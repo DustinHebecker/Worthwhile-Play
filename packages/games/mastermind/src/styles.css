@@ -1,0 +1,108 @@
+/* Code Breaker (mastermind). All rules are scoped under .wp-mastermind. */
+.wp-mastermind {
+  --mm-c0: #c62828;
+  --mm-c1: #1565c0;
+  --mm-c2: #2e7d32;
+  --mm-c3: #a35f00;
+  --mm-c4: #6a1b9a;
+  --mm-c5: #00727d;
+  --mm-c6: #5d4037;
+  --mm-c7: #ad1457;
+  --mm-tile: 44px;
+  --mm-small: 30px;
+  display: grid;
+  gap: 0.75rem;
+  max-width: 34rem;
+  margin-inline: auto;
+}
+@media (prefers-color-scheme: dark) {
+  .wp-mastermind {
+    --mm-c0: #ef9a9a;
+    --mm-c1: #90caf9;
+    --mm-c2: #a5d6a7;
+    --mm-c3: #ffcc80;
+    --mm-c4: #ce93d8;
+    --mm-c5: #80deea;
+    --mm-c6: #d7ccc8;
+    --mm-c7: #f48fb1;
+  }
+}
+
+.wp-mastermind .mm-board { display: grid; gap: 0.75rem; }
+.wp-mastermind p { margin: 0; }
+
+/* Symbols: shape + colour + accessible name (never colour alone). */
+.wp-mastermind .mm-tile {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: var(--mm-tile); height: var(--mm-tile); flex: none;
+  border-radius: 8px; background: var(--wp-surface-2);
+}
+.wp-mastermind .mm-tile svg { width: 72%; height: 72%; fill: currentColor; stroke: var(--wp-text); stroke-width: 0.8; stroke-linejoin: round; }
+.wp-mastermind .mm-tile.mm-small { width: var(--mm-small); height: var(--mm-small); border-radius: 6px; }
+.wp-mastermind .mm-empty { border: 2px dashed var(--wp-border); background: transparent; }
+.wp-mastermind .mm-sym-0 { color: var(--mm-c0); }
+.wp-mastermind .mm-sym-1 { color: var(--mm-c1); }
+.wp-mastermind .mm-sym-2 { color: var(--mm-c2); }
+.wp-mastermind .mm-sym-3 { color: var(--mm-c3); }
+.wp-mastermind .mm-sym-4 { color: var(--mm-c4); }
+.wp-mastermind .mm-sym-5 { color: var(--mm-c5); }
+.wp-mastermind .mm-sym-6 { color: var(--mm-c6); }
+.wp-mastermind .mm-sym-7 { color: var(--mm-c7); }
+
+/* Feedback pegs: filled dot = exact, ring = partial, tiny dot = nothing. Shape, not colour, carries meaning. */
+.wp-mastermind .mm-pegs {
+  display: inline-grid; grid-template-columns: repeat(var(--mm-peg-cols, 2), 12px);
+  gap: 3px; align-items: center; justify-items: center;
+}
+.wp-mastermind .mm-peg { display: block; width: 11px; height: 11px; border-radius: 50%; box-sizing: border-box; }
+.wp-mastermind .mm-peg-exact { background: var(--wp-text); }
+.wp-mastermind .mm-peg-partial { border: 2.5px solid var(--wp-text); background: transparent; }
+.wp-mastermind .mm-peg-none { width: 4px; height: 4px; background: var(--wp-border); }
+
+.wp-mastermind .mm-legend { display: flex; flex-wrap: wrap; gap: 0.35rem 1.25rem; font-size: 0.9rem; color: var(--wp-muted); }
+.wp-mastermind .mm-legend-item { display: inline-flex; align-items: center; gap: 0.4rem; }
+
+.wp-mastermind .mm-status-won { color: var(--wp-ok); }
+.wp-mastermind .mm-status-lost { color: var(--wp-danger); }
+
+/* History */
+.wp-mastermind .mm-history { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; }
+.wp-mastermind .mm-row {
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0.3rem 0.5rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius); background: var(--wp-surface);
+}
+.wp-mastermind .mm-row-n { min-width: 1.6em; text-align: end; color: var(--wp-muted); font-variant-numeric: tabular-nums; }
+.wp-mastermind .mm-code { display: inline-flex; gap: 4px; }
+.wp-mastermind .mm-row .mm-pegs { margin-inline-start: auto; }
+
+.wp-mastermind .mm-secret { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; font-weight: 600; }
+
+/* Composer */
+.wp-mastermind .mm-composer { display: grid; gap: 0.75rem; padding: 0.75rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius); background: var(--wp-surface); }
+.wp-mastermind .mm-slots { display: flex; gap: 0.5rem; justify-content: center; }
+.wp-mastermind .mm-slot {
+  position: relative; padding: 4px; min-width: calc(var(--mm-tile) + 12px); min-height: calc(var(--mm-tile) + 12px);
+  border: 2px solid var(--wp-border); background: var(--wp-bg);
+}
+.wp-mastermind .mm-slot.is-cursor { border: 3px solid var(--wp-accent); }
+/* Cursor marker: a small bar under the active slot, so the cursor is not shown by colour alone. */
+.wp-mastermind .mm-slot.is-cursor::after {
+  content: ''; position: absolute; inset-inline: 25%; bottom: -9px; height: 4px; border-radius: 2px; background: var(--wp-accent);
+}
+.wp-mastermind .mm-palette { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.4rem; }
+.wp-mastermind .mm-pal { position: relative; padding: 4px; min-height: 52px; }
+.wp-mastermind .mm-pal .mm-tile { background: transparent; }
+.wp-mastermind .mm-key {
+  position: absolute; inset-inline-end: 4px; top: 2px; font-size: 0.75rem; color: var(--wp-muted); font-variant-numeric: tabular-nums;
+}
+.wp-mastermind .mm-actions { justify-content: center; }
+.wp-mastermind button.is-inactive { opacity: 0.6; }
+.wp-mastermind .mm-check-result { padding: 0.5rem 0.75rem; border-inline-start: 4px solid var(--wp-accent); background: var(--wp-surface-2); border-radius: 6px; }
+.wp-mastermind .mm-hint { font-size: 0.85rem; }
+
+@media (max-width: 400px) {
+  .wp-mastermind { --mm-tile: 40px; --mm-small: 26px; }
+  .wp-mastermind .mm-composer { padding: 0.5rem; }
+  .wp-mastermind .mm-slots { gap: 0.35rem; }
+  .wp-mastermind .mm-row { gap: 0.4rem; padding-inline: 0.35rem; }
+}

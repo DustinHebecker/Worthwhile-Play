@@ -1,0 +1,102 @@
+/* Tic-Tac-Toe — all rules scoped under .wp-tic-tac-toe. Uses shared --wp-* tokens. */
+.wp-tic-tac-toe {
+  display: grid;
+  gap: var(--wp-gap, 1rem);
+  justify-items: center;
+  width: 100%;
+  max-width: 32rem;
+  margin-inline: auto;
+}
+.wp-tic-tac-toe .ttt-toolbar,
+.wp-tic-tac-toe .ttt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  align-items: end;
+  justify-content: center;
+  width: 100%;
+}
+.wp-tic-tac-toe .ttt-field {
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.9rem;
+  min-width: 0;
+  max-width: 100%;
+}
+.wp-tic-tac-toe .ttt-field[hidden] { display: none; }
+.wp-tic-tac-toe .ttt-field select { max-width: 100%; }
+.wp-tic-tac-toe .ttt-status { margin: 0; text-align: center; }
+
+.wp-tic-tac-toe .ttt-board {
+  --ttt-gap: 6px;
+  position: relative;
+  direction: ltr;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(var(--wp-touch, 44px), 1fr));
+  gap: var(--ttt-gap);
+  padding: var(--ttt-gap);
+  width: min(100%, 22rem);
+  aspect-ratio: 1;
+  background: var(--wp-border);
+  border-radius: var(--wp-radius, 10px);
+}
+.wp-tic-tac-toe .ttt-cell {
+  min-width: var(--wp-touch, 44px);
+  min-height: var(--wp-touch, 44px);
+  aspect-ratio: 1;
+  padding: 0;
+  border: none;
+  border-radius: calc(var(--wp-radius, 10px) - 4px);
+  background: var(--wp-surface);
+  color: var(--wp-text);
+}
+.wp-tic-tac-toe .ttt-cell[aria-disabled='true'] { cursor: default; }
+.wp-tic-tac-toe .ttt-cell:not([aria-disabled='true']):hover { background: var(--wp-surface-2); }
+.wp-tic-tac-toe .ttt-cell[data-mark='X'] { color: var(--wp-p1); }
+.wp-tic-tac-toe .ttt-cell[data-mark='O'] { color: var(--wp-p2); }
+.wp-tic-tac-toe .ttt-cell:focus-visible { outline: 3px solid var(--wp-focus); outline-offset: 2px; z-index: 1; }
+
+/* Winning line: a thick inset frame plus a hatch pattern on each winning cell, and a strike line
+   across the board — never colour alone. */
+.wp-tic-tac-toe .ttt-cell.is-winning {
+  box-shadow: inset 0 0 0 4px var(--wp-text);
+  background-image: repeating-linear-gradient(45deg, transparent 0 7px, color-mix(in srgb, var(--wp-text) 14%, transparent) 7px 10px);
+}
+
+.wp-tic-tac-toe .ttt-glyph {
+  width: 72%;
+  height: 72%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 12;
+  stroke-linecap: round;
+  animation: ttt-pop 160ms ease-out;
+}
+.wp-tic-tac-toe .ttt-strike {
+  position: absolute;
+  inset: var(--ttt-gap);
+  width: calc(100% - 2 * var(--ttt-gap));
+  height: calc(100% - 2 * var(--ttt-gap));
+  overflow: visible;
+  pointer-events: none;
+}
+.wp-tic-tac-toe .ttt-strike[hidden] { display: none; }
+.wp-tic-tac-toe .ttt-strike line {
+  stroke: var(--wp-text);
+  stroke-width: 0.09;
+  stroke-linecap: round;
+  stroke-dasharray: 0.3 0.12;
+}
+
+@keyframes ttt-pop {
+  from { transform: scale(0.6); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.wp-tic-tac-toe.ttt-reduced .ttt-glyph { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .wp-tic-tac-toe .ttt-glyph { animation: none; }
+}
+@media (forced-colors: active) {
+  .wp-tic-tac-toe .ttt-cell.is-winning { outline: 4px solid CanvasText; outline-offset: -6px; }
+  .wp-tic-tac-toe .ttt-strike line { stroke: CanvasText; }
+}
