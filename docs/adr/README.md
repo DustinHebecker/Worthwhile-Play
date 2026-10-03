@@ -11,3 +11,4 @@ Short, durable records of decisions that are not obvious from the code. New ADR:
 | [0005](0005-legal-notice-outside-git.md) | Legal-notice data injected at build time |
 | [0006](0006-multi-agent-workflow.md) | Orchestrator and feature agents |
 | [0007](0007-license.md) | Source-available license (PolyForm Perimeter 1.0.0) |
+| [0008](0008-strategy-engine-api.md) | Shared strategy engine and its API (Proposed) |
