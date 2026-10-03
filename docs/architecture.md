@@ -78,7 +78,7 @@ test/rules.test.ts, test/contract.test.ts (runGameContract), e2e/games/<id>.spec
 
 ## Deployment
 
-Cloudflare Workers Static Assets (assets-only Worker, SPA fallback for deep links). Security headers via `public/_headers`. See [deployment.md](deployment.md).
+Cloudflare Pages (SPA fallback for deep links, ADR 0008). Security headers via `public/_headers`. See [deployment.md](deployment.md).
 
 ## Determinism and randomness
 

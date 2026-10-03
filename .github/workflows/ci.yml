@@ -104,7 +104,7 @@ jobs:
         run: |
           node scripts/check-release-env.mjs
           pnpm build
-      - name: Deploy
+      - name: Deploy (Cloudflare Pages)
         id: deploy
         if: steps.config.outputs.enabled == 'true'
         env:
@@ -114,6 +114,17 @@ jobs:
           # The account ID is optional: with a token limited to one account, wrangler detects it.
           if [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then unset CLOUDFLARE_ACCOUNT_ID; fi
           set -o pipefail
-          pnpm exec wrangler deploy 2>&1 | tee deploy.log
-          url=$(grep -oE 'https://[a-zA-Z0-9.-]+\.workers\.dev' deploy.log | head -1 || true)
-          echo "url=${url}" >> "$GITHUB_OUTPUT"
+          # Create the Pages project on first deploy (no-op afterwards).
+          if ! pnpm exec wrangler pages project list 2>/dev/null | grep -q 'worthwhile-play'; then
+            pnpm exec wrangler pages project create worthwhile-play --production-branch main
+          fi
+          pnpm exec wrangler pages deploy --branch main --commit-dirty=true 2>&1 | tee deploy.log
+          echo "url=$(pnpm exec wrangler pages project list 2>/dev/null | grep -oE 'worthwhile-play[a-z0-9-]*\.pages\.dev' | head -1 | sed 's#^#https://#')" >> "$GITHUB_OUTPUT"
+      - name: Remove the earlier Workers deployment (*.workers.dev)
+        if: steps.config.outputs.enabled == 'true'
+        continue-on-error: true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          # Run outside the repo so the Pages config is not picked up; only the Worker script is deleted.
+          cd "$RUNNER_TEMP" && "$GITHUB_WORKSPACE/node_modules/.bin/wrangler" delete --name worthwhile-play --force 2>&1 | tail -3 || true

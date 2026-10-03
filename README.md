@@ -56,7 +56,7 @@ Current versions of Chrome/Edge, Firefox and Safari (desktop and mobile). Offlin
 
 ## Deployment
 
-Cloudflare Workers with Static Assets, deployed by GitHub Actions on every push to `main`. The legal notice (Impressum) data is injected at build time from secrets and is never committed. See [docs/deployment.md](docs/deployment.md).
+Cloudflare Pages (https://worthwhile-play.pages.dev), deployed by GitHub Actions on every push to `main`. The legal notice (Impressum) data is injected at build time from secrets and is never committed. See [docs/deployment.md](docs/deployment.md).
 
 ## Documentation
 
