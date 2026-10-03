@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import fc from 'fast-check';
 import type { GameModule } from '@wp/game-core';
 import { createAutosave, createIndexedDbStore, createMemoryStore, createSave, interpretSave, isGameSave } from '../src';
@@ -116,71 +116,147 @@ describe('stores', () => {
 });
 
 describe('autosave', () => {
-  const setup = () => {
+  const flushMicrotasks = async () => {
+    for (let i = 0; i < 5; i++) await Promise.resolve();
+  };
+  const setup = (delayMs = 100) => {
     vi.useFakeTimers();
     const listeners = new Map<string, () => void>();
     const target = {
       addEventListener: (type: string, fn: () => void) => listeners.set(type, fn),
-      removeEventListener: (type: string) => listeners.delete(type),
+      removeEventListener: (type: string, fn: () => void) => {
+        if (listeners.get(type) === fn) listeners.delete(type);
+      },
       visibilityState: 'visible' as DocumentVisibilityState
     };
     const save = vi.fn(async () => {});
     const onError = vi.fn();
-    const autosave = createAutosave({ save, onError, delayMs: 100, win: target as never, doc: target as never, timers: { setTimeout, clearTimeout } });
+    const autosave = createAutosave({ save, onError, delayMs, win: target as never, doc: target as never, timers: { setTimeout, clearTimeout } });
     return { autosave, save, onError, listeners, target };
   };
+  afterEach(() => vi.useRealTimers());
 
-  it('debounces requests', async () => {
+  it('registers visibilitychange on the document and pagehide on the window', () => {
+    vi.useFakeTimers();
+    const doc = { addEventListener: vi.fn(), removeEventListener: vi.fn(), visibilityState: 'visible' };
+    const win = { addEventListener: vi.fn(), removeEventListener: vi.fn() };
+    const a = createAutosave({ save: async () => {}, doc: doc as never, win: win as never });
+    expect(doc.addEventListener).toHaveBeenCalledWith('visibilitychange', expect.any(Function));
+    expect(win.addEventListener).toHaveBeenCalledWith('pagehide', expect.any(Function));
+    a.dispose();
+    expect(doc.removeEventListener).toHaveBeenCalledWith('visibilitychange', doc.addEventListener.mock.calls[0]?.[1]);
+    expect(win.removeEventListener).toHaveBeenCalledWith('pagehide', win.addEventListener.mock.calls[0]?.[1]);
+  });
+
+  it('debounces requests into one save after the delay', async () => {
     const { autosave, save } = setup();
     autosave.request();
+    await vi.advanceTimersByTimeAsync(60);
     autosave.request();
     await vi.advanceTimersByTimeAsync(99);
     expect(save).not.toHaveBeenCalled();
     await vi.advanceTimersByTimeAsync(1);
     expect(save).toHaveBeenCalledTimes(1);
-    vi.useRealTimers();
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(save).toHaveBeenCalledTimes(1);
   });
 
-  it('flushes immediately when the page is hidden or unloaded', async () => {
-    const { autosave, save, listeners, target } = setup();
+  it('uses a short default delay', async () => {
+    vi.useFakeTimers();
+    const save = vi.fn(async () => {});
+    const a = createAutosave({ save, doc: undefined as never, win: undefined as never });
+    a.request();
+    await vi.advanceTimersByTimeAsync(49);
+    expect(save).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(save).toHaveBeenCalledTimes(1);
+    a.dispose();
+  });
+
+  it('flushes synchronously (without waiting for the timer) when the page becomes hidden', async () => {
+    const { autosave, save, listeners, target } = setup(10_000);
     autosave.request();
     target.visibilityState = 'hidden';
     listeners.get('visibilitychange')?.();
-    await vi.runAllTimersAsync();
+    await flushMicrotasks();
     expect(save).toHaveBeenCalledTimes(1);
-    autosave.request();
-    listeners.get('pagehide')?.();
-    await vi.runAllTimersAsync();
-    expect(save).toHaveBeenCalledTimes(2);
-    listeners.get('pagehide')?.();
-    await vi.runAllTimersAsync();
-    expect(save).toHaveBeenCalledTimes(2);
-    vi.useRealTimers();
+    // the pending timer was cancelled: no second save later
+    await vi.advanceTimersByTimeAsync(20_000);
+    expect(save).toHaveBeenCalledTimes(1);
   });
 
-  it('does not flush on visible visibilitychange; flush(force) saves anyway; dispose removes listeners', async () => {
-    const { autosave, save, listeners } = setup();
+  it('does not save on visibilitychange while visible or when nothing is pending', async () => {
+    const { autosave, save, listeners, target } = setup(10_000);
     autosave.request();
     listeners.get('visibilitychange')?.();
+    await flushMicrotasks();
     expect(save).not.toHaveBeenCalled();
     await autosave.flush();
+    target.visibilityState = 'hidden';
+    listeners.get('visibilitychange')?.();
+    await flushMicrotasks();
     expect(save).toHaveBeenCalledTimes(1);
-    await autosave.flush();
-    expect(save).toHaveBeenCalledTimes(1);
-    await autosave.flush(true);
-    expect(save).toHaveBeenCalledTimes(2);
-    autosave.dispose();
-    expect(listeners.size).toBe(0);
-    vi.useRealTimers();
   });
 
-  it('reports save errors without breaking later saves', async () => {
-    const { autosave, save, onError } = setup();
-    save.mockRejectedValueOnce(new Error('quota'));
-    await autosave.flush(true);
-    expect(onError).toHaveBeenCalledTimes(1);
+  it('flushes on pagehide only when a save is pending', async () => {
+    const { autosave, save, listeners } = setup(10_000);
+    listeners.get('pagehide')?.();
+    await flushMicrotasks();
+    expect(save).not.toHaveBeenCalled();
+    autosave.request();
+    listeners.get('pagehide')?.();
+    await flushMicrotasks();
+    expect(save).toHaveBeenCalledTimes(1);
+    listeners.get('pagehide')?.();
+    await flushMicrotasks();
+    expect(save).toHaveBeenCalledTimes(1);
+  });
+
+  it('flush() saves only when pending unless forced', async () => {
+    const { autosave, save } = setup();
+    await autosave.flush();
+    expect(save).not.toHaveBeenCalled();
+    autosave.request();
+    await autosave.flush();
+    expect(save).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(save).toHaveBeenCalledTimes(1);
     await autosave.flush(true);
     expect(save).toHaveBeenCalledTimes(2);
-    vi.useRealTimers();
+  });
+
+  it('dispose() cancels a pending timer and removes listeners', async () => {
+    const { autosave, save, listeners } = setup();
+    autosave.request();
+    autosave.dispose();
+    expect(listeners.size).toBe(0);
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(save).not.toHaveBeenCalled();
+  });
+
+  it('serializes saves and reports errors without breaking later saves', async () => {
+    const { autosave, save, onError } = setup();
+    const order: string[] = [];
+    save.mockImplementationOnce(async () => {
+      order.push('a-start');
+      await Promise.resolve();
+      order.push('a-end');
+      throw new Error('quota');
+    });
+    save.mockImplementationOnce(async () => {
+      order.push('b');
+    });
+    const first = autosave.flush(true);
+    const second = autosave.flush(true);
+    await Promise.all([first, second]);
+    expect(order).toEqual(['a-start', 'a-end', 'b']);
+    expect(onError).toHaveBeenCalledTimes(1);
+    expect(onError.mock.calls[0]?.[0]).toBeInstanceOf(Error);
+  });
+
+  it('works without an onError handler', async () => {
+    vi.useFakeTimers();
+    const a = createAutosave({ save: async () => { throw new Error('x'); }, doc: undefined as never, win: undefined as never, timers: { setTimeout, clearTimeout } });
+    await expect(a.flush(true)).resolves.toBeUndefined();
   });
 });

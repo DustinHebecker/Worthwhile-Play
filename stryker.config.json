@@ -14,7 +14,8 @@
     "packages/localization/src/translate.ts",
     "packages/games/*/src/rules.ts",
     "packages/games/*/src/ai.ts",
-    "!**/*.d.ts"
+    "!**/*.d.ts",
+    "!packages/learning-content/src/builtin/**"
   ],
   "reporters": [
     "clear-text",
