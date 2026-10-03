@@ -1,0 +1,45 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "vitest": {
+    "configFile": "vitest.config.ts"
+  },
+  "coverageAnalysis": "perTest",
+  "mutate": [
+    "packages/game-core/src/**/*.ts",
+    "packages/persistence/src/**/*.ts",
+    "packages/learning-content/src/**/*.ts",
+    "packages/localization/src/locales.ts",
+    "packages/localization/src/translate.ts",
+    "packages/games/*/src/rules.ts",
+    "packages/games/*/src/ai.ts",
+    "!**/*.d.ts",
+    "!packages/learning-content/src/builtin/**"
+  ],
+  "reporters": [
+    "clear-text",
+    "progress",
+    "html"
+  ],
+  "htmlReporter": {
+    "fileName": "reports/mutation/index.html"
+  },
+  "thresholds": {
+    "high": 85,
+    "low": 70,
+    "break": 65
+  },
+  "tempDirName": ".stryker-tmp",
+  "plugins": [
+    "@stryker-mutator/vitest-runner"
+  ],
+  "ignorePatterns": [
+    "test-results",
+    "playwright-report",
+    "reports",
+    "coverage",
+    "dist",
+    ".wrangler"
+  ]
+}

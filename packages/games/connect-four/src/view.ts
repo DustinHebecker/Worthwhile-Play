@@ -73,7 +73,7 @@ export function createConnectFour(context: GameContext): GameInstance<ConnectFou
   const undoButton = h('button', { type: 'button', 'data-testid': 'undo', onclick: () => onUndo() }, t('common.undo'));
   const restartButton = h('button', { type: 'button', 'data-testid': 'restart', onclick: () => changeOptions(optionsOf(state)) }, t('restart'));
 
-  const statusDisc = h('span', { class: 'c4-cell c4-status-disc', 'data-disc': '', 'aria-hidden': 'true' }, discElement());
+  const statusDisc = h('span', { class: 'c4-cell c4-status-disc', 'data-player': '', 'aria-hidden': 'true' }, discElement());
   const statusText = h('span', { 'data-testid': 'status' });
   const status = h('p', { class: 'wp-status c4-status' }, statusDisc, statusText);
   const live = h('div', { class: 'sr-only', 'aria-live': 'polite', role: 'status', 'data-testid': 'announcer' });
@@ -137,15 +137,16 @@ export function createConnectFour(context: GameContext): GameInstance<ConnectFou
   /* ---------- Rendering ---------- */
   const discName = (disc: Player, winning: boolean) => (winning ? t('disc.winning', { disc: t(`disc.${disc}`) }) : t(`disc.${disc}`));
 
-  const columnLabel = (board: readonly Cell[], col: number, winning: ReadonlySet<number>): string => {
-    const discs: string[] = [];
+  /** Column description from the bottom up, e.g. "Column 3, from the bottom: filled, hollow." */
+  const columnLabel = (discs: readonly Cell[], col: number, winning: ReadonlySet<number>): string => {
+    const names: string[] = [];
     for (let row = ROWS - 1; row >= 0; row--) {
-      const disc = board[cellIndex(row, col)];
+      const disc = discs[cellIndex(row, col)];
       if (!disc) break;
-      discs.push(discName(disc, winning.has(cellIndex(row, col))));
+      names.push(discName(disc, winning.has(cellIndex(row, col))));
     }
-    if (discs.length === 0) return t('column.empty', { col: col + 1 });
-    return t(discs.length === ROWS ? 'column.full' : 'column.discs', { col: col + 1, discs: discs.join(t('separator')) });
+    if (names.length === 0) return t('column.empty', { col: col + 1 });
+    return t(names.length === ROWS ? 'column.full' : 'column.discs', { col: col + 1, discs: names.join(t('separator')) });
   };
 
   const statusFor = (outcome: Outcome, next: Player, revealing: boolean): string => {
@@ -193,7 +194,7 @@ export function createConnectFour(context: GameContext): GameInstance<ConnectFou
     });
 
     const shownDisc = outcome.kind === 'won' ? outcome.win.player : outcome.kind === 'playing' ? next : 0;
-    statusDisc.dataset.disc = shownDisc ? String(shownDisc) : '';
+    statusDisc.dataset.player = shownDisc ? String(shownDisc) : '';
     statusDisc.hidden = shownDisc === 0;
     statusText.textContent = statusFor(outcome, next, revealing);
     container.dataset.outcome = outcome.kind;

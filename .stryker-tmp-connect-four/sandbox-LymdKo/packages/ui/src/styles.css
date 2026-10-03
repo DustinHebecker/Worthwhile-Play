@@ -1,0 +1,60 @@
+/* Shared design tokens and primitives for the app shell and all games. */
+:root {
+  color-scheme: light dark;
+  --wp-bg: #f6f4ef;
+  --wp-surface: #ffffff;
+  --wp-surface-2: #ecebe5;
+  --wp-text: #1d1d1b;
+  --wp-muted: #5c5b55;
+  --wp-border: #cfcdc4;
+  --wp-accent: #2f5d50;
+  --wp-accent-contrast: #ffffff;
+  --wp-focus: #b4530a;
+  --wp-danger: #a1271b;
+  --wp-ok: #26643a;
+  --wp-p1: #24508f;
+  --wp-p2: #9a3412;
+  --wp-radius: 10px;
+  --wp-gap: 1rem;
+  --wp-font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', 'Noto Sans Arabic', 'Noto Sans Devanagari', 'Noto Sans CJK SC', sans-serif;
+  --wp-touch: 44px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --wp-bg: #171816;
+    --wp-surface: #22231f;
+    --wp-surface-2: #2c2d28;
+    --wp-text: #ecebe4;
+    --wp-muted: #a9a79d;
+    --wp-border: #45463f;
+    --wp-accent: #8fc1ad;
+    --wp-accent-contrast: #10201a;
+    --wp-focus: #f0a35e;
+    --wp-danger: #f08a7e;
+    --wp-ok: #8fd19e;
+    --wp-p1: #8db4f0;
+    --wp-p2: #f2a07a;
+  }
+}
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: var(--wp-bg); color: var(--wp-text); font-family: var(--wp-font); line-height: 1.5; }
+:focus-visible { outline: 3px solid var(--wp-focus); outline-offset: 2px; }
+a { color: var(--wp-accent); }
+button, .wp-button {
+  font: inherit; min-height: var(--wp-touch); min-width: var(--wp-touch); padding: 0.5rem 1rem;
+  border-radius: var(--wp-radius); border: 1px solid var(--wp-border); background: var(--wp-surface); color: var(--wp-text);
+  cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; text-decoration: none;
+}
+button:hover:not(:disabled), .wp-button:hover { border-color: var(--wp-accent); }
+button:disabled { opacity: 0.55; cursor: not-allowed; }
+button.primary, .wp-button.primary { background: var(--wp-accent); color: var(--wp-accent-contrast); border-color: var(--wp-accent); }
+select, input, textarea { font: inherit; min-height: var(--wp-touch); padding: 0.4rem 0.6rem; border-radius: var(--wp-radius); border: 1px solid var(--wp-border); background: var(--wp-surface); color: var(--wp-text); }
+.wp-row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.wp-stack { display: grid; gap: var(--wp-gap); }
+.wp-card { background: var(--wp-surface); border: 1px solid var(--wp-border); border-radius: var(--wp-radius); padding: 1rem; }
+.wp-muted { color: var(--wp-muted); }
+.wp-status { min-height: 1.5em; font-weight: 600; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}

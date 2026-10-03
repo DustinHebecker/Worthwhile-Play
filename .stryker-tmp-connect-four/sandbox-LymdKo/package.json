@@ -1,0 +1,52 @@
+{
+  "name": "worthwhile-play",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Games worth your attention: a multilingual, offline-capable collection of games for productive leisure.",
+  "license": "SEE LICENSE IN LICENSE",
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @wp/web dev",
+    "build": "pnpm --filter @wp/web build",
+    "preview": "pnpm --filter @wp/web preview",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "coverage": "vitest run --coverage",
+    "e2e": "playwright test",
+    "mutation": "stryker run",
+    "check:licenses": "node scripts/check-licenses.mjs",
+    "check": "pnpm check:licenses && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "deploy:cloudflare": "node scripts/check-release-env.mjs && pnpm build && wrangler pages deploy --branch main"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@playwright/test": "1.56.1",
+    "@stryker-mutator/core": "^10.0.0",
+    "@stryker-mutator/vitest-runner": "^10.0.0",
+    "@types/node": "^24.19.1",
+    "@vitest/coverage-v8": "^4.1.11",
+    "eslint": "^9.39.5",
+    "fake-indexeddb": "^6.2.5",
+    "fast-check": "^4.10.2",
+    "globals": "^17.13.0",
+    "jsdom": "^30.1.1",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.71.0",
+    "vite": "^8.3.2",
+    "vite-plugin-pwa": "^1.3.0",
+    "vitest": "^4.1.11",
+    "wrangler": "^4.147.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "workerd"
+    ]
+  }
+}

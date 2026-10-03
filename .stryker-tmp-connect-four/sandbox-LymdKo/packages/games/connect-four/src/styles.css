@@ -1,0 +1,151 @@
+/* Four in a Row — all rules scoped under .wp-connect-four. Uses shared --wp-* tokens.
+   Discs differ by shape: player 1 = filled disc, player 2 = ring (hollow centre). */
+.wp-connect-four {
+  --c4-gap: 2px;
+  --c4-ring: radial-gradient(circle closest-side, transparent 0 52%, currentColor 55% 100%);
+  display: grid;
+  gap: var(--wp-gap, 1rem);
+  justify-items: center;
+  width: 100%;
+  max-width: 34rem;
+  margin-inline: auto;
+}
+.wp-connect-four .c4-toolbar,
+.wp-connect-four .c4-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  align-items: end;
+  justify-content: center;
+  width: 100%;
+}
+.wp-connect-four .c4-field {
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.9rem;
+  min-width: 0;
+  max-width: 100%;
+}
+.wp-connect-four .c4-field[hidden] { display: none; }
+.wp-connect-four .c4-field select { max-width: 100%; }
+.wp-connect-four .c4-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 0;
+  text-align: center;
+}
+
+/* Board: seven column buttons; each column is one large touch target. Fits 7 × 44px on a 360px phone. */
+.wp-connect-four .c4-board {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--c4-gap);
+  padding: 4px;
+  width: min(100%, 30rem);
+  background: var(--wp-surface-2);
+  border: 1px solid var(--wp-border);
+  border-radius: var(--wp-radius, 10px);
+}
+.wp-connect-four .c4-column {
+  display: grid;
+  grid-template-rows: repeat(6, auto);
+  gap: var(--c4-gap);
+  min-width: 0;
+  min-height: var(--wp-touch, 44px);
+  padding: 2px 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--wp-text);
+}
+.wp-connect-four .c4-column[aria-disabled='true'] { cursor: default; }
+.wp-connect-four .c4-column:not([aria-disabled='true']):hover {
+  background: color-mix(in srgb, var(--wp-accent) 14%, transparent);
+}
+.wp-connect-four .c4-column:focus-visible {
+  outline: 3px solid var(--wp-focus);
+  outline-offset: 1px;
+  z-index: 1;
+}
+
+.wp-connect-four .c4-cell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  min-width: 0;
+  border-radius: 50%;
+  background: var(--wp-bg);
+  box-shadow: inset 0 2px 3px rgb(0 0 0 / 0.22);
+}
+.wp-connect-four .c4-cell:is([data-disc='1'], [data-player='1']) { color: var(--wp-p1); }
+.wp-connect-four .c4-cell:is([data-disc='2'], [data-player='2']) { color: var(--wp-p2); }
+
+.wp-connect-four .c4-disc {
+  grid-area: 1 / 1;
+  width: 84%;
+  height: 84%;
+  border-radius: 50%;
+  animation: c4-drop 280ms cubic-bezier(0.45, 0, 0.9, 0.6);
+}
+/* Filled disc with a slim inner rim for depth. */
+.wp-connect-four :is([data-disc='1'], [data-player='1']) > .c4-disc {
+  background: currentColor;
+  box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--wp-surface) 35%, transparent);
+}
+/* Ring: thick outline, hollow centre. */
+.wp-connect-four :is([data-disc='2'], [data-player='2']) > .c4-disc { background: var(--c4-ring); }
+
+/* Preview of where the next disc would land (hover / keyboard focus). */
+.wp-connect-four .c4-column:not([aria-disabled='true']):is(:hover, :focus-visible) .c4-cell.is-next::before {
+  content: '';
+  grid-area: 1 / 1;
+  width: 84%;
+  height: 84%;
+  border-radius: 50%;
+  opacity: 0.4;
+}
+.wp-connect-four[data-turn='1'] .c4-cell.is-next::before { background: var(--wp-p1); }
+.wp-connect-four[data-turn='2'] .c4-cell.is-next::before { color: var(--wp-p2); background: var(--c4-ring); }
+
+/* Last move: dashed frame. Winning four: solid frame plus a diamond marker — never colour alone. */
+.wp-connect-four .c4-cell[data-last] { outline: 2px dashed var(--wp-muted); outline-offset: 1px; }
+.wp-connect-four .c4-cell.is-winning {
+  outline: 3px solid var(--wp-text);
+  outline-offset: 1px;
+}
+.wp-connect-four .c4-cell.is-winning::after {
+  content: '';
+  grid-area: 1 / 1;
+  width: 28%;
+  height: 28%;
+  transform: rotate(45deg);
+  background: var(--wp-surface);
+  border: 2px solid var(--wp-text);
+}
+
+.wp-connect-four .c4-status-disc {
+  width: 1.6em;
+  flex: none;
+  box-shadow: none;
+  background: transparent;
+}
+.wp-connect-four .c4-status-disc[hidden] { display: none; }
+.wp-connect-four .c4-status-disc .c4-disc { width: 100%; height: 100%; animation: none; }
+
+@keyframes c4-drop {
+  from { transform: translateY(calc(var(--c4-fall, 1) * -125%)); }
+  to { transform: translateY(0); }
+}
+.wp-connect-four.c4-reduced .c4-disc { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .wp-connect-four .c4-disc { animation: none; }
+}
+@media (forced-colors: active) {
+  .wp-connect-four .c4-cell { forced-color-adjust: none; background: Canvas; border: 1px solid CanvasText; color: CanvasText; }
+  .wp-connect-four .c4-cell:is([data-disc], [data-player]) { color: CanvasText; }
+  .wp-connect-four .c4-cell.is-winning { outline-color: Highlight; }
+  .wp-connect-four .c4-cell.is-winning::after { background: Canvas; border-color: CanvasText; }
+}

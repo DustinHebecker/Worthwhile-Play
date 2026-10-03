@@ -325,6 +325,22 @@ describe('generation', () => {
     );
   });
 
+  it('retries with derived seeds in order and keeps the first line-solvable candidate', () => {
+    // Seeds whose first candidate is not line-solvable exercise the retry path.
+    let checked = 0;
+    for (let seed = 0; checked < 5 && seed < 500; seed++) {
+      if (isLineSolvable(randomPicture(attemptSeed(seed, 0), 10), 10)) continue;
+      let attempt = 1;
+      while (!isLineSolvable(randomPicture(attemptSeed(seed, attempt), 10), 10)) attempt++;
+      expect(generatePuzzle(seed, 'hard')).toEqual(randomPicture(attemptSeed(seed, attempt), 10));
+      checked++;
+    }
+    expect(checked).toBe(5);
+    // When the first candidate works, it is used as is.
+    const easy = [0, 1, 2].find((seed) => isLineSolvable(randomPicture(attemptSeed(seed, 0), 5), 5)) as number;
+    expect(generatePuzzle(easy, 'easy')).toEqual(randomPicture(attemptSeed(easy, 0), 5));
+  });
+
   it('is deterministic per seed and differs between seeds', () => {
     for (const difficulty of DIFFICULTIES) {
       expect(generatePuzzle(77, difficulty)).toEqual(generatePuzzle(77, difficulty));
@@ -520,6 +536,7 @@ describe('game state', () => {
 });
 
 describe('isNonogramState', () => {
+  const unmarked = (s: NonogramState) => s.cells.findIndex((_, i) => !s.marked.includes(i));
   const valid = () => {
     let s = createInitialState(21, 'easy');
     s = applyCell(s, firstEmpty(s), 'fill');
@@ -541,11 +558,13 @@ describe('isNonogramState', () => {
     ['unknown difficulty', (s: NonogramState) => ({ ...s, difficulty: 'expert' })],
     ['size mismatch', (s: NonogramState) => ({ ...s, size: 8 })],
     ['short solution', (s: NonogramState) => ({ ...s, solution: s.solution.slice(1) })],
+    ['long solution', (s: NonogramState) => ({ ...s, solution: [...s.solution, 0] })],
     ['solution value 2', (s: NonogramState) => ({ ...s, solution: [2, ...s.solution.slice(1)] })],
     ['solution not an array', (s: NonogramState) => ({ ...s, solution: 'x' })],
     ['short cells', (s: NonogramState) => ({ ...s, cells: s.cells.slice(1) })],
-    ['cell value 3', (s: NonogramState) => ({ ...s, cells: [3, ...s.cells.slice(1)] })],
-    ['cell value string', (s: NonogramState) => ({ ...s, cells: ['1', ...s.cells.slice(1)] })],
+    ['long cells', (s: NonogramState) => ({ ...s, cells: [...s.cells, 0] })],
+    ['cell value 3', (s: NonogramState) => ({ ...s, cells: s.cells.map((m, i) => (i === unmarked(s) ? 3 : m)) })],
+    ['cell value string', (s: NonogramState) => ({ ...s, cells: s.cells.map((m, i) => (i === unmarked(s) ? '1' : m)) })],
     ['cells not an array', (s: NonogramState) => ({ ...s, cells: {} })],
     ['bad mode', (s: NonogramState) => ({ ...s, mode: 'erase' })],
     ['negative moves', (s: NonogramState) => ({ ...s, moves: -1 })],
@@ -558,7 +577,10 @@ describe('isNonogramState', () => {
     ['marked not an array', (s: NonogramState) => ({ ...s, marked: 3 })],
     ['marked out of range', (s: NonogramState) => ({ ...s, marked: [25] })],
     ['marked duplicate', (s: NonogramState) => ({ ...s, marked: [...s.marked, ...s.marked] })],
-    ['marked a correct cell', (s: NonogramState) => ({ ...s, marked: [s.solution.indexOf(1)] })],
+    ['marked a correct filled cell', (s: NonogramState) => {
+      const right = s.solution.findIndex((v, i) => v === 1 && s.cells[i] === UNKNOWN);
+      return { ...s, cells: s.cells.map((m, i) => (i === right ? FILLED : m)), marked: [right] };
+    }],
     ['marked an unfilled wrong cell', (s: NonogramState) => ({ ...s, marked: [s.solution.findIndex((v, i) => v === 0 && s.cells[i] !== FILLED)] })],
     ['ambiguous puzzle', (s: NonogramState) => ({ ...s, solution: new Array(25).fill(0).map((_, i) => (i === 0 || i === 6 ? 1 : 0)), cells: new Array(25).fill(0), marked: [], mistakes: 0 })]
   ])('rejects %s', (_label, mutate) => {
