@@ -17,7 +17,7 @@ import { renderHome } from './pages/home';
 import { renderLegal } from './pages/legal';
 import { renderNotFound } from './pages/not-found';
 import { renderSettings } from './pages/settings';
-import { setupPwa } from './pwa';
+import { applyPendingUpdateIfIdle, setupPwa } from './pwa';
 import { routeHref, startRouter, type Route } from './router';
 
 export type UiTranslator = Translator & ((key: UiKey, params?: Readonly<Record<string, string | number>>) => string);
@@ -126,6 +126,7 @@ export function startApp(root: HTMLElement): void {
       console.error(error);
     }
     route = next;
+    applyPendingUpdateIfIdle();
     renderChrome();
     clear(main);
     try {
