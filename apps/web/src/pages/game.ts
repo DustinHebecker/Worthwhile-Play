@@ -30,7 +30,7 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
   const gameRoot = h('div', { class: 'game-root', 'data-testid': 'game-root', hidden: true });
   const finishedSlot = h('div', { class: 'finished-slot' });
   main.append(
-    h('nav', { class: 'breadcrumb' }, h('a', { href: '/' }, `← ${t('game.back')}`)),
+    h('nav', { class: 'breadcrumb' }, h('a', { href: '/' }, `${t.direction === 'rtl' ? '→' : '←'} ${t('game.back')}`)),
     h('header', { class: 'game-header' },
       h('h1', {}, gt('title')),
       h('p', { class: 'lead' }, gt('tagline')),
