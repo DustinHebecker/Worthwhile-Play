@@ -20,7 +20,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -44,7 +44,7 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -85,7 +85,7 @@ jobs:
           fi
       - uses: actions/checkout@v4
         if: steps.config.outputs.enabled == 'true'
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         if: steps.config.outputs.enabled == 'true'
       - uses: actions/setup-node@v4
         if: steps.config.outputs.enabled == 'true'
