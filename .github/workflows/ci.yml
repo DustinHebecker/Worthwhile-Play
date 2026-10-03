@@ -120,11 +120,3 @@ jobs:
           fi
           pnpm exec wrangler pages deploy --branch main --commit-dirty=true 2>&1 | tee deploy.log
           echo "url=$(pnpm exec wrangler pages project list 2>/dev/null | grep -oE 'worthwhile-play[a-z0-9-]*\.pages\.dev' | head -1 | sed 's#^#https://#')" >> "$GITHUB_OUTPUT"
-      - name: Remove the earlier Workers deployment (*.workers.dev)
-        if: steps.config.outputs.enabled == 'true'
-        continue-on-error: true
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: |
-          # Run outside the repo so the Pages config is not picked up; only the Worker script is deleted.
-          cd "$RUNNER_TEMP" && "$GITHUB_WORKSPACE/node_modules/.bin/wrangler" delete --name worthwhile-play --force 2>&1 | tail -3 || true
