@@ -1,9 +1,0 @@
-{
-  "$schema": "./node_modules/wrangler/config-schema.json",
-  // Cloudflare Pages project (same setup as Home Workout). Pages serves index.html for
-  // unknown paths (no top-level 404.html), so deep links such as /games/memory work.
-  // URL: https://worthwhile-play.pages.dev — see ADR 0008.
-  "name": "worthwhile-play",
-  "pages_build_output_dir": "./apps/web/dist",
-  "compatibility_date": "2026-09-01"
-}
