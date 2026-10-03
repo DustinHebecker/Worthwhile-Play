@@ -2,21 +2,15 @@
 
 The app is deployed as a **Cloudflare Worker with Static Assets** (`wrangler.jsonc`), by GitHub Actions on every push to `main` after lint, types, unit, property and E2E tests pass (`.github/workflows/ci.yml`, job `deploy`). Without the secrets below, CI skips the deploy step with a notice.
 
-## One-time setup
+## One-time setup (owner)
 
-1. **Cloudflare API token** — Cloudflare dashboard → *My Profile → API Tokens → Create Token* → template **"Edit Cloudflare Workers"**. Restrict it to your account (and zone, if you use a custom domain).
-2. **Account ID** — Cloudflare dashboard → *Workers & Pages* → right sidebar "Account ID".
-3. **GitHub repository secrets** — GitHub → repository → *Settings → Secrets and variables → Actions → New repository secret*:
+1. **Cloudflare API token**: <https://dash.cloudflare.com/profile/api-tokens> → *Create Token* → template **Edit Cloudflare Workers** → *Use template* → under *Account Resources* select the account (same account as Home Workout) → *Continue to summary* → *Create Token* → copy it.
+2. **GitHub secret `CLOUDFLARE_API_TOKEN`**: <https://github.com/DustinHebecker/Worthwhile-Play/settings/secrets/actions/new> → paste the token.
+3. **GitHub secret `WP_LEGAL`**: same page → value `Name|Street No.|Postal code City|Country` — i.e. the provider name, `|`, then the same value as `HW_LEGAL_ADDRESS` in Home Workout.
 
-   | Secret | Value |
-   |---|---|
-   | `CLOUDFLARE_API_TOKEN` | token from step 1 |
-   | `CLOUDFLARE_ACCOUNT_ID` | account ID from step 2 |
-   | `WP_LEGAL_NAME` | provider name for the legal notice, same as Home Workout |
-   | `WP_LEGAL_ADDRESS` | postal address lines separated by `\|`, e.g. `Street 1\|12345 City\|Germany` — same format as `HW_LEGAL_ADDRESS` in Home Workout |
-   | `WP_LEGAL_EMAIL` | optional contact e-mail |
+`CLOUDFLARE_ACCOUNT_ID` is optional (a token limited to one account is enough for wrangler to find it; the ID is the 32-character hex string in the dashboard URL `dash.cloudflare.com/<account-id>/…`). Instead of `WP_LEGAL`, the separate secrets `WP_LEGAL_NAME`, `WP_LEGAL_ADDRESS` and optional `WP_LEGAL_EMAIL` are also accepted.
 
-4. Push to `main` (or re-run the CI workflow). The deploy job prints the `*.workers.dev` URL. A custom domain can be attached in the Cloudflare dashboard (*Workers & Pages → worthwhile-play → Settings → Domains & Routes*).
+Deploys run on every push to `main` and on a manual *Run workflow* of CI on `main`. The deploy job prints the `*.workers.dev` URL. If the account has never used Workers, Cloudflare may first require a `workers.dev` subdomain (*Workers & Pages* in the dashboard offers to create one).
 
 ## Legal notice (Impressum) handling
 
@@ -30,7 +24,7 @@ The app is deployed as a **Cloudflare Worker with Static Assets** (`wrangler.jso
 ## Manual deploy (local)
 
 ```bash
-cp .env.example .env.production.local   # fill in WP_LEGAL_*; the file is git-ignored
+cp .env.example .env.production.local   # fill in WP_LEGAL; the file is git-ignored
 pnpm exec wrangler login                # or export CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID
 pnpm deploy:cloudflare                  # checks legal env → build → wrangler deploy
 ```

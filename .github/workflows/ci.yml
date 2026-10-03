@@ -65,7 +65,7 @@ jobs:
   deploy:
     name: Deploy to Cloudflare
     needs: [quality, e2e]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment:
@@ -97,6 +97,7 @@ jobs:
       - name: Release build with legal notice (values come from secrets, never logged)
         if: steps.config.outputs.enabled == 'true'
         env:
+          WP_LEGAL: ${{ secrets.WP_LEGAL }}
           WP_LEGAL_NAME: ${{ secrets.WP_LEGAL_NAME }}
           WP_LEGAL_ADDRESS: ${{ secrets.WP_LEGAL_ADDRESS }}
           WP_LEGAL_EMAIL: ${{ secrets.WP_LEGAL_EMAIL }}
@@ -110,6 +111,9 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
+          # The account ID is optional: with a token limited to one account, wrangler detects it.
+          if [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then unset CLOUDFLARE_ACCOUNT_ID; fi
+          set -o pipefail
           pnpm exec wrangler deploy 2>&1 | tee deploy.log
           url=$(grep -oE 'https://[a-zA-Z0-9.-]+\.workers\.dev' deploy.log | head -1 || true)
           echo "url=${url}" >> "$GITHUB_OUTPUT"
