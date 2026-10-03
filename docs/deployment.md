@@ -6,7 +6,7 @@ The app is deployed to **Cloudflare Pages** (project `worthwhile-play`, `wrangle
 
 1. **Cloudflare API token**: <https://dash.cloudflare.com/profile/api-tokens> → *Create Token* → template **Edit Cloudflare Workers** → *Use template* → under *Account Resources* select the account (same account as Home Workout) → *Continue to summary* → *Create Token* → copy it.
 2. **GitHub secret `CLOUDFLARE_API_TOKEN`**: <https://github.com/DustinHebecker/Worthwhile-Play/settings/secrets/actions/new> → paste the token.
-3. **GitHub secret `WP_LEGAL`**: same page → value `Name|Street No.|Postal code City|Country` — i.e. the provider name, `|`, then the same value as `HW_LEGAL_ADDRESS` in Home Workout.
+3. **GitHub secret `WP_LEGAL`**: same page → provider name and postal address, one line each (or separated by `|`). Pasting the Home Workout `.env` line `HW_LEGAL_ADDRESS="…"` unchanged also works (`scripts/legal-env.mjs` strips the prefix and quotes).
 
 `CLOUDFLARE_ACCOUNT_ID` is optional (a token limited to one account is enough for wrangler to find it; the ID is the 32-character hex string in the dashboard URL `dash.cloudflare.com/<account-id>/…`). Instead of `WP_LEGAL`, the separate secrets `WP_LEGAL_NAME`, `WP_LEGAL_ADDRESS` and optional `WP_LEGAL_EMAIL` are also accepted.
 

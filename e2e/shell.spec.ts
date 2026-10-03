@@ -33,6 +33,18 @@ test.describe('app shell', () => {
     await expect(page.locator('#learning-language')).toHaveValue('ja');
   });
 
+  test('the language switcher is visible in the header on every page', async ({ page }) => {
+    await page.goto('/games/memory');
+    const menu = page.getByTestId('language-menu');
+    await expect(menu).toBeVisible();
+    await expect(menu.locator('summary')).toContainText('English');
+    await menu.locator('summary').click();
+    await page.getByTestId('header-language').selectOption('de');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'de');
+    await expect(page.getByTestId('language-menu').locator('summary')).toContainText('Deutsch');
+    await expect(page.getByTestId('new-game')).toHaveText('Neues Spiel');
+  });
+
   test('unknown routes show a not-found page', async ({ page }) => {
     await page.goto('/games/does-not-exist');
     await expect(page.locator('h1')).toBeVisible();

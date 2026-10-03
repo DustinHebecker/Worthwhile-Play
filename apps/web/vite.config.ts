@@ -1,28 +1,16 @@
 import { readFileSync } from 'node:fs';
 import { defineConfig, loadEnv } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import { legalFromEnv } from '../../scripts/legal-env.mjs';
 
 const pkg = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')) as { version: string };
 
-/**
- * Legal-notice data is read from the environment at build time and is never committed
- * (docs/deployment.md). Either one combined value `WP_LEGAL="Name|Street|City|Country"`
- * or the separate WP_LEGAL_NAME / WP_LEGAL_ADDRESS (pipe-separated); optional WP_LEGAL_EMAIL.
- */
-function legalFromEnv(mode: string) {
-  const env = { ...loadEnv(mode, new URL('../..', import.meta.url).pathname, 'WP_'), ...process.env };
-  const lines = (value: string | undefined) => (value ?? '').split('|').map((line) => line.trim()).filter(Boolean);
-  const combined = lines(env.WP_LEGAL);
-  return {
-    name: (env.WP_LEGAL_NAME ?? '').trim() || (combined[0] ?? ''),
-    address: env.WP_LEGAL_ADDRESS?.trim() ? lines(env.WP_LEGAL_ADDRESS) : combined.slice(1),
-    email: (env.WP_LEGAL_EMAIL ?? '').trim()
-  };
-}
+/** Legal-notice data comes from the environment at build time and is never committed (docs/deployment.md). */
+const legalConfig = (mode: string) => legalFromEnv({ ...loadEnv(mode, new URL('../..', import.meta.url).pathname, 'WP_'), ...process.env });
 
 export default defineConfig(({ mode }) => ({
   define: {
-    __WP_LEGAL__: JSON.stringify(legalFromEnv(mode)),
+    __WP_LEGAL__: JSON.stringify(legalConfig(mode)),
     __WP_VERSION__: JSON.stringify(pkg.version)
   },
   build: { target: 'es2022', sourcemap: true },
