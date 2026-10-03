@@ -27,7 +27,7 @@ Cross-cutting, continuous: accessibility review, native-speaker review of transl
 | Area | Game / feature | Milestone | Status | Notes |
 |---|---|---|---|---|
 | Board | Tic-Tac-Toe | M0 | ✅ | reference game; human vs human / computer |
-| Logic | Mastermind | M0 | ✅ | reference game; hypothesis testing helper |
+| Logic | Mastermind → shown as **Code Breaker** | M0 | ✅ | reference game (id `mastermind`); renamed because "Mastermind" is a trademark; consistency-check helper |
 | Memory | Classic Memory | M0 | ✅ | reference game; first consumer of the deck model |
 | Memory | image↔word, word↔image, word↔definition, audio↔word, audio↔translation | M1 | ⏳ | deck variants, arbitrary language pairs |
 | Learning | Language decks, geography (flag/capital/map/neighbours), AI & business vocabulary, user decks | M1 | ⏳ | content packs |

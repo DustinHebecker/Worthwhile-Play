@@ -29,7 +29,16 @@ export async function expectResumeAfterReload(page: Page, gameId: string, act: (
   await page.getByTestId('new-game').click();
   await expect(page.getByTestId('game-root')).toBeVisible();
   await act(page);
-  await expect.poll(async () => JSON.stringify((await readSave(page, gameId) as { state?: unknown } | undefined)?.state ?? null)).not.toBe('null');
+  // Wait until the autosave has caught up: the persisted state must be stable for a moment.
+  let previous = '';
+  await expect
+    .poll(async () => {
+      const current = JSON.stringify(((await readSave(page, gameId)) as { state?: unknown } | undefined)?.state ?? null);
+      const stable = current !== 'null' && current === previous;
+      previous = current;
+      return stable;
+    }, { intervals: [150] })
+    .toBe(true);
   const before = ((await readSave(page, gameId)) as { state: unknown }).state;
 
   await page.reload();

@@ -230,8 +230,9 @@ describe('view', () => {
       playing.q('mm-check')!.click();
       playing.key('Backspace');
       playing.q('mm-submit')!.click();
-      start({ locale, state: won });
+      const w = start({ locale, state: won });
       const l = start({ locale, state: lost });
+      expect(w.ctx.missingKeys, locale).toEqual([]);
       expect(l.ctx.missingKeys, locale).toEqual([]);
       expect(playing.ctx.missingKeys, locale).toEqual([]);
     }

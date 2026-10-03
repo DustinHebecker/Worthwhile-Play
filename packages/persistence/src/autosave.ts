@@ -1,7 +1,7 @@
 export interface AutosaveOptions {
   /** Persists the current state. Errors are reported via `onError`, never thrown. */
   save: () => Promise<void>;
-  /** Debounce for `request()` calls in ms. Lifecycle events flush immediately. */
+  /** Coalescing window for `request()` calls in ms (default 50). Kept short: a pending write may not survive a tab close. */
   delayMs?: number;
   onError?: (error: unknown) => void;
   /** Injected for tests. */
@@ -24,7 +24,7 @@ export interface Autosave {
  * rely on `beforeunload`/`unload`, which are unreliable on mobile.
  */
 export function createAutosave(options: AutosaveOptions): Autosave {
-  const delay = options.delayMs ?? 400;
+  const delay = options.delayMs ?? 50;
   const win = options.win ?? globalThis.window;
   const doc = options.doc ?? globalThis.document;
   const timers = options.timers ?? { setTimeout: globalThis.setTimeout.bind(globalThis), clearTimeout: globalThis.clearTimeout.bind(globalThis) };

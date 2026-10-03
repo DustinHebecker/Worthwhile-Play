@@ -69,7 +69,9 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
 
   const showFinished = (result: GameResult) => {
     clear(finishedSlot);
-    const outcome = { won: 'common.won', lost: 'common.lost', draw: 'common.draw', completed: 'common.solved' }[result.outcome];
+    // A game may phrase its own outcome (`result.<outcome>`), e.g. "Player X wins"; otherwise use the shared wording.
+    const own = `result.${result.outcome}`;
+    const outcome = metadata.messages.en?.[own] ? own : { won: 'common.won', lost: 'common.lost', draw: 'common.draw', completed: 'common.solved' }[result.outcome];
     const another = h('button', { type: 'button', class: 'primary', 'data-testid': 'another-round' }, t('game.anotherRound'));
     another.addEventListener('click', () => void startNew());
     finishedSlot.append(
@@ -109,7 +111,9 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
 
   const startNew = async (seed = randomSeed(), difficulty = chosenDifficulty()) => {
     current = { seed, difficulty };
-    const game = mount();
+    // Reuse a running instance so game-internal options (e.g. opponent type) carry over to the next round.
+    const game = instance ?? mount();
+    clear(finishedSlot);
     game.newGame(difficulty === undefined ? { seed } : { seed, difficulty });
     toolbar();
     await autosave?.flush(true);

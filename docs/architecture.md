@@ -91,5 +91,5 @@ Cloudflare Workers Static Assets (assets-only Worker, SPA fallback for deep link
 | Unit / TDD | Vitest | rules, core packages, router, catalogues |
 | Property / fuzz | fast-check | invariants (legal moves, permutations, parsers never throw, determinism) |
 | Contract | `@wp/testing` | every game, every locale |
-| Mutation | Stryker | core packages, `games/*/src/rules.ts`, `ai.ts` (break threshold 65 %) |
+| Mutation | Stryker | core packages, `games/*/src/rules.ts`, `ai.ts` (break threshold 65 %). Vitest is pinned to 4.1.x: with Vitest 5, `@stryker-mutator/vitest-runner` 10 does not activate mutants (every mutant "survives"). Re-check before upgrading. |
 | E2E | Playwright | shell, direct URLs, RTL, corrupt saves, offline, per-game resume; desktop + mobile viewports |
