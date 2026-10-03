@@ -1,0 +1,13 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  // Cloudflare Workers with Static Assets (assets-only Worker; no server code yet).
+  // A `main` Worker script can be added later for optional online features without changing hosting.
+  "name": "worthwhile-play",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./apps/web/dist",
+    // Deep links such as /games/memory are served index.html; the client router takes over.
+    "not_found_handling": "single-page-application"
+  },
+  "observability": { "enabled": false }
+}

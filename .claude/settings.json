@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && corepack enable >/dev/null 2>&1; pnpm install --frozen-lockfile --reporter=silent >/dev/null 2>&1 || pnpm install --reporter=silent >/dev/null 2>&1; echo 'Dependencies installed. Run `pnpm check` before committing.'"
+          }
+        ]
+      }
+    ]
+  }
+}

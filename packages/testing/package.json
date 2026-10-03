@@ -1,0 +1,12 @@
+{
+  "name": "@wp/testing",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts", "./e2e": "./src/e2e.ts" },
+  "dependencies": {
+    "@wp/game-core": "workspace:*",
+    "@wp/localization": "workspace:*",
+    "@wp/persistence": "workspace:*"
+  }
+}
