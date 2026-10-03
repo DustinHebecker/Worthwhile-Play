@@ -32,7 +32,7 @@ jobs:
       - run: pnpm coverage
       - name: Development build (no legal data; must still succeed)
         run: pnpm build
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: coverage
           path: coverage/
@@ -55,7 +55,7 @@ jobs:
       - run: pnpm e2e
         env:
           CI: 'true'
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-report
