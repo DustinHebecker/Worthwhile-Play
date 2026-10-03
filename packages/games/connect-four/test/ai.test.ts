@@ -163,7 +163,7 @@ describe('evaluate', () => {
 describe('search', () => {
   it('refuses finished games and bad depths', () => {
     expect(() => analyse(boardFromMoves([0, 0, 1, 1, 2, 2, 3]), 3)).toThrow(/over/);
-    expect(() => analyse(emptyBoard(), 0)).toThrow(RangeError);
+    expect(() => analyse(emptyBoard(), 0)).toThrow('Depth must be a positive integer');
     expect(() => analyse(emptyBoard(), 1.5)).toThrow(RangeError);
     expect(() => chooseMove(boardFromMoves([0, 0, 1, 1, 2, 2, 3]), 'easy', stubRng(0))).toThrow(/over/);
   });

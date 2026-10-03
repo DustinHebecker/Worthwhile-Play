@@ -9,14 +9,17 @@
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
+    "@wp/game-connect-four": "workspace:*",
     "@wp/game-core": "workspace:*",
+    "@wp/game-lights-out": "workspace:*",
+    "@wp/game-mastermind": "workspace:*",
+    "@wp/game-memory": "workspace:*",
+    "@wp/game-nonogram": "workspace:*",
+    "@wp/game-tic-tac-toe": "workspace:*",
     "@wp/learning-content": "workspace:*",
     "@wp/localization": "workspace:*",
     "@wp/persistence": "workspace:*",
-    "@wp/ui": "workspace:*",
-    "@wp/game-tic-tac-toe": "workspace:*",
-    "@wp/game-mastermind": "workspace:*",
-    "@wp/game-memory": "workspace:*"
+    "@wp/ui": "workspace:*"
   },
   "devDependencies": {
     "vite": "^8.3.2",

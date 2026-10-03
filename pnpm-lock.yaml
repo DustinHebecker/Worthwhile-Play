@@ -62,15 +62,24 @@ importers:
 
   apps/web:
     dependencies:
+      '@wp/game-connect-four':
+        specifier: workspace:*
+        version: link:../../packages/games/connect-four
       '@wp/game-core':
         specifier: workspace:*
         version: link:../../packages/game-core
+      '@wp/game-lights-out':
+        specifier: workspace:*
+        version: link:../../packages/games/lights-out
       '@wp/game-mastermind':
         specifier: workspace:*
         version: link:../../packages/games/mastermind
       '@wp/game-memory':
         specifier: workspace:*
         version: link:../../packages/games/memory
+      '@wp/game-nonogram':
+        specifier: workspace:*
+        version: link:../../packages/games/nonogram
       '@wp/game-tic-tac-toe':
         specifier: workspace:*
         version: link:../../packages/games/tic-tac-toe

@@ -10,7 +10,7 @@ Worthwhile Play is a free, multilingual, installable web app with games and exer
 - **16 interface languages** (de, en, nl, es, fr, ru, zh-Hans, ko, ja, ar, pt, it, pl, tr, uk, hi), with Arabic right-to-left.
 - **Honest claims**: the games exercise specific skills. They are not proven to make you smarter in general, and we don't say so.
 
-> Status: early development. The foundation (architecture, persistence, localization, PWA, CI) and three reference games (Tic-Tac-Toe, Code Breaker — a Mastermind-style deduction game, Memory) exist. The full backlog — puzzles, learning decks, Faces & Names, chess, communication exercises, an original turn-based strategy/tower-defense engine and two point-and-click adventures — is planned in [docs/ROADMAP.md](docs/ROADMAP.md).
+> Status: early development. The foundation (architecture, persistence, localization, PWA, CI) and six games (Tic-Tac-Toe, Code Breaker — a Mastermind-style deduction game, Memory, Four in a Row, Lights Out, Nonogram) exist. The full backlog — puzzles, learning decks, Faces & Names, chess, communication exercises, an original turn-based strategy/tower-defense engine and two point-and-click adventures — is planned in [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Play
 

@@ -214,7 +214,7 @@ describe('gravity and legal moves', () => {
     expect(drop(next, 3, 2)[cellIndex(4, 3)]).toBe(2);
     const full = boardFromMoves([0, 0, 0, 0, 0, 0]);
     expect(() => drop(full, 0, 1)).toThrow(RangeError);
-    expect(() => drop(board, 7, 1)).toThrow(RangeError);
+    expect(() => drop(board, 7, 1)).toThrow('Illegal move 7');
     expect(() => drop(board, -1, 1)).toThrow(RangeError);
   });
 
@@ -440,6 +440,9 @@ describe('game state transitions', () => {
   it('undoes single moves between two people', () => {
     expect(canUndo(state({ moves: [] }))).toBe(false);
     expect(canUndo(state({ moves: [3] }))).toBe(true);
+    // "Who starts" only matters against the computer.
+    expect(canUndo(state({ starter: 'computer', moves: [3] }))).toBe(true);
+    expect(undo(state({ starter: 'computer', moves: [3] })).moves).toEqual([]);
     expect(undo(state({ moves: [3, 0, 6] })).moves).toEqual([3, 0]);
     expect(undo(state({ moves: [3] })).moves).toEqual([]);
     const empty = state({ moves: [] });
