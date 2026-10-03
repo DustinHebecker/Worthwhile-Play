@@ -16,7 +16,7 @@ export interface TranslatorOptions {
   /** Searched in order. E.g. [gameMessages, commonMessages]. */
   sources: readonly LocalizedCatalogues[];
   /** Called when a key is missing in the active locale (tests turn this into a failure). */
-  onMissing?: (key: string, locale: SupportedLocale) => void;
+  onMissing?: ((key: string, locale: SupportedLocale) => void) | undefined;
 }
 
 /**
