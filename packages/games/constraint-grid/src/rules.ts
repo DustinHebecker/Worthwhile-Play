@@ -599,13 +599,13 @@ export function isClue(value: unknown, categories: number, size: number): value 
   return a.cat !== FLOOR && b.cat !== FLOOR && (a.cat !== b.cat || a.item !== b.item);
 }
 
-function isKinds(value: unknown, categories: number): value is CategoryKind[] {
+export function isKinds(value: unknown, categories: number): value is CategoryKind[] {
   if (!Array.isArray(value) || value.length !== categories || value[0] !== 'person' || value[1] !== 'floor') return false;
   const attributes = value.slice(2);
   return attributes.every((k) => isOneOf(k, ATTRIBUTE_KINDS)) && new Set(attributes).size === attributes.length;
 }
 
-function isVocab(value: unknown, kinds: readonly CategoryKind[], size: number): value is number[][] {
+export function isVocab(value: unknown, kinds: readonly CategoryKind[], size: number): value is number[][] {
   if (!Array.isArray(value) || value.length !== kinds.length) return false;
   return kinds.every((kind, c) => {
     const row: unknown = value[c];
@@ -615,7 +615,13 @@ function isVocab(value: unknown, kinds: readonly CategoryKind[], size: number): 
   });
 }
 
-function isHistory(value: unknown, total: number): value is number[][] {
+/** One permutation per category; the names (category 0) are the identity. */
+export function isSolution(value: unknown, categories: number, size: number): value is number[][] {
+  if (!Array.isArray(value) || value.length !== categories || !value.every((perm) => isPermutation(perm, size))) return false;
+  return (value[PERSON] as number[]).every((slot, p) => slot === p);
+}
+
+export function isHistory(value: unknown, total: number): value is number[][] {
   if (!Array.isArray(value) || value.length > MAX_HISTORY) return false;
   return value.every((entry) =>
     Array.isArray(entry) && entry.length >= 2 && entry.length % 2 === 0 &&
@@ -630,11 +636,10 @@ export function isConstraintGridState(value: unknown): value is ConstraintGridSt
     const { categories, items: size } = SHAPES[v.difficulty];
     if (v.size !== size || !isKinds(v.kinds, categories) || !isVocab(v.vocab, v.kinds, size)) return false;
     const solution = v.solution;
-    if (!Array.isArray(solution) || solution.length !== categories || !solution.every((perm) => isPermutation(perm, size))) return false;
-    if (!(solution[PERSON] as number[]).every((slot, p) => slot === p)) return false;
+    if (!isSolution(solution, categories, size)) return false;
     const clues = v.clues;
     if (!Array.isArray(clues) || clues.length === 0 || clues.length > MAX_CLUES) return false;
-    if (!clues.every((clue) => isClue(clue, categories, size) && clueHolds(clue, solution as number[][]))) return false;
+    if (!clues.every((clue) => isClue(clue, categories, size) && clueHolds(clue, solution))) return false;
     const total = markCount(categories, size);
     if (!Array.isArray(v.marks) || v.marks.length !== total || !v.marks.every((m) => isInt(m, 0, 2))) return false;
     if (!Array.isArray(v.used) || v.used.length !== clues.length || !v.used.every((u) => typeof u === 'boolean')) return false;

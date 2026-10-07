@@ -1,0 +1,95 @@
+/* Network Detective — all rules scoped under .wp-graph-detective. Uses shared --wp-* tokens. */
+.wp-graph-detective {
+  --gd-line: var(--wp-muted);
+  --gd-node: var(--wp-surface);
+  --gd-ink: var(--wp-text);
+  --gd-pick: var(--wp-accent);
+  --gd-hint: var(--wp-focus);
+  display: grid;
+  gap: 0.6rem;
+  width: 100%;
+  max-width: 34rem;
+  margin-inline: auto;
+}
+.wp-graph-detective p { margin: 0; }
+.wp-graph-detective [hidden] { display: none !important; }
+.wp-graph-detective .gd-progress { font-weight: 600; color: var(--wp-muted); }
+.wp-graph-detective .gd-task { font-size: 1.1rem; font-weight: 600; }
+.wp-graph-detective .gd-help { font-size: 0.9rem; }
+
+/* Diagram: scales with the width; points stay ≥ 44 px apart and pickable on a 360 px phone. */
+.wp-graph-detective .gd-diagram {
+  display: block;
+  width: 100%;
+  height: auto;
+  direction: ltr;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.wp-graph-detective .gd-diagram[data-type='bridge'],
+.wp-graph-detective .gd-diagram[data-type='path'],
+.wp-graph-detective .gd-diagram[data-type='augment'],
+.wp-graph-detective .gd-diagram[data-type='cutvertex'] { cursor: pointer; }
+.wp-graph-detective[data-status='solved'] .gd-diagram,
+.wp-graph-detective[data-status='shown'] .gd-diagram { cursor: default; }
+.wp-graph-detective .gd-bg { fill: var(--wp-surface-2); stroke: var(--wp-border); stroke-width: 1; }
+.wp-graph-detective .gd-edge, .wp-graph-detective .gd-node { outline: none; }
+
+/* Connections */
+.wp-graph-detective .gd-edge line { stroke-linecap: round; fill: none; }
+.wp-graph-detective .gd-line { stroke: var(--gd-line); stroke-width: 4; }
+.wp-graph-detective .gd-mark, .wp-graph-detective .gd-hint, .wp-graph-detective .gd-ring { visibility: hidden; }
+.wp-graph-detective .gd-edge.is-selected .gd-line { stroke: var(--gd-pick); stroke-width: 13; }
+.wp-graph-detective .gd-edge.is-selected .gd-mark { visibility: visible; stroke: var(--wp-accent-contrast); stroke-width: 4; stroke-dasharray: 10 8; stroke-linecap: butt; }
+.wp-graph-detective .gd-edge.is-hint .gd-hint { visibility: visible; stroke: var(--gd-hint); stroke-width: 9; stroke-dasharray: 0.1 14; }
+.wp-graph-detective .gd-edge.is-faded .gd-line { stroke-dasharray: 6 8; opacity: 0.55; }
+.wp-graph-detective .gd-edge .gd-ring { stroke: var(--gd-hint); stroke-width: 30; opacity: 0.45; }
+.wp-graph-detective .gd-edge:focus-visible .gd-ring { visibility: visible; }
+.wp-graph-detective .gd-weight-box { fill: var(--wp-surface); stroke: var(--gd-line); stroke-width: 2; }
+.wp-graph-detective .gd-weight { font: 700 17px var(--wp-font); fill: var(--gd-ink); }
+.wp-graph-detective .gd-edge.is-selected .gd-weight-box { stroke: var(--gd-pick); stroke-width: 3; }
+
+/* Proposed new connection (augment) */
+.wp-graph-detective .gd-preview { fill: none; stroke: var(--gd-pick); stroke-width: 6; stroke-dasharray: 14 9; stroke-linecap: round; pointer-events: none; }
+
+/* Points */
+.wp-graph-detective .gd-shape { fill: var(--gd-node); stroke: var(--gd-ink); stroke-width: 3; }
+.wp-graph-detective .gd-node.is-endpoint .gd-shape { stroke-width: 4.5; }
+.wp-graph-detective .gd-label { font: 700 20px var(--wp-font); fill: var(--gd-ink); pointer-events: none; }
+.wp-graph-detective .gd-node .gd-sel { fill: none; stroke: var(--gd-pick); stroke-width: 5; visibility: hidden; }
+.wp-graph-detective .gd-node.is-selected .gd-sel { visibility: visible; }
+.wp-graph-detective .gd-node.is-selected .gd-shape { fill: var(--gd-pick); stroke: var(--gd-node); }
+.wp-graph-detective .gd-node.is-selected .gd-label { fill: var(--wp-accent-contrast); }
+.wp-graph-detective .gd-node.is-removed .gd-shape { stroke: var(--gd-hint); stroke-dasharray: 5 5; fill: var(--wp-surface-2); }
+.wp-graph-detective .gd-node.is-removed .gd-label { fill: var(--gd-ink); }
+.wp-graph-detective .gd-node .gd-ring { fill: none; stroke: var(--gd-hint); stroke-width: 4; }
+.wp-graph-detective .gd-node:focus-visible .gd-ring { visibility: visible; }
+
+/* Answer buttons for the minimum cut */
+.wp-graph-detective .gd-choices { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; }
+.wp-graph-detective .gd-choice { min-width: 3rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.wp-graph-detective .gd-choice[aria-pressed='true'] { border: 2px solid var(--wp-accent); box-shadow: inset 0 0 0 2px var(--wp-accent); text-decoration: underline; }
+
+.wp-graph-detective .gd-status:empty { display: none; }
+.wp-graph-detective .gd-status[data-state='wrong'],
+.wp-graph-detective .gd-status[data-state='note'] { border-inline-start: 4px dotted var(--wp-focus); padding-inline-start: 0.5rem; }
+.wp-graph-detective .gd-status[data-state='correct'],
+.wp-graph-detective .gd-status[data-state='shown'] { border-inline-start: 4px solid var(--wp-ok); padding-inline-start: 0.5rem; }
+.wp-graph-detective .gd-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.wp-graph-detective .gd-summary { font-weight: 600; }
+.wp-graph-detective .gd-details summary { cursor: pointer; min-height: var(--wp-touch, 44px); display: flex; align-items: center; }
+.wp-graph-detective .gd-list { margin: 0; padding-inline-start: 1.25rem; columns: 2 9rem; }
+.wp-graph-detective .gd-help-block { display: grid; gap: 0.25rem; font-size: 0.85rem; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .wp-graph-detective:not(.gd-reduced) .gd-line { transition: stroke-width 120ms ease-out; }
+}
+
+@media (forced-colors: active) {
+  .wp-graph-detective .gd-line, .wp-graph-detective .gd-shape { stroke: CanvasText; }
+  .wp-graph-detective .gd-edge.is-selected .gd-line, .wp-graph-detective .gd-node .gd-sel, .wp-graph-detective .gd-preview { stroke: Highlight; }
+  .wp-graph-detective .gd-label, .wp-graph-detective .gd-weight { fill: CanvasText; }
+  .wp-graph-detective .gd-edge.is-hint .gd-hint, .wp-graph-detective .gd-ring { stroke: LinkText; }
+}

@@ -37,6 +37,10 @@ import {
   isClue,
   isComplete,
   isConstraintGridState,
+  isHistory,
+  isKinds,
+  isSolution,
+  isVocab,
   isOrdinal,
   isPermutation,
   isSolved,
@@ -360,6 +364,60 @@ describe('solver', () => {
     ]).status).toBe('contradiction');
     const cands = initialCandidates(3, 3);
     expect(propagate(cands, 3, [{ type: 'same', a: ref(0, 0), b: ref(0, 1) } as Clue])).toBe(false);
+  });
+
+  it('permutation rule: naked and hidden singles', () => {
+    const start = (floors: number[]) => [[1, 2, 4], floors, [7, 7, 7]];
+    expect(solve(3, 3, [], start([1, 7, 7])).candidates[1]).toEqual([1, 6, 6]);
+    expect(solve(3, 3, [], start([6, 6, 7])).candidates[1]).toEqual([6, 6, 1]);
+    expect(solve(3, 3, [], start([2, 7, 6])).candidates[1]).toEqual([2, 1, 4]);
+    expect(solve(3, 3, [], start([2, 6, 6])).status).toBe('contradiction');
+    expect(solve(3, 3, [], start([2, 2, 7])).status).toBe('contradiction');
+    expect(solve(3, 3, [], start([6, 6, 6])).status).toBe('contradiction');
+    expect(solve(3, 3, [], start([1, 2, 4])).status).toBe('stuck');
+    expect(solve(2, 3, [], [[1, 2, 4], [1, 2, 4]]).status).toBe('solved');
+  });
+
+  it('isolated clue rules on hand-made candidate sets', () => {
+    // same(pet 0, floor 0): a person who cannot have pet 0 cannot be on floor 0, and vice versa.
+    const open = () => [[1, 2, 4], [7, 7, 7], [7, 7, 7]];
+    let start = open();
+    start[2] = [6, 7, 7];
+    expect(solve(3, 3, [{ type: 'same', a: ref(2, 0), b: ref(1, 0) }], start).candidates[1]).toEqual([6, 7, 7]);
+    start = open();
+    start[1] = [7, 6, 7];
+    expect(solve(3, 3, [{ type: 'same', a: ref(2, 0), b: ref(1, 0) }], start).candidates[2]).toEqual([7, 6, 7]);
+    // notSame between attributes: certain pet 0 for person 0 removes floor 0 from person 0.
+    start = open();
+    start[2] = [1, 6, 6];
+    expect(solve(3, 3, [{ type: 'notSame', a: ref(2, 0), b: ref(1, 0) }], start).candidates[1]).toEqual([6, 7, 7]);
+    start = open();
+    start[1] = [1, 6, 6];
+    expect(solve(3, 3, [{ type: 'notSame', a: ref(2, 0), b: ref(1, 0) }], start).candidates[2]).toEqual([6, 7, 7]);
+    // eitherOr with both options in one attribute category restricts the certain subject.
+    start = open();
+    expect(solve(3, 3, [{ type: 'eitherOr', a: ref(1, 0), b: ref(2, 0), c: ref(2, 1) }], [[1, 2, 4], [1, 6, 6], [7, 7, 7]]).candidates[2]).toEqual([3, 7, 7]);
+    // eitherOr with name options never restricts names; an attribute subject can only be b's or c's person.
+    const r = solve(3, 3, [{ type: 'eitherOr', a: ref(2, 0), b: ref(0, 0), c: ref(0, 1) }]);
+    expect(r.candidates[2]).toEqual([7, 7, 6]);
+    expect(r.candidates[0]).toEqual([1, 2, 4]);
+    // eitherOr where the subject cannot share a person with b: subject ⇔ c.
+    start = open();
+    start[2] = [6, 7, 7];
+    start[1] = [7, 6, 6];
+    const e = solve(3, 3, [{ type: 'eitherOr', a: ref(1, 0), b: ref(2, 0), c: ref(2, 1) }], start);
+    expect(e.candidates[2]?.[0]).toBe(2);
+    // Ordinal rule only prunes floors of a person who is certainly the subject.
+    start = open();
+    const o = solve(3, 3, [{ type: 'directlyAbove', a: ref(2, 0), b: ref(2, 1) }], start);
+    expect(o.candidates[1]).toEqual([7, 7, 7]);
+    start = open();
+    start[2] = [1, 6, 6];
+    const o2 = solve(3, 3, [{ type: 'directlyAbove', a: ref(2, 0), b: ref(0, 1) }], start);
+    expect(o2.candidates[1]).toEqual([6, 3, 7]);
+    // nextTo with the middle floor taken by someone else: nothing else changes.
+    const n = solve(3, 3, [{ type: 'nextTo', a: ref(0, 0), b: ref(0, 1) }, { type: 'same', a: ref(0, 2), b: ref(1, 1) }]);
+    expect(n.status).toBe('contradiction');
   });
 
   it('does not mutate a given start', () => {
@@ -734,6 +792,50 @@ describe('isConstraintGridState', () => {
     expect(isConstraintGridState({ ...s, moves: MAX_COUNTER, checks: MAX_COUNTER })).toBe(true);
     expect(isConstraintGridState({ ...s, history: range(MAX_HISTORY).map(() => [0, 2, 47, 1]) })).toBe(true);
     expect(isConstraintGridState({ ...s, autoExclude: false })).toBe(true);
+  });
+
+  it('validates kinds, vocabulary, solution and history directly', () => {
+    expect(isKinds(['person', 'floor', 'pet'], 3)).toBe(true);
+    expect(isKinds(['person', 'floor', 'pet', 'drink'], 4)).toBe(true);
+    expect(isKinds(['person', 'floor', 'pet'], 4)).toBe(false);
+    expect(isKinds(['floor', 'floor', 'pet'], 3)).toBe(false);
+    expect(isKinds(['person', 'person', 'pet'], 3)).toBe(false);
+    expect(isKinds(['person', 'floor', 'pet', 'pet'], 4)).toBe(false);
+    expect(isKinds(['person', 'floor', 'pet', 'car'], 4)).toBe(false);
+    expect(isKinds(['person', 'floor', 'floor'], 3)).toBe(false);
+    expect(isKinds({ 0: 'person', 1: 'floor', 2: 'pet', length: 3 }, 3)).toBe(false);
+    const kinds = ['person', 'floor', 'pet'] as const;
+    expect(isVocab([[0, 1, 7], [0, 1, 2], [0, 2, 5]], kinds, 3)).toBe(true);
+    expect(isVocab([[0, 1, 7], [0, 1, 2]], kinds, 3)).toBe(false);
+    expect(isVocab('x', kinds, 3)).toBe(false);
+    expect(isVocab([[0, 1, 8], [0, 1, 2], [0, 2, 5]], kinds, 3)).toBe(false);
+    expect(isVocab([[0, 1, 7], [0, 1, 2], [0, 2, 6]], kinds, 3)).toBe(false);
+    expect(isVocab([[0, 1, 7], [0, 1, 2], [0, 2, 2]], kinds, 3)).toBe(false);
+    expect(isVocab([[0, 1, 7], [0, 1, 2], [0, 2]], kinds, 3)).toBe(false);
+    expect(isVocab([[0, 1], [0, 1, 2], [0, 2, 5]], kinds, 3)).toBe(false);
+    expect(isVocab([[0, 1, 7], [0, 1], [0, 2, 5]], kinds, 3)).toBe(false);
+    expect(isVocab([[0, 1, 7], [0, 2, 1], [0, 2, 5]], kinds, 3)).toBe(false);
+    expect(isVocab([[0, 1, 7], 'abc', [0, 2, 5]], kinds, 3)).toBe(false);
+    expect(isVocab([[0, 1, 7], [0, 1, 2], { length: 3 }], kinds, 3)).toBe(false);
+    expect(isVocab([{ length: 3 }, [0, 1, 2], [0, 2, 5]], kinds, 3)).toBe(false);
+    expect(isSolution(WORLD, 3, 3)).toBe(true);
+    expect(isSolution(WORLD, 4, 3)).toBe(false);
+    expect(isSolution('x', 3, 3)).toBe(false);
+    expect(isSolution([[0, 1, 2], [2, 0, 1], [1, 1, 0]], 3, 3)).toBe(false);
+    expect(isSolution([[0, 1, 2], [2, 0, 1], [1, 2, 0, 3]], 3, 3)).toBe(false);
+    expect(isSolution([[1, 0, 2], [2, 0, 1], [1, 2, 0]], 3, 3)).toBe(false);
+    expect(isSolution([[0, 2, 1], [2, 0, 1], [1, 2, 0]], 3, 3)).toBe(false);
+    expect(isHistory([], 27)).toBe(true);
+    expect(isHistory([[26, 2, 0, 0]], 27)).toBe(true);
+    expect(isHistory([[27, 0]], 27)).toBe(false);
+    expect(isHistory([[0, 3]], 27)).toBe(false);
+    expect(isHistory([[0, 1, 2]], 27)).toBe(false);
+    expect(isHistory([[0]], 27)).toBe(false);
+    expect(isHistory([[]], 27)).toBe(false);
+    expect(isHistory([{ length: 2 }], 27)).toBe(false);
+    expect(isHistory({ length: 0 }, 27)).toBe(false);
+    expect(isHistory(range(MAX_HISTORY).map(() => [0, 0]), 27)).toBe(true);
+    expect(isHistory(range(MAX_HISTORY + 1).map(() => [0, 0]), 27)).toBe(false);
   });
 
   it('rejects malformed clues', () => {

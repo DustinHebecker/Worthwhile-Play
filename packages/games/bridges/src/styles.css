@@ -1,0 +1,141 @@
+/* Bridges. All rules are scoped under .wp-bridges; logical properties mirror the map in RTL. */
+.wp-bridges {
+  --br-cell-max: 52px;
+  --br-hit: 44px;
+  --br-line: 3px;
+  display: grid;
+  gap: 0.75rem;
+  max-width: 40rem;
+  margin-inline: auto;
+}
+.wp-bridges p { margin: 0; }
+/* Shared button styles set display; keep the hidden attribute authoritative. */
+.wp-bridges [hidden] { display: none !important; }
+
+/*
+ * Board geometry: n × n cells, at most 52 px each, shrinking to fit the screen
+ * (11 × 11 on a 360 px phone ≈ 28 px cells). Islands never touch, so each island's
+ * 44 px touch target may overflow its cell without overlapping another target; the
+ * wrapper's padding keeps that overflow inside the page.
+ */
+.wp-bridges .br-wrap { padding: calc(var(--br-hit) / 2 - 14px); max-width: 100%; box-sizing: border-box; }
+.wp-bridges .br-board {
+  position: relative;
+  width: min(100%, calc(var(--br-n, 7) * var(--br-cell-max)));
+  aspect-ratio: 1;
+  margin-inline: auto;
+  container-type: inline-size;
+  background-image:
+    radial-gradient(circle, var(--wp-border) 1.5px, transparent 2px);
+  background-size: calc(100% / var(--br-n, 7)) calc(100% / var(--br-n, 7));
+  border-radius: var(--wp-radius);
+}
+
+/* Bridges: one or two parallel lines (never colour alone). */
+.wp-bridges .br-bridge {
+  position: absolute;
+  box-sizing: border-box;
+  pointer-events: none;
+  border: 0 solid var(--wp-text);
+}
+.wp-bridges .br-bridge[data-count='0'] { display: none; }
+.wp-bridges .br-bridge[data-orientation='horizontal'] {
+  top: calc((var(--r) + 0.5) * 100% / var(--br-n));
+  inset-inline-start: calc((var(--c) + 0.5) * 100% / var(--br-n));
+  inline-size: calc(var(--len) * 100% / var(--br-n));
+}
+.wp-bridges .br-bridge[data-orientation='vertical'] {
+  inset-inline-start: calc((var(--c) + 0.5) * 100% / var(--br-n));
+  top: calc((var(--r) + 0.5) * 100% / var(--br-n));
+  block-size: calc(var(--len) * 100% / var(--br-n));
+}
+.wp-bridges .br-bridge[data-orientation='horizontal'][data-count='1'] { border-block-start-width: var(--br-line); margin-block-start: calc(var(--br-line) / -2); }
+.wp-bridges .br-bridge[data-orientation='horizontal'][data-count='2'] { border-block-width: var(--br-line); block-size: calc(3 * var(--br-line) + 2px); margin-block-start: calc((3 * var(--br-line) + 2px) / -2); }
+.wp-bridges .br-bridge[data-orientation='vertical'][data-count='1'] { border-inline-start-width: var(--br-line); margin-inline-start: calc(var(--br-line) / -2); }
+.wp-bridges .br-bridge[data-orientation='vertical'][data-count='2'] { border-inline-width: var(--br-line); inline-size: calc(3 * var(--br-line) + 2px); margin-inline-start: calc((3 * var(--br-line) + 2px) / -2); }
+
+/* Islands: a 44 px transparent touch target centred on its cell, with a visible disc. */
+.wp-bridges .br-island {
+  position: absolute;
+  top: calc((var(--r) + 0.5) * 100% / var(--br-n));
+  inset-inline-start: calc((var(--c) + 0.5) * 100% / var(--br-n));
+  inline-size: var(--br-hit);
+  block-size: var(--br-hit);
+  min-width: 0;
+  min-height: 0;
+  margin-block-start: calc(var(--br-hit) / -2);
+  margin-inline-start: calc(var(--br-hit) / -2);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--wp-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  z-index: 1;
+}
+.wp-bridges .br-island:focus-visible { outline: none; }
+.wp-bridges .br-disc {
+  --br-disc: 28px;
+  position: relative;
+  inline-size: var(--br-disc);
+  block-size: var(--br-disc);
+  border-radius: 50%;
+  border: 2px solid var(--wp-text);
+  background: var(--wp-surface);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.95rem;
+  line-height: 1;
+}
+@supports (width: 1cqi) {
+  .wp-bridges .br-disc { --br-disc: min(40px, calc(100cqi / var(--br-n) * 0.88)); font-size: min(1.15rem, calc(100cqi / var(--br-n) * 0.5)); }
+}
+.wp-bridges .br-badge {
+  position: absolute;
+  inset-block-start: -0.55em;
+  inset-inline-end: -0.6em;
+  min-inline-size: 1.25em;
+  block-size: 1.25em;
+  padding-inline: 0.15em;
+  box-sizing: border-box;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  line-height: 1.25em;
+  text-align: center;
+  background: var(--wp-surface-2);
+  border: 1px solid var(--wp-border);
+  color: var(--wp-text);
+}
+.wp-bridges .br-badge:empty { display: none; }
+
+.wp-bridges .br-island:hover .br-disc { background: var(--wp-surface-2); }
+.wp-bridges .br-island[data-state='done'] .br-disc { background: var(--wp-surface-2); color: var(--wp-muted); border-color: var(--wp-muted); }
+.wp-bridges .br-island[data-state='done'] .br-badge { background: var(--wp-ok); border-color: var(--wp-ok); color: var(--wp-surface); font-weight: 700; }
+/* Too many bridges: dashed outline plus "!" badge. */
+.wp-bridges .br-island[data-state='over'] .br-disc { border-style: dashed; border-color: var(--wp-danger); }
+.wp-bridges .br-island[data-state='over'] .br-badge { background: var(--wp-danger); border-color: var(--wp-danger); color: var(--wp-surface); font-weight: 700; }
+/* Selected island waiting for a partner: thick ring with a gap (shape, not only colour). */
+.wp-bridges .br-island[aria-pressed='true'] .br-disc { outline: 3px solid var(--wp-accent); outline-offset: 2px; border-width: 3px; }
+.wp-bridges .br-island:focus-visible .br-disc { box-shadow: 0 0 0 3px var(--wp-bg), 0 0 0 6px var(--wp-focus); }
+
+.wp-bridges .br-board.is-solved .br-island { cursor: default; }
+
+/* Controls */
+.wp-bridges .br-controls { display: grid; gap: 0.6rem; justify-items: center; }
+.wp-bridges .br-actions { justify-content: center; }
+.wp-bridges .br-check-result {
+  padding: 0.5rem 0.75rem; border-inline-start: 4px solid var(--wp-accent);
+  background: var(--wp-surface-2); border-radius: 6px;
+}
+.wp-bridges .br-help { display: grid; gap: 0.25rem; font-size: 0.85rem; }
