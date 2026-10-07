@@ -68,6 +68,11 @@ export interface Summary {
   rounds: number;
 }
 
+const isTile = (value: unknown): value is number => isInt(value, 0, TILES - 1);
+const isDistinct = (values: readonly number[]) => new Set(values).size === values.length;
+const isRoundResult = (value: unknown): value is RoundResult =>
+  isRecord(value) && isInt(value.span, MIN_SPAN, MAX_SPAN) && typeof value.correct === 'boolean';
+
 export function toDifficulty(value: unknown): Difficulty {
   return isOneOf(value, DIFFICULTIES) ? value : DEFAULT_DIFFICULTY;
 }
@@ -183,10 +188,36 @@ export function summarize(state: SequenceState): Summary {
   return { maxSpan, correctRounds, rounds: state.history.length };
 }
 
-const isTile = (value: unknown): value is number => isInt(value, 0, TILES - 1);
-const isDistinct = (values: readonly number[]) => new Set(values).size === values.length;
-const isRoundResult = (value: unknown): value is RoundResult =>
-  isRecord(value) && isInt(value.span, MIN_SPAN, MAX_SPAN) && typeof value.correct === 'boolean';
+
+/** What a tile shows. Every kind has its own symbol/border, so nothing relies on colour. */
+export type TileMark =
+  | { kind: 'idle' }
+  | { kind: 'lit' }
+  | { kind: 'entered'; step: number }
+  | { kind: 'ok'; step: number }
+  | { kind: 'miss'; step: number }
+  | { kind: 'extra' };
+
+/**
+ * Tile marks for a state. `lit` is the tile highlighted by the (view-only) presentation.
+ * After a round, every tile of the expected answer shows its step in the correct order
+ * (`ok` if the player entered it at that step, `miss` otherwise); entered tiles that are
+ * not part of the sequence are `extra`.
+ */
+export function tileMarks(state: SequenceState, lit?: number): TileMark[] {
+  const marks: TileMark[] = Array.from({ length: TILES }, () => ({ kind: 'idle' }));
+  if (state.phase === 'showing') {
+    if (isTile(lit)) marks[lit] = { kind: 'lit' };
+    return marks;
+  }
+  if (state.phase === 'recalling') {
+    state.input.forEach((tile, i) => (marks[tile] = { kind: 'entered', step: i + 1 }));
+    return marks;
+  }
+  for (const tile of state.input) marks[tile] = { kind: 'extra' };
+  expectedAnswer(state.sequence, state.difficulty).forEach((tile, i) => (marks[tile] = { kind: state.input[i] === tile ? 'ok' : 'miss', step: i + 1 }));
+  return marks;
+}
 
 /** Structural and cross-field validation of untrusted saves. Never throws. */
 export function isValidSequenceState(value: unknown): value is SequenceState {
@@ -215,7 +246,7 @@ export function isValidSequenceState(value: unknown): value is SequenceState {
 
   // Replay the generator: the sequence and PRNG state must follow from the seed.
   const replay = createRng(seed);
-  let generated: number[] = [];
-  for (let r = 0; r <= round; r++) generated = generateSequence(replay, spans[r] as number);
-  return replay.state() === rng && generated.every((tile, i) => sequence[i] === tile);
+  const generated = spans.slice(0, round + 1).map((s) => generateSequence(replay, s));
+  const replayed = generated[round] as number[];
+  return replay.state() === rng && replayed.every((tile, i) => sequence[i] === tile);
 }

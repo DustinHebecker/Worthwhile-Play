@@ -80,6 +80,9 @@ importers:
       '@wp/game-nonogram':
         specifier: workspace:*
         version: link:../../packages/games/nonogram
+      '@wp/game-sequence-memory':
+        specifier: workspace:*
+        version: link:../../packages/games/sequence-memory
       '@wp/game-tic-tac-toe':
         specifier: workspace:*
         version: link:../../packages/games/tic-tac-toe
