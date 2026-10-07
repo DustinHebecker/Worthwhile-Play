@@ -13,8 +13,8 @@ Legend — Priority: **P0** foundation/blocking · **P1** next · **P2** later. 
 | M1 | **Learning platform**: deck browser/import (CSV/JSON), Memory variants (word↔image, term↔definition, language pairs), optional spaced repetition *without* streaks/notifications ("Items worth reviewing"), audio (bundled + speech synthesis best effort), content-pack download mechanism with size disclosure | P1 | M0 | ⏳ |
 | M2 | **Puzzle core + logic puzzles**: shared grid/puzzle utilities; *generator → independent solver → uniqueness → difficulty* pipeline; first puzzles | P1 | M0 | 🚧 Nonogram, Lights Out, Skyscrapers, Crate Pusher, Mine Logic, Unblock, Logic Grid, River Crossing, Bridges done; `puzzle-core` extraction pending |
 | M3 | **Board games**: Connect Four, Chess (complete rules, local AI; engine license review) | P1 | M0 | 🚧 Four in a Row done |
-| M4 | **Systems & hypothesis games** | P1 | M2 | 🚧 Black Box, Laser Paths, Network Detective, Proof Chain done |
-| M5 | **Memory & attention exercises**, Faces & Names (synthetic/licensed faces only) | P1 | M1 | 🚧 Sequence Memory done |
+| M4 | **Systems & hypothesis games** | P1 | M2 | 🚧 Black Box, Laser Paths, Network Detective, Proof Chain, Robot Program done |
+| M5 | **Memory & attention exercises**, Faces & Names (synthetic/licensed faces only) | P1 | M1 | 🚧 Sequence Memory, Pattern Memory done |
 | M6 | **Communication exercises** with deterministic evaluation | P2 | M0 | ⏳ |
 | M7 | **Strategy engine** (fresh agent context): shared simulation → Tower Defense → turn-based strategy → 4 hybrid modes | P2 | stable M0–M2 | ⏳ |
 | M8 | **Adventure engine** → Adventure A (dark fantasy) → Adventure B (temporal) | P2 | M0 | ⏳ |
@@ -46,7 +46,7 @@ Cross-cutting, continuous: accessibility review, native-speaker review of transl
 | Logic | Minimal Proof → shown as **Proof Chain** | M4 | ✅ | generated rule systems (→, ∧, ∨, simple negation); shortest proof verified by oracle |
 | Hypothesis | Rule Discovery | M4 | ⏳ | value-of-information feedback |
 | Hypothesis | Black Box | M4 | ✅ | 15 rule families; challenge inputs rule out all consistent alternatives of the family |
-| Algorithms | Logic Path | M4 | ⏳ | |
+| Algorithms | Logic Path → shown as **Robot Program** | M4 | ✅ | small command language (repeat, conditional); 24 original levels, limits proven by exhaustive program search |
 | Systems | Systems Puzzle | M4 | ⏳ | |
 | Systems | Debug the System | M4 | ⏳ | |
 | Systems | Graph Detective → shown as **Network Detective** | M4 | ✅ | 5 task types (bridge, augment, shortest route, single point of failure, min cut); algorithms checked against brute-force oracle |
@@ -55,7 +55,7 @@ Cross-cutting, continuous: accessibility review, native-speaker review of transl
 | Spatial | Laser Circuit → shown as **Laser Paths** | M4 | ✅ | 24 original levels, each with exactly one solution (oracle-verified); generic `traceBeams` for later reuse |
 | Memory | Faces & Names | M5 | ⏳ | mnemonic, self-generated associations |
 | Memory | Sequence Memory | M5 | ✅ | user-paced (Auto/Step), adaptive span, 12-round session |
-| Memory | Spatial Memory | M5 | ⏳ | |
+| Memory | Spatial Memory → shown as **Pattern Memory** | M5 | ✅ | adaptive pattern size, standard and rotated variants |
 | Memory | Prospective Memory | M5 | ⏳ | |
 | Memory | Association / Mnemonic exercises | M5 | ⏳ | |
 | Memory | N-back (optional) | M5 | ⏳ | |
