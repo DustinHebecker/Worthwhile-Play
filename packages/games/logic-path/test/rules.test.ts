@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { LEVELS, type LevelSource } from '../src/levels';
 import {
@@ -97,6 +97,14 @@ describe('parseLevel', () => {
     expect(() => lvl(['^GG'])).toThrow(/more than one goal/);
     expect(() => lvl(['^>G'])).toThrow(/more than one robot/);
     expect(() => lvl(['^xG'])).toThrow(/unknown glyph/);
+    expect(() => lvl(['^ G'])).toThrow(/unknown glyph/);
+    try {
+      lvl(['^']);
+    } catch (error) {
+      expect(error).toBeInstanceOf(LevelFormatError);
+      expect((error as Error).name).toBe('LevelFormatError');
+    }
+    expect.assertions(8);
   });
 
   it('rejects inconsistent limits', () => {
@@ -122,7 +130,8 @@ describe('levels', () => {
       }
       expect(maps.size).toBe(8);
     }
-    expect(() => getLevel('easy', 8)).toThrow(RangeError);
+    expect(() => getLevel('easy', 8)).toThrow(/no level easy\/8/);
+    expect(() => getLevel('hard', -1)).toThrow(RangeError);
   });
 
   it('no program within a level limit can reach the step limit', () => {
@@ -177,7 +186,11 @@ describe('programs', () => {
 });
 
 describe('interpreter', () => {
-  const level = lvl(OPEN);
+  // Built in beforeAll (not at collection time) so mutation testing can attribute coverage.
+  let level: Level;
+  beforeAll(() => {
+    level = lvl(OPEN);
+  });
 
   it('turns left and right', () => {
     expect(turnLeft(0)).toBe(3);
@@ -251,6 +264,13 @@ describe('interpreter', () => {
     expect(run(level, ['L'], 0)).toMatchObject({ outcome: 'limit', steps: 0 });
     expect(run(level, [], 0)).toMatchObject({ outcome: 'ended', steps: 0 });
     expect(run(level, ['L'], 1)).toMatchObject({ outcome: 'ended', steps: 1 });
+  });
+
+  it('lists collected stars in ascending cell order', () => {
+    // Stars at cells 5 and 1; the robot collects cell 5 first.
+    const result = run(lvl(['G*.', '.^*']), ['R', 'F', 'L', 'F', 'L', 'F', 'F']);
+    expect(result.outcome).toBe('goal');
+    expect(result.collected).toEqual([1, 5]);
   });
 
   it('records the program position of each frame inside repeat blocks', () => {
@@ -569,14 +589,38 @@ describe('isLogicPathState', () => {
     expect(mutate((s) => cur(s).program.push(5))).toBe(false);
     expect(mutate((s) => (cur(s).program[1] = { repeat: 1, body: ['F'] }))).toBe(false);
     expect(mutate((s) => (cur(s).program[1] = { repeat: 6, body: ['F'] }))).toBe(false);
-    expect(mutate((s) => (cur(s).program[1] = { repeat: 2, body: ['F', 'F', 'F', 'F', 'F'] }))).toBe(false);
+    expect(mutate((s) => Object.assign(cur(s), { open: false, program: [{ repeat: 2, body: ['F', 'F', 'F', 'F', 'F'] }] }))).toBe(false);
+    expect(mutate((s) => Object.assign(cur(s), { open: false, program: [{ repeat: 2, body: ['F', 'F', 'F', 'F'] }] }))).toBe(true);
     expect(mutate((s) => (cur(s).program[1] = { repeat: 2, body: ['Q'] }))).toBe(false);
     expect(mutate((s) => (cur(s).program[1] = { repeat: 2, body: 'F' }))).toBe(false);
     expect(mutate((s) => (cur(s).program[1] = { repeat: 2, body: [], x: 1 }))).toBe(false);
     expect(mutate((s) => (cur(s).program[1] = { repeat: 2, body: [] }))).toBe(true);
-    expect(mutate((s) => (cur(s).program = Array.from({ length: 9 }, () => 'F')))).toBe(false); // limit 8
+    expect(mutate((s) => Object.assign(cur(s), { open: false, program: Array.from({ length: 9 }, () => 'F') }))).toBe(false); // limit 8
     expect(mutate((s) => Object.assign(cur(s), { open: false, program: Array.from({ length: 8 }, () => 'F') }))).toBe(true);
     expect(mutate((s) => (cur(s).program = 'F' as never))).toBe(false);
+  });
+
+  it('checks repeat blocks against the palette', () => {
+    const easy = createInitialState(0, 'easy') as unknown as { levels: Record<string, unknown>[] };
+    (easy.levels[0] as Record<string, unknown>).program = [{ repeat: 2, body: ['F'] }];
+    expect(isLogicPathState(easy)).toBe(false);
+    const medium = createInitialState(0, 'medium') as unknown as { levels: Record<string, unknown>[] };
+    (medium.levels[0] as Record<string, unknown>).program = [{ repeat: 2, body: ['C'] }];
+    expect(isLogicPathState(medium)).toBe(false);
+    (medium.levels[0] as Record<string, unknown>).program = [{ repeat: 2, body: ['R'] }];
+    expect(isLogicPathState(medium)).toBe(true);
+    (medium.levels[0] as Record<string, unknown>).program = [null];
+    expect(isLogicPathState(medium)).toBe(false);
+  });
+
+  it('returns false when reading the data throws', () => {
+    const hostile = Object.defineProperty({}, 'seed', {
+      enumerable: true,
+      get() {
+        throw new Error('boom');
+      }
+    });
+    expect(isLogicPathState(hostile)).toBe(false);
   });
 
   it('checks the open flag against the last item', () => {
@@ -598,6 +642,7 @@ describe('isLogicPathState', () => {
     expect(mutate((s) => (cur(s).runs = 1.5))).toBe(false);
     expect(mutate((s) => (cur(s).ran = 1))).toBe(false);
     expect(mutate((s) => (cur(s).solved = 'no'))).toBe(false);
+    expect(mutate((s) => Object.assign(cur(s), { solved: 1, best: 6 }))).toBe(false);
     expect(mutate((s) => (cur(s).best = 3))).toBe(false); // unsolved with a best
     // Solved needs a best within [minimal, limit] (hard 2: minimal 6, limit 8) and at least one run.
     expect(mutate((s) => Object.assign(cur(s), { solved: true, best: 6 }))).toBe(true);

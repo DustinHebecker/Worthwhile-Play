@@ -624,5 +624,19 @@ describe('isValidPatternState', () => {
     const other = newSession(22, 'standard', 'step');
     expect(isValidPatternState({ ...base, pattern: other.pattern })).toBe(false);
     expect(isValidPatternState({ ...base, seed: 22 })).toBe(false);
+    // Sharing only the first cell with the real pattern is not enough.
+    const [first] = base.pattern as [number];
+    const others = Array.from({ length: 16 }, (_, i) => i).filter((c) => c > first && !base.pattern.includes(c));
+    expect(isValidPatternState({ ...base, pattern: [first, others[0], others[1]] })).toBe(false);
+  });
+
+  it('rejects malformed history entries and an empty answer after evaluation', () => {
+    const fb = feedback();
+    for (const entry of [null, 'x', { size: 3 }, { correct: true }, { size: '3', correct: true }, { size: 1, correct: true }, { size: 3, correct: 1 }]) {
+      expect(isValidPatternState({ ...fb, history: [entry] }), JSON.stringify(entry)).toBe(false);
+    }
+    const wrong = playRound(newSession(21, 'standard', 'step'), false);
+    expect(isValidPatternState(wrong)).toBe(true);
+    expect(isValidPatternState({ ...wrong, marks: [] })).toBe(false);
   });
 });

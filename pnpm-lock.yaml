@@ -86,6 +86,9 @@ importers:
       '@wp/game-lights-out':
         specifier: workspace:*
         version: link:../../packages/games/lights-out
+      '@wp/game-logic-path':
+        specifier: workspace:*
+        version: link:../../packages/games/logic-path
       '@wp/game-mastermind':
         specifier: workspace:*
         version: link:../../packages/games/mastermind
@@ -116,6 +119,9 @@ importers:
       '@wp/game-sokoban':
         specifier: workspace:*
         version: link:../../packages/games/sokoban
+      '@wp/game-spatial-memory':
+        specifier: workspace:*
+        version: link:../../packages/games/spatial-memory
       '@wp/game-tic-tac-toe':
         specifier: workspace:*
         version: link:../../packages/games/tic-tac-toe
