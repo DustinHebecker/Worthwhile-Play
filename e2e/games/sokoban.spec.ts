@@ -21,7 +21,7 @@ test('sokoban: steps, a restart and its undo survive a reload', async ({ page })
 
   expect(await kinds(page)).toEqual(before);
   await expect(root(page).getByTestId('moves')).toHaveAttribute('data-value', moves ?? '');
-  await expect(root(page).locator('[data-kind="player"], [data-kind="player-on-goal"]')).toHaveCount(1);
+  await expect(root(page).locator('[data-testid^="tile-"][data-kind="player"], [data-testid^="tile-"][data-kind="player-on-goal"]')).toHaveCount(1);
 });
 
 test('sokoban: a 7-wide hard level fits a 360 px phone with 44 px tiles and plays by keyboard and tap', async ({ page }) => {
