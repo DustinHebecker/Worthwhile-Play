@@ -11,6 +11,7 @@
   "dependencies": {
     "@wp/game-black-box": "workspace:*",
     "@wp/game-connect-four": "workspace:*",
+    "@wp/game-constraint-grid": "workspace:*",
     "@wp/game-core": "workspace:*",
     "@wp/game-laser-circuit": "workspace:*",
     "@wp/game-lights-out": "workspace:*",

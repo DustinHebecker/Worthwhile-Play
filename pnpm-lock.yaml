@@ -68,6 +68,9 @@ importers:
       '@wp/game-connect-four':
         specifier: workspace:*
         version: link:../../packages/games/connect-four
+      '@wp/game-constraint-grid':
+        specifier: workspace:*
+        version: link:../../packages/games/constraint-grid
       '@wp/game-core':
         specifier: workspace:*
         version: link:../../packages/game-core
@@ -148,6 +151,25 @@ importers:
         specifier: workspace:*
         version: link:../../testing
 
+  packages/games/bridges:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../../game-core
+      '@wp/ui':
+        specifier: workspace:*
+        version: link:../../ui
+    devDependencies:
+      '@wp/localization':
+        specifier: workspace:*
+        version: link:../../localization
+      '@wp/persistence':
+        specifier: workspace:*
+        version: link:../../persistence
+      '@wp/testing':
+        specifier: workspace:*
+        version: link:../../testing
+
   packages/games/connect-four:
     dependencies:
       '@wp/game-core':
@@ -168,6 +190,25 @@ importers:
         version: link:../../testing
 
   packages/games/constraint-grid:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../../game-core
+      '@wp/ui':
+        specifier: workspace:*
+        version: link:../../ui
+    devDependencies:
+      '@wp/localization':
+        specifier: workspace:*
+        version: link:../../localization
+      '@wp/persistence':
+        specifier: workspace:*
+        version: link:../../persistence
+      '@wp/testing':
+        specifier: workspace:*
+        version: link:../../testing
+
+  packages/games/graph-detective:
     dependencies:
       '@wp/game-core':
         specifier: workspace:*
@@ -285,6 +326,25 @@ importers:
         version: link:../../testing
 
   packages/games/nonogram:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../../game-core
+      '@wp/ui':
+        specifier: workspace:*
+        version: link:../../ui
+    devDependencies:
+      '@wp/localization':
+        specifier: workspace:*
+        version: link:../../localization
+      '@wp/persistence':
+        specifier: workspace:*
+        version: link:../../persistence
+      '@wp/testing':
+        specifier: workspace:*
+        version: link:../../testing
+
+  packages/games/river-crossing:
     dependencies:
       '@wp/game-core':
         specifier: workspace:*
