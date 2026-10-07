@@ -13,9 +13,20 @@ let registered = false;
 let rerender: (() => void) | undefined;
 
 /**
- * Service-worker registration with an explicit update prompt (`registerType: 'prompt'`):
- * an update never reloads the page on its own, so a running game is never interrupted.
+ * Service-worker registration (`registerType: 'prompt'`).
+ * Update policy: a new version is applied automatically (page reload) whenever no game is
+ * open, so visitors always see the latest release. While a game page is open, the update
+ * waits and is offered via a footer button, so a running game is never interrupted; it is
+ * applied automatically on the next navigation away from the game.
  */
+const UPDATE_CHECK_INTERVAL_MS = 60 * 60 * 1000;
+const isGamePage = (path = location.pathname) => path.startsWith('/games/');
+
+/** Called by the router after every navigation: apply a waiting update once the user leaves a game. */
+export function applyPendingUpdateIfIdle(): void {
+  if (needRefresh && updateSW && !isGamePage()) void updateSW(true);
+}
+
 export function setupPwa(slot: HTMLElement, t: UiTranslator): void {
   const render = () => {
     slot.replaceChildren();
@@ -51,7 +62,12 @@ export function setupPwa(slot: HTMLElement, t: UiTranslator): void {
     updateSW = registerSW({
       onNeedRefresh: () => {
         needRefresh = true;
-        rerender?.();
+        if (!isGamePage()) void updateSW?.(true);
+        else rerender?.();
+      },
+      onRegisteredSW: (_url, registration) => {
+        // Long-lived tabs and installed apps also pick up new releases.
+        if (registration) setInterval(() => void registration.update(), UPDATE_CHECK_INTERVAL_MS);
       },
       onOfflineReady: () => {
         offlineReady = true;

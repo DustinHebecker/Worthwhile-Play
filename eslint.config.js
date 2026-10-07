@@ -3,7 +3,7 @@ import tseslint from 'typescript-eslint';
 import globals from 'globals';
 
 export default tseslint.config(
-  { ignores: ['**/dist/**', '**/node_modules/**', 'coverage/**', 'reports/**', '.stryker-tmp/**', 'playwright-report/**', 'test-results/**', '.wrangler/**'] },
+  { ignores: ['**/dist/**', '**/node_modules/**', 'coverage/**', 'reports/**', '.stryker-tmp*/**', 'playwright-report/**', 'test-results/**', '.wrangler/**'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

@@ -48,3 +48,5 @@ In cloud containers Playwright's Chromium is preinstalled (`PLAYWRIGHT_BROWSERS_
 ## Git
 
 Work on a feature branch; one logical change per commit; never commit `.env*`, `dist/`, reports or personal data. Merge only with green CI.
+
+**Always publish finished work** (owner's standing instruction): as soon as a change is complete and the full gate is green, merge it into `main` — every push to `main` deploys to https://worthwhile-play.pages.dev. Do not leave finished work only on a feature branch. Verify the deployment afterwards.

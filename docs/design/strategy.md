@@ -7,7 +7,7 @@ Scope:
 - `packages/strategy-engine` (`@wp/strategy-engine`) — the shared deterministic simulation used by the strategy game, Tower Defense and the four hybrid modes (spec: "Shared Strategy / Tower Defense engine").
 - `packages/games/strategy` — the original turn-based strategy game (spec: "Strategy engine"). Working title **Relay Front** *(proposal, see D1)*.
 
-Out of scope here: Tower Defense and hybrid **game rules** (owned by the TD workstream). This document only fixes what the engine must offer them; the engine API is recorded in [ADR 0008](../adr/0008-strategy-engine-api.md).
+Out of scope here: Tower Defense and hybrid **game rules** (owned by the TD workstream). This document only fixes what the engine must offer them; the engine API is recorded in [ADR 0009](../adr/0009-strategy-engine-api.md).
 
 References: implementation brief (binding), reference conversation (intent: "Command Network + simultaneous turns", "information and communication become a resource itself", "C&C × Into the Breach × board game"), ADR 0001/0002/0006.
 
@@ -330,7 +330,7 @@ interface ModeDefinition {
 }
 ```
 
-Hybrid needs map directly onto engine primitives: external force = scripted side with `advance` doctrine and a split path; "VS Large" = two wave sides meeting via normal combat, survivors continue their standing order to the enemy base. Details stay with the TD workstream; the API is in ADR 0008.
+Hybrid needs map directly onto engine primitives: external force = scripted side with `advance` doctrine and a split path; "VS Large" = two wave sides meeting via normal combat, survivors continue their standing order to the enemy base. Details stay with the TD workstream; the API is in ADR 0009.
 
 ---
 
@@ -396,7 +396,7 @@ Each with options and my recommendation (**★**). Decisions marked **[blocks I1
 | **D14** | Ticks per turn **[blocks I1]** | (a) **6**; (b) 4; (c) 10 | ★ (a): enough granularity for ballistic flight time and dodging, divisible for speeds 2/3. |
 | **D15** | Movement conflict **[blocks I1]** | (a) **all contenders bump (symmetric)**; (b) priority by unit class (infantry yields to vehicles), then bump; (c) contested cell → instant melee | ★ (a): symmetric, predictable, mirror-testable. |
 | **D16** | Ownership of tower content | (a) **shared archetypes in `strategy-engine/content` (base stats), TD workstream owns branches/balancing in its ruleset**; (b) each mode defines its own towers completely | ★ (a): one implementation of each tower mechanic (beam, ballistic, aura, jammer), consistent with "no separate TD implementation". Needs sign-off from the TD workstream. |
-| **D17** | Shared-package ownership | (a) **this workstream owns `packages/strategy-engine`** (CLAUDE.md lists future engines under the orchestrator); (b) orchestrator owns it, this workstream proposes changes | ★ (a) as assigned in the task brief; I'd record it in ADR 0008 and update `CLAUDE.md` roles accordingly — needs your confirmation since it changes ADR 0006 practice. |
+| **D17** | Shared-package ownership | (a) **this workstream owns `packages/strategy-engine`** (CLAUDE.md lists future engines under the orchestrator); (b) orchestrator owns it, this workstream proposes changes | ★ (a) as assigned in the task brief; I'd record it in ADR 0009 and update `CLAUDE.md` roles accordingly — needs your confirmation since it changes ADR 0006 practice. |
 
 ### Risks and assumptions
 
@@ -404,7 +404,7 @@ Each with options and my recommendation (**★**). Decisions marked **[blocks I1
 - **Learnability**: network + doctrines + simultaneity is a lot. Mitigation: Field Exercise scenario, clear coverage overlay, "why didn't my unit obey?" explanation in the event log.
 - **Balancing** is empirical: AI-vs-AI statistics plus your play-testing; numbers above are placeholders.
 - **Mobile UI** is the main implementation risk (selection, map panning, 44 px targets on a 16² map). Assumption: the map scrolls; the DOM unit list is the fallback.
-- **Parallel TD workstream**: the engine API must be stable early. Mitigation: ADR 0008 as *Proposed* now; engine core (I1) lands first with tower/projectile/flow-field primitives.
+- **Parallel TD workstream**: the engine API must be stable early. Mitigation: ADR 0009 as *Proposed* now; engine core (I1) lands first with tower/projectile/flow-field primitives.
 
 ---
 
