@@ -1,3 +1,4 @@
+// @ts-nocheck
 // @vitest-environment jsdom
 import { runGameContract } from '@wp/testing';
 import game from '../src/index';

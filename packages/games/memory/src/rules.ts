@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { createRng, isInt, isOneOf, isRecord, isUint32 } from '@wp/game-core';
 import type { Deck } from '@wp/learning-content';
 

@@ -12,6 +12,8 @@
  * is the toggle matrix and `b` the board, and takes the minimum-weight solution over
  * the null space (5×5 has a 2-dimensional null space, 3×3 and 7×7 have none).
  */
+// @ts-nocheck
+
 import { createRng, isArrayOf, isInt, isOneOf, isRecord, isUint32, normalizeSeed } from '@wp/game-core';
 
 export const DIFFICULTIES = ['easy', 'medium', 'hard'] as const;

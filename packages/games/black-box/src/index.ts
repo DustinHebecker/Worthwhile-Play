@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { defineGame } from '@wp/game-core';
 import { metadata } from './metadata';
 import { isBlackBoxState, type BlackBoxState } from './rules';

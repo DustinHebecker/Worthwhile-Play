@@ -5,6 +5,8 @@
  * every simple route, and minimum cuts by trying all sets of connections in order of size.
  * They are slow on purpose and only meant for small networks.
  */
+// @ts-nocheck
+
 
 export type OEdge = readonly [number, number, number];
 

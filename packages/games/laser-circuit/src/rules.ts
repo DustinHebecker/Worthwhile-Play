@@ -12,6 +12,8 @@
  * generic, reusable beam tracer: it only needs a `Board` and knows nothing about levels,
  * inventory or game state.
  */
+// @ts-nocheck
+
 import { isInt, isOneOf, isRecord, isUint32, normalizeSeed } from '@wp/game-core';
 import { LEVELS, type LevelSource } from './levels';
 

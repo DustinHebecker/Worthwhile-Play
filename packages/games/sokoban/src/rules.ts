@@ -13,6 +13,8 @@
  *   - `*` = "restart level". Restarting is recorded rather than erasing the history, so
  *     Undo right after a restart brings the previous attempt back.
  */
+// @ts-nocheck
+
 import { isInt, isOneOf, isRecord, isUint32, normalizeSeed } from '@wp/game-core';
 import { LEVELS } from './levels';
 

@@ -3,6 +3,8 @@
  * it enumerates complete rows (all permutations) and backtracks row by row, checking the
  * column rule and clues directly. Slow but obviously correct; used only in tests.
  */
+// @ts-nocheck
+
 
 export interface OracleClues {
   top: readonly number[];

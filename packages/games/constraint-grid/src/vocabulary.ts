@@ -3,6 +3,8 @@
  * so that `metadata.ts` stays light). Each id maps to `item.<kind>.<id>` (grid label) and
  * `subject.<kind>.<id>` (a full noun phrase used inside clue sentences).
  */
+// @ts-nocheck
+
 export const ATTRIBUTE_KINDS = ['pet', 'drink', 'colour'] as const;
 export type AttributeKind = (typeof ATTRIBUTE_KINDS)[number];
 

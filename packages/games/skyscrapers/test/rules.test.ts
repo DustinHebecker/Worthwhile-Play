@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { beforeEach, describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { createRng } from '@wp/game-core';

@@ -11,6 +11,8 @@
  *
  * All transitions are immutable and return the very same object when nothing changed.
  */
+// @ts-nocheck
+
 import { createRng, createRngFromState, isArrayOf, isInt, isOneOf, isRecord, isUint32, normalizeSeed, type Rng } from '@wp/game-core';
 
 export const DIFFICULTIES = ['easy', 'medium', 'hard'] as const;

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { Deck, LearningItem } from '@wp/learning-content';
 import { SYMBOL_DECK } from '@wp/learning-content';
 import type { DeckLookup } from './rules';

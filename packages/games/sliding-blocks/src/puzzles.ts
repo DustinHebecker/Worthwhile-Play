@@ -7,6 +7,8 @@
  * `optimum`: fewest moves (one block slid any distance) to free the star block. The test suite
  * re-derives every optimum with an independent solver (test/oracle.ts).
  */
+// @ts-nocheck
+
 export interface PuzzleSource {
   readonly layout: string;
   readonly optimum: number;

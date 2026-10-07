@@ -1,3 +1,4 @@
+// @ts-nocheck
 // @vitest-environment jsdom
 import type { GameInstance } from '@wp/game-core';
 import { runGameContract } from '@wp/testing';

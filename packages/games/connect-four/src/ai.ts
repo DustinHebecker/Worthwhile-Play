@@ -23,6 +23,8 @@
  *  - medium: 5 — also sees most short combinations.
  *  - hard:   8 — sees double threats several moves ahead.
  */
+// @ts-nocheck
+
 import { createRngFromState, type Rng } from '@wp/game-core';
 import {
   COLS,

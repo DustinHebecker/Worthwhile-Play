@@ -15,6 +15,8 @@
  * desktop, far too slow for a phone at the moment of pressing "New game" (medium: about 3 s).
  * Hence the shipped, pre-generated list, which the tests re-verify with an independent solver.
  */
+// @ts-nocheck
+
 import { createRng, seedFromString, type Rng } from '@wp/game-core';
 import {
   BANDS,

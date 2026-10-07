@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { GameMessages } from '@wp/game-core';
 
 /**

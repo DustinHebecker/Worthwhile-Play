@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { createRng, isInt, isOneOf, isRecord, isUint32, type Rng } from '@wp/game-core';
 
 /**

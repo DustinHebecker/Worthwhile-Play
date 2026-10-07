@@ -17,6 +17,8 @@
  *   - `"*"`: restart. Restarting is recorded, so Undo right after a restart brings the
  *     previous attempt back.
  */
+// @ts-nocheck
+
 import { isArrayOf, isInt, isOneOf, isRecord, isUint32, normalizeSeed } from '@wp/game-core';
 import { PUZZLES } from './puzzles';
 

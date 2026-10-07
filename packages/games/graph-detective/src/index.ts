@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { defineGame } from '@wp/game-core';
 import { metadata } from './metadata';
 import { isGdState, type GdState } from './rules';

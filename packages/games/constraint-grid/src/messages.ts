@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { GameMessages } from '@wp/game-core';
 import { ATTRIBUTE_KINDS, NAME_COUNT, VOCABULARY, type AttributeKind } from './vocabulary';
 

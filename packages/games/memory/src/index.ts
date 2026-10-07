@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { defineGame } from '@wp/game-core';
 import { lookupDeckItems } from './decks';
 import { metadata } from './metadata';

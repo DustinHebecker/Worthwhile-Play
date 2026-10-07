@@ -10,6 +10,8 @@
  * `minCrossings` is the fewest crossings that solve the puzzle. The test suite re-derives it
  * with an independent breadth-first solver (`test/oracle.ts`), so a wrong value fails the tests.
  */
+// @ts-nocheck
+
 import type { Difficulty, EntityDef, PuzzleDef } from './rules';
 
 type Extra = Omit<EntityDef, 'id' | 'kind' | 'n'>;

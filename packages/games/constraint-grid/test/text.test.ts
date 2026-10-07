@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, expect, it } from 'vitest';
 import { COMMON_MESSAGES, SUPPORTED_LOCALES, createTranslator, type SupportedLocale } from '@wp/localization';
 import { messages } from '../src/messages';

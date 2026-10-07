@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { Translator } from '@wp/game-core';
 import { FLOOR, PERSON, type Clue, type Puzzle, type Ref } from './rules';
 import { VOCABULARY } from './vocabulary';

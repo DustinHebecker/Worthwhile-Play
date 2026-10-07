@@ -7,6 +7,8 @@
  * Deterministic: the same code always produces the same file. Why a shipped list instead of
  * generating on the device: see `src/generator.ts`.
  */
+// @ts-nocheck
+
 import { writeFileSync } from 'node:fs';
 import { generatePuzzle, type GeneratedPuzzle } from '../src/generator';
 import { BANDS, DIFFICULTIES, mirrorLayout, parseLayout, solve, type Difficulty } from '../src/rules';

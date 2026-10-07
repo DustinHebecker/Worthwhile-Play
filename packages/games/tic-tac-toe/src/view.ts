@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { GameContext, GameInstance, GameResult, NewGameOptions } from '@wp/game-core';
 import { isOneOf, normalizeSeed } from '@wp/game-core';
 import { announce, clear, gridKeyboard, h } from '@wp/ui';

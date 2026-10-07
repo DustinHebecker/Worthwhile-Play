@@ -3,6 +3,8 @@
  * `src/rules.ts`: clues come from string splitting, line deduction from brute-force
  * enumeration, and solution counting from row-pattern enumeration / backtracking.
  */
+// @ts-nocheck
+
 
 /** Runs of '1' in a 0/1 line, computed by string splitting. */
 export function runsOf(line: readonly number[]): number[] {

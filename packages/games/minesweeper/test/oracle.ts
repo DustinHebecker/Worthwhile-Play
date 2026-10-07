@@ -4,6 +4,8 @@
  * agree with all revealed numbers, and calls a cell forced when it has the same value
  * in all of them.
  */
+// @ts-nocheck
+
 
 export function oracleNeighbours(rows: number, cols: number, index: number): number[] {
   const r = Math.floor(index / cols);

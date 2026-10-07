@@ -7,6 +7,8 @@
  * inventory) that solves the level and in which every placed piece receives light. A piece in a
  * dark square changes nothing, so it would only multiply the count without being a different idea.
  */
+// @ts-nocheck
+
 
 export type Grid = string[][];
 

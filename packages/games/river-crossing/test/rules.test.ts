@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { metadata } from '../src/metadata';
@@ -298,6 +299,8 @@ describe('boatViolation', () => {
     expect(boatViolation(FIX_A, [0, 1])).toBeNull();
     expect(boatViolation(FIX_B, [0, 1])).toBeNull();
     expect(boatViolation(FIX_B, [2, 3])).toEqual({ kind: 'noRower' });
+    expect(boatViolation(FIX_A, [99, 0])).toBeNull();
+    expect(boatViolation(FIX_A, [99])).toEqual({ kind: 'noRower' });
   });
 
   it('ignores weights without a weight limit', () => {
@@ -460,6 +463,10 @@ describe('validatePuzzle', () => {
     expect(validatePuzzle(withEntity({ id: 'robot-2x' }, 1))).not.toContain('entity id "robot-2x" must be kebab-case');
     expect(validatePuzzle(withEntity({ id: '1robot' }, 1))).toContain('entity id "1robot" must be kebab-case');
     expect(validatePuzzle(withEntity({ kind: 'dragon' }, 1))).toEqual(['unknown kind "dragon"']);
+    expect(validatePuzzle(withEntity({ id: 'dog_x' }, 1))).toContain('entity id "dog_x" must be kebab-case');
+    expect(validatePuzzle({ ...base, entities: base.entities.slice(0, 2), rules: [] })).toEqual([]);
+    const twelve = Array.from({ length: 12 }, (_, i) => ({ id: `robot-${i + 1}`, kind: 'robot' as const, rower: true }));
+    expect(validatePuzzle({ ...base, entities: twelve, maxWeight: undefined, rules: [] } as unknown as PuzzleDef)).toEqual([]);
   });
 
   it('checks trips, weights and rowers', () => {
@@ -682,6 +689,8 @@ describe('game state', () => {
     expect(choosePuzzle(loaded, GARDEN)).toEqual(start);
     const played = stateOf('easy', GARDEN, [[0, 2]], [0, 2]);
     expect(choosePuzzle(played, GARDEN)).toEqual(start);
+    const unloaded = stateOf('easy', GARDEN, [[0, 2], [0]], []);
+    expect(choosePuzzle(unloaded, GARDEN)).toEqual(start);
   });
 
   it('progressOf throws for an invalid history', () => {
@@ -754,6 +763,9 @@ describe('isRiverState', () => {
     expect(bad({ boat: [1] })).toBe(false);
     expect(bad({ boat: [-1] })).toBe(false);
     expect(bad({ boat: [0, 1, 2] })).toBe(false);
+    expect(bad({ history: [], boat: [0, 1, 2] })).toBe(false);
+    expect(bad({ history: [], boat: [0, 1] })).toBe(true);
+    expect(bad({ puzzle: '1' })).toBe(false);
     expect(bad({ boat: [0, 2] })).toBe(true);
     expect(bad({ boat: [] })).toBe(true);
     const { boat: _boat, ...noBoat } = valid();

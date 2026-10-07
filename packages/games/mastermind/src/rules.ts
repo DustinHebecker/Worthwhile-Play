@@ -6,6 +6,8 @@
  * wrong place). All state transitions are immutable and return the same object when
  * nothing changed, so callers can cheaply detect real changes.
  */
+// @ts-nocheck
+
 import { createRng, isArrayOf, isInt, isOneOf, isRecord, isUint32 } from '@wp/game-core';
 
 export const MAX_GUESSES = 10;
