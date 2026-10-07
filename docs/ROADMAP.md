@@ -53,7 +53,8 @@ Cross-cutting, continuous: accessibility review, native-speaker review of transl
 | Spatial | Circuit Puzzle | M4 | ⏳ | |
 | Spatial | Laser Circuit | M4 | ⏳ | shares beam logic with Laser tower |
 | Memory | Faces & Names | M5 | ⏳ | mnemonic, self-generated associations |
-| Memory | Spatial Memory, Sequence Memory | M5 | ⏳ | |
+| Memory | Sequence Memory | M5 | ✅ | user-paced (Auto/Step), adaptive span, 12-round session |
+| Memory | Spatial Memory | M5 | ⏳ | |
 | Memory | Prospective Memory | M5 | ⏳ | |
 | Memory | Association / Mnemonic exercises | M5 | ⏳ | |
 | Memory | N-back (optional) | M5 | ⏳ | |
