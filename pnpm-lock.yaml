@@ -68,6 +68,9 @@ importers:
       '@wp/game-connect-four':
         specifier: workspace:*
         version: link:../../packages/games/connect-four
+      '@wp/game-constraint-grid':
+        specifier: workspace:*
+        version: link:../../packages/games/constraint-grid
       '@wp/game-core':
         specifier: workspace:*
         version: link:../../packages/game-core

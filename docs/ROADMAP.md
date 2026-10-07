@@ -11,7 +11,7 @@ Legend — Priority: **P0** foundation/blocking · **P1** next · **P2** later. 
 |---|---|---|---|---|
 | M0 | **Foundation**: monorepo, CI, app shell, localization (16 locales, RTL), GameModule contract, persistence + autosave, seeded RNG, PWA/offline, shared contract tests, Cloudflare deploy, 3 reference games | P0 | – | ✅ |
 | M1 | **Learning platform**: deck browser/import (CSV/JSON), Memory variants (word↔image, term↔definition, language pairs), optional spaced repetition *without* streaks/notifications ("Items worth reviewing"), audio (bundled + speech synthesis best effort), content-pack download mechanism with size disclosure | P1 | M0 | ⏳ |
-| M2 | **Puzzle core + logic puzzles**: shared grid/puzzle utilities; *generator → independent solver → uniqueness → difficulty* pipeline; first puzzles | P1 | M0 | 🚧 Nonogram, Lights Out, Skyscrapers, Crate Pusher, Mine Logic, Unblock done; `puzzle-core` extraction pending |
+| M2 | **Puzzle core + logic puzzles**: shared grid/puzzle utilities; *generator → independent solver → uniqueness → difficulty* pipeline; first puzzles | P1 | M0 | 🚧 Nonogram, Lights Out, Skyscrapers, Crate Pusher, Mine Logic, Unblock, Logic Grid done; `puzzle-core` extraction pending |
 | M3 | **Board games**: Connect Four, Chess (complete rules, local AI; engine license review) | P1 | M0 | 🚧 Four in a Row done |
 | M4 | **Systems & hypothesis games** | P1 | M2 | 🚧 Black Box, Laser Paths done |
 | M5 | **Memory & attention exercises**, Faces & Names (synthetic/licensed faces only) | P1 | M1 | 🚧 Sequence Memory done |
@@ -35,7 +35,7 @@ Cross-cutting, continuous: accessibility review, native-speaker review of transl
 | Logic | Nonogram | M2 | ✅ | line-solvable + unique (independent oracle in tests) |
 | Logic | Bridges / Hashi | M2 | ⏳ | |
 | Logic | Slitherlink | M2 | ⏳ | |
-| Logic | Einstein / Constraint Grid | M2 | ⏳ | generator + independent solver |
+| Logic | Einstein / Constraint Grid → shown as **Logic Grid** | M2 | ✅ | generated, minimal clue sets; uniqueness via brute-force oracle; clue templates in 16 locales |
 | Logic | Lights Out | M2 | ✅ | GF(2) solver, minimal-solution hints |
 | Logic | River Crossing | M2 | ⏳ | |
 | Logic | Rush-Hour-style sliding | M2 | ⏳ | |

@@ -1,5 +1,6 @@
 import type { GameMetadata, GameModule } from '@wp/game-core';
 import { metadata as blackBox } from '@wp/game-black-box/metadata';
+import { metadata as constraintGrid } from '@wp/game-constraint-grid/metadata';
 import { metadata as connectFour } from '@wp/game-connect-four/metadata';
 import { metadata as laserCircuit } from '@wp/game-laser-circuit/metadata';
 import { metadata as lightsOut } from '@wp/game-lights-out/metadata';
@@ -29,6 +30,7 @@ const entry = <S>(metadata: GameMetadata, load: () => Promise<{ default: GameMod
 export const GAMES: readonly GameEntry[] = [
   entry(mastermind, () => import('@wp/game-mastermind')),
   entry(blackBox, () => import('@wp/game-black-box')),
+  entry(constraintGrid, () => import('@wp/game-constraint-grid')),
   entry(nonogram, () => import('@wp/game-nonogram')),
   entry(skyscrapers, () => import('@wp/game-skyscrapers')),
   entry(minesweeper, () => import('@wp/game-minesweeper')),
