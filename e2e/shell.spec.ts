@@ -9,7 +9,7 @@ test.describe('app shell', () => {
   });
 
   test('every game is reachable by direct URL', async ({ page }) => {
-    for (const id of ['tic-tac-toe', 'mastermind', 'memory']) {
+    for (const id of ['tic-tac-toe', 'mastermind', 'memory', 'connect-four', 'lights-out', 'nonogram']) {
       await page.goto(`/games/${id}`);
       await expect(page.getByTestId('new-game')).toBeVisible();
     }
@@ -31,6 +31,18 @@ test.describe('app shell', () => {
     await page.reload();
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
     await expect(page.locator('#learning-language')).toHaveValue('ja');
+  });
+
+  test('the language switcher is visible in the header on every page', async ({ page }) => {
+    await page.goto('/games/memory');
+    const menu = page.getByTestId('language-menu');
+    await expect(menu).toBeVisible();
+    await expect(menu.locator('summary')).toContainText('English');
+    await menu.locator('summary').click();
+    await page.getByTestId('header-language').selectOption('de');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'de');
+    await expect(page.getByTestId('language-menu').locator('summary')).toContainText('Deutsch');
+    await expect(page.getByTestId('new-game')).toHaveText('Neues Spiel');
   });
 
   test('unknown routes show a not-found page', async ({ page }) => {

@@ -10,7 +10,7 @@ Worthwhile Play is a free, multilingual, installable web app with games and exer
 - **16 interface languages** (de, en, nl, es, fr, ru, zh-Hans, ko, ja, ar, pt, it, pl, tr, uk, hi), with Arabic right-to-left.
 - **Honest claims**: the games exercise specific skills. They are not proven to make you smarter in general, and we don't say so.
 
-> Status: early development. The foundation (architecture, persistence, localization, PWA, CI) and three reference games (Tic-Tac-Toe, Code Breaker — a Mastermind-style deduction game, Memory) exist. The full backlog — puzzles, learning decks, Faces & Names, chess, communication exercises, an original turn-based strategy/tower-defense engine and two point-and-click adventures — is planned in [docs/ROADMAP.md](docs/ROADMAP.md).
+> Status: early development. The foundation (architecture, persistence, localization, PWA, CI) and six games (Tic-Tac-Toe, Code Breaker — a Mastermind-style deduction game, Memory, Four in a Row, Lights Out, Nonogram) exist. The full backlog — puzzles, learning decks, Faces & Names, chess, communication exercises, an original turn-based strategy/tower-defense engine and two point-and-click adventures — is planned in [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Play
 
@@ -56,7 +56,7 @@ Current versions of Chrome/Edge, Firefox and Safari (desktop and mobile). Offlin
 
 ## Deployment
 
-Cloudflare Workers with Static Assets, deployed by GitHub Actions on every push to `main`. The legal notice (Impressum) data is injected at build time from secrets and is never committed. See [docs/deployment.md](docs/deployment.md).
+Cloudflare Pages (https://worthwhile-play.pages.dev), deployed by GitHub Actions on every push to `main`. The legal notice (Impressum) data is injected at build time from secrets and is never committed. See [docs/deployment.md](docs/deployment.md).
 
 ## Documentation
 

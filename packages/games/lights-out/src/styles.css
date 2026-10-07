@@ -1,0 +1,106 @@
+/* Lights Out — all rules scoped under .wp-lights-out. Uses shared --wp-* tokens. */
+.wp-lights-out {
+  --lo-on-bg: #f6d36b;
+  --lo-on-fg: #3d2c00;
+  --lo-gap: 2px;
+  display: grid;
+  gap: 0.75rem;
+  justify-items: center;
+  width: 100%;
+  max-width: 34rem;
+  margin-inline: auto;
+}
+@media (prefers-color-scheme: dark) {
+  .wp-lights-out {
+    --lo-on-bg: #e7c65a;
+    --lo-on-fg: #2a1e00;
+  }
+}
+.wp-lights-out p { margin: 0; }
+.wp-lights-out [hidden] { display: none; }
+
+.wp-lights-out .lo-progress {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.25rem 1.25rem;
+  font-variant-numeric: tabular-nums;
+}
+.wp-lights-out .lo-status { text-align: center; }
+
+.wp-lights-out .lo-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.35rem 1.25rem; font-size: 0.9rem; }
+.wp-lights-out .lo-legend-item { display: inline-flex; align-items: center; gap: 0.4rem; }
+.wp-lights-out .lo-swatch {
+  display: inline-flex;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 6px;
+  border: 1px solid var(--wp-border);
+  background: var(--wp-surface);
+  color: var(--wp-text);
+}
+.wp-lights-out .lo-swatch.is-on { background: var(--lo-on-bg); color: var(--lo-on-fg); }
+
+/* Board: n columns of at least 44 px. 7 × 44 + 6 × 2 + 2 × 3 = 326 px, which fits a 360 px phone
+   inside the app's 16 px gutters. */
+.wp-lights-out .lo-board {
+  direction: ltr;
+  display: grid;
+  grid-template-columns: repeat(var(--lo-n, 3), minmax(var(--wp-touch, 44px), 1fr));
+  gap: var(--lo-gap);
+  padding: 3px;
+  width: min(100%, calc(var(--lo-n, 3) * 4.5rem));
+  background: var(--wp-border);
+  border-radius: var(--wp-radius, 10px);
+}
+.wp-lights-out .lo-cell {
+  position: relative;
+  min-width: var(--wp-touch, 44px);
+  min-height: var(--wp-touch, 44px);
+  aspect-ratio: 1;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: var(--wp-surface);
+  color: var(--wp-muted);
+  transition: background-color 120ms ease-out;
+}
+.wp-lights-out .lo-cell[data-on='true'] { background: var(--lo-on-bg); color: var(--lo-on-fg); }
+.wp-lights-out .lo-cell[aria-disabled='true'] { cursor: default; }
+.wp-lights-out .lo-cell:not([aria-disabled='true']):hover { box-shadow: inset 0 0 0 2px var(--wp-accent); }
+.wp-lights-out .lo-cell:focus-visible { outline: 3px solid var(--wp-focus); outline-offset: 1px; z-index: 1; }
+
+.wp-lights-out .lo-bulb { width: 70%; height: 70%; max-width: 3rem; max-height: 3rem; }
+.wp-lights-out .lo-bulb-on circle { fill: currentColor; }
+.wp-lights-out .lo-bulb-on line { stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.wp-lights-out .lo-bulb-off circle { fill: none; stroke: currentColor; stroke-width: 2; }
+
+/* Hint: a dashed frame and a corner marker, never colour alone. */
+.wp-lights-out .lo-cell.is-hint::after {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border: 3px dashed currentColor;
+  border-radius: 4px;
+  pointer-events: none;
+}
+.wp-lights-out .lo-cell.is-hint::before {
+  content: '';
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  border-block-start: 12px solid currentColor;
+  border-inline-end: 12px solid transparent;
+  border-start-start-radius: 6px;
+  pointer-events: none;
+}
+
+.wp-lights-out .lo-actions { justify-content: center; }
+.wp-lights-out .lo-hint-text { padding: 0.5rem 0.75rem; border-inline-start: 4px solid var(--wp-focus); background: var(--wp-surface-2); border-radius: 6px; }
+.wp-lights-out .lo-help { font-size: 0.85rem; text-align: center; }
+
+.wp-lights-out.lo-reduced .lo-cell { transition: none; }
+@media (forced-colors: active) {
+  .wp-lights-out .lo-cell[data-on='true'] { background: Highlight; color: HighlightText; }
+  .wp-lights-out .lo-cell.is-hint::after { border-color: CanvasText; }
+}

@@ -1,9 +1,23 @@
 /* App shell layout. Uses logical properties so the Arabic RTL layout mirrors automatically. */
 #app { min-height: 100dvh; display: grid; grid-template-rows: auto 1fr auto; }
-.app-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; padding: 0.75rem 1rem; border-block-end: 1px solid var(--wp-border); background: var(--wp-surface); }
+.app-header { display: grid; grid-template-columns: 1fr auto auto; grid-template-areas: 'brand nav lang'; align-items: center; gap: 0.5rem 1rem; padding: 0.75rem 1rem; border-block-end: 1px solid var(--wp-border); background: var(--wp-surface); }
+.app-header .brand { grid-area: brand; }
+.app-header nav { grid-area: nav; }
+.app-header .language-menu { grid-area: lang; }
+@media (max-width: 640px) { .app-header { grid-template-columns: 1fr auto; grid-template-areas: 'brand lang' 'nav nav'; } }
 .brand { display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 700; text-decoration: none; color: var(--wp-text); min-height: var(--wp-touch); }
 .brand-mark { display: inline-grid; place-items: center; width: 2rem; height: 2rem; border-radius: 8px; background: var(--wp-accent); color: var(--wp-accent-contrast); }
 .app-header nav { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+.language-menu { position: relative; }
+.language-menu summary { min-height: var(--wp-touch); display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.7rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius); background: var(--wp-surface); cursor: pointer; list-style: none; font-weight: 600; }
+.language-menu summary::-webkit-details-marker { display: none; }
+.language-menu summary::after { content: '▾'; color: var(--wp-muted); font-size: 0.75rem; }
+.language-menu[open] summary, .language-menu summary:hover { border-color: var(--wp-accent); }
+.language-icon { font-size: 0.85rem; letter-spacing: -0.02em; }
+.language-menu-panel { position: absolute; z-index: 60; inset-inline-end: 0; top: calc(100% + 0.4rem); width: min(18rem, calc(100vw - 2rem)); display: grid; gap: 0.75rem; padding: 1rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius); background: var(--wp-surface); box-shadow: 0 12px 28px rgb(0 0 0 / 0.18); }
+.language-menu-panel label { display: grid; gap: 0.35rem; color: var(--wp-muted); }
+.language-menu-panel select { width: 100%; color: var(--wp-text); }
+@media (max-width: 380px) { .brand > span:last-child { display: none; } }
 .app-header nav a { padding: 0.5rem 0.75rem; border-radius: var(--wp-radius); text-decoration: none; min-height: var(--wp-touch); display: inline-flex; align-items: center; }
 .app-header nav a[aria-current='page'] { background: var(--wp-surface-2); font-weight: 600; }
 .skip-link { position: absolute; inset-inline-start: -999px; }
