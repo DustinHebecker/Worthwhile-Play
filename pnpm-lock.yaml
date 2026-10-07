@@ -86,6 +86,9 @@ importers:
       '@wp/game-sequence-memory':
         specifier: workspace:*
         version: link:../../packages/games/sequence-memory
+      '@wp/game-sokoban':
+        specifier: workspace:*
+        version: link:../../packages/games/sokoban
       '@wp/game-tic-tac-toe':
         specifier: workspace:*
         version: link:../../packages/games/tic-tac-toe

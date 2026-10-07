@@ -31,7 +31,7 @@ Cross-cutting, continuous: accessibility review, native-speaker review of transl
 | Memory | Classic Memory | M0 | ✅ | reference game; first consumer of the deck model |
 | Memory | image↔word, word↔image, word↔definition, audio↔word, audio↔translation | M1 | ⏳ | deck variants, arbitrary language pairs |
 | Learning | Language decks, geography (flag/capital/map/neighbours), AI & business vocabulary, user decks | M1 | ⏳ | content packs |
-| Logic | Sokoban | M2 | ⏳ | property: player exists exactly once |
+| Logic | Sokoban → shown as **Crate Pusher** | M2 | ✅ | 24 original levels, solver-verified optimal push counts |
 | Logic | Nonogram | M2 | ✅ | line-solvable + unique (independent oracle in tests) |
 | Logic | Bridges / Hashi | M2 | ⏳ | |
 | Logic | Slitherlink | M2 | ⏳ | |
