@@ -1,0 +1,51 @@
+/* Rule Hunt. All rules are scoped under .wp-rule-discovery. */
+.wp-rule-discovery { display: grid; gap: 0.75rem; max-width: 40rem; margin-inline: auto; }
+.wp-rule-discovery .rd-board { display: grid; gap: 0.75rem; }
+.wp-rule-discovery p { margin: 0; }
+.wp-rule-discovery h3 { margin: 0; font-size: 1.05rem; }
+.wp-rule-discovery .rd-small { font-size: 0.85rem; }
+.wp-rule-discovery .rd-notation { font-variant-numeric: tabular-nums; unicode-bidi: isolate; white-space: nowrap; }
+.wp-rule-discovery .rd-status-solved { color: var(--wp-ok); }
+
+.wp-rule-discovery .rd-example {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.5rem 1rem;
+  padding: 0.75rem; border: 2px solid var(--wp-text); border-radius: var(--wp-radius); background: var(--wp-surface);
+}
+.wp-rule-discovery .rd-example-triple { font-size: 1.75rem; font-weight: 700; letter-spacing: 0.05em; }
+
+.wp-rule-discovery .rd-panel {
+  display: grid; gap: 0.6rem; padding: 0.75rem; border: 1px solid var(--wp-border);
+  border-radius: var(--wp-radius); background: var(--wp-surface);
+}
+.wp-rule-discovery .rd-inputs { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: flex-start; }
+.wp-rule-discovery .rd-number {
+  width: 5rem; min-height: var(--wp-touch); text-align: center; font-size: 1.15rem; font-variant-numeric: tabular-nums;
+}
+.wp-rule-discovery .rd-number[aria-invalid='true'] { border: 2px dashed var(--wp-danger); }
+.wp-rule-discovery .rd-notice { padding: 0.5rem 0.75rem; border-inline-start: 4px solid var(--wp-accent); background: var(--wp-surface-2); border-radius: 6px; }
+.wp-rule-discovery .rd-insight { display: grid; gap: 0.4rem; padding: 0.6rem 0.75rem; border: 1px dashed var(--wp-border); border-radius: 6px; }
+
+.wp-rule-discovery .rd-candidates { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
+.wp-rule-discovery .rd-candidate {
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.25rem 0.75rem;
+  width: 100%; min-height: var(--wp-touch); text-align: start;
+}
+.wp-rule-discovery .rd-candidate.is-out span:first-child { text-decoration: line-through; }
+.wp-rule-discovery .rd-candidate.is-answer { border: 3px solid var(--wp-ok); font-weight: 700; opacity: 1; }
+.wp-rule-discovery .rd-tag { padding: 0 0.35rem; border: 1px solid var(--wp-border); border-radius: 4px; font-size: 0.8rem; font-weight: 400; }
+
+.wp-rule-discovery .rd-log { display: grid; gap: 0.5rem; }
+.wp-rule-discovery .rd-scroll { overflow-x: auto; }
+.wp-rule-discovery .rd-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.wp-rule-discovery .rd-table td { padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--wp-border); text-align: start; vertical-align: middle; }
+.wp-rule-discovery .rd-table td .rd-tag { margin-inline-start: 0.4rem; }
+.wp-rule-discovery .rd-n { color: var(--wp-muted); width: 2rem; }
+.wp-rule-discovery .rd-answer { font-weight: 700; white-space: nowrap; }
+.wp-rule-discovery tr.is-yes .rd-answer { color: var(--wp-ok); }
+.wp-rule-discovery tr.is-no .rd-answer { color: var(--wp-danger); }
+
+@media (max-width: 400px) {
+  .wp-rule-discovery .rd-panel { padding: 0.5rem; }
+  .wp-rule-discovery .rd-number { width: 4.25rem; }
+  .wp-rule-discovery .rd-table td { padding-inline: 0.3rem; }
+}

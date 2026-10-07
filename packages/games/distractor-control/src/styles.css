@@ -1,0 +1,101 @@
+/* Stay on Task (Distractor Control): all rules scoped under .wp-dc. Uses shared --wp-* tokens. */
+.wp-dc {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: center;
+  width: 100%;
+  max-width: 100%;
+  text-align: center;
+}
+.wp-dc p { margin: 0; }
+.wp-dc__intro,
+.wp-dc__play {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: center;
+  width: min(100%, 26rem);
+}
+.wp-dc__intro[hidden],
+.wp-dc__play[hidden],
+.wp-dc__answers[hidden],
+.wp-dc__summary[hidden] { display: none; }
+.wp-dc__task { font-weight: 700; }
+.wp-dc__muted { color: var(--wp-muted); font-size: 0.95rem; }
+.wp-dc__status { font-variant-numeric: tabular-nums; }
+.wp-dc__ack {
+  min-height: 1.5em;
+  color: var(--wp-muted);
+}
+/* Reserved lanes above and below the task: an extra appearing never shifts the layout. */
+.wp-dc__lane {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: calc(var(--wp-touch) + 0.25rem);
+}
+.wp-dc__slot {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.wp-dc__slot--start { justify-content: flex-start; }
+.wp-dc__slot--end { justify-content: flex-end; }
+.wp-dc__item {
+  display: grid;
+  place-items: center;
+  width: min(100%, 10rem);
+  aspect-ratio: 1;
+  border: 2px solid var(--wp-border);
+  border-radius: var(--wp-radius);
+  background: var(--wp-surface);
+  color: var(--wp-text);
+  font-size: 4.5rem;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+.wp-dc__answers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  width: 100%;
+}
+.wp-dc__answer {
+  min-height: calc(var(--wp-touch) * 1.5);
+  min-width: var(--wp-touch);
+  font-size: 1.2rem;
+  touch-action: manipulation;
+}
+/* The extras look like ordinary app nudges, but muted: no bright colours, no blinking. */
+.wp-dc__extra {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: var(--wp-touch);
+  max-width: 100%;
+  padding-block: 0.25rem;
+  padding-inline: 0.75rem;
+  border: 1px dashed var(--wp-border);
+  border-radius: 999px;
+  background: var(--wp-surface);
+  color: var(--wp-muted);
+  font-size: 0.9rem;
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+.wp-dc__extra-icon { font-variant-emoji: text; }
+.wp-dc__summary {
+  display: grid;
+  gap: 0.35rem;
+}
+/* Gentle one-time fade-in only (never flashing); fully static with reduced motion. */
+.wp-dc--motion .wp-dc__extra { animation: wp-dc-in 600ms ease-out 250ms backwards; }
+@keyframes wp-dc-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wp-dc--motion .wp-dc__extra { animation: none; }
+}

@@ -4,6 +4,7 @@ import { metadata as bridges } from '@wp/game-bridges/metadata';
 import { metadata as constraintGrid } from '@wp/game-constraint-grid/metadata';
 import { metadata as circuitPuzzle } from '@wp/game-circuit-puzzle/metadata';
 import { metadata as connectFour } from '@wp/game-connect-four/metadata';
+import { metadata as distractorControl } from '@wp/game-distractor-control/metadata';
 import { metadata as graphDetective } from '@wp/game-graph-detective/metadata';
 import { metadata as laserCircuit } from '@wp/game-laser-circuit/metadata';
 import { metadata as lightsOut } from '@wp/game-lights-out/metadata';
@@ -58,6 +59,7 @@ export const GAMES: readonly GameEntry[] = [
   entry(sequenceMemory, () => import('@wp/game-sequence-memory')),
   entry(spatialMemory, () => import('@wp/game-spatial-memory')),
   entry(signalWatch, () => import('@wp/game-signal-watch')),
+  entry(distractorControl, () => import('@wp/game-distractor-control')),
   entry(connectFour, () => import('@wp/game-connect-four')),
   entry(ticTacToe, () => import('@wp/game-tic-tac-toe'))
 ];

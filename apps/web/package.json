@@ -15,6 +15,7 @@
     "@wp/game-connect-four": "workspace:*",
     "@wp/game-constraint-grid": "workspace:*",
     "@wp/game-core": "workspace:*",
+    "@wp/game-distractor-control": "workspace:*",
     "@wp/game-graph-detective": "workspace:*",
     "@wp/game-laser-circuit": "workspace:*",
     "@wp/game-lights-out": "workspace:*",
