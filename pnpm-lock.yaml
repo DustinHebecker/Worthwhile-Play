@@ -108,6 +108,25 @@ importers:
 
   packages/game-core: {}
 
+  packages/games/black-box:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../../game-core
+      '@wp/ui':
+        specifier: workspace:*
+        version: link:../../ui
+    devDependencies:
+      '@wp/localization':
+        specifier: workspace:*
+        version: link:../../localization
+      '@wp/persistence':
+        specifier: workspace:*
+        version: link:../../persistence
+      '@wp/testing':
+        specifier: workspace:*
+        version: link:../../testing
+
   packages/games/connect-four:
     dependencies:
       '@wp/game-core':
@@ -188,6 +207,63 @@ importers:
         version: link:../../testing
 
   packages/games/nonogram:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../../game-core
+      '@wp/ui':
+        specifier: workspace:*
+        version: link:../../ui
+    devDependencies:
+      '@wp/localization':
+        specifier: workspace:*
+        version: link:../../localization
+      '@wp/persistence':
+        specifier: workspace:*
+        version: link:../../persistence
+      '@wp/testing':
+        specifier: workspace:*
+        version: link:../../testing
+
+  packages/games/sequence-memory:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../../game-core
+      '@wp/ui':
+        specifier: workspace:*
+        version: link:../../ui
+    devDependencies:
+      '@wp/localization':
+        specifier: workspace:*
+        version: link:../../localization
+      '@wp/persistence':
+        specifier: workspace:*
+        version: link:../../persistence
+      '@wp/testing':
+        specifier: workspace:*
+        version: link:../../testing
+
+  packages/games/skyscrapers:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../../game-core
+      '@wp/ui':
+        specifier: workspace:*
+        version: link:../../ui
+    devDependencies:
+      '@wp/localization':
+        specifier: workspace:*
+        version: link:../../localization
+      '@wp/persistence':
+        specifier: workspace:*
+        version: link:../../persistence
+      '@wp/testing':
+        specifier: workspace:*
+        version: link:../../testing
+
+  packages/games/sokoban:
     dependencies:
       '@wp/game-core':
         specifier: workspace:*
