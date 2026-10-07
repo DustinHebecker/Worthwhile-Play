@@ -18,6 +18,9 @@ const tr: UiCatalogue = {
   'home.honesty': 'Her oyun belirli becerileri çalıştırır. Hiçbirinin seni genel olarak daha zeki yaptığı kanıtlanmış değildir ve biz de bunu iddia etmiyoruz.',
   'home.catalogue': 'Oyunlar',
   'home.roadmap': 'Yeni oyunlar geliştiriliyor. Yol haritasını GitHub’da görebilirsin.',
+  'home.filter': 'Beceriye göre filtrele',
+  'home.filterAll': 'Tümü',
+  'home.inProgress': 'Kayıtlı oyun',
 
   'skill.deduction': 'Tümdengelim',
   'skill.planning': 'Planlama',

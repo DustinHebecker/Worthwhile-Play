@@ -17,6 +17,9 @@ const en = {
   'home.honesty': 'Each game exercises specific skills. None of them is proven to make you smarter in general, and we do not claim that.',
   'home.catalogue': 'Games',
   'home.roadmap': 'More games are in development. See the roadmap on GitHub.',
+  'home.filter': 'Filter by skill',
+  'home.filterAll': 'All',
+  'home.inProgress': 'Saved game',
 
   'skill.deduction': 'Deduction',
   'skill.planning': 'Planning',

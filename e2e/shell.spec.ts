@@ -8,8 +8,24 @@ test.describe('app shell', () => {
     await expect(page.getByTestId('legal-link')).toBeVisible();
   });
 
+  test('skill filter narrows the catalogue and saved games are marked', async ({ page }) => {
+    await page.goto('/');
+    await page.getByTestId('filter-memory').click();
+    await expect(page).toHaveURL(/\?skill=memory$/);
+    await expect(page.getByTestId('game-card-memory')).toBeVisible();
+    await expect(page.getByTestId('game-card-tic-tac-toe')).toBeHidden();
+    await page.getByTestId('filter-all').click();
+    await expect(page.getByTestId('game-card-tic-tac-toe')).toBeVisible();
+    await page.goto('/games/memory');
+    await page.getByTestId('new-game').click();
+    await expect(page.getByTestId('game-root')).toBeVisible();
+    await page.goto('/');
+    await expect(page.getByTestId('saved-memory')).toBeVisible();
+    await expect(page.getByTestId('saved-tic-tac-toe')).toBeHidden();
+  });
+
   test('every game is reachable by direct URL', async ({ page }) => {
-    for (const id of ['tic-tac-toe', 'mastermind', 'memory', 'connect-four', 'lights-out', 'nonogram']) {
+    for (const id of ['tic-tac-toe', 'mastermind', 'memory', 'connect-four', 'lights-out', 'nonogram', 'sequence-memory', 'black-box', 'sokoban', 'skyscrapers', 'laser-circuit', 'minesweeper', 'sliding-blocks', 'constraint-grid', 'river-crossing', 'bridges', 'graph-detective']) {
       await page.goto(`/games/${id}`);
       await expect(page.getByTestId('new-game')).toBeVisible();
     }

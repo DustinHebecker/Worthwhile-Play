@@ -18,6 +18,9 @@ const ko: UiCatalogue = {
   'home.honesty': '각 게임은 특정한 능력을 연습하게 해요. 어떤 게임도 전반적으로 더 똑똑하게 만든다는 근거는 없으며, 저희도 그렇게 주장하지 않아요.',
   'home.catalogue': '게임',
   'home.roadmap': '더 많은 게임을 개발하고 있어요. GitHub에서 로드맵을 확인해 보세요.',
+  'home.filter': '능력별 필터',
+  'home.filterAll': '전체',
+  'home.inProgress': '저장된 게임',
 
   'skill.deduction': '연역 추론',
   'skill.planning': '계획',

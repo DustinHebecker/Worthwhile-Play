@@ -18,6 +18,9 @@ const uk: UiCatalogue = {
   'home.honesty': 'Кожна гра тренує певні навички. Для жодної не доведено, що вона робить людину розумнішою загалом, і ми цього не стверджуємо.',
   'home.catalogue': 'Ігри',
   'home.roadmap': 'Нові ігри в розробці. План розвитку можна переглянути на GitHub.',
+  'home.filter': 'Фільтр за навичкою',
+  'home.filterAll': 'Усі',
+  'home.inProgress': 'Є збереження',
 
   'skill.deduction': 'Дедукція',
   'skill.planning': 'Планування',

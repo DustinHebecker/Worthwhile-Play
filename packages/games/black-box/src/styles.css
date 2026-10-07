@@ -1,0 +1,81 @@
+/* Black Box. All rules are scoped under .wp-black-box. */
+.wp-black-box {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 40rem;
+  margin-inline: auto;
+}
+.wp-black-box .bb-board { display: grid; gap: 0.75rem; }
+.wp-black-box p { margin: 0; }
+.wp-black-box h3 { margin: 0; font-size: 1.05rem; }
+.wp-black-box .bb-small { font-size: 0.85rem; }
+.wp-black-box .bb-notation { font-variant-numeric: tabular-nums; unicode-bidi: isolate; white-space: nowrap; }
+
+/* Input → ? → Output diagram */
+.wp-black-box .bb-diagram { display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-variant-numeric: tabular-nums; }
+.wp-black-box .bb-io { padding: 0.2rem 0.5rem; border: 1px dashed var(--wp-border); border-radius: 6px; color: var(--wp-muted); }
+.wp-black-box .bb-box {
+  display: inline-flex; align-items: center; justify-content: center; width: 3rem; height: 3rem;
+  border-radius: 8px; background: var(--wp-text); color: var(--wp-bg); font-size: 1.5rem; font-weight: 700;
+}
+.wp-black-box .bb-arrow { color: var(--wp-muted); }
+
+.wp-black-box .bb-status-solved { color: var(--wp-ok); }
+
+/* Panels */
+.wp-black-box .bb-panel {
+  display: grid; gap: 0.75rem; padding: 0.75rem; border: 1px solid var(--wp-border);
+  border-radius: var(--wp-radius); background: var(--wp-surface);
+}
+.wp-black-box .bb-actions { justify-content: flex-start; }
+.wp-black-box .bb-notice { padding: 0.5rem 0.75rem; border-inline-start: 4px solid var(--wp-accent); background: var(--wp-surface-2); border-radius: 6px; }
+.wp-black-box .bb-hint-text { padding: 0.5rem 0.75rem; border: 1px dashed var(--wp-border); border-radius: 6px; }
+
+/* Experiment inputs */
+.wp-black-box .bb-inputs { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: center; }
+.wp-black-box .bb-field { display: inline-flex; align-items: center; gap: 0.4rem; }
+.wp-black-box .bb-var { font-weight: 600; font-variant-numeric: tabular-nums; }
+.wp-black-box .bb-stepper { display: inline-flex; align-items: center; gap: 0.25rem; }
+.wp-black-box .bb-nudge { padding: 0; width: var(--wp-touch); font-size: 1.2rem; }
+.wp-black-box .bb-number { width: 5rem; text-align: center; font-variant-numeric: tabular-nums; }
+.wp-black-box .bb-number[aria-invalid='true'] { border: 2px dashed var(--wp-danger); }
+.wp-black-box .bb-list-fields { display: inline-flex; flex-wrap: wrap; gap: 0.3rem; }
+.wp-black-box .bb-digit { width: 3.2rem; padding-inline: 0.2rem; }
+.wp-black-box .bb-bracket { font-size: 1.6rem; color: var(--wp-muted); }
+.wp-black-box .bb-bit-field { flex-direction: column; gap: 0.1rem; }
+.wp-black-box .bb-bit { min-width: 52px; font-size: 1.15rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+/* "On" is shown by a filled, thick-bordered button and aria-pressed, plus the digit itself. */
+.wp-black-box .bb-bit.is-on { background: var(--wp-accent); color: var(--wp-accent-contrast); border: 3px solid var(--wp-text); }
+
+/* Hypothesis test */
+.wp-black-box .bb-predictions { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+.wp-black-box .bb-prediction { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.wp-black-box .bb-challenge-input { min-width: 4rem; font-weight: 600; }
+.wp-black-box .bb-choice { display: inline-flex; gap: 0.35rem; }
+.wp-black-box .bb-predict { width: 7rem; }
+.wp-black-box .bb-predict-list { width: 10rem; text-align: start; }
+
+/* Tables */
+.wp-black-box .bb-scroll { overflow-x: auto; }
+.wp-black-box .bb-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.wp-black-box .bb-table th, .wp-black-box .bb-table td { padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--wp-border); text-align: start; vertical-align: middle; }
+.wp-black-box .bb-table th { font-weight: 600; font-size: 0.9rem; }
+.wp-black-box .bb-n { color: var(--wp-muted); white-space: nowrap; }
+.wp-black-box .bb-tag { margin-inline-start: 0.4rem; padding: 0 0.35rem; border: 1px solid var(--wp-border); border-radius: 4px; font-size: 0.75rem; }
+.wp-black-box tr.is-highlight td { background: var(--wp-surface-2); font-weight: 700; }
+.wp-black-box tr.is-highlight td:first-child { border-inline-start: 4px solid var(--wp-accent); }
+.wp-black-box .bb-verdict { white-space: nowrap; width: 2rem; text-align: center; font-size: 1.15rem; font-weight: 700; }
+.wp-black-box th.bb-verdict { padding: 0; }
+.wp-black-box tr.is-right .bb-verdict { color: var(--wp-ok); }
+.wp-black-box tr.is-wrong .bb-verdict { color: var(--wp-danger); font-weight: 700; }
+.wp-black-box .bb-attempt { display: grid; gap: 0.5rem; }
+.wp-black-box .bb-log { display: grid; gap: 0.5rem; }
+.wp-black-box .bb-rule { font-weight: 600; }
+
+@media (max-width: 400px) {
+  .wp-black-box .bb-panel { padding: 0.5rem; }
+  .wp-black-box .bb-inputs .bb-number { width: 4rem; }
+  .wp-black-box .bb-inputs .bb-digit { width: 2.9rem; }
+  .wp-black-box .bb-inputs { gap: 0.5rem; }
+  .wp-black-box .bb-table th, .wp-black-box .bb-table td { padding-inline: 0.3rem; }
+}
