@@ -1,4 +1,5 @@
 import type { GameMetadata, GameModule } from '@wp/game-core';
+import { metadata as blackBox } from '@wp/game-black-box/metadata';
 import { metadata as connectFour } from '@wp/game-connect-four/metadata';
 import { metadata as lightsOut } from '@wp/game-lights-out/metadata';
 import { metadata as mastermind } from '@wp/game-mastermind/metadata';
@@ -22,6 +23,7 @@ const entry = <S>(metadata: GameMetadata, load: () => Promise<{ default: GameMod
 /** Catalogue order = order of this list. Adding a game: one line here + a package under packages/games. */
 export const GAMES: readonly GameEntry[] = [
   entry(mastermind, () => import('@wp/game-mastermind')),
+  entry(blackBox, () => import('@wp/game-black-box')),
   entry(nonogram, () => import('@wp/game-nonogram')),
   entry(lightsOut, () => import('@wp/game-lights-out')),
   entry(memory, () => import('@wp/game-memory')),

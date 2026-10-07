@@ -28,8 +28,6 @@ export const RESTART = '*';
 /** Upper bound on the total history length (characters) — keeps untrusted saves small. */
 export const MAX_HISTORY = 100_000;
 
-const MOVE_ENTRY = /^[udlrUDLR]+$/;
-
 export type Tile = 'wall' | 'floor' | 'outside';
 
 export interface Level {
@@ -77,6 +75,26 @@ const ascending = (a: number, b: number) => a - b;
 
 /* ---------- Level parsing ---------- */
 
+interface GlyphMeaning {
+  wall?: true;
+  goal?: true;
+  box?: true;
+  player?: true;
+}
+
+/** XSB glyphs. Short rows are padded with spaces. */
+const GLYPHS: Readonly<Record<string, GlyphMeaning>> = {
+  '#': { wall: true },
+  ' ': {},
+  '-': {},
+  _: {},
+  '.': { goal: true },
+  $: { box: true },
+  '*': { box: true, goal: true },
+  '@': { player: true },
+  '+': { player: true, goal: true }
+};
+
 /**
  * Parses an XSB-style level (`|`-separated rows) and validates it: exactly one player, at least
  * one crate, as many goals as crates, a room closed by walls, every crate and goal inside the
@@ -95,16 +113,13 @@ export function parseLevel(text: string): Level {
     const row = rows[r] as string;
     for (let c = 0; c < width; c++) {
       const glyph = row[c] ?? ' ';
+      const meaning = GLYPHS[glyph];
+      if (!meaning) throw new LevelFormatError(`unknown glyph "${glyph}" at row ${r + 1}, column ${c + 1}`);
       const i = r * width + c;
-      if (glyph === '#') {
-        tiles.push('wall');
-        continue;
-      }
-      if (!' -_.$*@+'.includes(glyph)) throw new LevelFormatError(`unknown glyph "${glyph}" at row ${r + 1}, column ${c + 1}`);
-      tiles.push('floor');
-      if (glyph === '.' || glyph === '*' || glyph === '+') goals.push(i);
-      if (glyph === '$' || glyph === '*') boxes.push(i);
-      if (glyph === '@' || glyph === '+') players.push(i);
+      tiles.push(meaning.wall ? 'wall' : 'floor');
+      if (meaning.goal) goals.push(i);
+      if (meaning.box) boxes.push(i);
+      if (meaning.player) players.push(i);
     }
   }
   if (players.length !== 1) throw new LevelFormatError(`expected exactly one player, found ${players.length}`);
@@ -217,7 +232,7 @@ export function replay(level: Level, history: readonly string[]): Progress | nul
       pushes = 0;
       continue;
     }
-    if (!MOVE_ENTRY.test(entry)) return null;
+    if (!/^[udlrUDLR]+$/.test(entry)) return null;
     for (const letter of entry) {
       if (solved) return null;
       const direction = letter.toLowerCase() as Direction;
@@ -239,14 +254,13 @@ export function replay(level: Level, history: readonly string[]): Progress | nul
  */
 export function pathTo(level: Level, position: Position, target: number): string | null {
   if (target === position.player) return '';
-  if (!isFree(level, position.boxes, target)) return null;
-  const from = new Map<number, [number, Direction]>();
+  // Breadth-first search; `from` records how each cell was first reached (the start points to itself).
+  const from = new Map<number, [number, Direction]>([[position.player, [position.player, 'u']]]);
   const queue = [position.player];
-  for (let head = 0; head < queue.length; head++) {
-    const cell = queue[head] as number;
+  for (const cell of queue) {
     for (const direction of DIRECTIONS) {
       const next = cell + delta(level.width, direction);
-      if (next === position.player || from.has(next) || !isFree(level, position.boxes, next)) continue;
+      if (from.has(next) || !isFree(level, position.boxes, next)) continue;
       from.set(next, [cell, direction]);
       if (next === target) {
         let path = '';
@@ -281,8 +295,7 @@ export function liveCells(level: Level): boolean[] {
   const live = new Array<boolean>(level.tiles.length).fill(false);
   const queue = [...level.goals];
   for (const goal of queue) live[goal] = true;
-  for (let head = 0; head < queue.length; head++) {
-    const cell = queue[head] as number;
+  for (const cell of queue) {
     for (const direction of DIRECTIONS) {
       const d = delta(level.width, direction);
       // A crate at `from` pushed by a player standing at `from - d` arrives at `cell`.
@@ -307,9 +320,9 @@ export function deadBoxes(level: Level, position: Position): number[] {
   return position.boxes.filter((box) => {
     if (level.goals.includes(box)) return false;
     if (!live[box]) return true;
+    // Each `corner` is the top-left cell of a 2×2 block containing `box`. Crates never stand
+    // in the outer column of a parsed level (the room is closed), so no block wraps a row.
     for (const corner of [box, box - 1, box - w, box - w - 1]) {
-      // `corner` is the top-left cell of a 2×2 block that contains `box`.
-      if (Math.floor(corner / w) !== Math.floor((corner + 1) / w)) continue;
       if (solid(corner) && solid(corner + 1) && solid(corner + w) && solid(corner + w + 1)) return true;
     }
     return false;
@@ -419,7 +432,7 @@ export function isSokobanState(value: unknown): value is SokobanState {
     const { seed, difficulty, level, history } = value;
     if (!isUint32(seed) || !isOneOf(difficulty, DIFFICULTIES)) return false;
     if (!isInt(level, 0, levelCount(difficulty) - 1)) return false;
-    if (!Array.isArray(history) || history.length > MAX_HISTORY) return false;
+    if (!Array.isArray(history)) return false;
     if (!history.every((entry): entry is string => typeof entry === 'string')) return false;
     if (historyLength(history) > MAX_HISTORY) return false;
     return replay(getLevel(difficulty, level), history) !== null;

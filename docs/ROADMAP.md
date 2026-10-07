@@ -45,7 +45,7 @@ Cross-cutting, continuous: accessibility review, native-speaker review of transl
 | Board | Chess | M3 | ⏳ | full rules incl. repetition/50-move/insufficient material |
 | Logic | Minimal Proof | M4 | ⏳ | |
 | Hypothesis | Rule Discovery | M4 | ⏳ | value-of-information feedback |
-| Hypothesis | Black Box | M4 | ⏳ | |
+| Hypothesis | Black Box | M4 | ✅ | 15 rule families; challenge inputs rule out all consistent alternatives of the family |
 | Algorithms | Logic Path | M4 | ⏳ | |
 | Systems | Systems Puzzle | M4 | ⏳ | |
 | Systems | Debug the System | M4 | ⏳ | |

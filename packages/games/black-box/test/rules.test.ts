@@ -623,6 +623,14 @@ describe('createInitialState', () => {
     );
   });
 
+  it('seeds the list draft from the PRNG right after the rule', () => {
+    const s = stateWith('sorttake');
+    const rng = createRng(s.seed);
+    generateRule(rng, 'hard');
+    expect(s.draft).toEqual(randomInput(FAMILIES.sorttake.input, rng));
+    expect(s.rng).toBe(rng.state());
+  });
+
   it('defaults to easy and normalizes the seed', () => {
     expect(createInitialState(5).difficulty).toBe('easy');
     expect(createInitialState(-1).seed).toBe(0xffffffff);
@@ -647,6 +655,7 @@ describe('experiments', () => {
     expect(setDraftValue(a, 0, -1)).toBe(a);
     expect(setDraftValue(a, 0, 20).draft).toEqual([20]);
     expect(setDraftValue(a, 1, 3)).toBe(a);
+    expect(setDraftValue(a, 2, 3)).toBe(a);
     expect(setDraftValue(a, -1, 3)).toBe(a);
     expect(setDraftValue(startTest(a), 0, 3).draft).toEqual([7]);
   });
@@ -911,6 +920,22 @@ describe('isBlackBoxState', () => {
       expect(isBlackBoxState(mutate(clone(base)))).toBe(false);
     });
   }
+
+  it('accepts challenges of 1 to MAX_CHALLENGE_SIZE inputs', () => {
+    const base = clone(stateWith('linear'));
+    const make = (n: number) => ({ ...base, challenge: { inputs: Array.from({ length: n }, (_, i) => [i]), predictions: new Array(n).fill(null) } });
+    expect(isBlackBoxState(make(1))).toBe(true);
+    expect(isBlackBoxState(make(MAX_CHALLENGE_SIZE))).toBe(true);
+    expect(isBlackBoxState(make(MAX_CHALLENGE_SIZE + 1))).toBe(false);
+    expect(isBlackBoxState({ ...make(2), solved: true })).toBe(false);
+  });
+
+  it('requires a valid integer attempt counter and boolean hint flag', () => {
+    const base = clone(stateWith('linear'));
+    expect(isBlackBoxState({ ...base, attempts: 1_000_001 })).toBe(false);
+    expect(isBlackBoxState({ ...base, attempts: 3 })).toBe(true);
+    expect(isBlackBoxState({ ...base, hintUsed: true })).toBe(true);
+  });
 
   it('rejects inconsistent attempts', () => {
     const solved = solvedState();

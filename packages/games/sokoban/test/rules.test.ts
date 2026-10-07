@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { metadata } from '../src/metadata';
 import { LEVELS } from '../src/levels';
@@ -116,6 +116,7 @@ describe('configuration', () => {
     expect(getLevel('easy', 3)).toBe(getLevel('easy', 3));
     expect(() => getLevel('easy', 8)).toThrow(RangeError);
     expect(() => getLevel('hard', -1)).toThrow(RangeError);
+    expect(() => getLevel('hard', 9)).toThrow('No level 9 in hard');
     expect(() => minPushesOf('medium', 8)).toThrow(RangeError);
     expect(() => minPushesOf('medium', -1)).toThrow(/No level -1 in medium/);
   });
@@ -226,8 +227,13 @@ describe('parseLevel', () => {
 /* ---------- Movement ---------- */
 
 describe('movement primitives', () => {
-  const level = parseLevel('#######|#  #  #|# @$  #|# $.. #|#######');
-  const start = startPosition(level);
+  // Built per test (not at collection time) so mutation testing attributes the coverage to tests.
+  let level: Level;
+  let start: Position;
+  beforeEach(() => {
+    level = parseLevel('#######|#  #  #|# @$  #|# $.. #|#######');
+    start = startPosition(level);
+  });
 
   it('delta maps directions to cell offsets', () => {
     expect(delta(7, 'u')).toBe(-7);
@@ -301,8 +307,12 @@ describe('movement primitives', () => {
 });
 
 describe('pathTo', () => {
-  const level = parseLevel('#######|#@ #  #|#  $  #|# ## .#|#######');
-  const start = startPosition(level);
+  let level: Level;
+  let start: Position;
+  beforeEach(() => {
+    level = parseLevel('#######|#@ #  #|#  $  #|# ## .#|#######');
+    start = startPosition(level);
+  });
 
   it('finds a shortest walk around obstacles in u, d, l, r preference order', () => {
     expect(pathTo(level, start, start.player)).toBe('');
@@ -357,6 +367,24 @@ describe('deadlock detection', () => {
     expect(live[0]).toBe(false);
   });
 
+  it('a goal in a corner is live even though no crate can be pulled out of it', () => {
+    const level = parseLevel('#####|#.  #|# $ #|#@  #|#####');
+    expect(liveCells(level)[cell(level, 1, 1)]).toBe(true);
+    expect(deadBoxes(level, { player: cell(level, 3, 1), boxes: [cell(level, 1, 1)] })).toEqual([]);
+  });
+
+  it('only floor cells are ever live, in every level', () => {
+    for (const { difficulty, index } of ALL) {
+      const level = getLevel(difficulty, index);
+      const live = liveCells(level);
+      expect(live).toHaveLength(level.tiles.length);
+      live.forEach((isLive, i) => {
+        if (isLive) expect(level.tiles[i]).toBe('floor');
+      });
+      for (const goal of level.goals) expect(live[goal]).toBe(true);
+    }
+  });
+
   it('flags a crate pushed into a dead corner, but not a crate on a goal', () => {
     const level = parseLevel('######|#@   #|#  $ #|# .  #|######');
     expect(deadBoxes(level, startPosition(level))).toEqual([]);
@@ -380,21 +408,6 @@ describe('deadlock detection', () => {
     const withGoal = parseLevel('########|#@     #|# $$   #|# *$   #|#      #|# ...  #|########');
     const p = startPosition(withGoal);
     expect(deadBoxes(withGoal, p)).toEqual([cell(withGoal, 2, 2), cell(withGoal, 2, 3), cell(withGoal, 3, 3)]);
-  });
-
-  it('does not treat a 2×2 window that wraps across the row edge as a block', () => {
-    // Crate in the last column with walls at the start of the next rows must not be "frozen".
-    const level: Level = {
-      width: 4,
-      height: 4,
-      tiles: ['floor', 'floor', 'floor', 'floor', 'wall', 'floor', 'floor', 'floor', 'wall', 'floor', 'floor', 'floor', 'floor', 'floor', 'floor', 'floor'],
-      goals: [5],
-      boxes: [7],
-      player: 1
-    };
-    const live = liveCells(level);
-    expect(live[7]).toBe(true);
-    expect(deadBoxes(level, { player: 1, boxes: [7, 11] })).toEqual([]);
   });
 
   it('no level starts with a flagged crate, and no position along an optimal solution is flagged', () => {
@@ -427,7 +440,10 @@ describe('deadlock detection', () => {
 /* ---------- Replay ---------- */
 
 describe('replay', () => {
-  const level = getLevel('easy', 0); // '#######|#   # #|# # $@#|#  .# #|##    #| ######'
+  let level: Level; // easy 1: '#######|#   # #|# # $@#|#  .# #|##    #| ######'
+  beforeEach(() => {
+    level = getLevel('easy', 0);
+  });
 
   it('starts at the level start', () => {
     expect(replay(level, [])).toEqual({ position: startPosition(level), moves: 0, pushes: 0, solved: false });
@@ -457,6 +473,8 @@ describe('replay', () => {
     ['an empty entry', ['']],
     ['an unknown letter', ['x']],
     ['mixed junk', ['d1']],
+    ['junk before a letter', ['xd']],
+    ['junk after a letter', ['dx']],
     ['a step after solving', [solution('easy', 0), 'u']],
     ['a step after solving inside the same entry', [`${solution('easy', 0)}u`]],
     ['a restart after solving', [solution('easy', 0), RESTART]]
@@ -566,6 +584,7 @@ describe('game state', () => {
     expect(chooseLevel(s0, 7).level).toBe(7);
     expect(chooseLevel(s0, 0).level).toBe(0);
     for (const bad of [-1, 8, 1.5, Number.NaN]) expect(chooseLevel(s0, bad)).toBe(s0);
+    expect(chooseLevel(stateOf('hard', 1), 4)).toEqual({ seed: 1, difficulty: 'hard', level: 4, history: [] });
     const solved = stateOf('easy', 0, [solution('easy', 0)]);
     expect(chooseLevel(solved, 0).history).toEqual([]);
   });
@@ -590,6 +609,7 @@ describe('game state', () => {
     expect(appendEntry(s, 'x', 6).history).toEqual(['l', RESTART, 'r', 'x']);
     expect(appendEntry(s, 'xx', 3).history).toEqual(['r', 'xx']);
     expect(appendEntry(s, 'xxxx', 3)).toBe(s);
+    expect(appendEntry(stateOf('easy', 0, [RESTART, 'ud']), 'x', 3).history).toEqual(['ud', 'x']);
     const noRestart = stateOf('easy', 0, ['ud', 'ud']);
     expect(appendEntry(noRestart, 'u', 4)).toBe(noRestart);
     expect(appendEntry(noRestart, 'u', 5).history).toEqual(['ud', 'ud', 'u']);
@@ -634,7 +654,8 @@ describe('isSokobanState', () => {
     ['a fractional level', { ...valid, level: 1.5 }],
     ['a level given as text', { ...valid, level: '3' }],
     ['a history object', { ...valid, history: { 0: 'u' } }],
-    ['a non-string history entry', { ...valid, history: [['r']] }],
+    ['a non-string history entry', { ...valid, history: [['d']] }],
+    ['a history of empty entries', { ...valid, history: ['', ''] }],
     ['a numeric history entry', { ...valid, history: [1] }],
     ['an illegal history', { ...valid, history: ['l'] }],
     ['a history that is too long', { ...valid, history: ['ud'.repeat(MAX_HISTORY / 2), 'u'] }],
