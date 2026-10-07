@@ -5,6 +5,7 @@ import { metadata as laserCircuit } from '@wp/game-laser-circuit/metadata';
 import { metadata as lightsOut } from '@wp/game-lights-out/metadata';
 import { metadata as mastermind } from '@wp/game-mastermind/metadata';
 import { metadata as memory } from '@wp/game-memory/metadata';
+import { metadata as minesweeper } from '@wp/game-minesweeper/metadata';
 import { metadata as nonogram } from '@wp/game-nonogram/metadata';
 import { metadata as sequenceMemory } from '@wp/game-sequence-memory/metadata';
 import { metadata as skyscrapers } from '@wp/game-skyscrapers/metadata';
@@ -29,6 +30,7 @@ export const GAMES: readonly GameEntry[] = [
   entry(blackBox, () => import('@wp/game-black-box')),
   entry(nonogram, () => import('@wp/game-nonogram')),
   entry(skyscrapers, () => import('@wp/game-skyscrapers')),
+  entry(minesweeper, () => import('@wp/game-minesweeper')),
   entry(lightsOut, () => import('@wp/game-lights-out')),
   entry(sokoban, () => import('@wp/game-sokoban')),
   entry(laserCircuit, () => import('@wp/game-laser-circuit')),

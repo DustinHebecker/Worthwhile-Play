@@ -352,6 +352,7 @@ describe('parseLayout / layoutString / mirrorLayout', () => {
     ['exit row blocked', 'xx..aa' + '.'.repeat(30), /blocks the exit row/]
   ])('rejects %s', (_, text, message) => {
     expect(() => parseLayout(text)).toThrow(LayoutError);
+    expect(() => parseLayout(text)).toThrow(expect.objectContaining({ name: 'LayoutError' }));
     expect(() => parseLayout(text)).toThrow(message);
   });
 
@@ -409,6 +410,10 @@ describe('history entries and replay', () => {
     expect(parseEntry(' 3:1')).toBeNull();
     expect(parseEntry('3:1 ')).toBeNull();
     expect(entryOf({ id: 5, delta: -3 })).toBe('5:-3');
+  });
+
+  it('progressOf throws on a history the rules cannot produce', () => {
+    expect(() => progressOf(sampleState(['1:4']))).toThrow('Invalid history');
   });
 
   it('replays moves and restarts, counting moves since the last restart', () => {
@@ -592,6 +597,8 @@ describe('undo / restart', () => {
     expect(appendEntry(s, '1:1', 6).history).toEqual([...s.history, '1:1']);
     expect(appendEntry(s, '1:1', 5).history).toEqual(['1:2', '*', '6:1', '1:1']);
     expect(appendEntry(s, '1:1', 3).history).toEqual(['6:1', '1:1']);
+    // A restart at the very front is dropped too.
+    expect(appendEntry(sampleState(['*', '1:1']), '6:1', 2).history).toEqual(['1:1', '6:1']);
     const noRestart = sampleState(['1:1', '6:1']);
     expect(appendEntry(noRestart, '4:1', 2)).toBe(noRestart);
     expect(appendEntry(noRestart, '4:1').history).toEqual(['1:1', '6:1', '4:1']);
@@ -599,9 +606,9 @@ describe('undo / restart', () => {
 });
 
 describe('deltaToCell (tap a square on the block’s line)', () => {
-  const blocks = sampleBlocks();
-  const start = startPositions(blocks);
   it('moves the far end onto cells ahead and the near end onto cells behind', () => {
+    const blocks = sampleBlocks();
+    const start = startPositions(blocks);
     expect(deltaToCell(blocks, start, 1, 0, 4)).toBe(3); // a (cols 0–1) → right end on col 4
     expect(deltaToCell(blocks, start, 1, 0, 2)).toBe(1);
     expect(deltaToCell(blocks, start, 5, 4, 0)).toBe(-4); // e (cols 4–5) → left end on col 0
@@ -612,7 +619,11 @@ describe('deltaToCell (tap a square on the block’s line)', () => {
   });
 
   it('returns null off the line, on the block itself, or for an unknown block', () => {
+    const blocks = sampleBlocks();
+    const start = startPositions(blocks);
     expect(deltaToCell(blocks, start, 1, 1, 3)).toBeNull();
+    expect(deltaToCell(blocks, start, 4, 0, 2)).toBeNull();
+    expect(deltaToCell(blocks, start, 4, 5, 4)).toBeNull();
     expect(deltaToCell(blocks, start, 4, 2, 2)).toBeNull();
     expect(deltaToCell(blocks, start, 1, 0, 0)).toBeNull();
     expect(deltaToCell(blocks, start, 1, 0, 1)).toBeNull();
@@ -634,26 +645,33 @@ describe('isSlidingBlocksState', () => {
     expect(isSlidingBlocksState(sampleState(['1:2', '*', '6:1']))).toBe(true);
   });
 
+  // Values are built lazily inside the test (not while collecting), so mutation coverage is per test.
   it.each([
-    ['null', null],
-    ['array', []],
-    ['missing seed', { ...sampleState(), seed: undefined }],
-    ['negative seed', { ...sampleState(), seed: -1 }],
-    ['too large seed', { ...sampleState(), seed: 2 ** 32 }],
-    ['unknown difficulty', { ...sampleState(), difficulty: 'expert' }],
-    ['missing puzzle', { ...sampleState(), puzzle: null }],
-    ['optimum 0', { ...sampleState(), puzzle: { ...sampleState().puzzle, optimum: 0 } }],
-    ['optimum too big', { ...sampleState(), puzzle: { ...sampleState().puzzle, optimum: MAX_OPTIMUM + 1 } }],
-    ['optimum fraction', { ...sampleState(), puzzle: { ...sampleState().puzzle, optimum: 2.5 } }],
-    ['blocks not an array', { ...sampleState(), puzzle: { ...sampleState().puzzle, blocks: {} } }],
-    ['overlapping blocks', { ...sampleState(), puzzle: { ...sampleState().puzzle, blocks: [...sampleBlocks(), { row: 0, col: 0, len: 2, orient: 'v' }] } }],
-    ['history not an array', sampleState('1:2' as unknown as string[])],
-    ['non-string entry', sampleState([1 as unknown as string])],
-    ['illegal entry', sampleState(['1:4'])],
-    ['unmerged entries', sampleState(['1:1', '1:1'])],
-    ['too long history', sampleState(cycle(MAX_HISTORY + 1))]
+    ['null', () => null],
+    ['array', () => []],
+    ['missing seed', () => ({ ...sampleState(), seed: undefined })],
+    ['negative seed', () => ({ ...sampleState(), seed: -1 })],
+    ['too large seed', () => ({ ...sampleState(), seed: 2 ** 32 })],
+    ['unknown difficulty', () => ({ ...sampleState(), difficulty: 'expert' })],
+    ['missing puzzle', () => ({ ...sampleState(), puzzle: null })],
+    ['optimum 0', () => ({ ...sampleState(), puzzle: { ...sampleState().puzzle, optimum: 0 } })],
+    ['optimum too big', () => ({ ...sampleState(), puzzle: { ...sampleState().puzzle, optimum: MAX_OPTIMUM + 1 } })],
+    ['optimum fraction', () => ({ ...sampleState(), puzzle: { ...sampleState().puzzle, optimum: 2.5 } })],
+    ['blocks not an array', () => ({ ...sampleState(), puzzle: { ...sampleState().puzzle, blocks: {} } })],
+    ['overlapping blocks', () => ({ ...sampleState(), puzzle: { ...sampleState().puzzle, blocks: [...sampleBlocks(), { row: 0, col: 0, len: 2, orient: 'v' }] } })],
+    ['history not an array', () => sampleState('1:2' as unknown as string[])],
+    ['non-string entry', () => sampleState([1 as unknown as string])],
+    ['entry that only looks like a string', () => sampleState([{ toString: () => '1:1' } as unknown as string])],
+    ['illegal entry', () => sampleState(['1:4'])],
+    ['unmerged entries', () => sampleState(['1:1', '1:1'])],
+    ['too long history', () => sampleState(cycle(MAX_HISTORY + 1))]
   ])('rejects %s', (_, value) => {
-    expect(isSlidingBlocksState(value)).toBe(false);
+    expect(isSlidingBlocksState(value())).toBe(false);
+  });
+
+  it('accepts the maximum optimum and the smallest one', () => {
+    expect(isSlidingBlocksState({ ...sampleState(), puzzle: { ...sampleState().puzzle, optimum: MAX_OPTIMUM } })).toBe(true);
+    expect(isSlidingBlocksState({ ...sampleState(), puzzle: { ...sampleState().puzzle, optimum: 1 } })).toBe(true);
   });
 
   it('accepts a history of exactly the maximum length', () => {

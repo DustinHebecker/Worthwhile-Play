@@ -238,9 +238,7 @@ export function layoutString(blocks: readonly Block[], positions: Positions = st
 
 /** The layout upside down (rows reversed). The exit stays on the right edge of the star block's row. */
 export function mirrorLayout(text: string): string {
-  let result = '';
-  for (let row = SIZE - 1; row >= 0; row--) result += text.slice(row * SIZE, row * SIZE + SIZE);
-  return result;
+  return Array.from({ length: SIZE }, (_, i) => text.slice((SIZE - 1 - i) * SIZE, (SIZE - i) * SIZE)).join('');
 }
 
 /* ---------- Validation ---------- */

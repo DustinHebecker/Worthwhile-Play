@@ -16,6 +16,7 @@
     "@wp/game-lights-out": "workspace:*",
     "@wp/game-mastermind": "workspace:*",
     "@wp/game-memory": "workspace:*",
+    "@wp/game-minesweeper": "workspace:*",
     "@wp/game-nonogram": "workspace:*",
     "@wp/game-sequence-memory": "workspace:*",
     "@wp/game-skyscrapers": "workspace:*",

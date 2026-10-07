@@ -11,7 +11,7 @@ Legend — Priority: **P0** foundation/blocking · **P1** next · **P2** later. 
 |---|---|---|---|---|
 | M0 | **Foundation**: monorepo, CI, app shell, localization (16 locales, RTL), GameModule contract, persistence + autosave, seeded RNG, PWA/offline, shared contract tests, Cloudflare deploy, 3 reference games | P0 | – | ✅ |
 | M1 | **Learning platform**: deck browser/import (CSV/JSON), Memory variants (word↔image, term↔definition, language pairs), optional spaced repetition *without* streaks/notifications ("Items worth reviewing"), audio (bundled + speech synthesis best effort), content-pack download mechanism with size disclosure | P1 | M0 | ⏳ |
-| M2 | **Puzzle core + logic puzzles**: shared grid/puzzle utilities; *generator → independent solver → uniqueness → difficulty* pipeline; first puzzles | P1 | M0 | 🚧 Nonogram, Lights Out, Skyscrapers, Crate Pusher done; `puzzle-core` extraction pending |
+| M2 | **Puzzle core + logic puzzles**: shared grid/puzzle utilities; *generator → independent solver → uniqueness → difficulty* pipeline; first puzzles | P1 | M0 | 🚧 Nonogram, Lights Out, Skyscrapers, Crate Pusher, Mine Logic done; `puzzle-core` extraction pending |
 | M3 | **Board games**: Connect Four, Chess (complete rules, local AI; engine license review) | P1 | M0 | 🚧 Four in a Row done |
 | M4 | **Systems & hypothesis games** | P1 | M2 | 🚧 Black Box, Laser Paths done |
 | M5 | **Memory & attention exercises**, Faces & Names (synthetic/licensed faces only) | P1 | M1 | 🚧 Sequence Memory done |
@@ -40,7 +40,7 @@ Cross-cutting, continuous: accessibility review, native-speaker review of transl
 | Logic | River Crossing | M2 | ⏳ | |
 | Logic | Rush-Hour-style sliding | M2 | ⏳ | |
 | Logic | Skyscrapers | M2 | ✅ | generator + line solver; uniqueness verified by independent oracle |
-| Logic | Deterministic Minesweeper | M2 | ⏳ | no-guess generation |
+| Logic | Deterministic Minesweeper → shown as **Mine Logic** | M2 | ✅ | no-guess generation (solver + brute-force oracle); mistakes are undoable, never punished |
 | Board | Connect Four → shown as **Four in a Row** | M3 | ✅ | alpha-beta, 3 levels |
 | Board | Chess | M3 | ⏳ | full rules incl. repetition/50-move/insufficient material |
 | Logic | Minimal Proof | M4 | ⏳ | |

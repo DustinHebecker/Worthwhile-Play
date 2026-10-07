@@ -1,5 +1,6 @@
 /* App shell layout. Uses logical properties so the Arabic RTL layout mirrors automatically. */
-#app { min-height: 100dvh; display: grid; grid-template-rows: auto 1fr auto; }
+/* minmax(0, 1fr): the page column never grows wider than the viewport because of a wide child (e.g. a long select). */
+#app { min-height: 100dvh; display: grid; grid-template-rows: auto 1fr auto; grid-template-columns: minmax(0, 1fr); }
 .app-header { display: grid; grid-template-columns: 1fr auto auto; grid-template-areas: 'brand nav lang'; align-items: center; gap: 0.5rem 1rem; padding: 0.75rem 1rem; border-block-end: 1px solid var(--wp-border); background: var(--wp-surface); }
 .app-header .brand { grid-area: brand; }
 .app-header nav { grid-area: nav; }
@@ -22,7 +23,8 @@
 .app-header nav a[aria-current='page'] { background: var(--wp-surface-2); font-weight: 600; }
 .skip-link { position: absolute; inset-inline-start: -999px; }
 .skip-link:focus { inset-inline-start: 1rem; top: 0.5rem; background: var(--wp-surface); padding: 0.5rem; z-index: 10; }
-main { width: min(100%, 64rem); margin-inline: auto; padding: 1rem; }
+main { width: min(100%, 64rem); min-width: 0; margin-inline: auto; padding: 1rem; }
+main select { max-width: 100%; }
 main:focus { outline: none; }
 .app-footer { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; align-items: center; justify-content: center; padding: 1rem; border-block-start: 1px solid var(--wp-border); color: var(--wp-muted); font-size: 0.9rem; }
 .app-footer a { min-height: var(--wp-touch); display: inline-flex; align-items: center; }

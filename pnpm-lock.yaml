@@ -83,6 +83,9 @@ importers:
       '@wp/game-memory':
         specifier: workspace:*
         version: link:../../packages/games/memory
+      '@wp/game-minesweeper':
+        specifier: workspace:*
+        version: link:../../packages/games/minesweeper
       '@wp/game-nonogram':
         specifier: workspace:*
         version: link:../../packages/games/nonogram

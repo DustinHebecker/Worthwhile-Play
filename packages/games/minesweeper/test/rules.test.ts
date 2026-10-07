@@ -8,6 +8,7 @@ import {
   FLAGGED,
   HIDDEN,
   MAX_ATTEMPTS,
+  MAX_COMPONENT,
   MAX_COUNTER,
   REVEALED,
   adjacentCounts,
@@ -336,6 +337,31 @@ describe('solver rules', () => {
       2
     );
     expect(safe.size + mines.size).toBe(0);
+  });
+
+  it('enumeration skips oversized components soundly (weaker, never wrong)', () => {
+    const cells = (n: number) => [...Array(n).keys()];
+    // Within the size limit: the component holds exactly one mine, so the interior cell is safe.
+    let [safe, mines] = enumerateRule([{ cells: cells(MAX_COMPONENT), need: 1 }], [...cells(MAX_COMPONENT), 100], 1);
+    expect(sorted(safe)).toEqual([100]);
+    expect(mines.size).toBe(0);
+    // One cell more is not enumerated: anything from 0 to its size is assumed, so nothing follows.
+    [safe, mines] = enumerateRule([{ cells: cells(MAX_COMPONENT + 1), need: 1 }], [...cells(MAX_COMPONENT + 1), 100], 1);
+    expect(safe.size + mines.size).toBe(0);
+    // A component whose search exceeds the node budget is treated the same way.
+    [safe, mines] = enumerateRule([{ cells: cells(40), need: 20 }], [...cells(40), 100], 20);
+    expect(safe.size + mines.size).toBe(0);
+    // A small one next to a skipped one is still decided.
+    [safe, mines] = enumerateRule(
+      [
+        { cells: cells(40), need: 20 },
+        { cells: [60], need: 1 }
+      ],
+      [...cells(40), 60],
+      21
+    );
+    expect(sorted(mines)).toEqual([60]);
+    expect(safe.size).toBe(0);
   });
 
   it('enumeration deduces inside one component without global help', () => {
