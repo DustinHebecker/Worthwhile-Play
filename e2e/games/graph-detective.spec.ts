@@ -11,8 +11,10 @@ const selected = (page: Page) =>
 async function selectSomething(page: Page) {
   const type = await root(page).getByTestId('gd-task').getAttribute('data-type');
   if (type === 'mincut') await root(page).getByTestId('gd-choice-2').click();
-  else await root(page).locator('.gd-diagram [role="button"]').first().click();
-  if (type === 'augment') await root(page).locator('.gd-diagram [role="button"]').nth(3).click();
+  // dispatchEvent: on some random layouts a length label overlaps the item's centre, so a
+  // pointer click at that point would be intercepted. Real taps resolve to the nearest item anyway.
+  else await root(page).locator('.gd-diagram [role="button"]').first().dispatchEvent('click');
+  if (type === 'augment') await root(page).locator('.gd-diagram [role="button"]').nth(3).dispatchEvent('click');
 }
 
 test('graph-detective: a checked answer and a selection survive a reload', async ({ page }) => {
