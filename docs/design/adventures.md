@@ -533,7 +533,7 @@ Minimal and justified; nothing else in shared packages is needed for the current
 1. `packages/adventure-engine` as a new shared package (owned by this workstream per the assignment).
 2. Registry lines in `apps/web/src/registry.ts` + dependencies in `apps/web/package.json` (per game).
 3. `stryker.config.json`: add `packages/adventure-engine/src/**/*.ts` (excluding `view/**`).
-4. `docs/ROADMAP.md`: M8 status; `docs/architecture.md`: adventure engine paragraph; new **ADR 0008 — Adventure engine: declarative content, solver-verified completability, lazy content text** (proposed text derived from sections 2, 4 and 8).
+4. `docs/ROADMAP.md`: M8 status; `docs/architecture.md`: adventure engine paragraph; new **ADR (next free number at merge time; 0008 is taken, 0009 likely reserved by the strategy workstream) — Adventure engine: declarative content, solver-verified completability, lazy content text** (proposed text derived from sections 2, 4 and 8).
 5. No change to `GameModule`, `GameContext`, persistence or the contract suite is required. If later an audio service is added to `GameContext`, it is optional.
 
 ---
