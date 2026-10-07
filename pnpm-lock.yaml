@@ -485,6 +485,12 @@ importers:
         specifier: workspace:*
         version: link:../game-core
 
+  packages/strategy-engine:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../game-core
+
   packages/testing:
     dependencies:
       '@wp/game-core':
