@@ -57,19 +57,19 @@
 .wp-systems-puzzle .fl-overflowed .fl-tank-outline { stroke-width: 4; stroke-dasharray: 6 3; }
 .wp-systems-puzzle .fl-fill { stroke: none; }
 .wp-systems-puzzle:not(.fl-reduced) .fl-fill { transition: y 0.3s ease, height 0.3s ease; }
-.wp-systems-puzzle .fl-tank-name { font-weight: 700; font-size: 16px; fill: var(--wp-text); }
-.wp-systems-puzzle .fl-tank-level { font-size: 15px; font-weight: 600; fill: var(--wp-text); font-variant-numeric: tabular-nums; }
+.wp-systems-puzzle .fl-tank-name { font-weight: 700; font-size: 18px; fill: var(--wp-text); }
+.wp-systems-puzzle .fl-tank-level { font-size: 17px; font-weight: 600; fill: var(--wp-text); font-variant-numeric: tabular-nums; }
 .wp-systems-puzzle .fl-target { stroke: var(--wp-text); stroke-width: 2; stroke-dasharray: 5 3; }
-.wp-systems-puzzle .fl-target-label { font-size: 12px; font-weight: 700; fill: var(--wp-text); }
+.wp-systems-puzzle .fl-target-label,
+.wp-systems-puzzle .fl-float-label { font-size: 14px; font-weight: 700; fill: var(--wp-text); stroke: var(--fl-tank); stroke-width: 3px; paint-order: stroke; }
 .wp-systems-puzzle .fl-float { stroke: var(--wp-text); stroke-width: 2; stroke-dasharray: 1 3; stroke-linecap: round; }
-.wp-systems-puzzle .fl-float-label { font-size: 12px; font-weight: 700; fill: var(--wp-text); }
 
 .wp-systems-puzzle .fl-pipe-line { stroke: var(--fl-line); stroke-width: 3; stroke-dasharray: 4 5; }
 .wp-systems-puzzle .fl-pipe[data-state='open'] .fl-pipe-line { stroke-width: 6; stroke-dasharray: none; }
 .wp-systems-puzzle .fl-pipe[data-state='held'] .fl-pipe-line { stroke-width: 4; stroke-dasharray: 10 4 2 4; }
 .wp-systems-puzzle .fl-slow .fl-pipe-outer { stroke: var(--fl-line); stroke-width: 14; opacity: 0.35; }
 .wp-systems-puzzle .fl-arrow { fill: var(--fl-line); }
-.wp-systems-puzzle .fl-pipe-label { font-size: 12px; fill: var(--wp-text); font-variant-numeric: tabular-nums; }
+.wp-systems-puzzle .fl-pipe-label { font-size: 15px; font-weight: 600; fill: var(--wp-text); font-variant-numeric: tabular-nums; }
 
 .wp-systems-puzzle .fl-valve {
   position: absolute;

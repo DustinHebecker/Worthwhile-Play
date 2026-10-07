@@ -25,7 +25,9 @@ import './styles.css';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const CELL_W = 140;
-const CELL_H = 160;
+const CELL_H = 190;
+/** Room kept free above and below a tank for its name and level text. */
+const TEXT_PAD = 24;
 const TANK_W = 64;
 const TANK_H = 88;
 
@@ -66,7 +68,7 @@ export function pipeGeometry(puzzle: PuzzleDef, index: number): PipeGeometry {
   const offset = twin ? 30 : 0;
   const ox = (-dy / len) * offset;
   const oy = (dx / len) * offset;
-  const edge = Math.min(dx === 0 ? Infinity : TANK_W / 2 / Math.abs(dx), dy === 0 ? Infinity : TANK_H / 2 / Math.abs(dy));
+  const edge = Math.min(dx === 0 ? Infinity : (TANK_W / 2 + 2) / Math.abs(dx), dy === 0 ? Infinity : (TANK_H / 2 + TEXT_PAD) / Math.abs(dy));
   const x1 = a.x + dx * edge + ox;
   const y1 = a.y + dy * edge + oy;
   const x2 = b.x - dx * edge + ox;
@@ -175,11 +177,12 @@ export function createSystemsPuzzle(context: GameContext): GameInstance<FlowStat
     drawing.setAttribute('viewBox', `0 0 ${width} ${height}`);
     clear(drawing);
     schematic.style.setProperty('--fl-ratio', `${width} / ${height}`);
+    schematic.style.maxWidth = `${Math.round(width * 1.3)}px`;
 
     const defs = svg('defs');
     const pattern = svg('pattern', { id: `${uid}-hatch`, width: 8, height: 8, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' });
     pattern.append(svg('rect', { width: 8, height: 8, class: 'fl-water' }), svg('line', { x1: 0, y1: 0, x2: 0, y2: 8, class: 'fl-hatch-line' }));
-    const arrow = svg('marker', { id: `${uid}-arrow`, viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 5, markerHeight: 5, orient: 'auto' });
+    const arrow = svg('marker', { id: `${uid}-arrow`, viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 14, markerHeight: 14, markerUnits: 'userSpaceOnUse', orient: 'auto' });
     arrow.append(svg('path', { d: 'M0 0 L10 5 L0 10 Z', class: 'fl-arrow' }));
     defs.append(pattern, arrow);
     drawing.append(defs);
@@ -190,7 +193,9 @@ export function createSystemsPuzzle(context: GameContext): GameInstance<FlowStat
       if (pipe.delay === 2) group.append(svg('line', { x1: g.x1, y1: g.y1, x2: g.x2, y2: g.y2, class: 'fl-pipe-outer' }));
       const line = svg('line', { x1: g.x1, y1: g.y1, x2: g.x2, y2: g.y2, class: 'fl-pipe-line', 'marker-end': `url(#${uid}-arrow)` });
       const horizontal = Math.abs(g.y2 - g.y1) < 1;
-      const label = svg('text', { x: g.vx, y: horizontal ? g.vy - 28 : g.vy, dx: horizontal ? 0 : 30, class: 'fl-pipe-label', 'text-anchor': 'middle' });
+      const label = horizontal
+        ? svg('text', { x: g.vx, y: g.vy - 36, class: 'fl-pipe-label', 'text-anchor': 'middle' })
+        : svg('text', { x: g.vx + 36, y: g.vy + 5, class: 'fl-pipe-label', 'text-anchor': 'start' });
       group.append(line, label);
       drawing.append(group);
       return { line, label };
@@ -207,8 +212,8 @@ export function createSystemsPuzzle(context: GameContext): GameInstance<FlowStat
       for (const target of puzzle.targets.filter((tg) => tg.tank === i)) {
         const y = top + TANK_H - (TANK_H * target.level) / tank.cap;
         group.append(
-          svg('line', { x1: left - 6, y1: y, x2: left + TANK_W + 6, y2: y, class: 'fl-target' }),
-          svg('text', { x: left - 9, y: y + 4, class: 'fl-target-label', 'text-anchor': 'end' }, `◎${target.level}`)
+          svg('line', { x1: left - 4, y1: y, x2: left + TANK_W + 4, y2: y, class: 'fl-target' }),
+          svg('text', { x: left + TANK_W - 3, y: y - top < 20 ? y + 16 : y - 4, class: 'fl-target-label', 'text-anchor': 'end' }, `◎${target.level}`)
         );
       }
       puzzle.pipes.forEach((pipe) => {
@@ -216,7 +221,7 @@ export function createSystemsPuzzle(context: GameContext): GameInstance<FlowStat
         const y = top + TANK_H - (TANK_H * pipe.float.at) / tank.cap;
         group.append(
           svg('line', { x1: left, y1: y, x2: left + TANK_W, y2: y, class: 'fl-float' }),
-          svg('text', { x: left + TANK_W + 4, y: y + 4, class: 'fl-float-label' }, `F${pipe.float.at}`)
+          svg('text', { x: left + 3, y: y - top < 20 ? y + 16 : y - 4, class: 'fl-float-label' }, `F${pipe.float.at}`)
         );
       });
       group.append(svg('rect', { x: left, y: top, width: TANK_W, height: TANK_H, class: 'fl-tank-outline' }));

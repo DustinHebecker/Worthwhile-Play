@@ -68,6 +68,9 @@ importers:
       '@wp/game-bridges':
         specifier: workspace:*
         version: link:../../packages/games/bridges
+      '@wp/game-circuit-puzzle':
+        specifier: workspace:*
+        version: link:../../packages/games/circuit-puzzle
       '@wp/game-connect-four':
         specifier: workspace:*
         version: link:../../packages/games/connect-four
@@ -125,6 +128,9 @@ importers:
       '@wp/game-spatial-memory':
         specifier: workspace:*
         version: link:../../packages/games/spatial-memory
+      '@wp/game-systems-puzzle':
+        specifier: workspace:*
+        version: link:../../packages/games/systems-puzzle
       '@wp/game-tic-tac-toe':
         specifier: workspace:*
         version: link:../../packages/games/tic-tac-toe
