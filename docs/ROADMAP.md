@@ -16,7 +16,7 @@ Legend — Priority: **P0** foundation/blocking · **P1** next · **P2** later. 
 | M4 | **Systems & hypothesis games** | P1 | M2 | 🚧 Black Box, Laser Paths, Network Detective done |
 | M5 | **Memory & attention exercises**, Faces & Names (synthetic/licensed faces only) | P1 | M1 | 🚧 Sequence Memory done |
 | M6 | **Communication exercises** with deterministic evaluation | P2 | M0 | ⏳ |
-| M7 | **Strategy engine** (fresh agent context): shared simulation → Tower Defense → turn-based strategy → 4 hybrid modes | P2 | stable M0–M2 | ⏳ |
+| M7 | **Strategy engine** (fresh agent context): shared simulation → Tower Defense → turn-based strategy → 4 hybrid modes | P2 | stable M0–M2 | 🚧 |
 | M8 | **Adventure engine** → Adventure A (dark fantasy) → Adventure B (temporal) | P2 | M0 | ⏳ |
 | M9 | **Optional local AI** (WebLLM, explicit download, deterministic checks first) | P2 | M6 | ⏳ |
 
@@ -67,9 +67,9 @@ Cross-cutting, continuous: accessibility review, native-speaker review of transl
 | Communication | Compression Challenge | M6 | ⏳ | |
 | Communication | Briefing Game | M6 | ⏳ | |
 | Communication | Ambiguity Detector | M6 | ⏳ | |
-| Strategy | Shared strategy/TD engine | M7 | ⏳ | deterministic simulation |
+| Strategy | Shared strategy/TD engine | M7 | 🚧 | `packages/strategy-engine`: core simulation done (I1); design `docs/design/strategy.md`, API ADR 0009 |
 | Strategy | Tower Defense (Gun, Artillery, Laser, Support, Specialist + branches) | M7 | ⏳ | |
-| Strategy | Original turn-based strategy (plan→lock→resolve, command network, EW) | M7 | ⏳ | not a C&C clone |
+| Strategy | Original turn-based strategy (plan→lock→resolve, command network, EW) | M7 | ⏳ | **Relay Command** (`relay-command`); not a C&C clone; design decided |
 | Strategy | Hybrid: External Small / External Large / VS Small / VS Large | M7 | ⏳ | |
 | Adventure | Adventure engine (scenes, hotspots, inventory, dialogue, flags) | M8 | ⏳ | |
 | Adventure | Adventure A — original dark-fantasy exploration | M8 | ⏳ | design reference only |

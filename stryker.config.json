@@ -14,7 +14,8 @@
     "packages/localization/src/translate.ts",
     "packages/games/*/src/rules.ts",
     "packages/games/*/src/ai.ts",
-    "packages/strategy-engine/src/{grid,path,sim,world,serialize}.ts",
+    "packages/strategy-engine/src/*.ts",
+    "!packages/strategy-engine/src/{content,index,types}.ts",
     "!**/*.d.ts",
     "!packages/learning-content/src/builtin/**"
   ],

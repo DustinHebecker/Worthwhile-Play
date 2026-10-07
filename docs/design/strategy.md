@@ -414,7 +414,7 @@ Each with options and my recommendation (**★**). Decisions marked **[blocks I1
 
 | # | Increment | Deliverable / gate |
 |---|---|---|
-| I1 | Engine core (TDD) | grid, terrain, A*/flow field, entities, tick loop, movement + conflicts, damage/targeting/projectiles, status, serialization, hash; properties P1–P5; mutation on combat |
+| I1 ✅ | Engine core (TDD) | grid, terrain, A*/flow field, entities, tick loop, movement + conflicts, damage/targeting/projectiles, status, serialization, hash; properties P1–P5; mutation on combat |
 | I2 | Minimal playable map | `games/<id>`: canvas + DOM UI, plan→lock→resolve, Field Exercise, scripted dummy AI; contract + e2e; registry entry |
 | I3 | Command network | sources/relays/coverage, commandability, order slots, doctrines, info model; P6/P7; mutation on network |
 | I4 | Electronic warfare | jammer, emitters, tracer/burn-through, EMP status |
