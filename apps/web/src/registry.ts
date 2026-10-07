@@ -9,6 +9,7 @@ import { metadata as minesweeper } from '@wp/game-minesweeper/metadata';
 import { metadata as nonogram } from '@wp/game-nonogram/metadata';
 import { metadata as sequenceMemory } from '@wp/game-sequence-memory/metadata';
 import { metadata as skyscrapers } from '@wp/game-skyscrapers/metadata';
+import { metadata as slidingBlocks } from '@wp/game-sliding-blocks/metadata';
 import { metadata as sokoban } from '@wp/game-sokoban/metadata';
 import { metadata as ticTacToe } from '@wp/game-tic-tac-toe/metadata';
 
@@ -33,6 +34,7 @@ export const GAMES: readonly GameEntry[] = [
   entry(minesweeper, () => import('@wp/game-minesweeper')),
   entry(lightsOut, () => import('@wp/game-lights-out')),
   entry(sokoban, () => import('@wp/game-sokoban')),
+  entry(slidingBlocks, () => import('@wp/game-sliding-blocks')),
   entry(laserCircuit, () => import('@wp/game-laser-circuit')),
   entry(memory, () => import('@wp/game-memory')),
   entry(sequenceMemory, () => import('@wp/game-sequence-memory')),
