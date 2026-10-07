@@ -14,7 +14,7 @@ The product reference conversation (`docs/product/reference-conversation.md`) ex
 
 ## Roles (ADR 0006)
 
-- **Orchestrator**: owns `packages/{game-core,persistence,localization,ui,learning-content,testing}`, future shared engines, `apps/web`, root configs, CI, backlog, ADRs, merges. Decomposes work, writes the agent briefs, integrates.
+- **Orchestrator**: owns `packages/{game-core,persistence,localization,ui,learning-content,testing}`, future shared engines (except `packages/strategy-engine`, owned by the strategy agent — ADR 0009), `apps/web`, root configs, CI, backlog, ADRs, merges. Decomposes work, writes the agent briefs, integrates.
 - **Feature agent** (one game): may only touch `packages/games/<id>/` and `e2e/games/<id>.spec.ts`; adds no dependencies; reports needed shared changes instead of making them. Registers nothing in the app — the orchestrator adds the registry line in `apps/web/src/registry.ts` and the dependency in `apps/web/package.json`.
 - **Large-system agents** (strategy engine, adventure engine, each adventure, local AI): fresh context; get the spec, ADRs and the relevant interfaces only.
 - **QA agent**: independent review of tests, mutation reports and e2e coverage.

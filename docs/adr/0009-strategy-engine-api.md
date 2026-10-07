@@ -6,7 +6,7 @@ Status: **Proposed** (2026-10-03) — open points in [docs/design/strategy.md §
 The spec requires one shared deterministic engine for the turn-based strategy game, Tower Defense and the four hybrid modes ("Do not build separate implementations for TD and strategy"). Strategy and TD are developed by parallel workstreams; TD needs a stable API early.
 
 ## Decision
-- New package `packages/strategy-engine` (`@wp/strategy-engine`), pure TypeScript, no DOM, depends only on `@wp/game-core`. Games depend on it; it never imports games. Owned by the strategy workstream; API changes go through this ADR (amend + note in the PR).
+- New package `packages/strategy-engine` (`@wp/strategy-engine`), pure TypeScript, no DOM, depends only on `@wp/game-core`. Games depend on it; it never imports games. Owned by the strategy workstream (owner decision D17, deviating from ADR 0006's default that future engines belong to the orchestrator); API changes go through this ADR (amend + note in the PR).
 - **Integer-only, tick-based simulation.** One fixed system order per tick (orders → intent → movement → targeting → fire/projectiles → damage → status → removal → economy/production/research → network → vision → victory). Modes choose the system subset and how many ticks run between player inputs (strategy: fixed ticks per turn; TD: until a wave is resolved).
 - **Data, not classes.** `World` is plain JSON (entities sorted by id, RNG state inside). Archetype stats live in a `Ruleset` referenced by id, not in saves. Derived caches (network graph, coverage, flow fields, spatial hash) are rebuilt, never serialized.
 - **Pure public API** (inputs never mutated):

@@ -1,11 +1,11 @@
 # Design: shared strategy engine and the original turn-based strategy game
 
-Status: **Draft for decision** (Phase 1 — no implementation yet). Open decisions are listed in [§ 14](#14-open-decisions); nothing marked *(proposal)* is final until the owner decides.
+Status: **Decided for the first implementation** (owner, 2026-10-07). All decisions in [§ 14](#14-open-decisions) were taken as recommended (option a) except D1 (name **Relay Command**). They hold for the first version and may be revised iteratively after play-testing.
 
 Scope:
 
 - `packages/strategy-engine` (`@wp/strategy-engine`) — the shared deterministic simulation used by the strategy game, Tower Defense and the four hybrid modes (spec: "Shared Strategy / Tower Defense engine").
-- `packages/games/strategy` — the original turn-based strategy game (spec: "Strategy engine"). Working title **Relay Front** *(proposal, see D1)*.
+- `packages/games/relay-command` — the original turn-based strategy game (spec: "Strategy engine"), titled **Relay Command** (D1).
 
 Out of scope here: Tower Defense and hybrid **game rules** (owned by the TD workstream). This document only fixes what the engine must offer them; the engine API is recorded in [ADR 0009](../adr/0009-strategy-engine-api.md).
 
@@ -367,7 +367,7 @@ Hybrid needs map directly onto engine primitives: external force = scripted side
 | **Property (fast-check)** | **(P1) determinism**: same seed + state + commands ⇒ identical `worldHash`. **(P2) purity**: `resolveTurn` never mutates its inputs. **(P3) save round-trip**: `restore(serialize(w))` continues identically for arbitrary command sequences. **(P4) mirror symmetry**: a point-mirrored world with mirrored commands yields the mirrored result (catches side bias / id-order bias). **(P5) invariants**: 0 < hp ≤ max, unique ids, ≤ 1 ground unit per cell, supply ≥ 0, entities inside map. **(P6) network monotonicity**: adding a relay never shrinks coverage; adding a jammer never grows it. **(P7) command gating**: orders to non-commandable units are always rejected. **(P8) AI fairness**: the AI plan is invariant under any change of the opponent's draft/locked plan and of unobserved enemy entities. **(P9) generator**: every generated map passes the independent validator and is symmetric. |
 | **Fuzz** | random (valid and invalid) command streams over many turns never throw and keep invariants; `isValidState` on arbitrary data never throws (contract). |
 | **Golden replays** | a few `seed + command log ⇒ hash` fixtures; intentional rule changes update them explicitly (reviewed diff). |
-| **Contract** | `runGameContract` for `games/strategy` (16 locales, resume, pause, reset, dispose). |
+| **Contract** | `runGameContract` for `games/relay-command` (16 locales, resume, pause, reset, dispose). |
 | **Mutation (Stryker)** | `strategy-engine/src/{systems/{damage,targeting,movement,network,economy},sim,serialize}` and `games/strategy/src/rules.ts`; target ≥ 75 % on combat and network (above the repo break threshold of 65 %). Presentation code excluded. |
 | **AI** | AI vs AI smoke matches over many seeds: always terminate, no invalid commands, hard beats easy in ≥ 70 % *(statistical, seeded, so stable)*. |
 | **E2E (Playwright)** | open `/games/strategy?seed=…`, start the Field Exercise, issue orders via the DOM unit list, lock, reload mid-plan (draft preserved — `expectResumeAfterReload`), finish within the turn limit; phone + desktop viewports; keyboard-only flow. |
@@ -376,11 +376,13 @@ Hybrid needs map directly onto engine primitives: external force = scripted side
 
 ## 14. Open decisions
 
+**Outcome (2026-10-07):** D1 → **Relay Command**, id `relay-command`. D2–D17 → option (a) as recommended. D4, D6, D7, D9, D12 and D16 are explicitly provisional ("for now"); all decisions apply to the first implementation and may be revisited iteratively.
+
 Each with options and my recommendation (**★**). Decisions marked **[blocks I1]** are needed before the engine core; the others can be confirmed later but shape the design.
 
 | # | Decision | Options | Recommendation |
 |---|---|---|---|
-| **D1** | Game name / id | (a) **Relay Front**, id `relay-front`; (b) "Signal Line", id `signal-line`; (c) neutral "Command Grid" | ★ (a) — names the core mechanic. Package dir stays `packages/games/strategy`? I'd rather use the id as dir (`packages/games/relay-front`) for consistency with other games. Trademark check is a web search, not a legal opinion. |
+| **D1** | Game name / id | (a) **Relay Front**, id `relay-front`; (b) "Signal Line", id `signal-line`; (c) neutral "Command Grid" | ★ (a) — names the core mechanic. Package dir stays `packages/games/relay-command`? I'd rather use the id as dir (`packages/games/relay-front`) for consistency with other games. Trademark check is a web search, not a legal opinion. |
 | **D2** | Grid geometry **[blocks I1]** | (a) **square, 8-neighbour, diagonal ×1.5**; (b) hex; (c) square 4-neighbour | ★ (a): simplest keyboard navigation and TD tower placement, integer costs; hex is prettier for ranges but awkward on keyboard and for TD paths; 4-neighbour feels artificial. |
 | **D3** | Combat randomness **[blocks I1]** | (a) **fully deterministic**; (b) small bounded variance (±10 %, seeded); (c) hit chances | ★ (a): planning game, simultaneity already supplies uncertainty; best testability. (c) feels unfair under simultaneous resolution. |
 | **D4** | Command limit | (a) **order slots per turn** (HQ 4, Field Post +2); (b) unlimited orders for covered units; (c) slots plus order delay by hop count | ★ (a): makes command bandwidth a resource and caps planning time per turn on mobile. (c) is deeper but hard to read. |
