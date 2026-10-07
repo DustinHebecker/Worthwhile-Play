@@ -65,6 +65,9 @@ importers:
       '@wp/game-black-box':
         specifier: workspace:*
         version: link:../../packages/games/black-box
+      '@wp/game-bridges':
+        specifier: workspace:*
+        version: link:../../packages/games/bridges
       '@wp/game-connect-four':
         specifier: workspace:*
         version: link:../../packages/games/connect-four

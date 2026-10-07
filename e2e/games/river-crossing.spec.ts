@@ -13,7 +13,9 @@ test('river-crossing: boat load and crossings survive a reload', async ({ page }
   let crossings: string | null = null;
   await expectResumeAfterReload(page, 'river-crossing', async (p) => {
     // The puzzle depends on the random seed. The first figure of every easy puzzle can row.
-    const first = root(p).locator('[data-testid^="entity-"][data-side="left"]').first();
+    const firstId = await root(p).locator('[data-testid^="entity-"][data-side="left"]').first().getAttribute('data-testid');
+    // Pin the figure by id: a side-based locator would move on to the next figure after boarding.
+    const first = root(p).getByTestId(firstId ?? '');
     await first.click();
     await expect(first).toHaveAttribute('data-side', 'boat');
     // Some puzzles forbid crossing alone: then the reason is shown and nothing changes.

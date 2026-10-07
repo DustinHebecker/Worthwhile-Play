@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@wp/game-black-box": "workspace:*",
+    "@wp/game-bridges": "workspace:*",
     "@wp/game-connect-four": "workspace:*",
     "@wp/game-constraint-grid": "workspace:*",
     "@wp/game-core": "workspace:*",

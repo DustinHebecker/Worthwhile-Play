@@ -1,5 +1,6 @@
 import type { GameMetadata, GameModule } from '@wp/game-core';
 import { metadata as blackBox } from '@wp/game-black-box/metadata';
+import { metadata as bridges } from '@wp/game-bridges/metadata';
 import { metadata as constraintGrid } from '@wp/game-constraint-grid/metadata';
 import { metadata as connectFour } from '@wp/game-connect-four/metadata';
 import { metadata as laserCircuit } from '@wp/game-laser-circuit/metadata';
@@ -34,6 +35,7 @@ export const GAMES: readonly GameEntry[] = [
   entry(constraintGrid, () => import('@wp/game-constraint-grid')),
   entry(nonogram, () => import('@wp/game-nonogram')),
   entry(skyscrapers, () => import('@wp/game-skyscrapers')),
+  entry(bridges, () => import('@wp/game-bridges')),
   entry(minesweeper, () => import('@wp/game-minesweeper')),
   entry(lightsOut, () => import('@wp/game-lights-out')),
   entry(sokoban, () => import('@wp/game-sokoban')),
