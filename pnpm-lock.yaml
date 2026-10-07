@@ -62,15 +62,24 @@ importers:
 
   apps/web:
     dependencies:
+      '@wp/game-connect-four':
+        specifier: workspace:*
+        version: link:../../packages/games/connect-four
       '@wp/game-core':
         specifier: workspace:*
         version: link:../../packages/game-core
+      '@wp/game-lights-out':
+        specifier: workspace:*
+        version: link:../../packages/games/lights-out
       '@wp/game-mastermind':
         specifier: workspace:*
         version: link:../../packages/games/mastermind
       '@wp/game-memory':
         specifier: workspace:*
         version: link:../../packages/games/memory
+      '@wp/game-nonogram':
+        specifier: workspace:*
+        version: link:../../packages/games/nonogram
       '@wp/game-tic-tac-toe':
         specifier: workspace:*
         version: link:../../packages/games/tic-tac-toe
@@ -99,6 +108,44 @@ importers:
 
   packages/game-core: {}
 
+  packages/games/connect-four:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../../game-core
+      '@wp/ui':
+        specifier: workspace:*
+        version: link:../../ui
+    devDependencies:
+      '@wp/localization':
+        specifier: workspace:*
+        version: link:../../localization
+      '@wp/persistence':
+        specifier: workspace:*
+        version: link:../../persistence
+      '@wp/testing':
+        specifier: workspace:*
+        version: link:../../testing
+
+  packages/games/lights-out:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../../game-core
+      '@wp/ui':
+        specifier: workspace:*
+        version: link:../../ui
+    devDependencies:
+      '@wp/localization':
+        specifier: workspace:*
+        version: link:../../localization
+      '@wp/persistence':
+        specifier: workspace:*
+        version: link:../../persistence
+      '@wp/testing':
+        specifier: workspace:*
+        version: link:../../testing
+
   packages/games/mastermind:
     dependencies:
       '@wp/game-core':
@@ -126,6 +173,25 @@ importers:
       '@wp/learning-content':
         specifier: workspace:*
         version: link:../../learning-content
+      '@wp/ui':
+        specifier: workspace:*
+        version: link:../../ui
+    devDependencies:
+      '@wp/localization':
+        specifier: workspace:*
+        version: link:../../localization
+      '@wp/persistence':
+        specifier: workspace:*
+        version: link:../../persistence
+      '@wp/testing':
+        specifier: workspace:*
+        version: link:../../testing
+
+  packages/games/nonogram:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../../game-core
       '@wp/ui':
         specifier: workspace:*
         version: link:../../ui

@@ -1,6 +1,7 @@
 import type { Translator } from '@wp/game-core';
 import {
   createTranslator,
+  isSupportedLocale,
   LOCALE_DEFINITIONS,
   localeDirection,
   readUiLocale,
@@ -17,7 +18,7 @@ import { renderHome } from './pages/home';
 import { renderLegal } from './pages/legal';
 import { renderNotFound } from './pages/not-found';
 import { renderSettings } from './pages/settings';
-import { setupPwa } from './pwa';
+import { applyPendingUpdateIfIdle, setupPwa } from './pwa';
 import { routeHref, startRouter, type Route } from './router';
 
 export type UiTranslator = Translator & ((key: UiKey, params?: Readonly<Record<string, string | number>>) => string);
@@ -96,7 +97,8 @@ export function startApp(root: HTMLElement): void {
     header.append(
       h('a', { class: 'skip-link', href: '#main' }, t('nav.skip')),
       h('a', { class: 'brand', href: '/' }, h('span', { class: 'brand-mark', 'aria-hidden': 'true' }, 'W'), h('span', {}, APP_NAME)),
-      nav
+      nav,
+      languageMenu()
     );
     const pwaSlot = h('div', { class: 'pwa-slot', 'aria-live': 'polite' });
     footer.append(
@@ -107,6 +109,41 @@ export function startApp(root: HTMLElement): void {
     );
     setupPwa(pwaSlot, t);
   };
+
+  /** Visible language switcher in the header on every page (same pattern as Home Workout). */
+  const languageMenu = () => {
+    const { t } = app;
+    const current = LOCALE_DEFINITIONS.find((d) => d.code === locale)?.nativeName ?? locale;
+    const select = h('select', { id: 'header-language', 'data-testid': 'header-language' },
+      ...LOCALE_DEFINITIONS.map((d) => h('option', { value: d.code, selected: d.code === locale, lang: d.code }, d.nativeName))
+    );
+    const menu = h('details', { class: 'language-menu', 'data-testid': 'language-menu' },
+      h('summary', { 'aria-label': `${t('settings.uiLanguage')}: ${current}` },
+        h('span', { class: 'language-icon', 'aria-hidden': 'true' }, '文/A'),
+        h('span', { class: 'language-current', lang: locale }, current)
+      ),
+      h('div', { class: 'language-menu-panel' },
+        h('label', { for: 'header-language' }, h('span', {}, t('settings.uiLanguage')), select),
+        h('a', { href: '/settings' }, `${t('settings.contentTitle')} ${t.direction === 'rtl' ? '←' : '→'}`)
+      )
+    );
+    select.addEventListener('change', () => {
+      if (isSupportedLocale(select.value)) app.setLocale(select.value);
+      document.getElementById('header-language')?.closest('details')?.setAttribute('open', '');
+      document.getElementById('header-language')?.focus();
+    });
+    menu.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && menu.open) {
+        menu.open = false;
+        menu.querySelector('summary')?.focus();
+      }
+    });
+    return menu;
+  };
+  document.addEventListener('click', (event) => {
+    const open = header.querySelector<HTMLDetailsElement>('details.language-menu[open]');
+    if (open && !open.contains(event.target as Node)) open.open = false;
+  });
 
   const pages: Record<Route['name'], Page> = {
     home: renderHome,
@@ -126,6 +163,7 @@ export function startApp(root: HTMLElement): void {
       console.error(error);
     }
     route = next;
+    applyPendingUpdateIfIdle();
     renderChrome();
     clear(main);
     try {

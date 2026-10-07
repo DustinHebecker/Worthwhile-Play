@@ -37,6 +37,8 @@
   }
 }
 *, *::before, *::after { box-sizing: border-box; }
+/* Element display rules below (e.g. button: inline-flex) must never override the hidden attribute. */
+[hidden] { display: none !important; }
 body { margin: 0; background: var(--wp-bg); color: var(--wp-text); font-family: var(--wp-font); line-height: 1.5; }
 :focus-visible { outline: 3px solid var(--wp-focus); outline-offset: 2px; }
 a { color: var(--wp-accent); }

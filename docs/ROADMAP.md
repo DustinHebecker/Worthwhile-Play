@@ -11,8 +11,8 @@ Legend — Priority: **P0** foundation/blocking · **P1** next · **P2** later. 
 |---|---|---|---|---|
 | M0 | **Foundation**: monorepo, CI, app shell, localization (16 locales, RTL), GameModule contract, persistence + autosave, seeded RNG, PWA/offline, shared contract tests, Cloudflare deploy, 3 reference games | P0 | – | ✅ |
 | M1 | **Learning platform**: deck browser/import (CSV/JSON), Memory variants (word↔image, term↔definition, language pairs), optional spaced repetition *without* streaks/notifications ("Items worth reviewing"), audio (bundled + speech synthesis best effort), content-pack download mechanism with size disclosure | P1 | M0 | ⏳ |
-| M2 | **Puzzle core + logic puzzles**: shared grid/puzzle utilities; *generator → independent solver → uniqueness → difficulty* pipeline; first puzzles | P1 | M0 | ⏳ |
-| M3 | **Board games**: Connect Four, Chess (complete rules, local AI; engine license review) | P1 | M0 | ⏳ |
+| M2 | **Puzzle core + logic puzzles**: shared grid/puzzle utilities; *generator → independent solver → uniqueness → difficulty* pipeline; first puzzles | P1 | M0 | 🚧 Nonogram, Lights Out done; `puzzle-core` extraction pending |
+| M3 | **Board games**: Connect Four, Chess (complete rules, local AI; engine license review) | P1 | M0 | 🚧 Four in a Row done |
 | M4 | **Systems & hypothesis games** | P1 | M2 | ⏳ |
 | M5 | **Memory & attention exercises**, Faces & Names (synthetic/licensed faces only) | P1 | M1 | ⏳ |
 | M6 | **Communication exercises** with deterministic evaluation | P2 | M0 | ⏳ |
@@ -32,16 +32,16 @@ Cross-cutting, continuous: accessibility review, native-speaker review of transl
 | Memory | image↔word, word↔image, word↔definition, audio↔word, audio↔translation | M1 | ⏳ | deck variants, arbitrary language pairs |
 | Learning | Language decks, geography (flag/capital/map/neighbours), AI & business vocabulary, user decks | M1 | ⏳ | content packs |
 | Logic | Sokoban | M2 | ⏳ | property: player exists exactly once |
-| Logic | Nonogram / Picross | M2 | ⏳ | unique-solution check |
+| Logic | Nonogram | M2 | ✅ | line-solvable + unique (independent oracle in tests) |
 | Logic | Bridges / Hashi | M2 | ⏳ | |
 | Logic | Slitherlink | M2 | ⏳ | |
 | Logic | Einstein / Constraint Grid | M2 | ⏳ | generator + independent solver |
-| Logic | Lights Out | M2 | ⏳ | solvability via GF(2) |
+| Logic | Lights Out | M2 | ✅ | GF(2) solver, minimal-solution hints |
 | Logic | River Crossing | M2 | ⏳ | |
 | Logic | Rush-Hour-style sliding | M2 | ⏳ | |
 | Logic | Skyscrapers / Towers | M2 | ⏳ | |
 | Logic | Deterministic Minesweeper | M2 | ⏳ | no-guess generation |
-| Board | Connect Four | M3 | ⏳ | alpha-beta |
+| Board | Connect Four → shown as **Four in a Row** | M3 | ✅ | alpha-beta, 3 levels |
 | Board | Chess | M3 | ⏳ | full rules incl. repetition/50-move/insufficient material |
 | Logic | Minimal Proof | M4 | ⏳ | |
 | Hypothesis | Rule Discovery | M4 | ⏳ | value-of-information feedback |

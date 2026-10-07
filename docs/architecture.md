@@ -74,11 +74,11 @@ test/rules.test.ts, test/contract.test.ts (runGameContract), e2e/games/<id>.spec
 
 ## PWA and offline
 
-`vite-plugin-pwa` (Workbox `generateSW`) precaches the shell and all bundled game chunks. Updates use `registerType: 'prompt'`: the app shows "Update now" and never reloads on its own (a running game is never interrupted). Large optional content (audio packs, AI models) will use separate caches downloaded only on explicit request with the size shown first.
+`vite-plugin-pwa` (Workbox `generateSW`) precaches the shell and all bundled game chunks. Updates: a new release is applied automatically (reload) whenever no game page is open; on a game page it waits and is offered via "Update now", and is applied on the next navigation away — a running game is never interrupted. Open tabs check for updates hourly. Large optional content (audio packs, AI models) will use separate caches downloaded only on explicit request with the size shown first.
 
 ## Deployment
 
-Cloudflare Workers Static Assets (assets-only Worker, SPA fallback for deep links). Security headers via `public/_headers`. See [deployment.md](deployment.md).
+Cloudflare Pages (SPA fallback for deep links, ADR 0008). Security headers via `public/_headers`. See [deployment.md](deployment.md).
 
 ## Determinism and randomness
 

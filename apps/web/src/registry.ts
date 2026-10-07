@@ -1,6 +1,9 @@
 import type { GameMetadata, GameModule } from '@wp/game-core';
+import { metadata as connectFour } from '@wp/game-connect-four/metadata';
+import { metadata as lightsOut } from '@wp/game-lights-out/metadata';
 import { metadata as mastermind } from '@wp/game-mastermind/metadata';
 import { metadata as memory } from '@wp/game-memory/metadata';
+import { metadata as nonogram } from '@wp/game-nonogram/metadata';
 import { metadata as ticTacToe } from '@wp/game-tic-tac-toe/metadata';
 
 export interface GameEntry {
@@ -18,7 +21,10 @@ const entry = <S>(metadata: GameMetadata, load: () => Promise<{ default: GameMod
 /** Catalogue order = order of this list. Adding a game: one line here + a package under packages/games. */
 export const GAMES: readonly GameEntry[] = [
   entry(mastermind, () => import('@wp/game-mastermind')),
+  entry(nonogram, () => import('@wp/game-nonogram')),
+  entry(lightsOut, () => import('@wp/game-lights-out')),
   entry(memory, () => import('@wp/game-memory')),
+  entry(connectFour, () => import('@wp/game-connect-four')),
   entry(ticTacToe, () => import('@wp/game-tic-tac-toe'))
 ];
 

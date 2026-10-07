@@ -1,13 +1,11 @@
 // Guards public releases: the legal notice (Impressum) must contain the provider details.
 // Values come from the environment or an untracked .env.production.local; never from Git.
 import { loadEnv } from 'vite';
+import { legalFromEnv } from './legal-env.mjs';
 
-const env = { ...loadEnv('production', process.cwd(), 'WP_'), ...process.env };
-const missing = [];
-if (!env.WP_LEGAL_NAME?.trim()) missing.push('WP_LEGAL_NAME');
-if ((env.WP_LEGAL_ADDRESS ?? '').split('|').filter((l) => l.trim()).length < 2) missing.push('WP_LEGAL_ADDRESS (pipe-separated, at least street and city lines)');
-if (missing.length) {
-  console.error(`Release blocked: set ${missing.join(', ')} (see docs/deployment.md). Values are never printed.`);
+const legal = legalFromEnv({ ...loadEnv('production', process.cwd(), 'WP_'), ...process.env });
+if (!legal.name || legal.address.length < 2) {
+  console.error('Release blocked: set WP_LEGAL to the provider name and postal address (lines separated by newlines or "|"). See docs/deployment.md. Values are never printed.');
   process.exit(1);
 }
-console.log('Release environment OK (legal notice configured).');
+console.log(`Release environment OK (legal notice: name + ${legal.address.length} address lines).`);
