@@ -82,7 +82,7 @@ export function oracleAugmentPairs(n: number, edges: readonly OEdge[]): string[]
 }
 
 /** Every simple route from `s` to `t`, as sorted lists of connection indices. */
-export function simpleRoutes(n: number, edges: readonly OEdge[], s: number, t: number): number[][] {
+export function simpleRoutes(_n: number, edges: readonly OEdge[], s: number, t: number): number[][] {
   const routes: number[][] = [];
   const visited = new Set<number>([s]);
   const walk = (at: number, used: number[]) => {

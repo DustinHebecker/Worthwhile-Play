@@ -139,7 +139,7 @@ describe('view', () => {
     expect(q(`node-${nodeLabel(a)}`).dataset.selected).toBe('true');
     expect(document.querySelector('.gd-preview')?.getAttribute('visibility')).toBe('visible');
     expect(q('gd-status').dataset.state).toBe('note');
-    expect(q('gd-submit').disabled).toBe(true);
+    expect((q('gd-submit') as HTMLButtonElement).disabled).toBe(true);
     click(q('gd-clear'));
     expect(document.querySelector('.gd-preview')?.getAttribute('visibility')).toBe('hidden');
     const [u, v] = solutionOf(task)!.nodes;
@@ -169,7 +169,7 @@ describe('view', () => {
     const { q, click, root } = mount(state);
     expect(q('gd-choices').hidden).toBe(false);
     expect(root.querySelector('.gd-diagram [role="button"]')).toBeNull();
-    expect(q('gd-submit').disabled).toBe(true);
+    expect((q('gd-submit') as HTMLButtonElement).disabled).toBe(true);
     click(q('gd-choice-1'));
     expect(q('gd-choice-1').getAttribute('aria-pressed')).toBe('true');
     click(q('gd-submit'));
@@ -181,7 +181,7 @@ describe('view', () => {
     click(q('gd-submit'));
     expect(q('gd-status').dataset.state).toBe('correct');
     expect(document.querySelectorAll('.gd-edge[data-selected="true"]')).toHaveLength(answer);
-    expect(q(`gd-choice-${answer}`).disabled).toBe(true);
+    expect((q(`gd-choice-${answer}`) as HTMLButtonElement).disabled).toBe(true);
   });
 
   it('keyboard: arrows move between items (reversed in RTL), Enter and Space select', () => {

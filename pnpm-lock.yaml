@@ -92,6 +92,9 @@ importers:
       '@wp/game-nonogram':
         specifier: workspace:*
         version: link:../../packages/games/nonogram
+      '@wp/game-river-crossing':
+        specifier: workspace:*
+        version: link:../../packages/games/river-crossing
       '@wp/game-sequence-memory':
         specifier: workspace:*
         version: link:../../packages/games/sequence-memory

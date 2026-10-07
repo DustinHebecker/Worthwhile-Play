@@ -8,6 +8,7 @@ import { metadata as mastermind } from '@wp/game-mastermind/metadata';
 import { metadata as memory } from '@wp/game-memory/metadata';
 import { metadata as minesweeper } from '@wp/game-minesweeper/metadata';
 import { metadata as nonogram } from '@wp/game-nonogram/metadata';
+import { metadata as riverCrossing } from '@wp/game-river-crossing/metadata';
 import { metadata as sequenceMemory } from '@wp/game-sequence-memory/metadata';
 import { metadata as skyscrapers } from '@wp/game-skyscrapers/metadata';
 import { metadata as slidingBlocks } from '@wp/game-sliding-blocks/metadata';
@@ -37,6 +38,7 @@ export const GAMES: readonly GameEntry[] = [
   entry(lightsOut, () => import('@wp/game-lights-out')),
   entry(sokoban, () => import('@wp/game-sokoban')),
   entry(slidingBlocks, () => import('@wp/game-sliding-blocks')),
+  entry(riverCrossing, () => import('@wp/game-river-crossing')),
   entry(laserCircuit, () => import('@wp/game-laser-circuit')),
   entry(memory, () => import('@wp/game-memory')),
   entry(sequenceMemory, () => import('@wp/game-sequence-memory')),
