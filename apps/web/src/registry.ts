@@ -3,6 +3,7 @@ import { metadata as blackBox } from '@wp/game-black-box/metadata';
 import { metadata as bridges } from '@wp/game-bridges/metadata';
 import { metadata as constraintGrid } from '@wp/game-constraint-grid/metadata';
 import { metadata as connectFour } from '@wp/game-connect-four/metadata';
+import { metadata as graphDetective } from '@wp/game-graph-detective/metadata';
 import { metadata as laserCircuit } from '@wp/game-laser-circuit/metadata';
 import { metadata as lightsOut } from '@wp/game-lights-out/metadata';
 import { metadata as mastermind } from '@wp/game-mastermind/metadata';
@@ -32,6 +33,7 @@ const entry = <S>(metadata: GameMetadata, load: () => Promise<{ default: GameMod
 export const GAMES: readonly GameEntry[] = [
   entry(mastermind, () => import('@wp/game-mastermind')),
   entry(blackBox, () => import('@wp/game-black-box')),
+  entry(graphDetective, () => import('@wp/game-graph-detective')),
   entry(constraintGrid, () => import('@wp/game-constraint-grid')),
   entry(nonogram, () => import('@wp/game-nonogram')),
   entry(skyscrapers, () => import('@wp/game-skyscrapers')),

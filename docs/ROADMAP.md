@@ -13,7 +13,7 @@ Legend — Priority: **P0** foundation/blocking · **P1** next · **P2** later. 
 | M1 | **Learning platform**: deck browser/import (CSV/JSON), Memory variants (word↔image, term↔definition, language pairs), optional spaced repetition *without* streaks/notifications ("Items worth reviewing"), audio (bundled + speech synthesis best effort), content-pack download mechanism with size disclosure | P1 | M0 | ⏳ |
 | M2 | **Puzzle core + logic puzzles**: shared grid/puzzle utilities; *generator → independent solver → uniqueness → difficulty* pipeline; first puzzles | P1 | M0 | 🚧 Nonogram, Lights Out, Skyscrapers, Crate Pusher, Mine Logic, Unblock, Logic Grid, River Crossing, Bridges done; `puzzle-core` extraction pending |
 | M3 | **Board games**: Connect Four, Chess (complete rules, local AI; engine license review) | P1 | M0 | 🚧 Four in a Row done |
-| M4 | **Systems & hypothesis games** | P1 | M2 | 🚧 Black Box, Laser Paths done |
+| M4 | **Systems & hypothesis games** | P1 | M2 | 🚧 Black Box, Laser Paths, Network Detective done |
 | M5 | **Memory & attention exercises**, Faces & Names (synthetic/licensed faces only) | P1 | M1 | 🚧 Sequence Memory done |
 | M6 | **Communication exercises** with deterministic evaluation | P2 | M0 | ⏳ |
 | M7 | **Strategy engine** (fresh agent context): shared simulation → Tower Defense → turn-based strategy → 4 hybrid modes | P2 | stable M0–M2 | ⏳ |
@@ -49,7 +49,7 @@ Cross-cutting, continuous: accessibility review, native-speaker review of transl
 | Algorithms | Logic Path | M4 | ⏳ | |
 | Systems | Systems Puzzle | M4 | ⏳ | |
 | Systems | Debug the System | M4 | ⏳ | |
-| Systems | Graph Detective | M4 | ⏳ | |
+| Systems | Graph Detective → shown as **Network Detective** | M4 | ✅ | 5 task types (bridge, augment, shortest route, single point of failure, min cut); algorithms checked against brute-force oracle |
 | Spatial | Circuit Puzzle | M4 | ⏳ | |
 | Spatial | Stacking duel (Tower-Battle-style): players alternately rotate and drop irregular original shapes onto a shared tower; whoever makes it collapse loses (also solo: reach a height with N pieces) | M4 | ⏳ | original name/shapes (the commercial "Animal Tower Battle" is only a design reference); needs a deterministic 2D physics step (own engine or license-reviewed MIT engine such as planck.js); save only settled states between turns |
 | Spatial | Laser Circuit → shown as **Laser Paths** | M4 | ✅ | 24 original levels, each with exactly one solution (oracle-verified); generic `traceBeams` for later reuse |
