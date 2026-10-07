@@ -144,6 +144,15 @@ describe('generateSequence', () => {
     );
   });
 
+  it('places targets as close as the minimum gap allows (but never closer)', () => {
+    const gaps = new Set<number>();
+    for (let seed = 0; seed < 40; seed++) {
+      const targets = generateSequence(seed, 'long').flatMap((s, i) => (s.target ? [i] : []));
+      for (let k = 1; k < targets.length; k++) gaps.add((targets[k] as number) - (targets[k - 1] as number));
+    }
+    expect(Math.min(...gaps)).toBe(MIN_TARGET_GAP);
+  });
+
   it('never shows a target in the first two stimuli', () => {
     for (let seed = 0; seed < 200; seed++) {
       const [a, b] = generateSequence(seed, 'short');
@@ -378,6 +387,8 @@ describe('isValidSignalState', () => {
       { ...valid(), phase: 'finished', index: 79 },
       { ...valid(), phase: 'ready' },
       { ...valid(), phase: 'ready', index: 0 },
+      { ...valid(), phase: 'ready', index: 0, responses: [{ index: 0, rtMs: 5 }] },
+      { ...valid(), phase: 'ready', index: 3, responses: [] },
       { ...valid(), responses: 'x' },
       { ...valid(), responses: [{ index: 1 }] },
       { ...valid(), responses: [{ index: 1, rtMs: -1 }] },

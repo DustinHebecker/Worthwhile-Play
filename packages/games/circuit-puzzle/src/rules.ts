@@ -1,4 +1,4 @@
-import { createRng, isInt, isOneOf, isRecord, isUint32, type Rng } from '@wp/game-core';
+import { createRng, isArrayOf, isInt, isOneOf, isRecord, isUint32, type Rng } from '@wp/game-core';
 
 /**
  * Pure, DOM-free rules for Circuit (a rotate-the-tiles network puzzle).
@@ -106,8 +106,7 @@ export function kindOf(mask: number): TileKind | null {
 export function rotationOf(mask: number): number {
   const kind = kindOf(mask);
   if (kind === null) return -1;
-  for (let k = 0; k < 4; k++) if (rotateBy(CANONICAL[kind], k) === mask) return k;
-  return -1;
+  return [0, 1, 2, 3].findIndex((k) => rotateBy(CANONICAL[kind], k) === mask);
 }
 
 /** True when `b` can be reached from `a` by rotation. */
@@ -130,8 +129,8 @@ export function neighbor(index: number, size: number, dir: Direction): number {
 /** True when tile `index` has a wire towards `dir` and the neighbour wires back. */
 export function linked(masks: readonly number[], size: number, index: number, dir: Direction): boolean {
   if (!((masks[index] ?? 0) & dir)) return false;
-  const j = neighbor(index, size, dir);
-  return j >= 0 && ((masks[j] ?? 0) & opposite(dir)) !== 0;
+  // Off-board neighbours (-1) read as an empty tile.
+  return ((masks[neighbor(index, size, dir)] ?? 0) & opposite(dir)) !== 0;
 }
 
 /** Tiles connected to the source through matched wires (breadth-first search). */
@@ -140,8 +139,8 @@ export function poweredSet(masks: readonly number[], size: number, source: numbe
   if (source < 0 || source >= masks.length) return powered;
   powered[source] = true;
   const queue = [source];
-  for (let q = 0; q < queue.length; q++) {
-    const i = queue[q] as number;
+  // Iterating an array while appending to it visits the appended items too (BFS order).
+  for (const i of queue) {
     for (const d of DIRECTIONS) {
       if (!linked(masks, size, i, d)) continue;
       const j = neighbor(i, size, d);
@@ -170,16 +169,16 @@ export function countLoose(masks: readonly number[], size: number): number {
 /** Number of matched connections (each counted once). */
 export function countLinks(masks: readonly number[], size: number): number {
   let links = 0;
-  for (let i = 0; i < masks.length; i++) {
+  masks.forEach((_, i) => {
     if (linked(masks, size, i, E)) links++;
     if (linked(masks, size, i, S)) links++;
-  }
+  });
   return links;
 }
 
 /** Complete circuit: everything powered, no loose ends, and no loops (a spanning tree). */
 export function isCircuitComplete(masks: readonly number[], size: number, source: number): boolean {
-  if (masks.length !== size * size || masks.length === 0) return false;
+  if (masks.length !== size * size) return false;
   if (!poweredSet(masks, size, source).every(Boolean)) return false;
   if (countLoose(masks, size) !== 0) return false;
   return countLinks(masks, size) === masks.length - 1;
@@ -321,11 +320,10 @@ export function isCircuitState(value: unknown): value is CircuitState {
     if (size !== SIZES[difficulty] || source !== sourceIndex(size)) return false;
     const total = size * size;
     const isMask = (m: unknown): m is number => isInt(m, 1, 15);
-    if (!Array.isArray(solution) || solution.length !== total || !solution.every(isMask)) return false;
-    if (!Array.isArray(masks) || masks.length !== total || !masks.every(isMask)) return false;
+    if (!isArrayOf(solution, isMask, total) || !isArrayOf(masks, isMask, total)) return false;
     if (!masks.every((m, i) => isRotationOf(solution[i] as number, m))) return false;
     if (!isCircuitComplete(solution, size, source)) return false;
-    if (!Array.isArray(locked) || locked.length !== total || !locked.every((b) => typeof b === 'boolean')) return false;
+    if (!isArrayOf(locked, (b): b is boolean => typeof b === 'boolean', total)) return false;
     if (!isInt(moves, 0, MAX_COUNTER)) return false;
     if (!Array.isArray(history) || history.length > MAX_HISTORY || history.length > moves) return false;
     return history.every((h) => isInt(h, -total, total) && h !== 0);

@@ -14,7 +14,7 @@ Legend — Priority: **P0** foundation/blocking · **P1** next · **P2** later. 
 | M2 | **Puzzle core + logic puzzles**: shared grid/puzzle utilities; *generator → independent solver → uniqueness → difficulty* pipeline; first puzzles | P1 | M0 | 🚧 Nonogram, Lights Out, Skyscrapers, Crate Pusher, Mine Logic, Unblock, Logic Grid, River Crossing, Bridges done; `puzzle-core` extraction pending |
 | M3 | **Board games**: Connect Four, Chess (complete rules, local AI; engine license review) | P1 | M0 | 🚧 Four in a Row done |
 | M4 | **Systems & hypothesis games** | P1 | M2 | 🚧 Black Box, Laser Paths, Network Detective, Proof Chain, Robot Program done |
-| M5 | **Memory & attention exercises**, Faces & Names (synthetic/licensed faces only) | P1 | M1 | 🚧 Sequence Memory, Pattern Memory done |
+| M5 | **Memory & attention exercises**, Faces & Names (synthetic/licensed faces only) | P1 | M1 | 🚧 Sequence Memory, Pattern Memory, Signal Watch done |
 | M6 | **Communication exercises** with deterministic evaluation | P2 | M0 | ⏳ |
 | M7 | **Strategy engine** (fresh agent context): shared simulation → Tower Defense → turn-based strategy → 4 hybrid modes | P2 | stable M0–M2 | ⏳ |
 | M8 | **Adventure engine** → Adventure A (dark fantasy) → Adventure B (temporal) | P2 | M0 | ⏳ |
@@ -59,7 +59,7 @@ Cross-cutting, continuous: accessibility review, native-speaker review of transl
 | Memory | Prospective Memory | M5 | ⏳ | |
 | Memory | Association / Mnemonic exercises | M5 | ⏳ | |
 | Memory | N-back (optional) | M5 | ⏳ | |
-| Attention | Signal Watch | M5 | ⏳ | explicit session lengths |
+| Attention | Signal Watch | M5 | ✅ | 2/4/6-minute sessions, seeded stream, calm factual summary; pauses safely |
 | Attention | Deep Read | M5 | ⏳ | |
 | Attention | Distractor Control | M5 | ⏳ | must not become irritating |
 | Attention | Visual / peripheral search | M5 | ⏳ | |

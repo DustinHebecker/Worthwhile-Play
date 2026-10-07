@@ -56,6 +56,9 @@ const boardArb = (minSize: number, maxSize: number) =>
     })
   );
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
+/** A valid tile mask that is not a rotation of `m` (straight ↔ corner, end ↔ tee). */
+const notRotation = (m: number) => (degree(m) === 2 ? (kindOf(m) === 'straight' ? N | E : N | S) : degree(m) === 1 ? N | E | S : N);
+const notRotationIndex = (s: CircuitState) => s.masks.length - 1;
 
 /** Turns every tile to the generated solution (clockwise turns only). */
 function solve(state: CircuitState): CircuitState {
@@ -127,6 +130,7 @@ describe('tile algebra', () => {
   });
 
   it('rotationOf recovers the turns from the canonical shape', () => {
+    expect(TILE_KINDS).toEqual(['end', 'straight', 'corner', 'tee', 'cross']);
     for (const kind of TILE_KINDS) {
       for (let k = 0; k < 4; k++) {
         const m = rotateBy(CANONICAL[kind], k);
@@ -197,6 +201,9 @@ describe('grid connectivity', () => {
     expect(isCircuitComplete(fixed, 2, 0)).toBe(true);
     expect(isCircuitComplete(fixed, 2, 3)).toBe(true);
     expect(poweredSet(fixed, 2, -1)).toEqual([false, false, false, false]);
+    expect(poweredSet(fixed, 2, 4)).toEqual([false, false, false, false]);
+    // A 1×2 strip is a valid tree, but not when the board is declared 2×2.
+    expect(isCircuitComplete([E, W], 2, 0)).toBe(false);
   });
 
   it('rejects loops, off-board ends and wrong board sizes', () => {
@@ -209,6 +216,16 @@ describe('grid connectivity', () => {
     expect(isCircuitComplete(offBoard, 2, 0)).toBe(false);
     expect(isCircuitComplete([E | S, W | S, N], 2, 0)).toBe(false);
     expect(isCircuitComplete([], 0, 0)).toBe(false);
+  });
+
+  it('rejects a loop plus a separate tree even though the link count matches', () => {
+    // 3×3: loop on tiles 0,1,3,4 and a separate chain 2-5-8-7-6; 8 links, no loose ends.
+    const masks = [E | S, W | S, S, N | E, N | W, N | S, E, E | W, N | W];
+    expect(countLoose(masks, 3)).toBe(0);
+    expect(countLinks(masks, 3)).toBe(8);
+    expect(poweredSet(masks, 3, 0).filter(Boolean)).toHaveLength(4);
+    expect(isCircuitComplete(masks, 3, 0)).toBe(false);
+    expect(oracleSolved(masks, 3, 0)).toBe(false);
   });
 
   it('powered set, loose ends and completeness agree with the oracle (property)', () => {
@@ -313,6 +330,15 @@ describe('generation', { timeout: 60_000 }, () => {
       }),
       { numRuns: 120 }
     );
+  });
+
+  it('never hands out a completed board, even on tiny boards', () => {
+    for (let seed = 0; seed < 300; seed++) {
+      const p = generatePuzzle(seed, 2);
+      expect(isCircuitComplete(p.solution, 2, p.source)).toBe(true);
+      expect(isCircuitComplete(p.masks, 2, p.source)).toBe(false);
+      p.masks.forEach((m, i) => expect(isRotationOf(p.solution[i] as number, m)).toBe(true));
+    }
   });
 
   it('is deterministic per seed and differs between seeds', () => {
@@ -453,6 +479,12 @@ describe('isCircuitState', () => {
       { ...base, solution: base.solution.map(() => 15), masks: base.masks.map(() => 15) },
       { ...base, locked: base.locked.slice(1) },
       { ...base, locked: base.locked.map(() => 1) },
+      { ...base, locked: base.locked.map((b, i) => (i === 3 ? 1 : b)) },
+      { ...base, masks: base.masks.map((m, i) => (i === 0 ? 16 : m)) },
+      { ...base, solution: [...base.solution, 1], masks: [...base.masks, 1] },
+      { ...base, difficulty: 'medium' },
+      { ...base, source: 13 },
+      { ...base, masks: base.masks.map((m, i) => (i === notRotationIndex(base) ? notRotation(base.solution[i] as number) : m)) },
       { ...base, locked: 'no' },
       { ...base, moves: -1 },
       { ...base, moves: MAX_COUNTER + 1 },
@@ -467,6 +499,13 @@ describe('isCircuitState', () => {
     for (const value of bad) expect(isCircuitState(value)).toBe(false);
     expect(isCircuitState({ ...base, history: [25, -25] })).toBe(true);
     expect(isCircuitState({ ...base, moves: MAX_COUNTER })).toBe(true);
+  });
+
+  it('accepts a medium state but rejects it relabelled as easy', () => {
+    const medium = createInitialState(4, 'medium');
+    expect(isCircuitState(medium)).toBe(true);
+    expect(isCircuitState({ ...medium, difficulty: 'easy' })).toBe(false);
+    expect(isCircuitState({ ...medium, size: 5 })).toBe(false);
   });
 
   it('detects a solution that is not a single tree', () => {

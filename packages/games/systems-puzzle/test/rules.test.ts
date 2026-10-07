@@ -357,9 +357,10 @@ describe('replay', () => {
     expect(replay(LAB, 'medium', [...fourTicks, TICK])).toBeNull();
     expect(replay(LAB, 'medium', [...fourTicks, 0])).toBeNull();
     // LAB goal: tank C holds exactly 1 after tick 4 — slow pipe from B delivers it.
-    const solved = [1, TICK, 1, 0, TICK, 0, 2, TICK, 2, TICK];
-    const progress = replay(LAB, 'medium', solved)!;
-    expect(progress.sim.levels[2]).toBe(4);
+    const overshoot = replay(LAB, 'medium', [1, TICK, 1, 0, TICK, 0, 2, TICK, 2, TICK])!;
+    expect(overshoot.sim.levels).toEqual([0, 0, 5]);
+    expect(overshoot.solved).toBe(false);
+    expect(overshoot.over).toBe(true);
     const exact = replay(LAB, 'medium', [0, TICK, 0, 2, TICK, 2, TICK, TICK])!;
     expect(exact.sim.levels).toEqual([3, 1, 1]);
     expect(exact.solved).toBe(true);
