@@ -25,7 +25,7 @@ test.describe('app shell', () => {
   });
 
   test('every game is reachable by direct URL', async ({ page }) => {
-    for (const id of ['tic-tac-toe', 'mastermind', 'memory', 'connect-four', 'lights-out', 'nonogram', 'sequence-memory', 'black-box', 'sokoban', 'skyscrapers', 'laser-circuit', 'minesweeper', 'sliding-blocks', 'constraint-grid', 'river-crossing', 'bridges', 'graph-detective']) {
+    for (const id of ['tic-tac-toe', 'mastermind', 'memory', 'connect-four', 'lights-out', 'nonogram', 'sequence-memory', 'black-box', 'sokoban', 'skyscrapers', 'laser-circuit', 'minesweeper', 'sliding-blocks', 'constraint-grid', 'river-crossing', 'bridges', 'graph-detective', 'minimal-proof']) {
       await page.goto(`/games/${id}`);
       await expect(page.getByTestId('new-game')).toBeVisible();
     }

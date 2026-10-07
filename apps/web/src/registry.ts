@@ -8,6 +8,7 @@ import { metadata as laserCircuit } from '@wp/game-laser-circuit/metadata';
 import { metadata as lightsOut } from '@wp/game-lights-out/metadata';
 import { metadata as mastermind } from '@wp/game-mastermind/metadata';
 import { metadata as memory } from '@wp/game-memory/metadata';
+import { metadata as minimalProof } from '@wp/game-minimal-proof/metadata';
 import { metadata as minesweeper } from '@wp/game-minesweeper/metadata';
 import { metadata as nonogram } from '@wp/game-nonogram/metadata';
 import { metadata as riverCrossing } from '@wp/game-river-crossing/metadata';
@@ -35,6 +36,7 @@ export const GAMES: readonly GameEntry[] = [
   entry(blackBox, () => import('@wp/game-black-box')),
   entry(graphDetective, () => import('@wp/game-graph-detective')),
   entry(constraintGrid, () => import('@wp/game-constraint-grid')),
+  entry(minimalProof, () => import('@wp/game-minimal-proof')),
   entry(nonogram, () => import('@wp/game-nonogram')),
   entry(skyscrapers, () => import('@wp/game-skyscrapers')),
   entry(bridges, () => import('@wp/game-bridges')),

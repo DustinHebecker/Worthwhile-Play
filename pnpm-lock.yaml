@@ -95,6 +95,9 @@ importers:
       '@wp/game-minesweeper':
         specifier: workspace:*
         version: link:../../packages/games/minesweeper
+      '@wp/game-minimal-proof':
+        specifier: workspace:*
+        version: link:../../packages/games/minimal-proof
       '@wp/game-nonogram':
         specifier: workspace:*
         version: link:../../packages/games/nonogram
@@ -274,6 +277,25 @@ importers:
         specifier: workspace:*
         version: link:../../testing
 
+  packages/games/logic-path:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../../game-core
+      '@wp/ui':
+        specifier: workspace:*
+        version: link:../../ui
+    devDependencies:
+      '@wp/localization':
+        specifier: workspace:*
+        version: link:../../localization
+      '@wp/persistence':
+        specifier: workspace:*
+        version: link:../../persistence
+      '@wp/testing':
+        specifier: workspace:*
+        version: link:../../testing
+
   packages/games/mastermind:
     dependencies:
       '@wp/game-core':
@@ -316,6 +338,25 @@ importers:
         version: link:../../testing
 
   packages/games/minesweeper:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../../game-core
+      '@wp/ui':
+        specifier: workspace:*
+        version: link:../../ui
+    devDependencies:
+      '@wp/localization':
+        specifier: workspace:*
+        version: link:../../localization
+      '@wp/persistence':
+        specifier: workspace:*
+        version: link:../../persistence
+      '@wp/testing':
+        specifier: workspace:*
+        version: link:../../testing
+
+  packages/games/minimal-proof:
     dependencies:
       '@wp/game-core':
         specifier: workspace:*
@@ -430,6 +471,25 @@ importers:
         version: link:../../testing
 
   packages/games/sokoban:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../../game-core
+      '@wp/ui':
+        specifier: workspace:*
+        version: link:../../ui
+    devDependencies:
+      '@wp/localization':
+        specifier: workspace:*
+        version: link:../../localization
+      '@wp/persistence':
+        specifier: workspace:*
+        version: link:../../persistence
+      '@wp/testing':
+        specifier: workspace:*
+        version: link:../../testing
+
+  packages/games/spatial-memory:
     dependencies:
       '@wp/game-core':
         specifier: workspace:*
