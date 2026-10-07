@@ -54,7 +54,8 @@ main:focus { outline: none; }
 .host-panel { margin-block: 1rem; }
 .toolbar { justify-content: flex-start; }
 .field { display: grid; gap: 0.3rem; margin-block: 0.75rem; }
-.field.inline { display: inline-flex; align-items: center; gap: 0.5rem; margin: 0; }
+.field.inline { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin: 0; max-width: 100%; min-width: 0; }
+.field.inline select { min-width: 0; max-width: 100%; text-overflow: ellipsis; }
 .field.checkbox { display: flex; align-items: center; gap: 0.6rem; }
 .field.checkbox input { width: 1.4rem; height: 1.4rem; min-height: 0; }
 fieldset { border: 1px solid var(--wp-border); border-radius: var(--wp-radius); padding: 0.5rem 1rem; }

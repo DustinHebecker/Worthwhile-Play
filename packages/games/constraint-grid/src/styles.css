@@ -14,7 +14,10 @@
 /* Shared button styles set display; keep the hidden attribute authoritative. */
 .wp-constraint-grid [hidden] { display: none !important; }
 
-.wp-constraint-grid .cg-layout { display: grid; gap: 1.25rem; align-items: start; }
+.wp-constraint-grid .cg-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.25rem; align-items: start; }
+/* Long clue texts must wrap instead of widening the page on phones. */
+.wp-constraint-grid .cg-layout > * { min-width: 0; }
+.wp-constraint-grid button { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
 @media (min-width: 60rem) {
   .wp-constraint-grid .cg-layout { grid-template-columns: minmax(15rem, 18rem) minmax(0, 1fr); }
   .wp-constraint-grid .cg-clues { position: sticky; inset-block-start: 0.5rem; max-height: calc(100vh - 1rem); overflow-y: auto; }
