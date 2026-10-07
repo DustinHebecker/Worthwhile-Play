@@ -1,6 +1,7 @@
 import type { GameMetadata, GameModule } from '@wp/game-core';
 import { metadata as blackBox } from '@wp/game-black-box/metadata';
 import { metadata as connectFour } from '@wp/game-connect-four/metadata';
+import { metadata as laserCircuit } from '@wp/game-laser-circuit/metadata';
 import { metadata as lightsOut } from '@wp/game-lights-out/metadata';
 import { metadata as mastermind } from '@wp/game-mastermind/metadata';
 import { metadata as memory } from '@wp/game-memory/metadata';
@@ -30,6 +31,7 @@ export const GAMES: readonly GameEntry[] = [
   entry(skyscrapers, () => import('@wp/game-skyscrapers')),
   entry(lightsOut, () => import('@wp/game-lights-out')),
   entry(sokoban, () => import('@wp/game-sokoban')),
+  entry(laserCircuit, () => import('@wp/game-laser-circuit')),
   entry(memory, () => import('@wp/game-memory')),
   entry(sequenceMemory, () => import('@wp/game-sequence-memory')),
   entry(connectFour, () => import('@wp/game-connect-four')),

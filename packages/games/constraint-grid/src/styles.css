@@ -1,0 +1,118 @@
+/* Constraint Grid ("Logic Grid"). All rules are scoped under .wp-constraint-grid and use logical
+   properties, so the layout mirrors correctly in RTL. Each category pair is its own small grid
+   (at most 5 × 5 cells of 44 px plus a row-label column), which fits a 360 px phone. */
+.wp-constraint-grid {
+  --cg-cell: 44px;
+  --cg-label: minmax(3.5rem, 6.5rem);
+  display: grid;
+  gap: 0.75rem;
+  max-width: 64rem;
+  margin-inline: auto;
+}
+.wp-constraint-grid p { margin: 0; }
+.wp-constraint-grid h2 { margin: 0; font-size: 1.1rem; }
+/* Shared button styles set display; keep the hidden attribute authoritative. */
+.wp-constraint-grid [hidden] { display: none !important; }
+
+.wp-constraint-grid .cg-layout { display: grid; gap: 1.25rem; align-items: start; }
+@media (min-width: 60rem) {
+  .wp-constraint-grid .cg-layout { grid-template-columns: minmax(15rem, 18rem) minmax(0, 1fr); }
+  .wp-constraint-grid .cg-clues { position: sticky; inset-block-start: 0.5rem; max-height: calc(100vh - 1rem); overflow-y: auto; }
+}
+.wp-constraint-grid .cg-clues,
+.wp-constraint-grid .cg-grids { display: grid; gap: 0.5rem; min-width: 0; }
+.wp-constraint-grid .cg-hint { font-size: 0.85rem; }
+
+/* Clues: toggle buttons; used clues are struck through and carry a ✓ (not colour alone). */
+.wp-constraint-grid .cg-clue-list { margin: 0; padding-inline-start: 2.1rem; display: grid; gap: 0.35rem; }
+.wp-constraint-grid .cg-clue-list li { padding-inline-start: 0.15rem; }
+.wp-constraint-grid .cg-clue-list li::marker { font-variant-numeric: tabular-nums; }
+.wp-constraint-grid .cg-clue {
+  display: flex; align-items: flex-start; justify-content: flex-start; gap: 0.4rem; width: 100%;
+  min-height: var(--wp-touch); padding: 0.45rem 0.6rem;
+  text-align: start; font: inherit; line-height: 1.35;
+  background: var(--wp-surface); color: var(--wp-text);
+  border: 1px solid var(--wp-border); border-radius: 8px; cursor: pointer;
+}
+.wp-constraint-grid .cg-clue-mark { flex: 0 0 1.1em; font-weight: 800; color: var(--wp-ok); }
+.wp-constraint-grid .cg-clue[data-used='true'] { background: var(--wp-surface-2); color: var(--wp-muted); }
+.wp-constraint-grid .cg-clue[data-used='true'] .cg-clue-text { text-decoration: line-through; text-decoration-thickness: 2px; }
+.wp-constraint-grid .cg-clue:focus-visible { outline: 3px solid var(--wp-focus); outline-offset: 2px; }
+
+/* Grids */
+.wp-constraint-grid .cg-blocks { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; }
+.wp-constraint-grid .cg-block { display: grid; gap: 0.35rem; max-width: 100%; overflow-x: auto; }
+.wp-constraint-grid .cg-caption { margin: 0; font-size: 0.95rem; font-weight: 700; text-align: center; }
+.wp-constraint-grid .cg-matrix {
+  display: grid;
+  grid-template-columns: var(--cg-label) repeat(var(--cg-n, 3), var(--cg-cell));
+  justify-content: center;
+}
+.wp-constraint-grid .cg-row { display: contents; }
+
+.wp-constraint-grid .cg-colhead {
+  display: grid; place-items: end center;
+  padding-block-end: 0.3rem; font-size: 0.85rem; line-height: 1.15;
+}
+/* Column labels run bottom-to-top; short CJK labels stay horizontal and wrap per character. */
+.wp-constraint-grid .cg-colhead span { writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; }
+.wp-constraint-grid:is(:lang(zh), :lang(ja), :lang(ko)) .cg-colhead span {
+  writing-mode: horizontal-tb; transform: none; white-space: normal; word-break: break-all;
+  max-inline-size: var(--cg-cell); text-align: center; font-size: 0.8rem;
+}
+.wp-constraint-grid .cg-rowhead {
+  display: flex; align-items: center; justify-content: flex-end;
+  padding-inline-end: 0.4rem; font-size: 0.85rem; line-height: 1.15;
+  text-align: end; overflow-wrap: anywhere; hyphens: auto;
+}
+
+.wp-constraint-grid .cg-cell {
+  position: relative;
+  block-size: var(--cg-cell);
+  display: flex; align-items: center; justify-content: center;
+  background: var(--wp-surface);
+  border-block-end: 1px solid var(--wp-border);
+  border-inline-end: 1px solid var(--wp-border);
+  font-size: 1.3rem; line-height: 1;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+/* Outer frame. */
+.wp-constraint-grid .cg-rowhead + .cg-cell { border-inline-start: 2px solid var(--wp-muted); }
+.wp-constraint-grid .cg-row:nth-child(2) > .cg-cell { border-block-start: 2px solid var(--wp-muted); }
+.wp-constraint-grid .cg-row:last-child > .cg-cell { border-block-end: 2px solid var(--wp-muted); }
+.wp-constraint-grid .cg-row > .cg-cell:last-child { border-inline-end: 2px solid var(--wp-muted); }
+
+.wp-constraint-grid .cg-cell:hover { background: var(--wp-surface-2); }
+.wp-constraint-grid .cg-cell.is-peer { background: color-mix(in srgb, var(--wp-accent) 8%, var(--wp-surface)); }
+/* ✗: muted cross. ✓: bold tick on a tinted, framed cell (symbol + frame, never colour alone). */
+.wp-constraint-grid .cg-cell[data-mark='no'] .cg-symbol { color: var(--wp-muted); }
+.wp-constraint-grid .cg-cell[data-mark='yes'] { background: color-mix(in srgb, var(--wp-accent) 18%, var(--wp-surface)); }
+.wp-constraint-grid .cg-cell[data-mark='yes']::after {
+  content: ''; position: absolute; inset: 3px; border: 2px solid var(--wp-accent); border-radius: 4px; pointer-events: none;
+}
+.wp-constraint-grid .cg-cell[data-mark='yes'] .cg-symbol { font-weight: 800; color: var(--wp-text); }
+.wp-constraint-grid .cg-cell:focus-visible { outline: 3px solid var(--wp-focus); outline-offset: -3px; z-index: 2; }
+.wp-constraint-grid .cg-blocks.is-solved .cg-cell { cursor: default; }
+
+/* Controls */
+.wp-constraint-grid .cg-controls { display: grid; gap: 0.6rem; justify-items: center; margin-block-start: 0.5rem; }
+.wp-constraint-grid .cg-actions { justify-content: center; }
+.wp-constraint-grid .cg-auto {
+  display: flex; align-items: center; gap: 0.5rem; min-height: var(--wp-touch);
+  max-width: 30rem; cursor: pointer; font-size: 0.95rem;
+}
+.wp-constraint-grid .cg-auto input { inline-size: 1.4rem; block-size: 1.4rem; min-height: 0; margin: 0; flex: none; }
+.wp-constraint-grid .cg-check-result {
+  padding: 0.5rem 0.75rem; border-inline-start: 4px solid var(--wp-accent);
+  background: var(--wp-surface-2); border-radius: 6px;
+}
+.wp-constraint-grid .cg-help { display: grid; gap: 0.25rem; font-size: 0.85rem; }
+
+@media (max-width: 400px) {
+  .wp-constraint-grid { --cg-label: minmax(3.25rem, 6rem); }
+  .wp-constraint-grid .cg-rowhead,
+  .wp-constraint-grid .cg-colhead { font-size: 0.8rem; }
+}

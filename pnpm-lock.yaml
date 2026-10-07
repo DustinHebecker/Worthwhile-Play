@@ -71,6 +71,9 @@ importers:
       '@wp/game-core':
         specifier: workspace:*
         version: link:../../packages/game-core
+      '@wp/game-laser-circuit':
+        specifier: workspace:*
+        version: link:../../packages/games/laser-circuit
       '@wp/game-lights-out':
         specifier: workspace:*
         version: link:../../packages/games/lights-out

@@ -1,0 +1,165 @@
+/* Unblock — all rules scoped under .wp-sliding-blocks. Uses shared --wp-* tokens. */
+.wp-sliding-blocks {
+  --sb-frame: #6f5a43;
+  --sb-floor: var(--wp-surface);
+  --sb-line: var(--wp-border);
+  --sb-wood: #d8b98a;
+  --sb-wood-edge: #7a5a2e;
+  --sb-wood-text: #2b1d0b;
+  --sb-star: #2f5d50;
+  --sb-star-stripe: #3f7566;
+  --sb-star-text: #ffffff;
+  --sb-exit-w: 14px;
+  display: grid;
+  gap: 0.75rem;
+  justify-items: center;
+  width: 100%;
+  max-width: 34rem;
+  margin-inline: auto;
+}
+@media (prefers-color-scheme: dark) {
+  .wp-sliding-blocks {
+    --sb-frame: #4d3f30;
+    --sb-wood: #b8976a;
+    --sb-wood-edge: #3c2a12;
+    --sb-wood-text: #1a1206;
+    --sb-star: #8fc1ad;
+    --sb-star-stripe: #a6d2c1;
+    --sb-star-text: #10201a;
+  }
+}
+.wp-sliding-blocks p { margin: 0; }
+.wp-sliding-blocks [hidden] { display: none; }
+.wp-sliding-blocks .sb-goal { text-align: center; }
+.wp-sliding-blocks .sb-moves { font-variant-numeric: tabular-nums; }
+.wp-sliding-blocks .sb-status { text-align: center; border-inline-start: 4px solid var(--wp-ok); padding-inline-start: 0.5rem; }
+
+/*
+ * Board: a frame around 6 × 6 cells of at least 48 px plus a narrow exit column on the right
+ * (6 px + 6 × 48 px + 14 px = 308 px, which fits a 360 px phone). Always laid out left to right:
+ * the exit is on the right edge in every language.
+ */
+.wp-sliding-blocks .sb-board {
+  direction: ltr;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(48px, 1fr)) var(--sb-exit-w);
+  width: min(100%, 25rem);
+  padding-block: 6px;
+  padding-inline-start: 6px;
+  background: var(--sb-frame);
+  border-radius: var(--wp-radius, 10px);
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+.wp-sliding-blocks .sb-cell {
+  aspect-ratio: 1;
+  min-width: 48px;
+  background: var(--sb-floor);
+  box-shadow: inset 0 0 0 0.5px var(--sb-line);
+  cursor: pointer;
+}
+.wp-sliding-blocks .sb-exit {
+  grid-column: 7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--sb-floor);
+  color: var(--wp-text);
+  font-weight: 700;
+  font-size: 0.8rem;
+  overflow: hidden;
+  border-block: 2px dashed var(--wp-muted);
+}
+
+.wp-sliding-blocks .sb-block {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  min-height: 0;
+  margin: 2px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: 2px solid var(--sb-wood-edge);
+  background:
+    repeating-linear-gradient(0deg, transparent 0 7px, rgb(0 0 0 / 0.06) 7px 9px),
+    var(--sb-wood);
+  color: var(--sb-wood-text);
+  font-weight: 700;
+  font-size: 1.1rem;
+  cursor: grab;
+  touch-action: none;
+}
+.wp-sliding-blocks .sb-block[data-orient='v'] {
+  background:
+    repeating-linear-gradient(90deg, transparent 0 7px, rgb(0 0 0 / 0.06) 7px 9px),
+    var(--sb-wood);
+}
+/* The star block: a different colour, diagonal stripes and the ★ symbol — never colour alone. */
+.wp-sliding-blocks .sb-block[data-target='true'] {
+  background: repeating-linear-gradient(45deg, var(--sb-star) 0 8px, var(--sb-star-stripe) 8px 14px);
+  color: var(--sb-star-text);
+  border-color: var(--wp-text);
+  font-size: 1.5rem;
+}
+.wp-sliding-blocks .sb-mark {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.6em;
+  border-radius: 999px;
+  line-height: 1.5;
+}
+.wp-sliding-blocks .sb-block:not([data-target]) .sb-mark { background: rgb(255 255 255 / 0.55); }
+.wp-sliding-blocks .sb-block:hover { border-color: var(--wp-text); }
+.wp-sliding-blocks .sb-block:focus-visible { outline: 3px solid var(--wp-focus); outline-offset: 1px; }
+/* Dragging follows the pointer directly (no transition), so a release snaps without a jump. */
+.wp-sliding-blocks .sb-dragging { z-index: 2; cursor: grabbing; box-shadow: 0 6px 14px rgb(0 0 0 / 0.3); }
+
+/* Selected block: a double outline plus arrow marks at both ends showing its axis. */
+.wp-sliding-blocks .sb-block[aria-pressed='true'] { border-style: double; border-width: 5px; border-color: var(--wp-text); }
+.wp-sliding-blocks .sb-block[aria-pressed='true']::before,
+.wp-sliding-blocks .sb-block[aria-pressed='true']::after {
+  position: absolute;
+  font-size: 0.75rem;
+  line-height: 1;
+  color: inherit;
+}
+.wp-sliding-blocks .sb-block[aria-pressed='true'][data-orient='h']::before { content: '◀'; inset-inline-start: 3px; }
+.wp-sliding-blocks .sb-block[aria-pressed='true'][data-orient='h']::after { content: '▶'; inset-inline-end: 3px; }
+.wp-sliding-blocks .sb-block[aria-pressed='true'][data-orient='v']::before { content: '▲'; inset-block-start: 3px; }
+.wp-sliding-blocks .sb-block[aria-pressed='true'][data-orient='v']::after { content: '▼'; inset-block-end: 3px; }
+
+.wp-sliding-blocks[data-solved='true'] .sb-block { cursor: default; }
+.wp-sliding-blocks[data-solved='true'] .sb-block[data-target='true'] { outline: 3px solid var(--wp-ok); outline-offset: 2px; }
+
+.wp-sliding-blocks .sb-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem 1.5rem;
+}
+.wp-sliding-blocks .sb-pad {
+  direction: ltr;
+  display: grid;
+  grid-template-columns: repeat(3, 3rem);
+  grid-template-rows: repeat(3, 3rem);
+  grid-template-areas: '. up .' 'left . right' '. down .';
+  gap: 0.25rem;
+}
+.wp-sliding-blocks .sb-pad button { padding: 0; min-width: 0; width: 100%; height: 100%; font-size: 1.1rem; }
+.wp-sliding-blocks .sb-slide-up { grid-area: up; }
+.wp-sliding-blocks .sb-slide-left { grid-area: left; }
+.wp-sliding-blocks .sb-slide-right { grid-area: right; }
+.wp-sliding-blocks .sb-slide-down { grid-area: down; }
+.wp-sliding-blocks .sb-actions { display: grid; gap: 0.5rem; }
+.wp-sliding-blocks .sb-help { display: grid; gap: 0.25rem; font-size: 0.85rem; text-align: center; }
+
+@media (forced-colors: active) {
+  .wp-sliding-blocks .sb-board { border: 2px solid CanvasText; }
+  .wp-sliding-blocks .sb-block { border-color: ButtonText; background: ButtonFace; color: ButtonText; }
+  .wp-sliding-blocks .sb-block[data-target='true'] { background: Highlight; color: HighlightText; }
+}

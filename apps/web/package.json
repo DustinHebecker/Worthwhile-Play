@@ -12,6 +12,7 @@
     "@wp/game-black-box": "workspace:*",
     "@wp/game-connect-four": "workspace:*",
     "@wp/game-core": "workspace:*",
+    "@wp/game-laser-circuit": "workspace:*",
     "@wp/game-lights-out": "workspace:*",
     "@wp/game-mastermind": "workspace:*",
     "@wp/game-memory": "workspace:*",
