@@ -1,0 +1,37 @@
+{
+ "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+ "packageManager": "pnpm",
+ "testRunner": "vitest",
+ "vitest": {
+  "configFile": "packages/games/skyscrapers/stryker.vitest.config.ts"
+ },
+ "coverageAnalysis": "perTest",
+ "mutate": [
+  "packages/games/skyscrapers/src/rules.ts"
+ ],
+ "reporters": [
+  "clear-text",
+  "progress"
+ ],
+ "htmlReporter": {
+  "fileName": "reports/mutation/index.html"
+ },
+ "thresholds": {
+  "high": 85,
+  "low": 70,
+  "break": 65
+ },
+ "tempDirName": ".stryker-tmp-skyscrapers",
+ "plugins": [
+  "@stryker-mutator/vitest-runner"
+ ],
+ "ignorePatterns": [
+  "test-results",
+  "playwright-report",
+  "reports",
+  "coverage",
+  "dist",
+  ".wrangler"
+ ],
+ "concurrency": 4
+}

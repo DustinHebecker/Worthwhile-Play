@@ -9,6 +9,7 @@
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
+    "@wp/game-black-box": "workspace:*",
     "@wp/game-connect-four": "workspace:*",
     "@wp/game-core": "workspace:*",
     "@wp/game-lights-out": "workspace:*",
