@@ -86,6 +86,9 @@ importers:
       '@wp/game-sequence-memory':
         specifier: workspace:*
         version: link:../../packages/games/sequence-memory
+      '@wp/game-skyscrapers':
+        specifier: workspace:*
+        version: link:../../packages/games/skyscrapers
       '@wp/game-sokoban':
         specifier: workspace:*
         version: link:../../packages/games/sokoban

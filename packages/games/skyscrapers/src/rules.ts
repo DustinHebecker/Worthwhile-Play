@@ -390,8 +390,8 @@ export function repeatedCells(cells: readonly number[], givens: readonly number[
 /** Number of filled cells (givens included). */
 export const filledCount = (cells: readonly number[]): number => cells.filter((v) => v !== 0).length;
 
-const editable = (state: SkyscrapersState, index: number): boolean =>
-  Number.isInteger(index) && index >= 0 && index < state.cells.length && state.givens[index] === 0 && !isSolved(state);
+/** Only open cells of an unsolved grid can change (out-of-range or fractional indices have no `givens` entry). */
+const editable = (state: SkyscrapersState, index: number): boolean => state.givens[index] === 0 && !isSolved(state);
 
 const withCell = (state: SkyscrapersState, index: number, value: number, notes: number): SkyscrapersState => {
   if (state.cells[index] === value && state.notes[index] === notes) return state;

@@ -39,7 +39,7 @@ Cross-cutting, continuous: accessibility review, native-speaker review of transl
 | Logic | Lights Out | M2 | ✅ | GF(2) solver, minimal-solution hints |
 | Logic | River Crossing | M2 | ⏳ | |
 | Logic | Rush-Hour-style sliding | M2 | ⏳ | |
-| Logic | Skyscrapers / Towers | M2 | ⏳ | |
+| Logic | Skyscrapers | M2 | ✅ | generator + line solver; uniqueness verified by independent oracle |
 | Logic | Deterministic Minesweeper | M2 | ⏳ | no-guess generation |
 | Board | Connect Four → shown as **Four in a Row** | M3 | ✅ | alpha-beta, 3 levels |
 | Board | Chess | M3 | ⏳ | full rules incl. repetition/50-move/insufficient material |

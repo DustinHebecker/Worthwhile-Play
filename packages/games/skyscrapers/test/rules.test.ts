@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { createRng } from '@wp/game-core';
 import {
@@ -180,6 +180,7 @@ describe('Latin squares', () => {
     expect(isLatinSquare([1, 2, 1, 2], 2)).toBe(false); // column repeat
     expect(isLatinSquare([1, 1, 2, 2], 2)).toBe(false); // row repeat
     expect(isLatinSquare([1, 2, 2], 2)).toBe(false); // length
+    expect(isLatinSquare([1, 2, 2, 1, 1], 2)).toBe(false); // trailing extra cell
     expect(isLatinSquare([0, 1, 1, 0], 2)).toBe(false); // out of range
     expect(isLatinSquare([1, 3, 3, 1], 2)).toBe(false); // out of range
     expect(isLatinSquare([1, 2.5, 2.5, 1], 2)).toBe(false);
@@ -337,6 +338,18 @@ describe('solver', SLOW, () => {
     }
   });
 
+  it('stops at a fixpoint: propagating again changes nothing', () => {
+    for (const n of [4, 5]) {
+      fc.assert(
+        fc.property(puzzleArb(n), ({ puzzle }) => {
+          const once = propagate(puzzle) as number[];
+          expect(propagate(puzzle, once)).toEqual(once);
+        }),
+        { numRuns: 40 }
+      );
+    }
+  });
+
   it('counts solutions like the brute-force oracle', () => {
     for (const n of [3, 4]) {
       fc.assert(
@@ -421,6 +434,18 @@ describe('generation', SLOW, () => {
       expect(sawNoGivens).toBe(EXTRA_GIVENS[difficulty] === 0);
     }
     expect(EXTRA_GIVENS).toEqual({ easy: 2, medium: 0, hard: 0 });
+  });
+
+  it('reveals the easy extra digits in cells that were not given yet', () => {
+    let needed = 0;
+    for (let seed = 0; seed < 200; seed++) {
+      const p = generatePuzzle(seed, 'easy');
+      if (isLogicSolvable({ size: 4, clues: cluesOf(p.solution, 4), givens: zeros(4) })) continue;
+      needed++;
+      // At least one digit was needed for the full clue set, plus two distinct extras.
+      expect(p.givens.filter((g) => g !== 0).length).toBeGreaterThanOrEqual(1 + EXTRA_GIVENS.easy);
+    }
+    expect(needed).toBeGreaterThan(10);
   });
 
   it('is deterministic per seed and varies between seeds', () => {
@@ -615,40 +640,46 @@ describe('game state', SLOW, () => {
   });
 });
 
-describe('isSkyscrapersState', () => {
-  const base = createInitialState(77, 'medium');
-  const open = firstOpen(base);
-  const given = base.givens.findIndex((g) => g !== 0);
-  const variants: Array<[string, Partial<SkyscrapersState> | Record<string, unknown>]> = [
-    ['negative seed', { seed: -1 }],
-    ['huge seed', { seed: 2 ** 32 }],
-    ['unknown difficulty', { difficulty: 'expert' as never }],
-    ['size mismatch', { size: 4 }],
-    ['short solution', { solution: base.solution.slice(1) }],
-    ['non-Latin solution', { solution: base.solution.map((v, i) => (i === 0 ? (base.solution[1] as number) : v)) }],
-    ['solution out of range', { solution: base.solution.map((v) => v + 1) }],
-    ['clues missing a side', { clues: { ...clone(base.clues), top: undefined } as never }],
-    ['clue list too short', { clues: { ...clone(base.clues), left: base.clues.left.slice(1) } }],
-    ['false clue', { clues: { ...clone(base.clues), right: base.clues.right.map((_, i) => (i === 0 ? (cluesOf(base.solution, 5).right[0] as number) % 5 + 1 : 0)) } }],
-    ['clue out of range', { clues: { ...clone(base.clues), bottom: [9, 0, 0, 0, 0] } }],
-    ['clues not a record', { clues: [] as never }],
-    ['short givens', { givens: base.givens.slice(1) }],
-    ['wrong given', { givens: base.givens.map((g, i) => (i === open ? wrongDigit(base, open) : g)), cells: base.cells.map((c, i) => (i === open ? wrongDigit(base, open) : c)) }],
-    ['cells out of range', { cells: base.cells.map((c, i) => (i === open ? 6 : c)) }],
-    ['cells not integers', { cells: base.cells.map((c, i) => (i === open ? 1.5 : c)) }],
-    ['short cells', { cells: base.cells.slice(1) }],
-    ['negative note', { notes: base.notes.map((m, i) => (i === 0 ? -2 : m)) }],
-    ['note bit 0', { notes: base.notes.map((m, i) => (i === 0 ? 1 : m)) }],
-    ['note too high', { notes: base.notes.map((m, i) => (i === 0 ? 1 << 6 : m)) }],
-    ['short notes', { notes: base.notes.slice(1) }],
-    ['pencil not boolean', { pencil: 1 as never }],
-    ['negative moves', { moves: -1 }],
-    ['huge checks', { checks: MAX_COUNTER + 1 }],
-    ['fractional moves', { moves: 1.5 }],
-    ['bad lastCheck', { lastCheck: { wrong: -1, repeated: 0 } }],
-    ['lastCheck too large', { lastCheck: { wrong: 0, repeated: 26 } }],
-    ['lastCheck missing field', { lastCheck: { wrong: 0 } as never }],
-    ['lastCheck not a record', { lastCheck: 3 as never }]
+describe('isSkyscrapersState', SLOW, () => {
+  // Built inside each test (not at collection time) so mutation testing can attribute coverage.
+  let base: SkyscrapersState;
+  let open: number;
+  let given: number;
+  beforeEach(() => {
+    base = createInitialState(77, 'medium');
+    open = firstOpen(base);
+    given = base.givens.findIndex((g) => g !== 0);
+  });
+  const variants: Array<[string, () => Partial<SkyscrapersState> | Record<string, unknown>]> = [
+    ['negative seed', () => ({ seed: -1 })],
+    ['huge seed', () => ({ seed: 2 ** 32 })],
+    ['unknown difficulty', () => ({ difficulty: 'expert' as never })],
+    ['size mismatch', () => ({ size: 4 })],
+    ['short solution', () => ({ solution: base.solution.slice(1) })],
+    ['non-Latin solution', () => ({ solution: base.solution.map((v, i) => (i === 0 ? (base.solution[1] as number) : v)) })],
+    ['solution out of range', () => ({ solution: base.solution.map((v) => v + 1) })],
+    ['clues missing a side', () => ({ clues: { ...clone(base.clues), top: undefined } as never })],
+    ['clue list too short', () => ({ clues: { ...clone(base.clues), left: base.clues.left.slice(1) } })],
+    ['false clue', () => ({ clues: { ...clone(base.clues), right: base.clues.right.map((_, i) => (i === 0 ? (cluesOf(base.solution, 5).right[0] as number) % 5 + 1 : 0)) } })],
+    ['clue out of range', () => ({ clues: { ...clone(base.clues), bottom: [9, 0, 0, 0, 0] } })],
+    ['clues not a record', () => ({ clues: [] as never })],
+    ['short givens', () => ({ givens: base.givens.slice(1) })],
+    ['wrong given', () => ({ givens: base.givens.map((g, i) => (i === open ? wrongDigit(base, open) : g)), cells: base.cells.map((c, i) => (i === open ? wrongDigit(base, open) : c)) })],
+    ['cells out of range', () => ({ cells: base.cells.map((c, i) => (i === open ? 6 : c)) })],
+    ['cells not integers', () => ({ cells: base.cells.map((c, i) => (i === open ? 1.5 : c)) })],
+    ['short cells', () => ({ cells: base.cells.slice(1) })],
+    ['negative note', () => ({ notes: base.notes.map((m, i) => (i === 0 ? -2 : m)) })],
+    ['note bit 0', () => ({ notes: base.notes.map((m, i) => (i === 0 ? 1 : m)) })],
+    ['note too high', () => ({ notes: base.notes.map((m, i) => (i === 0 ? 1 << 6 : m)) })],
+    ['short notes', () => ({ notes: base.notes.slice(1) })],
+    ['pencil not boolean', () => ({ pencil: 1 as never })],
+    ['negative moves', () => ({ moves: -1 })],
+    ['huge checks', () => ({ checks: MAX_COUNTER + 1 })],
+    ['fractional moves', () => ({ moves: 1.5 })],
+    ['bad lastCheck', () => ({ lastCheck: { wrong: -1, repeated: 0 } })],
+    ['lastCheck too large', () => ({ lastCheck: { wrong: 0, repeated: 26 } })],
+    ['lastCheck missing field', () => ({ lastCheck: { wrong: 0 } as never })],
+    ['lastCheck not a record', () => ({ lastCheck: 3 as never })]
   ];
 
   it('accepts real states, including edge values', () => {
@@ -661,7 +692,19 @@ describe('isSkyscrapersState', () => {
   });
 
   it.each(variants)('rejects %s', (_, patch) => {
-    expect(isSkyscrapersState(stateWith(base, patch as Partial<SkyscrapersState>))).toBe(false);
+    expect(isSkyscrapersState(stateWith(base, patch() as Partial<SkyscrapersState>))).toBe(false);
+  });
+
+  it('rejects malformed clue lists and non-Latin solutions on their own', () => {
+    const empty = { top: [0, 0, 0, 0, 0], bottom: [0, 0, 0, 0, 0], left: [0, 0, 0, 0, 0], right: [0, 0, 0, 0, 0] };
+    const blank = stateWith(base, { clues: empty, givens: zeros(5), cells: zeros(5) });
+    expect(isSkyscrapersState(blank)).toBe(true);
+    expect(isSkyscrapersState({ ...blank, clues: { ...empty, top: [0, 0, 0, 0] } })).toBe(false);
+    expect(isSkyscrapersState({ ...blank, clues: { ...empty, bottom: [0, 0, 0, 0, 0, 0] } })).toBe(false);
+    expect(isSkyscrapersState({ ...blank, clues: { ...empty, left: '00000' } })).toBe(false);
+    // Rows are permutations but columns repeat: only the Latin check can reject this.
+    const rowsOnly = [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5];
+    expect(isSkyscrapersState({ ...blank, solution: rowsOnly })).toBe(false);
   });
 
   it('rejects a given cell whose entry differs from the given', () => {
