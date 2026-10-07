@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@wp/game-black-box": "workspace:*",
+    "@wp/game-bridges": "workspace:*",
     "@wp/game-connect-four": "workspace:*",
     "@wp/game-constraint-grid": "workspace:*",
     "@wp/game-core": "workspace:*",
@@ -19,6 +20,7 @@
     "@wp/game-memory": "workspace:*",
     "@wp/game-minesweeper": "workspace:*",
     "@wp/game-nonogram": "workspace:*",
+    "@wp/game-river-crossing": "workspace:*",
     "@wp/game-sequence-memory": "workspace:*",
     "@wp/game-skyscrapers": "workspace:*",
     "@wp/game-sliding-blocks": "workspace:*",

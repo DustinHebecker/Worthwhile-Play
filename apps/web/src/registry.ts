@@ -1,5 +1,6 @@
 import type { GameMetadata, GameModule } from '@wp/game-core';
 import { metadata as blackBox } from '@wp/game-black-box/metadata';
+import { metadata as bridges } from '@wp/game-bridges/metadata';
 import { metadata as constraintGrid } from '@wp/game-constraint-grid/metadata';
 import { metadata as connectFour } from '@wp/game-connect-four/metadata';
 import { metadata as laserCircuit } from '@wp/game-laser-circuit/metadata';
@@ -8,6 +9,7 @@ import { metadata as mastermind } from '@wp/game-mastermind/metadata';
 import { metadata as memory } from '@wp/game-memory/metadata';
 import { metadata as minesweeper } from '@wp/game-minesweeper/metadata';
 import { metadata as nonogram } from '@wp/game-nonogram/metadata';
+import { metadata as riverCrossing } from '@wp/game-river-crossing/metadata';
 import { metadata as sequenceMemory } from '@wp/game-sequence-memory/metadata';
 import { metadata as skyscrapers } from '@wp/game-skyscrapers/metadata';
 import { metadata as slidingBlocks } from '@wp/game-sliding-blocks/metadata';
@@ -33,10 +35,12 @@ export const GAMES: readonly GameEntry[] = [
   entry(constraintGrid, () => import('@wp/game-constraint-grid')),
   entry(nonogram, () => import('@wp/game-nonogram')),
   entry(skyscrapers, () => import('@wp/game-skyscrapers')),
+  entry(bridges, () => import('@wp/game-bridges')),
   entry(minesweeper, () => import('@wp/game-minesweeper')),
   entry(lightsOut, () => import('@wp/game-lights-out')),
   entry(sokoban, () => import('@wp/game-sokoban')),
   entry(slidingBlocks, () => import('@wp/game-sliding-blocks')),
+  entry(riverCrossing, () => import('@wp/game-river-crossing')),
   entry(laserCircuit, () => import('@wp/game-laser-circuit')),
   entry(memory, () => import('@wp/game-memory')),
   entry(sequenceMemory, () => import('@wp/game-sequence-memory')),

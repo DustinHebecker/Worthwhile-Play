@@ -11,7 +11,7 @@ Legend — Priority: **P0** foundation/blocking · **P1** next · **P2** later. 
 |---|---|---|---|---|
 | M0 | **Foundation**: monorepo, CI, app shell, localization (16 locales, RTL), GameModule contract, persistence + autosave, seeded RNG, PWA/offline, shared contract tests, Cloudflare deploy, 3 reference games | P0 | – | ✅ |
 | M1 | **Learning platform**: deck browser/import (CSV/JSON), Memory variants (word↔image, term↔definition, language pairs), optional spaced repetition *without* streaks/notifications ("Items worth reviewing"), audio (bundled + speech synthesis best effort), content-pack download mechanism with size disclosure | P1 | M0 | ⏳ |
-| M2 | **Puzzle core + logic puzzles**: shared grid/puzzle utilities; *generator → independent solver → uniqueness → difficulty* pipeline; first puzzles | P1 | M0 | 🚧 Nonogram, Lights Out, Skyscrapers, Crate Pusher, Mine Logic, Unblock, Logic Grid done; `puzzle-core` extraction pending |
+| M2 | **Puzzle core + logic puzzles**: shared grid/puzzle utilities; *generator → independent solver → uniqueness → difficulty* pipeline; first puzzles | P1 | M0 | 🚧 Nonogram, Lights Out, Skyscrapers, Crate Pusher, Mine Logic, Unblock, Logic Grid, River Crossing, Bridges done; `puzzle-core` extraction pending |
 | M3 | **Board games**: Connect Four, Chess (complete rules, local AI; engine license review) | P1 | M0 | 🚧 Four in a Row done |
 | M4 | **Systems & hypothesis games** | P1 | M2 | 🚧 Black Box, Laser Paths done |
 | M5 | **Memory & attention exercises**, Faces & Names (synthetic/licensed faces only) | P1 | M1 | 🚧 Sequence Memory done |
@@ -33,11 +33,11 @@ Cross-cutting, continuous: accessibility review, native-speaker review of transl
 | Learning | Language decks, geography (flag/capital/map/neighbours), AI & business vocabulary, user decks | M1 | ⏳ | content packs |
 | Logic | Sokoban → shown as **Crate Pusher** | M2 | ✅ | 24 original levels, solver-verified optimal push counts |
 | Logic | Nonogram | M2 | ✅ | line-solvable + unique (independent oracle in tests) |
-| Logic | Bridges / Hashi | M2 | ⏳ | |
+| Logic | Bridges / Hashi | M2 | ✅ | generated, solvable by logic (capacity, crossing, isolation); uniqueness via oracle |
 | Logic | Slitherlink | M2 | ⏳ | |
 | Logic | Einstein / Constraint Grid → shown as **Logic Grid** | M2 | ✅ | generated, minimal clue sets; uniqueness via brute-force oracle; clue templates in 16 locales |
 | Logic | Lights Out | M2 | ✅ | GF(2) solver, minimal-solution hints |
-| Logic | River Crossing | M2 | ⏳ | |
+| Logic | River Crossing | M2 | ✅ | data-driven rule engine; 24 original-themed puzzles, optimum verified by independent BFS |
 | Logic | Rush-Hour-style sliding | M2 | ⏳ | |
 | Logic | Skyscrapers | M2 | ✅ | generator + line solver; uniqueness verified by independent oracle |
 | Logic | Deterministic Minesweeper → shown as **Mine Logic** | M2 | ✅ | no-guess generation (solver + brute-force oracle); mistakes are undoable, never punished |
@@ -51,6 +51,7 @@ Cross-cutting, continuous: accessibility review, native-speaker review of transl
 | Systems | Debug the System | M4 | ⏳ | |
 | Systems | Graph Detective | M4 | ⏳ | |
 | Spatial | Circuit Puzzle | M4 | ⏳ | |
+| Spatial | Stacking duel (Tower-Battle-style): players alternately rotate and drop irregular original shapes onto a shared tower; whoever makes it collapse loses (also solo: reach a height with N pieces) | M4 | ⏳ | original name/shapes (the commercial "Animal Tower Battle" is only a design reference); needs a deterministic 2D physics step (own engine or license-reviewed MIT engine such as planck.js); save only settled states between turns |
 | Spatial | Laser Circuit → shown as **Laser Paths** | M4 | ✅ | 24 original levels, each with exactly one solution (oracle-verified); generic `traceBeams` for later reuse |
 | Memory | Faces & Names | M5 | ⏳ | mnemonic, self-generated associations |
 | Memory | Sequence Memory | M5 | ✅ | user-paced (Auto/Step), adaptive span, 12-round session |
