@@ -18,6 +18,9 @@ const zhHans: UiCatalogue = {
   'home.honesty': '每个游戏锻炼特定的能力。没有任何一个游戏被证明能让人整体上变得更聪明，我们也不这样宣称。',
   'home.catalogue': '游戏',
   'home.roadmap': '更多游戏正在开发中。请在 GitHub 上查看路线图。',
+  'home.filter': '按能力筛选',
+  'home.filterAll': '全部',
+  'home.inProgress': '有存档',
 
   'skill.deduction': '演绎推理',
   'skill.planning': '规划',

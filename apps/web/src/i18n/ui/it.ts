@@ -18,6 +18,9 @@ const it: UiCatalogue = {
   'home.honesty': 'Ogni gioco allena abilità specifiche. Non è dimostrato che qualcuno di essi renda più intelligenti in generale, e non lo affermiamo.',
   'home.catalogue': 'Giochi',
   'home.roadmap': 'Altri giochi sono in sviluppo. Consulta la roadmap su GitHub.',
+  'home.filter': 'Filtra per abilità',
+  'home.filterAll': 'Tutti',
+  'home.inProgress': 'Partita salvata',
 
   'skill.deduction': 'Deduzione',
   'skill.planning': 'Pianificazione',

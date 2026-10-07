@@ -18,6 +18,9 @@ const ar: UiCatalogue = {
   'home.honesty': 'تمرّن كل لعبة مهارات محددة. لم يثبت أن أيًّا منها يجعلك أذكى بشكل عام، ونحن لا ندّعي ذلك.',
   'home.catalogue': 'الألعاب',
   'home.roadmap': 'هناك ألعاب أخرى قيد التطوير. اطّلع على خطة العمل على GitHub.',
+  'home.filter': 'تصفية حسب المهارة',
+  'home.filterAll': 'الكل',
+  'home.inProgress': 'لعبة محفوظة',
 
   'skill.deduction': 'الاستنتاج',
   'skill.planning': 'التخطيط',

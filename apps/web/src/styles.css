@@ -28,6 +28,11 @@ main:focus { outline: none; }
 .app-footer a { min-height: var(--wp-touch); display: inline-flex; align-items: center; }
 .hero h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); margin-block: 0.5rem; }
 .lead { font-size: 1.1rem; color: var(--wp-muted); max-width: 46rem; }
+.chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-block: 0.5rem 1rem; }
+.chip { min-height: 40px; padding: 0.3rem 0.85rem; border-radius: 999px; font-size: 0.9rem; }
+.chip[aria-pressed='true'] { background: var(--wp-accent); color: var(--wp-accent-contrast); border-color: var(--wp-accent); font-weight: 600; }
+.chip[aria-pressed='true']::before { content: '✓ '; }
+.badge.saved { font-weight: 600; border-color: var(--wp-accent); font-size: 0.75rem; vertical-align: middle; }
 .game-grid { list-style: none; padding: 0; display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr)); }
 .game-card { display: grid; gap: 0.35rem; height: 100%; padding: 1rem; border-radius: var(--wp-radius); border: 1px solid var(--wp-border); background: var(--wp-surface); color: var(--wp-text); text-decoration: none; }
 .game-card:hover { border-color: var(--wp-accent); }

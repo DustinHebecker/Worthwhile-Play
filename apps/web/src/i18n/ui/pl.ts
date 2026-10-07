@@ -18,6 +18,9 @@ const pl: UiCatalogue = {
   'home.honesty': 'Każda gra ćwiczy określone umiejętności. Nie udowodniono, że którakolwiek z nich ogólnie zwiększa inteligencję, i wcale tego nie twierdzimy.',
   'home.catalogue': 'Gry',
   'home.roadmap': 'Kolejne gry są w przygotowaniu. Zobacz plan rozwoju na GitHubie.',
+  'home.filter': 'Filtruj według umiejętności',
+  'home.filterAll': 'Wszystkie',
+  'home.inProgress': 'Zapisana gra',
 
   'skill.deduction': 'Dedukcja',
   'skill.planning': 'Planowanie',

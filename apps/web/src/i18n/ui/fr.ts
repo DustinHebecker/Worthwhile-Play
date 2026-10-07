@@ -18,6 +18,9 @@ const fr: UiCatalogue = {
   'home.honesty': 'Chaque jeu exerce des compétences précises. Rien ne prouve que l’un d’eux rende plus intelligent en général, et nous ne le prétendons pas.',
   'home.catalogue': 'Jeux',
   'home.roadmap': 'D’autres jeux sont en préparation. Consultez la feuille de route sur GitHub.',
+  'home.filter': 'Filtrer par compétence',
+  'home.filterAll': 'Tous',
+  'home.inProgress': 'Partie enregistrée',
 
   'skill.deduction': 'Déduction',
   'skill.planning': 'Planification',

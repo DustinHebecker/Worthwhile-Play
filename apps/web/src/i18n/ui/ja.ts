@@ -18,6 +18,9 @@ const ja: UiCatalogue = {
   'home.honesty': '各ゲームは特定のスキルを鍛えます。どのゲームにも、頭が全般的に良くなるという証明はなく、私たちもそうは主張しません。',
   'home.catalogue': 'ゲーム',
   'home.roadmap': 'ほかのゲームも開発中です。ロードマップは GitHub でご覧いただけます。',
+  'home.filter': '能力で絞り込む',
+  'home.filterAll': 'すべて',
+  'home.inProgress': '保存データあり',
 
   'skill.deduction': '推論',
   'skill.planning': '計画',

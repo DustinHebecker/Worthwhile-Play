@@ -18,6 +18,9 @@ const de: UiCatalogue = {
   'home.honesty': 'Jedes Spiel übt bestimmte Fähigkeiten. Dass eines davon allgemein klüger macht, ist nicht belegt – und das behaupten wir auch nicht.',
   'home.catalogue': 'Spiele',
   'home.roadmap': 'Weitere Spiele sind in Entwicklung. Siehe die Roadmap auf GitHub.',
+  'home.filter': 'Nach Fähigkeit filtern',
+  'home.filterAll': 'Alle',
+  'home.inProgress': 'Spielstand vorhanden',
 
   'skill.deduction': 'Deduktion',
   'skill.planning': 'Planung',

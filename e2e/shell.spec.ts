@@ -8,6 +8,22 @@ test.describe('app shell', () => {
     await expect(page.getByTestId('legal-link')).toBeVisible();
   });
 
+  test('skill filter narrows the catalogue and saved games are marked', async ({ page }) => {
+    await page.goto('/');
+    await page.getByTestId('filter-memory').click();
+    await expect(page).toHaveURL(/\?skill=memory$/);
+    await expect(page.getByTestId('game-card-memory')).toBeVisible();
+    await expect(page.getByTestId('game-card-tic-tac-toe')).toBeHidden();
+    await page.getByTestId('filter-all').click();
+    await expect(page.getByTestId('game-card-tic-tac-toe')).toBeVisible();
+    await page.goto('/games/memory');
+    await page.getByTestId('new-game').click();
+    await expect(page.getByTestId('game-root')).toBeVisible();
+    await page.goto('/');
+    await expect(page.getByTestId('saved-memory')).toBeVisible();
+    await expect(page.getByTestId('saved-tic-tac-toe')).toBeHidden();
+  });
+
   test('every game is reachable by direct URL', async ({ page }) => {
     for (const id of ['tic-tac-toe', 'mastermind', 'memory', 'connect-four', 'lights-out', 'nonogram']) {
       await page.goto(`/games/${id}`);

@@ -18,6 +18,9 @@ const nl: UiCatalogue = {
   'home.honesty': 'Elk spel oefent bepaalde vaardigheden. Van geen enkel spel is bewezen dat het je in het algemeen slimmer maakt, en dat beweren we ook niet.',
   'home.catalogue': 'Spellen',
   'home.roadmap': 'Er zijn meer spellen in ontwikkeling. Bekijk de roadmap op GitHub.',
+  'home.filter': 'Filteren op vaardigheid',
+  'home.filterAll': 'Alle',
+  'home.inProgress': 'Opgeslagen spel',
 
   'skill.deduction': 'Deductie',
   'skill.planning': 'Plannen',
