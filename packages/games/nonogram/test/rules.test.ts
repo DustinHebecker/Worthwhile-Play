@@ -287,6 +287,8 @@ describe('generation', () => {
     const seeds = new Set<number>();
     for (let a = 0; a < 50; a++) seeds.add(attemptSeed(12345, a));
     for (let s = 0; s < 50; s++) seeds.add(attemptSeed(s, 0));
+    // Neighbouring seeds must not share retry sequences.
+    for (let s = 0; s < 200; s++) for (let a = 0; a < 8; a++) expect(attemptSeed(s, a)).not.toBe(attemptSeed(s ^ 1, a ^ 1));
     expect(seeds.size).toBe(100);
     for (const s of seeds) expect(Number.isInteger(s) && s >= 0 && s <= 0xffffffff).toBe(true);
   });

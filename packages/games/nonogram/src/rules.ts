@@ -229,10 +229,15 @@ export function isLineSolvable(solution: readonly number[], size: number): boole
 
 /** Deterministic per-attempt seed derivation (FNV-style mix of seed and attempt number). */
 export function attemptSeed(seed: number, attempt: number): number {
-  let h = (seed ^ 0x9e3779b9) >>> 0;
-  h = Math.imul(h ^ attempt, 0x01000193) >>> 0;
-  h = Math.imul(h ^ (h >>> 15), 0x85ebca6b) >>> 0;
-  return (h ^ (h >>> 13)) >>> 0;
+  // Avalanche the seed fully before mixing in the attempt, so that neighbouring seeds never share
+  // retry sequences (the former xor-based mix mapped (s, a) and (s ^ 1, a ^ 1) to the same value).
+  const fmix = (x: number): number => {
+    let h = x >>> 0;
+    h = Math.imul(h ^ (h >>> 16), 0x85ebca6b) >>> 0;
+    h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35) >>> 0;
+    return (h ^ (h >>> 16)) >>> 0;
+  };
+  return fmix((fmix(seed ^ 0x9e3779b9) + Math.imul(attempt + 1, 0x27d4eb2f)) >>> 0);
 }
 
 /** Random picture with a fill count between `MIN_DENSITY` and `MAX_DENSITY` of all cells. */
