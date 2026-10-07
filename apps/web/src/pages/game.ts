@@ -67,8 +67,20 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
     await store.write(createSave(module, current.seed, instance.serialize(), current.difficulty) as GameSave);
   };
 
+  let interactedAfterFinish = false;
+  const markInteraction = () => {
+    if (finishedSlot.childElementCount > 0) interactedAfterFinish = true;
+  };
+  gameRoot.addEventListener('pointerdown', markInteraction);
+  gameRoot.addEventListener('keydown', markInteraction);
+  const clearFinished = () => {
+    clear(finishedSlot);
+    interactedAfterFinish = false;
+  };
+
   const showFinished = (result: GameResult) => {
     clear(finishedSlot);
+    interactedAfterFinish = false;
     // A game may phrase its own outcome (`result.<outcome>`), e.g. "Player X wins"; otherwise use the shared wording.
     const own = `result.${result.outcome}`;
     const outcome = metadata.messages.en?.[own] ? own : { won: 'common.won', lost: 'common.lost', draw: 'common.draw', completed: 'common.solved' }[result.outcome];
@@ -95,7 +107,12 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
       root: gameRoot,
       t: gt,
       reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
-      requestSave: () => autosave?.request(),
+      requestSave: () => {
+        // Continued play inside the game (e.g. choosing another level) after a natural end
+        // hides the calm "finished" panel again; the save itself is unaffected.
+        if (interactedAfterFinish) clearFinished();
+        autosave?.request();
+      },
       finished: showFinished
     });
     return instance;

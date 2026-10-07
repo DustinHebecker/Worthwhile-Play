@@ -17,6 +17,7 @@
     "@wp/game-memory": "workspace:*",
     "@wp/game-nonogram": "workspace:*",
     "@wp/game-sequence-memory": "workspace:*",
+    "@wp/game-sokoban": "workspace:*",
     "@wp/game-tic-tac-toe": "workspace:*",
     "@wp/learning-content": "workspace:*",
     "@wp/localization": "workspace:*",

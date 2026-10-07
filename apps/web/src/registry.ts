@@ -6,6 +6,7 @@ import { metadata as mastermind } from '@wp/game-mastermind/metadata';
 import { metadata as memory } from '@wp/game-memory/metadata';
 import { metadata as nonogram } from '@wp/game-nonogram/metadata';
 import { metadata as sequenceMemory } from '@wp/game-sequence-memory/metadata';
+import { metadata as sokoban } from '@wp/game-sokoban/metadata';
 import { metadata as ticTacToe } from '@wp/game-tic-tac-toe/metadata';
 
 export interface GameEntry {
@@ -26,6 +27,7 @@ export const GAMES: readonly GameEntry[] = [
   entry(blackBox, () => import('@wp/game-black-box')),
   entry(nonogram, () => import('@wp/game-nonogram')),
   entry(lightsOut, () => import('@wp/game-lights-out')),
+  entry(sokoban, () => import('@wp/game-sokoban')),
   entry(memory, () => import('@wp/game-memory')),
   entry(sequenceMemory, () => import('@wp/game-sequence-memory')),
   entry(connectFour, () => import('@wp/game-connect-four')),

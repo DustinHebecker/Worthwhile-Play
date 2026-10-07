@@ -389,8 +389,8 @@ export function walkTo(state: SokobanState, target: number): SokobanState {
  */
 export function tapCell(state: SokobanState, cell: number): SokobanState {
   const level = levelOf(state);
-  const { position, solved } = progressOf(state);
-  if (solved) return state;
+  // move() and walkTo() both refuse to act on a solved level.
+  const { position } = progressOf(state);
   if (position.boxes.includes(cell)) {
     const direction = directionBetween(level, position.player, cell);
     return direction ? move(state, direction) : state;

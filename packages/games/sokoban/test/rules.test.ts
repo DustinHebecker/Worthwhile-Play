@@ -175,6 +175,11 @@ describe('parseLevel', () => {
     expect(level.player).toBe(cell(level, 2, 1));
   });
 
+  it('accepts the smallest closed rooms (3 wide or 3 high)', () => {
+    expect(parseLevel('###|#@#|#$#|#.#|###').width).toBe(3);
+    expect(parseLevel('#####|#@$.#|#####').height).toBe(3);
+  });
+
   it('pads short rows: missing cells count as outside floor', () => {
     const level = parseLevel('####|#@$.#|######');
     expect(level.width).toBe(6);
