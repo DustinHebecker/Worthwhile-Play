@@ -1,0 +1,87 @@
+/* Proof Chain. All rules are scoped under .wp-minimal-proof; logical properties keep RTL correct.
+   Formulas themselves are always laid out left-to-right (dir="ltr"). */
+.wp-minimal-proof {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 36rem;
+  margin-inline: auto;
+}
+.wp-minimal-proof p,
+.wp-minimal-proof h3,
+.wp-minimal-proof ul { margin: 0; }
+.wp-minimal-proof [hidden] { display: none !important; }
+.wp-minimal-proof h3 { font-size: 1rem; margin-block-end: 0.35rem; }
+
+.wp-minimal-proof .mp-goal {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem;
+  font-size: 1.1rem; font-weight: 600;
+}
+.wp-minimal-proof .mp-goal-atom { border-style: dashed; border-width: 2px; }
+.wp-minimal-proof .mp-goal-atom.is-known { border-style: solid; }
+
+/* Statement chips: symbol, themed label, ✓ when known (never colour alone). */
+.wp-minimal-proof .mp-atom {
+  display: inline-flex; align-items: baseline; gap: 0.25rem;
+  padding: 0.1rem 0.4rem;
+  border: 1px solid var(--wp-border);
+  border-radius: var(--wp-radius, 6px);
+  background: var(--wp-surface);
+  white-space: nowrap;
+}
+.wp-minimal-proof .mp-symbol { font-weight: 800; font-size: 1.05rem; font-family: ui-monospace, monospace; }
+.wp-minimal-proof .mp-label { font-size: 0.75rem; color: var(--wp-muted); }
+.wp-minimal-proof .mp-atom.is-known {
+  border-color: var(--wp-ok);
+  background: color-mix(in srgb, var(--wp-ok) 12%, var(--wp-surface));
+}
+.wp-minimal-proof .mp-check { font-weight: 700; font-size: 0.8rem; }
+
+/* Known statements */
+.wp-minimal-proof .mp-facts {
+  list-style: none; padding: 0;
+  display: flex; flex-wrap: wrap; gap: 0.4rem;
+}
+.wp-minimal-proof .mp-fact { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 0.1rem; }
+.wp-minimal-proof .mp-fact.is-goal .mp-atom { border-width: 2px; }
+.wp-minimal-proof .mp-note { font-size: 0.7rem; color: var(--wp-muted); padding-inline-start: 0.2rem; }
+.wp-minimal-proof .mp-fact.is-new { animation: mp-pop 0.35s ease-out; }
+@keyframes mp-pop {
+  from { transform: scale(0.6); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wp-minimal-proof .mp-fact.is-new { animation: none; }
+}
+
+/* Rules */
+.wp-minimal-proof .mp-rules { display: grid; gap: 0.4rem; }
+.wp-minimal-proof .mp-rule {
+  display: flex; align-items: center; justify-content: flex-start; gap: 0.5rem;
+  width: 100%;
+  min-height: var(--wp-touch, 44px);
+  padding-block: 0.35rem; padding-inline: 0.6rem;
+  text-align: start;
+  border: 1px solid var(--wp-border);
+  border-radius: var(--wp-radius, 6px);
+  background: var(--wp-surface);
+  color: var(--wp-text);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.wp-minimal-proof .mp-rule:hover { background: var(--wp-surface-2); }
+.wp-minimal-proof .mp-rule:focus-visible { outline: 3px solid var(--wp-focus); outline-offset: 2px; }
+.wp-minimal-proof .mp-rule[data-state='ready'] { border-width: 2px; border-color: var(--wp-accent); }
+.wp-minimal-proof .mp-rule[data-state='known'] { opacity: 0.75; border-style: dashed; }
+.wp-minimal-proof .mp-rule[aria-disabled='true'] { cursor: default; }
+.wp-minimal-proof .mp-mark { inline-size: 1.2rem; text-align: center; font-weight: 700; flex: none; }
+.wp-minimal-proof .mp-num { inline-size: 1.4rem; color: var(--wp-muted); font-variant-numeric: tabular-nums; flex: none; }
+.wp-minimal-proof .mp-formula { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; min-width: 0; }
+.wp-minimal-proof .mp-op { font-weight: 700; font-size: 1.1rem; }
+
+.wp-minimal-proof .mp-feedback {
+  padding: 0.4rem 0.6rem;
+  border-inline-start: 4px solid var(--wp-accent);
+  background: var(--wp-surface-2);
+}
+.wp-minimal-proof .mp-controls button { min-height: var(--wp-touch, 44px); }
+.wp-minimal-proof .mp-help { font-size: 0.85rem; display: grid; gap: 0.25rem; }

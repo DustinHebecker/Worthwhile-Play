@@ -13,7 +13,7 @@ Legend — Priority: **P0** foundation/blocking · **P1** next · **P2** later. 
 | M1 | **Learning platform**: deck browser/import (CSV/JSON), Memory variants (word↔image, term↔definition, language pairs), optional spaced repetition *without* streaks/notifications ("Items worth reviewing"), audio (bundled + speech synthesis best effort), content-pack download mechanism with size disclosure | P1 | M0 | ⏳ |
 | M2 | **Puzzle core + logic puzzles**: shared grid/puzzle utilities; *generator → independent solver → uniqueness → difficulty* pipeline; first puzzles | P1 | M0 | 🚧 Nonogram, Lights Out, Skyscrapers, Crate Pusher, Mine Logic, Unblock, Logic Grid, River Crossing, Bridges done; `puzzle-core` extraction pending |
 | M3 | **Board games**: Connect Four, Chess (complete rules, local AI; engine license review) | P1 | M0 | 🚧 Four in a Row done |
-| M4 | **Systems & hypothesis games** | P1 | M2 | 🚧 Black Box, Laser Paths, Network Detective done |
+| M4 | **Systems & hypothesis games** | P1 | M2 | 🚧 Black Box, Laser Paths, Network Detective, Proof Chain done |
 | M5 | **Memory & attention exercises**, Faces & Names (synthetic/licensed faces only) | P1 | M1 | 🚧 Sequence Memory done |
 | M6 | **Communication exercises** with deterministic evaluation | P2 | M0 | ⏳ |
 | M7 | **Strategy engine** (fresh agent context): shared simulation → Tower Defense → turn-based strategy → 4 hybrid modes | P2 | stable M0–M2 | ⏳ |
@@ -43,7 +43,7 @@ Cross-cutting, continuous: accessibility review, native-speaker review of transl
 | Logic | Deterministic Minesweeper → shown as **Mine Logic** | M2 | ✅ | no-guess generation (solver + brute-force oracle); mistakes are undoable, never punished |
 | Board | Connect Four → shown as **Four in a Row** | M3 | ✅ | alpha-beta, 3 levels |
 | Board | Chess | M3 | ⏳ | full rules incl. repetition/50-move/insufficient material |
-| Logic | Minimal Proof | M4 | ⏳ | |
+| Logic | Minimal Proof → shown as **Proof Chain** | M4 | ✅ | generated rule systems (→, ∧, ∨, simple negation); shortest proof verified by oracle |
 | Hypothesis | Rule Discovery | M4 | ⏳ | value-of-information feedback |
 | Hypothesis | Black Box | M4 | ✅ | 15 rule families; challenge inputs rule out all consistent alternatives of the family |
 | Algorithms | Logic Path | M4 | ⏳ | |

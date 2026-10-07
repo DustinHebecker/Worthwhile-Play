@@ -95,6 +95,9 @@ importers:
       '@wp/game-minesweeper':
         specifier: workspace:*
         version: link:../../packages/games/minesweeper
+      '@wp/game-minimal-proof':
+        specifier: workspace:*
+        version: link:../../packages/games/minimal-proof
       '@wp/game-nonogram':
         specifier: workspace:*
         version: link:../../packages/games/nonogram
