@@ -4,6 +4,7 @@ import { metadata as bridges } from '@wp/game-bridges/metadata';
 import { metadata as constraintGrid } from '@wp/game-constraint-grid/metadata';
 import { metadata as circuitPuzzle } from '@wp/game-circuit-puzzle/metadata';
 import { metadata as connectFour } from '@wp/game-connect-four/metadata';
+import { metadata as debugSystem } from '@wp/game-debug-system/metadata';
 import { metadata as distractorControl } from '@wp/game-distractor-control/metadata';
 import { metadata as graphDetective } from '@wp/game-graph-detective/metadata';
 import { metadata as laserCircuit } from '@wp/game-laser-circuit/metadata';
@@ -15,6 +16,7 @@ import { metadata as minimalProof } from '@wp/game-minimal-proof/metadata';
 import { metadata as minesweeper } from '@wp/game-minesweeper/metadata';
 import { metadata as nonogram } from '@wp/game-nonogram/metadata';
 import { metadata as riverCrossing } from '@wp/game-river-crossing/metadata';
+import { metadata as ruleDiscovery } from '@wp/game-rule-discovery/metadata';
 import { metadata as sequenceMemory } from '@wp/game-sequence-memory/metadata';
 import { metadata as signalWatch } from '@wp/game-signal-watch/metadata';
 import { metadata as skyscrapers } from '@wp/game-skyscrapers/metadata';
@@ -40,9 +42,11 @@ const entry = <S>(metadata: GameMetadata, load: () => Promise<{ default: GameMod
 export const GAMES: readonly GameEntry[] = [
   entry(mastermind, () => import('@wp/game-mastermind')),
   entry(blackBox, () => import('@wp/game-black-box')),
+  entry(ruleDiscovery, () => import('@wp/game-rule-discovery')),
   entry(graphDetective, () => import('@wp/game-graph-detective')),
   entry(logicPath, () => import('@wp/game-logic-path')),
   entry(systemsPuzzle, () => import('@wp/game-systems-puzzle')),
+  entry(debugSystem, () => import('@wp/game-debug-system')),
   entry(constraintGrid, () => import('@wp/game-constraint-grid')),
   entry(minimalProof, () => import('@wp/game-minimal-proof')),
   entry(nonogram, () => import('@wp/game-nonogram')),

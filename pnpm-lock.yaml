@@ -80,6 +80,9 @@ importers:
       '@wp/game-core':
         specifier: workspace:*
         version: link:../../packages/game-core
+      '@wp/game-debug-system':
+        specifier: workspace:*
+        version: link:../../packages/games/debug-system
       '@wp/game-distractor-control':
         specifier: workspace:*
         version: link:../../packages/games/distractor-control
@@ -113,6 +116,9 @@ importers:
       '@wp/game-river-crossing':
         specifier: workspace:*
         version: link:../../packages/games/river-crossing
+      '@wp/game-rule-discovery':
+        specifier: workspace:*
+        version: link:../../packages/games/rule-discovery
       '@wp/game-sequence-memory':
         specifier: workspace:*
         version: link:../../packages/games/sequence-memory

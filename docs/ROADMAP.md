@@ -13,7 +13,7 @@ Legend — Priority: **P0** foundation/blocking · **P1** next · **P2** later. 
 | M1 | **Learning platform**: deck browser/import (CSV/JSON), Memory variants (word↔image, term↔definition, language pairs), optional spaced repetition *without* streaks/notifications ("Items worth reviewing"), audio (bundled + speech synthesis best effort), content-pack download mechanism with size disclosure | P1 | M0 | ⏳ |
 | M2 | **Puzzle core + logic puzzles**: shared grid/puzzle utilities; *generator → independent solver → uniqueness → difficulty* pipeline; first puzzles | P1 | M0 | 🚧 Nonogram, Lights Out, Skyscrapers, Crate Pusher, Mine Logic, Unblock, Logic Grid, River Crossing, Bridges done; `puzzle-core` extraction pending |
 | M3 | **Board games**: Connect Four, Chess (complete rules, local AI; engine license review) | P1 | M0 | 🚧 Four in a Row done |
-| M4 | **Systems & hypothesis games** | P1 | M2 | 🚧 Black Box, Laser Paths, Network Detective, Proof Chain, Robot Program, Circuit, Flow Lab done |
+| M4 | **Systems & hypothesis games** | P1 | M2 | 🚧 Black Box, Laser Paths, Network Detective, Proof Chain, Robot Program, Circuit, Flow Lab, Rule Hunt, Fix the Machine done |
 | M5 | **Memory & attention exercises**, Faces & Names (synthetic/licensed faces only) | P1 | M1 | 🚧 Sequence Memory, Pattern Memory, Signal Watch, Stay on Task done |
 | M6 | **Communication exercises** with deterministic evaluation | P2 | M0 | ⏳ |
 | M7 | **Strategy engine** (fresh agent context): shared simulation → Tower Defense → turn-based strategy → 4 hybrid modes | P2 | stable M0–M2 | ⏳ |
@@ -44,11 +44,11 @@ Cross-cutting, continuous: accessibility review, native-speaker review of transl
 | Board | Connect Four → shown as **Four in a Row** | M3 | ✅ | alpha-beta, 3 levels |
 | Board | Chess | M3 | ⏳ | full rules incl. repetition/50-move/insufficient material |
 | Logic | Minimal Proof → shown as **Proof Chain** | M4 | ✅ | generated rule systems (→, ∧, ∨, simple negation); shortest proof verified by oracle |
-| Hypothesis | Rule Discovery | M4 | ⏳ | value-of-information feedback |
+| Hypothesis | Rule Discovery → shown as **Rule Hunt** | M4 | ✅ | 2-4-6-style task; confirmation-bias feedback and information value of each test after solving |
 | Hypothesis | Black Box | M4 | ✅ | 15 rule families; challenge inputs rule out all consistent alternatives of the family |
 | Algorithms | Logic Path → shown as **Robot Program** | M4 | ✅ | small command language (repeat, conditional); 24 original levels, limits proven by exhaustive program search |
 | Systems | Systems Puzzle → shown as **Flow Lab** | M4 | ✅ | integer tank/valve simulation with float switches and delays; 24 original puzzles proven solvable by brute force |
-| Systems | Debug the System | M4 | ⏳ | |
+| Systems | Debug the System → shown as **Fix the Machine** | M4 | ✅ | generated register machines with one injected bug; unique single-rule fix verified by brute force |
 | Systems | Graph Detective → shown as **Network Detective** | M4 | ✅ | 5 task types (bridge, augment, shortest route, single point of failure, min cut); algorithms checked against brute-force oracle |
 | Spatial | Circuit Puzzle → shown as **Circuit** | M4 | ✅ | rotate tiles into one spanning-tree circuit; any valid solution accepted (checked against oracle) |
 | Spatial | Stacking duel (Tower-Battle-style): players alternately rotate and drop irregular original shapes onto a shared tower; whoever makes it collapse loses (also solo: reach a height with N pieces) | M4 | ⏳ | original name/shapes (the commercial "Animal Tower Battle" is only a design reference); needs a deterministic 2D physics step (own engine or license-reviewed MIT engine such as planck.js); save only settled states between turns |
