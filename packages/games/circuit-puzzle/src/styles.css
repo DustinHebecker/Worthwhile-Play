@@ -67,7 +67,7 @@
 .wp-circuit-puzzle .cp-source { fill: var(--wp-text); }
 .wp-circuit-puzzle .cp-source-mark { stroke: var(--wp-surface); stroke-width: 7; stroke-linecap: round; }
 /* Loose wire ends: an open ring (shape, not only colour). */
-.wp-circuit-puzzle .cp-loose { fill: var(--wp-surface); stroke: var(--wp-danger); stroke-width: 5; }
+.wp-circuit-puzzle .cp-loose { fill: var(--wp-surface); stroke: var(--wp-danger); stroke-width: 4; }
 .wp-circuit-puzzle .cp-lock { fill: var(--wp-focus); }
 
 .wp-circuit-puzzle .cp-board.is-solved .cp-tile { cursor: default; }

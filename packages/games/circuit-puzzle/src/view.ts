@@ -63,7 +63,7 @@ function drawTile(mask: number, powered: boolean, loose: number, isSource: boole
   for (const d of DIRECTIONS) {
     if (!(loose & d)) continue;
     const [cx, cy] = RING[d];
-    root.appendChild(svg('circle', { cx, cy, r: 10, class: 'cp-loose' }));
+    root.appendChild(svg('circle', { cx, cy, r: 8, class: 'cp-loose' }));
   }
   if (locked) root.appendChild(svg('path', { d: 'M0 0 H30 L0 30 Z', class: 'cp-lock' }));
   return root;

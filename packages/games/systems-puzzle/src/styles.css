@@ -1,0 +1,129 @@
+/* Flow Lab — all rules scoped under .wp-systems-puzzle. Uses shared --wp-* tokens. */
+.wp-systems-puzzle {
+  --fl-water: #9cc9e0;
+  --fl-hatch: #2f6f8f;
+  --fl-tank: var(--wp-surface);
+  --fl-line: var(--wp-text);
+  display: grid;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 44rem;
+  margin-inline: auto;
+}
+@media (prefers-color-scheme: dark) {
+  .wp-systems-puzzle {
+    --fl-water: #24546b;
+    --fl-hatch: #8fd0ee;
+  }
+}
+.wp-systems-puzzle p,
+.wp-systems-puzzle h3,
+.wp-systems-puzzle ul { margin: 0; }
+.wp-systems-puzzle h3 { font-size: 1rem; }
+
+.wp-systems-puzzle .fl-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.wp-systems-puzzle .fl-goal {
+  background: var(--wp-surface);
+  border: 1px solid var(--wp-border);
+  border-radius: var(--wp-radius, 10px);
+  padding: 0.6rem 0.9rem;
+  display: grid;
+  gap: 0.3rem;
+}
+.wp-systems-puzzle .fl-goal-list { padding-inline-start: 1.2rem; display: grid; gap: 0.15rem; }
+.wp-systems-puzzle .fl-mode { font-size: 0.9rem; }
+
+/* The schematic is a technical drawing: it keeps its left-to-right geometry in every language. */
+.wp-systems-puzzle .fl-schematic {
+  position: relative;
+  width: 100%;
+  aspect-ratio: var(--fl-ratio, 3 / 2);
+  margin-inline: auto;
+}
+.wp-systems-puzzle .fl-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+
+.wp-systems-puzzle .fl-water { fill: var(--fl-water); }
+.wp-systems-puzzle .fl-hatch-line { stroke: var(--fl-hatch); stroke-width: 2.5; }
+.wp-systems-puzzle .fl-tank-bg { fill: var(--fl-tank); }
+.wp-systems-puzzle .fl-tank-outline { fill: none; stroke: var(--fl-line); stroke-width: 2.5; }
+.wp-systems-puzzle .fl-overflowed .fl-tank-outline { stroke-width: 4; stroke-dasharray: 6 3; }
+.wp-systems-puzzle .fl-fill { stroke: none; }
+.wp-systems-puzzle:not(.fl-reduced) .fl-fill { transition: y 0.3s ease, height 0.3s ease; }
+.wp-systems-puzzle .fl-tank-name { font-weight: 700; font-size: 16px; fill: var(--wp-text); }
+.wp-systems-puzzle .fl-tank-level { font-size: 15px; font-weight: 600; fill: var(--wp-text); font-variant-numeric: tabular-nums; }
+.wp-systems-puzzle .fl-target { stroke: var(--wp-text); stroke-width: 2; stroke-dasharray: 5 3; }
+.wp-systems-puzzle .fl-target-label { font-size: 12px; font-weight: 700; fill: var(--wp-text); }
+.wp-systems-puzzle .fl-float { stroke: var(--wp-text); stroke-width: 2; stroke-dasharray: 1 3; stroke-linecap: round; }
+.wp-systems-puzzle .fl-float-label { font-size: 12px; font-weight: 700; fill: var(--wp-text); }
+
+.wp-systems-puzzle .fl-pipe-line { stroke: var(--fl-line); stroke-width: 3; stroke-dasharray: 4 5; }
+.wp-systems-puzzle .fl-pipe[data-state='open'] .fl-pipe-line { stroke-width: 6; stroke-dasharray: none; }
+.wp-systems-puzzle .fl-pipe[data-state='held'] .fl-pipe-line { stroke-width: 4; stroke-dasharray: 10 4 2 4; }
+.wp-systems-puzzle .fl-slow .fl-pipe-outer { stroke: var(--fl-line); stroke-width: 14; opacity: 0.35; }
+.wp-systems-puzzle .fl-arrow { fill: var(--fl-line); }
+.wp-systems-puzzle .fl-pipe-label { font-size: 12px; fill: var(--wp-text); font-variant-numeric: tabular-nums; }
+
+.wp-systems-puzzle .fl-valve {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  min-width: var(--wp-touch, 44px);
+  min-height: var(--wp-touch, 44px);
+  width: var(--wp-touch, 44px);
+  height: var(--wp-touch, 44px);
+  padding: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  font-weight: 700;
+  line-height: 1;
+  border: 2px solid var(--fl-line);
+  background: var(--wp-surface);
+  color: var(--wp-text);
+}
+.wp-systems-puzzle .fl-valve[data-open='true'] { background: var(--wp-accent); color: var(--wp-accent-contrast); border-style: solid; }
+.wp-systems-puzzle .fl-valve[data-open='false'] { border-style: dashed; }
+.wp-systems-puzzle .fl-valve[aria-disabled='true'] { cursor: default; opacity: 0.85; }
+.wp-systems-puzzle .fl-valve-num { font-size: 0.8rem; }
+.wp-systems-puzzle .fl-valve-mark { font-size: 1rem; }
+
+.wp-systems-puzzle .fl-legend { font-size: 0.8rem; }
+.wp-systems-puzzle .fl-stats { text-align: center; font-variant-numeric: tabular-nums; }
+.wp-systems-puzzle .fl-status { text-align: center; padding-inline: 0.5rem; }
+.wp-systems-puzzle .fl-status[data-state='blocked'],
+.wp-systems-puzzle .fl-status[data-state='failed'] {
+  border-inline-start: 4px solid var(--wp-focus);
+  text-align: start;
+  font-weight: 500;
+}
+.wp-systems-puzzle .fl-status[data-state='blocked']::before,
+.wp-systems-puzzle .fl-status[data-state='failed']::before { content: '! '; font-weight: 700; }
+.wp-systems-puzzle .fl-status[data-state='solved']::before { content: '✓ '; }
+.wp-systems-puzzle .fl-events { list-style: none; padding: 0; display: grid; gap: 0.15rem; text-align: center; font-size: 0.9rem; }
+
+.wp-systems-puzzle .fl-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; }
+.wp-systems-puzzle .fl-actions button { min-height: var(--wp-touch, 44px); }
+.wp-systems-puzzle .fl-chooser { justify-content: center; }
+.wp-systems-puzzle .fl-chooser select { max-width: 100%; min-height: var(--wp-touch, 44px); }
+.wp-systems-puzzle .fl-help { display: grid; gap: 0.25rem; font-size: 0.85rem; text-align: center; }
+
+@media (forced-colors: active) {
+  .wp-systems-puzzle .fl-water { fill: Canvas; }
+  .wp-systems-puzzle .fl-hatch-line,
+  .wp-systems-puzzle .fl-tank-outline,
+  .wp-systems-puzzle .fl-pipe-line,
+  .wp-systems-puzzle .fl-target,
+  .wp-systems-puzzle .fl-float { stroke: CanvasText; }
+  .wp-systems-puzzle .fl-arrow,
+  .wp-systems-puzzle text { fill: CanvasText; }
+  .wp-systems-puzzle .fl-valve { border-color: ButtonText; }
+}
