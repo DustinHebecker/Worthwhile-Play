@@ -6,6 +6,7 @@
     "configFile": "vitest.config.ts"
   },
   "coverageAnalysis": "perTest",
+  "dryRunTimeoutMinutes": 25,
   "mutate": [
     "packages/game-core/src/**/*.ts",
     "packages/persistence/src/**/*.ts",
