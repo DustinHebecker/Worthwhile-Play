@@ -1,4 +1,3 @@
-// @ts-nocheck
 import './styles.css';
 import type { GameContext, GameInstance, NewGameOptions } from '@wp/game-core';
 import type { CardSide } from '@wp/learning-content';

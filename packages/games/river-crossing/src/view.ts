@@ -1,4 +1,3 @@
-// @ts-nocheck
 import type { GameContext, GameInstance, NewGameOptions, Translator } from '@wp/game-core';
 import { announce, clear, h } from '@wp/ui';
 import {

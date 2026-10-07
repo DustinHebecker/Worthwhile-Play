@@ -20,8 +20,6 @@
  * exactly reproducible saves. History entries: a crossing (ascending entity indices) or
  * `RESTART`. Restarting is recorded rather than erasing the history, so it can be undone.
  */
-// @ts-nocheck
-
 import { isInt, isOneOf, isRecord, isUint32, normalizeSeed } from '@wp/game-core';
 import { PUZZLES } from './puzzles';
 

@@ -11,8 +11,6 @@
  * `minPushes` is the fewest pushes that solve the level. The test suite re-derives it with an
  * independent breadth-first solver, so a wrong value (or an unsolvable level) fails the tests.
  */
-// @ts-nocheck
-
 export interface LevelSource {
   readonly map: string;
   readonly minPushes: number;

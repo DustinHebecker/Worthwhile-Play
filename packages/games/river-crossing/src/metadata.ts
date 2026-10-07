@@ -1,4 +1,3 @@
-// @ts-nocheck
 import type { GameMetadata } from '@wp/game-core';
 import { messages } from './messages';
 

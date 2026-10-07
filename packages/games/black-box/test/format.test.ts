@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { describeRule, formatInput, formatList, formatNumber, formatOutput, formatPolynomial, inputHeader, normalizeDigits, parseDigitList, parseInteger, MINUS } from '../src/format';

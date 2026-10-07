@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { createRngFromState, type Rng } from '@wp/game-core';

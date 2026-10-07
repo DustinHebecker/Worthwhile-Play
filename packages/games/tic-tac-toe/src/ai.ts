@@ -12,8 +12,6 @@
  *             legal move (and may then miss a win or a block).
  *  - easy:    takes an immediate win when one exists, otherwise plays randomly.
  */
-// @ts-nocheck
-
 import { createRngFromState, type Rng } from '@wp/game-core';
 import {
   applyMove,

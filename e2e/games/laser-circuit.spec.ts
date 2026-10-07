@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { expect, test, type Page } from '@playwright/test';
 import { expectResumeAfterReload } from '../../packages/testing/src/e2e';
 

@@ -5,8 +5,6 @@
  * string. A move (one block slid any distance) is every string reachable by repeating one
  * single-cell shift of the same letter in the same direction.
  */
-// @ts-nocheck
-
 const W = 6;
 
 const cellsOfLetter = (grid: string, letter: string): number[] => {

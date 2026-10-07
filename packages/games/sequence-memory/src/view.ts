@@ -1,4 +1,3 @@
-// @ts-nocheck
 import './styles.css';
 import type { GameContext, GameInstance, NewGameOptions } from '@wp/game-core';
 import { announce, clear, gridKeyboard, h } from '@wp/ui';

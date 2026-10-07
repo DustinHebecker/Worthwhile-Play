@@ -4,8 +4,6 @@
  * enumerates all assignments (0–2 bridges per slot) with simple pruning, then checks
  * connectivity by flood fill. Exponential in the worst case, but fast for real puzzles.
  */
-// @ts-nocheck
-
 
 export interface OracleResult {
   /** Number of solutions found (stops at `limit`). */

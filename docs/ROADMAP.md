@@ -51,6 +51,7 @@ Cross-cutting, continuous: accessibility review, native-speaker review of transl
 | Systems | Debug the System | M4 | ⏳ | |
 | Systems | Graph Detective | M4 | ⏳ | |
 | Spatial | Circuit Puzzle | M4 | ⏳ | |
+| Spatial | Stacking duel (Tower-Battle-style): players alternately rotate and drop irregular original shapes onto a shared tower; whoever makes it collapse loses (also solo: reach a height with N pieces) | M4 | ⏳ | original name/shapes (the commercial "Animal Tower Battle" is only a design reference); needs a deterministic 2D physics step (own engine or license-reviewed MIT engine such as planck.js); save only settled states between turns |
 | Spatial | Laser Circuit → shown as **Laser Paths** | M4 | ✅ | 24 original levels, each with exactly one solution (oracle-verified); generic `traceBeams` for later reuse |
 | Memory | Faces & Names | M5 | ⏳ | mnemonic, self-generated associations |
 | Memory | Sequence Memory | M5 | ✅ | user-paced (Auto/Step), adaptive span, 12-round session |

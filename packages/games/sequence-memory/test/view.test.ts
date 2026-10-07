@@ -1,4 +1,3 @@
-// @ts-nocheck
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { GameContext, GameInstance, GameModule } from '@wp/game-core';

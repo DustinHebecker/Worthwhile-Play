@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { defineGame } from '@wp/game-core';
 import { metadata } from './metadata';
 import { isSokobanState, type SokobanState } from './rules';

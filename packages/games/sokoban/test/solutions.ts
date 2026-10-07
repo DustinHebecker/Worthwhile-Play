@@ -3,8 +3,6 @@
  * independent oracle solver in `oracle.ts`. Tests replay them through the real rules, so the
  * fast rules tests do not need to run the (slower) search.
  */
-// @ts-nocheck
-
 export const SOLUTIONS = {
   easy: [
     'LrddllulluurrD', // 2 pushes

@@ -5,8 +5,6 @@
  * Slow but obviously correct; used only in tests. Category 0 is the people themselves and
  * category 1 the floors (0 = lowest), as documented for the save format.
  */
-// @ts-nocheck
-
 
 export interface OracleRef {
   cat: number;

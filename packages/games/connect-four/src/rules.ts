@@ -9,8 +9,6 @@
  * undo is trivial and the board can never disagree with the history (or float).
  * How the computer chooses its moves lives in `ai.ts`.
  */
-// @ts-nocheck
-
 import { isArrayOf, isInt, isOneOf, isRecord, isUint32 } from '@wp/game-core';
 
 export type Player = 1 | 2;

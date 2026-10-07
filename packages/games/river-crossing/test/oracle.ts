@@ -7,8 +7,6 @@
  * entities with a trip limit — how many crossings each of them has made. Breadth-first order
  * over crossings makes the first solved state found crossing-optimal.
  */
-// @ts-nocheck
-
 
 interface OracleEntity {
   readonly id: string;

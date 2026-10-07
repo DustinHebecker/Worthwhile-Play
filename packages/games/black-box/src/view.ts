@@ -1,4 +1,3 @@
-// @ts-nocheck
 import type { GameContext, GameInstance, NewGameOptions } from '@wp/game-core';
 import { announce, append, clear, h } from '@wp/ui';
 import { bitName, describeRule, formatInput, formatList, formatNumber, formatOutput, inputHeader, parseDigitList, parseInteger } from './format';

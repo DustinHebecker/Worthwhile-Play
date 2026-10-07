@@ -3,8 +3,6 @@
  * Mathematical notation (formulas, lists, bits) is language-neutral; rules that need
  * words are returned as a message key plus parameters.
  */
-// @ts-nocheck
-
 import { COMPARATORS, FAMILIES, GATES, PREDICTION_LIMIT, otherBits, type Input, type InputSpec, type Output, type OutputKind, type Rule } from './rules';
 
 export const MINUS = '−';

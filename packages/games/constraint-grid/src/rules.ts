@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { createRng, isInt, isOneOf, isRecord, isUint32, type Rng } from '@wp/game-core';
 import { ATTRIBUTE_KINDS, CLUE_TYPES, NAME_COUNT, VOCABULARY, type AttributeKind, type ClueType } from './vocabulary';
 

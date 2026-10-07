@@ -18,8 +18,6 @@
  * Graphs are drawn on a jittered grid (100 units per cell) with short, non-crossing straight
  * connections, so every layout is deterministic, readable and stored in the state.
  */
-// @ts-nocheck
-
 import { createRng, isInt, isOneOf, isRecord, isUint32, normalizeSeed, type Rng } from '@wp/game-core';
 
 /* ---------- Constants and types ---------- */

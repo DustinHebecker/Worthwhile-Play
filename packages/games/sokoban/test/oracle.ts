@@ -7,8 +7,6 @@
  * crates plus the smallest cell of that region. Breadth-first order over pushes makes the
  * first solved state found push-optimal.
  */
-// @ts-nocheck
-
 export interface OracleLevel {
   w: number;
   h: number;
