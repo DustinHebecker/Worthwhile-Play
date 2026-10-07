@@ -63,6 +63,7 @@ Cross-cutting, continuous: accessibility review, native-speaker review of transl
 | Attention | Deep Read | M5 | ⏳ | |
 | Attention | Distractor Control | M5 | ⏳ | must not become irritating |
 | Attention | Visual / peripheral search | M5 | ⏳ | |
+| Language | Word-guessing game (Wordle-style): guess a hidden word in a few tries with per-letter feedback; unlimited free play, no daily-puzzle streak | M6 | ⏳ | original name and design ("Wordle" is a trademark); word lists per content language need a license review (prefer CC0/public-domain or self-built lists); feedback by symbol + colour; content language independent of UI language |
 | Communication | Audience Switch | M6 | ⏳ | |
 | Communication | Compression Challenge | M6 | ⏳ | |
 | Communication | Briefing Game | M6 | ⏳ | |
