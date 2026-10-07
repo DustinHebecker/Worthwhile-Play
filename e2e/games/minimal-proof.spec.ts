@@ -13,9 +13,9 @@ test('minimal-proof: applied steps and known statements survive a reload', async
   let status: string | null = null;
   await expectResumeAfterReload(page, 'minimal-proof', async (p) => {
     await ready(p).first().click();
+    // One step only: every puzzle needs at least two, so the proof is still open
+    // (with a random seed, two steps could already finish an easy puzzle).
     await expect(root(p).getByTestId('mp-status')).toHaveText('Steps so far: 1');
-    await ready(p).first().click();
-    await expect(root(p).getByTestId('mp-status')).toHaveText('Steps so far: 2');
     facts = await knownFacts(p);
     status = await root(p).getByTestId('mp-status').textContent();
   });
