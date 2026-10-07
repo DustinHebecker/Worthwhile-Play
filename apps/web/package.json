@@ -25,6 +25,7 @@
     "@wp/game-nonogram": "workspace:*",
     "@wp/game-river-crossing": "workspace:*",
     "@wp/game-sequence-memory": "workspace:*",
+    "@wp/game-signal-watch": "workspace:*",
     "@wp/game-skyscrapers": "workspace:*",
     "@wp/game-sliding-blocks": "workspace:*",
     "@wp/game-sokoban": "workspace:*",

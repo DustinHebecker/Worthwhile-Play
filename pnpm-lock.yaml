@@ -110,6 +110,9 @@ importers:
       '@wp/game-sequence-memory':
         specifier: workspace:*
         version: link:../../packages/games/sequence-memory
+      '@wp/game-signal-watch':
+        specifier: workspace:*
+        version: link:../../packages/games/signal-watch
       '@wp/game-skyscrapers':
         specifier: workspace:*
         version: link:../../packages/games/skyscrapers

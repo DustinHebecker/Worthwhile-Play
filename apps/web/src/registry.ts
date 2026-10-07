@@ -14,6 +14,7 @@ import { metadata as minesweeper } from '@wp/game-minesweeper/metadata';
 import { metadata as nonogram } from '@wp/game-nonogram/metadata';
 import { metadata as riverCrossing } from '@wp/game-river-crossing/metadata';
 import { metadata as sequenceMemory } from '@wp/game-sequence-memory/metadata';
+import { metadata as signalWatch } from '@wp/game-signal-watch/metadata';
 import { metadata as skyscrapers } from '@wp/game-skyscrapers/metadata';
 import { metadata as slidingBlocks } from '@wp/game-sliding-blocks/metadata';
 import { metadata as sokoban } from '@wp/game-sokoban/metadata';
@@ -52,6 +53,7 @@ export const GAMES: readonly GameEntry[] = [
   entry(memory, () => import('@wp/game-memory')),
   entry(sequenceMemory, () => import('@wp/game-sequence-memory')),
   entry(spatialMemory, () => import('@wp/game-spatial-memory')),
+  entry(signalWatch, () => import('@wp/game-signal-watch')),
   entry(connectFour, () => import('@wp/game-connect-four')),
   entry(ticTacToe, () => import('@wp/game-tic-tac-toe'))
 ];
