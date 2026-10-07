@@ -36,7 +36,8 @@
 .wp-laser-circuit .lc-board {
   direction: ltr;
   display: grid;
-  grid-template-columns: repeat(var(--lc-cols, 7), minmax(var(--wp-touch, 44px), 1fr));
+  /* minmax(0, 1fr): never wider than the container (7 columns still give ≥ 44 px on a 360 px phone). */
+  grid-template-columns: repeat(var(--lc-cols, 7), minmax(0, 1fr));
   width: min(100%, calc(var(--lc-cols, 7) * 3.75rem));
   padding: 1px;
   gap: 1px;
