@@ -52,45 +52,41 @@ export function satisfies(grid: readonly (readonly number[])[], clues: OracleClu
 }
 
 /**
- * Enumerates solutions (as arrays of rows) up to `limit`. Rows are taken from the permutations
- * that already match their left/right clues and givens; columns are checked for repeats and
- * for the top clue (a partial column may never show more buildings than the clue, and must
- * still be able to reach it), the full check runs on every complete grid.
+ * Enumerates solutions (as arrays of rows) up to `limit`. "Generate every line, then
+ * intersect": each row is taken from the permutations that already match its left/right
+ * clues and givens, and every column must stay a prefix of some permutation that matches
+ * its top/bottom clues and givens (which also rules out repeats). Every complete grid is
+ * re-checked from scratch by `satisfies`.
  */
 export function oracleSolutions(n: number, clues: OracleClues, givens: readonly number[], limit = 2): number[][][] {
   const perms = allPermutations(n);
-  const rowOptions = Array.from({ length: n }, (_, r) =>
-    perms.filter(
-      (p) =>
-        (!clues.left[r] || seenFromStart(p) === clues.left[r]) &&
-        (!clues.right[r] || seenFromStart(reversed(p)) === clues.right[r]) &&
-        p.every((h, c) => !givens[r * n + c] || givens[r * n + c] === h)
-    )
-  );
+  const matches = (p: readonly number[], start: number | undefined, end: number | undefined, given: (i: number) => number) =>
+    (!start || seenFromStart(p) === start) && (!end || seenFromStart(reversed(p)) === end) && p.every((h, i) => !given(i) || given(i) === h);
+  const rowOptions = Array.from({ length: n }, (_, r) => perms.filter((p) => matches(p, clues.left[r], clues.right[r], (i) => givens[r * n + i] ?? 0)));
+  const columnPrefixes = Array.from({ length: n }, (_, c) => {
+    const prefixes = new Set<string>();
+    for (const p of perms) {
+      if (!matches(p, clues.top[c], clues.bottom[c], (i) => givens[i * n + c] ?? 0)) continue;
+      for (let k = 1; k <= n; k++) prefixes.add(p.slice(0, k).join(''));
+    }
+    return prefixes;
+  });
   const found: number[][][] = [];
   const rows: number[][] = [];
-  const columnOk = (c: number): boolean => {
-    const col = rows.map((row) => row[c] as number);
-    if (new Set(col).size !== col.length) return false;
-    const top = clues.top[c];
-    if (!top) return true;
-    const seen = seenFromStart(col);
-    const tallest = Math.max(...col);
-    const left = n - col.length;
-    // Heights that could still appear above the current tallest building.
-    const higher = Array.from({ length: n - tallest }, (_, i) => tallest + 1 + i).filter((h) => !col.includes(h)).length;
-    return seen <= top && seen + Math.min(left, higher) >= top;
-  };
+  const columns: string[] = new Array<string>(n).fill('');
   const search = () => {
-    if (found.length >= limit) return;
     if (rows.length === n) {
       if (satisfies(rows, clues, givens)) found.push(rows.map((row) => [...row]));
       return;
     }
     for (const option of rowOptions[rows.length] as number[][]) {
+      if (!option.every((h, c) => columnPrefixes[c]?.has(columns[c] + String(h)))) continue;
+      const saved = [...columns];
+      option.forEach((h, c) => (columns[c] += String(h)));
       rows.push(option);
-      if (option.every((_, c) => columnOk(c))) search();
+      search();
       rows.pop();
+      columns.splice(0, n, ...saved);
       if (found.length >= limit) return;
     }
   };

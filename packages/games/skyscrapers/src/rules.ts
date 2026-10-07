@@ -236,7 +236,7 @@ export function isLogicSolvable(puzzle: Puzzle): boolean {
 
 /** Counts solutions up to `limit` by propagation plus branching on the most constrained cell. */
 export function countSolutions(puzzle: Puzzle, limit = 2): number {
-  const search = (start: readonly number[] | undefined): number => {
+  const search = (start: readonly number[] | undefined, wanted: number): number => {
     const cand = propagate(puzzle, start);
     if (!cand) return 0;
     let best = -1;
@@ -249,12 +249,12 @@ export function countSolutions(puzzle: Puzzle, limit = 2): number {
     for (const d of maskDigits(cand[best] as number)) {
       const next = [...cand];
       next[best] = 1 << d;
-      found += search(next);
-      if (found >= limit) return found;
+      found += search(next, wanted - found);
+      if (found >= wanted) return found;
     }
     return found;
   };
-  return search(undefined);
+  return search(undefined, limit);
 }
 
 /** The single solution found by propagation, or `null` if the puzzle is not logic-solvable. */
