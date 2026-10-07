@@ -343,6 +343,7 @@ describe('parseLayout / layoutString / mirrorLayout', () => {
     ['no star block', 'aa' + '.'.repeat(34), /no star block/],
     ['single cell', 'xx.a' + '.'.repeat(32), /"a" is not a straight piece/],
     ['too long', 'xx.aaaa' + '.'.repeat(29), /"a" is not a straight piece/],
+    ['too tall', '.....a' + 'xx...a' + '.....a' + '.....a' + '.'.repeat(12), /"a" is not a straight piece/],
     ['wraps a row', '....aa' + 'a.....' + 'xx' + '.'.repeat(22), /"a" is not a straight piece/],
     ['bent', 'aa....a.....xx' + '.'.repeat(22), /"a" is not a straight piece/],
     ['wrapping star', '.....x' + 'x.....' + '.'.repeat(24), /"x" is not a straight piece/],
@@ -368,6 +369,18 @@ describe('layoutProblem / isLayout', () => {
     expect(isLayout(sampleBlocks())).toBe(true);
     expect(layoutProblem([])).toMatch(/1 to 18 blocks/);
     expect(layoutProblem(Array.from({ length: 19 }, () => star))).toMatch(/1 to 18 blocks/);
+    // A completely full board: 18 blocks of length 2 is the most a layout can hold.
+    const full: Block[] = [
+      star,
+      { row: 3, col: 0, len: 2, orient: 'h' },
+      ...[0, 1, 2, 3, 4, 5].flatMap((col) => [
+        { row: 0, col, len: 2, orient: 'v' as const },
+        { row: 4, col, len: 2, orient: 'v' as const }
+      ]),
+      ...[2, 3, 4, 5].map((col) => ({ row: 2, col, len: 2, orient: 'v' as const }))
+    ];
+    expect(full).toHaveLength(18);
+    expect(layoutProblem(full)).toBeNull();
     expect(layoutProblem([{ ...star, len: 3 }])).toMatch(/star block/);
     expect(layoutProblem([{ ...star, orient: 'v' }])).toMatch(/star block/);
     expect(layoutProblem([{ ...star, col: 4 }])).toMatch(/already at the exit/);
@@ -391,6 +404,8 @@ describe('layoutProblem / isLayout', () => {
     expect(isLayout([{ ...star, len: 1 }])).toBe(false);
     expect(isLayout([star, { row: 0, col: 0, len: 4, orient: 'v' }])).toBe(false);
     expect(isLayout([star, { row: 0, col: 0, len: 2, orient: 'd' }])).toBe(false);
+    expect(isLayout([star, { row: 0, col: 6, len: 2, orient: 'v' }])).toBe(false);
+    expect(isLayout([star, { row: 0, col: 5, len: 2, orient: 'v' }])).toBe(true);
     expect(isLayout([star, { row: 0.5, col: 0, len: 2, orient: 'v' }])).toBe(false);
     expect(isLayout([star, { row: 0, col: '0', len: 2, orient: 'v' }])).toBe(false);
   });

@@ -173,10 +173,11 @@ export interface SolveResult {
   candidates: Candidates;
 }
 
+/** Population count of a 32-bit mask (branch- and loop-free). */
 export const bitCount = (mask: number): number => {
-  let n = 0;
-  for (let m = mask; m; m &= m - 1) n++;
-  return n;
+  let n = mask - ((mask >>> 1) & 0x55555555);
+  n = (n & 0x33333333) + ((n >>> 2) & 0x33333333);
+  return (Math.imul((n + (n >>> 4)) & 0x0f0f0f0f, 0x01010101) >>> 24);
 };
 
 const isSingle = (mask: number): boolean => mask !== 0 && (mask & (mask - 1)) === 0;
@@ -318,8 +319,11 @@ export function propagate(cands: Candidates, size: number, clues: readonly Clue[
     }
   };
 
+  // Every round that changes something removes at least one candidate, so the fixpoint is
+  // reached within `candidateCount` rounds; the bound only makes termination explicit.
+  let rounds = candidateCount(cands) + 1;
   try {
-    while (changed) {
+    while (changed && rounds-- > 0) {
       changed = false;
       applyPermutations();
       for (const clue of clues) {

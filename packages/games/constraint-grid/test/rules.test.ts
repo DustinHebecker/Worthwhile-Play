@@ -105,6 +105,12 @@ describe('helpers', () => {
     expect(range(3)).toEqual([0, 1, 2]);
     expect(bitCount(0)).toBe(0);
     expect(bitCount(0b1011)).toBe(3);
+    expect(bitCount(0xffffffff)).toBe(32);
+    expect(bitCount(0x80000000)).toBe(1);
+    expect(bitCount(0x0f0f0f0f)).toBe(16);
+    fc.assert(fc.property(fc.integer({ min: 0, max: 0xffffffff }), (m) => {
+      expect(bitCount(m)).toBe(m.toString(2).split('').filter((d) => d === '1').length);
+    }));
     expect(lowestBit(0b1000)).toBe(3);
     expect(lowestBit(0b110)).toBe(1);
     expect(lowestBit(1)).toBe(0);
