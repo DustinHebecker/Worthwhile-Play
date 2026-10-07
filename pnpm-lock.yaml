@@ -95,6 +95,9 @@ importers:
       '@wp/game-skyscrapers':
         specifier: workspace:*
         version: link:../../packages/games/skyscrapers
+      '@wp/game-sliding-blocks':
+        specifier: workspace:*
+        version: link:../../packages/games/sliding-blocks
       '@wp/game-sokoban':
         specifier: workspace:*
         version: link:../../packages/games/sokoban

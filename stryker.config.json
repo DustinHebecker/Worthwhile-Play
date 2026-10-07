@@ -40,6 +40,7 @@
     "reports",
     "coverage",
     "dist",
-    ".wrangler"
+    ".wrangler",
+    ".stryker-tmp*"
   ]
 }
