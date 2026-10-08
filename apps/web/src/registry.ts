@@ -25,6 +25,7 @@ import { metadata as sokoban } from '@wp/game-sokoban/metadata';
 import { metadata as spatialMemory } from '@wp/game-spatial-memory/metadata';
 import { metadata as systemsPuzzle } from '@wp/game-systems-puzzle/metadata';
 import { metadata as nodeConquest } from '@wp/game-node-conquest/metadata';
+import { metadata as slitherlink } from '@wp/game-slitherlink/metadata';
 import { metadata as ticTacToe } from '@wp/game-tic-tac-toe/metadata';
 
 export interface GameEntry {
@@ -67,7 +68,8 @@ export const GAMES: readonly GameEntry[] = [
   entry(distractorControl, () => import('@wp/game-distractor-control')),
   entry(connectFour, () => import('@wp/game-connect-four')),
   entry(ticTacToe, () => import('@wp/game-tic-tac-toe')),
-  entry(nodeConquest, () => import('@wp/game-node-conquest'))
+  entry(nodeConquest, () => import('@wp/game-node-conquest')),
+  entry(slitherlink, () => import('@wp/game-slitherlink'))
 ];
 
 export const findGame = (id: string): GameEntry | undefined => GAMES.find((g) => g.metadata.id === id);

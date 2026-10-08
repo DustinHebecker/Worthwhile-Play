@@ -134,6 +134,9 @@ importers:
       '@wp/game-sliding-blocks':
         specifier: workspace:*
         version: link:../../packages/games/sliding-blocks
+      '@wp/game-slitherlink':
+        specifier: workspace:*
+        version: link:../../packages/games/slitherlink
       '@wp/game-sokoban':
         specifier: workspace:*
         version: link:../../packages/games/sokoban

@@ -51,8 +51,11 @@ test('node-conquest: a paused battle resumes exactly after a reload', async ({ p
   expect((await savedState(page)).tick).toBe(state.tick);
 
   // Resuming continues the same battle.
+  const pausedText = await page.getByTestId('nc-status').textContent();
   await page.getByTestId('nc-pause').click();
   await expect(page.getByTestId('nc-status')).toHaveAttribute('data-state', 'running');
+  // Let at least one displayed second of game time pass (rAF can be slow on a loaded machine).
+  await expect.poll(async () => /(\d+):(\d+)/.exec((await page.getByTestId('nc-status').textContent())!)![0], { timeout: 10_000 }).not.toBe(/(\d+):(\d+)/.exec(pausedText!)![0]);
   await page.keyboard.press('p');
   await expect(page.getByTestId('nc-status')).toHaveAttribute('data-state', 'paused');
   await expect.poll(async () => (await savedState(page)).tick).toBeGreaterThan(state.tick);
@@ -62,6 +65,12 @@ test('node-conquest: dragging from node to node activates a path; Space pauses',
   await page.goto('/games/node-conquest');
   await page.getByTestId('new-game').click();
   const [from, to] = await startAndNeighbour(page);
+  // The map is seeded randomly, so the start node may lie below the fold: centre the pair first.
+  await page.evaluate(([f, t]) => {
+    const box = (id: string) => document.querySelector(`[data-testid="${id}"] .nc-body`)!.getBoundingClientRect();
+    const [p, q] = [box(`node-${f}`), box(`node-${t}`)];
+    window.scrollBy(0, (p.top + q.bottom) / 2 - window.innerHeight / 2);
+  }, [from, to]);
   const a = (await page.getByTestId(`node-${from}`).locator('.nc-body').boundingBox())!;
   const b = (await page.getByTestId(`node-${to}`).locator('.nc-body').boundingBox())!;
   await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);

@@ -34,7 +34,7 @@ Cross-cutting, continuous: accessibility review, native-speaker review of transl
 | Logic | Sokoban → shown as **Crate Pusher** | M2 | ✅ | 24 original levels, solver-verified optimal push counts |
 | Logic | Nonogram | M2 | ✅ | line-solvable + unique (independent oracle in tests) |
 | Logic | Bridges / Hashi | M2 | ✅ | generated, solvable by logic (capacity, crossing, isolation); uniqueness via oracle |
-| Logic | Slitherlink | M2 | 🚧 | |
+| Logic | Slitherlink ("Loop") | M2 | ✅ | unique solution checked by an independent exhaustive solver |
 | Logic | Einstein / Constraint Grid → shown as **Logic Grid** | M2 | ✅ | generated, minimal clue sets; uniqueness via brute-force oracle; clue templates in 16 locales |
 | Logic | Lights Out | M2 | ✅ | GF(2) solver, minimal-solution hints |
 | Logic | River Crossing | M2 | ✅ | data-driven rule engine; 24 original-themed puzzles, optimum verified by independent BFS |
