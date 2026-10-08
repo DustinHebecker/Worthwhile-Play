@@ -34,15 +34,14 @@ Cross-cutting, continuous: accessibility review, native-speaker review of transl
 | Logic | Sokoban → shown as **Crate Pusher** | M2 | ✅ | 24 original levels, solver-verified optimal push counts |
 | Logic | Nonogram | M2 | ✅ | line-solvable + unique (independent oracle in tests) |
 | Logic | Bridges / Hashi | M2 | ✅ | generated, solvable by logic (capacity, crossing, isolation); uniqueness via oracle |
-| Logic | Slitherlink | M2 | ⏳ | |
+| Logic | Slitherlink ("Loop") | M2 | ✅ | unique solution checked by an independent exhaustive solver |
 | Logic | Einstein / Constraint Grid → shown as **Logic Grid** | M2 | ✅ | generated, minimal clue sets; uniqueness via brute-force oracle; clue templates in 16 locales |
 | Logic | Lights Out | M2 | ✅ | GF(2) solver, minimal-solution hints |
 | Logic | River Crossing | M2 | ✅ | data-driven rule engine; 24 original-themed puzzles, optimum verified by independent BFS |
-| Logic | Rush-Hour-style sliding | M2 | ⏳ | |
 | Logic | Skyscrapers | M2 | ✅ | generator + line solver; uniqueness verified by independent oracle |
 | Logic | Deterministic Minesweeper → shown as **Mine Logic** | M2 | ✅ | no-guess generation (solver + brute-force oracle); mistakes are undoable, never punished |
 | Board | Connect Four → shown as **Four in a Row** | M3 | ✅ | alpha-beta, 3 levels |
-| Board | Chess | M3 | ⏳ | full rules incl. repetition/50-move/insufficient material |
+| Board | Chess | M3 | 🚧 | own engine (no third-party engine); full rules verified by perft; AI uses strategic evaluation and human-like candidate selection (not only depth + piece-square tables); optional move explanations; puzzle modes "Find the best move" and "Mate in N" (positions verified by own solver, original or CC0-licensed) |
 | Logic | Minimal Proof → shown as **Proof Chain** | M4 | ✅ | generated rule systems (→, ∧, ∨, simple negation); shortest proof verified by oracle |
 | Hypothesis | Rule Discovery → shown as **Rule Hunt** | M4 | ✅ | 2-4-6-style task; confirmation-bias feedback and information value of each test after solving |
 | Hypothesis | Black Box | M4 | ✅ | 15 rule families; challenge inputs rule out all consistent alternatives of the family |
@@ -68,6 +67,7 @@ Cross-cutting, continuous: accessibility review, native-speaker review of transl
 | Communication | Compression Challenge | M6 | ⏳ | |
 | Communication | Briefing Game | M6 | ⏳ | |
 | Communication | Ambiguity Detector | M6 | ⏳ | |
+| Strategy | Orbit Links — node conquest (space theme, inspired by "tower battle"-type games): own/enemy/neutral nodes connected by lanes; nodes level 1–30 with 1/2/3 active outgoing paths; units stream along paths (level up own nodes, convert neutral/enemy nodes, head-on fights mid-lane); several opponents without alliances; node types (standard, shipyard for heavy units, defence station with level-based range); real-time but pausable at any moment, deterministic tick simulation | M7 | ✅ | original theme (space or abstract rings/dots); separate from the stacking duel |
 | Strategy | Shared strategy/TD engine | M7 | ⏳ | deterministic simulation |
 | Strategy | Tower Defense (Gun, Artillery, Laser, Support, Specialist + branches) | M7 | ⏳ | |
 | Strategy | Original turn-based strategy (plan→lock→resolve, command network, EW) | M7 | ⏳ | not a C&C clone |
