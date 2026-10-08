@@ -1239,3 +1239,180 @@ export function explainMove(input: Position, move: number): Reason[] {
   if (reasons.length === 0) reasons.push({ key: 'why.solid' });
   return reasons.slice(0, 3);
 }
+
+/* ------------------------------------------------------------------------ */
+/* Exhaustive mate solver (puzzles)                                           */
+/* ------------------------------------------------------------------------ */
+
+/** Thrown when a mate search exceeds its node budget. */
+export class BudgetExceeded extends Error {
+  constructor() {
+    super('Mate search budget exceeded');
+  }
+}
+
+/**
+ * Exhaustive AND/OR search for forced mates: "can the side to move force checkmate
+ * within n of its own moves against every defence?". Exact (no heuristics); results
+ * are memoised per (position, n). Repetition and fifty-move draws are ignored, which
+ * cannot matter for mates of at most a few moves.
+ */
+export class MateSolver {
+  nodes = 0;
+  private readonly memo = new Map<string, boolean>();
+  constructor(readonly budget = 5_000_000) {}
+
+  private tick(): void {
+    if (++this.nodes > this.budget) throw new BudgetExceeded();
+  }
+
+  /** Whether the side to move in `pos` forces mate within `n` moves. `pos` is restored afterwards. */
+  canMate(pos: Position, n: number): boolean {
+    if (n <= 0) return false;
+    const key = `${pos.hashLo},${pos.hashHi},${n}`;
+    const known = this.memo.get(key);
+    if (known !== undefined) return known;
+    let result = false;
+    for (const move of orderForMate(pos, legalMoves(pos))) {
+      if (this.forcesMate(pos, move, n)) {
+        result = true;
+        break;
+      }
+    }
+    // Monotonic: a mate within n is also a mate within n + 1.
+    this.memo.set(key, result);
+    return result;
+  }
+
+  /** Whether `move` (legal for the side to move) forces mate within `n` moves including itself. */
+  forcesMate(pos: Position, move: number, n: number): boolean {
+    this.tick();
+    const undo = makeMove(pos, move);
+    let result: boolean;
+    const replies = legalMoves(pos);
+    if (replies.length === 0) result = inCheck(pos);
+    else if (n <= 1) result = false;
+    else {
+      result = true;
+      for (const reply of orderForMate(pos, replies)) {
+        const r = makeMove(pos, reply);
+        const ok = this.canMate(pos, n - 1);
+        unmakeMove(pos, r);
+        if (!ok) {
+          result = false;
+          break;
+        }
+      }
+    }
+    unmakeMove(pos, undo);
+    return result;
+  }
+
+  /** Smallest n ≤ maxN with a forced mate in n for the side to move, or 0. */
+  distance(pos: Position, maxN: number): number {
+    for (let n = 1; n <= maxN; n++) if (this.canMate(pos, n)) return n;
+    return 0;
+  }
+
+  /** All first moves that force mate within `n`. */
+  solutions(pos: Position, n: number): number[] {
+    return legalMoves(pos).filter((m) => this.forcesMate(pos, m, n));
+  }
+
+  /**
+   * The defender's most stubborn reply (defender to move, attacker mates within `n` after
+   * any reply): the reply after which the attacker's mate takes longest. Ties keep the
+   * first reply in generation order, so the choice is deterministic.
+   */
+  bestDefence(pos: Position, n: number): number {
+    let best = 0;
+    let longest = -1;
+    for (const reply of legalMoves(pos)) {
+      const r = makeMove(pos, reply);
+      const d = this.distance(pos, n);
+      unmakeMove(pos, r);
+      const length = d === 0 ? n + 1 : d;
+      if (length > longest) {
+        longest = length;
+        best = reply;
+      }
+    }
+    return best;
+  }
+}
+
+/** Checks first, then captures, then the rest (stable): finds mates and refutations sooner. */
+function orderForMate(pos: Position, moves: number[]): number[] {
+  const keyed = moves.map((move) => {
+    const undo = makeMove(pos, move);
+    const check = inCheck(pos);
+    unmakeMove(pos, undo);
+    const capture = pos.board[moveTo(move)] !== 0 || moveFlag(move) === FLAG_EP;
+    return { move, key: (check ? 2 : 0) + (capture ? 1 : 0) };
+  });
+  return keyed.sort((a, b) => b.key - a.key).map((k) => k.move);
+}
+
+/* ------------------------------------------------------------------------ */
+/* Puzzle verification                                                        */
+/* ------------------------------------------------------------------------ */
+
+export interface MatePuzzle {
+  fen: string;
+  /** Forced mate in exactly n moves of the side to move. */
+  n: number;
+  /** Main line in UCI: attacker, defender (most stubborn), …, mating move (2n − 1 plies). */
+  line: string[];
+}
+
+export interface BestMovePuzzle {
+  fen: string;
+  /** The single clearly best move (UCI). */
+  move: string;
+}
+
+/** Minimum lead (centipawns) of the best move over every alternative in a best-move puzzle. */
+export const BEST_MOVE_GAP = 150;
+
+/**
+ * Verifies a mate-in-n puzzle: no faster mate, exactly one first move that mates within n,
+ * and returns the main line (first solution move at each turn, most stubborn defence).
+ * Returns null if the position does not qualify. Throws `BudgetExceeded` if too expensive.
+ */
+export function verifyMatePuzzle(fen: string, n: number, solver = new MateSolver()): MatePuzzle | null {
+  const pos = parseFen(fen);
+  if (!pos || n < 1) return null;
+  if (n > 1 && solver.canMate(pos, n - 1)) return null;
+  const firsts = solver.solutions(pos, n);
+  if (firsts.length !== 1) return null;
+  const line: string[] = [];
+  let move = firsts[0]!;
+  for (let left = n; ; left--) {
+    line.push(moveToUci(move));
+    makeMove(pos, move);
+    if (!hasLegalMove(pos)) break;
+    const reply = solver.bestDefence(pos, left - 1);
+    line.push(moveToUci(reply));
+    makeMove(pos, reply);
+    move = solver.solutions(pos, left - 1)[0]!;
+  }
+  return line.length === 2 * n - 1 ? { fen, n, line } : null;
+}
+
+/** The level used to judge best-move puzzles (all knowledge, wide search, no randomness). */
+export const PUZZLE_LEVEL: Level = { ...LEVELS.strong, nodes: 150_000, margin: 0, temperature: 0 };
+
+/**
+ * Verifies a "find the best move" puzzle with a deep search: exactly one move lies within
+ * `BEST_MOVE_GAP` of the best score, the best move is not a quick forced mate (that is the
+ * other puzzle type), and a smaller search agrees on the move. Returns null otherwise.
+ */
+export function verifyBestMovePuzzle(fen: string, level: Level = PUZZLE_LEVEL): BestMovePuzzle | null {
+  const pos = parseFen(fen);
+  if (!pos || legalMoves(pos).length < 4) return null;
+  const deep = analyse(pos, level, [], BEST_MOVE_GAP);
+  if (deep.candidates.length !== 1 || Math.abs(deep.candidates[0]!.score) > MATE_BOUND) return null;
+  const quick = analyse(pos, { ...level, nodes: Math.max(4000, level.nodes >> 2) }, [], 0);
+  if (quick.candidates[0]?.move !== deep.candidates[0]!.move) return null;
+  return { fen, move: moveToUci(deep.candidates[0]!.move) };
+}
