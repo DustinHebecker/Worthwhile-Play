@@ -5,11 +5,14 @@ import { moveToUci, parseFen, puzzlesFor, replay, uciToMove } from '../src/rules
 import { oracleForcesMate, oracleSolutions } from './oracle';
 
 /**
- * Re-verifies every shipped puzzle (about 3 minutes on one core). Mutation testing sets
- * CHESS_SKIP_PUZZLE_DATA=1 to skip this file; the regular test run always executes it.
+ * Re-verifies the shipped puzzles. The full check (every puzzle, about 3 minutes on one core)
+ * runs with CHESS_VERIFY_PUZZLES=1, as its own CI job; the regular run verifies every eighth
+ * puzzle so local runs stay fast. Mutation testing sets CHESS_SKIP_PUZZLE_DATA=1 to skip this file.
  */
 const pos = (fen: string) => parseFen(fen)!;
 const run = process.env.CHESS_SKIP_PUZZLE_DATA ? describe.skip : describe;
+const full = Boolean(process.env.CHESS_VERIFY_PUZZLES);
+const subset = <T>(list: readonly T[]): readonly T[] => (full ? list : list.filter((_, i) => i % 8 === 0));
 
 run('shipped puzzles', { timeout: 600_000 }, () => {
   it('has enough distinct, well-formed puzzles in every category', () => {
@@ -26,11 +29,11 @@ run('shipped puzzles', { timeout: 600_000 }, () => {
   });
 
   it('every mate puzzle is re-verified by the solver: exact length, unique first move, same main line', () => {
-    for (const p of MATE_PUZZLES) expect(verifyMatePuzzle(p.fen, p.n, new MateSolver(20_000_000)), p.fen).toEqual(p);
+    for (const p of subset(MATE_PUZZLES)) expect(verifyMatePuzzle(p.fen, p.n, new MateSolver(20_000_000)), p.fen).toEqual(p);
   });
 
   it('the independent oracle confirms mates in one and two exactly, and the first move of longer mates', () => {
-    for (const p of MATE_PUZZLES) {
+    for (const p of subset(MATE_PUZZLES)) {
       const start = pos(p.fen);
       const first = uciToMove(start, p.line[0]!);
       if (p.n <= 2) {
@@ -53,7 +56,7 @@ run('shipped puzzles', { timeout: 600_000 }, () => {
   });
 
   it('every best-move puzzle is re-verified by a deep search with a clear gap', () => {
-    for (const p of BEST_MOVE_PUZZLES) expect(verifyBestMovePuzzle(p.fen), p.fen).toEqual(p);
+    for (const p of subset(BEST_MOVE_PUZZLES)) expect(verifyBestMovePuzzle(p.fen), p.fen).toEqual(p);
     const sample = BEST_MOVE_PUZZLES[0]!;
     const deep = analyse(pos(sample.fen), PUZZLE_LEVEL, [], BEST_MOVE_GAP);
     expect(deep.candidates).toHaveLength(1);

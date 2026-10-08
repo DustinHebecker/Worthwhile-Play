@@ -68,6 +68,9 @@ importers:
       '@wp/game-bridges':
         specifier: workspace:*
         version: link:../../packages/games/bridges
+      '@wp/game-chess':
+        specifier: workspace:*
+        version: link:../../packages/games/chess
       '@wp/game-circuit-puzzle':
         specifier: workspace:*
         version: link:../../packages/games/circuit-puzzle
