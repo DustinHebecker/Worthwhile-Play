@@ -25,6 +25,7 @@
     "@wp/game-memory": "workspace:*",
     "@wp/game-minesweeper": "workspace:*",
     "@wp/game-minimal-proof": "workspace:*",
+    "@wp/game-node-conquest": "workspace:*",
     "@wp/game-nonogram": "workspace:*",
     "@wp/game-river-crossing": "workspace:*",
     "@wp/game-rule-discovery": "workspace:*",

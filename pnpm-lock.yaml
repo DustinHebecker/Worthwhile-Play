@@ -110,6 +110,9 @@ importers:
       '@wp/game-minimal-proof':
         specifier: workspace:*
         version: link:../../packages/games/minimal-proof
+      '@wp/game-node-conquest':
+        specifier: workspace:*
+        version: link:../../packages/games/node-conquest
       '@wp/game-nonogram':
         specifier: workspace:*
         version: link:../../packages/games/nonogram

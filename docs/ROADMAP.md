@@ -67,7 +67,7 @@ Cross-cutting, continuous: accessibility review, native-speaker review of transl
 | Communication | Compression Challenge | M6 | ⏳ | |
 | Communication | Briefing Game | M6 | ⏳ | |
 | Communication | Ambiguity Detector | M6 | ⏳ | |
-| Strategy | Node conquest (space theme, inspired by "tower battle"-type games): own/enemy/neutral nodes connected by lanes; nodes level 1–30 with 1/2/3 active outgoing paths; units stream along paths (level up own nodes, convert neutral/enemy nodes, head-on fights mid-lane); several opponents without alliances; node types (standard, shipyard for heavy units, defence station with level-based range); real-time but pausable at any moment, deterministic tick simulation | M7 | 🚧 | original theme (space or abstract rings/dots); separate from the stacking duel |
+| Strategy | Orbit Links — node conquest (space theme, inspired by "tower battle"-type games): own/enemy/neutral nodes connected by lanes; nodes level 1–30 with 1/2/3 active outgoing paths; units stream along paths (level up own nodes, convert neutral/enemy nodes, head-on fights mid-lane); several opponents without alliances; node types (standard, shipyard for heavy units, defence station with level-based range); real-time but pausable at any moment, deterministic tick simulation | M7 | ✅ | original theme (space or abstract rings/dots); separate from the stacking duel |
 | Strategy | Shared strategy/TD engine | M7 | ⏳ | deterministic simulation |
 | Strategy | Tower Defense (Gun, Artillery, Laser, Support, Specialist + branches) | M7 | ⏳ | |
 | Strategy | Original turn-based strategy (plan→lock→resolve, command network, EW) | M7 | ⏳ | not a C&C clone |
