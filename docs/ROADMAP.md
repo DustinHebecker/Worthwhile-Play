@@ -41,7 +41,7 @@ Cross-cutting, continuous: accessibility review, native-speaker review of transl
 | Logic | Skyscrapers | M2 | ✅ | generator + line solver; uniqueness verified by independent oracle |
 | Logic | Deterministic Minesweeper → shown as **Mine Logic** | M2 | ✅ | no-guess generation (solver + brute-force oracle); mistakes are undoable, never punished |
 | Board | Connect Four → shown as **Four in a Row** | M3 | ✅ | alpha-beta, 3 levels |
-| Board | Chess | M3 | 🚧 | own engine (no third-party engine); full rules verified by perft; AI uses strategic evaluation and human-like candidate selection (not only depth + piece-square tables); optional move explanations |
+| Board | Chess | M3 | 🚧 | own engine (no third-party engine); full rules verified by perft; AI uses strategic evaluation and human-like candidate selection (not only depth + piece-square tables); optional move explanations; puzzle modes "Find the best move" and "Mate in N" (positions verified by own solver, original or CC0-licensed) |
 | Logic | Minimal Proof → shown as **Proof Chain** | M4 | ✅ | generated rule systems (→, ∧, ∨, simple negation); shortest proof verified by oracle |
 | Hypothesis | Rule Discovery → shown as **Rule Hunt** | M4 | ✅ | 2-4-6-style task; confirmation-bias feedback and information value of each test after solving |
 | Hypothesis | Black Box | M4 | ✅ | 15 rule families; challenge inputs rule out all consistent alternatives of the family |
