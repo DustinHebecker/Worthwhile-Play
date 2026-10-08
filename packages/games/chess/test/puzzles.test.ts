@@ -62,7 +62,7 @@ describe('shipped puzzles', { timeout: 600_000 }, () => {
   it('has enough distinct, well-formed puzzles in every category', () => {
     const fens = new Set([...MATE_PUZZLES, ...BEST_MOVE_PUZZLES].map((p) => p.fen.split(' ').slice(0, 2).join(' ')));
     expect(fens.size).toBe(MATE_PUZZLES.length + BEST_MOVE_PUZZLES.length);
-    for (const n of [1, 2, 3, 4]) expect(puzzlesFor('mate', n).length, `mate in ${n}`).toBeGreaterThanOrEqual(n === 4 ? 8 : 30);
+    for (const n of [1, 2, 3, 4]) expect(puzzlesFor('mate', n).length, `mate in ${n}`).toBeGreaterThanOrEqual(30);
     expect(BEST_MOVE_PUZZLES.length).toBeGreaterThanOrEqual(30);
     for (const p of MATE_PUZZLES) {
       expect(p.line).toHaveLength(2 * p.n - 1);
