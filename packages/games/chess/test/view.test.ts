@@ -4,7 +4,7 @@ import type { GameInstance, GameModule } from '@wp/game-core';
 import { createTestContext, type TestContext } from '@wp/testing';
 import game from '../src/index';
 import { COMPUTER_REVEAL_MS, figurine } from '../src/view';
-import { createGame, isValidState, type ChessState } from '../src/rules';
+import { createGame, isValidState, legalMoves, moveToUci, parseFen, puzzlesFor, type ChessState } from '../src/rules';
 
 let instances: GameInstance<ChessState>[] = [];
 
@@ -253,6 +253,64 @@ describe('chess view', () => {
     pointer('pointerdown', sq('g1'));
     pointer('pointerup', sq('g3'));
     expect(instance.serialize().moves).toEqual(['g1f3']);
+  });
+
+  it('offers "find the best move" puzzles with explanations for wrong tries', () => {
+    const { ctx, instance, byId, tap, status, root } = mount();
+    instance.newGame({ seed: 0 });
+    const choose = (name: string, value: string) => {
+      const el = byId<HTMLSelectElement>(`option-${name}`);
+      el.value = value;
+      el.dispatchEvent(new Event('change'));
+    };
+    choose('mode', 'best');
+    expect(root.querySelector('[data-testid="option-opponent"]')!.closest('label')!.hidden).toBe(true);
+    byId('start').click();
+    const state = instance.serialize();
+    expect(state.mode).toBe('best');
+    const ref = puzzlesFor('best', 1)[state.puzzle]!;
+    expect(state.start).toBe(ref.fen);
+    expect(status()).toMatch(/to move: find the clearly best move\.$/);
+    expect(byId('mode').textContent).toContain(`${state.puzzle + 1} of ${puzzlesFor('best', 1).length}`);
+    expect(byId('resign').hidden).toBe(true);
+    expect(byId('next-puzzle').hidden).toBe(false);
+    const wrong = legalMoves(parseFen(ref.fen)!).map(moveToUci).find((m) => m !== ref.line[0] && m.length === 4)!;
+    tap(wrong.slice(0, 2), wrong.slice(2, 4));
+    expect(byId('explanation').textContent).toContain('is not the solution');
+    expect(instance.serialize().moves).toEqual([]);
+    byId('hint').click();
+    expect(byId('explanation').textContent).toMatch(/^Suggestion: /);
+    tap(ref.line[0]!.slice(0, 2), ref.line[0]!.slice(2, 4));
+    if (ref.line[0]!.length === 5) byId(`promote-${ref.line[0]![4]}`).click();
+    expect(status()).toBe('Solved — that is the best move.');
+    expect(ctx.results).toEqual([{ outcome: 'won', stats: { moves: 1 } }]);
+    byId('next-puzzle').click();
+    expect(instance.serialize().puzzle).toBe((state.puzzle + 1) % puzzlesFor('best', 1).length);
+    expect(instance.serialize().moves).toEqual([]);
+    // The host's "new game" keeps the mode; the seed picks the puzzle.
+    instance.newGame({ seed: 5 });
+    expect(instance.serialize()).toMatchObject({ mode: 'best', puzzle: 5 % puzzlesFor('best', 1).length });
+  });
+
+  it('plays mate-in-N puzzles against the engine’s defence', () => {
+    const { ctx, instance, byId, tap, status } = mount();
+    instance.restore(createGame({ seed: 1, difficulty: 'beginner', opponent: 'human', humanColor: 'w', mode: 'mate', mateN: 2, puzzle: 0 }));
+    const ref = puzzlesFor('mate', 2)[0]!;
+    expect(status()).toMatch(/force checkmate — moves left: 2\.$/);
+    const play = (uci: string) => {
+      tap(uci.slice(0, 2), uci.slice(2, 4));
+      if (uci.length === 5) byId(`promote-${uci[4]}`).click();
+    };
+    play(ref.line[0]!);
+    expect(instance.serialize().moves).toEqual(ref.line.slice(0, 2));
+    expect(status()).toMatch(/moves left: 1\.$/);
+    byId('undo').click();
+    expect(instance.serialize().moves).toEqual([]);
+    play(ref.line[0]!);
+    play(ref.line[2]!);
+    expect(status()).toBe('Checkmate — puzzle solved.');
+    expect(ctx.results).toEqual([{ outcome: 'won', stats: { moves: 2 } }]);
+    expect(isValidState(instance.serialize())).toBe(true);
   });
 
   it('uses figurines in the move list', () => {

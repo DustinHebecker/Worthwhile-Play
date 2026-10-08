@@ -12,7 +12,7 @@ const en = {
   title: 'Chess',
   tagline: 'The classic game of planning and tactics — against a thoughtful computer or a friend.',
   rules:
-    'Move your pieces in turn and try to checkmate the opposing king: attack it so that it cannot escape. Tap a piece to see its possible moves, then tap the target square. Stalemate, threefold repetition, fifty moves without a capture or pawn move, and positions where nobody can mate end in a draw automatically.',
+    'Move your pieces in turn and try to checkmate the opposing king: attack it so that it cannot escape. Tap a piece to see its possible moves, then tap the target square. Stalemate, threefold repetition, fifty moves without a capture or pawn move, and positions where nobody can mate end in a draw automatically. In the puzzle modes you look for the clearly best move, or force checkmate within a given number of moves.',
   'difficulty.beginner': 'Beginner',
   'difficulty.intermediate': 'Club player',
   'difficulty.strong': 'Strong',
@@ -98,7 +98,23 @@ const en = {
   'why.outpost': 'Places a piece on a strong outpost that pawns cannot chase away.',
   'why.kingActivity': 'Activates the king for the endgame.',
   'why.mopUp': 'Drives the lone king towards the edge to prepare checkmate.',
-  'why.solid': 'No single reason stands out; the search rated this move best overall.'
+  'why.solid': 'No single reason stands out; the search rated this move best overall.',
+  'mode': 'Mode',
+  'mode.play': 'Play a game',
+  'mode.best': 'Find the best move',
+  'mode.mate': 'Mate in N',
+  'mateN': 'Mate in (moves)',
+  'puzzle.next': 'Next puzzle',
+  'puzzle.number': 'Puzzle {n} of {total}',
+  'puzzle.best.task.w': 'White to move: find the clearly best move.',
+  'puzzle.best.task.b': 'Black to move: find the clearly best move.',
+  'puzzle.mate.task.w': 'White to move: force checkmate — moves left: {left}.',
+  'puzzle.mate.task.b': 'Black to move: force checkmate — moves left: {left}.',
+  'puzzle.solved': 'Solved — that is the best move.',
+  'puzzle.mated': 'Checkmate — puzzle solved.',
+  'puzzle.wrong': '{move} is not the solution. Try again.',
+  'puzzle.refutation': 'The answer {move} shows why:',
+  'puzzle.correct': 'Correct.'
 };
 
 
@@ -108,7 +124,7 @@ const de: Catalogue = {
   title: 'Schach',
   tagline: 'Das klassische Spiel aus Planung und Taktik – gegen einen bedachten Computer oder gegen jemanden neben dir.',
   rules:
-    'Zieht abwechselnd und versucht, den gegnerischen König mattzusetzen: Er wird angegriffen und kann nicht mehr entkommen. Tippe eine Figur an, um ihre möglichen Züge zu sehen, dann das Zielfeld. Patt, dreifache Stellungswiederholung, fünfzig Züge ohne Schlagen oder Bauernzug sowie Stellungen, in denen niemand mehr mattsetzen kann, enden automatisch remis.',
+    'Zieht abwechselnd und versucht, den gegnerischen König mattzusetzen: Er wird angegriffen und kann nicht mehr entkommen. Tippe eine Figur an, um ihre möglichen Züge zu sehen, dann das Zielfeld. Patt, dreifache Stellungswiederholung, fünfzig Züge ohne Schlagen oder Bauernzug sowie Stellungen, in denen niemand mehr mattsetzen kann, enden automatisch remis. In den Rätselmodi suchst du den klar besten Zug oder erzwingst Matt in einer vorgegebenen Zahl von Zügen.',
   'difficulty.beginner': 'Einsteiger',
   'difficulty.intermediate': 'Vereinsspieler',
   'difficulty.strong': 'Stark',
@@ -194,14 +210,30 @@ const de: Catalogue = {
   'why.outpost': 'Stellt eine Figur auf einen starken Vorposten, den Bauern nicht vertreiben können.',
   'why.kingActivity': 'Aktiviert den König für das Endspiel.',
   'why.mopUp': 'Drängt den einzelnen König an den Rand, um das Matt vorzubereiten.',
-  'why.solid': 'Kein einzelner Grund sticht heraus; die Suche bewertete diesen Zug insgesamt am besten.'
+  'why.solid': 'Kein einzelner Grund sticht heraus; die Suche bewertete diesen Zug insgesamt am besten.',
+  'mode': 'Modus',
+  'mode.play': 'Partie spielen',
+  'mode.best': 'Finde den besten Zug',
+  'mode.mate': 'Matt in N',
+  'mateN': 'Matt in (Zügen)',
+  'puzzle.next': 'Nächstes Rätsel',
+  'puzzle.number': 'Rätsel {n} von {total}',
+  'puzzle.best.task.w': 'Weiß am Zug: Finde den klar besten Zug.',
+  'puzzle.best.task.b': 'Schwarz am Zug: Finde den klar besten Zug.',
+  'puzzle.mate.task.w': 'Weiß am Zug: Erzwinge Matt — verbleibende Züge: {left}.',
+  'puzzle.mate.task.b': 'Schwarz am Zug: Erzwinge Matt — verbleibende Züge: {left}.',
+  'puzzle.solved': 'Gelöst – das ist der beste Zug.',
+  'puzzle.mated': 'Schachmatt – Rätsel gelöst.',
+  'puzzle.wrong': '{move} ist nicht die Lösung. Versuch es noch einmal.',
+  'puzzle.refutation': 'Die Antwort {move} zeigt, warum:',
+  'puzzle.correct': 'Richtig.'
 };
 
 const nl: Catalogue = {
   title: 'Schaken',
   tagline: 'Het klassieke spel van planning en tactiek – tegen een bedachtzame computer of tegen iemand naast je.',
   rules:
-    'Zet om de beurt en probeer de vijandelijke koning schaakmat te zetten: hij staat aangevallen en kan niet meer ontsnappen. Tik op een stuk om zijn mogelijke zetten te zien en daarna op het doelveld. Pat, drievoudige herhaling, vijftig zetten zonder slaan of pionzet en stellingen waarin niemand meer mat kan zetten, eindigen automatisch in remise.',
+    'Zet om de beurt en probeer de vijandelijke koning schaakmat te zetten: hij staat aangevallen en kan niet meer ontsnappen. Tik op een stuk om zijn mogelijke zetten te zien en daarna op het doelveld. Pat, drievoudige herhaling, vijftig zetten zonder slaan of pionzet en stellingen waarin niemand meer mat kan zetten, eindigen automatisch in remise. In de puzzelmodi zoek je de duidelijk beste zet of dwing je mat af binnen een gegeven aantal zetten.',
   'difficulty.beginner': 'Beginner',
   'difficulty.intermediate': 'Clubspeler',
   'difficulty.strong': 'Sterk',
@@ -287,14 +319,30 @@ const nl: Catalogue = {
   'why.outpost': 'Zet een stuk op een sterke voorpost die pionnen niet kunnen verjagen.',
   'why.kingActivity': 'Activeert de koning voor het eindspel.',
   'why.mopUp': 'Drijft de eenzame koning naar de rand om mat voor te bereiden.',
-  'why.solid': 'Er springt geen enkele reden uit; de zoektocht vond deze zet over het geheel het best.'
+  'why.solid': 'Er springt geen enkele reden uit; de zoektocht vond deze zet over het geheel het best.',
+  'mode': 'Modus',
+  'mode.play': 'Partij spelen',
+  'mode.best': 'Vind de beste zet',
+  'mode.mate': 'Mat in N',
+  'mateN': 'Mat in (zetten)',
+  'puzzle.next': 'Volgende puzzel',
+  'puzzle.number': 'Puzzel {n} van {total}',
+  'puzzle.best.task.w': 'Wit aan zet: vind de duidelijk beste zet.',
+  'puzzle.best.task.b': 'Zwart aan zet: vind de duidelijk beste zet.',
+  'puzzle.mate.task.w': 'Wit aan zet: dwing mat af — resterende zetten: {left}.',
+  'puzzle.mate.task.b': 'Zwart aan zet: dwing mat af — resterende zetten: {left}.',
+  'puzzle.solved': 'Opgelost – dat is de beste zet.',
+  'puzzle.mated': 'Schaakmat – puzzel opgelost.',
+  'puzzle.wrong': '{move} is niet de oplossing. Probeer het opnieuw.',
+  'puzzle.refutation': 'Het antwoord {move} laat zien waarom:',
+  'puzzle.correct': 'Goed zo.'
 };
 
 const es: Catalogue = {
   title: 'Ajedrez',
   tagline: 'El clásico juego de planificación y táctica, contra un ordenador reflexivo o contra alguien a tu lado.',
   rules:
-    'Moved por turnos e intentad dar jaque mate al rey contrario: atacarlo de forma que no pueda escapar. Toca una pieza para ver sus movimientos posibles y después la casilla de destino. El rey ahogado, la triple repetición, cincuenta jugadas sin captura ni movimiento de peón y las posiciones en las que nadie puede dar mate terminan en tablas automáticamente.',
+    'Moved por turnos e intentad dar jaque mate al rey contrario: atacarlo de forma que no pueda escapar. Toca una pieza para ver sus movimientos posibles y después la casilla de destino. El rey ahogado, la triple repetición, cincuenta jugadas sin captura ni movimiento de peón y las posiciones en las que nadie puede dar mate terminan en tablas automáticamente. En los modos de problemas buscas la jugada claramente mejor o fuerzas el mate en un número dado de jugadas.',
   'difficulty.beginner': 'Principiante',
   'difficulty.intermediate': 'Jugador de club',
   'difficulty.strong': 'Fuerte',
@@ -380,14 +428,30 @@ const es: Catalogue = {
   'why.outpost': 'Coloca una pieza en un puesto avanzado fuerte que los peones no pueden atacar.',
   'why.kingActivity': 'Activa el rey para el final.',
   'why.mopUp': 'Empuja al rey solitario hacia el borde para preparar el mate.',
-  'why.solid': 'No destaca un único motivo; la búsqueda valoró esta jugada como la mejor en conjunto.'
+  'why.solid': 'No destaca un único motivo; la búsqueda valoró esta jugada como la mejor en conjunto.',
+  'mode': 'Modo',
+  'mode.play': 'Jugar una partida',
+  'mode.best': 'Encuentra la mejor jugada',
+  'mode.mate': 'Mate en N',
+  'mateN': 'Mate en (jugadas)',
+  'puzzle.next': 'Siguiente problema',
+  'puzzle.number': 'Problema {n} de {total}',
+  'puzzle.best.task.w': 'Juegan las blancas: encuentra la jugada claramente mejor.',
+  'puzzle.best.task.b': 'Juegan las negras: encuentra la jugada claramente mejor.',
+  'puzzle.mate.task.w': 'Juegan las blancas: fuerza el mate; jugadas restantes: {left}.',
+  'puzzle.mate.task.b': 'Juegan las negras: fuerza el mate; jugadas restantes: {left}.',
+  'puzzle.solved': 'Resuelto: esa es la mejor jugada.',
+  'puzzle.mated': 'Jaque mate: problema resuelto.',
+  'puzzle.wrong': '{move} no es la solución. Inténtalo de nuevo.',
+  'puzzle.refutation': 'La respuesta {move} muestra por qué:',
+  'puzzle.correct': 'Correcto.'
 };
 
 const fr: Catalogue = {
   title: 'Échecs',
   tagline: 'Le jeu classique de planification et de tactique, contre un ordinateur réfléchi ou une personne à tes côtés.',
   rules:
-    'Jouez à tour de rôle et essayez de mater le roi adverse : l’attaquer de sorte qu’il ne puisse plus s’échapper. Touche une pièce pour voir ses coups possibles, puis la case d’arrivée. Le pat, la triple répétition, cinquante coups sans prise ni coup de pion et les positions où personne ne peut plus mater se terminent automatiquement par la nulle.',
+    'Jouez à tour de rôle et essayez de mater le roi adverse : l’attaquer de sorte qu’il ne puisse plus s’échapper. Touche une pièce pour voir ses coups possibles, puis la case d’arrivée. Le pat, la triple répétition, cinquante coups sans prise ni coup de pion et les positions où personne ne peut plus mater se terminent automatiquement par la nulle. Dans les modes problèmes, tu cherches le coup nettement meilleur ou tu forces le mat en un nombre de coups donné.',
   'difficulty.beginner': 'Débutant',
   'difficulty.intermediate': 'Joueur de club',
   'difficulty.strong': 'Fort',
@@ -473,14 +537,30 @@ const fr: Catalogue = {
   'why.outpost': 'Place une pièce sur un avant-poste solide que les pions ne peuvent pas chasser.',
   'why.kingActivity': 'Active le roi pour la finale.',
   'why.mopUp': 'Repousse le roi isolé vers le bord pour préparer le mat.',
-  'why.solid': 'Aucune raison ne ressort particulièrement ; la recherche a jugé ce coup le meilleur dans l’ensemble.'
+  'why.solid': 'Aucune raison ne ressort particulièrement ; la recherche a jugé ce coup le meilleur dans l’ensemble.',
+  'mode': 'Mode',
+  'mode.play': 'Jouer une partie',
+  'mode.best': 'Trouve le meilleur coup',
+  'mode.mate': 'Mat en N',
+  'mateN': 'Mat en (coups)',
+  'puzzle.next': 'Problème suivant',
+  'puzzle.number': 'Problème {n} sur {total}',
+  'puzzle.best.task.w': 'Les Blancs jouent : trouve le coup nettement meilleur.',
+  'puzzle.best.task.b': 'Les Noirs jouent : trouve le coup nettement meilleur.',
+  'puzzle.mate.task.w': 'Les Blancs jouent : force le mat — coups restants : {left}.',
+  'puzzle.mate.task.b': 'Les Noirs jouent : force le mat — coups restants : {left}.',
+  'puzzle.solved': 'Résolu — c’est le meilleur coup.',
+  'puzzle.mated': 'Échec et mat — problème résolu.',
+  'puzzle.wrong': '{move} n’est pas la solution. Essaie encore.',
+  'puzzle.refutation': 'La réponse {move} montre pourquoi :',
+  'puzzle.correct': 'Exact.'
 };
 
 const ru: Catalogue = {
   title: 'Шахматы',
   tagline: 'Классическая игра планирования и тактики — против вдумчивого компьютера или человека рядом.',
   rules:
-    'Ходите по очереди и постарайтесь поставить мат королю соперника: атаковать его так, чтобы он не мог уйти. Нажмите на фигуру, чтобы увидеть её возможные ходы, затем на поле назначения. Пат, троекратное повторение позиции, пятьдесят ходов без взятий и ходов пешками, а также позиции, где никто уже не может поставить мат, автоматически заканчиваются ничьей.',
+    'Ходите по очереди и постарайтесь поставить мат королю соперника: атаковать его так, чтобы он не мог уйти. Нажмите на фигуру, чтобы увидеть её возможные ходы, затем на поле назначения. Пат, троекратное повторение позиции, пятьдесят ходов без взятий и ходов пешками, а также позиции, где никто уже не может поставить мат, автоматически заканчиваются ничьей. В режимах задач нужно найти явно лучший ход или поставить мат за заданное число ходов.',
   'difficulty.beginner': 'Новичок',
   'difficulty.intermediate': 'Клубный игрок',
   'difficulty.strong': 'Сильный',
@@ -566,14 +646,30 @@ const ru: Catalogue = {
   'why.outpost': 'Ставит фигуру на сильный форпост, откуда её не прогнать пешками.',
   'why.kingActivity': 'Активирует короля для эндшпиля.',
   'why.mopUp': 'Оттесняет одинокого короля к краю, готовя мат.',
-  'why.solid': 'Нет одной главной причины; поиск оценил этот ход как лучший в целом.'
+  'why.solid': 'Нет одной главной причины; поиск оценил этот ход как лучший в целом.',
+  'mode': 'Режим',
+  'mode.play': 'Сыграть партию',
+  'mode.best': 'Найдите лучший ход',
+  'mode.mate': 'Мат в N ходов',
+  'mateN': 'Мат за (ходов)',
+  'puzzle.next': 'Следующая задача',
+  'puzzle.number': 'Задача {n} из {total}',
+  'puzzle.best.task.w': 'Ход белых: найдите явно лучший ход.',
+  'puzzle.best.task.b': 'Ход чёрных: найдите явно лучший ход.',
+  'puzzle.mate.task.w': 'Ход белых: поставьте мат — осталось ходов: {left}.',
+  'puzzle.mate.task.b': 'Ход чёрных: поставьте мат — осталось ходов: {left}.',
+  'puzzle.solved': 'Решено — это лучший ход.',
+  'puzzle.mated': 'Мат — задача решена.',
+  'puzzle.wrong': '{move} — не решение. Попробуйте ещё раз.',
+  'puzzle.refutation': 'Ответ {move} показывает почему:',
+  'puzzle.correct': 'Верно.'
 };
 
 const zhHans: Catalogue = {
   title: '国际象棋',
   tagline: '经典的计划与战术游戏——与深思熟虑的电脑或身边的人对弈。',
   rules:
-    '双方轮流走棋，目标是将死对方的王：攻击它，使它无处可逃。点按一枚棋子查看可走的位置，再点按目标格。逼和、三次重复局面、连续五十回合无吃子也无兵的移动，以及双方都无法再将死对方的局面，都会自动判为和棋。',
+    '双方轮流走棋，目标是将死对方的王：攻击它，使它无处可逃。点按一枚棋子查看可走的位置，再点按目标格。逼和、三次重复局面、连续五十回合无吃子也无兵的移动，以及双方都无法再将死对方的局面，都会自动判为和棋。在解题模式中，你要找出明显最好的一步，或在规定步数内强制将死。',
   'difficulty.beginner': '入门',
   'difficulty.intermediate': '俱乐部棋手',
   'difficulty.strong': '强',
@@ -659,14 +755,30 @@ const zhHans: Catalogue = {
   'why.outpost': '把棋子放到兵无法驱赶的坚固前哨。',
   'why.kingActivity': '在残局中让王活跃起来。',
   'why.mopUp': '把孤王逼向棋盘边缘，为将杀做准备。',
-  'why.solid': '没有单一突出的理由；搜索认为这步棋总体最好。'
+  'why.solid': '没有单一突出的理由；搜索认为这步棋总体最好。',
+  'mode': '模式',
+  'mode.play': '下一盘棋',
+  'mode.best': '找出最佳着法',
+  'mode.mate': 'N 步杀',
+  'mateN': '几步杀',
+  'puzzle.next': '下一题',
+  'puzzle.number': '第 {n} 题，共 {total} 题',
+  'puzzle.best.task.w': '白方走：找出明显最好的一步。',
+  'puzzle.best.task.b': '黑方走：找出明显最好的一步。',
+  'puzzle.mate.task.w': '白方走：强制将死——剩余步数：{left}。',
+  'puzzle.mate.task.b': '黑方走：强制将死——剩余步数：{left}。',
+  'puzzle.solved': '解出来了——这就是最佳着法。',
+  'puzzle.mated': '将死——题目完成。',
+  'puzzle.wrong': '{move} 不是答案，再试一次。',
+  'puzzle.refutation': '对方的应着 {move} 说明了原因：',
+  'puzzle.correct': '正确。'
 };
 
 const ko: Catalogue = {
   title: '체스',
   tagline: '계획과 전술의 고전 게임 — 신중한 컴퓨터나 옆에 있는 사람과 둡니다.',
   rules:
-    '번갈아 한 수씩 두며 상대 킹을 체크메이트하세요. 킹을 공격해 더 이상 피할 곳이 없게 만드는 것입니다. 기물을 탭하면 갈 수 있는 칸이 보이고, 이어서 목표 칸을 탭합니다. 스테일메이트, 같은 국면의 3회 반복, 잡기나 폰 이동 없는 50수, 어느 쪽도 메이트할 수 없는 국면은 자동으로 무승부가 됩니다.',
+    '번갈아 한 수씩 두며 상대 킹을 체크메이트하세요. 킹을 공격해 더 이상 피할 곳이 없게 만드는 것입니다. 기물을 탭하면 갈 수 있는 칸이 보이고, 이어서 목표 칸을 탭합니다. 스테일메이트, 같은 국면의 3회 반복, 잡기나 폰 이동 없는 50수, 어느 쪽도 메이트할 수 없는 국면은 자동으로 무승부가 됩니다. 퍼즐 모드에서는 확실히 가장 좋은 수를 찾거나, 정해진 수 안에 메이트를 강제합니다.',
   'difficulty.beginner': '입문',
   'difficulty.intermediate': '클럽 플레이어',
   'difficulty.strong': '강함',
@@ -752,14 +864,30 @@ const ko: Catalogue = {
   'why.outpost': '폰이 쫓아낼 수 없는 강한 전초기지에 기물을 둡니다.',
   'why.kingActivity': '엔드게임을 위해 킹을 활발하게 만듭니다.',
   'why.mopUp': '메이트를 준비하려고 외톨이 킹을 가장자리로 몹니다.',
-  'why.solid': '특별히 두드러진 이유는 없지만, 탐색 결과 전체적으로 가장 좋은 수였습니다.'
+  'why.solid': '특별히 두드러진 이유는 없지만, 탐색 결과 전체적으로 가장 좋은 수였습니다.',
+  'mode': '모드',
+  'mode.play': '대국하기',
+  'mode.best': '최선의 수 찾기',
+  'mode.mate': 'N수 메이트',
+  'mateN': '메이트까지 (수)',
+  'puzzle.next': '다음 퍼즐',
+  'puzzle.number': '퍼즐 {n} / {total}',
+  'puzzle.best.task.w': '백 차례: 확실히 가장 좋은 수를 찾으세요.',
+  'puzzle.best.task.b': '흑 차례: 확실히 가장 좋은 수를 찾으세요.',
+  'puzzle.mate.task.w': '백 차례: 메이트를 강제하세요 — 남은 수: {left}.',
+  'puzzle.mate.task.b': '흑 차례: 메이트를 강제하세요 — 남은 수: {left}.',
+  'puzzle.solved': '정답 — 그것이 최선의 수입니다.',
+  'puzzle.mated': '체크메이트 — 퍼즐을 풀었습니다.',
+  'puzzle.wrong': '{move}는 정답이 아닙니다. 다시 해 보세요.',
+  'puzzle.refutation': '응수 {move}가 그 이유를 보여 줍니다:',
+  'puzzle.correct': '정답입니다.'
 };
 
 const ja: Catalogue = {
   title: 'チェス',
   tagline: '計画と戦術の古典ゲーム。思慮深いコンピューターや、となりの人と対局できます。',
   rules:
-    '交互に1手ずつ指し、相手のキングをチェックメイトしましょう。キングを攻撃し、逃げ場をなくすことです。駒をタップすると動ける場所が表示され、続けて移動先をタップします。ステイルメイト、同一局面の3回繰り返し、駒取りもポーンの移動もない50手、どちらもメイトできない局面は自動的に引き分けになります。',
+    '交互に1手ずつ指し、相手のキングをチェックメイトしましょう。キングを攻撃し、逃げ場をなくすことです。駒をタップすると動ける場所が表示され、続けて移動先をタップします。ステイルメイト、同一局面の3回繰り返し、駒取りもポーンの移動もない50手、どちらもメイトできない局面は自動的に引き分けになります。問題モードでは、はっきり最善の一手を探すか、決められた手数以内にメイトを強制します。',
   'difficulty.beginner': '入門',
   'difficulty.intermediate': 'クラブ級',
   'difficulty.strong': '強い',
@@ -845,14 +973,30 @@ const ja: Catalogue = {
   'why.outpost': 'ポーンに追い払われない強い拠点に駒を置きます。',
   'why.kingActivity': '終盤に向けてキングを活動させます。',
   'why.mopUp': 'メイトの準備として、孤立したキングを盤の端へ追い込みます。',
-  'why.solid': '特に目立つ理由はありませんが、探索の結果、総合的に最善と判断しました。'
+  'why.solid': '特に目立つ理由はありませんが、探索の結果、総合的に最善と判断しました。',
+  'mode': 'モード',
+  'mode.play': '対局する',
+  'mode.best': '最善手を探す',
+  'mode.mate': 'N手メイト',
+  'mateN': 'メイトまで（手）',
+  'puzzle.next': '次の問題',
+  'puzzle.number': '問題 {n} / {total}',
+  'puzzle.best.task.w': '白番：はっきり最善の一手を見つけてください。',
+  'puzzle.best.task.b': '黒番：はっきり最善の一手を見つけてください。',
+  'puzzle.mate.task.w': '白番：メイトを強制してください — 残り手数：{left}。',
+  'puzzle.mate.task.b': '黒番：メイトを強制してください — 残り手数：{left}。',
+  'puzzle.solved': '正解 — それが最善手です。',
+  'puzzle.mated': 'チェックメイト — 問題クリア。',
+  'puzzle.wrong': '{move} は正解ではありません。もう一度どうぞ。',
+  'puzzle.refutation': '応手 {move} がその理由です：',
+  'puzzle.correct': '正解です。'
 };
 
 const ar: Catalogue = {
   title: 'الشطرنج',
   tagline: 'اللعبة الكلاسيكية للتخطيط والتكتيك — أمام حاسوب متأنٍّ أو أمام شخص بجانبك.',
   rules:
-    'تناوبا على الحركة وحاولا إماتة الملك المنافس: أي مهاجمته بحيث لا يستطيع الإفلات. المس قطعة لترى نقلاتها الممكنة، ثم المس المربع الهدف. تنتهي اللعبة بالتعادل تلقائيًا عند الجمود (بات)، أو تكرار الوضع نفسه ثلاث مرات، أو مرور خمسين نقلة دون أسر أو تحريك بيدق، أو حين لا يستطيع أي طرف الإماتة.',
+    'تناوبا على الحركة وحاولا إماتة الملك المنافس: أي مهاجمته بحيث لا يستطيع الإفلات. المس قطعة لترى نقلاتها الممكنة، ثم المس المربع الهدف. تنتهي اللعبة بالتعادل تلقائيًا عند الجمود (بات)، أو تكرار الوضع نفسه ثلاث مرات، أو مرور خمسين نقلة دون أسر أو تحريك بيدق، أو حين لا يستطيع أي طرف الإماتة. في أوضاع الألغاز تبحث عن النقلة الأفضل بوضوح، أو تفرض الإماتة خلال عدد محدد من النقلات.',
   'difficulty.beginner': 'مبتدئ',
   'difficulty.intermediate': 'لاعب نادٍ',
   'difficulty.strong': 'قوي',
@@ -938,14 +1082,30 @@ const ar: Catalogue = {
   'why.outpost': 'يضع قطعة في موقع متقدّم قوي لا تستطيع البيادق طردها منه.',
   'why.kingActivity': 'ينشّط الملك لنهاية المباراة.',
   'why.mopUp': 'يدفع الملك المنفرد نحو الحافة تمهيدًا للإماتة.',
-  'why.solid': 'لا يبرز سبب واحد؛ قيّم البحث هذه النقلة بأنها الأفضل إجمالًا.'
+  'why.solid': 'لا يبرز سبب واحد؛ قيّم البحث هذه النقلة بأنها الأفضل إجمالًا.',
+  'mode': 'الوضع',
+  'mode.play': 'العب مباراة',
+  'mode.best': 'اعثر على أفضل نقلة',
+  'mode.mate': 'مات في N',
+  'mateN': 'مات خلال (نقلات)',
+  'puzzle.next': 'اللغز التالي',
+  'puzzle.number': 'اللغز {n} من {total}',
+  'puzzle.best.task.w': 'دور الأبيض: اعثر على النقلة الأفضل بوضوح.',
+  'puzzle.best.task.b': 'دور الأسود: اعثر على النقلة الأفضل بوضوح.',
+  'puzzle.mate.task.w': 'دور الأبيض: افرض الإماتة — النقلات المتبقية: {left}.',
+  'puzzle.mate.task.b': 'دور الأسود: افرض الإماتة — النقلات المتبقية: {left}.',
+  'puzzle.solved': 'تم الحل — هذه أفضل نقلة.',
+  'puzzle.mated': 'كش مات — تم حل اللغز.',
+  'puzzle.wrong': '{move} ليست الحل. حاول مرة أخرى.',
+  'puzzle.refutation': 'الرد {move} يوضح السبب:',
+  'puzzle.correct': 'صحيح.'
 };
 
 const pt: Catalogue = {
   title: 'Xadrez',
   tagline: 'O clássico jogo de planejamento e tática — contra um computador ponderado ou alguém ao seu lado.',
   rules:
-    'Joguem alternadamente e tentem dar xeque-mate ao rei adversário: atacá-lo de modo que não possa escapar. Toque numa peça para ver os lances possíveis e depois na casa de destino. Afogamento, tripla repetição, cinquenta lances sem captura nem lance de peão e posições em que ninguém consegue dar mate terminam empatadas automaticamente.',
+    'Joguem alternadamente e tentem dar xeque-mate ao rei adversário: atacá-lo de modo que não possa escapar. Toque numa peça para ver os lances possíveis e depois na casa de destino. Afogamento, tripla repetição, cinquenta lances sem captura nem lance de peão e posições em que ninguém consegue dar mate terminam empatadas automaticamente. Nos modos de problemas, você procura o lance claramente melhor ou força o mate num número dado de lances.',
   'difficulty.beginner': 'Iniciante',
   'difficulty.intermediate': 'Jogador de clube',
   'difficulty.strong': 'Forte',
@@ -1031,14 +1191,30 @@ const pt: Catalogue = {
   'why.outpost': 'Coloca uma peça num posto avançado forte, de onde peões não a expulsam.',
   'why.kingActivity': 'Ativa o rei para o final.',
   'why.mopUp': 'Empurra o rei solitário para a borda para preparar o mate.',
-  'why.solid': 'Nenhum motivo isolado se destaca; a busca avaliou este lance como o melhor no conjunto.'
+  'why.solid': 'Nenhum motivo isolado se destaca; a busca avaliou este lance como o melhor no conjunto.',
+  'mode': 'Modo',
+  'mode.play': 'Jogar uma partida',
+  'mode.best': 'Encontre o melhor lance',
+  'mode.mate': 'Mate em N',
+  'mateN': 'Mate em (lances)',
+  'puzzle.next': 'Próximo problema',
+  'puzzle.number': 'Problema {n} de {total}',
+  'puzzle.best.task.w': 'Brancas jogam: encontre o lance claramente melhor.',
+  'puzzle.best.task.b': 'Pretas jogam: encontre o lance claramente melhor.',
+  'puzzle.mate.task.w': 'Brancas jogam: force o mate — lances restantes: {left}.',
+  'puzzle.mate.task.b': 'Pretas jogam: force o mate — lances restantes: {left}.',
+  'puzzle.solved': 'Resolvido — esse é o melhor lance.',
+  'puzzle.mated': 'Xeque-mate — problema resolvido.',
+  'puzzle.wrong': '{move} não é a solução. Tente de novo.',
+  'puzzle.refutation': 'A resposta {move} mostra por quê:',
+  'puzzle.correct': 'Correto.'
 };
 
 const it: Catalogue = {
   title: 'Scacchi',
   tagline: 'Il classico gioco di pianificazione e tattica, contro un computer riflessivo o contro qualcuno accanto a te.',
   rules:
-    'Muovete a turno e cercate di dare scacco matto al re avversario: attaccarlo in modo che non possa più sfuggire. Tocca un pezzo per vedere le mosse possibili, poi la casa di arrivo. Stallo, triplice ripetizione, cinquanta mosse senza catture né mosse di pedone e le posizioni in cui nessuno può più dare matto terminano automaticamente in patta.',
+    'Muovete a turno e cercate di dare scacco matto al re avversario: attaccarlo in modo che non possa più sfuggire. Tocca un pezzo per vedere le mosse possibili, poi la casa di arrivo. Stallo, triplice ripetizione, cinquanta mosse senza catture né mosse di pedone e le posizioni in cui nessuno può più dare matto terminano automaticamente in patta. Nelle modalità problemi cerchi la mossa nettamente migliore o forzi il matto in un numero dato di mosse.',
   'difficulty.beginner': 'Principiante',
   'difficulty.intermediate': 'Giocatore di circolo',
   'difficulty.strong': 'Forte',
@@ -1124,14 +1300,30 @@ const it: Catalogue = {
   'why.outpost': 'Piazza un pezzo su un avamposto forte da cui i pedoni non possono scacciarlo.',
   'why.kingActivity': 'Attiva il re per il finale.',
   'why.mopUp': 'Spinge il re solitario verso il bordo per preparare il matto.',
-  'why.solid': 'Nessun motivo singolo spicca; la ricerca ha valutato questa mossa come la migliore nel complesso.'
+  'why.solid': 'Nessun motivo singolo spicca; la ricerca ha valutato questa mossa come la migliore nel complesso.',
+  'mode': 'Modalità',
+  'mode.play': 'Gioca una partita',
+  'mode.best': 'Trova la mossa migliore',
+  'mode.mate': 'Matto in N',
+  'mateN': 'Matto in (mosse)',
+  'puzzle.next': 'Problema successivo',
+  'puzzle.number': 'Problema {n} di {total}',
+  'puzzle.best.task.w': 'Muove il Bianco: trova la mossa nettamente migliore.',
+  'puzzle.best.task.b': 'Muove il Nero: trova la mossa nettamente migliore.',
+  'puzzle.mate.task.w': 'Muove il Bianco: forza il matto — mosse rimaste: {left}.',
+  'puzzle.mate.task.b': 'Muove il Nero: forza il matto — mosse rimaste: {left}.',
+  'puzzle.solved': 'Risolto: è la mossa migliore.',
+  'puzzle.mated': 'Scacco matto: problema risolto.',
+  'puzzle.wrong': '{move} non è la soluzione. Riprova.',
+  'puzzle.refutation': 'La risposta {move} mostra perché:',
+  'puzzle.correct': 'Giusto.'
 };
 
 const pl: Catalogue = {
   title: 'Szachy',
   tagline: 'Klasyczna gra planowania i taktyki — z rozważnym komputerem albo z kimś obok ciebie.',
   rules:
-    'Wykonujcie ruchy na zmianę i spróbujcie zamatować króla przeciwnika: zaatakować go tak, by nie mógł uciec. Dotknij bierki, aby zobaczyć jej możliwe ruchy, a potem pola docelowego. Pat, trzykrotne powtórzenie pozycji, pięćdziesiąt ruchów bez bicia i ruchu pionem oraz pozycje, w których nikt nie może już dać mata, kończą się automatycznie remisem.',
+    'Wykonujcie ruchy na zmianę i spróbujcie zamatować króla przeciwnika: zaatakować go tak, by nie mógł uciec. Dotknij bierki, aby zobaczyć jej możliwe ruchy, a potem pola docelowego. Pat, trzykrotne powtórzenie pozycji, pięćdziesiąt ruchów bez bicia i ruchu pionem oraz pozycje, w których nikt nie może już dać mata, kończą się automatycznie remisem. W trybach zadań szukasz wyraźnie najlepszego ruchu albo wymuszasz mata w zadanej liczbie ruchów.',
   'difficulty.beginner': 'Początkujący',
   'difficulty.intermediate': 'Gracz klubowy',
   'difficulty.strong': 'Silny',
@@ -1217,14 +1409,30 @@ const pl: Catalogue = {
   'why.outpost': 'Stawia bierkę na mocnej placówce, z której piony jej nie przegonią.',
   'why.kingActivity': 'Aktywizuje króla na końcówkę.',
   'why.mopUp': 'Spycha samotnego króla na brzeg, przygotowując mata.',
-  'why.solid': 'Żaden pojedynczy powód się nie wyróżnia; wyszukiwanie uznało ten ruch za najlepszy w sumie.'
+  'why.solid': 'Żaden pojedynczy powód się nie wyróżnia; wyszukiwanie uznało ten ruch za najlepszy w sumie.',
+  'mode': 'Tryb',
+  'mode.play': 'Zagraj partię',
+  'mode.best': 'Znajdź najlepszy ruch',
+  'mode.mate': 'Mat w N',
+  'mateN': 'Mat w (ruchach)',
+  'puzzle.next': 'Następne zadanie',
+  'puzzle.number': 'Zadanie {n} z {total}',
+  'puzzle.best.task.w': 'Ruch białych: znajdź wyraźnie najlepszy ruch.',
+  'puzzle.best.task.b': 'Ruch czarnych: znajdź wyraźnie najlepszy ruch.',
+  'puzzle.mate.task.w': 'Ruch białych: wymuś mata — pozostałe ruchy: {left}.',
+  'puzzle.mate.task.b': 'Ruch czarnych: wymuś mata — pozostałe ruchy: {left}.',
+  'puzzle.solved': 'Rozwiązane — to najlepszy ruch.',
+  'puzzle.mated': 'Szach-mat — zadanie rozwiązane.',
+  'puzzle.wrong': '{move} to nie rozwiązanie. Spróbuj jeszcze raz.',
+  'puzzle.refutation': 'Odpowiedź {move} pokazuje dlaczego:',
+  'puzzle.correct': 'Dobrze.'
 };
 
 const tr: Catalogue = {
   title: 'Satranç',
   tagline: 'Planlama ve taktiğin klasik oyunu — düşünceli bir bilgisayara ya da yanındaki birine karşı.',
   rules:
-    'Sırayla hamle yapın ve rakip şahı mat etmeye çalışın: şaha, kaçamayacağı biçimde saldırmak. Olası hamlelerini görmek için bir taşa, ardından hedef kareye dokun. Pat, üç kez tekrar, taş alınmadan ve piyon oynanmadan geçen elli hamle ve kimsenin artık mat edemeyeceği konumlar otomatik olarak berabere biter.',
+    'Sırayla hamle yapın ve rakip şahı mat etmeye çalışın: şaha, kaçamayacağı biçimde saldırmak. Olası hamlelerini görmek için bir taşa, ardından hedef kareye dokun. Pat, üç kez tekrar, taş alınmadan ve piyon oynanmadan geçen elli hamle ve kimsenin artık mat edemeyeceği konumlar otomatik olarak berabere biter. Bulmaca modlarında açıkça en iyi hamleyi arar ya da belirli sayıda hamlede matı zorlarsın.',
   'difficulty.beginner': 'Başlangıç',
   'difficulty.intermediate': 'Kulüp oyuncusu',
   'difficulty.strong': 'Güçlü',
@@ -1310,14 +1518,30 @@ const tr: Catalogue = {
   'why.outpost': 'Bir taşı, piyonların kovamayacağı güçlü bir ileri karakola yerleştirir.',
   'why.kingActivity': 'Oyun sonu için şahı etkinleştirir.',
   'why.mopUp': 'Matı hazırlamak için yalnız şahı kenara doğru iter.',
-  'why.solid': 'Tek bir neden öne çıkmıyor; arama bu hamleyi genel olarak en iyi buldu.'
+  'why.solid': 'Tek bir neden öne çıkmıyor; arama bu hamleyi genel olarak en iyi buldu.',
+  'mode': 'Mod',
+  'mode.play': 'Oyun oyna',
+  'mode.best': 'En iyi hamleyi bul',
+  'mode.mate': 'N hamlede mat',
+  'mateN': 'Mat (hamle sayısı)',
+  'puzzle.next': 'Sonraki bulmaca',
+  'puzzle.number': 'Bulmaca {n} / {total}',
+  'puzzle.best.task.w': 'Sıra Beyazda: açıkça en iyi hamleyi bul.',
+  'puzzle.best.task.b': 'Sıra Siyahta: açıkça en iyi hamleyi bul.',
+  'puzzle.mate.task.w': 'Sıra Beyazda: matı zorla — kalan hamle: {left}.',
+  'puzzle.mate.task.b': 'Sıra Siyahta: matı zorla — kalan hamle: {left}.',
+  'puzzle.solved': 'Çözüldü — en iyi hamle bu.',
+  'puzzle.mated': 'Şah mat — bulmaca çözüldü.',
+  'puzzle.wrong': '{move} çözüm değil. Tekrar dene.',
+  'puzzle.refutation': '{move} cevabı nedenini gösteriyor:',
+  'puzzle.correct': 'Doğru.'
 };
 
 const uk: Catalogue = {
   title: 'Шахи',
   tagline: 'Класична гра планування й тактики — проти вдумливого комп’ютера або людини поруч.',
   rules:
-    'Ходіть по черзі й намагайтеся поставити мат королю суперника: атакувати його так, щоб він не міг утекти. Торкніться фігури, щоб побачити її можливі ходи, а потім поля призначення. Пат, триразове повторення позиції, п’ятдесят ходів без взяття й ходу пішаком, а також позиції, де ніхто вже не може поставити мат, автоматично закінчуються нічиєю.',
+    'Ходіть по черзі й намагайтеся поставити мат королю суперника: атакувати його так, щоб він не міг утекти. Торкніться фігури, щоб побачити її можливі ходи, а потім поля призначення. Пат, триразове повторення позиції, п’ятдесят ходів без взяття й ходу пішаком, а також позиції, де ніхто вже не може поставити мат, автоматично закінчуються нічиєю. У режимах задач треба знайти явно найкращий хід або поставити мат за задану кількість ходів.',
   'difficulty.beginner': 'Початківець',
   'difficulty.intermediate': 'Клубний гравець',
   'difficulty.strong': 'Сильний',
@@ -1403,14 +1627,30 @@ const uk: Catalogue = {
   'why.outpost': 'Ставить фігуру на сильний форпост, звідки пішаки її не проженуть.',
   'why.kingActivity': 'Активізує короля для ендшпілю.',
   'why.mopUp': 'Відтісняє самотнього короля до краю, готуючи мат.',
-  'why.solid': 'Немає однієї головної причини; пошук оцінив цей хід як найкращий загалом.'
+  'why.solid': 'Немає однієї головної причини; пошук оцінив цей хід як найкращий загалом.',
+  'mode': 'Режим',
+  'mode.play': 'Зіграти партію',
+  'mode.best': 'Знайдіть найкращий хід',
+  'mode.mate': 'Мат у N ходів',
+  'mateN': 'Мат за (ходів)',
+  'puzzle.next': 'Наступна задача',
+  'puzzle.number': 'Задача {n} з {total}',
+  'puzzle.best.task.w': 'Хід білих: знайдіть явно найкращий хід.',
+  'puzzle.best.task.b': 'Хід чорних: знайдіть явно найкращий хід.',
+  'puzzle.mate.task.w': 'Хід білих: поставте мат — залишилось ходів: {left}.',
+  'puzzle.mate.task.b': 'Хід чорних: поставте мат — залишилось ходів: {left}.',
+  'puzzle.solved': 'Розв’язано — це найкращий хід.',
+  'puzzle.mated': 'Мат — задачу розв’язано.',
+  'puzzle.wrong': '{move} — не розв’язок. Спробуйте ще раз.',
+  'puzzle.refutation': 'Відповідь {move} показує чому:',
+  'puzzle.correct': 'Правильно.'
 };
 
 const hi: Catalogue = {
   title: 'शतरंज',
   tagline: 'योजना और चालबाज़ी का क्लासिक खेल — सोच-समझकर खेलने वाले कंप्यूटर या पास बैठे किसी व्यक्ति के साथ।',
   rules:
-    'बारी-बारी से चाल चलें और विरोधी राजा को शह-मात देने की कोशिश करें: उस पर ऐसा हमला करें कि वह बच न सके। किसी मोहरे को छूकर उसकी संभावित चालें देखें, फिर लक्ष्य वाले खाने को छुएँ। गतिरोध (स्टेलमेट), एक ही स्थिति का तीन बार दोहराना, बिना मोहरा मारे या प्यादा चलाए पचास चालें, और ऐसी स्थितियाँ जिनमें कोई भी मात नहीं दे सकता — ये सब अपने-आप ड्रॉ हो जाते हैं।',
+    'बारी-बारी से चाल चलें और विरोधी राजा को शह-मात देने की कोशिश करें: उस पर ऐसा हमला करें कि वह बच न सके। किसी मोहरे को छूकर उसकी संभावित चालें देखें, फिर लक्ष्य वाले खाने को छुएँ। गतिरोध (स्टेलमेट), एक ही स्थिति का तीन बार दोहराना, बिना मोहरा मारे या प्यादा चलाए पचास चालें, और ऐसी स्थितियाँ जिनमें कोई भी मात नहीं दे सकता — ये सब अपने-आप ड्रॉ हो जाते हैं। पहेली मोड में आप साफ़ तौर पर सबसे अच्छी चाल खोजते हैं, या तय चालों के भीतर मात के लिए मजबूर करते हैं।',
   'difficulty.beginner': 'शुरुआती',
   'difficulty.intermediate': 'क्लब खिलाड़ी',
   'difficulty.strong': 'मज़बूत',
@@ -1496,7 +1736,23 @@ const hi: Catalogue = {
   'why.outpost': 'मोहरे को ऐसी मज़बूत चौकी पर रखता है जहाँ से प्यादे उसे भगा नहीं सकते।',
   'why.kingActivity': 'अंतिम चरण के लिए राजा को सक्रिय करता है।',
   'why.mopUp': 'मात की तैयारी में अकेले राजा को किनारे की ओर धकेलता है।',
-  'why.solid': 'कोई एक कारण अलग से नहीं दिखता; खोज ने इस चाल को कुल मिलाकर सबसे अच्छा माना।'
+  'why.solid': 'कोई एक कारण अलग से नहीं दिखता; खोज ने इस चाल को कुल मिलाकर सबसे अच्छा माना।',
+  'mode': 'मोड',
+  'mode.play': 'बाज़ी खेलें',
+  'mode.best': 'सबसे अच्छी चाल खोजें',
+  'mode.mate': 'N चालों में मात',
+  'mateN': 'मात (चालों में)',
+  'puzzle.next': 'अगली पहेली',
+  'puzzle.number': 'पहेली {n} / {total}',
+  'puzzle.best.task.w': 'सफ़ेद की बारी: साफ़ तौर पर सबसे अच्छी चाल खोजें।',
+  'puzzle.best.task.b': 'काले की बारी: साफ़ तौर पर सबसे अच्छी चाल खोजें।',
+  'puzzle.mate.task.w': 'सफ़ेद की बारी: मात के लिए मजबूर करें — बची चालें: {left}।',
+  'puzzle.mate.task.b': 'काले की बारी: मात के लिए मजबूर करें — बची चालें: {left}।',
+  'puzzle.solved': 'हल हो गया — यही सबसे अच्छी चाल है।',
+  'puzzle.mated': 'शह-मात — पहेली हल हो गई।',
+  'puzzle.wrong': '{move} हल नहीं है। फिर कोशिश करें।',
+  'puzzle.refutation': 'जवाबी चाल {move} कारण दिखाती है:',
+  'puzzle.correct': 'सही।'
 };
 
 export const messages = {

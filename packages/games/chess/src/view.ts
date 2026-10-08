@@ -1,7 +1,7 @@
 import type { GameContext, GameInstance, GameResult, NewGameOptions } from '@wp/game-core';
 import { isOneOf, normalizeSeed } from '@wp/game-core';
 import { announce, clear, gridKeyboard, h } from '@wp/ui';
-import { computerReply, explainMove, playTurn, suggestMove, type Reason } from './ai';
+import { computerReply, explainMove, playTurn, puzzleHint, puzzleTurn, suggestMove, type Reason } from './ai';
 import {
   COLORS,
   DEFAULT_DIFFICULTY,
@@ -23,7 +23,10 @@ import {
   movePromo,
   moveTo,
   moveToUci,
-  outcomeOfReplay,
+  MATE_LENGTHS,
+  MODES,
+  puzzlesFor,
+  stateOutcome,
   parseFen,
   rankOf,
   replay,
@@ -58,7 +61,10 @@ const optionsOf = (state: ChessState): GameOptions => ({
   difficulty: state.difficulty,
   opponent: state.opponent,
   humanColor: state.humanColor,
-  start: state.start
+  start: state.start,
+  mode: state.mode,
+  mateN: state.mateN,
+  puzzle: state.puzzle
 });
 
 /** Starts a game, including the computer's first move when it plays white. */
@@ -80,7 +86,8 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
   let orientation: Color = 'w';
   let promotion: { from: number; to: number } | null = null;
   let hint: { move: number; reasons: Reason[] } | null = null;
-  let why: { san: string; reasons: Reason[] } | null = null;
+  /** Explanation panel: "Why?" for the computer's move, or why a puzzle attempt fails. */
+  let note: { title: string; reasons: Reason[] } | null = null;
   let confirmResign = false;
   let view: Replay = replay(state.start, state.moves)!;
 
@@ -143,6 +150,7 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
     render();
     announce(live, t(orientation === 'w' ? 'flipped.w' : 'flipped.b'));
   });
+  const nextButton = button('next-puzzle', t('puzzle.next'), () => startFresh({ ...optionsOf(state), puzzle: state.puzzle + 1 }));
   const resignButton = button('resign', t('resign'), () => {
     confirmResign = true;
     render();
@@ -191,26 +199,39 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
   const opponentSelect = select('opponent', OPPONENTS, (v) => t(`common.opponent.${v}`));
   const colorSelect = select('color', COLORS, (v) => t(`color.${v}`));
   const strengthSelect = select('strength', DIFFICULTIES, (v) => t(`difficulty.${v}`));
+  const modeSelect = select('mode', MODES, (v) => t(`mode.${v}`));
+  const mateSelect = select('mate', MATE_LENGTHS.map(String), (v) => v);
   const field = (label: string, control: HTMLSelectElement) => h('label', { class: 'ch-field' }, h('span', {}, label), control);
   const colorField = field(t('yourColor'), colorSelect);
   const strengthField = field(t('strength'), strengthSelect);
-  opponentSelect.addEventListener('change', () => {
+  const opponentField = field(t('common.opponent'), opponentSelect);
+  const mateField = field(t('mateN'), mateSelect);
+  const syncFields = () => {
+    const playing = modeSelect.value === 'play';
     const computer = opponentSelect.value === 'computer';
-    colorField.hidden = !computer;
-    strengthField.hidden = !computer;
-  });
+    opponentField.hidden = !playing;
+    colorField.hidden = !playing || !computer;
+    strengthField.hidden = !playing || !computer;
+    mateField.hidden = modeSelect.value !== 'mate';
+  };
+  opponentSelect.addEventListener('change', syncFields);
+  modeSelect.addEventListener('change', syncFields);
   const startButton = button('start', t('start'), () => {
     const opponent = isOneOf(opponentSelect.value, OPPONENTS) ? opponentSelect.value : state.opponent;
     const humanColor = isOneOf(colorSelect.value, COLORS) ? colorSelect.value : state.humanColor;
     const difficulty = isOneOf(strengthSelect.value, DIFFICULTIES) ? strengthSelect.value : state.difficulty;
+    const mode = isOneOf(modeSelect.value, MODES) ? modeSelect.value : state.mode;
+    const mateN = Number(mateSelect.value) || state.mateN;
+    // Same puzzle category: continue with the next puzzle; otherwise let the seed pick one.
+    const puzzle = mode === state.mode && mateN === state.mateN ? state.puzzle + 1 : state.seed;
     settings.open = false;
-    startFresh({ ...optionsOf(state), opponent, humanColor, difficulty });
+    startFresh({ seed: state.seed, opponent, humanColor, difficulty, mode, mateN, puzzle });
   });
   const settings = h(
     'details',
     { class: 'ch-settings', 'data-testid': 'settings' },
     h('summary', {}, t('common.newGame')),
-    h('div', { class: 'ch-settings-body' }, field(t('common.opponent'), opponentSelect), colorField, strengthField, startButton)
+    h('div', { class: 'ch-settings-body' }, field(t('mode'), modeSelect), mateField, opponentField, colorField, strengthField, startButton)
   );
   settings.addEventListener('toggle', () => {
     if (settings.open) syncSettings();
@@ -223,7 +244,7 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
     { class: `wp-chess${context.reducedMotion ? ' ch-reduced' : ''}`, dir: t.direction },
     status,
     h('div', { class: 'ch-board-wrap' }, board, promoDialog),
-    h('div', { class: 'ch-actions' }, undoButton, hintButton, whyButton, flipButton, resignButton),
+    h('div', { class: 'ch-actions' }, undoButton, hintButton, whyButton, flipButton, resignButton, nextButton),
     resignConfirm,
     explanation,
     h('section', { class: 'ch-history', 'aria-label': t('common.moves') }, h('h3', {}, t('common.moves')), moveList),
@@ -236,7 +257,8 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
   /* ---------- Helpers ---------- */
   const displayed = (): string[] => (pending ? [...state.moves, pending] : state.moves.slice(0, shown));
   const busy = () => pending !== null || shown < state.moves.length;
-  const outcomeNow = () => outcomeOfReplay(view, state.resigned);
+  const outcomeNow = () => stateOutcome(state, view);
+  const puzzleMode = () => state.mode !== 'play';
   /** The colour the person at the device may move now, or null. */
   const controllable = (): Color | null => {
     if (busy() || isOver(outcomeNow())) return null;
@@ -275,8 +297,8 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
     return text;
   };
 
-  const describeMoves = (from: number, moves: readonly string[]): string => {
-    const game = replay(state.start, moves.slice(0, from));
+  const describeMoves = (from: number, moves: readonly string[], start = state.start): string => {
+    const game = replay(start, moves.slice(0, from));
     if (!game) return '';
     const pos = game.pos;
     const parts: string[] = [];
@@ -292,13 +314,17 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
   const statusText = (outcome: Outcome): string => {
     if (busy()) return t('common.thinking');
     switch (outcome.kind) {
+      case 'solved':
+        return t('puzzle.solved');
       case 'checkmate':
-        return t(`end.checkmate.${outcome.winner}`);
+        return puzzleMode() ? t('puzzle.mated') : t(`end.checkmate.${outcome.winner}`);
       case 'resigned':
         return t(`end.resigned.${outcome.winner === 'w' ? 'b' : 'w'}`);
       case 'draw':
         return t(`end.${outcome.reason}`);
       default: {
+        if (state.mode === 'best') return t(`puzzle.best.task.${state.humanColor}`);
+        if (state.mode === 'mate') return t(`puzzle.mate.task.${state.humanColor}`, { left: state.mateN - state.moves.length / 2 });
         const turn = state.opponent === 'computer' ? t(`turn.you.${state.humanColor}`) : t(`turn.${outcome.turn}`);
         return outcome.check ? `${t('check')} ${turn}` : turn;
       }
@@ -404,25 +430,28 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
     undoButton.disabled = busy() || !canUndo(state);
     hintButton.disabled = mover === null;
     const lastIsComputer = state.opponent === 'computer' && view.moves.length > 0 && !busy() && colorOfSide(view.pos.side) === state.humanColor;
-    whyButton.hidden = state.opponent !== 'computer';
+    whyButton.hidden = state.opponent !== 'computer' || puzzleMode();
     whyButton.disabled = !lastIsComputer;
     resignButton.disabled = busy() || !playing;
-    resignButton.hidden = confirmResign;
+    resignButton.hidden = confirmResign || puzzleMode();
+    nextButton.hidden = !puzzleMode();
     resignConfirm.hidden = !confirmResign || !playing;
     promoDialog.hidden = promotion === null;
 
-    if (hint || why) {
+    if (hint || note) {
       explanation.hidden = false;
-      const title = hint ? t('hint.title', { move: figurine(sanOf(hint.move)) }) : t('why.title', { move: why!.san });
-      const reasons = (hint ? hint.reasons : why!.reasons).map((r) => h('li', {}, reasonText(r)));
+      const title = hint ? t('hint.title', { move: figurine(sanOf(hint.move)) }) : note!.title;
+      const reasons = (hint ? hint.reasons : note!.reasons).map((r) => h('li', {}, reasonText(r)));
       explanation.replaceChildren(h('p', { class: 'ch-explain-title' }, title), h('ul', {}, ...reasons));
     } else {
       explanation.hidden = true;
       explanation.replaceChildren();
     }
 
-    const mode =
-      state.opponent === 'computer'
+    const list = puzzlesFor(state.mode, state.mateN);
+    const mode = puzzleMode()
+      ? `${state.mode === 'mate' ? `${t('mateN')}: ${state.mateN}` : t('mode.best')} — ${t('puzzle.number', { n: state.puzzle + 1, total: list.length })}`
+      : state.opponent === 'computer'
         ? t('mode.computer', { color: t(`color.${state.humanColor}`), level: t(`difficulty.${state.difficulty}`) })
         : t('mode.human');
     modeLine.textContent = mode;
@@ -434,8 +463,9 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
     opponentSelect.value = state.opponent;
     colorSelect.value = state.humanColor;
     strengthSelect.value = state.difficulty;
-    colorField.hidden = state.opponent !== 'computer';
-    strengthField.hidden = state.opponent !== 'computer';
+    modeSelect.value = state.mode;
+    mateSelect.value = String(state.mateN);
+    syncFields();
   }
 
   /* ---------- Transitions ---------- */
@@ -448,6 +478,8 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
     const stats = { moves: Math.ceil(state.moves.length / 2) };
     if (outcome.kind === 'draw') return { outcome: 'draw', stats };
     if (outcome.kind === 'playing') return { outcome: 'completed', stats };
+    // A solved puzzle (best move found, or the mate delivered) counts as a win.
+    if (outcome.kind === 'solved' || puzzleMode()) return { outcome: 'won', stats };
     if (state.opponent === 'human') return { outcome: 'completed', stats };
     return { outcome: outcome.winner === state.humanColor ? 'won' : 'lost', stats };
   };
@@ -465,18 +497,18 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
     selected = -1;
     promotion = null;
     hint = null;
-    why = null;
+    note = null;
     confirmResign = false;
   };
 
   /** Applies a new logical state: saves, reports a natural end once, then draws (optionally revealing from `revealFrom`). */
   const commit = (next: ChessState, announcement: string, revealFrom?: number) => {
     const before = replay(state.start, state.moves);
-    const wasPlaying = before ? !isOver(outcomeOfReplay(before, state.resigned)) : false;
+    const wasPlaying = before ? !isOver(stateOutcome(state, before)) : false;
     state = next;
     context.requestSave();
     const after = replay(state.start, state.moves)!;
-    const outcome = outcomeOfReplay(after, state.resigned);
+    const outcome = stateOutcome(state, after);
     if (wasPlaying && isOver(outcome)) context.finished(resultOf(outcome));
     pendingAnnouncement = announcement;
     cancelTimer();
@@ -502,6 +534,27 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
   const play = (move: number) => {
     const uci = moveToUci(move);
     resetTransient();
+    if (puzzleMode()) {
+      const before = state.moves.length;
+      const pos = view.pos;
+      const san = figurine(toSan(pos, move));
+      const turn = puzzleTurn(state, uci);
+      if (!turn.correct) {
+        note = { title: t('puzzle.wrong', { move: san }), reasons: [] };
+        if (turn.refutation) {
+          const after = replay(state.start, [...state.moves, uci])!;
+          note = {
+            title: `${t('puzzle.wrong', { move: san })} ${t('puzzle.refutation', { move: figurine(toSan(after.pos, turn.refutation)) })}`,
+            reasons: explainMove(after.pos, turn.refutation)
+          };
+        }
+        render();
+        announce(live, explanation.textContent ?? '');
+        return;
+      }
+      commit(turn.state, `${t('puzzle.correct')} ${describeMoves(before, turn.state.moves)}`, turn.state.moves.length > before + 1 ? before + 1 : undefined);
+      return;
+    }
     if (state.opponent === 'computer' && !context.reducedMotion) {
       // Draw the person's move first, then think (the move is only saved together with the reply).
       pending = uci;
@@ -581,9 +634,9 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
   function onHint(): void {
     if (!controllable()) return;
     const game = replay(state.start, state.moves)!;
-    const move = suggestMove(state);
+    const move = puzzleMode() ? puzzleHint(state) : suggestMove(state);
     if (move === null) return;
-    why = null;
+    note = null;
     hint = { move, reasons: explainMove(game.pos, move) };
     render();
     announce(live, explanation.textContent ?? '');
@@ -595,7 +648,7 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
     if (!prior) return;
     const move = view.moves[view.moves.length - 1]!;
     hint = null;
-    why = { san: figurine(view.sans[view.sans.length - 1]!), reasons: explainMove(prior.pos, move) };
+    note = { title: t('why.title', { move: figurine(view.sans[view.sans.length - 1]!) }), reasons: explainMove(prior.pos, move) };
     render();
     announce(live, explanation.textContent ?? '');
   }
@@ -604,10 +657,10 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
     cancelTimer();
     pending = null;
     resetTransient();
-    orientation = options.opponent === 'computer' ? options.humanColor : 'w';
     const next = startGame(options);
+    orientation = next.opponent === 'computer' ? next.humanColor : 'w';
     const intro = t('newRound');
-    commit(next, `${intro} ${describeMoves(0, next.moves)}`.trim());
+    commit(next, `${intro} ${describeMoves(0, next.moves, next.start)}`.trim());
     focusCursor();
   }
 
@@ -640,8 +693,9 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
   return {
     newGame(options: NewGameOptions) {
       const difficulty = isOneOf(options.difficulty, DIFFICULTIES) ? options.difficulty : DEFAULT_DIFFICULTY;
-      // Opponent and colour are in-game preferences and carry over to a new game.
-      load(startGame({ seed: normalizeSeed(options.seed), difficulty, opponent: state.opponent, humanColor: state.humanColor }));
+      // Opponent, colour and mode are in-game preferences; in the puzzle modes the seed picks the puzzle.
+      const seed = normalizeSeed(options.seed);
+      load(startGame({ seed, difficulty, opponent: state.opponent, humanColor: state.humanColor, mode: state.mode, mateN: state.mateN, puzzle: seed }));
     },
     restore(saved: ChessState) {
       load(cloneState(saved));

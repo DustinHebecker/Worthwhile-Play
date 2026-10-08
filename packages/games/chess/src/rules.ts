@@ -19,7 +19,8 @@
  * keep the interface simple (no claim button to miss) and stop endless shuffling;
  * this matches how most online chess sites handle them.
  */
-import { createRng, isArrayOf, isOneOf, isRecord, isUint32 } from '@wp/game-core';
+import { createRng, isArrayOf, isInt, isOneOf, isRecord, isUint32 } from '@wp/game-core';
+import { BEST_MOVE_PUZZLES, MATE_PUZZLES } from './puzzle-data';
 
 /* ------------------------------------------------------------------------ */
 /* Pieces, squares, moves                                                     */
@@ -751,6 +752,26 @@ export const OPPONENTS = ['computer', 'human'] as const;
 export type Opponent = (typeof OPPONENTS)[number];
 export const COLORS = ['w', 'b'] as const;
 export const MAX_MOVES = 1200;
+/** Play a game, solve "find the best move" puzzles, or solve "mate in N" puzzles. */
+export const MODES = ['play', 'best', 'mate'] as const;
+export type Mode = (typeof MODES)[number];
+export const MATE_LENGTHS = [1, 2, 3, 4] as const;
+
+/** A shipped puzzle: start position and the expected main line (best move, or the mating line). */
+export interface PuzzleRef {
+  fen: string;
+  line: readonly string[];
+}
+
+/** The shipped puzzles of a category (empty for 'play'). */
+export function puzzlesFor(mode: Mode, mateN: number): readonly PuzzleRef[] {
+  if (mode === 'best') return BEST_MOVE_PUZZLES.map((p) => ({ fen: p.fen, line: [p.move] }));
+  if (mode === 'mate') return MATE_PUZZLES.filter((p) => p.n === mateN).map((p) => ({ fen: p.fen, line: p.line }));
+  return [];
+}
+
+/** The puzzle a state is about, or undefined in play mode. */
+export const puzzleOf = (state: ChessState): PuzzleRef | undefined => puzzlesFor(state.mode, state.mateN)[state.puzzle];
 
 export interface ChessState {
   /** Seed of this game (uint32); the computer's PRNG restarts from it. */
@@ -767,6 +788,11 @@ export interface ChessState {
   rng: number;
   /** Colour that resigned, or '' if nobody did. */
   resigned: '' | Color;
+  mode: Mode;
+  /** Length of the mates in 'mate' mode (1–4); kept as a preference in the other modes. */
+  mateN: number;
+  /** Index of the current puzzle in its category (0 in play mode). */
+  puzzle: number;
 }
 
 export interface GameOptions {
@@ -775,17 +801,38 @@ export interface GameOptions {
   opponent: Opponent;
   humanColor: Color;
   start?: string;
+  mode?: Mode;
+  mateN?: number;
+  /** Puzzle index; taken modulo the category size. */
+  puzzle?: number;
 }
 
-export function createGame({ seed, difficulty, opponent, humanColor, start = START_FEN }: GameOptions): ChessState {
-  return { seed, difficulty, opponent, humanColor, start, moves: [], rng: seed, resigned: '' };
+/**
+ * A fresh game or puzzle. In the puzzle modes the start position, the person's colour and
+ * the opponent (the engine defends) come from the puzzle.
+ */
+export function createGame({ seed, difficulty, opponent, humanColor, start = START_FEN, mode = 'play', mateN = 1, puzzle = 0 }: GameOptions): ChessState {
+  const base = { seed, difficulty, opponent, humanColor, start, moves: [], rng: seed, resigned: '' as const, mode, mateN, puzzle: 0 };
+  const list = puzzlesFor(mode, mateN);
+  if (list.length === 0) return { ...base, mode: 'play' };
+  const index = ((puzzle % list.length) + list.length) % list.length;
+  const fen = list[index]!.fen;
+  return { ...base, opponent: 'computer', start: fen, humanColor: fen.split(' ')[1] === 'b' ? 'b' : 'w', puzzle: index };
 }
 
 export type Outcome =
   | { kind: 'playing'; check: boolean; turn: Color }
   | { kind: 'checkmate'; winner: Color }
   | { kind: 'draw'; reason: DrawReason }
-  | { kind: 'resigned'; winner: Color };
+  | { kind: 'resigned'; winner: Color }
+  /** A "find the best move" puzzle after its (correct) move. */
+  | { kind: 'solved' };
+
+/** Outcome including puzzle completion. */
+export function stateOutcome(state: ChessState, game: Replay): Outcome {
+  if (state.mode === 'best' && game.moves.length > 0) return { kind: 'solved' };
+  return outcomeOfReplay(game, state.resigned);
+}
 
 export function outcomeOfReplay(game: Replay, resigned: '' | Color): Outcome {
   if (game.status.kind === 'playing') {
@@ -802,17 +849,18 @@ export function replayState(state: ChessState): Replay {
   return game;
 }
 
-export const outcomeOf = (state: ChessState): Outcome => outcomeOfReplay(replayState(state), state.resigned);
+export const outcomeOf = (state: ChessState): Outcome => stateOutcome(state, replayState(state));
 
+/** True when the engine (playing to win, not as a puzzle defender) must move. */
 export function isComputerTurn(state: ChessState, game: Replay = replayState(state)): boolean {
-  if (state.opponent !== 'computer') return false;
+  if (state.opponent !== 'computer' || state.mode !== 'play') return false;
   return outcomeOfReplay(game, state.resigned).kind === 'playing' && colorOfSide(game.pos.side) !== state.humanColor;
 }
 
 /** Adds one legal move (UCI). Throws if illegal or the game is over. */
 export function applyMove(state: ChessState, uci: string): ChessState {
   const game = replayState(state);
-  if (outcomeOfReplay(game, state.resigned).kind !== 'playing') throw new RangeError('The game is already over');
+  if (stateOutcome(state, game).kind !== 'playing') throw new RangeError('The game is already over');
   if (!uciToMove(game.pos, uci)) throw new RangeError(`Illegal move ${uci}`);
   return { ...state, moves: [...state.moves, uci] };
 }
@@ -820,7 +868,7 @@ export function applyMove(state: ChessState, uci: string): ChessState {
 /** The side to move resigns (or, against the computer, the person). */
 export function resign(state: ChessState): ChessState {
   const game = replayState(state);
-  if (outcomeOfReplay(game, state.resigned).kind !== 'playing') return state;
+  if (state.mode !== 'play' || stateOutcome(state, game).kind !== 'playing') return state;
   const loser = state.opponent === 'computer' ? state.humanColor : colorOfSide(game.pos.side);
   return { ...state, resigned: loser };
 }
@@ -860,8 +908,9 @@ const UCI_PATTERN = /^[a-h][1-8][a-h][1-8][qrbn]?$/;
 /** Thorough validation of untrusted data, including a full legal replay. Never throws. */
 export function isValidState(value: unknown): value is ChessState {
   try {
-    if (!isRecord(value) || Object.keys(value).length !== 8) return false;
-    const { seed, difficulty, opponent, humanColor, start, moves, rng, resigned } = value;
+    if (!isRecord(value) || Object.keys(value).length !== 11) return false;
+    const { seed, difficulty, opponent, humanColor, start, moves, rng, resigned, mode, mateN, puzzle } = value;
+    if (!isOneOf(mode, MODES) || !isInt(mateN, 1, 4) || !isInt(puzzle, 0, 9999)) return false;
     if (!isUint32(seed) || !isUint32(rng)) return false;
     if (!isOneOf(difficulty, DIFFICULTIES) || !isOneOf(opponent, OPPONENTS) || !isOneOf(humanColor, COLORS)) return false;
     if (resigned !== '' && !isOneOf(resigned, COLORS)) return false;
@@ -871,6 +920,14 @@ export function isValidState(value: unknown): value is ChessState {
     if (!game) return false;
     if (resigned !== '' && game.status.kind !== 'playing') return false;
     if (opponent === 'computer' && resigned !== '' && resigned !== humanColor) return false;
+    if (mode !== 'play') {
+      // Puzzles: the shipped position, the person moves first, nobody resigns, and the
+      // line never exceeds the puzzle (a best-move puzzle stores only its correct move).
+      const ref = puzzlesFor(mode, mateN)[puzzle];
+      if (!ref || start !== ref.fen || opponent !== 'computer' || resigned !== '') return false;
+      if (humanColor !== colorOfSide(parseFen(start)!.side) || moves.length > ref.line.length) return false;
+      if (mode === 'best') return moves.length === 0 || moves[0] === ref.line[0];
+    } else if (puzzle !== 0) return false;
     // Against the computer there is never "half a turn": the reply is part of the person's move.
     if (opponent === 'computer' && resigned === '' && game.status.kind === 'playing' && colorOfSide(game.pos.side) !== humanColor) return false;
     return true;

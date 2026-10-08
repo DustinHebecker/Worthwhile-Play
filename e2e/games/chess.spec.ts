@@ -53,6 +53,29 @@ test('is playable with the keyboard', async ({ page }) => {
   await expect(page.getByTestId('sq-e4')).toHaveAttribute('data-piece', 'wP');
 });
 
+test('solves a mate-in-one puzzle with the help of the hint', async ({ page }) => {
+  await startNewGame(page);
+  await page.getByTestId('settings').locator('summary').click();
+  await page.getByTestId('option-mode').selectOption('mate');
+  await page.getByTestId('option-mate').selectOption('1');
+  await page.getByTestId('start').click();
+  await expect(page.getByTestId('next-puzzle')).toBeVisible();
+  await page.getByTestId('hint').click();
+  await expect(page.locator('[data-hint]')).toHaveCount(2);
+  const turn = await page.locator('.wp-chess').getAttribute('data-turn');
+  const squares = await page.locator('[data-hint]').evaluateAll((els) => els.map((el) => [el.getAttribute('data-square'), el.getAttribute('data-piece')]));
+  const from = squares.find(([, piece]) => piece?.startsWith(turn ?? 'w'))![0]!;
+  const to = squares.find(([square]) => square !== from)![0]!;
+  await tap(page, from, to);
+  if (await page.getByTestId('promotion').isVisible()) {
+    // The hint names the piece in figurine notation, e.g. "e8=♘#".
+    const hint = (await page.getByTestId('explanation').textContent()) ?? '';
+    const piece = ({ '♕': 'q', '♖': 'r', '♗': 'b', '♘': 'n' } as Record<string, string>)[/=(.)/.exec(hint)?.[1] ?? '♕'] ?? 'q';
+    await page.getByTestId(`promote-${piece}`).click();
+  }
+  await expect(page.locator('.wp-chess')).toHaveAttribute('data-outcome', 'checkmate');
+});
+
 test('fits a 360px-wide phone without horizontal scrolling', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 740 });
   await startNewGame(page);
