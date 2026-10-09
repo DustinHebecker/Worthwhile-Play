@@ -62,6 +62,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@wp/game-ambiguity-detector':
+        specifier: workspace:*
+        version: link:../../packages/games/ambiguity-detector
       '@wp/game-association':
         specifier: workspace:*
         version: link:../../packages/games/association

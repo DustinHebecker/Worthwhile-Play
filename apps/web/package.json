@@ -9,6 +9,7 @@
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
+    "@wp/game-ambiguity-detector": "workspace:*",
     "@wp/game-association": "workspace:*",
     "@wp/game-black-box": "workspace:*",
     "@wp/game-bridges": "workspace:*",
