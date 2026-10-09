@@ -68,7 +68,8 @@ describe('evaluation', () => {
         expect(quickEvaluate(mirrored) + 0).toBe(quickEvaluate(p) + 0);
         expect(evaluate(p, featureMask(['material'])) + 0).toBe(evaluate(mirrored, featureMask(['material'])) + 0);
       }),
-      { numRuns: 60 }
+      // The example is a CI counterexample: a tapered score ending in .5 once rounded differently per colour.
+      { numRuns: 60, examples: [[[1369190316, 2029470155, 125136451, 482959727, 826866478, 51055678, 699105058, 2026852746, 1500952465, 946868968]]] }
     );
   });
 

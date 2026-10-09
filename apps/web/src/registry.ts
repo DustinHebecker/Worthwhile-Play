@@ -28,6 +28,7 @@ import { metadata as systemsPuzzle } from '@wp/game-systems-puzzle/metadata';
 import { metadata as nodeConquest } from '@wp/game-node-conquest/metadata';
 import { metadata as slitherlink } from '@wp/game-slitherlink/metadata';
 import { metadata as ticTacToe } from '@wp/game-tic-tac-toe/metadata';
+import { metadata as wordGuess } from '@wp/game-word-guess/metadata';
 
 export interface GameEntry {
   /** Lightweight metadata (incl. translated title/tagline/rules), bundled with the shell. */
@@ -71,7 +72,8 @@ export const GAMES: readonly GameEntry[] = [
   entry(ticTacToe, () => import('@wp/game-tic-tac-toe')),
   entry(nodeConquest, () => import('@wp/game-node-conquest')),
   entry(slitherlink, () => import('@wp/game-slitherlink')),
-  entry(chess, () => import('@wp/game-chess'))
+  entry(chess, () => import('@wp/game-chess')),
+  entry(wordGuess, () => import('@wp/game-word-guess'))
 ];
 
 export const findGame = (id: string): GameEntry | undefined => GAMES.find((g) => g.metadata.id === id);

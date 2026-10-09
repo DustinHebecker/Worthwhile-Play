@@ -290,6 +290,12 @@ function scan(b: Int8Array, kings: readonly [number, number]): number {
 }
 
 /** Material + placement only (tapered), side-to-move view: a cheap first estimate for lazy evaluation. */
+/**
+ * Rounds halves away from zero. Math.round rounds them up (+330.5 → 331 but −330.5 → −330), which would
+ * make White-relative scores colour-asymmetric by one centipawn.
+ */
+const roundHalfAway = (x: number): number => (x < 0 ? -Math.round(-x) : Math.round(x));
+
 export function quickEvaluate(pos: Position): number {
   const b = pos.board;
   let mg = 0;
@@ -309,7 +315,7 @@ export function quickEvaluate(pos: Position): number {
     }
   }
   if (phase > MAX_PHASE) phase = MAX_PHASE;
-  const score = Math.round((mg * phase + eg * (MAX_PHASE - phase)) / MAX_PHASE);
+  const score = roundHalfAway((mg * phase + eg * (MAX_PHASE - phase)) / MAX_PHASE);
   return pos.side === WHITE ? score : -score;
 }
 
@@ -640,7 +646,7 @@ export function evaluate(pos: Position, features: number = ALL_FEATURES, terms?:
     if (terms) terms[i] = v;
     if (i === T_MATERIAL || (features & (1 << i)) !== 0) score += v;
   }
-  score = Math.round(score);
+  score = roundHalfAway(score);
 
   if (features & FEATURE_SCALING) {
     const strong = score > 0 ? 0 : 1;

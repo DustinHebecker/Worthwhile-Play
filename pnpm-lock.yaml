@@ -152,6 +152,9 @@ importers:
       '@wp/game-tic-tac-toe':
         specifier: workspace:*
         version: link:../../packages/games/tic-tac-toe
+      '@wp/game-word-guess':
+        specifier: workspace:*
+        version: link:../../packages/games/word-guess
       '@wp/learning-content':
         specifier: workspace:*
         version: link:../../packages/learning-content
