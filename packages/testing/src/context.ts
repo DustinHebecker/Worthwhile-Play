@@ -6,6 +6,10 @@ export interface TestContext {
   saveRequests: () => number;
   results: GameResult[];
   missingKeys: string[];
+  /** Difficulties the game reported via `setDifficulty`, in order. */
+  difficulties: string[];
+  /** Backing map of `context.preferences` (keys as passed by the game). */
+  preferences: Map<string, unknown>;
 }
 
 /** Builds a `GameContext` for unit tests (requires a DOM, e.g. `// @vitest-environment jsdom`). */
@@ -19,16 +23,26 @@ export function createTestContext(module: GameModule<unknown>, locale: Supported
     sources: [module.metadata.messages, COMMON_MESSAGES],
     onMissing: (key) => missingKeys.push(key)
   });
+  const difficulties: string[] = [];
+  const preferences = new Map<string, unknown>();
   return {
     context: {
       root,
       t,
       reducedMotion: true,
       requestSave: () => void saves++,
-      finished: (result) => void results.push(result)
+      finished: (result) => void results.push(result),
+      setDifficulty: (difficulty) => void difficulties.push(difficulty),
+      preferences: {
+        // JSON round trip, like the app's storage, so games cannot rely on object identity.
+        get: (key) => (preferences.has(key) ? (JSON.parse(JSON.stringify(preferences.get(key))) as unknown) : undefined),
+        set: (key, value) => void (value === undefined ? preferences.delete(key) : preferences.set(key, JSON.parse(JSON.stringify(value)) as unknown))
+      }
     },
     saveRequests: () => saves,
     results,
-    missingKeys
+    missingKeys,
+    difficulties,
+    preferences
   };
 }

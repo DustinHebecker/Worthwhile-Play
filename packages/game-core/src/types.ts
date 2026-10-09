@@ -84,6 +84,21 @@ export interface GameContext {
   requestSave(): void;
   /** Signal natural completion. The host shows a calm "finished" screen and never auto-starts another game. */
   finished(result: GameResult): void;
+  /**
+   * Optional: tell the host which of `metadata.difficulties` the game now runs at, when the game lets the
+   * player change it inside the game (so the host's select, its next "New game" and the save agree).
+   */
+  setDifficulty?(difficulty: string): void;
+  /**
+   * Optional per-device preferences of this game (e.g. opponent count, word language) that should survive
+   * a reload even when the player starts a fresh game. Small JSON values only; never game state.
+   */
+  readonly preferences?: GamePreferences;
+}
+
+export interface GamePreferences {
+  get(key: string): unknown;
+  set(key: string, value: unknown): void;
 }
 
 /** A running game bound to a DOM root. */

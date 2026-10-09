@@ -5,7 +5,8 @@ import type { AppContext, Page } from '../app';
 import { SESSION_NOTE_MINUTES } from '../config';
 import { findGame } from '../registry';
 import type { Route } from '../router';
-import { sessionNoteEnabled } from './settings';
+import { createPreferences } from '../lib/preferences';
+import { safeStorage, sessionNoteEnabled } from './settings';
 import { gameBadges, gameTranslator } from './shared';
 
 type GameRoute = Extract<Route, { name: 'game' }>;
@@ -113,7 +114,17 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
         if (interactedAfterFinish) clearFinished();
         autosave?.request();
       },
-      finished: showFinished
+      finished: showFinished,
+      // The game changed its own difficulty (e.g. a strength chosen in an in-game menu): keep the host's
+      // select, the next "New game" and the save envelope in line with it.
+      setDifficulty: (difficulty: string) => {
+        if (!current || !metadata.difficulties?.includes(difficulty) || current.difficulty === difficulty) return;
+        current = { ...current, difficulty };
+        const select = main.querySelector<HTMLSelectElement>('#difficulty');
+        if (select) select.value = difficulty;
+        autosave?.request();
+      },
+      preferences: createPreferences(safeStorage(), metadata.id)
     });
     return instance;
   };
