@@ -1,6 +1,7 @@
 import { isRecord, normalizeSeed } from '@wp/game-core';
 import { inBounds, passable } from './grid';
 import { isCommandable, type Network } from './network';
+import { initialIntel, isSpotted } from './vision';
 import { RETREAT_THRESHOLDS, TARGET_PRIORITIES, type Archetype, type Command, type Doctrine, type Entity, type Order, type Ruleset, type Scenario, type World } from './types';
 
 /** Build the initial world for a scenario. Throws on invalid authored content (programmer error). */
@@ -21,7 +22,7 @@ export function createWorld(scenario: Scenario, ruleset: Ruleset): World {
     occupied.add(key);
     return spawn(i + 1, spec.side, arch, spec.x, spec.y, spec.order ?? { type: 'hold' });
   });
-  return {
+  const world: World = {
     v: 1,
     ruleset: ruleset.id,
     tick: 0,
@@ -33,6 +34,8 @@ export function createWorld(scenario: Scenario, ruleset: Ruleset): World {
     projectiles: [],
     nextId: entities.length + 1
   };
+  if (ruleset.fog) world.intel = initialIntel(world, ruleset);
+  return world;
 }
 
 export function spawn(id: number, side: number, arch: Archetype, x: number, y: number, order: Order = { type: 'hold' }): Entity {
@@ -61,7 +64,7 @@ export const findEntity = (world: World, id: number): Entity | undefined => worl
 
 export type CommandCheck =
   | { ok: true }
-  | { ok: false; reason: 'unknown-unit' | 'not-yours' | 'out-of-contact' | 'immobile' | 'out-of-bounds' | 'impassable' | 'no-weapon' | 'bad-target' | 'bad-order' };
+  | { ok: false; reason: 'unknown-unit' | 'not-yours' | 'out-of-contact' | 'immobile' | 'out-of-bounds' | 'impassable' | 'no-weapon' | 'bad-target' | 'not-visible' | 'bad-order' };
 
 /**
  * Rule check for a single command against the current world. Never throws. Pass `networks`
@@ -108,6 +111,8 @@ export function validateCommand(world: World, ruleset: Ruleset, command: Command
       if (!arch.weapon) return { ok: false, reason: 'no-weapon' };
       const target = findEntity(world, order.target);
       if (!target || target.side === unit.side) return { ok: false, reason: 'bad-target' };
+      // Fog: only a target the side has spotted can be ordered (D7).
+      if (!isSpotted(world, ruleset, unit.side, target.id)) return { ok: false, reason: 'not-visible' };
       return { ok: true };
     }
     default:

@@ -166,10 +166,12 @@ describe('review findings on PR #7 (second round): temporary blockers never end 
       { side: 0, kind: 'lancer', x: 1, y: 0 },
       { side: 1, kind: 'command-post', x: 19, y: 0 }
     ]);
+    // The far post is not spotted (fog), so the standing order is written directly: a unit keeps
+    // chasing a target it was ordered to attack while it was visible.
+    unit(w, 4).order = { type: 'attack', target: 5 };
     const r = play(w, 2, [
       { side: 0, unit: 2, order: { type: 'move', x: 14, y: 0 } },
-      { side: 0, unit: 3, order: { type: 'escort', target: 2 } },
-      { side: 0, unit: 4, order: { type: 'attack', target: 5 } }
+      { side: 0, unit: 3, order: { type: 'escort', target: 2 } }
     ]);
     expect(ended(r.events, 4)).toEqual([]);
     expect(unit(r.world, 4).order).toEqual({ type: 'attack', target: 5 });

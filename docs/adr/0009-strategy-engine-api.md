@@ -27,9 +27,15 @@ archetypeOf(ruleset, kind): Archetype | undefined                    // own-prop
 // Command network (I3a):
 computeNetwork(world, ruleset, side): { nodes, coverage: Uint8Array, slots }
 isCommandable(world, ruleset, unit, network?): boolean               // always true without commandNetwork
-STRATEGY_RULESET                                                     // BASE_RULESET + commandNetwork: true
+STRATEGY_RULESET                                                     // BASE_RULESET + commandNetwork + fog ('strategy-2')
 // Doctrines (I3b):
 DEFAULT_DOCTRINE, isValidDoctrine(v), TARGET_PRIORITIES, RETREAT_THRESHOLDS
+// Information model (I3c, D7):
+observedCells(world, ruleset, side, network?): Uint8Array            // vision discs of reporting units
+reportingUnits(world, ruleset, side, network?): Entity[]             // units in coverage (all without a network)
+initialIntel(world, ruleset): Report[][]                             // start: observed + own units + all structures
+isSpotted(world, ruleset, side, id): boolean                         // live report (always true without fog)
+resolveTurn/runTicks(...).reported?: SimEvent[][]                    // fog: per-side filtered events
 ```
 
   Orders: `hold`, `move`, `attack`, `deploy`, `escort {target}` (stay within 2 cells of a friendly unit/structure), `patrol {x, y, rx, ry}`, `regroup` (nearest covered cell, then hold). A `Command` may carry a `doctrine` (`retreatBelow`, `priority`, `seekCover`, `holdFire`) that replaces the unit's doctrine with the same order slot; units keep following it out of contact. Tower Defense waves can use doctrines for target priority and return fire.
@@ -37,6 +43,8 @@ DEFAULT_DOCTRINE, isValidDoctrine(v), TARGET_PRIORITIES, RETREAT_THRESHOLDS
   Movement never ends an order silently: walls are terrain, structures and units that will not leave (holding or deploying); a unit routes around moving units when that costs at most a small detour and otherwise waits behind them. The engine replaces a standing order on its own only with an `order-ended` event and a reason (`arrived`, `occupied`, `unreachable` after `UNREACHABLE_TICKS` without any way, `blocked` after `DEADLOCK_TICKS` of mutual blocking, `lost-target`, `retreat`, `regrouped`).
 
   Rulesets carry `commandNetwork` (orders only reach units in coverage as it was at the start of the batch, at most the connected sources' order slots per side and batch; rejected commands report `out-of-contact`) and `relayHillBonus`. Archetypes carry `comms: { role: 'source' | 'relay', radius, orderSlots, needsDeploy } | null`; the `deploy` order sets a `needsDeploy` node up in one turn (`entity.deploy` counts ticks); `hold` keeps it set up, moving packs it up. `computeNetwork` is O(nodes²) — fine for strategy maps; Tower Defense/hybrids with many relays should add spatial buckets first. Tower Defense can ignore all of this by using `BASE_RULESET` (`commandNetwork: false`), or use relay/support towers as network nodes.
+
+  Fog (`ruleset.fog`, D7): `World.intel[side]` holds `Report { id, side, kind, x, y, hp, tick, live }`, sorted by id, refreshed in system 11 (vision) at the end of every tick. Only units in the own coverage report; their vision discs are the observed cells. Observed entities get a `live` report; other reports stay as ghosts at the last reported position: an enemy ghost is dropped once its cell is observed empty, an own unit is never forgotten until its destruction is observed. Weapons engage only targets their side has spotted or that the shooter sees itself (artillery needs spotters), and `attack` commands need a spotted target (`not-visible`). Events are filtered per side (`reported`): an event is known if it involves an observed entity or an observed cell. `isValidWorld` checks that intel exists exactly for fog rulesets, that live reports match their entity and that every own unit is known. Standing attack orders keep chasing a target that leaves sight (movement uses the true position; firing still needs sight). `observe(...)` from the plan below is covered by `World.intel` plus the game's own picture.
 
   Planned (I3–I5), names provisional: `ModeDefinition { id, systems, phases, victory, spawns? }` passed to `runTicks`; `coverage(world, ruleset, side)`; `observe(world, ruleset, side)`; `planAi(observation, ruleset, profile)`; production/economy commands.
 - **Mirror-consistent tie-breaking**: path and neighbour ties are broken in each side's own frame (side 1 = point-mirrored), the movement conflict rule is symmetric between sides (contenders of different sides all bump; within one side the lowest id enters, so friendly units cannot deadlock), damage is applied simultaneously. Property P4 checks that a point-mirrored world with swapped sides evolves as the exact mirror image.

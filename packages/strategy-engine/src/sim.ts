@@ -3,11 +3,15 @@ import { TupleHeap } from './heap';
 import { findPath } from './path';
 import { DEFAULT_DOCTRINE, type Archetype, type Command, type Doctrine, type Entity, type OrderEndReason, type Ruleset, type SimEvent, type Status, type TargetPriority, type WeaponSpec, type World } from './types';
 import { computeNetwork, type Network } from './network';
+import { initialIntel, updateIntel } from './vision';
 import { archetypeOf, findEntity, normalizeDoctrine, normalizeOrder, validateCommand } from './world';
 
 export interface SimResult {
   world: World;
+  /** Everything that happened (ground truth, for tests and replays). */
   events: SimEvent[];
+  /** Fog rulesets only: per side, the events that side could know about (D7). */
+  reported?: SimEvent[][];
 }
 
 /**
@@ -17,8 +21,9 @@ export interface SimResult {
 export function runTicks(world: World, ruleset: Ruleset, commands: readonly Command[], ticks: number): SimResult {
   const w = structuredClone(world);
   const events: SimEvent[] = [];
-  for (let i = 0; i < ticks; i++) tick(w, ruleset, i === 0 ? commands : [], events);
-  return { world: w, events };
+  const reported = ruleset.fog ? Array.from({ length: w.sides }, (): SimEvent[] => []) : undefined;
+  for (let i = 0; i < ticks; i++) tick(w, ruleset, i === 0 ? commands : [], events, reported);
+  return reported ? { world: w, events, reported } : { world: w, events };
 }
 
 /** Strategy turn: both sides' locked plans execute simultaneously over `ruleset.ticksPerTurn` ticks. */
@@ -55,7 +60,10 @@ interface Hit {
 }
 
 /** One tick in the fixed system order of ADR 0009 (systems not yet implemented are no-ops). */
-export function tick(w: World, rs: Ruleset, commands: readonly Command[], events: SimEvent[]): void {
+export function tick(w: World, rs: Ruleset, commands: readonly Command[], events: SimEvent[], reported?: SimEvent[][]): void {
+  const firstEvent = events.length;
+  // Worlds from before fog (or built by hand) start with what each side sees and owns.
+  if (rs.fog && !w.intel) w.intel = initialIntel(w, rs);
   w.tick += 1;
   const t = w.tick;
   const arch = (e: Entity): Archetype => {
@@ -83,6 +91,15 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     events.push({ t: 'order', tick: t, id: unit.id });
   }
 
+  // With fog, weapons engage only targets the own side has spotted (reports from the end of the
+  // previous tick) or that the shooter sees itself.
+  const spotted = rs.fog ? w.intel?.map((list) => new Set(list.filter((r) => r.live).map((r) => r.id))) : undefined;
+  const visible = (e: Entity, target: Entity): boolean => {
+    if (!rs.fog) return true;
+    const vision = arch(e).vision;
+    return (spotted?.[e.side]?.has(target.id) ?? false) || dist2(e.x, e.y, target.x, target.y) <= vision * vision;
+  };
+
   // 2 + 3. Intent (standing order + doctrine) and simultaneous movement
   const cells = w.map.w * w.map.h;
   const occupied = { ground: new Set<number>(), air: new Set<number>() };
@@ -104,7 +121,7 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     return n.coverage;
   };
   const end = (e: Entity, reason: OrderEndReason): void => endOrder(e, reason, t, events);
-  const intent: Intent = { w, rs, occupied, permanent, coverageOf, end };
+  const intent: Intent = { w, rs, occupied, permanent, coverageOf, end, visible };
   const goals = new Map<number, number>();
   for (const e of w.entities) {
     const a = arch(e);
@@ -189,7 +206,7 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     const a = arch(e);
     const weapon = a.weapon;
     if (!weapon || e.cooldown > 0 || has(e, 'disabled') || (weapon.stationary && moved.has(e.id))) continue;
-    const target = pickTarget(w, rs, e, a, t);
+    const target = pickTarget(w, rs, e, a, t, (other) => visible(e, other));
     if (!target) {
       e.beam = null;
       continue;
@@ -251,15 +268,23 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
 
   // 8. Removal
   const alive: Entity[] = [];
+  const gone: Entity[] = [];
   for (const e of w.entities) {
     if (e.hp > 0) alive.push(e);
-    else events.push({ t: 'destroyed', tick: t, id: e.id, side: e.side, kind: e.kind, x: e.x, y: e.y });
+    else {
+      gone.push(e);
+      events.push({ t: 'destroyed', tick: t, id: e.id, side: e.side, kind: e.kind, x: e.x, y: e.y });
+    }
   }
   w.entities = alive;
   for (const e of alive) {
     if (e.order.type === 'attack' && !findEntity(w, e.order.target)) endOrder(e, 'lost-target', t, events);
   }
-  // 9–12 (economy, production, research, network, vision, victory) arrive with later increments.
+  // 9 + 10 (economy, production, research) arrive with later increments; the network is
+  // derived data, recomputed where needed.
+  // 11. Vision (fog rulesets): reports and per-side event filter (D7)
+  if (rs.fog) updateIntel(w, rs, gone, events, firstEvent, reported);
+  // 12. Victory is decided by the mode (game rules).
 }
 
 /**
@@ -282,6 +307,8 @@ interface Intent {
   readonly end: (e: Entity, reason: OrderEndReason) => void;
   /** The side's command coverage, or `undefined` when the ruleset has no command network. */
   readonly coverageOf: (side: number) => Uint8Array | undefined;
+  /** Whether `e` may fire at `target` (fog: spotted by its side or seen by itself). */
+  readonly visible: (e: Entity, target: Entity) => boolean;
 }
 
 const doctrineOf = (e: Entity): Doctrine => e.doctrine ?? DEFAULT_DOCTRINE;
@@ -353,7 +380,8 @@ function goalOf(ctx: Intent, e: Entity, a: Archetype): number | undefined {
       break;
     case 'attack': {
       const target = findEntity(w, order.target);
-      if (!target || inWeaponRange(w, rs, e, a, target)) break;
+      // In range and in sight: stay and fire. Out of sight (fog): close in until it can be seen.
+      if (!target || (inWeaponRange(w, rs, e, a, target) && ctx.visible(e, target))) break;
       // Too close for a weapon with a minimum range: stay rather than walk into the target.
       const minRange = a.weapon?.minRange ?? 0;
       if (dist2(e.x, e.y, target.x, target.y) < minRange * minRange) break;
@@ -464,19 +492,19 @@ function matchesPriority(rs: Ruleset, target: Entity, priority: TargetPriority):
  * Target selection: an ordered target in range first. Otherwise, by doctrine priority: preferred
  * class first, then lowest health and nearest ('nearest': distance before health), then lowest
  * id. With return-fire doctrine the unit only shoots at an ordered target or after being hit
- * within the last turn.
+ * within the last turn. Only `visible` targets are engaged (fog).
  */
-function pickTarget(w: World, rs: Ruleset, e: Entity, a: Archetype, tick: number): Entity | undefined {
+function pickTarget(w: World, rs: Ruleset, e: Entity, a: Archetype, tick: number, visible: (target: Entity) => boolean): Entity | undefined {
   const doctrine = doctrineOf(e);
   if (e.order.type === 'attack') {
     const ordered = findEntity(w, e.order.target);
-    if (ordered && inWeaponRange(w, rs, e, a, ordered)) return ordered;
+    if (ordered && visible(ordered) && inWeaponRange(w, rs, e, a, ordered)) return ordered;
   }
   if (doctrine.holdFire && (e.hitAt === undefined || tick - e.hitAt > rs.ticksPerTurn)) return undefined;
   const classed = doctrine.priority !== 'weakest' && doctrine.priority !== 'nearest';
   let best: Entity | undefined;
   for (const target of w.entities) {
-    if (target.side === e.side || !inWeaponRange(w, rs, e, a, target)) continue;
+    if (target.side === e.side || !visible(target) || !inWeaponRange(w, rs, e, a, target)) continue;
     if (!best) {
       best = target;
       continue;
