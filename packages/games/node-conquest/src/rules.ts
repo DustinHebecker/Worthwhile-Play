@@ -162,7 +162,7 @@ const emptyStats = (): Stats => ({ produced: 0, reinforced: 0, passed: 0, absorb
 /** Node count per faction. */
 export const countsOf = (s: Pick<NcState, 'owner'>, factions: number): number[] => {
   const counts = new Array<number>(factions).fill(0);
-  for (const o of s.owner) if (o >= 0) counts[o]!++;
+  for (const o of s.owner) if (o >= 0) counts[o] = counts[o]! + 1;
   return counts;
 };
 
@@ -339,7 +339,7 @@ function fight(s: NcState, map: GameMap): void {
     const lane = laneAt[u.a * n + u.b]!;
     const i = 2 * lane + (u.a < u.b ? 0 : 1);
     if (count[2 * lane]! + count[2 * lane + 1]! === 0) touched.push(lane);
-    count[i]!++;
+    count[i] = count[i]! + 1;
     if (u.d > front[i]!) front[i] = u.d;
   }
   // Only lanes where both directions are used and the front-most units have met can see fights.

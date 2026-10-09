@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BudgetExceeded, MateSolver, puzzleHint, puzzleTurn, verifyMatePuzzle } from '../src/ai';
-import { createGame, isValidState, legalMoves, moveToUci, parseFen, puzzlesFor, replay, uciToMove, type ChessState } from '../src/rules';
+import { createGame, isValidState, legalMoves, moveToUci, outcomeOf, parseFen, puzzlesFor, replay, uciToMove, type ChessState } from '../src/rules';
 import { oracleForcesMate, oracleSolutions } from './oracle';
 
 const pos = (fen: string) => parseFen(fen)!;
@@ -60,13 +60,37 @@ describe('puzzle play', { timeout: 120_000 }, () => {
     expect(wrong.refutation).toBeTypeOf('number');
     const right = puzzleTurn(state, ref.line[0]!);
     expect(right.correct).toBe(true);
-    expect(right.state.moves).toEqual([ref.line[0]]);
+    expect(right.state.moves).toEqual(ref.line.slice(0, 2));
     expect(isValidState(right.state)).toBe(true);
     expect(isValidState({ ...state, moves: [wrongMove] })).toBe(false);
     expect(puzzleHint(state)).toBe(uciToMove(pos(ref.fen), ref.line[0]!));
-    expect(puzzleHint(right.state)).toBeNull();
+    if (ref.line.length === 1) expect(puzzleHint(right.state)).toBeNull();
     expect(() => puzzleTurn(state, 'a1a1')).toThrow();
     expect(() => puzzleTurn(createGame({ seed: 1, difficulty: 'beginner', opponent: 'human', humanColor: 'w' }), 'e2e4')).toThrow();
+  });
+
+  it('plays a multi-move best line: the engine answers with the stored reply, every step has a hint and wrong tries are not stored', () => {
+    const list = puzzlesFor('best', 1);
+    const index = list.findIndex((p) => p.line.length >= 3);
+    const ref = list[index]!;
+    let state = puzzleState('best', 1, index);
+    for (let k = 0; k < ref.line.length; k += 2) {
+      const here = replay(state.start, state.moves)!.pos;
+      expect(puzzleHint(state), `hint ${k}`).toBe(uciToMove(here, ref.line[k]!));
+      const wrongMove = legalMoves(here).map(moveToUci).find((m) => m !== ref.line[k])!;
+      const wrong = puzzleTurn(state, wrongMove);
+      expect(wrong.correct).toBe(false);
+      expect(wrong.state).toBe(state);
+      const turn = puzzleTurn(state, ref.line[k]!);
+      expect(turn.correct).toBe(true);
+      // The person's move together with the engine's stored reply (none after the last move).
+      expect(turn.state.moves).toEqual(ref.line.slice(0, k + 2));
+      state = turn.state;
+      expect(isValidState(state)).toBe(true);
+    }
+    expect(state.moves).toEqual(ref.line);
+    expect(outcomeOf(state).kind).toBe('solved');
+    expect(puzzleHint(state)).toBeNull();
   });
 
   it('plays the mating line with the engine defending, and rejects other first moves', () => {

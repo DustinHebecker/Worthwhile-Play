@@ -14,6 +14,11 @@
   margin-inline: auto;
 }
 .wp-chess [hidden] { display: none !important; }
+/* The game column and the variation board: stacked by default, side by side on wide screens. */
+.wp-chess { container-type: inline-size; }
+.wp-chess .ch-stage { display: grid; gap: 1rem; width: 100%; justify-items: center; }
+.wp-chess .ch-main,
+.wp-chess .ch-variation { display: grid; gap: 0.75rem; justify-items: center; width: 100%; min-width: 0; }
 .wp-chess .ch-status { margin: 0; text-align: center; min-height: 1.5em; font-weight: 600; }
 .wp-chess .ch-mode { margin: 0; color: var(--wp-muted); font-size: 0.9rem; text-align: center; }
 
@@ -159,7 +164,8 @@
 .wp-chess .ch-explain ul { margin: 0; padding-inline-start: 1.2rem; }
 
 .wp-chess .ch-history { width: min(100%, 32rem); }
-.wp-chess .ch-history h3 { margin: 0 0 0.3rem; font-size: 1rem; }
+.wp-chess .ch-history h3,
+.wp-chess .ch-history h4 { margin: 0 0 0.3rem; font-size: 1rem; }
 .wp-chess .ch-moves {
   display: flex;
   flex-wrap: wrap;
@@ -175,6 +181,9 @@
   font-variant-numeric: tabular-nums;
 }
 .wp-chess .ch-move { display: flex; gap: 0.35rem; white-space: nowrap; }
+/* Variation move list: the shown move is framed and bold; moves ahead of it are italic. */
+.wp-chess .ch-ply.is-current { font-weight: 700; outline: 2px solid var(--wp-accent); outline-offset: 1px; border-radius: 3px; }
+.wp-chess .ch-ply.is-ahead { font-style: italic; color: var(--wp-muted); }
 .wp-chess .ch-num { color: var(--wp-muted); }
 .wp-chess .ch-empty { color: var(--wp-muted); unicode-bidi: plaintext; }
 
@@ -271,6 +280,43 @@
 .wp-chess .ch-menu-options { display: flex; flex-wrap: wrap; gap: 0.6rem 1rem; align-items: end; }
 .wp-chess .ch-start { margin-inline-start: auto; }
 .wp-chess .ch-menu .ch-confirm { justify-content: flex-start; }
+
+/* Variation board ("Variantenbrett"). */
+/* Narrow: full width (the board keeps the same size as the game board), a dashed rule on top. */
+.wp-chess .ch-variation {
+  padding-block: 0.6rem 0.75rem;
+  border-block-start: 2px dashed var(--wp-border);
+  box-sizing: border-box;
+}
+.wp-chess .ch-var-head { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; justify-content: space-between; width: min(100%, 32rem); }
+.wp-chess .ch-var-head h3 { margin: 0; font-size: 1.1rem; }
+.wp-chess .ch-var-head h3::before { content: '⇄\FE0E' / ''; margin-inline-end: 0.35rem; }
+.wp-chess .ch-var-close { min-height: var(--wp-touch, 44px); }
+.wp-chess .ch-var-note { margin: 0; color: var(--wp-muted); font-size: 0.9rem; text-align: center; }
+.wp-chess .ch-variation .ch-actions button,
+.wp-chess .ch-variation .ch-confirm button { min-height: var(--wp-touch, 44px); }
+.wp-chess .ch-dir-back::before { content: '◀\FE0E' / ''; margin-inline-end: 0.3rem; }
+.wp-chess .ch-dir-forward::after { content: '▶\FE0E' / ''; margin-inline-start: 0.3rem; }
+.wp-chess[dir='rtl'] .ch-dir-back::before { content: '▶\FE0E' / ''; }
+.wp-chess[dir='rtl'] .ch-dir-forward::after { content: '◀\FE0E' / ''; }
+/* Phone / narrow: the variation board replaces the game view until "Back to the game". */
+.wp-chess[data-variation] > .ch-menu,
+.wp-chess[data-variation] > .ch-mode,
+.wp-chess[data-variation] .ch-main { display: none; }
+.wp-chess[data-variation] { max-width: 72rem; }
+@container (min-width: 50rem) {
+  .wp-chess[data-variation] > .ch-menu { display: grid; }
+  .wp-chess[data-variation] > .ch-mode { display: block; }
+  .wp-chess[data-variation] .ch-main { display: grid; align-content: start; }
+  .wp-chess[data-variation] .ch-stage { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  /* Side by side: a dashed frame marks the analysis board. */
+  .wp-chess .ch-variation {
+    padding: 0.75rem;
+    border: 2px dashed var(--wp-border);
+    border-radius: var(--wp-radius, 10px);
+    background: var(--wp-surface);
+  }
+}
 
 @media (forced-colors: active) {
   .wp-chess .ch-seg-input:checked + .ch-seg-body { border-color: Highlight; }
