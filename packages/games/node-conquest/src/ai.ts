@@ -53,6 +53,8 @@ export interface Lookahead {
    * advanced heuristics, instead of freezing all paths — plans that hold up against replies.
    */
   policy: boolean;
+  /** Combine changes greedily: each runner-up is simulated together with the plan so far. */
+  greedy?: boolean;
 }
 
 export interface AiProfile {
@@ -132,7 +134,12 @@ export interface Command {
   to: number;
 }
 
-export const isDecisionTick = (tick: number, faction: number, profile: AiProfile): boolean => tick % profile.period === (faction * 7) % profile.period;
+/**
+ * Every faction makes an opening decision on tick 0 (the player can set paths before starting, too);
+ * later decisions are staggered by faction.
+ */
+export const isDecisionTick = (tick: number, faction: number, profile: AiProfile): boolean =>
+  tick === 0 || tick % profile.period === (faction * 7) % profile.period;
 
 /** Hostile strength already travelling towards each node of `faction`. */
 export function incomingThreat(s: NcState, faction: number): number[] {
@@ -365,22 +372,27 @@ export interface PlanStats {
 /** Last decision's lookahead cost (diagnostics for tests and measurements). */
 export const lastPlan: PlanStats = { ticks: 0, work: 0 };
 
+/** Work charged for one simulated heuristic decision inside a policy rollout (≈ its cost in stepped unit-ticks). */
+export const POLICY_DECISION_WORK = 300;
+
 function rollout(start: NcState, map: GameMap, horizon: number, stats: PlanStats, policy: Controller | undefined): NcState {
   const s = cloneState(start);
   for (let i = 0; i < horizon && s.result === 'playing'; i++) {
     stats.work += s.units.length + map.nodes.length;
+    if (policy) for (let f = 0; f < map.factions; f++) if (isDecisionTick(s.tick, f, POLICY) && s.owner.includes(f)) stats.work += POLICY_DECISION_WORK;
     stats.ticks++;
     stepMut(s, map, policy);
   }
   return s;
 }
 
+/** How every faction is assumed to keep playing inside policy rollouts: the advanced heuristics, without hesitation. */
+const POLICY: AiProfile = { ...PROFILES.advanced, hesitation: 0 };
 const policies = new Map<number, Controller>();
-/** All factions playing the advanced heuristics (used inside master's simulations). */
 function policyFor(factions: number): Controller {
   let control = policies.get(factions);
   if (!control) {
-    control = controllerFor(new Array<AiProfile>(factions).fill({ ...PROFILES.advanced, hesitation: 0 }));
+    control = controllerFor(new Array<AiProfile>(factions).fill(POLICY));
     policies.set(factions, control);
   }
   return control;
@@ -450,8 +462,20 @@ export function decide(s: NcState, map: GameMap, faction: number, profile: AiPro
   if (best && best.value > baseValue) {
     chosen = [best.option];
     let bestValue = best.value;
-    // Master: try the best change together with the runners-up (two-step plans).
-    for (let i = 1; i <= look.pairs && i < scored.length; i++) {
+    if (look.greedy) {
+      // Build the plan step by step: a runner-up joins only when the combined plan simulates better.
+      for (let i = 1; i <= look.pairs && i < scored.length && chosen.length < profile.actions; i++) {
+        if (stats.work + perRollout > look.budget) break;
+        const trial = { ...work, out: work.out.map((o) => [...o]) };
+        if (![...chosen, scored[i]!.option].every((o) => applyOption(trial, map, faction, o.cmds))) continue;
+        const value = evaluate(rollout(trial, map, look.horizon, stats, policy), map, faction, weights);
+        if (value > bestValue) {
+          chosen.push(scored[i]!.option);
+          bestValue = value;
+        }
+      }
+    } else for (let i = 1; i <= look.pairs && i < scored.length; i++) {
+      // Master: try the best change together with the runners-up (two-step plans).
       if (stats.work + perRollout > look.budget) break;
       const trial = { ...work, out: work.out.map((o) => [...o]) };
       if (!applyOption(trial, map, faction, best.option.cmds) || !applyOption(trial, map, faction, scored[i]!.option.cmds)) continue;
@@ -459,7 +483,7 @@ export function decide(s: NcState, map: GameMap, faction: number, profile: AiPro
       if (value > bestValue) [chosen, bestValue] = [[best.option, scored[i]!.option], value];
     }
     // Further independent improvements, if the budget of actions allows.
-    for (const entry of scored.slice(1)) if (entry.value > baseValue && !chosen.includes(entry.option) && chosen.length < profile.actions) chosen.push(entry.option);
+    if (!look.greedy) for (const entry of scored.slice(1)) if (entry.value > baseValue && !chosen.includes(entry.option) && chosen.length < profile.actions) chosen.push(entry.option);
   }
   for (const option of chosen) takeOnce(option);
   lastPlan.ticks = stats.ticks;

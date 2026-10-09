@@ -66,9 +66,9 @@ export const CONFIGS: Readonly<Record<Difficulty, DifficultyConfig>> = {
 /**
  * Geometry in percent of a grid cell: each item is drawn inside a circle of ITEM_DIAMETER
  * (so rotation never enlarges it) whose centre is jittered by at most MAX_JITTER from the
- * cell centre. 64 / 2 + 12 = 44 < 50, so an item never leaves its cell and never overlaps.
+ * cell centre. 72 / 2 + 12 = 48 < 50, so an item never leaves its cell and never overlaps.
  */
-export const ITEM_DIAMETER = 64;
+export const ITEM_DIAMETER = 72;
 export const MAX_JITTER = 12;
 
 export interface Item extends Features {
