@@ -95,6 +95,9 @@ importers:
       '@wp/game-debug-system':
         specifier: workspace:*
         version: link:../../packages/games/debug-system
+      '@wp/game-deep-read':
+        specifier: workspace:*
+        version: link:../../packages/games/deep-read
       '@wp/game-distractor-control':
         specifier: workspace:*
         version: link:../../packages/games/distractor-control

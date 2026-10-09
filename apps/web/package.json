@@ -20,6 +20,7 @@
     "@wp/game-constraint-grid": "workspace:*",
     "@wp/game-core": "workspace:*",
     "@wp/game-debug-system": "workspace:*",
+    "@wp/game-deep-read": "workspace:*",
     "@wp/game-distractor-control": "workspace:*",
     "@wp/game-graph-detective": "workspace:*",
     "@wp/game-laser-circuit": "workspace:*",
