@@ -1,0 +1,283 @@
+/* Chess — all rules scoped under .wp-chess. Uses shared --wp-* tokens.
+   Markers never rely on colour alone: legal moves = dot / corner wedges, last move = dashed
+   frame, check = double ring, selection = thick solid frame, hint = diamond. The board is
+   always laid out left-to-right (also in RTL locales). */
+.wp-chess {
+  --ch-light: #e9dfc8;
+  --ch-dark: #a98c68;
+  --ch-mark: rgb(20 20 20 / 0.45);
+  display: grid;
+  gap: 0.75rem;
+  justify-items: center;
+  width: 100%;
+  max-width: 34rem;
+  margin-inline: auto;
+}
+.wp-chess [hidden] { display: none !important; }
+.wp-chess .ch-status { margin: 0; text-align: center; min-height: 1.5em; font-weight: 600; }
+.wp-chess .ch-mode { margin: 0; color: var(--wp-muted); font-size: 0.9rem; text-align: center; }
+
+.wp-chess .ch-board-wrap { position: relative; width: min(100%, 32rem); }
+.wp-chess .ch-board {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  width: 100%;
+  aspect-ratio: 1;
+  border: 2px solid var(--wp-text);
+  border-radius: 4px;
+  overflow: hidden;
+  direction: ltr;
+  touch-action: manipulation;
+  user-select: none;
+}
+.wp-chess .ch-sq {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 0;
+  aspect-ratio: 1;
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  font: inherit;
+  line-height: 1;
+  color: #111;
+  cursor: pointer;
+}
+.wp-chess .ch-sq.is-light { background: var(--ch-light); }
+.wp-chess .ch-sq.is-dark { background: var(--ch-dark); }
+.wp-chess .ch-sq:focus-visible { outline: 3px solid var(--wp-focus); outline-offset: -3px; z-index: 2; }
+
+.wp-chess .ch-piece {
+  grid-area: 1 / 1;
+  position: relative;
+  display: grid;
+  place-items: center;
+  font-family: 'Segoe UI Symbol', 'Noto Sans Symbols 2', 'DejaVu Sans', 'Arial Unicode MS', serif;
+  z-index: 1;
+  font-size: min(9vw, 2.6rem);
+  line-height: 1;
+  pointer-events: none;
+}
+.wp-chess .ch-piece > span { grid-area: 1 / 1; }
+.wp-chess .ch-piece.is-black .ch-fill { color: #141414; text-shadow: 0 0 2px rgb(255 255 255 / 0.55); }
+.wp-chess .ch-piece.is-white .ch-fill { color: #fbfbf7; }
+.wp-chess .ch-piece.is-white .ch-outline { color: #141414; }
+
+.wp-chess .ch-coord {
+  position: absolute;
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 1;
+  color: rgb(0 0 0 / 0.62);
+  pointer-events: none;
+}
+.wp-chess .ch-file { inset-block-end: 2px; right: 3px; }
+.wp-chess .ch-rank { inset-block-start: 2px; left: 3px; }
+
+.wp-chess .ch-marker { position: absolute; inset: 0; pointer-events: none; }
+/* Legal quiet move: centred dot. */
+.wp-chess .ch-sq[data-target='move'] .ch-marker {
+  background: radial-gradient(circle, var(--ch-mark) 0 17%, transparent 19%);
+}
+/* Legal capture: four corner wedges around the target piece. */
+.wp-chess .ch-sq[data-target='capture'] .ch-marker {
+  background:
+    linear-gradient(135deg, var(--ch-mark) 0 18%, transparent 18%),
+    linear-gradient(225deg, var(--ch-mark) 0 18%, transparent 18%),
+    linear-gradient(45deg, var(--ch-mark) 0 18%, transparent 18%),
+    linear-gradient(315deg, var(--ch-mark) 0 18%, transparent 18%);
+}
+.wp-chess .ch-sq[data-last]::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border: 2px dashed rgb(30 30 30 / 0.7);
+  pointer-events: none;
+}
+.wp-chess .ch-sq[data-selected] { box-shadow: inset 0 0 0 4px var(--wp-accent); }
+.wp-chess .ch-sq[data-check]::before {
+  content: '';
+  position: absolute;
+  inset: 8%;
+  border-radius: 50%;
+  border: 4px double var(--wp-danger);
+  pointer-events: none;
+}
+.wp-chess .ch-sq[data-hint] .ch-marker {
+  box-shadow: inset 0 0 0 3px var(--wp-p1);
+  background: linear-gradient(45deg, transparent 44%, var(--wp-p1) 44% 56%, transparent 56%);
+  opacity: 0.8;
+}
+
+.wp-chess .ch-actions,
+.wp-chess .ch-confirm {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  align-items: end;
+}
+.wp-chess .ch-actions button,
+.wp-chess .ch-confirm button,
+.wp-chess .ch-dialog button,
+.wp-chess .ch-menu button { min-height: var(--wp-touch, 44px); }
+.wp-chess .ch-confirm { align-items: center; }
+
+.wp-chess .ch-dialog {
+  position: absolute;
+  inset-inline: 8%;
+  inset-block-start: 30%;
+  z-index: 5;
+  display: grid;
+  gap: 0.5rem;
+  justify-items: center;
+  padding: 0.75rem;
+  background: var(--wp-surface);
+  color: var(--wp-text);
+  border: 2px solid var(--wp-text);
+  border-radius: var(--wp-radius, 10px);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.3);
+}
+.wp-chess .ch-dialog p { margin: 0; font-weight: 600; }
+.wp-chess .ch-promo-row { display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: center; }
+.wp-chess .ch-promo { display: grid; justify-items: center; gap: 0.15rem; min-width: 3.4rem; padding: 0.3rem; }
+.wp-chess .ch-promo .ch-glyph { font-size: 1.8rem; line-height: 1; }
+.wp-chess .ch-promo-label { font-size: 0.75rem; }
+
+.wp-chess .ch-explain {
+  width: min(100%, 32rem);
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--wp-border);
+  border-inline-start: 4px solid var(--wp-accent);
+  border-radius: var(--wp-radius, 10px);
+  background: var(--wp-surface);
+}
+.wp-chess .ch-explain-title { margin: 0 0 0.3rem; font-weight: 600; }
+.wp-chess .ch-explain ul { margin: 0; padding-inline-start: 1.2rem; }
+
+.wp-chess .ch-history { width: min(100%, 32rem); }
+.wp-chess .ch-history h3 { margin: 0 0 0.3rem; font-size: 1rem; }
+.wp-chess .ch-moves {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.9rem;
+  max-height: 8.5rem;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0.4rem 0.6rem;
+  list-style: none;
+  background: var(--wp-surface-2);
+  border-radius: var(--wp-radius, 10px);
+  direction: ltr;
+  font-variant-numeric: tabular-nums;
+}
+.wp-chess .ch-move { display: flex; gap: 0.35rem; white-space: nowrap; }
+.wp-chess .ch-num { color: var(--wp-muted); }
+.wp-chess .ch-empty { color: var(--wp-muted); unicode-bidi: plaintext; }
+
+
+/* What-to-play menu above the board: segmented radio groups (native radios: arrow keys, one tab stop).
+   Checked = filled ring + bold frame; the running game's entry carries a "current" text badge. */
+.wp-chess .ch-menu {
+  container-type: inline-size;
+  display: grid;
+  gap: 0.6rem;
+  width: min(100%, 32rem);
+  padding: 0.75rem;
+  border: 1px solid var(--wp-border);
+  border-radius: var(--wp-radius, 10px);
+  background: var(--wp-surface);
+}
+.wp-chess .ch-seg { margin: 0; padding: 0; border: none; min-width: 0; }
+.wp-chess .ch-seg legend { padding: 0; margin-block-end: 0.3rem; font-weight: 600; font-size: 0.9rem; }
+.wp-chess .ch-seg-mode legend { font-size: 1rem; }
+.wp-chess .ch-seg-options { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.wp-chess .ch-seg-mode .ch-seg-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; }
+@container (min-width: 30rem) {
+  /* Wide enough for one row: icon above the text, like tabs. */
+  .wp-chess .ch-seg-mode .ch-seg-options { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .wp-chess .ch-seg-mode .ch-seg-body { flex-direction: column; justify-content: center; gap: 0.2rem; text-align: center; }
+}
+.wp-chess .ch-seg-option { position: relative; display: grid; min-width: 0; cursor: pointer; }
+/* Visually hidden but focusable; the whole label is the click/touch target. */
+.wp-chess .ch-seg-input {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  width: 1px;
+  height: 1px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.wp-chess .ch-seg-body {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: var(--wp-touch, 44px);
+  min-width: var(--wp-touch, 44px);
+  padding: 0.35rem 0.65rem;
+  border: 1px solid var(--wp-border);
+  border-radius: var(--wp-radius, 10px);
+  background: var(--wp-surface);
+  line-height: 1.2;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+.wp-chess .ch-seg-mode .ch-seg-body { height: 100%; gap: 0.35rem; padding: 0.5rem 0.45rem; font-size: 0.95rem; }
+/* Menu entries have an icon; the chosen one gets a thick frame and bold text instead of a ring. */
+.wp-chess .ch-seg-mode .ch-seg-body::before { content: none; }
+.wp-chess .ch-seg-mode .ch-seg-input:checked + .ch-seg-body { border-width: 3px; padding: calc(0.5rem - 2px) calc(0.45rem - 2px); }
+/* Radio ring: empty when not chosen, filled dot when chosen (shape, not only colour). */
+.wp-chess .ch-seg-body::before {
+  content: '';
+  flex: none;
+  width: 0.9rem;
+  height: 0.9rem;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+.wp-chess .ch-seg-input:checked + .ch-seg-body {
+  border: 2px solid var(--wp-accent);
+  background: var(--wp-surface-2);
+  font-weight: 700;
+}
+.wp-chess .ch-seg-input:checked + .ch-seg-body::before { background: radial-gradient(circle, currentColor 0 40%, transparent 45%); }
+.wp-chess .ch-seg-input:focus-visible + .ch-seg-body { outline: 3px solid var(--wp-focus); outline-offset: 2px; }
+.wp-chess .ch-seg-option:hover .ch-seg-body { border-color: var(--wp-accent); }
+.wp-chess .ch-seg-icon { flex: none; font-size: 1.15rem; line-height: 1; font-family: 'Segoe UI Symbol', 'Noto Sans Symbols 2', 'DejaVu Sans', sans-serif; }
+.wp-chess .ch-seg-text { min-width: 0; }
+.wp-chess .ch-seg-current {
+  position: absolute;
+  inset-block-start: -0.55rem;
+  inset-inline-end: 0.4rem;
+  padding: 0 0.35rem;
+  border: 1px solid var(--wp-accent);
+  border-radius: 999px;
+  background: var(--wp-surface);
+  color: var(--wp-text);
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.3;
+  pointer-events: none;
+}
+.wp-chess .ch-seg-mode .ch-seg-options { padding-block-start: 0.35rem; }
+.wp-chess .ch-menu-options { display: flex; flex-wrap: wrap; gap: 0.6rem 1rem; align-items: end; }
+.wp-chess .ch-start { margin-inline-start: auto; }
+.wp-chess .ch-menu .ch-confirm { justify-content: flex-start; }
+
+@media (forced-colors: active) {
+  .wp-chess .ch-seg-input:checked + .ch-seg-body { border-color: Highlight; }
+  .wp-chess .ch-sq { forced-color-adjust: none; background: Canvas; color: CanvasText; border: 1px solid CanvasText; }
+  .wp-chess .ch-piece .ch-fill { color: CanvasText; text-shadow: none; }
+  .wp-chess .ch-piece.is-white .ch-fill { visibility: hidden; }
+  .wp-chess .ch-piece.is-white .ch-outline { color: CanvasText; }
+  .wp-chess .ch-coord { color: CanvasText; }
+  .wp-chess { --ch-mark: Highlight; }
+}

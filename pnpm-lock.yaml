@@ -68,6 +68,12 @@ importers:
       '@wp/game-bridges':
         specifier: workspace:*
         version: link:../../packages/games/bridges
+      '@wp/game-chess':
+        specifier: workspace:*
+        version: link:../../packages/games/chess
+      '@wp/game-circuit-puzzle':
+        specifier: workspace:*
+        version: link:../../packages/games/circuit-puzzle
       '@wp/game-connect-four':
         specifier: workspace:*
         version: link:../../packages/games/connect-four
@@ -77,6 +83,12 @@ importers:
       '@wp/game-core':
         specifier: workspace:*
         version: link:../../packages/game-core
+      '@wp/game-debug-system':
+        specifier: workspace:*
+        version: link:../../packages/games/debug-system
+      '@wp/game-distractor-control':
+        specifier: workspace:*
+        version: link:../../packages/games/distractor-control
       '@wp/game-graph-detective':
         specifier: workspace:*
         version: link:../../packages/games/graph-detective
@@ -86,6 +98,9 @@ importers:
       '@wp/game-lights-out':
         specifier: workspace:*
         version: link:../../packages/games/lights-out
+      '@wp/game-logic-path':
+        specifier: workspace:*
+        version: link:../../packages/games/logic-path
       '@wp/game-mastermind':
         specifier: workspace:*
         version: link:../../packages/games/mastermind
@@ -95,27 +110,54 @@ importers:
       '@wp/game-minesweeper':
         specifier: workspace:*
         version: link:../../packages/games/minesweeper
+      '@wp/game-minimal-proof':
+        specifier: workspace:*
+        version: link:../../packages/games/minimal-proof
+      '@wp/game-node-conquest':
+        specifier: workspace:*
+        version: link:../../packages/games/node-conquest
       '@wp/game-nonogram':
         specifier: workspace:*
         version: link:../../packages/games/nonogram
       '@wp/game-river-crossing':
         specifier: workspace:*
         version: link:../../packages/games/river-crossing
+      '@wp/game-rule-discovery':
+        specifier: workspace:*
+        version: link:../../packages/games/rule-discovery
       '@wp/game-sequence-memory':
         specifier: workspace:*
         version: link:../../packages/games/sequence-memory
+      '@wp/game-signal-watch':
+        specifier: workspace:*
+        version: link:../../packages/games/signal-watch
       '@wp/game-skyscrapers':
         specifier: workspace:*
         version: link:../../packages/games/skyscrapers
       '@wp/game-sliding-blocks':
         specifier: workspace:*
         version: link:../../packages/games/sliding-blocks
+      '@wp/game-slitherlink':
+        specifier: workspace:*
+        version: link:../../packages/games/slitherlink
       '@wp/game-sokoban':
         specifier: workspace:*
         version: link:../../packages/games/sokoban
+      '@wp/game-spatial-memory':
+        specifier: workspace:*
+        version: link:../../packages/games/spatial-memory
+      '@wp/game-stack-duel':
+        specifier: workspace:*
+        version: link:../../packages/games/stack-duel
+      '@wp/game-systems-puzzle':
+        specifier: workspace:*
+        version: link:../../packages/games/systems-puzzle
       '@wp/game-tic-tac-toe':
         specifier: workspace:*
         version: link:../../packages/games/tic-tac-toe
+      '@wp/game-word-guess':
+        specifier: workspace:*
+        version: link:../../packages/games/word-guess
       '@wp/learning-content':
         specifier: workspace:*
         version: link:../../packages/learning-content
@@ -179,6 +221,44 @@ importers:
         specifier: workspace:*
         version: link:../../testing
 
+  packages/games/chess:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../../game-core
+      '@wp/ui':
+        specifier: workspace:*
+        version: link:../../ui
+    devDependencies:
+      '@wp/localization':
+        specifier: workspace:*
+        version: link:../../localization
+      '@wp/persistence':
+        specifier: workspace:*
+        version: link:../../persistence
+      '@wp/testing':
+        specifier: workspace:*
+        version: link:../../testing
+
+  packages/games/circuit-puzzle:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../../game-core
+      '@wp/ui':
+        specifier: workspace:*
+        version: link:../../ui
+    devDependencies:
+      '@wp/localization':
+        specifier: workspace:*
+        version: link:../../localization
+      '@wp/persistence':
+        specifier: workspace:*
+        version: link:../../persistence
+      '@wp/testing':
+        specifier: workspace:*
+        version: link:../../testing
+
   packages/games/connect-four:
     dependencies:
       '@wp/game-core':
@@ -199,6 +279,44 @@ importers:
         version: link:../../testing
 
   packages/games/constraint-grid:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../../game-core
+      '@wp/ui':
+        specifier: workspace:*
+        version: link:../../ui
+    devDependencies:
+      '@wp/localization':
+        specifier: workspace:*
+        version: link:../../localization
+      '@wp/persistence':
+        specifier: workspace:*
+        version: link:../../persistence
+      '@wp/testing':
+        specifier: workspace:*
+        version: link:../../testing
+
+  packages/games/debug-system:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../../game-core
+      '@wp/ui':
+        specifier: workspace:*
+        version: link:../../ui
+    devDependencies:
+      '@wp/localization':
+        specifier: workspace:*
+        version: link:../../localization
+      '@wp/persistence':
+        specifier: workspace:*
+        version: link:../../persistence
+      '@wp/testing':
+        specifier: workspace:*
+        version: link:../../testing
+
+  packages/games/distractor-control:
     dependencies:
       '@wp/game-core':
         specifier: workspace:*
@@ -256,6 +374,25 @@ importers:
         version: link:../../testing
 
   packages/games/lights-out:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../../game-core
+      '@wp/ui':
+        specifier: workspace:*
+        version: link:../../ui
+    devDependencies:
+      '@wp/localization':
+        specifier: workspace:*
+        version: link:../../localization
+      '@wp/persistence':
+        specifier: workspace:*
+        version: link:../../persistence
+      '@wp/testing':
+        specifier: workspace:*
+        version: link:../../testing
+
+  packages/games/logic-path:
     dependencies:
       '@wp/game-core':
         specifier: workspace:*
@@ -334,6 +471,44 @@ importers:
         specifier: workspace:*
         version: link:../../testing
 
+  packages/games/minimal-proof:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../../game-core
+      '@wp/ui':
+        specifier: workspace:*
+        version: link:../../ui
+    devDependencies:
+      '@wp/localization':
+        specifier: workspace:*
+        version: link:../../localization
+      '@wp/persistence':
+        specifier: workspace:*
+        version: link:../../persistence
+      '@wp/testing':
+        specifier: workspace:*
+        version: link:../../testing
+
+  packages/games/node-conquest:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../../game-core
+      '@wp/ui':
+        specifier: workspace:*
+        version: link:../../ui
+    devDependencies:
+      '@wp/localization':
+        specifier: workspace:*
+        version: link:../../localization
+      '@wp/persistence':
+        specifier: workspace:*
+        version: link:../../persistence
+      '@wp/testing':
+        specifier: workspace:*
+        version: link:../../testing
+
   packages/games/nonogram:
     dependencies:
       '@wp/game-core':
@@ -372,7 +547,45 @@ importers:
         specifier: workspace:*
         version: link:../../testing
 
+  packages/games/rule-discovery:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../../game-core
+      '@wp/ui':
+        specifier: workspace:*
+        version: link:../../ui
+    devDependencies:
+      '@wp/localization':
+        specifier: workspace:*
+        version: link:../../localization
+      '@wp/persistence':
+        specifier: workspace:*
+        version: link:../../persistence
+      '@wp/testing':
+        specifier: workspace:*
+        version: link:../../testing
+
   packages/games/sequence-memory:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../../game-core
+      '@wp/ui':
+        specifier: workspace:*
+        version: link:../../ui
+    devDependencies:
+      '@wp/localization':
+        specifier: workspace:*
+        version: link:../../localization
+      '@wp/persistence':
+        specifier: workspace:*
+        version: link:../../persistence
+      '@wp/testing':
+        specifier: workspace:*
+        version: link:../../testing
+
+  packages/games/signal-watch:
     dependencies:
       '@wp/game-core':
         specifier: workspace:*
@@ -429,6 +642,25 @@ importers:
         specifier: workspace:*
         version: link:../../testing
 
+  packages/games/slitherlink:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../../game-core
+      '@wp/ui':
+        specifier: workspace:*
+        version: link:../../ui
+    devDependencies:
+      '@wp/localization':
+        specifier: workspace:*
+        version: link:../../localization
+      '@wp/persistence':
+        specifier: workspace:*
+        version: link:../../persistence
+      '@wp/testing':
+        specifier: workspace:*
+        version: link:../../testing
+
   packages/games/sokoban:
     dependencies:
       '@wp/game-core':
@@ -448,7 +680,83 @@ importers:
         specifier: workspace:*
         version: link:../../testing
 
+  packages/games/spatial-memory:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../../game-core
+      '@wp/ui':
+        specifier: workspace:*
+        version: link:../../ui
+    devDependencies:
+      '@wp/localization':
+        specifier: workspace:*
+        version: link:../../localization
+      '@wp/persistence':
+        specifier: workspace:*
+        version: link:../../persistence
+      '@wp/testing':
+        specifier: workspace:*
+        version: link:../../testing
+
+  packages/games/stack-duel:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../../game-core
+      '@wp/ui':
+        specifier: workspace:*
+        version: link:../../ui
+    devDependencies:
+      '@wp/localization':
+        specifier: workspace:*
+        version: link:../../localization
+      '@wp/persistence':
+        specifier: workspace:*
+        version: link:../../persistence
+      '@wp/testing':
+        specifier: workspace:*
+        version: link:../../testing
+
+  packages/games/systems-puzzle:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../../game-core
+      '@wp/ui':
+        specifier: workspace:*
+        version: link:../../ui
+    devDependencies:
+      '@wp/localization':
+        specifier: workspace:*
+        version: link:../../localization
+      '@wp/persistence':
+        specifier: workspace:*
+        version: link:../../persistence
+      '@wp/testing':
+        specifier: workspace:*
+        version: link:../../testing
+
   packages/games/tic-tac-toe:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../../game-core
+      '@wp/ui':
+        specifier: workspace:*
+        version: link:../../ui
+    devDependencies:
+      '@wp/localization':
+        specifier: workspace:*
+        version: link:../../localization
+      '@wp/persistence':
+        specifier: workspace:*
+        version: link:../../persistence
+      '@wp/testing':
+        specifier: workspace:*
+        version: link:../../testing
+
+  packages/games/word-guess:
     dependencies:
       '@wp/game-core':
         specifier: workspace:*

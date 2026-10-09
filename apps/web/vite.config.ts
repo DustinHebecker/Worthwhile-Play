@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => ({
     VitePWA({
       registerType: 'prompt',
       injectRegister: false,
-      includeAssets: ['icon.svg', 'maskable-icon.svg', 'apple-touch-icon.png', 'robots.txt'],
+      includeAssets: ['favicon.ico', 'favicon-32.png', 'apple-touch-icon.png', 'logo.png', 'robots.txt'],
       manifest: {
         id: '/',
         name: 'Worthwhile Play',
@@ -33,14 +33,15 @@ export default defineConfig(({ mode }) => ({
         icons: [
           { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
-          { src: '/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
-          { src: '/icon.svg', sizes: 'any', type: 'image/svg+xml' }
+          { src: '/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
         ]
       },
       workbox: {
         // Core app and all bundled games are precached: they must work offline after the first visit.
         // Large optional packs (audio, AI models) will use separate, explicitly user-triggered caches.
-        globPatterns: ['**/*.{js,css,html,svg,png,webmanifest,txt}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,webmanifest,txt}'],
+        // The link-preview image is only fetched by link unfurlers, never by the app.
+        globIgnores: ['og-image.png', 'favicon-16.png', 'favicon-48.png'],
         navigateFallback: '/index.html',
         cleanupOutdatedCaches: true
       },

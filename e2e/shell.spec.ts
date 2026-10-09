@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { readSave } from '../packages/testing/src/e2e';
 
 test.describe('app shell', () => {
   test('home lists games and explains the product', async ({ page }) => {
@@ -19,13 +20,15 @@ test.describe('app shell', () => {
     await page.goto('/games/memory');
     await page.getByTestId('new-game').click();
     await expect(page.getByTestId('game-root')).toBeVisible();
+    // Leave only once the new game is stored (the write is asynchronous).
+    await expect.poll(() => readSave(page, 'memory')).toBeTruthy();
     await page.goto('/');
     await expect(page.getByTestId('saved-memory')).toBeVisible();
     await expect(page.getByTestId('saved-tic-tac-toe')).toBeHidden();
   });
 
   test('every game is reachable by direct URL', async ({ page }) => {
-    for (const id of ['tic-tac-toe', 'mastermind', 'memory', 'connect-four', 'lights-out', 'nonogram', 'sequence-memory', 'black-box', 'sokoban', 'skyscrapers', 'laser-circuit', 'minesweeper', 'sliding-blocks', 'constraint-grid', 'river-crossing', 'bridges', 'graph-detective']) {
+    for (const id of ['tic-tac-toe', 'mastermind', 'memory', 'connect-four', 'lights-out', 'nonogram', 'sequence-memory', 'black-box', 'sokoban', 'skyscrapers', 'laser-circuit', 'minesweeper', 'sliding-blocks', 'constraint-grid', 'river-crossing', 'bridges', 'graph-detective', 'minimal-proof', 'logic-path', 'spatial-memory', 'signal-watch', 'circuit-puzzle', 'systems-puzzle', 'distractor-control', 'rule-discovery', 'debug-system', 'node-conquest', 'slitherlink', 'chess', 'word-guess', 'stack-duel']) {
       await page.goto(`/games/${id}`);
       await expect(page.getByTestId('new-game')).toBeVisible();
     }

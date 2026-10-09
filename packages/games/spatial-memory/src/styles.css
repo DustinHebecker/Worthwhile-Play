@@ -1,0 +1,115 @@
+/* Pattern Memory: all rules scoped under .wp-pm. Uses shared --wp-* tokens. */
+.wp-pm {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: center;
+  width: 100%;
+  max-width: 100%;
+}
+.wp-pm__info {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.25rem 1.5rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--wp-muted);
+}
+.wp-pm__modes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.wp-pm__modes-label { color: var(--wp-muted); }
+/* Selected mode: thicker border, bold text and a check mark (not colour alone). */
+.wp-pm__mode[aria-pressed='true'] {
+  border: 2px solid var(--wp-accent);
+  font-weight: 700;
+}
+.wp-pm__mode[aria-pressed='true']::before { content: '✓ '; }
+.wp-pm__hint {
+  margin: 0;
+  padding-block: 0.25rem;
+  padding-inline: 0.75rem;
+  border: 2px dashed var(--wp-border);
+  border-radius: var(--wp-radius);
+  text-align: center;
+}
+.wp-pm__arrow {
+  font-size: 1.4em;
+  font-weight: 700;
+  vertical-align: middle;
+}
+.wp-pm__status {
+  margin: 0;
+  text-align: center;
+  max-width: 36rem;
+  min-height: 3em;
+}
+.wp-pm__board {
+  --pm-side: 4;
+  display: grid;
+  grid-template-columns: repeat(var(--pm-side), minmax(0, 1fr));
+  gap: 0.375rem;
+  width: min(100%, 24rem);
+}
+.wp-pm__cell {
+  aspect-ratio: 1;
+  min-width: var(--wp-touch);
+  min-height: var(--wp-touch);
+  padding: 0;
+  border: 2px solid var(--wp-border);
+  border-radius: var(--wp-radius);
+  background: var(--wp-surface);
+  color: var(--wp-text);
+  font-size: clamp(1.1rem, 5vw, 1.6rem);
+  font-weight: 700;
+  line-height: 1;
+  touch-action: manipulation;
+}
+.wp-pm__cell[aria-disabled='true'] { cursor: default; }
+.wp-pm__cell[aria-disabled='true']:hover { border-color: var(--wp-border); }
+
+/* Part of the pattern while it is shown: filled, very thick border and a ● symbol. */
+.wp-pm__cell[data-state='shown'],
+.wp-pm__cell[data-state='shown']:hover {
+  background: var(--wp-accent);
+  color: var(--wp-accent-contrast);
+  border: 5px solid var(--wp-text);
+}
+/* Marked during recall: dashed thick border plus ●. */
+.wp-pm__cell[data-state='marked'],
+.wp-pm__cell[data-state='marked']:hover {
+  border: 3px dashed var(--wp-accent);
+  background: var(--wp-surface-2);
+}
+/* After a round: ✓ found, ○ missed (outlined), ✗ wrong mark. */
+.wp-pm__cell[data-state='hit'],
+.wp-pm__cell[data-state='hit']:hover { border: 3px solid var(--wp-ok); }
+.wp-pm__cell[data-state='miss'],
+.wp-pm__cell[data-state='miss']:hover { border: 3px dotted var(--wp-text); }
+.wp-pm__cell[data-state='wrong'],
+.wp-pm__cell[data-state='wrong']:hover {
+  border: 3px dotted var(--wp-danger);
+  color: var(--wp-danger);
+}
+.wp-pm__legend {
+  margin: 0;
+  color: var(--wp-muted);
+  text-align: center;
+}
+.wp-pm__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: var(--wp-touch);
+}
+.wp-pm__summary { text-align: center; }
+.wp-pm__summary p { margin: 0.25rem 0; }
+
+.wp-pm--motion .wp-pm__cell { transition: background-color 150ms ease-out, color 150ms ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .wp-pm--motion .wp-pm__cell { transition: none; }
+}
