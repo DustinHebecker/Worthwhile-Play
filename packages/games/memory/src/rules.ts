@@ -1,13 +1,14 @@
 import { createRng, isInt, isOneOf, isRecord, isUint32 } from '@wp/game-core';
-import type { Deck } from '@wp/learning-content';
+import { isUserDeckId, isVocabularyLanguage, type Deck } from '@wp/learning-content';
 
 /**
  * Pure, DOM-free rules for Memory (concentration / pairs).
  *
  * A pair is always `(item.front, item.back)` of the same `LearningItem`, so the same
  * rules work for image↔image (symbol deck), word↔image, word↔translation or
- * term↔definition decks without changes. The state stores only the deck id and the
- * selected item ids; card contents are resolved against a deck registry by the view.
+ * term↔definition decks without changes. The state stores only the variant, deck id,
+ * the content languages chosen at deal time and the selected item ids; card contents are
+ * resolved by the view (built-in decks are generated, user decks come from the host).
  */
 
 export const DIFFICULTIES = ['small', 'medium', 'large'] as const;
@@ -24,6 +25,38 @@ export const BOARD: Readonly<Record<Difficulty, { readonly pairs: number; readon
 /** Upper bound for the move counter in untrusted saves (far beyond any real game). */
 export const MAX_MOVES = 1_000_000;
 
+/**
+ * What the cards show. Built-in variants use fixed decks; `own` uses a deck the user imported.
+ * - `symbols`: the same picture on both cards (classic Memory, default, all v1 saves)
+ * - `picture-word`: picture ↔ word in the learning language ("First words")
+ * - `word-translation`: word in the learning language ↔ word in the translation language ("First words")
+ * - `flag-country`: flag ↔ country name ("Flags & countries")
+ * - `own`: front ↔ back of a user deck
+ */
+export const VARIANTS = ['symbols', 'picture-word', 'word-translation', 'flag-country', 'own'] as const;
+export type Variant = (typeof VARIANTS)[number];
+export type BuiltinVariant = Exclude<Variant, 'own'>;
+export const DEFAULT_VARIANT: Variant = 'symbols';
+
+/** Deck behind each built-in variant (ids from `@wp/learning-content`). */
+export const VARIANT_DECK: Readonly<Record<BuiltinVariant, string>> = {
+  symbols: 'symbols',
+  'picture-word': 'first-words',
+  'word-translation': 'first-words',
+  'flag-country': 'flags'
+};
+
+/** Smallest board for user decks with fewer items than the difficulty asks for. */
+export const MIN_PAIRS = 2;
+/** Upper bound for item ids of user decks in untrusted saves. */
+export const MAX_ITEM_ID_LENGTH = 200;
+
+/** Content languages fixed when the cards were dealt (so a resumed game looks the same). */
+export interface CardLanguages {
+  front?: string;
+  back?: string;
+}
+
 export type Side = 'front' | 'back';
 export const SIDES: readonly Side[] = ['front', 'back'];
 
@@ -36,7 +69,10 @@ export interface Card {
 export interface MemoryState {
   seed: number;
   difficulty: Difficulty;
+  variant: Variant;
+  /** `VARIANT_DECK[variant]` for built-in variants, the user deck id (`user-…`) for `own`. */
   deckId: string;
+  languages: CardLanguages;
   /** Item ids selected for this game, in selection order. */
   itemIds: string[];
   /** Board layout: one entry per position. Each selected item appears once per side. */
@@ -71,17 +107,36 @@ export function toDifficulty(value: unknown): Difficulty {
   return isOneOf(value, DIFFICULTIES) ? value : DEFAULT_DIFFICULTY;
 }
 
-/** Deals a new game: picks `pairs` items from the deck and shuffles both sides of each onto the board. */
-export function deal(deck: Deck, difficulty: Difficulty, seed: number): MemoryState {
+export function isVariant(value: unknown): value is Variant {
+  return isOneOf(value, VARIANTS);
+}
+
+/** Number of pairs on the board for a deck of `available` items. User decks may be smaller than the board. */
+export function pairsFor(variant: Variant, difficulty: Difficulty, available: number): number {
   const { pairs } = BOARD[difficulty];
-  if (deck.items.length < pairs) throw new RangeError(`Deck "${deck.id}" has ${deck.items.length} items; ${pairs} are needed.`);
+  return variant === 'own' ? Math.min(pairs, available) : pairs;
+}
+
+export interface DealOptions {
+  /** Defaults to `symbols` for the symbol deck and `own` for any other deck. */
+  variant?: Variant;
+  languages?: CardLanguages;
+}
+
+/** Deals a new game: picks `pairs` items from the deck and shuffles both sides of each onto the board. */
+export function deal(deck: Deck, difficulty: Difficulty, seed: number, options: DealOptions = {}): MemoryState {
+  const variant = options.variant ?? (deck.id === 'symbols' ? 'symbols' : 'own');
+  const pairs = pairsFor(variant, difficulty, deck.items.length);
+  if (deck.items.length < pairs || pairs < MIN_PAIRS) throw new RangeError(`Deck "${deck.id}" has ${deck.items.length} items; ${Math.max(pairs, MIN_PAIRS)} are needed.`);
   const rng = createRng(seed);
   const itemIds = rng.shuffle(deck.items.map((item) => item.id)).slice(0, pairs);
   const cards = rng.shuffle(itemIds.flatMap((item): Card[] => SIDES.map((side) => ({ item, side }))));
   return {
     seed: seed >>> 0,
     difficulty,
+    variant,
     deckId: deck.id,
+    languages: { ...options.languages },
     itemIds,
     cards,
     matched: cards.map(() => false),
@@ -151,24 +206,58 @@ export function select(state: MemoryState, position: number): SelectResult {
   return { state: { ...state, revealed: positions, moves }, event: { kind: 'mismatch', positions } };
 }
 
-/** Item ids available in a deck, or `undefined` when the deck id is unknown. */
+/** Item ids available in a built-in deck, or `undefined` when the deck id is unknown. */
 export type DeckLookup = (deckId: string) => readonly string[] | undefined;
 
 const isCard = (value: unknown): value is Card => isRecord(value) && typeof value.item === 'string' && isOneOf(value.side, SIDES);
 const isBoolean = (value: unknown): value is boolean => typeof value === 'boolean';
 const isStringArray = (value: unknown): value is string[] => Array.isArray(value) && value.every((v) => typeof v === 'string');
+const LANGUAGE_TAG = /^[a-zA-Z]{2,3}(?:-[a-zA-Z0-9]{2,8})*$/;
+const isLanguageTag = (value: unknown): value is string => typeof value === 'string' && value.length <= 35 && LANGUAGE_TAG.test(value);
+
+/** The languages each variant records at deal time, and nothing else. */
+export function isValidLanguages(variant: Variant, value: unknown): value is CardLanguages {
+  if (!isRecord(value) || Object.keys(value).some((key) => key !== 'front' && key !== 'back')) return false;
+  const { front, back } = value;
+  switch (variant) {
+    case 'picture-word':
+      return front === undefined && isVocabularyLanguage(back);
+    case 'word-translation':
+      return isVocabularyLanguage(front) && isVocabularyLanguage(back) && front !== back;
+    case 'flag-country':
+      return front === undefined && isLanguageTag(back);
+    default:
+      return front === undefined && back === undefined;
+  }
+}
+
+/**
+ * Item ids of the state's deck as far as they can be checked without the user's data:
+ * built-in decks are checked against the lookup; user decks only structurally (they may be
+ * deleted later; the view handles a missing deck).
+ */
+function validItems(value: Record<string, unknown>, variant: Variant, lookup: DeckLookup, difficulty: Difficulty): boolean {
+  const { itemIds, deckId } = value;
+  if (!isStringArray(itemIds) || new Set(itemIds).size !== itemIds.length) return false;
+  const { pairs } = BOARD[difficulty];
+  if (variant === 'own') {
+    return isUserDeckId(deckId) && itemIds.length >= MIN_PAIRS && itemIds.length <= pairs && itemIds.every((id) => id.length > 0 && id.length <= MAX_ITEM_ID_LENGTH);
+  }
+  if (deckId !== VARIANT_DECK[variant] || itemIds.length !== pairs) return false;
+  const available = lookup(deckId);
+  return available !== undefined && itemIds.every((id) => available.includes(id));
+}
 
 /** Thorough structural validation of untrusted saved data. Never throws. */
 export function isValidMemoryState(value: unknown, lookup: DeckLookup): value is MemoryState {
   try {
     if (!isRecord(value)) return false;
-    if (!isUint32(value.seed) || !isOneOf(value.difficulty, DIFFICULTIES) || typeof value.deckId !== 'string') return false;
-    const available = lookup(value.deckId);
-    if (!available) return false;
-    const { pairs } = BOARD[value.difficulty];
-    const { itemIds, cards, matched, revealed, moves } = value;
-    if (!isStringArray(itemIds) || itemIds.length !== pairs || new Set(itemIds).size !== pairs) return false;
-    if (!itemIds.every((id) => available.includes(id))) return false;
+    if (!isUint32(value.seed) || !isOneOf(value.difficulty, DIFFICULTIES) || typeof value.deckId !== 'string' || !isVariant(value.variant)) return false;
+    if (!isValidLanguages(value.variant, value.languages)) return false;
+    if (!validItems(value, value.variant, lookup, value.difficulty)) return false;
+    const itemIds = value.itemIds as string[];
+    const pairs = itemIds.length;
+    const { cards, matched, revealed, moves } = value;
     if (!Array.isArray(cards) || cards.length !== pairs * 2 || !cards.every(isCard)) return false;
     // Every selected item appears exactly once per side.
     const seen = new Set(cards.map((card) => `${card.side}:${card.item}`));
@@ -184,4 +273,14 @@ export function isValidMemoryState(value: unknown, lookup: DeckLookup): value is
   } catch {
     return false;
   }
+}
+
+/**
+ * Upgrades older saves. Version 1 (only the symbol deck existed) gains `variant: 'symbols'`
+ * and empty `languages`; everything else is kept unchanged, so the restored game is identical.
+ * Returns `undefined` for anything that cannot be upgraded.
+ */
+export function migrateMemoryState(state: unknown, fromVersion: number): MemoryState | undefined {
+  if (fromVersion !== 1 || !isRecord(state) || 'variant' in state) return undefined;
+  return { ...state, variant: 'symbols', languages: {} } as unknown as MemoryState;
 }

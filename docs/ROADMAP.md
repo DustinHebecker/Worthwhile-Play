@@ -10,7 +10,7 @@ Legend — Priority: **P0** foundation/blocking · **P1** next · **P2** later. 
 | # | Milestone | Priority | Depends on | Status |
 |---|---|---|---|---|
 | M0 | **Foundation**: monorepo, CI, app shell, localization (16 locales, RTL), GameModule contract, persistence + autosave, seeded RNG, PWA/offline, shared contract tests, Cloudflare deploy, 3 reference games | P0 | – | ✅ |
-| M1 | **Learning platform**: deck browser/import (CSV/JSON), Memory variants (word↔image, term↔definition, language pairs), optional spaced repetition *without* streaks/notifications ("Items worth reviewing"), audio (bundled + speech synthesis best effort), content-pack download mechanism with size disclosure | P1 | M0 | ⏳ |
+| M1 | **Learning platform**: deck browser/import (CSV/JSON), Memory variants (word↔image, term↔definition, language pairs), optional spaced repetition *without* streaks/notifications ("Items worth reviewing"), audio (bundled + speech synthesis best effort), content-pack download mechanism with size disclosure | P1 | M0 | 🚧 L1 done: local deck library (`/decks`, import CSV/JSON with preview and row-level errors, export JSON, delete), built-in decks *First words* (60 nouns × 16 languages) and *Flags & countries* (CLDR via the browser), Memory variants picture↔word, word↔translation, flag↔country, own decks, read aloud (speech synthesis, best effort). Next: L2 "Items worth reviewing" (spaced repetition, no streaks), term↔definition decks, audio packs |
 | M2 | **Puzzle core + logic puzzles**: shared grid/puzzle utilities; *generator → independent solver → uniqueness → difficulty* pipeline; first puzzles | P1 | M0 | 🚧 Nonogram, Lights Out, Skyscrapers, Crate Pusher, Mine Logic, Unblock, Logic Grid, River Crossing, Bridges done; `puzzle-core` extraction pending |
 | M3 | **Board games**: Connect Four, Chess (complete rules, local AI; engine license review) | P1 | M0 | ✅ Four in a Row, Chess (own engine, no third-party code) |
 | M4 | **Systems & hypothesis games** | P1 | M2 | 🚧 Black Box, Laser Paths, Network Detective, Proof Chain, Robot Program, Circuit, Flow Lab, Rule Hunt, Fix the Machine done |
@@ -29,8 +29,8 @@ Cross-cutting, continuous: accessibility review, native-speaker review of transl
 | Board | Tic-Tac-Toe | M0 | ✅ | reference game; human vs human / computer |
 | Logic | Mastermind → shown as **Code Breaker** | M0 | ✅ | reference game (id `mastermind`); renamed because "Mastermind" is a trademark; consistency-check helper |
 | Memory | Classic Memory | M0 | ✅ | reference game; first consumer of the deck model |
-| Memory | image↔word, word↔image, word↔definition, audio↔word, audio↔translation | M1 | ⏳ | deck variants, arbitrary language pairs |
-| Learning | Language decks, geography (flag/capital/map/neighbours), AI & business vocabulary, user decks | M1 | ⏳ | content packs |
+| Memory | image↔word, word↔image, word↔definition, audio↔word, audio↔translation | M1 | 🚧 | picture↔word, word↔translation (any pair of the 16 languages from Settings → learning languages), flag↔country and own decks (front↔back, also word↔definition) done; read aloud via speech synthesis (best effort); audio↔word with bundled audio pending |
+| Learning | Language decks, geography (flag/capital/map/neighbours), AI & business vocabulary, user decks | M1 | 🚧 | done: deck library with CSV/JSON import/export (local only), *First words* (60 nouns, 16 languages), *Flags & countries* (60 countries, CLDR names from the browser); pending: capitals/maps/neighbours, AI & business vocabulary packs, spaced repetition ("Items worth reviewing") |
 | Logic | Sokoban → shown as **Crate Pusher** | M2 | ✅ | 24 original levels, solver-verified optimal push counts |
 | Logic | Nonogram | M2 | ✅ | line-solvable + unique (independent oracle in tests) |
 | Logic | Bridges / Hashi | M2 | ✅ | generated, solvable by logic (capacity, crossing, isolation); uniqueness via oracle |
@@ -80,5 +80,5 @@ Cross-cutting, continuous: accessibility review, native-speaker review of transl
 ## Next steps (suggested agent assignments)
 
 1. **M2 kickoff (orchestrator)**: design `packages/puzzle-core` (grid model, generator/solver interfaces, difficulty metrics) via ADR; then one feature agent per puzzle in parallel.
-2. **M1 (learning agent)**: deck registry + import UI, Memory variants, spaced repetition (no streaks).
+2. **M1 (learning agent)**: L1 (deck library, import, Memory variants) done; L2: "Items worth reviewing" (spaced repetition without streaks), more decks (capitals, definitions), audio packs.
 3. **M3 (board-games agent)**: Connect Four first (alpha-beta, reuses Tic-Tac-Toe patterns), then chess in its own context.

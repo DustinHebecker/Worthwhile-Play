@@ -43,8 +43,12 @@ interface GameContext {
   finished(result: GameResult): void;// once, on natural end
   setDifficulty?(id: string): void;  // optional: in-game difficulty change → host select, next round, save
   preferences?: { get(key): unknown; set(key, value): void }; // optional: per-device options (localStorage, cleared with saves)
+  contentLanguages?: { learning?: string; translation?: string }; // optional: learning languages from Settings (any BCP-47 tag)
+  userDecks?: { list(): UserDeckSummary[]; get(id): unknown };    // optional: snapshot of imported decks (metadata.usesUserDecks)
 }
 ```
+
+`contentLanguages` is independent of the UI language (`t.locale`); either entry may be missing and games must fall back explicitly (see `resolveContentLanguages` in `@wp/learning-content`). `userDecks` is a synchronous, read-only snapshot the host loads before creating a game whose metadata sets `usesUserDecks: true`, so `newGame`/`restore` stay synchronous. Decks can be deleted between sessions; a game must handle a saved game whose deck is gone (Memory shows an explanation and a "new game" button).
 
 The spec's `metadata()`/`initialize()` are expressed as the `metadata` object and `create()`. Every game package has:
 
@@ -58,6 +62,8 @@ src/index.ts      export default defineGame({...})
 test/rules.test.ts, test/contract.test.ts (runGameContract), e2e/games/<id>.spec.ts
 ```
 
+The home page and the game page header need every game's metadata, but only a few of its messages. `apps/web/catalogue-plugin.ts` therefore generates `virtual:wp-catalogue` at build time: each game's metadata with only the catalogue keys (`title`, `tagline`, `rules`, `difficulty.*`). The registry (`apps/web/src/registry.ts`) lists game ids and lazy loaders; a game's complete messages arrive with its own chunk, so the main bundle does not grow with every game's translations.
+
 After "New game" the host moves focus into the game: to the element marked `data-autofocus` (usually the board), otherwise to the first control.
 
 ### Shared contract suite
@@ -66,7 +72,21 @@ After "New game" the host moves focus into the game: to the element marked `data
 
 ## Persistence
 
-`GameSave { schemaVersion, gameId, stateVersion, updatedAt, seed, difficulty?, state }` in IndexedDB (`worthwhile-play` → `saves`, one active save per game). `interpretSave` validates and migrates untrusted data and returns `empty | ok | corrupt` — a corrupt save is reported and discarded, never crashes the app. If IndexedDB is unavailable, an in-memory store is used and the user is told that progress will not persist.
+IndexedDB database `worthwhile-play`, schema version 2. Upgrades are additive (`upgradeDatabase` only creates missing stores; tested with a real version-1 database): 1 → `saves`, 2 → `decks`. A connection closes itself on `versionchange`, so a newer app version in another tab can upgrade; if an *older* tab blocks the upgrade for more than 4 s, the app falls back to in-memory storage and says so (it never hangs).
+
+`GameSave { schemaVersion, gameId, stateVersion, updatedAt, seed, difficulty?, state }` in `saves` (one active save per game). `interpretSave` validates and migrates untrusted data and returns `empty | ok | corrupt` — a corrupt save is reported and discarded, never crashes the app. If IndexedDB is unavailable, an in-memory store is used and the user is told that progress will not persist.
+
+## Learning content and deck library
+
+`@wp/learning-content` holds the generic card model (`Deck`, `LearningItem`, `CardSide`; format in [content/deck-format.md](content/deck-format.md)), CSV/JSON import and export, and the built-in decks:
+
+- **Symbols** (24 emoji, classic Memory), **First words** (60 everyday nouns with an emoji picture, authored in all 16 UI languages), **Flags & countries** (60 ISO codes; names from the browser's CLDR data via `Intl.DisplayNames`, flags from regional-indicator emoji). Built-in decks are generated in code and never stored.
+- `resolveContentLanguages(choice, uiLocale)` is the single, tested place for content-language fallbacks: learning → UI language → English; translation → UI language → English → German, never equal to the learning language; country names in the learning language if the platform knows it, else the UI language.
+- `importDeck(text, { id, title })` turns untrusted CSV/JSON into a validated deck: size limits (`IMPORT_LIMITS`), removal of every media reference that could cause a network request (http(s), protocol-relative, other schemes; only bundled relative paths and small `data:image/png|jpeg|gif|webp|avif` are kept, matching the CSP `img-src 'self' data: blob:`), and errors/warnings with card number and CSV line for translated messages.
+
+**Imported decks** are stored only on the device in the `decks` store (`{ id: 'user-…', importedAt, deck }`), independent of saves: "Delete all saved games" keeps them, "Delete my imported decks" (Settings, confirmed) removes them. The app validates every record on read and skips broken ones. Pages: `/decks` (library), `/decks/<id>` (preview, play, export JSON, delete), `/decks/import` (file or paste → check → preview → save). The deck pages are a lazily loaded chunk.
+
+**Memory** uses the deck system with five variants (symbols, picture ↔ word, word ↔ translation, flag ↔ country, own deck front ↔ back). Its state stores only the variant, deck id, item ids and the content languages fixed at deal time (never deck contents), so a resumed game looks exactly as before even if Settings changed. Saves from state version 1 are migrated (`variant: 'symbols'`). A saved game whose own deck was deleted stays valid (validation is structural, `isValidState` is pure); the view explains that the deck is gone and offers a new game. "Read aloud" uses the browser's speech synthesis only when the player presses the button and a voice exists for the language (best effort; hidden otherwise).
 
 ## Localization
 

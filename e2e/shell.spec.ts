@@ -75,7 +75,7 @@ test.describe('app shell', () => {
     await page.evaluate(
       () =>
         new Promise<void>((resolve, reject) => {
-          const open = indexedDB.open('worthwhile-play', 1);
+          const open = indexedDB.open('worthwhile-play');
           open.onupgradeneeded = () => open.result.createObjectStore('saves', { keyPath: 'gameId' });
           open.onsuccess = () => {
             const tx = open.result.transaction('saves', 'readwrite');

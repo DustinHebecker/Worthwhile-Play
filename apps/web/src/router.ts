@@ -1,12 +1,16 @@
 export type Route =
   | { name: 'home' }
-  | { name: 'game'; id: string; seed?: number; difficulty?: string }
+  | { name: 'game'; id: string; seed?: number; difficulty?: string; fresh?: boolean }
+  | { name: 'decks' }
+  | { name: 'deck'; id: string }
+  | { name: 'deck-import' }
   | { name: 'about' }
   | { name: 'settings' }
   | { name: 'legal' }
   | { name: 'not-found' };
 
 const SEED = /^\d{1,10}$/;
+const SLUG = '([a-z0-9]+(?:-[a-z0-9]+)*)';
 
 /** Pure URL → route mapping. `?seed=…&difficulty=…` make a game reproducible (bug reports, sharing). */
 export function parseRoute(pathname: string, search = ''): Route {
@@ -15,7 +19,11 @@ export function parseRoute(pathname: string, search = ''): Route {
   if (path === '/about') return { name: 'about' };
   if (path === '/settings') return { name: 'settings' };
   if (path === '/legal' || path === '/impressum') return { name: 'legal' };
-  const match = /^\/games\/([a-z0-9]+(?:-[a-z0-9]+)*)$/.exec(path);
+  if (path === '/decks') return { name: 'decks' };
+  if (path === '/decks/import') return { name: 'deck-import' };
+  const deck = new RegExp(`^/decks/${SLUG}$`).exec(path);
+  if (deck && deck[1] && deck[1].length <= 64) return { name: 'deck', id: deck[1] };
+  const match = new RegExp(`^/games/${SLUG}$`).exec(path);
   if (match) {
     const params = new URLSearchParams(search);
     const route: Route = { name: 'game', id: match[1] as string };
@@ -23,6 +31,9 @@ export function parseRoute(pathname: string, search = ''): Route {
     if (seed && SEED.test(seed) && Number(seed) <= 0xffffffff) route.seed = Number(seed);
     const difficulty = params.get('difficulty');
     if (difficulty && /^[a-z0-9-]{1,32}$/.test(difficulty)) route.difficulty = difficulty;
+    // `?new=1`: start a fresh game right away (e.g. "Play" on a deck page); the host then drops the parameter
+    // so that a reload resumes this game instead of dealing again.
+    if (params.get('new') === '1' && route.seed === undefined) route.fresh = true;
     return route;
   }
   return { name: 'not-found' };
@@ -40,6 +51,12 @@ export function routeHref(route: Route): string {
       return '/settings';
     case 'legal':
       return '/legal';
+    case 'decks':
+      return '/decks';
+    case 'deck':
+      return `/decks/${route.id}`;
+    case 'deck-import':
+      return '/decks/import';
     default:
       return '/';
   }

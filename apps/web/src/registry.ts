@@ -1,89 +1,60 @@
 import type { GameMetadata, GameModule } from '@wp/game-core';
-import { metadata as blackBox } from '@wp/game-black-box/metadata';
-import { metadata as bridges } from '@wp/game-bridges/metadata';
-import { metadata as constraintGrid } from '@wp/game-constraint-grid/metadata';
-import { metadata as circuitPuzzle } from '@wp/game-circuit-puzzle/metadata';
-import { metadata as chess } from '@wp/game-chess/metadata';
-import { metadata as connectFour } from '@wp/game-connect-four/metadata';
-import { metadata as debugSystem } from '@wp/game-debug-system/metadata';
-import { metadata as distractorControl } from '@wp/game-distractor-control/metadata';
-import { metadata as graphDetective } from '@wp/game-graph-detective/metadata';
-import { metadata as laserCircuit } from '@wp/game-laser-circuit/metadata';
-import { metadata as lightsOut } from '@wp/game-lights-out/metadata';
-import { metadata as logicPath } from '@wp/game-logic-path/metadata';
-import { metadata as mastermind } from '@wp/game-mastermind/metadata';
-import { metadata as memory } from '@wp/game-memory/metadata';
-import { metadata as minimalProof } from '@wp/game-minimal-proof/metadata';
-import { metadata as minesweeper } from '@wp/game-minesweeper/metadata';
-import { metadata as nonogram } from '@wp/game-nonogram/metadata';
-import { metadata as riverCrossing } from '@wp/game-river-crossing/metadata';
-import { metadata as ruleDiscovery } from '@wp/game-rule-discovery/metadata';
-import { metadata as sequenceMemory } from '@wp/game-sequence-memory/metadata';
-import { metadata as signalWatch } from '@wp/game-signal-watch/metadata';
-import { metadata as skyscrapers } from '@wp/game-skyscrapers/metadata';
-import { metadata as slidingBlocks } from '@wp/game-sliding-blocks/metadata';
-import { metadata as sokoban } from '@wp/game-sokoban/metadata';
-import { metadata as spatialMemory } from '@wp/game-spatial-memory/metadata';
-import { metadata as systemsPuzzle } from '@wp/game-systems-puzzle/metadata';
-import { metadata as nBack } from '@wp/game-n-back/metadata';
-import { metadata as nodeConquest } from '@wp/game-node-conquest/metadata';
-import { metadata as prospectiveMemory } from '@wp/game-prospective-memory/metadata';
-import { metadata as relayCommand } from '@wp/game-relay-command/metadata';
-import { metadata as slitherlink } from '@wp/game-slitherlink/metadata';
-import { metadata as stackDuel } from '@wp/game-stack-duel/metadata';
-import { metadata as ticTacToe } from '@wp/game-tic-tac-toe/metadata';
-import { metadata as visualSearch } from '@wp/game-visual-search/metadata';
-import { metadata as wordGuess } from '@wp/game-word-guess/metadata';
+import CATALOGUE from 'virtual:wp-catalogue';
 
 export interface GameEntry {
-  /** Lightweight metadata (incl. translated title/tagline/rules), bundled with the shell. */
+  /**
+   * Catalogue metadata bundled with the shell: everything from the game's metadata, but only the messages the
+   * shell renders before the game is loaded (title, tagline, rules, difficulty labels; see catalogue-plugin.ts).
+   * The complete metadata is `(await load()).metadata`.
+   */
   metadata: GameMetadata;
   /** Lazily loads the game code, so each game is its own chunk and can be launched directly. */
   load: () => Promise<GameModule<unknown>>;
 }
 
-const entry = <S>(metadata: GameMetadata, load: () => Promise<{ default: GameModule<S> }>): GameEntry => ({
-  metadata,
-  load: async () => (await load()).default as GameModule<unknown>
-});
+const entry = <S>(id: string, load: () => Promise<{ default: GameModule<S> }>): GameEntry => {
+  const metadata = (CATALOGUE as Record<string, GameMetadata | undefined>)[id];
+  if (!metadata) throw new Error(`Game "${id}" is missing from the catalogue (add @wp/game-${id} to apps/web/package.json).`);
+  return { metadata, load: async () => (await load()).default as GameModule<unknown> };
+};
 
 /** Catalogue order = order of this list. Adding a game: one line here + a package under packages/games. */
 export const GAMES: readonly GameEntry[] = [
-  entry(mastermind, () => import('@wp/game-mastermind')),
-  entry(blackBox, () => import('@wp/game-black-box')),
-  entry(ruleDiscovery, () => import('@wp/game-rule-discovery')),
-  entry(graphDetective, () => import('@wp/game-graph-detective')),
-  entry(logicPath, () => import('@wp/game-logic-path')),
-  entry(systemsPuzzle, () => import('@wp/game-systems-puzzle')),
-  entry(debugSystem, () => import('@wp/game-debug-system')),
-  entry(constraintGrid, () => import('@wp/game-constraint-grid')),
-  entry(minimalProof, () => import('@wp/game-minimal-proof')),
-  entry(nonogram, () => import('@wp/game-nonogram')),
-  entry(skyscrapers, () => import('@wp/game-skyscrapers')),
-  entry(bridges, () => import('@wp/game-bridges')),
-  entry(minesweeper, () => import('@wp/game-minesweeper')),
-  entry(lightsOut, () => import('@wp/game-lights-out')),
-  entry(sokoban, () => import('@wp/game-sokoban')),
-  entry(slidingBlocks, () => import('@wp/game-sliding-blocks')),
-  entry(riverCrossing, () => import('@wp/game-river-crossing')),
-  entry(laserCircuit, () => import('@wp/game-laser-circuit')),
-  entry(circuitPuzzle, () => import('@wp/game-circuit-puzzle')),
-  entry(memory, () => import('@wp/game-memory')),
-  entry(sequenceMemory, () => import('@wp/game-sequence-memory')),
-  entry(spatialMemory, () => import('@wp/game-spatial-memory')),
-  entry(signalWatch, () => import('@wp/game-signal-watch')),
-  entry(distractorControl, () => import('@wp/game-distractor-control')),
-  entry(connectFour, () => import('@wp/game-connect-four')),
-  entry(ticTacToe, () => import('@wp/game-tic-tac-toe')),
-  entry(nodeConquest, () => import('@wp/game-node-conquest')),
-  entry(relayCommand, () => import('@wp/game-relay-command')),
-  entry(slitherlink, () => import('@wp/game-slitherlink')),
-  entry(chess, () => import('@wp/game-chess')),
-  entry(wordGuess, () => import('@wp/game-word-guess')),
-  entry(stackDuel, () => import('@wp/game-stack-duel')),
-  entry(nBack, () => import('@wp/game-n-back')),
-  entry(visualSearch, () => import('@wp/game-visual-search')),
-  entry(prospectiveMemory, () => import('@wp/game-prospective-memory'))
+  entry('mastermind', () => import('@wp/game-mastermind')),
+  entry('black-box', () => import('@wp/game-black-box')),
+  entry('rule-discovery', () => import('@wp/game-rule-discovery')),
+  entry('graph-detective', () => import('@wp/game-graph-detective')),
+  entry('logic-path', () => import('@wp/game-logic-path')),
+  entry('systems-puzzle', () => import('@wp/game-systems-puzzle')),
+  entry('debug-system', () => import('@wp/game-debug-system')),
+  entry('constraint-grid', () => import('@wp/game-constraint-grid')),
+  entry('minimal-proof', () => import('@wp/game-minimal-proof')),
+  entry('nonogram', () => import('@wp/game-nonogram')),
+  entry('skyscrapers', () => import('@wp/game-skyscrapers')),
+  entry('bridges', () => import('@wp/game-bridges')),
+  entry('minesweeper', () => import('@wp/game-minesweeper')),
+  entry('lights-out', () => import('@wp/game-lights-out')),
+  entry('sokoban', () => import('@wp/game-sokoban')),
+  entry('sliding-blocks', () => import('@wp/game-sliding-blocks')),
+  entry('river-crossing', () => import('@wp/game-river-crossing')),
+  entry('laser-circuit', () => import('@wp/game-laser-circuit')),
+  entry('circuit-puzzle', () => import('@wp/game-circuit-puzzle')),
+  entry('memory', () => import('@wp/game-memory')),
+  entry('sequence-memory', () => import('@wp/game-sequence-memory')),
+  entry('spatial-memory', () => import('@wp/game-spatial-memory')),
+  entry('signal-watch', () => import('@wp/game-signal-watch')),
+  entry('distractor-control', () => import('@wp/game-distractor-control')),
+  entry('connect-four', () => import('@wp/game-connect-four')),
+  entry('tic-tac-toe', () => import('@wp/game-tic-tac-toe')),
+  entry('node-conquest', () => import('@wp/game-node-conquest')),
+  entry('relay-command', () => import('@wp/game-relay-command')),
+  entry('slitherlink', () => import('@wp/game-slitherlink')),
+  entry('chess', () => import('@wp/game-chess')),
+  entry('word-guess', () => import('@wp/game-word-guess')),
+  entry('stack-duel', () => import('@wp/game-stack-duel')),
+  entry('n-back', () => import('@wp/game-n-back')),
+  entry('visual-search', () => import('@wp/game-visual-search')),
+  entry('prospective-memory', () => import('@wp/game-prospective-memory'))
 ];
 
 export const findGame = (id: string): GameEntry | undefined => GAMES.find((g) => g.metadata.id === id);

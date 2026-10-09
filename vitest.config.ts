@@ -1,6 +1,9 @@
 import { defineConfig } from 'vitest/config';
+import { cataloguePlugin } from './apps/web/catalogue-plugin';
 
 export default defineConfig({
+  // Provides virtual:wp-catalogue for app tests (apps/web/src/registry.ts).
+  plugins: [cataloguePlugin()],
   test: {
     include: ['packages/**/test/**/*.test.ts', 'apps/**/test/**/*.test.ts'],
     environment: 'node',
