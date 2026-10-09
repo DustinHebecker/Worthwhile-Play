@@ -101,6 +101,9 @@ importers:
       '@wp/game-distractor-control':
         specifier: workspace:*
         version: link:../../packages/games/distractor-control
+      '@wp/game-faces-names':
+        specifier: workspace:*
+        version: link:../../packages/games/faces-names
       '@wp/game-graph-detective':
         specifier: workspace:*
         version: link:../../packages/games/graph-detective

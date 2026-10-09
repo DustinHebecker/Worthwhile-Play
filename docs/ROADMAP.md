@@ -14,7 +14,7 @@ Legend — Priority: **P0** foundation/blocking · **P1** next · **P2** later. 
 | M2 | **Puzzle core + logic puzzles**: shared grid/puzzle utilities; *generator → independent solver → uniqueness → difficulty* pipeline; first puzzles | P1 | M0 | 🚧 Nonogram, Lights Out, Skyscrapers, Crate Pusher, Mine Logic, Unblock, Logic Grid, River Crossing, Bridges done; `puzzle-core` extraction pending |
 | M3 | **Board games**: Connect Four, Chess (complete rules, local AI; engine license review) | P1 | M0 | ✅ Four in a Row, Chess (own engine, no third-party code) |
 | M4 | **Systems & hypothesis games** | P1 | M2 | 🚧 Black Box, Laser Paths, Network Detective, Proof Chain, Robot Program, Circuit, Flow Lab, Rule Hunt, Fix the Machine done |
-| M5 | **Memory & attention exercises**, Faces & Names (synthetic/licensed faces only) | P1 | M1 | 🚧 Sequence Memory, Pattern Memory, Signal Watch, Stay on Task, Deep Read done |
+| M5 | **Memory & attention exercises**, Faces & Names (synthetic/licensed faces only) | P1 | M1 | 🚧 Sequence Memory, Pattern Memory, Signal Watch, Stay on Task, Deep Read, Faces & Names done |
 | M6 | **Communication exercises** with deterministic evaluation (ADR 0010) | P2 | M0 | 🚧 Ambiguity Detector, Audience Switch done |
 | M7 | **Strategy engine** (fresh agent context): shared simulation → Tower Defense → turn-based strategy → 4 hybrid modes | P2 | stable M0–M2 | 🚧 |
 | M8 | **Adventure engine** → Adventure A (dark fantasy) → Adventure B (temporal) | P2 | M0 | ⏳ |
@@ -52,7 +52,7 @@ Cross-cutting, continuous: accessibility review, native-speaker review of transl
 | Spatial | Circuit Puzzle → shown as **Circuit** | M4 | ✅ | rotate tiles into one spanning-tree circuit; any valid solution accepted (checked against oracle) |
 | Spatial | Stack Duel — stacking duel (Tower-Battle-style): players alternately rotate and drop irregular original shapes onto a shared tower; whoever makes it collapse loses (also solo: reach a height with N pieces) | M4 | ✅ | original name/shapes (the commercial "Animal Tower Battle" is only a design reference); needs a deterministic 2D physics step (own engine or license-reviewed MIT engine such as planck.js); save only settled states between turns |
 | Spatial | Laser Circuit → shown as **Laser Paths** | M4 | ✅ | 24 original levels, each with exactly one solution (oracle-verified); generic `traceBeams` for later reuse |
-| Memory | Faces & Names | M5 | ⏳ | mnemonic, self-generated associations |
+| Memory | Faces & Names | M5 | ✅ | `faces-names`: procedurally drawn synthetic faces (no photos or datasets; every feature ≥ 3:1 contrast on all skin tones; spoken descriptions for screen readers); study with optional "what stands out" and own association (never graded); test face→name, name→face, face→job; 4/6/8 people |
 | Memory | Sequence Memory | M5 | ✅ | user-paced (Auto/Step), adaptive span, 12-round session |
 | Memory | Spatial Memory → shown as **Pattern Memory** | M5 | ✅ | adaptive pattern size, standard and rotated variants |
 | Memory | Prospective Memory → shown as **Keep in Mind** | M5 | ✅ | self-paced shape sorting with event-based intentions (★ / subtle dot) and an item-count check-in on hard; no clocks; neutral summary with everyday strategies |
