@@ -45,15 +45,20 @@ export const TAIL_STEPS = 45;
 export const RECORD_EVERY = 2;
 export const MAX_DUEL_PIECES = 40;
 
+/**
+ * Solo targets, balanced with a greedy one-step look-ahead builder (seeds 1–10): it reaches
+ * them in roughly 8/10 (easy), 5/10 (medium) and 2–3/10 (hard) attempts; a careful person
+ * can do better since there is no time limit.
+ */
 export interface SoloGoal {
   readonly height: number;
   readonly pieces: number;
 }
 
 export const SOLO_GOALS: Readonly<Record<Difficulty, SoloGoal>> = {
-  easy: { height: 4.5, pieces: 12 },
-  medium: { height: 5.5, pieces: 12 },
-  hard: { height: 6.5, pieces: 12 }
+  easy: { height: 6, pieces: 12 },
+  medium: { height: 6.5, pieces: 12 },
+  hard: { height: 7, pieces: 14 }
 };
 
 /** A settled piece: kind index, centre-of-mass position and angle (radians, CCW). */

@@ -152,7 +152,7 @@ describe('stack duel view', () => {
     solo.instance.newGame({ seed: 4, difficulty: 'easy' });
     solo.select('solo');
     expect(solo.$('goal-line').hasAttribute('hidden')).toBe(false);
-    expect(solo.text('progress')).toBe('Height 0.0 of 4.5 · 12 stones left');
+    expect(solo.text('progress')).toBe('Height 0.0 of 6.0 · 12 stones left');
     expect(solo.text('status')).toMatch(/^Place the /);
     solo.key('End');
     solo.key('Enter');

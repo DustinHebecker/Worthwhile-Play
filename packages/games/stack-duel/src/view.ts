@@ -251,6 +251,8 @@ export function createStackDuel(context: GameContext): GameInstance<StackDuelSta
     nextBox.hidden = kind === undefined;
     if (kind === undefined) return;
     drawPiece(nextGroup, { k: kind, x: 0, y: 0, a: 0 });
+    const r = Math.max(...PIECE_KINDS[kind]!.outline.map(([x, y]) => Math.hypot(x, y))) + 0.1;
+    nextSvg.setAttribute('viewBox', `${(-r).toFixed(3)} ${(-r).toFixed(3)} ${(2 * r).toFixed(3)} ${(2 * r).toFixed(3)}`);
     nextText.textContent = t('next', { piece: pieceName(kind) });
   };
 

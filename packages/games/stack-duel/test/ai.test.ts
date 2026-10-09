@@ -239,9 +239,10 @@ describe('look-ahead details (oracles built from public functions)', () => {
   });
 
   it('penalizes the best candidates whose ±0.1 neighbours would fall', () => {
-    const k2 = kindById('bar');
-    // A stone near the edge: some neighbours of good-looking drops fall off.
-    const s: StackDuelState = { ...newState(3, 'easy', 'human'), bodies: [{ k: k2, x: 1.2, y: 0.25, a: 0 }], queue: [kindById('block'), 0] };
+    // A long bar balanced right at the platform edge: a block on its middle stays, 0.1 further out tips it over.
+    const bar = simulateDrop([], kindById('bar'), { x: 2.45, rot: 0 }).bodies;
+    expect(bar[0]!.y).toBeGreaterThan(0);
+    const s: StackDuelState = { ...newState(3, 'easy', 'human'), bodies: bar, queue: [kindById('block'), 0] };
     const robust: AiProfile = { ...plain, candidates: 30, robust: 30, rotations: [0] };
     const list = evaluate(s, robust, createRng(9));
     let penalized = 0;
