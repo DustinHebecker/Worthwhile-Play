@@ -81,6 +81,18 @@ test('relay-command: keyboard-only orders, then playing to the natural end', asy
   await expect.poll(async () => (await saved(page))?.result).not.toBeNull();
 });
 
+test('relay-command: setting up the Mast Truck spends an order and activates the relay', async ({ page }) => {
+  await start(page);
+  await expect(page.getByTestId('rc-slots')).toHaveText('Orders this turn: 0 of 4.');
+  const truck = (await saved(page))!.world.entities.find((e) => e.side === 0 && e.kind === 'mast-truck')!;
+  await page.getByTestId(`rc-unit-${truck.id}`).click();
+  await page.getByTestId('rc-deploy').click();
+  await expect(page.getByTestId('rc-slots')).toHaveText('Orders this turn: 1 of 4.');
+  await page.getByTestId('rc-lock').click();
+  await expect(page.getByTestId(`rc-unit-${truck.id}`)).toContainText('Relay active.');
+  await expect.poll(async () => (await saved(page))?.world.entities.find((e) => e.id === truck.id) as unknown).toMatchObject({ deploy: 6 });
+});
+
 test('relay-command: giving up asks first', async ({ page }) => {
   await start(page);
   await page.getByTestId('rc-concede').click();

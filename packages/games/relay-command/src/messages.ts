@@ -77,7 +77,21 @@ const en = {
   'help.combat': 'Rifle Squads are good against infantry, Lancer Teams against armour, the Warden is a heavy tank, and the Field Gun fires shells that land a moment later on the cell where the target was, so moving targets can dodge. Forest and buildings give cover; hills add range.',
   'help.goal': 'Destroy the enemy Command Post. After the last turn, the side with more remaining strength (unit value scaled by health) wins.',
   'help.shapes': 'Your units are filled circles, enemy units outlined diamonds, Command Posts squares. Planned moves are dashed lines, planned attacks solid lines with a cross.',
-  'help.access': 'The map relies on seeing positions. Everything can also be done with the keyboard and the unit lists, but this is not fully equivalent for screen-reader users.'
+  'help.access': 'The map relies on seeing positions. Everything can also be done with the keyboard and the unit lists, but this is not fully equivalent for screen-reader users.',
+  'status.slots': 'Orders this turn: {n} of {slots}.',
+  'contact.in': 'in contact',
+  'contact.out': 'out of contact, keeps its last order',
+  'panel.outOfContact': 'This unit is outside your command coverage (the hatched area) and cannot receive new orders. It keeps its last order. Extend coverage with a relay, or wait until it is back in range.',
+  'unit.mast-truck': 'Mast Truck',
+  'order.deploy': 'set up as relay',
+  'action.deploy': 'Set up relay',
+  'deploy.active': 'Relay active.',
+  'deploy.pending': 'Setting up: the relay works after this turn.',
+  'deploy.idle': 'Relay packed: it only works once set up, which takes one turn in place.',
+  'refuse.out-of-contact': 'No contact: this unit is outside your command coverage.',
+  'refuse.no-slots': 'No orders left this turn ({slots} per turn). Change an order you already gave, or lock the turn.',
+  'refuse.impassable': 'That cell cannot be entered.',
+  'help.network': 'Orders travel by radio. Your Command Post covers the cells around it; a Mast Truck that has stood set up for a full turn extends that coverage. Cells outside coverage are hatched. Units there cannot receive new orders and keep doing what they were last told. Each turn you can give as many new orders as your Command Post allows; the count is shown above the map.',
 };
 
 type Catalogue = Record<keyof typeof en, string>;
@@ -155,7 +169,21 @@ const de: Catalogue = {
   'help.combat': 'Schützentrupps sind stark gegen Infanterie, Lanzentrupps gegen Panzerung, der Wächter ist ein schwerer Panzer, und das Feldgeschütz verschießt Granaten, die einen Moment später auf dem Feld einschlagen, auf dem das Ziel stand – bewegte Ziele können also ausweichen. Wald und Gebäude geben Deckung, Hügel mehr Reichweite.',
   'help.goal': 'Zerstöre den gegnerischen Gefechtsstand. Nach der letzten Runde gewinnt die Seite mit mehr verbleibender Stärke (Einheitenwert anteilig zur Gesundheit).',
   'help.shapes': 'Deine Einheiten sind gefüllte Kreise, gegnerische umrandete Rauten, Gefechtsstände Quadrate. Geplante Bewegungen sind gestrichelte Linien, geplante Angriffe durchgezogene Linien mit einem Kreuz.',
-  'help.access': 'Die Karte setzt voraus, dass man Positionen sieht. Alles lässt sich auch mit der Tastatur und den Einheitenlisten bedienen, für Screenreader ist das aber nicht vollständig gleichwertig.'
+  'help.access': 'Die Karte setzt voraus, dass man Positionen sieht. Alles lässt sich auch mit der Tastatur und den Einheitenlisten bedienen, für Screenreader ist das aber nicht vollständig gleichwertig.',
+  'status.slots': 'Befehle in dieser Runde: {n} von {slots}.',
+  'contact.in': 'in Funkkontakt',
+  'contact.out': 'ohne Funkkontakt, behält den letzten Befehl',
+  'panel.outOfContact': 'Diese Einheit ist außerhalb deiner Funkabdeckung (schraffierter Bereich) und kann keine neuen Befehle empfangen. Sie behält ihren letzten Befehl. Erweitere die Abdeckung mit einem Relais oder warte, bis sie wieder in Reichweite ist.',
+  'unit.mast-truck': 'Mastwagen',
+  'order.deploy': 'als Relais aufbauen',
+  'action.deploy': 'Relais aufbauen',
+  'deploy.active': 'Relais aktiv.',
+  'deploy.pending': 'Wird aufgebaut: Das Relais wirkt nach dieser Runde.',
+  'deploy.idle': 'Relais verpackt: Es wirkt erst aufgebaut, und der Aufbau dauert eine Runde an Ort und Stelle.',
+  'refuse.out-of-contact': 'Kein Funkkontakt: Diese Einheit ist außerhalb deiner Abdeckung.',
+  'refuse.no-slots': 'Keine Befehle mehr in dieser Runde ({slots} pro Runde). Ändere einen bereits gegebenen Befehl oder schließe die Runde ab.',
+  'refuse.impassable': 'Dieses Feld kann nicht betreten werden.',
+  'help.network': 'Befehle gehen per Funk. Dein Gefechtsstand deckt die Felder um sich herum ab; ein Mastwagen, der eine volle Runde aufgebaut stand, erweitert diese Abdeckung. Felder außerhalb sind schraffiert. Einheiten dort können keine neuen Befehle empfangen und tun weiter, was ihnen zuletzt befohlen wurde. Pro Runde kannst du so viele neue Befehle geben, wie dein Gefechtsstand erlaubt; die Zahl steht über der Karte.',
 };
 
 // Translations other than en/de are AI-assisted and await native-speaker review.
@@ -232,7 +260,21 @@ const nl: Catalogue = {
   'help.combat': 'Geweerploegen zijn sterk tegen infanterie, lansploegen tegen pantser, de wachter is een zware tank, en het veldkanon vuurt granaten af die een moment later inslaan op het vak waar het doel stond, zodat bewegende doelen kunnen ontwijken. Bos en gebouwen geven dekking; heuvels geven meer bereik.',
   'help.goal': 'Vernietig de vijandelijke commandopost. Na de laatste beurt wint de kant met de meeste resterende sterkte (eenheidswaarde naar verhouding van de gezondheid).',
   'help.shapes': 'Jouw eenheden zijn gevulde cirkels, vijandelijke eenheden omlijnde ruiten, commandoposten vierkanten. Geplande bewegingen zijn gestreepte lijnen, geplande aanvallen doorgetrokken lijnen met een kruis.',
-  'help.access': 'De kaart vraagt om het zien van posities. Alles kan ook met het toetsenbord en de eenhedenlijsten, maar voor gebruikers van een schermlezer is dat niet helemaal gelijkwaardig.'
+  'help.access': 'De kaart vraagt om het zien van posities. Alles kan ook met het toetsenbord en de eenhedenlijsten, maar voor gebruikers van een schermlezer is dat niet helemaal gelijkwaardig.',
+  'status.slots': 'Bevelen deze beurt: {n} van {slots}.',
+  'contact.in': 'in verbinding',
+  'contact.out': 'geen verbinding, houdt het laatste bevel aan',
+  'panel.outOfContact': 'Deze eenheid is buiten je commandobereik (het gearceerde gebied) en kan geen nieuwe bevelen ontvangen. Ze houdt haar laatste bevel aan. Vergroot het bereik met een relais, of wacht tot ze weer binnen bereik is.',
+  'unit.mast-truck': 'Mastwagen',
+  'order.deploy': 'als relais opstellen',
+  'action.deploy': 'Relais opstellen',
+  'deploy.active': 'Relais actief.',
+  'deploy.pending': 'Wordt opgesteld: het relais werkt na deze beurt.',
+  'deploy.idle': 'Relais ingepakt: het werkt pas als het is opgesteld, en dat duurt één beurt op dezelfde plek.',
+  'refuse.out-of-contact': 'Geen verbinding: deze eenheid is buiten je commandobereik.',
+  'refuse.no-slots': 'Geen bevelen meer deze beurt ({slots} per beurt). Wijzig een bevel dat je al gaf, of zet de beurt vast.',
+  'refuse.impassable': 'Dat vak kan niet worden betreden.',
+  'help.network': 'Bevelen gaan per radio. Je commandopost dekt de vakken eromheen; een mastwagen die een volle beurt opgesteld heeft gestaan, vergroot dat bereik. Vakken buiten het bereik zijn gearceerd. Eenheden daar kunnen geen nieuwe bevelen ontvangen en blijven doen wat hun het laatst is opgedragen. Elke beurt kun je zoveel nieuwe bevelen geven als je commandopost toestaat; het aantal staat boven de kaart.',
 };
 
 const es: Catalogue = {
@@ -308,7 +350,21 @@ const es: Catalogue = {
   'help.combat': 'Los pelotones de fusileros son buenos contra la infantería, los equipos lanzacohetes contra los blindados, el Guardián es un tanque pesado y el cañón de campaña dispara proyectiles que caen un momento después en la casilla donde estaba el objetivo, así que los objetivos en movimiento pueden esquivarlos. El bosque y los edificios dan cobertura; las colinas añaden alcance.',
   'help.goal': 'Destruye el puesto de mando enemigo. Tras el último turno gana el bando con más fuerza restante (valor de las unidades ponderado por su salud).',
   'help.shapes': 'Tus unidades son círculos rellenos, las enemigas rombos con contorno, los puestos de mando cuadrados. Los movimientos planeados son líneas discontinuas; los ataques planeados, líneas continuas con una cruz.',
-  'help.access': 'El mapa depende de ver las posiciones. Todo se puede hacer también con el teclado y las listas de unidades, pero para quienes usan lector de pantalla no es del todo equivalente.'
+  'help.access': 'El mapa depende de ver las posiciones. Todo se puede hacer también con el teclado y las listas de unidades, pero para quienes usan lector de pantalla no es del todo equivalente.',
+  'status.slots': 'Órdenes en este turno: {n} de {slots}.',
+  'contact.in': 'en contacto',
+  'contact.out': 'sin contacto, mantiene su última orden',
+  'panel.outOfContact': 'Esta unidad está fuera de tu cobertura de mando (la zona rayada) y no puede recibir órdenes nuevas. Mantiene su última orden. Amplía la cobertura con un repetidor o espera a que vuelva a estar a su alcance.',
+  'unit.mast-truck': 'Camión de antena',
+  'order.deploy': 'desplegarse como repetidor',
+  'action.deploy': 'Desplegar repetidor',
+  'deploy.active': 'Repetidor activo.',
+  'deploy.pending': 'Desplegándose: el repetidor funciona después de este turno.',
+  'deploy.idle': 'Repetidor recogido: solo funciona desplegado, y desplegarlo lleva un turno sin moverse del sitio.',
+  'refuse.out-of-contact': 'Sin contacto: esta unidad está fuera de tu cobertura de mando.',
+  'refuse.no-slots': 'No quedan órdenes en este turno ({slots} por turno). Cambia una orden que ya diste o cierra el turno.',
+  'refuse.impassable': 'No se puede entrar en esa casilla.',
+  'help.network': 'Las órdenes viajan por radio. Tu puesto de mando cubre las casillas a su alrededor; un camión de antena que lleva un turno completo desplegado amplía esa cobertura. Las casillas fuera de la cobertura están rayadas. Las unidades que están allí no pueden recibir órdenes nuevas y siguen haciendo lo último que se les ordenó. En cada turno puedes dar tantas órdenes nuevas como permita tu puesto de mando; el número aparece encima del mapa.',
 };
 
 const fr: Catalogue = {
@@ -384,7 +440,21 @@ const fr: Catalogue = {
   'help.combat': 'Les groupes de fusiliers sont efficaces contre l’infanterie, les équipes lance-roquettes contre les blindés, le Gardien est un char lourd, et le canon de campagne tire des obus qui tombent un instant plus tard sur la case où se trouvait la cible : les cibles en mouvement peuvent donc les éviter. La forêt et les bâtiments offrent un couvert ; les collines augmentent la portée.',
   'help.goal': 'Détruis le poste de commandement ennemi. Après le dernier tour, le camp qui conserve le plus de force (valeur des unités pondérée par leur santé) l’emporte.',
   'help.shapes': 'Tes unités sont des cercles pleins, les unités ennemies des losanges en contour, les postes de commandement des carrés. Les déplacements prévus sont des lignes en pointillés, les attaques prévues des lignes pleines avec une croix.',
-  'help.access': 'La carte suppose de voir les positions. Tout peut aussi se faire au clavier et avec les listes d’unités, mais ce n’est pas tout à fait équivalent pour les personnes utilisant un lecteur d’écran.'
+  'help.access': 'La carte suppose de voir les positions. Tout peut aussi se faire au clavier et avec les listes d’unités, mais ce n’est pas tout à fait équivalent pour les personnes utilisant un lecteur d’écran.',
+  'status.slots': 'Ordres ce tour : {n} sur {slots}.',
+  'contact.in': 'en liaison',
+  'contact.out': 'hors liaison, garde son dernier ordre',
+  'panel.outOfContact': 'Cette unité est hors de ta couverture de commandement (la zone hachurée) et ne peut pas recevoir de nouveaux ordres. Elle garde son dernier ordre. Étends la couverture avec un relais, ou attends qu’elle revienne à portée.',
+  'unit.mast-truck': 'Camion-mât',
+  'order.deploy': 'se déployer en relais',
+  'action.deploy': 'Déployer le relais',
+  'deploy.active': 'Relais actif.',
+  'deploy.pending': 'Déploiement en cours : le relais fonctionne après ce tour.',
+  'deploy.idle': 'Relais replié : il ne fonctionne qu’une fois déployé, ce qui prend un tour sur place.',
+  'refuse.out-of-contact': 'Pas de liaison : cette unité est hors de ta couverture de commandement.',
+  'refuse.no-slots': 'Plus d’ordres disponibles ce tour ({slots} par tour). Modifie un ordre déjà donné, ou valide le tour.',
+  'refuse.impassable': 'Impossible d’entrer dans cette case.',
+  'help.network': 'Les ordres passent par radio. Ton poste de commandement couvre les cases autour de lui ; un camion-mât resté déployé pendant un tour complet étend cette couverture. Les cases hors couverture sont hachurées. Les unités qui s’y trouvent ne peuvent pas recevoir de nouveaux ordres et continuent ce qu’on leur a ordonné en dernier. À chaque tour, tu peux donner autant de nouveaux ordres que ton poste de commandement le permet ; le nombre est affiché au-dessus de la carte.',
 };
 const ru: Catalogue = {
   title: 'Relay Command',
@@ -459,7 +529,21 @@ const ru: Catalogue = {
   'help.combat': 'Стрелковые отделения хороши против пехоты, противотанковые группы — против бронетехники, Страж — тяжёлый танк, а полевое орудие стреляет снарядами, которые падают чуть позже на клетку, где была цель, поэтому движущиеся цели могут увернуться. Лес и здания дают укрытие; холмы увеличивают дальность.',
   'help.goal': 'Уничтожь вражеский командный пункт. После последнего хода побеждает сторона, у которой осталось больше сил (ценность подразделений с учётом их здоровья).',
   'help.shapes': 'Твои подразделения — закрашенные круги, подразделения противника — ромбы с контуром, командные пункты — квадраты. Запланированные перемещения — пунктирные линии, запланированные атаки — сплошные линии с крестиком.',
-  'help.access': 'Карта рассчитана на то, что позиции видно. Всё можно делать и с клавиатуры, и через списки подразделений, но для пользователей программ чтения с экрана это не полностью равноценно.'
+  'help.access': 'Карта рассчитана на то, что позиции видно. Всё можно делать и с клавиатуры, и через списки подразделений, но для пользователей программ чтения с экрана это не полностью равноценно.',
+  'status.slots': 'Приказы в этом ходу: {n} из {slots}.',
+  'contact.in': 'на связи',
+  'contact.out': 'без связи, сохраняет последний приказ',
+  'panel.outOfContact': 'Это подразделение находится вне зоны связи твоего командования (заштрихованная область) и не может получать новые приказы. Оно сохраняет свой последний приказ. Расширь зону связи ретранслятором или подожди, пока оно снова не окажется в зоне досягаемости.',
+  'unit.mast-truck': 'Антенная машина',
+  'order.deploy': 'развернуться как ретранслятор',
+  'action.deploy': 'Развернуть ретранслятор',
+  'deploy.active': 'Ретранслятор работает.',
+  'deploy.pending': 'Идёт развёртывание: ретранслятор заработает после этого хода.',
+  'deploy.idle': 'Ретранслятор свёрнут: он работает только в развёрнутом виде, а развёртывание занимает один ход на месте.',
+  'refuse.out-of-contact': 'Нет связи: это подразделение вне зоны связи твоего командования.',
+  'refuse.no-slots': 'В этом ходу приказов больше нет ({slots} за ход). Измени уже отданный приказ или зафиксируй ход.',
+  'refuse.impassable': 'На эту клетку нельзя войти.',
+  'help.network': 'Приказы передаются по радио. Твой командный пункт покрывает клетки вокруг себя; антенная машина, простоявшая развёрнутой целый ход, расширяет эту зону. Клетки вне зоны связи заштрихованы. Подразделения там не могут получать новые приказы и продолжают делать то, что им приказали последним. Каждый ход ты можешь отдать столько новых приказов, сколько позволяет твой командный пункт; их число показано над картой.',
 };
 
 const zhHans: Catalogue = {
@@ -535,7 +619,21 @@ const zhHans: Catalogue = {
   'help.combat': '步枪班擅长对付步兵，反坦克小组擅长对付装甲，守卫者是一辆重型坦克，野战炮发射的炮弹会在片刻后落在目标原先所在的格子上，因此移动中的目标可以躲开。森林和建筑提供掩护；山丘增加射程。',
   'help.goal': '摧毁敌方指挥所。最后一回合结束后，剩余实力（按生命值比例计算的部队价值）更强的一方获胜。',
   'help.shapes': '你的部队是实心圆，敌方部队是空心菱形，指挥所是正方形。计划的移动是虚线，计划的攻击是带叉号的实线。',
-  'help.access': '地图需要看到位置。所有操作也可以通过键盘和部队列表完成，但对屏幕阅读器用户来说并不完全等效。'
+  'help.access': '地图需要看到位置。所有操作也可以通过键盘和部队列表完成，但对屏幕阅读器用户来说并不完全等效。',
+  'status.slots': '本回合命令：{n}/{slots}。',
+  'contact.in': '保持联络',
+  'contact.out': '失去联络，保持最后一条命令',
+  'panel.outOfContact': '该部队位于你的指挥覆盖范围之外（斜线区域），无法接收新命令。它会保持最后一条命令。可以用中继扩展覆盖范围，或等它回到范围内。',
+  'unit.mast-truck': '天线车',
+  'order.deploy': '架设为中继',
+  'action.deploy': '架设中继',
+  'deploy.active': '中继已启用。',
+  'deploy.pending': '正在架设：本回合结束后中继开始工作。',
+  'deploy.idle': '中继已收起：只有架设后才能工作，架设需要在原地停留一个回合。',
+  'refuse.out-of-contact': '无法联络：该部队位于你的指挥覆盖范围之外。',
+  'refuse.no-slots': '本回合已没有可下达的命令（每回合 {slots} 条）。可以修改已下达的命令，或锁定回合。',
+  'refuse.impassable': '无法进入该格子。',
+  'help.network': '命令通过无线电传达。你的指挥所覆盖其周围的格子；已架设满一个回合的天线车会扩展这一覆盖范围。覆盖范围外的格子带有斜线。那里的部队无法接收新命令，会继续执行最后收到的命令。每回合你能下达的新命令数量取决于你的指挥所；数量显示在地图上方。',
 };
 const ko: Catalogue = {
   title: 'Relay Command',
@@ -610,7 +708,21 @@ const ko: Catalogue = {
   'help.combat': '소총 분대는 보병에, 대전차 조는 장갑에 강하고, 수호자는 중전차이며, 야포는 목표가 있던 칸에 잠시 뒤 떨어지는 포탄을 쏘기 때문에 움직이는 목표는 피할 수 있습니다. 숲과 건물은 엄폐를 제공하고, 언덕은 사거리를 늘려 줍니다.',
   'help.goal': '적 지휘소를 파괴하세요. 마지막 턴이 끝난 뒤에는 남은 전력(체력에 비례한 유닛 가치)이 더 많은 쪽이 승리합니다.',
   'help.shapes': '아군 유닛은 채워진 원, 적 유닛은 테두리만 있는 마름모, 지휘소는 정사각형입니다. 계획된 이동은 점선, 계획된 공격은 X 표시가 있는 실선입니다.',
-  'help.access': '지도는 위치를 눈으로 보는 것을 전제로 합니다. 모든 조작은 키보드와 유닛 목록으로도 할 수 있지만, 화면 낭독기 사용자에게는 완전히 동등하지 않습니다.'
+  'help.access': '지도는 위치를 눈으로 보는 것을 전제로 합니다. 모든 조작은 키보드와 유닛 목록으로도 할 수 있지만, 화면 낭독기 사용자에게는 완전히 동등하지 않습니다.',
+  'status.slots': '이번 턴 명령: {n}/{slots}.',
+  'contact.in': '통신 연결됨',
+  'contact.out': '통신 두절, 마지막 명령 유지',
+  'panel.outOfContact': '이 유닛은 지휘 통신 범위(빗금 친 영역) 밖에 있어 새 명령을 받을 수 없습니다. 마지막 명령을 계속 유지합니다. 중계기로 범위를 넓히거나, 유닛이 다시 범위 안으로 들어올 때까지 기다리세요.',
+  'unit.mast-truck': '안테나 차량',
+  'order.deploy': '중계기로 설치',
+  'action.deploy': '중계기 설치',
+  'deploy.active': '중계기 작동 중.',
+  'deploy.pending': '설치 중: 이번 턴이 끝나면 중계기가 작동합니다.',
+  'deploy.idle': '중계기 철수 상태: 설치해야만 작동하며, 설치에는 제자리에서 한 턴이 걸립니다.',
+  'refuse.out-of-contact': '통신 두절: 이 유닛은 지휘 통신 범위 밖에 있습니다.',
+  'refuse.no-slots': '이번 턴에 남은 명령이 없습니다(턴당 {slots}개). 이미 내린 명령을 바꾸거나 턴을 확정하세요.',
+  'refuse.impassable': '그 칸에는 들어갈 수 없습니다.',
+  'help.network': '명령은 무선으로 전달됩니다. 지휘소는 주변 칸을 범위로 덮고, 한 턴 내내 설치된 상태로 있었던 안테나 차량은 그 범위를 넓힙니다. 범위 밖의 칸에는 빗금이 쳐져 있습니다. 그곳의 유닛은 새 명령을 받을 수 없고 마지막으로 받은 명령을 계속 수행합니다. 매 턴 지휘소가 허용하는 만큼 새 명령을 내릴 수 있으며, 그 수는 지도 위에 표시됩니다.',
 };
 
 const ja: Catalogue = {
@@ -686,7 +798,21 @@ const ja: Catalogue = {
   'help.combat': '小銃分隊は歩兵に、対戦車班は装甲に強く、守護者は重戦車です。野砲の砲弾は少し遅れて目標がいたマスに着弾するので、動いている目標はかわせます。森と建物は遮蔽になり、丘は射程を伸ばします。',
   'help.goal': '敵の指揮所を破壊しましょう。最終ターンのあとは、残っている戦力（耐久に応じた部隊の価値）が多い側の勝利です。',
   'help.shapes': '味方の部隊は塗りつぶした円、敵の部隊は輪郭だけのひし形、指揮所は正方形です。計画した移動は破線、計画した攻撃はバツ印付きの実線です。',
-  'help.access': 'マップは位置が見えることを前提にしています。すべての操作はキーボードと部隊リストでも行えますが、スクリーンリーダーの利用者にとっては完全に同等ではありません。'
+  'help.access': 'マップは位置が見えることを前提にしています。すべての操作はキーボードと部隊リストでも行えますが、スクリーンリーダーの利用者にとっては完全に同等ではありません。',
+  'status.slots': 'このターンの命令：{n}／{slots}。',
+  'contact.in': '通信可能',
+  'contact.out': '通信途絶、最後の命令を継続',
+  'panel.outOfContact': 'この部隊は指揮通信範囲（斜線の領域）の外にいるため、新しい命令を受け取れません。最後の命令を続けます。中継で範囲を広げるか、範囲内に戻るまで待ってください。',
+  'unit.mast-truck': 'アンテナ車',
+  'order.deploy': '中継として設営',
+  'action.deploy': '中継を設営',
+  'deploy.active': '中継は稼働中です。',
+  'deploy.pending': '設営中：このターンのあとに中継が機能します。',
+  'deploy.idle': '中継は収納されています：設営して初めて機能し、設営にはその場で1ターンかかります。',
+  'refuse.out-of-contact': '通信途絶：この部隊は指揮通信範囲の外にいます。',
+  'refuse.no-slots': 'このターンに出せる命令は残っていません（1ターンに{slots}件）。すでに出した命令を変更するか、ターンを確定してください。',
+  'refuse.impassable': 'そのマスには入れません。',
+  'help.network': '命令は無線で伝わります。指揮所は周囲のマスをカバーし、1ターンまるごと設営状態だったアンテナ車はその範囲を広げます。範囲外のマスには斜線が引かれています。そこにいる部隊は新しい命令を受け取れず、最後に指示されたことを続けます。各ターン、指揮所が許す数だけ新しい命令を出せます。その数はマップの上に表示されます。',
 };
 const ar: Catalogue = {
   title: 'Relay Command',
@@ -761,7 +887,21 @@ const ar: Catalogue = {
   'help.combat': 'فصائل البنادق جيدة ضد المشاة، والفرق المضادة للدروع ضد المدرعات، والحارس دبابة ثقيلة، والمدفع الميداني يطلق قذائف تسقط بعد لحظة على الخانة التي كان فيها الهدف، لذا تستطيع الأهداف المتحركة تفاديها. توفر الغابات والمباني ساترًا، وتزيد التلال المدى.',
   'help.goal': 'دمّر مركز قيادة العدو. بعد الدور الأخير يفوز الجانب صاحب القوة المتبقية الأكبر (قيمة الوحدات بحسب صحتها).',
   'help.shapes': 'وحداتك دوائر مملوءة، ووحدات العدو معيّنات محددة الإطار، ومراكز القيادة مربعات. التحركات المخطط لها خطوط متقطعة، والهجمات المخطط لها خطوط متصلة بعلامة تقاطع.',
-  'help.access': 'تعتمد الخريطة على رؤية المواقع. يمكن فعل كل شيء أيضًا باستخدام لوحة المفاتيح وقوائم الوحدات، لكن ذلك ليس مكافئًا تمامًا لمستخدمي قارئات الشاشة.'
+  'help.access': 'تعتمد الخريطة على رؤية المواقع. يمكن فعل كل شيء أيضًا باستخدام لوحة المفاتيح وقوائم الوحدات، لكن ذلك ليس مكافئًا تمامًا لمستخدمي قارئات الشاشة.',
+  'status.slots': 'أوامر هذا الدور: {n} من {slots}.',
+  'contact.in': 'على اتصال',
+  'contact.out': 'خارج الاتصال، تحتفظ بآخر أمر لها',
+  'panel.outOfContact': 'هذه الوحدة خارج نطاق تغطية القيادة (المنطقة المظللة بخطوط) ولا يمكنها تلقي أوامر جديدة. وهي تحتفظ بآخر أمر لها. وسّع التغطية بمحطة ترحيل، أو انتظر حتى تعود إلى النطاق.',
+  'unit.mast-truck': 'شاحنة الهوائي',
+  'order.deploy': 'النصب كمحطة ترحيل',
+  'action.deploy': 'نصب محطة الترحيل',
+  'deploy.active': 'محطة الترحيل تعمل.',
+  'deploy.pending': 'جارٍ النصب: تعمل محطة الترحيل بعد هذا الدور.',
+  'deploy.idle': 'محطة الترحيل مطوية: لا تعمل إلا بعد نصبها، والنصب يستغرق دورًا واحدًا في المكان نفسه.',
+  'refuse.out-of-contact': 'لا اتصال: هذه الوحدة خارج نطاق تغطية القيادة.',
+  'refuse.no-slots': 'لم تبقَ أوامر في هذا الدور ({slots} في كل دور). غيّر أمرًا أعطيته من قبل، أو ثبّت الدور.',
+  'refuse.impassable': 'لا يمكن دخول هذه الخانة.',
+  'help.network': 'تنتقل الأوامر عبر اللاسلكي. يغطي مركز القيادة الخانات المحيطة به؛ وشاحنة الهوائي التي بقيت منصوبة طوال دور كامل توسّع هذه التغطية. الخانات خارج التغطية مظللة بخطوط. لا تستطيع الوحدات هناك تلقي أوامر جديدة، وتستمر في تنفيذ آخر ما طُلب منها. في كل دور يمكنك إعطاء عدد من الأوامر الجديدة بقدر ما يسمح به مركز القيادة؛ ويظهر العدد فوق الخريطة.',
 };
 
 const pt: Catalogue = {
@@ -837,7 +977,21 @@ const pt: Catalogue = {
   'help.combat': 'Esquadras de fuzileiros são boas contra infantaria, equipes antitanque contra blindados, o Guardião é um tanque pesado e o canhão de campanha dispara projéteis que caem um momento depois na casa onde o alvo estava, então alvos em movimento podem desviar. Floresta e edifícios dão cobertura; colinas aumentam o alcance.',
   'help.goal': 'Destrua o posto de comando inimigo. Após o último turno, vence o lado com mais força restante (valor das unidades proporcional à saúde).',
   'help.shapes': 'Suas unidades são círculos preenchidos, as inimigas losangos contornados, os postos de comando quadrados. Movimentos planejados são linhas tracejadas; ataques planejados, linhas contínuas com um X.',
-  'help.access': 'O mapa depende de ver as posições. Tudo também pode ser feito pelo teclado e pelas listas de unidades, mas isso não é totalmente equivalente para quem usa leitor de tela.'
+  'help.access': 'O mapa depende de ver as posições. Tudo também pode ser feito pelo teclado e pelas listas de unidades, mas isso não é totalmente equivalente para quem usa leitor de tela.',
+  'status.slots': 'Ordens neste turno: {n} de {slots}.',
+  'contact.in': 'em contato',
+  'contact.out': 'sem contato, mantém a última ordem',
+  'panel.outOfContact': 'Esta unidade está fora da sua cobertura de comando (a área hachurada) e não pode receber ordens novas. Ela mantém a última ordem. Amplie a cobertura com um repetidor ou espere até que ela volte ao alcance.',
+  'unit.mast-truck': 'Caminhão de antena',
+  'order.deploy': 'montar como repetidor',
+  'action.deploy': 'Montar repetidor',
+  'deploy.active': 'Repetidor ativo.',
+  'deploy.pending': 'Em montagem: o repetidor funciona depois deste turno.',
+  'deploy.idle': 'Repetidor recolhido: ele só funciona montado, e a montagem leva um turno parado no lugar.',
+  'refuse.out-of-contact': 'Sem contato: esta unidade está fora da sua cobertura de comando.',
+  'refuse.no-slots': 'Não há mais ordens neste turno ({slots} por turno). Mude uma ordem que você já deu ou confirme o turno.',
+  'refuse.impassable': 'Não é possível entrar nessa casa.',
+  'help.network': 'As ordens são transmitidas por rádio. Seu posto de comando cobre as casas ao redor; um caminhão de antena que ficou montado por um turno inteiro amplia essa cobertura. As casas fora da cobertura são hachuradas. As unidades ali não podem receber ordens novas e continuam fazendo o que lhes foi ordenado por último. Em cada turno você pode dar tantas ordens novas quanto seu posto de comando permitir; o número aparece acima do mapa.',
 };
 const it: Catalogue = {
   title: 'Relay Command',
@@ -912,7 +1066,21 @@ const it: Catalogue = {
   'help.combat': 'Le squadre fucilieri sono efficaci contro la fanteria, le squadre controcarro contro i corazzati, il Guardiano è un carro pesante e il cannone da campagna spara proiettili che cadono un attimo dopo sulla casella dove si trovava il bersaglio, quindi i bersagli in movimento possono schivarli. Boschi ed edifici danno copertura; le colline aumentano la gittata.',
   'help.goal': 'Distruggi il posto di comando nemico. Dopo l’ultimo turno vince la parte con più forza rimasta (valore delle unità in proporzione alla salute).',
   'help.shapes': 'Le tue unità sono cerchi pieni, quelle nemiche rombi con contorno, i posti di comando quadrati. I movimenti pianificati sono linee tratteggiate, gli attacchi pianificati linee continue con una croce.',
-  'help.access': 'La mappa presuppone di vedere le posizioni. Tutto si può fare anche con la tastiera e con gli elenchi delle unità, ma per chi usa un lettore di schermo non è del tutto equivalente.'
+  'help.access': 'La mappa presuppone di vedere le posizioni. Tutto si può fare anche con la tastiera e con gli elenchi delle unità, ma per chi usa un lettore di schermo non è del tutto equivalente.',
+  'status.slots': 'Ordini in questo turno: {n} su {slots}.',
+  'contact.in': 'in contatto',
+  'contact.out': 'fuori contatto, mantiene l’ultimo ordine',
+  'panel.outOfContact': 'Questa unità è fuori dalla tua copertura di comando (l’area tratteggiata) e non può ricevere nuovi ordini. Mantiene l’ultimo ordine. Estendi la copertura con un ripetitore, o aspetta che torni nel raggio.',
+  'unit.mast-truck': 'Camion antenna',
+  'order.deploy': 'installarsi come ripetitore',
+  'action.deploy': 'Installa ripetitore',
+  'deploy.active': 'Ripetitore attivo.',
+  'deploy.pending': 'Installazione in corso: il ripetitore funziona dopo questo turno.',
+  'deploy.idle': 'Ripetitore smontato: funziona solo una volta installato, e l’installazione richiede un turno sul posto.',
+  'refuse.out-of-contact': 'Nessun contatto: questa unità è fuori dalla tua copertura di comando.',
+  'refuse.no-slots': 'Nessun ordine rimasto in questo turno ({slots} per turno). Cambia un ordine già dato, o conferma il turno.',
+  'refuse.impassable': 'In quella casella non si può entrare.',
+  'help.network': 'Gli ordini viaggiano via radio. Il tuo posto di comando copre le caselle intorno a sé; un camion antenna rimasto installato per un turno intero estende quella copertura. Le caselle fuori copertura sono tratteggiate. Le unità lì non possono ricevere nuovi ordini e continuano a fare ciò che è stato loro ordinato per ultimo. A ogni turno puoi dare tanti nuovi ordini quanti ne consente il tuo posto di comando; il numero è indicato sopra la mappa.',
 };
 
 const pl: Catalogue = {
@@ -988,7 +1156,21 @@ const pl: Catalogue = {
   'help.combat': 'Drużyny strzelców sprawdzają się przeciw piechocie, zespoły przeciwpancerne przeciw pancerzom, Strażnik to ciężki czołg, a działo polowe wystrzeliwuje pociski, które spadają chwilę później na pole, na którym był cel, więc poruszające się cele mogą ich uniknąć. Las i zabudowa dają osłonę; wzgórza zwiększają zasięg.',
   'help.goal': 'Zniszcz wrogie stanowisko dowodzenia. Po ostatniej turze wygrywa strona z większą pozostałą siłą (wartość oddziałów proporcjonalna do zdrowia).',
   'help.shapes': 'Twoje oddziały to wypełnione koła, oddziały wroga to obrysowane romby, stanowiska dowodzenia to kwadraty. Planowane ruchy to linie przerywane, planowane ataki to linie ciągłe z krzyżykiem.',
-  'help.access': 'Mapa zakłada widzenie pozycji. Wszystko można też zrobić za pomocą klawiatury i list oddziałów, ale dla użytkowników czytników ekranu nie jest to w pełni równoważne.'
+  'help.access': 'Mapa zakłada widzenie pozycji. Wszystko można też zrobić za pomocą klawiatury i list oddziałów, ale dla użytkowników czytników ekranu nie jest to w pełni równoważne.',
+  'status.slots': 'Rozkazy w tej turze: {n} z {slots}.',
+  'contact.in': 'w zasięgu łączności',
+  'contact.out': 'poza łącznością, zachowuje ostatni rozkaz',
+  'panel.outOfContact': 'Ten oddział jest poza zasięgiem twojej łączności dowodzenia (zakreskowany obszar) i nie może otrzymywać nowych rozkazów. Zachowuje ostatni rozkaz. Rozszerz zasięg przekaźnikiem albo poczekaj, aż oddział wróci w zasięg.',
+  'unit.mast-truck': 'Wóz z masztem',
+  'order.deploy': 'rozstawić się jako przekaźnik',
+  'action.deploy': 'Rozstaw przekaźnik',
+  'deploy.active': 'Przekaźnik działa.',
+  'deploy.pending': 'Rozstawianie: przekaźnik zadziała po tej turze.',
+  'deploy.idle': 'Przekaźnik złożony: działa dopiero po rozstawieniu, które zajmuje jedną turę w miejscu.',
+  'refuse.out-of-contact': 'Brak łączności: ten oddział jest poza zasięgiem twojej łączności dowodzenia.',
+  'refuse.no-slots': 'W tej turze nie ma już rozkazów ({slots} na turę). Zmień rozkaz, który już wydałeś, albo zatwierdź turę.',
+  'refuse.impassable': 'Na to pole nie można wejść.',
+  'help.network': 'Rozkazy idą drogą radiową. Twoje stanowisko dowodzenia obejmuje pola wokół siebie; wóz z masztem, który przez pełną turę stał rozstawiony, rozszerza ten zasięg. Pola poza zasięgiem są zakreskowane. Oddziały tam nie mogą otrzymywać nowych rozkazów i robią dalej to, co im ostatnio rozkazano. W każdej turze możesz wydać tyle nowych rozkazów, na ile pozwala twoje stanowisko dowodzenia; liczba jest widoczna nad mapą.',
 };
 const tr: Catalogue = {
   title: 'Relay Command',
@@ -1063,7 +1245,21 @@ const tr: Catalogue = {
   'help.combat': 'Tüfek mangaları piyadeye, tanksavar ekipleri zırhlılara karşı etkilidir; Muhafız ağır bir tanktır; sahra topu ise hedefin bulunduğu kareye kısa bir süre sonra düşen mermiler atar, bu yüzden hareket eden hedefler kaçabilir. Orman ve binalar siper sağlar; tepeler menzili artırır.',
   'help.goal': 'Düşman komuta merkezini yok et. Son turdan sonra kalan gücü daha fazla olan taraf kazanır (birlik değeri sağlığa göre oranlanır).',
   'help.shapes': 'Senin birliklerin dolu daireler, düşman birlikleri çerçeveli eşkenar dörtgenler, komuta merkezleri karelerdir. Planlanan hareketler kesikli çizgiler, planlanan saldırılar çarpı işaretli düz çizgilerdir.',
-  'help.access': 'Harita konumların görülmesine dayanır. Her şey klavye ve birlik listeleriyle de yapılabilir, ancak bu ekran okuyucu kullananlar için tam olarak eşdeğer değildir.'
+  'help.access': 'Harita konumların görülmesine dayanır. Her şey klavye ve birlik listeleriyle de yapılabilir, ancak bu ekran okuyucu kullananlar için tam olarak eşdeğer değildir.',
+  'status.slots': 'Bu turdaki emirler: {n} / {slots}.',
+  'contact.in': 'bağlantıda',
+  'contact.out': 'bağlantı yok, son emrini sürdürür',
+  'panel.outOfContact': 'Bu birlik komuta kapsamının (taralı alan) dışında ve yeni emir alamaz. Son emrini sürdürür. Kapsamı bir röleyle genişlet ya da birlik yeniden menzile girene kadar bekle.',
+  'unit.mast-truck': 'Anten Kamyonu',
+  'order.deploy': 'röle olarak kurul',
+  'action.deploy': 'Röleyi kur',
+  'deploy.active': 'Röle etkin.',
+  'deploy.pending': 'Kuruluyor: röle bu turdan sonra çalışır.',
+  'deploy.idle': 'Röle toplanmış: yalnızca kurulduğunda çalışır ve kurulum yerinde bir tur sürer.',
+  'refuse.out-of-contact': 'Bağlantı yok: bu birlik komuta kapsamının dışında.',
+  'refuse.no-slots': 'Bu turda emir hakkın kalmadı (tur başına {slots}). Daha önce verdiğin bir emri değiştir ya da turu kilitle.',
+  'refuse.impassable': 'O kareye girilemez.',
+  'help.network': 'Emirler telsizle iletilir. Komuta merkezin çevresindeki kareleri kapsar; bir tur boyunca kurulu kalmış bir anten kamyonu bu kapsamı genişletir. Kapsam dışındaki kareler taralıdır. Oradaki birlikler yeni emir alamaz ve kendilerine en son söyleneni yapmaya devam eder. Her turda komuta merkezinin izin verdiği kadar yeni emir verebilirsin; sayı haritanın üstünde gösterilir.',
 };
 
 const uk: Catalogue = {
@@ -1139,7 +1335,21 @@ const uk: Catalogue = {
   'help.combat': 'Стрілецькі відділення добрі проти піхоти, протитанкові групи — проти броні, Вартовий — важкий танк, а польова гармата стріляє снарядами, які падають трохи пізніше на клітинку, де була ціль, тож рухомі цілі можуть ухилитися. Ліс і будівлі дають укриття; пагорби збільшують дальність.',
   'help.goal': 'Знищ ворожий командний пункт. Після останнього ходу перемагає сторона, в якої залишилося більше сил (цінність підрозділів з урахуванням їхнього здоров’я).',
   'help.shapes': 'Твої підрозділи — зафарбовані кола, підрозділи ворога — ромби з контуром, командні пункти — квадрати. Заплановані переміщення — пунктирні лінії, заплановані атаки — суцільні лінії з хрестиком.',
-  'help.access': 'Карта розрахована на те, що позиції видно. Усе можна робити й за допомогою клавіатури та списків підрозділів, але для користувачів програм зчитування з екрана це не повністю рівноцінно.'
+  'help.access': 'Карта розрахована на те, що позиції видно. Усе можна робити й за допомогою клавіатури та списків підрозділів, але для користувачів програм зчитування з екрана це не повністю рівноцінно.',
+  'status.slots': 'Накази в цьому ході: {n} з {slots}.',
+  'contact.in': 'на зв’язку',
+  'contact.out': 'без зв’язку, зберігає останній наказ',
+  'panel.outOfContact': 'Цей підрозділ перебуває поза зоною зв’язку твого командування (заштрихована область) і не може отримувати нові накази. Він зберігає свій останній наказ. Розшир зону зв’язку ретранслятором або зачекай, доки він знову не опиниться в зоні досяжності.',
+  'unit.mast-truck': 'Антенна машина',
+  'order.deploy': 'розгорнутися як ретранслятор',
+  'action.deploy': 'Розгорнути ретранслятор',
+  'deploy.active': 'Ретранслятор працює.',
+  'deploy.pending': 'Триває розгортання: ретранслятор запрацює після цього ходу.',
+  'deploy.idle': 'Ретранслятор згорнуто: він працює лише розгорнутим, а розгортання триває один хід на місці.',
+  'refuse.out-of-contact': 'Немає зв’язку: цей підрозділ поза зоною зв’язку твого командування.',
+  'refuse.no-slots': 'У цьому ході наказів більше немає ({slots} за хід). Зміни вже відданий наказ або зафіксуй хід.',
+  'refuse.impassable': 'На цю клітинку не можна зайти.',
+  'help.network': 'Накази передаються по радіо. Твій командний пункт покриває клітинки навколо себе; антенна машина, що простояла розгорнутою цілий хід, розширює цю зону. Клітинки поза зоною зв’язку заштриховані. Підрозділи там не можуть отримувати нові накази й далі виконують те, що їм наказали востаннє. Кожного ходу ти можеш віддати стільки нових наказів, скільки дозволяє твій командний пункт; їхня кількість показана над картою.',
 };
 
 const hi: Catalogue = {
@@ -1215,7 +1425,21 @@ const hi: Catalogue = {
   'help.combat': 'राइफ़ल दस्ते पैदल सेना के ख़िलाफ़ अच्छे हैं, टैंक-रोधी दल बख़्तरबंद के ख़िलाफ़, रक्षक एक भारी टैंक है, और फ़ील्ड तोप ऐसे गोले दागती है जो कुछ पल बाद उस खाने पर गिरते हैं जहाँ लक्ष्य था, इसलिए चलते हुए लक्ष्य बच सकते हैं। जंगल और इमारतें आड़ देती हैं; पहाड़ियाँ मारक दूरी बढ़ाती हैं।',
   'help.goal': 'दुश्मन की कमान चौकी नष्ट करो। आख़िरी बारी के बाद जिस पक्ष के पास ज़्यादा ताक़त बची हो (स्वास्थ्य के अनुपात में टुकड़ियों का मूल्य), वह जीतता है।',
   'help.shapes': 'तुम्हारी टुकड़ियाँ भरे हुए वृत्त हैं, दुश्मन की टुकड़ियाँ रेखांकित समचतुर्भुज, कमान चौकियाँ वर्ग। योजनाबद्ध चालें डैश वाली रेखाएँ हैं, योजनाबद्ध हमले क्रॉस वाली ठोस रेखाएँ।',
-  'help.access': 'नक्शा स्थितियों को देखने पर निर्भर है। सब कुछ कीबोर्ड और टुकड़ियों की सूचियों से भी किया जा सकता है, लेकिन स्क्रीन रीडर इस्तेमाल करने वालों के लिए यह पूरी तरह बराबर नहीं है।'
+  'help.access': 'नक्शा स्थितियों को देखने पर निर्भर है। सब कुछ कीबोर्ड और टुकड़ियों की सूचियों से भी किया जा सकता है, लेकिन स्क्रीन रीडर इस्तेमाल करने वालों के लिए यह पूरी तरह बराबर नहीं है।',
+  'status.slots': 'इस बारी के आदेश: {slots} में से {n}।',
+  'contact.in': 'संपर्क में',
+  'contact.out': 'संपर्क से बाहर, आख़िरी आदेश पर चलती रहती है',
+  'panel.outOfContact': 'यह टुकड़ी तुम्हारे कमान कवरेज (धारीदार हिस्सा) से बाहर है और नए आदेश नहीं ले सकती। यह अपना आख़िरी आदेश बनाए रखती है। रिले से कवरेज बढ़ाओ, या इसके फिर से दायरे में आने तक रुको।',
+  'unit.mast-truck': 'एंटीना गाड़ी',
+  'order.deploy': 'रिले के रूप में लगना',
+  'action.deploy': 'रिले लगाओ',
+  'deploy.active': 'रिले चालू है।',
+  'deploy.pending': 'लगाया जा रहा है: रिले इस बारी के बाद काम करेगा।',
+  'deploy.idle': 'रिले समेटा हुआ है: यह लगाए जाने के बाद ही काम करता है, और लगाने में एक ही जगह पर एक बारी लगती है।',
+  'refuse.out-of-contact': 'संपर्क नहीं: यह टुकड़ी तुम्हारे कमान कवरेज से बाहर है।',
+  'refuse.no-slots': 'इस बारी में और आदेश नहीं बचे (हर बारी {slots})। पहले दिया हुआ कोई आदेश बदलो, या बारी पक्की करो।',
+  'refuse.impassable': 'उस खाने में नहीं जाया जा सकता।',
+  'help.network': 'आदेश रेडियो से पहुँचते हैं। तुम्हारी कमान चौकी अपने आसपास के खानों को कवर करती है; जो एंटीना गाड़ी पूरी एक बारी तक लगी हुई खड़ी रही हो, वह यह कवरेज बढ़ाती है। कवरेज से बाहर के खाने धारीदार हैं। वहाँ की टुकड़ियाँ नए आदेश नहीं ले सकतीं और वही करती रहती हैं जो उन्हें आख़िरी बार कहा गया था। हर बारी तुम उतने नए आदेश दे सकते हो जितने तुम्हारी कमान चौकी अनुमति देती है; यह संख्या नक्शे के ऊपर दिखती है।',
 };
 
 export const messages: GameMessages = {

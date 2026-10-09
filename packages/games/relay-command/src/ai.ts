@@ -1,18 +1,55 @@
-import { dist2, inWeaponRange, type Command, type Entity, type Ruleset, type World } from '@wp/strategy-engine';
+import {
+  archetypeOf,
+  cellOf,
+  computeNetwork,
+  dist2,
+  frameIndex,
+  inWeaponRange,
+  passable,
+  validateCommand,
+  type Command,
+  type Entity,
+  type Network,
+  type Ruleset,
+  type World
+} from '@wp/strategy-engine';
+
+/** How far ahead of its Command Post the opponent may set up its relay truck (cells per axis). */
+const RELAY_FORWARD = 4;
 
 /**
- * Scripted opponent for the first playable version (increment I2): every armed mobile unit
- * engages the nearest enemy it can actually hit (ballistic weapons skip targets inside their
- * minimum range). Deterministic. It receives only the world, never the player's draft, so the
- * opponent cannot react to plans that are not yet locked.
+ * Scripted opponent (increment I3a). Deterministic. It receives only the world, never the
+ * player's draft, so it cannot react to plans that are not yet locked. Like the player it may
+ * only order units inside its command coverage and only as many as its order slots allow:
+ * 1. a relay truck drives to the most forward cell it can reach while staying in contact, and sets up there;
+ * 2. armed units engage the nearest enemy they can actually hit (closest units first).
  */
 export function planAi(world: World, ruleset: Ruleset, side: number): Command[] {
+  const network = computeNetwork(world, ruleset, side);
+  const inContact = (e: Entity) => !ruleset.commandNetwork || network.coverage[cellOf(world.map, e.x, e.y)] === 1;
+  const budget = ruleset.commandNetwork ? network.slots : Number.POSITIVE_INFINITY;
   const enemies = world.entities.filter((e) => e.side !== side);
+  const own = world.entities.filter((e) => e.side === side && inContact(e));
   const commands: Command[] = [];
-  for (const unit of world.entities) {
-    if (unit.side !== side) continue;
-    const arch = ruleset.archetypes[unit.kind];
-    if (!arch?.weapon || arch.speed === 0) continue;
+
+  for (const truck of own) {
+    if (!archetypeOf(ruleset, truck.kind)?.comms?.needsDeploy || truck.order.type === 'deploy') continue;
+    if ((truck.deploy ?? 0) >= ruleset.ticksPerTurn) continue; // already set up: leave it standing
+    const spot = relaySpot(world, ruleset, side, truck);
+    if (!spot) continue;
+    if (truck.x === spot.x && truck.y === spot.y) commands.push({ side, unit: truck.id, order: { type: 'deploy' } });
+    else if (truck.order.type !== 'move' || truck.order.x !== spot.x || truck.order.y !== spot.y) {
+      commands.push({ side, unit: truck.id, order: { type: 'move', x: spot.x, y: spot.y } });
+    }
+  }
+
+  const fighters = own
+    .filter((u) => archetypeOf(ruleset, u.kind)?.weapon && (archetypeOf(ruleset, u.kind)?.speed ?? 0) > 0)
+    .map((u) => ({ u, d: nearestDistance(u, enemies) }))
+    .sort((a, b) => a.d - b.d || a.u.id - b.u.id);
+  for (const { u: unit } of fighters) {
+    const arch = archetypeOf(ruleset, unit.kind);
+    if (!arch?.weapon) continue;
     const minRange = arch.weapon.minRange;
     const reachable = enemies.filter((e) => dist2(unit.x, unit.y, e.x, e.y) >= minRange * minRange);
     const target = nearest(unit, reachable.length > 0 ? reachable : enemies);
@@ -21,8 +58,42 @@ export function planAi(world: World, ruleset: Ruleset, side: number): Command[] 
     if (unit.order.type === 'attack' && unit.order.target === target.id) continue;
     commands.push({ side, unit: unit.id, order: { type: 'attack', target: target.id } });
   }
-  return commands;
+  // Spend order slots only on orders the engine will accept.
+  const networks: Network[] = [];
+  networks[side] = network;
+  return commands.filter((c) => validateCommand(world, ruleset, c, networks).ok).slice(0, budget);
 }
+
+/**
+ * Where to set up a relay truck: the passable cell closest to the enemy Command Post that is
+ * covered by the network *without* this truck (so the truck is still in contact when it
+ * arrives and can be told to set up), at most RELAY_FORWARD cells from the own post along each
+ * axis. Ties are broken in the side's own frame, so mirrored positions give mirrored choices.
+ */
+function relaySpot(world: World, ruleset: Ruleset, side: number, truck: Entity): { x: number; y: number } | undefined {
+  const post = world.entities.find((e) => e.side === side && e.kind === 'command-post');
+  const enemyPost = world.entities.find((e) => e.side !== side && e.kind === 'command-post');
+  if (!post || !enemyPost) return undefined;
+  const without = { ...world, entities: world.entities.filter((e) => e.id !== truck.id) };
+  const coverage = computeNetwork(without, ruleset, side).coverage;
+  const cells = world.map.w * world.map.h;
+  let best: { x: number; y: number; d: number; f: number } | undefined;
+  for (let y = 0; y < world.map.h; y++) {
+    for (let x = 0; x < world.map.w; x++) {
+      const cell = cellOf(world.map, x, y);
+      if (coverage[cell] !== 1 || Math.abs(x - post.x) > RELAY_FORWARD || Math.abs(y - post.y) > RELAY_FORWARD) continue;
+      if (!passable(world.map, ruleset, x, y, 'ground')) continue;
+      if (world.entities.some((e) => e.id !== truck.id && e.x === x && e.y === y && archetypeOf(ruleset, e.kind)?.layer === 'ground')) continue;
+      const d = dist2(x, y, enemyPost.x, enemyPost.y);
+      const f = frameIndex(cell, side, cells);
+      if (!best || d < best.d || (d === best.d && f < best.f)) best = { x, y, d, f };
+    }
+  }
+  return best && { x: best.x, y: best.y };
+}
+
+const nearestDistance = (unit: Entity, candidates: readonly Entity[]): number =>
+  candidates.reduce((best, e) => Math.min(best, dist2(unit.x, unit.y, e.x, e.y)), Number.POSITIVE_INFINITY);
 
 function nearest(unit: Entity, candidates: readonly Entity[]): Entity | undefined {
   let best: Entity | undefined;

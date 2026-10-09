@@ -39,6 +39,18 @@ export interface WeaponSpec {
   readonly effect: StatusEffectSpec | null;
 }
 
+/** Command-network role of an archetype (docs/design/strategy.md § 5). */
+export interface CommsSpec {
+  /** `source` originates command (HQ, field post); `relay` only extends a connected network. */
+  readonly role: 'source' | 'relay';
+  /** Link and coverage radius in cells (squared-distance comparison). */
+  readonly radius: number;
+  /** Orders per turn a connected source contributes (0 for relays). */
+  readonly orderSlots: number;
+  /** Mobile node that only works after a full turn of deploying in place. */
+  readonly needsDeploy: boolean;
+}
+
 export interface Archetype {
   readonly id: string;
   readonly hp: number;
@@ -49,6 +61,7 @@ export interface Archetype {
   readonly vision: number;
   readonly cost: number;
   readonly weapon: WeaponSpec | null;
+  readonly comms: CommsSpec | null;
 }
 
 export interface TerrainSpec {
@@ -66,6 +79,13 @@ export interface Ruleset {
   /** Terrain by single-character code. */
   readonly terrain: Readonly<Record<string, TerrainSpec>>;
   readonly archetypes: Readonly<Record<string, Archetype>>;
+  /**
+   * When true, orders reach only units inside their side's command coverage, and each side may
+   * issue at most its connected sources' order slots per batch (strategy mode).
+   */
+  readonly commandNetwork: boolean;
+  /** Extra radius for static relays standing on terrain with a range bonus (hills). */
+  readonly relayHillBonus: number;
 }
 
 export interface GameMap {
@@ -78,7 +98,9 @@ export interface GameMap {
 export type Order =
   | { readonly type: 'hold' }
   | { readonly type: 'move'; readonly x: number; readonly y: number }
-  | { readonly type: 'attack'; readonly target: number };
+  | { readonly type: 'attack'; readonly target: number }
+  /** Stay in place and set up as a network node (completes after one turn of ticks). */
+  | { readonly type: 'deploy' };
 
 export interface Status {
   kind: StatusKind;
@@ -100,6 +122,8 @@ export interface Entity {
   status: Status[];
   /** Beam weapons: current target and consecutive-tick stacks. */
   beam: { target: number; stacks: number } | null;
+  /** Ticks spent deploying (nodes with `needsDeploy`); absent = 0. Active once it reaches ticksPerTurn. */
+  deploy?: number;
 }
 
 export interface Projectile {

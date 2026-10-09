@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { BASE_RULESET, canonicalJson, isValidWorld, resolveTurn, worldHash, type Command, type World } from '../src';
+import { BASE_RULESET, canonicalJson, isValidWorld, resolveTurn, STRATEGY_RULESET, worldHash, type Command, type World } from '../src';
 import { arbScenario, mirrorCommands, mirrorWorld } from './helpers';
 
 const rs = BASE_RULESET;
@@ -79,6 +79,26 @@ describe('engine properties (docs/design/strategy.md § 13)', () => {
         expect(isValidWorld(w, rs)).toBe(true);
       }),
       { numRuns: 100 }
+    );
+  });
+});
+
+describe('engine properties with the command network (strategy ruleset)', () => {
+  const net = STRATEGY_RULESET;
+  const playNet = (world: World, plans: readonly Command[][]): World => plans.reduce((w, plan) => resolveTurn(w, net, [plan]).world, world);
+  const asNet = (world: World): World => ({ ...world, ruleset: net.id });
+
+  it('P1 determinism and P4 mirror symmetry hold with coverage gating, order slots and deploying', () => {
+    fc.assert(
+      fc.property(arbScenario, ({ world, plans }) => {
+        const w = asNet(world);
+        expect(worldHash(playNet(w, plans))).toBe(worldHash(playNet(structuredClone(w), structuredClone(plans))));
+        const direct = mirrorWorld(playNet(w, plans));
+        const mirrored = playNet(mirrorWorld(w), plans.map((p) => mirrorCommands(w, p)));
+        expect(canonicalJson(mirrored)).toBe(canonicalJson(direct));
+        expect(isValidWorld(playNet(w, plans), net)).toBe(true);
+      }),
+      RUNS
     );
   });
 });

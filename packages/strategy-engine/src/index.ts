@@ -3,5 +3,6 @@ export * from './grid';
 export * from './path';
 export * from './content';
 export * from './world';
+export * from './network';
 export * from './sim';
 export * from './serialize';
