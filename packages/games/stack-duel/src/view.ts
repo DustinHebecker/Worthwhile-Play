@@ -88,6 +88,17 @@ function patternElement(id: string, pattern: Pattern): SVGPatternElement {
   return p;
 }
 
+/** Number of frames worth showing: trailing frames that no longer differ visibly from the final pose are skipped. */
+export function visibleFrames(frames: readonly (readonly number[])[]): number {
+  const last = frames[frames.length - 1];
+  if (!last) return 0;
+  for (let i = frames.length - 2; i >= 0; i--) {
+    const f = frames[i]!;
+    for (let j = 0; j < last.length; j++) if (Math.abs(f[j]! - last[j]!) > 0.004) return i + 2;
+  }
+  return 1;
+}
+
 interface Animation {
   turn: TurnResult;
   drop: number;
@@ -100,6 +111,7 @@ export function createStackDuel(context: GameContext): GameInstance<StackDuelSta
   const uid = `sd${++instanceCounter}`;
   const number = new Intl.NumberFormat(t.locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   const fmt = (value: number) => number.format(Math.round(value * 10) / 10);
+  const position = new Intl.NumberFormat(t.locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   let state: StackDuelState = newState(0, DEFAULT_DIFFICULTY, 'computer');
   let anim: Animation | undefined;
   let dragging = false;
@@ -272,7 +284,7 @@ export function createStackDuel(context: GameContext): GameInstance<StackDuelSta
       count: state.bodies.length,
       height: fmt(towerHeight(state.bodies)),
       piece: pieceName(state.queue[0]),
-      pos: fmt(state.cursor.x),
+      pos: position.format(state.cursor.x),
       deg: Math.round((state.cursor.rot * 360) / ROT_STEPS)
     });
 
@@ -338,12 +350,14 @@ export function createStackDuel(context: GameContext): GameInstance<StackDuelSta
     guide.setAttribute('hidden', '');
     let groups: SVGGElement[] = [];
     let prepared = -1;
+    let length = 0;
     const tick = (time: number) => {
       if (anim !== a) return;
       const d = turn.drops[a.drop]!;
       const frames = d.outcome.frames ?? [];
       if (prepared !== a.drop) {
         prepared = a.drop;
+        length = visibleFrames(frames);
         a.start = time;
         setView(d.outcome.bodies);
         clear(piecesLayer);
@@ -352,9 +366,9 @@ export function createStackDuel(context: GameContext): GameInstance<StackDuelSta
       }
       const hover = d.by === 1 && state.mode === 'computer' ? HOVER_MS : 0;
       const index = Math.max(0, Math.floor((time - a.start - hover) / FRAME_MS));
-      const frame = frames[Math.min(index, frames.length - 1)];
+      const frame = index >= length - 1 ? frames[frames.length - 1] : frames[index];
       if (frame) groups.forEach((g, i) => g.setAttribute('transform', transformOf(frame[3 * i]!, frame[3 * i + 1]!, frame[3 * i + 2]!)));
-      if (index >= frames.length - 1) {
+      if (index >= length - 1) {
         if (a.drop + 1 < turn.drops.length) a.drop++;
         else return finishAnimation(announcement);
       }
@@ -443,9 +457,9 @@ export function createStackDuel(context: GameContext): GameInstance<StackDuelSta
 
   const worldX = (clientX: number): number => {
     const rect = board.getBoundingClientRect();
-    const vb = board.viewBox.baseVal;
-    if (!rect.width || !vb || !vb.width) return state.cursor.x;
-    return vb.x + ((clientX - rect.left) / rect.width) * vb.width;
+    const [vx, , vw] = (board.getAttribute('viewBox') ?? '').split(' ').map(Number);
+    if (!rect.width || vx === undefined || !vw) return state.cursor.x;
+    return vx + ((clientX - rect.left) / rect.width) * vw;
   };
   const onPointerDown = (event: PointerEvent) => {
     if (anim || state.result !== null) return;

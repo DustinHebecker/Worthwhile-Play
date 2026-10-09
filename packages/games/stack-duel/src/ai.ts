@@ -55,6 +55,24 @@ export const AI_PROFILES: Readonly<Record<Difficulty, AiProfile>> = {
   hard: { candidates: 16, rotations: every(1), robust: 4, trap: 3, trapSamples: 5, tremor: 0, simSteps: 300 }
 };
 
+/** Tower size up to which the full sampling budget is used. */
+export const FULL_BUDGET_PIECES = 12;
+
+/**
+ * Scales the number of look-ahead simulations down on tall towers (each simulation costs
+ * more there), so thinking time stays roughly constant. Depends only on the state, never
+ * on wall-clock time, so the choice stays deterministic.
+ */
+export function budgeted(profile: AiProfile, pieces: number): AiProfile {
+  const f = Math.min(1, FULL_BUDGET_PIECES / Math.max(1, pieces));
+  return {
+    ...profile,
+    candidates: Math.max(4, Math.round(profile.candidates * f)),
+    robust: Math.round(profile.robust * f),
+    trapSamples: profile.trap > 0 ? Math.max(2, Math.round(profile.trapSamples * f)) : 0
+  };
+}
+
 /** Seed of the AI's PRNG for the move about to be made (no extra state needs saving). */
 export const aiSeed = (state: StackDuelState): number => (state.seed ^ Math.imul(state.bodies.length + 1, 0x9e3779b1)) >>> 0;
 
@@ -142,7 +160,7 @@ export function evaluate(state: StackDuelState, profile: AiProfile, rng: Rng, go
 
 /** The computer's placement for the current state (deterministic for a given state). */
 export function chooseDrop(state: StackDuelState, goal: Goal = 'low'): Cursor {
-  const profile = AI_PROFILES[state.difficulty];
+  const profile = budgeted(AI_PROFILES[state.difficulty], state.bodies.length);
   const rng = createRng(aiSeed(state));
   const best = evaluate(state, profile, rng, goal)[0]!.cursor;
   if (profile.tremor === 0) return best;
