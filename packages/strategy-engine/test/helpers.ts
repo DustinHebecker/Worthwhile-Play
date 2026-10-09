@@ -29,7 +29,8 @@ export function mirrorWorld(w: World): World {
       x: mx(e.x),
       y: my(e.y),
       order: mirrorOrder(e.order),
-      ...(e.stall && { stall: { ...e.stall, goal: w.map.w * w.map.h - 1 - e.stall.goal } }),
+      // Progress keys below the cell count are cells (mirrored); above it, target ids (kept).
+      ...(e.stall && { stall: { ...e.stall, goal: e.stall.goal < w.map.w * w.map.h ? w.map.w * w.map.h - 1 - e.stall.goal : e.stall.goal } }),
       ...(e.prev !== undefined && { prev: w.map.w * w.map.h - 1 - e.prev })
     })),
     projectiles: w.projectiles.map((p): Projectile => ({ ...p, side: ms(p.side), x: mx(p.x), y: my(p.y) })),

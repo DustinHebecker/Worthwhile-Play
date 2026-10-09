@@ -5,6 +5,7 @@ import {
   createWorld,
   DEADLOCK_TICKS,
   DEFAULT_DOCTRINE,
+  findPath,
   isValidWorld,
   resolveTurn,
   runTicks,
@@ -612,5 +613,88 @@ describe('review of PR #9: attacking targets whose own cell cannot be reached', 
     }
     expect(ended(events, 1)).not.toContain('unreachable');
     expect(events.some((e) => e.t === 'launch' && e.id === 1)).toBe(true);
+  });
+});
+
+describe('review of PR #9 (round 2): the no-reversal rule never trades a way around units for a blocked one', () => {
+  it('the reviewer\'s 8×9 world: Warden 2 arrives instead of bumping until blocked', () => {
+    const map = mapOf('^~~=~^~f', 'ff.~^fh.', '=.f.=h=^', 'f...^^=.', 'hs..^f..', 'f.=hh...', 's=f~f.~.', '=~~^..f.', '.^h.^.^=');
+    let world = createWorld({ map, sides: 2, seed: 1, entities: [
+      { side: 1, kind: 'mast-truck', x: 3, y: 0, order: { type: 'move', x: 5, y: 7 } },
+      { side: 0, kind: 'warden', x: 7, y: 3, order: { type: 'move', x: 1, y: 3 } },
+      { side: 0, kind: 'warden', x: 7, y: 4, order: { type: 'move', x: 3, y: 5 } },
+      { side: 0, kind: 'mast-truck', x: 5, y: 2, order: { type: 'escort', target: 3 } },
+      { side: 0, kind: 'outrider', x: 7, y: 7, order: { type: 'move', x: 0, y: 5 } }
+    ] }, BASE_RULESET);
+    for (const e of world.entities) e.doctrine = doctrine({ holdFire: true });
+    const events: SimEvent[] = [];
+    for (let i = 0; i < 6; i++) {
+      const r = resolveTurn(world, BASE_RULESET, [[]]);
+      events.push(...r.events);
+      world = r.world;
+    }
+    expect(ended(events, 2)).toEqual(['arrived']);
+  });
+
+  it('property: a single moving unit among units that stay always arrives when its destination is free and reachable', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 4, max: 10 }),
+        fc.integer({ min: 3, max: 8 }),
+        fc.array(fc.constantFrom('.', '.', '.', '=', 'f', 's', '^', '~'), { minLength: 80, maxLength: 80 }),
+        fc.array(fc.nat(79), { minLength: 1, maxLength: 10 }),
+        fc.nat(79),
+        fc.nat(79),
+        (w, h, terrain, holders, from, to) => {
+          const n = w * h;
+          const t = terrain.slice(0, n);
+          const start = from % n;
+          const goal = to % n;
+          t[start] = '.';
+          t[goal] = '.';
+          const map = { w, h, terrain: t.join('') };
+          const used = new Set([start, goal]);
+          const entities: Scenario['entities'][number][] = [{ side: 0, kind: 'rifles', x: start % w, y: Math.floor(start / w), order: { type: 'move', x: goal % w, y: Math.floor(goal / w) } }];
+          for (const c of holders) {
+            const cell = c % n;
+            if (used.has(cell) || t[cell] === '^' || t[cell] === '~') continue;
+            used.add(cell);
+            entities.push({ side: 0, kind: 'rifles', x: cell % w, y: Math.floor(cell / w) });
+          }
+          fc.pre(start !== goal);
+          let world = createWorld({ map, sides: 2, seed: 1, entities }, BASE_RULESET);
+          const blockedCells = new Set(world.entities.slice(1).map((e) => e.y * w + e.x));
+          fc.pre(findPath(map, BASE_RULESET, start, goal, { layer: 'ground', side: 0, blocked: blockedCells }) !== undefined);
+          const events: SimEvent[] = [];
+          for (let i = 0; i < 20 && !events.some((e) => e.t === 'order-ended'); i++) {
+            const r = resolveTurn(world, BASE_RULESET, [[]]);
+            events.push(...r.events);
+            world = r.world;
+          }
+          expect(ended(events, 1)).toEqual(['arrived']);
+        }
+      ),
+      { numRuns: 300 }
+    );
+  });
+});
+
+describe('review of PR #9 (round 2, N-b)', () => {
+  it('two attackers pacing in step around each other out of range end their orders in time', () => {
+    // A point-symmetric duel: each step of one is mirrored by the other, so neither gets closer.
+    let world = createWorld({ map: open(8, 9), sides: 2, seed: 1, entities: [
+      { side: 0, kind: 'outrider', x: 3, y: 3, order: { type: 'attack', target: 2 } },
+      { side: 1, kind: 'outrider', x: 4, y: 5, order: { type: 'attack', target: 1 } }
+    ] }, BASE_RULESET);
+    const events: SimEvent[] = [];
+    for (let i = 0; i < 10; i++) {
+      const r = resolveTurn(world, BASE_RULESET, [[]]);
+      events.push(...r.events);
+      world = r.world;
+    }
+    // Either they fight (one fires) or their orders end; never pacing for ever with neither.
+    const fired = events.some((e) => e.t === 'fire');
+    const endedBoth = ended(events, 1).length > 0 && ended(events, 2).length > 0;
+    expect(fired || endedBoth).toBe(true);
   });
 });

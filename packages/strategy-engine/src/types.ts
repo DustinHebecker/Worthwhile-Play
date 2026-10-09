@@ -183,8 +183,9 @@ export interface Entity {
   /** Consecutive ticks without any way to its goal (see UNREACHABLE_TICKS). */
   stuck?: number;
   /**
-   * Progress towards the current movement goal (cell index): the lowest remaining route cost
-   * reached and the ticks since it last fell (see STALL_TICKS).
+   * Progress towards the current movement goal: `goal` is its cell index, or for attacks the
+   * cell count plus the target id; the lowest remaining route cost reached and the ticks since
+   * it last fell (see STALL_TICKS).
    */
   stall?: { goal: number; best: number; ticks: number };
   /** Cell the unit left with its last step (it does not step straight back if it can help it). */

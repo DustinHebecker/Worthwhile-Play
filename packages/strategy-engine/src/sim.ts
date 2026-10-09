@@ -344,7 +344,7 @@ interface Intent {
   readonly end: (e: Entity, reason: OrderEndReason) => void;
   /** The side's command coverage, or `undefined` when the ruleset has no command network. */
   readonly coverageOf: (side: number) => Uint8Array | undefined;
-  /** Per attacking unit: the cell it aims at (its progress is measured per aim, not per firing cell). */
+  /** Per attacking unit: its progress key, cells + target id (progress is kept per target). */
   readonly aims: Map<number, number>;
   /** Regions between permanent walls (see `regions`). */
   readonly regionsOf: (layer: 'ground' | 'air') => Int32Array;
@@ -448,15 +448,21 @@ function nextStepTowards(ctx: Intent, e: Entity, a: Archetype, goal: number): { 
   // step back, and so on for ever.)
   const occupied = ctx.occupied[a.layer];
   let next = base[0] as number;
+  let aroundUnits = false;
   if (base.some((c) => occupied.has(c))) {
     // A route around the units in the way, if it costs at most DETOUR more (bounded search).
     const around = findPath(w.map, rs, start, goal, { layer: a.layer, side: e.side, blocked: occupied, maxCost: remaining + DETOUR });
-    if (around && around.length > 0) next = around[0] as number;
+    if (around && around.length > 0) {
+      next = around[0] as number;
+      aroundUnits = true;
+    }
   }
   // No stepping straight back to the cell just left when another way within DETOUR exists: two
   // routes that are free in turn (a patrol between them) would otherwise make it pace for ever.
+  // The other way must avoid what the chosen one avoided (units, when it went around them);
+  // without such a way the unit steps back after all.
   if (next === e.prev && next !== goal) {
-    const blocked = new Set(ctx.permanent[a.layer]).add(e.prev);
+    const blocked = new Set(aroundUnits ? occupied : ctx.permanent[a.layer]).add(e.prev);
     const other = findPath(w.map, rs, start, goal, { layer: a.layer, side: e.side, blocked, maxCost: remaining + DETOUR });
     if (other && other.length > 0) next = other[0] as number;
   }
@@ -553,7 +559,9 @@ function attackAim(ctx: Intent, e: Entity, a: Archetype, id: number): number | '
   const min = weapon.minRange;
   if (max < min) return 'lost'; // cannot see and hit it at the same time
   const p = at;
-  ctx.aims.set(e.id, cellOf(w.map, p.x, p.y));
+  // Progress is kept per target (not per cell it stands on or firing cell): two attackers pacing
+  // in step around each other out of range, or firing cells taken in turn, still end in time.
+  ctx.aims.set(e.id, w.map.w * w.map.h + id);
   const firing = (c: number): boolean => {
     const d = dist2(c % w.map.w, Math.floor(c / w.map.w), p.x, p.y);
     return d >= min * min && d <= max * max;
