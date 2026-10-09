@@ -162,8 +162,18 @@ test('the variation board plays both sides without changing the game and survive
     await expect(p.getByTestId('var-board')).toHaveAttribute('aria-label', 'Variation board');
     for (const s of ['g1', 'f3']) await p.getByTestId(`var-sq-${s}`).click();
     await expect(p.getByTestId('var-sq-f3')).toHaveAttribute('data-piece', 'wN');
-    // Black's reply on the variation board is the person's own choice: any black knight move.
-    const knight = (await p.getByTestId('var-sq-b8').getAttribute('data-piece')) === 'bN' ? ['b8', 'a6'] : ['g8', 'h6'];
+    // Black's reply on the variation board is the person's own choice: any black knight move to a
+    // free square (the computer's random first reply may have moved a knight or a pawn).
+    const candidates = [['b8', 'a6'], ['b8', 'c6'], ['g8', 'h6'], ['g8', 'f6']];
+    let knight = candidates[0]!;
+    for (const [from, to] of candidates) {
+      const fromPiece = await p.getByTestId(`var-sq-${from}`).getAttribute('data-piece');
+      const toPiece = await p.getByTestId(`var-sq-${to}`).getAttribute('data-piece');
+      if (fromPiece === 'bN' && !toPiece) {
+        knight = [from!, to!];
+        break;
+      }
+    }
     for (const s of knight) await p.getByTestId(`var-sq-${s}`).click();
     await expect(p.getByTestId(`var-sq-${knight[1]}`)).toHaveAttribute('data-piece', 'bN');
     await expect(p.getByTestId('var-ply-1')).toBeVisible();
