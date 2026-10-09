@@ -57,12 +57,29 @@ function auditLocale(locale: string, content: LocaleContent | undefined): string
 }
 
 describe('content structure', () => {
-  it('has six texts with unique ids, two per difficulty, ordered easy → hard', () => {
-    expect(TEXTS).toHaveLength(6);
-    expect(new Set(TEXTS.map((t) => t.id)).size).toBe(6);
-    for (const d of DIFFICULTIES) expect(TEXTS.filter((t) => t.difficulty === d)).toHaveLength(2);
+  it('has twelve texts with unique ids, four per difficulty, ordered easy → hard', () => {
+    expect(TEXTS).toHaveLength(12);
+    expect(new Set(TEXTS.map((t) => t.id)).size).toBe(12);
+    for (const d of DIFFICULTIES) expect(TEXTS.filter((t) => t.difficulty === d)).toHaveLength(4);
     const order = TEXTS.map((t) => DIFFICULTIES.indexOf(t.difficulty));
     expect([...order].sort((a, b) => a - b)).toEqual(order);
+  });
+
+  it('keeps the ids and gold answers that existing saves reference (append-only)', () => {
+    // Saves store text, question and option ids; these first six texts shipped in the first release.
+    const shipped: Record<string, string> = {
+      'city-trees': 'abcb',
+      bees: 'abcb',
+      lighthouse: 'acbcb',
+      'time-zones': 'bacac',
+      repair: 'cabcba',
+      library: 'dbacab'
+    };
+    for (const [id, golds] of Object.entries(shipped)) {
+      const text = TEXTS.find((t) => t.id === id);
+      expect(text?.questions.map((q) => q.gold).join(''), id).toBe(golds);
+      expect(text?.questions.map((q) => q.id), id).toEqual([...golds].map((_, i) => `q${i + 1}`));
+    }
   });
 
   it('gives easy texts 4 questions, medium 5 and hard 6', () => {
@@ -133,7 +150,7 @@ describe('content in all 16 locales', () => {
 
   it('keeps the bundled content reasonably small', () => {
     const bytes = Object.values(CONTENT).reduce((sum, c) => sum + new TextEncoder().encode(JSON.stringify(c)).length, 0);
-    expect(bytes).toBeLessThan(700 * 1024);
+    expect(bytes).toBeLessThan(1200 * 1024);
   });
 
   it('falls back to English for unknown locales', () => {
