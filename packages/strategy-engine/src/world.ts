@@ -1,6 +1,6 @@
 import { isRecord, normalizeSeed } from '@wp/game-core';
 import { inBounds, passable } from './grid';
-import { isCommandable } from './network';
+import { isCommandable, type Network } from './network';
 import type { Archetype, Command, Entity, Order, Ruleset, Scenario, World } from './types';
 
 /** Build the initial world for a scenario. Throws on invalid authored content (programmer error). */
@@ -52,15 +52,18 @@ export type CommandCheck =
   | { ok: true }
   | { ok: false; reason: 'unknown-unit' | 'not-yours' | 'out-of-contact' | 'immobile' | 'out-of-bounds' | 'impassable' | 'no-weapon' | 'bad-target' | 'bad-order' };
 
-/** Rule check for a single command against the current world. Never throws. */
-export function validateCommand(world: World, ruleset: Ruleset, command: Command): CommandCheck {
+/**
+ * Rule check for a single command against the current world. Never throws. Pass `networks`
+ * (indexed by side) to judge coverage against a fixed snapshot, e.g. the start of a batch.
+ */
+export function validateCommand(world: World, ruleset: Ruleset, command: Command, networks?: readonly Network[]): CommandCheck {
   if (!isRecord(command) || !isRecord(command.order)) return { ok: false, reason: 'bad-order' };
   const unit = findEntity(world, command.unit);
   if (!unit) return { ok: false, reason: 'unknown-unit' };
   if (unit.side !== command.side) return { ok: false, reason: 'not-yours' };
   const arch = archetypeOf(ruleset, unit.kind);
   if (!arch) return { ok: false, reason: 'unknown-unit' };
-  if (!isCommandable(world, ruleset, unit)) return { ok: false, reason: 'out-of-contact' };
+  if (!isCommandable(world, ruleset, unit, networks?.[unit.side])) return { ok: false, reason: 'out-of-contact' };
   const order = command.order;
   switch (order.type) {
     case 'hold':

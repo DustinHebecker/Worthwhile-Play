@@ -26,7 +26,8 @@ export function nodeRadius(world: World, ruleset: Ruleset, e: Entity): number {
   const arch = archetypeOf(ruleset, e.kind);
   const comms = arch?.comms;
   if (!arch || !comms) return 0;
-  const onHill = arch.speed === 0 && terrainAt(world.map, ruleset, e.x, e.y).rangeBonus > 0;
+  // Only static relays (masts) profit from height; command posts keep their fixed radius.
+  const onHill = comms.role === 'relay' && arch.speed === 0 && terrainAt(world.map, ruleset, e.x, e.y).rangeBonus > 0;
   return comms.radius + (onHill ? ruleset.relayHillBonus : 0);
 }
 

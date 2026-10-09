@@ -25,6 +25,17 @@ export const isValidOrder = (v: unknown, w: number, h: number): v is Order => {
 const isStatus = (v: unknown): v is Status => isRecord(v) && isOneOf(v.kind, STATUS_KINDS) && isInt(v.ticks, 1, 10_000);
 
 /**
+ * Deploy progress is only meaningful on units that need deploying, at most one turn of ticks,
+ * and only while deploying or holding (a node must not keep working while it travels).
+ */
+function validDeploy(e: Record<string, unknown>, ruleset: Ruleset | undefined): boolean {
+  if (!ruleset) return isInt(e.deploy, 0, 1000);
+  const comms = archetypeOf(ruleset, e.kind as string)?.comms;
+  const type = isRecord(e.order) ? e.order.type : undefined;
+  return !!comms?.needsDeploy && isInt(e.deploy, 0, ruleset.ticksPerTurn) && (type === 'deploy' || type === 'hold');
+}
+
+/**
  * Structural validation of untrusted world data (saves). Never throws. With a ruleset it also
  * checks that every archetype and terrain code is known. Every guard checks the type before
  * accessing a property, so no try/catch is needed (and none hides a broken guard).
@@ -54,7 +65,7 @@ export function isValidWorld(value: unknown, ruleset?: Ruleset): value is World 
     isValidOrder(e.order, w, h) &&
     isArrayOf(e.status, isStatus) &&
     (e.beam === null || (isRecord(e.beam) && isInt(e.beam.target, 1, MAX_ID) && isInt(e.beam.stacks, 0, 1000))) &&
-    (e.deploy === undefined || isInt(e.deploy, 0, 1000));
+    (e.deploy === undefined || validDeploy(e, ruleset));
   const isProjectile = (p: unknown): p is Projectile =>
     isRecord(p) &&
     isInt(p.id, 1, nextId - 1) &&

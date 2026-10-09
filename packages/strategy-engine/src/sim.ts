@@ -64,12 +64,12 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
   };
 
   // 1. Orders (with a command network: only units in coverage, at most the side's order slots)
-  const slotsLeft = new Map<number, number>();
-  if (rs.commandNetwork && commands.length > 0) {
-    for (let side = 0; side < w.sides; side++) slotsLeft.set(side, computeNetwork(w, rs, side).slots);
-  }
+  // Coverage and slots come from one snapshot taken before any order of this batch applies,
+  // so the order of commands within a batch never changes which of them get through.
+  const networks = rs.commandNetwork && commands.length > 0 ? Array.from({ length: w.sides }, (_, side) => computeNetwork(w, rs, side)) : undefined;
+  const slotsLeft = new Map<number, number>(networks?.map((n, side) => [side, n.slots]));
   for (const c of commands) {
-    if (!validateCommand(w, rs, c).ok) continue;
+    if (!validateCommand(w, rs, c, networks).ok) continue;
     if (rs.commandNetwork) {
       const left = slotsLeft.get(c.side) ?? 0;
       if (left <= 0) continue;
@@ -77,7 +77,8 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     }
     const unit = findEntity(w, c.unit) as Entity;
     unit.order = normalizeOrder(c.order);
-    if (unit.order.type !== 'deploy') delete unit.deploy;
+    // Orders that make the unit travel pack a set-up node up; hold keeps it standing.
+    if (unit.order.type === 'move' || unit.order.type === 'attack') delete unit.deploy;
     events.push({ t: 'order', tick: t, id: unit.id });
   }
 
@@ -134,6 +135,7 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
       e.x = cell % w.map.w;
       e.y = Math.floor(cell / w.map.w);
       e.mp -= claim.cost;
+      delete e.deploy;
       moved.add(e.id);
       events.push({ t: 'move', tick: t, id: e.id, x: e.x, y: e.y });
     }

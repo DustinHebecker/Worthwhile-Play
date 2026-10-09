@@ -101,6 +101,59 @@ describe('command network', () => {
     expect(validateCommand(w, rs, { side: 0, unit: 3, order: { type: 'deploy' } })).toEqual({ ok: true });
   });
 
+  it('coverage is evaluated once at the start of the batch, independent of command order (B2)', () => {
+    const base = worldOf(open(14, 1), [
+      { side: 0, kind: 'command-post', x: 0, y: 0 },
+      { side: 0, kind: 'mast-truck', x: 4, y: 0 },
+      { side: 0, kind: 'rifles', x: 8, y: 0 }
+    ]);
+    const w = { ...base, entities: deployed(base) };
+    expect(isCommandable(w, rs, w.entities[2]!)).toBe(true);
+    for (const plan of [
+      [move(0, 2, 3, 0), move(0, 3, 9, 0)],
+      [move(0, 3, 9, 0), move(0, 2, 3, 0)]
+    ]) {
+      const { world } = runTicks(w, rs, plan, 1);
+      expect(world.entities[2]!.order).toEqual({ type: 'move', x: 9, y: 0 });
+      expect(world.entities[1]!.order).toEqual({ type: 'move', x: 3, y: 0 });
+    }
+  });
+
+  it('a set-up relay stays set up on hold and packs up only when it moves (N3)', () => {
+    const base = worldOf(open(14, 1), [{ side: 0, kind: 'command-post', x: 0, y: 0 }, { side: 0, kind: 'mast-truck', x: 4, y: 0 }]);
+    const w = { ...base, entities: deployed(base) };
+    const held = runTicks(w, rs, [{ side: 0, unit: 2, order: { type: 'hold' } }], 6).world;
+    expect(held.entities[1]!.deploy).toBe(rs.ticksPerTurn);
+    expect(covered(held, 0, 9, 0)).toBe(true);
+    const moved = runTicks(w, rs, [move(0, 2, 3, 0)], 1).world;
+    expect(moved.entities[1]!.deploy ?? 0).toBe(0);
+  });
+
+  it('a deployed Mast Truck really adds coverage cells (N10)', () => {
+    const base = worldOf(open(14, 14), [{ side: 0, kind: 'command-post', x: 0, y: 0 }, { side: 0, kind: 'mast-truck', x: 4, y: 3 }]);
+    const count = (w: World) => computeNetwork(w, rs, 0).coverage.reduce((a, b) => a + b, 0);
+    expect(count({ ...base, entities: deployed(base) })).toBeGreaterThan(count(base) + 20);
+  });
+
+  it('the hill bonus applies to static relays only, not to command posts (N7)', () => {
+    const flat = worldOf(open(14, 1), [{ side: 0, kind: 'command-post', x: 0, y: 0 }]);
+    const hill = worldOf(mapOf('h.............'), [{ side: 0, kind: 'command-post', x: 0, y: 0 }]);
+    expect(computeNetwork(hill, rs, 0).coverage).toEqual(computeNetwork(flat, rs, 0).coverage);
+  });
+
+  it('P7 command gating: an order for a unit outside coverage never changes it', () => {
+    fc.assert(
+      fc.property(fc.nat(13), fc.nat(13), fc.nat(13), fc.nat(13), (ux, uy, tx, ty) => {
+        fc.pre(ux * ux + uy * uy > 25 && (ux !== 0 || uy !== 0));
+        const w = worldOf(open(14, 14), [{ side: 0, kind: 'command-post', x: 0, y: 0 }, { side: 0, kind: 'rifles', x: ux, y: uy }]);
+        const { world, events } = runTicks(w, rs, [move(0, 2, tx, ty)], 1);
+        expect(world.entities[1]!.order).toEqual({ type: 'hold' });
+        expect(events.some((e) => e.t === 'order')).toBe(false);
+      }),
+      { numRuns: 200 }
+    );
+  });
+
   it('P6 monotonicity: adding a relay never shrinks coverage', () => {
     fc.assert(
       fc.property(fc.nat(9), fc.nat(9), fc.nat(9), fc.nat(9), fc.constantFrom('relay-mast', 'mast-truck', 'kite'), (cx, cy, rx, ry, kind) => {
