@@ -1,4 +1,4 @@
-import type { Archetype, ArmorClass, CommsSpec, Ruleset, StatusEffectSpec, TerrainSpec, WeaponSpec } from './types';
+import type { Archetype, ArmorClass, CommsSpec, EwSpec, Ruleset, StatusEffectSpec, TerrainSpec, WeaponSpec } from './types';
 
 /**
  * Shared base content (ADR 0009, decision D16): terrain and archetypes used by the strategy
@@ -35,10 +35,11 @@ const weapon = (spec: Partial<WeaponSpec> & Pick<WeaponSpec, 'damage' | 'range' 
   ...spec
 });
 
-const unit = (spec: Omit<Archetype, 'weapon' | 'comms'> & { weapon?: WeaponSpec; comms?: CommsSpec }): Archetype => ({
+const unit = (spec: Omit<Archetype, 'weapon' | 'comms' | 'ew'> & { weapon?: WeaponSpec; comms?: CommsSpec; ew?: EwSpec }): Archetype => ({
   ...spec,
   weapon: spec.weapon ?? null,
-  comms: spec.comms ?? null
+  comms: spec.comms ?? null,
+  ew: spec.ew ?? null
 });
 
 export const BASE_ARCHETYPES: Readonly<Record<string, Archetype>> = Object.fromEntries(
@@ -60,6 +61,10 @@ export const BASE_ARCHETYPES: Readonly<Record<string, Archetype>> = Object.fromE
       comms: { role: 'relay', radius: 5, orderSlots: 0, needsDeploy: true } }),
     unit({ id: 'field-post', hp: 90, armor: 'light', layer: 'ground', speed: 3, vision: 4, cost: 160,
       comms: { role: 'source', radius: 4, orderSlots: 2, needsDeploy: true } }),
+    unit({ id: 'jammer', hp: 50, armor: 'light', layer: 'ground', speed: 3, vision: 3, cost: 100,
+      ew: { role: 'jammer', radius: 3, burnThrough: 0, needsDeploy: true } }),
+    unit({ id: 'tracer', hp: 45, armor: 'light', layer: 'ground', speed: 3, vision: 4, cost: 90,
+      ew: { role: 'tracer', radius: 8, burnThrough: 2, needsDeploy: false } }),
     unit({ id: 'command-post', hp: 400, armor: 'structure', layer: 'ground', speed: 0, vision: 5, cost: 0,
       comms: { role: 'source', radius: 5, orderSlots: 4, needsDeploy: false } }),
     unit({ id: 'relay-mast', hp: 100, armor: 'structure', layer: 'ground', speed: 0, vision: 4, cost: 60,

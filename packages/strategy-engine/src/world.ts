@@ -49,6 +49,9 @@ export function spawn(id: number, side: number, arch: Archetype, x: number, y: n
 export const archetypeOf = (ruleset: Ruleset, kind: string): Archetype | undefined =>
   Object.hasOwn(ruleset.archetypes, kind) ? ruleset.archetypes[kind] : undefined;
 
+/** Whether the archetype only works after a full turn of deploying in place (relays, posts, jammers). */
+export const needsDeploy = (arch: Archetype | undefined): boolean => !!(arch?.comms?.needsDeploy || arch?.ew?.needsDeploy);
+
 /** Structural check of a doctrine. Never throws. */
 export const isValidDoctrine = (v: unknown): v is Doctrine =>
   isRecord(v) &&
@@ -91,7 +94,7 @@ export function validateCommand(world: World, ruleset: Ruleset, command: Command
       if (!passable(world.map, ruleset, order.x, order.y, arch.layer)) return { ok: false, reason: 'impassable' };
       return { ok: true };
     case 'deploy':
-      return arch.comms?.needsDeploy ? { ok: true } : { ok: false, reason: 'bad-order' };
+      return needsDeploy(arch) ? { ok: true } : { ok: false, reason: 'bad-order' };
     case 'regroup':
       return arch.speed > 0 ? { ok: true } : { ok: false, reason: 'immobile' };
     case 'patrol':

@@ -51,7 +51,7 @@ describe('Relay Command view', () => {
   it('renders the turn, the status, both unit lists and the map', () => {
     expect($('rc-turn').textContent).toBe('Turn 1 of 12');
     expect($('rc-status').getAttribute('data-phase')).toBe('plan');
-    expect(ctx.context.root.querySelectorAll('[data-testid^="rc-unit-"]')).toHaveLength(7);
+    expect(ctx.context.root.querySelectorAll('[data-testid^="rc-unit-"]')).toHaveLength(9);
     // Fog: of the enemy, only its Command Post is known, from before the battle.
     expect($('rc-enemy').querySelectorAll('li')).toHaveLength(1);
     expect($('rc-enemy').textContent).toContain('Position known from before the battle');
@@ -255,6 +255,71 @@ describe('Relay Command view', () => {
     for (let i = 0; i < 12; i++) key('ArrowUp');
     for (let i = 0; i < 12; i++) key('ArrowRight');
     expect($('rc-cursor').textContent).toContain('(not observed now)');
+  });
+
+  it('sets up a Static Jammer through its own button and explains what it does', () => {
+    const jammer = own().find((e) => e.kind === 'jammer')!;
+    click(`rc-unit-${jammer.id}`);
+    expect($('rc-deploy').textContent).toBe('Set up jammer');
+    click('rc-deploy');
+    expect(state().draft).toEqual([{ side: PLAYER, unit: jammer.id, order: { type: 'deploy' } }]);
+    expect($(`rc-unit-${jammer.id}`).textContent).toContain('Setting up: the jammer works after this turn.');
+    expect(ctx.context.root.textContent).toContain('Electronic warfare:');
+  });
+
+  /** Puts the enemy jammer, set up, on the first free cell next to (x, y). */
+  function enemyJammerNear(x: number, y: number, withoutOwnTracer = false) {
+    const s = structuredClone(state());
+    if (withoutOwnTracer) s.world.entities = s.world.entities.filter((e) => !(e.side === PLAYER && e.kind === 'tracer'));
+    const jammer = s.world.entities.find((e) => e.side === OPPONENT && e.kind === 'jammer')!;
+    const free = (cx: number, cy: number) => cx >= 0 && cy >= 0 && cx < 12 && cy < 12 && passable(s.world.map, RULESET, cx, cy, 'ground') && !s.world.entities.some((e) => e.x === cx && e.y === cy);
+    const spot = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1], [2, 0], [0, 2]].map(([dx, dy]) => [x + dx!, y + dy!] as const).find(([cx, cy]) => free(cx, cy))!;
+    Object.assign(jammer, { x: spot[0], y: spot[1], order: { type: 'hold' }, deploy: RULESET.ticksPerTurn });
+    s.world.entities.sort((a, b) => a.id - b.id);
+    s.world.intel = initialIntel(s.world, RULESET);
+    instance.restore(s);
+    return jammer;
+  }
+
+  it('shows the player\'s own units as jammed when an enemy jammer works next to them (no order buttons)', () => {
+    const lancer = own().find((e) => e.kind === 'lancer')!;
+    enemyJammerNear(lancer.x, lancer.y);
+    expect($(`rc-unit-${lancer.id}`).textContent).toContain('jammed, keeps its last order');
+    click(`rc-unit-${lancer.id}`);
+    expect($('rc-hold').closest('[hidden]')).not.toBeNull();
+    $('rc-map').focus();
+    expect($('rc-cursor').textContent).toContain('(your radio is jammed here)');
+  });
+
+  it('tells the player when the Command Post itself is jammed', () => {
+    const post = own().find((e) => e.kind === 'command-post')!;
+    // The own Tracer starts next to the post and would burn through; take it away.
+    enemyJammerNear(post.x, post.y, true);
+    expect($('rc-status').textContent).toBe('Your Command Post is jammed: no orders can be sent this turn. Destroy the jammer, or bring a Tracer next to the post.');
+    // The silenced post shows no jam marks: they would pin down the (unlocated) jammer.
+    const jammer = state().world.entities.find((e) => e.side === OPPONENT && e.kind === 'jammer')!;
+    $('rc-map').focus();
+    for (let i = 0; i < 12; i++) key('ArrowUp');
+    for (let i = 0; i < 12; i++) key('ArrowLeft');
+    for (let i = 0; i < jammer.x; i++) key('ArrowRight');
+    for (let i = 0; i < jammer.y; i++) key('ArrowDown');
+    expect($('rc-cursor').textContent).not.toContain('jammed');
+  });
+
+  it('does not mark jammed cells outside the own coverage (that would reveal a hidden jammer)', () => {
+    const s = structuredClone(state());
+    const jammer = s.world.entities.find((e) => e.side === OPPONENT && e.kind === 'jammer')!;
+    Object.assign(jammer, { order: { type: 'hold' }, deploy: RULESET.ticksPerTurn }); // at its start, far from the player
+    s.world.intel = initialIntel(s.world, RULESET);
+    instance.restore(s);
+    $('rc-map').focus();
+    // Walk the cursor onto the jammer's own cell (inside its disc, outside the player's coverage).
+    for (let i = 0; i < 12; i++) key('ArrowUp');
+    for (let i = 0; i < 12; i++) key('ArrowLeft');
+    for (let i = 0; i < jammer.x; i++) key('ArrowRight');
+    for (let i = 0; i < jammer.y; i++) key('ArrowDown');
+    expect($('rc-cursor').textContent).toContain(`Cell ${jammer.x + 1}, ${jammer.y + 1}`);
+    expect($('rc-cursor').textContent).not.toContain('jammed');
   });
 
   it('maps pointer clicks on the canvas to cells', () => {

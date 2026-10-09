@@ -23,7 +23,16 @@ export function mirrorWorld(w: World): World {
   return {
     ...structuredClone(w),
     map: { ...w.map, terrain: [...w.map.terrain].reverse().join('') },
-    entities: w.entities.map((e) => ({ ...structuredClone(e), side: ms(e.side), x: mx(e.x), y: my(e.y), order: mirrorOrder(e.order) })),
+    entities: w.entities.map((e) => ({
+      ...structuredClone(e),
+      side: ms(e.side),
+      x: mx(e.x),
+      y: my(e.y),
+      order: mirrorOrder(e.order),
+      // Progress keys below the cell count are cells (mirrored); above it, target ids (kept).
+      ...(e.stall && { stall: { ...e.stall, goal: e.stall.goal < w.map.w * w.map.h ? w.map.w * w.map.h - 1 - e.stall.goal : e.stall.goal } }),
+      ...(e.prev !== undefined && { prev: w.map.w * w.map.h - 1 - e.prev })
+    })),
     projectiles: w.projectiles.map((p): Projectile => ({ ...p, side: ms(p.side), x: mx(p.x), y: my(p.y) })),
     ...(w.intel && {
       intel: w.intel.map((_, side) => (w.intel?.[ms(side)] ?? []).map((r) => ({ ...r, side: ms(r.side), x: mx(r.x), y: my(r.y) })))
@@ -45,7 +54,7 @@ export const mirrorCommands = (w: World, commands: readonly Command[]): Command[
     return { ...c, side: c.side === 0 ? 1 : 0, order };
   });
 
-const KINDS = ['rifles', 'lancer', 'outrider', 'warden', 'howitzer', 'kite', 'tower-gun', 'tower-artillery', 'tower-laser', 'tower-emp', 'command-post', 'mast-truck', 'field-post', 'relay-mast'];
+const KINDS = ['rifles', 'lancer', 'outrider', 'warden', 'howitzer', 'kite', 'tower-gun', 'tower-artillery', 'tower-laser', 'tower-emp', 'command-post', 'mast-truck', 'field-post', 'relay-mast', 'jammer', 'tracer'];
 const TERRAIN = ['.', '.', '.', '=', 'f', 'h', 'u', 's', '~', '^'];
 
 /** Random small valid world with two sides plus commands for a few turns. */
@@ -64,7 +73,7 @@ export const arbScenario = fc
         doctrine: fc.option(
           fc.record({
             retreatBelow: fc.constantFrom(0, 25, 50, 75),
-            priority: fc.constantFrom('weakest', 'nearest', 'armor', 'infantry', 'structures'),
+            priority: fc.constantFrom('weakest', 'nearest', 'armor', 'infantry', 'structures', 'emitters'),
             seekCover: fc.boolean(),
             holdFire: fc.boolean()
           }),

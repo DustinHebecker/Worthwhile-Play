@@ -171,7 +171,7 @@ export function canReach(map: GameMap, ruleset: Ruleset, layer: Layer, region: I
 }
 
 /** Binary min-heap of plain numbers (exact integers below 2^53). */
-class NumberHeap {
+export class NumberHeap {
   private readonly a: number[] = [];
 
   get size(): number {

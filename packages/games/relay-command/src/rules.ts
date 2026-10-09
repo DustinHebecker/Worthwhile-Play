@@ -290,6 +290,11 @@ export function isValidState(value: unknown): value is RcState {
   if (!isValidWorld(value.world, RULESET) || value.world.sides !== 2 || !matchesScenario(value.world, spec)) return false;
   const isCommand = commandGuard(value.world.map.w, value.world.map.h);
   if (!isArrayOf(value.draft, isCommand) || value.draft.some((c) => c.side !== PLAYER)) return false;
+  // Bounded by the scenario (hostile saves must not freeze the tab): one command per unit and
+  // plan, and at most a dozen events per unit and tick in the last turn's summary.
+  const n = spec.scenario.entities.length;
+  if (value.draft.length > n || !Array.isArray(value.events) || value.events.length > n * RULESET.ticksPerTurn * 12) return false;
+  if (!Array.isArray(value.log) || value.log.some((t) => !isRecord(t) || !Array.isArray(t.plans) || t.plans.some((p) => !Array.isArray(p) || p.length > n))) return false;
   if (new Set(value.draft.map((c) => c.unit)).size !== value.draft.length) return false;
   if (!Array.isArray(value.events) || !value.events.every((e) => isRecord(e) && typeof e.t === 'string' && isInt(e.tick, 0))) return false;
   if (!isArrayOf(value.log, isTurnLog(isCommand)) || value.log.length !== value.world.turn) return false;

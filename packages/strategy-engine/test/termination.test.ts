@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import {
+  BASE_RULESET,
   createWorld,
   DEADLOCK_TICKS,
   DEFAULT_DOCTRINE,
+  findPath,
   isValidWorld,
   resolveTurn,
   runTicks,
+  STALL_TICKS,
   STRATEGY_RULESET,
   UNREACHABLE_TICKS,
   type Command,
@@ -245,7 +248,7 @@ const MAPS = [
   { w: 10, h: 6 },
   { w: 8, h: 8 }
 ];
-const MOBILE = ['rifles', 'lancer', 'outrider', 'warden', 'howitzer', 'mast-truck', 'kite'];
+const MOBILE = ['rifles', 'lancer', 'outrider', 'warden', 'howitzer', 'mast-truck', 'kite', 'jammer', 'tracer'];
 
 const arbOrder = (w: number, h: number) =>
   fc.oneof(
@@ -265,7 +268,7 @@ const arbOrder = (w: number, h: number) =>
  */
 const arbDoctrine: fc.Arbitrary<Doctrine> = fc.record({
   retreatBelow: fc.constantFrom(0, 25, 50, 75),
-  priority: fc.constantFrom('weakest', 'nearest', 'armor', 'infantry', 'structures'),
+  priority: fc.constantFrom('weakest', 'nearest', 'armor', 'infantry', 'structures', 'emitters'),
   seekCover: fc.boolean(),
   holdFire: fc.boolean()
 });
@@ -325,7 +328,7 @@ const arbBattle = fc
       if (!e || e.kind === 'command-post') continue;
       const order = clampOrder(s.order);
       // Only orders a player could have given earlier.
-      if (order.type === 'deploy' && e.kind !== 'mast-truck') continue;
+      if (order.type === 'deploy' && e.kind !== 'mast-truck' && e.kind !== 'jammer') continue;
       if ((order.type === 'escort' || order.type === 'attack') && !world.entities.some((x) => x.id === order.target)) continue;
       e.order = order;
       if (s.doctrine) e.doctrine = s.doctrine;
@@ -500,5 +503,198 @@ describe('review of PR #8: no endless back-and-forth', () => {
     for (const e of events) if (e.t === 'move' && e.id === 3) visits.set(`${e.x},${e.y}`, (visits.get(`${e.x},${e.y}`) ?? 0) + 1);
     expect(Math.max(...visits.values())).toBeLessThan(4);
     expect(ended(events, 3)).toEqual(['arrived']);
+  });
+});
+
+describe('review of PR #8 (round 2): no endless waiting or back-and-forth', () => {
+  it('a Warden that cannot get past a two-cell patrol ends its order (blocked) instead of pacing for ever', () => {
+    const w = worldOf(mapOf('ff=....=.f', '.^=...f^..', '.....=^=f^'), [
+      { side: 0, kind: 'warden', x: 2, y: 1 },
+      { side: 0, kind: 'mast-truck', x: 2, y: 0 },
+      { side: 0, kind: 'howitzer', x: 3, y: 1 }
+    ]);
+    unit(w, 1).order = { type: 'move', x: 0, y: 0 };
+    unit(w, 2).order = { type: 'patrol', x: 3, y: 0, rx: 2, ry: 0 };
+    unit(w, 3).order = { type: 'escort', target: 2 };
+    const { events } = play(w, 8);
+    const end = events.find((e) => e.t === 'order-ended' && e.id === 1);
+    expect(end).toBeDefined();
+    expect(end!.tick).toBeLessThanOrEqual(STALL_TICKS + 2 * rs.ticksPerTurn);
+    expect(['arrived', 'blocked']).toContain((end as { reason: string }).reason);
+  });
+
+  it('progress resets the count: a slow unit crossing a swamp is never ended', () => {
+    const w = worldOf(mapOf('.ssssssssssssssssss.'), [{ side: 0, kind: 'rifles', x: 0, y: 0 }]);
+    Object.assign(unit(w, 1), { order: { type: 'move', x: 19, y: 0 }, status: [{ kind: 'slowed', ticks: 200 }] });
+    // One swamp cell per 8 ticks (speed halved to 1, cost 8): 18 cells take 24 turns.
+    const { events } = play(w, 26);
+    expect(ended(events, 1)).toEqual(['arrived']);
+  });
+});
+
+describe('progress along the route (STALL_TICKS)', () => {
+  it('a long detour around a lake counts as progress (the route gets shorter), so the order is kept', () => {
+    // From (0,0) to (0,4): the lake forces a walk to x = 11 and back, moving away in straight line.
+    const w = worldOf(mapOf('............', '~~~~~~~~~~~.', '~~~~~~~~~~~.', '~~~~~~~~~~~.', '............'), [{ side: 0, kind: 'rifles', x: 0, y: 0 }]);
+    unit(w, 1).order = { type: 'move', x: 0, y: 4 };
+    const { events } = play(w, 12);
+    expect(ended(events, 1)).toEqual(['arrived']);
+  });
+
+  it('an order whose route has not got shorter for STALL_TICKS searches ends as blocked', () => {
+    const w = worldOf(open(10, 1), [
+      { side: 0, kind: 'command-post', x: 0, y: 0 },
+      { side: 0, kind: 'rifles', x: 1, y: 0 }
+    ]);
+    // Pretend the unit was a little closer before (best route cost 30, now 32) and has not got closer since.
+    Object.assign(unit(w, 2), { order: { type: 'move', x: 9, y: 0 }, mp: 4, stall: { goal: 9, best: 30, ticks: STALL_TICKS - 1 } });
+    const r = runTicks(w, rs, [], 1);
+    expect(ended(r.events, 2)).toEqual(['blocked']);
+    expect(isValidWorld(JSON.parse(JSON.stringify(r.world)), rs)).toBe(true);
+    // A new order starts afresh.
+    const again = runTicks(w, rs, [{ side: 0, unit: 2, order: { type: 'move', x: 9, y: 0 } }], 1);
+    expect(ended(again.events, 2)).toEqual([]);
+  });
+});
+
+describe('review of PR #9', () => {
+  /** 40×7, a wall row at y = 3 with gaps at x = 1 and x = gap. */
+  const gapMap = (gap: number) => {
+    const rows = Array.from({ length: 7 }, () => '.'.repeat(40).split(''));
+    for (let x = 0; x < 40; x++) if (x !== 1 && x !== gap) rows[3]![x] = '^';
+    return mapOf(...rows.map((r) => r.join('')));
+  };
+
+  for (const gap of [12, 20, 38]) {
+    it(`a long forced detour (near gap taken, far gap at x = ${gap}) is progress: the unit arrives`, () => {
+      const w = worldOf(gapMap(gap), [
+        { side: 0, kind: 'rifles', x: 6, y: 0 },
+        { side: 0, kind: 'outrider', x: 1, y: 0 }
+      ]);
+      unit(w, 1).order = { type: 'move', x: 6, y: 6 };
+      unit(w, 2).order = { type: 'move', x: 1, y: 3 }; // settles in the near gap and holds there
+      // Up to ~70 cells at one cell per two ticks: allow 26 turns.
+      const { world, events } = play(w, 26);
+      expect(ended(events, 2)).toEqual(['arrived']);
+      expect(ended(events, 1)).toEqual(['arrived']);
+      expect(unit(world, 1)).toMatchObject({ x: 6, y: 6 });
+    });
+  }
+});
+
+describe('review of PR #9: attacking targets whose own cell cannot be reached', () => {
+  it('a Lancer attacking a reported Command Post ringed by holding Rifles closes in and fires (fog)', () => {
+    const w = worldOf(open(24, 3), [
+      { side: 0, kind: 'command-post', x: 0, y: 0 },
+      { side: 0, kind: 'lancer', x: 2, y: 0 },
+      { side: 1, kind: 'command-post', x: 23, y: 0 },
+      { side: 1, kind: 'rifles', x: 22, y: 0 },
+      { side: 1, kind: 'rifles', x: 22, y: 1 },
+      { side: 1, kind: 'rifles', x: 23, y: 1 }
+    ]);
+    unit(w, 2).order = { type: 'attack', target: 3 }; // the post is known from before the battle
+    const { events } = play(w, 8);
+    expect(ended(events, 2)).not.toContain('unreachable');
+    expect(events.some((e) => e.t === 'fire' && e.id === 2)).toBe(true);
+  });
+
+  it('a Field Gun facing a target across a river drives to the shore and fires (no fog)', () => {
+    const map = mapOf('........~.....', '........~.....', '........~.....');
+    let world = createWorld({ map, sides: 2, seed: 1, entities: [
+      { side: 0, kind: 'howitzer', x: 1, y: 1 },
+      { side: 1, kind: 'rifles', x: 12, y: 1 }
+    ] }, BASE_RULESET);
+    world.entities[0]!.order = { type: 'attack', target: 2 };
+    const events: SimEvent[] = [];
+    for (let i = 0; i < 6; i++) {
+      const r = resolveTurn(world, BASE_RULESET, [[]]);
+      events.push(...r.events);
+      world = r.world;
+    }
+    expect(ended(events, 1)).not.toContain('unreachable');
+    expect(events.some((e) => e.t === 'launch' && e.id === 1)).toBe(true);
+  });
+});
+
+describe('review of PR #9 (round 2): the no-reversal rule never trades a way around units for a blocked one', () => {
+  it('the reviewer\'s 8×9 world: Warden 2 arrives instead of bumping until blocked', () => {
+    const map = mapOf('^~~=~^~f', 'ff.~^fh.', '=.f.=h=^', 'f...^^=.', 'hs..^f..', 'f.=hh...', 's=f~f.~.', '=~~^..f.', '.^h.^.^=');
+    let world = createWorld({ map, sides: 2, seed: 1, entities: [
+      { side: 1, kind: 'mast-truck', x: 3, y: 0, order: { type: 'move', x: 5, y: 7 } },
+      { side: 0, kind: 'warden', x: 7, y: 3, order: { type: 'move', x: 1, y: 3 } },
+      { side: 0, kind: 'warden', x: 7, y: 4, order: { type: 'move', x: 3, y: 5 } },
+      { side: 0, kind: 'mast-truck', x: 5, y: 2, order: { type: 'escort', target: 3 } },
+      { side: 0, kind: 'outrider', x: 7, y: 7, order: { type: 'move', x: 0, y: 5 } }
+    ] }, BASE_RULESET);
+    for (const e of world.entities) e.doctrine = doctrine({ holdFire: true });
+    const events: SimEvent[] = [];
+    for (let i = 0; i < 6; i++) {
+      const r = resolveTurn(world, BASE_RULESET, [[]]);
+      events.push(...r.events);
+      world = r.world;
+    }
+    expect(ended(events, 2)).toEqual(['arrived']);
+  });
+
+  it('property: a single moving unit among units that stay always arrives when its destination is free and reachable', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 4, max: 10 }),
+        fc.integer({ min: 3, max: 8 }),
+        fc.array(fc.constantFrom('.', '.', '.', '=', 'f', 's', '^', '~'), { minLength: 80, maxLength: 80 }),
+        fc.array(fc.nat(79), { minLength: 1, maxLength: 10 }),
+        fc.nat(79),
+        fc.nat(79),
+        (w, h, terrain, holders, from, to) => {
+          const n = w * h;
+          const t = terrain.slice(0, n);
+          const start = from % n;
+          const goal = to % n;
+          t[start] = '.';
+          t[goal] = '.';
+          const map = { w, h, terrain: t.join('') };
+          const used = new Set([start, goal]);
+          const entities: Scenario['entities'][number][] = [{ side: 0, kind: 'rifles', x: start % w, y: Math.floor(start / w), order: { type: 'move', x: goal % w, y: Math.floor(goal / w) } }];
+          for (const c of holders) {
+            const cell = c % n;
+            if (used.has(cell) || t[cell] === '^' || t[cell] === '~') continue;
+            used.add(cell);
+            entities.push({ side: 0, kind: 'rifles', x: cell % w, y: Math.floor(cell / w) });
+          }
+          fc.pre(start !== goal);
+          let world = createWorld({ map, sides: 2, seed: 1, entities }, BASE_RULESET);
+          const blockedCells = new Set(world.entities.slice(1).map((e) => e.y * w + e.x));
+          fc.pre(findPath(map, BASE_RULESET, start, goal, { layer: 'ground', side: 0, blocked: blockedCells }) !== undefined);
+          const events: SimEvent[] = [];
+          for (let i = 0; i < 20 && !events.some((e) => e.t === 'order-ended'); i++) {
+            const r = resolveTurn(world, BASE_RULESET, [[]]);
+            events.push(...r.events);
+            world = r.world;
+          }
+          expect(ended(events, 1)).toEqual(['arrived']);
+        }
+      ),
+      { numRuns: 300 }
+    );
+  });
+});
+
+describe('review of PR #9 (round 2, N-b)', () => {
+  it('two attackers pacing in step around each other out of range end their orders in time', () => {
+    // A point-symmetric duel: each step of one is mirrored by the other, so neither gets closer.
+    let world = createWorld({ map: open(8, 9), sides: 2, seed: 1, entities: [
+      { side: 0, kind: 'outrider', x: 3, y: 3, order: { type: 'attack', target: 2 } },
+      { side: 1, kind: 'outrider', x: 4, y: 5, order: { type: 'attack', target: 1 } }
+    ] }, BASE_RULESET);
+    const events: SimEvent[] = [];
+    for (let i = 0; i < 10; i++) {
+      const r = resolveTurn(world, BASE_RULESET, [[]]);
+      events.push(...r.events);
+      world = r.world;
+    }
+    // Either they fight (one fires) or their orders end; never pacing for ever with neither.
+    const fired = events.some((e) => e.t === 'fire');
+    const endedBoth = ended(events, 1).length > 0 && ended(events, 2).length > 0;
+    expect(fired || endedBoth).toBe(true);
   });
 });

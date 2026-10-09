@@ -42,7 +42,9 @@ export const FIELD_EXERCISE: ScenarioSpec = symmetric(
     { kind: 'lancer', x: 9, y: 2 },
     { kind: 'warden', x: 8, y: 3 },
     { kind: 'rifles', x: 10, y: 3 },
-    { kind: 'mast-truck', x: 11, y: 2 }
+    { kind: 'mast-truck', x: 11, y: 2 },
+    { kind: 'jammer', x: 9, y: 0 },
+    { kind: 'tracer', x: 11, y: 1 }
   ]
 );
 
