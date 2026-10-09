@@ -39,6 +39,7 @@
     "@wp/game-spatial-memory": "workspace:*",
     "@wp/game-systems-puzzle": "workspace:*",
     "@wp/game-tic-tac-toe": "workspace:*",
+    "@wp/game-word-guess": "workspace:*",
     "@wp/learning-content": "workspace:*",
     "@wp/localization": "workspace:*",
     "@wp/persistence": "workspace:*",

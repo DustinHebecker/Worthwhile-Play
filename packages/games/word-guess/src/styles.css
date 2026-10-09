@@ -51,7 +51,6 @@
 .wp-word-guess .wg-key.wg-wide { flex-grow: 1.6; max-width: 4.75rem; font-size: 0.8rem; padding-inline: 2px; overflow-wrap: anywhere; }
 .wp-word-guess .wg-key.primary { background: var(--wp-accent); color: var(--wp-accent-contrast); border-color: var(--wp-accent); }
 .wp-word-guess .wg-key .wg-symbol { font-size: 0.6rem; inset-block-start: 1px; inset-inline-end: 2px; }
-.wp-word-guess .wg-key.wg-miss .wg-letter { text-decoration: line-through; }
 .wp-word-guess .wg-back-icon, .wp-word-guess .wg-enter-icon { font-size: 1.3rem; }
 .wp-word-guess .wg-enter-icon { display: none; }
 /* Large layout: alphabetical grid of full 44 px keys that fits a 360 px phone. */
@@ -67,7 +66,6 @@
   color: var(--wg-near-fg); border-color: var(--wg-near-bg);
 }
 .wp-word-guess .wg-miss { background: var(--wg-miss-bg); color: var(--wg-miss-fg); border-color: var(--wg-miss-bg); }
-.wp-word-guess .wg-tile.wg-miss .wg-letter { text-decoration: line-through; text-decoration-thickness: 2px; }
 
 .wp-word-guess .wg-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.35rem 1rem; font-size: 0.9rem; color: var(--wp-muted); }
 .wp-word-guess .wg-legend li { display: inline-flex; align-items: center; gap: 0.4rem; }
