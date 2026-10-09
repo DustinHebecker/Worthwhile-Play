@@ -53,6 +53,8 @@ export interface GameMetadata {
   readonly messages: GameMessages;
   /** Optional difficulty identifiers; translated via `difficulty.<id>` message keys. */
   readonly difficulties?: readonly string[];
+  /** Optional: the game can play with the user's imported decks; the host then provides `GameContext.userDecks`. */
+  readonly usesUserDecks?: boolean;
 }
 
 export interface Translator {
@@ -94,6 +96,37 @@ export interface GameContext {
    * a reload even when the player starts a fresh game. Small JSON values only; never game state.
    */
   readonly preferences?: GamePreferences;
+  /**
+   * Optional learning languages chosen in Settings (any BCP-47 tags, independent of the UI language `t.locale`).
+   * Either may be missing; games must fall back explicitly (e.g. to the UI language).
+   */
+  readonly contentLanguages?: GameContentLanguages;
+  /**
+   * Optional read-only snapshot of the decks the user imported on this device (only for games with
+   * `metadata.usesUserDecks`). Synchronous, so `newGame`/`restore` stay synchronous. Decks can be deleted
+   * between sessions: a saved game must handle a missing deck gracefully.
+   */
+  readonly userDecks?: UserDeckSource;
+}
+
+export interface GameContentLanguages {
+  /** Language being learned, e.g. `ja`. */
+  readonly learning?: string;
+  /** Language translations are shown in, e.g. `en`. */
+  readonly translation?: string;
+}
+
+export interface UserDeckSummary {
+  readonly id: string;
+  /** Title keyed by BCP-47 tag. */
+  readonly title: Readonly<Record<string, string>>;
+  readonly itemCount: number;
+}
+
+export interface UserDeckSource {
+  list(): readonly UserDeckSummary[];
+  /** The deck in the `@wp/learning-content` format (already validated by the host), or undefined. */
+  get(id: string): unknown;
 }
 
 export interface GamePreferences {
