@@ -100,6 +100,11 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     if (cachedJam?.state !== state) cachedJam = { state, jam: jammedCells(state.world, RULESET, PLAYER) };
     return cachedJam.jam[cellOf(state.world.map, x, y)] === 1;
   };
+  /** Whether the unit's weapon can damage the target's armour at all (no button otherwise). */
+  const canHurt = (shooter: Entity, target: Entity): boolean => {
+    const armor = archetypeOf(RULESET, target.kind)?.armor;
+    return !!armor && (archetypeOf(RULESET, shooter.kind)?.weapon?.vs[armor] ?? 0) > 0;
+  };
   const inContact = (e: Entity) => !isGhost(e) && network().coverage[cellOf(world().map, e.x, e.y)] === 1;
   const isSetUpOrPending = (e: Entity) =>
     (e.deploy ?? 0) >= RULESET.ticksPerTurn || e.order.type === 'deploy' || draftFor(state, e.id)?.type === 'deploy';
@@ -340,7 +345,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       !!attacker && attacker.side === PLAYER && isMobile(attacker) && inContact(attacker) && !!archetypeOf(RULESET, attacker.kind)?.weapon && state.phase === 'plan';
     for (const e of enemies) {
       const item = h('li', { 'data-testid': `rc-enemy-${e.id}` }, h('span', {}, describeUnit(e)));
-      if (canAttack && !isGhost(e)) {
+      if (canAttack && !isGhost(e) && canHurt(attacker, e)) {
         item.append(h('button', { type: 'button', 'data-testid': `rc-attack-${e.id}`, onclick: () => orderSelected({ type: 'attack', target: e.id }) }, t('action.attack', { name: unitName(e) })));
       }
       enemyList.append(item);

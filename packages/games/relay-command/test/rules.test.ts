@@ -604,3 +604,15 @@ describe('electronic warfare (I4)', () => {
     }
   });
 });
+
+describe('save bounds (review of PR #8, round 2)', () => {
+  it('rejects saves with oversized turn summaries or plans', () => {
+    const s = lockTurn(newGame(3));
+    expect(isValidState(s)).toBe(true);
+    const n = FIELD_EXERCISE.scenario.entities.length;
+    const event = { t: 'bump', tick: 1, id: 2 };
+    expect(isValidState({ ...s, events: Array.from({ length: n * RULESET.ticksPerTurn * 12 + 1 }, () => event) })).toBe(false);
+    const bigPlan = Array.from({ length: n + 1 }, () => ({ side: PLAYER, unit: 2, order: { type: 'hold' } }));
+    expect(isValidState({ ...s, log: [{ turn: 0, plans: [bigPlan, []] }] })).toBe(false);
+  });
+});
