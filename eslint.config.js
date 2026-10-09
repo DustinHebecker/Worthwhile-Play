@@ -17,6 +17,13 @@ export default tseslint.config(
     }
   },
   {
+    // Stryker's instrumenter crashes on `a[i]!++` (non-null assertion inside ++/--) in mutated source files.
+    files: ['packages/**/src/**/*.ts'],
+    rules: {
+      'no-restricted-syntax': ['error', { selector: 'UpdateExpression > TSNonNullExpression', message: 'Write `x = x! + 1` instead of `x!++` / `x!--` (Stryker cannot instrument it).' }]
+    }
+  },
+  {
     // Architecture rule: games may only depend on shared packages, never on other games or the app.
     files: ['packages/games/**/*.ts'],
     rules: {

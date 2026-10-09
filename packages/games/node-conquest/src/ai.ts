@@ -226,7 +226,7 @@ function pressure(s: NcState, map: GameMap, faction: number, v: number, inFlight
 /** Node count per faction. */
 function counts(s: NcState, factions: number): number[] {
   const c = new Array<number>(factions).fill(0);
-  for (const o of s.owner) if (o >= 0) c[o]!++;
+  for (const o of s.owner) if (o >= 0) c[o] = c[o]! + 1;
   return c;
 }
 
