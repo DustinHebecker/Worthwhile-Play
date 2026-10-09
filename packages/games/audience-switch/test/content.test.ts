@@ -1,9 +1,15 @@
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { SUPPORTED_LOCALES } from '@wp/localization';
-import { CONTENT, contentFor } from '../src/content';
+import { CONTENT_LOADERS, contentFor, preloadContent, type ContentText } from '../src/content';
 import { messageIdsFor } from '../src/rules';
 import { AUDIENCES, SCENARIOS } from '../src/scenarios';
 import { messages } from '../src/messages';
+
+/** Every locale's content, loaded through the per-locale loaders (ADR 0011: one chunk per locale). */
+const CONTENT: Record<string, ContentText> = {};
+beforeAll(async () => {
+  for (const [locale, load] of Object.entries(CONTENT_LOADERS)) CONTENT[locale] = await load();
+});
 
 const PLACEHOLDER = /\{(\w+)\}/g;
 
@@ -28,9 +34,12 @@ describe('scenario content', () => {
     expect(Object.keys(CONTENT).sort()).toEqual([...SUPPORTED_LOCALES].sort());
   });
 
-  it('falls back to English for an unknown locale', () => {
+  it('falls back to English for an unknown locale', async () => {
+    await preloadContent('de');
     expect(contentFor('xx')).toBe(CONTENT.en);
     expect(contentFor('de')).toBe(CONTENT.de);
+    // Only the requested locale and English were loaded; anything else falls back to English.
+    expect(contentFor('ja')).toBe(CONTENT.en);
   });
 
   it('has the same scenario ids, fact ids, reason keys and message keys in every locale', () => {

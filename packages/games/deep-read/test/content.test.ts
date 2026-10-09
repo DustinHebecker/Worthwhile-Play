@@ -1,8 +1,14 @@
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { SUPPORTED_LOCALES } from '@wp/localization';
-import { CONTENT, contentFor } from '../src/content';
+import { CONTENT_LOADERS, contentFor, preloadContent } from '../src/content';
 import { TEXTS } from '../src/content/structure';
 import { DIFFICULTIES, OPTION_IDS, QUESTION_TYPES, type LocaleContent, type OptionText, type QuestionText } from '../src/content/types';
+
+/** Every locale's content, loaded through the per-locale loaders (ADR 0011: one chunk per locale). */
+const CONTENT: Record<string, LocaleContent> = {};
+beforeAll(async () => {
+  for (const [locale, load] of Object.entries(CONTENT_LOADERS)) CONTENT[locale] = await load();
+});
 
 const PLACEHOLDER = /\{(\w+)\}/g;
 
@@ -153,8 +159,11 @@ describe('content in all 16 locales', () => {
     expect(bytes).toBeLessThan(1200 * 1024);
   });
 
-  it('falls back to English for unknown locales', () => {
+  it('falls back to English for unknown locales', async () => {
+    await preloadContent('de');
     expect(contentFor('xx')).toBe(CONTENT.en);
     expect(contentFor('de')).toBe(CONTENT.de);
+    // Only the requested locale and English were loaded; anything else falls back to English.
+    expect(contentFor('ja')).toBe(CONTENT.en);
   });
 });

@@ -1,11 +1,16 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import type { GameInstance } from '@wp/game-core';
 import { SUPPORTED_LOCALES } from '@wp/localization';
 import { createTestContext } from '@wp/testing';
 import game from '../src/index';
 import { createInitialState, type AudienceSwitchState, type Difficulty } from '../src/rules';
 import { SCENARIOS } from '../src/scenarios';
+
+// Per-locale content (ADR 0011): the host awaits `preload` before creating the game.
+beforeAll(async () => {
+  for (const locale of SUPPORTED_LOCALES) await game.preload!(locale);
+});
 
 let running: GameInstance<AudienceSwitchState>[] = [];
 afterEach(() => {

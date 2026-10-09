@@ -1,11 +1,16 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import type { GameInstance } from '@wp/game-core';
 import { SUPPORTED_LOCALES } from '@wp/localization';
 import { createTestContext } from '@wp/testing';
 import game from '../src/index';
-import { CONTENT } from '../src/content';
+import { contentFor } from '../src/content';
 import { answer, createInitialState, finishReading, next, setSummary, setTextOpen, submitSummary, textOf, toggleSelfCheck, type DeepReadState } from '../src/rules';
+
+// Per-locale content (ADR 0011): the host awaits `preload` before creating the game.
+beforeAll(async () => {
+  for (const locale of SUPPORTED_LOCALES) await game.preload!(locale);
+});
 
 let running: GameInstance<DeepReadState>[] = [];
 afterEach(() => {
@@ -48,7 +53,7 @@ describe('Deep Read view', () => {
   it('shows the text with numbered paragraphs, then the first question after "done reading"', () => {
     const { root, instance } = setup();
     const textId = instance.serialize().textId;
-    const content = CONTENT.en![textId]!;
+    const content = contentFor('en')[textId]!;
     expect(byId(root, 'dr-title').textContent).toBe(content.title);
     expect(byId(root, 'dr-title').hasAttribute('data-autofocus')).toBe(true);
     expect(root.querySelectorAll('[data-para]')).toHaveLength(content.paragraphs.length);
@@ -91,7 +96,7 @@ describe('Deep Read view', () => {
     expect(feedback.dataset.answer).toBe(wrong);
     expect(byId(root, 'dr-verdict').textContent).toContain('✗');
     expect(byId(root, 'dr-verdict').textContent).toContain('Not quite.');
-    const content = CONTENT.en![s.textId]!.questions[q.id]!;
+    const content = contentFor('en')[s.textId]!.questions[q.id]!;
     for (const id of q.options) {
       const item = byId(root, `dr-explain-${id}`);
       expect(item.textContent).toContain(content[id]![0]);
@@ -165,7 +170,7 @@ describe('Deep Read view', () => {
     byId(root, 'dr-compare').click();
 
     expect(byId(root, 'dr-yours').textContent).toBe('Test both plans fairly.');
-    expect(byId(root, 'dr-model').textContent).toBe(CONTENT.en![instance.serialize().textId]!.summary);
+    expect(byId(root, 'dr-model').textContent).toBe(contentFor('en')[instance.serialize().textId]!.summary);
     byId(root, 'dr-check-2').click();
     expect(instance.serialize().selfCheck).toEqual([false, true, false]);
     expect(ctx.results).toHaveLength(0);
@@ -223,8 +228,9 @@ describe('Deep Read view', () => {
     const saved = instance.serialize();
     const german = restoreInto(saved, 'de');
     expect(german.instance.serialize()).toEqual(saved);
-    expect(byId(german.root, 'dr-title').textContent).toBe(CONTENT.de![saved.textId]!.title);
-    expect(byId(german.root, 'dr-feedback').textContent).toContain(CONTENT.de![saved.textId]!.questions.q1!.a![1]);
+    expect(contentFor('de')[saved.textId]!.title, 'German content is loaded, not the fallback').not.toBe(contentFor('en')[saved.textId]!.title);
+    expect(byId(german.root, 'dr-title').textContent).toBe(contentFor('de')[saved.textId]!.title);
+    expect(byId(german.root, 'dr-feedback').textContent).toContain(contentFor('de')[saved.textId]!.questions.q1!.a![1]);
   });
 
   it('renders right-to-left for Arabic', () => {

@@ -1,10 +1,16 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import type { GameInstance } from '@wp/game-core';
+import { SUPPORTED_LOCALES } from '@wp/localization';
 import { createTestContext } from '@wp/testing';
 import game from '../src/index';
-import { CONTENT } from '../src/content';
+import { contentFor } from '../src/content';
 import { createInitialState, itemById, phaseOf, ROUND_SIZE, type AmbiguityState } from '../src/rules';
+
+// Per-locale content (ADR 0011): the host awaits `preload` before creating the game.
+beforeAll(async () => {
+  for (const locale of SUPPORTED_LOCALES) await game.preload!(locale);
+});
 
 let running: GameInstance<AmbiguityState>[] = [];
 afterEach(() => {
@@ -42,8 +48,8 @@ describe('Ambiguity Detector view', () => {
     const state = instance.serialize();
     const id = state.items[0] as string;
     expect(byId(root, 'ad-message').dataset.item).toBe(id);
-    expect(byId(root, 'ad-context').textContent).toBe(CONTENT.en![id]!.context);
-    expect(byId(root, 'ad-text').textContent).toBe(CONTENT.en![id]!.text);
+    expect(byId(root, 'ad-context').textContent).toBe(contentFor('en')[id]!.context);
+    expect(byId(root, 'ad-text').textContent).toBe(contentFor('en')[id]!.text);
     expect(byId(root, 'ad-progress').textContent).toBe('Message 1 of 6 · Easy');
     expect(root.querySelectorAll('[data-testid^="ad-dim-"]')).toHaveLength(5);
     expect(maybe(root, 'ad-dim-purpose')).toBeNull();
@@ -76,7 +82,7 @@ describe('Ambiguity Detector view', () => {
     byId(root, `ad-dim-${hit}`).click();
     byId(root, `ad-dim-${extra}`).click();
     byId(root, 'ad-check').click();
-    const text = CONTENT.en![item.id]!;
+    const text = contentFor('en')[item.id]!;
     const hitRow = byId(root, `ad-row-${hit}`);
     expect(hitRow.dataset.verdict).toBe('hit');
     expect(hitRow.textContent).toContain('✓');
@@ -157,7 +163,7 @@ describe('Ambiguity Detector view', () => {
     expect(byId(root, 'ad-reply-vague').textContent).toContain('✗');
     expect(byId(root, 'ad-reply-clear').textContent).toContain('✓');
     expect(byId(root, 'ad-reply-clear').textContent).toContain('Best reply');
-    expect(byId(root, `ad-reply-${item.third}`).textContent).toContain(CONTENT.en![item.id]!.replies[item.third]!);
+    expect(byId(root, `ad-reply-${item.third}`).textContent).toContain(contentFor('en')[item.id]!.replies[item.third]!);
     expect(document.activeElement?.getAttribute('data-testid')).toBe('ad-next');
   });
 
@@ -248,7 +254,7 @@ describe('Ambiguity Detector view', () => {
   it('renders the item texts in the UI language and right-to-left for Arabic', () => {
     const de = setup({ locale: 'de' });
     const id = de.instance.serialize().items[0] as string;
-    expect(byId(de.root, 'ad-text').textContent).toBe(CONTENT.de![id]!.text);
+    expect(byId(de.root, 'ad-text').textContent).toBe(contentFor('de')[id]!.text);
     const ar = setup({ locale: 'ar' });
     expect(ar.root.querySelector('.wp-ambiguity-detector')?.getAttribute('dir')).toBe('rtl');
     expect(ar.ctx.missingKeys).toEqual([]);
