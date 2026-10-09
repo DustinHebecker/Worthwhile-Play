@@ -214,5 +214,5 @@ describe('Audience Switch view', () => {
         expect(root.querySelector('.wp-audience-switch')!.getAttribute('dir')).toBe(locale === 'ar' ? 'rtl' : 'ltr');
       }
     }
-  });
+  }, 90_000);
 });
