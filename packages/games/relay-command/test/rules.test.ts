@@ -60,7 +60,7 @@ describe('Field Exercise scenario', () => {
     expect(s.world.turn).toBe(0);
     expect(commandPost(s.world, PLAYER)).toBeDefined();
     expect(commandPost(s.world, OPPONENT)).toBeDefined();
-    expect(own(s)).toHaveLength(7);
+    expect(own(s)).toHaveLength(9);
     expect(sideValue(s.world, PLAYER)).toBe(sideValue(s.world, OPPONENT));
     expect(isValidState(s)).toBe(true);
   });
@@ -149,8 +149,8 @@ describe('command network (I3a)', () => {
   });
 
   it('migrates a real version-1 save with a full draft: drafts are re-checked against the new limits (N5)', () => {
-    // Version 1: base ruleset, no Mast Truck, five planned orders (no slot limit back then).
-    const entities = FIELD_EXERCISE.scenario.entities.filter((e) => e.kind !== 'mast-truck');
+    // Version 1: base ruleset, no Mast Truck (nor EW units), five planned orders (no slot limit back then).
+    const entities = FIELD_EXERCISE.scenario.entities.filter((e) => !['mast-truck', 'jammer', 'tracer'].includes(e.kind));
     const world = createWorld({ ...FIELD_EXERCISE.scenario, entities, seed: 9 }, BASE_RULESET);
     const mobile = world.entities.filter((e) => e.side === PLAYER && e.kind !== 'command-post');
     const v1 = {
@@ -560,5 +560,59 @@ describe('review of PR #8', () => {
     s = lockTurn(planOrder(s, rifle.id, { type: 'move', x: rifle.x, y: 0 })!);
     s = lockTurn(s);
     expect(lastSentOrder(s, rifle.id)).toEqual({ type: 'move', x: rifle.x, y: 0 });
+  });
+});
+
+describe('electronic warfare (I4)', () => {
+  const ewWorld = (jammerAt: { x: number; y: number }) =>
+    createWorld(
+      {
+        map: FIELD_EXERCISE.scenario.map,
+        sides: 2,
+        seed: 1,
+        entities: [
+          { side: 1, kind: 'command-post', x: 10, y: 1 },
+          { side: 1, kind: 'jammer', ...jammerAt },
+          { side: 1, kind: 'tracer', x: 11, y: 2 },
+          { side: 1, kind: 'mast-truck', x: 11, y: 3 },
+          { side: 0, kind: 'relay-mast', x: 6, y: 3 },
+          { side: 0, kind: 'command-post', x: 1, y: 10 }
+        ]
+      },
+      RULESET
+    );
+
+  it('the opponent drives its jammer to a covered cell within 3 of a known enemy relay and sets it up there', () => {
+    const plan = planAi(ewWorld({ x: 9, y: 0 }), RULESET, OPPONENT);
+    const move = plan.find((c) => c.unit === 2)?.order;
+    expect(move?.type).toBe('move');
+    if (move?.type !== 'move') return;
+    expect((move.x - 6) ** 2 + (move.y - 3) ** 2).toBeLessThanOrEqual(9);
+    const there = planAi(ewWorld({ x: move.x, y: move.y }), RULESET, OPPONENT);
+    expect(there.find((c) => c.unit === 2)?.order).toEqual({ type: 'deploy' });
+  });
+
+  it('the opponent keeps its tracer with its relay truck', () => {
+    const plan = planAi(ewWorld({ x: 9, y: 0 }), RULESET, OPPONENT);
+    expect(plan.find((c) => c.unit === 3)?.order).toEqual({ type: 'escort', target: 4 });
+  });
+
+  it('both sides start with a jammer and a tracer; the scenario stays symmetric', () => {
+    const s = newGame(1);
+    for (const side of [PLAYER, OPPONENT]) {
+      expect(s.world.entities.filter((e) => e.side === side && (e.kind === 'jammer' || e.kind === 'tracer')).map((e) => e.kind).sort()).toEqual(['jammer', 'tracer']);
+    }
+  });
+});
+
+describe('save bounds (review of PR #8, round 2)', () => {
+  it('rejects saves with oversized turn summaries or plans', () => {
+    const s = lockTurn(newGame(3));
+    expect(isValidState(s)).toBe(true);
+    const n = FIELD_EXERCISE.scenario.entities.length;
+    const event = { t: 'bump', tick: 1, id: 2 };
+    expect(isValidState({ ...s, events: Array.from({ length: n * RULESET.ticksPerTurn * 12 + 1 }, () => event) })).toBe(false);
+    const bigPlan = Array.from({ length: n + 1 }, () => ({ side: PLAYER, unit: 2, order: { type: 'hold' } }));
+    expect(isValidState({ ...s, log: [{ turn: 0, plans: [bigPlan, []] }] })).toBe(false);
   });
 });

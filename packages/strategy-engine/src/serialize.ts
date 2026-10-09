@@ -1,6 +1,6 @@
 import { isArrayOf, isInt, isOneOf, isRecord, isUint32, seedFromString } from '@wp/game-core';
-import { DEADLOCK_TICKS, UNREACHABLE_TICKS } from './sim';
-import { archetypeOf, isValidDoctrine } from './world';
+import { DEADLOCK_TICKS, STALL_TICKS, UNREACHABLE_TICKS } from './sim';
+import { archetypeOf, isValidDoctrine, needsDeploy } from './world';
 import { STATUS_KINDS, type Entity, type Order, type Projectile, type Report, type Ruleset, type Status, type World } from './types';
 
 const MAX_DIM = 128;
@@ -36,9 +36,8 @@ const isStatus = (v: unknown): v is Status => isRecord(v) && isOneOf(v.kind, STA
  */
 function validDeploy(e: Record<string, unknown>, ruleset: Ruleset | undefined): boolean {
   if (!ruleset) return isInt(e.deploy, 0, 1000);
-  const comms = archetypeOf(ruleset, e.kind as string)?.comms;
   const type = isRecord(e.order) ? e.order.type : undefined;
-  return !!comms?.needsDeploy && isInt(e.deploy, 0, ruleset.ticksPerTurn) && (type === 'deploy' || type === 'hold');
+  return needsDeploy(archetypeOf(ruleset, e.kind as string)) && isInt(e.deploy, 0, ruleset.ticksPerTurn) && (type === 'deploy' || type === 'hold');
 }
 
 /**
@@ -76,7 +75,10 @@ export function isValidWorld(value: unknown, ruleset?: Ruleset): value is World 
     (e.doctrine === undefined || isValidDoctrine(e.doctrine)) &&
     (e.hitAt === undefined || isInt(e.hitAt, 0, tick)) &&
     (e.bumps === undefined || isInt(e.bumps, 0, DEADLOCK_TICKS)) &&
-    (e.stuck === undefined || isInt(e.stuck, 0, UNREACHABLE_TICKS));
+    (e.stuck === undefined || isInt(e.stuck, 0, UNREACHABLE_TICKS)) &&
+    (e.prev === undefined || isInt(e.prev, 0, w * h - 1)) &&
+    (e.stall === undefined ||
+      (isRecord(e.stall) && isInt(e.stall.goal, 0, w * h + MAX_ID) && typeof e.stall.best === 'number' && Number.isFinite(e.stall.best) && e.stall.best >= 0 && e.stall.best <= 100 * MAX_DIM * MAX_DIM && isInt(e.stall.ticks, 0, STALL_TICKS)));
   const isProjectile = (p: unknown): p is Projectile =>
     isRecord(p) &&
     isInt(p.id, 1, nextId - 1) &&

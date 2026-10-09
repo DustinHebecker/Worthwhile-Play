@@ -1,10 +1,9 @@
 import { cellOf, dirsFor, dist2, frameIndex, maxStepCost, passable, stepCost, terrainAt } from './grid';
-import { TupleHeap } from './heap';
-import { canReach, findPath, regions } from './path';
+import { canReach, costGrid, findPath, NumberHeap, regions } from './path';
 import { DEFAULT_DOCTRINE, type Archetype, type Command, type Doctrine, type Entity, type OrderEndReason, type Ruleset, type SimEvent, type Status, type TargetPriority, type WeaponSpec, type World } from './types';
-import { computeNetwork, type Network } from './network';
+import { computeNetwork, isEmitter, type Network } from './network';
 import { initialIntel, updateIntel } from './vision';
-import { archetypeOf, findEntity, normalizeDoctrine, normalizeOrder, validateCommand } from './world';
+import { archetypeOf, findEntity, needsDeploy, normalizeDoctrine, normalizeOrder, validateCommand } from './world';
 
 export interface SimResult {
   world: World;
@@ -90,6 +89,8 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     // A new order starts with fresh counters (a dead end of the old order says nothing about it).
     delete unit.bumps;
     delete unit.stuck;
+    delete unit.stall;
+    delete unit.prev;
     events.push({ t: 'order', tick: t, id: unit.id });
   }
 
@@ -132,7 +133,9 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     if (!r) regionCache.set(layer, (r = regions(w.map, rs, layer, permanent[layer])));
     return r;
   };
-  const intent: Intent = { w, rs, occupied, permanent, coverageOf, end, visible, spottedBy, regionsOf };
+  // Attackers: the cell they aim at (target or its last report), the key for their progress.
+  const aims = new Map<number, number>();
+  const intent: Intent = { w, rs, occupied, permanent, coverageOf, end, visible, spottedBy, regionsOf, aims };
   const goals = new Map<number, number>();
   for (const e of w.entities) {
     const a = arch(e);
@@ -147,6 +150,7 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     if (goal === undefined) {
       e.mp = 0;
       delete e.stuck;
+      delete e.stall;
       continue;
     }
     const start = cellOf(w.map, e.x, e.y);
@@ -164,7 +168,15 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     e.mp = Math.min(e.mp + speed, Math.max(speed, maxStepCost(rs, a.layer)));
     // Not enough movement points for even the cheapest step: no need to search a route yet.
     if (e.mp < cheapestStep(w, rs, e, a)) continue;
-    const next = nextStepTowards(intent, e, a, goal) as number;
+    const step = nextStepTowards(intent, e, a, goal);
+    if (!step) continue; // cannot happen: the goal is reachable (checked above)
+    // No progress along the route for three turns (e.g. stepping aside and back around a
+    // patrol, or waiting for a cell that is never free): end the order.
+    if (e.order.type !== 'patrol' && e.order.type !== 'escort' && trackProgress(e, aims.get(e.id) ?? goal, step.remaining) >= STALL_TICKS) {
+      end(e, 'blocked');
+      continue;
+    }
+    const next = step.next;
     const cost = stepCost(w.map, rs, e.x, e.y, next % w.map.w, Math.floor(next / w.map.w), a.layer) as number;
     if (e.mp < cost) continue;
     const key = a.layer === 'air' ? next + cells : next;
@@ -193,6 +205,7 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
         continue;
       }
       delete e.bumps;
+      e.prev = cellOf(w.map, e.x, e.y);
       e.x = cell % w.map.w;
       e.y = Math.floor(cell / w.map.w);
       e.mp -= claim.cost;
@@ -331,6 +344,8 @@ interface Intent {
   readonly end: (e: Entity, reason: OrderEndReason) => void;
   /** The side's command coverage, or `undefined` when the ruleset has no command network. */
   readonly coverageOf: (side: number) => Uint8Array | undefined;
+  /** Per attacking unit: its progress key, cells + target id (progress is kept per target). */
+  readonly aims: Map<number, number>;
   /** Regions between permanent walls (see `regions`). */
   readonly regionsOf: (layer: 'ground' | 'air') => Int32Array;
   /** Whether `e` may fire at `target` (fog: spotted by its side or seen by itself). */
@@ -343,6 +358,24 @@ const doctrineOf = (e: Entity): Doctrine => e.doctrine ?? DEFAULT_DOCTRINE;
 
 /** Ticks a unit may be blocked by other units in a row before its order ends ('blocked'): three turns. */
 export const DEADLOCK_TICKS = 18;
+/** Ticks without getting any closer to an unchanged goal before an order ends ('blocked'): three turns. */
+export const STALL_TICKS = 18;
+
+/**
+ * Updates the unit's progress record and returns the ticks (with a route search) since its
+ * remaining route cost to `goal` last fell (a new goal starts a new record). Measured along the
+ * route past walls, so long detours count as progress. Patrols and escorts move back and forth
+ * by design and are not ended by it.
+ */
+function trackProgress(e: Entity, goal: number, remaining: number): number {
+  const s = e.stall;
+  // A route that got much longer (a unit settled in a gap, a forced detour) starts a new record:
+  // walking the detour is progress, even before it gets below the old best.
+  if (!s || s.goal !== goal || remaining < s.best || remaining > s.best + DETOUR) e.stall = { goal, best: remaining, ticks: 0 };
+  else s.ticks = Math.min(STALL_TICKS, s.ticks + 1);
+  return e.stall?.ticks ?? 0;
+}
+
 /** Bumps in a row against a taken destination before a move ends as 'occupied'. */
 export const OCCUPIED_BUMPS = 3;
 /** Ticks without any way to the goal (walls and holding units only) before the order ends ('unreachable'). */
@@ -365,6 +398,8 @@ function endOrder(e: Entity, reason: OrderEndReason, tick: number, events: SimEv
   e.order = { type: 'hold' };
   delete e.bumps;
   delete e.stuck;
+  delete e.stall;
+  delete e.prev;
   events.push({ t: 'order-ended', tick, id: e.id, reason });
 }
 
@@ -401,21 +436,37 @@ const pathCost = (ctx: Intent, e: Entity, a: Archetype, path: readonly number[])
  * route around all other units is preferred when it costs at most DETOUR more, otherwise the
  * unit queues behind them. `undefined` only if there is no way even past moving units.
  */
-function nextStepTowards(ctx: Intent, e: Entity, a: Archetype, goal: number): number | undefined {
+function nextStepTowards(ctx: Intent, e: Entity, a: Archetype, goal: number): { next: number; remaining: number } | undefined {
   const { w, rs } = ctx;
   const start = cellOf(w.map, e.x, e.y);
   const base = findPath(w.map, rs, start, goal, { layer: a.layer, side: e.side, blocked: ctx.permanent[a.layer] });
-  if (!base || base.length === 0) return base?.[0];
+  if (!base || base.length === 0) return undefined;
+  // Route cost past walls only: the progress measure (it does not depend on who is in the way).
+  const remaining = pathCost(ctx, e, a, base);
   // The usual case: nobody stands on the route, so there is nothing to walk around (one search).
   // (Checking only the next cell is not enough: a unit could then step aside, see a free route,
   // step back, and so on for ever.)
   const occupied = ctx.occupied[a.layer];
-  if (!base.some((c) => occupied.has(c))) return base[0];
-  // A route around the units in the way, if it costs at most DETOUR more (bounded search).
-  const maxCost = pathCost(ctx, e, a, base) + DETOUR;
-  const around = findPath(w.map, rs, start, goal, { layer: a.layer, side: e.side, blocked: ctx.occupied[a.layer], maxCost });
-  if (around && around.length > 0) return around[0];
-  return base[0];
+  let next = base[0] as number;
+  let aroundUnits = false;
+  if (base.some((c) => occupied.has(c))) {
+    // A route around the units in the way, if it costs at most DETOUR more (bounded search).
+    const around = findPath(w.map, rs, start, goal, { layer: a.layer, side: e.side, blocked: occupied, maxCost: remaining + DETOUR });
+    if (around && around.length > 0) {
+      next = around[0] as number;
+      aroundUnits = true;
+    }
+  }
+  // No stepping straight back to the cell just left when another way within DETOUR exists: two
+  // routes that are free in turn (a patrol between them) would otherwise make it pace for ever.
+  // The other way must avoid what the chosen one avoided (units, when it went around them);
+  // without such a way the unit steps back after all.
+  if (next === e.prev && next !== goal) {
+    const blocked = new Set(aroundUnits ? occupied : ctx.permanent[a.layer]).add(e.prev);
+    const other = findPath(w.map, rs, start, goal, { layer: a.layer, side: e.side, blocked, maxCost: remaining + DETOUR });
+    if (other && other.length > 0) next = other[0] as number;
+  }
+  return { next, remaining };
 }
 
 /**
@@ -474,7 +525,7 @@ function goalOf(ctx: Intent, e: Entity, a: Archetype): number | undefined {
       break;
   }
   // Doctrine: seek cover when holding (never for nodes that work only where they were set up).
-  if (goal === undefined && e.order.type === 'hold' && doctrineOf(e).seekCover && !archetypeOf(rs, e.kind)?.comms?.needsDeploy) {
+  if (goal === undefined && e.order.type === 'hold' && doctrineOf(e).seekCover && !needsDeploy(archetypeOf(rs, e.kind))) {
     goal = adjacentCover(ctx, e, a);
   }
   return goal;
@@ -508,15 +559,26 @@ function attackAim(ctx: Intent, e: Entity, a: Archetype, id: number): number | '
   const min = weapon.minRange;
   if (max < min) return 'lost'; // cannot see and hit it at the same time
   const p = at;
+  // Progress is kept per target (not per cell it stands on or firing cell): two attackers pacing
+  // in step around each other out of range, or firing cells taken in turn, still end in time.
+  ctx.aims.set(e.id, w.map.w * w.map.h + id);
   const firing = (c: number): boolean => {
     const d = dist2(c % w.map.w, Math.floor(c / w.map.w), p.x, p.y);
     return d >= min * min && d <= max * max;
   };
   const start = cellOf(w.map, e.x, e.y);
   if (firing(start)) return undefined;
+  // Far away: head for the target (one A* search); the firing position is chosen when close. Only
+  // if the target's cell can be reached at all (not for a post ringed by holding units or one
+  // across a river): otherwise search a firing position right away.
+  const aim = cellOf(w.map, p.x, p.y);
+  if (dist2(e.x, e.y, p.x, p.y) > (max + FIRING_SEARCH) ** 2 && canReach(w.map, rs, a.layer, ctx.regionsOf(a.layer), start, aim)) return aim;
   // No firing position reachable now: keep the order (counted as 'stuck', ends as 'unreachable').
   return nearestCell(ctx, e, a, firing) ?? start;
 }
+
+/** Within this many cells beyond its range an attacker looks for a firing position. */
+const FIRING_SEARCH = 3;
 
 /** Escort / guard keeps within this many cells of its charge. */
 const ESCORT_RANGE = 2;
@@ -527,33 +589,47 @@ const ESCORT_RANGE = 2;
  */
 function nearestCell(ctx: Intent, e: Entity, a: Archetype, accept: (cell: number) => boolean): number | undefined {
   const { w, rs, occupied } = ctx;
-  const cells = w.map.w * w.map.h;
+  const width = w.map.w;
+  const cells = width * w.map.h;
+  const grid = costGrid(w.map, rs, a.layer);
+  const air = a.layer === 'air';
   const start = cellOf(w.map, e.x, e.y);
   const dist = new Int32Array(cells).fill(-1);
-  const heap = new TupleHeap();
+  // Ordering key (distance, cell index in the side's frame) packed into one number.
+  const frame = (c: number): number => frameIndex(c, e.side, cells);
+  const heap = new NumberHeap();
   dist[start] = 0;
-  heap.push([0, frameIndex(start, e.side, cells), start]);
-  for (let item = heap.pop(); item; item = heap.pop()) {
-    const c = item[2] as number;
-    const d = item[0] as number;
+  heap.push(frame(start));
+  while (heap.size > 0) {
+    const k = heap.pop();
+    const f = k % FRAME;
+    const d = (k - f) / FRAME;
+    const c = e.side === 1 ? cells - 1 - f : f;
     if (d !== dist[c]) continue;
     if (c !== start && accept(c) && !occupied[a.layer].has(c)) return c;
-    const cx = c % w.map.w;
-    const cy = Math.floor(c / w.map.w);
+    const cx = c % width;
+    const cy = (c - cx) / width;
     for (const [dx, dy] of dirsFor(e.side)) {
-      const cost = stepCost(w.map, rs, cx, cy, cx + dx, cy + dy, a.layer);
-      if (cost === undefined) continue;
-      const n = cellOf(w.map, cx + dx, cy + dy);
-      if (ctx.permanent[a.layer].has(n)) continue;
-      const nd = d + cost;
+      const nx = cx + dx;
+      const ny = cy + dy;
+      if (nx < 0 || ny < 0 || nx >= width || ny >= w.map.h) continue;
+      const n = ny * width + nx;
+      const base = grid[n] as number;
+      if (base < 0 || ctx.permanent[a.layer].has(n)) continue;
+      const diagonal = dx !== 0 && dy !== 0;
+      if (diagonal && !air && ((grid[cy * width + nx] as number) < 0 || (grid[ny * width + cx] as number) < 0)) continue;
+      const nd = d + (diagonal ? (base * 3) / 2 : base);
       const old = dist[n] as number;
       if (old !== -1 && nd >= old) continue;
       dist[n] = nd;
-      heap.push([nd, frameIndex(n, e.side, cells), n]);
+      heap.push(nd * FRAME + frame(n));
     }
   }
   return undefined;
 }
+
+/** Packing base for (distance, frame index) keys: frame indices stay below 2^14 (maps up to 128×128). */
+const FRAME = 2 ** 14;
 
 /** A free neighbouring cell with cover, if the unit is not already in cover (side-frame order). */
 function adjacentCover(ctx: Intent, e: Entity, a: Archetype): number | undefined {
@@ -575,6 +651,7 @@ function matchesPriority(rs: Ruleset, target: Entity, priority: TargetPriority):
   if (priority === 'armor') return armor === 'heavy' || armor === 'light';
   if (priority === 'infantry') return armor === 'infantry';
   if (priority === 'structures') return armor === 'structure';
+  if (priority === 'emitters') return isEmitter(rs, target);
   return false;
 }
 

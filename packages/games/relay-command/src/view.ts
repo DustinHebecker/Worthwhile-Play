@@ -4,6 +4,8 @@ import {
   archetypeOf,
   cellOf,
   computeNetwork,
+  jammedCells,
+  needsDeploy as needsDeployArch,
   nodeRadius,
   RETREAT_THRESHOLDS,
   TARGET_PRIORITIES,
@@ -29,6 +31,7 @@ import {
   picture,
   planDoctrine,
   planOrder,
+  commandPost as commandPostOf,
   lastSentOrder,
   PLAYER,
   reportTurn,
@@ -83,20 +86,55 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   const sideName = (side: number) => t(side === PLAYER ? 'side.own' : 'side.enemy');
   const terrainName = (x: number, y: number) => t(`terrain.${TERRAIN_NAMES[world().map.terrain[y * world().map.w + x] ?? '.'] ?? 'plain'}`);
   const isMobile = (e: Entity) => (archetypeOf(RULESET, e.kind)?.speed ?? 0) > 0;
-  const needsDeploy = (e: Entity) => archetypeOf(RULESET, e.kind)?.comms?.needsDeploy === true;
+  const needsDeploy = (e: Entity) => needsDeployArch(archetypeOf(RULESET, e.kind));
+  /** Message key prefix: relays and posts set up as network nodes, jammers as jammers. */
+  const deployKind = (e: Pick<Entity, 'kind'>): 'deploy' | 'deployJammer' => (archetypeOf(RULESET, e.kind)?.ew?.role === 'jammer' ? 'deployJammer' : 'deploy');
   /** The player's network, computed once per state (not per unit or per drawing call). */
   let cachedNet: { state: RcState; net: Network } | undefined;
   const network = (): Network => {
-    if (cachedNet?.state !== state) cachedNet = { state, net: computeNetwork(world(), RULESET, PLAYER) };
+    // From the true world: the player's own radio net is felt directly, enemy jamming included
+    // (the picture strips enemy set-up state, so it cannot tell a working jammer).
+    if (cachedNet?.state !== state) cachedNet = { state, net: computeNetwork(state.world, RULESET, PLAYER) };
     return cachedNet.net;
+  };
+  /** Cells where the player's radio is jammed (the player notices the interference). */
+  // Only cells the own net would cover without jamming: the player notices radio silence where
+  // there should be contact, not the jammer's whole disc (that would give its position away).
+  let cachedJam: { state: RcState; jam: Uint8Array } | undefined;
+  const jammed = (x: number, y: number): boolean => {
+    if (cachedJam?.state !== state) {
+      // Expected reach: the discs of the nodes that really are connected now. A silenced post
+      // then shows no marks at all (the status line explains it) instead of the jammer's disc.
+      const jam = jammedCells(state.world, RULESET, PLAYER);
+      const { w: mw, h: mh } = state.world.map;
+      const expected = new Uint8Array(mw * mh);
+      for (const id of network().nodes) {
+        const node = unitById(state, id);
+        const r = node ? nodeRadius(state.world, RULESET, node) : 0;
+        if (!node) continue;
+        for (let y = Math.max(0, node.y - r); y <= Math.min(mh - 1, node.y + r); y++) {
+          for (let x = Math.max(0, node.x - r); x <= Math.min(mw - 1, node.x + r); x++) {
+            if ((x - node.x) ** 2 + (y - node.y) ** 2 <= r * r) expected[y * mw + x] = 1;
+          }
+        }
+      }
+      cachedJam = { state, jam: jam.map((j, c) => (j === 1 && expected[c] === 1 ? 1 : 0)) };
+    }
+    return cachedJam.jam[cellOf(state.world.map, x, y)] === 1;
+  };
+  /** Whether the unit's weapon can damage the target's armour at all (no button otherwise). */
+  const canHurt = (shooter: Entity, target: Entity): boolean => {
+    const armor = archetypeOf(RULESET, target.kind)?.armor;
+    return !!armor && (archetypeOf(RULESET, shooter.kind)?.weapon?.vs[armor] ?? 0) > 0;
   };
   const inContact = (e: Entity) => !isGhost(e) && network().coverage[cellOf(world().map, e.x, e.y)] === 1;
   const isSetUpOrPending = (e: Entity) =>
     (e.deploy ?? 0) >= RULESET.ticksPerTurn || e.order.type === 'deploy' || draftFor(state, e.id)?.type === 'deploy';
   const deployText = (e: Entity): string => {
-    if ((e.deploy ?? 0) >= RULESET.ticksPerTurn) return t('deploy.active');
-    if (e.order.type === 'deploy' || draftFor(state, e.id)?.type === 'deploy') return t('deploy.pending');
-    return t('deploy.idle');
+    const k = deployKind(e);
+    if ((e.deploy ?? 0) >= RULESET.ticksPerTurn) return t(`${k}.active`);
+    if (e.order.type === 'deploy' || draftFor(state, e.id)?.type === 'deploy') return t(`${k}.pending`);
+    return t(`${k}.idle`);
   };
 
   const describeOrder = (e: Entity, order: Order): string => {
@@ -109,7 +147,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
         return t('order.attack', { target: target ? unitName(target) : `#${order.target}` });
       }
       case 'deploy':
-        return t('order.deploy');
+        return t(deployKind(e) === 'deployJammer' ? 'order.deployJammer' : 'order.deploy');
       case 'escort': {
         const charge = known(order.target);
         return t('order.escort', { target: charge ? unitName(charge) : `#${order.target}` });
@@ -137,7 +175,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     const order = ghost !== undefined ? t('unit.unconfirmed', { order: describeOrder(e, lastSentOrder(state, e.id) ?? { type: 'hold' }) }) : describeOrder(e, e.order);
     let text = t('unit.summary', { name: unitName(e), side: sideName(e.side), x: e.x + 1, y: e.y + 1, hp: e.hp, max, order });
     if (ghost !== undefined) text = `${text} ${ghost === 0 ? t('unit.ghostStart') : t('unit.ghost', { turn: reportTurn(ghost) })}`;
-    if (isMobile(e)) text = `${text} (${t(inContact(e) ? 'contact.in' : 'contact.out')})`;
+    if (isMobile(e)) text = `${text} (${t(inContact(e) ? 'contact.in' : !isGhost(e) && jammed(e.x, e.y) ? 'contact.jammed' : 'contact.out')})`;
     if (needsDeploy(e)) text = `${text} ${deployText(e)}`;
     const planned = draftFor(state, e.id);
     return planned ? `${text} ${t('unit.planned', { order: describeOrder(e, planned) })}` : text;
@@ -148,7 +186,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   const describeCell = (x: number, y: number): string => {
     const units = unitsAt(x, y);
     // The veil is told in words too (screen readers).
-    const terrain = observedAt(x, y) ? terrainName(x, y) : `${terrainName(x, y)} ${t('cell.unobserved')}`;
+    let terrain = observedAt(x, y) ? terrainName(x, y) : `${terrainName(x, y)} ${t('cell.unobserved')}`;
+    if (!revealed() && jammed(x, y)) terrain = `${terrain} ${t('cell.jammed')}`;
     if (units.length === 0) return t('cell.describe', { x: x + 1, y: y + 1, terrain });
     return t('cell.describeUnit', { x: x + 1, y: y + 1, terrain, unit: units.map(describeUnit).join(' ') });
   };
@@ -224,7 +263,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     'details',
     { class: 'rc-help' },
     h('summary', {}, t('help.title')),
-    ...['help.turns', 'help.orders', 'help.network', 'help.fog', 'help.doctrine', 'help.combat', 'help.goal', 'help.shapes', 'help.access'].map((k) => h('p', {}, t(k)))
+    ...['help.turns', 'help.orders', 'help.network', 'help.fog', 'help.ew', 'help.doctrine', 'help.combat', 'help.goal', 'help.shapes', 'help.access'].map((k) => h('p', {}, t(k)))
   );
 
   const shell = h(
@@ -270,6 +309,12 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   }
 
   function statusText(): string {
+    // A jammed Command Post: no orders at all, and the player should know why.
+    if (state.phase === 'plan' && orderSlots(state) === 0) {
+      const post = commandPostOf(state.world, PLAYER);
+      // The post knows its own radio is jammed (this reveals nothing beyond its own cell).
+      if (post && jammedCells(state.world, RULESET, PLAYER)[cellOf(state.world.map, post.x, post.y)] === 1) return t('status.postJammed');
+    }
     if (state.phase === 'plan') return t('status.plan', { n: state.draft.length });
     if (state.conceded) return t('status.conceded');
     // The result is decided on the true world, so it is told from it (not from the picture).
@@ -296,6 +341,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     }
     selectionActions.hidden = !canOrder;
     deployBtn.hidden = !unit || !needsDeploy(unit) || isSetUpOrPending(unit);
+    deployBtn.textContent = unit && deployKind(unit) === 'deployJammer' ? t('action.deployJammer') : t('action.deploy');
     for (const b of modeButtons) b.setAttribute('aria-pressed', String(b.getAttribute('data-testid') === `rc-mode-${mode}`));
     modeHint.textContent = mode === 'patrol' ? t('mode.hintPatrol') : mode === 'escort' ? t('mode.hintEscort') : '';
     modeHint.hidden = mode === 'move';
@@ -328,7 +374,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       !!attacker && attacker.side === PLAYER && isMobile(attacker) && inContact(attacker) && !!archetypeOf(RULESET, attacker.kind)?.weapon && state.phase === 'plan';
     for (const e of enemies) {
       const item = h('li', { 'data-testid': `rc-enemy-${e.id}` }, h('span', {}, describeUnit(e)));
-      if (canAttack && !isGhost(e)) {
+      if (canAttack && !isGhost(e) && canHurt(attacker, e)) {
         item.append(h('button', { type: 'button', 'data-testid': `rc-attack-${e.id}`, onclick: () => orderSelected({ type: 'attack', target: e.id }) }, t('action.attack', { name: unitName(e) })));
       }
       enemyList.append(item);
@@ -422,6 +468,20 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       }
     }
     g.stroke();
+    // Jammed cells: a zigzag across the cell (pattern, not colour alone).
+    g.strokeStyle = css('--wp-danger', '#a1271b');
+    g.lineWidth = 1.5;
+    g.beginPath();
+    for (let y = 0; y < w.map.h; y++) {
+      for (let x = 0; x < w.map.w; x++) {
+        if (!jammed(x, y)) continue;
+        const py = y * CELL + CELL / 2;
+        g.moveTo(x * CELL + 4, py);
+        for (let k = 1; k <= 4; k++) g.lineTo(x * CELL + 4 + (k * (CELL - 8)) / 4, py + (k % 2 === 1 ? -5 : 5));
+      }
+    }
+    g.stroke();
+    g.lineWidth = 1;
     g.strokeStyle = css('--wp-p1', '#24508f');
     g.setLineDash([3, 6]);
     for (const id of net.nodes) {
@@ -710,6 +770,21 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
         g.lineTo(cx, cy - 6);
         g.moveTo(cx - 5, cy - 3);
         g.arc(cx, cy - 6, 5, Math.PI * 0.85, Math.PI * 0.15, true);
+        g.stroke();
+        return;
+      case 'jammer':
+        // Lightning zigzag: the jamming signal.
+        g.moveTo(cx - 7, cy - 6);
+        g.lineTo(cx + 1, cy - 1);
+        g.lineTo(cx - 2, cy + 1);
+        g.lineTo(cx + 7, cy + 7);
+        g.stroke();
+        return;
+      case 'tracer':
+        // Listening arcs: direction finding.
+        g.arc(cx - 4, cy + 4, 4, -Math.PI / 2, 0);
+        g.moveTo(cx - 4, cy - 5);
+        g.arc(cx - 4, cy + 4, 9, -Math.PI / 2, 0);
         g.stroke();
         return;
       case 'command-post':
