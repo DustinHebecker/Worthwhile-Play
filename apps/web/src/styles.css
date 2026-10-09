@@ -76,9 +76,11 @@ button.danger::before { content: '✕ '; }
 .deck-preview td:first-child, .deck-preview th:first-child { width: 2.5rem; }
 .deck-symbol { font-size: 1.6rem; line-height: 1; }
 .deck-image { max-width: 4rem; max-height: 3rem; object-fit: contain; vertical-align: middle; }
-.import-form textarea { width: 100%; max-width: 100%; box-sizing: border-box; font-family: ui-monospace, monospace; font-size: 0.9rem; }
-.import-form input[type='text'] { width: min(100%, 24rem); box-sizing: border-box; }
-.import-form input[type='file'] { max-width: 100%; }
+.import-form .field { min-width: 0; grid-template-columns: minmax(0, 1fr); }
+.import-form textarea, .import-form input { box-sizing: border-box; max-width: 100%; min-width: 0; }
+.import-form textarea { width: 100%; font-family: ui-monospace, monospace; font-size: 0.9rem; }
+.import-form input[type='text'] { width: min(100%, 24rem); }
+.import-form input[type='file'] { width: 100%; }
 .import-example { overflow-x: auto; padding: 0.5rem; border-radius: 6px; background: var(--wp-surface-2); font-size: 0.85rem; }
 .import-errors { border-inline-start-color: var(--wp-danger); }
 .import-errors ul, .import-warnings ul { margin-block: 0.25rem; padding-inline-start: 1.2rem; }

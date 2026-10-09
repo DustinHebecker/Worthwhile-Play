@@ -39,7 +39,8 @@ const CHOICE_LABEL: Readonly<Record<(typeof BUILTIN_CHOICES)[number], string>> =
  * combinations) decks all work with the same view.
  */
 export function renderSide(side: CardSide, description: string): HTMLElement {
-  const face = h('span', { class: 'wp-memory__face' });
+  const textOnly = Boolean(side.text) && !side.image && !side.symbol;
+  const face = h('span', { class: textOnly ? 'wp-memory__face wp-memory__face--text' : 'wp-memory__face' });
   if (side.image) face.append(h('img', { class: 'wp-memory__image', src: side.image, alt: description, draggable: 'false' }));
   if (side.symbol) face.append(h('span', { class: 'wp-memory__symbol', role: 'img', 'aria-label': description }, side.symbol));
   if (side.text) face.append(h('span', { class: 'wp-memory__text', lang: side.lang, dir: 'auto' }, side.text));
