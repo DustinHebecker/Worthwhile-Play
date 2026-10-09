@@ -2,7 +2,7 @@ import type { UserDeckSource } from '@wp/game-core';
 import { isRecord } from '@wp/game-core';
 import { isUserDeckId, userDeckId, validateDeck, type Deck, type ImportError, type ImportWarning, IMPORT_LIMITS } from '@wp/learning-content';
 import type { DeckStore } from '@wp/persistence';
-import type { UiKey } from '../i18n/ui';
+import type { UiKey } from '../i18n';
 
 /** What the app stores per imported deck (IndexedDB `decks`, keyed by `id`). */
 export interface StoredDeck {

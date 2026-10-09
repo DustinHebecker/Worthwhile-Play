@@ -57,7 +57,7 @@ interface GameContext {
 The spec's `metadata()`/`initialize()` are expressed as the `metadata` object and `create()`. Every game package has:
 
 ```text
-src/metadata.ts   light: metadata + messages (bundled with the catalogue)
+src/metadata.ts   light: metadata + messages (catalogue keys bundled per locale)
 src/messages.ts   16 locales; keys `title`, `tagline`, `rules`, `difficulty.<id>` …
 src/rules.ts      pure logic (DOM-free) — unit, property and mutation tested
 src/ai.ts         optional pure opponent logic
@@ -66,7 +66,7 @@ src/index.ts      export default defineGame({...})
 test/rules.test.ts, test/contract.test.ts (runGameContract), e2e/games/<id>.spec.ts
 ```
 
-The home page and the game page header need every game's metadata, but only a few of its messages. `apps/web/catalogue-plugin.ts` therefore generates `virtual:wp-catalogue` at build time: each game's metadata with only the catalogue keys (`title`, `tagline`, `rules`, `difficulty.*`). The registry (`apps/web/src/registry.ts`) lists game ids and lazy loaders; a game's complete messages arrive with its own chunk, so the main bundle does not grow with every game's translations.
+The home page and the game page header need every game's metadata, but only a few of its messages. `apps/web/catalogue-plugin.ts` therefore generates two kinds of virtual modules at build time: `virtual:wp-catalogue` holds each game's metadata *without* messages, and `virtual:wp-catalogue/<locale>` holds, per game id, only the catalogue keys (`title`, `tagline`, `rules`, `difficulty.*`) of one locale. The registry (`apps/web/src/registry.ts`) lists game ids and lazy loaders; each entry's `metadata.messages` is a live object that holds the locales loaded so far (see Localization). A game's complete messages arrive with its own chunk, so the main bundle carries no game translations at all.
 
 After "New game" the host moves focus into the game: to the element marked `data-autofocus` (usually the board), otherwise to the first control.
 
@@ -109,6 +109,7 @@ Optional spaced repetition without engagement mechanics (spec "Spaced repetition
 - 16 UI locales (`packages/localization/src/locales.ts`), BCP-47, Arabic RTL (`<html dir>`; CSS uses logical properties).
 - Resolution: stored choice → first matching browser language → English. Traditional Chinese is *not* mapped to `zh-Hans`.
 - Catalogues: shell (`apps/web/src/i18n/ui/<locale>.ts`, type-checked key sets), shared game vocabulary (`common.*`), and one namespace per game (`metadata.messages`). Tests enforce complete key sets and identical placeholders; the English fallback exists only as a safety net and is reported.
+- Loading: the main chunk contains no shell or catalogue translations. `apps/web/src/i18n/locales/<locale>.ts` bundles one locale's shell UI (`i18n/ui/<locale>.ts`), deck-page (`i18n/learning/<locale>.ts`) and game catalogue messages (`virtual:wp-catalogue/<locale>`) into one chunk. `loadLocale(locale)` (`apps/web/src/i18n/index.ts`) loads it together with English (the translator's fallback) in parallel; the app awaits it before the first render, and a language switch awaits the new locale before re-rendering (the last choice wins; if a locale cannot be loaded, the current language stays). Key types (`UiKey`, `LearningUiKey`) come from the English modules. All locale chunks are precached by the service worker, so switching the language works offline (e2e-tested). `common.*` (`packages/localization`) is still bundled eagerly (≈ 11 KB).
 - Content languages (learning/translation) are separate preferences that accept any BCP-47 tag.
 - Translations other than en/de are AI-assisted and await native-speaker review.
 

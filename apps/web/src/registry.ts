@@ -1,10 +1,12 @@
 import type { GameMetadata, GameModule } from '@wp/game-core';
 import CATALOGUE from 'virtual:wp-catalogue';
+import { gameCatalogueMessages } from './i18n';
 
 export interface GameEntry {
   /**
    * Catalogue metadata bundled with the shell: everything from the game's metadata, but only the messages the
    * shell renders before the game is loaded (title, tagline, rules, difficulty labels; see catalogue-plugin.ts).
+   * `messages` holds only the locales loaded so far (`loadLocale` in ./i18n: the UI locale and English).
    * The complete metadata is `(await load()).metadata`.
    */
   metadata: GameMetadata;
@@ -13,9 +15,9 @@ export interface GameEntry {
 }
 
 const entry = <S>(id: string, load: () => Promise<{ default: GameModule<S> }>): GameEntry => {
-  const metadata = (CATALOGUE as Record<string, GameMetadata | undefined>)[id];
+  const metadata = (CATALOGUE as Record<string, Omit<GameMetadata, 'messages'> | undefined>)[id];
   if (!metadata) throw new Error(`Game "${id}" is missing from the catalogue (add @wp/game-${id} to apps/web/package.json).`);
-  return { metadata, load: async () => (await load()).default as GameModule<unknown> };
+  return { metadata: { ...metadata, messages: gameCatalogueMessages(id) }, load: async () => (await load()).default as GameModule<unknown> };
 };
 
 /** Catalogue order = order of this list. Adding a game: one line here + a package under packages/games. */

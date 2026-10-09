@@ -3,9 +3,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createTranslator } from '@wp/localization';
 import { createMemoryDeckStore, createMemoryLearningStore, createMemoryStore, type LearningStore } from '@wp/persistence';
 import type { AppContext } from '../src/app';
-import { UI_MESSAGES } from '../src/i18n/ui';
+import { UI_MESSAGES } from '../src/i18n';
 import { hostLearning, loadLearningRecords, removeUserDeckRecords } from '../src/lib/learning';
 import { renderSettings } from '../src/pages/settings';
+import { loadAllLocales } from './locales';
+
+await loadAllLocales();
 
 vi.hoisted(() => {
   Object.assign(globalThis, { __WP_VERSION__: 'test', __WP_LEGAL__: { name: '', address: [], email: '' } });

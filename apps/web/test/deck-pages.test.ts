@@ -3,8 +3,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createTranslator } from '@wp/localization';
 import { createMemoryDeckStore, createMemoryLearningStore, createMemoryStore, createSave, type DeckStore, type LearningStore } from '@wp/persistence';
 import type { AppContext } from '../src/app';
-import { UI_MESSAGES } from '../src/i18n/ui';
+import { UI_MESSAGES } from '../src/i18n';
 import { renderDeck, renderDeckImport, renderDecks } from '../src/pages/decks';
+import { loadAllLocales } from './locales';
+
+await loadAllLocales();
 
 // Build-time constants normally injected by vite.config.ts.
 vi.hoisted(() => {

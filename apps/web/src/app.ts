@@ -11,7 +11,7 @@ import {
 import { createIndexedDbDeckStore, createIndexedDbLearningStore, createIndexedDbStore, type DeckStore, type LearningStore, type SaveStore } from '@wp/persistence';
 import { announce, clear, h } from '@wp/ui';
 import { APP_NAME } from './config';
-import { UI_MESSAGES, type UiKey } from './i18n/ui';
+import { loadLocale, UI_MESSAGES, type UiKey } from './i18n';
 import { renderAbout } from './pages/about';
 import type * as DeckPages from './pages/decks';
 import { renderGamePage } from './pages/game';
@@ -33,7 +33,8 @@ export interface AppContext {
   /** Spaced-repetition records ("Items worth reviewing"); separate from saves and decks. */
   learning: Promise<LearningStore>;
   navigate: (path: string) => void;
-  setLocale: (locale: SupportedLocale) => void;
+  /** Loads the locale's messages, then switches to it and re-renders (never shows keys or English meanwhile). */
+  setLocale: (locale: SupportedLocale) => Promise<void>;
   announce: (message: string) => void;
 }
 
@@ -50,8 +51,10 @@ const storage = (): Storage | undefined => {
 
 const noopStorage = { getItem: () => null, setItem: () => undefined };
 
-export function startApp(root: HTMLElement): void {
-  let locale = readUiLocale(storage() ?? noopStorage, navigator.languages ?? [navigator.language]);
+/** Loads the messages of the UI locale (and the English fallback), then renders the app. */
+export async function startApp(root: HTMLElement): Promise<void> {
+  let locale = await loadLocale(readUiLocale(storage() ?? noopStorage, navigator.languages ?? [navigator.language]));
+  let localeRequest = 0;
   let route: Route = { name: 'home' };
   let cleanup: void | (() => void | Promise<void>);
 
@@ -68,7 +71,11 @@ export function startApp(root: HTMLElement): void {
     decks: createIndexedDbDeckStore(),
     learning: createIndexedDbLearningStore(),
     navigate: (path) => navigate(path),
-    setLocale: (next) => {
+    setLocale: async (next) => {
+      // Only the latest choice wins when the user switches again while a locale is still loading.
+      const request = ++localeRequest;
+      const loaded = await loadLocale(next).catch(() => undefined);
+      if (request !== localeRequest || loaded !== next) return;
       locale = next;
       writeUiLocale(storage() ?? noopStorage, next);
       applyLocale();
@@ -135,7 +142,7 @@ export function startApp(root: HTMLElement): void {
       )
     );
     select.addEventListener('change', () => {
-      if (isSupportedLocale(select.value)) app.setLocale(select.value);
+      if (isSupportedLocale(select.value)) void app.setLocale(select.value);
       document.getElementById('header-language')?.closest('details')?.setAttribute('open', '');
       document.getElementById('header-language')?.focus();
     });

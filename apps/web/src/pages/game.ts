@@ -7,7 +7,6 @@ import type { AppContext, Page } from '../app';
 import { SESSION_NOTE_MINUTES } from '../config';
 import { findGame } from '../registry';
 import type { Route } from '../router';
-import { loadUserDecks, userDeckSource } from '../lib/decks';
 import { hostLearning, loadLearningRecords, type HostLearning } from '../lib/learning';
 import { createPreferences } from '../lib/preferences';
 import { safeStorage, sessionNoteEnabled } from './settings';
@@ -229,10 +228,11 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
       [module, store, decks, records] = await Promise.all([
         entry.load(),
         app.store,
-        metadata.usesUserDecks ? loadUserDecks(app.decks) : undefined,
+        // The deck library code (validation shared with the importer) is a separate chunk: only some games use it.
+        metadata.usesUserDecks ? import('../lib/decks').then(async (lib) => lib.userDeckSource(await lib.loadUserDecks(app.decks))) : undefined,
         metadata.usesLearningRecords ? loadLearningRecords(app.learning) : undefined
       ]);
-      if (decks) userDecks = userDeckSource(decks);
+      if (decks) userDecks = decks;
       if (records) learning = hostLearning(records, await app.learning);
     } catch (error) {
       console.error(error);

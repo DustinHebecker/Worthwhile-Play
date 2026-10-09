@@ -20,8 +20,7 @@ import { createTranslator, readContentLanguages } from '@wp/localization';
 import { append, clear, h } from '@wp/ui';
 import type { AppContext, Page } from '../app';
 import { APP_NAME } from '../config';
-import { LEARNING_UI_MESSAGES, type LearningUiKey } from '../i18n/learning';
-import type { UiKey } from '../i18n/ui';
+import { LEARNING_UI_MESSAGES, type LearningUiKey, type UiKey } from '../i18n';
 import { deckLanguages, importErrorText, importWarningText, loadUserDecks, newDeckId, type StoredDeck } from '../lib/decks';
 import { loadLearningRecords } from '../lib/learning';
 import { createPreferences } from '../lib/preferences';
@@ -59,7 +58,7 @@ const builtinDecks = (app: AppContext): Deck[] => {
 };
 
 type LearningT = (key: LearningUiKey, params?: Readonly<Record<string, string | number>>) => string;
-/** Translator for the "Items worth reviewing" strings (a catalogue that lives in this lazily loaded chunk). */
+/** Translator for the "Items worth reviewing" strings (loaded with the UI locale, see ../i18n). */
 const lt = (app: AppContext): LearningT => createTranslator({ locale: app.locale, sources: [LEARNING_UI_MESSAGES] }) as LearningT;
 
 /** "Items worth reviewing" counts of a deck, or undefined if the deck is not reviewable (symbols). */
