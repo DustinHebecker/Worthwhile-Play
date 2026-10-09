@@ -178,7 +178,11 @@ const tr: UiCatalogue = {
   'settings.decks': 'Bu cihazda içe aktarılan desteler: {count}',
   'settings.clearDecks': 'İçe aktardığım desteleri sil',
   'settings.clearDecksConfirm': 'Bu cihazda içe aktardığın tüm desteler silinsin mi? Yerleşik desteler ve kayıtlı oyunlar etkilenmez. Bu işlem geri alınamaz.',
-  'settings.decksDeleted': 'İçe aktarılan desteler silindi.'
+  'settings.decksDeleted': 'İçe aktarılan desteler silindi.',
+  'settings.learning': 'Bu cihazdaki öğrenme kayıtları: {count}',
+  'settings.clearLearning': 'Öğrenme kayıtlarını sil',
+  'settings.clearLearningConfirm': 'Bu cihazdaki tüm öğrenme kayıtları (tekrar planı) silinsin mi? Desteler ve kayıtlı oyunlar etkilenmez. Bu işlem geri alınamaz.',
+  'settings.learningDeleted': 'Öğrenme kayıtları silindi.'
 };
 
 export default tr;

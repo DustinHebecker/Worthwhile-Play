@@ -87,3 +87,7 @@ Constants: `IMPORT_LIMITS` in `packages/learning-content/src/import.ts`.
 
 Language fallbacks (`resolveContentLanguages`): learning language → UI language → English; translation language → UI language → English → German (never the same as the learning language); country names in the learning language if the browser has CLDR names for it, else the UI language. Flags depend on the system emoji font (Windows shows two letters instead of a flag).
 
+
+## Learning records
+
+Reviewing a deck in the *Review* game stores small learning records on the device (IndexedDB store `learning`, never uploaded): per card and direction a Leitner box, the next suggested day and a few counts — see [architecture.md](../architecture.md#learning-records-items-worth-reviewing). Records refer to item ids, so keep `id`s stable when you edit and re-import a JSON deck if you want to keep them (a re-import gets a new deck id; records of the old deck are deleted with it). The *Symbols* deck is not reviewable (both sides are the same).

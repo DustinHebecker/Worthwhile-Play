@@ -178,7 +178,11 @@ const pt: UiCatalogue = {
   'settings.decks': 'Baralhos importados neste dispositivo: {count}',
   'settings.clearDecks': 'Apagar meus baralhos importados',
   'settings.clearDecksConfirm': 'Apagar todos os baralhos que você importou neste dispositivo? Os baralhos incluídos e os jogos gravados não são afetados. Esta ação não pode ser desfeita.',
-  'settings.decksDeleted': 'Baralhos importados apagados.'
+  'settings.decksDeleted': 'Baralhos importados apagados.',
+  'settings.learning': 'Registros de estudo neste aparelho: {count}',
+  'settings.clearLearning': 'Apagar registros de estudo',
+  'settings.clearLearningConfirm': 'Apagar todos os registros de estudo (o cronograma de revisão) deste aparelho? Baralhos e jogos salvos não são afetados. Isso não pode ser desfeito.',
+  'settings.learningDeleted': 'Registros de estudo apagados.'
 };
 
 export default pt;

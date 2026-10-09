@@ -64,7 +64,8 @@
 .wp-review__typed-result { margin: 0; text-align: center; }
 .wp-review__typed-result[data-match='true'] { font-weight: 600; }
 .wp-review__rating { display: grid; gap: 0.4rem; justify-items: center; }
-.wp-review__rate { display: inline-flex; align-items: center; gap: 0.35rem; min-width: 6.5rem; justify-content: center; }
+.wp-review__rating .wp-review__buttons { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: min(100%, 26rem); }
+.wp-review__rate { display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.3rem; min-width: 0; padding-inline: 0.4rem; }
 .wp-review__rate-symbol { font-weight: 700; }
 .wp-review__rate--again { border-style: dashed; }
 .wp-review__rate--good { border-width: 2px; }

@@ -290,12 +290,13 @@ describe('stored records', () => {
 });
 
 describe('review counts', () => {
-  it('counts due and seen cards of one deck, ignoring other decks and removed items', () => {
+  it('counts due and seen cards (items, any direction) of one deck, ignoring other decks and removed items', () => {
     const at = (itemId: string, d: string, direction: 'forward' | 'backward' = 'forward', deckId = 'flags') =>
       applyReview(undefined, review({ itemId, day: d, direction, deckId }))!; // due two days later
     const records = [at('de', '2026-03-01'), at('fr', '2026-03-08'), at('fr', '2026-03-09', 'backward'), at('it', '2026-03-10'), at('gone', '2026-03-01'), at('de', '2026-03-01', 'forward', 'x')];
-    expect(reviewCounts(records, 'flags', ['de', 'fr', 'it'], '2026-03-10')).toEqual({ due: 2, seen: 4 });
-    expect(reviewCounts(records, 'flags', ['de', 'fr', 'it'], '2026-03-11')).toEqual({ due: 3, seen: 4 });
+    expect(reviewCounts(records, 'flags', ['de', 'fr', 'it'], '2026-03-09')).toEqual({ due: 1, seen: 3 });
+    expect(reviewCounts(records, 'flags', ['de', 'fr', 'it'], '2026-03-10')).toEqual({ due: 2, seen: 3 });
+    expect(reviewCounts(records, 'flags', ['de', 'fr', 'it'], '2026-03-12')).toEqual({ due: 3, seen: 3 });
     expect(reviewCounts([], 'flags', ['de'], '2026-03-11')).toEqual({ due: 0, seen: 0 });
     expect(isDue({ due: '2026-03-10' }, '2026-03-10')).toBe(true);
     expect(isDue({ due: '2026-03-11' }, '2026-03-10')).toBe(false);

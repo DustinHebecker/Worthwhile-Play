@@ -178,7 +178,11 @@ const hi: UiCatalogue = {
   'settings.decks': 'इस डिवाइस पर इम्पोर्ट किए गए डेक: {count}',
   'settings.clearDecks': 'मेरे इम्पोर्ट किए डेक हटाएँ',
   'settings.clearDecksConfirm': 'इस डिवाइस पर इम्पोर्ट किए गए सभी डेक हटाएँ? बिल्ट-इन डेक और सहेजे गए खेल प्रभावित नहीं होंगे। इसे पूर्ववत नहीं किया जा सकता।',
-  'settings.decksDeleted': 'इम्पोर्ट किए गए डेक हटा दिए गए।'
+  'settings.decksDeleted': 'इम्पोर्ट किए गए डेक हटा दिए गए।',
+  'settings.learning': 'इस डिवाइस पर सीखने के रिकॉर्ड: {count}',
+  'settings.clearLearning': 'सीखने के रिकॉर्ड हटाएँ',
+  'settings.clearLearningConfirm': 'इस डिवाइस के सभी सीखने के रिकॉर्ड (दोहराव की योजना) हटाएँ? डेक और सहेजे गए खेल प्रभावित नहीं होंगे। इसे पूर्ववत नहीं किया जा सकता।',
+  'settings.learningDeleted': 'सीखने के रिकॉर्ड हटा दिए गए।'
 };
 
 export default hi;

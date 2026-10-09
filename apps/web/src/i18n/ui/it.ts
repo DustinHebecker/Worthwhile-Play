@@ -178,7 +178,11 @@ const it: UiCatalogue = {
   'settings.decks': 'Mazzi importati su questo dispositivo: {count}',
   'settings.clearDecks': 'Elimina i miei mazzi importati',
   'settings.clearDecksConfirm': 'Eliminare tutti i mazzi importati su questo dispositivo? I mazzi inclusi e le partite salvate non vengono toccati. L’operazione non può essere annullata.',
-  'settings.decksDeleted': 'Mazzi importati eliminati.'
+  'settings.decksDeleted': 'Mazzi importati eliminati.',
+  'settings.learning': 'Dati di apprendimento su questo dispositivo: {count}',
+  'settings.clearLearning': 'Elimina i dati di apprendimento',
+  'settings.clearLearningConfirm': 'Eliminare tutti i dati di apprendimento (il piano di ripasso) da questo dispositivo? Mazzi e partite salvate non vengono toccati. L’operazione non può essere annullata.',
+  'settings.learningDeleted': 'Dati di apprendimento eliminati.'
 };
 
 export default it;

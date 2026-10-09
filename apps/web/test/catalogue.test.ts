@@ -43,3 +43,11 @@ describe('game registry', () => {
     }
   });
 });
+
+describe('learning page strings (lazily loaded with the deck pages)', () => {
+  it('are complete and placeholder-consistent for all 16 locales', async () => {
+    const { LEARNING_UI_MESSAGES } = await import('../src/i18n/learning');
+    expect(auditCatalogues(LEARNING_UI_MESSAGES, SUPPORTED_LOCALES)).toEqual([]);
+    expect(Object.keys(LEARNING_UI_MESSAGES).sort()).toEqual([...SUPPORTED_LOCALES].sort());
+  });
+});

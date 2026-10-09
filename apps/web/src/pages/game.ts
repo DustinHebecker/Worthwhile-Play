@@ -8,6 +8,7 @@ import { SESSION_NOTE_MINUTES } from '../config';
 import { findGame } from '../registry';
 import type { Route } from '../router';
 import { loadUserDecks, userDeckSource } from '../lib/decks';
+import { hostLearning, loadLearningRecords, type HostLearning } from '../lib/learning';
 import { createPreferences } from '../lib/preferences';
 import { safeStorage, sessionNoteEnabled } from './settings';
 import { gameBadges, gameTranslator } from './shared';
@@ -58,6 +59,7 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
 
   let module: GameModule<unknown> | undefined;
   let userDecks: UserDeckSource | undefined;
+  let learning: HostLearning | undefined;
   let store: (SaveStore & { persistent: boolean }) | undefined;
   let instance: GameInstance<unknown> | undefined;
   let autosave: ReturnType<typeof createAutosave> | undefined;
@@ -111,6 +113,7 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
     void autosave?.flush(true);
   };
 
+  let launched = false;
   const mount = () => {
     instance?.dispose();
     autosave?.dispose();
@@ -139,8 +142,12 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
       },
       preferences: createPreferences(safeStorage(), metadata.id),
       contentLanguages: contentLanguages(),
-      ...(userDecks ? { userDecks } : {})
+      ...(userDecks ? { userDecks } : {}),
+      ...(learning ? { learning } : {}),
+      // `?deck=<id>` applies to the first game started on this page only.
+      ...(route.deck && !launched ? { launch: { deck: route.deck } } : {})
     });
+    launched = true;
     return instance;
   };
 
@@ -218,8 +225,15 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
     status.append(h('p', { class: 'wp-muted', 'data-testid': 'loading' }, t('game.loading')));
     try {
       let decks;
-      [module, store, decks] = await Promise.all([entry.load(), app.store, metadata.usesUserDecks ? loadUserDecks(app.decks) : undefined]);
+      let records;
+      [module, store, decks, records] = await Promise.all([
+        entry.load(),
+        app.store,
+        metadata.usesUserDecks ? loadUserDecks(app.decks) : undefined,
+        metadata.usesLearningRecords ? loadLearningRecords(app.learning) : undefined
+      ]);
       if (decks) userDecks = userDeckSource(decks);
+      if (records) learning = hostLearning(records, await app.learning);
     } catch (error) {
       console.error(error);
       clear(status);
@@ -252,6 +266,7 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
     document.removeEventListener('visibilitychange', onVisibility);
     try {
       await autosave?.flush(true);
+      await learning?.flush();
     } finally {
       autosave?.dispose();
       instance?.dispose();

@@ -150,23 +150,23 @@ export function isDue(record: Pick<LearningRecordSummary, 'due'>, today: Day): b
 }
 
 export interface ReviewCounts {
-  /** Cards (item × direction) whose suggested day has arrived. */
+  /** Cards (items) with at least one direction whose suggested day has arrived. */
   due: number;
-  /** Cards (item × direction) rated at least once. */
+  /** Cards (items) rated at least once, in any direction. */
   seen: number;
 }
 
 /** Neutral counts for one learning deck; records of items that are no longer in the deck are ignored. */
 export function reviewCounts(records: readonly LearningRecordSummary[], deckId: string, itemIds: readonly string[], today: Day): ReviewCounts {
   const items = new Set(itemIds);
-  let due = 0;
-  let seen = 0;
+  const due = new Set<string>();
+  const seen = new Set<string>();
   for (const record of records) {
     if (record.deckId !== deckId || !items.has(record.itemId)) continue;
-    seen++;
-    if (isDue(record, today)) due++;
+    seen.add(record.itemId);
+    if (isDue(record, today)) due.add(record.itemId);
   }
-  return { due, seen };
+  return { due: due.size, seen: seen.size };
 }
 
 export interface LearningRecordsOptions {

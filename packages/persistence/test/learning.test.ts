@@ -20,7 +20,7 @@ const module = {
   metadata: { id: 'memory', stateVersion: 1, skills: ['memory'], typicalMinutes: [1, 2], inputMethods: ['pointer'], capabilities: {}, messages: {} }
 } as unknown as GameModule<unknown>;
 
-const row = (deckId: string, itemId: string, direction = 'forward', box = 1): LearningRow => ({ deckId, itemId, direction, box, due: '2026-03-11' });
+const row = (deckId: string, itemId: string, direction = 'forward', box = 1) => ({ deckId, itemId, direction, box, due: '2026-03-11' });
 
 /**
  * Creates a database exactly as an older app version did: version 1 (`saves`) or version 2 (`saves`, `decks`),
@@ -59,7 +59,7 @@ describe.each([
     await store.putMany([row('flags', 'de'), row('flags', 'de', 'backward'), row('flags', 'fr'), row('user-a-1', 'x')]);
     await store.putMany([row('flags', 'de', 'forward', 3)]);
     await store.putMany([]);
-    const all = (await store.list()) as LearningRow[];
+    const all = (await store.list()) as (LearningRow & { box: number })[];
     expect(all).toHaveLength(4);
     expect(all.find((r) => r.deckId === 'flags' && r.itemId === 'de' && r.direction === 'forward')?.box).toBe(3);
     await store.removeDeck('flags');
@@ -75,7 +75,7 @@ describe.each([
     await expect(store.putMany([row('flags', 'de'), { deckId: 'flags' } as unknown as LearningRow])).rejects.toThrow();
     const cyclic: Record<string, unknown> = { ...row('flags', 'fr') };
     cyclic.self = cyclic;
-    await expect(store.putMany([cyclic as LearningRow])).rejects.toThrow();
+    await expect(store.putMany([cyclic as unknown as LearningRow])).rejects.toThrow();
     expect(await store.list()).toEqual([]);
   });
 });

@@ -2,10 +2,9 @@ import { DB_NAME, LEARNING_STORE, idbRequest, openDatabase } from './store';
 
 /** A stored learning record. Beyond its key fields the shape is owned by `@wp/learning-content` (validated on read). */
 export interface LearningRow {
-  deckId: string;
-  itemId: string;
-  direction: string;
-  [key: string]: unknown;
+  readonly deckId: string;
+  readonly itemId: string;
+  readonly direction: string;
 }
 
 /**

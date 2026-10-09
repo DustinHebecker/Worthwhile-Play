@@ -178,7 +178,11 @@ const ja: UiCatalogue = {
   'settings.decks': 'この端末にインポートしたデッキ：{count} 個',
   'settings.clearDecks': 'インポートしたデッキを削除',
   'settings.clearDecksConfirm': 'この端末にインポートしたデッキをすべて削除しますか？内蔵デッキとセーブデータには影響しません。この操作は元に戻せません。',
-  'settings.decksDeleted': 'インポートしたデッキを削除しました。'
+  'settings.decksDeleted': 'インポートしたデッキを削除しました。',
+  'settings.learning': 'この端末の学習記録：{count}',
+  'settings.clearLearning': '学習記録を削除',
+  'settings.clearLearningConfirm': 'この端末のすべての学習記録（復習スケジュール）を削除しますか？デッキと保存したゲームには影響しません。元に戻せません。',
+  'settings.learningDeleted': '学習記録を削除しました。'
 };
 
 export default ja;

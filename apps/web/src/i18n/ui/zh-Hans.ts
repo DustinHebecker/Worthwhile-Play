@@ -178,7 +178,11 @@ const zhHans: UiCatalogue = {
   'settings.decks': '此设备上导入的卡组：{count}',
   'settings.clearDecks': '删除我导入的卡组',
   'settings.clearDecksConfirm': '要删除你在此设备上导入的所有卡组吗？内置卡组和存档不受影响。此操作无法撤销。',
-  'settings.decksDeleted': '已删除导入的卡组。'
+  'settings.decksDeleted': '已删除导入的卡组。',
+  'settings.learning': '此设备上的学习记录：{count}',
+  'settings.clearLearning': '删除学习记录',
+  'settings.clearLearningConfirm': '删除此设备上的所有学习记录（复习安排）？卡组和已保存的游戏不受影响。此操作无法撤销。',
+  'settings.learningDeleted': '学习记录已删除。'
 };
 
 export default zhHans;

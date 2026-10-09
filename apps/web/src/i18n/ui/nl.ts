@@ -178,7 +178,11 @@ const nl: UiCatalogue = {
   'settings.decks': 'Geïmporteerde decks op dit apparaat: {count}',
   'settings.clearDecks': 'Mijn geïmporteerde decks verwijderen',
   'settings.clearDecksConfirm': 'Alle decks verwijderen die je op dit apparaat hebt geïmporteerd? Ingebouwde decks en opgeslagen spellen blijven behouden. Dit kan niet ongedaan worden gemaakt.',
-  'settings.decksDeleted': 'Geïmporteerde decks verwijderd.'
+  'settings.decksDeleted': 'Geïmporteerde decks verwijderd.',
+  'settings.learning': 'Leergegevens op dit apparaat: {count}',
+  'settings.clearLearning': 'Leergegevens verwijderen',
+  'settings.clearLearningConfirm': 'Alle leergegevens (het herhaalschema) op dit apparaat verwijderen? Decks en opgeslagen spellen blijven bewaard. Dit kan niet ongedaan worden gemaakt.',
+  'settings.learningDeleted': 'Leergegevens verwijderd.'
 };
 
 export default nl;

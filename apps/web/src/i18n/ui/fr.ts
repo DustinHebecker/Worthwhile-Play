@@ -178,7 +178,11 @@ const fr: UiCatalogue = {
   'settings.decks': 'Paquets importés sur cet appareil : {count}',
   'settings.clearDecks': 'Supprimer mes paquets importés',
   'settings.clearDecksConfirm': 'Supprimer tous les paquets que vous avez importés sur cet appareil ? Les paquets intégrés et les parties sauvegardées ne sont pas concernés. Cette action est irréversible.',
-  'settings.decksDeleted': 'Paquets importés supprimés.'
+  'settings.decksDeleted': 'Paquets importés supprimés.',
+  'settings.learning': 'Données d’apprentissage sur cet appareil : {count}',
+  'settings.clearLearning': 'Supprimer les données d’apprentissage',
+  'settings.clearLearningConfirm': 'Supprimer toutes les données d’apprentissage (le planning de révision) de cet appareil ? Les paquets et les parties enregistrées ne sont pas concernés. Cette action est irréversible.',
+  'settings.learningDeleted': 'Données d’apprentissage supprimées.'
 };
 
 export default fr;

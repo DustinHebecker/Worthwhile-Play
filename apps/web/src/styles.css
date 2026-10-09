@@ -83,6 +83,14 @@ button.danger::before { content: '✕ '; }
 .import-form input[type='file'] { width: 100%; }
 .import-example { overflow-x: auto; padding: 0.5rem; border-radius: 6px; background: var(--wp-surface-2); font-size: 0.85rem; }
 .import-errors { border-inline-start-color: var(--wp-danger); }
+/* Items worth reviewing (neutral overview: no colours that urge, no counters that grow louder) */
+.review-overview { margin-block: 1.25rem; }
+.review-list { list-style: none; padding: 0; margin: 0.5rem 0; display: grid; gap: 0.5rem; }
+.review-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.75rem; padding: 0.5rem 0.75rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius); background: var(--wp-surface); }
+.review-list .review-deck { font-weight: 600; }
+.review-list .wp-button { margin-inline-start: auto; }
+.review-badge { border-style: dashed; }
+.review-how { max-width: 46rem; }
 .import-errors ul, .import-warnings ul { margin-block: 0.25rem; padding-inline-start: 1.2rem; }
 .import-errors strong::before { content: '⚠ '; }
 .import-result { margin-block: 1rem; display: grid; gap: 0.75rem; }

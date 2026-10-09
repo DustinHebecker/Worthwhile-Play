@@ -292,7 +292,7 @@ export function createReview(context: GameContext, speech: Speech | undefined = 
 
   // --- Sessions -------------------------------------------------------------------------------
   /** Starts a session on `deckId` (falls back to First words if that deck is not available). */
-  const start = (seed: number, deckId: string, direction: DirectionChoice, mode: Mode) => {
+  const start = (seed: number, deckId: string, wanted: DirectionChoice, mode: Mode, autoDirection = false) => {
     let deck = deckId;
     let notice = '';
     let ids = deckItemIds(deck, context.userDecks);
@@ -304,6 +304,14 @@ export function createReview(context: GameContext, speech: Speech | undefined = 
     const { languages, learningFallback } = sessionLanguages(deck, context.contentLanguages, t.locale);
     if (learningFallback) notice = t('languages.fallback', { language: languageName(context.contentLanguages?.learning) });
     const key = recordDeckOf({ deckId: deck, languages });
+    // A new session prefers the remembered direction; if nothing is due that way but something is in the other
+    // direction, it reviews both (the deck library counts cards due in any direction).
+    let direction = wanted;
+    if (autoDirection && learning && mode === 'review' && direction !== 'mixed') {
+      const deckItems = ids;
+      const due = (d: DirectionChoice) => availableCounts(deckItems, recordsOf(key), d, today()).due;
+      if (due(direction) === 0 && due('mixed') > 0) direction = 'mixed';
+    }
     state = startSession({ seed, deckId: deck, languages, direction, mode: learning ? mode : 'practice', itemIds: ids, records: recordsOf(key), today: today() });
     faces = faceResolver(state, t, context.userDecks);
     typedInput.value = '';
@@ -413,7 +421,7 @@ export function createReview(context: GameContext, speech: Speech | undefined = 
 
   return {
     newGame(opts: NewGameOptions) {
-      start(opts.seed, chosenDeck(), wantedDirection, learning ? 'review' : 'practice');
+      start(opts.seed, chosenDeck(), wantedDirection, learning ? 'review' : 'practice', true);
     },
     restore(saved: ReviewState) {
       state = clone(saved);

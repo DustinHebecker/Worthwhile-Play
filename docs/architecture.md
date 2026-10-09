@@ -45,10 +45,14 @@ interface GameContext {
   preferences?: { get(key): unknown; set(key, value): void }; // optional: per-device options (localStorage, cleared with saves)
   contentLanguages?: { learning?: string; translation?: string }; // optional: learning languages from Settings (any BCP-47 tag)
   userDecks?: { list(): UserDeckSummary[]; get(id): unknown };    // optional: snapshot of imported decks (metadata.usesUserDecks)
+  learning?: { today(): string; list(deckId): LearningRecordSummary[]; record(reviews: LearningReview[]): void }; // optional (metadata.usesLearningRecords)
+  launch?: { deck?: string };       // optional: parameters of the opening link (`?deck=<id>`), for the first newGame only
 }
 ```
 
 `contentLanguages` is independent of the UI language (`t.locale`); either entry may be missing and games must fall back explicitly (see `resolveContentLanguages` in `@wp/learning-content`). `userDecks` is a synchronous, read-only snapshot the host loads before creating a game whose metadata sets `usesUserDecks: true`, so `newGame`/`restore` stay synchronous. Decks can be deleted between sessions; a game must handle a saved game whose deck is gone (Memory shows an explanation and a "new game" button).
+
+`learning` is the minimal capability for spaced repetition (see "Learning records" below). The host provides it only to games whose metadata sets `usesLearningRecords: true`: a synchronous snapshot of the records loaded before the game is created, `today()` (the device's local calendar day, `YYYY-MM-DD`) and `record(reviews)`, which applies self-ratings in memory immediately and writes them to IndexedDB in order. `record` is idempotent per (card, session), so a game may send the same ratings again at any time (Review does so on every `restore`, which also completes writes lost when the page closed before they reached the store). Games without the capability keep working (Review then runs as practice without a schedule). `launch.deck` comes from `/games/<id>?deck=<id>` (which also starts a fresh game and is then removed from the URL); a game uses it for its first `newGame` and remembers it in its preferences.
 
 The spec's `metadata()`/`initialize()` are expressed as the `metadata` object and `create()`. Every game package has:
 
@@ -72,7 +76,7 @@ After "New game" the host moves focus into the game: to the element marked `data
 
 ## Persistence
 
-IndexedDB database `worthwhile-play`, schema version 2. Upgrades are additive (`upgradeDatabase` only creates missing stores; tested with a real version-1 database): 1 → `saves`, 2 → `decks`. A connection closes itself on `versionchange`, so a newer app version in another tab can upgrade; if an *older* tab blocks the upgrade for more than 4 s, the app falls back to in-memory storage and says so (it never hangs).
+IndexedDB database `worthwhile-play`, schema version 3. Upgrades are additive (`upgradeDatabase` only creates missing stores; tested with real version-1 and version-2 databases, whose saves and decks survive): 1 → `saves`, 2 → `decks`, 3 → `learning` (key path `[deckId, itemId, direction]`). A connection closes itself on `versionchange`, so a newer app version in another tab can upgrade; if an *older* tab blocks the upgrade for more than 4 s, the app falls back to in-memory storage and says so (it never hangs).
 
 `GameSave { schemaVersion, gameId, stateVersion, updatedAt, seed, difficulty?, state }` in `saves` (one active save per game). `interpretSave` validates and migrates untrusted data and returns `empty | ok | corrupt` — a corrupt save is reported and discarded, never crashes the app. If IndexedDB is unavailable, an in-memory store is used and the user is told that progress will not persist.
 
@@ -87,6 +91,18 @@ IndexedDB database `worthwhile-play`, schema version 2. Upgrades are additive (`
 **Imported decks** are stored only on the device in the `decks` store (`{ id: 'user-…', importedAt, deck }`), independent of saves: "Delete all saved games" keeps them, "Delete my imported decks" (Settings, confirmed) removes them. The app validates every record on read and skips broken ones. Pages: `/decks` (library), `/decks/<id>` (preview, play, export JSON, delete), `/decks/import` (file or paste → check → preview → save). The deck pages are a lazily loaded chunk.
 
 **Memory** uses the deck system with five variants (symbols, picture ↔ word, word ↔ translation, flag ↔ country, own deck front ↔ back). Its state stores only the variant, deck id, item ids and the content languages fixed at deal time (never deck contents), so a resumed game looks exactly as before even if Settings changed. Saves from state version 1 are migrated (`variant: 'symbols'`). A saved game whose own deck was deleted stays valid (validation is structural, `isValidState` is pure); the view explains that the deck is gone and offers a new game. "Read aloud" uses the browser's speech synthesis only when the player presses the button and a voice exists for the language (best effort; hidden otherwise).
+
+## Learning records ("Items worth reviewing")
+
+Optional spaced repetition without engagement mechanics (spec "Spaced repetition"): no streaks, daily goals, reminders, notifications, badges or guilt messages; nothing happens unless the person opens the library or the *Review* game.
+
+- **Model** (`packages/learning-content/src/schedule.ts`): Leitner boxes with whole days. One record per (learning deck, item, direction): `box` (1–7), `due` (local calendar day), `lastDay`, `last` rating, `reviews`, `lapses`, `session`. Ratings are "Not yet" (`again` → box 1, due tomorrow), "Almost" (`hard` → same box, half its interval, at least one day) and "Knew it" (`good` → next box). Box n is suggested again after 1, 2, 4, 8, 16, 32, 64 days; a never-rated card counts as box 1. The due day is always after the rating day. Three buttons instead of four (no "Easy"): fewer decisions, and the scale stays explainable in one sentence; "Knew it" on a new card already skips box 1.
+- **Dates**: only the device's local calendar day is used, and only to decide what is due. No timers, no time of day; tests inject "today".
+- **Idempotency**: every session has an id (start day + seed). A record accepts at most one rating per session, so resending ratings (reload, resume, lost write) never counts twice. Consequence: re-rating a card in the same session (e.g. after `reset()`) keeps the first rating.
+- **Keys**: "First words" is learned per learning language (`first-words:<lang>`); flags are language-independent (`flags`); imported decks use their unique id. Deleting an imported deck deletes its records.
+- **Storage**: IndexedDB store `learning`, separate from saves and decks; "Delete all saved games" keeps it, Settings has its own confirmed "Delete learning records". Records are validated on read (`toLearningRecord`); broken ones are skipped.
+- **Library**: `/decks` shows a neutral "Items worth reviewing" overview (decks with cards whose day has arrived, counted per card in any direction) with a "Review" link each, a per-deck badge, and a short explanation of the schedule ("tends to help people remember … only a suggestion"). The strings of these parts live in `apps/web/src/i18n/learning.ts`, imported only by the lazily loaded deck pages, so they do not grow the main bundle.
+- **Review game** (`packages/games/review`): a session is a fixed queue built once — due cards (most overdue first, at most 20), new cards (at most 10) or practice (any 10 cards, schedule unchanged). "Not yet" brings a card back once at the end of the session (not recorded). The state stores deck id, content languages fixed at start, the queue, the index and the answers (rating + day), never card contents. Memory does not write records (L2 decision: keeps Memory a game rather than an assessment).
 
 ## Localization
 

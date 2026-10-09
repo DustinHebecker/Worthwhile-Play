@@ -178,7 +178,11 @@ const pl: UiCatalogue = {
   'settings.decks': 'Zaimportowane talie na tym urządzeniu: {count}',
   'settings.clearDecks': 'Usuń moje zaimportowane talie',
   'settings.clearDecksConfirm': 'Usunąć wszystkie talie zaimportowane na tym urządzeniu? Wbudowane talie i zapisane gry pozostaną. Tej operacji nie można cofnąć.',
-  'settings.decksDeleted': 'Zaimportowane talie usunięte.'
+  'settings.decksDeleted': 'Zaimportowane talie usunięte.',
+  'settings.learning': 'Zapisy nauki na tym urządzeniu: {count}',
+  'settings.clearLearning': 'Usuń zapisy nauki',
+  'settings.clearLearningConfirm': 'Usunąć wszystkie zapisy nauki (harmonogram powtórek) z tego urządzenia? Talie i zapisane gry pozostaną. Tej operacji nie można cofnąć.',
+  'settings.learningDeleted': 'Zapisy nauki usunięte.'
 };
 
 export default pl;

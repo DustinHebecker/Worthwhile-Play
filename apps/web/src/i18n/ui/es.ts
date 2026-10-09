@@ -178,7 +178,11 @@ const es: UiCatalogue = {
   'settings.decks': 'Mazos importados en este dispositivo: {count}',
   'settings.clearDecks': 'Borrar mis mazos importados',
   'settings.clearDecksConfirm': '¿Borrar todos los mazos que importaste en este dispositivo? Los mazos incluidos y las partidas guardadas no se ven afectados. No se puede deshacer.',
-  'settings.decksDeleted': 'Mazos importados borrados.'
+  'settings.decksDeleted': 'Mazos importados borrados.',
+  'settings.learning': 'Registros de aprendizaje en este dispositivo: {count}',
+  'settings.clearLearning': 'Borrar los registros de aprendizaje',
+  'settings.clearLearningConfirm': '¿Borrar todos los registros de aprendizaje (el plan de repaso) de este dispositivo? Los mazos y las partidas guardadas no se ven afectados. No se puede deshacer.',
+  'settings.learningDeleted': 'Registros de aprendizaje borrados.'
 };
 
 export default es;
