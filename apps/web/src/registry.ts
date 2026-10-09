@@ -61,7 +61,8 @@ export const GAMES: readonly GameEntry[] = [
   entry('audience-switch', () => import('@wp/game-audience-switch')),
   entry('deep-read', () => import('@wp/game-deep-read')),
   entry('faces-names', () => import('@wp/game-faces-names')),
-  entry('briefing-game', () => import('@wp/game-briefing-game'))
+  entry('briefing-game', () => import('@wp/game-briefing-game')),
+  entry('compression-challenge', () => import('@wp/game-compression-challenge'))
 ];
 
 export const findGame = (id: string): GameEntry | undefined => GAMES.find((g) => g.metadata.id === id);

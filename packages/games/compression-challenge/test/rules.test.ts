@@ -5,6 +5,7 @@ import {
   BULLET_PICKS,
   DIFFICULTIES,
   MAX_DRAFT,
+  SCORED_STEPS,
   SELF_CHECKS,
   bulletIdsFor,
   canCheck,
@@ -608,6 +609,37 @@ describe('isCompressionState', () => {
     expect(isCompressionState(own)).toBe(true);
     expect(isCompressionState({ ...clone(own), checked: false })).toBe(false);
     expect(isCompressionState({ ...clone(own), checked: false, draft: '', checks: [false, false, false] })).toBe(true);
+  });
+
+  it('validates the open current step precisely', () => {
+    expect(SCORED_STEPS).toBe(5);
+    expect(kindOf(pieceById('launch')!, 'nope')).toBeUndefined();
+    // Bullets step, not yet checked: up to three picks are fine, a fourth is not.
+    let b = next(check(toggleSentence(createInitialState(8, 'hard'), 's2')));
+    for (const id of b.bullets.slice(0, 3)) b = toggleBullet(b, id);
+    expect(isCompressionState(b)).toBe(true);
+    expect(isCompressionState({ ...clone(b), picks: b.bullets.slice(0, 4) })).toBe(false);
+    expect(isCompressionState({ ...clone(b), picks: [...b.picks, 'gold9'] })).toBe(false);
+    // Details and expand steps with partial answers are valid; answers for later steps are not.
+    let d = next(check(chooseSummary(next(check(b)), b.summaries[0]!)));
+    d = toggleDetail(d, 'd4');
+    expect(d.step).toBe('details');
+    expect(isCompressionState(d)).toBe(true);
+    expect(isCompressionState({ ...clone(d), expanded: 'actionable' })).toBe(false);
+    expect(isCompressionState({ ...clone(d), summary: 'nope' })).toBe(false);
+    const e = chooseVersion(next(check(d)), 'vague');
+    expect(isCompressionState(e)).toBe(true);
+    expect(isCompressionState({ ...clone(e), expanded: 'nope' })).toBe(false);
+    expect(isCompressionState({ ...clone(e), needs: [] })).toBe(false);
+    // Arrays with an extra element or a non-string are rejected; a draft of exactly the maximum is fine.
+    expect(isCompressionState({ ...clone(e), sentences: [...e.sentences, 's99'] })).toBe(false);
+    expect(isCompressionState({ ...clone(e), versions: [...e.versions, 'vague'] })).toBe(false);
+    expect(isCompressionState({ ...clone(e), details: [...e.details.slice(0, 5), 7] })).toBe(false);
+    expect(isCompressionState({ ...clone(e), step: 4 })).toBe(false);
+    expect(isCompressionState({ ...clone(e), difficulty: ['hard'] })).toBe(false);
+    const w = toggleCheck(setDraft(check(chooseSummary(next(check(b)), 'faithful')), 'x'.repeat(MAX_DRAFT)), 0);
+    expect(isCompressionState(w)).toBe(true);
+    expect(isCompressionState({ ...clone(w), draft: 7 })).toBe(false);
   });
 
   it('never throws on hostile input', () => {

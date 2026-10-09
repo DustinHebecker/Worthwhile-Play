@@ -17,6 +17,7 @@
     "@wp/game-briefing-game": "workspace:*",
     "@wp/game-chess": "workspace:*",
     "@wp/game-circuit-puzzle": "workspace:*",
+    "@wp/game-compression-challenge": "workspace:*",
     "@wp/game-connect-four": "workspace:*",
     "@wp/game-constraint-grid": "workspace:*",
     "@wp/game-core": "workspace:*",

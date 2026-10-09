@@ -142,7 +142,7 @@ export function createCompressionChallenge(context: GameContext): GameInstance<C
     const step = state.step as ScoredStep;
     const section = h('section', { class: 'cc-step', 'data-testid': 'cc-step', 'data-step': step, 'data-checked': state.checked ? 'true' : 'false', 'aria-labelledby': 'cc-step-heading' },
       h('h2', { id: 'cc-step-heading', tabindex: -1, 'data-focus': 'step', 'data-autofocus': true }, stepHeading(step)),
-      h('p', { class: 'wp-status', 'data-testid': 'cc-task' }, state.checked ? t('feedback.heading') : t(`task.${step}`))
+      h('p', { class: 'wp-status', 'data-testid': 'cc-task' }, t(`task.${step}`))
     );
     if (step === 'core') section.appendChild(state.checked ? renderCoreFeedback() : renderCoreChoice());
     else {

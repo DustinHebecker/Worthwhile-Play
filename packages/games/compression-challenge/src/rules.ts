@@ -301,8 +301,9 @@ export function summarize(state: CompressionState): GameSummary {
 // --- Validation ------------------------------------------------------------------------------------
 
 const isStringArray = (value: unknown): value is string[] => Array.isArray(value) && value.every((v) => typeof v === 'string');
+/** Same length and every expected id present, hence a permutation of distinct ids. */
 const isPermutationOf = (value: unknown, expected: readonly string[]): boolean =>
-  isStringArray(value) && value.length === expected.length && new Set(value).size === value.length && expected.every((x) => value.includes(x));
+  Array.isArray(value) && value.length === expected.length && expected.every((x) => value.includes(x));
 const isSubsetOf = (value: unknown, allowed: readonly string[]): value is string[] =>
   isStringArray(value) && new Set(value).size === value.length && value.every((x) => allowed.includes(x));
 const sameOrder = (a: readonly string[], b: readonly string[]) => a.length === b.length && a.every((x, i) => x === b[i]);
@@ -313,7 +314,7 @@ export function isCompressionState(value: unknown): value is CompressionState {
     if (!isRecord(value)) return false;
     const v = value;
     if (v.version !== 1 || !isUint32(v.seed)) return false;
-    if (typeof v.difficulty !== 'string' || !(DIFFICULTIES as readonly string[]).includes(v.difficulty)) return false;
+    if (!(DIFFICULTIES as readonly unknown[]).includes(v.difficulty)) return false;
     const difficulty = v.difficulty as Difficulty;
     if (typeof v.piece !== 'string') return false;
     const def = pieceById(v.piece);
@@ -323,7 +324,7 @@ export function isCompressionState(value: unknown): value is CompressionState {
     if (!isPermutationOf(v.summaries, summaryIdsFor(difficulty))) return false;
     if (!isPermutationOf(v.details, def.details.map((d) => d.id))) return false;
     if (!isPermutationOf(v.versions, VERSIONS)) return false;
-    if (typeof v.step !== 'string' || !(STEPS as readonly string[]).includes(v.step)) return false;
+    if (!(STEPS as readonly unknown[]).includes(v.step)) return false;
     if (typeof v.checked !== 'boolean') return false;
     const step = stepIndex(v.step as Step);
     if (v.step === 'done' && !v.checked) return false;
@@ -339,13 +340,13 @@ export function isCompressionState(value: unknown): value is CompressionState {
     if (!isSubsetOf(v.picks, v.bullets as string[]) || v.picks.length > BULLET_PICKS) return false;
     if (phase('bullets') === 1 ? v.picks.length !== BULLET_PICKS : phase('bullets') === -1 && v.picks.length > 0) return false;
 
-    if (v.summary !== null && (typeof v.summary !== 'string' || !(v.summaries as string[]).includes(v.summary))) return false;
+    if (v.summary !== null && !(v.summaries as unknown[]).includes(v.summary)) return false;
     if (phase('sentence') === 1 ? v.summary === null : phase('sentence') === -1 && v.summary !== null) return false;
 
     if (!isSubsetOf(v.needs, v.details as string[])) return false;
     if (phase('details') === 1 ? v.needs.length === 0 : phase('details') === -1 && v.needs.length > 0) return false;
 
-    if (v.expanded !== null && (typeof v.expanded !== 'string' || !(v.versions as string[]).includes(v.expanded))) return false;
+    if (v.expanded !== null && !(v.versions as unknown[]).includes(v.expanded)) return false;
     if (phase('expand') === 1 ? v.expanded === null : phase('expand') === -1 && v.expanded !== null) return false;
 
     if (typeof v.draft !== 'string' || v.draft.length > MAX_DRAFT) return false;

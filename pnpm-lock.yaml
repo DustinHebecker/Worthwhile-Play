@@ -86,6 +86,9 @@ importers:
       '@wp/game-circuit-puzzle':
         specifier: workspace:*
         version: link:../../packages/games/circuit-puzzle
+      '@wp/game-compression-challenge':
+        specifier: workspace:*
+        version: link:../../packages/games/compression-challenge
       '@wp/game-connect-four':
         specifier: workspace:*
         version: link:../../packages/games/connect-four
