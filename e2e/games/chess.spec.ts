@@ -133,3 +133,100 @@ test('a strength chosen in the menu becomes the host difficulty and the menu cho
   await page.getByTestId('new-game').click();
   await expect(page.getByTestId('current-human')).toBeVisible();
 });
+
+test('a random colour is drawn at the start and shown', async ({ page }) => {
+  await startNewGame(page);
+  await page.getByTestId('color-random').check({ force: true }); // visually hidden native radio inside a styled label
+  await page.getByTestId('start').click();
+  await expect(page.getByTestId('mode')).toContainText(/drawn at random/);
+  const colour = (await page.getByTestId('mode').textContent())!.includes('White') ? 'w' : 'b';
+  // The board is turned to the drawn colour; as Black the computer has already opened.
+  await expect(page.locator('.wp-chess')).toHaveAttribute('data-orientation', colour);
+  await expect(page.getByTestId('status')).toHaveText(`Your move — you play ${colour === 'w' ? 'White' : 'Black'}.`);
+  if (colour === 'b') await expect(page.getByTestId('ply-0')).toBeVisible();
+  // The choice "random" is remembered for the next game.
+  await page.reload();
+  await page.getByTestId('new-game').click();
+  await expect(page.getByTestId('color-random')).toBeChecked();
+  await expect(page.getByTestId('mode')).toContainText(/drawn at random/);
+});
+
+test('the variation board plays both sides without changing the game and survives a reload', async ({ page }) => {
+  let before: (string | null)[] = [];
+  await expectResumeAfterReload(page, GAME, async (p) => {
+    await tap(p, 'e2', 'e4');
+    await expect(p.getByTestId('ply-1')).toBeVisible({ timeout: 10_000 });
+    before = await boardPieces(p);
+    await p.getByTestId('variation-open').click();
+    await expect(p.getByTestId('var-board')).toBeVisible();
+    await expect(p.getByTestId('var-board')).toHaveAttribute('aria-label', 'Variation board');
+    for (const s of ['g1', 'f3']) await p.getByTestId(`var-sq-${s}`).click();
+    await expect(p.getByTestId('var-sq-f3')).toHaveAttribute('data-piece', 'wN');
+    // Black's reply on the variation board is the person's own choice: any black knight move.
+    const knight = (await p.getByTestId('var-sq-b8').getAttribute('data-piece')) === 'bN' ? ['b8', 'a6'] : ['g8', 'h6'];
+    for (const s of knight) await p.getByTestId(`var-sq-${s}`).click();
+    await expect(p.getByTestId(`var-sq-${knight[1]}`)).toHaveAttribute('data-piece', 'bN');
+    await expect(p.getByTestId('var-ply-1')).toBeVisible();
+  });
+  // After the reload the variation is open again, with its moves; the game itself is unchanged.
+  await expect(page.getByTestId('var-board')).toBeVisible();
+  await expect(page.getByTestId('var-sq-f3')).toHaveAttribute('data-piece', 'wN');
+  await page.getByTestId('var-back').click();
+  await expect(page.getByTestId('var-sq-f3')).toHaveAttribute('data-piece', 'wN');
+  await page.getByTestId('var-back').click();
+  await expect(page.getByTestId('var-sq-f3')).toHaveAttribute('data-piece', '');
+  await page.getByTestId('var-close').click();
+  await expect(page.getByTestId('variation')).toBeHidden();
+  await expect(page.getByTestId('board')).toBeVisible();
+  expect(await boardPieces(page)).toEqual(before);
+  await expect(page.getByTestId('ply-2')).toHaveCount(0);
+  await expect(page.getByTestId('variation-open')).toBeFocused();
+});
+
+test('on a 360px phone the variation board replaces the game view without horizontal scrolling', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await startNewGame(page);
+  await page.getByTestId('variation-open').click();
+  await expect(page.getByTestId('board')).toBeHidden();
+  await expect(page.getByTestId('var-board')).toBeVisible();
+  await expect(page.getByTestId('var-close')).toBeVisible();
+  await expect(page.getByTestId('var-close')).toHaveText('Back to the game');
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
+  expect((await page.getByTestId('var-sq-a1').boundingBox())?.width ?? 0).toBeGreaterThanOrEqual(38);
+  for (const id of ['var-close', 'var-back', 'var-forward', 'var-reset', 'var-flip', 'var-engine']) {
+    expect((await page.getByTestId(id).boundingBox())?.height ?? 0, id).toBeGreaterThanOrEqual(44);
+  }
+  await page.getByTestId('var-close').click();
+  await expect(page.getByTestId('board')).toBeVisible();
+});
+
+test('solves a multi-move "find the best move" puzzle with the help of the hint', async ({ page }) => {
+  await startNewGame(page);
+  await page.getByTestId('menu').getByText('Find the best move').click();
+  await page.getByTestId('start').click();
+  await expect(page.getByTestId('next-puzzle')).toBeVisible();
+  // Go to the next puzzle whose line has two or more moves.
+  for (let i = 0; i < 80 && !/Move 1 of [23]\./.test((await page.getByTestId('status').textContent()) ?? ''); i++) {
+    await page.getByTestId('next-puzzle').click();
+  }
+  await expect(page.getByTestId('status')).toContainText(/Move 1 of [23]\./);
+  const total = Number(/Move 1 of (\d)\./.exec((await page.getByTestId('status').textContent())!)![1]);
+  for (let step = 1; step <= total; step++) {
+    if (step > 1) await expect(page.getByTestId('status')).toContainText(`Move ${step} of ${total}.`, { timeout: 10_000 });
+    await page.getByTestId('hint').click();
+    await expect(page.locator('[data-testid^="sq-"][data-hint]')).toHaveCount(2);
+    const turn = await page.locator('.wp-chess').getAttribute('data-turn');
+    const squares = await page.locator('[data-testid^="sq-"][data-hint]').evaluateAll((els) => els.map((el) => [el.getAttribute('data-square'), el.getAttribute('data-piece')]));
+    const from = squares.find(([, piece]) => piece?.startsWith(turn ?? 'w'))![0]!;
+    const to = squares.find(([square]) => square !== from)![0]!;
+    await tap(page, from, to);
+    if (await page.getByTestId('promotion').isVisible()) {
+      const hint = (await page.getByTestId('explanation').textContent()) ?? '';
+      const piece = ({ '♕': 'q', '♖': 'r', '♗': 'b', '♘': 'n' } as Record<string, string>)[/=(.)/.exec(hint)?.[1] ?? '♕'] ?? 'q';
+      await page.getByTestId(`promote-${piece}`).click();
+    }
+  }
+  await expect(page.locator('.wp-chess')).toHaveAttribute('data-outcome', 'solved');
+  await expect(page.getByTestId('status')).toHaveText('Solved — you found every move of the line.');
+});
