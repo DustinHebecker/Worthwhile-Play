@@ -1,16 +1,18 @@
 import { isArrayOf, isInt, isOneOf, isRecord, isUint32, seedFromString } from '@wp/game-core';
+import { archetypeOf } from './world';
 import { STATUS_KINDS, type Entity, type Order, type Projectile, type Ruleset, type Status, type World } from './types';
 
 const MAX_DIM = 128;
 const MAX_ID = 0x7fff_ffff;
 
-const isOrder = (v: unknown): v is Order => {
+/** Structural check of an order; move targets must lie on a `w`×`h` map. Never throws. */
+export const isValidOrder = (v: unknown, w: number, h: number): v is Order => {
   if (!isRecord(v)) return false;
   switch (v.type) {
     case 'hold':
       return Object.keys(v).length === 1;
     case 'move':
-      return isInt(v.x, 0, MAX_DIM) && isInt(v.y, 0, MAX_DIM);
+      return isInt(v.x, 0, w - 1) && isInt(v.y, 0, h - 1);
     case 'attack':
       return isInt(v.target, 1, MAX_ID);
     default:
@@ -33,7 +35,7 @@ export function isValidWorld(value: unknown, ruleset?: Ruleset): value is World 
   const w = map.w;
   const h = map.h;
   if (map.terrain.length !== w * h) return false;
-  if (ruleset && [...map.terrain].some((ch) => !(ch in ruleset.terrain))) return false;
+  if (ruleset && [...map.terrain].some((ch) => !Object.hasOwn(ruleset.terrain, ch))) return false;
   const sides = value.sides;
   const nextId = value.nextId;
   const inMap = (x: unknown, y: unknown): boolean => isInt(x, 0, w - 1) && isInt(y, 0, h - 1);
@@ -42,12 +44,12 @@ export function isValidWorld(value: unknown, ruleset?: Ruleset): value is World 
     isInt(e.id, 1, nextId - 1) &&
     isInt(e.side, 0, sides - 1) &&
     typeof e.kind === 'string' &&
-    (!ruleset || e.kind in ruleset.archetypes) &&
+    (!ruleset || Object.hasOwn(ruleset.archetypes, e.kind)) &&
     inMap(e.x, e.y) &&
-    isInt(e.hp, 1) &&
+    isInt(e.hp, 1, ruleset ? (archetypeOf(ruleset, e.kind as string)?.hp ?? 0) : Number.MAX_SAFE_INTEGER) &&
     isInt(e.mp, 0, 10_000) &&
     isInt(e.cooldown, 0, 10_000) &&
-    isOrder(e.order) &&
+    isValidOrder(e.order, w, h) &&
     isArrayOf(e.status, isStatus) &&
     (e.beam === null || (isRecord(e.beam) && isInt(e.beam.target, 1, MAX_ID) && isInt(e.beam.stacks, 0, 1000)));
   const isProjectile = (p: unknown): p is Projectile =>
@@ -55,7 +57,7 @@ export function isValidWorld(value: unknown, ruleset?: Ruleset): value is World 
     isInt(p.id, 1, nextId - 1) &&
     isInt(p.side, 0, sides - 1) &&
     typeof p.kind === 'string' &&
-    (!ruleset || p.kind in ruleset.archetypes) &&
+    (!ruleset || Object.hasOwn(ruleset.archetypes, p.kind)) &&
     inMap(p.x, p.y) &&
     isInt(p.ticks, 1, 10_000);
   if (!isArrayOf(value.entities, isEntity) || !isArrayOf(value.projectiles, isProjectile)) return false;
@@ -64,7 +66,7 @@ export function isValidWorld(value: unknown, ruleset?: Ruleset): value is World 
   if (ruleset) {
     const cells = new Set<string>();
     for (const e of entities) {
-      const layer = ruleset.archetypes[e.kind]?.layer;
+      const layer = archetypeOf(ruleset, e.kind)?.layer;
       const key = `${layer}:${e.x},${e.y}`;
       if (cells.has(key)) return false;
       cells.add(key);

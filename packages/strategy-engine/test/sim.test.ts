@@ -38,6 +38,11 @@ describe('commands', () => {
     expect(validateCommand(w, rs, move(1, 1, 3, 3))).toEqual({ ok: false, reason: 'not-yours' });
     expect(validateCommand(w, rs, move(1, 2, 0, 0))).toEqual({ ok: false, reason: 'immobile' });
     expect(validateCommand(w, rs, move(0, 1, 4, 0))).toEqual({ ok: false, reason: 'out-of-bounds' });
+    const wet = worldOf(mapOf('..~'), [{ side: 0, kind: 'rifles', x: 0, y: 0 }]);
+    expect(validateCommand(wet, rs, move(0, 1, 2, 0))).toEqual({ ok: false, reason: 'impassable' });
+    const proto = structuredClone(w);
+    proto.entities[0]!.kind = 'constructor';
+    expect(validateCommand(proto, rs, move(0, 1, 1, 1))).toEqual({ ok: false, reason: 'unknown-unit' });
     expect(validateCommand(w, rs, { side: 1, unit: 2, order: { type: 'attack', target: 1 } })).toEqual({ ok: true });
     expect(validateCommand(w, rs, { side: 1, unit: 3, order: { type: 'attack', target: 1 } })).toEqual({ ok: false, reason: 'no-weapon' });
     expect(validateCommand(w, rs, { side: 0, unit: 1, order: { type: 'attack', target: 1 } })).toEqual({ ok: false, reason: 'bad-target' });
@@ -208,6 +213,20 @@ describe('combat', () => {
     const later = runTicks(calm, rs, [], 6);
     expect(later.events.filter((e) => e.t === 'move' && e.id === 2)).toEqual([]);
     expect(unit(later.world, 2)?.status).toEqual([]);
+  });
+
+  it('a ballistic unit ordered to attack a target inside its minimum range stays put instead of running into it', () => {
+    const w = worldOf(open(12, 1), [{ side: 0, kind: 'howitzer', x: 0, y: 0 }, { side: 1, kind: 'command-post', x: 2, y: 0 }]);
+    const { world, events } = runTicks(w, rs, [{ side: 0, unit: 1, order: { type: 'attack', target: 2 } }], 30);
+    expect(unit(world, 1)?.x).toBe(0);
+    expect(events.filter((e) => e.t === 'bump')).toEqual([]);
+    expect(unit(world, 1)?.mp).toBe(0);
+  });
+
+  it('never crashes on archetype names from the object prototype chain', () => {
+    const w = worldOf(open(3, 1), [{ side: 0, kind: 'rifles', x: 0, y: 0 }]);
+    w.entities[0]!.kind = 'constructor';
+    expect(() => runTicks(w, rs, [], 1)).toThrow(RangeError);
   });
 
   it('drops attack orders whose target was destroyed', () => {

@@ -1,7 +1,7 @@
 import { cellOf, dist2, maxStepCost, stepCost, terrainAt } from './grid';
 import { findPath } from './path';
 import type { Archetype, Command, Entity, Ruleset, SimEvent, Status, WeaponSpec, World } from './types';
-import { findEntity, normalizeOrder, validateCommand } from './world';
+import { archetypeOf, findEntity, normalizeOrder, validateCommand } from './world';
 
 export interface SimResult {
   world: World;
@@ -39,7 +39,7 @@ export function computeDamage(base: number, weapon: WeaponSpec, target: Archetyp
 export function inWeaponRange(world: World, ruleset: Ruleset, shooter: Entity, arch: Archetype, target: Entity): boolean {
   const weapon = arch.weapon;
   if (!weapon) return false;
-  const targetArch = ruleset.archetypes[target.kind];
+  const targetArch = archetypeOf(ruleset, target.kind);
   if (!targetArch || weapon.vs[targetArch.armor] <= 0) return false;
   const bonus = weapon.delivery === 'ballistic' ? 0 : terrainAt(world.map, ruleset, shooter.x, shooter.y).rangeBonus;
   const d = dist2(shooter.x, shooter.y, target.x, target.y);
@@ -57,7 +57,7 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
   w.tick += 1;
   const t = w.tick;
   const arch = (e: Entity): Archetype => {
-    const a = rs.archetypes[e.kind];
+    const a = archetypeOf(rs, e.kind);
     if (!a) throw new RangeError(`Unknown archetype '${e.kind}'.`);
     return a;
   };
@@ -138,7 +138,7 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
   const landed = w.projectiles.filter((p) => --p.ticks <= 0);
   w.projectiles = w.projectiles.filter((p) => p.ticks > 0);
   for (const p of landed) {
-    const weapon = rs.archetypes[p.kind]?.weapon;
+    const weapon = archetypeOf(rs, p.kind)?.weapon;
     events.push({ t: 'land', tick: t, x: p.x, y: p.y });
     if (!weapon) continue;
     for (const target of w.entities) {
@@ -228,6 +228,9 @@ function goalOf(w: World, rs: Ruleset, e: Entity, a: Archetype): number | undefi
   if (order.type === 'attack') {
     const target = findEntity(w, order.target);
     if (!target || inWeaponRange(w, rs, e, a, target)) return undefined;
+    // Too close for a weapon with a minimum range: stay rather than walk into the target.
+    const minRange = a.weapon?.minRange ?? 0;
+    if (dist2(e.x, e.y, target.x, target.y) < minRange * minRange) return undefined;
     return cellOf(w.map, target.x, target.y);
   }
   return undefined;

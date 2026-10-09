@@ -8,10 +8,10 @@ export function createWorld(scenario: Scenario, ruleset: Ruleset): World {
   if (!Number.isInteger(map.w) || !Number.isInteger(map.h) || map.w < 1 || map.h < 1 || map.terrain.length !== map.w * map.h) {
     throw new RangeError('Invalid map dimensions.');
   }
-  for (const ch of map.terrain) if (!(ch in ruleset.terrain)) throw new RangeError(`Unknown terrain '${ch}'.`);
+  for (const ch of map.terrain) if (!Object.hasOwn(ruleset.terrain, ch)) throw new RangeError(`Unknown terrain '${ch}'.`);
   const occupied = new Set<string>();
   const entities: Entity[] = scenario.entities.map((spec, i) => {
-    const arch = ruleset.archetypes[spec.kind];
+    const arch = archetypeOf(ruleset, spec.kind);
     if (!arch) throw new RangeError(`Unknown archetype '${spec.kind}'.`);
     if (!Number.isInteger(spec.side) || spec.side < 0 || spec.side >= scenario.sides) throw new RangeError('Invalid side.');
     if (!passable(map, ruleset, spec.x, spec.y, arch.layer)) throw new RangeError(`Cannot place ${spec.kind} at ${spec.x},${spec.y}.`);
@@ -38,9 +38,18 @@ export function spawn(id: number, side: number, arch: Archetype, x: number, y: n
   return { id, side, kind: arch.id, x, y, hp: arch.hp, mp: 0, cooldown: 0, order, status: [], beam: null };
 }
 
+/**
+ * Own-property lookup of an archetype. Kinds can come from untrusted saves, so a plain index
+ * (`ruleset.archetypes[kind]`) would also find prototype members such as `constructor`.
+ */
+export const archetypeOf = (ruleset: Ruleset, kind: string): Archetype | undefined =>
+  Object.hasOwn(ruleset.archetypes, kind) ? ruleset.archetypes[kind] : undefined;
+
 export const findEntity = (world: World, id: number): Entity | undefined => world.entities.find((e) => e.id === id);
 
-export type CommandCheck = { ok: true } | { ok: false; reason: 'unknown-unit' | 'not-yours' | 'immobile' | 'out-of-bounds' | 'no-weapon' | 'bad-target' | 'bad-order' };
+export type CommandCheck =
+  | { ok: true }
+  | { ok: false; reason: 'unknown-unit' | 'not-yours' | 'immobile' | 'out-of-bounds' | 'impassable' | 'no-weapon' | 'bad-target' | 'bad-order' };
 
 /** Rule check for a single command against the current world. Never throws. */
 export function validateCommand(world: World, ruleset: Ruleset, command: Command): CommandCheck {
@@ -48,7 +57,7 @@ export function validateCommand(world: World, ruleset: Ruleset, command: Command
   const unit = findEntity(world, command.unit);
   if (!unit) return { ok: false, reason: 'unknown-unit' };
   if (unit.side !== command.side) return { ok: false, reason: 'not-yours' };
-  const arch = ruleset.archetypes[unit.kind];
+  const arch = archetypeOf(ruleset, unit.kind);
   if (!arch) return { ok: false, reason: 'unknown-unit' };
   const order = command.order;
   switch (order.type) {
@@ -59,6 +68,7 @@ export function validateCommand(world: World, ruleset: Ruleset, command: Command
       if (!Number.isInteger(order.x) || !Number.isInteger(order.y) || !inBounds(world.map, order.x, order.y)) {
         return { ok: false, reason: 'out-of-bounds' };
       }
+      if (!passable(world.map, ruleset, order.x, order.y, arch.layer)) return { ok: false, reason: 'impassable' };
       return { ok: true };
     case 'attack': {
       if (!arch.weapon) return { ok: false, reason: 'no-weapon' };

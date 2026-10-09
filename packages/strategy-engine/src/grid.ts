@@ -28,7 +28,8 @@ export const dist2 = (ax: number, ay: number, bx: number, by: number): number =>
 const PLAIN: TerrainSpec = { cost: null, cover: 0, rangeBonus: 0 };
 
 export function terrainAt(map: GameMap, ruleset: Ruleset, x: number, y: number): TerrainSpec {
-  return ruleset.terrain[map.terrain[cellOf(map, x, y)] ?? ''] ?? PLAIN;
+  const code = map.terrain[cellOf(map, x, y)] ?? '';
+  return Object.hasOwn(ruleset.terrain, code) ? (ruleset.terrain[code] ?? PLAIN) : PLAIN;
 }
 
 export function passable(map: GameMap, ruleset: Ruleset, x: number, y: number, layer: Layer): boolean {

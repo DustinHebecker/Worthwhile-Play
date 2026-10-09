@@ -66,7 +66,13 @@ const CORRUPTIONS: Corruption[] = [
   ['projectile cell', (w) => void (w.projectiles[0]!.y = 4)],
   ['projectile ticks', (w) => void (w.projectiles[0]!.ticks = 0)],
   ['same ground cell', (w) => void (w.entities[1]!.x = 0)],
-  ['entity kind unknown', (w) => void (w.entities[2]!.kind = 'unknown')]
+  ['entity kind unknown', (w) => void (w.entities[2]!.kind = 'unknown')],
+  ['entity kind from the prototype chain (constructor)', (w) => void (w.entities[2]!.kind = 'constructor')],
+  ['entity kind from the prototype chain (__proto__)', (w) => void (w.entities[2]!.kind = '__proto__')],
+  ['projectile kind from the prototype chain', (w) => void (w.projectiles[0]!.kind = 'toString')],
+  ['entity hp above the archetype maximum', (w) => void (w.entities[1]!.hp = 41)],
+  ['move order outside the map', (w) => void (w.entities[1]!.order = { type: 'move', x: 5, y: 0 })],
+  ['move order below the map', (w) => void (w.entities[1]!.order = { type: 'move', x: 0, y: 4 })]
 ];
 
 describe('isValidWorld', () => {
