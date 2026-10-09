@@ -31,6 +31,7 @@ import {
   picture,
   planDoctrine,
   planOrder,
+  commandPost as commandPostOf,
   lastSentOrder,
   PLAYER,
   reportTurn,
@@ -91,13 +92,22 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   /** The player's network, computed once per state (not per unit or per drawing call). */
   let cachedNet: { state: RcState; net: Network } | undefined;
   const network = (): Network => {
-    if (cachedNet?.state !== state) cachedNet = { state, net: computeNetwork(world(), RULESET, PLAYER) };
+    // From the true world: the player's own radio net is felt directly, enemy jamming included
+    // (the picture strips enemy set-up state, so it cannot tell a working jammer).
+    if (cachedNet?.state !== state) cachedNet = { state, net: computeNetwork(state.world, RULESET, PLAYER) };
     return cachedNet.net;
   };
   /** Cells where the player's radio is jammed (the player notices the interference). */
+  // Only cells the own net would cover without jamming: the player notices radio silence where
+  // there should be contact, not the jammer's whole disc (that would give its position away).
   let cachedJam: { state: RcState; jam: Uint8Array } | undefined;
   const jammed = (x: number, y: number): boolean => {
-    if (cachedJam?.state !== state) cachedJam = { state, jam: jammedCells(state.world, RULESET, PLAYER) };
+    if (cachedJam?.state !== state) {
+      const jam = jammedCells(state.world, RULESET, PLAYER);
+      const quiet = { ...state.world, entities: state.world.entities.filter((e) => e.side === PLAYER || archetypeOf(RULESET, e.kind)?.ew?.role !== 'jammer') };
+      const expected = computeNetwork(quiet, RULESET, PLAYER).coverage;
+      cachedJam = { state, jam: jam.map((j, c) => (j === 1 && expected[c] === 1 ? 1 : 0)) };
+    }
     return cachedJam.jam[cellOf(state.world.map, x, y)] === 1;
   };
   /** Whether the unit's weapon can damage the target's armour at all (no button otherwise). */
@@ -164,7 +174,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   const describeCell = (x: number, y: number): string => {
     const units = unitsAt(x, y);
     // The veil is told in words too (screen readers).
-    const terrain = observedAt(x, y) ? terrainName(x, y) : `${terrainName(x, y)} ${t('cell.unobserved')}`;
+    let terrain = observedAt(x, y) ? terrainName(x, y) : `${terrainName(x, y)} ${t('cell.unobserved')}`;
+    if (!revealed() && jammed(x, y)) terrain = `${terrain} ${t('cell.jammed')}`;
     if (units.length === 0) return t('cell.describe', { x: x + 1, y: y + 1, terrain });
     return t('cell.describeUnit', { x: x + 1, y: y + 1, terrain, unit: units.map(describeUnit).join(' ') });
   };
@@ -286,6 +297,11 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   }
 
   function statusText(): string {
+    // A jammed Command Post: no orders at all, and the player should know why.
+    if (state.phase === 'plan' && orderSlots(state) === 0) {
+      const post = commandPostOf(state.world, PLAYER);
+      if (post && jammed(post.x, post.y)) return t('status.postJammed');
+    }
     if (state.phase === 'plan') return t('status.plan', { n: state.draft.length });
     if (state.conceded) return t('status.conceded');
     // The result is decided on the true world, so it is told from it (not from the picture).
