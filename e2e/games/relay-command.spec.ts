@@ -93,6 +93,34 @@ test('relay-command: setting up the Mast Truck spends an order and activates the
   await expect.poll(async () => (await saved(page))?.world.entities.find((e) => e.id === truck.id) as unknown).toMatchObject({ deploy: 6 });
 });
 
+test('relay-command: a doctrine and a patrol survive a reload and are carried out', async ({ page }) => {
+  await start(page);
+  const rifle = firstRifle((await saved(page))!);
+  await page.getByTestId(`rc-unit-${rifle.id}`).click();
+  await page.getByTestId('rc-doctrine-retreat').selectOption('50');
+  await page.getByTestId('rc-mode-patrol').click();
+  const map = page.getByTestId('rc-map');
+  await map.scrollIntoViewIfNeeded();
+  const box = (await map.boundingBox())!;
+  const cell = box.width / 12;
+  await map.click({ position: { x: (rifle.x + 1) * cell + cell / 2, y: (rifle.y - 3) * cell + cell / 2 } });
+  const expected = {
+    side: 0,
+    unit: rifle.id,
+    order: { type: 'patrol', x: rifle.x + 1, y: rifle.y - 3, rx: rifle.x, ry: rifle.y },
+    doctrine: { retreatBelow: 50, priority: 'weakest', seekCover: false, holdFire: false }
+  };
+  await expect.poll(async () => (await saved(page))?.draft).toEqual([expected]);
+  await page.reload();
+  await page.getByTestId('continue').click();
+  await expect(page.getByTestId('rc-slots')).toHaveText('Orders this turn: 1 of 4.');
+  await page.getByTestId('rc-lock').click();
+  await expect.poll(async () => (await saved(page))?.world.entities.find((e) => e.id === rifle.id) as unknown).toMatchObject({
+    order: { type: 'patrol' },
+    doctrine: expected.doctrine
+  });
+});
+
 test('relay-command: giving up asks first', async ({ page }) => {
   await start(page);
   await page.getByTestId('rc-concede').click();

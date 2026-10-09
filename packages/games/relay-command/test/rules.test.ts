@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { BASE_RULESET, canonicalJson, computeNetwork, createWorld, validateCommand, worldHash, type Command, type World } from '@wp/strategy-engine';
+import { BASE_RULESET, canonicalJson, DEFAULT_DOCTRINE, computeNetwork, createWorld, validateCommand, worldHash, type Command, type World } from '@wp/strategy-engine';
 import { planAi } from '../src/ai';
 import {
   cancelOrder,
+  doctrineFor,
+  doctrineRefusal,
+  planDoctrine,
   migrateState,
   orderRefusal,
   orderSlots,
@@ -116,7 +119,7 @@ describe('command network (I3a)', () => {
     expect(orderSlots(s)).toBe(before);
   });
 
-  it('the opponent obeys coverage and order slots and gets its relay set up within 4 turns (B1)', () => {
+  it('the opponent obeys coverage and order slots and gets its relay set up by turn 3 (B1)', () => {
     for (const seed of [1, 2, 3]) {
       let s = newGame(seed);
       let setUp = false;
@@ -127,7 +130,7 @@ describe('command network (I3a)', () => {
         s = lockTurn(s);
         const truck = enemy(s).find((e) => e.kind === 'mast-truck');
         if (truck?.deploy === RULESET.ticksPerTurn) setUp = true;
-        if (turn === 3) expect(setUp).toBe(true);
+        if (turn === 2) expect(setUp).toBe(true);
       }
       // Once set up, it stays inside its own coverage and keeps working.
       const truck = enemy(s).find((e) => e.kind === 'mast-truck');
@@ -178,6 +181,52 @@ describe('command network (I3a)', () => {
     expect(migrateState(v1, 2)).toBeUndefined();
     expect(migrateState(null, 1)).toBeUndefined();
     expect(migrateState({ ...v1, world: { ...(v1.world as object), map: { w: 1, h: 1, terrain: '.' } } }, 1)).toBeUndefined();
+  });
+});
+
+describe('doctrines (I3b)', () => {
+  it('planDoctrine re-issues the current order with the new doctrine; a later order keeps it', () => {
+    let s = newGame(1);
+    const rifle = own(s).find((e) => e.kind === 'rifles')!;
+    const d = { ...DEFAULT_DOCTRINE, priority: 'armor' as const };
+    s = planDoctrine(s, rifle.id, d)!;
+    expect(s.draft).toEqual([{ side: PLAYER, unit: rifle.id, order: { type: 'hold' }, doctrine: d }]);
+    expect(doctrineFor(s, rifle.id)).toEqual(d);
+    s = planOrder(s, rifle.id, { type: 'move', x: rifle.x, y: rifle.y - 1 })!;
+    expect(s.draft[0]!.doctrine).toEqual(d);
+    expect(doctrineRefusal(s, rifle.id, { ...d, retreatBelow: 40 as never })).toBe('bad-order');
+    s = lockTurn(s);
+    expect(unitById(s, rifle.id)!.doctrine).toEqual(d);
+    expect(doctrineFor(s, rifle.id)).toEqual(d);
+  });
+
+  it('the opponent leaves fighters below its retreat threshold alone (no wasted slots)', () => {
+    const s = structuredClone(newGame(1));
+    const hurt = s.world.entities.find((e) => e.side === OPPONENT && e.kind === 'rifles')!;
+    hurt.hp = 5;
+    let world = s.world;
+    for (let turn = 0; turn < 3; turn++) {
+      const plan = planAi(world, RULESET, OPPONENT);
+      expect(plan.some((c) => c.unit === hurt.id)).toBe(false);
+      world = lockTurn({ ...s, world, draft: [] }).world;
+      if (!world.entities.some((e) => e.id === hurt.id)) break;
+    }
+  });
+
+  it('the opponent gives its fighters a retreat doctrine', () => {
+    const plan = planAi(newGame(1).world, RULESET, OPPONENT);
+    const attacks = plan.filter((c) => c.order.type === 'attack');
+    expect(attacks.length).toBeGreaterThan(0);
+    for (const c of attacks) expect(c.doctrine?.retreatBelow).toBe(25);
+  });
+
+  it('drafts with doctrines and the new orders survive validation as plain JSON', () => {
+    let s = newGame(1);
+    const rifle = own(s).find((e) => e.kind === 'rifles')!;
+    const post = commandPost(s.world, PLAYER)!;
+    s = planOrder(s, rifle.id, { type: 'escort', target: post.id }, { ...DEFAULT_DOCTRINE, holdFire: true })!;
+    expect(isValidState(JSON.parse(JSON.stringify(s)))).toBe(true);
+    expect(isValidState({ ...s, draft: [{ ...s.draft[0]!, doctrine: { retreatBelow: 10 } }] })).toBe(false);
   });
 });
 
