@@ -999,7 +999,12 @@ describe('opponent heuristics', () => {
     expect(PROFILES.strong.lookahead!.policy).toBe(false);
     expect(levelProfile('master', 2).lookahead).toBe(PROFILES.master.lookahead);
     expect(PROFILES.master.lookahead).toMatchObject({ policy: true, greedy: true });
-    for (const n of [1, 2, 3] as const) expect(levelProfile('master', n).lookahead!.budget).toBeGreaterThan(levelProfile('strong', n).lookahead!.budget);
+    for (const n of [1, 2, 3] as const) {
+      expect(levelProfile('master', n).lookahead!.budget).toBeGreaterThan(levelProfile('strong', n).lookahead!.budget);
+      const periods = DIFFICULTIES.map((d) => levelProfile(d, n).period);
+      expect([...periods].sort((a, b) => b - a)).toEqual(periods);
+      expect(new Set(periods).size).toBe(4);
+    }
   });
 
   it('never issues an illegal command and stays deterministic (all difficulties)', () => {
