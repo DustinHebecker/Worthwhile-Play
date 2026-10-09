@@ -369,7 +369,9 @@ export const STALL_TICKS = 18;
  */
 function trackProgress(e: Entity, goal: number, remaining: number): number {
   const s = e.stall;
-  if (!s || s.goal !== goal || remaining < s.best) e.stall = { goal, best: remaining, ticks: 0 };
+  // A route that got much longer (a unit settled in a gap, a forced detour) starts a new record:
+  // walking the detour is progress, even before it gets below the old best.
+  if (!s || s.goal !== goal || remaining < s.best || remaining > s.best + DETOUR) e.stall = { goal, best: remaining, ticks: 0 };
   else s.ticks = Math.min(STALL_TICKS, s.ticks + 1);
   return e.stall?.ticks ?? 0;
 }
@@ -558,8 +560,11 @@ function attackAim(ctx: Intent, e: Entity, a: Archetype, id: number): number | '
   };
   const start = cellOf(w.map, e.x, e.y);
   if (firing(start)) return undefined;
-  // Far away: head for the target (one A* search); the firing position is chosen when close.
-  if (dist2(e.x, e.y, p.x, p.y) > (max + FIRING_SEARCH) ** 2) return cellOf(w.map, p.x, p.y);
+  // Far away: head for the target (one A* search); the firing position is chosen when close. Only
+  // if the target's cell can be reached at all (not for a post ringed by holding units or one
+  // across a river): otherwise search a firing position right away.
+  const aim = cellOf(w.map, p.x, p.y);
+  if (dist2(e.x, e.y, p.x, p.y) > (max + FIRING_SEARCH) ** 2 && canReach(w.map, rs, a.layer, ctx.regionsOf(a.layer), start, aim)) return aim;
   // No firing position reachable now: keep the order (counted as 'stuck', ends as 'unreachable').
   return nearestCell(ctx, e, a, firing) ?? start;
 }

@@ -72,7 +72,7 @@ export const arbScenario = fc
         doctrine: fc.option(
           fc.record({
             retreatBelow: fc.constantFrom(0, 25, 50, 75),
-            priority: fc.constantFrom('weakest', 'nearest', 'armor', 'infantry', 'structures'),
+            priority: fc.constantFrom('weakest', 'nearest', 'armor', 'infantry', 'structures', 'emitters'),
             seekCover: fc.boolean(),
             holdFire: fc.boolean()
           }),

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import {
+  BASE_RULESET,
   createWorld,
   DEADLOCK_TICKS,
   DEFAULT_DOCTRINE,
@@ -266,7 +267,7 @@ const arbOrder = (w: number, h: number) =>
  */
 const arbDoctrine: fc.Arbitrary<Doctrine> = fc.record({
   retreatBelow: fc.constantFrom(0, 25, 50, 75),
-  priority: fc.constantFrom('weakest', 'nearest', 'armor', 'infantry', 'structures'),
+  priority: fc.constantFrom('weakest', 'nearest', 'armor', 'infantry', 'structures', 'emitters'),
   seekCover: fc.boolean(),
   holdFire: fc.boolean()
 });
@@ -544,13 +545,72 @@ describe('progress along the route (STALL_TICKS)', () => {
       { side: 0, kind: 'command-post', x: 0, y: 0 },
       { side: 0, kind: 'rifles', x: 1, y: 0 }
     ]);
-    // Pretend the unit already got closer before (best route cost 4) and has not since.
-    Object.assign(unit(w, 2), { order: { type: 'move', x: 9, y: 0 }, mp: 4, stall: { goal: 9, best: 4, ticks: STALL_TICKS - 1 } });
+    // Pretend the unit was a little closer before (best route cost 30, now 32) and has not got closer since.
+    Object.assign(unit(w, 2), { order: { type: 'move', x: 9, y: 0 }, mp: 4, stall: { goal: 9, best: 30, ticks: STALL_TICKS - 1 } });
     const r = runTicks(w, rs, [], 1);
     expect(ended(r.events, 2)).toEqual(['blocked']);
     expect(isValidWorld(JSON.parse(JSON.stringify(r.world)), rs)).toBe(true);
     // A new order starts afresh.
     const again = runTicks(w, rs, [{ side: 0, unit: 2, order: { type: 'move', x: 9, y: 0 } }], 1);
     expect(ended(again.events, 2)).toEqual([]);
+  });
+});
+
+describe('review of PR #9', () => {
+  /** 40×7, a wall row at y = 3 with gaps at x = 1 and x = gap. */
+  const gapMap = (gap: number) => {
+    const rows = Array.from({ length: 7 }, () => '.'.repeat(40).split(''));
+    for (let x = 0; x < 40; x++) if (x !== 1 && x !== gap) rows[3]![x] = '^';
+    return mapOf(...rows.map((r) => r.join('')));
+  };
+
+  for (const gap of [12, 20, 38]) {
+    it(`a long forced detour (near gap taken, far gap at x = ${gap}) is progress: the unit arrives`, () => {
+      const w = worldOf(gapMap(gap), [
+        { side: 0, kind: 'rifles', x: 6, y: 0 },
+        { side: 0, kind: 'outrider', x: 1, y: 0 }
+      ]);
+      unit(w, 1).order = { type: 'move', x: 6, y: 6 };
+      unit(w, 2).order = { type: 'move', x: 1, y: 3 }; // settles in the near gap and holds there
+      // Up to ~70 cells at one cell per two ticks: allow 26 turns.
+      const { world, events } = play(w, 26);
+      expect(ended(events, 2)).toEqual(['arrived']);
+      expect(ended(events, 1)).toEqual(['arrived']);
+      expect(unit(world, 1)).toMatchObject({ x: 6, y: 6 });
+    });
+  }
+});
+
+describe('review of PR #9: attacking targets whose own cell cannot be reached', () => {
+  it('a Lancer attacking a reported Command Post ringed by holding Rifles closes in and fires (fog)', () => {
+    const w = worldOf(open(24, 3), [
+      { side: 0, kind: 'command-post', x: 0, y: 0 },
+      { side: 0, kind: 'lancer', x: 2, y: 0 },
+      { side: 1, kind: 'command-post', x: 23, y: 0 },
+      { side: 1, kind: 'rifles', x: 22, y: 0 },
+      { side: 1, kind: 'rifles', x: 22, y: 1 },
+      { side: 1, kind: 'rifles', x: 23, y: 1 }
+    ]);
+    unit(w, 2).order = { type: 'attack', target: 3 }; // the post is known from before the battle
+    const { events } = play(w, 8);
+    expect(ended(events, 2)).not.toContain('unreachable');
+    expect(events.some((e) => e.t === 'fire' && e.id === 2)).toBe(true);
+  });
+
+  it('a Field Gun facing a target across a river drives to the shore and fires (no fog)', () => {
+    const map = mapOf('........~.....', '........~.....', '........~.....');
+    let world = createWorld({ map, sides: 2, seed: 1, entities: [
+      { side: 0, kind: 'howitzer', x: 1, y: 1 },
+      { side: 1, kind: 'rifles', x: 12, y: 1 }
+    ] }, BASE_RULESET);
+    world.entities[0]!.order = { type: 'attack', target: 2 };
+    const events: SimEvent[] = [];
+    for (let i = 0; i < 6; i++) {
+      const r = resolveTurn(world, BASE_RULESET, [[]]);
+      events.push(...r.events);
+      world = r.world;
+    }
+    expect(ended(events, 1)).not.toContain('unreachable');
+    expect(events.some((e) => e.t === 'launch' && e.id === 1)).toBe(true);
   });
 });
