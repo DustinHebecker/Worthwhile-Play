@@ -35,7 +35,19 @@ let instanceCounter = 0;
 export function createWordGuess(context: GameContext): GameInstance<WordGuessState> {
   const { t } = context;
   const uid = `wg${++instanceCounter}`;
-  let state = createInitialState(0, undefined, { language: defaultLanguage(t.locale), strict: false, layout: 'familiar' });
+  // Options remembered on this device (word language, strict mode, keyboard layout) for fresh games after a
+  // reload; read defensively, anything unexpected falls back to the defaults.
+  const remembered = (() => {
+    const raw = context.preferences?.get('options');
+    const r = typeof raw === 'object' && raw !== null ? (raw as Record<string, unknown>) : {};
+    return {
+      language: typeof r.language === 'string' && isWordLanguage(r.language) ? r.language : defaultLanguage(t.locale),
+      strict: r.strict === true,
+      layout: (LAYOUTS as readonly unknown[]).includes(r.layout) ? (r.layout as KeyboardLayout) : 'familiar'
+    };
+  })();
+  const rememberOptions = () => context.preferences?.set('options', { language: state.language, strict: state.strict, layout: state.layout });
+  let state = createInitialState(0, undefined, remembered);
   let paused = false;
   let message = '';
 
@@ -236,20 +248,29 @@ export function createWordGuess(context: GameContext): GameInstance<WordGuessSta
       id: `${uid}-language`, 'data-focus': 'language', 'data-testid': 'wg-language', 'aria-describedby': `${uid}-language-note`,
       onchange: (event: Event) => {
         const value = (event.target as HTMLSelectElement).value;
-        if (isWordLanguage(value) && !paused) commit(setLanguage(state, value));
+        if (isWordLanguage(value) && !paused) {
+          commit(setLanguage(state, value));
+          rememberOptions();
+        }
       }
     }, ...WORD_LANGUAGES.map((id) => h('option', { value: id, selected: id === state.language, lang: id }, LANGUAGE_INFO[id].nativeName)));
     const layout = h('select', {
       id: `${uid}-layout`, 'data-focus': 'layout', 'data-testid': 'wg-layout',
       onchange: (event: Event) => {
         const value = (event.target as HTMLSelectElement).value as KeyboardLayout;
-        if ((LAYOUTS as readonly string[]).includes(value) && !paused) commit(setLayout(state, value));
+        if ((LAYOUTS as readonly string[]).includes(value) && !paused) {
+          commit(setLayout(state, value));
+          rememberOptions();
+        }
       }
     }, ...LAYOUTS.map((id) => h('option', { value: id, selected: id === state.layout }, t(`layout.${id}`))));
     const strict = h('input', {
       type: 'checkbox', id: `${uid}-strict`, 'data-focus': 'strict', 'data-testid': 'wg-strict', checked: state.strict,
       onchange: (event: Event) => {
-        if (!paused) commit(setStrict(state, (event.target as HTMLInputElement).checked));
+        if (!paused) {
+          commit(setStrict(state, (event.target as HTMLInputElement).checked));
+          rememberOptions();
+        }
       }
     });
     return h('section', { class: 'wg-options', 'aria-label': t('options.label') },

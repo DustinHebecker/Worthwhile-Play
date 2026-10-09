@@ -25,11 +25,13 @@ import { metadata as slidingBlocks } from '@wp/game-sliding-blocks/metadata';
 import { metadata as sokoban } from '@wp/game-sokoban/metadata';
 import { metadata as spatialMemory } from '@wp/game-spatial-memory/metadata';
 import { metadata as systemsPuzzle } from '@wp/game-systems-puzzle/metadata';
+import { metadata as nBack } from '@wp/game-n-back/metadata';
 import { metadata as nodeConquest } from '@wp/game-node-conquest/metadata';
 import { metadata as relayCommand } from '@wp/game-relay-command/metadata';
 import { metadata as slitherlink } from '@wp/game-slitherlink/metadata';
 import { metadata as stackDuel } from '@wp/game-stack-duel/metadata';
 import { metadata as ticTacToe } from '@wp/game-tic-tac-toe/metadata';
+import { metadata as visualSearch } from '@wp/game-visual-search/metadata';
 import { metadata as wordGuess } from '@wp/game-word-guess/metadata';
 
 export interface GameEntry {
@@ -77,7 +79,9 @@ export const GAMES: readonly GameEntry[] = [
   entry(slitherlink, () => import('@wp/game-slitherlink')),
   entry(chess, () => import('@wp/game-chess')),
   entry(wordGuess, () => import('@wp/game-word-guess')),
-  entry(stackDuel, () => import('@wp/game-stack-duel'))
+  entry(stackDuel, () => import('@wp/game-stack-duel')),
+  entry(nBack, () => import('@wp/game-n-back')),
+  entry(visualSearch, () => import('@wp/game-visual-search'))
 ];
 
 export const findGame = (id: string): GameEntry | undefined => GAMES.find((g) => g.metadata.id === id);

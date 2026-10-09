@@ -1,0 +1,125 @@
+/* N-back: all rules scoped under .wp-nb. Uses shared --wp-* tokens and logical properties. */
+.wp-nb {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: center;
+  width: 100%;
+  max-width: 100%;
+  text-align: center;
+}
+.wp-nb p { margin: 0; }
+.wp-nb [hidden] { display: none !important; }
+.wp-nb__intro,
+.wp-nb__play {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: center;
+  width: 100%;
+  max-width: 36rem;
+}
+.wp-nb__play:focus { outline: none; }
+.wp-nb__play:focus-visible { outline: 3px solid var(--wp-focus); outline-offset: 4px; }
+.wp-nb__task { font-weight: 700; }
+.wp-nb__muted { color: var(--wp-muted); font-size: 0.95rem; }
+.wp-nb__status { font-variant-numeric: tabular-nums; }
+.wp-nb__prompt { min-height: 1.5em; }
+.wp-nb__options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.wp-nb__options-label { color: var(--wp-muted); inline-size: 100%; }
+/* Selected option and pressed toggles: thicker border, bold text and a check mark (not colour alone). */
+.wp-nb__option[aria-pressed='true'],
+.wp-nb__toggle[aria-pressed='true'] {
+  border: 2px solid var(--wp-accent);
+  font-weight: 700;
+}
+.wp-nb__option[aria-pressed='true']::before,
+.wp-nb__toggle[aria-pressed='true']::before { content: '✓ '; }
+
+/* Fixed-size stage: swapping items never shifts the layout. */
+.wp-nb__stage {
+  display: grid;
+  place-items: center;
+  inline-size: min(100%, 16rem);
+}
+.wp-nb__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem;
+  inline-size: 100%;
+}
+.wp-nb__cell {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border: 2px solid var(--wp-border);
+  border-radius: var(--wp-radius);
+  background: var(--wp-surface);
+  color: var(--wp-text);
+  font-size: clamp(1.5rem, 9vw, 2.75rem);
+  line-height: 1;
+  font-variant-emoji: text;
+  user-select: none;
+}
+/* The marked cell: thick border, filled background and a glyph (not colour alone). */
+.wp-nb__cell[data-state='active'] {
+  border: 4px solid var(--wp-text);
+  background: var(--wp-accent);
+  color: var(--wp-accent-contrast);
+}
+.wp-nb__shape {
+  display: grid;
+  place-items: center;
+  inline-size: min(100%, 10rem);
+  aspect-ratio: 1;
+  border: 2px solid var(--wp-border);
+  border-radius: var(--wp-radius);
+  background: var(--wp-surface);
+  color: var(--wp-text);
+  font-size: 5.5rem;
+  line-height: 1;
+  font-variant-emoji: text;
+  user-select: none;
+}
+.wp-nb__item {
+  min-height: 1.5em;
+  color: var(--wp-muted);
+}
+.wp-nb__answers {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  inline-size: 100%;
+}
+.wp-nb__answer {
+  flex: 1 1 9rem;
+  max-inline-size: 14rem;
+  min-height: calc(var(--wp-touch) * 1.5);
+  font-size: 1.15rem;
+  touch-action: manipulation;
+}
+.wp-nb__summary {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 36rem;
+}
+.wp-nb__summary:focus { outline: none; }
+.wp-nb__stream {
+  display: grid;
+  gap: 0.25rem;
+}
+.wp-nb__stream h3 { margin: 0; font-size: 1.05rem; }
+
+.wp-nb--motion .wp-nb__stage--enter { animation: wp-nb-in 180ms ease-out; }
+@keyframes wp-nb-in {
+  from { opacity: 0.35; }
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wp-nb--motion .wp-nb__stage--enter { animation: none; }
+}
