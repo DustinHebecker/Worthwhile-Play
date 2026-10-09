@@ -276,6 +276,53 @@ describe('Orbit Links view', () => {
     expect(opp.value).toBe('2');
   });
 
+  it('remembers the opponent count per device for a fresh instance after a reload', () => {
+    setup(11);
+    expect(ctx.preferences.size).toBe(0);
+    const opp = $('nc-opponents') as unknown as HTMLSelectElement;
+    opp.value = '3';
+    opp.dispatchEvent(new Event('change'));
+    expect(ctx.preferences.get('setup')).toEqual({ opponents: 3 });
+    // The introduction (always one opponent) does not overwrite the setting.
+    const select = $('nc-map-select') as unknown as HTMLSelectElement;
+    select.value = String(INTRO_MAP);
+    select.dispatchEvent(new Event('change'));
+    expect(instance.serialize()).toMatchObject({ map: INTRO_MAP, opponents: 1 });
+    expect(ctx.preferences.get('setup')).toEqual({ opponents: 3 });
+    // A new instance (as after a reload) with the same preferences starts its next match with 3 opponents.
+    instance.dispose();
+    instance = game.create(ctx.context);
+    instance.newGame({ seed: 12, difficulty: 'advanced' });
+    expect(instance.serialize()).toEqual(createGame(12, { opponents: 3, difficulty: 'advanced' }));
+    expect(($('nc-opponents') as unknown as HTMLSelectElement).value).toBe('3');
+    // Restoring a save keeps the saved match as it is.
+    const saved = createGame(5, { opponents: 2 });
+    instance.restore(saved);
+    expect(instance.serialize()).toEqual(saved);
+    expect(ctx.difficulties).toEqual([]);
+  });
+
+  it('ignores invalid or missing remembered settings', () => {
+    for (const bad of [{ opponents: 4 }, { opponents: '2' }, 2, null, [3], { other: 1 }]) {
+      ctx = createTestContext(game as GameModule<unknown>);
+      ctx.preferences.set('setup', bad);
+      instance = game.create(ctx.context);
+      instance.newGame({ seed: 20, difficulty: 'beginner' });
+      expect(instance.serialize().opponents).toBe(1);
+      instance.dispose();
+    }
+    // Hosts without preferences work as before.
+    ctx = createTestContext(game as GameModule<unknown>);
+    const { preferences: _p, ...bare } = ctx.context;
+    instance = game.create(bare);
+    instance.newGame({ seed: 21, difficulty: 'beginner' });
+    const opp = ctx.context.root.querySelector<HTMLSelectElement>('[data-testid="nc-opponents"]')!;
+    opp.value = '2';
+    opp.dispatchEvent(new Event('change'));
+    instance.newGame({ seed: 22, difficulty: 'beginner' });
+    expect(instance.serialize().opponents).toBe(2);
+  });
+
   it('asks before replacing a match under way, and only switches on Yes', () => {
     setup(13);
     const v = start();
