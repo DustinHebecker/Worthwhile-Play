@@ -9,6 +9,8 @@ on:
     paths:
       - 'packages/**/src/**'
       - 'stryker.config.json'
+      - 'scripts/mutation-targets.mjs'
+      - '.github/workflows/mutation.yml'
   schedule:
     - cron: '17 3 * * 1'
   workflow_dispatch:

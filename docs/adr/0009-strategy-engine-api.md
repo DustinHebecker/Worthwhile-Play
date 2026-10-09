@@ -1,6 +1,6 @@
 # 0009 — Shared strategy engine (`@wp/strategy-engine`) and its API
 
-Status: **Proposed** (2026-10-03) — open points in [docs/design/strategy.md § 14](../design/strategy.md#14-open-decisions). Becomes *Accepted* with engine increment I1.
+Status: Accepted (2026-10-09, with engine increment I1; proposed 2026-10-03). Design and owner decisions: [docs/design/strategy.md](../design/strategy.md).
 
 ## Context
 The spec requires one shared deterministic engine for the turn-based strategy game, Tower Defense and the four hybrid modes ("Do not build separate implementations for TD and strategy"). Strategy and TD are developed by parallel workstreams; TD needs a stable API early.
