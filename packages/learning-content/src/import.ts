@@ -60,6 +60,8 @@ export interface ImportOptions {
   title?: string;
   /** Forces a format; otherwise text starting with `{` is JSON, everything else CSV. */
   format?: ImportFormat;
+  /** BCP-47 language of `title` (default `en`), e.g. the UI language the user typed it in. */
+  titleLanguage?: string;
 }
 
 /** Detects the format of pasted text or a file: JSON objects start with `{`. */
@@ -178,7 +180,9 @@ export function importDeck(text: string, options: ImportOptions): ImportResult {
     lines = built.lines;
   }
 
-  const title = format === 'csv' ? { en: options.title?.trim() || 'Deck' } : options.title?.trim() ? { en: options.title.trim() } : (cleanTitle(raw.title) ?? { en: 'Deck' });
+  const lang = options.titleLanguage ?? 'en';
+  const given = options.title?.trim();
+  const title = given ? { [lang]: given } : format === 'csv' ? { [lang]: 'Deck' } : (cleanTitle(raw.title) ?? { [lang]: 'Deck' });
   if (Object.values(title).some((v) => v.length > IMPORT_LIMITS.maxTitleChars)) return fail({ code: 'title-too-long' });
   if (!Array.isArray(raw.items) || raw.items.length === 0) return fail({ code: 'no-items' });
   if (raw.items.length > IMPORT_LIMITS.maxItems) return fail({ code: 'too-many-items' });

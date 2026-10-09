@@ -175,9 +175,12 @@ describe('importDeck (JSON)', () => {
     expect(result.warnings).toEqual([{ code: 'remote-url-removed', item: 1, side: 'back', field: 'audio' }]);
   });
 
-  it('a given title overrides the JSON title', () => {
+  it('a given title overrides the JSON title and is stored under its language', () => {
     const result = importDeck(JSON.stringify(deck), { id: 'user-a-1', title: 'Mine' });
     expect(result.ok && result.deck.title).toEqual({ en: 'Mine' });
+    const german = importDeck('a,b', { id: 'user-a-1', title: 'Meins', titleLanguage: 'de' });
+    expect(german.ok && german.deck.title).toEqual({ de: 'Meins' });
+    expect(importDeck('a,b', { id: 'user-a-1' })).toMatchObject({ ok: true, deck: { title: { en: 'Deck' } } });
   });
 
   it('maps validation issues to card numbers and reports syntax errors', () => {

@@ -322,7 +322,7 @@ export const renderDeckImport: Page = (main, app) => {
     const text = textArea.value;
     const format = text.replace(/^\uFEFF/, '').trimStart().startsWith('{') ? 'json' : 'csv';
     const name = title(format);
-    showResult(importDeck(text, { id: newDeckId(name || 'deck'), ...(name ? { title: name } : {}) }));
+    showResult(importDeck(text, { id: newDeckId(name || 'deck'), titleLanguage: app.locale, ...(name ? { title: name } : {}) }));
   };
 
   form.addEventListener('submit', (event) => {
