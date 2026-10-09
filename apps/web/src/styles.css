@@ -7,7 +7,7 @@
 .app-header .language-menu { grid-area: lang; }
 @media (max-width: 640px) { .app-header { grid-template-columns: 1fr auto; grid-template-areas: 'brand lang' 'nav nav'; } }
 .brand { display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 700; text-decoration: none; color: var(--wp-text); min-height: var(--wp-touch); }
-.brand-mark { display: inline-grid; place-items: center; width: 2rem; height: 2rem; border-radius: 8px; background: var(--wp-accent); color: var(--wp-accent-contrast); }
+.brand-mark { display: block; width: 2.5rem; height: 2.5rem; object-fit: contain; }
 .app-header nav { display: flex; flex-wrap: wrap; gap: 0.25rem; }
 .language-menu { position: relative; }
 .language-menu summary { min-height: var(--wp-touch); display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.7rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius); background: var(--wp-surface); cursor: pointer; list-style: none; font-weight: 600; }
