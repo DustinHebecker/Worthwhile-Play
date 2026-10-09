@@ -62,6 +62,8 @@ src/index.ts      export default defineGame({...})
 test/rules.test.ts, test/contract.test.ts (runGameContract), e2e/games/<id>.spec.ts
 ```
 
+The home page and the game page header need every game's metadata, but only a few of its messages. `apps/web/catalogue-plugin.ts` therefore generates `virtual:wp-catalogue` at build time: each game's metadata with only the catalogue keys (`title`, `tagline`, `rules`, `difficulty.*`). The registry (`apps/web/src/registry.ts`) lists game ids and lazy loaders; a game's complete messages arrive with its own chunk, so the main bundle does not grow with every game's translations.
+
 After "New game" the host moves focus into the game: to the element marked `data-autofocus` (usually the board), otherwise to the first control.
 
 ### Shared contract suite

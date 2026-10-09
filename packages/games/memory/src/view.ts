@@ -43,7 +43,12 @@ export function renderSide(side: CardSide, description: string): HTMLElement {
   const face = h('span', { class: textOnly ? 'wp-memory__face wp-memory__face--text' : 'wp-memory__face' });
   if (side.image) face.append(h('img', { class: 'wp-memory__image', src: side.image, alt: description, draggable: 'false' }));
   if (side.symbol) face.append(h('span', { class: 'wp-memory__symbol', role: 'img', 'aria-label': description }, side.symbol));
-  if (side.text) face.append(h('span', { class: 'wp-memory__text', lang: side.lang, dir: 'auto' }, side.text));
+  if (side.text) {
+    // Long single words ("der Schlüssel", "Wassermelone") get a smaller size instead of breaking mid-word.
+    const longest = Math.max(...side.text.split(/\s+/).map((word) => [...word].length));
+    const size = longest > 11 ? ' wp-memory__text--xlong' : longest > 7 ? ' wp-memory__text--long' : '';
+    face.append(h('span', { class: `wp-memory__text${size}`, lang: side.lang, dir: 'auto' }, side.text));
+  }
   // Audio sides are not played yet (bundled audio packs are a later increment); text can be read aloud.
   return face;
 }

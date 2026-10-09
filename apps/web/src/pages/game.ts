@@ -34,7 +34,9 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
     return async () => undefined;
   }
   const { metadata } = entry;
-  const gt = gameTranslator(metadata, app.locale);
+  // Until the game's chunk is loaded, only its catalogue messages are available (title, tagline, rules,
+  // difficulty labels); the game itself always gets a translator over its complete messages.
+  let gt = gameTranslator(metadata, app.locale);
 
   const status = h('div', { class: 'host-status' });
   const panel = h('div', { class: 'host-panel' });
@@ -95,7 +97,7 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
     interactedAfterFinish = false;
     // A game may phrase its own outcome (`result.<outcome>`), e.g. "Player X wins"; otherwise use the shared wording.
     const own = `result.${result.outcome}`;
-    const outcome = metadata.messages.en?.[own] ? own : { won: 'common.won', lost: 'common.lost', draw: 'common.draw', completed: 'common.solved' }[result.outcome];
+    const outcome = (module?.metadata ?? metadata).messages.en?.[own] ? own : { won: 'common.won', lost: 'common.lost', draw: 'common.draw', completed: 'common.solved' }[result.outcome];
     const another = h('button', { type: 'button', class: 'primary', 'data-testid': 'another-round' }, t('game.anotherRound'));
     another.addEventListener('click', () => void startNew());
     finishedSlot.append(
@@ -225,6 +227,7 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
       return;
     }
     if (disposed) return;
+    gt = gameTranslator(module.metadata, app.locale);
     clear(status);
     if (!store.persistent) status.append(h('p', { class: 'notice' }, t('game.saveUnavailable')));
     const loaded = interpretSave(await store.read(metadata.id).catch(() => undefined), module);

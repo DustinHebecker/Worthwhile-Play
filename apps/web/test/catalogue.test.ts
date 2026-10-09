@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { validateMetadata } from '@wp/game-core';
 import { auditCatalogues, SUPPORTED_LOCALES } from '@wp/localization';
 import { UI_MESSAGES } from '../src/i18n/ui';
+import { isCatalogueKey } from '../catalogue-plugin';
 import { GAMES } from '../src/registry';
 
 describe('UI catalogues', () => {
@@ -29,10 +30,16 @@ describe('game registry', () => {
     }
   });
 
-  it('lazy-loads modules whose metadata matches the registry', async () => {
+  it('lazy-loads modules whose metadata matches the catalogue, which carries only the catalogue messages', async () => {
     for (const entry of GAMES) {
       const module = await entry.load();
-      expect(module.metadata).toBe(entry.metadata);
+      const { messages, ...rest } = module.metadata;
+      const { messages: catalogueMessages, ...catalogueRest } = entry.metadata;
+      expect(catalogueRest, entry.metadata.id).toEqual(rest);
+      for (const [locale, table] of Object.entries(messages)) {
+        expect(catalogueMessages[locale], `${entry.metadata.id}/${locale}`).toEqual(Object.fromEntries(Object.entries(table).filter(([key]) => isCatalogueKey(key))));
+      }
+      expect(Object.keys(catalogueMessages)).toEqual(Object.keys(messages));
     }
   });
 });

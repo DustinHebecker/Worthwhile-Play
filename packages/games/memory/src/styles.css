@@ -97,6 +97,10 @@
   hyphens: auto;
 }
 .wp-memory__face--text .wp-memory__text { font-size: clamp(1rem, 5vw, 1.4rem); font-weight: 600; }
+.wp-memory__face--text .wp-memory__text--long { font-size: clamp(0.8rem, 3.7vw, 1.15rem); }
+.wp-memory__face--text .wp-memory__text--xlong { font-size: clamp(0.7rem, 3vw, 0.95rem); }
+.wp-memory__text--long { font-size: clamp(0.7rem, 3vw, 0.9rem); }
+.wp-memory__text--xlong { font-size: clamp(0.65rem, 2.6vw, 0.8rem); }
 .wp-memory__actions { min-height: var(--wp-touch); display: flex; justify-content: center; }
 
 .wp-memory--motion .wp-memory__face { animation: wp-memory-flip 160ms ease-out; }
