@@ -191,7 +191,12 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
     }
     items.push(h('div', { class: 'wp-row' }, difficultySelect(route.difficulty ?? save?.difficulty), newButton));
     panel.append(h('div', { class: 'start wp-card wp-stack' }, ...items));
-    (save ? panel.querySelector<HTMLElement>('[data-testid="continue"]') : newButton)?.focus();
+    // The game module loads asynchronously; do not pull focus away from a control the person is
+    // using meanwhile (e.g. the header language menu after switching language).
+    const active = document.activeElement;
+    if (!active || active === document.body || main.contains(active)) {
+      (save ? panel.querySelector<HTMLElement>('[data-testid="continue"]') : newButton)?.focus();
+    }
   };
 
   // Pause when hidden; informational (never blocking) note after long continuous play.
