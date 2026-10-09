@@ -79,7 +79,7 @@ export async function startApp(root: HTMLElement): Promise<void> {
       locale = next;
       writeUiLocale(storage() ?? noopStorage, next);
       applyLocale();
-      void render(route);
+      await render(route);
       const name = LOCALE_DEFINITIONS.find((d) => d.code === next)?.nativeName ?? next;
       app.announce(app.t('lang.changed', { language: name }));
     },
@@ -142,9 +142,13 @@ export async function startApp(root: HTMLElement): Promise<void> {
       )
     );
     select.addEventListener('change', () => {
-      if (isSupportedLocale(select.value)) void app.setLocale(select.value);
-      document.getElementById('header-language')?.closest('details')?.setAttribute('open', '');
-      document.getElementById('header-language')?.focus();
+      if (!isSupportedLocale(select.value)) return;
+      // The page re-renders in the new language; reopen the menu and keep focus on the select there.
+      void app.setLocale(select.value).then(() => {
+        const next = document.getElementById('header-language');
+        next?.closest('details')?.setAttribute('open', '');
+        next?.focus();
+      });
     });
     menu.addEventListener('keydown', (event) => {
       if (event.key === 'Escape' && menu.open) {
