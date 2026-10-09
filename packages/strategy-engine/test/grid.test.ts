@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { BASE_RULESET, cellOf, findPath, flowField, maxStepCost, minStepCost, nextStep, stepCost } from '../src';
+import fc from 'fast-check';
+import { BASE_RULESET, canReach, cellOf, findPath, flowField, maxStepCost, minStepCost, nextStep, regions, stepCost } from '../src';
 import { mapOf, open } from './helpers';
 
 const rs = BASE_RULESET;
@@ -91,5 +92,40 @@ describe('pathfinding', () => {
       prev = c;
     }
     expect(field[cellOf(map, 0, 0)]).toBe(cost);
+  });
+});
+
+describe('canReach agrees with findPath', () => {
+  it('for random maps, blockers, starts and goals', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 2, max: 9 }),
+        fc.integer({ min: 2, max: 9 }),
+        fc.array(fc.constantFrom('.', '.', 'f', 's', '~', '^'), { minLength: 81, maxLength: 81 }),
+        fc.array(fc.nat(80), { maxLength: 20 }),
+        fc.nat(80),
+        fc.nat(80),
+        fc.constantFrom('ground' as const, 'air' as const),
+        (w, h, terrain, blockedCells, s, g, layer) => {
+          const map = { w, h, terrain: terrain.slice(0, w * h).join('') };
+          const n = w * h;
+          const blocked = new Set(blockedCells.map((c) => c % n));
+          const start = s % n;
+          const goal = g % n;
+          const region = regions(map, BASE_RULESET, layer, blocked);
+          const path = findPath(map, BASE_RULESET, start, goal, { layer, side: 0, blocked });
+          expect(canReach(map, BASE_RULESET, layer, region, start, goal)).toBe(path !== undefined);
+        }
+      ),
+      { numRuns: 1500 }
+    );
+  });
+
+  it('a bounded search finds the same route when one is cheap enough, and none otherwise', () => {
+    const map = { w: 7, h: 3, terrain: '.......' + '.^^^^^.' + '.......' };
+    const free = findPath(map, BASE_RULESET, 7, 13, { layer: 'ground', side: 0 })!;
+    expect(free.length).toBeGreaterThan(0);
+    expect(findPath(map, BASE_RULESET, 7, 13, { layer: 'ground', side: 0, maxCost: 1000 })).toEqual(free);
+    expect(findPath(map, BASE_RULESET, 7, 13, { layer: 'ground', side: 0, maxCost: 10 })).toBeUndefined();
   });
 });

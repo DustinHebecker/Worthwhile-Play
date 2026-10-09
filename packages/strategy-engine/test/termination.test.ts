@@ -263,12 +263,29 @@ const arbOrder = (w: number, h: number) =>
  * coverage), some standing orders written straight into the world (as if given earlier, now
  * possibly out of contact), and commands for several turns.
  */
+const arbDoctrine: fc.Arbitrary<Doctrine> = fc.record({
+  retreatBelow: fc.constantFrom(0, 25, 50, 75),
+  priority: fc.constantFrom('weakest', 'nearest', 'armor', 'infantry', 'structures'),
+  seekCover: fc.boolean(),
+  holdFire: fc.boolean()
+});
+
+/**
+ * An order with all its parameters; a patrol is the same order whichever leg it is on (turning
+ * at an end is part of patrolling, not a change).
+ */
+const orderKey = (o: Order): string => {
+  if (o.type !== 'patrol') return JSON.stringify(o);
+  const ends = [`${o.x},${o.y}`, `${o.rx},${o.ry}`].sort();
+  return `patrol:${ends.join('|')}`;
+};
+
 const arbBattle = fc
   .record({
     map: fc.constantFrom(...MAPS),
     terrain: fc.array(fc.constantFrom('.', '.', '.', '=', 'f', 's'), { minLength: 112, maxLength: 112 }),
     units: fc.array(fc.record({ side: fc.nat(1), kind: fc.constantFrom(...MOBILE), dx: fc.nat(3), dy: fc.nat(3) }), { minLength: 4, maxLength: 12 }),
-    standing: fc.array(fc.record({ unit: fc.integer({ min: 1, max: 14 }), order: arbOrder(14, 8) }), { maxLength: 6 }),
+    standing: fc.array(fc.record({ unit: fc.integer({ min: 1, max: 14 }), order: arbOrder(14, 8), doctrine: fc.option(arbDoctrine, { nil: undefined }) }), { maxLength: 6 }),
     seed: fc.nat(1000)
   })
   .chain(({ map, terrain, units, standing, seed }) => {
@@ -311,12 +328,15 @@ const arbBattle = fc
       if (order.type === 'deploy' && e.kind !== 'mast-truck') continue;
       if ((order.type === 'escort' || order.type === 'attack') && !world.entities.some((x) => x.id === order.target)) continue;
       e.order = order;
+      if (s.doctrine) e.doctrine = s.doctrine;
     }
     const mobileIds = world.entities.filter((e) => e.kind !== 'command-post').map((e) => e.id);
-    const arbCommand = fc.record({ unit: fc.constantFrom(...mobileIds), order: arbOrder(w, h) }).map(({ unit, order }) => {
-      const side = world.entities.find((e) => e.id === unit)!.side;
-      return { side, unit, order: clampOrder(order) } as Command;
-    });
+    const arbCommand = fc
+      .record({ unit: fc.constantFrom(...mobileIds), order: arbOrder(w, h), doctrine: fc.option(arbDoctrine, { nil: undefined }) })
+      .map(({ unit, order, doctrine }) => {
+        const side = world.entities.find((e) => e.id === unit)!.side;
+        return (doctrine ? { side, unit, order: clampOrder(order), doctrine } : { side, unit, order: clampOrder(order) }) as Command;
+      });
     return fc.record({
       world: fc.constant(world),
       plans: fc.array(fc.array(arbCommand, { maxLength: 6 }), { minLength: 3, maxLength: 3 })
@@ -333,12 +353,12 @@ describe('generated battles (strategy ruleset): validity, explained order change
         const streak = new Map<number, number>();
         for (const plan of [...plans, [], [], []]) {
           for (let tick = 0; tick < rs.ticksPerTurn; tick++) {
-            const before = new Map(w.entities.map((e) => [e.id, e.order.type]));
+            const before = new Map(w.entities.map((e) => [e.id, orderKey(e.order)]));
             const r = runTicks(w, rs, tick === 0 ? plan : [], 1);
             const explained = new Set(r.events.flatMap((e) => (e.t === 'order' || e.t === 'order-ended' ? [e.id] : [])));
             for (const e of r.world.entities) {
               const was = before.get(e.id);
-              if (was !== undefined && was !== e.order.type) expect(explained.has(e.id), `order of ${e.id} changed silently`).toBe(true);
+              if (was !== undefined && was !== orderKey(e.order)) expect(explained.has(e.id), `order of ${e.id} changed silently`).toBe(true);
             }
             const bumped = new Set(r.events.flatMap((e) => (e.t === 'bump' ? [e.id] : [])));
             for (const e of r.world.entities) streak.set(e.id, bumped.has(e.id) ? (streak.get(e.id) ?? 0) + 1 : 0);
@@ -365,6 +385,88 @@ describe('generated battles (strategy ruleset): validity, explained order change
     for (const [key, min] of Object.entries({ move: 60, patrol: 40, escort: 20, attack: 20, regroup: 20, bumps: 100, ended: 60 })) {
       expect(stats[key as keyof typeof stats], key).toBeGreaterThanOrEqual(min);
     }
-    for (const reason of ['arrived', 'occupied', 'unreachable', 'lost-target', 'regrouped']) expect(reasons, reason).toContain(reason);
+    for (const reason of ['arrived', 'occupied', 'unreachable', 'lost-target', 'regrouped', 'retreat']) expect(reasons, reason).toContain(reason);
+  });
+});
+
+describe('follow-ups from the review of PR #7 (round 3)', () => {
+  const endTicks = (events: readonly SimEvent[], id: number) => events.flatMap((e) => (e.t === 'order-ended' && e.id === id ? [[e.tick, e.reason] as const] : []));
+
+  it('a new order resets the dead-end counter: it gets a full turn before it ends as unreachable', () => {
+    const w = worldOf(mapOf('...^......'), [
+      { side: 0, kind: 'command-post', x: 0, y: 0 },
+      { side: 0, kind: 'rifles', x: 1, y: 0 }
+    ]);
+    unit(w, 2).order = { type: 'move', x: 6, y: 0 };
+    const stuck = runTicks(w, rs, [], 4).world;
+    expect(unit(stuck, 2).stuck).toBe(4);
+    const r = runTicks(stuck, rs, [{ side: 0, unit: 2, order: { type: 'move', x: 7, y: 0 } }], 8);
+    expect(endTicks(r.events, 2)).toEqual([[4 + UNREACHABLE_TICKS, 'unreachable']]);
+  });
+
+  it('a unit already holding in coverage does not report a retreat on every hit', () => {
+    const w = worldOf(open(8, 1), [
+      { side: 0, kind: 'command-post', x: 0, y: 0 },
+      { side: 0, kind: 'warden', x: 2, y: 0 },
+      { side: 1, kind: 'warden', x: 4, y: 0 },
+      { side: 1, kind: 'command-post', x: 7, y: 0 }
+    ]);
+    Object.assign(unit(w, 2), { hp: 40, doctrine: doctrine({ retreatBelow: 75 }) });
+    const { events } = play(w, 1);
+    expect(events.filter((e) => e.t === 'hit' && e.id === 2).length).toBeGreaterThan(1);
+    expect(ended(events, 2)).toEqual([]);
+  });
+
+  it('a damaged unit out of coverage still retreats once', () => {
+    const w = worldOf(open(14, 1), [
+      { side: 0, kind: 'command-post', x: 0, y: 0 },
+      { side: 0, kind: 'warden', x: 9, y: 0 },
+      { side: 1, kind: 'warden', x: 11, y: 0 },
+      { side: 1, kind: 'command-post', x: 13, y: 0 }
+    ]);
+    Object.assign(unit(w, 2), { hp: 120, doctrine: doctrine({ retreatBelow: 75 }) });
+    const reasons = ended(play(w, 2).events, 2);
+    expect(reasons.filter((r) => r === 'retreat')).toHaveLength(1);
+  });
+
+  it('a patrol turns before an end taken by a unit that is not holding (escort)', () => {
+    const w = worldOf(open(10, 1), [
+      { side: 0, kind: 'command-post', x: 0, y: 0 },
+      { side: 0, kind: 'rifles', x: 1, y: 0 },
+      { side: 0, kind: 'lancer', x: 6, y: 0 },
+      { side: 0, kind: 'warden', x: 7, y: 0 }
+    ]);
+    unit(w, 2).order = { type: 'patrol', x: 6, y: 0, rx: 1, ry: 0 };
+    unit(w, 3).order = { type: 'escort', target: 4 };
+    const { world, events } = play(w, 4);
+    expect(ended(events, 2)).toEqual([]);
+    expect(unit(world, 2).order.type).toBe('patrol');
+    // It went back towards the far end at least once.
+    const xs = events.flatMap((e) => (e.t === 'move' && e.id === 2 ? [e.x] : []));
+    expect(xs.indexOf(5)).toBeGreaterThanOrEqual(0);
+    expect(xs.slice(xs.indexOf(5)).some((x) => x < 5)).toBe(true);
+  });
+
+  it('a destination taken by a unit that stays (escort) ends a move as occupied, not blocked', () => {
+    const w = worldOf(open(10, 1), [
+      { side: 0, kind: 'command-post', x: 0, y: 0 },
+      { side: 0, kind: 'rifles', x: 3, y: 0 },
+      { side: 0, kind: 'lancer', x: 6, y: 0 },
+      { side: 0, kind: 'warden', x: 7, y: 0 }
+    ]);
+    unit(w, 3).order = { type: 'escort', target: 4 };
+    const { events } = play(w, 2, [{ side: 0, unit: 2, order: { type: 'move', x: 6, y: 0 } }]);
+    expect(ended(events, 2)).toEqual(['occupied']);
+  });
+
+  it('a convoy unit whose held destination lies behind a held cell ends as occupied, not unreachable', () => {
+    const w = worldOf(open(8, 1), [
+      { side: 0, kind: 'command-post', x: 0, y: 0 },
+      { side: 0, kind: 'rifles', x: 2, y: 0 },
+      { side: 0, kind: 'rifles', x: 4, y: 0 },
+      { side: 0, kind: 'rifles', x: 5, y: 0 }
+    ]);
+    const { events } = play(w, 2, [{ side: 0, unit: 2, order: { type: 'move', x: 5, y: 0 } }]);
+    expect(ended(events, 2)).toEqual(['occupied']);
   });
 });
