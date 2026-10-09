@@ -12,6 +12,7 @@
   --rc-mark: rgba(29, 29, 27, 0.45);
   --rc-grid: rgba(29, 29, 27, 0.12);
   --rc-nocover: rgba(29, 29, 27, 0.3);
+  --rc-fog: rgba(29, 29, 27, 0.16);
   display: grid;
   gap: var(--wp-gap, 1rem);
   width: 100%;
@@ -31,6 +32,7 @@
     --rc-mark: rgba(236, 235, 228, 0.45);
     --rc-grid: rgba(236, 235, 228, 0.12);
     --rc-nocover: rgba(236, 235, 228, 0.3);
+    --rc-fog: rgba(0, 0, 0, 0.32);
   }
 }
 .wp-relay-command .rc-bar {

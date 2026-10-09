@@ -1,13 +1,17 @@
 import { cellOf, dirsFor, dist2, frameIndex, maxStepCost, passable, stepCost, terrainAt } from './grid';
 import { TupleHeap } from './heap';
-import { findPath } from './path';
+import { canReach, findPath, regions } from './path';
 import { DEFAULT_DOCTRINE, type Archetype, type Command, type Doctrine, type Entity, type OrderEndReason, type Ruleset, type SimEvent, type Status, type TargetPriority, type WeaponSpec, type World } from './types';
 import { computeNetwork, type Network } from './network';
+import { initialIntel, updateIntel } from './vision';
 import { archetypeOf, findEntity, normalizeDoctrine, normalizeOrder, validateCommand } from './world';
 
 export interface SimResult {
   world: World;
+  /** Everything that happened (ground truth, for tests and replays). */
   events: SimEvent[];
+  /** Fog rulesets only: per side, the events that side could know about (D7). */
+  reported?: SimEvent[][];
 }
 
 /**
@@ -17,8 +21,9 @@ export interface SimResult {
 export function runTicks(world: World, ruleset: Ruleset, commands: readonly Command[], ticks: number): SimResult {
   const w = structuredClone(world);
   const events: SimEvent[] = [];
-  for (let i = 0; i < ticks; i++) tick(w, ruleset, i === 0 ? commands : [], events);
-  return { world: w, events };
+  const reported = ruleset.fog ? Array.from({ length: w.sides }, (): SimEvent[] => []) : undefined;
+  for (let i = 0; i < ticks; i++) tick(w, ruleset, i === 0 ? commands : [], events, reported);
+  return reported ? { world: w, events, reported } : { world: w, events };
 }
 
 /** Strategy turn: both sides' locked plans execute simultaneously over `ruleset.ticksPerTurn` ticks. */
@@ -55,7 +60,10 @@ interface Hit {
 }
 
 /** One tick in the fixed system order of ADR 0009 (systems not yet implemented are no-ops). */
-export function tick(w: World, rs: Ruleset, commands: readonly Command[], events: SimEvent[]): void {
+export function tick(w: World, rs: Ruleset, commands: readonly Command[], events: SimEvent[], reported?: SimEvent[][]): void {
+  const firstEvent = events.length;
+  // Worlds from before fog (or built by hand) start with what each side sees and owns.
+  if (rs.fog && !w.intel) w.intel = initialIntel(w, rs);
   w.tick += 1;
   const t = w.tick;
   const arch = (e: Entity): Archetype => {
@@ -79,9 +87,21 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     const unit = findEntity(w, c.unit) as Entity;
     unit.order = normalizeOrder(c.order);
     if (c.doctrine) unit.doctrine = normalizeDoctrine(c.doctrine);
+    // A new order starts with fresh counters (a dead end of the old order says nothing about it).
     delete unit.bumps;
+    delete unit.stuck;
     events.push({ t: 'order', tick: t, id: unit.id });
   }
+
+  // With fog, weapons engage only targets the own side has spotted (reports from the end of the
+  // previous tick) or that the shooter sees itself.
+  const spotted = rs.fog ? w.intel?.map((list) => new Set(list.filter((r) => r.live).map((r) => r.id))) : undefined;
+  const spottedBy = (side: number, id: number): boolean => !rs.fog || (spotted?.[side]?.has(id) ?? false);
+  const visible = (e: Entity, target: Entity): boolean => {
+    if (!rs.fog) return true;
+    const vision = arch(e).vision;
+    return spottedBy(e.side, target.id) || dist2(e.x, e.y, target.x, target.y) <= vision * vision;
+  };
 
   // 2 + 3. Intent (standing order + doctrine) and simultaneous movement
   const cells = w.map.w * w.map.h;
@@ -104,7 +124,15 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     return n.coverage;
   };
   const end = (e: Entity, reason: OrderEndReason): void => endOrder(e, reason, t, events);
-  const intent: Intent = { w, rs, occupied, permanent, coverageOf, end };
+  // Regions between permanent walls, computed lazily once per layer and tick: a search that
+  // cannot succeed is answered without exploring the whole map.
+  const regionCache = new Map<string, Int32Array>();
+  const regionsOf = (layer: 'ground' | 'air'): Int32Array => {
+    let r = regionCache.get(layer);
+    if (!r) regionCache.set(layer, (r = regions(w.map, rs, layer, permanent[layer])));
+    return r;
+  };
+  const intent: Intent = { w, rs, occupied, permanent, coverageOf, end, visible, spottedBy, regionsOf };
   const goals = new Map<number, number>();
   for (const e of w.entities) {
     const a = arch(e);
@@ -121,17 +149,22 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
       delete e.stuck;
       continue;
     }
-    const next = nextStepTowards(intent, e, a, goal);
-    if (next === undefined) {
+    const start = cellOf(w.map, e.x, e.y);
+    if (goal === start || !canReach(w.map, rs, a.layer, regionsOf(a.layer), start, goal)) {
       // No way even past moving units: only a lasting dead end ends the order.
       e.mp = 0;
       e.stuck = (e.stuck ?? 0) + 1;
-      if (e.stuck >= UNREACHABLE_TICKS) end(e, 'unreachable');
+      // Say 'occupied' when it is the destination itself that is held (e.g. a convoy whose
+      // destination a unit that will not leave has taken).
+      if (e.stuck >= UNREACHABLE_TICKS) end(e, destinationHeld(intent, e, a) ? 'occupied' : 'unreachable');
       continue;
     }
     delete e.stuck;
     const speed = has(e, 'slowed') ? Math.max(1, a.speed >> 1) : a.speed;
     e.mp = Math.min(e.mp + speed, Math.max(speed, maxStepCost(rs, a.layer)));
+    // Not enough movement points for even the cheapest step: no need to search a route yet.
+    if (e.mp < cheapestStep(w, rs, e, a)) continue;
+    const next = nextStepTowards(intent, e, a, goal) as number;
     const cost = stepCost(w.map, rs, e.x, e.y, next % w.map.w, Math.floor(next / w.map.w), a.layer) as number;
     if (e.mp < cost) continue;
     const key = a.layer === 'air' ? next + cells : next;
@@ -152,8 +185,11 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
       if (claim !== winner) {
         events.push({ t: 'bump', tick: t, id: e.id });
         e.bumps = (e.bumps ?? 0) + 1;
-        // Waiting behind moving units is normal; only a lasting mutual block ends the order.
-        if (e.bumps >= DEADLOCK_TICKS) end(e, 'blocked');
+        // Waiting behind moving units is normal; only a lasting mutual block ends the order. A
+        // destination that stays taken (by a unit escorting, attacking, ...) is 'occupied'.
+        const order = e.order;
+        if (order.type === 'move' && cellOf(w.map, order.x, order.y) === cell && e.bumps >= OCCUPIED_BUMPS) end(e, 'occupied');
+        else if (e.bumps >= DEADLOCK_TICKS) end(e, 'blocked');
         continue;
       }
       delete e.bumps;
@@ -189,7 +225,7 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     const a = arch(e);
     const weapon = a.weapon;
     if (!weapon || e.cooldown > 0 || has(e, 'disabled') || (weapon.stationary && moved.has(e.id))) continue;
-    const target = pickTarget(w, rs, e, a, t);
+    const target = pickTarget(w, rs, e, a, t, (other) => visible(e, other));
     if (!target) {
       e.beam = null;
       continue;
@@ -224,7 +260,10 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
       // (Checked on hits only, so fresh orders to an already damaged unit are obeyed.)
       const a = arch(e);
       const below = doctrineOf(e).retreatBelow;
-      if (below > 0 && a.speed > 0 && e.hp > 0 && e.hp * 100 < a.hp * below && e.order.type !== 'regroup') {
+      // A unit already holding inside its coverage has nowhere to retreat to: no new order, no
+      // repeated 'retreat' → 'regrouped' on every further hit.
+      const settled = e.order.type === 'hold' && (coverageOf(e.side)?.[cellOf(w.map, e.x, e.y)] ?? 1) === 1;
+      if (below > 0 && a.speed > 0 && e.hp > 0 && e.hp * 100 < a.hp * below && e.order.type !== 'regroup' && !settled) {
         e.order = { type: 'regroup' };
         events.push({ t: 'order-ended', tick: t, id: e.id, reason: 'retreat' });
       }
@@ -251,15 +290,25 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
 
   // 8. Removal
   const alive: Entity[] = [];
+  const gone: Entity[] = [];
   for (const e of w.entities) {
     if (e.hp > 0) alive.push(e);
-    else events.push({ t: 'destroyed', tick: t, id: e.id, side: e.side, kind: e.kind, x: e.x, y: e.y });
+    else {
+      gone.push(e);
+      events.push({ t: 'destroyed', tick: t, id: e.id, side: e.side, kind: e.kind, x: e.x, y: e.y });
+    }
   }
   w.entities = alive;
   for (const e of alive) {
-    if (e.order.type === 'attack' && !findEntity(w, e.order.target)) endOrder(e, 'lost-target', t, events);
+    // With fog an attacker only learns of the loss through its side's reports or its own sight
+    // (handled when it next plans its move); without fog the target is gone at once.
+    if (!rs.fog && e.order.type === 'attack' && !findEntity(w, e.order.target)) endOrder(e, 'lost-target', t, events);
   }
-  // 9–12 (economy, production, research, network, vision, victory) arrive with later increments.
+  // 9 + 10 (economy, production, research) arrive with later increments; the network is
+  // derived data, recomputed where needed.
+  // 11. Vision (fog rulesets): reports and per-side event filter (D7)
+  if (rs.fog) updateIntel(w, rs, gone, events, firstEvent, reported);
+  // 12. Victory is decided by the mode (game rules).
 }
 
 /**
@@ -282,16 +331,34 @@ interface Intent {
   readonly end: (e: Entity, reason: OrderEndReason) => void;
   /** The side's command coverage, or `undefined` when the ruleset has no command network. */
   readonly coverageOf: (side: number) => Uint8Array | undefined;
+  /** Regions between permanent walls (see `regions`). */
+  readonly regionsOf: (layer: 'ground' | 'air') => Int32Array;
+  /** Whether `e` may fire at `target` (fog: spotted by its side or seen by itself). */
+  readonly visible: (e: Entity, target: Entity) => boolean;
+  /** Whether `side` has a live report on entity `id` (always true without fog). */
+  readonly spottedBy: (side: number, id: number) => boolean;
 }
 
 const doctrineOf = (e: Entity): Doctrine => e.doctrine ?? DEFAULT_DOCTRINE;
 
 /** Ticks a unit may be blocked by other units in a row before its order ends ('blocked'): three turns. */
 export const DEADLOCK_TICKS = 18;
+/** Bumps in a row against a taken destination before a move ends as 'occupied'. */
+export const OCCUPIED_BUMPS = 3;
 /** Ticks without any way to the goal (walls and holding units only) before the order ends ('unreachable'). */
 export const UNREACHABLE_TICKS = 6;
 /** Extra path cost accepted to walk around moving units instead of waiting behind them. */
 const DETOUR = 8;
+
+/** Cheapest single step out of the unit's cell (terrain only), `Infinity` if there is none. */
+function cheapestStep(w: World, rs: Ruleset, e: Entity, a: Archetype): number {
+  let min = Number.POSITIVE_INFINITY;
+  for (const [dx, dy] of dirsFor(0)) {
+    const cost = stepCost(w.map, rs, e.x, e.y, e.x + dx, e.y + dy, a.layer);
+    if (cost !== undefined && cost < min) min = cost;
+  }
+  return min;
+}
 
 /** Ends a standing order: the unit holds, and an event says why. */
 function endOrder(e: Entity, reason: OrderEndReason, tick: number, events: SimEvent[]): void {
@@ -304,6 +371,14 @@ function endOrder(e: Entity, reason: OrderEndReason, tick: number, events: SimEv
 /** Whether a unit that will not leave (structure, holding, deploying) stands on (x, y). */
 const heldBy = (ctx: Intent, e: Entity, a: Archetype, x: number, y: number): boolean =>
   (x !== e.x || y !== e.y) && ctx.permanent[a.layer].has(cellOf(ctx.w.map, x, y));
+
+/** Whether any other unit (on the unit's layer) stands on (x, y). */
+const takenBy = (ctx: Intent, e: Entity, a: Archetype, x: number, y: number): boolean =>
+  (x !== e.x || y !== e.y) && ctx.occupied[a.layer].has(cellOf(ctx.w.map, x, y));
+
+/** Whether a move order's destination is held by a unit that will not leave. */
+const destinationHeld = (ctx: Intent, e: Entity, a: Archetype): boolean =>
+  e.order.type === 'move' && heldBy(ctx, e, a, e.order.x, e.order.y);
 
 const adjacent = (e: Entity, x: number, y: number): boolean => Math.max(Math.abs(e.x - x), Math.abs(e.y - y)) <= 1;
 
@@ -331,8 +406,15 @@ function nextStepTowards(ctx: Intent, e: Entity, a: Archetype, goal: number): nu
   const start = cellOf(w.map, e.x, e.y);
   const base = findPath(w.map, rs, start, goal, { layer: a.layer, side: e.side, blocked: ctx.permanent[a.layer] });
   if (!base || base.length === 0) return base?.[0];
-  const around = findPath(w.map, rs, start, goal, { layer: a.layer, side: e.side, blocked: ctx.occupied[a.layer] });
-  if (around && around.length > 0 && pathCost(ctx, e, a, around) <= pathCost(ctx, e, a, base) + DETOUR) return around[0];
+  // The usual case: nobody stands on the route, so there is nothing to walk around (one search).
+  // (Checking only the next cell is not enough: a unit could then step aside, see a free route,
+  // step back, and so on for ever.)
+  const occupied = ctx.occupied[a.layer];
+  if (!base.some((c) => occupied.has(c))) return base[0];
+  // A route around the units in the way, if it costs at most DETOUR more (bounded search).
+  const maxCost = pathCost(ctx, e, a, base) + DETOUR;
+  const around = findPath(w.map, rs, start, goal, { layer: a.layer, side: e.side, blocked: ctx.occupied[a.layer], maxCost });
+  if (around && around.length > 0) return around[0];
   return base[0];
 }
 
@@ -352,12 +434,9 @@ function goalOf(ctx: Intent, e: Entity, a: Archetype): number | undefined {
       else goal = cellOf(w.map, order.x, order.y);
       break;
     case 'attack': {
-      const target = findEntity(w, order.target);
-      if (!target || inWeaponRange(w, rs, e, a, target)) break;
-      // Too close for a weapon with a minimum range: stay rather than walk into the target.
-      const minRange = a.weapon?.minRange ?? 0;
-      if (dist2(e.x, e.y, target.x, target.y) < minRange * minRange) break;
-      goal = cellOf(w.map, target.x, target.y);
+      const aim = attackAim(ctx, e, a, order.target);
+      if (aim === 'lost') ctx.end(e, 'lost-target');
+      else goal = aim;
       break;
     }
     case 'escort': {
@@ -370,12 +449,13 @@ function goalOf(ctx: Intent, e: Entity, a: Archetype): number | undefined {
       break;
     }
     case 'patrol': {
-      // Turn at the end, or right before it when a unit that will not leave stands on it.
-      if ((order.x === e.x && order.y === e.y) || (adjacent(e, order.x, order.y) && heldBy(ctx, e, a, order.x, order.y))) {
+      // Turn at the end, or right before it when any other unit stands on it (a patrol has no
+      // reason to wait for the exact cell).
+      if ((order.x === e.x && order.y === e.y) || (adjacent(e, order.x, order.y) && takenBy(ctx, e, a, order.x, order.y))) {
         e.order = { type: 'patrol', x: order.rx, y: order.ry, rx: order.x, ry: order.y };
       }
       const leg = e.order;
-      if (leg.type === 'patrol' && (leg.x !== e.x || leg.y !== e.y) && !(adjacent(e, leg.x, leg.y) && heldBy(ctx, e, a, leg.x, leg.y))) {
+      if (leg.type === 'patrol' && (leg.x !== e.x || leg.y !== e.y) && !(adjacent(e, leg.x, leg.y) && takenBy(ctx, e, a, leg.x, leg.y))) {
         goal = cellOf(w.map, leg.x, leg.y);
       }
       break;
@@ -387,7 +467,7 @@ function goalOf(ctx: Intent, e: Entity, a: Archetype): number | undefined {
         break;
       }
       // No free covered cell reachable right now: keep the order (counted as 'stuck' below).
-      goal = nearestCovered(ctx, e, a, coverage) ?? cellOf(w.map, e.x, e.y);
+      goal = nearestCell(ctx, e, a, (c) => coverage[c] === 1) ?? cellOf(w.map, e.x, e.y);
       break;
     }
     default:
@@ -400,14 +480,52 @@ function goalOf(ctx: Intent, e: Entity, a: Archetype): number | undefined {
   return goal;
 }
 
+/**
+ * Where an attacking unit should go: `undefined` to stay (it can fire from here, or waits in a
+ * firing position), a cell to head for, or 'lost' when the target is gone as far as the unit's
+ * side knows. With fog the unit only uses what its side reports or what it sees itself: a target
+ * out of sight is sought at its last reported cell, and the order ends once the unit sees that
+ * cell without the target. It heads for the nearest firing position: a cell at least the weapon's
+ * minimum range away and within its range (without a spotter also within its own sight).
+ */
+function attackAim(ctx: Intent, e: Entity, a: Archetype, id: number): number | 'lost' | undefined {
+  const { w, rs } = ctx;
+  const weapon = a.weapon;
+  const target = findEntity(w, id);
+  const seen = target !== undefined && ctx.visible(e, target);
+  let at: { x: number; y: number; kind: string } | undefined;
+  if (seen || !rs.fog) at = target;
+  else at = w.intel?.[e.side]?.find((r) => r.id === id);
+  if (!at || !weapon) return 'lost';
+  const armor = archetypeOf(rs, at.kind)?.armor;
+  if (!armor || weapon.vs[armor] <= 0) return 'lost';
+  if (seen && target && inWeaponRange(w, rs, e, a, target)) return undefined;
+  const vision = a.vision;
+  // Fog: the unit looks at the last reported cell itself and the target is not there.
+  if (rs.fog && !seen && dist2(e.x, e.y, at.x, at.y) <= vision * vision) return 'lost';
+  const spotter = seen && ctx.spottedBy(e.side, id);
+  const max = rs.fog && !spotter ? Math.min(weapon.range, vision) : weapon.range;
+  const min = weapon.minRange;
+  if (max < min) return 'lost'; // cannot see and hit it at the same time
+  const p = at;
+  const firing = (c: number): boolean => {
+    const d = dist2(c % w.map.w, Math.floor(c / w.map.w), p.x, p.y);
+    return d >= min * min && d <= max * max;
+  };
+  const start = cellOf(w.map, e.x, e.y);
+  if (firing(start)) return undefined;
+  // No firing position reachable now: keep the order (counted as 'stuck', ends as 'unreachable').
+  return nearestCell(ctx, e, a, firing) ?? start;
+}
+
 /** Escort / guard keeps within this many cells of its charge. */
 const ESCORT_RANGE = 2;
 
 /**
- * The covered, free cell the unit can reach most cheaply (Dijkstra over step costs through
- * free cells; ties in the side's frame), or `undefined` if none is reachable.
+ * The free cell other than its own that the unit can reach most cheaply among those `accept`
+ * allows (Dijkstra over step costs, past walls only; ties in the side's frame), or `undefined`.
  */
-function nearestCovered(ctx: Intent, e: Entity, a: Archetype, coverage: Uint8Array): number | undefined {
+function nearestCell(ctx: Intent, e: Entity, a: Archetype, accept: (cell: number) => boolean): number | undefined {
   const { w, rs, occupied } = ctx;
   const cells = w.map.w * w.map.h;
   const start = cellOf(w.map, e.x, e.y);
@@ -419,7 +537,7 @@ function nearestCovered(ctx: Intent, e: Entity, a: Archetype, coverage: Uint8Arr
     const c = item[2] as number;
     const d = item[0] as number;
     if (d !== dist[c]) continue;
-    if (c !== start && coverage[c] === 1 && !occupied[a.layer].has(c)) return c;
+    if (c !== start && accept(c) && !occupied[a.layer].has(c)) return c;
     const cx = c % w.map.w;
     const cy = Math.floor(c / w.map.w);
     for (const [dx, dy] of dirsFor(e.side)) {
@@ -464,19 +582,19 @@ function matchesPriority(rs: Ruleset, target: Entity, priority: TargetPriority):
  * Target selection: an ordered target in range first. Otherwise, by doctrine priority: preferred
  * class first, then lowest health and nearest ('nearest': distance before health), then lowest
  * id. With return-fire doctrine the unit only shoots at an ordered target or after being hit
- * within the last turn.
+ * within the last turn. Only `visible` targets are engaged (fog).
  */
-function pickTarget(w: World, rs: Ruleset, e: Entity, a: Archetype, tick: number): Entity | undefined {
+function pickTarget(w: World, rs: Ruleset, e: Entity, a: Archetype, tick: number, visible: (target: Entity) => boolean): Entity | undefined {
   const doctrine = doctrineOf(e);
   if (e.order.type === 'attack') {
     const ordered = findEntity(w, e.order.target);
-    if (ordered && inWeaponRange(w, rs, e, a, ordered)) return ordered;
+    if (ordered && visible(ordered) && inWeaponRange(w, rs, e, a, ordered)) return ordered;
   }
   if (doctrine.holdFire && (e.hitAt === undefined || tick - e.hitAt > rs.ticksPerTurn)) return undefined;
   const classed = doctrine.priority !== 'weakest' && doctrine.priority !== 'nearest';
   let best: Entity | undefined;
   for (const target of w.entities) {
-    if (target.side === e.side || !inWeaponRange(w, rs, e, a, target)) continue;
+    if (target.side === e.side || !visible(target) || !inWeaponRange(w, rs, e, a, target)) continue;
     if (!best) {
       best = target;
       continue;

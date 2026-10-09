@@ -84,8 +84,12 @@ export const BASE_RULESET: Ruleset = {
   terrain: BASE_TERRAIN,
   archetypes: BASE_ARCHETYPES,
   commandNetwork: false,
-  relayHillBonus: 2
+  relayHillBonus: 2,
+  fog: false
 };
 
-/** Turn-based strategy: orders travel through the command network (docs/design/strategy.md § 5). */
-export const STRATEGY_RULESET: Ruleset = { ...BASE_RULESET, id: 'strategy-1', commandNetwork: true };
+/**
+ * Turn-based strategy: orders and reports travel through the command network
+ * (docs/design/strategy.md § 5). `strategy-1` (I3a/I3b) had no fog; `strategy-2` adds D7.
+ */
+export const STRATEGY_RULESET: Ruleset = { ...BASE_RULESET, id: 'strategy-2', commandNetwork: true, fog: true };

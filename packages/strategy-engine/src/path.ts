@@ -1,4 +1,4 @@
-import { cellOf, dirsFor, frameIndex, minStepCost, passable, stepCost, xOf, yOf } from './grid';
+import { AIR_COST, cellOf, dirsFor, minStepCost, passable, stepCost, terrainAt, xOf, yOf } from './grid';
 import { TupleHeap } from './heap';
 import type { GameMap, Layer, Ruleset } from './types';
 
@@ -8,59 +8,210 @@ export interface PathOptions {
   readonly side: number;
   /** Cells that may not be entered (e.g. structures). The goal itself is always allowed. */
   readonly blocked?: ReadonlySet<number>;
+  /** Give up on routes costing more than this (bounds the search; `undefined` if none is cheap enough). */
+  readonly maxCost?: number;
 }
+
+/** Orthogonal step cost into each cell (-1 = impassable), cached per map object, ruleset and layer. */
+const costGrids = new WeakMap<GameMap, Map<string, Int32Array>>();
+
+export function costGrid(map: GameMap, ruleset: Ruleset, layer: Layer): Int32Array {
+  let byKey = costGrids.get(map);
+  if (!byKey) costGrids.set(map, (byKey = new Map()));
+  const key = `${ruleset.id}:${layer}`;
+  let grid = byKey.get(key);
+  if (!grid) {
+    grid = new Int32Array(map.w * map.h);
+    for (let c = 0; c < grid.length; c++) {
+      grid[c] = passable(map, ruleset, xOf(map, c), yOf(map, c), layer) ? orthogonalCost(map, ruleset, c, layer) : -1;
+    }
+    byKey.set(key, grid);
+  }
+  return grid;
+}
+
+const orthogonalCost = (map: GameMap, ruleset: Ruleset, c: number, layer: Layer): number =>
+  layer === 'air' ? AIR_COST : (terrainAt(map, ruleset, xOf(map, c), yOf(map, c)).cost ?? -1);
+
+/**
+ * Packs the A* ordering key (f, h, frame index) into one exactly comparable number: frame
+ * indices < 2^14 (maps up to 128×128), h < 2^20 and f < 2^19 keep it below 2^53.
+ */
+const H_SHIFT = 2 ** 14;
+const F_SHIFT = 2 ** 34;
 
 /**
  * Deterministic A* over integer step costs. Returns the cells to walk (excluding the start,
- * including the goal), `[]` if already there, or `undefined` if unreachable.
+ * including the goal), `[]` if already there, or `undefined` if unreachable (or dearer than
+ * `maxCost`). Ties: lower f, then lower h, then lower cell index in the side's frame.
  */
 export function findPath(map: GameMap, ruleset: Ruleset, start: number, goal: number, options: PathOptions): number[] | undefined {
   if (start === goal) return [];
   const n = map.w * map.h;
   if (goal < 0 || goal >= n) return undefined;
   const { layer, side, blocked } = options;
+  const maxCost = options.maxCost ?? Number.POSITIVE_INFINITY;
+  const cost = costGrid(map, ruleset, layer);
+  const w = map.w;
   const m = minStepCost(ruleset, layer);
-  const gx = xOf(map, goal);
-  const gy = yOf(map, goal);
+  const gx = goal % w;
+  const gy = Math.floor(goal / w);
   const h = (c: number): number => {
-    const dx = Math.abs(xOf(map, c) - gx);
-    const dy = Math.abs(yOf(map, c) - gy);
+    const dx = Math.abs((c % w) - gx);
+    const dy = Math.abs(Math.floor(c / w) - gy);
     return m * Math.max(dx, dy) + Math.floor((m * Math.min(dx, dy)) / 2);
   };
   const g = new Int32Array(n).fill(-1);
   const parent = new Int32Array(n).fill(-1);
   const closed = new Uint8Array(n);
-  const heap = new TupleHeap();
+  const heap = new NumberHeap();
+  const mirrored = side === 1;
+  const key = (f: number, hn: number, c: number): number => f * F_SHIFT + hn * H_SHIFT + (mirrored ? n - 1 - c : c);
   g[start] = 0;
-  heap.push([h(start), h(start), frameIndex(start, side, n), start]);
+  heap.push(key(h(start), h(start), start));
   const dirs = dirsFor(side);
-  for (let item = heap.pop(); item; item = heap.pop()) {
-    const c = item[3] as number;
+  const air = layer === 'air';
+  while (heap.size > 0) {
+    const k = heap.pop();
+    const frame = k % H_SHIFT;
+    const c = mirrored ? n - 1 - frame : frame;
     if (closed[c]) continue;
     closed[c] = 1;
     if (c === goal) break;
-    const cx = xOf(map, c);
-    const cy = yOf(map, c);
+    const cx = c % w;
+    const cy = (c - cx) / w;
     for (const [dx, dy] of dirs) {
       const nx = cx + dx;
       const ny = cy + dy;
-      const cost = stepCost(map, ruleset, cx, cy, nx, ny, layer);
-      if (cost === undefined) continue;
-      const nc = cellOf(map, nx, ny);
+      if (nx < 0 || ny < 0 || nx >= w || ny >= map.h) continue;
+      const nc = ny * w + nx;
+      const base = cost[nc] as number;
+      if (base < 0) continue;
+      const diagonal = dx !== 0 && dy !== 0;
+      // No corner cutting past impassable ground.
+      if (diagonal && !air && ((cost[cy * w + nx] as number) < 0 || (cost[ny * w + cx] as number) < 0)) continue;
       if (closed[nc] || (nc !== goal && blocked?.has(nc))) continue;
-      const ng = (g[c] as number) + cost;
+      const ng = (g[c] as number) + (diagonal ? (base * 3) / 2 : base);
       const old = g[nc] as number;
       if (old !== -1 && ng >= old) continue;
+      const hn = h(nc);
+      if (ng + hn > maxCost) continue;
       g[nc] = ng;
       parent[nc] = c;
-      const hn = h(nc);
-      heap.push([ng + hn, hn, frameIndex(nc, side, n), nc]);
+      heap.push(key(ng + hn, hn, nc));
     }
   }
   if (!closed[goal]) return undefined;
   const path: number[] = [];
   for (let c = goal; c !== start; c = parent[c] as number) path.push(c);
   return path.reverse();
+}
+
+/**
+ * Connected regions for the movement rules of `layer` (8 neighbours, no corner cutting), with
+ * `blocked` cells excluded: each passable, unblocked cell gets a region id ≥ 0, others -1.
+ * One flood fill answers many "is there any way?" questions in O(1) (see `canReach`).
+ */
+export function regions(map: GameMap, ruleset: Ruleset, layer: Layer, blocked?: ReadonlySet<number>): Int32Array {
+  const n = map.w * map.h;
+  const cost = costGrid(map, ruleset, layer);
+  const region = new Int32Array(n).fill(-1);
+  const stack: number[] = [];
+  let next = 0;
+  for (let s0 = 0; s0 < n; s0++) {
+    if (region[s0] !== -1 || (cost[s0] as number) < 0 || blocked?.has(s0)) continue;
+    region[s0] = next;
+    stack.push(s0);
+    while (stack.length > 0) {
+      const c = stack.pop() as number;
+      for (const nb of neighbours(map, cost, layer, c)) {
+        if (region[nb] !== -1 || blocked?.has(nb)) continue;
+        region[nb] = next;
+        stack.push(nb);
+      }
+    }
+    next++;
+  }
+  return region;
+}
+
+/** Cells reachable in one step from `c` under the movement rules (terrain only). */
+function neighbours(map: GameMap, cost: Int32Array, layer: Layer, c: number): number[] {
+  const w = map.w;
+  const cx = c % w;
+  const cy = (c - cx) / w;
+  const out: number[] = [];
+  for (const [dx, dy] of dirsFor(0)) {
+    const nx = cx + dx;
+    const ny = cy + dy;
+    if (nx < 0 || ny < 0 || nx >= w || ny >= map.h) continue;
+    const nc = ny * w + nx;
+    if ((cost[nc] as number) < 0) continue;
+    if (dx !== 0 && dy !== 0 && layer !== 'air' && ((cost[cy * w + nx] as number) < 0 || (cost[ny * w + cx] as number) < 0)) continue;
+    out.push(nc);
+  }
+  return out;
+}
+
+/**
+ * Whether `findPath` with the same `blocked` set can reach `goal` from `start` (the goal itself
+ * may be blocked: it is entered from a neighbour in the start's region).
+ */
+export function canReach(map: GameMap, ruleset: Ruleset, layer: Layer, region: Int32Array, start: number, goal: number): boolean {
+  if (start === goal) return true;
+  const cost = costGrid(map, ruleset, layer);
+  if ((cost[goal] as number) < 0) return false;
+  const home = region[start] as number;
+  // The start may itself be a blocked cell (a unit standing in a crowd): use its neighbours.
+  const homes = home >= 0 ? [home] : neighbours(map, cost, layer, start).map((c) => region[c] as number).filter((r) => r >= 0);
+  if (home < 0 && neighbours(map, cost, layer, start).includes(goal)) return true;
+  if (homes.length === 0) return false;
+  if ((region[goal] as number) >= 0) return homes.includes(region[goal] as number);
+  return neighbours(map, cost, layer, goal).some((c) => homes.includes(region[c] as number) || c === start);
+}
+
+/** Binary min-heap of plain numbers (exact integers below 2^53). */
+class NumberHeap {
+  private readonly a: number[] = [];
+
+  get size(): number {
+    return this.a.length;
+  }
+
+  push(v: number): void {
+    const a = this.a;
+    let i = a.length;
+    a.push(v);
+    while (i > 0) {
+      const p = (i - 1) >> 1;
+      const pv = a[p] as number;
+      if (pv <= v) break;
+      a[i] = pv;
+      i = p;
+    }
+    a[i] = v;
+  }
+
+  pop(): number {
+    const a = this.a;
+    const top = a[0] as number;
+    const last = a.pop() as number;
+    const len = a.length;
+    if (len > 0) {
+      let i = 0;
+      for (;;) {
+        const l = 2 * i + 1;
+        if (l >= len) break;
+        const r = l + 1;
+        const child = r < len && (a[r] as number) < (a[l] as number) ? r : l;
+        if ((a[child] as number) >= last) break;
+        a[i] = a[child] as number;
+        i = child;
+      }
+      a[i] = last;
+    }
+    return top;
+  }
 }
 
 /**

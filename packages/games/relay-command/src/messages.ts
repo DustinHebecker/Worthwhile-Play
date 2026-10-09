@@ -121,6 +121,14 @@ const en = {
   'summary.ended.blocked': '{name}: blocked by other units for three turns; now holding position.',
   'summary.ended.lost-target': '{name}: target or escorted unit gone; now holding position.',
   'summary.ended.retreat': '{name}: badly hit, retreating to regroup (doctrine).',
+  'unit.enemySummary': '{name} ({side}) at {x}, {y}: health {hp} of {max}.',
+  'unit.unconfirmed': 'last order sent: {order} (unconfirmed)',
+  'cell.unobserved': '(not observed now)',
+  'unit.lastSeen': '{name} ({side}) last reported at {x}, {y} with health {hp} of {max}.',
+  'unit.ghost': 'Last report: turn {turn}; where it is now is unknown.',
+  'unit.ghostStart': 'Position known from before the battle; not seen since.',
+  'refuse.not-visible': 'Not in sight: you can only attack enemies that your units in contact see right now. Move closer to find it.',
+  'help.fog': 'Only units inside your command coverage report what they see. Cells nobody reports on lie under a light veil with a dot. Enemies seen earlier, and your own units out of contact, are shown faded with a dashed outline and a question mark where they were last reported; that is not necessarily where they are now. Units attack only what your side reports or what they see themselves: an attack on an enemy out of sight leads to where it was last reported, and the order ends if it is no longer there. Field Guns see only 3 cells, but shoot at least 3 cells far: give them a spotter in contact.',
 };
 
 type Catalogue = Record<keyof typeof en, string>;
@@ -242,6 +250,14 @@ const de: Catalogue = {
   'summary.ended.blocked': '{name}: Drei Runden lang von anderen Einheiten blockiert; hält jetzt die Stellung.',
   'summary.ended.lost-target': '{name}: Ziel oder begleitete Einheit nicht mehr da; hält jetzt die Stellung.',
   'summary.ended.retreat': '{name}: Schwer getroffen, zieht sich zum Sammeln zurück (Doktrin).',
+  'unit.enemySummary': '{name} ({side}) bei {x}, {y}: Gesundheit {hp} von {max}.',
+  'unit.unconfirmed': 'zuletzt gesendeter Befehl: {order} (unbestätigt)',
+  'cell.unobserved': '(derzeit nicht beobachtet)',
+  'unit.lastSeen': '{name} ({side}) zuletzt gemeldet bei {x}, {y} mit Gesundheit {hp} von {max}.',
+  'unit.ghost': 'Letzte Meldung: Runde {turn}; wo die Einheit jetzt ist, ist unbekannt.',
+  'unit.ghostStart': 'Position aus der Zeit vor dem Gefecht bekannt; seitdem nicht gesehen.',
+  'refuse.not-visible': 'Nicht in Sicht: Angreifen kannst du nur Gegner, die deine Einheiten mit Verbindung gerade sehen. Rück näher heran, um ihn zu finden.',
+  'help.fog': 'Nur Einheiten innerhalb deiner Befehlsabdeckung melden, was sie sehen. Felder, über die niemand meldet, liegen unter einem hellen Schleier mit einem Punkt. Früher gesehene Gegner und eigene Einheiten ohne Verbindung erscheinen blass, gestrichelt umrandet und mit Fragezeichen dort, wo sie zuletzt gemeldet wurden – nicht unbedingt dort, wo sie jetzt sind. Einheiten greifen nur an, was deine Seite meldet oder was sie selbst sehen: Ein Angriff auf einen Gegner außer Sicht führt dorthin, wo er zuletzt gemeldet wurde, und endet, wenn er dort nicht mehr ist. Feldgeschütze sehen nur 3 Felder weit, schießen aber mindestens 3 Felder weit: Gib ihnen einen Späher mit Verbindung.',
 };
 
 // Translations other than en/de are AI-assisted and await native-speaker review.
@@ -362,6 +378,14 @@ const nl: Catalogue = {
   'summary.ended.blocked': '{name}: drie beurten lang door andere eenheden geblokkeerd; houdt nu positie.',
   'summary.ended.lost-target': '{name}: doel of geëscorteerde eenheid verdwenen; houdt nu positie.',
   'summary.ended.retreat': '{name}: zwaar geraakt, trekt zich terug om te hergroeperen (doctrine).',
+  'unit.enemySummary': '{name} ({side}) op {x}, {y}: gezondheid {hp} van {max}.',
+  'unit.unconfirmed': 'laatst verzonden bevel: {order} (onbevestigd)',
+  'cell.unobserved': '(nu niet waargenomen)',
+  'unit.lastSeen': '{name} ({side}) laatst gemeld op {x}, {y} met gezondheid {hp} van {max}.',
+  'unit.ghost': 'Laatste melding: beurt {turn}; waar de eenheid nu is, is onbekend.',
+  'unit.ghostStart': 'Positie bekend van vóór het gevecht; sindsdien niet gezien.',
+  'refuse.not-visible': 'Niet in zicht: je kunt alleen vijanden aanvallen die je eenheden in verbinding nu zien. Kom dichterbij om hem te vinden.',
+  'help.fog': 'Alleen eenheden binnen je commandobereik melden wat ze zien. Vakken waarover niemand meldt, liggen onder een lichte sluier met een stip. Eerder geziene vijanden en je eigen eenheden zonder verbinding worden vervaagd weergegeven, met een gestreepte rand en een vraagteken, op de plek waar ze het laatst zijn gemeld; dat is niet per se waar ze nu zijn. Eenheden vallen alleen aan wat jouw kant meldt of wat ze zelf zien: een aanval op een vijand buiten zicht leidt naar de plek waar hij het laatst is gemeld, en het bevel eindigt als hij daar niet meer is. Veldkanonnen zien maar 3 vakken ver, maar schieten minstens 3 vakken ver: geef ze een waarnemer in verbinding.',
 };
 
 const es: Catalogue = {
@@ -481,6 +505,14 @@ const es: Catalogue = {
   'summary.ended.blocked': '{name}: bloqueada por otras unidades durante tres turnos; ahora mantiene la posición.',
   'summary.ended.lost-target': '{name}: el objetivo o la unidad escoltada ya no está; ahora mantiene la posición.',
   'summary.ended.retreat': '{name}: muy dañada, se retira para reagruparse (doctrina).',
+  'unit.enemySummary': '{name} ({side}) en {x}, {y}: salud {hp} de {max}.',
+  'unit.unconfirmed': 'última orden enviada: {order} (sin confirmar)',
+  'cell.unobserved': '(sin observar ahora)',
+  'unit.lastSeen': '{name} ({side}): último informe en {x}, {y}, con salud {hp} de {max}.',
+  'unit.ghost': 'Último informe: turno {turn}; se desconoce dónde está ahora.',
+  'unit.ghostStart': 'Posición conocida desde antes de la batalla; no se ha visto desde entonces.',
+  'refuse.not-visible': 'Fuera de la vista: solo puedes atacar enemigos que tus unidades en contacto vean ahora mismo. Acércate para encontrarlo.',
+  'help.fog': 'Solo las unidades dentro de tu cobertura de mando informan de lo que ven. Las casillas de las que nadie informa quedan bajo un velo claro con un punto. Los enemigos vistos antes y tus propias unidades sin contacto se muestran atenuados, con contorno discontinuo y un signo de interrogación, donde se informó de ellos por última vez; no es necesariamente donde están ahora. Las unidades solo atacan lo que tu bando informa o lo que ven ellas mismas: un ataque contra un enemigo fuera de la vista lleva hasta donde se informó de él por última vez, y la orden termina si ya no está allí. Los cañones de campaña solo ven 3 casillas, pero disparan como mínimo a 3 casillas: dales un observador en contacto.',
 };
 
 const fr: Catalogue = {
@@ -600,6 +632,14 @@ const fr: Catalogue = {
   'summary.ended.blocked': '{name} : bloquée par d’autres unités pendant trois tours ; tient désormais la position.',
   'summary.ended.lost-target': '{name} : cible ou unité escortée disparue ; tient désormais la position.',
   'summary.ended.retreat': '{name} : durement touchée, se replie pour se regrouper (doctrine).',
+  'unit.enemySummary': '{name} ({side}) en {x}, {y} : santé {hp} sur {max}.',
+  'unit.unconfirmed': 'dernier ordre envoyé : {order} (non confirmé)',
+  'cell.unobserved': '(non observée en ce moment)',
+  'unit.lastSeen': '{name} ({side}) : dernier signalement en {x}, {y}, santé {hp} sur {max}.',
+  'unit.ghost': 'Dernier signalement : tour {turn} ; sa position actuelle est inconnue.',
+  'unit.ghostStart': 'Position connue d’avant la bataille ; non observée depuis.',
+  'refuse.not-visible': 'Hors de vue : tu ne peux attaquer que des ennemis que tes unités en liaison voient en ce moment. Rapproche-toi pour le trouver.',
+  'help.fog': 'Seules les unités dans ta couverture de commandement signalent ce qu’elles voient. Les cases dont personne ne rend compte sont sous un voile clair avec un point. Les ennemis vus plus tôt, et tes propres unités hors liaison, apparaissent estompés, avec un contour en tirets et un point d’interrogation, là où ils ont été signalés pour la dernière fois ; ce n’est pas forcément là où ils sont maintenant. Les unités n’attaquent que ce que ton camp signale ou ce qu’elles voient elles-mêmes : une attaque contre un ennemi hors de vue mène là où il a été signalé pour la dernière fois, et l’ordre prend fin s’il n’y est plus. Les canons de campagne ne voient qu’à 3 cases, mais tirent à 3 cases au minimum : donne-leur un observateur en liaison.',
 };
 const ru: Catalogue = {
   title: 'Relay Command',
@@ -718,6 +758,14 @@ const ru: Catalogue = {
   'summary.ended.blocked': '{name}: три хода заблокировано другими подразделениями; теперь удерживает позицию.',
   'summary.ended.lost-target': '{name}: цель или сопровождаемое подразделение исчезли; теперь удерживает позицию.',
   'summary.ended.retreat': '{name}: тяжело повреждено, отходит для перегруппировки (доктрина).',
+  'unit.enemySummary': '{name} ({side}) на {x}, {y}: здоровье {hp} из {max}.',
+  'unit.unconfirmed': 'последний отправленный приказ: {order} (не подтверждён)',
+  'cell.unobserved': '(сейчас не наблюдается)',
+  'unit.lastSeen': '{name} ({side}): последнее донесение — {x}, {y}, здоровье {hp} из {max}.',
+  'unit.ghost': 'Последнее донесение: ход {turn}; текущее местоположение неизвестно.',
+  'unit.ghostStart': 'Позиция известна ещё до начала боя; с тех пор не замечено.',
+  'refuse.not-visible': 'Вне видимости: атаковать можно только противника, которого твои подразделения на связи видят прямо сейчас. Подойди ближе, чтобы найти его.',
+  'help.fog': 'Только подразделения в зоне связи твоего командования докладывают, что видят. Клетки, о которых никто не докладывает, лежат под лёгкой дымкой с точкой. Замеченные ранее противники и твои подразделения без связи показаны бледными, со штриховым контуром и вопросительным знаком там, где о них доложили в последний раз; это не обязательно то место, где они сейчас. Подразделения атакуют только то, о чём докладывает твоя сторона или что видят сами: атака на противника вне видимости ведёт туда, где о нём доложили в последний раз, и приказ завершается, если его там больше нет. Полевые орудия видят только на 3 клетки, но стреляют не ближе чем на 3 клетки: дай им корректировщика на связи.',
 };
 
 const zhHans: Catalogue = {
@@ -837,6 +885,14 @@ const zhHans: Catalogue = {
   'summary.ended.blocked': '{name}：连续三回合被其他部队阻挡；现在原地坚守。',
   'summary.ended.lost-target': '{name}：目标或护送的部队已不存在；现在原地坚守。',
   'summary.ended.retreat': '{name}：受到重创，撤退集结（作战准则）。',
+  'unit.enemySummary': '{name}（{side}）位于 {x}, {y}：生命值 {hp}/{max}。',
+  'unit.unconfirmed': '最后发出的命令：{order}（未确认）',
+  'cell.unobserved': '（当前无人观察）',
+  'unit.lastSeen': '{name}（{side}）最后报告位于 {x}, {y}：生命值 {hp}/{max}。',
+  'unit.ghost': '最后报告：第 {turn} 回合；现在的位置不明。',
+  'unit.ghostStart': '位置为战斗开始前所知；此后未再发现。',
+  'refuse.not-visible': '不在视野内：你只能攻击保持联络的部队此刻能看到的敌人。靠近一些去找到它。',
+  'help.fog': '只有指挥覆盖范围内的部队会报告它们看到的情况。无人报告的格子覆盖着一层浅色薄纱，并带有一个圆点。之前见过的敌人，以及失去联络的己方部队，会以淡化、虚线轮廓和问号的样式显示在最后报告的位置；那不一定是它们现在的位置。部队只攻击己方报告的或自己看到的敌人：攻击视野外的敌人时，部队会前往它最后被报告的位置，如果它已不在那里，命令就会结束。野战炮只能看到 3 格远，但至少要向 3 格外射击：给它们配一个保持联络的观察员。',
 };
 const ko: Catalogue = {
   title: 'Relay Command',
@@ -955,6 +1011,14 @@ const ko: Catalogue = {
   'summary.ended.blocked': '{name}: 세 턴 동안 다른 유닛에 막혔습니다. 이제 위치를 고수합니다.',
   'summary.ended.lost-target': '{name}: 목표 또는 호위 대상 유닛이 사라졌습니다. 이제 위치를 고수합니다.',
   'summary.ended.retreat': '{name}: 큰 피해를 입어 재집결을 위해 후퇴합니다 (교리).',
+  'unit.enemySummary': '{name} ({side}), 위치 {x}, {y}: 체력 {hp}/{max}.',
+  'unit.unconfirmed': '마지막으로 보낸 명령: {order} (미확인)',
+  'cell.unobserved': '(현재 관측되지 않음)',
+  'unit.lastSeen': '{name} ({side}), 마지막 보고 위치 {x}, {y}: 체력 {hp}/{max}.',
+  'unit.ghost': '마지막 보고: 턴 {turn}. 현재 위치는 알 수 없습니다.',
+  'unit.ghostStart': '전투 전부터 알려진 위치입니다. 그 이후로 관측되지 않았습니다.',
+  'refuse.not-visible': '보이지 않음: 통신이 연결된 유닛이 지금 보고 있는 적만 공격할 수 있습니다. 더 가까이 이동해 찾아보세요.',
+  'help.fog': '지휘 통신 범위 안의 유닛만 보이는 것을 보고합니다. 아무도 보고하지 않는 칸은 점이 찍힌 옅은 베일로 덮여 있습니다. 이전에 본 적과 통신이 두절된 아군 유닛은 마지막으로 보고된 위치에 흐릿하게, 점선 테두리와 물음표로 표시됩니다. 지금도 그 위치에 있다는 보장은 없습니다. 유닛은 아군이 보고하거나 스스로 보고 있는 대상만 공격합니다. 시야 밖의 적을 공격하면 그 적이 마지막으로 보고된 위치로 이동하며, 적이 더 이상 그곳에 없으면 명령이 끝납니다. 야포는 3칸까지만 볼 수 있지만 최소 3칸 떨어진 곳에 사격합니다. 통신이 연결된 관측 유닛을 붙여 주세요.',
 };
 
 const ja: Catalogue = {
@@ -1074,6 +1138,14 @@ const ja: Catalogue = {
   'summary.ended.blocked': '{name}：3ターンの間ほかの部隊にふさがれました。現在地を保持します。',
   'summary.ended.lost-target': '{name}：目標または護衛対象の部隊がいなくなりました。現在地を保持します。',
   'summary.ended.retreat': '{name}：大きな損害を受けたため、再集結のため後退します（行動方針）。',
+  'unit.enemySummary': '{name}（{side}）位置 {x}, {y}：耐久 {hp}／{max}。',
+  'unit.unconfirmed': '最後に送った命令：{order}（未確認）',
+  'cell.unobserved': '（現在は未観測）',
+  'unit.lastSeen': '{name}（{side}）最終報告位置 {x}, {y}：耐久 {hp}／{max}。',
+  'unit.ghost': '最終報告：ターン {turn}。現在の位置は不明です。',
+  'unit.ghostStart': '戦闘開始前から分かっている位置です。それ以降は確認されていません。',
+  'refuse.not-visible': '視界外：攻撃できるのは、通信可能な部隊がいま見ている敵だけです。近づいて見つけてください。',
+  'help.fog': '見たものを報告するのは、指揮通信範囲内の部隊だけです。誰も報告していないマスは、点の付いた薄いベールに覆われます。以前に見た敵や通信途絶中の味方部隊は、最後に報告された位置に、薄く、破線の輪郭と疑問符付きで表示されます。そこが今いる場所とは限りません。部隊が攻撃するのは、味方が報告している敵か、自分で見ている敵だけです。視界外の敵を攻撃すると、最後に報告された位置へ向かい、敵がもうそこにいなければ命令は終わります。野砲の視界は3マスだけですが、砲撃できるのは3マス以上離れた場所です。通信可能な観測役を付けてください。',
 };
 const ar: Catalogue = {
   title: 'Relay Command',
@@ -1192,6 +1264,14 @@ const ar: Catalogue = {
   'summary.ended.blocked': '{name}: أعاقتها وحدات أخرى ثلاثة أدوار؛ تثبت الآن في الموقع.',
   'summary.ended.lost-target': '{name}: الهدف أو الوحدة المرافَقة لم يعد موجودًا؛ تثبت الآن في الموقع.',
   'summary.ended.retreat': '{name}: أصيبت إصابة بالغة، تنسحب لإعادة التجمع (العقيدة).',
+  'unit.enemySummary': '{name} ({side}) عند {x}، {y}: الصحة {hp} من {max}.',
+  'unit.unconfirmed': 'آخر أمر أُرسل: {order} (غير مؤكَّد)',
+  'cell.unobserved': '(غير مرصودة حاليًا)',
+  'unit.lastSeen': '{name} ({side}): آخر بلاغ عند {x}، {y}، والصحة {hp} من {max}.',
+  'unit.ghost': 'آخر بلاغ: الدور {turn}؛ والموقع الحالي غير معروف.',
+  'unit.ghostStart': 'الموقع معروف منذ ما قبل المعركة؛ ولم يُرصد منذ ذلك الحين.',
+  'refuse.not-visible': 'ليس في مجال الرؤية: لا يمكنك أن تهاجم إلا الأعداء الذين تراهم الآن وحداتك التي على اتصال. اقترب أكثر لتجده.',
+  'help.fog': 'لا تُبلغ عمّا تراه إلا الوحدات الموجودة داخل نطاق تغطية القيادة. الخانات التي لا يُبلغ عنها أحد تقع تحت غطاء فاتح عليه نقطة. الأعداء الذين شوهدوا سابقًا، ووحداتك الخارجة عن الاتصال، تظهر باهتة بإطار متقطع وعلامة استفهام في آخر موقع أُبلغ عنه؛ وليس هذا بالضرورة موقعها الآن. لا تهاجم الوحدات إلا ما يُبلغ عنه جانبك أو ما تراه بنفسها: الهجوم على عدو خارج مجال الرؤية يقود إلى آخر موقع أُبلغ عنه، وينتهي الأمر إذا لم يعد هناك. لا ترى المدافع الميدانية إلا 3 خانات، لكنها تطلق النار على بُعد 3 خانات على الأقل: امنحها راصدًا على اتصال.',
 };
 
 const pt: Catalogue = {
@@ -1311,6 +1391,14 @@ const pt: Catalogue = {
   'summary.ended.blocked': '{name}: bloqueada por outras unidades durante três turnos; agora mantém a posição.',
   'summary.ended.lost-target': '{name}: o alvo ou a unidade escoltada não existe mais; agora mantém a posição.',
   'summary.ended.retreat': '{name}: muito atingida, recua para se reagrupar (doutrina).',
+  'unit.enemySummary': '{name} ({side}) em {x}, {y}: saúde {hp} de {max}.',
+  'unit.unconfirmed': 'última ordem enviada: {order} (não confirmada)',
+  'cell.unobserved': '(sem observação no momento)',
+  'unit.lastSeen': '{name} ({side}): último relato em {x}, {y}, com saúde {hp} de {max}.',
+  'unit.ghost': 'Último relato: turno {turn}; a posição atual é desconhecida.',
+  'unit.ghostStart': 'Posição conhecida de antes da batalha; não foi vista desde então.',
+  'refuse.not-visible': 'Fora de vista: você só pode atacar inimigos que suas unidades em contato estejam vendo agora. Aproxime-se para encontrá-lo.',
+  'help.fog': 'Só as unidades dentro da sua cobertura de comando relatam o que veem. As casas sobre as quais ninguém relata ficam sob um véu claro com um ponto. Inimigos vistos antes e suas próprias unidades sem contato aparecem esmaecidos, com contorno tracejado e um ponto de interrogação, onde foram relatados pela última vez; não é necessariamente onde estão agora. As unidades só atacam o que o seu lado relata ou o que elas mesmas veem: um ataque a um inimigo fora de vista leva até onde ele foi relatado pela última vez, e a ordem termina se ele não estiver mais lá. Canhões de campanha só veem 3 casas, mas disparam a no mínimo 3 casas de distância: dê a eles um observador em contato.',
 };
 const it: Catalogue = {
   title: 'Relay Command',
@@ -1429,6 +1517,14 @@ const it: Catalogue = {
   'summary.ended.blocked': '{name}: bloccata da altre unità per tre turni; ora mantiene la posizione.',
   'summary.ended.lost-target': '{name}: bersaglio o unità scortata non più presente; ora mantiene la posizione.',
   'summary.ended.retreat': '{name}: colpita duramente, si ritira per raggrupparsi (dottrina).',
+  'unit.enemySummary': '{name} ({side}) in {x}, {y}: salute {hp} su {max}.',
+  'unit.unconfirmed': 'ultimo ordine inviato: {order} (non confermato)',
+  'cell.unobserved': '(non osservata ora)',
+  'unit.lastSeen': '{name} ({side}): ultima segnalazione in {x}, {y}, salute {hp} su {max}.',
+  'unit.ghost': 'Ultima segnalazione: turno {turn}; la posizione attuale è sconosciuta.',
+  'unit.ghostStart': 'Posizione nota da prima della battaglia; non più vista da allora.',
+  'refuse.not-visible': 'Non in vista: puoi attaccare solo nemici che le tue unità in contatto vedono in questo momento. Avvicinati per trovarlo.',
+  'help.fog': 'Solo le unità dentro la tua copertura di comando segnalano ciò che vedono. Le caselle su cui nessuno fa rapporto restano sotto un velo chiaro con un punto. I nemici visti in precedenza e le tue unità fuori contatto appaiono sbiaditi, con un contorno a trattini e un punto interrogativo, dove sono stati segnalati l’ultima volta; non è detto che siano ancora lì. Le unità attaccano solo ciò che la tua parte segnala o ciò che vedono esse stesse: un attacco a un nemico fuori vista porta dove è stato segnalato l’ultima volta, e l’ordine termina se non è più lì. I cannoni da campagna vedono solo a 3 caselle, ma sparano ad almeno 3 caselle: affianca loro un osservatore in contatto.',
 };
 
 const pl: Catalogue = {
@@ -1548,6 +1644,14 @@ const pl: Catalogue = {
   'summary.ended.blocked': '{name}: przez trzy tury blokowany przez inne oddziały; teraz utrzymuje pozycję.',
   'summary.ended.lost-target': '{name}: cel lub eskortowany oddział zniknął; teraz utrzymuje pozycję.',
   'summary.ended.retreat': '{name}: ciężko trafiony, wycofuje się, by się przegrupować (doktryna).',
+  'unit.enemySummary': '{name} ({side}) na polu {x}, {y}: zdrowie {hp} z {max}.',
+  'unit.unconfirmed': 'ostatnio wysłany rozkaz: {order} (niepotwierdzony)',
+  'cell.unobserved': '(obecnie nieobserwowane)',
+  'unit.lastSeen': '{name} ({side}): ostatni meldunek z pola {x}, {y}, zdrowie {hp} z {max}.',
+  'unit.ghost': 'Ostatni meldunek: tura {turn}; obecne położenie jest nieznane.',
+  'unit.ghostStart': 'Pozycja znana sprzed bitwy; od tego czasu niewidziana.',
+  'refuse.not-visible': 'Poza zasięgiem wzroku: możesz atakować tylko wrogów, których twoje oddziały w zasięgu łączności widzą w tej chwili. Podejdź bliżej, aby go znaleźć.',
+  'help.fog': 'Tylko oddziały w zasięgu twojej łączności dowodzenia meldują, co widzą. Pola, o których nikt nie melduje, leżą pod jasną zasłoną z kropką. Wcześniej widzianych wrogów i twoje oddziały poza łącznością widać blado, z przerywanym obrysem i znakiem zapytania tam, gdzie ostatnio je zameldowano; niekoniecznie są tam teraz. Oddziały atakują tylko to, co melduje twoja strona albo co widzą same: atak na wroga poza zasięgiem wzroku prowadzi tam, gdzie ostatnio go zameldowano, a rozkaz kończy się, jeśli go tam już nie ma. Działa polowe widzą tylko na 3 pola, ale strzelają na co najmniej 3 pola: daj im obserwatora w zasięgu łączności.',
 };
 const tr: Catalogue = {
   title: 'Relay Command',
@@ -1666,6 +1770,14 @@ const tr: Catalogue = {
   'summary.ended.blocked': '{name}: üç tur boyunca başka birliklerce engellendi; artık mevziyi koruyor.',
   'summary.ended.lost-target': '{name}: hedef veya eşlik edilen birlik artık yok; artık mevziyi koruyor.',
   'summary.ended.retreat': '{name}: ağır hasar aldı, yeniden toplanmak için geri çekiliyor (doktrin).',
+  'unit.enemySummary': '{name} ({side}) konum {x}, {y}: sağlık {hp} / {max}.',
+  'unit.unconfirmed': 'son gönderilen emir: {order} (doğrulanmadı)',
+  'cell.unobserved': '(şu an gözlenmiyor)',
+  'unit.lastSeen': '{name} ({side}) son bildirilen konum {x}, {y}: sağlık {hp} / {max}.',
+  'unit.ghost': 'Son rapor: tur {turn}; şu anki yeri bilinmiyor.',
+  'unit.ghostStart': 'Konum savaştan öncesinden biliniyor; o zamandan beri görülmedi.',
+  'refuse.not-visible': 'Görüş dışında: yalnızca bağlantıdaki birliklerinin şu anda gördüğü düşmanlara saldırabilirsin. Onu bulmak için daha yakına git.',
+  'help.fog': 'Yalnızca komuta kapsamının içindeki birlikler gördüklerini bildirir. Kimsenin bildirmediği kareler, üzerinde nokta olan açık bir örtünün altındadır. Daha önce görülen düşmanlar ve bağlantısı olmayan kendi birliklerin, en son bildirildikleri yerde soluk, kesik çizgili bir çerçeve ve soru işaretiyle gösterilir; şu an orada olmaları gerekmez. Birlikler yalnızca tarafının bildirdiğine ya da kendi gördüklerine saldırır: görüş dışındaki bir düşmana saldırı, onun en son bildirildiği yere götürür ve düşman artık orada değilse emir sona erer. Sahra Topları yalnızca 3 kare görür ama en az 3 kare uzağa ateş eder: onlara bağlantıda bir gözcü ver.',
 };
 
 const uk: Catalogue = {
@@ -1785,6 +1897,14 @@ const uk: Catalogue = {
   'summary.ended.blocked': '{name}: три ходи заблоковано іншими підрозділами; тепер утримує позицію.',
   'summary.ended.lost-target': '{name}: ціль або супроводжуваний підрозділ зникли; тепер утримує позицію.',
   'summary.ended.retreat': '{name}: тяжко пошкоджено, відходить для перегрупування (доктрина).',
+  'unit.enemySummary': '{name} ({side}) на {x}, {y}: здоров’я {hp} з {max}.',
+  'unit.unconfirmed': 'останній надісланий наказ: {order} (не підтверджено)',
+  'cell.unobserved': '(зараз не спостерігається)',
+  'unit.lastSeen': '{name} ({side}): останнє донесення — {x}, {y}, здоров’я {hp} з {max}.',
+  'unit.ghost': 'Останнє донесення: хід {turn}; поточне місцезнаходження невідоме.',
+  'unit.ghostStart': 'Позиція відома ще до початку бою; відтоді не помічено.',
+  'refuse.not-visible': 'Поза видимістю: атакувати можна лише ворога, якого твої підрозділи на зв’язку бачать просто зараз. Підійди ближче, щоб знайти його.',
+  'help.fog': 'Лише підрозділи в зоні зв’язку твого командування доповідають, що бачать. Клітинки, про які ніхто не доповідає, лежать під легким серпанком із крапкою. Раніше помічені вороги та твої підрозділи без зв’язку показані блідими, зі штриховим контуром і знаком питання там, де про них доповіли востаннє; це не обов’язково те місце, де вони зараз. Підрозділи атакують лише те, про що доповідає твоя сторона або що бачать самі: атака на ворога поза видимістю веде туди, де про нього доповіли востаннє, і наказ завершується, якщо його там уже немає. Польові гармати бачать лише на 3 клітинки, але стріляють щонайменше на 3 клітинки: дай їм коригувальника на зв’язку.',
 };
 
 const hi: Catalogue = {
@@ -1904,6 +2024,14 @@ const hi: Catalogue = {
   'summary.ended.blocked': '{name}: तीन बारियों तक दूसरी टुकड़ियों ने रोका; अब जगह पर डटी है।',
   'summary.ended.lost-target': '{name}: लक्ष्य या साथ चलने वाली टुकड़ी अब नहीं है; अब जगह पर डटी है।',
   'summary.ended.retreat': '{name}: भारी चोट लगी, फिर से इकट्ठा होने के लिए पीछे हट रही है (युद्ध-नीति)।',
+  'unit.enemySummary': '{name} ({side}) {x}, {y} पर: स्वास्थ्य {hp} / {max}।',
+  'unit.unconfirmed': 'आख़िरी भेजा गया आदेश: {order} (पुष्टि नहीं हुई)',
+  'cell.unobserved': '(अभी निगरानी में नहीं)',
+  'unit.lastSeen': '{name} ({side}) की आख़िरी सूचना {x}, {y} पर: स्वास्थ्य {hp} / {max}।',
+  'unit.ghost': 'आख़िरी सूचना: बारी {turn}; अभी यह कहाँ है, पता नहीं।',
+  'unit.ghostStart': 'यह स्थिति लड़ाई से पहले से पता है; तब से देखी नहीं गई।',
+  'refuse.not-visible': 'नज़र में नहीं: तुम सिर्फ़ उन दुश्मनों पर हमला कर सकते हो जिन्हें संपर्क में मौजूद तुम्हारी टुकड़ियाँ अभी देख रही हैं। उसे ढूँढने के लिए पास जाओ।',
+  'help.fog': 'सिर्फ़ तुम्हारे कमान कवरेज के अंदर की टुकड़ियाँ बताती हैं कि वे क्या देख रही हैं। जिन खानों के बारे में कोई नहीं बताता, वे एक हल्के परदे के नीचे होते हैं जिस पर एक बिंदु होता है। पहले देखे गए दुश्मन, और संपर्क से बाहर तुम्हारी अपनी टुकड़ियाँ, वहाँ फीकी, टूटी रेखा वाली किनारी और प्रश्नचिह्न के साथ दिखती हैं जहाँ उनकी आख़िरी सूचना मिली थी; ज़रूरी नहीं कि वे अभी वहीं हों। टुकड़ियाँ सिर्फ़ उसी पर हमला करती हैं जिसकी सूचना तुम्हारा पक्ष देता है या जिसे वे ख़ुद देखती हैं: नज़र से बाहर के दुश्मन पर हमले का आदेश टुकड़ी को वहाँ ले जाता है जहाँ उसकी आख़िरी सूचना मिली थी, और अगर दुश्मन वहाँ नहीं रहा तो आदेश ख़त्म हो जाता है। फ़ील्ड तोपें सिर्फ़ 3 खानों तक देखती हैं, लेकिन कम से कम 3 खाने दूर गोले दागती हैं: उन्हें संपर्क में कोई देखने वाली टुकड़ी दो।',
 };
 
 export const messages: GameMessages = {
