@@ -6,6 +6,7 @@
     "configFile": "vitest.config.ts"
   },
   "coverageAnalysis": "perTest",
+  "dryRunTimeoutMinutes": 25,
   "mutate": [
     "packages/game-core/src/**/*.ts",
     "packages/persistence/src/**/*.ts",
@@ -14,6 +15,8 @@
     "packages/localization/src/translate.ts",
     "packages/games/*/src/rules.ts",
     "packages/games/*/src/ai.ts",
+    "packages/strategy-engine/src/*.ts",
+    "!packages/strategy-engine/src/{content,index,types}.ts",
     "!**/*.d.ts",
     "!packages/learning-content/src/builtin/**"
   ],

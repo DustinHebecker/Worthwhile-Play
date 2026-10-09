@@ -29,6 +29,7 @@
     "@wp/game-n-back": "workspace:*",
     "@wp/game-node-conquest": "workspace:*",
     "@wp/game-nonogram": "workspace:*",
+    "@wp/game-relay-command": "workspace:*",
     "@wp/game-river-crossing": "workspace:*",
     "@wp/game-rule-discovery": "workspace:*",
     "@wp/game-sequence-memory": "workspace:*",

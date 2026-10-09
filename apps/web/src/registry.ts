@@ -27,6 +27,7 @@ import { metadata as spatialMemory } from '@wp/game-spatial-memory/metadata';
 import { metadata as systemsPuzzle } from '@wp/game-systems-puzzle/metadata';
 import { metadata as nBack } from '@wp/game-n-back/metadata';
 import { metadata as nodeConquest } from '@wp/game-node-conquest/metadata';
+import { metadata as relayCommand } from '@wp/game-relay-command/metadata';
 import { metadata as slitherlink } from '@wp/game-slitherlink/metadata';
 import { metadata as stackDuel } from '@wp/game-stack-duel/metadata';
 import { metadata as ticTacToe } from '@wp/game-tic-tac-toe/metadata';
@@ -74,6 +75,7 @@ export const GAMES: readonly GameEntry[] = [
   entry(connectFour, () => import('@wp/game-connect-four')),
   entry(ticTacToe, () => import('@wp/game-tic-tac-toe')),
   entry(nodeConquest, () => import('@wp/game-node-conquest')),
+  entry(relayCommand, () => import('@wp/game-relay-command')),
   entry(slitherlink, () => import('@wp/game-slitherlink')),
   entry(chess, () => import('@wp/game-chess')),
   entry(wordGuess, () => import('@wp/game-word-guess')),

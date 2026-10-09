@@ -122,6 +122,9 @@ importers:
       '@wp/game-nonogram':
         specifier: workspace:*
         version: link:../../packages/games/nonogram
+      '@wp/game-relay-command':
+        specifier: workspace:*
+        version: link:../../packages/games/relay-command
       '@wp/game-river-crossing':
         specifier: workspace:*
         version: link:../../packages/games/river-crossing
@@ -553,6 +556,28 @@ importers:
         specifier: workspace:*
         version: link:../../testing
 
+  packages/games/relay-command:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../../game-core
+      '@wp/strategy-engine':
+        specifier: workspace:*
+        version: link:../../strategy-engine
+      '@wp/ui':
+        specifier: workspace:*
+        version: link:../../ui
+    devDependencies:
+      '@wp/localization':
+        specifier: workspace:*
+        version: link:../../localization
+      '@wp/persistence':
+        specifier: workspace:*
+        version: link:../../persistence
+      '@wp/testing':
+        specifier: workspace:*
+        version: link:../../testing
+
   packages/games/river-crossing:
     dependencies:
       '@wp/game-core':
@@ -832,6 +857,12 @@ importers:
         version: link:../game-core
 
   packages/persistence:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../game-core
+
+  packages/strategy-engine:
     dependencies:
       '@wp/game-core':
         specifier: workspace:*
