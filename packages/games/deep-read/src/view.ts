@@ -16,6 +16,7 @@ import {
   lookedBackCount,
   next,
   questionCount,
+  restart,
   resultStats,
   selfCheckCount,
   setSummary,
@@ -421,7 +422,7 @@ export function createDeepRead(context: GameContext): GameInstance<DeepReadState
       paused = false;
     },
     reset() {
-      state = createInitialState(state.seed, state.difficulty);
+      state = restart(state);
       mount();
       context.requestSave();
     },

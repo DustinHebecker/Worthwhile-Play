@@ -262,5 +262,266 @@ export const pt: LocaleContent = {
         c: ['Uma lista de regras da biblioteca seguida de exemplos.', 'O texto não contém regras.']
       }
     }
+  },
+  paperback: {
+    title: 'O livro que cabia no bolso',
+    paragraphs: [
+      'Durante muito tempo, a maioria dos livros novos era cara. Tinham capa dura e páginas cosidas, por isso muitas pessoas requisitavam livros nas bibliotecas ou simplesmente não liam novidades. Já no século XIX existiam livros baratos com capa de papel, mas eram muitas vezes vistos como leitura descartável.',
+      'Em 1935, o editor britânico Allen Lane fundou a Penguin Books. A sua ideia era simples: livros bem escritos, com capa de papel, vendidos mais ou menos ao preço de um maço de cigarros. As capas eram sóbrias e tinham um código de cores – laranja para ficção, verde para policiais –, para que se reconhecesse o género do livro num relance.',
+      'Muitos livreiros duvidaram do plano. Temiam que os livros baratos levassem as pessoas a deixar de comprar os caros. Mas os livros de bolso venderam-se em grandes quantidades, e outras editoras depressa seguiram o exemplo. Nos Estados Unidos, a Pocket Books começou a vender livros de bolso em 1939, e durante a Segunda Guerra Mundial foram impressos milhões de pequenos livros especialmente para os soldados.',
+      'Hoje, os livros de bolso são tão comuns que é fácil esquecer como pareceram novos. Permitiram que muito mais pessoas tivessem livros seus em vez de apenas os pedirem emprestados, e que levassem um romance inteiro no bolso do casaco.'
+    ],
+    summary: 'Os livros de bolso, popularizados pela Penguin a partir de 1935, tornaram os livros bem escritos baratos o suficiente para muitas pessoas os terem e levarem consigo.',
+    questions: {
+      q1: {
+        q: 'Qual é a ideia principal do texto?',
+        a: ['As capas da Penguin eram laranja e verdes.', 'É um pormenor do parágrafo 2, não a ideia principal.'],
+        b: ['Os livros de bolso baratos tornaram normal, para muitas pessoas, ter bons livros.', 'Correto. O texto passa dos livros caros para os livros de bolso que as pessoas podiam ter.'],
+        c: ['Os livreiros tinham razão em temer os livros baratos.', 'O texto diz que os livros de bolso se venderam bem; não diz que o receio se confirmou.']
+      },
+      q2: {
+        q: 'O que indicava a cor de uma capa da Penguin?',
+        a: ['A idade do livro.', 'O texto não diz isto.'],
+        b: ['O preço do livro.', 'O texto liga a cor ao género do livro, não ao preço.'],
+        c: ['O género do livro, por exemplo ficção ou policial.', 'Correto. O parágrafo 2 explica o código de cores.']
+      },
+      q3: {
+        q: 'Porque é que muitos livreiros duvidaram do plano?',
+        a: ['Temiam que as pessoas deixassem de comprar livros caros.', 'Correto. O parágrafo 3 dá esta razão.'],
+        b: ['Achavam que as capas de papel se rasgariam depressa.', 'O texto não refere isto.'],
+        c: ['Não gostavam das cores.', 'O texto não diz isto.']
+      },
+      q4: {
+        q: 'Como está organizado o texto?',
+        a: ['Como uma comparação de preços entre duas editoras.', 'Não se comparam preços.'],
+        b: ['Como uma lista de romances de bolso famosos.', 'No texto não é referido nenhum título.'],
+        c: ['Por ordem cronológica: livros caros, início da Penguin, expansão do livro de bolso, hoje.', 'Correto. O texto avança no tempo e termina no presente.']
+      }
+    }
+  },
+  bridges: {
+    title: 'Quando uma ponte começa a balançar',
+    paragraphs: [
+      'As pontes não são totalmente rígidas. O vento, o trânsito e até os passos fazem-nas mexer um pouco, e os engenheiros projetam-nas para que possam fletir ligeiramente sem danos. Normalmente o movimento é demasiado pequeno para se notar.',
+      'Às vezes, porém, uma ponte mexe-se de forma que se sente. Quando a Millennium Bridge, uma ponte pedonal sobre o rio Tamisa, em Londres, abriu em 2000, começou a balançar de um lado para o outro quando as multidões a atravessavam. Cada passo empurra ligeiramente para o lado. Quando a ponte se mexia, as pessoas ajustavam o andar para manter o equilíbrio, e muitas começaram a pisar ao ritmo do balanço – o que empurrava a ponte ainda mais.',
+      'A ponte foi fechada dois dias depois da abertura. Os engenheiros não a reconstruíram. Em vez disso, acrescentaram amortecedores: dispositivos que absorvem o movimento, como os amortecedores de um carro. Alguns funcionam como grandes pistões cheios de líquido; outros são pesos montados em molas que se movem contra o balanço. A ponte reabriu em 2002 e desde então mantém-se estável.',
+      'A lição não foi que a ponte era fraca, mas que as pessoas e as estruturas se podem influenciar de formas difíceis de prever. Por isso, hoje os engenheiros têm em conta a forma como as multidões caminham, e não apenas quanto pesam.'
+    ],
+    summary: 'A Millennium Bridge balançava porque os peões acertavam o passo com o seu movimento; os amortecedores resolveram o problema e mostraram que é preciso ter em conta como as multidões se movem.',
+    questions: {
+      q1: {
+        q: 'Qual é a ideia principal do texto?',
+        a: ['Pessoas que caminham ao ritmo de uma ponte que balança podem aumentar o balanço, e os amortecedores podem impedi-lo.', 'Correto. O texto explica a causa e a solução.'],
+        b: ['A Millennium Bridge estava mal construída e teve de ser substituída.', 'Não. Não foi reconstruída; acrescentaram-se amortecedores, e o texto diz que não era fraca.'],
+        c: ['Todas as pontes são perigosas com vento forte.', 'O texto diz que os pequenos movimentos são normais e inofensivos.']
+      },
+      q2: {
+        q: 'Porque é que o balanço aumentou?',
+        a: ['O vento sobre o rio ficou mais forte.', 'O texto não culpa o vento; a causa foi a forma de andar.'],
+        b: ['A ponte suportava peso a mais.', 'O texto culpa o ritmo dos passos, não o peso.'],
+        c: ['Muitas pessoas começaram a pisar ao ritmo do balanço.', 'Correto. O parágrafo 2 descreve isto.']
+      },
+      q3: {
+        q: 'O que fizeram os engenheiros?',
+        a: ['Reconstruíram a ponte com um aço mais resistente.', 'O texto diz que não a reconstruíram.'],
+        b: ['Acrescentaram amortecedores que absorvem o movimento.', 'Correto. O parágrafo 3 descreve os amortecedores.'],
+        c: ['Passaram a deixar atravessar apenas poucas pessoas de cada vez.', 'O texto não refere isto.']
+      },
+      q4: {
+        q: 'Que pormenor apoia melhor a afirmação de que os amortecedores resultaram?',
+        a: ['A ponte abriu em 2000.', 'Foi quando o problema começou, não uma prova da solução.'],
+        b: ['Os amortecedores funcionam como os de um carro.', 'Isto explica como funcionam, não se resultaram aqui.'],
+        c: ['A ponte reabriu em 2002 e desde então mantém-se estável.', 'Correto. O parágrafo 3 dá o resultado depois de acrescentados os amortecedores.']
+      }
+    }
+  },
+  longitude: {
+    title: 'Saber onde se está no mar',
+    paragraphs: [
+      'Durante séculos, os marinheiros souberam calcular a que distância estavam para norte ou para sul. A altura do sol ao meio-dia, ou da Estrela Polar à noite, dava-lhes a latitude. Saber a que distância estavam para leste ou para oeste – a longitude – era muito mais difícil, e os navios que se enganavam podiam encalhar em rochedos ou ficar sem mantimentos longe de terra.',
+      'O problema era, na verdade, um problema de tempo. A Terra roda 15 graus por hora: se um navegador soubesse, no mesmo instante, a hora local a bordo e a hora do porto de origem, a diferença dava-lhe a longitude. A hora local obtinha-se pelo sol. O difícil era manter a hora do porto: os relógios de pêndulo da época não funcionavam num navio a balançar, e as mudanças de temperatura faziam-nos adiantar ou atrasar.',
+      'Em 1714, o Parlamento britânico ofereceu uma grande recompensa por uma solução prática. Muitos especialistas esperavam que a resposta viesse do céu: medindo o ângulo entre a Lua e certas estrelas e comparando-o com tabelas impressas, um navegador podia calcular a hora do porto. Este método das «distâncias lunares» funcionava, mas exigia medições cuidadosas e cálculos longos.',
+      'John Harrison, um relojoeiro autodidata, escolheu outro caminho. Ao longo de várias décadas construiu uma série de relógios marítimos. O quarto, que parecia um grande relógio de bolso, manteve a hora de forma notável numa viagem de teste às Caraíbas em 1761–62. Mesmo assim, Harrison passou anos em disputa com os responsáveis pela recompensa antes de ser pago.',
+      'Durante muito tempo, os dois métodos foram usados lado a lado, porque os novos relógios marítimos, chamados cronómetros, eram caros. Quando ficaram mais baratos, ao longo do século XIX, passaram a fazer parte do equipamento normal de um navio.'
+    ],
+    summary: 'Encontrar a longitude no mar dependia de saber a hora do porto de origem e, depois de anos de concorrência entre dois métodos, os relógios marítimos precisos tornaram-se a solução padrão.',
+    questions: {
+      q1: {
+        q: 'Qual é a ideia principal do texto?',
+        a: ['Antes dos satélites, os marinheiros nunca conseguiam saber a sua posição.', 'O texto descreve dois métodos que funcionavam.'],
+        b: ['Encontrar a longitude era um problema de medir o tempo, resolvido ao longo de anos com tabelas de estrelas e relógios marítimos.', 'Correto. O texto explica o problema e como os dois métodos o abordaram.'],
+        c: ['Harrison foi tratado injustamente pelo Parlamento.', 'A disputa é um pormenor, não a ideia principal.'],
+        d: ['A latitude é mais difícil de encontrar do que a longitude.', 'O texto diz o contrário.']
+      },
+      q2: {
+        q: 'Porque é que os relógios comuns falhavam no mar?',
+        a: ['Os pêndulos não funcionavam num navio a balançar e a temperatura alterava o seu andamento.', 'Correto. O parágrafo 2 dá as duas razões.'],
+        b: ['Eram demasiado caros.', 'O custo é referido a propósito dos cronómetros posteriores, não como razão da falha dos relógios comuns.'],
+        c: ['Os marinheiros esqueciam-se de lhes dar corda.', 'O texto não diz isto.']
+      },
+      q3: {
+        q: 'O que comparava o método das distâncias lunares?',
+        a: ['O relógio do navio com um relógio no porto.', 'Essa é a ideia do método dos relógios, não do método lunar.'],
+        b: ['A altura da Estrela Polar com a do sol.', 'Essas medições dão a latitude, como explica o parágrafo 1.'],
+        c: ['O ângulo entre a Lua e as estrelas com tabelas impressas.', 'Correto. O parágrafo 3 descreve isto.']
+      },
+      q4: {
+        q: 'Que papel tem o parágrafo 2 no texto?',
+        a: ['Explica que a longitude é, na verdade, uma questão de tempo, e é nisso que assentam os parágrafos seguintes.', 'Correto. Os dois métodos dos parágrafos 3 e 4 são formas de obter a hora do porto.'],
+        b: ['Conta a vida de Harrison.', 'Esse é o parágrafo 4.'],
+        c: ['Descreve a recompensa oferecida pelo Parlamento.', 'Esse é o parágrafo 3.']
+      },
+      q5: {
+        q: 'Que pormenor prova que o quarto relógio de Harrison funcionava bem?',
+        a: ['Parecia um grande relógio de bolso.', 'A sua forma nada diz sobre a precisão.'],
+        b: ['Harrison passou décadas a construir relógios.', 'O esforço não é prova de resultados.'],
+        c: ['Manteve a hora de forma notável numa viagem de teste às Caraíbas.', 'Correto. O parágrafo 4 relata o resultado do teste.']
+      }
+    }
+  },
+  'tree-rings': {
+    title: 'Ler os anéis de uma árvore',
+    paragraphs: [
+      'Se cortarmos o tronco de uma árvore velha, vemos normalmente um padrão de anéis. Em lugares com estações bem marcadas, uma árvore acrescenta geralmente um anel por ano: madeira clara, de crescimento rápido, na primavera, e madeira mais escura e densa mais tarde. Contar os anéis da casca para dentro dá uma primeira estimativa da idade da árvore.',
+      'Os anéis dizem mais do que a idade. Num ano bom, com chuva e calor suficientes, a árvore forma um anel largo; num ano seco ou frio, o anel é estreito. Por isso, árvores da mesma espécie numa mesma região partilham um padrão semelhante de anéis largos e estreitos, como um código de barras escrito pelo clima.',
+      'Este padrão partilhado é a chave da datação por anéis, chamada dendrocronologia. Os investigadores começam por árvores vivas, cujo anel exterior pertence a um ano conhecido. Depois procuram madeira mais antiga – de edifícios velhos, por exemplo – cujos anéis interiores coincidam com o padrão dos anéis mais antigos das árvores vivas. Passo a passo, amostras que se sobrepõem prolongam o registo para trás. Em algumas regiões, estes registos recuam hoje milhares de anos.',
+      'Contar uma única árvore, porém, não chega. Num ano muito mau, uma árvore pode não formar nenhum anel visível, e uma seca a meio do verão pode produzir algo que parece um anel a mais. É por isso que os investigadores comparam muitas amostras: uma árvore pode enganar, mas muitas árvores juntas revelam a verdadeira sequência.',
+      'A datação por anéis tem servido para saber quando foram construídas casas de madeira, quando foram feitos navios e como era o clima no passado. Tudo começa com um padrão que qualquer pessoa pode ver num cepo.'
+    ],
+    summary: 'Como as árvores de uma região partilham padrões de anéis largos e estreitos, os investigadores podem comparar muitas amostras para datar a madeira com precisão e muito para trás no tempo.',
+    questions: {
+      q1: {
+        q: 'Qual é a ideia principal do texto?',
+        a: ['Padrões de anéis partilhados permitem datar a madeira com precisão, comparando muitas amostras.', 'Correto. O texto conduz a este método e aos seus usos.'],
+        b: ['Contar anéis é a única forma de saber a idade de uma árvore.', 'O texto diz que contar dá apenas uma primeira estimativa e pode enganar.'],
+        c: ['As árvores crescem mais depressa nos anos frios.', 'O texto diz o contrário.'],
+        d: ['Os edifícios antigos são feitos de madeira.', 'Os edifícios antigos são apenas uma fonte de amostras.']
+      },
+      q2: {
+        q: 'O que costuma indicar um anel estreito?',
+        a: ['Que a árvore era jovem.', 'O texto não liga os anéis estreitos à idade.'],
+        b: ['Um ano seco ou frio.', 'Correto. O parágrafo 2 di-lo.'],
+        c: ['Que a árvore foi cortada no inverno.', 'O texto não diz isto.']
+      },
+      q3: {
+        q: 'Porque é que os investigadores começam por árvores vivas?',
+        a: ['Porque as árvores vivas têm mais anéis.', 'Não é essa a razão dada pelo texto.'],
+        b: ['Porque a sua madeira é mais fácil de cortar.', 'O texto não refere isto.'],
+        c: ['Porque o seu anel exterior pertence a um ano conhecido.', 'Correto. O parágrafo 3 apresenta isto como ponto de partida.']
+      },
+      q4: {
+        q: 'O parágrafo 1 diz que uma árvore acrescenta geralmente um anel por ano. Que afirmação posterior mostra que isto nem sempre é verdade?',
+        a: ['As árvores de uma mesma região partilham um padrão semelhante.', 'Isto apoia o método; não limita a regra de um anel por ano.'],
+        b: ['Num ano muito mau pode faltar um anel, ou surgir algo que parece um anel a mais.', 'Correto. O parágrafo 4 descreve estas exceções.'],
+        c: ['Em algumas regiões, os registos recuam milhares de anos.', 'Isto diz respeito à extensão dos registos, não à regra de um anel por ano.']
+      },
+      q5: {
+        q: 'Porque é que comparar muitas amostras é mais fiável do que contar uma só árvore?',
+        a: ['Porque cada árvore regista um ano diferente.', 'As árvores de uma região partilham os mesmos anos; é precisamente por isso que se podem comparar.'],
+        b: ['Porque muitas amostras impressionam mais num relatório.', 'O texto não dá essa razão.'],
+        c: ['Porque uma árvore pode enganar, mas muitas árvores juntas revelam a verdadeira sequência.', 'Correto. O parágrafo 4 explica isto.']
+      }
+    }
+  },
+  'car-free': {
+    title: 'Uma rua sem carros?',
+    paragraphs: [
+      'A Rua das Tílias é uma rua curta com lojas, uma padaria e uma escola primária. Um grupo de moradores propôs fechá-la aos carros durante um teste de três meses no verão, com bancos e floreiras onde agora estacionam carros. Numa reunião pública, as pessoas trouxeram provas a favor e contra.',
+      'O senhor Okafor, que gere a loja de ferragens, opôs-se com firmeza. «Da última vez que a rua foi fechada, para a festa da primavera, as minhas vendas caíram para metade nessa semana», disse. Outros lembraram que tinha chovido quase toda essa semana e que a festa só durou um fim de semana.',
+      'O grupo de moradores apresentou uma petição com 300 assinaturas a favor. Quando questionados, admitiram que as assinaturas tinham sido recolhidas na internet e que não tinham verificado quantas eram de pessoas que vivem ou fazem compras na zona.',
+      'Mais útil foi uma contagem de trânsito feita pela câmara municipal. Num dia útil normal, cerca de 40 por cento dos carros na Rua das Tílias atravessavam-na sem parar, muitos para cortar caminho. Poucos lugares de estacionamento eram usados por clientes das lojas durante mais de uma hora; a maioria era ocupada pelos mesmos carros o dia inteiro.',
+      'A senhora Varga, vereadora, apoiava o teste. «Projetos semelhantes noutras cidades aumentaram o número de pessoas que passam à frente das lojas», disse, «e este teste não custa nada.» Mais tarde, na mesma reunião, referiu que a câmara pagaria os bancos, as floreiras e a nova sinalização.',
+      'No fim, a reunião aprovou um teste, mas com condições. As lojas partilhariam as vendas semanais, a câmara contaria peões e carros antes e durante o teste, e a decisão sobre uma mudança definitiva esperaria pelos números.'
+    ],
+    summary: 'Um bairro pondera provas de qualidade muito desigual sobre uma rua sem carros e acorda um teste com medições antes de decidir.',
+    questions: {
+      q1: {
+        q: 'De que trata principalmente o texto?',
+        a: ['De porque é que as ruas sem carros ajudam sempre as lojas.', 'O texto não chega a essa conclusão; o teste ainda está por fazer.'],
+        b: ['De uma reunião que pondera provas de qualidade desigual e acorda um teste com medições.', 'Correto. O texto conduz a esta decisão no último parágrafo.'],
+        c: ['Da história da festa da primavera.', 'A festa aparece apenas como uma das provas.'],
+        d: ['De um conflito entre a escola e a padaria.', 'Nenhuma das duas participa no debate.']
+      },
+      q2: {
+        q: 'Segundo a contagem da câmara, que parte dos carros apenas atravessava a rua?',
+        a: ['Cerca de metade', 'Metade é a queda de vendas referida pelo senhor Okafor.'],
+        b: ['Cerca de 40 por cento', 'Correto. O parágrafo 4 dá este valor.'],
+        c: ['Cerca de 300', '300 é o número de assinaturas da petição.']
+      },
+      q3: {
+        q: 'Que afirmação é contrariada mais à frente no texto?',
+        a: ['Que a festa só durou um fim de semana.', 'Nada no texto a contraria.'],
+        b: ['Que a rua tem uma escola primária.', 'Nada no texto a contraria.'],
+        c: ['Que o teste não custa nada.', 'Correto. A senhora Varga diz depois que a câmara pagaria bancos, floreiras e sinalização.']
+      },
+      q4: {
+        q: 'Porque é que a prova do senhor Okafor é fraca?',
+        a: ['Porque os comerciantes não podem saber as suas vendas.', 'Podem; o problema é a semana que ele usa para comparar.'],
+        b: ['Porque é uma só semana, durante um evento curto e com mau tempo.', 'Correto. A chuva e a brevidade da festa podem explicar a queda.'],
+        c: ['Porque ele era contra o teste.', 'Ter uma opinião não torna uma prova fraca; o problema é aquilo em que se baseia.']
+      },
+      q5: {
+        q: 'Qual é o problema da petição?',
+        a: ['Ninguém verificou se quem assinou vive ou faz compras na zona.', 'Correto. O parágrafo 3 di-lo.'],
+        b: ['Tinha poucas assinaturas.', 'O número não é o problema que o texto aponta.'],
+        c: ['Era contra o teste.', 'A petição era a favor do teste.']
+      },
+      q6: {
+        q: 'Como está organizado o texto?',
+        a: ['Como uma história contada pelo dono da loja de ferragens.', 'No texto falam várias pessoas.'],
+        b: ['Como uma lista de regras para ruas sem carros.', 'O texto não contém regras.'],
+        c: ['Uma proposta, várias provas e as suas fraquezas, e depois a decisão de medir.', 'Correto. É a ordem dos seis parágrafos.']
+      }
+    }
+  },
+  hiring: {
+    title: 'Duas formas de contratar',
+    paragraphs: [
+      'Um pequeno estúdio de design com doze pessoas precisava de contratar três novos colaboradores. A equipa discutiu duas formas de os escolher. A primeira era a de sempre: duas rondas de entrevistas. A segunda era dar a cada finalista uma tarefa curta e paga, semelhante ao trabalho real, seguida de uma única conversa sobre ela.',
+      'A Lea, responsável pelo escritório, preferia entrevistas e fez um inquérito rápido à equipa. Dez das doze pessoas disseram preferir entrevistas. «A nossa equipa sabe por experiência que as entrevistas funcionam melhor», disse, «e além disso são mais rápidas para todos.»',
+      'O Sam, designer sénior, apontou um problema. Toda a gente no estúdio tinha sido contratada por entrevista, e ninguém tinha alguma vez experimentado a tarefa. O inquérito mostrava aquilo a que as pessoas estavam habituadas, não que método encontrava bons colegas. E quem foi contratado por entrevista é, por definição, alguém com quem as entrevistas funcionaram.',
+      'O Sam tinha uma prova sua: no ano anterior, o estúdio tinha usado uma tarefa em duas contratações, e ambas as pessoas continuavam lá e a trabalhar bem. A Lea respondeu que duas pessoas eram demasiado poucas para provar fosse o que fosse, e que uma delas já tinha feito um estágio no estúdio, pelo que a equipa a conhecia bem antes da tarefa.',
+      'Depois, a equipa olhou para a folha de planeamento. Duas rondas de entrevistas exigiam cerca de cinco horas de trabalho da equipa por candidato; avaliar uma tarefa e ter uma conversa, cerca de três. Por fim, decidiram escrever antecipadamente como é um bom começo nos primeiros seis meses, usar cada método com uma parte dos candidatos e rever os resultados ao fim de um ano – sabendo que poucas contratações não iam resolver a questão de vez.'
+    ],
+    summary: 'Um estúdio de design percebe que o seu inquérito e o seu pequeno caso de sucesso são provas fracas e decide experimentar os dois métodos de contratação com critérios definidos antecipadamente.',
+    questions: {
+      q1: {
+        q: 'De que trata principalmente o texto?',
+        a: ['De porque é que as tarefas pagas são melhores do que as entrevistas.', 'O texto não decide isto.'],
+        b: ['De como escrever um bom anúncio de emprego.', 'O texto não fala de anúncios de emprego.'],
+        c: ['De uma equipa que percebe que as suas provas são fracas e decide testar os dois métodos com critérios definidos antecipadamente.', 'Correto. O texto conduz a esta decisão no último parágrafo.'],
+        d: ['De um desacordo que acaba com o Sam a sair do estúdio.', 'Ninguém sai do estúdio.']
+      },
+      q2: {
+        q: 'Que afirmação é contrariada por números que aparecem mais à frente?',
+        a: ['Que dez das doze pessoas preferiam entrevistas.', 'É o próprio resultado do inquérito; nada o contraria.'],
+        b: ['Que as entrevistas são mais rápidas para todos.', 'Correto. A folha de planeamento mostra cerca de cinco horas por candidato para as entrevistas contra cerca de três para a tarefa.'],
+        c: ['Que o estúdio precisava de três pessoas.', 'Nada no texto contraria isto.']
+      },
+      q3: {
+        q: 'Segundo o Sam, qual é a principal fraqueza do inquérito da Lea?',
+        a: ['Mostra aquilo a que as pessoas estão habituadas, porque todas foram contratadas por entrevista.', 'Correto. O parágrafo 3 explica isto.'],
+        b: ['Era anónimo.', 'O texto não diz isto, e o Sam não o critica.'],
+        c: ['Perguntou a poucas pessoas.', 'O Sam não critica o número de pessoas inquiridas.']
+      },
+      q4: {
+        q: 'Porque é que a prova do Sam sobre as duas contratações do ano anterior é fraca?',
+        a: ['As duas pessoas já tinham saído do estúdio.', 'Ambas continuavam lá e a trabalhar bem.'],
+        b: ['As tarefas não foram pagas.', 'O texto não diz isto.'],
+        c: ['Duas são muito poucas, e uma delas já era bem conhecida da equipa.', 'Correto. A Lea aponta os dois problemas no parágrafo 4.']
+      },
+      q5: {
+        q: 'O que vai a equipa escrever antes de contratar?',
+        a: ['As perguntas das entrevistas.', 'O texto não diz isto.'],
+        b: ['Como é um bom começo nos primeiros seis meses.', 'Correto. O parágrafo 5 di-lo.'],
+        c: ['Os nomes dos melhores candidatos.', 'O texto não diz isto.']
+      },
+      q6: {
+        q: 'Como avança o texto?',
+        a: ['Dois métodos, um inquérito e a sua fraqueza, um pequeno caso de sucesso e a sua fraqueza, depois números sobre o tempo e um teste planeado.', 'Correto. É a ordem dos cinco parágrafos.'],
+        b: ['Dois métodos, uma votação e o vencedor.', 'No texto não há votação.'],
+        c: ['Um guia passo a passo para fazer entrevistas.', 'O texto é um caso, não um guia.']
+      }
+    }
   }
 };

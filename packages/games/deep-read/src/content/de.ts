@@ -262,5 +262,266 @@ export const de: LocaleContent = {
         c: ['Eine Liste von Bibliotheksregeln mit Beispielen.', 'Der Text enthält keine Regeln.']
       }
     }
+  },
+  paperback: {
+    title: 'Das Buch für die Manteltasche',
+    paragraphs: [
+      'Lange Zeit waren die meisten neuen Bücher teuer. Sie hatten feste Einbände und gebundene Seiten, deshalb liehen viele Menschen Bücher in Bibliotheken aus oder lasen gar keine neuen. Billige Bücher mit Papierumschlag gab es zwar schon im 19. Jahrhundert, aber sie galten oft als Wegwerflektüre.',
+      '1935 gründete der britische Verleger Allen Lane den Verlag Penguin Books. Seine Idee war einfach: gut geschriebene Bücher mit Papiereinband, verkauft für etwa den Preis einer Schachtel Zigaretten. Die Umschläge waren schlicht und farblich gekennzeichnet – Orange für Romane, Grün für Krimis –, sodass man die Art des Buches auf einen Blick erkannte.',
+      'Viele Buchhändler zweifelten an dem Plan. Sie fürchteten, billige Bücher würden die Leute davon abhalten, teure zu kaufen. Doch die Taschenbücher verkauften sich in großen Mengen, und andere Verlage zogen bald nach. In den USA begann Pocket Books 1939 mit dem Verkauf von Taschenbüchern, und im Zweiten Weltkrieg wurden Millionen kleiner Taschenbücher eigens für Soldaten gedruckt.',
+      'Heute sind Taschenbücher so selbstverständlich, dass man leicht vergisst, wie neu sie einmal wirkten. Sie machten es viel mehr Menschen möglich, Bücher zu besitzen statt sie nur auszuleihen – und einen ganzen Roman in der Manteltasche mitzunehmen.'
+    ],
+    summary: 'Taschenbücher, ab 1935 durch Penguin populär geworden, machten gut geschriebene Bücher so billig, dass viele Menschen sie besitzen und mitnehmen konnten.',
+    questions: {
+      q1: {
+        q: 'Was ist die Hauptaussage des Textes?',
+        a: ['Die Umschläge von Penguin waren orange und grün.', 'Das ist ein Detail aus Absatz 2, nicht die Hauptaussage.'],
+        b: ['Billige Taschenbücher machten es für viele Menschen normal, gute Bücher zu besitzen.', 'Richtig. Der Text führt von teuren Büchern zu Taschenbüchern, die man besitzen konnte.'],
+        c: ['Die Buchhändler hatten zu Recht Angst vor billigen Büchern.', 'Der Text sagt, dass sich Taschenbücher gut verkauften; er sagt nicht, dass die Befürchtung eintrat.']
+      },
+      q2: {
+        q: 'Was verriet die Farbe eines Penguin-Umschlags?',
+        a: ['Wie alt das Buch war.', 'Das steht nicht im Text.'],
+        b: ['Wie viel das Buch kostete.', 'Der Text verbindet die Farbe mit der Art des Buches, nicht mit dem Preis.'],
+        c: ['Welche Art von Buch es war, etwa Roman oder Krimi.', 'Richtig. Absatz 2 erklärt den Farbcode.']
+      },
+      q3: {
+        q: 'Warum zweifelten viele Buchhändler an dem Plan?',
+        a: ['Sie fürchteten, die Leute würden keine teuren Bücher mehr kaufen.', 'Richtig. Absatz 3 nennt diesen Grund.'],
+        b: ['Sie glaubten, Papierumschläge würden zu schnell reißen.', 'Das wird im Text nicht erwähnt.'],
+        c: ['Ihnen gefielen die Farben nicht.', 'Das steht nicht im Text.']
+      },
+      q4: {
+        q: 'Wie ist der Text aufgebaut?',
+        a: ['Als Preisvergleich zweier Verlage.', 'Es werden keine Preise verglichen.'],
+        b: ['Als Liste berühmter Taschenbuch-Romane.', 'Im Text werden keine Titel genannt.'],
+        c: ['Zeitlich geordnet: teure Bücher, der Start von Penguin, die Verbreitung der Taschenbücher, heute.', 'Richtig. Der Text geht in der Zeit voran und endet in der Gegenwart.']
+      }
+    }
+  },
+  bridges: {
+    title: 'Wenn eine Brücke zu schwanken beginnt',
+    paragraphs: [
+      'Brücken sind nicht völlig starr. Wind, Verkehr und sogar Schritte bringen sie ein wenig in Bewegung, und Ingenieurinnen und Ingenieure planen sie so, dass sie sich leicht biegen können, ohne Schaden zu nehmen. Meist ist die Bewegung viel zu klein, um sie zu bemerken.',
+      'Manchmal bewegt sich eine Brücke aber spürbar. Als die Millennium Bridge, eine Fußgängerbrücke über die Themse in London, im Jahr 2000 eröffnet wurde, begann sie seitlich zu schwanken, sobald Menschenmengen darüberliefen. Jeder Schritt drückt ein wenig zur Seite. Als die Brücke sich bewegte, passten die Menschen ihren Gang an, um das Gleichgewicht zu halten, und viele traten im Takt des Schwankens auf – was die Brücke noch stärker anschob.',
+      'Die Brücke wurde zwei Tage nach der Eröffnung gesperrt. Neu gebaut wurde sie nicht. Stattdessen bekam sie Dämpfer: Vorrichtungen, die Bewegung schlucken, ähnlich wie die Stoßdämpfer eines Autos. Manche arbeiten wie große, mit Flüssigkeit gefüllte Kolben, andere sind schwere Gewichte auf Federn, die sich gegen das Schwanken bewegen. 2002 wurde die Brücke wieder geöffnet, und seitdem steht sie ruhig.',
+      'Die Lehre war nicht, dass die Brücke schwach war. Sie lautete, dass Menschen und Bauwerke sich gegenseitig auf schwer vorhersehbare Weise beeinflussen können – deshalb berücksichtigen Ingenieure heute, wie Menschenmengen gehen, und nicht nur, wie viel sie wiegen.'
+    ],
+    summary: 'Die Millennium Bridge schwankte, weil Fußgänger in den Takt ihrer Bewegung fielen; Dämpfer lösten das Problem und zeigten, dass man beachten muss, wie Menschenmengen sich bewegen.',
+    questions: {
+      q1: {
+        q: 'Was ist die Hauptaussage des Textes?',
+        a: ['Menschen, die im Takt einer schwankenden Brücke gehen, können das Schwanken verstärken, und Dämpfer können das verhindern.', 'Richtig. Der Text erklärt die Ursache und die Lösung.'],
+        b: ['Die Millennium Bridge war schlecht gebaut und musste ersetzt werden.', 'Nein. Sie wurde nicht neu gebaut, sondern bekam Dämpfer, und der Text sagt, sie sei nicht schwach gewesen.'],
+        c: ['Alle Brücken sind bei starkem Wind gefährlich.', 'Der Text sagt, dass kleine Bewegungen normal und harmlos sind.']
+      },
+      q2: {
+        q: 'Warum wurde das Schwanken stärker?',
+        a: ['Der Wind über dem Fluss wurde stärker.', 'Der Text macht nicht den Wind verantwortlich; die Ursache war das Gehen.'],
+        b: ['Die Brücke trug zu viel Gewicht.', 'Der Text nennt den Takt der Schritte als Ursache, nicht das Gewicht.'],
+        c: ['Viele Menschen begannen, im Takt des Schwankens zu gehen.', 'Richtig. Absatz 2 beschreibt das.']
+      },
+      q3: {
+        q: 'Was taten die Ingenieure?',
+        a: ['Sie bauten die Brücke mit stärkerem Stahl neu.', 'Laut Text wurde sie nicht neu gebaut.'],
+        b: ['Sie bauten Dämpfer ein, die die Bewegung schlucken.', 'Richtig. Absatz 3 beschreibt die Dämpfer.'],
+        c: ['Sie ließen nur noch wenige Menschen gleichzeitig auf die Brücke.', 'Das wird im Text nicht erwähnt.']
+      },
+      q4: {
+        q: 'Welches Detail stützt am besten die Aussage, dass die Dämpfer wirkten?',
+        a: ['Die Brücke wurde im Jahr 2000 eröffnet.', 'Damals begann das Problem; das ist kein Beleg für die Lösung.'],
+        b: ['Dämpfer funktionieren wie die Stoßdämpfer eines Autos.', 'Das erklärt, wie Dämpfer funktionieren, nicht, ob sie hier wirkten.'],
+        c: ['Die Brücke wurde 2002 wieder geöffnet und steht seitdem ruhig.', 'Richtig. Absatz 3 berichtet das Ergebnis nach dem Einbau.']
+      }
+    }
+  },
+  longitude: {
+    title: 'Den eigenen Ort auf See finden',
+    paragraphs: [
+      'Jahrhundertelang konnten Seeleute bestimmen, wie weit nördlich oder südlich sie waren. Die Höhe der Sonne zu Mittag oder des Polarsterns in der Nacht ergab ihre geografische Breite. Wie weit östlich oder westlich sie waren – ihre geografische Länge –, war viel schwerer herauszufinden, und Schiffe, die sich dabei irrten, konnten auf Felsen laufen oder fern vom Land ohne Vorräte dastehen.',
+      'Das Problem war eigentlich ein Zeitproblem. Die Erde dreht sich jede Stunde um 15 Grad. Kannte ein Navigator zum selben Zeitpunkt sowohl die Ortszeit auf dem Schiff als auch die Zeit in der Heimat, ergab der Unterschied die Länge. Die Ortszeit ließ sich an der Sonne ablesen. Schwierig war es, die Heimatzeit mitzuführen: Die Pendeluhren jener Zeit funktionierten auf einem schaukelnden Schiff nicht, und Temperaturschwankungen ließen Uhren vor- oder nachgehen.',
+      '1714 setzte das britische Parlament eine hohe Belohnung für eine praktische Lösung aus. Viele Fachleute erwarteten die Antwort vom Himmel: Wer den Winkel zwischen dem Mond und bestimmten Sternen maß und mit gedruckten Tabellen verglich, konnte die Heimatzeit berechnen. Diese Methode der „Monddistanzen“ funktionierte zwar, verlangte aber sorgfältige Messungen und lange Rechnungen.',
+      'John Harrison, ein Uhrmacher, der sich sein Handwerk selbst beigebracht hatte, ging einen anderen Weg. Über mehrere Jahrzehnte baute er eine Reihe von Schiffsuhren. Die vierte, die wie eine große Taschenuhr aussah, ging auf einer Testfahrt in die Karibik 1761–62 bemerkenswert genau. Trotzdem stritt Harrison jahrelang mit den für die Belohnung zuständigen Stellen, bevor er bezahlt wurde.',
+      'Lange wurden beide Methoden nebeneinander genutzt, denn die neuen Schiffsuhren, Chronometer genannt, waren teuer. Als sie im 19. Jahrhundert billiger wurden, gehörten sie bald zur Standardausrüstung eines Schiffes.'
+    ],
+    summary: 'Die Länge auf See zu bestimmen hing davon ab, die Heimatzeit zu kennen; nach Jahren, in denen zwei Methoden konkurrierten, wurden genaue Schiffsuhren zur Standardlösung.',
+    questions: {
+      q1: {
+        q: 'Was ist der Hauptgedanke des Textes?',
+        a: ['Vor den Satelliten konnten Seeleute ihre Position nie bestimmen.', 'Der Text beschreibt zwei Methoden, die funktionierten.'],
+        b: ['Die Länge zu finden war ein Zeitproblem, das über viele Jahre mit Sterntabellen und Schiffsuhren gelöst wurde.', 'Richtig. Der Text erklärt das Problem und wie beide Methoden es angingen.'],
+        c: ['Harrison wurde vom Parlament ungerecht behandelt.', 'Der Streit ist ein Detail, nicht der Hauptgedanke.'],
+        d: ['Die Breite ist schwerer zu bestimmen als die Länge.', 'Der Text sagt das Gegenteil.']
+      },
+      q2: {
+        q: 'Warum versagten gewöhnliche Uhren auf See?',
+        a: ['Pendel funktionierten auf einem schaukelnden Schiff nicht, und die Temperatur veränderte ihren Gang.', 'Richtig. Absatz 2 nennt beide Gründe.'],
+        b: ['Sie waren zu teuer.', 'Die Kosten werden bei den späteren Chronometern erwähnt, nicht als Grund für das Versagen gewöhnlicher Uhren.'],
+        c: ['Die Seeleute vergaßen, sie aufzuziehen.', 'Das steht nicht im Text.']
+      },
+      q3: {
+        q: 'Was verglich die Methode der Monddistanzen?',
+        a: ['Die Schiffsuhr mit einer Uhr in der Heimat.', 'Das ist die Idee der Schiffsuhr-Methode, nicht der Mondmethode.'],
+        b: ['Die Höhe des Polarsterns mit der Höhe der Sonne.', 'Diese Messungen ergeben die Breite, wie Absatz 1 erklärt.'],
+        c: ['Den Winkel zwischen Mond und Sternen mit gedruckten Tabellen.', 'Richtig. Absatz 3 beschreibt das.']
+      },
+      q4: {
+        q: 'Welche Rolle spielt Absatz 2 im Text?',
+        a: ['Er erklärt, dass die Länge eigentlich eine Frage der Zeit ist – darauf bauen die späteren Absätze auf.', 'Richtig. Beide Methoden in den Absätzen 3 und 4 sind Wege, die Heimatzeit zu finden.'],
+        b: ['Er erzählt Harrisons Lebensgeschichte.', 'Das ist Absatz 4.'],
+        c: ['Er beschreibt die Belohnung des Parlaments.', 'Das ist Absatz 3.']
+      },
+      q5: {
+        q: 'Welches Detail belegt, dass Harrisons vierte Uhr gut funktionierte?',
+        a: ['Sie sah aus wie eine große Taschenuhr.', 'Ihre Form sagt nichts über ihre Genauigkeit.'],
+        b: ['Harrison baute jahrzehntelang an Uhren.', 'Aufwand ist kein Beleg für Ergebnisse.'],
+        c: ['Sie ging auf einer Testfahrt in die Karibik bemerkenswert genau.', 'Richtig. Absatz 4 berichtet das Ergebnis des Tests.']
+      }
+    }
+  },
+  'tree-rings': {
+    title: 'Die Ringe eines Baumes lesen',
+    paragraphs: [
+      'Wer den Stamm eines alten Baumes durchsägt, sieht meist ein Muster aus Ringen. In Gegenden mit deutlichen Jahreszeiten bildet ein Baum in der Regel jedes Jahr einen Ring: helles, schnell gewachsenes Holz im Frühjahr und dunkleres, dichteres Holz später im Jahr. Zählt man die Ringe von der Rinde nach innen, erhält man eine erste Schätzung des Alters.',
+      'Die Ringe verraten mehr als das Alter. In einem guten Jahr mit genug Regen und Wärme wächst ein breiter Ring, in einem trockenen oder kalten Jahr ein schmaler. Bäume derselben Art in derselben Gegend haben deshalb ein ähnliches Muster aus breiten und schmalen Ringen – wie einen Strichcode, den das Wetter geschrieben hat.',
+      'Dieses gemeinsame Muster ist der Schlüssel zur Jahrringdatierung, auch Dendrochronologie genannt. Man beginnt mit lebenden Bäumen, deren äußerster Ring zu einem bekannten Jahr gehört. Dann sucht man älteres Holz – etwa aus alten Gebäuden –, dessen innere Ringe zum Muster der ältesten Ringe der lebenden Bäume passen. Schritt für Schritt verlängern sich überlappende Proben immer weiter zurück. In manchen Regionen reichen diese Reihen heute Tausende Jahre zurück.',
+      'Einen einzelnen Baum zu zählen, reicht allerdings nicht. In einem sehr schlechten Jahr bildet ein Baum manchmal gar keinen sichtbaren Ring, und eine Trockenphase mitten im Sommer kann etwas erzeugen, das wie ein zusätzlicher Ring aussieht. Deshalb vergleicht man viele Proben: Ein Baum kann täuschen, viele Bäume zusammen zeigen die wahre Abfolge.',
+      'Mit der Jahrringdatierung hat man herausgefunden, wann Holzhäuser gebaut und Schiffe gefertigt wurden und wie das Klima früher war. Alles beginnt mit einem Muster, das jeder auf einem Baumstumpf sehen kann.'
+    ],
+    summary: 'Weil Bäume einer Region ähnliche Muster aus breiten und schmalen Ringen haben, kann man durch den Vergleich vieler Proben Holz genau und weit zurück datieren.',
+    questions: {
+      q1: {
+        q: 'Was ist der Hauptgedanke des Textes?',
+        a: ['Gemeinsame Ringmuster erlauben es, Holz durch den Vergleich vieler Proben genau zu datieren.', 'Richtig. Der Text führt zu dieser Methode und ihren Anwendungen hin.'],
+        b: ['Ringe zu zählen ist der einzige Weg, das Alter eines Baumes zu bestimmen.', 'Laut Text ergibt Zählen nur eine erste Schätzung und kann täuschen.'],
+        c: ['Bäume wachsen in kalten Jahren schneller.', 'Der Text sagt das Gegenteil.'],
+        d: ['Alte Gebäude bestehen aus Holz.', 'Alte Gebäude sind nur eine Quelle für Proben.']
+      },
+      q2: {
+        q: 'Was zeigt ein schmaler Ring meistens?',
+        a: ['Dass der Baum jung war.', 'Der Text verbindet schmale Ringe nicht mit dem Alter.'],
+        b: ['Ein trockenes oder kaltes Jahr.', 'Richtig. Absatz 2 sagt das.'],
+        c: ['Dass der Baum im Winter gefällt wurde.', 'Das steht nicht im Text.']
+      },
+      q3: {
+        q: 'Warum beginnt man mit lebenden Bäumen?',
+        a: ['Weil lebende Bäume die meisten Ringe haben.', 'Diesen Grund nennt der Text nicht.'],
+        b: ['Weil ihr Holz leichter zu schneiden ist.', 'Das wird im Text nicht erwähnt.'],
+        c: ['Weil ihr äußerster Ring zu einem bekannten Jahr gehört.', 'Richtig. Absatz 3 nennt das als Ausgangspunkt.']
+      },
+      q4: {
+        q: 'Absatz 1 sagt, dass ein Baum in der Regel jedes Jahr einen Ring bildet. Welche spätere Aussage zeigt, dass das nicht immer stimmt?',
+        a: ['Bäume derselben Gegend haben ein ähnliches Muster.', 'Das stützt die Methode, schränkt die Ein-Ring-Regel aber nicht ein.'],
+        b: ['In einem sehr schlechten Jahr fehlt manchmal ein Ring, oder es entsteht etwas, das wie ein zusätzlicher Ring aussieht.', 'Richtig. Absatz 4 beschreibt diese Ausnahmen.'],
+        c: ['In manchen Regionen reichen die Reihen Tausende Jahre zurück.', 'Das betrifft die Länge der Reihen, nicht die Ein-Ring-Regel.']
+      },
+      q5: {
+        q: 'Warum ist der Vergleich vieler Proben verlässlicher als das Zählen eines Baumes?',
+        a: ['Weil jeder Baum ein anderes Jahr aufzeichnet.', 'Bäume einer Region teilen dieselben Jahre; gerade deshalb lassen sie sich vergleichen.'],
+        b: ['Weil viele Proben in einem Bericht eindrucksvoller aussehen.', 'Einen solchen Grund nennt der Text nicht.'],
+        c: ['Weil ein Baum täuschen kann, viele Bäume zusammen aber die wahre Abfolge zeigen.', 'Richtig. Absatz 4 erklärt das.']
+      }
+    }
+  },
+  'car-free': {
+    title: 'Eine Straße ohne Autos?',
+    paragraphs: [
+      'Die Lindenstraße ist eine kurze Straße mit Läden, einer Bäckerei und einer Grundschule. Eine Gruppe von Anwohnern hat vorgeschlagen, sie für einen dreimonatigen Sommerversuch für Autos zu sperren – mit Bänken und Pflanzkübeln dort, wo jetzt Autos parken. Bei einer öffentlichen Versammlung brachten die Leute Belege dafür und dagegen mit.',
+      'Herr Okafor, der das Eisenwarengeschäft führt, war entschieden dagegen. „Als die Straße zuletzt gesperrt war, für das Frühlingsfest, ist mein Umsatz in dieser Woche um die Hälfte gefallen“, sagte er. Andere wiesen darauf hin, dass es in jener Woche fast durchgehend geregnet hatte und das Fest nur ein Wochenende dauerte.',
+      'Die Anwohnergruppe legte eine Unterschriftenliste mit 300 Unterschriften für den Versuch vor. Auf Nachfrage räumten sie ein, dass die Unterschriften online gesammelt worden waren und sie nicht geprüft hatten, wie viele von Menschen stammten, die in der Gegend wohnen oder einkaufen.',
+      'Nützlicher war eine Verkehrszählung der Stadt. An einem gewöhnlichen Werktag fuhren etwa 40 Prozent der Autos ohne anzuhalten durch die Lindenstraße, viele davon als Abkürzung. Nur wenige Parkplätze wurden von Kundinnen und Kunden länger als eine Stunde genutzt; die meisten belegten den ganzen Tag dieselben Autos.',
+      'Frau Varga, eine Stadträtin, unterstützte den Versuch. „Ähnliche Projekte in anderen Städten haben die Zahl der Menschen erhöht, die an Geschäften vorbeigehen“, sagte sie, „und dieser Versuch kostet nichts.“ Später in der Versammlung erwähnte sie, dass die Stadt die Bänke, die Pflanzkübel und neue Schilder bezahlen werde.',
+      'Am Ende stimmte die Versammlung einem Versuch zu – unter Bedingungen. Die Läden würden ihre wöchentlichen Umsätze offenlegen, die Stadt würde Fußgänger und Autos vor und während des Versuchs zählen, und über eine dauerhafte Änderung würde erst entschieden, wenn die Zahlen vorliegen.'
+    ],
+    summary: 'Eine Nachbarschaft wägt Belege sehr unterschiedlicher Qualität zu einer autofreien Straße ab und einigt sich vor der Entscheidung auf einen Versuch mit Messungen.',
+    questions: {
+      q1: {
+        q: 'Worum geht es in dem Text hauptsächlich?',
+        a: ['Warum autofreie Straßen den Läden immer helfen.', 'Zu diesem Schluss kommt der Text nicht; der Versuch steht noch aus.'],
+        b: ['Um eine Versammlung, die Belege unterschiedlicher Qualität abwägt und sich auf einen Versuch mit Messungen einigt.', 'Richtig. Der Text läuft im letzten Absatz auf diese Entscheidung zu.'],
+        c: ['Um die Geschichte des Frühlingsfests.', 'Das Fest kommt nur als ein Beleg vor.'],
+        d: ['Um einen Streit zwischen der Schule und der Bäckerei.', 'Keine von beiden beteiligt sich an der Debatte.']
+      },
+      q2: {
+        q: 'Welcher Anteil der Autos fuhr laut der städtischen Zählung nur durch die Straße?',
+        a: ['Etwa die Hälfte', 'Die Hälfte ist der Umsatzrückgang, den Herr Okafor nannte.'],
+        b: ['Etwa 40 Prozent', 'Richtig. Absatz 4 nennt diese Zahl.'],
+        c: ['Etwa 300', '300 ist die Zahl der Unterschriften.']
+      },
+      q3: {
+        q: 'Welcher Aussage widerspricht der Text später?',
+        a: ['Dass das Fest nur ein Wochenende dauerte.', 'Nichts im Text widerspricht dem.'],
+        b: ['Dass es in der Straße eine Grundschule gibt.', 'Nichts im Text widerspricht dem.'],
+        c: ['Dass der Versuch nichts kostet.', 'Richtig. Frau Varga sagt später, dass die Stadt Bänke, Pflanzkübel und Schilder bezahlt.']
+      },
+      q4: {
+        q: 'Warum ist Herrn Okafors Beleg schwach?',
+        a: ['Weil Ladenbesitzer ihre Umsätze nicht kennen können.', 'Das können sie; das Problem ist die Woche, die er vergleicht.'],
+        b: ['Weil es nur eine Woche war, während einer kurzen Veranstaltung bei schlechtem Wetter.', 'Richtig. Regen und das kurze Fest könnten den Rückgang erklären.'],
+        c: ['Weil er gegen den Versuch war.', 'Eine Meinung macht einen Beleg nicht schwach; das Problem ist, worauf er beruht.']
+      },
+      q5: {
+        q: 'Was ist das Problem mit der Unterschriftenliste?',
+        a: ['Niemand hat geprüft, ob die Unterzeichnenden in der Gegend wohnen oder einkaufen.', 'Richtig. Absatz 3 sagt das.'],
+        b: ['Sie hatte zu wenige Unterschriften.', 'Die Anzahl ist nicht das Problem, auf das der Text hinweist.'],
+        c: ['Sie war gegen den Versuch.', 'Die Liste war für den Versuch.']
+      },
+      q6: {
+        q: 'Wie ist der Text aufgebaut?',
+        a: ['Als Geschichte, erzählt vom Besitzer des Eisenwarengeschäfts.', 'Im Text kommen mehrere Personen zu Wort.'],
+        b: ['Als Liste von Regeln für autofreie Straßen.', 'Der Text enthält keine Regeln.'],
+        c: ['Ein Vorschlag, mehrere Belege und ihre Schwächen, dann der Beschluss, zu messen.', 'Richtig. Das ist die Reihenfolge der sechs Absätze.']
+      }
+    }
+  },
+  hiring: {
+    title: 'Zwei Wege, neue Leute einzustellen',
+    paragraphs: [
+      'Ein kleines Designbüro mit zwölf Beschäftigten musste drei neue Leute einstellen. Das Team diskutierte zwei Wege, sie auszuwählen. Der erste war der bisher übliche: zwei Runden Vorstellungsgespräche. Der zweite bestand darin, allen in der Endrunde eine kurze, bezahlte Aufgabe zu geben, die echter Arbeit ähnelt, und danach ein Gespräch darüber zu führen.',
+      'Lea, die Büroleiterin, bevorzugte Vorstellungsgespräche und machte eine kurze Umfrage im Team. Zehn der zwölf sagten, sie bevorzugten Gespräche. „Unser Team weiß aus Erfahrung, dass Gespräche am besten funktionieren“, sagte sie, „und sie gehen für alle auch schneller.“',
+      'Sam, ein erfahrener Designer, wies auf ein Problem hin. Alle im Büro waren über Vorstellungsgespräche eingestellt worden, und niemand hatte je den Weg mit der Aufgabe erlebt. Die Umfrage zeigte, woran die Leute gewöhnt waren, nicht, welcher Weg gute Kolleginnen und Kollegen fand. Und wer per Gespräch eingestellt wurde, ist schon per Definition jemand, bei dem Gespräche funktioniert haben.',
+      'Sam hatte einen eigenen Beleg: Im Vorjahr hatte das Büro bei zwei Einstellungen eine Aufgabe genutzt, und beide waren noch da und machten ihre Sache gut. Lea entgegnete, zwei Personen seien viel zu wenige, um etwas zu beweisen, und eine von ihnen habe schon ein Praktikum im Büro gemacht – das Team habe sie also vor der Aufgabe gut gekannt.',
+      'Dann sah sich das Team den Planungsbogen an. Zwei Gesprächsrunden kosteten pro Person etwa fünf Stunden Arbeitszeit des Teams; eine Aufgabe zu prüfen und ein Gespräch zu führen etwa drei. Schließlich einigten sie sich darauf, vorab aufzuschreiben, wie ein guter Start in den ersten sechs Monaten aussieht, beide Wege bei einem Teil der Kandidaten zu nutzen und die Ergebnisse nach einem Jahr zu prüfen – im Wissen, dass wenige Einstellungen die Frage nicht endgültig klären.'
+    ],
+    summary: 'Ein Designbüro erkennt, dass seine Umfrage und seine Erfolgsgeschichte schwache Belege sind, und beschließt, beide Einstellungswege anhand vorab festgelegter Kriterien zu erproben.',
+    questions: {
+      q1: {
+        q: 'Worum geht es in dem Text hauptsächlich?',
+        a: ['Warum bezahlte Aufgaben besser sind als Vorstellungsgespräche.', 'Das entscheidet der Text nicht.'],
+        b: ['Wie man eine gute Stellenanzeige schreibt.', 'Stellenanzeigen kommen im Text nicht vor.'],
+        c: ['Um ein Team, das schwache Belege erkennt und beide Wege anhand vorab festgelegter Kriterien testen will.', 'Richtig. Der Text läuft im letzten Absatz auf diese Entscheidung zu.'],
+        d: ['Um einen Streit, der damit endet, dass Sam das Büro verlässt.', 'Niemand verlässt das Büro.']
+      },
+      q2: {
+        q: 'Welcher Behauptung widersprechen spätere Zahlen im Text?',
+        a: ['Dass zehn von zwölf Beschäftigten Gespräche bevorzugten.', 'Das ist das Umfrageergebnis selbst; nichts widerspricht ihm.'],
+        b: ['Dass Gespräche für alle schneller gehen.', 'Richtig. Laut Planungsbogen kosten Gespräche etwa fünf Stunden pro Person, die Aufgabe etwa drei.'],
+        c: ['Dass das Büro drei neue Leute brauchte.', 'Nichts im Text widerspricht dem.']
+      },
+      q3: {
+        q: 'Was ist laut Sam die größte Schwäche von Leas Umfrage?',
+        a: ['Sie zeigt, woran die Leute gewöhnt sind, weil alle per Gespräch eingestellt wurden.', 'Richtig. Absatz 3 erklärt das.'],
+        b: ['Sie war anonym.', 'Das steht nicht im Text, und Sam kritisiert es nicht.'],
+        c: ['Sie fragte zu wenige Leute.', 'Sam kritisiert nicht die Zahl der Befragten.']
+      },
+      q4: {
+        q: 'Warum ist Sams Beleg über die zwei Einstellungen im Vorjahr schwach?',
+        a: ['Die beiden hatten das Büro schon verlassen.', 'Beide waren noch da und machten ihre Sache gut.'],
+        b: ['Die Aufgaben waren nicht bezahlt.', 'Das steht nicht im Text.'],
+        c: ['Zwei sind sehr wenige, und eine Person kannte das Team schon gut.', 'Richtig. Lea nennt in Absatz 4 beide Probleme.']
+      },
+      q5: {
+        q: 'Was will das Team vor den Einstellungen aufschreiben?',
+        a: ['Die Fragen für die Gespräche.', 'Das steht nicht im Text.'],
+        b: ['Wie ein guter Start in den ersten sechs Monaten aussieht.', 'Richtig. Absatz 5 sagt das.'],
+        c: ['Die Namen der besten Kandidaten.', 'Das steht nicht im Text.']
+      },
+      q6: {
+        q: 'Wie geht der Text vor?',
+        a: ['Zwei Wege, eine Umfrage und ihre Schwäche, eine kleine Erfolgsgeschichte und ihre Schwäche, dann Zeitangaben und ein geplanter Test.', 'Richtig. Das ist die Reihenfolge der fünf Absätze.'],
+        b: ['Zwei Wege, eine Abstimmung und der Sieger.', 'Im Text gibt es keine Abstimmung.'],
+        c: ['Eine Schritt-für-Schritt-Anleitung für Vorstellungsgespräche.', 'Der Text ist ein Fallbeispiel, keine Anleitung.']
+      }
+    }
   }
 };
