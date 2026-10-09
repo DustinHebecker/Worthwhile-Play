@@ -94,7 +94,7 @@ const formatDate = (app: AppContext, iso: string) => {
   return Number.isNaN(date.getTime()) ? iso : new Intl.DateTimeFormat(app.locale, { dateStyle: 'medium' }).format(date);
 };
 
-const backLink = (app: AppContext) => h('nav', { class: 'breadcrumb' }, h('a', { href: '/decks' }, `${app.t.direction === 'rtl' ? '→' : '←'} ${app.t('decks.back')}`));
+const backLink = (app: AppContext) => h('nav', { class: 'breadcrumb' }, h('a', { href: '/decks' }, `${app.t.direction === 'rtl' ? '→' : '←'} ${app.t('decks.all')}`));
 
 // --- /decks -------------------------------------------------------------------------------
 

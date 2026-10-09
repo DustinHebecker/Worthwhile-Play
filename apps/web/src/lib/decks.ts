@@ -43,8 +43,8 @@ export function userDeckSource(decks: readonly StoredDeck[]): UserDeckSource {
 }
 
 /** Fresh id for an imported deck (random suffix from the platform CSPRNG; `Math.random` is banned). */
-export function newDeckId(title: string, random: (bytes: Uint8Array) => Uint8Array = (b) => crypto.getRandomValues(b)): string {
-  const hex = [...random(new Uint8Array(4))].map((b) => b.toString(16).padStart(2, '0')).join('');
+export function newDeckId(title: string, randomBytes: () => ArrayLike<number> = () => crypto.getRandomValues(new Uint8Array(4))): string {
+  const hex = Array.from(randomBytes(), (b) => b.toString(16).padStart(2, '0')).join('');
   return userDeckId(title, hex);
 }
 

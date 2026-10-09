@@ -2,7 +2,8 @@ import { LOCALE_DEFINITIONS, isSupportedLocale, readContentLanguages, writeConte
 import { h } from '@wp/ui';
 import type { Page } from '../app';
 import { SESSION_NOTE_KEY } from '../config';
-import { clearPreferences } from '../lib/preferences';
+import { loadUserDecks } from '../lib/decks';
+import { clearPreferences, createPreferences } from '../lib/preferences';
 
 /** A small list of common learning languages; content languages are not limited to the 16 UI locales. */
 const CONTENT_LANGUAGES = ['ar', 'cs', 'da', 'de', 'el', 'en', 'es', 'fi', 'fr', 'he', 'hi', 'hu', 'id', 'it', 'ja', 'ko', 'nl', 'no', 'pl', 'pt', 'ro', 'ru', 'sv', 'sw', 'th', 'tr', 'uk', 'vi', 'zh-Hans'];
@@ -74,6 +75,24 @@ export const renderSettings: Page = (main, app) => {
   });
   void refreshSaves();
 
+  // Imported decks are kept when saved games are deleted; they have their own, confirmed control.
+  const decksInfo = h('p', { class: 'wp-muted', 'data-testid': 'decks-info' });
+  const clearDecksButton = h('button', { type: 'button', 'data-testid': 'clear-decks' }, t('settings.clearDecks'));
+  const refreshDecks = async () => {
+    const count = (await loadUserDecks(app.decks)).length;
+    decksInfo.textContent = t('settings.decks', { count });
+    clearDecksButton.disabled = count === 0;
+  };
+  clearDecksButton.addEventListener('click', async () => {
+    if (!confirm(t('settings.clearDecksConfirm'))) return;
+    await (await app.decks).clear();
+    // A remembered "own deck" choice would only fall back to picture pairs; forget it with the decks.
+    createPreferences(storage, 'memory').set('cards', undefined);
+    await refreshDecks();
+    app.announce(t('settings.decksDeleted'));
+  });
+  void refreshDecks();
+
   main.append(
     h('section', { class: 'prose settings' },
       h('h1', {}, t('settings.title')),
@@ -87,7 +106,8 @@ export const renderSettings: Page = (main, app) => {
           contentSelect('translation-language', content.translation, (v) => storage && writeContentLanguages(storage, { translation: v })))
       ),
       h('div', { class: 'field checkbox' }, sessionToggle, h('label', { for: 'session-note' }, t('settings.sessionNote'))),
-      h('div', { class: 'field' }, savesInfo, clearButton)
+      h('div', { class: 'field' }, savesInfo, clearButton),
+      h('div', { class: 'field' }, decksInfo, clearDecksButton, h('a', { href: '/decks' }, t('nav.decks')))
     )
   );
 };

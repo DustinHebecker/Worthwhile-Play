@@ -8,11 +8,12 @@ import {
   writeUiLocale,
   type SupportedLocale
 } from '@wp/localization';
-import { createIndexedDbStore, type SaveStore } from '@wp/persistence';
+import { createIndexedDbDeckStore, createIndexedDbStore, type DeckStore, type SaveStore } from '@wp/persistence';
 import { announce, clear, h } from '@wp/ui';
 import { APP_NAME } from './config';
 import { UI_MESSAGES, type UiKey } from './i18n/ui';
 import { renderAbout } from './pages/about';
+import { renderDeck, renderDeckImport, renderDecks } from './pages/decks';
 import { renderGamePage } from './pages/game';
 import { renderHome } from './pages/home';
 import { renderLegal } from './pages/legal';
@@ -27,6 +28,8 @@ export interface AppContext {
   locale: SupportedLocale;
   t: UiTranslator;
   store: Promise<SaveStore & { persistent: boolean }>;
+  /** Learning decks imported by the user (separate from saves; never deleted together with them). */
+  decks: Promise<DeckStore>;
   navigate: (path: string) => void;
   setLocale: (locale: SupportedLocale) => void;
   announce: (message: string) => void;
@@ -60,6 +63,7 @@ export function startApp(root: HTMLElement): void {
     locale,
     t: undefined as unknown as UiTranslator,
     store: createIndexedDbStore(),
+    decks: createIndexedDbDeckStore(),
     navigate: (path) => navigate(path),
     setLocale: (next) => {
       locale = next;
@@ -90,10 +94,10 @@ export function startApp(root: HTMLElement): void {
     clear(footer);
     nav.setAttribute('aria-label', t('nav.main'));
     const link = (r: Route, label: string) => {
-      const active = r.name === route.name || (r.name === 'home' && route.name === 'game');
+      const active = r.name === route.name || (r.name === 'home' && route.name === 'game') || (r.name === 'decks' && (route.name === 'deck' || route.name === 'deck-import'));
       return h('a', { href: routeHref(r), 'aria-current': active ? 'page' : undefined }, label);
     };
-    nav.append(link({ name: 'home' }, t('nav.home')), link({ name: 'settings' }, t('nav.settings')), link({ name: 'about' }, t('nav.about')));
+    nav.append(link({ name: 'home' }, t('nav.home')), link({ name: 'decks' }, t('nav.decks')), link({ name: 'settings' }, t('nav.settings')), link({ name: 'about' }, t('nav.about')));
     header.append(
       h('a', { class: 'skip-link', href: '#main' }, t('nav.skip')),
       h('a', { class: 'brand', href: '/' }, h('img', { class: 'brand-mark', src: '/logo.png', alt: '', width: 40, height: 40 }), h('span', {}, APP_NAME)),
@@ -150,6 +154,9 @@ export function startApp(root: HTMLElement): void {
     game: (m, a) => renderGamePage(m, a, route as Extract<Route, { name: 'game' }>),
     about: renderAbout,
     settings: renderSettings,
+    decks: renderDecks,
+    deck: (m, a) => renderDeck(m, a, (route as Extract<Route, { name: 'deck' }>).id),
+    'deck-import': renderDeckImport,
     legal: renderLegal,
     'not-found': renderNotFound
   };
