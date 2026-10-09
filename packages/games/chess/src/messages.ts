@@ -99,8 +99,6 @@ const en = {
   'why.kingActivity': 'Activates the king for the endgame.',
   'why.mopUp': 'Drives the lone king towards the edge to prepare checkmate.',
   'why.solid': 'No single reason stands out; the search rated this move best overall.',
-  'mode': 'Mode',
-  'mode.play': 'Play a game',
   'mode.best': 'Find the best move',
   'mode.mate': 'Mate in N',
   'mateN': 'Mate in (moves)',
@@ -114,7 +112,14 @@ const en = {
   'puzzle.mated': 'Checkmate — puzzle solved.',
   'puzzle.wrong': '{move} is not the solution. Try again.',
   'puzzle.refutation': 'The answer {move} shows why:',
-  'puzzle.correct': 'Correct.'
+  'puzzle.correct': 'Correct.',
+  'menu.legend': 'What would you like to play?',
+  'menu.computer': 'Against the computer',
+  'menu.human': 'Two players',
+  'menu.current': 'current',
+  'menu.confirm': 'The current game is not finished. Start a new one anyway?',
+  'menu.confirm.yes': 'Yes, start a new one',
+  'menu.confirm.no': 'Keep playing'
 };
 
 
@@ -211,8 +216,6 @@ const de: Catalogue = {
   'why.kingActivity': 'Aktiviert den König für das Endspiel.',
   'why.mopUp': 'Drängt den einzelnen König an den Rand, um das Matt vorzubereiten.',
   'why.solid': 'Kein einzelner Grund sticht heraus; die Suche bewertete diesen Zug insgesamt am besten.',
-  'mode': 'Modus',
-  'mode.play': 'Partie spielen',
   'mode.best': 'Finde den besten Zug',
   'mode.mate': 'Matt in N',
   'mateN': 'Matt in (Zügen)',
@@ -226,7 +229,14 @@ const de: Catalogue = {
   'puzzle.mated': 'Schachmatt – Rätsel gelöst.',
   'puzzle.wrong': '{move} ist nicht die Lösung. Versuch es noch einmal.',
   'puzzle.refutation': 'Die Antwort {move} zeigt, warum:',
-  'puzzle.correct': 'Richtig.'
+  'puzzle.correct': 'Richtig.',
+  'menu.legend': 'Was möchtest du spielen?',
+  'menu.computer': 'Gegen den Computer',
+  'menu.human': 'Zu zweit',
+  'menu.current': 'aktuell',
+  'menu.confirm': 'Die laufende Partie ist noch nicht beendet. Trotzdem eine neue beginnen?',
+  'menu.confirm.yes': 'Ja, neu beginnen',
+  'menu.confirm.no': 'Weiterspielen'
 };
 
 const nl: Catalogue = {
@@ -320,8 +330,6 @@ const nl: Catalogue = {
   'why.kingActivity': 'Activeert de koning voor het eindspel.',
   'why.mopUp': 'Drijft de eenzame koning naar de rand om mat voor te bereiden.',
   'why.solid': 'Er springt geen enkele reden uit; de zoektocht vond deze zet over het geheel het best.',
-  'mode': 'Modus',
-  'mode.play': 'Partij spelen',
   'mode.best': 'Vind de beste zet',
   'mode.mate': 'Mat in N',
   'mateN': 'Mat in (zetten)',
@@ -335,7 +343,14 @@ const nl: Catalogue = {
   'puzzle.mated': 'Schaakmat – puzzel opgelost.',
   'puzzle.wrong': '{move} is niet de oplossing. Probeer het opnieuw.',
   'puzzle.refutation': 'Het antwoord {move} laat zien waarom:',
-  'puzzle.correct': 'Goed zo.'
+  'puzzle.correct': 'Goed zo.',
+  'menu.legend': 'Wat wil je spelen?',
+  'menu.computer': 'Tegen de computer',
+  'menu.human': 'Met z’n tweeën',
+  'menu.current': 'huidig',
+  'menu.confirm': 'De huidige partij is nog niet afgelopen. Toch een nieuwe beginnen?',
+  'menu.confirm.yes': 'Ja, nieuwe beginnen',
+  'menu.confirm.no': 'Verder spelen'
 };
 
 const es: Catalogue = {
@@ -429,8 +444,6 @@ const es: Catalogue = {
   'why.kingActivity': 'Activa el rey para el final.',
   'why.mopUp': 'Empuja al rey solitario hacia el borde para preparar el mate.',
   'why.solid': 'No destaca un único motivo; la búsqueda valoró esta jugada como la mejor en conjunto.',
-  'mode': 'Modo',
-  'mode.play': 'Jugar una partida',
   'mode.best': 'Encuentra la mejor jugada',
   'mode.mate': 'Mate en N',
   'mateN': 'Mate en (jugadas)',
@@ -444,7 +457,14 @@ const es: Catalogue = {
   'puzzle.mated': 'Jaque mate: problema resuelto.',
   'puzzle.wrong': '{move} no es la solución. Inténtalo de nuevo.',
   'puzzle.refutation': 'La respuesta {move} muestra por qué:',
-  'puzzle.correct': 'Correcto.'
+  'puzzle.correct': 'Correcto.',
+  'menu.legend': '¿Qué quieres jugar?',
+  'menu.computer': 'Contra el ordenador',
+  'menu.human': 'Dos jugadores',
+  'menu.current': 'actual',
+  'menu.confirm': 'La partida actual no ha terminado. ¿Empezar una nueva de todos modos?',
+  'menu.confirm.yes': 'Sí, empezar otra',
+  'menu.confirm.no': 'Seguir jugando'
 };
 
 const fr: Catalogue = {
@@ -538,8 +558,6 @@ const fr: Catalogue = {
   'why.kingActivity': 'Active le roi pour la finale.',
   'why.mopUp': 'Repousse le roi isolé vers le bord pour préparer le mat.',
   'why.solid': 'Aucune raison ne ressort particulièrement ; la recherche a jugé ce coup le meilleur dans l’ensemble.',
-  'mode': 'Mode',
-  'mode.play': 'Jouer une partie',
   'mode.best': 'Trouve le meilleur coup',
   'mode.mate': 'Mat en N',
   'mateN': 'Mat en (coups)',
@@ -553,7 +571,14 @@ const fr: Catalogue = {
   'puzzle.mated': 'Échec et mat — problème résolu.',
   'puzzle.wrong': '{move} n’est pas la solution. Essaie encore.',
   'puzzle.refutation': 'La réponse {move} montre pourquoi :',
-  'puzzle.correct': 'Exact.'
+  'puzzle.correct': 'Exact.',
+  'menu.legend': 'À quoi veux-tu jouer ?',
+  'menu.computer': 'Contre l’ordinateur',
+  'menu.human': 'À deux',
+  'menu.current': 'en cours',
+  'menu.confirm': 'La partie en cours n’est pas terminée. En commencer une nouvelle quand même ?',
+  'menu.confirm.yes': 'Oui, recommencer',
+  'menu.confirm.no': 'Continuer la partie'
 };
 
 const ru: Catalogue = {
@@ -647,8 +672,6 @@ const ru: Catalogue = {
   'why.kingActivity': 'Активирует короля для эндшпиля.',
   'why.mopUp': 'Оттесняет одинокого короля к краю, готовя мат.',
   'why.solid': 'Нет одной главной причины; поиск оценил этот ход как лучший в целом.',
-  'mode': 'Режим',
-  'mode.play': 'Сыграть партию',
   'mode.best': 'Найдите лучший ход',
   'mode.mate': 'Мат в N ходов',
   'mateN': 'Мат за (ходов)',
@@ -662,7 +685,14 @@ const ru: Catalogue = {
   'puzzle.mated': 'Мат — задача решена.',
   'puzzle.wrong': '{move} — не решение. Попробуйте ещё раз.',
   'puzzle.refutation': 'Ответ {move} показывает почему:',
-  'puzzle.correct': 'Верно.'
+  'puzzle.correct': 'Верно.',
+  'menu.legend': 'Во что хотите сыграть?',
+  'menu.computer': 'Против компьютера',
+  'menu.human': 'Вдвоём',
+  'menu.current': 'текущий',
+  'menu.confirm': 'Текущая партия не окончена. Всё равно начать новую?',
+  'menu.confirm.yes': 'Да, начать новую',
+  'menu.confirm.no': 'Продолжить партию'
 };
 
 const zhHans: Catalogue = {
@@ -756,8 +786,6 @@ const zhHans: Catalogue = {
   'why.kingActivity': '在残局中让王活跃起来。',
   'why.mopUp': '把孤王逼向棋盘边缘，为将杀做准备。',
   'why.solid': '没有单一突出的理由；搜索认为这步棋总体最好。',
-  'mode': '模式',
-  'mode.play': '下一盘棋',
   'mode.best': '找出最佳着法',
   'mode.mate': 'N 步杀',
   'mateN': '几步杀',
@@ -771,7 +799,14 @@ const zhHans: Catalogue = {
   'puzzle.mated': '将死——题目完成。',
   'puzzle.wrong': '{move} 不是答案，再试一次。',
   'puzzle.refutation': '对方的应着 {move} 说明了原因：',
-  'puzzle.correct': '正确。'
+  'puzzle.correct': '正确。',
+  'menu.legend': '想玩什么？',
+  'menu.computer': '对战电脑',
+  'menu.human': '双人对弈',
+  'menu.current': '当前',
+  'menu.confirm': '当前对局尚未结束。仍要开始新的一局吗？',
+  'menu.confirm.yes': '是，开始新局',
+  'menu.confirm.no': '继续下棋'
 };
 
 const ko: Catalogue = {
@@ -865,8 +900,6 @@ const ko: Catalogue = {
   'why.kingActivity': '엔드게임을 위해 킹을 활발하게 만듭니다.',
   'why.mopUp': '메이트를 준비하려고 외톨이 킹을 가장자리로 몹니다.',
   'why.solid': '특별히 두드러진 이유는 없지만, 탐색 결과 전체적으로 가장 좋은 수였습니다.',
-  'mode': '모드',
-  'mode.play': '대국하기',
   'mode.best': '최선의 수 찾기',
   'mode.mate': 'N수 메이트',
   'mateN': '메이트까지 (수)',
@@ -880,7 +913,14 @@ const ko: Catalogue = {
   'puzzle.mated': '체크메이트 — 퍼즐을 풀었습니다.',
   'puzzle.wrong': '{move}는 정답이 아닙니다. 다시 해 보세요.',
   'puzzle.refutation': '응수 {move}가 그 이유를 보여 줍니다:',
-  'puzzle.correct': '정답입니다.'
+  'puzzle.correct': '정답입니다.',
+  'menu.legend': '무엇을 하시겠어요?',
+  'menu.computer': '컴퓨터와 대국',
+  'menu.human': '두 사람이 대국',
+  'menu.current': '현재',
+  'menu.confirm': '진행 중인 대국이 아직 끝나지 않았습니다. 그래도 새로 시작할까요?',
+  'menu.confirm.yes': '네, 새로 시작',
+  'menu.confirm.no': '계속 두기'
 };
 
 const ja: Catalogue = {
@@ -974,8 +1014,6 @@ const ja: Catalogue = {
   'why.kingActivity': '終盤に向けてキングを活動させます。',
   'why.mopUp': 'メイトの準備として、孤立したキングを盤の端へ追い込みます。',
   'why.solid': '特に目立つ理由はありませんが、探索の結果、総合的に最善と判断しました。',
-  'mode': 'モード',
-  'mode.play': '対局する',
   'mode.best': '最善手を探す',
   'mode.mate': 'N手メイト',
   'mateN': 'メイトまで（手）',
@@ -989,7 +1027,14 @@ const ja: Catalogue = {
   'puzzle.mated': 'チェックメイト — 問題クリア。',
   'puzzle.wrong': '{move} は正解ではありません。もう一度どうぞ。',
   'puzzle.refutation': '応手 {move} がその理由です：',
-  'puzzle.correct': '正解です。'
+  'puzzle.correct': '正解です。',
+  'menu.legend': '何をプレイしますか？',
+  'menu.computer': 'コンピューターと対局',
+  'menu.human': '二人で対局',
+  'menu.current': '現在',
+  'menu.confirm': '対局はまだ終わっていません。それでも新しく始めますか？',
+  'menu.confirm.yes': 'はい、新しく始める',
+  'menu.confirm.no': '対局を続ける'
 };
 
 const ar: Catalogue = {
@@ -1083,8 +1128,6 @@ const ar: Catalogue = {
   'why.kingActivity': 'ينشّط الملك لنهاية المباراة.',
   'why.mopUp': 'يدفع الملك المنفرد نحو الحافة تمهيدًا للإماتة.',
   'why.solid': 'لا يبرز سبب واحد؛ قيّم البحث هذه النقلة بأنها الأفضل إجمالًا.',
-  'mode': 'الوضع',
-  'mode.play': 'العب مباراة',
   'mode.best': 'اعثر على أفضل نقلة',
   'mode.mate': 'مات في N',
   'mateN': 'مات خلال (نقلات)',
@@ -1098,7 +1141,14 @@ const ar: Catalogue = {
   'puzzle.mated': 'كش مات — تم حل اللغز.',
   'puzzle.wrong': '{move} ليست الحل. حاول مرة أخرى.',
   'puzzle.refutation': 'الرد {move} يوضح السبب:',
-  'puzzle.correct': 'صحيح.'
+  'puzzle.correct': 'صحيح.',
+  'menu.legend': 'ماذا تريد أن تلعب؟',
+  'menu.computer': 'ضد الحاسوب',
+  'menu.human': 'لاعبان',
+  'menu.current': 'الحالي',
+  'menu.confirm': 'المباراة الحالية لم تنتهِ بعد. هل تريد بدء مباراة جديدة رغم ذلك؟',
+  'menu.confirm.yes': 'نعم، ابدأ من جديد',
+  'menu.confirm.no': 'تابع اللعب'
 };
 
 const pt: Catalogue = {
@@ -1192,8 +1242,6 @@ const pt: Catalogue = {
   'why.kingActivity': 'Ativa o rei para o final.',
   'why.mopUp': 'Empurra o rei solitário para a borda para preparar o mate.',
   'why.solid': 'Nenhum motivo isolado se destaca; a busca avaliou este lance como o melhor no conjunto.',
-  'mode': 'Modo',
-  'mode.play': 'Jogar uma partida',
   'mode.best': 'Encontre o melhor lance',
   'mode.mate': 'Mate em N',
   'mateN': 'Mate em (lances)',
@@ -1207,7 +1255,14 @@ const pt: Catalogue = {
   'puzzle.mated': 'Xeque-mate — problema resolvido.',
   'puzzle.wrong': '{move} não é a solução. Tente de novo.',
   'puzzle.refutation': 'A resposta {move} mostra por quê:',
-  'puzzle.correct': 'Correto.'
+  'puzzle.correct': 'Correto.',
+  'menu.legend': 'O que você quer jogar?',
+  'menu.computer': 'Contra o computador',
+  'menu.human': 'Dois jogadores',
+  'menu.current': 'atual',
+  'menu.confirm': 'A partida atual ainda não terminou. Começar uma nova mesmo assim?',
+  'menu.confirm.yes': 'Sim, começar nova',
+  'menu.confirm.no': 'Continuar jogando'
 };
 
 const it: Catalogue = {
@@ -1301,8 +1356,6 @@ const it: Catalogue = {
   'why.kingActivity': 'Attiva il re per il finale.',
   'why.mopUp': 'Spinge il re solitario verso il bordo per preparare il matto.',
   'why.solid': 'Nessun motivo singolo spicca; la ricerca ha valutato questa mossa come la migliore nel complesso.',
-  'mode': 'Modalità',
-  'mode.play': 'Gioca una partita',
   'mode.best': 'Trova la mossa migliore',
   'mode.mate': 'Matto in N',
   'mateN': 'Matto in (mosse)',
@@ -1316,7 +1369,14 @@ const it: Catalogue = {
   'puzzle.mated': 'Scacco matto: problema risolto.',
   'puzzle.wrong': '{move} non è la soluzione. Riprova.',
   'puzzle.refutation': 'La risposta {move} mostra perché:',
-  'puzzle.correct': 'Giusto.'
+  'puzzle.correct': 'Giusto.',
+  'menu.legend': 'A cosa vuoi giocare?',
+  'menu.computer': 'Contro il computer',
+  'menu.human': 'In due',
+  'menu.current': 'in corso',
+  'menu.confirm': 'La partita in corso non è finita. Iniziarne comunque una nuova?',
+  'menu.confirm.yes': 'Sì, iniziane una nuova',
+  'menu.confirm.no': 'Continua a giocare'
 };
 
 const pl: Catalogue = {
@@ -1410,8 +1470,6 @@ const pl: Catalogue = {
   'why.kingActivity': 'Aktywizuje króla na końcówkę.',
   'why.mopUp': 'Spycha samotnego króla na brzeg, przygotowując mata.',
   'why.solid': 'Żaden pojedynczy powód się nie wyróżnia; wyszukiwanie uznało ten ruch za najlepszy w sumie.',
-  'mode': 'Tryb',
-  'mode.play': 'Zagraj partię',
   'mode.best': 'Znajdź najlepszy ruch',
   'mode.mate': 'Mat w N',
   'mateN': 'Mat w (ruchach)',
@@ -1425,7 +1483,14 @@ const pl: Catalogue = {
   'puzzle.mated': 'Szach-mat — zadanie rozwiązane.',
   'puzzle.wrong': '{move} to nie rozwiązanie. Spróbuj jeszcze raz.',
   'puzzle.refutation': 'Odpowiedź {move} pokazuje dlaczego:',
-  'puzzle.correct': 'Dobrze.'
+  'puzzle.correct': 'Dobrze.',
+  'menu.legend': 'W co chcesz zagrać?',
+  'menu.computer': 'Przeciw komputerowi',
+  'menu.human': 'Dwie osoby',
+  'menu.current': 'aktualny',
+  'menu.confirm': 'Bieżąca partia nie jest zakończona. Mimo to rozpocząć nową?',
+  'menu.confirm.yes': 'Tak, zacznij nową',
+  'menu.confirm.no': 'Graj dalej'
 };
 
 const tr: Catalogue = {
@@ -1519,8 +1584,6 @@ const tr: Catalogue = {
   'why.kingActivity': 'Oyun sonu için şahı etkinleştirir.',
   'why.mopUp': 'Matı hazırlamak için yalnız şahı kenara doğru iter.',
   'why.solid': 'Tek bir neden öne çıkmıyor; arama bu hamleyi genel olarak en iyi buldu.',
-  'mode': 'Mod',
-  'mode.play': 'Oyun oyna',
   'mode.best': 'En iyi hamleyi bul',
   'mode.mate': 'N hamlede mat',
   'mateN': 'Mat (hamle sayısı)',
@@ -1534,7 +1597,14 @@ const tr: Catalogue = {
   'puzzle.mated': 'Şah mat — bulmaca çözüldü.',
   'puzzle.wrong': '{move} çözüm değil. Tekrar dene.',
   'puzzle.refutation': '{move} cevabı nedenini gösteriyor:',
-  'puzzle.correct': 'Doğru.'
+  'puzzle.correct': 'Doğru.',
+  'menu.legend': 'Ne oynamak istersin?',
+  'menu.computer': 'Bilgisayara karşı',
+  'menu.human': 'İki kişi',
+  'menu.current': 'şu an',
+  'menu.confirm': 'Mevcut oyun henüz bitmedi. Yine de yeni bir oyun başlatılsın mı?',
+  'menu.confirm.yes': 'Evet, yeni başlat',
+  'menu.confirm.no': 'Oynamaya devam et'
 };
 
 const uk: Catalogue = {
@@ -1628,8 +1698,6 @@ const uk: Catalogue = {
   'why.kingActivity': 'Активізує короля для ендшпілю.',
   'why.mopUp': 'Відтісняє самотнього короля до краю, готуючи мат.',
   'why.solid': 'Немає однієї головної причини; пошук оцінив цей хід як найкращий загалом.',
-  'mode': 'Режим',
-  'mode.play': 'Зіграти партію',
   'mode.best': 'Знайдіть найкращий хід',
   'mode.mate': 'Мат у N ходів',
   'mateN': 'Мат за (ходів)',
@@ -1643,7 +1711,14 @@ const uk: Catalogue = {
   'puzzle.mated': 'Мат — задачу розв’язано.',
   'puzzle.wrong': '{move} — не розв’язок. Спробуйте ще раз.',
   'puzzle.refutation': 'Відповідь {move} показує чому:',
-  'puzzle.correct': 'Правильно.'
+  'puzzle.correct': 'Правильно.',
+  'menu.legend': 'У що хочете зіграти?',
+  'menu.computer': 'Проти комп’ютера',
+  'menu.human': 'Удвох',
+  'menu.current': 'поточний',
+  'menu.confirm': 'Поточна партія ще не закінчена. Однаково почати нову?',
+  'menu.confirm.yes': 'Так, почати нову',
+  'menu.confirm.no': 'Продовжити партію'
 };
 
 const hi: Catalogue = {
@@ -1737,8 +1812,6 @@ const hi: Catalogue = {
   'why.kingActivity': 'अंतिम चरण के लिए राजा को सक्रिय करता है।',
   'why.mopUp': 'मात की तैयारी में अकेले राजा को किनारे की ओर धकेलता है।',
   'why.solid': 'कोई एक कारण अलग से नहीं दिखता; खोज ने इस चाल को कुल मिलाकर सबसे अच्छा माना।',
-  'mode': 'मोड',
-  'mode.play': 'बाज़ी खेलें',
   'mode.best': 'सबसे अच्छी चाल खोजें',
   'mode.mate': 'N चालों में मात',
   'mateN': 'मात (चालों में)',
@@ -1752,7 +1825,14 @@ const hi: Catalogue = {
   'puzzle.mated': 'शह-मात — पहेली हल हो गई।',
   'puzzle.wrong': '{move} हल नहीं है। फिर कोशिश करें।',
   'puzzle.refutation': 'जवाबी चाल {move} कारण दिखाती है:',
-  'puzzle.correct': 'सही।'
+  'puzzle.correct': 'सही।',
+  'menu.legend': 'आप क्या खेलना चाहते हैं?',
+  'menu.computer': 'कंप्यूटर के ख़िलाफ़',
+  'menu.human': 'दो खिलाड़ी',
+  'menu.current': 'वर्तमान',
+  'menu.confirm': 'मौजूदा बाज़ी अभी ख़त्म नहीं हुई है। फिर भी नई शुरू करें?',
+  'menu.confirm.yes': 'हाँ, नई शुरू करें',
+  'menu.confirm.no': 'खेलना जारी रखें'
 };
 
 export const messages = {
