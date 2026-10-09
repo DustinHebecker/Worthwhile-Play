@@ -15,6 +15,7 @@ import {
   type GameMap,
   type Controller,
   type NcState,
+  type OpponentCount,
   type StepEvents
 } from './rules';
 
@@ -32,8 +33,17 @@ import {
  * - strong: advanced, plus a short forward simulation (lookahead) of its best candidate path
  *   changes, assuming everyone keeps their current paths. Possible because the simulation is
  *   deterministic. Joint attacks, head-on fights and platform cover show up in the outcome.
- * - master: longer lookahead, evaluates pairs of changes (plans two steps at once) and in
- *   free-for-all prefers attacking whichever rival is weakest.
+ * - master: more candidates, and its simulations let every faction keep playing (with the advanced
+ *   heuristics) instead of freezing all paths, so plans are judged against the replies they provoke:
+ *   futile trades into a defended node, attacks that a counter path would meet head-on, and gaps
+ *   an over-extended rival leaves open show up as such. It builds its plan step by step (each
+ *   further change is simulated together with the plan so far) and in free-for-all prefers
+ *   attacking whichever rival is weakest.
+ *
+ * Every faction decides on tick 0 (the player can set paths before starting) and then at its own
+ * staggered ticks. With 2 or 3 opponents the levels are tuned separately (FREE_FOR_ALL), because a
+ * free-for-all rewards different things: e.g. strong then uses the reply-aware simulation as well.
+ * Every rival (player or opponent) is treated alike; preferring the weakest one applies to all.
  *
  * Cost is bounded by a fixed simulation budget (units + nodes summed over simulated ticks), never
  * by wall-clock time, so results do not depend on the device.
@@ -99,7 +109,7 @@ const BASE: AiProfile = {
 };
 
 export const PROFILES: Record<Difficulty, AiProfile> = {
-  beginner: { ...BASE, period: 40, actions: 1, hesitation: 0.25, attackLevel: 6, frontierOnly: true, impulsive: 0.45 },
+  beginner: { ...BASE, period: 40, actions: 1, hesitation: 0.1, attackLevel: 6, frontierOnly: true, impulsive: 0.45 },
   advanced: { ...BASE, period: 35, actions: 2, hesitation: 0.2, attackLevel: 12, counter: true, defend: true, aware: true },
   strong: {
     ...BASE,
@@ -120,14 +130,44 @@ export const PROFILES: Record<Difficulty, AiProfile> = {
     defend: true,
     aware: true,
     weakest: true,
-    lookahead: { candidates: 8, horizon: 120, pairs: 3, budget: 160_000, policy: false }
+    lookahead: { candidates: 8, horizon: 120, pairs: 3, budget: 200_000, policy: true, greedy: true }
   }
 };
+
+/**
+ * Adjustments for 2 and 3 opponents (free-for-all), calibrated with a human-like proxy player
+ * (see the tests): beginner acts more slowly, advanced at about the proxy's own pace (so the proxy
+ * gets about its fair share), strong uses reply-aware simulations and goes for the weakest rival,
+ * master decides a little less often (fewer, better-founded changes).
+ */
+export const FREE_FOR_ALL: Record<Difficulty, Record<2 | 3, Partial<AiProfile>>> = {
+  beginner: { 2: { period: 50 }, 3: { period: 60, hesitation: 0.35 } },
+  advanced: { 2: { period: 30, actions: 3 }, 3: { period: 30, actions: 3 } },
+  strong: {
+    2: { weakest: true, lookahead: { candidates: 3, horizon: 120, pairs: 0, budget: 80_000, policy: true } },
+    3: { weakest: true, lookahead: { candidates: 3, horizon: 120, pairs: 0, budget: 80_000, policy: true } }
+  },
+  master: { 2: { period: 15 }, 3: { period: 15 } }
+};
+
+const mixed = new Map<string, AiProfile>();
+/** The profile of `difficulty` with `opponents` opponents (the same object for the same arguments). */
+export function levelProfile(difficulty: Difficulty, opponents: OpponentCount): AiProfile {
+  if (opponents === 1) return PROFILES[difficulty];
+  const key = `${difficulty}:${opponents}`;
+  let profile = mixed.get(key);
+  if (!profile) {
+    profile = { ...PROFILES[difficulty], ...FREE_FOR_ALL[difficulty][opponents] };
+    mixed.set(key, profile);
+  }
+  return profile;
+}
 
 /** The introduction map's opponent: never attacks, only reinforces a node under attack. */
 export const PASSIVE: AiProfile = { ...BASE, period: 30, actions: 1, defend: true, passive: true };
 
-export const profileFor = (s: Pick<NcState, 'difficulty' | 'map'>): AiProfile => (s.map === INTRO_MAP ? PASSIVE : PROFILES[s.difficulty]);
+export const profileFor = (s: Pick<NcState, 'difficulty' | 'map' | 'opponents'>): AiProfile =>
+  s.map === INTRO_MAP ? PASSIVE : levelProfile(s.difficulty, s.opponents);
 
 export interface Command {
   from: number;
@@ -291,7 +331,9 @@ export function options(s: NcState, map: GameMap, faction: number, profile: AiPr
       if (!profile.lookahead || o === faction) continue;
       let worst = -1;
       for (const t of s.out[v]!) if (s.owner[t] !== faction && (worst < 0 || s.level[t]! > s.level[worst]!)) worst = t;
-      if (worst >= 0 && s.level[worst]! > s.level[w]! + 4) add([{ from: v, to: worst }, { from: v, to: w }], score - 20);
+      // Reply-aware levels let the simulation judge any switch to an easier target (armour included).
+      const gap = profile.lookahead.policy && worst >= 0 ? effectiveLevel(map, s, worst) - effectiveLevel(map, s, w) : s.level[worst]! - s.level[w]!;
+      if (worst >= 0 && gap > (profile.lookahead.policy ? 0 : 4)) add([{ from: v, to: worst }, { from: v, to: w }], score - 20);
     }
     // Interior nodes without paths supply the front.
     if (!profile.frontierOnly && !saturated && s.out[v]!.length === 0 && frontier[v]! > 1) {
@@ -519,7 +561,7 @@ export function opponents(observer?: CommandObserver) {
   const cache = new Map<string, ReturnType<typeof controllerFor>>();
   return (s: NcState, map: GameMap): void => {
     const profile = profileFor(s);
-    const key = `${s.map === INTRO_MAP ? 'intro' : s.difficulty}:${map.factions}`;
+    const key = `${s.map === INTRO_MAP ? 'intro' : s.difficulty}:${s.opponents}`;
     let control = cache.get(key);
     if (!control) {
       control = controllerFor([null, profile, profile, profile].slice(0, map.factions), observer);
