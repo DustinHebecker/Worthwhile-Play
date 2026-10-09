@@ -142,7 +142,7 @@ describe('Orbit Links view', () => {
     vi.advanceTimersByTime(1000);
     expect(instance.serialize().tick - paused.tick).toBeGreaterThanOrEqual(17);
     // The same commands at the same ticks reproduce the same state.
-    const replay = createGame(4, 'easy');
+    const replay = createGame(4);
     expect(instance.serialize().units.length).toBeGreaterThan(0);
     expect(replay.tick).toBe(0);
   });
@@ -409,7 +409,7 @@ describe('Orbit Links view', () => {
   it('restores a save from state version 1 as an equivalent match', () => {
     const v1 = createGame(18, { opponents: 2, layout: 1, map: 4 });
     const { opponents: _o, layout: _l, half: _h, hist: _hi, centre: _c, ...rest } = JSON.parse(JSON.stringify(v1)) as NcState;
-    const raw = { ...createSave(game, 18, { ...rest, difficulty: 'medium' }, 'medium'), stateVersion: 1 };
+    const raw = { ...createSave(game, 18, { ...rest, difficulty: 'medium' } as unknown as NcState, 'medium'), stateVersion: 1 };
     const loaded = interpretSave(raw, game);
     expect(loaded.status).toBe('ok');
     if (loaded.status !== 'ok') return;
