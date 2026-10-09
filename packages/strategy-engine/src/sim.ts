@@ -90,6 +90,7 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     delete unit.bumps;
     delete unit.stuck;
     delete unit.stall;
+    delete unit.prev;
     events.push({ t: 'order', tick: t, id: unit.id });
   }
 
@@ -132,7 +133,9 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     if (!r) regionCache.set(layer, (r = regions(w.map, rs, layer, permanent[layer])));
     return r;
   };
-  const intent: Intent = { w, rs, occupied, permanent, coverageOf, end, visible, spottedBy, regionsOf };
+  // Attackers: the cell they aim at (target or its last report), the key for their progress.
+  const aims = new Map<number, number>();
+  const intent: Intent = { w, rs, occupied, permanent, coverageOf, end, visible, spottedBy, regionsOf, aims };
   const goals = new Map<number, number>();
   for (const e of w.entities) {
     const a = arch(e);
@@ -169,7 +172,7 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     if (!step) continue; // cannot happen: the goal is reachable (checked above)
     // No progress along the route for three turns (e.g. stepping aside and back around a
     // patrol, or waiting for a cell that is never free): end the order.
-    if (e.order.type !== 'patrol' && e.order.type !== 'escort' && trackProgress(e, goal, step.remaining) >= STALL_TICKS) {
+    if (e.order.type !== 'patrol' && e.order.type !== 'escort' && trackProgress(e, aims.get(e.id) ?? goal, step.remaining) >= STALL_TICKS) {
       end(e, 'blocked');
       continue;
     }
@@ -202,6 +205,7 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
         continue;
       }
       delete e.bumps;
+      e.prev = cellOf(w.map, e.x, e.y);
       e.x = cell % w.map.w;
       e.y = Math.floor(cell / w.map.w);
       e.mp -= claim.cost;
@@ -340,6 +344,8 @@ interface Intent {
   readonly end: (e: Entity, reason: OrderEndReason) => void;
   /** The side's command coverage, or `undefined` when the ruleset has no command network. */
   readonly coverageOf: (side: number) => Uint8Array | undefined;
+  /** Per attacking unit: the cell it aims at (its progress is measured per aim, not per firing cell). */
+  readonly aims: Map<number, number>;
   /** Regions between permanent walls (see `regions`). */
   readonly regionsOf: (layer: 'ground' | 'air') => Int32Array;
   /** Whether `e` may fire at `target` (fog: spotted by its side or seen by itself). */
@@ -391,6 +397,7 @@ function endOrder(e: Entity, reason: OrderEndReason, tick: number, events: SimEv
   delete e.bumps;
   delete e.stuck;
   delete e.stall;
+  delete e.prev;
   events.push({ t: 'order-ended', tick, id: e.id, reason });
 }
 
@@ -438,10 +445,20 @@ function nextStepTowards(ctx: Intent, e: Entity, a: Archetype, goal: number): { 
   // (Checking only the next cell is not enough: a unit could then step aside, see a free route,
   // step back, and so on for ever.)
   const occupied = ctx.occupied[a.layer];
-  if (!base.some((c) => occupied.has(c))) return { next: base[0] as number, remaining };
-  // A route around the units in the way, if it costs at most DETOUR more (bounded search).
-  const around = findPath(w.map, rs, start, goal, { layer: a.layer, side: e.side, blocked: occupied, maxCost: remaining + DETOUR });
-  return { next: (around && around.length > 0 ? around[0] : base[0]) as number, remaining };
+  let next = base[0] as number;
+  if (base.some((c) => occupied.has(c))) {
+    // A route around the units in the way, if it costs at most DETOUR more (bounded search).
+    const around = findPath(w.map, rs, start, goal, { layer: a.layer, side: e.side, blocked: occupied, maxCost: remaining + DETOUR });
+    if (around && around.length > 0) next = around[0] as number;
+  }
+  // No stepping straight back to the cell just left when another way within DETOUR exists: two
+  // routes that are free in turn (a patrol between them) would otherwise make it pace for ever.
+  if (next === e.prev && next !== goal) {
+    const blocked = new Set(ctx.permanent[a.layer]).add(e.prev);
+    const other = findPath(w.map, rs, start, goal, { layer: a.layer, side: e.side, blocked, maxCost: remaining + DETOUR });
+    if (other && other.length > 0) next = other[0] as number;
+  }
+  return { next, remaining };
 }
 
 /**
@@ -534,6 +551,7 @@ function attackAim(ctx: Intent, e: Entity, a: Archetype, id: number): number | '
   const min = weapon.minRange;
   if (max < min) return 'lost'; // cannot see and hit it at the same time
   const p = at;
+  ctx.aims.set(e.id, cellOf(w.map, p.x, p.y));
   const firing = (c: number): boolean => {
     const d = dist2(c % w.map.w, Math.floor(c / w.map.w), p.x, p.y);
     return d >= min * min && d <= max * max;

@@ -187,6 +187,8 @@ export interface Entity {
    * reached and the ticks since it last fell (see STALL_TICKS).
    */
   stall?: { goal: number; best: number; ticks: number };
+  /** Cell the unit left with its last step (it does not step straight back if it can help it). */
+  prev?: number;
 }
 
 export interface Projectile {

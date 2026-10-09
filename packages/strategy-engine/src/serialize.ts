@@ -76,6 +76,7 @@ export function isValidWorld(value: unknown, ruleset?: Ruleset): value is World 
     (e.hitAt === undefined || isInt(e.hitAt, 0, tick)) &&
     (e.bumps === undefined || isInt(e.bumps, 0, DEADLOCK_TICKS)) &&
     (e.stuck === undefined || isInt(e.stuck, 0, UNREACHABLE_TICKS)) &&
+    (e.prev === undefined || isInt(e.prev, 0, w * h - 1)) &&
     (e.stall === undefined ||
       (isRecord(e.stall) && isInt(e.stall.goal, 0, w * h - 1) && isInt(e.stall.best, 0, 100 * MAX_DIM * MAX_DIM) && isInt(e.stall.ticks, 0, STALL_TICKS)));
   const isProjectile = (p: unknown): p is Projectile =>
