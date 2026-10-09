@@ -417,10 +417,12 @@ Each with options and my recommendation (**★**). Decisions marked **[blocks I1
 |---|---|---|
 | I1 ✅ | Engine core (TDD) | grid, terrain, A*/flow field, entities, tick loop, movement + conflicts, damage/targeting/projectiles, status, serialization, hash; properties P1–P5; mutation on combat |
 | I2 ✅ | Minimal playable map | `games/<id>`: canvas + DOM UI, plan→lock→resolve, Field Exercise, scripted dummy AI; contract + e2e; registry entry |
-| I3 | Command network | **I3a ✅** sources/relays/coverage, commandability, order slots, deploying, P6/P7 · **I3b** doctrines · **I3c** information model (D7); mutation on network |
+| I3 | Command network | **I3a ✅** sources/relays/coverage, commandability, order slots, deploying, P6/P7 · **I3b ✅** doctrines · **I3c** information model (D7); mutation on network |
 | I4 | Electronic warfare | jammer, emitters, tracer/burn-through, EMP status |
 | I5 | AI | observation, strategic + tactical planner, difficulties; P8; AI-vs-AI suite |
 | I6 | Economy/research/maps + balancing | extractors, research tree, symmetric generator + validator (P9), medium map, balancing pass, hot-seat (if D10b) |
+
+I3b notes: standing orders escort/guard, patrol and regroup plus the four doctrine modifiers of § 7; a doctrine travels with an order and costs the same slot. Target priority adds 'weakest' (the previous default) to the § 7 list; 'emitters' follows with electronic warfare (I4). The opponent gives its fighters 'retreat below 25 %'. The map shows patrol (dashed, rings at both ends) and escort (dotted) lines; a click-mode switch picks what the next map click means.
 
 I3a notes: `STRATEGY_RULESET` turns the network on (Tower Defense keeps `BASE_RULESET`); the engine enforces coverage and order slots for both sides, so the opponent obeys the same limits. Each side's Field Exercise force gains a Mast Truck. Saves of state version 1 are migrated to the network rules instead of being discarded.
 

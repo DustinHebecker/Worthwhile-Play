@@ -2,17 +2,25 @@ import {
   archetypeOf,
   cellOf,
   computeNetwork,
+  DEFAULT_DOCTRINE,
   dist2,
   frameIndex,
   inWeaponRange,
   passable,
   validateCommand,
   type Command,
+  type Doctrine,
   type Entity,
   type Network,
   type Ruleset,
   type World
 } from '@wp/strategy-engine';
+
+/** Squared-distance slack within which a truck's current spot counts as good enough. */
+const SPOT_TOLERANCE = 8;
+
+/** Standing doctrine the opponent gives its fighters. */
+const AI_DOCTRINE: Doctrine = { ...DEFAULT_DOCTRINE, retreatBelow: 25 };
 
 /** How far ahead of its Command Post the opponent may set up its relay truck (cells per axis). */
 const RELAY_FORWARD = 4;
@@ -43,8 +51,11 @@ export function planAi(world: World, ruleset: Ruleset, side: number): Command[] 
     }
   }
 
+  // Fighters below the retreat threshold are left to regroup and hold; ordering them back into
+  // the fight would only spend a slot on an order the doctrine is meant to prevent.
+  const retreating = (u: Entity) => u.hp * 100 < (archetypeOf(ruleset, u.kind)?.hp ?? 0) * AI_DOCTRINE.retreatBelow;
   const fighters = own
-    .filter((u) => archetypeOf(ruleset, u.kind)?.weapon && (archetypeOf(ruleset, u.kind)?.speed ?? 0) > 0)
+    .filter((u) => archetypeOf(ruleset, u.kind)?.weapon && (archetypeOf(ruleset, u.kind)?.speed ?? 0) > 0 && !retreating(u))
     .map((u) => ({ u, d: nearestDistance(u, enemies) }))
     .sort((a, b) => a.d - b.d || a.u.id - b.u.id);
   for (const { u: unit } of fighters) {
@@ -56,7 +67,8 @@ export function planAi(world: World, ruleset: Ruleset, side: number): Command[] 
     if (!target) continue;
     if (inWeaponRange(world, ruleset, unit, arch, target) && unit.order.type === 'hold') continue;
     if (unit.order.type === 'attack' && unit.order.target === target.id) continue;
-    commands.push({ side, unit: unit.id, order: { type: 'attack', target: target.id } });
+    // Fighters pull back to regroup when badly damaged, also once out of contact.
+    commands.push({ side, unit: unit.id, order: { type: 'attack', target: target.id }, doctrine: AI_DOCTRINE });
   }
   // Spend order slots only on orders the engine will accept.
   const networks: Network[] = [];
@@ -78,19 +90,30 @@ function relaySpot(world: World, ruleset: Ruleset, side: number, truck: Entity):
   const coverage = computeNetwork(without, ruleset, side).coverage;
   const cells = world.map.w * world.map.h;
   let best: { x: number; y: number; d: number; f: number } | undefined;
+  let here: number | undefined;
   for (let y = 0; y < world.map.h; y++) {
     for (let x = 0; x < world.map.w; x++) {
       const cell = cellOf(world.map, x, y);
       if (coverage[cell] !== 1 || Math.abs(x - post.x) > RELAY_FORWARD || Math.abs(y - post.y) > RELAY_FORWARD) continue;
       if (!passable(world.map, ruleset, x, y, 'ground')) continue;
-      if (world.entities.some((e) => e.id !== truck.id && e.x === x && e.y === y && archetypeOf(ruleset, e.kind)?.layer === 'ground')) continue;
+      // Skip cells held by units that stay (structures, holding units); passing units move on.
+      if (world.entities.some((e) => e.id !== truck.id && e.x === x && e.y === y && staysPut(ruleset, e))) continue;
       const d = dist2(x, y, enemyPost.x, enemyPost.y);
       const f = frameIndex(cell, side, cells);
       if (!best || d < best.d || (d === best.d && f < best.f)) best = { x, y, d, f };
+      if (x === truck.x && y === truck.y) here = d;
     }
   }
+  // A truck already standing on a valid spot nearly as good as the best sets up right there
+  // instead of chasing a cell that another unit freed or took this turn.
+  if (best && here !== undefined && truck.order.type !== 'move' && here <= best.d + SPOT_TOLERANCE) return { x: truck.x, y: truck.y };
   return best && { x: best.x, y: best.y };
 }
+
+const staysPut = (ruleset: Ruleset, e: Entity): boolean => {
+  const arch = archetypeOf(ruleset, e.kind);
+  return arch?.layer === 'ground' && (arch.speed === 0 || e.order.type === 'hold' || e.order.type === 'deploy');
+};
 
 const nearestDistance = (unit: Entity, candidates: readonly Entity[]): number =>
   candidates.reduce((best, e) => Math.min(best, dist2(unit.x, unit.y, e.x, e.y)), Number.POSITIVE_INFINITY);

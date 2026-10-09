@@ -1,7 +1,7 @@
 import { isRecord, normalizeSeed } from '@wp/game-core';
 import { inBounds, passable } from './grid';
 import { isCommandable, type Network } from './network';
-import type { Archetype, Command, Entity, Order, Ruleset, Scenario, World } from './types';
+import { RETREAT_THRESHOLDS, TARGET_PRIORITIES, type Archetype, type Command, type Doctrine, type Entity, type Order, type Ruleset, type Scenario, type World } from './types';
 
 /** Build the initial world for a scenario. Throws on invalid authored content (programmer error). */
 export function createWorld(scenario: Scenario, ruleset: Ruleset): World {
@@ -46,6 +46,17 @@ export function spawn(id: number, side: number, arch: Archetype, x: number, y: n
 export const archetypeOf = (ruleset: Ruleset, kind: string): Archetype | undefined =>
   Object.hasOwn(ruleset.archetypes, kind) ? ruleset.archetypes[kind] : undefined;
 
+/** Structural check of a doctrine. Never throws. */
+export const isValidDoctrine = (v: unknown): v is Doctrine =>
+  isRecord(v) &&
+  (RETREAT_THRESHOLDS as readonly unknown[]).includes(v.retreatBelow) &&
+  (TARGET_PRIORITIES as readonly unknown[]).includes(v.priority) &&
+  typeof v.seekCover === 'boolean' &&
+  typeof v.holdFire === 'boolean';
+
+/** Copy of a validated doctrine without foreign fields. */
+export const normalizeDoctrine = (d: Doctrine): Doctrine => ({ retreatBelow: d.retreatBelow, priority: d.priority, seekCover: d.seekCover, holdFire: d.holdFire });
+
 export const findEntity = (world: World, id: number): Entity | undefined => world.entities.find((e) => e.id === id);
 
 export type CommandCheck =
@@ -64,6 +75,7 @@ export function validateCommand(world: World, ruleset: Ruleset, command: Command
   const arch = archetypeOf(ruleset, unit.kind);
   if (!arch) return { ok: false, reason: 'unknown-unit' };
   if (!isCommandable(world, ruleset, unit, networks?.[unit.side])) return { ok: false, reason: 'out-of-contact' };
+  if (command.doctrine !== undefined && !isValidDoctrine(command.doctrine)) return { ok: false, reason: 'bad-order' };
   const order = command.order;
   switch (order.type) {
     case 'hold':
@@ -77,6 +89,21 @@ export function validateCommand(world: World, ruleset: Ruleset, command: Command
       return { ok: true };
     case 'deploy':
       return arch.comms?.needsDeploy ? { ok: true } : { ok: false, reason: 'bad-order' };
+    case 'regroup':
+      return arch.speed > 0 ? { ok: true } : { ok: false, reason: 'immobile' };
+    case 'patrol':
+      if (arch.speed <= 0) return { ok: false, reason: 'immobile' };
+      for (const [x, y] of [[order.x, order.y], [order.rx, order.ry]] as const) {
+        if (!Number.isInteger(x) || !Number.isInteger(y) || !inBounds(world.map, x, y)) return { ok: false, reason: 'out-of-bounds' };
+        if (!passable(world.map, ruleset, x, y, arch.layer)) return { ok: false, reason: 'impassable' };
+      }
+      return { ok: true };
+    case 'escort': {
+      if (arch.speed <= 0) return { ok: false, reason: 'immobile' };
+      const target = findEntity(world, order.target);
+      if (!target || target.side !== unit.side || target.id === unit.id) return { ok: false, reason: 'bad-target' };
+      return { ok: true };
+    }
     case 'attack': {
       if (!arch.weapon) return { ok: false, reason: 'no-weapon' };
       const target = findEntity(world, order.target);
@@ -97,6 +124,12 @@ export function normalizeOrder(order: Order): Order {
       return { type: 'attack', target: order.target };
     case 'deploy':
       return { type: 'deploy' };
+    case 'regroup':
+      return { type: 'regroup' };
+    case 'escort':
+      return { type: 'escort', target: order.target };
+    case 'patrol':
+      return { type: 'patrol', x: order.x, y: order.y, rx: order.rx, ry: order.ry };
     default:
       return { type: 'hold' };
   }

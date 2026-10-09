@@ -28,7 +28,13 @@ archetypeOf(ruleset, kind): Archetype | undefined                    // own-prop
 computeNetwork(world, ruleset, side): { nodes, coverage: Uint8Array, slots }
 isCommandable(world, ruleset, unit, network?): boolean               // always true without commandNetwork
 STRATEGY_RULESET                                                     // BASE_RULESET + commandNetwork: true
+// Doctrines (I3b):
+DEFAULT_DOCTRINE, isValidDoctrine(v), TARGET_PRIORITIES, RETREAT_THRESHOLDS
 ```
+
+  Orders: `hold`, `move`, `attack`, `deploy`, `escort {target}` (stay within 2 cells of a friendly unit/structure), `patrol {x, y, rx, ry}`, `regroup` (nearest covered cell, then hold). A `Command` may carry a `doctrine` (`retreatBelow`, `priority`, `seekCover`, `holdFire`) that replaces the unit's doctrine with the same order slot; units keep following it out of contact. Tower Defense waves can use doctrines for target priority and return fire.
+
+  Movement never ends an order silently: walls are terrain, structures and units that will not leave (holding or deploying); a unit routes around moving units when that costs at most a small detour and otherwise waits behind them. The engine replaces a standing order on its own only with an `order-ended` event and a reason (`arrived`, `occupied`, `unreachable` after `UNREACHABLE_TICKS` without any way, `blocked` after `DEADLOCK_TICKS` of mutual blocking, `lost-target`, `retreat`, `regrouped`).
 
   Rulesets carry `commandNetwork` (orders only reach units in coverage as it was at the start of the batch, at most the connected sources' order slots per side and batch; rejected commands report `out-of-contact`) and `relayHillBonus`. Archetypes carry `comms: { role: 'source' | 'relay', radius, orderSlots, needsDeploy } | null`; the `deploy` order sets a `needsDeploy` node up in one turn (`entity.deploy` counts ticks); `hold` keeps it set up, moving packs it up. `computeNetwork` is O(nodes²) — fine for strategy maps; Tower Defense/hybrids with many relays should add spatial buckets first. Tower Defense can ignore all of this by using `BASE_RULESET` (`commandNetwork: false`), or use relay/support towers as network nodes.
 
