@@ -183,6 +183,59 @@ describe('stack duel view', () => {
     expect(instance.serialize().cursor.x).toBeCloseTo(Math.round(at(150) * 20) / 20, 9);
   });
 
+  const pointer = (type: string, pointerType: string, init: MouseEventInit = {}) => {
+    const event = new MouseEvent(type, { bubbles: true, cancelable: true, ...init });
+    Object.defineProperty(event, 'pointerType', { value: pointerType });
+    return event;
+  };
+
+  it('drops with a mouse click on the board, but never on a touch tap or another mouse button', () => {
+    const { instance, $ } = mount();
+    instance.newGame({ seed: 1, difficulty: 'easy' });
+    $('board').dispatchEvent(pointer('pointerdown', 'touch'));
+    $('board').dispatchEvent(pointer('pointerup', 'touch'));
+    expect(instance.serialize().bodies).toHaveLength(0);
+    $('board').dispatchEvent(pointer('pointerdown', 'mouse', { button: 2 }));
+    $('board').dispatchEvent(pointer('pointerup', 'mouse', { button: 2 }));
+    expect(instance.serialize().bodies).toHaveLength(0);
+    // A release without a press on the board (e.g. a drag that started elsewhere) does nothing either.
+    $('board').dispatchEvent(pointer('pointerup', 'mouse'));
+    expect(instance.serialize().bodies).toHaveLength(0);
+    $('board').dispatchEvent(pointer('pointerdown', 'mouse'));
+    $('board').dispatchEvent(pointer('pointercancel', 'mouse'));
+    expect(instance.serialize().bodies).toHaveLength(0);
+    $('board').dispatchEvent(pointer('pointerdown', 'mouse'));
+    $('board').dispatchEvent(pointer('pointerup', 'mouse'));
+    // The person's stone and the computer's reply.
+    expect(instance.serialize().bodies).toHaveLength(2);
+  });
+
+  it('turns the stone with the mouse wheel, one 15° step per notch, accumulating small trackpad deltas', () => {
+    const { instance, $ } = mount();
+    instance.newGame({ seed: 1, difficulty: 'easy' });
+    const wheel = (deltaY: number, init: WheelEventInit = {}) => {
+      const event = new WheelEvent('wheel', { deltaY, bubbles: true, cancelable: true, ...init });
+      $('board').dispatchEvent(event);
+      return event;
+    };
+    const rot0 = instance.serialize().cursor.rot;
+    expect(wheel(100).defaultPrevented).toBe(true);
+    expect(instance.serialize().cursor.rot).toBe((rot0 + 22) % 24);
+    wheel(-50);
+    expect(instance.serialize().cursor.rot).toBe((rot0 + 23) % 24);
+    for (let i = 0; i < 4; i++) wheel(-12);
+    expect(instance.serialize().cursor.rot).toBe((rot0 + 23) % 24);
+    wheel(-2);
+    expect(instance.serialize().cursor.rot).toBe(rot0);
+    wheel(3, { deltaMode: 1 });
+    expect(instance.serialize().cursor.rot).toBe(rot0);
+    wheel(1, { deltaMode: 1 });
+    expect(instance.serialize().cursor.rot).toBe((rot0 + 23) % 24);
+    // ctrl + wheel stays the browser's page zoom.
+    expect(wheel(500, { ctrlKey: true }).defaultPrevented).toBe(false);
+    expect(instance.serialize().cursor.rot).toBe((rot0 + 23) % 24);
+  });
+
   it('animates the recorded drop without changing the logical state, and catches up on pause', () => {
     vi.useFakeTimers();
     const { instance, key, root, $ } = mount({ reducedMotion: false });

@@ -466,6 +466,7 @@ export function createStackDuel(context: GameContext): GameInstance<StackDuelSta
   };
   const onPointerDown = (event: PointerEvent) => {
     if (anim || state.result !== null) return;
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
     dragging = true;
     boardBox.setPointerCapture?.(event.pointerId);
     setCursor({ x: worldX(event.clientX), rot: state.cursor.rot });
@@ -474,13 +475,32 @@ export function createStackDuel(context: GameContext): GameInstance<StackDuelSta
     if (!dragging && event.pointerType !== 'mouse') return;
     setCursor({ x: worldX(event.clientX), rot: state.cursor.rot });
   };
-  const onPointerUp = () => {
+  const onPointerUp = (event: PointerEvent) => {
+    const pressed = dragging;
     dragging = false;
+    // With a mouse the stone follows the pointer, so a click on the board drops it. Touch only positions
+    // (a tap must never drop by accident); there the Drop button drops.
+    if (pressed && event.type === 'pointerup' && event.pointerType === 'mouse') onDrop();
+  };
+  // The mouse wheel turns the stone by 15° per notch (down = clockwise). Trackpads send many small deltas,
+  // so they are accumulated; ctrl/⌘ + wheel is left to the browser (page zoom).
+  let wheelRest = 0;
+  const WHEEL_NOTCH = 50;
+  const onWheel = (event: WheelEvent) => {
+    if (event.ctrlKey || event.metaKey || anim || state.result !== null) return;
+    event.preventDefault();
+    wheelRest += event.deltaMode === 1 ? event.deltaY * 16 : event.deltaMode === 2 ? event.deltaY * 400 : event.deltaY;
+    while (Math.abs(wheelRest) >= WHEEL_NOTCH) {
+      const step = Math.sign(wheelRest);
+      wheelRest -= step * WHEEL_NOTCH;
+      nudge(0, -step);
+    }
   };
   boardBox.addEventListener('pointerdown', onPointerDown);
   boardBox.addEventListener('pointermove', onPointerMove);
   boardBox.addEventListener('pointerup', onPointerUp);
   boardBox.addEventListener('pointercancel', onPointerUp);
+  boardBox.addEventListener('wheel', onWheel, { passive: false });
 
   /* ---------- Instance ---------- */
   return {
@@ -511,6 +531,7 @@ export function createStackDuel(context: GameContext): GameInstance<StackDuelSta
       boardBox.removeEventListener('pointermove', onPointerMove);
       boardBox.removeEventListener('pointerup', onPointerUp);
       boardBox.removeEventListener('pointercancel', onPointerUp);
+      boardBox.removeEventListener('wheel', onWheel);
       clear(root);
     }
   };

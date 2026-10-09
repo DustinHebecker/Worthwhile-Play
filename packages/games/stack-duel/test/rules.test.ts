@@ -14,6 +14,7 @@ import {
   ROT_STEPS,
   SOLO_GOALS,
   TAIL_STEPS,
+  VERIFY_STEPS,
   VERIFY_TOLERANCE,
   X_LIMIT,
   angleOf,
@@ -30,7 +31,6 @@ import {
   outlineOf,
   piecesLeft,
   playerToMove,
-  runWorld,
   simulateDrop,
   snapX,
   spawnPose,
@@ -284,13 +284,31 @@ describe('dropping', () => {
   it('settled towers stay put when woken cold, and stones never deeply interpenetrate (property)', () => {
     fc.assert(
       fc.property(fc.integer({ min: 0, max: 2 ** 32 - 1 }), fc.array(cursorArb, { minLength: 2, maxLength: 6 }), (seed, cursors) => {
-        const s = playAll(newState(seed, 'hard', 'human'), cursors);
+        let s = newState(seed, 'hard', 'human');
+        let settled = true;
+        for (const c of cursors) {
+          const r = drop(s, c);
+          if (!r) break;
+          s = r.state;
+          settled = r.outcome.settled;
+        }
         if (s.result !== null) return;
+        // One cold restart (all awake, zero velocity, primed contacts) is what the next stone meets.
         const world = buildWorld(s.bodies, true);
         expect(world.maxPenetration()).toBeLessThan(0.03);
-        const after = runWorld(world, s.bodies.map((b) => b.k), { maxSteps: 90 });
-        expect(after.fallen).toEqual([]);
-        expect(maxDisplacement(s.bodies, after.bodies)).toBeLessThan(5 * VERIFY_TOLERANCE);
+        let steps = 0;
+        while (steps < VERIFY_STEPS && !world.allAsleep()) {
+          world.step();
+          steps++;
+        }
+        const woken = s.bodies.map((b, i) => ({ ...b, x: world.bodies[i + 1]!.x, y: world.bodies[i + 1]!.y, a: world.bodies[i + 1]!.a }));
+        expect(woken.some(hasFallen)).toBe(false);
+        // A settled snapshot is guaranteed to come back to rest at once, practically unmoved. Only a drop
+        // that hit the step cap (slow sway on tall towers) may still drift a little.
+        if (settled) {
+          expect(world.allAsleep()).toBe(true);
+          expect(maxDisplacement(s.bodies, woken)).toBeLessThanOrEqual(VERIFY_TOLERANCE);
+        } else expect(maxDisplacement(s.bodies, woken)).toBeLessThan(10 * VERIFY_TOLERANCE);
       }),
       { numRuns: 15 }
     );
