@@ -51,6 +51,9 @@ const TERRAIN_NAMES: Readonly<Record<string, string>> = {
   '^': 'ridge'
 };
 
+/** Automatic order ends worth telling the player (arrivals and regroups are expected outcomes). */
+const REPORTED_ENDS: ReadonlySet<string> = new Set(['occupied', 'unreachable', 'blocked', 'lost-target', 'retreat']);
+
 let instanceCounter = 0;
 
 export function createRelayCommand(context: GameContext): GameInstance<RcState> {
@@ -328,6 +331,10 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
         if (unitById(state, e.id)?.side !== OPPONENT) bumps += 1;
       } else if (e.t === 'destroyed') {
         lines.push(t(e.side === PLAYER ? 'summary.lostUnit' : 'summary.destroyedUnit', { name: unitName(e) }));
+      } else if (e.t === 'order-ended' && REPORTED_ENDS.has(e.reason)) {
+        // Orders the engine ended on its own are always reported for the player's units.
+        const unit = unitById(state, e.id);
+        if (unit?.side === PLAYER) lines.push(t(`summary.ended.${e.reason}`, { name: unitName(unit) }));
       }
     }
     summaryList.append(h('li', {}, t('summary.damage', { dealt, taken })));

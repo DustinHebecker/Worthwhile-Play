@@ -119,7 +119,7 @@ describe('command network (I3a)', () => {
     expect(orderSlots(s)).toBe(before);
   });
 
-  it('the opponent obeys coverage and order slots and gets its relay set up within 4 turns (B1)', () => {
+  it('the opponent obeys coverage and order slots and gets its relay set up by turn 3 (B1)', () => {
     for (const seed of [1, 2, 3]) {
       let s = newGame(seed);
       let setUp = false;
@@ -130,7 +130,7 @@ describe('command network (I3a)', () => {
         s = lockTurn(s);
         const truck = enemy(s).find((e) => e.kind === 'mast-truck');
         if (truck?.deploy === RULESET.ticksPerTurn) setUp = true;
-        if (turn === 3) expect(setUp).toBe(true);
+        if (turn === 2) expect(setUp).toBe(true);
       }
       // Once set up, it stays inside its own coverage and keeps working.
       const truck = enemy(s).find((e) => e.kind === 'mast-truck');

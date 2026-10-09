@@ -180,6 +180,23 @@ describe('Relay Command view', () => {
     expect(($('rc-doctrine-cover') as HTMLInputElement).checked).toBe(true);
   });
 
+  it('reports orders the engine ended on its own in the turn summary', () => {
+    const s = structuredClone(state());
+    const rifle = s.world.entities.find((e) => e.side === PLAYER && e.kind === 'rifles')!;
+    const blocker = s.world.entities.find((e) => e.side === PLAYER && e.kind === 'warden')!;
+    // Send the rifle squad onto the cell of a holding Warden next to it.
+    Object.assign(rifle, { x: blocker.x - 1, y: blocker.y });
+    s.world.entities.sort((a, b) => a.id - b.id);
+    instance.restore(s);
+    click(`rc-unit-${rifle.id}`);
+    const map = $('rc-map');
+    map.getBoundingClientRect = () => ({ left: 0, top: 0, width: 12 * CELL, height: 12 * CELL, right: 12 * CELL, bottom: 12 * CELL, x: 0, y: 0, toJSON: () => ({}) });
+    click(`rc-unit-${rifle.id}`);
+    instance.restore({ ...state(), draft: [{ side: PLAYER, unit: rifle.id, order: { type: 'move', x: blocker.x, y: blocker.y } }] });
+    click('rc-lock');
+    expect($('rc-summary').textContent).toContain(`Rifle Squad ${rifle.id}: the destination is occupied; now holding position.`);
+  });
+
   it('maps pointer clicks on the canvas to cells', () => {
     const unit = firstMobile();
     const map = $('rc-map');

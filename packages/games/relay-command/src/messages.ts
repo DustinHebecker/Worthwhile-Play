@@ -116,6 +116,11 @@ const en = {
   'doctrine.holdFire': 'Return fire only',
   'announce.doctrine': 'New doctrine for {name}.',
   'help.doctrine': 'Doctrines are standing instructions a unit follows on its own, also without contact: when to retreat, what to shoot first, whether to seek cover, whether to fire only when fired upon. Changing a doctrine uses one order, like any other order. Escort keeps a unit within two cells of another; patrol walks between two cells; regroup returns into coverage.',
+  'summary.ended.occupied': '{name}: the destination is occupied; now holding position.',
+  'summary.ended.unreachable': '{name}: no way to the destination; now holding position.',
+  'summary.ended.blocked': '{name}: blocked by other units for three turns; now holding position.',
+  'summary.ended.lost-target': '{name}: target or escorted unit gone; now holding position.',
+  'summary.ended.retreat': '{name}: badly hit, retreating to regroup (doctrine).',
 };
 
 type Catalogue = Record<keyof typeof en, string>;
@@ -232,6 +237,11 @@ const de: Catalogue = {
   'doctrine.holdFire': 'Nur zurückschießen',
   'announce.doctrine': 'Neue Doktrin für {name}.',
   'help.doctrine': 'Doktrinen sind Daueranweisungen, die eine Einheit selbstständig befolgt, auch ohne Funkkontakt: wann sie sich zurückzieht, worauf sie zuerst schießt, ob sie Deckung sucht und ob sie nur zurückschießt. Eine Doktrin zu ändern kostet einen Befehl wie jeder andere Befehl. Begleiten hält eine Einheit höchstens zwei Felder von einer anderen entfernt, Patrouille pendelt zwischen zwei Feldern, Sammeln führt zurück in die Abdeckung.',
+  'summary.ended.occupied': '{name}: Das Ziel ist besetzt; hält jetzt die Stellung.',
+  'summary.ended.unreachable': '{name}: Kein Weg zum Ziel; hält jetzt die Stellung.',
+  'summary.ended.blocked': '{name}: Drei Runden lang von anderen Einheiten blockiert; hält jetzt die Stellung.',
+  'summary.ended.lost-target': '{name}: Ziel oder begleitete Einheit nicht mehr da; hält jetzt die Stellung.',
+  'summary.ended.retreat': '{name}: Schwer getroffen, zieht sich zum Sammeln zurück (Doktrin).',
 };
 
 // Translations other than en/de are AI-assisted and await native-speaker review.
@@ -347,6 +357,11 @@ const nl: Catalogue = {
   'doctrine.holdFire': 'Alleen terugschieten',
   'announce.doctrine': 'Nieuwe doctrine voor {name}.',
   'help.doctrine': 'Doctrines zijn vaste instructies die een eenheid zelfstandig volgt, ook zonder verbinding: wanneer ze zich terugtrekt, waarop ze eerst schiet, of ze dekking zoekt en of ze alleen terugschiet. Een doctrine wijzigen kost één bevel, net als elk ander bevel. Escorteren houdt een eenheid op hoogstens twee vakken van een andere; een patrouille pendelt tussen twee vakken; hergroeperen brengt haar terug binnen het bereik.',
+  'summary.ended.occupied': '{name}: de bestemming is bezet; houdt nu positie.',
+  'summary.ended.unreachable': '{name}: geen weg naar de bestemming; houdt nu positie.',
+  'summary.ended.blocked': '{name}: drie beurten lang door andere eenheden geblokkeerd; houdt nu positie.',
+  'summary.ended.lost-target': '{name}: doel of geëscorteerde eenheid verdwenen; houdt nu positie.',
+  'summary.ended.retreat': '{name}: zwaar geraakt, trekt zich terug om te hergroeperen (doctrine).',
 };
 
 const es: Catalogue = {
@@ -461,6 +476,11 @@ const es: Catalogue = {
   'doctrine.holdFire': 'Solo devolver el fuego',
   'announce.doctrine': 'Doctrina nueva para {name}.',
   'help.doctrine': 'Las doctrinas son instrucciones permanentes que una unidad sigue por su cuenta, también sin contacto: cuándo retirarse, a qué disparar primero, si buscar cobertura y si disparar solo cuando le disparan. Cambiar una doctrina cuesta una orden, como cualquier otra orden. Escoltar mantiene una unidad a dos casillas como máximo de otra; patrullar la hace ir y venir entre dos casillas; reagruparse la devuelve a la cobertura.',
+  'summary.ended.occupied': '{name}: el destino está ocupado; ahora mantiene la posición.',
+  'summary.ended.unreachable': '{name}: no hay camino hasta el destino; ahora mantiene la posición.',
+  'summary.ended.blocked': '{name}: bloqueada por otras unidades durante tres turnos; ahora mantiene la posición.',
+  'summary.ended.lost-target': '{name}: el objetivo o la unidad escoltada ya no está; ahora mantiene la posición.',
+  'summary.ended.retreat': '{name}: muy dañada, se retira para reagruparse (doctrina).',
 };
 
 const fr: Catalogue = {
@@ -575,6 +595,11 @@ const fr: Catalogue = {
   'doctrine.holdFire': 'Riposter seulement',
   'announce.doctrine': 'Nouvelle doctrine pour {name}.',
   'help.doctrine': 'Les doctrines sont des consignes permanentes qu’une unité suit d’elle-même, même sans liaison : quand se replier, sur quoi tirer d’abord, si elle se met à couvert et si elle ne tire qu’en riposte. Changer une doctrine coûte un ordre, comme tout autre ordre. L’escorte maintient une unité à deux cases au plus d’une autre ; la patrouille fait des allers-retours entre deux cases ; le regroupement ramène l’unité dans la couverture.',
+  'summary.ended.occupied': '{name} : la destination est occupée ; tient désormais la position.',
+  'summary.ended.unreachable': '{name} : aucun chemin vers la destination ; tient désormais la position.',
+  'summary.ended.blocked': '{name} : bloquée par d’autres unités pendant trois tours ; tient désormais la position.',
+  'summary.ended.lost-target': '{name} : cible ou unité escortée disparue ; tient désormais la position.',
+  'summary.ended.retreat': '{name} : durement touchée, se replie pour se regrouper (doctrine).',
 };
 const ru: Catalogue = {
   title: 'Relay Command',
@@ -688,6 +713,11 @@ const ru: Catalogue = {
   'doctrine.holdFire': 'Только ответный огонь',
   'announce.doctrine': 'Новая доктрина для {name}.',
   'help.doctrine': 'Доктрины — это постоянные указания, которые подразделение выполняет само, в том числе без связи: когда отступать, по кому стрелять сначала, искать ли укрытие и стрелять ли только в ответ. Изменение доктрины стоит одного приказа, как и любой другой приказ. Сопровождение держит подразделение не дальше двух клеток от другого; патруль ходит между двумя клетками; перегруппировка возвращает в зону связи.',
+  'summary.ended.occupied': '{name}: пункт назначения занят; теперь удерживает позицию.',
+  'summary.ended.unreachable': '{name}: нет пути к пункту назначения; теперь удерживает позицию.',
+  'summary.ended.blocked': '{name}: три хода заблокировано другими подразделениями; теперь удерживает позицию.',
+  'summary.ended.lost-target': '{name}: цель или сопровождаемое подразделение исчезли; теперь удерживает позицию.',
+  'summary.ended.retreat': '{name}: тяжело повреждено, отходит для перегруппировки (доктрина).',
 };
 
 const zhHans: Catalogue = {
@@ -802,6 +832,11 @@ const zhHans: Catalogue = {
   'doctrine.holdFire': '仅还击',
   'announce.doctrine': '{name}的新作战准则。',
   'help.doctrine': '作战准则是部队自行遵循的常设指示，失去联络时同样有效：何时撤退、优先射击什么、是否寻找掩护、是否只在遭到射击时还击。与其他命令一样，更改作战准则需要消耗一条命令。护送让部队与另一部队保持在两格以内；巡逻在两个格子之间往返；重新集结则返回覆盖范围内。',
+  'summary.ended.occupied': '{name}：目的地已被占据；现在原地坚守。',
+  'summary.ended.unreachable': '{name}：无法到达目的地；现在原地坚守。',
+  'summary.ended.blocked': '{name}：连续三回合被其他部队阻挡；现在原地坚守。',
+  'summary.ended.lost-target': '{name}：目标或护送的部队已不存在；现在原地坚守。',
+  'summary.ended.retreat': '{name}：受到重创，撤退集结（作战准则）。',
 };
 const ko: Catalogue = {
   title: 'Relay Command',
@@ -915,6 +950,11 @@ const ko: Catalogue = {
   'doctrine.holdFire': '응사만 하기',
   'announce.doctrine': '{name}의 새 교리.',
   'help.doctrine': '교리는 유닛이 통신이 끊겼을 때도 스스로 따르는 상시 지침입니다. 언제 후퇴할지, 무엇을 먼저 쏠지, 엄폐할지, 공격받았을 때만 응사할지를 정합니다. 교리를 바꾸는 데에는 다른 명령과 마찬가지로 명령 하나가 듭니다. 호위는 유닛을 다른 유닛에서 두 칸 이내로 유지하고, 순찰은 두 칸 사이를 오가며, 재집결은 통신 범위 안으로 돌아갑니다.',
+  'summary.ended.occupied': '{name}: 목적지가 점유되어 있습니다. 이제 위치를 고수합니다.',
+  'summary.ended.unreachable': '{name}: 목적지로 가는 길이 없습니다. 이제 위치를 고수합니다.',
+  'summary.ended.blocked': '{name}: 세 턴 동안 다른 유닛에 막혔습니다. 이제 위치를 고수합니다.',
+  'summary.ended.lost-target': '{name}: 목표 또는 호위 대상 유닛이 사라졌습니다. 이제 위치를 고수합니다.',
+  'summary.ended.retreat': '{name}: 큰 피해를 입어 재집결을 위해 후퇴합니다 (교리).',
 };
 
 const ja: Catalogue = {
@@ -1029,6 +1069,11 @@ const ja: Catalogue = {
   'doctrine.holdFire': '反撃のみ',
   'announce.doctrine': '{name}への新しい行動方針。',
   'help.doctrine': '行動方針は、部隊が通信途絶中も自ら従う常設の指示です。いつ撤退するか、何を優先して撃つか、遮蔽を取るか、撃たれたときだけ反撃するかを決めます。行動方針の変更には、ほかの命令と同じく命令を1つ使います。護衛は部隊を別の部隊から2マス以内に保ち、巡回は2つのマスの間を往復し、再集結は通信範囲内へ戻ります。',
+  'summary.ended.occupied': '{name}：目的地がふさがっています。現在地を保持します。',
+  'summary.ended.unreachable': '{name}：目的地への経路がありません。現在地を保持します。',
+  'summary.ended.blocked': '{name}：3ターンの間ほかの部隊にふさがれました。現在地を保持します。',
+  'summary.ended.lost-target': '{name}：目標または護衛対象の部隊がいなくなりました。現在地を保持します。',
+  'summary.ended.retreat': '{name}：大きな損害を受けたため、再集結のため後退します（行動方針）。',
 };
 const ar: Catalogue = {
   title: 'Relay Command',
@@ -1142,6 +1187,11 @@ const ar: Catalogue = {
   'doctrine.holdFire': 'الرد على النيران فقط',
   'announce.doctrine': 'عقيدة جديدة لـ{name}.',
   'help.doctrine': 'العقائد تعليمات دائمة تتبعها الوحدة من تلقاء نفسها، حتى دون اتصال: متى تنسحب، وعلى ماذا تطلق النار أولًا، وهل تبحث عن ساتر، وهل تكتفي بالرد على النيران. تغيير العقيدة يستهلك أمرًا واحدًا مثل أي أمر آخر. المرافقة تُبقي الوحدة على بعد خانتين على الأكثر من وحدة أخرى؛ والدورية تتنقل بين خانتين؛ وإعادة التجمع تعيدها إلى التغطية.',
+  'summary.ended.occupied': '{name}: الوجهة مشغولة؛ تثبت الآن في الموقع.',
+  'summary.ended.unreachable': '{name}: لا طريق إلى الوجهة؛ تثبت الآن في الموقع.',
+  'summary.ended.blocked': '{name}: أعاقتها وحدات أخرى ثلاثة أدوار؛ تثبت الآن في الموقع.',
+  'summary.ended.lost-target': '{name}: الهدف أو الوحدة المرافَقة لم يعد موجودًا؛ تثبت الآن في الموقع.',
+  'summary.ended.retreat': '{name}: أصيبت إصابة بالغة، تنسحب لإعادة التجمع (العقيدة).',
 };
 
 const pt: Catalogue = {
@@ -1256,6 +1306,11 @@ const pt: Catalogue = {
   'doctrine.holdFire': 'Só responder ao fogo',
   'announce.doctrine': 'Doutrina nova para {name}.',
   'help.doctrine': 'Doutrinas são instruções permanentes que uma unidade segue por conta própria, também sem contato: quando recuar, em que atirar primeiro, se deve buscar cobertura e se deve atirar só quando atacada. Mudar uma doutrina custa uma ordem, como qualquer outra ordem. Escoltar mantém uma unidade a no máximo duas casas de outra; patrulhar a faz ir e vir entre duas casas; reagrupar a leva de volta à cobertura.',
+  'summary.ended.occupied': '{name}: o destino está ocupado; agora mantém a posição.',
+  'summary.ended.unreachable': '{name}: não há caminho até o destino; agora mantém a posição.',
+  'summary.ended.blocked': '{name}: bloqueada por outras unidades durante três turnos; agora mantém a posição.',
+  'summary.ended.lost-target': '{name}: o alvo ou a unidade escoltada não existe mais; agora mantém a posição.',
+  'summary.ended.retreat': '{name}: muito atingida, recua para se reagrupar (doutrina).',
 };
 const it: Catalogue = {
   title: 'Relay Command',
@@ -1369,6 +1424,11 @@ const it: Catalogue = {
   'doctrine.holdFire': 'Rispondere solo al fuoco',
   'announce.doctrine': 'Nuova dottrina per {name}.',
   'help.doctrine': 'Le dottrine sono istruzioni permanenti che un’unità segue da sola, anche senza contatto: quando ritirarsi, contro cosa sparare per primo, se cercare copertura e se sparare solo quando viene colpita. Cambiare una dottrina costa un ordine, come qualsiasi altro ordine. La scorta tiene un’unità entro due caselle da un’altra; la pattuglia va avanti e indietro tra due caselle; il raggruppamento la riporta nella copertura.',
+  'summary.ended.occupied': '{name}: la destinazione è occupata; ora mantiene la posizione.',
+  'summary.ended.unreachable': '{name}: nessun percorso verso la destinazione; ora mantiene la posizione.',
+  'summary.ended.blocked': '{name}: bloccata da altre unità per tre turni; ora mantiene la posizione.',
+  'summary.ended.lost-target': '{name}: bersaglio o unità scortata non più presente; ora mantiene la posizione.',
+  'summary.ended.retreat': '{name}: colpita duramente, si ritira per raggrupparsi (dottrina).',
 };
 
 const pl: Catalogue = {
@@ -1483,6 +1543,11 @@ const pl: Catalogue = {
   'doctrine.holdFire': 'Tylko odpowiadać ogniem',
   'announce.doctrine': 'Nowa doktryna dla {name}.',
   'help.doctrine': 'Doktryny to stałe instrukcje, które oddział wykonuje sam, także bez łączności: kiedy się wycofać, do czego strzelać najpierw, czy szukać osłony i czy strzelać tylko w odpowiedzi na ostrzał. Zmiana doktryny kosztuje jeden rozkaz, jak każdy inny rozkaz. Eskorta trzyma oddział najwyżej dwa pola od innego; patrol krąży między dwoma polami; przegrupowanie prowadzi z powrotem w zasięg łączności.',
+  'summary.ended.occupied': '{name}: cel jest zajęty; teraz utrzymuje pozycję.',
+  'summary.ended.unreachable': '{name}: brak drogi do celu; teraz utrzymuje pozycję.',
+  'summary.ended.blocked': '{name}: przez trzy tury blokowany przez inne oddziały; teraz utrzymuje pozycję.',
+  'summary.ended.lost-target': '{name}: cel lub eskortowany oddział zniknął; teraz utrzymuje pozycję.',
+  'summary.ended.retreat': '{name}: ciężko trafiony, wycofuje się, by się przegrupować (doktryna).',
 };
 const tr: Catalogue = {
   title: 'Relay Command',
@@ -1596,6 +1661,11 @@ const tr: Catalogue = {
   'doctrine.holdFire': 'Yalnızca ateşe karşılık ver',
   'announce.doctrine': '{name} için yeni doktrin.',
   'help.doctrine': 'Doktrinler, bir birliğin bağlantı yokken de kendi başına uyduğu kalıcı talimatlardır: ne zaman geri çekileceği, önce neye ateş edeceği, siper arayıp aramayacağı ve yalnızca kendisine ateş edildiğinde karşılık verip vermeyeceği. Bir doktrini değiştirmek, diğer her emir gibi bir emir harcar. Eşlik, bir birliği diğerinden en fazla iki kare uzakta tutar; devriye iki kare arasında gidip gelir; yeniden toplanma kapsam içine geri döndürür.',
+  'summary.ended.occupied': '{name}: hedef nokta dolu; artık mevziyi koruyor.',
+  'summary.ended.unreachable': '{name}: hedef noktaya yol yok; artık mevziyi koruyor.',
+  'summary.ended.blocked': '{name}: üç tur boyunca başka birliklerce engellendi; artık mevziyi koruyor.',
+  'summary.ended.lost-target': '{name}: hedef veya eşlik edilen birlik artık yok; artık mevziyi koruyor.',
+  'summary.ended.retreat': '{name}: ağır hasar aldı, yeniden toplanmak için geri çekiliyor (doktrin).',
 };
 
 const uk: Catalogue = {
@@ -1710,6 +1780,11 @@ const uk: Catalogue = {
   'doctrine.holdFire': 'Лише вогонь у відповідь',
   'announce.doctrine': 'Нова доктрина для {name}.',
   'help.doctrine': 'Доктрини — це постійні вказівки, які підрозділ виконує сам, зокрема без зв’язку: коли відступати, по кому стріляти спершу, чи шукати укриття і чи стріляти лише у відповідь. Зміна доктрини коштує одного наказу, як і будь-який інший наказ. Супровід тримає підрозділ не далі ніж за дві клітинки від іншого; патруль ходить між двома клітинками; перегрупування повертає в зону зв’язку.',
+  'summary.ended.occupied': '{name}: пункт призначення зайнятий; тепер утримує позицію.',
+  'summary.ended.unreachable': '{name}: немає шляху до пункту призначення; тепер утримує позицію.',
+  'summary.ended.blocked': '{name}: три ходи заблоковано іншими підрозділами; тепер утримує позицію.',
+  'summary.ended.lost-target': '{name}: ціль або супроводжуваний підрозділ зникли; тепер утримує позицію.',
+  'summary.ended.retreat': '{name}: тяжко пошкоджено, відходить для перегрупування (доктрина).',
 };
 
 const hi: Catalogue = {
@@ -1824,6 +1899,11 @@ const hi: Catalogue = {
   'doctrine.holdFire': 'सिर्फ़ जवाबी गोलीबारी',
   'announce.doctrine': '{name} के लिए नई युद्ध-नीति।',
   'help.doctrine': 'युद्ध-नीतियाँ स्थायी निर्देश हैं जिन्हें टुकड़ी ख़ुद मानती है, संपर्क न होने पर भी: कब पीछे हटना है, पहले किस पर गोली चलानी है, आड़ लेनी है या नहीं, और क्या सिर्फ़ तभी गोली चलानी है जब उस पर गोली चले। युद्ध-नीति बदलने में किसी भी दूसरे आदेश की तरह एक आदेश लगता है। साथ चलना टुकड़ी को दूसरी टुकड़ी से ज़्यादा से ज़्यादा दो खानों की दूरी पर रखता है; गश्त दो खानों के बीच आती-जाती है; फिर से इकट्ठा होना कवरेज में वापस ले जाता है।',
+  'summary.ended.occupied': '{name}: मंज़िल पर पहले से कोई है; अब जगह पर डटी है।',
+  'summary.ended.unreachable': '{name}: मंज़िल तक कोई रास्ता नहीं; अब जगह पर डटी है।',
+  'summary.ended.blocked': '{name}: तीन बारियों तक दूसरी टुकड़ियों ने रोका; अब जगह पर डटी है।',
+  'summary.ended.lost-target': '{name}: लक्ष्य या साथ चलने वाली टुकड़ी अब नहीं है; अब जगह पर डटी है।',
+  'summary.ended.retreat': '{name}: भारी चोट लगी, फिर से इकट्ठा होने के लिए पीछे हट रही है (युद्ध-नीति)।',
 };
 
 export const messages: GameMessages = {
