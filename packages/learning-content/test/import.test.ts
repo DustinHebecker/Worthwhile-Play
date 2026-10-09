@@ -266,3 +266,55 @@ describe('user deck ids', () => {
     expect(isUserDeckId(`user-${'a'.repeat(70)}`)).toBe(false);
   });
 });
+
+describe('import edge cases (boundaries and exact results)', () => {
+  it('limits are inclusive', () => {
+    const at = (n: number) => `front_text,back_text\nok,${'x'.repeat(n)}\n`;
+    expect(importDeck(at(IMPORT_LIMITS.maxTextChars), { id: 'user-x-1', title: 'X' }).ok).toBe(true);
+    expect(importDeck(at(IMPORT_LIMITS.maxTextChars + 1), { id: 'user-x-1', title: 'X' }).ok).toBe(false);
+    const image = (n: number) => `data:image/png;base64,${'A'.repeat(n - 'data:image/png;base64,'.length)}`;
+    expect(classifyMedia(image(IMPORT_LIMITS.maxImageChars), 'image')).toBe('ok');
+    expect(classifyMedia(image(IMPORT_LIMITS.maxImageChars + 1), 'image')).toBe('too-large');
+  });
+
+  it('reports long categories and tags, and only when they are long', () => {
+    const deck = (category: string, tags: string[]) => JSON.stringify({ schemaVersion: 1, title: { en: 'x' }, items: [{ id: 'a', front: { text: 'a' }, back: { text: 'b' }, category, tags }] });
+    const long = 'c'.repeat(IMPORT_LIMITS.maxTextChars + 1);
+    expect(importDeck(deck(long, ['ok']), { id: 'user-x-1' })).toStrictEqual({ ok: false, format: 'json', errors: [{ code: 'text-too-long', item: 1 }], warnings: [] });
+    expect(importDeck(deck('ok', ['ok', long]), { id: 'user-x-1' })).toMatchObject({ ok: false, errors: [{ code: 'text-too-long', item: 1 }] });
+    expect(importDeck(deck('ok', ['ok', 'fine']), { id: 'user-x-1' }).ok).toBe(true);
+  });
+
+  it('produces exact error objects without undefined fields', () => {
+    const result = importDeck('front_text,back_text\nok,\n', { id: 'user-x-1', title: 'X' });
+    expect(result).toStrictEqual({ ok: false, format: 'csv', errors: [{ code: 'empty-side', item: 1, line: 2, side: 'back' }], warnings: [] });
+    const json = importDeck(JSON.stringify({ schemaVersion: 1, items: [{ id: 'a', front: 'x', back: { text: 'b' } }, 5] }), { id: 'user-x-1' });
+    expect(json).toStrictEqual({ ok: false, format: 'json', errors: [{ code: 'type', item: 1, side: 'front' }, { code: 'type', item: 2 }], warnings: [] });
+  });
+
+  it('only strips a leading byte order mark and trims media references', () => {
+    expect(detectFormat('﻿{')).toBe('json');
+    expect(detectFormat('a﻿{')).toBe('csv');
+    expect(classifyMedia('  https://example.com/a.png', 'image')).toBe('remote');
+    expect(classifyMedia('cat.png?data:x', 'image')).toBe('unsupported');
+    expect(classifyMedia(PNG, 'audio')).toBe('unsupported');
+    expect(classifyMedia('git+ssh://host/x', 'image')).toBe('remote');
+    expect(classifyMedia('http://example.com/a.png', 'audio')).toBe('remote');
+    expect(classifyMedia('ws://example.com/a', 'audio')).toBe('remote');
+    expect(classifyMedia('mailto:a@b.c', 'image')).toBe('unsupported');
+  });
+
+  it('keeps only known side fields and ignores blank title entries', () => {
+    const raw = { schemaVersion: 1, title: { en: '  ', de: 'Titel' }, items: [{ id: 'a', front: { text: 'a', junk: 1 }, back: { text: 'b' } }] };
+    const result = importDeck(JSON.stringify(raw), { id: 'user-x-1' });
+    expect(result.ok && result.deck.title).toStrictEqual({ de: 'Titel' });
+    expect(result.ok && result.deck.items[0]?.front).toStrictEqual({ text: 'a' });
+    const blank = importDeck(JSON.stringify({ ...raw, title: { en: '' } }), { id: 'user-x-1' });
+    expect(blank.ok && blank.deck.title).toStrictEqual({ en: 'Deck' });
+  });
+
+  it('exports description and source', () => {
+    const deck: Deck = { schemaVersion: 1, id: 'user-a-1', title: { en: 'A' }, description: { en: 'D' }, source: 'S', items: [{ id: 'a', front: { text: 'a' }, back: { text: 'b' } }] };
+    expect(JSON.parse(deckToJson(deck))).toStrictEqual(deck);
+  });
+});
