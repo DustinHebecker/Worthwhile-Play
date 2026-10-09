@@ -81,7 +81,7 @@ describe('scenario content', () => {
         const text = CONTENT[locale]![def.id]!;
         const en = CONTENT.en![def.id]!;
         for (const id of Object.keys(en.facts)) {
-          const normalized = (text.facts[id] ?? '').replace(/(\d)[\s.,  '’](?=\d{3}\b)/g, '$1');
+          const normalized = (text.facts[id] ?? '').replace(/(\d)[\s.,\u00a0\u202f'’](?=\d{3}\b)/g, '$1');
           const reference = (en.facts[id] ?? '').replace(/(\d),(?=\d{3}\b)/g, '$1');
           expect(digits(normalized), `${locale}/${def.id}/${id}`).toEqual(digits(reference));
         }

@@ -374,7 +374,8 @@ describe('isAudienceSwitchState', () => {
   });
 
   it('rejects each broken field', () => {
-    const [, , lead, , message, , reflect, second] = phases() as AudienceSwitchState[];
+    const all = phases();
+    const [lead, message, reflect, second] = [all[2]!, all[4]!, all[6]!, all[7]!];
     const bad: [string, (s: AudienceSwitchState) => unknown][] = [
       ['version', (s) => ({ ...s, version: 2 })],
       ['seed', (s) => ({ ...s, seed: -1 })],

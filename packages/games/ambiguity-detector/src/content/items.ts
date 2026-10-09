@@ -34,7 +34,7 @@ export interface ItemSpec {
 
 export const ITEMS: readonly ItemSpec[] = [
   // Easy: everyday requests, one or two gaps among the five everyday dimensions.
-  { id: 'finish-tomorrow', difficulty: 'easy', missing: ['what'], given: ['when', 'who'], third: 'assume' },
+  { id: 'finish-tomorrow', difficulty: 'easy', missing: ['what', 'when'], given: ['who'], third: 'assume' },
   { id: 'concert-entrance', difficulty: 'easy', missing: ['when', 'where'], given: ['what'], third: 'rude' },
   { id: 'party-photos', difficulty: 'easy', missing: ['what', 'format'], given: ['who'], third: 'assume' },
   { id: 'water-plants', difficulty: 'easy', missing: ['when', 'where'], given: ['what', 'who'], third: 'assume' },

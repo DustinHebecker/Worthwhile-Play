@@ -4,10 +4,10 @@ export const content: LocaleContent = {
   'finish-tomorrow': {
     context: 'Je teamleider stuurt je een bericht in de teamchat. Je werkt op dit moment aan drie verschillende rapporten.',
     text: 'Maak dit morgen alsjeblieft af.',
-    ask: { what: 'Welk van de drie rapporten bedoel je?' },
-    given: { when: 'De dag staat erin: morgen.', who: 'Het bericht is direct aan jou gericht.' },
+    ask: { what: 'Welk van de drie rapporten bedoel je?', when: 'Hoe laat morgen precies: ’s ochtends of aan het eind van de dag?' },
+    given: { who: 'Het bericht is direct aan jou gericht.' },
     replies: {
-      clear: 'Prima. Welk van de drie rapporten bedoel je: budget, verkoop of personeel?',
+      clear: 'Prima. Welk van de drie rapporten bedoel je: budget, verkoop of personeel? En hoe laat morgen?',
       vague: 'Oké, komt goed!',
       assume: 'Geen probleem, ik maak het verkooprapport morgen af.'
     }

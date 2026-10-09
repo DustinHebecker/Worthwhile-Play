@@ -4,10 +4,10 @@ export const content: LocaleContent = {
   'finish-tomorrow': {
     context: '你的团队负责人在团队群里给你发消息。你目前同时在写三份不同的报告。',
     text: '请明天把这个做完。',
-    ask: { what: '你指的是三份报告中的哪一份？' },
-    given: { when: '日期已说明：明天。', who: '这条消息是直接发给你的。' },
+    ask: { what: '你指的是三份报告中的哪一份？', when: '明天几点前：上午还是下班前？' },
+    given: { who: '这条消息是直接发给你的。' },
     replies: {
-      clear: '好的。你指的是哪一份报告：预算、销售还是人事？',
+      clear: '好的。你指的是哪一份报告：预算、销售还是人事？明天几点前要？',
       vague: '好的，没问题！',
       assume: '没问题，我明天把销售报告做完。'
     }

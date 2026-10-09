@@ -4,10 +4,10 @@ export const content: LocaleContent = {
   'finish-tomorrow': {
     context: 'Deine Teamleiterin schreibt dir im Team-Chat. Du arbeitest gerade an drei verschiedenen Berichten.',
     text: 'Bitte mach das morgen fertig.',
-    ask: { what: 'Welchen der drei Berichte meinst du?' },
-    given: { when: 'Der Tag steht da: morgen.', who: 'Die Nachricht richtet sich direkt an dich.' },
+    ask: { what: 'Welchen der drei Berichte meinst du?', when: 'Bis wann genau morgen: vormittags oder bis Feierabend?' },
+    given: { who: 'Die Nachricht richtet sich direkt an dich.' },
     replies: {
-      clear: 'Klar. Welchen der drei Berichte meinst du: Budget, Vertrieb oder Personal?',
+      clear: 'Klar. Welchen der drei Berichte meinst du: Budget, Vertrieb oder Personal? Und bis wann genau morgen?',
       vague: 'Okay, mache ich!',
       assume: 'Kein Problem, ich mache den Vertriebsbericht morgen fertig.'
     }

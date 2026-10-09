@@ -113,7 +113,8 @@ describe('content specification', () => {
   });
 
   it('looks up items by id', () => {
-    expect(itemById('finish-tomorrow')?.missing).toEqual(['what']);
+    expect(itemById('finish-tomorrow')?.missing).toEqual(['what', 'when']);
+    expect(itemById('finish-tomorrow')?.given).toEqual(['who']);
     expect(itemById('nope')).toBeUndefined();
   });
 });

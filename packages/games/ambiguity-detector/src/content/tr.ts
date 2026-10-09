@@ -4,10 +4,10 @@ export const content: LocaleContent = {
   'finish-tomorrow': {
     context: 'Ekip liderin sana ekip sohbetinden yazıyor. Şu anda üç farklı rapor üzerinde çalışıyorsun.',
     text: 'Lütfen bunu yarın bitir.',
-    ask: { what: 'Üç rapordan hangisini kastediyorsun?' },
-    given: { when: 'Gün belli: yarın.', who: 'Mesaj doğrudan sana yazılmış.' },
+    ask: { what: 'Üç rapordan hangisini kastediyorsun?', when: 'Yarın saat kaça kadar: sabah mı, gün sonuna kadar mı?' },
+    given: { who: 'Mesaj doğrudan sana yazılmış.' },
     replies: {
-      clear: 'Tabii. Üç rapordan hangisi: bütçe, satış yoksa personel raporu mu?',
+      clear: 'Tabii. Üç rapordan hangisi: bütçe, satış yoksa personel raporu mu? Ve yarın saat kaça kadar?',
       vague: 'Tamam, hallederim!',
       assume: 'Sorun değil, satış raporunu yarın bitiririm.'
     }
