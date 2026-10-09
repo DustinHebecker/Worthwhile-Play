@@ -112,7 +112,8 @@ export const categoryOf = (shape: Shape): Category | null =>
 
 /** The response the instructions ask for: "Note" on a cue, otherwise the shape's category. */
 export function expectedResponse(item: Item): Response {
-  return item.cue ? 'note' : (categoryOf(item.shape) ?? 'note');
+  // Non-cue items are never stars, so they always have a category.
+  return item.cue ? 'note' : (categoryOf(item.shape) as Category);
 }
 
 /**
@@ -122,7 +123,6 @@ export function expectedResponse(item: Item): Response {
  */
 export function placeCues(rng: Rng, count: number, minGap: number, leadIn: number, itemCount: number): number[] {
   const slack = itemCount - 1 - leadIn - (count - 1) * minGap;
-  if (count <= 0) return [];
   if (slack < 0) throw new RangeError('Cues do not fit into the block.');
   const picked = rng
     .shuffle(Array.from({ length: slack + count }, (_, i) => i))
@@ -190,8 +190,7 @@ export function score(state: ProspectiveState, items: readonly Item[]): Prospect
   let late = 0;
   const attributed = new Set<number>();
   answers.forEach((response, i) => {
-    const item = items[i];
-    if (!item) return;
+    const item = items[i] as Item;
     if (!item.cue) {
       ongoingTotal++;
       if (response === expectedResponse(item)) ongoingCorrect++;
@@ -202,8 +201,9 @@ export function score(state: ProspectiveState, items: readonly Item[]): Prospect
       onTime++;
       return;
     }
-    for (let j = i + 1; j <= i + LATE_WINDOW && j < answers.length; j++) {
-      if (answers[j] === 'note' && !items[j]?.cue) {
+    // Cues are at least minGap > LATE_WINDOW apart, so the window never contains another cue.
+    for (let j = i + 1; j <= i + LATE_WINDOW; j++) {
+      if (answers[j] === 'note') {
         late++;
         attributed.add(j);
         return;
@@ -212,7 +212,7 @@ export function score(state: ProspectiveState, items: readonly Item[]): Prospect
   });
   let falseAlarms = 0;
   answers.forEach((response, i) => {
-    if (response === 'note' && items[i] && !items[i].cue && !attributed.has(i)) falseAlarms++;
+    if (response === 'note' && !items[i]?.cue && !attributed.has(i)) falseAlarms++;
   });
 
   const target = CONFIGS[state.difficulty].checkIn;
