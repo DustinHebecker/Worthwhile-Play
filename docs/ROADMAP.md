@@ -61,7 +61,7 @@ Cross-cutting, continuous: accessibility review, native-speaker review of transl
 | Attention | Signal Watch | M5 | ✅ | 2/4/6-minute sessions, seeded stream, calm factual summary; pauses safely |
 | Attention | Deep Read | M5 | ⏳ | |
 | Attention | Distractor Control → shown as **Stay on Task** | M5 | ✅ | self-paced sorting task with mild, explained distractors; no timers, neutral summary |
-| Attention | Visual / peripheral search | M5 | ⏳ | |
+| Attention | Visual search | M5 | ✅ | feature → conjunction → similar-distractor search; shape/fill/orientation (never colour-only); self-paced, target-absent boards; neutral summary with median time per set size |
 | Language | Letter Logic — word-guessing game (Wordle-style): guess a hidden word in a few tries with per-letter feedback; unlimited free play, no daily-puzzle streak | M6 | ✅ | original name and design ("Wordle" is a trademark); word lists per content language need a license review (prefer CC0/public-domain or self-built lists); feedback by symbol + colour; content language independent of UI language |
 | Communication | Audience Switch | M6 | ⏳ | |
 | Communication | Compression Challenge | M6 | ⏳ | |

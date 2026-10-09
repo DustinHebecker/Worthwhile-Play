@@ -30,6 +30,7 @@ import { metadata as nodeConquest } from '@wp/game-node-conquest/metadata';
 import { metadata as slitherlink } from '@wp/game-slitherlink/metadata';
 import { metadata as stackDuel } from '@wp/game-stack-duel/metadata';
 import { metadata as ticTacToe } from '@wp/game-tic-tac-toe/metadata';
+import { metadata as visualSearch } from '@wp/game-visual-search/metadata';
 import { metadata as wordGuess } from '@wp/game-word-guess/metadata';
 
 export interface GameEntry {
@@ -77,7 +78,8 @@ export const GAMES: readonly GameEntry[] = [
   entry(chess, () => import('@wp/game-chess')),
   entry(wordGuess, () => import('@wp/game-word-guess')),
   entry(stackDuel, () => import('@wp/game-stack-duel')),
-  entry(nBack, () => import('@wp/game-n-back'))
+  entry(nBack, () => import('@wp/game-n-back')),
+  entry(visualSearch, () => import('@wp/game-visual-search'))
 ];
 
 export const findGame = (id: string): GameEntry | undefined => GAMES.find((g) => g.metadata.id === id);
