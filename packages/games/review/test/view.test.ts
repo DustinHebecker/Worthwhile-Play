@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest';
 import type { GameModule, UserDeckSource } from '@wp/game-core';
-import { applyReview, builtinItemIds, countryName, createLearningRecords, type Deck, type LearningRecord, type Speech } from '@wp/learning-content';
+import { applyReview, builtinItemIds, capitalName, countryName, createLearningRecords, type Deck, type LearningRecord, type Speech } from '@wp/learning-content';
 import { createTestContext, type TestContextExtras } from '@wp/testing';
 import game from '../src/index';
 import { isValidReviewState, type ReviewState } from '../src/rules';
@@ -168,6 +168,37 @@ describe('Review view', () => {
     expect(q('review-languages').textContent).toBe('Country names in German');
   });
 
+  it('capitals: country → capital in the learning language; backward asks for the country', () => {
+    const { q, reveal, instance } = setup({ extras: { learning: learningWith(), contentLanguages: { learning: 'it' } }, prefs: { [DECK_PREFERENCE]: 'capitals', [DIRECTION_PREFERENCE]: 'forward' } });
+    q('review-practice').click();
+    const state = instance.serialize();
+    expect(state).toMatchObject({ mode: 'practice', deckId: 'capitals', languages: { learning: 'it' }, direction: 'forward' });
+    expect(isValidReviewState(JSON.parse(JSON.stringify(state)))).toBe(true);
+    const code = state.cards[0]!.item.toUpperCase();
+    const capital = capitalName(code, 'it')!;
+    expect(q('review-prompt').textContent).toBe(countryName(code, 'it'));
+    expect(q('review-prompt').querySelector('[lang]')!.getAttribute('lang')).toBe('it');
+    expect(q('review-session').textContent).not.toContain(capital);
+    reveal(capital.toUpperCase());
+    expect(q('review-answer').textContent).toContain(capital);
+    expect(q('review-typed-result').textContent).toContain('Matches the card.');
+    expect(q('review-languages').textContent).toBe('Countries and capitals in Italian');
+
+    const backward = setup({ extras: { contentLanguages: { learning: 'ja' } }, prefs: { [DECK_PREFERENCE]: 'capitals', [DIRECTION_PREFERENCE]: 'backward' } });
+    const s = backward.instance.serialize();
+    const c = s.cards[0]!.item;
+    expect(backward.q('review-prompt').textContent).toBe(capitalName(c, 'ja'));
+    backward.reveal();
+    expect(backward.q('review-answer').textContent).toContain(countryName(c.toUpperCase(), 'ja'));
+  });
+
+  it('capitals: a learning language without capital names falls back to the UI language with a notice', () => {
+    const { q, instance } = setup({ locale: 'de', extras: { contentLanguages: { learning: 'sv' } }, prefs: { [DECK_PREFERENCE]: 'capitals' } });
+    expect(instance.serialize()).toMatchObject({ deckId: 'capitals', languages: { learning: 'de' } });
+    expect(q('review-notice').textContent).toBe('Für Schwedisch gibt es noch keine Hauptstadtnamen, daher wird eine andere Sprache verwendet.');
+    expect(q('review-languages').textContent).toBe('Länder und Hauptstädte auf Deutsch');
+  });
+
   it('first words: the picture is shown with the answer only; backward asks for the word in the learning language', () => {
     const { q, reveal, instance, root } = setup({ extras: { contentLanguages: { learning: 'es', translation: 'en' } }, prefs: { [DIRECTION_PREFERENCE]: 'backward' } });
     const state = instance.serialize();
@@ -184,7 +215,7 @@ describe('Review view', () => {
     const userDecks = decks(OWN);
     const { q, instance, ctx, reveal } = setup({ extras: { userDecks, learning: learningWith() } });
     const select = q<HTMLSelectElement>('review-deck');
-    expect([...select.options].map((o) => o.value)).toEqual(['first-words', 'flags', OWN.id]);
+    expect([...select.options].map((o) => o.value)).toEqual(['first-words', 'flags', 'capitals', OWN.id]);
     select.value = OWN.id;
     select.dispatchEvent(new Event('change'));
     expect(ctx.preferences.get(DECK_PREFERENCE)).toBe(OWN.id);

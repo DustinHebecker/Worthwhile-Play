@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { GameInstance, UserDeckSource } from '@wp/game-core';
-import { countryName, findWord, type Deck } from '@wp/learning-content';
+import { capitalName, countryName, findWord, type Deck } from '@wp/learning-content';
 import { createMemoryStore, createSave, interpretSave } from '@wp/persistence';
 import { createTestContext, type TestContextExtras } from '@wp/testing';
 import game from '../src/index';
@@ -62,6 +62,7 @@ describe('card choice menu', () => {
       ['picture-word', 'Picture ↔ word', false],
       ['word-translation', 'Word ↔ translation', false],
       ['flag-country', 'Flag ↔ country', false],
+      ['country-capital', 'Country ↔ capital', false],
       ['own:user-colours-ab12', 'Colours (4 cards)', false],
       ['own:user-tiny-1', 'Tiny (1 cards)', true]
     ]);
@@ -172,6 +173,80 @@ describe('flag ↔ country', () => {
   it('uses the learning language for country names when the platform knows it', () => {
     const { instance } = setup({ prefs: { cards: 'flag-country' }, extras: { contentLanguages: { learning: 'sv' } } });
     expect(instance.serialize().languages).toEqual({ back: 'sv' });
+  });
+});
+
+describe('country ↔ capital', () => {
+  it('pairs the country name with its capital, both in the learning language', () => {
+    const { root, instance } = setup({ prefs: { cards: 'country-capital' }, extras: { contentLanguages: { learning: 'fr' } }, difficulty: 'large' });
+    const s = instance.serialize();
+    expect(s).toMatchObject({ variant: 'country-capital', deckId: 'capitals', languages: { back: 'fr' } });
+    expect(select(root).value).toBe('country-capital');
+    expect(byId(root, 'memory-languages').textContent).toBe('Countries and capitals in French');
+    expect(byId(root, 'memory-notice').hidden).toBe(true);
+    const back = s.cards.findIndex((c) => c.side === 'back');
+    const code = (s.cards[back]?.item ?? '').toUpperCase();
+    card(root, back).click();
+    const capital = card(root, back).querySelector('.wp-memory__text');
+    expect(capital?.textContent).toBe(capitalName(code, 'fr'));
+    expect(capital?.getAttribute('lang')).toBe('fr');
+    expect(card(root, back).getAttribute('aria-label')).toBe(`Card ${back + 1}: ${capitalName(code, 'fr')}`);
+    const front = partnerOf(s.cards, back);
+    card(root, front).click();
+    expect(card(root, front).textContent).toBe(countryName(code, 'fr'));
+    expect(card(root, front).dataset.state).toBe('matched');
+    expect(game.isValidState(JSON.parse(JSON.stringify(instance.serialize())))).toBe(true);
+  });
+
+  it('a known pair shows the expected names (Poland ↔ Warsaw in German)', () => {
+    const { root, instance } = setup({ prefs: { cards: 'country-capital' }, locale: 'de' });
+    const s = instance.serialize();
+    expect(s.languages).toEqual({ back: 'de' });
+    // Reveal every card once (pairs of two) and collect the visible texts.
+    const texts: string[] = [];
+    for (let i = 0; i < s.cards.length; i++) {
+      card(root, i).click();
+      texts.push(card(root, i).textContent ?? '');
+    }
+    for (const id of s.itemIds) {
+      expect(texts).toContain(countryName(id.toUpperCase(), 'de'));
+      expect(texts).toContain(capitalName(id, 'de'));
+    }
+    expect(capitalName('pl', 'de')).toBe('Warschau');
+  });
+
+  it('falls back to the UI language with a notice when the learning language has no capital names', () => {
+    const { instance, root } = setup({ prefs: { cards: 'country-capital' }, extras: { contentLanguages: { learning: 'sv' } }, locale: 'de' });
+    expect(instance.serialize().languages).toEqual({ back: 'de' });
+    expect(byId(root, 'memory-notice').hidden).toBe(false);
+    expect(byId(root, 'memory-notice').textContent).toBe('Für Schwedisch gibt es noch keine Hauptstadtnamen, daher wird eine andere Sprache verwendet.');
+    expect(byId(root, 'memory-languages').textContent).toBe('Länder und Hauptstädte auf Deutsch');
+  });
+
+  it('keeps the recorded language on restore, even if Settings changed', () => {
+    const first = setup({ prefs: { cards: 'country-capital' }, extras: { contentLanguages: { learning: 'ja' } } });
+    card(first.root, 0).click();
+    const saved = first.instance.serialize();
+    const later = setup({ extras: { contentLanguages: { learning: 'pl' } } });
+    later.instance.restore(saved);
+    expect(later.instance.serialize()).toEqual(saved);
+    const text = card(later.root, 0).querySelector('.wp-memory__text');
+    expect(text?.getAttribute('lang')).toBe('ja');
+    const item = saved.cards[0]?.item ?? '';
+    expect(text?.textContent).toBe(saved.cards[0]?.side === 'front' ? countryName(item.toUpperCase(), 'ja') : capitalName(item, 'ja'));
+  });
+
+  it('round-trips through a real save', () => {
+    const { instance } = setup({ prefs: { cards: 'country-capital' } });
+    const state = instance.serialize();
+    const loaded = interpretSave(JSON.parse(JSON.stringify(createSave(game, state.seed, state, state.difficulty))), game);
+    expect(loaded).toMatchObject({ status: 'ok' });
+    // A card that the capitals deck does not have (South Africa is left out) makes the save unusable.
+    const first = state.itemIds[0];
+    const za = (id: string) => (id === first ? 'za' : id);
+    const tampered = { ...state, itemIds: state.itemIds.map(za), cards: state.cards.map((c) => ({ ...c, item: za(c.item) })) };
+    expect(interpretSave(createSave(game, state.seed, tampered), game).status).toBe('corrupt');
+    expect(interpretSave(createSave(game, state.seed, { ...tampered, deckId: 'flags', variant: 'flag-country', languages: { back: 'en' } }), game).status).toBe('ok');
   });
 });
 

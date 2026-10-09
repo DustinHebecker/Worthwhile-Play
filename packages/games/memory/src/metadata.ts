@@ -4,6 +4,7 @@ import { messages } from './messages';
 export const metadata: GameMetadata = {
   id: 'memory',
   // 2: card variants (symbols, words, flags, own decks) and recorded content languages; v1 saves are migrated.
+  // Later variants (country ↔ capital) are additive: every older v2 save stays valid.
   stateVersion: 2,
   skills: ['memory', 'learning'],
   typicalMinutes: [2, 6],

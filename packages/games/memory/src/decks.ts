@@ -1,6 +1,8 @@
 import type { Translator, UserDeckSource } from '@wp/game-core';
 import {
   builtinItemIds,
+  capitalName,
+  capitalsDeck,
   countryName,
   findWord,
   firstWordsDeck,
@@ -17,12 +19,12 @@ import {
 } from '@wp/learning-content';
 import type { BuiltinVariant, CardLanguages, Card, DeckLookup, MemoryState, Variant } from './rules';
 
-/** Item ids of the built-in decks (symbols, first words, flags) for save validation. */
+/** Item ids of the built-in decks (symbols, first words, flags, capitals) for save validation. */
 export const lookupDeckItems: DeckLookup = (deckId) => builtinItemIds(deckId);
 
 /** What the player can choose in the "Cards" menu: a built-in variant or `own:<deck id>`. */
 export type CardChoice = BuiltinVariant | `own:${string}`;
-export const BUILTIN_CHOICES: readonly BuiltinVariant[] = ['symbols', 'picture-word', 'word-translation', 'flag-country'];
+export const BUILTIN_CHOICES: readonly BuiltinVariant[] = ['symbols', 'picture-word', 'word-translation', 'flag-country', 'country-capital'];
 
 export function parseChoice(value: unknown): { variant: Variant; deckId?: string } | undefined {
   if (typeof value !== 'string') return undefined;
@@ -59,6 +61,9 @@ export function builtinDeal(variant: BuiltinVariant, choice: ContentLanguageChoi
       return { deck: firstWordsDeck(resolved.learning, resolved.translation), languages: { front: resolved.learning, back: resolved.translation } };
     case 'flag-country':
       return { deck: flagsDeck(resolved.countries), languages: { back: resolved.countries } };
+    case 'country-capital':
+      // Capital names exist in the 16 "First words" languages only, so this follows the learning language.
+      return { deck: capitalsDeck(resolved.learning), languages: { back: resolved.learning } };
   }
 }
 
@@ -106,6 +111,15 @@ export function faceResolver(state: MemoryState, t: Translator, userDecks: UserD
         const text = countryName(code, backLang ?? t.locale);
         return { side: { text, lang: backLang ?? t.locale }, description: text };
       };
+    case 'country-capital': {
+      const lang = backLang && isVocabularyLanguage(backLang) ? backLang : vocabularyUiLanguage(t.locale);
+      return (card) => {
+        const code = card.item.toUpperCase();
+        // Both cards are plain text in the same language: the country name (CLDR) and its capital.
+        const text = card.side === 'front' ? countryName(code, lang) : (capitalName(code, lang) ?? '');
+        return { side: { text, lang }, description: text };
+      };
+    }
     case 'own': {
       const deck = userDeck(userDecks, state.deckId);
       if (!deck) return undefined;

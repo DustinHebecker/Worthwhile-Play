@@ -2,6 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
   builtinDeck,
   builtinItemIds,
+  CAPITAL_CODES,
+  CAPITAL_EXCLUSIONS,
+  CAPITALS,
+  capitalName,
+  capitalsDeck,
   COUNTRY_CODES,
   countryName,
   FIRST_WORDS,
@@ -11,6 +16,8 @@ import {
   hasCountryNames,
   isBuiltinDeckId,
   isCountryCode,
+  learningDeckId,
+  REVIEW_BUILTIN_DECK_IDS,
   resolveContentLanguages,
   SYMBOL_DECK,
   toVocabularyLanguage,
@@ -154,19 +161,130 @@ describe('Flags & countries', () => {
   });
 });
 
+describe('Capitals', () => {
+  it('covers every country of the flags deck exactly once: with a capital or as a documented exclusion', () => {
+    expect(new Set(CAPITAL_CODES).size).toBe(CAPITAL_CODES.length);
+    for (const code of CAPITAL_CODES) {
+      expect(isCountryCode(code), code).toBe(true);
+      expect(CAPITAL_EXCLUSIONS[code], code).toBeUndefined();
+    }
+    const excluded = Object.keys(CAPITAL_EXCLUSIONS);
+    for (const code of excluded) {
+      expect(isCountryCode(code), code).toBe(true);
+      expect(CAPITAL_EXCLUSIONS[code as 'ZA']?.trim(), code).toBeTruthy();
+    }
+    expect(CAPITAL_CODES.length + excluded.length).toBe(COUNTRY_CODES.length);
+    // Same order as the flags deck.
+    expect([...CAPITAL_CODES]).toEqual(COUNTRY_CODES.filter((code) => !excluded.includes(code)));
+    expect(CAPITAL_CODES.length).toBeGreaterThanOrEqual(50);
+  });
+
+  it('has a non-empty, trimmed capital in every supported language and no duplicates within a language', () => {
+    for (const lang of VOCABULARY_LANGUAGES) {
+      const names = CAPITALS.map((entry) => entry.names[lang]);
+      for (const [i, name] of names.entries()) {
+        const where = `${lang}/${CAPITALS[i]?.code}`;
+        expect(typeof name, where).toBe('string');
+        expect(name.trim(), where).not.toBe('');
+        expect(name.trim(), where).toBe(name);
+        expect(name, where).not.toMatch(/\s{2}/);
+        expect(name.length, where).toBeLessThanOrEqual(24);
+      }
+      expect(new Set(names).size, lang).toBe(names.length);
+    }
+    for (const entry of CAPITALS) expect(Object.keys(entry.names).sort(), entry.code).toEqual([...VOCABULARY_LANGUAGES].sort());
+  });
+
+  it('uses the script of each language (no copy-paste slips between columns)', () => {
+    const scripts: Partial<Record<string, RegExp>> = {
+      ru: /^[\p{Script=Cyrillic} -]+$/u,
+      uk: /^[\p{Script=Cyrillic} '-]+$/u,
+      'zh-Hans': /^\p{Script=Han}+$/u,
+      ja: /^[\p{Script=Katakana}\p{Script=Han}ー.D C]+$/u,
+      ko: /^[\p{Script=Hangul} .DC]+$/u,
+      ar: /^[\p{Script=Arabic} ]+$/u,
+      hi: /^[\p{Script=Devanagari} .]+$/u
+    };
+    for (const [lang, pattern] of Object.entries(scripts)) {
+      for (const entry of CAPITALS) expect(entry.names[lang as 'ru'], `${lang}/${entry.code}`).toMatch(pattern!);
+    }
+    for (const lang of ['de', 'en', 'nl', 'es', 'fr', 'pt', 'it', 'pl', 'tr'] as const) {
+      for (const entry of CAPITALS) expect(entry.names[lang], `${lang}/${entry.code}`).toMatch(/^[\p{Script=Latin} .,()-]+$/u);
+    }
+  });
+
+  it('spot checks: conventional exonyms per language', () => {
+    expect(capitalName('PL', 'de')).toBe('Warschau');
+    expect(capitalName('pl', 'fr')).toBe('Varsovie');
+    expect(capitalName('PL', 'ja')).toBe('ワルシャワ');
+    expect(capitalName('PL', 'pl')).toBe('Warszawa');
+    expect(capitalName('CN', 'en')).toBe('Beijing');
+    expect(capitalName('CN', 'de')).toBe('Peking');
+    expect(capitalName('AT', 'ko')).toBe('빈');
+    expect(capitalName('EG', 'ar')).toBe('القاهرة');
+    expect(capitalName('ES', 'pt')).toBe('Madri');
+    expect(capitalName('ZA', 'en')).toBeUndefined();
+    expect(capitalName('XX', 'en')).toBeUndefined();
+  });
+
+  it('a capital never has the same name as its country (both cards of a pair stay distinguishable)', () => {
+    for (const lang of VOCABULARY_LANGUAGES) {
+      for (const entry of CAPITALS) {
+        const country = countryName(entry.code, lang);
+        expect(country, `${lang}/${entry.code}`).not.toBe(entry.code);
+        expect(entry.names[lang].toLocaleLowerCase(lang), `${lang}/${entry.code}`).not.toBe(country.toLocaleLowerCase(lang));
+      }
+    }
+  });
+
+  it('builds a valid deck in every supported language: country name ↔ capital, ids as in the flags deck', () => {
+    for (const lang of VOCABULARY_LANGUAGES) {
+      const deck = capitalsDeck(lang);
+      expect(validateDeck(deck).ok, lang).toBe(true);
+      expect(deck.items).toHaveLength(CAPITALS.length);
+      for (const item of deck.items) {
+        expect(item.front.lang).toBe(lang);
+        expect(item.back.lang).toBe(lang);
+      }
+    }
+    expect(capitalsDeck('de').items.find((i) => i.id === 'fr')).toEqual({ id: 'fr', front: { text: 'Frankreich', lang: 'de' }, back: { text: 'Paris', lang: 'de' }, category: 'geography' });
+    expect(capitalsDeck('ja').items.find((i) => i.id === 'pl')).toMatchObject({ front: { text: 'ポーランド' }, back: { text: 'ワルシャワ' } });
+    const flagIds = new Set(builtinItemIds('flags'));
+    for (const id of builtinItemIds('capitals') ?? []) expect(flagIds.has(id), id).toBe(true);
+  });
+
+  it('follows the learning language with the explicit fallbacks (UI language, then English)', () => {
+    expect(builtinDeck('capitals', resolveContentLanguages({ learning: 'fr' }, 'de')).items[0]?.back.lang).toBe('fr');
+    // A learning language without capital names: the UI language (country names follow, so both cards match).
+    const swedish = resolveContentLanguages({ learning: 'sv' }, 'de');
+    expect(swedish.learningFallback).toBe(true);
+    expect(builtinDeck('capitals', swedish).items.find((i) => i.id === 'at')).toMatchObject({ front: { text: 'Österreich', lang: 'de' }, back: { text: 'Wien', lang: 'de' } });
+    expect(builtinDeck('capitals', resolveContentLanguages({ learning: 'pt-BR' }, 'en')).items[0]?.back.lang).toBe('pt');
+  });
+
+  it('is reviewable and keeps one set of learning records for all languages (like flags)', () => {
+    expect(REVIEW_BUILTIN_DECK_IDS).toContain('capitals');
+    expect(learningDeckId('capitals', { learning: 'ja' })).toBe('capitals');
+    expect(learningDeckId('capitals', { learning: 'de' })).toBe('capitals');
+  });
+});
+
 describe('built-in deck registry', () => {
   it('lists item ids per deck independently of languages', () => {
     expect(builtinItemIds('symbols')).toEqual(SYMBOL_DECK.items.map((i) => i.id));
     expect(builtinItemIds('first-words')).toHaveLength(60);
     expect(builtinItemIds('flags')).toContain('de');
+    expect(builtinItemIds('capitals')).toContain('de');
+    expect(builtinItemIds('capitals')).not.toContain('za');
     expect(builtinItemIds('user-x')).toBeUndefined();
     expect(isBuiltinDeckId('flags')).toBe(true);
+    expect(isBuiltinDeckId('capitals')).toBe(true);
     expect(isBuiltinDeckId('toString')).toBe(false);
   });
 
   it('builds each built-in deck with matching item ids', () => {
     const languages = resolveContentLanguages({ learning: 'es' }, 'en');
-    for (const id of ['symbols', 'first-words', 'flags'] as const) {
+    for (const id of ['symbols', 'first-words', 'flags', 'capitals'] as const) {
       const deck = builtinDeck(id, languages);
       expect(deck.id).toBe(id);
       expect(deck.license).toBeTruthy();
