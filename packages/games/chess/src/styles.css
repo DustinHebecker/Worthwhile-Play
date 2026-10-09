@@ -282,11 +282,10 @@
 .wp-chess .ch-menu .ch-confirm { justify-content: flex-start; }
 
 /* Variation board ("Variantenbrett"). */
+/* Narrow: full width (the board keeps the same size as the game board), a dashed rule on top. */
 .wp-chess .ch-variation {
-  padding: 0.75rem;
-  border: 2px dashed var(--wp-border);
-  border-radius: var(--wp-radius, 10px);
-  background: var(--wp-surface);
+  padding-block: 0.6rem 0.75rem;
+  border-block-start: 2px dashed var(--wp-border);
   box-sizing: border-box;
 }
 .wp-chess .ch-var-head { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; justify-content: space-between; width: min(100%, 32rem); }
@@ -310,6 +309,13 @@
   .wp-chess[data-variation] > .ch-mode { display: block; }
   .wp-chess[data-variation] .ch-main { display: grid; align-content: start; }
   .wp-chess[data-variation] .ch-stage { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  /* Side by side: a dashed frame marks the analysis board. */
+  .wp-chess .ch-variation {
+    padding: 0.75rem;
+    border: 2px dashed var(--wp-border);
+    border-radius: var(--wp-radius, 10px);
+    background: var(--wp-surface);
+  }
 }
 
 @media (forced-colors: active) {

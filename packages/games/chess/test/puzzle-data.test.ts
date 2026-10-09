@@ -1,13 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { BEST_MOVE_GAP, DECISIVE_LEAD, MAX_LINE_MOVES, MateSolver, analyse, uniqueBestMove, verifyBestMovePuzzle, verifyMatePuzzle, PUZZLE_LEVEL } from '../src/ai';
+import { MAX_LINE_MOVES, MateSolver, verifyMatePuzzle } from '../src/ai';
 import { BEST_MOVE_PUZZLES, MATE_PUZZLES } from '../src/puzzle-data';
 import { moveToUci, parseFen, puzzlesFor, replay, uciToMove } from '../src/rules';
+import { defineBestLineChecks } from './best-lines';
 import { oracleForcesMate, oracleSolutions } from './oracle';
 
 /**
- * Re-verifies the shipped puzzles. The full check (every puzzle, about 3 minutes on one core)
- * runs with CHESS_VERIFY_PUZZLES=1, as its own CI job; the regular run verifies every eighth
- * puzzle so local runs stay fast. Mutation testing sets CHESS_SKIP_PUZZLE_DATA=1 to skip this file.
+ * Re-verifies the shipped puzzles. The full check (every mate puzzle and every move of every
+ * best-move line, a few minutes) runs with CHESS_VERIFY_PUZZLES=1, as its own CI job; the regular
+ * run verifies every eighth mate puzzle here and a sample of the best-move lines in
+ * puzzle-lines.test.ts (in parallel), so local runs stay fast. Mutation testing sets
+ * CHESS_SKIP_PUZZLE_DATA=1 to skip this file.
  */
 const pos = (fen: string) => parseFen(fen)!;
 const run = process.env.CHESS_SKIP_PUZZLE_DATA ? describe.skip : describe;
@@ -61,29 +64,6 @@ run('shipped puzzles', { timeout: 600_000 }, () => {
       }
     }
   });
-
-  it('every move of every best-move line is re-verified by a deep search with a clear gap', () => {
-    // verifyBestMovePuzzle re-derives the whole line: each move of the person passes the
-    // unique-best test, each reply is the engine's deep-search best move, and the stopping rule
-    // gives exactly the stored length.
-    for (const p of subset(BEST_MOVE_PUZZLES)) expect(verifyBestMovePuzzle(p.fen), p.fen).toEqual(p);
-    const sample = BEST_MOVE_PUZZLES[0]!;
-    const deep = analyse(pos(sample.fen), PUZZLE_LEVEL, [], BEST_MOVE_GAP);
-    expect(deep.candidates).toHaveLength(1);
-  });
-
-  it('checks each later move of a multi-move line on its own (unique best, reply is the engine’s best, lead not yet decisive)', () => {
-    const lines = BEST_MOVE_PUZZLES.filter((p) => p.line.length > 1);
-    for (const p of full ? lines : lines.slice(0, 1)) {
-      for (let i = 2; i < p.line.length; i += 2) {
-        const before = replay(p.fen, p.line.slice(0, i - 1))!.pos;
-        const reply = analyse(before, PUZZLE_LEVEL, [], 0).candidates[0]!;
-        expect(reply.move, `${p.fen} reply ${i - 1}`).toBe(uciToMove(before, p.line[i - 1]!));
-        expect(-reply.score < DECISIVE_LEAD || -reply.score > 29_000, `${p.fen} lead before ${i}`).toBe(true);
-        const here = replay(p.fen, p.line.slice(0, i))!.pos;
-        expect(uniqueBestMove(here, PUZZLE_LEVEL, false), `${p.fen} move ${i}`).toBe(uciToMove(here, p.line[i]!));
-      }
-    }
-  });
 });
 
+if (full && !process.env.CHESS_SKIP_PUZZLE_DATA) defineBestLineChecks(true);
