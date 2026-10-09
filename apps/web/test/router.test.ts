@@ -11,6 +11,13 @@ describe('parseRoute', () => {
     ['/legal', { name: 'legal' }],
     ['/impressum', { name: 'legal' }],
     ['/games/tic-tac-toe', { name: 'game', id: 'tic-tac-toe' }],
+    ['/decks', { name: 'decks' }],
+    ['/decks/', { name: 'decks' }],
+    ['/decks/import', { name: 'deck-import' }],
+    ['/decks/first-words', { name: 'deck', id: 'first-words' }],
+    ['/decks/user-spanish-a1b2', { name: 'deck', id: 'user-spanish-a1b2' }],
+    ['/decks/Bad_Id', { name: 'not-found' }],
+    [`/decks/${'a'.repeat(65)}`, { name: 'not-found' }],
     ['/games/Bad_Id', { name: 'not-found' }],
     ['/games/', { name: 'not-found' }],
     ['/nope', { name: 'not-found' }]
@@ -25,8 +32,14 @@ describe('parseRoute', () => {
     expect(parseRoute('/games/memory', '?seed=4294967295')).toEqual({ name: 'game', id: 'memory', seed: 4294967295 });
   });
 
+  it('reads ?new=1 as "start a fresh game" (ignored together with a seed)', () => {
+    expect(parseRoute('/games/memory', '?new=1')).toEqual({ name: 'game', id: 'memory', fresh: true });
+    expect(parseRoute('/games/memory', '?new=yes')).toEqual({ name: 'game', id: 'memory' });
+    expect(parseRoute('/games/memory', '?new=1&seed=5')).toEqual({ name: 'game', id: 'memory', seed: 5 });
+  });
+
   it('round-trips hrefs', () => {
-    for (const route of [{ name: 'home' }, { name: 'about' }, { name: 'settings' }, { name: 'legal' }, { name: 'game', id: 'memory' }] as const) {
+    for (const route of [{ name: 'home' }, { name: 'about' }, { name: 'settings' }, { name: 'legal' }, { name: 'game', id: 'memory' }, { name: 'decks' }, { name: 'deck-import' }, { name: 'deck', id: 'flags' }] as const) {
       expect(parseRoute(routeHref(route))).toEqual(route);
     }
     expect(routeHref({ name: 'not-found' })).toBe('/');

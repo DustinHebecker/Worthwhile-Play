@@ -12,8 +12,16 @@ export interface TestContext {
   preferences: Map<string, unknown>;
 }
 
+/** Optional host services a test can provide (content languages from Settings, the user's decks). */
+export type TestContextExtras = Partial<Pick<GameContext, 'contentLanguages' | 'userDecks'>>;
+
 /** Builds a `GameContext` for unit tests (requires a DOM, e.g. `// @vitest-environment jsdom`). */
-export function createTestContext(module: GameModule<unknown>, locale: SupportedLocale = 'en', root: HTMLElement = document.createElement('div')): TestContext {
+export function createTestContext(
+  module: GameModule<unknown>,
+  locale: SupportedLocale = 'en',
+  root: HTMLElement = document.createElement('div'),
+  extras: TestContextExtras = {}
+): TestContext {
   let saves = 0;
   const results: GameResult[] = [];
   const missingKeys: string[] = [];
@@ -37,7 +45,8 @@ export function createTestContext(module: GameModule<unknown>, locale: Supported
         // JSON round trip, like the app's storage, so games cannot rely on object identity.
         get: (key) => (preferences.has(key) ? (JSON.parse(JSON.stringify(preferences.get(key))) as unknown) : undefined),
         set: (key, value) => void (value === undefined ? preferences.delete(key) : preferences.set(key, JSON.parse(JSON.stringify(value)) as unknown))
-      }
+      },
+      ...extras
     },
     saveRequests: () => saves,
     results,

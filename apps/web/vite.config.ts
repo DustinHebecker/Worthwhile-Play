@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { defineConfig, loadEnv } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { legalFromEnv } from '../../scripts/legal-env.mjs';
+import { cataloguePlugin } from './catalogue-plugin';
 
 const pkg = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')) as { version: string };
 
@@ -15,6 +16,7 @@ export default defineConfig(({ mode }) => ({
   },
   build: { target: 'es2022', sourcemap: true },
   plugins: [
+    cataloguePlugin(),
     VitePWA({
       registerType: 'prompt',
       injectRegister: false,
