@@ -14,6 +14,7 @@
     "@wp/game-audience-switch": "workspace:*",
     "@wp/game-black-box": "workspace:*",
     "@wp/game-bridges": "workspace:*",
+    "@wp/game-briefing-game": "workspace:*",
     "@wp/game-chess": "workspace:*",
     "@wp/game-circuit-puzzle": "workspace:*",
     "@wp/game-connect-four": "workspace:*",
