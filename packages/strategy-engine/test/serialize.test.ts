@@ -9,12 +9,14 @@ function rich(): World {
   const w = worldOf(open(5, 4), [
     { side: 0, kind: 'tower-laser', x: 0, y: 0 },
     { side: 1, kind: 'rifles', x: 3, y: 0, order: { type: 'move', x: 4, y: 3 } },
-    { side: 1, kind: 'kite', x: 3, y: 0, order: { type: 'attack', target: 1 } }
+    { side: 1, kind: 'kite', x: 3, y: 0, order: { type: 'attack', target: 1 } },
+    { side: 0, kind: 'mast-truck', x: 4, y: 3, order: { type: 'deploy' } }
   ]);
+  w.entities[3]!.deploy = 6;
   w.entities[0]!.beam = { target: 2, stacks: 1 };
   w.entities[1]!.status = [{ kind: 'slowed', ticks: 2 }];
-  w.projectiles = [{ id: 4, side: 0, kind: 'tower-artillery', x: 1, y: 1, ticks: 1 }];
-  w.nextId = 5;
+  w.projectiles = [{ id: 5, side: 0, kind: 'tower-artillery', x: 1, y: 1, ticks: 1 }];
+  w.nextId = 6;
   return w;
 }
 
@@ -29,7 +31,7 @@ const CORRUPTIONS: Corruption[] = [
   ['rng', (w) => void (w.rng = -1)],
   ['sides 0', (w) => void (w.sides = 0)],
   ['sides 9', (w) => void (w.sides = 9)],
-  ['nextId', (w) => void (w.nextId = 4)],
+  ['nextId', (w) => void (w.nextId = 5)],
   ['map missing', (w) => void (w.map = any(null))],
   ['map w', (w) => void (w.map = { ...w.map, w: 0 })],
   ['map h', (w) => void (w.map = { ...w.map, h: 129 })],
@@ -39,7 +41,7 @@ const CORRUPTIONS: Corruption[] = [
   ['entities type', (w) => void (w.entities = any({}))],
   ['projectiles type', (w) => void (w.projectiles = any(null))],
   ['entity id 0', (w) => void (w.entities[0]!.id = 0)],
-  ['entity id ≥ nextId', (w) => void (w.entities[2]!.id = 5)],
+  ['entity id ≥ nextId', (w) => void (w.entities[3]!.id = 6)],
   ['entity order of ids', (w) => void w.entities.reverse()],
   ['entity side', (w) => void (w.entities[0]!.side = 2)],
   ['entity kind type', (w) => void (w.entities[0]!.kind = any(3))],
@@ -60,7 +62,7 @@ const CORRUPTIONS: Corruption[] = [
   ['beam target', (w) => void (w.entities[0]!.beam = { target: 0, stacks: 1 })],
   ['beam stacks', (w) => void (w.entities[0]!.beam = { target: 2, stacks: -1 })],
   ['beam type', (w) => void (w.entities[0]!.beam = any(7))],
-  ['projectile id', (w) => void (w.projectiles[0]!.id = 5)],
+  ['projectile id', (w) => void (w.projectiles[0]!.id = 6)],
   ['projectile side', (w) => void (w.projectiles[0]!.side = -1)],
   ['projectile kind', (w) => void (w.projectiles[0]!.kind = 'nope')],
   ['projectile cell', (w) => void (w.projectiles[0]!.y = 4)],
@@ -72,7 +74,10 @@ const CORRUPTIONS: Corruption[] = [
   ['projectile kind from the prototype chain', (w) => void (w.projectiles[0]!.kind = 'toString')],
   ['entity hp above the archetype maximum', (w) => void (w.entities[1]!.hp = 41)],
   ['move order outside the map', (w) => void (w.entities[1]!.order = { type: 'move', x: 5, y: 0 })],
-  ['move order below the map', (w) => void (w.entities[1]!.order = { type: 'move', x: 0, y: 4 })]
+  ['move order below the map', (w) => void (w.entities[1]!.order = { type: 'move', x: 0, y: 4 })],
+  ['deploy progress on a unit that cannot deploy', (w) => void (w.entities[1]!.deploy = 3)],
+  ['deploy progress above ticksPerTurn', (w) => void Object.assign(w.entities[3]!, { order: { type: 'deploy' }, deploy: 7 })],
+  ['deploy progress while moving', (w) => void Object.assign(w.entities[3]!, { order: { type: 'move', x: 0, y: 3 }, deploy: 6 })]
 ];
 
 describe('isValidWorld', () => {

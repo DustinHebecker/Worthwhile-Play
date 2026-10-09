@@ -1,6 +1,7 @@
 import { cellOf, dist2, maxStepCost, stepCost, terrainAt } from './grid';
 import { findPath } from './path';
 import type { Archetype, Command, Entity, Ruleset, SimEvent, Status, WeaponSpec, World } from './types';
+import { computeNetwork } from './network';
 import { archetypeOf, findEntity, normalizeOrder, validateCommand } from './world';
 
 export interface SimResult {
@@ -62,11 +63,22 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     return a;
   };
 
-  // 1. Orders
+  // 1. Orders (with a command network: only units in coverage, at most the side's order slots)
+  // Coverage and slots come from one snapshot taken before any order of this batch applies,
+  // so the order of commands within a batch never changes which of them get through.
+  const networks = rs.commandNetwork && commands.length > 0 ? Array.from({ length: w.sides }, (_, side) => computeNetwork(w, rs, side)) : undefined;
+  const slotsLeft = new Map<number, number>(networks?.map((n, side) => [side, n.slots]));
   for (const c of commands) {
-    if (!validateCommand(w, rs, c).ok) continue;
+    if (!validateCommand(w, rs, c, networks).ok) continue;
+    if (rs.commandNetwork) {
+      const left = slotsLeft.get(c.side) ?? 0;
+      if (left <= 0) continue;
+      slotsLeft.set(c.side, left - 1);
+    }
     const unit = findEntity(w, c.unit) as Entity;
     unit.order = normalizeOrder(c.order);
+    // Orders that make the unit travel pack a set-up node up; hold keeps it standing.
+    if (unit.order.type === 'move' || unit.order.type === 'attack') delete unit.deploy;
     events.push({ t: 'order', tick: t, id: unit.id });
   }
 
@@ -123,6 +135,7 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
       e.x = cell % w.map.w;
       e.y = Math.floor(cell / w.map.w);
       e.mp -= claim.cost;
+      delete e.deploy;
       moved.add(e.id);
       events.push({ t: 'move', tick: t, id: e.id, x: e.x, y: e.y });
     }
@@ -187,6 +200,7 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
 
   // 7. Status effects and cooldowns: existing effects count down, new ones start next tick.
   for (const e of w.entities) {
+    if (e.order.type === 'deploy' && !has(e, 'disabled')) e.deploy = Math.min(rs.ticksPerTurn, (e.deploy ?? 0) + 1);
     if (e.cooldown > 0) e.cooldown -= 1;
     e.status = e.status.map((s) => ({ kind: s.kind, ticks: s.ticks - 1 })).filter((s) => s.ticks > 0);
     for (const effect of pendingEffects.get(e.id) ?? []) {

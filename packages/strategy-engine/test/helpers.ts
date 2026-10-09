@@ -30,7 +30,7 @@ export const mirrorCommands = (w: World, commands: readonly Command[]): Command[
     order: c.order.type === 'move' ? { type: 'move', x: w.map.w - 1 - c.order.x, y: w.map.h - 1 - c.order.y } : c.order
   }));
 
-const KINDS = ['rifles', 'lancer', 'outrider', 'warden', 'howitzer', 'kite', 'tower-gun', 'tower-artillery', 'tower-laser', 'tower-emp', 'command-post'];
+const KINDS = ['rifles', 'lancer', 'outrider', 'warden', 'howitzer', 'kite', 'tower-gun', 'tower-artillery', 'tower-laser', 'tower-emp', 'command-post', 'mast-truck', 'field-post', 'relay-mast'];
 const TERRAIN = ['.', '.', '.', '=', 'f', 'h', 'u', 's', '~', '^'];
 
 /** Random small valid world with two sides plus commands for a few turns. */
@@ -45,7 +45,7 @@ export const arbScenario = fc
       fc.record({
         turn: fc.nat(3),
         unit: fc.integer({ min: 1, max: 14 }),
-        type: fc.constantFrom('hold', 'move', 'attack'),
+        type: fc.constantFrom('hold', 'move', 'attack', 'deploy'),
         x: fc.nat(9),
         y: fc.nat(9),
         target: fc.integer({ min: 1, max: 14 })
@@ -74,7 +74,13 @@ export const arbScenario = fc
       const unit = world.entities.find((e) => e.id === o.unit);
       const side = unit?.side ?? 0;
       const order: Order =
-        o.type === 'move' ? { type: 'move', x: o.x % w, y: o.y % h } : o.type === 'attack' ? { type: 'attack', target: o.target } : { type: 'hold' };
+        o.type === 'move'
+          ? { type: 'move', x: o.x % w, y: o.y % h }
+          : o.type === 'attack'
+            ? { type: 'attack', target: o.target }
+            : o.type === 'deploy'
+              ? { type: 'deploy' }
+              : { type: 'hold' };
       plans[o.turn]?.push({ side, unit: o.unit, order });
     }
     return { world, plans };
