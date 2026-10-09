@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { BASE_RULESET, canonicalJson, DEFAULT_DOCTRINE, computeNetwork, createWorld, initialIntel, resolveTurn, validateCommand, worldHash, type Command, type World } from '@wp/strategy-engine';
+import { BASE_RULESET, canonicalJson, DEFAULT_DOCTRINE, computeNetwork, createWorld, initialIntel, observedCells, resolveTurn, validateCommand, worldHash, type Command, type World } from '@wp/strategy-engine';
 import { planAi } from '../src/ai';
 import {
   cancelOrder,
   doctrineFor,
   doctrineRefusal,
+  lastSentOrder,
   planDoctrine,
   migrateState,
   orderRefusal,
@@ -479,5 +480,85 @@ describe('information model (I3c, D7)', () => {
     expect(migrated.world.intel).toEqual(initialIntel(s.world, RULESET));
     expect(isValidState(migrated)).toBe(true);
     expect(migrateState({ ...v2, v: 3 }, 2)).toBeUndefined();
+  });
+});
+
+describe('review of PR #8', () => {
+  /** Mid-game state: k turns in which the player gives random orders (the opponent is scripted). */
+  const arbMidGame = fc
+    .record({
+      seed: fc.nat(1000),
+      turns: fc.array(fc.array(fc.record({ unit: fc.integer({ min: 1, max: 7 }), x: fc.nat(11), y: fc.nat(11), kind: fc.constantFrom('move', 'patrol', 'regroup') }), { maxLength: 4 }), {
+        minLength: 1,
+        maxLength: 5
+      })
+    })
+    .map(({ seed, turns }) => {
+      let s = newGame(seed);
+      for (const plan of turns) {
+        if (s.phase !== 'plan') break;
+        for (const o of plan) {
+          const order = o.kind === 'move' ? { type: 'move' as const, x: o.x, y: o.y } : o.kind === 'patrol' ? { type: 'patrol' as const, x: o.x, y: o.y, rx: o.y, ry: o.x } : { type: 'regroup' as const };
+          s = planOrder(s, o.unit, order) ?? s;
+        }
+        s = lockTurn(s);
+      }
+      return s;
+    });
+
+  it('the opponent plan does not change when player units it does not see move or get other orders (mid-game)', () => {
+    let checked = 0;
+    fc.assert(
+      fc.property(arbMidGame, fc.nat(1000), fc.nat(143), fc.constantFrom('hold', 'regroup', 'move'), (s, pick, cell, kind) => {
+        const intel = s.world.intel?.[OPPONENT] ?? [];
+        const hidden = own(s).filter((e) => e.kind !== 'command-post' && !intel.some((r) => r.id === e.id && r.live));
+        if (hidden.length === 0) return;
+        const before = canonicalJson(planAi(s.world, RULESET, OPPONENT));
+        const moved = structuredClone(s.world);
+        const unit = moved.entities.find((e) => e.id === hidden[pick % hidden.length]!.id)!;
+        const x = cell % 12;
+        const y = Math.floor(cell / 12);
+        const observed = observedCells(s.world, RULESET, OPPONENT);
+        const free = !moved.entities.some((e) => e.x === x && e.y === y) && validate(moved, { side: PLAYER, unit: unit.id, order: { type: 'move', x, y } });
+        if (!free || observed[y * 12 + x] === 1) return;
+        Object.assign(unit, { x, y, order: kind === 'move' ? { type: 'move', x: 0, y: 0 } : { type: kind } });
+        checked++;
+        expect(canonicalJson(planAi(moved, RULESET, OPPONENT))).toBe(before);
+      }),
+      { numRuns: 120 }
+    );
+    expect(checked).toBeGreaterThan(30);
+  });
+
+  it('rejects saves with more reports or ids than the scenario has entities (hostile saves)', () => {
+    const s = lockTurn(newGame(1));
+    expect(isValidState(s)).toBe(true);
+    const flooded = structuredClone(s);
+    const ghost = { id: 1, side: OPPONENT, kind: 'rifles', x: 0, y: 0, hp: 1, tick: 0, live: false };
+    flooded.world.intel![PLAYER] = Array.from({ length: 50_000 }, (_, i) => ({ ...ghost, id: i + 100 }));
+    flooded.world.nextId = 60_000;
+    expect(isValidState(flooded)).toBe(false);
+    const bigId = structuredClone(s);
+    bigId.world.nextId = 1_000_000;
+    expect(isValidState(bigId)).toBe(false);
+  });
+
+  it('migration keeps a doctrine planned in a version-2 save', () => {
+    const s = newGame(5);
+    const rifle = own(s).find((e) => e.kind === 'rifles')!;
+    const d = { ...DEFAULT_DOCTRINE, holdFire: true };
+    const planned = planDoctrine(s, rifle.id, d)!;
+    const v2 = JSON.parse(JSON.stringify({ ...planned, v: 2, world: { ...planned.world, ruleset: 'strategy-1', intel: undefined } })) as Record<string, unknown>;
+    const migrated = migrateState(v2, 2)!;
+    expect(migrated.draft).toEqual([{ side: PLAYER, unit: rifle.id, order: { type: 'hold' }, doctrine: d }]);
+  });
+
+  it('remembers the last order sent to a unit (shown as unconfirmed while out of contact)', () => {
+    let s = newGame(2);
+    const rifle = own(s).find((e) => e.kind === 'rifles')!;
+    expect(lastSentOrder(s, rifle.id)).toBeUndefined();
+    s = lockTurn(planOrder(s, rifle.id, { type: 'move', x: rifle.x, y: 0 })!);
+    s = lockTurn(s);
+    expect(lastSentOrder(s, rifle.id)).toEqual({ type: 'move', x: rifle.x, y: 0 });
   });
 });

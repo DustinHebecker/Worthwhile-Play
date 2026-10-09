@@ -29,6 +29,7 @@ import {
   picture,
   planDoctrine,
   planOrder,
+  lastSentOrder,
   PLAYER,
   reportTurn,
   RULESET,
@@ -70,9 +71,12 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
 
   /* ---------- Text helpers ---------- */
   /** The world as the player knows it (fog, D7); rule checks use the true world in `rules.ts`. */
-  const world = (): World => picture(state.world).world;
+  // Once the game is over everything is revealed: the map and the result show the true world.
+  const revealed = (): boolean => state.phase === 'finished';
+  const world = (): World => (revealed() ? state.world : picture(state.world).world);
   /** Tick of the last report for units shown at their last known position, else `undefined`. */
-  const ghostTick = (e: Pick<Entity, 'id'>): number | undefined => picture(state.world).ghosts.get(e.id);
+  const ghostTick = (e: Pick<Entity, 'id'>): number | undefined => (revealed() ? undefined : picture(state.world).ghosts.get(e.id));
+  const observedAt = (x: number, y: number): boolean => revealed() || picture(state.world).observed[cellOf(state.world.map, x, y)] === 1;
   const isGhost = (e: Pick<Entity, 'id'>): boolean => ghostTick(e) !== undefined;
   const known = (id: number): Entity | undefined => world().entities.find((e) => e.id === id);
   const unitName = (e: Pick<Entity, 'kind' | 'id'>) => t('unit.name', { name: t(`unit.${e.kind}`), id: e.id });
@@ -127,9 +131,12 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       const where = t('unit.lastSeen', { name: unitName(e), side: sideName(e.side), x: e.x + 1, y: e.y + 1, hp: e.hp, max });
       return `${where} ${ghost === 0 ? t('unit.ghostStart') : t('unit.ghost', { turn: reportTurn(ghost) })}`;
     }
-    let text = t('unit.summary', { name: unitName(e), side: sideName(e.side), x: e.x + 1, y: e.y + 1, hp: e.hp, max, order: describeOrder(e, e.order) });
+    // Enemy orders are never known, not even for enemies in sight.
+    if (e.side !== PLAYER) return t('unit.enemySummary', { name: unitName(e), side: sideName(e.side), x: e.x + 1, y: e.y + 1, hp: e.hp, max });
+    // Own units out of contact: the last order sent, which the player cannot confirm.
+    const order = ghost !== undefined ? t('unit.unconfirmed', { order: describeOrder(e, lastSentOrder(state, e.id) ?? { type: 'hold' }) }) : describeOrder(e, e.order);
+    let text = t('unit.summary', { name: unitName(e), side: sideName(e.side), x: e.x + 1, y: e.y + 1, hp: e.hp, max, order });
     if (ghost !== undefined) text = `${text} ${ghost === 0 ? t('unit.ghostStart') : t('unit.ghost', { turn: reportTurn(ghost) })}`;
-    if (e.side !== PLAYER) return text;
     if (isMobile(e)) text = `${text} (${t(inContact(e) ? 'contact.in' : 'contact.out')})`;
     if (needsDeploy(e)) text = `${text} ${deployText(e)}`;
     const planned = draftFor(state, e.id);
@@ -140,8 +147,10 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
 
   const describeCell = (x: number, y: number): string => {
     const units = unitsAt(x, y);
-    if (units.length === 0) return t('cell.describe', { x: x + 1, y: y + 1, terrain: terrainName(x, y) });
-    return t('cell.describeUnit', { x: x + 1, y: y + 1, terrain: terrainName(x, y), unit: units.map(describeUnit).join(' ') });
+    // The veil is told in words too (screen readers).
+    const terrain = observedAt(x, y) ? terrainName(x, y) : `${terrainName(x, y)} ${t('cell.unobserved')}`;
+    if (units.length === 0) return t('cell.describe', { x: x + 1, y: y + 1, terrain });
+    return t('cell.describeUnit', { x: x + 1, y: y + 1, terrain, unit: units.map(describeUnit).join(' ') });
   };
 
   /* ---------- DOM ---------- */
@@ -263,9 +272,10 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   function statusText(): string {
     if (state.phase === 'plan') return t('status.plan', { n: state.draft.length });
     if (state.conceded) return t('status.conceded');
-    const own = sideValue(world(), PLAYER);
-    const enemy = sideValue(world(), OPPONENT);
-    const decidedByPost = outcome({ ...world(), turn: 0 }, state.turnLimit) !== null;
+    // The result is decided on the true world, so it is told from it (not from the picture).
+    const own = sideValue(state.world, PLAYER);
+    const enemy = sideValue(state.world, OPPONENT);
+    const decidedByPost = outcome({ ...state.world, turn: 0 }, state.turnLimit) !== null;
     if (state.result === 'won') return decidedByPost ? t('status.won') : t('status.wonScore', { own, enemy });
     if (state.result === 'lost') return decidedByPost ? t('status.lost') : t('status.lostScore', { own, enemy });
     return t('status.draw', { own, enemy });
@@ -428,6 +438,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
 
   /** Veils cells the player does not see now: a translucent wash plus a dot (not colour alone). */
   function drawFog(g: CanvasRenderingContext2D, w: World): void {
+    if (revealed()) return;
     const observed = picture(state.world).observed;
     g.save();
     g.fillStyle = css('--rc-fog', 'rgba(29, 29, 27, 0.18)');

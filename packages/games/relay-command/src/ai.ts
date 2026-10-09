@@ -101,6 +101,12 @@ function relaySpot(world: World, ruleset: Ruleset, side: number, truck: Entity):
   const without = { ...world, entities: world.entities.filter((e) => e.id !== truck.id) };
   const coverage = computeNetwork(without, ruleset, side).coverage;
   const cells = world.map.w * world.map.h;
+  // Cells to avoid: own units that stay put, and enemies the side knows to stand there (spotted
+  // units, reported structures). Enemy orders are unknown, so spotted enemies always count.
+  const known = knownEnemies(world, ruleset, side);
+  const taken = (x: number, y: number): boolean =>
+    world.entities.some((e) => e.side === side && e.id !== truck.id && e.x === x && e.y === y && staysPut(ruleset, e)) ||
+    known.some((r) => r.x === x && r.y === y && (isSpotted(world, ruleset, side, r.id) || archetypeOf(ruleset, r.kind)?.speed === 0));
   let best: { x: number; y: number; d: number; f: number } | undefined;
   let here: number | undefined;
   for (let y = 0; y < world.map.h; y++) {
@@ -109,7 +115,7 @@ function relaySpot(world: World, ruleset: Ruleset, side: number, truck: Entity):
       if (coverage[cell] !== 1 || Math.abs(x - post.x) > RELAY_FORWARD || Math.abs(y - post.y) > RELAY_FORWARD) continue;
       if (!passable(world.map, ruleset, x, y, 'ground')) continue;
       // Skip cells held by units that stay (structures, holding units); passing units move on.
-      if (world.entities.some((e) => e.id !== truck.id && e.x === x && e.y === y && staysPut(ruleset, e))) continue;
+      if (taken(x, y)) continue;
       const d = dist2(x, y, enemyPost.x, enemyPost.y);
       const f = frameIndex(cell, side, cells);
       if (!best || d < best.d || (d === best.d && f < best.f)) best = { x, y, d, f };

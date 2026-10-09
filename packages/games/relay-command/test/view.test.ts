@@ -226,6 +226,37 @@ describe('Relay Command view', () => {
     expect(lines).toHaveLength(1);
   });
 
+  it('after losing the own Command Post the result is told from the true world (no stale picture)', () => {
+    const s = structuredClone(state());
+    const post = s.world.entities.find((e) => e.side === PLAYER && e.kind === 'command-post')!;
+    const foe = s.world.entities.find((e) => e.side === OPPONENT && e.kind === 'warden')!;
+    const free = [[-1, 0], [0, -1], [1, 0], [0, 1], [-1, -1], [1, -1]].map(([dx, dy]) => [post.x + dx!, post.y + dy!] as const)
+      .find(([x, y]) => x >= 0 && y >= 0 && x < 12 && y < 12 && passable(s.world.map, RULESET, x, y, 'ground') && !s.world.entities.some((e) => e.x === x && e.y === y))!;
+    Object.assign(foe, { x: free[0], y: free[1] });
+    post.hp = 1;
+    s.world.intel = initialIntel(s.world, RULESET);
+    instance.restore(s);
+    click('rc-lock');
+    expect(state().result).toBe('lost');
+    expect($('rc-status').textContent).toBe('Your Command Post was destroyed.');
+    expect($('rc-summary').textContent).toContain(`Lost: Command Post ${post.id}.`);
+  });
+
+  it('describes enemies without orders, own units out of contact with their last order as unconfirmed, and unobserved cells', () => {
+    const s = structuredClone(state());
+    const rifle = s.world.entities.find((e) => e.side === PLAYER && e.kind === 'rifles')!;
+    // Out of contact: far from the own post, with no report since the start.
+    s.world.intel![PLAYER] = s.world.intel![PLAYER]!.map((r) => (r.id === rifle.id ? { ...r, live: false } : r));
+    s.log = [];
+    instance.restore(s);
+    expect($(`rc-unit-${rifle.id}`).textContent).toContain('last order sent: hold position (unconfirmed)');
+    expect($('rc-enemy').textContent).not.toContain('Current order');
+    $('rc-map').focus();
+    for (let i = 0; i < 12; i++) key('ArrowUp');
+    for (let i = 0; i < 12; i++) key('ArrowRight');
+    expect($('rc-cursor').textContent).toContain('(not observed now)');
+  });
+
   it('maps pointer clicks on the canvas to cells', () => {
     const unit = firstMobile();
     const map = $('rc-map');

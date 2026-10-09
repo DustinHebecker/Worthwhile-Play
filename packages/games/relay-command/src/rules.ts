@@ -206,6 +206,18 @@ export function picture(world: World): Picture {
   return result;
 }
 
+/**
+ * The last order the player sent to a unit (from the turn log), for units out of contact whose
+ * current order the player cannot confirm. `undefined` if none was ever sent.
+ */
+export function lastSentOrder(state: RcState, id: number): Order | undefined {
+  for (let i = state.log.length - 1; i >= 0; i--) {
+    const sent = state.log[i]?.plans[PLAYER]?.find((c) => c.unit === id);
+    if (sent) return sent.order;
+  }
+  return undefined;
+}
+
 /** Turn (1-based, 0 = start) in which a report was made. */
 export const reportTurn = (tick: number): number => Math.ceil(tick / RULESET.ticksPerTurn);
 
@@ -262,7 +274,13 @@ function matchesScenario(world: World, spec: ScenarioSpec): boolean {
   const { map, entities } = spec.scenario;
   if (world.ruleset !== RULESET.id || world.map.w !== map.w || world.map.h !== map.h || world.map.terrain !== map.terrain) return false;
   const kinds = new Set(entities.map((e) => e.kind));
-  return world.entities.length <= entities.length && world.entities.every((e) => kinds.has(e.kind)) && world.projectiles.length <= entities.length * 4;
+  const n = entities.length;
+  // No production yet: every entity id comes from the scenario, so reports are bounded by it too.
+  // Projectiles also draw ids, at most one per unit and tick.
+  const maxId = n * (1 + spec.turnLimit * RULESET.ticksPerTurn) + 1;
+  if (world.nextId > maxId || world.entities.some((e) => e.id > n)) return false;
+  if (world.intel?.some((reports) => reports.length > n || reports.some((r) => r.id > n))) return false;
+  return world.entities.length <= n && world.entities.every((e) => kinds.has(e.kind)) && world.projectiles.length <= n * 4;
 }
 
 export function isValidState(value: unknown): value is RcState {
@@ -296,6 +314,6 @@ export function migrateState(state: unknown, fromVersion: number): RcState | und
   if (!isValidState(migrated)) return undefined;
   // Version 1 had no order limit or coverage: keep only the planned orders that are still allowed.
   let replanned: RcState = { ...migrated, draft: [] };
-  for (const c of migrated.draft) replanned = planOrder(replanned, c.unit, c.order) ?? replanned;
+  for (const c of migrated.draft) replanned = planOrder(replanned, c.unit, c.order, c.doctrine) ?? replanned;
   return replanned;
 }
