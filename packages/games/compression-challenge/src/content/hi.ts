@@ -2,358 +2,358 @@ import type { ContentText } from './types';
 
 export const content: ContentText = {
   launch: {
-    title: 'App launch update',
-    context: 'An email from the project lead to the whole team.',
+    title: 'ऐप लॉन्च की ताज़ा जानकारी',
+    context: 'प्रोजेक्ट प्रमुख का पूरी टीम को भेजा गया ईमेल।',
     sentences: {
-      s1: 'Hi everyone, I hope you all had a good weekend in the sunshine.',
-      s2: 'The launch of our booking app moves from 2 April to 14 May.',
-      s3: 'The reason is that the payment provider has not yet finished its security certification, and we cannot take payments without it.',
-      s4: 'The provider says it has a backlog of applications.',
-      s5: 'The design team will use the extra weeks to polish the onboarding screens.',
-      s6: 'Our 300 beta testers can keep using the test version until the launch.',
-      s7: 'A competitor launched a similar app last year and needed three attempts.',
-      s8: 'Marketing must move the campaign, so please decide on the new campaign start by Friday.',
-      s9: 'The budget stays the same, because the agency does not charge for moving the campaign.',
-      s10: 'The certification itself takes about three weeks once it starts.',
-      s11: 'Thanks again for all your hard work!',
-      s12: 'I will send an updated project plan on Wednesday.'
+      s1: 'सभी को नमस्ते, उम्मीद है आप सबका धूप भरा सप्ताहांत अच्छा बीता।',
+      s2: 'हमारे बुकिंग ऐप का लॉन्च 2 अप्रैल से हटकर 14 मई को होगा।',
+      s3: 'वजह यह है कि भुगतान प्रदाता ने अभी तक अपना सुरक्षा प्रमाणन पूरा नहीं किया है, और उसके बिना हम भुगतान नहीं ले सकते।',
+      s4: 'प्रदाता का कहना है कि उसके पास आवेदनों का ढेर लगा है।',
+      s5: 'डिज़ाइन टीम अतिरिक्त हफ़्तों में स्वागत स्क्रीनों को और निखारेगी।',
+      s6: 'हमारे 300 बीटा परीक्षक लॉन्च तक टेस्ट वर्शन इस्तेमाल करते रह सकते हैं।',
+      s7: 'एक प्रतिस्पर्धी ने पिछले साल ऐसा ही ऐप लॉन्च किया था और उसे तीन कोशिशें लगीं।',
+      s8: 'मार्केटिंग को अभियान आगे बढ़ाना होगा, इसलिए कृपया शुक्रवार तक अभियान की नई शुरुआत तय कर लें।',
+      s9: 'बजट वही रहेगा, क्योंकि एजेंसी अभियान आगे बढ़ाने का कोई शुल्क नहीं लेती।',
+      s10: 'प्रमाणन शुरू होने के बाद उसमें लगभग तीन हफ़्ते लगते हैं।',
+      s11: 'आप सबकी मेहनत के लिए एक बार फिर धन्यवाद!',
+      s12: 'बुधवार को मैं अपडेट की गई प्रोजेक्ट योजना भेजूँगी।'
     },
     bullets: {
-      gold1: 'The launch moves from 2 April to 14 May.',
-      gold2: 'Cause: the payment provider’s security certification is not finished.',
-      gold3: 'Marketing must decide on the new campaign start by Friday.',
-      minor: 'The design team will polish the onboarding screens.',
-      distort: 'The app has failed its security check.',
-      dup: 'The launch is delayed.',
-      subtle: 'The launch moves from 2 April to 4 May.'
+      gold1: 'लॉन्च 2 अप्रैल से हटकर 14 मई को।',
+      gold2: 'कारण: भुगतान प्रदाता का सुरक्षा प्रमाणन पूरा नहीं हुआ।',
+      gold3: 'मार्केटिंग को शुक्रवार तक अभियान की नई शुरुआत तय करनी है।',
+      minor: 'डिज़ाइन टीम स्वागत स्क्रीनों को निखारेगी।',
+      distort: 'ऐप सुरक्षा जाँच में फ़ेल हो गया।',
+      dup: 'लॉन्च में देरी है।',
+      subtle: 'लॉन्च 2 अप्रैल से हटकर 4 मई को।'
     },
     bulletNotes: {
-      distort: 'The text says the certification is not finished yet, not that the app failed a check.',
-      dup: 'Repeats the point about the new date without the date, so it wastes a slot.',
-      subtle: 'Almost right, but the new date is 14 May, not 4 May.'
+      distort: 'पाठ कहता है कि प्रमाणन अभी पूरा नहीं हुआ, यह नहीं कि ऐप किसी जाँच में फ़ेल हुआ।',
+      dup: 'नई तारीख़ वाली बात को तारीख़ के बिना दोहराता है और एक जगह बर्बाद करता है।',
+      subtle: 'लगभग सही, पर नई तारीख़ 14 मई है, 4 मई नहीं।'
     },
     summaries: {
-      faithful: 'The launch moves to 14 May because the payment provider’s certification is not finished, and marketing must decide on the new campaign start by Friday.',
-      vague: 'There are some changes to the launch timing that the team should be aware of.',
-      drops: 'Because the payment provider is not ready yet, the launch has been postponed, but the budget stays the same.',
-      adds: 'The launch moves to 14 May because the payment provider’s certification is not finished, and the delay will make the project more expensive.',
-      subtle: 'The launch moves to 14 May because our app failed the payment provider’s certification, and marketing must decide on the new campaign start by Friday.'
+      faithful: 'भुगतान प्रदाता का प्रमाणन पूरा न होने से लॉन्च 14 मई तक टल गया है, और मार्केटिंग को शुक्रवार तक अभियान की नई शुरुआत तय करनी है।',
+      vague: 'लॉन्च के समय में कुछ बदलाव हैं, जिनकी जानकारी टीम को होनी चाहिए।',
+      drops: 'भुगतान प्रदाता अभी तैयार नहीं है, इसलिए लॉन्च टाल दिया गया है, पर बजट वही रहेगा।',
+      adds: 'भुगतान प्रदाता का प्रमाणन पूरा न होने से लॉन्च 14 मई तक टल गया है, और इस देरी से प्रोजेक्ट महँगा हो जाएगा।',
+      subtle: 'हमारा ऐप भुगतान प्रदाता के प्रमाणन में फ़ेल हो गया, इसलिए लॉन्च 14 मई तक टल गया है, और मार्केटिंग को शुक्रवार तक अभियान की नई शुरुआत तय करनी है।'
     },
     summaryNotes: {
-      drops: 'It leaves out the new date and the decision marketing has to make.',
-      adds: 'The text says the budget stays the same; higher costs are made up.',
-      subtle: 'The app has not failed anything: the certification is simply not finished yet.'
+      drops: 'इसमें नई तारीख़ और मार्केटिंग का फ़ैसला दोनों छूट गए हैं।',
+      adds: 'पाठ के अनुसार बजट वही रहेगा; लागत बढ़ने की बात गढ़ी हुई है।',
+      subtle: 'ऐप किसी चीज़ में फ़ेल नहीं हुआ: प्रमाणन बस अभी पूरा नहीं हुआ है।'
     },
-    task: 'The marketing team has to act on this one-liner.',
-    oneLiner: 'Move the launch to May.',
+    task: 'मार्केटिंग टीम को इस एक पंक्ति के आधार पर काम करना है।',
+    oneLiner: 'लॉन्च को मई में कर दो।',
     details: {
-      d1: 'The exact new date: 14 May',
-      d2: 'Who must act: marketing moves the campaign',
-      d3: 'The deadline: decide on the new campaign start by Friday',
-      d4: 'Why the provider is behind schedule',
-      d5: 'The design team’s plans for the onboarding screens',
-      d6: 'The sunny weekend'
+      d1: 'सही नई तारीख़: 14 मई',
+      d2: 'किसे काम करना है: मार्केटिंग अभियान आगे बढ़ाएगी',
+      d3: 'समय-सीमा: शुक्रवार तक अभियान की नई शुरुआत तय करना',
+      d4: 'प्रदाता को देर क्यों हो रही है',
+      d5: 'स्वागत स्क्रीनों के लिए डिज़ाइन टीम की योजना',
+      d6: 'धूप भरा सप्ताहांत'
     },
     versions: {
-      actionable: 'The launch moves from 2 April to 14 May. Marketing: please move the campaign and decide on the new start date by Friday. The budget stays the same.',
-      vague: 'We are moving the launch to May. Please adjust your plans accordingly and let us know if anything comes up.',
-      invented: 'The launch moves to 1 May. Marketing: please cancel the campaign and plan a new one by the end of the month.'
+      actionable: 'लॉन्च 2 अप्रैल से हटकर 14 मई को होगा। मार्केटिंग: कृपया अभियान आगे बढ़ाएँ और शुक्रवार तक नई शुरुआत की तारीख़ तय करें। बजट वही रहेगा।',
+      vague: 'हम लॉन्च को मई में कर रहे हैं। कृपया अपनी योजनाएँ उसी हिसाब से बदल लें और कोई बात हो तो बताएँ।',
+      invented: 'लॉन्च अब 1 मई को होगा। मार्केटिंग: कृपया अभियान रद्द करें और महीने के अंत तक नया अभियान बनाएँ।'
     },
-    versionNote: 'The new date is 14 May, not 1 May, and the campaign is moved, not cancelled.'
+    versionNote: 'नई तारीख़ 14 मई है, 1 मई नहीं, और अभियान आगे बढ़ाया जा रहा है, रद्द नहीं किया जा रहा।'
   },
   library: {
-    title: 'Library renovation',
-    context: 'A notice on the door of the local library branch.',
+    title: 'पुस्तकालय की मरम्मत',
+    context: 'मोहल्ले के पुस्तकालय के दरवाज़े पर लगी एक सूचना।',
     sentences: {
-      s1: 'Many of you have told us how much you love the old armchairs in the reading corner.',
-      s2: 'From 3 June, the library will be closed for renovation for eight weeks.',
-      s3: 'The roof will be repaired, and the building will get a lift and new lighting.',
-      s4: 'During the closure, a library bus will stop at the market square every Tuesday.',
-      s5: 'The bus carries about 2,000 books and can order any title from the central library.',
-      s6: 'All loans that would fall due during the closure are extended automatically, so nobody pays late fees.',
-      s7: 'Books can also be returned at any time in the return box next to the town hall.',
-      s8: 'The town hall itself was renovated in a similar way ten years ago.',
-      s9: 'Our e-books and audiobooks remain available online as usual.',
-      s10: 'We are already looking forward to next year’s summer reading festival.',
-      s11: 'The renovation is paid for by a regional building fund.'
+      s1: 'आप में से कई लोगों ने बताया है कि आपको पढ़ने के कोने की पुरानी आरामकुर्सियाँ कितनी पसंद हैं।',
+      s2: '3 जून से पुस्तकालय मरम्मत के लिए आठ हफ़्ते बंद रहेगा।',
+      s3: 'छत की मरम्मत होगी, और इमारत में लिफ़्ट और नई रोशनी लगेगी।',
+      s4: 'बंद रहने के दौरान हर मंगलवार बाज़ार चौक पर एक पुस्तकालय बस खड़ी होगी।',
+      s5: 'बस में लगभग 2,000 किताबें हैं, और वह केंद्रीय पुस्तकालय से कोई भी किताब मँगवा सकती है।',
+      s6: 'बंद रहने के दौरान जिन किताबों की वापसी की तारीख़ आती है, वे सब अपने आप बढ़ा दी जाएँगी, इसलिए किसी को विलंब शुल्क नहीं देना होगा।',
+      s7: 'किताबें कभी भी नगर भवन के पास वाले वापसी बॉक्स में भी लौटाई जा सकती हैं।',
+      s8: 'नगर भवन की भी दस साल पहले इसी तरह मरम्मत हुई थी।',
+      s9: 'हमारी ई-बुक और ऑडियोबुक हमेशा की तरह ऑनलाइन उपलब्ध रहेंगी।',
+      s10: 'हम अगले साल के गर्मियों के पठन उत्सव का अभी से इंतज़ार कर रहे हैं।',
+      s11: 'मरम्मत का ख़र्च एक क्षेत्रीय निर्माण कोष से दिया जा रहा है।'
     },
     bullets: {
-      gold1: 'Closed for renovation for eight weeks from 3 June.',
-      gold2: 'A library bus stops at the market square every Tuesday.',
-      gold3: 'Loans due during the closure are extended automatically.',
-      minor: 'The building will get new lighting.',
-      distort: 'All library services stop for eight weeks.',
-      dup: 'The library will be closed for a while.',
-      subtle: 'Closed for renovation for six weeks from 3 June.'
+      gold1: '3 जून से मरम्मत के लिए आठ हफ़्ते बंद।',
+      gold2: 'हर मंगलवार बाज़ार चौक पर पुस्तकालय बस आती है।',
+      gold3: 'बंद रहने के दौरान देय किताबें अपने आप बढ़ जाती हैं।',
+      minor: 'इमारत में नई रोशनी लगेगी।',
+      distort: 'पुस्तकालय की सारी सेवाएँ आठ हफ़्ते बंद रहेंगी।',
+      dup: 'पुस्तकालय कुछ समय के लिए बंद रहेगा।',
+      subtle: '3 जून से मरम्मत के लिए छह हफ़्ते बंद।'
     },
     bulletNotes: {
-      distort: 'Not true: the bus and the return box keep working during the closure.',
-      dup: 'Repeats the closure without the start date or the length.',
-      subtle: 'Almost right, but the closure lasts eight weeks, not six.'
+      distort: 'सही नहीं: बंद रहने के दौरान भी बस और वापसी बॉक्स चलते रहेंगे।',
+      dup: 'बंद होने की बात को शुरुआत की तारीख़ और अवधि के बिना दोहराता है।',
+      subtle: 'लगभग सही, पर पुस्तकालय आठ हफ़्ते बंद रहेगा, छह नहीं।'
     },
     summaries: {
-      faithful: 'The library closes for eight weeks from 3 June; meanwhile a bus visits the market square every Tuesday, and loans due in that time are extended automatically.',
-      vague: 'There will be some changes at the library over the summer, so keep an eye out.',
-      drops: 'The library is being renovated and will get a repaired roof, a lift and new lighting.',
-      adds: 'The library closes for eight weeks from 3 June and will charge a small fee for loans after it reopens.',
-      subtle: 'Because the roof is unsafe, the library closes for eight weeks from 3 June; meanwhile a bus visits the market square every Tuesday.'
+      faithful: 'पुस्तकालय 3 जून से आठ हफ़्ते बंद रहेगा; इस दौरान हर मंगलवार बाज़ार चौक पर बस आएगी और देय किताबें अपने आप बढ़ा दी जाएँगी।',
+      vague: 'इस गर्मी पुस्तकालय में कुछ बदलाव होंगे, तो ध्यान रखिए।',
+      drops: 'पुस्तकालय की मरम्मत होगी और उसमें ठीक की गई छत, लिफ़्ट और नई रोशनी होगी।',
+      adds: 'पुस्तकालय 3 जून से आठ हफ़्ते बंद रहेगा और दोबारा खुलने के बाद किताबें लेने पर थोड़ा शुल्क लेगा।',
+      subtle: 'छत असुरक्षित है, इसलिए पुस्तकालय 3 जून से आठ हफ़्ते बंद रहेगा; इस दौरान हर मंगलवार बाज़ार चौक पर बस आएगी।'
     },
     summaryNotes: {
-      drops: 'It describes the building work but not when the library closes or what readers can do meanwhile.',
-      adds: 'Nothing in the notice mentions fees after the reopening.',
-      subtle: 'The notice says the roof will be repaired, not that it is unsafe; that cause is added.'
+      drops: 'यह मरम्मत का ब्योरा देता है, पर यह नहीं बताता कि पुस्तकालय कब बंद होगा या पाठक इस बीच क्या कर सकते हैं।',
+      adds: 'सूचना में दोबारा खुलने के बाद किसी शुल्क का ज़िक्र नहीं है।',
+      subtle: 'सूचना कहती है कि छत की मरम्मत होगी, यह नहीं कि वह असुरक्षित है; यह कारण जोड़ा गया है।'
     },
-    task: 'A neighbour who wants to keep borrowing books asks you about it.',
-    oneLiner: 'The library is closed in summer.',
+    task: 'एक पड़ोसी, जो किताबें लेते रहना चाहता है, आपसे इसके बारे में पूछता है।',
+    oneLiner: 'पुस्तकालय गर्मियों में बंद है।',
     details: {
-      d1: 'When exactly: for eight weeks from 3 June',
-      d2: 'Where to borrow meanwhile: the bus at the market square on Tuesdays',
-      d3: 'Where to return books: the box next to the town hall',
-      d4: 'What the renovation includes',
-      d5: 'The armchairs in the reading corner',
-      d6: 'Next year’s reading festival'
+      d1: 'ठीक कब: 3 जून से आठ हफ़्ते',
+      d2: 'इस बीच किताबें कहाँ से लें: मंगलवार को बाज़ार चौक की बस से',
+      d3: 'किताबें कहाँ लौटाएँ: नगर भवन के पास वाला बॉक्स',
+      d4: 'मरम्मत में क्या-क्या शामिल है',
+      d5: 'पढ़ने के कोने की आरामकुर्सियाँ',
+      d6: 'अगले साल का पठन उत्सव'
     },
     versions: {
-      actionable: 'From 3 June the library is closed for eight weeks. You can borrow books from the library bus at the market square every Tuesday and return them any time in the box next to the town hall. Loans due in that time are extended automatically.',
-      vague: 'The library will be closed for a while in the summer because of building work. There will be other options, so check the notice for more.',
-      invented: 'From 3 June the library is closed for eight weeks. You can borrow books from the library bus at the station every Friday. Please return all books before the closure.'
+      actionable: '3 जून से पुस्तकालय आठ हफ़्ते बंद रहेगा। आप हर मंगलवार बाज़ार चौक पर पुस्तकालय बस से किताबें ले सकते हैं और कभी भी नगर भवन के पास वाले बॉक्स में लौटा सकते हैं। इस दौरान देय किताबें अपने आप बढ़ा दी जाएँगी।',
+      vague: 'पुस्तकालय गर्मियों में निर्माण कार्य की वजह से कुछ समय बंद रहेगा। दूसरे विकल्प भी होंगे, ज़्यादा जानकारी के लिए सूचना देख लीजिए।',
+      invented: '3 जून से पुस्तकालय आठ हफ़्ते बंद रहेगा। आप हर शुक्रवार स्टेशन पर पुस्तकालय बस से किताबें ले सकते हैं। कृपया बंद होने से पहले सारी किताबें लौटा दें।'
     },
-    versionNote: 'The bus stops at the market square on Tuesdays, and nobody has to return books before the closure.'
+    versionNote: 'बस मंगलवार को बाज़ार चौक पर आती है, और किसी को बंद होने से पहले किताबें लौटाने की ज़रूरत नहीं है।'
   },
   leaves: {
-    title: 'Why leaves change colour',
-    context: 'A short article from a nature magazine for curious readers.',
+    title: 'पत्तियों का रंग क्यों बदलता है',
+    context: 'जिज्ञासु पाठकों के लिए एक प्रकृति पत्रिका का छोटा लेख।',
     sentences: {
-      s1: 'Autumn is many people’s favourite season for long walks.',
-      s2: 'Leaves are green because they contain a lot of chlorophyll, the pigment plants use to capture sunlight.',
-      s3: 'As the days get shorter, many trees stop making chlorophyll and break it down.',
-      s4: 'Yellow and orange pigments, called carotenoids, were in the leaf all along; they only become visible when the green fades.',
-      s5: 'Carotenoids are the same kind of pigment that makes carrots orange.',
-      s6: 'Red is different: some trees, such as many maples, make new red pigments in autumn.',
-      s7: 'Researchers think these red pigments may protect the leaf from strong light while the tree takes back nutrients.',
-      s8: 'Sunny days and cool nights tend to make the reds brighter.',
-      s9: 'In some regions, colourful forests attract many tourists every year.',
-      s10: 'Finally, a thin layer of cells forms where the leaf joins the twig, and the leaf falls.',
-      s11: 'Don’t forget a warm jacket if you go out to look at the trees.'
+      s1: 'शरद ऋतु बहुत लोगों के लिए लंबी सैर का सबसे पसंदीदा मौसम है।',
+      s2: 'पत्तियाँ हरी होती हैं क्योंकि उनमें बहुत सारा क्लोरोफ़िल होता है, वह रंजक जिससे पौधे धूप पकड़ते हैं।',
+      s3: 'जब दिन छोटे होने लगते हैं, तो कई पेड़ क्लोरोफ़िल बनाना बंद कर देते हैं और उसे तोड़ देते हैं।',
+      s4: 'पीले और नारंगी रंजक, जिन्हें कैरोटिनॉयड कहते हैं, पत्ती में हमेशा से थे; वे तभी दिखते हैं जब हरा रंग फीका पड़ता है।',
+      s5: 'कैरोटिनॉयड उसी तरह के रंजक हैं जो गाजर को नारंगी बनाते हैं।',
+      s6: 'लाल रंग अलग है: कुछ पेड़, जैसे कई मेपल, शरद ऋतु में नए लाल रंजक बनाते हैं।',
+      s7: 'शोधकर्ताओं का मानना है कि ये लाल रंजक शायद पत्ती को तेज़ रोशनी से बचाते हैं, जब पेड़ पोषक तत्व वापस ले रहा होता है।',
+      s8: 'धूप वाले दिन और ठंडी रातें अक्सर लाल रंग को और चटक बना देती हैं।',
+      s9: 'कुछ इलाक़ों में रंग-बिरंगे जंगल हर साल बहुत से पर्यटकों को खींचते हैं।',
+      s10: 'आख़िर में, जहाँ पत्ती टहनी से जुड़ती है, वहाँ कोशिकाओं की एक पतली परत बनती है और पत्ती गिर जाती है।',
+      s11: 'पेड़ देखने निकलें तो गर्म जैकेट ले जाना न भूलें।'
     },
     bullets: {
-      gold1: 'In autumn, trees stop making green chlorophyll and break it down.',
-      gold2: 'Yellow and orange pigments were there all along and become visible.',
-      gold3: 'Some trees, such as maples, make new red pigments.',
-      minor: 'A thin layer of cells forms, and the leaf falls.',
-      distort: 'All autumn colours are new pigments made by the tree.',
-      dup: 'Leaves lose their green colour.',
-      subtle: 'Red pigments protect the leaf from strong light.'
+      gold1: 'शरद ऋतु में पेड़ हरा क्लोरोफ़िल बनाना बंद करके उसे तोड़ देते हैं।',
+      gold2: 'पीले और नारंगी रंजक हमेशा से थे और अब दिखने लगते हैं।',
+      gold3: 'कुछ पेड़, जैसे मेपल, नए लाल रंजक बनाते हैं।',
+      minor: 'कोशिकाओं की पतली परत बनती है और पत्ती गिर जाती है।',
+      distort: 'शरद ऋतु के सारे रंग पेड़ के बनाए नए रंजक हैं।',
+      dup: 'पत्तियाँ अपना हरा रंग खो देती हैं।',
+      subtle: 'लाल रंजक पत्ती को तेज़ रोशनी से बचाते हैं।'
     },
     bulletNotes: {
-      distort: 'Only the reds are new; yellow and orange were in the leaf all along.',
-      dup: 'Says less than the point about chlorophyll and wastes a slot.',
-      subtle: 'The text only says researchers think the red pigments may protect the leaf; this bullet states it as a fact.'
+      distort: 'सिर्फ़ लाल रंग नया है; पीला और नारंगी पत्ती में हमेशा से थे।',
+      dup: 'क्लोरोफ़िल वाली बात से कम कहता है और एक जगह बर्बाद करता है।',
+      subtle: 'पाठ बस इतना कहता है कि शोधकर्ता मानते हैं लाल रंजक शायद पत्ती को बचाते हैं; यह बिंदु इसे पक्के तथ्य की तरह कहता है।'
     },
     summaries: {
-      faithful: 'In autumn many trees break down their green chlorophyll, which reveals yellow and orange pigments that were there all along, while some trees also make new red ones.',
-      vague: 'Leaves change colour in autumn because of various natural processes in the tree.',
-      drops: 'In autumn, leaves turn yellow, orange and red, and then they fall from the trees.',
-      adds: 'In autumn many trees break down their green chlorophyll, which reveals yellow and orange pigments, and the redder the leaves, the colder the coming winter.',
-      subtle: 'In autumn many trees break down their green chlorophyll, which reveals yellow and orange pigments, and cold nights make the trees produce red ones.'
+      faithful: 'शरद ऋतु में कई पेड़ हरे क्लोरोफ़िल को तोड़ देते हैं, जिससे हमेशा से मौजूद पीले और नारंगी रंजक दिखने लगते हैं, और कुछ पेड़ नए लाल रंजक भी बनाते हैं।',
+      vague: 'शरद ऋतु में पत्तियों का रंग पेड़ के अंदर की कई प्राकृतिक प्रक्रियाओं के कारण बदलता है।',
+      drops: 'शरद ऋतु में पत्तियाँ पीली, नारंगी और लाल हो जाती हैं, और फिर पेड़ों से गिर जाती हैं।',
+      adds: 'शरद ऋतु में कई पेड़ हरे क्लोरोफ़िल को तोड़ देते हैं, जिससे पीले और नारंगी रंजक दिखने लगते हैं, और पत्तियाँ जितनी लाल होंगी, आने वाली सर्दी उतनी ठंडी होगी।',
+      subtle: 'शरद ऋतु में कई पेड़ हरे क्लोरोफ़िल को तोड़ देते हैं, जिससे पीले और नारंगी रंजक दिखने लगते हैं, और ठंडी रातें पेड़ों से लाल रंजक बनवाती हैं।'
     },
     summaryNotes: {
-      drops: 'It describes what we see, but not why it happens.',
-      adds: 'The text says nothing about predicting the winter.',
-      subtle: 'Cool nights only tend to make the reds brighter; the text does not say they cause the red pigments.'
+      drops: 'यह बताता है कि हम क्या देखते हैं, पर यह नहीं कि ऐसा क्यों होता है।',
+      adds: 'पाठ में सर्दी का अनुमान लगाने के बारे में कुछ नहीं है।',
+      subtle: 'ठंडी रातें बस अक्सर लाल रंग को चटक बनाती हैं; पाठ यह नहीं कहता कि वे लाल रंजक पैदा करती हैं।'
     },
-    task: 'A teacher wants to explain this one-liner to a class, using real leaves.',
-    oneLiner: 'The chlorophyll breaks down, so other colours show.',
+    task: 'एक शिक्षिका असली पत्तियों की मदद से यह एक पंक्ति कक्षा को समझाना चाहती है।',
+    oneLiner: 'क्लोरोफ़िल टूटता है, इसलिए दूसरे रंग दिखते हैं।',
     details: {
-      d1: 'What chlorophyll is: the green pigment that captures sunlight',
-      d2: 'That yellow and orange were in the leaf all along',
-      d3: 'That some trees, such as maples, make new red pigments',
-      d4: 'That autumn is a popular season for walks',
-      d5: 'That you need a warm jacket outside',
-      d6: 'How the leaf finally falls off'
+      d1: 'क्लोरोफ़िल क्या है: धूप पकड़ने वाला हरा रंजक',
+      d2: 'कि पीला और नारंगी पत्ती में हमेशा से थे',
+      d3: 'कि कुछ पेड़, जैसे मेपल, नए लाल रंजक बनाते हैं',
+      d4: 'कि शरद ऋतु सैर के लिए पसंदीदा मौसम है',
+      d5: 'कि बाहर गर्म जैकेट चाहिए',
+      d6: 'कि आख़िर में पत्ती कैसे गिरती है'
     },
     versions: {
-      actionable: 'Leaves are green because of chlorophyll, a pigment that captures sunlight. In autumn many trees stop making it and break it down. Then yellow and orange pigments that were there all along become visible, and some trees, like maples, make new red ones.',
-      vague: 'In autumn the leaves change because the green goes away and other colours come out. Nature is fascinating that way.',
-      invented: 'Leaves are green because of chlorophyll. In autumn the frost freezes the chlorophyll, and then the tree paints its leaves yellow, orange and red with new pigments.'
+      actionable: 'पत्तियाँ क्लोरोफ़िल की वजह से हरी होती हैं, जो धूप पकड़ने वाला एक रंजक है। शरद ऋतु में कई पेड़ इसे बनाना बंद कर देते हैं और तोड़ देते हैं। तब हमेशा से मौजूद पीले और नारंगी रंजक दिखने लगते हैं, और कुछ पेड़, जैसे मेपल, नए लाल रंजक बनाते हैं।',
+      vague: 'शरद ऋतु में पत्तियाँ बदलती हैं क्योंकि हरा रंग चला जाता है और दूसरे रंग निकल आते हैं। प्रकृति ऐसी ही अद्भुत है।',
+      invented: 'पत्तियाँ क्लोरोफ़िल की वजह से हरी होती हैं। शरद ऋतु में पाला क्लोरोफ़िल को जमा देता है, और फिर पेड़ नए रंजकों से अपनी पत्तियों को पीला, नारंगी और लाल रंग देता है।'
     },
-    versionNote: 'The text does not say that frost freezes the chlorophyll, and only the reds are new pigments.'
+    versionNote: 'पाठ यह नहीं कहता कि पाला क्लोरोफ़िल को जमा देता है, और सिर्फ़ लाल रंग ही नया रंजक है।'
   },
   club: {
-    title: 'Sports club board meeting',
-    context: 'The minutes of a sports club board meeting, sent to all members.',
+    title: 'खेल क्लब की प्रबंध समिति की बैठक',
+    context: 'एक खेल क्लब की प्रबंध समिति की बैठक का कार्यवृत्त, जो सभी सदस्यों को भेजा गया।',
     sentences: {
-      s1: 'The meeting took place in the clubhouse and started a little late because of a football match.',
-      s2: 'The board proposes raising the annual membership fee from 60 to 66 euros from next January.',
-      s3: 'The reason is that the rent for the sports hall has gone up by 15 percent.',
-      s4: 'The fee has not changed for eight years.',
-      s5: 'Members under 18 will keep paying the old fee.',
-      s6: 'The members will vote on the proposal at the general meeting on 12 March.',
-      s7: 'The board also discussed new nets for the tennis courts but postponed a decision.',
-      s8: 'If the proposal is rejected, the board will look at cutting some training times instead.',
-      s9: 'A neighbouring club recently raised its fee as well, to 75 euros.',
-      s10: 'The hall belongs to the town, which sets the rent.',
-      s11: 'Many thanks to the youth team for the delicious cakes!'
+      s1: 'बैठक क्लबहाउस में हुई और एक फ़ुटबॉल मैच की वजह से थोड़ी देर से शुरू हुई।',
+      s2: 'समिति का प्रस्ताव है कि अगली जनवरी से सालाना सदस्यता शुल्क 60 से बढ़ाकर 66 यूरो किया जाए।',
+      s3: 'वजह यह है कि खेल हॉल का किराया 15 प्रतिशत बढ़ गया है।',
+      s4: 'शुल्क आठ साल से नहीं बदला है।',
+      s5: '18 साल से कम उम्र के सदस्य पुराना शुल्क ही देते रहेंगे।',
+      s6: 'सदस्य 12 मार्च की आम सभा में इस प्रस्ताव पर मतदान करेंगे।',
+      s7: 'समिति ने टेनिस कोर्ट के लिए नए जालों पर भी बात की, पर फ़ैसला टाल दिया।',
+      s8: 'अगर प्रस्ताव नामंज़ूर हुआ, तो समिति इसके बजाय कुछ अभ्यास समय घटाने पर विचार करेगी।',
+      s9: 'पास के एक क्लब ने भी हाल में अपना शुल्क बढ़ाकर 75 यूरो कर दिया है।',
+      s10: 'हॉल नगर निगम का है, और किराया भी वही तय करता है।',
+      s11: 'स्वादिष्ट केक के लिए युवा टीम का बहुत-बहुत धन्यवाद!'
     },
     bullets: {
-      gold1: 'Proposal: the annual fee rises from 60 to 66 euros from January.',
-      gold2: 'Members under 18 keep paying the old fee.',
-      gold3: 'Members vote on it at the general meeting on 12 March.',
-      minor: 'New nets for the tennis courts were discussed.',
-      distort: 'The board has decided to raise the fee.',
-      dup: 'The membership fee may go up.',
-      subtle: 'Proposal: the annual fee rises from 60 to 76 euros from January.'
+      gold1: 'प्रस्ताव: जनवरी से सालाना शुल्क 60 से बढ़कर 66 यूरो।',
+      gold2: '18 साल से कम उम्र के सदस्य पुराना शुल्क देते रहेंगे।',
+      gold3: 'सदस्य 12 मार्च की आम सभा में मतदान करेंगे।',
+      minor: 'टेनिस कोर्ट के नए जालों पर बात हुई।',
+      distort: 'समिति ने शुल्क बढ़ाने का फ़ैसला कर लिया है।',
+      dup: 'सदस्यता शुल्क बढ़ सकता है।',
+      subtle: 'प्रस्ताव: जनवरी से सालाना शुल्क 60 से बढ़कर 76 यूरो।'
     },
     bulletNotes: {
-      distort: 'Nothing is decided yet: it is a proposal, and the members vote on it.',
-      dup: 'A vaguer repeat of the fee point, without the amounts.',
-      subtle: 'Almost right, but the proposed fee is 66 euros, not 76.'
+      distort: 'अभी कुछ तय नहीं हुआ: यह प्रस्ताव है, और सदस्य इस पर मतदान करेंगे।',
+      dup: 'शुल्क वाली बात को रक़म के बिना और धुंधले ढंग से दोहराता है।',
+      subtle: 'लगभग सही, पर प्रस्तावित शुल्क 66 यूरो है, 76 नहीं।'
     },
     summaries: {
-      faithful: 'Because the hall rent rose, the board proposes raising the annual fee from 60 to 66 euros from January, with under-18s exempt, and members vote on it on 12 March.',
-      vague: 'The board talked about money matters and some changes for members.',
-      drops: 'Because the rent for the sports hall has gone up, the club’s finances were the main topic of the board meeting.',
-      adds: 'The board proposes raising the annual fee from 60 to 66 euros from January, and members who do not pay by March will lose their membership.',
-      subtle: 'Because the hall rent rose, the board has decided to raise the annual fee from 60 to 66 euros from January, with under-18s exempt.'
+      faithful: 'हॉल का किराया बढ़ने से समिति ने जनवरी से सालाना शुल्क 60 से 66 यूरो करने का प्रस्ताव रखा है, 18 साल से कम उम्र वालों को छोड़कर, और सदस्य 12 मार्च को मतदान करेंगे।',
+      vague: 'समिति ने पैसों से जुड़े मामलों और सदस्यों के लिए कुछ बदलावों पर बात की।',
+      drops: 'खेल हॉल का किराया बढ़ गया है, इसलिए समिति की बैठक का मुख्य विषय क्लब की वित्तीय स्थिति रहा।',
+      adds: 'समिति ने जनवरी से सालाना शुल्क 60 से 66 यूरो करने का प्रस्ताव रखा है, और जो मार्च तक भुगतान नहीं करेगा उसकी सदस्यता ख़त्म हो जाएगी।',
+      subtle: 'हॉल का किराया बढ़ने से समिति ने जनवरी से सालाना शुल्क 60 से 66 यूरो करने का फ़ैसला कर लिया है, 18 साल से कम उम्र वालों को छोड़कर।'
     },
     summaryNotes: {
-      drops: 'It leaves out the proposed new fee and the vote on 12 March.',
-      adds: 'The minutes say nothing about losing the membership.',
-      subtle: 'It is only a proposal that the members still vote on, so “has decided” is wrong.'
+      drops: 'इसमें प्रस्तावित नया शुल्क और 12 मार्च का मतदान छूट गए हैं।',
+      adds: 'कार्यवृत्त में सदस्यता ख़त्म होने के बारे में कुछ नहीं लिखा है।',
+      subtle: 'यह सिर्फ़ प्रस्ताव है जिस पर सदस्यों को अभी मतदान करना है, इसलिए “फ़ैसला कर लिया” ग़लत है।'
     },
-    task: 'A member asks you what this means for them.',
-    oneLiner: 'The fees are going up.',
+    task: 'एक सदस्य आपसे पूछता है कि इसका उसके लिए क्या मतलब है।',
+    oneLiner: 'शुल्क बढ़ रहे हैं।',
     details: {
-      d1: 'The amounts: from 60 to 66 euros a year',
-      d2: 'That it is a proposal, voted on at the general meeting on 12 March',
-      d3: 'That members under 18 keep the old fee',
-      d4: 'That the meeting started late',
-      d5: 'The cakes from the youth team',
-      d6: 'The discussion about tennis nets'
+      d1: 'रक़म: सालाना 60 से 66 यूरो',
+      d2: 'कि यह प्रस्ताव है, जिस पर 12 मार्च की आम सभा में मतदान होगा',
+      d3: 'कि 18 साल से कम उम्र के सदस्यों का शुल्क पुराना ही रहेगा',
+      d4: 'कि बैठक देर से शुरू हुई',
+      d5: 'युवा टीम के केक',
+      d6: 'टेनिस जालों पर हुई बातचीत'
     },
     versions: {
-      actionable: 'The board proposes raising the annual fee from 60 to 66 euros from January, because the hall rent went up. Members under 18 keep the old fee. Nothing is decided yet: you can vote on it at the general meeting on 12 March.',
-      vague: 'The fees are going up next year because things have become more expensive. More information will follow at some point.',
-      invented: 'From January the fee rises from 60 to 66 euros for everyone. Please update your bank transfer before the general meeting on 12 March.'
+      actionable: 'हॉल का किराया बढ़ने की वजह से समिति ने जनवरी से सालाना शुल्क 60 से 66 यूरो करने का प्रस्ताव रखा है। 18 साल से कम उम्र के सदस्यों का शुल्क पुराना ही रहेगा। अभी कुछ तय नहीं हुआ है: आप 12 मार्च की आम सभा में मतदान कर सकते हैं।',
+      vague: 'अगले साल शुल्क बढ़ रहे हैं क्योंकि सब कुछ महँगा हो गया है। ज़्यादा जानकारी बाद में कभी आएगी।',
+      invented: 'जनवरी से सबके लिए शुल्क 60 से बढ़कर 66 यूरो हो रहा है। कृपया 12 मार्च की आम सभा से पहले अपना बैंक ट्रांसफ़र बदल लें।'
     },
-    versionNote: 'It treats a proposal as decided and forgets that members under 18 keep the old fee.'
+    versionNote: 'यह प्रस्ताव को तय फ़ैसला मान लेता है और भूल जाता है कि 18 साल से कम उम्र के सदस्यों का शुल्क पुराना ही रहेगा।'
   },
   trip: {
-    title: 'Change to the class trip',
-    context: 'A message from a teacher to the parents of a school class.',
+    title: 'कक्षा की यात्रा में बदलाव',
+    context: 'एक शिक्षक का कक्षा के अभिभावकों को भेजा गया संदेश।',
     sentences: {
-      s1: 'I hope the children are as excited about the trip as I am!',
-      s2: 'Because of a rail strike, we will travel to the coast by coach instead of by train.',
-      s3: 'This means we leave one hour earlier than planned.',
-      s4: 'The meeting point is no longer the station but the car park behind the school.',
-      s5: 'The coach company has a lot of experience with school groups.',
-      s6: 'The return trip on Friday stays as planned.',
-      s7: 'There are no extra costs for families; the school covers the difference.',
-      s8: 'The coach journey takes about 40 minutes longer than the train.',
-      s9: 'Last year’s class went to the mountains, which was also a great trip.',
-      s10: 'There is a short break halfway, at a service station.',
-      s11: 'Thank you all for your help with the packing lists.'
+      s1: 'उम्मीद है बच्चे भी यात्रा को लेकर मेरे जितने ही उत्साहित हैं!',
+      s2: 'रेल हड़ताल की वजह से हम समुद्र तट तक ट्रेन के बजाय बस से जाएँगे।',
+      s3: 'इसका मतलब है कि हम तय समय से एक घंटा पहले निकलेंगे।',
+      s4: 'मिलने की जगह अब स्टेशन नहीं, बल्कि स्कूल के पीछे वाली पार्किंग है।',
+      s5: 'बस कंपनी को स्कूली समूहों के साथ काफ़ी अनुभव है।',
+      s6: 'शुक्रवार की वापसी पहले की तरह ही रहेगी।',
+      s7: 'परिवारों पर कोई अतिरिक्त ख़र्च नहीं है; अंतर का ख़र्च स्कूल उठाएगा।',
+      s8: 'बस का सफ़र ट्रेन से लगभग 40 मिनट ज़्यादा लेता है।',
+      s9: 'पिछले साल की कक्षा पहाड़ों पर गई थी, और वह भी शानदार यात्रा थी।',
+      s10: 'आधे रास्ते में एक ढाबे पर थोड़ी देर का विराम होगा।',
+      s11: 'सामान की सूचियों में मदद के लिए आप सबका धन्यवाद।'
     },
     bullets: {
-      gold1: 'Coach instead of train because of a rail strike.',
-      gold2: 'Departure one hour earlier, from the car park behind the school.',
-      gold3: 'No extra costs for families.',
-      minor: 'The coach company is experienced with school groups.',
-      distort: 'The trip is shortened because of the strike.',
-      dup: 'The travel plans have changed.',
-      subtle: 'Departure two hours earlier, from the car park behind the school.'
+      gold1: 'रेल हड़ताल के कारण ट्रेन की जगह बस।',
+      gold2: 'स्कूल के पीछे की पार्किंग से एक घंटा पहले रवानगी।',
+      gold3: 'परिवारों पर कोई अतिरिक्त ख़र्च नहीं।',
+      minor: 'बस कंपनी को स्कूली समूहों का अनुभव है।',
+      distort: 'हड़ताल के कारण यात्रा छोटी कर दी गई है।',
+      dup: 'यात्रा की योजना बदल गई है।',
+      subtle: 'स्कूल के पीछे की पार्किंग से दो घंटे पहले रवानगी।'
     },
     bulletNotes: {
-      distort: 'Only the journey there changes; the trip is not shortened.',
-      dup: 'Says only that something changed, which the other points already show.',
-      subtle: 'Almost right, but departure is one hour earlier, not two.'
+      distort: 'सिर्फ़ जाने का रास्ता बदला है; यात्रा छोटी नहीं की गई।',
+      dup: 'बस इतना कहता है कि कुछ बदला है, जो बाक़ी बिंदुओं से पहले ही पता चलता है।',
+      subtle: 'लगभग सही, पर रवानगी एक घंटा पहले है, दो घंटे नहीं।'
     },
     summaries: {
-      faithful: 'Because of a rail strike, the class travels by coach, leaving one hour earlier from the car park behind the school, at no extra cost to families.',
-      vague: 'There are a few changes to the trip arrangements that parents should know about.',
-      drops: 'Because of a rail strike, the class will travel to the coast by coach, which costs families nothing extra.',
-      adds: 'Because of a rail strike, the class travels by coach, leaving one hour earlier from the car park behind the school, and parents pay a small extra fee.',
-      subtle: 'Because the coach is faster than the train, the class travels by coach, leaving one hour earlier from the car park behind the school, at no extra cost to families.'
+      faithful: 'रेल हड़ताल के कारण कक्षा बस से जाएगी और स्कूल के पीछे की पार्किंग से एक घंटा पहले निकलेगी, परिवारों पर कोई अतिरिक्त ख़र्च नहीं होगा।',
+      vague: 'यात्रा की व्यवस्था में कुछ बदलाव हैं, जिनकी जानकारी अभिभावकों को होनी चाहिए।',
+      drops: 'रेल हड़ताल के कारण कक्षा बस से समुद्र तट जाएगी, और इससे परिवारों का कोई अतिरिक्त ख़र्च नहीं होगा।',
+      adds: 'रेल हड़ताल के कारण कक्षा बस से जाएगी और स्कूल के पीछे की पार्किंग से एक घंटा पहले निकलेगी, और अभिभावकों को थोड़ा अतिरिक्त शुल्क देना होगा।',
+      subtle: 'बस ट्रेन से तेज़ है, इसलिए कक्षा बस से जाएगी और स्कूल के पीछे की पार्किंग से एक घंटा पहले निकलेगी, परिवारों पर कोई अतिरिक्त ख़र्च नहीं होगा।'
     },
     summaryNotes: {
-      drops: 'It leaves out what parents must act on: the earlier departure and the new meeting point.',
-      adds: 'The message says the school covers the difference, so there is no fee.',
-      subtle: 'The reason is the rail strike, and the coach is even slower than the train.'
+      drops: 'इसमें वह छूट गया है जिस पर अभिभावकों को अमल करना है: पहले निकलना और मिलने की नई जगह।',
+      adds: 'संदेश के अनुसार अंतर का ख़र्च स्कूल उठाएगा, इसलिए कोई अतिरिक्त शुल्क नहीं है।',
+      subtle: 'वजह रेल हड़ताल है, और बस तो ट्रेन से भी धीमी है।'
     },
-    task: 'A parent who missed the message asks another parent what to do.',
-    oneLiner: 'The class goes by coach now.',
+    task: 'संदेश न देख पाए एक अभिभावक दूसरे अभिभावक से पूछते हैं कि क्या करना है।',
+    oneLiner: 'कक्षा अब बस से जा रही है।',
     details: {
-      d1: 'The new meeting point: the car park behind the school',
-      d2: 'The new time: one hour earlier than planned',
-      d3: 'That there are no extra costs',
-      d4: 'That the coach company is experienced',
-      d5: 'Why they are not taking the train',
-      d6: 'That the teacher is looking forward to the trip'
+      d1: 'मिलने की नई जगह: स्कूल के पीछे की पार्किंग',
+      d2: 'नया समय: तय समय से एक घंटा पहले',
+      d3: 'कि कोई अतिरिक्त ख़र्च नहीं है',
+      d4: 'कि बस कंपनी अनुभवी है',
+      d5: 'कि वे ट्रेन से क्यों नहीं जा रहे',
+      d6: 'कि शिक्षक यात्रा को लेकर उत्साहित हैं'
     },
     versions: {
-      actionable: 'The class goes by coach. Bring your child to the car park behind the school, not to the station, one hour earlier than planned. It costs nothing extra, and the return on Friday is unchanged.',
-      vague: 'There is a strike, so they are taking a coach now. Times and places are a bit different, so check what the teacher wrote.',
-      invented: 'The class goes by coach. Bring your child to the station one hour earlier, and give them some money for the coach ticket.'
+      actionable: 'कक्षा बस से जा रही है। अपने बच्चे को तय समय से एक घंटा पहले स्कूल के पीछे की पार्किंग में लाएँ, स्टेशन पर नहीं। कोई अतिरिक्त ख़र्च नहीं है, और शुक्रवार की वापसी वैसी ही रहेगी।',
+      vague: 'हड़ताल है, इसलिए अब वे बस से जा रहे हैं। समय और जगह थोड़े बदले हैं, शिक्षक ने जो लिखा है वह देख लीजिए।',
+      invented: 'कक्षा बस से जा रही है। अपने बच्चे को एक घंटा पहले स्टेशन पर लाएँ और बस टिकट के लिए उसे कुछ पैसे दे दें।'
     },
-    versionNote: 'The meeting point is the car park behind the school, not the station, and the school covers the cost.'
+    versionNote: 'मिलने की जगह स्कूल के पीछे की पार्किंग है, स्टेशन नहीं, और ख़र्च स्कूल उठाएगा।'
   },
   bikes: {
-    title: 'E-bikes for bike sharing',
-    context: 'An announcement from a city’s bike-sharing service to its users.',
+    title: 'साझा साइकिल सेवा में ई-बाइक',
+    context: 'एक शहर की साझा साइकिल सेवा की अपने उपयोगकर्ताओं के लिए घोषणा।',
     sentences: {
-      s1: 'Cycling is a great way to stay active and explore the city.',
-      s2: 'From 1 July, our bike-sharing service adds 200 electric bikes to its fleet.',
-      s3: 'An e-bike costs 20 cents per minute; the regular bikes keep their current price.',
-      s4: 'To unlock an e-bike, you need the latest version of our app.',
-      s5: 'The e-bikes have a range of about 60 kilometres per charge.',
-      s6: 'E-bikes must be returned to one of 12 charging stations; they cannot be left anywhere else.',
-      s7: 'A map of the charging stations is in the app.',
-      s8: 'If an e-bike is left outside a station, a fee of 10 euros is charged.',
-      s9: 'Several other cities have introduced similar services in recent years.',
-      s10: 'The bikes were tested by 50 volunteers over the winter.',
-      s11: 'Thank you for riding with us!'
+      s1: 'साइकिल चलाना सक्रिय रहने और शहर घूमने का बढ़िया तरीक़ा है।',
+      s2: '1 जुलाई से हमारी साझा साइकिल सेवा अपने बेड़े में 200 इलेक्ट्रिक साइकिलें जोड़ रही है।',
+      s3: 'एक ई-बाइक का किराया 20 सेंट प्रति मिनट है; सामान्य साइकिलों का किराया वही रहेगा।',
+      s4: 'ई-बाइक का ताला खोलने के लिए हमारे ऐप का नवीनतम संस्करण चाहिए।',
+      s5: 'ई-बाइक एक बार चार्ज होने पर लगभग 60 किलोमीटर चलती हैं।',
+      s6: 'ई-बाइक 12 चार्जिंग स्टेशनों में से किसी एक पर ही लौटानी होंगी; उन्हें कहीं और नहीं छोड़ा जा सकता।',
+      s7: 'चार्जिंग स्टेशनों का नक्शा ऐप में है।',
+      s8: 'अगर कोई ई-बाइक स्टेशन के बाहर छोड़ी जाती है, तो 10 यूरो का शुल्क लगता है।',
+      s9: 'पिछले कुछ सालों में कई दूसरे शहरों ने भी ऐसी सेवाएँ शुरू की हैं।',
+      s10: 'सर्दियों में 50 स्वयंसेवकों ने इन साइकिलों को परखा।',
+      s11: 'हमारे साथ सवारी करने के लिए धन्यवाद!'
     },
     bullets: {
-      gold1: 'From 1 July: 200 e-bikes at 20 cents per minute.',
-      gold2: 'Unlocking them needs the latest app version.',
-      gold3: 'E-bikes must be returned to one of 12 charging stations.',
-      minor: 'A map of the charging stations is in the app.',
-      distort: 'The e-bikes replace the regular bikes.',
-      dup: 'There are new bikes.',
-      subtle: 'From 1 July: 200 e-bikes at 25 cents per minute.'
+      gold1: '1 जुलाई से: 200 ई-बाइक, 20 सेंट प्रति मिनट।',
+      gold2: 'ताला खोलने के लिए ऐप का नवीनतम संस्करण चाहिए।',
+      gold3: 'ई-बाइक 12 चार्जिंग स्टेशनों में से किसी एक पर लौटानी होंगी।',
+      minor: 'चार्जिंग स्टेशनों का नक्शा ऐप में है।',
+      distort: 'ई-बाइक सामान्य साइकिलों की जगह ले लेंगी।',
+      dup: 'नई साइकिलें आई हैं।',
+      subtle: '1 जुलाई से: 200 ई-बाइक, 25 सेंट प्रति मिनट।'
     },
     bulletNotes: {
-      distort: 'The e-bikes are added; the regular bikes stay, at their current price.',
-      dup: 'A vaguer repeat of the first point, without date, number or price.',
-      subtle: 'Almost right, but the price is 20 cents per minute, not 25.'
+      distort: 'ई-बाइक जोड़ी जा रही हैं; सामान्य साइकिलें अपने मौजूदा किराए पर बनी रहेंगी।',
+      dup: 'पहली बात को तारीख़, संख्या और किराए के बिना धुंधले ढंग से दोहराता है।',
+      subtle: 'लगभग सही, पर किराया 20 सेंट प्रति मिनट है, 25 नहीं।'
     },
     summaries: {
-      faithful: 'From 1 July there are 200 e-bikes at 20 cents per minute; they need the latest app to unlock and must be returned to one of 12 charging stations.',
-      vague: 'The bike-sharing service is introducing something new this summer that users may find interesting.',
-      drops: 'The bike-sharing service adds 200 e-bikes with a range of about 60 kilometres, so longer trips become easier.',
-      adds: 'From 1 July there are 200 e-bikes at 20 cents per minute, and the regular bikes will be phased out next year.',
-      subtle: 'From 1 July there are 200 e-bikes at 20 cents per minute; they need the latest app to unlock and can be returned to any bike station.'
+      faithful: '1 जुलाई से 20 सेंट प्रति मिनट पर 200 ई-बाइक मिलेंगी; इनका ताला ऐप के नवीनतम संस्करण से खुलता है और इन्हें 12 चार्जिंग स्टेशनों में से किसी एक पर लौटाना होगा।',
+      vague: 'साझा साइकिल सेवा इस गर्मी कुछ नया ला रही है, जो उपयोगकर्ताओं को दिलचस्प लग सकता है।',
+      drops: 'साझा साइकिल सेवा लगभग 60 किलोमीटर की रेंज वाली 200 ई-बाइक जोड़ रही है, जिससे लंबी यात्राएँ आसान होंगी।',
+      adds: '1 जुलाई से 20 सेंट प्रति मिनट पर 200 ई-बाइक मिलेंगी, और सामान्य साइकिलें अगले साल हटा दी जाएँगी।',
+      subtle: '1 जुलाई से 20 सेंट प्रति मिनट पर 200 ई-बाइक मिलेंगी; इनका ताला ऐप के नवीनतम संस्करण से खुलता है और इन्हें किसी भी साइकिल स्टेशन पर लौटाया जा सकता है।'
     },
     summaryNotes: {
-      drops: 'It leaves out the price and what users must do: update the app and return e-bikes to a charging station.',
-      adds: 'Nothing in the announcement says the regular bikes will be phased out.',
-      subtle: 'E-bikes can only be returned to the 12 charging stations, not to any station.'
+      drops: 'इसमें किराया और उपयोगकर्ताओं को क्या करना है, दोनों छूट गए हैं: ऐप अपडेट करना और ई-बाइक चार्जिंग स्टेशन पर लौटाना।',
+      adds: 'घोषणा में कहीं नहीं लिखा कि सामान्य साइकिलें हटा दी जाएँगी।',
+      subtle: 'ई-बाइक सिर्फ़ 12 चार्जिंग स्टेशनों पर लौटाई जा सकती हैं, किसी भी स्टेशन पर नहीं।'
     },
-    task: 'A friend wants to try an e-bike next week.',
-    oneLiner: 'There are e-bikes now.',
+    task: 'एक दोस्त अगले हफ़्ते ई-बाइक चलाकर देखना चाहती है।',
+    oneLiner: 'अब ई-बाइक भी हैं।',
     details: {
-      d1: 'The price: 20 cents per minute',
-      d2: 'That unlocking needs the latest app version',
-      d3: 'That e-bikes must go back to a charging station',
-      d4: 'That cycling keeps you active',
-      d5: 'How many e-bikes there are in total',
-      d6: 'That the regular bikes keep their price'
+      d1: 'किराया: 20 सेंट प्रति मिनट',
+      d2: 'कि ताला खोलने के लिए ऐप का नवीनतम संस्करण चाहिए',
+      d3: 'कि ई-बाइक चार्जिंग स्टेशन पर लौटानी होगी',
+      d4: 'कि साइकिल चलाने से इंसान सक्रिय रहता है',
+      d5: 'कि कुल कितनी ई-बाइक हैं',
+      d6: 'कि सामान्य साइकिलों का किराया वही रहेगा'
     },
     versions: {
-      actionable: 'From 1 July you can rent e-bikes for 20 cents per minute. Update the app first, because you need the latest version to unlock them. Afterwards, return the bike to one of the 12 charging stations shown on the map in the app.',
-      vague: 'There are e-bikes now, and they are easy to use. Just get the app and ride off.',
-      invented: 'From 1 July you can rent e-bikes for 20 cents per minute without the app, and you can leave them anywhere in the city afterwards.'
+      actionable: '1 जुलाई से तुम 20 सेंट प्रति मिनट पर ई-बाइक किराए पर ले सकती हो। पहले ऐप अपडेट कर लेना, क्योंकि ताला खोलने के लिए नवीनतम संस्करण चाहिए। सवारी के बाद बाइक को ऐप के नक्शे में दिखे 12 चार्जिंग स्टेशनों में से किसी एक पर लौटा देना।',
+      vague: 'अब ई-बाइक भी हैं, और उन्हें चलाना बहुत आसान है। बस ऐप ले लो और निकल पड़ो।',
+      invented: '1 जुलाई से तुम बिना ऐप के 20 सेंट प्रति मिनट पर ई-बाइक किराए पर ले सकती हो, और सवारी के बाद उसे शहर में कहीं भी छोड़ सकती हो।'
     },
-    versionNote: 'You need the latest app to unlock them, and they must go back to a charging station.'
+    versionNote: 'ताला खोलने के लिए ऐप का नवीनतम संस्करण चाहिए, और बाइक चार्जिंग स्टेशन पर ही लौटानी होगी।'
   }
 };

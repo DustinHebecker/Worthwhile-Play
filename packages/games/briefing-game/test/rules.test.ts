@@ -28,7 +28,7 @@ import {
   type BriefingState,
   type Difficulty
 } from '../src/rules';
-import { ACTIONS, DECISIONS, SECTIONS, SITUATIONS, SLOTS, situationById, type Slot } from '../src/situations';
+import { ACTIONS, DECISIONS, SECTIONS, SITUATIONS, SLOTS, situationById, type ActionId, type DecisionId, type Slot } from '../src/situations';
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
@@ -45,7 +45,7 @@ function sortAll(state: BriefingState, pick: (cardId: string) => Slot): Briefing
 const primaryOf = (state: BriefingState) => (id: string) => cardDef(situationOf(state), id)!.gold[0]!;
 
 /** Plays a game through to the review step with the given slot picker and choices. */
-function toReview(state: BriefingState, pick: (cardId: string) => Slot, decision = DECISIONS[0], action = ACTIONS[0]): BriefingState {
+function toReview(state: BriefingState, pick: (cardId: string) => Slot, decision: DecisionId = 'right', action: ActionId = 'concrete'): BriefingState {
   let s = checkSort(sortAll(state, pick));
   s = chooseDecision(s, decision);
   s = chooseAction(s, action);
@@ -374,6 +374,20 @@ describe('scoring', () => {
       { from: 'facts', to: 'context', count: 1 },
       { from: 'facts', to: 'risks', count: 1 }
     ]);
+  });
+
+  it('orders patterns with the same source by target slot, with unsorted last, whatever the card order', () => {
+    const s0 = createInitialState(seedFor('supplierDelay'), 'hard');
+    const wrong: Record<string, Slot | null> = { c10: null, c11: 'next', c12: 'context' };
+    for (const order of [['c10', 'c11', 'c12'], ['c12', 'c11', 'c10'], ['c11', 'c10', 'c12']]) {
+      const s: BriefingState = { ...s0, cards: [...order, ...s0.cards.filter((id) => !order.includes(id))] };
+      const placed = s.cards.reduce<BriefingState>((acc, id) => placeCard(acc, id, id in wrong ? (wrong[id] ?? null) : SUPPLIER_GOLD[id]!), s);
+      expect(scoreSort(placed).confusions, order.join()).toEqual([
+        { from: 'leave', to: 'context', count: 1 },
+        { from: 'leave', to: 'next', count: 1 },
+        { from: 'leave', to: null, count: 1 }
+      ]);
+    }
   });
 
   it('summarizes choices and self-checks', () => {

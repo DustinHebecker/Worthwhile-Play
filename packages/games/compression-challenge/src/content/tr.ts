@@ -2,358 +2,358 @@ import type { ContentText } from './types';
 
 export const content: ContentText = {
   launch: {
-    title: 'App launch update',
-    context: 'An email from the project lead to the whole team.',
+    title: 'Uygulama lansmanı hakkında güncelleme',
+    context: 'Proje yöneticisinin tüm ekibe gönderdiği bir e-posta.',
     sentences: {
-      s1: 'Hi everyone, I hope you all had a good weekend in the sunshine.',
-      s2: 'The launch of our booking app moves from 2 April to 14 May.',
-      s3: 'The reason is that the payment provider has not yet finished its security certification, and we cannot take payments without it.',
-      s4: 'The provider says it has a backlog of applications.',
-      s5: 'The design team will use the extra weeks to polish the onboarding screens.',
-      s6: 'Our 300 beta testers can keep using the test version until the launch.',
-      s7: 'A competitor launched a similar app last year and needed three attempts.',
-      s8: 'Marketing must move the campaign, so please decide on the new campaign start by Friday.',
-      s9: 'The budget stays the same, because the agency does not charge for moving the campaign.',
-      s10: 'The certification itself takes about three weeks once it starts.',
-      s11: 'Thanks again for all your hard work!',
-      s12: 'I will send an updated project plan on Wednesday.'
+      s1: 'Herkese merhaba, umarım güneşli bir hafta sonu geçirmişsinizdir.',
+      s2: 'Rezervasyon uygulamamızın lansmanı 2 Nisan’dan 14 Mayıs’a kayıyor.',
+      s3: 'Bunun nedeni, ödeme sağlayıcısının güvenlik sertifikasyonunu henüz tamamlamamış olması; bu sertifika olmadan ödeme alamayız.',
+      s4: 'Sağlayıcı, başvurularda bir birikme olduğunu söylüyor.',
+      s5: 'Tasarım ekibi fazladan haftaları karşılama ekranlarını cilalamak için kullanacak.',
+      s6: '300 beta test kullanıcımız lansmana kadar test sürümünü kullanmaya devam edebilir.',
+      s7: 'Bir rakip geçen yıl benzer bir uygulama çıkardı ve bunu üç denemede başardı.',
+      s8: 'Pazarlama kampanyayı kaydırmalı; lütfen kampanyanın yeni başlangıcına cumaya kadar karar verin.',
+      s9: 'Ajans kampanyayı kaydırmak için ücret almadığından bütçe aynı kalıyor.',
+      s10: 'Sertifikasyonun kendisi başladıktan sonra yaklaşık üç hafta sürüyor.',
+      s11: 'Tüm emekleriniz için tekrar teşekkürler!',
+      s12: 'Çarşamba günü güncellenmiş proje planını göndereceğim.'
     },
     bullets: {
-      gold1: 'The launch moves from 2 April to 14 May.',
-      gold2: 'Cause: the payment provider’s security certification is not finished.',
-      gold3: 'Marketing must decide on the new campaign start by Friday.',
-      minor: 'The design team will polish the onboarding screens.',
-      distort: 'The app has failed its security check.',
-      dup: 'The launch is delayed.',
-      subtle: 'The launch moves from 2 April to 4 May.'
+      gold1: 'Lansman 2 Nisan’dan 14 Mayıs’a kayıyor.',
+      gold2: 'Neden: ödeme sağlayıcısının güvenlik sertifikasyonu tamamlanmadı.',
+      gold3: 'Pazarlama, kampanyanın yeni başlangıcına cumaya kadar karar vermeli.',
+      minor: 'Tasarım ekibi karşılama ekranlarını cilalayacak.',
+      distort: 'Uygulama güvenlik kontrolünden geçemedi.',
+      dup: 'Lansman gecikiyor.',
+      subtle: 'Lansman 2 Nisan’dan 4 Mayıs’a kayıyor.'
     },
     bulletNotes: {
-      distort: 'The text says the certification is not finished yet, not that the app failed a check.',
-      dup: 'Repeats the point about the new date without the date, so it wastes a slot.',
-      subtle: 'Almost right, but the new date is 14 May, not 4 May.'
+      distort: 'Metin sertifikasyonun henüz bitmediğini söylüyor, uygulamanın bir kontrolden kaldığını değil.',
+      dup: 'Yeni tarih maddesini tarihsiz tekrarlıyor ve bir yeri boşa harcıyor.',
+      subtle: 'Neredeyse doğru, ama yeni tarih 4 Mayıs değil 14 Mayıs.'
     },
     summaries: {
-      faithful: 'The launch moves to 14 May because the payment provider’s certification is not finished, and marketing must decide on the new campaign start by Friday.',
-      vague: 'There are some changes to the launch timing that the team should be aware of.',
-      drops: 'Because the payment provider is not ready yet, the launch has been postponed, but the budget stays the same.',
-      adds: 'The launch moves to 14 May because the payment provider’s certification is not finished, and the delay will make the project more expensive.',
-      subtle: 'The launch moves to 14 May because our app failed the payment provider’s certification, and marketing must decide on the new campaign start by Friday.'
+      faithful: 'Ödeme sağlayıcısının sertifikasyonu bitmediği için lansman 14 Mayıs’a kayıyor ve pazarlama kampanyanın yeni başlangıcına cumaya kadar karar vermeli.',
+      vague: 'Lansman takviminde ekibin bilmesi gereken bazı değişiklikler var.',
+      drops: 'Ödeme sağlayıcısı henüz hazır olmadığı için lansman ertelendi, ama bütçe aynı kalıyor.',
+      adds: 'Ödeme sağlayıcısının sertifikasyonu bitmediği için lansman 14 Mayıs’a kayıyor ve bu gecikme projeyi daha pahalı hâle getirecek.',
+      subtle: 'Uygulamamız ödeme sağlayıcısının sertifikasyonundan geçemediği için lansman 14 Mayıs’a kayıyor ve pazarlama kampanyanın yeni başlangıcına cumaya kadar karar vermeli.'
     },
     summaryNotes: {
-      drops: 'It leaves out the new date and the decision marketing has to make.',
-      adds: 'The text says the budget stays the same; higher costs are made up.',
-      subtle: 'The app has not failed anything: the certification is simply not finished yet.'
+      drops: 'Yeni tarih ve pazarlamanın vermesi gereken karar eksik.',
+      adds: 'Metin bütçenin aynı kaldığını söylüyor; maliyet artışı uydurma.',
+      subtle: 'Uygulama hiçbir şeyden kalmadı: sertifikasyon sadece henüz bitmedi.'
     },
-    task: 'The marketing team has to act on this one-liner.',
-    oneLiner: 'Move the launch to May.',
+    task: 'Pazarlama ekibi bu tek cümleye göre harekete geçmeli.',
+    oneLiner: 'Lansmanı mayısa kaydırın.',
     details: {
-      d1: 'The exact new date: 14 May',
-      d2: 'Who must act: marketing moves the campaign',
-      d3: 'The deadline: decide on the new campaign start by Friday',
-      d4: 'Why the provider is behind schedule',
-      d5: 'The design team’s plans for the onboarding screens',
-      d6: 'The sunny weekend'
+      d1: 'Kesin yeni tarih: 14 Mayıs',
+      d2: 'Kim harekete geçecek: pazarlama kampanyayı kaydırıyor',
+      d3: 'Son tarih: kampanyanın yeni başlangıcına cumaya kadar karar vermek',
+      d4: 'Sağlayıcının neden geciktiği',
+      d5: 'Tasarım ekibinin karşılama ekranları için planları',
+      d6: 'Güneşli hafta sonu'
     },
     versions: {
-      actionable: 'The launch moves from 2 April to 14 May. Marketing: please move the campaign and decide on the new start date by Friday. The budget stays the same.',
-      vague: 'We are moving the launch to May. Please adjust your plans accordingly and let us know if anything comes up.',
-      invented: 'The launch moves to 1 May. Marketing: please cancel the campaign and plan a new one by the end of the month.'
+      actionable: 'Lansman 2 Nisan’dan 14 Mayıs’a kayıyor. Pazarlama: lütfen kampanyayı kaydırın ve yeni başlangıç tarihine cumaya kadar karar verin. Bütçe aynı kalıyor.',
+      vague: 'Lansmanı mayısa kaydırıyoruz. Lütfen planlarınızı buna göre ayarlayın ve bir şey çıkarsa haber verin.',
+      invented: 'Lansman 1 Mayıs’a kayıyor. Pazarlama: lütfen kampanyayı iptal edin ve ay sonuna kadar yenisini planlayın.'
     },
-    versionNote: 'The new date is 14 May, not 1 May, and the campaign is moved, not cancelled.'
+    versionNote: 'Yeni tarih 1 Mayıs değil 14 Mayıs, ve kampanya iptal edilmiyor, kaydırılıyor.'
   },
   library: {
-    title: 'Library renovation',
-    context: 'A notice on the door of the local library branch.',
+    title: 'Kütüphane tadilatı',
+    context: 'Mahalle kütüphanesinin kapısına asılmış bir duyuru.',
     sentences: {
-      s1: 'Many of you have told us how much you love the old armchairs in the reading corner.',
-      s2: 'From 3 June, the library will be closed for renovation for eight weeks.',
-      s3: 'The roof will be repaired, and the building will get a lift and new lighting.',
-      s4: 'During the closure, a library bus will stop at the market square every Tuesday.',
-      s5: 'The bus carries about 2,000 books and can order any title from the central library.',
-      s6: 'All loans that would fall due during the closure are extended automatically, so nobody pays late fees.',
-      s7: 'Books can also be returned at any time in the return box next to the town hall.',
-      s8: 'The town hall itself was renovated in a similar way ten years ago.',
-      s9: 'Our e-books and audiobooks remain available online as usual.',
-      s10: 'We are already looking forward to next year’s summer reading festival.',
-      s11: 'The renovation is paid for by a regional building fund.'
+      s1: 'Birçoğunuz okuma köşesindeki eski koltukları ne kadar sevdiğinizi bize söylediniz.',
+      s2: '3 Haziran’dan itibaren kütüphane tadilat nedeniyle sekiz hafta kapalı olacak.',
+      s3: 'Çatı onarılacak, binaya asansör ve yeni aydınlatma eklenecek.',
+      s4: 'Kapalı olduğu süre boyunca her salı pazar meydanında bir kütüphane otobüsü duracak.',
+      s5: 'Otobüste yaklaşık 2.000 kitap var ve merkez kütüphaneden istenen her kitap sipariş edilebiliyor.',
+      s6: 'Kapalı olunan sürede iadesi gelen tüm ödünç kitaplar otomatik olarak uzatılıyor, yani kimse gecikme cezası ödemiyor.',
+      s7: 'Kitaplar ayrıca her zaman belediye binasının yanındaki iade kutusuna bırakılabilir.',
+      s8: 'Belediye binası da on yıl önce benzer şekilde tadil edilmişti.',
+      s9: 'E-kitaplarımız ve sesli kitaplarımız her zamanki gibi çevrim içi erişilebilir.',
+      s10: 'Gelecek yılın yaz okuma festivalini şimdiden dört gözle bekliyoruz.',
+      s11: 'Tadilat, bölgesel bir yapı fonundan karşılanıyor.'
     },
     bullets: {
-      gold1: 'Closed for renovation for eight weeks from 3 June.',
-      gold2: 'A library bus stops at the market square every Tuesday.',
-      gold3: 'Loans due during the closure are extended automatically.',
-      minor: 'The building will get new lighting.',
-      distort: 'All library services stop for eight weeks.',
-      dup: 'The library will be closed for a while.',
-      subtle: 'Closed for renovation for six weeks from 3 June.'
+      gold1: '3 Haziran’dan itibaren tadilat için sekiz hafta kapalı.',
+      gold2: 'Her salı pazar meydanında bir kütüphane otobüsü duruyor.',
+      gold3: 'Kapalıyken iadesi gelen ödünç kitaplar otomatik uzatılıyor.',
+      minor: 'Binaya yeni aydınlatma geliyor.',
+      distort: 'Kütüphanenin tüm hizmetleri sekiz hafta duruyor.',
+      dup: 'Kütüphane bir süre kapalı olacak.',
+      subtle: '3 Haziran’dan itibaren tadilat için altı hafta kapalı.'
     },
     bulletNotes: {
-      distort: 'Not true: the bus and the return box keep working during the closure.',
-      dup: 'Repeats the closure without the start date or the length.',
-      subtle: 'Almost right, but the closure lasts eight weeks, not six.'
+      distort: 'Doğru değil: kapalıyken de otobüs ve iade kutusu çalışıyor.',
+      dup: 'Kapanışı başlangıç tarihi ve süresi olmadan tekrarlıyor.',
+      subtle: 'Neredeyse doğru, ama kapanış altı değil sekiz hafta sürüyor.'
     },
     summaries: {
-      faithful: 'The library closes for eight weeks from 3 June; meanwhile a bus visits the market square every Tuesday, and loans due in that time are extended automatically.',
-      vague: 'There will be some changes at the library over the summer, so keep an eye out.',
-      drops: 'The library is being renovated and will get a repaired roof, a lift and new lighting.',
-      adds: 'The library closes for eight weeks from 3 June and will charge a small fee for loans after it reopens.',
-      subtle: 'Because the roof is unsafe, the library closes for eight weeks from 3 June; meanwhile a bus visits the market square every Tuesday.'
+      faithful: 'Kütüphane 3 Haziran’dan itibaren sekiz hafta kapanıyor; bu sürede her salı pazar meydanına bir otobüs geliyor ve iadesi gelen kitaplar otomatik uzatılıyor.',
+      vague: 'Bu yaz kütüphanede bazı değişiklikler olacak, gözünüz üzerinde olsun.',
+      drops: 'Kütüphane tadil ediliyor; çatısı onarılacak, asansör ve yeni aydınlatma eklenecek.',
+      adds: 'Kütüphane 3 Haziran’dan itibaren sekiz hafta kapanıyor ve yeniden açıldıktan sonra ödünç kitaplar için küçük bir ücret alacak.',
+      subtle: 'Çatı güvenli olmadığı için kütüphane 3 Haziran’dan itibaren sekiz hafta kapanıyor; bu sürede her salı pazar meydanına bir otobüs geliyor.'
     },
     summaryNotes: {
-      drops: 'It describes the building work but not when the library closes or what readers can do meanwhile.',
-      adds: 'Nothing in the notice mentions fees after the reopening.',
-      subtle: 'The notice says the roof will be repaired, not that it is unsafe; that cause is added.'
+      drops: 'İnşaat işlerini anlatıyor ama kütüphanenin ne zaman kapandığını ve okurların bu sürede ne yapabileceğini söylemiyor.',
+      adds: 'Duyuruda yeniden açılıştan sonra ücret alınacağına dair hiçbir şey yok.',
+      subtle: 'Duyuru çatının onarılacağını söylüyor, güvenli olmadığını değil; bu neden sonradan eklenmiş.'
     },
-    task: 'A neighbour who wants to keep borrowing books asks you about it.',
-    oneLiner: 'The library is closed in summer.',
+    task: 'Kitap ödünç almaya devam etmek isteyen bir komşu size bunu soruyor.',
+    oneLiner: 'Kütüphane yazın kapalı.',
     details: {
-      d1: 'When exactly: for eight weeks from 3 June',
-      d2: 'Where to borrow meanwhile: the bus at the market square on Tuesdays',
-      d3: 'Where to return books: the box next to the town hall',
-      d4: 'What the renovation includes',
-      d5: 'The armchairs in the reading corner',
-      d6: 'Next year’s reading festival'
+      d1: 'Tam olarak ne zaman: 3 Haziran’dan itibaren sekiz hafta',
+      d2: 'Bu sürede nereden ödünç alınır: salı günleri pazar meydanındaki otobüs',
+      d3: 'Kitaplar nereye iade edilir: belediye binasının yanındaki kutu',
+      d4: 'Tadilatın neleri kapsadığı',
+      d5: 'Okuma köşesindeki koltuklar',
+      d6: 'Gelecek yılın okuma festivali'
     },
     versions: {
-      actionable: 'From 3 June the library is closed for eight weeks. You can borrow books from the library bus at the market square every Tuesday and return them any time in the box next to the town hall. Loans due in that time are extended automatically.',
-      vague: 'The library will be closed for a while in the summer because of building work. There will be other options, so check the notice for more.',
-      invented: 'From 3 June the library is closed for eight weeks. You can borrow books from the library bus at the station every Friday. Please return all books before the closure.'
+      actionable: '3 Haziran’dan itibaren kütüphane sekiz hafta kapalı. Her salı pazar meydanındaki kütüphane otobüsünden kitap alabilir, istediğin zaman belediye binasının yanındaki kutuya iade edebilirsin. Bu sürede iadesi gelen kitaplar otomatik uzatılıyor.',
+      vague: 'Kütüphane yazın inşaat yüzünden bir süre kapalı olacak. Başka seçenekler de olacakmış, duyuruya bir bak.',
+      invented: '3 Haziran’dan itibaren kütüphane sekiz hafta kapalı. Her cuma garın önündeki kütüphane otobüsünden kitap alabilirsin. Lütfen kapanıştan önce tüm kitapları iade et.'
     },
-    versionNote: 'The bus stops at the market square on Tuesdays, and nobody has to return books before the closure.'
+    versionNote: 'Otobüs salı günleri pazar meydanında duruyor ve kimsenin kapanıştan önce kitap iade etmesi gerekmiyor.'
   },
   leaves: {
-    title: 'Why leaves change colour',
-    context: 'A short article from a nature magazine for curious readers.',
+    title: 'Yapraklar neden renk değiştirir',
+    context: 'Meraklı okurlar için bir doğa dergisinden kısa bir yazı.',
     sentences: {
-      s1: 'Autumn is many people’s favourite season for long walks.',
-      s2: 'Leaves are green because they contain a lot of chlorophyll, the pigment plants use to capture sunlight.',
-      s3: 'As the days get shorter, many trees stop making chlorophyll and break it down.',
-      s4: 'Yellow and orange pigments, called carotenoids, were in the leaf all along; they only become visible when the green fades.',
-      s5: 'Carotenoids are the same kind of pigment that makes carrots orange.',
-      s6: 'Red is different: some trees, such as many maples, make new red pigments in autumn.',
-      s7: 'Researchers think these red pigments may protect the leaf from strong light while the tree takes back nutrients.',
-      s8: 'Sunny days and cool nights tend to make the reds brighter.',
-      s9: 'In some regions, colourful forests attract many tourists every year.',
-      s10: 'Finally, a thin layer of cells forms where the leaf joins the twig, and the leaf falls.',
-      s11: 'Don’t forget a warm jacket if you go out to look at the trees.'
+      s1: 'Sonbahar, pek çok kişinin uzun yürüyüşler için en sevdiği mevsimdir.',
+      s2: 'Yapraklar yeşildir, çünkü bitkilerin güneş ışığını yakalamak için kullandığı pigment olan klorofilden bolca içerirler.',
+      s3: 'Günler kısaldıkça birçok ağaç klorofil üretmeyi bırakır ve onu parçalar.',
+      s4: 'Karotenoit denen sarı ve turuncu pigmentler baştan beri yaprakta vardı; ancak yeşil solunca görünür hâle gelirler.',
+      s5: 'Karotenoitler, havucu turuncu yapan pigmentle aynı türdendir.',
+      s6: 'Kırmızı ise farklıdır: birçok akçaağaç gibi bazı ağaçlar sonbaharda yeni kırmızı pigmentler üretir.',
+      s7: 'Araştırmacılar, bu kırmızı pigmentlerin ağaç besinleri geri alırken yaprağı güçlü ışıktan koruyabileceğini düşünüyor.',
+      s8: 'Güneşli günler ve serin geceler kırmızıları genellikle daha canlı yapar.',
+      s9: 'Bazı bölgelerde rengârenk ormanlar her yıl birçok turist çeker.',
+      s10: 'Son olarak yaprağın dala bağlandığı yerde ince bir hücre tabakası oluşur ve yaprak düşer.',
+      s11: 'Ağaçlara bakmaya çıkarsanız sıcak bir ceket almayı unutmayın.'
     },
     bullets: {
-      gold1: 'In autumn, trees stop making green chlorophyll and break it down.',
-      gold2: 'Yellow and orange pigments were there all along and become visible.',
-      gold3: 'Some trees, such as maples, make new red pigments.',
-      minor: 'A thin layer of cells forms, and the leaf falls.',
-      distort: 'All autumn colours are new pigments made by the tree.',
-      dup: 'Leaves lose their green colour.',
-      subtle: 'Red pigments protect the leaf from strong light.'
+      gold1: 'Sonbaharda ağaçlar yeşil klorofil üretmeyi bırakıp onu parçalar.',
+      gold2: 'Sarı ve turuncu pigmentler baştan beri vardı ve görünür hâle gelir.',
+      gold3: 'Akçaağaç gibi bazı ağaçlar yeni kırmızı pigmentler üretir.',
+      minor: 'İnce bir hücre tabakası oluşur ve yaprak düşer.',
+      distort: 'Sonbaharın tüm renkleri ağacın ürettiği yeni pigmentlerdir.',
+      dup: 'Yapraklar yeşil rengini kaybeder.',
+      subtle: 'Kırmızı pigmentler yaprağı güçlü ışıktan korur.'
     },
     bulletNotes: {
-      distort: 'Only the reds are new; yellow and orange were in the leaf all along.',
-      dup: 'Says less than the point about chlorophyll and wastes a slot.',
-      subtle: 'The text only says researchers think the red pigments may protect the leaf; this bullet states it as a fact.'
+      distort: 'Yalnızca kırmızılar yenidir; sarı ve turuncu baştan beri yapraktaydı.',
+      dup: 'Klorofil maddesinden daha azını söylüyor ve bir yeri boşa harcıyor.',
+      subtle: 'Metin yalnızca araştırmacıların kırmızı pigmentlerin yaprağı koruyabileceğini düşündüğünü söylüyor; bu madde bunu kesin bir gerçek gibi sunuyor.'
     },
     summaries: {
-      faithful: 'In autumn many trees break down their green chlorophyll, which reveals yellow and orange pigments that were there all along, while some trees also make new red ones.',
-      vague: 'Leaves change colour in autumn because of various natural processes in the tree.',
-      drops: 'In autumn, leaves turn yellow, orange and red, and then they fall from the trees.',
-      adds: 'In autumn many trees break down their green chlorophyll, which reveals yellow and orange pigments, and the redder the leaves, the colder the coming winter.',
-      subtle: 'In autumn many trees break down their green chlorophyll, which reveals yellow and orange pigments, and cold nights make the trees produce red ones.'
+      faithful: 'Sonbaharda birçok ağaç yeşil klorofili parçalar, böylece baştan beri var olan sarı ve turuncu pigmentler görünür olur; bazı ağaçlar ayrıca yeni kırmızı pigmentler üretir.',
+      vague: 'Yapraklar sonbaharda ağaçtaki çeşitli doğal süreçler yüzünden renk değiştirir.',
+      drops: 'Sonbaharda yapraklar sarı, turuncu ve kırmızı olur, sonra ağaçlardan düşer.',
+      adds: 'Sonbaharda birçok ağaç yeşil klorofili parçalar, böylece sarı ve turuncu pigmentler görünür olur; yapraklar ne kadar kırmızıysa gelecek kış o kadar soğuk olur.',
+      subtle: 'Sonbaharda birçok ağaç yeşil klorofili parçalar, böylece sarı ve turuncu pigmentler görünür olur; soğuk geceler de ağaçları kırmızı pigment üretmeye iter.'
     },
     summaryNotes: {
-      drops: 'It describes what we see, but not why it happens.',
-      adds: 'The text says nothing about predicting the winter.',
-      subtle: 'Cool nights only tend to make the reds brighter; the text does not say they cause the red pigments.'
+      drops: 'Gördüğümüzü anlatıyor ama neden olduğunu söylemiyor.',
+      adds: 'Metin kışı tahmin etmekle ilgili hiçbir şey söylemiyor.',
+      subtle: 'Serin geceler kırmızıları genellikle yalnızca daha canlı yapar; metin bunların kırmızı pigmentlere yol açtığını söylemiyor.'
     },
-    task: 'A teacher wants to explain this one-liner to a class, using real leaves.',
-    oneLiner: 'The chlorophyll breaks down, so other colours show.',
+    task: 'Bir öğretmen bu tek cümleyi gerçek yapraklarla sınıfa anlatmak istiyor.',
+    oneLiner: 'Klorofil parçalanır, böylece başka renkler ortaya çıkar.',
     details: {
-      d1: 'What chlorophyll is: the green pigment that captures sunlight',
-      d2: 'That yellow and orange were in the leaf all along',
-      d3: 'That some trees, such as maples, make new red pigments',
-      d4: 'That autumn is a popular season for walks',
-      d5: 'That you need a warm jacket outside',
-      d6: 'How the leaf finally falls off'
+      d1: 'Klorofilin ne olduğu: güneş ışığını yakalayan yeşil pigment',
+      d2: 'Sarı ve turuncunun baştan beri yaprakta olduğu',
+      d3: 'Akçaağaç gibi bazı ağaçların yeni kırmızı pigmentler ürettiği',
+      d4: 'Sonbaharın yürüyüş için sevilen bir mevsim olduğu',
+      d5: 'Dışarıda sıcak bir cekete ihtiyaç olduğu',
+      d6: 'Yaprağın sonunda nasıl düştüğü'
     },
     versions: {
-      actionable: 'Leaves are green because of chlorophyll, a pigment that captures sunlight. In autumn many trees stop making it and break it down. Then yellow and orange pigments that were there all along become visible, and some trees, like maples, make new red ones.',
-      vague: 'In autumn the leaves change because the green goes away and other colours come out. Nature is fascinating that way.',
-      invented: 'Leaves are green because of chlorophyll. In autumn the frost freezes the chlorophyll, and then the tree paints its leaves yellow, orange and red with new pigments.'
+      actionable: 'Yapraklar, güneş ışığını yakalayan bir pigment olan klorofil sayesinde yeşildir. Sonbaharda birçok ağaç klorofil üretmeyi bırakır ve onu parçalar. O zaman baştan beri var olan sarı ve turuncu pigmentler görünür olur, akçaağaç gibi bazı ağaçlar da yeni kırmızı pigmentler üretir.',
+      vague: 'Sonbaharda yapraklar değişir, çünkü yeşil gider ve başka renkler çıkar. Doğa gerçekten büyüleyici.',
+      invented: 'Yapraklar klorofil sayesinde yeşildir. Sonbaharda don klorofili dondurur, sonra ağaç yapraklarını yeni pigmentlerle sarıya, turuncuya ve kırmızıya boyar.'
     },
-    versionNote: 'The text does not say that frost freezes the chlorophyll, and only the reds are new pigments.'
+    versionNote: 'Metin donun klorofili dondurduğunu söylemiyor ve yalnızca kırmızılar yeni pigmenttir.'
   },
   club: {
-    title: 'Sports club board meeting',
-    context: 'The minutes of a sports club board meeting, sent to all members.',
+    title: 'Spor kulübü yönetim kurulu toplantısı',
+    context: 'Bir spor kulübünün yönetim kurulu toplantı tutanağı; tüm üyelere gönderildi.',
     sentences: {
-      s1: 'The meeting took place in the clubhouse and started a little late because of a football match.',
-      s2: 'The board proposes raising the annual membership fee from 60 to 66 euros from next January.',
-      s3: 'The reason is that the rent for the sports hall has gone up by 15 percent.',
-      s4: 'The fee has not changed for eight years.',
-      s5: 'Members under 18 will keep paying the old fee.',
-      s6: 'The members will vote on the proposal at the general meeting on 12 March.',
-      s7: 'The board also discussed new nets for the tennis courts but postponed a decision.',
-      s8: 'If the proposal is rejected, the board will look at cutting some training times instead.',
-      s9: 'A neighbouring club recently raised its fee as well, to 75 euros.',
-      s10: 'The hall belongs to the town, which sets the rent.',
-      s11: 'Many thanks to the youth team for the delicious cakes!'
+      s1: 'Toplantı kulüp lokalinde yapıldı ve bir futbol maçı yüzünden biraz geç başladı.',
+      s2: 'Yönetim kurulu, yıllık aidatın gelecek ocaktan itibaren 60 eurodan 66 euroya çıkarılmasını öneriyor.',
+      s3: 'Bunun nedeni spor salonunun kirasının yüzde 15 artması.',
+      s4: 'Aidat sekiz yıldır değişmedi.',
+      s5: '18 yaşından küçük üyeler eski aidatı ödemeye devam edecek.',
+      s6: 'Üyeler öneriyi 12 Mart’taki genel kurulda oylayacak.',
+      s7: 'Yönetim kurulu tenis kortları için yeni fileleri de konuştu ama kararı erteledi.',
+      s8: 'Öneri reddedilirse yönetim kurulu bunun yerine bazı antrenman saatlerini kısmayı değerlendirecek.',
+      s9: 'Komşu bir kulüp de kısa süre önce aidatını 75 euroya çıkardı.',
+      s10: 'Salon belediyeye ait ve kirayı da belediye belirliyor.',
+      s11: 'Leziz kekler için genç takıma çok teşekkürler!'
     },
     bullets: {
-      gold1: 'Proposal: the annual fee rises from 60 to 66 euros from January.',
-      gold2: 'Members under 18 keep paying the old fee.',
-      gold3: 'Members vote on it at the general meeting on 12 March.',
-      minor: 'New nets for the tennis courts were discussed.',
-      distort: 'The board has decided to raise the fee.',
-      dup: 'The membership fee may go up.',
-      subtle: 'Proposal: the annual fee rises from 60 to 76 euros from January.'
+      gold1: 'Öneri: yıllık aidat ocaktan itibaren 60 eurodan 66 euroya çıkıyor.',
+      gold2: '18 yaşından küçük üyeler eski aidatı ödemeye devam ediyor.',
+      gold3: 'Üyeler 12 Mart’taki genel kurulda oy veriyor.',
+      minor: 'Tenis kortları için yeni fileler konuşuldu.',
+      distort: 'Yönetim kurulu aidatı artırmaya karar verdi.',
+      dup: 'Üyelik aidatı artabilir.',
+      subtle: 'Öneri: yıllık aidat ocaktan itibaren 60 eurodan 76 euroya çıkıyor.'
     },
     bulletNotes: {
-      distort: 'Nothing is decided yet: it is a proposal, and the members vote on it.',
-      dup: 'A vaguer repeat of the fee point, without the amounts.',
-      subtle: 'Almost right, but the proposed fee is 66 euros, not 76.'
+      distort: 'Henüz hiçbir şeye karar verilmedi: bu bir öneri ve üyeler oylayacak.',
+      dup: 'Aidat maddesinin tutarlar olmadan daha belirsiz bir tekrarı.',
+      subtle: 'Neredeyse doğru, ama önerilen aidat 76 değil 66 euro.'
     },
     summaries: {
-      faithful: 'Because the hall rent rose, the board proposes raising the annual fee from 60 to 66 euros from January, with under-18s exempt, and members vote on it on 12 March.',
-      vague: 'The board talked about money matters and some changes for members.',
-      drops: 'Because the rent for the sports hall has gone up, the club’s finances were the main topic of the board meeting.',
-      adds: 'The board proposes raising the annual fee from 60 to 66 euros from January, and members who do not pay by March will lose their membership.',
-      subtle: 'Because the hall rent rose, the board has decided to raise the annual fee from 60 to 66 euros from January, with under-18s exempt.'
+      faithful: 'Salon kirası arttığı için yönetim kurulu, yıllık aidatın ocaktan itibaren 60 eurodan 66 euroya çıkmasını öneriyor; 18 yaşından küçükler hariç tutuluyor ve üyeler 12 Mart’ta oylayacak.',
+      vague: 'Yönetim kurulu para konularını ve üyeler için bazı değişiklikleri konuştu.',
+      drops: 'Spor salonunun kirası arttığı için kulübün mali durumu yönetim kurulu toplantısının ana konusuydu.',
+      adds: 'Yönetim kurulu, yıllık aidatın ocaktan itibaren 60 eurodan 66 euroya çıkmasını öneriyor ve marta kadar ödemeyenler üyeliğini kaybedecek.',
+      subtle: 'Salon kirası arttığı için yönetim kurulu, yıllık aidatı ocaktan itibaren 60 eurodan 66 euroya çıkarmaya karar verdi; 18 yaşından küçükler hariç tutuluyor.'
     },
     summaryNotes: {
-      drops: 'It leaves out the proposed new fee and the vote on 12 March.',
-      adds: 'The minutes say nothing about losing the membership.',
-      subtle: 'It is only a proposal that the members still vote on, so “has decided” is wrong.'
+      drops: 'Önerilen yeni aidat ve 12 Mart’taki oylama eksik.',
+      adds: 'Tutanakta üyeliğin kaybedilmesiyle ilgili hiçbir şey yok.',
+      subtle: 'Bu, üyelerin henüz oylayacağı bir öneri; bu yüzden “karar verdi” yanlış.'
     },
-    task: 'A member asks you what this means for them.',
-    oneLiner: 'The fees are going up.',
+    task: 'Bir üye bunun kendisi için ne anlama geldiğini soruyor.',
+    oneLiner: 'Aidatlar artıyor.',
     details: {
-      d1: 'The amounts: from 60 to 66 euros a year',
-      d2: 'That it is a proposal, voted on at the general meeting on 12 March',
-      d3: 'That members under 18 keep the old fee',
-      d4: 'That the meeting started late',
-      d5: 'The cakes from the youth team',
-      d6: 'The discussion about tennis nets'
+      d1: 'Tutarlar: yılda 60 eurodan 66 euroya',
+      d2: 'Bunun bir öneri olduğu ve 12 Mart’taki genel kurulda oylanacağı',
+      d3: '18 yaşından küçük üyelerin eski aidatı koruduğu',
+      d4: 'Toplantının geç başladığı',
+      d5: 'Genç takımın kekleri',
+      d6: 'Tenis fileleriyle ilgili konuşma'
     },
     versions: {
-      actionable: 'The board proposes raising the annual fee from 60 to 66 euros from January, because the hall rent went up. Members under 18 keep the old fee. Nothing is decided yet: you can vote on it at the general meeting on 12 March.',
-      vague: 'The fees are going up next year because things have become more expensive. More information will follow at some point.',
-      invented: 'From January the fee rises from 60 to 66 euros for everyone. Please update your bank transfer before the general meeting on 12 March.'
+      actionable: 'Salon kirası arttığı için yönetim kurulu, yıllık aidatın ocaktan itibaren 60 eurodan 66 euroya çıkmasını öneriyor. 18 yaşından küçük üyeler eski aidatı ödüyor. Henüz bir şey kesinleşmedi: 12 Mart’taki genel kurulda oy verebilirsin.',
+      vague: 'Her şey pahalandığı için aidatlar gelecek yıl artıyor. Daha fazla bilgi bir ara gelecekmiş.',
+      invented: 'Ocaktan itibaren aidat herkes için 60 eurodan 66 euroya çıkıyor. Lütfen 12 Mart’taki genel kuruldan önce havale tutarını değiştir.'
     },
-    versionNote: 'It treats a proposal as decided and forgets that members under 18 keep the old fee.'
+    versionNote: 'Bir öneriyi kesinleşmiş gibi sunuyor ve 18 yaşından küçük üyelerin eski aidatı koruduğunu unutuyor.'
   },
   trip: {
-    title: 'Change to the class trip',
-    context: 'A message from a teacher to the parents of a school class.',
+    title: 'Sınıf gezisinde değişiklik',
+    context: 'Bir öğretmenin sınıftaki öğrencilerin velilerine gönderdiği mesaj.',
     sentences: {
-      s1: 'I hope the children are as excited about the trip as I am!',
-      s2: 'Because of a rail strike, we will travel to the coast by coach instead of by train.',
-      s3: 'This means we leave one hour earlier than planned.',
-      s4: 'The meeting point is no longer the station but the car park behind the school.',
-      s5: 'The coach company has a lot of experience with school groups.',
-      s6: 'The return trip on Friday stays as planned.',
-      s7: 'There are no extra costs for families; the school covers the difference.',
-      s8: 'The coach journey takes about 40 minutes longer than the train.',
-      s9: 'Last year’s class went to the mountains, which was also a great trip.',
-      s10: 'There is a short break halfway, at a service station.',
-      s11: 'Thank you all for your help with the packing lists.'
+      s1: 'Umarım çocuklar da gezi için benim kadar heyecanlıdır!',
+      s2: 'Demiryolu grevi nedeniyle sahile trenle değil, otobüsle gideceğiz.',
+      s3: 'Bu da planladığımızdan bir saat erken yola çıkacağımız anlamına geliyor.',
+      s4: 'Buluşma noktası artık istasyon değil, okulun arkasındaki otopark.',
+      s5: 'Otobüs firmasının okul gruplarıyla çok deneyimi var.',
+      s6: 'Cuma günkü dönüş planlandığı gibi kalıyor.',
+      s7: 'Ailelere ek bir masraf yok; farkı okul karşılıyor.',
+      s8: 'Otobüs yolculuğu trenden yaklaşık 40 dakika daha uzun sürüyor.',
+      s9: 'Geçen yılki sınıf dağlara gitmişti, o da harika bir geziydi.',
+      s10: 'Yolun yarısında bir dinlenme tesisinde kısa bir mola var.',
+      s11: 'Eşya listelerine yardım ettiğiniz için hepinize teşekkürler.'
     },
     bullets: {
-      gold1: 'Coach instead of train because of a rail strike.',
-      gold2: 'Departure one hour earlier, from the car park behind the school.',
-      gold3: 'No extra costs for families.',
-      minor: 'The coach company is experienced with school groups.',
-      distort: 'The trip is shortened because of the strike.',
-      dup: 'The travel plans have changed.',
-      subtle: 'Departure two hours earlier, from the car park behind the school.'
+      gold1: 'Demiryolu grevi nedeniyle tren yerine otobüs.',
+      gold2: 'Okulun arkasındaki otoparktan bir saat erken hareket.',
+      gold3: 'Ailelere ek masraf yok.',
+      minor: 'Otobüs firması okul gruplarında deneyimli.',
+      distort: 'Grev yüzünden gezi kısaltılıyor.',
+      dup: 'Seyahat planları değişti.',
+      subtle: 'Okulun arkasındaki otoparktan iki saat erken hareket.'
     },
     bulletNotes: {
-      distort: 'Only the journey there changes; the trip is not shortened.',
-      dup: 'Says only that something changed, which the other points already show.',
-      subtle: 'Almost right, but departure is one hour earlier, not two.'
+      distort: 'Yalnızca gidiş yolu değişiyor; gezi kısaltılmıyor.',
+      dup: 'Sadece bir şeyin değiştiğini söylüyor; bu zaten diğer maddelerden anlaşılıyor.',
+      subtle: 'Neredeyse doğru, ama hareket iki değil bir saat erken.'
     },
     summaries: {
-      faithful: 'Because of a rail strike, the class travels by coach, leaving one hour earlier from the car park behind the school, at no extra cost to families.',
-      vague: 'There are a few changes to the trip arrangements that parents should know about.',
-      drops: 'Because of a rail strike, the class will travel to the coast by coach, which costs families nothing extra.',
-      adds: 'Because of a rail strike, the class travels by coach, leaving one hour earlier from the car park behind the school, and parents pay a small extra fee.',
-      subtle: 'Because the coach is faster than the train, the class travels by coach, leaving one hour earlier from the car park behind the school, at no extra cost to families.'
+      faithful: 'Demiryolu grevi nedeniyle sınıf otobüsle gidiyor ve okulun arkasındaki otoparktan bir saat erken hareket ediyor; ailelere ek masraf yok.',
+      vague: 'Gezi düzenlemelerinde velilerin bilmesi gereken birkaç değişiklik var.',
+      drops: 'Demiryolu grevi nedeniyle sınıf sahile otobüsle gidecek; bu da ailelere ek bir masraf çıkarmıyor.',
+      adds: 'Demiryolu grevi nedeniyle sınıf otobüsle gidiyor ve okulun arkasındaki otoparktan bir saat erken hareket ediyor; veliler de küçük bir ek ücret ödüyor.',
+      subtle: 'Otobüs trenden hızlı olduğu için sınıf otobüsle gidiyor ve okulun arkasındaki otoparktan bir saat erken hareket ediyor; ailelere ek masraf yok.'
     },
     summaryNotes: {
-      drops: 'It leaves out what parents must act on: the earlier departure and the new meeting point.',
-      adds: 'The message says the school covers the difference, so there is no fee.',
-      subtle: 'The reason is the rail strike, and the coach is even slower than the train.'
+      drops: 'Velilerin harekete geçmesi gereken bilgiler eksik: erken hareket ve yeni buluşma noktası.',
+      adds: 'Mesajda farkı okulun karşıladığı yazıyor, yani ek ücret yok.',
+      subtle: 'Neden demiryolu grevi; üstelik otobüs trenden bile yavaş.'
     },
-    task: 'A parent who missed the message asks another parent what to do.',
-    oneLiner: 'The class goes by coach now.',
+    task: 'Mesajı kaçıran bir veli, başka bir veliye ne yapması gerektiğini soruyor.',
+    oneLiner: 'Sınıf artık otobüsle gidiyor.',
     details: {
-      d1: 'The new meeting point: the car park behind the school',
-      d2: 'The new time: one hour earlier than planned',
-      d3: 'That there are no extra costs',
-      d4: 'That the coach company is experienced',
-      d5: 'Why they are not taking the train',
-      d6: 'That the teacher is looking forward to the trip'
+      d1: 'Yeni buluşma noktası: okulun arkasındaki otopark',
+      d2: 'Yeni saat: plandan bir saat erken',
+      d3: 'Ek masraf olmadığı',
+      d4: 'Otobüs firmasının deneyimli olduğu',
+      d5: 'Neden trenle gitmedikleri',
+      d6: 'Öğretmenin gezi için heyecanlı olduğu'
     },
     versions: {
-      actionable: 'The class goes by coach. Bring your child to the car park behind the school, not to the station, one hour earlier than planned. It costs nothing extra, and the return on Friday is unchanged.',
-      vague: 'There is a strike, so they are taking a coach now. Times and places are a bit different, so check what the teacher wrote.',
-      invented: 'The class goes by coach. Bring your child to the station one hour earlier, and give them some money for the coach ticket.'
+      actionable: 'Sınıf otobüsle gidiyor. Çocuğunu plandan bir saat erken, istasyona değil okulun arkasındaki otoparka getir. Ek bir masraf yok ve cuma günkü dönüş değişmiyor.',
+      vague: 'Grev var, o yüzden artık otobüsle gidiyorlar. Saat ve yer biraz farklı, öğretmenin yazdığına bir bak.',
+      invented: 'Sınıf otobüsle gidiyor. Çocuğunu bir saat erken istasyona getir ve otobüs bileti için yanına biraz para ver.'
     },
-    versionNote: 'The meeting point is the car park behind the school, not the station, and the school covers the cost.'
+    versionNote: 'Buluşma noktası istasyon değil okulun arkasındaki otopark, ve masrafı okul karşılıyor.'
   },
   bikes: {
-    title: 'E-bikes for bike sharing',
-    context: 'An announcement from a city’s bike-sharing service to its users.',
+    title: 'Paylaşımlı bisikletlere elektrikli bisiklet',
+    context: 'Bir şehrin paylaşımlı bisiklet hizmetinin kullanıcılarına duyurusu.',
     sentences: {
-      s1: 'Cycling is a great way to stay active and explore the city.',
-      s2: 'From 1 July, our bike-sharing service adds 200 electric bikes to its fleet.',
-      s3: 'An e-bike costs 20 cents per minute; the regular bikes keep their current price.',
-      s4: 'To unlock an e-bike, you need the latest version of our app.',
-      s5: 'The e-bikes have a range of about 60 kilometres per charge.',
-      s6: 'E-bikes must be returned to one of 12 charging stations; they cannot be left anywhere else.',
-      s7: 'A map of the charging stations is in the app.',
-      s8: 'If an e-bike is left outside a station, a fee of 10 euros is charged.',
-      s9: 'Several other cities have introduced similar services in recent years.',
-      s10: 'The bikes were tested by 50 volunteers over the winter.',
-      s11: 'Thank you for riding with us!'
+      s1: 'Bisiklet sürmek, aktif kalmanın ve şehri keşfetmenin harika bir yolu.',
+      s2: '1 Temmuz’dan itibaren paylaşımlı bisiklet hizmetimiz filosuna 200 elektrikli bisiklet ekliyor.',
+      s3: 'Elektrikli bisikletin dakikası 20 sent; normal bisikletler şimdiki fiyatlarını koruyor.',
+      s4: 'Elektrikli bisikletin kilidini açmak için uygulamamızın en son sürümü gerekiyor.',
+      s5: 'Elektrikli bisikletlerin bir şarjla menzili yaklaşık 60 kilometre.',
+      s6: 'Elektrikli bisikletler 12 şarj istasyonundan birine iade edilmeli; başka bir yere bırakılamaz.',
+      s7: 'Şarj istasyonlarının haritası uygulamada.',
+      s8: 'Bir elektrikli bisiklet istasyon dışında bırakılırsa 10 euro ücret alınır.',
+      s9: 'Son yıllarda başka birkaç şehir de benzer hizmetler başlattı.',
+      s10: 'Bisikletler kış boyunca 50 gönüllü tarafından test edildi.',
+      s11: 'Bizimle pedal çevirdiğiniz için teşekkürler!'
     },
     bullets: {
-      gold1: 'From 1 July: 200 e-bikes at 20 cents per minute.',
-      gold2: 'Unlocking them needs the latest app version.',
-      gold3: 'E-bikes must be returned to one of 12 charging stations.',
-      minor: 'A map of the charging stations is in the app.',
-      distort: 'The e-bikes replace the regular bikes.',
-      dup: 'There are new bikes.',
-      subtle: 'From 1 July: 200 e-bikes at 25 cents per minute.'
+      gold1: '1 Temmuz’dan itibaren: dakikası 20 sentten 200 elektrikli bisiklet.',
+      gold2: 'Kilidi açmak için uygulamanın en son sürümü gerekiyor.',
+      gold3: 'Elektrikli bisikletler 12 şarj istasyonundan birine iade edilmeli.',
+      minor: 'Şarj istasyonlarının haritası uygulamada.',
+      distort: 'Elektrikli bisikletler normal bisikletlerin yerini alıyor.',
+      dup: 'Yeni bisikletler var.',
+      subtle: '1 Temmuz’dan itibaren: dakikası 25 sentten 200 elektrikli bisiklet.'
     },
     bulletNotes: {
-      distort: 'The e-bikes are added; the regular bikes stay, at their current price.',
-      dup: 'A vaguer repeat of the first point, without date, number or price.',
-      subtle: 'Almost right, but the price is 20 cents per minute, not 25.'
+      distort: 'Elektrikli bisikletler ekleniyor; normal bisikletler şimdiki fiyatlarıyla kalıyor.',
+      dup: 'İlk maddenin tarih, sayı ve fiyat olmadan daha belirsiz bir tekrarı.',
+      subtle: 'Neredeyse doğru, ama fiyat dakikası 25 değil 20 sent.'
     },
     summaries: {
-      faithful: 'From 1 July there are 200 e-bikes at 20 cents per minute; they need the latest app to unlock and must be returned to one of 12 charging stations.',
-      vague: 'The bike-sharing service is introducing something new this summer that users may find interesting.',
-      drops: 'The bike-sharing service adds 200 e-bikes with a range of about 60 kilometres, so longer trips become easier.',
-      adds: 'From 1 July there are 200 e-bikes at 20 cents per minute, and the regular bikes will be phased out next year.',
-      subtle: 'From 1 July there are 200 e-bikes at 20 cents per minute; they need the latest app to unlock and can be returned to any bike station.'
+      faithful: '1 Temmuz’dan itibaren dakikası 20 sentten 200 elektrikli bisiklet var; kilitleri uygulamanın en son sürümüyle açılıyor ve 12 şarj istasyonundan birine iade edilmeleri gerekiyor.',
+      vague: 'Paylaşımlı bisiklet hizmeti bu yaz kullanıcıların ilgisini çekebilecek yeni bir şey sunuyor.',
+      drops: 'Paylaşımlı bisiklet hizmeti, menzili yaklaşık 60 kilometre olan 200 elektrikli bisiklet ekliyor; böylece uzun yolculuklar kolaylaşıyor.',
+      adds: '1 Temmuz’dan itibaren dakikası 20 sentten 200 elektrikli bisiklet var ve normal bisikletler gelecek yıl kaldırılacak.',
+      subtle: '1 Temmuz’dan itibaren dakikası 20 sentten 200 elektrikli bisiklet var; kilitleri uygulamanın en son sürümüyle açılıyor ve herhangi bir bisiklet istasyonuna iade edilebiliyorlar.'
     },
     summaryNotes: {
-      drops: 'It leaves out the price and what users must do: update the app and return e-bikes to a charging station.',
-      adds: 'Nothing in the announcement says the regular bikes will be phased out.',
-      subtle: 'E-bikes can only be returned to the 12 charging stations, not to any station.'
+      drops: 'Fiyat ve kullanıcıların yapması gerekenler eksik: uygulamayı güncellemek ve bisikleti şarj istasyonuna iade etmek.',
+      adds: 'Duyuruda normal bisikletlerin kaldırılacağı hiçbir yerde yazmıyor.',
+      subtle: 'Elektrikli bisikletler herhangi bir istasyona değil, yalnızca 12 şarj istasyonuna iade edilebilir.'
     },
-    task: 'A friend wants to try an e-bike next week.',
-    oneLiner: 'There are e-bikes now.',
+    task: 'Bir arkadaşınız gelecek hafta elektrikli bisikleti denemek istiyor.',
+    oneLiner: 'Artık elektrikli bisiklet var.',
     details: {
-      d1: 'The price: 20 cents per minute',
-      d2: 'That unlocking needs the latest app version',
-      d3: 'That e-bikes must go back to a charging station',
-      d4: 'That cycling keeps you active',
-      d5: 'How many e-bikes there are in total',
-      d6: 'That the regular bikes keep their price'
+      d1: 'Fiyat: dakikası 20 sent',
+      d2: 'Kilidi açmak için uygulamanın en son sürümünün gerektiği',
+      d3: 'Elektrikli bisikletlerin şarj istasyonuna geri götürülmesi gerektiği',
+      d4: 'Bisikletin insanı aktif tuttuğu',
+      d5: 'Toplam kaç elektrikli bisiklet olduğu',
+      d6: 'Normal bisikletlerin fiyatını koruduğu'
     },
     versions: {
-      actionable: 'From 1 July you can rent e-bikes for 20 cents per minute. Update the app first, because you need the latest version to unlock them. Afterwards, return the bike to one of the 12 charging stations shown on the map in the app.',
-      vague: 'There are e-bikes now, and they are easy to use. Just get the app and ride off.',
-      invented: 'From 1 July you can rent e-bikes for 20 cents per minute without the app, and you can leave them anywhere in the city afterwards.'
+      actionable: '1 Temmuz’dan itibaren dakikası 20 sentten elektrikli bisiklet kiralayabilirsin. Önce uygulamayı güncelle, çünkü kilidi açmak için en son sürüm gerekiyor. İşin bitince bisikleti uygulamadaki haritada görünen 12 şarj istasyonundan birine bırak.',
+      vague: 'Artık elektrikli bisiklet var ve kullanması çok kolay. Uygulamayı indir ve sür.',
+      invented: '1 Temmuz’dan itibaren uygulama olmadan dakikası 20 sentten elektrikli bisiklet kiralayabilir, işin bitince şehirde istediğin yere bırakabilirsin.'
     },
-    versionNote: 'You need the latest app to unlock them, and they must go back to a charging station.'
+    versionNote: 'Kilidi açmak için uygulamanın en son sürümü gerekiyor ve bisiklet bir şarj istasyonuna geri götürülmeli.'
   }
 };

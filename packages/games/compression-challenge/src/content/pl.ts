@@ -2,358 +2,358 @@ import type { ContentText } from './types';
 
 export const content: ContentText = {
   launch: {
-    title: 'App launch update',
-    context: 'An email from the project lead to the whole team.',
+    title: 'Informacja o premierze aplikacji',
+    context: 'E-mail kierowniczki projektu do całego zespołu.',
     sentences: {
-      s1: 'Hi everyone, I hope you all had a good weekend in the sunshine.',
-      s2: 'The launch of our booking app moves from 2 April to 14 May.',
-      s3: 'The reason is that the payment provider has not yet finished its security certification, and we cannot take payments without it.',
-      s4: 'The provider says it has a backlog of applications.',
-      s5: 'The design team will use the extra weeks to polish the onboarding screens.',
-      s6: 'Our 300 beta testers can keep using the test version until the launch.',
-      s7: 'A competitor launched a similar app last year and needed three attempts.',
-      s8: 'Marketing must move the campaign, so please decide on the new campaign start by Friday.',
-      s9: 'The budget stays the same, because the agency does not charge for moving the campaign.',
-      s10: 'The certification itself takes about three weeks once it starts.',
-      s11: 'Thanks again for all your hard work!',
-      s12: 'I will send an updated project plan on Wednesday.'
+      s1: 'Cześć wszystkim, mam nadzieję, że mieliście udany, słoneczny weekend.',
+      s2: 'Premiera naszej aplikacji do rezerwacji przesuwa się z 2 kwietnia na 14 maja.',
+      s3: 'Powodem jest to, że operator płatności nie zakończył jeszcze certyfikacji bezpieczeństwa, a bez niej nie możemy przyjmować płatności.',
+      s4: 'Operator twierdzi, że ma zaległości w rozpatrywaniu wniosków.',
+      s5: 'Zespół projektowy wykorzysta dodatkowe tygodnie, żeby dopracować ekrany powitalne.',
+      s6: 'Nasi 300 beta-testerzy mogą korzystać z wersji testowej aż do premiery.',
+      s7: 'Pewien konkurent wypuścił w zeszłym roku podobną aplikację i potrzebował do tego trzech podejść.',
+      s8: 'Marketing musi przesunąć kampanię, więc proszę do piątku zdecydować o nowym starcie kampanii.',
+      s9: 'Budżet się nie zmienia, bo agencja nie pobiera opłat za przesunięcie kampanii.',
+      s10: 'Sama certyfikacja trwa około trzech tygodni od chwili rozpoczęcia.',
+      s11: 'Jeszcze raz dziękuję za całą waszą pracę!',
+      s12: 'W środę wyślę zaktualizowany plan projektu.'
     },
     bullets: {
-      gold1: 'The launch moves from 2 April to 14 May.',
-      gold2: 'Cause: the payment provider’s security certification is not finished.',
-      gold3: 'Marketing must decide on the new campaign start by Friday.',
-      minor: 'The design team will polish the onboarding screens.',
-      distort: 'The app has failed its security check.',
-      dup: 'The launch is delayed.',
-      subtle: 'The launch moves from 2 April to 4 May.'
+      gold1: 'Premiera przesuwa się z 2 kwietnia na 14 maja.',
+      gold2: 'Przyczyna: certyfikacja bezpieczeństwa u operatora płatności nie jest zakończona.',
+      gold3: 'Marketing musi do piątku zdecydować o nowym starcie kampanii.',
+      minor: 'Zespół projektowy dopracuje ekrany powitalne.',
+      distort: 'Aplikacja oblała kontrolę bezpieczeństwa.',
+      dup: 'Premiera się opóźnia.',
+      subtle: 'Premiera przesuwa się z 2 kwietnia na 4 maja.'
     },
     bulletNotes: {
-      distort: 'The text says the certification is not finished yet, not that the app failed a check.',
-      dup: 'Repeats the point about the new date without the date, so it wastes a slot.',
-      subtle: 'Almost right, but the new date is 14 May, not 4 May.'
+      distort: 'Tekst mówi, że certyfikacja nie jest jeszcze zakończona, a nie, że aplikacja oblała jakąś kontrolę.',
+      dup: 'Powtarza punkt o nowym terminie, ale bez daty, i marnuje miejsce.',
+      subtle: 'Prawie dobrze, ale nowy termin to 14 maja, a nie 4 maja.'
     },
     summaries: {
-      faithful: 'The launch moves to 14 May because the payment provider’s certification is not finished, and marketing must decide on the new campaign start by Friday.',
-      vague: 'There are some changes to the launch timing that the team should be aware of.',
-      drops: 'Because the payment provider is not ready yet, the launch has been postponed, but the budget stays the same.',
-      adds: 'The launch moves to 14 May because the payment provider’s certification is not finished, and the delay will make the project more expensive.',
-      subtle: 'The launch moves to 14 May because our app failed the payment provider’s certification, and marketing must decide on the new campaign start by Friday.'
+      faithful: 'Premiera przesuwa się na 14 maja, bo certyfikacja operatora płatności nie jest zakończona, a marketing musi do piątku zdecydować o nowym starcie kampanii.',
+      vague: 'W harmonogramie premiery są pewne zmiany, o których zespół powinien wiedzieć.',
+      drops: 'Ponieważ operator płatności nie jest jeszcze gotowy, premierę przełożono, ale budżet się nie zmienia.',
+      adds: 'Premiera przesuwa się na 14 maja, bo certyfikacja operatora płatności nie jest zakończona, a opóźnienie podniesie koszty projektu.',
+      subtle: 'Premiera przesuwa się na 14 maja, bo nasza aplikacja oblała certyfikację u operatora płatności, a marketing musi do piątku zdecydować o nowym starcie kampanii.'
     },
     summaryNotes: {
-      drops: 'It leaves out the new date and the decision marketing has to make.',
-      adds: 'The text says the budget stays the same; higher costs are made up.',
-      subtle: 'The app has not failed anything: the certification is simply not finished yet.'
+      drops: 'Brakuje nowego terminu i decyzji, którą musi podjąć marketing.',
+      adds: 'Tekst mówi, że budżet się nie zmienia; wyższe koszty są wymyślone.',
+      subtle: 'Aplikacja niczego nie oblała: certyfikacja po prostu jeszcze się nie skończyła.'
     },
-    task: 'The marketing team has to act on this one-liner.',
-    oneLiner: 'Move the launch to May.',
+    task: 'Zespół marketingu musi działać na podstawie tego jednego zdania.',
+    oneLiner: 'Przesuńcie premierę na maj.',
     details: {
-      d1: 'The exact new date: 14 May',
-      d2: 'Who must act: marketing moves the campaign',
-      d3: 'The deadline: decide on the new campaign start by Friday',
-      d4: 'Why the provider is behind schedule',
-      d5: 'The design team’s plans for the onboarding screens',
-      d6: 'The sunny weekend'
+      d1: 'Dokładny nowy termin: 14 maja',
+      d2: 'Kto ma działać: marketing przesuwa kampanię',
+      d3: 'Termin decyzji: do piątku ustalić nowy start kampanii',
+      d4: 'Dlaczego operator ma opóźnienie',
+      d5: 'Plany zespołu projektowego dotyczące ekranów powitalnych',
+      d6: 'Słoneczny weekend'
     },
     versions: {
-      actionable: 'The launch moves from 2 April to 14 May. Marketing: please move the campaign and decide on the new start date by Friday. The budget stays the same.',
-      vague: 'We are moving the launch to May. Please adjust your plans accordingly and let us know if anything comes up.',
-      invented: 'The launch moves to 1 May. Marketing: please cancel the campaign and plan a new one by the end of the month.'
+      actionable: 'Premiera przesuwa się z 2 kwietnia na 14 maja. Marketing: proszę przesunąć kampanię i do piątku ustalić nowy termin startu. Budżet się nie zmienia.',
+      vague: 'Przesuwamy premierę na maj. Dostosujcie odpowiednio swoje plany i dajcie znać, jeśli coś się pojawi.',
+      invented: 'Premiera przesuwa się na 1 maja. Marketing: proszę odwołać kampanię i do końca miesiąca zaplanować nową.'
     },
-    versionNote: 'The new date is 14 May, not 1 May, and the campaign is moved, not cancelled.'
+    versionNote: 'Nowy termin to 14 maja, a nie 1 maja, a kampanię się przesuwa, a nie odwołuje.'
   },
   library: {
-    title: 'Library renovation',
-    context: 'A notice on the door of the local library branch.',
+    title: 'Remont biblioteki',
+    context: 'Ogłoszenie na drzwiach osiedlowej biblioteki.',
     sentences: {
-      s1: 'Many of you have told us how much you love the old armchairs in the reading corner.',
-      s2: 'From 3 June, the library will be closed for renovation for eight weeks.',
-      s3: 'The roof will be repaired, and the building will get a lift and new lighting.',
-      s4: 'During the closure, a library bus will stop at the market square every Tuesday.',
-      s5: 'The bus carries about 2,000 books and can order any title from the central library.',
-      s6: 'All loans that would fall due during the closure are extended automatically, so nobody pays late fees.',
-      s7: 'Books can also be returned at any time in the return box next to the town hall.',
-      s8: 'The town hall itself was renovated in a similar way ten years ago.',
-      s9: 'Our e-books and audiobooks remain available online as usual.',
-      s10: 'We are already looking forward to next year’s summer reading festival.',
-      s11: 'The renovation is paid for by a regional building fund.'
+      s1: 'Wielu z Państwa mówiło nam, jak bardzo lubi stare fotele w kąciku czytelniczym.',
+      s2: 'Od 3 czerwca biblioteka będzie zamknięta z powodu remontu przez osiem tygodni.',
+      s3: 'Zostanie naprawiony dach, a budynek dostanie windę i nowe oświetlenie.',
+      s4: 'W czasie zamknięcia w każdy wtorek na rynku będzie stał bibliobus.',
+      s5: 'Bibliobus wozi około 2000 książek i może zamówić każdy tytuł z biblioteki centralnej.',
+      s6: 'Wszystkie wypożyczenia, których termin minąłby w czasie zamknięcia, zostaną automatycznie przedłużone, więc nikt nie zapłaci kary.',
+      s7: 'Książki można też w każdej chwili oddać do skrzynki zwrotów obok ratusza.',
+      s8: 'Sam ratusz przeszedł podobny remont dziesięć lat temu.',
+      s9: 'Nasze e-booki i audiobooki są jak zwykle dostępne online.',
+      s10: 'Już cieszymy się na przyszłoroczny letni festiwal czytania.',
+      s11: 'Remont jest finansowany z regionalnego funduszu budowlanego.'
     },
     bullets: {
-      gold1: 'Closed for renovation for eight weeks from 3 June.',
-      gold2: 'A library bus stops at the market square every Tuesday.',
-      gold3: 'Loans due during the closure are extended automatically.',
-      minor: 'The building will get new lighting.',
-      distort: 'All library services stop for eight weeks.',
-      dup: 'The library will be closed for a while.',
-      subtle: 'Closed for renovation for six weeks from 3 June.'
+      gold1: 'Od 3 czerwca zamknięta z powodu remontu na osiem tygodni.',
+      gold2: 'W każdy wtorek na rynku stoi bibliobus.',
+      gold3: 'Wypożyczenia z terminem w czasie zamknięcia przedłużają się automatycznie.',
+      minor: 'Budynek dostanie nowe oświetlenie.',
+      distort: 'Wszystkie usługi biblioteki zostają wstrzymane na osiem tygodni.',
+      dup: 'Biblioteka będzie przez jakiś czas zamknięta.',
+      subtle: 'Od 3 czerwca zamknięta z powodu remontu na sześć tygodni.'
     },
     bulletNotes: {
-      distort: 'Not true: the bus and the return box keep working during the closure.',
-      dup: 'Repeats the closure without the start date or the length.',
-      subtle: 'Almost right, but the closure lasts eight weeks, not six.'
+      distort: 'Nieprawda: bibliobus i skrzynka zwrotów działają również w czasie zamknięcia.',
+      dup: 'Powtarza informację o zamknięciu bez daty rozpoczęcia i czasu trwania.',
+      subtle: 'Prawie dobrze, ale zamknięcie trwa osiem tygodni, a nie sześć.'
     },
     summaries: {
-      faithful: 'The library closes for eight weeks from 3 June; meanwhile a bus visits the market square every Tuesday, and loans due in that time are extended automatically.',
-      vague: 'There will be some changes at the library over the summer, so keep an eye out.',
-      drops: 'The library is being renovated and will get a repaired roof, a lift and new lighting.',
-      adds: 'The library closes for eight weeks from 3 June and will charge a small fee for loans after it reopens.',
-      subtle: 'Because the roof is unsafe, the library closes for eight weeks from 3 June; meanwhile a bus visits the market square every Tuesday.'
+      faithful: 'Biblioteka zamyka się na osiem tygodni od 3 czerwca; w tym czasie w każdy wtorek na rynek przyjeżdża bibliobus, a wypożyczenia z mijającym terminem przedłużają się automatycznie.',
+      vague: 'Latem w bibliotece zajdą pewne zmiany, więc warto mieć oczy otwarte.',
+      drops: 'Biblioteka przejdzie remont i dostanie naprawiony dach, windę i nowe oświetlenie.',
+      adds: 'Biblioteka zamyka się na osiem tygodni od 3 czerwca, a po ponownym otwarciu będzie pobierać niewielką opłatę za wypożyczenia.',
+      subtle: 'Ponieważ dach jest niebezpieczny, biblioteka zamyka się na osiem tygodni od 3 czerwca; w tym czasie w każdy wtorek na rynek przyjeżdża bibliobus.'
     },
     summaryNotes: {
-      drops: 'It describes the building work but not when the library closes or what readers can do meanwhile.',
-      adds: 'Nothing in the notice mentions fees after the reopening.',
-      subtle: 'The notice says the roof will be repaired, not that it is unsafe; that cause is added.'
+      drops: 'Opisuje prace remontowe, ale nie mówi, kiedy biblioteka się zamyka ani co czytelnicy mogą w tym czasie robić.',
+      adds: 'Ogłoszenie nie wspomina o żadnych opłatach po ponownym otwarciu.',
+      subtle: 'Ogłoszenie mówi, że dach zostanie naprawiony, a nie, że jest niebezpieczny; ta przyczyna jest dopisana.'
     },
-    task: 'A neighbour who wants to keep borrowing books asks you about it.',
-    oneLiner: 'The library is closed in summer.',
+    task: 'Sąsiad, który chce dalej wypożyczać książki, pyta cię o to.',
+    oneLiner: 'Biblioteka jest latem zamknięta.',
     details: {
-      d1: 'When exactly: for eight weeks from 3 June',
-      d2: 'Where to borrow meanwhile: the bus at the market square on Tuesdays',
-      d3: 'Where to return books: the box next to the town hall',
-      d4: 'What the renovation includes',
-      d5: 'The armchairs in the reading corner',
-      d6: 'Next year’s reading festival'
+      d1: 'Kiedy dokładnie: osiem tygodni od 3 czerwca',
+      d2: 'Gdzie wypożyczać w tym czasie: w bibliobusie na rynku we wtorki',
+      d3: 'Gdzie oddawać książki: do skrzynki obok ratusza',
+      d4: 'Co obejmuje remont',
+      d5: 'Fotele w kąciku czytelniczym',
+      d6: 'Przyszłoroczny festiwal czytania'
     },
     versions: {
-      actionable: 'From 3 June the library is closed for eight weeks. You can borrow books from the library bus at the market square every Tuesday and return them any time in the box next to the town hall. Loans due in that time are extended automatically.',
-      vague: 'The library will be closed for a while in the summer because of building work. There will be other options, so check the notice for more.',
-      invented: 'From 3 June the library is closed for eight weeks. You can borrow books from the library bus at the station every Friday. Please return all books before the closure.'
+      actionable: 'Od 3 czerwca biblioteka jest zamknięta na osiem tygodni. Książki możesz wypożyczać w każdy wtorek w bibliobusie na rynku, a oddawać w każdej chwili do skrzynki obok ratusza. To, czego termin minie w tym czasie, przedłuża się automatycznie.',
+      vague: 'Latem biblioteka będzie przez jakiś czas zamknięta z powodu remontu. Będą inne możliwości, więc zajrzyj do ogłoszenia.',
+      invented: 'Od 3 czerwca biblioteka jest zamknięta na osiem tygodni. Książki możesz wypożyczać w każdy piątek w bibliobusie przy dworcu. Oddaj wszystkie książki przed zamknięciem.'
     },
-    versionNote: 'The bus stops at the market square on Tuesdays, and nobody has to return books before the closure.'
+    versionNote: 'Bibliobus stoi na rynku we wtorki, a nikt nie musi oddawać książek przed zamknięciem.'
   },
   leaves: {
-    title: 'Why leaves change colour',
-    context: 'A short article from a nature magazine for curious readers.',
+    title: 'Dlaczego liście zmieniają kolor',
+    context: 'Krótki artykuł z magazynu przyrodniczego dla ciekawych świata czytelników.',
     sentences: {
-      s1: 'Autumn is many people’s favourite season for long walks.',
-      s2: 'Leaves are green because they contain a lot of chlorophyll, the pigment plants use to capture sunlight.',
-      s3: 'As the days get shorter, many trees stop making chlorophyll and break it down.',
-      s4: 'Yellow and orange pigments, called carotenoids, were in the leaf all along; they only become visible when the green fades.',
-      s5: 'Carotenoids are the same kind of pigment that makes carrots orange.',
-      s6: 'Red is different: some trees, such as many maples, make new red pigments in autumn.',
-      s7: 'Researchers think these red pigments may protect the leaf from strong light while the tree takes back nutrients.',
-      s8: 'Sunny days and cool nights tend to make the reds brighter.',
-      s9: 'In some regions, colourful forests attract many tourists every year.',
-      s10: 'Finally, a thin layer of cells forms where the leaf joins the twig, and the leaf falls.',
-      s11: 'Don’t forget a warm jacket if you go out to look at the trees.'
+      s1: 'Jesień to dla wielu ulubiona pora na długie spacery.',
+      s2: 'Liście są zielone, bo zawierają dużo chlorofilu, barwnika, dzięki któremu rośliny wychwytują światło słoneczne.',
+      s3: 'Gdy dni robią się krótsze, wiele drzew przestaje wytwarzać chlorofil i go rozkłada.',
+      s4: 'Żółte i pomarańczowe barwniki, zwane karotenoidami, były w liściu przez cały czas; widać je dopiero, gdy zieleń blednie.',
+      s5: 'Karotenoidy to ten sam rodzaj barwnika, który nadaje marchewce pomarańczowy kolor.',
+      s6: 'Z czerwienią jest inaczej: niektóre drzewa, na przykład wiele klonów, wytwarzają jesienią nowe czerwone barwniki.',
+      s7: 'Naukowcy sądzą, że te czerwone barwniki mogą chronić liść przed silnym światłem, gdy drzewo odzyskuje składniki odżywcze.',
+      s8: 'Słoneczne dni i chłodne noce zwykle sprawiają, że czerwień jest żywsza.',
+      s9: 'W niektórych regionach kolorowe lasy co roku przyciągają wielu turystów.',
+      s10: 'Na koniec w miejscu, gdzie liść łączy się z gałązką, tworzy się cienka warstwa komórek i liść opada.',
+      s11: 'Nie zapomnij ciepłej kurtki, jeśli wychodzisz oglądać drzewa.'
     },
     bullets: {
-      gold1: 'In autumn, trees stop making green chlorophyll and break it down.',
-      gold2: 'Yellow and orange pigments were there all along and become visible.',
-      gold3: 'Some trees, such as maples, make new red pigments.',
-      minor: 'A thin layer of cells forms, and the leaf falls.',
-      distort: 'All autumn colours are new pigments made by the tree.',
-      dup: 'Leaves lose their green colour.',
-      subtle: 'Red pigments protect the leaf from strong light.'
+      gold1: 'Jesienią drzewa przestają wytwarzać zielony chlorofil i go rozkładają.',
+      gold2: 'Żółte i pomarańczowe barwniki były tam od zawsze i stają się widoczne.',
+      gold3: 'Niektóre drzewa, np. klony, wytwarzają nowe czerwone barwniki.',
+      minor: 'Tworzy się cienka warstwa komórek i liść opada.',
+      distort: 'Wszystkie jesienne kolory to nowe barwniki wytwarzane przez drzewo.',
+      dup: 'Liście tracą zielony kolor.',
+      subtle: 'Czerwone barwniki chronią liść przed silnym światłem.'
     },
     bulletNotes: {
-      distort: 'Only the reds are new; yellow and orange were in the leaf all along.',
-      dup: 'Says less than the point about chlorophyll and wastes a slot.',
-      subtle: 'The text only says researchers think the red pigments may protect the leaf; this bullet states it as a fact.'
+      distort: 'Nowa jest tylko czerwień; żółty i pomarańczowy były w liściu przez cały czas.',
+      dup: 'Mówi mniej niż punkt o chlorofilu i marnuje miejsce.',
+      subtle: 'Tekst mówi tylko, że naukowcy sądzą, iż czerwone barwniki mogą chronić liść; ten punkt podaje to jako fakt.'
     },
     summaries: {
-      faithful: 'In autumn many trees break down their green chlorophyll, which reveals yellow and orange pigments that were there all along, while some trees also make new red ones.',
-      vague: 'Leaves change colour in autumn because of various natural processes in the tree.',
-      drops: 'In autumn, leaves turn yellow, orange and red, and then they fall from the trees.',
-      adds: 'In autumn many trees break down their green chlorophyll, which reveals yellow and orange pigments, and the redder the leaves, the colder the coming winter.',
-      subtle: 'In autumn many trees break down their green chlorophyll, which reveals yellow and orange pigments, and cold nights make the trees produce red ones.'
+      faithful: 'Jesienią wiele drzew rozkłada zielony chlorofil, przez co widać żółte i pomarańczowe barwniki obecne od zawsze, a niektóre drzewa wytwarzają też nowe czerwone.',
+      vague: 'Liście zmieniają jesienią kolor z powodu różnych naturalnych procesów w drzewie.',
+      drops: 'Jesienią liście robią się żółte, pomarańczowe i czerwone, a potem spadają z drzew.',
+      adds: 'Jesienią wiele drzew rozkłada zielony chlorofil, przez co widać żółte i pomarańczowe barwniki, a im bardziej czerwone liście, tym zimniejsza będzie zima.',
+      subtle: 'Jesienią wiele drzew rozkłada zielony chlorofil, przez co widać żółte i pomarańczowe barwniki, a zimne noce sprawiają, że drzewa wytwarzają czerwone.'
     },
     summaryNotes: {
-      drops: 'It describes what we see, but not why it happens.',
-      adds: 'The text says nothing about predicting the winter.',
-      subtle: 'Cool nights only tend to make the reds brighter; the text does not say they cause the red pigments.'
+      drops: 'Opisuje, co widzimy, ale nie wyjaśnia, dlaczego tak się dzieje.',
+      adds: 'Tekst nic nie mówi o przewidywaniu zimy.',
+      subtle: 'Chłodne noce zwykle tylko ożywiają czerwień; tekst nie mówi, że to one powodują powstanie czerwonych barwników.'
     },
-    task: 'A teacher wants to explain this one-liner to a class, using real leaves.',
-    oneLiner: 'The chlorophyll breaks down, so other colours show.',
+    task: 'Nauczycielka chce wyjaśnić to zdanie klasie na prawdziwych liściach.',
+    oneLiner: 'Chlorofil się rozkłada, więc widać inne kolory.',
     details: {
-      d1: 'What chlorophyll is: the green pigment that captures sunlight',
-      d2: 'That yellow and orange were in the leaf all along',
-      d3: 'That some trees, such as maples, make new red pigments',
-      d4: 'That autumn is a popular season for walks',
-      d5: 'That you need a warm jacket outside',
-      d6: 'How the leaf finally falls off'
+      d1: 'Czym jest chlorofil: zielonym barwnikiem, który wychwytuje światło słoneczne',
+      d2: 'Że żółty i pomarańczowy były w liściu przez cały czas',
+      d3: 'Że niektóre drzewa, np. klony, wytwarzają nowe czerwone barwniki',
+      d4: 'Że jesień to popularna pora na spacery',
+      d5: 'Że na dworze potrzebna jest ciepła kurtka',
+      d6: 'Jak liść w końcu opada'
     },
     versions: {
-      actionable: 'Leaves are green because of chlorophyll, a pigment that captures sunlight. In autumn many trees stop making it and break it down. Then yellow and orange pigments that were there all along become visible, and some trees, like maples, make new red ones.',
-      vague: 'In autumn the leaves change because the green goes away and other colours come out. Nature is fascinating that way.',
-      invented: 'Leaves are green because of chlorophyll. In autumn the frost freezes the chlorophyll, and then the tree paints its leaves yellow, orange and red with new pigments.'
+      actionable: 'Liście są zielone dzięki chlorofilowi, barwnikowi, który wychwytuje światło słoneczne. Jesienią wiele drzew przestaje go wytwarzać i go rozkłada. Wtedy widać żółte i pomarańczowe barwniki, które były tam od zawsze, a niektóre drzewa, na przykład klony, wytwarzają nowe czerwone.',
+      vague: 'Jesienią liście się zmieniają, bo zieleń znika i wychodzą inne kolory. Przyroda jest fascynująca.',
+      invented: 'Liście są zielone dzięki chlorofilowi. Jesienią przymrozek zamraża chlorofil, a potem drzewo maluje liście na żółto, pomarańczowo i czerwono nowymi barwnikami.'
     },
-    versionNote: 'The text does not say that frost freezes the chlorophyll, and only the reds are new pigments.'
+    versionNote: 'Tekst nie mówi, że przymrozek zamraża chlorofil, a nowa jest tylko czerwień.'
   },
   club: {
-    title: 'Sports club board meeting',
-    context: 'The minutes of a sports club board meeting, sent to all members.',
+    title: 'Posiedzenie zarządu klubu sportowego',
+    context: 'Protokół z posiedzenia zarządu klubu sportowego, wysłany do wszystkich członków.',
     sentences: {
-      s1: 'The meeting took place in the clubhouse and started a little late because of a football match.',
-      s2: 'The board proposes raising the annual membership fee from 60 to 66 euros from next January.',
-      s3: 'The reason is that the rent for the sports hall has gone up by 15 percent.',
-      s4: 'The fee has not changed for eight years.',
-      s5: 'Members under 18 will keep paying the old fee.',
-      s6: 'The members will vote on the proposal at the general meeting on 12 March.',
-      s7: 'The board also discussed new nets for the tennis courts but postponed a decision.',
-      s8: 'If the proposal is rejected, the board will look at cutting some training times instead.',
-      s9: 'A neighbouring club recently raised its fee as well, to 75 euros.',
-      s10: 'The hall belongs to the town, which sets the rent.',
-      s11: 'Many thanks to the youth team for the delicious cakes!'
+      s1: 'Posiedzenie odbyło się w klubie i zaczęło się nieco później z powodu meczu piłki nożnej.',
+      s2: 'Zarząd proponuje podnieść roczną składkę z 60 do 66 euro od przyszłego stycznia.',
+      s3: 'Powodem jest wzrost czynszu za halę sportową o 15 procent.',
+      s4: 'Składka nie zmieniała się od ośmiu lat.',
+      s5: 'Członkowie poniżej 18 lat nadal będą płacić dotychczasową składkę.',
+      s6: 'Członkowie zagłosują nad propozycją na walnym zebraniu 12 marca.',
+      s7: 'Zarząd rozmawiał też o nowych siatkach na korty tenisowe, ale odłożył decyzję.',
+      s8: 'Jeśli propozycja zostanie odrzucona, zarząd rozważy zamiast tego ograniczenie części treningów.',
+      s9: 'Sąsiedni klub też niedawno podniósł składkę, do 75 euro.',
+      s10: 'Hala należy do miasta, które ustala czynsz.',
+      s11: 'Serdeczne podziękowania dla drużyny młodzieżowej za pyszne ciasta!'
     },
     bullets: {
-      gold1: 'Proposal: the annual fee rises from 60 to 66 euros from January.',
-      gold2: 'Members under 18 keep paying the old fee.',
-      gold3: 'Members vote on it at the general meeting on 12 March.',
-      minor: 'New nets for the tennis courts were discussed.',
-      distort: 'The board has decided to raise the fee.',
-      dup: 'The membership fee may go up.',
-      subtle: 'Proposal: the annual fee rises from 60 to 76 euros from January.'
+      gold1: 'Propozycja: roczna składka rośnie od stycznia z 60 do 66 euro.',
+      gold2: 'Członkowie poniżej 18 lat płacą dotychczasową składkę.',
+      gold3: 'Głosowanie na walnym zebraniu 12 marca.',
+      minor: 'Rozmawiano o nowych siatkach na korty tenisowe.',
+      distort: 'Zarząd postanowił podnieść składkę.',
+      dup: 'Składka członkowska może wzrosnąć.',
+      subtle: 'Propozycja: roczna składka rośnie od stycznia z 60 do 76 euro.'
     },
     bulletNotes: {
-      distort: 'Nothing is decided yet: it is a proposal, and the members vote on it.',
-      dup: 'A vaguer repeat of the fee point, without the amounts.',
-      subtle: 'Almost right, but the proposed fee is 66 euros, not 76.'
+      distort: 'Nic jeszcze nie postanowiono: to propozycja, nad którą głosują członkowie.',
+      dup: 'Bardziej ogólne powtórzenie punktu o składce, bez kwot.',
+      subtle: 'Prawie dobrze, ale proponowana składka to 66 euro, a nie 76.'
     },
     summaries: {
-      faithful: 'Because the hall rent rose, the board proposes raising the annual fee from 60 to 66 euros from January, with under-18s exempt, and members vote on it on 12 March.',
-      vague: 'The board talked about money matters and some changes for members.',
-      drops: 'Because the rent for the sports hall has gone up, the club’s finances were the main topic of the board meeting.',
-      adds: 'The board proposes raising the annual fee from 60 to 66 euros from January, and members who do not pay by March will lose their membership.',
-      subtle: 'Because the hall rent rose, the board has decided to raise the annual fee from 60 to 66 euros from January, with under-18s exempt.'
+      faithful: 'Ponieważ wzrósł czynsz za halę, zarząd proponuje podnieść od stycznia roczną składkę z 60 do 66 euro, z wyjątkiem osób poniżej 18 lat, a członkowie zagłosują 12 marca.',
+      vague: 'Zarząd rozmawiał o sprawach finansowych i kilku zmianach dla członków.',
+      drops: 'Ponieważ wzrósł czynsz za halę sportową, finanse klubu były głównym tematem posiedzenia zarządu.',
+      adds: 'Zarząd proponuje podnieść od stycznia roczną składkę z 60 do 66 euro, a kto nie zapłaci do marca, straci członkostwo.',
+      subtle: 'Ponieważ wzrósł czynsz za halę, zarząd postanowił podnieść od stycznia roczną składkę z 60 do 66 euro, z wyjątkiem osób poniżej 18 lat.'
     },
     summaryNotes: {
-      drops: 'It leaves out the proposed new fee and the vote on 12 March.',
-      adds: 'The minutes say nothing about losing the membership.',
-      subtle: 'It is only a proposal that the members still vote on, so “has decided” is wrong.'
+      drops: 'Brakuje proponowanej nowej składki i głosowania 12 marca.',
+      adds: 'Protokół nic nie mówi o utracie członkostwa.',
+      subtle: 'To tylko propozycja, nad którą członkowie jeszcze zagłosują, więc „postanowił” jest błędne.'
     },
-    task: 'A member asks you what this means for them.',
-    oneLiner: 'The fees are going up.',
+    task: 'Członek klubu pyta cię, co to dla niego oznacza.',
+    oneLiner: 'Składki idą w górę.',
     details: {
-      d1: 'The amounts: from 60 to 66 euros a year',
-      d2: 'That it is a proposal, voted on at the general meeting on 12 March',
-      d3: 'That members under 18 keep the old fee',
-      d4: 'That the meeting started late',
-      d5: 'The cakes from the youth team',
-      d6: 'The discussion about tennis nets'
+      d1: 'Kwoty: z 60 do 66 euro rocznie',
+      d2: 'Że to propozycja, nad którą głosuje się na zebraniu 12 marca',
+      d3: 'Że członkowie poniżej 18 lat zachowują dotychczasową składkę',
+      d4: 'Że posiedzenie zaczęło się później',
+      d5: 'Ciasta od drużyny młodzieżowej',
+      d6: 'Rozmowa o siatkach tenisowych'
     },
     versions: {
-      actionable: 'The board proposes raising the annual fee from 60 to 66 euros from January, because the hall rent went up. Members under 18 keep the old fee. Nothing is decided yet: you can vote on it at the general meeting on 12 March.',
-      vague: 'The fees are going up next year because things have become more expensive. More information will follow at some point.',
-      invented: 'From January the fee rises from 60 to 66 euros for everyone. Please update your bank transfer before the general meeting on 12 March.'
+      actionable: 'Zarząd proponuje podnieść od stycznia roczną składkę z 60 do 66 euro, bo wzrósł czynsz za halę. Członkowie poniżej 18 lat płacą dotychczasową składkę. Nic jeszcze nie postanowiono: możesz zagłosować na walnym zebraniu 12 marca.',
+      vague: 'Od przyszłego roku składki rosną, bo wszystko zdrożało. Więcej informacji kiedyś będzie.',
+      invented: 'Od stycznia składka dla wszystkich rośnie z 60 do 66 euro. Zmień swój przelew przed walnym zebraniem 12 marca.'
     },
-    versionNote: 'It treats a proposal as decided and forgets that members under 18 keep the old fee.'
+    versionNote: 'Traktuje propozycję jak decyzję i zapomina, że członkowie poniżej 18 lat zachowują dotychczasową składkę.'
   },
   trip: {
-    title: 'Change to the class trip',
-    context: 'A message from a teacher to the parents of a school class.',
+    title: 'Zmiana w wycieczce klasowej',
+    context: 'Wiadomość nauczyciela do rodziców uczniów jednej klasy.',
     sentences: {
-      s1: 'I hope the children are as excited about the trip as I am!',
-      s2: 'Because of a rail strike, we will travel to the coast by coach instead of by train.',
-      s3: 'This means we leave one hour earlier than planned.',
-      s4: 'The meeting point is no longer the station but the car park behind the school.',
-      s5: 'The coach company has a lot of experience with school groups.',
-      s6: 'The return trip on Friday stays as planned.',
-      s7: 'There are no extra costs for families; the school covers the difference.',
-      s8: 'The coach journey takes about 40 minutes longer than the train.',
-      s9: 'Last year’s class went to the mountains, which was also a great trip.',
-      s10: 'There is a short break halfway, at a service station.',
-      s11: 'Thank you all for your help with the packing lists.'
+      s1: 'Mam nadzieję, że dzieci cieszą się na wycieczkę tak samo jak ja!',
+      s2: 'Z powodu strajku na kolei pojedziemy nad morze autokarem zamiast pociągiem.',
+      s3: 'To oznacza, że wyjeżdżamy godzinę wcześniej, niż planowaliśmy.',
+      s4: 'Miejscem zbiórki nie jest już dworzec, tylko parking za szkołą.',
+      s5: 'Firma autokarowa ma duże doświadczenie z grupami szkolnymi.',
+      s6: 'Powrót w piątek odbędzie się zgodnie z planem.',
+      s7: 'Rodziny nie ponoszą dodatkowych kosztów; różnicę pokrywa szkoła.',
+      s8: 'Podróż autokarem trwa około 40 minut dłużej niż pociągiem.',
+      s9: 'Zeszłoroczna klasa pojechała w góry i to też była świetna wycieczka.',
+      s10: 'W połowie drogi będzie krótka przerwa na stacji przy autostradzie.',
+      s11: 'Dziękuję wszystkim za pomoc przy listach rzeczy do spakowania.'
     },
     bullets: {
-      gold1: 'Coach instead of train because of a rail strike.',
-      gold2: 'Departure one hour earlier, from the car park behind the school.',
-      gold3: 'No extra costs for families.',
-      minor: 'The coach company is experienced with school groups.',
-      distort: 'The trip is shortened because of the strike.',
-      dup: 'The travel plans have changed.',
-      subtle: 'Departure two hours earlier, from the car park behind the school.'
+      gold1: 'Autokar zamiast pociągu z powodu strajku na kolei.',
+      gold2: 'Wyjazd godzinę wcześniej, z parkingu za szkołą.',
+      gold3: 'Brak dodatkowych kosztów dla rodzin.',
+      minor: 'Firma autokarowa ma doświadczenie z grupami szkolnymi.',
+      distort: 'Wycieczka zostaje skrócona z powodu strajku.',
+      dup: 'Plany podróży się zmieniły.',
+      subtle: 'Wyjazd dwie godziny wcześniej, z parkingu za szkołą.'
     },
     bulletNotes: {
-      distort: 'Only the journey there changes; the trip is not shortened.',
-      dup: 'Says only that something changed, which the other points already show.',
-      subtle: 'Almost right, but departure is one hour earlier, not two.'
+      distort: 'Zmienia się tylko dojazd; wycieczka nie jest skracana.',
+      dup: 'Mówi tylko, że coś się zmieniło, co widać już z innych punktów.',
+      subtle: 'Prawie dobrze, ale wyjazd jest godzinę wcześniej, a nie dwie.'
     },
     summaries: {
-      faithful: 'Because of a rail strike, the class travels by coach, leaving one hour earlier from the car park behind the school, at no extra cost to families.',
-      vague: 'There are a few changes to the trip arrangements that parents should know about.',
-      drops: 'Because of a rail strike, the class will travel to the coast by coach, which costs families nothing extra.',
-      adds: 'Because of a rail strike, the class travels by coach, leaving one hour earlier from the car park behind the school, and parents pay a small extra fee.',
-      subtle: 'Because the coach is faster than the train, the class travels by coach, leaving one hour earlier from the car park behind the school, at no extra cost to families.'
+      faithful: 'Z powodu strajku na kolei klasa jedzie autokarem i wyjeżdża godzinę wcześniej z parkingu za szkołą, bez dodatkowych kosztów dla rodzin.',
+      vague: 'W organizacji wycieczki jest kilka zmian, o których rodzice powinni wiedzieć.',
+      drops: 'Z powodu strajku na kolei klasa pojedzie nad morze autokarem, co nie kosztuje rodzin nic więcej.',
+      adds: 'Z powodu strajku na kolei klasa jedzie autokarem i wyjeżdża godzinę wcześniej z parkingu za szkołą, a rodzice dopłacają niewielką kwotę.',
+      subtle: 'Ponieważ autokar jest szybszy od pociągu, klasa jedzie autokarem i wyjeżdża godzinę wcześniej z parkingu za szkołą, bez dodatkowych kosztów dla rodzin.'
     },
     summaryNotes: {
-      drops: 'It leaves out what parents must act on: the earlier departure and the new meeting point.',
-      adds: 'The message says the school covers the difference, so there is no fee.',
-      subtle: 'The reason is the rail strike, and the coach is even slower than the train.'
+      drops: 'Brakuje tego, co rodzice muszą zrobić: wcześniejszego wyjazdu i nowego miejsca zbiórki.',
+      adds: 'Wiadomość mówi, że różnicę pokrywa szkoła, więc dopłaty nie ma.',
+      subtle: 'Powodem jest strajk na kolei, a autokar jest nawet wolniejszy od pociągu.'
     },
-    task: 'A parent who missed the message asks another parent what to do.',
-    oneLiner: 'The class goes by coach now.',
+    task: 'Rodzic, który przegapił wiadomość, pyta innego rodzica, co trzeba zrobić.',
+    oneLiner: 'Klasa jedzie teraz autokarem.',
     details: {
-      d1: 'The new meeting point: the car park behind the school',
-      d2: 'The new time: one hour earlier than planned',
-      d3: 'That there are no extra costs',
-      d4: 'That the coach company is experienced',
-      d5: 'Why they are not taking the train',
-      d6: 'That the teacher is looking forward to the trip'
+      d1: 'Nowe miejsce zbiórki: parking za szkołą',
+      d2: 'Nowa godzina: godzinę wcześniej niż w planie',
+      d3: 'Że nie ma dodatkowych kosztów',
+      d4: 'Że firma autokarowa jest doświadczona',
+      d5: 'Dlaczego nie jadą pociągiem',
+      d6: 'Że nauczyciel cieszy się na wycieczkę'
     },
     versions: {
-      actionable: 'The class goes by coach. Bring your child to the car park behind the school, not to the station, one hour earlier than planned. It costs nothing extra, and the return on Friday is unchanged.',
-      vague: 'There is a strike, so they are taking a coach now. Times and places are a bit different, so check what the teacher wrote.',
-      invented: 'The class goes by coach. Bring your child to the station one hour earlier, and give them some money for the coach ticket.'
+      actionable: 'Klasa jedzie autokarem. Przyprowadź dziecko godzinę wcześniej, niż było w planie, na parking za szkołą, a nie na dworzec. Nic nie dopłacasz, a powrót w piątek się nie zmienia.',
+      vague: 'Jest strajk, więc teraz jadą autokarem. Godziny i miejsca są trochę inne, zobacz, co napisał nauczyciel.',
+      invented: 'Klasa jedzie autokarem. Przyprowadź dziecko na dworzec godzinę wcześniej i daj mu trochę pieniędzy na bilet na autokar.'
     },
-    versionNote: 'The meeting point is the car park behind the school, not the station, and the school covers the cost.'
+    versionNote: 'Zbiórka jest na parkingu za szkołą, a nie na dworcu, a koszty pokrywa szkoła.'
   },
   bikes: {
-    title: 'E-bikes for bike sharing',
-    context: 'An announcement from a city’s bike-sharing service to its users.',
+    title: 'Rowery elektryczne w wypożyczalni miejskiej',
+    context: 'Ogłoszenie miejskiej wypożyczalni rowerów dla użytkowników.',
     sentences: {
-      s1: 'Cycling is a great way to stay active and explore the city.',
-      s2: 'From 1 July, our bike-sharing service adds 200 electric bikes to its fleet.',
-      s3: 'An e-bike costs 20 cents per minute; the regular bikes keep their current price.',
-      s4: 'To unlock an e-bike, you need the latest version of our app.',
-      s5: 'The e-bikes have a range of about 60 kilometres per charge.',
-      s6: 'E-bikes must be returned to one of 12 charging stations; they cannot be left anywhere else.',
-      s7: 'A map of the charging stations is in the app.',
-      s8: 'If an e-bike is left outside a station, a fee of 10 euros is charged.',
-      s9: 'Several other cities have introduced similar services in recent years.',
-      s10: 'The bikes were tested by 50 volunteers over the winter.',
-      s11: 'Thank you for riding with us!'
+      s1: 'Jazda na rowerze to świetny sposób, żeby być aktywnym i poznawać miasto.',
+      s2: 'Od 1 lipca nasza wypożyczalnia dodaje do floty 200 rowerów elektrycznych.',
+      s3: 'Rower elektryczny kosztuje 20 centów za minutę; zwykłe rowery zachowują obecną cenę.',
+      s4: 'Do odblokowania roweru elektrycznego potrzebna jest najnowsza wersja naszej aplikacji.',
+      s5: 'Rowery elektryczne mają zasięg około 60 kilometrów na jednym ładowaniu.',
+      s6: 'Rowery elektryczne trzeba zwracać do jednej z 12 stacji ładowania; nie można ich zostawiać nigdzie indziej.',
+      s7: 'Mapa stacji ładowania jest w aplikacji.',
+      s8: 'Za zostawienie roweru elektrycznego poza stacją pobierana jest opłata 10 euro.',
+      s9: 'Kilka innych miast wprowadziło w ostatnich latach podobne usługi.',
+      s10: 'Rowery testowało zimą 50 wolontariuszy.',
+      s11: 'Dziękujemy, że jeździcie z nami!'
     },
     bullets: {
-      gold1: 'From 1 July: 200 e-bikes at 20 cents per minute.',
-      gold2: 'Unlocking them needs the latest app version.',
-      gold3: 'E-bikes must be returned to one of 12 charging stations.',
-      minor: 'A map of the charging stations is in the app.',
-      distort: 'The e-bikes replace the regular bikes.',
-      dup: 'There are new bikes.',
-      subtle: 'From 1 July: 200 e-bikes at 25 cents per minute.'
+      gold1: 'Od 1 lipca: 200 rowerów elektrycznych za 20 centów za minutę.',
+      gold2: 'Do odblokowania potrzebna jest najnowsza wersja aplikacji.',
+      gold3: 'Rowery elektryczne zwraca się do jednej z 12 stacji ładowania.',
+      minor: 'Mapa stacji ładowania jest w aplikacji.',
+      distort: 'Rowery elektryczne zastępują zwykłe rowery.',
+      dup: 'Są nowe rowery.',
+      subtle: 'Od 1 lipca: 200 rowerów elektrycznych za 25 centów za minutę.'
     },
     bulletNotes: {
-      distort: 'The e-bikes are added; the regular bikes stay, at their current price.',
-      dup: 'A vaguer repeat of the first point, without date, number or price.',
-      subtle: 'Almost right, but the price is 20 cents per minute, not 25.'
+      distort: 'Rowery elektryczne dochodzą do floty; zwykłe zostają, w obecnej cenie.',
+      dup: 'Bardziej ogólne powtórzenie pierwszego punktu, bez daty, liczby i ceny.',
+      subtle: 'Prawie dobrze, ale cena to 20 centów za minutę, a nie 25.'
     },
     summaries: {
-      faithful: 'From 1 July there are 200 e-bikes at 20 cents per minute; they need the latest app to unlock and must be returned to one of 12 charging stations.',
-      vague: 'The bike-sharing service is introducing something new this summer that users may find interesting.',
-      drops: 'The bike-sharing service adds 200 e-bikes with a range of about 60 kilometres, so longer trips become easier.',
-      adds: 'From 1 July there are 200 e-bikes at 20 cents per minute, and the regular bikes will be phased out next year.',
-      subtle: 'From 1 July there are 200 e-bikes at 20 cents per minute; they need the latest app to unlock and can be returned to any bike station.'
+      faithful: 'Od 1 lipca jest 200 rowerów elektrycznych za 20 centów za minutę; odblokowuje się je najnowszą wersją aplikacji i trzeba je zwracać do jednej z 12 stacji ładowania.',
+      vague: 'Wypożyczalnia rowerów wprowadza tego lata nowość, która może zainteresować użytkowników.',
+      drops: 'Wypożyczalnia dodaje 200 rowerów elektrycznych o zasięgu około 60 kilometrów, więc dłuższe trasy będą łatwiejsze.',
+      adds: 'Od 1 lipca jest 200 rowerów elektrycznych za 20 centów za minutę, a zwykłe rowery zostaną wycofane w przyszłym roku.',
+      subtle: 'Od 1 lipca jest 200 rowerów elektrycznych za 20 centów za minutę; odblokowuje się je najnowszą wersją aplikacji i można je zwrócić do dowolnej stacji rowerowej.'
     },
     summaryNotes: {
-      drops: 'It leaves out the price and what users must do: update the app and return e-bikes to a charging station.',
-      adds: 'Nothing in the announcement says the regular bikes will be phased out.',
-      subtle: 'E-bikes can only be returned to the 12 charging stations, not to any station.'
+      drops: 'Brakuje ceny i tego, co muszą zrobić użytkownicy: zaktualizować aplikację i zwrócić rower do stacji ładowania.',
+      adds: 'Ogłoszenie nigdzie nie mówi, że zwykłe rowery zostaną wycofane.',
+      subtle: 'Rowery elektryczne można zwracać tylko do 12 stacji ładowania, a nie do dowolnej stacji.'
     },
-    task: 'A friend wants to try an e-bike next week.',
-    oneLiner: 'There are e-bikes now.',
+    task: 'Koleżanka chce w przyszłym tygodniu wypróbować rower elektryczny.',
+    oneLiner: 'Są teraz rowery elektryczne.',
     details: {
-      d1: 'The price: 20 cents per minute',
-      d2: 'That unlocking needs the latest app version',
-      d3: 'That e-bikes must go back to a charging station',
-      d4: 'That cycling keeps you active',
-      d5: 'How many e-bikes there are in total',
-      d6: 'That the regular bikes keep their price'
+      d1: 'Cena: 20 centów za minutę',
+      d2: 'Że do odblokowania potrzebna jest najnowsza wersja aplikacji',
+      d3: 'Że rower elektryczny trzeba zwrócić do stacji ładowania',
+      d4: 'Że jazda na rowerze pomaga być aktywnym',
+      d5: 'Ile jest w sumie rowerów elektrycznych',
+      d6: 'Że zwykłe rowery zachowują cenę'
     },
     versions: {
-      actionable: 'From 1 July you can rent e-bikes for 20 cents per minute. Update the app first, because you need the latest version to unlock them. Afterwards, return the bike to one of the 12 charging stations shown on the map in the app.',
-      vague: 'There are e-bikes now, and they are easy to use. Just get the app and ride off.',
-      invented: 'From 1 July you can rent e-bikes for 20 cents per minute without the app, and you can leave them anywhere in the city afterwards.'
+      actionable: 'Od 1 lipca możesz wypożyczać rowery elektryczne za 20 centów za minutę. Najpierw zaktualizuj aplikację, bo do odblokowania potrzebna jest najnowsza wersja. Potem zwróć rower do jednej z 12 stacji ładowania zaznaczonych na mapie w aplikacji.',
+      vague: 'Są teraz rowery elektryczne i są bardzo proste w obsłudze. Ściągnij aplikację i jedź.',
+      invented: 'Od 1 lipca możesz wypożyczać rowery elektryczne za 20 centów za minutę bez aplikacji, a potem zostawić je gdziekolwiek w mieście.'
     },
-    versionNote: 'You need the latest app to unlock them, and they must go back to a charging station.'
+    versionNote: 'Do odblokowania potrzebna jest najnowsza wersja aplikacji, a rower trzeba zwrócić do stacji ładowania.'
   }
 };

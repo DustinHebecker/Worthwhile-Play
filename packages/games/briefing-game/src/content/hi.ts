@@ -2,235 +2,235 @@ import type { ContentText } from './types';
 
 export const content: ContentText = {
   supplierDelay: {
-    title: 'Supplier delay before a launch',
-    situation: 'Your company launches a new desk lamp on 14 May. The supplier of the lamp heads reports a delay. Prepare a briefing.',
-    recipient: 'the head of product',
+    title: 'लॉन्च से पहले सप्लायर की देरी',
+    situation: 'आपकी कंपनी 14 मई को एक नया डेस्क लैंप लॉन्च कर रही है। लैंप हेड के सप्लायर ने देरी की सूचना दी है। एक ब्रीफ़िंग तैयार कीजिए।',
+    recipient: 'प्रोडक्ट प्रमुख',
     cards: {
-      c1: 'The new desk lamp launches on 14 May; 350 customers have pre-ordered it.',
-      c2: 'The supplier has shipped only 200 of the 500 lamp heads we ordered.',
-      c3: 'Once the parts are here, our workshop can assemble 100 lamps a day.',
-      c4: 'The supplier has not yet given a date for shipping the remaining lamp heads.',
-      c5: 'The supplier expects the rest to ship next week, probably on Tuesday.',
-      c6: 'If the parts arrive after 10 May, the lamps cannot be assembled in time for the launch.',
-      c7: 'The launch advert is booked for 14 May; moving it would cost a fee of 800 euros.',
-      c8: 'Marketing needs to know by Friday whether the launch date holds.',
-      c9: 'Jonas from purchasing can call the supplier tomorrow morning and ask for a firm date.',
-      c10: 'The supplier moved into a new office building last year.',
-      c11: 'So far only 200 of the 500 ordered lamp heads have been shipped.',
-      c12: 'Honestly, this supplier has always been a bit chaotic.'
+      c1: 'नया डेस्क लैंप 14 मई को लॉन्च होगा; 350 ग्राहक इसे पहले से ऑर्डर कर चुके हैं।',
+      c2: 'सप्लायर ने हमारे ऑर्डर किए 500 लैंप हेड में से सिर्फ़ 200 भेजे हैं।',
+      c3: 'पुर्ज़े आ जाने पर हमारी वर्कशॉप रोज़ 100 लैंप जोड़ सकती है।',
+      c4: 'सप्लायर ने बाकी लैंप हेड भेजने की तारीख अभी तक नहीं बताई है।',
+      c5: 'सप्लायर को उम्मीद है कि बाकी माल अगले हफ़्ते, शायद मंगलवार को, भेज देगा।',
+      c6: 'अगर पुर्ज़े 10 मई के बाद आए, तो लॉन्च तक लैंप जोड़े नहीं जा सकेंगे।',
+      c7: 'लॉन्च का विज्ञापन 14 मई के लिए बुक है; इसे आगे बढ़ाने पर 800 यूरो शुल्क लगेगा।',
+      c8: 'मार्केटिंग को शुक्रवार तक जानना है कि लॉन्च की तारीख कायम रहेगी या नहीं।',
+      c9: 'खरीद विभाग के योनास कल सुबह सप्लायर को फ़ोन करके पक्की तारीख माँग सकते हैं।',
+      c10: 'सप्लायर पिछले साल एक नई ऑफ़िस बिल्डिंग में चला गया था।',
+      c11: 'अब तक ऑर्डर किए 500 लैंप हेड में से केवल 200 भेजे गए हैं।',
+      c12: 'सच कहूँ तो यह सप्लायर हमेशा से थोड़ा अव्यवस्थित रहा है।'
     },
     decisions: {
-      right: 'Keep the launch on 14 May, or move it by one week?',
-      notTheirs: 'Which shipping company should the supplier use?',
-      premature: 'Should we replace this supplier for all future products?'
+      right: 'लॉन्च 14 मई को ही रखें, या एक हफ़्ता आगे बढ़ाएँ?',
+      notTheirs: 'सप्लायर को कौन-सी शिपिंग कंपनी इस्तेमाल करनी चाहिए?',
+      premature: 'क्या आगे के सभी उत्पादों के लिए यह सप्लायर बदल देना चाहिए?'
     },
     actions: {
-      concrete: 'Jonas calls the supplier tomorrow at 9:00 and tells the head of product the confirmed date by 12:00.',
-      vague: 'Someone should keep an eye on the supplier.',
-      outOfScope: 'Start designing next year’s lamp collection.'
+      concrete: 'योनास कल 9:00 बजे सप्लायर को फ़ोन करते हैं और 12:00 बजे तक प्रोडक्ट प्रमुख को पक्की तारीख बताते हैं।',
+      vague: 'किसी को सप्लायर पर नज़र रखनी चाहिए।',
+      outOfScope: 'अगले साल के लैंप कलेक्शन का डिज़ाइन शुरू करना।'
     }
   },
   basement: {
-    title: 'Flooded basement in a shared house',
-    situation: 'After heavy rain, water is standing in the basement of the shared house you live in. Prepare a briefing.',
-    recipient: 'the landlord',
+    title: 'साझा घर का पानी से भरा तहखाना',
+    situation: 'तेज़ बारिश के बाद, जिस साझा घर में आप रहते हैं उसके तहखाने में पानी भर गया है। एक ब्रीफ़िंग तैयार कीजिए।',
+    recipient: 'मकान-मालिक',
     cards: {
-      c1: 'Five people share the house; the basement holds the heating boiler and everyone’s storage boxes.',
-      c2: 'This morning about 10 cm of water stood in the basement.',
-      c3: 'We switched off the power to the basement this morning as a precaution.',
-      c4: 'Nobody knows yet whether the heating boiler has been damaged.',
-      c5: 'The water has probably stopped rising; at noon it looked the same as in the morning.',
-      c6: 'More rain is forecast for Thursday, and the water could rise again.',
-      c7: 'The boiler stands 15 cm above the floor, so a few more centimetres of water would reach it.',
-      c8: 'The plumber can only come this week if the landlord approves the call-out costs by tomorrow.',
-      c9: 'A housemate who works from home could let the plumber in on Wednesday.',
-      c10: 'The basement walls were last painted in 2015.',
-      c11: 'When we checked this morning, the basement was under 10 cm of water.',
-      c12: 'This house has always been damp, and nobody ever does anything about it.'
+      c1: 'घर में पाँच लोग रहते हैं; तहखाने में हीटिंग बॉयलर और सबके सामान के डिब्बे हैं।',
+      c2: 'आज सुबह तहखाने में लगभग 10 सेमी पानी भरा था।',
+      c3: 'आज सुबह हमने एहतियातन तहखाने की बिजली बंद कर दी।',
+      c4: 'अभी किसी को नहीं पता कि बॉयलर खराब हुआ है या नहीं।',
+      c5: 'पानी शायद अब और नहीं बढ़ रहा; दोपहर में भी सुबह जैसा ही दिख रहा था।',
+      c6: 'गुरुवार को और बारिश का अनुमान है, और पानी फिर से बढ़ सकता है।',
+      c7: 'बॉयलर फ़र्श से 15 सेमी ऊपर है, इसलिए कुछ सेंटीमीटर और पानी उस तक पहुँच जाएगा।',
+      c8: 'प्लंबर इस हफ़्ते तभी आ सकता है जब मकान-मालिक कल तक आने का खर्च मंज़ूर कर दें।',
+      c9: 'घर से काम करने वाली एक साथी बुधवार को प्लंबर को अंदर आने दे सकती है।',
+      c10: 'तहखाने की दीवारें आखिरी बार 2015 में रंगी गई थीं।',
+      c11: 'आज सुबह देखा तो तहखाना 10 सेमी पानी में डूबा था।',
+      c12: 'यह घर हमेशा से सीलन भरा रहा है, और कोई कभी कुछ नहीं करता।'
     },
     decisions: {
-      right: 'Approve the plumber’s call-out costs for this week?',
-      notTheirs: 'Which housemate should move their boxes first?',
-      premature: 'Should the whole basement be waterproofed and renovated?'
+      right: 'क्या इस हफ़्ते प्लंबर के आने का खर्च मंज़ूर करें?',
+      notTheirs: 'कौन-सा साथी पहले अपने डिब्बे हटाए?',
+      premature: 'क्या पूरे तहखाने को वॉटरप्रूफ़ करके मरम्मत करानी चाहिए?'
     },
     actions: {
-      concrete: 'The housemate who works from home books the plumber for Wednesday and sends the landlord the quote today.',
-      vague: 'We will deal with it at some point.',
-      outOfScope: 'Plan a house party to cheer everyone up.'
+      concrete: 'घर से काम करने वाली साथी बुधवार के लिए प्लंबर बुक करती है और आज ही मकान-मालिक को खर्च का अनुमान भेजती है।',
+      vague: 'हम कभी न कभी इसे देख लेंगे।',
+      outOfScope: 'सबका मन बहलाने के लिए घर में पार्टी की योजना बनाना।'
     }
   },
   schoolTrip: {
-    title: 'School trip and a weather warning',
-    situation: 'A class of 24 pupils is due to go hiking in the hills on Friday. A weather warning has been issued. Prepare a briefing.',
-    recipient: 'the head teacher',
+    title: 'स्कूल की सैर और मौसम की चेतावनी',
+    situation: '24 विद्यार्थियों की एक कक्षा शुक्रवार को पहाड़ियों में पैदल सैर पर जाने वाली है। मौसम की चेतावनी जारी हुई है। एक ब्रीफ़िंग तैयार कीजिए।',
+    recipient: 'प्रधानाचार्य',
     cards: {
-      c1: 'The class of 24 pupils, aged 11, is booked for a hiking trip on Friday with three accompanying adults.',
-      c2: 'The weather service has issued a storm warning for Friday afternoon.',
-      c3: 'The science museum in town still has room for a class visit on Friday.',
-      c4: 'The forecast does not yet say whether the storm will arrive before or after midday.',
-      c5: 'The park ranger thinks the main trail will most likely stay open.',
-      c6: 'Strong wind can bring down branches on the forest trail.',
-      c7: 'The only shelter on the route is a 40-minute walk from the end of the trail, too far to reach quickly in a storm.',
-      c8: 'The bus company must be told by Wednesday evening whether the trip goes ahead; until then it can be cancelled free of charge.',
-      c9: 'The class teacher can check the updated forecast on Wednesday at midday.',
-      c10: 'The class voted for the hiking trip back in September.',
-      c11: 'According to the weather service, a storm is expected on Friday afternoon.',
-      c12: 'The children will be terribly disappointed if we cancel.'
+      c1: '11 साल के 24 विद्यार्थियों की कक्षा शुक्रवार की पैदल सैर के लिए दर्ज है, साथ में तीन बड़े लोग होंगे।',
+      c2: 'मौसम विभाग ने शुक्रवार दोपहर के लिए तूफ़ान की चेतावनी जारी की है।',
+      c3: 'शहर के विज्ञान संग्रहालय में शुक्रवार को एक कक्षा के आने की अभी जगह है।',
+      c4: 'पूर्वानुमान अभी नहीं बताता कि तूफ़ान दोपहर से पहले आएगा या बाद में।',
+      c5: 'पार्क रेंजर का मानना है कि मुख्य पगडंडी बहुत संभवतः खुली रहेगी।',
+      c6: 'तेज़ हवा से जंगल की पगडंडी पर टहनियाँ टूटकर गिर सकती हैं।',
+      c7: 'रास्ते का अकेला आश्रय पगडंडी के अंत से 40 मिनट पैदल है—तूफ़ान में जल्दी पहुँचने के लिए बहुत दूर।',
+      c8: 'बस कंपनी को बुधवार शाम तक बताना होगा कि सैर होगी या नहीं; तब तक रद्द करना मुफ़्त है।',
+      c9: 'कक्षा अध्यापिका बुधवार दोपहर को ताज़ा पूर्वानुमान देख सकती हैं।',
+      c10: 'कक्षा ने सितंबर में ही पैदल सैर के लिए वोट दिया था।',
+      c11: 'मौसम विभाग के अनुसार शुक्रवार दोपहर तूफ़ान आने की आशंका है।',
+      c12: 'अगर हमने रद्द किया तो बच्चे बहुत निराश होंगे।'
     },
     decisions: {
-      right: 'Go ahead with the hike, switch to the museum, or cancel the trip?',
-      notTheirs: 'What should the pupils pack for lunch?',
-      premature: 'Should the school stop all outdoor trips from now on?'
+      right: 'सैर पर जाएँ, संग्रहालय चलें, या सैर रद्द करें?',
+      notTheirs: 'विद्यार्थी दोपहर के खाने में क्या लाएँ?',
+      premature: 'क्या स्कूल अब से सारी बाहरी सैरें बंद कर दे?'
     },
     actions: {
-      concrete: 'The class teacher checks the forecast on Wednesday at 12:00 and sends the head teacher a recommendation by 14:00.',
-      vague: 'Let’s see how the weather turns out.',
-      outOfScope: 'Start planning next year’s school festival.'
+      concrete: 'कक्षा अध्यापिका बुधवार 12:00 बजे पूर्वानुमान देखती हैं और 14:00 बजे तक प्रधानाचार्य को सुझाव भेजती हैं।',
+      vague: 'देखते हैं मौसम कैसा रहता है।',
+      outOfScope: 'अगले साल के स्कूल उत्सव की तैयारी शुरू करना।'
     }
   },
   volunteers: {
-    title: 'Clean-up day short of helpers',
-    situation: 'Your neighbourhood association runs a park clean-up on Saturday. Too few volunteers have signed up. Prepare a briefing.',
-    recipient: 'the chair of the association',
+    title: 'स्वयंसेवकों की कमी वाला सफ़ाई दिवस',
+    situation: 'आपकी मोहल्ला समिति शनिवार को पार्क की सफ़ाई कर रही है। बहुत कम स्वयंसेवकों ने नाम लिखाया है। एक ब्रीफ़िंग तैयार कीजिए।',
+    recipient: 'समिति की अध्यक्ष',
     cards: {
-      c1: 'The yearly park clean-up is on Saturday from 10:00 to 13:00; the city provides bags and gloves.',
-      c2: 'So far 9 volunteers have signed up; we planned for 20.',
-      c3: 'The city collects the filled bags only on Saturday at 13:00.',
-      c4: 'The youth football team might send helpers, but the coach has not replied yet.',
-      c5: 'Several neighbours said they will probably drop by if the weather is nice.',
-      c6: 'With 9 people we can clean only about half of the park.',
-      c7: 'Nobody has been named yet to fetch the gloves from the community centre, which closes at 9:30 on Saturday.',
-      c8: 'We can either shrink the clean-up to the playground area or move it to the following Saturday.',
-      c9: 'Two volunteers have offered to put up posters in the neighbourhood tomorrow.',
-      c10: 'Last year’s clean-up ended with a barbecue.',
-      c11: 'Only 9 of the 20 volunteers we planned for have registered.',
-      c12: 'People just don’t care about their neighbourhood any more.'
+      c1: 'सालाना पार्क सफ़ाई शनिवार को 10:00 से 13:00 बजे तक है; नगर निगम थैले और दस्ताने देता है।',
+      c2: 'अब तक 9 स्वयंसेवकों ने नाम लिखाया है; हमने 20 की योजना बनाई थी।',
+      c3: 'नगर निगम भरे थैले सिर्फ़ शनिवार 13:00 बजे उठाता है।',
+      c4: 'युवा फ़ुटबॉल टीम शायद मददगार भेजे, पर कोच ने अभी जवाब नहीं दिया।',
+      c5: 'कुछ पड़ोसियों ने कहा कि मौसम अच्छा रहा तो वे शायद आ जाएँगे।',
+      c6: '9 लोगों के साथ हम पार्क का लगभग आधा हिस्सा ही साफ़ कर पाएँगे।',
+      c7: 'सामुदायिक केंद्र से दस्ताने लाने के लिए अभी किसी को तय नहीं किया गया है, और केंद्र शनिवार को 9:30 बजे बंद हो जाता है।',
+      c8: 'हम सफ़ाई को खेल के मैदान वाले हिस्से तक सीमित कर सकते हैं या अगले शनिवार तक टाल सकते हैं।',
+      c9: 'दो स्वयंसेवकों ने कल मोहल्ले में पोस्टर लगाने की पेशकश की है।',
+      c10: 'पिछले साल की सफ़ाई एक बारबेक्यू के साथ खत्म हुई थी।',
+      c11: 'योजना के 20 स्वयंसेवकों में से केवल 9 ने पंजीकरण कराया है।',
+      c12: 'लोगों को अब अपने मोहल्ले की कोई परवाह ही नहीं है।'
     },
     decisions: {
-      right: 'Hold a smaller clean-up this Saturday, or move it by one week?',
-      notTheirs: 'Should the city change its collection times for the bags?',
-      premature: 'Should the association hire a cleaning company in future years?'
+      right: 'इस शनिवार छोटी सफ़ाई करें, या एक हफ़्ता टाल दें?',
+      notTheirs: 'क्या नगर निगम थैले उठाने का समय बदले?',
+      premature: 'क्या समिति आने वाले सालों में सफ़ाई कंपनी को रखे?'
     },
     actions: {
-      concrete: 'The two volunteers put up posters tomorrow, and the secretary emails the football coach today and reports back by Thursday.',
-      vague: 'We should somehow try to get more people.',
-      outOfScope: 'Start planning the association’s summer party.'
+      concrete: 'दोनों स्वयंसेवक कल पोस्टर लगाते हैं, और सचिव आज फ़ुटबॉल कोच को ईमेल करके गुरुवार तक जवाब बताते हैं।',
+      vague: 'हमें किसी तरह और लोग जुटाने चाहिए।',
+      outOfScope: 'समिति की गर्मियों की पार्टी की योजना शुरू करना।'
     }
   },
   release: {
-    title: 'Software release with a failing test',
-    situation: 'Your team plans to release a new version of a booking app on Tuesday. One automated test fails. Prepare a briefing.',
-    recipient: 'the product manager',
+    title: 'एक फ़ेल होते टेस्ट के साथ सॉफ़्टवेयर रिलीज़',
+    situation: 'आपकी टीम मंगलवार को एक बुकिंग ऐप का नया संस्करण रिलीज़ करना चाहती है। एक स्वचालित टेस्ट फ़ेल हो रहा है। एक ब्रीफ़िंग तैयार कीजिए।',
+    recipient: 'प्रोडक्ट मैनेजर',
     cards: {
-      c1: 'The new version adds online payment and has been announced to customers for Tuesday.',
-      c2: 'One of 640 automated tests fails: the refund of a cancelled booking.',
-      c3: 'The failure only appears for payments in a foreign currency.',
-      c4: 'We do not know yet whether the bug is in our code or in the payment provider’s test system.',
-      c5: 'The developer expects the fix to take about a day, but has not looked at the code yet.',
-      c6: 'If the bug is real, some customers could be refunded the wrong amount.',
-      c7: 'About 15% of bookings are paid in a foreign currency, so the bug would affect many customers.',
-      c8: 'We can release on Tuesday with foreign-currency payments switched off, or postpone the whole release.',
-      c9: 'The developer can check the payment provider’s test logs this afternoon.',
-      c10: 'The new payment screen uses the company’s new shade of blue.',
-      c11: 'A single test fails: refunds for cancelled bookings.',
-      c12: 'This test has always been flaky; I would just ignore it.'
+      c1: 'नए संस्करण में ऑनलाइन भुगतान जुड़ा है, और ग्राहकों को मंगलवार की घोषणा हो चुकी है।',
+      c2: '640 स्वचालित टेस्ट में से एक फ़ेल है: रद्द बुकिंग का रिफ़ंड।',
+      c3: 'यह गड़बड़ी सिर्फ़ विदेशी मुद्रा में भुगतान पर दिखती है।',
+      c4: 'हमें अभी नहीं पता कि बग हमारे कोड में है या भुगतान सेवा के टेस्ट सिस्टम में।',
+      c5: 'डेवलपर को उम्मीद है कि ठीक करने में लगभग एक दिन लगेगा, पर उन्होंने अभी कोड देखा नहीं है।',
+      c6: 'अगर बग असली है, तो कुछ ग्राहकों को गलत रकम का रिफ़ंड मिल सकता है।',
+      c7: 'लगभग 15% बुकिंग विदेशी मुद्रा में होती हैं, इसलिए यह बग बहुत से ग्राहकों पर असर डालेगा।',
+      c8: 'हम मंगलवार को विदेशी मुद्रा भुगतान बंद करके रिलीज़ कर सकते हैं, या पूरी रिलीज़ टाल सकते हैं।',
+      c9: 'डेवलपर आज दोपहर बाद भुगतान सेवा के टेस्ट लॉग देख सकते हैं।',
+      c10: 'नई भुगतान स्क्रीन में कंपनी का नया नीला रंग है।',
+      c11: 'सिर्फ़ एक टेस्ट लाल है: रद्द बुकिंग के रिफ़ंड।',
+      c12: 'यह टेस्ट हमेशा से अस्थिर रहा है; मैं तो इसे अनदेखा कर दूँ।'
     },
     decisions: {
-      right: 'Release on Tuesday without foreign-currency payments, or postpone the release?',
-      notTheirs: 'Which programming technique should the developer use for the fix?',
-      premature: 'Should we switch to a different payment provider?'
+      right: 'मंगलवार को विदेशी मुद्रा भुगतान के बिना रिलीज़ करें, या रिलीज़ टाल दें?',
+      notTheirs: 'डेवलपर सुधार के लिए कौन-सी प्रोग्रामिंग तकनीक अपनाएँ?',
+      premature: 'क्या हमें कोई दूसरी भुगतान सेवा अपना लेनी चाहिए?'
     },
     actions: {
-      concrete: 'The developer checks the provider’s test logs this afternoon and tells the product manager by 17:00 whether the bug is ours.',
-      vague: 'Someone will look into the test.',
-      outOfScope: 'Start writing the release notes for the version after next.'
+      concrete: 'डेवलपर आज दोपहर बाद सेवा के टेस्ट लॉग देखते हैं और 17:00 बजे तक प्रोडक्ट मैनेजर को बताते हैं कि बग हमारा है या नहीं।',
+      vague: 'कोई टेस्ट को देख लेगा।',
+      outOfScope: 'अगले के बाद वाले संस्करण के रिलीज़ नोट्स लिखना शुरू करना।'
     }
   },
   careAppointment: {
-    title: 'A care advice appointment for Grandmother',
-    situation: 'Your grandmother has an appointment with a care advice service on Monday. The family has to sort out who goes with her. Prepare a briefing. (This is about organising, not about medical questions.)',
-    recipient: 'your brother, who shares the decision with you',
+    title: 'दादी के लिए देखभाल-परामर्श की मुलाक़ात',
+    situation: 'आपकी दादी की सोमवार को एक देखभाल-परामर्श सेवा के साथ मुलाक़ात है। परिवार को तय करना है कि उनके साथ कौन जाएगा। एक ब्रीफ़िंग तैयार कीजिए। (बात इंतज़ाम की है, चिकित्सा संबंधी सवालों की नहीं।)',
+    recipient: 'आपका भाई, जो आपके साथ मिलकर फ़ैसला करता है',
     cards: {
-      c1: 'Grandmother has an appointment with the care advice service on Monday at 10:00 to talk about help at home.',
-      c2: 'She has asked for one family member to come with her.',
-      c3: 'The letter says to bring her list of medicines and her insurance card.',
-      c4: 'It is not clear yet whether Mum can take Monday off work.',
-      c5: 'The advice centre is said to have a lift, but nobody has checked.',
-      c6: 'If nobody can go, the next free appointment is in six weeks.',
-      c7: 'Grandmother tires quickly, and the bus ride to the centre takes 50 minutes each way.',
-      c8: 'The advice service needs to know by Friday whether the appointment takes place in person or by video call.',
-      c9: 'You could call Mum tonight and ask about Monday.',
-      c10: 'Grandmother’s neighbour recently got a new dog.',
-      c11: 'She would like someone from the family to go with her.',
-      c12: 'In my view, these advice services never really help anyway.'
+      c1: 'दादी की सोमवार 10:00 बजे देखभाल-परामर्श सेवा में घर पर मदद के बारे में बात करने की मुलाक़ात है।',
+      c2: 'उन्होंने कहा है कि परिवार का एक सदस्य उनके साथ आए।',
+      c3: 'पत्र में लिखा है कि वे अपनी दवाओं की सूची और बीमा कार्ड साथ लाएँ।',
+      c4: 'अभी साफ़ नहीं है कि माँ सोमवार को छुट्टी ले पाएँगी या नहीं।',
+      c5: 'कहा जाता है कि परामर्श केंद्र में लिफ़्ट है, पर किसी ने जाँचा नहीं।',
+      c6: 'अगर कोई नहीं जा पाया, तो अगली खाली मुलाक़ात छह हफ़्ते बाद है।',
+      c7: 'दादी जल्दी थक जाती हैं, और केंद्र तक बस से एक तरफ़ 50 मिनट लगते हैं।',
+      c8: 'परामर्श सेवा को शुक्रवार तक जानना है कि मुलाक़ात आमने-सामने होगी या वीडियो कॉल पर।',
+      c9: 'आप आज रात माँ को फ़ोन करके सोमवार के बारे में पूछ सकते हैं।',
+      c10: 'दादी की पड़ोसन हाल ही में एक नया कुत्ता लाई हैं।',
+      c11: 'वे चाहती हैं कि परिवार का कोई उनके साथ जाए।',
+      c12: 'मेरी राय में ऐसी परामर्श सेवाएँ वैसे भी कभी सचमुच मदद नहीं करतीं।'
     },
     decisions: {
-      right: 'Who goes with Grandmother on Monday, and in person or by video call?',
-      notTheirs: 'Which kind of help at home should Grandmother get?',
-      premature: 'Should Grandmother move into a care home?'
+      right: 'सोमवार को दादी के साथ कौन जाएगा, और आमने-सामने या वीडियो पर?',
+      notTheirs: 'दादी को घर पर किस तरह की मदद मिलनी चाहिए?',
+      premature: 'क्या दादी को किसी देखभाल गृह में चले जाना चाहिए?'
     },
     actions: {
-      concrete: 'You call Mum tonight and tell your brother by Wednesday evening who can go.',
-      vague: 'We’ll sort it out somehow.',
-      outOfScope: 'Start planning Grandmother’s birthday party.'
+      concrete: 'आप आज रात माँ को फ़ोन करते हैं और बुधवार शाम तक भाई को बताते हैं कि कौन जा सकता है।',
+      vague: 'किसी तरह हो जाएगा।',
+      outOfScope: 'दादी की जन्मदिन पार्टी की योजना शुरू करना।'
     }
   },
   cafeFreezer: {
-    title: 'Broken freezer in a small café',
-    situation: 'You work in a small café. This morning the freezer was not cold enough. The owner is away until tomorrow. Prepare a briefing.',
-    recipient: 'the café owner',
+    title: 'छोटे कैफ़े का खराब फ़्रीज़र',
+    situation: 'आप एक छोटे कैफ़े में काम करते हैं। आज सुबह फ़्रीज़र पर्याप्त ठंडा नहीं था। मालकिन कल तक बाहर हैं। एक ब्रीफ़िंग तैयार कीजिए।',
+    recipient: 'कैफ़े की मालकिन',
     cards: {
-      c1: 'The café sells homemade ice cream; the freezer holds about a week’s stock.',
-      c2: 'At 7:00 the freezer showed −2 °C instead of the usual −18 °C.',
-      c3: 'We moved the ice cream into the neighbouring bakery’s freezer at 7:30.',
-      c4: 'We do not know whether the ice cream thawed during the night.',
-      c5: 'The repair service will probably be able to come on Thursday.',
-      c6: 'Ice cream that has thawed must not be sold, so we may have to throw away the stock.',
-      c7: 'The bakery needs its freezer space back on Saturday, so our ice cream can only stay there until then.',
-      c8: 'The repair service will only book a visit once the owner approves the call-out fee of 90 euros.',
-      c9: 'The barista can read the freezer’s temperature log this afternoon.',
-      c10: 'The café’s new menu boards arrive next week.',
-      c11: 'This morning the freezer read −2 °C instead of −18 °C.',
-      c12: 'That freezer was a bad buy from day one.'
+      c1: 'कैफ़े घर की बनी आइसक्रीम बेचता है; फ़्रीज़र में लगभग एक हफ़्ते का स्टॉक रहता है।',
+      c2: '7:00 बजे फ़्रीज़र सामान्य −18 °C की जगह −2 °C दिखा रहा था।',
+      c3: 'हमने 7:30 बजे आइसक्रीम बगल की बेकरी के फ़्रीज़र में रख दी।',
+      c4: 'हमें नहीं पता कि रात में आइसक्रीम पिघली थी या नहीं।',
+      c5: 'मरम्मत सेवा शायद गुरुवार को आ पाएगी।',
+      c6: 'पिघली हुई आइसक्रीम बेची नहीं जा सकती, इसलिए हो सकता है स्टॉक फेंकना पड़े।',
+      c7: 'बेकरी को शनिवार को अपनी जगह वापस चाहिए, इसलिए हमारी आइसक्रीम वहाँ तभी तक रह सकती है।',
+      c8: 'मरम्मत सेवा तभी आने का समय तय करेगी जब मालकिन 90 यूरो का विज़िट शुल्क मंज़ूर करेंगी।',
+      c9: 'बरिस्ता आज दोपहर बाद फ़्रीज़र का तापमान रिकॉर्ड पढ़ सकता है।',
+      c10: 'कैफ़े के नए मेन्यू बोर्ड अगले हफ़्ते आएँगे।',
+      c11: 'आज सुबह फ़्रीज़र −18 °C की जगह −2 °C पर था।',
+      c12: 'वह फ़्रीज़र पहले दिन से ही घाटे का सौदा था।'
     },
     decisions: {
-      right: 'Approve the repair call-out fee of 90 euros?',
-      notTheirs: 'Which cakes should the bakery sell this week?',
-      premature: 'Should the café stop selling ice cream altogether?'
+      right: 'मरम्मत के लिए 90 यूरो का विज़िट शुल्क मंज़ूर करें?',
+      notTheirs: 'बेकरी इस हफ़्ते कौन-से केक बेचे?',
+      premature: 'क्या कैफ़े आइसक्रीम बेचना पूरी तरह बंद कर दे?'
     },
     actions: {
-      concrete: 'The barista reads the temperature log this afternoon and texts the owner the result by 16:00.',
-      vague: 'We’ll keep an eye on it.',
-      outOfScope: 'Redesign the café’s website.'
+      concrete: 'बरिस्ता आज दोपहर बाद तापमान रिकॉर्ड पढ़ता है और 16:00 बजे तक मालकिन को नतीजा मैसेज करता है।',
+      vague: 'हम नज़र रखेंगे।',
+      outOfScope: 'कैफ़े की वेबसाइट दोबारा डिज़ाइन करना।'
     }
   },
   tournament: {
-    title: 'New venue for a chess tournament',
-    situation: 'Your chess club hosts a youth tournament on Sunday. The school hall you booked is no longer available. Prepare a briefing.',
-    recipient: 'the club board',
+    title: 'शतरंज प्रतियोगिता के लिए नई जगह',
+    situation: 'आपका शतरंज क्लब रविवार को एक युवा प्रतियोगिता करा रहा है। बुक किया गया स्कूल हॉल अब उपलब्ध नहीं है। एक ब्रीफ़िंग तैयार कीजिए।',
+    recipient: 'क्लब की कार्यकारिणी',
     cards: {
-      c1: 'Sunday’s youth tournament has 48 registered players from six clubs.',
-      c2: 'The school has cancelled our hall booking because of a leak in the roof.',
-      c3: 'The town library offers its event room free of charge, but it only fits 32 players.',
-      c4: 'The sports centre might have a free room, but it has not answered our email yet.',
-      c5: 'The caretaker believes the school hall could be repaired in time, but nobody has confirmed it.',
-      c6: 'If families hear about the change too late, some players may turn up at the old venue.',
-      c7: 'Several families travel more than 100 km and have already booked their trains, so a change of date would hit them hardest.',
-      c8: 'The invitations with the final venue must go out by Wednesday.',
-      c9: 'The club secretary can phone the sports centre tomorrow morning.',
-      c10: 'The club’s trophy cabinet was cleaned last month.',
-      c11: 'The school has called off our booking for the hall.',
-      c12: 'We should never have relied on that school.'
+      c1: 'रविवार की युवा प्रतियोगिता में छह क्लबों के 48 खिलाड़ी पंजीकृत हैं।',
+      c2: 'स्कूल ने छत टपकने की वजह से हमारी हॉल बुकिंग रद्द कर दी है।',
+      c3: 'नगर पुस्तकालय अपना कार्यक्रम कक्ष मुफ़्त दे रहा है, पर उसमें सिर्फ़ 32 खिलाड़ी आ सकते हैं।',
+      c4: 'खेल केंद्र में शायद कोई खाली कमरा हो, पर उसने अभी हमारे ईमेल का जवाब नहीं दिया।',
+      c5: 'चौकीदार का मानना है कि हॉल समय पर ठीक हो सकता है, पर किसी ने इसकी पुष्टि नहीं की।',
+      c6: 'अगर परिवारों को बदलाव की खबर बहुत देर से मिली, तो कुछ खिलाड़ी पुरानी जगह पहुँच सकते हैं।',
+      c7: 'कई परिवार 100 किमी से ज़्यादा सफ़र करते हैं और ट्रेन बुक कर चुके हैं, इसलिए तारीख बदलने से उन पर सबसे ज़्यादा असर पड़ेगा।',
+      c8: 'अंतिम जगह वाले निमंत्रण बुधवार तक भेजने होंगे।',
+      c9: 'क्लब के सचिव कल सुबह खेल केंद्र को फ़ोन कर सकते हैं।',
+      c10: 'क्लब की ट्रॉफ़ी अलमारी पिछले महीने साफ़ की गई थी।',
+      c11: 'स्कूल ने हॉल की हमारी बुकिंग वापस ले ली है।',
+      c12: 'हमें उस स्कूल पर कभी भरोसा नहीं करना चाहिए था।'
     },
     decisions: {
-      right: 'Move to another venue, limit the tournament to 32 players, or postpone it?',
-      notTheirs: 'When should the school repair its roof?',
-      premature: 'Should the club build its own clubhouse?'
+      right: 'दूसरी जगह जाएँ, प्रतियोगिता 32 खिलाड़ियों तक सीमित करें, या उसे टाल दें?',
+      notTheirs: 'स्कूल अपनी छत कब ठीक कराए?',
+      premature: 'क्या क्लब अपना खुद का क्लबहाउस बनाए?'
     },
     actions: {
-      concrete: 'The secretary phones the sports centre tomorrow at 9:00 and reports to the board by 12:00.',
-      vague: 'Let’s wait and see what turns up.',
-      outOfScope: 'Order new chess sets for the club.'
+      concrete: 'सचिव कल 9:00 बजे खेल केंद्र को फ़ोन करते हैं और 12:00 बजे तक कार्यकारिणी को बताते हैं।',
+      vague: 'रुककर देखते हैं क्या रास्ता निकलता है।',
+      outOfScope: 'क्लब के लिए नए शतरंज सेट मँगवाना।'
     }
   }
 };

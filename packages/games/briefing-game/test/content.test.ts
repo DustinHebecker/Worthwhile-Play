@@ -8,7 +8,7 @@ const PLACEHOLDER = /\{(\w+)\}/g;
 
 /** Multi-digit numbers (10 and above), with thousands separators removed, sorted. */
 const numbers = (s: string) =>
-  (s.replace(/(\d)[\s.,  '’](?=\d{3}\b)/g, '$1').match(/\d+/g) ?? [])
+  (s.replace(/(\d)[\s.,\u00a0\u202f'’](?=\d{3}\b)/g, '$1').match(/\d+/g) ?? [])
     .map(Number)
     .filter((n) => n >= 10)
     .sort((a, b) => a - b);
