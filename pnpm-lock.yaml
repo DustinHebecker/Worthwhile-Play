@@ -128,6 +128,9 @@ importers:
       '@wp/game-relay-command':
         specifier: workspace:*
         version: link:../../packages/games/relay-command
+      '@wp/game-review':
+        specifier: workspace:*
+        version: link:../../packages/games/review
       '@wp/game-river-crossing':
         specifier: workspace:*
         version: link:../../packages/games/river-crossing
@@ -586,6 +589,28 @@ importers:
       '@wp/strategy-engine':
         specifier: workspace:*
         version: link:../../strategy-engine
+      '@wp/ui':
+        specifier: workspace:*
+        version: link:../../ui
+    devDependencies:
+      '@wp/localization':
+        specifier: workspace:*
+        version: link:../../localization
+      '@wp/persistence':
+        specifier: workspace:*
+        version: link:../../persistence
+      '@wp/testing':
+        specifier: workspace:*
+        version: link:../../testing
+
+  packages/games/review:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../../game-core
+      '@wp/learning-content':
+        specifier: workspace:*
+        version: link:../../learning-content
       '@wp/ui':
         specifier: workspace:*
         version: link:../../ui
