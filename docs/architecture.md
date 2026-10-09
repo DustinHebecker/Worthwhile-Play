@@ -30,6 +30,7 @@ interface GameModule<S> {
   create(ctx: GameContext): GameInstance<S>;
   isValidState(value: unknown): value is S;     // validates untrusted saves, never throws
   migrateState?(state: unknown, fromVersion: number): S | undefined;
+  preload?(locale: string): Promise<void>;      // optional: per-locale content (+ English) before create (ADR 0011)
 }
 interface GameInstance<S> {
   newGame({ seed, difficulty }): void;
@@ -68,11 +69,13 @@ test/rules.test.ts, test/contract.test.ts (runGameContract), e2e/games/<id>.spec
 
 The home page and the game page header need every game's metadata, but only a few of its messages. `apps/web/catalogue-plugin.ts` therefore generates two kinds of virtual modules at build time: `virtual:wp-catalogue` holds each game's metadata *without* messages, and `virtual:wp-catalogue/<locale>` holds, per game id, only the catalogue keys (`title`, `tagline`, `rules`, `difficulty.*`) of one locale. The registry (`apps/web/src/registry.ts`) lists game ids and lazy loaders; each entry's `metadata.messages` is a live object that holds the locales loaded so far (see Localization). A game's complete messages arrive with its own chunk, so the main bundle carries no game translations at all.
 
+**Per-locale game content (ADR 0011).** Games with large texts (Deep Read, Audience Switch, Compression Challenge, Briefing Game, Ambiguity Detector) keep each locale's content in `src/content/<locale>.ts` and list them in `src/content/index.ts` as `CONTENT_LOADERS`, an explicit `Record<SupportedLocale, () => Promise<…>>` of dynamic imports, so each locale is its own chunk. `createLocaleContent` (`@wp/game-core`) caches them; the module's `preload(locale)` loads the UI locale and English in parallel, and the view reads `contentFor(locale)` synchronously (English if the locale is not loaded). The host awaits `module.preload?.(app.locale)` after loading the game chunk and before `create`; a language switch re-renders the game page, so the new locale is loaded before the saved game continues. If only the locale fails to load, the game shows English content and reports it via `console.error`; if English fails too, the host shows its generic load error. UI messages stay in `metadata.messages`. Saves hold ids only, so they do not change.
+
 After "New game" the host moves focus into the game: to the element marked `data-autofocus` (usually the board), otherwise to the first control.
 
 ### Shared contract suite
 
-`runGameContract(module, { interact })` (`packages/testing`) checks for every game: valid metadata and complete translations in all 16 locales, determinism per seed, JSON-serializable state accepted by `isValidState`, rejection of arbitrary junk (fuzzed with fast-check), exact restore through the real persistence layer after interaction, pause/resume invariance, `reset()` to the seeded start, no missing translation keys when rendering in each locale, and DOM cleanup on `dispose()`. The e2e helper `expectResumeAfterReload` verifies the same across a real browser reload.
+`runGameContract(module, { interact })` (`packages/testing`) checks for every game: valid metadata and complete translations in all 16 locales, determinism per seed, JSON-serializable state accepted by `isValidState`, rejection of arbitrary junk (fuzzed with fast-check), exact restore through the real persistence layer after interaction, pause/resume invariance, `reset()` to the seeded start, no missing translation keys when rendering in each locale, and DOM cleanup on `dispose()`. For games with `preload`, it awaits `preload('en')` before the suite and `preload(locale)` before rendering in each locale, and checks that every locale loads without a reported fallback. The e2e helper `expectResumeAfterReload` verifies the same across a real browser reload.
 
 ## Persistence
 
@@ -109,13 +112,13 @@ Optional spaced repetition without engagement mechanics (spec "Spaced repetition
 - 16 UI locales (`packages/localization/src/locales.ts`), BCP-47, Arabic RTL (`<html dir>`; CSS uses logical properties).
 - Resolution: stored choice → first matching browser language → English. Traditional Chinese is *not* mapped to `zh-Hans`.
 - Catalogues: shell (`apps/web/src/i18n/ui/<locale>.ts`, type-checked key sets), shared game vocabulary (`common.*`), and one namespace per game (`metadata.messages`). Tests enforce complete key sets and identical placeholders; the English fallback exists only as a safety net and is reported.
-- Loading: the main chunk contains no shell or catalogue translations. `apps/web/src/i18n/locales/<locale>.ts` bundles one locale's shell UI (`i18n/ui/<locale>.ts`), deck-page (`i18n/learning/<locale>.ts`) and game catalogue messages (`virtual:wp-catalogue/<locale>`) into one chunk. `loadLocale(locale)` (`apps/web/src/i18n/index.ts`) loads it together with English (the translator's fallback) in parallel; the app awaits it before the first render, and a language switch awaits the new locale before re-rendering (the last choice wins; if a locale cannot be loaded, the current language stays). Key types (`UiKey`, `LearningUiKey`) come from the English modules. All locale chunks are precached by the service worker, so switching the language works offline (e2e-tested). `common.*` (`packages/localization`) is still bundled eagerly (≈ 11 KB).
+- Loading: the main chunk contains no shell or catalogue translations. `apps/web/src/i18n/locales/<locale>.ts` bundles one locale's shell UI (`i18n/ui/<locale>.ts`), deck-page (`i18n/learning/<locale>.ts`) and game catalogue messages (`virtual:wp-catalogue/<locale>`) into one chunk. `loadLocale(locale)` (`apps/web/src/i18n/index.ts`) loads it together with English (the translator's fallback) in parallel; the app awaits it before the first render, and a language switch awaits the new locale before re-rendering (the last choice wins; if a locale cannot be loaded, the current language stays). Key types (`UiKey`, `LearningUiKey`) come from the English modules. All locale chunks are precached by the service worker, so switching the language works offline (e2e-tested). `common.*` (`packages/localization`) is still bundled eagerly (≈ 11 KB). Games with large texts load them per locale the same way (one chunk per locale, plus English; see "Per-locale game content" above).
 - Content languages (learning/translation) are separate preferences that accept any BCP-47 tag.
 - Translations other than en/de are AI-assisted and await native-speaker review.
 
 ## PWA and offline
 
-`vite-plugin-pwa` (Workbox `generateSW`) precaches the shell and all bundled game chunks. Updates: a new release is applied automatically (reload) whenever no game page is open; on a game page it waits and is offered via "Update now", and is applied on the next navigation away — a running game is never interrupted. Open tabs check for updates hourly. Large optional content (audio packs, AI models) will use separate caches downloaded only on explicit request with the size shown first.
+`vite-plugin-pwa` (Workbox `generateSW`) precaches the shell and all bundled game chunks, including every per-locale content chunk (a game continues offline in a language never opened before; e2e-tested with Deep Read). Updates: a new release is applied automatically (reload) whenever no game page is open; on a game page it waits and is offered via "Update now", and is applied on the next navigation away — a running game is never interrupted. Open tabs check for updates hourly. Large optional content (audio packs, AI models) will use separate caches downloaded only on explicit request with the size shown first.
 
 ## Deployment
 

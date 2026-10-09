@@ -6,11 +6,12 @@ Status: Accepted (2026-10-03)
 Spec requirements: universal resumability, direct URLs, determinism for bug reproduction and testing, robust handling of corrupt/old saves.
 
 ## Decision
-- `GameModule { metadata, create(ctx), isValidState, migrateState? }` and `GameInstance { newGame, restore, serialize, pause, resume, reset, dispose }` (see `packages/game-core/src/types.ts`). The spec's `metadata()/initialize()` map to the `metadata` object and `create()`.
+- `GameModule { metadata, create(ctx), isValidState, migrateState?, preload? }` and `GameInstance { newGame, restore, serialize, pause, resume, reset, dispose }` (see `packages/game-core/src/types.ts`). The spec's `metadata()/initialize()` map to the `metadata` object and `create()`.
 - The host owns persistence and timing of saves; games only call `requestSave()` after logical changes and `finished()` once.
 - State is plain JSON logical state (no animation frames). PRNG = mulberry32 with a 32-bit serializable state.
 - Save envelope `{ schemaVersion: 1, gameId, stateVersion, updatedAt, seed, difficulty?, state }`; `interpretSave` → `empty | ok | corrupt`, migrations via `migrateState`.
 - Every game must pass the shared contract suite (`@wp/testing`), including in all 16 locales.
+- Amendment (ADR 0011): the optional `preload(locale)` lets a game load per-locale content before `create`; the host awaits it, so `newGame`/`restore` stay synchronous.
 
 ## Consequences
 + Uniform resume behavior and tests for every game; reproducible bugs via `?seed=`.

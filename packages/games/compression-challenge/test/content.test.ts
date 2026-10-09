@@ -1,8 +1,14 @@
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { SUPPORTED_LOCALES } from '@wp/localization';
-import { CONTENT, contentFor, type PieceText } from '../src/content';
+import { CONTENT_LOADERS, contentFor, preloadContent, type PieceText, type ContentText } from '../src/content';
 import { BULLETS, NOTED_BULLETS, NOTED_SUMMARIES, PIECES, SUMMARIES, VERSIONS } from '../src/pieces';
 import { countWords, sentenceIdsFor } from '../src/rules';
+
+/** Every locale's content, loaded through the per-locale loaders (ADR 0011: one chunk per locale). */
+const CONTENT: Record<string, ContentText> = {};
+beforeAll(async () => {
+  for (const [locale, load] of Object.entries(CONTENT_LOADERS)) CONTENT[locale] = await load();
+});
 
 const sorted = (keys: Iterable<string>) => [...keys].sort();
 const PLACEHOLDER = /\{(\w+)\}/g;
@@ -35,9 +41,12 @@ describe('piece content', () => {
     expect(sorted(Object.keys(CONTENT))).toEqual(sorted(SUPPORTED_LOCALES));
   });
 
-  it('falls back to English for an unknown locale', () => {
+  it('falls back to English for an unknown locale', async () => {
+    await preloadContent('de');
     expect(contentFor('xx')).toBe(CONTENT.en);
     expect(contentFor('de')).toBe(CONTENT.de);
+    // Only the requested locale and English were loaded; anything else falls back to English.
+    expect(contentFor('ja')).toBe(CONTENT.en);
   });
 
   it('has the same piece ids and keys in every locale', () => {

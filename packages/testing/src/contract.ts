@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import fc from 'fast-check';
 import { validateMetadata, type GameInstance, type GameModule } from '@wp/game-core';
 import { auditCatalogues, COMMON_MESSAGES, SUPPORTED_LOCALES } from '@wp/localization';
@@ -20,7 +20,8 @@ export interface ContractOptions<S> {
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
 /**
- * Shared contract every game must satisfy. Call from a test file running in jsdom:
+ * Shared contract every game must satisfy. Games with `preload` (ADR 0011) get it awaited for English before
+ * the suite and for each locale before rendering in it, as the app shell does. Call from a test file running in jsdom:
  *
  *   // @vitest-environment jsdom
  *   runGameContract(game, { interact: (root) => root.querySelector('button')!.click() });
@@ -35,6 +36,11 @@ export function runGameContract<S>(module: GameModule<S>, options: ContractOptio
   };
 
   describe(`GameModule contract: ${module.metadata.id}`, () => {
+    // Games with per-locale content (ADR 0011) need it loaded before `create`, like in the app shell.
+    beforeAll(async () => {
+      await module.preload?.('en');
+    });
+
     it('has valid metadata with required messages for all 16 UI locales', () => {
       expect(validateMetadata(module.metadata, SUPPORTED_LOCALES)).toEqual([]);
     });
@@ -108,8 +114,27 @@ export function runGameContract<S>(module: GameModule<S>, options: ContractOptio
       instance.dispose();
     });
 
-    it('renders without missing translation keys in every locale', () => {
+    if (module.preload) {
+      const preload = module.preload.bind(module);
+      it('preloads the content of every UI locale (repeatable, nothing reported)', async () => {
+        // A locale that fails to load falls back to English and is reported via console.error.
+        const reported = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+        try {
+          for (const locale of SUPPORTED_LOCALES) {
+            await expect(preload(locale), `preload ${locale}`).resolves.toBeUndefined();
+            await expect(preload(locale), `preload ${locale} again`).resolves.toBeUndefined();
+          }
+          expect(reported.mock.calls).toEqual([]);
+        } finally {
+          reported.mockRestore();
+        }
+      });
+    }
+
+    it('renders without missing translation keys in every locale', async () => {
       for (const locale of SUPPORTED_LOCALES) {
+        // The host awaits `preload(locale)` for the locale the game is shown in.
+        await module.preload?.(locale);
         const ctx = createTestContext(module as GameModule<unknown>, locale, undefined, options.extras?.());
         const instance = module.create(ctx.context);
         instance.newGame({ seed: 3 });

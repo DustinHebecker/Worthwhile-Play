@@ -14,3 +14,4 @@ Short, durable records of decisions that are not obvious from the code. New ADR:
 | [0008](0008-cloudflare-pages.md) | Cloudflare Pages (supersedes 0004) |
 | [0009](0009-strategy-engine-api.md) | Shared strategy engine and its API |
 | [0010](0010-communication-and-reading-evaluation.md) | Deterministic evaluation for reading and communication exercises |
+| [0011](0011-per-locale-game-content.md) | Per-locale game content, loaded by an optional `preload` hook |

@@ -1,4 +1,5 @@
 import { defineGame } from '@wp/game-core';
+import { preloadContent } from './content';
 import { metadata } from './metadata';
 import { isBriefingState, type BriefingState } from './rules';
 import { createBriefingGame } from './view';
@@ -8,5 +9,6 @@ export type { BriefingState } from './rules';
 export default defineGame<BriefingState>({
   metadata,
   create: createBriefingGame,
-  isValidState: isBriefingState
+  isValidState: isBriefingState,
+  preload: preloadContent
 });

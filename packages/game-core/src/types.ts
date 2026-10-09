@@ -216,6 +216,15 @@ export interface GameModule<S = unknown> {
   isValidState(value: unknown): value is S;
   /** Upgrade state saved by an older `stateVersion`. Return `undefined` if impossible. */
   migrateState?(state: unknown, fromVersion: number): S | undefined;
+  /**
+   * Optional (ADR 0011): loads what the game needs to render in the UI locale `locale` (e.g. per-locale texts,
+   * see `createLocaleContent`) and the English fallback. The host awaits it after loading the module and before
+   * `create`, and again for every locale the game is shown in (a language switch re-renders the game page).
+   * Must be idempotent and cache its result. Resolves when the game can render — in `locale`, or in English when
+   * only `locale` failed to load (the game reports that itself); rejects only when nothing can be loaded.
+   * Never needed for the catalogue: `metadata` stays synchronous and complete.
+   */
+  preload?(locale: string): Promise<void>;
 }
 
 export type { Rng };

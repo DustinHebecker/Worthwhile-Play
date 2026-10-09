@@ -231,7 +231,12 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
       let decks;
       let records;
       [module, store, decks, records] = await Promise.all([
-        entry.load(),
+        // Games with per-locale content (ADR 0011) load the UI locale's content and the English fallback before
+        // they are created. A language switch re-renders this page, so it runs again for the new locale.
+        entry.load().then(async (game) => {
+          await game.preload?.(app.locale);
+          return game;
+        }),
         app.store,
         // The deck library code (validation shared with the importer) is a separate chunk: only some games use it.
         metadata.usesUserDecks ? import('../lib/decks').then(async (lib) => lib.userDeckSource(await lib.loadUserDecks(app.decks))) : undefined,
