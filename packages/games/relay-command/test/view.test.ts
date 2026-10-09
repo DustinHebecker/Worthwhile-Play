@@ -51,7 +51,7 @@ describe('Relay Command view', () => {
   it('renders the turn, the status, both unit lists and the map', () => {
     expect($('rc-turn').textContent).toBe('Turn 1 of 12');
     expect($('rc-status').getAttribute('data-phase')).toBe('plan');
-    expect(ctx.context.root.querySelectorAll('[data-testid^="rc-unit-"]')).toHaveLength(7);
+    expect(ctx.context.root.querySelectorAll('[data-testid^="rc-unit-"]')).toHaveLength(9);
     // Fog: of the enemy, only its Command Post is known, from before the battle.
     expect($('rc-enemy').querySelectorAll('li')).toHaveLength(1);
     expect($('rc-enemy').textContent).toContain('Position known from before the battle');
@@ -255,6 +255,16 @@ describe('Relay Command view', () => {
     for (let i = 0; i < 12; i++) key('ArrowUp');
     for (let i = 0; i < 12; i++) key('ArrowRight');
     expect($('rc-cursor').textContent).toContain('(not observed now)');
+  });
+
+  it('sets up a Static Jammer through its own button and explains what it does', () => {
+    const jammer = own().find((e) => e.kind === 'jammer')!;
+    click(`rc-unit-${jammer.id}`);
+    expect($('rc-deploy').textContent).toBe('Set up jammer');
+    click('rc-deploy');
+    expect(state().draft).toEqual([{ side: PLAYER, unit: jammer.id, order: { type: 'deploy' } }]);
+    expect($(`rc-unit-${jammer.id}`).textContent).toContain('Setting up: the jammer works after this turn.');
+    expect(ctx.context.root.textContent).toContain('Electronic warfare:');
   });
 
   it('maps pointer clicks on the canvas to cells', () => {

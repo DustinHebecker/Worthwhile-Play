@@ -56,6 +56,23 @@ export function planAi(world: World, ruleset: Ruleset, side: number): Command[] 
     }
   }
 
+  // Electronic warfare: the jammer sets up where it cuts off a known enemy relay or post while
+  // staying in contact; the tracer escorts the relay truck (burn-through and direction finding).
+  for (const unit of own) {
+    const ew = archetypeOf(ruleset, unit.kind)?.ew;
+    if (!ew) continue;
+    if (ew.role === 'tracer') {
+      const truck = own.find((u) => u.kind === 'mast-truck') ?? world.entities.find((u) => u.side === side && u.kind === 'mast-truck');
+      if (truck && (unit.order.type !== 'escort' || unit.order.target !== truck.id)) commands.push({ side, unit: unit.id, order: { type: 'escort', target: truck.id } });
+      continue;
+    }
+    if (unit.order.type === 'deploy' || (unit.deploy ?? 0) >= ruleset.ticksPerTurn) continue;
+    const spot = jamSpot(world, ruleset, side, unit, ew.radius);
+    if (!spot) continue;
+    if (unit.x === spot.x && unit.y === spot.y) commands.push({ side, unit: unit.id, order: { type: 'deploy' } });
+    else if (unit.order.type !== 'move' || unit.order.x !== spot.x || unit.order.y !== spot.y) commands.push({ side, unit: unit.id, order: { type: 'move', x: spot.x, y: spot.y } });
+  }
+
   // Fighters below the retreat threshold are left to regroup and hold; ordering them back into
   // the fight would only spend a slot on an order the doctrine is meant to prevent.
   const retreating = (u: Entity) => u.hp * 100 < (archetypeOf(ruleset, u.kind)?.hp ?? 0) * AI_DOCTRINE.retreatBelow;
@@ -125,6 +142,36 @@ function relaySpot(world: World, ruleset: Ruleset, side: number, truck: Entity):
   // A truck already standing on a valid spot nearly as good as the best sets up right there
   // instead of chasing a cell that another unit freed or took this turn.
   if (best && here !== undefined && truck.order.type !== 'move' && here <= best.d + SPOT_TOLERANCE) return { x: truck.x, y: truck.y };
+  return best && { x: best.x, y: best.y };
+}
+
+/**
+ * Where to set up a jammer: a passable cell inside the own coverage (without the jammer itself)
+ * within `radius` of a known enemy relay or post, closest to the jammer (ties in the side's
+ * frame). Only reports are used, so positions out of sight are the last known ones.
+ */
+function jamSpot(world: World, ruleset: Ruleset, side: number, jammer: Entity, radius: number): { x: number; y: number } | undefined {
+  const targets = knownEnemies(world, ruleset, side).filter((r) => archetypeOf(ruleset, r.kind)?.comms);
+  if (targets.length === 0) return undefined;
+  const without = { ...world, entities: world.entities.filter((e) => e.id !== jammer.id) };
+  const coverage = computeNetwork(without, ruleset, side).coverage;
+  const known = knownEnemies(world, ruleset, side);
+  const cells = world.map.w * world.map.h;
+  let best: { x: number; y: number; d: number; f: number } | undefined;
+  for (let y = 0; y < world.map.h; y++) {
+    for (let x = 0; x < world.map.w; x++) {
+      const cell = cellOf(world.map, x, y);
+      if (coverage[cell] !== 1 || !passable(world.map, ruleset, x, y, 'ground')) continue;
+      if (!targets.some((r) => dist2(x, y, r.x, r.y) <= radius * radius)) continue;
+      const taken =
+        world.entities.some((e) => e.side === side && e.id !== jammer.id && e.x === x && e.y === y && staysPut(ruleset, e)) ||
+        known.some((r) => r.x === x && r.y === y);
+      if (taken) continue;
+      const d = dist2(x, y, jammer.x, jammer.y);
+      const f = frameIndex(cell, side, cells);
+      if (!best || d < best.d || (d === best.d && f < best.f)) best = { x, y, d, f };
+    }
+  }
   return best && { x: best.x, y: best.y };
 }
 

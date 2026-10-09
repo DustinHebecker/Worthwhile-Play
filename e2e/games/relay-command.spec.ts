@@ -154,3 +154,18 @@ test('relay-command: giving up asks first', async ({ page }) => {
   await expect(page.getByTestId('rc-status')).toBeFocused();
   await expect.poll(async () => (await saved(page))?.result).toBe('lost');
 });
+
+test('relay-command: a Static Jammer is set up in one turn and stays set up across a reload', async ({ page }) => {
+  await start(page);
+  const jammer = (await saved(page))!.world.entities.find((e) => e.side === 0 && e.kind === 'jammer')!;
+  await page.getByTestId(`rc-unit-${jammer.id}`).click();
+  await expect(page.getByTestId('rc-deploy')).toHaveText('Set up jammer');
+  await page.getByTestId('rc-deploy').click();
+  await expect.poll(async () => (await saved(page))?.draft[0]?.order.type).toBe('deploy');
+  await page.getByTestId('rc-lock').click();
+  await expect(page.getByTestId('rc-turn')).toHaveText('Turn 2 of 12');
+  await expect.poll(async () => (await saved(page))?.world.turn).toBe(1);
+  await page.reload();
+  await page.getByTestId('continue').click();
+  await expect(page.getByTestId(`rc-unit-${jammer.id}`)).toContainText('Jammer active');
+});
