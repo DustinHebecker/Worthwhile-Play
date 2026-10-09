@@ -146,6 +146,9 @@ importers:
       '@wp/game-spatial-memory':
         specifier: workspace:*
         version: link:../../packages/games/spatial-memory
+      '@wp/game-stack-duel':
+        specifier: workspace:*
+        version: link:../../packages/games/stack-duel
       '@wp/game-systems-puzzle':
         specifier: workspace:*
         version: link:../../packages/games/systems-puzzle
