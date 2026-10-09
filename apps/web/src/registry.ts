@@ -40,6 +40,7 @@ export const GAMES: readonly GameEntry[] = [
   entry('laser-circuit', () => import('@wp/game-laser-circuit')),
   entry('circuit-puzzle', () => import('@wp/game-circuit-puzzle')),
   entry('memory', () => import('@wp/game-memory')),
+  entry('review', () => import('@wp/game-review')),
   entry('sequence-memory', () => import('@wp/game-sequence-memory')),
   entry('spatial-memory', () => import('@wp/game-spatial-memory')),
   entry('signal-watch', () => import('@wp/game-signal-watch')),
