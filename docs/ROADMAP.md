@@ -15,7 +15,7 @@ Legend — Priority: **P0** foundation/blocking · **P1** next · **P2** later. 
 | M3 | **Board games**: Connect Four, Chess (complete rules, local AI; engine license review) | P1 | M0 | ✅ Four in a Row, Chess (own engine, no third-party code) |
 | M4 | **Systems & hypothesis games** | P1 | M2 | 🚧 Black Box, Laser Paths, Network Detective, Proof Chain, Robot Program, Circuit, Flow Lab, Rule Hunt, Fix the Machine done |
 | M5 | **Memory & attention exercises**, Faces & Names (synthetic/licensed faces only) | P1 | M1 | 🚧 Sequence Memory, Pattern Memory, Signal Watch, Stay on Task done |
-| M6 | **Communication exercises** with deterministic evaluation | P2 | M0 | ⏳ |
+| M6 | **Communication exercises** with deterministic evaluation (ADR 0010) | P2 | M0 | 🚧 Ambiguity Detector done |
 | M7 | **Strategy engine** (fresh agent context): shared simulation → Tower Defense → turn-based strategy → 4 hybrid modes | P2 | stable M0–M2 | 🚧 |
 | M8 | **Adventure engine** → Adventure A (dark fantasy) → Adventure B (temporal) | P2 | M0 | ⏳ |
 | M9 | **Optional local AI** (WebLLM, explicit download, deterministic checks first) | P2 | M6 | ⏳ |
@@ -66,7 +66,7 @@ Cross-cutting, continuous: accessibility review, native-speaker review of transl
 | Communication | Audience Switch | M6 | ⏳ | |
 | Communication | Compression Challenge | M6 | ⏳ | |
 | Communication | Briefing Game | M6 | ⏳ | |
-| Communication | Ambiguity Detector | M6 | ⏳ | |
+| Communication | Ambiguity Detector | M6 | ✅ | `ambiguity-detector`: 24 original messages (8 per level), tick the missing dimensions (set comparison with gold answers), pick the reply you would send; optional own question, never graded (ADR 0010); per-dimension summary |
 | Strategy | Orbit Links — node conquest (space theme, inspired by "tower battle"-type games): own/enemy/neutral nodes connected by lanes; nodes level 1–30 with 1/2/3 active outgoing paths; units stream along paths (level up own nodes, convert neutral/enemy nodes, head-on fights mid-lane); several opponents without alliances; node types (standard, shipyard for heavy units, defence station with level-based range); real-time but pausable at any moment, deterministic tick simulation | M7 | ✅ | original theme (space or abstract rings/dots); separate from the stacking duel; v2: difficulty = opponent intelligence (beginner/advanced/strong/master, same rules, bot-tournament calibrated), 1–3 opponents as a separate setting, bastion nodes (half damage), confirm before switching map, pinch-zoom/pan, post-game review, introduction map |
 | Strategy | Shared strategy/TD engine | M7 | 🚧 | `packages/strategy-engine`: core simulation done (I1); design `docs/design/strategy.md`, API ADR 0009 |
 | Strategy | Tower Defense (Gun, Artillery, Laser, Support, Specialist + branches) | M7 | ⏳ | |

@@ -162,8 +162,7 @@ export function variantFace(rng: Rng, base: Face, changes: number, age: number):
   }
   // A younger look-alike of a grey-haired person gets another colour (colour never counts as a difference).
   if (face.hairColour === 'grey' && age < GREY_FROM_AGE) face.hairColour = rng.pick(HAIR_COLOURS.filter((c) => c !== 'grey'));
-  if (!isConsistentFace(face, age) || faceDistance(face, base) !== changes) return undefined;
-  return face;
+  return isConsistentFace(face, age) ? face : undefined;
 }
 
 /** Whether `face` is far enough from every face in `others`. */
@@ -251,8 +250,7 @@ export const isName = (value: unknown): value is string =>
  */
 export function sanitizeNote(value: unknown): string {
   if (typeof value !== 'string') return '';
-  const chars = Array.from(value.replace(CONTROL_ALL, ' '));
-  return chars.length > NOTE_MAX ? chars.slice(0, NOTE_MAX).join('') : chars.join('');
+  return Array.from(value.replace(CONTROL_ALL, ' ')).slice(0, NOTE_MAX).join('');
 }
 
 /** Picks `count` names from the pool, preferring names that start with different characters. */
@@ -296,10 +294,8 @@ export type Question = PersonQuestion | JobQuestion;
 export function nearestPeople(rng: Rng, people: readonly Person[], person: number): number[] {
   const face = (people[person] as Person).face;
   const others = rng.shuffle(people.map((_, i) => i).filter((i) => i !== person));
-  return others
-    .map((i, order) => ({ i, order, d: faceDistance(face, (people[i] as Person).face) }))
-    .sort((a, b) => a.d - b.d || a.order - b.order)
-    .map((x) => x.i);
+  // Array.prototype.sort is stable: equally close people keep their shuffled order.
+  return others.map((i) => ({ i, d: faceDistance(face, (people[i] as Person).face) })).sort((a, b) => a.d - b.d).map((x) => x.i);
 }
 
 export function makeQuestion(rng: Rng, people: readonly Person[], person: number, type: QuestionType, options: number): Question {
@@ -375,7 +371,7 @@ export function newRound(seed: number, difficulty: Difficulty, namePool: readonl
   const names = pickNames(rng, namePool, config.people);
   const ages = names.map(() => rng.int(MIN_AGE, MAX_AGE));
   const faces = generateFaces(rng, ages, config);
-  const jobs = rng.shuffle(JOBS).slice(0, config.people);
+  const jobs = rng.shuffle(JOBS);
   const people: Person[] = names.map((name, i) => ({
     name,
     age: ages[i] as number,
@@ -413,8 +409,9 @@ export const STANDOUT_OPTIONS = 4;
 export function standoutOptions(people: readonly Person[], person: number): Feature[] {
   const face = (people[person] as Person).face;
   return FEATURES.filter((f) => face[f] !== 'none')
-    .map((f, order) => ({ f, order, shared: people.filter((p) => featureValue(p.face, f) === featureValue(face, f)).length }))
-    .sort((a, b) => a.shared - b.shared || a.order - b.order)
+    .map((f) => ({ f, shared: people.filter((p) => featureValue(p.face, f) === featureValue(face, f)).length }))
+    // Stable sort: equally rare features stay in FEATURES order.
+    .sort((a, b) => a.shared - b.shared)
     .slice(0, STANDOUT_OPTIONS)
     .map((x) => x.f);
 }
@@ -454,10 +451,11 @@ export function toggleStandout(state: FacesNamesState, feature: Feature): FacesN
 export function hasHint(state: FacesNamesState, question = state.index): boolean {
   const q = state.questions[question];
   if (!q) return false;
-  return (state.notes[q.person] ?? '').trim() !== '' || (state.standout[q.person] ?? null) !== null;
+  return Boolean(state.notes[q.person]?.trim()) || Boolean(state.standout[q.person]);
 }
 
-export const isAnswered = (state: FacesNamesState): boolean => state.phase === 'test' && state.answers.length > state.index;
+/** Whether the current question has been answered (never true while studying or after the end). */
+export const isAnswered = (state: FacesNamesState): boolean => state.answers.length > state.index;
 
 /** Test: shows the person's own note (and noticed feature) for the current, unanswered question. */
 export function showHint(state: FacesNamesState): FacesNamesState {
