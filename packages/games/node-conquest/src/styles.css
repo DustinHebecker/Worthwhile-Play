@@ -37,7 +37,7 @@
 /* Board: square, scales with the width (360 px phones included). Map geometry is never mirrored.
    touch-action: pan-y lets a one-finger swipe that starts on empty space scroll the page; touches
    that start on a node and two-finger gestures are claimed in script (touchstart preventDefault). */
-.wp-nc .nc-board-wrap { position: relative; }
+.wp-nc .nc-board-wrap { display: grid; gap: 0.4rem; }
 .wp-nc .nc-board {
   display: block;
   width: 100%;
@@ -52,12 +52,9 @@
 .wp-nc .nc-bg { fill: var(--nc-space); stroke: var(--wp-border); stroke-width: 1; }
 .wp-nc.is-zoomed .nc-board { cursor: grab; }
 .wp-nc .nc-zoom {
-  position: absolute;
-  inset-block-start: 0.4rem;
-  inset-inline-end: 0.4rem;
   display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
+  justify-content: flex-end;
+  gap: 0.4rem;
 }
 .wp-nc .nc-zoom-btn {
   min-width: var(--wp-touch, 44px);
@@ -65,7 +62,6 @@
   padding: 0;
   font-size: 1.25rem;
   line-height: 1;
-  background: color-mix(in srgb, var(--wp-surface) 88%, transparent);
 }
 .wp-nc .nc-confirm {
   display: grid;

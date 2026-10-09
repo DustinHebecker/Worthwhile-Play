@@ -220,7 +220,7 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
     zoomBtn('out', 'zoom.out', '−', () => zoomBy(1 / 1.5)),
     zoomBtn('fit', 'zoom.fit', '⤢', () => fit())
   );
-  const boardWrap = h('div', { class: 'nc-board-wrap' }, svgEl, zoomBar);
+  const boardWrap = h('div', { class: 'nc-board-wrap' }, zoomBar, svgEl);
 
   const reviewChart = h('div', { class: 'nc-review-chart' });
   const reviewSummary = h('p', { 'data-testid': 'nc-review-summary' });
@@ -350,7 +350,7 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
       h('li', {}, legendIcon(svg('circle', { class: 'nc-legend-type', cx: 10, cy: 10, r: 7 })), t('type.standard')),
       h('li', {}, legendIcon(svg('path', { class: 'nc-legend-type', d: hexagon(10, 10, 8) })), t('type.shipyard')),
       h('li', {}, legendIcon(svg('path', { class: 'nc-legend-type', d: crosshair(10, 10, 3, 9) })), t('type.station')),
-      h('li', { 'data-type': 'bastion' }, legendIcon(svg('path', { class: 'nc-legend-type', d: battlements(10, 10, 8) })), t('type.bastion'))
+      h('li', { 'data-type': 'bastion' }, legendIcon(svg('path', { class: 'nc-legend-type', d: battlements(10, 10, 6) })), t('type.bastion'))
     );
     fillMapOptions(state.opponents);
   };

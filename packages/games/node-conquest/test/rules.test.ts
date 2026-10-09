@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { createRng } from '@wp/game-core';
 import { metadata } from '../src/metadata';
+import { reviewOf } from '../src/review';
 import { BOARD, FACTION_COUNTS, getMap as getLayoutMap, hops, isFairMap, isqrt, MAX_LANE_LENGTH, MIN_NODE_DISTANCE, rotate, type MapNode } from '../src/maps';
 import {
   accountedUnits,
@@ -1787,5 +1788,53 @@ describe('opponent levels', () => {
     const a = run();
     expect(a.out.some((o, v) => o.length > 0 && a.owner[v] === 0)).toBe(true);
     expect(run()).toEqual(a);
+  });
+});
+
+describe('post-game review data', () => {
+  const finished = (rows: number[][], tick: number, centre: number[] = [], start = 0) => {
+    const s = createGame(2);
+    s.hist = { start, every: HISTORY_EVERY, rows };
+    s.tick = tick;
+    s.centre = centre;
+    return s;
+  };
+
+  it('adds the final position after the last sample and is deterministic', () => {
+    const s = finished([[1, 1], [3, 1]], 70);
+    const review = reviewOf(s, 2);
+    expect(review.points).toEqual([
+      { tick: 0, counts: [1, 1] },
+      { tick: 50, counts: [3, 1] },
+      { tick: 70, counts: countsOf(s, 2) }
+    ]);
+    expect(reviewOf(clone(s), 2)).toEqual(review);
+    expect(reviewOf(finished([[1, 1]], 0), 2).points).toHaveLength(1);
+  });
+
+  it('finds the biggest swing (earliest on ties), the centre and the last lead change, in time order', () => {
+    const s = finished([[1, 1], [4, 1], [2, 1], [5, 1], [1, 3], [1, 3]], 250, [120, 1]);
+    s.owner = s.owner.map((o) => (o === 0 ? 1 : o));
+    s.owner[0] = 0;
+    const review = reviewOf(s, 2);
+    expect(review.moments).toEqual([
+      { kind: 'centre', tick: 120, value: 0, faction: 1 },
+      { kind: 'loss', tick: 200, value: 4, faction: 0 },
+      { kind: 'leadLost', tick: 200, value: 0, faction: 0 }
+    ]);
+    expect(review.best).toEqual({ count: 5, tick: 150 });
+    const flat = reviewOf(finished([[1, 1], [1, 1]], 50), 2);
+    expect(flat.moments).toEqual([]);
+    const gained = reviewOf(finished([[1, 1], [2, 1], [2, 1]], 100), 2);
+    expect(gained.moments).toEqual([
+      { kind: 'gain', tick: 50, value: 1, faction: 0 },
+      { kind: 'leadGained', tick: 50, value: 0, faction: 0 }
+    ]);
+  });
+
+  it('starts at the migration tick for migrated saves', () => {
+    const review = reviewOf(finished([[2, 2]], 400, [], 300), 2);
+    expect(review.points[0]!.tick).toBe(300);
+    expect(review.points[review.points.length - 1]!.tick).toBe(400);
   });
 });

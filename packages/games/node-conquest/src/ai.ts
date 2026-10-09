@@ -107,7 +107,7 @@ export const PROFILES: Record<Difficulty, AiProfile> = {
     counter: true,
     defend: true,
     aware: true,
-    lookahead: { candidates: 3, horizon: 120, pairs: 0, budget: 90_000, policy: false }
+    lookahead: { candidates: 3, horizon: 120, pairs: 0, budget: 60_000, policy: false }
   },
   master: {
     ...BASE,
@@ -118,7 +118,7 @@ export const PROFILES: Record<Difficulty, AiProfile> = {
     defend: true,
     aware: true,
     weakest: true,
-    lookahead: { candidates: 6, horizon: 120, pairs: 2, budget: 160_000, policy: false }
+    lookahead: { candidates: 8, horizon: 120, pairs: 3, budget: 160_000, policy: false }
   }
 };
 
