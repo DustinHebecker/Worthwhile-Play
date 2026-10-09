@@ -137,15 +137,15 @@ export const PROFILES: Record<Difficulty, AiProfile> = {
 /**
  * Adjustments for 2 and 3 opponents (free-for-all), calibrated with a human-like proxy player
  * (see the tests): beginner acts more slowly, advanced at about the proxy's own pace (so the proxy
- * gets about its fair share), strong uses reply-aware simulations and goes for the weakest rival,
- * master decides a little less often (fewer, better-founded changes).
+ * gets about its fair share), strong uses reply-aware simulations and goes for the weakest rival
+ * (with 3 opponents also deciding more often), master decides a little less often.
  */
 export const FREE_FOR_ALL: Record<Difficulty, Record<2 | 3, Partial<AiProfile>>> = {
-  beginner: { 2: { period: 50 }, 3: { period: 60, hesitation: 0.35 } },
+  beginner: { 2: { period: 50 }, 3: { period: 80, hesitation: 0.4 } },
   advanced: { 2: { period: 30, actions: 3 }, 3: { period: 30, actions: 3 } },
   strong: {
     2: { weakest: true, lookahead: { candidates: 3, horizon: 120, pairs: 0, budget: 80_000, policy: true } },
-    3: { weakest: true, lookahead: { candidates: 3, horizon: 120, pairs: 0, budget: 80_000, policy: true } }
+    3: { period: 18, weakest: true, lookahead: { candidates: 3, horizon: 120, pairs: 0, budget: 80_000, policy: true } }
   },
   master: { 2: { period: 12 }, 3: { period: 12 } }
 };

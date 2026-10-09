@@ -1374,12 +1374,22 @@ export interface MatePuzzle {
 
 export interface BestMovePuzzle {
   fen: string;
-  /** The single clearly best move (UCI). */
-  move: string;
+  /**
+   * The line in UCI: the person's clearly best move, the engine's reply, the next clearly best
+   * move, … (1–3 moves of the person, so 1, 3 or 5 plies; always ends with the person's move).
+   */
+  line: string[];
 }
 
 /** Minimum lead (centipawns) of the best move over every alternative in a best-move puzzle. */
 export const BEST_MOVE_GAP = 150;
+/** Most moves the person makes in one "find the best move" line. */
+export const MAX_LINE_MOVES = 3;
+/**
+ * A line stops once the person's advantage is decisive (centipawns, the person's view after the
+ * engine's reply): the tactic has worked, what follows is technique. Forced mates continue.
+ */
+export const DECISIVE_LEAD = 500;
 
 /**
  * Verifies a mate-in-n puzzle: no faster mate, exactly one first move that mates within n,
@@ -1410,18 +1420,61 @@ export function verifyMatePuzzle(fen: string, n: number, solver = new MateSolver
 export const PUZZLE_LEVEL: Level = { ...LEVELS.strong, nodes: 150_000, margin: 0, temperature: 0 };
 
 /**
- * Verifies a "find the best move" puzzle with a deep search: exactly one move lies within
- * `BEST_MOVE_GAP` of the best score, the best move is not a quick forced mate (that is the
- * other puzzle type), and a smaller search agrees on the move. Returns null otherwise.
+ * The criterion for one move of a best-move line: a deep search finds exactly one move within
+ * `BEST_MOVE_GAP` of the best score, and a search with a quarter of the budget agrees. The first
+ * move of a puzzle must not be a forced mate (that is the other puzzle type) and needs at least
+ * four legal moves; later moves may mate ("mates count as best"). Returns the move or 0.
+ */
+export function uniqueBestMove(pos: Position, level: Level = PUZZLE_LEVEL, first = true): number {
+  if (legalMoves(pos).length < (first ? 4 : 2)) return 0;
+  const deep = analyse(pos, level, [], BEST_MOVE_GAP);
+  if (deep.candidates.length !== 1) return 0;
+  const best = deep.candidates[0]!;
+  if (first && Math.abs(best.score) > MATE_BOUND) return 0;
+  const quick = analyse(pos, { ...level, nodes: Math.max(4000, level.nodes >> 2) }, [], 0);
+  return quick.candidates[0]?.move === best.move ? best.move : 0;
+}
+
+/**
+ * Extends a best-move puzzle into a line (stopping rule): after each move of the person the
+ * engine's reply is its deep-search best move (ties: lowest move number, deterministic); the line
+ * continues only while (1) the person has made fewer than `MAX_LINE_MOVES` moves, (2) the game
+ * goes on after the move and after the reply, (3) the person's lead after the reply is below
+ * `DECISIVE_LEAD` (a forced mate for the person is allowed to continue), and (4) the next
+ * position again has a unique clearly best move (`uniqueBestMove`, mates allowed). `pos` is the
+ * position before the first move; it is left unchanged.
+ */
+export function extendBestLine(start: Position, first: number, level: Level = PUZZLE_LEVEL): string[] {
+  const pos = { ...start, board: Int8Array.from(start.board), kings: [start.kings[0], start.kings[1]] as [number, number] };
+  const line = [moveToUci(first)];
+  makeMove(pos, first);
+  for (let made = 1; made < MAX_LINE_MOVES; made++) {
+    if (!hasLegalMove(pos)) break;
+    const reply = analyse(pos, level, [], 0).candidates[0]!;
+    const lead = -reply.score;
+    if (lead >= DECISIVE_LEAD && lead <= MATE_BOUND) break;
+    const undo = makeMove(pos, reply.move);
+    const next = hasLegalMove(pos) ? uniqueBestMove(pos, level, false) : 0;
+    if (!next) {
+      unmakeMove(pos, undo);
+      break;
+    }
+    line.push(moveToUci(reply.move), moveToUci(next));
+    makeMove(pos, next);
+  }
+  return line;
+}
+
+/**
+ * Verifies a "find the best move" puzzle: the first move passes `uniqueBestMove`, and the line
+ * is its extension by `extendBestLine` (every later move of the person passes the same test).
+ * Returns null if the position does not qualify.
  */
 export function verifyBestMovePuzzle(fen: string, level: Level = PUZZLE_LEVEL): BestMovePuzzle | null {
   const pos = parseFen(fen);
-  if (!pos || legalMoves(pos).length < 4) return null;
-  const deep = analyse(pos, level, [], BEST_MOVE_GAP);
-  if (deep.candidates.length !== 1 || Math.abs(deep.candidates[0]!.score) > MATE_BOUND) return null;
-  const quick = analyse(pos, { ...level, nodes: Math.max(4000, level.nodes >> 2) }, [], 0);
-  if (quick.candidates[0]?.move !== deep.candidates[0]!.move) return null;
-  return { fen, move: moveToUci(deep.candidates[0]!.move) };
+  if (!pos) return null;
+  const first = uniqueBestMove(pos, level, true);
+  return first ? { fen, line: extendBestLine(pos, first, level) } : null;
 }
 
 /* ------------------------------------------------------------------------ */
