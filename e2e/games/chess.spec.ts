@@ -116,3 +116,20 @@ test('fits a 360px-wide phone without horizontal scrolling', async ({ page }) =>
     expect(option?.height ?? 0).toBeGreaterThanOrEqual(44);
   }
 });
+
+test('a strength chosen in the menu becomes the host difficulty and the menu choice survives a reload', async ({ page }) => {
+  await startNewGame(page);
+  await page.getByTestId('strength-strong').check({ force: true }); // visually hidden native radio inside a styled label
+  await page.getByTestId('mode-human').check({ force: true }); // visually hidden native radio inside a styled label
+  await page.getByTestId('mode-computer').check({ force: true }); // visually hidden native radio inside a styled label
+  await page.getByTestId('start').click();
+  await expect(page.locator('#difficulty')).toHaveValue('strong');
+  await page.getByTestId('mode-human').check({ force: true }); // visually hidden native radio inside a styled label
+  await page.getByTestId('start').click();
+  if (await page.getByTestId('start-yes').isVisible()) await page.getByTestId('start-yes').click();
+  await expect(page.getByTestId('current-human')).toBeVisible();
+  // After a reload, a fresh "New game" starts the remembered kind of game (two players).
+  await page.reload();
+  await page.getByTestId('new-game').click();
+  await expect(page.getByTestId('current-human')).toBeVisible();
+});

@@ -211,6 +211,34 @@ describe('chess view', () => {
     expect(byId<HTMLInputElement>('strength-strong').checked).toBe(true);
   });
 
+  it('reports a strength chosen in the menu to the host and remembers the menu choice across instances', () => {
+    const first = mount();
+    first.instance.newGame({ seed: 9, difficulty: 'beginner' });
+    first.byId('strength-strong').click();
+    first.byId('color-b').click();
+    first.byId('start').click();
+    expect(first.ctx.difficulties).toEqual(['strong']);
+    expect(first.ctx.preferences.get('menu')).toEqual({ opponent: 'computer', humanColor: 'b', mode: 'play', mateN: first.instance.serialize().mateN });
+    // Two players: no strength is reported.
+    first.byId('mode-human').click();
+    first.byId('start').click();
+    if (!first.byId('start-confirm').hidden) first.byId('start-yes').click();
+    expect(first.ctx.difficulties).toEqual(['strong']);
+    // A fresh instance (e.g. after a reload) on the same device starts the remembered kind of game.
+    const ctx = createTestContext(game as GameModule<unknown>, 'en');
+    for (const [k, v] of first.ctx.preferences) ctx.preferences.set(k, v);
+    const second = game.create({ ...ctx.context, preferences: { get: (k) => ctx.preferences.get(k), set: (k, v) => void ctx.preferences.set(k, v) } });
+    instances.push(second);
+    second.newGame({ seed: 3, difficulty: 'beginner' });
+    expect(second.serialize()).toMatchObject({ opponent: 'human', humanColor: 'b', mode: 'play' });
+    // Unexpected stored values are ignored.
+    const odd = createTestContext(game as GameModule<unknown>, 'en');
+    const third = game.create({ ...odd.context, preferences: { get: () => ({ opponent: 'robot', humanColor: 7, mode: 'x', mateN: 9 }), set: () => undefined } });
+    instances.push(third);
+    third.newGame({ seed: 3, difficulty: 'beginner' });
+    expect(third.serialize()).toMatchObject({ opponent: 'computer', humanColor: 'w', mode: 'play' });
+  });
+
   it('asks before a running game with own moves is replaced, and keeps it on “keep playing”', () => {
     const { ctx, instance, byId, tap } = mount();
     instance.newGame({ seed: 3 });
