@@ -22,6 +22,7 @@
     "@wp/game-debug-system": "workspace:*",
     "@wp/game-deep-read": "workspace:*",
     "@wp/game-distractor-control": "workspace:*",
+    "@wp/game-faces-names": "workspace:*",
     "@wp/game-graph-detective": "workspace:*",
     "@wp/game-laser-circuit": "workspace:*",
     "@wp/game-lights-out": "workspace:*",
