@@ -15,6 +15,7 @@ import {
   type GameMap,
   type Controller,
   type NcState,
+  type OpponentCount,
   type StepEvents
 } from './rules';
 
@@ -32,8 +33,17 @@ import {
  * - strong: advanced, plus a short forward simulation (lookahead) of its best candidate path
  *   changes, assuming everyone keeps their current paths. Possible because the simulation is
  *   deterministic. Joint attacks, head-on fights and platform cover show up in the outcome.
- * - master: longer lookahead, evaluates pairs of changes (plans two steps at once) and in
- *   free-for-all prefers attacking whichever rival is weakest.
+ * - master: more candidates, and its simulations let every faction keep playing (with the advanced
+ *   heuristics) instead of freezing all paths, so plans are judged against the replies they provoke:
+ *   futile trades into a defended node, attacks that a counter path would meet head-on, and gaps
+ *   an over-extended rival leaves open show up as such. It builds its plan step by step (each
+ *   further change is simulated together with the plan so far) and in free-for-all prefers
+ *   attacking whichever rival is weakest.
+ *
+ * Every faction decides on tick 0 (the player can set paths before starting) and then at its own
+ * staggered ticks. With 2 or 3 opponents the levels are tuned separately (FREE_FOR_ALL), because a
+ * free-for-all rewards different things: e.g. strong then uses the reply-aware simulation as well.
+ * Every rival (player or opponent) is treated alike; preferring the weakest one applies to all.
  *
  * Cost is bounded by a fixed simulation budget (units + nodes summed over simulated ticks), never
  * by wall-clock time, so results do not depend on the device.
@@ -53,6 +63,8 @@ export interface Lookahead {
    * advanced heuristics, instead of freezing all paths — plans that hold up against replies.
    */
   policy: boolean;
+  /** Combine changes greedily: each runner-up is simulated together with the plan so far. */
+  greedy?: boolean;
 }
 
 export interface AiProfile {
@@ -97,7 +109,7 @@ const BASE: AiProfile = {
 };
 
 export const PROFILES: Record<Difficulty, AiProfile> = {
-  beginner: { ...BASE, period: 40, actions: 1, hesitation: 0.25, attackLevel: 6, frontierOnly: true, impulsive: 0.45 },
+  beginner: { ...BASE, period: 40, actions: 1, hesitation: 0.1, attackLevel: 6, frontierOnly: true, impulsive: 0.45 },
   advanced: { ...BASE, period: 35, actions: 2, hesitation: 0.2, attackLevel: 12, counter: true, defend: true, aware: true },
   strong: {
     ...BASE,
@@ -118,21 +130,56 @@ export const PROFILES: Record<Difficulty, AiProfile> = {
     defend: true,
     aware: true,
     weakest: true,
-    lookahead: { candidates: 8, horizon: 120, pairs: 3, budget: 160_000, policy: false }
+    lookahead: { candidates: 6, horizon: 120, pairs: 2, budget: 120_000, policy: true, greedy: true }
   }
 };
+
+/**
+ * Adjustments for 2 and 3 opponents (free-for-all), calibrated with a human-like proxy player
+ * (see the tests): beginner acts more slowly, advanced at about the proxy's own pace (so the proxy
+ * gets about its fair share), strong uses reply-aware simulations and goes for the weakest rival
+ * (with 3 opponents also deciding more often), master decides a little less often.
+ */
+export const FREE_FOR_ALL: Record<Difficulty, Record<2 | 3, Partial<AiProfile>>> = {
+  beginner: { 2: { period: 50 }, 3: { period: 80, hesitation: 0.4 } },
+  advanced: { 2: { period: 30, actions: 3 }, 3: { period: 30, actions: 3 } },
+  strong: {
+    2: { weakest: true, lookahead: { candidates: 3, horizon: 120, pairs: 0, budget: 80_000, policy: true } },
+    3: { period: 18, weakest: true, lookahead: { candidates: 3, horizon: 120, pairs: 0, budget: 80_000, policy: true } }
+  },
+  master: { 2: { period: 12 }, 3: { period: 12 } }
+};
+
+const mixed = new Map<string, AiProfile>();
+/** The profile of `difficulty` with `opponents` opponents (the same object for the same arguments). */
+export function levelProfile(difficulty: Difficulty, opponents: OpponentCount): AiProfile {
+  if (opponents === 1) return PROFILES[difficulty];
+  const key = `${difficulty}:${opponents}`;
+  let profile = mixed.get(key);
+  if (!profile) {
+    profile = { ...PROFILES[difficulty], ...FREE_FOR_ALL[difficulty][opponents] };
+    mixed.set(key, profile);
+  }
+  return profile;
+}
 
 /** The introduction map's opponent: never attacks, only reinforces a node under attack. */
 export const PASSIVE: AiProfile = { ...BASE, period: 30, actions: 1, defend: true, passive: true };
 
-export const profileFor = (s: Pick<NcState, 'difficulty' | 'map'>): AiProfile => (s.map === INTRO_MAP ? PASSIVE : PROFILES[s.difficulty]);
+export const profileFor = (s: Pick<NcState, 'difficulty' | 'map' | 'opponents'>): AiProfile =>
+  s.map === INTRO_MAP ? PASSIVE : levelProfile(s.difficulty, s.opponents);
 
 export interface Command {
   from: number;
   to: number;
 }
 
-export const isDecisionTick = (tick: number, faction: number, profile: AiProfile): boolean => tick % profile.period === (faction * 7) % profile.period;
+/**
+ * Every faction makes an opening decision on tick 0 (the player can set paths before starting, too);
+ * later decisions are staggered by faction.
+ */
+export const isDecisionTick = (tick: number, faction: number, profile: AiProfile): boolean =>
+  tick === 0 || tick % profile.period === (faction * 7) % profile.period;
 
 /** Hostile strength already travelling towards each node of `faction`. */
 export function incomingThreat(s: NcState, faction: number): number[] {
@@ -365,22 +412,27 @@ export interface PlanStats {
 /** Last decision's lookahead cost (diagnostics for tests and measurements). */
 export const lastPlan: PlanStats = { ticks: 0, work: 0 };
 
+/** Work charged for one simulated heuristic decision inside a policy rollout (≈ its cost in stepped unit-ticks). */
+export const POLICY_DECISION_WORK = 300;
+
 function rollout(start: NcState, map: GameMap, horizon: number, stats: PlanStats, policy: Controller | undefined): NcState {
   const s = cloneState(start);
   for (let i = 0; i < horizon && s.result === 'playing'; i++) {
     stats.work += s.units.length + map.nodes.length;
+    if (policy) for (let f = 0; f < map.factions; f++) if (isDecisionTick(s.tick, f, POLICY) && s.owner.includes(f)) stats.work += POLICY_DECISION_WORK;
     stats.ticks++;
     stepMut(s, map, policy);
   }
   return s;
 }
 
+/** How every faction is assumed to keep playing inside policy rollouts: the advanced heuristics, without hesitation. */
+const POLICY: AiProfile = { ...PROFILES.advanced, hesitation: 0 };
 const policies = new Map<number, Controller>();
-/** All factions playing the advanced heuristics (used inside master's simulations). */
 function policyFor(factions: number): Controller {
   let control = policies.get(factions);
   if (!control) {
-    control = controllerFor(new Array<AiProfile>(factions).fill({ ...PROFILES.advanced, hesitation: 0 }));
+    control = controllerFor(new Array<AiProfile>(factions).fill(POLICY));
     policies.set(factions, control);
   }
   return control;
@@ -450,8 +502,20 @@ export function decide(s: NcState, map: GameMap, faction: number, profile: AiPro
   if (best && best.value > baseValue) {
     chosen = [best.option];
     let bestValue = best.value;
-    // Master: try the best change together with the runners-up (two-step plans).
-    for (let i = 1; i <= look.pairs && i < scored.length; i++) {
+    if (look.greedy) {
+      // Build the plan step by step: a runner-up joins only when the combined plan simulates better.
+      for (let i = 1; i <= look.pairs && i < scored.length && chosen.length < profile.actions; i++) {
+        if (stats.work + perRollout > look.budget) break;
+        const trial = { ...work, out: work.out.map((o) => [...o]) };
+        if (![...chosen, scored[i]!.option].every((o) => applyOption(trial, map, faction, o.cmds))) continue;
+        const value = evaluate(rollout(trial, map, look.horizon, stats, policy), map, faction, weights);
+        if (value > bestValue) {
+          chosen.push(scored[i]!.option);
+          bestValue = value;
+        }
+      }
+    } else for (let i = 1; i <= look.pairs && i < scored.length; i++) {
+      // Master: try the best change together with the runners-up (two-step plans).
       if (stats.work + perRollout > look.budget) break;
       const trial = { ...work, out: work.out.map((o) => [...o]) };
       if (!applyOption(trial, map, faction, best.option.cmds) || !applyOption(trial, map, faction, scored[i]!.option.cmds)) continue;
@@ -459,7 +523,7 @@ export function decide(s: NcState, map: GameMap, faction: number, profile: AiPro
       if (value > bestValue) [chosen, bestValue] = [[best.option, scored[i]!.option], value];
     }
     // Further independent improvements, if the budget of actions allows.
-    for (const entry of scored.slice(1)) if (entry.value > baseValue && !chosen.includes(entry.option) && chosen.length < profile.actions) chosen.push(entry.option);
+    if (!look.greedy) for (const entry of scored.slice(1)) if (entry.value > baseValue && !chosen.includes(entry.option) && chosen.length < profile.actions) chosen.push(entry.option);
   }
   for (const option of chosen) takeOnce(option);
   lastPlan.ticks = stats.ticks;
@@ -495,7 +559,7 @@ export function opponents(observer?: CommandObserver) {
   const cache = new Map<string, ReturnType<typeof controllerFor>>();
   return (s: NcState, map: GameMap): void => {
     const profile = profileFor(s);
-    const key = `${s.map === INTRO_MAP ? 'intro' : s.difficulty}:${map.factions}`;
+    const key = `${s.map === INTRO_MAP ? 'intro' : s.difficulty}:${s.opponents}`;
     let control = cache.get(key);
     if (!control) {
       control = controllerFor([null, profile, profile, profile].slice(0, map.factions), observer);

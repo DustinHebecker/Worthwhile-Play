@@ -1,5 +1,5 @@
 import './styles.css';
-import type { GameContext, GameInstance, NewGameOptions } from '@wp/game-core';
+import { isOneOf, isRecord, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
 import { announce, clear, h } from '@wp/ui';
 import { opponents } from './ai';
 import { reviewOf, type Moment } from './review';
@@ -1066,9 +1066,18 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
   const setupText = (map: number, count: OpponentCount) =>
     map === INTRO_MAP ? t('confirm.intro') : t('confirm.text', { n: map + 1, opponents: count });
 
+  /** Per-device setting: the opponent count chosen last (the map of a new match comes from its seed). */
+  const PREF_SETUP = 'setup';
+  const preferredOpponents = (): OpponentCount | null => {
+    const saved: unknown = context.preferences?.get(PREF_SETUP);
+    return isRecord(saved) && isOneOf(saved.opponents, OPPONENT_COUNTS) ? saved.opponents : null;
+  };
+
   const startSetup = (map: number, count: OpponentCount) => {
     pending = null;
     confirmBox.hidden = true;
+    // The introduction always has one opponent; it does not change the remembered setting.
+    if (map !== INTRO_MAP) context.preferences?.set(PREF_SETUP, { opponents: count });
     load(createGame(state.seed, { difficulty: state.difficulty, map, opponents: count }));
     context.requestSave();
   };
@@ -1120,8 +1129,10 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
 
   return {
     newGame(options: NewGameOptions) {
-      // The opponent count is a game setting: a new match keeps it (the introduction is a one-off).
-      load(createGame(options.seed, { difficulty: toDifficulty(options.difficulty), map: mapForSeed(options.seed), opponents: state.opponents }));
+      // The opponent count is a game setting: a new match keeps it (the introduction is a one-off),
+      // also after a reload (per-device preference).
+      const count = preferredOpponents() ?? state.opponents;
+      load(createGame(options.seed, { difficulty: toDifficulty(options.difficulty), map: mapForSeed(options.seed), opponents: count }));
       context.requestSave();
     },
     restore(saved: NcState) {

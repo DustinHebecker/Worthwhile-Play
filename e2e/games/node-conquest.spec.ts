@@ -155,6 +155,13 @@ test('node-conquest: changing the opponent count or map asks first during a matc
   await expect.poll(async () => (await savedState(page))?.map).toBe(Number(other));
   expect((await savedState(page))!.opponents).toBe(2);
   expect((await savedState(page))!.out.every((o) => o.length === 0)).toBe(true);
+
+  // The opponent count is remembered on this device: after a reload a fresh new match keeps it.
+  await page.reload();
+  await page.getByTestId('new-game').click();
+  await expect(page.getByTestId('nc-opponents')).toHaveValue('2');
+  await expect(page.locator('.nc-legend li[data-faction]')).toHaveCount(3);
+  await expect.poll(async () => (await savedState(page))?.opponents).toBe(2);
 });
 
 test('node-conquest: the introduction guides step by step; zoom buttons work', async ({ page }) => {
