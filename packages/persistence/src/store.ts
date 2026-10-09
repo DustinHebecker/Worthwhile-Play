@@ -35,10 +35,12 @@ export const DB_NAME = 'worthwhile-play';
  * Schema history (upgrades are additive; existing stores and data are never touched):
  * 1 — `saves` (one game save per game id)
  * 2 — `decks` (learning decks imported by the user)
+ * 3 — `learning` (spaced-repetition records, keyed by [deckId, itemId, direction])
  */
-export const DB_VERSION = 2;
+export const DB_VERSION = 3;
 export const SAVES_STORE = 'saves';
 export const DECKS_STORE = 'decks';
+export const LEARNING_STORE = 'learning';
 /** How long to wait for another tab (running an older version) to release the database before giving up. */
 export const UPGRADE_BLOCKED_TIMEOUT_MS = 4000;
 
@@ -53,6 +55,7 @@ export function idbRequest<T>(req: IDBRequest<T>): Promise<T> {
 export function upgradeDatabase(db: IDBDatabase): void {
   if (!db.objectStoreNames.contains(SAVES_STORE)) db.createObjectStore(SAVES_STORE, { keyPath: 'gameId' });
   if (!db.objectStoreNames.contains(DECKS_STORE)) db.createObjectStore(DECKS_STORE, { keyPath: 'id' });
+  if (!db.objectStoreNames.contains(LEARNING_STORE)) db.createObjectStore(LEARNING_STORE, { keyPath: ['deckId', 'itemId', 'direction'] });
 }
 
 export function openDatabase(factory: IDBFactory = globalThis.indexedDB, name = DB_NAME, blockedTimeoutMs = UPGRADE_BLOCKED_TIMEOUT_MS): Promise<IDBDatabase> {

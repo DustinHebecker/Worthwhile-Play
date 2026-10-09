@@ -12,8 +12,8 @@ export interface TestContext {
   preferences: Map<string, unknown>;
 }
 
-/** Optional host services a test can provide (content languages from Settings, the user's decks). */
-export type TestContextExtras = Partial<Pick<GameContext, 'contentLanguages' | 'userDecks'>>;
+/** Optional host services a test can provide (content languages from Settings, the user's decks, learning records, launch options). */
+export type TestContextExtras = Partial<Pick<GameContext, 'contentLanguages' | 'userDecks' | 'learning' | 'launch'>>;
 
 /** Builds a `GameContext` for unit tests (requires a DOM, e.g. `// @vitest-environment jsdom`). */
 export function createTestContext(
