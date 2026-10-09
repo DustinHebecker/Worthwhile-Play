@@ -751,7 +751,20 @@ export const DEFAULT_DIFFICULTY: Difficulty = 'beginner';
 export const OPPONENTS = ['computer', 'human'] as const;
 export type Opponent = (typeof OPPONENTS)[number];
 export const COLORS = ['w', 'b'] as const;
+/** The colour choice in the menu: a fixed colour, or one drawn from the game's seed. */
+export const COLOR_CHOICES = ['w', 'b', 'random'] as const;
+export type ColorChoice = (typeof COLOR_CHOICES)[number];
+
+/**
+ * The colour drawn for "random" (deterministic from the seed, from its own PRNG stream so it is
+ * independent of the computer's move choice). A restored or replayed game is therefore identical.
+ */
+export const randomColor = (seed: number): Color => (createRng((seed ^ 0x00c0_1065) >>> 0).next() < 0.5 ? 'w' : 'b');
+
+/** A fresh seed derived from the previous one (for games started from the in-game menu). */
+export const nextSeed = (seed: number): number => Math.floor(createRng((seed ^ 0x5eed_0001) >>> 0).next() * 0x1_0000_0000) >>> 0;
 export const MAX_MOVES = 1200;
+const UCI_PATTERN = /^[a-h][1-8][a-h][1-8][qrbn]?$/;
 /** Play a game, solve "find the best move" puzzles, or solve "mate in N" puzzles. */
 export const MODES = ['play', 'best', 'mate'] as const;
 export type Mode = (typeof MODES)[number];
@@ -765,7 +778,7 @@ export interface PuzzleRef {
 
 /** The shipped puzzles of a category (empty for 'play'). */
 export function puzzlesFor(mode: Mode, mateN: number): readonly PuzzleRef[] {
-  if (mode === 'best') return BEST_MOVE_PUZZLES.map((p) => ({ fen: p.fen, line: [p.move] }));
+  if (mode === 'best') return BEST_MOVE_PUZZLES;
   if (mode === 'mate') return MATE_PUZZLES.filter((p) => p.n === mateN).map((p) => ({ fen: p.fen, line: p.line }));
   return [];
 }
@@ -793,13 +806,88 @@ export interface ChessState {
   mateN: number;
   /** Index of the current puzzle in its category (0 in play mode). */
   puzzle: number;
+  /**
+   * Optional (absent in older saves): the person chose "random" and `humanColor` was drawn from
+   * the seed (`randomColor`). Only against the computer in play mode.
+   */
+  colorRandom?: true;
+  /** Optional (absent in older saves): the open variation board. Never affects the game itself. */
+  variation?: Variation;
 }
+
+/* ------------------------------------------------------------------------ */
+/* Variation board (analysis)                                                 */
+/* ------------------------------------------------------------------------ */
+
+/**
+ * A free analysis line next to the real game: a start position, moves for both sides and a
+ * cursor (number of moves currently shown; moves after it can be stepped through again).
+ */
+export interface Variation {
+  fen: string;
+  moves: string[];
+  cursor: number;
+  orientation: Color;
+}
+
+export const MAX_VARIATION_MOVES = 400;
+
+export const createVariation = (fen: string, orientation: Color): Variation => ({ fen, moves: [], cursor: 0, orientation });
+
+/** Thorough check of untrusted data (legal FEN, legal moves, cursor in range). Never throws. */
+export function isValidVariation(value: unknown): value is Variation {
+  try {
+    if (!isRecord(value) || Object.keys(value).length !== 4) return false;
+    const { fen, moves, cursor, orientation } = value;
+    if (typeof fen !== 'string' || !isOneOf(orientation, COLORS)) return false;
+    if (!isArrayOf(moves, (m): m is string => typeof m === 'string' && UCI_PATTERN.test(m)) || moves.length > MAX_VARIATION_MOVES) return false;
+    if (!isInt(cursor, 0, moves.length)) return false;
+    return replay(fen, moves) !== null;
+  } catch {
+    return false;
+  }
+}
+
+/** The position shown on the variation board (after `cursor` moves). Only for valid variations. */
+export function variationView(variation: Variation): Replay {
+  const game = replay(variation.fen, variation.moves.slice(0, variation.cursor));
+  if (!game) throw new RangeError('Invalid variation');
+  return game;
+}
+
+/**
+ * Plays a legal move at the cursor. The same move as the next stored one just steps forward
+ * (the rest of the line is kept); a different move replaces everything after the cursor.
+ * Throws if the move is illegal or the variation's game is over.
+ */
+export function variationPlay(variation: Variation, uci: string): Variation {
+  const game = variationView(variation);
+  if (game.status.kind !== 'playing') throw new RangeError('The variation has ended');
+  if (!uciToMove(game.pos, uci)) throw new RangeError(`Illegal move ${uci}`);
+  if (variation.moves.length >= MAX_VARIATION_MOVES && variation.moves[variation.cursor] !== uci) return variation;
+  const { cursor } = variation;
+  const moves = variation.moves[cursor] === uci ? [...variation.moves] : [...variation.moves.slice(0, cursor), uci];
+  return { ...variation, moves, cursor: cursor + 1 };
+}
+
+/** Moves the cursor by `delta` (clamped to the line). */
+export const variationStep = (variation: Variation, delta: number): Variation => ({
+  ...variation,
+  moves: [...variation.moves],
+  cursor: Math.max(0, Math.min(variation.moves.length, variation.cursor + delta))
+});
+
+/** Back to the variation's starting position, line cleared. */
+export const variationReset = (variation: Variation): Variation => ({ ...variation, moves: [], cursor: 0 });
+
+export const variationFlip = (variation: Variation): Variation => ({ ...variation, moves: [...variation.moves], orientation: variation.orientation === 'w' ? 'b' : 'w' });
 
 export interface GameOptions {
   seed: number;
   difficulty: Difficulty;
   opponent: Opponent;
-  humanColor: Color;
+  /** 'random' draws the colour from the seed (play mode against the computer). */
+  humanColor: ColorChoice;
   start?: string;
   mode?: Mode;
   mateN?: number;
@@ -811,10 +899,11 @@ export interface GameOptions {
  * A fresh game or puzzle. In the puzzle modes the start position, the person's colour and
  * the opponent (the engine defends) come from the puzzle.
  */
-export function createGame({ seed, difficulty, opponent, humanColor, start = START_FEN, mode = 'play', mateN = 1, puzzle = 0 }: GameOptions): ChessState {
+export function createGame({ seed, difficulty, opponent, humanColor: choice, start = START_FEN, mode = 'play', mateN = 1, puzzle = 0 }: GameOptions): ChessState {
+  const humanColor = choice === 'random' ? randomColor(seed) : choice;
   const base = { seed, difficulty, opponent, humanColor, start, moves: [], rng: seed, resigned: '' as const, mode, mateN, puzzle: 0 };
   const list = puzzlesFor(mode, mateN);
-  if (list.length === 0) return { ...base, mode: 'play' };
+  if (list.length === 0) return choice === 'random' && opponent === 'computer' ? { ...base, mode: 'play', colorRandom: true } : { ...base, mode: 'play' };
   const index = ((puzzle % list.length) + list.length) % list.length;
   const fen = list[index]!.fen;
   return { ...base, opponent: 'computer', start: fen, humanColor: fen.split(' ')[1] === 'b' ? 'b' : 'w', puzzle: index };
@@ -828,9 +917,16 @@ export type Outcome =
   /** A "find the best move" puzzle after its (correct) move. */
   | { kind: 'solved' };
 
-/** Outcome including puzzle completion. */
+/** The menu's colour choice that produced this game ('random' if the colour was drawn). */
+export const colorChoiceOf = (state: ChessState): ColorChoice => (state.colorRandom ? 'random' : state.humanColor);
+
+/**
+ * Outcome including puzzle completion. A best-move line stores the person's moves together with
+ * the engine's replies, so an odd number of moves means the person made the last (final) move.
+ * (Saves from the single-move era hold just the first move: they stay solved.)
+ */
 export function stateOutcome(state: ChessState, game: Replay): Outcome {
-  if (state.mode === 'best' && game.moves.length > 0) return { kind: 'solved' };
+  if (state.mode === 'best' && game.moves.length % 2 === 1) return { kind: 'solved' };
   return outcomeOfReplay(game, state.resigned);
 }
 
@@ -903,13 +999,18 @@ export function undo(state: ChessState): ChessState {
   return { ...state, moves };
 }
 
-const UCI_PATTERN = /^[a-h][1-8][a-h][1-8][qrbn]?$/;
+const REQUIRED_KEYS = ['seed', 'difficulty', 'opponent', 'humanColor', 'start', 'moves', 'rng', 'resigned', 'mode', 'mateN', 'puzzle'] as const;
+const OPTIONAL_KEYS: readonly string[] = ['colorRandom', 'variation'];
 
 /** Thorough validation of untrusted data, including a full legal replay. Never throws. */
 export function isValidState(value: unknown): value is ChessState {
   try {
-    if (!isRecord(value) || Object.keys(value).length !== 11) return false;
-    const { seed, difficulty, opponent, humanColor, start, moves, rng, resigned, mode, mateN, puzzle } = value;
+    if (!isRecord(value)) return false;
+    const keys = Object.keys(value);
+    if (!REQUIRED_KEYS.every((k) => keys.includes(k)) || keys.some((k) => !(REQUIRED_KEYS as readonly string[]).includes(k) && !OPTIONAL_KEYS.includes(k))) return false;
+    const { seed, difficulty, opponent, humanColor, start, moves, rng, resigned, mode, mateN, puzzle, colorRandom, variation } = value;
+    if ('variation' in value && !isValidVariation(variation)) return false;
+    if ('colorRandom' in value && (colorRandom !== true || mode !== 'play' || opponent !== 'computer' || !isUint32(seed) || humanColor !== randomColor(seed))) return false;
     if (!isOneOf(mode, MODES) || !isInt(mateN, 1, 4) || !isInt(puzzle, 0, 9999)) return false;
     if (!isUint32(seed) || !isUint32(rng)) return false;
     if (!isOneOf(difficulty, DIFFICULTIES) || !isOneOf(opponent, OPPONENTS) || !isOneOf(humanColor, COLORS)) return false;
@@ -922,11 +1023,12 @@ export function isValidState(value: unknown): value is ChessState {
     if (opponent === 'computer' && resigned !== '' && resigned !== humanColor) return false;
     if (mode !== 'play') {
       // Puzzles: the shipped position, the person moves first, nobody resigns, and the
-      // line never exceeds the puzzle (a best-move puzzle stores only its correct move).
+      // line never exceeds the puzzle.
       const ref = puzzlesFor(mode, mateN)[puzzle];
       if (!ref || start !== ref.fen || opponent !== 'computer' || resigned !== '') return false;
       if (humanColor !== colorOfSide(parseFen(start)!.side) || moves.length > ref.line.length) return false;
-      if (mode === 'best') return moves.length === 0 || moves[0] === ref.line[0];
+      // Best move: the stored line so far (the person's moves with the engine's replies).
+      if (mode === 'best') return moves.every((m, i) => m === ref.line[i]);
     } else if (puzzle !== 0) return false;
     // Against the computer there is never "half a turn": the reply is part of the person's move.
     if (opponent === 'computer' && resigned === '' && game.status.kind === 'playing' && colorOfSide(game.pos.side) !== humanColor) return false;

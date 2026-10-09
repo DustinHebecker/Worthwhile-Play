@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BEST_MOVE_GAP, MateSolver, analyse, verifyBestMovePuzzle, verifyMatePuzzle, PUZZLE_LEVEL } from '../src/ai';
+import { BEST_MOVE_GAP, DECISIVE_LEAD, MAX_LINE_MOVES, MateSolver, analyse, uniqueBestMove, verifyBestMovePuzzle, verifyMatePuzzle, PUZZLE_LEVEL } from '../src/ai';
 import { BEST_MOVE_PUZZLES, MATE_PUZZLES } from '../src/puzzle-data';
 import { moveToUci, parseFen, puzzlesFor, replay, uciToMove } from '../src/rules';
 import { oracleForcesMate, oracleSolutions } from './oracle';
@@ -25,7 +25,14 @@ run('shipped puzzles', { timeout: 600_000 }, () => {
       const game = replay(p.fen, p.line);
       expect(game?.status.kind, p.fen).toBe('checkmate');
     }
-    for (const p of BEST_MOVE_PUZZLES) expect(uciToMove(pos(p.fen), p.move), p.fen).not.toBe(0);
+    for (const p of BEST_MOVE_PUZZLES) {
+      // Lines of 1–3 moves of the person (with the engine's replies in between), all legal.
+      expect(p.line.length % 2, p.fen).toBe(1);
+      expect(p.line.length, p.fen).toBeLessThanOrEqual(2 * MAX_LINE_MOVES - 1);
+      expect(replay(p.fen, p.line), p.fen).not.toBeNull();
+    }
+    // A good share of the lines are longer than one move.
+    expect(BEST_MOVE_PUZZLES.filter((p) => p.line.length > 1).length).toBeGreaterThanOrEqual(BEST_MOVE_PUZZLES.length / 3);
   });
 
   it('every mate puzzle is re-verified by the solver: exact length, unique first move, same main line', () => {
@@ -55,11 +62,28 @@ run('shipped puzzles', { timeout: 600_000 }, () => {
     }
   });
 
-  it('every best-move puzzle is re-verified by a deep search with a clear gap', () => {
+  it('every move of every best-move line is re-verified by a deep search with a clear gap', () => {
+    // verifyBestMovePuzzle re-derives the whole line: each move of the person passes the
+    // unique-best test, each reply is the engine's deep-search best move, and the stopping rule
+    // gives exactly the stored length.
     for (const p of subset(BEST_MOVE_PUZZLES)) expect(verifyBestMovePuzzle(p.fen), p.fen).toEqual(p);
     const sample = BEST_MOVE_PUZZLES[0]!;
     const deep = analyse(pos(sample.fen), PUZZLE_LEVEL, [], BEST_MOVE_GAP);
     expect(deep.candidates).toHaveLength(1);
+  });
+
+  it('checks each later move of a multi-move line on its own (unique best, reply is the engine’s best, lead not yet decisive)', () => {
+    const lines = BEST_MOVE_PUZZLES.filter((p) => p.line.length > 1);
+    for (const p of full ? lines : lines.slice(0, 1)) {
+      for (let i = 2; i < p.line.length; i += 2) {
+        const before = replay(p.fen, p.line.slice(0, i - 1))!.pos;
+        const reply = analyse(before, PUZZLE_LEVEL, [], 0).candidates[0]!;
+        expect(reply.move, `${p.fen} reply ${i - 1}`).toBe(uciToMove(before, p.line[i - 1]!));
+        expect(-reply.score < DECISIVE_LEAD || -reply.score > 29_000, `${p.fen} lead before ${i}`).toBe(true);
+        const here = replay(p.fen, p.line.slice(0, i))!.pos;
+        expect(uniqueBestMove(here, PUZZLE_LEVEL, false), `${p.fen} move ${i}`).toBe(uciToMove(here, p.line[i]!));
+      }
+    }
   });
 });
 

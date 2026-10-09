@@ -1123,12 +1123,36 @@ export function playTurn(state: ChessState, uci: string): ChessState {
   return computerReply({ ...state, moves: [...state.moves, uci] });
 }
 
+/** The level behind suggestions (strong evaluation, no randomness, small budget). */
+const SUGGEST_LEVEL: Level = { ...LEVELS.strong, margin: 0, temperature: 0 };
+
 /** A suggestion for the side to move (strong evaluation, no randomness, small budget). Null when the game is over. */
 export function suggestMove(state: ChessState): number | null {
   const { pos, history } = gameHistory(state);
   if (!hasLegalMove(pos)) return null;
-  const level: Level = { ...LEVELS.strong, margin: 0, temperature: 0 };
-  return analyse(pos, level, history, 0).candidates[0]!.move;
+  return analyse(pos, SUGGEST_LEVEL, history, 0).candidates[0]!.move;
+}
+
+export interface Evaluation {
+  move: number;
+  /** Centipawns from WHITE's point of view (positive: White is better). */
+  white: number;
+  /** Forced mate: moves until mate (positive: White mates, negative: Black mates); 0 if none found. */
+  mate: number;
+}
+
+/**
+ * The engine's suggestion and evaluation for any position (the variation board's "Engine
+ * suggestion"; only ever computed on request). `history` holds hash pairs of earlier positions
+ * for repetition awareness. Null when there is no legal move.
+ */
+export function evaluatePosition(pos: Position, history: readonly number[] = []): Evaluation | null {
+  if (!hasLegalMove(pos)) return null;
+  const best = analyse(pos, SUGGEST_LEVEL, history, 0).candidates[0]!;
+  const sign = pos.side === WHITE ? 1 : -1;
+  let mate = 0;
+  if (Math.abs(best.score) > MATE_BOUND) mate = Math.sign(best.score) * Math.ceil((MATE - Math.abs(best.score)) / 2) * sign;
+  return { move: best.move, white: best.score * sign, mate };
 }
 
 /* ------------------------------------------------------------------------ */
@@ -1496,7 +1520,8 @@ const REFUTATION_LEVEL: Level = { ...LEVELS.strong, nodes: 20_000, margin: 0, te
 const onBook = (state: ChessState, line: readonly string[]) => state.moves.every((m, i) => m === line[i]);
 
 /**
- * The person's move in a puzzle. Best move: only the verified move is correct. Mate in N:
+ * The person's move in a puzzle. Best move: only the verified move of the line is correct; the
+ * engine's stored reply follows at once (the line's end solves the puzzle). Mate in N:
  * the main-line move or ANY move that still forces mate within the remaining moves is
  * correct (checked with the exhaustive solver; the first move is unique by construction);
  * the engine then answers with the most stubborn defence. Throws on an illegal move.
@@ -1513,9 +1538,9 @@ export function puzzleTurn(state: ChessState, uci: string): PuzzleTurn {
     if (!hasLegalMove(after)) return { state, correct: false };
     return { state, correct: false, refutation: analyse(after, REFUTATION_LEVEL, [], 0).candidates[0]!.move };
   };
-  if (state.mode === 'best') return uci === ref.line[0] ? { state: { ...state, moves: [uci] }, correct: true } : wrong();
-
   const k = state.moves.length;
+  if (state.mode === 'best') return uci === ref.line[k] ? { state: { ...state, moves: ref.line.slice(0, k + 2) }, correct: true } : wrong();
+
   const left = state.mateN - k / 2;
   const book = onBook(state, ref.line) && uci === ref.line[k];
   const solver = new MateSolver(PUZZLE_SOLVER_BUDGET);
@@ -1540,7 +1565,7 @@ export function puzzleHint(state: ChessState): number | null {
   const ref = puzzleOf(state);
   if (!ref) return null;
   const pos = replayState(state).pos;
-  if (!hasLegalMove(pos) || (state.mode === 'best' && state.moves.length > 0)) return null;
+  if (!hasLegalMove(pos) || (state.mode === 'best' && state.moves.length % 2 === 1)) return null;
   if (onBook(state, ref.line)) return uciToMove(pos, ref.line[state.moves.length]!) || null;
   try {
     return new MateSolver(PUZZLE_SOLVER_BUDGET).solutions(pos, state.mateN - state.moves.length / 2)[0] ?? null;

@@ -15,7 +15,15 @@
  * No external puzzle database is used. Every candidate is verified:
  *  - mate in n: exhaustive mate solver (no faster mate, exactly one first move);
  *  - best move: deep search, the best move leads every alternative by BEST_MOVE_GAP and a
- *    smaller search agrees.
+ *    smaller search agrees; the line is then extended move by move with the engine's best reply
+ *    while the next position again has a unique clearly best move (stopping rule: at most
+ *    MAX_LINE_MOVES moves of the person, stop once the lead is decisive (DECISIVE_LEAD) unless
+ *    it is a forced mate; see `extendBestLine` in src/ai.ts).
+ * Selection: games 0 … BASE_GAMES − 1 give the original categories in game order (the first 32
+ * best-move puzzles keep their positions and indices, so saved games still find their puzzle;
+ * their lines are extended where the rule allows). Further games 'BASE_GAMES …' only add
+ * best-move puzzles whose line has at least two moves, so a good share of the category is
+ * multi-move.
  * Deterministic: the same code always produces the same file.
  */
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -26,6 +34,8 @@ import {
   MATE,
   MateSolver,
   chooseMove,
+  MAX_LINE_MOVES,
+  uniqueBestMove,
   verifyBestMovePuzzle,
   verifyMatePuzzle,
   type BestMovePuzzle,
@@ -35,7 +45,13 @@ import {
 import { inCheck, legalMoves, moveTo, moveToUci, parseFen, replay, START_FEN, toFen } from '../src/rules';
 
 const PER_CATEGORY = 32;
-const MAX_GAMES = Number(process.env.CHESS_PUZZLE_GAMES ?? 120);
+/** Additional multi-move best-move lines (from games after the base games). */
+const EXTRA_LINES = Number(process.env.CHESS_PUZZLE_EXTRA ?? 32);
+/** Games whose harvest forms the original categories (unchanged since single-move puzzles). */
+const BASE_GAMES = 120;
+const MAX_GAMES = Number(process.env.CHESS_PUZZLE_GAMES ?? 180);
+/** In extra games: puzzles from one game are at least this many plies apart (variety). */
+const EXTRA_SPACING = 16;
 const target = new URL('../src/puzzle-data.ts', import.meta.url);
 
 const fast = (level: Level, nodes: number): Level => ({ ...level, nodes });
@@ -51,14 +67,20 @@ const PAIRINGS: readonly [Level, Level][] = [
 /** One harvested puzzle with its origin (game index, ply) for a deterministic merge. */
 type Found = { game: number; ply: number } & ({ kind: 'mate'; puzzle: MatePuzzle } | { kind: 'best'; puzzle: BestMovePuzzle });
 
-/** Plays one seeded self-play game and returns every verified puzzle position in it (at most one per category). */
+/**
+ * Plays one seeded self-play game and returns verified puzzle positions in it. Base games: at
+ * most one per category (as always). Extra games: only best-move lines of two or more moves,
+ * at most two per game, EXTRA_SPACING plies apart.
+ */
 function harvest(game: number): Found[] {
   const found: Found[] = [];
+  const base = game < BASE_GAMES;
   const rng = createRng(0xc4e55 + game * 7919);
   const [white, black] = PAIRINGS[game % PAIRINGS.length]!;
   const moves: string[] = [];
   const history: number[] = [];
   const taken = new Set<string>();
+  let lastExtra = -EXTRA_SPACING;
   for (let ply = 0; ply < 160; ply++) {
     const g = replay(START_FEN, moves)!;
     if (g.status.kind !== 'playing') break;
@@ -67,7 +89,7 @@ function harvest(game: number): Found[] {
     const choice = chooseMove(pos, pos.side === 1 ? white : black, rng, history);
     if (ply >= 8) {
       // Mates: only where a quick search already smells blood (keeps the harvest fast).
-      if (choice.score > 400) {
+      if (base && choice.score > 400) {
         try {
           const solver = new MateSolver(400_000);
           let n = solver.distance(parseFen(fen)!, 3);
@@ -85,13 +107,16 @@ function harvest(game: number): Found[] {
       }
       // Best move: a quiet-looking position (not in check, not a recapture) with one clearly best move.
       const last = g.moves[g.moves.length - 1];
-      if (!taken.has('best') && ply >= 12 && !inCheck(pos) && Math.abs(choice.score) < MATE - 1000) {
-        const candidate = verifyBestMovePuzzle(fen, { ...LEVELS.strong, nodes: 8000, margin: 0, temperature: 0 });
+      const wanted = base ? !taken.has('best') : found.length < 2 && ply - lastExtra >= EXTRA_SPACING;
+      if (wanted && ply >= 12 && !inCheck(pos) && Math.abs(choice.score) < MATE - 1000) {
+        const candidate = uniqueBestMove(parseFen(fen)!, { ...LEVELS.strong, nodes: 8000, margin: 0, temperature: 0 });
         const puzzle = candidate ? verifyBestMovePuzzle(fen) : null;
-        const move = puzzle ? legalMoves(parseFen(fen)!).find((m) => moveToUci(m) === puzzle.move) : undefined;
-        if (puzzle && move !== undefined && !(last !== undefined && moveTo(move) === moveTo(last))) {
+        const move = puzzle ? legalMoves(parseFen(fen)!).find((m) => moveToUci(m) === puzzle.line[0]) : undefined;
+        const recapture = last !== undefined && move !== undefined && moveTo(move) === moveTo(last);
+        if (puzzle && move !== undefined && !recapture && (base || puzzle.line.length > 1)) {
           found.push({ game, ply, kind: 'best', puzzle });
           taken.add('best');
+          lastExtra = ply;
         }
       }
     }
@@ -119,7 +144,8 @@ if (merge) {
   }
 }
 
-// Deterministic selection: by game, then ply; the same position never twice.
+// Deterministic selection: by game, then ply; the same position never twice. The base games
+// fill the original categories first, then extra games add multi-move best-move lines.
 all.sort((a, b) => a.game - b.game || a.ply - b.ply);
 const mates: MatePuzzle[][] = [[], [], [], []];
 const best: BestMovePuzzle[] = [];
@@ -127,12 +153,22 @@ const seen = new Set<string>();
 /** Placement + side only: the same picture never appears twice. */
 const keyOf = (fen: string) => fen.split(' ').slice(0, 2).join(' ');
 for (const item of all) {
+  if (item.game >= BASE_GAMES) continue;
   const key = keyOf(item.puzzle.fen);
   if (seen.has(key)) continue;
   const list = item.kind === 'best' ? best : mates[item.puzzle.n - 1]!;
   if (list.length >= PER_CATEGORY) continue;
   seen.add(key);
   (list as unknown[]).push(item.puzzle);
+}
+let extra = 0;
+for (const item of all) {
+  if (item.game < BASE_GAMES || item.kind !== 'best' || extra >= EXTRA_LINES) continue;
+  const key = keyOf(item.puzzle.fen);
+  if (seen.has(key)) continue;
+  seen.add(key);
+  best.push(item.puzzle);
+  extra++;
 }
 
 function log(message: string) {
@@ -143,7 +179,7 @@ const mateRows = mates
   .flat()
   .map((p) => `  { fen: '${p.fen}', n: ${p.n}, line: [${p.line.map((m) => `'${m}'`).join(', ')}] }`)
   .join(',\n');
-const bestRows = best.map((p) => `  { fen: '${p.fen}', move: '${p.move}' }`).join(',\n');
+const bestRows = best.map((p) => `  { fen: '${p.fen}', line: [${p.line.map((m) => `'${m}'`).join(', ')}] }`).join(',\n');
 
 writeFileSync(
   target,
@@ -163,4 +199,5 @@ ${bestRows}
 ];
 `
 );
-log(`wrote ${mates.map((l) => l.length).join('/')} mates and ${best.length} best-move puzzles`);
+const lengths = Array.from({ length: MAX_LINE_MOVES }, (_, i) => best.filter((p) => p.line.length === 2 * i + 1).length);
+log(`wrote ${mates.map((l) => l.length).join('/')} mates and ${best.length} best-move puzzles (moves per line 1/2/3: ${lengths.join('/')})`);

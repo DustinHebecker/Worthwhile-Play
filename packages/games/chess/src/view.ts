@@ -1,9 +1,10 @@
 import type { GameContext, GameInstance, GameResult, NewGameOptions } from '@wp/game-core';
 import { isOneOf, normalizeSeed } from '@wp/game-core';
-import { announce, clear, gridKeyboard, h } from '@wp/ui';
-import { computerReply, explainMove, playTurn, puzzleHint, puzzleTurn, suggestMove, type Reason } from './ai';
+import { announce, clear, h } from '@wp/ui';
+import { computerReply, evaluatePosition, explainMove, playTurn, puzzleHint, puzzleTurn, suggestMove, type Evaluation, type Reason } from './ai';
+import { GLYPH, OUTLINE, createBoard, createPromotion, figurine, renderMoveList } from './board';
 import {
-  COLORS,
+  COLOR_CHOICES,
   DEFAULT_DIFFICULTY,
   DIFFICULTIES,
   FLAG_CASTLE_K,
@@ -11,9 +12,10 @@ import {
   FLAG_EP,
   PAWN,
   canUndo,
+  colorChoiceOf,
   colorOfSide,
   createGame,
-  fileOf,
+  createVariation,
   kingSquare,
   legalMoves,
   makeMove,
@@ -25,52 +27,61 @@ import {
   MATE_LENGTHS,
   MODES,
   OPPONENTS,
-  puzzlesFor,
-  stateOutcome,
+  nextSeed,
   parseFen,
-  rankOf,
+  puzzleOf,
+  puzzlesFor,
   replay,
   resign,
   squareName,
+  stateOutcome,
+  toFen,
   toSan,
   undo,
+  variationFlip,
+  variationPlay,
+  variationReset,
+  variationStep,
+  variationView,
   type ChessState,
   type Color,
+  type ColorChoice,
   type GameOptions,
   type Outcome,
   type Position,
-  type Replay
+  type Replay,
+  type Variation
 } from './rules';
 import './styles.css';
 
+export { figurine } from './board';
+
 /** Short pause before the computer's reply becomes visible (skipped with reduced motion). */
 export const COMPUTER_REVEAL_MS = 450;
-
-/** Solid glyphs for both colours (shape is identical; colour and outline differ). U+FE0E forces text presentation. */
-const GLYPH = ['', '♟︎', '♞', '♝', '♜', '♛', '♚'] as const;
-/** Outline glyphs, layered on white pieces so they stay distinguishable without colour (and in forced-colours mode). */
-const OUTLINE = ['', '♙', '♘', '♗', '♖', '♕', '♔'] as const;
-/** Figurines for the move list (language-independent notation). */
-const FIGURINE: Record<string, string> = { K: '♔', Q: '♕', R: '♖', B: '♗', N: '♘' };
-
-export const figurine = (san: string): string => san.replace(/[KQRBN]/g, (letter) => FIGURINE[letter] ?? letter);
 
 /** What the menu offers: the two ways to play a game, and the two puzzle modes. */
 export const CHOICES = ['computer', 'human', 'best', 'mate'] as const;
 export type Choice = (typeof CHOICES)[number];
 /** Small symbols next to the menu labels (decorative; the text carries the meaning). */
-const CHOICE_ICON: Record<Choice, string> = { computer: '⚙\uFE0E', human: '♔♚', best: '★', mate: '#' };
+const CHOICE_ICON: Record<Choice, string> = { computer: '⚙︎', human: '♔♚', best: '★', mate: '#' };
+/** Colour choices: outline king, solid king, a die for "random". */
+const COLOR_ICON: Record<ColorChoice, string> = { w: OUTLINE[6], b: GLYPH[6], random: '⚄︎' };
 /** The menu entry describing a game. */
 export const choiceOf = (state: ChessState): Choice => (state.mode === 'play' ? state.opponent : state.mode);
 /** Unique radio-group names when several boards share one document. */
 let instanceCount = 0;
 
-const cloneState = (state: ChessState): ChessState => ({ ...state, moves: [...state.moves] });
+const cloneVariation = (v: Variation): Variation => ({ ...v, moves: [...v.moves] });
+const cloneState = (state: ChessState): ChessState => ({
+  ...state,
+  moves: [...state.moves],
+  ...(state.variation ? { variation: cloneVariation(state.variation) } : {})
+});
 const optionsOf = (state: ChessState): GameOptions => ({
   seed: state.seed,
   difficulty: state.difficulty,
   opponent: state.opponent,
-  humanColor: state.humanColor,
+  humanColor: colorChoiceOf(state),
   start: state.start,
   mode: state.mode,
   mateN: state.mateN,
@@ -81,6 +92,15 @@ const optionsOf = (state: ChessState): GameOptions => ({
 export const startGame = (options: GameOptions): ChessState => computerReply(createGame(options));
 
 const isOver = (outcome: Outcome) => outcome.kind !== 'playing';
+/** Bidirectional isolation for numbers and notation inside translated (possibly RTL) sentences. */
+const isolate = (text: string) => `⁦${text}⁩`;
+
+/** "+1.25" / "−0.40" (pawns, White's view) or "#3" / "#−3" for a forced mate. */
+export function formatEvaluation(evaluation: Pick<Evaluation, 'white' | 'mate'>): string {
+  if (evaluation.mate !== 0) return `#${evaluation.mate < 0 ? '−' : ''}${Math.abs(evaluation.mate)}`;
+  const pawns = evaluation.white / 100;
+  return `${pawns < 0 ? '−' : '+'}${Math.abs(pawns).toFixed(2)}`;
+}
 
 export function createChess(context: GameContext): GameInstance<ChessState> {
   const { t, root } = context;
@@ -92,11 +112,13 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
     const r = raw as Record<string, unknown>;
     return {
       ...(isOneOf(r.opponent, OPPONENTS) ? { opponent: r.opponent } : {}),
-      ...(isOneOf(r.humanColor, COLORS) ? { humanColor: r.humanColor } : {}),
+      ...(isOneOf(r.humanColor, COLOR_CHOICES) ? { humanColor: r.humanColor } : {}),
       ...(isOneOf(r.mode, MODES) ? { mode: r.mode } : {}),
       ...(isOneOf(r.mateN, MATE_LENGTHS) ? { mateN: r.mateN } : {})
     };
   })();
+  /** The person's colour choice for games against the computer (kept while puzzles or two-player games run). */
+  let colorPref: ColorChoice = remembered.humanColor ?? 'w';
   let state: ChessState = startGame({ seed: 0, difficulty: DEFAULT_DIFFICULTY, opponent: 'computer', humanColor: 'w', puzzle: 0, ...remembered });
   /** Number of plies drawn; lags behind `state.moves` only while the computer's reply is revealed. */
   let shown = 0;
@@ -115,57 +137,44 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
   let confirmStart = false;
   let view: Replay = replay(state.start, state.moves)!;
 
+  /* Variation board (transient UI; the line itself lives in `state.variation`). */
+  let varSelected = -1;
+  let varCursor = 12;
+  let varPromotion: { from: number; to: number } | null = null;
+  let varEngine: { evaluation: Evaluation; text: string } | null = null;
+  /** Asking whether to show the engine's suggestion while a puzzle is unsolved. */
+  let confirmSolution = false;
+  /** The person agreed to see engine suggestions for this puzzle (reset with every new puzzle). */
+  let solutionOk = false;
+  let varView: Replay | null = null;
+
   /* ---------- DOM ---------- */
   const status = h('p', { class: 'wp-status ch-status', 'data-testid': 'status' });
   const live = h('div', { class: 'sr-only', 'aria-live': 'polite', role: 'status', 'data-testid': 'announcer' });
 
-  const squares: HTMLButtonElement[] = [];
-  const board = h('div', { class: 'ch-board', role: 'group', 'aria-label': t('board'), 'data-testid': 'board', dir: 'ltr' });
-  for (let sq = 0; sq < 64; sq++) {
-    const light = (fileOf(sq) + rankOf(sq)) % 2 === 1;
-    const button = h('button', {
-      type: 'button',
-      class: `ch-sq ${light ? 'is-light' : 'is-dark'}`,
-      'data-cell': '',
-      'data-testid': `sq-${squareName(sq)}`,
-      'data-square': squareName(sq),
-      tabindex: -1,
-      onclick: () => onSquare(sq),
-      onfocus: () => {
-        cursor = sq;
-      }
-    });
-    squares.push(button);
-  }
-  const disposeKeys = gridKeyboard(board, 8);
+  const mainBoard = createBoard({
+    t,
+    label: t('board'),
+    prefix: '',
+    onSquare: (sq) => onSquare(sq),
+    onFocus: (sq) => {
+      cursor = sq;
+    },
+    canDrag: (sq) => {
+      const mover = controllable();
+      const piece = view.pos.board[sq]!;
+      return mover !== null && piece !== 0 && (piece > 0 ? 'w' : 'b') === mover;
+    },
+    onDrop: (from, to) => {
+      if (promotion) return;
+      selected = from;
+      onSquare(to);
+    }
+  });
+  const squares = mainBoard.squares;
+  const board = mainBoard.element;
 
-  /* Mouse drag (optional): press on a piece, release on the target square. Tap/click and keyboard work the same way. */
-  let dragFrom = -1;
-  const squareAt = (event: PointerEvent): number => {
-    const el = document.elementFromPoint?.(event.clientX, event.clientY)?.closest<HTMLElement>('[data-square]');
-    return el ? squares.indexOf(el as HTMLButtonElement) : -1;
-  };
-  const onPointerDown = (event: PointerEvent) => {
-    dragFrom = -1;
-    if (event.pointerType !== 'mouse' || event.button !== 0) return;
-    const sq = squares.indexOf((event.target as HTMLElement).closest('[data-square]') as HTMLButtonElement);
-    const mover = controllable();
-    const piece = sq >= 0 ? view.pos.board[sq]! : 0;
-    if (mover && piece !== 0 && (piece > 0 ? 'w' : 'b') === mover) dragFrom = sq;
-  };
-  const onPointerUp = (event: PointerEvent) => {
-    const from = dragFrom;
-    dragFrom = -1;
-    if (from < 0 || promotion) return;
-    const to = squareAt(event);
-    if (to < 0 || to === from) return;
-    selected = from;
-    onSquare(to);
-  };
-  board.addEventListener('pointerdown', onPointerDown);
-  document.addEventListener('pointerup', onPointerUp);
-
-  const button = (id: string, label: string, onclick: () => void) => h('button', { type: 'button', 'data-testid': id, onclick }, label);
+  const button = (id: string, label: string, onclick: () => void, extra: Record<string, string> = {}) => h('button', { type: 'button', 'data-testid': id, onclick, ...extra }, label);
   const undoButton = button('undo', t('common.undo'), () => onUndo());
   const hintButton = button('hint', t('common.hint'), () => onHint());
   const whyButton = button('why', t('why'), () => onWhy());
@@ -175,6 +184,7 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
     announce(live, t(orientation === 'w' ? 'flipped.w' : 'flipped.b'));
   });
   const nextButton = button('next-puzzle', t('puzzle.next'), () => startFresh({ ...optionsOf(state), puzzle: state.puzzle + 1 }));
+  const variationButton = button('variation-open', t('variation.open'), () => openVariation());
   const resignButton = button('resign', t('resign'), () => {
     confirmResign = true;
     render();
@@ -188,28 +198,8 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
   });
   const resignConfirm = h('div', { class: 'ch-confirm', role: 'group', 'aria-label': t('resign.confirm') }, h('span', {}, t('resign.confirm')), resignYes, resignNo);
 
-  const promoButtons = [5, 4, 3, 2].map((type) =>
-    h(
-      'button',
-      { type: 'button', class: 'ch-promo', 'data-testid': `promote-${'  nbrq'[type]!}`, 'aria-label': t(`piece.${type}`), onclick: () => onPromote(type) },
-      h('span', { class: 'ch-glyph', 'aria-hidden': 'true' }, GLYPH[type]!),
-      h('span', { class: 'ch-promo-label' }, t(`piece.${type}`))
-    )
-  );
-  const promoCancel = button('promote-cancel', t('cancel'), () => closePromotion());
-  const promoDialog = h(
-    'div',
-    { class: 'ch-dialog', role: 'dialog', 'aria-modal': 'false', 'aria-label': t('promotion'), 'data-testid': 'promotion', hidden: true },
-    h('p', {}, t('promotion')),
-    h('div', { class: 'ch-promo-row' }, ...promoButtons),
-    promoCancel
-  );
-  promoDialog.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      closePromotion();
-    }
-  });
+  const promo = createPromotion(t, '', (type) => onPromote(type), () => closePromotion());
+  const promoDialog = promo.element;
 
   const explanation = h('div', { class: 'ch-explain', 'data-testid': 'explanation', 'aria-live': 'polite', hidden: true });
   const moveList = h('ol', { class: 'ch-moves', 'data-testid': 'move-list', 'aria-label': t('common.moves') });
@@ -254,7 +244,7 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
   };
   const modeGroup = radioGroup('mode', t('menu.legend'), CHOICES, (v) => t(v === 'best' || v === 'mate' ? `mode.${v}` : `menu.${v}`), (v) => CHOICE_ICON[v]);
   const strengthGroup = radioGroup('strength', t('strength'), DIFFICULTIES, (v) => t(`difficulty.${v}`));
-  const colorGroup = radioGroup('color', t('yourColor'), COLORS, (v) => t(`color.${v}`), (v) => (v === 'w' ? OUTLINE[6] : GLYPH[6]));
+  const colorGroup = radioGroup('color', t('yourColor'), COLOR_CHOICES, (v) => t(`color.${v}`), (v) => COLOR_ICON[v]);
   const mateGroup = radioGroup('mate', t('mateN'), MATE_LENGTHS.map(String), (v) => v);
   // The active game's mode carries a visible text badge (not only a colour).
   const currentBadges = modeGroup.inputs.map((input) => {
@@ -291,17 +281,90 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
 
   const modeLine = h('p', { class: 'ch-mode', 'data-testid': 'mode' });
 
+  /* ---------- Variation board DOM ---------- */
+  const varBoard = createBoard({
+    t,
+    label: t('variation.title'),
+    prefix: 'var-',
+    onSquare: (sq) => onVarSquare(sq),
+    onFocus: (sq) => {
+      varCursor = sq;
+    },
+    canDrag: (sq) => {
+      if (!varView || varView.status.kind !== 'playing') return false;
+      const piece = varView.pos.board[sq]!;
+      return piece !== 0 && (piece > 0 ? 1 : -1) === varView.pos.side;
+    },
+    onDrop: (from, to) => {
+      if (varPromotion) return;
+      varSelected = from;
+      onVarSquare(to);
+    }
+  });
+  const varPromo = createPromotion(t, 'var-', (type) => onVarPromote(type), () => closeVarPromotion());
+  const varStatus = h('p', { class: 'ch-status ch-var-status', 'data-testid': 'var-status' });
+  const varBack = button('var-back', t('variation.back'), () => stepVariation(-1), { class: 'ch-dir ch-dir-back' });
+  const varForward = button('var-forward', t('variation.forward'), () => stepVariation(1), { class: 'ch-dir ch-dir-forward' });
+  const varReset = button('var-reset', t('variation.reset'), () => resetVariation());
+  const varFlip = button('var-flip', t('flip'), () => flipVariation());
+  const varEngineButton = button('var-engine', t('variation.engine'), () => onEngine());
+  const solutionYes = button('var-solution-yes', t('variation.solution.yes'), () => {
+    confirmSolution = false;
+    solutionOk = true;
+    showEngine();
+  });
+  const solutionNo = button('var-solution-no', t('cancel'), () => {
+    confirmSolution = false;
+    render();
+    varEngineButton.focus();
+  });
+  const solutionConfirm = h(
+    'div',
+    { class: 'ch-confirm', role: 'group', 'aria-label': t('variation.solution'), 'data-testid': 'var-solution-confirm', hidden: true },
+    h('span', {}, t('variation.solution')),
+    solutionYes,
+    solutionNo
+  );
+  solutionConfirm.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      solutionNo.click();
+    }
+  });
+  const varEngineBox = h('div', { class: 'ch-explain', 'data-testid': 'var-engine-result', hidden: true });
+  const varMoveList = h('ol', { class: 'ch-moves', 'data-testid': 'var-move-list', 'aria-label': t('variation.moves') });
+  const varClose = h('button', { type: 'button', class: 'primary ch-var-close', 'data-testid': 'var-close', onclick: () => closeVariation() }, t('variation.close'));
+  const varHeadingId = `${groupName}-var`;
+  const variationSection = h(
+    'section',
+    { class: 'ch-variation', 'aria-labelledby': varHeadingId, 'data-testid': 'variation', hidden: true },
+    h('div', { class: 'ch-var-head' }, h('h3', { id: varHeadingId }, t('variation.title')), varClose),
+    h('p', { class: 'ch-var-note' }, t('variation.note')),
+    varStatus,
+    h('div', { class: 'ch-board-wrap' }, varBoard.element, varPromo.element),
+    h('div', { class: 'ch-actions' }, varBack, varForward, varReset, varFlip, varEngineButton),
+    solutionConfirm,
+    varEngineBox,
+    h('section', { class: 'ch-history', 'aria-label': t('variation.moves') }, h('h4', {}, t('variation.moves')), varMoveList)
+  );
+
+  const main = h(
+    'div',
+    { class: 'ch-main' },
+    status,
+    h('div', { class: 'ch-board-wrap' }, board, promoDialog),
+    h('div', { class: 'ch-actions' }, undoButton, hintButton, whyButton, flipButton, resignButton, nextButton, variationButton),
+    resignConfirm,
+    explanation,
+    h('section', { class: 'ch-history', 'aria-label': t('common.moves') }, h('h3', {}, t('common.moves')), moveList)
+  );
+
   const container = h(
     'div',
     { class: `wp-chess${context.reducedMotion ? ' ch-reduced' : ''}`, dir: t.direction },
     menu,
     modeLine,
-    status,
-    h('div', { class: 'ch-board-wrap' }, board, promoDialog),
-    h('div', { class: 'ch-actions' }, undoButton, hintButton, whyButton, flipButton, resignButton, nextButton),
-    resignConfirm,
-    explanation,
-    h('section', { class: 'ch-history', 'aria-label': t('common.moves') }, h('h3', {}, t('common.moves')), moveList),
+    h('div', { class: 'ch-stage' }, main, variationSection),
     live
   );
   root.append(container);
@@ -363,11 +426,17 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
     return parts.join(' ');
   };
 
+  /** Moves of the person in the current best-move line: [made so far + 1, total]; total 1 for single-move puzzles. */
+  const lineProgress = (): { step: number; total: number } => {
+    const line = puzzleOf(state)?.line ?? [];
+    return { step: Math.floor(state.moves.length / 2) + 1, total: (line.length + 1) / 2 };
+  };
+
   const statusText = (outcome: Outcome): string => {
     if (busy()) return t('common.thinking');
     switch (outcome.kind) {
       case 'solved':
-        return t('puzzle.solved');
+        return state.moves.length > 1 ? t('puzzle.solved.line') : t('puzzle.solved');
       case 'checkmate':
         return puzzleMode() ? t('puzzle.mated') : t(`end.checkmate.${outcome.winner}`);
       case 'resigned':
@@ -375,12 +444,39 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
       case 'draw':
         return t(`end.${outcome.reason}`);
       default: {
-        if (state.mode === 'best') return t(`puzzle.best.task.${state.humanColor}`);
+        if (state.mode === 'best') {
+          const { step, total } = lineProgress();
+          const task = t(`puzzle.best.task.${state.humanColor}`);
+          return total > 1 ? `${task} ${t('puzzle.step', { n: step, total })}` : task;
+        }
         if (state.mode === 'mate') return t(`puzzle.mate.task.${state.humanColor}`, { left: state.mateN - state.moves.length / 2 });
         const turn = state.opponent === 'computer' ? t(`turn.you.${state.humanColor}`) : t(`turn.${outcome.turn}`);
         return outcome.check ? `${t('check')} ${turn}` : turn;
       }
     }
+  };
+
+  /** Status of a position on the variation board. */
+  const varStatusText = (game: Replay, variation: Variation): string => {
+    const where = variation.moves.length === 0 ? t('variation.start') : t('variation.progress', { n: variation.cursor, total: variation.moves.length });
+    const s = game.status;
+    let what: string;
+    if (s.kind === 'checkmate') what = t(`end.checkmate.${s.winner}`);
+    else if (s.kind === 'draw') what = t(`end.${s.reason}`);
+    else what = s.check ? `${t('check')} ${t(`turn.${colorOfSide(game.pos.side)}`)}` : t(`turn.${colorOfSide(game.pos.side)}`);
+    return `${where} ${what}`;
+  };
+
+  const targetsOf = (pos: Position, from: number): Map<number, number[]> => {
+    const targets = new Map<number, number[]>();
+    if (from < 0) return targets;
+    for (const m of legalMoves(pos)) {
+      if (moveFrom(m) !== from) continue;
+      const list = targets.get(moveTo(m)) ?? [];
+      list.push(m);
+      targets.set(moveTo(m), list);
+    }
+    return targets;
   };
 
   /* ---------- Rendering ---------- */
@@ -389,88 +485,20 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
     const pos = view.pos;
     const outcome = outcomeNow();
     const mover = controllable();
-    const targets = new Map<number, number[]>();
-    if (selected >= 0 && mover) {
-      for (const m of legalMoves(pos)) {
-        if (moveFrom(m) !== selected) continue;
-        const list = targets.get(moveTo(m)) ?? [];
-        list.push(m);
-        targets.set(moveTo(m), list);
-      }
-    }
     const lastMove = view.moves[view.moves.length - 1];
-    const lastFrom = lastMove === undefined ? -1 : moveFrom(lastMove);
-    const lastTo = lastMove === undefined ? -1 : moveTo(lastMove);
-    const checked = outcome.kind === 'playing' && outcome.check ? kingSquare(pos, pos.side) : outcome.kind === 'checkmate' ? kingSquare(pos, pos.side) : -1;
-    const hintFrom = hint ? moveFrom(hint.move) : -1;
-    const hintTo = hint ? moveTo(hint.move) : -1;
-
-    // Visual order: rank 8 at the top for white's view; mirrored for black's.
-    const order: number[] = [];
-    for (let row = 0; row < 8; row++) {
-      for (let col = 0; col < 8; col++) order.push(orientation === 'w' ? (7 - row) * 8 + col : row * 8 + (7 - col));
-    }
-    const sep = t('separator');
-    order.forEach((sq, index) => {
-      const el = squares[sq]!;
-      if (board.children[index] !== el) board.insertBefore(el, board.children[index] ?? null);
-      const piece = pos.board[sq]!;
-      const code = piece === 0 ? '' : `${piece > 0 ? 'w' : 'b'}${' PNBRQK'[Math.abs(piece)]!}`;
-      if (el.dataset.piece !== code || el.dataset.orientation !== orientation) {
-        el.dataset.piece = code;
-        el.dataset.orientation = orientation;
-        const parts: (HTMLElement | false)[] = [];
-        if (piece) {
-          const type = Math.abs(piece);
-          parts.push(h('span', { class: `ch-piece ${piece > 0 ? 'is-white' : 'is-black'}`, 'aria-hidden': 'true' }, h('span', { class: 'ch-fill' }, GLYPH[type]!), piece > 0 && h('span', { class: 'ch-outline' }, OUTLINE[type]!)));
-        }
-        const row = Math.floor(index / 8);
-        const col = index % 8;
-        if (row === 7) parts.push(h('span', { class: 'ch-coord ch-file', 'aria-hidden': 'true' }, 'abcdefgh'[fileOf(sq)]!));
-        if (col === 0) parts.push(h('span', { class: 'ch-coord ch-rank', 'aria-hidden': 'true' }, String(rankOf(sq) + 1)));
-        parts.push(h('span', { class: 'ch-marker', 'aria-hidden': 'true' }));
-        el.replaceChildren(...parts.filter((p): p is HTMLElement => p !== false));
-      }
-      const target = targets.has(sq);
-      el.toggleAttribute('data-selected', sq === selected && mover !== null);
-      el.dataset.target = target ? (piece !== 0 || targets.get(sq)!.some((m) => moveFlag(m) === FLAG_EP) ? 'capture' : 'move') : '';
-      el.toggleAttribute('data-last', sq === lastFrom || sq === lastTo);
-      el.toggleAttribute('data-check', sq === checked);
-      el.toggleAttribute('data-hint', sq === hintFrom || sq === hintTo);
-      el.setAttribute('aria-pressed', String(sq === selected && mover !== null));
-      const label = [piece ? t('sq.piece', { square: squareName(sq), piece: pieceName(piece), color: colorName(piece) }) : t('sq.empty', { square: squareName(sq) })];
-      if (target) label.push(t(el.dataset.target === 'capture' ? 'sq.capture' : 'sq.target'));
-      if (sq === lastFrom || sq === lastTo) label.push(t('sq.last'));
-      if (sq === checked) label.push(t('sq.check'));
-      if (sq === hintFrom || sq === hintTo) label.push(t('sq.hint'));
-      el.setAttribute('aria-label', label.join(sep));
-      el.tabIndex = sq === cursor ? 0 : -1;
+    const checked = (outcome.kind === 'playing' && outcome.check) || outcome.kind === 'checkmate' ? kingSquare(pos, pos.side) : -1;
+    mainBoard.render({
+      pos,
+      orientation,
+      selected: mover ? selected : -1,
+      targets: mover ? targetsOf(pos, selected) : new Map(),
+      last: lastMove ?? -1,
+      checked,
+      hint: hint ? hint.move : -1,
+      cursor
     });
 
-    // Move list in figurine notation.
-    const items: HTMLElement[] = [];
-    const startPos = parseFen(state.start)!;
-    const blackFirst = startPos.side === -1;
-    const sans = view.sans;
-    let number = startPos.fullmove;
-    for (let i = 0; i < sans.length; ) {
-      const li = h('li', { value: number, class: 'ch-move' });
-      li.append(h('span', { class: 'ch-num' }, `${number}.`));
-      if (i === 0 && blackFirst) {
-        li.append(h('span', { class: 'ch-ply' }, '…'));
-        li.append(h('span', { class: 'ch-ply', 'data-testid': `ply-${i}` }, figurine(sans[i]!)));
-        i += 1;
-      } else {
-        li.append(h('span', { class: 'ch-ply', 'data-testid': `ply-${i}` }, figurine(sans[i]!)));
-        if (i + 1 < sans.length) li.append(h('span', { class: 'ch-ply', 'data-testid': `ply-${i + 1}` }, figurine(sans[i + 1]!)));
-        i += 2;
-      }
-      items.push(li);
-      number++;
-    }
-    moveList.replaceChildren(...items);
-    if (items.length === 0) moveList.append(h('li', { class: 'ch-empty' }, t('noMoves')));
-    moveList.scrollTop = moveList.scrollHeight;
+    renderMoveList(moveList, state.start, view.sans, t('noMoves'));
 
     status.textContent = statusText(outcome);
     container.dataset.outcome = outcome.kind;
@@ -487,6 +515,7 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
     resignButton.disabled = busy() || !playing;
     resignButton.hidden = confirmResign || puzzleMode();
     nextButton.hidden = !puzzleMode();
+    variationButton.hidden = state.variation !== undefined;
     resignConfirm.hidden = !confirmResign || !playing;
     promoDialog.hidden = promotion === null;
     startConfirm.hidden = !confirmStart;
@@ -503,12 +532,58 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
     }
 
     const list = puzzlesFor(state.mode, state.mateN);
+    const colorText = t(`color.${state.humanColor}`);
+    const level = t(`difficulty.${state.difficulty}`);
     const mode = puzzleMode()
       ? `${state.mode === 'mate' ? `${t('mateN')}: ${state.mateN}` : t('mode.best')} — ${t('puzzle.number', { n: state.puzzle + 1, total: list.length })}`
       : state.opponent === 'computer'
-        ? t('mode.computer', { color: t(`color.${state.humanColor}`), level: t(`difficulty.${state.difficulty}`) })
+        ? t(state.colorRandom ? 'mode.computer.random' : 'mode.computer', { color: colorText, level })
         : t('mode.human');
     modeLine.textContent = mode;
+    renderVariation();
+  }
+
+  function renderVariation(): void {
+    const variation = state.variation;
+    container.toggleAttribute('data-variation', variation !== undefined);
+    variationSection.hidden = variation === undefined;
+    if (!variation) {
+      varView = null;
+      return;
+    }
+    const game = variationView(variation);
+    varView = game;
+    const pos = game.pos;
+    const playing = game.status.kind === 'playing';
+    const lastMove = game.moves[game.moves.length - 1];
+    const checked = game.status.kind === 'checkmate' || (game.status.kind === 'playing' && game.status.check) ? kingSquare(pos, pos.side) : -1;
+    varBoard.render({
+      pos,
+      orientation: variation.orientation,
+      selected: playing ? varSelected : -1,
+      targets: playing ? targetsOf(pos, varSelected) : new Map(),
+      last: lastMove ?? -1,
+      checked,
+      hint: varEngine ? varEngine.evaluation.move : -1,
+      cursor: varCursor
+    });
+    const full = replay(variation.fen, variation.moves);
+    renderMoveList(varMoveList, variation.fen, full ? full.sans : [], t('noMoves'), 'var-', variation.cursor);
+    varStatus.textContent = varStatusText(game, variation);
+    varBack.disabled = variation.cursor === 0;
+    varForward.disabled = variation.cursor >= variation.moves.length;
+    varReset.disabled = variation.moves.length === 0;
+    varEngineButton.disabled = !playing;
+    varEngineButton.hidden = confirmSolution;
+    solutionConfirm.hidden = !confirmSolution;
+    varPromo.element.hidden = varPromotion === null;
+    if (varEngine) {
+      varEngineBox.hidden = false;
+      varEngineBox.textContent = varEngine.text;
+    } else {
+      varEngineBox.hidden = true;
+      varEngineBox.textContent = '';
+    }
   }
 
   const sanOf = (move: number): string => toSan(view.pos, move);
@@ -530,8 +605,9 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
   function syncMenu(): void {
     modeGroup.set(choiceOf(state));
     strengthGroup.set(state.difficulty);
-    // Puzzles set the colour from the position; keep the person's own colour choice for games then.
-    if (state.mode === 'play' || colorGroup.value() === undefined) colorGroup.set(state.mode === 'play' ? state.humanColor : 'w');
+    // Puzzles and two-player games keep the person's own colour choice for games against the computer.
+    if (state.mode === 'play' && state.opponent === 'computer') colorPref = colorChoiceOf(state);
+    colorGroup.set(colorPref);
     mateGroup.set(String(state.mateN));
     confirmStart = false;
     syncMenuFields();
@@ -576,13 +652,15 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
     const choice = modeGroup.value() ?? choiceOf(state);
     const mode = choice === 'computer' || choice === 'human' ? 'play' : choice;
     const opponent = choice === 'human' ? 'human' : choice === 'computer' ? 'computer' : state.opponent;
-    const humanColor = choice === 'computer' ? (colorGroup.value() ?? state.humanColor) : state.humanColor;
+    if (choice === 'computer') colorPref = colorGroup.value() ?? colorPref;
     const difficulty = choice === 'computer' ? (strengthGroup.value() ?? state.difficulty) : state.difficulty;
     const mateN = mode === 'mate' ? Number(mateGroup.value() ?? state.mateN) : state.mateN;
+    // A fresh seed for every start from the menu (so "random" can draw a different colour).
+    const seed = nextSeed(state.seed);
     // Same puzzle category: continue with the next puzzle; otherwise let the seed pick one.
-    const puzzle = mode === state.mode && mateN === state.mateN ? state.puzzle + 1 : state.seed;
-    startFresh({ seed: state.seed, opponent, humanColor, difficulty, mode, mateN, puzzle });
-    context.preferences?.set('menu', { opponent, humanColor, mode, mateN });
+    const puzzle = mode === state.mode && mateN === state.mateN ? state.puzzle + 1 : seed;
+    startFresh({ seed, opponent, humanColor: colorPref, difficulty, mode, mateN, puzzle });
+    context.preferences?.set('menu', { opponent, humanColor: colorPref, mode, mateN });
     // The strength chosen here is the game's difficulty now: keep the host's select and next round in line.
     if (choice === 'computer') context.setDifficulty?.(difficulty);
     squares[cursor]?.focus();
@@ -598,7 +676,7 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
     const stats = { moves: Math.ceil(state.moves.length / 2) };
     if (outcome.kind === 'draw') return { outcome: 'draw', stats };
     if (outcome.kind === 'playing') return { outcome: 'completed', stats };
-    // A solved puzzle (best move found, or the mate delivered) counts as a win.
+    // A solved puzzle (best line found, or the mate delivered) counts as a win.
     if (outcome.kind === 'solved' || puzzleMode()) return { outcome: 'won', stats };
     if (state.opponent === 'human') return { outcome: 'completed', stats };
     return { outcome: outcome.winner === state.humanColor ? 'won' : 'lost', stats };
@@ -620,6 +698,13 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
     note = null;
     confirmResign = false;
     confirmStart = false;
+  };
+
+  const resetVariationTransient = () => {
+    varSelected = -1;
+    varPromotion = null;
+    varEngine = null;
+    confirmSolution = false;
   };
 
   /** Applies a new logical state: saves, reports a natural end once, then draws (optionally revealing from `revealFrom`). */
@@ -699,7 +784,7 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
       if (options.length > 1) {
         promotion = { from: selected, to: sq };
         render();
-        promoButtons[0]!.focus();
+        promo.first.focus();
         return;
       }
       if (options.length === 1) {
@@ -774,13 +859,182 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
     announce(live, explanation.textContent ?? '');
   }
 
+  /* ---------- Variation board ---------- */
+  /** Stores a changed variation (or none) WITHOUT touching the game: only a save, never a result. */
+  const setVariation = (variation: Variation | undefined) => {
+    const { variation: _old, ...rest } = state;
+    state = variation ? { ...rest, variation } : rest;
+    context.requestSave();
+    render();
+  };
+
+  /** Keyboard cursor on the variation board: the moving side's king, like on the main board. */
+  const focusVariationCursor = () => {
+    if (!state.variation) return;
+    const pos = variationView(state.variation).pos;
+    varCursor = kingSquare(pos, pos.side);
+    render();
+    varBoard.squares[varCursor]?.focus();
+  };
+
+  function openVariation(): void {
+    // The board must show the full logical position (complete a pending computer reply first).
+    if (pending !== null) flushPending();
+    if (timer !== undefined) showAll();
+    if (state.variation) return;
+    resetVariationTransient();
+    const fen = toFen(replay(state.start, state.moves)!.pos);
+    setVariation(createVariation(fen, orientation));
+    focusVariationCursor();
+    announce(live, `${t('variation.opened')} ${varStatus.textContent ?? ''}`);
+  }
+
+  function closeVariation(): void {
+    if (!state.variation) return;
+    resetVariationTransient();
+    setVariation(undefined);
+    announce(live, t('variation.closed'));
+    variationButton.focus();
+  }
+
+  const varAnnounce = () => announce(live, varStatus.textContent ?? '');
+
+  function stepVariation(delta: number): void {
+    if (!state.variation) return;
+    resetVariationTransient();
+    const before = state.variation;
+    const next = variationStep(before, delta);
+    if (next.cursor === before.cursor) return;
+    let text = '';
+    if (delta > 0) {
+      const pos = variationView(before).pos;
+      const move = legalMoves(pos).find((m) => moveToUci(m) === before.moves[before.cursor]);
+      if (move !== undefined) text = describe(pos, move);
+    }
+    setVariation(next);
+    announce(live, `${text} ${varStatus.textContent ?? ''}`.trim());
+  }
+
+  function resetVariation(): void {
+    if (!state.variation) return;
+    resetVariationTransient();
+    setVariation(variationReset(state.variation));
+    varAnnounce();
+  }
+
+  function flipVariation(): void {
+    if (!state.variation) return;
+    setVariation(variationFlip(state.variation));
+    announce(live, t(state.variation!.orientation === 'w' ? 'flipped.w' : 'flipped.b'));
+  }
+
+  function playVariation(move: number): void {
+    if (!state.variation || !varView) return;
+    const text = describe(varView.pos, move);
+    resetVariationTransient();
+    setVariation(variationPlay(state.variation, moveToUci(move)));
+    announce(live, `${text} ${varStatus.textContent ?? ''}`);
+  }
+
+  function onVarSquare(sq: number): void {
+    varCursor = sq;
+    if (varPromotion || !varView || varView.status.kind !== 'playing') return;
+    const pos = varView.pos;
+    if (varSelected >= 0) {
+      const options = legalMoves(pos).filter((m) => moveFrom(m) === varSelected && moveTo(m) === sq);
+      if (options.length > 1) {
+        varPromotion = { from: varSelected, to: sq };
+        render();
+        varPromo.first.focus();
+        return;
+      }
+      if (options.length === 1) {
+        playVariation(options[0]!);
+        return;
+      }
+    }
+    const piece = pos.board[sq]!;
+    const own = piece !== 0 && (piece > 0 ? 1 : -1) === pos.side;
+    if (own && sq !== varSelected) {
+      varSelected = sq;
+      render();
+      const count = legalMoves(pos).filter((m) => moveFrom(m) === sq).length;
+      announce(live, t('selected', { piece: pieceName(piece), square: squareName(sq), n: count }));
+    } else {
+      varSelected = -1;
+      render();
+    }
+  }
+
+  function onVarPromote(type: number): void {
+    if (!varPromotion || !varView) return;
+    const { from, to } = varPromotion;
+    const move = legalMoves(varView.pos).find((m) => moveFrom(m) === from && moveTo(m) === to && movePromo(m) === type);
+    varPromotion = null;
+    if (move) playVariation(move);
+    else render();
+    varBoard.squares[to]?.focus();
+  }
+
+  function closeVarPromotion(): void {
+    if (!varPromotion) return;
+    const to = varPromotion.to;
+    varPromotion = null;
+    varSelected = -1;
+    render();
+    varBoard.squares[to]?.focus();
+  }
+
+  /** In an unsolved puzzle the engine would give the solution away: ask first (once per puzzle). */
+  function onEngine(): void {
+    if (!varView || varView.status.kind !== 'playing') return;
+    if (puzzleMode() && !solutionOk && !isOver(stateOutcome(state, replay(state.start, state.moves)!))) {
+      confirmSolution = true;
+      render();
+      solutionYes.focus();
+      announce(live, t('variation.solution'));
+      return;
+    }
+    showEngine();
+  }
+
+  function showEngine(): void {
+    if (!state.variation) return;
+    // Repetition awareness within the variation line itself.
+    const variation = state.variation;
+    const pos = parseFen(variation.fen)!;
+    const history: number[] = [];
+    for (const uci of variation.moves.slice(0, variation.cursor)) {
+      history.push(pos.hashLo, pos.hashHi);
+      makeMove(pos, legalMoves(pos).find((m) => moveToUci(m) === uci)!);
+    }
+    const evaluation = evaluatePosition(pos, history);
+    if (!evaluation) {
+      render();
+      return;
+    }
+    const move = figurine(toSan(pos, evaluation.move));
+    const value = isolate(formatEvaluation(evaluation));
+    const text =
+      evaluation.mate !== 0
+        ? t('variation.engine.mate', { move: isolate(move), color: t(evaluation.mate > 0 ? 'color.w' : 'color.b'), n: Math.abs(evaluation.mate), eval: value })
+        : t('variation.engine.result', { move: isolate(move), eval: value });
+    varEngine = { evaluation, text };
+    render();
+    announce(live, text);
+    varEngineButton.focus();
+  }
+
+  /* ---------- Lifecycle ---------- */
   function startFresh(options: GameOptions): void {
     cancelTimer();
     pending = null;
     resetTransient();
+    resetVariationTransient();
+    solutionOk = false;
     const next = startGame(options);
     orientation = next.opponent === 'computer' ? next.humanColor : 'w';
-    const intro = t('newRound');
+    const intro = next.colorRandom ? `${t('newRound')} ${t('color.drawn', { color: t(`color.${next.humanColor}`) })}` : t('newRound');
     commit(next, `${intro} ${describeMoves(0, next.moves, next.start)}`.trim());
     syncMenu();
     focusCursor();
@@ -801,10 +1055,16 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
     pending = null;
     pendingAnnouncement = '';
     resetTransient();
+    resetVariationTransient();
+    solutionOk = false;
     state = next;
     orientation = state.opponent === 'computer' ? state.humanColor : 'w';
     shown = state.moves.length;
     view = replay(state.start, state.moves)!;
+    if (state.variation) {
+      const pos = variationView(state.variation).pos;
+      varCursor = kingSquare(pos, pos.side);
+    }
     syncMenu();
     focusCursor();
   };
@@ -817,7 +1077,7 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
       const difficulty = isOneOf(options.difficulty, DIFFICULTIES) ? options.difficulty : DEFAULT_DIFFICULTY;
       // Opponent, colour and mode are in-game preferences; in the puzzle modes the seed picks the puzzle.
       const seed = normalizeSeed(options.seed);
-      load(startGame({ seed, difficulty, opponent: state.opponent, humanColor: state.humanColor, mode: state.mode, mateN: state.mateN, puzzle: seed }));
+      load(startGame({ seed, difficulty, opponent: state.opponent, humanColor: colorPref, mode: state.mode, mateN: state.mateN, puzzle: seed }));
     },
     restore(saved: ChessState) {
       load(cloneState(saved));
@@ -836,11 +1096,9 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
     dispose() {
       cancelTimer();
       pending = null;
-      disposeKeys();
-      board.removeEventListener('pointerdown', onPointerDown);
-      document.removeEventListener('pointerup', onPointerUp);
+      mainBoard.dispose();
+      varBoard.dispose();
       clear(root);
     }
   };
 }
-
