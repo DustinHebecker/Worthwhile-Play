@@ -54,11 +54,14 @@ import {
   decide,
   effectiveLevel,
   evaluate,
+  FREE_FOR_ALL,
   frontierDistance,
   incomingThreat,
   isDecisionTick,
   lastPlan,
+  levelProfile,
   material,
+  POLICY_DECISION_WORK,
   opponents,
   options,
   PASSIVE,
@@ -964,6 +967,39 @@ describe('opponent heuristics', () => {
     expect(isDecisionTick(14, 2, p15)).toBe(true);
     expect(isDecisionTick(0, 0, p15)).toBe(true);
     expect(isDecisionTick(1, 0, p15)).toBe(false);
+    // Everyone opens on tick 0 (the player can set paths before starting); later ticks are staggered.
+    for (const f of [1, 2, 3]) expect(isDecisionTick(0, f, p15)).toBe(true);
+    expect(isDecisionTick(15, 1, p15)).toBe(false);
+    expect(isDecisionTick(15, 0, p15)).toBe(true);
+    expect(isDecisionTick(22, 1, p15)).toBe(true);
+    expect(isDecisionTick(14, 1, p15)).toBe(false);
+  });
+
+  it('every opponent makes an opening move on tick 0', () => {
+    const factions = new Set<number>();
+    simulate(createGame(3, { difficulty: 'advanced', opponents: 3 }), 1, undefined, (f) => factions.add(f));
+    expect([...factions].sort()).toEqual([1, 2, 3]);
+  });
+
+  it('tunes every level separately for free-for-all, the same for all opponents', () => {
+    for (const d of DIFFICULTIES) {
+      expect(levelProfile(d, 1)).toBe(PROFILES[d]);
+      for (const n of [2, 3] as const) {
+        const p = levelProfile(d, n);
+        expect(p).toBe(levelProfile(d, n));
+        expect(p).toEqual({ ...PROFILES[d], ...FREE_FOR_ALL[d][n] });
+        expect(profileFor({ difficulty: d, map: 0, opponents: n })).toBe(p);
+      }
+    }
+    // Free-for-all: beginner slower, advanced at a human pace, strong reply-aware and after the weakest rival.
+    expect(levelProfile('beginner', 3).period).toBeGreaterThan(levelProfile('beginner', 2).period);
+    expect(levelProfile('beginner', 2).period).toBeGreaterThan(PROFILES.beginner.period);
+    expect(levelProfile('advanced', 2)).toMatchObject({ period: 30, actions: 3, lookahead: null });
+    expect(levelProfile('strong', 3)).toMatchObject({ weakest: true, lookahead: { policy: true } });
+    expect(PROFILES.strong.lookahead!.policy).toBe(false);
+    expect(levelProfile('master', 2).lookahead).toBe(PROFILES.master.lookahead);
+    expect(PROFILES.master.lookahead).toMatchObject({ policy: true, greedy: true });
+    for (const n of [1, 2, 3] as const) expect(levelProfile('master', n).lookahead!.budget).toBeGreaterThan(levelProfile('strong', n).lookahead!.budget);
   });
 
   it('never issues an illegal command and stays deterministic (all difficulties)', () => {
@@ -1586,6 +1622,7 @@ describe('introduction map', () => {
     expect(isValidState({ ...clone(s), opponents: 2 })).toBe(false);
     expect(profileFor(s)).toBe(PASSIVE);
     expect(profileFor({ ...s, map: 0 })).toBe(PROFILES.master);
+    expect(profileFor({ ...s, map: 0, opponents: 2 })).toBe(levelProfile('master', 2));
   });
 
   it('never attacks; it only reinforces a node under attack', () => {
@@ -1745,6 +1782,51 @@ describe('opponent levels', () => {
     expect(decide(s, map, 1, look, createRng(1))).toEqual(decide(s, map, 1, look, createRng(1)));
   });
 
+  it('master: simulates replies, charges them to the budget and combines changes only when they simulate better', () => {
+    const map = makeMap(
+      [
+        { x: 300, y: 300, owner: 1, level: 12 },
+        { x: 300, y: 100, level: 3 },
+        { x: 500, y: 300, level: 4 },
+        { x: 100, y: 300, owner: 0, level: 12 },
+        { x: 300, y: 500, level: 6 }
+      ],
+      [
+        [0, 1],
+        [0, 2],
+        [0, 3],
+        [0, 4],
+        [3, 1],
+        [3, 4]
+      ]
+    );
+    const s = stateFor(map);
+    s.tick = 1;
+    const base = { ...quiet, aware: true, actions: 3 };
+    const frozen = { ...base, lookahead: { candidates: 4, horizon: 100, pairs: 2, budget: 1_000_000, policy: false } };
+    const replies = { ...frozen, lookahead: { ...frozen.lookahead, policy: true } };
+    const greedy = { ...replies, lookahead: { ...replies.lookahead, greedy: true } };
+    const check = (profile: AiProfile) => {
+      const cmds = decide(s, map, 1, profile, createRng(2));
+      const trial = cloneState(s);
+      for (const c of cmds) expect(['on', 'off']).toContain(toggleMut(trial, map, 1, c.from, c.to).outcome);
+      expect(cmds.length).toBeLessThanOrEqual(3);
+      return { cmds, ticks: lastPlan.ticks, work: lastPlan.work };
+    };
+    const a = check(frozen);
+    const b = check(replies);
+    // Same simulated ticks, but every heuristic decision inside a policy rollout is charged.
+    expect(b.ticks).toBe(a.ticks);
+    expect(b.work).toBeGreaterThanOrEqual(a.work + POLICY_DECISION_WORK);
+    const g = check(greedy);
+    expect(g.cmds.length).toBeGreaterThan(0);
+    expect(check(greedy)).toEqual(g);
+    // A budget for the baseline alone changes nothing; the budget is never exceeded.
+    expect(check({ ...greedy, lookahead: { ...greedy.lookahead, budget: b.work / 10 } }).cmds).toEqual([]);
+    const tight = { ...greedy, lookahead: { ...greedy.lookahead, budget: Math.floor(g.work / 2) } };
+    expect(check(tight).work).toBeLessThanOrEqual(tight.lookahead.budget);
+  });
+
   it('master: values the weakest rival most in free-for-all, all rivals alike in a duel', () => {
     const s = createGame(4, { opponents: 3 });
     const map = mapOf(s);
@@ -1765,7 +1847,7 @@ describe('opponent levels', () => {
 
   it('every level decides within its simulation budget on the largest maps', () => {
     for (const level of ['strong', 'master'] as const) {
-      const profile = PROFILES[level];
+      const profile = levelProfile(level, 3);
       for (let m = 0; m < MAPS_PER_SET; m += 3) {
         let s = createGame(m, { opponents: 3, difficulty: level, map: m });
         s = simulate(s, 700);

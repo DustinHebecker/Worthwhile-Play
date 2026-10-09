@@ -130,7 +130,7 @@ export const PROFILES: Record<Difficulty, AiProfile> = {
     defend: true,
     aware: true,
     weakest: true,
-    lookahead: { candidates: 8, horizon: 120, pairs: 3, budget: 200_000, policy: true, greedy: true }
+    lookahead: { candidates: 6, horizon: 120, pairs: 2, budget: 120_000, policy: true, greedy: true }
   }
 };
 
@@ -147,7 +147,7 @@ export const FREE_FOR_ALL: Record<Difficulty, Record<2 | 3, Partial<AiProfile>>>
     2: { weakest: true, lookahead: { candidates: 3, horizon: 120, pairs: 0, budget: 80_000, policy: true } },
     3: { weakest: true, lookahead: { candidates: 3, horizon: 120, pairs: 0, budget: 80_000, policy: true } }
   },
-  master: { 2: { period: 15 }, 3: { period: 15 } }
+  master: { 2: { period: 12 }, 3: { period: 12 } }
 };
 
 const mixed = new Map<string, AiProfile>();
@@ -331,9 +331,7 @@ export function options(s: NcState, map: GameMap, faction: number, profile: AiPr
       if (!profile.lookahead || o === faction) continue;
       let worst = -1;
       for (const t of s.out[v]!) if (s.owner[t] !== faction && (worst < 0 || s.level[t]! > s.level[worst]!)) worst = t;
-      // Reply-aware levels let the simulation judge any switch to an easier target (armour included).
-      const gap = profile.lookahead.policy && worst >= 0 ? effectiveLevel(map, s, worst) - effectiveLevel(map, s, w) : s.level[worst]! - s.level[w]!;
-      if (worst >= 0 && gap > (profile.lookahead.policy ? 0 : 4)) add([{ from: v, to: worst }, { from: v, to: w }], score - 20);
+      if (worst >= 0 && s.level[worst]! > s.level[w]! + 4) add([{ from: v, to: worst }, { from: v, to: w }], score - 20);
     }
     // Interior nodes without paths supply the front.
     if (!profile.frontierOnly && !saturated && s.out[v]!.length === 0 && frontier[v]! > 1) {
