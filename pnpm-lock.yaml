@@ -68,6 +68,9 @@ importers:
       '@wp/game-association':
         specifier: workspace:*
         version: link:../../packages/games/association
+      '@wp/game-audience-switch':
+        specifier: workspace:*
+        version: link:../../packages/games/audience-switch
       '@wp/game-black-box':
         specifier: workspace:*
         version: link:../../packages/games/black-box

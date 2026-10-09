@@ -164,7 +164,7 @@ export function createDeepRead(context: GameContext): GameInstance<DeepReadState
           'data-support': isSupport ? 'true' : undefined,
           tabindex: -1
         },
-          h('span', { class: 'dr-pnum', 'aria-hidden': 'true' }, isSupport ? `▶ ${n}` : String(n)),
+          h('span', { class: 'dr-pnum', 'aria-hidden': 'true' }, isSupport ? `◆ ${n}` : String(n)),
           h('span', { class: 'sr-only' }, `${t('text.paragraph', { n })}: `),
           paragraph
         );

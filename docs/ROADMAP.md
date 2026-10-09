@@ -15,7 +15,7 @@ Legend — Priority: **P0** foundation/blocking · **P1** next · **P2** later. 
 | M3 | **Board games**: Connect Four, Chess (complete rules, local AI; engine license review) | P1 | M0 | ✅ Four in a Row, Chess (own engine, no third-party code) |
 | M4 | **Systems & hypothesis games** | P1 | M2 | 🚧 Black Box, Laser Paths, Network Detective, Proof Chain, Robot Program, Circuit, Flow Lab, Rule Hunt, Fix the Machine done |
 | M5 | **Memory & attention exercises**, Faces & Names (synthetic/licensed faces only) | P1 | M1 | 🚧 Sequence Memory, Pattern Memory, Signal Watch, Stay on Task done |
-| M6 | **Communication exercises** with deterministic evaluation (ADR 0010) | P2 | M0 | 🚧 Ambiguity Detector done |
+| M6 | **Communication exercises** with deterministic evaluation (ADR 0010) | P2 | M0 | 🚧 Ambiguity Detector, Audience Switch done |
 | M7 | **Strategy engine** (fresh agent context): shared simulation → Tower Defense → turn-based strategy → 4 hybrid modes | P2 | stable M0–M2 | 🚧 |
 | M8 | **Adventure engine** → Adventure A (dark fantasy) → Adventure B (temporal) | P2 | M0 | ⏳ |
 | M9 | **Optional local AI** (WebLLM, explicit download, deterministic checks first) | P2 | M6 | ⏳ |
@@ -63,7 +63,7 @@ Cross-cutting, continuous: accessibility review, native-speaker review of transl
 | Attention | Distractor Control → shown as **Stay on Task** | M5 | ✅ | self-paced sorting task with mild, explained distractors; no timers, neutral summary |
 | Attention | Visual search | M5 | ✅ | feature → conjunction → similar-distractor search; shape/fill/orientation (never colour-only); self-paced, target-absent boards; neutral summary with median time per set size |
 | Language | Letter Logic — word-guessing game (Wordle-style): guess a hidden word in a few tries with per-letter feedback; unlimited free play, no daily-puzzle streak | M6 | ✅ | original name and design ("Wordle" is a trademark); word lists per content language need a license review (prefer CC0/public-domain or self-built lists); feedback by symbol + colour; content language independent of UI language |
-| Communication | Audience Switch | M6 | ⏳ | |
+| Communication | Audience Switch | M6 | ✅ | `audience-switch`: 6 original scenarios × 3 audiences; tick the facts an audience needs (needed / optional / leave out), choose the opening, pick the fitting message; own version self-checked, never graded (ADR 0010); more scenarios welcome |
 | Communication | Compression Challenge | M6 | ⏳ | |
 | Communication | Briefing Game | M6 | ⏳ | |
 | Communication | Ambiguity Detector | M6 | ✅ | `ambiguity-detector`: 24 original messages (8 per level), tick the missing dimensions (set comparison with gold answers), pick the reply you would send; optional own question, never graded (ADR 0010); per-dimension summary |

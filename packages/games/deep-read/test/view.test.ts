@@ -138,7 +138,7 @@ describe('Deep Read view', () => {
     expect(instance.serialize().lookedBack).toEqual([false]);
     const para = byId(root, `dr-para-${support}`);
     expect(para.dataset.support).toBe('true');
-    expect(para.querySelector('.dr-pnum')?.textContent).toBe(`▶ ${support}`);
+    expect(para.querySelector('.dr-pnum')?.textContent).toBe(`◆ ${support}`);
     expect(document.activeElement).toBe(para);
     expect(root.querySelectorAll('[data-support="true"]')).toHaveLength(1);
   });

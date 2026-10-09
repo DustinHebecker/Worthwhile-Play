@@ -426,6 +426,42 @@ describe('isAudienceSwitchState', () => {
     expect(isAudienceSwitchState(r(reflect, { chosen: 5 })), 'chosen type').toBe(false);
   });
 
+  it('rejects further structural mistakes', () => {
+    const base = sample();
+    const r0 = (patch: object) => ({ ...base, rounds: [{ ...base.rounds[0], ...patch }, ...base.rounds.slice(1)] });
+    const cases: [string, unknown][] = [
+      ['facts extra', { ...base, facts: [...base.facts, 'cause'] }],
+      ['facts number', { ...base, facts: [...base.facts.slice(1), 7] }],
+      ['facts type', { ...base, facts: 'cause' }],
+      ['audiences numbers', { ...base, audiences: [1, 2, 3] }],
+      ['round array', { ...base, rounds: [[], ...base.rounds.slice(1)] }],
+      ['step number', r0({ step: 3 })],
+      ['order extra', r0({ order: [...base.rounds[0]!.order, 'fit'] })],
+      ['order number', r0({ order: [1, 2, 3] })],
+      ['order type', r0({ order: 'fit' })],
+      ['checks type', r0({ checks: 'no' })],
+      ['selected type', r0({ selected: 'cause' })]
+    ];
+    for (const [name, value] of cases) expect(isAudienceSwitchState(value), name).toBe(false);
+  });
+
+  it('ignores step moves from the wrong step', () => {
+    const lead = chooseLead(goToLead(toggleFact(sample(), 'cause')), 'cause');
+    const message = checkSelection(lead);
+    expect(round0(message).step).toBe('message');
+    expect(goToLead(message)).toBe(message);
+    expect(chooseLead(message, 'cause')).toBe(message);
+    expect(checkSelection(message)).toBe(message);
+    const reflect = checkMessage(chooseMessage(message, 'fit'));
+    expect(round0(reflect).step).toBe('reflect');
+    expect(checkMessage(reflect)).toBe(reflect);
+    expect(checkSelection(reflect)).toBe(reflect);
+    // In the select step a kept lead does not allow checking.
+    const back = backToSelect(lead);
+    expect(checkSelection(back)).toBe(back);
+    expect(chooseLead(backToSelect(goToLead(toggleFact(toggleFact(sample(), 'cause'), 'encoding'))), 'cause').rounds[0]!.lead).toBeNull();
+  });
+
   it('accepts a lead kept in the select step after going back', () => {
     const s = backToSelect(chooseLead(goToLead(toggleFact(sample(), 'cause')), 'cause'));
     expect(isAudienceSwitchState(s)).toBe(true);

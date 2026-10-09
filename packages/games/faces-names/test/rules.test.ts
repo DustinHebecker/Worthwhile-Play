@@ -228,7 +228,7 @@ describe('faces', () => {
     const rng = createRng(11);
     const seen = new Map<string, Set<unknown>>();
     for (let i = 0; i < 600; i++) {
-      const f = randomFace(rng, 70);
+      const f = randomFace(rng, GREY_FROM_AGE);
       for (const [k, v] of Object.entries(f)) (seen.get(k) ?? seen.set(k, new Set()).get(k))?.add(v);
     }
     for (const feature of FEATURES) expect(seen.get(feature)?.size, feature).toBe(FEATURE_VALUES[feature].length);
@@ -278,6 +278,40 @@ describe('faces', () => {
       }),
       { numRuns: 120 }
     );
+  });
+
+  it('recolours a grey-haired look-alike only when the person is younger than GREY_FROM_AGE', () => {
+    const grey: Face = { ...BASE, hairColour: 'grey' };
+    const rng = createRng(17);
+    for (let i = 0; i < 60; i++) {
+      const young = variantFace(rng, grey, 1, GREY_FROM_AGE - 1);
+      expect(young).toBeDefined();
+      expect(young?.hairColour).not.toBe('grey');
+      expect(faceDistance(young as Face, grey)).toBe(1);
+      expect(variantFace(rng, grey, 1, GREY_FROM_AGE)?.hairColour).toBe('grey');
+    }
+  });
+
+  it('gives up with an error when the distance rules cannot be met', () => {
+    const impossible = { people: 2, options: 2, minDistance: FEATURES.length + 1, lookalikePairs: 0 };
+    expect(() => generateFaces(createRng(1), [30, 30], impossible)).toThrow('Could not generate distinct faces.');
+    expect(generateFaces(createRng(1), [30], impossible)).toHaveLength(1);
+  });
+
+  it('makes only the declared pairs look-alikes (pairs 0–1, 2–3, … up to lookalikePairs)', () => {
+    for (const difficulty of DIFFICULTIES) {
+      const config = CONFIGS[difficulty];
+      const farther = new Set<number>();
+      for (let seed = 0; seed < 40; seed++) {
+        const rng = createRng(seed);
+        const faces = generateFaces(rng, Array.from({ length: config.people }, () => 60), config);
+        for (let i = 1; i < faces.length; i++) if (faceDistance(faces[i - 1] as Face, faces[i] as Face) > config.minDistance) farther.add(i);
+      }
+      for (let i = 1; i < config.people; i++) {
+        const declared = i % 2 === 1 && (i - 1) / 2 < config.lookalikePairs;
+        expect(farther.has(i), `${difficulty} face ${i}`).toBe(!declared);
+      }
+    }
   });
 
   it('checks distinctness against every other face', () => {
@@ -337,7 +371,7 @@ describe('names', () => {
     const names = pickNames(createRng(1), ['Ann', 'Anna', 'Abe', ' bad', '', 'Ann'], 3);
     expect([...names].sort()).toEqual(['Abe', 'Ann', 'Anna']);
     expect(names[0]?.[0]).toBe('A');
-    expect(() => pickNames(createRng(1), ['Ann', 'Ann', 'x\n'], 2)).toThrow(RangeError);
+    expect(() => pickNames(createRng(1), ['Ann', 'Ann', 'x\n'], 2)).toThrow('Not enough names.');
   });
 
   it('accepts only displayable names', () => {
@@ -480,6 +514,12 @@ describe('questions', () => {
     expect(q.options).toHaveLength(6);
     for (const j of sessionJobs) expect(q.options).toContain(j);
     expect(answerValue(s.people, q)).toBe(s.people[0]?.job);
+    for (let seed = 0; seed < 30; seed++) {
+      const other = makeQuestion(createRng(seed), s.people, 1, 'job', 8);
+      const opts = other.options as unknown[];
+      expect(new Set(opts).size).toBe(8);
+      expect(correctOption(s.people, other)).toBe(opts.indexOf(s.people[1]?.job));
+    }
     const name = makeQuestion(createRng(1), s.people, 2, 'name', 3);
     expect(name.options).toContain(2);
     expect(answerValue(s.people, name)).toBe(2);
@@ -511,6 +551,9 @@ describe('study', () => {
     expect(s).toMatchObject({ phase: 'test', index: 0 });
     expect(nextPerson(s)).toBe(s);
     expect(previousPerson(s)).toBe(s);
+    const second = nextQuestion(answer(s, 0));
+    expect(second.index).toBe(1);
+    expect(previousPerson(second)).toBe(second);
   });
 
   it('keeps a sanitized note per person, only while studying', () => {
@@ -645,6 +688,8 @@ describe('test phase', () => {
     const partial = answer(toTest(s), oracleAnswer(s, s.questions[0] as Question));
     const byPerson = resultsByPerson(partial);
     expect(byPerson[(s.questions[0] as Question).person]?.results).toEqual({ [(s.questions[0] as Question).type]: true });
+    const q1 = s.questions[1] as Question;
+    expect(byPerson[q1.person]?.results[q1.type]).toBeUndefined();
     expect(isCorrect(partial, 1)).toBe(false);
     expect(isCorrect(partial, 99)).toBe(false);
   });
@@ -746,8 +791,24 @@ describe('isValidFacesNamesState', () => {
     ['question person out of range', (s) => void ((s.questions[0] as Question).person = 99)],
     ['options without the answer', (s) => {
       const q = s.questions.find((x) => x.type !== 'job') as Question & { options: number[] };
-      q.options = q.options.map((o) => (o === q.person ? (s.people.length - 1 === q.person ? 0 : s.people.length - 1) : o));
+      const missing = s.people.findIndex((_, i) => !q.options.includes(i));
+      q.options = q.options.map((o) => (o === q.person ? missing : o));
     }],
+    ['job options without the answer', (s) => {
+      const q = s.questions.find((x) => x.type === 'job') as Question;
+      const opts = q.options as string[];
+      const missing = JOBS.find((j) => !opts.includes(j)) as string;
+      (q as { options: string[] }).options = opts.map((o) => (o === s.people[q.person]?.job ? missing : o));
+    }],
+    ['an extra duplicated option', (s) => void (s.questions[0] as Question & { options: unknown[] }).options.push((s.questions[0] as Question).options[0])],
+    ['person option just out of range', (s) => {
+      const q = s.questions.find((x) => x.type !== 'job') as Question;
+      const i = q.options.findIndex((o) => o !== q.person);
+      (q.options as unknown[])[i] = s.people.length;
+    }],
+    ['question person just out of range', (s) => void ((s.questions[0] as Question).person = s.people.length)],
+    ['shirt just out of range', (s) => void ((s.people[0] as Person).face.shirt = SHIRTS)],
+    ['answer just out of range', (s) => void (s.answers[0] = (s.questions[0] as Question).options.length)],
     ['options with duplicates', (s) => {
       const q = s.questions[0] as Question;
       (q.options as unknown[])[1] = q.options[0];
@@ -790,13 +851,31 @@ describe('isValidFacesNamesState', () => {
     const study = clone(nextPerson(round(5)));
     study.index = study.people.length;
     expect(isValidFacesNamesState(study)).toBe(false);
-    const hinted = clone(setNote(round(5), 'n'));
+    let noted = round(5);
+    for (let i = 0; i < noted.people.length; i++) noted = nextPerson(setNote(noted, 'n'));
+    const hinted = clone(noted);
+    hinted.phase = 'study';
+    expect(isValidFacesNamesState(hinted)).toBe(true);
     hinted.hints[0] = true;
     expect(isValidFacesNamesState(hinted)).toBe(false);
+    const studyAnswers = clone(hinted);
+    studyAnswers.hints[0] = false;
+    studyAnswers.answers = [0];
+    expect(isValidFacesNamesState(studyAnswers)).toBe(false);
+    // A hint for the current, still unanswered question is fine.
+    const current = clone(showHint(noted));
+    expect(current.hints[0]).toBe(true);
+    expect(isValidFacesNamesState(current)).toBe(true);
+    const later = clone(showHint(nextQuestion(answer(noted, 0))));
+    expect(later.hints[1]).toBe(true);
+    expect(isValidFacesNamesState(later)).toBe(true);
     const done = clone(play(round(5), () => 0));
     expect(isValidFacesNamesState(done)).toBe(true);
     done.index = done.questions.length - 1;
     expect(isValidFacesNamesState(done)).toBe(false);
+    const overrun = clone(play(round(5), () => 0));
+    (overrun as { phase: string }).phase = 'test';
+    expect(isValidFacesNamesState(overrun)).toBe(false);
     const short = clone(play(round(5), () => 0));
     short.answers.pop();
     expect(isValidFacesNamesState(short)).toBe(false);

@@ -23,10 +23,10 @@
   position: absolute; inset-inline-start: 0; top: 0.2em; min-width: 1.8rem; font-size: 0.75em; color: var(--wp-muted);
   font-variant-numeric: tabular-nums; white-space: nowrap;
 }
-/* Supporting paragraph: thick border, tinted background and an arrow in the number column (not colour alone). */
+/* Supporting paragraph: thick border, tinted background and a ◆ marker in the number column (not colour alone). */
 .wp-deep-read .dr-para.is-support {
   background: var(--wp-surface-2); border-inline-start: 4px solid var(--wp-accent);
-  padding-block: 0.3rem; padding-inline-end: 0.4rem;
+  padding-block: 0.3rem; padding-inline: 2.8rem 0.4rem;
 }
 .wp-deep-read .dr-para.is-support .dr-pnum { color: var(--wp-text); font-weight: 700; inset-inline-start: 0.3rem; }
 .wp-deep-read .dr-intro { max-width: 65ch; }
@@ -48,7 +48,7 @@
 }
 .wp-deep-read .dr-option:hover { border-color: var(--wp-accent); }
 .wp-deep-read .dr-option:has(input:checked) { border: 2px solid var(--wp-accent); background: var(--wp-surface-2); }
-.wp-deep-read .dr-option input { width: 1.3rem; height: 1.3rem; min-height: 0; margin: 0; flex: none; accent-color: var(--wp-accent); }
+.wp-deep-read .dr-option input { width: 1.3rem; height: 1.3rem; min-height: 0; min-width: 0; padding: 0; margin: 0; flex: none; accent-color: var(--wp-accent); }
 .wp-deep-read .dr-checklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
 .wp-deep-read .dr-notice { padding: 0.5rem 0.75rem; border-inline-start: 4px solid var(--wp-focus); background: var(--wp-surface-2); border-radius: 6px; }
 .wp-deep-read .dr-actions { justify-content: flex-start; }
