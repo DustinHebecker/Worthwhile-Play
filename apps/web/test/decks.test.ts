@@ -2,8 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { createTranslator, SUPPORTED_LOCALES } from '@wp/localization';
 import { importDeck, IMPORT_LIMITS, type Deck, type ImportError, type ImportWarning } from '@wp/learning-content';
 import { createMemoryDeckStore } from '@wp/persistence';
-import { UI_MESSAGES } from '../src/i18n/ui';
+import { UI_MESSAGES } from '../src/i18n';
 import { deckLanguages, importErrorText, importWarningText, loadUserDecks, newDeckId, toStoredDeck, userDeckSource } from '../src/lib/decks';
+import { loadAllLocales } from './locales';
+
+await loadAllLocales();
 
 const deck = (id: string, extra: Partial<Deck> = {}): Deck => ({
   schemaVersion: 1,

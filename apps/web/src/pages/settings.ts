@@ -2,7 +2,6 @@ import { LOCALE_DEFINITIONS, isSupportedLocale, readContentLanguages, writeConte
 import { h } from '@wp/ui';
 import type { Page } from '../app';
 import { SESSION_NOTE_KEY } from '../config';
-import { loadUserDecks } from '../lib/decks';
 import { loadLearningRecords, removeUserDeckRecords } from '../lib/learning';
 import { clearPreferences, createPreferences } from '../lib/preferences';
 
@@ -36,7 +35,7 @@ export const renderSettings: Page = (main, app) => {
     ...LOCALE_DEFINITIONS.map((d) => h('option', { value: d.code, selected: d.code === app.locale, lang: d.code }, d.nativeName))
   );
   uiSelect.addEventListener('change', () => {
-    if (isSupportedLocale(uiSelect.value)) app.setLocale(uiSelect.value);
+    if (isSupportedLocale(uiSelect.value)) void app.setLocale(uiSelect.value);
     document.getElementById('ui-language')?.focus();
   });
 
@@ -80,6 +79,7 @@ export const renderSettings: Page = (main, app) => {
   const decksInfo = h('p', { class: 'wp-muted', 'data-testid': 'decks-info' });
   const clearDecksButton = h('button', { type: 'button', 'data-testid': 'clear-decks' }, t('settings.clearDecks'));
   const refreshDecks = async () => {
+    const { loadUserDecks } = await import('../lib/decks');
     const count = (await loadUserDecks(app.decks)).length;
     decksInfo.textContent = t('settings.decks', { count });
     clearDecksButton.disabled = count === 0;

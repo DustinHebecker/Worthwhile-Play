@@ -107,4 +107,23 @@ test.describe('offline', () => {
     await expect(page.getByTestId('game-root')).toBeVisible();
     await context.setOffline(false);
   });
+
+  test('switching to a language never loaded before works offline (all locale chunks are precached)', async ({ page, context }) => {
+    await page.goto('/');
+    await page.evaluate(async () => {
+      await navigator.serviceWorker.ready;
+    });
+    await page.reload();
+    await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true);
+    await context.setOffline(true);
+    await page.getByTestId('language-menu').locator('summary').click();
+    await page.getByTestId('header-language').selectOption('uk');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'uk');
+    await expect(page.getByTestId('language-menu').locator('summary')).toContainText('Українська');
+    await expect(page.getByTestId('game-card-memory')).not.toContainText('Memory');
+    await page.reload();
+    await expect(page.locator('html')).toHaveAttribute('lang', 'uk');
+    await expect(page.getByTestId('game-card-memory')).toBeVisible();
+    await context.setOffline(false);
+  });
 });
