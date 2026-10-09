@@ -55,7 +55,7 @@ Cross-cutting, continuous: accessibility review, native-speaker review of transl
 | Memory | Faces & Names | M5 | ⏳ | mnemonic, self-generated associations |
 | Memory | Sequence Memory | M5 | ✅ | user-paced (Auto/Step), adaptive span, 12-round session |
 | Memory | Spatial Memory → shown as **Pattern Memory** | M5 | ✅ | adaptive pattern size, standard and rotated variants |
-| Memory | Prospective Memory | M5 | ⏳ | |
+| Memory | Prospective Memory → shown as **Keep in Mind** | M5 | ✅ | self-paced shape sorting with event-based intentions (★ / subtle dot) and an item-count check-in on hard; no clocks; neutral summary with everyday strategies |
 | Memory | Association / Mnemonic exercises | M5 | ⏳ | |
 | Memory | N-back | M5 | ✅ | N = 1–3; position, shape or dual stream; self-paced by default (calm 3 s pace opt-in); seeded blocks with controlled match rate and look-alikes; neutral summary with d′ |
 | Attention | Signal Watch | M5 | ✅ | 2/4/6-minute sessions, seeded stream, calm factual summary; pauses safely |

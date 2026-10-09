@@ -32,6 +32,17 @@ import {
   type Response
 } from '../src/rules';
 
+/** Seed 1, easy: pinned so that a generator change (which would alter saved blocks) is noticed. */
+const GOLDEN_CUES = [7, 14, 23, 29, 38];
+const GOLDEN_ITEMS: Item[] = [
+  { shape: 'triangle', filled: false, dot: false, cue: false },
+  { shape: 'circle', filled: true, dot: false, cue: false },
+  { shape: 'triangle', filled: false, dot: false, cue: false },
+  { shape: 'diamond', filled: true, dot: false, cue: false },
+  { shape: 'oval', filled: false, dot: false, cue: false },
+  { shape: 'hexagon', filled: false, dot: false, cue: false }
+];
+
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 const seedArb = fc.integer({ min: 0, max: 0xffff_ffff });
 const difficultyArb = fc.constantFrom(...DIFFICULTIES);

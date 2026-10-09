@@ -122,6 +122,9 @@ importers:
       '@wp/game-nonogram':
         specifier: workspace:*
         version: link:../../packages/games/nonogram
+      '@wp/game-prospective-memory':
+        specifier: workspace:*
+        version: link:../../packages/games/prospective-memory
       '@wp/game-relay-command':
         specifier: workspace:*
         version: link:../../packages/games/relay-command
