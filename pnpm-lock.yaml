@@ -122,6 +122,9 @@ importers:
       '@wp/game-nonogram':
         specifier: workspace:*
         version: link:../../packages/games/nonogram
+      '@wp/game-prospective-memory':
+        specifier: workspace:*
+        version: link:../../packages/games/prospective-memory
       '@wp/game-relay-command':
         specifier: workspace:*
         version: link:../../packages/games/relay-command
@@ -538,6 +541,25 @@ importers:
         version: link:../../testing
 
   packages/games/nonogram:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../../game-core
+      '@wp/ui':
+        specifier: workspace:*
+        version: link:../../ui
+    devDependencies:
+      '@wp/localization':
+        specifier: workspace:*
+        version: link:../../localization
+      '@wp/persistence':
+        specifier: workspace:*
+        version: link:../../persistence
+      '@wp/testing':
+        specifier: workspace:*
+        version: link:../../testing
+
+  packages/games/prospective-memory:
     dependencies:
       '@wp/game-core':
         specifier: workspace:*
