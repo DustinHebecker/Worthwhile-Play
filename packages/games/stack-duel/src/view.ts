@@ -112,7 +112,9 @@ export function createStackDuel(context: GameContext): GameInstance<StackDuelSta
   const number = new Intl.NumberFormat(t.locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   const fmt = (value: number) => number.format(Math.round(value * 10) / 10);
   const position = new Intl.NumberFormat(t.locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  let state: StackDuelState = newState(0, DEFAULT_DIFFICULTY, 'computer');
+  // The mode chosen last on this device (duel vs computer, two people, solo) for fresh games after a reload.
+  const rememberedMode = context.preferences?.get('mode');
+  let state: StackDuelState = newState(0, DEFAULT_DIFFICULTY, isOneOf(rememberedMode, MODES) ? rememberedMode : 'computer');
   let anim: Animation | undefined;
   let dragging = false;
 
@@ -423,6 +425,7 @@ export function createStackDuel(context: GameContext): GameInstance<StackDuelSta
   const onMode = (value: string) => {
     if (!isOneOf(value, MODES)) return;
     start(state.seed, state.difficulty, value);
+    context.preferences?.set('mode', value);
     context.requestSave();
     announce(live, `${t(`mode.${value}`)}. ${status.textContent ?? ''}`);
   };

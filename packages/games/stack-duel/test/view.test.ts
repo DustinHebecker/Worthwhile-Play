@@ -183,6 +183,22 @@ describe('stack duel view', () => {
     expect(instance.serialize().cursor.x).toBeCloseTo(Math.round(at(150) * 20) / 20, 9);
   });
 
+  it('remembers the chosen mode on this device for fresh games after a reload', () => {
+    const first = mount();
+    first.instance.newGame({ seed: 1, difficulty: 'easy' });
+    first.select('solo');
+    expect(first.ctx.preferences.get('mode')).toBe('solo');
+    const ctx = createTestContext(game as GameModule<unknown>, 'en');
+    const second = game.create({ ...ctx.context, preferences: { get: (k) => first.ctx.preferences.get(k), set: () => undefined } });
+    instances.push(second);
+    second.newGame({ seed: 2, difficulty: 'easy' });
+    expect(second.serialize().mode).toBe('solo');
+    const odd = game.create({ ...ctx.context, root: document.createElement('div'), preferences: { get: () => 'flying', set: () => undefined } });
+    instances.push(odd);
+    odd.newGame({ seed: 2, difficulty: 'easy' });
+    expect(odd.serialize().mode).toBe('computer');
+  });
+
   const pointer = (type: string, pointerType: string, init: MouseEventInit = {}) => {
     const event = new MouseEvent(type, { bubbles: true, cancelable: true, ...init });
     Object.defineProperty(event, 'pointerType', { value: pointerType });
