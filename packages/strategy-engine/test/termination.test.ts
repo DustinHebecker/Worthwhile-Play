@@ -245,7 +245,7 @@ const MAPS = [
   { w: 10, h: 6 },
   { w: 8, h: 8 }
 ];
-const MOBILE = ['rifles', 'lancer', 'outrider', 'warden', 'howitzer', 'mast-truck', 'kite'];
+const MOBILE = ['rifles', 'lancer', 'outrider', 'warden', 'howitzer', 'mast-truck', 'kite', 'jammer', 'tracer'];
 
 const arbOrder = (w: number, h: number) =>
   fc.oneof(
@@ -325,7 +325,7 @@ const arbBattle = fc
       if (!e || e.kind === 'command-post') continue;
       const order = clampOrder(s.order);
       // Only orders a player could have given earlier.
-      if (order.type === 'deploy' && e.kind !== 'mast-truck') continue;
+      if (order.type === 'deploy' && e.kind !== 'mast-truck' && e.kind !== 'jammer') continue;
       if ((order.type === 'escort' || order.type === 'attack') && !world.entities.some((x) => x.id === order.target)) continue;
       e.order = order;
       if (s.doctrine) e.doctrine = s.doctrine;

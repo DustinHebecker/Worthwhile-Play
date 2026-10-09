@@ -1,5 +1,5 @@
 import { cellOf, dist2 } from './grid';
-import { computeNetwork, type Network } from './network';
+import { computeNetwork, isActiveEw, isEmitter, type Network } from './network';
 import type { Entity, Report, Ruleset, SimEvent, World } from './types';
 import { archetypeOf } from './world';
 
@@ -37,6 +37,27 @@ export function observedCells(world: World, ruleset: Ruleset, side: number, netw
   return observed;
 }
 
+/** Distance within which a working jammer gives itself away to any reporting enemy unit (§ 6). */
+export const EMITTER_EXPOSURE = 8;
+
+/**
+ * Enemy emitters `side` locates without seeing them (§ 6): working jammers within
+ * EMITTER_EXPOSURE of one of its reporting units, and every emitter (working node or jammer)
+ * within the radius of one of its reporting, working Tracers.
+ */
+export function revealedEmitters(world: World, ruleset: Ruleset, side: number, network?: Network): Set<number> {
+  const reporting = reportingUnits(world, ruleset, side, network);
+  const tracers = reporting.filter((e) => archetypeOf(ruleset, e.kind)?.ew?.role === 'tracer' && isActiveEw(ruleset, e));
+  const near = (list: readonly Entity[], e: Entity, r: (u: Entity) => number): boolean => list.some((u) => dist2(u.x, u.y, e.x, e.y) <= r(u) ** 2);
+  const out = new Set<number>();
+  for (const e of world.entities) {
+    if (e.side === side || !isEmitter(ruleset, e)) continue;
+    const jammer = archetypeOf(ruleset, e.kind)?.ew?.role === 'jammer';
+    if ((jammer && near(reporting, e, () => EMITTER_EXPOSURE)) || near(tracers, e, (u) => archetypeOf(ruleset, u.kind)?.ew?.radius ?? 0)) out.add(e.id);
+  }
+  return out;
+}
+
 const reportOf = (e: Entity, tick: number): Report => ({ id: e.id, side: e.side, kind: e.kind, x: e.x, y: e.y, hp: e.hp, tick, live: true });
 
 /**
@@ -49,11 +70,12 @@ function updatedReports(
   observed: Uint8Array,
   previous: readonly Report[],
   gone: readonly Entity[],
-  knownLoss: (e: Entity) => boolean = () => false
+  knownLoss: (e: Entity) => boolean = () => false,
+  revealed: ReadonlySet<number> = new Set()
 ): Report[] {
   const seen = (x: number, y: number): boolean => observed[cellOf(world.map, x, y)] === 1;
   const next = new Map<number, Report>();
-  for (const e of world.entities) if (seen(e.x, e.y)) next.set(e.id, reportOf(e, world.tick));
+  for (const e of world.entities) if (seen(e.x, e.y) || revealed.has(e.id)) next.set(e.id, reportOf(e, world.tick));
   const goneAt = new Map(gone.map((e) => [e.id, e]));
   for (const r of previous) {
     if (next.has(r.id)) continue;
@@ -74,7 +96,7 @@ function updatedReports(
 export function initialIntel(world: World, ruleset: Ruleset): Report[][] {
   return Array.from({ length: world.sides }, (_, side) => {
     const observed = observedCells(world, ruleset, side);
-    const reports = updatedReports(world, side, observed, [], []);
+    const reports = updatedReports(world, side, observed, [], [], undefined, revealedEmitters(world, ruleset, side));
     const known = new Set(reports.map((r) => r.id));
     for (const e of world.entities) {
       const structure = archetypeOf(ruleset, e.kind)?.speed === 0;
@@ -99,10 +121,11 @@ export function isSpotted(world: World, ruleset: Ruleset, side: number, id: numb
 export function updateIntel(world: World, ruleset: Ruleset, gone: readonly Entity[], events?: readonly SimEvent[], from = 0, reported?: SimEvent[][]): void {
   const intel: Report[][] = [];
   for (let side = 0; side < world.sides; side++) {
-    const observed = observedCells(world, ruleset, side);
+    const network = ruleset.commandNetwork ? computeNetwork(world, ruleset, side) : undefined;
+    const observed = observedCells(world, ruleset, side, network);
     // A side always learns of losing one of its own command sources: its network goes dark.
     const knownLoss = (e: Entity): boolean => e.side === side && archetypeOf(ruleset, e.kind)?.comms?.role === 'source';
-    const reports = updatedReports(world, side, observed, world.intel?.[side] ?? [], gone, knownLoss);
+    const reports = updatedReports(world, side, observed, world.intel?.[side] ?? [], gone, knownLoss, revealedEmitters(world, ruleset, side, network));
     intel.push(reports);
     const list = reported?.[side];
     if (!events || !list) continue;

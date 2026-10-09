@@ -2,9 +2,9 @@ import { cellOf, dirsFor, dist2, frameIndex, maxStepCost, passable, stepCost, te
 import { TupleHeap } from './heap';
 import { canReach, findPath, regions } from './path';
 import { DEFAULT_DOCTRINE, type Archetype, type Command, type Doctrine, type Entity, type OrderEndReason, type Ruleset, type SimEvent, type Status, type TargetPriority, type WeaponSpec, type World } from './types';
-import { computeNetwork, type Network } from './network';
+import { computeNetwork, isEmitter, type Network } from './network';
 import { initialIntel, updateIntel } from './vision';
-import { archetypeOf, findEntity, normalizeDoctrine, normalizeOrder, validateCommand } from './world';
+import { archetypeOf, findEntity, needsDeploy, normalizeDoctrine, normalizeOrder, validateCommand } from './world';
 
 export interface SimResult {
   world: World;
@@ -474,7 +474,7 @@ function goalOf(ctx: Intent, e: Entity, a: Archetype): number | undefined {
       break;
   }
   // Doctrine: seek cover when holding (never for nodes that work only where they were set up).
-  if (goal === undefined && e.order.type === 'hold' && doctrineOf(e).seekCover && !archetypeOf(rs, e.kind)?.comms?.needsDeploy) {
+  if (goal === undefined && e.order.type === 'hold' && doctrineOf(e).seekCover && !needsDeploy(archetypeOf(rs, e.kind))) {
     goal = adjacentCover(ctx, e, a);
   }
   return goal;
@@ -575,6 +575,7 @@ function matchesPriority(rs: Ruleset, target: Entity, priority: TargetPriority):
   if (priority === 'armor') return armor === 'heavy' || armor === 'light';
   if (priority === 'infantry') return armor === 'infantry';
   if (priority === 'structures') return armor === 'structure';
+  if (priority === 'emitters') return isEmitter(rs, target);
   return false;
 }
 

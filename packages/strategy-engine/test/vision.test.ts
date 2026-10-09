@@ -8,6 +8,7 @@ import {
   isValidWorld,
   observedCells,
   resolveTurn,
+  revealedEmitters,
   STRATEGY_RULESET,
   validateCommand,
   type Command,
@@ -197,7 +198,8 @@ describe('vision properties', () => {
           for (let side = 0; side < w.sides; side++) {
             const observed = observedCells(w, rs, side);
             const live = (w.intel?.[side] ?? []).filter((x) => x.live).map((x) => x.id);
-            const expected = w.entities.filter((e) => observed[cellOf(w.map, e.x, e.y)] === 1).map((e) => e.id);
+            const revealed = revealedEmitters(w, rs, side);
+            const expected = w.entities.filter((e) => observed[cellOf(w.map, e.x, e.y)] === 1 || revealed.has(e.id)).map((e) => e.id);
             expect(live).toEqual(expected);
             // Every own unit is known to its side.
             for (const e of w.entities.filter((x) => x.side === side)) expect(report(w, side, e.id)).toBeDefined();

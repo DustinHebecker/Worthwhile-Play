@@ -51,6 +51,21 @@ export interface CommsSpec {
   readonly needsDeploy: boolean;
 }
 
+/** Electronic warfare role of an archetype (docs/design/strategy.md § 6). */
+export interface EwSpec {
+  /**
+   * `jammer`: once set up, enemy network nodes within `radius` cannot relay and enemy units
+   * there cannot receive orders; it is visible to the enemy as an emitter within
+   * EMITTER_EXPOSURE. `tracer`: locates enemy emitters (active nodes and jammers) within
+   * `radius`, and friendly links within `burnThrough` of it ignore jamming.
+   */
+  readonly role: 'jammer' | 'tracer';
+  readonly radius: number;
+  readonly burnThrough: number;
+  /** Works only after a full turn of deploying in place (like a mast truck). */
+  readonly needsDeploy: boolean;
+}
+
 export interface Archetype {
   readonly id: string;
   readonly hp: number;
@@ -62,6 +77,7 @@ export interface Archetype {
   readonly cost: number;
   readonly weapon: WeaponSpec | null;
   readonly comms: CommsSpec | null;
+  readonly ew: EwSpec | null;
 }
 
 export interface TerrainSpec {
@@ -114,7 +130,7 @@ export type Order =
   /** Return to the nearest cell inside the own command coverage, then hold. */
   | { readonly type: 'regroup' };
 
-export const TARGET_PRIORITIES = ['weakest', 'nearest', 'armor', 'infantry', 'structures'] as const;
+export const TARGET_PRIORITIES = ['weakest', 'nearest', 'armor', 'infantry', 'structures', 'emitters'] as const;
 export type TargetPriority = (typeof TARGET_PRIORITIES)[number];
 export const RETREAT_THRESHOLDS = [0, 25, 50, 75] as const;
 export type RetreatThreshold = (typeof RETREAT_THRESHOLDS)[number];

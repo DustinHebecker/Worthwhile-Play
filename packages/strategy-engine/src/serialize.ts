@@ -1,6 +1,6 @@
 import { isArrayOf, isInt, isOneOf, isRecord, isUint32, seedFromString } from '@wp/game-core';
 import { DEADLOCK_TICKS, UNREACHABLE_TICKS } from './sim';
-import { archetypeOf, isValidDoctrine } from './world';
+import { archetypeOf, isValidDoctrine, needsDeploy } from './world';
 import { STATUS_KINDS, type Entity, type Order, type Projectile, type Report, type Ruleset, type Status, type World } from './types';
 
 const MAX_DIM = 128;
@@ -36,9 +36,8 @@ const isStatus = (v: unknown): v is Status => isRecord(v) && isOneOf(v.kind, STA
  */
 function validDeploy(e: Record<string, unknown>, ruleset: Ruleset | undefined): boolean {
   if (!ruleset) return isInt(e.deploy, 0, 1000);
-  const comms = archetypeOf(ruleset, e.kind as string)?.comms;
   const type = isRecord(e.order) ? e.order.type : undefined;
-  return !!comms?.needsDeploy && isInt(e.deploy, 0, ruleset.ticksPerTurn) && (type === 'deploy' || type === 'hold');
+  return needsDeploy(archetypeOf(ruleset, e.kind as string)) && isInt(e.deploy, 0, ruleset.ticksPerTurn) && (type === 'deploy' || type === 'hold');
 }
 
 /**
