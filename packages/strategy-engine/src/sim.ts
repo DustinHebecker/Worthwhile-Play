@@ -96,10 +96,11 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
   // With fog, weapons engage only targets the own side has spotted (reports from the end of the
   // previous tick) or that the shooter sees itself.
   const spotted = rs.fog ? w.intel?.map((list) => new Set(list.filter((r) => r.live).map((r) => r.id))) : undefined;
+  const spottedBy = (side: number, id: number): boolean => !rs.fog || (spotted?.[side]?.has(id) ?? false);
   const visible = (e: Entity, target: Entity): boolean => {
     if (!rs.fog) return true;
     const vision = arch(e).vision;
-    return (spotted?.[e.side]?.has(target.id) ?? false) || dist2(e.x, e.y, target.x, target.y) <= vision * vision;
+    return spottedBy(e.side, target.id) || dist2(e.x, e.y, target.x, target.y) <= vision * vision;
   };
 
   // 2 + 3. Intent (standing order + doctrine) and simultaneous movement
@@ -131,7 +132,7 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     if (!r) regionCache.set(layer, (r = regions(w.map, rs, layer, permanent[layer])));
     return r;
   };
-  const intent: Intent = { w, rs, occupied, permanent, coverageOf, end, visible, regionsOf };
+  const intent: Intent = { w, rs, occupied, permanent, coverageOf, end, visible, spottedBy, regionsOf };
   const goals = new Map<number, number>();
   for (const e of w.entities) {
     const a = arch(e);
@@ -299,7 +300,9 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
   }
   w.entities = alive;
   for (const e of alive) {
-    if (e.order.type === 'attack' && !findEntity(w, e.order.target)) endOrder(e, 'lost-target', t, events);
+    // With fog an attacker only learns of the loss through its side's reports or its own sight
+    // (handled when it next plans its move); without fog the target is gone at once.
+    if (!rs.fog && e.order.type === 'attack' && !findEntity(w, e.order.target)) endOrder(e, 'lost-target', t, events);
   }
   // 9 + 10 (economy, production, research) arrive with later increments; the network is
   // derived data, recomputed where needed.
@@ -332,6 +335,8 @@ interface Intent {
   readonly regionsOf: (layer: 'ground' | 'air') => Int32Array;
   /** Whether `e` may fire at `target` (fog: spotted by its side or seen by itself). */
   readonly visible: (e: Entity, target: Entity) => boolean;
+  /** Whether `side` has a live report on entity `id` (always true without fog). */
+  readonly spottedBy: (side: number, id: number) => boolean;
 }
 
 const doctrineOf = (e: Entity): Doctrine => e.doctrine ?? DEFAULT_DOCTRINE;
@@ -401,8 +406,11 @@ function nextStepTowards(ctx: Intent, e: Entity, a: Archetype, goal: number): nu
   const start = cellOf(w.map, e.x, e.y);
   const base = findPath(w.map, rs, start, goal, { layer: a.layer, side: e.side, blocked: ctx.permanent[a.layer] });
   if (!base || base.length === 0) return base?.[0];
-  // The usual case: the next cell is free, so there is nothing to walk around (one search only).
-  if (!ctx.occupied[a.layer].has(base[0] as number)) return base[0];
+  // The usual case: nobody stands on the route, so there is nothing to walk around (one search).
+  // (Checking only the next cell is not enough: a unit could then step aside, see a free route,
+  // step back, and so on for ever.)
+  const occupied = ctx.occupied[a.layer];
+  if (!base.some((c) => occupied.has(c))) return base[0];
   // A route around the units in the way, if it costs at most DETOUR more (bounded search).
   const maxCost = pathCost(ctx, e, a, base) + DETOUR;
   const around = findPath(w.map, rs, start, goal, { layer: a.layer, side: e.side, blocked: ctx.occupied[a.layer], maxCost });
@@ -426,13 +434,9 @@ function goalOf(ctx: Intent, e: Entity, a: Archetype): number | undefined {
       else goal = cellOf(w.map, order.x, order.y);
       break;
     case 'attack': {
-      const target = findEntity(w, order.target);
-      // In range and in sight: stay and fire. Out of sight (fog): close in until it can be seen.
-      if (!target || (inWeaponRange(w, rs, e, a, target) && ctx.visible(e, target))) break;
-      // Too close for a weapon with a minimum range: stay rather than walk into the target.
-      const minRange = a.weapon?.minRange ?? 0;
-      if (dist2(e.x, e.y, target.x, target.y) < minRange * minRange) break;
-      goal = cellOf(w.map, target.x, target.y);
+      const aim = attackAim(ctx, e, a, order.target);
+      if (aim === 'lost') ctx.end(e, 'lost-target');
+      else goal = aim;
       break;
     }
     case 'escort': {
@@ -463,7 +467,7 @@ function goalOf(ctx: Intent, e: Entity, a: Archetype): number | undefined {
         break;
       }
       // No free covered cell reachable right now: keep the order (counted as 'stuck' below).
-      goal = nearestCovered(ctx, e, a, coverage) ?? cellOf(w.map, e.x, e.y);
+      goal = nearestCell(ctx, e, a, (c) => coverage[c] === 1) ?? cellOf(w.map, e.x, e.y);
       break;
     }
     default:
@@ -476,14 +480,52 @@ function goalOf(ctx: Intent, e: Entity, a: Archetype): number | undefined {
   return goal;
 }
 
+/**
+ * Where an attacking unit should go: `undefined` to stay (it can fire from here, or waits in a
+ * firing position), a cell to head for, or 'lost' when the target is gone as far as the unit's
+ * side knows. With fog the unit only uses what its side reports or what it sees itself: a target
+ * out of sight is sought at its last reported cell, and the order ends once the unit sees that
+ * cell without the target. It heads for the nearest firing position: a cell at least the weapon's
+ * minimum range away and within its range (without a spotter also within its own sight).
+ */
+function attackAim(ctx: Intent, e: Entity, a: Archetype, id: number): number | 'lost' | undefined {
+  const { w, rs } = ctx;
+  const weapon = a.weapon;
+  const target = findEntity(w, id);
+  const seen = target !== undefined && ctx.visible(e, target);
+  let at: { x: number; y: number; kind: string } | undefined;
+  if (seen || !rs.fog) at = target;
+  else at = w.intel?.[e.side]?.find((r) => r.id === id);
+  if (!at || !weapon) return 'lost';
+  const armor = archetypeOf(rs, at.kind)?.armor;
+  if (!armor || weapon.vs[armor] <= 0) return 'lost';
+  if (seen && target && inWeaponRange(w, rs, e, a, target)) return undefined;
+  const vision = a.vision;
+  // Fog: the unit looks at the last reported cell itself and the target is not there.
+  if (rs.fog && !seen && dist2(e.x, e.y, at.x, at.y) <= vision * vision) return 'lost';
+  const spotter = seen && ctx.spottedBy(e.side, id);
+  const max = rs.fog && !spotter ? Math.min(weapon.range, vision) : weapon.range;
+  const min = weapon.minRange;
+  if (max < min) return 'lost'; // cannot see and hit it at the same time
+  const p = at;
+  const firing = (c: number): boolean => {
+    const d = dist2(c % w.map.w, Math.floor(c / w.map.w), p.x, p.y);
+    return d >= min * min && d <= max * max;
+  };
+  const start = cellOf(w.map, e.x, e.y);
+  if (firing(start)) return undefined;
+  // No firing position reachable now: keep the order (counted as 'stuck', ends as 'unreachable').
+  return nearestCell(ctx, e, a, firing) ?? start;
+}
+
 /** Escort / guard keeps within this many cells of its charge. */
 const ESCORT_RANGE = 2;
 
 /**
- * The covered, free cell the unit can reach most cheaply (Dijkstra over step costs through
- * free cells; ties in the side's frame), or `undefined` if none is reachable.
+ * The free cell other than its own that the unit can reach most cheaply among those `accept`
+ * allows (Dijkstra over step costs, past walls only; ties in the side's frame), or `undefined`.
  */
-function nearestCovered(ctx: Intent, e: Entity, a: Archetype, coverage: Uint8Array): number | undefined {
+function nearestCell(ctx: Intent, e: Entity, a: Archetype, accept: (cell: number) => boolean): number | undefined {
   const { w, rs, occupied } = ctx;
   const cells = w.map.w * w.map.h;
   const start = cellOf(w.map, e.x, e.y);
@@ -495,7 +537,7 @@ function nearestCovered(ctx: Intent, e: Entity, a: Archetype, coverage: Uint8Arr
     const c = item[2] as number;
     const d = item[0] as number;
     if (d !== dist[c]) continue;
-    if (c !== start && coverage[c] === 1 && !occupied[a.layer].has(c)) return c;
+    if (c !== start && accept(c) && !occupied[a.layer].has(c)) return c;
     const cx = c % w.map.w;
     const cy = Math.floor(c / w.map.w);
     for (const [dx, dy] of dirsFor(e.side)) {

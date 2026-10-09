@@ -110,9 +110,12 @@ export function validateCommand(world: World, ruleset: Ruleset, command: Command
     case 'attack': {
       if (!arch.weapon) return { ok: false, reason: 'no-weapon' };
       const target = findEntity(world, order.target);
+      // Fog (D7): only a target the side has spotted can be ordered. Anything else, also an id
+      // that no longer exists, is 'not-visible', so the answer reveals nothing the side does not know.
+      if (ruleset.fog && target?.side !== unit.side && !isSpotted(world, ruleset, unit.side, order.target)) return { ok: false, reason: 'not-visible' };
       if (!target || target.side === unit.side) return { ok: false, reason: 'bad-target' };
-      // Fog: only a target the side has spotted can be ordered (D7).
-      if (!isSpotted(world, ruleset, unit.side, target.id)) return { ok: false, reason: 'not-visible' };
+      const armor = archetypeOf(ruleset, target.kind)?.armor;
+      if (!armor || arch.weapon.vs[armor] <= 0) return { ok: false, reason: 'bad-target' };
       return { ok: true };
     }
     default:

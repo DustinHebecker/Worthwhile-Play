@@ -4,6 +4,7 @@ import {
   BASE_RULESET,
   cellOf,
   createWorld,
+  dist2,
   isValidWorld,
   observedCells,
   resolveTurn,
@@ -20,6 +21,7 @@ import { arbScenario, open } from './helpers';
 const rs = STRATEGY_RULESET;
 const worldOf = (map: Scenario['map'], entities: Scenario['entities']): World => createWorld({ map, sides: 2, entities, seed: 1 }, rs);
 const unit = (w: World, id: number) => w.entities.find((e) => e.id === id)!;
+const ended = (events: readonly SimEvent[], id: number) => events.flatMap((e) => (e.t === 'order-ended' && e.id === id ? [e.reason] : []));
 const report = (w: World, side: number, id: number): Report | undefined => w.intel?.[side]?.find((r) => r.id === id);
 
 /** Runs whole turns; the first turn carries `first`. Returns the world and side-filtered events. */
@@ -241,20 +243,109 @@ describe('vision properties', () => {
 });
 
 describe('attack orders under fog', () => {
-  it('a gun ordered to attack a target in range but out of sight closes in until it sees it, then fires', () => {
-    // Field Gun: range 7, vision 3. The rifles at distance 6 are in range but nobody sees them.
+  /** A Field Gun with a scout that spots the target, a relay mast keeping the scout in contact. */
+  const gunScene = (target: { x: number; y: number }) =>
+    worldOf(open(15, 9), [
+      { side: 0, kind: 'command-post', x: 0, y: 4 },
+      { side: 0, kind: 'howitzer', x: 2, y: 4 },
+      { side: 0, kind: 'relay-mast', x: 5, y: 4 },
+      { side: 0, kind: 'outrider', x: 8, y: 6 },
+      { side: 1, kind: 'rifles', x: target.x, y: target.y },
+      { side: 1, kind: 'command-post', x: 14, y: 0 }
+    ]);
+  const gunOrders = (to: { x: number; y: number }): Command[] => [
+    { side: 0, unit: 2, order: { type: 'attack', target: 5 } },
+    // The scout leaves at once: the gun has to find the target with its own eyes (vision 3).
+    { side: 0, unit: 4, order: { type: 'move', x: to.x, y: to.y } }
+  ];
+
+  for (const target of [{ x: 10, y: 7 }, { x: 10, y: 4 }, { x: 11, y: 8 }]) {
+    it(`a Field Gun whose spotter leaves finds a firing position and fires (target at ${target.x},${target.y})`, () => {
+      const w = gunScene(target);
+      expect(report(w, 0, 5)?.live).toBe(true);
+      const r = play(w, 5, gunOrders({ x: 1, y: 0 }));
+      const gun = unit(r.world, 2);
+      const launches = r.events.filter((e) => e.t === 'launch' && e.id === 2);
+      expect(launches.length).toBeGreaterThan(0);
+      expect(dist2(gun.x, gun.y, target.x, target.y)).toBeGreaterThanOrEqual(9);
+      // Never stuck without firing: either still attacking a live target, or it is destroyed.
+      expect(r.world.entities.some((e) => e.id === 5) ? gun.order : { type: 'attack', target: 5 }).toEqual({ type: 'attack', target: 5 });
+    });
+  }
+
+  it('an attacker seeks a target that left sight at its last reported cell, not at its true position', () => {
+    const w = worldOf(open(30, 9), [
+      { side: 0, kind: 'command-post', x: 0, y: 4 },
+      { side: 0, kind: 'rifles', x: 3, y: 4 },
+      { side: 1, kind: 'mast-truck', x: 7, y: 4 },
+      { side: 1, kind: 'command-post', x: 29, y: 8 }
+    ]);
+    expect(report(w, 0, 3)?.live).toBe(true);
+    unit(w, 3).order = { type: 'move', x: 27, y: 0 }; // the truck drives off, out of sight
+    const r = play(w, 4, [{ side: 0, unit: 2, order: { type: 'attack', target: 3 } }]);
+    const ghost = report(r.world, 0, 3);
+    expect(ghost === undefined || !ghost.live).toBe(true);
+    // The rifles ended the order once they looked at the last reported cell and found it empty …
+    expect(ended(r.events, 2)).toEqual(['lost-target']);
+    // … and never followed the truck's true route (north-east, towards x = 27).
+    const xs = r.events.flatMap((e) => (e.t === 'move' && e.id === 2 ? [e.x] : []));
+    expect(Math.max(...xs)).toBeLessThanOrEqual(10);
+  });
+
+  it('without any report an attack order ends at once (lost-target), it does not track the true position', () => {
     const w = worldOf(open(20, 1), [
       { side: 0, kind: 'command-post', x: 0, y: 0 },
       { side: 0, kind: 'howitzer', x: 3, y: 0 },
       { side: 1, kind: 'rifles', x: 9, y: 0 },
       { side: 1, kind: 'command-post', x: 19, y: 0 }
     ]);
-    unit(w, 2).order = { type: 'attack', target: 3 }; // written directly: given while it was spotted
+    unit(w, 2).order = { type: 'attack', target: 3 }; // a save could hold this; no report exists
     expect(report(w, 0, 3)).toBeUndefined();
-    const r = play(w, 3);
-    const launch = r.events.find((e) => e.t === 'launch' && e.id === 2);
-    expect(launch).toBeDefined();
-    const at = r.events.filter((e) => e.t === 'move' && e.id === 2 && e.tick < launch!.tick).at(-1);
-    expect(at && 'x' in at ? 9 - at.x : 0).toBeLessThanOrEqual(3);
+    const r = play(w, 1);
+    expect(ended(r.events, 2)).toEqual(['lost-target']);
+    expect(r.events.some((e) => e.t === 'move' && e.id === 2)).toBe(false);
+  });
+});
+
+describe('what a side learns (review of PR #8)', () => {
+  it('a side always learns of losing its own Command Post, even with nobody left to see it', () => {
+    const w = worldOf(open(10, 1), [
+      { side: 0, kind: 'command-post', x: 0, y: 0 },
+      { side: 1, kind: 'warden', x: 2, y: 0 },
+      { side: 1, kind: 'command-post', x: 9, y: 0 }
+    ]);
+    unit(w, 1).hp = 1;
+    const r = play(w, 1);
+    expect(r.world.entities.some((e) => e.id === 1)).toBe(false);
+    expect(r.reported[0]!.some((e) => e.t === 'destroyed' && e.id === 1)).toBe(true);
+    expect(report(r.world, 0, 1)).toBeUndefined();
+  });
+
+  it('shots from unseen shooters are not reported (their ids would reveal them); the hits are', () => {
+    const w = worldOf(open(20, 1), [
+      { side: 0, kind: 'command-post', x: 0, y: 0 },
+      { side: 0, kind: 'rifles', x: 3, y: 0 },
+      { side: 1, kind: 'howitzer', x: 9, y: 0 },
+      { side: 1, kind: 'outrider', x: 7, y: 0 }, // in side 1's coverage, spots the rifles
+      { side: 1, kind: 'command-post', x: 12, y: 0 }
+    ]);
+    expect(report(w, 0, 3)).toBeUndefined();
+    const r = play(w, 1);
+    expect(r.events.some((e) => e.t === 'launch' && e.id === 3)).toBe(true);
+    expect(r.reported[0]!.some((e) => (e.t === 'launch' || e.t === 'fire') && e.id === 3)).toBe(false);
+    expect(r.reported[0]!.some((e) => e.t === 'hit' && e.id === 2)).toBe(true);
+  });
+
+  it('an attack command on an id the side does not see is always not-visible (no hint whether it still exists)', () => {
+    const w = worldOf(open(20, 1), [
+      { side: 0, kind: 'command-post', x: 0, y: 0 },
+      { side: 0, kind: 'rifles', x: 3, y: 0 },
+      { side: 1, kind: 'rifles', x: 15, y: 0 },
+      { side: 1, kind: 'command-post', x: 19, y: 0 }
+    ]);
+    const v = (target: number) => validateCommand(w, rs, { side: 0, unit: 2, order: { type: 'attack', target } });
+    expect(v(3)).toEqual({ ok: false, reason: 'not-visible' });
+    expect(v(99)).toEqual({ ok: false, reason: 'not-visible' });
+    expect(v(1)).toEqual({ ok: false, reason: 'bad-target' }); // own unit
   });
 });

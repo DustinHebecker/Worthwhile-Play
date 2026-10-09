@@ -351,6 +351,8 @@ describe('generated battles (strategy ruleset): validity, explained order change
       fc.property(arbBattle, ({ world, plans }) => {
         let w = world;
         const streak = new Map<number, number>();
+        // Per unit and move order: how often it entered each cell (no endless back-and-forth).
+        const visits = new Map<number, { key: string; cells: Map<number, number> }>();
         for (const plan of [...plans, [], [], []]) {
           for (let tick = 0; tick < rs.ticksPerTurn; tick++) {
             const before = new Map(w.entities.map((e) => [e.id, orderKey(e.order)]));
@@ -359,6 +361,17 @@ describe('generated battles (strategy ruleset): validity, explained order change
             for (const e of r.world.entities) {
               const was = before.get(e.id);
               if (was !== undefined && was !== orderKey(e.order)) expect(explained.has(e.id), `order of ${e.id} changed silently`).toBe(true);
+            }
+            for (const ev of r.events) {
+              if (ev.t !== 'move') continue;
+              const mover = r.world.entities.find((e) => e.id === ev.id);
+              if (mover?.order.type !== 'move') continue;
+              const key = orderKey(mover.order);
+              let v = visits.get(ev.id);
+              if (!v || v.key !== key) visits.set(ev.id, (v = { key, cells: new Map() }));
+              const cell = ev.y * w.map.w + ev.x;
+              v.cells.set(cell, (v.cells.get(cell) ?? 0) + 1);
+              expect(v.cells.get(cell), `unit ${ev.id} keeps returning to ${ev.x},${ev.y}`).toBeLessThan(4);
             }
             const bumped = new Set(r.events.flatMap((e) => (e.t === 'bump' ? [e.id] : [])));
             for (const e of r.world.entities) streak.set(e.id, bumped.has(e.id) ? (streak.get(e.id) ?? 0) + 1 : 0);
@@ -468,5 +481,24 @@ describe('follow-ups from the review of PR #7 (round 3)', () => {
     ]);
     const { events } = play(w, 2, [{ side: 0, unit: 2, order: { type: 'move', x: 5, y: 0 } }]);
     expect(ended(events, 2)).toEqual(['occupied']);
+  });
+});
+
+describe('review of PR #8: no endless back-and-forth', () => {
+  it('a Warden passing two escorting squads arrives instead of oscillating (fuzz map)', () => {
+    const terrain = 'f.f=f.^f...==.f..f....^f.=^=...^f^....=.^......=f.^....f....^..=';
+    const w = worldOf({ w: 8, h: 8, terrain }, [
+      { side: 0, kind: 'rifles', x: 1, y: 5 },
+      { side: 0, kind: 'rifles', x: 2, y: 5 },
+      { side: 0, kind: 'warden', x: 7, y: 6 }
+    ]);
+    unit(w, 1).order = { type: 'escort', target: 2 };
+    unit(w, 2).order = { type: 'escort', target: 1 };
+    unit(w, 3).order = { type: 'move', x: 1, y: 6 };
+    const { events } = play(w, 8);
+    const visits = new Map<string, number>();
+    for (const e of events) if (e.t === 'move' && e.id === 3) visits.set(`${e.x},${e.y}`, (visits.get(`${e.x},${e.y}`) ?? 0) + 1);
+    expect(Math.max(...visits.values())).toBeLessThan(4);
+    expect(ended(events, 3)).toEqual(['arrived']);
   });
 });
