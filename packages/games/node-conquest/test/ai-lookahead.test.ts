@@ -181,6 +181,8 @@ describe('lookahead: combining changes', () => {
     // The plan is complete after two actions: no further combination is simulated.
     expect(plan(l, look({ horizon: 12, pairs: 2, greedy: true }, { actions: 2 }))).toMatchObject({ commands: [A, B], ticks: 72 });
     expect(plan(l, look({ pairs: 2, greedy: true }, { actions: 1 }))).toMatchObject({ commands: [Y], ticks: 125 });
+    // Greedy plans take no further independent improvements beyond the simulated combinations.
+    expect(plan(l, look({ pairs: 1, greedy: true }, { actions: 3 }))).toMatchObject({ commands: [Y, A], ticks: 150 });
     // 25 ticks: Y, then A, then B each improve the plan.
     expect(plan(l, look({ pairs: 2, greedy: true }, { actions: 3 }))).toMatchObject({ commands: [Y, A, B], ticks: 175 });
   });

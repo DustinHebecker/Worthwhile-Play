@@ -56,7 +56,11 @@ export interface Lookahead {
   horizon: number;
   /** Master: combinations of the best change with this many runners-up. */
   pairs: number;
-  /** Upper bound on simulated work per decision: Σ (units + nodes) over all simulated ticks. */
+  /**
+   * Simulated work allowed per decision: Σ (units + nodes) over all simulated ticks. A rollout starts only if
+   * the work so far plus the baseline rollout's cost fits, so a rollout with more units than the baseline may
+   * end slightly above the budget (it is a deterministic soft limit, not a hard cap).
+   */
   budget: number;
   /**
    * Master: inside the simulation every faction (itself included) keeps playing with the
