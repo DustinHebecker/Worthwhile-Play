@@ -1,6 +1,7 @@
 import type { GameContentLanguages, Translator, UserDeckSource } from '@wp/game-core';
 import {
   builtinItemIds,
+  capitalName,
   countryName,
   findWord,
   flagEmoji,
@@ -38,6 +39,8 @@ export function sessionLanguages(deckId: string, choice: GameContentLanguages | 
   const resolved = resolveContentLanguages(choice, uiLocale);
   if (deckId === 'first-words') return { languages: { learning: resolved.learning, translation: resolved.translation }, learningFallback: resolved.learningFallback };
   if (deckId === 'flags') return { languages: { countries: resolved.countries }, learningFallback: false };
+  // Capital names exist in the 16 "First words" languages only, so "Capitals" follows the learning language.
+  if (deckId === 'capitals') return { languages: { learning: resolved.learning }, learningFallback: resolved.learningFallback };
   return { languages: {}, learningFallback: false };
 }
 
@@ -88,6 +91,18 @@ export function faceResolver(state: Pick<ReviewState, 'deckId' | 'languages'>, t
         // A flag shown as the question must not carry the country name in its label.
         if (card.dir === 'forward') return { prompt: { side: { symbol: flag }, description: t('card.flag') }, answer: { side: { symbol: flag, text: name, lang: language }, description: t('card.flagOf', { name }) } };
         return { prompt: nameFace, answer: { side: { symbol: flag }, description: t('card.flagOf', { name: countryName(code, t.locale) }) } };
+      };
+    }
+    case 'capitals': {
+      const { learning } = state.languages;
+      if (!learning || !isVocabularyLanguage(learning)) return undefined;
+      return (card) => {
+        const code = card.item.toUpperCase();
+        const country = countryName(code, learning);
+        const capital = capitalName(code, learning) ?? '';
+        const front: Face = { side: { text: country, lang: learning }, description: country };
+        const back: Face = { side: { text: capital, lang: learning }, description: capital };
+        return orient(front, back, card);
       };
     }
     default: {

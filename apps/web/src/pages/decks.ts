@@ -34,7 +34,8 @@ const IMPORT_PREVIEW_ROWS = 20;
 const BUILTIN_TEXT: Readonly<Record<BuiltinDeckId, { title: UiKey; about: UiKey }>> = {
   symbols: { title: 'decks.symbols', about: 'decks.symbols.about' },
   'first-words': { title: 'decks.firstWords', about: 'decks.firstWords.about' },
-  flags: { title: 'decks.flags', about: 'decks.flags.about' }
+  flags: { title: 'decks.flags', about: 'decks.flags.about' },
+  capitals: { title: 'decks.capitals', about: 'decks.capitals.about' }
 };
 
 /** Memory variants offered for each built-in deck (own decks always play front ↔ back). */
@@ -44,7 +45,8 @@ const BUILTIN_PLAY: Readonly<Record<BuiltinDeckId, readonly { choice: string; la
     { choice: 'picture-word', label: 'decks.playPictureWord' },
     { choice: 'word-translation', label: 'decks.playWordTranslation' }
   ],
-  flags: [{ choice: 'flag-country', label: 'decks.playFlags' }]
+  flags: [{ choice: 'flag-country', label: 'decks.playFlags' }],
+  capitals: [{ choice: 'country-capital', label: 'decks.playCapitals' }]
 };
 
 const contentChoice = () => {
@@ -81,7 +83,7 @@ const languageName = (app: AppContext, tag: string) => {
   }
 };
 
-/** "Pictures ↔ Japanese" / "German ↔ English" / "Language not specified". */
+/** "Pictures ↔ Japanese" / "German ↔ English" / "German" (both sides) / "Language not specified". */
 function languagesLabel(app: AppContext, deck: Deck): string {
   const { t } = app;
   const { front, back, pictures } = deckLanguages(deck);
@@ -89,6 +91,8 @@ function languagesLabel(app: AppContext, deck: Deck): string {
   const frontText = front.length ? list(front) : pictures.front ? t('decks.pictures') : '';
   const backText = back.length ? list(back) : pictures.back ? t('decks.pictures') : '';
   if (!frontText && !backText) return t('decks.noLanguage');
+  // Both sides in one language (e.g. country ↔ capital): "German" rather than "German ↔ German".
+  if (frontText && frontText === backText && front.length > 0) return frontText;
   return [frontText || t('decks.noLanguage'), backText || t('decks.noLanguage')].join(' ↔ ');
 }
 

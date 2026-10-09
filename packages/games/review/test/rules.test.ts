@@ -224,6 +224,7 @@ describe('sessions', () => {
   it('record deck keys', () => {
     expect(recordDeckOf({ deckId: 'first-words', languages: { learning: 'ja', translation: 'en' } })).toBe('first-words:ja');
     expect(recordDeckOf({ deckId: 'flags', languages: { countries: 'de' } })).toBe('flags');
+    expect(recordDeckOf({ deckId: 'capitals', languages: { learning: 'ja' } })).toBe('capitals');
     expect(recordDeckOf({ deckId: DECK, languages: {} })).toBe(DECK);
   });
 });
@@ -311,6 +312,24 @@ describe('validation of untrusted saves', () => {
     expect(isValidReviewState(fw)).toBe(true);
     const flags = startSession(options({ deckId: 'flags', languages: { countries: 'pt-BR' }, itemIds: builtinItemIds('flags')!, mode: 'new' }));
     expect(isValidReviewState(flags)).toBe(true);
+    const capitals = startSession(options({ deckId: 'capitals', languages: { learning: 'ko' }, itemIds: builtinItemIds('capitals')!, mode: 'new', direction: 'mixed' }));
+    expect(isValidReviewState(capitals)).toBe(true);
+    expect(isValidReviewState(JSON.parse(JSON.stringify(capitals)))).toBe(true);
+  });
+
+  it('capitals: rejects other languages and cards the deck does not have', () => {
+    const capitals = startSession(options({ deckId: 'capitals', languages: { learning: 'de' }, itemIds: builtinItemIds('capitals')!, mode: 'practice' }));
+    expect(isValidReviewState(capitals)).toBe(true);
+    const broken: unknown[] = [
+      { ...capitals, languages: { learning: 'sv' } },
+      { ...capitals, languages: { countries: 'de' } },
+      { ...capitals, languages: { learning: 'de', translation: 'en' } },
+      { ...capitals, languages: {} },
+      { ...capitals, cards: [{ item: 'za', dir: 'forward' }, ...capitals.cards.slice(1)] },
+      { ...capitals, cards: [{ item: 'xx', dir: 'forward' }, ...capitals.cards.slice(1)] },
+      { ...capitals, deckId: 'capital' }
+    ];
+    for (const value of broken) expect(isValidReviewState(value), JSON.stringify(value)?.slice(0, 200)).toBe(false);
   });
 
   it('rejects inconsistent or malformed states', () => {

@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createTranslator } from '@wp/localization';
+import { CAPITALS } from '@wp/learning-content';
+import { createTranslator, SUPPORTED_LOCALES } from '@wp/localization';
 import { createMemoryDeckStore, createMemoryLearningStore, createMemoryStore, createSave, type DeckStore, type LearningStore } from '@wp/persistence';
 import type { AppContext } from '../src/app';
 import { UI_MESSAGES } from '../src/i18n';
@@ -102,6 +103,8 @@ describe('deck library pages', () => {
     expect(own?.textContent).toContain('Deutsch ↔ Englisch');
     expect(byId(main, 'builtin-decks')?.textContent).toContain('Erste Wörter');
     expect(byId(main, 'deck-card-flags')?.textContent).toContain('60 Karten');
+    expect(byId(main, 'deck-card-capitals')?.textContent).toContain('Hauptstädte');
+    expect(byId(main, 'deck-card-capitals')?.textContent).toContain(`${CAPITALS.length} Karten`);
     expect(byId(main, 'own-decks-empty')?.hidden).toBe(true);
   });
 
@@ -112,6 +115,32 @@ describe('deck library pages', () => {
     expect(byId(main, 'deck-preview')?.textContent).toContain('Deutschland');
     expect(byId(main, 'delete-deck')).toBeNull();
     expect(byId(main, 'play-flag-country')).not.toBeNull();
+  });
+
+  it('shows the capitals deck: country ↔ capital in one language, playable in Memory and reviewable', async () => {
+    const { context, main } = app('de');
+    renderDeck(main, context, 'capitals');
+    expect(main.querySelector('h1')?.textContent).toBe('Hauptstädte');
+    const rows = [...(byId(main, 'deck-preview')?.querySelectorAll('tbody tr') ?? [])].map((tr) => [...tr.querySelectorAll('td')].slice(1).map((td) => td.textContent?.trim()));
+    expect(rows).toContainEqual(['Polen', 'Warschau']);
+    expect(rows).toContainEqual(['Frankreich', 'Paris']);
+    expect(rows).toHaveLength(CAPITALS.length);
+    expect(byId(main, 'deck-count')?.textContent).toBe(`${CAPITALS.length} Karten`);
+    expect(main.textContent).toContain('Sprachen: Deutsch');
+    expect(main.textContent).not.toContain('Deutsch ↔ Deutsch');
+    expect(byId(main, 'review-deck')?.getAttribute('href')).toBe('/games/review?deck=capitals');
+    byId(main, 'play-country-capital')?.click();
+    await flush();
+    expect(JSON.parse(localStorage.getItem('wp:pref:memory:cards') ?? 'null')).toBe('country-capital');
+    expect(context.navigate).toHaveBeenLastCalledWith('/games/memory?new=1');
+  });
+
+  it('the capitals description states the real number of countries in every locale', () => {
+    for (const locale of SUPPORTED_LOCALES) {
+      const about = UI_MESSAGES[locale]?.['decks.capitals.about'] ?? '';
+      expect(about, locale).toContain(String(CAPITALS.length));
+      expect(UI_MESSAGES[locale]?.['decks.playCapitals'], locale).toBeTruthy();
+    }
   });
 
   it('plays an own deck: remembers the choice and asks before replacing an unfinished game', async () => {

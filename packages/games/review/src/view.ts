@@ -31,7 +31,7 @@ let instanceCounter = 0;
 export const DECK_PREFERENCE = 'deck';
 export const DIRECTION_PREFERENCE = 'direction';
 
-const DECK_LABEL: Readonly<Record<(typeof BUILTIN_REVIEW_DECKS)[number], string>> = { 'first-words': 'deck.firstWords', flags: 'deck.flags' };
+const DECK_LABEL: Readonly<Record<(typeof BUILTIN_REVIEW_DECKS)[number], string>> = { 'first-words': 'deck.firstWords', flags: 'deck.flags', capitals: 'deck.capitals' };
 const RATING_SYMBOL: Readonly<Record<LearningRating, string>> = { again: '↺', hard: '≈', good: '✓' };
 
 /** Renders one card side (symbol, image, text in any combination). */
@@ -186,6 +186,7 @@ export function createReview(context: GameContext, speech: Speech | undefined = 
   const languagesText = (s: ReviewState): string => {
     if (s.deckId === 'first-words') return t('languages.words', { learning: languageName(s.languages.learning), translation: languageName(s.languages.translation) });
     if (s.deckId === 'flags') return t('languages.countries', { language: languageName(s.languages.countries) });
+    if (s.deckId === 'capitals') return t('languages.capitals', { language: languageName(s.languages.learning) });
     return '';
   };
 
@@ -302,7 +303,7 @@ export function createReview(context: GameContext, speech: Speech | undefined = 
       notice = t('deck.fallback');
     }
     const { languages, learningFallback } = sessionLanguages(deck, context.contentLanguages, t.locale);
-    if (learningFallback) notice = t('languages.fallback', { language: languageName(context.contentLanguages?.learning) });
+    if (learningFallback) notice = t(deck === 'capitals' ? 'languages.capitalsFallback' : 'languages.fallback', { language: languageName(context.contentLanguages?.learning) });
     const key = recordDeckOf({ deckId: deck, languages });
     // A new session prefers the remembered direction; if nothing is due that way but something is in the other
     // direction, it reviews both (the deck library counts cards due in any direction).

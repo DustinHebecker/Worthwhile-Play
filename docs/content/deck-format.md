@@ -82,6 +82,7 @@ Constants: `IMPORT_LIMITS` in `packages/learning-content/src/import.ts`.
 | Symbols (`symbols`) | 24 emoji pictures, same picture on both sides | language-neutral; names translated in Memory |
 | First words (`first-words`) | 60 everyday concrete nouns with an emoji picture | all 16 UI languages; front = picture + word in the learning language, back = word in the translation language |
 | Flags & countries (`flags`) | 60 widely recognised, undisputed countries (ISO 3166-1 alpha-2) | names from the browser's CLDR data (`Intl.DisplayNames`) in the learning language (or the UI language); flags are regional-indicator emoji |
+| Capitals (`capitals`) | 55 of the flags countries with an unambiguous capital (exclusions with reasons in `CAPITAL_EXCLUSIONS`) | country names from CLDR, capital names written for the project in the 16 UI languages; learning language → UI language → English |
 
 *First words* conventions: singular, the most common everyday word; German, Dutch, Spanish, French, Portuguese and Italian include the definite article ("der Apfel", "de appel", "la manzana", "la pomme", "a maçã", "la mela") because the gender belongs to the word; other languages show the bare noun. Portuguese follows Brazilian usage (like the UI), Chinese is Simplified. Translations other than en/de are AI-assisted and await native-speaker review (like the UI).
 

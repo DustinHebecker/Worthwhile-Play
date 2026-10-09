@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import type { Deck } from '@wp/learning-content';
-import { SYMBOL_DECK } from '@wp/learning-content';
+import { capitalsDeck, SYMBOL_DECK } from '@wp/learning-content';
 import { lookupDeckItems } from '../src/decks';
 import { metadata } from '../src/metadata';
 import { SYMBOL_IDS } from '../src/messages';
@@ -85,8 +85,8 @@ describe('deck lookup', () => {
   });
 
   it('maps built-in variants to decks', () => {
-    expect(VARIANTS).toEqual(['symbols', 'picture-word', 'word-translation', 'flag-country', 'own']);
-    expect(VARIANT_DECK).toEqual({ symbols: 'symbols', 'picture-word': 'first-words', 'word-translation': 'first-words', 'flag-country': 'flags' });
+    expect(VARIANTS).toEqual(['symbols', 'picture-word', 'word-translation', 'flag-country', 'country-capital', 'own']);
+    expect(VARIANT_DECK).toEqual({ symbols: 'symbols', 'picture-word': 'first-words', 'word-translation': 'first-words', 'flag-country': 'flags', 'country-capital': 'capitals' });
   });
 });
 
@@ -408,6 +408,10 @@ describe('isValidMemoryState', () => {
     expect(isValidLanguages('flag-country', { back: 'sv' })).toBe(true);
     expect(isValidLanguages('flag-country', { back: 'not a tag' })).toBe(false);
     expect(isValidLanguages('flag-country', { back: `en-${'x'.repeat(40)}` })).toBe(false);
+    expect(isValidLanguages('country-capital', { back: 'ja' })).toBe(true);
+    expect(isValidLanguages('country-capital', { back: 'sv' })).toBe(false); // no capital names in Swedish
+    expect(isValidLanguages('country-capital', { front: 'ja', back: 'ja' })).toBe(false);
+    expect(isValidLanguages('country-capital', {})).toBe(false);
     expect(isValidLanguages('symbols', { other: 'x' })).toBe(false);
     expect(isValidLanguages('symbols', null)).toBe(false);
   });
@@ -421,6 +425,29 @@ describe('isValidMemoryState', () => {
     const flags = deal({ ...SYMBOL_DECK, id: 'flags', items: (lookupDeckItems('flags') ?? []).map((id) => ({ id, front: { text: id }, back: { text: id } })) }, 'large', 8, { variant: 'flag-country', languages: { back: 'de' } });
     expect(valid(flags)).toBe(true);
     expect(valid({ ...flags, deckId: 'first-words' })).toBe(false);
+  });
+
+  it('validates country ↔ capital games against the capitals deck', () => {
+    const capitals = deal(capitalsDeck('fr'), 'large', 8, { variant: 'country-capital', languages: { back: 'fr' } });
+    expect(capitals.deckId).toBe('capitals');
+    expect(valid(capitals)).toBe(true);
+    expect(valid(JSON.parse(JSON.stringify(capitals)))).toBe(true);
+    expect(lookupDeckItems('capitals')).toContain('jp');
+    // Another deck id, a language without capital names, or a card the deck does not have: rejected.
+    expect(valid({ ...capitals, deckId: 'flags' })).toBe(false);
+    expect(valid({ ...capitals, variant: 'flag-country' })).toBe(false);
+    expect(valid({ ...capitals, languages: { back: 'sv' } })).toBe(false);
+    expect(valid({ ...capitals, languages: {} })).toBe(false);
+    const swap = (from: string, to: string) =>
+      mutate(capitals, (s) => {
+        s.itemIds = (s.itemIds as string[]).map((id) => (id === from ? to : id));
+        s.cards = (s.cards as Card[]).map((c) => (c.item === from ? { ...c, item: to } : c));
+      });
+    const first = capitals.itemIds[0] as string;
+    expect(valid(swap(first, 'za'))).toBe(false); // in the flags deck, but without a capital
+    expect(valid(swap(first, 'xx'))).toBe(false);
+    const unused = (lookupDeckItems('capitals') ?? []).find((id) => !capitals.itemIds.includes(id)) as string;
+    expect(valid(swap(first, unused))).toBe(true);
   });
 
   it('validates own-deck games structurally (the deck itself may be gone)', () => {

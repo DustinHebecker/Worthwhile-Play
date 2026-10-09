@@ -31,7 +31,8 @@ const CHOICE_LABEL: Readonly<Record<(typeof BUILTIN_CHOICES)[number], string>> =
   symbols: 'cards.symbols',
   'picture-word': 'cards.pictureWord',
   'word-translation': 'cards.wordTranslation',
-  'flag-country': 'cards.flags'
+  'flag-country': 'cards.flags',
+  'country-capital': 'cards.capitals'
 };
 
 /**
@@ -139,6 +140,8 @@ export function createMemory(context: GameContext, speech: Speech | undefined = 
         return t('languages.pair', { learning: languageName(s.languages.front), translation: languageName(s.languages.back) });
       case 'flag-country':
         return t('languages.countries', { language: languageName(s.languages.back) });
+      case 'country-capital':
+        return t('languages.capitals', { language: languageName(s.languages.back) });
       default:
         return '';
     }
@@ -309,8 +312,10 @@ export function createMemory(context: GameContext, speech: Speech | undefined = 
     const { deck, languages } = builtinDeal(parsed.variant, context.contentLanguages, t.locale);
     let notice = '';
     const resolved = resolveContentLanguages(context.contentLanguages, t.locale);
-    if ((parsed.variant === 'picture-word' || parsed.variant === 'word-translation') && resolved.learningFallback) {
-      notice = t('languages.fallback', { language: languageName(context.contentLanguages?.learning) });
+    if (resolved.learningFallback) {
+      const language = languageName(context.contentLanguages?.learning);
+      if (parsed.variant === 'picture-word' || parsed.variant === 'word-translation') notice = t('languages.fallback', { language });
+      if (parsed.variant === 'country-capital') notice = t('languages.capitalsFallback', { language });
     }
     return { next: deal(deck, difficulty, seed, { variant: parsed.variant, languages }), notice };
   };
