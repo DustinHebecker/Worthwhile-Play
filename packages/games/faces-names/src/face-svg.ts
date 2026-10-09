@@ -32,13 +32,81 @@ export const HAIR: Readonly<Record<Face['hairColour'], string>> = {
   grey: '#b5b0a8'
 };
 
-const BROW: Readonly<Record<Face['hairColour'], string>> = { ...HAIR, blond: '#a8834a', grey: '#8a857e' };
+export const BROW: Readonly<Record<Face['hairColour'], string>> = { ...HAIR, blond: '#a8834a', grey: '#8a857e' };
 /** Headscarf / cap colours, indexed like HAIR_COLOURS. */
-const COVER = ['#3f5f8a', '#7a4a6e', '#2f6b5a', '#a0563a', '#b8953f', '#5b5b78'] as const;
+export const COVER = ['#3f5f8a', '#7a4a6e', '#2f6b5a', '#a0563a', '#b8953f', '#5b5b78'] as const;
 const COVER_KEYS: readonly Face['hairColour'][] = ['black', 'darkbrown', 'brown', 'auburn', 'blond', 'grey'];
 export const SHIRT = ['#4f7a9a', '#8a5a7a', '#5f8a5a', '#b07a3a', '#6a6a8a', '#9a4a4a'] as const;
 
 const INK = '#2a1d17';
+/** Pupils / small eyes and the open mouth (each gets a keyline where it is too close to the skin). */
+export const EYE_INK = '#1a120e';
+export const MOUTH_FILL = '#6e2f2f';
+const DARK_INK = '#1a120e';
+const LIGHT_INK = '#f6eadf';
+
+// --- contrast (WCAG 2.x relative luminance) ---
+
+/** WCAG non-text contrast: every part that tells faces apart must reach this against the skin. */
+export const MIN_CONTRAST = 3;
+
+const channel = (v: number): number => {
+  const c = v / 255;
+  return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+};
+
+/** Relative luminance of a `#rrggbb` colour. */
+export function luminance(hex: string): number {
+  const n = Number.parseInt(hex.slice(1), 16);
+  return 0.2126 * channel((n >> 16) & 255) + 0.7152 * channel((n >> 8) & 255) + 0.0722 * channel(n & 255);
+}
+
+export function contrastRatio(a: string, b: string): number {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x) as [number, number];
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+/** The first candidate with enough contrast against `background` (else the one with the most). */
+export function pickContrasting(background: string, candidates: readonly string[]): string {
+  const ok = candidates.find((c) => contrastRatio(c, background) >= MIN_CONTRAST);
+  return ok ?? [...candidates].sort((a, b) => contrastRatio(b, background) - contrastRatio(a, background))[0] ?? DARK_INK;
+}
+
+export interface SkinPalette {
+  fill: string;
+  shade: string;
+  /** Nose, smiling eyes, eye outlines, freckles and mole. */
+  line: string;
+  /** Closed-mouth smiles. */
+  lip: string;
+  /** Glasses frames. */
+  frame: string;
+  /** Earrings. */
+  metal: string;
+  /** Outline for hair-coloured parts (hair, brows, beard, coverings) that are too close to the skin. */
+  keyline: string;
+}
+
+/** Feature colours for a skin tone, each chosen for at least MIN_CONTRAST against the skin. */
+export function skinPalette(skin: number): SkinPalette {
+  const [fill, shade] = SKIN[skin] ?? (SKIN[0] as readonly [string, string]);
+  return {
+    fill,
+    shade,
+    line: pickContrasting(fill, ['#7a4a32', '#4a2a1c', DARK_INK, '#f1d9c6', LIGHT_INK]),
+    lip: pickContrasting(fill, ['#8a3b36', '#5a1f1c', '#f0b8a8', LIGHT_INK]),
+    frame: pickContrasting(fill, ['#2d2d2d', DARK_INK, '#e6e0d4']),
+    metal: pickContrasting(fill, ['#7a5a12', '#4a3608', '#f0d070']),
+    keyline: pickContrasting(fill, [DARK_INK, LIGHT_INK])
+  };
+}
+
+/** The outline a part of colour `colour` needs on this skin: none when the colour itself contrasts enough. */
+export const edgeFor = (colour: string, palette: SkinPalette): string | undefined =>
+  contrastRatio(colour, palette.fill) >= MIN_CONTRAST ? undefined : palette.keyline;
+
+/** Attribute marking the elements that sit on the skin (checked for contrast by the tests). */
+export const ON_SKIN = 'data-on-skin';
 const CX = 50;
 const CY = 50;
 
@@ -79,39 +147,59 @@ function cap(rx: number, ry: number, pad: number, side: number, depth: number, s
 
 export function faceSvg(face: Face): SvgNode[] {
   const { rx, ry } = HEAD[face.shape];
-  const [skin, shade] = SKIN[face.skin] ?? (SKIN[0] as readonly [string, string]);
+  const palette = skinPalette(face.skin);
+  const { fill: skin, shade } = palette;
   const hair = HAIR[face.hairColour];
   const cover = COVER[Math.max(0, COVER_KEYS.indexOf(face.hairColour))] as string;
   const nodes: SvgNode[] = [];
   const add = (tag: SvgNode['tag'], attrs: SvgNode['attrs']) => nodes.push({ tag, attrs });
+  /** A filled shape next to the skin, outlined when its colour is too close to the skin. */
+  const onSkin = (tag: SvgNode['tag'], attrs: SvgNode['attrs'], colour: string) => {
+    const edge = edgeFor(colour, palette);
+    add(tag, { ...attrs, fill: colour, ...(edge ? { stroke: edge, 'stroke-width': 1, 'stroke-linejoin': 'round' } : {}), [ON_SKIN]: 1 });
+  };
+  /** Overlapping circles (curls) of one colour: a keyline silhouette underneath when needed, so only the outer edge is outlined. */
+  const curls = (circles: readonly (readonly [number, number, number])[], colour: string) => {
+    const edge = edgeFor(colour, palette);
+    if (edge) for (const [cx, cy, r] of circles) add('circle', { cx, cy, r: r + 0.9, fill: edge, [ON_SKIN]: 1 });
+    for (const [cx, cy, r] of circles) add('circle', { cx, cy, r, fill: colour, ...(edge ? {} : { [ON_SKIN]: 1 }) });
+  };
+  /** A stroke next to the skin; a too-close colour gets a wider keyline underneath. */
+  const strokeOnSkin = (d: string, colour: string, width: number) => {
+    const edge = edgeFor(colour, palette);
+    if (edge) add('path', { d, fill: 'none', stroke: edge, 'stroke-width': width + 1.6, 'stroke-linecap': 'round', [ON_SKIN]: 1 });
+    add('path', { d, fill: 'none', stroke: colour, 'stroke-width': width, 'stroke-linecap': 'round', ...(edge ? {} : { [ON_SKIN]: 1 }) });
+  };
   const eyeY = CY - 1;
   const eyeDx = rx > 26 ? 10 : 9;
   const mouthY = CY + 18;
 
   // Hair behind the head.
   if (face.hair === 'long')
-    add('path', { d: p('M', CX - rx - 6, CY, 'A', rx + 6, ry + 5, 0, 0, 1, CX + rx + 6, CY, 'L', CX + rx + 9, CY + ry + 22, 'L', CX - rx - 9, CY + ry + 22, 'Z'), fill: hair });
+    onSkin('path', { d: p('M', CX - rx - 6, CY, 'A', rx + 6, ry + 5, 0, 0, 1, CX + rx + 6, CY, 'L', CX + rx + 9, CY + ry + 22, 'L', CX - rx - 9, CY + ry + 22, 'Z') }, hair);
   if (face.hair === 'wavy') {
     const b = CY + ry * 0.75;
-    add('path', {
+    onSkin('path', {
       d: p('M', CX - rx - 6, CY, 'A', rx + 6, ry + 5, 0, 0, 1, CX + rx + 6, CY, 'L', CX + rx + 8, b, 'q', -3, 6, -7, 1, 'q', -3, 5, -6, -1,
-        'L', CX - rx + 5, b - 1, 'q', -3, 6, -6, 1, 'q', -4, 5, -7, -1, 'Z'),
-      fill: hair
-    });
+        'L', CX - rx + 5, b - 1, 'q', -3, 6, -6, 1, 'q', -4, 5, -7, -1, 'Z')
+    }, hair);
   }
-  if (face.hair === 'curly')
+  if (face.hair === 'curly') {
+    const back: [number, number, number][] = [];
     for (let a = 150; a <= 390; a += 30) {
       const rad = (a * Math.PI) / 180;
-      add('circle', { cx: r1(CX + (rx + 2) * Math.cos(rad)), cy: r1(CY - 4 + (ry + 1) * Math.sin(rad)), r: 9, fill: hair });
+      back.push([r1(CX + (rx + 2) * Math.cos(rad)), r1(CY - 4 + (ry + 1) * Math.sin(rad)), 9]);
     }
+    curls(back, hair);
+  }
   if (face.hair === 'headscarf')
-    add('path', { d: p('M', CX - rx - 9, CY, 'A', rx + 9, ry + 8, 0, 0, 1, CX + rx + 9, CY, 'L', CX + rx + 13, CY + ry + 16, 'Q', CX, CY + ry + 26, CX - rx - 13, CY + ry + 16, 'Z'), fill: cover });
+    onSkin('path', { d: p('M', CX - rx - 9, CY, 'A', rx + 9, ry + 8, 0, 0, 1, CX + rx + 9, CY, 'L', CX + rx + 13, CY + ry + 16, 'Q', CX, CY + ry + 26, CX - rx - 13, CY + ry + 16, 'Z') }, cover);
 
   // Neck, shoulders (shirt), ears, head.
   add('rect', { x: CX - 9, y: CY + ry - 12, width: 18, height: 30, fill: shade });
   add('path', { d: p('M', 4, 110, 'C', 6, 97, 20, 92, 38, 90, 'Q', CX, 100, 62, 90, 'C', 80, 92, 94, 97, 96, 110, 'Z'), fill: SHIRT[face.shirt] ?? SHIRT[0] });
   if (face.hair === 'headscarf')
-    add('path', { d: p('M', CX - rx - 13, CY + ry + 16, 'Q', CX, CY + ry + 26, CX + rx + 13, CY + ry + 16, 'L', CX + rx + 4, 110, 'L', CX - rx - 4, 110, 'Z'), fill: cover });
+    onSkin('path', { d: p('M', CX - rx - 13, CY + ry + 16, 'Q', CX, CY + ry + 26, CX + rx + 13, CY + ry + 16, 'L', CX + rx + 4, 110, 'L', CX - rx - 4, 110, 'Z') }, cover);
   if (face.hair !== 'headscarf')
     for (const side of [-1, 1]) add('ellipse', { cx: CX + side * (rx - 1), cy: CY + 2, rx: 5, ry: 8, fill: skin, stroke: shade, 'stroke-width': 1 });
   const head = headPath(face.shape, rx, ry);
@@ -122,16 +210,15 @@ export function faceSvg(face: Face): SvgNode[] {
   // Marks.
   if (face.mark === 'freckles')
     for (const [dx, dy] of [[-17, 7], [-13, 9], [-15, 12], [-10, 6], [17, 7], [13, 9], [15, 12], [10, 6]] as const)
-      add('circle', { cx: CX + dx, cy: CY + dy, r: 0.95, fill: '#8a5236', opacity: 0.75 });
-  if (face.mark === 'mole') add('circle', { cx: CX + 13, cy: CY + 14, r: 1.3, fill: '#4a2c1c' });
+      add('circle', { cx: CX + dx, cy: CY + dy, r: 0.95, fill: palette.line, [ON_SKIN]: 1 });
+  if (face.mark === 'mole') add('circle', { cx: CX + 13, cy: CY + 14, r: 1.4, fill: palette.line, [ON_SKIN]: 1 });
 
   // Beard under the mouth.
   if (face.facialHair === 'beard')
-    add('path', {
+    onSkin('path', {
       d: p('M', CX - rx + 1, CY + 4, 'Q', CX - rx + 3, CY + ry + 2, CX, CY + ry + 4, 'Q', CX + rx - 3, CY + ry + 2, CX + rx - 1, CY + 4,
-        'Q', CX + rx - 8, CY + ry * 0.45, CX, CY + ry * 0.48, 'Q', CX - rx + 8, CY + ry * 0.45, CX - rx + 1, CY + 4, 'Z'),
-      fill: hair
-    });
+        'Q', CX + rx - 8, CY + ry * 0.45, CX, CY + ry * 0.48, 'Q', CX - rx + 8, CY + ry * 0.45, CX - rx + 1, CY + 4, 'Z')
+    }, hair);
 
   // Eyebrows.
   const browW = face.brows === 'thick' ? 3.4 : 1.9;
@@ -144,18 +231,18 @@ export function faceSvg(face: Face): SvgNode[] {
         : face.brows === 'arched'
           ? p('M', ex - 6, by + 1.5, 'Q', ex, by - 3.5, ex + 6, by + 1.5)
           : p('M', ex - 6, by + 1, 'Q', ex, by - 1.5, ex + 6, by + 0.5);
-    add('path', { d, fill: 'none', stroke: BROW[face.hairColour], 'stroke-width': browW, 'stroke-linecap': 'round' });
+    strokeOnSkin(d, BROW[face.hairColour], browW);
   }
 
   // Eyes.
   for (const side of [-1, 1]) {
     const ex = CX + side * eyeDx;
-    if (face.eyes === 'small') add('circle', { cx: ex, cy: eyeY, r: 2.3, fill: INK });
+    if (face.eyes === 'small') onSkin('circle', { cx: ex, cy: eyeY, r: 2.3 }, EYE_INK);
     else if (face.eyes === 'large') {
-      add('ellipse', { cx: ex, cy: eyeY, rx: 4.3, ry: 3.4, fill: '#ffffff', stroke: INK, 'stroke-width': 0.8 });
+      add('ellipse', { cx: ex, cy: eyeY, rx: 4.3, ry: 3.4, fill: '#ffffff', stroke: palette.line, 'stroke-width': 0.9, [ON_SKIN]: 1 });
       add('circle', { cx: ex, cy: eyeY, r: 2.4, fill: '#3b2a20' });
       add('circle', { cx: ex + 0.8, cy: eyeY - 0.8, r: 0.8, fill: '#ffffff' });
-    } else add('path', { d: p('M', ex - 4, eyeY + 1, 'Q', ex, eyeY - 3.5, ex + 4, eyeY + 1), fill: 'none', stroke: INK, 'stroke-width': 1.8, 'stroke-linecap': 'round' });
+    } else add('path', { d: p('M', ex - 4, eyeY + 1, 'Q', ex, eyeY - 3.5, ex + 4, eyeY + 1), fill: 'none', stroke: palette.line, 'stroke-width': 1.9, 'stroke-linecap': 'round', [ON_SKIN]: 1 });
   }
 
   // Nose.
@@ -165,58 +252,61 @@ export function faceSvg(face: Face): SvgNode[] {
       : face.nose === 'straight'
         ? p('M', CX - 0.5, CY + 1, 'L', CX - 2, CY + 10, 'Q', CX, CY + 12, CX + 3, CY + 10)
         : p('M', CX - 4.5, CY + 7.5, 'Q', CX - 5.5, CY + 12, CX, CY + 12, 'Q', CX + 5.5, CY + 12, CX + 4.5, CY + 7.5);
-  add('path', { d: nose, fill: 'none', stroke: shade, 'stroke-width': 1.6, 'stroke-linecap': 'round' });
+  add('path', { d: nose, fill: 'none', stroke: palette.line, 'stroke-width': 1.6, 'stroke-linecap': 'round', [ON_SKIN]: 1 });
 
   // Moustache (also part of the beard).
   if (face.facialHair !== 'none')
-    add('path', { d: p('M', CX - 8, mouthY - 3, 'Q', CX - 4, mouthY - 7.5, CX, mouthY - 5, 'Q', CX + 4, mouthY - 7.5, CX + 8, mouthY - 3, 'Q', CX, mouthY - 4.5, CX - 8, mouthY - 3, 'Z'), fill: hair });
+    onSkin('path', { d: p('M', CX - 8, mouthY - 3, 'Q', CX - 4, mouthY - 7.5, CX, mouthY - 5, 'Q', CX + 4, mouthY - 7.5, CX + 8, mouthY - 3, 'Q', CX, mouthY - 4.5, CX - 8, mouthY - 3, 'Z') }, hair);
 
   // Mouth: always friendly.
   if (face.mouth === 'broad') {
-    add('path', { d: p('M', CX - 8.5, mouthY - 1.5, 'Q', CX, mouthY + 9, CX + 8.5, mouthY - 1.5, 'Z'), fill: '#6e2f2f' });
+    onSkin('path', { d: p('M', CX - 8.5, mouthY - 1.5, 'Q', CX, mouthY + 9, CX + 8.5, mouthY - 1.5, 'Z') }, MOUTH_FILL);
     add('path', { d: p('M', CX - 7, mouthY - 0.8, 'Q', CX, mouthY + 2.4, CX + 7, mouthY - 0.8, 'Z'), fill: '#ffffff' });
   } else {
     const w = face.mouth === 'smile' ? 8 : 5.5;
     const depth = face.mouth === 'smile' ? 5 : 2.5;
-    add('path', { d: p('M', CX - w, mouthY - 1, 'Q', CX, mouthY - 1 + depth * 1.4, CX + w, mouthY - 1), fill: 'none', stroke: '#8a3b36', 'stroke-width': 1.9, 'stroke-linecap': 'round' });
+    add('path', { d: p('M', CX - w, mouthY - 1, 'Q', CX, mouthY - 1 + depth * 1.4, CX + w, mouthY - 1), fill: 'none', stroke: palette.lip, 'stroke-width': 1.9, 'stroke-linecap': 'round', [ON_SKIN]: 1 });
   }
 
   // Hair and coverings in front.
   switch (face.hair) {
     case 'buzz':
-      add('path', { d: cap(rx, ry, 1.2, 0, 1.02), fill: hair, opacity: 0.92 });
+      onSkin('path', { d: cap(rx, ry, 1.2, 0, 1.02) }, hair);
       break;
     case 'short':
-      add('path', { d: cap(rx, ry, 5, -2, 0.95, 0.15), fill: hair });
-      add('path', { d: p('M', CX - rx * 0.9, CY - ry * 0.55, 'Q', CX - rx * 0.3, CY - ry * 0.5, CX + rx * 0.2, CY - ry * 0.85, 'L', CX - rx * 0.6, CY - ry * 0.95, 'Z'), fill: hair });
+      onSkin('path', { d: cap(rx, ry, 5, -2, 0.95, 0.15) }, hair);
+      onSkin('path', { d: p('M', CX - rx * 0.9, CY - ry * 0.55, 'Q', CX - rx * 0.3, CY - ry * 0.5, CX + rx * 0.2, CY - ry * 0.85, 'L', CX - rx * 0.6, CY - ry * 0.95, 'Z') }, hair);
       break;
     case 'curly':
-      add('path', { d: cap(rx, ry, 2, 0, 0.95), fill: hair });
-      for (let x = -rx * 0.6; x <= rx * 0.61; x += rx * 0.3) add('circle', { cx: r1(CX + x), cy: r1(CY - ry * 0.68 - Math.abs(x) * 0.25), r: 5, fill: hair });
+      onSkin('path', { d: cap(rx, ry, 2, 0, 0.95) }, hair);
+      curls(
+        [-0.6, -0.3, 0, 0.3, 0.6].map((k): [number, number, number] => [r1(CX + rx * k), r1(CY - ry * 0.68 - Math.abs(rx * k) * 0.25), 5]),
+        hair
+      );
       break;
     case 'wavy':
-      add('path', { d: cap(rx, ry, 4, 4, 0.92, 0.18), fill: hair });
+      onSkin('path', { d: cap(rx, ry, 4, 4, 0.92, 0.18) }, hair);
       break;
     case 'long':
-      add('path', { d: cap(rx, ry, 4, 6, 0.95), fill: hair });
+      onSkin('path', { d: cap(rx, ry, 4, 6, 0.95) }, hair);
       add('path', { d: p('M', CX, CY - ry - 3, 'L', CX, CY - ry * 0.7), stroke: shade, 'stroke-width': 1, opacity: 0.6 });
       break;
     case 'bun':
-      add('circle', { cx: CX, cy: CY - ry - 7, r: 10, fill: hair });
-      add('path', { d: cap(rx, ry, 1.5, 0, 1.0), fill: hair });
+      onSkin('circle', { cx: CX, cy: CY - ry - 7, r: 10 }, hair);
+      onSkin('path', { d: cap(rx, ry, 1.5, 0, 1.0) }, hair);
       break;
     case 'headscarf': {
       const ring =
         p('M', CX - rx - 9, CY - 2, 'A', rx + 9, ry + 8, 0, 1, 1, CX + rx + 9, CY - 2, 'A', rx + 9, ry + 8, 0, 1, 1, CX - rx - 9, CY - 2, 'Z') +
         ' ' +
         p('M', CX - rx + 3, CY + 4, 'A', rx - 3, ry - 4, 0, 1, 0, CX + rx - 3, CY + 4, 'A', rx - 3, ry - 4, 0, 1, 0, CX - rx + 3, CY + 4, 'Z');
-      add('path', { d: ring, fill: cover, 'fill-rule': 'evenodd' });
+      onSkin('path', { d: ring, 'fill-rule': 'evenodd' }, cover);
       add('path', { d: p('M', CX - rx * 0.7, CY - ry * 0.75, 'Q', CX, CY - ry * 1.05, CX + rx * 0.7, CY - ry * 0.75), fill: 'none', stroke: '#ffffff', 'stroke-width': 1, opacity: 0.35 });
       break;
     }
     case 'cap':
-      add('path', { d: p('M', CX - rx - 2, CY - ry * 0.32, 'A', rx + 2, ry * 0.78, 0, 0, 1, CX + rx + 2, CY - ry * 0.32, 'Z'), fill: cover });
-      add('path', { d: p('M', CX - rx - 4, CY - ry * 0.34, 'Q', CX, CY - ry * 0.08, CX + rx + 4, CY - ry * 0.34, 'Q', CX, CY - ry * 0.24, CX - rx - 4, CY - ry * 0.34, 'Z'), fill: cover, stroke: INK, 'stroke-width': 0.6, 'stroke-opacity': 0.5 });
+      onSkin('path', { d: p('M', CX - rx - 2, CY - ry * 0.32, 'A', rx + 2, ry * 0.78, 0, 0, 1, CX + rx + 2, CY - ry * 0.32, 'Z') }, cover);
+      onSkin('path', { d: p('M', CX - rx - 4, CY - ry * 0.34, 'Q', CX, CY - ry * 0.08, CX + rx + 4, CY - ry * 0.34, 'Q', CX, CY - ry * 0.24, CX - rx - 4, CY - ry * 0.34, 'Z') }, cover);
       add('circle', { cx: CX, cy: CY - ry * 1.08, r: 2, fill: cover, stroke: INK, 'stroke-width': 0.5, 'stroke-opacity': 0.5 });
       break;
     default:
@@ -229,20 +319,20 @@ export function faceSvg(face: Face): SvgNode[] {
   if (face.earrings !== 'none')
     for (const side of [-1, 1]) {
       const x = CX + side * (rx - 0.5);
-      if (face.earrings === 'studs') add('circle', { cx: x, cy: CY + 9, r: 1.8, fill: '#e2c25a', stroke: '#8a6d1a', 'stroke-width': 0.6 });
-      else add('circle', { cx: x, cy: CY + 12.5, r: 3.6, fill: 'none', stroke: '#c9a43a', 'stroke-width': 1.4 });
+      if (face.earrings === 'studs') add('circle', { cx: x, cy: CY + 9, r: 1.9, fill: palette.metal, [ON_SKIN]: 1 });
+      else add('circle', { cx: x, cy: CY + 12.5, r: 3.6, fill: 'none', stroke: palette.metal, 'stroke-width': 1.5, [ON_SKIN]: 1 });
     }
 
   // Glasses.
   if (face.glasses !== 'none') {
     for (const side of [-1, 1]) {
       const ex = CX + side * eyeDx;
-      if (face.glasses === 'round') add('circle', { cx: ex, cy: eyeY, r: 6.5, fill: '#ffffff', 'fill-opacity': 0.12, stroke: '#2d2d2d', 'stroke-width': 1.6 });
-      else add('rect', { x: ex - 7.5, y: eyeY - 5, width: 15, height: 10, rx: 2.5, fill: '#ffffff', 'fill-opacity': 0.12, stroke: '#2d2d2d', 'stroke-width': 1.6 });
-      add('line', { x1: CX + side * (eyeDx + (face.glasses === 'round' ? 6.5 : 7.5)), y1: eyeY - 1, x2: CX + side * (rx - 1), y2: eyeY - 2, stroke: '#2d2d2d', 'stroke-width': 1.4 });
+      if (face.glasses === 'round') add('circle', { cx: ex, cy: eyeY, r: 6.5, fill: '#ffffff', 'fill-opacity': 0.12, stroke: palette.frame, 'stroke-width': 1.6, [ON_SKIN]: 1 });
+      else add('rect', { x: ex - 7.5, y: eyeY - 5, width: 15, height: 10, rx: 2.5, fill: '#ffffff', 'fill-opacity': 0.12, stroke: palette.frame, 'stroke-width': 1.6, [ON_SKIN]: 1 });
+      add('line', { x1: CX + side * (eyeDx + (face.glasses === 'round' ? 6.5 : 7.5)), y1: eyeY - 1, x2: CX + side * (rx - 1), y2: eyeY - 2, stroke: palette.frame, 'stroke-width': 1.4, [ON_SKIN]: 1 });
     }
     const inner = eyeDx - (face.glasses === 'round' ? 6.5 : 7.5);
-    add('path', { d: p('M', CX - inner, eyeY - 1, 'Q', CX, eyeY - 3, CX + inner, eyeY - 1), fill: 'none', stroke: '#2d2d2d', 'stroke-width': 1.4 });
+    add('path', { d: p('M', CX - inner, eyeY - 1, 'Q', CX, eyeY - 3, CX + inner, eyeY - 1), fill: 'none', stroke: palette.frame, 'stroke-width': 1.4, [ON_SKIN]: 1 });
   }
   return nodes;
 }
