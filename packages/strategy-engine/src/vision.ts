@@ -81,9 +81,10 @@ function updatedReports(
     if (next.has(r.id)) continue;
     const dead = goneAt.get(r.id);
     if (dead && (seen(dead.x, dead.y) || knownLoss(dead))) continue; // destruction observed
-    // An enemy ghost disappears once its cell is observed empty; own units are never forgotten
-    // while they may still exist.
-    if (!dead && r.side !== side && seen(r.x, r.y)) continue;
+    // An enemy ghost disappears once its cell is observed empty, also when it died elsewhere
+    // unseen (it is gone from the cell all the same); own units are never forgotten while they
+    // may still exist.
+    if (r.side !== side && seen(r.x, r.y)) continue;
     next.set(r.id, r.live ? { ...r, live: false } : r);
   }
   return [...next.values()].sort((a, b) => a.id - b.id);

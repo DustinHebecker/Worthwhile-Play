@@ -182,6 +182,11 @@ export interface Entity {
   bumps?: number;
   /** Consecutive ticks without any way to its goal (see UNREACHABLE_TICKS). */
   stuck?: number;
+  /**
+   * Progress towards the current movement goal (cell index): the lowest remaining route cost
+   * reached and the ticks since it last fell (see STALL_TICKS).
+   */
+  stall?: { goal: number; best: number; ticks: number };
 }
 
 export interface Projectile {

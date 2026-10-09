@@ -23,7 +23,14 @@ export function mirrorWorld(w: World): World {
   return {
     ...structuredClone(w),
     map: { ...w.map, terrain: [...w.map.terrain].reverse().join('') },
-    entities: w.entities.map((e) => ({ ...structuredClone(e), side: ms(e.side), x: mx(e.x), y: my(e.y), order: mirrorOrder(e.order) })),
+    entities: w.entities.map((e) => ({
+      ...structuredClone(e),
+      side: ms(e.side),
+      x: mx(e.x),
+      y: my(e.y),
+      order: mirrorOrder(e.order),
+      ...(e.stall && { stall: { ...e.stall, goal: w.map.w * w.map.h - 1 - e.stall.goal } })
+    })),
     projectiles: w.projectiles.map((p): Projectile => ({ ...p, side: ms(p.side), x: mx(p.x), y: my(p.y) })),
     ...(w.intel && {
       intel: w.intel.map((_, side) => (w.intel?.[ms(side)] ?? []).map((r) => ({ ...r, side: ms(r.side), x: mx(r.x), y: my(r.y) })))

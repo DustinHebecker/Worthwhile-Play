@@ -7,6 +7,7 @@ import {
   isValidWorld,
   resolveTurn,
   runTicks,
+  STALL_TICKS,
   STRATEGY_RULESET,
   UNREACHABLE_TICKS,
   type Command,
@@ -500,5 +501,56 @@ describe('review of PR #8: no endless back-and-forth', () => {
     for (const e of events) if (e.t === 'move' && e.id === 3) visits.set(`${e.x},${e.y}`, (visits.get(`${e.x},${e.y}`) ?? 0) + 1);
     expect(Math.max(...visits.values())).toBeLessThan(4);
     expect(ended(events, 3)).toEqual(['arrived']);
+  });
+});
+
+describe('review of PR #8 (round 2): no endless waiting or back-and-forth', () => {
+  it('a Warden that cannot get past a two-cell patrol ends its order (blocked) instead of pacing for ever', () => {
+    const w = worldOf(mapOf('ff=....=.f', '.^=...f^..', '.....=^=f^'), [
+      { side: 0, kind: 'warden', x: 2, y: 1 },
+      { side: 0, kind: 'mast-truck', x: 2, y: 0 },
+      { side: 0, kind: 'howitzer', x: 3, y: 1 }
+    ]);
+    unit(w, 1).order = { type: 'move', x: 0, y: 0 };
+    unit(w, 2).order = { type: 'patrol', x: 3, y: 0, rx: 2, ry: 0 };
+    unit(w, 3).order = { type: 'escort', target: 2 };
+    const { events } = play(w, 8);
+    const end = events.find((e) => e.t === 'order-ended' && e.id === 1);
+    expect(end).toBeDefined();
+    expect(end!.tick).toBeLessThanOrEqual(STALL_TICKS + 2 * rs.ticksPerTurn);
+    expect(['arrived', 'blocked']).toContain((end as { reason: string }).reason);
+  });
+
+  it('progress resets the count: a slow unit crossing a swamp is never ended', () => {
+    const w = worldOf(mapOf('.ssssssssssssssssss.'), [{ side: 0, kind: 'rifles', x: 0, y: 0 }]);
+    Object.assign(unit(w, 1), { order: { type: 'move', x: 19, y: 0 }, status: [{ kind: 'slowed', ticks: 200 }] });
+    // One swamp cell per 8 ticks (speed halved to 1, cost 8): 18 cells take 24 turns.
+    const { events } = play(w, 26);
+    expect(ended(events, 1)).toEqual(['arrived']);
+  });
+});
+
+describe('progress along the route (STALL_TICKS)', () => {
+  it('a long detour around a lake counts as progress (the route gets shorter), so the order is kept', () => {
+    // From (0,0) to (0,4): the lake forces a walk to x = 11 and back, moving away in straight line.
+    const w = worldOf(mapOf('............', '~~~~~~~~~~~.', '~~~~~~~~~~~.', '~~~~~~~~~~~.', '............'), [{ side: 0, kind: 'rifles', x: 0, y: 0 }]);
+    unit(w, 1).order = { type: 'move', x: 0, y: 4 };
+    const { events } = play(w, 12);
+    expect(ended(events, 1)).toEqual(['arrived']);
+  });
+
+  it('an order whose route has not got shorter for STALL_TICKS searches ends as blocked', () => {
+    const w = worldOf(open(10, 1), [
+      { side: 0, kind: 'command-post', x: 0, y: 0 },
+      { side: 0, kind: 'rifles', x: 1, y: 0 }
+    ]);
+    // Pretend the unit already got closer before (best route cost 4) and has not since.
+    Object.assign(unit(w, 2), { order: { type: 'move', x: 9, y: 0 }, mp: 4, stall: { goal: 9, best: 4, ticks: STALL_TICKS - 1 } });
+    const r = runTicks(w, rs, [], 1);
+    expect(ended(r.events, 2)).toEqual(['blocked']);
+    expect(isValidWorld(JSON.parse(JSON.stringify(r.world)), rs)).toBe(true);
+    // A new order starts afresh.
+    const again = runTicks(w, rs, [{ side: 0, unit: 2, order: { type: 'move', x: 9, y: 0 } }], 1);
+    expect(ended(again.events, 2)).toEqual([]);
   });
 });

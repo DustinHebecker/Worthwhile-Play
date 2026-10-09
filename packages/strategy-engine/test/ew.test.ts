@@ -179,3 +179,15 @@ describe('electronic warfare (I4, § 6)', () => {
     );
   });
 });
+
+describe('attack orders a weapon cannot carry out', () => {
+  it('are refused as bad-target (a Warden cannot engage air units)', () => {
+    const w = worldOf(open(8, 1), [
+      { side: 0, kind: 'command-post', x: 0, y: 0 },
+      { side: 0, kind: 'warden', x: 1, y: 0 },
+      { side: 1, kind: 'kite', x: 3, y: 0 },
+      { side: 1, kind: 'command-post', x: 7, y: 0 }
+    ]);
+    expect(validateCommand(w, rs, { side: 0, unit: 2, order: { type: 'attack', target: 3 } })).toEqual({ ok: false, reason: 'bad-target' });
+  });
+});

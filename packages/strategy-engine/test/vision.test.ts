@@ -9,6 +9,7 @@ import {
   observedCells,
   resolveTurn,
   revealedEmitters,
+  updateIntel,
   STRATEGY_RULESET,
   validateCommand,
   type Command,
@@ -349,5 +350,25 @@ describe('what a side learns (review of PR #8)', () => {
     expect(v(3)).toEqual({ ok: false, reason: 'not-visible' });
     expect(v(99)).toEqual({ ok: false, reason: 'not-visible' });
     expect(v(1)).toEqual({ ok: false, reason: 'bad-target' }); // own unit
+  });
+});
+
+describe('ghost of an enemy that died unseen (review of PR #8, N8)', () => {
+  it('disappears as soon as its last reported cell is observed, like one that drove away', () => {
+    const w = worldOf(open(20, 1), [
+      { side: 0, kind: 'command-post', x: 0, y: 0 },
+      { side: 1, kind: 'rifles', x: 15, y: 0 },
+      { side: 1, kind: 'command-post', x: 19, y: 0 }
+    ]);
+    // Side 0 remembers the rifles at (3, 0), a cell its post observes now.
+    w.intel![0] = [...w.intel![0]!, { id: 2, side: 1, kind: 'rifles', x: 3, y: 0, hp: 40, tick: 0, live: false }].sort((a, b) => a.id - b.id);
+    const died = structuredClone(w);
+    const dead = died.entities.find((e) => e.id === 2)!;
+    died.entities = died.entities.filter((e) => e.id !== 2);
+    updateIntel(died, rs, [dead]);
+    expect(report(died, 0, 2)).toBeUndefined();
+    const alive = structuredClone(w);
+    updateIntel(alive, rs, []);
+    expect(report(alive, 0, 2)).toBeUndefined();
   });
 });
