@@ -13,6 +13,7 @@ import { announce, clear, h } from '@wp/ui';
 import { APP_NAME } from './config';
 import { UI_MESSAGES, type UiKey } from './i18n/ui';
 import { renderAbout } from './pages/about';
+import type * as DeckPages from './pages/decks';
 import { renderGamePage } from './pages/game';
 import { renderHome } from './pages/home';
 import { renderLegal } from './pages/legal';
@@ -148,7 +149,7 @@ export function startApp(root: HTMLElement): void {
     if (open && !open.contains(event.target as Node)) open.open = false;
   });
 
-  const lazyPage = (m: HTMLElement, a: AppContext, show: (pages: typeof import('./pages/decks')) => void) => {
+  const lazyPage = (m: HTMLElement, a: AppContext, show: (pages: typeof DeckPages) => void) => {
     const target = route;
     import('./pages/decks')
       .then((pages) => {

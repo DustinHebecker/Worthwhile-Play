@@ -49,10 +49,10 @@ export function newDeckId(title: string, randomBytes: () => ArrayLike<number> = 
 }
 
 /** Distinct language tags of a deck's fronts and backs (in order of appearance). */
-export function deckLanguages(deck: Deck): { front: string[]; back: string[]; pictures: boolean } {
+export function deckLanguages(deck: Deck): { front: string[]; back: string[]; pictures: { front: boolean; back: boolean } } {
   const collect = (side: 'front' | 'back') => [...new Set(deck.items.map((i) => i[side].lang).filter((l): l is string => Boolean(l)))];
-  const pictures = deck.items.some((i) => (i.front.symbol || i.front.image) && !i.front.text);
-  return { front: collect('front'), back: collect('back'), pictures };
+  const pictures = (side: 'front' | 'back') => deck.items.some((i) => (i[side].symbol || i[side].image) && !i[side].text);
+  return { front: collect('front'), back: collect('back'), pictures: { front: pictures('front'), back: pictures('back') } };
 }
 
 type T = (key: UiKey, params?: Readonly<Record<string, string | number>>) => string;

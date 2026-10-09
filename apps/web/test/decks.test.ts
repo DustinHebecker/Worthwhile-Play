@@ -52,9 +52,9 @@ describe('stored decks', () => {
   });
 
   it('lists the languages of both sides and detects picture fronts', () => {
-    expect(deckLanguages(deck('user-a-1'))).toEqual({ front: ['de'], back: ['en', 'de'], pictures: true });
-    expect(deckLanguages({ ...deck('user-a-1'), items: deck('user-a-1').items.slice(0, 1) }).pictures).toBe(false);
-    expect(deckLanguages({ ...deck('user-a-1'), items: [{ id: 'x', front: { symbol: '🐈' }, back: { text: 'cat' } }] })).toEqual({ front: [], back: [], pictures: true });
+    expect(deckLanguages(deck('user-a-1'))).toEqual({ front: ['de'], back: ['en', 'de'], pictures: { front: true, back: false } });
+    expect(deckLanguages({ ...deck('user-a-1'), items: deck('user-a-1').items.slice(0, 1) }).pictures).toEqual({ front: false, back: false });
+    expect(deckLanguages({ ...deck('user-a-1'), items: [{ id: 'x', front: { symbol: '🐈' }, back: { text: 'cat' } }] })).toEqual({ front: [], back: [], pictures: { front: true, back: false } });
   });
 });
 

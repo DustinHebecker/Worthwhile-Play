@@ -107,7 +107,7 @@ export const renderSettings: Page = (main, app) => {
       ),
       h('div', { class: 'field checkbox' }, sessionToggle, h('label', { for: 'session-note' }, t('settings.sessionNote'))),
       h('div', { class: 'field' }, savesInfo, clearButton),
-      h('div', { class: 'field' }, decksInfo, clearDecksButton, h('a', { href: '/decks' }, t('nav.decks')))
+      h('div', { class: 'field' }, decksInfo, clearDecksButton)
     )
   );
 };

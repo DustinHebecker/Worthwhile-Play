@@ -65,8 +65,8 @@ function languagesLabel(app: AppContext, deck: Deck): string {
   const { t } = app;
   const { front, back, pictures } = deckLanguages(deck);
   const list = (tags: string[]) => tags.map((tag) => languageName(app, tag)).join(', ');
-  const frontText = front.length ? list(front) : pictures ? t('decks.pictures') : '';
-  const backText = back.length ? list(back) : '';
+  const frontText = front.length ? list(front) : pictures.front ? t('decks.pictures') : '';
+  const backText = back.length ? list(back) : pictures.back ? t('decks.pictures') : '';
   if (!frontText && !backText) return t('decks.noLanguage');
   return [frontText || t('decks.noLanguage'), backText || t('decks.noLanguage')].join(' ↔ ');
 }

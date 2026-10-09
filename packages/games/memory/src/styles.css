@@ -96,7 +96,7 @@
   overflow-wrap: anywhere;
   hyphens: auto;
 }
-.wp-memory__face--text .wp-memory__text { font-size: clamp(0.9rem, 4.4vw, 1.25rem); font-weight: 600; }
+.wp-memory__face--text .wp-memory__text { font-size: clamp(1rem, 5vw, 1.4rem); font-weight: 600; }
 .wp-memory__actions { min-height: var(--wp-touch); display: flex; justify-content: center; }
 
 .wp-memory--motion .wp-memory__face { animation: wp-memory-flip 160ms ease-out; }
