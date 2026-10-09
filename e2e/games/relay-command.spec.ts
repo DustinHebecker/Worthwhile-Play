@@ -22,14 +22,36 @@ async function start(page: Page) {
 test('relay-command: a planned but unlocked order survives a reload', async ({ page }) => {
   await expectResumeAfterReload(page, 'relay-command', async (p) => {
     await p.locator('[data-testid^="rc-unit-"]').nth(2).click();
-    await p.locator('[data-testid^="rc-attack-"]').first().click();
+    await p.getByTestId('rc-regroup').click();
     await expect(p.getByTestId('rc-status')).toHaveText('Planning: 1 new orders. Lock the turn when you are ready.');
   });
   const state = (await saved(page))!;
   expect(state.phase).toBe('plan');
   expect(state.draft).toHaveLength(1);
-  expect(state.draft[0]!.order.type).toBe('attack');
+  expect(state.draft[0]!.order.type).toBe('regroup');
   await expect(page.getByTestId('rc-status')).toHaveText('Planning: 1 new orders. Lock the turn when you are ready.');
+});
+
+test('relay-command: fog of war — only reported enemies are shown; a ghost takes a move order', async ({ page }) => {
+  await start(page);
+  // At the start only the enemy Command Post is known, from before the battle.
+  const enemies = page.getByTestId('rc-enemy').locator('li');
+  await expect(enemies).toHaveCount(1);
+  await expect(enemies.first()).toContainText('Position known from before the battle');
+  const state = (await saved(page))!;
+  const rifle = firstRifle(state);
+  const post = state.world.entities.find((e) => e.side === 1 && e.kind === 'command-post')!;
+  await page.getByTestId(`rc-unit-${rifle.id}`).click();
+  // Nothing is in sight, so nothing can be attacked yet.
+  await expect(page.locator('[data-testid^="rc-attack-"]')).toHaveCount(0);
+  const map = page.getByTestId('rc-map');
+  await map.scrollIntoViewIfNeeded();
+  const box = (await map.boundingBox())!;
+  const cell = box.width / 12;
+  await map.click({ position: { x: post.x * cell + cell / 2, y: post.y * cell + cell / 2 } });
+  await expect.poll(async () => (await saved(page))?.draft[0]?.order).toEqual({ type: 'move', x: post.x, y: post.y });
+  await page.getByTestId('rc-lock').click();
+  await expect(page.getByTestId('rc-turn')).toHaveText('Turn 2 of 12');
 });
 
 test('relay-command: canvas clicks select a unit and plan a move; locking resolves the turn', async ({ page }) => {

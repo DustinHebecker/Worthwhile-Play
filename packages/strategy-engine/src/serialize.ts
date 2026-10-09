@@ -1,7 +1,7 @@
 import { isArrayOf, isInt, isOneOf, isRecord, isUint32, seedFromString } from '@wp/game-core';
 import { DEADLOCK_TICKS, UNREACHABLE_TICKS } from './sim';
 import { archetypeOf, isValidDoctrine } from './world';
-import { STATUS_KINDS, type Entity, type Order, type Projectile, type Ruleset, type Status, type World } from './types';
+import { STATUS_KINDS, type Entity, type Order, type Projectile, type Report, type Ruleset, type Status, type World } from './types';
 
 const MAX_DIM = 128;
 const MAX_ID = 0x7fff_ffff;
@@ -88,6 +88,8 @@ export function isValidWorld(value: unknown, ruleset?: Ruleset): value is World 
   if (!isArrayOf(value.entities, isEntity) || !isArrayOf(value.projectiles, isProjectile)) return false;
   const entities = value.entities;
   for (let i = 1; i < entities.length; i++) if ((entities[i] as Entity).id <= (entities[i - 1] as Entity).id) return false;
+  if (ruleset && (ruleset.fog ? value.intel === undefined : value.intel !== undefined)) return false;
+  if (value.intel !== undefined && !validIntel(value.intel, entities, { w, h, sides, tick, nextId }, ruleset)) return false;
   if (ruleset) {
     const cells = new Set<string>();
     for (const e of entities) {
@@ -96,6 +98,44 @@ export function isValidWorld(value: unknown, ruleset?: Ruleset): value is World 
       if (cells.has(key)) return false;
       cells.add(key);
     }
+  }
+  return true;
+}
+
+/**
+ * Reports per side, ids ascending. A live report is a current observation, so it must match an
+ * existing entity exactly; every own unit must be known to its side (possibly as a ghost).
+ */
+function validIntel(
+  intel: unknown,
+  entities: readonly Entity[],
+  dims: { w: number; h: number; sides: number; tick: number; nextId: number },
+  ruleset: Ruleset | undefined
+): boolean {
+  if (!Array.isArray(intel) || intel.length !== dims.sides) return false;
+  const byId = new Map(entities.map((e) => [e.id, e]));
+  const isReport = (r: unknown): r is Report =>
+    isRecord(r) &&
+    isInt(r.id, 1, dims.nextId - 1) &&
+    isInt(r.side, 0, dims.sides - 1) &&
+    typeof r.kind === 'string' &&
+    (!ruleset || Object.hasOwn(ruleset.archetypes, r.kind)) &&
+    isInt(r.x, 0, dims.w - 1) &&
+    isInt(r.y, 0, dims.h - 1) &&
+    isInt(r.hp, 1, ruleset ? (archetypeOf(ruleset, r.kind as string)?.hp ?? 0) : Number.MAX_SAFE_INTEGER) &&
+    isInt(r.tick, 0, dims.tick) &&
+    typeof r.live === 'boolean';
+  for (let side = 0; side < dims.sides; side++) {
+    const reports: unknown = intel[side];
+    if (!isArrayOf(reports, isReport)) return false;
+    for (let i = 1; i < reports.length; i++) if ((reports[i] as Report).id <= (reports[i - 1] as Report).id) return false;
+    for (const r of reports) {
+      const e = byId.get(r.id);
+      if (e && (e.side !== r.side || e.kind !== r.kind)) return false;
+      if (r.live && (!e || r.tick !== dims.tick || e.x !== r.x || e.y !== r.y || e.hp !== r.hp)) return false;
+    }
+    const known = new Set(reports.map((r) => r.id));
+    if (entities.some((e) => e.side === side && !known.has(e.id))) return false;
   }
   return true;
 }

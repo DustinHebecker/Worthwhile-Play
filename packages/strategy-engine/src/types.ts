@@ -86,6 +86,12 @@ export interface Ruleset {
   readonly commandNetwork: boolean;
   /** Extra radius for static relays standing on terrain with a range bonus (hills). */
   readonly relayHillBonus: number;
+  /**
+   * Information model D7: each side knows only what its reporting units see (with a command
+   * network: units inside the own coverage). Out-of-sight entities are remembered at their last
+   * reported position (`World.intel`), and weapons only engage targets that are spotted.
+   */
+  readonly fog: boolean;
 }
 
 export interface GameMap {
@@ -173,6 +179,22 @@ export interface Projectile {
   ticks: number;
 }
 
+/**
+ * What one side last learned about an entity (own or enemy). `live` = observed in the latest
+ * vision update; otherwise this is a ghost at the last reported position.
+ */
+export interface Report {
+  id: number;
+  side: number;
+  kind: string;
+  x: number;
+  y: number;
+  hp: number;
+  /** Tick of the last observation. */
+  tick: number;
+  live: boolean;
+}
+
 export interface World {
   v: 1;
   ruleset: string;
@@ -186,6 +208,8 @@ export interface World {
   entities: Entity[];
   projectiles: Projectile[];
   nextId: number;
+  /** Fog rulesets only: per side, the reports it holds, sorted by ascending id. */
+  intel?: Report[][];
 }
 
 export interface Command {

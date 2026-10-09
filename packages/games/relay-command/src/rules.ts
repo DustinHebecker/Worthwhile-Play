@@ -4,9 +4,11 @@ import {
   computeNetwork,
   createWorld,
   DEFAULT_DOCTRINE,
+  initialIntel,
   isValidDoctrine,
   isValidOrder,
   isValidWorld,
+  observedCells,
   resolveTurn,
   STRATEGY_RULESET,
   validateCommand,
@@ -14,6 +16,7 @@ import {
   type Doctrine,
   type Entity,
   type Order,
+  type Report,
   type Ruleset,
   type SimEvent,
   type World
@@ -21,7 +24,7 @@ import {
 import { planAi } from './ai';
 import { FIELD_EXERCISE, SCENARIOS, type ScenarioSpec } from './scenarios';
 
-/** Strategy rules: orders travel through the command network (coverage and order slots). */
+/** Strategy rules: orders and reports travel through the command network (coverage, order slots, fog). */
 export const RULESET: Ruleset = STRATEGY_RULESET;
 export const PLAYER = 0;
 export const OPPONENT = 1;
@@ -42,14 +45,14 @@ export interface TurnLog {
  * survives closing the game; `log` holds every locked plan so any game can be replayed exactly.
  */
 export interface RcState {
-  v: 2;
+  v: 3;
   seed: number;
   scenario: string;
   turnLimit: number;
   world: World;
   phase: Phase;
   draft: Command[];
-  /** Events of the last resolved turn (shown as the turn summary). */
+  /** Events of the last resolved turn that reached the player (fog: only what was reported). */
   events: SimEvent[];
   log: TurnLog[];
   result: Outcome | null;
@@ -60,7 +63,7 @@ export const scenarioById = (id: string): ScenarioSpec | undefined => SCENARIOS.
 
 export function newGame(seed: number, spec: ScenarioSpec = FIELD_EXERCISE): RcState {
   return {
-    v: 2,
+    v: 3,
     seed: normalizeSeed(seed),
     scenario: spec.id,
     turnLimit: spec.turnLimit,
@@ -97,6 +100,7 @@ export type OrderRefusal =
   | 'impassable'
   | 'no-weapon'
   | 'bad-target'
+  | 'not-visible'
   | 'bad-order';
 
 /** Why an order cannot be planned, or `null` if it can (replacing a unit's planned order is free). */
@@ -146,7 +150,8 @@ export function cancelOrder(state: RcState, unit: number): RcState {
 export function lockTurn(state: RcState): RcState {
   if (state.phase !== 'plan') return state;
   const plans = [state.draft, planAi(state.world, RULESET, OPPONENT)];
-  const { world, events } = resolveTurn(state.world, RULESET, plans);
+  const { world, reported } = resolveTurn(state.world, RULESET, plans);
+  const events = reported?.[PLAYER] ?? [];
   const result = outcome(world, state.turnLimit);
   return {
     ...state,
@@ -163,6 +168,58 @@ export function concede(state: RcState): RcState {
   if (state.phase !== 'plan') return state;
   return { ...state, phase: 'finished', result: 'lost', conceded: true, draft: [] };
 }
+
+/**
+ * What the player knows (D7): own units in contact and spotted enemies as they are; everything
+ * else as a ghost at its last reported position. Enemy orders and doctrines are never revealed.
+ */
+export interface Picture {
+  /** The known world: same map and turn, entities as the player knows them. */
+  world: World;
+  /** Ids shown at their last reported position, with the tick of that report. */
+  ghosts: ReadonlyMap<number, number>;
+  /** Cells the player observes now (1 = observed). */
+  observed: Uint8Array;
+}
+
+const pictureCache = new WeakMap<World, Picture>();
+
+export function picture(world: World): Picture {
+  const cached = pictureCache.get(world);
+  if (cached) return cached;
+  const reports: readonly Report[] = world.intel?.[PLAYER] ?? [];
+  const ghosts = new Map<number, number>();
+  const entities: Entity[] = [];
+  for (const r of reports) {
+    const actual = world.entities.find((e) => e.id === r.id);
+    if (r.live && actual) {
+      // Enemies: position, health and visible effects only.
+      const { id, side, kind, x, y, hp, status } = actual;
+      entities.push(r.side === PLAYER ? actual : { id, side, kind, x, y, hp, mp: 0, cooldown: 0, order: { type: 'hold' }, status, beam: null });
+      continue;
+    }
+    ghosts.set(r.id, r.tick);
+    entities.push({ id: r.id, side: r.side, kind: r.kind, x: r.x, y: r.y, hp: r.hp, mp: 0, cooldown: 0, order: { type: 'hold' }, status: [], beam: null });
+  }
+  const result: Picture = { world: { ...world, entities }, ghosts, observed: observedCells(world, RULESET, PLAYER) };
+  pictureCache.set(world, result);
+  return result;
+}
+
+/**
+ * The last order the player sent to a unit (from the turn log), for units out of contact whose
+ * current order the player cannot confirm. `undefined` if none was ever sent.
+ */
+export function lastSentOrder(state: RcState, id: number): Order | undefined {
+  for (let i = state.log.length - 1; i >= 0; i--) {
+    const sent = state.log[i]?.plans[PLAYER]?.find((c) => c.unit === id);
+    if (sent) return sent.order;
+  }
+  return undefined;
+}
+
+/** Turn (1-based, 0 = start) in which a report was made. */
+export const reportTurn = (tick: number): number => Math.ceil(tick / RULESET.ticksPerTurn);
 
 export const commandPost = (world: World, side: number): Entity | undefined =>
   world.entities.find((e) => e.side === side && e.kind === COMMAND_POST);
@@ -217,11 +274,17 @@ function matchesScenario(world: World, spec: ScenarioSpec): boolean {
   const { map, entities } = spec.scenario;
   if (world.ruleset !== RULESET.id || world.map.w !== map.w || world.map.h !== map.h || world.map.terrain !== map.terrain) return false;
   const kinds = new Set(entities.map((e) => e.kind));
-  return world.entities.length <= entities.length && world.entities.every((e) => kinds.has(e.kind)) && world.projectiles.length <= entities.length * 4;
+  const n = entities.length;
+  // No production yet: every entity id comes from the scenario, so reports are bounded by it too.
+  // Projectiles also draw ids, at most one per unit and tick.
+  const maxId = n * (1 + spec.turnLimit * RULESET.ticksPerTurn) + 1;
+  if (world.nextId > maxId || world.entities.some((e) => e.id > n)) return false;
+  if (world.intel?.some((reports) => reports.length > n || reports.some((r) => r.id > n))) return false;
+  return world.entities.length <= n && world.entities.every((e) => kinds.has(e.kind)) && world.projectiles.length <= n * 4;
 }
 
 export function isValidState(value: unknown): value is RcState {
-  if (!isRecord(value) || value.v !== 2 || !isUint32(value.seed) || typeof value.scenario !== 'string') return false;
+  if (!isRecord(value) || value.v !== 3 || !isUint32(value.seed) || typeof value.scenario !== 'string') return false;
   const spec = scenarioById(value.scenario);
   if (!spec || !isInt(value.turnLimit, 1, 1000) || !isOneOf(value.phase, ['plan', 'finished'])) return false;
   if (!isValidWorld(value.world, RULESET) || value.world.sides !== 2 || !matchesScenario(value.world, spec)) return false;
@@ -236,16 +299,21 @@ export function isValidState(value: unknown): value is RcState {
 }
 
 /**
- * Version 1 saves (first playable version, no command network) continue under the current
- * rules: the world switches to the strategy ruleset. Their logs replay exactly only up to the
- * switch, which is acceptable for an unfinished practice game.
+ * Older saves continue under the current rules: version 1 (no command network) and version 2
+ * (no fog) switch to the current ruleset; with fog, each side starts from what it observes now
+ * plus its own units and all structures. Their logs replay exactly only up to the switch, which
+ * is acceptable for an unfinished practice game. The last turn summary is dropped (it was not
+ * filtered by what the player could know).
  */
 export function migrateState(state: unknown, fromVersion: number): RcState | undefined {
-  if (fromVersion !== 1 || !isRecord(state) || state.v !== 1 || !isRecord(state.world)) return undefined;
-  const migrated = { ...state, v: 2, world: { ...state.world, ruleset: RULESET.id } };
+  if ((fromVersion !== 1 && fromVersion !== 2) || !isRecord(state) || state.v !== fromVersion || !isRecord(state.world)) return undefined;
+  const world: Record<string, unknown> = { ...state.world, ruleset: RULESET.id };
+  delete world.intel;
+  if (!isValidWorld(world, { ...RULESET, fog: false })) return undefined;
+  const migrated = { ...state, v: 3, events: [], world: { ...world, intel: initialIntel(world as unknown as World, RULESET) } };
   if (!isValidState(migrated)) return undefined;
   // Version 1 had no order limit or coverage: keep only the planned orders that are still allowed.
   let replanned: RcState = { ...migrated, draft: [] };
-  for (const c of migrated.draft) replanned = planOrder(replanned, c.unit, c.order) ?? replanned;
+  for (const c of migrated.draft) replanned = planOrder(replanned, c.unit, c.order, c.doctrine) ?? replanned;
   return replanned;
 }
