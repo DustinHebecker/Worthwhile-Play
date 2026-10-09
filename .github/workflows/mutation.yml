@@ -1,12 +1,16 @@
 name: Mutation tests
 
 # Targeted mutation testing (Stryker) on high-value logic: RNG, persistence, deck model,
-# localization core, and each game's rules/AI. Not run on presentation code.
+# localization core, each game's rules/AI and the strategy engine. Not run on presentation code.
+# Pull requests mutate only the changed files that stryker.config.json covers (the full run no
+# longer fits the job timeout); the weekly schedule and manual runs mutate everything.
 on:
   pull_request:
     paths:
       - 'packages/**/src/**'
       - 'stryker.config.json'
+      - 'scripts/mutation-targets.mjs'
+      - '.github/workflows/mutation.yml'
   schedule:
     - cron: '17 3 * * 1'
   workflow_dispatch:
@@ -17,16 +21,32 @@ permissions:
 jobs:
   stryker:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 180
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm mutation
+      - name: Mutation tests (changed files on pull requests, everything otherwise)
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            pnpm mutation
+            exit 0
+          fi
+          targets=$(git diff --name-only --diff-filter=AMR "origin/$BASE_REF...HEAD" | node scripts/mutation-targets.mjs)
+          if [ -z "$targets" ]; then
+            echo "No changed files are covered by stryker.config.json; nothing to mutate."
+            exit 0
+          fi
+          echo "Mutating: $targets"
+          pnpm mutation --mutate "$targets"
       - uses: actions/upload-artifact@v7
         if: always()
         with:

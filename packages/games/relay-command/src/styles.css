@@ -1,0 +1,83 @@
+/* Relay Command — all rules scoped under .wp-relay-command. Uses shared --wp-* tokens.
+   Terrain colours are paired with pattern marks drawn on the canvas (never colour alone). */
+.wp-relay-command {
+  --rc-plain: #e7e3d4;
+  --rc-road: #cfc8b4;
+  --rc-forest: #b9d0ae;
+  --rc-hill: #ddcfa8;
+  --rc-urban: #d3d1cc;
+  --rc-swamp: #c4d3c2;
+  --rc-water: #a9c7dd;
+  --rc-ridge: #a9a49a;
+  --rc-mark: rgba(29, 29, 27, 0.45);
+  --rc-grid: rgba(29, 29, 27, 0.12);
+  display: grid;
+  gap: var(--wp-gap, 1rem);
+  width: 100%;
+  max-width: 72rem;
+  margin-inline: auto;
+}
+@media (prefers-color-scheme: dark) {
+  .wp-relay-command {
+    --rc-plain: #3a3a32;
+    --rc-road: #4a473d;
+    --rc-forest: #2f4a33;
+    --rc-hill: #514832;
+    --rc-urban: #44443f;
+    --rc-swamp: #344238;
+    --rc-water: #2a4356;
+    --rc-ridge: #5a5650;
+    --rc-mark: rgba(236, 235, 228, 0.45);
+    --rc-grid: rgba(236, 235, 228, 0.12);
+  }
+}
+.wp-relay-command .rc-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: center;
+}
+.wp-relay-command .rc-turn { margin: 0; font-weight: 600; }
+.wp-relay-command .rc-status { margin: 0; flex: 1 1 16rem; }
+.wp-relay-command .rc-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.wp-relay-command .rc-confirm { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.wp-relay-command .rc-main {
+  display: grid;
+  gap: var(--wp-gap, 1rem);
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 60rem) {
+  .wp-relay-command .rc-main { grid-template-columns: minmax(0, auto) minmax(16rem, 1fr); align-items: start; }
+}
+.wp-relay-command .rc-board { display: grid; gap: 0.5rem; min-width: 0; }
+.wp-relay-command .rc-mapwrap {
+  max-width: 100%;
+  overflow: auto;
+  border: 1px solid var(--wp-border);
+  border-radius: var(--wp-radius, 10px);
+}
+.wp-relay-command .rc-map { display: block; cursor: pointer; touch-action: manipulation; }
+.wp-relay-command .rc-map:focus-visible { outline: 3px solid var(--wp-focus); outline-offset: -3px; }
+.wp-relay-command .rc-cursor { margin: 0; color: var(--wp-muted); min-height: 3em; }
+.wp-relay-command .rc-side { display: grid; gap: 0.75rem; min-width: 0; }
+.wp-relay-command .rc-panel {
+  border: 1px solid var(--wp-border);
+  border-radius: var(--wp-radius, 10px);
+  padding: 0.75rem;
+  background: var(--wp-surface);
+}
+.wp-relay-command .rc-panel h3 { margin: 0 0 0.5rem; font-size: 1rem; }
+.wp-relay-command .rc-panel p { margin: 0 0 0.5rem; }
+.wp-relay-command .rc-units,
+.wp-relay-command .rc-summary { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
+.wp-relay-command .rc-units li { display: grid; gap: 0.3rem; }
+.wp-relay-command .rc-unit {
+  width: 100%;
+  min-height: var(--wp-touch, 44px);
+  text-align: start;
+  justify-content: flex-start;
+  white-space: normal;
+}
+.wp-relay-command .rc-unit[aria-pressed='true'] { border-color: var(--wp-focus); border-width: 3px; }
+.wp-relay-command button { min-height: var(--wp-touch, 44px); }
+.wp-relay-command .rc-help p { margin: 0.5rem 0; }
