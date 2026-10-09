@@ -16,3 +16,4 @@ blob-report/
 .env.*
 !.env.example
 .dev.vars
+vitest.mut-*.config.ts
