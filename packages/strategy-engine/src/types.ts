@@ -141,8 +141,8 @@ export type SimEvent =
   | { t: 'fire'; tick: number; id: number; target: number }
   | { t: 'launch'; tick: number; id: number; x: number; y: number }
   | { t: 'land'; tick: number; x: number; y: number }
-  | { t: 'hit'; tick: number; id: number; damage: number }
-  | { t: 'destroyed'; tick: number; id: number };
+  | { t: 'hit'; tick: number; id: number; side: number; damage: number }
+  | { t: 'destroyed'; tick: number; id: number; side: number; kind: string; x: number; y: number };
 
 export interface Scenario {
   readonly map: GameMap;

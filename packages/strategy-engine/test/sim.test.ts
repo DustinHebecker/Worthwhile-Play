@@ -76,6 +76,26 @@ describe('movement', () => {
     expect(events.filter((e) => e.t === 'bump')).toHaveLength(2);
   });
 
+  it('lets the lowest id of one side enter a cell its friends also want (no friendly deadlock)', () => {
+    const w = worldOf(open(3, 1), [{ side: 0, kind: 'outrider', x: 0, y: 0 }, { side: 0, kind: 'outrider', x: 2, y: 0 }]);
+    const { world, events } = runTicks(w, rs, [move(0, 1, 1, 0), move(0, 2, 1, 0)], 1);
+    expect(events.filter((e) => e.t === 'move').map((e) => e.id)).toEqual([1]);
+    expect(events.filter((e) => e.t === 'bump').map((e) => e.id)).toEqual([2]);
+    expect([unit(world, 1)?.x, unit(world, 1)?.y]).toEqual([1, 0]);
+    // Two friendly squads heading the same way both make progress over a turn.
+    const pair = worldOf(open(8, 2), [{ side: 0, kind: 'rifles', x: 0, y: 0 }, { side: 0, kind: 'rifles', x: 0, y: 1 }]);
+    const after = resolveTurn(pair, rs, [[move(0, 1, 7, 0), move(0, 2, 7, 0)]]).world;
+    expect(unit(after, 1)!.x).toBeGreaterThan(0);
+    expect(unit(after, 2)!.x).toBeGreaterThan(0);
+  });
+
+  it('routes around units that are not moving instead of queueing behind them', () => {
+    const w = worldOf(open(5, 3), [{ side: 0, kind: 'outrider', x: 0, y: 1 }, { side: 0, kind: 'warden', x: 2, y: 1 }]);
+    const { world, events } = runTicks(w, rs, [move(0, 1, 4, 1)], 6);
+    expect(events.filter((e) => e.t === 'bump')).toEqual([]);
+    expect([unit(world, 1)?.x, unit(world, 1)?.y]).toEqual([4, 1]);
+  });
+
   it('never swaps units or enters an occupied cell, but air and ground layers coexist', () => {
     const w = worldOf(open(2, 1), [{ side: 0, kind: 'outrider', x: 0, y: 0 }, { side: 0, kind: 'outrider', x: 1, y: 0 }]);
     const { world } = runTicks(w, rs, [move(0, 1, 1, 0), move(0, 2, 0, 0)], 3);

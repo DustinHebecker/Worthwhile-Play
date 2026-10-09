@@ -73,23 +73,28 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
   // 2 + 3. Intent and simultaneous movement
   const cells = w.map.w * w.map.h;
   const occupied = { ground: new Set<number>(), air: new Set<number>() };
-  const statics = new Set<number>();
+  // Cells of units that will not move this tick (structures, holding or arrived units):
+  // paths go around them instead of queueing behind them forever.
+  const settled = { ground: new Set<number>(), air: new Set<number>() };
+  const goals = new Map<number, number>();
   for (const e of w.entities) {
     const a = arch(e);
     const c = cellOf(w.map, e.x, e.y);
     occupied[a.layer].add(c);
-    if (a.speed === 0 && a.layer === 'ground') statics.add(c);
+    const goal = a.speed === 0 || has(e, 'disabled') ? undefined : goalOf(w, rs, e, a);
+    if (goal === undefined) settled[a.layer].add(c);
+    else goals.set(e.id, goal);
   }
   const claims = new Map<number, { e: Entity; cost: number }[]>();
   for (const e of w.entities) {
     const a = arch(e);
     if (a.speed === 0) continue;
-    const goal = goalOf(w, rs, e, a);
-    if (goal === undefined || has(e, 'disabled')) {
+    const goal = goals.get(e.id);
+    if (goal === undefined) {
       e.mp = 0;
       continue;
     }
-    const path = findPath(w.map, rs, cellOf(w.map, e.x, e.y), goal, { layer: a.layer, side: e.side, blocked: statics });
+    const path = findPath(w.map, rs, cellOf(w.map, e.x, e.y), goal, { layer: a.layer, side: e.side, blocked: settled[a.layer] });
     const next = path?.[0];
     if (next === undefined) {
       e.mp = 0;
@@ -108,16 +113,18 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
   for (const [key, list] of claims) {
     const air = key >= cells;
     const cell = air ? key - cells : key;
-    if (list.length === 1 && !(air ? occupied.air : occupied.ground).has(cell)) {
-      const { e, cost } = list[0] as { e: Entity; cost: number };
+    const winner = (air ? occupied.air : occupied.ground).has(cell) ? undefined : contestWinner(list);
+    for (const claim of list) {
+      const e = claim.e;
+      if (claim !== winner) {
+        events.push({ t: 'bump', tick: t, id: e.id });
+        continue;
+      }
       e.x = cell % w.map.w;
       e.y = Math.floor(cell / w.map.w);
-      e.mp -= cost;
+      e.mp -= claim.cost;
       moved.add(e.id);
       events.push({ t: 'move', tick: t, id: e.id, x: e.x, y: e.y });
-    } else {
-      // Symmetric conflict rule (D15): nobody enters a contested or occupied cell.
-      for (const { e } of list) events.push({ t: 'bump', tick: t, id: e.id });
     }
   }
 
@@ -173,7 +180,7 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     if (!list) continue;
     const damage = list.reduce((sum, h) => sum + h.damage, 0);
     e.hp -= damage;
-    events.push({ t: 'hit', tick: t, id: e.id, damage });
+    events.push({ t: 'hit', tick: t, id: e.id, side: e.side, damage });
     const effects = list.flatMap((h) => (h.effect ? [{ kind: h.effect.kind, ticks: h.effect.ticks }] : []));
     if (effects.length > 0) pendingEffects.set(e.id, effects);
   }
@@ -194,13 +201,24 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
   const alive: Entity[] = [];
   for (const e of w.entities) {
     if (e.hp > 0) alive.push(e);
-    else events.push({ t: 'destroyed', tick: t, id: e.id });
+    else events.push({ t: 'destroyed', tick: t, id: e.id, side: e.side, kind: e.kind, x: e.x, y: e.y });
   }
   w.entities = alive;
   for (const e of alive) {
     if (e.order.type === 'attack' && !findEntity(w, e.order.target)) e.order = { type: 'hold' };
   }
   // 9–12 (economy, production, research, network, vision, victory) arrive with later increments.
+}
+
+/**
+ * Conflict rule for a free cell claimed in the same tick (D15, refined): claimants from
+ * different sides all bump (symmetric between sides); among claimants of one side the lowest id
+ * enters, so friendly units queue instead of blocking each other forever.
+ */
+function contestWinner<T extends { e: Entity }>(list: readonly T[]): T | undefined {
+  const first = list[0];
+  if (!first || list.some((c) => c.e.side !== first.e.side)) return undefined;
+  return list.reduce((best, c) => (c.e.id < best.e.id ? c : best), first);
 }
 
 /** Movement goal cell for the unit's standing order, or `undefined` to stay. */
