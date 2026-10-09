@@ -27,6 +27,7 @@ import { metadata as spatialMemory } from '@wp/game-spatial-memory/metadata';
 import { metadata as systemsPuzzle } from '@wp/game-systems-puzzle/metadata';
 import { metadata as nodeConquest } from '@wp/game-node-conquest/metadata';
 import { metadata as slitherlink } from '@wp/game-slitherlink/metadata';
+import { metadata as stackDuel } from '@wp/game-stack-duel/metadata';
 import { metadata as ticTacToe } from '@wp/game-tic-tac-toe/metadata';
 import { metadata as wordGuess } from '@wp/game-word-guess/metadata';
 
@@ -73,7 +74,8 @@ export const GAMES: readonly GameEntry[] = [
   entry(nodeConquest, () => import('@wp/game-node-conquest')),
   entry(slitherlink, () => import('@wp/game-slitherlink')),
   entry(chess, () => import('@wp/game-chess')),
-  entry(wordGuess, () => import('@wp/game-word-guess'))
+  entry(wordGuess, () => import('@wp/game-word-guess')),
+  entry(stackDuel, () => import('@wp/game-stack-duel'))
 ];
 
 export const findGame = (id: string): GameEntry | undefined => GAMES.find((g) => g.metadata.id === id);
