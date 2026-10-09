@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { createRng } from '@wp/game-core';
 import { metadata } from '../src/metadata';
-import { BOARD, hops, isFairMap, isqrt, MAX_LANE_LENGTH, MIN_NODE_DISTANCE, rotate, type MapNode } from '../src/maps';
+import { BOARD, FACTION_COUNTS, getMap as getLayoutMap, hops, isFairMap, isqrt, MAX_LANE_LENGTH, MIN_NODE_DISTANCE, rotate, type MapNode } from '../src/maps';
 import {
   accountedUnits,
   cloneState,
@@ -12,7 +12,15 @@ import {
   isValidState,
   mapForSeed,
   mapOf,
-  MAPS_PER_DIFFICULTY,
+  MAPS_PER_SET,
+  INTRO_MAP,
+  HISTORY_CAP,
+  HISTORY_EVERY,
+  countsOf,
+  migrateState,
+  V1_MAPPING,
+  OPPONENT_COUNTS,
+  toOpponents,
   MAX_HOPS,
   MAX_LEVEL,
   MAX_UNITS,
@@ -40,7 +48,25 @@ import {
   type NodeType,
   type Unit
 } from '../src/rules';
-import { decide, frontierDistance, incomingThreat, isDecisionTick, opponents, PROFILES, simulate, type AiProfile } from '../src/ai';
+import {
+  controllerFor,
+  decide,
+  effectiveLevel,
+  evaluate,
+  frontierDistance,
+  incomingThreat,
+  isDecisionTick,
+  lastPlan,
+  material,
+  opponents,
+  options,
+  PASSIVE,
+  profileFor,
+  PROFILES,
+  rivalWeights,
+  simulate,
+  type AiProfile
+} from '../src/ai';
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
@@ -69,24 +95,29 @@ function makeMap(specs: NodeSpec[], pairs: [number, number][], factions = 2): Ga
     adjacent[a]!.push(b);
     adjacent[b]!.push(a);
   });
-  return { difficulty: 'easy', index: 0, factions, nodes, lanes, laneOf, adjacent };
+  return { index: 0, layout: 2, factions, nodes, lanes, laneOf, adjacent, center: -1 };
 }
 
 function stateFor(map: GameMap): NcState {
   return {
     seed: 1,
-    difficulty: 'easy',
+    difficulty: 'beginner',
+    opponents: 1,
     map: 0,
+    layout: 2,
     tick: 0,
     speed: 1,
     owner: map.nodes.map((n) => n.owner),
     level: map.nodes.map((n) => n.level),
     out: map.nodes.map(() => []),
     charge: map.nodes.map(() => 0),
+    half: map.nodes.map(() => 0),
     units: [],
     rng: 7,
     result: 'playing',
-    stats: { produced: 0, reinforced: 0, passed: 0, absorbed: 0, hits: 0, fought: 0, shot: 0, captured: 0 }
+    stats: { produced: 0, reinforced: 0, passed: 0, absorbed: 0, hits: 0, fought: 0, shot: 0, captured: 0 },
+    hist: { start: 0, every: HISTORY_EVERY, rows: [] },
+    centre: []
   };
 }
 
@@ -113,7 +144,20 @@ const row = (middle: Partial<NodeSpec> = {}) =>
     ]
   );
 
-const quiet: AiProfile = { period: 1, actions: 3, hesitation: 0, attackLevel: 10, counter: false, defend: false };
+const quiet: AiProfile = {
+  period: 1,
+  actions: 3,
+  hesitation: 0,
+  attackLevel: 10,
+  counter: false,
+  defend: false,
+  frontierOnly: false,
+  impulsive: 0,
+  aware: false,
+  lookahead: null,
+  weakest: false,
+  passive: false
+};
 
 /* ---------- Constants and thresholds ---------- */
 
@@ -134,11 +178,17 @@ describe('levels and limits', () => {
     expect(PRODUCTION_INTERVAL.shipyard).toBeGreaterThan(PRODUCTION_INTERVAL.standard);
   });
 
-  it('keeps metadata difficulties in sync and maps unknown difficulties to easy', () => {
+  it('keeps metadata difficulties in sync and maps unknown difficulties to beginner', () => {
     expect(metadata.difficulties).toEqual([...DIFFICULTIES]);
-    expect(toDifficulty('hard')).toBe('hard');
-    expect(toDifficulty('nope')).toBe('easy');
-    expect(toDifficulty(undefined)).toBe('easy');
+    expect(metadata.stateVersion).toBe(2);
+    expect(toDifficulty('master')).toBe('master');
+    expect(toDifficulty('hard')).toBe('beginner');
+    expect(toDifficulty('nope')).toBe('beginner');
+    expect(toDifficulty(undefined)).toBe('beginner');
+    expect(toOpponents(3)).toBe(3);
+    expect(toOpponents(4)).toBe(1);
+    expect(toOpponents('2')).toBe(1);
+    expect(OPPONENT_COUNTS).toEqual([1, 2, 3]);
   });
 
   it('computes exact integer square roots', () => {
@@ -181,21 +231,23 @@ function distanceToSegment(p: MapNode, a: MapNode, b: MapNode): number {
 }
 
 describe('maps', () => {
-  it('offers seven original maps per difficulty with 1, 2 or 3 opponents', () => {
-    expect(MAPS_PER_DIFFICULTY).toBe(7);
-    DIFFICULTIES.forEach((d, i) => {
-      for (let m = 0; m < MAPS_PER_DIFFICULTY; m++) {
-        const map = getMap(d, m);
-        expect(map.factions).toBe(i + 2);
-        expect(map.index).toBe(m);
-        expect(map.difficulty).toBe(d);
+  it('offers seven original maps for 1, 2 or 3 opponents, in both layouts', () => {
+    expect(MAPS_PER_SET).toBe(7);
+    for (const f of FACTION_COUNTS) {
+      for (let m = 0; m < MAPS_PER_SET; m++) {
+        for (const layout of [1, 2] as const) {
+          const map = getMap(f, m, layout);
+          expect(map.factions).toBe(f);
+          expect(map.index).toBe(m);
+          expect(map.layout).toBe(layout);
+        }
       }
-    });
+    }
   });
 
   it('are geometrically clean: inside the board, spaced, planar, no lane through a node', () => {
-    for (const d of DIFFICULTIES) {
-      for (let m = 0; m < MAPS_PER_DIFFICULTY; m++) {
+    for (const d of FACTION_COUNTS) {
+      for (let m = 0; m < MAPS_PER_SET; m++) {
         const { nodes, lanes } = getMap(d, m);
         expect(nodes.length).toBeGreaterThanOrEqual(10);
         expect(nodes.length).toBeLessThanOrEqual(17);
@@ -230,8 +282,8 @@ describe('maps', () => {
   });
 
   it('are fair: rotationally symmetric starts, topology and lane lengths', () => {
-    for (const d of DIFFICULTIES) {
-      for (let m = 0; m < MAPS_PER_DIFFICULTY; m++) {
+    for (const d of FACTION_COUNTS) {
+      for (let m = 0; m < MAPS_PER_SET; m++) {
         const map = getMap(d, m);
         expect(isFairMap(map)).toBe(true);
         const n = map.factions;
@@ -283,8 +335,10 @@ describe('maps', () => {
     expect(mapForSeed(0)).toBe(0);
     expect(mapForSeed(15)).toBe(1);
     expect(mapForSeed(-1)).toBe(0xffffffff % 7);
-    expect(getMap('medium', 3)).toBe(getMap('medium', 3));
-    expect(clone(getMap('hard', 2).lanes)).toMatchSnapshot();
+    expect(getMap(3, 3)).toBe(getMap(3, 3));
+    // Layout 1 is the unchanged original generator (saves of state version 1 depend on it).
+    expect(clone(getMap(4, 2, 1).lanes)).toMatchSnapshot();
+    expect(getMap(4, 2, 2).lanes).toEqual(getMap(4, 2, 1).lanes);
   });
 });
 
@@ -292,7 +346,7 @@ describe('maps', () => {
 
 describe('createGame', () => {
   it('starts paused at tick 0 with the map’s owners and levels', () => {
-    const s = createGame(42, 'medium');
+    const s = createGame(42, { difficulty: 'advanced', opponents: 2 });
     const map = mapOf(s);
     expect(s.map).toBe(42 % 7);
     expect(s.tick).toBe(0);
@@ -305,8 +359,13 @@ describe('createGame', () => {
     expect(nodeCount(s, 0)).toBe(1);
     expect(nodeCount(s, 2)).toBe(1);
     expect(isValidState(s)).toBe(true);
-    expect(createGame(42, 'medium')).toEqual(s);
-    expect(createGame(42, 'medium', 5).map).toBe(5);
+    expect(createGame(42, { difficulty: 'advanced', opponents: 2 })).toEqual(s);
+    expect(createGame(42, { opponents: 2, map: 5 }).map).toBe(5);
+    expect(s.half.every((b) => b === 0)).toBe(true);
+    expect(s.hist).toEqual({ start: 0, every: HISTORY_EVERY, rows: [[1, 1, 1]] });
+    expect(s.centre).toEqual([]);
+    expect(s.layout).toBe(2);
+    expect(createGame(42)).toMatchObject({ difficulty: 'beginner', opponents: 1, layout: 2 });
   });
 });
 
@@ -379,7 +438,7 @@ describe('activating and stopping paths', () => {
   });
 
   it('toggle is pure and returns the unchanged state on refusal', () => {
-    const s = createGame(3, 'easy');
+    const s = createGame(3);
     const map = mapOf(s);
     const start = s.owner.indexOf(0);
     const target = map.adjacent[start]![0]!;
@@ -802,7 +861,7 @@ describe('positions, results and time', () => {
   });
 
   it('pure step leaves its input untouched', () => {
-    const s = createGame(9, 'easy');
+    const s = createGame(9);
     const start = s.owner.indexOf(0);
     s.out[start] = [mapOf(s).adjacent[start]![0]!];
     const before = clone(s);
@@ -886,36 +945,44 @@ describe('opponent heuristics', () => {
   });
 
   it('respects the action budget, hesitation and elimination', () => {
-    const s = createGame(5, 'hard');
+    const s = createGame(5, { difficulty: 'advanced', opponents: 3 });
     const map = mapOf(s);
-    expect(decide(s, map, 1, { ...PROFILES.hard, actions: 1 }, createRng(3)).length).toBeLessThanOrEqual(1);
-    expect(decide(s, map, 1, { ...PROFILES.hard, hesitation: 1 }, createRng(3))).toEqual([]);
+    expect(decide(s, map, 1, { ...PROFILES.advanced, actions: 1 }, createRng(3)).length).toBeLessThanOrEqual(1);
+    expect(decide(s, map, 1, { ...PROFILES.advanced, hesitation: 1 }, createRng(3))).toEqual([]);
     const gone = { ...s, owner: s.owner.map((o) => (o === 2 ? -1 : o)) };
-    expect(decide(gone, map, 2, PROFILES.hard, createRng(3))).toEqual([]);
+    expect(decide(gone, map, 2, PROFILES.advanced, createRng(3))).toEqual([]);
   });
 
   it('decides on a staggered schedule, harder opponents more often', () => {
-    expect(PROFILES.easy.period).toBeGreaterThan(PROFILES.medium.period);
-    expect(PROFILES.medium.period).toBeGreaterThan(PROFILES.hard.period);
-    expect(isDecisionTick(7, 1, PROFILES.hard)).toBe(true);
-    expect(isDecisionTick(8, 1, PROFILES.hard)).toBe(false);
-    expect(isDecisionTick(14, 2, PROFILES.hard)).toBe(true);
-    expect(isDecisionTick(0, 0, { ...PROFILES.hard, period: 1 })).toBe(false);
+    expect(PROFILES.beginner.period).toBeGreaterThan(PROFILES.advanced.period);
+    expect(PROFILES.advanced.period).toBeGreaterThan(PROFILES.strong.period);
+    expect(PROFILES.strong.period).toBeGreaterThan(PROFILES.master.period);
+    const p15 = { ...PROFILES.advanced, period: 15 };
+    expect(isDecisionTick(7, 1, p15)).toBe(true);
+    expect(isDecisionTick(8, 1, p15)).toBe(false);
+    expect(isDecisionTick(14, 2, p15)).toBe(true);
+    expect(isDecisionTick(0, 0, p15)).toBe(true);
+    expect(isDecisionTick(1, 0, p15)).toBe(false);
   });
 
   it('never issues an illegal command and stays deterministic (all difficulties)', () => {
     for (const d of DIFFICULTIES) {
       const outcomes: string[] = [];
-      const a = simulate(createGame(11, d), 900, undefined, (_f, _c, outcome) => outcomes.push(outcome));
+      const factions: number[] = [];
+      const a = simulate(createGame(11, { difficulty: d, opponents: 2 }), 900, undefined, (f, _c, outcome) => {
+        outcomes.push(outcome);
+        factions.push(f);
+      });
       expect(outcomes.length).toBeGreaterThan(5);
       expect(outcomes.every((o) => o === 'on' || o === 'off')).toBe(true);
-      expect(simulate(createGame(11, d), 900)).toEqual(a);
+      expect(factions.every((f) => f === 1 || f === 2)).toBe(true);
+      expect(simulate(createGame(11, { difficulty: d, opponents: 2 }), 900)).toEqual(a);
       expect(isValidState(clone(a))).toBe(true);
     }
   }, 60_000);
 
   it('opponents fight each other too', () => {
-    const s = createGame(4, 'hard');
+    const s = createGame(4, { difficulty: 'advanced', opponents: 3 });
     let rivalCaptures = 0;
     simulate(s, 3000, (events) => {
       for (const [, now, before] of events.captures) if (now > 0 && before > 0) rivalCaptures++;
@@ -929,18 +996,21 @@ describe('opponent heuristics', () => {
 interface Script {
   seed: number;
   difficulty: Difficulty;
+  opponents: 1 | 2 | 3;
   moves: { wait: number; pick: number; target: number }[];
 }
 
 const scriptArb: fc.Arbitrary<Script> = fc.record({
   seed: fc.integer({ min: 0, max: 0xffff_ffff }),
-  difficulty: fc.constantFrom(...DIFFICULTIES),
+  // Lookahead levels are covered by dedicated (slower) tests; properties use the heuristic levels.
+  difficulty: fc.constantFrom<Difficulty>('beginner', 'advanced'),
+  opponents: fc.constantFrom<1 | 2 | 3>(1, 2, 3),
   moves: fc.array(fc.record({ wait: fc.integer({ min: 0, max: 80 }), pick: fc.nat(), target: fc.nat() }), { maxLength: 12 })
 });
 
 /** Plays a script: waits, then has the player toggle a path from one of its nodes. */
 function play(script: Script, check?: (s: NcState) => void): NcState {
-  let s = createGame(script.seed, script.difficulty);
+  let s = createGame(script.seed, { difficulty: script.difficulty, opponents: script.opponents });
   for (const move of script.moves) {
     s = simulate(s, move.wait);
     check?.(s);
@@ -980,7 +1050,7 @@ describe('properties', () => {
   }, 60_000);
 
   it('restores mid-battle exactly from a JSON save', () => {
-    const script: Script = { seed: 77, difficulty: 'medium', moves: [{ wait: 0, pick: 0, target: 0 }, { wait: 150, pick: 0, target: 1 }] };
+    const script: Script = { seed: 77, difficulty: 'strong', opponents: 2, moves: [{ wait: 0, pick: 0, target: 0 }, { wait: 150, pick: 0, target: 1 }] };
     const mid = play(script);
     expect(mid.units.length).toBeGreaterThan(0);
     const saved = clone(mid);
@@ -995,7 +1065,7 @@ describe('properties', () => {
 
 describe('isValidState', () => {
   const base = () => {
-    const s = createGame(21, 'easy');
+    const s = createGame(21);
     const start = s.owner.indexOf(0);
     s.out[start] = [mapOf(s).adjacent[start]![0]!];
     return simulate(s, 60);
@@ -1009,7 +1079,23 @@ describe('isValidState', () => {
     const tamper: ((s: NcState & Record<string, unknown>) => void)[] = [
       (s) => (s.seed = -1),
       (s) => (s.difficulty = 'extreme' as Difficulty),
-      (s) => (s.map = MAPS_PER_DIFFICULTY),
+      (s) => (s.map = MAPS_PER_SET),
+      (s) => (s.map = INTRO_MAP - 1),
+      (s) => (s.opponents = 4 as 1),
+      (s) => (s.layout = 3 as 2),
+      (s) => (s.half = s.half.slice(1)),
+      (s) => (s.half[0] = 1),
+      (s) => (s.half[0] = 2),
+      (s) => (s.hist = { ...s.hist, every: 0 }),
+      (s) => (s.hist = { ...s.hist, start: s.tick + 1 }),
+      (s) => (s.hist = { ...s.hist, rows: [[1, 1, 1]] }),
+      (s) => (s.hist = { ...s.hist, rows: [[99, 0]] }),
+      (s) => (s.hist = { ...s.hist, rows: Array.from({ length: HISTORY_CAP + 1 }, () => [1, 1]) }),
+      (s) => (s.hist = { ...s.hist, rows: [...s.hist.rows, [1, 1], [1, 1], [1, 1]] }),
+      (s) => (s.hist = null as unknown as NcState['hist']),
+      (s) => (s.centre = [s.tick + 5, 0]),
+      (s) => (s.centre = [1, 9]),
+      (s) => (s.centre = 'x' as unknown as number[]),
       (s) => (s.tick = -1),
       (s) => (s.speed = 3 as 1),
       (s) => (s.rng = 1.5),
@@ -1073,17 +1159,17 @@ describe('isValidState', () => {
   });
 
   it('rejects a running match without player or without opponents', () => {
-    const lost = createGame(21, 'easy');
+    const lost = createGame(21);
     lost.owner[lost.owner.indexOf(0)] = -1;
     expect(isValidState(lost)).toBe(false);
-    const won = createGame(21, 'easy');
+    const won = createGame(21);
     won.owner = won.owner.map((o) => (o > 0 ? -1 : o));
     expect(isValidState(won)).toBe(false);
   });
 
   it('accepts finished states that are consistent', () => {
-    const map = mapOf(createGame(21, 'easy'));
-    const s = createGame(21, 'easy');
+    const map = mapOf(createGame(21));
+    const s = createGame(21);
     s.owner = map.nodes.map((n) => (n.owner > 0 ? 0 : n.owner));
     s.result = 'won';
     expect(isValidState(s)).toBe(true);
@@ -1105,15 +1191,15 @@ describe('isValidState', () => {
 
 describe('opponents controller', () => {
   it('persists the PRNG only when an opponent decided', () => {
-    const s = createGame(6, 'easy');
+    const s = createGame(6);
     const map = mapOf(s);
     const control = opponents();
     s.tick = 1;
     control(s, map);
-    expect(s.rng).toBe(createGame(6, 'easy').rng);
+    expect(s.rng).toBe(createGame(6).rng);
     s.tick = 7;
     control(s, map);
-    expect(s.rng).not.toBe(createGame(6, 'easy').rng);
+    expect(s.rng).not.toBe(createGame(6).rng);
   });
 });
 
@@ -1296,15 +1382,410 @@ describe('opponent heuristics in detail', () => {
     expect(decide(stateFor(map), map, 1, { ...quiet, actions: 5 }, createRng(1))).toHaveLength(3);
   });
 
-  it('configures easy as slow and passive, medium and hard as reactive', () => {
-    expect(PROFILES.easy).toMatchObject({ counter: false, defend: false, actions: 1 });
-    expect(PROFILES.medium).toMatchObject({ counter: true, defend: true, actions: 2 });
-    expect(PROFILES.hard).toMatchObject({ counter: true, defend: true, actions: 3, hesitation: 0 });
-    expect(PROFILES.easy.attackLevel).toBeLessThan(PROFILES.hard.attackLevel);
+  it('configures the levels from slow and impulsive to reactive, simulating and finally planning', () => {
+    expect(PROFILES.beginner).toMatchObject({ counter: false, defend: false, actions: 1, frontierOnly: true, aware: false, lookahead: null });
+    expect(PROFILES.beginner.impulsive).toBeGreaterThan(0);
+    expect(PROFILES.advanced).toMatchObject({ counter: true, defend: true, frontierOnly: false, impulsive: 0, aware: true, lookahead: null });
+    expect(PROFILES.strong).toMatchObject({ counter: true, defend: true, aware: true, weakest: false });
+    expect(PROFILES.master).toMatchObject({ counter: true, defend: true, aware: true, weakest: true, hesitation: 0 });
+    expect(PROFILES.strong.lookahead!.pairs).toBe(0);
+    expect(PROFILES.master.lookahead!.pairs).toBeGreaterThan(0);
+    expect(PROFILES.master.lookahead!.candidates).toBeGreaterThan(PROFILES.strong.lookahead!.candidates);
+    expect(PROFILES.master.lookahead!.budget).toBeGreaterThan(PROFILES.strong.lookahead!.budget);
+    expect(PROFILES.beginner.attackLevel).toBeLessThan(PROFILES.master.attackLevel);
   });
 
   it('simulates exactly the requested number of ticks', () => {
-    expect(simulate(createGame(1, 'easy'), 37).tick).toBe(37);
-    expect(simulate(createGame(1, 'easy'), 0)).toEqual(createGame(1, 'easy'));
+    expect(simulate(createGame(1), 37).tick).toBe(37);
+    expect(simulate(createGame(1), 0)).toEqual(createGame(1));
+  });
+});
+
+/* ---------- Bastions ---------- */
+
+describe('bastions', () => {
+  const bastion = (level: number, owner = -1) => row({ type: 'bastion', level, owner });
+
+  it('take half damage: every second hostile point lowers the level, then converts the node', () => {
+    const map = bastion(2);
+    const s = stateFor(map);
+    const hit = () => {
+      addUnit(s, { f: 0, a: 0, b: 1, d: 199 });
+      stepMut(s, map);
+      return [s.owner[1], s.level[1], s.half[1]];
+    };
+    expect(PRODUCTION_INTERVAL.bastion).toBeGreaterThan(PRODUCTION_INTERVAL.standard);
+    expect(hit()).toEqual([-1, 2, 1]);
+    expect(hit()).toEqual([-1, 1, 0]);
+    expect(hit()).toEqual([-1, 1, 1]);
+    expect(hit()).toEqual([0, 1, 0]);
+    expect(s.stats.hits).toBe(4);
+    expect(s.stats.captured).toBe(1);
+  });
+
+  it('count a frigate as three points: one level and a filled armour bit', () => {
+    const map = bastion(5);
+    const s = stateFor(map);
+    addUnit(s, { f: 0, k: 1, a: 0, b: 1, d: 199 });
+    stepMut(s, map);
+    expect([s.level[1], s.half[1]]).toEqual([4, 1]);
+    // A second frigate empties the bit first: two more levels.
+    addUnit(s, { f: 0, k: 1, a: 0, b: 1, d: 199 });
+    stepMut(s, map);
+    expect([s.level[1], s.half[1]]).toEqual([2, 0]);
+  });
+
+  it('share the armour bit between attackers and reinforce their owner at full strength', () => {
+    const map = bastion(4, 1);
+    const s = stateFor(map);
+    s.half[1] = 1;
+    addUnit(s, { f: 1, a: 2, b: 1, d: 199 });
+    stepMut(s, map);
+    expect([s.level[1], s.half[1]]).toEqual([5, 1]);
+    addUnit(s, { f: 0, a: 0, b: 1, d: 199 });
+    stepMut(s, map);
+    expect([s.level[1], s.half[1]]).toEqual([4, 0]);
+  });
+
+  it('pass leftover points of a converting frigate to the new owner', () => {
+    const map = bastion(1);
+    const s = stateFor(map);
+    s.half[1] = 1;
+    addUnit(s, { f: 0, k: 1, a: 0, b: 1, d: 199 });
+    stepMut(s, map);
+    expect([s.owner[1], s.level[1], s.half[1]]).toEqual([0, 3, 0]);
+  });
+
+  it('produce drones more slowly than outposts', () => {
+    const map = bastion(10, 0);
+    const s = stateFor(map);
+    s.out[1] = [2];
+    for (let i = 1; i < PRODUCTION_INTERVAL.bastion; i++) stepMut(s, map);
+    expect(s.stats.produced).toBe(0);
+    stepMut(s, map);
+    expect(s.stats.produced).toBe(1);
+    expect(s.units[0]!.k).toBe(0);
+  });
+
+  it('are placed symmetrically by layout 2 only, never on starts or the first expansion', () => {
+    for (const f of FACTION_COUNTS) {
+      for (let m = 0; m < MAPS_PER_SET; m++) {
+        const one = getLayoutMap(f, m, 1);
+        const two = getLayoutMap(f, m, 2);
+        expect(one.nodes.some((n) => n.type === 'bastion')).toBe(false);
+        expect(two.nodes.map((n) => [n.x, n.y, n.owner])).toEqual(one.nodes.map((n) => [n.x, n.y, n.owner]));
+        const bastions = two.nodes.flatMap((n, v) => (n.type === 'bastion' ? [v] : []));
+        const outer = bastions.filter((v) => v !== two.center);
+        expect(outer.length % f).toBe(0);
+        expect(outer.length).toBeGreaterThan(0);
+        for (const v of bastions) {
+          expect(two.nodes[v]!.owner).toBe(-1);
+          expect(two.nodes[v]!.level).toBeGreaterThanOrEqual(4);
+          expect(one.nodes[v]!.type).not.toBe('bastion');
+        }
+        // Every start keeps a non-bastion neighbour at level 2–3 (the easy first expansion).
+        two.nodes.forEach((n, v) => {
+          if (n.owner >= 0) expect(two.adjacent[v]!.some((w) => two.nodes[w]!.type === 'standard' && two.nodes[w]!.level <= 3)).toBe(true);
+        });
+        expect(isFairMap(two)).toBe(true);
+      }
+    }
+  });
+
+  it('are counted at double level by aware opponents only', () => {
+    const map = star([{ level: 4, type: 'bastion' }, { level: 6 }, { level: 30, owner: 0 }]);
+    const s = stateFor(map);
+    expect(effectiveLevel(map, s, 1)).toBe(8);
+    s.half[1] = 1;
+    expect(effectiveLevel(map, s, 1)).toBe(7);
+    expect(effectiveLevel(map, s, 2)).toBe(6);
+    s.half[1] = 0;
+    expect(decide(s, map, 1, { ...quiet, actions: 1 }, createRng(1))).toEqual([{ from: 0, to: 1 }]);
+    expect(decide(s, map, 1, { ...quiet, aware: true, actions: 1 }, createRng(1))).toEqual([{ from: 0, to: 2 }]);
+  });
+});
+
+/** Star: centre 0 (faction 1) with neighbours 1–3 and a player node 4 (unless overridden). */
+function star(specs: Partial<NodeSpec>[], centre: Partial<NodeSpec> = {}): GameMap {
+  return makeMap(
+    [
+      { x: 300, y: 300, owner: 1, level: 5, ...centre },
+      { x: 100, y: 300, ...specs[0] },
+      { x: 500, y: 300, ...specs[1] },
+      { x: 300, y: 100, ...specs[2] },
+      { x: 300, y: 500, owner: 0, level: 30, ...specs[3] }
+    ],
+    [
+      [0, 1],
+      [0, 2],
+      [0, 3],
+      [0, 4]
+    ]
+  );
+}
+
+/* ---------- History and introduction map ---------- */
+
+describe('match history', () => {
+  it('samples node counts every HISTORY_EVERY ticks', () => {
+    const s = createGame(3);
+    const start = s.owner.indexOf(0);
+    s.out[start] = [mapOf(s).adjacent[start]![0]!];
+    const later = step(s, HISTORY_EVERY * 2 + 1);
+    expect(later.hist.rows).toHaveLength(3);
+    expect(later.hist.rows[0]).toEqual([1, 1]);
+    expect(step(s, HISTORY_EVERY).hist.rows[1]).toEqual(countsOf(step(s, HISTORY_EVERY), 2));
+    expect(step(s, HISTORY_EVERY - 1).hist.rows).toHaveLength(1);
+  });
+
+  it('halves its resolution instead of growing beyond HISTORY_CAP', () => {
+    const s = createGame(3);
+    s.hist.rows = Array.from({ length: HISTORY_CAP }, (_, i) => [1, i % 2]);
+    s.tick = HISTORY_EVERY * HISTORY_CAP - 1;
+    expect(isValidState(clone(s))).toBe(true);
+    const next = step(s, 1);
+    expect(next.hist.every).toBe(HISTORY_EVERY * 2);
+    expect(next.hist.rows).toHaveLength(HISTORY_CAP / 2 + 1);
+    expect(next.hist.rows.slice(0, 3)).toEqual([
+      [1, 0],
+      [1, 0],
+      [1, 0]
+    ]);
+    expect(isValidState(clone(next))).toBe(true);
+    // The next sample follows the coarser grid.
+    expect(step(next, HISTORY_EVERY).hist.rows).toHaveLength(HISTORY_CAP / 2 + 1);
+    expect(step(next, HISTORY_EVERY * 2).hist.rows).toHaveLength(HISTORY_CAP / 2 + 2);
+  });
+
+  it('records who first converts the centre node, once', () => {
+    const map = { ...row({ level: 1 }), center: 1 };
+    const s = stateFor(map);
+    addUnit(s, { f: 0, a: 0, b: 1, d: 199 });
+    const taken = cloneState(s);
+    stepMut(taken, map);
+    expect(taken.centre).toEqual([1, 0]);
+    addUnit(taken, { f: 1, a: 2, b: 1, d: 199 });
+    stepMut(taken, map);
+    expect(taken.owner[1]).toBe(1);
+    expect(taken.centre).toEqual([1, 0]);
+  });
+});
+
+describe('introduction map', () => {
+  it('is a small hand-made map with one passive opponent', () => {
+    const s = createGame(5, { map: INTRO_MAP, opponents: 3, difficulty: 'master' });
+    const map = mapOf(s);
+    expect(s.opponents).toBe(1);
+    expect(s.layout).toBe(2);
+    expect(map.factions).toBe(2);
+    expect(map.nodes).toHaveLength(7);
+    expect(new Set(map.nodes.map((n) => n.type))).toEqual(new Set(['standard', 'shipyard', 'bastion']));
+    expect(hops(map, 0).every((d) => d >= 0)).toBe(true);
+    expect(isValidState(clone(s))).toBe(true);
+    expect(isValidState({ ...clone(s), opponents: 2 })).toBe(false);
+    expect(profileFor(s)).toBe(PASSIVE);
+    expect(profileFor({ ...s, map: 0 })).toBe(PROFILES.master);
+  });
+
+  it('never attacks; it only reinforces a node under attack', () => {
+    const s = createGame(5, { map: INTRO_MAP });
+    const quietMatch = simulate(s, 600);
+    expect(quietMatch.out.every((o) => o.length === 0)).toBe(true);
+    expect(quietMatch.owner).toEqual(s.owner);
+    const attacked = cloneState(s);
+    attacked.owner[3] = 0;
+    attacked.level[3] = 20;
+    attacked.out[3] = [5];
+    const later = simulate(attacked, 120);
+    expect(later.out[6]).toEqual([5]);
+    expect(later.out[5]).toEqual([]);
+  });
+});
+
+/* ---------- Saves from state version 1 ---------- */
+
+describe('migration from state version 1', () => {
+  const v1 = (difficulty: string, opponents: 1 | 2 | 3, ticks: number) => {
+    const played = simulate(createGame(9, { difficulty: V1_MAPPING[difficulty]![0], opponents, map: 3, layout: 1 }), ticks);
+    const { opponents: _o, layout: _l, half: _h, hist: _hi, centre: _c, ...rest } = clone(played);
+    return { played, old: { ...rest, difficulty } };
+  };
+
+  it('maps easy/medium/hard to beginner+1, advanced+2, advanced+3 on the identical original map', () => {
+    expect(V1_MAPPING).toEqual({ easy: ['beginner', 1], medium: ['advanced', 2], hard: ['advanced', 3] });
+    for (const [d, n] of [
+      ['easy', 1],
+      ['medium', 2],
+      ['hard', 3]
+    ] as const) {
+      const { played, old } = v1(d, n, 230);
+      const migrated = migrateState(old, 1)!;
+      expect(migrated).toBeDefined();
+      expect(isValidState(migrated)).toBe(true);
+      expect(mapOf(migrated)).toBe(getLayoutMap((n + 1) as 2 | 3 | 4, 3, 1));
+      expect(migrated).toEqual({
+        ...played,
+        half: played.half.map(() => 0),
+        hist: { start: 230, every: HISTORY_EVERY, rows: [countsOf(played, n + 1)] },
+        centre: []
+      });
+      // The match continues exactly like a native state of the same position.
+      expect(simulate(migrated, 200).owner).toEqual(simulate({ ...played, hist: migrated.hist, centre: [] }, 200).owner);
+    }
+  }, 30_000);
+
+  it('refuses what it cannot migrate, without throwing', () => {
+    const { old } = v1('medium', 2, 10);
+    expect(migrateState(old, 2)).toBeUndefined();
+    expect(migrateState({ ...old, difficulty: 'extreme' }, 1)).toBeUndefined();
+    expect(migrateState({ ...old, difficulty: 'toString' }, 1)).toBeUndefined();
+    expect(migrateState({ ...old, owner: [0] }, 1)).toBeUndefined();
+    expect(migrateState({ ...old, map: 7 }, 1)).toBeUndefined();
+    expect(migrateState({ ...old, tick: -1 }, 1)).toBeUndefined();
+    expect(migrateState(null, 1)).toBeUndefined();
+    fc.assert(
+      fc.property(fc.anything(), (value) => {
+        expect(() => migrateState(value, 1)).not.toThrow();
+      }),
+      { numRuns: 200 }
+    );
+  });
+});
+
+/* ---------- Opponent levels ---------- */
+
+describe('opponent levels', () => {
+  it('beginner: only frontier nodes act, and it often takes the nearest target', () => {
+    const map = makeMap(
+      [
+        { x: 100, y: 300, owner: 1, level: 5 },
+        { x: 300, y: 300, owner: 1, level: 5 },
+        { x: 500, y: 300, owner: 0, level: 29 },
+        { x: 300, y: 140, level: 2 },
+        { x: 300, y: 500, owner: 0, level: 25 }
+      ],
+      [
+        [0, 1],
+        [1, 2],
+        [1, 3],
+        [1, 4]
+      ]
+    );
+    const s = stateFor(map);
+    expect(frontierDistance(s, map, 1)).toEqual([2, 1, 0, 0, 0]);
+    const calm = { ...quiet, frontierOnly: true, actions: 3 };
+    expect(decide(s, map, 1, calm, createRng(1)).every((c) => c.from === 1)).toBe(true);
+    expect(decide(s, map, 1, { ...quiet, actions: 3 }, createRng(1))).toContainEqual({ from: 0, to: 1 });
+    // Nearest neighbour of node 1 is the strong player node 4? No: node 3 (160) is nearer than 2 and 4 (200).
+    expect(decide(s, map, 1, { ...calm, actions: 1, impulsive: 1 }, createRng(1))).toEqual([{ from: 1, to: 3 }]);
+    const near = cloneState(s);
+    near.owner[3] = 0;
+    near.level[3] = 25;
+    near.level[2] = 3;
+    expect(decide(near, map, 1, { ...calm, actions: 1 }, createRng(1))).toEqual([{ from: 1, to: 2 }]);
+    expect(decide(near, map, 1, { ...calm, actions: 1, impulsive: 1 }, createRng(1))).toEqual([{ from: 1, to: 3 }]);
+  });
+
+  it('advanced: defends before a node drops below 10 and lifts front nodes towards 10', () => {
+    const map = makeMap(
+      [
+        { x: 100, y: 300, owner: 1, level: 25 },
+        { x: 300, y: 300, owner: 1, level: 11 },
+        { x: 500, y: 300, owner: 0, level: 30 },
+        { x: 300, y: 100, level: 3 }
+      ],
+      [
+        [0, 1],
+        [1, 2],
+        [1, 3]
+      ]
+    );
+    const s = stateFor(map);
+    s.out[1] = [3, 2];
+    s.out[2] = [1];
+    for (let i = 0; i < 2; i++) addUnit(s, { f: 0, a: 2, b: 1, d: 20 * i });
+    const aware = { ...quiet, defend: true, aware: true, actions: 1 };
+    const urgent = (profile: AiProfile) => options(s, map, 1, profile, createRng(1)).filter((o) => o.score >= 200);
+    expect(urgent(aware).map((o) => o.cmds)).toEqual([[{ from: 0, to: 1 }]]);
+    expect(urgent({ ...aware, aware: false })).toEqual([]);
+    expect(decide(s, map, 1, aware, createRng(1))).toEqual([{ from: 0, to: 1 }]);
+    const grow = stateFor(map);
+    grow.level[1] = 8;
+    grow.out[1] = [3];
+    const feed = (profile: AiProfile) => options(grow, map, 1, profile, createRng(1)).filter((o) => o.cmds[0]!.from === 0 && o.cmds[0]!.to === 1);
+    // Unaware opponents only supply the front (low priority); aware ones push the node towards 10.
+    expect(feed(quiet).map((o) => o.score)).toEqual([20]);
+    expect(feed({ ...quiet, aware: true })[0]!.score).toBeGreaterThan(40);
+  });
+
+  it('strong: simulation rejects a target covered by a hostile platform that the heuristics prefer', () => {
+    const map = makeMap(
+      [
+        { x: 300, y: 300, owner: 1, level: 5 },
+        { x: 300, y: 100, level: 3 },
+        { x: 500, y: 300, level: 5 },
+        { x: 200, y: 100, owner: 0, level: 30, type: 'station' }
+      ],
+      [
+        [0, 1],
+        [0, 2],
+        [1, 3]
+      ]
+    );
+    const s = stateFor(map);
+    const heuristic = { ...quiet, aware: true, actions: 1 };
+    expect(decide(s, map, 1, heuristic, createRng(1))).toEqual([{ from: 0, to: 1 }]);
+    const look = { ...heuristic, lookahead: { candidates: 4, horizon: 120, pairs: 0, budget: 50_000, policy: false } };
+    expect(decide(s, map, 1, look, createRng(1))).toEqual([{ from: 0, to: 2 }]);
+    expect(lastPlan.ticks).toBe(3 * 120);
+    expect(lastPlan.work).toBeLessThanOrEqual(50_000);
+    // A tiny budget simulates only the baseline and changes nothing.
+    expect(decide(s, map, 1, { ...look, lookahead: { ...look.lookahead, budget: 1 } }, createRng(1))).toEqual([]);
+    expect(decide(s, map, 1, look, createRng(1))).toEqual(decide(s, map, 1, look, createRng(1)));
+  });
+
+  it('master: values the weakest rival most in free-for-all, all rivals alike in a duel', () => {
+    const s = createGame(4, { opponents: 3 });
+    const map = mapOf(s);
+    const weak = cloneState(s);
+    weak.level[weak.owner.indexOf(2)] = 1;
+    const w = rivalWeights(weak, map, 1, true);
+    expect(w.reduce((a, b) => a + b, 0)).toBeCloseTo(1);
+    expect(w[1]).toBe(0);
+    expect(w[2]).toBeCloseTo(2 * w[0]!);
+    expect(w[3]).toBeCloseTo(w[0]!);
+    expect(rivalWeights(weak, map, 1, false)).toEqual([1 / 3, 0, 1 / 3, 1 / 3]);
+    const duel = createGame(4);
+    expect(rivalWeights(duel, mapOf(duel), 1, true)).toEqual([1, 0]);
+    const m = material(s, map);
+    expect(m).toEqual([m[0], m[0], m[0], m[0]]);
+    expect(evaluate(s, map, 1, rivalWeights(s, map, 1, false))).toBeLessThan(m[1]!);
+  });
+
+  it('every level decides within its simulation budget on the largest maps', () => {
+    for (const level of ['strong', 'master'] as const) {
+      const profile = PROFILES[level];
+      for (let m = 0; m < MAPS_PER_SET; m += 3) {
+        let s = createGame(m, { opponents: 3, difficulty: level, map: m });
+        s = simulate(s, 700);
+        if (s.result !== 'playing') continue;
+        decide(s, mapOf(s), 1, profile, createRng(1));
+        expect(lastPlan.work).toBeLessThanOrEqual(profile.lookahead!.budget);
+      }
+    }
+  }, 60_000);
+
+  it('bots can play the player side too (tournaments), deterministically', () => {
+    const s = createGame(8);
+    const map = mapOf(s);
+    const run = () => {
+      const x = cloneState(s);
+      const control = controllerFor([PROFILES.advanced, PROFILES.beginner]);
+      for (let i = 0; i < 400 && x.result === 'playing'; i++) stepMut(x, map, control);
+      return x;
+    };
+    const a = run();
+    expect(a.out.some((o, v) => o.length > 0 && a.owner[v] === 0)).toBe(true);
+    expect(run()).toEqual(a);
   });
 });

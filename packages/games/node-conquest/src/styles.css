@@ -34,19 +34,74 @@
 .wp-nc .nc-message { min-height: 1.4em; font-size: 0.95rem; }
 .wp-nc .nc-message:not(:empty) { border-inline-start: 4px dotted var(--wp-focus); padding-inline-start: 0.5rem; }
 
-/* Board: square, scales with the width (360 px phones included). Map geometry is never mirrored. */
+/* Board: square, scales with the width (360 px phones included). Map geometry is never mirrored.
+   touch-action: pan-y lets a one-finger swipe that starts on empty space scroll the page; touches
+   that start on a node and two-finger gestures are claimed in script (touchstart preventDefault). */
+.wp-nc .nc-board-wrap { position: relative; }
 .wp-nc .nc-board {
   display: block;
   width: 100%;
   height: auto;
   direction: ltr;
-  touch-action: none;
+  touch-action: pan-y;
   user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
   cursor: pointer;
 }
 .wp-nc .nc-bg { fill: var(--nc-space); stroke: var(--wp-border); stroke-width: 1; }
+.wp-nc.is-zoomed .nc-board { cursor: grab; }
+.wp-nc .nc-zoom {
+  position: absolute;
+  inset-block-start: 0.4rem;
+  inset-inline-end: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.wp-nc .nc-zoom-btn {
+  min-width: var(--wp-touch, 44px);
+  min-height: var(--wp-touch, 44px);
+  padding: 0;
+  font-size: 1.25rem;
+  line-height: 1;
+  background: color-mix(in srgb, var(--wp-surface) 88%, transparent);
+}
+.wp-nc .nc-confirm {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: 2px solid var(--wp-focus);
+  border-radius: var(--wp-radius, 10px);
+  background: var(--wp-surface);
+}
+.wp-nc .nc-confirm-text { font-weight: 600; }
+.wp-nc .nc-confirm-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.wp-nc .nc-hint {
+  padding: 0.6rem 0.75rem;
+  border-inline-start: 4px solid var(--wp-accent);
+  background: color-mix(in srgb, var(--wp-accent) 10%, var(--wp-surface));
+  border-radius: 6px;
+}
+
+/* Post-game review */
+.wp-nc .nc-review { display: grid; gap: 0.5rem; padding: 0.75rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius, 10px); background: var(--wp-surface); }
+.wp-nc .nc-review h3 { margin: 0; font-size: 1.05rem; }
+.wp-nc .nc-chart { display: block; width: 100%; height: auto; max-width: 32rem; direction: ltr; }
+.wp-nc .nc-axis { stroke: var(--wp-muted); stroke-width: 1; }
+.wp-nc .nc-axis-label { font: 10px var(--wp-font); fill: var(--wp-muted); }
+.wp-nc .nc-moment-line { stroke: var(--wp-focus); stroke-width: 1; stroke-dasharray: 2 3; }
+.wp-nc .nc-series { fill: none; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+.wp-nc .nc-series[data-faction='0'] { stroke: var(--nc-f0); stroke-width: 3.5; }
+.wp-nc .nc-series[data-faction='1'] { stroke: var(--nc-f1); }
+.wp-nc .nc-series[data-faction='2'] { stroke: var(--nc-f2); }
+.wp-nc .nc-series[data-faction='3'] { stroke: var(--nc-f3); }
+.wp-nc .nc-series-mark { stroke: var(--nc-ink); stroke-width: 1; }
+.wp-nc .nc-series-mark[data-faction='0'] { fill: var(--nc-f0); }
+.wp-nc .nc-series-mark[data-faction='1'] { fill: var(--nc-f1); }
+.wp-nc .nc-series-mark[data-faction='2'] { fill: var(--nc-f2); }
+.wp-nc .nc-series-mark[data-faction='3'] { fill: var(--nc-f3); }
+.wp-nc .nc-moments { margin: 0; padding-inline-start: 1.5rem; }
 
 .wp-nc .nc-lane-line { stroke: var(--nc-lane); stroke-width: 5; stroke-linecap: round; }
 .wp-nc .nc-flow-line { stroke-width: 4; stroke-linecap: butt; stroke-dasharray: 10 8; fill: none; }
@@ -87,6 +142,7 @@
 .wp-nc .nc-node:not([data-owner='neutral']) .nc-level { fill: var(--wp-surface); }
 .wp-nc .nc-deco { fill: none; stroke: var(--nc-ink); stroke-width: 3; stroke-linecap: round; }
 .wp-nc .nc-deco-thin { stroke-width: 1.5; opacity: 0.6; }
+.wp-nc .nc-deco-wall { stroke-width: 3; stroke-linejoin: miter; }
 .wp-nc .nc-badge { fill: var(--wp-surface); stroke: var(--nc-ink); stroke-width: 2; }
 .wp-nc .nc-pip { fill: var(--wp-surface); stroke: var(--nc-ink); stroke-width: 1.5; }
 .wp-nc .nc-pip.is-used { fill: var(--nc-ink); }

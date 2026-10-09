@@ -97,28 +97,28 @@ const BASE: AiProfile = {
 };
 
 export const PROFILES: Record<Difficulty, AiProfile> = {
-  beginner: { ...BASE, period: 50, actions: 1, hesitation: 0.35, attackLevel: 6, frontierOnly: true, impulsive: 0.6 },
-  advanced: { ...BASE, period: 30, actions: 2, hesitation: 0.15, attackLevel: 12, counter: true, defend: true, aware: true },
+  beginner: { ...BASE, period: 40, actions: 1, hesitation: 0.25, attackLevel: 6, frontierOnly: true, impulsive: 0.45 },
+  advanced: { ...BASE, period: 35, actions: 2, hesitation: 0.2, attackLevel: 12, counter: true, defend: true, aware: true },
   strong: {
     ...BASE,
-    period: 20,
+    period: 25,
     actions: 2,
     attackLevel: 14,
     counter: true,
     defend: true,
     aware: true,
-    lookahead: { candidates: 4, horizon: 120, pairs: 0, budget: 90_000, policy: false }
+    lookahead: { candidates: 3, horizon: 120, pairs: 0, budget: 90_000, policy: false }
   },
   master: {
     ...BASE,
-    period: 15,
+    period: 10,
     actions: 3,
     attackLevel: 16,
     counter: true,
     defend: true,
     aware: true,
     weakest: true,
-    lookahead: { candidates: 6, horizon: 120, pairs: 2, budget: 160_000, policy: true }
+    lookahead: { candidates: 6, horizon: 120, pairs: 2, budget: 160_000, policy: false }
   }
 };
 
@@ -183,9 +183,11 @@ function counts(s: NcState, factions: number): number[] {
   return c;
 }
 
-interface Option {
+export interface Option {
   cmds: Command[];
   score: number;
+  /** Housekeeping, defence and counters may share a source; expansion uses each source once per decision. */
+  urgent: boolean;
 }
 
 /**
@@ -199,7 +201,7 @@ export function options(s: NcState, map: GameMap, faction: number, profile: AiPr
   if (own.length === 0 || s.result !== 'playing') return result;
   const free = (v: number) => (map.nodes[v]!.type !== 'station' || s.level[v] === MAX_LEVEL) && s.out[v]!.length < maxPaths(s.level[v]!);
   const canSend = (v: number) => map.nodes[v]!.type !== 'station' || s.level[v] === MAX_LEVEL;
-  const add = (cmds: Command[], score: number) => result.push({ cmds, score });
+  const add = (cmds: Command[], score: number) => result.push({ cmds, score, urgent: score >= 150 });
 
   // 1. Stop feeding own nodes that are full and pass nothing on (those units would be absorbed).
   for (const v of own) {
@@ -217,7 +219,7 @@ export function options(s: NcState, map: GameMap, faction: number, profile: AiPr
       const losesPaths = profile.aware && floor > 1 && s.out[v]!.length > maxPaths(floor - 1) && level - danger < floor;
       if (danger < level && !losesPaths) continue;
       for (const w of map.adjacent[v]!) {
-        if (s.owner[w] === faction && free(w) && !isActive(s, w, v) && !refusal(s, map, faction, w, v)) add([{ from: w, to: v }], 200 + danger - level);
+        if (s.owner[w] === faction && free(w) && !isActive(s, w, v) && !refusal(s, map, faction, w, v)) add([{ from: w, to: v }], 200 + Math.max(0, danger - level));
       }
     }
   }
@@ -403,11 +405,16 @@ export function decide(s: NcState, map: GameMap, faction: number, profile: AiPro
     return true;
   };
   const used = new Set<number>();
+  const changed = new Set<string>();
   const takeOnce = (option: Option) => {
     const from = option.cmds[option.cmds.length - 1]!.from;
-    // One new path per source and decision (keeps changes spread over the map).
-    if (option.cmds.every((c) => !isActive(work, c.from, c.to)) && used.has(from)) return;
-    if (take(option.cmds)) used.add(from);
+    // A lane changed once in this decision is not toggled back by a later option.
+    if (option.cmds.some((c) => changed.has(`${c.from}-${c.to}`))) return;
+    // One new path per source and decision for expansion (keeps changes spread over the map).
+    if (!option.urgent && used.has(from)) return;
+    if (!take(option.cmds)) return;
+    used.add(from);
+    for (const c of option.cmds) changed.add(`${c.from}-${c.to}`);
   };
 
   const look = profile.lookahead;
@@ -420,8 +427,7 @@ export function decide(s: NcState, map: GameMap, faction: number, profile: AiPro
   }
 
   // Urgent housekeeping (useless feeding) is applied without simulation.
-  const urgent = list.filter((o) => o.score >= 300);
-  for (const option of urgent) takeOnce(option);
+  for (const option of list) if (option.score >= 300) takeOnce(option);
   const candidates = list.filter((o) => o.score < 300).slice(0, look.candidates);
   if (candidates.length === 0 || commands.length >= profile.actions) return commands;
 

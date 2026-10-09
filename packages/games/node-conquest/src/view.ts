@@ -2,23 +2,31 @@ import './styles.css';
 import type { GameContext, GameInstance, NewGameOptions } from '@wp/game-core';
 import { announce, clear, h } from '@wp/ui';
 import { opponents } from './ai';
+import { reviewOf, type Moment } from './review';
 import {
   BOARD,
   cloneState,
   createGame,
   getMap,
-  MAPS_PER_DIFFICULTY,
+  INTRO_MAP,
+  mapForSeed,
+  MAPS_PER_SET,
   mapOf,
   maxPaths,
   nodeCount,
+  OPPONENT_COUNTS,
   seconds,
   stationRange,
   stepMut,
+  TICKS_PER_SECOND,
   toDifficulty,
   toggleMut,
+  toOpponents,
   UNIT_SPEED,
+  type FactionCount,
   type GameMap,
   type NcState,
+  type OpponentCount,
   type StepEvents
 } from './rules';
 
@@ -66,6 +74,35 @@ const hexagon = (x: number, y: number, r: number) =>
 const crosshair = (x: number, y: number, r1: number, r2: number) =>
   `M${x} ${y - r2}V${y - r1}M${x} ${y + r1}V${y + r2}M${x - r2} ${y}H${x - r1}M${x + r1} ${y}H${x + r2}`;
 
+/** Bastion outline: a square wall with three battlements on every side. */
+export function battlements(x: number, y: number, r: number): string {
+  const q = Math.round(r / 3);
+  const t = Math.max(3, Math.round(r / 4));
+  const side = (sx: number, sy: number, dx: number, dy: number, nx: number, ny: number) => {
+    let d = '';
+    for (let i = 0; i < 3; i++) {
+      const ax = sx + dx * (2 * i) * q;
+      const ay = sy + dy * (2 * i) * q;
+      d += `L${ax + nx * t} ${ay + ny * t}L${ax + dx * q + nx * t} ${ay + dy * q + ny * t}L${ax + dx * q} ${ay + dy * q}L${ax + dx * 2 * q} ${ay + dy * 2 * q}`;
+    }
+    return d;
+  };
+  const s = 3 * q;
+  return (
+    `M${x - s} ${y - s}` +
+    side(x - s, y - s, 1, 0, 0, -1) +
+    side(x + s, y - s, 0, 1, 1, 0) +
+    side(x + s, y + s, -1, 0, 0, 1) +
+    side(x - s, y + s, 0, -1, -1, 0) +
+    'Z'
+  );
+}
+
+/** Stroke pattern per faction in the review chart (lines differ by pattern, not only colour). */
+const DASHES = ['', '9 5', '2 5', '12 4 2 4'];
+export const MIN_ZOOM = 1;
+export const MAX_ZOOM = 3;
+
 const isTextEntry = (target: EventTarget | null): boolean =>
   target instanceof HTMLElement && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
 
@@ -87,6 +124,7 @@ interface LaneView {
 
 interface Board {
   map: GameMap;
+  root: SVGGElement;
   nodes: NodeView[];
   lanes: LaneView[];
   ring: SVGCircleElement;
@@ -113,6 +151,15 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
   let controller = opponents();
   let drag: { from: number; x: number; y: number; active: boolean } | null = null;
   let suppressClick = false;
+  /** View only (never saved): zoom factor and the board point shown in the middle. */
+  const camera = { zoom: 1, cx: BOARD / 2, cy: BOARD / 2 };
+  /** Active touch/pen/mouse pointers on the board (client coordinates). */
+  const pointers = new Map<number, { x: number; y: number }>();
+  let pinch: { distance: number; zoom: number; mid: [number, number]; centre: [number, number] } | null = null;
+  let pan: { x: number; y: number; cx: number; cy: number } | null = null;
+  let lastTouchTap = -Infinity;
+  /** A map/opponent change waiting for confirmation. */
+  let pending: { map: number; opponents: OpponentCount } | null = null;
 
   const nodeName = (v: number) => t('node.name', { id: v + 1 });
   const ownerName = (o: number) => (o < 0 ? t('faction.neutral') : t(`faction.${o}`));
@@ -124,11 +171,35 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
   const countsEl = h('p', { class: 'nc-counts', 'data-testid': 'nc-counts' });
   const pauseBtn = h('button', { type: 'button', class: 'primary nc-pause', 'data-testid': 'nc-pause', onclick: () => togglePause() });
   const speedBtn = h('button', { type: 'button', class: 'nc-speed', 'data-testid': 'nc-speed', onclick: () => toggleSpeed() });
-  const mapSelect = h('select', { 'data-testid': 'nc-map-select', id: 'nc-map-select', onchange: () => chooseMap() });
+  const mapSelect = h('select', { 'data-testid': 'nc-map-select', id: 'nc-map-select', onchange: () => requestSetup() });
   const mapLabel = h('label', { for: 'nc-map-select', class: 'nc-map-label' }, t('map.label'));
+  const oppSelect = h(
+    'select',
+    { 'data-testid': 'nc-opponents', id: 'nc-opponents', onchange: () => requestSetup() },
+    ...OPPONENT_COUNTS.map((n) => h('option', { value: n }, String(n)))
+  );
+  const oppLabel = h('label', { for: 'nc-opponents', class: 'nc-map-label' }, t('opponents.label'));
   const retryBtn = h('button', { type: 'button', class: 'primary', 'data-testid': 'nc-retry', hidden: true, onclick: () => retry() });
-  const toolbar = h('div', { class: 'nc-toolbar' }, pauseBtn, speedBtn, h('span', { class: 'nc-map' }, mapLabel, mapSelect), retryBtn);
+  const toolbar = h(
+    'div',
+    { class: 'nc-toolbar' },
+    pauseBtn,
+    speedBtn,
+    h('span', { class: 'nc-map' }, mapLabel, mapSelect),
+    h('span', { class: 'nc-map' }, oppLabel, oppSelect),
+    retryBtn
+  );
+  const confirmText = h('p', { id: 'nc-confirm-text', class: 'nc-confirm-text', 'data-testid': 'nc-confirm-text' });
+  const confirmYes = h('button', { type: 'button', class: 'primary', 'data-testid': 'nc-confirm-yes', onclick: () => confirmSetup(true) }, t('confirm.yes'));
+  const confirmNo = h('button', { type: 'button', 'data-testid': 'nc-confirm-no', onclick: () => confirmSetup(false) }, t('confirm.no'));
+  const confirmBox = h(
+    'div',
+    { class: 'nc-confirm', role: 'group', 'aria-labelledby': 'nc-confirm-text', 'data-testid': 'nc-confirm', hidden: true },
+    confirmText,
+    h('div', { class: 'nc-confirm-actions' }, confirmYes, confirmNo)
+  );
   const messageEl = h('p', { class: 'nc-message', 'data-testid': 'nc-message' });
+  const hintEl = h('p', { class: 'nc-hint', 'data-testid': 'nc-hint', hidden: true });
 
   const svgEl = svg('svg', { class: 'nc-board', viewBox: `0 0 ${BOARD} ${BOARD}`, role: 'group', 'data-testid': 'nc-board' });
   svgEl.addEventListener('click', (event) => onBoardClick(event));
@@ -136,7 +207,32 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
   svgEl.addEventListener('pointerdown', (event) => onPointerDown(event));
   svgEl.addEventListener('pointermove', (event) => onPointerMove(event));
   svgEl.addEventListener('pointerup', (event) => onPointerUp(event));
-  svgEl.addEventListener('pointercancel', () => endDrag());
+  svgEl.addEventListener('pointercancel', (event) => onPointerCancel(event));
+  svgEl.addEventListener('touchstart', (event) => onTouchStart(event), { passive: false });
+  svgEl.addEventListener('wheel', (event) => onWheel(event), { passive: false });
+
+  const zoomBtn = (id: string, label: string, text: string, action: () => void) =>
+    h('button', { type: 'button', class: 'nc-zoom-btn', 'data-testid': `nc-zoom-${id}`, 'aria-label': t(label), title: t(label), onclick: action }, text);
+  const zoomBar = h(
+    'div',
+    { class: 'nc-zoom', role: 'group', 'aria-label': t('zoom.label') },
+    zoomBtn('in', 'zoom.in', '+', () => zoomBy(1.5)),
+    zoomBtn('out', 'zoom.out', '−', () => zoomBy(1 / 1.5)),
+    zoomBtn('fit', 'zoom.fit', '⤢', () => fit())
+  );
+  const boardWrap = h('div', { class: 'nc-board-wrap' }, svgEl, zoomBar);
+
+  const reviewChart = h('div', { class: 'nc-review-chart' });
+  const reviewSummary = h('p', { 'data-testid': 'nc-review-summary' });
+  const reviewMoments = h('ol', { class: 'nc-moments', 'data-testid': 'nc-moments' });
+  const reviewBox = h(
+    'section',
+    { class: 'nc-review', 'data-testid': 'nc-review', hidden: true, 'aria-labelledby': 'nc-review-title' },
+    h('h3', { id: 'nc-review-title' }, t('review.title')),
+    reviewChart,
+    reviewSummary,
+    reviewMoments
+  );
 
   const legend = h('ul', { class: 'nc-legend', 'aria-label': t('legend.title') });
   const listEl = h('ul', { class: 'nc-list', 'data-testid': 'nc-list' });
@@ -145,7 +241,7 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
     'details',
     { class: 'nc-details nc-help' },
     h('summary', {}, t('help.title')),
-    ...['help.tap', 'help.levels', 'help.capture', 'help.types', 'help.keys'].map((key) => h('p', {}, t(key)))
+    ...['help.tap', 'help.levels', 'help.capture', 'help.types', 'help.bastion', 'help.zoom', 'help.keys'].map((key) => h('p', {}, t(key)))
   );
   const live = h('div', { class: 'sr-only', 'aria-live': 'polite', role: 'status', 'data-testid': 'nc-live' });
   const container = h(
@@ -154,8 +250,11 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
     statusEl,
     countsEl,
     toolbar,
+    confirmBox,
+    hintEl,
     messageEl,
-    svgEl,
+    boardWrap,
+    reviewBox,
     legend,
     helpBox,
     listBox,
@@ -204,7 +303,9 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
           ? svg('path', { class: 'nc-deco', d: hexagon(x, y, NODE_R + 9) })
           : node.type === 'station'
             ? svg('path', { class: 'nc-deco', d: crosshair(x, y, NODE_R + 3, NODE_R + 11) })
-            : svg('circle', { class: 'nc-deco nc-deco-thin', cx: x, cy: y, r: NODE_R + 5 });
+            : node.type === 'bastion'
+              ? svg('path', { class: 'nc-deco nc-deco-wall', d: battlements(x, y, NODE_R + 7) })
+              : svg('circle', { class: 'nc-deco nc-deco-thin', cx: x, cy: y, r: NODE_R + 5 });
       const body = svg('circle', { class: 'nc-body', cx: x, cy: y, r: NODE_R });
       const badge = svg('path', { class: 'nc-badge', d: '', transform: `translate(${x + NODE_R - 2} ${y - NODE_R + 2})` });
       const label = svg('text', { class: 'nc-level', x, y: y + 1, 'text-anchor': 'middle', 'dominant-baseline': 'central' });
@@ -224,7 +325,9 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
     });
     const units = svg('g', { class: 'nc-units', 'aria-hidden': 'true' });
     const shots = svg('g', { class: 'nc-shots', 'aria-hidden': 'true' });
-    svgEl.append(
+    const rootG = svg(
+      'g',
+      {},
       svg('rect', { class: 'nc-bg', x: 0, y: 0, width: BOARD, height: BOARD, rx: 16 }),
       ring,
       svg('g', { class: 'nc-lanes' }, ...lanes.map((l) => l.g)),
@@ -233,7 +336,9 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
       preview,
       svg('g', { class: 'nc-nodes' }, ...nodes.map((n) => n.g))
     );
-    board = { map, nodes, lanes, ring, preview, units, shots, pool: [] };
+    svgEl.append(rootG);
+    board = { map, root: rootG, nodes, lanes, ring, preview, units, shots, pool: [] };
+    fit();
 
     clear(legend);
     for (let f = 0; f < map.factions; f++) {
@@ -244,12 +349,17 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
     legend.append(
       h('li', {}, legendIcon(svg('circle', { class: 'nc-legend-type', cx: 10, cy: 10, r: 7 })), t('type.standard')),
       h('li', {}, legendIcon(svg('path', { class: 'nc-legend-type', d: hexagon(10, 10, 8) })), t('type.shipyard')),
-      h('li', {}, legendIcon(svg('path', { class: 'nc-legend-type', d: crosshair(10, 10, 3, 9) })), t('type.station'))
+      h('li', {}, legendIcon(svg('path', { class: 'nc-legend-type', d: crosshair(10, 10, 3, 9) })), t('type.station')),
+      h('li', { 'data-type': 'bastion' }, legendIcon(svg('path', { class: 'nc-legend-type', d: battlements(10, 10, 8) })), t('type.bastion'))
     );
+    fillMapOptions(state.opponents);
+  };
 
+  const fillMapOptions = (opponentCount: OpponentCount) => {
     clear(mapSelect);
-    for (let i = 0; i < MAPS_PER_DIFFICULTY; i++) {
-      const count = getMap(map.difficulty, i).nodes.length;
+    mapSelect.append(h('option', { value: INTRO_MAP }, t('map.intro')));
+    for (let i = 0; i < MAPS_PER_SET; i++) {
+      const count = getMap((opponentCount + 1) as FactionCount, i, state.layout).nodes.length;
       mapSelect.append(h('option', { value: i }, t('map.option', { n: i + 1, count })));
     }
   };
@@ -358,7 +468,11 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
     pauseBtn.setAttribute('aria-pressed', String(!running));
     speedBtn.textContent = t('action.speed', { n: state.speed });
     speedBtn.dataset.speed = String(state.speed);
-    mapSelect.value = String(state.map);
+    if (!pending) {
+      mapSelect.value = String(state.map);
+      oppSelect.value = String(state.opponents);
+    }
+    oppSelect.disabled = Number(mapSelect.value) === INTRO_MAP;
     retryBtn.hidden = !finished;
     retryBtn.textContent = state.result === 'won' ? t('action.replay') : t('action.retry');
     container.classList.toggle('is-running', running);
@@ -374,12 +488,91 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
     sinceList = 0;
   };
 
+  /** Step-by-step hints on the introduction map, derived from the position (nothing extra is saved). */
+  const renderHint = () => {
+    let key = '';
+    if (state.map === INTRO_MAP && state.result === 'playing') {
+      const paths = state.out.some((o, v) => o.length > 0 && state.owner[v] === 0);
+      if (state.stats.captured === 0) key = paths ? 'intro.start' : selected === null ? 'intro.select' : 'intro.target';
+      else key = state.stats.captured < 3 ? 'intro.levels' : 'intro.win';
+    }
+    const text = key ? t(key) : '';
+    if (hintEl.textContent !== text) {
+      hintEl.textContent = text;
+      hintEl.hidden = !key;
+      if (key) announce(live, text);
+    }
+  };
+
+  const momentText = (m: Moment): string => {
+    const time = formatTime(Math.floor(m.tick / TICKS_PER_SECOND));
+    if (m.kind === 'centre') return m.faction === 0 ? t('review.centreYou', { time }) : t('review.centreOther', { time, owner: ownerName(m.faction) });
+    if (m.kind === 'gain' || m.kind === 'loss') return t(`review.${m.kind}`, { time, n: m.value });
+    return t(`review.${m.kind}`, { time });
+  };
+
+  /** Post-game review: node counts per faction over time (SVG) with a text summary and key moments. */
+  const renderReview = () => {
+    const finished = state.result !== 'playing';
+    reviewBox.hidden = !finished;
+    clear(reviewChart);
+    clear(reviewMoments);
+    if (!finished) {
+      reviewSummary.textContent = '';
+      return;
+    }
+    const map = mapOf(state);
+    const review = reviewOf(state, map.factions);
+    const [W, H, L, R, T, B] = [320, 150, 30, 12, 10, 24];
+    const first = review.points[0]!.tick;
+    const span = Math.max(1, state.tick - first);
+    const maxY = Math.max(1, ...review.points.flatMap((p) => p.counts));
+    const px = (tick: number) => L + ((tick - first) / span) * (W - L - R);
+    const py = (count: number) => T + (1 - count / maxY) * (H - T - B);
+    const chart = svg(
+      'svg',
+      { viewBox: `0 0 ${W} ${H}`, class: 'nc-chart', role: 'img', 'aria-label': t('review.chart'), 'data-testid': 'nc-chart' },
+      svg('line', { class: 'nc-axis', x1: L, y1: H - B, x2: W - R, y2: H - B }),
+      svg('line', { class: 'nc-axis', x1: L, y1: T, x2: L, y2: H - B }),
+      svg('text', { class: 'nc-axis-label', x: L - 4, y: T + 4, 'text-anchor': 'end' }, String(maxY)),
+      svg('text', { class: 'nc-axis-label', x: L - 4, y: H - B + 4, 'text-anchor': 'end' }, '0'),
+      svg('text', { class: 'nc-axis-label', x: L, y: H - 6, 'text-anchor': 'start' }, formatTime(Math.floor(first / TICKS_PER_SECOND))),
+      svg('text', { class: 'nc-axis-label', x: W - R, y: H - 6, 'text-anchor': 'end' }, formatTime(seconds(state)))
+    );
+    review.moments.forEach((m, i) => {
+      const x = px(m.tick).toFixed(1);
+      chart.append(
+        svg('line', { class: 'nc-moment-line', x1: x, y1: T, x2: x, y2: H - B }),
+        svg('text', { class: 'nc-axis-label', x, y: T + 2, 'text-anchor': 'middle' }, String(i + 1))
+      );
+    });
+    for (let f = map.factions - 1; f >= 0; f--) {
+      const pts = review.points.map((p) => `${px(p.tick).toFixed(1)},${py(p.counts[f]!).toFixed(1)}`).join(' ');
+      const last = review.points[review.points.length - 1]!;
+      chart.append(
+        svg('polyline', { class: 'nc-series', 'data-faction': f, points: pts, 'stroke-dasharray': DASHES[f]! }),
+        svg('path', { class: 'nc-series-mark', 'data-faction': f, d: shapePath(f, 5), transform: `translate(${px(last.tick).toFixed(1)} ${py(last.counts[f]!).toFixed(1)})` })
+      );
+    }
+    reviewChart.append(chart);
+    const final = review.points[review.points.length - 1]!.counts;
+    reviewSummary.textContent = t('review.summary', {
+      time: formatTime(seconds(state)),
+      own: final[0]!,
+      best: review.best.count,
+      at: formatTime(Math.floor(review.best.tick / TICKS_PER_SECOND))
+    });
+    review.moments.forEach((m) => reviewMoments.append(h('li', {}, momentText(m))));
+  };
+
   const render = () => {
     if (!board || board.map !== mapOf(state)) build(mapOf(state));
     renderNodes();
     renderUnits(0);
     renderStatus();
     renderList();
+    renderHint();
+    renderReview();
   };
 
   const say = (text: string) => {
@@ -435,6 +628,7 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
     if (steps > 0) {
       renderNodes();
       renderStatus();
+      if (state.map === INTRO_MAP) renderHint();
       renderShots(events);
       if (sinceList >= 10) renderList();
       if (sinceSave >= SAVE_EVERY) {
@@ -508,6 +702,7 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
   const select = (v: number | null, quiet = false) => {
     selected = v;
     renderNodes();
+    renderHint();
     if (!quiet) say(v === null ? t('select.cleared') : t('select.source', { name: nodeName(v) }));
   };
 
@@ -518,6 +713,7 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
       selected = null;
       renderNodes();
       renderList();
+      renderHint();
       say(t(outcome === 'on' ? 'path.on' : 'path.off', { from: nodeName(from), to: nodeName(to) }));
       context.requestSave();
       return;
@@ -546,12 +742,13 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
 
   /* ---------- Pointer and keyboard input ---------- */
 
-  const boardPoint = (event: MouseEvent): [number, number] | null => {
+  const clientToBoard = (x: number, y: number): [number, number] | null => {
     const matrix = svgEl.getScreenCTM?.();
     if (!matrix) return null;
     const inv = matrix.inverse();
-    return [inv.a * event.clientX + inv.c * event.clientY + inv.e, inv.b * event.clientX + inv.d * event.clientY + inv.f];
+    return [inv.a * x + inv.c * y + inv.e, inv.b * x + inv.d * y + inv.f];
   };
+  const boardPoint = (event: MouseEvent): [number, number] | null => clientToBoard(event.clientX, event.clientY);
 
   const nearestNode = (p: [number, number] | null): number | null => {
     if (!p || !board) return null;
@@ -573,6 +770,7 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
 
   const focusNode = (v: number) => {
     focusIndex = v;
+    reveal(v);
     renderNodes();
     board?.nodes[v]?.g.focus({ preventScroll: true });
   };
@@ -582,6 +780,8 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
       suppressClick = false;
       return;
     }
+    // Ignore a compatibility click right after a touch tap that was already handled.
+    if (event.detail > 0 && performance.now() - lastTouchTap < 800) return;
     const v = nodeFromEvent(event);
     if (v === null) {
       if (selected !== null) select(null);
@@ -591,11 +791,99 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
     activateNode(v);
   };
 
+  /* Gesture rules (touch): a touch that starts on or near a node never scrolls the page; one finger
+   * then taps (select / target) or drags a path. A one-finger touch that starts on empty board space
+   * scrolls the page vertically (CSS touch-action: pan-y). Two fingers pinch-zoom and pan the board.
+   * Mouse: ctrl/⌘ + wheel (or a trackpad pinch) zooms at the pointer, plain wheel scrolls the page,
+   * dragging empty board space pans when zoomed in. Buttons + / − / fit work for every input. */
+
+  const applyCamera = () => {
+    const size = BOARD / camera.zoom;
+    const half = size / 2;
+    camera.cx = Math.min(BOARD - half, Math.max(half, camera.cx));
+    camera.cy = Math.min(BOARD - half, Math.max(half, camera.cy));
+    svgEl.setAttribute('viewBox', `${(camera.cx - half).toFixed(1)} ${(camera.cy - half).toFixed(1)} ${size.toFixed(1)} ${size.toFixed(1)}`);
+    svgEl.dataset.zoom = camera.zoom.toFixed(2);
+    container.classList.toggle('is-zoomed', camera.zoom > MIN_ZOOM);
+  };
+
+  /** Zooms by `factor`, keeping board point `at` (default: the view centre) under the same screen spot. */
+  const zoomBy = (factor: number, at?: [number, number]) => {
+    const next = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, camera.zoom * factor));
+    const [ax, ay] = at ?? [camera.cx, camera.cy];
+    const ratio = camera.zoom / next;
+    camera.cx = ax + (camera.cx - ax) * ratio;
+    camera.cy = ay + (camera.cy - ay) * ratio;
+    camera.zoom = next;
+    applyCamera();
+  };
+
+  const fit = () => {
+    camera.zoom = MIN_ZOOM;
+    camera.cx = BOARD / 2;
+    camera.cy = BOARD / 2;
+    applyCamera();
+  };
+
+  /** Keeps a keyboard-focused node inside the zoomed view. */
+  const reveal = (v: number) => {
+    if (!board || camera.zoom <= MIN_ZOOM) return;
+    const node = board.map.nodes[v]!;
+    const half = BOARD / camera.zoom / 2 - NODE_R * 2;
+    if (Math.abs(node.x - camera.cx) > half || Math.abs(node.y - camera.cy) > half) {
+      camera.cx = node.x;
+      camera.cy = node.y;
+      applyCamera();
+    }
+  };
+
+  const onWheel = (event: WheelEvent) => {
+    if (!event.ctrlKey && !event.metaKey) return;
+    event.preventDefault();
+    zoomBy(Math.exp(-Math.max(-50, Math.min(50, event.deltaY)) / 120), boardPoint(event) ?? undefined);
+  };
+
+  const onTouchStart = (event: TouchEvent) => {
+    const touch = event.touches[0];
+    if (event.touches.length >= 2) {
+      event.preventDefault();
+      return;
+    }
+    if (touch && nearestNode(clientToBoard(touch.clientX, touch.clientY)) !== null) event.preventDefault();
+  };
+
+  const startPinch = () => {
+    const [a, b] = [...pointers.values()];
+    if (!a || !b) return;
+    endDrag();
+    pan = null;
+    const mid: [number, number] = [(a.x + b.x) / 2, (a.y + b.y) / 2];
+    pinch = { distance: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)), zoom: camera.zoom, mid, centre: [camera.cx, camera.cy] };
+  };
+
   const onPointerDown = (event: PointerEvent) => {
-    if (event.button !== 0 || state.result !== 'playing') return;
+    if (event.pointerType !== 'mouse' || event.button === 0) pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (pointers.size >= 2) {
+      startPinch();
+      return;
+    }
+    if (event.button !== 0) return;
     const p = boardPoint(event);
     const v = nearestNode(p);
-    if (v === null || state.owner[v] !== 0 || !p) return;
+    if (!p) return;
+    if (v === null) {
+      // Mouse/pen drag on empty space pans a zoomed board (touch scrolls the page instead).
+      if (event.pointerType !== 'touch' && camera.zoom > MIN_ZOOM) {
+        pan = { x: event.clientX, y: event.clientY, cx: camera.cx, cy: camera.cy };
+        try {
+          svgEl.setPointerCapture(event.pointerId);
+        } catch {
+          /* not supported */
+        }
+      }
+      return;
+    }
+    if (state.result !== 'playing' && event.pointerType !== 'touch') return;
     drag = { from: v, x: p[0], y: p[1], active: false };
     try {
       svgEl.setPointerCapture(event.pointerId);
@@ -605,10 +893,31 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
   };
 
   const onPointerMove = (event: PointerEvent) => {
+    if (pointers.has(event.pointerId)) pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (pinch && pointers.size >= 2) {
+      const [a, b] = [...pointers.values()];
+      const rect = svgEl.getBoundingClientRect();
+      const scale = rect.width > 0 ? BOARD / rect.width : 1;
+      const zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, (pinch.zoom * Math.hypot(a!.x - b!.x, a!.y - b!.y)) / pinch.distance));
+      camera.zoom = zoom;
+      camera.cx = pinch.centre[0] - (((a!.x + b!.x) / 2 - pinch.mid[0]) * scale) / zoom;
+      camera.cy = pinch.centre[1] - (((a!.y + b!.y) / 2 - pinch.mid[1]) * scale) / zoom;
+      applyCamera();
+      return;
+    }
+    if (pan) {
+      const rect = svgEl.getBoundingClientRect();
+      const scale = rect.width > 0 ? BOARD / rect.width / camera.zoom : 1;
+      camera.cx = pan.cx - (event.clientX - pan.x) * scale;
+      camera.cy = pan.cy - (event.clientY - pan.y) * scale;
+      applyCamera();
+      return;
+    }
     if (!drag || !board) return;
     const p = boardPoint(event);
     if (!p) return;
     if (!drag.active && Math.hypot(p[0] - drag.x, p[1] - drag.y) < DRAG_START) return;
+    if (!drag.active && state.owner[drag.from] !== 0) return;
     drag.active = true;
     const node = board.map.nodes[drag.from]!;
     const preview = board.preview;
@@ -624,11 +933,37 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
     board?.preview.setAttribute('visibility', 'hidden');
   };
 
+  const onPointerCancel = (event: PointerEvent) => {
+    pointers.delete(event.pointerId);
+    if (pointers.size < 2) pinch = null;
+    pan = null;
+    endDrag();
+  };
+
   const onPointerUp = (event: PointerEvent) => {
+    pointers.delete(event.pointerId);
+    if (pinch) {
+      if (pointers.size < 2) pinch = null;
+      suppressClick = event.pointerType !== 'touch';
+      return;
+    }
+    if (pan) {
+      pan = null;
+      return;
+    }
     const current = drag;
     endDrag();
-    if (!current?.active) return;
-    suppressClick = true;
+    if (!current) return;
+    if (!current.active) {
+      // A touch tap on a node: the page's own click is suppressed by touchstart, so handle it here.
+      if (event.pointerType === 'touch') {
+        lastTouchTap = performance.now();
+        focusIndex = current.from;
+        activateNode(current.from);
+      }
+      return;
+    }
+    suppressClick = event.pointerType !== 'touch';
     const target = nearestNode(boardPoint(event));
     if (target !== null && target !== current.from) command(current.from, target);
   };
@@ -706,6 +1041,11 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
     state = next;
     controller = opponents();
     selected = null;
+    pending = null;
+    confirmBox.hidden = true;
+    pointers.clear();
+    pinch = null;
+    pan = null;
     drag = null;
     sinceSave = 0;
     reported = next.result !== 'playing';
@@ -720,22 +1060,68 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
     renderShots(null);
   };
 
-  const chooseMap = () => {
-    const index = Number(mapSelect.value);
-    if (!Number.isInteger(index) || index === state.map) return;
-    load(createGame(state.seed, state.difficulty, index));
+  /** A match counts as untouched before the first tick when the player has no active path. */
+  const untouched = () => state.result !== 'playing' || (state.tick === 0 && state.out.every((o, v) => o.length === 0 || state.owner[v] !== 0));
+
+  const setupText = (map: number, count: OpponentCount) =>
+    map === INTRO_MAP ? t('confirm.intro') : t('confirm.text', { n: map + 1, opponents: count });
+
+  const startSetup = (map: number, count: OpponentCount) => {
+    pending = null;
+    confirmBox.hidden = true;
+    load(createGame(state.seed, { difficulty: state.difficulty, map, opponents: count }));
     context.requestSave();
   };
 
+  /** Map or opponent count changed in the toolbar: start at once, or ask first if a match is under way. */
+  const requestSetup = () => {
+    const map = Number(mapSelect.value);
+    const count = map === INTRO_MAP ? 1 : toOpponents(Number(oppSelect.value));
+    if (!Number.isInteger(map) || map < INTRO_MAP || map >= MAPS_PER_SET) return;
+    if (map !== INTRO_MAP && count !== state.opponents) fillMapOptions(count);
+    mapSelect.value = String(map);
+    oppSelect.value = String(count);
+    oppSelect.disabled = map === INTRO_MAP;
+    if (map === state.map && count === state.opponents) {
+      pending = null;
+      confirmBox.hidden = true;
+      return;
+    }
+    if (untouched()) {
+      startSetup(map, count);
+      return;
+    }
+    stop();
+    pending = { map, opponents: count };
+    confirmText.textContent = setupText(map, count);
+    confirmBox.hidden = false;
+    announce(live, confirmText.textContent);
+  };
+
+  const confirmSetup = (yes: boolean) => {
+    const choice = pending;
+    pending = null;
+    confirmBox.hidden = true;
+    if (yes && choice) {
+      startSetup(choice.map, choice.opponents);
+      pauseBtn.focus({ preventScroll: true });
+      return;
+    }
+    fillMapOptions(state.opponents);
+    renderStatus();
+    mapSelect.focus({ preventScroll: true });
+  };
+
   const retry = () => {
-    load(createGame(state.seed, state.difficulty, state.map));
+    load(createGame(state.seed, { difficulty: state.difficulty, map: state.map, opponents: state.opponents, layout: state.layout }));
     context.requestSave();
     pauseBtn.focus({ preventScroll: true });
   };
 
   return {
     newGame(options: NewGameOptions) {
-      load(createGame(options.seed, toDifficulty(options.difficulty)));
+      // The opponent count is a game setting: a new match keeps it (the introduction is a one-off).
+      load(createGame(options.seed, { difficulty: toDifficulty(options.difficulty), map: mapForSeed(options.seed), opponents: state.opponents }));
       context.requestSave();
     },
     restore(saved: NcState) {
@@ -750,7 +1136,7 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
       // Deliberately stays paused: the player resumes when ready.
     },
     reset() {
-      load(createGame(state.seed, state.difficulty, state.map));
+      load(createGame(state.seed, { difficulty: state.difficulty, map: state.map, opponents: state.opponents, layout: state.layout }));
       context.requestSave();
     },
     dispose() {

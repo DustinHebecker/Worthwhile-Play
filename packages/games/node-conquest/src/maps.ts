@@ -272,8 +272,10 @@ export function withBastions(base: GameMap): GameMap {
   const dist = (i: number) => d2([base.nodes[i]!.x, base.nodes[i]!.y], [base.nodes[0]!.x, base.nodes[0]!.y]);
   let nearest = 1;
   for (let i = 2; i < k; i++) if (dist(i) < dist(nearest)) nearest = i;
-  const candidates: number[] = [];
+  // Prefer turning an outpost into a bastion; take any other neutral when a sector has none.
+  let candidates: number[] = [];
   for (let i = 1; i < k; i++) if (i !== nearest && base.nodes[i]!.type === 'standard') candidates.push(i);
+  if (candidates.length === 0) for (let i = 1; i < k; i++) if (i !== nearest) candidates.push(i);
   const chosen = new Set<number>();
   if (candidates.length > 0) {
     const local = rng.pick(candidates);
