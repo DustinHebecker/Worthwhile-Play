@@ -1,0 +1,17 @@
+{
+  "name": "@wp/game-association",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts", "./metadata": "./src/metadata.ts" },
+  "dependencies": {
+    "@wp/game-core": "workspace:*",
+    "@wp/ui": "workspace:*",
+    "@wp/learning-content": "workspace:*"
+  },
+  "devDependencies": {
+    "@wp/localization": "workspace:*",
+    "@wp/persistence": "workspace:*",
+    "@wp/testing": "workspace:*"
+  }
+}
