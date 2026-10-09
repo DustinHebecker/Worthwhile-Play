@@ -13,3 +13,4 @@ Short, durable records of decisions that are not obvious from the code. New ADR:
 | [0007](0007-license.md) | Source-available license (PolyForm Perimeter 1.0.0) |
 | [0008](0008-cloudflare-pages.md) | Cloudflare Pages (supersedes 0004) |
 | [0009](0009-strategy-engine-api.md) | Shared strategy engine and its API |
+| [0010](0010-communication-and-reading-evaluation.md) | Deterministic evaluation for reading and communication exercises |
