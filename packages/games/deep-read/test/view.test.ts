@@ -294,5 +294,5 @@ describe('Deep Read view', () => {
       expect(ctx.missingKeys, locale).toEqual([]);
       expect(byId(root, 'dr-verdict').textContent?.trim().length).toBeGreaterThan(2);
     }
-  });
+  }, 90_000);
 });

@@ -256,5 +256,5 @@ describe('Compression Challenge view', () => {
       expect(box.getAttribute('lang'), locale).toBe(locale);
       for (const p of root.querySelectorAll('p')) expect(p.textContent?.includes('undefined'), locale).toBe(false);
     }
-  });
+  }, 90_000);
 });

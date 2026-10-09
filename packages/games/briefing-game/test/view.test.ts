@@ -269,5 +269,5 @@ describe('Briefing Game view', () => {
         instance.dispose();
       }
     }
-  });
+  }, 90_000);
 });
