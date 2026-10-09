@@ -96,7 +96,7 @@ export function startApp(root: HTMLElement): void {
     nav.append(link({ name: 'home' }, t('nav.home')), link({ name: 'settings' }, t('nav.settings')), link({ name: 'about' }, t('nav.about')));
     header.append(
       h('a', { class: 'skip-link', href: '#main' }, t('nav.skip')),
-      h('a', { class: 'brand', href: '/' }, h('span', { class: 'brand-mark', 'aria-hidden': 'true' }, 'W'), h('span', {}, APP_NAME)),
+      h('a', { class: 'brand', href: '/' }, h('img', { class: 'brand-mark', src: '/logo.png', alt: '', width: 40, height: 40 }), h('span', {}, APP_NAME)),
       nav,
       languageMenu()
     );
