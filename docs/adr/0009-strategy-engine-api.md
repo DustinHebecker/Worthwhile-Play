@@ -22,7 +22,14 @@ computeDamage(base, weapon, targetArchetype, cover): number
 isValidWorld(value: unknown, ruleset?): value is World               // never throws
 canonicalJson(value) / worldHash(world): number                     // FNV-1a over canonical JSON
 BASE_RULESET, BASE_TERRAIN, BASE_ARCHETYPES                          // shared content (D16)
+archetypeOf(ruleset, kind): Archetype | undefined                    // own-property lookup (untrusted kinds)
+// Command network (I3a):
+computeNetwork(world, ruleset, side): { nodes, coverage: Uint8Array, slots }
+isCommandable(world, ruleset, unit, network?): boolean               // always true without commandNetwork
+STRATEGY_RULESET                                                     // BASE_RULESET + commandNetwork: true
 ```
+
+  Rulesets carry `commandNetwork` (orders only reach units in coverage, at most the connected sources' order slots per side and batch; rejected commands report `out-of-contact`) and `relayHillBonus`. Archetypes carry `comms: { role: 'source' | 'relay', radius, orderSlots, needsDeploy } | null`; the `deploy` order sets a `needsDeploy` node up in one turn (`entity.deploy` counts ticks). Tower Defense can ignore all of this by using `BASE_RULESET` (`commandNetwork: false`), or use relay/support towers as network nodes.
 
   Planned (I3–I5), names provisional: `ModeDefinition { id, systems, phases, victory, spawns? }` passed to `runTicks`; `coverage(world, ruleset, side)`; `observe(world, ruleset, side)`; `planAi(observation, ruleset, profile)`; production/economy commands.
 - **Mirror-consistent tie-breaking**: path and neighbour ties are broken in each side's own frame (side 1 = point-mirrored), the movement conflict rule is symmetric between sides (contenders of different sides all bump; within one side the lowest id enters, so friendly units cannot deadlock), damage is applied simultaneously. Property P4 checks that a point-mirrored world with swapped sides evolves as the exact mirror image.

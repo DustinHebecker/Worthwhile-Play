@@ -1,6 +1,6 @@
 import type { GameContext, GameInstance, GameResult, NewGameOptions } from '@wp/game-core';
 import { normalizeSeed } from '@wp/game-core';
-import type { Entity, Order, World } from '@wp/strategy-engine';
+import { archetypeOf, cellOf, computeNetwork, type Entity, type Network, type Order, type World } from '@wp/strategy-engine';
 import { announce, clear, h } from '@wp/ui';
 import {
   cancelOrder,
@@ -9,6 +9,8 @@ import {
   lockTurn,
   newGame,
   OPPONENT,
+  orderRefusal,
+  orderSlots,
   outcome,
   planOrder,
   PLAYER,
@@ -51,7 +53,15 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   const unitName = (e: Pick<Entity, 'kind' | 'id'>) => t('unit.name', { name: t(`unit.${e.kind}`), id: e.id });
   const sideName = (side: number) => t(side === PLAYER ? 'side.own' : 'side.enemy');
   const terrainName = (x: number, y: number) => t(`terrain.${TERRAIN_NAMES[world().map.terrain[y * world().map.w + x] ?? '.'] ?? 'plain'}`);
-  const isMobile = (e: Entity) => (RULESET.archetypes[e.kind]?.speed ?? 0) > 0;
+  const isMobile = (e: Entity) => (archetypeOf(RULESET, e.kind)?.speed ?? 0) > 0;
+  const needsDeploy = (e: Entity) => archetypeOf(RULESET, e.kind)?.comms?.needsDeploy === true;
+  const network = (): Network => computeNetwork(world(), RULESET, PLAYER);
+  const inContact = (e: Entity, net: Network = network()) => net.coverage[cellOf(world().map, e.x, e.y)] === 1;
+  const deployText = (e: Entity): string => {
+    if ((e.deploy ?? 0) >= RULESET.ticksPerTurn) return t('deploy.active');
+    if (e.order.type === 'deploy' || draftFor(state, e.id)?.type === 'deploy') return t('deploy.pending');
+    return t('deploy.idle');
+  };
 
   const describeOrder = (e: Entity, order: Order): string => {
     if (!isMobile(e) && order.type === 'hold') return t('order.static');
@@ -62,16 +72,21 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
         const target = unitById(state, order.target);
         return t('order.attack', { target: target ? unitName(target) : `#${order.target}` });
       }
+      case 'deploy':
+        return t('order.deploy');
       default:
         return t('order.hold');
     }
   };
 
   const describeUnit = (e: Entity): string => {
-    const max = RULESET.archetypes[e.kind]?.hp ?? e.hp;
-    const base = t('unit.summary', { name: unitName(e), side: sideName(e.side), x: e.x + 1, y: e.y + 1, hp: e.hp, max, order: describeOrder(e, e.order) });
-    const planned = e.side === PLAYER ? draftFor(state, e.id) : undefined;
-    return planned ? `${base} ${t('unit.planned', { order: describeOrder(e, planned) })}` : base;
+    const max = archetypeOf(RULESET, e.kind)?.hp ?? e.hp;
+    let text = t('unit.summary', { name: unitName(e), side: sideName(e.side), x: e.x + 1, y: e.y + 1, hp: e.hp, max, order: describeOrder(e, e.order) });
+    if (e.side !== PLAYER) return text;
+    if (isMobile(e)) text = `${text} (${t(inContact(e) ? 'contact.in' : 'contact.out')})`;
+    if (needsDeploy(e)) text = `${text} ${deployText(e)}`;
+    const planned = draftFor(state, e.id);
+    return planned ? `${text} ${t('unit.planned', { order: describeOrder(e, planned) })}` : text;
   };
 
   const unitsAt = (x: number, y: number) => world().entities.filter((e) => e.x === x && e.y === y);
@@ -86,6 +101,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   const live = h('p', { class: 'sr-only', 'aria-live': 'polite', 'data-testid': 'rc-live' });
   const turnEl = h('p', { class: 'rc-turn', 'data-testid': 'rc-turn' });
   const statusEl = h('p', { class: 'rc-status', 'data-testid': 'rc-status', role: 'status', tabindex: -1 });
+  const slotsEl = h('p', { class: 'rc-slots', 'data-testid': 'rc-slots' });
   const lockBtn = h('button', { type: 'button', class: 'primary', 'data-testid': 'rc-lock', onclick: () => onLock() }, t('action.lock'));
   const concedeBtn = h('button', { type: 'button', 'data-testid': 'rc-concede', onclick: () => setConfirming(true) }, t('action.concede'));
   const confirmBox = h(
@@ -111,8 +127,9 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   const selectionTitle = h('h3', {}, t('panel.selection'));
   const selectionText = h('p', { 'data-testid': 'rc-selection-text' });
   const holdBtn = h('button', { type: 'button', 'data-testid': 'rc-hold', onclick: () => onHold() }, t('action.hold'));
+  const deployBtn = h('button', { type: 'button', 'data-testid': 'rc-deploy', onclick: () => orderSelected({ type: 'deploy' }) }, t('action.deploy'));
   const cancelBtn = h('button', { type: 'button', 'data-testid': 'rc-cancel', onclick: () => onCancel() }, t('action.cancel'));
-  const selectionActions = h('div', { class: 'rc-actions' }, holdBtn, cancelBtn);
+  const selectionActions = h('div', { class: 'rc-actions' }, holdBtn, deployBtn, cancelBtn);
   const selectionPanel = h('section', { class: 'rc-panel', 'data-testid': 'rc-selection' }, selectionTitle, selectionText, selectionActions);
 
   const ownList = h('ul', { class: 'rc-units', 'data-testid': 'rc-own' });
@@ -123,13 +140,13 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     'details',
     { class: 'rc-help' },
     h('summary', {}, t('help.title')),
-    ...['help.turns', 'help.orders', 'help.combat', 'help.goal', 'help.shapes', 'help.access'].map((k) => h('p', {}, t(k)))
+    ...['help.turns', 'help.orders', 'help.network', 'help.combat', 'help.goal', 'help.shapes', 'help.access'].map((k) => h('p', {}, t(k)))
   );
 
   const shell = h(
     'div',
     { class: 'wp-relay-command', 'data-testid': 'rc-root' },
-    h('div', { class: 'rc-bar' }, turnEl, statusEl, h('div', { class: 'rc-actions' }, lockBtn, concedeBtn), confirmBox),
+    h('div', { class: 'rc-bar' }, turnEl, statusEl, slotsEl, h('div', { class: 'rc-actions' }, lockBtn, concedeBtn), confirmBox),
     h(
       'div',
       { class: 'rc-main' },
@@ -155,6 +172,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     turnEl.textContent = t('status.turn', { turn: Math.min(w.turn + 1, state.turnLimit), limit: state.turnLimit });
     statusEl.textContent = statusText();
     statusEl.setAttribute('data-phase', state.phase);
+    slotsEl.hidden = finished;
+    slotsEl.textContent = t('status.slots', { n: state.draft.length, slots: orderSlots(state) });
     lockBtn.disabled = finished;
     concedeBtn.disabled = finished;
     concedeBtn.hidden = confirming;
@@ -179,15 +198,19 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
 
   function renderSelection(): void {
     const unit = selected === null ? undefined : unitById(state, selected);
-    const canOrder = !!unit && unit.side === PLAYER && isMobile(unit) && state.phase === 'plan';
+    const reachable = !!unit && unit.side === PLAYER && inContact(unit);
+    const canOrder = !!unit && unit.side === PLAYER && isMobile(unit) && reachable && state.phase === 'plan';
     if (!unit) {
       selectionText.textContent = t('panel.none');
     } else if (!isMobile(unit)) {
       selectionText.textContent = `${describeUnit(unit)} ${t('panel.static')}`;
+    } else if (unit.side === PLAYER && !reachable) {
+      selectionText.textContent = `${describeUnit(unit)} ${t('panel.outOfContact')}`;
     } else {
       selectionText.textContent = `${describeUnit(unit)} ${canOrder ? t('panel.hint') : ''}`.trim();
     }
     selectionActions.hidden = !canOrder;
+    deployBtn.hidden = !unit || !needsDeploy(unit);
     cancelBtn.disabled = !unit || !draftFor(state, unit.id);
   }
 
@@ -267,10 +290,46 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     canvas.height = Math.round(height * ratio);
     g.setTransform(ratio, 0, 0, ratio, 0, 0);
     drawTerrain(g, w);
+    drawCoverage(g, w);
     drawOrders(g, w);
     drawEvents(g);
     for (const e of w.entities) drawUnit(g, e);
     drawCursor(g);
+  }
+
+  /** Hatches cells outside the own command coverage and rings the connected network nodes. */
+  function drawCoverage(g: CanvasRenderingContext2D, w: World): void {
+    const net = network();
+    g.save();
+    g.strokeStyle = css('--rc-nocover', 'rgba(29, 29, 27, 0.35)');
+    g.lineWidth = 1;
+    g.beginPath();
+    for (let y = 0; y < w.map.h; y++) {
+      for (let x = 0; x < w.map.w; x++) {
+        if (net.coverage[cellOf(w.map, x, y)] === 1) continue;
+        const px = x * CELL;
+        const py = y * CELL;
+        for (let k = 0; k < CELL; k += 11) {
+          g.moveTo(px + k, py);
+          g.lineTo(px, py + k);
+          g.moveTo(px + CELL, py + k);
+          g.lineTo(px + k, py + CELL);
+        }
+      }
+    }
+    g.stroke();
+    g.strokeStyle = css('--wp-p1', '#24508f');
+    g.setLineDash([3, 6]);
+    for (const id of net.nodes) {
+      const node = unitById(state, id);
+      const r = archetypeOf(RULESET, node?.kind ?? '')?.comms?.radius ?? 0;
+      if (!node || r === 0) continue;
+      const [cx, cy] = centre(node.x, node.y);
+      g.beginPath();
+      g.arc(cx, cy, r * CELL + CELL / 2, 0, Math.PI * 2);
+      g.stroke();
+    }
+    g.restore();
   }
 
   function drawTerrain(g: CanvasRenderingContext2D, w: World): void {
@@ -443,6 +502,18 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     g.fillRect(cx - bw / 2, cy + CELL * 0.38, bw, 4);
     g.fillStyle = colour;
     g.fillRect(cx - bw / 2, cy + CELL * 0.38, (bw * e.hp) / max, 4);
+    if (own && isMobile(e) && !inContact(e)) {
+      // "No contact" badge: a small crossed-out signal in the corner (not colour alone).
+      const bx = e.x * CELL + CELL - 10;
+      const by = e.y * CELL + 10;
+      g.strokeStyle = css('--wp-danger', '#a1271b');
+      g.lineWidth = 2;
+      g.beginPath();
+      g.arc(bx, by, 6, Math.PI * 1.15, Math.PI * 1.85);
+      g.moveTo(bx - 6, by + 6);
+      g.lineTo(bx + 6, by - 6);
+      g.stroke();
+    }
     if (selected === e.id) {
       g.strokeStyle = css('--wp-focus', '#b4530a');
       g.lineWidth = 3;
@@ -480,6 +551,13 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
         g.arc(cx, cy + 4, 7, Math.PI, Math.PI * 2);
         g.moveTo(cx, cy + 4);
         g.lineTo(cx + 6, cy - 6);
+        g.stroke();
+        return;
+      case 'mast-truck':
+        g.moveTo(cx, cy + 7);
+        g.lineTo(cx, cy - 6);
+        g.moveTo(cx - 5, cy - 3);
+        g.arc(cx, cy - 6, 5, Math.PI * 0.85, Math.PI * 0.15, true);
         g.stroke();
         return;
       case 'command-post':
@@ -532,9 +610,11 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   function orderSelected(order: Order): void {
     if (selected === null) return;
     const unit = unitById(state, selected);
-    const next = planOrder(state, selected, order);
+    const refusal = orderRefusal(state, selected, order);
+    const next = refusal === null ? planOrder(state, selected, order) : undefined;
     if (!unit || !next) {
-      announce(live, t('announce.refused'));
+      const specific = refusal === 'out-of-contact' || refusal === 'no-slots' || refusal === 'impassable';
+      announce(live, specific ? t(`refuse.${refusal}`, { slots: orderSlots(state) }) : t('announce.refused'));
       return;
     }
     commit(next, t('announce.planned', { name: unitName(unit), order: describeOrder(unit, order) }));

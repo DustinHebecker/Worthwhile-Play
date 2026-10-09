@@ -36,8 +36,9 @@ describe('Relay Command view', () => {
   it('renders the turn, the status, both unit lists and the map', () => {
     expect($('rc-turn').textContent).toBe('Turn 1 of 12');
     expect($('rc-status').getAttribute('data-phase')).toBe('plan');
-    expect(ctx.context.root.querySelectorAll('[data-testid^="rc-unit-"]')).toHaveLength(6);
-    expect($('rc-enemy').querySelectorAll('li')).toHaveLength(6);
+    expect(ctx.context.root.querySelectorAll('[data-testid^="rc-unit-"]')).toHaveLength(7);
+    expect($('rc-enemy').querySelectorAll('li')).toHaveLength(7);
+    expect($('rc-slots').textContent).toBe('Orders this turn: 0 of 4.');
     expect($('rc-map').getAttribute('data-cols')).toBe('12');
     expect($('rc-map').style.width).toBe(`${12 * CELL}px`);
     expect($('rc-summary').textContent).toContain('No turn played yet');
@@ -49,7 +50,7 @@ describe('Relay Command view', () => {
     click(`rc-unit-${unit.id}`);
     expect($(`rc-unit-${unit.id}`).getAttribute('aria-pressed')).toBe('true');
     expect($('rc-selection-text').textContent).toContain('Rifle Squad');
-    expect(ctx.context.root.querySelectorAll('[data-testid^="rc-attack-"]')).toHaveLength(6);
+    expect(ctx.context.root.querySelectorAll('[data-testid^="rc-attack-"]')).toHaveLength(7);
   });
 
   it('plans attack, hold and cancel through the buttons and saves each change', () => {
@@ -90,6 +91,43 @@ describe('Relay Command view', () => {
     expect(state().draft[0]!.order).toEqual({ type: 'hold' });
     key('Delete');
     expect(state().draft).toEqual([]);
+  });
+
+  it('shows contact, offers set-up for the Mast Truck and explains refused orders', () => {
+    const truck = own().find((e) => e.kind === 'mast-truck')!;
+    expect($(`rc-unit-${truck.id}`).textContent).toContain('in contact');
+    expect($(`rc-unit-${truck.id}`).textContent).toContain('Relay packed');
+    click(`rc-unit-${truck.id}`);
+    expect($('rc-deploy').hidden).toBe(false);
+    click('rc-deploy');
+    expect(state().draft).toEqual([{ side: PLAYER, unit: truck.id, order: { type: 'deploy' } }]);
+    expect($('rc-slots').textContent).toBe('Orders this turn: 1 of 4.');
+    // A rifle squad has no relay to set up.
+    click(`rc-unit-${firstMobile().id}`);
+    expect($('rc-deploy').hidden).toBe(true);
+    // Fill the remaining slots, then a fifth unit is refused with a reason.
+    const others = own().filter((e) => e.kind !== 'command-post' && e.id !== truck.id);
+    for (const u of others.slice(0, 3)) {
+      click(`rc-unit-${u.id}`);
+      click('rc-hold');
+    }
+    click(`rc-unit-${others[3]!.id}`);
+    click('rc-hold');
+    vi.runAllTimers();
+    expect($('rc-live').textContent).toContain('No orders left this turn (4 per turn)');
+    expect(state().draft).toHaveLength(4);
+  });
+
+  it('a unit outside coverage shows why it cannot be ordered', () => {
+    const s = structuredClone(state());
+    const rifle = s.world.entities.find((e) => e.side === PLAYER && e.kind === 'rifles')!;
+    rifle.x = 9;
+    rifle.y = 9;
+    instance.restore(s);
+    click(`rc-unit-${rifle.id}`);
+    expect($(`rc-unit-${rifle.id}`).textContent).toContain('out of contact');
+    expect($('rc-selection-text').textContent).toContain('outside your command coverage');
+    expect(ctx.context.root.querySelector('.rc-actions[hidden]')).not.toBeNull();
   });
 
   it('maps pointer clicks on the canvas to cells', () => {

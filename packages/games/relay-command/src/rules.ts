@@ -1,11 +1,12 @@
 import { isArrayOf, isInt, isOneOf, isRecord, isUint32, normalizeSeed } from '@wp/game-core';
 import {
   archetypeOf,
-  BASE_RULESET,
+  computeNetwork,
   createWorld,
   isValidOrder,
   isValidWorld,
   resolveTurn,
+  STRATEGY_RULESET,
   validateCommand,
   type Command,
   type Entity,
@@ -17,7 +18,8 @@ import {
 import { planAi } from './ai';
 import { FIELD_EXERCISE, SCENARIOS, type ScenarioSpec } from './scenarios';
 
-export const RULESET: Ruleset = BASE_RULESET;
+/** Strategy rules: orders travel through the command network (coverage and order slots). */
+export const RULESET: Ruleset = STRATEGY_RULESET;
 export const PLAYER = 0;
 export const OPPONENT = 1;
 const COMMAND_POST = 'command-post';
@@ -37,7 +39,7 @@ export interface TurnLog {
  * survives closing the game; `log` holds every locked plan so any game can be replayed exactly.
  */
 export interface RcState {
-  v: 1;
+  v: 2;
   seed: number;
   scenario: string;
   turnLimit: number;
@@ -55,7 +57,7 @@ export const scenarioById = (id: string): ScenarioSpec | undefined => SCENARIOS.
 
 export function newGame(seed: number, spec: ScenarioSpec = FIELD_EXERCISE): RcState {
   return {
-    v: 1,
+    v: 2,
     seed: normalizeSeed(seed),
     scenario: spec.id,
     turnLimit: spec.turnLimit,
@@ -72,11 +74,36 @@ export function newGame(seed: number, spec: ScenarioSpec = FIELD_EXERCISE): RcSt
 export const unitById = (state: RcState, id: number): Entity | undefined => state.world.entities.find((e) => e.id === id);
 export const draftFor = (state: RcState, id: number): Order | undefined => state.draft.find((c) => c.unit === id)?.order;
 
+/** Orders the player may give this turn: the connected sources' order slots. */
+export const orderSlots = (state: RcState): number => computeNetwork(state.world, RULESET, PLAYER).slots;
+
+export type OrderRefusal =
+  | 'finished'
+  | 'no-slots'
+  | 'unknown-unit'
+  | 'not-yours'
+  | 'out-of-contact'
+  | 'immobile'
+  | 'out-of-bounds'
+  | 'impassable'
+  | 'no-weapon'
+  | 'bad-target'
+  | 'bad-order';
+
+/** Why an order cannot be planned, or `null` if it can (replacing a unit's planned order is free). */
+export function orderRefusal(state: RcState, unit: number, order: Order): OrderRefusal | null {
+  if (state.phase !== 'plan') return 'finished';
+  const check = validateCommand(state.world, RULESET, { side: PLAYER, unit, order });
+  if (!check.ok) return check.reason;
+  const replaces = state.draft.some((c) => c.unit === unit);
+  if (!replaces && state.draft.length >= orderSlots(state)) return 'no-slots';
+  return null;
+}
+
 /** Adds or replaces the player's order for one unit. Returns `undefined` if the order is not allowed. */
 export function planOrder(state: RcState, unit: number, order: Order): RcState | undefined {
-  if (state.phase !== 'plan') return undefined;
+  if (orderRefusal(state, unit, order) !== null) return undefined;
   const command: Command = { side: PLAYER, unit, order };
-  if (!validateCommand(state.world, RULESET, command).ok) return undefined;
   const draft = state.draft.filter((c) => c.unit !== unit);
   draft.push(command);
   draft.sort((a, b) => a.unit - b.unit);
@@ -166,7 +193,7 @@ function matchesScenario(world: World, spec: ScenarioSpec): boolean {
 }
 
 export function isValidState(value: unknown): value is RcState {
-  if (!isRecord(value) || value.v !== 1 || !isUint32(value.seed) || typeof value.scenario !== 'string') return false;
+  if (!isRecord(value) || value.v !== 2 || !isUint32(value.seed) || typeof value.scenario !== 'string') return false;
   const spec = scenarioById(value.scenario);
   if (!spec || !isInt(value.turnLimit, 1, 1000) || !isOneOf(value.phase, ['plan', 'finished'])) return false;
   if (!isValidWorld(value.world, RULESET) || value.world.sides !== 2 || !matchesScenario(value.world, spec)) return false;
@@ -178,4 +205,15 @@ export function isValidState(value: unknown): value is RcState {
   if (typeof value.conceded !== 'boolean') return false;
   if (value.phase === 'plan') return value.result === null;
   return isOneOf(value.result, ['won', 'lost', 'draw']);
+}
+
+/**
+ * Version 1 saves (first playable version, no command network) continue under the current
+ * rules: the world switches to the strategy ruleset. Their logs replay exactly only up to the
+ * switch, which is acceptable for an unfinished practice game.
+ */
+export function migrateState(state: unknown, fromVersion: number): RcState | undefined {
+  if (fromVersion !== 1 || !isRecord(state) || state.v !== 1 || !isRecord(state.world)) return undefined;
+  const migrated = { ...state, v: 2, world: { ...state.world, ruleset: RULESET.id } };
+  return isValidState(migrated) ? migrated : undefined;
 }
