@@ -101,6 +101,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     class: 'rc-map',
     'data-testid': 'rc-map',
     tabindex: 0,
+    'data-autofocus': true,
     role: 'application',
     'aria-label': t('map.label'),
     'aria-describedby': `${uid}-cursor`
