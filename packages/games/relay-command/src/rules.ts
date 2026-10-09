@@ -215,5 +215,9 @@ export function isValidState(value: unknown): value is RcState {
 export function migrateState(state: unknown, fromVersion: number): RcState | undefined {
   if (fromVersion !== 1 || !isRecord(state) || state.v !== 1 || !isRecord(state.world)) return undefined;
   const migrated = { ...state, v: 2, world: { ...state.world, ruleset: RULESET.id } };
-  return isValidState(migrated) ? migrated : undefined;
+  if (!isValidState(migrated)) return undefined;
+  // Version 1 had no order limit or coverage: keep only the planned orders that are still allowed.
+  let replanned: RcState = { ...migrated, draft: [] };
+  for (const c of migrated.draft) replanned = planOrder(replanned, c.unit, c.order) ?? replanned;
+  return replanned;
 }

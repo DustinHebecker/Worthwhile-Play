@@ -101,6 +101,7 @@ describe('Relay Command view', () => {
     expect($('rc-deploy').hidden).toBe(false);
     click('rc-deploy');
     expect(state().draft).toEqual([{ side: PLAYER, unit: truck.id, order: { type: 'deploy' } }]);
+    expect($('rc-deploy').hidden).toBe(true);
     expect($('rc-slots').textContent).toBe('Orders this turn: 1 of 4.');
     // A rifle squad has no relay to set up.
     click(`rc-unit-${firstMobile().id}`);
@@ -115,6 +116,12 @@ describe('Relay Command view', () => {
     click('rc-hold');
     vi.runAllTimers();
     expect($('rc-live').textContent).toContain('No orders left this turn (4 per turn)');
+    // Visible too, for pointer and touch players (N9); cleared by the next successful action.
+    expect($('rc-notice').hidden).toBe(false);
+    expect($('rc-notice').textContent).toContain('No orders left this turn');
+    click(`rc-unit-${others[0]!.id}`);
+    click('rc-hold');
+    expect($('rc-notice').hidden).toBe(true);
     expect(state().draft).toHaveLength(4);
   });
 
@@ -128,6 +135,7 @@ describe('Relay Command view', () => {
     expect($(`rc-unit-${rifle.id}`).textContent).toContain('out of contact');
     expect($('rc-selection-text').textContent).toContain('outside your command coverage');
     expect(ctx.context.root.querySelector('.rc-actions[hidden]')).not.toBeNull();
+    expect(ctx.context.root.querySelector('[data-testid^="rc-attack-"]')).toBeNull();
   });
 
   it('maps pointer clicks on the canvas to cells', () => {

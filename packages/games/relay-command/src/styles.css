@@ -42,6 +42,7 @@
 .wp-relay-command .rc-turn { margin: 0; font-weight: 600; }
 .wp-relay-command .rc-status { margin: 0; flex: 1 1 16rem; }
 .wp-relay-command .rc-slots { margin: 0; font-weight: 600; }
+.wp-relay-command .rc-notice { margin: 0 0 0.5rem; padding: 0.4rem 0.6rem; border-inline-start: 4px solid var(--wp-danger); background: var(--wp-surface-2); }
 .wp-relay-command .rc-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .wp-relay-command .rc-confirm { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
 .wp-relay-command .rc-main {

@@ -1,6 +1,6 @@
 import type { GameContext, GameInstance, GameResult, NewGameOptions } from '@wp/game-core';
 import { normalizeSeed } from '@wp/game-core';
-import { archetypeOf, cellOf, computeNetwork, type Entity, type Network, type Order, type World } from '@wp/strategy-engine';
+import { archetypeOf, cellOf, computeNetwork, nodeRadius, type Entity, type Network, type Order, type World } from '@wp/strategy-engine';
 import { announce, clear, h } from '@wp/ui';
 import {
   cancelOrder,
@@ -55,8 +55,15 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   const terrainName = (x: number, y: number) => t(`terrain.${TERRAIN_NAMES[world().map.terrain[y * world().map.w + x] ?? '.'] ?? 'plain'}`);
   const isMobile = (e: Entity) => (archetypeOf(RULESET, e.kind)?.speed ?? 0) > 0;
   const needsDeploy = (e: Entity) => archetypeOf(RULESET, e.kind)?.comms?.needsDeploy === true;
-  const network = (): Network => computeNetwork(world(), RULESET, PLAYER);
-  const inContact = (e: Entity, net: Network = network()) => net.coverage[cellOf(world().map, e.x, e.y)] === 1;
+  /** The player's network, computed once per state (not per unit or per drawing call). */
+  let cachedNet: { state: RcState; net: Network } | undefined;
+  const network = (): Network => {
+    if (cachedNet?.state !== state) cachedNet = { state, net: computeNetwork(world(), RULESET, PLAYER) };
+    return cachedNet.net;
+  };
+  const inContact = (e: Entity) => network().coverage[cellOf(world().map, e.x, e.y)] === 1;
+  const isSetUpOrPending = (e: Entity) =>
+    (e.deploy ?? 0) >= RULESET.ticksPerTurn || e.order.type === 'deploy' || draftFor(state, e.id)?.type === 'deploy';
   const deployText = (e: Entity): string => {
     if ((e.deploy ?? 0) >= RULESET.ticksPerTurn) return t('deploy.active');
     if (e.order.type === 'deploy' || draftFor(state, e.id)?.type === 'deploy') return t('deploy.pending');
@@ -102,6 +109,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   const turnEl = h('p', { class: 'rc-turn', 'data-testid': 'rc-turn' });
   const statusEl = h('p', { class: 'rc-status', 'data-testid': 'rc-status', role: 'status', tabindex: -1 });
   const slotsEl = h('p', { class: 'rc-slots', 'data-testid': 'rc-slots' });
+  /** Visible reason for a refused order (the live region alone only reaches screen readers). */
+  const noticeEl = h('p', { class: 'rc-notice', 'data-testid': 'rc-notice', hidden: true });
   const lockBtn = h('button', { type: 'button', class: 'primary', 'data-testid': 'rc-lock', onclick: () => onLock() }, t('action.lock'));
   const concedeBtn = h('button', { type: 'button', 'data-testid': 'rc-concede', onclick: () => setConfirming(true) }, t('action.concede'));
   const confirmBox = h(
@@ -130,7 +139,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   const deployBtn = h('button', { type: 'button', 'data-testid': 'rc-deploy', onclick: () => orderSelected({ type: 'deploy' }) }, t('action.deploy'));
   const cancelBtn = h('button', { type: 'button', 'data-testid': 'rc-cancel', onclick: () => onCancel() }, t('action.cancel'));
   const selectionActions = h('div', { class: 'rc-actions' }, holdBtn, deployBtn, cancelBtn);
-  const selectionPanel = h('section', { class: 'rc-panel', 'data-testid': 'rc-selection' }, selectionTitle, selectionText, selectionActions);
+  const selectionPanel = h('section', { class: 'rc-panel', 'data-testid': 'rc-selection' }, selectionTitle, selectionText, noticeEl, selectionActions);
 
   const ownList = h('ul', { class: 'rc-units', 'data-testid': 'rc-own' });
   const enemyList = h('ul', { class: 'rc-units', 'data-testid': 'rc-enemy' });
@@ -210,7 +219,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       selectionText.textContent = `${describeUnit(unit)} ${canOrder ? t('panel.hint') : ''}`.trim();
     }
     selectionActions.hidden = !canOrder;
-    deployBtn.hidden = !unit || !needsDeploy(unit);
+    deployBtn.hidden = !unit || !needsDeploy(unit) || isSetUpOrPending(unit);
     cancelBtn.disabled = !unit || !draftFor(state, unit.id);
   }
 
@@ -229,7 +238,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     }
     if (own.length === 0) ownList.append(h('li', {}, t('list.empty')));
     const attacker = selected === null ? undefined : unitById(state, selected);
-    const canAttack = !!attacker && attacker.side === PLAYER && isMobile(attacker) && !!RULESET.archetypes[attacker.kind]?.weapon && state.phase === 'plan';
+    const canAttack =
+      !!attacker && attacker.side === PLAYER && isMobile(attacker) && inContact(attacker) && !!archetypeOf(RULESET, attacker.kind)?.weapon && state.phase === 'plan';
     for (const e of enemies) {
       const item = h('li', { 'data-testid': `rc-enemy-${e.id}` }, h('span', {}, describeUnit(e)));
       if (canAttack) {
@@ -322,7 +332,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     g.setLineDash([3, 6]);
     for (const id of net.nodes) {
       const node = unitById(state, id);
-      const r = archetypeOf(RULESET, node?.kind ?? '')?.comms?.radius ?? 0;
+      const r = node ? nodeRadius(w, RULESET, node) : 0;
       if (!node || r === 0) continue;
       const [cx, cy] = centre(node.x, node.y);
       g.beginPath();
@@ -601,6 +611,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
 
   function select(id: number | null): void {
     selected = id;
+    noticeEl.hidden = true;
     const unit = id === null ? undefined : unitById(state, id);
     if (unit) cursor = { x: unit.x, y: unit.y };
     render();
@@ -614,9 +625,13 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     const next = refusal === null ? planOrder(state, selected, order) : undefined;
     if (!unit || !next) {
       const specific = refusal === 'out-of-contact' || refusal === 'no-slots' || refusal === 'impassable';
-      announce(live, specific ? t(`refuse.${refusal}`, { slots: orderSlots(state) }) : t('announce.refused'));
+      const message = specific ? t(`refuse.${refusal}`, { slots: orderSlots(state) }) : t('announce.refused');
+      noticeEl.textContent = message;
+      noticeEl.hidden = false;
+      announce(live, message);
       return;
     }
+    noticeEl.hidden = true;
     commit(next, t('announce.planned', { name: unitName(unit), order: describeOrder(unit, order) }));
   }
 

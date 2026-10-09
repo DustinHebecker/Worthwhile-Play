@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { canonicalJson, validateCommand, worldHash, type Command, type World } from '@wp/strategy-engine';
+import { BASE_RULESET, canonicalJson, computeNetwork, createWorld, validateCommand, worldHash, type Command, type World } from '@wp/strategy-engine';
 import { planAi } from '../src/ai';
 import {
   cancelOrder,
@@ -116,16 +116,57 @@ describe('command network (I3a)', () => {
     expect(orderSlots(s)).toBe(before);
   });
 
-  it('the opponent obeys coverage and order slots and sets up its relay forward', () => {
-    let s = newGame(2);
-    for (let turn = 0; turn < 4 && s.phase === 'plan'; turn++) {
-      const plan = planAi(s.world, RULESET, OPPONENT);
-      expect(plan.length).toBeLessThanOrEqual(4);
-      for (const c of plan) expect(validate(s.world, c)).toBe(true);
-      s = lockTurn(s);
+  it('the opponent obeys coverage and order slots and gets its relay set up within 4 turns (B1)', () => {
+    for (const seed of [1, 2, 3]) {
+      let s = newGame(seed);
+      let setUp = false;
+      for (let turn = 0; turn < 6 && s.phase === 'plan'; turn++) {
+        const plan = planAi(s.world, RULESET, OPPONENT);
+        expect(plan.length).toBeLessThanOrEqual(4);
+        for (const c of plan) expect(validate(s.world, c)).toBe(true);
+        s = lockTurn(s);
+        const truck = enemy(s).find((e) => e.kind === 'mast-truck');
+        if (truck?.deploy === RULESET.ticksPerTurn) setUp = true;
+        if (turn === 3) expect(setUp).toBe(true);
+      }
+      // Once set up, it stays inside its own coverage and keeps working.
+      const truck = enemy(s).find((e) => e.kind === 'mast-truck');
+      if (truck) expect(computeNetwork(s.world, RULESET, OPPONENT).nodes).toContain(truck.id);
     }
-    const truck = enemy(s).find((e) => e.kind === 'mast-truck');
-    expect(truck && (truck.order.type === 'deploy' || truck.order.type === 'move')).toBe(true);
+  });
+
+  it('the opponent only spends order slots on orders that will be accepted (N8)', () => {
+    const s = structuredClone(newGame(1));
+    // Put every opponent unit but one out of contact: the plan must still only hold valid orders.
+    for (const e of s.world.entities) if (e.side === OPPONENT && e.kind !== 'command-post' && e.kind !== 'rifles') Object.assign(e, { x: e.x - 6, y: e.y + 6 });
+    s.world.entities.sort((a, b) => a.id - b.id);
+    for (const c of planAi(s.world, RULESET, OPPONENT)) expect(validate(s.world, c)).toBe(true);
+  });
+
+  it('migrates a real version-1 save with a full draft: drafts are re-checked against the new limits (N5)', () => {
+    // Version 1: base ruleset, no Mast Truck, five planned orders (no slot limit back then).
+    const entities = FIELD_EXERCISE.scenario.entities.filter((e) => e.kind !== 'mast-truck');
+    const world = createWorld({ ...FIELD_EXERCISE.scenario, entities, seed: 9 }, BASE_RULESET);
+    const mobile = world.entities.filter((e) => e.side === PLAYER && e.kind !== 'command-post');
+    const v1 = {
+      v: 1,
+      seed: 9,
+      scenario: 'field-exercise',
+      turnLimit: 12,
+      world,
+      phase: 'plan',
+      draft: mobile.map((e) => ({ side: PLAYER, unit: e.id, order: { type: 'hold' } })),
+      events: [],
+      log: [],
+      result: null,
+      conceded: false
+    };
+    expect(v1.draft).toHaveLength(5);
+    const migrated = migrateState(JSON.parse(JSON.stringify(v1)), 1)!;
+    expect(migrated.v).toBe(2);
+    expect(migrated.draft.length).toBeLessThanOrEqual(orderSlots(migrated));
+    expect(migrated.draft.every((c) => orderRefusal({ ...migrated, draft: [] }, c.unit, c.order) === null)).toBe(true);
+    expect(isValidState(migrated)).toBe(true);
   });
 
   it('migrates a version-1 save (no network) to the strategy ruleset', () => {
