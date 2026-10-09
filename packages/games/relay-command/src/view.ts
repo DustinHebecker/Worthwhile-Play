@@ -26,9 +26,11 @@ import {
   orderRefusal,
   orderSlots,
   outcome,
+  picture,
   planDoctrine,
   planOrder,
   PLAYER,
+  reportTurn,
   RULESET,
   scenarioById,
   sideValue,
@@ -67,7 +69,12 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   let reported = false;
 
   /* ---------- Text helpers ---------- */
-  const world = (): World => state.world;
+  /** The world as the player knows it (fog, D7); rule checks use the true world in `rules.ts`. */
+  const world = (): World => picture(state.world).world;
+  /** Tick of the last report for units shown at their last known position, else `undefined`. */
+  const ghostTick = (e: Pick<Entity, 'id'>): number | undefined => picture(state.world).ghosts.get(e.id);
+  const isGhost = (e: Pick<Entity, 'id'>): boolean => ghostTick(e) !== undefined;
+  const known = (id: number): Entity | undefined => world().entities.find((e) => e.id === id);
   const unitName = (e: Pick<Entity, 'kind' | 'id'>) => t('unit.name', { name: t(`unit.${e.kind}`), id: e.id });
   const sideName = (side: number) => t(side === PLAYER ? 'side.own' : 'side.enemy');
   const terrainName = (x: number, y: number) => t(`terrain.${TERRAIN_NAMES[world().map.terrain[y * world().map.w + x] ?? '.'] ?? 'plain'}`);
@@ -79,7 +86,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     if (cachedNet?.state !== state) cachedNet = { state, net: computeNetwork(world(), RULESET, PLAYER) };
     return cachedNet.net;
   };
-  const inContact = (e: Entity) => network().coverage[cellOf(world().map, e.x, e.y)] === 1;
+  const inContact = (e: Entity) => !isGhost(e) && network().coverage[cellOf(world().map, e.x, e.y)] === 1;
   const isSetUpOrPending = (e: Entity) =>
     (e.deploy ?? 0) >= RULESET.ticksPerTurn || e.order.type === 'deploy' || draftFor(state, e.id)?.type === 'deploy';
   const deployText = (e: Entity): string => {
@@ -94,13 +101,13 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       case 'move':
         return t('order.move', { x: order.x + 1, y: order.y + 1 });
       case 'attack': {
-        const target = unitById(state, order.target);
+        const target = known(order.target);
         return t('order.attack', { target: target ? unitName(target) : `#${order.target}` });
       }
       case 'deploy':
         return t('order.deploy');
       case 'escort': {
-        const charge = unitById(state, order.target);
+        const charge = known(order.target);
         return t('order.escort', { target: charge ? unitName(charge) : `#${order.target}` });
       }
       case 'patrol':
@@ -114,7 +121,14 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
 
   const describeUnit = (e: Entity): string => {
     const max = archetypeOf(RULESET, e.kind)?.hp ?? e.hp;
+    const ghost = ghostTick(e);
+    if (ghost !== undefined && e.side !== PLAYER) {
+      // Enemies out of sight: only where and how strong they were when last reported.
+      const where = t('unit.lastSeen', { name: unitName(e), side: sideName(e.side), x: e.x + 1, y: e.y + 1, hp: e.hp, max });
+      return `${where} ${ghost === 0 ? t('unit.ghostStart') : t('unit.ghost', { turn: reportTurn(ghost) })}`;
+    }
     let text = t('unit.summary', { name: unitName(e), side: sideName(e.side), x: e.x + 1, y: e.y + 1, hp: e.hp, max, order: describeOrder(e, e.order) });
+    if (ghost !== undefined) text = `${text} ${ghost === 0 ? t('unit.ghostStart') : t('unit.ghost', { turn: reportTurn(ghost) })}`;
     if (e.side !== PLAYER) return text;
     if (isMobile(e)) text = `${text} (${t(inContact(e) ? 'contact.in' : 'contact.out')})`;
     if (needsDeploy(e)) text = `${text} ${deployText(e)}`;
@@ -201,7 +215,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     'details',
     { class: 'rc-help' },
     h('summary', {}, t('help.title')),
-    ...['help.turns', 'help.orders', 'help.network', 'help.doctrine', 'help.combat', 'help.goal', 'help.shapes', 'help.access'].map((k) => h('p', {}, t(k)))
+    ...['help.turns', 'help.orders', 'help.network', 'help.fog', 'help.doctrine', 'help.combat', 'help.goal', 'help.shapes', 'help.access'].map((k) => h('p', {}, t(k)))
   );
 
   const shell = h(
@@ -258,7 +272,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   }
 
   function renderSelection(): void {
-    const unit = selected === null ? undefined : unitById(state, selected);
+    const unit = selected === null ? undefined : known(selected);
     const reachable = !!unit && unit.side === PLAYER && inContact(unit);
     const canOrder = !!unit && unit.side === PLAYER && isMobile(unit) && reachable && state.phase === 'plan';
     if (!unit) {
@@ -299,12 +313,12 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       ownList.append(h('li', {}, btn));
     }
     if (own.length === 0) ownList.append(h('li', {}, t('list.empty')));
-    const attacker = selected === null ? undefined : unitById(state, selected);
+    const attacker = selected === null ? undefined : known(selected);
     const canAttack =
       !!attacker && attacker.side === PLAYER && isMobile(attacker) && inContact(attacker) && !!archetypeOf(RULESET, attacker.kind)?.weapon && state.phase === 'plan';
     for (const e of enemies) {
       const item = h('li', { 'data-testid': `rc-enemy-${e.id}` }, h('span', {}, describeUnit(e)));
-      if (canAttack) {
+      if (canAttack && !isGhost(e)) {
         item.append(h('button', { type: 'button', 'data-testid': `rc-attack-${e.id}`, onclick: () => orderSelected({ type: 'attack', target: e.id }) }, t('action.attack', { name: unitName(e) })));
       }
       enemyList.append(item);
@@ -366,6 +380,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     canvas.height = Math.round(height * ratio);
     g.setTransform(ratio, 0, 0, ratio, 0, 0);
     drawTerrain(g, w);
+    drawFog(g, w);
     drawCoverage(g, w);
     drawOrders(g, w);
     drawEvents(g);
@@ -404,6 +419,23 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       g.beginPath();
       g.arc(cx, cy, r * CELL + CELL / 2, 0, Math.PI * 2);
       g.stroke();
+    }
+    g.restore();
+  }
+
+  /** Veils cells the player does not see now: a translucent wash plus a dot (not colour alone). */
+  function drawFog(g: CanvasRenderingContext2D, w: World): void {
+    const observed = picture(state.world).observed;
+    g.save();
+    g.fillStyle = css('--rc-fog', 'rgba(29, 29, 27, 0.18)');
+    for (let y = 0; y < w.map.h; y++) {
+      for (let x = 0; x < w.map.w; x++) {
+        if (observed[cellOf(w.map, x, y)] === 1) continue;
+        g.fillRect(x * CELL, y * CELL, CELL, CELL);
+        g.beginPath();
+        g.arc(x * CELL + CELL - 7, y * CELL + CELL - 7, 2, 0, Math.PI * 2);
+        g.fill();
+      }
     }
     g.restore();
   }
@@ -499,7 +531,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       let target: readonly [number, number] | undefined;
       if (order.type === 'move') target = centre(order.x, order.y);
       if (order.type === 'attack' || order.type === 'escort') {
-        const other = unitById(state, order.target);
+        const other = known(order.target);
         if (other) target = centre(other.x, other.y);
       }
       if (order.type === 'patrol') target = centre(order.x, order.y);
@@ -564,10 +596,17 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     const colour = css(own ? '--wp-p1' : '--wp-p2', own ? '#24508f' : '#9a3412');
     const surface = css('--wp-surface', '#ffffff');
     const r = CELL * 0.34;
+    const ghost = isGhost(e);
     g.save();
     g.lineWidth = 3;
     g.strokeStyle = colour;
     g.fillStyle = own ? colour : surface;
+    // Last known position: faded, dashed outline and a question mark (not colour alone).
+    if (ghost) {
+      g.globalAlpha = 0.55;
+      g.setLineDash([4, 3]);
+      g.fillStyle = surface;
+    }
     g.beginPath();
     if (e.kind === 'command-post') g.rect(cx - r, cy - r, r * 2, r * 2);
     else if (own) g.arc(cx, cy, r, 0, Math.PI * 2);
@@ -580,9 +619,10 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     }
     g.fill();
     g.stroke();
+    g.setLineDash([]);
     // Kind glyph, drawn in the contrasting colour.
-    g.strokeStyle = own ? surface : colour;
-    g.fillStyle = own ? surface : colour;
+    g.strokeStyle = own && !ghost ? surface : colour;
+    g.fillStyle = own && !ghost ? surface : colour;
     g.lineWidth = 2;
     drawGlyph(g, e.kind, cx, cy);
     // Health bar under the unit.
@@ -592,6 +632,14 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     g.fillRect(cx - bw / 2, cy + CELL * 0.38, bw, 4);
     g.fillStyle = colour;
     g.fillRect(cx - bw / 2, cy + CELL * 0.38, (bw * e.hp) / max, 4);
+    if (ghost) {
+      g.globalAlpha = 1;
+      g.fillStyle = colour;
+      g.font = `bold ${Math.round(CELL * 0.3)}px sans-serif`;
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillText('?', e.x * CELL + 9, e.y * CELL + 10);
+    }
     if (own && isMobile(e) && !inContact(e)) {
       // "No contact" badge: a small crossed-out signal in the corner (not colour alone).
       const bx = e.x * CELL + CELL - 10;
@@ -693,7 +741,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     selected = id;
     mode = 'move';
     noticeEl.hidden = true;
-    const unit = id === null ? undefined : unitById(state, id);
+    const unit = id === null ? undefined : known(id);
     if (unit) cursor = { x: unit.x, y: unit.y };
     render();
     if (unit) announce(live, t('announce.selected', { name: unitName(unit) }));
@@ -701,7 +749,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
 
   function orderSelected(order: Order): void {
     if (selected === null) return;
-    const unit = unitById(state, selected);
+    const unit = known(selected);
     const refusal = orderRefusal(state, selected, order);
     const next = refusal === null ? planOrder(state, selected, order) : undefined;
     if (!unit || !next) {
@@ -715,7 +763,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
 
   /** Shows why an order was refused, visibly and for screen readers. */
   function showRefusal(refusal: string | null): void {
-    const specific = refusal === 'out-of-contact' || refusal === 'no-slots' || refusal === 'impassable';
+    const specific = refusal === 'out-of-contact' || refusal === 'no-slots' || refusal === 'impassable' || refusal === 'not-visible';
     const message = specific ? t(`refuse.${refusal}`, { slots: orderSlots(state) }) : t('announce.refused');
     noticeEl.textContent = message;
     noticeEl.hidden = false;
@@ -730,7 +778,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   /** Doctrine controls changed: plan the new doctrine (one order slot), or explain why not. */
   function onDoctrine(): void {
     if (selected === null) return;
-    const unit = unitById(state, selected);
+    const unit = known(selected);
     if (!unit) return;
     const doctrine: Doctrine = {
       retreatBelow: Number(retreatSelect.value) as Doctrine['retreatBelow'],
@@ -755,7 +803,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
 
   function onCancel(): void {
     if (selected === null) return;
-    const unit = unitById(state, selected);
+    const unit = known(selected);
     if (!unit || !draftFor(state, unit.id)) return;
     commit(cancelOrder(state, unit.id), t('announce.cancelled', { name: unitName(unit) }));
   }
@@ -765,8 +813,9 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     cursor = { x, y };
     const here = unitsAt(x, y);
     const ownHere = here.find((e) => e.side === PLAYER);
-    const enemyHere = here.find((e) => e.side !== PLAYER);
-    const current = selected === null ? undefined : unitById(state, selected);
+    // A ghost marks where an enemy was, not where it is: its cell takes a move order.
+    const enemyHere = here.find((e) => e.side !== PLAYER && !isGhost(e));
+    const current = selected === null ? undefined : known(selected);
     const canOrder = !!current && current.side === PLAYER && isMobile(current) && state.phase === 'plan';
     if (canOrder && mode === 'escort' && ownHere && ownHere.id !== selected) {
       orderSelected({ type: 'escort', target: ownHere.id });
@@ -784,7 +833,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       orderSelected({ type: 'attack', target: enemyHere.id });
       return;
     }
-    if (canOrder && !ownHere) {
+    if (canOrder && (!ownHere || isGhost(ownHere))) {
       orderSelected({ type: 'move', x, y });
       return;
     }

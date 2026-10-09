@@ -3,7 +3,7 @@ import { messages } from './messages';
 
 export const metadata: GameMetadata = {
   id: 'relay-command',
-  stateVersion: 2,
+  stateVersion: 3,
   skills: ['strategy', 'planning', 'spatial'],
   typicalMinutes: [10, 20],
   inputMethods: ['pointer', 'touch', 'keyboard'],

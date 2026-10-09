@@ -6,12 +6,14 @@ import {
   dist2,
   frameIndex,
   inWeaponRange,
+  isSpotted,
   passable,
   validateCommand,
   type Command,
   type Doctrine,
   type Entity,
   type Network,
+  type Report,
   type Ruleset,
   type World
 } from '@wp/strategy-engine';
@@ -28,15 +30,18 @@ const RELAY_FORWARD = 4;
 /**
  * Scripted opponent (increment I3a). Deterministic. It receives only the world, never the
  * player's draft, so it cannot react to plans that are not yet locked. Like the player it may
- * only order units inside its command coverage and only as many as its order slots allow:
+ * only order units inside its command coverage and only as many as its order slots allow, and
+ * like the player it knows only what its side has reported (fog, D7):
  * 1. a relay truck drives to the most forward cell it can reach while staying in contact, and sets up there;
- * 2. armed units engage the nearest enemy they can actually hit (closest units first).
+ * 2. armed units engage the nearest spotted enemy they can actually hit (closest units first),
+ *    or advance towards the nearest enemy position on record when none is spotted.
  */
 export function planAi(world: World, ruleset: Ruleset, side: number): Command[] {
   const network = computeNetwork(world, ruleset, side);
   const inContact = (e: Entity) => !ruleset.commandNetwork || network.coverage[cellOf(world.map, e.x, e.y)] === 1;
   const budget = ruleset.commandNetwork ? network.slots : Number.POSITIVE_INFINITY;
-  const enemies = world.entities.filter((e) => e.side !== side);
+  const known = knownEnemies(world, ruleset, side);
+  const enemies = world.entities.filter((e) => e.side !== side && isSpotted(world, ruleset, side, e.id));
   const own = world.entities.filter((e) => e.side === side && inContact(e));
   const commands: Command[] = [];
 
@@ -56,7 +61,7 @@ export function planAi(world: World, ruleset: Ruleset, side: number): Command[] 
   const retreating = (u: Entity) => u.hp * 100 < (archetypeOf(ruleset, u.kind)?.hp ?? 0) * AI_DOCTRINE.retreatBelow;
   const fighters = own
     .filter((u) => archetypeOf(ruleset, u.kind)?.weapon && (archetypeOf(ruleset, u.kind)?.speed ?? 0) > 0 && !retreating(u))
-    .map((u) => ({ u, d: nearestDistance(u, enemies) }))
+    .map((u) => ({ u, d: nearestDistance(u, known) }))
     .sort((a, b) => a.d - b.d || a.u.id - b.u.id);
   for (const { u: unit } of fighters) {
     const arch = archetypeOf(ruleset, unit.kind);
@@ -64,7 +69,14 @@ export function planAi(world: World, ruleset: Ruleset, side: number): Command[] 
     const minRange = arch.weapon.minRange;
     const reachable = enemies.filter((e) => dist2(unit.x, unit.y, e.x, e.y) >= minRange * minRange);
     const target = nearest(unit, reachable.length > 0 ? reachable : enemies);
-    if (!target) continue;
+    if (!target) {
+      // Nothing spotted: advance on the nearest enemy position on record (e.g. a structure).
+      const goal = nearest(unit, known);
+      if (goal && (unit.order.type !== 'move' || unit.order.x !== goal.x || unit.order.y !== goal.y) && unit.order.type !== 'attack') {
+        commands.push({ side, unit: unit.id, order: { type: 'move', x: goal.x, y: goal.y }, doctrine: AI_DOCTRINE });
+      }
+      continue;
+    }
     if (inWeaponRange(world, ruleset, unit, arch, target) && unit.order.type === 'hold') continue;
     if (unit.order.type === 'attack' && unit.order.target === target.id) continue;
     // Fighters pull back to regroup when badly damaged, also once out of contact.
@@ -84,7 +96,7 @@ export function planAi(world: World, ruleset: Ruleset, side: number): Command[] 
  */
 function relaySpot(world: World, ruleset: Ruleset, side: number, truck: Entity): { x: number; y: number } | undefined {
   const post = world.entities.find((e) => e.side === side && e.kind === 'command-post');
-  const enemyPost = world.entities.find((e) => e.side !== side && e.kind === 'command-post');
+  const enemyPost = knownEnemies(world, ruleset, side).find((e) => e.kind === 'command-post');
   if (!post || !enemyPost) return undefined;
   const without = { ...world, entities: world.entities.filter((e) => e.id !== truck.id) };
   const coverage = computeNetwork(without, ruleset, side).coverage;
@@ -115,11 +127,17 @@ const staysPut = (ruleset: Ruleset, e: Entity): boolean => {
   return arch?.layer === 'ground' && (arch.speed === 0 || e.order.type === 'hold' || e.order.type === 'deploy');
 };
 
-const nearestDistance = (unit: Entity, candidates: readonly Entity[]): number =>
+/** Enemy positions the side knows: current sightings and last reports (all enemies without fog). */
+const knownEnemies = (world: World, ruleset: Ruleset, side: number): readonly Pick<Report, 'id' | 'kind' | 'x' | 'y'>[] =>
+  ruleset.fog ? (world.intel?.[side] ?? []).filter((r) => r.side !== side) : world.entities.filter((e) => e.side !== side);
+
+type Positioned = Pick<Entity, 'id' | 'x' | 'y'>;
+
+const nearestDistance = (unit: Entity, candidates: readonly Positioned[]): number =>
   candidates.reduce((best, e) => Math.min(best, dist2(unit.x, unit.y, e.x, e.y)), Number.POSITIVE_INFINITY);
 
-function nearest(unit: Entity, candidates: readonly Entity[]): Entity | undefined {
-  let best: Entity | undefined;
+function nearest<T extends Positioned>(unit: Entity, candidates: readonly T[]): T | undefined {
+  let best: T | undefined;
   let bestD = Infinity;
   for (const e of candidates) {
     const d = dist2(unit.x, unit.y, e.x, e.y);

@@ -3,7 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { GameInstance, GameModule } from '@wp/game-core';
 import { createTestContext, type TestContext } from '@wp/testing';
 import game from '../src/index';
-import { concede, OPPONENT, PLAYER, type RcState } from '../src/rules';
+import { initialIntel, passable, type Entity } from '@wp/strategy-engine';
+import { concede, OPPONENT, PLAYER, RULESET, type RcState } from '../src/rules';
 import { CELL } from '../src/view';
 
 let ctx: TestContext;
@@ -16,6 +17,20 @@ const state = () => instance.serialize();
 const own = () => state().world.entities.filter((e) => e.side === PLAYER);
 const enemies = () => state().world.entities.filter((e) => e.side === OPPONENT);
 const firstMobile = () => own().find((e) => e.kind === 'rifles')!;
+
+/** Moves the enemy's first Rifle Squad next to the player's, in sight, and returns it (fog, D7). */
+function spotEnemy(): Entity {
+  const s = structuredClone(state());
+  const rifle = s.world.entities.find((e) => e.side === PLAYER && e.kind === 'rifles')!;
+  const foe = s.world.entities.find((e) => e.side === OPPONENT && e.kind === 'rifles')!;
+  const free = (x: number, y: number) => passable(s.world.map, RULESET, x, y, 'ground') && !s.world.entities.some((e) => e.x === x && e.y === y);
+  const spot = [[0, -2], [1, -2], [-1, -2], [2, 0], [-2, 0], [0, 2]].map(([dx, dy]) => [rifle.x + dx!, rifle.y + dy!] as const).find(([x, y]) => free(x, y))!;
+  foe.x = spot[0];
+  foe.y = spot[1];
+  s.world.intel = initialIntel(s.world, RULESET);
+  instance.restore(s);
+  return foe;
+}
 
 function setup(locale: 'en' | 'ar' | 'de' = 'en') {
   ctx = createTestContext(game as GameModule<unknown>, locale);
@@ -37,7 +52,9 @@ describe('Relay Command view', () => {
     expect($('rc-turn').textContent).toBe('Turn 1 of 12');
     expect($('rc-status').getAttribute('data-phase')).toBe('plan');
     expect(ctx.context.root.querySelectorAll('[data-testid^="rc-unit-"]')).toHaveLength(7);
-    expect($('rc-enemy').querySelectorAll('li')).toHaveLength(7);
+    // Fog: of the enemy, only its Command Post is known, from before the battle.
+    expect($('rc-enemy').querySelectorAll('li')).toHaveLength(1);
+    expect($('rc-enemy').textContent).toContain('Position known from before the battle');
     expect($('rc-slots').textContent).toBe('Orders this turn: 0 of 4.');
     expect($('rc-map').getAttribute('data-cols')).toBe('12');
     expect($('rc-map').style.width).toBe(`${12 * CELL}px`);
@@ -50,12 +67,16 @@ describe('Relay Command view', () => {
     click(`rc-unit-${unit.id}`);
     expect($(`rc-unit-${unit.id}`).getAttribute('aria-pressed')).toBe('true');
     expect($('rc-selection-text').textContent).toContain('Rifle Squad');
-    expect(ctx.context.root.querySelectorAll('[data-testid^="rc-attack-"]')).toHaveLength(7);
+    // Nothing in sight yet: the known enemy post is a ghost and cannot be attacked.
+    expect(ctx.context.root.querySelectorAll('[data-testid^="rc-attack-"]')).toHaveLength(0);
+    const foe = spotEnemy();
+    click(`rc-unit-${unit.id}`);
+    expect([...ctx.context.root.querySelectorAll('[data-testid^="rc-attack-"]')].map((b) => b.getAttribute('data-testid'))).toEqual([`rc-attack-${foe.id}`]);
   });
 
   it('plans attack, hold and cancel through the buttons and saves each change', () => {
     const unit = firstMobile();
-    const enemy = enemies()[0]!;
+    const enemy = spotEnemy();
     click(`rc-unit-${unit.id}`);
     click(`rc-attack-${enemy.id}`);
     expect(state().draft).toEqual([{ side: PLAYER, unit: unit.id, order: { type: 'attack', target: enemy.id } }]);
@@ -206,7 +227,12 @@ describe('Relay Command view', () => {
     expect($(`rc-unit-${unit.id}`).getAttribute('aria-pressed')).toBe('true');
     at(unit.x + 1, unit.y - 3);
     expect(state().draft[0]!.order).toEqual({ type: 'move', x: unit.x + 1, y: unit.y - 3 });
-    const enemy = enemies()[0]!;
+    // A ghost (the enemy post, known from before the battle) takes a move order, not an attack.
+    const post = enemies().find((e) => e.kind === 'command-post')!;
+    at(post.x, post.y);
+    expect(state().draft[0]!.order).toEqual({ type: 'move', x: post.x, y: post.y });
+    const enemy = spotEnemy();
+    at(unit.x, unit.y);
     at(enemy.x, enemy.y);
     expect(state().draft[0]!.order).toEqual({ type: 'attack', target: enemy.id });
   });
