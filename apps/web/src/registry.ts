@@ -55,7 +55,8 @@ export const GAMES: readonly GameEntry[] = [
   entry('stack-duel', () => import('@wp/game-stack-duel')),
   entry('n-back', () => import('@wp/game-n-back')),
   entry('visual-search', () => import('@wp/game-visual-search')),
-  entry('prospective-memory', () => import('@wp/game-prospective-memory'))
+  entry('prospective-memory', () => import('@wp/game-prospective-memory')),
+  entry('association', () => import('@wp/game-association'))
 ];
 
 export const findGame = (id: string): GameEntry | undefined => GAMES.find((g) => g.metadata.id === id);

@@ -6,7 +6,8 @@
   "exports": { ".": "./src/index.ts", "./metadata": "./src/metadata.ts" },
   "dependencies": {
     "@wp/game-core": "workspace:*",
-    "@wp/ui": "workspace:*"
+    "@wp/ui": "workspace:*",
+    "@wp/learning-content": "workspace:*"
   },
   "devDependencies": {
     "@wp/localization": "workspace:*",
