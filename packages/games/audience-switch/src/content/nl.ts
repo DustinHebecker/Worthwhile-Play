@@ -255,5 +255,182 @@ export const content: ContentText = {
       'expert.missing': 'Sommige deksels zitten los; klanten krijgen gratis vervanging.',
       'expert.condescending': 'Een scharnier is het onderdeel waarmee het deksel draait. Als het te dun is, houdt het niet goed.'
     }
+  },
+  renovation: {
+    title: 'Vertraagde verbouwing',
+    situation: 'Je leidt het bouwbedrijf dat de keuken en badkamer van een twee-onder-een-kapwoning verbouwt. Het werk loopt vertraging op. Leg het uit.',
+    facts: {
+      delay: 'De verbouwing is een week later klaar: op 21 juni in plaats van 14 juni.',
+      tiles: 'De leverancier leverde badkamertegels van 30 × 60 cm in plaats van 60 × 60 cm; ze moeten opnieuw besteld worden.',
+      order: 'Tot de nieuwe tegels er zijn, werkt de ploeg eerst aan de keuken.',
+      water: 'De gedeelde waterleiding wordt dinsdag van 8 tot 12 uur afgesloten.',
+      noise: 'Volgende week wordt er nog drie dagen luid geboord, tussen 8 en 17 uur.',
+      cost: 'De vertraging kost de eigenaren niets; de leverancier betaalt de nieuwe tegels.',
+      supplierHistory: 'Deze tegelleverancier had dit jaar al meerdere keren leveringsproblemen.',
+      skip: 'Maandag staat de container op straat voor de oprit van de buren.'
+    },
+    reasons: {
+      'customer.delay': 'De eigenaren plannen rond de nieuwe opleverdatum.',
+      'customer.tiles': 'Het precieze tegelformaat is een zaak van de ploeg; de eigenaren hebben de datum en de kosten nodig.',
+      'customer.water': 'Ze moeten weten wanneer ze geen water hebben.',
+      'customer.cost': 'Hun eerste zorg is of de vertraging hun geld kost.',
+      'projectManager.delay': 'De ploegleider plant het resterende werk naar de nieuwe datum toe.',
+      'projectManager.tiles': 'De ploeg moet precies weten wat er mis is met de levering.',
+      'projectManager.order': 'Dit doet de ploeg morgenochtend.',
+      'projectManager.water': 'De ploeg sluit het water af en moet iedereen waarschuwen.',
+      'projectManager.cost': 'Wie betaalt, regelen kantoor en leverancier; het verandert niets aan het werk.',
+      'projectManager.skip': 'De ploegleider moet regelen waar de container komt.',
+      'neighbour.tiles': 'Tegeldetails gaan de buren niets aan.',
+      'neighbour.order': 'De werkvolgorde van de ploeg raakt de buren niet.',
+      'neighbour.water': 'De buren delen de leiding en hebben de precieze tijden nodig.',
+      'neighbour.noise': 'De tijden van lawaai raken de buren het meest.',
+      'neighbour.cost': 'De kosten van de eigenaren zijn privé.',
+      'neighbour.skip': 'De container blokkeert hun oprit, dus moeten ze het vooraf weten.',
+      supplierHistory: 'Klagen over de leverancier klinkt als een excuus en helpt niemand.'
+    },
+    messages: {
+      'customer.fit': 'Uw verbouwing is op 21 juni klaar in plaats van 14 juni, omdat de badkamertegels in het verkeerde formaat zijn geleverd. Dat kost u niets. Let op: dinsdag is het water van 8 tot 12 uur afgesloten.',
+      'customer.tooMuch': 'De leverancier stuurde 30 × 60 in plaats van 60 × 60, dus het legplan klopt niet meer; de ploeg doet nu eerst de keuken en de container komt maandag op straat.',
+      'customer.condescending': 'Er is een klein probleempje met de tegels, daar hoeft u zich geen zorgen over te maken. Laat dat maar aan de vakmensen over.',
+      'projectManager.fit': 'De badkamertegels kwamen als 30 × 60 in plaats van 60 × 60, dus eerst de keuken tot de nabestelling er is. Nieuwe oplevering: 21 juni. Dinsdag water af van 8 tot 12 uur, en maandag komt de container op straat.',
+      'projectManager.missing': 'Er is vertraging bij de badkamer. Ga maar gewoon door.',
+      'projectManager.condescending': 'Tegels hebben een maat, en als de maat verkeerd is, passen ze niet. Dus leg ze alsjeblieft niet.',
+      'neighbour.fit': 'Over de verbouwing hiernaast: dinsdag is de gedeelde waterleiding van 8 tot 12 uur afgesloten, en volgende week wordt er nog drie dagen luid geboord, tussen 8 en 17 uur. Maandag staat de container voor uw oprit. Excuses voor het ongemak.',
+      'neighbour.tooMuch': 'De badkamertegels kwamen in het verkeerde formaat, dus de ploeg schakelt over naar de keuken, en de eigenaren betalen niets extra omdat de leverancier het vergoedt.',
+      'neighbour.missing': 'We zijn hiernaast een beetje aan het verbouwen. Bedankt voor uw geduld.'
+    }
+  },
+  schoolTrip: {
+    title: 'Wijziging schoolreisje',
+    situation: 'Je bent klassenleraar. Het busbedrijf heeft afgezegd, dus het uitje naar de dierentuin moet verschuiven. Leg het uit.',
+    facts: {
+      newDate: 'Het dierentuinuitje verschuift van donderdag naar volgende week dinsdag.',
+      bus: 'Het busbedrijf heeft afgezegd omdat twee chauffeurs ziek zijn.',
+      lunch: 'Kinderen nemen zoals gepland een lunchpakket en drinken mee.',
+      form: 'Ouders moeten vóór vrijdag een nieuw toestemmingsformulier ondertekenen.',
+      price: 'De prijs blijft 12 euro per kind.',
+      cover: 'Dinsdag moet iemand mijn lessen aan klas 7b van 10 tot 12 uur overnemen.',
+      rain: 'Bij hevige regen bezoekt de klas in plaats daarvan het aquariumhuis.',
+      complaint: 'Sommige ouders klaagden dat donderdag toch al een slechte dag was.'
+    },
+    reasons: {
+      'child.newDate': 'Kinderen willen eerst weten wanneer het uitje is.',
+      'child.bus': 'Zieke buschauffeurs zijn niets waar kinderen over hoeven na te denken.',
+      'child.lunch': 'Dit moeten ze zelf meenemen.',
+      'child.form': 'Het formulier is voor de ouders, niet voor de kinderen.',
+      'child.price': 'Geld regelen de ouders.',
+      'child.cover': 'Afspraken tussen leraren gaan de kinderen niet aan.',
+      'child.rain': 'Het vertelt hun wat ze kunnen verwachten, en dat willen kinderen graag weten.',
+      'parent.newDate': 'Ouders hebben de nieuwe datum nodig om hun week te plannen.',
+      'parent.lunch': 'Zij maken het lunchpakket klaar.',
+      'parent.form': 'Dit moeten ze doen, met een deadline.',
+      'parent.price': 'Ze willen weten of het duurder wordt.',
+      'parent.cover': 'Vervangende lessen zijn een interne schoolzaak.',
+      'parent.rain': 'Zo kunnen ze hun kind op het weer voorbereiden.',
+      'colleague.newDate': 'De collega moet weten om welke dag het gaat.',
+      'colleague.lunch': 'Lunchpakketten zijn voor de klas, niet voor de collega.',
+      'colleague.price': 'De prijs van het uitje raakt de collega niet.',
+      'colleague.cover': 'Dit is wat je eigenlijk aan hen vraagt.',
+      'colleague.rain': 'Het slechtweerplan verandert niets aan de lessen van de collega.',
+      complaint: 'Klachten doorgeven zorgt voor onrust en verandert niets.'
+    },
+    messages: {
+      'child.fit': 'Ons dierentuinuitje is nu volgende week dinsdag! Neem een lunchpakket en drinken mee, zoals afgesproken. Als het hard regent, gaan we naar het aquariumhuis.',
+      'child.tooMuch': 'Het busbedrijf heeft afgezegd omdat twee chauffeurs ziek zijn, jullie ouders moeten vóór vrijdag een nieuw formulier tekenen, en de prijs blijft 12 euro.',
+      'child.missing': 'Er verandert iets aan het uitje. Jullie horen later meer.',
+      'parent.fit': 'Het dierentuinuitje verschuift van donderdag naar volgende week dinsdag, omdat het busbedrijf heeft afgezegd. Wilt u vóór vrijdag het nieuwe toestemmingsformulier ondertekenen? De prijs blijft 12 euro; uw kind heeft nog steeds een lunchpakket en drinken nodig.',
+      'parent.tooMuch': 'Bij het busbedrijf zijn twee chauffeurs ziek, ik heb dinsdag van 10 tot 12 uur vervanging nodig voor klas 7b, en sommige ouders vonden donderdag toch al een slechte dag.',
+      'parent.condescending': 'Maakt u zich geen zorgen over de details, wij leraren hebben alles onder controle. Teken gewoon wat uw kind mee naar huis neemt.',
+      'colleague.fit': 'Ons dierentuinuitje is nu volgende week dinsdag. Kun jij die dag mijn lessen aan klas 7b van 10 tot 12 uur overnemen?',
+      'colleague.tooMuch': 'De kinderen nemen een lunchpakket mee, de prijs blijft 12 euro, het toestemmingsformulier moet vrijdag binnen zijn, en bij regen gaan we naar het aquariumhuis.',
+      'colleague.missing': 'Het uitje verschuift trouwens.'
+    }
+  },
+  practiceMonday: {
+    title: 'Huisartsenpraktijk: afspraken op maandag',
+    situation: 'Je werkt aan de balie van een huisartsenpraktijk. Een arts is maandag onverwacht afwezig, dus afspraken moeten verschuiven. Leg het uit. (Het gaat alleen om afspraken, niet om gezondheid.)',
+    facts: {
+      moved: 'Alle maandagafspraken bij dokter Lind verschuiven naar woensdag, op hetzelfde tijdstip.',
+      away: 'Dokter Lind is onverwacht afwezig om privéredenen.',
+      urgent: 'Dringende zaken op maandag worden opgevangen door de tweede arts van de praktijk.',
+      calls: '42 patiënten moeten vóór vrijdag gebeld worden.',
+      reply: 'Wie woensdag niet kan, belt de praktijk voor een ander tijdstip.',
+      hours: 'Het omboeken kost deze week ongeveer zes extra personeelsuren, die de praktijkmanager moet goedkeuren.',
+      vip: 'Een van de maandagpatiënten is een bekende lokale politicus.',
+      texts: 'Het nieuwe afsprakensysteem kan automatisch sms-herinneringen sturen.'
+    },
+    reasons: {
+      'patient.moved': 'De patiënt heeft eerst de nieuwe dag en tijd nodig.',
+      'patient.urgent': 'Hij moet weten waar hij terechtkan als iets niet kan wachten.',
+      'patient.calls': 'Hoeveel mensen het betreft, is interne werkdruk.',
+      'patient.reply': 'Het vertelt wat hij kan doen als woensdag niet uitkomt.',
+      'patient.hours': 'Personeelsuren zijn een zaak van de praktijk.',
+      'patient.texts': 'Interne hulpmiddelen hoeft de patiënt niet te horen.',
+      'executive.moved': 'De praktijkmanager moet weten wat er in de planning verandert.',
+      'executive.calls': 'Het laat de omvang van het werk zien.',
+      'executive.reply': 'Instructies voor patiënten zijn baliewerk, geen managementvraag.',
+      'executive.hours': 'Dit is de beslissing die de praktijkmanager moet nemen.',
+      'colleague.moved': 'De collega moet patiënten de nieuwe tijd doorgeven.',
+      'colleague.urgent': 'Patiënten gaan ernaar vragen, dus de collega heeft het antwoord nodig.',
+      'colleague.calls': 'Dit is de taak die je overdraagt.',
+      'colleague.hours': 'Extra uren keurt de manager goed; de collega heeft de taak nodig.',
+      'colleague.texts': 'Het scheelt haar veel telefoontjes.',
+      vip: 'Wie de patiënten zijn, is vertrouwelijk en hoort in geen van deze berichten thuis.'
+    },
+    messages: {
+      'patient.fit': 'Uw afspraak bij dokter Lind op maandag verschuift naar woensdag, op hetzelfde tijdstip. Komt woensdag u niet uit, bel ons dan voor een ander tijdstip. Dringende zaken op maandag worden opgevangen door onze tweede arts.',
+      'patient.tooMuch': 'We moeten vóór vrijdag 42 patiënten bellen, wat ongeveer zes extra personeelsuren kost, en het nieuwe systeem kan sms-herinneringen sturen.',
+      'patient.condescending': 'Artsen hebben het nu eenmaal druk. Kom gewoon woensdag en maak u geen zorgen over het waarom.',
+      'executive.fit': 'Wil je deze week ongeveer zes extra personeelsuren goedkeuren? Dokter Lind is maandag afwezig, dus 42 afspraken verschuiven naar woensdag en die patiënten moeten vóór vrijdag gebeld worden.',
+      'executive.tooMuch': 'Wie woensdag niet kan, moet ons bellen, dringende zaken gaan naar de tweede arts, en sms-herinneringen kun je aanzetten in het instellingenmenu.',
+      'executive.missing': 'Maandag is een beetje rommelig, we lossen het op.',
+      'colleague.fit': 'Kun je me helpen om vóór vrijdag de 42 patiënten te bellen die maandag bij dokter Lind staan? Hun afspraken verschuiven naar woensdag, op hetzelfde tijdstip; dringende zaken op maandag gaan naar de tweede arts. Het nieuwe systeem kan ook sms-herinneringen sturen.',
+      'colleague.missing': 'De maandagafspraken veranderen, even ter info.',
+      'colleague.condescending': 'Patiënten bellen is makkelijk: hoorn opnemen, nummer kiezen, praten. Doe dat alsjeblieft voor de maandaglijst.'
+    }
+  },
+  libraryHours: {
+    title: 'Openingstijden van de bibliotheek',
+    situation: 'Je leidt de stadsbibliotheek. Door bezuinigingen veranderen de openingstijden. Leg het uit.',
+    facts: {
+      hours: 'Vanaf 1 september is de bibliotheek dinsdag tot en met zaterdag open van 10 tot 18 uur en op maandag gesloten.',
+      cards: 'Bibliotheekpassen en online lenen veranderen niet.',
+      budget: 'De gemeente heeft het budget van de bibliotheek met 15% verlaagd.',
+      returns: 'Boeken kunnen nog steeds altijd via de inleverbus worden teruggebracht.',
+      shifts: 'De diensten veranderen: geen maandagdiensten meer, langere zaterdagdiensten.',
+      savings: 'De nieuwe tijden besparen ongeveer 40.000 euro per jaar, en niemand verliest zijn baan.',
+      petition: 'Een lezer is een petitie gestart tegen de sluiting op maandag.',
+      heating: 'De sluiting op maandag bespaart ook op verwarming, omdat het oude gebouw slecht geïsoleerd is.'
+    },
+    reasons: {
+      'customer.hours': 'Lezers moeten eerst weten wanneer ze kunnen komen.',
+      'customer.cards': 'Het beantwoordt de zorg of hun pas en online lenen nog werken.',
+      'customer.returns': 'Het vertelt wat ze op een gesloten dag toch kunnen doen.',
+      'customer.shifts': 'Dienstroosters zijn intern.',
+      'customer.savings': 'Begrotingscijfers helpen lezers niet hun bezoek te plannen.',
+      'customer.petition': 'De petitie noemen kiest partij en helpt lezers niet plannen.',
+      'customer.heating': 'De isolatie van het gebouw is een intern detail.',
+      'colleague.hours': 'Collega’s beantwoorden de vragen van lezers over de nieuwe tijden.',
+      'colleague.cards': 'Collega’s kennen hun eigen systemen; deze zin is voor lezers.',
+      'colleague.shifts': 'Dit verandert hun eigen werkweek.',
+      'colleague.savings': 'Horen dat niemand zijn baan verliest, is voor hen heel belangrijk.',
+      'colleague.heating': 'Verwarmingskosten veranderen niets aan hun werk.',
+      'executive.hours': 'De gemeenteraad moet precies weten wat het publiek gaat zien.',
+      'executive.budget': 'De raad heeft de bezuiniging zelf besloten; het herhalen kost alleen tijd.',
+      'executive.returns': 'Details over de inleverbus zijn dagelijkse bedrijfsvoering.',
+      'executive.savings': 'Besparingen en banen zijn precies waar de raad naar vroeg.',
+      'executive.petition': 'Reacties van het publiek kunnen de raad bereiken, dus moet die het eerst van jou horen.'
+    },
+    messages: {
+      'customer.fit': 'Vanaf 1 september is de bibliotheek dinsdag tot en met zaterdag open van 10 tot 18 uur en op maandag gesloten. U kunt boeken nog steeds altijd via de inleverbus terugbrengen, en uw pas en online lenen werken zoals altijd.',
+      'customer.tooMuch': 'De gemeente heeft ons budget met 15% verlaagd, dus besparen we ongeveer 40.000 euro per jaar door de diensten aan te passen en het oude gebouw op maandag minder te verwarmen.',
+      'customer.condescending': 'We weten dat verandering voor sommige lezers moeilijk is. Onthoud gewoon: op maandag geen bibliotheek. Zo simpel is het.',
+      'colleague.fit': 'Vanaf 1 september veranderen onze diensten: geen maandagdiensten meer, langere zaterdagdiensten. We zijn open van dinsdag tot en met zaterdag van 10 tot 18 uur, en niemand verliest zijn baan.',
+      'colleague.missing': 'In het najaar verandert er een en ander. Later meer.',
+      'colleague.tooMuch': 'Lezers kunnen de inleverbus blijven gebruiken, passen en online lenen veranderen niet, en de maandagsluiting bespaart ook op verwarming in ons slecht geïsoleerde gebouw.',
+      'executive.fit': 'De nieuwe openingstijden besparen ongeveer 40.000 euro per jaar zonder banenverlies: vanaf 1 september sluiten we op maandag en zijn we dinsdag tot en met zaterdag open van 10 tot 18 uur. Let op: een lezer is een petitie gestart tegen de maandagsluiting.',
+      'executive.tooMuch': 'Inleveren blijft mogelijk via de inleverbus, passen en online lenen veranderen niet, en de zaterdagdiensten worden langer terwijl de maandagdiensten vervallen.',
+      'executive.missing': 'We hebben de openingstijden wat aangepast.'
+    }
   }
 };

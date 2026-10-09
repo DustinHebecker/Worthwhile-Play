@@ -30,7 +30,7 @@ import {
   type AudienceSwitchState,
   type Difficulty
 } from '../src/rules';
-import { SCENARIOS, scenarioById, type AudienceId, type MessageId } from '../src/scenarios';
+import { AUDIENCES, SCENARIOS, scenarioById, type AudienceId, type MessageId } from '../src/scenarios';
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 const round0 = (s: AudienceSwitchState) => s.rounds[0]!;
@@ -134,7 +134,7 @@ describe('createInitialState', () => {
 describe('scenario data', () => {
   it('is consistent: 3 audiences, a far pair, unique ids, tags for every audience', () => {
     expect(new Set(SCENARIOS.map((s) => s.id)).size).toBe(SCENARIOS.length);
-    expect(SCENARIOS.length).toBeGreaterThanOrEqual(6);
+    expect(SCENARIOS.length).toBeGreaterThanOrEqual(10);
     for (const def of SCENARIOS) {
       expect(def.audiences).toHaveLength(3);
       expect(new Set(def.audiences).size).toBe(3);
@@ -144,6 +144,26 @@ describe('scenario data', () => {
       expect(def.facts.length).toBeGreaterThanOrEqual(8);
       for (const f of def.facts) for (const a of def.audiences) expect(['must', 'optional', 'leave']).toContain(f.tags[a]);
     }
+  });
+
+  it('keeps the ids stored in saves unchanged (append only)', () => {
+    expect(AUDIENCES.slice(0, 7)).toEqual(['developer', 'projectManager', 'customer', 'executive', 'child', 'expert', 'layperson']);
+    const shape = (id: string) => {
+      const def = scenarioById(id)!;
+      return { audiences: def.audiences, facts: def.facts.map((f) => f.id).join(), messages: def.audiences.map((a) => messageIdsFor(def, a).join()).join('|') };
+    };
+    expect(SCENARIOS.slice(0, 6).map((d) => d.id)).toEqual(['migration', 'skyBlue', 'clubRoof', 'shopOutage', 'signalFault', 'kettleLid']);
+    expect(shape('migration')).toEqual({
+      audiences: ['developer', 'projectManager', 'customer'],
+      facts: 'newDate,cause,noLoss,encoding,apology,regression,buffer,library',
+      messages: 'fit,missing,condescending|fit,tooMuch,missing|fit,tooMuch,condescending'
+    });
+    expect(shape('skyBlue').facts).toBe('sunlight,scatter,rayleigh,sunset,everywhere,violet,molecules,ocean');
+    expect(shape('clubRoof').facts).toBe('cost,decision,storage,fees,schedule,tiles,reserve,volunteer');
+    expect(shape('shopOutage').facts).toBe('duration,revenue,cause,fixed,renewal,voucher,approval,competitor');
+    expect(shape('signalFault').facts).toBe('delay,bus,tickets,signal,singleTrack,repair,construction,staff');
+    expect(shape('kettleLid').facts).toBe('batches,risk,stop,hinge,free,cost,supplier,injuries');
+    expect(shape('kettleLid').audiences).toEqual(['customer', 'executive', 'expert']);
   });
 
   it('gives every audience at least one must and one leave-out among the non-subtle cards', () => {

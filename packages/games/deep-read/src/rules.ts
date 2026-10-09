@@ -81,6 +81,14 @@ export function createInitialState(seed: number, difficulty: Difficulty = 'easy'
   };
 }
 
+/**
+ * Restarts the same text from the beginning. Keeps the saved `textId`, so a save made before more texts
+ * were added (when the same seed picked from a smaller pool) restarts the text it was reading.
+ */
+export function restart(state: DeepReadState): DeepReadState {
+  return { ...createInitialState(state.seed, state.difficulty), textId: state.textId };
+}
+
 /** "I'm done reading": the text closes and the first question appears. */
 export function finishReading(state: DeepReadState): DeepReadState {
   if (state.phase !== 'reading') return state;

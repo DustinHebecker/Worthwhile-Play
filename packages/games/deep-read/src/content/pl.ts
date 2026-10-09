@@ -262,5 +262,266 @@ export const pl: LocaleContent = {
         c: ['Lista zasad biblioteki, a po niej przykłady.', 'Tekst nie zawiera żadnych zasad.']
       }
     }
+  },
+  paperback: {
+    title: 'Książka, która mieściła się w kieszeni',
+    paragraphs: [
+      'Przez długi czas większość nowych książek była droga. Miały twarde okładki i szyte strony, więc wiele osób wypożyczało książki z bibliotek albo w ogóle nie czytało nowości. Tanie książki w papierowych okładkach istniały już w XIX wieku, ale często uważano je za lekturę na jeden raz.',
+      'W 1935 roku brytyjski wydawca Allen Lane założył wydawnictwo Penguin Books. Jego pomysł był prosty: dobrze napisane książki w papierowej okładce, sprzedawane mniej więcej w cenie paczki papierosów. Okładki były skromne i oznaczone kolorami – pomarańczowy dla powieści, zielony dla kryminałów – tak by rodzaj książki dało się rozpoznać na pierwszy rzut oka.',
+      'Wielu księgarzy wątpiło w ten plan. Obawiali się, że tanie książki sprawią, iż ludzie przestaną kupować drogie. Jednak książki kieszonkowe sprzedawały się w ogromnych ilościach, a inni wydawcy szybko poszli w ich ślady. W Stanach Zjednoczonych wydawnictwo Pocket Books zaczęło sprzedawać książki kieszonkowe w 1939 roku, a w czasie II wojny światowej wydrukowano miliony małych książek specjalnie dla żołnierzy.',
+      'Dziś książki kieszonkowe są tak zwyczajne, że łatwo zapomnieć, jak nowe kiedyś się wydawały. Dzięki nim znacznie więcej ludzi mogło mieć własne książki, zamiast tylko je wypożyczać, i nosić całą powieść w kieszeni płaszcza.'
+    ],
+    summary: 'Książki kieszonkowe, spopularyzowane przez Penguin od 1935 roku, sprawiły, że dobrze napisane książki stały się na tyle tanie, by wiele osób mogło je mieć i nosić ze sobą.',
+    questions: {
+      q1: {
+        q: 'Jaka jest główna myśl tekstu?',
+        a: ['Okładki Penguin były pomarańczowe i zielone.', 'To szczegół z akapitu 2, a nie główna myśl.'],
+        b: ['Tanie książki kieszonkowe sprawiły, że posiadanie dobrych książek stało się dla wielu osób czymś normalnym.', 'Dobrze. Tekst prowadzi od drogich książek do kieszonkowych, które ludzie mogli mieć na własność.'],
+        c: ['Księgarze słusznie obawiali się tanich książek.', 'Tekst mówi, że książki kieszonkowe dobrze się sprzedawały; nie mówi, że obawy się sprawdziły.']
+      },
+      q2: {
+        q: 'Co mówił czytelnikom kolor okładki Penguin?',
+        a: ['Ile lat ma książka.', 'Tekst tego nie mówi.'],
+        b: ['Ile kosztuje książka.', 'Tekst łączy kolor z rodzajem książki, a nie z ceną.'],
+        c: ['Jakiego rodzaju to książka, na przykład powieść czy kryminał.', 'Dobrze. Akapit 2 wyjaśnia kod kolorów.']
+      },
+      q3: {
+        q: 'Dlaczego wielu księgarzy wątpiło w ten plan?',
+        a: ['Obawiali się, że ludzie przestaną kupować drogie książki.', 'Dobrze. Akapit 3 podaje ten powód.'],
+        b: ['Sądzili, że papierowe okładki będą się zbyt szybko drzeć.', 'Tekst o tym nie wspomina.'],
+        c: ['Nie podobały im się kolory.', 'Tekst tego nie mówi.']
+      },
+      q4: {
+        q: 'Jak zbudowany jest tekst?',
+        a: ['Jako porównanie cen dwóch wydawnictw.', 'Nie porównuje się żadnych cen.'],
+        b: ['Jako lista słynnych powieści kieszonkowych.', 'W tekście nie pada żaden tytuł.'],
+        c: ['Chronologicznie: drogie książki, początki Penguin, upowszechnienie książek kieszonkowych, dziś.', 'Dobrze. Tekst posuwa się w czasie i kończy na teraźniejszości.']
+      }
+    }
+  },
+  bridges: {
+    title: 'Kiedy most zaczyna się kołysać',
+    paragraphs: [
+      'Mosty nie są całkowicie sztywne. Wiatr, ruch pojazdów, a nawet kroki sprawiają, że lekko się poruszają, a inżynierowie projektują je tak, by mogły się nieco uginać bez szkody. Zwykle ruch jest zbyt mały, by go zauważyć.',
+      'Czasem jednak most porusza się tak, że ludzie to czują. Gdy w 2000 roku otwarto Millennium Bridge, kładkę dla pieszych nad Tamizą w Londynie, zaczęła się ona kołysać na boki, kiedy przechodziły nią tłumy. Każdy krok lekko pcha w bok. Gdy most się ruszał, ludzie dostosowywali chód, by utrzymać równowagę, i wielu zaczęło stawiać kroki w rytm kołysania – co rozkołysało most jeszcze bardziej.',
+      'Most zamknięto dwa dni po otwarciu. Inżynierowie go nie przebudowali. Zamiast tego dodali tłumiki: urządzenia pochłaniające ruch, podobne do amortyzatorów w samochodzie. Niektóre działają jak duże tłoki wypełnione cieczą; inne to ciężkie masy na sprężynach, które poruszają się przeciwnie do kołysania. Most otwarto ponownie w 2002 roku i od tamtej pory jest stabilny.',
+      'Lekcja nie polegała na tym, że most był słaby. Chodziło o to, że ludzie i konstrukcje mogą wpływać na siebie w trudny do przewidzenia sposób. Dlatego inżynierowie biorą dziś pod uwagę to, jak tłumy chodzą, a nie tylko to, ile ważą.'
+    ],
+    summary: 'Millennium Bridge kołysał się, bo piesi zaczęli iść w rytm jego ruchu; tłumiki rozwiązały problem i pokazały, że trzeba uwzględniać sposób, w jaki poruszają się tłumy.',
+    questions: {
+      q1: {
+        q: 'Jaka jest główna myśl tekstu?',
+        a: ['Ludzie idący w rytm kołyszącego się mostu mogą wzmacniać kołysanie, a tłumiki mogą temu zapobiec.', 'Dobrze. Tekst wyjaśnia przyczynę i rozwiązanie.'],
+        b: ['Millennium Bridge był źle zbudowany i trzeba go było wymienić.', 'Nie. Nie przebudowano go, tylko dodano tłumiki, a tekst mówi, że nie był słaby.'],
+        c: ['Wszystkie mosty są niebezpieczne przy silnym wietrze.', 'Tekst mówi, że niewielkie ruchy są normalne i nieszkodliwe.']
+      },
+      q2: {
+        q: 'Dlaczego kołysanie się nasiliło?',
+        a: ['Wiatr nad rzeką się wzmógł.', 'Tekst nie obwinia wiatru; przyczyną był sposób chodzenia.'],
+        b: ['Most dźwigał zbyt duży ciężar.', 'Tekst wskazuje rytm kroków, a nie ciężar.'],
+        c: ['Wiele osób zaczęło stawiać kroki w rytm kołysania.', 'Dobrze. Opisuje to akapit 2.']
+      },
+      q3: {
+        q: 'Co zrobili inżynierowie?',
+        a: ['Przebudowali most z mocniejszej stali.', 'Tekst mówi, że go nie przebudowali.'],
+        b: ['Dodali tłumiki pochłaniające ruch.', 'Dobrze. Akapit 3 opisuje tłumiki.'],
+        c: ['Wpuszczali na most tylko kilka osób naraz.', 'Tekst o tym nie wspomina.']
+      },
+      q4: {
+        q: 'Który szczegół najlepiej potwierdza, że tłumiki zadziałały?',
+        a: ['Most otwarto w 2000 roku.', 'Wtedy zaczął się problem; to nie dowód na rozwiązanie.'],
+        b: ['Tłumiki działają jak amortyzatory w samochodzie.', 'To wyjaśnia, jak działają, a nie czy zadziałały w tym przypadku.'],
+        c: ['Most otwarto ponownie w 2002 roku i od tamtej pory jest stabilny.', 'Dobrze. Akapit 3 podaje wynik po dodaniu tłumików.']
+      }
+    }
+  },
+  longitude: {
+    title: 'Jak ustalić swoje położenie na morzu',
+    paragraphs: [
+      'Przez stulecia żeglarze potrafili określić, jak daleko na północ lub południe się znajdują. Wysokość słońca w południe albo Gwiazdy Polarnej nocą dawała im szerokość geograficzną. Ustalenie, jak daleko są na wschód lub zachód – czyli długości geograficznej – było znacznie trudniejsze, a statki, które się pomyliły, mogły wpaść na skały albo zostać bez zapasów daleko od lądu.',
+      'Problem dotyczył w gruncie rzeczy czasu. Ziemia obraca się o 15 stopni na godzinę, więc jeśli nawigator znał w tej samej chwili czas miejscowy na statku i czas w porcie macierzystym, różnica dawała długość geograficzną. Czas miejscowy dało się ustalić ze słońca. Trudno było natomiast zachować czas portu: ówczesne zegary wahadłowe nie działały na kołyszącym się statku, a zmiany temperatury sprawiały, że zegary się spieszyły lub spóźniały.',
+      'W 1714 roku brytyjski parlament wyznaczył wysoką nagrodę za praktyczne rozwiązanie. Wielu ekspertów spodziewało się odpowiedzi z nieba: mierząc kąt między Księżycem a pewnymi gwiazdami i porównując go z drukowanymi tablicami, nawigator mógł obliczyć czas portu. Ta metoda „odległości księżycowych” działała, ale wymagała starannych pomiarów i długich obliczeń.',
+      'John Harrison, zegarmistrz samouk, wybrał inną drogę. Przez kilkadziesiąt lat budował serię zegarów okrętowych. Czwarty, przypominający duży zegarek kieszonkowy, wyjątkowo dokładnie odmierzał czas podczas próbnego rejsu na Karaiby w latach 1761–62. Mimo to Harrison przez lata spierał się z urzędnikami odpowiedzialnymi za nagrodę, zanim otrzymał zapłatę.',
+      'Przez długi czas obie metody stosowano równolegle, bo nowe zegary okrętowe, zwane chronometrami, były drogie. Gdy w XIX wieku potaniały, stały się standardowym wyposażeniem statków.'
+    ],
+    summary: 'Ustalenie długości geograficznej na morzu zależało od znajomości czasu portu macierzystego, a po latach rywalizacji dwóch metod standardem stały się dokładne zegary okrętowe.',
+    questions: {
+      q1: {
+        q: 'Jaka jest główna myśl tekstu?',
+        a: ['Przed erą satelitów żeglarze nigdy nie mogli ustalić swojego położenia.', 'Tekst opisuje dwie metody, które działały.'],
+        b: ['Ustalenie długości geograficznej było problemem pomiaru czasu, rozwiązanym przez lata za pomocą tablic gwiazd i zegarów okrętowych.', 'Dobrze. Tekst wyjaśnia problem i to, jak podeszły do niego obie metody.'],
+        c: ['Parlament niesprawiedliwie potraktował Harrisona.', 'Spór to szczegół, a nie główna myśl.'],
+        d: ['Szerokość geograficzną trudniej ustalić niż długość.', 'Tekst mówi coś przeciwnego.']
+      },
+      q2: {
+        q: 'Dlaczego zwykłe zegary zawodziły na morzu?',
+        a: ['Wahadła nie działały na kołyszącym się statku, a temperatura zmieniała ich chód.', 'Dobrze. Akapit 2 podaje oba powody.'],
+        b: ['Były zbyt drogie.', 'Koszt wspomniano przy późniejszych chronometrach, a nie jako przyczynę zawodności zwykłych zegarów.'],
+        c: ['Żeglarze zapominali je nakręcać.', 'Tekst tego nie mówi.']
+      },
+      q3: {
+        q: 'Co porównywała metoda odległości księżycowych?',
+        a: ['Zegar na statku z zegarem w porcie.', 'To idea metody zegarowej, a nie księżycowej.'],
+        b: ['Wysokość Gwiazdy Polarnej z wysokością słońca.', 'Te pomiary dają szerokość geograficzną, jak wyjaśnia akapit 1.'],
+        c: ['Kąt między Księżycem a gwiazdami z drukowanymi tablicami.', 'Dobrze. Opisuje to akapit 3.']
+      },
+      q4: {
+        q: 'Jaką rolę pełni w tekście akapit 2?',
+        a: ['Wyjaśnia, że długość geograficzna to w istocie kwestia czasu, na czym opierają się dalsze akapity.', 'Dobrze. Obie metody z akapitów 3 i 4 to sposoby ustalenia czasu portu.'],
+        b: ['Opowiada historię życia Harrisona.', 'To akapit 4.'],
+        c: ['Opisuje nagrodę wyznaczoną przez parlament.', 'To akapit 3.']
+      },
+      q5: {
+        q: 'Który szczegół świadczy o tym, że czwarty zegar Harrisona działał dobrze?',
+        a: ['Przypominał duży zegarek kieszonkowy.', 'Kształt nic nie mówi o dokładności.'],
+        b: ['Harrison przez dziesięciolecia budował zegary.', 'Wysiłek nie jest dowodem wyników.'],
+        c: ['Wyjątkowo dokładnie odmierzał czas podczas próbnego rejsu na Karaiby.', 'Dobrze. Akapit 4 podaje wynik próby.']
+      }
+    }
+  },
+  'tree-rings': {
+    title: 'Jak czytać słoje drzewa',
+    paragraphs: [
+      'Gdy przetnie się pień starego drzewa, zwykle widać wzór słojów. Tam, gdzie pory roku są wyraźne, drzewo zazwyczaj przyrasta o jeden słój rocznie: jasne, szybko rosnące drewno wiosną i ciemniejsze, gęstsze później w sezonie. Liczenie słojów od kory do środka daje pierwsze oszacowanie wieku drzewa.',
+      'Słoje mówią więcej niż wiek. W dobrym roku, przy dostatku deszczu i ciepła, drzewo tworzy szeroki słój; w roku suchym lub zimnym – wąski. Dlatego drzewa tego samego gatunku w jednej okolicy mają podobny wzór szerokich i wąskich słojów, jak kod kreskowy zapisany przez pogodę.',
+      'Ten wspólny wzór jest kluczem do datowania słojów, czyli dendrochronologii. Badacze zaczynają od żywych drzew, których zewnętrzny słój należy do znanego roku. Potem szukają starszego drewna – na przykład ze starych budynków – którego wewnętrzne słoje pasują do wzoru najstarszych słojów żywych drzew. Krok po kroku nakładające się próbki wydłużają zapis w przeszłość. W niektórych regionach takie zapisy sięgają dziś tysięcy lat wstecz.',
+      'Policzenie jednego drzewa jednak nie wystarcza. W bardzo złym roku drzewo może nie wytworzyć żadnego widocznego słoja, a susza w środku lata może dać coś, co wygląda jak dodatkowy słój. Dlatego badacze porównują wiele próbek: jedno drzewo może zmylić, ale wiele drzew razem ujawnia prawdziwą sekwencję.',
+      'Dzięki datowaniu słojów ustalono, kiedy budowano drewniane domy, kiedy powstawały statki i jaki był dawny klimat. Wszystko zaczyna się od wzoru, który każdy może zobaczyć na pniaku.'
+    ],
+    summary: 'Ponieważ drzewa z jednej okolicy mają podobne wzory szerokich i wąskich słojów, badacze mogą porównywać wiele próbek i dokładnie datować drewno daleko wstecz.',
+    questions: {
+      q1: {
+        q: 'Jaka jest główna myśl tekstu?',
+        a: ['Wspólne wzory słojów pozwalają dokładnie datować drewno przez porównanie wielu próbek.', 'Dobrze. Tekst prowadzi do tej metody i jej zastosowań.'],
+        b: ['Liczenie słojów to jedyny sposób ustalenia wieku drzewa.', 'Tekst mówi, że liczenie daje tylko pierwsze oszacowanie i może zmylić.'],
+        c: ['Drzewa rosną szybciej w zimne lata.', 'Tekst mówi coś przeciwnego.'],
+        d: ['Stare budynki są zbudowane z drewna.', 'Stare budynki to tylko jedno ze źródeł próbek.']
+      },
+      q2: {
+        q: 'Co zwykle oznacza wąski słój?',
+        a: ['Że drzewo było młode.', 'Tekst nie łączy wąskich słojów z wiekiem.'],
+        b: ['Rok suchy lub zimny.', 'Dobrze. Mówi to akapit 2.'],
+        c: ['Że drzewo ścięto zimą.', 'Tekst tego nie mówi.']
+      },
+      q3: {
+        q: 'Dlaczego badacze zaczynają od żywych drzew?',
+        a: ['Bo żywe drzewa mają najwięcej słojów.', 'Tekst nie podaje takiego powodu.'],
+        b: ['Bo ich drewno łatwiej ciąć.', 'Tekst o tym nie wspomina.'],
+        c: ['Bo ich zewnętrzny słój należy do znanego roku.', 'Dobrze. Akapit 3 wskazuje to jako punkt wyjścia.']
+      },
+      q4: {
+        q: 'Akapit 1 mówi, że drzewo zazwyczaj przyrasta o jeden słój rocznie. Które późniejsze stwierdzenie pokazuje, że nie zawsze tak jest?',
+        a: ['Drzewa z jednej okolicy mają podobny wzór.', 'To wspiera metodę, ale nie ogranicza reguły jednego słoja rocznie.'],
+        b: ['W bardzo złym roku słoja może brakować albo może powstać coś, co wygląda jak dodatkowy słój.', 'Dobrze. Akapit 4 opisuje te wyjątki.'],
+        c: ['W niektórych regionach zapisy sięgają tysięcy lat wstecz.', 'To dotyczy długości zapisów, a nie reguły jednego słoja rocznie.']
+      },
+      q5: {
+        q: 'Dlaczego porównywanie wielu próbek jest pewniejsze niż liczenie jednego drzewa?',
+        a: ['Bo każde drzewo zapisuje inny rok.', 'Drzewa z jednej okolicy dzielą te same lata; właśnie dlatego można je porównywać.'],
+        b: ['Bo wiele próbek lepiej wygląda w raporcie.', 'Tekst nie podaje takiego powodu.'],
+        c: ['Bo jedno drzewo może zmylić, a wiele drzew razem ujawnia prawdziwą sekwencję.', 'Dobrze. Wyjaśnia to akapit 4.']
+      }
+    }
+  },
+  'car-free': {
+    title: 'Ulica bez samochodów?',
+    paragraphs: [
+      'Ulica Lipowa to krótka ulica ze sklepami, piekarnią i szkołą podstawową. Grupa mieszkańców zaproponowała, by na trzymiesięczną letnią próbę zamknąć ją dla samochodów i postawić ławki oraz donice tam, gdzie teraz parkują auta. Na zebraniu publicznym ludzie przedstawili argumenty za i przeciw.',
+      'Pan Okafor, który prowadzi sklep żelazny, był zdecydowanie przeciw. „Kiedy ostatnio zamknięto ulicę, na wiosenny festyn, moja sprzedaż w tamtym tygodniu spadła o połowę” – powiedział. Inni zwrócili uwagę, że przez większość tamtego tygodnia padało, a festyn trwał tylko jeden weekend.',
+      'Grupa mieszkańców przedstawiła petycję z 300 podpisami poparcia. Zapytani przyznali, że podpisy zbierano w internecie i nie sprawdzono, ile z nich złożyły osoby, które mieszkają lub robią zakupy w okolicy.',
+      'Bardziej przydatny był pomiar ruchu wykonany przez miasto. W zwykły dzień roboczy około 40 procent samochodów przejeżdżało przez ulicę Lipową bez zatrzymywania się, wiele z nich na skróty. Niewiele miejsc parkingowych zajmowali klienci sklepów dłużej niż godzinę; większość przez cały dzień zajmowały te same auta.',
+      'Pani Varga, radna miejska, popierała próbę. „Podobne projekty w innych miastach zwiększyły liczbę osób przechodzących obok sklepów – powiedziała – a ta próba nic nie kosztuje”. Później na tym samym zebraniu wspomniała, że miasto zapłaci za ławki, donice i nowe znaki.',
+      'Ostatecznie zebranie zgodziło się na próbę – pod pewnymi warunkami. Sklepy miały udostępniać tygodniowe wyniki sprzedaży, miasto miało liczyć pieszych i samochody przed próbą i w jej trakcie, a decyzja o trwałej zmianie miała zapaść dopiero po zebraniu danych.'
+    ],
+    summary: 'Mieszkańcy rozważają dowody bardzo różnej jakości w sprawie ulicy bez samochodów i przed podjęciem decyzji zgadzają się na próbę z pomiarami.',
+    questions: {
+      q1: {
+        q: 'O czym głównie jest ten tekst?',
+        a: ['O tym, dlaczego ulice bez samochodów zawsze pomagają sklepom.', 'Tekst nie dochodzi do takiego wniosku; próba dopiero się odbędzie.'],
+        b: ['O zebraniu, które rozważa dowody różnej jakości i zgadza się na próbę z pomiarami.', 'Dobrze. Tekst prowadzi do tej decyzji w ostatnim akapicie.'],
+        c: ['O historii wiosennego festynu.', 'Festyn pojawia się tylko jako jeden z dowodów.'],
+        d: ['O konflikcie między szkołą a piekarnią.', 'Żadna z nich nie bierze udziału w dyskusji.']
+      },
+      q2: {
+        q: 'Jaka część samochodów według miejskiego pomiaru tylko przejeżdżała przez ulicę?',
+        a: ['Około połowy', 'Połowa to spadek sprzedaży, o którym mówił pan Okafor.'],
+        b: ['Około 40 procent', 'Dobrze. Akapit 4 podaje tę liczbę.'],
+        c: ['Około 300', '300 to liczba podpisów pod petycją.']
+      },
+      q3: {
+        q: 'Któremu stwierdzeniu tekst później przeczy?',
+        a: ['Że festyn trwał tylko jeden weekend.', 'Nic w tekście temu nie przeczy.'],
+        b: ['Że przy ulicy jest szkoła podstawowa.', 'Nic w tekście temu nie przeczy.'],
+        c: ['Że próba nic nie kosztuje.', 'Dobrze. Pani Varga mówi później, że miasto zapłaci za ławki, donice i znaki.']
+      },
+      q4: {
+        q: 'Dlaczego dowód pana Okafora jest słaby?',
+        a: ['Bo właściciele sklepów nie mogą znać swojej sprzedaży.', 'Mogą; problemem jest tydzień, który porównuje.'],
+        b: ['Bo dotyczy jednego tygodnia, krótkiego wydarzenia i złej pogody.', 'Dobrze. Deszcz i krótki festyn mogą wyjaśniać spadek.'],
+        c: ['Bo był przeciwny próbie.', 'Posiadanie zdania nie osłabia dowodu; problemem jest to, na czym się opiera.']
+      },
+      q5: {
+        q: 'Na czym polega problem z petycją?',
+        a: ['Nikt nie sprawdził, czy podpisani mieszkają lub robią zakupy w okolicy.', 'Dobrze. Mówi to akapit 3.'],
+        b: ['Miała za mało podpisów.', 'Liczba nie jest problemem, na który wskazuje tekst.'],
+        c: ['Była przeciwko próbie.', 'Petycja popierała próbę.']
+      },
+      q6: {
+        q: 'Jak zbudowany jest tekst?',
+        a: ['Jako opowieść właściciela sklepu żelaznego.', 'W tekście wypowiada się kilka osób.'],
+        b: ['Jako lista zasad dla ulic bez samochodów.', 'Tekst nie zawiera żadnych zasad.'],
+        c: ['Propozycja, kilka dowodów i ich słabości, a potem decyzja o pomiarach.', 'Dobrze. Taka jest kolejność sześciu akapitów.']
+      }
+    }
+  },
+  hiring: {
+    title: 'Dwa sposoby rekrutacji',
+    paragraphs: [
+      'Małe studio projektowe zatrudniające dwanaście osób musiało przyjąć trzech nowych pracowników. Zespół omówił dwa sposoby wyboru. Pierwszy był ten, z którego zawsze korzystano: dwie rundy rozmów kwalifikacyjnych. Drugi polegał na tym, by każdej osobie z finału dać krótkie, płatne zadanie podobne do prawdziwej pracy, a potem odbyć jedną rozmowę o nim.',
+      'Lea, kierowniczka biura, wolała rozmowy i przeprowadziła szybką ankietę wśród pracowników. Dziesięć z dwunastu osób odpowiedziało, że woli rozmowy. „Nasz zespół wie z doświadczenia, że rozmowy działają najlepiej – powiedziała – a do tego są szybsze dla wszystkich”.',
+      'Sam, starszy projektant, wskazał problem. Wszyscy w studiu zostali zatrudnieni po rozmowach i nikt nigdy nie przeszedł rekrutacji z zadaniem. Ankieta pokazywała, do czego ludzie są przyzwyczajeni, a nie który sposób pozwala znaleźć dobrych współpracowników. A osoby zatrudnione po rozmowie to z definicji osoby, w których przypadku rozmowy zadziałały.',
+      'Sam miał własny dowód: rok wcześniej studio użyło zadania przy dwóch rekrutacjach i obie osoby nadal tam pracowały i dobrze sobie radziły. Lea odparła, że dwie osoby to zdecydowanie za mało, by czegokolwiek dowieść, a jedna z nich odbyła wcześniej staż w studiu, więc zespół dobrze ją znał jeszcze przed zadaniem.',
+      'Potem zespół zajrzał do arkusza planowania. Dwie rundy rozmów zajmowały około pięciu godzin pracy zespołu na kandydata; ocena zadania i jedna rozmowa – około trzech. W końcu ustalono, że z góry zostanie spisane, jak wygląda dobry start w pierwszych sześciu miesiącach, że każdy sposób zostanie użyty przy części kandydatów, a wyniki zostaną ocenione po roku – ze świadomością, że kilka rekrutacji nie rozstrzygnie sprawy na zawsze.'
+    ],
+    summary: 'Studio projektowe dostrzega, że jego ankieta i mała historia sukcesu to słabe dowody, i postanawia wypróbować oba sposoby rekrutacji według kryteriów ustalonych z góry.',
+    questions: {
+      q1: {
+        q: 'O czym głównie jest ten tekst?',
+        a: ['O tym, dlaczego płatne zadania są lepsze od rozmów.', 'Tekst tego nie rozstrzyga.'],
+        b: ['O tym, jak napisać dobre ogłoszenie o pracę.', 'Tekst nie mówi o ogłoszeniach.'],
+        c: ['O zespole, który dostrzega słabość swoich dowodów i postanawia sprawdzić oba sposoby według kryteriów ustalonych z góry.', 'Dobrze. Tekst prowadzi do tej decyzji w ostatnim akapicie.'],
+        d: ['O sporze, który kończy się odejściem Sama ze studia.', 'Nikt nie odchodzi ze studia.']
+      },
+      q2: {
+        q: 'Któremu twierdzeniu przeczą liczby podane później w tekście?',
+        a: ['Że dziesięć z dwunastu osób wolało rozmowy.', 'To sam wynik ankiety; nic mu nie przeczy.'],
+        b: ['Że rozmowy są szybsze dla wszystkich.', 'Dobrze. Według arkusza rozmowy zajmują około pięciu godzin na kandydata, a zadanie około trzech.'],
+        c: ['Że studio potrzebowało trzech nowych osób.', 'Nic w tekście temu nie przeczy.']
+      },
+      q3: {
+        q: 'Jaka jest według Sama główna słabość ankiety Lei?',
+        a: ['Pokazuje, do czego ludzie są przyzwyczajeni, bo wszyscy zostali zatrudnieni po rozmowach.', 'Dobrze. Wyjaśnia to akapit 3.'],
+        b: ['Była anonimowa.', 'Tekst tego nie mówi, a Sam tego nie krytykuje.'],
+        c: ['Objęła zbyt mało osób.', 'Sam nie krytykuje liczby ankietowanych.']
+      },
+      q4: {
+        q: 'Dlaczego dowód Sama dotyczący dwóch zeszłorocznych rekrutacji jest słaby?',
+        a: ['Obie osoby już odeszły ze studia.', 'Obie nadal tam pracowały i dobrze sobie radziły.'],
+        b: ['Zadania nie były płatne.', 'Tekst tego nie mówi.'],
+        c: ['Dwie osoby to bardzo mało, a jedną z nich zespół już dobrze znał.', 'Dobrze. Lea wskazuje oba problemy w akapicie 4.']
+      },
+      q5: {
+        q: 'Co zespół spisze przed rekrutacją?',
+        a: ['Pytania na rozmowy.', 'Tekst tego nie mówi.'],
+        b: ['Jak wygląda dobry start w pierwszych sześciu miesiącach.', 'Dobrze. Mówi to akapit 5.'],
+        c: ['Nazwiska najlepszych kandydatów.', 'Tekst tego nie mówi.']
+      },
+      q6: {
+        q: 'Jak przebiega tekst?',
+        a: ['Dwa sposoby, ankieta i jej słabość, mała historia sukcesu i jej słabość, potem dane o czasie i planowana próba.', 'Dobrze. Taka jest kolejność pięciu akapitów.'],
+        b: ['Dwa sposoby, głosowanie i zwycięzca.', 'W tekście nie ma głosowania.'],
+        c: ['Instrukcja krok po kroku, jak prowadzić rozmowy.', 'Tekst jest opisem przypadku, a nie instrukcją.']
+      }
+    }
   }
 };

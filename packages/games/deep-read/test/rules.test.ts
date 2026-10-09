@@ -20,6 +20,7 @@ import {
   lookedBackCount,
   next,
   questionCount,
+  restart,
   resultStats,
   selfCheckCount,
   setSummary,
@@ -85,9 +86,9 @@ describe('setup', () => {
   });
 
   it('selects texts by difficulty', () => {
-    expect(textsFor('easy').map((t) => t.id)).toEqual(['city-trees', 'bees']);
-    expect(textsFor('medium').map((t) => t.id)).toEqual(['lighthouse', 'time-zones']);
-    expect(textsFor('hard').map((t) => t.id)).toEqual(['repair', 'library']);
+    expect(textsFor('easy').map((t) => t.id)).toEqual(['city-trees', 'bees', 'paperback', 'bridges']);
+    expect(textsFor('medium').map((t) => t.id)).toEqual(['lighthouse', 'time-zones', 'longitude', 'tree-rings']);
+    expect(textsFor('hard').map((t) => t.id)).toEqual(['repair', 'library', 'car-free', 'hiring']);
   });
 
   it('finds texts by id and rejects unknown ids', () => {
@@ -131,6 +132,25 @@ describe('setup', () => {
       })
     );
     for (const text of TEXTS) expect(seedFor(text.id).difficulty).toBe(text.difficulty);
+  });
+});
+
+describe('restart', () => {
+  it('returns to the seeded start of the same text', () => {
+    const s = setSummary(answerAll(start('library')), 'x');
+    const r = restart(s);
+    expect(r).toEqual(createInitialState(s.seed, s.difficulty));
+    expect(r.textId).toBe('library');
+  });
+
+  it('keeps the saved text even when the seed now picks another one (saves from before more texts were added)', () => {
+    const s = createInitialState(1, 'easy');
+    const other = textsFor('easy').find((t) => t.id !== s.textId)!.id;
+    const saved: DeepReadState = { ...answer(finishReading(s), 'a'), textId: other, answers: [] };
+    const r = restart(saved);
+    expect(r.textId).toBe(other);
+    expect(r).toEqual({ ...createInitialState(1, 'easy'), textId: other });
+    expect(isDeepReadState(r)).toBe(true);
   });
 });
 

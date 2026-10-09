@@ -262,5 +262,266 @@ export const fr: LocaleContent = {
         c: ['Une liste de règles de la bibliothèque suivie d’exemples.', 'Le texte ne contient aucune règle.']
       }
     }
+  },
+  paperback: {
+    title: 'Le livre qui tenait dans la poche',
+    paragraphs: [
+      'Pendant longtemps, la plupart des livres neufs coûtaient cher. Ils avaient une couverture rigide et des pages cousues, si bien que beaucoup de gens empruntaient les livres en bibliothèque ou ne lisaient pas du tout de nouveautés. Des livres bon marché à couverture de papier existaient déjà au XIXe siècle, mais on les considérait souvent comme une lecture jetable.',
+      'En 1935, l’éditeur britannique Allen Lane fonde Penguin Books. Son idée est simple : des livres bien écrits, à couverture de papier, vendus à peu près au prix d’un paquet de cigarettes. Les couvertures sont sobres et codées par couleur – orange pour les romans, vert pour les policiers – pour que l’on reconnaisse d’un coup d’œil le genre du livre.',
+      'Beaucoup de libraires doutaient du projet. Ils craignaient que les livres bon marché détournent les gens des livres chers. Mais les livres de poche se vendirent en grand nombre, et d’autres éditeurs suivirent bientôt. Aux États-Unis, Pocket Books commença à vendre des livres de poche en 1939, et pendant la Seconde Guerre mondiale, des millions de petits livres furent imprimés spécialement pour les soldats.',
+      'Aujourd’hui, les livres de poche sont si ordinaires qu’on oublie facilement à quel point ils ont paru nouveaux. Ils ont permis à beaucoup plus de gens de posséder des livres au lieu de seulement les emprunter, et d’emporter un roman entier dans la poche d’un manteau.'
+    ],
+    summary: 'Les livres de poche, popularisés par Penguin à partir de 1935, ont rendu les livres bien écrits assez bon marché pour que beaucoup de gens les possèdent et les emportent.',
+    questions: {
+      q1: {
+        q: 'Quelle est l’idée principale du texte ?',
+        a: ['Les couvertures de Penguin étaient orange et vertes.', 'C’est un détail du paragraphe 2, pas l’idée principale.'],
+        b: ['Les livres de poche bon marché ont rendu normal, pour beaucoup, le fait de posséder de bons livres.', 'Juste. Le texte passe des livres chers aux livres de poche que l’on pouvait posséder.'],
+        c: ['Les libraires avaient raison de craindre les livres bon marché.', 'Le texte dit que les livres de poche se vendaient bien ; il ne dit pas que la crainte s’est réalisée.']
+      },
+      q2: {
+        q: 'Qu’indiquait la couleur d’une couverture Penguin ?',
+        a: ['L’âge du livre.', 'Le texte ne dit pas cela.'],
+        b: ['Le prix du livre.', 'Le texte relie la couleur au genre du livre, pas au prix.'],
+        c: ['Le genre du livre, par exemple roman ou policier.', 'Juste. Le paragraphe 2 explique le code couleur.']
+      },
+      q3: {
+        q: 'Pourquoi beaucoup de libraires doutaient-ils du projet ?',
+        a: ['Ils craignaient que les gens n’achètent plus de livres chers.', 'Juste. Le paragraphe 3 donne cette raison.'],
+        b: ['Ils pensaient que les couvertures en papier se déchireraient trop vite.', 'Le texte ne le mentionne pas.'],
+        c: ['Les couleurs ne leur plaisaient pas.', 'Le texte ne dit pas cela.']
+      },
+      q4: {
+        q: 'Comment le texte est-il organisé ?',
+        a: ['Comme une comparaison des prix de deux éditeurs.', 'Aucun prix n’est comparé.'],
+        b: ['Comme une liste de romans de poche célèbres.', 'Aucun titre n’est cité dans le texte.'],
+        c: ['Dans l’ordre chronologique : livres chers, débuts de Penguin, diffusion du livre de poche, aujourd’hui.', 'Juste. Le texte avance dans le temps et se termine sur le présent.']
+      }
+    }
+  },
+  bridges: {
+    title: 'Quand un pont se met à osciller',
+    paragraphs: [
+      'Les ponts ne sont pas complètement rigides. Le vent, la circulation et même les pas les font bouger un peu, et les ingénieurs les conçoivent pour qu’ils puissent fléchir légèrement sans dommage. En général, le mouvement est bien trop faible pour être remarqué.',
+      'Parfois pourtant, un pont bouge de façon perceptible. Quand le Millennium Bridge, une passerelle piétonne sur la Tamise à Londres, a ouvert en 2000, il s’est mis à osciller de gauche à droite lorsque la foule le traversait. Chaque pas pousse légèrement sur le côté. Quand le pont bougeait, les gens adaptaient leur démarche pour garder l’équilibre, et beaucoup se mettaient à marcher au rythme de l’oscillation – ce qui poussait le pont encore davantage.',
+      'Le pont a été fermé deux jours après son ouverture. Les ingénieurs ne l’ont pas reconstruit. Ils ont ajouté des amortisseurs : des dispositifs qui absorbent le mouvement, un peu comme ceux d’une voiture. Certains fonctionnent comme de grands pistons remplis de liquide ; d’autres sont des masses lourdes montées sur ressorts qui bougent à l’opposé de l’oscillation. Le pont a rouvert en 2002 et il est stable depuis.',
+      'La leçon n’était pas que le pont était fragile. C’était que les personnes et les ouvrages peuvent s’influencer de façons difficiles à prévoir ; les ingénieurs tiennent donc compte aujourd’hui de la façon dont les foules marchent, et pas seulement de leur poids.'
+    ],
+    summary: 'Le Millennium Bridge oscillait parce que les piétons se calaient sur son mouvement ; des amortisseurs ont réglé le problème, montrant qu’il faut tenir compte de la façon dont les foules bougent.',
+    questions: {
+      q1: {
+        q: 'Quelle est l’idée principale du texte ?',
+        a: ['Des gens qui marchent au rythme d’un pont qui oscille peuvent amplifier l’oscillation, et des amortisseurs peuvent l’empêcher.', 'Juste. Le texte explique la cause et la solution.'],
+        b: ['Le Millennium Bridge était mal construit et a dû être remplacé.', 'Non. Il n’a pas été reconstruit, on a ajouté des amortisseurs, et le texte dit qu’il n’était pas fragile.'],
+        c: ['Tous les ponts sont dangereux par vent fort.', 'Le texte dit que les petits mouvements sont normaux et sans danger.']
+      },
+      q2: {
+        q: 'Pourquoi l’oscillation s’est-elle amplifiée ?',
+        a: ['Le vent sur le fleuve a forci.', 'Le texte n’accuse pas le vent ; la cause était la marche.'],
+        b: ['Le pont portait trop de poids.', 'Le texte met en cause le rythme des pas, pas le poids.'],
+        c: ['Beaucoup de gens se sont mis à marcher au rythme de l’oscillation.', 'Juste. Le paragraphe 2 le décrit.']
+      },
+      q3: {
+        q: 'Qu’ont fait les ingénieurs ?',
+        a: ['Ils ont reconstruit le pont avec un acier plus solide.', 'Le texte dit qu’ils ne l’ont pas reconstruit.'],
+        b: ['Ils ont ajouté des amortisseurs qui absorbent le mouvement.', 'Juste. Le paragraphe 3 décrit les amortisseurs.'],
+        c: ['Ils n’ont plus laissé passer que quelques personnes à la fois.', 'Le texte ne le mentionne pas.']
+      },
+      q4: {
+        q: 'Quel détail appuie le mieux l’idée que les amortisseurs ont fonctionné ?',
+        a: ['Le pont a ouvert en 2000.', 'C’est le début du problème, pas une preuve de la solution.'],
+        b: ['Les amortisseurs fonctionnent comme ceux d’une voiture.', 'Cela explique comment ils fonctionnent, pas s’ils ont marché ici.'],
+        c: ['Le pont a rouvert en 2002 et il est stable depuis.', 'Juste. Le paragraphe 3 donne le résultat après l’ajout des amortisseurs.']
+      }
+    }
+  },
+  longitude: {
+    title: 'Trouver sa position en mer',
+    paragraphs: [
+      'Pendant des siècles, les marins ont su calculer à quelle distance ils se trouvaient au nord ou au sud. La hauteur du soleil à midi, ou celle de l’étoile Polaire la nuit, leur donnait leur latitude. Savoir à quelle distance ils étaient à l’est ou à l’ouest – leur longitude – était bien plus difficile, et un navire qui se trompait pouvait s’échouer sur des rochers ou manquer de vivres loin des côtes.',
+      'Le problème était en fait un problème d’heure. La Terre tourne de 15 degrés par heure : si un navigateur connaissait au même instant l’heure locale à bord et l’heure du port d’attache, la différence donnait la longitude. L’heure locale se lisait au soleil. Garder l’heure du port était la partie difficile : les horloges à pendule de l’époque ne fonctionnaient pas sur un navire qui roule, et les changements de température les faisaient avancer ou retarder.',
+      'En 1714, le Parlement britannique offrit une forte récompense pour une solution pratique. Beaucoup d’experts attendaient la réponse du ciel : en mesurant l’angle entre la Lune et certaines étoiles et en le comparant à des tables imprimées, un navigateur pouvait retrouver l’heure du port. Cette méthode des « distances lunaires » fonctionnait, mais elle exigeait des mesures soigneuses et de longs calculs.',
+      'John Harrison, un horloger autodidacte, choisit une autre voie. Pendant plusieurs décennies, il construisit une série d’horloges de marine. La quatrième, qui ressemblait à une grosse montre de poche, garda l’heure de façon remarquable lors d’un voyage d’essai vers les Caraïbes en 1761–1762. Pourtant, Harrison fut en litige pendant des années avec les responsables de la récompense avant d’être payé.',
+      'Longtemps, les deux méthodes furent utilisées côte à côte, car les nouvelles horloges de marine, appelées chronomètres, coûtaient cher. Quand elles devinrent moins chères au XIXe siècle, elles firent partie de l’équipement normal d’un navire.'
+    ],
+    summary: 'Trouver la longitude en mer dépendait de la connaissance de l’heure du port, et après des années de concurrence entre deux méthodes, les horloges de marine précises sont devenues la solution standard.',
+    questions: {
+      q1: {
+        q: 'Quelle est l’idée principale du texte ?',
+        a: ['Avant les satellites, les marins ne pouvaient jamais connaître leur position.', 'Le texte décrit deux méthodes qui fonctionnaient.'],
+        b: ['Trouver la longitude était un problème d’heure, résolu au fil des ans par des tables astronomiques et des horloges de marine.', 'Juste. Le texte explique le problème et comment les deux méthodes l’ont traité.'],
+        c: ['Harrison a été traité injustement par le Parlement.', 'Le litige est un détail, pas l’idée principale.'],
+        d: ['La latitude est plus difficile à trouver que la longitude.', 'Le texte dit le contraire.']
+      },
+      q2: {
+        q: 'Pourquoi les horloges ordinaires échouaient-elles en mer ?',
+        a: ['Les pendules ne fonctionnaient pas sur un navire qui roule, et la température modifiait leur marche.', 'Juste. Le paragraphe 2 donne les deux raisons.'],
+        b: ['Elles coûtaient trop cher.', 'Le coût est mentionné pour les chronomètres plus tardifs, pas comme raison de l’échec des horloges ordinaires.'],
+        c: ['Les marins oubliaient de les remonter.', 'Le texte ne dit pas cela.']
+      },
+      q3: {
+        q: 'Que comparait la méthode des distances lunaires ?',
+        a: ['L’horloge du navire avec une horloge restée au port.', 'C’est l’idée de la méthode des horloges, pas de la méthode lunaire.'],
+        b: ['La hauteur de l’étoile Polaire avec celle du soleil.', 'Ces mesures donnent la latitude, comme l’explique le paragraphe 1.'],
+        c: ['L’angle entre la Lune et des étoiles avec des tables imprimées.', 'Juste. Le paragraphe 3 le décrit.']
+      },
+      q4: {
+        q: 'Quel rôle joue le paragraphe 2 dans le texte ?',
+        a: ['Il explique que la longitude est en fait une question d’heure, ce sur quoi s’appuient les paragraphes suivants.', 'Juste. Les deux méthodes des paragraphes 3 et 4 sont des façons de retrouver l’heure du port.'],
+        b: ['Il raconte la vie de Harrison.', 'C’est le paragraphe 4.'],
+        c: ['Il décrit la récompense offerte par le Parlement.', 'C’est le paragraphe 3.']
+      },
+      q5: {
+        q: 'Quel détail prouve que la quatrième horloge de Harrison fonctionnait bien ?',
+        a: ['Elle ressemblait à une grosse montre de poche.', 'Sa forme ne dit rien de sa précision.'],
+        b: ['Harrison a passé des décennies à construire des horloges.', 'L’effort n’est pas une preuve de résultat.'],
+        c: ['Elle a gardé l’heure de façon remarquable lors d’un voyage d’essai vers les Caraïbes.', 'Juste. Le paragraphe 4 rapporte le résultat de l’essai.']
+      }
+    }
+  },
+  'tree-rings': {
+    title: 'Lire les cernes d’un arbre',
+    paragraphs: [
+      'Si l’on coupe le tronc d’un vieil arbre, on voit en général un motif d’anneaux, les cernes. Dans les régions aux saisons marquées, un arbre ajoute normalement un cerne par an : un bois clair à croissance rapide au printemps, puis un bois plus sombre et plus dense plus tard dans la saison. Compter les cernes de l’écorce vers le centre donne une première estimation de l’âge de l’arbre.',
+      'Les cernes disent plus que l’âge. Une bonne année, avec assez de pluie et de chaleur, l’arbre forme un cerne large ; une année sèche ou froide, le cerne est étroit. Les arbres de la même espèce dans une même région partagent donc un motif semblable de cernes larges et étroits, comme un code-barres écrit par le climat.',
+      'Ce motif commun est la clé de la datation par les cernes, appelée dendrochronologie. Les chercheurs partent d’arbres vivants, dont le cerne extérieur correspond à une année connue. Ils cherchent ensuite du bois plus ancien – dans de vieux bâtiments, par exemple – dont les cernes intérieurs correspondent au motif des plus anciens cernes des arbres vivants. Pas à pas, des échantillons qui se chevauchent prolongent la série vers le passé. Dans certaines régions, ces séries remontent aujourd’hui à des milliers d’années.',
+      'Compter un seul arbre ne suffit pas, cependant. Lors d’une très mauvaise année, un arbre peut ne former aucun cerne visible, et une sécheresse en plein été peut produire quelque chose qui ressemble à un cerne supplémentaire. C’est pourquoi les chercheurs comparent de nombreux échantillons : un arbre peut tromper, mais beaucoup d’arbres ensemble révèlent la vraie séquence.',
+      'La datation par les cernes a permis de savoir quand des maisons en bois ont été construites, quand des navires ont été fabriqués et à quoi ressemblaient les climats passés. Tout commence par un motif que chacun peut voir sur une souche.'
+    ],
+    summary: 'Comme les arbres d’une même région partagent des motifs de cernes larges et étroits, les chercheurs peuvent, en comparant de nombreux échantillons, dater le bois avec précision et loin dans le passé.',
+    questions: {
+      q1: {
+        q: 'Quelle est l’idée principale du texte ?',
+        a: ['Des motifs de cernes communs permettent de dater le bois avec précision en comparant de nombreux échantillons.', 'Juste. Le texte mène à cette méthode et à ses usages.'],
+        b: ['Compter les cernes est le seul moyen de connaître l’âge d’un arbre.', 'Le texte dit que le comptage ne donne qu’une première estimation et peut tromper.'],
+        c: ['Les arbres poussent plus vite les années froides.', 'Le texte dit le contraire.'],
+        d: ['Les vieux bâtiments sont faits de bois.', 'Les vieux bâtiments ne sont qu’une source d’échantillons.']
+      },
+      q2: {
+        q: 'Que montre généralement un cerne étroit ?',
+        a: ['Que l’arbre était jeune.', 'Le texte ne relie pas les cernes étroits à l’âge.'],
+        b: ['Une année sèche ou froide.', 'Juste. Le paragraphe 2 le dit.'],
+        c: ['Que l’arbre a été coupé en hiver.', 'Le texte ne dit pas cela.']
+      },
+      q3: {
+        q: 'Pourquoi les chercheurs partent-ils d’arbres vivants ?',
+        a: ['Parce que les arbres vivants ont le plus de cernes.', 'Ce n’est pas la raison donnée par le texte.'],
+        b: ['Parce que leur bois est plus facile à couper.', 'Le texte ne le mentionne pas.'],
+        c: ['Parce que leur cerne extérieur correspond à une année connue.', 'Juste. Le paragraphe 3 en fait le point de départ.']
+      },
+      q4: {
+        q: 'Le paragraphe 1 dit qu’un arbre ajoute normalement un cerne par an. Quelle affirmation ultérieure montre que ce n’est pas toujours vrai ?',
+        a: ['Les arbres d’une même région partagent un motif semblable.', 'Cela appuie la méthode, sans limiter la règle d’un cerne par an.'],
+        b: ['Une très mauvaise année, un cerne peut manquer, ou un faux cerne supplémentaire peut apparaître.', 'Juste. Le paragraphe 4 décrit ces exceptions.'],
+        c: ['Dans certaines régions, les séries remontent à des milliers d’années.', 'Cela concerne la longueur des séries, pas la règle d’un cerne par an.']
+      },
+      q5: {
+        q: 'Pourquoi comparer de nombreux échantillons est-il plus fiable que compter un seul arbre ?',
+        a: ['Parce que chaque arbre enregistre une année différente.', 'Les arbres d’une région partagent les mêmes années ; c’est justement pour cela qu’on peut les comparer.'],
+        b: ['Parce que beaucoup d’échantillons font meilleure impression dans un rapport.', 'Le texte ne donne pas une telle raison.'],
+        c: ['Parce qu’un arbre peut tromper, mais beaucoup d’arbres ensemble révèlent la vraie séquence.', 'Juste. Le paragraphe 4 l’explique.']
+      }
+    }
+  },
+  'car-free': {
+    title: 'Une rue sans voitures ?',
+    paragraphs: [
+      'La rue des Tilleuls est une rue courte avec des commerces, une boulangerie et une école primaire. Un groupe d’habitants a proposé de la fermer aux voitures pour un essai de trois mois en été, avec des bancs et des bacs à plantes à la place des voitures garées. Lors d’une réunion publique, chacun a apporté des arguments pour et contre.',
+      'M. Okafor, qui tient la quincaillerie, était fermement contre. « La dernière fois que la rue a été fermée, pour la fête du printemps, mes ventes ont chuté de moitié cette semaine-là », a-t-il dit. D’autres ont fait remarquer qu’il avait plu presque toute la semaine et que la fête n’avait duré qu’un week-end.',
+      'Le groupe d’habitants a présenté une pétition de 300 signatures en faveur de l’essai. Interrogés, ils ont reconnu que les signatures avaient été recueillies en ligne et qu’ils n’avaient pas vérifié combien venaient de personnes qui habitent ou font leurs courses dans le quartier.',
+      'Un comptage de la circulation réalisé par la ville était plus utile. Un jour de semaine ordinaire, environ 40 % des voitures traversaient la rue des Tilleuls sans s’arrêter, beaucoup pour prendre un raccourci. Peu de places de stationnement étaient utilisées par des clients des commerces plus d’une heure ; la plupart étaient occupées toute la journée par les mêmes voitures.',
+      'Mme Varga, conseillère municipale, soutenait l’essai. « Des projets semblables dans d’autres villes ont augmenté le nombre de passants devant les commerces, a-t-elle dit, et cet essai ne coûte rien. » Plus tard dans la réunion, elle a mentionné que la ville paierait les bancs, les bacs à plantes et de nouveaux panneaux.',
+      'Finalement, la réunion a accepté un essai – sous conditions. Les commerces communiqueraient leurs ventes hebdomadaires, la ville compterait piétons et voitures avant et pendant l’essai, et la décision d’un changement durable attendrait que les chiffres soient connus.'
+    ],
+    summary: 'Un quartier examine des preuves de qualité très inégale sur une rue sans voitures et accepte un essai mesuré avant de décider.',
+    questions: {
+      q1: {
+        q: 'De quoi parle principalement le texte ?',
+        a: ['De la raison pour laquelle les rues sans voitures aident toujours les commerces.', 'Le texte n’arrive pas à cette conclusion ; l’essai reste à faire.'],
+        b: ['D’une réunion qui examine des preuves de qualité inégale et accepte un essai mesuré.', 'Juste. Le texte mène à cette décision au dernier paragraphe.'],
+        c: ['De l’histoire de la fête du printemps.', 'La fête n’apparaît que comme un élément de preuve.'],
+        d: ['D’un conflit entre l’école et la boulangerie.', 'Aucune des deux ne participe au débat.']
+      },
+      q2: {
+        q: 'Selon le comptage de la ville, quelle part des voitures ne faisait que traverser la rue ?',
+        a: ['Environ la moitié', 'La moitié correspond à la baisse des ventes citée par M. Okafor.'],
+        b: ['Environ 40 %', 'Juste. Le paragraphe 4 donne ce chiffre.'],
+        c: ['Environ 300', '300 est le nombre de signatures de la pétition.']
+      },
+      q3: {
+        q: 'Quelle affirmation est contredite plus loin dans le texte ?',
+        a: ['Que la fête n’a duré qu’un week-end.', 'Rien dans le texte ne la contredit.'],
+        b: ['Que la rue a une école primaire.', 'Rien dans le texte ne la contredit.'],
+        c: ['Que l’essai ne coûte rien.', 'Juste. Mme Varga dit ensuite que la ville paiera les bancs, les bacs et les panneaux.']
+      },
+      q4: {
+        q: 'Pourquoi la preuve de M. Okafor est-elle fragile ?',
+        a: ['Parce que les commerçants ne peuvent pas connaître leurs ventes.', 'Ils le peuvent ; le problème est la semaine qu’il compare.'],
+        b: ['Parce qu’il s’agit d’une seule semaine, pendant un court événement et sous la pluie.', 'Juste. La pluie et la brièveté de la fête pourraient expliquer la baisse.'],
+        c: ['Parce qu’il était contre l’essai.', 'Avoir un avis ne rend pas une preuve fragile ; le problème est ce sur quoi elle repose.']
+      },
+      q5: {
+        q: 'Quel est le problème de la pétition ?',
+        a: ['Personne n’a vérifié si les signataires habitent ou font leurs courses dans le quartier.', 'Juste. Le paragraphe 3 le dit.'],
+        b: ['Elle avait trop peu de signatures.', 'Le nombre n’est pas le problème que soulève le texte.'],
+        c: ['Elle était contre l’essai.', 'La pétition était en faveur de l’essai.']
+      },
+      q6: {
+        q: 'Comment le texte est-il organisé ?',
+        a: ['Comme une histoire racontée par le quincaillier.', 'Plusieurs personnes prennent la parole dans le texte.'],
+        b: ['Comme une liste de règles pour les rues sans voitures.', 'Le texte ne contient aucune règle.'],
+        c: ['Une proposition, plusieurs preuves et leurs faiblesses, puis la décision de mesurer.', 'Juste. C’est l’ordre des six paragraphes.']
+      }
+    }
+  },
+  hiring: {
+    title: 'Deux façons de recruter',
+    paragraphs: [
+      'Un petit studio de design de douze personnes devait recruter trois nouveaux collaborateurs. L’équipe a discuté de deux façons de les choisir. La première était celle qu’elle avait toujours utilisée : deux séries d’entretiens. La seconde consistait à confier à chaque finaliste une courte tâche rémunérée, proche du vrai travail, suivie d’une seule conversation à son sujet.',
+      'Lea, la responsable administrative, préférait les entretiens et a fait un petit sondage auprès de l’équipe. Dix personnes sur douze ont dit préférer les entretiens. « Notre équipe sait par expérience que les entretiens marchent le mieux, a-t-elle dit, et en plus ils sont plus rapides pour tout le monde. »',
+      'Sam, designer confirmé, a relevé un problème. Tout le monde au studio avait été recruté par entretiens, et personne n’avait jamais essayé la méthode de la tâche. Le sondage montrait ce à quoi les gens étaient habitués, pas quelle méthode trouvait de bons collègues. Et les personnes recrutées par entretien sont, par définition, des personnes pour qui les entretiens ont fonctionné.',
+      'Sam avait sa propre preuve : l’année précédente, le studio avait utilisé une tâche pour deux recrutements, et les deux personnes étaient toujours là et faisaient du bon travail. Lea a répondu que deux personnes, c’était bien trop peu pour prouver quoi que ce soit, et que l’une d’elles avait déjà fait un stage au studio, si bien que l’équipe la connaissait bien avant la tâche.',
+      'Puis l’équipe a consulté la feuille de planification. Deux séries d’entretiens prenaient environ cinq heures de temps de l’équipe par candidat ; examiner une tâche et mener une conversation en prenaient environ trois. Finalement, ils ont décidé d’écrire à l’avance à quoi ressemble un bon début au cours des six premiers mois, d’utiliser chaque méthode pour une partie des candidats et d’examiner les résultats au bout d’un an – en sachant que quelques recrutements ne trancheraient pas la question pour de bon.'
+    ],
+    summary: 'Un studio de design voit que son sondage et sa réussite isolée sont des preuves fragiles et décide d’essayer les deux méthodes de recrutement selon des critères fixés à l’avance.',
+    questions: {
+      q1: {
+        q: 'De quoi parle principalement le texte ?',
+        a: ['De la raison pour laquelle les tâches rémunérées valent mieux que les entretiens.', 'Le texte ne tranche pas cette question.'],
+        b: ['De la façon de rédiger une bonne offre d’emploi.', 'Le texte ne parle pas d’offres d’emploi.'],
+        c: ['D’une équipe qui voit que ses preuves sont fragiles et décide de tester les deux méthodes selon des critères fixés à l’avance.', 'Juste. Le texte mène à cette décision au dernier paragraphe.'],
+        d: ['D’un désaccord qui se termine par le départ de Sam.', 'Personne ne quitte le studio.']
+      },
+      q2: {
+        q: 'Quelle affirmation est contredite par des chiffres plus loin dans le texte ?',
+        a: ['Que dix personnes sur douze préféraient les entretiens.', 'C’est le résultat du sondage lui-même ; rien ne le contredit.'],
+        b: ['Que les entretiens sont plus rapides pour tout le monde.', 'Juste. La feuille de planification indique environ cinq heures par candidat pour les entretiens contre environ trois pour la tâche.'],
+        c: ['Que le studio avait besoin de trois nouvelles personnes.', 'Rien dans le texte ne le contredit.']
+      },
+      q3: {
+        q: 'Selon Sam, quelle est la principale faiblesse du sondage de Lea ?',
+        a: ['Il montre ce à quoi les gens sont habitués, puisque tous ont été recrutés par entretien.', 'Juste. Le paragraphe 3 l’explique.'],
+        b: ['Il était anonyme.', 'Le texte ne le dit pas, et Sam ne le critique pas.'],
+        c: ['Il a interrogé trop peu de personnes.', 'Sam ne critique pas le nombre de personnes interrogées.']
+      },
+      q4: {
+        q: 'Pourquoi la preuve de Sam sur les deux recrutements de l’année précédente est-elle fragile ?',
+        a: ['Les deux personnes avaient déjà quitté le studio.', 'Les deux étaient toujours là et faisaient du bon travail.'],
+        b: ['Les tâches n’étaient pas rémunérées.', 'Le texte ne dit pas cela.'],
+        c: ['Deux, c’est très peu, et l’une des deux était déjà bien connue de l’équipe.', 'Juste. Lea relève ces deux problèmes au paragraphe 4.']
+      },
+      q5: {
+        q: 'Qu’est-ce que l’équipe va écrire avant de recruter ?',
+        a: ['Les questions des entretiens.', 'Le texte ne dit pas cela.'],
+        b: ['À quoi ressemble un bon début au cours des six premiers mois.', 'Juste. Le paragraphe 5 le dit.'],
+        c: ['Les noms des meilleurs candidats.', 'Le texte ne dit pas cela.']
+      },
+      q6: {
+        q: 'Comment le texte progresse-t-il ?',
+        a: ['Deux méthodes, un sondage et sa faiblesse, une petite réussite et sa faiblesse, puis des durées et un essai prévu.', 'Juste. C’est l’ordre des cinq paragraphes.'],
+        b: ['Deux méthodes, un vote et la méthode gagnante.', 'Il n’y a pas de vote dans le texte.'],
+        c: ['Un guide pas à pas pour mener des entretiens.', 'Le texte est un cas concret, pas un guide.']
+      }
+    }
   }
 };

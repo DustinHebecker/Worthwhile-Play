@@ -255,5 +255,182 @@ export const content: ContentText = {
       'expert.missing': 'Bazı kapaklar gevşek; müşteriler ücretsiz değişim alıyor.',
       'expert.condescending': 'Menteşe, kapağın dönmesini sağlayan parçadır. Fazla inceyse iyi tutmaz.'
     }
+  },
+  renovation: {
+    title: 'Geciken tadilat',
+    situation: 'İkiz bir evin mutfağını ve banyosunu yenileyen inşaat firmasını yönetiyorsun. İşler gecikiyor. Bunu açıkla.',
+    facts: {
+      delay: 'Tadilat bir hafta geç bitecek: 14 Haziran yerine 21 Haziran’da.',
+      tiles: 'Tedarikçi banyo fayanslarını 60 × 60 cm yerine 30 × 60 cm getirdi; yeniden sipariş edilmeleri gerekiyor.',
+      order: 'Yeni fayanslar gelene kadar ekip önce mutfakta çalışıyor.',
+      water: 'Ortak su borusu salı günü 8 ile 12 arasında kesilecek.',
+      noise: 'Gelecek hafta üç gün daha 8 ile 17 arasında gürültülü delme işi olacak.',
+      cost: 'Gecikme ev sahiplerine hiçbir şeye mal olmuyor; yeni fayansları tedarikçi ödüyor.',
+      supplierHistory: 'Bu fayans tedarikçisi bu yıl zaten birkaç kez teslimat sorunu yaşadı.',
+      skip: 'Pazartesi günü moloz konteyneri sokakta komşunun garaj girişinin önünde duracak.'
+    },
+    reasons: {
+      'customer.delay': 'Ev sahipleri planlarını yeni bitiş tarihine göre yapar.',
+      'customer.tiles': 'Fayansın tam ölçüsü ekibin işi; ev sahiplerinin tarih ve maliyete ihtiyacı var.',
+      'customer.water': 'Ne zaman susuz kalacaklarını bilmeleri gerekir.',
+      'customer.cost': 'İlk endişeleri gecikmenin onlara para çıkarıp çıkarmayacağıdır.',
+      'projectManager.delay': 'Ekip şefi kalan işleri yeni tarihe göre planlar.',
+      'projectManager.tiles': 'Ekip teslimatta tam olarak neyin yanlış olduğunu bilmeli.',
+      'projectManager.order': 'Ekibin yarın sabah yapacağı iş bu.',
+      'projectManager.water': 'Suyu ekip kesiyor ve herkesi önceden uyarmalı.',
+      'projectManager.cost': 'Kimin ödeyeceğini ofis ve tedarikçi halleder; işi değiştirmez.',
+      'projectManager.skip': 'Konteynerin nereye konacağını ekip şefi ayarlamalı.',
+      'neighbour.tiles': 'Fayans ayrıntıları komşuyu ilgilendirmez.',
+      'neighbour.order': 'Ekibin iş sırası komşuyu etkilemez.',
+      'neighbour.water': 'Komşu aynı boruyu kullanıyor ve tam saatlere ihtiyacı var.',
+      'neighbour.noise': 'Gürültü saatleri komşuyu en çok etkileyen şeydir.',
+      'neighbour.cost': 'Ev sahiplerinin masrafları özeldir.',
+      'neighbour.skip': 'Konteyner girişlerini kapatacağı için önceden bilmeleri gerekir.',
+      supplierHistory: 'Tedarikçiden yakınmak bahane gibi duyulur ve kimseye yardım etmez.'
+    },
+    messages: {
+      'customer.fit': 'Banyo fayansları yanlış ölçüde geldiği için tadilatınız 14 Haziran yerine 21 Haziran’da bitecek. Bu size hiçbir ek maliyet getirmiyor. Lütfen dikkat: salı günü 8 ile 12 arasında su kesik olacak.',
+      'customer.tooMuch': 'Tedarikçi 60 × 60 yerine 30 × 60 gönderdi, bu yüzden döşeme planı artık uymuyor; ekip önce mutfağı yapıyor ve pazartesi konteyner sokağa konuyor.',
+      'customer.condescending': 'Fayanslarda ufak bir aksilik var, sizin kafa yormanıza gerek yok. İşi profesyonellere bırakın.',
+      'projectManager.fit': 'Banyo fayansları 60 × 60 yerine 30 × 60 geldi, yeni sipariş gelene kadar önce mutfak. Yeni bitiş tarihi: 21 Haziran. Salı 8 ile 12 arası su kesik, pazartesi konteyner sokağa konuyor.',
+      'projectManager.missing': 'Banyoda gecikme var. Bir şekilde devam edin.',
+      'projectManager.condescending': 'Fayansların bir ölçüsü vardır ve ölçü yanlışsa uymazlar. O yüzden lütfen döşemeyin.',
+      'neighbour.fit': 'Yan evdeki tadilatla ilgili: salı günü ortak su borusu 8 ile 12 arasında kesik olacak ve gelecek hafta üç gün daha 8 ile 17 arasında gürültülü delme işi olacak. Pazartesi konteyner garaj girişinizin önünde duracak. Rahatsızlık için özür dileriz.',
+      'neighbour.tooMuch': 'Banyo fayansları yanlış ölçüde geldi, bu yüzden ekip mutfağa geçti ve ev sahipleri ek bir şey ödemiyor çünkü masrafı tedarikçi karşılıyor.',
+      'neighbour.missing': 'Yan tarafta biraz inşaat işi yapıyoruz. Sabrınız için teşekkürler.'
+    }
+  },
+  schoolTrip: {
+    title: 'Okul gezisinde değişiklik',
+    situation: 'Sınıf öğretmenisin. Otobüs firması iptal etti, bu yüzden hayvanat bahçesi gezisi ertelenmek zorunda. Bunu açıkla.',
+    facts: {
+      newDate: 'Hayvanat bahçesi gezisi perşembeden gelecek salıya alınıyor.',
+      bus: 'Otobüs firması, iki şoförü hasta olduğu için iptal etti.',
+      lunch: 'Çocuklar planlandığı gibi beslenme ve içecek getiriyor.',
+      form: 'Veliler cuma gününe kadar yeni bir izin formu imzalamalı.',
+      price: 'Ücret çocuk başına 12 avro olarak kalıyor.',
+      cover: 'Salı günü 10 ile 12 arasında 7b sınıfındaki dersimi birinin devralması gerekiyor.',
+      rain: 'Çok yağmur yağarsa sınıf onun yerine akvaryum binasını gezecek.',
+      complaint: 'Bazı veliler perşembenin zaten kötü bir gün olduğundan şikâyet etti.'
+    },
+    reasons: {
+      'child.newDate': 'Çocuklar önce gezinin ne zaman olduğunu bilmek ister.',
+      'child.bus': 'Hasta şoförler çocukların düşünmesi gereken bir şey değil.',
+      'child.lunch': 'Bunu kendileri getirmeleri gerekiyor.',
+      'child.form': 'Formu çocuklar değil veliler imzalar.',
+      'child.price': 'Parayla veliler ilgilenir.',
+      'child.cover': 'Öğretmenler arasındaki düzenlemeler çocukları ilgilendirmez.',
+      'child.rain': 'Neyle karşılaşacaklarını söyler; çocuklar bunu bilmeyi sever.',
+      'parent.newDate': 'Velilerin haftalarını planlamak için yeni tarihe ihtiyacı var.',
+      'parent.lunch': 'Beslenmeyi onlar hazırlar.',
+      'parent.form': 'Yapmaları gereken şey bu, hem de son tarihli.',
+      'parent.price': 'Daha pahalı olup olmadığını bilmek isterler.',
+      'parent.cover': 'Ders devirleri okulun iç meselesidir.',
+      'parent.rain': 'Çocuklarını havaya göre hazırlamalarına yardım eder.',
+      'colleague.newDate': 'Meslektaş hangi günün etkilendiğini bilmeli.',
+      'colleague.lunch': 'Beslenmeler sınıfın işi, meslektaşın değil.',
+      'colleague.price': 'Gezi ücreti meslektaşı ilgilendirmez.',
+      'colleague.cover': 'Ondan aslında istediğin şey bu.',
+      'colleague.rain': 'Kötü hava planı meslektaşın derslerini değiştirmez.',
+      complaint: 'Şikâyetleri aktarmak ortalığı karıştırır ve hiçbir şeyi değiştirmez.'
+    },
+    messages: {
+      'child.fit': 'Hayvanat bahçesi gezimiz gelecek salı! Planladığımız gibi beslenme ve içecek getirin. Çok yağmur yağarsa akvaryum binasına gideceğiz.',
+      'child.tooMuch': 'Otobüs firması iki şoförü hasta olduğu için iptal etti, velileriniz cumaya kadar yeni bir form imzalamalı ve ücret 12 avro olarak kalıyor.',
+      'child.missing': 'Gezide küçük bir değişiklik var. Sonra daha fazlasını söylerim.',
+      'parent.fit': 'Otobüs firması iptal ettiği için hayvanat bahçesi gezisi perşembeden gelecek salıya alındı. Lütfen yeni izin formunu cuma gününe kadar imzalayın. Ücret 12 avro olarak kalıyor; çocuğunuzun yine beslenme ve içeceğe ihtiyacı var.',
+      'parent.tooMuch': 'Otobüs firmasının iki şoförü hasta, salı günü 10 ile 12 arasında 7b için bir yedek öğretmene ihtiyacım var ve bazı veliler perşembenin zaten kötü bir gün olduğunu söyledi.',
+      'parent.condescending': 'Ayrıntılara kafa yormayın, biz öğretmenler her şeyi kontrol ediyoruz. Çocuğunuz eve ne getirirse imzalayın yeter.',
+      'colleague.fit': 'Hayvanat bahçesi gezimiz gelecek salıya alındı. O gün 10 ile 12 arasında 7b’deki dersimi devralabilir misin?',
+      'colleague.tooMuch': 'Çocuklar beslenme getiriyor, ücret 12 avro olarak kalıyor, izin formu cuma teslim ve yağmur yağarsa akvaryum binasına gidiyoruz.',
+      'colleague.missing': 'Bu arada gezi ertelendi.'
+    }
+  },
+  practiceMonday: {
+    title: 'Muayenehane: pazartesi randevuları',
+    situation: 'Bir aile hekimi muayenehanesinin danışmasında çalışıyorsun. Bir doktor pazartesi günü beklenmedik şekilde gelemeyecek, bu yüzden randevular kaydırılmalı. Bunu açıkla. (Konu yalnızca randevular, sağlık değil.)',
+    facts: {
+      moved: 'Dr. Lind’in pazartesi günkü tüm randevuları aynı saatte çarşambaya kayıyor.',
+      away: 'Dr. Lind özel nedenlerle beklenmedik şekilde izinli.',
+      urgent: 'Pazartesi günkü acil işlere muayenehanenin ikinci doktoru bakıyor.',
+      calls: 'Cuma gününe kadar 42 hasta aranmalı.',
+      reply: 'Çarşamba gelemeyecek hastalar başka bir saat için muayenehaneyi arıyor.',
+      hours: 'Randevuları kaydırmak bu hafta yaklaşık altı ek personel saati gerektiriyor ve bunu muayenehane müdürü onaylamalı.',
+      vip: 'Pazartesi hastalarından biri tanınmış bir yerel siyasetçi.',
+      texts: 'Yeni randevu sistemi otomatik SMS hatırlatması gönderebiliyor.'
+    },
+    reasons: {
+      'patient.moved': 'Hastanın önce yeni gün ve saate ihtiyacı var.',
+      'patient.urgent': 'Bekleyemeyecek bir durumda kime başvuracağını bilmesi gerekir.',
+      'patient.calls': 'Kaç kişinin etkilendiği iç iş yüküdür.',
+      'patient.reply': 'Çarşamba uymazsa ne yapacağını söyler.',
+      'patient.hours': 'Personel saatleri muayenehanenin işi.',
+      'patient.texts': 'İç araçlar hastanın duyması gereken şeyler değil.',
+      'executive.moved': 'Müdür takvimde neyin değiştiğini bilmeli.',
+      'executive.calls': 'İşin büyüklüğünü gösterir.',
+      'executive.reply': 'Hastalara verilen bilgiler danışmanın rutin işidir, yönetim konusu değil.',
+      'executive.hours': 'Müdürün vermesi gereken karar bu.',
+      'colleague.moved': 'İş arkadaşı hastalara yeni saati söylemeli.',
+      'colleague.urgent': 'Hastalar soracak, bu yüzden iş arkadaşının cevabı bilmesi gerekir.',
+      'colleague.calls': 'Devrettiğin görev bu.',
+      'colleague.hours': 'Ek saatleri onaylamak müdürün kararı; iş arkadaşının görevi bilmesi gerekir.',
+      'colleague.texts': 'Onu birçok telefon görüşmesinden kurtarır.',
+      vip: 'Hastaların kim olduğu gizlidir ve bu mesajların hiçbirinde yer almamalı.'
+    },
+    messages: {
+      'patient.fit': 'Pazartesi günkü Dr. Lind randevunuz aynı saatte çarşambaya alındı. Çarşamba size uymazsa başka bir saat için lütfen bizi arayın. Pazartesi günkü acil işlere ikinci doktorumuz bakıyor.',
+      'patient.tooMuch': 'Cumaya kadar 42 hastayı aramamız gerekiyor, bu yaklaşık altı ek personel saati demek ve yeni sistem SMS hatırlatması gönderebiliyor.',
+      'patient.condescending': 'Doktorlar meşgul insanlar, biliyorsunuz. Siz çarşamba gelin, nedenini dert etmeyin.',
+      'executive.fit': 'Lütfen bu hafta için yaklaşık altı ek personel saatini onayla: Dr. Lind pazartesi yok, bu yüzden 42 randevu çarşambaya kayıyor ve bu hastalar cumaya kadar aranmalı.',
+      'executive.tooMuch': 'Çarşamba gelemeyenler bizi aramalı, acil işler ikinci doktora gidiyor ve SMS hatırlatmaları ayarlar menüsünden açılabiliyor.',
+      'executive.missing': 'Pazartesi biraz karışık, hallederiz.',
+      'colleague.fit': 'Pazartesi Dr. Lind’e randevulu 42 hastayı cumaya kadar aramama yardım eder misin? Randevuları aynı saatte çarşambaya kayıyor; pazartesi acil işler ikinci doktora gidiyor. Yeni sistem SMS hatırlatması da gönderebiliyor.',
+      'colleague.missing': 'Pazartesi randevuları değişiyor, bilgin olsun.',
+      'colleague.condescending': 'Hastaları aramak kolay: ahizeyi kaldırırsın, numarayı çevirirsin ve konuşursun. Pazartesi listesi için bunu yap lütfen.'
+    }
+  },
+  libraryHours: {
+    title: 'Kütüphanenin açılış saatleri',
+    situation: 'Şehir kütüphanesini yönetiyorsun. Bütçe kesintileri nedeniyle açılış saatleri değişiyor. Bunu açıkla.',
+    facts: {
+      hours: '1 Eylül’den itibaren kütüphane salıdan cumartesiye 10 ile 18 arasında açık, pazartesileri kapalı.',
+      cards: 'Kütüphane kartları ve çevrim içi ödünç alma etkilenmiyor.',
+      budget: 'Belediye kütüphane bütçesini %15 kesti.',
+      returns: 'Kitaplar her zaman iade kutusuyla geri verilebilir.',
+      shifts: 'Personel vardiyaları değişiyor: pazartesi vardiyası kalmıyor, cumartesi vardiyaları uzuyor.',
+      savings: 'Yeni saatler yılda yaklaşık 40.000 avro tasarruf sağlıyor ve kimse işini kaybetmiyor.',
+      petition: 'Bir okur pazartesi kapanışına karşı imza kampanyası başlattı.',
+      heating: 'Pazartesi kapanışı ısınmadan da tasarruf sağlıyor, çünkü eski bina kötü yalıtılmış.'
+    },
+    reasons: {
+      'customer.hours': 'Okurların önce ne zaman gelebileceklerini bilmesi gerekir.',
+      'customer.cards': 'Kartlarının ve çevrim içi ödünç almanın çalışıp çalışmadığı endişesine cevap verir.',
+      'customer.returns': 'Kapalı bir günde bile neler yapabileceklerini söyler.',
+      'customer.shifts': 'Personel çizelgeleri iç konudur.',
+      'customer.savings': 'Bütçe rakamları okurların ziyaretlerini planlamasına yardım etmez.',
+      'customer.petition': 'İmza kampanyasından söz etmek taraf tutmaktır ve planlamaya yardım etmez.',
+      'customer.heating': 'Binanın yalıtımı iç bir ayrıntıdır.',
+      'colleague.hours': 'Meslektaşlar okurların yeni saatlerle ilgili sorularını yanıtlar.',
+      'colleague.cards': 'Meslektaşlar kendi sistemlerini bilir; bu cümle okurlar için.',
+      'colleague.shifts': 'Bu onların kendi çalışma haftasını değiştirir.',
+      'colleague.savings': 'Kimsenin işini kaybetmeyeceğini duymak onlar için çok önemlidir.',
+      'colleague.heating': 'Isınma giderleri işlerini değiştirmez.',
+      'executive.hours': 'Belediye meclisi halkın ne göreceğini tam olarak bilmeli.',
+      'executive.budget': 'Kesintiye meclisin kendisi karar verdi; bunu tekrarlamak vakit kaybıdır.',
+      'executive.returns': 'İade kutusu ayrıntıları günlük işleyiştir.',
+      'executive.savings': 'Tasarruf ve istihdam tam da meclisin sorduğu şeydir.',
+      'executive.petition': 'Halkın tepkisi meclise ulaşabilir, bu yüzden önce senden duymaları iyi olur.'
+    },
+    messages: {
+      'customer.fit': '1 Eylül’den itibaren kütüphane salıdan cumartesiye 10 ile 18 arasında açık, pazartesileri kapalı. Kitapları her zaman iade kutusuyla geri verebilirsiniz; kartınız ve çevrim içi ödünç alma eskisi gibi çalışıyor.',
+      'customer.tooMuch': 'Belediye bütçemizi %15 kesti, bu yüzden vardiyaları değiştirip pazartesileri eski binayı daha az ısıtarak yılda yaklaşık 40.000 avro tasarruf ediyoruz.',
+      'customer.condescending': 'Değişikliğin bazı okurlar için zor olduğunu biliyoruz. Sadece şunu hatırlayın: pazartesi kütüphane yok. Gerçekten çok basit.',
+      'colleague.fit': '1 Eylül’den itibaren vardiyalarımız değişiyor: pazartesi vardiyası kalmıyor, cumartesi vardiyaları uzuyor. Salıdan cumartesiye 10 ile 18 arasında açığız ve kimse işini kaybetmiyor.',
+      'colleague.missing': 'Sonbaharda bazı şeyler değişecek. Ayrıntılar sonra.',
+      'colleague.tooMuch': 'Okurlar iade kutusunu kullanmaya devam edebilir, kartlar ve çevrim içi ödünç alma değişmiyor ve pazartesi kapanışı kötü yalıtılmış binamızda ısınmadan da tasarruf sağlıyor.',
+      'executive.fit': 'Yeni açılış saatleri işten çıkarma olmadan yılda yaklaşık 40.000 avro tasarruf sağlıyor: 1 Eylül’den itibaren pazartesileri kapalıyız, salıdan cumartesiye 10 ile 18 arasında açığız. Bilginize: bir okur pazartesi kapanışına karşı imza kampanyası başlattı.',
+      'executive.tooMuch': 'İadeler kutuyla mümkün olmaya devam ediyor, kartlar ve çevrim içi ödünç alma değişmiyor, cumartesi vardiyaları uzarken pazartesi vardiyaları kalkıyor.',
+      'executive.missing': 'Açılış saatlerinde ufak bir ayarlama yaptık.'
+    }
   }
 };

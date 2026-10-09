@@ -262,5 +262,266 @@ export const nl: LocaleContent = {
         c: ['Een lijst met bibliotheekregels, gevolgd door voorbeelden.', 'De tekst bevat geen regels.']
       }
     }
+  },
+  paperback: {
+    title: 'Het boek dat in je jaszak paste',
+    paragraphs: [
+      'Lange tijd waren de meeste nieuwe boeken duur. Ze hadden een harde kaft en genaaide pagina’s, dus veel mensen leenden boeken in de bibliotheek of lazen helemaal geen nieuwe. Goedkope boeken met een papieren omslag bestonden al in de negentiende eeuw, maar ze werden vaak gezien als wegwerplectuur.',
+      'In 1935 begon de Britse uitgever Allen Lane Penguin Books. Zijn idee was eenvoudig: goed geschreven boeken met een papieren omslag, verkocht voor ongeveer de prijs van een pakje sigaretten. De omslagen waren sober en hadden een kleurcode – oranje voor romans, groen voor misdaad –, zodat lezers in één oogopslag zagen wat voor boek het was.',
+      'Veel boekhandelaren twijfelden aan het plan. Ze waren bang dat goedkope boeken mensen ervan zouden weerhouden dure te kopen. Maar de pockets verkochten in grote aantallen, en andere uitgevers volgden al snel. In de Verenigde Staten begon Pocket Books in 1939 met de verkoop van pockets, en in de Tweede Wereldoorlog werden miljoenen kleine pockets speciaal voor soldaten gedrukt.',
+      'Tegenwoordig zijn pockets zo gewoon dat je makkelijk vergeet hoe nieuw ze ooit voelden. Ze maakten het voor veel meer mensen mogelijk om boeken te bezitten in plaats van ze alleen te lenen, en om een hele roman in een jaszak mee te nemen.'
+    ],
+    summary: 'Pockets, populair geworden door Penguin vanaf 1935, maakten goed geschreven boeken zo goedkoop dat veel mensen ze konden bezitten en meenemen.',
+    questions: {
+      q1: {
+        q: 'Wat is de hoofdgedachte van de tekst?',
+        a: ['De omslagen van Penguin waren oranje en groen.', 'Dat is een detail uit alinea 2, niet de hoofdgedachte.'],
+        b: ['Goedkope pockets maakten het voor veel mensen gewoon om goede boeken te bezitten.', 'Goed. De tekst gaat van dure boeken naar pockets die mensen konden bezitten.'],
+        c: ['Boekhandelaren waren terecht bang voor goedkope boeken.', 'De tekst zegt dat pockets goed verkochten; niet dat de angst uitkwam.']
+      },
+      q2: {
+        q: 'Wat vertelde de kleur van een Penguin-omslag aan lezers?',
+        a: ['Hoe oud het boek was.', 'Dat staat niet in de tekst.'],
+        b: ['Hoeveel het boek kostte.', 'De tekst koppelt de kleur aan het soort boek, niet aan de prijs.'],
+        c: ['Wat voor boek het was, bijvoorbeeld een roman of een misdaadverhaal.', 'Goed. Alinea 2 legt de kleurcode uit.']
+      },
+      q3: {
+        q: 'Waarom twijfelden veel boekhandelaren aan het plan?',
+        a: ['Ze waren bang dat mensen geen dure boeken meer zouden kopen.', 'Goed. Alinea 3 noemt deze reden.'],
+        b: ['Ze dachten dat papieren omslagen te snel zouden scheuren.', 'Dat wordt in de tekst niet genoemd.'],
+        c: ['Ze vonden de kleuren niet mooi.', 'Dat staat niet in de tekst.']
+      },
+      q4: {
+        q: 'Hoe is de tekst opgebouwd?',
+        a: ['Als een vergelijking van de prijzen van twee uitgevers.', 'Er worden geen prijzen vergeleken.'],
+        b: ['Als een lijst van beroemde pocketromans.', 'In de tekst worden geen titels genoemd.'],
+        c: ['Chronologisch: dure boeken, het begin van Penguin, de verspreiding van pockets, vandaag.', 'Goed. De tekst gaat vooruit in de tijd en eindigt in het heden.']
+      }
+    }
+  },
+  bridges: {
+    title: 'Als een brug begint te slingeren',
+    paragraphs: [
+      'Bruggen zijn niet helemaal star. Wind, verkeer en zelfs voetstappen laten ze een beetje bewegen, en ingenieurs ontwerpen ze zo dat ze een beetje kunnen buigen zonder schade. Meestal is de beweging veel te klein om te merken.',
+      'Soms beweegt een brug echter zo dat mensen het wel voelen. Toen de Millennium Bridge, een voetgangersbrug over de Theems in Londen, in 2000 openging, begon hij heen en weer te slingeren zodra mensenmassa’s eroverheen liepen. Elke stap duwt een beetje opzij. Toen de brug bewoog, pasten mensen hun manier van lopen aan om hun evenwicht te bewaren, en velen gingen in het ritme van het slingeren stappen – waardoor de brug nog verder werd geduwd.',
+      'De brug werd twee dagen na de opening gesloten. Ingenieurs bouwden hem niet opnieuw. In plaats daarvan voegden ze dempers toe: onderdelen die beweging opvangen, zoals de schokdempers van een auto. Sommige werken als grote, met vloeistof gevulde zuigers; andere zijn zware gewichten op veren die tegen het slingeren in bewegen. De brug ging in 2002 weer open en is sindsdien stabiel.',
+      'De les was niet dat de brug zwak was, maar dat mensen en bouwwerken elkaar kunnen beïnvloeden op manieren die moeilijk te voorspellen zijn. Daarom houden ingenieurs nu rekening met hoe menigten lopen, en niet alleen met hoeveel ze wegen.'
+    ],
+    summary: 'De Millennium Bridge slingerde omdat voetgangers in de maat van de beweging gingen lopen; dempers losten het op en lieten zien dat je rekening moet houden met hoe menigten bewegen.',
+    questions: {
+      q1: {
+        q: 'Wat is de hoofdgedachte van de tekst?',
+        a: ['Mensen die in de maat van een slingerende brug lopen, kunnen het slingeren versterken, en dempers kunnen dat voorkomen.', 'Goed. De tekst legt de oorzaak en de oplossing uit.'],
+        b: ['De Millennium Bridge was slecht gebouwd en moest worden vervangen.', 'Nee. Hij werd niet opnieuw gebouwd; er kwamen dempers, en de tekst zegt dat hij niet zwak was.'],
+        c: ['Alle bruggen zijn gevaarlijk bij harde wind.', 'De tekst zegt dat kleine bewegingen normaal en onschuldig zijn.']
+      },
+      q2: {
+        q: 'Waarom werd het slingeren sterker?',
+        a: ['De wind boven de rivier werd sterker.', 'De tekst geeft de wind niet de schuld; de oorzaak was het lopen.'],
+        b: ['De brug droeg te veel gewicht.', 'De tekst noemt het ritme van de stappen als oorzaak, niet het gewicht.'],
+        c: ['Veel mensen gingen in het ritme van het slingeren stappen.', 'Goed. Alinea 2 beschrijft dit.']
+      },
+      q3: {
+        q: 'Wat deden de ingenieurs?',
+        a: ['Ze bouwden de brug opnieuw met sterker staal.', 'Volgens de tekst bouwden ze hem niet opnieuw.'],
+        b: ['Ze voegden dempers toe die de beweging opvangen.', 'Goed. Alinea 3 beschrijft de dempers.'],
+        c: ['Ze lieten nog maar een paar mensen tegelijk op de brug.', 'Dat wordt in de tekst niet genoemd.']
+      },
+      q4: {
+        q: 'Welk detail ondersteunt het best dat de dempers werkten?',
+        a: ['De brug ging in 2000 open.', 'Toen begon het probleem; dat is geen bewijs voor de oplossing.'],
+        b: ['Dempers werken zoals de schokdempers van een auto.', 'Dat legt uit hoe dempers werken, niet of ze hier werkten.'],
+        c: ['De brug ging in 2002 weer open en is sindsdien stabiel.', 'Goed. Alinea 3 meldt het resultaat nadat de dempers waren toegevoegd.']
+      }
+    }
+  },
+  longitude: {
+    title: 'Je plek vinden op zee',
+    paragraphs: [
+      'Eeuwenlang konden zeelieden bepalen hoe ver naar het noorden of zuiden ze waren. De hoogte van de zon ’s middags, of van de Poolster ’s nachts, gaf hun de breedtegraad. Hoe ver naar het oosten of westen ze waren – de lengtegraad – was veel moeilijker te bepalen, en schepen die zich vergisten, konden op rotsen lopen of ver van land zonder voorraden komen te zitten.',
+      'Het probleem was eigenlijk een tijdprobleem. De aarde draait elk uur 15 graden, dus als een navigator op hetzelfde moment de plaatselijke tijd aan boord en de tijd thuis kende, gaf het verschil de lengtegraad. De plaatselijke tijd kon je aflezen aan de zon. Het moeilijke was de tijd van thuis bij te houden: de slingeruurwerken van die tijd werkten niet op een rollend schip, en temperatuurwisselingen lieten klokken voor- of achterlopen.',
+      'In 1714 loofde het Britse parlement een grote beloning uit voor een praktische oplossing. Veel deskundigen verwachtten het antwoord uit de hemel: door de hoek tussen de maan en bepaalde sterren te meten en die te vergelijken met gedrukte tabellen, kon een navigator de tijd van thuis berekenen. Deze methode van de ‘maansafstanden’ werkte, maar vroeg zorgvuldige metingen en lange berekeningen.',
+      'John Harrison, een uurwerkmaker die zichzelf het vak had geleerd, koos een andere weg. In de loop van tientallen jaren bouwde hij een reeks scheepsklokken. De vierde, die eruitzag als een groot zakhorloge, hield op een proefreis naar het Caribisch gebied in 1761–62 opmerkelijk goed de tijd bij. Toch lag Harrison jarenlang in onenigheid met de beheerders van de beloning voordat hij werd betaald.',
+      'Lange tijd werden beide methoden naast elkaar gebruikt, omdat de nieuwe scheepsklokken, chronometers genoemd, duur waren. Toen ze in de negentiende eeuw goedkoper werden, werden ze een vast onderdeel van de uitrusting van een schip.'
+    ],
+    summary: 'De lengtegraad op zee vinden hing af van het kennen van de tijd thuis; na jaren waarin twee methoden concurreerden, werden nauwkeurige scheepsklokken de standaardoplossing.',
+    questions: {
+      q1: {
+        q: 'Wat is de hoofdgedachte van de tekst?',
+        a: ['Vóór satellieten konden zeelieden nooit hun positie bepalen.', 'De tekst beschrijft twee methoden die werkten.'],
+        b: ['De lengtegraad vinden was een tijdprobleem, dat over vele jaren werd opgelost met sterrentabellen en scheepsklokken.', 'Goed. De tekst legt het probleem uit en hoe beide methoden het aanpakten.'],
+        c: ['Harrison werd door het parlement oneerlijk behandeld.', 'De onenigheid is een detail, niet de hoofdgedachte.'],
+        d: ['De breedtegraad is moeilijker te vinden dan de lengtegraad.', 'De tekst zegt het omgekeerde.']
+      },
+      q2: {
+        q: 'Waarom faalden gewone klokken op zee?',
+        a: ['Slingers werkten niet op een rollend schip, en de temperatuur veranderde hun snelheid.', 'Goed. Alinea 2 noemt beide redenen.'],
+        b: ['Ze waren te duur.', 'De kosten worden genoemd bij de latere chronometers, niet als reden waarom gewone klokken faalden.'],
+        c: ['Zeelieden vergaten ze op te winden.', 'Dat staat niet in de tekst.']
+      },
+      q3: {
+        q: 'Wat vergeleek de methode van de maansafstanden?',
+        a: ['De klok van het schip met een klok thuis.', 'Dat is het idee van de klokmethode, niet van de maanmethode.'],
+        b: ['De hoogte van de Poolster met die van de zon.', 'Die metingen geven de breedtegraad, zoals alinea 1 uitlegt.'],
+        c: ['De hoek tussen de maan en sterren met gedrukte tabellen.', 'Goed. Alinea 3 beschrijft dit.']
+      },
+      q4: {
+        q: 'Welke rol speelt alinea 2 in de tekst?',
+        a: ['Ze legt uit dat de lengtegraad eigenlijk een kwestie van tijd is, waarop de latere alinea’s voortbouwen.', 'Goed. Beide methoden in alinea 3 en 4 zijn manieren om de tijd thuis te vinden.'],
+        b: ['Ze vertelt het levensverhaal van Harrison.', 'Dat is alinea 4.'],
+        c: ['Ze beschrijft de beloning van het parlement.', 'Dat is alinea 3.']
+      },
+      q5: {
+        q: 'Welk detail is bewijs dat Harrisons vierde klok goed werkte?',
+        a: ['Hij zag eruit als een groot zakhorloge.', 'De vorm zegt niets over de nauwkeurigheid.'],
+        b: ['Harrison werkte tientallen jaren aan klokken.', 'Inspanning is geen bewijs voor resultaten.'],
+        c: ['Hij hield op een proefreis naar het Caribisch gebied opmerkelijk goed de tijd bij.', 'Goed. Alinea 4 meldt het resultaat van de proef.']
+      }
+    }
+  },
+  'tree-rings': {
+    title: 'De ringen van een boom lezen',
+    paragraphs: [
+      'Wie de stam van een oude boom doorzaagt, ziet meestal een patroon van ringen. In streken met duidelijke seizoenen vormt een boom doorgaans één ring per jaar: licht, snel gegroeid hout in het voorjaar en donkerder, dichter hout later in het seizoen. Wie de ringen van de schors naar binnen telt, krijgt een eerste schatting van de leeftijd.',
+      'De ringen vertellen meer dan de leeftijd. In een goed jaar, met genoeg regen en warmte, groeit een brede ring; in een droog of koud jaar is de ring smal. Bomen van dezelfde soort in dezelfde streek hebben daarom een vergelijkbaar patroon van brede en smalle ringen, als een streepjescode die het weer heeft geschreven.',
+      'Dit gedeelde patroon is de sleutel tot jaarringdatering, ook dendrochronologie genoemd. Onderzoekers beginnen bij levende bomen, waarvan de buitenste ring bij een bekend jaar hoort. Daarna zoeken ze ouder hout – uit oude gebouwen, bijvoorbeeld – waarvan de binnenste ringen passen bij het patroon van de oudste ringen van de levende bomen. Stap voor stap verlengen overlappende monsters de reeks naar het verleden. In sommige streken gaan deze reeksen nu duizenden jaren terug.',
+      'Eén boom tellen is echter niet genoeg. In een heel slecht jaar vormt een boom soms helemaal geen zichtbare ring, en een droge periode midden in de zomer kan iets opleveren dat op een extra ring lijkt. Daarom vergelijken onderzoekers veel monsters: één boom kan misleiden, maar veel bomen samen laten de echte volgorde zien.',
+      'Met jaarringdatering is uitgezocht wanneer houten huizen werden gebouwd, wanneer schepen werden gemaakt en hoe het klimaat vroeger was. Het begint allemaal met een patroon dat iedereen op een boomstronk kan zien.'
+    ],
+    summary: 'Omdat bomen in één streek patronen van brede en smalle ringen delen, kunnen onderzoekers door veel monsters te vergelijken hout nauwkeurig en ver terug in de tijd dateren.',
+    questions: {
+      q1: {
+        q: 'Wat is de hoofdgedachte van de tekst?',
+        a: ['Gedeelde ringpatronen maken het mogelijk hout nauwkeurig te dateren door veel monsters te vergelijken.', 'Goed. De tekst werkt toe naar deze methode en haar toepassingen.'],
+        b: ['Ringen tellen is de enige manier om de leeftijd van een boom te bepalen.', 'Volgens de tekst geeft tellen alleen een eerste schatting en kan het misleiden.'],
+        c: ['Bomen groeien sneller in koude jaren.', 'De tekst zegt het omgekeerde.'],
+        d: ['Oude gebouwen zijn van hout gemaakt.', 'Oude gebouwen zijn maar één bron van monsters.']
+      },
+      q2: {
+        q: 'Wat laat een smalle ring meestal zien?',
+        a: ['Dat de boom jong was.', 'De tekst koppelt smalle ringen niet aan leeftijd.'],
+        b: ['Een droog of koud jaar.', 'Goed. Alinea 2 zegt dit.'],
+        c: ['Dat de boom in de winter werd gekapt.', 'Dat staat niet in de tekst.']
+      },
+      q3: {
+        q: 'Waarom beginnen onderzoekers bij levende bomen?',
+        a: ['Omdat levende bomen de meeste ringen hebben.', 'Dat is niet de reden die de tekst geeft.'],
+        b: ['Omdat hun hout makkelijker te zagen is.', 'Dat wordt in de tekst niet genoemd.'],
+        c: ['Omdat hun buitenste ring bij een bekend jaar hoort.', 'Goed. Alinea 3 noemt dit als beginpunt.']
+      },
+      q4: {
+        q: 'Alinea 1 zegt dat een boom doorgaans één ring per jaar vormt. Welke latere uitspraak laat zien dat dit niet altijd klopt?',
+        a: ['Bomen in dezelfde streek hebben een vergelijkbaar patroon.', 'Dit ondersteunt de methode; het beperkt de één-ring-regel niet.'],
+        b: ['In een heel slecht jaar kan een ring ontbreken, of kan iets ontstaan dat op een extra ring lijkt.', 'Goed. Alinea 4 beschrijft deze uitzonderingen.'],
+        c: ['In sommige streken gaan de reeksen duizenden jaren terug.', 'Dat gaat over de lengte van de reeksen, niet over de één-ring-regel.']
+      },
+      q5: {
+        q: 'Waarom is het vergelijken van veel monsters betrouwbaarder dan het tellen van één boom?',
+        a: ['Omdat elke boom een ander jaar vastlegt.', 'Bomen in een streek delen dezelfde jaren; juist daarom kun je ze vergelijken.'],
+        b: ['Omdat veel monsters indrukwekkender ogen in een rapport.', 'Zo’n reden geeft de tekst niet.'],
+        c: ['Omdat één boom kan misleiden, maar veel bomen samen de echte volgorde laten zien.', 'Goed. Alinea 4 legt dit uit.']
+      }
+    }
+  },
+  'car-free': {
+    title: 'Een straat zonder auto’s?',
+    paragraphs: [
+      'De Lindestraat is een korte straat met winkels, een bakkerij en een basisschool. Een groep bewoners heeft voorgesteld de straat voor een proef van drie zomermaanden af te sluiten voor auto’s, met bankjes en plantenbakken op de plekken waar nu auto’s parkeren. Op een openbare bijeenkomst brachten mensen bewijs voor en tegen mee.',
+      'Meneer Okafor, die de ijzerwarenwinkel heeft, was fel tegen. ‘De laatste keer dat de straat dicht was, voor het lentefeest, daalde mijn omzet die week met de helft,’ zei hij. Anderen wezen erop dat het die week bijna voortdurend had geregend en dat het feest maar één weekend duurde.',
+      'De bewonersgroep presenteerde een petitie met 300 handtekeningen voor de proef. Toen ernaar werd gevraagd, gaven ze toe dat de handtekeningen online waren verzameld en dat ze niet hadden nagegaan hoeveel ervan kwamen van mensen die in de buurt wonen of winkelen.',
+      'Een verkeerstelling van de gemeente was nuttiger. Op een gewone werkdag reed ongeveer 40 procent van de auto’s zonder te stoppen door de Lindestraat, veel van hen als sluiproute. Weinig parkeerplaatsen werden langer dan een uur door winkelklanten gebruikt; de meeste werden de hele dag door dezelfde auto’s bezet.',
+      'Mevrouw Varga, gemeenteraadslid, steunde de proef. ‘Vergelijkbare plannen in andere steden hebben het aantal mensen dat langs winkels loopt verhoogd,’ zei ze, ‘en deze proef kost niets.’ Later in de bijeenkomst noemde ze dat de gemeente de bankjes, de plantenbakken en nieuwe borden zou betalen.',
+      'Uiteindelijk stemde de bijeenkomst in met een proef – onder voorwaarden. Winkels zouden hun wekelijkse omzet delen, de gemeente zou voetgangers en auto’s tellen voor en tijdens de proef, en een besluit over een blijvende verandering zou wachten tot de cijfers binnen waren.'
+    ],
+    summary: 'Een buurt weegt bewijs van zeer wisselende kwaliteit over een autovrije straat en spreekt een proef met metingen af voordat er wordt besloten.',
+    questions: {
+      q1: {
+        q: 'Waar gaat de tekst vooral over?',
+        a: ['Waarom autovrije straten winkels altijd helpen.', 'Tot die conclusie komt de tekst niet; de proef moet nog komen.'],
+        b: ['Een bijeenkomst die bewijs van wisselende kwaliteit afweegt en een proef met metingen afspreekt.', 'Goed. De tekst werkt in de laatste alinea naar dit besluit toe.'],
+        c: ['De geschiedenis van het lentefeest.', 'Het feest komt alleen voor als één stuk bewijs.'],
+        d: ['Een conflict tussen de school en de bakkerij.', 'Geen van beide doet mee aan het debat.']
+      },
+      q2: {
+        q: 'Welk deel van de auto’s reed volgens de gemeentelijke telling alleen door de straat?',
+        a: ['Ongeveer de helft', 'De helft is de omzetdaling die meneer Okafor noemde.'],
+        b: ['Ongeveer 40 procent', 'Goed. Alinea 4 noemt dit cijfer.'],
+        c: ['Ongeveer 300', '300 is het aantal handtekeningen onder de petitie.']
+      },
+      q3: {
+        q: 'Welke uitspraak wordt later in de tekst tegengesproken?',
+        a: ['Dat het feest maar één weekend duurde.', 'Niets in de tekst spreekt dit tegen.'],
+        b: ['Dat er een basisschool in de straat is.', 'Niets in de tekst spreekt dit tegen.'],
+        c: ['Dat de proef niets kost.', 'Goed. Mevrouw Varga zegt later dat de gemeente bankjes, plantenbakken en borden betaalt.']
+      },
+      q4: {
+        q: 'Waarom is het bewijs van meneer Okafor zwak?',
+        a: ['Omdat winkeliers hun omzet niet kunnen kennen.', 'Dat kunnen ze wel; het probleem is de week die hij vergelijkt.'],
+        b: ['Omdat het om één week gaat, tijdens een kort evenement met slecht weer.', 'Goed. De regen en het korte feest kunnen de daling verklaren.'],
+        c: ['Omdat hij tegen de proef was.', 'Een mening maakt bewijs niet zwak; het probleem is waarop het berust.']
+      },
+      q5: {
+        q: 'Wat is het probleem met de petitie?',
+        a: ['Niemand heeft nagegaan of de ondertekenaars in de buurt wonen of winkelen.', 'Goed. Alinea 3 zegt dit.'],
+        b: ['Er stonden te weinig handtekeningen onder.', 'Het aantal is niet het probleem dat de tekst noemt.'],
+        c: ['Ze was tegen de proef.', 'De petitie was vóór de proef.']
+      },
+      q6: {
+        q: 'Hoe is de tekst opgebouwd?',
+        a: ['Als een verhaal verteld door de eigenaar van de ijzerwarenwinkel.', 'In de tekst komen meerdere mensen aan het woord.'],
+        b: ['Als een lijst met regels voor autovrije straten.', 'De tekst bevat geen regels.'],
+        c: ['Een voorstel, verschillende stukken bewijs en hun zwakke punten, dan het besluit om te meten.', 'Goed. Dit is de volgorde van de zes alinea’s.']
+      }
+    }
+  },
+  hiring: {
+    title: 'Twee manieren om mensen aan te nemen',
+    paragraphs: [
+      'Een kleine ontwerpstudio met twaalf medewerkers moest drie nieuwe mensen aannemen. Het team besprak twee manieren om hen te kiezen. De eerste was de manier die ze altijd gebruikten: twee rondes sollicitatiegesprekken. De tweede was om iedere finalist een korte, betaalde opdracht te geven die op echt werk lijkt, gevolgd door één gesprek daarover.',
+      'Lea, de officemanager, had een voorkeur voor gesprekken en hield een korte enquête onder het personeel. Tien van de twaalf zeiden gesprekken te verkiezen. ‘Ons team weet uit ervaring dat gesprekken het best werken,’ zei ze, ‘en ze gaan ook nog sneller voor iedereen.’',
+      'Sam, een ervaren ontwerper, wees op een probleem. Iedereen in de studio was via gesprekken aangenomen, en niemand had de opdrachtmethode ooit meegemaakt. De enquête liet zien waaraan mensen gewend waren, niet welke methode goede collega’s vond. En wie via een gesprek is aangenomen, is per definitie iemand bij wie gesprekken hebben gewerkt.',
+      'Sam had zelf ook bewijs: het jaar ervoor had de studio bij twee aannames een opdracht gebruikt, en beiden werkten er nog en deden het goed. Lea antwoordde dat twee mensen veel te weinig waren om iets te bewijzen, en dat een van hen al stage had gelopen bij de studio, zodat het team haar vóór de opdracht al goed kende.',
+      'Toen keek het team naar het planningsoverzicht. Twee gespreksrondes kostten per kandidaat ongeveer vijf uur werktijd van het team; een opdracht beoordelen en één gesprek voeren ongeveer drie. Uiteindelijk spraken ze af om vooraf op te schrijven hoe een goede start in de eerste zes maanden eruitziet, elke methode bij een deel van de kandidaten te gebruiken en de resultaten na een jaar te bekijken – wetende dat een paar aannames de vraag niet voorgoed zouden beslissen.'
+    ],
+    summary: 'Een ontwerpstudio ziet dat haar enquête en haar kleine succesverhaal zwak bewijs zijn en besluit beide aannamemethoden uit te proberen aan de hand van vooraf vastgelegde criteria.',
+    questions: {
+      q1: {
+        q: 'Waar gaat de tekst vooral over?',
+        a: ['Waarom betaalde opdrachten beter zijn dan gesprekken.', 'Dat beslist de tekst niet.'],
+        b: ['Hoe je een goede vacaturetekst schrijft.', 'Vacatureteksten komen in de tekst niet voor.'],
+        c: ['Een team dat ziet dat zijn bewijs zwak is en besluit beide methoden te testen aan de hand van vooraf vastgelegde criteria.', 'Goed. De tekst werkt in de laatste alinea naar dit besluit toe.'],
+        d: ['Een meningsverschil dat eindigt doordat Sam de studio verlaat.', 'Niemand verlaat de studio.']
+      },
+      q2: {
+        q: 'Welke bewering wordt door latere cijfers in de tekst tegengesproken?',
+        a: ['Dat tien van de twaalf medewerkers gesprekken verkozen.', 'Dat is de uitkomst van de enquête zelf; niets spreekt die tegen.'],
+        b: ['Dat gesprekken voor iedereen sneller gaan.', 'Goed. Volgens het planningsoverzicht kosten gesprekken ongeveer vijf uur per kandidaat, de opdracht ongeveer drie.'],
+        c: ['Dat de studio drie nieuwe mensen nodig had.', 'Niets in de tekst spreekt dit tegen.']
+      },
+      q3: {
+        q: 'Wat is volgens Sam de grootste zwakte van Lea’s enquête?',
+        a: ['Ze laat zien waaraan mensen gewend zijn, omdat iedereen via een gesprek is aangenomen.', 'Goed. Alinea 3 legt dit uit.'],
+        b: ['Ze was anoniem.', 'Dat staat niet in de tekst, en Sam heeft er geen kritiek op.'],
+        c: ['Er werden te weinig mensen gevraagd.', 'Sam heeft geen kritiek op het aantal ondervraagden.']
+      },
+      q4: {
+        q: 'Waarom is Sams bewijs over de twee aannames van vorig jaar zwak?',
+        a: ['De twee mensen waren al vertrokken.', 'Beiden werkten er nog en deden het goed.'],
+        b: ['De opdrachten waren niet betaald.', 'Dat staat niet in de tekst.'],
+        c: ['Twee is heel weinig, en een van hen was al goed bekend bij het team.', 'Goed. Lea noemt beide problemen in alinea 4.']
+      },
+      q5: {
+        q: 'Wat gaat het team vóór het aannemen opschrijven?',
+        a: ['De vragen voor de gesprekken.', 'Dat staat niet in de tekst.'],
+        b: ['Hoe een goede start in de eerste zes maanden eruitziet.', 'Goed. Alinea 5 zegt dit.'],
+        c: ['De namen van de beste kandidaten.', 'Dat staat niet in de tekst.']
+      },
+      q6: {
+        q: 'Hoe verloopt de tekst?',
+        a: ['Twee methoden, een enquête en haar zwakte, een klein succesverhaal en de zwakte daarvan, dan tijdcijfers en een geplande proef.', 'Goed. Dit is de volgorde van de vijf alinea’s.'],
+        b: ['Twee methoden, een stemming en de winnaar.', 'In de tekst wordt niet gestemd.'],
+        c: ['Een stappenplan voor sollicitatiegesprekken.', 'De tekst is een praktijkgeval, geen handleiding.']
+      }
+    }
   }
 };

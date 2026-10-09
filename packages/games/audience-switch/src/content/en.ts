@@ -255,5 +255,182 @@ export const content: ContentText = {
       'expert.missing': 'Some lids are loose; customers get a free replacement.',
       'expert.condescending': 'A hinge is the part that lets the lid turn. If it is too thin, it does not hold well.'
     }
+  },
+  renovation: {
+    title: 'Delayed renovation',
+    situation: 'You run the building firm renovating the kitchen and bathroom of a semi-detached house. The work is delayed. Explain it.',
+    facts: {
+      delay: 'The renovation will finish one week later: on 21 June instead of 14 June.',
+      tiles: 'The supplier delivered 30 × 60 cm bathroom tiles instead of 60 × 60 cm, so they must be reordered.',
+      order: 'Until the new tiles arrive, the crew works on the kitchen first.',
+      water: 'The shared water pipe will be shut off on Tuesday from 8 to 12.',
+      noise: 'Loud drilling continues for three more days next week, between 8 and 17.',
+      cost: 'The delay costs the homeowner nothing; the supplier pays for the new tiles.',
+      supplierHistory: 'This tile supplier has had delivery problems several times this year.',
+      skip: 'On Monday the skip will stand on the street in front of the neighbour’s driveway.'
+    },
+    reasons: {
+      'customer.delay': 'The homeowner plans around the new finishing date.',
+      'customer.tiles': 'The exact tile format is the crew’s concern; the homeowner needs the date and the cost.',
+      'customer.water': 'They must know when they will have no water.',
+      'customer.cost': 'Their first worry is whether the delay costs them money.',
+      'projectManager.delay': 'The crew lead plans the remaining work towards the new date.',
+      'projectManager.tiles': 'The crew must know exactly what is wrong with the delivery.',
+      'projectManager.order': 'This is what the crew does tomorrow morning.',
+      'projectManager.water': 'The crew shuts off the water and has to warn everyone.',
+      'projectManager.cost': 'Who pays is settled between the office and the supplier; it does not change the work.',
+      'projectManager.skip': 'The crew lead must arrange where the skip goes.',
+      'neighbour.tiles': 'Tile details are none of the neighbour’s business.',
+      'neighbour.order': 'The crew’s work order does not affect the neighbour.',
+      'neighbour.water': 'The neighbour shares the pipe and needs the exact times.',
+      'neighbour.noise': 'Noise times are what affect the neighbour most.',
+      'neighbour.cost': 'The homeowner’s costs are private.',
+      'neighbour.skip': 'The skip blocks their driveway, so they must know in advance.',
+      supplierHistory: 'Complaining about the supplier sounds like an excuse and helps no one.'
+    },
+    messages: {
+      'customer.fit': 'Your renovation will be finished on 21 June instead of 14 June, because the bathroom tiles were delivered in the wrong size. This costs you nothing. Please note: on Tuesday the water is off from 8 to 12.',
+      'customer.tooMuch': 'The supplier sent 30 × 60 tiles instead of 60 × 60, so the layout plan no longer fits; the crew now does the kitchen first, and the skip goes on the street on Monday.',
+      'customer.condescending': 'There’s a small hiccup with the tiles, nothing you need to worry about. Leave it to the professionals.',
+      'projectManager.fit': 'The bathroom tiles came as 30 × 60 instead of 60 × 60, so do the kitchen first until the reorder arrives. New finish: 21 June. Water off on Tuesday from 8 to 12, and the skip goes on the street on Monday.',
+      'projectManager.missing': 'There’s a delay on the bathroom. Carry on as best you can.',
+      'projectManager.condescending': 'Tiles have a size, and when the size is wrong they don’t fit. So please don’t lay them.',
+      'neighbour.fit': 'About the renovation next door: on Tuesday the shared water pipe is off from 8 to 12, and there will be loud drilling for three more days next week, between 8 and 17. On Monday the skip stands in front of your driveway. Sorry for the trouble.',
+      'neighbour.tooMuch': 'The bathroom tiles came in the wrong format, so the crew is switching to the kitchen, and the homeowner pays nothing extra because the supplier covers it.',
+      'neighbour.missing': 'We are doing some building work next door. Thank you for your patience.'
+    }
+  },
+  schoolTrip: {
+    title: 'School trip change',
+    situation: 'You are a class teacher. The bus company cancelled, so the class trip to the zoo has to move. Explain it.',
+    facts: {
+      newDate: 'The zoo trip moves from Thursday to next Tuesday.',
+      bus: 'The bus company cancelled because two of its drivers are ill.',
+      lunch: 'Children bring a packed lunch and a drink, as planned.',
+      form: 'Parents must sign a new consent form by Friday.',
+      price: 'The price stays at 12 euros per child.',
+      cover: 'On Tuesday someone must cover my lessons with class 7b from 10 to 12.',
+      rain: 'If it rains heavily, the class visits the aquarium house instead.',
+      complaint: 'Some parents complained that Thursday was a bad day anyway.'
+    },
+    reasons: {
+      'child.newDate': 'Children first want to know when the trip happens.',
+      'child.bus': 'Ill bus drivers are not something the children need to think about.',
+      'child.lunch': 'This is what they have to bring themselves.',
+      'child.form': 'The form is for parents to sign, not for children.',
+      'child.price': 'Money is handled by the parents.',
+      'child.cover': 'Arrangements between teachers do not concern the children.',
+      'child.rain': 'It tells them what to expect, which children like to know.',
+      'parent.newDate': 'Parents need the new date to plan their week.',
+      'parent.lunch': 'They prepare the packed lunch.',
+      'parent.form': 'This is what they must do, with a deadline.',
+      'parent.price': 'They want to know whether it costs more.',
+      'parent.cover': 'Cover lessons are an internal school matter.',
+      'parent.rain': 'It helps them prepare their child for the weather.',
+      'colleague.newDate': 'The colleague must know which day is affected.',
+      'colleague.lunch': 'Packed lunches are for the class, not for the colleague.',
+      'colleague.price': 'The trip price does not affect the colleague.',
+      'colleague.cover': 'This is what you are actually asking them for.',
+      'colleague.rain': 'The bad-weather plan does not change the colleague’s lessons.',
+      complaint: 'Passing on complaints stirs things up and changes nothing.'
+    },
+    messages: {
+      'child.fit': 'Our zoo trip moves to next Tuesday! Bring a packed lunch and a drink, just like we planned. If it rains a lot, we will visit the aquarium house.',
+      'child.tooMuch': 'The bus company cancelled because two drivers are ill, your parents must sign a new form by Friday, and the price stays at 12 euros.',
+      'child.missing': 'There is a little change with the trip. You will hear more later.',
+      'parent.fit': 'The zoo trip moves from Thursday to next Tuesday because the bus company cancelled. Please sign the new consent form by Friday. The price stays at 12 euros; your child still needs a packed lunch and a drink.',
+      'parent.tooMuch': 'The bus company has two drivers off sick, I need cover for class 7b on Tuesday from 10 to 12, and some parents said Thursday was a bad day anyway.',
+      'parent.condescending': 'Don’t worry about the details, we teachers have everything under control. Just sign whatever your child brings home.',
+      'colleague.fit': 'Our zoo trip moves to next Tuesday. Could you cover my lessons with class 7b from 10 to 12 that day?',
+      'colleague.tooMuch': 'The children bring a packed lunch, the price stays at 12 euros, the consent form is due on Friday, and if it rains we go to the aquarium house.',
+      'colleague.missing': 'The trip is moving, by the way.'
+    }
+  },
+  practiceMonday: {
+    title: 'Doctor’s practice: Monday appointments',
+    situation: 'You work at the front desk of a family doctor’s practice. One doctor is away on Monday at short notice, so appointments must move. Explain it. (This is only about appointments, not about health.)',
+    facts: {
+      moved: 'All of Dr Lind’s Monday appointments move to Wednesday at the same time.',
+      away: 'Dr Lind is away at short notice for private reasons.',
+      urgent: 'Urgent matters on Monday are seen by the second doctor in the practice.',
+      calls: '42 patients must be phoned by Friday.',
+      reply: 'Patients who cannot come on Wednesday call the practice to get another time.',
+      hours: 'Rebooking needs about six extra staff hours this week, which the practice manager must approve.',
+      vip: 'One of the Monday patients is a well-known local politician.',
+      texts: 'The new appointment system can send text reminders automatically.'
+    },
+    reasons: {
+      'patient.moved': 'The patient needs the new day and time first.',
+      'patient.urgent': 'They need to know where to turn if something cannot wait.',
+      'patient.calls': 'How many people are affected is internal workload.',
+      'patient.reply': 'It tells them what to do if Wednesday does not work.',
+      'patient.hours': 'Staff hours are the practice’s concern.',
+      'patient.texts': 'Internal tools are not what the patient needs to hear.',
+      'executive.moved': 'The practice manager must know what changes in the schedule.',
+      'executive.calls': 'It shows the size of the workload.',
+      'executive.reply': 'Patient instructions are front-desk routine, not a management question.',
+      'executive.hours': 'This is the decision the practice manager must make.',
+      'colleague.moved': 'The colleague must tell patients the new time.',
+      'colleague.urgent': 'Patients will ask, so the colleague needs the answer.',
+      'colleague.calls': 'This is the task you are handing over.',
+      'colleague.hours': 'Approving extra hours is the manager’s decision; the colleague needs the task.',
+      'colleague.texts': 'It saves them many phone calls.',
+      vip: 'Who the patients are is confidential and does not belong in any of these messages.'
+    },
+    messages: {
+      'patient.fit': 'Your appointment with Dr Lind on Monday moves to Wednesday at the same time. If Wednesday does not suit you, please call us for another time. Urgent matters on Monday are seen by our second doctor.',
+      'patient.tooMuch': 'We have to phone 42 patients by Friday, which needs about six extra staff hours, and the new system can send text reminders.',
+      'patient.condescending': 'Doctors are busy people, you know. Just come on Wednesday instead and don’t worry about why.',
+      'executive.fit': 'Please approve about six extra staff hours this week: Dr Lind is away on Monday, so 42 appointments move to Wednesday and those patients must be phoned by Friday.',
+      'executive.tooMuch': 'Patients who cannot make Wednesday should call us, urgent matters go to the second doctor, and text reminders can be switched on in the settings menu.',
+      'executive.missing': 'Monday is a bit messy; we will sort it out.',
+      'colleague.fit': 'Could you help phone the 42 patients booked with Dr Lind on Monday by Friday? Their appointments move to Wednesday at the same time; urgent matters on Monday go to the second doctor. The new system can also send text reminders.',
+      'colleague.missing': 'Monday’s appointments are changing, just so you know.',
+      'colleague.condescending': 'Phoning patients is easy: you pick up the phone, dial the number and talk. Please do it for Monday’s list.'
+    }
+  },
+  libraryHours: {
+    title: 'Library opening hours',
+    situation: 'You manage the city library. Because of budget cuts, the opening hours change. Explain it.',
+    facts: {
+      hours: 'From 1 September the library opens Tuesday to Saturday from 10 to 18 and is closed on Mondays.',
+      cards: 'Library cards and online loans are not affected.',
+      budget: 'The city cut the library budget by 15%.',
+      returns: 'Books can still be returned at any time through the drop box.',
+      shifts: 'Staff shifts change: no more Monday shifts, longer Saturday shifts.',
+      savings: 'The new hours save about 40,000 euros a year, and nobody loses their job.',
+      petition: 'A reader has started a petition against the Monday closure.',
+      heating: 'Closing on Mondays also saves heating, as the old building is poorly insulated.'
+    },
+    reasons: {
+      'customer.hours': 'Readers first need to know when they can come.',
+      'customer.cards': 'It answers the worry whether their card and online loans still work.',
+      'customer.returns': 'It tells them what they can still do on a closed day.',
+      'customer.shifts': 'Staff rosters are internal.',
+      'customer.savings': 'Budget figures do not help readers plan their visit.',
+      'customer.petition': 'Mentioning the petition takes sides and does not help readers plan.',
+      'customer.heating': 'The building’s insulation is an internal detail.',
+      'colleague.hours': 'Colleagues answer readers’ questions about the new times.',
+      'colleague.cards': 'Colleagues know their own systems; this line is for readers.',
+      'colleague.shifts': 'This changes their own working week.',
+      'colleague.savings': 'Hearing that nobody loses their job matters a lot to them.',
+      'colleague.heating': 'Heating costs do not change their work.',
+      'executive.hours': 'The council must know exactly what the public will see.',
+      'executive.budget': 'The council made the cut itself; repeating it wastes their time.',
+      'executive.returns': 'Drop-box details are day-to-day operations.',
+      'executive.savings': 'Savings and jobs are what the council asked about.',
+      'executive.petition': 'Public reaction may reach the council, so they should hear it from you first.'
+    },
+    messages: {
+      'customer.fit': 'From 1 September the library is open Tuesday to Saturday from 10 to 18 and closed on Mondays. You can still return books at any time through the drop box, and your library card and online loans work as before.',
+      'customer.tooMuch': 'The city cut our budget by 15%, so we save about 40,000 euros a year by changing staff shifts and heating the old building less on Mondays.',
+      'customer.condescending': 'We know change is hard for some readers. Just remember: no library on Mondays. It’s really quite simple.',
+      'colleague.fit': 'From 1 September our shifts change: no more Monday shifts, longer Saturday shifts. We open Tuesday to Saturday from 10 to 18, and nobody loses their job.',
+      'colleague.missing': 'Some things will change in the autumn. More later.',
+      'colleague.tooMuch': 'Readers can still use the drop box, library cards and online loans are unaffected, and the Monday closure also saves heating in our poorly insulated building.',
+      'executive.fit': 'The new opening hours save about 40,000 euros a year without job losses: from 1 September we close on Mondays and open Tuesday to Saturday from 10 to 18. Please note that a reader has started a petition against the Monday closure.',
+      'executive.tooMuch': 'Returns stay possible through the drop box, library cards and online loans are unaffected, and Saturday shifts get longer while Monday shifts are dropped.',
+      'executive.missing': 'We have adjusted the opening hours a little.'
+    }
   }
 };

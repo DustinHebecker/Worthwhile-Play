@@ -262,5 +262,266 @@ export const en: LocaleContent = {
         c: ['A list of library rules followed by examples.', 'The text contains no rules.']
       }
     }
+  },
+  paperback: {
+    title: 'The Book That Fit in a Pocket',
+    paragraphs: [
+      'For a long time, most new books were expensive. They had hard covers and sewn pages, so many people borrowed books from libraries or did not read new ones at all. Cheap paper-covered books did exist in the nineteenth century, but they were often seen as throwaway reading.',
+      'In 1935, the British publisher Allen Lane started Penguin Books. His idea was simple: well-written books with paper covers, sold for about the price of a packet of cigarettes. The covers were plain and colour-coded – orange for fiction, green for crime – so readers could recognise the kind of book at a glance.',
+      'Many booksellers doubted the plan. They worried that cheap books would make people stop buying expensive ones. But the paperbacks sold in large numbers, and other publishers soon followed. In the United States, Pocket Books began selling paperbacks in 1939, and during the Second World War millions of small paperbacks were printed especially for soldiers.',
+      'Today, paperbacks are so normal that it is easy to forget how new they once felt. They made it possible for many more people to own books rather than only borrow them, and to carry a whole novel in a coat pocket.'
+    ],
+    summary: 'Paperbacks, made popular by Penguin from 1935, turned well-written books into something cheap enough for many people to own and carry.',
+    questions: {
+      q1: {
+        q: 'What is the main point of the text?',
+        a: ['Penguin’s covers were orange and green.', 'That is a detail from paragraph 2, not the main point.'],
+        b: ['Cheap paperbacks made owning good books normal for many people.', 'Correct. The text moves from expensive books to paperbacks that people could own.'],
+        c: ['Booksellers were right to worry about cheap books.', 'The text says paperbacks sold well; it does not say the worry came true.']
+      },
+      q2: {
+        q: 'What did the colour of a Penguin cover tell readers?',
+        a: ['How old the book was.', 'The text does not say this.'],
+        b: ['How much the book cost.', 'The text links colour to the kind of book, not to the price.'],
+        c: ['What kind of book it was, such as fiction or crime.', 'Correct. Paragraph 2 explains the colour code.']
+      },
+      q3: {
+        q: 'Why did many booksellers doubt the plan?',
+        a: ['They feared people would stop buying expensive books.', 'Correct. Paragraph 3 gives this reason.'],
+        b: ['They thought paper covers would tear too quickly.', 'The text does not mention this.'],
+        c: ['They did not like the colours.', 'The text does not say this.']
+      },
+      q4: {
+        q: 'How is the text organised?',
+        a: ['As a comparison of two publishers’ prices.', 'No prices are compared.'],
+        b: ['As a list of famous paperback novels.', 'No titles are named in the text.'],
+        c: ['In time order: expensive books, Penguin’s start, the spread of paperbacks, today.', 'Correct. The text moves forward in time and ends with the present.']
+      }
+    }
+  },
+  bridges: {
+    title: 'When a Bridge Starts to Sway',
+    paragraphs: [
+      'Bridges are not completely rigid. Wind, traffic and even footsteps make them move a little, and engineers design them to bend slightly without harm. Usually the movement is far too small to notice.',
+      'Sometimes, however, a bridge moves in a way people do feel. When the Millennium Bridge, a footbridge over the River Thames in London, opened in 2000, it began to sway from side to side as crowds walked across. Every step pushes slightly sideways. When the bridge moved, people adjusted their walking to keep their balance, and many began to step in time with the swaying – which pushed the bridge even further.',
+      'The bridge was closed two days after it opened. Engineers did not rebuild it. Instead, they added dampers: devices that absorb movement, much like the shock absorbers in a car. Some work like large pistons filled with fluid; others are heavy weights on springs that move against the sway. The bridge reopened in 2002 and has been steady since.',
+      'The lesson was not that the bridge was weak. It was that people and structures can affect each other in ways that are hard to predict, so engineers now consider how crowds walk, not only how much they weigh.'
+    ],
+    summary: 'The Millennium Bridge swayed because walkers fell into step with its movement; dampers fixed it, showing that engineers must consider how crowds move.',
+    questions: {
+      q1: {
+        q: 'What is the main point of the text?',
+        a: ['People walking in step with a swaying bridge can make it sway more, and dampers can stop this.', 'Correct. The text explains the cause and the solution.'],
+        b: ['The Millennium Bridge was badly built and had to be replaced.', 'No. It was not rebuilt; dampers were added, and the text says it was not weak.'],
+        c: ['All bridges are dangerous in strong wind.', 'The text says that small movements are normal and harmless.']
+      },
+      q2: {
+        q: 'Why did the sway grow stronger?',
+        a: ['The wind over the river became stronger.', 'The text does not blame the wind; the cause was the walking.'],
+        b: ['The bridge was carrying too much weight.', 'The text blames the timing of the steps, not the weight.'],
+        c: ['Many people began to step in time with the swaying.', 'Correct. Paragraph 2 describes this.']
+      },
+      q3: {
+        q: 'What did the engineers do?',
+        a: ['They rebuilt the bridge with stronger steel.', 'The text says they did not rebuild it.'],
+        b: ['They added dampers that absorb the movement.', 'Correct. Paragraph 3 describes the dampers.'],
+        c: ['They allowed only a few people on the bridge at a time.', 'The text does not mention this.']
+      },
+      q4: {
+        q: 'Which detail best supports the claim that the dampers worked?',
+        a: ['The bridge opened in 2000.', 'That is when the problem started, not evidence for the solution.'],
+        b: ['Dampers work like the shock absorbers in a car.', 'This explains how dampers work, not whether they worked here.'],
+        c: ['The bridge reopened in 2002 and has been steady since.', 'Correct. Paragraph 3 reports the result after the dampers were added.']
+      }
+    }
+  },
+  longitude: {
+    title: 'Finding Your Place at Sea',
+    paragraphs: [
+      'For centuries, sailors could work out how far north or south they were. Measuring the height of the sun at noon, or of the Pole Star at night, gave them their latitude. How far east or west they were – their longitude – was much harder to find, and ships that got it wrong could run onto rocks or run out of supplies far from land.',
+      'The problem was really a problem of time. The Earth turns 15 degrees every hour, so if a navigator knew both the local time on the ship and the time at home at the same moment, the difference would give the longitude. Local time could be found from the sun. Keeping home time was the hard part: the pendulum clocks of the day did not work on a rolling ship, and changes in temperature made clocks run fast or slow.',
+      'In 1714, the British Parliament offered a large reward for a practical solution. Many experts expected the answer to come from the sky: by measuring the angle between the Moon and certain stars and comparing it with printed tables, a navigator could work out the home time. This “lunar distance” method did work, but it needed careful measurements and long calculations.',
+      'John Harrison, a self-taught clockmaker, chose a different path. Over several decades he built a series of sea clocks. The fourth, which looked like a large pocket watch, kept time remarkably well on a test voyage to the Caribbean in 1761–62. Even so, Harrison spent years in dispute with the officials in charge of the reward before he was paid.',
+      'For a long time, the two methods were used side by side, because the new sea clocks, called chronometers, were expensive. As they became cheaper during the nineteenth century, they became a standard part of a ship’s equipment.'
+    ],
+    summary: 'Finding longitude at sea depended on knowing the home time, and after years in which two methods competed, accurate sea clocks became the standard solution.',
+    questions: {
+      q1: {
+        q: 'What is the main idea of the text?',
+        a: ['Sailors could never find their position before satellites.', 'The text describes two methods that worked.'],
+        b: ['Finding longitude was a problem of keeping time, solved over many years by star tables and sea clocks.', 'Correct. The text explains the problem and how both methods addressed it.'],
+        c: ['Harrison was treated unfairly by Parliament.', 'The dispute is a detail, not the main idea.'],
+        d: ['Latitude is harder to find than longitude.', 'The text says the opposite.']
+      },
+      q2: {
+        q: 'Why did ordinary clocks fail at sea?',
+        a: ['Pendulums did not work on a rolling ship, and temperature changed their speed.', 'Correct. Paragraph 2 gives both reasons.'],
+        b: ['They were too expensive.', 'Cost is mentioned for the later chronometers, not as the reason ordinary clocks failed.'],
+        c: ['Sailors forgot to wind them.', 'The text does not say this.']
+      },
+      q3: {
+        q: 'What did the lunar distance method compare?',
+        a: ['The ship’s clock with a clock at home.', 'That is the idea of the sea-clock method, not the lunar method.'],
+        b: ['The height of the Pole Star with the height of the sun.', 'Those measurements give latitude, as paragraph 1 explains.'],
+        c: ['The angle between the Moon and stars with printed tables.', 'Correct. Paragraph 3 describes this.']
+      },
+      q4: {
+        q: 'What role does paragraph 2 play in the text?',
+        a: ['It explains that longitude is really a question of time, which the later paragraphs build on.', 'Correct. Both methods in paragraphs 3 and 4 are ways of finding the home time.'],
+        b: ['It tells the story of Harrison’s life.', 'That is paragraph 4.'],
+        c: ['It describes the reward offered by Parliament.', 'That is paragraph 3.']
+      },
+      q5: {
+        q: 'Which detail is evidence that Harrison’s fourth clock worked well?',
+        a: ['It looked like a large pocket watch.', 'Its shape says nothing about its accuracy.'],
+        b: ['Harrison spent decades building clocks.', 'Effort is not evidence of results.'],
+        c: ['It kept time remarkably well on a test voyage to the Caribbean.', 'Correct. Paragraph 4 reports the result of the test.']
+      }
+    }
+  },
+  'tree-rings': {
+    title: 'Reading the Rings of a Tree',
+    paragraphs: [
+      'Cut through the trunk of an old tree and you will usually see a pattern of rings. In places with clear seasons, a tree typically adds one ring each year: light, fast-growing wood in spring and darker, denser wood later in the season. Counting the rings from the bark inwards gives a first estimate of the tree’s age.',
+      'The rings tell more than age. In a good year, with enough rain and warmth, a tree grows a wide ring; in a dry or cold year, the ring is narrow. Trees of the same species in the same region therefore share a similar pattern of wide and narrow rings, like a barcode written by the weather.',
+      'This shared pattern is the key to tree-ring dating, also called dendrochronology. Researchers start with living trees, whose outer ring belongs to a known year. They then look for older wood – from old buildings, for example – whose inner rings match the pattern of the oldest rings in the living trees. Step by step, overlapping samples extend the record further back. In some regions, these records now reach back thousands of years.',
+      'Counting a single tree is not enough, though. In a very bad year, a tree may form no visible ring at all, and a dry spell in the middle of summer can produce something that looks like an extra ring. That is why researchers compare many samples: one tree can mislead, but many trees together reveal the true sequence.',
+      'Tree-ring dating has been used to find out when wooden houses were built, when ships were made and what past climates were like. It all starts with a pattern that anyone can see on a tree stump.'
+    ],
+    summary: 'Because trees in one region share patterns of wide and narrow rings, researchers can match many samples to date wood precisely, far back in time.',
+    questions: {
+      q1: {
+        q: 'What is the main idea of the text?',
+        a: ['Shared ring patterns let researchers date wood accurately by matching many samples.', 'Correct. The text builds up to this method and its uses.'],
+        b: ['Counting rings is the only way to find a tree’s age.', 'The text says counting gives only a first estimate and can mislead.'],
+        c: ['Trees grow faster in cold years.', 'The text says the opposite.'],
+        d: ['Old buildings are made of wood.', 'Old buildings are only one source of samples.']
+      },
+      q2: {
+        q: 'What does a narrow ring usually show?',
+        a: ['That the tree was young.', 'The text does not link narrow rings to age.'],
+        b: ['A dry or cold year.', 'Correct. Paragraph 2 says this.'],
+        c: ['That the tree was cut in winter.', 'The text does not say this.']
+      },
+      q3: {
+        q: 'Why do researchers start with living trees?',
+        a: ['Because living trees have the most rings.', 'That is not the reason the text gives.'],
+        b: ['Because their wood is easier to cut.', 'The text does not mention this.'],
+        c: ['Because their outer ring belongs to a known year.', 'Correct. Paragraph 3 says this is the starting point.']
+      },
+      q4: {
+        q: 'Paragraph 1 says a tree typically adds one ring each year. What later statement shows that this is not always true?',
+        a: ['Trees in the same region share a similar pattern.', 'This supports the method; it does not limit the one-ring rule.'],
+        b: ['A tree may form no ring in a very bad year, or something that looks like an extra ring.', 'Correct. Paragraph 4 describes these exceptions.'],
+        c: ['In some regions, records reach back thousands of years.', 'This is about the length of the records, not the one-ring rule.']
+      },
+      q5: {
+        q: 'Why is comparing many samples more reliable than counting one tree?',
+        a: ['Because each tree records a different year.', 'Trees in a region share the same years; that is why they can be matched.'],
+        b: ['Because more samples look more impressive in a report.', 'The text gives no such reason.'],
+        c: ['Because one tree can mislead, but many trees together reveal the true sequence.', 'Correct. Paragraph 4 explains this.']
+      }
+    }
+  },
+  'car-free': {
+    title: 'A Street Without Cars?',
+    paragraphs: [
+      'Linden Street is a short street with shops, a bakery and a primary school. A group of residents has proposed closing it to cars for a three-month summer trial, with benches and planters where cars now park. At a public meeting, people brought evidence for and against.',
+      'Mr Okafor, who runs the hardware shop, was strongly against. “The last time the street was closed, for the spring fair, my sales fell by half that week,” he said. Others pointed out that it had rained for most of that week and that the fair lasted only one weekend.',
+      'The residents’ group presented a petition with 300 signatures in favour. When asked, they admitted that the signatures had been collected online and that they had not checked how many came from people who live or shop in the area.',
+      'A traffic count by the city was more useful. On an ordinary weekday, about 40 per cent of the cars on Linden Street drove straight through without stopping, many of them using it as a short cut. Few parking spaces were used by shop customers for more than an hour; most were taken by the same cars all day.',
+      'Ms Varga, a city councillor, supported the trial. “Similar schemes in other cities have increased the number of people walking past shops,” she said, “and this trial costs nothing.” Later in the meeting, she mentioned that the city would pay for the benches, the planters and new signs.',
+      'In the end, the meeting agreed to a trial – with conditions. Shops would share their weekly sales figures, the city would count pedestrians and cars before and during the trial, and the decision about a permanent change would wait until the numbers were in.'
+    ],
+    summary: 'A neighbourhood weighs evidence of very different quality about a car-free street and agrees to a measured trial before deciding.',
+    questions: {
+      q1: {
+        q: 'What is the text mainly about?',
+        a: ['Why car-free streets always help shops.', 'The text does not reach this conclusion; the trial is still to come.'],
+        b: ['A meeting that weighs evidence of mixed quality and agrees to a measured trial.', 'Correct. The text leads to this decision in the last paragraph.'],
+        c: ['The history of the spring fair.', 'The fair appears only as one piece of evidence.'],
+        d: ['A conflict between the school and the bakery.', 'Neither takes part in the debate.']
+      },
+      q2: {
+        q: 'According to the city’s count, what share of the cars only drove through the street?',
+        a: ['About half', 'Half is the drop in sales that Mr Okafor mentioned.'],
+        b: ['About 40 per cent', 'Correct. Paragraph 4 gives this figure.'],
+        c: ['About 300', '300 is the number of signatures on the petition.']
+      },
+      q3: {
+        q: 'Which statement is contradicted later in the text?',
+        a: ['That the fair lasted only one weekend.', 'Nothing in the text contradicts this.'],
+        b: ['That the street has a primary school.', 'Nothing in the text contradicts this.'],
+        c: ['That the trial costs nothing.', 'Correct. Ms Varga later says the city would pay for benches, planters and signs.']
+      },
+      q4: {
+        q: 'Why is Mr Okafor’s evidence weak?',
+        a: ['Because shop owners cannot know their sales.', 'They can; the problem is the week he compares.'],
+        b: ['Because it is a single week, during a short event with bad weather.', 'Correct. The rain and the short fair may explain the drop.'],
+        c: ['Because he was against the trial.', 'Having an opinion does not make evidence weak; the problem is what it is based on.']
+      },
+      q5: {
+        q: 'What is the problem with the petition?',
+        a: ['Nobody checked whether the people who signed live or shop in the area.', 'Correct. Paragraph 3 says this.'],
+        b: ['It had too few signatures.', 'The number is not the problem the text points out.'],
+        c: ['It was against the trial.', 'The petition was in favour of the trial.']
+      },
+      q6: {
+        q: 'How is the text organised?',
+        a: ['As a story told by the owner of the hardware shop.', 'Several people speak in the text.'],
+        b: ['As a list of rules for car-free streets.', 'The text contains no rules.'],
+        c: ['A proposal, several pieces of evidence and their weaknesses, then a decision to measure.', 'Correct. This is the order of the six paragraphs.']
+      }
+    }
+  },
+  hiring: {
+    title: 'Two Ways to Hire',
+    paragraphs: [
+      'A small design studio with twelve employees needed to hire three new people. The team discussed two ways of choosing them. The first was the approach they had always used: two rounds of interviews. The second was to give each finalist a short, paid task similar to real work, followed by one conversation about it.',
+      'Lea, the office manager, preferred interviews and ran a quick survey among the staff. Ten of the twelve said they preferred interviews. “Our team knows from experience that interviews work best,” she said, “and they are quicker for everyone, too.”',
+      'Sam, a senior designer, pointed out a problem. Everyone at the studio had been hired through interviews, and none of them had ever tried the task approach. The survey showed what people were used to, not which approach found good colleagues. And people hired by interview were, by definition, people for whom interviews had worked.',
+      'Sam had evidence of his own: the year before, the studio had used a task for two hires, and both were still there and doing well. Lea answered that two people were far too few to prove anything, and that one of them had already done an internship at the studio, so the team knew her well before the task.',
+      'Then the team looked at the planning sheet. Two interview rounds took about five hours of staff time per candidate; reviewing a task and holding one conversation took about three. Finally, they agreed to write down in advance what a good start in the first six months looks like, to use each approach for some candidates, and to review the results after a year – knowing that a few hires would not settle the question for good.'
+    ],
+    summary: 'A design studio sees that its survey and its success story are weak evidence and decides to try both hiring approaches against criteria set in advance.',
+    questions: {
+      q1: {
+        q: 'What is the text mainly about?',
+        a: ['Why paid tasks are better than interviews.', 'The text does not decide this.'],
+        b: ['How to write a good job advertisement.', 'The text does not mention job advertisements.'],
+        c: ['A team that notices its evidence is weak and decides to test both approaches against criteria set in advance.', 'Correct. The text leads to this decision in the last paragraph.'],
+        d: ['A disagreement that ends with Sam leaving the studio.', 'Nobody leaves the studio.']
+      },
+      q2: {
+        q: 'Which claim is contradicted by figures later in the text?',
+        a: ['That ten of the twelve staff preferred interviews.', 'That is the survey result itself; nothing contradicts it.'],
+        b: ['That interviews are quicker for everyone.', 'Correct. The planning sheet shows about five hours per candidate for interviews against about three for the task.'],
+        c: ['That the studio needed three new people.', 'Nothing in the text contradicts this.']
+      },
+      q3: {
+        q: 'What is the main weakness of Lea’s survey, according to Sam?',
+        a: ['It shows what people are used to, because everyone was hired by interview.', 'Correct. Paragraph 3 explains this.'],
+        b: ['It was anonymous.', 'The text does not say this, and Sam does not criticise it.'],
+        c: ['It asked too few people.', 'Sam does not criticise the number of people asked.']
+      },
+      q4: {
+        q: 'Why is Sam’s evidence about last year’s two hires weak?',
+        a: ['The two people had already left the studio.', 'Both were still there and doing well.'],
+        b: ['The tasks were not paid.', 'The text does not say this.'],
+        c: ['Two is very few, and one of them was already well known to the team.', 'Correct. Lea points out both problems in paragraph 4.']
+      },
+      q5: {
+        q: 'What will the team write down before hiring?',
+        a: ['The questions for the interviews.', 'The text does not say this.'],
+        b: ['What a good start in the first six months looks like.', 'Correct. Paragraph 5 says this.'],
+        c: ['The names of the best candidates.', 'The text does not say this.']
+      },
+      q6: {
+        q: 'How does the text proceed?',
+        a: ['Two approaches, a survey and its weakness, a small success story and its weakness, then time figures and a planned test.', 'Correct. This is the order of the five paragraphs.'],
+        b: ['Two approaches, a vote and the winner.', 'There is no vote in the text.'],
+        c: ['A step-by-step guide to running interviews.', 'The text is a case, not a guide.']
+      }
+    }
   }
 };
