@@ -64,7 +64,7 @@ export interface ImportOptions {
 
 /** Detects the format of pasted text or a file: JSON objects start with `{`. */
 export function detectFormat(text: string): ImportFormat {
-  return text.replace(/^﻿/, '').trimStart().startsWith('{') ? 'json' : 'csv';
+  return text.replace(/^\uFEFF/, '').trimStart().startsWith('{') ? 'json' : 'csv';
 }
 
 const DATA_IMAGE = /^data:image\/(png|jpeg|gif|webp|avif);base64,[A-Za-z0-9+/=\s]+$/i;
@@ -164,7 +164,7 @@ export function importDeck(text: string, options: ImportOptions): ImportResult {
   if (format === 'json') {
     let parsed: unknown;
     try {
-      parsed = JSON.parse(text.replace(/^﻿/, ''));
+      parsed = JSON.parse(text.replace(/^\uFEFF/, ''));
     } catch {
       return fail({ code: 'json-syntax' });
     }

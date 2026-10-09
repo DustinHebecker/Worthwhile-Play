@@ -19,7 +19,7 @@ export function parseCsvRows(input: string): CsvRow[] {
   let quoted = false;
   let line = 1;
   let rowLine = 1;
-  const text = input.replace(/^﻿/, '');
+  const text = input.replace(/^\uFEFF/, '');
   const endRow = () => {
     row.push(field);
     rows.push({ fields: row, line: rowLine });
