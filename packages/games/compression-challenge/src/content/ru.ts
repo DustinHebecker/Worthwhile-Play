@@ -2,358 +2,358 @@ import type { ContentText } from './types';
 
 export const content: ContentText = {
   launch: {
-    title: 'App launch update',
-    context: 'An email from the project lead to the whole team.',
+    title: 'Новости о запуске приложения',
+    context: 'Письмо руководителя проекта всей команде.',
     sentences: {
-      s1: 'Hi everyone, I hope you all had a good weekend in the sunshine.',
-      s2: 'The launch of our booking app moves from 2 April to 14 May.',
-      s3: 'The reason is that the payment provider has not yet finished its security certification, and we cannot take payments without it.',
-      s4: 'The provider says it has a backlog of applications.',
-      s5: 'The design team will use the extra weeks to polish the onboarding screens.',
-      s6: 'Our 300 beta testers can keep using the test version until the launch.',
-      s7: 'A competitor launched a similar app last year and needed three attempts.',
-      s8: 'Marketing must move the campaign, so please decide on the new campaign start by Friday.',
-      s9: 'The budget stays the same, because the agency does not charge for moving the campaign.',
-      s10: 'The certification itself takes about three weeks once it starts.',
-      s11: 'Thanks again for all your hard work!',
-      s12: 'I will send an updated project plan on Wednesday.'
+      s1: 'Всем привет, надеюсь, вы хорошо провели солнечные выходные.',
+      s2: 'Запуск нашего приложения для бронирования переносится со 2 апреля на 14 мая.',
+      s3: 'Причина в том, что платёжный провайдер ещё не закончил сертификацию безопасности, а без неё мы не можем принимать платежи.',
+      s4: 'Провайдер говорит, что у него скопилось много заявок.',
+      s5: 'Команда дизайна использует лишние недели, чтобы доработать приветственные экраны.',
+      s6: 'Наши 300 бета-тестеров смогут пользоваться тестовой версией до самого запуска.',
+      s7: 'Один конкурент в прошлом году запустил похожее приложение, и ему понадобилось три попытки.',
+      s8: 'Маркетингу нужно перенести кампанию, поэтому решите, пожалуйста, до пятницы, когда она теперь стартует.',
+      s9: 'Бюджет не меняется, потому что агентство не берёт денег за перенос кампании.',
+      s10: 'Сама сертификация после начала занимает около трёх недель.',
+      s11: 'Ещё раз спасибо всем за отличную работу!',
+      s12: 'В среду я пришлю обновлённый план проекта.'
     },
     bullets: {
-      gold1: 'The launch moves from 2 April to 14 May.',
-      gold2: 'Cause: the payment provider’s security certification is not finished.',
-      gold3: 'Marketing must decide on the new campaign start by Friday.',
-      minor: 'The design team will polish the onboarding screens.',
-      distort: 'The app has failed its security check.',
-      dup: 'The launch is delayed.',
-      subtle: 'The launch moves from 2 April to 4 May.'
+      gold1: 'Запуск переносится со 2 апреля на 14 мая.',
+      gold2: 'Причина: сертификация безопасности у платёжного провайдера не завершена.',
+      gold3: 'Маркетинг должен до пятницы решить, когда стартует кампания.',
+      minor: 'Команда дизайна доработает приветственные экраны.',
+      distort: 'Приложение не прошло проверку безопасности.',
+      dup: 'Запуск откладывается.',
+      subtle: 'Запуск переносится со 2 апреля на 4 мая.'
     },
     bulletNotes: {
-      distort: 'The text says the certification is not finished yet, not that the app failed a check.',
-      dup: 'Repeats the point about the new date without the date, so it wastes a slot.',
-      subtle: 'Almost right, but the new date is 14 May, not 4 May.'
+      distort: 'В тексте сказано, что сертификация ещё не завершена, а не что приложение провалило проверку.',
+      dup: 'Повторяет пункт о новой дате, но без даты — и зря занимает место.',
+      subtle: 'Почти верно, но новая дата — 14 мая, а не 4 мая.'
     },
     summaries: {
-      faithful: 'The launch moves to 14 May because the payment provider’s certification is not finished, and marketing must decide on the new campaign start by Friday.',
-      vague: 'There are some changes to the launch timing that the team should be aware of.',
-      drops: 'Because the payment provider is not ready yet, the launch has been postponed, but the budget stays the same.',
-      adds: 'The launch moves to 14 May because the payment provider’s certification is not finished, and the delay will make the project more expensive.',
-      subtle: 'The launch moves to 14 May because our app failed the payment provider’s certification, and marketing must decide on the new campaign start by Friday.'
+      faithful: 'Запуск переносится на 14 мая, потому что платёжный провайдер не завершил сертификацию, а маркетинг должен до пятницы решить, когда стартует новая кампания.',
+      vague: 'В сроках запуска есть некоторые изменения, о которых команде стоит знать.',
+      drops: 'Поскольку платёжный провайдер ещё не готов, запуск отложили, но бюджет не меняется.',
+      adds: 'Запуск переносится на 14 мая, потому что платёжный провайдер не завершил сертификацию, и из-за задержки проект подорожает.',
+      subtle: 'Запуск переносится на 14 мая, потому что наше приложение провалило сертификацию у платёжного провайдера, а маркетинг должен до пятницы решить, когда стартует новая кампания.'
     },
     summaryNotes: {
-      drops: 'It leaves out the new date and the decision marketing has to make.',
-      adds: 'The text says the budget stays the same; higher costs are made up.',
-      subtle: 'The app has not failed anything: the certification is simply not finished yet.'
+      drops: 'Здесь нет новой даты и решения, которое должен принять маркетинг.',
+      adds: 'В тексте сказано, что бюджет не меняется; рост расходов выдуман.',
+      subtle: 'Приложение ничего не провалило: сертификация просто ещё не закончена.'
     },
-    task: 'The marketing team has to act on this one-liner.',
-    oneLiner: 'Move the launch to May.',
+    task: 'Отделу маркетинга нужно действовать по этой фразе.',
+    oneLiner: 'Перенесите запуск на май.',
     details: {
-      d1: 'The exact new date: 14 May',
-      d2: 'Who must act: marketing moves the campaign',
-      d3: 'The deadline: decide on the new campaign start by Friday',
-      d4: 'Why the provider is behind schedule',
-      d5: 'The design team’s plans for the onboarding screens',
-      d6: 'The sunny weekend'
+      d1: 'Точная новая дата: 14 мая',
+      d2: 'Кто действует: маркетинг переносит кампанию',
+      d3: 'Срок: до пятницы решить, когда стартует кампания',
+      d4: 'Почему провайдер задерживается',
+      d5: 'Планы дизайнеров насчёт приветственных экранов',
+      d6: 'Солнечные выходные'
     },
     versions: {
-      actionable: 'The launch moves from 2 April to 14 May. Marketing: please move the campaign and decide on the new start date by Friday. The budget stays the same.',
-      vague: 'We are moving the launch to May. Please adjust your plans accordingly and let us know if anything comes up.',
-      invented: 'The launch moves to 1 May. Marketing: please cancel the campaign and plan a new one by the end of the month.'
+      actionable: 'Запуск переносится со 2 апреля на 14 мая. Маркетинг: пожалуйста, перенесите кампанию и до пятницы решите, когда она стартует. Бюджет не меняется.',
+      vague: 'Мы переносим запуск на май. Пожалуйста, скорректируйте свои планы и дайте знать, если что-то возникнет.',
+      invented: 'Запуск переносится на 1 мая. Маркетинг: пожалуйста, отмените кампанию и до конца месяца подготовьте новую.'
     },
-    versionNote: 'The new date is 14 May, not 1 May, and the campaign is moved, not cancelled.'
+    versionNote: 'Новая дата — 14 мая, а не 1 мая, и кампанию переносят, а не отменяют.'
   },
   library: {
-    title: 'Library renovation',
-    context: 'A notice on the door of the local library branch.',
+    title: 'Ремонт библиотеки',
+    context: 'Объявление на двери районной библиотеки.',
     sentences: {
-      s1: 'Many of you have told us how much you love the old armchairs in the reading corner.',
-      s2: 'From 3 June, the library will be closed for renovation for eight weeks.',
-      s3: 'The roof will be repaired, and the building will get a lift and new lighting.',
-      s4: 'During the closure, a library bus will stop at the market square every Tuesday.',
-      s5: 'The bus carries about 2,000 books and can order any title from the central library.',
-      s6: 'All loans that would fall due during the closure are extended automatically, so nobody pays late fees.',
-      s7: 'Books can also be returned at any time in the return box next to the town hall.',
-      s8: 'The town hall itself was renovated in a similar way ten years ago.',
-      s9: 'Our e-books and audiobooks remain available online as usual.',
-      s10: 'We are already looking forward to next year’s summer reading festival.',
-      s11: 'The renovation is paid for by a regional building fund.'
+      s1: 'Многие из вас рассказывали, как любят старые кресла в читальном уголке.',
+      s2: 'С 3 июня библиотека закрывается на ремонт на восемь недель.',
+      s3: 'Отремонтируют крышу, а в здании появятся лифт и новое освещение.',
+      s4: 'Пока библиотека закрыта, каждый вторник на рыночной площади будет стоять библиобус.',
+      s5: 'В библиобусе около 2000 книг, и через него можно заказать любую книгу из центральной библиотеки.',
+      s6: 'Все книги, срок возврата которых наступает во время закрытия, продлеваются автоматически, так что штрафов никто не платит.',
+      s7: 'Книги также можно в любое время сдать в ящик для возврата рядом с ратушей.',
+      s8: 'Саму ратушу так же отремонтировали десять лет назад.',
+      s9: 'Наши электронные книги и аудиокниги, как обычно, доступны онлайн.',
+      s10: 'Мы уже с нетерпением ждём летнего фестиваля чтения в следующем году.',
+      s11: 'Ремонт оплачивается из регионального строительного фонда.'
     },
     bullets: {
-      gold1: 'Closed for renovation for eight weeks from 3 June.',
-      gold2: 'A library bus stops at the market square every Tuesday.',
-      gold3: 'Loans due during the closure are extended automatically.',
-      minor: 'The building will get new lighting.',
-      distort: 'All library services stop for eight weeks.',
-      dup: 'The library will be closed for a while.',
-      subtle: 'Closed for renovation for six weeks from 3 June.'
+      gold1: 'С 3 июня закрыто на ремонт на восемь недель.',
+      gold2: 'Каждый вторник на рыночной площади стоит библиобус.',
+      gold3: 'Книги, срок которых истекает во время закрытия, продлеваются автоматически.',
+      minor: 'В здании будет новое освещение.',
+      distort: 'Все услуги библиотеки приостанавливаются на восемь недель.',
+      dup: 'Библиотека на какое-то время закроется.',
+      subtle: 'С 3 июня закрыто на ремонт на шесть недель.'
     },
     bulletNotes: {
-      distort: 'Not true: the bus and the return box keep working during the closure.',
-      dup: 'Repeats the closure without the start date or the length.',
-      subtle: 'Almost right, but the closure lasts eight weeks, not six.'
+      distort: 'Неверно: библиобус и ящик для возврата работают и во время закрытия.',
+      dup: 'Повторяет про закрытие, но без даты начала и без срока.',
+      subtle: 'Почти верно, но закрытие длится восемь недель, а не шесть.'
     },
     summaries: {
-      faithful: 'The library closes for eight weeks from 3 June; meanwhile a bus visits the market square every Tuesday, and loans due in that time are extended automatically.',
-      vague: 'There will be some changes at the library over the summer, so keep an eye out.',
-      drops: 'The library is being renovated and will get a repaired roof, a lift and new lighting.',
-      adds: 'The library closes for eight weeks from 3 June and will charge a small fee for loans after it reopens.',
-      subtle: 'Because the roof is unsafe, the library closes for eight weeks from 3 June; meanwhile a bus visits the market square every Tuesday.'
+      faithful: 'С 3 июня библиотека закрывается на восемь недель; в это время каждый вторник на рыночную площадь приезжает библиобус, а книги с истекающим сроком продлеваются автоматически.',
+      vague: 'Летом в библиотеке будут кое-какие изменения, так что следите за новостями.',
+      drops: 'Библиотеку ремонтируют: там починят крышу и появятся лифт и новое освещение.',
+      adds: 'С 3 июня библиотека закрывается на восемь недель, а после открытия будет брать небольшую плату за выдачу книг.',
+      subtle: 'Из-за того что крыша аварийная, с 3 июня библиотека закрывается на восемь недель; в это время каждый вторник на рыночную площадь приезжает библиобус.'
     },
     summaryNotes: {
-      drops: 'It describes the building work but not when the library closes or what readers can do meanwhile.',
-      adds: 'Nothing in the notice mentions fees after the reopening.',
-      subtle: 'The notice says the roof will be repaired, not that it is unsafe; that cause is added.'
+      drops: 'Описывает ремонт, но не говорит, когда библиотека закрывается и что читателям делать в это время.',
+      adds: 'В объявлении ничего не сказано о плате после открытия.',
+      subtle: 'В объявлении сказано, что крышу отремонтируют, а не что она аварийная; эта причина добавлена.'
     },
-    task: 'A neighbour who wants to keep borrowing books asks you about it.',
-    oneLiner: 'The library is closed in summer.',
+    task: 'Сосед, который хочет и дальше брать книги, спрашивает вас об этом.',
+    oneLiner: 'Летом библиотека закрыта.',
     details: {
-      d1: 'When exactly: for eight weeks from 3 June',
-      d2: 'Where to borrow meanwhile: the bus at the market square on Tuesdays',
-      d3: 'Where to return books: the box next to the town hall',
-      d4: 'What the renovation includes',
-      d5: 'The armchairs in the reading corner',
-      d6: 'Next year’s reading festival'
+      d1: 'Когда именно: на восемь недель с 3 июня',
+      d2: 'Где брать книги в это время: в библиобусе на рыночной площади по вторникам',
+      d3: 'Куда сдавать книги: в ящик рядом с ратушей',
+      d4: 'Что входит в ремонт',
+      d5: 'Кресла в читальном уголке',
+      d6: 'Фестиваль чтения в следующем году'
     },
     versions: {
-      actionable: 'From 3 June the library is closed for eight weeks. You can borrow books from the library bus at the market square every Tuesday and return them any time in the box next to the town hall. Loans due in that time are extended automatically.',
-      vague: 'The library will be closed for a while in the summer because of building work. There will be other options, so check the notice for more.',
-      invented: 'From 3 June the library is closed for eight weeks. You can borrow books from the library bus at the station every Friday. Please return all books before the closure.'
+      actionable: 'С 3 июня библиотека закрыта на восемь недель. Брать книги можно каждый вторник в библиобусе на рыночной площади, а сдавать — в любое время в ящик рядом с ратушей. Книги, срок которых истекает в это время, продлеваются автоматически.',
+      vague: 'Летом библиотека на какое-то время закроется из-за ремонта. Будут другие варианты, так что посмотри объявление.',
+      invented: 'С 3 июня библиотека закрыта на восемь недель. Брать книги можно каждую пятницу в библиобусе у вокзала. Пожалуйста, сдай все книги до закрытия.'
     },
-    versionNote: 'The bus stops at the market square on Tuesdays, and nobody has to return books before the closure.'
+    versionNote: 'Библиобус стоит на рыночной площади по вторникам, и сдавать книги до закрытия никому не нужно.'
   },
   leaves: {
-    title: 'Why leaves change colour',
-    context: 'A short article from a nature magazine for curious readers.',
+    title: 'Почему листья меняют цвет',
+    context: 'Короткая статья из журнала о природе для любознательных читателей.',
     sentences: {
-      s1: 'Autumn is many people’s favourite season for long walks.',
-      s2: 'Leaves are green because they contain a lot of chlorophyll, the pigment plants use to capture sunlight.',
-      s3: 'As the days get shorter, many trees stop making chlorophyll and break it down.',
-      s4: 'Yellow and orange pigments, called carotenoids, were in the leaf all along; they only become visible when the green fades.',
-      s5: 'Carotenoids are the same kind of pigment that makes carrots orange.',
-      s6: 'Red is different: some trees, such as many maples, make new red pigments in autumn.',
-      s7: 'Researchers think these red pigments may protect the leaf from strong light while the tree takes back nutrients.',
-      s8: 'Sunny days and cool nights tend to make the reds brighter.',
-      s9: 'In some regions, colourful forests attract many tourists every year.',
-      s10: 'Finally, a thin layer of cells forms where the leaf joins the twig, and the leaf falls.',
-      s11: 'Don’t forget a warm jacket if you go out to look at the trees.'
+      s1: 'Для многих осень — любимое время для долгих прогулок.',
+      s2: 'Листья зелёные, потому что в них много хлорофилла — пигмента, с помощью которого растения улавливают солнечный свет.',
+      s3: 'Когда дни становятся короче, многие деревья перестают вырабатывать хлорофилл и разрушают его.',
+      s4: 'Жёлтые и оранжевые пигменты, каротиноиды, всё время были в листе; они становятся видны, только когда зелёный цвет блекнет.',
+      s5: 'Каротиноиды — это тот же тип пигмента, что делает морковь оранжевой.',
+      s6: 'С красным иначе: некоторые деревья, например многие клёны, осенью вырабатывают новые красные пигменты.',
+      s7: 'Исследователи полагают, что эти красные пигменты, возможно, защищают лист от яркого света, пока дерево забирает обратно питательные вещества.',
+      s8: 'Солнечные дни и прохладные ночи обычно делают красный цвет ярче.',
+      s9: 'В некоторых регионах разноцветные леса каждый год привлекают множество туристов.',
+      s10: 'Наконец, там, где лист крепится к ветке, образуется тонкий слой клеток, и лист опадает.',
+      s11: 'Не забудьте тёплую куртку, если пойдёте смотреть на деревья.'
     },
     bullets: {
-      gold1: 'In autumn, trees stop making green chlorophyll and break it down.',
-      gold2: 'Yellow and orange pigments were there all along and become visible.',
-      gold3: 'Some trees, such as maples, make new red pigments.',
-      minor: 'A thin layer of cells forms, and the leaf falls.',
-      distort: 'All autumn colours are new pigments made by the tree.',
-      dup: 'Leaves lose their green colour.',
-      subtle: 'Red pigments protect the leaf from strong light.'
+      gold1: 'Осенью деревья перестают вырабатывать зелёный хлорофилл и разрушают его.',
+      gold2: 'Жёлтые и оранжевые пигменты были в листе всегда и становятся видны.',
+      gold3: 'Некоторые деревья, например клёны, вырабатывают новые красные пигменты.',
+      minor: 'Образуется тонкий слой клеток, и лист опадает.',
+      distort: 'Все осенние цвета — это новые пигменты, которые вырабатывает дерево.',
+      dup: 'Листья теряют зелёный цвет.',
+      subtle: 'Красные пигменты защищают лист от яркого света.'
     },
     bulletNotes: {
-      distort: 'Only the reds are new; yellow and orange were in the leaf all along.',
-      dup: 'Says less than the point about chlorophyll and wastes a slot.',
-      subtle: 'The text only says researchers think the red pigments may protect the leaf; this bullet states it as a fact.'
+      distort: 'Новые только красные; жёлтый и оранжевый всё время были в листе.',
+      dup: 'Говорит меньше, чем пункт о хлорофилле, и зря занимает место.',
+      subtle: 'В тексте сказано лишь, что исследователи полагают, будто красные пигменты, возможно, защищают лист; здесь это подано как факт.'
     },
     summaries: {
-      faithful: 'In autumn many trees break down their green chlorophyll, which reveals yellow and orange pigments that were there all along, while some trees also make new red ones.',
-      vague: 'Leaves change colour in autumn because of various natural processes in the tree.',
-      drops: 'In autumn, leaves turn yellow, orange and red, and then they fall from the trees.',
-      adds: 'In autumn many trees break down their green chlorophyll, which reveals yellow and orange pigments, and the redder the leaves, the colder the coming winter.',
-      subtle: 'In autumn many trees break down their green chlorophyll, which reveals yellow and orange pigments, and cold nights make the trees produce red ones.'
+      faithful: 'Осенью многие деревья разрушают зелёный хлорофилл, и становятся видны жёлтые и оранжевые пигменты, которые были в листе всегда, а некоторые деревья ещё и вырабатывают новые красные.',
+      vague: 'Осенью листья меняют цвет из-за разных природных процессов в дереве.',
+      drops: 'Осенью листья становятся жёлтыми, оранжевыми и красными, а потом опадают.',
+      adds: 'Осенью многие деревья разрушают зелёный хлорофилл, и становятся видны жёлтые и оранжевые пигменты, а чем краснее листья, тем холоднее будет зима.',
+      subtle: 'Осенью многие деревья разрушают зелёный хлорофилл, и становятся видны жёлтые и оранжевые пигменты, а холодные ночи заставляют деревья вырабатывать красные.'
     },
     summaryNotes: {
-      drops: 'It describes what we see, but not why it happens.',
-      adds: 'The text says nothing about predicting the winter.',
-      subtle: 'Cool nights only tend to make the reds brighter; the text does not say they cause the red pigments.'
+      drops: 'Описывает, что мы видим, но не объясняет почему.',
+      adds: 'В тексте ничего не сказано о предсказании зимы.',
+      subtle: 'Прохладные ночи лишь обычно делают красный ярче; в тексте не сказано, что они вызывают появление красных пигментов.'
     },
-    task: 'A teacher wants to explain this one-liner to a class, using real leaves.',
-    oneLiner: 'The chlorophyll breaks down, so other colours show.',
+    task: 'Учительница хочет объяснить эту фразу классу на настоящих листьях.',
+    oneLiner: 'Хлорофилл разрушается, и проступают другие цвета.',
     details: {
-      d1: 'What chlorophyll is: the green pigment that captures sunlight',
-      d2: 'That yellow and orange were in the leaf all along',
-      d3: 'That some trees, such as maples, make new red pigments',
-      d4: 'That autumn is a popular season for walks',
-      d5: 'That you need a warm jacket outside',
-      d6: 'How the leaf finally falls off'
+      d1: 'Что такое хлорофилл: зелёный пигмент, улавливающий солнечный свет',
+      d2: 'Что жёлтый и оранжевый всё время были в листе',
+      d3: 'Что некоторые деревья, например клёны, вырабатывают новые красные пигменты',
+      d4: 'Что осень — популярное время для прогулок',
+      d5: 'Что на улице нужна тёплая куртка',
+      d6: 'Как лист в конце концов опадает'
     },
     versions: {
-      actionable: 'Leaves are green because of chlorophyll, a pigment that captures sunlight. In autumn many trees stop making it and break it down. Then yellow and orange pigments that were there all along become visible, and some trees, like maples, make new red ones.',
-      vague: 'In autumn the leaves change because the green goes away and other colours come out. Nature is fascinating that way.',
-      invented: 'Leaves are green because of chlorophyll. In autumn the frost freezes the chlorophyll, and then the tree paints its leaves yellow, orange and red with new pigments.'
+      actionable: 'Листья зелёные из-за хлорофилла — пигмента, который улавливает солнечный свет. Осенью многие деревья перестают его вырабатывать и разрушают. Тогда становятся видны жёлтые и оранжевые пигменты, которые были в листе всегда, а некоторые деревья, например клёны, вырабатывают новые красные.',
+      vague: 'Осенью листья меняются, потому что зелёный уходит и появляются другие цвета. Вот такая удивительная природа.',
+      invented: 'Листья зелёные из-за хлорофилла. Осенью мороз замораживает хлорофилл, и тогда дерево раскрашивает листья в жёлтый, оранжевый и красный новыми пигментами.'
     },
-    versionNote: 'The text does not say that frost freezes the chlorophyll, and only the reds are new pigments.'
+    versionNote: 'В тексте не сказано, что мороз замораживает хлорофилл, и новые пигменты — только красные.'
   },
   club: {
-    title: 'Sports club board meeting',
-    context: 'The minutes of a sports club board meeting, sent to all members.',
+    title: 'Заседание правления спортклуба',
+    context: 'Протокол заседания правления спортивного клуба, разосланный всем членам клуба.',
     sentences: {
-      s1: 'The meeting took place in the clubhouse and started a little late because of a football match.',
-      s2: 'The board proposes raising the annual membership fee from 60 to 66 euros from next January.',
-      s3: 'The reason is that the rent for the sports hall has gone up by 15 percent.',
-      s4: 'The fee has not changed for eight years.',
-      s5: 'Members under 18 will keep paying the old fee.',
-      s6: 'The members will vote on the proposal at the general meeting on 12 March.',
-      s7: 'The board also discussed new nets for the tennis courts but postponed a decision.',
-      s8: 'If the proposal is rejected, the board will look at cutting some training times instead.',
-      s9: 'A neighbouring club recently raised its fee as well, to 75 euros.',
-      s10: 'The hall belongs to the town, which sets the rent.',
-      s11: 'Many thanks to the youth team for the delicious cakes!'
+      s1: 'Заседание прошло в клубном доме и началось чуть позже из-за футбольного матча.',
+      s2: 'Правление предлагает с января поднять ежегодный взнос с 60 до 66 евро.',
+      s3: 'Причина в том, что аренда спортзала подорожала на 15 процентов.',
+      s4: 'Взнос не менялся восемь лет.',
+      s5: 'Члены клуба младше 18 лет продолжат платить прежний взнос.',
+      s6: 'Члены клуба проголосуют за предложение на общем собрании 12 марта.',
+      s7: 'Правление также обсудило новые сетки для теннисных кортов, но отложило решение.',
+      s8: 'Если предложение отклонят, правление рассмотрит вместо этого сокращение части тренировок.',
+      s9: 'Соседний клуб недавно тоже поднял взнос — до 75 евро.',
+      s10: 'Зал принадлежит городу, который и устанавливает аренду.',
+      s11: 'Большое спасибо юношеской команде за вкусные пироги!'
     },
     bullets: {
-      gold1: 'Proposal: the annual fee rises from 60 to 66 euros from January.',
-      gold2: 'Members under 18 keep paying the old fee.',
-      gold3: 'Members vote on it at the general meeting on 12 March.',
-      minor: 'New nets for the tennis courts were discussed.',
-      distort: 'The board has decided to raise the fee.',
-      dup: 'The membership fee may go up.',
-      subtle: 'Proposal: the annual fee rises from 60 to 76 euros from January.'
+      gold1: 'Предложение: с января годовой взнос растёт с 60 до 66 евро.',
+      gold2: 'Члены клуба младше 18 лет платят прежний взнос.',
+      gold3: 'Голосование — на общем собрании 12 марта.',
+      minor: 'Обсуждали новые сетки для теннисных кортов.',
+      distort: 'Правление решило повысить взнос.',
+      dup: 'Членский взнос может вырасти.',
+      subtle: 'Предложение: с января годовой взнос растёт с 60 до 76 евро.'
     },
     bulletNotes: {
-      distort: 'Nothing is decided yet: it is a proposal, and the members vote on it.',
-      dup: 'A vaguer repeat of the fee point, without the amounts.',
-      subtle: 'Almost right, but the proposed fee is 66 euros, not 76.'
+      distort: 'Ещё ничего не решено: это предложение, и за него голосуют члены клуба.',
+      dup: 'Более расплывчатый повтор пункта о взносе, без сумм.',
+      subtle: 'Почти верно, но предлагаемый взнос — 66 евро, а не 76.'
     },
     summaries: {
-      faithful: 'Because the hall rent rose, the board proposes raising the annual fee from 60 to 66 euros from January, with under-18s exempt, and members vote on it on 12 March.',
-      vague: 'The board talked about money matters and some changes for members.',
-      drops: 'Because the rent for the sports hall has gone up, the club’s finances were the main topic of the board meeting.',
-      adds: 'The board proposes raising the annual fee from 60 to 66 euros from January, and members who do not pay by March will lose their membership.',
-      subtle: 'Because the hall rent rose, the board has decided to raise the annual fee from 60 to 66 euros from January, with under-18s exempt.'
+      faithful: 'Из-за роста аренды зала правление предлагает с января поднять годовой взнос с 60 до 66 евро, кроме членов младше 18 лет, а голосование пройдёт 12 марта.',
+      vague: 'Правление обсудило денежные вопросы и некоторые изменения для членов клуба.',
+      drops: 'Поскольку аренда спортзала подорожала, главной темой заседания правления стали финансы клуба.',
+      adds: 'Правление предлагает с января поднять годовой взнос с 60 до 66 евро, а тот, кто не заплатит до марта, потеряет членство.',
+      subtle: 'Из-за роста аренды зала правление решило с января поднять годовой взнос с 60 до 66 евро, кроме членов младше 18 лет.'
     },
     summaryNotes: {
-      drops: 'It leaves out the proposed new fee and the vote on 12 March.',
-      adds: 'The minutes say nothing about losing the membership.',
-      subtle: 'It is only a proposal that the members still vote on, so “has decided” is wrong.'
+      drops: 'Здесь нет предлагаемого нового взноса и голосования 12 марта.',
+      adds: 'В протоколе ничего не сказано о потере членства.',
+      subtle: 'Это только предложение, за которое ещё будут голосовать, так что «решило» — неверно.'
     },
-    task: 'A member asks you what this means for them.',
-    oneLiner: 'The fees are going up.',
+    task: 'Член клуба спрашивает вас, что это значит для него.',
+    oneLiner: 'Взносы растут.',
     details: {
-      d1: 'The amounts: from 60 to 66 euros a year',
-      d2: 'That it is a proposal, voted on at the general meeting on 12 March',
-      d3: 'That members under 18 keep the old fee',
-      d4: 'That the meeting started late',
-      d5: 'The cakes from the youth team',
-      d6: 'The discussion about tennis nets'
+      d1: 'Суммы: с 60 до 66 евро в год',
+      d2: 'Что это предложение, голосование по которому 12 марта',
+      d3: 'Что члены клуба младше 18 лет сохраняют прежний взнос',
+      d4: 'Что заседание началось позже',
+      d5: 'Пироги от юношеской команды',
+      d6: 'Обсуждение теннисных сеток'
     },
     versions: {
-      actionable: 'The board proposes raising the annual fee from 60 to 66 euros from January, because the hall rent went up. Members under 18 keep the old fee. Nothing is decided yet: you can vote on it at the general meeting on 12 March.',
-      vague: 'The fees are going up next year because things have become more expensive. More information will follow at some point.',
-      invented: 'From January the fee rises from 60 to 66 euros for everyone. Please update your bank transfer before the general meeting on 12 March.'
+      actionable: 'Правление предлагает с января поднять годовой взнос с 60 до 66 евро, потому что подорожала аренда зала. Члены клуба младше 18 лет платят прежний взнос. Пока ничего не решено: проголосовать можно на общем собрании 12 марта.',
+      vague: 'Со следующего года взносы растут, потому что всё подорожало. Подробности будут когда-нибудь потом.',
+      invented: 'С января взнос для всех растёт с 60 до 66 евро. Пожалуйста, измени сумму перевода до общего собрания 12 марта.'
     },
-    versionNote: 'It treats a proposal as decided and forgets that members under 18 keep the old fee.'
+    versionNote: 'Предложение выдаётся за решение, и забыто, что члены клуба младше 18 лет сохраняют прежний взнос.'
   },
   trip: {
-    title: 'Change to the class trip',
-    context: 'A message from a teacher to the parents of a school class.',
+    title: 'Изменения в поездке класса',
+    context: 'Сообщение учителя родителям учеников класса.',
     sentences: {
-      s1: 'I hope the children are as excited about the trip as I am!',
-      s2: 'Because of a rail strike, we will travel to the coast by coach instead of by train.',
-      s3: 'This means we leave one hour earlier than planned.',
-      s4: 'The meeting point is no longer the station but the car park behind the school.',
-      s5: 'The coach company has a lot of experience with school groups.',
-      s6: 'The return trip on Friday stays as planned.',
-      s7: 'There are no extra costs for families; the school covers the difference.',
-      s8: 'The coach journey takes about 40 minutes longer than the train.',
-      s9: 'Last year’s class went to the mountains, which was also a great trip.',
-      s10: 'There is a short break halfway, at a service station.',
-      s11: 'Thank you all for your help with the packing lists.'
+      s1: 'Надеюсь, дети ждут поездку так же, как и я!',
+      s2: 'Из-за забастовки на железной дороге мы поедем к морю на автобусе, а не на поезде.',
+      s3: 'Поэтому мы выезжаем на час раньше, чем планировали.',
+      s4: 'Место сбора теперь не вокзал, а парковка за школой.',
+      s5: 'У автобусной компании большой опыт работы со школьными группами.',
+      s6: 'Обратная поездка в пятницу остаётся без изменений.',
+      s7: 'Дополнительных расходов для семей нет: разницу оплачивает школа.',
+      s8: 'Поездка на автобусе длится примерно на 40 минут дольше, чем на поезде.',
+      s9: 'Прошлогодний класс ездил в горы, и это тоже была отличная поездка.',
+      s10: 'На полпути будет короткая остановка на заправке.',
+      s11: 'Спасибо всем за помощь со списками вещей.'
     },
     bullets: {
-      gold1: 'Coach instead of train because of a rail strike.',
-      gold2: 'Departure one hour earlier, from the car park behind the school.',
-      gold3: 'No extra costs for families.',
-      minor: 'The coach company is experienced with school groups.',
-      distort: 'The trip is shortened because of the strike.',
-      dup: 'The travel plans have changed.',
-      subtle: 'Departure two hours earlier, from the car park behind the school.'
+      gold1: 'Автобус вместо поезда из-за забастовки на железной дороге.',
+      gold2: 'Выезд на час раньше, с парковки за школой.',
+      gold3: 'Никаких дополнительных расходов для семей.',
+      minor: 'У автобусной компании есть опыт со школьными группами.',
+      distort: 'Из-за забастовки поездку сокращают.',
+      dup: 'Планы поездки изменились.',
+      subtle: 'Выезд на два часа раньше, с парковки за школой.'
     },
     bulletNotes: {
-      distort: 'Only the journey there changes; the trip is not shortened.',
-      dup: 'Says only that something changed, which the other points already show.',
-      subtle: 'Almost right, but departure is one hour earlier, not two.'
+      distort: 'Меняется только дорога туда; поездку не сокращают.',
+      dup: 'Говорит лишь, что что-то изменилось, а это видно и из других пунктов.',
+      subtle: 'Почти верно, но выезд на час раньше, а не на два.'
     },
     summaries: {
-      faithful: 'Because of a rail strike, the class travels by coach, leaving one hour earlier from the car park behind the school, at no extra cost to families.',
-      vague: 'There are a few changes to the trip arrangements that parents should know about.',
-      drops: 'Because of a rail strike, the class will travel to the coast by coach, which costs families nothing extra.',
-      adds: 'Because of a rail strike, the class travels by coach, leaving one hour earlier from the car park behind the school, and parents pay a small extra fee.',
-      subtle: 'Because the coach is faster than the train, the class travels by coach, leaving one hour earlier from the car park behind the school, at no extra cost to families.'
+      faithful: 'Из-за забастовки на железной дороге класс едет на автобусе и выезжает на час раньше с парковки за школой, без дополнительных расходов для семей.',
+      vague: 'В организации поездки есть несколько изменений, о которых родителям стоит знать.',
+      drops: 'Из-за забастовки на железной дороге класс поедет к морю на автобусе, и семьям это ничего не будет стоить.',
+      adds: 'Из-за забастовки на железной дороге класс едет на автобусе и выезжает на час раньше с парковки за школой, а родители доплачивают небольшую сумму.',
+      subtle: 'Поскольку автобус быстрее поезда, класс едет на автобусе и выезжает на час раньше с парковки за школой, без дополнительных расходов для семей.'
     },
     summaryNotes: {
-      drops: 'It leaves out what parents must act on: the earlier departure and the new meeting point.',
-      adds: 'The message says the school covers the difference, so there is no fee.',
-      subtle: 'The reason is the rail strike, and the coach is even slower than the train.'
+      drops: 'Здесь нет того, что нужно сделать родителям: более раннего выезда и нового места сбора.',
+      adds: 'В сообщении сказано, что разницу оплачивает школа, так что доплаты нет.',
+      subtle: 'Причина — забастовка, а автобус даже медленнее поезда.'
     },
-    task: 'A parent who missed the message asks another parent what to do.',
-    oneLiner: 'The class goes by coach now.',
+    task: 'Родитель, пропустивший сообщение, спрашивает другого родителя, что делать.',
+    oneLiner: 'Класс теперь едет на автобусе.',
     details: {
-      d1: 'The new meeting point: the car park behind the school',
-      d2: 'The new time: one hour earlier than planned',
-      d3: 'That there are no extra costs',
-      d4: 'That the coach company is experienced',
-      d5: 'Why they are not taking the train',
-      d6: 'That the teacher is looking forward to the trip'
+      d1: 'Новое место сбора: парковка за школой',
+      d2: 'Новое время: на час раньше, чем планировали',
+      d3: 'Что дополнительных расходов нет',
+      d4: 'Что у автобусной компании есть опыт',
+      d5: 'Почему они не едут на поезде',
+      d6: 'Что учитель ждёт поездку'
     },
     versions: {
-      actionable: 'The class goes by coach. Bring your child to the car park behind the school, not to the station, one hour earlier than planned. It costs nothing extra, and the return on Friday is unchanged.',
-      vague: 'There is a strike, so they are taking a coach now. Times and places are a bit different, so check what the teacher wrote.',
-      invented: 'The class goes by coach. Bring your child to the station one hour earlier, and give them some money for the coach ticket.'
+      actionable: 'Класс едет на автобусе. Приведи ребёнка на час раньше, чем планировали, на парковку за школой, а не на вокзал. Доплачивать ничего не нужно, а обратная поездка в пятницу не меняется.',
+      vague: 'Там забастовка, поэтому теперь едут на автобусе. Время и место немного другие, так что посмотри, что написал учитель.',
+      invented: 'Класс едет на автобусе. Приведи ребёнка на вокзал на час раньше и дай ему немного денег на билет на автобус.'
     },
-    versionNote: 'The meeting point is the car park behind the school, not the station, and the school covers the cost.'
+    versionNote: 'Место сбора — парковка за школой, а не вокзал, и расходы оплачивает школа.'
   },
   bikes: {
-    title: 'E-bikes for bike sharing',
-    context: 'An announcement from a city’s bike-sharing service to its users.',
+    title: 'Электровелосипеды в велопрокате',
+    context: 'Объявление городского велопроката для пользователей.',
     sentences: {
-      s1: 'Cycling is a great way to stay active and explore the city.',
-      s2: 'From 1 July, our bike-sharing service adds 200 electric bikes to its fleet.',
-      s3: 'An e-bike costs 20 cents per minute; the regular bikes keep their current price.',
-      s4: 'To unlock an e-bike, you need the latest version of our app.',
-      s5: 'The e-bikes have a range of about 60 kilometres per charge.',
-      s6: 'E-bikes must be returned to one of 12 charging stations; they cannot be left anywhere else.',
-      s7: 'A map of the charging stations is in the app.',
-      s8: 'If an e-bike is left outside a station, a fee of 10 euros is charged.',
-      s9: 'Several other cities have introduced similar services in recent years.',
-      s10: 'The bikes were tested by 50 volunteers over the winter.',
-      s11: 'Thank you for riding with us!'
+      s1: 'Велосипед — отличный способ оставаться в форме и узнавать город.',
+      s2: 'С 1 июля наш велопрокат добавляет в свой парк 200 электровелосипедов.',
+      s3: 'Электровелосипед стоит 20 центов в минуту; обычные велосипеды сохраняют прежнюю цену.',
+      s4: 'Чтобы разблокировать электровелосипед, нужна последняя версия нашего приложения.',
+      s5: 'Запас хода электровелосипедов — около 60 километров на одном заряде.',
+      s6: 'Электровелосипеды нужно возвращать на одну из 12 зарядных станций; оставлять их где-то ещё нельзя.',
+      s7: 'Карта зарядных станций есть в приложении.',
+      s8: 'Если электровелосипед оставлен вне станции, взимается сбор 10 евро.',
+      s9: 'Несколько других городов в последние годы ввели похожие услуги.',
+      s10: 'Зимой велосипеды испытали 50 добровольцев.',
+      s11: 'Спасибо, что катаетесь с нами!'
     },
     bullets: {
-      gold1: 'From 1 July: 200 e-bikes at 20 cents per minute.',
-      gold2: 'Unlocking them needs the latest app version.',
-      gold3: 'E-bikes must be returned to one of 12 charging stations.',
-      minor: 'A map of the charging stations is in the app.',
-      distort: 'The e-bikes replace the regular bikes.',
-      dup: 'There are new bikes.',
-      subtle: 'From 1 July: 200 e-bikes at 25 cents per minute.'
+      gold1: 'С 1 июля: 200 электровелосипедов по 20 центов в минуту.',
+      gold2: 'Для разблокировки нужна последняя версия приложения.',
+      gold3: 'Электровелосипеды возвращают на одну из 12 зарядных станций.',
+      minor: 'Карта зарядных станций есть в приложении.',
+      distort: 'Электровелосипеды заменяют обычные велосипеды.',
+      dup: 'Появились новые велосипеды.',
+      subtle: 'С 1 июля: 200 электровелосипедов по 25 центов в минуту.'
     },
     bulletNotes: {
-      distort: 'The e-bikes are added; the regular bikes stay, at their current price.',
-      dup: 'A vaguer repeat of the first point, without date, number or price.',
-      subtle: 'Almost right, but the price is 20 cents per minute, not 25.'
+      distort: 'Электровелосипеды добавляются; обычные остаются, по прежней цене.',
+      dup: 'Более расплывчатый повтор первого пункта — без даты, количества и цены.',
+      subtle: 'Почти верно, но цена — 20 центов в минуту, а не 25.'
     },
     summaries: {
-      faithful: 'From 1 July there are 200 e-bikes at 20 cents per minute; they need the latest app to unlock and must be returned to one of 12 charging stations.',
-      vague: 'The bike-sharing service is introducing something new this summer that users may find interesting.',
-      drops: 'The bike-sharing service adds 200 e-bikes with a range of about 60 kilometres, so longer trips become easier.',
-      adds: 'From 1 July there are 200 e-bikes at 20 cents per minute, and the regular bikes will be phased out next year.',
-      subtle: 'From 1 July there are 200 e-bikes at 20 cents per minute; they need the latest app to unlock and can be returned to any bike station.'
+      faithful: 'С 1 июля появляются 200 электровелосипедов по 20 центов в минуту; разблокировать их можно в последней версии приложения, а возвращать нужно на одну из 12 зарядных станций.',
+      vague: 'Этим летом велопрокат вводит новинку, которая может заинтересовать пользователей.',
+      drops: 'Велопрокат добавляет 200 электровелосипедов с запасом хода около 60 километров, так что длинные поездки станут проще.',
+      adds: 'С 1 июля появляются 200 электровелосипедов по 20 центов в минуту, а обычные велосипеды в следующем году уберут.',
+      subtle: 'С 1 июля появляются 200 электровелосипедов по 20 центов в минуту; разблокировать их можно в последней версии приложения, а вернуть — на любую велостанцию.'
     },
     summaryNotes: {
-      drops: 'It leaves out the price and what users must do: update the app and return e-bikes to a charging station.',
-      adds: 'Nothing in the announcement says the regular bikes will be phased out.',
-      subtle: 'E-bikes can only be returned to the 12 charging stations, not to any station.'
+      drops: 'Здесь нет цены и того, что нужно сделать пользователям: обновить приложение и вернуть велосипед на зарядную станцию.',
+      adds: 'В объявлении нигде не сказано, что обычные велосипеды уберут.',
+      subtle: 'Электровелосипеды можно вернуть только на 12 зарядных станций, а не на любую станцию.'
     },
-    task: 'A friend wants to try an e-bike next week.',
-    oneLiner: 'There are e-bikes now.',
+    task: 'Подруга хочет на следующей неделе попробовать электровелосипед.',
+    oneLiner: 'Теперь есть электровелосипеды.',
     details: {
-      d1: 'The price: 20 cents per minute',
-      d2: 'That unlocking needs the latest app version',
-      d3: 'That e-bikes must go back to a charging station',
-      d4: 'That cycling keeps you active',
-      d5: 'How many e-bikes there are in total',
-      d6: 'That the regular bikes keep their price'
+      d1: 'Цена: 20 центов в минуту',
+      d2: 'Что для разблокировки нужна последняя версия приложения',
+      d3: 'Что электровелосипед нужно вернуть на зарядную станцию',
+      d4: 'Что велосипед помогает быть в форме',
+      d5: 'Сколько всего электровелосипедов',
+      d6: 'Что обычные велосипеды сохраняют цену'
     },
     versions: {
-      actionable: 'From 1 July you can rent e-bikes for 20 cents per minute. Update the app first, because you need the latest version to unlock them. Afterwards, return the bike to one of the 12 charging stations shown on the map in the app.',
-      vague: 'There are e-bikes now, and they are easy to use. Just get the app and ride off.',
-      invented: 'From 1 July you can rent e-bikes for 20 cents per minute without the app, and you can leave them anywhere in the city afterwards.'
+      actionable: 'С 1 июля можно брать электровелосипеды за 20 центов в минуту. Сначала обнови приложение: для разблокировки нужна последняя версия. Потом верни велосипед на одну из 12 зарядных станций, отмеченных на карте в приложении.',
+      vague: 'Теперь есть электровелосипеды, и пользоваться ими очень просто. Скачай приложение и катайся.',
+      invented: 'С 1 июля можно брать электровелосипеды за 20 центов в минуту без приложения, а потом оставлять их где угодно в городе.'
     },
-    versionNote: 'You need the latest app to unlock them, and they must go back to a charging station.'
+    versionNote: 'Для разблокировки нужна последняя версия приложения, а велосипед нужно вернуть на зарядную станцию.'
   }
 };

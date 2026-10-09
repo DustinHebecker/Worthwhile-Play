@@ -2,235 +2,235 @@ import type { ContentText } from './types';
 
 export const content: ContentText = {
   supplierDelay: {
-    title: 'Supplier delay before a launch',
-    situation: 'Your company launches a new desk lamp on 14 May. The supplier of the lamp heads reports a delay. Prepare a briefing.',
-    recipient: 'the head of product',
+    title: 'Lansman öncesi tedarikçi gecikmesi',
+    situation: 'Şirketin 14 Mayıs’ta yeni bir masa lambası piyasaya sürüyor. Lamba başlıklarının tedarikçisi bir gecikme bildirdi. Bir brifing hazırla.',
+    recipient: 'ürün sorumlusu',
     cards: {
-      c1: 'The new desk lamp launches on 14 May; 350 customers have pre-ordered it.',
-      c2: 'The supplier has shipped only 200 of the 500 lamp heads we ordered.',
-      c3: 'Once the parts are here, our workshop can assemble 100 lamps a day.',
-      c4: 'The supplier has not yet given a date for shipping the remaining lamp heads.',
-      c5: 'The supplier expects the rest to ship next week, probably on Tuesday.',
-      c6: 'If the parts arrive after 10 May, the lamps cannot be assembled in time for the launch.',
-      c7: 'The launch advert is booked for 14 May; moving it would cost a fee of 800 euros.',
-      c8: 'Marketing needs to know by Friday whether the launch date holds.',
-      c9: 'Jonas from purchasing can call the supplier tomorrow morning and ask for a firm date.',
-      c10: 'The supplier moved into a new office building last year.',
-      c11: 'So far only 200 of the 500 ordered lamp heads have been shipped.',
-      c12: 'Honestly, this supplier has always been a bit chaotic.'
+      c1: 'Yeni masa lambası 14 Mayıs’ta satışa çıkıyor; 350 müşteri ön sipariş verdi.',
+      c2: 'Tedarikçi, sipariş ettiğimiz 500 lamba başlığının yalnızca 200’ünü gönderdi.',
+      c3: 'Parçalar gelince atölyemiz günde 100 lamba monte edebilir.',
+      c4: 'Tedarikçi kalan lamba başlıklarının gönderim tarihini henüz vermedi.',
+      c5: 'Tedarikçi kalanını gelecek hafta, muhtemelen salı günü göndermeyi bekliyor.',
+      c6: 'Parçalar 10 Mayıs’tan sonra gelirse lambalar lansmana yetişecek şekilde monte edilemez.',
+      c7: 'Lansman reklamı 14 Mayıs için ayrıldı; tarihi değiştirmek 800 euro ücrete mal olur.',
+      c8: 'Pazarlama ekibinin, lansman tarihinin geçerli kalıp kalmadığını cumaya kadar bilmesi gerekiyor.',
+      c9: 'Satın almadan Jonas yarın sabah tedarikçiyi arayıp kesin bir tarih isteyebilir.',
+      c10: 'Tedarikçi geçen yıl yeni bir ofis binasına taşındı.',
+      c11: 'Şimdiye kadar sipariş edilen 500 lamba başlığından sadece 200’ü gönderildi.',
+      c12: 'Açıkçası bu tedarikçi hep biraz dağınıktı.'
     },
     decisions: {
-      right: 'Keep the launch on 14 May, or move it by one week?',
-      notTheirs: 'Which shipping company should the supplier use?',
-      premature: 'Should we replace this supplier for all future products?'
+      right: 'Lansman 14 Mayıs’ta mı kalsın, yoksa bir hafta mı ertelensin?',
+      notTheirs: 'Tedarikçi hangi kargo firmasını kullanmalı?',
+      premature: 'Gelecekteki tüm ürünler için bu tedarikçiyi değiştirmeli miyiz?'
     },
     actions: {
-      concrete: 'Jonas calls the supplier tomorrow at 9:00 and tells the head of product the confirmed date by 12:00.',
-      vague: 'Someone should keep an eye on the supplier.',
-      outOfScope: 'Start designing next year’s lamp collection.'
+      concrete: 'Jonas yarın 9:00’da tedarikçiyi arar ve kesinleşen tarihi 12:00’ye kadar ürün sorumlusuna bildirir.',
+      vague: 'Birinin tedarikçiyi gözden kaçırmaması lazım.',
+      outOfScope: 'Gelecek yılın lamba koleksiyonunu tasarlamaya başlamak.'
     }
   },
   basement: {
-    title: 'Flooded basement in a shared house',
-    situation: 'After heavy rain, water is standing in the basement of the shared house you live in. Prepare a briefing.',
-    recipient: 'the landlord',
+    title: 'Ortak evde su basan bodrum',
+    situation: 'Şiddetli yağmurdan sonra, başkalarıyla paylaştığın evin bodrumunda su birikti. Bir brifing hazırla.',
+    recipient: 'ev sahibi',
     cards: {
-      c1: 'Five people share the house; the basement holds the heating boiler and everyone’s storage boxes.',
-      c2: 'This morning about 10 cm of water stood in the basement.',
-      c3: 'We switched off the power to the basement this morning as a precaution.',
-      c4: 'Nobody knows yet whether the heating boiler has been damaged.',
-      c5: 'The water has probably stopped rising; at noon it looked the same as in the morning.',
-      c6: 'More rain is forecast for Thursday, and the water could rise again.',
-      c7: 'The boiler stands 15 cm above the floor, so a few more centimetres of water would reach it.',
-      c8: 'The plumber can only come this week if the landlord approves the call-out costs by tomorrow.',
-      c9: 'A housemate who works from home could let the plumber in on Wednesday.',
-      c10: 'The basement walls were last painted in 2015.',
-      c11: 'When we checked this morning, the basement was under 10 cm of water.',
-      c12: 'This house has always been damp, and nobody ever does anything about it.'
+      c1: 'Evi beş kişi paylaşıyor; bodrumda kombi kazanı ve herkesin eşya kutuları var.',
+      c2: 'Bu sabah bodrumda yaklaşık 10 cm su vardı.',
+      c3: 'Bu sabah önlem olarak bodrumun elektriğini kestik.',
+      c4: 'Kazanın zarar görüp görmediğini henüz kimse bilmiyor.',
+      c5: 'Su muhtemelen artık yükselmiyor; öğlen de sabahki gibi görünüyordu.',
+      c6: 'Perşembe için yine yağmur bekleniyor ve su tekrar yükselebilir.',
+      c7: 'Kazan yerden 15 cm yüksekte, yani birkaç santim daha su ona ulaşır.',
+      c8: 'Tesisatçı ancak ev sahibi servis ücretini yarına kadar onaylarsa bu hafta gelebilir.',
+      c9: 'Evden çalışan bir ev arkadaşı çarşamba günü tesisatçıyı içeri alabilir.',
+      c10: 'Bodrum duvarları en son 2015’te boyandı.',
+      c11: 'Bu sabah baktığımızda bodrum 10 cm su altındaydı.',
+      c12: 'Bu ev hep rutubetliydi ve kimse hiçbir şey yapmıyor.'
     },
     decisions: {
-      right: 'Approve the plumber’s call-out costs for this week?',
-      notTheirs: 'Which housemate should move their boxes first?',
-      premature: 'Should the whole basement be waterproofed and renovated?'
+      right: 'Tesisatçının bu haftaki servis ücreti onaylansın mı?',
+      notTheirs: 'Hangi ev arkadaşı kutularını önce taşımalı?',
+      premature: 'Bodrumun tamamı yalıtılıp yenilenmeli mi?'
     },
     actions: {
-      concrete: 'The housemate who works from home books the plumber for Wednesday and sends the landlord the quote today.',
-      vague: 'We will deal with it at some point.',
-      outOfScope: 'Plan a house party to cheer everyone up.'
+      concrete: 'Evden çalışan ev arkadaşı tesisatçıyı çarşambaya ayarlar ve teklifi bugün ev sahibine gönderir.',
+      vague: 'Bir ara ilgileniriz.',
+      outOfScope: 'Herkesin moralini düzeltmek için bir ev partisi planlamak.'
     }
   },
   schoolTrip: {
-    title: 'School trip and a weather warning',
-    situation: 'A class of 24 pupils is due to go hiking in the hills on Friday. A weather warning has been issued. Prepare a briefing.',
-    recipient: 'the head teacher',
+    title: 'Okul gezisi ve hava uyarısı',
+    situation: '24 öğrencilik bir sınıf cuma günü tepelerde yürüyüşe çıkacak. Bir hava uyarısı yayımlandı. Bir brifing hazırla.',
+    recipient: 'okul müdürü',
     cards: {
-      c1: 'The class of 24 pupils, aged 11, is booked for a hiking trip on Friday with three accompanying adults.',
-      c2: 'The weather service has issued a storm warning for Friday afternoon.',
-      c3: 'The science museum in town still has room for a class visit on Friday.',
-      c4: 'The forecast does not yet say whether the storm will arrive before or after midday.',
-      c5: 'The park ranger thinks the main trail will most likely stay open.',
-      c6: 'Strong wind can bring down branches on the forest trail.',
-      c7: 'The only shelter on the route is a 40-minute walk from the end of the trail, too far to reach quickly in a storm.',
-      c8: 'The bus company must be told by Wednesday evening whether the trip goes ahead; until then it can be cancelled free of charge.',
-      c9: 'The class teacher can check the updated forecast on Wednesday at midday.',
-      c10: 'The class voted for the hiking trip back in September.',
-      c11: 'According to the weather service, a storm is expected on Friday afternoon.',
-      c12: 'The children will be terribly disappointed if we cancel.'
+      c1: '11 yaşındaki 24 öğrenciden oluşan sınıf cuma günkü yürüyüşe kayıtlı; yanlarında üç yetişkin refakatçi var.',
+      c2: 'Meteoroloji cuma öğleden sonrası için fırtına uyarısı yayımladı.',
+      c3: 'Şehirdeki bilim müzesinde cuma günü bir sınıf ziyareti için hâlâ yer var.',
+      c4: 'Tahmin, fırtınanın öğleden önce mi sonra mı geleceğini henüz söylemiyor.',
+      c5: 'Park bekçisi ana patikanın büyük olasılıkla açık kalacağını düşünüyor.',
+      c6: 'Kuvvetli rüzgâr orman patikasında dalları koparabilir.',
+      c7: 'Güzergâhtaki tek sığınak patikanın sonundan 40 dakikalık yürüme mesafesinde; fırtınada hızla ulaşmak için çok uzak.',
+      c8: 'Otobüs firmasına gezinin yapılıp yapılmayacağı çarşamba akşamına kadar bildirilmeli; o zamana kadar iptal ücretsiz.',
+      c9: 'Sınıf öğretmeni çarşamba öğlen güncel tahmini kontrol edebilir.',
+      c10: 'Sınıf daha eylülde yürüyüş için oy vermişti.',
+      c11: 'Meteorolojiye göre cuma öğleden sonra fırtına bekleniyor.',
+      c12: 'İptal edersek çocuklar çok hayal kırıklığına uğrar.'
     },
     decisions: {
-      right: 'Go ahead with the hike, switch to the museum, or cancel the trip?',
-      notTheirs: 'What should the pupils pack for lunch?',
-      premature: 'Should the school stop all outdoor trips from now on?'
+      right: 'Yürüyüş yapılsın mı, müzeye mi geçilsin, yoksa gezi iptal mi edilsin?',
+      notTheirs: 'Öğrenciler öğle yemeği için ne getirmeli?',
+      premature: 'Okul bundan sonra tüm açık hava gezilerini kaldırmalı mı?'
     },
     actions: {
-      concrete: 'The class teacher checks the forecast on Wednesday at 12:00 and sends the head teacher a recommendation by 14:00.',
-      vague: 'Let’s see how the weather turns out.',
-      outOfScope: 'Start planning next year’s school festival.'
+      concrete: 'Sınıf öğretmeni çarşamba 12:00’de tahmini kontrol eder ve 14:00’e kadar müdüre bir öneri gönderir.',
+      vague: 'Bakalım hava nasıl olacak.',
+      outOfScope: 'Gelecek yılki okul şenliğini planlamaya başlamak.'
     }
   },
   volunteers: {
-    title: 'Clean-up day short of helpers',
-    situation: 'Your neighbourhood association runs a park clean-up on Saturday. Too few volunteers have signed up. Prepare a briefing.',
-    recipient: 'the chair of the association',
+    title: 'Gönüllüsü az bir temizlik günü',
+    situation: 'Mahalle derneğin cumartesi günü parkta temizlik yapıyor. Çok az gönüllü kaydoldu. Bir brifing hazırla.',
+    recipient: 'dernek başkanı',
     cards: {
-      c1: 'The yearly park clean-up is on Saturday from 10:00 to 13:00; the city provides bags and gloves.',
-      c2: 'So far 9 volunteers have signed up; we planned for 20.',
-      c3: 'The city collects the filled bags only on Saturday at 13:00.',
-      c4: 'The youth football team might send helpers, but the coach has not replied yet.',
-      c5: 'Several neighbours said they will probably drop by if the weather is nice.',
-      c6: 'With 9 people we can clean only about half of the park.',
-      c7: 'Nobody has been named yet to fetch the gloves from the community centre, which closes at 9:30 on Saturday.',
-      c8: 'We can either shrink the clean-up to the playground area or move it to the following Saturday.',
-      c9: 'Two volunteers have offered to put up posters in the neighbourhood tomorrow.',
-      c10: 'Last year’s clean-up ended with a barbecue.',
-      c11: 'Only 9 of the 20 volunteers we planned for have registered.',
-      c12: 'People just don’t care about their neighbourhood any more.'
+      c1: 'Her yılki park temizliği cumartesi 10:00 ile 13:00 arasında; belediye torba ve eldiven veriyor.',
+      c2: 'Şu ana kadar 9 gönüllü kaydoldu; 20 kişi planlamıştık.',
+      c3: 'Belediye dolu torbaları yalnızca cumartesi 13:00’te topluyor.',
+      c4: 'Gençler futbol takımı yardımcı gönderebilir ama antrenör henüz cevap vermedi.',
+      c5: 'Birkaç komşu, hava güzel olursa muhtemelen uğrayacaklarını söyledi.',
+      c6: '9 kişiyle parkın ancak yarısı kadarını temizleyebiliriz.',
+      c7: 'Cumartesi 9:30’da kapanan toplum merkezinden eldivenleri alacak kişi henüz belirlenmedi.',
+      c8: 'Temizliği oyun alanı bölgesiyle sınırlayabilir ya da bir sonraki cumartesiye erteleyebiliriz.',
+      c9: 'İki gönüllü yarın mahalleye afiş asmayı önerdi.',
+      c10: 'Geçen yılki temizlik mangalla bitmişti.',
+      c11: 'Planladığımız 20 gönüllüden sadece 9’u kayıt yaptırdı.',
+      c12: 'İnsanlar artık mahallelerini hiç umursamıyor.'
     },
     decisions: {
-      right: 'Hold a smaller clean-up this Saturday, or move it by one week?',
-      notTheirs: 'Should the city change its collection times for the bags?',
-      premature: 'Should the association hire a cleaning company in future years?'
+      right: 'Bu cumartesi daha küçük bir temizlik mi yapılsın, yoksa bir hafta mı ertelensin?',
+      notTheirs: 'Belediye torba toplama saatlerini değiştirmeli mi?',
+      premature: 'Dernek önümüzdeki yıllarda bir temizlik şirketiyle mi çalışmalı?'
     },
     actions: {
-      concrete: 'The two volunteers put up posters tomorrow, and the secretary emails the football coach today and reports back by Thursday.',
-      vague: 'We should somehow try to get more people.',
-      outOfScope: 'Start planning the association’s summer party.'
+      concrete: 'İki gönüllü yarın afişleri asar, sekreter bugün futbol antrenörüne e-posta yazar ve perşembeye kadar sonucu bildirir.',
+      vague: 'Bir şekilde daha fazla insan bulmalıyız.',
+      outOfScope: 'Derneğin yaz şenliğini planlamaya başlamak.'
     }
   },
   release: {
-    title: 'Software release with a failing test',
-    situation: 'Your team plans to release a new version of a booking app on Tuesday. One automated test fails. Prepare a briefing.',
-    recipient: 'the product manager',
+    title: 'Başarısız bir testle yazılım sürümü',
+    situation: 'Ekibin salı günü bir rezervasyon uygulamasının yeni sürümünü yayımlamak istiyor. Otomatik testlerden biri başarısız oluyor. Bir brifing hazırla.',
+    recipient: 'ürün yöneticisi',
     cards: {
-      c1: 'The new version adds online payment and has been announced to customers for Tuesday.',
-      c2: 'One of 640 automated tests fails: the refund of a cancelled booking.',
-      c3: 'The failure only appears for payments in a foreign currency.',
-      c4: 'We do not know yet whether the bug is in our code or in the payment provider’s test system.',
-      c5: 'The developer expects the fix to take about a day, but has not looked at the code yet.',
-      c6: 'If the bug is real, some customers could be refunded the wrong amount.',
-      c7: 'About 15% of bookings are paid in a foreign currency, so the bug would affect many customers.',
-      c8: 'We can release on Tuesday with foreign-currency payments switched off, or postpone the whole release.',
-      c9: 'The developer can check the payment provider’s test logs this afternoon.',
-      c10: 'The new payment screen uses the company’s new shade of blue.',
-      c11: 'A single test fails: refunds for cancelled bookings.',
-      c12: 'This test has always been flaky; I would just ignore it.'
+      c1: 'Yeni sürüm çevrim içi ödeme ekliyor ve müşterilere salı günü için duyuruldu.',
+      c2: '640 otomatik testten biri başarısız: iptal edilen bir rezervasyonun iadesi.',
+      c3: 'Hata yalnızca yabancı para birimiyle yapılan ödemelerde görülüyor.',
+      c4: 'Hatanın bizim kodumuzda mı yoksa ödeme sağlayıcısının test sisteminde mi olduğunu henüz bilmiyoruz.',
+      c5: 'Geliştirici düzeltmenin yaklaşık bir gün süreceğini tahmin ediyor ama koda henüz bakmadı.',
+      c6: 'Hata gerçekse bazı müşterilere yanlış tutarda iade yapılabilir.',
+      c7: 'Rezervasyonların yaklaşık %15’i yabancı para birimiyle ödeniyor; yani hata birçok müşteriyi etkiler.',
+      c8: 'Salı günü yabancı para birimiyle ödemeyi kapatarak yayımlayabilir ya da sürümün tamamını erteleyebiliriz.',
+      c9: 'Geliştirici bu öğleden sonra ödeme sağlayıcısının test kayıtlarını inceleyebilir.',
+      c10: 'Yeni ödeme ekranında şirketin yeni mavi tonu kullanılıyor.',
+      c11: 'Kırmızı olan tek bir test var: iptal edilen rezervasyonların iadeleri.',
+      c12: 'Bu test hep güvenilmezdi; ben olsam görmezden gelirdim.'
     },
     decisions: {
-      right: 'Release on Tuesday without foreign-currency payments, or postpone the release?',
-      notTheirs: 'Which programming technique should the developer use for the fix?',
-      premature: 'Should we switch to a different payment provider?'
+      right: 'Salı günü yabancı para birimiyle ödeme olmadan mı yayımlansın, yoksa sürüm ertelensin mi?',
+      notTheirs: 'Geliştirici düzeltme için hangi programlama tekniğini kullanmalı?',
+      premature: 'Başka bir ödeme sağlayıcısına mı geçmeliyiz?'
     },
     actions: {
-      concrete: 'The developer checks the provider’s test logs this afternoon and tells the product manager by 17:00 whether the bug is ours.',
-      vague: 'Someone will look into the test.',
-      outOfScope: 'Start writing the release notes for the version after next.'
+      concrete: 'Geliştirici bu öğleden sonra sağlayıcının test kayıtlarını inceler ve hatanın bizden olup olmadığını 17:00’ye kadar ürün yöneticisine bildirir.',
+      vague: 'Biri teste bir bakar.',
+      outOfScope: 'Bir sonrakinden sonraki sürümün sürüm notlarını yazmaya başlamak.'
     }
   },
   careAppointment: {
-    title: 'A care advice appointment for Grandmother',
-    situation: 'Your grandmother has an appointment with a care advice service on Monday. The family has to sort out who goes with her. Prepare a briefing. (This is about organising, not about medical questions.)',
-    recipient: 'your brother, who shares the decision with you',
+    title: 'Büyükanne için bakım danışmanlığı randevusu',
+    situation: 'Büyükannenin pazartesi günü bir bakım danışmanlık servisinde randevusu var. Aile, ona kimin eşlik edeceğine karar vermeli. Bir brifing hazırla. (Konu tıbbi sorular değil, organizasyon.)',
+    recipient: 'kararı seninle paylaşan kardeşin',
     cards: {
-      c1: 'Grandmother has an appointment with the care advice service on Monday at 10:00 to talk about help at home.',
-      c2: 'She has asked for one family member to come with her.',
-      c3: 'The letter says to bring her list of medicines and her insurance card.',
-      c4: 'It is not clear yet whether Mum can take Monday off work.',
-      c5: 'The advice centre is said to have a lift, but nobody has checked.',
-      c6: 'If nobody can go, the next free appointment is in six weeks.',
-      c7: 'Grandmother tires quickly, and the bus ride to the centre takes 50 minutes each way.',
-      c8: 'The advice service needs to know by Friday whether the appointment takes place in person or by video call.',
-      c9: 'You could call Mum tonight and ask about Monday.',
-      c10: 'Grandmother’s neighbour recently got a new dog.',
-      c11: 'She would like someone from the family to go with her.',
-      c12: 'In my view, these advice services never really help anyway.'
+      c1: 'Büyükannenin pazartesi 10:00’da evde yardım konusunu konuşmak için bakım danışmanlık servisinde randevusu var.',
+      c2: 'Aileden bir kişinin kendisiyle gelmesini istedi.',
+      c3: 'Mektupta ilaç listesini ve sigorta kartını getirmesi gerektiği yazıyor.',
+      c4: 'Annemin pazartesi izin alıp alamayacağı henüz belli değil.',
+      c5: 'Danışmanlık merkezinde asansör olduğu söyleniyor ama kimse kontrol etmedi.',
+      c6: 'Kimse gidemezse bir sonraki boş randevu altı hafta sonra.',
+      c7: 'Büyükanne çabuk yoruluyor ve merkeze otobüs yolculuğu tek yön 50 dakika sürüyor.',
+      c8: 'Danışmanlık servisi randevunun yüz yüze mi yoksa görüntülü görüşmeyle mi olacağını cumaya kadar bilmeli.',
+      c9: 'Bu akşam annemi arayıp pazartesiyi sorabilirsin.',
+      c10: 'Büyükannenin komşusu yakın zamanda yeni bir köpek aldı.',
+      c11: 'Aileden birinin kendisiyle gelmesini istiyor.',
+      c12: 'Bence bu danışmanlıklar zaten hiçbir zaman gerçekten işe yaramıyor.'
     },
     decisions: {
-      right: 'Who goes with Grandmother on Monday, and in person or by video call?',
-      notTheirs: 'Which kind of help at home should Grandmother get?',
-      premature: 'Should Grandmother move into a care home?'
+      right: 'Pazartesi büyükanneye kim eşlik edecek; yüz yüze mi, görüntülü mü?',
+      notTheirs: 'Büyükanne evde ne tür bir yardım almalı?',
+      premature: 'Büyükanne bir bakımevine mi taşınmalı?'
     },
     actions: {
-      concrete: 'You call Mum tonight and tell your brother by Wednesday evening who can go.',
-      vague: 'We’ll sort it out somehow.',
-      outOfScope: 'Start planning Grandmother’s birthday party.'
+      concrete: 'Bu akşam annemi ararsın ve kimin gidebileceğini çarşamba akşamına kadar kardeşine söylersin.',
+      vague: 'Bir şekilde hallederiz.',
+      outOfScope: 'Büyükannenin doğum günü partisini planlamaya başlamak.'
     }
   },
   cafeFreezer: {
-    title: 'Broken freezer in a small café',
-    situation: 'You work in a small café. This morning the freezer was not cold enough. The owner is away until tomorrow. Prepare a briefing.',
-    recipient: 'the café owner',
+    title: 'Küçük bir kafede bozulan dondurucu',
+    situation: 'Küçük bir kafede çalışıyorsun. Bu sabah dondurucu yeterince soğutmuyordu. Kafe sahibi yarına kadar yok. Bir brifing hazırla.',
+    recipient: 'kafe sahibi',
     cards: {
-      c1: 'The café sells homemade ice cream; the freezer holds about a week’s stock.',
-      c2: 'At 7:00 the freezer showed −2 °C instead of the usual −18 °C.',
-      c3: 'We moved the ice cream into the neighbouring bakery’s freezer at 7:30.',
-      c4: 'We do not know whether the ice cream thawed during the night.',
-      c5: 'The repair service will probably be able to come on Thursday.',
-      c6: 'Ice cream that has thawed must not be sold, so we may have to throw away the stock.',
-      c7: 'The bakery needs its freezer space back on Saturday, so our ice cream can only stay there until then.',
-      c8: 'The repair service will only book a visit once the owner approves the call-out fee of 90 euros.',
-      c9: 'The barista can read the freezer’s temperature log this afternoon.',
-      c10: 'The café’s new menu boards arrive next week.',
-      c11: 'This morning the freezer read −2 °C instead of −18 °C.',
-      c12: 'That freezer was a bad buy from day one.'
+      c1: 'Kafe ev yapımı dondurma satıyor; dondurucuda yaklaşık bir haftalık stok var.',
+      c2: 'Saat 7:00’de dondurucu her zamanki −18 °C yerine −2 °C gösteriyordu.',
+      c3: 'Dondurmayı 7:30’da yandaki fırının dondurucusuna taşıdık.',
+      c4: 'Dondurmanın gece boyunca erimiş olup olmadığını bilmiyoruz.',
+      c5: 'Servis muhtemelen perşembe günü gelebilecek.',
+      c6: 'Erimiş dondurma satılamaz; stoğu atmak zorunda kalabiliriz.',
+      c7: 'Fırın, dondurucudaki yerini cumartesi geri istiyor; yani dondurmamız ancak o zamana kadar orada kalabilir.',
+      c8: 'Servis, kafe sahibi 90 euroluk servis ücretini onaylamadan randevu vermiyor.',
+      c9: 'Barista bu öğleden sonra dondurucunun sıcaklık kaydını okuyabilir.',
+      c10: 'Kafenin yeni menü panoları gelecek hafta geliyor.',
+      c11: 'Bu sabah dondurucu −18 °C yerine −2 °C gösterdi.',
+      c12: 'O dondurucu ilk günden beri yanlış bir alışverişti.'
     },
     decisions: {
-      right: 'Approve the repair call-out fee of 90 euros?',
-      notTheirs: 'Which cakes should the bakery sell this week?',
-      premature: 'Should the café stop selling ice cream altogether?'
+      right: 'Onarım için 90 euroluk servis ücreti onaylansın mı?',
+      notTheirs: 'Fırın bu hafta hangi pastaları satmalı?',
+      premature: 'Kafe dondurma satmayı tamamen bırakmalı mı?'
     },
     actions: {
-      concrete: 'The barista reads the temperature log this afternoon and texts the owner the result by 16:00.',
-      vague: 'We’ll keep an eye on it.',
-      outOfScope: 'Redesign the café’s website.'
+      concrete: 'Barista bu öğleden sonra sıcaklık kaydını okur ve sonucu 16:00’ya kadar kafe sahibine mesajla bildirir.',
+      vague: 'Göz kulak oluruz.',
+      outOfScope: 'Kafenin web sitesini yeniden tasarlamak.'
     }
   },
   tournament: {
-    title: 'New venue for a chess tournament',
-    situation: 'Your chess club hosts a youth tournament on Sunday. The school hall you booked is no longer available. Prepare a briefing.',
-    recipient: 'the club board',
+    title: 'Satranç turnuvası için yeni yer',
+    situation: 'Satranç kulübün pazar günü bir gençler turnuvası düzenliyor. Ayırttığınız okul salonu artık kullanılamıyor. Bir brifing hazırla.',
+    recipient: 'kulüp yönetimi',
     cards: {
-      c1: 'Sunday’s youth tournament has 48 registered players from six clubs.',
-      c2: 'The school has cancelled our hall booking because of a leak in the roof.',
-      c3: 'The town library offers its event room free of charge, but it only fits 32 players.',
-      c4: 'The sports centre might have a free room, but it has not answered our email yet.',
-      c5: 'The caretaker believes the school hall could be repaired in time, but nobody has confirmed it.',
-      c6: 'If families hear about the change too late, some players may turn up at the old venue.',
-      c7: 'Several families travel more than 100 km and have already booked their trains, so a change of date would hit them hardest.',
-      c8: 'The invitations with the final venue must go out by Wednesday.',
-      c9: 'The club secretary can phone the sports centre tomorrow morning.',
-      c10: 'The club’s trophy cabinet was cleaned last month.',
-      c11: 'The school has called off our booking for the hall.',
-      c12: 'We should never have relied on that school.'
+      c1: 'Pazar günkü gençler turnuvasına altı kulüpten 48 oyuncu kayıtlı.',
+      c2: 'Okul, çatıdaki bir sızıntı yüzünden salon rezervasyonumuzu iptal etti.',
+      c3: 'Belediye kütüphanesi etkinlik salonunu ücretsiz öneriyor ama salon yalnızca 32 oyuncu alıyor.',
+      c4: 'Spor merkezinde boş bir salon olabilir ama e-postamıza henüz cevap vermedi.',
+      c5: 'Okulun hizmetlisi salonun zamanında onarılabileceğine inanıyor ama bunu kimse doğrulamadı.',
+      c6: 'Aileler değişikliği çok geç öğrenirse bazı oyuncular eski yere gidebilir.',
+      c7: 'Birkaç aile 100 km’den fazla yol geliyor ve trenlerini çoktan ayırttı; tarih değişikliği en çok onları etkiler.',
+      c8: 'Kesin yerin yazılı olduğu davetiyeler çarşambaya kadar gönderilmeli.',
+      c9: 'Kulüp sekreteri yarın sabah spor merkezini arayabilir.',
+      c10: 'Kulübün kupa vitrini geçen ay temizlendi.',
+      c11: 'Okul salon rezervasyonumuzu geri çekti.',
+      c12: 'O okula hiç güvenmemeliydik.'
     },
     decisions: {
-      right: 'Move to another venue, limit the tournament to 32 players, or postpone it?',
-      notTheirs: 'When should the school repair its roof?',
-      premature: 'Should the club build its own clubhouse?'
+      right: 'Başka bir yere mi geçilsin, turnuva 32 oyuncuyla mı sınırlansın, yoksa ertelensin mi?',
+      notTheirs: 'Okul çatısını ne zaman onarmalı?',
+      premature: 'Kulüp kendi lokalini mi inşa etmeli?'
     },
     actions: {
-      concrete: 'The secretary phones the sports centre tomorrow at 9:00 and reports to the board by 12:00.',
-      vague: 'Let’s wait and see what turns up.',
-      outOfScope: 'Order new chess sets for the club.'
+      concrete: 'Sekreter yarın 9:00’da spor merkezini arar ve 12:00’ye kadar yönetime bilgi verir.',
+      vague: 'Bekleyip ne çıkacağını görelim.',
+      outOfScope: 'Kulüp için yeni satranç takımları sipariş etmek.'
     }
   }
 };

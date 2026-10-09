@@ -2,358 +2,358 @@ import type { ContentText } from './types';
 
 export const content: ContentText = {
   launch: {
-    title: 'App launch update',
-    context: 'An email from the project lead to the whole team.',
+    title: '앱 출시 소식',
+    context: '프로젝트 책임자가 팀 전체에 보낸 이메일입니다.',
     sentences: {
-      s1: 'Hi everyone, I hope you all had a good weekend in the sunshine.',
-      s2: 'The launch of our booking app moves from 2 April to 14 May.',
-      s3: 'The reason is that the payment provider has not yet finished its security certification, and we cannot take payments without it.',
-      s4: 'The provider says it has a backlog of applications.',
-      s5: 'The design team will use the extra weeks to polish the onboarding screens.',
-      s6: 'Our 300 beta testers can keep using the test version until the launch.',
-      s7: 'A competitor launched a similar app last year and needed three attempts.',
-      s8: 'Marketing must move the campaign, so please decide on the new campaign start by Friday.',
-      s9: 'The budget stays the same, because the agency does not charge for moving the campaign.',
-      s10: 'The certification itself takes about three weeks once it starts.',
-      s11: 'Thanks again for all your hard work!',
-      s12: 'I will send an updated project plan on Wednesday.'
+      s1: '안녕하세요, 모두 햇살 좋은 주말 잘 보내셨길 바랍니다.',
+      s2: '예약 앱 출시일이 4월 2일에서 5월 14일로 바뀝니다.',
+      s3: '결제 대행사가 아직 보안 인증을 마치지 못했고, 인증 없이는 결제를 받을 수 없기 때문입니다.',
+      s4: '대행사는 신청이 밀려 있다고 합니다.',
+      s5: '디자인팀은 늘어난 몇 주 동안 시작 화면을 다듬을 예정입니다.',
+      s6: '베타 테스터 300명은 출시 때까지 테스트 버전을 계속 쓸 수 있습니다.',
+      s7: '한 경쟁사는 작년에 비슷한 앱을 내놓았는데 세 번 만에 성공했습니다.',
+      s8: '마케팅팀은 캠페인 일정을 옮겨야 하니, 금요일까지 새 캠페인 시작일을 정해 주세요.',
+      s9: '대행사가 캠페인 일정 변경에 비용을 받지 않아서 예산은 그대로입니다.',
+      s10: '인증 자체는 시작되면 약 3주가 걸립니다.',
+      s11: '다시 한번 모두의 수고에 감사드립니다!',
+      s12: '수요일에 업데이트된 프로젝트 계획을 보내겠습니다.'
     },
     bullets: {
-      gold1: 'The launch moves from 2 April to 14 May.',
-      gold2: 'Cause: the payment provider’s security certification is not finished.',
-      gold3: 'Marketing must decide on the new campaign start by Friday.',
-      minor: 'The design team will polish the onboarding screens.',
-      distort: 'The app has failed its security check.',
-      dup: 'The launch is delayed.',
-      subtle: 'The launch moves from 2 April to 4 May.'
+      gold1: '출시일이 4월 2일에서 5월 14일로 바뀝니다.',
+      gold2: '원인: 결제 대행사의 보안 인증이 끝나지 않았습니다.',
+      gold3: '마케팅팀은 금요일까지 새 캠페인 시작일을 정해야 합니다.',
+      minor: '디자인팀이 시작 화면을 다듬습니다.',
+      distort: '앱이 보안 검사에서 떨어졌습니다.',
+      dup: '출시가 늦어집니다.',
+      subtle: '출시일이 4월 2일에서 5월 4일로 바뀝니다.'
     },
     bulletNotes: {
-      distort: 'The text says the certification is not finished yet, not that the app failed a check.',
-      dup: 'Repeats the point about the new date without the date, so it wastes a slot.',
-      subtle: 'Almost right, but the new date is 14 May, not 4 May.'
+      distort: '본문은 인증이 아직 끝나지 않았다고 했지, 앱이 검사에서 떨어졌다고 하지 않았습니다.',
+      dup: '새 날짜에 관한 내용을 날짜 없이 반복해서 한 자리를 낭비합니다.',
+      subtle: '거의 맞지만 새 날짜는 5월 4일이 아니라 5월 14일입니다.'
     },
     summaries: {
-      faithful: 'The launch moves to 14 May because the payment provider’s certification is not finished, and marketing must decide on the new campaign start by Friday.',
-      vague: 'There are some changes to the launch timing that the team should be aware of.',
-      drops: 'Because the payment provider is not ready yet, the launch has been postponed, but the budget stays the same.',
-      adds: 'The launch moves to 14 May because the payment provider’s certification is not finished, and the delay will make the project more expensive.',
-      subtle: 'The launch moves to 14 May because our app failed the payment provider’s certification, and marketing must decide on the new campaign start by Friday.'
+      faithful: '결제 대행사의 인증이 끝나지 않아 출시가 5월 14일로 미뤄지며, 마케팅팀은 금요일까지 새 캠페인 시작일을 정해야 합니다.',
+      vague: '출시 일정에 팀이 알아야 할 몇 가지 변경 사항이 있습니다.',
+      drops: '결제 대행사가 아직 준비되지 않아 출시가 연기되었지만 예산은 그대로입니다.',
+      adds: '결제 대행사의 인증이 끝나지 않아 출시가 5월 14일로 미뤄지며, 이 지연으로 프로젝트 비용이 늘어날 것입니다.',
+      subtle: '우리 앱이 결제 대행사의 인증에서 떨어져 출시가 5월 14일로 미뤄지며, 마케팅팀은 금요일까지 새 캠페인 시작일을 정해야 합니다.'
     },
     summaryNotes: {
-      drops: 'It leaves out the new date and the decision marketing has to make.',
-      adds: 'The text says the budget stays the same; higher costs are made up.',
-      subtle: 'The app has not failed anything: the certification is simply not finished yet.'
+      drops: '새 날짜와 마케팅팀이 내려야 할 결정이 빠져 있습니다.',
+      adds: '본문에는 예산이 그대로라고 되어 있으니, 비용 증가는 지어낸 말입니다.',
+      subtle: '앱은 어디서도 떨어지지 않았습니다. 인증이 아직 끝나지 않았을 뿐입니다.'
     },
-    task: 'The marketing team has to act on this one-liner.',
-    oneLiner: 'Move the launch to May.',
+    task: '마케팅팀이 이 한 줄을 보고 움직여야 합니다.',
+    oneLiner: '출시를 5월로 미뤄 주세요.',
     details: {
-      d1: 'The exact new date: 14 May',
-      d2: 'Who must act: marketing moves the campaign',
-      d3: 'The deadline: decide on the new campaign start by Friday',
-      d4: 'Why the provider is behind schedule',
-      d5: 'The design team’s plans for the onboarding screens',
-      d6: 'The sunny weekend'
+      d1: '정확한 새 날짜: 5월 14일',
+      d2: '움직일 사람: 마케팅팀이 캠페인을 옮김',
+      d3: '기한: 금요일까지 새 캠페인 시작일 결정',
+      d4: '대행사가 늦어지는 이유',
+      d5: '시작 화면에 대한 디자인팀의 계획',
+      d6: '햇살 좋은 주말'
     },
     versions: {
-      actionable: 'The launch moves from 2 April to 14 May. Marketing: please move the campaign and decide on the new start date by Friday. The budget stays the same.',
-      vague: 'We are moving the launch to May. Please adjust your plans accordingly and let us know if anything comes up.',
-      invented: 'The launch moves to 1 May. Marketing: please cancel the campaign and plan a new one by the end of the month.'
+      actionable: '출시일이 4월 2일에서 5월 14일로 바뀝니다. 마케팅팀은 캠페인을 옮기고 금요일까지 새 시작일을 정해 주세요. 예산은 그대로입니다.',
+      vague: '출시를 5월로 미룹니다. 계획을 적절히 조정하시고, 문제가 생기면 알려 주세요.',
+      invented: '출시가 5월 1일로 바뀝니다. 마케팅팀은 캠페인을 취소하고 이달 말까지 새 캠페인을 기획해 주세요.'
     },
-    versionNote: 'The new date is 14 May, not 1 May, and the campaign is moved, not cancelled.'
+    versionNote: '새 날짜는 5월 1일이 아니라 5월 14일이고, 캠페인은 취소가 아니라 일정 변경입니다.'
   },
   library: {
-    title: 'Library renovation',
-    context: 'A notice on the door of the local library branch.',
+    title: '도서관 보수 공사',
+    context: '동네 도서관 문에 붙은 안내문입니다.',
     sentences: {
-      s1: 'Many of you have told us how much you love the old armchairs in the reading corner.',
-      s2: 'From 3 June, the library will be closed for renovation for eight weeks.',
-      s3: 'The roof will be repaired, and the building will get a lift and new lighting.',
-      s4: 'During the closure, a library bus will stop at the market square every Tuesday.',
-      s5: 'The bus carries about 2,000 books and can order any title from the central library.',
-      s6: 'All loans that would fall due during the closure are extended automatically, so nobody pays late fees.',
-      s7: 'Books can also be returned at any time in the return box next to the town hall.',
-      s8: 'The town hall itself was renovated in a similar way ten years ago.',
-      s9: 'Our e-books and audiobooks remain available online as usual.',
-      s10: 'We are already looking forward to next year’s summer reading festival.',
-      s11: 'The renovation is paid for by a regional building fund.'
+      s1: '많은 분이 열람 코너의 낡은 안락의자를 무척 좋아한다고 말씀해 주셨습니다.',
+      s2: '6월 3일부터 도서관은 보수 공사로 8주 동안 문을 닫습니다.',
+      s3: '지붕을 수리하고, 건물에 엘리베이터와 새 조명을 설치합니다.',
+      s4: '휴관 기간에는 매주 화요일 이동도서관 버스가 시장 광장에 섭니다.',
+      s5: '버스에는 책이 약 2,000권 실려 있고, 중앙도서관의 어떤 책이든 주문할 수 있습니다.',
+      s6: '휴관 중에 반납일이 돌아오는 대출은 모두 자동으로 연장되므로 연체료를 내는 사람은 없습니다.',
+      s7: '책은 시청 옆 반납함에 언제든지 반납할 수도 있습니다.',
+      s8: '시청 건물도 십 년 전에 비슷한 방식으로 보수했습니다.',
+      s9: '전자책과 오디오북은 평소처럼 온라인으로 이용할 수 있습니다.',
+      s10: '내년 여름 독서 축제가 벌써 기다려집니다.',
+      s11: '보수 공사 비용은 지역 건축 기금에서 지원합니다.'
     },
     bullets: {
-      gold1: 'Closed for renovation for eight weeks from 3 June.',
-      gold2: 'A library bus stops at the market square every Tuesday.',
-      gold3: 'Loans due during the closure are extended automatically.',
-      minor: 'The building will get new lighting.',
-      distort: 'All library services stop for eight weeks.',
-      dup: 'The library will be closed for a while.',
-      subtle: 'Closed for renovation for six weeks from 3 June.'
+      gold1: '6월 3일부터 8주 동안 보수 공사로 휴관.',
+      gold2: '매주 화요일 이동도서관 버스가 시장 광장에 섭니다.',
+      gold3: '휴관 중 반납일이 돌아오는 대출은 자동 연장됩니다.',
+      minor: '건물에 새 조명이 설치됩니다.',
+      distort: '도서관의 모든 서비스가 8주 동안 중단됩니다.',
+      dup: '도서관이 한동안 문을 닫습니다.',
+      subtle: '6월 3일부터 6주 동안 보수 공사로 휴관.'
     },
     bulletNotes: {
-      distort: 'Not true: the bus and the return box keep working during the closure.',
-      dup: 'Repeats the closure without the start date or the length.',
-      subtle: 'Almost right, but the closure lasts eight weeks, not six.'
+      distort: '사실이 아닙니다. 휴관 중에도 이동도서관 버스와 반납함은 운영됩니다.',
+      dup: '휴관 사실을 시작일과 기간 없이 반복합니다.',
+      subtle: '거의 맞지만 휴관 기간은 6주가 아니라 8주입니다.'
     },
     summaries: {
-      faithful: 'The library closes for eight weeks from 3 June; meanwhile a bus visits the market square every Tuesday, and loans due in that time are extended automatically.',
-      vague: 'There will be some changes at the library over the summer, so keep an eye out.',
-      drops: 'The library is being renovated and will get a repaired roof, a lift and new lighting.',
-      adds: 'The library closes for eight weeks from 3 June and will charge a small fee for loans after it reopens.',
-      subtle: 'Because the roof is unsafe, the library closes for eight weeks from 3 June; meanwhile a bus visits the market square every Tuesday.'
+      faithful: '도서관은 6월 3일부터 8주 동안 문을 닫으며, 그동안 매주 화요일 시장 광장에 버스가 오고 반납일이 돌아오는 대출은 자동으로 연장됩니다.',
+      vague: '올여름 도서관에 몇 가지 변화가 있으니 눈여겨보세요.',
+      drops: '도서관이 보수 공사를 해서 지붕을 고치고 엘리베이터와 새 조명을 갖추게 됩니다.',
+      adds: '도서관은 6월 3일부터 8주 동안 문을 닫고, 다시 문을 연 뒤에는 대출에 약간의 요금을 받습니다.',
+      subtle: '지붕이 위험해서 도서관은 6월 3일부터 8주 동안 문을 닫으며, 그동안 매주 화요일 시장 광장에 버스가 옵니다.'
     },
     summaryNotes: {
-      drops: 'It describes the building work but not when the library closes or what readers can do meanwhile.',
-      adds: 'Nothing in the notice mentions fees after the reopening.',
-      subtle: 'The notice says the roof will be repaired, not that it is unsafe; that cause is added.'
+      drops: '공사 내용만 있고, 언제 문을 닫는지와 그동안 독자가 무엇을 할 수 있는지는 없습니다.',
+      adds: '안내문 어디에도 재개관 후 요금 이야기는 없습니다.',
+      subtle: '안내문은 지붕을 수리한다고 했지 위험하다고 하지 않았습니다. 그 원인은 덧붙인 것입니다.'
     },
-    task: 'A neighbour who wants to keep borrowing books asks you about it.',
-    oneLiner: 'The library is closed in summer.',
+    task: '책을 계속 빌리고 싶은 이웃이 이 일에 대해 묻습니다.',
+    oneLiner: '도서관이 여름에 문을 닫아요.',
     details: {
-      d1: 'When exactly: for eight weeks from 3 June',
-      d2: 'Where to borrow meanwhile: the bus at the market square on Tuesdays',
-      d3: 'Where to return books: the box next to the town hall',
-      d4: 'What the renovation includes',
-      d5: 'The armchairs in the reading corner',
-      d6: 'Next year’s reading festival'
+      d1: '정확한 시기: 6월 3일부터 8주',
+      d2: '그동안 빌리는 곳: 화요일마다 시장 광장의 버스',
+      d3: '책 반납하는 곳: 시청 옆 반납함',
+      d4: '보수 공사에 포함된 내용',
+      d5: '열람 코너의 안락의자',
+      d6: '내년 독서 축제'
     },
     versions: {
-      actionable: 'From 3 June the library is closed for eight weeks. You can borrow books from the library bus at the market square every Tuesday and return them any time in the box next to the town hall. Loans due in that time are extended automatically.',
-      vague: 'The library will be closed for a while in the summer because of building work. There will be other options, so check the notice for more.',
-      invented: 'From 3 June the library is closed for eight weeks. You can borrow books from the library bus at the station every Friday. Please return all books before the closure.'
+      actionable: '6월 3일부터 도서관이 8주 동안 문을 닫아요. 매주 화요일 시장 광장의 이동도서관 버스에서 책을 빌리고, 시청 옆 반납함에 언제든 반납하면 돼요. 그 기간에 반납일이 돌아오는 책은 자동으로 연장돼요.',
+      vague: '도서관이 여름에 공사 때문에 한동안 문을 닫아요. 다른 방법도 있다니까 안내문을 한번 보세요.',
+      invented: '6월 3일부터 도서관이 8주 동안 문을 닫아요. 매주 금요일 기차역의 이동도서관 버스에서 책을 빌릴 수 있어요. 휴관 전에 책을 모두 반납해 주세요.'
     },
-    versionNote: 'The bus stops at the market square on Tuesdays, and nobody has to return books before the closure.'
+    versionNote: '버스는 화요일에 시장 광장에 서고, 휴관 전에 책을 반납할 필요는 없습니다.'
   },
   leaves: {
-    title: 'Why leaves change colour',
-    context: 'A short article from a nature magazine for curious readers.',
+    title: '나뭇잎은 왜 색이 변할까',
+    context: '호기심 많은 독자를 위한 자연 잡지의 짧은 기사입니다.',
     sentences: {
-      s1: 'Autumn is many people’s favourite season for long walks.',
-      s2: 'Leaves are green because they contain a lot of chlorophyll, the pigment plants use to capture sunlight.',
-      s3: 'As the days get shorter, many trees stop making chlorophyll and break it down.',
-      s4: 'Yellow and orange pigments, called carotenoids, were in the leaf all along; they only become visible when the green fades.',
-      s5: 'Carotenoids are the same kind of pigment that makes carrots orange.',
-      s6: 'Red is different: some trees, such as many maples, make new red pigments in autumn.',
-      s7: 'Researchers think these red pigments may protect the leaf from strong light while the tree takes back nutrients.',
-      s8: 'Sunny days and cool nights tend to make the reds brighter.',
-      s9: 'In some regions, colourful forests attract many tourists every year.',
-      s10: 'Finally, a thin layer of cells forms where the leaf joins the twig, and the leaf falls.',
-      s11: 'Don’t forget a warm jacket if you go out to look at the trees.'
+      s1: '가을은 많은 사람이 가장 좋아하는 긴 산책의 계절입니다.',
+      s2: '나뭇잎이 초록색인 것은 식물이 햇빛을 모으는 색소인 엽록소가 많이 들어 있기 때문입니다.',
+      s3: '낮이 짧아지면 많은 나무가 엽록소를 더 만들지 않고 분해합니다.',
+      s4: '카로티노이드라는 노란색과 주황색 색소는 처음부터 잎에 있었고, 초록색이 옅어져야 비로소 보입니다.',
+      s5: '카로티노이드는 당근을 주황색으로 만드는 것과 같은 종류의 색소입니다.',
+      s6: '빨간색은 다릅니다. 많은 단풍나무처럼 일부 나무는 가을에 새로운 빨간 색소를 만듭니다.',
+      s7: '연구자들은 이 빨간 색소가 나무가 양분을 회수하는 동안 강한 빛으로부터 잎을 보호할 수도 있다고 봅니다.',
+      s8: '맑은 낮과 서늘한 밤은 대개 빨간색을 더 선명하게 만듭니다.',
+      s9: '어떤 지역에서는 알록달록한 숲이 해마다 많은 관광객을 끌어들입니다.',
+      s10: '마지막으로 잎이 가지에 붙은 자리에 얇은 세포층이 생기고, 잎이 떨어집니다.',
+      s11: '나무를 보러 나갈 때 따뜻한 외투를 잊지 마세요.'
     },
     bullets: {
-      gold1: 'In autumn, trees stop making green chlorophyll and break it down.',
-      gold2: 'Yellow and orange pigments were there all along and become visible.',
-      gold3: 'Some trees, such as maples, make new red pigments.',
-      minor: 'A thin layer of cells forms, and the leaf falls.',
-      distort: 'All autumn colours are new pigments made by the tree.',
-      dup: 'Leaves lose their green colour.',
-      subtle: 'Red pigments protect the leaf from strong light.'
+      gold1: '가을이면 나무는 초록색 엽록소를 더 만들지 않고 분해합니다.',
+      gold2: '노란색과 주황색 색소는 처음부터 있었고 이제 드러납니다.',
+      gold3: '단풍나무 같은 일부 나무는 새로운 빨간 색소를 만듭니다.',
+      minor: '얇은 세포층이 생기고 잎이 떨어집니다.',
+      distort: '가을의 모든 색은 나무가 새로 만든 색소입니다.',
+      dup: '잎이 초록색을 잃습니다.',
+      subtle: '빨간 색소는 강한 빛으로부터 잎을 보호합니다.'
     },
     bulletNotes: {
-      distort: 'Only the reds are new; yellow and orange were in the leaf all along.',
-      dup: 'Says less than the point about chlorophyll and wastes a slot.',
-      subtle: 'The text only says researchers think the red pigments may protect the leaf; this bullet states it as a fact.'
+      distort: '새로운 것은 빨간색뿐이고, 노란색과 주황색은 처음부터 잎에 있었습니다.',
+      dup: '엽록소에 관한 항목보다 말하는 것이 적어 한 자리를 낭비합니다.',
+      subtle: '본문은 연구자들이 빨간 색소가 잎을 보호할 수도 있다고 본다고만 했는데, 이 항목은 사실처럼 말합니다.'
     },
     summaries: {
-      faithful: 'In autumn many trees break down their green chlorophyll, which reveals yellow and orange pigments that were there all along, while some trees also make new red ones.',
-      vague: 'Leaves change colour in autumn because of various natural processes in the tree.',
-      drops: 'In autumn, leaves turn yellow, orange and red, and then they fall from the trees.',
-      adds: 'In autumn many trees break down their green chlorophyll, which reveals yellow and orange pigments, and the redder the leaves, the colder the coming winter.',
-      subtle: 'In autumn many trees break down their green chlorophyll, which reveals yellow and orange pigments, and cold nights make the trees produce red ones.'
+      faithful: '가을에 많은 나무가 초록색 엽록소를 분해하면서 처음부터 있던 노란색과 주황색 색소가 드러나고, 일부 나무는 새로운 빨간 색소도 만듭니다.',
+      vague: '가을에 잎의 색이 변하는 것은 나무 안의 여러 자연적인 과정 때문입니다.',
+      drops: '가을이 되면 잎이 노랗고 주황색이고 빨갛게 변했다가 나무에서 떨어집니다.',
+      adds: '가을에 많은 나무가 초록색 엽록소를 분해하면서 노란색과 주황색 색소가 드러나며, 잎이 빨갈수록 다가올 겨울이 더 춥습니다.',
+      subtle: '가을에 많은 나무가 초록색 엽록소를 분해하면서 노란색과 주황색 색소가 드러나며, 추운 밤이 나무가 빨간 색소를 만들게 합니다.'
     },
     summaryNotes: {
-      drops: 'It describes what we see, but not why it happens.',
-      adds: 'The text says nothing about predicting the winter.',
-      subtle: 'Cool nights only tend to make the reds brighter; the text does not say they cause the red pigments.'
+      drops: '우리가 보는 현상은 설명하지만 왜 그런지는 말하지 않습니다.',
+      adds: '본문은 겨울을 예측하는 이야기를 전혀 하지 않습니다.',
+      subtle: '서늘한 밤은 대개 빨간색을 더 선명하게 할 뿐이고, 빨간 색소를 생기게 한다고 본문에 나오지 않습니다.'
     },
-    task: 'A teacher wants to explain this one-liner to a class, using real leaves.',
-    oneLiner: 'The chlorophyll breaks down, so other colours show.',
+    task: '한 선생님이 진짜 나뭇잎을 가지고 이 한 줄을 반 아이들에게 설명하려 합니다.',
+    oneLiner: '엽록소가 분해되어 다른 색이 드러난다.',
     details: {
-      d1: 'What chlorophyll is: the green pigment that captures sunlight',
-      d2: 'That yellow and orange were in the leaf all along',
-      d3: 'That some trees, such as maples, make new red pigments',
-      d4: 'That autumn is a popular season for walks',
-      d5: 'That you need a warm jacket outside',
-      d6: 'How the leaf finally falls off'
+      d1: '엽록소가 무엇인지: 햇빛을 모으는 초록 색소',
+      d2: '노란색과 주황색이 처음부터 잎에 있었다는 것',
+      d3: '단풍나무 같은 일부 나무가 새로운 빨간 색소를 만든다는 것',
+      d4: '가을이 산책하기 좋은 계절이라는 것',
+      d5: '밖에서는 따뜻한 외투가 필요하다는 것',
+      d6: '잎이 마지막에 어떻게 떨어지는지'
     },
     versions: {
-      actionable: 'Leaves are green because of chlorophyll, a pigment that captures sunlight. In autumn many trees stop making it and break it down. Then yellow and orange pigments that were there all along become visible, and some trees, like maples, make new red ones.',
-      vague: 'In autumn the leaves change because the green goes away and other colours come out. Nature is fascinating that way.',
-      invented: 'Leaves are green because of chlorophyll. In autumn the frost freezes the chlorophyll, and then the tree paints its leaves yellow, orange and red with new pigments.'
+      actionable: '잎이 초록색인 것은 햇빛을 모으는 색소인 엽록소 때문이에요. 가을에는 많은 나무가 엽록소를 더 만들지 않고 분해해요. 그러면 처음부터 있던 노란색과 주황색 색소가 보이고, 단풍나무 같은 일부 나무는 새로운 빨간 색소를 만들어요.',
+      vague: '가을에는 초록색이 사라지고 다른 색이 나와서 잎이 변해요. 자연은 참 신기하죠.',
+      invented: '잎이 초록색인 것은 엽록소 때문이에요. 가을에는 서리가 엽록소를 얼려 버리고, 그다음 나무가 새로운 색소로 잎을 노랗고 주황색이고 빨갛게 칠해요.'
     },
-    versionNote: 'The text does not say that frost freezes the chlorophyll, and only the reds are new pigments.'
+    versionNote: '본문에는 서리가 엽록소를 얼린다는 말이 없고, 새로운 색소는 빨간색뿐입니다.'
   },
   club: {
-    title: 'Sports club board meeting',
-    context: 'The minutes of a sports club board meeting, sent to all members.',
+    title: '스포츠 클럽 이사회 회의',
+    context: '스포츠 클럽 이사회 회의록으로, 모든 회원에게 발송되었습니다.',
     sentences: {
-      s1: 'The meeting took place in the clubhouse and started a little late because of a football match.',
-      s2: 'The board proposes raising the annual membership fee from 60 to 66 euros from next January.',
-      s3: 'The reason is that the rent for the sports hall has gone up by 15 percent.',
-      s4: 'The fee has not changed for eight years.',
-      s5: 'Members under 18 will keep paying the old fee.',
-      s6: 'The members will vote on the proposal at the general meeting on 12 March.',
-      s7: 'The board also discussed new nets for the tennis courts but postponed a decision.',
-      s8: 'If the proposal is rejected, the board will look at cutting some training times instead.',
-      s9: 'A neighbouring club recently raised its fee as well, to 75 euros.',
-      s10: 'The hall belongs to the town, which sets the rent.',
-      s11: 'Many thanks to the youth team for the delicious cakes!'
+      s1: '회의는 클럽하우스에서 열렸고, 축구 경기 때문에 조금 늦게 시작했습니다.',
+      s2: '이사회는 내년 1월부터 연회비를 60유로에서 66유로로 올리자고 제안합니다.',
+      s3: '체육관 임대료가 15퍼센트 올랐기 때문입니다.',
+      s4: '회비는 8년 동안 바뀌지 않았습니다.',
+      s5: '18세 미만 회원은 계속 기존 회비를 냅니다.',
+      s6: '회원들은 3월 12일 정기 총회에서 이 제안에 대해 투표합니다.',
+      s7: '이사회는 테니스 코트의 새 네트도 논의했지만 결정을 미뤘습니다.',
+      s8: '제안이 부결되면 이사회는 대신 일부 훈련 시간을 줄이는 방안을 검토합니다.',
+      s9: '이웃 클럽도 최근 회비를 75유로로 올렸습니다.',
+      s10: '체육관은 시 소유이며, 임대료도 시가 정합니다.',
+      s11: '맛있는 케이크를 준비해 준 유소년 팀에게 감사드립니다!'
     },
     bullets: {
-      gold1: 'Proposal: the annual fee rises from 60 to 66 euros from January.',
-      gold2: 'Members under 18 keep paying the old fee.',
-      gold3: 'Members vote on it at the general meeting on 12 March.',
-      minor: 'New nets for the tennis courts were discussed.',
-      distort: 'The board has decided to raise the fee.',
-      dup: 'The membership fee may go up.',
-      subtle: 'Proposal: the annual fee rises from 60 to 76 euros from January.'
+      gold1: '제안: 1월부터 연회비를 60유로에서 66유로로 인상.',
+      gold2: '18세 미만 회원은 기존 회비를 계속 냅니다.',
+      gold3: '3월 12일 정기 총회에서 회원 투표를 합니다.',
+      minor: '테니스 코트의 새 네트를 논의했습니다.',
+      distort: '이사회가 회비 인상을 결정했습니다.',
+      dup: '회비가 오를 수도 있습니다.',
+      subtle: '제안: 1월부터 연회비를 60유로에서 76유로로 인상.'
     },
     bulletNotes: {
-      distort: 'Nothing is decided yet: it is a proposal, and the members vote on it.',
-      dup: 'A vaguer repeat of the fee point, without the amounts.',
-      subtle: 'Almost right, but the proposed fee is 66 euros, not 76.'
+      distort: '아직 결정된 것은 없습니다. 제안일 뿐이고 회원들이 투표합니다.',
+      dup: '회비 항목을 금액 없이 더 막연하게 반복합니다.',
+      subtle: '거의 맞지만 제안된 회비는 76유로가 아니라 66유로입니다.'
     },
     summaries: {
-      faithful: 'Because the hall rent rose, the board proposes raising the annual fee from 60 to 66 euros from January, with under-18s exempt, and members vote on it on 12 March.',
-      vague: 'The board talked about money matters and some changes for members.',
-      drops: 'Because the rent for the sports hall has gone up, the club’s finances were the main topic of the board meeting.',
-      adds: 'The board proposes raising the annual fee from 60 to 66 euros from January, and members who do not pay by March will lose their membership.',
-      subtle: 'Because the hall rent rose, the board has decided to raise the annual fee from 60 to 66 euros from January, with under-18s exempt.'
+      faithful: '체육관 임대료가 올라 이사회는 1월부터 연회비를 60유로에서 66유로로 올리자고 제안했고, 18세 미만은 제외되며, 회원들은 3월 12일에 투표합니다.',
+      vague: '이사회가 돈 문제와 회원 관련 변경 사항 몇 가지를 논의했습니다.',
+      drops: '체육관 임대료가 올라서 클럽 재정이 이사회 회의의 주요 안건이었습니다.',
+      adds: '이사회는 1월부터 연회비를 60유로에서 66유로로 올리자고 제안했고, 3월까지 내지 않는 사람은 회원 자격을 잃습니다.',
+      subtle: '체육관 임대료가 올라 이사회는 1월부터 연회비를 60유로에서 66유로로 올리기로 결정했으며, 18세 미만은 제외됩니다.'
     },
     summaryNotes: {
-      drops: 'It leaves out the proposed new fee and the vote on 12 March.',
-      adds: 'The minutes say nothing about losing the membership.',
-      subtle: 'It is only a proposal that the members still vote on, so “has decided” is wrong.'
+      drops: '제안된 새 회비와 3월 12일 투표가 빠져 있습니다.',
+      adds: '회의록에는 회원 자격을 잃는다는 내용이 없습니다.',
+      subtle: '회원들이 아직 투표해야 하는 제안일 뿐이므로 ‘결정했다’는 틀렸습니다.'
     },
-    task: 'A member asks you what this means for them.',
-    oneLiner: 'The fees are going up.',
+    task: '한 회원이 이것이 자기에게 무슨 의미인지 묻습니다.',
+    oneLiner: '회비가 오릅니다.',
     details: {
-      d1: 'The amounts: from 60 to 66 euros a year',
-      d2: 'That it is a proposal, voted on at the general meeting on 12 March',
-      d3: 'That members under 18 keep the old fee',
-      d4: 'That the meeting started late',
-      d5: 'The cakes from the youth team',
-      d6: 'The discussion about tennis nets'
+      d1: '금액: 연 60유로에서 66유로로',
+      d2: '제안이며 3월 12일 총회에서 투표한다는 것',
+      d3: '18세 미만 회원은 기존 회비를 유지한다는 것',
+      d4: '회의가 늦게 시작했다는 것',
+      d5: '유소년 팀의 케이크',
+      d6: '테니스 네트에 관한 논의'
     },
     versions: {
-      actionable: 'The board proposes raising the annual fee from 60 to 66 euros from January, because the hall rent went up. Members under 18 keep the old fee. Nothing is decided yet: you can vote on it at the general meeting on 12 March.',
-      vague: 'The fees are going up next year because things have become more expensive. More information will follow at some point.',
-      invented: 'From January the fee rises from 60 to 66 euros for everyone. Please update your bank transfer before the general meeting on 12 March.'
+      actionable: '체육관 임대료가 올라서 이사회가 1월부터 연회비를 60유로에서 66유로로 올리자고 제안했어요. 18세 미만 회원은 기존 회비를 그대로 내요. 아직 정해진 건 아니고, 3월 12일 정기 총회에서 투표할 수 있어요.',
+      vague: '모든 게 비싸져서 내년에 회비가 올라요. 자세한 건 나중에 알려 준대요.',
+      invented: '1월부터 모든 회원의 회비가 60유로에서 66유로로 올라요. 3월 12일 정기 총회 전에 이체 금액을 바꿔 두세요.'
     },
-    versionNote: 'It treats a proposal as decided and forgets that members under 18 keep the old fee.'
+    versionNote: '제안을 이미 결정된 것처럼 다루고, 18세 미만 회원은 기존 회비를 유지한다는 점을 빠뜨렸습니다.'
   },
   trip: {
-    title: 'Change to the class trip',
-    context: 'A message from a teacher to the parents of a school class.',
+    title: '학급 여행 변경 안내',
+    context: '선생님이 학급 학부모에게 보낸 메시지입니다.',
     sentences: {
-      s1: 'I hope the children are as excited about the trip as I am!',
-      s2: 'Because of a rail strike, we will travel to the coast by coach instead of by train.',
-      s3: 'This means we leave one hour earlier than planned.',
-      s4: 'The meeting point is no longer the station but the car park behind the school.',
-      s5: 'The coach company has a lot of experience with school groups.',
-      s6: 'The return trip on Friday stays as planned.',
-      s7: 'There are no extra costs for families; the school covers the difference.',
-      s8: 'The coach journey takes about 40 minutes longer than the train.',
-      s9: 'Last year’s class went to the mountains, which was also a great trip.',
-      s10: 'There is a short break halfway, at a service station.',
-      s11: 'Thank you all for your help with the packing lists.'
+      s1: '아이들도 저만큼 여행을 기대하고 있으면 좋겠어요!',
+      s2: '철도 파업 때문에 기차 대신 전세버스를 타고 바닷가로 갑니다.',
+      s3: '그래서 예정보다 한 시간 일찍 출발합니다.',
+      s4: '모이는 곳은 이제 기차역이 아니라 학교 뒤 주차장입니다.',
+      s5: '버스 회사는 학생 단체를 맡은 경험이 많습니다.',
+      s6: '금요일 귀가 일정은 예정대로입니다.',
+      s7: '가정에서 추가로 낼 비용은 없으며, 차액은 학교가 부담합니다.',
+      s8: '버스로 가면 기차보다 약 40분 더 걸립니다.',
+      s9: '작년 반은 산으로 갔는데, 그 여행도 아주 좋았습니다.',
+      s10: '가는 길 중간에 휴게소에서 잠깐 쉽니다.',
+      s11: '준비물 목록을 도와주셔서 모두 감사합니다.'
     },
     bullets: {
-      gold1: 'Coach instead of train because of a rail strike.',
-      gold2: 'Departure one hour earlier, from the car park behind the school.',
-      gold3: 'No extra costs for families.',
-      minor: 'The coach company is experienced with school groups.',
-      distort: 'The trip is shortened because of the strike.',
-      dup: 'The travel plans have changed.',
-      subtle: 'Departure two hours earlier, from the car park behind the school.'
+      gold1: '철도 파업으로 기차 대신 전세버스.',
+      gold2: '학교 뒤 주차장에서 한 시간 일찍 출발.',
+      gold3: '가정의 추가 비용 없음.',
+      minor: '버스 회사는 학생 단체 경험이 많습니다.',
+      distort: '파업 때문에 여행이 단축됩니다.',
+      dup: '여행 계획이 바뀌었습니다.',
+      subtle: '학교 뒤 주차장에서 두 시간 일찍 출발.'
     },
     bulletNotes: {
-      distort: 'Only the journey there changes; the trip is not shortened.',
-      dup: 'Says only that something changed, which the other points already show.',
-      subtle: 'Almost right, but departure is one hour earlier, not two.'
+      distort: '바뀌는 것은 가는 길뿐이고, 여행이 줄어들지는 않습니다.',
+      dup: '무언가 바뀌었다는 말뿐인데, 그건 다른 항목에서 이미 드러납니다.',
+      subtle: '거의 맞지만 출발은 두 시간이 아니라 한 시간 일찍입니다.'
     },
     summaries: {
-      faithful: 'Because of a rail strike, the class travels by coach, leaving one hour earlier from the car park behind the school, at no extra cost to families.',
-      vague: 'There are a few changes to the trip arrangements that parents should know about.',
-      drops: 'Because of a rail strike, the class will travel to the coast by coach, which costs families nothing extra.',
-      adds: 'Because of a rail strike, the class travels by coach, leaving one hour earlier from the car park behind the school, and parents pay a small extra fee.',
-      subtle: 'Because the coach is faster than the train, the class travels by coach, leaving one hour earlier from the car park behind the school, at no extra cost to families.'
+      faithful: '철도 파업으로 학급은 전세버스를 타고 학교 뒤 주차장에서 한 시간 일찍 출발하며, 가정의 추가 비용은 없습니다.',
+      vague: '여행 준비에 학부모가 알아야 할 몇 가지 변경 사항이 있습니다.',
+      drops: '철도 파업으로 학급은 전세버스를 타고 바닷가에 가며, 가정에 추가 비용은 없습니다.',
+      adds: '철도 파업으로 학급은 전세버스를 타고 학교 뒤 주차장에서 한 시간 일찍 출발하며, 학부모는 약간의 추가 요금을 냅니다.',
+      subtle: '버스가 기차보다 빨라서 학급은 전세버스를 타고 학교 뒤 주차장에서 한 시간 일찍 출발하며, 가정의 추가 비용은 없습니다.'
     },
     summaryNotes: {
-      drops: 'It leaves out what parents must act on: the earlier departure and the new meeting point.',
-      adds: 'The message says the school covers the difference, so there is no fee.',
-      subtle: 'The reason is the rail strike, and the coach is even slower than the train.'
+      drops: '학부모가 행동해야 할 내용, 즉 이른 출발과 새 모이는 곳이 빠져 있습니다.',
+      adds: '메시지에는 차액을 학교가 부담한다고 되어 있으니 추가 요금은 없습니다.',
+      subtle: '이유는 철도 파업이고, 버스는 오히려 기차보다 느립니다.'
     },
-    task: 'A parent who missed the message asks another parent what to do.',
-    oneLiner: 'The class goes by coach now.',
+    task: '메시지를 못 본 학부모가 다른 학부모에게 무엇을 해야 하는지 묻습니다.',
+    oneLiner: '이제 반 아이들은 버스로 가요.',
     details: {
-      d1: 'The new meeting point: the car park behind the school',
-      d2: 'The new time: one hour earlier than planned',
-      d3: 'That there are no extra costs',
-      d4: 'That the coach company is experienced',
-      d5: 'Why they are not taking the train',
-      d6: 'That the teacher is looking forward to the trip'
+      d1: '새 모이는 곳: 학교 뒤 주차장',
+      d2: '새 시간: 예정보다 한 시간 일찍',
+      d3: '추가 비용이 없다는 것',
+      d4: '버스 회사가 경험이 많다는 것',
+      d5: '왜 기차를 타지 않는지',
+      d6: '선생님이 여행을 기대한다는 것'
     },
     versions: {
-      actionable: 'The class goes by coach. Bring your child to the car park behind the school, not to the station, one hour earlier than planned. It costs nothing extra, and the return on Friday is unchanged.',
-      vague: 'There is a strike, so they are taking a coach now. Times and places are a bit different, so check what the teacher wrote.',
-      invented: 'The class goes by coach. Bring your child to the station one hour earlier, and give them some money for the coach ticket.'
+      actionable: '반 아이들은 전세버스로 가요. 예정보다 한 시간 일찍 기차역이 아니라 학교 뒤 주차장으로 아이를 데려다주세요. 추가 비용은 없고, 금요일 귀가는 그대로예요.',
+      vague: '파업이 있어서 이제 버스로 간대요. 시간이랑 장소가 좀 달라졌으니 선생님 메시지를 확인해 보세요.',
+      invented: '반 아이들은 전세버스로 가요. 한 시간 일찍 기차역으로 아이를 데려다주시고, 버스표 살 돈을 조금 챙겨 주세요.'
     },
-    versionNote: 'The meeting point is the car park behind the school, not the station, and the school covers the cost.'
+    versionNote: '모이는 곳은 기차역이 아니라 학교 뒤 주차장이고, 비용은 학교가 부담합니다.'
   },
   bikes: {
-    title: 'E-bikes for bike sharing',
-    context: 'An announcement from a city’s bike-sharing service to its users.',
+    title: '공공자전거에 전기자전거 도입',
+    context: '시 공공자전거 서비스가 이용자에게 보낸 공지입니다.',
     sentences: {
-      s1: 'Cycling is a great way to stay active and explore the city.',
-      s2: 'From 1 July, our bike-sharing service adds 200 electric bikes to its fleet.',
-      s3: 'An e-bike costs 20 cents per minute; the regular bikes keep their current price.',
-      s4: 'To unlock an e-bike, you need the latest version of our app.',
-      s5: 'The e-bikes have a range of about 60 kilometres per charge.',
-      s6: 'E-bikes must be returned to one of 12 charging stations; they cannot be left anywhere else.',
-      s7: 'A map of the charging stations is in the app.',
-      s8: 'If an e-bike is left outside a station, a fee of 10 euros is charged.',
-      s9: 'Several other cities have introduced similar services in recent years.',
-      s10: 'The bikes were tested by 50 volunteers over the winter.',
-      s11: 'Thank you for riding with us!'
+      s1: '자전거는 활동적으로 지내며 도시를 둘러보기에 좋은 방법입니다.',
+      s2: '7월 1일부터 공공자전거 서비스에 전기자전거 200대가 추가됩니다.',
+      s3: '전기자전거는 분당 20센트이며, 일반 자전거는 지금 요금 그대로입니다.',
+      s4: '전기자전거 잠금을 풀려면 앱 최신 버전이 필요합니다.',
+      s5: '전기자전거는 한 번 충전으로 약 60킬로미터를 달릴 수 있습니다.',
+      s6: '전기자전거는 12곳의 충전소 중 한 곳에 반납해야 하며, 다른 곳에 두면 안 됩니다.',
+      s7: '충전소 지도는 앱에 있습니다.',
+      s8: '충전소 밖에 전기자전거를 두면 10유로의 요금이 부과됩니다.',
+      s9: '최근 몇 년 사이 여러 다른 도시도 비슷한 서비스를 도입했습니다.',
+      s10: '자전거는 겨울 동안 자원봉사자 50명이 시험했습니다.',
+      s11: '함께 달려 주셔서 감사합니다!'
     },
     bullets: {
-      gold1: 'From 1 July: 200 e-bikes at 20 cents per minute.',
-      gold2: 'Unlocking them needs the latest app version.',
-      gold3: 'E-bikes must be returned to one of 12 charging stations.',
-      minor: 'A map of the charging stations is in the app.',
-      distort: 'The e-bikes replace the regular bikes.',
-      dup: 'There are new bikes.',
-      subtle: 'From 1 July: 200 e-bikes at 25 cents per minute.'
+      gold1: '7월 1일부터: 전기자전거 200대, 분당 20센트.',
+      gold2: '잠금 해제에는 앱 최신 버전이 필요합니다.',
+      gold3: '전기자전거는 12곳의 충전소 중 한 곳에 반납해야 합니다.',
+      minor: '충전소 지도는 앱에 있습니다.',
+      distort: '전기자전거가 일반 자전거를 대체합니다.',
+      dup: '새 자전거가 생겼습니다.',
+      subtle: '7월 1일부터: 전기자전거 200대, 분당 25센트.'
     },
     bulletNotes: {
-      distort: 'The e-bikes are added; the regular bikes stay, at their current price.',
-      dup: 'A vaguer repeat of the first point, without date, number or price.',
-      subtle: 'Almost right, but the price is 20 cents per minute, not 25.'
+      distort: '전기자전거는 추가되는 것이고, 일반 자전거는 지금 요금 그대로 남습니다.',
+      dup: '첫 항목을 날짜, 대수, 가격 없이 더 막연하게 반복합니다.',
+      subtle: '거의 맞지만 요금은 분당 25센트가 아니라 20센트입니다.'
     },
     summaries: {
-      faithful: 'From 1 July there are 200 e-bikes at 20 cents per minute; they need the latest app to unlock and must be returned to one of 12 charging stations.',
-      vague: 'The bike-sharing service is introducing something new this summer that users may find interesting.',
-      drops: 'The bike-sharing service adds 200 e-bikes with a range of about 60 kilometres, so longer trips become easier.',
-      adds: 'From 1 July there are 200 e-bikes at 20 cents per minute, and the regular bikes will be phased out next year.',
-      subtle: 'From 1 July there are 200 e-bikes at 20 cents per minute; they need the latest app to unlock and can be returned to any bike station.'
+      faithful: '7월 1일부터 분당 20센트인 전기자전거 200대가 생기며, 앱 최신 버전으로 잠금을 풀고 12곳의 충전소 중 한 곳에 반납해야 합니다.',
+      vague: '공공자전거 서비스가 올여름 이용자들이 흥미로워할 만한 새로운 것을 선보입니다.',
+      drops: '공공자전거 서비스에 주행 거리 약 60킬로미터인 전기자전거 200대가 추가되어 먼 거리도 편해집니다.',
+      adds: '7월 1일부터 분당 20센트인 전기자전거 200대가 생기며, 일반 자전거는 내년에 없어집니다.',
+      subtle: '7월 1일부터 분당 20센트인 전기자전거 200대가 생기며, 앱 최신 버전으로 잠금을 풀고 아무 자전거 정류소에나 반납할 수 있습니다.'
     },
     summaryNotes: {
-      drops: 'It leaves out the price and what users must do: update the app and return e-bikes to a charging station.',
-      adds: 'Nothing in the announcement says the regular bikes will be phased out.',
-      subtle: 'E-bikes can only be returned to the 12 charging stations, not to any station.'
+      drops: '요금과 이용자가 해야 할 일, 즉 앱 업데이트와 충전소 반납이 빠져 있습니다.',
+      adds: '공지 어디에도 일반 자전거가 없어진다는 말은 없습니다.',
+      subtle: '전기자전거는 아무 정류소가 아니라 12곳의 충전소에만 반납할 수 있습니다.'
     },
-    task: 'A friend wants to try an e-bike next week.',
-    oneLiner: 'There are e-bikes now.',
+    task: '친구가 다음 주에 전기자전거를 타 보고 싶어 합니다.',
+    oneLiner: '이제 전기자전거가 있어요.',
     details: {
-      d1: 'The price: 20 cents per minute',
-      d2: 'That unlocking needs the latest app version',
-      d3: 'That e-bikes must go back to a charging station',
-      d4: 'That cycling keeps you active',
-      d5: 'How many e-bikes there are in total',
-      d6: 'That the regular bikes keep their price'
+      d1: '요금: 분당 20센트',
+      d2: '잠금 해제에 앱 최신 버전이 필요하다는 것',
+      d3: '전기자전거는 충전소에 반납해야 한다는 것',
+      d4: '자전거가 활동적인 생활에 좋다는 것',
+      d5: '전기자전거가 모두 몇 대인지',
+      d6: '일반 자전거 요금은 그대로라는 것'
     },
     versions: {
-      actionable: 'From 1 July you can rent e-bikes for 20 cents per minute. Update the app first, because you need the latest version to unlock them. Afterwards, return the bike to one of the 12 charging stations shown on the map in the app.',
-      vague: 'There are e-bikes now, and they are easy to use. Just get the app and ride off.',
-      invented: 'From 1 July you can rent e-bikes for 20 cents per minute without the app, and you can leave them anywhere in the city afterwards.'
+      actionable: '7월 1일부터 분당 20센트에 전기자전거를 빌릴 수 있어. 잠금을 풀려면 최신 버전이 필요하니까 먼저 앱을 업데이트해. 다 타면 앱 지도에 나오는 12곳의 충전소 중 한 곳에 반납하면 돼.',
+      vague: '이제 전기자전거가 있는데 쓰기 정말 쉬워. 앱만 받고 그냥 타면 돼.',
+      invented: '7월 1일부터 앱 없이도 분당 20센트에 전기자전거를 빌릴 수 있고, 다 타면 시내 아무 데나 두면 돼.'
     },
-    versionNote: 'You need the latest app to unlock them, and they must go back to a charging station.'
+    versionNote: '잠금을 풀려면 앱 최신 버전이 필요하고, 자전거는 충전소로 돌려놓아야 합니다.'
   }
 };

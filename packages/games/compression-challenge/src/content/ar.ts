@@ -2,358 +2,358 @@ import type { ContentText } from './types';
 
 export const content: ContentText = {
   launch: {
-    title: 'App launch update',
-    context: 'An email from the project lead to the whole team.',
+    title: 'مستجدات إطلاق التطبيق',
+    context: 'رسالة بريد إلكتروني من مديرة المشروع إلى الفريق كله.',
     sentences: {
-      s1: 'Hi everyone, I hope you all had a good weekend in the sunshine.',
-      s2: 'The launch of our booking app moves from 2 April to 14 May.',
-      s3: 'The reason is that the payment provider has not yet finished its security certification, and we cannot take payments without it.',
-      s4: 'The provider says it has a backlog of applications.',
-      s5: 'The design team will use the extra weeks to polish the onboarding screens.',
-      s6: 'Our 300 beta testers can keep using the test version until the launch.',
-      s7: 'A competitor launched a similar app last year and needed three attempts.',
-      s8: 'Marketing must move the campaign, so please decide on the new campaign start by Friday.',
-      s9: 'The budget stays the same, because the agency does not charge for moving the campaign.',
-      s10: 'The certification itself takes about three weeks once it starts.',
-      s11: 'Thanks again for all your hard work!',
-      s12: 'I will send an updated project plan on Wednesday.'
+      s1: 'مرحبًا بالجميع، أتمنى أن تكونوا قد قضيتم عطلة نهاية أسبوع جميلة تحت الشمس.',
+      s2: 'يتأجل إطلاق تطبيق الحجز من 2 أبريل إلى 14 مايو.',
+      s3: 'السبب أن مزوّد الدفع لم ينتهِ بعد من شهادة الأمان الخاصة به، ولا يمكننا قبول المدفوعات من دونها.',
+      s4: 'يقول المزوّد إن لديه تراكمًا في الطلبات.',
+      s5: 'سيستغل فريق التصميم الأسابيع الإضافية لتحسين شاشات الترحيب.',
+      s6: 'يمكن لمختبري النسخة التجريبية البالغ عددهم 300 مواصلة استخدامها حتى الإطلاق.',
+      s7: 'أطلق أحد المنافسين تطبيقًا مشابهًا العام الماضي واحتاج إلى ثلاث محاولات.',
+      s8: 'على فريق التسويق تأجيل الحملة، لذا يُرجى تحديد موعد بدء الحملة الجديد قبل يوم الجمعة.',
+      s9: 'تبقى الميزانية كما هي، لأن الوكالة لا تتقاضى شيئًا مقابل تأجيل الحملة.',
+      s10: 'تستغرق الشهادة نفسها نحو ثلاثة أسابيع بعد أن تبدأ.',
+      s11: 'شكرًا مرة أخرى على كل جهودكم!',
+      s12: 'سأرسل خطة مشروع محدّثة يوم الأربعاء.'
     },
     bullets: {
-      gold1: 'The launch moves from 2 April to 14 May.',
-      gold2: 'Cause: the payment provider’s security certification is not finished.',
-      gold3: 'Marketing must decide on the new campaign start by Friday.',
-      minor: 'The design team will polish the onboarding screens.',
-      distort: 'The app has failed its security check.',
-      dup: 'The launch is delayed.',
-      subtle: 'The launch moves from 2 April to 4 May.'
+      gold1: 'يتأجل الإطلاق من 2 أبريل إلى 14 مايو.',
+      gold2: 'السبب: شهادة الأمان لدى مزوّد الدفع لم تكتمل.',
+      gold3: 'على التسويق تحديد موعد بدء الحملة الجديد قبل الجمعة.',
+      minor: 'سيحسّن فريق التصميم شاشات الترحيب.',
+      distort: 'رسب التطبيق في فحص الأمان.',
+      dup: 'الإطلاق متأخر.',
+      subtle: 'يتأجل الإطلاق من 2 أبريل إلى 4 مايو.'
     },
     bulletNotes: {
-      distort: 'The text says the certification is not finished yet, not that the app failed a check.',
-      dup: 'Repeats the point about the new date without the date, so it wastes a slot.',
-      subtle: 'Almost right, but the new date is 14 May, not 4 May.'
+      distort: 'يقول النص إن الشهادة لم تكتمل بعد، لا إن التطبيق رسب في فحص.',
+      dup: 'يكرر نقطة الموعد الجديد من دون الموعد، فيضيّع مكانًا.',
+      subtle: 'قريب جدًا، لكن الموعد الجديد هو 14 مايو لا 4 مايو.'
     },
     summaries: {
-      faithful: 'The launch moves to 14 May because the payment provider’s certification is not finished, and marketing must decide on the new campaign start by Friday.',
-      vague: 'There are some changes to the launch timing that the team should be aware of.',
-      drops: 'Because the payment provider is not ready yet, the launch has been postponed, but the budget stays the same.',
-      adds: 'The launch moves to 14 May because the payment provider’s certification is not finished, and the delay will make the project more expensive.',
-      subtle: 'The launch moves to 14 May because our app failed the payment provider’s certification, and marketing must decide on the new campaign start by Friday.'
+      faithful: 'يتأجل الإطلاق إلى 14 مايو لأن شهادة مزوّد الدفع لم تكتمل، وعلى التسويق تحديد موعد بدء الحملة الجديد قبل الجمعة.',
+      vague: 'هناك بعض التغييرات في توقيت الإطلاق ينبغي أن يعرفها الفريق.',
+      drops: 'لأن مزوّد الدفع ليس جاهزًا بعد، تأجّل الإطلاق، لكن الميزانية تبقى كما هي.',
+      adds: 'يتأجل الإطلاق إلى 14 مايو لأن شهادة مزوّد الدفع لم تكتمل، وسيجعل هذا التأخير المشروع أغلى.',
+      subtle: 'يتأجل الإطلاق إلى 14 مايو لأن تطبيقنا رسب في شهادة مزوّد الدفع، وعلى التسويق تحديد موعد بدء الحملة الجديد قبل الجمعة.'
     },
     summaryNotes: {
-      drops: 'It leaves out the new date and the decision marketing has to make.',
-      adds: 'The text says the budget stays the same; higher costs are made up.',
-      subtle: 'The app has not failed anything: the certification is simply not finished yet.'
+      drops: 'تغيب عنها الموعد الجديد والقرار الذي على التسويق اتخاذه.',
+      adds: 'يقول النص إن الميزانية تبقى كما هي؛ وارتفاع التكاليف مختلَق.',
+      subtle: 'لم يرسب التطبيق في شيء: الشهادة ببساطة لم تكتمل بعد.'
     },
-    task: 'The marketing team has to act on this one-liner.',
-    oneLiner: 'Move the launch to May.',
+    task: 'على فريق التسويق أن يتصرف بناءً على هذه الجملة.',
+    oneLiner: 'أجّلوا الإطلاق إلى مايو.',
     details: {
-      d1: 'The exact new date: 14 May',
-      d2: 'Who must act: marketing moves the campaign',
-      d3: 'The deadline: decide on the new campaign start by Friday',
-      d4: 'Why the provider is behind schedule',
-      d5: 'The design team’s plans for the onboarding screens',
-      d6: 'The sunny weekend'
+      d1: 'الموعد الجديد بالضبط: 14 مايو',
+      d2: 'من عليه التصرف: التسويق يؤجّل الحملة',
+      d3: 'المهلة: تحديد موعد بدء الحملة الجديد قبل الجمعة',
+      d4: 'لماذا تأخر المزوّد',
+      d5: 'خطط فريق التصميم لشاشات الترحيب',
+      d6: 'عطلة نهاية الأسبوع المشمسة'
     },
     versions: {
-      actionable: 'The launch moves from 2 April to 14 May. Marketing: please move the campaign and decide on the new start date by Friday. The budget stays the same.',
-      vague: 'We are moving the launch to May. Please adjust your plans accordingly and let us know if anything comes up.',
-      invented: 'The launch moves to 1 May. Marketing: please cancel the campaign and plan a new one by the end of the month.'
+      actionable: 'يتأجل الإطلاق من 2 أبريل إلى 14 مايو. إلى فريق التسويق: يُرجى تأجيل الحملة وتحديد موعد البدء الجديد قبل الجمعة. الميزانية تبقى كما هي.',
+      vague: 'سنؤجل الإطلاق إلى مايو. يُرجى تعديل خططكم وفقًا لذلك وإبلاغنا إذا طرأ شيء.',
+      invented: 'يتأجل الإطلاق إلى 1 مايو. إلى فريق التسويق: يُرجى إلغاء الحملة والتخطيط لحملة جديدة قبل نهاية الشهر.'
     },
-    versionNote: 'The new date is 14 May, not 1 May, and the campaign is moved, not cancelled.'
+    versionNote: 'الموعد الجديد هو 14 مايو لا 1 مايو، والحملة تؤجَّل ولا تُلغى.'
   },
   library: {
-    title: 'Library renovation',
-    context: 'A notice on the door of the local library branch.',
+    title: 'ترميم المكتبة',
+    context: 'إعلان معلّق على باب مكتبة الحي.',
     sentences: {
-      s1: 'Many of you have told us how much you love the old armchairs in the reading corner.',
-      s2: 'From 3 June, the library will be closed for renovation for eight weeks.',
-      s3: 'The roof will be repaired, and the building will get a lift and new lighting.',
-      s4: 'During the closure, a library bus will stop at the market square every Tuesday.',
-      s5: 'The bus carries about 2,000 books and can order any title from the central library.',
-      s6: 'All loans that would fall due during the closure are extended automatically, so nobody pays late fees.',
-      s7: 'Books can also be returned at any time in the return box next to the town hall.',
-      s8: 'The town hall itself was renovated in a similar way ten years ago.',
-      s9: 'Our e-books and audiobooks remain available online as usual.',
-      s10: 'We are already looking forward to next year’s summer reading festival.',
-      s11: 'The renovation is paid for by a regional building fund.'
+      s1: 'أخبرنا كثيرون منكم كم يحبون الكراسي القديمة في ركن القراءة.',
+      s2: 'اعتبارًا من 3 يونيو ستُغلق المكتبة للترميم مدة ثمانية أسابيع.',
+      s3: 'سيُصلَح السقف، وسيُزوَّد المبنى بمصعد وإضاءة جديدة.',
+      s4: 'خلال الإغلاق ستتوقف حافلة مكتبة متنقلة في ساحة السوق كل ثلاثاء.',
+      s5: 'تحمل الحافلة نحو 2000 كتاب، ويمكنها طلب أي عنوان من المكتبة المركزية.',
+      s6: 'تُمدَّد تلقائيًا كل الإعارات التي يحين موعد إرجاعها أثناء الإغلاق، فلا يدفع أحد غرامة تأخير.',
+      s7: 'ويمكن أيضًا إرجاع الكتب في أي وقت في صندوق الإرجاع بجوار مبنى البلدية.',
+      s8: 'رُمِّم مبنى البلدية نفسه بطريقة مشابهة قبل عشر سنوات.',
+      s9: 'تبقى كتبنا الإلكترونية والمسموعة متاحة على الإنترنت كالمعتاد.',
+      s10: 'نحن نتطلع منذ الآن إلى مهرجان القراءة الصيفي في العام المقبل.',
+      s11: 'يُموَّل الترميم من صندوق إقليمي للبناء.'
     },
     bullets: {
-      gold1: 'Closed for renovation for eight weeks from 3 June.',
-      gold2: 'A library bus stops at the market square every Tuesday.',
-      gold3: 'Loans due during the closure are extended automatically.',
-      minor: 'The building will get new lighting.',
-      distort: 'All library services stop for eight weeks.',
-      dup: 'The library will be closed for a while.',
-      subtle: 'Closed for renovation for six weeks from 3 June.'
+      gold1: 'مغلقة للترميم ثمانية أسابيع اعتبارًا من 3 يونيو.',
+      gold2: 'حافلة مكتبة تتوقف في ساحة السوق كل ثلاثاء.',
+      gold3: 'الإعارات المستحقة أثناء الإغلاق تُمدَّد تلقائيًا.',
+      minor: 'سيحصل المبنى على إضاءة جديدة.',
+      distort: 'تتوقف كل خدمات المكتبة ثمانية أسابيع.',
+      dup: 'ستُغلق المكتبة لفترة.',
+      subtle: 'مغلقة للترميم ستة أسابيع اعتبارًا من 3 يونيو.'
     },
     bulletNotes: {
-      distort: 'Not true: the bus and the return box keep working during the closure.',
-      dup: 'Repeats the closure without the start date or the length.',
-      subtle: 'Almost right, but the closure lasts eight weeks, not six.'
+      distort: 'غير صحيح: الحافلة وصندوق الإرجاع يواصلان العمل أثناء الإغلاق.',
+      dup: 'يكرر خبر الإغلاق من دون تاريخ البدء ولا المدة.',
+      subtle: 'قريب جدًا، لكن الإغلاق يستمر ثمانية أسابيع لا ستة.'
     },
     summaries: {
-      faithful: 'The library closes for eight weeks from 3 June; meanwhile a bus visits the market square every Tuesday, and loans due in that time are extended automatically.',
-      vague: 'There will be some changes at the library over the summer, so keep an eye out.',
-      drops: 'The library is being renovated and will get a repaired roof, a lift and new lighting.',
-      adds: 'The library closes for eight weeks from 3 June and will charge a small fee for loans after it reopens.',
-      subtle: 'Because the roof is unsafe, the library closes for eight weeks from 3 June; meanwhile a bus visits the market square every Tuesday.'
+      faithful: 'تُغلق المكتبة ثمانية أسابيع اعتبارًا من 3 يونيو، وفي هذه الأثناء تأتي حافلة إلى ساحة السوق كل ثلاثاء وتُمدَّد الإعارات المستحقة تلقائيًا.',
+      vague: 'ستحدث بعض التغييرات في المكتبة هذا الصيف، فابقوا منتبهين.',
+      drops: 'ستُرمَّم المكتبة وسيصبح لها سقف مُصلَح ومصعد وإضاءة جديدة.',
+      adds: 'تُغلق المكتبة ثمانية أسابيع اعتبارًا من 3 يونيو، وستفرض رسمًا بسيطًا على الإعارة بعد إعادة فتحها.',
+      subtle: 'لأن السقف غير آمن، تُغلق المكتبة ثمانية أسابيع اعتبارًا من 3 يونيو، وفي هذه الأثناء تأتي حافلة إلى ساحة السوق كل ثلاثاء.'
     },
     summaryNotes: {
-      drops: 'It describes the building work but not when the library closes or what readers can do meanwhile.',
-      adds: 'Nothing in the notice mentions fees after the reopening.',
-      subtle: 'The notice says the roof will be repaired, not that it is unsafe; that cause is added.'
+      drops: 'تصف أعمال البناء، لكن لا تقول متى تُغلق المكتبة ولا ما يمكن للقرّاء فعله في هذه الأثناء.',
+      adds: 'لا يذكر الإعلان أي رسوم بعد إعادة الفتح.',
+      subtle: 'يقول الإعلان إن السقف سيُصلَح، لا إنه غير آمن؛ هذا السبب مُضاف.'
     },
-    task: 'A neighbour who wants to keep borrowing books asks you about it.',
-    oneLiner: 'The library is closed in summer.',
+    task: 'جار يريد مواصلة استعارة الكتب يسألك عن الأمر.',
+    oneLiner: 'المكتبة مغلقة في الصيف.',
     details: {
-      d1: 'When exactly: for eight weeks from 3 June',
-      d2: 'Where to borrow meanwhile: the bus at the market square on Tuesdays',
-      d3: 'Where to return books: the box next to the town hall',
-      d4: 'What the renovation includes',
-      d5: 'The armchairs in the reading corner',
-      d6: 'Next year’s reading festival'
+      d1: 'متى بالضبط: ثمانية أسابيع اعتبارًا من 3 يونيو',
+      d2: 'أين يستعير في هذه الأثناء: الحافلة في ساحة السوق أيام الثلاثاء',
+      d3: 'أين يُرجع الكتب: الصندوق بجوار مبنى البلدية',
+      d4: 'ما الذي يشمله الترميم',
+      d5: 'الكراسي في ركن القراءة',
+      d6: 'مهرجان القراءة في العام المقبل'
     },
     versions: {
-      actionable: 'From 3 June the library is closed for eight weeks. You can borrow books from the library bus at the market square every Tuesday and return them any time in the box next to the town hall. Loans due in that time are extended automatically.',
-      vague: 'The library will be closed for a while in the summer because of building work. There will be other options, so check the notice for more.',
-      invented: 'From 3 June the library is closed for eight weeks. You can borrow books from the library bus at the station every Friday. Please return all books before the closure.'
+      actionable: 'اعتبارًا من 3 يونيو تُغلق المكتبة ثمانية أسابيع. يمكنك استعارة الكتب من حافلة المكتبة في ساحة السوق كل ثلاثاء، وإرجاعها في أي وقت في الصندوق بجوار مبنى البلدية. وما يحين موعده في هذه الفترة يُمدَّد تلقائيًا.',
+      vague: 'ستُغلق المكتبة فترة في الصيف بسبب أعمال بناء. ستكون هناك خيارات أخرى، فانظر إلى الإعلان لتعرف أكثر.',
+      invented: 'اعتبارًا من 3 يونيو تُغلق المكتبة ثمانية أسابيع. يمكنك استعارة الكتب من حافلة المكتبة عند محطة القطار كل جمعة. يُرجى إرجاع كل الكتب قبل الإغلاق.'
     },
-    versionNote: 'The bus stops at the market square on Tuesdays, and nobody has to return books before the closure.'
+    versionNote: 'تتوقف الحافلة في ساحة السوق أيام الثلاثاء، ولا يلزم أحدًا إرجاع الكتب قبل الإغلاق.'
   },
   leaves: {
-    title: 'Why leaves change colour',
-    context: 'A short article from a nature magazine for curious readers.',
+    title: 'لماذا تتغير ألوان الأوراق',
+    context: 'مقال قصير من مجلة طبيعة للقراء الفضوليين.',
     sentences: {
-      s1: 'Autumn is many people’s favourite season for long walks.',
-      s2: 'Leaves are green because they contain a lot of chlorophyll, the pigment plants use to capture sunlight.',
-      s3: 'As the days get shorter, many trees stop making chlorophyll and break it down.',
-      s4: 'Yellow and orange pigments, called carotenoids, were in the leaf all along; they only become visible when the green fades.',
-      s5: 'Carotenoids are the same kind of pigment that makes carrots orange.',
-      s6: 'Red is different: some trees, such as many maples, make new red pigments in autumn.',
-      s7: 'Researchers think these red pigments may protect the leaf from strong light while the tree takes back nutrients.',
-      s8: 'Sunny days and cool nights tend to make the reds brighter.',
-      s9: 'In some regions, colourful forests attract many tourists every year.',
-      s10: 'Finally, a thin layer of cells forms where the leaf joins the twig, and the leaf falls.',
-      s11: 'Don’t forget a warm jacket if you go out to look at the trees.'
+      s1: 'الخريف هو الفصل المفضل لدى كثيرين للنزهات الطويلة.',
+      s2: 'الأوراق خضراء لأنها تحتوي على كثير من الكلوروفيل، وهو الصبغ الذي تلتقط به النباتات ضوء الشمس.',
+      s3: 'حين تقصر الأيام، تتوقف أشجار كثيرة عن صنع الكلوروفيل وتفككه.',
+      s4: 'الأصباغ الصفراء والبرتقالية، وتُسمّى الكاروتينات، كانت في الورقة طوال الوقت؛ ولا تظهر إلا حين يبهت الأخضر.',
+      s5: 'الكاروتينات من نوع الأصباغ نفسه الذي يجعل الجزر برتقاليًا.',
+      s6: 'أما الأحمر فمختلف: بعض الأشجار، مثل كثير من أشجار القيقب، تصنع أصباغًا حمراء جديدة في الخريف.',
+      s7: 'يعتقد الباحثون أن هذه الأصباغ الحمراء قد تحمي الورقة من الضوء القوي بينما تستعيد الشجرة المغذيات.',
+      s8: 'الأيام المشمسة والليالي الباردة تجعل الأحمر في الغالب أزهى.',
+      s9: 'في بعض المناطق تجذب الغابات الملونة كثيرًا من السياح كل عام.',
+      s10: 'وأخيرًا تتكوّن طبقة رقيقة من الخلايا حيث تتصل الورقة بالغصن، فتسقط الورقة.',
+      s11: 'لا تنسَ سترة دافئة إذا خرجت لتتأمل الأشجار.'
     },
     bullets: {
-      gold1: 'In autumn, trees stop making green chlorophyll and break it down.',
-      gold2: 'Yellow and orange pigments were there all along and become visible.',
-      gold3: 'Some trees, such as maples, make new red pigments.',
-      minor: 'A thin layer of cells forms, and the leaf falls.',
-      distort: 'All autumn colours are new pigments made by the tree.',
-      dup: 'Leaves lose their green colour.',
-      subtle: 'Red pigments protect the leaf from strong light.'
+      gold1: 'في الخريف تتوقف الأشجار عن صنع الكلوروفيل الأخضر وتفككه.',
+      gold2: 'الأصباغ الصفراء والبرتقالية كانت موجودة دائمًا وتصبح مرئية.',
+      gold3: 'بعض الأشجار، مثل القيقب، تصنع أصباغًا حمراء جديدة.',
+      minor: 'تتكوّن طبقة رقيقة من الخلايا وتسقط الورقة.',
+      distort: 'كل ألوان الخريف أصباغ جديدة تصنعها الشجرة.',
+      dup: 'تفقد الأوراق لونها الأخضر.',
+      subtle: 'الأصباغ الحمراء تحمي الورقة من الضوء القوي.'
     },
     bulletNotes: {
-      distort: 'Only the reds are new; yellow and orange were in the leaf all along.',
-      dup: 'Says less than the point about chlorophyll and wastes a slot.',
-      subtle: 'The text only says researchers think the red pigments may protect the leaf; this bullet states it as a fact.'
+      distort: 'الأحمر وحده جديد؛ أما الأصفر والبرتقالي فكانا في الورقة طوال الوقت.',
+      dup: 'يقول أقل من نقطة الكلوروفيل ويضيّع مكانًا.',
+      subtle: 'يقول النص فقط إن الباحثين يعتقدون أن الأصباغ الحمراء قد تحمي الورقة؛ وهذه النقطة تقدّم ذلك كحقيقة.'
     },
     summaries: {
-      faithful: 'In autumn many trees break down their green chlorophyll, which reveals yellow and orange pigments that were there all along, while some trees also make new red ones.',
-      vague: 'Leaves change colour in autumn because of various natural processes in the tree.',
-      drops: 'In autumn, leaves turn yellow, orange and red, and then they fall from the trees.',
-      adds: 'In autumn many trees break down their green chlorophyll, which reveals yellow and orange pigments, and the redder the leaves, the colder the coming winter.',
-      subtle: 'In autumn many trees break down their green chlorophyll, which reveals yellow and orange pigments, and cold nights make the trees produce red ones.'
+      faithful: 'في الخريف تفكك أشجار كثيرة الكلوروفيل الأخضر، فتظهر أصباغ صفراء وبرتقالية كانت موجودة طوال الوقت، بينما تصنع بعض الأشجار أيضًا أصباغًا حمراء جديدة.',
+      vague: 'تتغير ألوان الأوراق في الخريف بسبب عمليات طبيعية مختلفة داخل الشجرة.',
+      drops: 'في الخريف تصبح الأوراق صفراء وبرتقالية وحمراء، ثم تسقط من الأشجار.',
+      adds: 'في الخريف تفكك أشجار كثيرة الكلوروفيل الأخضر، فتظهر أصباغ صفراء وبرتقالية، وكلما زادت حمرة الأوراق كان الشتاء القادم أبرد.',
+      subtle: 'في الخريف تفكك أشجار كثيرة الكلوروفيل الأخضر، فتظهر أصباغ صفراء وبرتقالية، والليالي الباردة تدفع الأشجار إلى صنع أصباغ حمراء.'
     },
     summaryNotes: {
-      drops: 'It describes what we see, but not why it happens.',
-      adds: 'The text says nothing about predicting the winter.',
-      subtle: 'Cool nights only tend to make the reds brighter; the text does not say they cause the red pigments.'
+      drops: 'تصف ما نراه، لكن لا تقول لماذا يحدث.',
+      adds: 'لا يقول النص شيئًا عن التنبؤ بالشتاء.',
+      subtle: 'الليالي الباردة تجعل الأحمر في الغالب أزهى فقط؛ ولا يقول النص إنها تسبب الأصباغ الحمراء.'
     },
-    task: 'A teacher wants to explain this one-liner to a class, using real leaves.',
-    oneLiner: 'The chlorophyll breaks down, so other colours show.',
+    task: 'معلمة تريد شرح هذه الجملة لصفها باستخدام أوراق حقيقية.',
+    oneLiner: 'يتفكك الكلوروفيل، فتظهر ألوان أخرى.',
     details: {
-      d1: 'What chlorophyll is: the green pigment that captures sunlight',
-      d2: 'That yellow and orange were in the leaf all along',
-      d3: 'That some trees, such as maples, make new red pigments',
-      d4: 'That autumn is a popular season for walks',
-      d5: 'That you need a warm jacket outside',
-      d6: 'How the leaf finally falls off'
+      d1: 'ما الكلوروفيل: الصبغ الأخضر الذي يلتقط ضوء الشمس',
+      d2: 'أن الأصفر والبرتقالي كانا في الورقة طوال الوقت',
+      d3: 'أن بعض الأشجار، مثل القيقب، تصنع أصباغًا حمراء جديدة',
+      d4: 'أن الخريف فصل محبوب للنزهات',
+      d5: 'أن المرء يحتاج إلى سترة دافئة في الخارج',
+      d6: 'كيف تسقط الورقة في النهاية'
     },
     versions: {
-      actionable: 'Leaves are green because of chlorophyll, a pigment that captures sunlight. In autumn many trees stop making it and break it down. Then yellow and orange pigments that were there all along become visible, and some trees, like maples, make new red ones.',
-      vague: 'In autumn the leaves change because the green goes away and other colours come out. Nature is fascinating that way.',
-      invented: 'Leaves are green because of chlorophyll. In autumn the frost freezes the chlorophyll, and then the tree paints its leaves yellow, orange and red with new pigments.'
+      actionable: 'الأوراق خضراء بسبب الكلوروفيل، وهو صبغ يلتقط ضوء الشمس. في الخريف تتوقف أشجار كثيرة عن صنعه وتفككه. عندها تظهر الأصباغ الصفراء والبرتقالية التي كانت موجودة طوال الوقت، وتصنع بعض الأشجار، مثل القيقب، أصباغًا حمراء جديدة.',
+      vague: 'في الخريف تتغير الأوراق لأن الأخضر يختفي وتظهر ألوان أخرى. الطبيعة مدهشة حقًا.',
+      invented: 'الأوراق خضراء بسبب الكلوروفيل. في الخريف يجمّد الصقيع الكلوروفيل، ثم تلوّن الشجرة أوراقها بالأصفر والبرتقالي والأحمر بأصباغ جديدة.'
     },
-    versionNote: 'The text does not say that frost freezes the chlorophyll, and only the reds are new pigments.'
+    versionNote: 'لا يقول النص إن الصقيع يجمّد الكلوروفيل، والأحمر وحده صبغ جديد.'
   },
   club: {
-    title: 'Sports club board meeting',
-    context: 'The minutes of a sports club board meeting, sent to all members.',
+    title: 'اجتماع مجلس إدارة النادي الرياضي',
+    context: 'محضر اجتماع مجلس إدارة نادٍ رياضي، أُرسل إلى جميع الأعضاء.',
     sentences: {
-      s1: 'The meeting took place in the clubhouse and started a little late because of a football match.',
-      s2: 'The board proposes raising the annual membership fee from 60 to 66 euros from next January.',
-      s3: 'The reason is that the rent for the sports hall has gone up by 15 percent.',
-      s4: 'The fee has not changed for eight years.',
-      s5: 'Members under 18 will keep paying the old fee.',
-      s6: 'The members will vote on the proposal at the general meeting on 12 March.',
-      s7: 'The board also discussed new nets for the tennis courts but postponed a decision.',
-      s8: 'If the proposal is rejected, the board will look at cutting some training times instead.',
-      s9: 'A neighbouring club recently raised its fee as well, to 75 euros.',
-      s10: 'The hall belongs to the town, which sets the rent.',
-      s11: 'Many thanks to the youth team for the delicious cakes!'
+      s1: 'عُقد الاجتماع في مقر النادي وبدأ متأخرًا قليلًا بسبب مباراة كرة قدم.',
+      s2: 'يقترح المجلس رفع الاشتراك السنوي من 60 إلى 66 يورو اعتبارًا من يناير المقبل.',
+      s3: 'السبب أن إيجار الصالة الرياضية ارتفع بنسبة 15 في المئة.',
+      s4: 'لم يتغير الاشتراك منذ ثماني سنوات.',
+      s5: 'سيواصل الأعضاء دون 18 عامًا دفع الاشتراك القديم.',
+      s6: 'سيصوّت الأعضاء على الاقتراح في الجمعية العامة يوم 12 مارس.',
+      s7: 'ناقش المجلس أيضًا شباكًا جديدة لملاعب التنس، لكنه أجّل القرار.',
+      s8: 'إذا رُفض الاقتراح، فسيدرس المجلس بدلًا من ذلك تقليص بعض مواعيد التدريب.',
+      s9: 'رفع نادٍ مجاور اشتراكه مؤخرًا أيضًا، إلى 75 يورو.',
+      s10: 'الصالة ملك للبلدية، وهي التي تحدد الإيجار.',
+      s11: 'شكرًا جزيلًا لفريق الناشئين على الكعك اللذيذ!'
     },
     bullets: {
-      gold1: 'Proposal: the annual fee rises from 60 to 66 euros from January.',
-      gold2: 'Members under 18 keep paying the old fee.',
-      gold3: 'Members vote on it at the general meeting on 12 March.',
-      minor: 'New nets for the tennis courts were discussed.',
-      distort: 'The board has decided to raise the fee.',
-      dup: 'The membership fee may go up.',
-      subtle: 'Proposal: the annual fee rises from 60 to 76 euros from January.'
+      gold1: 'اقتراح: يرتفع الاشتراك السنوي من 60 إلى 66 يورو اعتبارًا من يناير.',
+      gold2: 'الأعضاء دون 18 عامًا يواصلون دفع الاشتراك القديم.',
+      gold3: 'يصوّت الأعضاء عليه في الجمعية العامة يوم 12 مارس.',
+      minor: 'نوقشت شباك جديدة لملاعب التنس.',
+      distort: 'قرر المجلس رفع الاشتراك.',
+      dup: 'قد يرتفع اشتراك العضوية.',
+      subtle: 'اقتراح: يرتفع الاشتراك السنوي من 60 إلى 76 يورو اعتبارًا من يناير.'
     },
     bulletNotes: {
-      distort: 'Nothing is decided yet: it is a proposal, and the members vote on it.',
-      dup: 'A vaguer repeat of the fee point, without the amounts.',
-      subtle: 'Almost right, but the proposed fee is 66 euros, not 76.'
+      distort: 'لم يُتخذ أي قرار بعد: إنه اقتراح، والأعضاء يصوّتون عليه.',
+      dup: 'تكرار أكثر غموضًا لنقطة الاشتراك، من دون المبالغ.',
+      subtle: 'قريب جدًا، لكن الاشتراك المقترح 66 يورو لا 76.'
     },
     summaries: {
-      faithful: 'Because the hall rent rose, the board proposes raising the annual fee from 60 to 66 euros from January, with under-18s exempt, and members vote on it on 12 March.',
-      vague: 'The board talked about money matters and some changes for members.',
-      drops: 'Because the rent for the sports hall has gone up, the club’s finances were the main topic of the board meeting.',
-      adds: 'The board proposes raising the annual fee from 60 to 66 euros from January, and members who do not pay by March will lose their membership.',
-      subtle: 'Because the hall rent rose, the board has decided to raise the annual fee from 60 to 66 euros from January, with under-18s exempt.'
+      faithful: 'لأن إيجار الصالة ارتفع، يقترح المجلس رفع الاشتراك السنوي من 60 إلى 66 يورو اعتبارًا من يناير، باستثناء من هم دون 18 عامًا، ويصوّت الأعضاء على ذلك يوم 12 مارس.',
+      vague: 'تحدث المجلس عن أمور مالية وبعض التغييرات التي تخص الأعضاء.',
+      drops: 'لأن إيجار الصالة الرياضية ارتفع، كانت مالية النادي الموضوع الرئيسي في اجتماع المجلس.',
+      adds: 'يقترح المجلس رفع الاشتراك السنوي من 60 إلى 66 يورو اعتبارًا من يناير، ومن لا يدفع قبل مارس يفقد عضويته.',
+      subtle: 'لأن إيجار الصالة ارتفع، قرر المجلس رفع الاشتراك السنوي من 60 إلى 66 يورو اعتبارًا من يناير، باستثناء من هم دون 18 عامًا.'
     },
     summaryNotes: {
-      drops: 'It leaves out the proposed new fee and the vote on 12 March.',
-      adds: 'The minutes say nothing about losing the membership.',
-      subtle: 'It is only a proposal that the members still vote on, so “has decided” is wrong.'
+      drops: 'تغيب عنها قيمة الاشتراك الجديد المقترحة والتصويت يوم 12 مارس.',
+      adds: 'لا يذكر المحضر شيئًا عن فقدان العضوية.',
+      subtle: 'إنه مجرد اقتراح ما زال الأعضاء سيصوّتون عليه، فعبارة «قرر» خاطئة.'
     },
-    task: 'A member asks you what this means for them.',
-    oneLiner: 'The fees are going up.',
+    task: 'عضو يسألك ماذا يعني هذا بالنسبة إليه.',
+    oneLiner: 'الاشتراكات سترتفع.',
     details: {
-      d1: 'The amounts: from 60 to 66 euros a year',
-      d2: 'That it is a proposal, voted on at the general meeting on 12 March',
-      d3: 'That members under 18 keep the old fee',
-      d4: 'That the meeting started late',
-      d5: 'The cakes from the youth team',
-      d6: 'The discussion about tennis nets'
+      d1: 'المبالغ: من 60 إلى 66 يورو سنويًا',
+      d2: 'أنه اقتراح يُصوَّت عليه في الجمعية العامة يوم 12 مارس',
+      d3: 'أن الأعضاء دون 18 عامًا يحتفظون بالاشتراك القديم',
+      d4: 'أن الاجتماع بدأ متأخرًا',
+      d5: 'كعك فريق الناشئين',
+      d6: 'النقاش حول شباك التنس'
     },
     versions: {
-      actionable: 'The board proposes raising the annual fee from 60 to 66 euros from January, because the hall rent went up. Members under 18 keep the old fee. Nothing is decided yet: you can vote on it at the general meeting on 12 March.',
-      vague: 'The fees are going up next year because things have become more expensive. More information will follow at some point.',
-      invented: 'From January the fee rises from 60 to 66 euros for everyone. Please update your bank transfer before the general meeting on 12 March.'
+      actionable: 'يقترح المجلس رفع الاشتراك السنوي من 60 إلى 66 يورو اعتبارًا من يناير، لأن إيجار الصالة ارتفع. الأعضاء دون 18 عامًا يحتفظون بالاشتراك القديم. لم يُحسم شيء بعد: يمكنك التصويت في الجمعية العامة يوم 12 مارس.',
+      vague: 'سترتفع الاشتراكات العام المقبل لأن كل شيء صار أغلى. ستأتي معلومات أكثر في وقت ما.',
+      invented: 'اعتبارًا من يناير يرتفع الاشتراك للجميع من 60 إلى 66 يورو. يُرجى تعديل تحويلك المصرفي قبل الجمعية العامة يوم 12 مارس.'
     },
-    versionNote: 'It treats a proposal as decided and forgets that members under 18 keep the old fee.'
+    versionNote: 'تعامل الاقتراح كأنه قرار نهائي وتنسى أن الأعضاء دون 18 عامًا يحتفظون بالاشتراك القديم.'
   },
   trip: {
-    title: 'Change to the class trip',
-    context: 'A message from a teacher to the parents of a school class.',
+    title: 'تغيير في رحلة الصف',
+    context: 'رسالة من معلم إلى أولياء أمور تلاميذ صف دراسي.',
     sentences: {
-      s1: 'I hope the children are as excited about the trip as I am!',
-      s2: 'Because of a rail strike, we will travel to the coast by coach instead of by train.',
-      s3: 'This means we leave one hour earlier than planned.',
-      s4: 'The meeting point is no longer the station but the car park behind the school.',
-      s5: 'The coach company has a lot of experience with school groups.',
-      s6: 'The return trip on Friday stays as planned.',
-      s7: 'There are no extra costs for families; the school covers the difference.',
-      s8: 'The coach journey takes about 40 minutes longer than the train.',
-      s9: 'Last year’s class went to the mountains, which was also a great trip.',
-      s10: 'There is a short break halfway, at a service station.',
-      s11: 'Thank you all for your help with the packing lists.'
+      s1: 'أتمنى أن يكون الأطفال متحمسين للرحلة بقدر حماسي!',
+      s2: 'بسبب إضراب في السكك الحديدية، سنسافر إلى الساحل بالحافلة بدلًا من القطار.',
+      s3: 'هذا يعني أننا سننطلق قبل الموعد المخطط بساعة.',
+      s4: 'لم تعد نقطة التجمع محطة القطار، بل موقف السيارات خلف المدرسة.',
+      s5: 'لشركة الحافلات خبرة كبيرة مع المجموعات المدرسية.',
+      s6: 'تبقى رحلة العودة يوم الجمعة كما هو مخطط.',
+      s7: 'لا توجد تكاليف إضافية على الأسر؛ فالمدرسة تتحمل الفرق.',
+      s8: 'تستغرق الرحلة بالحافلة نحو 40 دقيقة أكثر من القطار.',
+      s9: 'ذهب صف العام الماضي إلى الجبال، وكانت رحلة رائعة أيضًا.',
+      s10: 'هناك استراحة قصيرة في منتصف الطريق عند محطة استراحة.',
+      s11: 'شكرًا لكم جميعًا على مساعدتكم في قوائم الأمتعة.'
     },
     bullets: {
-      gold1: 'Coach instead of train because of a rail strike.',
-      gold2: 'Departure one hour earlier, from the car park behind the school.',
-      gold3: 'No extra costs for families.',
-      minor: 'The coach company is experienced with school groups.',
-      distort: 'The trip is shortened because of the strike.',
-      dup: 'The travel plans have changed.',
-      subtle: 'Departure two hours earlier, from the car park behind the school.'
+      gold1: 'حافلة بدل القطار بسبب إضراب السكك الحديدية.',
+      gold2: 'الانطلاق قبل ساعة، من موقف السيارات خلف المدرسة.',
+      gold3: 'لا تكاليف إضافية على الأسر.',
+      minor: 'لشركة الحافلات خبرة مع المجموعات المدرسية.',
+      distort: 'تُختصر الرحلة بسبب الإضراب.',
+      dup: 'تغيّرت خطط السفر.',
+      subtle: 'الانطلاق قبل ساعتين، من موقف السيارات خلف المدرسة.'
     },
     bulletNotes: {
-      distort: 'Only the journey there changes; the trip is not shortened.',
-      dup: 'Says only that something changed, which the other points already show.',
-      subtle: 'Almost right, but departure is one hour earlier, not two.'
+      distort: 'يتغير طريق الذهاب فقط؛ ولا تُختصر الرحلة.',
+      dup: 'يقول فقط إن شيئًا تغيّر، وهو ما تُظهره النقاط الأخرى أصلًا.',
+      subtle: 'قريب جدًا، لكن الانطلاق قبل ساعة لا ساعتين.'
     },
     summaries: {
-      faithful: 'Because of a rail strike, the class travels by coach, leaving one hour earlier from the car park behind the school, at no extra cost to families.',
-      vague: 'There are a few changes to the trip arrangements that parents should know about.',
-      drops: 'Because of a rail strike, the class will travel to the coast by coach, which costs families nothing extra.',
-      adds: 'Because of a rail strike, the class travels by coach, leaving one hour earlier from the car park behind the school, and parents pay a small extra fee.',
-      subtle: 'Because the coach is faster than the train, the class travels by coach, leaving one hour earlier from the car park behind the school, at no extra cost to families.'
+      faithful: 'بسبب إضراب السكك الحديدية يسافر الصف بالحافلة وينطلق قبل ساعة من موقف السيارات خلف المدرسة، من دون تكاليف إضافية على الأسر.',
+      vague: 'هناك بعض التغييرات في ترتيبات الرحلة ينبغي أن يعرفها الأهل.',
+      drops: 'بسبب إضراب السكك الحديدية سيسافر الصف إلى الساحل بالحافلة، ولن يكلّف ذلك الأسر شيئًا إضافيًا.',
+      adds: 'بسبب إضراب السكك الحديدية يسافر الصف بالحافلة وينطلق قبل ساعة من موقف السيارات خلف المدرسة، ويدفع الأهل رسمًا إضافيًا بسيطًا.',
+      subtle: 'لأن الحافلة أسرع من القطار، يسافر الصف بالحافلة وينطلق قبل ساعة من موقف السيارات خلف المدرسة، من دون تكاليف إضافية على الأسر.'
     },
     summaryNotes: {
-      drops: 'It leaves out what parents must act on: the earlier departure and the new meeting point.',
-      adds: 'The message says the school covers the difference, so there is no fee.',
-      subtle: 'The reason is the rail strike, and the coach is even slower than the train.'
+      drops: 'يغيب عنها ما يجب أن يفعله الأهل: الانطلاق الأبكر ونقطة التجمع الجديدة.',
+      adds: 'تقول الرسالة إن المدرسة تتحمل الفرق، فلا رسوم إضافية.',
+      subtle: 'السبب هو إضراب السكك الحديدية، والحافلة أبطأ من القطار أصلًا.'
     },
-    task: 'A parent who missed the message asks another parent what to do.',
-    oneLiner: 'The class goes by coach now.',
+    task: 'أحد الأهل فاتته الرسالة ويسأل وليّ أمر آخر عمّا يجب فعله.',
+    oneLiner: 'الصف سيذهب بالحافلة الآن.',
     details: {
-      d1: 'The new meeting point: the car park behind the school',
-      d2: 'The new time: one hour earlier than planned',
-      d3: 'That there are no extra costs',
-      d4: 'That the coach company is experienced',
-      d5: 'Why they are not taking the train',
-      d6: 'That the teacher is looking forward to the trip'
+      d1: 'نقطة التجمع الجديدة: موقف السيارات خلف المدرسة',
+      d2: 'الموعد الجديد: قبل الموعد المخطط بساعة',
+      d3: 'أنه لا توجد تكاليف إضافية',
+      d4: 'أن شركة الحافلات ذات خبرة',
+      d5: 'لماذا لن يسافروا بالقطار',
+      d6: 'أن المعلم متحمس للرحلة'
     },
     versions: {
-      actionable: 'The class goes by coach. Bring your child to the car park behind the school, not to the station, one hour earlier than planned. It costs nothing extra, and the return on Friday is unchanged.',
-      vague: 'There is a strike, so they are taking a coach now. Times and places are a bit different, so check what the teacher wrote.',
-      invented: 'The class goes by coach. Bring your child to the station one hour earlier, and give them some money for the coach ticket.'
+      actionable: 'الصف سيذهب بالحافلة. أحضر طفلك إلى موقف السيارات خلف المدرسة، لا إلى المحطة، قبل الموعد المخطط بساعة. لا توجد تكلفة إضافية، والعودة يوم الجمعة لم تتغير.',
+      vague: 'هناك إضراب، لذا سيذهبون بالحافلة الآن. المواعيد والأماكن مختلفة قليلًا، فانظر إلى ما كتبه المعلم.',
+      invented: 'الصف سيذهب بالحافلة. أحضر طفلك إلى المحطة قبل ساعة، وأعطه بعض المال لتذكرة الحافلة.'
     },
-    versionNote: 'The meeting point is the car park behind the school, not the station, and the school covers the cost.'
+    versionNote: 'نقطة التجمع هي موقف السيارات خلف المدرسة لا المحطة، والمدرسة تتحمل التكلفة.'
   },
   bikes: {
-    title: 'E-bikes for bike sharing',
-    context: 'An announcement from a city’s bike-sharing service to its users.',
+    title: 'دراجات كهربائية في خدمة مشاركة الدراجات',
+    context: 'إعلان من خدمة مشاركة الدراجات في إحدى المدن إلى مستخدميها.',
     sentences: {
-      s1: 'Cycling is a great way to stay active and explore the city.',
-      s2: 'From 1 July, our bike-sharing service adds 200 electric bikes to its fleet.',
-      s3: 'An e-bike costs 20 cents per minute; the regular bikes keep their current price.',
-      s4: 'To unlock an e-bike, you need the latest version of our app.',
-      s5: 'The e-bikes have a range of about 60 kilometres per charge.',
-      s6: 'E-bikes must be returned to one of 12 charging stations; they cannot be left anywhere else.',
-      s7: 'A map of the charging stations is in the app.',
-      s8: 'If an e-bike is left outside a station, a fee of 10 euros is charged.',
-      s9: 'Several other cities have introduced similar services in recent years.',
-      s10: 'The bikes were tested by 50 volunteers over the winter.',
-      s11: 'Thank you for riding with us!'
+      s1: 'ركوب الدراجة طريقة رائعة للبقاء نشيطًا واستكشاف المدينة.',
+      s2: 'اعتبارًا من 1 يوليو تضيف خدمتنا 200 دراجة كهربائية إلى أسطولها.',
+      s3: 'تكلّف الدراجة الكهربائية 20 سنتًا في الدقيقة؛ وتحتفظ الدراجات العادية بسعرها الحالي.',
+      s4: 'لفتح قفل الدراجة الكهربائية تحتاج إلى أحدث إصدار من تطبيقنا.',
+      s5: 'تقطع الدراجات الكهربائية نحو 60 كيلومترًا بالشحنة الواحدة.',
+      s6: 'يجب إرجاع الدراجات الكهربائية إلى إحدى محطات الشحن الـ 12؛ ولا يجوز تركها في أي مكان آخر.',
+      s7: 'توجد خريطة لمحطات الشحن في التطبيق.',
+      s8: 'إذا تُركت دراجة كهربائية خارج محطة، تُفرض رسوم قدرها 10 يورو.',
+      s9: 'أطلقت عدة مدن أخرى خدمات مشابهة في السنوات الأخيرة.',
+      s10: 'جرّب 50 متطوعًا الدراجات خلال الشتاء.',
+      s11: 'شكرًا لركوبك معنا!'
     },
     bullets: {
-      gold1: 'From 1 July: 200 e-bikes at 20 cents per minute.',
-      gold2: 'Unlocking them needs the latest app version.',
-      gold3: 'E-bikes must be returned to one of 12 charging stations.',
-      minor: 'A map of the charging stations is in the app.',
-      distort: 'The e-bikes replace the regular bikes.',
-      dup: 'There are new bikes.',
-      subtle: 'From 1 July: 200 e-bikes at 25 cents per minute.'
+      gold1: 'من 1 يوليو: 200 دراجة كهربائية بـ 20 سنتًا في الدقيقة.',
+      gold2: 'فتح القفل يحتاج إلى أحدث إصدار من التطبيق.',
+      gold3: 'يجب إرجاع الدراجات الكهربائية إلى إحدى محطات الشحن الـ 12.',
+      minor: 'توجد خريطة لمحطات الشحن في التطبيق.',
+      distort: 'الدراجات الكهربائية تحل محل الدراجات العادية.',
+      dup: 'هناك دراجات جديدة.',
+      subtle: 'من 1 يوليو: 200 دراجة كهربائية بـ 25 سنتًا في الدقيقة.'
     },
     bulletNotes: {
-      distort: 'The e-bikes are added; the regular bikes stay, at their current price.',
-      dup: 'A vaguer repeat of the first point, without date, number or price.',
-      subtle: 'Almost right, but the price is 20 cents per minute, not 25.'
+      distort: 'الدراجات الكهربائية تُضاف؛ والدراجات العادية تبقى بسعرها الحالي.',
+      dup: 'تكرار أكثر غموضًا للنقطة الأولى، من دون تاريخ أو عدد أو سعر.',
+      subtle: 'قريب جدًا، لكن السعر 20 سنتًا في الدقيقة لا 25.'
     },
     summaries: {
-      faithful: 'From 1 July there are 200 e-bikes at 20 cents per minute; they need the latest app to unlock and must be returned to one of 12 charging stations.',
-      vague: 'The bike-sharing service is introducing something new this summer that users may find interesting.',
-      drops: 'The bike-sharing service adds 200 e-bikes with a range of about 60 kilometres, so longer trips become easier.',
-      adds: 'From 1 July there are 200 e-bikes at 20 cents per minute, and the regular bikes will be phased out next year.',
-      subtle: 'From 1 July there are 200 e-bikes at 20 cents per minute; they need the latest app to unlock and can be returned to any bike station.'
+      faithful: 'اعتبارًا من 1 يوليو تتوفر 200 دراجة كهربائية بـ 20 سنتًا في الدقيقة، يُفتح قفلها بأحدث إصدار من التطبيق ويجب إرجاعها إلى إحدى محطات الشحن الـ 12.',
+      vague: 'تقدّم خدمة مشاركة الدراجات هذا الصيف شيئًا جديدًا قد يهم المستخدمين.',
+      drops: 'تضيف خدمة مشاركة الدراجات 200 دراجة كهربائية تقطع نحو 60 كيلومترًا، فتصبح الرحلات الطويلة أسهل.',
+      adds: 'اعتبارًا من 1 يوليو تتوفر 200 دراجة كهربائية بـ 20 سنتًا في الدقيقة، وستُلغى الدراجات العادية في العام المقبل.',
+      subtle: 'اعتبارًا من 1 يوليو تتوفر 200 دراجة كهربائية بـ 20 سنتًا في الدقيقة، يُفتح قفلها بأحدث إصدار من التطبيق ويمكن إرجاعها إلى أي محطة دراجات.'
     },
     summaryNotes: {
-      drops: 'It leaves out the price and what users must do: update the app and return e-bikes to a charging station.',
-      adds: 'Nothing in the announcement says the regular bikes will be phased out.',
-      subtle: 'E-bikes can only be returned to the 12 charging stations, not to any station.'
+      drops: 'يغيب عنها السعر وما يجب على المستخدمين فعله: تحديث التطبيق وإرجاع الدراجة إلى محطة شحن.',
+      adds: 'لا يقول الإعلان في أي موضع إن الدراجات العادية ستُلغى.',
+      subtle: 'لا يمكن إرجاع الدراجات الكهربائية إلا إلى محطات الشحن الـ 12، لا إلى أي محطة.'
     },
-    task: 'A friend wants to try an e-bike next week.',
-    oneLiner: 'There are e-bikes now.',
+    task: 'صديقة تريد تجربة دراجة كهربائية الأسبوع المقبل.',
+    oneLiner: 'صارت هناك دراجات كهربائية.',
     details: {
-      d1: 'The price: 20 cents per minute',
-      d2: 'That unlocking needs the latest app version',
-      d3: 'That e-bikes must go back to a charging station',
-      d4: 'That cycling keeps you active',
-      d5: 'How many e-bikes there are in total',
-      d6: 'That the regular bikes keep their price'
+      d1: 'السعر: 20 سنتًا في الدقيقة',
+      d2: 'أن فتح القفل يحتاج إلى أحدث إصدار من التطبيق',
+      d3: 'أن الدراجات الكهربائية يجب أن تعود إلى محطة شحن',
+      d4: 'أن ركوب الدراجة يبقيك نشيطًا',
+      d5: 'كم دراجة كهربائية هناك إجمالًا',
+      d6: 'أن الدراجات العادية تحتفظ بسعرها'
     },
     versions: {
-      actionable: 'From 1 July you can rent e-bikes for 20 cents per minute. Update the app first, because you need the latest version to unlock them. Afterwards, return the bike to one of the 12 charging stations shown on the map in the app.',
-      vague: 'There are e-bikes now, and they are easy to use. Just get the app and ride off.',
-      invented: 'From 1 July you can rent e-bikes for 20 cents per minute without the app, and you can leave them anywhere in the city afterwards.'
+      actionable: 'اعتبارًا من 1 يوليو يمكنك استئجار دراجات كهربائية بـ 20 سنتًا في الدقيقة. حدّثي التطبيق أولًا، لأنك تحتاجين إلى أحدث إصدار لفتح القفل. وبعد الانتهاء أرجعي الدراجة إلى إحدى محطات الشحن الـ 12 الظاهرة على خريطة التطبيق.',
+      vague: 'صارت هناك دراجات كهربائية، واستخدامها سهل جدًا. نزّلي التطبيق وانطلقي.',
+      invented: 'اعتبارًا من 1 يوليو يمكنك استئجار دراجات كهربائية بـ 20 سنتًا في الدقيقة من دون التطبيق، وتركها في أي مكان في المدينة بعد الانتهاء.'
     },
-    versionNote: 'You need the latest app to unlock them, and they must go back to a charging station.'
+    versionNote: 'تحتاجين إلى أحدث إصدار من التطبيق لفتح القفل، ويجب إرجاع الدراجة إلى محطة شحن.'
   }
 };

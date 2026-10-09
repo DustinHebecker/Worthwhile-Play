@@ -2,235 +2,235 @@ import type { ContentText } from './types';
 
 export const content: ContentText = {
   supplierDelay: {
-    title: 'Supplier delay before a launch',
-    situation: 'Your company launches a new desk lamp on 14 May. The supplier of the lamp heads reports a delay. Prepare a briefing.',
-    recipient: 'the head of product',
+    title: '新品上市前的供货延误',
+    situation: '你的公司将于5月14日推出一款新台灯。灯头供应商通知说要延误。请准备一份简报。',
+    recipient: '产品负责人',
     cards: {
-      c1: 'The new desk lamp launches on 14 May; 350 customers have pre-ordered it.',
-      c2: 'The supplier has shipped only 200 of the 500 lamp heads we ordered.',
-      c3: 'Once the parts are here, our workshop can assemble 100 lamps a day.',
-      c4: 'The supplier has not yet given a date for shipping the remaining lamp heads.',
-      c5: 'The supplier expects the rest to ship next week, probably on Tuesday.',
-      c6: 'If the parts arrive after 10 May, the lamps cannot be assembled in time for the launch.',
-      c7: 'The launch advert is booked for 14 May; moving it would cost a fee of 800 euros.',
-      c8: 'Marketing needs to know by Friday whether the launch date holds.',
-      c9: 'Jonas from purchasing can call the supplier tomorrow morning and ask for a firm date.',
-      c10: 'The supplier moved into a new office building last year.',
-      c11: 'So far only 200 of the 500 ordered lamp heads have been shipped.',
-      c12: 'Honestly, this supplier has always been a bit chaotic.'
+      c1: '新台灯将于5月14日上市，已有350位顾客预订。',
+      c2: '供应商只发出了我们订购的500个灯头中的200个。',
+      c3: '零件一到，我们的车间每天能组装100盏灯。',
+      c4: '供应商还没有给出剩余灯头的发货日期。',
+      c5: '供应商预计下周发出其余灯头，可能是周二。',
+      c6: '如果零件在5月10日之后才到，台灯就来不及在上市前组装好。',
+      c7: '上市广告已订在5月14日，改期要付800欧元手续费。',
+      c8: '市场部需要在周五前知道上市日期是否不变。',
+      c9: '采购部的约纳斯明天上午可以给供应商打电话，要一个确定的日期。',
+      c10: '供应商去年搬进了一栋新的办公楼。',
+      c11: '到目前为止，订购的500个灯头只发出了200个。',
+      c12: '说实话，这家供应商一向有点乱。'
     },
     decisions: {
-      right: 'Keep the launch on 14 May, or move it by one week?',
-      notTheirs: 'Which shipping company should the supplier use?',
-      premature: 'Should we replace this supplier for all future products?'
+      right: '维持5月14日上市，还是推迟一周？',
+      notTheirs: '供应商应该用哪家物流公司？',
+      premature: '以后所有产品都要换掉这家供应商吗？'
     },
     actions: {
-      concrete: 'Jonas calls the supplier tomorrow at 9:00 and tells the head of product the confirmed date by 12:00.',
-      vague: 'Someone should keep an eye on the supplier.',
-      outOfScope: 'Start designing next year’s lamp collection.'
+      concrete: '约纳斯明天9:00给供应商打电话，并在12:00前把确认的日期告诉产品负责人。',
+      vague: '应该有人盯着供应商。',
+      outOfScope: '开始设计明年的台灯系列。'
     }
   },
   basement: {
-    title: 'Flooded basement in a shared house',
-    situation: 'After heavy rain, water is standing in the basement of the shared house you live in. Prepare a briefing.',
-    recipient: 'the landlord',
+    title: '合租房的地下室进水了',
+    situation: '一场大雨之后，你合租的房子的地下室里积了水。请准备一份简报。',
+    recipient: '房东',
     cards: {
-      c1: 'Five people share the house; the basement holds the heating boiler and everyone’s storage boxes.',
-      c2: 'This morning about 10 cm of water stood in the basement.',
-      c3: 'We switched off the power to the basement this morning as a precaution.',
-      c4: 'Nobody knows yet whether the heating boiler has been damaged.',
-      c5: 'The water has probably stopped rising; at noon it looked the same as in the morning.',
-      c6: 'More rain is forecast for Thursday, and the water could rise again.',
-      c7: 'The boiler stands 15 cm above the floor, so a few more centimetres of water would reach it.',
-      c8: 'The plumber can only come this week if the landlord approves the call-out costs by tomorrow.',
-      c9: 'A housemate who works from home could let the plumber in on Wednesday.',
-      c10: 'The basement walls were last painted in 2015.',
-      c11: 'When we checked this morning, the basement was under 10 cm of water.',
-      c12: 'This house has always been damp, and nobody ever does anything about it.'
+      c1: '这栋房子住着五个人；地下室里有暖气锅炉和每个人的储物箱。',
+      c2: '今天早上地下室里积了大约10厘米的水。',
+      c3: '今天早上我们为了安全起见切断了地下室的电。',
+      c4: '目前还没人知道锅炉有没有受损。',
+      c5: '水位可能不再上涨了；中午看起来和早上一样。',
+      c6: '预报说周四还有雨，水位可能再次上涨。',
+      c7: '锅炉离地面15厘米，再多几厘米的水就会淹到它。',
+      c8: '只有房东在明天之前批准上门费用，水管工这周才能来。',
+      c9: '一位在家办公的室友周三可以给水管工开门。',
+      c10: '地下室的墙上一次粉刷是在2015年。',
+      c11: '今天早上我们去看的时候，地下室积水有10厘米深。',
+      c12: '这房子一直很潮，从来没人管。'
     },
     decisions: {
-      right: 'Approve the plumber’s call-out costs for this week?',
-      notTheirs: 'Which housemate should move their boxes first?',
-      premature: 'Should the whole basement be waterproofed and renovated?'
+      right: '批准水管工这周的上门费用吗？',
+      notTheirs: '哪位室友应该先把箱子搬走？',
+      premature: '要不要给整个地下室做防水并翻修？'
     },
     actions: {
-      concrete: 'The housemate who works from home books the plumber for Wednesday and sends the landlord the quote today.',
-      vague: 'We will deal with it at some point.',
-      outOfScope: 'Plan a house party to cheer everyone up.'
+      concrete: '在家办公的室友预约水管工周三上门，并在今天把报价发给房东。',
+      vague: '我们找个时间处理一下。',
+      outOfScope: '办一场家庭聚会给大家打打气。'
     }
   },
   schoolTrip: {
-    title: 'School trip and a weather warning',
-    situation: 'A class of 24 pupils is due to go hiking in the hills on Friday. A weather warning has been issued. Prepare a briefing.',
-    recipient: 'the head teacher',
+    title: '学校郊游遇上天气预警',
+    situation: '一个24名学生的班级周五要去山里徒步。气象部门发布了天气预警。请准备一份简报。',
+    recipient: '校长',
     cards: {
-      c1: 'The class of 24 pupils, aged 11, is booked for a hiking trip on Friday with three accompanying adults.',
-      c2: 'The weather service has issued a storm warning for Friday afternoon.',
-      c3: 'The science museum in town still has room for a class visit on Friday.',
-      c4: 'The forecast does not yet say whether the storm will arrive before or after midday.',
-      c5: 'The park ranger thinks the main trail will most likely stay open.',
-      c6: 'Strong wind can bring down branches on the forest trail.',
-      c7: 'The only shelter on the route is a 40-minute walk from the end of the trail, too far to reach quickly in a storm.',
-      c8: 'The bus company must be told by Wednesday evening whether the trip goes ahead; until then it can be cancelled free of charge.',
-      c9: 'The class teacher can check the updated forecast on Wednesday at midday.',
-      c10: 'The class voted for the hiking trip back in September.',
-      c11: 'According to the weather service, a storm is expected on Friday afternoon.',
-      c12: 'The children will be terribly disappointed if we cancel.'
+      c1: '这个班有24名11岁的学生，周五报名参加徒步，有三名成人陪同。',
+      c2: '气象部门发布了周五下午的暴风预警。',
+      c3: '市里的科学博物馆周五还可以接待一个班参观。',
+      c4: '预报还没说暴风会在中午之前还是之后到来。',
+      c5: '公园管理员认为主步道很可能会保持开放。',
+      c6: '强风可能会把林间步道上的树枝吹断。',
+      c7: '路线上唯一的避难所离步道终点要走40分钟，遇到暴风时太远，没法很快赶到。',
+      c8: '必须在周三晚上之前告诉大巴公司郊游是否进行；在那之前取消是免费的。',
+      c9: '班主任可以在周三中午查看最新的天气预报。',
+      c10: '早在九月班里就投票选了这次徒步。',
+      c11: '据气象部门说，周五下午预计会有暴风。',
+      c12: '要是取消了，孩子们会非常失望。'
     },
     decisions: {
-      right: 'Go ahead with the hike, switch to the museum, or cancel the trip?',
-      notTheirs: 'What should the pupils pack for lunch?',
-      premature: 'Should the school stop all outdoor trips from now on?'
+      right: '照常徒步、改去博物馆，还是取消郊游？',
+      notTheirs: '学生午饭应该带什么？',
+      premature: '学校以后要不要取消所有户外活动？'
     },
     actions: {
-      concrete: 'The class teacher checks the forecast on Wednesday at 12:00 and sends the head teacher a recommendation by 14:00.',
-      vague: 'Let’s see how the weather turns out.',
-      outOfScope: 'Start planning next year’s school festival.'
+      concrete: '班主任周三12:00查看天气预报，并在14:00前给校长发一份建议。',
+      vague: '看看天气怎么样再说吧。',
+      outOfScope: '开始筹备明年的校庆活动。'
     }
   },
   volunteers: {
-    title: 'Clean-up day short of helpers',
-    situation: 'Your neighbourhood association runs a park clean-up on Saturday. Too few volunteers have signed up. Prepare a briefing.',
-    recipient: 'the chair of the association',
+    title: '清洁日志愿者不够',
+    situation: '你所在的社区协会周六要在公园搞清洁活动。报名的志愿者太少了。请准备一份简报。',
+    recipient: '协会主席',
     cards: {
-      c1: 'The yearly park clean-up is on Saturday from 10:00 to 13:00; the city provides bags and gloves.',
-      c2: 'So far 9 volunteers have signed up; we planned for 20.',
-      c3: 'The city collects the filled bags only on Saturday at 13:00.',
-      c4: 'The youth football team might send helpers, but the coach has not replied yet.',
-      c5: 'Several neighbours said they will probably drop by if the weather is nice.',
-      c6: 'With 9 people we can clean only about half of the park.',
-      c7: 'Nobody has been named yet to fetch the gloves from the community centre, which closes at 9:30 on Saturday.',
-      c8: 'We can either shrink the clean-up to the playground area or move it to the following Saturday.',
-      c9: 'Two volunteers have offered to put up posters in the neighbourhood tomorrow.',
-      c10: 'Last year’s clean-up ended with a barbecue.',
-      c11: 'Only 9 of the 20 volunteers we planned for have registered.',
-      c12: 'People just don’t care about their neighbourhood any more.'
+      c1: '一年一度的公园清洁活动在周六10:00到13:00；市里提供垃圾袋和手套。',
+      c2: '目前有9名志愿者报名；我们原计划要20人。',
+      c3: '市里只在周六13:00收走装满的垃圾袋。',
+      c4: '青少年足球队也许会派人来帮忙，但教练还没回复。',
+      c5: '几位邻居说，如果天气好，他们可能会过来。',
+      c6: '只有9个人的话，我们只能清理大约一半的公园。',
+      c7: '还没指定谁去社区中心取手套，而社区中心周六9:30就关门。',
+      c8: '我们可以把清洁范围缩小到游乐场一带，或者改到下周六。',
+      c9: '两名志愿者主动提出明天在社区张贴海报。',
+      c10: '去年的清洁活动最后办了一场烧烤。',
+      c11: '计划的20名志愿者中只有9人报了名。',
+      c12: '现在的人根本不关心自己的社区了。'
     },
     decisions: {
-      right: 'Hold a smaller clean-up this Saturday, or move it by one week?',
-      notTheirs: 'Should the city change its collection times for the bags?',
-      premature: 'Should the association hire a cleaning company in future years?'
+      right: '这周六搞一个规模小一点的清洁，还是推迟一周？',
+      notTheirs: '市里要不要改变收垃圾袋的时间？',
+      premature: '协会以后几年要不要请一家保洁公司？'
     },
     actions: {
-      concrete: 'The two volunteers put up posters tomorrow, and the secretary emails the football coach today and reports back by Thursday.',
-      vague: 'We should somehow try to get more people.',
-      outOfScope: 'Start planning the association’s summer party.'
+      concrete: '两名志愿者明天张贴海报，秘书今天给足球教练发邮件，并在周四前反馈结果。',
+      vague: '我们总得想办法多找些人。',
+      outOfScope: '开始筹备协会的夏季聚会。'
     }
   },
   release: {
-    title: 'Software release with a failing test',
-    situation: 'Your team plans to release a new version of a booking app on Tuesday. One automated test fails. Prepare a briefing.',
-    recipient: 'the product manager',
+    title: '一个测试失败的软件发布',
+    situation: '你的团队计划周二发布一款预订应用的新版本。有一个自动化测试失败了。请准备一份简报。',
+    recipient: '产品经理',
     cards: {
-      c1: 'The new version adds online payment and has been announced to customers for Tuesday.',
-      c2: 'One of 640 automated tests fails: the refund of a cancelled booking.',
-      c3: 'The failure only appears for payments in a foreign currency.',
-      c4: 'We do not know yet whether the bug is in our code or in the payment provider’s test system.',
-      c5: 'The developer expects the fix to take about a day, but has not looked at the code yet.',
-      c6: 'If the bug is real, some customers could be refunded the wrong amount.',
-      c7: 'About 15% of bookings are paid in a foreign currency, so the bug would affect many customers.',
-      c8: 'We can release on Tuesday with foreign-currency payments switched off, or postpone the whole release.',
-      c9: 'The developer can check the payment provider’s test logs this afternoon.',
-      c10: 'The new payment screen uses the company’s new shade of blue.',
-      c11: 'A single test fails: refunds for cancelled bookings.',
-      c12: 'This test has always been flaky; I would just ignore it.'
+      c1: '新版本增加了在线支付，已经向客户宣布周二上线。',
+      c2: '640个自动化测试中有一个失败：取消预订后的退款。',
+      c3: '只有用外币付款时才会出现这个错误。',
+      c4: '我们还不知道问题出在我们的代码里，还是支付服务商的测试系统里。',
+      c5: '开发人员估计修复大约要一天，但他还没看过代码。',
+      c6: '如果这个错误是真的，有些客户可能会收到错误金额的退款。',
+      c7: '大约15%的预订用外币支付，所以这个错误会影响很多客户。',
+      c8: '我们可以周二发布但关闭外币支付，或者把整个发布推迟。',
+      c9: '开发人员今天下午可以查看支付服务商的测试日志。',
+      c10: '新的支付页面用的是公司新的蓝色。',
+      c11: '只有一个测试是红的：取消预订的退款。',
+      c12: '这个测试一直不稳定，要我说直接忽略就行。'
     },
     decisions: {
-      right: 'Release on Tuesday without foreign-currency payments, or postpone the release?',
-      notTheirs: 'Which programming technique should the developer use for the fix?',
-      premature: 'Should we switch to a different payment provider?'
+      right: '周二发布但不支持外币支付，还是推迟发布？',
+      notTheirs: '开发人员应该用哪种编程技巧来修复？',
+      premature: '我们要不要换一家支付服务商？'
     },
     actions: {
-      concrete: 'The developer checks the provider’s test logs this afternoon and tells the product manager by 17:00 whether the bug is ours.',
-      vague: 'Someone will look into the test.',
-      outOfScope: 'Start writing the release notes for the version after next.'
+      concrete: '开发人员今天下午查看服务商的测试日志，并在17:00前告诉产品经理问题是不是出在我们这边。',
+      vague: '会有人看看这个测试的。',
+      outOfScope: '开始写下下个版本的发布说明。'
     }
   },
   careAppointment: {
-    title: 'A care advice appointment for Grandmother',
-    situation: 'Your grandmother has an appointment with a care advice service on Monday. The family has to sort out who goes with her. Prepare a briefing. (This is about organising, not about medical questions.)',
-    recipient: 'your brother, who shares the decision with you',
+    title: '陪奶奶去做照护咨询',
+    situation: '你奶奶周一要去一家照护咨询机构。家里得商量好谁陪她去。请准备一份简报。（这里讲的是安排事宜，不涉及医疗问题。）',
+    recipient: '你哥哥，他和你一起做决定',
     cards: {
-      c1: 'Grandmother has an appointment with the care advice service on Monday at 10:00 to talk about help at home.',
-      c2: 'She has asked for one family member to come with her.',
-      c3: 'The letter says to bring her list of medicines and her insurance card.',
-      c4: 'It is not clear yet whether Mum can take Monday off work.',
-      c5: 'The advice centre is said to have a lift, but nobody has checked.',
-      c6: 'If nobody can go, the next free appointment is in six weeks.',
-      c7: 'Grandmother tires quickly, and the bus ride to the centre takes 50 minutes each way.',
-      c8: 'The advice service needs to know by Friday whether the appointment takes place in person or by video call.',
-      c9: 'You could call Mum tonight and ask about Monday.',
-      c10: 'Grandmother’s neighbour recently got a new dog.',
-      c11: 'She would like someone from the family to go with her.',
-      c12: 'In my view, these advice services never really help anyway.'
+      c1: '奶奶周一10:00在照护咨询机构有预约，要谈居家帮助的事。',
+      c2: '她希望有一位家人陪她去。',
+      c3: '信里说要带上她的用药清单和医保卡。',
+      c4: '还不清楚妈妈周一能不能请假。',
+      c5: '听说咨询中心有电梯，但没人确认过。',
+      c6: '如果没人能去，下一个空档要等六周。',
+      c7: '奶奶很容易累，坐公交去咨询中心单程就要50分钟。',
+      c8: '咨询机构需要在周五前知道是到现场还是视频咨询。',
+      c9: '你今晚可以给妈妈打电话问问周一的事。',
+      c10: '奶奶的邻居最近新养了一条狗。',
+      c11: '她想让家里有人陪她一起去。',
+      c12: '我觉得这种咨询反正从来都没什么用。'
     },
     decisions: {
-      right: 'Who goes with Grandmother on Monday, and in person or by video call?',
-      notTheirs: 'Which kind of help at home should Grandmother get?',
-      premature: 'Should Grandmother move into a care home?'
+      right: '周一谁陪奶奶去，现场还是视频？',
+      notTheirs: '奶奶在家应该得到哪种帮助？',
+      premature: '奶奶要不要搬进养老院？'
     },
     actions: {
-      concrete: 'You call Mum tonight and tell your brother by Wednesday evening who can go.',
-      vague: 'We’ll sort it out somehow.',
-      outOfScope: 'Start planning Grandmother’s birthday party.'
+      concrete: '你今晚给妈妈打电话，并在周三晚上之前告诉哥哥谁能去。',
+      vague: '总会有办法的。',
+      outOfScope: '开始筹备奶奶的生日聚会。'
     }
   },
   cafeFreezer: {
-    title: 'Broken freezer in a small café',
-    situation: 'You work in a small café. This morning the freezer was not cold enough. The owner is away until tomorrow. Prepare a briefing.',
-    recipient: 'the café owner',
+    title: '小咖啡馆的冰柜坏了',
+    situation: '你在一家小咖啡馆工作。今天早上冰柜不够冷。老板明天才回来。请准备一份简报。',
+    recipient: '咖啡馆老板',
     cards: {
-      c1: 'The café sells homemade ice cream; the freezer holds about a week’s stock.',
-      c2: 'At 7:00 the freezer showed −2 °C instead of the usual −18 °C.',
-      c3: 'We moved the ice cream into the neighbouring bakery’s freezer at 7:30.',
-      c4: 'We do not know whether the ice cream thawed during the night.',
-      c5: 'The repair service will probably be able to come on Thursday.',
-      c6: 'Ice cream that has thawed must not be sold, so we may have to throw away the stock.',
-      c7: 'The bakery needs its freezer space back on Saturday, so our ice cream can only stay there until then.',
-      c8: 'The repair service will only book a visit once the owner approves the call-out fee of 90 euros.',
-      c9: 'The barista can read the freezer’s temperature log this afternoon.',
-      c10: 'The café’s new menu boards arrive next week.',
-      c11: 'This morning the freezer read −2 °C instead of −18 °C.',
-      c12: 'That freezer was a bad buy from day one.'
+      c1: '咖啡馆卖自制冰淇淋；冰柜里大约有一周的存货。',
+      c2: '7:00时冰柜显示−2 °C，而平时是−18 °C。',
+      c3: '7:30我们把冰淇淋搬到了隔壁面包店的冰柜里。',
+      c4: '我们不知道冰淇淋夜里有没有化过。',
+      c5: '维修公司可能周四能来。',
+      c6: '化过的冰淇淋不能再卖，所以我们可能得把存货扔掉。',
+      c7: '面包店周六要收回冰柜的空间，所以我们的冰淇淋只能放到那时。',
+      c8: '只有老板批准90欧元的上门费，维修公司才会安排上门时间。',
+      c9: '咖啡师今天下午可以读取冰柜的温度记录。',
+      c10: '咖啡馆的新菜单板下周到货。',
+      c11: '今天早上冰柜显示−2 °C，而不是−18 °C。',
+      c12: '那台冰柜从第一天起就买错了。'
     },
     decisions: {
-      right: 'Approve the repair call-out fee of 90 euros?',
-      notTheirs: 'Which cakes should the bakery sell this week?',
-      premature: 'Should the café stop selling ice cream altogether?'
+      right: '批准90欧元的维修上门费吗？',
+      notTheirs: '面包店这周应该卖哪些蛋糕？',
+      premature: '咖啡馆要不要彻底不卖冰淇淋了？'
     },
     actions: {
-      concrete: 'The barista reads the temperature log this afternoon and texts the owner the result by 16:00.',
-      vague: 'We’ll keep an eye on it.',
-      outOfScope: 'Redesign the café’s website.'
+      concrete: '咖啡师今天下午读取温度记录，并在16:00前把结果发短信告诉老板。',
+      vague: '我们会留意的。',
+      outOfScope: '重新设计咖啡馆的网站。'
     }
   },
   tournament: {
-    title: 'New venue for a chess tournament',
-    situation: 'Your chess club hosts a youth tournament on Sunday. The school hall you booked is no longer available. Prepare a briefing.',
-    recipient: 'the club board',
+    title: '国际象棋比赛换场地',
+    situation: '你所在的国际象棋俱乐部周日要举办一场青少年比赛。预订好的学校礼堂不能用了。请准备一份简报。',
+    recipient: '俱乐部理事会',
     cards: {
-      c1: 'Sunday’s youth tournament has 48 registered players from six clubs.',
-      c2: 'The school has cancelled our hall booking because of a leak in the roof.',
-      c3: 'The town library offers its event room free of charge, but it only fits 32 players.',
-      c4: 'The sports centre might have a free room, but it has not answered our email yet.',
-      c5: 'The caretaker believes the school hall could be repaired in time, but nobody has confirmed it.',
-      c6: 'If families hear about the change too late, some players may turn up at the old venue.',
-      c7: 'Several families travel more than 100 km and have already booked their trains, so a change of date would hit them hardest.',
-      c8: 'The invitations with the final venue must go out by Wednesday.',
-      c9: 'The club secretary can phone the sports centre tomorrow morning.',
-      c10: 'The club’s trophy cabinet was cleaned last month.',
-      c11: 'The school has called off our booking for the hall.',
-      c12: 'We should never have relied on that school.'
+      c1: '周日的青少年比赛有来自六个俱乐部的48名棋手报名。',
+      c2: '学校因为屋顶漏水取消了我们的礼堂预订。',
+      c3: '市图书馆免费提供活动室，但只容得下32名棋手。',
+      c4: '体育中心也许有空的场地，但还没回复我们的邮件。',
+      c5: '校工认为礼堂也许能及时修好，但没人确认过。',
+      c6: '如果家长们太晚才知道换了地方，有些棋手可能会去原来的场地。',
+      c7: '有几个家庭要跑100多公里，已经订好了火车票，所以改日期对他们影响最大。',
+      c8: '写有最终场地的邀请函必须在周三前发出。',
+      c9: '俱乐部秘书明天上午可以给体育中心打电话。',
+      c10: '俱乐部的奖杯柜上个月擦过了。',
+      c11: '学校撤销了我们对礼堂的预订。',
+      c12: '我们当初就不该指望那所学校。'
     },
     decisions: {
-      right: 'Move to another venue, limit the tournament to 32 players, or postpone it?',
-      notTheirs: 'When should the school repair its roof?',
-      premature: 'Should the club build its own clubhouse?'
+      right: '换个场地、把比赛限制在32人，还是延期？',
+      notTheirs: '学校应该什么时候修屋顶？',
+      premature: '俱乐部要不要自己盖一座会所？'
     },
     actions: {
-      concrete: 'The secretary phones the sports centre tomorrow at 9:00 and reports to the board by 12:00.',
-      vague: 'Let’s wait and see what turns up.',
-      outOfScope: 'Order new chess sets for the club.'
+      concrete: '秘书明天9:00给体育中心打电话，并在12:00前向理事会汇报。',
+      vague: '等等看会有什么办法吧。',
+      outOfScope: '给俱乐部订购新的国际象棋。'
     }
   }
 };

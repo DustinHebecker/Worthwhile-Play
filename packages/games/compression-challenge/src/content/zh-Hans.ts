@@ -2,358 +2,358 @@ import type { ContentText } from './types';
 
 export const content: ContentText = {
   launch: {
-    title: 'App launch update',
-    context: 'An email from the project lead to the whole team.',
+    title: '应用上线进展',
+    context: '项目负责人发给全体团队的一封邮件。',
     sentences: {
-      s1: 'Hi everyone, I hope you all had a good weekend in the sunshine.',
-      s2: 'The launch of our booking app moves from 2 April to 14 May.',
-      s3: 'The reason is that the payment provider has not yet finished its security certification, and we cannot take payments without it.',
-      s4: 'The provider says it has a backlog of applications.',
-      s5: 'The design team will use the extra weeks to polish the onboarding screens.',
-      s6: 'Our 300 beta testers can keep using the test version until the launch.',
-      s7: 'A competitor launched a similar app last year and needed three attempts.',
-      s8: 'Marketing must move the campaign, so please decide on the new campaign start by Friday.',
-      s9: 'The budget stays the same, because the agency does not charge for moving the campaign.',
-      s10: 'The certification itself takes about three weeks once it starts.',
-      s11: 'Thanks again for all your hard work!',
-      s12: 'I will send an updated project plan on Wednesday.'
+      s1: '大家好，希望你们周末都在阳光下过得愉快。',
+      s2: '我们的预订应用上线时间从4月2日推迟到5月14日。',
+      s3: '原因是支付服务商还没有完成安全认证，没有认证我们就无法收款。',
+      s4: '服务商说他们那边积压了很多申请。',
+      s5: '设计团队会利用多出来的几周打磨欢迎页面。',
+      s6: '我们的300名测试用户在上线前可以继续使用测试版。',
+      s7: '有个竞争对手去年推出了类似的应用，尝试了三次才成功。',
+      s8: '市场部需要调整推广活动的时间，请在周五前确定新的活动开始日期。',
+      s9: '预算不变，因为代理公司调整活动时间不收费。',
+      s10: '认证本身一旦开始，大约需要三周。',
+      s11: '再次感谢大家的辛勤工作！',
+      s12: '我会在周三发送更新后的项目计划。'
     },
     bullets: {
-      gold1: 'The launch moves from 2 April to 14 May.',
-      gold2: 'Cause: the payment provider’s security certification is not finished.',
-      gold3: 'Marketing must decide on the new campaign start by Friday.',
-      minor: 'The design team will polish the onboarding screens.',
-      distort: 'The app has failed its security check.',
-      dup: 'The launch is delayed.',
-      subtle: 'The launch moves from 2 April to 4 May.'
+      gold1: '上线时间从4月2日推迟到5月14日。',
+      gold2: '原因：支付服务商的安全认证尚未完成。',
+      gold3: '市场部须在周五前确定新的活动开始日期。',
+      minor: '设计团队会打磨欢迎页面。',
+      distort: '应用没有通过安全检查。',
+      dup: '上线推迟了。',
+      subtle: '上线时间从4月2日推迟到5月4日。'
     },
     bulletNotes: {
-      distort: 'The text says the certification is not finished yet, not that the app failed a check.',
-      dup: 'Repeats the point about the new date without the date, so it wastes a slot.',
-      subtle: 'Almost right, but the new date is 14 May, not 4 May.'
+      distort: '原文说的是认证还没完成，并没有说应用没通过检查。',
+      dup: '重复了新日期这一点，却没给出日期，白白占了一个位置。',
+      subtle: '几乎正确，但新日期是5月14日，不是5月4日。'
     },
     summaries: {
-      faithful: 'The launch moves to 14 May because the payment provider’s certification is not finished, and marketing must decide on the new campaign start by Friday.',
-      vague: 'There are some changes to the launch timing that the team should be aware of.',
-      drops: 'Because the payment provider is not ready yet, the launch has been postponed, but the budget stays the same.',
-      adds: 'The launch moves to 14 May because the payment provider’s certification is not finished, and the delay will make the project more expensive.',
-      subtle: 'The launch moves to 14 May because our app failed the payment provider’s certification, and marketing must decide on the new campaign start by Friday.'
+      faithful: '由于支付服务商的认证尚未完成，上线推迟到5月14日，市场部须在周五前确定新的活动开始日期。',
+      vague: '上线时间有一些变化，团队应该了解一下。',
+      drops: '因为支付服务商还没准备好，上线已经推迟，但预算不变。',
+      adds: '由于支付服务商的认证尚未完成，上线推迟到5月14日，而且这次延期会让项目成本上升。',
+      subtle: '由于我们的应用没有通过支付服务商的认证，上线推迟到5月14日，市场部须在周五前确定新的活动开始日期。'
     },
     summaryNotes: {
-      drops: 'It leaves out the new date and the decision marketing has to make.',
-      adds: 'The text says the budget stays the same; higher costs are made up.',
-      subtle: 'The app has not failed anything: the certification is simply not finished yet.'
+      drops: '漏掉了新日期，也漏掉了市场部要做的决定。',
+      adds: '原文说预算不变，成本上升是编出来的。',
+      subtle: '应用并没有“没通过”什么，认证只是还没完成。'
     },
-    task: 'The marketing team has to act on this one-liner.',
-    oneLiner: 'Move the launch to May.',
+    task: '市场团队需要根据这句话采取行动。',
+    oneLiner: '把上线推到五月。',
     details: {
-      d1: 'The exact new date: 14 May',
-      d2: 'Who must act: marketing moves the campaign',
-      d3: 'The deadline: decide on the new campaign start by Friday',
-      d4: 'Why the provider is behind schedule',
-      d5: 'The design team’s plans for the onboarding screens',
-      d6: 'The sunny weekend'
+      d1: '确切的新日期：5月14日',
+      d2: '谁要行动：市场部调整推广活动',
+      d3: '截止时间：周五前确定新的活动开始日期',
+      d4: '服务商为什么延误',
+      d5: '设计团队对欢迎页面的计划',
+      d6: '阳光明媚的周末'
     },
     versions: {
-      actionable: 'The launch moves from 2 April to 14 May. Marketing: please move the campaign and decide on the new start date by Friday. The budget stays the same.',
-      vague: 'We are moving the launch to May. Please adjust your plans accordingly and let us know if anything comes up.',
-      invented: 'The launch moves to 1 May. Marketing: please cancel the campaign and plan a new one by the end of the month.'
+      actionable: '上线时间从4月2日推迟到5月14日。市场部：请调整推广活动，并在周五前确定新的开始日期。预算不变。',
+      vague: '我们把上线推到五月。请相应调整你们的计划，有问题随时告诉我们。',
+      invented: '上线推迟到5月1日。市场部：请取消推广活动，并在月底前策划一个新的。'
     },
-    versionNote: 'The new date is 14 May, not 1 May, and the campaign is moved, not cancelled.'
+    versionNote: '新日期是5月14日而不是5月1日，而且活动是改期，不是取消。'
   },
   library: {
-    title: 'Library renovation',
-    context: 'A notice on the door of the local library branch.',
+    title: '图书馆装修',
+    context: '社区图书馆门上贴出的一则通知。',
     sentences: {
-      s1: 'Many of you have told us how much you love the old armchairs in the reading corner.',
-      s2: 'From 3 June, the library will be closed for renovation for eight weeks.',
-      s3: 'The roof will be repaired, and the building will get a lift and new lighting.',
-      s4: 'During the closure, a library bus will stop at the market square every Tuesday.',
-      s5: 'The bus carries about 2,000 books and can order any title from the central library.',
-      s6: 'All loans that would fall due during the closure are extended automatically, so nobody pays late fees.',
-      s7: 'Books can also be returned at any time in the return box next to the town hall.',
-      s8: 'The town hall itself was renovated in a similar way ten years ago.',
-      s9: 'Our e-books and audiobooks remain available online as usual.',
-      s10: 'We are already looking forward to next year’s summer reading festival.',
-      s11: 'The renovation is paid for by a regional building fund.'
+      s1: '很多读者告诉我们，你们非常喜欢阅读角那些旧扶手椅。',
+      s2: '从6月3日起，图书馆将闭馆装修八周。',
+      s3: '屋顶会得到修缮，楼里还会加装电梯和新的照明。',
+      s4: '闭馆期间，每周二会有一辆流动图书车停在集市广场。',
+      s5: '流动图书车上约有2000本书，还可以从中心图书馆预订任何书目。',
+      s6: '所有在闭馆期间到期的借阅都会自动续借，所以没人需要交逾期费。',
+      s7: '书也可以随时还到市政厅旁边的还书箱里。',
+      s8: '市政厅本身十年前也进行过类似的装修。',
+      s9: '我们的电子书和有声书照常在线提供。',
+      s10: '我们已经开始期待明年的夏季阅读节了。',
+      s11: '这次装修由一项地区建设基金出资。'
     },
     bullets: {
-      gold1: 'Closed for renovation for eight weeks from 3 June.',
-      gold2: 'A library bus stops at the market square every Tuesday.',
-      gold3: 'Loans due during the closure are extended automatically.',
-      minor: 'The building will get new lighting.',
-      distort: 'All library services stop for eight weeks.',
-      dup: 'The library will be closed for a while.',
-      subtle: 'Closed for renovation for six weeks from 3 June.'
+      gold1: '从6月3日起闭馆装修八周。',
+      gold2: '每周二有流动图书车停在集市广场。',
+      gold3: '闭馆期间到期的借阅自动续借。',
+      minor: '楼里会换上新的照明。',
+      distort: '图书馆的所有服务暂停八周。',
+      dup: '图书馆会关一段时间。',
+      subtle: '从6月3日起闭馆装修六周。'
     },
     bulletNotes: {
-      distort: 'Not true: the bus and the return box keep working during the closure.',
-      dup: 'Repeats the closure without the start date or the length.',
-      subtle: 'Almost right, but the closure lasts eight weeks, not six.'
+      distort: '不对：闭馆期间流动图书车和还书箱照常运作。',
+      dup: '重复了闭馆这件事，却没有开始日期和时长。',
+      subtle: '几乎正确，但闭馆是八周，不是六周。'
     },
     summaries: {
-      faithful: 'The library closes for eight weeks from 3 June; meanwhile a bus visits the market square every Tuesday, and loans due in that time are extended automatically.',
-      vague: 'There will be some changes at the library over the summer, so keep an eye out.',
-      drops: 'The library is being renovated and will get a repaired roof, a lift and new lighting.',
-      adds: 'The library closes for eight weeks from 3 June and will charge a small fee for loans after it reopens.',
-      subtle: 'Because the roof is unsafe, the library closes for eight weeks from 3 June; meanwhile a bus visits the market square every Tuesday.'
+      faithful: '图书馆从6月3日起闭馆八周，期间每周二有流动图书车到集市广场，到期的借阅自动续借。',
+      vague: '今年夏天图书馆会有一些变化，请多留意。',
+      drops: '图书馆要装修了，会修好屋顶，加装电梯和新的照明。',
+      adds: '图书馆从6月3日起闭馆八周，重新开放后借书将收取少量费用。',
+      subtle: '由于屋顶不安全，图书馆从6月3日起闭馆八周，期间每周二有流动图书车到集市广场。'
     },
     summaryNotes: {
-      drops: 'It describes the building work but not when the library closes or what readers can do meanwhile.',
-      adds: 'Nothing in the notice mentions fees after the reopening.',
-      subtle: 'The notice says the roof will be repaired, not that it is unsafe; that cause is added.'
+      drops: '只讲了施工内容，没说图书馆什么时候闭馆，也没说读者这段时间能怎么办。',
+      adds: '通知里根本没提重新开放后要收费。',
+      subtle: '通知说的是屋顶会修缮，并没说屋顶不安全，这个原因是添加的。'
     },
-    task: 'A neighbour who wants to keep borrowing books asks you about it.',
-    oneLiner: 'The library is closed in summer.',
+    task: '一位想继续借书的邻居来问你这件事。',
+    oneLiner: '图书馆夏天关门。',
     details: {
-      d1: 'When exactly: for eight weeks from 3 June',
-      d2: 'Where to borrow meanwhile: the bus at the market square on Tuesdays',
-      d3: 'Where to return books: the box next to the town hall',
-      d4: 'What the renovation includes',
-      d5: 'The armchairs in the reading corner',
-      d6: 'Next year’s reading festival'
+      d1: '具体时间：从6月3日起八周',
+      d2: '这期间去哪借书：每周二集市广场的流动图书车',
+      d3: '去哪还书：市政厅旁边的还书箱',
+      d4: '装修包括哪些内容',
+      d5: '阅读角的扶手椅',
+      d6: '明年的阅读节'
     },
     versions: {
-      actionable: 'From 3 June the library is closed for eight weeks. You can borrow books from the library bus at the market square every Tuesday and return them any time in the box next to the town hall. Loans due in that time are extended automatically.',
-      vague: 'The library will be closed for a while in the summer because of building work. There will be other options, so check the notice for more.',
-      invented: 'From 3 June the library is closed for eight weeks. You can borrow books from the library bus at the station every Friday. Please return all books before the closure.'
+      actionable: '图书馆从6月3日起闭馆八周。你可以每周二到集市广场的流动图书车借书，随时把书还到市政厅旁边的还书箱。这段时间到期的借阅会自动续借。',
+      vague: '图书馆夏天因为施工要关一阵子。会有别的办法，具体看看通知吧。',
+      invented: '图书馆从6月3日起闭馆八周。你可以每周五到火车站的流动图书车借书。请在闭馆前把所有书都还回去。'
     },
-    versionNote: 'The bus stops at the market square on Tuesdays, and nobody has to return books before the closure.'
+    versionNote: '流动图书车是每周二停在集市广场，而且没人需要在闭馆前还书。'
   },
   leaves: {
-    title: 'Why leaves change colour',
-    context: 'A short article from a nature magazine for curious readers.',
+    title: '树叶为什么会变色',
+    context: '一本自然杂志上写给好奇读者的短文。',
     sentences: {
-      s1: 'Autumn is many people’s favourite season for long walks.',
-      s2: 'Leaves are green because they contain a lot of chlorophyll, the pigment plants use to capture sunlight.',
-      s3: 'As the days get shorter, many trees stop making chlorophyll and break it down.',
-      s4: 'Yellow and orange pigments, called carotenoids, were in the leaf all along; they only become visible when the green fades.',
-      s5: 'Carotenoids are the same kind of pigment that makes carrots orange.',
-      s6: 'Red is different: some trees, such as many maples, make new red pigments in autumn.',
-      s7: 'Researchers think these red pigments may protect the leaf from strong light while the tree takes back nutrients.',
-      s8: 'Sunny days and cool nights tend to make the reds brighter.',
-      s9: 'In some regions, colourful forests attract many tourists every year.',
-      s10: 'Finally, a thin layer of cells forms where the leaf joins the twig, and the leaf falls.',
-      s11: 'Don’t forget a warm jacket if you go out to look at the trees.'
+      s1: '秋天是很多人最喜欢的长途散步季节。',
+      s2: '树叶是绿色的，因为它们含有大量叶绿素，这是植物用来吸收阳光的色素。',
+      s3: '随着白天变短，许多树停止制造叶绿素，并把它分解掉。',
+      s4: '黄色和橙色的色素叫类胡萝卜素，它们一直都在叶子里，只是等绿色褪去后才显现出来。',
+      s5: '类胡萝卜素和让胡萝卜呈橙色的是同一类色素。',
+      s6: '红色则不同：有些树，比如许多枫树，会在秋天制造新的红色色素。',
+      s7: '研究人员认为，这些红色色素可能在树回收养分时保护叶子免受强光伤害。',
+      s8: '晴朗的白天和凉爽的夜晚往往会让红色更鲜艳。',
+      s9: '在一些地区，多彩的森林每年都会吸引大量游客。',
+      s10: '最后，叶子和树枝相连的地方会形成一层薄薄的细胞，叶子随之掉落。',
+      s11: '出门看树时别忘了带一件暖和的外套。'
     },
     bullets: {
-      gold1: 'In autumn, trees stop making green chlorophyll and break it down.',
-      gold2: 'Yellow and orange pigments were there all along and become visible.',
-      gold3: 'Some trees, such as maples, make new red pigments.',
-      minor: 'A thin layer of cells forms, and the leaf falls.',
-      distort: 'All autumn colours are new pigments made by the tree.',
-      dup: 'Leaves lose their green colour.',
-      subtle: 'Red pigments protect the leaf from strong light.'
+      gold1: '秋天，树停止制造绿色的叶绿素并将其分解。',
+      gold2: '黄色和橙色的色素一直都在，随后显现出来。',
+      gold3: '有些树，比如枫树，会制造新的红色色素。',
+      minor: '会形成一层薄薄的细胞，然后叶子掉落。',
+      distort: '所有秋天的颜色都是树新制造的色素。',
+      dup: '树叶失去了绿色。',
+      subtle: '红色色素能保护叶子免受强光伤害。'
     },
     bulletNotes: {
-      distort: 'Only the reds are new; yellow and orange were in the leaf all along.',
-      dup: 'Says less than the point about chlorophyll and wastes a slot.',
-      subtle: 'The text only says researchers think the red pigments may protect the leaf; this bullet states it as a fact.'
+      distort: '只有红色是新的，黄色和橙色一直都在叶子里。',
+      dup: '比叶绿素那一点说得更少，白白占了一个位置。',
+      subtle: '原文只说研究人员认为红色色素可能保护叶子，这一条却把它说成了事实。'
     },
     summaries: {
-      faithful: 'In autumn many trees break down their green chlorophyll, which reveals yellow and orange pigments that were there all along, while some trees also make new red ones.',
-      vague: 'Leaves change colour in autumn because of various natural processes in the tree.',
-      drops: 'In autumn, leaves turn yellow, orange and red, and then they fall from the trees.',
-      adds: 'In autumn many trees break down their green chlorophyll, which reveals yellow and orange pigments, and the redder the leaves, the colder the coming winter.',
-      subtle: 'In autumn many trees break down their green chlorophyll, which reveals yellow and orange pigments, and cold nights make the trees produce red ones.'
+      faithful: '秋天许多树会分解绿色的叶绿素，使一直存在的黄色和橙色色素显现出来，而有些树还会制造新的红色色素。',
+      vague: '秋天树叶变色是因为树里发生了各种自然过程。',
+      drops: '秋天树叶会变成黄色、橙色和红色，然后从树上落下。',
+      adds: '秋天许多树会分解绿色的叶绿素，使黄色和橙色色素显现出来，而且叶子越红，接下来的冬天就越冷。',
+      subtle: '秋天许多树会分解绿色的叶绿素，使黄色和橙色色素显现出来，而寒冷的夜晚会促使树制造红色色素。'
     },
     summaryNotes: {
-      drops: 'It describes what we see, but not why it happens.',
-      adds: 'The text says nothing about predicting the winter.',
-      subtle: 'Cool nights only tend to make the reds brighter; the text does not say they cause the red pigments.'
+      drops: '只描述了我们看到的现象，没有说明原因。',
+      adds: '原文完全没有提到预测冬天。',
+      subtle: '凉爽的夜晚只是往往让红色更鲜艳，原文并没有说它们导致了红色色素的产生。'
     },
-    task: 'A teacher wants to explain this one-liner to a class, using real leaves.',
-    oneLiner: 'The chlorophyll breaks down, so other colours show.',
+    task: '一位老师想用真实的树叶向全班解释这句话。',
+    oneLiner: '叶绿素分解了，其他颜色就显现出来。',
     details: {
-      d1: 'What chlorophyll is: the green pigment that captures sunlight',
-      d2: 'That yellow and orange were in the leaf all along',
-      d3: 'That some trees, such as maples, make new red pigments',
-      d4: 'That autumn is a popular season for walks',
-      d5: 'That you need a warm jacket outside',
-      d6: 'How the leaf finally falls off'
+      d1: '叶绿素是什么：吸收阳光的绿色色素',
+      d2: '黄色和橙色一直都在叶子里',
+      d3: '有些树，比如枫树，会制造新的红色色素',
+      d4: '秋天是散步的热门季节',
+      d5: '出门需要一件暖和的外套',
+      d6: '叶子最后是怎么掉落的'
     },
     versions: {
-      actionable: 'Leaves are green because of chlorophyll, a pigment that captures sunlight. In autumn many trees stop making it and break it down. Then yellow and orange pigments that were there all along become visible, and some trees, like maples, make new red ones.',
-      vague: 'In autumn the leaves change because the green goes away and other colours come out. Nature is fascinating that way.',
-      invented: 'Leaves are green because of chlorophyll. In autumn the frost freezes the chlorophyll, and then the tree paints its leaves yellow, orange and red with new pigments.'
+      actionable: '树叶是绿色的，是因为叶绿素，这是一种吸收阳光的色素。到了秋天，许多树不再制造叶绿素，并把它分解掉。这时，一直存在的黄色和橙色色素就显现出来了，而有些树，比如枫树，还会制造新的红色色素。',
+      vague: '秋天树叶会变，是因为绿色没了，别的颜色就出来了。大自然就是这么奇妙。',
+      invented: '树叶是绿色的，是因为叶绿素。到了秋天，霜冻会把叶绿素冻住，然后树用新的色素把叶子染成黄色、橙色和红色。'
     },
-    versionNote: 'The text does not say that frost freezes the chlorophyll, and only the reds are new pigments.'
+    versionNote: '原文没有说霜冻会冻住叶绿素，而且只有红色是新的色素。'
   },
   club: {
-    title: 'Sports club board meeting',
-    context: 'The minutes of a sports club board meeting, sent to all members.',
+    title: '体育俱乐部理事会会议',
+    context: '一家体育俱乐部理事会的会议纪要，发给全体会员。',
     sentences: {
-      s1: 'The meeting took place in the clubhouse and started a little late because of a football match.',
-      s2: 'The board proposes raising the annual membership fee from 60 to 66 euros from next January.',
-      s3: 'The reason is that the rent for the sports hall has gone up by 15 percent.',
-      s4: 'The fee has not changed for eight years.',
-      s5: 'Members under 18 will keep paying the old fee.',
-      s6: 'The members will vote on the proposal at the general meeting on 12 March.',
-      s7: 'The board also discussed new nets for the tennis courts but postponed a decision.',
-      s8: 'If the proposal is rejected, the board will look at cutting some training times instead.',
-      s9: 'A neighbouring club recently raised its fee as well, to 75 euros.',
-      s10: 'The hall belongs to the town, which sets the rent.',
-      s11: 'Many thanks to the youth team for the delicious cakes!'
+      s1: '会议在俱乐部会所举行，因为一场足球赛开始得稍晚了一些。',
+      s2: '理事会提议从明年一月起把年度会费从60欧元提高到66欧元。',
+      s3: '原因是体育馆的租金上涨了15%。',
+      s4: '会费已经八年没变了。',
+      s5: '18岁以下的会员继续按原标准缴费。',
+      s6: '会员将在3月12日的全体大会上对该提议进行表决。',
+      s7: '理事会还讨论了为网球场换新球网的事，但推迟了决定。',
+      s8: '如果提议被否决，理事会将转而考虑削减部分训练时段。',
+      s9: '附近一家俱乐部最近也提高了会费，涨到了75欧元。',
+      s10: '体育馆归市政府所有，租金也由市政府决定。',
+      s11: '非常感谢青少年队带来的美味蛋糕！'
     },
     bullets: {
-      gold1: 'Proposal: the annual fee rises from 60 to 66 euros from January.',
-      gold2: 'Members under 18 keep paying the old fee.',
-      gold3: 'Members vote on it at the general meeting on 12 March.',
-      minor: 'New nets for the tennis courts were discussed.',
-      distort: 'The board has decided to raise the fee.',
-      dup: 'The membership fee may go up.',
-      subtle: 'Proposal: the annual fee rises from 60 to 76 euros from January.'
+      gold1: '提议：年度会费从一月起由60欧元涨到66欧元。',
+      gold2: '18岁以下会员继续按原标准缴费。',
+      gold3: '会员在3月12日的全体大会上表决。',
+      minor: '讨论了为网球场换新球网的事。',
+      distort: '理事会已决定提高会费。',
+      dup: '会费可能会上涨。',
+      subtle: '提议：年度会费从一月起由60欧元涨到76欧元。'
     },
     bulletNotes: {
-      distort: 'Nothing is decided yet: it is a proposal, and the members vote on it.',
-      dup: 'A vaguer repeat of the fee point, without the amounts.',
-      subtle: 'Almost right, but the proposed fee is 66 euros, not 76.'
+      distort: '还什么都没决定：这只是提议，要由会员表决。',
+      dup: '对会费那一点更含糊的重复，没有金额。',
+      subtle: '几乎正确，但提议的会费是66欧元，不是76欧元。'
     },
     summaries: {
-      faithful: 'Because the hall rent rose, the board proposes raising the annual fee from 60 to 66 euros from January, with under-18s exempt, and members vote on it on 12 March.',
-      vague: 'The board talked about money matters and some changes for members.',
-      drops: 'Because the rent for the sports hall has gone up, the club’s finances were the main topic of the board meeting.',
-      adds: 'The board proposes raising the annual fee from 60 to 66 euros from January, and members who do not pay by March will lose their membership.',
-      subtle: 'Because the hall rent rose, the board has decided to raise the annual fee from 60 to 66 euros from January, with under-18s exempt.'
+      faithful: '由于体育馆租金上涨，理事会提议从一月起把年度会费从60欧元提高到66欧元，18岁以下会员除外，会员将于3月12日表决。',
+      vague: '理事会讨论了一些财务问题和会员方面的变化。',
+      drops: '由于体育馆租金上涨，俱乐部的财务成了这次理事会会议的主要议题。',
+      adds: '理事会提议从一月起把年度会费从60欧元提高到66欧元，三月前不缴费的人将失去会员资格。',
+      subtle: '由于体育馆租金上涨，理事会已决定从一月起把年度会费从60欧元提高到66欧元，18岁以下会员除外。'
     },
     summaryNotes: {
-      drops: 'It leaves out the proposed new fee and the vote on 12 March.',
-      adds: 'The minutes say nothing about losing the membership.',
-      subtle: 'It is only a proposal that the members still vote on, so “has decided” is wrong.'
+      drops: '漏掉了提议的新会费和3月12日的表决。',
+      adds: '纪要里完全没有提到会失去会员资格。',
+      subtle: '这只是会员还要表决的提议，所以“已决定”是错的。'
     },
-    task: 'A member asks you what this means for them.',
-    oneLiner: 'The fees are going up.',
+    task: '一位会员问你这对他意味着什么。',
+    oneLiner: '会费要涨了。',
     details: {
-      d1: 'The amounts: from 60 to 66 euros a year',
-      d2: 'That it is a proposal, voted on at the general meeting on 12 March',
-      d3: 'That members under 18 keep the old fee',
-      d4: 'That the meeting started late',
-      d5: 'The cakes from the youth team',
-      d6: 'The discussion about tennis nets'
+      d1: '金额：每年从60欧元涨到66欧元',
+      d2: '这是提议，将在3月12日的大会上表决',
+      d3: '18岁以下会员保持原会费',
+      d4: '会议开始得晚了',
+      d5: '青少年队的蛋糕',
+      d6: '关于网球网的讨论'
     },
     versions: {
-      actionable: 'The board proposes raising the annual fee from 60 to 66 euros from January, because the hall rent went up. Members under 18 keep the old fee. Nothing is decided yet: you can vote on it at the general meeting on 12 March.',
-      vague: 'The fees are going up next year because things have become more expensive. More information will follow at some point.',
-      invented: 'From January the fee rises from 60 to 66 euros for everyone. Please update your bank transfer before the general meeting on 12 March.'
+      actionable: '因为体育馆租金上涨，理事会提议从一月起把年度会费从60欧元提高到66欧元。18岁以下会员保持原会费。现在还没定：你可以在3月12日的全体大会上投票。',
+      vague: '明年会费要涨，因为什么都变贵了。之后会有更多消息。',
+      invented: '从一月起，所有人的会费都从60欧元涨到66欧元。请在3月12日的全体大会前修改你的转账金额。'
     },
-    versionNote: 'It treats a proposal as decided and forgets that members under 18 keep the old fee.'
+    versionNote: '它把提议当成了已定的决定，还漏掉了18岁以下会员保持原会费这一点。'
   },
   trip: {
-    title: 'Change to the class trip',
-    context: 'A message from a teacher to the parents of a school class.',
+    title: '班级出游有变动',
+    context: '一位老师发给班级家长的消息。',
     sentences: {
-      s1: 'I hope the children are as excited about the trip as I am!',
-      s2: 'Because of a rail strike, we will travel to the coast by coach instead of by train.',
-      s3: 'This means we leave one hour earlier than planned.',
-      s4: 'The meeting point is no longer the station but the car park behind the school.',
-      s5: 'The coach company has a lot of experience with school groups.',
-      s6: 'The return trip on Friday stays as planned.',
-      s7: 'There are no extra costs for families; the school covers the difference.',
-      s8: 'The coach journey takes about 40 minutes longer than the train.',
-      s9: 'Last year’s class went to the mountains, which was also a great trip.',
-      s10: 'There is a short break halfway, at a service station.',
-      s11: 'Thank you all for your help with the packing lists.'
+      s1: '希望孩子们和我一样期待这次出游！',
+      s2: '由于铁路罢工，我们将改乘大巴而不是火车去海边。',
+      s3: '这意味着我们要比原计划早一小时出发。',
+      s4: '集合地点不再是火车站，而是学校后面的停车场。',
+      s5: '这家大巴公司接待学生团体的经验很丰富。',
+      s6: '周五的返程照原计划进行。',
+      s7: '家庭无需支付额外费用，差价由学校承担。',
+      s8: '坐大巴比坐火车大约多花40分钟。',
+      s9: '去年的班级去了山区，那次旅行也很棒。',
+      s10: '途中会在一个服务区短暂休息。',
+      s11: '感谢大家帮忙整理行李清单。'
     },
     bullets: {
-      gold1: 'Coach instead of train because of a rail strike.',
-      gold2: 'Departure one hour earlier, from the car park behind the school.',
-      gold3: 'No extra costs for families.',
-      minor: 'The coach company is experienced with school groups.',
-      distort: 'The trip is shortened because of the strike.',
-      dup: 'The travel plans have changed.',
-      subtle: 'Departure two hours earlier, from the car park behind the school.'
+      gold1: '因铁路罢工改乘大巴，不坐火车。',
+      gold2: '提前一小时从学校后面的停车场出发。',
+      gold3: '家庭无需额外付费。',
+      minor: '大巴公司接待学生团体经验丰富。',
+      distort: '因为罢工，出游时间缩短了。',
+      dup: '出行计划有变。',
+      subtle: '提前两小时从学校后面的停车场出发。'
     },
     bulletNotes: {
-      distort: 'Only the journey there changes; the trip is not shortened.',
-      dup: 'Says only that something changed, which the other points already show.',
-      subtle: 'Almost right, but departure is one hour earlier, not two.'
+      distort: '只有去程变了，出游并没有缩短。',
+      dup: '只说有变化，这一点其他条目已经体现了。',
+      subtle: '几乎正确，但出发时间是提前一小时，不是两小时。'
     },
     summaries: {
-      faithful: 'Because of a rail strike, the class travels by coach, leaving one hour earlier from the car park behind the school, at no extra cost to families.',
-      vague: 'There are a few changes to the trip arrangements that parents should know about.',
-      drops: 'Because of a rail strike, the class will travel to the coast by coach, which costs families nothing extra.',
-      adds: 'Because of a rail strike, the class travels by coach, leaving one hour earlier from the car park behind the school, and parents pay a small extra fee.',
-      subtle: 'Because the coach is faster than the train, the class travels by coach, leaving one hour earlier from the car park behind the school, at no extra cost to families.'
+      faithful: '由于铁路罢工，全班改乘大巴，提前一小时从学校后面的停车场出发，家庭无需额外付费。',
+      vague: '出游安排有一些变化，家长们应该了解一下。',
+      drops: '由于铁路罢工，全班将乘大巴去海边，家庭不用多花钱。',
+      adds: '由于铁路罢工，全班改乘大巴，提前一小时从学校后面的停车场出发，家长需要支付一小笔额外费用。',
+      subtle: '因为大巴比火车快，全班改乘大巴，提前一小时从学校后面的停车场出发，家庭无需额外付费。'
     },
     summaryNotes: {
-      drops: 'It leaves out what parents must act on: the earlier departure and the new meeting point.',
-      adds: 'The message says the school covers the difference, so there is no fee.',
-      subtle: 'The reason is the rail strike, and the coach is even slower than the train.'
+      drops: '漏掉了家长需要据此行动的信息：提前出发和新的集合地点。',
+      adds: '消息说差价由学校承担，所以不需要额外付费。',
+      subtle: '原因是铁路罢工，而且大巴其实比火车还慢。'
     },
-    task: 'A parent who missed the message asks another parent what to do.',
-    oneLiner: 'The class goes by coach now.',
+    task: '一位没看到消息的家长问另一位家长该怎么办。',
+    oneLiner: '班级现在改坐大巴了。',
     details: {
-      d1: 'The new meeting point: the car park behind the school',
-      d2: 'The new time: one hour earlier than planned',
-      d3: 'That there are no extra costs',
-      d4: 'That the coach company is experienced',
-      d5: 'Why they are not taking the train',
-      d6: 'That the teacher is looking forward to the trip'
+      d1: '新的集合地点：学校后面的停车场',
+      d2: '新的时间：比原计划早一小时',
+      d3: '不需要额外费用',
+      d4: '大巴公司经验丰富',
+      d5: '为什么不坐火车',
+      d6: '老师很期待这次出游'
     },
     versions: {
-      actionable: 'The class goes by coach. Bring your child to the car park behind the school, not to the station, one hour earlier than planned. It costs nothing extra, and the return on Friday is unchanged.',
-      vague: 'There is a strike, so they are taking a coach now. Times and places are a bit different, so check what the teacher wrote.',
-      invented: 'The class goes by coach. Bring your child to the station one hour earlier, and give them some money for the coach ticket.'
+      actionable: '全班改坐大巴。请比原计划早一小时把孩子送到学校后面的停车场，不是火车站。不用多花钱，周五的返程不变。',
+      vague: '有罢工，所以现在改坐大巴了。时间和地点都有点变化，你看看老师发的消息吧。',
+      invented: '全班改坐大巴。请提前一小时把孩子送到火车站，再给他带点钱买大巴票。'
     },
-    versionNote: 'The meeting point is the car park behind the school, not the station, and the school covers the cost.'
+    versionNote: '集合地点是学校后面的停车场，不是火车站，而且费用由学校承担。'
   },
   bikes: {
-    title: 'E-bikes for bike sharing',
-    context: 'An announcement from a city’s bike-sharing service to its users.',
+    title: '共享单车新增电动自行车',
+    context: '某城市共享单车服务发给用户的公告。',
     sentences: {
-      s1: 'Cycling is a great way to stay active and explore the city.',
-      s2: 'From 1 July, our bike-sharing service adds 200 electric bikes to its fleet.',
-      s3: 'An e-bike costs 20 cents per minute; the regular bikes keep their current price.',
-      s4: 'To unlock an e-bike, you need the latest version of our app.',
-      s5: 'The e-bikes have a range of about 60 kilometres per charge.',
-      s6: 'E-bikes must be returned to one of 12 charging stations; they cannot be left anywhere else.',
-      s7: 'A map of the charging stations is in the app.',
-      s8: 'If an e-bike is left outside a station, a fee of 10 euros is charged.',
-      s9: 'Several other cities have introduced similar services in recent years.',
-      s10: 'The bikes were tested by 50 volunteers over the winter.',
-      s11: 'Thank you for riding with us!'
+      s1: '骑车是保持活力、探索城市的好方法。',
+      s2: '从7月1日起，我们的共享单车服务将新增200辆电动自行车。',
+      s3: '电动自行车每分钟20欧分；普通自行车价格不变。',
+      s4: '解锁电动自行车需要使用我们应用的最新版本。',
+      s5: '电动自行车充一次电大约能骑60公里。',
+      s6: '电动自行车必须还到12个充电站之一，不能停在其他地方。',
+      s7: '应用里有充电站的地图。',
+      s8: '如果把电动自行车停在充电站以外，将收取10欧元的费用。',
+      s9: '近几年，其他几个城市也推出了类似的服务。',
+      s10: '这些车在冬天由50名志愿者进行了测试。',
+      s11: '感谢您选择与我们同行！'
     },
     bullets: {
-      gold1: 'From 1 July: 200 e-bikes at 20 cents per minute.',
-      gold2: 'Unlocking them needs the latest app version.',
-      gold3: 'E-bikes must be returned to one of 12 charging stations.',
-      minor: 'A map of the charging stations is in the app.',
-      distort: 'The e-bikes replace the regular bikes.',
-      dup: 'There are new bikes.',
-      subtle: 'From 1 July: 200 e-bikes at 25 cents per minute.'
+      gold1: '7月1日起：200辆电动自行车，每分钟20欧分。',
+      gold2: '解锁需要最新版本的应用。',
+      gold3: '电动自行车须还到12个充电站之一。',
+      minor: '应用里有充电站的地图。',
+      distort: '电动自行车将取代普通自行车。',
+      dup: '有新车了。',
+      subtle: '7月1日起：200辆电动自行车，每分钟25欧分。'
     },
     bulletNotes: {
-      distort: 'The e-bikes are added; the regular bikes stay, at their current price.',
-      dup: 'A vaguer repeat of the first point, without date, number or price.',
-      subtle: 'Almost right, but the price is 20 cents per minute, not 25.'
+      distort: '电动自行车是新增的，普通自行车仍保留，价格不变。',
+      dup: '对第一点更含糊的重复，没有日期、数量和价格。',
+      subtle: '几乎正确，但价格是每分钟20欧分，不是25欧分。'
     },
     summaries: {
-      faithful: 'From 1 July there are 200 e-bikes at 20 cents per minute; they need the latest app to unlock and must be returned to one of 12 charging stations.',
-      vague: 'The bike-sharing service is introducing something new this summer that users may find interesting.',
-      drops: 'The bike-sharing service adds 200 e-bikes with a range of about 60 kilometres, so longer trips become easier.',
-      adds: 'From 1 July there are 200 e-bikes at 20 cents per minute, and the regular bikes will be phased out next year.',
-      subtle: 'From 1 July there are 200 e-bikes at 20 cents per minute; they need the latest app to unlock and can be returned to any bike station.'
+      faithful: '从7月1日起有200辆电动自行车，每分钟20欧分，需要用最新版应用解锁，并且必须还到12个充电站之一。',
+      vague: '共享单车服务今年夏天会推出一些用户可能感兴趣的新东西。',
+      drops: '共享单车服务新增200辆续航约60公里的电动自行车，长途骑行会更轻松。',
+      adds: '从7月1日起有200辆电动自行车，每分钟20欧分，而普通自行车明年将被淘汰。',
+      subtle: '从7月1日起有200辆电动自行车，每分钟20欧分，需要用最新版应用解锁，可以还到任何一个单车站点。'
     },
     summaryNotes: {
-      drops: 'It leaves out the price and what users must do: update the app and return e-bikes to a charging station.',
-      adds: 'Nothing in the announcement says the regular bikes will be phased out.',
-      subtle: 'E-bikes can only be returned to the 12 charging stations, not to any station.'
+      drops: '漏掉了价格，也漏掉了用户必须做的事：更新应用，并把车还到充电站。',
+      adds: '公告里完全没说普通自行车会被淘汰。',
+      subtle: '电动自行车只能还到那12个充电站，不是任何站点都行。'
     },
-    task: 'A friend wants to try an e-bike next week.',
-    oneLiner: 'There are e-bikes now.',
+    task: '一位朋友想下周试试电动自行车。',
+    oneLiner: '现在有电动自行车了。',
     details: {
-      d1: 'The price: 20 cents per minute',
-      d2: 'That unlocking needs the latest app version',
-      d3: 'That e-bikes must go back to a charging station',
-      d4: 'That cycling keeps you active',
-      d5: 'How many e-bikes there are in total',
-      d6: 'That the regular bikes keep their price'
+      d1: '价格：每分钟20欧分',
+      d2: '解锁需要最新版本的应用',
+      d3: '电动自行车必须还到充电站',
+      d4: '骑车能让人保持活力',
+      d5: '一共有多少辆电动自行车',
+      d6: '普通自行车价格不变'
     },
     versions: {
-      actionable: 'From 1 July you can rent e-bikes for 20 cents per minute. Update the app first, because you need the latest version to unlock them. Afterwards, return the bike to one of the 12 charging stations shown on the map in the app.',
-      vague: 'There are e-bikes now, and they are easy to use. Just get the app and ride off.',
-      invented: 'From 1 July you can rent e-bikes for 20 cents per minute without the app, and you can leave them anywhere in the city afterwards.'
+      actionable: '从7月1日起，你可以用每分钟20欧分的价格租电动自行车。先更新应用，因为解锁需要最新版本。骑完后，把车还到应用地图上标出的12个充电站之一。',
+      vague: '现在有电动自行车了，用起来很简单。下载应用直接骑就行。',
+      invented: '从7月1日起，你不用应用就能以每分钟20欧分的价格租电动自行车，骑完可以停在城里任何地方。'
     },
-    versionNote: 'You need the latest app to unlock them, and they must go back to a charging station.'
+    versionNote: '解锁需要最新版本的应用，而且车必须还到充电站。'
   }
 };

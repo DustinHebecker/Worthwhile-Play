@@ -2,235 +2,235 @@ import type { ContentText } from './types';
 
 export const content: ContentText = {
   supplierDelay: {
-    title: 'Supplier delay before a launch',
-    situation: 'Your company launches a new desk lamp on 14 May. The supplier of the lamp heads reports a delay. Prepare a briefing.',
-    recipient: 'the head of product',
+    title: 'Задержка поставщика перед запуском',
+    situation: 'Ваша компания 14 мая выпускает новую настольную лампу. Поставщик плафонов сообщает о задержке. Подготовьте брифинг.',
+    recipient: 'руководитель продукта',
     cards: {
-      c1: 'The new desk lamp launches on 14 May; 350 customers have pre-ordered it.',
-      c2: 'The supplier has shipped only 200 of the 500 lamp heads we ordered.',
-      c3: 'Once the parts are here, our workshop can assemble 100 lamps a day.',
-      c4: 'The supplier has not yet given a date for shipping the remaining lamp heads.',
-      c5: 'The supplier expects the rest to ship next week, probably on Tuesday.',
-      c6: 'If the parts arrive after 10 May, the lamps cannot be assembled in time for the launch.',
-      c7: 'The launch advert is booked for 14 May; moving it would cost a fee of 800 euros.',
-      c8: 'Marketing needs to know by Friday whether the launch date holds.',
-      c9: 'Jonas from purchasing can call the supplier tomorrow morning and ask for a firm date.',
-      c10: 'The supplier moved into a new office building last year.',
-      c11: 'So far only 200 of the 500 ordered lamp heads have been shipped.',
-      c12: 'Honestly, this supplier has always been a bit chaotic.'
+      c1: 'Новая настольная лампа поступает в продажу 14 мая; 350 покупателей уже оформили предзаказ.',
+      c2: 'Поставщик отправил только 200 из 500 заказанных плафонов.',
+      c3: 'Когда детали придут, наша мастерская сможет собирать 100 ламп в день.',
+      c4: 'Поставщик ещё не назвал дату отправки оставшихся плафонов.',
+      c5: 'Поставщик рассчитывает отправить остальное на следующей неделе, вероятно во вторник.',
+      c6: 'Если детали придут после 10 мая, лампы не успеют собрать к запуску.',
+      c7: 'Реклама запуска забронирована на 14 мая; перенос обойдётся в 800 евро сбора.',
+      c8: 'Отделу маркетинга нужно знать до пятницы, остаётся ли дата запуска в силе.',
+      c9: 'Йонас из отдела закупок может завтра утром позвонить поставщику и попросить твёрдую дату.',
+      c10: 'В прошлом году поставщик переехал в новое офисное здание.',
+      c11: 'Пока отправлено лишь 200 из 500 заказанных плафонов.',
+      c12: 'Честно говоря, у этого поставщика всегда был небольшой бардак.'
     },
     decisions: {
-      right: 'Keep the launch on 14 May, or move it by one week?',
-      notTheirs: 'Which shipping company should the supplier use?',
-      premature: 'Should we replace this supplier for all future products?'
+      right: 'Оставить запуск 14 мая или перенести его на неделю?',
+      notTheirs: 'Какой транспортной компанией должен пользоваться поставщик?',
+      premature: 'Заменить ли этого поставщика для всех будущих продуктов?'
     },
     actions: {
-      concrete: 'Jonas calls the supplier tomorrow at 9:00 and tells the head of product the confirmed date by 12:00.',
-      vague: 'Someone should keep an eye on the supplier.',
-      outOfScope: 'Start designing next year’s lamp collection.'
+      concrete: 'Йонас звонит поставщику завтра в 9:00 и до 12:00 сообщает руководителю продукта подтверждённую дату.',
+      vague: 'Кто-нибудь должен присматривать за поставщиком.',
+      outOfScope: 'Начать разрабатывать коллекцию ламп на следующий год.'
     }
   },
   basement: {
-    title: 'Flooded basement in a shared house',
-    situation: 'After heavy rain, water is standing in the basement of the shared house you live in. Prepare a briefing.',
-    recipient: 'the landlord',
+    title: 'Затопленный подвал в общем доме',
+    situation: 'После сильного дождя в подвале дома, где вы живёте вместе с соседями, стоит вода. Подготовьте брифинг.',
+    recipient: 'арендодатель',
     cards: {
-      c1: 'Five people share the house; the basement holds the heating boiler and everyone’s storage boxes.',
-      c2: 'This morning about 10 cm of water stood in the basement.',
-      c3: 'We switched off the power to the basement this morning as a precaution.',
-      c4: 'Nobody knows yet whether the heating boiler has been damaged.',
-      c5: 'The water has probably stopped rising; at noon it looked the same as in the morning.',
-      c6: 'More rain is forecast for Thursday, and the water could rise again.',
-      c7: 'The boiler stands 15 cm above the floor, so a few more centimetres of water would reach it.',
-      c8: 'The plumber can only come this week if the landlord approves the call-out costs by tomorrow.',
-      c9: 'A housemate who works from home could let the plumber in on Wednesday.',
-      c10: 'The basement walls were last painted in 2015.',
-      c11: 'When we checked this morning, the basement was under 10 cm of water.',
-      c12: 'This house has always been damp, and nobody ever does anything about it.'
+      c1: 'В доме живут пять человек; в подвале стоят отопительный котёл и коробки всех жильцов.',
+      c2: 'Сегодня утром в подвале стояло около 10 см воды.',
+      c3: 'Сегодня утром мы на всякий случай отключили электричество в подвале.',
+      c4: 'Пока никто не знает, пострадал ли котёл.',
+      c5: 'Вода, вероятно, больше не прибывает: в полдень всё выглядело так же, как утром.',
+      c6: 'На четверг обещают новый дождь, и вода может подняться снова.',
+      c7: 'Котёл стоит на высоте 15 см от пола, так что ещё несколько сантиметров воды до него дойдут.',
+      c8: 'Сантехник сможет прийти на этой неделе, только если арендодатель до завтра одобрит оплату вызова.',
+      c9: 'Сосед, который работает из дома, мог бы впустить сантехника в среду.',
+      c10: 'Стены подвала последний раз красили в 2015 году.',
+      c11: 'Когда мы проверили утром, подвал был под 10 см воды.',
+      c12: 'В этом доме всегда было сыро, и никто никогда ничего не делает.'
     },
     decisions: {
-      right: 'Approve the plumber’s call-out costs for this week?',
-      notTheirs: 'Which housemate should move their boxes first?',
-      premature: 'Should the whole basement be waterproofed and renovated?'
+      right: 'Одобрить оплату вызова сантехника на этой неделе?',
+      notTheirs: 'Кто из соседей должен первым убрать свои коробки?',
+      premature: 'Нужно ли гидроизолировать и отремонтировать весь подвал?'
     },
     actions: {
-      concrete: 'The housemate who works from home books the plumber for Wednesday and sends the landlord the quote today.',
-      vague: 'We will deal with it at some point.',
-      outOfScope: 'Plan a house party to cheer everyone up.'
+      concrete: 'Сосед, работающий из дома, вызывает сантехника на среду и сегодня же отправляет арендодателю смету.',
+      vague: 'Когда-нибудь этим займёмся.',
+      outOfScope: 'Устроить вечеринку, чтобы всех подбодрить.'
     }
   },
   schoolTrip: {
-    title: 'School trip and a weather warning',
-    situation: 'A class of 24 pupils is due to go hiking in the hills on Friday. A weather warning has been issued. Prepare a briefing.',
-    recipient: 'the head teacher',
+    title: 'Школьная экскурсия и штормовое предупреждение',
+    situation: 'Класс из 24 учеников в пятницу собирается в поход по холмам. Объявлено предупреждение о непогоде. Подготовьте брифинг.',
+    recipient: 'директор школы',
     cards: {
-      c1: 'The class of 24 pupils, aged 11, is booked for a hiking trip on Friday with three accompanying adults.',
-      c2: 'The weather service has issued a storm warning for Friday afternoon.',
-      c3: 'The science museum in town still has room for a class visit on Friday.',
-      c4: 'The forecast does not yet say whether the storm will arrive before or after midday.',
-      c5: 'The park ranger thinks the main trail will most likely stay open.',
-      c6: 'Strong wind can bring down branches on the forest trail.',
-      c7: 'The only shelter on the route is a 40-minute walk from the end of the trail, too far to reach quickly in a storm.',
-      c8: 'The bus company must be told by Wednesday evening whether the trip goes ahead; until then it can be cancelled free of charge.',
-      c9: 'The class teacher can check the updated forecast on Wednesday at midday.',
-      c10: 'The class voted for the hiking trip back in September.',
-      c11: 'According to the weather service, a storm is expected on Friday afternoon.',
-      c12: 'The children will be terribly disappointed if we cancel.'
+      c1: 'Класс из 24 учеников в возрасте 11 лет записан на пешую экскурсию в пятницу, с тремя сопровождающими взрослыми.',
+      c2: 'Метеослужба объявила штормовое предупреждение на вторую половину пятницы.',
+      c3: 'В городском музее науки в пятницу ещё есть место для экскурсии класса.',
+      c4: 'По прогнозу пока неясно, придёт ли шторм до полудня или после.',
+      c5: 'Смотритель парка считает, что главная тропа, скорее всего, останется открытой.',
+      c6: 'Сильный ветер может обломать ветки на лесной тропе.',
+      c7: 'Единственное укрытие на маршруте находится в 40 минутах ходьбы от конца тропы — слишком далеко, чтобы быстро добраться туда в шторм.',
+      c8: 'Автобусной компании нужно до вечера среды сообщить, состоится ли поездка; до этого отмена бесплатна.',
+      c9: 'Классный руководитель может в среду в полдень проверить обновлённый прогноз.',
+      c10: 'Класс проголосовал за поход ещё в сентябре.',
+      c11: 'По данным метеослужбы, в пятницу после обеда ожидается шторм.',
+      c12: 'Дети будут ужасно расстроены, если мы отменим поездку.'
     },
     decisions: {
-      right: 'Go ahead with the hike, switch to the museum, or cancel the trip?',
-      notTheirs: 'What should the pupils pack for lunch?',
-      premature: 'Should the school stop all outdoor trips from now on?'
+      right: 'Провести поход, заменить его музеем или отменить поездку?',
+      notTheirs: 'Что ученикам взять с собой на обед?',
+      premature: 'Отменить ли школе отныне все выезды на природу?'
     },
     actions: {
-      concrete: 'The class teacher checks the forecast on Wednesday at 12:00 and sends the head teacher a recommendation by 14:00.',
-      vague: 'Let’s see how the weather turns out.',
-      outOfScope: 'Start planning next year’s school festival.'
+      concrete: 'Классный руководитель в среду в 12:00 проверяет прогноз и до 14:00 отправляет директору рекомендацию.',
+      vague: 'Посмотрим, какая будет погода.',
+      outOfScope: 'Начать готовить школьный праздник следующего года.'
     }
   },
   volunteers: {
-    title: 'Clean-up day short of helpers',
-    situation: 'Your neighbourhood association runs a park clean-up on Saturday. Too few volunteers have signed up. Prepare a briefing.',
-    recipient: 'the chair of the association',
+    title: 'Субботник, на который не хватает помощников',
+    situation: 'Ваше соседское объединение в субботу проводит уборку парка. Записалось слишком мало добровольцев. Подготовьте брифинг.',
+    recipient: 'председатель объединения',
     cards: {
-      c1: 'The yearly park clean-up is on Saturday from 10:00 to 13:00; the city provides bags and gloves.',
-      c2: 'So far 9 volunteers have signed up; we planned for 20.',
-      c3: 'The city collects the filled bags only on Saturday at 13:00.',
-      c4: 'The youth football team might send helpers, but the coach has not replied yet.',
-      c5: 'Several neighbours said they will probably drop by if the weather is nice.',
-      c6: 'With 9 people we can clean only about half of the park.',
-      c7: 'Nobody has been named yet to fetch the gloves from the community centre, which closes at 9:30 on Saturday.',
-      c8: 'We can either shrink the clean-up to the playground area or move it to the following Saturday.',
-      c9: 'Two volunteers have offered to put up posters in the neighbourhood tomorrow.',
-      c10: 'Last year’s clean-up ended with a barbecue.',
-      c11: 'Only 9 of the 20 volunteers we planned for have registered.',
-      c12: 'People just don’t care about their neighbourhood any more.'
+      c1: 'Ежегодная уборка парка проходит в субботу с 10:00 до 13:00; город выдаёт мешки и перчатки.',
+      c2: 'Пока записались 9 добровольцев; мы рассчитывали на 20.',
+      c3: 'Город забирает полные мешки только в субботу в 13:00.',
+      c4: 'Юношеская футбольная команда, возможно, пришлёт помощников, но тренер ещё не ответил.',
+      c5: 'Несколько соседей сказали, что, вероятно, заглянут, если будет хорошая погода.',
+      c6: 'Вдевятером мы уберём только примерно половину парка.',
+      c7: 'Ещё никто не назначен забрать перчатки из районного центра, который в субботу закрывается в 9:30.',
+      c8: 'Мы можем либо сократить уборку до детской площадки, либо перенести её на следующую субботу.',
+      c9: 'Двое добровольцев вызвались завтра развесить объявления по району.',
+      c10: 'В прошлом году уборка закончилась шашлыками.',
+      c11: 'Записались только 9 из 20 запланированных добровольцев.',
+      c12: 'Людям просто больше нет дела до своего района.'
     },
     decisions: {
-      right: 'Hold a smaller clean-up this Saturday, or move it by one week?',
-      notTheirs: 'Should the city change its collection times for the bags?',
-      premature: 'Should the association hire a cleaning company in future years?'
+      right: 'Провести уборку поменьше в эту субботу или перенести её на неделю?',
+      notTheirs: 'Должен ли город изменить время вывоза мешков?',
+      premature: 'Нанимать ли объединению в будущие годы клининговую компанию?'
     },
     actions: {
-      concrete: 'The two volunteers put up posters tomorrow, and the secretary emails the football coach today and reports back by Thursday.',
-      vague: 'We should somehow try to get more people.',
-      outOfScope: 'Start planning the association’s summer party.'
+      concrete: 'Двое добровольцев завтра развешивают объявления, а секретарь сегодня пишет футбольному тренеру и до четверга сообщает ответ.',
+      vague: 'Надо как-нибудь привлечь больше людей.',
+      outOfScope: 'Начать планировать летний праздник объединения.'
     }
   },
   release: {
-    title: 'Software release with a failing test',
-    situation: 'Your team plans to release a new version of a booking app on Tuesday. One automated test fails. Prepare a briefing.',
-    recipient: 'the product manager',
+    title: 'Выпуск программы с падающим тестом',
+    situation: 'Ваша команда хочет во вторник выпустить новую версию приложения для бронирования. Один автотест не проходит. Подготовьте брифинг.',
+    recipient: 'менеджер продукта',
     cards: {
-      c1: 'The new version adds online payment and has been announced to customers for Tuesday.',
-      c2: 'One of 640 automated tests fails: the refund of a cancelled booking.',
-      c3: 'The failure only appears for payments in a foreign currency.',
-      c4: 'We do not know yet whether the bug is in our code or in the payment provider’s test system.',
-      c5: 'The developer expects the fix to take about a day, but has not looked at the code yet.',
-      c6: 'If the bug is real, some customers could be refunded the wrong amount.',
-      c7: 'About 15% of bookings are paid in a foreign currency, so the bug would affect many customers.',
-      c8: 'We can release on Tuesday with foreign-currency payments switched off, or postpone the whole release.',
-      c9: 'The developer can check the payment provider’s test logs this afternoon.',
-      c10: 'The new payment screen uses the company’s new shade of blue.',
-      c11: 'A single test fails: refunds for cancelled bookings.',
-      c12: 'This test has always been flaky; I would just ignore it.'
+      c1: 'Новая версия добавляет онлайн-оплату и уже анонсирована клиентам на вторник.',
+      c2: 'Падает один из 640 автотестов: возврат денег за отменённое бронирование.',
+      c3: 'Ошибка возникает только при оплате в иностранной валюте.',
+      c4: 'Мы пока не знаем, ошибка в нашем коде или в тестовой системе платёжного провайдера.',
+      c5: 'Разработчик рассчитывает исправить всё примерно за день, но в код ещё не заглядывал.',
+      c6: 'Если ошибка настоящая, некоторым клиентам могут вернуть неверную сумму.',
+      c7: 'Около 15 % бронирований оплачиваются в иностранной валюте, так что ошибка затронула бы многих клиентов.',
+      c8: 'Можно выпустить версию во вторник с отключённой оплатой в иностранной валюте или отложить весь выпуск.',
+      c9: 'Разработчик может сегодня днём посмотреть тестовые журналы платёжного провайдера.',
+      c10: 'Новый экран оплаты выполнен в новом фирменном оттенке синего.',
+      c11: 'Красный только один тест: возвраты за отменённые бронирования.',
+      c12: 'Этот тест всегда был нестабильным; я бы его просто проигнорировал.'
     },
     decisions: {
-      right: 'Release on Tuesday without foreign-currency payments, or postpone the release?',
-      notTheirs: 'Which programming technique should the developer use for the fix?',
-      premature: 'Should we switch to a different payment provider?'
+      right: 'Выпустить во вторник без оплаты в иностранной валюте или отложить выпуск?',
+      notTheirs: 'Какой приём программирования разработчику использовать для исправления?',
+      premature: 'Перейти ли к другому платёжному провайдеру?'
     },
     actions: {
-      concrete: 'The developer checks the provider’s test logs this afternoon and tells the product manager by 17:00 whether the bug is ours.',
-      vague: 'Someone will look into the test.',
-      outOfScope: 'Start writing the release notes for the version after next.'
+      concrete: 'Разработчик сегодня днём проверяет журналы провайдера и до 17:00 сообщает менеджеру продукта, наша ли это ошибка.',
+      vague: 'Кто-нибудь посмотрит этот тест.',
+      outOfScope: 'Начать писать примечания к выпуску для версии после следующей.'
     }
   },
   careAppointment: {
-    title: 'A care advice appointment for Grandmother',
-    situation: 'Your grandmother has an appointment with a care advice service on Monday. The family has to sort out who goes with her. Prepare a briefing. (This is about organising, not about medical questions.)',
-    recipient: 'your brother, who shares the decision with you',
+    title: 'Консультация по уходу для бабушки',
+    situation: 'В понедельник у вашей бабушки встреча со службой консультаций по уходу. Семье нужно решить, кто пойдёт с ней. Подготовьте брифинг. (Речь об организации, а не о медицинских вопросах.)',
+    recipient: 'ваш брат, с которым вы решаете вместе',
     cards: {
-      c1: 'Grandmother has an appointment with the care advice service on Monday at 10:00 to talk about help at home.',
-      c2: 'She has asked for one family member to come with her.',
-      c3: 'The letter says to bring her list of medicines and her insurance card.',
-      c4: 'It is not clear yet whether Mum can take Monday off work.',
-      c5: 'The advice centre is said to have a lift, but nobody has checked.',
-      c6: 'If nobody can go, the next free appointment is in six weeks.',
-      c7: 'Grandmother tires quickly, and the bus ride to the centre takes 50 minutes each way.',
-      c8: 'The advice service needs to know by Friday whether the appointment takes place in person or by video call.',
-      c9: 'You could call Mum tonight and ask about Monday.',
-      c10: 'Grandmother’s neighbour recently got a new dog.',
-      c11: 'She would like someone from the family to go with her.',
-      c12: 'In my view, these advice services never really help anyway.'
+      c1: 'В понедельник в 10:00 у бабушки встреча со службой консультаций, чтобы обсудить помощь на дому.',
+      c2: 'Она попросила, чтобы с ней пошёл кто-то один из семьи.',
+      c3: 'В письме сказано взять с собой список лекарств и страховой полис.',
+      c4: 'Пока неясно, сможет ли мама отпроситься с работы в понедельник.',
+      c5: 'Говорят, в консультационном центре есть лифт, но никто не проверял.',
+      c6: 'Если никто не сможет пойти, следующая свободная запись только через шесть недель.',
+      c7: 'Бабушка быстро устаёт, а дорога на автобусе до центра занимает 50 минут в одну сторону.',
+      c8: 'Службе нужно знать до пятницы, пройдёт ли встреча очно или по видеосвязи.',
+      c9: 'Вы могли бы сегодня вечером позвонить маме и спросить про понедельник.',
+      c10: 'Соседка бабушки недавно завела новую собаку.',
+      c11: 'Ей хотелось бы, чтобы кто-то из семьи пошёл с ней.',
+      c12: 'По-моему, такие консультации всё равно никогда толком не помогают.'
     },
     decisions: {
-      right: 'Who goes with Grandmother on Monday, and in person or by video call?',
-      notTheirs: 'Which kind of help at home should Grandmother get?',
-      premature: 'Should Grandmother move into a care home?'
+      right: 'Кто идёт с бабушкой в понедельник — и очно или по видеосвязи?',
+      notTheirs: 'Какую помощь на дому должна получать бабушка?',
+      premature: 'Стоит ли бабушке переехать в дом престарелых?'
     },
     actions: {
-      concrete: 'You call Mum tonight and tell your brother by Wednesday evening who can go.',
-      vague: 'We’ll sort it out somehow.',
-      outOfScope: 'Start planning Grandmother’s birthday party.'
+      concrete: 'Вы звоните маме сегодня вечером и до вечера среды сообщаете брату, кто может пойти.',
+      vague: 'Как-нибудь разберёмся.',
+      outOfScope: 'Начать планировать бабушкин день рождения.'
     }
   },
   cafeFreezer: {
-    title: 'Broken freezer in a small café',
-    situation: 'You work in a small café. This morning the freezer was not cold enough. The owner is away until tomorrow. Prepare a briefing.',
-    recipient: 'the café owner',
+    title: 'Сломанная морозилка в маленьком кафе',
+    situation: 'Вы работаете в маленьком кафе. Сегодня утром морозильный ларь морозил недостаточно. Хозяйка в отъезде до завтра. Подготовьте брифинг.',
+    recipient: 'хозяйка кафе',
     cards: {
-      c1: 'The café sells homemade ice cream; the freezer holds about a week’s stock.',
-      c2: 'At 7:00 the freezer showed −2 °C instead of the usual −18 °C.',
-      c3: 'We moved the ice cream into the neighbouring bakery’s freezer at 7:30.',
-      c4: 'We do not know whether the ice cream thawed during the night.',
-      c5: 'The repair service will probably be able to come on Thursday.',
-      c6: 'Ice cream that has thawed must not be sold, so we may have to throw away the stock.',
-      c7: 'The bakery needs its freezer space back on Saturday, so our ice cream can only stay there until then.',
-      c8: 'The repair service will only book a visit once the owner approves the call-out fee of 90 euros.',
-      c9: 'The barista can read the freezer’s temperature log this afternoon.',
-      c10: 'The café’s new menu boards arrive next week.',
-      c11: 'This morning the freezer read −2 °C instead of −18 °C.',
-      c12: 'That freezer was a bad buy from day one.'
+      c1: 'Кафе продаёт домашнее мороженое; в ларе хранится запас примерно на неделю.',
+      c2: 'В 7:00 ларь показывал −2 °C вместо обычных −18 °C.',
+      c3: 'В 7:30 мы перенесли мороженое в морозильник соседней пекарни.',
+      c4: 'Мы не знаем, подтаяло ли мороженое за ночь.',
+      c5: 'Ремонтная служба, вероятно, сможет приехать в четверг.',
+      c6: 'Подтаявшее мороженое продавать нельзя, так что запас, возможно, придётся выбросить.',
+      c7: 'В субботу пекарне нужно вернуть своё место в морозильнике, так что наше мороженое может пробыть там только до этого дня.',
+      c8: 'Ремонтная служба назначит визит, только когда хозяйка одобрит плату за выезд — 90 евро.',
+      c9: 'Бариста может сегодня днём считать журнал температуры ларя.',
+      c10: 'Новые доски с меню для кафе придут на следующей неделе.',
+      c11: 'Сегодня утром ларь показывал −2 °C вместо −18 °C.',
+      c12: 'Этот ларь с первого дня был неудачной покупкой.'
     },
     decisions: {
-      right: 'Approve the repair call-out fee of 90 euros?',
-      notTheirs: 'Which cakes should the bakery sell this week?',
-      premature: 'Should the café stop selling ice cream altogether?'
+      right: 'Одобрить плату за выезд ремонтника — 90 евро?',
+      notTheirs: 'Какие пирожные пекарне продавать на этой неделе?',
+      premature: 'Перестать ли кафе вообще продавать мороженое?'
     },
     actions: {
-      concrete: 'The barista reads the temperature log this afternoon and texts the owner the result by 16:00.',
-      vague: 'We’ll keep an eye on it.',
-      outOfScope: 'Redesign the café’s website.'
+      concrete: 'Бариста сегодня днём считывает журнал температуры и до 16:00 пишет хозяйке результат.',
+      vague: 'Будем присматривать.',
+      outOfScope: 'Переделать сайт кафе.'
     }
   },
   tournament: {
-    title: 'New venue for a chess tournament',
-    situation: 'Your chess club hosts a youth tournament on Sunday. The school hall you booked is no longer available. Prepare a briefing.',
-    recipient: 'the club board',
+    title: 'Новое место для шахматного турнира',
+    situation: 'Ваш шахматный клуб в воскресенье проводит юношеский турнир. Забронированный школьный зал больше недоступен. Подготовьте брифинг.',
+    recipient: 'правление клуба',
     cards: {
-      c1: 'Sunday’s youth tournament has 48 registered players from six clubs.',
-      c2: 'The school has cancelled our hall booking because of a leak in the roof.',
-      c3: 'The town library offers its event room free of charge, but it only fits 32 players.',
-      c4: 'The sports centre might have a free room, but it has not answered our email yet.',
-      c5: 'The caretaker believes the school hall could be repaired in time, but nobody has confirmed it.',
-      c6: 'If families hear about the change too late, some players may turn up at the old venue.',
-      c7: 'Several families travel more than 100 km and have already booked their trains, so a change of date would hit them hardest.',
-      c8: 'The invitations with the final venue must go out by Wednesday.',
-      c9: 'The club secretary can phone the sports centre tomorrow morning.',
-      c10: 'The club’s trophy cabinet was cleaned last month.',
-      c11: 'The school has called off our booking for the hall.',
-      c12: 'We should never have relied on that school.'
+      c1: 'На воскресный юношеский турнир записались 48 игроков из шести клубов.',
+      c2: 'Школа отменила нашу бронь зала из-за протечки в крыше.',
+      c3: 'Городская библиотека бесплатно предлагает свой зал, но в нём помещается только 32 игрока.',
+      c4: 'В спортивном центре, возможно, есть свободный зал, но на наше письмо там ещё не ответили.',
+      c5: 'Завхоз считает, что школьный зал могут успеть отремонтировать, но никто этого не подтвердил.',
+      c6: 'Если семьи узнают об изменении слишком поздно, некоторые игроки могут приехать на старое место.',
+      c7: 'Несколько семей едут больше чем за 100 км и уже купили билеты на поезд, так что перенос даты сильнее всего ударит по ним.',
+      c8: 'Приглашения с окончательным местом нужно разослать до среды.',
+      c9: 'Секретарь клуба может завтра утром позвонить в спортивный центр.',
+      c10: 'Витрину с кубками клуба чистили в прошлом месяце.',
+      c11: 'Школа отозвала нашу бронь зала.',
+      c12: 'Не надо было вообще полагаться на эту школу.'
     },
     decisions: {
-      right: 'Move to another venue, limit the tournament to 32 players, or postpone it?',
-      notTheirs: 'When should the school repair its roof?',
-      premature: 'Should the club build its own clubhouse?'
+      right: 'Перейти в другое место, ограничить турнир 32 игроками или перенести его?',
+      notTheirs: 'Когда школе ремонтировать крышу?',
+      premature: 'Строить ли клубу собственное помещение?'
     },
     actions: {
-      concrete: 'The secretary phones the sports centre tomorrow at 9:00 and reports to the board by 12:00.',
-      vague: 'Let’s wait and see what turns up.',
-      outOfScope: 'Order new chess sets for the club.'
+      concrete: 'Секретарь звонит в спортивный центр завтра в 9:00 и до 12:00 докладывает правлению.',
+      vague: 'Подождём, что подвернётся.',
+      outOfScope: 'Заказать для клуба новые шахматные комплекты.'
     }
   }
 };

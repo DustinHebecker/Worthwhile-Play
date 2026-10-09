@@ -2,235 +2,235 @@ import type { ContentText } from './types';
 
 export const content: ContentText = {
   supplierDelay: {
-    title: 'Supplier delay before a launch',
-    situation: 'Your company launches a new desk lamp on 14 May. The supplier of the lamp heads reports a delay. Prepare a briefing.',
-    recipient: 'the head of product',
+    title: '출시 직전 공급업체 지연',
+    situation: '회사가 5월 14일에 새 탁상 램프를 출시합니다. 램프 헤드 공급업체가 지연을 알려 왔습니다. 브리핑을 준비하세요.',
+    recipient: '제품 책임자',
     cards: {
-      c1: 'The new desk lamp launches on 14 May; 350 customers have pre-ordered it.',
-      c2: 'The supplier has shipped only 200 of the 500 lamp heads we ordered.',
-      c3: 'Once the parts are here, our workshop can assemble 100 lamps a day.',
-      c4: 'The supplier has not yet given a date for shipping the remaining lamp heads.',
-      c5: 'The supplier expects the rest to ship next week, probably on Tuesday.',
-      c6: 'If the parts arrive after 10 May, the lamps cannot be assembled in time for the launch.',
-      c7: 'The launch advert is booked for 14 May; moving it would cost a fee of 800 euros.',
-      c8: 'Marketing needs to know by Friday whether the launch date holds.',
-      c9: 'Jonas from purchasing can call the supplier tomorrow morning and ask for a firm date.',
-      c10: 'The supplier moved into a new office building last year.',
-      c11: 'So far only 200 of the 500 ordered lamp heads have been shipped.',
-      c12: 'Honestly, this supplier has always been a bit chaotic.'
+      c1: '새 탁상 램프는 5월 14일에 출시되며, 고객 350명이 사전 주문했습니다.',
+      c2: '공급업체는 주문한 램프 헤드 500개 중 200개만 보냈습니다.',
+      c3: '부품이 도착하면 우리 작업장은 하루에 램프 100개를 조립할 수 있습니다.',
+      c4: '공급업체는 나머지 램프 헤드의 발송 날짜를 아직 알려 주지 않았습니다.',
+      c5: '공급업체는 나머지를 다음 주, 아마 화요일에 보낼 것으로 예상합니다.',
+      c6: '부품이 5월 10일 이후에 도착하면 출시에 맞춰 램프를 조립할 수 없습니다.',
+      c7: '출시 광고는 5월 14일로 예약되어 있고, 옮기면 수수료 800유로가 듭니다.',
+      c8: '마케팅팀은 금요일까지 출시일이 유지되는지 알아야 합니다.',
+      c9: '구매팀의 요나스가 내일 아침 공급업체에 전화해 확정 날짜를 물어볼 수 있습니다.',
+      c10: '공급업체는 작년에 새 사무실 건물로 이사했습니다.',
+      c11: '지금까지 주문한 램프 헤드 500개 중 200개만 발송되었습니다.',
+      c12: '솔직히 이 공급업체는 늘 좀 정신없었어요.'
     },
     decisions: {
-      right: 'Keep the launch on 14 May, or move it by one week?',
-      notTheirs: 'Which shipping company should the supplier use?',
-      premature: 'Should we replace this supplier for all future products?'
+      right: '5월 14일 출시를 유지할까, 일주일 미룰까?',
+      notTheirs: '공급업체는 어느 운송 회사를 써야 할까?',
+      premature: '앞으로 모든 제품에서 이 공급업체를 바꿔야 할까?'
     },
     actions: {
-      concrete: 'Jonas calls the supplier tomorrow at 9:00 and tells the head of product the confirmed date by 12:00.',
-      vague: 'Someone should keep an eye on the supplier.',
-      outOfScope: 'Start designing next year’s lamp collection.'
+      concrete: '요나스가 내일 9:00에 공급업체에 전화하고 12:00까지 제품 책임자에게 확정 날짜를 알립니다.',
+      vague: '누군가 공급업체를 지켜봐야 합니다.',
+      outOfScope: '내년 램프 컬렉션 디자인을 시작합니다.'
     }
   },
   basement: {
-    title: 'Flooded basement in a shared house',
-    situation: 'After heavy rain, water is standing in the basement of the shared house you live in. Prepare a briefing.',
-    recipient: 'the landlord',
+    title: '셰어하우스 지하실 침수',
+    situation: '폭우가 내린 뒤, 여럿이 함께 사는 집의 지하실에 물이 찼습니다. 브리핑을 준비하세요.',
+    recipient: '집주인',
     cards: {
-      c1: 'Five people share the house; the basement holds the heating boiler and everyone’s storage boxes.',
-      c2: 'This morning about 10 cm of water stood in the basement.',
-      c3: 'We switched off the power to the basement this morning as a precaution.',
-      c4: 'Nobody knows yet whether the heating boiler has been damaged.',
-      c5: 'The water has probably stopped rising; at noon it looked the same as in the morning.',
-      c6: 'More rain is forecast for Thursday, and the water could rise again.',
-      c7: 'The boiler stands 15 cm above the floor, so a few more centimetres of water would reach it.',
-      c8: 'The plumber can only come this week if the landlord approves the call-out costs by tomorrow.',
-      c9: 'A housemate who works from home could let the plumber in on Wednesday.',
-      c10: 'The basement walls were last painted in 2015.',
-      c11: 'When we checked this morning, the basement was under 10 cm of water.',
-      c12: 'This house has always been damp, and nobody ever does anything about it.'
+      c1: '다섯 명이 이 집을 함께 쓰며, 지하실에는 보일러와 모두의 보관 상자가 있습니다.',
+      c2: '오늘 아침 지하실에 물이 약 10cm 차 있었습니다.',
+      c3: '오늘 아침 만일을 위해 지하실 전기를 차단했습니다.',
+      c4: '보일러가 손상되었는지는 아직 아무도 모릅니다.',
+      c5: '물은 아마 더 이상 차오르지 않는 것 같습니다. 정오에도 아침과 똑같아 보였습니다.',
+      c6: '목요일에 비가 더 온다는 예보가 있어 물이 다시 차오를 수 있습니다.',
+      c7: '보일러는 바닥에서 15cm 위에 있어서 물이 몇 센티미터만 더 차도 닿습니다.',
+      c8: '집주인이 내일까지 출장비를 승인해야 배관공이 이번 주에 올 수 있습니다.',
+      c9: '재택근무하는 하우스메이트가 수요일에 배관공을 들여보낼 수 있습니다.',
+      c10: '지하실 벽은 2015년에 마지막으로 칠했습니다.',
+      c11: '오늘 아침 확인했을 때 지하실은 10cm 물에 잠겨 있었습니다.',
+      c12: '이 집은 늘 눅눅했는데, 아무도 손을 쓰지 않아요.'
     },
     decisions: {
-      right: 'Approve the plumber’s call-out costs for this week?',
-      notTheirs: 'Which housemate should move their boxes first?',
-      premature: 'Should the whole basement be waterproofed and renovated?'
+      right: '이번 주 배관공 출장비를 승인할까?',
+      notTheirs: '어느 하우스메이트가 먼저 상자를 옮겨야 할까?',
+      premature: '지하실 전체를 방수 처리하고 리모델링해야 할까?'
     },
     actions: {
-      concrete: 'The housemate who works from home books the plumber for Wednesday and sends the landlord the quote today.',
-      vague: 'We will deal with it at some point.',
-      outOfScope: 'Plan a house party to cheer everyone up.'
+      concrete: '재택근무하는 하우스메이트가 수요일로 배관공을 예약하고 오늘 집주인에게 견적서를 보냅니다.',
+      vague: '언젠가 처리하죠.',
+      outOfScope: '모두의 기운을 북돋을 집들이 파티를 계획합니다.'
     }
   },
   schoolTrip: {
-    title: 'School trip and a weather warning',
-    situation: 'A class of 24 pupils is due to go hiking in the hills on Friday. A weather warning has been issued. Prepare a briefing.',
-    recipient: 'the head teacher',
+    title: '학교 소풍과 기상 특보',
+    situation: '학생 24명인 한 반이 금요일에 언덕으로 하이킹을 갈 예정입니다. 기상 특보가 발령되었습니다. 브리핑을 준비하세요.',
+    recipient: '교장 선생님',
     cards: {
-      c1: 'The class of 24 pupils, aged 11, is booked for a hiking trip on Friday with three accompanying adults.',
-      c2: 'The weather service has issued a storm warning for Friday afternoon.',
-      c3: 'The science museum in town still has room for a class visit on Friday.',
-      c4: 'The forecast does not yet say whether the storm will arrive before or after midday.',
-      c5: 'The park ranger thinks the main trail will most likely stay open.',
-      c6: 'Strong wind can bring down branches on the forest trail.',
-      c7: 'The only shelter on the route is a 40-minute walk from the end of the trail, too far to reach quickly in a storm.',
-      c8: 'The bus company must be told by Wednesday evening whether the trip goes ahead; until then it can be cancelled free of charge.',
-      c9: 'The class teacher can check the updated forecast on Wednesday at midday.',
-      c10: 'The class voted for the hiking trip back in September.',
-      c11: 'According to the weather service, a storm is expected on Friday afternoon.',
-      c12: 'The children will be terribly disappointed if we cancel.'
+      c1: '11살 학생 24명인 반이 금요일 하이킹을 신청했고, 인솔 어른 세 명이 함께합니다.',
+      c2: '기상청이 금요일 오후 폭풍 특보를 발령했습니다.',
+      c3: '시내 과학관에 금요일 학급 견학 자리가 아직 남아 있습니다.',
+      c4: '폭풍이 정오 전에 올지 후에 올지는 예보에 아직 나오지 않았습니다.',
+      c5: '공원 관리인은 주 탐방로가 십중팔구 열려 있을 거라고 생각합니다.',
+      c6: '강풍이 불면 숲길에 나뭇가지가 부러져 떨어질 수 있습니다.',
+      c7: '코스의 유일한 대피소는 탐방로 끝에서 걸어서 40분 거리라, 폭풍 때 빨리 가기에는 너무 멉니다.',
+      c8: '버스 회사에 수요일 저녁까지 소풍 진행 여부를 알려야 하며, 그때까지는 무료로 취소할 수 있습니다.',
+      c9: '담임 선생님이 수요일 정오에 최신 예보를 확인할 수 있습니다.',
+      c10: '이 반은 이미 9월에 하이킹으로 투표했습니다.',
+      c11: '기상청에 따르면 금요일 오후에 폭풍이 예상됩니다.',
+      c12: '취소하면 아이들이 엄청 실망할 거예요.'
     },
     decisions: {
-      right: 'Go ahead with the hike, switch to the museum, or cancel the trip?',
-      notTheirs: 'What should the pupils pack for lunch?',
-      premature: 'Should the school stop all outdoor trips from now on?'
+      right: '하이킹을 진행할까, 과학관으로 바꿀까, 소풍을 취소할까?',
+      notTheirs: '학생들이 점심으로 무엇을 싸 와야 할까?',
+      premature: '학교가 앞으로 모든 야외 활동을 없애야 할까?'
     },
     actions: {
-      concrete: 'The class teacher checks the forecast on Wednesday at 12:00 and sends the head teacher a recommendation by 14:00.',
-      vague: 'Let’s see how the weather turns out.',
-      outOfScope: 'Start planning next year’s school festival.'
+      concrete: '담임 선생님이 수요일 12:00에 예보를 확인하고 14:00까지 교장 선생님께 권고안을 보냅니다.',
+      vague: '날씨가 어떻게 되는지 봅시다.',
+      outOfScope: '내년 학교 축제 준비를 시작합니다.'
     }
   },
   volunteers: {
-    title: 'Clean-up day short of helpers',
-    situation: 'Your neighbourhood association runs a park clean-up on Saturday. Too few volunteers have signed up. Prepare a briefing.',
-    recipient: 'the chair of the association',
+    title: '자원봉사자가 모자란 청소의 날',
+    situation: '동네 주민 모임이 토요일에 공원 청소를 합니다. 신청한 자원봉사자가 너무 적습니다. 브리핑을 준비하세요.',
+    recipient: '주민 모임 회장',
     cards: {
-      c1: 'The yearly park clean-up is on Saturday from 10:00 to 13:00; the city provides bags and gloves.',
-      c2: 'So far 9 volunteers have signed up; we planned for 20.',
-      c3: 'The city collects the filled bags only on Saturday at 13:00.',
-      c4: 'The youth football team might send helpers, but the coach has not replied yet.',
-      c5: 'Several neighbours said they will probably drop by if the weather is nice.',
-      c6: 'With 9 people we can clean only about half of the park.',
-      c7: 'Nobody has been named yet to fetch the gloves from the community centre, which closes at 9:30 on Saturday.',
-      c8: 'We can either shrink the clean-up to the playground area or move it to the following Saturday.',
-      c9: 'Two volunteers have offered to put up posters in the neighbourhood tomorrow.',
-      c10: 'Last year’s clean-up ended with a barbecue.',
-      c11: 'Only 9 of the 20 volunteers we planned for have registered.',
-      c12: 'People just don’t care about their neighbourhood any more.'
+      c1: '연례 공원 청소는 토요일 10:00부터 13:00까지이며, 시에서 봉투와 장갑을 제공합니다.',
+      c2: '지금까지 자원봉사자 9명이 신청했고, 계획은 20명이었습니다.',
+      c3: '시는 가득 찬 봉투를 토요일 13:00에만 수거합니다.',
+      c4: '청소년 축구팀이 도우미를 보낼 수도 있지만, 코치가 아직 답하지 않았습니다.',
+      c5: '이웃 몇 명은 날씨가 좋으면 아마 들르겠다고 했습니다.',
+      c6: '9명으로는 공원의 절반 정도만 청소할 수 있습니다.',
+      c7: '토요일 9:30에 문을 닫는 주민센터에서 장갑을 가져올 사람이 아직 정해지지 않았습니다.',
+      c8: '청소 범위를 놀이터 구역으로 줄이거나, 다음 주 토요일로 미룰 수 있습니다.',
+      c9: '자원봉사자 두 명이 내일 동네에 포스터를 붙이겠다고 했습니다.',
+      c10: '작년 청소는 바비큐로 마무리했습니다.',
+      c11: '계획한 자원봉사자 20명 중 9명만 등록했습니다.',
+      c12: '요즘 사람들은 자기 동네에 도무지 관심이 없어요.'
     },
     decisions: {
-      right: 'Hold a smaller clean-up this Saturday, or move it by one week?',
-      notTheirs: 'Should the city change its collection times for the bags?',
-      premature: 'Should the association hire a cleaning company in future years?'
+      right: '이번 토요일에 규모를 줄여 할까, 일주일 미룰까?',
+      notTheirs: '시가 봉투 수거 시간을 바꿔야 할까?',
+      premature: '주민 모임이 앞으로 청소 업체를 고용해야 할까?'
     },
     actions: {
-      concrete: 'The two volunteers put up posters tomorrow, and the secretary emails the football coach today and reports back by Thursday.',
-      vague: 'We should somehow try to get more people.',
-      outOfScope: 'Start planning the association’s summer party.'
+      concrete: '자원봉사자 두 명이 내일 포스터를 붙이고, 총무가 오늘 축구 코치에게 이메일을 보내 목요일까지 결과를 알립니다.',
+      vague: '어떻게든 사람을 더 모아야 해요.',
+      outOfScope: '주민 모임 여름 파티 계획을 시작합니다.'
     }
   },
   release: {
-    title: 'Software release with a failing test',
-    situation: 'Your team plans to release a new version of a booking app on Tuesday. One automated test fails. Prepare a briefing.',
-    recipient: 'the product manager',
+    title: '실패한 테스트가 있는 소프트웨어 출시',
+    situation: '팀이 화요일에 예약 앱의 새 버전을 출시하려 합니다. 자동 테스트 하나가 실패합니다. 브리핑을 준비하세요.',
+    recipient: '프로덕트 매니저',
     cards: {
-      c1: 'The new version adds online payment and has been announced to customers for Tuesday.',
-      c2: 'One of 640 automated tests fails: the refund of a cancelled booking.',
-      c3: 'The failure only appears for payments in a foreign currency.',
-      c4: 'We do not know yet whether the bug is in our code or in the payment provider’s test system.',
-      c5: 'The developer expects the fix to take about a day, but has not looked at the code yet.',
-      c6: 'If the bug is real, some customers could be refunded the wrong amount.',
-      c7: 'About 15% of bookings are paid in a foreign currency, so the bug would affect many customers.',
-      c8: 'We can release on Tuesday with foreign-currency payments switched off, or postpone the whole release.',
-      c9: 'The developer can check the payment provider’s test logs this afternoon.',
-      c10: 'The new payment screen uses the company’s new shade of blue.',
-      c11: 'A single test fails: refunds for cancelled bookings.',
-      c12: 'This test has always been flaky; I would just ignore it.'
+      c1: '새 버전에는 온라인 결제가 추가되며, 고객에게 화요일 출시를 공지했습니다.',
+      c2: '자동 테스트 640개 중 하나가 실패합니다: 취소된 예약의 환불.',
+      c3: '오류는 외화 결제에서만 나타납니다.',
+      c4: '버그가 우리 코드에 있는지 결제 대행사의 테스트 시스템에 있는지 아직 모릅니다.',
+      c5: '개발자는 수정에 하루쯤 걸릴 거라고 예상하지만, 아직 코드를 보지 않았습니다.',
+      c6: '버그가 실제라면 일부 고객이 잘못된 금액을 환불받을 수 있습니다.',
+      c7: '예약의 약 15%가 외화로 결제되므로 이 버그는 많은 고객에게 영향을 줍니다.',
+      c8: '화요일에 외화 결제를 끈 채 출시하거나, 출시 전체를 미룰 수 있습니다.',
+      c9: '개발자가 오늘 오후에 결제 대행사의 테스트 로그를 확인할 수 있습니다.',
+      c10: '새 결제 화면은 회사의 새로운 파란색을 씁니다.',
+      c11: '빨간불인 테스트는 하나뿐입니다: 취소된 예약 환불.',
+      c12: '이 테스트는 원래 들쭉날쭉했어요. 저라면 그냥 무시하겠어요.'
     },
     decisions: {
-      right: 'Release on Tuesday without foreign-currency payments, or postpone the release?',
-      notTheirs: 'Which programming technique should the developer use for the fix?',
-      premature: 'Should we switch to a different payment provider?'
+      right: '화요일에 외화 결제 없이 출시할까, 출시를 미룰까?',
+      notTheirs: '개발자는 어떤 프로그래밍 기법으로 고쳐야 할까?',
+      premature: '다른 결제 대행사로 바꿔야 할까?'
     },
     actions: {
-      concrete: 'The developer checks the provider’s test logs this afternoon and tells the product manager by 17:00 whether the bug is ours.',
-      vague: 'Someone will look into the test.',
-      outOfScope: 'Start writing the release notes for the version after next.'
+      concrete: '개발자가 오늘 오후 대행사의 테스트 로그를 확인하고 17:00까지 프로덕트 매니저에게 우리 쪽 버그인지 알립니다.',
+      vague: '누군가 테스트를 살펴볼 거예요.',
+      outOfScope: '다다음 버전의 릴리스 노트 작성을 시작합니다.'
     }
   },
   careAppointment: {
-    title: 'A care advice appointment for Grandmother',
-    situation: 'Your grandmother has an appointment with a care advice service on Monday. The family has to sort out who goes with her. Prepare a briefing. (This is about organising, not about medical questions.)',
-    recipient: 'your brother, who shares the decision with you',
+    title: '할머니의 돌봄 상담 예약',
+    situation: '할머니가 월요일에 돌봄 상담 기관과 약속이 있습니다. 가족은 누가 함께 갈지 정해야 합니다. 브리핑을 준비하세요. (의학적 문제가 아니라 일정 조율에 관한 것입니다.)',
+    recipient: '결정을 함께 내리는 형제',
     cards: {
-      c1: 'Grandmother has an appointment with the care advice service on Monday at 10:00 to talk about help at home.',
-      c2: 'She has asked for one family member to come with her.',
-      c3: 'The letter says to bring her list of medicines and her insurance card.',
-      c4: 'It is not clear yet whether Mum can take Monday off work.',
-      c5: 'The advice centre is said to have a lift, but nobody has checked.',
-      c6: 'If nobody can go, the next free appointment is in six weeks.',
-      c7: 'Grandmother tires quickly, and the bus ride to the centre takes 50 minutes each way.',
-      c8: 'The advice service needs to know by Friday whether the appointment takes place in person or by video call.',
-      c9: 'You could call Mum tonight and ask about Monday.',
-      c10: 'Grandmother’s neighbour recently got a new dog.',
-      c11: 'She would like someone from the family to go with her.',
-      c12: 'In my view, these advice services never really help anyway.'
+      c1: '할머니는 월요일 10:00에 돌봄 상담 기관에서 재가 도움에 대해 상담할 예정입니다.',
+      c2: '할머니는 가족 한 명이 함께 가 주기를 부탁하셨습니다.',
+      c3: '안내문에 복용 약 목록과 보험증을 가져오라고 적혀 있습니다.',
+      c4: '엄마가 월요일에 휴가를 낼 수 있을지는 아직 모릅니다.',
+      c5: '상담 센터에 엘리베이터가 있다고 하지만, 아무도 확인하지 않았습니다.',
+      c6: '아무도 못 가면 다음 빈 예약은 6주 뒤입니다.',
+      c7: '할머니는 금방 지치시는데, 센터까지 버스로 편도 50분이 걸립니다.',
+      c8: '상담 기관은 금요일까지 대면으로 할지 영상 통화로 할지 알아야 합니다.',
+      c9: '오늘 저녁 엄마에게 전화해 월요일에 대해 물어볼 수 있습니다.',
+      c10: '할머니의 이웃이 최근에 새 강아지를 들였습니다.',
+      c11: '할머니는 가족 중 누군가가 같이 가 주기를 바라십니다.',
+      c12: '제 생각엔 이런 상담은 어차피 별 도움이 안 돼요.'
     },
     decisions: {
-      right: 'Who goes with Grandmother on Monday, and in person or by video call?',
-      notTheirs: 'Which kind of help at home should Grandmother get?',
-      premature: 'Should Grandmother move into a care home?'
+      right: '월요일에 누가 할머니와 함께 갈지, 대면일지 영상일지?',
+      notTheirs: '할머니가 집에서 어떤 도움을 받아야 할까?',
+      premature: '할머니가 요양원으로 옮기셔야 할까?'
     },
     actions: {
-      concrete: 'You call Mum tonight and tell your brother by Wednesday evening who can go.',
-      vague: 'We’ll sort it out somehow.',
-      outOfScope: 'Start planning Grandmother’s birthday party.'
+      concrete: '오늘 저녁 엄마에게 전화하고, 수요일 저녁까지 형제에게 누가 갈 수 있는지 알립니다.',
+      vague: '어떻게든 되겠죠.',
+      outOfScope: '할머니 생신 파티 계획을 시작합니다.'
     }
   },
   cafeFreezer: {
-    title: 'Broken freezer in a small café',
-    situation: 'You work in a small café. This morning the freezer was not cold enough. The owner is away until tomorrow. Prepare a briefing.',
-    recipient: 'the café owner',
+    title: '작은 카페의 고장 난 냉동고',
+    situation: '당신은 작은 카페에서 일합니다. 오늘 아침 냉동고가 충분히 차갑지 않았습니다. 사장님은 내일까지 자리를 비웁니다. 브리핑을 준비하세요.',
+    recipient: '카페 사장님',
     cards: {
-      c1: 'The café sells homemade ice cream; the freezer holds about a week’s stock.',
-      c2: 'At 7:00 the freezer showed −2 °C instead of the usual −18 °C.',
-      c3: 'We moved the ice cream into the neighbouring bakery’s freezer at 7:30.',
-      c4: 'We do not know whether the ice cream thawed during the night.',
-      c5: 'The repair service will probably be able to come on Thursday.',
-      c6: 'Ice cream that has thawed must not be sold, so we may have to throw away the stock.',
-      c7: 'The bakery needs its freezer space back on Saturday, so our ice cream can only stay there until then.',
-      c8: 'The repair service will only book a visit once the owner approves the call-out fee of 90 euros.',
-      c9: 'The barista can read the freezer’s temperature log this afternoon.',
-      c10: 'The café’s new menu boards arrive next week.',
-      c11: 'This morning the freezer read −2 °C instead of −18 °C.',
-      c12: 'That freezer was a bad buy from day one.'
+      c1: '카페는 수제 아이스크림을 팔며, 냉동고에는 약 일주일 치 재고가 들어 있습니다.',
+      c2: '7:00에 냉동고 온도가 평소의 −18 °C가 아니라 −2 °C였습니다.',
+      c3: '7:30에 아이스크림을 옆 빵집의 냉동고로 옮겼습니다.',
+      c4: '밤사이 아이스크림이 녹았는지는 모릅니다.',
+      c5: '수리 업체는 아마 목요일에 올 수 있을 것 같습니다.',
+      c6: '녹았던 아이스크림은 팔 수 없으니 재고를 버려야 할 수도 있습니다.',
+      c7: '빵집은 토요일에 냉동고 자리가 다시 필요해서, 우리 아이스크림은 그때까지만 둘 수 있습니다.',
+      c8: '수리 업체는 사장님이 출장비 90유로를 승인해야 방문 일정을 잡습니다.',
+      c9: '바리스타가 오늘 오후에 냉동고 온도 기록을 확인할 수 있습니다.',
+      c10: '카페의 새 메뉴판이 다음 주에 도착합니다.',
+      c11: '오늘 아침 냉동고는 −18 °C가 아니라 −2 °C를 가리켰습니다.',
+      c12: '그 냉동고는 처음부터 잘못 산 물건이에요.'
     },
     decisions: {
-      right: 'Approve the repair call-out fee of 90 euros?',
-      notTheirs: 'Which cakes should the bakery sell this week?',
-      premature: 'Should the café stop selling ice cream altogether?'
+      right: '수리 출장비 90유로를 승인할까?',
+      notTheirs: '빵집은 이번 주에 어떤 케이크를 팔아야 할까?',
+      premature: '카페가 아이스크림 판매를 아예 접어야 할까?'
     },
     actions: {
-      concrete: 'The barista reads the temperature log this afternoon and texts the owner the result by 16:00.',
-      vague: 'We’ll keep an eye on it.',
-      outOfScope: 'Redesign the café’s website.'
+      concrete: '바리스타가 오늘 오후 온도 기록을 확인하고 16:00까지 사장님께 결과를 문자로 보냅니다.',
+      vague: '계속 지켜볼게요.',
+      outOfScope: '카페 웹사이트를 새로 디자인합니다.'
     }
   },
   tournament: {
-    title: 'New venue for a chess tournament',
-    situation: 'Your chess club hosts a youth tournament on Sunday. The school hall you booked is no longer available. Prepare a briefing.',
-    recipient: 'the club board',
+    title: '체스 대회 장소 변경',
+    situation: '체스 클럽이 일요일에 청소년 대회를 엽니다. 예약해 둔 학교 강당을 더 이상 쓸 수 없습니다. 브리핑을 준비하세요.',
+    recipient: '클럽 운영진',
     cards: {
-      c1: 'Sunday’s youth tournament has 48 registered players from six clubs.',
-      c2: 'The school has cancelled our hall booking because of a leak in the roof.',
-      c3: 'The town library offers its event room free of charge, but it only fits 32 players.',
-      c4: 'The sports centre might have a free room, but it has not answered our email yet.',
-      c5: 'The caretaker believes the school hall could be repaired in time, but nobody has confirmed it.',
-      c6: 'If families hear about the change too late, some players may turn up at the old venue.',
-      c7: 'Several families travel more than 100 km and have already booked their trains, so a change of date would hit them hardest.',
-      c8: 'The invitations with the final venue must go out by Wednesday.',
-      c9: 'The club secretary can phone the sports centre tomorrow morning.',
-      c10: 'The club’s trophy cabinet was cleaned last month.',
-      c11: 'The school has called off our booking for the hall.',
-      c12: 'We should never have relied on that school.'
+      c1: '일요일 청소년 대회에는 여섯 개 클럽에서 선수 48명이 등록했습니다.',
+      c2: '학교가 지붕 누수 때문에 강당 예약을 취소했습니다.',
+      c3: '시립 도서관이 행사실을 무료로 내주겠다고 하지만, 32명만 들어갑니다.',
+      c4: '스포츠 센터에 빈 공간이 있을지도 모르지만, 아직 이메일에 답이 없습니다.',
+      c5: '학교 관리인은 강당을 제때 고칠 수 있을 거라 믿지만, 확인해 준 사람은 없습니다.',
+      c6: '가족들이 변경 소식을 너무 늦게 들으면, 일부 선수가 예전 장소로 갈 수 있습니다.',
+      c7: '여러 가족이 100km 넘게 이동하고 이미 기차표를 예매해서, 날짜를 바꾸면 그들이 가장 큰 타격을 받습니다.',
+      c8: '최종 장소가 적힌 초대장은 수요일까지 보내야 합니다.',
+      c9: '클럽 총무가 내일 아침 스포츠 센터에 전화할 수 있습니다.',
+      c10: '클럽 트로피 진열장은 지난달에 청소했습니다.',
+      c11: '학교가 우리 강당 예약을 철회했습니다.',
+      c12: '애초에 그 학교를 믿지 말았어야 했어요.'
     },
     decisions: {
-      right: 'Move to another venue, limit the tournament to 32 players, or postpone it?',
-      notTheirs: 'When should the school repair its roof?',
-      premature: 'Should the club build its own clubhouse?'
+      right: '다른 장소로 옮길까, 대회를 32명으로 제한할까, 연기할까?',
+      notTheirs: '학교는 언제 지붕을 고쳐야 할까?',
+      premature: '클럽이 자체 회관을 지어야 할까?'
     },
     actions: {
-      concrete: 'The secretary phones the sports centre tomorrow at 9:00 and reports to the board by 12:00.',
-      vague: 'Let’s wait and see what turns up.',
-      outOfScope: 'Order new chess sets for the club.'
+      concrete: '총무가 내일 9:00에 스포츠 센터에 전화하고 12:00까지 운영진에게 보고합니다.',
+      vague: '뭐가 나오는지 기다려 봅시다.',
+      outOfScope: '클럽용 새 체스 세트를 주문합니다.'
     }
   }
 };

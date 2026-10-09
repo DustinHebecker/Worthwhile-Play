@@ -2,235 +2,235 @@ import type { ContentText } from './types';
 
 export const content: ContentText = {
   supplierDelay: {
-    title: 'Supplier delay before a launch',
-    situation: 'Your company launches a new desk lamp on 14 May. The supplier of the lamp heads reports a delay. Prepare a briefing.',
-    recipient: 'the head of product',
+    title: 'Atraso de um fornecedor antes de um lançamento',
+    situation: 'Sua empresa lança uma nova luminária de mesa em 14 de maio. O fornecedor das cúpulas avisa que vai atrasar. Prepare um briefing.',
+    recipient: 'a gerente de produto',
     cards: {
-      c1: 'The new desk lamp launches on 14 May; 350 customers have pre-ordered it.',
-      c2: 'The supplier has shipped only 200 of the 500 lamp heads we ordered.',
-      c3: 'Once the parts are here, our workshop can assemble 100 lamps a day.',
-      c4: 'The supplier has not yet given a date for shipping the remaining lamp heads.',
-      c5: 'The supplier expects the rest to ship next week, probably on Tuesday.',
-      c6: 'If the parts arrive after 10 May, the lamps cannot be assembled in time for the launch.',
-      c7: 'The launch advert is booked for 14 May; moving it would cost a fee of 800 euros.',
-      c8: 'Marketing needs to know by Friday whether the launch date holds.',
-      c9: 'Jonas from purchasing can call the supplier tomorrow morning and ask for a firm date.',
-      c10: 'The supplier moved into a new office building last year.',
-      c11: 'So far only 200 of the 500 ordered lamp heads have been shipped.',
-      c12: 'Honestly, this supplier has always been a bit chaotic.'
+      c1: 'A nova luminária de mesa será lançada em 14 de maio; 350 clientes já fizeram a pré-encomenda.',
+      c2: 'O fornecedor só enviou 200 das 500 cúpulas que encomendamos.',
+      c3: 'Assim que as peças chegarem, nossa oficina consegue montar 100 luminárias por dia.',
+      c4: 'O fornecedor ainda não deu uma data para enviar as cúpulas restantes.',
+      c5: 'O fornecedor espera enviar o restante na semana que vem, provavelmente na terça-feira.',
+      c6: 'Se as peças chegarem depois de 10 de maio, as luminárias não poderão ser montadas a tempo do lançamento.',
+      c7: 'O anúncio do lançamento está reservado para 14 de maio; mudar a data custaria uma taxa de 800 euros.',
+      c8: 'O marketing precisa saber até sexta-feira se a data de lançamento se mantém.',
+      c9: 'Jonas, do setor de compras, pode ligar para o fornecedor amanhã de manhã e pedir uma data firme.',
+      c10: 'O fornecedor mudou-se para um novo prédio de escritórios no ano passado.',
+      c11: 'Até agora, só foram enviadas 200 das 500 cúpulas encomendadas.',
+      c12: 'Sinceramente, esse fornecedor sempre foi meio desorganizado.'
     },
     decisions: {
-      right: 'Keep the launch on 14 May, or move it by one week?',
-      notTheirs: 'Which shipping company should the supplier use?',
-      premature: 'Should we replace this supplier for all future products?'
+      right: 'Manter o lançamento em 14 de maio ou adiá-lo uma semana?',
+      notTheirs: 'Qual transportadora o fornecedor deve usar?',
+      premature: 'Devemos substituir esse fornecedor para todos os produtos futuros?'
     },
     actions: {
-      concrete: 'Jonas calls the supplier tomorrow at 9:00 and tells the head of product the confirmed date by 12:00.',
-      vague: 'Someone should keep an eye on the supplier.',
-      outOfScope: 'Start designing next year’s lamp collection.'
+      concrete: 'Jonas liga para o fornecedor amanhã às 9:00 e informa a data confirmada à gerente de produto até as 12:00.',
+      vague: 'Alguém deveria ficar de olho no fornecedor.',
+      outOfScope: 'Começar a desenhar a coleção de luminárias do ano que vem.'
     }
   },
   basement: {
-    title: 'Flooded basement in a shared house',
-    situation: 'After heavy rain, water is standing in the basement of the shared house you live in. Prepare a briefing.',
-    recipient: 'the landlord',
+    title: 'Porão alagado numa casa compartilhada',
+    situation: 'Depois de uma chuva forte, há água parada no porão da casa que você divide com outras pessoas. Prepare um briefing.',
+    recipient: 'o proprietário',
     cards: {
-      c1: 'Five people share the house; the basement holds the heating boiler and everyone’s storage boxes.',
-      c2: 'This morning about 10 cm of water stood in the basement.',
-      c3: 'We switched off the power to the basement this morning as a precaution.',
-      c4: 'Nobody knows yet whether the heating boiler has been damaged.',
-      c5: 'The water has probably stopped rising; at noon it looked the same as in the morning.',
-      c6: 'More rain is forecast for Thursday, and the water could rise again.',
-      c7: 'The boiler stands 15 cm above the floor, so a few more centimetres of water would reach it.',
-      c8: 'The plumber can only come this week if the landlord approves the call-out costs by tomorrow.',
-      c9: 'A housemate who works from home could let the plumber in on Wednesday.',
-      c10: 'The basement walls were last painted in 2015.',
-      c11: 'When we checked this morning, the basement was under 10 cm of water.',
-      c12: 'This house has always been damp, and nobody ever does anything about it.'
+      c1: 'Cinco pessoas dividem a casa; no porão ficam a caldeira e as caixas de todos.',
+      c2: 'Hoje de manhã havia cerca de 10 cm de água no porão.',
+      c3: 'Hoje de manhã desligamos a energia do porão por precaução.',
+      c4: 'Ninguém sabe ainda se a caldeira foi danificada.',
+      c5: 'A água provavelmente parou de subir; ao meio-dia parecia igual à manhã.',
+      c6: 'Há previsão de mais chuva para quinta-feira, e a água pode voltar a subir.',
+      c7: 'A caldeira fica a 15 cm do chão, então mais alguns centímetros de água chegariam até ela.',
+      c8: 'O encanador só pode vir esta semana se o proprietário aprovar a taxa de visita até amanhã.',
+      c9: 'Uma moradora que trabalha de casa poderia abrir a porta para o encanador na quarta-feira.',
+      c10: 'As paredes do porão foram pintadas pela última vez em 2015.',
+      c11: 'Quando olhamos hoje de manhã, o porão estava com 10 cm de água.',
+      c12: 'Esta casa sempre foi úmida, e ninguém nunca faz nada.'
     },
     decisions: {
-      right: 'Approve the plumber’s call-out costs for this week?',
-      notTheirs: 'Which housemate should move their boxes first?',
-      premature: 'Should the whole basement be waterproofed and renovated?'
+      right: 'Aprovar a taxa de visita do encanador para esta semana?',
+      notTheirs: 'Qual morador deve tirar suas caixas primeiro?',
+      premature: 'O porão inteiro deve ser impermeabilizado e reformado?'
     },
     actions: {
-      concrete: 'The housemate who works from home books the plumber for Wednesday and sends the landlord the quote today.',
-      vague: 'We will deal with it at some point.',
-      outOfScope: 'Plan a house party to cheer everyone up.'
+      concrete: 'A moradora que trabalha de casa agenda o encanador para quarta-feira e envia hoje o orçamento ao proprietário.',
+      vague: 'A gente resolve isso uma hora dessas.',
+      outOfScope: 'Planejar uma festa em casa para animar todo mundo.'
     }
   },
   schoolTrip: {
-    title: 'School trip and a weather warning',
-    situation: 'A class of 24 pupils is due to go hiking in the hills on Friday. A weather warning has been issued. Prepare a briefing.',
-    recipient: 'the head teacher',
+    title: 'Passeio escolar e alerta meteorológico',
+    situation: 'Uma turma de 24 alunos vai fazer uma caminhada nas colinas na sexta-feira. Foi emitido um alerta meteorológico. Prepare um briefing.',
+    recipient: 'a diretora da escola',
     cards: {
-      c1: 'The class of 24 pupils, aged 11, is booked for a hiking trip on Friday with three accompanying adults.',
-      c2: 'The weather service has issued a storm warning for Friday afternoon.',
-      c3: 'The science museum in town still has room for a class visit on Friday.',
-      c4: 'The forecast does not yet say whether the storm will arrive before or after midday.',
-      c5: 'The park ranger thinks the main trail will most likely stay open.',
-      c6: 'Strong wind can bring down branches on the forest trail.',
-      c7: 'The only shelter on the route is a 40-minute walk from the end of the trail, too far to reach quickly in a storm.',
-      c8: 'The bus company must be told by Wednesday evening whether the trip goes ahead; until then it can be cancelled free of charge.',
-      c9: 'The class teacher can check the updated forecast on Wednesday at midday.',
-      c10: 'The class voted for the hiking trip back in September.',
-      c11: 'According to the weather service, a storm is expected on Friday afternoon.',
-      c12: 'The children will be terribly disappointed if we cancel.'
+      c1: 'A turma de 24 alunos de 11 anos está inscrita para uma caminhada na sexta-feira, com três adultos acompanhantes.',
+      c2: 'O serviço meteorológico emitiu um alerta de tempestade para a tarde de sexta-feira.',
+      c3: 'O museu de ciências da cidade ainda tem vaga para a visita de uma turma na sexta-feira.',
+      c4: 'A previsão ainda não diz se a tempestade chega antes ou depois do meio-dia.',
+      c5: 'O guarda do parque acha que a trilha principal muito provavelmente continuará aberta.',
+      c6: 'Ventos fortes podem derrubar galhos na trilha da floresta.',
+      c7: 'O único abrigo do percurso fica a 40 minutos a pé do fim da trilha, longe demais para chegar rápido numa tempestade.',
+      c8: 'É preciso avisar a empresa de ônibus até quarta à noite se o passeio vai acontecer; até lá o cancelamento é gratuito.',
+      c9: 'A professora da turma pode consultar a previsão atualizada na quarta ao meio-dia.',
+      c10: 'A turma votou pela caminhada ainda em setembro.',
+      c11: 'Segundo o serviço meteorológico, espera-se uma tempestade na tarde de sexta-feira.',
+      c12: 'As crianças vão ficar muito decepcionadas se cancelarmos.'
     },
     decisions: {
-      right: 'Go ahead with the hike, switch to the museum, or cancel the trip?',
-      notTheirs: 'What should the pupils pack for lunch?',
-      premature: 'Should the school stop all outdoor trips from now on?'
+      right: 'Fazer a caminhada, trocar pelo museu ou cancelar o passeio?',
+      notTheirs: 'O que os alunos devem levar para o almoço?',
+      premature: 'A escola deveria cancelar de agora em diante todos os passeios ao ar livre?'
     },
     actions: {
-      concrete: 'The class teacher checks the forecast on Wednesday at 12:00 and sends the head teacher a recommendation by 14:00.',
-      vague: 'Let’s see how the weather turns out.',
-      outOfScope: 'Start planning next year’s school festival.'
+      concrete: 'A professora consulta a previsão na quarta às 12:00 e envia uma recomendação à diretora até as 14:00.',
+      vague: 'Vamos ver como fica o tempo.',
+      outOfScope: 'Começar a organizar a festa da escola do ano que vem.'
     }
   },
   volunteers: {
-    title: 'Clean-up day short of helpers',
-    situation: 'Your neighbourhood association runs a park clean-up on Saturday. Too few volunteers have signed up. Prepare a briefing.',
-    recipient: 'the chair of the association',
+    title: 'Mutirão de limpeza com poucos voluntários',
+    situation: 'A associação de moradores do seu bairro faz no sábado uma limpeza do parque. Poucos voluntários se inscreveram. Prepare um briefing.',
+    recipient: 'a presidente da associação',
     cards: {
-      c1: 'The yearly park clean-up is on Saturday from 10:00 to 13:00; the city provides bags and gloves.',
-      c2: 'So far 9 volunteers have signed up; we planned for 20.',
-      c3: 'The city collects the filled bags only on Saturday at 13:00.',
-      c4: 'The youth football team might send helpers, but the coach has not replied yet.',
-      c5: 'Several neighbours said they will probably drop by if the weather is nice.',
-      c6: 'With 9 people we can clean only about half of the park.',
-      c7: 'Nobody has been named yet to fetch the gloves from the community centre, which closes at 9:30 on Saturday.',
-      c8: 'We can either shrink the clean-up to the playground area or move it to the following Saturday.',
-      c9: 'Two volunteers have offered to put up posters in the neighbourhood tomorrow.',
-      c10: 'Last year’s clean-up ended with a barbecue.',
-      c11: 'Only 9 of the 20 volunteers we planned for have registered.',
-      c12: 'People just don’t care about their neighbourhood any more.'
+      c1: 'A limpeza anual do parque é no sábado, das 10:00 às 13:00; a prefeitura fornece sacos e luvas.',
+      c2: 'Até agora 9 voluntários se inscreveram; tínhamos planejado 20.',
+      c3: 'A prefeitura só recolhe os sacos cheios no sábado às 13:00.',
+      c4: 'O time juvenil de futebol talvez mande ajudantes, mas o técnico ainda não respondeu.',
+      c5: 'Alguns vizinhos disseram que provavelmente vão aparecer se fizer tempo bom.',
+      c6: 'Com 9 pessoas, só conseguimos limpar mais ou menos metade do parque.',
+      c7: 'Ninguém foi designado ainda para buscar as luvas no centro comunitário, que fecha às 9:30 no sábado.',
+      c8: 'Podemos reduzir a limpeza à área do parquinho ou passá-la para o sábado seguinte.',
+      c9: 'Dois voluntários se ofereceram para colar cartazes no bairro amanhã.',
+      c10: 'A limpeza do ano passado terminou com um churrasco.',
+      c11: 'Só 9 dos 20 voluntários previstos se inscreveram.',
+      c12: 'As pessoas simplesmente não ligam mais para o próprio bairro.'
     },
     decisions: {
-      right: 'Hold a smaller clean-up this Saturday, or move it by one week?',
-      notTheirs: 'Should the city change its collection times for the bags?',
-      premature: 'Should the association hire a cleaning company in future years?'
+      right: 'Fazer uma limpeza menor neste sábado ou adiá-la uma semana?',
+      notTheirs: 'A prefeitura deve mudar o horário de coleta dos sacos?',
+      premature: 'A associação deve contratar uma empresa de limpeza nos próximos anos?'
     },
     actions: {
-      concrete: 'The two volunteers put up posters tomorrow, and the secretary emails the football coach today and reports back by Thursday.',
-      vague: 'We should somehow try to get more people.',
-      outOfScope: 'Start planning the association’s summer party.'
+      concrete: 'Os dois voluntários colam os cartazes amanhã, e o secretário escreve hoje para o técnico de futebol e dá um retorno até quinta-feira.',
+      vague: 'Precisamos arranjar mais gente de algum jeito.',
+      outOfScope: 'Começar a planejar a festa de verão da associação.'
     }
   },
   release: {
-    title: 'Software release with a failing test',
-    situation: 'Your team plans to release a new version of a booking app on Tuesday. One automated test fails. Prepare a briefing.',
-    recipient: 'the product manager',
+    title: 'Lançamento de software com um teste falhando',
+    situation: 'Sua equipe quer publicar na terça-feira uma nova versão de um aplicativo de reservas. Um teste automatizado falha. Prepare um briefing.',
+    recipient: 'o gerente de produto',
     cards: {
-      c1: 'The new version adds online payment and has been announced to customers for Tuesday.',
-      c2: 'One of 640 automated tests fails: the refund of a cancelled booking.',
-      c3: 'The failure only appears for payments in a foreign currency.',
-      c4: 'We do not know yet whether the bug is in our code or in the payment provider’s test system.',
-      c5: 'The developer expects the fix to take about a day, but has not looked at the code yet.',
-      c6: 'If the bug is real, some customers could be refunded the wrong amount.',
-      c7: 'About 15% of bookings are paid in a foreign currency, so the bug would affect many customers.',
-      c8: 'We can release on Tuesday with foreign-currency payments switched off, or postpone the whole release.',
-      c9: 'The developer can check the payment provider’s test logs this afternoon.',
-      c10: 'The new payment screen uses the company’s new shade of blue.',
-      c11: 'A single test fails: refunds for cancelled bookings.',
-      c12: 'This test has always been flaky; I would just ignore it.'
+      c1: 'A nova versão acrescenta pagamento on-line e já foi anunciada aos clientes para terça-feira.',
+      c2: 'Um de 640 testes automatizados falha: o reembolso de uma reserva cancelada.',
+      c3: 'A falha só aparece em pagamentos em moeda estrangeira.',
+      c4: 'Ainda não sabemos se o erro está no nosso código ou no sistema de testes do provedor de pagamento.',
+      c5: 'O desenvolvedor estima que a correção leve cerca de um dia, mas ainda não olhou o código.',
+      c6: 'Se o erro for real, alguns clientes podem receber um reembolso com valor errado.',
+      c7: 'Cerca de 15% das reservas são pagas em moeda estrangeira, então o erro afetaria muitos clientes.',
+      c8: 'Podemos publicar na terça com pagamentos em moeda estrangeira desativados ou adiar toda a versão.',
+      c9: 'O desenvolvedor pode verificar hoje à tarde os registros de teste do provedor de pagamento.',
+      c10: 'A nova tela de pagamento usa o novo tom de azul da empresa.',
+      c11: 'Só um teste está vermelho: reembolsos de reservas canceladas.',
+      c12: 'Esse teste sempre foi instável; eu simplesmente o ignoraria.'
     },
     decisions: {
-      right: 'Release on Tuesday without foreign-currency payments, or postpone the release?',
-      notTheirs: 'Which programming technique should the developer use for the fix?',
-      premature: 'Should we switch to a different payment provider?'
+      right: 'Publicar na terça sem pagamentos em moeda estrangeira ou adiar a versão?',
+      notTheirs: 'Que técnica de programação o desenvolvedor deve usar na correção?',
+      premature: 'Devemos trocar de provedor de pagamento?'
     },
     actions: {
-      concrete: 'The developer checks the provider’s test logs this afternoon and tells the product manager by 17:00 whether the bug is ours.',
-      vague: 'Someone will look into the test.',
-      outOfScope: 'Start writing the release notes for the version after next.'
+      concrete: 'O desenvolvedor verifica hoje à tarde os registros do provedor e diz ao gerente de produto até as 17:00 se o erro é nosso.',
+      vague: 'Alguém vai dar uma olhada no teste.',
+      outOfScope: 'Começar a escrever as notas de versão da versão depois da próxima.'
     }
   },
   careAppointment: {
-    title: 'A care advice appointment for Grandmother',
-    situation: 'Your grandmother has an appointment with a care advice service on Monday. The family has to sort out who goes with her. Prepare a briefing. (This is about organising, not about medical questions.)',
-    recipient: 'your brother, who shares the decision with you',
+    title: 'Uma consulta de orientação sobre cuidados para a avó',
+    situation: 'Sua avó tem na segunda-feira uma consulta num serviço de orientação sobre cuidados. A família precisa combinar quem vai com ela. Prepare um briefing. (Trata-se de organização, não de questões médicas.)',
+    recipient: 'seu irmão, que divide a decisão com você',
     cards: {
-      c1: 'Grandmother has an appointment with the care advice service on Monday at 10:00 to talk about help at home.',
-      c2: 'She has asked for one family member to come with her.',
-      c3: 'The letter says to bring her list of medicines and her insurance card.',
-      c4: 'It is not clear yet whether Mum can take Monday off work.',
-      c5: 'The advice centre is said to have a lift, but nobody has checked.',
-      c6: 'If nobody can go, the next free appointment is in six weeks.',
-      c7: 'Grandmother tires quickly, and the bus ride to the centre takes 50 minutes each way.',
-      c8: 'The advice service needs to know by Friday whether the appointment takes place in person or by video call.',
-      c9: 'You could call Mum tonight and ask about Monday.',
-      c10: 'Grandmother’s neighbour recently got a new dog.',
-      c11: 'She would like someone from the family to go with her.',
-      c12: 'In my view, these advice services never really help anyway.'
+      c1: 'A avó tem consulta no serviço de orientação na segunda-feira às 10:00 para falar sobre ajuda em casa.',
+      c2: 'Ela pediu que um membro da família a acompanhe.',
+      c3: 'A carta diz para levar a lista de remédios e a carteirinha do plano de saúde.',
+      c4: 'Ainda não se sabe se a mãe consegue folga na segunda-feira.',
+      c5: 'Dizem que o centro tem elevador, mas ninguém confirmou.',
+      c6: 'Se ninguém puder ir, a próxima vaga é só daqui a seis semanas.',
+      c7: 'A avó se cansa rápido, e a viagem de ônibus até o centro leva 50 minutos cada trecho.',
+      c8: 'O serviço precisa saber até sexta-feira se a consulta será presencial ou por videochamada.',
+      c9: 'Você poderia ligar para a mãe hoje à noite e perguntar sobre segunda-feira.',
+      c10: 'A vizinha da avó arranjou um cachorro novo há pouco tempo.',
+      c11: 'Ela gostaria que alguém da família fosse com ela.',
+      c12: 'Na minha opinião, esses serviços de orientação nunca ajudam de verdade.'
     },
     decisions: {
-      right: 'Who goes with Grandmother on Monday, and in person or by video call?',
-      notTheirs: 'Which kind of help at home should Grandmother get?',
-      premature: 'Should Grandmother move into a care home?'
+      right: 'Quem acompanha a avó na segunda-feira, e presencialmente ou por vídeo?',
+      notTheirs: 'Que tipo de ajuda em casa a avó deve receber?',
+      premature: 'A avó deveria se mudar para uma casa de repouso?'
     },
     actions: {
-      concrete: 'You call Mum tonight and tell your brother by Wednesday evening who can go.',
-      vague: 'We’ll sort it out somehow.',
-      outOfScope: 'Start planning Grandmother’s birthday party.'
+      concrete: 'Você liga para a mãe hoje à noite e diz ao seu irmão até quarta à noite quem pode ir.',
+      vague: 'A gente dá um jeito.',
+      outOfScope: 'Começar a planejar a festa de aniversário da avó.'
     }
   },
   cafeFreezer: {
-    title: 'Broken freezer in a small café',
-    situation: 'You work in a small café. This morning the freezer was not cold enough. The owner is away until tomorrow. Prepare a briefing.',
-    recipient: 'the café owner',
+    title: 'Freezer quebrado num pequeno café',
+    situation: 'Você trabalha num pequeno café. Hoje de manhã o freezer não estava gelando o suficiente. A dona está fora até amanhã. Prepare um briefing.',
+    recipient: 'a dona do café',
     cards: {
-      c1: 'The café sells homemade ice cream; the freezer holds about a week’s stock.',
-      c2: 'At 7:00 the freezer showed −2 °C instead of the usual −18 °C.',
-      c3: 'We moved the ice cream into the neighbouring bakery’s freezer at 7:30.',
-      c4: 'We do not know whether the ice cream thawed during the night.',
-      c5: 'The repair service will probably be able to come on Thursday.',
-      c6: 'Ice cream that has thawed must not be sold, so we may have to throw away the stock.',
-      c7: 'The bakery needs its freezer space back on Saturday, so our ice cream can only stay there until then.',
-      c8: 'The repair service will only book a visit once the owner approves the call-out fee of 90 euros.',
-      c9: 'The barista can read the freezer’s temperature log this afternoon.',
-      c10: 'The café’s new menu boards arrive next week.',
-      c11: 'This morning the freezer read −2 °C instead of −18 °C.',
-      c12: 'That freezer was a bad buy from day one.'
+      c1: 'O café vende sorvete caseiro; o freezer guarda o estoque de mais ou menos uma semana.',
+      c2: 'Às 7:00 o freezer marcava −2 °C em vez dos −18 °C de sempre.',
+      c3: 'Às 7:30 levamos o sorvete para o freezer da padaria ao lado.',
+      c4: 'Não sabemos se o sorvete descongelou durante a noite.',
+      c5: 'A assistência técnica provavelmente vai poder vir na quinta-feira.',
+      c6: 'Sorvete que descongelou não pode ser vendido, então talvez tenhamos de jogar o estoque fora.',
+      c7: 'A padaria precisa do espaço de volta no sábado, então nosso sorvete só pode ficar lá até lá.',
+      c8: 'A assistência técnica só marca a visita depois que a dona aprovar a taxa de 90 euros.',
+      c9: 'A barista pode ler hoje à tarde o registro de temperatura do freezer.',
+      c10: 'Os novos quadros de cardápio do café chegam na semana que vem.',
+      c11: 'Hoje de manhã o freezer indicava −2 °C em vez de −18 °C.',
+      c12: 'Esse freezer foi uma péssima compra desde o primeiro dia.'
     },
     decisions: {
-      right: 'Approve the repair call-out fee of 90 euros?',
-      notTheirs: 'Which cakes should the bakery sell this week?',
-      premature: 'Should the café stop selling ice cream altogether?'
+      right: 'Aprovar a taxa de visita de 90 euros para o conserto?',
+      notTheirs: 'Que bolos a padaria deve vender esta semana?',
+      premature: 'O café deveria parar de vender sorvete de vez?'
     },
     actions: {
-      concrete: 'The barista reads the temperature log this afternoon and texts the owner the result by 16:00.',
-      vague: 'We’ll keep an eye on it.',
-      outOfScope: 'Redesign the café’s website.'
+      concrete: 'A barista lê o registro de temperatura hoje à tarde e manda o resultado para a dona por mensagem até as 16:00.',
+      vague: 'A gente fica de olho.',
+      outOfScope: 'Redesenhar o site do café.'
     }
   },
   tournament: {
-    title: 'New venue for a chess tournament',
-    situation: 'Your chess club hosts a youth tournament on Sunday. The school hall you booked is no longer available. Prepare a briefing.',
-    recipient: 'the club board',
+    title: 'Novo local para um torneio de xadrez',
+    situation: 'Seu clube de xadrez organiza no domingo um torneio juvenil. O salão da escola que vocês reservaram não está mais disponível. Prepare um briefing.',
+    recipient: 'a diretoria do clube',
     cards: {
-      c1: 'Sunday’s youth tournament has 48 registered players from six clubs.',
-      c2: 'The school has cancelled our hall booking because of a leak in the roof.',
-      c3: 'The town library offers its event room free of charge, but it only fits 32 players.',
-      c4: 'The sports centre might have a free room, but it has not answered our email yet.',
-      c5: 'The caretaker believes the school hall could be repaired in time, but nobody has confirmed it.',
-      c6: 'If families hear about the change too late, some players may turn up at the old venue.',
-      c7: 'Several families travel more than 100 km and have already booked their trains, so a change of date would hit them hardest.',
-      c8: 'The invitations with the final venue must go out by Wednesday.',
-      c9: 'The club secretary can phone the sports centre tomorrow morning.',
-      c10: 'The club’s trophy cabinet was cleaned last month.',
-      c11: 'The school has called off our booking for the hall.',
-      c12: 'We should never have relied on that school.'
+      c1: 'O torneio juvenil de domingo tem 48 jogadores inscritos de seis clubes.',
+      c2: 'A escola cancelou nossa reserva do salão por causa de uma goteira no telhado.',
+      c3: 'A biblioteca municipal oferece sua sala de eventos de graça, mas ela só comporta 32 jogadores.',
+      c4: 'O centro esportivo talvez tenha uma sala livre, mas ainda não respondeu ao nosso e-mail.',
+      c5: 'O zelador acredita que o salão poderia ser consertado a tempo, mas ninguém confirmou.',
+      c6: 'Se as famílias souberem da mudança tarde demais, alguns jogadores podem ir ao local antigo.',
+      c7: 'Várias famílias viajam mais de 100 km e já compraram passagens de trem, então mudar a data as prejudicaria mais.',
+      c8: 'Os convites com o local definitivo precisam ser enviados até quarta-feira.',
+      c9: 'O secretário do clube pode ligar para o centro esportivo amanhã de manhã.',
+      c10: 'A vitrine de troféus do clube foi limpa no mês passado.',
+      c11: 'A escola retirou nossa reserva do salão.',
+      c12: 'Nunca devíamos ter confiado naquela escola.'
     },
     decisions: {
-      right: 'Move to another venue, limit the tournament to 32 players, or postpone it?',
-      notTheirs: 'When should the school repair its roof?',
-      premature: 'Should the club build its own clubhouse?'
+      right: 'Mudar para outro local, limitar o torneio a 32 jogadores ou adiá-lo?',
+      notTheirs: 'Quando a escola deve consertar o telhado?',
+      premature: 'O clube deveria construir sua própria sede?'
     },
     actions: {
-      concrete: 'The secretary phones the sports centre tomorrow at 9:00 and reports to the board by 12:00.',
-      vague: 'Let’s wait and see what turns up.',
-      outOfScope: 'Order new chess sets for the club.'
+      concrete: 'O secretário liga para o centro esportivo amanhã às 9:00 e informa a diretoria até as 12:00.',
+      vague: 'Vamos esperar para ver o que aparece.',
+      outOfScope: 'Encomendar jogos de xadrez novos para o clube.'
     }
   }
 };

@@ -2,235 +2,235 @@ import type { ContentText } from './types';
 
 export const content: ContentText = {
   supplierDelay: {
-    title: 'Supplier delay before a launch',
-    situation: 'Your company launches a new desk lamp on 14 May. The supplier of the lamp heads reports a delay. Prepare a briefing.',
-    recipient: 'the head of product',
+    title: '発売直前の納品遅れ',
+    situation: 'あなたの会社は5月14日に新しいデスクランプを発売します。ランプヘッドの仕入れ先から遅れの連絡がありました。ブリーフィングを準備してください。',
+    recipient: '製品責任者',
     cards: {
-      c1: 'The new desk lamp launches on 14 May; 350 customers have pre-ordered it.',
-      c2: 'The supplier has shipped only 200 of the 500 lamp heads we ordered.',
-      c3: 'Once the parts are here, our workshop can assemble 100 lamps a day.',
-      c4: 'The supplier has not yet given a date for shipping the remaining lamp heads.',
-      c5: 'The supplier expects the rest to ship next week, probably on Tuesday.',
-      c6: 'If the parts arrive after 10 May, the lamps cannot be assembled in time for the launch.',
-      c7: 'The launch advert is booked for 14 May; moving it would cost a fee of 800 euros.',
-      c8: 'Marketing needs to know by Friday whether the launch date holds.',
-      c9: 'Jonas from purchasing can call the supplier tomorrow morning and ask for a firm date.',
-      c10: 'The supplier moved into a new office building last year.',
-      c11: 'So far only 200 of the 500 ordered lamp heads have been shipped.',
-      c12: 'Honestly, this supplier has always been a bit chaotic.'
+      c1: '新しいデスクランプは5月14日発売で、350人の顧客が予約注文しています。',
+      c2: '仕入れ先は、注文したランプヘッド500個のうち200個しか出荷していません。',
+      c3: '部品が届けば、工房では1日に100台のランプを組み立てられます。',
+      c4: '残りのランプヘッドの出荷日は、仕入れ先からまだ示されていません。',
+      c5: '仕入れ先は、残りを来週、おそらく火曜日に出荷できる見込みだとしています。',
+      c6: '部品が5月10日より後に届くと、発売までにランプを組み立てられません。',
+      c7: '発売広告は5月14日で予約済みで、変更すると800ユーロの手数料がかかります。',
+      c8: 'マーケティング部は金曜日までに、発売日が変わらないかを知る必要があります。',
+      c9: '購買部のヨナスが明日の朝、仕入れ先に電話して確定日を聞けます。',
+      c10: '仕入れ先は昨年、新しいオフィスビルに移転しました。',
+      c11: 'これまでに出荷されたのは、注文したランプヘッド500個のうち200個だけです。',
+      c12: '正直、この仕入れ先はいつも少しバタバタしています。'
     },
     decisions: {
-      right: 'Keep the launch on 14 May, or move it by one week?',
-      notTheirs: 'Which shipping company should the supplier use?',
-      premature: 'Should we replace this supplier for all future products?'
+      right: '5月14日の発売を維持するか、1週間延期するか？',
+      notTheirs: '仕入れ先はどの運送会社を使うべきか？',
+      premature: '今後のすべての製品で、この仕入れ先を替えるべきか？'
     },
     actions: {
-      concrete: 'Jonas calls the supplier tomorrow at 9:00 and tells the head of product the confirmed date by 12:00.',
-      vague: 'Someone should keep an eye on the supplier.',
-      outOfScope: 'Start designing next year’s lamp collection.'
+      concrete: 'ヨナスが明日9:00に仕入れ先へ電話し、12:00までに製品責任者へ確定日を伝える。',
+      vague: '誰かが仕入れ先に目を配っておくべきだ。',
+      outOfScope: '来年のランプコレクションのデザインを始める。'
     }
   },
   basement: {
-    title: 'Flooded basement in a shared house',
-    situation: 'After heavy rain, water is standing in the basement of the shared house you live in. Prepare a briefing.',
-    recipient: 'the landlord',
+    title: 'シェアハウスの地下室が浸水',
+    situation: '大雨のあと、あなたが住むシェアハウスの地下室に水がたまっています。ブリーフィングを準備してください。',
+    recipient: '大家さん',
     cards: {
-      c1: 'Five people share the house; the basement holds the heating boiler and everyone’s storage boxes.',
-      c2: 'This morning about 10 cm of water stood in the basement.',
-      c3: 'We switched off the power to the basement this morning as a precaution.',
-      c4: 'Nobody knows yet whether the heating boiler has been damaged.',
-      c5: 'The water has probably stopped rising; at noon it looked the same as in the morning.',
-      c6: 'More rain is forecast for Thursday, and the water could rise again.',
-      c7: 'The boiler stands 15 cm above the floor, so a few more centimetres of water would reach it.',
-      c8: 'The plumber can only come this week if the landlord approves the call-out costs by tomorrow.',
-      c9: 'A housemate who works from home could let the plumber in on Wednesday.',
-      c10: 'The basement walls were last painted in 2015.',
-      c11: 'When we checked this morning, the basement was under 10 cm of water.',
-      c12: 'This house has always been damp, and nobody ever does anything about it.'
+      c1: 'この家には5人が住んでいて、地下室にはボイラーと全員の収納箱があります。',
+      c2: '今朝、地下室には約10cmの水がたまっていました。',
+      c3: '今朝、念のため地下室の電気を切りました。',
+      c4: 'ボイラーが損傷したかどうかは、まだ誰にも分かりません。',
+      c5: '水位はおそらくもう上がっていません。正午も朝と同じに見えました。',
+      c6: '木曜日にまた雨の予報があり、水位が再び上がるかもしれません。',
+      c7: 'ボイラーは床から15cmの高さにあるので、あと数センチ水が増えると届いてしまいます。',
+      c8: '大家さんが明日までに出張費を承認すれば、配管業者は今週来られます。',
+      c9: '在宅勤務のハウスメイトが、水曜日に配管業者を中に入れられます。',
+      c10: '地下室の壁を最後に塗ったのは2015年です。',
+      c11: '今朝見たとき、地下室は10cmほど水に浸かっていました。',
+      c12: 'この家はずっと湿っぽいのに、誰も何もしない。'
     },
     decisions: {
-      right: 'Approve the plumber’s call-out costs for this week?',
-      notTheirs: 'Which housemate should move their boxes first?',
-      premature: 'Should the whole basement be waterproofed and renovated?'
+      right: '今週の配管業者の出張費を承認するか？',
+      notTheirs: 'どのハウスメイトが最初に箱を移すべきか？',
+      premature: '地下室全体を防水・改修すべきか？'
     },
     actions: {
-      concrete: 'The housemate who works from home books the plumber for Wednesday and sends the landlord the quote today.',
-      vague: 'We will deal with it at some point.',
-      outOfScope: 'Plan a house party to cheer everyone up.'
+      concrete: '在宅勤務のハウスメイトが水曜日で配管業者を予約し、今日中に大家さんへ見積もりを送る。',
+      vague: 'そのうち何とかしよう。',
+      outOfScope: 'みんなを元気づけるホームパーティーを計画する。'
     }
   },
   schoolTrip: {
-    title: 'School trip and a weather warning',
-    situation: 'A class of 24 pupils is due to go hiking in the hills on Friday. A weather warning has been issued. Prepare a briefing.',
-    recipient: 'the head teacher',
+    title: '遠足と気象警報',
+    situation: '24人の児童のクラスが、金曜日に丘でハイキングをする予定です。気象警報が出されました。ブリーフィングを準備してください。',
+    recipient: '校長先生',
     cards: {
-      c1: 'The class of 24 pupils, aged 11, is booked for a hiking trip on Friday with three accompanying adults.',
-      c2: 'The weather service has issued a storm warning for Friday afternoon.',
-      c3: 'The science museum in town still has room for a class visit on Friday.',
-      c4: 'The forecast does not yet say whether the storm will arrive before or after midday.',
-      c5: 'The park ranger thinks the main trail will most likely stay open.',
-      c6: 'Strong wind can bring down branches on the forest trail.',
-      c7: 'The only shelter on the route is a 40-minute walk from the end of the trail, too far to reach quickly in a storm.',
-      c8: 'The bus company must be told by Wednesday evening whether the trip goes ahead; until then it can be cancelled free of charge.',
-      c9: 'The class teacher can check the updated forecast on Wednesday at midday.',
-      c10: 'The class voted for the hiking trip back in September.',
-      c11: 'According to the weather service, a storm is expected on Friday afternoon.',
-      c12: 'The children will be terribly disappointed if we cancel.'
+      c1: '11歳の児童24人のクラスが、金曜日のハイキングを予約しています。付き添いの大人は3人です。',
+      c2: '気象台が金曜日午後の暴風警報を出しました。',
+      c3: '市内の科学館には、金曜日にクラスで見学できる空きがまだあります。',
+      c4: '嵐が正午の前に来るのか後に来るのかは、予報ではまだ分かりません。',
+      c5: '公園のレンジャーは、メインの登山道はまず開いたままだろうと考えています。',
+      c6: '強風で森の道に枝が折れて落ちることがあります。',
+      c7: 'ルート上の唯一の避難小屋は登山道の終点から歩いて40分で、嵐のときにすぐたどり着くには遠すぎます。',
+      c8: 'バス会社には水曜日の夜までに遠足を実施するか伝える必要があり、それまでならキャンセルは無料です。',
+      c9: '担任が水曜日の正午に最新の予報を確認できます。',
+      c10: 'クラスは9月の時点でハイキングに投票していました。',
+      c11: '気象台によると、金曜日の午後に嵐が来る見込みです。',
+      c12: '中止したら子どもたちはひどくがっかりするでしょう。'
     },
     decisions: {
-      right: 'Go ahead with the hike, switch to the museum, or cancel the trip?',
-      notTheirs: 'What should the pupils pack for lunch?',
-      premature: 'Should the school stop all outdoor trips from now on?'
+      right: 'ハイキングを実施するか、科学館に変更するか、遠足を中止するか？',
+      notTheirs: '児童はお昼に何を持ってくるべきか？',
+      premature: '学校は今後、屋外の行事をすべてやめるべきか？'
     },
     actions: {
-      concrete: 'The class teacher checks the forecast on Wednesday at 12:00 and sends the head teacher a recommendation by 14:00.',
-      vague: 'Let’s see how the weather turns out.',
-      outOfScope: 'Start planning next year’s school festival.'
+      concrete: '担任が水曜日12:00に予報を確認し、14:00までに校長先生へ提案を送る。',
+      vague: '天気がどうなるか様子を見よう。',
+      outOfScope: '来年の学校祭の準備を始める。'
     }
   },
   volunteers: {
-    title: 'Clean-up day short of helpers',
-    situation: 'Your neighbourhood association runs a park clean-up on Saturday. Too few volunteers have signed up. Prepare a briefing.',
-    recipient: 'the chair of the association',
+    title: '人手の足りない清掃の日',
+    situation: 'あなたの町内会は土曜日に公園の清掃を行います。申し込んだボランティアが少なすぎます。ブリーフィングを準備してください。',
+    recipient: '町内会の会長',
     cards: {
-      c1: 'The yearly park clean-up is on Saturday from 10:00 to 13:00; the city provides bags and gloves.',
-      c2: 'So far 9 volunteers have signed up; we planned for 20.',
-      c3: 'The city collects the filled bags only on Saturday at 13:00.',
-      c4: 'The youth football team might send helpers, but the coach has not replied yet.',
-      c5: 'Several neighbours said they will probably drop by if the weather is nice.',
-      c6: 'With 9 people we can clean only about half of the park.',
-      c7: 'Nobody has been named yet to fetch the gloves from the community centre, which closes at 9:30 on Saturday.',
-      c8: 'We can either shrink the clean-up to the playground area or move it to the following Saturday.',
-      c9: 'Two volunteers have offered to put up posters in the neighbourhood tomorrow.',
-      c10: 'Last year’s clean-up ended with a barbecue.',
-      c11: 'Only 9 of the 20 volunteers we planned for have registered.',
-      c12: 'People just don’t care about their neighbourhood any more.'
+      c1: '毎年恒例の公園清掃は土曜日の10:00から13:00までで、市がごみ袋と手袋を用意します。',
+      c2: 'これまでに申し込んだボランティアは9人で、予定は20人でした。',
+      c3: '市がいっぱいになった袋を回収するのは土曜日の13:00だけです。',
+      c4: '少年サッカーチームが手伝いを出してくれるかもしれませんが、コーチからまだ返事がありません。',
+      c5: '近所の何人かは、天気がよければたぶん顔を出すと言っていました。',
+      c6: '9人では公園の半分ほどしか掃除できません。',
+      c7: '土曜日は9:30に閉まる地域センターへ手袋を取りに行く人が、まだ決まっていません。',
+      c8: '清掃を遊び場の周りだけに縮小するか、次の土曜日に延期するかを選べます。',
+      c9: 'ボランティア2人が、明日近所にポスターを貼ると申し出てくれました。',
+      c10: '昨年の清掃はバーベキューで締めくくりました。',
+      c11: '予定していたボランティア20人のうち、登録したのは9人だけです。',
+      c12: 'みんなもう自分の地域のことなんてどうでもいいんですよ。'
     },
     decisions: {
-      right: 'Hold a smaller clean-up this Saturday, or move it by one week?',
-      notTheirs: 'Should the city change its collection times for the bags?',
-      premature: 'Should the association hire a cleaning company in future years?'
+      right: '今週の土曜日に規模を縮小して行うか、1週間延期するか？',
+      notTheirs: '市はごみ袋の回収時間を変えるべきか？',
+      premature: '町内会は今後、清掃業者を雇うべきか？'
     },
     actions: {
-      concrete: 'The two volunteers put up posters tomorrow, and the secretary emails the football coach today and reports back by Thursday.',
-      vague: 'We should somehow try to get more people.',
-      outOfScope: 'Start planning the association’s summer party.'
+      concrete: 'ボランティア2人が明日ポスターを貼り、書記が今日サッカーのコーチにメールして木曜日までに結果を報告する。',
+      vague: '何とかしてもっと人を集めないと。',
+      outOfScope: '町内会の夏祭りの計画を始める。'
     }
   },
   release: {
-    title: 'Software release with a failing test',
-    situation: 'Your team plans to release a new version of a booking app on Tuesday. One automated test fails. Prepare a briefing.',
-    recipient: 'the product manager',
+    title: 'テストが失敗しているソフトウェアのリリース',
+    situation: 'あなたのチームは火曜日に予約アプリの新バージョンをリリースする予定です。自動テストが1つ失敗しています。ブリーフィングを準備してください。',
+    recipient: 'プロダクトマネージャー',
     cards: {
-      c1: 'The new version adds online payment and has been announced to customers for Tuesday.',
-      c2: 'One of 640 automated tests fails: the refund of a cancelled booking.',
-      c3: 'The failure only appears for payments in a foreign currency.',
-      c4: 'We do not know yet whether the bug is in our code or in the payment provider’s test system.',
-      c5: 'The developer expects the fix to take about a day, but has not looked at the code yet.',
-      c6: 'If the bug is real, some customers could be refunded the wrong amount.',
-      c7: 'About 15% of bookings are paid in a foreign currency, so the bug would affect many customers.',
-      c8: 'We can release on Tuesday with foreign-currency payments switched off, or postpone the whole release.',
-      c9: 'The developer can check the payment provider’s test logs this afternoon.',
-      c10: 'The new payment screen uses the company’s new shade of blue.',
-      c11: 'A single test fails: refunds for cancelled bookings.',
-      c12: 'This test has always been flaky; I would just ignore it.'
+      c1: '新バージョンではオンライン決済が加わり、顧客には火曜日リリースと告知済みです。',
+      c2: '640件の自動テストのうち1件が失敗しています。キャンセルされた予約の返金です。',
+      c3: 'この不具合は外貨での支払いのときだけ起きます。',
+      c4: 'バグが自社のコードにあるのか、決済代行会社のテスト環境にあるのかはまだ分かりません。',
+      c5: '開発者は修正に1日ほどかかると見込んでいますが、まだコードを見ていません。',
+      c6: 'バグが本物なら、一部の顧客に間違った金額が返金されるおそれがあります。',
+      c7: '予約の約15%は外貨で支払われるので、このバグは多くの顧客に影響します。',
+      c8: '火曜日に外貨決済を止めたままリリースするか、リリース全体を延期するかを選べます。',
+      c9: '開発者は今日の午後、決済代行会社のテストログを確認できます。',
+      c10: '新しい決済画面には会社の新しい青色が使われています。',
+      c11: '赤くなっているテストは1つだけです。キャンセル予約の返金です。',
+      c12: 'このテストは前から不安定だから、無視していいと思います。'
     },
     decisions: {
-      right: 'Release on Tuesday without foreign-currency payments, or postpone the release?',
-      notTheirs: 'Which programming technique should the developer use for the fix?',
-      premature: 'Should we switch to a different payment provider?'
+      right: '火曜日に外貨決済なしでリリースするか、リリースを延期するか？',
+      notTheirs: '開発者は修正にどのプログラミング手法を使うべきか？',
+      premature: '別の決済代行会社に乗り換えるべきか？'
     },
     actions: {
-      concrete: 'The developer checks the provider’s test logs this afternoon and tells the product manager by 17:00 whether the bug is ours.',
-      vague: 'Someone will look into the test.',
-      outOfScope: 'Start writing the release notes for the version after next.'
+      concrete: '開発者が今日の午後に代行会社のテストログを確認し、17:00までにプロダクトマネージャーへ自社のバグかどうかを伝える。',
+      vague: '誰かがテストを見ておく。',
+      outOfScope: '次の次のバージョンのリリースノートを書き始める。'
     }
   },
   careAppointment: {
-    title: 'A care advice appointment for Grandmother',
-    situation: 'Your grandmother has an appointment with a care advice service on Monday. The family has to sort out who goes with her. Prepare a briefing. (This is about organising, not about medical questions.)',
-    recipient: 'your brother, who shares the decision with you',
+    title: '祖母の介護相談の予約',
+    situation: 'あなたの祖母は月曜日に介護相談窓口の予約があります。家族で誰が付き添うかを決める必要があります。ブリーフィングを準備してください。（医療の話ではなく、段取りの話です。）',
+    recipient: 'いっしょに決めるきょうだい',
     cards: {
-      c1: 'Grandmother has an appointment with the care advice service on Monday at 10:00 to talk about help at home.',
-      c2: 'She has asked for one family member to come with her.',
-      c3: 'The letter says to bring her list of medicines and her insurance card.',
-      c4: 'It is not clear yet whether Mum can take Monday off work.',
-      c5: 'The advice centre is said to have a lift, but nobody has checked.',
-      c6: 'If nobody can go, the next free appointment is in six weeks.',
-      c7: 'Grandmother tires quickly, and the bus ride to the centre takes 50 minutes each way.',
-      c8: 'The advice service needs to know by Friday whether the appointment takes place in person or by video call.',
-      c9: 'You could call Mum tonight and ask about Monday.',
-      c10: 'Grandmother’s neighbour recently got a new dog.',
-      c11: 'She would like someone from the family to go with her.',
-      c12: 'In my view, these advice services never really help anyway.'
+      c1: '祖母は月曜日10:00に介護相談窓口で、自宅での支援について相談する予定です。',
+      c2: '祖母は、家族の誰か1人に付き添ってほしいと頼んでいます。',
+      c3: '案内の手紙には、お薬の一覧と保険証を持ってくるよう書かれています。',
+      c4: '母が月曜日に仕事を休めるかどうかは、まだ分かりません。',
+      c5: '相談センターにはエレベーターがあるらしいですが、誰も確かめていません。',
+      c6: '誰も行けなければ、次に空いている予約は6週間後です。',
+      c7: '祖母は疲れやすく、センターまでのバスは片道50分かかります。',
+      c8: '相談窓口は金曜日までに、対面かビデオ通話かを知る必要があります。',
+      c9: '今夜、母に電話して月曜日のことを聞くことができます。',
+      c10: '祖母の隣の人が最近、新しく犬を飼い始めました。',
+      c11: '祖母は家族の誰かにいっしょに来てほしいと思っています。',
+      c12: '私に言わせれば、こういう相談なんてどうせ役に立たない。'
     },
     decisions: {
-      right: 'Who goes with Grandmother on Monday, and in person or by video call?',
-      notTheirs: 'Which kind of help at home should Grandmother get?',
-      premature: 'Should Grandmother move into a care home?'
+      right: '月曜日に誰が祖母に付き添うか、対面かビデオか？',
+      notTheirs: '祖母は自宅でどんな支援を受けるべきか？',
+      premature: '祖母は介護施設に移るべきか？'
     },
     actions: {
-      concrete: 'You call Mum tonight and tell your brother by Wednesday evening who can go.',
-      vague: 'We’ll sort it out somehow.',
-      outOfScope: 'Start planning Grandmother’s birthday party.'
+      concrete: '今夜あなたが母に電話し、水曜日の夜までに誰が行けるかをきょうだいに伝える。',
+      vague: 'まあ何とかなるでしょう。',
+      outOfScope: '祖母の誕生日パーティーの計画を始める。'
     }
   },
   cafeFreezer: {
-    title: 'Broken freezer in a small café',
-    situation: 'You work in a small café. This morning the freezer was not cold enough. The owner is away until tomorrow. Prepare a briefing.',
-    recipient: 'the café owner',
+    title: '小さなカフェの冷凍庫の故障',
+    situation: 'あなたは小さなカフェで働いています。今朝、冷凍庫が十分に冷えていませんでした。オーナーは明日まで不在です。ブリーフィングを準備してください。',
+    recipient: 'カフェのオーナー',
     cards: {
-      c1: 'The café sells homemade ice cream; the freezer holds about a week’s stock.',
-      c2: 'At 7:00 the freezer showed −2 °C instead of the usual −18 °C.',
-      c3: 'We moved the ice cream into the neighbouring bakery’s freezer at 7:30.',
-      c4: 'We do not know whether the ice cream thawed during the night.',
-      c5: 'The repair service will probably be able to come on Thursday.',
-      c6: 'Ice cream that has thawed must not be sold, so we may have to throw away the stock.',
-      c7: 'The bakery needs its freezer space back on Saturday, so our ice cream can only stay there until then.',
-      c8: 'The repair service will only book a visit once the owner approves the call-out fee of 90 euros.',
-      c9: 'The barista can read the freezer’s temperature log this afternoon.',
-      c10: 'The café’s new menu boards arrive next week.',
-      c11: 'This morning the freezer read −2 °C instead of −18 °C.',
-      c12: 'That freezer was a bad buy from day one.'
+      c1: 'カフェでは自家製アイスクリームを売っており、冷凍庫には約1週間分の在庫があります。',
+      c2: '7:00の時点で、冷凍庫はいつもの−18 °Cではなく−2 °Cを示していました。',
+      c3: '7:30にアイスクリームを隣のパン屋の冷凍庫へ移しました。',
+      c4: '夜のうちにアイスクリームが溶けたかどうかは分かりません。',
+      c5: '修理業者はおそらく木曜日に来られそうです。',
+      c6: '一度溶けたアイスクリームは販売できないので、在庫を捨てることになるかもしれません。',
+      c7: 'パン屋は土曜日に冷凍庫のスペースを返してほしいので、アイスクリームを置けるのはそれまでです。',
+      c8: '修理業者は、オーナーが出張費90ユーロを承認して初めて訪問日を決めます。',
+      c9: 'バリスタが今日の午後、冷凍庫の温度記録を読み出せます。',
+      c10: 'カフェの新しいメニューボードは来週届きます。',
+      c11: '今朝、冷凍庫の表示は−18 °Cではなく−2 °Cでした。',
+      c12: 'あの冷凍庫は最初から買い物の失敗だった。'
     },
     decisions: {
-      right: 'Approve the repair call-out fee of 90 euros?',
-      notTheirs: 'Which cakes should the bakery sell this week?',
-      premature: 'Should the café stop selling ice cream altogether?'
+      right: '修理の出張費90ユーロを承認するか？',
+      notTheirs: 'パン屋は今週どのケーキを売るべきか？',
+      premature: 'カフェはアイスクリームの販売を完全にやめるべきか？'
     },
     actions: {
-      concrete: 'The barista reads the temperature log this afternoon and texts the owner the result by 16:00.',
-      vague: 'We’ll keep an eye on it.',
-      outOfScope: 'Redesign the café’s website.'
+      concrete: 'バリスタが今日の午後に温度記録を読み出し、16:00までにオーナーへ結果をメッセージで送る。',
+      vague: '様子を見ておきます。',
+      outOfScope: 'カフェのウェブサイトをデザインし直す。'
     }
   },
   tournament: {
-    title: 'New venue for a chess tournament',
-    situation: 'Your chess club hosts a youth tournament on Sunday. The school hall you booked is no longer available. Prepare a briefing.',
-    recipient: 'the club board',
+    title: 'チェス大会の新しい会場',
+    situation: 'あなたのチェスクラブは日曜日にジュニア大会を開きます。予約していた学校のホールが使えなくなりました。ブリーフィングを準備してください。',
+    recipient: 'クラブの理事会',
     cards: {
-      c1: 'Sunday’s youth tournament has 48 registered players from six clubs.',
-      c2: 'The school has cancelled our hall booking because of a leak in the roof.',
-      c3: 'The town library offers its event room free of charge, but it only fits 32 players.',
-      c4: 'The sports centre might have a free room, but it has not answered our email yet.',
-      c5: 'The caretaker believes the school hall could be repaired in time, but nobody has confirmed it.',
-      c6: 'If families hear about the change too late, some players may turn up at the old venue.',
-      c7: 'Several families travel more than 100 km and have already booked their trains, so a change of date would hit them hardest.',
-      c8: 'The invitations with the final venue must go out by Wednesday.',
-      c9: 'The club secretary can phone the sports centre tomorrow morning.',
-      c10: 'The club’s trophy cabinet was cleaned last month.',
-      c11: 'The school has called off our booking for the hall.',
-      c12: 'We should never have relied on that school.'
+      c1: '日曜日のジュニア大会には、6つのクラブから48人の選手が登録しています。',
+      c2: '学校は屋根の雨漏りのため、ホールの予約を取り消しました。',
+      c3: '市立図書館がイベントルームを無料で貸してくれますが、入れるのは32人までです。',
+      c4: 'スポーツセンターに空き部屋があるかもしれませんが、メールの返事はまだありません。',
+      c5: '用務員はホールが間に合うように直せると思っていますが、誰も確認していません。',
+      c6: '家族への変更連絡が遅れると、一部の選手が元の会場に来てしまうかもしれません。',
+      c7: 'いくつかの家族は100km以上移動し、すでに列車を予約しているので、日程変更は彼らにいちばん響きます。',
+      c8: '最終的な会場を書いた招待状は、水曜日までに送る必要があります。',
+      c9: 'クラブの書記が、明日の朝スポーツセンターに電話できます。',
+      c10: 'クラブのトロフィー棚は先月掃除しました。',
+      c11: '学校はホールの予約を撤回しました。',
+      c12: 'そもそもあの学校を当てにするべきじゃなかった。'
     },
     decisions: {
-      right: 'Move to another venue, limit the tournament to 32 players, or postpone it?',
-      notTheirs: 'When should the school repair its roof?',
-      premature: 'Should the club build its own clubhouse?'
+      right: '別の会場に移すか、大会を32人に制限するか、延期するか？',
+      notTheirs: '学校はいつ屋根を直すべきか？',
+      premature: 'クラブは自前のクラブハウスを建てるべきか？'
     },
     actions: {
-      concrete: 'The secretary phones the sports centre tomorrow at 9:00 and reports to the board by 12:00.',
-      vague: 'Let’s wait and see what turns up.',
-      outOfScope: 'Order new chess sets for the club.'
+      concrete: '書記が明日9:00にスポーツセンターへ電話し、12:00までに理事会へ報告する。',
+      vague: '何か出てくるまで待ってみよう。',
+      outOfScope: 'クラブ用の新しいチェスセットを注文する。'
     }
   }
 };
