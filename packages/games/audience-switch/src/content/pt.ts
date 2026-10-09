@@ -255,5 +255,182 @@ export const content: ContentText = {
       'expert.missing': 'Algumas tampas estão soltas; os clientes recebem uma substituição gratuita.',
       'expert.condescending': 'Uma dobradiça é a peça que deixa a tampa rodar. Se for demasiado fina, não segura bem.'
     }
+  },
+  renovation: {
+    title: 'Obras atrasadas',
+    situation: 'Gere a empresa de construção que está a renovar a cozinha e a casa de banho de uma moradia geminada. As obras estão atrasadas. Explique isso.',
+    facts: {
+      delay: 'A renovação termina uma semana mais tarde: a 21 de junho em vez de 14 de junho.',
+      tiles: 'O fornecedor entregou azulejos de 30 × 60 cm em vez de 60 × 60 cm para a casa de banho; têm de ser encomendados de novo.',
+      order: 'Até chegarem os azulejos novos, a equipa trabalha primeiro na cozinha.',
+      water: 'O cano de água partilhado será fechado na terça-feira das 8 às 12.',
+      noise: 'Na próxima semana haverá mais três dias de berbequim barulhento, entre as 8 e as 17.',
+      cost: 'O atraso não custa nada aos proprietários; o fornecedor paga os azulejos novos.',
+      supplierHistory: 'Este fornecedor de azulejos já teve vários problemas de entrega este ano.',
+      skip: 'Na segunda-feira o contentor ficará na rua, em frente à entrada da garagem dos vizinhos.'
+    },
+    reasons: {
+      'customer.delay': 'Os proprietários organizam-se em função da nova data de conclusão.',
+      'customer.tiles': 'O formato exato dos azulejos é assunto da equipa; os proprietários precisam da data e do custo.',
+      'customer.water': 'Têm de saber quando vão ficar sem água.',
+      'customer.cost': 'A primeira preocupação é saber se o atraso lhes custa dinheiro.',
+      'projectManager.delay': 'O chefe de equipa planeia o resto da obra para a nova data.',
+      'projectManager.tiles': 'A equipa tem de saber exatamente o que está errado na entrega.',
+      'projectManager.order': 'É o que a equipa faz amanhã de manhã.',
+      'projectManager.water': 'A equipa fecha a água e tem de avisar toda a gente.',
+      'projectManager.cost': 'Quem paga é acertado entre o escritório e o fornecedor; não muda o trabalho.',
+      'projectManager.skip': 'O chefe de equipa tem de organizar onde fica o contentor.',
+      'neighbour.tiles': 'Os pormenores dos azulejos não dizem respeito aos vizinhos.',
+      'neighbour.order': 'A ordem de trabalho da equipa não afeta os vizinhos.',
+      'neighbour.water': 'Os vizinhos partilham o cano e precisam das horas exatas.',
+      'neighbour.noise': 'As horas de barulho são o que mais afeta os vizinhos.',
+      'neighbour.cost': 'Os custos dos proprietários são privados.',
+      'neighbour.skip': 'O contentor bloqueia a entrada deles, por isso têm de saber com antecedência.',
+      supplierHistory: 'Queixar-se do fornecedor soa a desculpa e não ajuda ninguém.'
+    },
+    messages: {
+      'customer.fit': 'A sua renovação fica concluída a 21 de junho em vez de 14 de junho, porque os azulejos da casa de banho vieram no tamanho errado. Isto não lhe custa nada. Atenção: na terça-feira não há água das 8 às 12.',
+      'customer.tooMuch': 'O fornecedor enviou 30 × 60 em vez de 60 × 60, por isso o plano de assentamento já não serve; a equipa faz primeiro a cozinha e o contentor vai para a rua na segunda-feira.',
+      'customer.condescending': 'Há um pequeno contratempo com os azulejos, nada com que se tenha de preocupar. Deixe isso aos profissionais.',
+      'projectManager.fit': 'Os azulejos da casa de banho vieram em 30 × 60 em vez de 60 × 60, por isso primeiro a cozinha até chegar a nova encomenda. Nova conclusão: 21 de junho. Água fechada na terça-feira das 8 às 12, e o contentor vai para a rua na segunda-feira.',
+      'projectManager.missing': 'Há atraso na casa de banho. Continuem como puderem.',
+      'projectManager.condescending': 'Os azulejos têm um tamanho e, se o tamanho estiver errado, não encaixam. Portanto, não os assentem, por favor.',
+      'neighbour.fit': 'Sobre as obras aqui ao lado: na terça-feira o cano de água partilhado fica fechado das 8 às 12, e na próxima semana haverá mais três dias de berbequim, entre as 8 e as 17. Na segunda-feira o contentor fica em frente à sua entrada. Pedimos desculpa pelo incómodo.',
+      'neighbour.tooMuch': 'Os azulejos da casa de banho vieram no formato errado, por isso a equipa passou para a cozinha, e os proprietários não pagam nada a mais porque o fornecedor assume o custo.',
+      'neighbour.missing': 'Estamos a fazer algumas obras aqui ao lado. Obrigado pela paciência.'
+    }
+  },
+  schoolTrip: {
+    title: 'Alteração da visita de estudo',
+    situation: 'É diretor ou diretora de turma. A empresa de autocarros cancelou, por isso a visita ao jardim zoológico tem de mudar de data. Explique isso.',
+    facts: {
+      newDate: 'A visita ao jardim zoológico passa de quinta-feira para a próxima terça-feira.',
+      bus: 'A empresa de autocarros cancelou porque dois motoristas estão doentes.',
+      lunch: 'As crianças levam lanche e bebida, como estava previsto.',
+      form: 'Os pais têm de assinar uma nova autorização até sexta-feira.',
+      price: 'O preço mantém-se em 12 euros por criança.',
+      cover: 'Na terça-feira alguém tem de me substituir na turma 7b das 10 às 12.',
+      rain: 'Se chover muito, a turma visita antes o pavilhão do aquário.',
+      complaint: 'Alguns pais queixaram-se de que a quinta-feira já era um mau dia.'
+    },
+    reasons: {
+      'child.newDate': 'As crianças querem saber primeiro quando é a visita.',
+      'child.bus': 'Motoristas doentes não são algo em que as crianças tenham de pensar.',
+      'child.lunch': 'É o que têm de levar elas próprias.',
+      'child.form': 'A autorização é assinada pelos pais, não pelas crianças.',
+      'child.price': 'O dinheiro é tratado pelos pais.',
+      'child.cover': 'Os acertos entre professores não dizem respeito às crianças.',
+      'child.rain': 'Diz-lhes o que esperar, e as crianças gostam de saber.',
+      'parent.newDate': 'Os pais precisam da nova data para organizar a semana.',
+      'parent.lunch': 'São eles que preparam o lanche.',
+      'parent.form': 'É o que têm de fazer, com prazo.',
+      'parent.price': 'Querem saber se fica mais caro.',
+      'parent.cover': 'As substituições são um assunto interno da escola.',
+      'parent.rain': 'Ajuda-os a preparar o filho para o tempo que fizer.',
+      'colleague.newDate': 'O colega tem de saber que dia é afetado.',
+      'colleague.lunch': 'Os lanches são assunto da turma, não do colega.',
+      'colleague.price': 'O preço da visita não afeta o colega.',
+      'colleague.cover': 'É isto que está, de facto, a pedir-lhe.',
+      'colleague.rain': 'O plano para mau tempo não muda as aulas do colega.',
+      complaint: 'Passar queixas adiante só cria agitação e não muda nada.'
+    },
+    messages: {
+      'child.fit': 'A nossa visita ao jardim zoológico é na próxima terça-feira! Tragam lanche e bebida, como combinámos. Se chover muito, vamos ao pavilhão do aquário.',
+      'child.tooMuch': 'A empresa de autocarros cancelou porque dois motoristas estão doentes, os vossos pais têm de assinar uma nova autorização até sexta-feira e o preço continua a ser 12 euros.',
+      'child.missing': 'Há uma pequena mudança na visita. Depois digo mais.',
+      'parent.fit': 'A visita ao jardim zoológico passa de quinta-feira para a próxima terça-feira, porque a empresa de autocarros cancelou. Por favor, assine a nova autorização até sexta-feira. O preço mantém-se em 12 euros; o seu filho continua a precisar de lanche e bebida.',
+      'parent.tooMuch': 'A empresa de autocarros tem dois motoristas doentes, preciso de alguém que me substitua na 7b na terça-feira das 10 às 12, e alguns pais disseram que a quinta-feira já era um mau dia.',
+      'parent.condescending': 'Não se preocupe com os pormenores, nós, professores, temos tudo controlado. Assine apenas o que o seu filho levar para casa.',
+      'colleague.fit': 'A nossa visita ao jardim zoológico passou para a próxima terça-feira. Podes substituir-me na 7b das 10 às 12 nesse dia?',
+      'colleague.tooMuch': 'As crianças levam lanche, o preço continua a ser 12 euros, a autorização tem de ser entregue na sexta-feira e, se chover, vamos ao pavilhão do aquário.',
+      'colleague.missing': 'Já agora, a visita mudou de data.'
+    }
+  },
+  practiceMonday: {
+    title: 'Consultório: consultas de segunda-feira',
+    situation: 'Trabalha na receção de um consultório de medicina geral. Uma médica falta na segunda-feira sem aviso prévio, por isso as consultas têm de ser mudadas. Explique isso. (Trata-se só de marcações, não de saúde.)',
+    facts: {
+      moved: 'Todas as consultas de segunda-feira com a Dra. Lind passam para quarta-feira à mesma hora.',
+      away: 'A Dra. Lind falta inesperadamente por motivos pessoais.',
+      urgent: 'Os assuntos urgentes de segunda-feira são atendidos pelo segundo médico do consultório.',
+      calls: 'É preciso telefonar a 42 doentes até sexta-feira.',
+      reply: 'Quem não puder vir na quarta-feira telefona para o consultório para marcar outra hora.',
+      hours: 'Remarcar exige cerca de seis horas extra de pessoal esta semana, que a gestora do consultório tem de aprovar.',
+      vip: 'Um dos doentes de segunda-feira é um político local conhecido.',
+      texts: 'O novo sistema de marcações pode enviar lembretes por SMS automaticamente.'
+    },
+    reasons: {
+      'patient.moved': 'O doente precisa primeiro do novo dia e da hora.',
+      'patient.urgent': 'Precisa de saber a quem recorrer se algo não puder esperar.',
+      'patient.calls': 'Quantas pessoas são afetadas é carga de trabalho interna.',
+      'patient.reply': 'Diz-lhe o que fazer se a quarta-feira não lhe der jeito.',
+      'patient.hours': 'As horas do pessoal são assunto do consultório.',
+      'patient.texts': 'As ferramentas internas não são o que o doente precisa de ouvir.',
+      'executive.moved': 'A gestora tem de saber o que muda na agenda.',
+      'executive.calls': 'Mostra a dimensão do trabalho.',
+      'executive.reply': 'As instruções aos doentes são rotina da receção, não uma questão de gestão.',
+      'executive.hours': 'É a decisão que a gestora tem de tomar.',
+      'colleague.moved': 'A colega tem de dizer a nova hora aos doentes.',
+      'colleague.urgent': 'Os doentes vão perguntar, por isso a colega precisa da resposta.',
+      'colleague.calls': 'É a tarefa que lhe está a passar.',
+      'colleague.hours': 'Aprovar horas extra cabe à gestora; a colega precisa da tarefa.',
+      'colleague.texts': 'Poupa-lhe muitos telefonemas.',
+      vip: 'Quem são os doentes é confidencial e não cabe em nenhuma destas mensagens.'
+    },
+    messages: {
+      'patient.fit': 'A sua consulta de segunda-feira com a Dra. Lind passa para quarta-feira à mesma hora. Se a quarta-feira não lhe der jeito, telefone-nos para marcar outra hora. Os assuntos urgentes de segunda-feira são atendidos pelo nosso segundo médico.',
+      'patient.tooMuch': 'Temos de telefonar a 42 doentes até sexta-feira, o que exige cerca de seis horas extra de pessoal, e o novo sistema pode enviar lembretes por SMS.',
+      'patient.condescending': 'Os médicos são pessoas ocupadas, sabe. Venha simplesmente na quarta-feira e não se preocupe com o porquê.',
+      'executive.fit': 'Por favor, aprova cerca de seis horas extra de pessoal esta semana: a Dra. Lind falta na segunda-feira, por isso 42 consultas passam para quarta-feira e esses doentes têm de ser contactados até sexta-feira.',
+      'executive.tooMuch': 'Quem não puder vir na quarta-feira deve telefonar-nos, os assuntos urgentes vão para o segundo médico e os lembretes por SMS ativam-se no menu de definições.',
+      'executive.missing': 'A segunda-feira está um pouco confusa, mas vamos resolver.',
+      'colleague.fit': 'Podes ajudar-me a telefonar até sexta-feira aos 42 doentes marcados com a Dra. Lind na segunda-feira? As consultas passam para quarta-feira à mesma hora; os assuntos urgentes de segunda vão para o segundo médico. O novo sistema também pode enviar lembretes por SMS.',
+      'colleague.missing': 'As consultas de segunda-feira vão mudar, só para saberes.',
+      'colleague.condescending': 'Telefonar a doentes é fácil: pegas no telefone, marcas o número e falas. Faz isso com a lista de segunda, por favor.'
+    }
+  },
+  libraryHours: {
+    title: 'Horário da biblioteca',
+    situation: 'Dirige a biblioteca municipal. Por causa de cortes no orçamento, o horário de abertura muda. Explique isso.',
+    facts: {
+      hours: 'A partir de 1 de setembro a biblioteca abre de terça a sábado, das 10 às 18, e fecha à segunda-feira.',
+      cards: 'Os cartões de leitor e o empréstimo online não são afetados.',
+      budget: 'A câmara municipal cortou 15% no orçamento da biblioteca.',
+      returns: 'Os livros continuam a poder ser devolvidos a qualquer hora na caixa de devolução.',
+      shifts: 'Os turnos mudam: deixa de haver turnos à segunda-feira e os de sábado ficam mais longos.',
+      savings: 'O novo horário poupa cerca de 40.000 euros por ano, e ninguém perde o emprego.',
+      petition: 'Uma leitora iniciou uma petição contra o encerramento à segunda-feira.',
+      heating: 'Fechar à segunda-feira também poupa aquecimento, porque o edifício antigo está mal isolado.'
+    },
+    reasons: {
+      'customer.hours': 'Os leitores precisam de saber primeiro quando podem vir.',
+      'customer.cards': 'Responde à dúvida sobre se o cartão e o empréstimo online continuam a funcionar.',
+      'customer.returns': 'Diz-lhes o que ainda podem fazer num dia de encerramento.',
+      'customer.shifts': 'As escalas do pessoal são internas.',
+      'customer.savings': 'Os números do orçamento não ajudam os leitores a planear a visita.',
+      'customer.petition': 'Referir a petição é tomar partido e não ajuda a planear.',
+      'customer.heating': 'O isolamento do edifício é um pormenor interno.',
+      'colleague.hours': 'Os colegas respondem às perguntas dos leitores sobre o novo horário.',
+      'colleague.cards': 'Os colegas conhecem os próprios sistemas; esta frase é para os leitores.',
+      'colleague.shifts': 'Isto muda a sua própria semana de trabalho.',
+      'colleague.savings': 'Saber que ninguém perde o emprego é muito importante para eles.',
+      'colleague.heating': 'Os custos de aquecimento não mudam o trabalho deles.',
+      'executive.hours': 'A câmara tem de saber exatamente o que o público vai ver.',
+      'executive.budget': 'Foi a própria câmara que decidiu o corte; repeti-lo é perder tempo.',
+      'executive.returns': 'Os pormenores da caixa de devolução são gestão do dia a dia.',
+      'executive.savings': 'Poupança e empregos é exatamente o que a câmara perguntou.',
+      'executive.petition': 'A reação do público pode chegar à câmara, por isso deve sabê-lo primeiro por si.'
+    },
+    messages: {
+      'customer.fit': 'A partir de 1 de setembro a biblioteca está aberta de terça a sábado, das 10 às 18, e fechada à segunda-feira. Pode continuar a devolver livros a qualquer hora na caixa de devolução, e o seu cartão e o empréstimo online funcionam como antes.',
+      'customer.tooMuch': 'A câmara cortou 15% no nosso orçamento, por isso poupamos cerca de 40.000 euros por ano alterando os turnos e aquecendo menos o edifício antigo à segunda-feira.',
+      'customer.condescending': 'Sabemos que a mudança custa a alguns leitores. Lembre-se só: à segunda-feira não há biblioteca. É mesmo muito simples.',
+      'colleague.fit': 'A partir de 1 de setembro os nossos turnos mudam: deixa de haver turnos à segunda-feira e os de sábado ficam mais longos. Abrimos de terça a sábado, das 10 às 18, e ninguém perde o emprego.',
+      'colleague.missing': 'No outono vão mudar algumas coisas. Mais tarde dou detalhes.',
+      'colleague.tooMuch': 'Os leitores continuam a poder usar a caixa de devolução, os cartões e o empréstimo online não mudam, e o encerramento à segunda também poupa aquecimento no nosso edifício mal isolado.',
+      'executive.fit': 'O novo horário poupa cerca de 40.000 euros por ano sem perda de empregos: a partir de 1 de setembro fechamos à segunda-feira e abrimos de terça a sábado, das 10 às 18. Note que uma leitora iniciou uma petição contra o encerramento à segunda-feira.',
+      'executive.tooMuch': 'As devoluções continuam possíveis na caixa, os cartões e o empréstimo online não mudam, e os turnos de sábado ficam mais longos enquanto os de segunda desaparecem.',
+      'executive.missing': 'Ajustámos um pouco o horário.'
+    }
   }
 };

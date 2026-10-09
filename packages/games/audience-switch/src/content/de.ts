@@ -255,5 +255,182 @@ export const content: ContentText = {
       'expert.missing': 'Manche Deckel sind locker; Kunden bekommen kostenlosen Ersatz.',
       'expert.condescending': 'Ein Scharnier ist das Teil, mit dem sich der Deckel dreht. Wenn es zu dünn ist, hält es nicht gut.'
     }
+  },
+  renovation: {
+    title: 'Verzögerte Renovierung',
+    situation: 'Du leitest die Baufirma, die Küche und Bad in einer Doppelhaushälfte renoviert. Die Arbeiten verzögern sich. Erkläre es.',
+    facts: {
+      delay: 'Die Renovierung wird eine Woche später fertig: am 21. Juni statt am 14. Juni.',
+      tiles: 'Der Lieferant hat Badfliesen in 30 × 60 cm statt 60 × 60 cm geliefert, sie müssen neu bestellt werden.',
+      order: 'Bis die neuen Fliesen da sind, arbeitet die Kolonne zuerst an der Küche.',
+      water: 'Die gemeinsame Wasserleitung wird am Dienstag von 8 bis 12 Uhr abgestellt.',
+      noise: 'Lautes Bohren dauert nächste Woche noch drei Tage, zwischen 8 und 17 Uhr.',
+      cost: 'Die Verzögerung kostet die Eigentümer nichts; der Lieferant zahlt die neuen Fliesen.',
+      supplierHistory: 'Dieser Fliesenlieferant hatte dieses Jahr schon mehrmals Lieferprobleme.',
+      skip: 'Am Montag steht der Container auf der Straße vor der Einfahrt der Nachbarn.'
+    },
+    reasons: {
+      'customer.delay': 'Die Eigentümer planen mit dem neuen Fertigstellungstermin.',
+      'customer.tiles': 'Das genaue Fliesenformat ist Sache der Kolonne; die Eigentümer brauchen Termin und Kosten.',
+      'customer.water': 'Sie müssen wissen, wann sie kein Wasser haben.',
+      'customer.cost': 'Ihre erste Sorge ist, ob die Verzögerung sie Geld kostet.',
+      'projectManager.delay': 'Der Vorarbeiter plant die restlichen Arbeiten auf den neuen Termin hin.',
+      'projectManager.tiles': 'Die Kolonne muss genau wissen, was an der Lieferung falsch ist.',
+      'projectManager.order': 'Das macht die Kolonne morgen früh.',
+      'projectManager.water': 'Die Kolonne stellt das Wasser ab und muss alle vorwarnen.',
+      'projectManager.cost': 'Wer zahlt, klären Büro und Lieferant; an der Arbeit ändert das nichts.',
+      'projectManager.skip': 'Der Vorarbeiter muss klären, wo der Container hinkommt.',
+      'neighbour.tiles': 'Fliesendetails gehen die Nachbarn nichts an.',
+      'neighbour.order': 'Die Arbeitsreihenfolge der Kolonne betrifft die Nachbarn nicht.',
+      'neighbour.water': 'Die Nachbarn teilen die Leitung und brauchen die genauen Zeiten.',
+      'neighbour.noise': 'Lärmzeiten betreffen die Nachbarn am meisten.',
+      'neighbour.cost': 'Die Kosten der Eigentümer sind privat.',
+      'neighbour.skip': 'Der Container blockiert ihre Einfahrt, also müssen sie es vorher wissen.',
+      supplierHistory: 'Über den Lieferanten zu klagen, klingt nach Ausrede und hilft niemandem.'
+    },
+    messages: {
+      'customer.fit': 'Ihre Renovierung wird am 21. Juni statt am 14. Juni fertig, weil die Badfliesen in der falschen Größe geliefert wurden. Das kostet Sie nichts. Bitte beachten Sie: Am Dienstag ist das Wasser von 8 bis 12 Uhr abgestellt.',
+      'customer.tooMuch': 'Der Lieferant hat 30 × 60 statt 60 × 60 geschickt, deshalb passt der Verlegeplan nicht mehr; die Kolonne macht jetzt zuerst die Küche, und der Container kommt am Montag auf die Straße.',
+      'customer.condescending': 'Es gibt einen kleinen Haken mit den Fliesen, darüber müssen Sie sich keine Gedanken machen. Überlassen Sie das den Profis.',
+      'projectManager.fit': 'Die Badfliesen kamen in 30 × 60 statt 60 × 60, also erst die Küche, bis die Nachbestellung da ist. Neuer Fertigstellungstermin: 21. Juni. Wasser am Dienstag von 8 bis 12 Uhr aus, und der Container kommt am Montag auf die Straße.',
+      'projectManager.missing': 'Beim Bad gibt es Verzögerung. Macht irgendwie weiter.',
+      'projectManager.condescending': 'Fliesen haben eine Größe, und wenn die Größe falsch ist, passen sie nicht. Also bitte nicht verlegen.',
+      'neighbour.fit': 'Zur Renovierung nebenan: Am Dienstag ist die gemeinsame Wasserleitung von 8 bis 12 Uhr abgestellt, und nächste Woche wird noch drei Tage laut gebohrt, zwischen 8 und 17 Uhr. Am Montag steht der Container vor Ihrer Einfahrt. Entschuldigen Sie die Umstände.',
+      'neighbour.tooMuch': 'Die Badfliesen kamen im falschen Format, daher wechselt die Kolonne zur Küche, und die Eigentümer zahlen nichts extra, weil der Lieferant das übernimmt.',
+      'neighbour.missing': 'Wir bauen nebenan ein bisschen. Danke für Ihre Geduld.'
+    }
+  },
+  schoolTrip: {
+    title: 'Änderung beim Klassenausflug',
+    situation: 'Du bist Klassenlehrer/in. Das Busunternehmen hat abgesagt, deshalb muss der Ausflug in den Zoo verschoben werden. Erkläre es.',
+    facts: {
+      newDate: 'Der Zooausflug wird von Donnerstag auf nächsten Dienstag verschoben.',
+      bus: 'Das Busunternehmen hat abgesagt, weil zwei Fahrer krank sind.',
+      lunch: 'Die Kinder bringen wie geplant ein Lunchpaket und etwas zu trinken mit.',
+      form: 'Die Eltern müssen bis Freitag eine neue Einverständniserklärung unterschreiben.',
+      price: 'Der Preis bleibt bei 12 Euro pro Kind.',
+      cover: 'Am Dienstag muss jemand meinen Unterricht in der 7b von 10 bis 12 Uhr vertreten.',
+      rain: 'Bei starkem Regen besucht die Klasse stattdessen das Aquarienhaus.',
+      complaint: 'Einige Eltern haben sich beschwert, dass der Donnerstag ohnehin ungünstig war.'
+    },
+    reasons: {
+      'child.newDate': 'Kinder wollen zuerst wissen, wann der Ausflug stattfindet.',
+      'child.bus': 'Kranke Busfahrer sind nichts, worüber Kinder nachdenken müssen.',
+      'child.lunch': 'Das müssen sie selbst mitbringen.',
+      'child.form': 'Die Erklärung unterschreiben die Eltern, nicht die Kinder.',
+      'child.price': 'Ums Geld kümmern sich die Eltern.',
+      'child.cover': 'Absprachen zwischen Lehrkräften betreffen die Kinder nicht.',
+      'child.rain': 'Es sagt ihnen, was sie erwartet – das wissen Kinder gern.',
+      'parent.newDate': 'Eltern brauchen den neuen Termin, um ihre Woche zu planen.',
+      'parent.lunch': 'Sie bereiten das Lunchpaket vor.',
+      'parent.form': 'Das müssen sie tun, und zwar bis zu einer Frist.',
+      'parent.price': 'Sie wollen wissen, ob es teurer wird.',
+      'parent.cover': 'Vertretungsstunden sind eine schulinterne Angelegenheit.',
+      'parent.rain': 'Es hilft ihnen, ihr Kind auf das Wetter vorzubereiten.',
+      'colleague.newDate': 'Die Kollegin muss wissen, welcher Tag betroffen ist.',
+      'colleague.lunch': 'Lunchpakete sind für die Klasse, nicht für die Kollegin.',
+      'colleague.price': 'Der Preis des Ausflugs betrifft die Kollegin nicht.',
+      'colleague.cover': 'Darum bittest du sie eigentlich.',
+      'colleague.rain': 'Der Schlechtwetterplan ändert ihren Unterricht nicht.',
+      complaint: 'Beschwerden weiterzugeben, sorgt für Unruhe und ändert nichts.'
+    },
+    messages: {
+      'child.fit': 'Unser Zooausflug ist jetzt am nächsten Dienstag! Bringt ein Lunchpaket und etwas zu trinken mit, wie geplant. Wenn es stark regnet, gehen wir ins Aquarienhaus.',
+      'child.tooMuch': 'Das Busunternehmen hat abgesagt, weil zwei Fahrer krank sind, eure Eltern müssen bis Freitag ein neues Formular unterschreiben, und der Preis bleibt bei 12 Euro.',
+      'child.missing': 'Beim Ausflug ändert sich etwas. Ihr hört später mehr.',
+      'parent.fit': 'Der Zooausflug wird von Donnerstag auf nächsten Dienstag verschoben, weil das Busunternehmen abgesagt hat. Bitte unterschreiben Sie bis Freitag die neue Einverständniserklärung. Der Preis bleibt bei 12 Euro; Ihr Kind braucht weiterhin ein Lunchpaket und etwas zu trinken.',
+      'parent.tooMuch': 'Beim Busunternehmen sind zwei Fahrer krank, ich brauche am Dienstag von 10 bis 12 Uhr eine Vertretung für die 7b, und einige Eltern meinten, der Donnerstag sei ohnehin ungünstig gewesen.',
+      'parent.condescending': 'Machen Sie sich um die Details keine Gedanken, wir Lehrkräfte haben alles im Griff. Unterschreiben Sie einfach, was Ihr Kind mitbringt.',
+      'colleague.fit': 'Unser Zooausflug ist jetzt nächsten Dienstag. Könntest du an dem Tag meinen Unterricht in der 7b von 10 bis 12 Uhr vertreten?',
+      'colleague.tooMuch': 'Die Kinder bringen ein Lunchpaket mit, der Preis bleibt bei 12 Euro, die Einverständniserklärung ist bis Freitag fällig, und bei Regen gehen wir ins Aquarienhaus.',
+      'colleague.missing': 'Der Ausflug wird übrigens verschoben.'
+    }
+  },
+  practiceMonday: {
+    title: 'Arztpraxis: Termine am Montag',
+    situation: 'Du arbeitest am Empfang einer Hausarztpraxis. Eine Ärztin fällt am Montag kurzfristig aus, deshalb müssen Termine verschoben werden. Erkläre es. (Es geht nur um Termine, nicht um Gesundheit.)',
+    facts: {
+      moved: 'Alle Montagstermine bei Dr. Lind werden zur selben Uhrzeit auf Mittwoch verschoben.',
+      away: 'Dr. Lind fällt kurzfristig aus privaten Gründen aus.',
+      urgent: 'Dringende Anliegen am Montag übernimmt die zweite Ärztin der Praxis.',
+      calls: '42 Patienten müssen bis Freitag angerufen werden.',
+      reply: 'Wer am Mittwoch nicht kann, ruft in der Praxis an und bekommt einen anderen Termin.',
+      hours: 'Das Umbuchen braucht diese Woche etwa sechs zusätzliche Personalstunden, die die Praxisleitung genehmigen muss.',
+      vip: 'Einer der Montagspatienten ist ein bekannter Lokalpolitiker.',
+      texts: 'Das neue Terminsystem kann automatisch SMS-Erinnerungen verschicken.'
+    },
+    reasons: {
+      'patient.moved': 'Der Patient braucht zuerst den neuen Tag und die Uhrzeit.',
+      'patient.urgent': 'Er muss wissen, an wen er sich wenden kann, wenn etwas nicht warten kann.',
+      'patient.calls': 'Wie viele Menschen betroffen sind, ist interne Arbeitslast.',
+      'patient.reply': 'Es sagt ihm, was er tun kann, wenn der Mittwoch nicht passt.',
+      'patient.hours': 'Personalstunden sind Sache der Praxis.',
+      'patient.texts': 'Interne Werkzeuge muss der Patient nicht kennen.',
+      'executive.moved': 'Die Praxisleitung muss wissen, was sich im Terminplan ändert.',
+      'executive.calls': 'Das zeigt den Umfang der Arbeit.',
+      'executive.reply': 'Hinweise für Patienten sind Routine am Empfang, keine Leitungsfrage.',
+      'executive.hours': 'Das ist die Entscheidung, die die Praxisleitung treffen muss.',
+      'colleague.moved': 'Die Kollegin muss den Patienten die neue Zeit nennen.',
+      'colleague.urgent': 'Patienten werden fragen, also braucht die Kollegin die Antwort.',
+      'colleague.calls': 'Das ist die Aufgabe, die du abgibst.',
+      'colleague.hours': 'Zusatzstunden genehmigt die Leitung; die Kollegin braucht die Aufgabe.',
+      'colleague.texts': 'Das erspart ihr viele Anrufe.',
+      vip: 'Wer die Patienten sind, ist vertraulich und gehört in keine dieser Nachrichten.'
+    },
+    messages: {
+      'patient.fit': 'Ihr Termin bei Dr. Lind am Montag wird zur selben Uhrzeit auf Mittwoch verschoben. Wenn Ihnen der Mittwoch nicht passt, rufen Sie uns bitte für einen anderen Termin an. Dringende Anliegen am Montag übernimmt unsere zweite Ärztin.',
+      'patient.tooMuch': 'Wir müssen bis Freitag 42 Patienten anrufen, das braucht etwa sechs zusätzliche Personalstunden, und das neue System kann SMS-Erinnerungen verschicken.',
+      'patient.condescending': 'Ärzte sind eben viel beschäftigt. Kommen Sie einfach am Mittwoch und machen Sie sich keine Gedanken, warum.',
+      'executive.fit': 'Bitte genehmige diese Woche etwa sechs zusätzliche Personalstunden: Dr. Lind fällt am Montag aus, deshalb werden 42 Termine auf Mittwoch verschoben, und diese Patienten müssen bis Freitag angerufen werden.',
+      'executive.tooMuch': 'Wer am Mittwoch nicht kann, soll uns anrufen, Dringendes übernimmt die zweite Ärztin, und SMS-Erinnerungen lassen sich im Einstellungsmenü einschalten.',
+      'executive.missing': 'Der Montag ist etwas chaotisch, wir kriegen das hin.',
+      'colleague.fit': 'Kannst du mir helfen, bis Freitag die 42 Patienten anzurufen, die am Montag bei Dr. Lind gebucht sind? Ihre Termine werden zur selben Uhrzeit auf Mittwoch verschoben; Dringendes am Montag übernimmt die zweite Ärztin. Das neue System kann auch SMS-Erinnerungen schicken.',
+      'colleague.missing': 'Die Montagstermine ändern sich, nur damit du es weißt.',
+      'colleague.condescending': 'Patienten anrufen ist einfach: Hörer abnehmen, Nummer wählen, reden. Mach das bitte für die Montagsliste.'
+    }
+  },
+  libraryHours: {
+    title: 'Öffnungszeiten der Bibliothek',
+    situation: 'Du leitest die Stadtbibliothek. Wegen Kürzungen im Haushalt ändern sich die Öffnungszeiten. Erkläre es.',
+    facts: {
+      hours: 'Ab 1. September ist die Bibliothek dienstags bis samstags von 10 bis 18 Uhr geöffnet und montags geschlossen.',
+      cards: 'Bibliotheksausweise und Online-Ausleihe sind nicht betroffen.',
+      budget: 'Die Stadt hat das Budget der Bibliothek um 15 % gekürzt.',
+      returns: 'Bücher können weiterhin jederzeit über den Rückgabekasten zurückgegeben werden.',
+      shifts: 'Die Dienstpläne ändern sich: keine Montagsschichten mehr, längere Samstagsschichten.',
+      savings: 'Die neuen Zeiten sparen etwa 40.000 Euro im Jahr, und niemand verliert seinen Arbeitsplatz.',
+      petition: 'Eine Leserin hat eine Petition gegen die Schließung am Montag gestartet.',
+      heating: 'Die Schließung am Montag spart auch Heizkosten, weil das alte Gebäude schlecht gedämmt ist.'
+    },
+    reasons: {
+      'customer.hours': 'Leser müssen zuerst wissen, wann sie kommen können.',
+      'customer.cards': 'Es beantwortet die Sorge, ob Ausweis und Online-Ausleihe noch funktionieren.',
+      'customer.returns': 'Es sagt ihnen, was sie an einem Schließtag trotzdem tun können.',
+      'customer.shifts': 'Dienstpläne sind intern.',
+      'customer.savings': 'Haushaltszahlen helfen Lesern nicht, ihren Besuch zu planen.',
+      'customer.petition': 'Die Petition zu erwähnen, ergreift Partei und hilft beim Planen nicht.',
+      'customer.heating': 'Die Dämmung des Gebäudes ist ein internes Detail.',
+      'colleague.hours': 'Kolleginnen beantworten die Fragen der Leser zu den neuen Zeiten.',
+      'colleague.cards': 'Kollegen kennen ihre eigenen Systeme; dieser Satz ist für Leser.',
+      'colleague.shifts': 'Das ändert ihre eigene Arbeitswoche.',
+      'colleague.savings': 'Zu hören, dass niemand seinen Arbeitsplatz verliert, ist ihnen sehr wichtig.',
+      'colleague.heating': 'Heizkosten ändern nichts an ihrer Arbeit.',
+      'executive.hours': 'Der Stadtrat muss genau wissen, was die Öffentlichkeit sehen wird.',
+      'executive.budget': 'Der Stadtrat hat die Kürzung selbst beschlossen; sie zu wiederholen, kostet nur Zeit.',
+      'executive.returns': 'Details zum Rückgabekasten sind Tagesgeschäft.',
+      'executive.savings': 'Einsparungen und Arbeitsplätze sind genau das, wonach der Stadtrat gefragt hat.',
+      'executive.petition': 'Die Reaktion der Öffentlichkeit kann den Stadtrat erreichen, also sollte er zuerst von dir davon hören.'
+    },
+    messages: {
+      'customer.fit': 'Ab 1. September ist die Bibliothek dienstags bis samstags von 10 bis 18 Uhr geöffnet und montags geschlossen. Bücher können Sie weiterhin jederzeit über den Rückgabekasten zurückgeben, und Ihr Ausweis und die Online-Ausleihe funktionieren wie bisher.',
+      'customer.tooMuch': 'Die Stadt hat unser Budget um 15 % gekürzt, also sparen wir etwa 40.000 Euro im Jahr, indem wir die Dienstpläne ändern und das alte Gebäude montags weniger heizen.',
+      'customer.condescending': 'Wir wissen, dass Veränderungen manchen Lesern schwerfallen. Merken Sie sich einfach: montags keine Bibliothek. Ist doch ganz einfach.',
+      'colleague.fit': 'Ab 1. September ändern sich unsere Dienstpläne: keine Montagsschichten mehr, längere Samstagsschichten. Wir öffnen dienstags bis samstags von 10 bis 18 Uhr, und niemand verliert seinen Arbeitsplatz.',
+      'colleague.missing': 'Im Herbst ändert sich einiges. Mehr später.',
+      'colleague.tooMuch': 'Leser können weiter den Rückgabekasten nutzen, Ausweise und Online-Ausleihe sind nicht betroffen, und die Montagsschließung spart in unserem schlecht gedämmten Gebäude auch Heizkosten.',
+      'executive.fit': 'Die neuen Öffnungszeiten sparen etwa 40.000 Euro im Jahr ohne Stellenabbau: Ab 1. September schließen wir montags und öffnen dienstags bis samstags von 10 bis 18 Uhr. Bitte beachten Sie, dass eine Leserin eine Petition gegen die Montagsschließung gestartet hat.',
+      'executive.tooMuch': 'Rückgaben bleiben über den Rückgabekasten möglich, Ausweise und Online-Ausleihe sind nicht betroffen, und die Samstagsschichten werden länger, während die Montagsschichten wegfallen.',
+      'executive.missing': 'Wir haben die Öffnungszeiten etwas angepasst.'
+    }
   }
 };

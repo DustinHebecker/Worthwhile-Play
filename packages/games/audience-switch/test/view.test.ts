@@ -5,6 +5,7 @@ import { SUPPORTED_LOCALES } from '@wp/localization';
 import { createTestContext } from '@wp/testing';
 import game from '../src/index';
 import { createInitialState, type AudienceSwitchState, type Difficulty } from '../src/rules';
+import { SCENARIOS } from '../src/scenarios';
 
 let running: GameInstance<AudienceSwitchState>[] = [];
 afterEach(() => {
@@ -199,7 +200,7 @@ describe('Audience Switch view', () => {
 
   it('renders every scenario in every locale without missing text, and RTL for Arabic', () => {
     for (const locale of SUPPORTED_LOCALES) {
-      for (const scenario of ['migration', 'skyBlue', 'clubRoof', 'shopOutage', 'signalFault', 'kettleLid']) {
+      for (const scenario of SCENARIOS.map((d) => d.id)) {
         const { root, ctx } = setup(scenario, 'hard', locale);
         const first = root.querySelector<HTMLInputElement>('[data-testid^="as-fact-"]')!;
         first.click();

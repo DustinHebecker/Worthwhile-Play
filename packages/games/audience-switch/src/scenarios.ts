@@ -4,7 +4,8 @@
  * `content/<locale>.ts`, keyed by these ids, so a save stays valid when the UI language changes.
  */
 
-export const AUDIENCES = ['developer', 'projectManager', 'customer', 'executive', 'child', 'expert', 'layperson'] as const;
+/** Append only: ids are stored in saves. */
+export const AUDIENCES = ['developer', 'projectManager', 'customer', 'executive', 'child', 'expert', 'layperson', 'parent', 'neighbour', 'patient', 'colleague'] as const;
 export type AudienceId = (typeof AUDIENCES)[number];
 
 /** `must` = the audience needs it, `optional` = neutral, `leave` = they do not need it. */
@@ -162,6 +163,75 @@ export const SCENARIOS: readonly ScenarioDef[] = [
     ],
     ['batches', 'risk', 'hinge'],
     [['tooMuch', 'condescending'], ['tooMuch', 'missing'], ['missing', 'condescending']]
+  ),
+  // --- Appended later (append only: existing ids are stored in saves) ---
+  scenario(
+    'renovation',
+    ['customer', 'projectManager', 'neighbour'],
+    ['projectManager', 'neighbour'],
+    [
+      ['delay', 'M M O'],
+      ['tiles', 'L M L'],
+      ['order', 'O M L'],
+      ['water', 'M M M'],
+      ['noise', 'O O M'],
+      ['cost', 'M L L'],
+      ['supplierHistory', 'L L L', 'subtle'],
+      ['skip', 'O M M', 'subtle']
+    ],
+    ['delay', 'order', 'water'],
+    [['tooMuch', 'condescending'], ['missing', 'condescending'], ['tooMuch', 'missing']]
+  ),
+  scenario(
+    'schoolTrip',
+    ['child', 'parent', 'colleague'],
+    ['child', 'colleague'],
+    [
+      ['newDate', 'M M M'],
+      ['bus', 'L O O'],
+      ['lunch', 'M M L'],
+      ['form', 'L M O'],
+      ['price', 'L M L'],
+      ['cover', 'L L M'],
+      ['rain', 'M M L', 'subtle'],
+      ['complaint', 'L L L', 'subtle']
+    ],
+    ['newDate', 'newDate', 'cover'],
+    [['tooMuch', 'missing'], ['tooMuch', 'condescending'], ['tooMuch', 'missing']]
+  ),
+  scenario(
+    'practiceMonday',
+    ['patient', 'executive', 'colleague'],
+    ['patient', 'executive'],
+    [
+      ['moved', 'M M M'],
+      ['away', 'O O O'],
+      ['urgent', 'M O M'],
+      ['calls', 'L M M'],
+      ['reply', 'M L O'],
+      ['hours', 'L M L'],
+      ['vip', 'L L L', 'subtle'],
+      ['texts', 'L O M', 'subtle']
+    ],
+    ['moved', 'hours', 'calls'],
+    [['tooMuch', 'condescending'], ['tooMuch', 'missing'], ['missing', 'condescending']]
+  ),
+  scenario(
+    'libraryHours',
+    ['customer', 'colleague', 'executive'],
+    ['customer', 'executive'],
+    [
+      ['hours', 'M M M'],
+      ['cards', 'M L O'],
+      ['budget', 'O O L'],
+      ['returns', 'M O L'],
+      ['shifts', 'L M O'],
+      ['savings', 'L M M'],
+      ['petition', 'L O M', 'subtle'],
+      ['heating', 'L L O', 'subtle']
+    ],
+    ['hours', 'shifts', 'savings'],
+    [['tooMuch', 'condescending'], ['missing', 'tooMuch'], ['tooMuch', 'missing']]
   )
 ];
 

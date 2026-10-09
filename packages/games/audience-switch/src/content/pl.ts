@@ -255,5 +255,182 @@ export const content: ContentText = {
       'expert.missing': 'Niektóre pokrywki są luźne; klienci dostają bezpłatną wymianę.',
       'expert.condescending': 'Zawias to część, dzięki której pokrywka się obraca. Jeśli jest za cienki, źle trzyma.'
     }
+  },
+  renovation: {
+    title: 'Opóźniony remont',
+    situation: 'Prowadzisz firmę budowlaną, która remontuje kuchnię i łazienkę w domu w zabudowie bliźniaczej. Prace się opóźniają. Wyjaśnij to.',
+    facts: {
+      delay: 'Remont skończy się tydzień później: 21 czerwca zamiast 14 czerwca.',
+      tiles: 'Dostawca przywiózł płytki łazienkowe 30 × 60 cm zamiast 60 × 60 cm; trzeba je zamówić ponownie.',
+      order: 'Dopóki nie przyjdą nowe płytki, ekipa pracuje najpierw w kuchni.',
+      water: 'Wspólna rura wodna zostanie zakręcona we wtorek od 8 do 12.',
+      noise: 'W przyszłym tygodniu przez jeszcze trzy dni będzie głośne wiercenie, między 8 a 17.',
+      cost: 'Opóźnienie nic nie kosztuje właścicieli; nowe płytki opłaca dostawca.',
+      supplierHistory: 'Ten dostawca płytek miał w tym roku już kilka razy problemy z dostawami.',
+      skip: 'W poniedziałek kontener stanie na ulicy przed wjazdem sąsiadów.'
+    },
+    reasons: {
+      'customer.delay': 'Właściciele planują wokół nowej daty zakończenia.',
+      'customer.tiles': 'Dokładny format płytek to sprawa ekipy; właściciele potrzebują daty i kosztów.',
+      'customer.water': 'Muszą wiedzieć, kiedy nie będą mieli wody.',
+      'customer.cost': 'Ich pierwsze zmartwienie to, czy opóźnienie będzie ich kosztować.',
+      'projectManager.delay': 'Brygadzista planuje pozostałe prace pod nową datę.',
+      'projectManager.tiles': 'Ekipa musi dokładnie wiedzieć, co jest nie tak z dostawą.',
+      'projectManager.order': 'To ekipa robi jutro rano.',
+      'projectManager.water': 'Ekipa zakręca wodę i musi wszystkich uprzedzić.',
+      'projectManager.cost': 'Kto płaci, ustalają biuro i dostawca; pracy to nie zmienia.',
+      'projectManager.skip': 'Brygadzista musi ustalić, gdzie stanie kontener.',
+      'neighbour.tiles': 'Szczegóły płytek nie dotyczą sąsiadów.',
+      'neighbour.order': 'Kolejność prac ekipy nie wpływa na sąsiadów.',
+      'neighbour.water': 'Sąsiedzi korzystają z tej samej rury i potrzebują dokładnych godzin.',
+      'neighbour.noise': 'Godziny hałasu najbardziej dotyczą sąsiadów.',
+      'neighbour.cost': 'Koszty właścicieli to sprawa prywatna.',
+      'neighbour.skip': 'Kontener zablokuje ich wjazd, więc muszą wiedzieć wcześniej.',
+      supplierHistory: 'Narzekanie na dostawcę brzmi jak wymówka i nikomu nie pomaga.'
+    },
+    messages: {
+      'customer.fit': 'Remont skończy się 21 czerwca zamiast 14 czerwca, bo płytki łazienkowe przyszły w złym rozmiarze. Nic to Państwa nie kosztuje. Uwaga: we wtorek od 8 do 12 nie będzie wody.',
+      'customer.tooMuch': 'Dostawca przysłał 30 × 60 zamiast 60 × 60, więc plan układania już nie pasuje; ekipa robi najpierw kuchnię, a w poniedziałek kontener stanie na ulicy.',
+      'customer.condescending': 'Jest mały kłopot z płytkami, nie ma się czym przejmować. Proszę zostawić to fachowcom.',
+      'projectManager.fit': 'Płytki do łazienki przyszły 30 × 60 zamiast 60 × 60, więc do czasu nowej dostawy najpierw kuchnia. Nowy termin końca: 21 czerwca. We wtorek woda zakręcona od 8 do 12, a w poniedziałek kontener na ulicę.',
+      'projectManager.missing': 'Z łazienką jest opóźnienie. Róbcie, jak się da.',
+      'projectManager.condescending': 'Płytki mają rozmiar, a jak rozmiar jest zły, to nie pasują. Więc proszę ich nie kłaść.',
+      'neighbour.fit': 'W sprawie remontu obok: we wtorek wspólna rura wodna będzie zakręcona od 8 do 12, a w przyszłym tygodniu przez jeszcze trzy dni będzie głośne wiercenie, między 8 a 17. W poniedziałek kontener stanie przed Państwa wjazdem. Przepraszamy za utrudnienia.',
+      'neighbour.tooMuch': 'Płytki do łazienki przyszły w złym formacie, więc ekipa przechodzi do kuchni, a właściciele nic nie dopłacają, bo koszty pokrywa dostawca.',
+      'neighbour.missing': 'Prowadzimy obok trochę prac budowlanych. Dziękujemy za cierpliwość.'
+    }
+  },
+  schoolTrip: {
+    title: 'Zmiana wycieczki szkolnej',
+    situation: 'Jesteś wychowawcą klasy. Firma autobusowa odwołała przejazd, więc wycieczka do zoo musi zostać przełożona. Wyjaśnij to.',
+    facts: {
+      newDate: 'Wycieczka do zoo zostaje przełożona z czwartku na przyszły wtorek.',
+      bus: 'Firma autobusowa odwołała przejazd, bo dwóch kierowców jest chorych.',
+      lunch: 'Dzieci zabierają drugie śniadanie i picie, tak jak planowano.',
+      form: 'Rodzice muszą do piątku podpisać nową zgodę.',
+      price: 'Cena pozostaje 12 euro za dziecko.',
+      cover: 'We wtorek ktoś musi mnie zastąpić w klasie 7b od 10 do 12.',
+      rain: 'Jeśli będzie mocno padać, klasa zamiast tego odwiedzi pawilon akwariów.',
+      complaint: 'Niektórzy rodzice narzekali, że czwartek i tak był złym dniem.'
+    },
+    reasons: {
+      'child.newDate': 'Dzieci najpierw chcą wiedzieć, kiedy jest wycieczka.',
+      'child.bus': 'Chorzy kierowcy to nie sprawa, o której dzieci muszą myśleć.',
+      'child.lunch': 'To muszą zabrać same.',
+      'child.form': 'Zgodę podpisują rodzice, nie dzieci.',
+      'child.price': 'Pieniędzmi zajmują się rodzice.',
+      'child.cover': 'Ustalenia między nauczycielami nie dotyczą dzieci.',
+      'child.rain': 'Mówi im, czego się spodziewać, a dzieci lubią to wiedzieć.',
+      'parent.newDate': 'Rodzice potrzebują nowej daty, żeby zaplanować tydzień.',
+      'parent.lunch': 'To oni przygotowują drugie śniadanie.',
+      'parent.form': 'To muszą zrobić, i to w terminie.',
+      'parent.price': 'Chcą wiedzieć, czy będzie drożej.',
+      'parent.cover': 'Zastępstwa to wewnętrzna sprawa szkoły.',
+      'parent.rain': 'Pomaga im przygotować dziecko na pogodę.',
+      'colleague.newDate': 'Kolega musi wiedzieć, którego dnia to dotyczy.',
+      'colleague.lunch': 'Drugie śniadania to sprawa klasy, nie kolegi.',
+      'colleague.price': 'Cena wycieczki nie dotyczy kolegi.',
+      'colleague.cover': 'O to właśnie go prosisz.',
+      'colleague.rain': 'Plan na złą pogodę nie zmienia jego lekcji.',
+      complaint: 'Przekazywanie skarg wywołuje zamieszanie i niczego nie zmienia.'
+    },
+    messages: {
+      'child.fit': 'Nasza wycieczka do zoo będzie w przyszły wtorek! Weźcie drugie śniadanie i picie, tak jak się umawialiśmy. Jeśli będzie mocno padać, pójdziemy do pawilonu akwariów.',
+      'child.tooMuch': 'Firma autobusowa odwołała przejazd, bo dwóch kierowców jest chorych, wasi rodzice muszą do piątku podpisać nową zgodę, a cena wciąż wynosi 12 euro.',
+      'child.missing': 'Jest mała zmiana w sprawie wycieczki. Więcej powiem później.',
+      'parent.fit': 'Wycieczka do zoo zostaje przełożona z czwartku na przyszły wtorek, ponieważ firma autobusowa odwołała przejazd. Proszę podpisać nową zgodę do piątku. Cena pozostaje 12 euro; dziecko nadal potrzebuje drugiego śniadania i picia.',
+      'parent.tooMuch': 'W firmie autobusowej dwóch kierowców jest chorych, potrzebuję zastępstwa w 7b we wtorek od 10 do 12, a niektórzy rodzice mówili, że czwartek i tak był złym dniem.',
+      'parent.condescending': 'Proszę się nie przejmować szczegółami, my, nauczyciele, wszystko kontrolujemy. Wystarczy podpisać to, co dziecko przyniesie do domu.',
+      'colleague.fit': 'Nasza wycieczka do zoo jest teraz w przyszły wtorek. Czy możesz mnie tego dnia zastąpić w 7b od 10 do 12?',
+      'colleague.tooMuch': 'Dzieci biorą drugie śniadanie, cena wciąż wynosi 12 euro, zgodę trzeba oddać w piątek, a jeśli będzie padać, idziemy do pawilonu akwariów.',
+      'colleague.missing': 'A, wycieczka jest przełożona.'
+    }
+  },
+  practiceMonday: {
+    title: 'Przychodnia: wizyty w poniedziałek',
+    situation: 'Pracujesz w rejestracji przychodni lekarza rodzinnego. Jedna z lekarek nagle nie będzie w poniedziałek, więc trzeba przełożyć wizyty. Wyjaśnij to. (Chodzi tylko o terminy, nie o zdrowie.)',
+    facts: {
+      moved: 'Wszystkie poniedziałkowe wizyty u dr Lind przechodzą na środę o tej samej godzinie.',
+      away: 'Dr Lind jest nagle nieobecna z powodów prywatnych.',
+      urgent: 'Pilne sprawy w poniedziałek przyjmuje drugi lekarz przychodni.',
+      calls: 'Do piątku trzeba zadzwonić do 42 pacjentów.',
+      reply: 'Kto nie może przyjść w środę, dzwoni do przychodni po inny termin.',
+      hours: 'Przełożenie wizyt wymaga w tym tygodniu około sześciu dodatkowych godzin pracy personelu, które musi zatwierdzić kierowniczka przychodni.',
+      vip: 'Jeden z poniedziałkowych pacjentów to znany lokalny polityk.',
+      texts: 'Nowy system rejestracji może automatycznie wysyłać przypomnienia SMS.'
+    },
+    reasons: {
+      'patient.moved': 'Pacjent najpierw potrzebuje nowego dnia i godziny.',
+      'patient.urgent': 'Musi wiedzieć, do kogo się zwrócić, jeśli coś nie może czekać.',
+      'patient.calls': 'Ilu osób to dotyczy, to wewnętrzne obciążenie pracą.',
+      'patient.reply': 'Mówi mu, co zrobić, jeśli środa mu nie pasuje.',
+      'patient.hours': 'Godziny personelu to sprawa przychodni.',
+      'patient.texts': 'Wewnętrzne narzędzia to nie to, co pacjent musi usłyszeć.',
+      'executive.moved': 'Kierowniczka musi wiedzieć, co zmienia się w grafiku.',
+      'executive.calls': 'Pokazuje skalę pracy.',
+      'executive.reply': 'Wskazówki dla pacjentów to rutyna rejestracji, nie sprawa kierownictwa.',
+      'executive.hours': 'To decyzja, którą musi podjąć kierowniczka.',
+      'colleague.moved': 'Koleżanka musi podawać pacjentom nową godzinę.',
+      'colleague.urgent': 'Pacjenci będą pytać, więc koleżanka potrzebuje odpowiedzi.',
+      'colleague.calls': 'To zadanie, które jej przekazujesz.',
+      'colleague.hours': 'Zatwierdzanie nadgodzin należy do kierowniczki; koleżanka potrzebuje zadania.',
+      'colleague.texts': 'Oszczędzi jej to wielu telefonów.',
+      vip: 'To, kim są pacjenci, jest poufne i nie powinno trafić do żadnej z tych wiadomości.'
+    },
+    messages: {
+      'patient.fit': 'Pana poniedziałkowa wizyta u dr Lind zostaje przeniesiona na środę o tej samej godzinie. Jeśli środa nie pasuje, prosimy zadzwonić po inny termin. Pilne sprawy w poniedziałek przyjmie nasz drugi lekarz.',
+      'patient.tooMuch': 'Do piątku musimy zadzwonić do 42 pacjentów, co wymaga około sześciu dodatkowych godzin pracy, a nowy system może wysyłać przypomnienia SMS.',
+      'patient.condescending': 'Lekarze to zapracowani ludzie, wie Pan. Proszę po prostu przyjść w środę i nie zastanawiać się dlaczego.',
+      'executive.fit': 'Proszę zatwierdzić w tym tygodniu około sześciu dodatkowych godzin pracy: dr Lind nie będzie w poniedziałek, więc 42 wizyty przechodzą na środę, a do tych pacjentów trzeba zadzwonić do piątku.',
+      'executive.tooMuch': 'Kto nie może w środę, ma do nas zadzwonić, pilne sprawy idą do drugiego lekarza, a przypomnienia SMS włącza się w menu ustawień.',
+      'executive.missing': 'W poniedziałek jest trochę zamieszania, ogarniemy to.',
+      'colleague.fit': 'Pomożesz mi do piątku obdzwonić 42 pacjentów zapisanych w poniedziałek do dr Lind? Ich wizyty przechodzą na środę o tej samej godzinie; pilne sprawy w poniedziałek idą do drugiego lekarza. Nowy system może też wysłać przypomnienia SMS.',
+      'colleague.missing': 'Poniedziałkowe wizyty się zmieniają, tak tylko mówię.',
+      'colleague.condescending': 'Dzwonienie do pacjentów jest proste: podnosisz słuchawkę, wybierasz numer i mówisz. Zrób to, proszę, dla listy z poniedziałku.'
+    }
+  },
+  libraryHours: {
+    title: 'Godziny otwarcia biblioteki',
+    situation: 'Kierujesz biblioteką miejską. Z powodu cięć budżetowych zmieniają się godziny otwarcia. Wyjaśnij to.',
+    facts: {
+      hours: 'Od 1 września biblioteka jest otwarta od wtorku do soboty w godzinach od 10 do 18, a w poniedziałki zamknięta.',
+      cards: 'Karty biblioteczne i wypożyczenia online się nie zmieniają.',
+      budget: 'Miasto obcięło budżet biblioteki o 15%.',
+      returns: 'Książki nadal można oddawać o każdej porze przez wrzutnię.',
+      shifts: 'Zmieniają się dyżury: nie ma już poniedziałkowych zmian, a sobotnie są dłuższe.',
+      savings: 'Nowe godziny oszczędzają około 40 000 euro rocznie i nikt nie traci pracy.',
+      petition: 'Jedna czytelniczka rozpoczęła petycję przeciwko zamknięciu w poniedziałki.',
+      heating: 'Zamknięcie w poniedziałki oszczędza też na ogrzewaniu, bo stary budynek jest słabo ocieplony.'
+    },
+    reasons: {
+      'customer.hours': 'Czytelnicy najpierw muszą wiedzieć, kiedy mogą przyjść.',
+      'customer.cards': 'Odpowiada na obawę, czy karta i wypożyczenia online nadal działają.',
+      'customer.returns': 'Mówi im, co mogą zrobić nawet w dzień zamknięcia.',
+      'customer.shifts': 'Grafiki pracowników są wewnętrzne.',
+      'customer.savings': 'Liczby budżetowe nie pomagają czytelnikom zaplanować wizyty.',
+      'customer.petition': 'Wspominanie petycji to opowiadanie się po stronie i nie pomaga planować.',
+      'customer.heating': 'Ocieplenie budynku to wewnętrzny szczegół.',
+      'colleague.hours': 'Współpracownicy odpowiadają na pytania czytelników o nowe godziny.',
+      'colleague.cards': 'Współpracownicy znają własne systemy; to zdanie jest dla czytelników.',
+      'colleague.shifts': 'To zmienia ich własny tydzień pracy.',
+      'colleague.savings': 'Wiadomość, że nikt nie traci pracy, jest dla nich bardzo ważna.',
+      'colleague.heating': 'Koszty ogrzewania nie zmieniają ich pracy.',
+      'executive.hours': 'Rada miasta musi dokładnie wiedzieć, co zobaczą mieszkańcy.',
+      'executive.budget': 'Rada sama zdecydowała o cięciu; powtarzanie tego to strata czasu.',
+      'executive.returns': 'Szczegóły wrzutni to codzienna działalność.',
+      'executive.savings': 'Oszczędności i miejsca pracy to właśnie to, o co pytała rada.',
+      'executive.petition': 'Reakcja mieszkańców może dotrzeć do rady, więc lepiej, żeby usłyszała o niej najpierw od ciebie.'
+    },
+    messages: {
+      'customer.fit': 'Od 1 września biblioteka jest otwarta od wtorku do soboty w godzinach od 10 do 18, a w poniedziałki zamknięta. Książki nadal można oddawać o każdej porze przez wrzutnię, a karta i wypożyczenia online działają jak dotąd.',
+      'customer.tooMuch': 'Miasto obcięło nam budżet o 15%, więc oszczędzamy około 40 000 euro rocznie, zmieniając dyżury i mniej ogrzewając stary budynek w poniedziałki.',
+      'customer.condescending': 'Wiemy, że zmiany są trudne dla niektórych czytelników. Proszę tylko zapamiętać: w poniedziałki nie ma biblioteki. To naprawdę proste.',
+      'colleague.fit': 'Od 1 września zmieniają się nasze dyżury: nie ma już poniedziałkowych zmian, sobotnie są dłuższe. Otwieramy od wtorku do soboty od 10 do 18 i nikt nie traci pracy.',
+      'colleague.missing': 'Jesienią kilka rzeczy się zmieni. Więcej później.',
+      'colleague.tooMuch': 'Czytelnicy mogą dalej korzystać z wrzutni, karty i wypożyczenia online się nie zmieniają, a zamknięcie w poniedziałki oszczędza też na ogrzewaniu naszego słabo ocieplonego budynku.',
+      'executive.fit': 'Nowe godziny otwarcia oszczędzają około 40 000 euro rocznie bez zwolnień: od 1 września zamykamy w poniedziałki i otwieramy od wtorku do soboty od 10 do 18. Informuję, że jedna czytelniczka rozpoczęła petycję przeciwko zamknięciu w poniedziałki.',
+      'executive.tooMuch': 'Zwroty są nadal możliwe przez wrzutnię, karty i wypożyczenia online się nie zmieniają, a sobotnie dyżury się wydłużają, poniedziałkowe zaś znikają.',
+      'executive.missing': 'Trochę zmieniliśmy godziny otwarcia.'
+    }
   }
 };
