@@ -11,6 +11,7 @@
   "dependencies": {
     "@wp/game-ambiguity-detector": "workspace:*",
     "@wp/game-association": "workspace:*",
+    "@wp/game-audience-switch": "workspace:*",
     "@wp/game-black-box": "workspace:*",
     "@wp/game-bridges": "workspace:*",
     "@wp/game-chess": "workspace:*",
@@ -19,6 +20,7 @@
     "@wp/game-constraint-grid": "workspace:*",
     "@wp/game-core": "workspace:*",
     "@wp/game-debug-system": "workspace:*",
+    "@wp/game-deep-read": "workspace:*",
     "@wp/game-distractor-control": "workspace:*",
     "@wp/game-graph-detective": "workspace:*",
     "@wp/game-laser-circuit": "workspace:*",

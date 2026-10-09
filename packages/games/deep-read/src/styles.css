@@ -1,0 +1,93 @@
+/* Deep Read. All rules are scoped under .wp-deep-read. */
+.wp-deep-read { max-width: 44rem; margin-inline: auto; }
+.wp-deep-read .dr-board { display: grid; gap: 0.9rem; }
+.wp-deep-read p, .wp-deep-read h3, .wp-deep-read h4, .wp-deep-read h5 { margin: 0; }
+.wp-deep-read h4 { font-size: 1.1rem; }
+.wp-deep-read h5 { font-size: 0.95rem; color: var(--wp-muted); }
+.wp-deep-read .dr-header { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: center; justify-content: space-between; }
+.wp-deep-read .dr-title { font-size: 1.25rem; }
+.wp-deep-read .dr-size { display: inline-flex; gap: 0.35rem; }
+.wp-deep-read .dr-size-btn { padding: 0 0.6rem; font-weight: 700; }
+.wp-deep-read .dr-a-small { font-size: 0.85rem; }
+.wp-deep-read .dr-a-large { font-size: 1.2rem; }
+
+/* Reading view: comfortable measure and line height, adjustable size. */
+.wp-deep-read .dr-text {
+  display: grid; gap: 0.9em; max-width: 65ch; padding: 1rem 1.1rem; font-size: 1.05rem; line-height: 1.7;
+  background: var(--wp-surface); border: 1px solid var(--wp-border); border-radius: var(--wp-radius);
+}
+.wp-deep-read.dr-size-1 .dr-text { font-size: 1.2rem; }
+.wp-deep-read.dr-size-2 .dr-text { font-size: 1.38rem; }
+.wp-deep-read .dr-para { position: relative; padding-inline-start: 2.2rem; border-radius: 6px; }
+.wp-deep-read .dr-pnum {
+  position: absolute; inset-inline-start: 0; top: 0.2em; min-width: 1.8rem; font-size: 0.75em; color: var(--wp-muted);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+/* Supporting paragraph: thick border, tinted background and a ◆ marker in the number column (not colour alone). */
+.wp-deep-read .dr-para.is-support {
+  background: var(--wp-surface-2); border-inline-start: 4px solid var(--wp-accent);
+  padding-block: 0.3rem; padding-inline: 2.8rem 0.4rem;
+}
+.wp-deep-read .dr-para.is-support .dr-pnum { color: var(--wp-text); font-weight: 700; inset-inline-start: 0.3rem; }
+.wp-deep-read .dr-intro { max-width: 65ch; }
+.wp-deep-read .dr-open-note { font-size: 0.9rem; }
+
+/* Questions */
+.wp-deep-read .dr-question, .wp-deep-read .dr-panel {
+  display: grid; gap: 0.75rem; padding: 0.9rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius); background: var(--wp-surface);
+}
+.wp-deep-read .dr-q-meta { font-size: 0.9rem; color: var(--wp-muted); }
+.wp-deep-read .dr-type { padding: 0.05rem 0.5rem; border: 1px solid var(--wp-border); border-radius: 999px; font-size: 0.8rem; color: var(--wp-text); }
+.wp-deep-read .dr-prompt { line-height: 1.45; }
+.wp-deep-read .dr-form { display: grid; gap: 0.75rem; }
+.wp-deep-read .dr-options { display: grid; gap: 0.5rem; margin: 0; padding: 0; border: 0; min-inline-size: 0; }
+.wp-deep-read .dr-options legend { padding: 0; margin-block-end: 0.4rem; font-weight: 600; }
+.wp-deep-read .dr-option {
+  display: flex; align-items: center; gap: 0.7rem; min-height: var(--wp-touch); padding: 0.45rem 0.7rem; cursor: pointer;
+  border: 1px solid var(--wp-border); border-radius: var(--wp-radius); background: var(--wp-surface);
+}
+.wp-deep-read .dr-option:hover { border-color: var(--wp-accent); }
+.wp-deep-read .dr-option:has(input:checked) { border: 2px solid var(--wp-accent); background: var(--wp-surface-2); }
+.wp-deep-read .dr-option input { width: 1.3rem; height: 1.3rem; min-height: 0; min-width: 0; padding: 0; margin: 0; flex: none; accent-color: var(--wp-accent); }
+.wp-deep-read .dr-checklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+.wp-deep-read .dr-notice { padding: 0.5rem 0.75rem; border-inline-start: 4px solid var(--wp-focus); background: var(--wp-surface-2); border-radius: 6px; }
+.wp-deep-read .dr-actions { justify-content: flex-start; }
+
+/* Feedback: a symbol and a word for right/wrong, colour only as an extra cue. */
+.wp-deep-read .dr-feedback { display: grid; gap: 0.7rem; }
+.wp-deep-read .dr-verdict { font-weight: 700; font-size: 1.05rem; }
+.wp-deep-read .dr-verdict-mark { display: inline-block; min-width: 1.2em; font-size: 1.2em; }
+.wp-deep-read .dr-verdict.is-right { color: var(--wp-ok); }
+.wp-deep-read .dr-verdict.is-wrong { color: var(--wp-danger); }
+.wp-deep-read .dr-explained, .wp-deep-read .dr-review { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+.wp-deep-read .dr-explain, .wp-deep-read .dr-review-item {
+  display: flex; gap: 0.6rem; padding: 0.5rem 0.7rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius);
+}
+.wp-deep-read .dr-explain.is-gold { border: 2px solid var(--wp-ok); }
+.wp-deep-read .dr-explain.is-chosen:not(.is-gold) { border: 2px dashed var(--wp-danger); }
+.wp-deep-read .dr-mark { flex: none; width: 1.4rem; font-weight: 700; font-size: 1.15rem; text-align: center; }
+.wp-deep-read .is-gold > .dr-mark, .wp-deep-read .dr-review-item.is-right > .dr-mark { color: var(--wp-ok); }
+.wp-deep-read .is-chosen:not(.is-gold) > .dr-mark, .wp-deep-read .dr-review-item.is-wrong > .dr-mark { color: var(--wp-danger); }
+.wp-deep-read .dr-explain-body { display: grid; gap: 0.15rem; min-width: 0; }
+.wp-deep-read .dr-tags { font-size: 0.8rem; font-weight: 700; text-transform: none; color: var(--wp-muted); }
+.wp-deep-read .dr-option-text { font-weight: 600; }
+.wp-deep-read .dr-why { color: var(--wp-muted); font-size: 0.95rem; }
+.wp-deep-read .dr-see { font-size: 0.95rem; }
+
+/* Summary */
+.wp-deep-read .dr-label { font-weight: 600; }
+.wp-deep-read .dr-summary-field { width: 100%; box-sizing: border-box; resize: vertical; line-height: 1.5; }
+.wp-deep-read .dr-count { font-size: 0.85rem; }
+.wp-deep-read .dr-sentences { display: grid; gap: 0.6rem; }
+.wp-deep-read .dr-sentence { display: grid; gap: 0.25rem; }
+.wp-deep-read blockquote {
+  margin: 0; padding: 0.5rem 0.8rem; border-inline-start: 4px solid var(--wp-border); background: var(--wp-surface-2);
+  border-radius: 6px; overflow-wrap: anywhere;
+}
+.wp-deep-read .dr-stats { margin: 0; padding-inline-start: 1.2rem; display: grid; gap: 0.2rem; }
+
+@media (max-width: 400px) {
+  .wp-deep-read .dr-text { padding: 0.75rem; }
+  .wp-deep-read .dr-para { padding-inline-start: 1.8rem; }
+  .wp-deep-read .dr-question, .wp-deep-read .dr-panel { padding: 0.6rem; }
+}

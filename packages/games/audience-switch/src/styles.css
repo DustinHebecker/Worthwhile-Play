@@ -1,0 +1,81 @@
+/* Audience Switch. All rules are scoped under .wp-audience-switch and use logical properties (RTL-safe). */
+.wp-audience-switch {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 44rem;
+  margin-inline: auto;
+}
+.wp-audience-switch .as-board { display: grid; gap: 0.75rem; }
+.wp-audience-switch p { margin: 0; }
+.wp-audience-switch h2 { margin: 0; font-size: 1.15rem; }
+.wp-audience-switch h3 { margin: 0; font-size: 1.02rem; }
+.wp-audience-switch fieldset { margin: 0; padding: 0; border: 0; min-width: 0; display: grid; gap: 0.5rem; }
+.wp-audience-switch legend { padding: 0; margin-block-end: 0.5rem; font-weight: 600; }
+
+.wp-audience-switch .as-situation { display: grid; gap: 0.5rem; }
+.wp-audience-switch .as-questions summary { cursor: pointer; min-height: var(--wp-touch); display: flex; align-items: center; color: var(--wp-accent); }
+.wp-audience-switch .as-questions ul { margin: 0; padding-inline-start: 1.25rem; }
+
+/* Audience progress chips: status shown by symbol and position, not colour alone. */
+.wp-audience-switch .as-audiences { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0; padding: 0; list-style: none; }
+.wp-audience-switch .as-chip {
+  display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.75rem;
+  border: 1px solid var(--wp-border); border-radius: 999px; background: var(--wp-surface);
+}
+.wp-audience-switch .as-chip-current { border-color: var(--wp-accent); border-width: 2px; font-weight: 600; }
+.wp-audience-switch .as-chip-done { color: var(--wp-muted); }
+.wp-audience-switch .as-chip-mark { font-weight: 700; }
+
+.wp-audience-switch .as-round { display: grid; gap: 0.75rem; }
+.wp-audience-switch .as-round > h2:focus { outline-offset: 4px; }
+
+/* Fact and message choices: the whole card is the 44 px+ target. */
+.wp-audience-switch .as-fact,
+.wp-audience-switch .as-message,
+.wp-audience-switch .as-check {
+  display: flex; align-items: flex-start; gap: 0.6rem; min-height: var(--wp-touch);
+  padding: 0.6rem 0.75rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius);
+  background: var(--wp-surface); cursor: pointer;
+}
+.wp-audience-switch .as-fact input,
+.wp-audience-switch .as-message input,
+.wp-audience-switch .as-check input { width: 1.4rem; height: 1.4rem; min-height: 0; margin: 0.1rem 0 0; flex: none; accent-color: var(--wp-accent); }
+.wp-audience-switch .is-checked { border-color: var(--wp-accent); border-width: 2px; }
+.wp-audience-switch .as-message > span { display: grid; gap: 0.25rem; }
+.wp-audience-switch .as-message.is-revealed { display: grid; gap: 0.35rem; cursor: default; }
+.wp-audience-switch .as-message.is-fit { border-inline-start: 6px solid var(--wp-ok); }
+.wp-audience-switch .as-badge { display: inline-block; margin-inline-start: 0.4rem; padding: 0 0.5rem; border-radius: 999px; background: var(--wp-surface-2); font-size: 0.9rem; }
+.wp-audience-switch .as-badge-yours { border: 1px solid var(--wp-accent); }
+
+.wp-audience-switch .as-panel {
+  display: grid; gap: 0.6rem; padding: 0.75rem; border: 1px solid var(--wp-border);
+  border-radius: var(--wp-radius); background: var(--wp-surface);
+}
+.wp-audience-switch .as-feedback { display: grid; gap: 0.5rem; margin: 0; padding: 0; list-style: none; }
+.wp-audience-switch .as-verdict { display: flex; gap: 0.6rem; align-items: flex-start; padding: 0.5rem; border-radius: 8px; background: var(--wp-surface-2); }
+.wp-audience-switch .as-symbol {
+  flex: none; display: inline-flex; align-items: center; justify-content: center;
+  width: 1.8rem; height: 1.8rem; border-radius: 50%; border: 2px solid currentColor; font-weight: 700;
+}
+.wp-audience-switch .as-verdict-hit .as-symbol,
+.wp-audience-switch .as-verdict-skipped .as-symbol { color: var(--wp-ok); }
+.wp-audience-switch .as-verdict-miss .as-symbol,
+.wp-audience-switch .as-verdict-extra .as-symbol { color: var(--wp-danger); }
+.wp-audience-switch .as-verdict-optional .as-symbol { color: var(--wp-muted); }
+.wp-audience-switch .as-verdict-label { font-weight: 600; }
+.wp-audience-switch .as-reason { font-size: 0.92rem; }
+.wp-audience-switch .as-lead-result { display: grid; gap: 0.35rem; padding-block-start: 0.5rem; border-block-start: 1px solid var(--wp-border); }
+
+.wp-audience-switch .as-compare { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); }
+.wp-audience-switch .as-compare label { display: block; font-weight: 600; margin-block-end: 0.35rem; }
+.wp-audience-switch textarea { width: 100%; box-sizing: border-box; resize: vertical; }
+.wp-audience-switch .as-model { padding: 0.6rem 0.75rem; border-inline-start: 4px solid var(--wp-accent); background: var(--wp-surface-2); border-radius: 6px; }
+.wp-audience-switch .as-model-label { font-weight: 600; margin-block-end: 0.35rem; }
+.wp-audience-switch .as-checks { gap: 0.4rem; }
+
+.wp-audience-switch .as-notice { padding: 0.5rem 0.75rem; border-inline-start: 4px solid var(--wp-focus); background: var(--wp-surface-2); border-radius: 6px; }
+.wp-audience-switch .as-actions { justify-content: flex-start; }
+
+.wp-audience-switch .as-summary { display: grid; gap: 0.75rem; }
+.wp-audience-switch .as-summary-list { display: grid; gap: 0.6rem; margin: 0; padding: 0; list-style: none; }
+.wp-audience-switch .as-summary-item ul { margin: 0.35rem 0 0; padding-inline-start: 1.1rem; }

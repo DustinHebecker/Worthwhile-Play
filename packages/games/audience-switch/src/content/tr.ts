@@ -1,0 +1,259 @@
+import type { ContentText } from './types';
+
+export const content: ContentText = {
+  migration: {
+    title: 'Veritabanı taşıma',
+    situation: 'Ekibin müşteri veritabanını yeni bir sisteme taşıyor. Testler bir sorun buldu ve geçiş gecikecek. Bunu açıkla.',
+    facts: {
+      newDate: 'Geçiş iki gün kayıyor: salı yerine perşembe.',
+      cause: 'Testler, ü veya é gibi özel karakterlerle ilgili daha önce bilinmeyen bir hata buldu.',
+      noLoss: 'Hiç veri kaybolmadı.',
+      encoding: 'İçe aktarma betiği metni yanlış karakter kodlamasıyla okuyor.',
+      apology: 'Yaşattığımız rahatsızlık için özür dileriz.',
+      regression: 'Yeni bir otomatik test artık özel karakterleri kontrol ediyor.',
+      buffer: 'İki gün, projenin zaman payına sığıyor; ek maliyet yok.',
+      library: 'Hatalı dönüşüm, yıllar önce seçilen bir kütüphaneden geliyor.'
+    },
+    reasons: {
+      'developer.cause': 'Geliştiriciler testlerin gerçekte ne bulduğunu bilmeli.',
+      'developer.encoding': 'Üzerinde çalışacakları asıl neden bu.',
+      'developer.apology': 'Müşterilere özür dilemek, bir iş arkadaşının hatayı düzeltmesine yardım etmez.',
+      'developer.regression': 'Hatanın artık bir testle güvence altında olduğunu bilmeliler.',
+      'developer.buffer': 'Zaman payı ve bütçe proje yöneticisinin işi.',
+      'projectManager.newDate': 'Proje yöneticisi yeni tarihe göre plan yapar.',
+      'projectManager.noLoss': 'Veri kaybı riski tamamen değiştirirdi; bu yüzden olmadığını duyması gerekir.',
+      'projectManager.encoding': 'Kodlama ayrıntısı hiçbir planlama kararını değiştirmez.',
+      'projectManager.apology': 'Özür müşteriler içindir; proje yöneticisinin olgulara ihtiyacı var.',
+      'projectManager.buffer': 'Takvim ve bütçenin tutup tutmadığı tam da onun sorusu.',
+      'projectManager.library': 'Yıllar önce kütüphaneyi kimin seçtiği, şimdi planlamaya yardım etmez.',
+      'customer.newDate': 'Müşterinin ihtiyacı hata türü değil, yeni tarih.',
+      'customer.noLoss': 'İlk endişesi verileri ve veriler güvende.',
+      'customer.cause': 'Hata ayrıntıları müşteriyi kaygılandırır ama işine yaramaz.',
+      'customer.encoding': 'Teknik iç ayrıntılar müşteriye bir şey ifade etmez.',
+      'customer.regression': 'İç testler müşteriyi ilgilendirmez.',
+      'customer.buffer': 'İç zaman payları ve maliyetler müşteriyi ilgilendirmez.',
+      'customer.library': 'Suçu eski bir kütüphaneye atmak bahane gibi duyulur.'
+    },
+    messages: {
+      'developer.fit': 'Bilgin olsun: içe aktarma betiği metni yanlış kodlamayla okuyor, bu yüzden ü ve é gibi özel karakterler bozuluyor. Artık bir regresyon testi bunu kapsıyor; geçiş perşembeye kaydı.',
+      'developer.missing': 'Taşımada küçük bir gecikme var, ciddi bir şey değil. Ayrıntılar sonra.',
+      'developer.condescending': 'Özel karakterler, temel alfabede olmayan ü gibi harflerdir. Bilgisayarlar harfleri sayı olarak saklar ve bazen bu sayılar karışır.',
+      'projectManager.fit': 'Taşıma salıdan perşembeye kayıyor. Hiç veri kaybolmadı ve iki gün ek maliyet olmadan zaman payımıza sığıyor. Neden: özel karakterlerle ilgili bir hata; artık bir testle kapsanıyor.',
+      'projectManager.tooMuch': 'İçe aktarma betiği girdiyi UTF-8 yerine Latin-1 olarak çözüyor, bu yüzden çok baytlı karakterler bozuluyor; okuyucuyu yamalıyor ve bir regresyon testi ekliyoruz.',
+      'projectManager.missing': 'Bir hata bulduk, üzerinde çalışıyoruz. Haber veririz.',
+      'customer.fit': 'Verileriniz güvende. Her ismin ve adresin doğru aktarılması için geçişi salıdan perşembeye alıyoruz. O zamana kadar her şey her zamanki gibi çalışıyor.',
+      'customer.tooMuch': 'İçe aktarma betiğimiz yanlış karakter kodlaması kullandı ve test çalıştırmalarında özel karakterler bozuldu; bu yüzden taşıma, zaman payımızdan iki gün daha gerektiriyor.',
+      'customer.condescending': 'Teknik tarafı kafanıza takmayın, karmaşık bir şey. Sadece biraz gecikeceğini bilin yeter.'
+    }
+  },
+  skyBlue: {
+    title: 'Gökyüzü neden mavi',
+    situation: 'Biri sana gökyüzünün neden mavi olduğunu soruyor. Arkasındaki fiziği biliyorsun. Açıkla.',
+    facts: {
+      sunlight: 'Güneş ışığı bütün renkleri içerir.',
+      scatter: 'Hava mavi ışığı kırmızı ışıktan çok daha fazla saçar.',
+      rayleigh: 'Bu Rayleigh saçılması frekansın dördüncü kuvvetiyle artar (1/λ⁴).',
+      sunset: 'Gün batımında ışık daha fazla havadan geçer, bu yüzden gökyüzü kırmızı ve turuncu olur.',
+      everywhere: 'Saçılan mavi ışık gözlerine her yönden ulaşır, bu yüzden bütün gökyüzü mavi görünür.',
+      violet: 'Mor ışık daha da fazla saçılır, ama güneş ışığında daha az mor vardır ve gözlerimiz mora daha az duyarlıdır.',
+      molecules: 'Saçılma, ışığın dalga boyundan çok daha küçük olan azot ve oksijen moleküllerinde olur.',
+      ocean: 'Gökyüzü maviliğini denizi yansıttığı için alır.'
+    },
+    reasons: {
+      'child.sunlight': 'Çocuğun önce şaşırması gerekir: beyaz güneş ışığı bütün renkleri saklar.',
+      'child.scatter': 'Bu, basit sözlerle anlatılan ana fikir.',
+      'child.rayleigh': 'Formül gelince çocuğun ilgisi hemen kaybolur.',
+      'child.everywhere': 'Gördüğünü açıklar: nereye baksa mavi.',
+      'child.violet': 'Bu yaşta mor ayrıntısı yardım etmekten çok kafa karıştırır.',
+      'child.molecules': 'Moleküller ve dalga boyları bir çocuk için fazla soyut.',
+      'layperson.sunlight': 'Bu olmadan “mavi ışık saçılır” bir anlam taşımaz.',
+      'layperson.scatter': 'Gündelik dille asıl cevap bu.',
+      'layperson.rayleigh': 'Formül, uzman olmayan birinin kullanabileceği bir şey katmaz.',
+      'expert.rayleigh': 'Uzman, kesin mekanizmayı ve dalga boyuna bağlılığını bekler.',
+      'expert.everywhere': 'Bu uzman için apaçık ve sadece vakit kaybettirir.',
+      'expert.violet': 'Uzmanlar bariz itirazı bilir: “Neden mor değil?” Buna cevap ver.',
+      'expert.molecules': 'Saçıcıları ve boyut oranını söylemek açıklamayı kesinleştirir.',
+      ocean: 'Bu yaygın bir efsane; renk denizden gelmez.'
+    },
+    messages: {
+      'child.fit': 'Güneş ışığı beyaz görünür ama aslında içinde bütün renkler karışıktır. Havadan geçerken en çok mavi kısım oraya buraya sekiyor; bu yüzden mavi, gökyüzünün her yerinden gözlerine geliyor.',
+      'child.tooMuch': 'Mavi ışığın dalga boyu daha kısadır ve Rayleigh saçılması, bir bölü dalga boyunun dördüncü kuvvetiyle artar.',
+      'child.missing': 'Gökyüzü böyle işte. Hep maviydi.',
+      'layperson.fit': 'Güneş ışığı bütün renkleri içerir. Hava mavi ışığı kırmızıdan çok daha güçlü saçar, bu yüzden mavi ışık gökyüzünün her yerinden bize ulaşır.',
+      'layperson.tooMuch': 'Bu Rayleigh saçılmasıdır: şiddet 1/λ⁴ ile ölçeklenir, bu yüzden gökyüzünün dağınık ışınımında kısa dalga boyları baskındır.',
+      'layperson.condescending': 'Bilim insanı olmayanlar için biraz karışık. Diyelim ki hava onu mavi yapıyor.',
+      'expert.fit': 'N₂ ve O₂ moleküllerinde 1/λ⁴ ile orantılı Rayleigh saçılması. Mor daha da fazla saçılır, ama güneş spektrumunda daha az mor vardır ve konilerimiz mora daha az duyarlıdır.',
+      'expert.condescending': 'Güneş ışığını bir kutu boya kalemi gibi düşün! Hava en çok mavi kalemle oynamayı sever.',
+      'expert.missing': 'Hava mavi ışığı daha çok saçar, o yüzden.'
+    }
+  },
+  clubRoof: {
+    title: 'Kulüp binasının çatısı',
+    situation: 'Spor kulübünüzün binasının çatısı acilen onarılmalı ve maliyet planlanandan yüksek. Bunu açıkla.',
+    facts: {
+      cost: 'Onarım 8.000 avroya mal oluyor, bütçeden 3.000 avro fazla.',
+      decision: 'Yönetim kurulu cuma gününe kadar yaz şenliği bütçesinden 3.000 avro aktarılıp aktarılmayacağına karar vermeli.',
+      storage: 'Malzeme odası onarıma kadar kapalı kalıyor; binanın geri kalanı açık.',
+      fees: 'Üyelik aidatları değişmiyor.',
+      schedule: 'Çatı ustası 12 Mayıs’ta başlıyor ve dört gün çalışacak; iskele için otopark gerekiyor.',
+      tiles: 'Yeni kiremitler antrasit renkli beton kiremit.',
+      reserve: 'Bunun yerine yedek fon kullanılırsa, fon zorunlu alt sınırın altına düşer.',
+      volunteer: 'Bir üye çatıyı ücretsiz olarak kendisi onarmayı teklif etti ama çatı ustası değil.'
+    },
+    reasons: {
+      'executive.cost': 'Yönetim kurulunun değerlendirmek için tutara ve aşıma ihtiyacı var.',
+      'executive.decision': 'Vermesi gereken karar bu, son tarihiyle birlikte.',
+      'executive.storage': 'Odaların günlük kullanımı yönetim kurulunun konusu değil.',
+      'executive.schedule': 'Kesin çalışma günleri koordinatörün işi.',
+      'executive.tiles': 'Kiremidin türü ve rengi kararı etkilemez.',
+      'executive.reserve': 'Akla gelen alternatifin neden mümkün olmadığını açıklar.',
+      'projectManager.fees': 'Aidatların onarımın organizasyonuyla ilgisi yok.',
+      'projectManager.schedule': 'Koordinatörün düzenlediği şey tam da bu tarihler ve otopark.',
+      'projectManager.reserve': 'Finansmana koordinatör değil, yönetim kurulu karar verir.',
+      'layperson.storage': 'Üyeler neyi kullanıp neyi kullanamayacaklarını bilmek ister.',
+      'layperson.fees': 'Kendi paraları ilk sorularıdır.',
+      'layperson.tiles': 'Malzeme ayrıntıları üyeler için önemli değil.',
+      'layperson.reserve': 'Yedek fon kuralları iç mali ayrıntılardır.',
+      volunteer: 'Gerekli yeterliliği olmayan bir teklif yalnızca boş bir tartışma başlatır; gerçek bir seçenek değildir.'
+    },
+    messages: {
+      'executive.fit': 'Cumaya kadar karar gerekiyor: çatı onarımı 8.000 avro, bütçeden 3.000 avro fazla. Yedek fon alt sınırın altına düşeceği için yaz şenliği bütçesinden 3.000 avro aktarmayı öneriyoruz.',
+      'executive.tooMuch': 'Çatı ustası 12 Mayıs’ta antrasit beton kiremitlerle başlıyor; iskele dört gün otoparkta duracak ve malzeme odası o zamana kadar kapalı kalacak.',
+      'executive.missing': 'Çatı daha pahalıya geliyor. Sizi bilgilendirmeye devam edeceğiz.',
+      'projectManager.fit': 'Çatı ustası 12 Mayıs’ta başlıyor ve dört gün çalışacak. Lütfen 11 Mayıs’tan itibaren otoparkı iskele için boş bırakın.',
+      'projectManager.tooMuch': 'Onarım 8.000 avro, bütçenin 3.000 avro üstünde; yedek fon alt sınırın altına düşemeyeceği için yönetim kurulu şenlikten para aktarabilir ve aidatlar aynı kalıyor.',
+      'projectManager.missing': 'Mayıs’ta bir ara çatıda çalışma olacak.',
+      'layperson.fit': 'Kulüp binasının çatısı mayısta onarılacak. O zamana kadar malzeme odası kapalı; geri kalan her yer her zamanki gibi açık. Üyelik aidatları değişmiyor.',
+      'layperson.tooMuch': 'Onarım 8.000 avro, bütçenin 3.000 avro üstünde; yedek fon alt sınırın altına düşemeyeceği için yönetim kurulu şenlik bütçesinden aktarmayı değerlendiriyor.',
+      'layperson.condescending': 'Çatıyı dert etmeyin, büyüklerin işlerini yönetim kurulu halleder.'
+    }
+  },
+  shopOutage: {
+    title: 'Online mağaza kesintisi',
+    situation: 'Şirketinin online mağazası dün üç saat boyunca çalışmadı. Ne olduğunu açıkla.',
+    facts: {
+      duration: 'Mağaza dün akşam üç saat boyunca kapalıydı.',
+      revenue: 'Yaklaşık 40.000 avroluk sipariş kaybedildi.',
+      cause: 'Süresi dolmuş bir güvenlik sertifikası ödemeleri durdurdu.',
+      fixed: 'Sertifika yenilendi; mağaza yeniden normal çalışıyor.',
+      renewal: 'Yenileme, iki hafta önceden uyarıyla otomatikleştirilecek; bu ekibin bir gününü alır.',
+      voucher: 'Siparişi başarısız olan müşteriler e-postayla %10 indirim kuponu alacak.',
+      approval: 'Yönetimden daha iyi izleme için 5.000 avroyu onaylaması isteniyor.',
+      competitor: 'Bir rakibin mağazası geçen ay benzer bir kesinti yaşadı.'
+    },
+    reasons: {
+      'projectManager.cause': 'Proje yöneticisinin çözümü değerlendirmek için nedene ihtiyacı var.',
+      'projectManager.renewal': 'Planlaması gereken iş bu: ekibin bir günü.',
+      'projectManager.voucher': 'Kuponlarla proje değil, müşteri hizmetleri ilgilenir.',
+      'executive.duration': 'Yönetimin olayın büyüklüğünü bilmesi gerekir.',
+      'executive.revenue': 'Yönetim için iş üzerindeki etki önce gelir.',
+      'executive.cause': 'Teknik ayrıntı kararlarını değiştirmez; “kaçırılan bir yenileme” yeter.',
+      'executive.renewal': 'Bunun bir daha olmayacağını duymaları gerekir.',
+      'executive.approval': 'Vermeleri gereken karar bu.',
+      'customer.revenue': 'Kaybettiğiniz ciro müşteriyi ilgilendirmez.',
+      'customer.cause': 'Teknik nedenler müşterilere yardım etmez.',
+      'customer.fixed': 'Müşteriler önce yeniden alışveriş yapabileceklerini bilmek ister.',
+      'customer.renewal': 'İç süreç değişiklikleri müşteriyi ilgilendirmez.',
+      'customer.voucher': 'Alacakları şey bu ve e-postalarını kontrol etmeleri gerekir.',
+      'customer.approval': 'İç bütçe kararları müşteriler için değildir.',
+      competitor: 'Başkalarını işaret etmek bahane gibi duyulur ve hiçbir şeyi değiştirmez.'
+    },
+    messages: {
+      'projectManager.fit': 'Dünkü üç saatlik kesinti, ödemeleri durduran süresi dolmuş bir güvenlik sertifikasından kaynaklandı. Tekrarlanmaması için yenilemeyi erken uyarıyla otomatikleştiriyoruz; bu sprintte ekibin bir gününü alacak.',
+      'projectManager.tooMuch': 'Yaklaşık 40.000 avroluk sipariş kaybettik, müşteriler e-postayla %10 kupon alıyor ve bir rakip geçen ay aynı sorunu yaşadı.',
+      'projectManager.missing': 'Mağaza dün ufak bir aksaklık yaşadı, şimdi her şey yolunda.',
+      'executive.fit': 'Dün mağaza üç saat kapalı kaldı; yaklaşık 40.000 avroluk sipariş kaybettik. Neden, kaçırılan rutin bir yenilemeydi ve artık otomatik. Bu tür sorunları erken yakalamak için izlemeye 5.000 avroyu onaylamanızı rica ediyoruz.',
+      'executive.tooMuch': 'Ödeme ağ geçidinin TLS sertifikası 18:02’de sona erdi; artık ACME protokolüyle otomatik yeniliyoruz ve 14 gün önceden uyarı alıyoruz.',
+      'executive.missing': 'Dün küçük bir teknik sorun oldu. Çözüldü.',
+      'customer.fit': 'Özür dileriz: dün akşam mağazamız birkaç saat kullanılamadı. Şimdi her şey yeniden çalışıyor. Siparişiniz başarısız olduysa e-postayla %10 indirim kuponu alacaksınız.',
+      'customer.tooMuch': 'Süresi dolmuş bir güvenlik sertifikası ödeme sistemimizi durdurdu; yaklaşık 40.000 avro kaybettik ve artık sertifikaları otomatik yeniliyoruz.',
+      'customer.condescending': 'Teknik bir şey bozuldu, anlayacağınız bir şey değil. Siz sadece tekrar deneyin.'
+    }
+  },
+  signalFault: {
+    title: 'Demiryolunda sinyal arızası',
+    situation: 'Bir sinyal arızası bir demiryolu hattını aksatıyor. Demiryolu şirketinde çalışıyorsun. Durumu açıkla.',
+    facts: {
+      delay: 'Bu hattaki trenler yaklaşık 40 dakika gecikmeli.',
+      bus: 'Aktarma otobüsleri istasyon meydanından her 20 dakikada bir kalkıyor.',
+      tickets: 'Biletler otobüslerde ve sonraki trenlerde de geçerli.',
+      signal: 'Makas noktasındaki 14 numaralı sinyal, bir kablo arızasından sonra sürekli kırmızı gösteriyor.',
+      singleTrack: 'Trenler bu kesimi yazılı emirle, yürüme hızında tek hattan geçiyor.',
+      repair: 'Teknisyenler onarımın yaklaşık dört saat daha süreceğini tahmin ediyor.',
+      construction: 'Kabloya muhtemelen başka bir şirketin inşaat çalışması zarar verdi.',
+      staff: 'Bu hafta iki teknisyen hasta izninde.'
+    },
+    reasons: {
+      'layperson.delay': 'Yolcular önce ne kadar gecikeceklerini bilmek ister.',
+      'layperson.bus': 'Hemen şimdi ne yapabileceklerini söyler.',
+      'layperson.tickets': 'Yeni bilet gerekip gerekmediği endişesine cevap verir.',
+      'layperson.signal': 'Sinyal numaraları yolculara bir şey ifade etmez.',
+      'layperson.singleTrack': 'İşletme kuralları yolculara yardım etmez.',
+      'layperson.construction': 'Suç hakkında tahmin yürütmek yolculara yardım etmez ve yanlış olabilir.',
+      'layperson.staff': 'İç personel durumu yolcuları ilgilendirmez.',
+      'expert.tickets': 'Bilet kuralları tren işletmesini etkilemez.',
+      'expert.signal': 'Meslektaşın tam yere ve tam arızaya ihtiyacı var.',
+      'expert.singleTrack': 'Uygulaması gereken işletme kuralı bu.',
+      'expert.repair': 'Tarifeyi beklenen bitişe göre planlar.',
+      'expert.staff': 'Personel durumu kesimin nasıl işletildiğini değiştirmez.',
+      'executive.delay': 'Yönetimin aksaklığın büyüklüğünü bilmesi gerekir.',
+      'executive.tickets': 'Biletlerin kabulü standart bir kuraldır, yönetim konusu değildir.',
+      'executive.repair': 'Etkinin ne kadar süreceğini bilmeleri gerekir.',
+      'executive.construction': 'Üçüncü bir tarafın verdiği olası hasar, sorumluluk ve maliyet açısından önemlidir.'
+    },
+    messages: {
+      'layperson.fit': 'Bu hattaki trenler yaklaşık 40 dakika gecikmeli. Aktarma otobüsleri istasyon meydanından her 20 dakikada bir kalkıyor ve biletiniz bu otobüslerde geçerli.',
+      'layperson.tooMuch': 'Makas noktasındaki 14 numaralı sinyal kablo arızasından sonra sürekli kırmızı; trenler yazılı emirle yürüme hızında tek hattan gidiyor.',
+      'layperson.missing': 'Lütfen sabırlı olun, teknik bir arıza var.',
+      'expert.fit': 'Makas noktasındaki 14 numaralı sinyal kablo arızası nedeniyle kırmızıda kaldı. Yazılı emirle yürüme hızında tek hat işletmesi; onarımın yaklaşık dört saat daha sürmesi bekleniyor.',
+      'expert.condescending': 'Sinyal, trenler için bir trafik lambası gibidir. Biri bozuldu, bu yüzden trenler yavaş gitmek zorunda.',
+      'expert.missing': 'Hatta bir sorun var ve trenler gecikiyor. Otobüsler çalışıyor.',
+      'executive.fit': 'Bir kablo arızası hattı yaklaşık dört saat daha aksatacak; trenler yaklaşık 40 dakika gecikmeli. Kabloya muhtemelen başka bir şirketin inşaat çalışması zarar verdi, bu yüzden sorumluluğu inceliyoruz.',
+      'executive.tooMuch': '14 numaralı sinyal sürekli kırmızı; yazılı emirle yürüme hızında tek hat; meydandan her 20 dakikada otobüs; biletler otobüslerde geçerli.',
+      'executive.missing': 'Ufak bir sinyal sorunu, ekip ilgileniyor.'
+    }
+  },
+  kettleLid: {
+    title: 'Su ısıtıcısının kapağı',
+    situation: 'Şirketin, bir su ısıtıcısı modelinin kapağının yerinden çıkabileceğini fark etti. Bunu açıkla.',
+    facts: {
+      batches: 'Yalnızca 2301 ile 2315 arası parti numaralı ısıtıcılar etkileniyor (tabanın altında yazılı).',
+      risk: 'Kapak dökerken açılabilir ve sıcak su sıçrayabilir.',
+      stop: 'Etkilenen bir ısıtıcıyı, değiştirilene kadar kullanmayın.',
+      hinge: 'Plastik bir menteşe pimi 0,2 mm fazla ince üretildi.',
+      free: 'Değişim, kargo dahil ücretsiz.',
+      cost: 'Değişim şirkete yaklaşık 120.000 avroya mal olacak.',
+      supplier: 'Pimler, numuneleri denetimden geçmiş yeni bir tedarikçiden geldi.',
+      injuries: 'Şu ana kadar bilinen bir yaralanma yok.'
+    },
+    reasons: {
+      'customer.batches': 'Müşteriler kendi ısıtıcılarının etkilenip etkilenmediğini kontrol edebilmeli.',
+      'customer.risk': 'Bunun neden önemli olduğunu anlamaları gerekir.',
+      'customer.stop': 'Onları güvende tutan eylem bu.',
+      'customer.hinge': 'Milimetre ayrıntıları müşterilere yardım etmez.',
+      'customer.free': 'Ücretsiz olduğunu bilmek, beklemek için bir nedeni ortadan kaldırır.',
+      'customer.cost': 'Şirketin maliyetleri müşteriyi ilgilendirmez.',
+      'customer.supplier': 'Tedarikçi ayrıntıları suçu başkasına atmak gibi duyulur.',
+      'executive.risk': 'Yönetim önce güvenlik riskini anlamalı.',
+      'executive.hinge': 'Kesin ölçü mühendislerin işi.',
+      'executive.cost': 'Mali etki kararlarının bir parçası.',
+      'executive.injuries': 'Birinin yaralanıp yaralanmadığı aciliyeti ve tepkiyi değiştirir.',
+      'expert.stop': 'Müşteri talimatları kusuru analiz etmeye yardım etmez.',
+      'expert.hinge': 'Mühendisin tam kusura ihtiyacı var.',
+      'expert.free': 'Kargo koşulları teknik analiz için önemli değil.',
+      'expert.cost': 'Geri çağırma maliyetleri parçayı düzeltmek için gerekmez.',
+      'expert.supplier': 'Kalite kontrolün nerede değişmesi gerektiğini gösterir.'
+    },
+    messages: {
+      'customer.fit': 'Lütfen ısıtıcınızın altındaki parti numarasını kontrol edin. 2301 ile 2315 arasındaysa kullanmayı bırakın: kapak dökerken açılabilir. Isıtıcınızı kargo dahil ücretsiz değiştiriyoruz.',
+      'customer.tooMuch': 'Yeni bir tedarikçinin menteşe pimi 0,2 mm fazla inceydi; değişim bize yaklaşık 120.000 avroya mal olacak.',
+      'customer.condescending': 'Bazı ısıtıcılarda ufacık bir sorun olabilir. Ayrıntıları anlamanıza gerek yok; isterseniz geri gönderin.',
+      'executive.fit': 'Güvenlik sorunu: 2301 ile 2315 arası partilerde sıcak su dökülürken ısıtıcının kapağı açılabilir. Şu ana kadar bilinen yaralanma yok. Değişim yaklaşık 120.000 avroya mal olacak.',
+      'executive.tooMuch': 'Menteşe piminin çapı toleransın 0,2 mm altında; yeni tedarikçinin numuneleri spesifikasyona uygundu, bu yüzden kalıp aşınmasından şüpheleniyoruz.',
+      'executive.missing': 'Önlem olarak bazı ısıtıcıları değiştiriyoruz.',
+      'expert.fit': 'Yeni tedarikçinin menteşe pimleri 0,2 mm fazla ince, bu yüzden kapak dökerken açılabiliyor. Etkilenen partiler: 2301 ile 2315 arası. Numuneleri denetimi geçmişti, yani giriş kontrolümüz değişmeli.',
+      'expert.missing': 'Bazı kapaklar gevşek; müşteriler ücretsiz değişim alıyor.',
+      'expert.condescending': 'Menteşe, kapağın dönmesini sağlayan parçadır. Fazla inceyse iyi tutmaz.'
+    }
+  }
+};

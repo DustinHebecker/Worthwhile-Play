@@ -57,7 +57,9 @@ export const GAMES: readonly GameEntry[] = [
   entry('visual-search', () => import('@wp/game-visual-search')),
   entry('prospective-memory', () => import('@wp/game-prospective-memory')),
   entry('association', () => import('@wp/game-association')),
-  entry('ambiguity-detector', () => import('@wp/game-ambiguity-detector'))
+  entry('ambiguity-detector', () => import('@wp/game-ambiguity-detector')),
+  entry('audience-switch', () => import('@wp/game-audience-switch')),
+  entry('deep-read', () => import('@wp/game-deep-read'))
 ];
 
 export const findGame = (id: string): GameEntry | undefined => GAMES.find((g) => g.metadata.id === id);
