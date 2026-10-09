@@ -41,6 +41,8 @@ interface GameContext {
   root: HTMLElement; t: Translator; reducedMotion: boolean;
   requestSave(): void;               // after each logical change
   finished(result: GameResult): void;// once, on natural end
+  setDifficulty?(id: string): void;  // optional: in-game difficulty change → host select, next round, save
+  preferences?: { get(key): unknown; set(key, value): void }; // optional: per-device options (localStorage, cleared with saves)
 }
 ```
 

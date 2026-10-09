@@ -2,11 +2,12 @@ import { LOCALE_DEFINITIONS, isSupportedLocale, readContentLanguages, writeConte
 import { h } from '@wp/ui';
 import type { Page } from '../app';
 import { SESSION_NOTE_KEY } from '../config';
+import { clearPreferences } from '../lib/preferences';
 
 /** A small list of common learning languages; content languages are not limited to the 16 UI locales. */
 const CONTENT_LANGUAGES = ['ar', 'cs', 'da', 'de', 'el', 'en', 'es', 'fi', 'fr', 'he', 'hi', 'hu', 'id', 'it', 'ja', 'ko', 'nl', 'no', 'pl', 'pt', 'ro', 'ru', 'sv', 'sw', 'th', 'tr', 'uk', 'vi', 'zh-Hans'];
 
-const safeStorage = (): Storage | undefined => {
+export const safeStorage = (): Storage | undefined => {
   try {
     return localStorage;
   } catch {
@@ -67,6 +68,8 @@ export const renderSettings: Page = (main, app) => {
     if (!confirm(t('settings.clearConfirm'))) return;
     const store = await app.store;
     for (const key of await store.keys()) await store.remove(key);
+    // Remembered game options (e.g. opponent count) go together with the saves.
+    clearPreferences(safeStorage());
     await refreshSaves();
   });
   void refreshSaves();

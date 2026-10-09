@@ -23,6 +23,8 @@ import {
   moveTo,
   moveToUci,
   MATE_LENGTHS,
+  MODES,
+  OPPONENTS,
   puzzlesFor,
   stateOutcome,
   parseFen,
@@ -82,7 +84,20 @@ const isOver = (outcome: Outcome) => outcome.kind !== 'playing';
 
 export function createChess(context: GameContext): GameInstance<ChessState> {
   const { t, root } = context;
-  let state: ChessState = startGame({ seed: 0, difficulty: DEFAULT_DIFFICULTY, opponent: 'computer', humanColor: 'w' });
+  // Menu choices remembered on this device (opponent, colour, mode, mate length): after a reload the next
+  // "New game" starts in the same kind of game. Read defensively; anything unexpected is ignored.
+  const remembered = ((): Partial<GameOptions> => {
+    const raw = context.preferences?.get('menu');
+    if (typeof raw !== 'object' || raw === null) return {};
+    const r = raw as Record<string, unknown>;
+    return {
+      ...(isOneOf(r.opponent, OPPONENTS) ? { opponent: r.opponent } : {}),
+      ...(isOneOf(r.humanColor, COLORS) ? { humanColor: r.humanColor } : {}),
+      ...(isOneOf(r.mode, MODES) ? { mode: r.mode } : {}),
+      ...(isOneOf(r.mateN, MATE_LENGTHS) ? { mateN: r.mateN } : {})
+    };
+  })();
+  let state: ChessState = startGame({ seed: 0, difficulty: DEFAULT_DIFFICULTY, opponent: 'computer', humanColor: 'w', puzzle: 0, ...remembered });
   /** Number of plies drawn; lags behind `state.moves` only while the computer's reply is revealed. */
   let shown = 0;
   /** The person's move while the computer is still to answer (never saved; see `flushPending`). */
@@ -567,6 +582,9 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
     // Same puzzle category: continue with the next puzzle; otherwise let the seed pick one.
     const puzzle = mode === state.mode && mateN === state.mateN ? state.puzzle + 1 : state.seed;
     startFresh({ seed: state.seed, opponent, humanColor, difficulty, mode, mateN, puzzle });
+    context.preferences?.set('menu', { opponent, humanColor, mode, mateN });
+    // The strength chosen here is the game's difficulty now: keep the host's select and next round in line.
+    if (choice === 'computer') context.setDifficulty?.(difficulty);
     squares[cursor]?.focus();
   }
 
