@@ -35,8 +35,9 @@ export const renderSettings: Page = (main, app) => {
     ...LOCALE_DEFINITIONS.map((d) => h('option', { value: d.code, selected: d.code === app.locale, lang: d.code }, d.nativeName))
   );
   uiSelect.addEventListener('change', () => {
-    if (isSupportedLocale(uiSelect.value)) void app.setLocale(uiSelect.value);
-    document.getElementById('ui-language')?.focus();
+    if (!isSupportedLocale(uiSelect.value)) return;
+    // Focus the select of the re-rendered settings page once the new language is shown.
+    void app.setLocale(uiSelect.value).then(() => document.getElementById('ui-language')?.focus());
   });
 
   const content = storage ? readContentLanguages(storage) : { learning: undefined, translation: undefined };

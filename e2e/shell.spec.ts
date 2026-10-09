@@ -47,6 +47,7 @@ test.describe('app shell', () => {
     await page.getByTestId('ui-language').selectOption('ar');
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
     await expect(page.locator('html')).toHaveAttribute('lang', 'ar');
+    await expect(page.getByTestId('ui-language')).toBeFocused();
     await page.reload();
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
     await expect(page.locator('#learning-language')).toHaveValue('ja');
@@ -62,6 +63,9 @@ test.describe('app shell', () => {
     await expect(page.locator('html')).toHaveAttribute('lang', 'de');
     await expect(page.getByTestId('language-menu').locator('summary')).toContainText('Deutsch');
     await expect(page.getByTestId('new-game')).toHaveText('Neues Spiel');
+    // The menu stays open with focus on the select, so a keyboard user can keep choosing.
+    await expect(page.getByTestId('language-menu')).toHaveAttribute('open', '');
+    await expect(page.getByTestId('header-language')).toBeFocused();
   });
 
   test('unknown routes show a not-found page', async ({ page }) => {
