@@ -48,8 +48,11 @@ export function planAi(world: World, ruleset: Ruleset, side: number): Command[] 
     }
   }
 
+  // Fighters below the retreat threshold are left to regroup and hold; ordering them back into
+  // the fight would only spend a slot on an order the doctrine is meant to prevent.
+  const retreating = (u: Entity) => u.hp * 100 < (archetypeOf(ruleset, u.kind)?.hp ?? 0) * AI_DOCTRINE.retreatBelow;
   const fighters = own
-    .filter((u) => archetypeOf(ruleset, u.kind)?.weapon && (archetypeOf(ruleset, u.kind)?.speed ?? 0) > 0)
+    .filter((u) => archetypeOf(ruleset, u.kind)?.weapon && (archetypeOf(ruleset, u.kind)?.speed ?? 0) > 0 && !retreating(u))
     .map((u) => ({ u, d: nearestDistance(u, enemies) }))
     .sort((a, b) => a.d - b.d || a.u.id - b.u.id);
   for (const { u: unit } of fighters) {

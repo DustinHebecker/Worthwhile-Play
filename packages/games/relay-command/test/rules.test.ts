@@ -200,6 +200,19 @@ describe('doctrines (I3b)', () => {
     expect(doctrineFor(s, rifle.id)).toEqual(d);
   });
 
+  it('the opponent leaves fighters below its retreat threshold alone (no wasted slots)', () => {
+    const s = structuredClone(newGame(1));
+    const hurt = s.world.entities.find((e) => e.side === OPPONENT && e.kind === 'rifles')!;
+    hurt.hp = 5;
+    let world = s.world;
+    for (let turn = 0; turn < 3; turn++) {
+      const plan = planAi(world, RULESET, OPPONENT);
+      expect(plan.some((c) => c.unit === hurt.id)).toBe(false);
+      world = lockTurn({ ...s, world, draft: [] }).world;
+      if (!world.entities.some((e) => e.id === hurt.id)) break;
+    }
+  });
+
   it('the opponent gives its fighters a retreat doctrine', () => {
     const plan = planAi(newGame(1).world, RULESET, OPPONENT);
     const attacks = plan.filter((c) => c.order.type === 'attack');
