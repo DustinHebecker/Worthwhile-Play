@@ -172,6 +172,31 @@ describe('view', () => {
     expect(instance.serialize().strict).toBe(true);
   });
 
+  it('remembers word language, strict mode and keyboard layout on this device for fresh games', () => {
+    const { q, ctx } = start({ seed: 5 });
+    const select = q('wg-language') as HTMLSelectElement;
+    select.value = 'de';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+    const strict = q('wg-strict') as HTMLInputElement;
+    strict.checked = true;
+    strict.dispatchEvent(new Event('change', { bubbles: true }));
+    const layout = q('wg-layout') as HTMLSelectElement;
+    layout.value = 'large';
+    layout.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(ctx.preferences.get('options')).toEqual({ language: 'de', strict: true, layout: 'large' });
+    const fresh = createTestContext(game as GameModule<unknown>, 'en');
+    const second = game.create({ ...fresh.context, preferences: { get: (k) => ctx.preferences.get(k), set: () => undefined } }) as GameInstance<WordGuessState>;
+    cleanup.push(() => second.dispose());
+    second.newGame({ seed: 7 });
+    expect(second.serialize()).toMatchObject({ language: 'de', strict: true, layout: 'large' });
+    // Unexpected stored values fall back to the defaults.
+    const odd = createTestContext(game as GameModule<unknown>, 'en');
+    const third = game.create({ ...odd.context, preferences: { get: () => ({ language: 'xx', strict: 'yes', layout: 'tiny' }), set: () => undefined } }) as GameInstance<WordGuessState>;
+    cleanup.push(() => third.dispose());
+    third.newGame({ seed: 7 });
+    expect(third.serialize()).toMatchObject({ language: 'en', strict: false, layout: 'familiar' });
+  });
+
   it('keeps the word grid left-to-right inside an Arabic (RTL) interface', () => {
     const { root, q } = start({ locale: 'ar' });
     expect(root.querySelector('.wp-word-guess')!.getAttribute('dir')).toBe('rtl');

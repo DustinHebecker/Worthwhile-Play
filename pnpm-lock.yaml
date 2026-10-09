@@ -113,6 +113,9 @@ importers:
       '@wp/game-minimal-proof':
         specifier: workspace:*
         version: link:../../packages/games/minimal-proof
+      '@wp/game-n-back':
+        specifier: workspace:*
+        version: link:../../packages/games/n-back
       '@wp/game-node-conquest':
         specifier: workspace:*
         version: link:../../packages/games/node-conquest
@@ -155,6 +158,9 @@ importers:
       '@wp/game-tic-tac-toe':
         specifier: workspace:*
         version: link:../../packages/games/tic-tac-toe
+      '@wp/game-visual-search':
+        specifier: workspace:*
+        version: link:../../packages/games/visual-search
       '@wp/game-word-guess':
         specifier: workspace:*
         version: link:../../packages/games/word-guess
