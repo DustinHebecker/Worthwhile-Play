@@ -201,6 +201,30 @@ describe('isValidState', () => {
       { ...s, result: 'won' },
       { ...s, phase: 'finished' }
     ];
+    // Saves that do not match the scenario (manipulated or from another version) are rejected too.
+    const huge = structuredClone(s);
+    huge.world.map = { w: 128, h: 128, terrain: '.'.repeat(128 * 128) };
+    const proto = structuredClone(s);
+    proto.world.entities[1]!.kind = 'constructor';
+    const foreign = structuredClone(s);
+    foreign.world.entities[1]!.kind = 'tower-laser';
+    const crowded = structuredClone(s);
+    crowded.world.entities.push({ ...structuredClone(crowded.world.entities[1]!), id: 99, x: 5, y: 5 });
+    crowded.world.nextId = 100;
+    const otherRuleset = structuredClone(s);
+    otherRuleset.world.ruleset = 'other';
+    const reshaped = structuredClone(s);
+    reshaped.world.map = { ...reshaped.world.map, terrain: `~${reshaped.world.map.terrain.slice(1)}` };
+    bad.push(
+      huge,
+      proto,
+      foreign,
+      crowded,
+      otherRuleset,
+      reshaped,
+      { ...s, draft: [{ side: PLAYER, unit: 2, order: { type: 'move', x: 12, y: 0 } }] },
+      { ...s, draft: [{ side: PLAYER, unit: 2, order: { type: 'hold', extra: 1 } }] }
+    );
     for (const b of bad) expect(isValidState(b)).toBe(false);
     expect(isValidState(JSON.parse(JSON.stringify(lockTurn(s))))).toBe(true);
     expect(isValidState(concede(s))).toBe(true);

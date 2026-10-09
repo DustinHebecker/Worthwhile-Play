@@ -85,7 +85,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   /* ---------- DOM ---------- */
   const live = h('p', { class: 'sr-only', 'aria-live': 'polite', 'data-testid': 'rc-live' });
   const turnEl = h('p', { class: 'rc-turn', 'data-testid': 'rc-turn' });
-  const statusEl = h('p', { class: 'rc-status', 'data-testid': 'rc-status', role: 'status' });
+  const statusEl = h('p', { class: 'rc-status', 'data-testid': 'rc-status', role: 'status', tabindex: -1 });
   const lockBtn = h('button', { type: 'button', class: 'primary', 'data-testid': 'rc-lock', onclick: () => onLock() }, t('action.lock'));
   const concedeBtn = h('button', { type: 'button', 'data-testid': 'rc-concede', onclick: () => setConfirming(true) }, t('action.concede'));
   const confirmBox = h(
@@ -585,14 +585,18 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     announce(live, `${t('announce.resolved', { turn: next.world.turn })} ${[...summaryList.querySelectorAll('li')].map((li) => li.textContent).join(' ')}`);
   }
 
+  /** Shows or hides the give-up confirmation and keeps keyboard focus on a visible control. */
   function setConfirming(value: boolean): void {
     confirming = value;
     render();
+    (value ? confirmBox.querySelector<HTMLElement>('[data-testid="rc-concede-no"]') : concedeBtn)?.focus();
   }
 
   function onConcede(): void {
     confirming = false;
     commit(concede(state), t('status.conceded'));
+    // The game buttons are now disabled; move focus to the result instead of losing it.
+    statusEl.focus();
   }
 
   const onCanvasClick = (event: MouseEvent) => {

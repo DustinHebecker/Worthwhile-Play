@@ -121,12 +121,15 @@ describe('Relay Command view', () => {
   it('asks before giving up, reports the result once and disables play', () => {
     click('rc-concede');
     expect($('rc-confirm').hidden).toBe(false);
+    expect(document.activeElement).toBe($('rc-concede-no'));
     click('rc-concede-no');
     expect($('rc-confirm').hidden).toBe(true);
+    expect(document.activeElement).toBe($('rc-concede'));
     expect(state().phase).toBe('plan');
     click('rc-concede');
     click('rc-concede-yes');
     expect(state()).toMatchObject({ phase: 'finished', result: 'lost', conceded: true });
+    expect(document.activeElement).toBe($('rc-status'));
     expect(ctx.results).toEqual([{ outcome: 'lost', stats: { turns: 0 } }]);
     expect(($('rc-lock') as HTMLButtonElement).disabled).toBe(true);
     click('rc-lock');

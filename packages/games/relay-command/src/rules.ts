@@ -1,7 +1,9 @@
 import { isArrayOf, isInt, isOneOf, isRecord, isUint32, normalizeSeed } from '@wp/game-core';
 import {
+  archetypeOf,
   BASE_RULESET,
   createWorld,
+  isValidOrder,
   isValidWorld,
   resolveTurn,
   validateCommand,
@@ -115,7 +117,7 @@ export function sideValue(world: World, side: number): number {
   let total = 0;
   for (const e of world.entities) {
     if (e.side !== side) continue;
-    const arch = RULESET.archetypes[e.kind];
+    const arch = archetypeOf(RULESET, e.kind);
     if (!arch) continue;
     const weight = e.kind === COMMAND_POST ? COMMAND_POST_VALUE : arch.cost;
     total += Math.floor((weight * e.hp) / arch.hp);
@@ -142,20 +144,37 @@ export function replay(seed: number, log: readonly TurnLog[], spec: ScenarioSpec
   return world;
 }
 
-const isCommand = (v: unknown): v is Command =>
-  isRecord(v) && isInt(v.side, 0, 1) && isInt(v.unit, 1) && isRecord(v.order) && isOneOf(v.order.type, ['hold', 'move', 'attack']);
+/** A command whose order is structurally valid on a `w`×`h` map. */
+const commandGuard =
+  (w: number, h: number) =>
+  (v: unknown): v is Command =>
+    isRecord(v) && isInt(v.side, 0, 1) && isInt(v.unit, 1) && isValidOrder(v.order, w, h);
 
-const isTurnLog = (v: unknown): v is TurnLog =>
+const isTurnLog = (isCommand: (v: unknown) => v is Command) => (v: unknown): v is TurnLog =>
   isRecord(v) && isInt(v.turn, 0) && Array.isArray(v.plans) && v.plans.length === 2 && v.plans.every((p) => isArrayOf(p, isCommand));
 
+/**
+ * The world must belong to the saved scenario: same map and ruleset, only the scenario's unit
+ * kinds and never more units than at the start. This keeps manipulated or foreign saves (huge
+ * maps, hundreds of units) from freezing the tab.
+ */
+function matchesScenario(world: World, spec: ScenarioSpec): boolean {
+  const { map, entities } = spec.scenario;
+  if (world.ruleset !== RULESET.id || world.map.w !== map.w || world.map.h !== map.h || world.map.terrain !== map.terrain) return false;
+  const kinds = new Set(entities.map((e) => e.kind));
+  return world.entities.length <= entities.length && world.entities.every((e) => kinds.has(e.kind)) && world.projectiles.length <= entities.length * 4;
+}
+
 export function isValidState(value: unknown): value is RcState {
-  if (!isRecord(value) || value.v !== 1 || !isUint32(value.seed) || typeof value.scenario !== 'string' || !scenarioById(value.scenario)) return false;
-  if (!isInt(value.turnLimit, 1, 1000) || !isOneOf(value.phase, ['plan', 'finished'])) return false;
-  if (!isValidWorld(value.world, RULESET) || value.world.sides !== 2) return false;
+  if (!isRecord(value) || value.v !== 1 || !isUint32(value.seed) || typeof value.scenario !== 'string') return false;
+  const spec = scenarioById(value.scenario);
+  if (!spec || !isInt(value.turnLimit, 1, 1000) || !isOneOf(value.phase, ['plan', 'finished'])) return false;
+  if (!isValidWorld(value.world, RULESET) || value.world.sides !== 2 || !matchesScenario(value.world, spec)) return false;
+  const isCommand = commandGuard(value.world.map.w, value.world.map.h);
   if (!isArrayOf(value.draft, isCommand) || value.draft.some((c) => c.side !== PLAYER)) return false;
   if (new Set(value.draft.map((c) => c.unit)).size !== value.draft.length) return false;
   if (!Array.isArray(value.events) || !value.events.every((e) => isRecord(e) && typeof e.t === 'string' && isInt(e.tick, 0))) return false;
-  if (!isArrayOf(value.log, isTurnLog) || value.log.length !== value.world.turn) return false;
+  if (!isArrayOf(value.log, isTurnLog(isCommand)) || value.log.length !== value.world.turn) return false;
   if (typeof value.conceded !== 'boolean') return false;
   if (value.phase === 'plan') return value.result === null;
   return isOneOf(value.result, ['won', 'lost', 'draw']);
