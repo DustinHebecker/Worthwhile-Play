@@ -1,5 +1,6 @@
 import { isRecord, normalizeSeed } from '@wp/game-core';
 import { inBounds, passable } from './grid';
+import { isCommandable } from './network';
 import type { Archetype, Command, Entity, Order, Ruleset, Scenario, World } from './types';
 
 /** Build the initial world for a scenario. Throws on invalid authored content (programmer error). */
@@ -49,7 +50,7 @@ export const findEntity = (world: World, id: number): Entity | undefined => worl
 
 export type CommandCheck =
   | { ok: true }
-  | { ok: false; reason: 'unknown-unit' | 'not-yours' | 'immobile' | 'out-of-bounds' | 'impassable' | 'no-weapon' | 'bad-target' | 'bad-order' };
+  | { ok: false; reason: 'unknown-unit' | 'not-yours' | 'out-of-contact' | 'immobile' | 'out-of-bounds' | 'impassable' | 'no-weapon' | 'bad-target' | 'bad-order' };
 
 /** Rule check for a single command against the current world. Never throws. */
 export function validateCommand(world: World, ruleset: Ruleset, command: Command): CommandCheck {
@@ -59,6 +60,7 @@ export function validateCommand(world: World, ruleset: Ruleset, command: Command
   if (unit.side !== command.side) return { ok: false, reason: 'not-yours' };
   const arch = archetypeOf(ruleset, unit.kind);
   if (!arch) return { ok: false, reason: 'unknown-unit' };
+  if (!isCommandable(world, ruleset, unit)) return { ok: false, reason: 'out-of-contact' };
   const order = command.order;
   switch (order.type) {
     case 'hold':
@@ -70,6 +72,8 @@ export function validateCommand(world: World, ruleset: Ruleset, command: Command
       }
       if (!passable(world.map, ruleset, order.x, order.y, arch.layer)) return { ok: false, reason: 'impassable' };
       return { ok: true };
+    case 'deploy':
+      return arch.comms?.needsDeploy ? { ok: true } : { ok: false, reason: 'bad-order' };
     case 'attack': {
       if (!arch.weapon) return { ok: false, reason: 'no-weapon' };
       const target = findEntity(world, order.target);
@@ -88,6 +92,8 @@ export function normalizeOrder(order: Order): Order {
       return { type: 'move', x: order.x, y: order.y };
     case 'attack':
       return { type: 'attack', target: order.target };
+    case 'deploy':
+      return { type: 'deploy' };
     default:
       return { type: 'hold' };
   }

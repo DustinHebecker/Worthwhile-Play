@@ -15,6 +15,8 @@ export const isValidOrder = (v: unknown, w: number, h: number): v is Order => {
       return isInt(v.x, 0, w - 1) && isInt(v.y, 0, h - 1);
     case 'attack':
       return isInt(v.target, 1, MAX_ID);
+    case 'deploy':
+      return Object.keys(v).length === 1;
     default:
       return false;
   }
@@ -51,7 +53,8 @@ export function isValidWorld(value: unknown, ruleset?: Ruleset): value is World 
     isInt(e.cooldown, 0, 10_000) &&
     isValidOrder(e.order, w, h) &&
     isArrayOf(e.status, isStatus) &&
-    (e.beam === null || (isRecord(e.beam) && isInt(e.beam.target, 1, MAX_ID) && isInt(e.beam.stacks, 0, 1000)));
+    (e.beam === null || (isRecord(e.beam) && isInt(e.beam.target, 1, MAX_ID) && isInt(e.beam.stacks, 0, 1000))) &&
+    (e.deploy === undefined || isInt(e.deploy, 0, 1000));
   const isProjectile = (p: unknown): p is Projectile =>
     isRecord(p) &&
     isInt(p.id, 1, nextId - 1) &&

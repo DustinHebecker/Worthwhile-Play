@@ -1,4 +1,4 @@
-import type { Archetype, ArmorClass, Ruleset, StatusEffectSpec, TerrainSpec, WeaponSpec } from './types';
+import type { Archetype, ArmorClass, CommsSpec, Ruleset, StatusEffectSpec, TerrainSpec, WeaponSpec } from './types';
 
 /**
  * Shared base content (ADR 0009, decision D16): terrain and archetypes used by the strategy
@@ -35,7 +35,11 @@ const weapon = (spec: Partial<WeaponSpec> & Pick<WeaponSpec, 'damage' | 'range' 
   ...spec
 });
 
-const unit = (spec: Omit<Archetype, 'weapon'> & { weapon?: WeaponSpec }): Archetype => ({ ...spec, weapon: spec.weapon ?? null });
+const unit = (spec: Omit<Archetype, 'weapon' | 'comms'> & { weapon?: WeaponSpec; comms?: CommsSpec }): Archetype => ({
+  ...spec,
+  weapon: spec.weapon ?? null,
+  comms: spec.comms ?? null
+});
 
 export const BASE_ARCHETYPES: Readonly<Record<string, Archetype>> = Object.fromEntries(
   [
@@ -50,8 +54,16 @@ export const BASE_ARCHETYPES: Readonly<Record<string, Archetype>> = Object.fromE
     unit({ id: 'howitzer', hp: 50, armor: 'light', layer: 'ground', speed: 2, vision: 3, cost: 120,
       weapon: weapon({ damage: 25, range: 7, minRange: 3, cooldown: 3, delivery: 'ballistic', flight: 2, splash: 1,
         stationary: true, vs: vs(100, 100, 70, 120, 0) }) }),
-    unit({ id: 'kite', hp: 20, armor: 'air', layer: 'air', speed: 6, vision: 6, cost: 60 }),
-    unit({ id: 'command-post', hp: 400, armor: 'structure', layer: 'ground', speed: 0, vision: 5, cost: 0 }),
+    unit({ id: 'kite', hp: 20, armor: 'air', layer: 'air', speed: 6, vision: 6, cost: 60,
+      comms: { role: 'relay', radius: 3, orderSlots: 0, needsDeploy: false } }),
+    unit({ id: 'mast-truck', hp: 60, armor: 'light', layer: 'ground', speed: 4, vision: 4, cost: 70,
+      comms: { role: 'relay', radius: 5, orderSlots: 0, needsDeploy: true } }),
+    unit({ id: 'field-post', hp: 90, armor: 'light', layer: 'ground', speed: 3, vision: 4, cost: 160,
+      comms: { role: 'source', radius: 4, orderSlots: 2, needsDeploy: true } }),
+    unit({ id: 'command-post', hp: 400, armor: 'structure', layer: 'ground', speed: 0, vision: 5, cost: 0,
+      comms: { role: 'source', radius: 5, orderSlots: 4, needsDeploy: false } }),
+    unit({ id: 'relay-mast', hp: 100, armor: 'structure', layer: 'ground', speed: 0, vision: 4, cost: 60,
+      comms: { role: 'relay', radius: 6, orderSlots: 0, needsDeploy: false } }),
     unit({ id: 'tower-gun', hp: 150, armor: 'structure', layer: 'ground', speed: 0, vision: 5, cost: 60,
       weapon: weapon({ damage: 8, range: 3, vs: vs(100, 80, 40, 30, 60) }) }),
     unit({ id: 'tower-artillery', hp: 150, armor: 'structure', layer: 'ground', speed: 0, vision: 5, cost: 120,
@@ -65,9 +77,15 @@ export const BASE_ARCHETYPES: Readonly<Record<string, Archetype>> = Object.fromE
   ].map((a) => [a.id, a])
 );
 
+/** Shared base ruleset without command-network gating (Tower Defense and tests). */
 export const BASE_RULESET: Ruleset = {
   id: 'base-1',
   ticksPerTurn: 6,
   terrain: BASE_TERRAIN,
-  archetypes: BASE_ARCHETYPES
+  archetypes: BASE_ARCHETYPES,
+  commandNetwork: false,
+  relayHillBonus: 2
 };
+
+/** Turn-based strategy: orders travel through the command network (docs/design/strategy.md § 5). */
+export const STRATEGY_RULESET: Ruleset = { ...BASE_RULESET, id: 'strategy-1', commandNetwork: true };
