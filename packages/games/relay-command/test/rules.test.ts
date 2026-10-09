@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { BASE_RULESET, canonicalJson, computeNetwork, createWorld, validateCommand, worldHash, type Command, type World } from '@wp/strategy-engine';
+import { BASE_RULESET, canonicalJson, DEFAULT_DOCTRINE, computeNetwork, createWorld, validateCommand, worldHash, type Command, type World } from '@wp/strategy-engine';
 import { planAi } from '../src/ai';
 import {
   cancelOrder,
+  doctrineFor,
+  doctrineRefusal,
+  planDoctrine,
   migrateState,
   orderRefusal,
   orderSlots,
@@ -178,6 +181,39 @@ describe('command network (I3a)', () => {
     expect(migrateState(v1, 2)).toBeUndefined();
     expect(migrateState(null, 1)).toBeUndefined();
     expect(migrateState({ ...v1, world: { ...(v1.world as object), map: { w: 1, h: 1, terrain: '.' } } }, 1)).toBeUndefined();
+  });
+});
+
+describe('doctrines (I3b)', () => {
+  it('planDoctrine re-issues the current order with the new doctrine; a later order keeps it', () => {
+    let s = newGame(1);
+    const rifle = own(s).find((e) => e.kind === 'rifles')!;
+    const d = { ...DEFAULT_DOCTRINE, priority: 'armor' as const };
+    s = planDoctrine(s, rifle.id, d)!;
+    expect(s.draft).toEqual([{ side: PLAYER, unit: rifle.id, order: { type: 'hold' }, doctrine: d }]);
+    expect(doctrineFor(s, rifle.id)).toEqual(d);
+    s = planOrder(s, rifle.id, { type: 'move', x: rifle.x, y: rifle.y - 1 })!;
+    expect(s.draft[0]!.doctrine).toEqual(d);
+    expect(doctrineRefusal(s, rifle.id, { ...d, retreatBelow: 40 as never })).toBe('bad-order');
+    s = lockTurn(s);
+    expect(unitById(s, rifle.id)!.doctrine).toEqual(d);
+    expect(doctrineFor(s, rifle.id)).toEqual(d);
+  });
+
+  it('the opponent gives its fighters a retreat doctrine', () => {
+    const plan = planAi(newGame(1).world, RULESET, OPPONENT);
+    const attacks = plan.filter((c) => c.order.type === 'attack');
+    expect(attacks.length).toBeGreaterThan(0);
+    for (const c of attacks) expect(c.doctrine?.retreatBelow).toBe(25);
+  });
+
+  it('drafts with doctrines and the new orders survive validation as plain JSON', () => {
+    let s = newGame(1);
+    const rifle = own(s).find((e) => e.kind === 'rifles')!;
+    const post = commandPost(s.world, PLAYER)!;
+    s = planOrder(s, rifle.id, { type: 'escort', target: post.id }, { ...DEFAULT_DOCTRINE, holdFire: true })!;
+    expect(isValidState(JSON.parse(JSON.stringify(s)))).toBe(true);
+    expect(isValidState({ ...s, draft: [{ ...s.draft[0]!, doctrine: { retreatBelow: 10 } }] })).toBe(false);
   });
 });
 

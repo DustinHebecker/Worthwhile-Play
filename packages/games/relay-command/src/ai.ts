@@ -2,17 +2,22 @@ import {
   archetypeOf,
   cellOf,
   computeNetwork,
+  DEFAULT_DOCTRINE,
   dist2,
   frameIndex,
   inWeaponRange,
   passable,
   validateCommand,
   type Command,
+  type Doctrine,
   type Entity,
   type Network,
   type Ruleset,
   type World
 } from '@wp/strategy-engine';
+
+/** Standing doctrine the opponent gives its fighters. */
+const AI_DOCTRINE: Doctrine = { ...DEFAULT_DOCTRINE, retreatBelow: 25 };
 
 /** How far ahead of its Command Post the opponent may set up its relay truck (cells per axis). */
 const RELAY_FORWARD = 4;
@@ -56,7 +61,8 @@ export function planAi(world: World, ruleset: Ruleset, side: number): Command[] 
     if (!target) continue;
     if (inWeaponRange(world, ruleset, unit, arch, target) && unit.order.type === 'hold') continue;
     if (unit.order.type === 'attack' && unit.order.target === target.id) continue;
-    commands.push({ side, unit: unit.id, order: { type: 'attack', target: target.id } });
+    // Fighters pull back to regroup when badly damaged, also once out of contact.
+    commands.push({ side, unit: unit.id, order: { type: 'attack', target: target.id }, doctrine: AI_DOCTRINE });
   }
   // Spend order slots only on orders the engine will accept.
   const networks: Network[] = [];

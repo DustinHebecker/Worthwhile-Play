@@ -1,10 +1,24 @@
 import type { GameContext, GameInstance, GameResult, NewGameOptions } from '@wp/game-core';
 import { normalizeSeed } from '@wp/game-core';
-import { archetypeOf, cellOf, computeNetwork, nodeRadius, type Entity, type Network, type Order, type World } from '@wp/strategy-engine';
+import {
+  archetypeOf,
+  cellOf,
+  computeNetwork,
+  nodeRadius,
+  RETREAT_THRESHOLDS,
+  TARGET_PRIORITIES,
+  type Doctrine,
+  type Entity,
+  type Network,
+  type Order,
+  type World
+} from '@wp/strategy-engine';
 import { announce, clear, h } from '@wp/ui';
 import {
   cancelOrder,
   concede,
+  doctrineFor,
+  doctrineRefusal,
   draftFor,
   lockTurn,
   newGame,
@@ -12,6 +26,7 @@ import {
   orderRefusal,
   orderSlots,
   outcome,
+  planDoctrine,
   planOrder,
   PLAYER,
   RULESET,
@@ -81,6 +96,14 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       }
       case 'deploy':
         return t('order.deploy');
+      case 'escort': {
+        const charge = unitById(state, order.target);
+        return t('order.escort', { target: charge ? unitName(charge) : `#${order.target}` });
+      }
+      case 'patrol':
+        return t('order.patrol', { x: order.x + 1, y: order.y + 1, rx: order.rx + 1, ry: order.ry + 1 });
+      case 'regroup':
+        return t('order.regroup');
       default:
         return t('order.hold');
     }
@@ -137,8 +160,34 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   const selectionText = h('p', { 'data-testid': 'rc-selection-text' });
   const holdBtn = h('button', { type: 'button', 'data-testid': 'rc-hold', onclick: () => onHold() }, t('action.hold'));
   const deployBtn = h('button', { type: 'button', 'data-testid': 'rc-deploy', onclick: () => orderSelected({ type: 'deploy' }) }, t('action.deploy'));
+  const regroupBtn = h('button', { type: 'button', 'data-testid': 'rc-regroup', onclick: () => orderSelected({ type: 'regroup' }) }, t('action.regroup'));
   const cancelBtn = h('button', { type: 'button', 'data-testid': 'rc-cancel', onclick: () => onCancel() }, t('action.cancel'));
-  const selectionActions = h('div', { class: 'rc-actions' }, holdBtn, deployBtn, cancelBtn);
+
+  /** What the next map click means for the selected unit. */
+  type ClickMode = 'move' | 'patrol' | 'escort';
+  let mode: ClickMode = 'move';
+  const modeButtons = (['move', 'patrol', 'escort'] as const).map((m) =>
+    h('button', { type: 'button', 'data-testid': `rc-mode-${m}`, 'aria-pressed': 'false', onclick: () => setMode(m) }, t(`mode.${m}`))
+  );
+  const modeHint = h('p', { class: 'rc-hint', 'data-testid': 'rc-mode-hint' });
+  const modeGroup = h('div', { class: 'rc-actions', role: 'group', 'aria-label': t('mode.label') }, h('span', { class: 'rc-label' }, t('mode.label')), ...modeButtons);
+
+  const retreatSelect = h('select', { 'data-testid': 'rc-doctrine-retreat', onchange: () => onDoctrine() });
+  for (const n of RETREAT_THRESHOLDS) retreatSelect.append(h('option', { value: String(n) }, n === 0 ? t('doctrine.never') : t('doctrine.percent', { n })));
+  const prioritySelect = h('select', { 'data-testid': 'rc-doctrine-priority', onchange: () => onDoctrine() });
+  for (const p of TARGET_PRIORITIES) prioritySelect.append(h('option', { value: p }, t(`doctrine.priority.${p}`)));
+  const coverBox = h('input', { type: 'checkbox', 'data-testid': 'rc-doctrine-cover', onchange: () => onDoctrine() });
+  const holdFireBox = h('input', { type: 'checkbox', 'data-testid': 'rc-doctrine-holdfire', onchange: () => onDoctrine() });
+  const doctrineBox = h(
+    'fieldset',
+    { class: 'rc-doctrine', 'data-testid': 'rc-doctrine' },
+    h('legend', {}, t('doctrine.title')),
+    h('label', {}, h('span', {}, t('doctrine.retreat')), retreatSelect),
+    h('label', {}, h('span', {}, t('doctrine.priority')), prioritySelect),
+    h('label', { class: 'rc-check' }, coverBox, h('span', {}, t('doctrine.seekCover'))),
+    h('label', { class: 'rc-check' }, holdFireBox, h('span', {}, t('doctrine.holdFire')))
+  );
+  const selectionActions = h('div', { class: 'rc-orders' }, h('div', { class: 'rc-actions' }, holdBtn, regroupBtn, deployBtn, cancelBtn), modeGroup, modeHint, doctrineBox);
   const selectionPanel = h('section', { class: 'rc-panel', 'data-testid': 'rc-selection' }, selectionTitle, selectionText, noticeEl, selectionActions);
 
   const ownList = h('ul', { class: 'rc-units', 'data-testid': 'rc-own' });
@@ -149,7 +198,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     'details',
     { class: 'rc-help' },
     h('summary', {}, t('help.title')),
-    ...['help.turns', 'help.orders', 'help.network', 'help.combat', 'help.goal', 'help.shapes', 'help.access'].map((k) => h('p', {}, t(k)))
+    ...['help.turns', 'help.orders', 'help.network', 'help.doctrine', 'help.combat', 'help.goal', 'help.shapes', 'help.access'].map((k) => h('p', {}, t(k)))
   );
 
   const shell = h(
@@ -220,6 +269,16 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     }
     selectionActions.hidden = !canOrder;
     deployBtn.hidden = !unit || !needsDeploy(unit) || isSetUpOrPending(unit);
+    for (const b of modeButtons) b.setAttribute('aria-pressed', String(b.getAttribute('data-testid') === `rc-mode-${mode}`));
+    modeHint.textContent = mode === 'patrol' ? t('mode.hintPatrol') : mode === 'escort' ? t('mode.hintEscort') : '';
+    modeHint.hidden = mode === 'move';
+    if (unit && canOrder) {
+      const d = doctrineFor(state, unit.id);
+      retreatSelect.value = String(d.retreatBelow);
+      prioritySelect.value = d.priority;
+      coverBox.checked = d.seekCover;
+      holdFireBox.checked = d.holdFire;
+    }
     cancelBtn.disabled = !unit || !draftFor(state, unit.id);
   }
 
@@ -432,16 +491,30 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       const [ax, ay] = centre(e.x, e.y);
       let target: readonly [number, number] | undefined;
       if (order.type === 'move') target = centre(order.x, order.y);
-      if (order.type === 'attack') {
-        const enemy = unitById(state, order.target);
-        if (enemy) target = centre(enemy.x, enemy.y);
+      if (order.type === 'attack' || order.type === 'escort') {
+        const other = unitById(state, order.target);
+        if (other) target = centre(other.x, other.y);
       }
+      if (order.type === 'patrol') target = centre(order.x, order.y);
       if (!target) continue;
       g.save();
       g.globalAlpha = planned ? 1 : 0.4;
       g.strokeStyle = css('--wp-p1', '#24508f');
       g.lineWidth = planned ? 3 : 2;
-      g.setLineDash(order.type === 'move' ? [6, 5] : []);
+      // Move: dashed · attack: solid with a cross · escort: dotted · patrol: dashed with rings at both ends.
+      g.setLineDash(order.type === 'move' || order.type === 'patrol' ? [6, 5] : order.type === 'escort' ? [2, 4] : []);
+      if (order.type === 'patrol') {
+        const [rx, ry] = centre(order.rx, order.ry);
+        g.beginPath();
+        g.moveTo(rx, ry);
+        g.lineTo(ax, ay);
+        g.stroke();
+        for (const [px, py] of [target, [rx, ry] as const]) {
+          g.beginPath();
+          g.arc(px, py, 6, 0, Math.PI * 2);
+          g.stroke();
+        }
+      }
       g.beginPath();
       g.moveTo(ax, ay);
       g.lineTo(target[0], target[1]);
@@ -611,6 +684,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
 
   function select(id: number | null): void {
     selected = id;
+    mode = 'move';
     noticeEl.hidden = true;
     const unit = id === null ? undefined : unitById(state, id);
     if (unit) cursor = { x: unit.x, y: unit.y };
@@ -624,15 +698,48 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     const refusal = orderRefusal(state, selected, order);
     const next = refusal === null ? planOrder(state, selected, order) : undefined;
     if (!unit || !next) {
-      const specific = refusal === 'out-of-contact' || refusal === 'no-slots' || refusal === 'impassable';
-      const message = specific ? t(`refuse.${refusal}`, { slots: orderSlots(state) }) : t('announce.refused');
-      noticeEl.textContent = message;
-      noticeEl.hidden = false;
-      announce(live, message);
+      showRefusal(refusal);
       return;
     }
     noticeEl.hidden = true;
+    mode = 'move';
     commit(next, t('announce.planned', { name: unitName(unit), order: describeOrder(unit, order) }));
+  }
+
+  /** Shows why an order was refused, visibly and for screen readers. */
+  function showRefusal(refusal: string | null): void {
+    const specific = refusal === 'out-of-contact' || refusal === 'no-slots' || refusal === 'impassable';
+    const message = specific ? t(`refuse.${refusal}`, { slots: orderSlots(state) }) : t('announce.refused');
+    noticeEl.textContent = message;
+    noticeEl.hidden = false;
+    announce(live, message);
+  }
+
+  function setMode(next: ClickMode): void {
+    mode = next;
+    render();
+  }
+
+  /** Doctrine controls changed: plan the new doctrine (one order slot), or explain why not. */
+  function onDoctrine(): void {
+    if (selected === null) return;
+    const unit = unitById(state, selected);
+    if (!unit) return;
+    const doctrine: Doctrine = {
+      retreatBelow: Number(retreatSelect.value) as Doctrine['retreatBelow'],
+      priority: prioritySelect.value as Doctrine['priority'],
+      seekCover: coverBox.checked,
+      holdFire: holdFireBox.checked
+    };
+    const refusal = doctrineRefusal(state, unit.id, doctrine);
+    const next = refusal === null ? planDoctrine(state, unit.id, doctrine) : undefined;
+    if (!next) {
+      showRefusal(refusal);
+      render(); // restores the controls to the doctrine that still applies
+      return;
+    }
+    noticeEl.hidden = true;
+    commit(next, t('announce.doctrine', { name: unitName(unit) }));
   }
 
   function onHold(): void {
@@ -654,8 +761,16 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     const enemyHere = here.find((e) => e.side !== PLAYER);
     const current = selected === null ? undefined : unitById(state, selected);
     const canOrder = !!current && current.side === PLAYER && isMobile(current) && state.phase === 'plan';
+    if (canOrder && mode === 'escort' && ownHere && ownHere.id !== selected) {
+      orderSelected({ type: 'escort', target: ownHere.id });
+      return;
+    }
     if (ownHere && ownHere.id !== selected) {
       select(ownHere.id);
+      return;
+    }
+    if (canOrder && mode === 'patrol' && current && !ownHere && !enemyHere) {
+      orderSelected({ type: 'patrol', x, y, rx: current.x, ry: current.y });
       return;
     }
     if (canOrder && enemyHere) {

@@ -134,8 +134,50 @@ describe('Relay Command view', () => {
     click(`rc-unit-${rifle.id}`);
     expect($(`rc-unit-${rifle.id}`).textContent).toContain('out of contact');
     expect($('rc-selection-text').textContent).toContain('outside your command coverage');
-    expect(ctx.context.root.querySelector('.rc-actions[hidden]')).not.toBeNull();
+    expect(ctx.context.root.querySelector('.rc-orders[hidden]')).not.toBeNull();
     expect(ctx.context.root.querySelector('[data-testid^="rc-attack-"]')).toBeNull();
+  });
+
+  it('plans patrol, escort and regroup through the click modes and buttons', () => {
+    const map = $('rc-map');
+    map.getBoundingClientRect = () => ({ left: 0, top: 0, width: 12 * CELL, height: 12 * CELL, right: 12 * CELL, bottom: 12 * CELL, x: 0, y: 0, toJSON: () => ({}) });
+    const at = (x: number, y: number) => map.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: x * CELL + 5, clientY: y * CELL + 5 }));
+    const unit = firstMobile();
+    click(`rc-unit-${unit.id}`);
+    click('rc-mode-patrol');
+    expect($('rc-mode-patrol').getAttribute('aria-pressed')).toBe('true');
+    expect($('rc-mode-hint').textContent).toContain('far end of the patrol');
+    at(unit.x + 1, unit.y - 3);
+    expect(state().draft[0]!.order).toEqual({ type: 'patrol', x: unit.x + 1, y: unit.y - 3, rx: unit.x, ry: unit.y });
+    expect($('rc-mode-move').getAttribute('aria-pressed')).toBe('true');
+    const post = own().find((e) => e.kind === 'command-post')!;
+    click('rc-mode-escort');
+    at(post.x, post.y);
+    expect(state().draft[0]!.order).toEqual({ type: 'escort', target: post.id });
+    expect($(`rc-unit-${unit.id}`).textContent).toContain('escort Command Post');
+    click('rc-regroup');
+    expect(state().draft[0]!.order).toEqual({ type: 'regroup' });
+  });
+
+  it('changes the doctrine with the controls, keeping the planned order and spending one slot', () => {
+    const unit = firstMobile();
+    click(`rc-unit-${unit.id}`);
+    const retreat = $('rc-doctrine-retreat') as HTMLSelectElement;
+    retreat.value = '50';
+    retreat.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(state().draft).toEqual([{ side: PLAYER, unit: unit.id, order: { type: 'hold' }, doctrine: { retreatBelow: 50, priority: 'weakest', seekCover: false, holdFire: false } }]);
+    const cover = $('rc-doctrine-cover') as HTMLInputElement;
+    cover.checked = true;
+    cover.dispatchEvent(new Event('change', { bubbles: true }));
+    click('rc-hold');
+    expect(state().draft).toHaveLength(1);
+    expect(state().draft[0]!.doctrine).toEqual({ retreatBelow: 50, priority: 'weakest', seekCover: true, holdFire: false });
+    expect($('rc-slots').textContent).toBe('Orders this turn: 1 of 4.');
+    click('rc-lock');
+    expect(state().world.entities.find((e) => e.id === unit.id)!.doctrine).toEqual({ retreatBelow: 50, priority: 'weakest', seekCover: true, holdFire: false });
+    click(`rc-unit-${unit.id}`);
+    expect(($('rc-doctrine-retreat') as HTMLSelectElement).value).toBe('50');
+    expect(($('rc-doctrine-cover') as HTMLInputElement).checked).toBe(true);
   });
 
   it('maps pointer clicks on the canvas to cells', () => {

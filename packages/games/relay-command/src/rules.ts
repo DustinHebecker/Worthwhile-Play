@@ -3,12 +3,15 @@ import {
   archetypeOf,
   computeNetwork,
   createWorld,
+  DEFAULT_DOCTRINE,
+  isValidDoctrine,
   isValidOrder,
   isValidWorld,
   resolveTurn,
   STRATEGY_RULESET,
   validateCommand,
   type Command,
+  type Doctrine,
   type Entity,
   type Order,
   type Ruleset,
@@ -74,6 +77,12 @@ export function newGame(seed: number, spec: ScenarioSpec = FIELD_EXERCISE): RcSt
 export const unitById = (state: RcState, id: number): Entity | undefined => state.world.entities.find((e) => e.id === id);
 export const draftFor = (state: RcState, id: number): Order | undefined => state.draft.find((c) => c.unit === id)?.order;
 
+/** The doctrine a unit will follow after this turn's orders: the planned one, else its current one. */
+export function doctrineFor(state: RcState, id: number): Doctrine {
+  const planned = state.draft.find((c) => c.unit === id)?.doctrine;
+  return planned ?? unitById(state, id)?.doctrine ?? DEFAULT_DOCTRINE;
+}
+
 /** Orders the player may give this turn: the connected sources' order slots. */
 export const orderSlots = (state: RcState): number => computeNetwork(state.world, RULESET, PLAYER).slots;
 
@@ -91,23 +100,42 @@ export type OrderRefusal =
   | 'bad-order';
 
 /** Why an order cannot be planned, or `null` if it can (replacing a unit's planned order is free). */
-export function orderRefusal(state: RcState, unit: number, order: Order): OrderRefusal | null {
+export function orderRefusal(state: RcState, unit: number, order: Order, doctrine?: Doctrine): OrderRefusal | null {
   if (state.phase !== 'plan') return 'finished';
-  const check = validateCommand(state.world, RULESET, { side: PLAYER, unit, order });
+  const check = validateCommand(state.world, RULESET, doctrine ? { side: PLAYER, unit, order, doctrine } : { side: PLAYER, unit, order });
   if (!check.ok) return check.reason;
   const replaces = state.draft.some((c) => c.unit === unit);
   if (!replaces && state.draft.length >= orderSlots(state)) return 'no-slots';
   return null;
 }
 
-/** Adds or replaces the player's order for one unit. Returns `undefined` if the order is not allowed. */
-export function planOrder(state: RcState, unit: number, order: Order): RcState | undefined {
-  if (orderRefusal(state, unit, order) !== null) return undefined;
-  const command: Command = { side: PLAYER, unit, order };
+/**
+ * Adds or replaces the player's order for one unit. A doctrine planned earlier in the same turn
+ * is kept unless a new one is given. Returns `undefined` if the order is not allowed.
+ */
+export function planOrder(state: RcState, unit: number, order: Order, doctrine?: Doctrine): RcState | undefined {
+  const keep = doctrine ?? state.draft.find((c) => c.unit === unit)?.doctrine;
+  if (orderRefusal(state, unit, order, keep) !== null) return undefined;
+  const command: Command = keep ? { side: PLAYER, unit, order, doctrine: keep } : { side: PLAYER, unit, order };
   const draft = state.draft.filter((c) => c.unit !== unit);
   draft.push(command);
   draft.sort((a, b) => a.unit - b.unit);
   return { ...state, draft };
+}
+
+/**
+ * Plans a new doctrine for a unit. It travels with the unit's planned order, or with its current
+ * standing order (re-issued unchanged), and uses one order slot like any other order.
+ */
+export function planDoctrine(state: RcState, unit: number, doctrine: Doctrine): RcState | undefined {
+  const order = draftFor(state, unit) ?? unitById(state, unit)?.order;
+  return order ? planOrder(state, unit, order, doctrine) : undefined;
+}
+
+/** Why a doctrine change cannot be planned, or `null` if it can. */
+export function doctrineRefusal(state: RcState, unit: number, doctrine: Doctrine): OrderRefusal | null {
+  const order = draftFor(state, unit) ?? unitById(state, unit)?.order;
+  return order ? orderRefusal(state, unit, order, doctrine) : 'unknown-unit';
 }
 
 export function cancelOrder(state: RcState, unit: number): RcState {
@@ -175,7 +203,7 @@ export function replay(seed: number, log: readonly TurnLog[], spec: ScenarioSpec
 const commandGuard =
   (w: number, h: number) =>
   (v: unknown): v is Command =>
-    isRecord(v) && isInt(v.side, 0, 1) && isInt(v.unit, 1) && isValidOrder(v.order, w, h);
+    isRecord(v) && isInt(v.side, 0, 1) && isInt(v.unit, 1) && isValidOrder(v.order, w, h) && (v.doctrine === undefined || isValidDoctrine(v.doctrine));
 
 const isTurnLog = (isCommand: (v: unknown) => v is Command) => (v: unknown): v is TurnLog =>
   isRecord(v) && isInt(v.turn, 0) && Array.isArray(v.plans) && v.plans.length === 2 && v.plans.every((p) => isArrayOf(p, isCommand));
