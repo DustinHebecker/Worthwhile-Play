@@ -87,7 +87,8 @@ Within one tick, systems run in a **fixed order** (each a pure function over the
 
 - Square grid, 8-neighbour movement *(proposal, D2)*. Movement points (MP) are integers: each tick a unit gains `speed` MP; entering a cell costs the terrain cost (diagonal = ×1.5, kept integral by base costs of 4/6/8/12). Fractional speeds therefore need no floats, and TD gets smooth sub-cell progress for rendering.
 - One ground unit per cell; air (drones) on a separate layer, one per cell.
-- **Conflict rule** *(proposal, D15)*: if two or more units want the same free cell in the same tick, *none* enters (both "bump", event emitted). Two units may not swap cells. This rule is fully symmetric (no side or id priority), which matters for the mirror property test (§ 13).
+- **Conflict rule** (D15, refined in I2): if units of *different* sides want the same free cell in the same tick, *none* enters (all "bump", event emitted) — symmetric between sides, which matters for the mirror property test (§ 13). Among contenders of the *same* side the lowest id enters and the others wait. Two units may not swap cells. Paths avoid cells of units that are not moving this tick (structures, holding or arrived units).
+  *Why refined:* AI-vs-AI play in I2 showed that the original "everyone bumps" rule deadlocks friendly units heading the same way (two squads blocked each other for the rest of the game). Same-side priority by id keeps the rule deterministic and mirror-consistent (ids are preserved by the mirror).
 - A unit whose target cell becomes free later in the same tick does not chain-move (single pass, order-independent).
 
 ### 3.2 Combat
@@ -415,10 +416,12 @@ Each with options and my recommendation (**★**). Decisions marked **[blocks I1
 | # | Increment | Deliverable / gate |
 |---|---|---|
 | I1 ✅ | Engine core (TDD) | grid, terrain, A*/flow field, entities, tick loop, movement + conflicts, damage/targeting/projectiles, status, serialization, hash; properties P1–P5; mutation on combat |
-| I2 | Minimal playable map | `games/<id>`: canvas + DOM UI, plan→lock→resolve, Field Exercise, scripted dummy AI; contract + e2e; registry entry |
+| I2 ✅ | Minimal playable map | `games/<id>`: canvas + DOM UI, plan→lock→resolve, Field Exercise, scripted dummy AI; contract + e2e; registry entry |
 | I3 | Command network | sources/relays/coverage, commandability, order slots, doctrines, info model; P6/P7; mutation on network |
 | I4 | Electronic warfare | jammer, emitters, tracer/burn-through, EMP status |
 | I5 | AI | observation, strategic + tactical planner, difficulties; P8; AI-vs-AI suite |
 | I6 | Economy/research/maps + balancing | extractors, research tree, symmetric generator + validator (P9), medium map, balancing pass, hot-seat (if D10b) |
+
+I2 notes: the opponent is a scripted, deterministic AI (engage the nearest reachable enemy); the resolve is shown as the final state plus a text summary and markers for destroyed units (animated replay later); on phones the 12 × 12 map (44 px cells) scrolls inside its frame, pinch-zoom follows later. The end-of-game "control score" of § 9.3 is approximated by remaining strength (unit cost × health share, Command Post = 300) until extractors and coverage exist (I3/I6).
 
 Each increment: tests in the same change, `pnpm check`, `pnpm build && pnpm e2e`, pushed to `feature/strategy-engine`, PR against `main`, merge only with green CI.
