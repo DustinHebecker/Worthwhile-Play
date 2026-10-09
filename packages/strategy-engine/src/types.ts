@@ -156,8 +156,10 @@ export interface Entity {
   doctrine?: Doctrine;
   /** Tick at which the unit last took damage (for return-fire doctrine). */
   hitAt?: number;
-  /** Consecutive ticks the unit's move was blocked; at BUMP_LIMIT it gives the movement order up. */
+  /** Consecutive ticks the unit's move was blocked by other units (see DEADLOCK_TICKS). */
   bumps?: number;
+  /** Consecutive ticks without any way to its goal (see UNREACHABLE_TICKS). */
+  stuck?: number;
 }
 
 export interface Projectile {
@@ -202,7 +204,17 @@ export type SimEvent =
   | { t: 'launch'; tick: number; id: number; x: number; y: number }
   | { t: 'land'; tick: number; x: number; y: number }
   | { t: 'hit'; tick: number; id: number; side: number; damage: number }
-  | { t: 'destroyed'; tick: number; id: number; side: number; kind: string; x: number; y: number };
+  | { t: 'destroyed'; tick: number; id: number; side: number; kind: string; x: number; y: number }
+  /** A standing order changed without a command: why (never silently). */
+  | { t: 'order-ended'; tick: number; id: number; reason: OrderEndReason };
+
+/**
+ * Why the engine replaced a unit's standing order on its own:
+ * `arrived` (move done), `occupied` (destination held by a unit that will not leave),
+ * `unreachable` (no way there for a whole turn), `blocked` (blocked by moving units for three
+ * turns), `lost-target` (target or charge gone), `retreat` (doctrine), `regrouped` (back in coverage).
+ */
+export type OrderEndReason = 'arrived' | 'occupied' | 'unreachable' | 'blocked' | 'lost-target' | 'retreat' | 'regrouped';
 
 export interface Scenario {
   readonly map: GameMap;
