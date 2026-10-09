@@ -204,6 +204,12 @@ describe('sequence generator', { timeout: 60_000 }, () => {
     );
   });
 
+  it('places look-alikes for N = 1 even when many are asked for (former flaky counterexample)', () => {
+    const values = generateStream(createRng(3336975638), 21, 1, 5, 4);
+    expect(count(21, (i) => isMatchAt(values, i, 1))).toBe(MATCHES_PER_STREAM);
+    expect(count(21, (i) => isLureAt(values, i, 1))).toBe(4);
+  });
+
   it('reports the match mask of an item', () => {
     const block = generateBlock(5, 'n2');
     const n = 2;

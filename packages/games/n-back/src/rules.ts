@@ -110,7 +110,10 @@ function lureSources(values: readonly number[], i: number, n: number): number[] 
 function attemptStream(rng: Rng, length: number, n: number, valueCount: number, lures: number): number[] {
   const order = rng.shuffle(Array.from({ length: length - n }, (_, k) => k + n));
   const matches = new Set(order.slice(0, MATCHES_PER_STREAM));
-  const lureSet = new Set(order.slice(MATCHES_PER_STREAM, MATCHES_PER_STREAM + lures));
+  // With N = 1 the only look-alike source is the item two back; it needs to exist and must
+  // differ from the item one back, which a match there would copy.
+  const canLure = (i: number): boolean => n >= 2 || (i >= 2 && !matches.has(i - 1));
+  const lureSet = new Set(order.slice(MATCHES_PER_STREAM).filter(canLure).slice(0, lures));
   const values: number[] = [];
   for (let i = 0; i < length; i++) {
     if (matches.has(i)) {
