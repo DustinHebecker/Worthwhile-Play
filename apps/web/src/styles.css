@@ -63,3 +63,24 @@ fieldset { border: 1px solid var(--wp-border); border-radius: var(--wp-radius); 
 .finished { margin-block: 1rem; }
 .session-note { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
 .seed { font-size: 0.85rem; }
+/* Deck library (/decks, /decks/<id>, /decks/import) */
+.deck-card .badges { margin-block-start: auto; }
+.deck-facts { padding-inline-start: 1.2rem; }
+.deck-actions { margin-block: 1rem; }
+button.danger { border-color: var(--wp-danger); color: var(--wp-danger); }
+button.danger::before { content: '✕ '; }
+.deck-preview { max-width: 100%; overflow-x: auto; }
+.deck-preview table { width: 100%; border-collapse: collapse; }
+.deck-preview th, .deck-preview td { padding: 0.4rem 0.5rem; border-block-end: 1px solid var(--wp-border); text-align: start; vertical-align: middle; overflow-wrap: anywhere; }
+.deck-preview th { font-weight: 600; color: var(--wp-muted); }
+.deck-preview td:first-child, .deck-preview th:first-child { width: 2.5rem; }
+.deck-symbol { font-size: 1.6rem; line-height: 1; }
+.deck-image { max-width: 4rem; max-height: 3rem; object-fit: contain; vertical-align: middle; }
+.import-form textarea { width: 100%; max-width: 100%; box-sizing: border-box; font-family: ui-monospace, monospace; font-size: 0.9rem; }
+.import-form input[type='text'] { width: min(100%, 24rem); box-sizing: border-box; }
+.import-form input[type='file'] { max-width: 100%; }
+.import-example { overflow-x: auto; padding: 0.5rem; border-radius: 6px; background: var(--wp-surface-2); font-size: 0.85rem; }
+.import-errors { border-inline-start-color: var(--wp-danger); }
+.import-errors ul, .import-warnings ul { margin-block: 0.25rem; padding-inline-start: 1.2rem; }
+.import-errors strong::before { content: '⚠ '; }
+.import-result { margin-block: 1rem; display: grid; gap: 0.75rem; }

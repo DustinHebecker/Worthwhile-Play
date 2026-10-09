@@ -13,7 +13,6 @@ import { announce, clear, h } from '@wp/ui';
 import { APP_NAME } from './config';
 import { UI_MESSAGES, type UiKey } from './i18n/ui';
 import { renderAbout } from './pages/about';
-import { renderDeck, renderDeckImport, renderDecks } from './pages/decks';
 import { renderGamePage } from './pages/game';
 import { renderHome } from './pages/home';
 import { renderLegal } from './pages/legal';
@@ -149,14 +148,29 @@ export function startApp(root: HTMLElement): void {
     if (open && !open.contains(event.target as Node)) open.open = false;
   });
 
+  const lazyPage = (m: HTMLElement, a: AppContext, show: (pages: typeof import('./pages/decks')) => void) => {
+    const target = route;
+    import('./pages/decks')
+      .then((pages) => {
+        if (route !== target) return; // navigated away meanwhile
+        show(pages);
+        document.title = `${m.querySelector('h1')?.textContent ?? ''} · ${APP_NAME}`;
+      })
+      .catch((error: unknown) => {
+        console.error(error);
+        m.append(h('p', { role: 'alert' }, a.t('error.generic')));
+      });
+  };
+
   const pages: Record<Route['name'], Page> = {
     home: renderHome,
     game: (m, a) => renderGamePage(m, a, route as Extract<Route, { name: 'game' }>),
     about: renderAbout,
     settings: renderSettings,
-    decks: renderDecks,
-    deck: (m, a) => renderDeck(m, a, (route as Extract<Route, { name: 'deck' }>).id),
-    'deck-import': renderDeckImport,
+    // The deck library (import parser, built-in vocabulary) is a separate chunk, loaded on first use.
+    decks: (m, a) => lazyPage(m, a, (pages) => pages.renderDecks(m, a)),
+    deck: (m, a) => lazyPage(m, a, (pages) => pages.renderDeck(m, a, (route as Extract<Route, { name: 'deck' }>).id)),
+    'deck-import': (m, a) => lazyPage(m, a, (pages) => pages.renderDeckImport(m, a)),
     legal: renderLegal,
     'not-found': renderNotFound
   };

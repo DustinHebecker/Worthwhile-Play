@@ -106,3 +106,12 @@
 @media (prefers-reduced-motion: reduce) {
   .wp-memory--motion .wp-memory__face { animation: none; }
 }
+
+/* Card choice (deck / variant) and language line above the board. */
+.wp-memory__options { display: grid; gap: 0.25rem; justify-items: center; text-align: center; max-width: 100%; }
+.wp-memory__field { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.5rem; max-width: 100%; }
+.wp-memory__field select { min-height: var(--wp-touch); max-width: 100%; min-width: 0; }
+.wp-memory__languages, .wp-memory__hint { margin: 0; color: var(--wp-muted); font-size: 0.9rem; }
+.wp-memory__notice, .wp-memory__missing p { margin: 0; padding: 0.5rem 0.75rem; border-inline-start: 4px solid var(--wp-focus); background: var(--wp-surface-2); border-radius: 6px; }
+.wp-memory__missing { display: grid; gap: 0.5rem; justify-items: center; }
+.wp-memory__actions { flex-wrap: wrap; gap: 0.5rem; }

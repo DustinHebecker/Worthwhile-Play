@@ -1,4 +1,3 @@
-import { randomSeed } from '@wp/game-core';
 import {
   BUILTIN_DECK_IDS,
   isBuiltinDeckId,
@@ -14,8 +13,9 @@ import {
   type ImportResult
 } from '@wp/learning-content';
 import { readContentLanguages } from '@wp/localization';
-import { clear, h } from '@wp/ui';
+import { append, clear, h } from '@wp/ui';
 import type { AppContext, Page } from '../app';
+import { APP_NAME } from '../config';
 import type { UiKey } from '../i18n/ui';
 import { deckLanguages, importErrorText, importWarningText, loadUserDecks, newDeckId, type StoredDeck } from '../lib/decks';
 import { createPreferences } from '../lib/preferences';
@@ -206,7 +206,7 @@ export function renderDeck(main: HTMLElement, app: AppContext, id: string): void
       deck.source ? h('li', {}, t('decks.source', { source: deck.source })) : null,
       stored ? h('li', {}, t('decks.imported', { date: formatDate(app, stored.importedAt) })) : null
     );
-    section.append(
+    append(section,
       h('h1', { dir: 'auto' }, deckTitle(app, deck)),
       about ? h('p', { class: 'lead' }, about) : null,
       facts,
@@ -215,7 +215,7 @@ export function renderDeck(main: HTMLElement, app: AppContext, id: string): void
       h('h2', {}, t('decks.preview')),
       previewTable(app, deck, PREVIEW_ROWS)
     );
-    document.title = `${deckTitle(app, deck)} · Worthwhile Play`;
+    document.title = `${deckTitle(app, deck)} · ${APP_NAME}`;
   };
 
   const builtin = builtinDecks(app).find((d) => d.id === id);
@@ -320,7 +320,7 @@ export const renderDeckImport: Page = (main, app) => {
 
   const check = () => {
     const text = textArea.value;
-    const format = text.replace(/^﻿/, '').trimStart().startsWith('{') ? 'json' : 'csv';
+    const format = text.replace(/^\uFEFF/, '').trimStart().startsWith('{') ? 'json' : 'csv';
     const name = title(format);
     showResult(importDeck(text, { id: newDeckId(name || 'deck'), ...(name ? { title: name } : {}) }));
   };
