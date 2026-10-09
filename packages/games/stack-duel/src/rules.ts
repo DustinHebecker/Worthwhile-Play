@@ -51,9 +51,9 @@ export interface SoloGoal {
 }
 
 export const SOLO_GOALS: Readonly<Record<Difficulty, SoloGoal>> = {
-  easy: { height: 4, pieces: 12 },
-  medium: { height: 5, pieces: 12 },
-  hard: { height: 6, pieces: 12 }
+  easy: { height: 4.5, pieces: 12 },
+  medium: { height: 5.5, pieces: 12 },
+  hard: { height: 6.5, pieces: 12 }
 };
 
 /** A settled piece: kind index, centre-of-mass position and angle (radians, CCW). */
@@ -215,16 +215,19 @@ export function maxDisplacement(before: readonly Placed[], after: readonly Place
   return worst;
 }
 
-/** A settled snapshot is accepted once a cold restart from it moves nothing more than this. */
-export const VERIFY_TOLERANCE = 0.002;
+/** A settled snapshot is accepted once a cold restart from it moves nothing more than this … */
+export const VERIFY_TOLERANCE = 0.01;
+/** … within this many steps (or until everything sleeps again). */
+export const VERIFY_STEPS = 60;
 
 /**
  * Runs a world with the given kinds until it is settled, a piece falls (plus tail) or the cap is hit.
  *
  * "Settled" means: every body fell asleep, and a cold restart from that snapshot (all bodies
- * awake, zero velocity, no warm-start impulses — exactly what the next drop will meet) falls
- * asleep again with no body moving more than VERIFY_TOLERANCE. Otherwise the simulation goes on
- * from the restarted world. This keeps saved towers stable when the game is resumed.
+ * awake, zero velocity, re-primed contacts — what the next drop will meet) moves no body by more
+ * than VERIFY_TOLERANCE within VERIFY_STEPS. The snapshot taken before the restart is stored.
+ * If the restart moves things more, the simulation simply goes on from the restarted world.
+ * This keeps saved towers stable when the game is resumed and the next piece touches them.
  */
 export function runWorld(initial: World, kinds: readonly number[], options: SimOptions = {}): DropOutcome {
   const maxSteps = options.maxSteps ?? MAX_STEPS;
@@ -242,8 +245,10 @@ export function runWorld(initial: World, kinds: readonly number[], options: SimO
   record();
   let steps = 0;
   let fellAt = -1;
-  let settled = false;
+  let accepted: Placed[] | undefined;
   let verifyFrom: Placed[] | undefined;
+  let verifyStart = 0;
+  let verifyFrames = 0;
   while (steps < maxSteps) {
     world.step();
     steps++;
@@ -255,36 +260,39 @@ export function runWorld(initial: World, kinds: readonly number[], options: SimO
           break;
         }
       }
-      if (fellAt >= 0 && options.stopOnFall) {
-        settled = true;
-        break;
-      }
+      if (fellAt >= 0 && options.stopOnFall) break;
     }
     if (fellAt >= 0) {
-      if (steps - fellAt >= TAIL_STEPS) {
-        settled = true;
-        break;
-      }
+      if (steps - fellAt >= TAIL_STEPS) break;
       continue;
     }
-    if (world.allAsleep()) {
-      const snap = snapshot(world, kinds);
-      if (verifyFrom && (globalThis as any).__dbg) console.log("verify", steps, maxDisplacement(verifyFrom, snap).toFixed(4));
-      if (verifyFrom && maxDisplacement(verifyFrom, snap) <= VERIFY_TOLERANCE) {
-        settled = true;
+    if (verifyFrom) {
+      if (!world.allAsleep() && steps - verifyStart < VERIFY_STEPS) continue;
+      if (maxDisplacement(verifyFrom, snapshot(world, kinds)) <= VERIFY_TOLERANCE) {
+        accepted = verifyFrom;
+        if (frames) frames.length = verifyFrames;
         break;
       }
-      verifyFrom = snap;
-      world = buildWorld(snap, true);
+      verifyFrom = undefined;
+    }
+    if (world.allAsleep()) {
+      verifyFrom = snapshot(world, kinds);
+      verifyStart = steps;
+      verifyFrames = frames ? frames.length : 0;
+      world = buildWorld(verifyFrom, true);
     }
   }
-  if (frames && steps % RECORD_EVERY !== 0) record();
-  const bodies = snapshot(world, kinds);
+  const bodies = accepted ?? snapshot(world, kinds);
+  if (frames) {
+    const f: number[] = [];
+    for (const b of bodies) f.push(b.x, b.y, b.a);
+    frames.push(f);
+  }
   const fallen: number[] = [];
   bodies.forEach((b, i) => {
     if (hasFallen(b)) fallen.push(i);
   });
-  const outcome: DropOutcome = { bodies, fallen, steps, settled };
+  const outcome: DropOutcome = { bodies, fallen, steps, settled: accepted !== undefined || fellAt >= 0 };
   if (frames) outcome.frames = frames;
   return outcome;
 }

@@ -196,7 +196,7 @@ export function createWordGuess(context: GameContext): GameInstance<WordGuessSta
       onclick: () => {
         if (!paused) submit();
       }
-    }, t('key.enter'));
+    }, h('span', { class: 'wg-enter-text', 'aria-hidden': 'true' }, t('key.enter')), h('span', { class: 'wg-enter-icon', 'aria-hidden': 'true' }, '↵'));
 
   const backKey = () =>
     h('button', {

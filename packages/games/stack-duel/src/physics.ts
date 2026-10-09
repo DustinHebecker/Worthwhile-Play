@@ -30,11 +30,11 @@ export const MARGIN = 0.02;
 /** Allowed penetration that is not corrected (keeps resting contacts warm). */
 export const SLOP = 0.005;
 const BAUMGARTE = 0.2;
-const VELOCITY_ITERATIONS = 12;
+const VELOCITY_ITERATIONS = 20;
 const POSITION_ITERATIONS = 6;
 const FRICTION = 0.6;
-const LINEAR_DAMPING = 0.05;
-const ANGULAR_DAMPING = 0.3;
+const LINEAR_DAMPING = 0.1;
+const ANGULAR_DAMPING = 1;
 export const SLEEP_LINEAR = 0.03;
 export const SLEEP_ANGULAR = 0.05;
 export const TIME_TO_SLEEP = 0.5;
@@ -390,7 +390,8 @@ export class World {
             // Warm start from the closest previous point with the same feature.
             let bestD = 0.05 * 0.05;
             for (const q of prev.points) {
-              if (q.key !== r.key) continue;
+              // Same part pair and (nearly) the same normal; the reference side may flip between steps.
+              if ((q.key & 0xffff) !== (r.key & 0xffff) || q.nx * r.nx + q.ny * r.ny < 0.95) continue;
               const dx = q.rax - rax;
               const dy = q.ray - ray;
               const d = dx * dx + dy * dy;

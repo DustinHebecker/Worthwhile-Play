@@ -27,7 +27,7 @@
 .wp-word-guess .wg-grid {
   display: grid; gap: 6px; justify-content: center; padding: 4px; border-radius: var(--wp-radius);
 }
-.wp-word-guess .wg-row { display: grid; grid-template-columns: repeat(var(--wg-len, 5), minmax(0, 3.25rem)); gap: 6px; }
+.wp-word-guess .wg-row { display: grid; grid-template-columns: repeat(var(--wg-len, 5), minmax(0, min(3.25rem, 7svh))); gap: 6px; }
 .wp-word-guess .wg-tile {
   position: relative; aspect-ratio: 1; min-width: 0; display: flex; align-items: center; justify-content: center;
   border: 2px solid var(--wp-border); border-radius: 8px; background: var(--wp-surface);
@@ -36,15 +36,6 @@
 .wp-word-guess .wg-row.is-current .wg-tile { border-style: dashed; }
 .wp-word-guess .wg-tile.wg-typed { border: 2px solid var(--wp-text); border-style: solid; }
 .wp-word-guess .wg-symbol { position: absolute; inset-block-start: 2px; inset-inline-end: 4px; font-size: 0.7rem; line-height: 1; }
-
-/* Feedback: colour + symbol + pattern (near is striped), never colour alone. */
-.wp-word-guess .wg-hit { background: var(--wg-hit-bg); color: var(--wg-hit-fg); border-color: var(--wg-hit-bg); }
-.wp-word-guess .wg-near {
-  background: var(--wg-near-bg) repeating-linear-gradient(135deg, transparent 0 6px, rgb(255 255 255 / 0.16) 6px 9px);
-  color: var(--wg-near-fg); border-color: var(--wg-near-bg);
-}
-.wp-word-guess .wg-miss { background: var(--wg-miss-bg); color: var(--wg-miss-fg); border-color: var(--wg-miss-bg); }
-.wp-word-guess .wg-tile.wg-miss .wg-letter { text-decoration: line-through; text-decoration-thickness: 2px; }
 
 .wp-word-guess .wg-message { text-align: center; padding: 0.5rem 0.75rem; border-inline-start: 4px solid var(--wp-focus); background: var(--wp-surface-2); border-radius: 6px; }
 .wp-word-guess .wg-answer { text-align: center; font-size: 1.15rem; font-weight: 700; }
@@ -61,11 +52,22 @@
 .wp-word-guess .wg-key.primary { background: var(--wp-accent); color: var(--wp-accent-contrast); border-color: var(--wp-accent); }
 .wp-word-guess .wg-key .wg-symbol { font-size: 0.6rem; inset-block-start: 1px; inset-inline-end: 2px; }
 .wp-word-guess .wg-key.wg-miss .wg-letter { text-decoration: line-through; }
-.wp-word-guess .wg-back-icon { font-size: 1.3rem; }
+.wp-word-guess .wg-back-icon, .wp-word-guess .wg-enter-icon { font-size: 1.3rem; }
+.wp-word-guess .wg-enter-icon { display: none; }
 /* Large layout: alphabetical grid of full 44 px keys that fits a 360 px phone. */
 .wp-word-guess .wg-layout-large { grid-template-columns: repeat(6, minmax(var(--wp-touch), 3.5rem)); justify-content: center; gap: 5px; }
 .wp-word-guess .wg-layout-large .wg-key { max-width: none; min-width: var(--wp-touch); }
 .wp-word-guess .wg-layout-large .wg-wide { grid-column: span 2; font-size: 0.9rem; }
+
+/* Feedback (tiles, keys, legend): colour + symbol + pattern (near is striped), never colour alone.
+   Defined after the key rules so it wins over their neutral background. */
+.wp-word-guess .wg-hit { background: var(--wg-hit-bg); color: var(--wg-hit-fg); border-color: var(--wg-hit-bg); }
+.wp-word-guess .wg-near {
+  background: var(--wg-near-bg) repeating-linear-gradient(135deg, transparent 0 6px, rgb(255 255 255 / 0.16) 6px 9px);
+  color: var(--wg-near-fg); border-color: var(--wg-near-bg);
+}
+.wp-word-guess .wg-miss { background: var(--wg-miss-bg); color: var(--wg-miss-fg); border-color: var(--wg-miss-bg); }
+.wp-word-guess .wg-tile.wg-miss .wg-letter { text-decoration: line-through; text-decoration-thickness: 2px; }
 
 .wp-word-guess .wg-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.35rem 1rem; font-size: 0.9rem; color: var(--wp-muted); }
 .wp-word-guess .wg-legend li { display: inline-flex; align-items: center; gap: 0.4rem; }
@@ -83,4 +85,7 @@
   .wp-word-guess .wg-krow { gap: 3px; }
   .wp-word-guess .wg-tile { font-size: 1.35rem; }
   .wp-word-guess .wg-options { padding: 0.5rem; }
+  /* Long translations of "Enter" do not fit a phone-width key: show the return symbol instead. */
+  .wp-word-guess .wg-krow .wg-enter-text { display: none; }
+  .wp-word-guess .wg-krow .wg-enter-icon { display: inline; }
 }

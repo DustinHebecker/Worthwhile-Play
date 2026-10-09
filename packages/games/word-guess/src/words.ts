@@ -35,7 +35,7 @@ const LISTS: Readonly<Record<WordLanguage, Readonly<Record<WordLength, readonly 
 };
 
 export function isWordLanguage(value: unknown): value is WordLanguage {
-  return typeof value === 'string' && (WORD_LANGUAGES as readonly string[]).includes(value);
+  return (WORD_LANGUAGES as readonly unknown[]).includes(value);
 }
 
 /** The answer list for a language and word length. */
