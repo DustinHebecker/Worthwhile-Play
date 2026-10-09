@@ -1,5 +1,5 @@
 import fc from 'fast-check';
-import { BASE_RULESET, createWorld, type Command, type GameMap, type Order, type Projectile, type Scenario, type World } from '../src';
+import { BASE_RULESET, createWorld, type Command, type Doctrine, type GameMap, type Order, type Projectile, type Scenario, type World } from '../src';
 
 /** Map from rows of terrain characters. */
 export const mapOf = (...rows: string[]): GameMap => ({ w: rows[0]?.length ?? 0, h: rows.length, terrain: rows.join('') });
@@ -14,7 +14,12 @@ export function mirrorWorld(w: World): World {
   const mx = (x: number) => w.map.w - 1 - x;
   const my = (y: number) => w.map.h - 1 - y;
   const ms = (s: number) => (s === 0 ? 1 : s === 1 ? 0 : s);
-  const mirrorOrder = (o: Order): Order => (o.type === 'move' ? { type: 'move', x: mx(o.x), y: my(o.y) } : o);
+  const mirrorOrder = (o: Order): Order =>
+    o.type === 'move'
+      ? { type: 'move', x: mx(o.x), y: my(o.y) }
+      : o.type === 'patrol'
+        ? { type: 'patrol', x: mx(o.x), y: my(o.y), rx: mx(o.rx), ry: my(o.ry) }
+        : o;
   return {
     ...structuredClone(w),
     map: { ...w.map, terrain: [...w.map.terrain].reverse().join('') },
@@ -24,11 +29,18 @@ export function mirrorWorld(w: World): World {
 }
 
 export const mirrorCommands = (w: World, commands: readonly Command[]): Command[] =>
-  commands.map((c) => ({
-    side: c.side === 0 ? 1 : 0,
-    unit: c.unit,
-    order: c.order.type === 'move' ? { type: 'move', x: w.map.w - 1 - c.order.x, y: w.map.h - 1 - c.order.y } : c.order
-  }));
+  commands.map((c) => {
+    const mx = (x: number) => w.map.w - 1 - x;
+    const my = (y: number) => w.map.h - 1 - y;
+    const o = c.order;
+    const order: Order =
+      o.type === 'move'
+        ? { type: 'move', x: mx(o.x), y: my(o.y) }
+        : o.type === 'patrol'
+          ? { type: 'patrol', x: mx(o.x), y: my(o.y), rx: mx(o.rx), ry: my(o.ry) }
+          : o;
+    return { ...c, side: c.side === 0 ? 1 : 0, order };
+  });
 
 const KINDS = ['rifles', 'lancer', 'outrider', 'warden', 'howitzer', 'kite', 'tower-gun', 'tower-artillery', 'tower-laser', 'tower-emp', 'command-post', 'mast-truck', 'field-post', 'relay-mast'];
 const TERRAIN = ['.', '.', '.', '=', 'f', 'h', 'u', 's', '~', '^'];
@@ -45,7 +57,16 @@ export const arbScenario = fc
       fc.record({
         turn: fc.nat(3),
         unit: fc.integer({ min: 1, max: 14 }),
-        type: fc.constantFrom('hold', 'move', 'attack', 'deploy'),
+        type: fc.constantFrom('hold', 'move', 'attack', 'deploy', 'escort', 'patrol', 'regroup'),
+        doctrine: fc.option(
+          fc.record({
+            retreatBelow: fc.constantFrom(0, 25, 50, 75),
+            priority: fc.constantFrom('weakest', 'nearest', 'armor', 'infantry', 'structures'),
+            seekCover: fc.boolean(),
+            holdFire: fc.boolean()
+          }),
+          { nil: undefined }
+        ),
         x: fc.nat(9),
         y: fc.nat(9),
         target: fc.integer({ min: 1, max: 14 })
@@ -80,8 +101,14 @@ export const arbScenario = fc
             ? { type: 'attack', target: o.target }
             : o.type === 'deploy'
               ? { type: 'deploy' }
-              : { type: 'hold' };
-      plans[o.turn]?.push({ side, unit: o.unit, order });
+              : o.type === 'escort'
+                ? { type: 'escort', target: o.target }
+                : o.type === 'patrol'
+                  ? { type: 'patrol', x: o.x % w, y: o.y % h, rx: o.y % w, ry: o.x % h }
+                  : o.type === 'regroup'
+                    ? { type: 'regroup' }
+                    : { type: 'hold' };
+      plans[o.turn]?.push(o.doctrine ? { side, unit: o.unit, order, doctrine: o.doctrine as Doctrine } : { side, unit: o.unit, order });
     }
     return { world, plans };
   });

@@ -1,8 +1,8 @@
-import { cellOf, dist2, maxStepCost, stepCost, terrainAt } from './grid';
+import { cellOf, dirsFor, dist2, frameIndex, maxStepCost, passable, stepCost, terrainAt } from './grid';
 import { findPath } from './path';
-import type { Archetype, Command, Entity, Ruleset, SimEvent, Status, WeaponSpec, World } from './types';
-import { computeNetwork } from './network';
-import { archetypeOf, findEntity, normalizeOrder, validateCommand } from './world';
+import { DEFAULT_DOCTRINE, type Archetype, type Command, type Doctrine, type Entity, type Ruleset, type SimEvent, type Status, type TargetPriority, type WeaponSpec, type World } from './types';
+import { computeNetwork, type Network } from './network';
+import { archetypeOf, findEntity, normalizeDoctrine, normalizeOrder, validateCommand } from './world';
 
 export interface SimResult {
   world: World;
@@ -77,14 +77,25 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     }
     const unit = findEntity(w, c.unit) as Entity;
     unit.order = normalizeOrder(c.order);
+    if (c.doctrine) unit.doctrine = normalizeDoctrine(c.doctrine);
     // Orders that make the unit travel pack a set-up node up; hold keeps it standing.
     if (unit.order.type === 'move' || unit.order.type === 'attack') delete unit.deploy;
     events.push({ t: 'order', tick: t, id: unit.id });
   }
 
-  // 2 + 3. Intent and simultaneous movement
+  // 2 + 3. Intent (standing order + doctrine) and simultaneous movement
   const cells = w.map.w * w.map.h;
   const occupied = { ground: new Set<number>(), air: new Set<number>() };
+  for (const e of w.entities) occupied[arch(e).layer].add(cellOf(w.map, e.x, e.y));
+  // Networks are only needed for regrouping units; computed lazily, once per side and tick.
+  const networkCache = new Map<number, Network>();
+  const coverageOf = (side: number): Uint8Array | undefined => {
+    if (!rs.commandNetwork) return undefined;
+    let n = networkCache.get(side);
+    if (!n) networkCache.set(side, (n = computeNetwork(w, rs, side)));
+    return n.coverage;
+  };
+  const intent: Intent = { w, rs, occupied, coverageOf };
   // Cells of units that will not move this tick (structures, holding or arrived units):
   // paths go around them instead of queueing behind them forever.
   const settled = { ground: new Set<number>(), air: new Set<number>() };
@@ -92,8 +103,7 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
   for (const e of w.entities) {
     const a = arch(e);
     const c = cellOf(w.map, e.x, e.y);
-    occupied[a.layer].add(c);
-    const goal = a.speed === 0 || has(e, 'disabled') ? undefined : goalOf(w, rs, e, a);
+    const goal = a.speed === 0 || has(e, 'disabled') ? undefined : goalOf(intent, e, a);
     if (goal === undefined) settled[a.layer].add(c);
     else goals.set(e.id, goal);
   }
@@ -164,7 +174,7 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     const a = arch(e);
     const weapon = a.weapon;
     if (!weapon || e.cooldown > 0 || has(e, 'disabled') || (weapon.stationary && moved.has(e.id))) continue;
-    const target = pickTarget(w, rs, e, a);
+    const target = pickTarget(w, rs, e, a, t);
     if (!target) {
       e.beam = null;
       continue;
@@ -193,6 +203,7 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     if (!list) continue;
     const damage = list.reduce((sum, h) => sum + h.damage, 0);
     e.hp -= damage;
+    if (damage > 0) e.hitAt = t;
     events.push({ t: 'hit', tick: t, id: e.id, side: e.side, damage });
     const effects = list.flatMap((h) => (h.effect ? [{ kind: h.effect.kind, ticks: h.effect.ticks }] : []));
     if (effects.length > 0) pendingEffects.set(e.id, effects);
@@ -235,27 +246,136 @@ function contestWinner<T extends { e: Entity }>(list: readonly T[]): T | undefin
   return list.reduce((best, c) => (c.e.id < best.e.id ? c : best), first);
 }
 
-/** Movement goal cell for the unit's standing order, or `undefined` to stay. */
-function goalOf(w: World, rs: Ruleset, e: Entity, a: Archetype): number | undefined {
+interface Intent {
+  readonly w: World;
+  readonly rs: Ruleset;
+  readonly occupied: { ground: Set<number>; air: Set<number> };
+  /** The side's command coverage, or `undefined` when the ruleset has no command network. */
+  readonly coverageOf: (side: number) => Uint8Array | undefined;
+}
+
+const doctrineOf = (e: Entity): Doctrine => e.doctrine ?? DEFAULT_DOCTRINE;
+
+/**
+ * Movement goal for the unit's standing order and doctrine, or `undefined` to stay. May update
+ * the standing order (retreat → regroup, regroup → hold on arrival, patrol legs, lost escorts).
+ */
+function goalOf(ctx: Intent, e: Entity, a: Archetype): number | undefined {
+  const { w, rs } = ctx;
+  const doctrine = doctrineOf(e);
+  const coverage = ctx.coverageOf(e.side);
+  const covered = (x: number, y: number) => coverage?.[cellOf(w.map, x, y)] === 1;
+  // Doctrine: retreat below a health threshold (only meaningful with a network to return to).
+  if (coverage && doctrine.retreatBelow > 0 && e.hp * 100 < a.hp * doctrine.retreatBelow) {
+    const settled = e.order.type === 'regroup' || (e.order.type === 'hold' && covered(e.x, e.y));
+    if (!settled) e.order = { type: 'regroup' };
+  }
   const order = e.order;
-  if (order.type === 'move') return order.x === e.x && order.y === e.y ? undefined : cellOf(w.map, order.x, order.y);
-  if (order.type === 'attack') {
-    const target = findEntity(w, order.target);
-    if (!target || inWeaponRange(w, rs, e, a, target)) return undefined;
-    // Too close for a weapon with a minimum range: stay rather than walk into the target.
-    const minRange = a.weapon?.minRange ?? 0;
-    if (dist2(e.x, e.y, target.x, target.y) < minRange * minRange) return undefined;
-    return cellOf(w.map, target.x, target.y);
+  let goal: number | undefined;
+  switch (order.type) {
+    case 'move':
+      goal = order.x === e.x && order.y === e.y ? undefined : cellOf(w.map, order.x, order.y);
+      break;
+    case 'attack': {
+      const target = findEntity(w, order.target);
+      if (!target || inWeaponRange(w, rs, e, a, target)) break;
+      // Too close for a weapon with a minimum range: stay rather than walk into the target.
+      const minRange = a.weapon?.minRange ?? 0;
+      if (dist2(e.x, e.y, target.x, target.y) < minRange * minRange) break;
+      goal = cellOf(w.map, target.x, target.y);
+      break;
+    }
+    case 'escort': {
+      const target = findEntity(w, order.target);
+      if (!target || target.side !== e.side) {
+        e.order = { type: 'hold' };
+        break;
+      }
+      if (dist2(e.x, e.y, target.x, target.y) > ESCORT_RANGE * ESCORT_RANGE) goal = cellOf(w.map, target.x, target.y);
+      break;
+    }
+    case 'patrol':
+      if (order.x === e.x && order.y === e.y) e.order = { type: 'patrol', x: order.rx, y: order.ry, rx: order.x, ry: order.y };
+      if (e.order.type === 'patrol' && (e.order.x !== e.x || e.order.y !== e.y)) goal = cellOf(w.map, e.order.x, e.order.y);
+      break;
+    case 'regroup':
+      if (!coverage || covered(e.x, e.y)) {
+        e.order = { type: 'hold' };
+        break;
+      }
+      goal = nearestCovered(ctx, e, a, coverage);
+      if (goal === undefined) e.order = { type: 'hold' };
+      break;
+    default:
+      break;
+  }
+  if (goal === undefined && doctrine.seekCover && (e.order.type === 'hold' || e.order.type === 'move')) goal = adjacentCover(ctx, e, a);
+  return goal;
+}
+
+/** Escort / guard keeps within this many cells of its charge. */
+const ESCORT_RANGE = 2;
+
+/** Nearest passable covered cell (squared distance; ties in the side's frame). */
+function nearestCovered(ctx: Intent, e: Entity, a: Archetype, coverage: Uint8Array): number | undefined {
+  const { w, rs } = ctx;
+  const cells = w.map.w * w.map.h;
+  let best: number | undefined;
+  let bestD = Infinity;
+  let bestF = Infinity;
+  for (let c = 0; c < cells; c++) {
+    if (coverage[c] !== 1) continue;
+    const x = c % w.map.w;
+    const y = Math.floor(c / w.map.w);
+    if (!passable(w.map, rs, x, y, a.layer)) continue;
+    const d = dist2(e.x, e.y, x, y);
+    const f = frameIndex(c, e.side, cells);
+    if (d < bestD || (d === bestD && f < bestF)) {
+      best = c;
+      bestD = d;
+      bestF = f;
+    }
+  }
+  return best;
+}
+
+/** A free neighbouring cell with cover, if the unit is not already in cover (side-frame order). */
+function adjacentCover(ctx: Intent, e: Entity, a: Archetype): number | undefined {
+  const { w, rs, occupied } = ctx;
+  if (a.layer !== 'ground' || terrainAt(w.map, rs, e.x, e.y).cover > 0) return undefined;
+  for (const [dx, dy] of dirsFor(e.side)) {
+    const x = e.x + dx;
+    const y = e.y + dy;
+    if (!passable(w.map, rs, x, y, a.layer) || terrainAt(w.map, rs, x, y).cover === 0) continue;
+    const c = cellOf(w.map, x, y);
+    if (!occupied.ground.has(c)) return c;
   }
   return undefined;
 }
 
-/** Ordered target first; otherwise lowest HP, then nearest, then lowest id among enemies in range. */
-function pickTarget(w: World, rs: Ruleset, e: Entity, a: Archetype): Entity | undefined {
+/** Whether a target matches a doctrine's priority class. */
+function matchesPriority(rs: Ruleset, target: Entity, priority: TargetPriority): boolean {
+  const armor = archetypeOf(rs, target.kind)?.armor;
+  if (priority === 'armor') return armor === 'heavy' || armor === 'light';
+  if (priority === 'infantry') return armor === 'infantry';
+  if (priority === 'structures') return armor === 'structure';
+  return false;
+}
+
+/**
+ * Target selection: an ordered target in range first. Otherwise, by doctrine priority: preferred
+ * class first, then lowest health and nearest ('nearest': distance before health), then lowest
+ * id. With return-fire doctrine the unit only shoots at an ordered target or after being hit
+ * within the last turn.
+ */
+function pickTarget(w: World, rs: Ruleset, e: Entity, a: Archetype, tick: number): Entity | undefined {
+  const doctrine = doctrineOf(e);
   if (e.order.type === 'attack') {
     const ordered = findEntity(w, e.order.target);
     if (ordered && inWeaponRange(w, rs, e, a, ordered)) return ordered;
   }
+  if (doctrine.holdFire && (e.hitAt === undefined || tick - e.hitAt > rs.ticksPerTurn)) return undefined;
+  const classed = doctrine.priority !== 'weakest' && doctrine.priority !== 'nearest';
   let best: Entity | undefined;
   for (const target of w.entities) {
     if (target.side === e.side || !inWeaponRange(w, rs, e, a, target)) continue;
@@ -263,8 +383,11 @@ function pickTarget(w: World, rs: Ruleset, e: Entity, a: Archetype): Entity | un
       best = target;
       continue;
     }
-    const d = target.hp - best.hp || dist2(e.x, e.y, target.x, target.y) - dist2(e.x, e.y, best.x, best.y) || target.id - best.id;
-    if (d < 0) best = target;
+    const cls = classed ? Number(matchesPriority(rs, best, doctrine.priority)) - Number(matchesPriority(rs, target, doctrine.priority)) : 0;
+    const hp = target.hp - best.hp;
+    const d = dist2(e.x, e.y, target.x, target.y) - dist2(e.x, e.y, best.x, best.y);
+    const cmp = cls || (doctrine.priority === 'nearest' ? d || hp : hp || d) || target.id - best.id;
+    if (cmp < 0) best = target;
   }
   return best;
 }

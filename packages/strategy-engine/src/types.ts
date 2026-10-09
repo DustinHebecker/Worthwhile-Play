@@ -100,7 +100,35 @@ export type Order =
   | { readonly type: 'move'; readonly x: number; readonly y: number }
   | { readonly type: 'attack'; readonly target: number }
   /** Stay in place and set up as a network node (completes after one turn of ticks). */
-  | { readonly type: 'deploy' };
+  | { readonly type: 'deploy' }
+  /** Stay within two cells of a friendly unit or structure and fight what comes near (escort / guard). */
+  | { readonly type: 'escort'; readonly target: number }
+  /** Walk to (x, y), then back to (rx, ry), and so on. */
+  | { readonly type: 'patrol'; readonly x: number; readonly y: number; readonly rx: number; readonly ry: number }
+  /** Return to the nearest cell inside the own command coverage, then hold. */
+  | { readonly type: 'regroup' };
+
+export const TARGET_PRIORITIES = ['weakest', 'nearest', 'armor', 'infantry', 'structures'] as const;
+export type TargetPriority = (typeof TARGET_PRIORITIES)[number];
+export const RETREAT_THRESHOLDS = [0, 25, 50, 75] as const;
+export type RetreatThreshold = (typeof RETREAT_THRESHOLDS)[number];
+
+/**
+ * Standing modifiers a unit follows on its own, also when out of contact (D6,
+ * docs/design/strategy.md § 7).
+ */
+export interface Doctrine {
+  /** Switch to `regroup` when health drops below this percentage (0 = never). */
+  readonly retreatBelow: RetreatThreshold;
+  /** Which enemy in range to shoot first. */
+  readonly priority: TargetPriority;
+  /** When not travelling, step onto an adjacent cover cell (forest, buildings). */
+  readonly seekCover: boolean;
+  /** Return fire only: shoot only after being hit within the last turn, or at an ordered target. */
+  readonly holdFire: boolean;
+}
+
+export const DEFAULT_DOCTRINE: Doctrine = { retreatBelow: 0, priority: 'weakest', seekCover: false, holdFire: false };
 
 export interface Status {
   kind: StatusKind;
@@ -124,6 +152,10 @@ export interface Entity {
   beam: { target: number; stacks: number } | null;
   /** Ticks spent deploying (nodes with `needsDeploy`); absent = 0. Active once it reaches ticksPerTurn. */
   deploy?: number;
+  /** Standing modifiers; absent = DEFAULT_DOCTRINE. */
+  doctrine?: Doctrine;
+  /** Tick at which the unit last took damage (for return-fire doctrine). */
+  hitAt?: number;
 }
 
 export interface Projectile {
@@ -156,6 +188,8 @@ export interface Command {
   readonly side: number;
   readonly unit: number;
   readonly order: Order;
+  /** Replaces the unit's doctrine together with the order (same order slot). */
+  readonly doctrine?: Doctrine;
 }
 
 export type SimEvent =

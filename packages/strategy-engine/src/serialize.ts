@@ -1,5 +1,5 @@
 import { isArrayOf, isInt, isOneOf, isRecord, isUint32, seedFromString } from '@wp/game-core';
-import { archetypeOf } from './world';
+import { archetypeOf, isValidDoctrine } from './world';
 import { STATUS_KINDS, type Entity, type Order, type Projectile, type Ruleset, type Status, type World } from './types';
 
 const MAX_DIM = 128;
@@ -16,7 +16,12 @@ export const isValidOrder = (v: unknown, w: number, h: number): v is Order => {
     case 'attack':
       return isInt(v.target, 1, MAX_ID);
     case 'deploy':
+    case 'regroup':
       return Object.keys(v).length === 1;
+    case 'escort':
+      return isInt(v.target, 1, MAX_ID);
+    case 'patrol':
+      return isInt(v.x, 0, w - 1) && isInt(v.y, 0, h - 1) && isInt(v.rx, 0, w - 1) && isInt(v.ry, 0, h - 1);
     default:
       return false;
   }
@@ -65,7 +70,9 @@ export function isValidWorld(value: unknown, ruleset?: Ruleset): value is World 
     isValidOrder(e.order, w, h) &&
     isArrayOf(e.status, isStatus) &&
     (e.beam === null || (isRecord(e.beam) && isInt(e.beam.target, 1, MAX_ID) && isInt(e.beam.stacks, 0, 1000))) &&
-    (e.deploy === undefined || validDeploy(e, ruleset));
+    (e.deploy === undefined || validDeploy(e, ruleset)) &&
+    (e.doctrine === undefined || isValidDoctrine(e.doctrine)) &&
+    (e.hitAt === undefined || isInt(e.hitAt, 0));
   const isProjectile = (p: unknown): p is Projectile =>
     isRecord(p) &&
     isInt(p.id, 1, nextId - 1) &&
