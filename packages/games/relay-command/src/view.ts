@@ -103,9 +103,21 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   let cachedJam: { state: RcState; jam: Uint8Array } | undefined;
   const jammed = (x: number, y: number): boolean => {
     if (cachedJam?.state !== state) {
+      // Expected reach: the discs of the nodes that really are connected now. A silenced post
+      // then shows no marks at all (the status line explains it) instead of the jammer's disc.
       const jam = jammedCells(state.world, RULESET, PLAYER);
-      const quiet = { ...state.world, entities: state.world.entities.filter((e) => e.side === PLAYER || archetypeOf(RULESET, e.kind)?.ew?.role !== 'jammer') };
-      const expected = computeNetwork(quiet, RULESET, PLAYER).coverage;
+      const { w: mw, h: mh } = state.world.map;
+      const expected = new Uint8Array(mw * mh);
+      for (const id of network().nodes) {
+        const node = unitById(state, id);
+        const r = node ? nodeRadius(state.world, RULESET, node) : 0;
+        if (!node) continue;
+        for (let y = Math.max(0, node.y - r); y <= Math.min(mh - 1, node.y + r); y++) {
+          for (let x = Math.max(0, node.x - r); x <= Math.min(mw - 1, node.x + r); x++) {
+            if ((x - node.x) ** 2 + (y - node.y) ** 2 <= r * r) expected[y * mw + x] = 1;
+          }
+        }
+      }
       cachedJam = { state, jam: jam.map((j, c) => (j === 1 && expected[c] === 1 ? 1 : 0)) };
     }
     return cachedJam.jam[cellOf(state.world.map, x, y)] === 1;
@@ -300,7 +312,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     // A jammed Command Post: no orders at all, and the player should know why.
     if (state.phase === 'plan' && orderSlots(state) === 0) {
       const post = commandPostOf(state.world, PLAYER);
-      if (post && jammed(post.x, post.y)) return t('status.postJammed');
+      // The post knows its own radio is jammed (this reveals nothing beyond its own cell).
+      if (post && jammedCells(state.world, RULESET, PLAYER)[cellOf(state.world.map, post.x, post.y)] === 1) return t('status.postJammed');
     }
     if (state.phase === 'plan') return t('status.plan', { n: state.draft.length });
     if (state.conceded) return t('status.conceded');

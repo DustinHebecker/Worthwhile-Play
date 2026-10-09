@@ -296,6 +296,14 @@ describe('Relay Command view', () => {
     // The own Tracer starts next to the post and would burn through; take it away.
     enemyJammerNear(post.x, post.y, true);
     expect($('rc-status').textContent).toBe('Your Command Post is jammed: no orders can be sent this turn. Destroy the jammer, or bring a Tracer next to the post.');
+    // The silenced post shows no jam marks: they would pin down the (unlocated) jammer.
+    const jammer = state().world.entities.find((e) => e.side === OPPONENT && e.kind === 'jammer')!;
+    $('rc-map').focus();
+    for (let i = 0; i < 12; i++) key('ArrowUp');
+    for (let i = 0; i < 12; i++) key('ArrowLeft');
+    for (let i = 0; i < jammer.x; i++) key('ArrowRight');
+    for (let i = 0; i < jammer.y; i++) key('ArrowDown');
+    expect($('rc-cursor').textContent).not.toContain('jammed');
   });
 
   it('does not mark jammed cells outside the own coverage (that would reveal a hidden jammer)', () => {
