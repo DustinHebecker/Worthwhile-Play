@@ -136,6 +136,9 @@ describe('match and look-alike detection', () => {
     // n = 3, i = 3: no item N+1 back, only N-1 counts.
     expect(isLureAt([0, 9, 9, 9], 3, 3)).toBe(true);
     expect(isLureAt([9, 0, 1, 9], 3, 3)).toBe(false);
+    // n = 2: N-1 is the previous item.
+    expect(isLureAt([0, 7, 7], 2, 2)).toBe(true);
+    expect(isLureAt([7, 0, 7], 2, 2)).toBe(false);
     // n = 1: "N-1 back" is the item itself and never counts.
     expect(isLureAt([3, 4, 5], 2, 1)).toBe(false);
     expect(isLureAt([5, 4, 5], 2, 1)).toBe(true);

@@ -57,7 +57,7 @@ Cross-cutting, continuous: accessibility review, native-speaker review of transl
 | Memory | Spatial Memory → shown as **Pattern Memory** | M5 | ✅ | adaptive pattern size, standard and rotated variants |
 | Memory | Prospective Memory | M5 | ⏳ | |
 | Memory | Association / Mnemonic exercises | M5 | ⏳ | |
-| Memory | N-back (optional) | M5 | ⏳ | |
+| Memory | N-back | M5 | ✅ | N = 1–3; position, shape or dual stream; self-paced by default (calm 3 s pace opt-in); seeded blocks with controlled match rate and look-alikes; neutral summary with d′ |
 | Attention | Signal Watch | M5 | ✅ | 2/4/6-minute sessions, seeded stream, calm factual summary; pauses safely |
 | Attention | Deep Read | M5 | ⏳ | |
 | Attention | Distractor Control → shown as **Stay on Task** | M5 | ✅ | self-paced sorting task with mild, explained distractors; no timers, neutral summary |
