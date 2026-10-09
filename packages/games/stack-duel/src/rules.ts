@@ -222,15 +222,15 @@ export function maxDisplacement(before: readonly Placed[], after: readonly Place
 
 /** A settled snapshot is accepted once a cold restart from it moves nothing more than this … */
 export const VERIFY_TOLERANCE = 0.01;
-/** … within this many steps (or until everything sleeps again). */
+/** … and everything is asleep again within this many steps. */
 export const VERIFY_STEPS = 60;
 
 /**
  * Runs a world with the given kinds until it is settled, a piece falls (plus tail) or the cap is hit.
  *
  * "Settled" means: every body fell asleep, and a cold restart from that snapshot (all bodies
- * awake, zero velocity, re-primed contacts — what the next drop will meet) moves no body by more
- * than VERIFY_TOLERANCE within VERIFY_STEPS. The snapshot taken before the restart is stored.
+ * awake, zero velocity, re-primed contacts — what the next drop will meet) falls asleep again
+ * within VERIFY_STEPS having moved no body by more than VERIFY_TOLERANCE. The snapshot taken before the restart is stored.
  * If the restart moves things more, the simulation simply goes on from the restarted world.
  * This keeps saved towers stable when the game is resumed and the next piece touches them.
  */
@@ -273,7 +273,9 @@ export function runWorld(initial: World, kinds: readonly number[], options: SimO
     }
     if (verifyFrom) {
       if (!world.allAsleep() && steps - verifyStart < VERIFY_STEPS) continue;
-      if (maxDisplacement(verifyFrom, snapshot(world, kinds)) <= VERIFY_TOLERANCE) {
+      // Only a restart that has come to rest again counts: a tower still creeping slowly after
+      // VERIFY_STEPS may have moved little so far but keeps going when the next stone wakes it.
+      if (world.allAsleep() && maxDisplacement(verifyFrom, snapshot(world, kinds)) <= VERIFY_TOLERANCE) {
         accepted = verifyFrom;
         if (frames) frames.length = verifyFrames;
         break;

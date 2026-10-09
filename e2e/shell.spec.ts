@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { readSave } from '../packages/testing/src/e2e';
 
 test.describe('app shell', () => {
   test('home lists games and explains the product', async ({ page }) => {
@@ -19,6 +20,8 @@ test.describe('app shell', () => {
     await page.goto('/games/memory');
     await page.getByTestId('new-game').click();
     await expect(page.getByTestId('game-root')).toBeVisible();
+    // Leave only once the new game is stored (the write is asynchronous).
+    await expect.poll(() => readSave(page, 'memory')).toBeTruthy();
     await page.goto('/');
     await expect(page.getByTestId('saved-memory')).toBeVisible();
     await expect(page.getByTestId('saved-tic-tac-toe')).toBeHidden();

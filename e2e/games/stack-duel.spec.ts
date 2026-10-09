@@ -72,3 +72,18 @@ test('fits a 360px-wide phone without horizontal scrolling', async ({ page }) =>
     expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
   }
 });
+
+test('with a mouse the wheel turns the stone and a click on the board drops it', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'mouse input');
+  await startNewGame(page);
+  const board = page.getByTestId('board');
+  await board.scrollIntoViewIfNeeded();
+  const box = (await board.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 3);
+  await page.mouse.wheel(0, 100);
+  // Wheel down turns clockwise: two notches of 15°.
+  await expect(board).toHaveAttribute('aria-label', /330°/);
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 3);
+  // The person's stone and the computer's reply.
+  await expect(page.locator('[data-testid^="piece-"]')).toHaveCount(2, { timeout: 15_000 });
+});
