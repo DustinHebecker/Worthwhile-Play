@@ -18,6 +18,13 @@ import {
   playTurn,
   quickEvaluate,
   suggestMove,
+  DECISIVE_LEAD,
+  MAX_LINE_MOVES,
+  PUZZLE_LEVEL,
+  evaluatePosition,
+  extendBestLine,
+  uniqueBestMove,
+  verifyBestMovePuzzle,
   type Level
 } from '../src/ai';
 import { START_FEN, createGame, isValidState, legalMoves, makeMove, moveFrom, moveToUci, parseFen, parseSquare, replay, startPosition, toFen, type ChessState } from '../src/rules';
@@ -338,5 +345,51 @@ describe('explanations and hints', { timeout: 60_000 }, () => {
     const state = createGame({ seed: 1, difficulty: 'beginner', opponent: 'human', humanColor: 'w', start: '6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1' });
     expect(moveToUci(suggestMove(state)!)).toBe('a1a8');
     expect(suggestMove({ ...state, start: '7k/5Q2/6K1/8/8/8/8/8 b - - 0 1' })).toBeNull();
+  });
+});
+
+describe('engine evaluation and best-move lines', { timeout: 60_000 }, () => {
+  it('evaluates any position from White’s view and reports forced mates for either side', () => {
+    const whiteMates = evaluatePosition(parseFen('6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1')!)!;
+    expect(moveToUci(whiteMates.move)).toBe('a1a8');
+    expect(whiteMates.mate).toBe(1);
+    expect(whiteMates.white).toBeGreaterThan(29_000);
+    const blackMates = evaluatePosition(parseFen('r5k1/8/8/8/8/8/5PPP/6K1 b - - 0 1')!)!;
+    expect(moveToUci(blackMates.move)).toBe('a8a1');
+    expect(blackMates.mate).toBe(-1);
+    expect(blackMates.white).toBeLessThan(-29_000);
+    // Black's extra queen: clearly better for Black, no mate in sight.
+    const queenUp = evaluatePosition(parseFen('4k3/8/8/8/8/8/1q6/4K3 w - - 0 1')!)!;
+    expect(queenUp.mate).toBe(0);
+    expect(queenUp.white).toBeLessThan(-600);
+    // Same position with Black to move: the same sign (White's view), not the mover's.
+    expect(evaluatePosition(parseFen('4k3/8/8/8/8/8/1q6/4K3 b - - 0 1')!)!.white).toBeLessThan(-600);
+    expect(evaluatePosition(parseFen('6k1/5ppp/8/8/8/8/5PPP/r5K1 w - - 0 1')!)).toBeNull();
+  });
+
+  it('extends a best move into a line while each next move is uniquely best, and stops once the lead is decisive', () => {
+    const level = { ...PUZZLE_LEVEL, nodes: 20_000 };
+    // Knight fork against a lone queen: the fork, then the capture (after which nothing is clearly best: K+N v K).
+    const fork = parseFen('q3k3/8/8/1N6/8/8/8/4K3 w - - 0 1')!;
+    const first = uniqueBestMove(fork, level);
+    expect(moveToUci(first)).toBe('b5c7');
+    const line = extendBestLine(fork, first, level);
+    expect(line[0]).toBe('b5c7');
+    expect(line[2]).toBe('c7a8');
+    expect(line).toHaveLength(3);
+    expect(toFen(fork)).toBe('q3k3/8/8/1N6/8/8/8/4K3 w - - 0 1'); // input unchanged
+    // With White's pawns the fork already wins decisively: the line stops after the fork.
+    const decisive = parseFen('q3k3/8/8/1N6/8/8/6PP/4K3 w - - 0 1')!;
+    expect(extendBestLine(decisive, uniqueBestMove(decisive, level), level)).toEqual(['b5c7']);
+    // A first move must not be a quick mate (that is the other puzzle type); later moves may mate.
+    expect(uniqueBestMove(parseFen('6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1')!, level)).toBe(0);
+    expect(moveToUci(uniqueBestMove(parseFen('6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1')!, level, false))).toBe('a1a8');
+    // Too few legal moves for a first move.
+    expect(uniqueBestMove(parseFen('7k/8/8/8/8/8/6q1/7K w - - 0 1')!, level)).toBe(0);
+    expect(MAX_LINE_MOVES).toBe(3);
+    expect(DECISIVE_LEAD).toBe(500);
+    // verifyBestMovePuzzle combines both (and rejects nonsense).
+    expect(verifyBestMovePuzzle('q3k3/8/8/1N6/8/8/8/4K3 w - - 0 1', level)).toEqual({ fen: 'q3k3/8/8/1N6/8/8/8/4K3 w - - 0 1', line });
+    expect(verifyBestMovePuzzle('bad', level)).toBeNull();
   });
 });
