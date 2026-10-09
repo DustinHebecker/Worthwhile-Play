@@ -156,6 +156,8 @@ export interface Entity {
   doctrine?: Doctrine;
   /** Tick at which the unit last took damage (for return-fire doctrine). */
   hitAt?: number;
+  /** Consecutive ticks the unit's move was blocked; at BUMP_LIMIT it gives the movement order up. */
+  bumps?: number;
 }
 
 export interface Projectile {

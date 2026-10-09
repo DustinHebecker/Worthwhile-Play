@@ -1,4 +1,5 @@
 import { isArrayOf, isInt, isOneOf, isRecord, isUint32, seedFromString } from '@wp/game-core';
+import { BUMP_LIMIT } from './sim';
 import { archetypeOf, isValidDoctrine } from './world';
 import { STATUS_KINDS, type Entity, type Order, type Projectile, type Ruleset, type Status, type World } from './types';
 
@@ -55,6 +56,7 @@ export function isValidWorld(value: unknown, ruleset?: Ruleset): value is World 
   if (map.terrain.length !== w * h) return false;
   if (ruleset && [...map.terrain].some((ch) => !Object.hasOwn(ruleset.terrain, ch))) return false;
   const sides = value.sides;
+  const tick = value.tick;
   const nextId = value.nextId;
   const inMap = (x: unknown, y: unknown): boolean => isInt(x, 0, w - 1) && isInt(y, 0, h - 1);
   const isEntity = (e: unknown): e is Entity =>
@@ -72,7 +74,8 @@ export function isValidWorld(value: unknown, ruleset?: Ruleset): value is World 
     (e.beam === null || (isRecord(e.beam) && isInt(e.beam.target, 1, MAX_ID) && isInt(e.beam.stacks, 0, 1000))) &&
     (e.deploy === undefined || validDeploy(e, ruleset)) &&
     (e.doctrine === undefined || isValidDoctrine(e.doctrine)) &&
-    (e.hitAt === undefined || isInt(e.hitAt, 0));
+    (e.hitAt === undefined || isInt(e.hitAt, 0, tick)) &&
+    (e.bumps === undefined || isInt(e.bumps, 0, BUMP_LIMIT));
   const isProjectile = (p: unknown): p is Projectile =>
     isRecord(p) &&
     isInt(p.id, 1, nextId - 1) &&

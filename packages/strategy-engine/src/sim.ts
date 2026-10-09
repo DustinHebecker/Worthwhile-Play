@@ -1,4 +1,5 @@
 import { cellOf, dirsFor, dist2, frameIndex, maxStepCost, passable, stepCost, terrainAt } from './grid';
+import { TupleHeap } from './heap';
 import { findPath } from './path';
 import { DEFAULT_DOCTRINE, type Archetype, type Command, type Doctrine, type Entity, type Ruleset, type SimEvent, type Status, type TargetPriority, type WeaponSpec, type World } from './types';
 import { computeNetwork, type Network } from './network';
@@ -78,8 +79,7 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     const unit = findEntity(w, c.unit) as Entity;
     unit.order = normalizeOrder(c.order);
     if (c.doctrine) unit.doctrine = normalizeDoctrine(c.doctrine);
-    // Orders that make the unit travel pack a set-up node up; hold keeps it standing.
-    if (unit.order.type === 'move' || unit.order.type === 'attack') delete unit.deploy;
+    delete unit.bumps;
     events.push({ t: 'order', tick: t, id: unit.id });
   }
 
@@ -90,6 +90,7 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
   // Networks are only needed for regrouping units; computed lazily, once per side and tick.
   const networkCache = new Map<number, Network>();
   const coverageOf = (side: number): Uint8Array | undefined => {
+    // Only regrouping units ask, so most ticks compute no network at all.
     if (!rs.commandNetwork) return undefined;
     let n = networkCache.get(side);
     if (!n) networkCache.set(side, (n = computeNetwork(w, rs, side)));
@@ -119,7 +120,9 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     const path = findPath(w.map, rs, cellOf(w.map, e.x, e.y), goal, { layer: a.layer, side: e.side, blocked: settled[a.layer] });
     const next = path?.[0];
     if (next === undefined) {
+      // Unreachable from here: give the movement order up instead of waiting forever.
       e.mp = 0;
+      giveUp(e);
       continue;
     }
     const speed = has(e, 'slowed') ? Math.max(1, a.speed >> 1) : a.speed;
@@ -132,6 +135,9 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     claims.set(key, list);
   }
   const moved = new Set<number>();
+  // Units that did not even try to move this tick start a fresh bump count.
+  const claimed = new Set([...claims.values()].flat().map((c) => c.e.id));
+  for (const e of w.entities) if (!claimed.has(e.id)) delete e.bumps;
   for (const [key, list] of claims) {
     const air = key >= cells;
     const cell = air ? key - cells : key;
@@ -140,8 +146,11 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
       const e = claim.e;
       if (claim !== winner) {
         events.push({ t: 'bump', tick: t, id: e.id });
+        e.bumps = (e.bumps ?? 0) + 1;
+        if (e.bumps >= BUMP_LIMIT) giveUp(e);
         continue;
       }
+      delete e.bumps;
       e.x = cell % w.map.w;
       e.y = Math.floor(cell / w.map.w);
       e.mp -= claim.cost;
@@ -203,7 +212,14 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     if (!list) continue;
     const damage = list.reduce((sum, h) => sum + h.damage, 0);
     e.hp -= damage;
-    if (damage > 0) e.hitAt = t;
+    if (damage > 0) {
+      e.hitAt = t;
+      // Retreat doctrine: a hit that leaves the unit below its threshold sends it back to regroup.
+      // (Checked on hits only, so fresh orders to an already damaged unit are obeyed.)
+      const a = arch(e);
+      const below = doctrineOf(e).retreatBelow;
+      if (below > 0 && a.speed > 0 && e.hp > 0 && e.hp * 100 < a.hp * below) e.order = { type: 'regroup' };
+    }
     events.push({ t: 'hit', tick: t, id: e.id, side: e.side, damage });
     const effects = list.flatMap((h) => (h.effect ? [{ kind: h.effect.kind, ticks: h.effect.ticks }] : []));
     if (effects.length > 0) pendingEffects.set(e.id, effects);
@@ -212,6 +228,8 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
   // 7. Status effects and cooldowns: existing effects count down, new ones start next tick.
   for (const e of w.entities) {
     if (e.order.type === 'deploy' && !has(e, 'disabled')) e.deploy = Math.min(rs.ticksPerTurn, (e.deploy ?? 0) + 1);
+    // A set-up node stays set up only while deploying or holding; any other order packs it up.
+    if (e.deploy !== undefined && e.order.type !== 'deploy' && e.order.type !== 'hold') delete e.deploy;
     if (e.cooldown > 0) e.cooldown -= 1;
     e.status = e.status.map((s) => ({ kind: s.kind, ticks: s.ticks - 1 })).filter((s) => s.ticks > 0);
     for (const effect of pendingEffects.get(e.id) ?? []) {
@@ -256,25 +274,37 @@ interface Intent {
 
 const doctrineOf = (e: Entity): Doctrine => e.doctrine ?? DEFAULT_DOCTRINE;
 
+/** Consecutive blocked ticks after which a unit gives its movement order up (one turn). */
+export const BUMP_LIMIT = 6;
+
+/** Ends a movement order that cannot be completed: the unit holds where it is. */
+function giveUp(e: Entity): void {
+  if (e.order.type !== 'hold' && e.order.type !== 'deploy') e.order = { type: 'hold' };
+  delete e.bumps;
+}
+
+/** Whether another unit of the same layer occupies the cell (x, y). */
+const blockedByOther = (ctx: Intent, e: Entity, a: Archetype, x: number, y: number): boolean =>
+  (x !== e.x || y !== e.y) && ctx.occupied[a.layer].has(cellOf(ctx.w.map, x, y));
+
+const adjacent = (e: Entity, x: number, y: number): boolean => Math.max(Math.abs(e.x - x), Math.abs(e.y - y)) <= 1;
+
 /**
- * Movement goal for the unit's standing order and doctrine, or `undefined` to stay. May update
- * the standing order (retreat → regroup, regroup → hold on arrival, patrol legs, lost escorts).
+ * Movement goal for the unit's standing order and doctrine, or `undefined` to stay. Settles
+ * orders that are done or cannot be done (arrived, occupied destination next to the unit,
+ * lost charge, regroup without a free covered cell) so that no unit waits forever.
  */
 function goalOf(ctx: Intent, e: Entity, a: Archetype): number | undefined {
   const { w, rs } = ctx;
-  const doctrine = doctrineOf(e);
-  const coverage = ctx.coverageOf(e.side);
-  const covered = (x: number, y: number) => coverage?.[cellOf(w.map, x, y)] === 1;
-  // Doctrine: retreat below a health threshold (only meaningful with a network to return to).
-  if (coverage && doctrine.retreatBelow > 0 && e.hp * 100 < a.hp * doctrine.retreatBelow) {
-    const settled = e.order.type === 'regroup' || (e.order.type === 'hold' && covered(e.x, e.y));
-    if (!settled) e.order = { type: 'regroup' };
-  }
-  const order = e.order;
   let goal: number | undefined;
+  const order = e.order;
   switch (order.type) {
     case 'move':
-      goal = order.x === e.x && order.y === e.y ? undefined : cellOf(w.map, order.x, order.y);
+      if ((order.x === e.x && order.y === e.y) || (adjacent(e, order.x, order.y) && blockedByOther(ctx, e, a, order.x, order.y))) {
+        e.order = { type: 'hold' };
+        break;
+      }
+      goal = cellOf(w.map, order.x, order.y);
       break;
     case 'attack': {
       const target = findEntity(w, order.target);
@@ -294,49 +324,73 @@ function goalOf(ctx: Intent, e: Entity, a: Archetype): number | undefined {
       if (dist2(e.x, e.y, target.x, target.y) > ESCORT_RANGE * ESCORT_RANGE) goal = cellOf(w.map, target.x, target.y);
       break;
     }
-    case 'patrol':
-      if (order.x === e.x && order.y === e.y) e.order = { type: 'patrol', x: order.rx, y: order.ry, rx: order.x, ry: order.y };
-      if (e.order.type === 'patrol' && (e.order.x !== e.x || e.order.y !== e.y)) goal = cellOf(w.map, e.order.x, e.order.y);
+    case 'patrol': {
+      // Turn at the end, or right before it when another unit stands on it.
+      const atEnd = order.x === e.x && order.y === e.y;
+      if (atEnd || (adjacent(e, order.x, order.y) && blockedByOther(ctx, e, a, order.x, order.y))) {
+        e.order = { type: 'patrol', x: order.rx, y: order.ry, rx: order.x, ry: order.y };
+      }
+      const leg = e.order;
+      if (leg.type === 'patrol' && (leg.x !== e.x || leg.y !== e.y) && !(adjacent(e, leg.x, leg.y) && blockedByOther(ctx, e, a, leg.x, leg.y))) {
+        goal = cellOf(w.map, leg.x, leg.y);
+      }
       break;
-    case 'regroup':
-      if (!coverage || covered(e.x, e.y)) {
+    }
+    case 'regroup': {
+      const coverage = ctx.coverageOf(e.side);
+      if (!coverage || coverage[cellOf(w.map, e.x, e.y)] === 1) {
         e.order = { type: 'hold' };
         break;
       }
       goal = nearestCovered(ctx, e, a, coverage);
       if (goal === undefined) e.order = { type: 'hold' };
       break;
+    }
     default:
       break;
   }
-  if (goal === undefined && doctrine.seekCover && (e.order.type === 'hold' || e.order.type === 'move')) goal = adjacentCover(ctx, e, a);
+  // Doctrine: seek cover when holding (never for nodes that work only where they were set up).
+  if (goal === undefined && e.order.type === 'hold' && doctrineOf(e).seekCover && !archetypeOf(rs, e.kind)?.comms?.needsDeploy) {
+    goal = adjacentCover(ctx, e, a);
+  }
   return goal;
 }
 
 /** Escort / guard keeps within this many cells of its charge. */
 const ESCORT_RANGE = 2;
 
-/** Nearest passable covered cell (squared distance; ties in the side's frame). */
+/**
+ * The covered, free cell the unit can reach most cheaply (Dijkstra over step costs through
+ * free cells; ties in the side's frame), or `undefined` if none is reachable.
+ */
 function nearestCovered(ctx: Intent, e: Entity, a: Archetype, coverage: Uint8Array): number | undefined {
-  const { w, rs } = ctx;
+  const { w, rs, occupied } = ctx;
   const cells = w.map.w * w.map.h;
-  let best: number | undefined;
-  let bestD = Infinity;
-  let bestF = Infinity;
-  for (let c = 0; c < cells; c++) {
-    if (coverage[c] !== 1) continue;
-    const x = c % w.map.w;
-    const y = Math.floor(c / w.map.w);
-    if (!passable(w.map, rs, x, y, a.layer)) continue;
-    const d = dist2(e.x, e.y, x, y);
-    const f = frameIndex(c, e.side, cells);
-    if (d < bestD || (d === bestD && f < bestF)) {
-      best = c;
-      bestD = d;
-      bestF = f;
+  const start = cellOf(w.map, e.x, e.y);
+  const dist = new Int32Array(cells).fill(-1);
+  const heap = new TupleHeap();
+  dist[start] = 0;
+  heap.push([0, frameIndex(start, e.side, cells), start]);
+  for (let item = heap.pop(); item; item = heap.pop()) {
+    const c = item[2] as number;
+    const d = item[0] as number;
+    if (d !== dist[c]) continue;
+    if (c !== start && coverage[c] === 1) return c;
+    const cx = c % w.map.w;
+    const cy = Math.floor(c / w.map.w);
+    for (const [dx, dy] of dirsFor(e.side)) {
+      const cost = stepCost(w.map, rs, cx, cy, cx + dx, cy + dy, a.layer);
+      if (cost === undefined) continue;
+      const n = cellOf(w.map, cx + dx, cy + dy);
+      if (occupied[a.layer].has(n)) continue;
+      const nd = d + cost;
+      const old = dist[n] as number;
+      if (old !== -1 && nd >= old) continue;
+      dist[n] = nd;
+      heap.push([nd, frameIndex(n, e.side, cells), n]);
     }
   }
-  return best;
+  return undefined;
 }
 
 /** A free neighbouring cell with cover, if the unit is not already in cover (side-frame order). */

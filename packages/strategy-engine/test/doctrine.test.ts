@@ -33,14 +33,19 @@ describe('doctrines (D6)', () => {
     expect(unit(later, 2).doctrine).toEqual(doctrine({ retreatBelow: 50, priority: 'armor' }));
   });
 
-  it('retreat below a health threshold switches to regroup and heads back into coverage', () => {
-    const w = worldOf(open(16, 1), [{ side: 0, kind: 'command-post', x: 0, y: 0 }, { side: 0, kind: 'rifles', x: 10, y: 0 }]);
+  it('retreat: a hit that takes the unit below the threshold switches it to regroup, back into coverage', () => {
+    const w = worldOf(open(16, 1), [
+      { side: 0, kind: 'command-post', x: 0, y: 0 },
+      { side: 0, kind: 'rifles', x: 10, y: 0 },
+      { side: 1, kind: 'warden', x: 13, y: 0 }
+    ]);
     const u = unit(w, 2);
     u.doctrine = doctrine({ retreatBelow: 50 });
     u.order = { type: 'move', x: 15, y: 0 };
-    u.hp = 15; // 37 % of 40
-    const { world } = resolveTurn(w, net, [[]]);
-    expect(unit(world, 2).order).toEqual({ type: 'regroup' });
+    u.hp = 21;
+    const { world, events } = resolveTurn(w, net, [[]]);
+    expect(events.some((e) => e.t === 'hit' && e.id === 2)).toBe(true);
+    expect(['regroup', 'hold']).toContain(unit(world, 2).order.type);
     expect(unit(world, 2).x).toBeLessThan(10);
   });
 
@@ -134,6 +139,7 @@ describe('doctrines (D6)', () => {
     unit(bad, 1).doctrine = { ...DEFAULT_DOCTRINE, priority: 'tallest' as never };
     expect(isValidWorld(bad, base)).toBe(false);
     const ok = structuredClone(w);
+    ok.tick = 5;
     unit(ok, 1).doctrine = doctrine({ seekCover: true });
     unit(ok, 1).hitAt = 3;
     unit(ok, 1).order = { type: 'patrol', x: 4, y: 0, rx: 0, ry: 0 };
