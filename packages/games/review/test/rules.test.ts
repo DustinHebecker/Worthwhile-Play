@@ -134,6 +134,16 @@ describe('building a session', () => {
     );
   });
 
+  it('shuffles with the seed (pinned outputs guard the sequence against accidental changes)', () => {
+    const many = Array.from({ length: 40 }, (_, i) => `i${i}`);
+    const practice = buildCards({ seed: 1, mode: 'practice', direction: 'mixed', itemIds: many, records: [], today: '' });
+    expect(practice.map((c) => `${c.item}${c.dir === 'forward' ? '>' : '<'}`).join(' ')).toBe('i21> i26> i12> i17> i15< i29< i18> i19> i22> i28<');
+    const fresh = buildCards({ seed: 2, mode: 'new', direction: 'forward', itemIds: many.slice(0, 12), records: [], today: TODAY });
+    expect(fresh.map((c) => c.item).join(' ')).toBe('i5 i6 i0 i10 i1 i9 i11 i7 i4 i2');
+    const orders = new Set([3, 4, 5, 6].map((seed) => buildCards({ seed, mode: 'practice', direction: 'forward', itemIds: ITEMS, records: [], today: '' }).map((c) => c.item).join()));
+    expect(orders.size).toBeGreaterThan(1);
+  });
+
   it('counts what a session could offer', () => {
     const records = [rec('a', '2026-03-01'), rec('b', '2026-03-12'), rec('c', '2026-03-10', 'backward')];
     expect(availableCounts(ITEMS, records, 'forward', TODAY)).toEqual({ due: 1, unseen: 4 });
@@ -341,6 +351,27 @@ describe('validation of untrusted saves', () => {
       { ...startSession(options({ mode: 'practice' })), cards: [], index: 0 },
       { ...startSession(options({ mode: 'new', itemIds: Array.from({ length: 30 }, (_, i) => `i${i}`) })), cards: Array.from({ length: 11 }, (_, i) => ({ item: `i${i}`, dir: 'forward' })) }
     ];
+    const mixed = startSession(options({ mode: 'practice', direction: 'mixed' }));
+    const flags = startSession(options({ deckId: 'flags', languages: { countries: 'de' }, itemIds: builtinItemIds('flags')!, mode: 'practice' }));
+    broken.push(
+      { ...mixed, cards: [{ item: 'a', dir: 'sideways' }, ...mixed.cards.slice(1)] },
+      { ...mixed, cards: [{ item: 5, dir: 'forward' }, ...mixed.cards.slice(1)] },
+      { ...mixed, cards: [{ item: '', dir: 'forward' }, ...mixed.cards.slice(1)] },
+      { ...mixed, cards: [{ item: 'x'.repeat(201), dir: 'forward' }, ...mixed.cards.slice(1)] },
+      { ...mixed, cards: ['a', ...mixed.cards.slice(1)] },
+      { ...mixed, cards: 'a' },
+      { ...flags, languages: { countries: 'de', extra: 'x' } },
+      { ...flags, languages: { countries: 5 } },
+      { ...flags, languages: { countries: 'de!' } },
+      { ...flags, languages: { countries: '!de' } },
+      { ...flags, languages: { countries: 'de-' } },
+      { ...flags, languages: {} },
+      { ...flags, languages: null },
+      { ...mixed, languages: { countries: 'de' } },
+      { ...fw, languages: { learning: 'ja', translation: 'en', countries: 'de' } }
+    );
+    expect(isValidReviewState({ ...mixed, cards: [{ item: 'x'.repeat(200), dir: 'forward' }, ...mixed.cards.slice(1)] })).toBe(true);
+    expect(isValidReviewState({ ...flags, languages: { countries: 'pt-BR' } })).toBe(true);
     for (const value of broken) expect(isValidReviewState(value), JSON.stringify(value)?.slice(0, 200)).toBe(false);
     const finished = playThrough(valid(), () => 'good').state;
     expect(isValidReviewState({ ...finished, revealed: true })).toBe(false);
