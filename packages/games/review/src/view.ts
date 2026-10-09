@@ -127,7 +127,7 @@ export function createReview(context: GameContext, speech: Speech | undefined = 
   );
   const typedInput = h('input', { type: 'text', id: `${uid}-typed`, autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false', dir: 'auto', maxlength: 300, 'data-testid': 'review-typed' });
   const typedField = h('div', { class: 'wp-review__typed' }, h('label', { for: `${uid}-typed` }, t('typed.label')), typedInput);
-  const revealButton = h('button', { type: 'submit', class: 'primary', 'data-testid': 'review-reveal', 'data-autofocus': '' }, t('reveal'));
+  const revealButton = h('button', { type: 'submit', class: 'primary', 'data-testid': 'review-reveal' }, t('reveal'));
   const revealForm = h('form', { class: 'wp-review__reveal', novalidate: true }, typedField, revealButton);
   const typedResult = h('p', { class: 'wp-review__typed-result', 'data-testid': 'review-typed-result', hidden: true });
   const rateButtons = RATINGS.map((rating) =>
@@ -257,6 +257,8 @@ export function createReview(context: GameContext, speech: Speech | undefined = 
       }
     }
     updateSpeak();
+    container.querySelectorAll('[data-autofocus]').forEach((el) => el.removeAttribute('data-autofocus'));
+    focusTarget()?.setAttribute('data-autofocus', '');
     if (!container.isConnected || container.parentElement !== root) {
       clear(root);
       root.append(container);
@@ -268,14 +270,17 @@ export function createReview(context: GameContext, speech: Speech | undefined = 
     noticeEl.hidden = text === '';
   };
 
-  const focusCurrent = () => {
-    if (!state) return;
-    if (!summaryEl.hidden) summaryEl.querySelector<HTMLElement>('h2')?.focus();
-    else if (!emptyEl.hidden) emptyEl.querySelector<HTMLElement>('h2')?.focus();
-    else if (!rateEl.hidden) answerEl.focus();
-    else if (!typedField.hidden) typedInput.focus();
-    else revealButton.focus();
+  /** The element to focus for the current step (also marked `data-autofocus` for the host's "New game"). */
+  const focusTarget = (): HTMLElement | undefined => {
+    if (!state) return undefined;
+    if (!summaryEl.hidden) return summaryEl.querySelector<HTMLElement>('h2') ?? undefined;
+    if (!emptyEl.hidden) return emptyEl.querySelector<HTMLElement>('h2') ?? undefined;
+    if (!missingEl.hidden) return missingNew;
+    if (!rateEl.hidden) return answerEl;
+    if (!typedField.hidden) return typedInput;
+    return revealButton;
   };
+  const focusCurrent = () => focusTarget()?.focus();
 
   const announceCard = () => {
     if (!state) return;
