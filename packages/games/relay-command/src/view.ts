@@ -337,6 +337,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     let taken = 0;
     let bumps = 0;
     const lines: string[] = [];
+    const told = new Set<string>();
     for (const e of events) {
       if (e.t === 'hit') {
         if (e.side === PLAYER) taken += e.damage;
@@ -345,9 +346,11 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
         if (unitById(state, e.id)?.side !== OPPONENT) bumps += 1;
       } else if (e.t === 'destroyed') {
         lines.push(t(e.side === PLAYER ? 'summary.lostUnit' : 'summary.destroyedUnit', { name: unitName(e) }));
-      } else if (e.t === 'order-ended' && REPORTED_ENDS.has(e.reason)) {
-        // Orders the engine ended on its own are always reported for the player's units.
+      } else if (e.t === 'order-ended' && REPORTED_ENDS.has(e.reason) && !told.has(`${e.id}:${e.reason}`)) {
+        // Orders the engine ended on its own are reported for the player's units, once per
+        // unit and reason in a turn.
         const unit = unitById(state, e.id);
+        told.add(`${e.id}:${e.reason}`);
         if (unit?.side === PLAYER) lines.push(t(`summary.ended.${e.reason}`, { name: unitName(unit) }));
       }
     }

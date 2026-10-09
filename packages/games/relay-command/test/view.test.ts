@@ -218,6 +218,14 @@ describe('Relay Command view', () => {
     expect($('rc-summary').textContent).toContain(`Rifle Squad ${rifle.id}: the destination is occupied; now holding position.`);
   });
 
+  it('reports each automatic order end at most once per unit and turn', () => {
+    const rifle = firstMobile();
+    const retreat = (tick: number) => ({ t: 'order-ended' as const, tick, id: rifle.id, reason: 'retreat' as const });
+    instance.restore({ ...state(), events: [retreat(1), retreat(3), retreat(5)] });
+    const lines = [...$('rc-summary').querySelectorAll('li')].filter((li) => li.textContent?.includes('retreating'));
+    expect(lines).toHaveLength(1);
+  });
+
   it('maps pointer clicks on the canvas to cells', () => {
     const unit = firstMobile();
     const map = $('rc-map');
