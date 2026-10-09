@@ -178,7 +178,11 @@ const uk: UiCatalogue = {
   'settings.decks': 'Імпортованих колод на цьому пристрої: {count}',
   'settings.clearDecks': 'Видалити мої імпортовані колоди',
   'settings.clearDecksConfirm': 'Видалити всі колоди, імпортовані на цьому пристрої? Вбудовані колоди та збережені ігри не зачіпаються. Цю дію не можна скасувати.',
-  'settings.decksDeleted': 'Імпортовані колоди видалено.'
+  'settings.decksDeleted': 'Імпортовані колоди видалено.',
+  'settings.learning': 'Записів навчання на цьому пристрої: {count}',
+  'settings.clearLearning': 'Видалити записи навчання',
+  'settings.clearLearningConfirm': 'Видалити всі записи навчання (розклад повторень) на цьому пристрої? Колоди та збережені ігри не зачіпаються. Цю дію не можна скасувати.',
+  'settings.learningDeleted': 'Записи навчання видалено.'
 };
 
 export default uk;

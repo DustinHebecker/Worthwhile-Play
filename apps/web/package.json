@@ -31,6 +31,7 @@
     "@wp/game-nonogram": "workspace:*",
     "@wp/game-prospective-memory": "workspace:*",
     "@wp/game-relay-command": "workspace:*",
+    "@wp/game-review": "workspace:*",
     "@wp/game-river-crossing": "workspace:*",
     "@wp/game-rule-discovery": "workspace:*",
     "@wp/game-sequence-memory": "workspace:*",

@@ -178,7 +178,11 @@ const ko: UiCatalogue = {
   'settings.decks': '이 기기에 가져온 덱: {count}개',
   'settings.clearDecks': '가져온 덱 삭제',
   'settings.clearDecksConfirm': '이 기기에서 가져온 덱을 모두 삭제할까요? 기본 덱과 저장된 게임은 그대로예요. 되돌릴 수 없어요.',
-  'settings.decksDeleted': '가져온 덱을 삭제했어요.'
+  'settings.decksDeleted': '가져온 덱을 삭제했어요.',
+  'settings.learning': '이 기기의 학습 기록: {count}',
+  'settings.clearLearning': '학습 기록 삭제',
+  'settings.clearLearningConfirm': '이 기기의 모든 학습 기록(복습 일정)을 삭제할까요? 덱과 저장된 게임은 영향을 받지 않습니다. 되돌릴 수 없습니다.',
+  'settings.learningDeleted': '학습 기록을 삭제했습니다.'
 };
 
 export default ko;

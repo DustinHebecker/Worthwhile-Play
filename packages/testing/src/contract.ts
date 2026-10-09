@@ -3,7 +3,7 @@ import fc from 'fast-check';
 import { validateMetadata, type GameInstance, type GameModule } from '@wp/game-core';
 import { auditCatalogues, COMMON_MESSAGES, SUPPORTED_LOCALES } from '@wp/localization';
 import { createSave, createMemoryStore, interpretSave } from '@wp/persistence';
-import { createTestContext } from './context';
+import { createTestContext, type TestContextExtras } from './context';
 
 export interface ContractOptions<S> {
   /** Seeds used for determinism checks. */
@@ -13,6 +13,8 @@ export interface ContractOptions<S> {
    * so that save/restore is verified on a non-initial state. Should trigger `requestSave`.
    */
   interact?: (root: HTMLElement, instance: GameInstance<S>) => void | Promise<void>;
+  /** Optional host services for every context the suite creates (fresh per context, e.g. learning records). */
+  extras?: () => TestContextExtras;
 }
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
@@ -26,7 +28,7 @@ const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 export function runGameContract<S>(module: GameModule<S>, options: ContractOptions<S> = {}): void {
   const seeds = options.seeds ?? [1, 42, 0xdeadbeef];
   const start = (seed: number) => {
-    const ctx = createTestContext(module as GameModule<unknown>);
+    const ctx = createTestContext(module as GameModule<unknown>, 'en', undefined, options.extras?.());
     const instance = module.create(ctx.context) as GameInstance<S>;
     instance.newGame({ seed });
     return { ctx, instance };
@@ -85,7 +87,7 @@ export function runGameContract<S>(module: GameModule<S>, options: ContractOptio
       const loaded = interpretSave(await store.read(module.metadata.id), module);
       expect(loaded.status).toBe('ok');
       if (loaded.status !== 'ok') return;
-      const ctx2 = createTestContext(module as GameModule<unknown>);
+      const ctx2 = createTestContext(module as GameModule<unknown>, 'en', undefined, options.extras?.());
       const restored = module.create(ctx2.context) as GameInstance<S>;
       restored.restore(loaded.save.state);
       expect(restored.serialize()).toEqual(before);
@@ -108,7 +110,7 @@ export function runGameContract<S>(module: GameModule<S>, options: ContractOptio
 
     it('renders without missing translation keys in every locale', () => {
       for (const locale of SUPPORTED_LOCALES) {
-        const ctx = createTestContext(module as GameModule<unknown>, locale);
+        const ctx = createTestContext(module as GameModule<unknown>, locale, undefined, options.extras?.());
         const instance = module.create(ctx.context);
         instance.newGame({ seed: 3 });
         expect(ctx.missingKeys, `missing keys in ${locale}`).toEqual([]);

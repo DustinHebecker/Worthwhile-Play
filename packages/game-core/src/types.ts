@@ -55,6 +55,8 @@ export interface GameMetadata {
   readonly difficulties?: readonly string[];
   /** Optional: the game can play with the user's imported decks; the host then provides `GameContext.userDecks`. */
   readonly usesUserDecks?: boolean;
+  /** Optional: the game reads and writes spaced-repetition learning records; the host then provides `GameContext.learning`. */
+  readonly usesLearningRecords?: boolean;
 }
 
 export interface Translator {
@@ -107,6 +109,63 @@ export interface GameContext {
    * between sessions: a saved game must handle a missing deck gracefully.
    */
   readonly userDecks?: UserDeckSource;
+  /**
+   * Optional learning records on this device (only for games with `metadata.usesLearningRecords`): a synchronous
+   * snapshot plus an idempotent write. Games without it must still work (e.g. as practice without a schedule).
+   */
+  readonly learning?: GameLearningRecords;
+  /**
+   * Optional parameters of the link that opened the game (e.g. `/games/review?deck=flags`). They apply to the next
+   * `newGame` only; a game that supports them should remember them in its preferences.
+   */
+  readonly launch?: GameLaunchOptions;
+}
+
+export interface GameLaunchOptions {
+  /** A deck id (built-in or imported) the game should use. */
+  readonly deck?: string;
+}
+
+/** Which way a card is asked: front → back (`forward`) or back → front (`backward`). */
+export type LearningDirection = 'forward' | 'backward';
+/** Self-rating after revealing a card: "not yet", "almost", "knew it". */
+export type LearningRating = 'again' | 'hard' | 'good';
+
+/** One self-rated card, sent to `GameLearningRecords.record`. */
+export interface LearningReview {
+  /** Learning deck key (see `learningDeckId` in `@wp/learning-content`), e.g. `flags`, `first-words:ja`, `user-…`. */
+  readonly deckId: string;
+  readonly itemId: string;
+  readonly direction: LearningDirection;
+  readonly rating: LearningRating;
+  /**
+   * Id of the session the rating belongs to. A record is updated at most once per session, so sending the same
+   * review again (e.g. after a reload or resume) never counts twice.
+   */
+  readonly session: string;
+  /** Local calendar day of the rating, `YYYY-MM-DD`. */
+  readonly day: string;
+}
+
+/** The scheduling facts a game may read about one card (host-validated). */
+export interface LearningRecordSummary {
+  readonly deckId: string;
+  readonly itemId: string;
+  readonly direction: LearningDirection;
+  /** Leitner box, 1 … 7. */
+  readonly box: number;
+  /** Local calendar day from which the card is suggested again, `YYYY-MM-DD`. */
+  readonly due: string;
+  readonly reviews: number;
+}
+
+export interface GameLearningRecords {
+  /** The device's local calendar day, `YYYY-MM-DD` (only used to decide what is due). */
+  today(): string;
+  /** Records of one learning deck (synchronous snapshot; reflects `record` calls immediately). */
+  list(deckId: string): readonly LearningRecordSummary[];
+  /** Applies self-ratings (stored asynchronously). Idempotent per record and session; never throws. */
+  record(reviews: readonly LearningReview[]): void;
 }
 
 export interface GameContentLanguages {

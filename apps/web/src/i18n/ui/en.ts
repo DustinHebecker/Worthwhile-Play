@@ -177,7 +177,11 @@ const en = {
   'settings.decks': 'Imported decks on this device: {count}',
   'settings.clearDecks': 'Delete my imported decks',
   'settings.clearDecksConfirm': 'Delete all decks you imported on this device? Built-in decks and saved games are not affected. This cannot be undone.',
-  'settings.decksDeleted': 'Imported decks deleted.'
+  'settings.decksDeleted': 'Imported decks deleted.',
+  'settings.learning': 'Learning records on this device: {count}',
+  'settings.clearLearning': 'Delete learning records',
+  'settings.clearLearningConfirm': 'Delete all learning records (the review schedule) on this device? Decks and saved games are not affected. This cannot be undone.',
+  'settings.learningDeleted': 'Learning records deleted.'
 } as const;
 
 export type UiKey = keyof typeof en;

@@ -178,7 +178,11 @@ const ar: UiCatalogue = {
   'settings.decks': 'المجموعات المستوردة على هذا الجهاز: {count}',
   'settings.clearDecks': 'حذف مجموعاتي المستوردة',
   'settings.clearDecksConfirm': 'هل تريد حذف كل المجموعات التي استوردتها على هذا الجهاز؟ لن تتأثر المجموعات المدمجة ولا الألعاب المحفوظة. لا يمكن التراجع عن ذلك.',
-  'settings.decksDeleted': 'حُذفت المجموعات المستوردة.'
+  'settings.decksDeleted': 'حُذفت المجموعات المستوردة.',
+  'settings.learning': 'سجلات التعلّم على هذا الجهاز: {count}',
+  'settings.clearLearning': 'حذف سجلات التعلّم',
+  'settings.clearLearningConfirm': 'حذف كل سجلات التعلّم (جدول المراجعة) على هذا الجهاز؟ لا يتأثر بذلك المجموعات ولا الألعاب المحفوظة. لا يمكن التراجع عن ذلك.',
+  'settings.learningDeleted': 'حُذفت سجلات التعلّم.'
 };
 
 export default ar;

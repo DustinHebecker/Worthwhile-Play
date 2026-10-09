@@ -8,6 +8,7 @@ import {
   createSave,
   DB_VERSION,
   DECKS_STORE,
+  LEARNING_STORE,
   openDatabase,
   SAVES_STORE,
   type DeckStore
@@ -63,7 +64,7 @@ describe.each([
   });
 });
 
-describe('database upgrade 1 → 2', () => {
+describe('database upgrade 1 → current', () => {
   it('adds the decks store and keeps existing saves untouched', async () => {
     const factory = new FakeIDBFactory();
     await createV1Database(factory, 'upgrade');
@@ -77,7 +78,7 @@ describe('database upgrade 1 → 2', () => {
     expect(await decks.list()).toEqual([{ id: 'user-x-1' }]);
     const db = await openDatabase(factory, 'upgrade');
     expect(db.version).toBe(DB_VERSION);
-    expect([...db.objectStoreNames].sort()).toEqual([DECKS_STORE, SAVES_STORE].sort());
+    expect([...db.objectStoreNames].sort()).toEqual([DECKS_STORE, LEARNING_STORE, SAVES_STORE].sort());
     db.close();
   });
 

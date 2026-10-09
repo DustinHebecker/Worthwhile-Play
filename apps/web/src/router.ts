@@ -1,6 +1,6 @@
 export type Route =
   | { name: 'home' }
-  | { name: 'game'; id: string; seed?: number; difficulty?: string; fresh?: boolean }
+  | { name: 'game'; id: string; seed?: number; difficulty?: string; fresh?: boolean; deck?: string }
   | { name: 'decks' }
   | { name: 'deck'; id: string }
   | { name: 'deck-import' }
@@ -34,6 +34,12 @@ export function parseRoute(pathname: string, search = ''): Route {
     // `?new=1`: start a fresh game right away (e.g. "Play" on a deck page); the host then drops the parameter
     // so that a reload resumes this game instead of dealing again.
     if (params.get('new') === '1' && route.seed === undefined) route.fresh = true;
+    // `?deck=<id>`: open the game with that deck (e.g. "Review" on a deck page); also starts a fresh game.
+    const deck = params.get('deck');
+    if (deck && deck.length <= 64 && new RegExp(`^${SLUG}$`).test(deck)) {
+      route.deck = deck;
+      if (route.seed === undefined) route.fresh = true;
+    }
     return route;
   }
   return { name: 'not-found' };

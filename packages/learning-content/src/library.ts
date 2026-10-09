@@ -50,6 +50,20 @@ export function isBuiltinDeckId(value: unknown): value is BuiltinDeckId {
   return typeof value === 'string' && (BUILTIN_DECK_IDS as readonly string[]).includes(value);
 }
 
+/** Built-in decks that make sense for review (front and back differ). */
+export const REVIEW_BUILTIN_DECK_IDS = ['first-words', 'flags'] as const satisfies readonly BuiltinDeckId[];
+
+/**
+ * Key under which learning records of a deck are kept, or `undefined` if the deck is not reviewable.
+ * "First words" is learned per learning language (`first-words:ja`); the translation language does not matter.
+ * Flags are language-independent knowledge; imported decks use their (unique) id.
+ */
+export function learningDeckId(deckId: string, languages: Pick<ResolvedLanguages, 'learning'>): string | undefined {
+  if (deckId === 'symbols') return undefined;
+  if (deckId === 'first-words') return `first-words:${languages.learning}`;
+  return deckId;
+}
+
 /** Item ids of a built-in deck (independent of languages), e.g. for validating saves. */
 export function builtinItemIds(id: string): readonly string[] | undefined {
   switch (id) {

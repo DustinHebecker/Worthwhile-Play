@@ -178,7 +178,11 @@ const de: UiCatalogue = {
   'settings.decks': 'Importierte Decks auf diesem Gerät: {count}',
   'settings.clearDecks': 'Meine importierten Decks löschen',
   'settings.clearDecksConfirm': 'Alle Decks löschen, die du auf diesem Gerät importiert hast? Eingebaute Decks und gespeicherte Spiele sind nicht betroffen. Das kann nicht rückgängig gemacht werden.',
-  'settings.decksDeleted': 'Importierte Decks gelöscht.'
+  'settings.decksDeleted': 'Importierte Decks gelöscht.',
+  'settings.learning': 'Lernstände auf diesem Gerät: {count}',
+  'settings.clearLearning': 'Lernstände löschen',
+  'settings.clearLearningConfirm': 'Alle Lernstände (den Wiederholungsplan) auf diesem Gerät löschen? Decks und gespeicherte Spiele sind nicht betroffen. Das kann nicht rückgängig gemacht werden.',
+  'settings.learningDeleted': 'Lernstände gelöscht.'
 };
 
 export default de;

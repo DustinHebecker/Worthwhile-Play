@@ -162,3 +162,87 @@ test('picture ↔ word uses the learning language from Settings', async ({ page 
   await page.getByTestId(`card-${back}`).click();
   await expect(page.getByTestId(`card-${back}`).locator('[lang="es"]')).toBeVisible();
 });
+
+/** Raw learning records ("Items worth reviewing") from the app's IndexedDB. */
+async function readLearning(page: Page): Promise<{ deckId: string; itemId: string; reviews: number; due: string }[]> {
+  return page.evaluate(
+    () =>
+      new Promise((resolve, reject) => {
+        const open = indexedDB.open('worthwhile-play');
+        open.onerror = () => reject(open.error);
+        open.onsuccess = () => {
+          const db = open.result;
+          if (!db.objectStoreNames.contains('learning')) return resolve([]);
+          const all = db.transaction('learning', 'readonly').objectStore('learning').getAll();
+          all.onsuccess = () => resolve(all.result);
+          all.onerror = () => reject(all.error);
+        };
+      })
+  );
+}
+
+async function rateCard(page: Page, rating: 'again' | 'hard' | 'good'): Promise<void> {
+  await page.getByTestId('review-reveal').click();
+  await expect(page.getByTestId('review-answer')).toBeVisible();
+  await page.getByTestId(`review-rate-${rating}`).click();
+}
+
+test('Review: learn an imported deck, reload mid-session, resume at the same card, finish; the library counts it later; records can be deleted', async ({ page }) => {
+  const id = await importCsv(page, 'Animals to review');
+  await page.getByTestId('review-deck').click();
+  await expect(page).toHaveURL(/\/games\/review$/);
+  await expect(page.getByTestId('review-deck')).toHaveValue(id);
+  // Nothing rated yet: nothing is due, new cards are offered.
+  await expect(page.getByTestId('review-empty')).toContainText('Nothing to review right now');
+  await page.getByTestId('review-learn-new').click();
+  await expect(page.getByTestId('review-progress')).toHaveText('Card 1 of 7');
+
+  await rateCard(page, 'good');
+  await rateCard(page, 'good');
+  await page.getByTestId('review-typed').fill('something');
+  await rateCard(page, 'good');
+  await expect(page.getByTestId('review-progress')).toHaveText('Card 4 of 7');
+  const prompt = await page.getByTestId('review-prompt').textContent();
+  await expect.poll(async () => ((await readSave(page, 'review')) as { state?: { index?: number } } | undefined)?.state?.index).toBe(3);
+  await expect.poll(async () => (await readLearning(page)).length).toBe(3);
+
+  await page.reload();
+  await page.getByTestId('continue').click();
+  await expect(page.getByTestId('review-progress')).toHaveText('Card 4 of 7');
+  await expect(page.getByTestId('review-prompt')).toHaveText(prompt as string);
+  // The resume does not count the first three cards again.
+  expect((await readLearning(page)).map((r) => r.reviews)).toEqual([1, 1, 1]);
+
+  for (let i = 0; i < 4; i++) await rateCard(page, 'good');
+  await expect(page.getByTestId('review-summary-counts')).toHaveText('7 cards: Knew it 7 · Almost 0 · Not yet 0');
+  await expect(page.getByTestId('finished')).toBeVisible();
+  await expect.poll(async () => (await readLearning(page)).length).toBe(7);
+  expect((await readLearning(page)).every((r) => r.reviews === 1 && r.deckId === id)).toBe(true);
+
+  // Today nothing is due yet; three days later all seven cards are worth reviewing (no reminder was sent meanwhile).
+  await page.goto('/decks');
+  await expect(page.getByTestId('review-none')).toBeVisible();
+  await page.clock.setFixedTime(new Date(Date.now() + 3 * 86_400_000));
+  await page.goto('/decks');
+  await expect(page.getByTestId(`review-item-${id}`)).toContainText('7 worth reviewing');
+  await expect(page.getByTestId(`deck-card-${id}`).getByTestId('deck-due')).toHaveText('7 worth reviewing');
+  await page.getByTestId(`review-${id}`).click();
+  await expect(page).toHaveURL(/\/games\/review$/);
+  await expect(page.getByTestId('review-progress')).toHaveText('Card 1 of 7');
+  await expect(page.getByTestId('review-mode')).toHaveValue('review');
+
+  await page.goto('/settings');
+  await expect(page.getByTestId('learning-info')).toHaveText('Learning records on this device: 7');
+  page.once('dialog', (dialog) => void dialog.dismiss());
+  await page.getByTestId('clear-learning').click();
+  await expect(page.getByTestId('learning-info')).toHaveText('Learning records on this device: 7');
+  page.once('dialog', (dialog) => void dialog.accept());
+  await page.getByTestId('clear-learning').click();
+  await expect(page.getByTestId('learning-info')).toHaveText('Learning records on this device: 0');
+  await expect(page.getByTestId('clear-learning')).toBeDisabled();
+  expect(await readLearning(page)).toEqual([]);
+  // Decks are kept.
+  await page.goto('/decks');
+  await expect(page.getByTestId(`deck-card-${id}`)).toBeVisible();
+  await expect(page.getByTestId('review-none')).toBeVisible();
+});

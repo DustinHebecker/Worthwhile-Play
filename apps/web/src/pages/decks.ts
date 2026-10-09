@@ -5,19 +5,25 @@ import {
   deckToJson,
   importDeck,
   IMPORT_LIMITS,
+  learningDeckId,
+  localDay,
   pickText,
+  reviewCounts,
   resolveContentLanguages,
   type BuiltinDeckId,
   type CardSide,
   type Deck,
-  type ImportResult
+  type ImportResult,
+  type LearningRecord
 } from '@wp/learning-content';
-import { readContentLanguages } from '@wp/localization';
+import { createTranslator, readContentLanguages } from '@wp/localization';
 import { append, clear, h } from '@wp/ui';
 import type { AppContext, Page } from '../app';
 import { APP_NAME } from '../config';
+import { LEARNING_UI_MESSAGES, type LearningUiKey } from '../i18n/learning';
 import type { UiKey } from '../i18n/ui';
 import { deckLanguages, importErrorText, importWarningText, loadUserDecks, newDeckId, type StoredDeck } from '../lib/decks';
+import { loadLearningRecords } from '../lib/learning';
 import { createPreferences } from '../lib/preferences';
 import { safeStorage } from './settings';
 
@@ -52,6 +58,22 @@ const builtinDecks = (app: AppContext): Deck[] => {
   return BUILTIN_DECK_IDS.map((id) => builtinDeck(id, languages));
 };
 
+type LearningT = (key: LearningUiKey, params?: Readonly<Record<string, string | number>>) => string;
+/** Translator for the "Items worth reviewing" strings (a catalogue that lives in this lazily loaded chunk). */
+const lt = (app: AppContext): LearningT => createTranslator({ locale: app.locale, sources: [LEARNING_UI_MESSAGES] }) as LearningT;
+
+/** "Items worth reviewing" counts of a deck, or undefined if the deck is not reviewable (symbols). */
+function deckReview(app: AppContext, deck: Deck, records: readonly LearningRecord[], today = localDay()): { due: number; seen: number } | undefined {
+  const key = learningDeckId(deck.id, resolveContentLanguages(contentChoice(), app.locale));
+  return key === undefined ? undefined : reviewCounts(records, key, deck.items.map((item) => item.id), today);
+}
+
+const reviewHref = (deck: Deck) => `/games/review?deck=${encodeURIComponent(deck.id)}`;
+
+/** Short, honest explanation of the schedule (shown on the library and deck pages). */
+const scheduleDetails = (app: AppContext) =>
+  h('details', { class: 'rules review-how', 'data-testid': 'review-how' }, h('summary', {}, lt(app)('review.howTitle')), h('p', {}, lt(app)('review.howText')));
+
 const languageName = (app: AppContext, tag: string) => {
   try {
     return new Intl.DisplayNames([app.locale], { type: 'language' }).of(tag) ?? tag;
@@ -73,7 +95,7 @@ function languagesLabel(app: AppContext, deck: Deck): string {
 
 const deckTitle = (app: AppContext, deck: Deck) => (isBuiltinDeckId(deck.id) ? app.t(BUILTIN_TEXT[deck.id as BuiltinDeckId].title) : pickText(deck.title, app.locale));
 
-function deckCard(app: AppContext, deck: Deck, stored?: StoredDeck): HTMLElement {
+function deckCard(app: AppContext, deck: Deck, stored?: StoredDeck, due = 0): HTMLElement {
   const { t } = app;
   const about = isBuiltinDeckId(deck.id) ? t(BUILTIN_TEXT[deck.id as BuiltinDeckId].about) : deck.description ? pickText(deck.description, app.locale) : '';
   return h('li', {},
@@ -83,7 +105,8 @@ function deckCard(app: AppContext, deck: Deck, stored?: StoredDeck): HTMLElement
       h('span', { class: 'badges' },
         h('span', { class: 'badge', 'data-testid': 'deck-count' }, t('decks.cards', { count: deck.items.length })),
         h('span', { class: 'badge' }, languagesLabel(app, deck)),
-        stored ? h('span', { class: 'badge' }, t('decks.imported', { date: formatDate(app, stored.importedAt) })) : null
+        stored ? h('span', { class: 'badge' }, t('decks.imported', { date: formatDate(app, stored.importedAt) })) : null,
+        due > 0 ? h('span', { class: 'badge review-badge', 'data-testid': 'deck-due' }, lt(app)('review.due', { count: due })) : null
       )
     )
   );
@@ -103,26 +126,54 @@ export const renderDecks: Page = (main, app) => {
   const ownList = h('ul', { class: 'game-grid', role: 'list', 'data-testid': 'own-decks' });
   const ownStatus = h('p', { class: 'wp-muted', 'data-testid': 'own-decks-empty', hidden: true }, t('decks.ownEmpty'));
   const storageNote = h('p', { class: 'notice', hidden: true }, t('decks.storageUnavailable'));
+  const builtinList = h('ul', { class: 'game-grid', role: 'list', 'data-testid': 'builtin-decks' });
+  const reviewList = h('ul', { class: 'review-list', role: 'list', 'data-testid': 'review-overview' });
+  const reviewNone = h('p', { class: 'wp-muted', 'data-testid': 'review-none', hidden: true }, lt(app)('review.none'));
   main.append(
     h('section', { class: 'decks' },
       h('h1', {}, t('decks.title')),
       h('p', { class: 'lead' }, t('decks.intro')),
       h('p', {}, h('a', { class: 'wp-button primary', href: '/decks/import', 'data-testid': 'import-deck' }, t('decks.import'))),
       storageNote,
+      h('section', { class: 'review-overview', 'aria-labelledby': 'review-title' },
+        h('h2', { id: 'review-title' }, lt(app)('review.title')),
+        h('p', { class: 'wp-muted' }, lt(app)('review.intro')),
+        reviewNone,
+        reviewList,
+        scheduleDetails(app)
+      ),
       h('h2', {}, t('decks.own')),
       ownStatus,
       ownList,
       h('h2', {}, t('decks.builtin')),
       h('p', { class: 'wp-muted' }, t('decks.languageHint'), ' ', h('a', { href: '/settings' }, t('nav.settings'))),
-      h('ul', { class: 'game-grid', role: 'list', 'data-testid': 'builtin-decks' }, ...builtinDecks(app).map((deck) => deckCard(app, deck)))
+      builtinList
     )
   );
+  const builtins = builtinDecks(app);
+  builtinList.append(...builtins.map((deck) => deckCard(app, deck)));
   void (async () => {
     const store = await app.decks;
     storageNote.hidden = store.persistent;
-    const own = await loadUserDecks(store);
+    const [own, records] = await Promise.all([loadUserDecks(store), loadLearningRecords(app.learning)]);
+    const today = localDay();
+    const dueOf = (deck: Deck) => deckReview(app, deck, records, today)?.due ?? 0;
     ownStatus.hidden = own.length > 0;
-    ownList.append(...own.map((stored) => deckCard(app, stored.deck, stored)));
+    ownList.append(...own.map((stored) => deckCard(app, stored.deck, stored, dueOf(stored.deck))));
+    clear(builtinList);
+    builtinList.append(...builtins.map((deck) => deckCard(app, deck, undefined, dueOf(deck))));
+    // Neutral overview: decks with cards whose suggested day has arrived, each with a "Review" link.
+    const due = [...own.map((stored) => stored.deck), ...builtins].map((deck) => ({ deck, due: dueOf(deck) })).filter((entry) => entry.due > 0);
+    reviewNone.hidden = due.length > 0;
+    reviewList.append(
+      ...due.map(({ deck, due: count }) =>
+        h('li', { 'data-testid': `review-item-${deck.id}` },
+          h('span', { dir: 'auto', class: 'review-deck' }, deckTitle(app, deck)),
+          h('span', { class: 'wp-muted' }, lt(app)('review.due', { count })),
+          h('a', { class: 'wp-button', href: reviewHref(deck), 'aria-label': lt(app)('review.actionLabel', { title: deckTitle(app, deck) }), 'data-testid': `review-${deck.id}` }, lt(app)('review.action'))
+        )
+      )
+    );
   })();
 };
 
@@ -185,6 +236,9 @@ export function renderDeck(main: HTMLElement, app: AppContext, id: string): void
       button.addEventListener('click', () => void playMemory(app, play.choice));
       actions.append(button);
     }
+    if (builtin !== 'symbols') {
+      actions.append(h('a', { class: 'wp-button primary', href: reviewHref(deck), 'data-testid': 'review-deck' }, lt(app)('decks.review')));
+    }
     const exportButton = h('button', { type: 'button', 'data-testid': 'export-deck' }, t('decks.export'));
     exportButton.addEventListener('click', () => exportDeck(deck));
     actions.append(exportButton);
@@ -193,6 +247,8 @@ export function renderDeck(main: HTMLElement, app: AppContext, id: string): void
       remove.addEventListener('click', async () => {
         if (!confirm(t('decks.deleteConfirm', { title: pickText(deck.title, app.locale) }))) return;
         await (await app.decks).remove(deck.id);
+        // Its learning records go with it (they would only be orphans).
+        await (await app.learning).removeDeck(deck.id).catch(() => undefined);
         app.announce(t('decks.deleted'));
         app.navigate('/decks');
       });
@@ -206,12 +262,23 @@ export function renderDeck(main: HTMLElement, app: AppContext, id: string): void
       deck.source ? h('li', {}, t('decks.source', { source: deck.source })) : null,
       stored ? h('li', {}, t('decks.imported', { date: formatDate(app, stored.importedAt) })) : null
     );
+    const reviewFacts = h('p', { class: 'wp-muted', 'data-testid': 'deck-review', hidden: true });
+    if (builtin !== 'symbols') {
+      void loadLearningRecords(app.learning).then((records) => {
+        const counts = deckReview(app, deck, records);
+        if (!counts) return;
+        reviewFacts.textContent = `${lt(app)('review.due', { count: counts.due })} · ${lt(app)('review.seen', { seen: counts.seen, total: deck.items.length })}`;
+        reviewFacts.hidden = false;
+      });
+    }
     append(section,
       h('h1', { dir: 'auto' }, deckTitle(app, deck)),
       about ? h('p', { class: 'lead' }, about) : null,
       facts,
       builtin && builtin !== 'symbols' ? h('p', { class: 'wp-muted' }, t('decks.languageHint'), ' ', h('a', { href: '/settings' }, t('nav.settings'))) : null,
       actions,
+      reviewFacts,
+      builtin !== 'symbols' ? scheduleDetails(app) : null,
       h('h2', {}, t('decks.preview')),
       previewTable(app, deck, PREVIEW_ROWS)
     );

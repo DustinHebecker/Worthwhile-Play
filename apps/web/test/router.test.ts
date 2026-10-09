@@ -32,6 +32,13 @@ describe('parseRoute', () => {
     expect(parseRoute('/games/memory', '?seed=4294967295')).toEqual({ name: 'game', id: 'memory', seed: 4294967295 });
   });
 
+  it('reads ?deck=<id> as "start a fresh game with this deck"', () => {
+    expect(parseRoute('/games/review', '?deck=flags')).toEqual({ name: 'game', id: 'review', fresh: true, deck: 'flags' });
+    expect(parseRoute('/games/review', '?deck=user-pets-0a1b2c3d&seed=4')).toEqual({ name: 'game', id: 'review', seed: 4, deck: 'user-pets-0a1b2c3d' });
+    expect(parseRoute('/games/review', '?deck=Bad%20Id')).toEqual({ name: 'game', id: 'review' });
+    expect(parseRoute('/games/review', `?deck=${'a'.repeat(65)}`)).toEqual({ name: 'game', id: 'review' });
+  });
+
   it('reads ?new=1 as "start a fresh game" (ignored together with a seed)', () => {
     expect(parseRoute('/games/memory', '?new=1')).toEqual({ name: 'game', id: 'memory', fresh: true });
     expect(parseRoute('/games/memory', '?new=yes')).toEqual({ name: 'game', id: 'memory' });

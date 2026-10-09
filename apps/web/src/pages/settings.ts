@@ -3,6 +3,7 @@ import { h } from '@wp/ui';
 import type { Page } from '../app';
 import { SESSION_NOTE_KEY } from '../config';
 import { loadUserDecks } from '../lib/decks';
+import { loadLearningRecords, removeUserDeckRecords } from '../lib/learning';
 import { clearPreferences, createPreferences } from '../lib/preferences';
 
 /** A small list of common learning languages; content languages are not limited to the 16 UI locales. */
@@ -86,12 +87,31 @@ export const renderSettings: Page = (main, app) => {
   clearDecksButton.addEventListener('click', async () => {
     if (!confirm(t('settings.clearDecksConfirm'))) return;
     await (await app.decks).clear();
+    // Learning records of imported decks would only be orphans now.
+    await removeUserDeckRecords(await app.learning).catch(() => undefined);
+    await refreshLearning();
     // A remembered "own deck" choice would only fall back to picture pairs; forget it with the decks.
     createPreferences(storage, 'memory').set('cards', undefined);
     await refreshDecks();
     app.announce(t('settings.decksDeleted'));
   });
   void refreshDecks();
+
+  // Learning records ("Items worth reviewing") are separate from saves and decks, with their own confirmed control.
+  const learningInfo = h('p', { class: 'wp-muted', 'data-testid': 'learning-info' });
+  const clearLearningButton = h('button', { type: 'button', 'data-testid': 'clear-learning' }, t('settings.clearLearning'));
+  async function refreshLearning() {
+    const count = (await loadLearningRecords(app.learning)).length;
+    learningInfo.textContent = t('settings.learning', { count });
+    clearLearningButton.disabled = count === 0;
+  }
+  clearLearningButton.addEventListener('click', async () => {
+    if (!confirm(t('settings.clearLearningConfirm'))) return;
+    await (await app.learning).clear();
+    await refreshLearning();
+    app.announce(t('settings.learningDeleted'));
+  });
+  void refreshLearning();
 
   main.append(
     h('section', { class: 'prose settings' },
@@ -107,7 +127,8 @@ export const renderSettings: Page = (main, app) => {
       ),
       h('div', { class: 'field checkbox' }, sessionToggle, h('label', { for: 'session-note' }, t('settings.sessionNote'))),
       h('div', { class: 'field' }, savesInfo, clearButton),
-      h('div', { class: 'field' }, decksInfo, clearDecksButton)
+      h('div', { class: 'field' }, decksInfo, clearDecksButton),
+      h('div', { class: 'field' }, learningInfo, clearLearningButton)
     )
   );
 };

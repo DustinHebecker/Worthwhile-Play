@@ -8,7 +8,7 @@ import {
   writeUiLocale,
   type SupportedLocale
 } from '@wp/localization';
-import { createIndexedDbDeckStore, createIndexedDbStore, type DeckStore, type SaveStore } from '@wp/persistence';
+import { createIndexedDbDeckStore, createIndexedDbLearningStore, createIndexedDbStore, type DeckStore, type LearningStore, type SaveStore } from '@wp/persistence';
 import { announce, clear, h } from '@wp/ui';
 import { APP_NAME } from './config';
 import { UI_MESSAGES, type UiKey } from './i18n/ui';
@@ -30,6 +30,8 @@ export interface AppContext {
   store: Promise<SaveStore & { persistent: boolean }>;
   /** Learning decks imported by the user (separate from saves; never deleted together with them). */
   decks: Promise<DeckStore>;
+  /** Spaced-repetition records ("Items worth reviewing"); separate from saves and decks. */
+  learning: Promise<LearningStore>;
   navigate: (path: string) => void;
   setLocale: (locale: SupportedLocale) => void;
   announce: (message: string) => void;
@@ -64,6 +66,7 @@ export function startApp(root: HTMLElement): void {
     t: undefined as unknown as UiTranslator,
     store: createIndexedDbStore(),
     decks: createIndexedDbDeckStore(),
+    learning: createIndexedDbLearningStore(),
     navigate: (path) => navigate(path),
     setLocale: (next) => {
       locale = next;

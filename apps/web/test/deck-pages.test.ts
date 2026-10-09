@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createTranslator } from '@wp/localization';
-import { createMemoryDeckStore, createMemoryStore, createSave, type DeckStore } from '@wp/persistence';
+import { createMemoryDeckStore, createMemoryLearningStore, createMemoryStore, createSave, type DeckStore, type LearningStore } from '@wp/persistence';
 import type { AppContext } from '../src/app';
 import { UI_MESSAGES } from '../src/i18n/ui';
 import { renderDeck, renderDeckImport, renderDecks } from '../src/pages/decks';
@@ -15,20 +15,21 @@ const flush = async () => {
   for (let i = 0; i < 20; i++) await new Promise((r) => setTimeout(r, 0));
 };
 
-function app(locale: 'en' | 'de' = 'en', decks: DeckStore = createMemoryDeckStore()) {
+function app(locale: 'en' | 'de' = 'en', decks: DeckStore = createMemoryDeckStore(), learning: LearningStore = createMemoryLearningStore()) {
   const store = Object.assign(createMemoryStore(), { persistent: true });
   const context: AppContext = {
     locale,
     t: createTranslator({ locale, sources: [UI_MESSAGES] }) as AppContext['t'],
     store: Promise.resolve(store),
     decks: Promise.resolve(decks),
+    learning: Promise.resolve(learning),
     navigate: vi.fn(),
     setLocale: vi.fn(),
     announce: vi.fn()
   };
   const main = document.createElement('main');
   document.body.append(main);
-  return { context, main, decks, store };
+  return { context, main, decks, store, learning };
 }
 
 const byId = (root: HTMLElement, id: string) => root.querySelector<HTMLElement>(`[data-testid="${id}"]`);
@@ -151,5 +152,82 @@ describe('deck library pages', () => {
     renderDeck(main, context, 'user-gone-1');
     await flush();
     expect(byId(main, 'deck-not-found')?.textContent).toBe('This deck does not exist on this device. It may have been deleted.');
+  });
+
+  it('deleting an own deck also deletes its learning records', async () => {
+    const decks = createMemoryDeckStore();
+    await decks.put(stored);
+    const learning = createMemoryLearningStore();
+    await learning.putMany([recordFor('user-pets-1', 'a'), recordFor('flags', 'de')]);
+    const { context, main } = app('en', decks, learning);
+    renderDeck(main, context, 'user-pets-1');
+    await flush();
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    byId(main, 'delete-deck')?.click();
+    await flush();
+    expect(((await learning.list()) as { deckId: string }[]).map((r) => r.deckId)).toEqual(['flags']);
+  });
+});
+
+/** A valid record that is due on any day after 2000-01-03. */
+const recordFor = (deckId: string, itemId: string, direction: 'forward' | 'backward' = 'forward') => ({
+  deckId, itemId, direction, box: 1, due: '2000-01-03', lastDay: '2000-01-02', last: 'again', reviews: 1, lapses: 1, session: 'old'
+});
+
+describe('items worth reviewing', () => {
+  const stored = { id: 'user-pets-1', importedAt: '2026-01-02T00:00:00Z', deck: { schemaVersion: 1, id: 'user-pets-1', title: { en: 'Pets' }, items: [{ id: 'a', front: { text: 'Hund', lang: 'de' }, back: { text: 'dog', lang: 'en' } }, { id: 'b', front: { text: 'Katze', lang: 'de' }, back: { text: 'cat', lang: 'en' } }] } };
+
+  it('says calmly that nothing is waiting and explains the schedule', async () => {
+    const { context, main } = app();
+    renderDecks(main, context);
+    await flush();
+    expect(byId(main, 'review-none')?.hidden).toBe(false);
+    expect(byId(main, 'review-none')?.textContent).toBe('Nothing is waiting for review right now.');
+    expect(byId(main, 'review-overview')?.childElementCount).toBe(0);
+    expect(byId(main, 'review-how')?.textContent).toContain('only a suggestion');
+    expect(byId(main, 'deck-due')).toBeNull();
+  });
+
+  it('lists decks with cards worth reviewing (items, any direction) with a Review link', async () => {
+    const decks = createMemoryDeckStore();
+    await decks.put(stored);
+    const learning = createMemoryLearningStore();
+    // English UI → "First words" records are kept per learning language (here: English).
+    await learning.putMany([
+      recordFor('user-pets-1', 'a'),
+      recordFor('user-pets-1', 'a', 'backward'),
+      recordFor('user-pets-1', 'b'),
+      recordFor('first-words:en', 'apple'),
+      recordFor('first-words:ja', 'dog'),
+      recordFor('flags', 'gone'),
+      { deckId: 'flags', itemId: 'de', direction: 'forward', junk: true }
+    ]);
+    const { context, main } = app('en', decks, learning);
+    renderDecks(main, context);
+    await flush();
+    expect(byId(main, 'review-none')?.hidden).toBe(true);
+    const items = [...(byId(main, 'review-overview')?.querySelectorAll('li') ?? [])].map((li) => li.textContent);
+    expect(items).toEqual(['Pets2 worth reviewingReview', 'First words1 worth reviewingReview']);
+    const link = byId(main, 'review-user-pets-1') as HTMLAnchorElement;
+    expect(link.getAttribute('href')).toBe('/games/review?deck=user-pets-1');
+    expect(link.getAttribute('aria-label')).toBe('Review Pets');
+    expect(byId(main, 'deck-card-user-pets-1')?.querySelector('[data-testid="deck-due"]')?.textContent).toBe('2 worth reviewing');
+    expect(byId(main, 'deck-card-flags')?.querySelector('[data-testid="deck-due"]')).toBeNull();
+  });
+
+  it('a deck page offers "Review with flash cards" and neutral counts (not for symbols)', async () => {
+    const learning = createMemoryLearningStore();
+    await learning.putMany([recordFor('flags', 'de')]);
+    const { context, main } = app('en', createMemoryDeckStore(), learning);
+    renderDeck(main, context, 'flags');
+    await flush();
+    expect(byId(main, 'review-deck')?.getAttribute('href')).toBe('/games/review?deck=flags');
+    expect(byId(main, 'deck-review')?.textContent).toBe('1 worth reviewing · Rated so far: 1 of 60 cards');
+    document.body.innerHTML = '';
+    const other = app();
+    renderDeck(other.main, other.context, 'symbols');
+    await flush();
+    expect(byId(other.main, 'review-deck')).toBeNull();
+    expect(byId(other.main, 'deck-review')?.hidden).toBe(true);
   });
 });
