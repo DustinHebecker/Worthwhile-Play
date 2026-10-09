@@ -311,6 +311,25 @@ importers:
         specifier: workspace:*
         version: link:../../testing
 
+  packages/games/briefing-game:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../../game-core
+      '@wp/ui':
+        specifier: workspace:*
+        version: link:../../ui
+    devDependencies:
+      '@wp/localization':
+        specifier: workspace:*
+        version: link:../../localization
+      '@wp/persistence':
+        specifier: workspace:*
+        version: link:../../persistence
+      '@wp/testing':
+        specifier: workspace:*
+        version: link:../../testing
+
   packages/games/chess:
     dependencies:
       '@wp/game-core':
@@ -331,6 +350,25 @@ importers:
         version: link:../../testing
 
   packages/games/circuit-puzzle:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../../game-core
+      '@wp/ui':
+        specifier: workspace:*
+        version: link:../../ui
+    devDependencies:
+      '@wp/localization':
+        specifier: workspace:*
+        version: link:../../localization
+      '@wp/persistence':
+        specifier: workspace:*
+        version: link:../../persistence
+      '@wp/testing':
+        specifier: workspace:*
+        version: link:../../testing
+
+  packages/games/compression-challenge:
     dependencies:
       '@wp/game-core':
         specifier: workspace:*
