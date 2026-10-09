@@ -105,7 +105,8 @@ export function scoreOutcome(before: readonly Placed[], cursor: Cursor, outcome:
   return heightTerm - 4 * disturbance(before, outcome.bodies) - 2 * tilt - 0.3 * Math.abs(placed.x) - (outcome.settled ? 0 : 2);
 }
 
-function sampleCursors(state: StackDuelState, profile: AiProfile, rng: Rng): Cursor[] {
+/** Candidate placements: the middle of the highest stone (flat) first, then random ones. */
+export function sampleCursors(state: StackDuelState, profile: AiProfile, rng: Rng): Cursor[] {
   const cursors: Cursor[] = [];
   const reach = PLATFORM_HALF - 0.4;
   // Always consider the middle of the current top piece, flat.
@@ -119,7 +120,7 @@ function sampleCursors(state: StackDuelState, profile: AiProfile, rng: Rng): Cur
 }
 
 /** Fraction of sampled placements of the opponent's next piece that would make something fall. */
-function trapValue(bodies: readonly Placed[], kind: number, samples: number, steps: number, rng: Rng): number {
+export function trapValue(bodies: readonly Placed[], kind: number, samples: number, steps: number, rng: Rng): number {
   let falls = 0;
   for (let i = 0; i < samples; i++) {
     const cursor = { x: snapX((rng.next() * 2 - 1) * (PLATFORM_HALF - 0.5)), rot: rng.int(0, 3) * 6 };

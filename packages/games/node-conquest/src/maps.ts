@@ -11,14 +11,22 @@ import { createRng, type Rng } from '@wp/game-core';
  * integer table), so maps are identical on every device.
  */
 
-export const DIFFICULTIES = ['easy', 'medium', 'hard'] as const;
-export type Difficulty = (typeof DIFFICULTIES)[number];
-export const NODE_TYPES = ['standard', 'shipyard', 'station'] as const;
+export const NODE_TYPES = ['standard', 'shipyard', 'station', 'bastion'] as const;
 export type NodeType = (typeof NODE_TYPES)[number];
 
 /** Board size in SVG units (square). */
 export const BOARD = 640;
-export const MAPS_PER_DIFFICULTY = 7;
+export const MAPS_PER_SET = 7;
+/** Map index of the hand-made introduction map (always one opponent). */
+export const INTRO_MAP = -1;
+/**
+ * Map layouts. 1: the original generator (outposts, shipyards, platforms) — kept unchanged so
+ * saves from state version 1 regenerate exactly. 2: the same geometry plus bastions.
+ */
+export const LAYOUTS = [1, 2] as const;
+export type Layout = (typeof LAYOUTS)[number];
+export const FACTION_COUNTS = [2, 3, 4] as const;
+export type FactionCount = (typeof FACTION_COUNTS)[number];
 export const MIN_NODE_DISTANCE = 100;
 export const MAX_LANE_LENGTH = 270;
 
@@ -33,8 +41,9 @@ export interface MapNode {
 }
 
 export interface GameMap {
-  readonly difficulty: Difficulty;
+  /** Map index (0–6), or INTRO_MAP. */
   readonly index: number;
+  readonly layout: Layout;
   /** Player (0) plus opponents. */
   readonly factions: number;
   readonly nodes: readonly MapNode[];
@@ -43,6 +52,8 @@ export interface GameMap {
   /** `laneOf[a][b]` = lane index or -1. */
   readonly laneOf: readonly (readonly number[])[];
   readonly adjacent: readonly (readonly number[])[];
+  /** Index of the centre node, or -1. */
+  readonly center: number;
 }
 
 interface Config {
@@ -53,10 +64,11 @@ interface Config {
   wedge: number;
 }
 
-const CONFIG: Record<Difficulty, Config> = {
-  easy: { factions: 2, perSector: [5, 6], neutralLevels: [2, 8], wedge: 400 },
-  medium: { factions: 3, perSector: [4, 5], neutralLevels: [3, 10], wedge: 150 },
-  hard: { factions: 4, perSector: [4, 4], neutralLevels: [3, 12], wedge: 90 }
+/** Keyed by the number of factions (player + opponents). */
+const CONFIG: Record<FactionCount, Config> = {
+  2: { factions: 2, perSector: [5, 6], neutralLevels: [2, 8], wedge: 400 },
+  3: { factions: 3, perSector: [4, 5], neutralLevels: [3, 10], wedge: 150 },
+  4: { factions: 4, perSector: [4, 4], neutralLevels: [3, 12], wedge: 90 }
 };
 
 /** cos/sin × 10000 for the rotation angles in use (degrees, clockwise on screen). */
@@ -140,8 +152,8 @@ function draftSector(rng: Rng, config: Config, withCenter: boolean): Draft | nul
   return { local, types, levels, center };
 }
 
-function buildMap(difficulty: Difficulty, index: number, draft: Draft): GameMap | null {
-  const config = CONFIG[difficulty];
+function buildMap(factions: FactionCount, index: number, draft: Draft): GameMap | null {
+  const config = CONFIG[factions];
   const n = config.factions;
   const k = draft.local.length;
   const step = 360 / n;
@@ -198,7 +210,7 @@ function buildMap(difficulty: Difficulty, index: number, draft: Draft): GameMap 
     adjacent[b]!.push(a);
   });
   for (const list of adjacent) list.sort((x, y) => x - y);
-  const map: GameMap = { difficulty, index, factions: n, nodes, lanes, laneOf, adjacent };
+  const map: GameMap = { index, layout: 1, factions: n, nodes, lanes, laneOf, adjacent, center: centerIndex };
   return isFairMap(map) ? map : null;
 }
 
@@ -234,26 +246,87 @@ export function isFairMap(map: GameMap): boolean {
   return true;
 }
 
-function generate(difficulty: Difficulty, index: number): GameMap {
-  const di = DIFFICULTIES.indexOf(difficulty);
-  const rng = createRng(0x0c0ffee + di * 7919 + index * 104729);
+/** The original generator (layout 1). The seed formula is unchanged from state version 1. */
+function generate(factions: FactionCount, index: number): GameMap {
+  const rng = createRng(0x0c0ffee + (factions - 2) * 7919 + index * 104729);
   for (let attempt = 0; attempt < 500; attempt++) {
-    const draft = draftSector(rng, CONFIG[difficulty], (index + attempt) % 3 !== 1);
+    const draft = draftSector(rng, CONFIG[factions], (index + attempt) % 3 !== 1);
     if (!draft) continue;
-    const map = buildMap(difficulty, index, draft);
+    const map = buildMap(factions, index, draft);
     if (map) return map;
   }
   /* c8 ignore next */
-  throw new Error(`No fair map for ${difficulty} #${index}`);
+  throw new Error(`No fair map for ${factions} factions #${index}`);
+}
+
+/**
+ * Layout 2: the layout-1 geometry with one outpost per sector turned into a bastion (never a start
+ * and never the easy first expansion next to the start), copied to every sector, so the map stays
+ * exactly symmetric. A standard centre node becomes a bastion on some maps. Uses its own PRNG
+ * stream, so layout 1 is untouched.
+ */
+export function withBastions(base: GameMap): GameMap {
+  const n = base.factions;
+  const k = Math.floor((base.nodes.length - (base.center >= 0 ? 1 : 0)) / n);
+  const rng = createRng(0xba5710 + n * 31 + base.index * 977);
+  const dist = (i: number) => d2([base.nodes[i]!.x, base.nodes[i]!.y], [base.nodes[0]!.x, base.nodes[0]!.y]);
+  let nearest = 1;
+  for (let i = 2; i < k; i++) if (dist(i) < dist(nearest)) nearest = i;
+  const candidates: number[] = [];
+  for (let i = 1; i < k; i++) if (i !== nearest && base.nodes[i]!.type === 'standard') candidates.push(i);
+  const chosen = new Set<number>();
+  if (candidates.length > 0) {
+    const local = rng.pick(candidates);
+    for (let s = 0; s < n; s++) chosen.add(s * k + local);
+  }
+  if (base.center >= 0 && base.nodes[base.center]!.type === 'standard' && rng.int(0, 2) === 0) chosen.add(base.center);
+  const nodes = base.nodes.map((node, v): MapNode => (chosen.has(v) ? { ...node, type: 'bastion', level: Math.max(node.level, 4) } : node));
+  return { ...base, layout: 2, nodes };
+}
+
+/** Small hand-made first map: one opponent, short lanes, one node of each kind that matters. */
+function introMap(): GameMap {
+  const spec: [number, number, NodeType, number, number][] = [
+    [320, 570, 'standard', 10, 0],
+    [180, 450, 'standard', 2, -1],
+    [460, 450, 'shipyard', 5, -1],
+    [320, 320, 'standard', 6, -1],
+    [180, 190, 'bastion', 5, -1],
+    [460, 190, 'standard', 4, 1],
+    [320, 70, 'standard', 10, 1]
+  ];
+  const nodes = spec.map(([x, y, type, level, owner]): MapNode => ({ x, y, type, level, owner }));
+  const pairs: [number, number][] = [
+    [0, 1],
+    [0, 2],
+    [1, 3],
+    [2, 3],
+    [3, 4],
+    [3, 5],
+    [4, 6],
+    [5, 6]
+  ];
+  const lanes = pairs.map(([a, b]) => [a, b, isqrt(d2([nodes[a]!.x, nodes[a]!.y], [nodes[b]!.x, nodes[b]!.y]))] as const);
+  const laneOf = nodes.map(() => nodes.map(() => -1));
+  const adjacent: number[][] = nodes.map(() => []);
+  lanes.forEach(([a, b], i) => {
+    laneOf[a]![b] = i;
+    laneOf[b]![a] = i;
+    adjacent[a]!.push(b);
+    adjacent[b]!.push(a);
+  });
+  for (const list of adjacent) list.sort((x, y) => x - y);
+  return { index: INTRO_MAP, layout: 2, factions: 2, nodes, lanes, laneOf, adjacent, center: 3 };
 }
 
 const cache = new Map<string, GameMap>();
 
-export function getMap(difficulty: Difficulty, index: number): GameMap {
-  const id = `${difficulty}:${index}`;
+/** Map `index` (0–6, or INTRO_MAP) for `factions` factions (player + opponents) in `layout`. */
+export function getMap(factions: FactionCount, index: number, layout: Layout = 2): GameMap {
+  const id = index === INTRO_MAP ? 'intro' : `${factions}:${index}:${layout}`;
   let map = cache.get(id);
   if (!map) {
-    map = generate(difficulty, index);
+    map = index === INTRO_MAP ? introMap() : layout === 1 ? generate(factions, index) : withBastions(getMap(factions, index, 1));
     cache.set(id, map);
   }
   return map;
