@@ -134,7 +134,9 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
     game.newGame(difficulty === undefined ? { seed } : { seed, difficulty });
     toolbar();
     await autosave?.flush(true);
-    gameRoot.querySelector<HTMLElement>('button, [tabindex="0"], input, select')?.focus();
+    // A game can mark its main play area with data-autofocus (e.g. so arrow keys move pieces instead of
+    // changing an options select that happens to come first); otherwise focus the first control.
+    (gameRoot.querySelector<HTMLElement>('[data-autofocus]') ?? gameRoot.querySelector<HTMLElement>('button, [tabindex="0"], input, select'))?.focus();
   };
 
   const resume = async (save: GameSave<unknown>) => {

@@ -14,6 +14,8 @@ async function startNewGame(page: Page) {
   await page.getByTestId('new-game').click();
   await expect(page.getByTestId('game-root')).toBeVisible();
   await expect(page.getByTestId('board')).toBeVisible();
+  // The board, not the mode select, gets focus, so arrow keys move the stone right away.
+  await expect(page.getByTestId('board')).toBeFocused();
 }
 
 test('resumes after reload with every stone in the same place', async ({ page }) => {

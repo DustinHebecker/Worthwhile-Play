@@ -156,6 +156,7 @@ export function createStackDuel(context: GameContext): GameInstance<StackDuelSta
     tabindex: 0,
     role: 'group',
     'data-testid': 'board',
+    'data-autofocus': '',
     'aria-describedby': `${uid}-help`
   });
   boardBox.append(board);

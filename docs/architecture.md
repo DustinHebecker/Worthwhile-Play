@@ -56,6 +56,8 @@ src/index.ts      export default defineGame({...})
 test/rules.test.ts, test/contract.test.ts (runGameContract), e2e/games/<id>.spec.ts
 ```
 
+After "New game" the host moves focus into the game: to the element marked `data-autofocus` (usually the board), otherwise to the first control.
+
 ### Shared contract suite
 
 `runGameContract(module, { interact })` (`packages/testing`) checks for every game: valid metadata and complete translations in all 16 locales, determinism per seed, JSON-serializable state accepted by `isValidState`, rejection of arbitrary junk (fuzzed with fast-check), exact restore through the real persistence layer after interaction, pause/resume invariance, `reset()` to the seeded start, no missing translation keys when rendering in each locale, and DOM cleanup on `dispose()`. The e2e helper `expectResumeAfterReload` verifies the same across a real browser reload.
