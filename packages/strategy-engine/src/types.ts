@@ -260,9 +260,10 @@ export type SimEvent =
  * Why the engine replaced a unit's standing order on its own:
  * `arrived` (move done), `occupied` (destination held by a unit that will not leave),
  * `unreachable` (no way there for a whole turn), `blocked` (blocked by moving units for three
- * turns), `lost-target` (target or charge gone), `retreat` (doctrine), `regrouped` (back in coverage).
+ * turns), `lost-target` (target or charge gone), `retreat` (doctrine), `regrouped` (back in coverage),
+ * `outpaced` (an attacker could not close in on its target for three turns).
  */
-export type OrderEndReason = 'arrived' | 'occupied' | 'unreachable' | 'blocked' | 'lost-target' | 'retreat' | 'regrouped';
+export type OrderEndReason = 'arrived' | 'occupied' | 'unreachable' | 'blocked' | 'lost-target' | 'retreat' | 'regrouped' | 'outpaced';
 
 export interface Scenario {
   readonly map: GameMap;

@@ -696,5 +696,7 @@ describe('review of PR #9 (round 2, N-b)', () => {
     const fired = events.some((e) => e.t === 'fire');
     const endedBoth = ended(events, 1).length > 0 && ended(events, 2).length > 0;
     expect(fired || endedBoth).toBe(true);
+    // An attacker that cannot close in is told apart from one blocked by units.
+    for (const id of [1, 2]) for (const reason of ended(events, id)) expect(['outpaced', 'lost-target']).toContain(reason);
   });
 });

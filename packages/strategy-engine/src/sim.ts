@@ -173,7 +173,9 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     // No progress along the route for three turns (e.g. stepping aside and back around a
     // patrol, or waiting for a cell that is never free): end the order.
     if (e.order.type !== 'patrol' && e.order.type !== 'escort' && trackProgress(e, aims.get(e.id) ?? goal, step.remaining) >= STALL_TICKS) {
-      end(e, 'blocked');
+      // An attacker that cannot close in (its target as fast as it, firing cells always taken)
+      // is told apart from a unit blocked on its way.
+      end(e, e.order.type === 'attack' ? 'outpaced' : 'blocked');
       continue;
     }
     const next = step.next;
