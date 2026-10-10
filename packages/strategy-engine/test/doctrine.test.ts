@@ -3,6 +3,7 @@ import {
   BASE_RULESET,
   createWorld,
   DEFAULT_DOCTRINE,
+  isValidDoctrine,
   isValidWorld,
   resolveTurn,
   runTicks,
@@ -146,5 +147,52 @@ describe('doctrines (D6)', () => {
     unit(ok, 1).hitAt = 3;
     unit(ok, 1).order = { type: 'patrol', x: 4, y: 0, rx: 0, ry: 0 };
     expect(isValidWorld(ok, base)).toBe(true);
+  });
+});
+
+describe('lost-contact doctrine (UX round after I5)', () => {
+  const worldWith = (lostContact: 'keep' | 'regroup') => {
+    const w = worldOf(open(20, 1), [{ side: 0, kind: 'command-post', x: 0, y: 0 }, { side: 0, kind: 'rifles', x: 7, y: 0 }]);
+    Object.assign(unit(w, 2), { order: { type: 'move', x: 18, y: 0 }, doctrine: doctrine({ lostContact }) });
+    return w;
+  };
+
+  it("'regroup': after a whole turn without contact the unit turns back, with a reported event", () => {
+    const w = worldWith('regroup');
+    const first = resolveTurn(w, net, [[]]);
+    const u = unit(first.world, 2);
+    // Still on its way in the first turn (it left coverage at x = 6 after one step), counter running.
+    expect(u.order.type === 'move' || u.order.type === 'regroup').toBe(true);
+    const second = resolveTurn(first.world, net, [[]]);
+    const events = [...first.events, ...second.events];
+    expect(events.some((e) => e.t === 'order-ended' && e.id === 2 && e.reason === 'lost-contact')).toBe(true);
+    expect(second.reported?.[0]?.some((e) => e.t === 'order-ended' && e.id === 2 && e.reason === 'lost-contact') || first.reported?.[0]?.some((e) => e.t === 'order-ended' && e.id === 2)).toBe(true);
+    const third = resolveTurn(second.world, net, [[]]);
+    expect(unit(third.world, 2).x).toBeLessThanOrEqual(5); // back in coverage (radius 5)
+    expect(isValidWorld(JSON.parse(JSON.stringify(third.world)), net)).toBe(true);
+  });
+
+  it("'keep': the unit carries on with its order out of contact", () => {
+    let w = worldWith('keep');
+    for (let i = 0; i < 4; i++) w = resolveTurn(w, net, [[]]).world;
+    expect(unit(w, 2)).toMatchObject({ order: { type: 'hold' }, x: 18 });
+    expect(unit(w, 2).noContact).toBe(net.ticksPerTurn);
+  });
+
+  it('a set-up relay out of contact stays set up (it does not pack up and drive home)', () => {
+    const w = worldOf(open(20, 1), [{ side: 0, kind: 'command-post', x: 0, y: 0 }, { side: 0, kind: 'mast-truck', x: 12, y: 0 }]);
+    Object.assign(unit(w, 2), { order: { type: 'hold' }, deploy: net.ticksPerTurn, doctrine: doctrine({ lostContact: 'regroup' }) });
+    let world = w;
+    for (let i = 0; i < 3; i++) world = resolveTurn(world, net, [[]]).world;
+    expect(unit(world, 2)).toMatchObject({ x: 12, deploy: net.ticksPerTurn });
+  });
+
+  it('the doctrine needs the field; rulesets without a network never trigger it', () => {
+    expect(isValidDoctrine({ ...DEFAULT_DOCTRINE, lostContact: 'sometimes' })).toBe(false);
+    const w = createWorld({ map: open(20, 1), sides: 2, seed: 1, entities: [{ side: 0, kind: 'rifles', x: 0, y: 0, order: { type: 'move', x: 18, y: 0 } }] }, base);
+    w.entities[0]!.doctrine = doctrine({ lostContact: 'regroup' });
+    let world = w;
+    for (let i = 0; i < 7; i++) world = resolveTurn(world, base, [[]]).world; // one cell per two ticks
+    expect(world.entities[0]!.x).toBe(18);
   });
 });

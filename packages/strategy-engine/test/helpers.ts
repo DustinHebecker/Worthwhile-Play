@@ -75,7 +75,8 @@ export const arbScenario = fc
             retreatBelow: fc.constantFrom(0, 25, 50, 75),
             priority: fc.constantFrom('weakest', 'nearest', 'armor', 'infantry', 'structures', 'emitters'),
             seekCover: fc.boolean(),
-            holdFire: fc.boolean()
+            holdFire: fc.boolean(),
+            lostContact: fc.constantFrom('regroup', 'keep')
           }),
           { nil: undefined }
         ),

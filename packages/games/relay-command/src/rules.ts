@@ -8,6 +8,7 @@ import {
   isValidDoctrine,
   isValidOrder,
   isValidWorld,
+  observe,
   observedCells,
   resolveTurn,
   STRATEGY_RULESET,
@@ -21,7 +22,7 @@ import {
   type SimEvent,
   type World
 } from '@wp/strategy-engine';
-import { planAi } from './ai';
+import { DIFFICULTIES, planAi, type Difficulty } from './ai';
 import { FIELD_EXERCISE, SCENARIOS, type ScenarioSpec } from './scenarios';
 
 /** Strategy rules: orders and reports travel through the command network (coverage, order slots, fog). */
@@ -44,11 +45,33 @@ export interface TurnLog {
  * Logical game state (plain JSON). `draft` holds the player's orders for the coming turn and
  * survives closing the game; `log` holds every locked plan so any game can be replayed exactly.
  */
+/** Longest game: an open-ended game still running at this turn is decided on strength. */
+export const MAX_TURNS = 1000;
+/** Open end: this many turns in a row without any loss of strength on either side decide the game on strength. */
+export const STALL_TURNS = 12;
+/** Turn limits the player can choose before the first turn; `null` = open end (default). */
+export const TURN_LIMITS: readonly (number | null)[] = [null, 12, 24];
+
+/** Doctrine every mobile unit starts with: return into coverage after a turn without contact. */
+export const PLAYER_DOCTRINE: Doctrine = { ...DEFAULT_DOCTRINE, lostContact: 'regroup' };
+
+/** The scenario's world at the start of a game (both sides alike, so the start is symmetric). */
+export function initialWorld(spec: ScenarioSpec, seed: number): World {
+  const world = createWorld({ ...spec.scenario, seed }, RULESET);
+  for (const e of world.entities) if ((archetypeOf(RULESET, e.kind)?.speed ?? 0) > 0) e.doctrine = PLAYER_DOCTRINE;
+  return world;
+}
+
 export interface RcState {
-  v: 3;
+  v: 5;
   seed: number;
+  /** Strength of the scripted opponent (chosen when the game starts). */
+  difficulty: Difficulty;
   scenario: string;
-  turnLimit: number;
+  /** `null`: open end, decided by the Command Posts, or on strength after STALL_TURNS turns without losses. */
+  turnLimit: number | null;
+  /** Turns in a row without any change of strength on either side (open end: see STALL_TURNS). */
+  quiet: number;
   world: World;
   phase: Phase;
   draft: Command[];
@@ -61,13 +84,16 @@ export interface RcState {
 
 export const scenarioById = (id: string): ScenarioSpec | undefined => SCENARIOS.find((s) => s.id === id);
 
-export function newGame(seed: number, spec: ScenarioSpec = FIELD_EXERCISE): RcState {
+export function newGame(seed: number, spec: ScenarioSpec = FIELD_EXERCISE, difficulty: Difficulty = 'normal', turnLimit: number | null = spec.turnLimit): RcState {
+  const world = initialWorld(spec, seed);
   return {
-    v: 3,
+    v: 5,
     seed: normalizeSeed(seed),
+    difficulty,
     scenario: spec.id,
-    turnLimit: spec.turnLimit,
-    world: createWorld({ ...spec.scenario, seed }, RULESET),
+    turnLimit,
+    quiet: 0,
+    world,
     phase: 'plan',
     draft: [],
     events: [],
@@ -83,7 +109,7 @@ export const draftFor = (state: RcState, id: number): Order | undefined => state
 /** The doctrine a unit will follow after this turn's orders: the planned one, else its current one. */
 export function doctrineFor(state: RcState, id: number): Doctrine {
   const planned = state.draft.find((c) => c.unit === id)?.doctrine;
-  return planned ?? unitById(state, id)?.doctrine ?? DEFAULT_DOCTRINE;
+  return planned ?? unitById(state, id)?.doctrine ?? PLAYER_DOCTRINE;
 }
 
 /** Orders the player may give this turn: the connected sources' order slots. */
@@ -149,13 +175,17 @@ export function cancelOrder(state: RcState, unit: number): RcState {
 /** Locks the player's plan, lets the opponent plan blind, and resolves both simultaneously. */
 export function lockTurn(state: RcState): RcState {
   if (state.phase !== 'plan') return state;
-  const plans = [state.draft, planAi(state.world, RULESET, OPPONENT)];
+  // The opponent plans from its own observation only (never the world or the player's draft).
+  const plans = [state.draft, planAi(observe(state.world, RULESET, OPPONENT), RULESET, state.difficulty)];
   const { world, reported } = resolveTurn(state.world, RULESET, plans);
   const events = reported?.[PLAYER] ?? [];
-  const result = outcome(world, state.turnLimit);
+  const changed = [PLAYER, OPPONENT].some((side) => sideValue(world, side) !== sideValue(state.world, side));
+  const quiet = changed ? 0 : state.quiet + 1;
+  const result = outcome(world, state.turnLimit, quiet);
   return {
     ...state,
     world,
+    quiet,
     events,
     draft: [],
     log: [...state.log, { turn: state.world.turn, plans }],
@@ -237,23 +267,55 @@ export function sideValue(world: World, side: number): number {
   return total;
 }
 
-/** Destroying the enemy Command Post wins at once; otherwise the turn limit compares remaining value. */
-export function outcome(world: World, turnLimit: number): Outcome | null {
+/**
+ * Destroying the enemy Command Post wins at once. Otherwise remaining strength decides: at the
+ * turn limit, or in an open-ended game after STALL_TURNS turns without any loss (`quiet`) or at
+ * MAX_TURNS, so a game nobody can win any more still ends.
+ */
+export function outcome(world: World, turnLimit: number | null, quiet = 0): Outcome | null {
   const own = commandPost(world, PLAYER);
   const enemy = commandPost(world, OPPONENT);
   if (!own && !enemy) return 'draw';
   if (!enemy) return 'won';
   if (!own) return 'lost';
-  if (world.turn < turnLimit) return null;
+  const decided = turnLimit === null ? quiet >= STALL_TURNS || world.turn >= MAX_TURNS : world.turn >= turnLimit;
+  if (!decided) return null;
   const diff = sideValue(world, PLAYER) - sideValue(world, OPPONENT);
   return diff > 0 ? 'won' : diff < 0 ? 'lost' : 'draw';
 }
 
 /** Re-runs the logged plans from the scenario start (bug reports, tests). */
 export function replay(seed: number, log: readonly TurnLog[], spec: ScenarioSpec = FIELD_EXERCISE): World {
-  let world = createWorld({ ...spec.scenario, seed }, RULESET);
+  let world = initialWorld(spec, seed);
   for (const entry of log) world = resolveTurn(world, RULESET, entry.plans).world;
   return world;
+}
+
+/**
+ * Adds `lostContact: 'keep'` to every doctrine of an older save (draft, log, units) and to player
+ * units without one: a resumed game plays on as it did (units do not start turning back
+ * unannounced); 'regroup' is the default for new games only. Adds the stall counter.
+ */
+function withLostContact(state: Record<string, unknown>): Record<string, unknown> {
+  const fix = (d: unknown): unknown => (isRecord(d) && d.lostContact === undefined ? { ...d, lostContact: 'keep' } : d);
+  const fixCommand = (c: unknown): unknown => (isRecord(c) && c.doctrine !== undefined ? { ...c, doctrine: fix(c.doctrine) } : c);
+  const draft = Array.isArray(state.draft) ? state.draft.map(fixCommand) : state.draft;
+  const log = Array.isArray(state.log) ? state.log.map((t) => (isRecord(t) && Array.isArray(t.plans) ? { ...t, plans: t.plans.map((p) => (Array.isArray(p) ? p.map(fixCommand) : p)) } : t)) : state.log;
+  const world = isRecord(state.world) && Array.isArray(state.world.entities)
+    ? {
+        ...state.world,
+        entities: state.world.entities.map((e) =>
+          isRecord(e)
+            ? e.doctrine !== undefined
+              ? { ...e, doctrine: fix(e.doctrine) }
+              : e.side === PLAYER && (archetypeOf(RULESET, String(e.kind))?.speed ?? 0) > 0
+                ? { ...e, doctrine: { ...PLAYER_DOCTRINE, lostContact: 'keep' } }
+                : e
+            : e
+        )
+      }
+    : state.world;
+  return { ...state, quiet: 0, draft, log, world };
 }
 
 /** A command whose order is structurally valid on a `w`×`h` map. */
@@ -277,16 +339,18 @@ function matchesScenario(world: World, spec: ScenarioSpec): boolean {
   const n = entities.length;
   // No production yet: every entity id comes from the scenario, so reports are bounded by it too.
   // Projectiles also draw ids, at most one per unit and tick.
-  const maxId = n * (1 + spec.turnLimit * RULESET.ticksPerTurn) + 1;
-  if (world.nextId > maxId || world.entities.some((e) => e.id > n)) return false;
+  const maxId = n * (1 + MAX_TURNS * RULESET.ticksPerTurn) + 1;
+  if (world.turn > MAX_TURNS || world.nextId > maxId || world.entities.some((e) => e.id > n)) return false;
   if (world.intel?.some((reports) => reports.length > n || reports.some((r) => r.id > n))) return false;
   return world.entities.length <= n && world.entities.every((e) => kinds.has(e.kind)) && world.projectiles.length <= n * 4;
 }
 
 export function isValidState(value: unknown): value is RcState {
-  if (!isRecord(value) || value.v !== 3 || !isUint32(value.seed) || typeof value.scenario !== 'string') return false;
+  if (!isRecord(value) || value.v !== 5 || !isUint32(value.seed) || typeof value.scenario !== 'string') return false;
+  if (!isOneOf(value.difficulty, DIFFICULTIES)) return false;
   const spec = scenarioById(value.scenario);
-  if (!spec || !isInt(value.turnLimit, 1, 1000) || !isOneOf(value.phase, ['plan', 'finished'])) return false;
+  if (!spec || !(value.turnLimit === null || isInt(value.turnLimit, 1, MAX_TURNS)) || !isOneOf(value.phase, ['plan', 'finished'])) return false;
+  if (!isInt(value.quiet, 0, MAX_TURNS)) return false;
   if (!isValidWorld(value.world, RULESET) || value.world.sides !== 2 || !matchesScenario(value.world, spec)) return false;
   const isCommand = commandGuard(value.world.map.w, value.world.map.h);
   if (!isArrayOf(value.draft, isCommand) || value.draft.some((c) => c.side !== PLAYER)) return false;
@@ -311,11 +375,24 @@ export function isValidState(value: unknown): value is RcState {
  * filtered by what the player could know).
  */
 export function migrateState(state: unknown, fromVersion: number): RcState | undefined {
+  // Version 4 (before the lost-contact doctrine and open end): doctrines keep their old meaning
+  // (carry on out of contact); player units without a doctrine get the current default.
+  if (fromVersion === 4) {
+    if (!isRecord(state) || state.v !== 4) return undefined;
+    const migrated = withLostContact({ ...state, v: 5 });
+    return isValidState(migrated) ? migrated : undefined;
+  }
+  // Version 3 (before difficulty levels) plays on at 'normal'.
+  if (fromVersion === 3) {
+    if (!isRecord(state) || state.v !== 3) return undefined;
+    const migrated = withLostContact({ ...state, v: 5, difficulty: 'normal' });
+    return isValidState(migrated) ? migrated : undefined;
+  }
   if ((fromVersion !== 1 && fromVersion !== 2) || !isRecord(state) || state.v !== fromVersion || !isRecord(state.world)) return undefined;
   const world: Record<string, unknown> = { ...state.world, ruleset: RULESET.id };
   delete world.intel;
   if (!isValidWorld(world, { ...RULESET, fog: false })) return undefined;
-  const migrated = { ...state, v: 3, events: [], world: { ...world, intel: initialIntel(world as unknown as World, RULESET) } };
+  const migrated = withLostContact({ ...state, v: 5, difficulty: 'normal', events: [], world: { ...world, intel: initialIntel(world as unknown as World, RULESET) } });
   if (!isValidState(migrated)) return undefined;
   // Version 1 had no order limit or coverage: keep only the planned orders that are still allowed.
   let replanned: RcState = { ...migrated, draft: [] };

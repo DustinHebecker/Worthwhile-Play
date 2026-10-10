@@ -5,5 +5,6 @@ export * from './content';
 export * from './world';
 export * from './network';
 export * from './vision';
+export * from './observe';
 export * from './sim';
 export * from './serialize';

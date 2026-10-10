@@ -136,6 +136,29 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
   // Attackers: the cell they aim at (target or its last report), the key for their progress.
   const aims = new Map<number, number>();
   const intent: Intent = { w, rs, occupied, permanent, coverageOf, end, visible, spottedBy, regionsOf, aims };
+  // Doctrine 'lostContact': a mobile unit that spent a whole turn outside its side's coverage
+  // returns into it (unless it is a node at work or already on its way back).
+  if (rs.commandNetwork) {
+    for (const e of w.entities) {
+      const a = arch(e);
+      if (a.speed === 0) continue;
+      const covered = coverageOf(e.side)?.[cellOf(w.map, e.x, e.y)] === 1;
+      if (covered) {
+        delete e.noContact;
+        continue;
+      }
+      e.noContact = Math.min(rs.ticksPerTurn, (e.noContact ?? 0) + 1);
+      const atWork = needsDeploy(a) && (e.order.type === 'deploy' || (e.deploy ?? 0) >= rs.ticksPerTurn);
+      if (e.noContact >= rs.ticksPerTurn && doctrineOf(e).lostContact === 'regroup' && e.order.type !== 'regroup' && !atWork) {
+        e.order = { type: 'regroup' };
+        delete e.bumps;
+        delete e.stuck;
+        delete e.stall;
+        delete e.prev;
+        events.push({ t: 'order-ended', tick: t, id: e.id, reason: 'lost-contact' });
+      }
+    }
+  }
   const goals = new Map<number, number>();
   for (const e of w.entities) {
     const a = arch(e);
@@ -173,7 +196,9 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     // No progress along the route for three turns (e.g. stepping aside and back around a
     // patrol, or waiting for a cell that is never free): end the order.
     if (e.order.type !== 'patrol' && e.order.type !== 'escort' && trackProgress(e, aims.get(e.id) ?? goal, step.remaining) >= STALL_TICKS) {
-      end(e, 'blocked');
+      // An attacker that cannot close in (its target as fast as it, firing cells always taken)
+      // is told apart from a unit blocked on its way.
+      end(e, e.order.type === 'attack' ? 'outpaced' : 'blocked');
       continue;
     }
     const next = step.next;
