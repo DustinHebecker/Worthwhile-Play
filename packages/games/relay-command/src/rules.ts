@@ -14,6 +14,7 @@ import {
   STRATEGY_RULESET,
   validateCommand,
   type Command,
+  type CommandRefusal,
   type Doctrine,
   type Entity,
   type Order,
@@ -47,8 +48,10 @@ export interface TurnLog {
  */
 /** Longest game: an open-ended game still running at this turn is decided on strength. */
 export const MAX_TURNS = 1000;
-/** Open end: this many turns in a row without any loss of strength on either side decide the game on strength. */
+/** Open end: this many turns in a row without a fight (nothing hit or destroyed) decide the game on strength. */
 export const STALL_TURNS = 12;
+/** Most units or sites one side can add per turn (one order slot each; the Command Post has four, a Field Post two). */
+const PRODUCTION_PER_TURN = 6;
 /** Turn limits the player can choose before the first turn; `null` = open end (default). */
 export const TURN_LIMITS: readonly (number | null)[] = [null, 12, 24];
 
@@ -58,19 +61,23 @@ export const PLAYER_DOCTRINE: Doctrine = { ...DEFAULT_DOCTRINE, lostContact: 're
 /** The scenario's world at the start of a game (both sides alike, so the start is symmetric). */
 export function initialWorld(spec: ScenarioSpec, seed: number): World {
   const world = createWorld({ ...spec.scenario, seed }, RULESET);
-  for (const e of world.entities) if ((archetypeOf(RULESET, e.kind)?.speed ?? 0) > 0) e.doctrine = PLAYER_DOCTRINE;
+  // Mobile units follow it; yards carry it so the units they produce follow it too.
+  for (const e of world.entities) {
+    const arch = archetypeOf(RULESET, e.kind);
+    if ((arch?.speed ?? 0) > 0 || arch?.production) e.doctrine = PLAYER_DOCTRINE;
+  }
   return world;
 }
 
 export interface RcState {
-  v: 5;
+  v: 6;
   seed: number;
   /** Strength of the scripted opponent (chosen when the game starts). */
   difficulty: Difficulty;
   scenario: string;
   /** `null`: open end, decided by the Command Posts, or on strength after STALL_TURNS turns without losses. */
   turnLimit: number | null;
-  /** Turns in a row without any change of strength on either side (open end: see STALL_TURNS). */
+  /** Turns in a row without a fight on either side (open end: see STALL_TURNS). */
   quiet: number;
   world: World;
   phase: Phase;
@@ -87,7 +94,7 @@ export const scenarioById = (id: string): ScenarioSpec | undefined => SCENARIOS.
 export function newGame(seed: number, spec: ScenarioSpec = FIELD_EXERCISE, difficulty: Difficulty = 'normal', turnLimit: number | null = spec.turnLimit): RcState {
   const world = initialWorld(spec, seed);
   return {
-    v: 5,
+    v: 6,
     seed: normalizeSeed(seed),
     difficulty,
     scenario: spec.id,
@@ -104,7 +111,12 @@ export function newGame(seed: number, spec: ScenarioSpec = FIELD_EXERCISE, diffi
 }
 
 export const unitById = (state: RcState, id: number): Entity | undefined => state.world.entities.find((e) => e.id === id);
-export const draftFor = (state: RcState, id: number): Order | undefined => state.draft.find((c) => c.unit === id)?.order;
+/** Production and placement are one-shot commands: a structure may give several per turn, each costs a slot. */
+export const isOneShot = (order: Order): boolean => order.type === 'produce' || order.type === 'build';
+/** The standing order planned for a unit this turn (one-shot commands are listed by `plannedJobs`). */
+export const draftFor = (state: RcState, id: number): Order | undefined => state.draft.find((c) => c.unit === id && !isOneShot(c.order))?.order;
+/** The one-shot commands (produce, build) planned for a structure this turn, in order. */
+export const plannedJobs = (state: RcState, id: number): Command[] => state.draft.filter((c) => c.unit === id && isOneShot(c.order));
 
 /** The doctrine a unit will follow after this turn's orders: the planned one, else its current one. */
 export function doctrineFor(state: RcState, id: number): Doctrine {
@@ -115,42 +127,60 @@ export function doctrineFor(state: RcState, id: number): Doctrine {
 /** Orders the player may give this turn: the connected sources' order slots. */
 export const orderSlots = (state: RcState): number => computeNetwork(state.world, RULESET, PLAYER).slots;
 
-export type OrderRefusal =
-  | 'finished'
-  | 'no-slots'
-  | 'unknown-unit'
-  | 'not-yours'
-  | 'out-of-contact'
-  | 'immobile'
-  | 'out-of-bounds'
-  | 'impassable'
-  | 'no-weapon'
-  | 'bad-target'
-  | 'not-visible'
-  | 'bad-order';
+export type OrderRefusal = 'finished' | 'no-slots' | CommandRefusal;
 
 /** Why an order cannot be planned, or `null` if it can (replacing a unit's planned order is free). */
 export function orderRefusal(state: RcState, unit: number, order: Order, doctrine?: Doctrine): OrderRefusal | null {
   if (state.phase !== 'plan') return 'finished';
-  const check = validateCommand(state.world, RULESET, doctrine ? { side: PLAYER, unit, order, doctrine } : { side: PLAYER, unit, order });
+  // One-shot commands are checked against the world as the planned ones leave it (Supply spent,
+  // queues filled), so the player cannot plan more than can be paid for.
+  const world = isOneShot(order) ? afterJobs(state) : state.world;
+  const check = validateCommand(world, RULESET, doctrine ? { side: PLAYER, unit, order, doctrine } : { side: PLAYER, unit, order });
   if (!check.ok) return check.reason;
-  const replaces = state.draft.some((c) => c.unit === unit);
+  const replaces = !isOneShot(order) && state.draft.some((c) => c.unit === unit && !isOneShot(c.order));
   if (!replaces && state.draft.length >= orderSlots(state)) return 'no-slots';
   return null;
 }
+
+/** The world as the planned one-shot commands leave it: Supply paid and queues filled (sites are not placed: cells stay checked). */
+function afterJobs(state: RcState): World {
+  const world = structuredClone(state.world);
+  for (const c of state.draft) {
+    if (!isOneShot(c.order) || c.order.type === 'hold') continue;
+    const cost = archetypeOf(RULESET, (c.order as { kind: string }).kind)?.cost ?? 0;
+    if (world.supply) world.supply[PLAYER] = (world.supply[PLAYER] ?? 0) - cost;
+    if (c.order.type === 'produce') {
+      const yard = world.entities.find((e) => e.id === c.unit);
+      if (yard) (yard.queue ??= []).push({ kind: c.order.kind, left: 1 });
+    }
+  }
+  return world;
+}
+
+/** Supply left to plan with this turn: the side's Supply minus what the planned jobs cost. */
+export const plannedSupply = (state: RcState): number => afterJobs(state).supply?.[PLAYER] ?? 0;
 
 /**
  * Adds or replaces the player's order for one unit. A doctrine planned earlier in the same turn
  * is kept unless a new one is given. Returns `undefined` if the order is not allowed.
  */
 export function planOrder(state: RcState, unit: number, order: Order, doctrine?: Doctrine): RcState | undefined {
-  const keep = doctrine ?? state.draft.find((c) => c.unit === unit)?.doctrine;
+  const oneShot = isOneShot(order);
+  const keep = oneShot ? undefined : (doctrine ?? state.draft.find((c) => c.unit === unit && !isOneShot(c.order))?.doctrine);
   if (orderRefusal(state, unit, order, keep) !== null) return undefined;
   const command: Command = keep ? { side: PLAYER, unit, order, doctrine: keep } : { side: PLAYER, unit, order };
-  const draft = state.draft.filter((c) => c.unit !== unit);
+  // A standing order replaces the unit's planned one; a one-shot command is added (stable order).
+  const draft = oneShot ? [...state.draft] : state.draft.filter((c) => c.unit !== unit || isOneShot(c.order));
   draft.push(command);
   draft.sort((a, b) => a.unit - b.unit);
   return { ...state, draft };
+}
+
+/** Removes the `index`-th planned one-shot command of a structure (production or placement). */
+export function cancelJob(state: RcState, unit: number, index: number): RcState {
+  const jobs = plannedJobs(state, unit);
+  const job = jobs[index];
+  return job ? { ...state, draft: state.draft.filter((c) => c !== job) } : state;
 }
 
 /**
@@ -177,10 +207,12 @@ export function lockTurn(state: RcState): RcState {
   if (state.phase !== 'plan') return state;
   // The opponent plans from its own observation only (never the world or the player's draft).
   const plans = [state.draft, planAi(observe(state.world, RULESET, OPPONENT), RULESET, state.difficulty)];
-  const { world, reported } = resolveTurn(state.world, RULESET, plans);
+  const { world, events: all, reported } = resolveTurn(state.world, RULESET, plans);
   const events = reported?.[PLAYER] ?? [];
-  const changed = [PLAYER, OPPONENT].some((side) => sideValue(world, side) !== sideValue(state.world, side));
-  const quiet = changed ? 0 : state.quiet + 1;
+  // A quiet turn is one without a fight: nothing hit, nothing destroyed (production and income
+  // go on in a stalemate; they are no reason to play on without end).
+  const fought = all.some((e) => e.t === 'hit' || e.t === 'destroyed');
+  const quiet = fought ? 0 : state.quiet + 1;
   const result = outcome(world, state.turnLimit, quiet);
   return {
     ...state,
@@ -291,6 +323,14 @@ export function replay(seed: number, log: readonly TurnLog[], spec: ScenarioSpec
   return world;
 }
 
+/** Switches an older save's world to the current ruleset and gives each side the starting Supply if it has none. */
+function withEconomy(state: Record<string, unknown>): Record<string, unknown> {
+  if (!isRecord(state.world)) return state;
+  const sides = typeof state.world.sides === 'number' ? state.world.sides : 2;
+  const supply = Array.isArray(state.world.supply) ? state.world.supply : Array.from({ length: sides }, () => RULESET.startSupply);
+  return { ...state, world: { ...state.world, ruleset: RULESET.id, supply } };
+}
+
 /**
  * Adds `lostContact: 'keep'` to every doctrine of an older save (draft, log, units) and to player
  * units without one: a resumed game plays on as it did (units do not start turning back
@@ -335,10 +375,12 @@ const isTurnLog = (isCommand: (v: unknown) => v is Command) => (v: unknown): v i
 function matchesScenario(world: World, spec: ScenarioSpec): boolean {
   const { map, entities } = spec.scenario;
   if (world.ruleset !== RULESET.id || world.map.w !== map.w || world.map.h !== map.h || world.map.terrain !== map.terrain) return false;
-  const kinds = new Set(entities.map((e) => e.kind));
-  const n = entities.length;
-  // No production yet: every entity id comes from the scenario, so reports are bounded by it too.
-  // Projectiles also draw ids, at most one per unit and tick.
+  // Kinds: the scenario's, plus anything a yard produces or a source builds.
+  const kinds = new Set([...entities.map((e) => e.kind), ...Object.values(RULESET.archetypes).filter((a) => a.buildTurns > 0).map((a) => a.id)]);
+  // Entities: the scenario's plus what the economy can add — at most the order slots per side
+  // and turn (each unit or site costs one order), so a hostile save cannot carry a horde.
+  const n = entities.length + world.turn * world.sides * PRODUCTION_PER_TURN;
+  // Entity ids are bounded by that too; projectiles draw ids as well, at most one per unit and tick.
   const maxId = n * (1 + MAX_TURNS * RULESET.ticksPerTurn) + 1;
   if (world.turn > MAX_TURNS || world.nextId > maxId || world.entities.some((e) => e.id > n)) return false;
   if (world.intel?.some((reports) => reports.length > n || reports.some((r) => r.id > n))) return false;
@@ -346,7 +388,7 @@ function matchesScenario(world: World, spec: ScenarioSpec): boolean {
 }
 
 export function isValidState(value: unknown): value is RcState {
-  if (!isRecord(value) || value.v !== 5 || !isUint32(value.seed) || typeof value.scenario !== 'string') return false;
+  if (!isRecord(value) || value.v !== 6 || !isUint32(value.seed) || typeof value.scenario !== 'string') return false;
   if (!isOneOf(value.difficulty, DIFFICULTIES)) return false;
   const spec = scenarioById(value.scenario);
   if (!spec || !(value.turnLimit === null || isInt(value.turnLimit, 1, MAX_TURNS)) || !isOneOf(value.phase, ['plan', 'finished'])) return false;
@@ -359,7 +401,8 @@ export function isValidState(value: unknown): value is RcState {
   const n = spec.scenario.entities.length;
   if (value.draft.length > n || !Array.isArray(value.events) || value.events.length > n * RULESET.ticksPerTurn * 12) return false;
   if (!Array.isArray(value.log) || value.log.some((t) => !isRecord(t) || !Array.isArray(t.plans) || t.plans.some((p) => !Array.isArray(p) || p.length > n))) return false;
-  if (new Set(value.draft.map((c) => c.unit)).size !== value.draft.length) return false;
+  const standing = value.draft.filter((c) => !isOneShot(c.order));
+  if (new Set(standing.map((c) => c.unit)).size !== standing.length) return false;
   if (!Array.isArray(value.events) || !value.events.every((e) => isRecord(e) && typeof e.t === 'string' && isInt(e.tick, 0))) return false;
   if (!isArrayOf(value.log, isTurnLog(isCommand)) || value.log.length !== value.world.turn) return false;
   if (typeof value.conceded !== 'boolean') return false;
@@ -375,24 +418,32 @@ export function isValidState(value: unknown): value is RcState {
  * filtered by what the player could know).
  */
 export function migrateState(state: unknown, fromVersion: number): RcState | undefined {
+  // Version 5 (before the economy): the world gets the starting Supply; its map has no deposits
+  // and no yards, so the game plays on as it did (nothing to build on, posts still yield).
+  if (fromVersion === 5) {
+    if (!isRecord(state) || state.v !== 5) return undefined;
+    const migrated = withEconomy({ ...state, v: 6 });
+    return isValidState(migrated) ? migrated : undefined;
+  }
   // Version 4 (before the lost-contact doctrine and open end): doctrines keep their old meaning
   // (carry on out of contact); player units without a doctrine get the current default.
   if (fromVersion === 4) {
     if (!isRecord(state) || state.v !== 4) return undefined;
-    const migrated = withLostContact({ ...state, v: 5 });
+    const migrated = withEconomy(withLostContact({ ...state, v: 6 }));
     return isValidState(migrated) ? migrated : undefined;
   }
   // Version 3 (before difficulty levels) plays on at 'normal'.
   if (fromVersion === 3) {
     if (!isRecord(state) || state.v !== 3) return undefined;
-    const migrated = withLostContact({ ...state, v: 5, difficulty: 'normal' });
+    const migrated = withEconomy(withLostContact({ ...state, v: 6, difficulty: 'normal' }));
     return isValidState(migrated) ? migrated : undefined;
   }
   if ((fromVersion !== 1 && fromVersion !== 2) || !isRecord(state) || state.v !== fromVersion || !isRecord(state.world)) return undefined;
   const world: Record<string, unknown> = { ...state.world, ruleset: RULESET.id };
   delete world.intel;
-  if (!isValidWorld(world, { ...RULESET, fog: false })) return undefined;
-  const migrated = withLostContact({ ...state, v: 5, difficulty: 'normal', events: [], world: { ...world, intel: initialIntel(world as unknown as World, RULESET) } });
+  delete world.supply;
+  if (!isValidWorld(world, { ...RULESET, fog: false, economy: false })) return undefined;
+  const migrated = withEconomy(withLostContact({ ...state, v: 6, difficulty: 'normal', events: [], world: { ...world, intel: initialIntel(world as unknown as World, RULESET) } }));
   if (!isValidState(migrated)) return undefined;
   // Version 1 had no order limit or coverage: keep only the planned orders that are still allowed.
   let replanned: RcState = { ...migrated, draft: [] };

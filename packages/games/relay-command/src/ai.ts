@@ -3,7 +3,9 @@ import {
   cellOf,
   computeNetwork,
   DEFAULT_DOCTRINE,
+  depositAt,
   dist2,
+  incomeOfSide,
   frameIndex,
   inWeaponRange,
   observedCells,
@@ -17,7 +19,8 @@ import {
   type Observation,
   type Order,
   type Ruleset,
-  type World
+  type World,
+  UNKNOWN_LEFT
 } from '@wp/strategy-engine';
 
 export const DIFFICULTIES = ['easy', 'normal', 'hard'] as const;
@@ -70,6 +73,9 @@ export function planAi(obs: Observation, ruleset: Ruleset, difficulty: Difficult
   const own = world.entities.filter((e) => e.side === side && inContact(e));
   const commands: Command[] = [];
 
+  // Economy (I6a): spend first, on at most half the slots, so the army still gets its orders.
+  if (ruleset.economy) commands.push(...economyOrders(obs, ruleset, own, difficulty, Math.max(1, Math.floor(budget / 2))));
+
   for (const truck of own) {
     if (!archetypeOf(ruleset, truck.kind)?.comms?.needsDeploy || truck.order.type === 'deploy') continue;
     if ((truck.deploy ?? 0) >= ruleset.ticksPerTurn) continue; // already set up: leave it standing
@@ -95,7 +101,7 @@ export function planAi(obs: Observation, ruleset: Ruleset, difficulty: Difficult
   // storm it together. The jammer joins in once the storm is on (hard); idle EW units follow
   // the relay truck so they neither box in their own post nor get lost.
   const plan = difficulty === 'easy' ? undefined : assaultPlan(obs, ruleset, difficulty);
-  commands.push(...electronicWarfare(obs, ruleset, own, difficulty === 'hard' && (plan?.storming ?? false)));
+  commands.push(...electronicWarfare(obs, ruleset, own, difficulty === 'hard' && (plan?.storming ?? false) && !(plan?.besieging ?? false)));
 
   const networks: Network[] = [];
   networks[side] = network;
@@ -245,6 +251,8 @@ const RALLY_RADIUS = 2;
 const RALLY_SHARE: Record<Difficulty, number> = { easy: 0, normal: 0.8, hard: 0.9 };
 /** Turn from which the storm goes ahead whatever has rallied (a stray fighter never stalls the game). */
 const RALLY_DEADLINE = 6;
+/** Fewest fighters the deadline storm goes ahead with while yards keep producing. */
+const MIN_STORM = 4;
 /** On the way to the rally point a fighter that loses contact comes back (the storm orders keep). */
 const RALLY_DOCTRINE: Doctrine = { ...AI_DOCTRINE, lostContact: 'regroup' };
 
@@ -273,6 +281,8 @@ interface AssaultPlan {
   readonly all: readonly Entity[];
   /** Enough fighters have gathered: storm the post. */
   readonly storming: boolean;
+  /** A gun is in the force: the post is besieged rather than stormed (the jammer stays home). */
+  readonly besieging: boolean;
 }
 
 /** The side's plan of attack from what it knows: rally point in front of the enemy post and whether to storm. */
@@ -295,8 +305,12 @@ function assaultPlan(obs: Observation, ruleset: Ruleset, difficulty: Difficulty)
   const past = all.filter((f) => dist2(f.x, f.y, objective.x, objective.y) < dist2(rally.x, rally.y, objective.x, objective.y)).length;
   // Only fighters that can be ordered count towards the share: one stuck out of contact never holds the storm up.
   const orderable = all.filter((f) => !ruleset.commandNetwork || obs.network.coverage[cellOf(world.map, f.x, f.y)] === 1);
-  const storming = all.length <= 2 || world.turn >= RALLY_DEADLINE || rallied + past >= Math.ceil(orderable.length * RALLY_SHARE[difficulty]);
-  return { objective, rally, all, storming };
+  // A tiny force storms at once only when no yard can reinforce it (with an economy it waits).
+  const reinforcing = ruleset.economy && world.entities.some((e) => e.side === side && archetypeOf(ruleset, e.kind)?.production && (e.build ?? 0) === 0);
+  // The deadline sends what has gathered, but never a lone unit while yards can reinforce it.
+  const storming = (all.length <= 2 && !reinforcing) || (world.turn >= RALLY_DEADLINE && (orderable.length >= MIN_STORM || !reinforcing)) || rallied + past >= Math.ceil(orderable.length * RALLY_SHARE[difficulty]);
+  const besieging = all.some((f) => (archetypeOf(ruleset, f.kind)?.weapon?.minRange ?? 0) > 0 && (archetypeOf(ruleset, f.kind)?.weapon?.range ?? 0) > 3);
+  return { objective, rally, all, storming, besieging };
 }
 
 /**
@@ -310,6 +324,10 @@ function assault(obs: Observation, ruleset: Ruleset, plan: AssaultPlan, fighters
   const { objective, rally, all } = plan;
   const commands: Command[] = [];
   if (plan.storming) {
+    // With a gun in the force the post is besieged, not stormed (artillery outranges a static
+    // defence; a storm into one trades badly).
+    const siegeOrders = siege(obs, ruleset, plan, fighters);
+    if (siegeOrders) return siegeOrders;
     // Everyone goes for the post. Artillery attacks it from its range once the stormers report it
     // (only a spotted target can be attacked); a ghost it seeks within its own sight and then
     // fires on its own (a stand-off with nothing spotted would hold forever).
@@ -358,6 +376,203 @@ function assault(obs: Observation, ruleset: Ruleset, plan: AssaultPlan, fighters
     commands.push({ side, unit: unit.id, order: { type: 'move', x: spot.x, y: spot.y }, doctrine: RALLY_DOCTRINE });
   }
   return commands;
+}
+
+/**
+ * Siege (I6a): a gun shells the post from its full range while one spotter keeps the post in
+ * sight from the cell farthest out of reach of the known defenders, and the rest guard the gun
+ * (escort) or hold where they stand. Needs a gun with a minimum range and a spotter that can see
+ * the post from beyond the defenders' reach; otherwise `undefined` and the force storms.
+ */
+function siege(obs: Observation, ruleset: Ruleset, plan: AssaultPlan, fighters: readonly Entity[]): Command[] | undefined {
+  const { side } = obs;
+  const { objective } = plan;
+  const arch = (e: Entity) => archetypeOf(ruleset, e.kind);
+  const guns = plan.all.filter((f) => (arch(f)?.weapon?.minRange ?? 0) > 0 && (arch(f)?.weapon?.range ?? 0) > 3);
+  if (guns.length === 0) return undefined;
+  const live = !obs.ghosts.has(objective.id);
+  const commands: Command[] = [];
+  const defenders = enemiesOf(obs).filter((e) => arch(e)?.weapon && arch(e)?.speed !== 0);
+  // The spotter: the fighter that sees farthest (an Outrider sees the post from beyond its sight), then the cheapest.
+  const spotters = fighters.filter((f) => !guns.includes(f)).sort((a, b) => (arch(b)?.vision ?? 0) - (arch(a)?.vision ?? 0) || (arch(a)?.cost ?? 0) - (arch(b)?.cost ?? 0) || frame(obs, a) - frame(obs, b));
+  const spotter = spotters[0];
+  // A spotter that the post itself would see is a spotter lost to the defenders' guns: without
+  // one that sees farther than the post, the gun waits at its stand-off until there is one.
+  const postVision = arch(objective)?.vision ?? 0;
+  const safe = spotter && (arch(spotter)?.vision ?? 0) > postVision;
+  if (spotter && safe) {
+    const post = spottingCell(obs, ruleset, spotter, objective, defenders);
+    if (post && !(spotter.x === post.x && spotter.y === post.y) && !(spotter.order.type === 'move' && spotter.order.x === post.x && spotter.order.y === post.y)) {
+      commands.push({ side, unit: spotter.id, order: { type: 'move', x: post.x, y: post.y }, doctrine: AI_DOCTRINE });
+    } else if (post && spotter.x === post.x && spotter.y === post.y && spotter.order.type !== 'hold') {
+      commands.push({ side, unit: spotter.id, order: { type: 'hold' }, doctrine: AI_DOCTRINE });
+    }
+  }
+  for (const gun of guns) {
+    if (!fighters.includes(gun)) continue;
+    const weapon = arch(gun)?.weapon;
+    if (!weapon) continue;
+    if (live) {
+      if (!(gun.order.type === 'attack' && gun.order.target === objective.id)) commands.push({ side, unit: gun.id, order: { type: 'attack', target: objective.id }, doctrine: AI_DOCTRINE });
+      continue;
+    }
+    // Nothing reports the post yet: wait at the gun's stand-off, out of the defenders' reach.
+    const goal = standOff(obs, ruleset, gun, objective, Math.max(weapon.minRange, weapon.range - 1));
+    if (gun.x === goal.x && gun.y === goal.y) continue;
+    if (!(gun.order.type === 'move' && gun.order.x === goal.x && gun.order.y === goal.y)) commands.push({ side, unit: gun.id, order: { type: 'move', x: goal.x, y: goal.y }, doctrine: AI_DOCTRINE });
+  }
+  // The rest guard the nearest gun (two per gun), the others hold where they are.
+  const guards = fighters.filter((f) => !(safe && f === spotter) && !guns.includes(f));
+  const assigned = new Map<number, number>();
+  for (const guard of guards) {
+    const gun = guns.filter((g) => (assigned.get(g.id) ?? 0) < 2).sort((a, b) => dist2(a.x, a.y, guard.x, guard.y) - dist2(b.x, b.y, guard.x, guard.y) || frame(obs, a) - frame(obs, b))[0];
+    if (gun) {
+      assigned.set(gun.id, (assigned.get(gun.id) ?? 0) + 1);
+      if (!(guard.order.type === 'escort' && guard.order.target === gun.id)) commands.push({ side, unit: guard.id, order: { type: 'escort', target: gun.id }, doctrine: AI_DOCTRINE });
+    } else if (guard.order.type !== 'hold') commands.push({ side, unit: guard.id, order: { type: 'hold' }, doctrine: AI_DOCTRINE });
+  }
+  return commands;
+}
+
+/**
+ * Where `spotter` keeps `objective` in its own sight while standing as far beyond the known
+ * defenders' reach as the map allows (ties: nearer to the spotter, then the side's frame).
+ */
+function spottingCell(obs: Observation, ruleset: Ruleset, spotter: Entity, objective: Positioned, defenders: readonly Entity[]): { x: number; y: number } | undefined {
+  const arch = archetypeOf(ruleset, spotter.kind);
+  if (!arch) return undefined;
+  const vision = arch.vision;
+  const { w, h } = obs.world.map;
+  const taken = new Set(obs.world.entities.filter((e) => e.id !== spotter.id).map((e) => cellOf(obs.world.map, e.x, e.y)));
+  let best: { x: number; y: number; margin: number; d: number; f: number } | undefined;
+  for (let y = Math.max(0, objective.y - vision); y <= Math.min(h - 1, objective.y + vision); y++) {
+    for (let x = Math.max(0, objective.x - vision); x <= Math.min(w - 1, objective.x + vision); x++) {
+      if (dist2(x, y, objective.x, objective.y) > vision * vision || !passable(obs.world.map, ruleset, x, y, arch.layer)) continue;
+      const c = cellOf(obs.world.map, x, y);
+      // Only a reporting unit spots: the cell must lie inside the own coverage.
+      if (taken.has(c) || (ruleset.commandNetwork && obs.network.coverage[c] !== 1)) continue;
+      // Margin: distance beyond the nearest defender's reach and eyes (negative = inside it); a
+      // spotter the defenders see is a spotter their guns can shell.
+      let margin = Number.POSITIVE_INFINITY;
+      for (const e of defenders) {
+        const a = archetypeOf(ruleset, e.kind);
+        const reach = Math.max((a?.weapon?.range ?? 0) + 1, a?.vision ?? 0);
+        margin = Math.min(margin, Math.sqrt(dist2(x, y, e.x, e.y)) - reach);
+      }
+      margin = Math.min(margin, Math.sqrt(dist2(x, y, objective.x, objective.y)) - (archetypeOf(ruleset, (objective as Entity).kind)?.vision ?? 0));
+      margin = Math.min(margin, 3); // beyond three cells of slack, nearer is better
+      const d = dist2(x, y, spotter.x, spotter.y);
+      const f = frameIndex(c, obs.side, w * h);
+      if (!best || margin > best.margin || (margin === best.margin && (d < best.d || (d === best.d && f < best.f)))) best = { x, y, margin, d, f };
+    }
+  }
+  return best;
+}
+
+/** Build order of the levels: what to produce when Supply allows, in this order of need. */
+const ARMY_TEMPLATE: Record<Difficulty, readonly string[]> = {
+  easy: ['rifles'],
+  normal: ['rifles', 'lancer', 'outrider', 'howitzer', 'rifles'],
+  hard: ['lancer', 'rifles', 'outrider', 'howitzer', 'warden']
+};
+/** Turn from which a Motor Pool is built even with fewer than two Extractors. */
+const POOL_TURN = 6;
+/** Turns of income the opponent is willing to wait for the unit it needs most. */
+const SAVE_TURNS = 3;
+/** Easy keeps a cushion before it produces anything (it never builds). */
+const EASY_RESERVE = 150;
+
+/**
+ * Strategic spending (I6a, § 11): Extractors on free covered deposits first (income compounds),
+ * then a Motor Pool once two Extractors stand (hard, or normal from turn 6), then units from the
+ * level's template as the yards allow; at most `slots` orders. Easy only produces infantry when
+ * it has a cushion. Everything is checked with validateCommand before it is spent.
+ */
+function economyOrders(obs: Observation, ruleset: Ruleset, own: readonly Entity[], difficulty: Difficulty, slots: number): Command[] {
+  const { world, side, network } = obs;
+  const commands: Command[] = [];
+  let supply = world.supply?.[side] ?? 0;
+  const arch = (e: Entity) => archetypeOf(ruleset, e.kind);
+  const source = own.find((e) => arch(e)?.comms?.role === 'source' && (e.build ?? 0) === 0);
+  const yards = own.filter((e) => arch(e)?.production && (e.build ?? 0) === 0);
+  const ownAll = world.entities.filter((e) => e.side === side);
+  const costOf = (kind: string) => archetypeOf(ruleset, kind)?.cost ?? Number.POSITIVE_INFINITY;
+  const networks: Network[] = [];
+  networks[side] = network;
+  const tryOrder = (c: Command): boolean => {
+    if (commands.length >= slots || !validateCommand(world, ruleset, c, networks).ok) return false;
+    commands.push(c);
+    const kind = c.order.type === 'produce' || c.order.type === 'build' ? c.order.kind : undefined;
+    if (kind) supply -= costOf(kind);
+    return true;
+  };
+  if (difficulty === 'easy') {
+    for (const yard of yards) {
+      if (supply < EASY_RESERVE + costOf('rifles') || (yard.queue?.length ?? 0) > 0) continue;
+      tryOrder({ side, unit: yard.id, order: { type: 'produce', kind: 'rifles' } });
+    }
+    return commands;
+  }
+  // 1. Extractors on free deposits inside coverage (nearest to the post first).
+  if (source) {
+    const free = (world.map.deposits ?? [])
+      .filter((d) => (d.left > 0 || d.left === UNKNOWN_LEFT) && !world.entities.some((e) => e.x === d.x && e.y === d.y))
+      .sort((a, b) => dist2(a.x, a.y, source.x, source.y) - dist2(b.x, b.y, source.x, source.y) || frameIndex(cellOf(world.map, a.x, a.y), side, world.map.w * world.map.h) - frameIndex(cellOf(world.map, b.x, b.y), side, world.map.w * world.map.h));
+    for (const d of free) {
+      if (supply < costOf('extractor')) break;
+      if (dangerAt(obs, ruleset, d.x, d.y) > 0) continue; // within reach of a known enemy fighter: it would only be shelled
+      tryOrder({ side, unit: source.id, order: { type: 'build', kind: 'extractor', x: d.x, y: d.y } });
+    }
+  }
+  // 2. A Motor Pool next to the post once the economy runs (vehicles: scouts that spot from afar, guns).
+  const extractors = ownAll.filter((e) => arch(e)?.extractor).length;
+  const hasPool = ownAll.some((e) => e.kind === 'motor-pool');
+  if (source && !hasPool && (extractors >= 2 || world.turn >= POOL_TURN) && supply >= costOf('motor-pool')) {
+    const spot = buildSpot(obs, ruleset, source, 'motor-pool');
+    if (spot) tryOrder({ side, unit: source.id, order: { type: 'build', kind: 'motor-pool', x: spot.x, y: spot.y } });
+  }
+  // 3. Units from the template: the first kind of the template that is short in the force.
+  const counts = new Map<string, number>();
+  for (const e of ownAll) counts.set(e.kind, (counts.get(e.kind) ?? 0) + 1);
+  for (const yard of ownAll) for (const q of yard.queue ?? []) counts.set(q.kind, (counts.get(q.kind) ?? 0) + 1);
+  const template = ARMY_TEMPLATE[difficulty];
+  const wanted = template.filter((kind) => (counts.get(kind) ?? 0) < template.filter((k) => k === kind).length + (difficulty === 'hard' ? 1 : 0));
+  // Keep a cushion for the next Extractor while a free deposit out of enemy reach remains.
+  const reserve = (world.map.deposits ?? []).some((d) => (d.left > 0 || d.left === UNKNOWN_LEFT) && !world.entities.some((e) => e.x === d.x && e.y === d.y) && dangerAt(obs, ruleset, d.x, d.y) === 0) ? costOf('extractor') : 0;
+  const income = incomeOfSide(world, ruleset, side, network);
+  const fighters = ownAll.filter((e) => arch(e)?.weapon && (arch(e)?.speed ?? 0) > 0).length;
+  for (const kind of [...wanted, ...template]) {
+    if (commands.length >= slots) break;
+    const yard = yards.find((y) => arch(y)?.production?.includes(kind) && (y.queue?.length ?? 0) < 2);
+    if (!yard) continue;
+    if (supply - costOf(kind) < reserve) {
+      // Save up for what is needed most (a gun, a scout) unless the force is too thin to wait.
+      if (wanted.includes(kind) && (fighters >= MIN_STORM || supply + income * SAVE_TURNS >= costOf(kind) + reserve)) break;
+      continue;
+    }
+    if (tryOrder({ side, unit: yard.id, order: { type: 'produce', kind } })) counts.set(kind, (counts.get(kind) ?? 0) + 1);
+  }
+  return commands;
+}
+
+/** A free covered cell for a structure near `source`, away from deposits, nearest first (ties in the side's frame). */
+function buildSpot(obs: Observation, ruleset: Ruleset, source: Entity, kind: string): { x: number; y: number } | undefined {
+  const { world, side, network } = obs;
+  const layer = archetypeOf(ruleset, kind)?.layer ?? 'ground';
+  const taken = new Set(world.entities.map((e) => cellOf(world.map, e.x, e.y)));
+  let best: { x: number; y: number; d: number; f: number } | undefined;
+  for (let y = Math.max(0, source.y - 3); y <= Math.min(world.map.h - 1, source.y + 3); y++) {
+    for (let x = Math.max(0, source.x - 3); x <= Math.min(world.map.w - 1, source.x + 3); x++) {
+      const c = cellOf(world.map, x, y);
+      if (taken.has(c) || network.coverage[c] !== 1 || !passable(world.map, ruleset, x, y, layer) || depositAt(world.map, x, y)) continue;
+      // Not adjacent to the post or a yard: their neighbours are where produced units appear.
+      if (world.entities.some((e) => e.side === side && (archetypeOf(ruleset, e.kind)?.production || e.kind === source.kind) && Math.max(Math.abs(e.x - x), Math.abs(e.y - y)) <= 1)) continue;
+      const d = dist2(x, y, source.x, source.y);
+      const f = frameIndex(c, side, world.map.w * world.map.h);
+      if (!best || d < best.d || (d === best.d && f < best.f)) best = { x, y, d, f };
+    }
+  }
+  return best;
 }
 
 /** Whether other fighters are close by, or are advancing with this turn's orders: no lone pushes. */

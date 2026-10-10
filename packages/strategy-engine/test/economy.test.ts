@@ -98,7 +98,7 @@ describe('economy (I6a, D8)', () => {
     unit(w, 3).queue = Array.from({ length: MAX_QUEUE }, () => ({ kind: 'rifles', left: 1 }));
     expect(v({ side: 0, unit: 3, order: { type: 'produce', kind: 'rifles' } })).toEqual({ ok: false, reason: 'queue-full' });
     expect(isValidWorld(w, net)).toBe(true);
-    unit(w, 3).queue.push({ kind: 'rifles', left: 1 });
+    unit(w, 3).queue?.push({ kind: 'rifles', left: 1 });
     expect(isValidWorld(w, net)).toBe(false);
     // Boxed in: every neighbour taken, the finished unit waits inside.
     const boxed = worldOf(open(3, 3), [
