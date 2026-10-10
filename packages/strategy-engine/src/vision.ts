@@ -142,20 +142,24 @@ export function updateIntel(world: World, ruleset: Ruleset, gone: readonly Entit
     for (let i = from; i < events.length; i++) {
       const ev = events[i] as SimEvent;
       const knownAnyway = (ev.t === 'destroyed' && lost.has(ev.id)) || (ev.t === 'order-ended' && ev.reason === 'lost-contact' && own.has(ev.id));
-      if (eventVisible(ev, live, seen, side) || knownAnyway) list.push(ev);
+      if (eventVisible(ev, live, seen, side, own) || knownAnyway) list.push(ev);
     }
   }
   world.intel = intel;
 }
 
-function eventVisible(ev: SimEvent, live: ReadonlySet<number>, seen: (x: number, y: number) => boolean, side: number): boolean {
+function eventVisible(ev: SimEvent, live: ReadonlySet<number>, seen: (x: number, y: number) => boolean, side: number, ownIds: ReadonlySet<number>): boolean {
   switch (ev.t) {
     case 'land':
       return seen(ev.x, ev.y);
     // Economy: a side's income and what it queued are its own; new units and sites are reported
     // like anything else standing on an observed cell (own ones are always known to their side).
     case 'income':
+    case 'site-blocked':
       return ev.side === side;
+    // What a yard queued is its owner's business, even when the yard is in sight.
+    case 'queued':
+      return ownIds.has(ev.id);
     case 'produced':
     case 'site':
       return ev.side === side || seen(ev.x, ev.y);

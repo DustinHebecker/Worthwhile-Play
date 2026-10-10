@@ -6,6 +6,7 @@ import {
   incomeOfSide,
   isValidWorld,
   MAX_QUEUE,
+  MAX_SUPPLY,
   observe,
   resolveTurn,
   STRATEGY_RULESET,
@@ -168,5 +169,62 @@ describe('economy (I6a, D8)', () => {
     expect(isValidWorld(w, net)).toBe(false);
     const plain = createWorld({ map: open(4, 1), sides: 2, entities: [{ side: 0, kind: 'command-post', x: 0, y: 0 }], seed: 1 }, BASE_RULESET);
     expect(validateCommand(plain, BASE_RULESET, { side: 0, unit: 1, order: { type: 'build', kind: 'muster', x: 1, y: 0 } })).toEqual({ ok: false, reason: 'bad-order' });
+  });
+
+  it('placements of both sides on one cell in one batch are refused for both, unpaid, whatever the command order', () => {
+    const w = worldOf(open(11, 3), [{ side: 0, kind: 'command-post', x: 2, y: 1 }, { side: 1, kind: 'command-post', x: 8, y: 1 }]);
+    const c0: Command = { side: 0, unit: 1, order: { type: 'build', kind: 'relay-mast', x: 5, y: 1 } };
+    const c1: Command = { side: 1, unit: 2, order: { type: 'build', kind: 'relay-mast', x: 5, y: 1 } };
+    for (const plans of [[[c0], [c1]], [[c1], [c0]]]) {
+      const { world, events } = turn(w, plans);
+      expect(world.entities).toHaveLength(2);
+      expect(world.supply).toEqual([320, 320]);
+      expect(events.filter((e) => e.t === 'site-blocked').map((e) => e.t === 'site-blocked' && e.side)).toEqual(plans.flat().map((c) => c.side));
+    }
+  });
+
+  it('placement is judged by what the side knows; a hidden unit on the cell is found only when the order is carried out', () => {
+    const w = worldOf(open(20, 3), [
+      { side: 0, kind: 'command-post', x: 0, y: 1 },
+      { side: 0, kind: 'relay-mast', x: 5, y: 1 },
+      { side: 1, kind: 'command-post', x: 19, y: 1 },
+      { side: 1, kind: 'rifles', x: 10, y: 1 }
+    ]);
+    const build: Command = { side: 0, unit: 1, order: { type: 'build', kind: 'relay-mast', x: 10, y: 1 } };
+    // (10, 1) lies in side 0's coverage but nobody sees it: the answer must not depend on the hidden rifle.
+    expect(w.intel?.[0]?.some((r) => r.id === 4)).toBe(false);
+    expect(validateCommand(w, net, build)).toEqual({ ok: true });
+    const empty = structuredClone(w);
+    empty.entities = empty.entities.filter((e) => e.id !== 4);
+    expect(validateCommand(empty, net, build)).toEqual({ ok: true });
+    const { world, events, reported } = turn(w, [[build], []]);
+    expect(world.entities.some((e) => e.kind === 'relay-mast' && e.x === 10)).toBe(false);
+    expect(world.supply?.[0]).toBe(320);
+    expect(reported?.[0]?.filter((e) => e.t === 'site-blocked')).toEqual([{ t: 'site-blocked', tick: 1, side: 0, kind: 'relay-mast', x: 10, y: 1 }]);
+    expect(reported?.[1]?.some((e) => e.t === 'site-blocked')).toBe(false);
+    expect(events.some((e) => e.t === 'site')).toBe(false);
+  });
+
+  it('what a yard queues is reported to its own side only, even when the yard is in sight', () => {
+    const w = worldOf(open(16, 3), [{ side: 0, kind: 'command-post', x: 1, y: 1 }, { side: 1, kind: 'muster', x: 5, y: 1 }, { side: 1, kind: 'command-post', x: 9, y: 1 }]);
+    const { reported } = turn(w, [[], [{ side: 1, unit: 2, order: { type: 'produce', kind: 'lancer' } }]]);
+    expect(reported?.[1]?.some((e) => e.t === 'queued')).toBe(true);
+    expect(reported?.[0]?.some((e) => e.t === 'queued')).toBe(false);
+  });
+
+  it('a yard ringed by units delivers two cells out; Supply is capped; a Field Post places structures only when set up', () => {
+    const ring = [[1, 1], [2, 1], [3, 1], [1, 2], [3, 2], [1, 3], [2, 3], [3, 3]].map(([x, y]) => ({ side: 0, kind: 'rifles', x: x as number, y: y as number }));
+    const w = worldOf(open(6, 6), [{ side: 0, kind: 'command-post', x: 5, y: 5 }, { side: 0, kind: 'muster', x: 2, y: 2 }, ...ring]);
+    unit(w, 2).queue = [{ kind: 'rifles', left: 1 }];
+    const produced = turn(w).events.find((e) => e.t === 'produced');
+    expect(produced && produced.t === 'produced' && Math.max(Math.abs(produced.x - 2), Math.abs(produced.y - 2))).toBe(2);
+    const rich = field([], [MAX_SUPPLY - 5, 0]);
+    expect(turn(rich).world.supply?.[0]).toBe(MAX_SUPPLY);
+    expect(isValidWorld(turn(rich).world, net)).toBe(true);
+    const post = field([{ side: 0, kind: 'field-post', x: 2, y: 1 }]);
+    const place: Command = { side: 0, unit: 3, order: { type: 'build', kind: 'muster', x: 2, y: 2 } };
+    expect(validateCommand(post, net, place)).toEqual({ ok: false, reason: 'cannot-build' });
+    unit(post, 3).deploy = net.ticksPerTurn;
+    expect(validateCommand(post, net, place)).toEqual({ ok: true });
   });
 });

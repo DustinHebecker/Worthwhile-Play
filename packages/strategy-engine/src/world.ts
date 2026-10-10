@@ -3,7 +3,7 @@ import { cellOf, inBounds, passable } from './grid';
 import { depositAt, isReady } from './economy';
 import { MAX_QUEUE } from './types';
 import { computeNetwork, isCommandable, type Network } from './network';
-import { initialIntel, isSpotted } from './vision';
+import { initialIntel, isSpotted, observedCells } from './vision';
 import { LOST_CONTACT, RETREAT_THRESHOLDS, TARGET_PRIORITIES, type Archetype, type Command, type Doctrine, type Entity, type Order, type Ruleset, type Scenario, type World } from './types';
 
 /** Build the initial world for a scenario. Throws on invalid authored content (programmer error). */
@@ -175,15 +175,22 @@ export function validateCommand(world: World, ruleset: Ruleset, command: Command
     case 'build': {
       if (!ruleset.economy || typeof order.kind !== 'string') return { ok: false, reason: 'bad-order' };
       const structure = archetypeOf(ruleset, order.kind);
-      if (arch.comms?.role !== 'source' || !isReady(unit) || !structure || structure.speed !== 0 || structure.buildTurns <= 0) return { ok: false, reason: 'cannot-build' };
+      // A source places structures once it works: a Field Post only when set up.
+      const working = !arch.comms?.needsDeploy || (unit.deploy ?? 0) >= ruleset.ticksPerTurn;
+      if (arch.comms?.role !== 'source' || !working || !isReady(unit) || !structure || structure.speed !== 0 || structure.buildTurns <= 0) return { ok: false, reason: 'cannot-build' };
       if (!Number.isInteger(order.x) || !Number.isInteger(order.y) || !inBounds(world.map, order.x, order.y)) return { ok: false, reason: 'out-of-bounds' };
       if (!passable(world.map, ruleset, order.x, order.y, structure.layer)) return { ok: false, reason: 'impassable' };
       const cell = cellOf(world.map, order.x, order.y);
-      const taken = world.entities.some((e) => e.x === order.x && e.y === order.y && archetypeOf(ruleset, e.kind)?.layer === structure.layer);
+      // Judged by what the side knows (fog, D7): its own units, enemies it sees, and enemy
+      // structures it knows of. A hidden unit on the cell is found only when the order is carried
+      // out (the site is then refused unpaid), so a refusal here reveals nothing.
+      const taken = knownAt(world, ruleset, unit.side, order.x, order.y).some((e) => archetypeOf(ruleset, e.kind)?.layer === structure.layer);
       const coverage = (networks?.[unit.side] ?? computeNetwork(world, ruleset, unit.side)).coverage;
-      // Deposits are for Extractors, an Extractor only for a deposit that still yields.
+      // Deposits are for Extractors, an Extractor only for a deposit that still yields (as far as
+      // the side knows: an unobserved deposit's remainder is unknown, `UNKNOWN_LEFT` in observations).
       const deposit = depositAt(world.map, order.x, order.y);
-      const fits = structure.extractor ? deposit !== undefined && deposit.left > 0 : deposit === undefined;
+      const observed = ruleset.fog ? observedCells(world, ruleset, unit.side, networks?.[unit.side])[cell] === 1 : true;
+      const fits = structure.extractor ? deposit !== undefined && (deposit.left > 0 || !observed) : deposit === undefined;
       if (taken || coverage[cell] !== 1 || !fits) return { ok: false, reason: 'not-buildable' };
       if ((world.supply?.[unit.side] ?? 0) < structure.cost) return { ok: false, reason: 'no-supply' };
       return { ok: true };
@@ -191,6 +198,21 @@ export function validateCommand(world: World, ruleset: Ruleset, command: Command
     default:
       return { ok: false, reason: 'bad-order' };
   }
+}
+
+/**
+ * Entities on (x, y) as `side` knows them: own units always; with fog, other sides' units only
+ * while they are spotted, and their structures from any report (structures do not move).
+ */
+export function knownAt(world: World, ruleset: Ruleset, side: number, x: number, y: number): Entity[] {
+  const here = world.entities.filter((e) => e.x === x && e.y === y);
+  if (!ruleset.fog) return here;
+  const reports = world.intel?.[side] ?? [];
+  return here.filter((e) => {
+    if (e.side === side) return true;
+    const r = reports.find((q) => q.id === e.id);
+    return !!r && (r.live || ((archetypeOf(ruleset, e.kind)?.speed ?? 1) === 0 && r.x === x && r.y === y));
+  });
 }
 
 /** Copy of a validated order without foreign fields (commands may come from untrusted saves). */

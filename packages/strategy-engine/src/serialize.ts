@@ -1,7 +1,7 @@
 import { isArrayOf, isInt, isOneOf, isRecord, isUint32, seedFromString } from '@wp/game-core';
 import { DEADLOCK_TICKS, STALL_TICKS, UNREACHABLE_TICKS } from './sim';
 import { archetypeOf, isValidDoctrine, needsDeploy } from './world';
-import { MAX_QUEUE, STATUS_KINDS, type Deposit, type Entity, type Order, type Projectile, type QueueItem, type Report, type Ruleset, type Status, type World } from './types';
+import { MAX_QUEUE, MAX_SUPPLY, STATUS_KINDS, type Deposit, type Entity, type Order, type Projectile, type QueueItem, type Report, type Ruleset, type Status, type World } from './types';
 
 const MAX_DIM = 128;
 const MAX_ID = 0x7fff_ffff;
@@ -120,7 +120,6 @@ export function isValidWorld(value: unknown, ruleset?: Ruleset): value is World 
   return true;
 }
 
-const MAX_SUPPLY = 1_000_000_000;
 const MAX_DEPOSIT = 1_000_000;
 
 /** Deposits: inside the map, sorted by cell without duplicates, with a non-negative remainder. */

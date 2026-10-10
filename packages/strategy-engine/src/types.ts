@@ -244,6 +244,9 @@ export interface QueueItem {
 /** Longest production queue of a yard. */
 export const MAX_QUEUE = 2;
 
+/** Most Supply a side can hold (income beyond it is lost; keeps every save valid). */
+export const MAX_SUPPLY = 1_000_000;
+
 export interface Projectile {
   id: number;
   side: number;
@@ -317,7 +320,13 @@ export type SimEvent =
   | { t: 'produced'; tick: number; id: number; side: number; kind: string; x: number; y: number; by: number }
   /** A structure site was placed (`id`), or finished (`built`). */
   | { t: 'site'; tick: number; id: number; side: number; kind: string; x: number; y: number }
-  | { t: 'built'; tick: number; id: number };
+  | { t: 'built'; tick: number; id: number }
+  /**
+   * A placement the side's knowledge allowed but the cell turned out taken (a hidden unit, a
+   * deposit run dry, or both sides placing on it in the same batch): refused unpaid, no slot used.
+   * Reported to the placing side only.
+   */
+  | { t: 'site-blocked'; tick: number; side: number; kind: string; x: number; y: number };
 
 /**
  * Why the engine replaced a unit's standing order on its own:

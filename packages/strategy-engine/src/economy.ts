@@ -34,13 +34,22 @@ export function incomeOfSide(world: World, ruleset: Ruleset, side: number, netwo
   return total;
 }
 
+/** Offsets two cells out, in side 0's frame (side 1 uses them point-mirrored). */
+const RING2: readonly (readonly [number, number])[] = (() => {
+  const out: [number, number][] = [];
+  for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if (Math.max(Math.abs(dx), Math.abs(dy)) === 2) out.push([dx, dy]);
+  return out;
+})();
+
 /**
- * The free cell next to `yard` where a produced unit of `arch` appears: the first free passable
- * neighbour in the side's own frame (mirrored sides choose mirrored cells), or `undefined`.
+ * The free cell near `yard` where a produced unit of `arch` appears: the first free passable
+ * neighbour, else a cell two out, in the side's own frame (mirrored sides choose mirrored cells), or `undefined`.
  */
 export function spawnCell(world: World, ruleset: Ruleset, yard: Entity, arch: Archetype): { x: number; y: number } | undefined {
   const taken = new Set(world.entities.filter((e) => archetypeOf(ruleset, e.kind)?.layer === arch.layer).map((e) => cellOf(world.map, e.x, e.y)));
-  for (const [dx, dy] of dirsFor(yard.side)) {
+  // Neighbours first, then the ring two cells out (a yard ringed by its own units still delivers).
+  const ring2 = RING2.map(([dx, dy]) => (yard.side === 1 ? ([-dx, -dy] as const) : ([dx, dy] as const)));
+  for (const [dx, dy] of [...dirsFor(yard.side), ...ring2]) {
     const x = yard.x + dx;
     const y = yard.y + dy;
     if (!inBounds(world.map, x, y) || !passable(world.map, ruleset, x, y, arch.layer) || taken.has(cellOf(world.map, x, y))) continue;

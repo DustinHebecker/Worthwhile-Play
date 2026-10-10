@@ -1,6 +1,7 @@
+import { isRecord } from '@wp/game-core';
 import { cellOf, dirsFor, dist2, frameIndex, maxStepCost, passable, stepCost, terrainAt } from './grid';
 import { canReach, costGrid, findPath, NumberHeap, regions } from './path';
-import { DEFAULT_DOCTRINE, type Archetype, type Command, type Doctrine, type Entity, type OrderEndReason, type Ruleset, type SimEvent, type Status, type TargetPriority, type WeaponSpec, type World } from './types';
+import { DEFAULT_DOCTRINE, MAX_SUPPLY, type Archetype, type Command, type Doctrine, type Entity, type Order, type OrderEndReason, type Ruleset, type SimEvent, type Status, type TargetPriority, type WeaponSpec, type World } from './types';
 import { computeNetwork, isEmitter, type Network } from './network';
 import { initialIntel, updateIntel } from './vision';
 import { archetypeOf, findEntity, needsDeploy, normalizeDoctrine, normalizeOrder, spawn, validateCommand } from './world';
@@ -77,8 +78,31 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
   // so the order of commands within a batch never changes which of them get through.
   const networks = rs.commandNetwork && commands.length > 0 ? Array.from({ length: w.sides }, (_, side) => computeNetwork(w, rs, side)) : undefined;
   const slotsLeft = new Map<number, number>(networks?.map((n, side) => [side, n.slots]));
+  // Placements of different sides on one cell in one batch: both refused (no side wins a tie by
+  // the order in which the plans were handed in).
+  const placedBy = new Map<number, Set<number>>();
+  for (const c of commands) {
+    const o = isRecord(c) && isRecord(c.order) ? (c.order as Order) : undefined;
+    if (o?.type !== 'build' || !Number.isInteger(o.x) || !Number.isInteger(o.y)) continue;
+    const key = o.y * w.map.w + o.x;
+    (placedBy.get(key) ?? placedBy.set(key, new Set()).get(key)!).add(c.side);
+  }
   for (const c of commands) {
     if (!validateCommand(w, rs, c, networks).ok) continue;
+    // A placement the side's knowledge allowed may still find the cell taken: refused unpaid.
+    if (c.order.type === 'build') {
+      const o = c.order;
+      const structure = arch({ kind: o.kind } as Entity);
+      const deposit = depositAt(w.map, o.x, o.y);
+      const blocked =
+        (placedBy.get(o.y * w.map.w + o.x)?.size ?? 0) > 1 ||
+        w.entities.some((e) => e.x === o.x && e.y === o.y && arch(e).layer === structure.layer) ||
+        (structure.extractor && (deposit?.left ?? 0) <= 0);
+      if (blocked) {
+        events.push({ t: 'site-blocked', tick: t, side: c.side, kind: o.kind, x: o.x, y: o.y });
+        continue;
+      }
+    }
     if (rs.commandNetwork) {
       const left = slotsLeft.get(c.side) ?? 0;
       if (left <= 0) continue;
@@ -384,7 +408,7 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
         amount += yield_;
         if (arch(e).extractor) (depositAt(w.map, e.x, e.y) as { left: number }).left -= yield_;
       }
-      supply[side] = (supply[side] ?? 0) + amount;
+      supply[side] = Math.min(MAX_SUPPLY, (supply[side] ?? 0) + amount);
       if (amount > 0) events.push({ t: 'income', tick: t, side, amount });
     }
     // Construction sites finish; yards work on the head of their queue and set the unit down
