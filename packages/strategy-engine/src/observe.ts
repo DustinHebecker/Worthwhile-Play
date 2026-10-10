@@ -1,4 +1,5 @@
-import { computeNetwork, type Network } from './network';
+import { cellOf, dist2 } from './grid';
+import { computeNetwork, jammedCells, nodeRadius, type Network } from './network';
 import type { Entity, Report, Ruleset, World } from './types';
 
 /**
@@ -16,6 +17,11 @@ export interface Observation {
   readonly ghosts: ReadonlyMap<number, number>;
   /** The side's own command network right now. */
   readonly network: Network;
+  /**
+   * Cells where the side's own radio is jammed (1), limited to the reach of its connected
+   * nodes: a side feels the silence where it expects contact, not the jammer's whole disc.
+   */
+  readonly jammed: Uint8Array;
 }
 
 /** Builds the observation of `side`. Without fog every enemy is known as it is (orders hidden). */
@@ -55,8 +61,30 @@ export function observe(world: World, ruleset: Ruleset, side: number): Observati
     sides: world.sides,
     entities,
     projectiles: world.projectiles.filter((p) => p.side === side).map((p) => ({ ...p })),
-    nextId: world.nextId,
+    // Only ids the side knows: the true counter would reveal every unseen enemy shot.
+    nextId: Math.max(0, ...entities.map((e) => e.id), ...world.projectiles.filter((p) => p.side === side).map((p) => p.id)) + 1,
     ...(intel && { intel })
   };
-  return { side, ruleset: ruleset.id, world: known, ghosts, network: computeNetwork(world, ruleset, side) };
+  const network = computeNetwork(world, ruleset, side);
+  return { side, ruleset: ruleset.id, world: known, ghosts, network, jammed: feltJamming(world, ruleset, side, network) };
+}
+
+/** Jammed cells within the reach of the side's connected nodes (what the side can tell apart from plain lack of coverage). */
+function feltJamming(world: World, ruleset: Ruleset, side: number, network: Network): Uint8Array {
+  const { w, h } = world.map;
+  const jam = jammedCells(world, ruleset, side);
+  const felt = new Uint8Array(w * h);
+  if (jam.every((c) => c === 0)) return felt;
+  for (const id of network.nodes) {
+    const node = world.entities.find((e) => e.id === id);
+    if (!node) continue;
+    const r = nodeRadius(world, ruleset, node);
+    for (let y = Math.max(0, node.y - r); y <= Math.min(h - 1, node.y + r); y++) {
+      for (let x = Math.max(0, node.x - r); x <= Math.min(w - 1, node.x + r); x++) {
+        const c = cellOf(world.map, x, y);
+        if (dist2(node.x, node.y, x, y) <= r * r && jam[c] === 1) felt[c] = 1;
+      }
+    }
+  }
+  return felt;
 }

@@ -32,7 +32,7 @@ STRATEGY_RULESET                                                     // BASE_RUL
 // Doctrines (I3b):
 DEFAULT_DOCTRINE, isValidDoctrine(v), TARGET_PRIORITIES, RETREAT_THRESHOLDS
 // AI input (I5):
-observe(world, ruleset, side): Observation                           // { world as known, ghosts, own network }
+observe(world, ruleset, side): Observation                           // { world as known, ghosts, own network, felt jamming }
 // Electronic warfare (I4):
 jammedCells(world, ruleset, side): Uint8Array                        // enemy jam discs minus own burn-through
 isActiveEw(ruleset, e) / isEmitter(ruleset, e)                       // working EW unit / node-or-jammer
@@ -58,7 +58,7 @@ resolveTurn/runTicks(...).reported?: SimEvent[][]                    // fog: per
 
   Doctrine `lostContact` (`regroup` | `keep`; engine default `keep`): with a command network, a mobile unit that spent a whole turn (`entity.noContact` ticks) outside its side's coverage switches to `regroup` with an `order-ended` of reason `lost-contact`, which its own side is always told; nodes at work (deploying or set up) are exempt. Games choose the default for their players' units (Relay Command: `regroup`).
 
-  AI (I5): planners receive an `Observation` — own units unchanged, enemies from the side's reports (orders, set-up state and doctrines hidden; ghosts at their last reported cell), the side's own intel only, and its true own network (a side feels jamming). They never see the world, which makes P8 structural. `OrderEndReason` gains `outpaced` (an attack that could not close in for STALL_TICKS).
+  AI (I5): planners receive an `Observation` — own units unchanged, enemies from the side's reports (orders, set-up state and doctrines hidden; ghosts at their last reported cell), the side's own intel only, its true own network and the jamming it feels (`jammed`), and a `nextId` derived from the known ids (the real counter would leak hidden units). They never see the world, which makes P8 structural. `OrderEndReason` gains `outpaced` (an attack that could not close in for STALL_TICKS).
 
   Planned (I3–I5), names provisional: `ModeDefinition { id, systems, phases, victory, spawns? }` passed to `runTicks`; `coverage(world, ruleset, side)`; `observe(world, ruleset, side)`; `planAi(observation, ruleset, profile)`; production/economy commands.
 - **Mirror-consistent tie-breaking**: path and neighbour ties are broken in each side's own frame (side 1 = point-mirrored), the movement conflict rule is symmetric between sides (contenders of different sides all bump; within one side the lowest id enters, so friendly units cannot deadlock), damage is applied simultaneously. Property P4 checks that a point-mirrored world with swapped sides evolves as the exact mirror image.

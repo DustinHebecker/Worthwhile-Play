@@ -1,12 +1,27 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { BASE_RULESET, canonicalJson, computeNetwork, createWorld, observe, resolveTurn, STRATEGY_RULESET, type Scenario, type World } from '../src';
+import {
+  archetypeOf,
+  BASE_RULESET,
+  canonicalJson,
+  cellOf,
+  computeNetwork,
+  createWorld,
+  observe,
+  observedCells,
+  passable,
+  resolveTurn,
+  revealedEmitters,
+  STRATEGY_RULESET,
+  type Scenario,
+  type World
+} from '../src';
 import { arbScenario, open } from './helpers';
 
 const rs = STRATEGY_RULESET;
 const worldOf = (map: Scenario['map'], entities: Scenario['entities']): World => createWorld({ map, sides: 2, entities, seed: 1 }, rs);
 const asText = (o: ReturnType<typeof observe>) =>
-  canonicalJson({ world: o.world, ghosts: [...o.ghosts], coverage: [...o.network.coverage], slots: o.network.slots, nodes: o.network.nodes });
+  canonicalJson({ world: o.world, ghosts: [...o.ghosts], coverage: [...o.network.coverage], slots: o.network.slots, nodes: o.network.nodes, jammed: [...o.jammed] });
 
 describe('observe (AI input, § 11)', () => {
   it('holds own units as they are and enemies only as reported, without their orders', () => {
@@ -51,10 +66,36 @@ describe('observe (AI input, § 11)', () => {
           const unit = changed.entities.find((e) => e.id === hidden[pick % hidden.length]!.id)!;
           unit.order = { type: 'move', x: cell % w.map.w, y: Math.floor(cell / w.map.w) % w.map.h };
           unit.hp = Math.max(1, unit.hp - 1);
+          // Its position may change too, as long as it stays unobserved (and its cell free) and
+          // it is not a working EW unit (a side feels jamming); unseen enemy shots are invisible.
+          const observed = observedCells(w, rs, side);
+          const tx = cell % w.map.w;
+          const ty = Math.floor(cell / w.map.w) % w.map.h;
+          const free = passable(w.map, rs, tx, ty, archetypeOf(rs, unit.kind)?.layer ?? 'ground') && !changed.entities.some((e) => e.x === tx && e.y === ty);
+          if (free && observed[cellOf(w.map, tx, ty)] !== 1 && !archetypeOf(rs, unit.kind)?.ew && !revealedEmitters(w, rs, side).has(unit.id)) {
+            unit.x = tx;
+            unit.y = ty;
+          }
+          changed.projectiles.push({ id: changed.nextId++, side: unit.side, kind: 'howitzer', x: 0, y: 0, ticks: 2 });
           expect(asText(observe(changed, rs, side))).toBe(before);
         }
       }),
       { numRuns: 150 }
     );
+  });
+});
+
+describe('observe: felt jamming (review of PR #10, N1)', () => {
+  it('marks jammed cells only within reach of the own connected nodes', () => {
+    const w = worldOf(open(20, 1), [
+      { side: 0, kind: 'command-post', x: 0, y: 0 },
+      { side: 1, kind: 'jammer', x: 6, y: 0 },
+      { side: 1, kind: 'command-post', x: 19, y: 0 }
+    ]);
+    Object.assign(w.entities.find((e) => e.id === 2)!, { order: { type: 'hold' }, deploy: rs.ticksPerTurn });
+    const o = observe(w, rs, 0);
+    // Cells 3..5 are within the post's reach (5) and jammed (jammer radius 3 → 3..9); 6..9 are beyond reach.
+    expect([...o.jammed.slice(0, 10)]).toEqual([0, 0, 0, 1, 1, 1, 0, 0, 0, 0]);
+    expect(o.network.coverage[4]).toBe(0);
   });
 });
