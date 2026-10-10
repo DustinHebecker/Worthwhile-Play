@@ -2,6 +2,8 @@ import type { GameContext, GameInstance, GameResult, NewGameOptions } from '@wp/
 import { normalizeSeed } from '@wp/game-core';
 import {
   archetypeOf,
+  depositAt,
+  incomeOfSide,
   ARMOR_CLASSES,
   cellOf,
   computeNetwork,
@@ -18,9 +20,11 @@ import {
 } from '@wp/strategy-engine';
 import { announce, clear, h } from '@wp/ui';
 import {
+  cancelJob,
   cancelOrder,
   concede,
   STALL_TURNS,
+  stalemateTurns,
   doctrineFor,
   doctrineRefusal,
   draftFor,
@@ -33,6 +37,8 @@ import {
   picture,
   planDoctrine,
   planOrder,
+  plannedJobs,
+  plannedSupply,
   commandPost as commandPostOf,
   lastSentOrder,
   PLAYER,
@@ -190,6 +196,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     if (ghost !== undefined) text = `${text} ${ghost === 0 ? t('unit.ghostStart') : t('unit.ghost', { turn: reportTurn(ghost) })}`;
     if (isMobile(e)) text = `${text} (${t(inContact(e) ? 'contact.in' : !isGhost(e) && jammed(e.x, e.y) ? 'contact.jammed' : 'contact.out')})`;
     if (needsDeploy(e)) text = `${text} ${deployText(e)}`;
+    if (e.build !== undefined) text = `${text} (${t('list.site', { n: e.build })})`;
+    else if (e.queue && e.queue.length > 0) text = `${text} (${t('list.queue', { n: e.queue.map((q) => t(`unit.${q.kind}`)).join(', ') })})`;
     const planned = draftFor(state, e.id);
     return planned ? `${text} ${t('unit.planned', { order: describeOrder(e, planned) })}` : text;
   };
@@ -201,6 +209,9 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     // The veil is told in words too (screen readers).
     let terrain = observedAt(x, y) ? terrainName(x, y) : `${terrainName(x, y)} ${t('cell.unobserved')}`;
     if (!revealed() && jammed(x, y)) terrain = `${terrain} ${t('cell.jammed')}`;
+    // Deposits are told in words as well; how much is left only while the cell is observed.
+    const deposit = depositAt(world().map, x, y);
+    if (deposit) terrain = `${terrain} ${observedAt(x, y) ? t('cell.deposit', { n: deposit.left }) : t('cell.depositUnknown')}`;
     if (units.length === 0) return t('cell.describe', { x: x + 1, y: y + 1, terrain });
     return t('cell.describeUnit', { x: x + 1, y: y + 1, terrain, unit: units.map(describeUnit).join(' ') });
   };
@@ -210,6 +221,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   const turnEl = h('p', { class: 'rc-turn', 'data-testid': 'rc-turn' });
   const statusEl = h('p', { class: 'rc-status', 'data-testid': 'rc-status', role: 'status', tabindex: -1 });
   const slotsEl = h('p', { class: 'rc-slots', 'data-testid': 'rc-slots' });
+  const supplyEl = h('p', { class: 'rc-supply', 'data-testid': 'rc-supply' });
   /** Visible reason for a refused order (the live region alone only reaches screen readers). */
   const noticeEl = h('p', { class: 'rc-notice', 'data-testid': 'rc-notice', hidden: true });
   const lockBtn = h('button', { type: 'button', class: 'primary', 'data-testid': 'rc-lock', onclick: () => onLock() }, t('action.lock'));
@@ -283,7 +295,11 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     h('label', { class: 'rc-check' }, lostContactBox, h('span', {}, t('doctrine.lostContact')))
   );
   const selectionActions = h('div', { class: 'rc-orders' }, h('div', { class: 'rc-actions' }, holdBtn, regroupBtn, deployBtn, cancelBtn), modeGroup, modeHint, doctrineBox);
-  const selectionPanel = h('section', { class: 'rc-panel', 'data-testid': 'rc-selection' }, selectionTitle, selectionText, cardEl, noticeEl, selectionActions);
+  /** Production (yards) and placement (command sources) of the selected structure (I6a). */
+  const jobsEl = h('div', { class: 'rc-jobs', 'data-testid': 'rc-jobs', hidden: true });
+  /** Structure kind the next map click places, or null. */
+  let placing: string | null = null;
+  const selectionPanel = h('section', { class: 'rc-panel', 'data-testid': 'rc-selection' }, selectionTitle, selectionText, cardEl, noticeEl, selectionActions, jobsEl);
   const legendEl = h('details', { class: 'rc-legend', 'data-testid': 'rc-legend' }, h('summary', {}, t('legend.title')));
 
   const ownList = h('ul', { class: 'rc-units', 'data-testid': 'rc-own' });
@@ -294,13 +310,13 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     'details',
     { class: 'rc-help' },
     h('summary', {}, t('help.title')),
-    ...['help.turns', 'help.orders', 'help.network', 'help.fog', 'help.ew', 'help.doctrine', 'help.combat', 'help.goal', 'help.shapes', 'help.access'].map((k) => h('p', {}, t(k)))
+    ...['help.turns', 'help.orders', 'help.network', 'help.fog', 'help.ew', 'help.doctrine', 'help.economy', 'help.combat', 'help.goal', 'help.shapes', 'help.access'].map((k) => h('p', {}, t(k)))
   );
 
   const shell = h(
     'div',
     { class: 'wp-relay-command', 'data-testid': 'rc-root' },
-    h('div', { class: 'rc-bar' }, turnEl, statusEl, slotsEl, h('div', { class: 'rc-actions' }, lockBtn, concedeBtn), confirmBox),
+    h('div', { class: 'rc-bar' }, turnEl, statusEl, supplyEl, slotsEl, h('div', { class: 'rc-actions' }, lockBtn, concedeBtn), confirmBox),
     setupBox,
     h(
       'div',
@@ -332,7 +348,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     turnEl.textContent =
       state.turnLimit === null ? t('status.turnOpen', { turn: w.turn + 1 }) : t('status.turn', { turn: Math.min(w.turn + 1, state.turnLimit), limit: state.turnLimit });
     // Open end: a stalled game is heading for a decision on strength (STALL_TURNS); say so early.
-    if (state.turnLimit === null && state.phase === 'plan' && state.quiet >= QUIET_NOTICE) turnEl.textContent += ' ' + t('status.quiet', { n: state.quiet, limit: STALL_TURNS });
+    if (state.turnLimit === null && state.phase === 'plan' && stalemateTurns(state) >= QUIET_NOTICE) turnEl.textContent += ' ' + t('status.quiet', { n: STALL_TURNS - stalemateTurns(state) });
     // Scenario and turn limit can be changed until the first turn is locked.
     setupBox.hidden = state.phase !== 'plan' || state.log.length > 0;
     scenarioSelect.value = state.scenario;
@@ -341,6 +357,12 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     statusEl.setAttribute('data-phase', state.phase);
     slotsEl.hidden = finished;
     slotsEl.textContent = t('status.slots', { n: state.draft.length, slots: orderSlots(state) });
+    // Supply and income (economy): what the planned jobs leave is shown while any are planned.
+    const supply = w.supply?.[PLAYER] ?? 0;
+    const left = plannedSupply(state);
+    const income = incomeOfSide(state.world, RULESET, PLAYER);
+    supplyEl.hidden = w.supply === undefined;
+    supplyEl.textContent = left === supply ? t('status.supply', { n: supply, income }) : t('status.supplyPlanned', { n: supply, left, income });
     lockBtn.disabled = finished;
     concedeBtn.disabled = finished;
     concedeBtn.hidden = confirming;
@@ -366,7 +388,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     const enemy = sideValue(state.world, OPPONENT);
     const decidedByPost = outcome({ ...state.world, turn: 0 }, state.turnLimit) !== null;
     // Open end: the quiet rule ended the game, not a last turn.
-    const quietEnd = !decidedByPost && state.turnLimit === null && state.quiet >= STALL_TURNS;
+    const quietEnd = !decidedByPost && state.turnLimit === null && stalemateTurns(state) >= STALL_TURNS;
     const args = { own, enemy, limit: STALL_TURNS };
     if (state.result === 'won') return decidedByPost ? t('status.won') : t(quietEnd ? 'status.wonQuiet' : 'status.wonScore', args);
     if (state.result === 'lost') return decidedByPost ? t('status.lost') : t(quietEnd ? 'status.lostQuiet' : 'status.lostScore', args);
@@ -380,7 +402,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     if (!unit) {
       selectionText.textContent = t('panel.none');
     } else if (!isMobile(unit)) {
-      selectionText.textContent = `${describeUnit(unit)} ${t('panel.static')}`;
+      selectionText.textContent = `${describeUnit(unit)} ${structureHint(unit)}`;
     } else if (unit.side === PLAYER && !reachable) {
       selectionText.textContent = `${describeUnit(unit)} ${t('panel.outOfContact')}`;
     } else {
@@ -388,6 +410,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       selectionText.textContent = `${describeUnit(unit)} ${hint}`.trim();
     }
     renderCard(unit);
+    renderJobs(unit);
     selectionActions.hidden = !canOrder;
     deployBtn.hidden = !unit || !needsDeploy(unit) || isSetUpOrPending(unit);
     deployBtn.textContent = unit && deployKind(unit) === 'deployJammer' ? t('action.deployJammer') : t('action.deploy');
@@ -403,6 +426,88 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       lostContactBox.checked = d.lostContact === 'regroup';
     }
     cancelBtn.disabled = !unit || !draftFor(state, unit.id);
+  }
+
+  /** What a selected structure is for (economy): yard, command source, site or Extractor. */
+  function structureHint(unit: Entity): string {
+    const arch = archetypeOf(RULESET, unit.kind);
+    if (!arch) return t('panel.structure');
+    if (unit.build !== undefined) return t('panel.site', { n: unit.build });
+    if (unit.side !== PLAYER) return t('panel.structure');
+    if (arch.production) return t('panel.yard');
+    if (arch.comms?.role === 'source' && RULESET.economy) return `${unit.kind === 'command-post' ? t('panel.static') : ''} ${t('panel.source')}`.trim();
+    if (arch.extractor) return t('panel.extractor', { n: arch.income });
+    return t('panel.structure');
+  }
+
+  /** The buildable structures a command source may place (finished structures with a build time). */
+  const BUILDABLE = Object.values(RULESET.archetypes).filter((a) => a.speed === 0 && a.buildTurns > 0).map((a) => a.id);
+
+  /** Production sheet of a yard, or the placement sheet of a command source: the planned jobs with cancel buttons. */
+  function renderJobs(unit: Entity | undefined): void {
+    clear(jobsEl);
+    const arch = unit && archetypeOf(RULESET, unit.kind);
+    const own = !!unit && unit.side === PLAYER && state.phase === 'plan' && RULESET.economy && inContact(unit) && unit.build === undefined;
+    const yard = own && !!arch?.production;
+    const source = own && arch?.comms?.role === 'source' && (!needsDeploy(unit) || isSetUp(unit));
+    jobsEl.hidden = !unit || !arch || (!yard && !source);
+    if (!unit || !arch || (!yard && !source)) {
+      placing = null;
+      return;
+    }
+    const kinds = yard ? (arch.production ?? []) : BUILDABLE;
+    const list = h('div', { class: 'rc-actions', role: 'group', 'aria-label': t(yard ? 'jobs.produce' : 'jobs.build') });
+    for (const kind of kinds) {
+      const a = archetypeOf(RULESET, kind);
+      if (!a) continue;
+      const label = t('jobs.item', { name: t(`unit.${kind}`), cost: a.cost, turns: a.buildTurns });
+      const onclick = yard ? () => orderJob({ type: 'produce', kind }) : () => startPlacing(kind);
+      list.append(h('button', { type: 'button', 'data-testid': `rc-job-${kind}`, 'aria-pressed': placing === kind ? 'true' : 'false', onclick }, label));
+    }
+    const rows = h('ul', { class: 'rc-joblist' });
+    // A finished unit that found no free cell waits inside: say so instead of "0 turns left".
+    for (const q of unit.queue ?? []) rows.append(h('li', {}, q.left === 0 ? t('jobs.waiting', { name: t(`unit.${q.kind}`) }) : t('jobs.queue', { name: t(`unit.${q.kind}`), n: q.left })));
+    plannedJobs(state, unit.id).forEach((job, index) => {
+      const o = job.order;
+      const name = t(`unit.${o.type === 'produce' || o.type === 'build' ? o.kind : unit.kind}`);
+      const text = o.type === 'build' ? t('jobs.plannedAt', { name, x: o.x + 1, y: o.y + 1 }) : t('jobs.planned', { name });
+      rows.append(h('li', {}, h('span', {}, text), h('button', { type: 'button', 'data-testid': `rc-job-cancel-${index}`, onclick: () => commit(cancelJob(state, unit.id, index), t('announce.cancelled', { name })) }, t('jobs.cancel', { name }))));
+    });
+    jobsEl.append(h('h4', {}, t(yard ? 'jobs.produce' : 'jobs.build')), list, rows);
+    if (placing) {
+      const a = archetypeOf(RULESET, placing);
+      jobsEl.append(
+        h('p', { class: 'rc-hint', 'data-testid': 'rc-placing' }, t(a?.extractor ? 'jobs.chooseDeposit' : 'jobs.chooseCell', { name: t(`unit.${placing}`) })),
+        h('button', { type: 'button', 'data-testid': 'rc-placing-stop', onclick: () => stopPlacing() }, t('jobs.stop'))
+      );
+    }
+  }
+
+  /** Queues a one-shot job (production) for the selected structure, or explains why not. */
+  function orderJob(order: Order): void {
+    if (selected === null) return;
+    const unit = known(selected);
+    const refusal = orderRefusal(state, selected, order);
+    const next = refusal === null ? planOrder(state, selected, order) : undefined;
+    if (!unit || !next) {
+      showRefusal(refusal);
+      return;
+    }
+    noticeEl.hidden = true;
+    const name = t(`unit.${order.type === 'produce' || order.type === 'build' ? order.kind : unit.kind}`);
+    commit(next, order.type === 'build' ? t('announce.site', { name, x: order.x + 1, y: order.y + 1 }) : t('announce.job', { name }));
+  }
+
+  function startPlacing(kind: string): void {
+    placing = placing === kind ? null : kind;
+    noticeEl.hidden = true;
+    render();
+    if (placing) announce(live, t(archetypeOf(RULESET, kind)?.extractor ? 'jobs.chooseDeposit' : 'jobs.chooseCell', { name: t(`unit.${kind}`) }));
+  }
+
+  function stopPlacing(): void {
+    placing = null;
+    render();
   }
 
   /* ---------- Unit card and legend ---------- */
@@ -503,6 +608,12 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       const text = arch.ew.role === 'jammer' ? t('card.jammer', { r: arch.ew.radius }) : t('card.tracer', { r: arch.ew.radius, b: arch.ew.burnThrough });
       cardEl.append(statRow(t('card.ew'), arch.ew.needsDeploy ? `${text} ${t('card.needsSetUp')}` : text, null));
     }
+    // Economy: what it costs and takes, what it yields or produces.
+    if (RULESET.economy) {
+      if (arch.buildTurns > 0) cardEl.append(statRow(t('card.cost'), t('card.supply', { n: arch.cost }), null, 'rc-card-cost'), statRow(t('card.buildTime'), t('card.turns', { n: arch.buildTurns }), null));
+      if (arch.income > 0) cardEl.append(statRow(t('card.income'), t('card.incomeValue', { n: arch.income }), null, 'rc-card-income'));
+      if (arch.production) cardEl.append(statRow(t('card.produces'), arch.production.map((k) => t(`unit.${k}`)).join(', '), null));
+    }
   }
 
   /** Swatch canvas painted by `paint`; the legend pairs each with its text. */
@@ -549,6 +660,29 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     row(shape(true, 'rifles'), t('legend.own'));
     row(shape(false, 'rifles'), t('legend.enemy'));
     row(shape(true, 'command-post'), t('legend.structure'));
+    if (RULESET.economy) {
+      row(
+        swatch((g) => {
+          g.fillStyle = css('--rc-plain', '#ddd');
+          g.fillRect(0, 0, CELL, CELL);
+          g.strokeStyle = css('--rc-mark', '#00000055');
+          g.fillStyle = css('--rc-mark', '#00000055');
+          drawDeposit(g, 0, 0);
+        }),
+        t('legend.deposit')
+      );
+      row(
+        swatch((g) => {
+          const c = CELL / 2;
+          const r = CELL * 0.34;
+          g.strokeStyle = colourOwn;
+          g.lineWidth = 3;
+          g.strokeRect(c - r, c - r, r * 2, r * 2);
+          drawSiteHatch(g, c - r, c - r, r * 2, colourOwn, 2);
+        }),
+        t('legend.site')
+      );
+    }
     row(
       swatch((g) => {
         const c = CELL / 2;
@@ -685,6 +819,17 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
         if (unitById(state, e.id)?.side !== OPPONENT) bumps += 1;
       } else if (e.t === 'destroyed') {
         lines.push(t(e.side === PLAYER ? 'summary.lostUnit' : 'summary.destroyedUnit', { name: unitName(e) }));
+      } else if (e.t === 'income') {
+        if (e.side === PLAYER) lines.push(t('summary.income', { n: e.amount }));
+      } else if (e.t === 'produced') {
+        if (e.side === PLAYER) lines.push(t('summary.produced', { name: unitName(e), yard: unitName(unitById(state, e.by) ?? { kind: 'muster', id: e.by }) }));
+      } else if (e.t === 'built') {
+        const site = unitById(state, e.id);
+        if (site?.side === PLAYER) lines.push(t('summary.built', { name: unitName(site) }));
+      } else if (e.t === 'site') {
+        if (e.side !== PLAYER) lines.push(t('summary.enemySite', { name: unitName(e) }));
+      } else if (e.t === 'site-blocked') {
+        if (e.side === PLAYER) lines.push(t('summary.siteBlocked', { name: t(`unit.${e.kind}`), x: e.x + 1, y: e.y + 1 }));
       } else if (e.t === 'order-ended' && REPORTED_ENDS.has(e.reason) && !told.has(`${e.id}:${e.reason}`)) {
         // Orders the engine ended on its own are reported for the player's units, once per
         // unit and reason in a turn.
@@ -811,11 +956,48 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
         g.fillStyle = css('--rc-mark', '#00000055');
         g.lineWidth = 1.5;
         drawTerrainMark(g, name, px, py);
+        if (depositAt(w.map, x, y)) drawDeposit(g, px, py);
         g.strokeStyle = line;
         g.lineWidth = 1;
         g.strokeRect(px + 0.5, py + 0.5, CELL - 1, CELL - 1);
       }
     }
+  }
+
+  /** A deposit: a small diamond with a dot in the cell's corner (a mark, not a colour). */
+  function drawDeposit(g: CanvasRenderingContext2D, px: number, py: number): void {
+    const cx = px + CELL - 9;
+    const cy = py + 9;
+    g.lineWidth = 1.5;
+    g.beginPath();
+    g.moveTo(cx, cy - 6);
+    g.lineTo(cx + 6, cy);
+    g.lineTo(cx, cy + 6);
+    g.lineTo(cx - 6, cy);
+    g.closePath();
+    g.stroke();
+    g.beginPath();
+    g.arc(cx, cy, 1.5, 0, Math.PI * 2);
+    g.fill();
+  }
+
+  /** Diagonal hatching inside a structure under construction, and the turns left as a number. */
+  function drawSiteHatch(g: CanvasRenderingContext2D, x: number, y: number, size: number, colour: string, left: number): void {
+    g.save();
+    g.strokeStyle = colour;
+    g.lineWidth = 1.5;
+    g.beginPath();
+    for (let k = 6; k < size * 2; k += 6) {
+      g.moveTo(x + Math.min(k, size), y + Math.max(0, k - size));
+      g.lineTo(x + Math.max(0, k - size), y + Math.min(k, size));
+    }
+    g.stroke();
+    g.fillStyle = colour;
+    g.font = `bold ${Math.round(CELL * 0.32)}px sans-serif`;
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText(String(left), x + size / 2, y + size / 2);
+    g.restore();
   }
 
   /** Pattern marks so that terrain is never told apart by colour alone. */
@@ -980,14 +1162,23 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       g.lineTo(cx - r - 2, cy);
       g.closePath();
     }
-    g.fill();
-    g.stroke();
-    g.setLineDash([]);
-    // Kind glyph, drawn in the contrasting colour.
-    g.strokeStyle = own && !ghost ? surface : colour;
-    g.fillStyle = own && !ghost ? surface : colour;
-    g.lineWidth = 2;
-    drawGlyph(g, e.kind, cx, cy);
+    if (e.build !== undefined) {
+      // A site: outlined and hatched, with the turns left instead of the glyph.
+      g.fillStyle = surface;
+      g.fill();
+      g.stroke();
+      g.setLineDash([]);
+      drawSiteHatch(g, cx - r, cy - r, r * 2, colour, e.build);
+    } else {
+      g.fill();
+      g.stroke();
+      g.setLineDash([]);
+      // Kind glyph, drawn in the contrasting colour.
+      g.strokeStyle = own && !ghost ? surface : colour;
+      g.fillStyle = own && !ghost ? surface : colour;
+      g.lineWidth = 2;
+      drawGlyph(g, e.kind, cx, cy);
+    }
     // Health bar under the unit.
     const max = RULESET.archetypes[e.kind]?.hp ?? e.hp;
     const bw = CELL * 0.7;
@@ -1118,6 +1309,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   function select(id: number | null): void {
     selected = id;
     mode = 'move';
+    placing = null;
     noticeEl.hidden = true;
     const unit = id === null ? undefined : known(id);
     if (unit) cursor = { x: unit.x, y: unit.y };
@@ -1141,7 +1333,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
 
   /** Shows why an order was refused, visibly and for screen readers. */
   function showRefusal(refusal: string | null): void {
-    const specific = refusal === 'out-of-contact' || refusal === 'no-slots' || refusal === 'impassable' || refusal === 'not-visible' || refusal === 'no-weapon';
+    const specific = ['out-of-contact', 'no-slots', 'impassable', 'not-visible', 'no-weapon', 'no-supply', 'cannot-produce', 'queue-full', 'cannot-build', 'not-buildable'].includes(refusal ?? '');
     const message = specific ? t(`refuse.${refusal}`, { slots: orderSlots(state) }) : t('announce.refused');
     noticeEl.textContent = message;
     noticeEl.hidden = false;
@@ -1207,6 +1399,18 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     const enemyHere = here.find((e) => e.side !== PLAYER && !isGhost(e));
     const current = selected === null ? undefined : known(selected);
     const canOrder = !!current && current.side === PLAYER && isMobile(current) && state.phase === 'plan';
+    // Placing a structure: the clicked cell is where it goes (the source stays selected).
+    if (placing && current && current.side === PLAYER && state.phase === 'plan') {
+      const kind = placing;
+      orderJob({ type: 'build', kind, x, y });
+      if (!noticeEl.hidden) {
+        render(); // refused: stay in placing mode with the reason shown, cursor on the cell
+        return;
+      }
+      placing = null;
+      render();
+      return;
+    }
     if (canOrder && mode === 'escort' && ownHere && ownHere.id !== selected) {
       orderSelected({ type: 'escort', target: ownHere.id });
       return;

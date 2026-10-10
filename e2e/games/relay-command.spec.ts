@@ -34,9 +34,9 @@ test('relay-command: a planned but unlocked order survives a reload', async ({ p
 
 test('relay-command: fog of war — only reported enemies are shown; a ghost takes a move order', async ({ page }) => {
   await start(page);
-  // At the start only the enemy Command Post is known, from before the battle.
+  // At the start only the enemy structures (Command Post, Muster Yard) are known, from before the battle.
   const enemies = page.getByTestId('rc-enemy').locator('li');
-  await expect(enemies).toHaveCount(1);
+  await expect(enemies).toHaveCount(2);
   await expect(enemies.first()).toContainText('Position known from before the battle');
   const state = (await saved(page))!;
   const rifle = firstRifle(state);
@@ -189,7 +189,7 @@ test('relay-command: map and length chosen before the first turn survive a reloa
   await page.getByTestId('rc-turn-limit').selectOption('12');
   await page.getByTestId('rc-scenario').selectOption('ridge-valley');
   await expect(page.getByTestId('rc-turn')).toHaveText('Turn 1 of 12');
-  await expect.poll(async () => (await saved(page))?.world.entities.length).toBe(28);
+  await expect.poll(async () => (await saved(page))?.world.entities.length).toBe(30);
   await page.reload();
   await page.getByTestId('continue').click();
   await expect(page.getByTestId('rc-map')).toHaveAttribute('data-cols', '20');
@@ -197,6 +197,45 @@ test('relay-command: map and length chosen before the first turn survive a reloa
   await page.getByTestId('rc-lock').click();
   await expect(page.getByTestId('rc-turn')).toHaveText('Turn 2 of 12');
   await expect(page.getByTestId('rc-setup')).toBeHidden();
+});
+
+test('relay-command: the Command Post places an Extractor on a deposit by tapping the map', async ({ page, isMobile }) => {
+  await start(page);
+  const s = (await saved(page))!;
+  const post = s.world.entities.find((e) => e.side === 0 && e.kind === 'command-post')!;
+  await page.getByTestId(`rc-unit-${post.id}`).click();
+  await page.getByTestId('rc-job-extractor').click();
+  await expect(page.getByTestId('rc-placing')).toHaveText('Choose a deposit inside your coverage for the Extractor.');
+  // The deposit behind the player's post on Field Exercise lies at (4, 10).
+  const map = page.getByTestId('rc-map');
+  await map.scrollIntoViewIfNeeded();
+  const box = (await map.boundingBox())!;
+  const cell = box.width / 12;
+  const position = { x: 4 * cell + cell / 2, y: 10 * cell + cell / 2 };
+  if (isMobile) await map.tap({ position });
+  else await map.click({ position });
+  await expect.poll(async () => (await saved(page))?.draft[0]?.order).toEqual({ type: 'build', kind: 'extractor', x: 4, y: 10 });
+  await expect(page.getByTestId('rc-supply')).toHaveText('Supply 300 (220 after planned orders) · income 20 per turn');
+});
+
+test('relay-command: queueing a unit at the Muster Yard works on a phone and survives a reload', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await start(page);
+  await expect(page.getByTestId('rc-supply')).toHaveText('Supply 300 · income 20 per turn');
+  const yard = (await saved(page))!.world.entities.find((e) => e.side === 0 && e.kind === 'muster')!;
+  await page.getByTestId(`rc-unit-${yard.id}`).click();
+  await page.getByTestId('rc-job-rifles').click();
+  await expect(page.getByTestId('rc-supply')).toHaveText('Supply 300 (260 after planned orders) · income 20 per turn');
+  await expect.poll(async () => (await saved(page))?.draft[0]?.order.type).toBe('produce');
+  // The production sheet fits the phone: no sideways scrolling.
+  const widths = await page.evaluate(() => ({ page: document.documentElement.scrollWidth, viewport: document.documentElement.clientWidth }));
+  expect(widths.page).toBeLessThanOrEqual(widths.viewport);
+  await page.reload();
+  await page.getByTestId('continue').click();
+  await expect(page.getByTestId('rc-supply')).toHaveText('Supply 300 (260 after planned orders) · income 20 per turn');
+  await page.getByTestId('rc-lock').click();
+  await expect(page.getByTestId('rc-summary')).toContainText('Finished: Rifle Squad');
+  await expect.poll(async () => (await saved(page))?.world.entities.filter((e) => e.side === 0 && e.kind === 'rifles').length).toBe(3);
 });
 
 test('relay-command: the game setup never scrolls sideways on a 360 px phone (a wide option once broke the layout viewport)', async ({ page }) => {

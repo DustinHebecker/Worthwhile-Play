@@ -19,10 +19,14 @@ export function mirrorWorld(w: World): World {
       ? { type: 'move', x: mx(o.x), y: my(o.y) }
       : o.type === 'patrol'
         ? { type: 'patrol', x: mx(o.x), y: my(o.y), rx: mx(o.rx), ry: my(o.ry) }
-        : o;
+        : o.type === 'build'
+          ? { type: 'build', kind: o.kind, x: mx(o.x), y: my(o.y) }
+          : o;
+  const deposits = w.map.deposits?.map((d) => ({ x: mx(d.x), y: my(d.y), left: d.left })).sort((a, b) => a.y * w.map.w + a.x - (b.y * w.map.w + b.x));
   return {
     ...structuredClone(w),
-    map: { ...w.map, terrain: [...w.map.terrain].reverse().join('') },
+    map: { ...w.map, terrain: [...w.map.terrain].reverse().join(''), ...(deposits && { deposits }) },
+    ...(w.supply && { supply: w.supply.map((_, side) => w.supply?.[ms(side)] ?? 0) }),
     entities: w.entities.map((e) => ({
       ...structuredClone(e),
       side: ms(e.side),
@@ -50,11 +54,15 @@ export const mirrorCommands = (w: World, commands: readonly Command[]): Command[
         ? { type: 'move', x: mx(o.x), y: my(o.y) }
         : o.type === 'patrol'
           ? { type: 'patrol', x: mx(o.x), y: my(o.y), rx: mx(o.rx), ry: my(o.ry) }
-          : o;
+          : o.type === 'build'
+            ? { type: 'build', kind: o.kind, x: mx(o.x), y: my(o.y) }
+            : o;
     return { ...c, side: c.side === 0 ? 1 : 0, order };
   });
 
-const KINDS = ['rifles', 'lancer', 'outrider', 'warden', 'howitzer', 'kite', 'tower-gun', 'tower-artillery', 'tower-laser', 'tower-emp', 'command-post', 'mast-truck', 'field-post', 'relay-mast', 'jammer', 'tracer'];
+const KINDS = ['rifles', 'lancer', 'outrider', 'warden', 'howitzer', 'kite', 'tower-gun', 'tower-artillery', 'tower-laser', 'tower-emp', 'command-post', 'mast-truck', 'field-post', 'relay-mast', 'jammer', 'tracer', 'muster', 'motor-pool', 'extractor'];
+const PRODUCTS = ['rifles', 'lancer', 'warden', 'howitzer', 'outrider', 'mast-truck'];
+const STRUCTURES = ['muster', 'motor-pool', 'extractor', 'relay-mast'];
 const TERRAIN = ['.', '.', '.', '=', 'f', 'h', 'u', 's', '~', '^'];
 
 /** Random small valid world with two sides plus commands for a few turns. */
@@ -65,11 +73,13 @@ export const arbScenario = fc
     seed: fc.integer({ min: 0, max: 0xffff }),
     terrain: fc.array(fc.constantFrom(...TERRAIN), { minLength: 100, maxLength: 100 }),
     units: fc.array(fc.record({ side: fc.integer({ min: 0, max: 1 }), kind: fc.constantFrom(...KINDS), cell: fc.nat(99) }), { maxLength: 14 }),
+    deposits: fc.array(fc.record({ cell: fc.nat(99), left: fc.integer({ min: 0, max: 60 }) }), { maxLength: 4 }),
     orders: fc.array(
       fc.record({
         turn: fc.nat(3),
         unit: fc.integer({ min: 1, max: 14 }),
-        type: fc.constantFrom('hold', 'move', 'attack', 'deploy', 'escort', 'patrol', 'regroup'),
+        type: fc.constantFrom('hold', 'move', 'attack', 'deploy', 'escort', 'patrol', 'regroup', 'produce', 'build'),
+        kind: fc.constantFrom(...PRODUCTS, ...STRUCTURES),
         doctrine: fc.option(
           fc.record({
             retreatBelow: fc.constantFrom(0, 25, 50, 75),
@@ -87,8 +97,17 @@ export const arbScenario = fc
       { maxLength: 20 }
     )
   })
-  .map(({ w, h, seed, terrain, units, orders }) => {
-    const map: GameMap = { w, h, terrain: terrain.slice(0, w * h).join('') };
+  .map(({ w, h, seed, terrain, units, orders, deposits }) => {
+    const terrainRow = terrain.slice(0, w * w * h > 0 ? w * h : 0).join('');
+    const cells = new Map<number, { x: number; y: number; left: number }>();
+    for (const d of deposits) {
+      const x = d.cell % w;
+      const y = Math.floor(d.cell / w) % h;
+      const ch = terrainRow[y * w + x];
+      if (ch === '~' || ch === '^') continue;
+      cells.set(y * w + x, { x, y, left: d.left });
+    }
+    const map: GameMap = { w, h, terrain: terrainRow, ...(cells.size > 0 && { deposits: [...cells.values()] }) };
     const used = new Set<string>();
     const entities: { side: number; kind: string; x: number; y: number }[] = [];
     for (const u of units) {
@@ -120,7 +139,11 @@ export const arbScenario = fc
                   ? { type: 'patrol', x: o.x % w, y: o.y % h, rx: o.y % w, ry: o.x % h }
                   : o.type === 'regroup'
                     ? { type: 'regroup' }
-                    : { type: 'hold' };
+                    : o.type === 'produce'
+                      ? { type: 'produce', kind: o.kind }
+                      : o.type === 'build'
+                        ? { type: 'build', kind: o.kind, x: o.x % w, y: o.y % h }
+                        : { type: 'hold' };
       plans[o.turn]?.push(o.doctrine ? { side, unit: o.unit, order, doctrine: o.doctrine as Doctrine } : { side, unit: o.unit, order });
     }
     return { world, plans };

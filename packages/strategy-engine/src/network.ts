@@ -17,7 +17,7 @@ const isDisabled = (e: Entity): boolean => e.status.some((s) => s.kind === 'disa
 /** Whether `e` currently works as a network node (has comms, is not disabled, is deployed if needed). */
 export function isActiveNode(ruleset: Ruleset, e: Entity): boolean {
   const comms = archetypeOf(ruleset, e.kind)?.comms;
-  if (!comms || isDisabled(e)) return false;
+  if (!comms || isDisabled(e) || (e.build ?? 0) > 0) return false; // a site under construction is silent
   return !comms.needsDeploy || (e.deploy ?? 0) >= ruleset.ticksPerTurn;
 }
 

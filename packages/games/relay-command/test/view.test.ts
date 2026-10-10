@@ -4,7 +4,7 @@ import type { GameInstance, GameModule } from '@wp/game-core';
 import { createTestContext, type TestContext } from '@wp/testing';
 import game from '../src/index';
 import { initialIntel, passable, type Entity } from '@wp/strategy-engine';
-import { concede, lockTurn, OPPONENT, PLAYER, RULESET, STALL_TURNS, type RcState } from '../src/rules';
+import { concede, lockTurn, OPPONENT, PLAYER, RULESET, sideValue, STALL_TURNS, stalemateTurns, type RcState } from '../src/rules';
 import { CELL } from '../src/view';
 
 let ctx: TestContext;
@@ -54,9 +54,9 @@ describe('Relay Command view', () => {
   it('renders the turn, the status, both unit lists and the map', () => {
     expect($('rc-turn').textContent).toBe('Turn 1');
     expect($('rc-status').getAttribute('data-phase')).toBe('plan');
-    expect(ctx.context.root.querySelectorAll('[data-testid^="rc-unit-"]')).toHaveLength(9);
-    // Fog: of the enemy, only its Command Post is known, from before the battle.
-    expect($('rc-enemy').querySelectorAll('li')).toHaveLength(1);
+    expect(ctx.context.root.querySelectorAll('[data-testid^="rc-unit-"]')).toHaveLength(10);
+    // Fog: of the enemy, only its structures (Command Post, Muster Yard) are known, from before the battle.
+    expect($('rc-enemy').querySelectorAll('li')).toHaveLength(2);
     expect($('rc-enemy').textContent).toContain('Position known from before the battle');
     expect($('rc-slots').textContent).toBe('Orders this turn: 0 of 4.');
     expect($('rc-map').getAttribute('data-cols')).toBe('12');
@@ -371,7 +371,7 @@ describe('Relay Command view', () => {
     expect(state().scenario).toBe('ridge-valley');
     expect(state().turnLimit).toBe(12);
     expect($('rc-map').getAttribute('data-cols')).toBe('20');
-    expect(ctx.context.root.querySelectorAll('[data-testid^="rc-unit-"]')).toHaveLength(14);
+    expect(ctx.context.root.querySelectorAll('[data-testid^="rc-unit-"]')).toHaveLength(15);
     click('rc-lock');
     expect($('rc-setup').hidden).toBe(true);
   });
@@ -437,22 +437,99 @@ describe('Relay Command view', () => {
     expect(state().world.turn).toBe(0);
   });
 
-  it('in an open-ended game the turn line warns from three quiet turns on that strength will decide; the host learns the level', () => {
+  it('in an open-ended game the turn line warns of a stalemate from three turns on; a stalemate end says so; the host learns the level', () => {
     expect(ctx.difficulties).toEqual(['normal']); // newGame without a known level fell back to 'normal'
-    instance.restore({ ...state(), quiet: 2 });
-    expect($('rc-turn').textContent).toBe('Turn 1');
-    instance.restore({ ...state(), quiet: 3, difficulty: 'hard' });
-    expect($('rc-turn').textContent).toBe('Turn 1 No losses for 3 turns: after 12 in a row, strength decides.');
-    expect(ctx.difficulties).toEqual(['normal', 'normal', 'hard']);
-    // A turn limit has no stall rule.
-    instance.restore({ ...state(), quiet: 5, turnLimit: 12 });
-    expect($('rc-turn').textContent).toBe('Turn 1 of 12');
-    // A game the quiet rule ended says so instead of "after the last turn".
-    let quiet: RcState = { ...state(), turnLimit: null };
-    for (let i = 0; i < STALL_TURNS && quiet.phase === 'plan'; i++) quiet = lockTurn({ ...quiet, world: withoutMobileUnits(quiet.world) });
-    expect(quiet).toMatchObject({ phase: 'finished', result: 'draw', quiet: STALL_TURNS });
-    instance.restore(quiet);
-    expect($('rc-status').textContent).toBe(`Draw after ${STALL_TURNS} turns without losses (300 : 300).`);
+    // Only the two posts left: from CONTACT_TURN on, nothing changes and the stalemate rule counts.
+    let s: RcState = { ...state(), turnLimit: null, difficulty: 'hard', world: withoutMobileUnits(state().world) };
+    while (s.phase === 'plan' && stalemateTurns(s) < 2) s = lockTurn(s);
+    instance.restore(s);
+    expect($('rc-turn').textContent).toBe(`Turn ${s.world.turn + 1}`);
+    s = lockTurn(s);
+    instance.restore(s);
+    expect($('rc-turn').textContent).toBe(`Turn ${s.world.turn + 1} Stalemate: strength decides in ${STALL_TURNS - 3} turns unless the side behind gains ground.`);
+    expect(ctx.difficulties).toEqual(['normal', 'hard', 'hard']);
+    // A turn limit has no stalemate rule.
+    instance.restore({ ...s, turnLimit: 100 });
+    expect($('rc-turn').textContent).toBe(`Turn ${s.world.turn + 1} of 100`);
+    while (s.phase === 'plan') s = lockTurn(s);
+    // The opponent builds an Extractor with its post and pulls ahead on income; the player never gains ground.
+    expect(s).toMatchObject({ phase: 'finished', result: 'lost' });
+    expect(stalemateTurns(s)).toBe(STALL_TURNS);
+    instance.restore(s);
+    expect($('rc-status').textContent).toBe(
+      `The opponent is stronger, and you did not gain ground for ${STALL_TURNS} turns (${sideValue(s.world, PLAYER)} : ${sideValue(s.world, OPPONENT)}).`
+    );
+  });
+
+  it('shows Supply and income, lets a yard queue units (paid from the planned Supply) and cancel them', () => {
+    expect($('rc-supply').textContent).toBe('Supply 300 · income 20 per turn');
+    const yard = own().find((e) => e.kind === 'muster')!;
+    click(`rc-unit-${yard.id}`);
+    expect($('rc-selection-text').textContent).toContain('Queue units below');
+    expect($('rc-jobs').hidden).toBe(false);
+    expect($('rc-job-rifles').textContent).toBe('Rifle Squad · 40 Supply · 1 turns');
+    expect($('rc-card-cost').textContent).toContain('100 Supply');
+    click('rc-job-rifles');
+    click('rc-job-lancer');
+    expect(state().draft.map((c) => c.order)).toEqual([{ type: 'produce', kind: 'rifles' }, { type: 'produce', kind: 'lancer' }]);
+    expect($('rc-supply').textContent).toBe('Supply 300 (200 after planned orders) · income 20 per turn');
+    expect($('rc-slots').textContent).toBe('Orders this turn: 2 of 4.');
+    expect($('rc-jobs').textContent).toContain('Planned: Rifle Squad');
+    // A third one does not fit the queue of two.
+    click('rc-job-rifles');
+    expect($('rc-notice').textContent).toBe('The production queue is full (two units).');
+    expect(state().draft).toHaveLength(2);
+    click('rc-job-cancel-0');
+    expect(state().draft.map((c) => c.order)).toEqual([{ type: 'produce', kind: 'lancer' }]);
+    // Locking: the lancer stands next to the yard at the end of the turn, told in the summary.
+    click('rc-lock');
+    expect(own().filter((e) => e.kind === 'lancer')).toHaveLength(2);
+    expect($('rc-summary').textContent).toContain('Finished: Lancer Team');
+    expect($('rc-summary').textContent).toContain('Income: +20 Supply');
+  });
+
+  it('lets the Command Post place an Extractor on a deposit inside coverage and explains a bad cell', () => {
+    const post = own().find((e) => e.kind === 'command-post')!;
+    click(`rc-unit-${post.id}`);
+    expect($('rc-selection-text').textContent).toContain('Place structures below');
+    click('rc-job-extractor');
+    expect($('rc-placing').textContent).toBe('Choose a deposit inside your coverage for the Extractor.');
+    expect($('rc-job-extractor').getAttribute('aria-pressed')).toBe('true');
+    const map = $('rc-map');
+    map.getBoundingClientRect = () => ({ left: 0, top: 0, width: 12 * CELL, height: 12 * CELL, right: 12 * CELL, bottom: 12 * CELL, x: 0, y: 0, toJSON: () => ({}) });
+    const place = (x: number, y: number) => map.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: x * CELL + 5, clientY: y * CELL + 5 }));
+    // The deposit behind the enemy post lies outside coverage: refused with the reason, still placing.
+    const far = state().world.map.deposits!.find((d) => d.x === 7 && d.y === 1)!;
+    place(far.x, far.y);
+    // The cell is described in words, deposit included; its remainder is unknown while unobserved.
+    expect($('rc-cursor').textContent).toContain('Deposit (amount left unknown: not observed).');
+    expect($('rc-notice').hidden).toBe(false);
+    expect($('rc-notice').textContent).toContain('Not here');
+    expect(state().draft).toHaveLength(0);
+    expect($('rc-placing')).not.toBeNull();
+    // The deposit behind the own post is inside coverage.
+    const near = state().world.map.deposits!.find((d) => d.x === 4 && d.y === 10)!;
+    place(near.x, near.y);
+    expect($('rc-cursor').textContent).toContain('Deposit: 300 Supply left.');
+    expect(state().draft.map((c) => c.order)).toEqual([{ type: 'build', kind: 'extractor', x: near.x, y: near.y }]);
+    // A second placement on the planned site's cell is refused while planning.
+    click('rc-job-extractor');
+    place(near.x, near.y);
+    expect(state().draft).toHaveLength(1);
+    expect($('rc-notice').textContent).toContain('Not here');
+    click('rc-placing-stop');
+    expect($('rc-jobs').textContent).toContain(`Planned: Extractor at ${near.x + 1}, ${near.y + 1}`);
+    expect($('rc-placing')).toBeNull();
+    click('rc-lock');
+    const site = own().find((e) => e.kind === 'extractor')!;
+    expect(site).toMatchObject({ x: near.x, y: near.y, build: 1 });
+    expect($(`rc-unit-${site.id}`).textContent).toContain('under construction, 1 turns left');
+    click(`rc-unit-${site.id}`);
+    expect($('rc-selection-text').textContent).toContain('Under construction: 1 turns left');
+    expect($('rc-jobs').hidden).toBe(true);
+    click('rc-lock');
+    expect($('rc-summary').textContent).toContain('Built: Extractor');
+    expect($('rc-supply').textContent).toBe(`Supply ${300 - 80 + 20 + 20} · income 35 per turn`);
   });
 
   it('keeps the map left-to-right in RTL locales and translates the interface', () => {

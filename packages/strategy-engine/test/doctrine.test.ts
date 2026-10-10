@@ -137,11 +137,13 @@ describe('doctrines (D6)', () => {
     expect(v({ side: 0, unit: 3, order: { type: 'regroup' } })).toEqual({ ok: false, reason: 'immobile' });
     expect(v({ side: 0, unit: 1, order: { type: 'hold' }, doctrine: { ...DEFAULT_DOCTRINE, retreatBelow: 33 as never } })).toEqual({ ok: false, reason: 'bad-order' });
     const bad = structuredClone(w);
-    delete bad.intel; // checked against the fog-free base ruleset
+    delete bad.intel; // checked against the fog-free base ruleset (no economy either)
+    delete bad.supply;
     unit(bad, 1).doctrine = { ...DEFAULT_DOCTRINE, priority: 'tallest' as never };
     expect(isValidWorld(bad, base)).toBe(false);
     const ok = structuredClone(w);
     delete ok.intel;
+    delete ok.supply;
     ok.tick = 5;
     unit(ok, 1).doctrine = doctrine({ seekCover: true });
     unit(ok, 1).hitAt = 3;
