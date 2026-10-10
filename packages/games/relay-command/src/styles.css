@@ -88,6 +88,11 @@
 .wp-relay-command button { min-height: var(--wp-touch, 44px); }
 .wp-relay-command .rc-help p { margin: 0.5rem 0; }
 .wp-relay-command .rc-orders { display: grid; gap: 0.6rem; }
+.wp-relay-command .rc-jobs { display: grid; gap: 0.5rem; margin-top: 0.6rem; padding: 0.6rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius, 10px); }
+.wp-relay-command .rc-jobs h4 { margin: 0; }
+.wp-relay-command .rc-joblist { display: grid; gap: 0.4rem; margin: 0; padding: 0; list-style: none; }
+.wp-relay-command .rc-joblist li { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; justify-content: space-between; }
+.wp-relay-command .rc-supply { margin: 0; }
 .wp-relay-command .rc-label { align-self: center; color: var(--wp-muted); }
 .wp-relay-command .rc-hint { margin: 0; color: var(--wp-muted); }
 .wp-relay-command [aria-pressed='true'] { border-color: var(--wp-focus); border-width: 3px; }

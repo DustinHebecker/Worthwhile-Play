@@ -38,6 +38,12 @@ jammedCells(world, ruleset, side): Uint8Array                        // enemy ja
 isActiveEw(ruleset, e) / isEmitter(ruleset, e)                       // working EW unit / node-or-jammer
 revealedEmitters(world, ruleset, side, network?): Set<number>        // located without sight (EMITTER_EXPOSURE, tracers)
 needsDeploy(archetype)                                               // comms or EW units that work only when set up
+// Economy (I6a, D8):
+incomeOfSide(world, ruleset, side, network?): number               // Supply the side gets at the end of this turn
+incomeOf(world, ruleset, entity, network): number                   // one post's or Extractor's share
+spawnCell(world, ruleset, yard, archetype): {x, y} | undefined      // where a produced unit appears
+depositAt(map, x, y): Deposit | undefined / isReady(entity)         // deposit lookup; finished and not disabled
+UNKNOWN_LEFT                                                         // a deposit's remainder in an observation while unobserved
 // Information model (I3c, D7):
 observedCells(world, ruleset, side, network?): Uint8Array            // vision discs of reporting units
 reportingUnits(world, ruleset, side, network?): Entity[]             // units in coverage (all without a network)
@@ -59,6 +65,8 @@ resolveTurn/runTicks(...).reported?: SimEvent[][]                    // fog: per
   Doctrine `lostContact` (`regroup` | `keep`; engine default `keep`): with a command network, a mobile unit that spent a whole turn (`entity.noContact` ticks) outside its side's coverage switches to `regroup` with an `order-ended` of reason `lost-contact`, which its own side is always told; nodes at work (deploying or set up) are exempt. Games choose the default for their players' units (Relay Command: `regroup`).
 
   AI (I5): planners receive an `Observation` — own units unchanged, enemies from the side's reports (orders, set-up state and doctrines hidden; ghosts at their last reported cell), the side's own intel only, its true own network and the jamming it feels (`jammed`), and a `nextId` derived from the known ids (the real counter would leak hidden units). They never see the world, which makes P8 structural. `OrderEndReason` gains `outpaced` (an attack that could not close in for STALL_TICKS).
+
+  Economy (I6a, D8): rulesets carry `economy` and `startSupply`; `World.supply[side]`; `GameMap.deposits` (finite, sorted by cell); archetypes carry `cost`, `buildTurns` (0 = not producible/buildable), `income`, `extractor`, `production` (kinds a yard makes). Orders `produce { kind }` (a yard, MAX_QUEUE 2) and `build { kind, x, y }` (a finished command source; a free passable cell inside the own coverage; Extractors only on deposits that still yield, nothing else on deposits) are one-shot commands: paid when applied, each costs an order slot, the standing order stays, and they are never standing orders (saves reject them as such). Refusals: `no-supply`, `cannot-produce`, `queue-full`, `cannot-build`, `not-buildable`. On the last tick of a turn (system 9/10): income from connected posts and from Extractors inside coverage (deposits run down), sites count down and finish (a site is no node, yields and produces nothing), yards finish the head of their queue into the first free neighbouring cell in the side's frame (a boxed-in yard waits); produced units follow their yard's doctrine. Events `income` (own side only), `queued`, `produced`, `site`, `built`. Observations show only the own Supply, no enemy queues, and a deposit's remainder only while a reporting unit observes it (`UNKNOWN_LEFT`). Property P4 covers economy commands; the generator places deposits.
 
   Planned (I3–I5), names provisional: `ModeDefinition { id, systems, phases, victory, spawns? }` passed to `runTicks`; `coverage(world, ruleset, side)`; `observe(world, ruleset, side)`; `planAi(observation, ruleset, profile)`; production/economy commands.
 - **Mirror-consistent tie-breaking**: path and neighbour ties are broken in each side's own frame (side 1 = point-mirrored), the movement conflict rule is symmetric between sides (contenders of different sides all bump; within one side the lowest id enters, so friendly units cannot deadlock), damage is applied simultaneously. Property P4 checks that a point-mirrored world with swapped sides evolves as the exact mirror image.

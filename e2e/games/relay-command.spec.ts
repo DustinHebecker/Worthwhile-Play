@@ -199,6 +199,26 @@ test('relay-command: map and length chosen before the first turn survive a reloa
   await expect(page.getByTestId('rc-setup')).toBeHidden();
 });
 
+test('relay-command: queueing a unit at the Muster Yard and placing an Extractor work by touch and survive a reload', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await start(page);
+  await expect(page.getByTestId('rc-supply')).toHaveText('Supply 300 · income 20 per turn');
+  const yard = (await saved(page))!.world.entities.find((e) => e.side === 0 && e.kind === 'muster')!;
+  await page.getByTestId(`rc-unit-${yard.id}`).click();
+  await page.getByTestId('rc-job-rifles').click();
+  await expect(page.getByTestId('rc-supply')).toHaveText('Supply 300 (260 after planned orders) · income 20 per turn');
+  await expect.poll(async () => (await saved(page))?.draft[0]?.order.type).toBe('produce');
+  // The production sheet fits the phone: no sideways scrolling.
+  const widths = await page.evaluate(() => ({ page: document.documentElement.scrollWidth, viewport: document.documentElement.clientWidth }));
+  expect(widths.page).toBeLessThanOrEqual(widths.viewport);
+  await page.reload();
+  await page.getByTestId('continue').click();
+  await expect(page.getByTestId('rc-supply')).toHaveText('Supply 300 (260 after planned orders) · income 20 per turn');
+  await page.getByTestId('rc-lock').click();
+  await expect(page.getByTestId('rc-summary')).toContainText('Finished: Rifle Squad');
+  await expect.poll(async () => (await saved(page))?.world.entities.filter((e) => e.side === 0 && e.kind === 'rifles').length).toBe(3);
+});
+
 test('relay-command: the game setup never scrolls sideways on a 360 px phone (a wide option once broke the layout viewport)', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 740 });
   await start(page);
