@@ -148,9 +148,18 @@ export interface Doctrine {
   readonly seekCover: boolean;
   /** Return fire only: shoot only after being hit within the last turn, or at an ordered target. */
   readonly holdFire: boolean;
+  /**
+   * What to do after a whole turn without radio contact: `regroup` (return into coverage) or
+   * `keep` (carry on with the standing order, e.g. for a deliberate deep push).
+   */
+  readonly lostContact: LostContact;
 }
 
-export const DEFAULT_DOCTRINE: Doctrine = { retreatBelow: 0, priority: 'weakest', seekCover: false, holdFire: false };
+export const LOST_CONTACT = ['regroup', 'keep'] as const;
+export type LostContact = (typeof LOST_CONTACT)[number];
+
+/** Engine default: a unit without a doctrine carries on out of contact (games may give their units another). */
+export const DEFAULT_DOCTRINE: Doctrine = { retreatBelow: 0, priority: 'weakest', seekCover: false, holdFire: false, lostContact: 'keep' };
 
 export interface Status {
   kind: StatusKind;
@@ -190,6 +199,8 @@ export interface Entity {
   stall?: { goal: number; best: number; ticks: number };
   /** Cell the unit left with its last step (it does not step straight back if it can help it). */
   prev?: number;
+  /** Consecutive ticks outside the own command coverage (doctrine `lostContact`); absent = 0. */
+  noContact?: number;
 }
 
 export interface Projectile {
@@ -260,9 +271,11 @@ export type SimEvent =
  * Why the engine replaced a unit's standing order on its own:
  * `arrived` (move done), `occupied` (destination held by a unit that will not leave),
  * `unreachable` (no way there for a whole turn), `blocked` (blocked by moving units for three
- * turns), `lost-target` (target or charge gone), `retreat` (doctrine), `regrouped` (back in coverage).
+ * turns), `lost-target` (target or charge gone), `retreat` (doctrine), `regrouped` (back in coverage),
+ * `outpaced` (an attacker could not close in on its target for three turns), `lost-contact` (a
+ * whole turn without radio contact; the unit returns into coverage, doctrine).
  */
-export type OrderEndReason = 'arrived' | 'occupied' | 'unreachable' | 'blocked' | 'lost-target' | 'retreat' | 'regrouped';
+export type OrderEndReason = 'arrived' | 'occupied' | 'unreachable' | 'blocked' | 'lost-target' | 'retreat' | 'regrouped' | 'outpaced' | 'lost-contact';
 
 export interface Scenario {
   readonly map: GameMap;

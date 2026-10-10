@@ -51,7 +51,7 @@ test('relay-command: fog of war — only reported enemies are shown; a ghost tak
   await map.click({ position: { x: post.x * cell + cell / 2, y: post.y * cell + cell / 2 } });
   await expect.poll(async () => (await saved(page))?.draft[0]?.order).toEqual({ type: 'move', x: post.x, y: post.y });
   await page.getByTestId('rc-lock').click();
-  await expect(page.getByTestId('rc-turn')).toHaveText('Turn 2 of 12');
+  await expect(page.getByTestId('rc-turn')).toHaveText('Turn 2');
 });
 
 test('relay-command: canvas clicks select a unit and plan a move; locking resolves the turn', async ({ page }) => {
@@ -66,7 +66,7 @@ test('relay-command: canvas clicks select a unit and plan a move; locking resolv
   await map.click({ position: { x: (rifle.x + 1) * cell + cell / 2, y: (rifle.y - 3) * cell + cell / 2 } });
   await expect.poll(async () => (await saved(page))?.draft[0]?.order.type).toBe('move');
   await page.getByTestId('rc-lock').click();
-  await expect(page.getByTestId('rc-turn')).toHaveText('Turn 2 of 12');
+  await expect(page.getByTestId('rc-turn')).toHaveText('Turn 2');
   await expect.poll(async () => (await saved(page))?.world.turn).toBe(1);
   await expect(page.getByTestId('rc-summary')).toContainText('Damage dealt');
 });
@@ -76,6 +76,10 @@ test('relay-command: keyboard-only orders, then playing to the natural end', asy
   const map = page.getByTestId('rc-map');
   // After "New game" the host focuses the map (data-autofocus); the cursor starts on the own Command Post.
   await expect(map).toBeFocused();
+  // A 12-turn game guarantees a natural end below; the map is re-focused afterwards.
+  await page.getByTestId('rc-turn-limit').selectOption('12');
+  await expect(page.getByTestId('rc-turn')).toHaveText('Turn 1 of 12');
+  await map.focus();
   const state = (await saved(page))!;
   const post = state.world.entities.find((e) => e.side === 0 && e.kind === 'command-post')!;
   const rifle = firstRifle(state);
@@ -130,7 +134,7 @@ test('relay-command: a doctrine and a patrol survive a reload and are carried ou
     side: 0,
     unit: rifle.id,
     order: { type: 'patrol', x: rifle.x + 1, y: rifle.y - 3, rx: rifle.x, ry: rifle.y },
-    doctrine: { retreatBelow: 50, priority: 'weakest', seekCover: false, holdFire: false }
+    doctrine: { retreatBelow: 50, priority: 'weakest', seekCover: false, holdFire: false, lostContact: 'regroup' }
   };
   await expect.poll(async () => (await saved(page))?.draft).toEqual([expected]);
   await page.reload();
@@ -163,9 +167,34 @@ test('relay-command: a Static Jammer is set up in one turn and stays set up acro
   await page.getByTestId('rc-deploy').click();
   await expect.poll(async () => (await saved(page))?.draft[0]?.order.type).toBe('deploy');
   await page.getByTestId('rc-lock').click();
-  await expect(page.getByTestId('rc-turn')).toHaveText('Turn 2 of 12');
+  await expect(page.getByTestId('rc-turn')).toHaveText('Turn 2');
   await expect.poll(async () => (await saved(page))?.world.turn).toBe(1);
   await page.reload();
   await page.getByTestId('continue').click();
   await expect(page.getByTestId(`rc-unit-${jammer.id}`)).toContainText('Jammer active');
+});
+
+test('relay-command: the opponent level chosen before a new game is kept in the save', async ({ page }) => {
+  await page.goto('/games/relay-command');
+  await page.getByTestId('difficulty').selectOption('hard');
+  await page.getByTestId('new-game').click();
+  await expect(page.getByTestId('rc-map')).toBeVisible();
+  await expect.poll(async () => ((await readSave(page, 'relay-command')) as { state: { difficulty: string } } | undefined)?.state.difficulty).toBe('hard');
+  await page.getByTestId('rc-lock').click();
+  await expect(page.getByTestId('rc-turn')).toHaveText('Turn 2');
+});
+
+test('relay-command: map and length chosen before the first turn survive a reload', async ({ page }) => {
+  await start(page);
+  await page.getByTestId('rc-turn-limit').selectOption('12');
+  await page.getByTestId('rc-scenario').selectOption('ridge-valley');
+  await expect(page.getByTestId('rc-turn')).toHaveText('Turn 1 of 12');
+  await expect.poll(async () => (await saved(page))?.world.entities.length).toBe(28);
+  await page.reload();
+  await page.getByTestId('continue').click();
+  await expect(page.getByTestId('rc-map')).toHaveAttribute('data-cols', '20');
+  await expect(page.getByTestId('rc-turn')).toHaveText('Turn 1 of 12');
+  await page.getByTestId('rc-lock').click();
+  await expect(page.getByTestId('rc-turn')).toHaveText('Turn 2 of 12');
+  await expect(page.getByTestId('rc-setup')).toBeHidden();
 });
