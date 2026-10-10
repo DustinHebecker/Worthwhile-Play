@@ -24,6 +24,7 @@ import {
   cancelOrder,
   concede,
   STALL_TURNS,
+  stalemateTurns,
   doctrineFor,
   doctrineRefusal,
   draftFor,
@@ -208,6 +209,9 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     // The veil is told in words too (screen readers).
     let terrain = observedAt(x, y) ? terrainName(x, y) : `${terrainName(x, y)} ${t('cell.unobserved')}`;
     if (!revealed() && jammed(x, y)) terrain = `${terrain} ${t('cell.jammed')}`;
+    // Deposits are told in words as well; how much is left only while the cell is observed.
+    const deposit = depositAt(world().map, x, y);
+    if (deposit) terrain = `${terrain} ${observedAt(x, y) ? t('cell.deposit', { n: deposit.left }) : t('cell.depositUnknown')}`;
     if (units.length === 0) return t('cell.describe', { x: x + 1, y: y + 1, terrain });
     return t('cell.describeUnit', { x: x + 1, y: y + 1, terrain, unit: units.map(describeUnit).join(' ') });
   };
@@ -344,7 +348,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     turnEl.textContent =
       state.turnLimit === null ? t('status.turnOpen', { turn: w.turn + 1 }) : t('status.turn', { turn: Math.min(w.turn + 1, state.turnLimit), limit: state.turnLimit });
     // Open end: a stalled game is heading for a decision on strength (STALL_TURNS); say so early.
-    if (state.turnLimit === null && state.phase === 'plan' && state.quiet >= QUIET_NOTICE) turnEl.textContent += ' ' + t('status.quiet', { n: state.quiet, limit: STALL_TURNS });
+    if (state.turnLimit === null && state.phase === 'plan' && stalemateTurns(state) >= QUIET_NOTICE) turnEl.textContent += ' ' + t('status.quiet', { n: STALL_TURNS - stalemateTurns(state) });
     // Scenario and turn limit can be changed until the first turn is locked.
     setupBox.hidden = state.phase !== 'plan' || state.log.length > 0;
     scenarioSelect.value = state.scenario;
@@ -384,7 +388,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     const enemy = sideValue(state.world, OPPONENT);
     const decidedByPost = outcome({ ...state.world, turn: 0 }, state.turnLimit) !== null;
     // Open end: the quiet rule ended the game, not a last turn.
-    const quietEnd = !decidedByPost && state.turnLimit === null && state.quiet >= STALL_TURNS;
+    const quietEnd = !decidedByPost && state.turnLimit === null && stalemateTurns(state) >= STALL_TURNS;
     const args = { own, enemy, limit: STALL_TURNS };
     if (state.result === 'won') return decidedByPost ? t('status.won') : t(quietEnd ? 'status.wonQuiet' : 'status.wonScore', args);
     if (state.result === 'lost') return decidedByPost ? t('status.lost') : t(quietEnd ? 'status.lostQuiet' : 'status.lostScore', args);
@@ -461,7 +465,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       list.append(h('button', { type: 'button', 'data-testid': `rc-job-${kind}`, 'aria-pressed': placing === kind ? 'true' : 'false', onclick }, label));
     }
     const rows = h('ul', { class: 'rc-joblist' });
-    for (const q of unit.queue ?? []) rows.append(h('li', {}, t('jobs.queue', { name: t(`unit.${q.kind}`), n: q.left })));
+    // A finished unit that found no free cell waits inside: say so instead of "0 turns left".
+    for (const q of unit.queue ?? []) rows.append(h('li', {}, q.left === 0 ? t('jobs.waiting', { name: t(`unit.${q.kind}`) }) : t('jobs.queue', { name: t(`unit.${q.kind}`), n: q.left })));
     plannedJobs(state, unit.id).forEach((job, index) => {
       const o = job.order;
       const name = t(`unit.${o.type === 'produce' || o.type === 'build' ? o.kind : unit.kind}`);
@@ -823,6 +828,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
         if (site?.side === PLAYER) lines.push(t('summary.built', { name: unitName(site) }));
       } else if (e.t === 'site') {
         if (e.side !== PLAYER) lines.push(t('summary.enemySite', { name: unitName(e) }));
+      } else if (e.t === 'site-blocked') {
+        if (e.side === PLAYER) lines.push(t('summary.siteBlocked', { name: t(`unit.${e.kind}`), x: e.x + 1, y: e.y + 1 }));
       } else if (e.t === 'order-ended' && REPORTED_ENDS.has(e.reason) && !told.has(`${e.id}:${e.reason}`)) {
         // Orders the engine ended on its own are reported for the player's units, once per
         // unit and reason in a turn.
@@ -1396,7 +1403,10 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     if (placing && current && current.side === PLAYER && state.phase === 'plan') {
       const kind = placing;
       orderJob({ type: 'build', kind, x, y });
-      if (!noticeEl.hidden) return; // refused: stay in placing mode with the reason shown
+      if (!noticeEl.hidden) {
+        render(); // refused: stay in placing mode with the reason shown, cursor on the cell
+        return;
+      }
       placing = null;
       render();
       return;

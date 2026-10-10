@@ -21,7 +21,8 @@ import {
   type Report,
   type Ruleset,
   type SimEvent,
-  type World
+  type World,
+  spawn
 } from '@wp/strategy-engine';
 import { DIFFICULTIES, planAi, type Difficulty } from './ai';
 import { FIELD_EXERCISE, SCENARIOS, type ScenarioSpec } from './scenarios';
@@ -48,10 +49,21 @@ export interface TurnLog {
  */
 /** Longest game: an open-ended game still running at this turn is decided on strength. */
 export const MAX_TURNS = 1000;
-/** Open end: this many turns in a row without a fight (nothing hit or destroyed) decide the game on strength. */
+/**
+ * Open end (stalemate rule): once the armies have met (the first hit) or from CONTACT_TURN on,
+ * a game in which the trailing side has not closed the gap in strength by more than STALL_MARGIN
+ * for STALL_TURNS turns in a row is decided on strength. Fights that change nothing (a unit sent
+ * in and lost) do not keep a game going; a comeback does.
+ */
 export const STALL_TURNS = 12;
+/** Turn from which the stalemate rule counts even if no shot has been fired. */
+export const CONTACT_TURN = 30;
+/** Change in the lead (strength points) below which a turn counts as no progress for the trailing side. */
+export const STALL_MARGIN = 50;
 /** Most units or sites one side can add per turn (one order slot each; the Command Post has four, a Field Post two). */
 const PRODUCTION_PER_TURN = 6;
+/** Bound for strength values in saves (Supply cap plus far more than any army). */
+const MAX_STRENGTH = 10_000_000;
 /** Turn limits the player can choose before the first turn; `null` = open end (default). */
 export const TURN_LIMITS: readonly (number | null)[] = [null, 12, 24];
 
@@ -75,10 +87,13 @@ export interface RcState {
   /** Strength of the scripted opponent (chosen when the game starts). */
   difficulty: Difficulty;
   scenario: string;
-  /** `null`: open end, decided by the Command Posts, or on strength after STALL_TURNS turns without losses. */
+  /** `null`: open end, decided by the Command Posts, or on strength by the stalemate rule (STALL_TURNS). */
   turnLimit: number | null;
-  /** Turns in a row without a fight on either side (open end: see STALL_TURNS). */
-  quiet: number;
+  /**
+   * Stalemate record: the player's lead in strength at the end of each turn since the trailing
+   * side last gained ground (empty until the stalemate rule counts; see STALL_TURNS).
+   */
+  lead: number[];
   world: World;
   phase: Phase;
   draft: Command[];
@@ -99,7 +114,7 @@ export function newGame(seed: number, spec: ScenarioSpec = FIELD_EXERCISE, diffi
     difficulty,
     scenario: spec.id,
     turnLimit,
-    quiet: 0,
+    lead: [],
     world,
     phase: 'plan',
     draft: [],
@@ -147,11 +162,17 @@ function afterJobs(state: RcState): World {
   const world = structuredClone(state.world);
   for (const c of state.draft) {
     if (!isOneShot(c.order) || c.order.type === 'hold') continue;
-    const cost = archetypeOf(RULESET, (c.order as { kind: string }).kind)?.cost ?? 0;
-    if (world.supply) world.supply[PLAYER] = (world.supply[PLAYER] ?? 0) - cost;
+    const arch = archetypeOf(RULESET, (c.order as { kind: string }).kind);
+    if (world.supply) world.supply[PLAYER] = (world.supply[PLAYER] ?? 0) - (arch?.cost ?? 0);
     if (c.order.type === 'produce') {
       const yard = world.entities.find((e) => e.id === c.unit);
       if (yard) (yard.queue ??= []).push({ kind: c.order.kind, left: 1 });
+    } else if (c.order.type === 'build' && arch) {
+      // The planned site takes its cell, so a second placement there is refused while planning.
+      const site = spawn(world.nextId++, PLAYER, arch, c.order.x, c.order.y);
+      site.build = arch.buildTurns;
+      world.entities.push(site);
+      world.intel?.[PLAYER]?.push({ id: site.id, side: PLAYER, kind: site.kind, x: site.x, y: site.y, hp: site.hp, tick: world.tick, live: false });
     }
   }
   return world;
@@ -209,15 +230,13 @@ export function lockTurn(state: RcState): RcState {
   const plans = [state.draft, planAi(observe(state.world, RULESET, OPPONENT), RULESET, state.difficulty)];
   const { world, events: all, reported } = resolveTurn(state.world, RULESET, plans);
   const events = reported?.[PLAYER] ?? [];
-  // A quiet turn is one without a fight: nothing hit, nothing destroyed (production and income
-  // go on in a stalemate; they are no reason to play on without end).
-  const fought = all.some((e) => e.t === 'hit' || e.t === 'destroyed');
-  const quiet = fought ? 0 : state.quiet + 1;
-  const result = outcome(world, state.turnLimit, quiet);
+  const fought = all.some((e) => e.t === 'hit');
+  const lead = nextLead(state.lead, world, fought || state.lead.length > 0 || world.turn >= CONTACT_TURN);
+  const result = outcome(world, state.turnLimit, lead);
   return {
     ...state,
     world,
-    quiet,
+    lead,
     events,
     draft: [],
     log: [...state.log, { turn: state.world.turn, plans }],
@@ -287,30 +306,51 @@ export const commandPost = (world: World, side: number): Entity | undefined =>
   world.entities.find((e) => e.side === side && e.kind === COMMAND_POST);
 
 /** Remaining strength of a side: build value scaled by remaining health. */
+/**
+ * A side's strength: units and structures at cost scaled by health (the Command Post counts
+ * COMMAND_POST_VALUE), plus banked Supply and what its yards have been paid for. Spending is
+ * neutral (Supply turns into a unit or a site of the same value); income and losses are not.
+ */
 export function sideValue(world: World, side: number): number {
-  let total = 0;
+  let total = world.supply?.[side] ?? 0;
   for (const e of world.entities) {
     if (e.side !== side) continue;
     const arch = archetypeOf(RULESET, e.kind);
     if (!arch) continue;
     const weight = e.kind === COMMAND_POST ? COMMAND_POST_VALUE : arch.cost;
     total += Math.floor((weight * e.hp) / arch.hp);
+    for (const q of e.queue ?? []) total += archetypeOf(RULESET, q.kind)?.cost ?? 0;
   }
   return total;
 }
 
+/** Whether a stretch from lead `from` to lead `to` brought the trailing side no real progress. */
+export const stalled = (from: number, to: number): boolean =>
+  Math.abs(to - from) <= STALL_MARGIN || (Math.sign(to) === Math.sign(from) && Math.abs(to) >= Math.abs(from));
+
+/** The stalemate record after a turn: restarts whenever the trailing side gained ground. */
+function nextLead(lead: readonly number[], world: World, counting: boolean): number[] {
+  if (!counting) return [];
+  const now = sideValue(world, PLAYER) - sideValue(world, OPPONENT);
+  const start = lead[0];
+  return start !== undefined && stalled(start, now) ? [...lead, now] : [now];
+}
+
+/** Turns the stalemate rule has counted without progress (decides at STALL_TURNS). */
+export const stalemateTurns = (state: Pick<RcState, 'lead'>): number => Math.max(0, state.lead.length - 1);
+
 /**
- * Destroying the enemy Command Post wins at once. Otherwise remaining strength decides: at the
- * turn limit, or in an open-ended game after STALL_TURNS turns without any loss (`quiet`) or at
- * MAX_TURNS, so a game nobody can win any more still ends.
+ * Destroying the enemy Command Post wins at once. Otherwise strength decides: at the turn limit,
+ * or in an open-ended game by the stalemate rule (`lead`, STALL_TURNS turns without the trailing
+ * side gaining ground) or at MAX_TURNS, so a game nobody can win any more still ends.
  */
-export function outcome(world: World, turnLimit: number | null, quiet = 0): Outcome | null {
+export function outcome(world: World, turnLimit: number | null, lead: readonly number[] = []): Outcome | null {
   const own = commandPost(world, PLAYER);
   const enemy = commandPost(world, OPPONENT);
   if (!own && !enemy) return 'draw';
   if (!enemy) return 'won';
   if (!own) return 'lost';
-  const decided = turnLimit === null ? quiet >= STALL_TURNS || world.turn >= MAX_TURNS : world.turn >= turnLimit;
+  const decided = turnLimit === null ? stalemateTurns({ lead: [...lead] }) >= STALL_TURNS || world.turn >= MAX_TURNS : world.turn >= turnLimit;
   if (!decided) return null;
   const diff = sideValue(world, PLAYER) - sideValue(world, OPPONENT);
   return diff > 0 ? 'won' : diff < 0 ? 'lost' : 'draw';
@@ -328,7 +368,10 @@ function withEconomy(state: Record<string, unknown>): Record<string, unknown> {
   if (!isRecord(state.world)) return state;
   const sides = typeof state.world.sides === 'number' ? state.world.sides : 2;
   const supply = Array.isArray(state.world.supply) ? state.world.supply : Array.from({ length: sides }, () => RULESET.startSupply);
-  return { ...state, world: { ...state.world, ruleset: RULESET.id, supply } };
+  // The old quiet count meant something else (turns without losses): the stalemate rule starts afresh.
+  const { quiet: _quiet, ...rest } = state;
+  void _quiet;
+  return { ...rest, lead: [], world: { ...state.world, ruleset: RULESET.id, supply } };
 }
 
 /**
@@ -355,7 +398,7 @@ function withLostContact(state: Record<string, unknown>): Record<string, unknown
         )
       }
     : state.world;
-  return { ...state, quiet: 0, draft, log, world };
+  return { ...state, lead: [], draft, log, world };
 }
 
 /** A command whose order is structurally valid on a `w`×`h` map. */
@@ -375,6 +418,10 @@ const isTurnLog = (isCommand: (v: unknown) => v is Command) => (v: unknown): v i
 function matchesScenario(world: World, spec: ScenarioSpec): boolean {
   const { map, entities } = spec.scenario;
   if (world.ruleset !== RULESET.id || world.map.w !== map.w || world.map.h !== map.h || world.map.terrain !== map.terrain) return false;
+  // Deposits: the scenario's cells (or none, for maps from before the economy), never fuller than at the start.
+  const deposits = world.map.deposits ?? [];
+  const start = map.deposits ?? [];
+  if (deposits.length > 0 && (deposits.length !== start.length || deposits.some((d) => !start.some((o) => o.x === d.x && o.y === d.y && d.left <= o.left)))) return false;
   // Kinds: the scenario's, plus anything a yard produces or a source builds.
   const kinds = new Set([...entities.map((e) => e.kind), ...Object.values(RULESET.archetypes).filter((a) => a.buildTurns > 0).map((a) => a.id)]);
   // Entities: the scenario's plus what the economy can add — at most the order slots per side
@@ -393,7 +440,8 @@ export function isValidState(value: unknown): value is RcState {
   const spec = scenarioById(value.scenario);
   if (!spec || !(value.turnLimit === null || isInt(value.turnLimit, 1, MAX_TURNS)) || !isOneOf(value.phase, ['plan', 'finished'])) return false;
   if (!isValidWorld(value.world, RULESET) || value.world.sides !== 2 || !matchesScenario(value.world, spec)) return false;
-  if (!isInt(value.quiet, 0, value.world.turn)) return false; // quiet turns cannot outnumber the turns played
+  // The stalemate record holds at most one entry per turn played and never more than decides a game.
+  if (!isArrayOf(value.lead, (v) => isInt(v, -MAX_STRENGTH, MAX_STRENGTH)) || value.lead.length > Math.min(value.world.turn, STALL_TURNS + 1)) return false;
   const isCommand = commandGuard(value.world.map.w, value.world.map.h);
   if (!isArrayOf(value.draft, isCommand) || value.draft.some((c) => c.side !== PLAYER)) return false;
   // Bounded by the scenario (hostile saves must not freeze the tab): one command per unit and

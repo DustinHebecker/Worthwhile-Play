@@ -4,7 +4,7 @@ import type { GameInstance, GameModule } from '@wp/game-core';
 import { createTestContext, type TestContext } from '@wp/testing';
 import game from '../src/index';
 import { initialIntel, passable, type Entity } from '@wp/strategy-engine';
-import { concede, lockTurn, OPPONENT, PLAYER, RULESET, STALL_TURNS, type RcState } from '../src/rules';
+import { concede, lockTurn, OPPONENT, PLAYER, RULESET, sideValue, STALL_TURNS, stalemateTurns, type RcState } from '../src/rules';
 import { CELL } from '../src/view';
 
 let ctx: TestContext;
@@ -437,22 +437,28 @@ describe('Relay Command view', () => {
     expect(state().world.turn).toBe(0);
   });
 
-  it('in an open-ended game the turn line warns from three quiet turns on that strength will decide; the host learns the level', () => {
+  it('in an open-ended game the turn line warns of a stalemate from three turns on; a stalemate end says so; the host learns the level', () => {
     expect(ctx.difficulties).toEqual(['normal']); // newGame without a known level fell back to 'normal'
-    instance.restore({ ...state(), quiet: 2 });
-    expect($('rc-turn').textContent).toBe('Turn 1');
-    instance.restore({ ...state(), quiet: 3, difficulty: 'hard' });
-    expect($('rc-turn').textContent).toBe('Turn 1 No losses for 3 turns: after 12 in a row, strength decides.');
-    expect(ctx.difficulties).toEqual(['normal', 'normal', 'hard']);
-    // A turn limit has no stall rule.
-    instance.restore({ ...state(), quiet: 5, turnLimit: 12 });
-    expect($('rc-turn').textContent).toBe('Turn 1 of 12');
-    // A game the quiet rule ended says so instead of "after the last turn".
-    let quiet: RcState = { ...state(), turnLimit: null };
-    for (let i = 0; i < STALL_TURNS && quiet.phase === 'plan'; i++) quiet = lockTurn({ ...quiet, world: withoutMobileUnits(quiet.world) });
-    expect(quiet).toMatchObject({ phase: 'finished', result: 'draw', quiet: STALL_TURNS });
-    instance.restore(quiet);
-    expect($('rc-status').textContent).toBe(`Draw after ${STALL_TURNS} turns without losses (300 : 300).`);
+    // Only the two posts left: from CONTACT_TURN on, nothing changes and the stalemate rule counts.
+    let s: RcState = { ...state(), turnLimit: null, difficulty: 'hard', world: withoutMobileUnits(state().world) };
+    while (s.phase === 'plan' && stalemateTurns(s) < 2) s = lockTurn(s);
+    instance.restore(s);
+    expect($('rc-turn').textContent).toBe(`Turn ${s.world.turn + 1}`);
+    s = lockTurn(s);
+    instance.restore(s);
+    expect($('rc-turn').textContent).toBe(`Turn ${s.world.turn + 1} Stalemate: strength decides in ${STALL_TURNS - 3} turns unless the side behind gains ground.`);
+    expect(ctx.difficulties).toEqual(['normal', 'hard', 'hard']);
+    // A turn limit has no stalemate rule.
+    instance.restore({ ...s, turnLimit: 100 });
+    expect($('rc-turn').textContent).toBe(`Turn ${s.world.turn + 1} of 100`);
+    while (s.phase === 'plan') s = lockTurn(s);
+    // The opponent builds an Extractor with its post and pulls ahead on income; the player never gains ground.
+    expect(s).toMatchObject({ phase: 'finished', result: 'lost' });
+    expect(stalemateTurns(s)).toBe(STALL_TURNS);
+    instance.restore(s);
+    expect($('rc-status').textContent).toBe(
+      `The opponent is stronger, and you did not gain ground for ${STALL_TURNS} turns (${sideValue(s.world, PLAYER)} : ${sideValue(s.world, OPPONENT)}).`
+    );
   });
 
   it('shows Supply and income, lets a yard queue units (paid from the planned Supply) and cancel them', () => {
@@ -495,6 +501,8 @@ describe('Relay Command view', () => {
     // The deposit behind the enemy post lies outside coverage: refused with the reason, still placing.
     const far = state().world.map.deposits!.find((d) => d.x === 7 && d.y === 1)!;
     place(far.x, far.y);
+    // The cell is described in words, deposit included; its remainder is unknown while unobserved.
+    expect($('rc-cursor').textContent).toContain('Deposit (amount left unknown: not observed).');
     expect($('rc-notice').hidden).toBe(false);
     expect($('rc-notice').textContent).toContain('Not here');
     expect(state().draft).toHaveLength(0);
@@ -502,7 +510,14 @@ describe('Relay Command view', () => {
     // The deposit behind the own post is inside coverage.
     const near = state().world.map.deposits!.find((d) => d.x === 4 && d.y === 10)!;
     place(near.x, near.y);
+    expect($('rc-cursor').textContent).toContain('Deposit: 300 Supply left.');
     expect(state().draft.map((c) => c.order)).toEqual([{ type: 'build', kind: 'extractor', x: near.x, y: near.y }]);
+    // A second placement on the planned site's cell is refused while planning.
+    click('rc-job-extractor');
+    place(near.x, near.y);
+    expect(state().draft).toHaveLength(1);
+    expect($('rc-notice').textContent).toContain('Not here');
+    click('rc-placing-stop');
     expect($('rc-jobs').textContent).toContain(`Planned: Extractor at ${near.x + 1}, ${near.y + 1}`);
     expect($('rc-placing')).toBeNull();
     click('rc-lock');

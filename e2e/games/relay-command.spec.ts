@@ -199,7 +199,26 @@ test('relay-command: map and length chosen before the first turn survive a reloa
   await expect(page.getByTestId('rc-setup')).toBeHidden();
 });
 
-test('relay-command: queueing a unit at the Muster Yard and placing an Extractor work by touch and survive a reload', async ({ page }) => {
+test('relay-command: the Command Post places an Extractor on a deposit by tapping the map', async ({ page, isMobile }) => {
+  await start(page);
+  const s = (await saved(page))!;
+  const post = s.world.entities.find((e) => e.side === 0 && e.kind === 'command-post')!;
+  await page.getByTestId(`rc-unit-${post.id}`).click();
+  await page.getByTestId('rc-job-extractor').click();
+  await expect(page.getByTestId('rc-placing')).toHaveText('Choose a deposit inside your coverage for the Extractor.');
+  // The deposit behind the player's post on Field Exercise lies at (4, 10).
+  const map = page.getByTestId('rc-map');
+  await map.scrollIntoViewIfNeeded();
+  const box = (await map.boundingBox())!;
+  const cell = box.width / 12;
+  const position = { x: 4 * cell + cell / 2, y: 10 * cell + cell / 2 };
+  if (isMobile) await map.tap({ position });
+  else await map.click({ position });
+  await expect.poll(async () => (await saved(page))?.draft[0]?.order).toEqual({ type: 'build', kind: 'extractor', x: 4, y: 10 });
+  await expect(page.getByTestId('rc-supply')).toHaveText('Supply 300 (220 after planned orders) · income 20 per turn');
+});
+
+test('relay-command: queueing a unit at the Muster Yard works on a phone and survives a reload', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 740 });
   await start(page);
   await expect(page.getByTestId('rc-supply')).toHaveText('Supply 300 · income 20 per turn');

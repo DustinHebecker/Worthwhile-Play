@@ -6,6 +6,7 @@ import {
   depositAt,
   dist2,
   incomeOfSide,
+  MAX_QUEUE,
   frameIndex,
   inWeaponRange,
   observedCells,
@@ -251,6 +252,10 @@ const RALLY_RADIUS = 2;
 const RALLY_SHARE: Record<Difficulty, number> = { easy: 0, normal: 0.8, hard: 0.9 };
 /** Turn from which the storm goes ahead whatever has rallied (a stray fighter never stalls the game). */
 const RALLY_DEADLINE = 6;
+/** Known enemy fighters within this many cells of their post count as its defenders. */
+const DEFENCE_RADIUS = 7;
+/** With yards to reinforce, the storm needs this much more value than the known defenders. */
+const STORM_ODDS = 1.3;
 /** Fewest fighters the deadline storm goes ahead with while yards keep producing. */
 const MIN_STORM = 4;
 /** On the way to the rally point a fighter that loses contact comes back (the storm orders keep). */
@@ -308,7 +313,15 @@ function assaultPlan(obs: Observation, ruleset: Ruleset, difficulty: Difficulty)
   // A tiny force storms at once only when no yard can reinforce it (with an economy it waits).
   const reinforcing = ruleset.economy && world.entities.some((e) => e.side === side && archetypeOf(ruleset, e.kind)?.production && (e.build ?? 0) === 0);
   // The deadline sends what has gathered, but never a lone unit while yards can reinforce it.
-  const storming = (all.length <= 2 && !reinforcing) || (world.turn >= RALLY_DEADLINE && (orderable.length >= MIN_STORM || !reinforcing)) || rallied + past >= Math.ceil(orderable.length * RALLY_SHARE[difficulty]);
+  const gathered = (all.length <= 2 && !reinforcing) || (world.turn >= RALLY_DEADLINE && (orderable.length >= MIN_STORM || !reinforcing)) || rallied + past >= Math.ceil(orderable.length * RALLY_SHARE[difficulty]);
+  // While yards can reinforce, go in only with clear odds against the known defenders of the post:
+  // units sent in one by one only feed the defence (and keep a stalemate from ever ending).
+  const value = (e: Entity) => ((archetypeOf(ruleset, e.kind)?.cost ?? 0) * e.hp) / (archetypeOf(ruleset, e.kind)?.hp || 1);
+  const ours = orderable.reduce((sum, f) => sum + value(f), 0);
+  const theirs = enemiesOf(obs)
+    .filter((e) => archetypeOf(ruleset, e.kind)?.weapon && dist2(e.x, e.y, objective.x, objective.y) <= DEFENCE_RADIUS * DEFENCE_RADIUS)
+    .reduce((sum, e) => sum + value(e), 0);
+  const storming = gathered && (!reinforcing || ours >= theirs * STORM_ODDS);
   const besieging = all.some((f) => (archetypeOf(ruleset, f.kind)?.weapon?.minRange ?? 0) > 0 && (archetypeOf(ruleset, f.kind)?.weapon?.range ?? 0) > 3);
   return { objective, rally, all, storming, besieging };
 }
@@ -400,8 +413,10 @@ function siege(obs: Observation, ruleset: Ruleset, plan: AssaultPlan, fighters: 
   // one that sees farther than the post, the gun waits at its stand-off until there is one.
   const postVision = arch(objective)?.vision ?? 0;
   const safe = spotter && (arch(spotter)?.vision ?? 0) > postVision;
+  const post = spotter && safe ? spottingCell(obs, ruleset, spotter, objective, defenders) : undefined;
+  // Nobody reports the post and no spotter can watch it safely: the siege cannot work, storm instead.
+  if (!live && !post) return undefined;
   if (spotter && safe) {
-    const post = spottingCell(obs, ruleset, spotter, objective, defenders);
     if (post && !(spotter.x === post.x && spotter.y === post.y) && !(spotter.order.type === 'move' && spotter.order.x === post.x && spotter.order.y === post.y)) {
       commands.push({ side, unit: spotter.id, order: { type: 'move', x: post.x, y: post.y }, doctrine: AI_DOCTRINE });
     } else if (post && spotter.x === post.x && spotter.y === post.y && spotter.order.type !== 'hold') {
@@ -429,7 +444,10 @@ function siege(obs: Observation, ruleset: Ruleset, plan: AssaultPlan, fighters: 
     if (gun) {
       assigned.set(gun.id, (assigned.get(gun.id) ?? 0) + 1);
       if (!(guard.order.type === 'escort' && guard.order.target === gun.id)) commands.push({ side, unit: guard.id, order: { type: 'escort', target: gun.id }, doctrine: AI_DOCTRINE });
-    } else if (guard.order.type !== 'hold') commands.push({ side, unit: guard.id, order: { type: 'hold' }, doctrine: AI_DOCTRINE });
+    } else if (Math.max(Math.abs(guard.x - plan.rally.x), Math.abs(guard.y - plan.rally.y)) > RALLY_RADIUS && !(guard.order.type === 'move' && guard.order.x === plan.rally.x && guard.order.y === plan.rally.y)) {
+      // Spare fighters wait at the rally point (not next to the yards they came from).
+      commands.push({ side, unit: guard.id, order: { type: 'move', x: plan.rally.x, y: plan.rally.y }, doctrine: AI_DOCTRINE });
+    }
   }
   return commands;
 }
@@ -466,7 +484,8 @@ function spottingCell(obs: Observation, ruleset: Ruleset, spotter: Entity, objec
       if (!best || margin > best.margin || (margin === best.margin && (d < best.d || (d === best.d && f < best.f)))) best = { x, y, margin, d, f };
     }
   }
-  return best;
+  // Only a cell beyond the defenders' eyes and reach is worth sending a spotter to.
+  return best && best.margin > 0 ? best : undefined;
 }
 
 /** Build order of the levels: what to produce when Supply allows, in this order of need. */
@@ -541,16 +560,22 @@ function economyOrders(obs: Observation, ruleset: Ruleset, own: readonly Entity[
   const reserve = (world.map.deposits ?? []).some((d) => (d.left > 0 || d.left === UNKNOWN_LEFT) && !world.entities.some((e) => e.x === d.x && e.y === d.y) && dangerAt(obs, ruleset, d.x, d.y) === 0) ? costOf('extractor') : 0;
   const income = incomeOfSide(world, ruleset, side, network);
   const fighters = ownAll.filter((e) => arch(e)?.weapon && (arch(e)?.speed ?? 0) > 0).length;
+  // Queue lengths including what this plan already put in (a yard never gets more than it holds).
+  const queued = new Map(yards.map((y) => [y.id, y.queue?.length ?? 0]));
+  for (const c of commands) if (c.order.type === 'produce') queued.set(c.unit, (queued.get(c.unit) ?? 0) + 1);
   for (const kind of [...wanted, ...template]) {
     if (commands.length >= slots) break;
-    const yard = yards.find((y) => arch(y)?.production?.includes(kind) && (y.queue?.length ?? 0) < 2);
+    const yard = yards.find((y) => arch(y)?.production?.includes(kind) && (queued.get(y.id) ?? 0) < MAX_QUEUE);
     if (!yard) continue;
     if (supply - costOf(kind) < reserve) {
       // Save up for what is needed most (a gun, a scout) unless the force is too thin to wait.
       if (wanted.includes(kind) && (fighters >= MIN_STORM || supply + income * SAVE_TURNS >= costOf(kind) + reserve)) break;
       continue;
     }
-    if (tryOrder({ side, unit: yard.id, order: { type: 'produce', kind } })) counts.set(kind, (counts.get(kind) ?? 0) + 1);
+    if (tryOrder({ side, unit: yard.id, order: { type: 'produce', kind } })) {
+      counts.set(kind, (counts.get(kind) ?? 0) + 1);
+      queued.set(yard.id, (queued.get(yard.id) ?? 0) + 1);
+    }
   }
   return commands;
 }
