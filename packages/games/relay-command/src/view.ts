@@ -20,6 +20,7 @@ import { announce, clear, h } from '@wp/ui';
 import {
   cancelOrder,
   concede,
+  STALL_TURNS,
   doctrineFor,
   doctrineRefusal,
   draftFor,
@@ -46,6 +47,9 @@ import {
 import { DIFFICULTIES, type Difficulty } from './ai';
 import { FIELD_EXERCISE, SCENARIOS } from './scenarios';
 import './styles.css';
+
+/** Open end: from this many quiet turns on the turn line says that strength will decide. */
+const QUIET_NOTICE = 3;
 
 /** Map cell size in CSS pixels (the 44 px minimum touch target). */
 export const CELL = 44;
@@ -327,6 +331,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     const finished = state.phase === 'finished';
     turnEl.textContent =
       state.turnLimit === null ? t('status.turnOpen', { turn: w.turn + 1 }) : t('status.turn', { turn: Math.min(w.turn + 1, state.turnLimit), limit: state.turnLimit });
+    // Open end: a stalled game is heading for a decision on strength (STALL_TURNS); say so early.
+    if (state.turnLimit === null && state.phase === 'plan' && state.quiet >= QUIET_NOTICE) turnEl.textContent += ' ' + t('status.quiet', { n: state.quiet, limit: STALL_TURNS });
     // Scenario and turn limit can be changed until the first turn is locked.
     setupBox.hidden = state.phase !== 'plan' || state.log.length > 0;
     scenarioSelect.value = state.scenario;

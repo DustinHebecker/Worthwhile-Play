@@ -114,5 +114,6 @@
 .wp-relay-command .rc-legend-list { list-style: none; margin: 0.25rem 0 0; padding: 0; display: grid; gap: 0.35rem; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); }
 .wp-relay-command .rc-legend-list li { display: flex; gap: 0.6rem; align-items: center; }
 .wp-relay-command .rc-setup { display: flex; flex-wrap: wrap; gap: 0.75rem 1.5rem; margin: 0; padding: 0.6rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius, 10px); }
-.wp-relay-command .rc-setup label { display: grid; gap: 0.2rem; }
-.wp-relay-command .rc-setup select { min-height: var(--wp-touch, 44px); max-width: 100%; }
+/* The selects must never widen the page (a long option on a phone would break the layout viewport). */
+.wp-relay-command .rc-setup label { display: grid; gap: 0.2rem; flex: 1 1 14rem; min-inline-size: 0; max-inline-size: 100%; }
+.wp-relay-command .rc-setup select { min-height: var(--wp-touch, 44px); inline-size: 100%; max-inline-size: 100%; }

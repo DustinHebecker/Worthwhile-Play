@@ -30,7 +30,7 @@ const SPOT_TOLERANCE = 8;
 const AI_DOCTRINE: Doctrine = { ...DEFAULT_DOCTRINE, retreatBelow: 25, lostContact: 'keep' };
 
 /** How far ahead of its Command Post the opponent may set up its relay truck (cells per axis). */
-const RELAY_FORWARD = 5;
+const RELAY_FORWARD = 8;
 
 /** Value of the Command Post in the lookahead score (it has no build cost). */
 const POST_VALUE = 300;
@@ -243,6 +243,28 @@ const RALLY_DIST = 6;
 const RALLY_RADIUS = 2;
 /** Share of the fighters that must be rallied before the storm: hard waits for nearly all, normal storms earlier. */
 const RALLY_SHARE: Record<Difficulty, number> = { easy: 0, normal: 0.8, hard: 0.9 };
+/** Turn from which the storm goes ahead whatever has rallied (a stray fighter never stalls the game). */
+const RALLY_DEADLINE = 6;
+/** On the way to the rally point a fighter that loses contact comes back (the storm orders keep). */
+const RALLY_DOCTRINE: Doctrine = { ...AI_DOCTRINE, lostContact: 'regroup' };
+
+/** The passable cell inside the side's coverage nearest to `at` (ties in the side's frame), or `at` itself when nothing is covered. */
+function coveredNear(obs: Observation, ruleset: Ruleset, at: { x: number; y: number }): { x: number; y: number } {
+  const { world, side, network } = obs;
+  if (!ruleset.commandNetwork) return at;
+  const cells = world.map.w * world.map.h;
+  let best: { x: number; y: number; d: number; f: number } | undefined;
+  for (let y = 0; y < world.map.h; y++) {
+    for (let x = 0; x < world.map.w; x++) {
+      const cell = cellOf(world.map, x, y);
+      if (network.coverage[cell] !== 1 || !passable(world.map, ruleset, x, y, 'ground')) continue;
+      const d = dist2(x, y, at.x, at.y);
+      const f = frameIndex(cell, side, cells);
+      if (!best || d < best.d || (d === best.d && f < best.f)) best = { x, y, d, f };
+    }
+  }
+  return best ? { x: best.x, y: best.y } : at;
+}
 
 interface AssaultPlan {
   readonly objective: Entity;
@@ -262,12 +284,18 @@ function assaultPlan(obs: Observation, ruleset: Ruleset, difficulty: Difficulty)
   const dx = home.x - objective.x;
   const dy = home.y - objective.y;
   const len = Math.hypot(dx, dy) || 1;
-  const rally = { x: Math.round(objective.x + (dx / len) * RALLY_DIST), y: Math.round(objective.y + (dy / len) * RALLY_DIST) };
+  const ideal = { x: Math.round(objective.x + (dx / len) * RALLY_DIST), y: Math.round(objective.y + (dy / len) * RALLY_DIST) };
+  // The rally point lies inside the own coverage (the nearest covered cell to the ideal one):
+  // fighters gather under radio cover and move up as the relay truck extends it, instead of
+  // waiting out of contact where no order and no recall can reach them.
+  const rally = coveredNear(obs, ruleset, ideal);
   const all = world.entities.filter((e) => e.side === side && archetypeOf(ruleset, e.kind)?.weapon && (archetypeOf(ruleset, e.kind)?.speed ?? 0) > 0);
   const rallied = all.filter((f) => Math.max(Math.abs(f.x - rally.x), Math.abs(f.y - rally.y)) <= RALLY_RADIUS).length;
   // Once the storm has begun (fighters past the rally point) it goes on; a tiny force storms at once.
   const past = all.filter((f) => dist2(f.x, f.y, objective.x, objective.y) < dist2(rally.x, rally.y, objective.x, objective.y)).length;
-  const storming = all.length <= 2 || rallied + past >= Math.ceil(all.length * RALLY_SHARE[difficulty]);
+  // Only fighters that can be ordered count towards the share: one stuck out of contact never holds the storm up.
+  const orderable = all.filter((f) => !ruleset.commandNetwork || obs.network.coverage[cellOf(world.map, f.x, f.y)] === 1);
+  const storming = all.length <= 2 || world.turn >= RALLY_DEADLINE || rallied + past >= Math.ceil(orderable.length * RALLY_SHARE[difficulty]);
   return { objective, rally, all, storming };
 }
 
@@ -282,16 +310,22 @@ function assault(obs: Observation, ruleset: Ruleset, plan: AssaultPlan, fighters
   const { objective, rally, all } = plan;
   const commands: Command[] = [];
   if (plan.storming) {
+    // Everyone goes for the post. Artillery attacks it from its range once the stormers report it
+    // (only a spotted target can be attacked); a ghost it seeks within its own sight and then
+    // fires on its own (a stand-off with nothing spotted would hold forever).
+    const live = !obs.ghosts.has(objective.id);
     for (const unit of fighters) {
-      if (unit.order.type === 'attack') continue;
-      // Artillery shells the post itself: from its full range once the stormers report the post,
-      // otherwise from as close as it can see (a stand-off with nothing spotted would hold forever).
-      if ((archetypeOf(ruleset, unit.kind)?.weapon?.minRange ?? 0) > 0) {
+      if (unit.order.type === 'attack' && unit.order.target === objective.id) continue;
+      const arch = archetypeOf(ruleset, unit.kind);
+      if (!arch?.weapon) continue;
+      const guns = arch.weapon.minRange > 0;
+      if (live && guns) {
         commands.push({ side, unit: unit.id, order: { type: 'attack', target: objective.id }, doctrine: AI_DOCTRINE });
         continue;
       }
-      const goal = standOff(obs, ruleset, unit, objective);
+      const goal = standOff(obs, ruleset, unit, objective, guns ? Math.max(arch.weapon.minRange, Math.min(arch.weapon.range, arch.vision)) : undefined);
       if (unit.order.type === 'move' && unit.order.x === goal.x && unit.order.y === goal.y) continue;
+      if (goal.x === unit.x && goal.y === unit.y) continue;
       commands.push({ side, unit: unit.id, order: { type: 'move', x: goal.x, y: goal.y }, doctrine: AI_DOCTRINE });
     }
     return commands;
@@ -321,7 +355,7 @@ function assault(obs: Observation, ruleset: Ruleset, plan: AssaultPlan, fighters
     const spot = spots.shift();
     if (!spot) break;
     if (unit.order.type === 'move' && unit.order.x === spot.x && unit.order.y === spot.y) continue;
-    commands.push({ side, unit: unit.id, order: { type: 'move', x: spot.x, y: spot.y }, doctrine: AI_DOCTRINE });
+    commands.push({ side, unit: unit.id, order: { type: 'move', x: spot.x, y: spot.y }, doctrine: RALLY_DOCTRINE });
   }
   return commands;
 }
@@ -338,21 +372,26 @@ function hasCompany(unit: Entity, fighters: readonly Entity[], chosen: readonly 
  * (a Field Gun never drives onto the post it is to shell), at its range along the line from the
  * objective towards the unit, on the nearest passable cell.
  */
-function standOff(obs: Observation, ruleset: Ruleset, unit: Entity, objective: Positioned): { x: number; y: number } {
+function standOff(obs: Observation, ruleset: Ruleset, unit: Entity, objective: Positioned, distance?: number): { x: number; y: number } {
   const arch = archetypeOf(ruleset, unit.kind);
   const weapon = arch?.weapon;
-  if (!weapon || weapon.minRange <= 0) return { x: objective.x, y: objective.y };
+  if (!weapon || (weapon.minRange <= 0 && distance === undefined)) return { x: objective.x, y: objective.y };
   const dx = unit.x - objective.x;
   const dy = unit.y - objective.y;
   const len = Math.hypot(dx, dy) || 1;
-  const keep = Math.max(weapon.minRange, weapon.range - 1);
+  const keep = distance ?? Math.max(weapon.minRange, weapon.range - 1);
+  // An explicit distance is a front (a gun's own sight of a ghost): the cell lies within it,
+  // also inside a gun's minimum range (it backs off again when it attacks). The gun's own
+  // stand-off keeps clear of the minimum range.
+  const near = distance === undefined ? weapon.minRange : 0;
   const want = { x: Math.round(objective.x + (dx / len) * keep), y: Math.round(objective.y + (dy / len) * keep) };
   const { w, h } = obs.world.map;
   let best: { x: number; y: number; d: number; f: number } | undefined;
   for (let y = Math.max(0, want.y - 2); y <= Math.min(h - 1, want.y + 2); y++) {
     for (let x = Math.max(0, want.x - 2); x <= Math.min(w - 1, want.x + 2); x++) {
       if (!passable(obs.world.map, ruleset, x, y, arch?.layer ?? 'ground')) continue;
-      if (dist2(x, y, objective.x, objective.y) < weapon.minRange ** 2) continue;
+      const d2 = dist2(x, y, objective.x, objective.y);
+      if (d2 < near * near || d2 > keep * keep) continue;
       const d = dist2(x, y, want.x, want.y);
       const f = frameIndex(cellOf(obs.world.map, x, y), obs.side, w * h);
       if (!best || d < best.d || (d === best.d && f < best.f)) best = { x, y, d, f };

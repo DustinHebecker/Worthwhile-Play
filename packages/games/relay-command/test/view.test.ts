@@ -434,6 +434,18 @@ describe('Relay Command view', () => {
     expect(state().world.turn).toBe(0);
   });
 
+  it('in an open-ended game the turn line warns from three quiet turns on that strength will decide; the host learns the level', () => {
+    expect(ctx.difficulties).toEqual(['normal']); // newGame without a known level fell back to 'normal'
+    instance.restore({ ...state(), quiet: 2 });
+    expect($('rc-turn').textContent).toBe('Turn 1');
+    instance.restore({ ...state(), quiet: 3, difficulty: 'hard' });
+    expect($('rc-turn').textContent).toBe('Turn 1 No losses for 3 turns: after 12 in a row, strength decides.');
+    expect(ctx.difficulties).toEqual(['normal', 'normal', 'hard']);
+    // A turn limit has no stall rule.
+    instance.restore({ ...state(), quiet: 5, turnLimit: 12 });
+    expect($('rc-turn').textContent).toBe('Turn 1 of 12');
+  });
+
   it('keeps the map left-to-right in RTL locales and translates the interface', () => {
     instance.dispose();
     setup('ar');

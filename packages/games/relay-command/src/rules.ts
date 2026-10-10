@@ -45,8 +45,10 @@ export interface TurnLog {
  * Logical game state (plain JSON). `draft` holds the player's orders for the coming turn and
  * survives closing the game; `log` holds every locked plan so any game can be replayed exactly.
  */
-/** Longest game a save may claim (open-ended games are bounded here, not in play). */
+/** Longest game: an open-ended game still running at this turn is decided on strength. */
 export const MAX_TURNS = 1000;
+/** Open end: this many turns in a row without any loss of strength on either side decide the game on strength. */
+export const STALL_TURNS = 12;
 /** Turn limits the player can choose before the first turn; `null` = open end (default). */
 export const TURN_LIMITS: readonly (number | null)[] = [null, 12, 24];
 
@@ -66,8 +68,10 @@ export interface RcState {
   /** Strength of the scripted opponent (chosen when the game starts). */
   difficulty: Difficulty;
   scenario: string;
-  /** `null`: open end, decided only by the Command Posts (or by giving up). */
+  /** `null`: open end, decided by the Command Posts, or on strength after STALL_TURNS turns without losses. */
   turnLimit: number | null;
+  /** Turns in a row without any change of strength on either side (open end: see STALL_TURNS). */
+  quiet: number;
   world: World;
   phase: Phase;
   draft: Command[];
@@ -88,6 +92,7 @@ export function newGame(seed: number, spec: ScenarioSpec = FIELD_EXERCISE, diffi
     difficulty,
     scenario: spec.id,
     turnLimit,
+    quiet: 0,
     world,
     phase: 'plan',
     draft: [],
@@ -174,10 +179,13 @@ export function lockTurn(state: RcState): RcState {
   const plans = [state.draft, planAi(observe(state.world, RULESET, OPPONENT), RULESET, state.difficulty)];
   const { world, reported } = resolveTurn(state.world, RULESET, plans);
   const events = reported?.[PLAYER] ?? [];
-  const result = outcome(world, state.turnLimit);
+  const changed = [PLAYER, OPPONENT].some((side) => sideValue(world, side) !== sideValue(state.world, side));
+  const quiet = changed ? 0 : state.quiet + 1;
+  const result = outcome(world, state.turnLimit, quiet);
   return {
     ...state,
     world,
+    quiet,
     events,
     draft: [],
     log: [...state.log, { turn: state.world.turn, plans }],
@@ -259,14 +267,19 @@ export function sideValue(world: World, side: number): number {
   return total;
 }
 
-/** Destroying the enemy Command Post wins at once; otherwise the turn limit (if any) compares remaining value. */
-export function outcome(world: World, turnLimit: number | null): Outcome | null {
+/**
+ * Destroying the enemy Command Post wins at once. Otherwise remaining strength decides: at the
+ * turn limit, or in an open-ended game after STALL_TURNS turns without any loss (`quiet`) or at
+ * MAX_TURNS, so a game nobody can win any more still ends.
+ */
+export function outcome(world: World, turnLimit: number | null, quiet = 0): Outcome | null {
   const own = commandPost(world, PLAYER);
   const enemy = commandPost(world, OPPONENT);
   if (!own && !enemy) return 'draw';
   if (!enemy) return 'won';
   if (!own) return 'lost';
-  if (turnLimit === null || world.turn < turnLimit) return null;
+  const decided = turnLimit === null ? quiet >= STALL_TURNS || world.turn >= MAX_TURNS : world.turn >= turnLimit;
+  if (!decided) return null;
   const diff = sideValue(world, PLAYER) - sideValue(world, OPPONENT);
   return diff > 0 ? 'won' : diff < 0 ? 'lost' : 'draw';
 }
@@ -278,7 +291,11 @@ export function replay(seed: number, log: readonly TurnLog[], spec: ScenarioSpec
   return world;
 }
 
-/** Adds `lostContact: 'keep'` to every doctrine of an older save (draft, log, units) and the default to player units without one. */
+/**
+ * Adds `lostContact: 'keep'` to every doctrine of an older save (draft, log, units) and to player
+ * units without one: a resumed game plays on as it did (units do not start turning back
+ * unannounced); 'regroup' is the default for new games only. Adds the stall counter.
+ */
 function withLostContact(state: Record<string, unknown>): Record<string, unknown> {
   const fix = (d: unknown): unknown => (isRecord(d) && d.lostContact === undefined ? { ...d, lostContact: 'keep' } : d);
   const fixCommand = (c: unknown): unknown => (isRecord(c) && c.doctrine !== undefined ? { ...c, doctrine: fix(c.doctrine) } : c);
@@ -292,13 +309,13 @@ function withLostContact(state: Record<string, unknown>): Record<string, unknown
             ? e.doctrine !== undefined
               ? { ...e, doctrine: fix(e.doctrine) }
               : e.side === PLAYER && (archetypeOf(RULESET, String(e.kind))?.speed ?? 0) > 0
-                ? { ...e, doctrine: PLAYER_DOCTRINE }
+                ? { ...e, doctrine: { ...PLAYER_DOCTRINE, lostContact: 'keep' } }
                 : e
             : e
         )
       }
     : state.world;
-  return { ...state, draft, log, world };
+  return { ...state, quiet: 0, draft, log, world };
 }
 
 /** A command whose order is structurally valid on a `w`×`h` map. */
@@ -333,6 +350,7 @@ export function isValidState(value: unknown): value is RcState {
   if (!isOneOf(value.difficulty, DIFFICULTIES)) return false;
   const spec = scenarioById(value.scenario);
   if (!spec || !(value.turnLimit === null || isInt(value.turnLimit, 1, MAX_TURNS)) || !isOneOf(value.phase, ['plan', 'finished'])) return false;
+  if (!isInt(value.quiet, 0, MAX_TURNS)) return false;
   if (!isValidWorld(value.world, RULESET) || value.world.sides !== 2 || !matchesScenario(value.world, spec)) return false;
   const isCommand = commandGuard(value.world.map.w, value.world.map.h);
   if (!isArrayOf(value.draft, isCommand) || value.draft.some((c) => c.side !== PLAYER)) return false;
