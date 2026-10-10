@@ -365,9 +365,12 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     const own = sideValue(state.world, PLAYER);
     const enemy = sideValue(state.world, OPPONENT);
     const decidedByPost = outcome({ ...state.world, turn: 0 }, state.turnLimit) !== null;
-    if (state.result === 'won') return decidedByPost ? t('status.won') : t('status.wonScore', { own, enemy });
-    if (state.result === 'lost') return decidedByPost ? t('status.lost') : t('status.lostScore', { own, enemy });
-    return t('status.draw', { own, enemy });
+    // Open end: the quiet rule ended the game, not a last turn.
+    const quietEnd = !decidedByPost && state.turnLimit === null && state.quiet >= STALL_TURNS;
+    const args = { own, enemy, limit: STALL_TURNS };
+    if (state.result === 'won') return decidedByPost ? t('status.won') : t(quietEnd ? 'status.wonQuiet' : 'status.wonScore', args);
+    if (state.result === 'lost') return decidedByPost ? t('status.lost') : t(quietEnd ? 'status.lostQuiet' : 'status.lostScore', args);
+    return t(quietEnd ? 'status.drawQuiet' : 'status.draw', args);
   }
 
   function renderSelection(): void {
