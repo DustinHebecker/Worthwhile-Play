@@ -3,7 +3,8 @@ import { canReach, costGrid, findPath, NumberHeap, regions } from './path';
 import { DEFAULT_DOCTRINE, type Archetype, type Command, type Doctrine, type Entity, type OrderEndReason, type Ruleset, type SimEvent, type Status, type TargetPriority, type WeaponSpec, type World } from './types';
 import { computeNetwork, isEmitter, type Network } from './network';
 import { initialIntel, updateIntel } from './vision';
-import { archetypeOf, findEntity, needsDeploy, normalizeDoctrine, normalizeOrder, validateCommand } from './world';
+import { archetypeOf, findEntity, needsDeploy, normalizeDoctrine, normalizeOrder, spawn, validateCommand } from './world';
+import { depositAt, incomeOf, isReady, spawnCell } from './economy';
 
 export interface SimResult {
   world: World;
@@ -84,7 +85,29 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
       slotsLeft.set(c.side, left - 1);
     }
     const unit = findEntity(w, c.unit) as Entity;
-    unit.order = normalizeOrder(c.order);
+    const order = normalizeOrder(c.order);
+    // Economy: production and placement are one-shot and paid at once; the standing order stays.
+    if (order.type === 'produce') {
+      const product = arch({ kind: order.kind } as Entity);
+      const supply = (w.supply ??= Array.from({ length: w.sides }, () => 0));
+      supply[unit.side] = (supply[unit.side] ?? 0) - product.cost;
+      (unit.queue ??= []).push({ kind: order.kind, left: product.buildTurns });
+      events.push({ t: 'queued', tick: t, id: unit.id, kind: order.kind });
+      continue;
+    }
+    if (order.type === 'build') {
+      const structure = arch({ kind: order.kind } as Entity);
+      const supply = (w.supply ??= Array.from({ length: w.sides }, () => 0));
+      supply[unit.side] = (supply[unit.side] ?? 0) - structure.cost;
+      const site = spawn(w.nextId++, unit.side, structure, order.x, order.y);
+      site.build = structure.buildTurns;
+      if (unit.doctrine) site.doctrine = normalizeDoctrine(unit.doctrine);
+      w.entities.push(site);
+      if (w.intel) w.intel[unit.side]?.push({ id: site.id, side: site.side, kind: site.kind, x: site.x, y: site.y, hp: site.hp, tick: t, live: false });
+      events.push({ t: 'site', tick: t, id: site.id, side: site.side, kind: site.kind, x: site.x, y: site.y });
+      continue;
+    }
+    unit.order = order;
     if (c.doctrine) unit.doctrine = normalizeDoctrine(c.doctrine);
     // A new order starts with fresh counters (a dead end of the old order says nothing about it).
     delete unit.bumps;
@@ -342,8 +365,58 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     // (handled when it next plans its move); without fog the target is gone at once.
     if (!rs.fog && e.order.type === 'attack' && !findEntity(w, e.order.target)) endOrder(e, 'lost-target', t, events);
   }
-  // 9 + 10 (economy, production, research) arrive with later increments; the network is
-  // derived data, recomputed where needed.
+  // 9 + 10. Economy and production (D8): on the last tick of a turn only (strategy mode).
+  if (rs.economy && t % rs.ticksPerTurn === 0) {
+    networkCache.clear();
+    const network = (side: number): Network => {
+      let n = networkCache.get(side);
+      if (!n) networkCache.set(side, (n = computeNetwork(w, rs, side)));
+      return n;
+    };
+    const supply = (w.supply ??= Array.from({ length: w.sides }, () => 0));
+    // Income from connected posts and from Extractors on deposits (which run down).
+    for (let side = 0; side < w.sides; side++) {
+      let amount = 0;
+      for (const e of w.entities) {
+        if (e.side !== side) continue;
+        const yield_ = incomeOf(w, rs, e, network(side));
+        if (yield_ <= 0) continue;
+        amount += yield_;
+        if (arch(e).extractor) (depositAt(w.map, e.x, e.y) as { left: number }).left -= yield_;
+      }
+      supply[side] = (supply[side] ?? 0) + amount;
+      if (amount > 0) events.push({ t: 'income', tick: t, side, amount });
+    }
+    // Construction sites finish; yards work on the head of their queue and set the unit down
+    // on a free neighbouring cell (a blocked yard waits).
+    for (const e of [...w.entities]) {
+      if (e.build !== undefined) {
+        e.build -= 1;
+        if (e.build <= 0) {
+          delete e.build;
+          events.push({ t: 'built', tick: t, id: e.id });
+        }
+        continue;
+      }
+      const head = e.queue?.[0];
+      if (!head || !isReady(e)) continue;
+      if (head.left > 0) head.left -= 1;
+      if (head.left > 0) continue;
+      const product = arch({ kind: head.kind } as Entity);
+      const cell = spawnCell(w, rs, e, product);
+      if (!cell) continue;
+      e.queue?.shift();
+      if (e.queue?.length === 0) delete e.queue;
+      const unit = spawn(w.nextId++, e.side, product, cell.x, cell.y);
+      if (e.doctrine) unit.doctrine = normalizeDoctrine(e.doctrine);
+      w.entities.push(unit);
+      // The side knows its own new unit (as a ghost until a reporting unit sees it).
+      if (w.intel) w.intel[e.side]?.push({ id: unit.id, side: unit.side, kind: unit.kind, x: unit.x, y: unit.y, hp: unit.hp, tick: t, live: false });
+      events.push({ t: 'produced', tick: t, id: unit.id, side: unit.side, kind: unit.kind, x: unit.x, y: unit.y, by: e.id });
+    }
+    w.entities.sort((a, b) => a.id - b.id);
+    for (const list of w.intel ?? []) list.sort((a, b) => a.id - b.id);
+  }
   // 11. Vision (fog rulesets): reports and per-side event filter (D7)
   if (rs.fog) updateIntel(w, rs, gone, events, firstEvent, reported);
   // 12. Victory is decided by the mode (game rules).

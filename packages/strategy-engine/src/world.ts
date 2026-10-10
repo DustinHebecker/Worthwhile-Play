@@ -1,6 +1,8 @@
 import { isRecord, normalizeSeed } from '@wp/game-core';
-import { inBounds, passable } from './grid';
-import { isCommandable, type Network } from './network';
+import { cellOf, inBounds, passable } from './grid';
+import { depositAt, isReady } from './economy';
+import { MAX_QUEUE } from './types';
+import { computeNetwork, isCommandable, type Network } from './network';
 import { initialIntel, isSpotted } from './vision';
 import { LOST_CONTACT, RETREAT_THRESHOLDS, TARGET_PRIORITIES, type Archetype, type Command, type Doctrine, type Entity, type Order, type Ruleset, type Scenario, type World } from './types';
 
@@ -22,18 +24,29 @@ export function createWorld(scenario: Scenario, ruleset: Ruleset): World {
     occupied.add(key);
     return spawn(i + 1, spec.side, arch, spec.x, spec.y, spec.order ?? { type: 'hold' });
   });
+  const deposits = (map.deposits ?? []).map((d) => ({ x: d.x, y: d.y, left: d.left }));
+  for (const d of deposits) {
+    if (!inBounds(map, d.x, d.y) || !passable(map, ruleset, d.x, d.y, 'ground') || !Number.isInteger(d.left) || d.left < 0) throw new RangeError(`Invalid deposit at ${d.x},${d.y}.`);
+  }
+  deposits.sort((a, b) => cellOf(map, a.x, a.y) - cellOf(map, b.x, b.y));
+  for (let i = 1; i < deposits.length; i++) if (cellOf(map, deposits[i]!.x, deposits[i]!.y) === cellOf(map, deposits[i - 1]!.x, deposits[i - 1]!.y)) throw new RangeError('Duplicate deposit.');
   const world: World = {
     v: 1,
     ruleset: ruleset.id,
     tick: 0,
     turn: 0,
     rng: normalizeSeed(scenario.seed),
-    map: { w: map.w, h: map.h, terrain: map.terrain },
+    map: { w: map.w, h: map.h, terrain: map.terrain, ...(deposits.length > 0 && { deposits }) },
     sides: scenario.sides,
     entities,
     projectiles: [],
     nextId: entities.length + 1
   };
+  if (ruleset.economy) {
+    const supply = scenario.supply ?? Array.from({ length: scenario.sides }, () => ruleset.startSupply);
+    if (supply.length !== scenario.sides || supply.some((v) => !Number.isInteger(v) || v < 0)) throw new RangeError('Invalid starting supply.');
+    world.supply = [...supply];
+  }
   if (ruleset.fog) world.intel = initialIntel(world, ruleset);
   return world;
 }
@@ -74,7 +87,30 @@ export const findEntity = (world: World, id: number): Entity | undefined => worl
 
 export type CommandCheck =
   | { ok: true }
-  | { ok: false; reason: 'unknown-unit' | 'not-yours' | 'out-of-contact' | 'immobile' | 'out-of-bounds' | 'impassable' | 'no-weapon' | 'bad-target' | 'not-visible' | 'bad-order' };
+  | { ok: false; reason: CommandRefusal };
+
+/**
+ * Why a command is refused. Economy (I6a): `no-supply` (cannot pay), `cannot-produce` (not a
+ * yard for that kind, or the yard is still a site), `queue-full`, `cannot-build` (not a finished
+ * command source, or the kind is no buildable structure), `not-buildable` (cell not free,
+ * passable, inside own coverage, or an Extractor off a deposit / another structure on one).
+ */
+export type CommandRefusal =
+  | 'unknown-unit'
+  | 'not-yours'
+  | 'out-of-contact'
+  | 'immobile'
+  | 'out-of-bounds'
+  | 'impassable'
+  | 'no-weapon'
+  | 'bad-target'
+  | 'not-visible'
+  | 'bad-order'
+  | 'no-supply'
+  | 'cannot-produce'
+  | 'queue-full'
+  | 'cannot-build'
+  | 'not-buildable';
 
 /**
  * Rule check for a single command against the current world. Never throws. Pass `networks`
@@ -128,6 +164,30 @@ export function validateCommand(world: World, ruleset: Ruleset, command: Command
       if (!armor || arch.weapon.vs[armor] <= 0) return { ok: false, reason: 'bad-target' };
       return { ok: true };
     }
+    case 'produce': {
+      if (!ruleset.economy || typeof order.kind !== 'string') return { ok: false, reason: 'bad-order' };
+      const product = archetypeOf(ruleset, order.kind);
+      if (!product || product.buildTurns <= 0 || !arch.production?.includes(order.kind) || !isReady(unit)) return { ok: false, reason: 'cannot-produce' };
+      if ((unit.queue?.length ?? 0) >= MAX_QUEUE) return { ok: false, reason: 'queue-full' };
+      if ((world.supply?.[unit.side] ?? 0) < product.cost) return { ok: false, reason: 'no-supply' };
+      return { ok: true };
+    }
+    case 'build': {
+      if (!ruleset.economy || typeof order.kind !== 'string') return { ok: false, reason: 'bad-order' };
+      const structure = archetypeOf(ruleset, order.kind);
+      if (arch.comms?.role !== 'source' || !isReady(unit) || !structure || structure.speed !== 0 || structure.buildTurns <= 0) return { ok: false, reason: 'cannot-build' };
+      if (!Number.isInteger(order.x) || !Number.isInteger(order.y) || !inBounds(world.map, order.x, order.y)) return { ok: false, reason: 'out-of-bounds' };
+      if (!passable(world.map, ruleset, order.x, order.y, structure.layer)) return { ok: false, reason: 'impassable' };
+      const cell = cellOf(world.map, order.x, order.y);
+      const taken = world.entities.some((e) => e.x === order.x && e.y === order.y && archetypeOf(ruleset, e.kind)?.layer === structure.layer);
+      const coverage = (networks?.[unit.side] ?? computeNetwork(world, ruleset, unit.side)).coverage;
+      // Deposits are for Extractors, an Extractor only for a deposit that still yields.
+      const deposit = depositAt(world.map, order.x, order.y);
+      const fits = structure.extractor ? deposit !== undefined && deposit.left > 0 : deposit === undefined;
+      if (taken || coverage[cell] !== 1 || !fits) return { ok: false, reason: 'not-buildable' };
+      if ((world.supply?.[unit.side] ?? 0) < structure.cost) return { ok: false, reason: 'no-supply' };
+      return { ok: true };
+    }
     default:
       return { ok: false, reason: 'bad-order' };
   }
@@ -148,6 +208,10 @@ export function normalizeOrder(order: Order): Order {
       return { type: 'escort', target: order.target };
     case 'patrol':
       return { type: 'patrol', x: order.x, y: order.y, rx: order.rx, ry: order.ry };
+    case 'produce':
+      return { type: 'produce', kind: order.kind };
+    case 'build':
+      return { type: 'build', kind: order.kind, x: order.x, y: order.y };
     default:
       return { type: 'hold' };
   }

@@ -142,16 +142,23 @@ export function updateIntel(world: World, ruleset: Ruleset, gone: readonly Entit
     for (let i = from; i < events.length; i++) {
       const ev = events[i] as SimEvent;
       const knownAnyway = (ev.t === 'destroyed' && lost.has(ev.id)) || (ev.t === 'order-ended' && ev.reason === 'lost-contact' && own.has(ev.id));
-      if (eventVisible(ev, live, seen) || knownAnyway) list.push(ev);
+      if (eventVisible(ev, live, seen, side) || knownAnyway) list.push(ev);
     }
   }
   world.intel = intel;
 }
 
-function eventVisible(ev: SimEvent, live: ReadonlySet<number>, seen: (x: number, y: number) => boolean): boolean {
+function eventVisible(ev: SimEvent, live: ReadonlySet<number>, seen: (x: number, y: number) => boolean, side: number): boolean {
   switch (ev.t) {
     case 'land':
       return seen(ev.x, ev.y);
+    // Economy: a side's income and what it queued are its own; new units and sites are reported
+    // like anything else standing on an observed cell (own ones are always known to their side).
+    case 'income':
+      return ev.side === side;
+    case 'produced':
+    case 'site':
+      return ev.side === side || seen(ev.x, ev.y);
     // A shot is reported only when the shooter is observed (its id would reveal it otherwise);
     // hits and landing shells on observed units and cells are reported on their own.
     case 'launch':
