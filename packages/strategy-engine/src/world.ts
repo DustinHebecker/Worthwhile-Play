@@ -2,7 +2,7 @@ import { isRecord, normalizeSeed } from '@wp/game-core';
 import { inBounds, passable } from './grid';
 import { isCommandable, type Network } from './network';
 import { initialIntel, isSpotted } from './vision';
-import { RETREAT_THRESHOLDS, TARGET_PRIORITIES, type Archetype, type Command, type Doctrine, type Entity, type Order, type Ruleset, type Scenario, type World } from './types';
+import { LOST_CONTACT, RETREAT_THRESHOLDS, TARGET_PRIORITIES, type Archetype, type Command, type Doctrine, type Entity, type Order, type Ruleset, type Scenario, type World } from './types';
 
 /** Build the initial world for a scenario. Throws on invalid authored content (programmer error). */
 export function createWorld(scenario: Scenario, ruleset: Ruleset): World {
@@ -58,10 +58,17 @@ export const isValidDoctrine = (v: unknown): v is Doctrine =>
   (RETREAT_THRESHOLDS as readonly unknown[]).includes(v.retreatBelow) &&
   (TARGET_PRIORITIES as readonly unknown[]).includes(v.priority) &&
   typeof v.seekCover === 'boolean' &&
-  typeof v.holdFire === 'boolean';
+  typeof v.holdFire === 'boolean' &&
+  (LOST_CONTACT as readonly unknown[]).includes(v.lostContact);
 
 /** Copy of a validated doctrine without foreign fields. */
-export const normalizeDoctrine = (d: Doctrine): Doctrine => ({ retreatBelow: d.retreatBelow, priority: d.priority, seekCover: d.seekCover, holdFire: d.holdFire });
+export const normalizeDoctrine = (d: Doctrine): Doctrine => ({
+  retreatBelow: d.retreatBelow,
+  priority: d.priority,
+  seekCover: d.seekCover,
+  holdFire: d.holdFire,
+  lostContact: d.lostContact
+});
 
 export const findEntity = (world: World, id: number): Entity | undefined => world.entities.find((e) => e.id === id);
 

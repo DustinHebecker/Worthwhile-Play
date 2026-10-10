@@ -270,7 +270,8 @@ const arbDoctrine: fc.Arbitrary<Doctrine> = fc.record({
   retreatBelow: fc.constantFrom(0, 25, 50, 75),
   priority: fc.constantFrom('weakest', 'nearest', 'armor', 'infantry', 'structures', 'emitters'),
   seekCover: fc.boolean(),
-  holdFire: fc.boolean()
+  holdFire: fc.boolean(),
+  lostContact: fc.constantFrom('regroup', 'keep')
 });
 
 /**
@@ -377,7 +378,8 @@ describe('generated battles (strategy ruleset): validity, explained order change
               expect(v.cells.get(cell), `unit ${ev.id} keeps returning to ${ev.x},${ev.y}`).toBeLessThan(4);
             }
             const bumped = new Set(r.events.flatMap((e) => (e.t === 'bump' ? [e.id] : [])));
-            for (const e of r.world.entities) streak.set(e.id, bumped.has(e.id) ? (streak.get(e.id) ?? 0) + 1 : 0);
+            // A new order (command or doctrine switch) restarts the engine's count, so the streak restarts too.
+            for (const e of r.world.entities) streak.set(e.id, bumped.has(e.id) && !explained.has(e.id) ? (streak.get(e.id) ?? 0) + 1 : bumped.has(e.id) ? 1 : 0);
             for (const id of bumped) expect(streak.get(id) ?? 0).toBeLessThanOrEqual(DEADLOCK_TICKS);
             const accepted = new Set(r.events.flatMap((ev) => (ev.t === 'order' ? [ev.id] : [])));
             if (tick === 0) {

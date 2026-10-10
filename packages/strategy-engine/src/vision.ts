@@ -137,9 +137,12 @@ export function updateIntel(world: World, ruleset: Ruleset, gone: readonly Entit
       if (seen(e.x, e.y)) live.add(e.id);
       else if (knownLoss(e)) lost.add(e.id);
     }
+    // A side knows which of its own units fell silent: their return by doctrine is reported too.
+    const own = new Set(world.entities.filter((e) => e.side === side).map((e) => e.id));
     for (let i = from; i < events.length; i++) {
       const ev = events[i] as SimEvent;
-      if (eventVisible(ev, live, seen) || (ev.t === 'destroyed' && lost.has(ev.id))) list.push(ev);
+      const knownAnyway = (ev.t === 'destroyed' && lost.has(ev.id)) || (ev.t === 'order-ended' && ev.reason === 'lost-contact' && own.has(ev.id));
+      if (eventVisible(ev, live, seen) || knownAnyway) list.push(ev);
     }
   }
   world.intel = intel;
