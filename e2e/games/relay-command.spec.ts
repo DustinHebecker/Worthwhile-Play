@@ -34,9 +34,9 @@ test('relay-command: a planned but unlocked order survives a reload', async ({ p
 
 test('relay-command: fog of war — only reported enemies are shown; a ghost takes a move order', async ({ page }) => {
   await start(page);
-  // At the start only the enemy Command Post is known, from before the battle.
+  // At the start only the enemy structures (Command Post, Muster Yard) are known, from before the battle.
   const enemies = page.getByTestId('rc-enemy').locator('li');
-  await expect(enemies).toHaveCount(1);
+  await expect(enemies).toHaveCount(2);
   await expect(enemies.first()).toContainText('Position known from before the battle');
   const state = (await saved(page))!;
   const rifle = firstRifle(state);
@@ -189,7 +189,7 @@ test('relay-command: map and length chosen before the first turn survive a reloa
   await page.getByTestId('rc-turn-limit').selectOption('12');
   await page.getByTestId('rc-scenario').selectOption('ridge-valley');
   await expect(page.getByTestId('rc-turn')).toHaveText('Turn 1 of 12');
-  await expect.poll(async () => (await saved(page))?.world.entities.length).toBe(28);
+  await expect.poll(async () => (await saved(page))?.world.entities.length).toBe(30);
   await page.reload();
   await page.getByTestId('continue').click();
   await expect(page.getByTestId('rc-map')).toHaveAttribute('data-cols', '20');
