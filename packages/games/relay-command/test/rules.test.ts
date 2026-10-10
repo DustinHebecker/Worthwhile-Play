@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { BASE_RULESET, canonicalJson, observe, DEFAULT_DOCTRINE, computeNetwork, createWorld, initialIntel, observedCells, resolveTurn, validateCommand, worldHash, type Command, type World } from '@wp/strategy-engine';
+import { isRecord } from '@wp/game-core';
+import { BASE_RULESET, canonicalJson, cellOf, findPath, observe, DEFAULT_DOCTRINE, computeNetwork, createWorld, initialIntel, observedCells, resolveTurn, validateCommand, worldHash, type Command, type World } from '@wp/strategy-engine';
 import { DIFFICULTIES, planAi, type Difficulty } from '../src/ai';
 import {
   cancelOrder,
@@ -26,9 +27,11 @@ import {
   RULESET,
   sideValue,
   unitById,
+  PLAYER_DOCTRINE,
+  MAX_TURNS,
   type RcState
 } from '../src/rules';
-import { FIELD_EXERCISE } from '../src/scenarios';
+import { FIELD_EXERCISE, SCENARIOS } from '../src/scenarios';
 
 /** A side's plan from its own observation (default: the game's default level). */
 const ai = (world: World, side: number, difficulty: Difficulty = 'normal') => planAi(observe(world, RULESET, side), RULESET, difficulty);
@@ -48,11 +51,43 @@ function selfPlay(seed: number): RcState {
 }
 
 describe('Field Exercise scenario', () => {
-  it('is point-symmetric in terrain and units', () => {
-    const { map, entities } = FIELD_EXERCISE.scenario;
-    expect(map.terrain).toBe([...map.terrain].reverse().join(''));
-    const mirror = (e: (typeof entities)[number]) => `${1 - e.side}:${e.kind}:${map.w - 1 - e.x},${map.h - 1 - e.y}`;
-    expect(new Set(entities.map(mirror))).toEqual(new Set(entities.map((e) => `${e.side}:${e.kind}:${e.x},${e.y}`)));
+  for (const spec of SCENARIOS) {
+    it(`${spec.id} is point-symmetric in terrain and units, and the Command Posts can reach each other`, () => {
+      const { map, entities } = spec.scenario;
+      expect(map.terrain).toBe([...map.terrain].reverse().join(''));
+      const mirror = (e: (typeof entities)[number]) => `${1 - e.side}:${e.kind}:${map.w - 1 - e.x},${map.h - 1 - e.y}`;
+      expect(new Set(entities.map(mirror))).toEqual(new Set(entities.map((e) => `${e.side}:${e.kind}:${e.x},${e.y}`)));
+      const w = createWorld({ ...spec.scenario, seed: 1 }, RULESET);
+      const posts = w.entities.filter((e) => e.kind === 'command-post');
+      expect(posts).toHaveLength(2);
+      expect(findPath(w.map, RULESET, cellOf(w.map, posts[0]!.x, posts[0]!.y), cellOf(w.map, posts[1]!.x, posts[1]!.y), { layer: 'ground', side: 0 })).toBeDefined();
+      expect(isValidState(newGame(3, spec))).toBe(true);
+    });
+  }
+
+  it('an open-ended game is decided only by the Command Posts; the chosen limit is kept and validated', () => {
+    const open = newGame(1, FIELD_EXERCISE, 'normal', null);
+    expect(open.turnLimit).toBeNull();
+    expect(outcome({ ...open.world, turn: 500 }, open.turnLimit)).toBeNull();
+    expect(outcome(withoutUnits(open.world, [commandPost(open.world, OPPONENT)!.id]), null)).toBe('won');
+    expect(isValidState(JSON.parse(JSON.stringify(open)))).toBe(true);
+    expect(isValidState({ ...open, turnLimit: 0 })).toBe(false);
+    expect(isValidState({ ...open, world: { ...open.world, turn: MAX_TURNS + 1 } })).toBe(false);
+    expect(newGame(1, FIELD_EXERCISE, 'normal', 24).turnLimit).toBe(24);
+  });
+
+  it('player units start with the return-when-out-of-contact doctrine; v4 saves keep their old behaviour', () => {
+    const s = newGame(1);
+    for (const e of own(s).filter((u) => u.kind !== 'command-post')) expect(e.doctrine).toEqual(PLAYER_DOCTRINE);
+    const v4 = JSON.parse(JSON.stringify({ ...lockTurn(planDoctrine(s, own(s).find((u) => u.kind === 'rifles')!.id, { ...DEFAULT_DOCTRINE, holdFire: true })!), v: 4 })) as Record<string, unknown>;
+    // Strip the field as a version-4 save would not have it.
+    const strip = (o: unknown): unknown => (isRecord(o) ? Object.fromEntries(Object.entries(o).filter(([k]) => k !== 'lostContact').map(([k, v]) => [k, strip(v)])) : Array.isArray(o) ? o.map(strip) : o);
+    const migrated = migrateState(strip(v4), 4)!;
+    expect(migrated.v).toBe(5);
+    expect(isValidState(migrated)).toBe(true);
+    const rifle = own(migrated).find((u) => u.kind === 'rifles')!;
+    expect(rifle.doctrine?.lostContact).toBe('keep');
+    expect(migrateState({ ...(strip(v4) as Record<string, unknown>), v: 5 }, 4)).toBeUndefined();
   });
 
   it('starts in the planning phase with one Command Post per side', () => {
@@ -108,9 +143,15 @@ describe('command network (I3a)', () => {
     rifle.y = 9;
     rifle.order = { type: 'move', x: 9, y: 2 };
     expect(orderRefusal(s, rifle.id, { type: 'hold' })).toBe('out-of-contact');
+    // Player units return into coverage after a turn without contact (doctrine default) …
     const after = lockTurn(s);
-    expect(unitById(after, rifle.id)!.order).toEqual({ type: 'move', x: 9, y: 2 });
+    expect(unitById(after, rifle.id)!.order).toEqual({ type: 'regroup' });
+    expect(after.events.some((e) => e.t === 'order-ended' && e.id === rifle.id && e.reason === 'lost-contact')).toBe(true);
     expect(unitById(after, rifle.id)!.y).toBeLessThan(9);
+    // … unless told to carry on.
+    const keep = structuredClone(s);
+    unitById(keep, rifle.id)!.doctrine = { ...PLAYER_DOCTRINE, lostContact: 'keep' };
+    expect(unitById(lockTurn(keep), rifle.id)!.order).toEqual({ type: 'move', x: 9, y: 2 });
   });
 
   it('a Mast Truck set up for a turn extends the coverage', () => {
@@ -170,7 +211,7 @@ describe('command network (I3a)', () => {
     };
     expect(v1.draft).toHaveLength(5);
     const migrated = migrateState(JSON.parse(JSON.stringify(v1)), 1)!;
-    expect(migrated.v).toBe(4);
+    expect(migrated.v).toBe(5);
     expect(migrated.draft.length).toBeLessThanOrEqual(orderSlots(migrated));
     expect(migrated.draft.every((c) => orderRefusal({ ...migrated, draft: [] }, c.unit, c.order) === null)).toBe(true);
     expect(isValidState(migrated)).toBe(true);
@@ -180,7 +221,7 @@ describe('command network (I3a)', () => {
     const v1 = { ...structuredClone(newGame(3)), v: 1 } as Record<string, unknown>;
     (v1.world as Record<string, unknown>).ruleset = 'base-1';
     const migrated = migrateState(v1, 1);
-    expect(migrated?.v).toBe(4);
+    expect(migrated?.v).toBe(5);
     expect(migrated?.world.ruleset).toBe(RULESET.id);
     expect(migrateState(v1, 2)).toBeUndefined();
     expect(migrateState(null, 1)).toBeUndefined();
@@ -476,7 +517,7 @@ describe('information model (I3c, D7)', () => {
     const s = lockTurn(newGame(5));
     const v2 = JSON.parse(JSON.stringify({ ...s, v: 2, world: { ...s.world, ruleset: 'strategy-1', intel: undefined } })) as Record<string, unknown>;
     const migrated = migrateState(v2, 2)!;
-    expect(migrated.v).toBe(4);
+    expect(migrated.v).toBe(5);
     expect(migrated.world.ruleset).toBe(RULESET.id);
     expect(migrated.events).toEqual([]);
     expect(migrated.world.intel).toEqual(initialIntel(s.world, RULESET));

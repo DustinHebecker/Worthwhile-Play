@@ -49,7 +49,7 @@ afterEach(() => {
 
 describe('Relay Command view', () => {
   it('renders the turn, the status, both unit lists and the map', () => {
-    expect($('rc-turn').textContent).toBe('Turn 1 of 12');
+    expect($('rc-turn').textContent).toBe('Turn 1');
     expect($('rc-status').getAttribute('data-phase')).toBe('plan');
     expect(ctx.context.root.querySelectorAll('[data-testid^="rc-unit-"]')).toHaveLength(9);
     // Fog: of the enemy, only its Command Post is known, from before the battle.
@@ -186,16 +186,16 @@ describe('Relay Command view', () => {
     const retreat = $('rc-doctrine-retreat') as HTMLSelectElement;
     retreat.value = '50';
     retreat.dispatchEvent(new Event('change', { bubbles: true }));
-    expect(state().draft).toEqual([{ side: PLAYER, unit: unit.id, order: { type: 'hold' }, doctrine: { retreatBelow: 50, priority: 'weakest', seekCover: false, holdFire: false } }]);
+    expect(state().draft).toEqual([{ side: PLAYER, unit: unit.id, order: { type: 'hold' }, doctrine: { retreatBelow: 50, priority: 'weakest', seekCover: false, holdFire: false, lostContact: 'regroup' } }]);
     const cover = $('rc-doctrine-cover') as HTMLInputElement;
     cover.checked = true;
     cover.dispatchEvent(new Event('change', { bubbles: true }));
     click('rc-hold');
     expect(state().draft).toHaveLength(1);
-    expect(state().draft[0]!.doctrine).toEqual({ retreatBelow: 50, priority: 'weakest', seekCover: true, holdFire: false });
+    expect(state().draft[0]!.doctrine).toEqual({ retreatBelow: 50, priority: 'weakest', seekCover: true, holdFire: false, lostContact: 'regroup' });
     expect($('rc-slots').textContent).toBe('Orders this turn: 1 of 4.');
     click('rc-lock');
-    expect(state().world.entities.find((e) => e.id === unit.id)!.doctrine).toEqual({ retreatBelow: 50, priority: 'weakest', seekCover: true, holdFire: false });
+    expect(state().world.entities.find((e) => e.id === unit.id)!.doctrine).toEqual({ retreatBelow: 50, priority: 'weakest', seekCover: true, holdFire: false, lostContact: 'regroup' });
     click(`rc-unit-${unit.id}`);
     expect(($('rc-doctrine-retreat') as HTMLSelectElement).value).toBe('50');
     expect(($('rc-doctrine-cover') as HTMLInputElement).checked).toBe(true);
@@ -322,6 +322,57 @@ describe('Relay Command view', () => {
     expect($('rc-cursor').textContent).not.toContain('jammed');
   });
 
+  it('shows a uniform stat card for the selected unit, and says when a unit has no weapon', () => {
+    expect($('rc-card').hidden).toBe(true);
+    const rifle = firstMobile();
+    click(`rc-unit-${rifle.id}`);
+    expect($('rc-card').hidden).toBe(false);
+    expect($('rc-card-health').textContent).toContain('40 / 40');
+    expect($('rc-card-damage').textContent).toContain('6');
+    expect($('rc-card').textContent).toContain('Effect against');
+    expect($('rc-selection-text').textContent).toContain('or an enemy to attack it');
+    const truck = own().find((e) => e.kind === 'mast-truck')!;
+    click(`rc-unit-${truck.id}`);
+    expect($('rc-card-noweapon').textContent).toContain('none');
+    expect($('rc-card').textContent).toContain('relay, radius 5');
+    expect($('rc-selection-text').textContent).toContain('This unit has no weapon');
+    // Ordering the truck to attack is refused with a specific reason.
+    const foe = spotEnemy();
+    click(`rc-unit-${truck.id}`);
+    const map = $('rc-map');
+    map.getBoundingClientRect = () => ({ left: 0, top: 0, width: 12 * CELL, height: 12 * CELL, right: 12 * CELL, bottom: 12 * CELL, x: 0, y: 0, toJSON: () => ({}) });
+    map.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: foe.x * CELL + 5, clientY: foe.y * CELL + 5 }));
+    expect($('rc-notice').textContent).toContain('has no weapon');
+  });
+
+  it('has a legend with every terrain type and the map shapes', () => {
+    const legend = $('rc-legend');
+    for (const name of ['open ground', 'road', 'forest', 'hill', 'buildings', 'swamp', 'water', 'ridge']) expect(legend.textContent).toContain(name);
+    expect(legend.textContent).toContain('move cost 6 · cover 25 %');
+    expect(legend.textContent).toContain('impassable');
+    expect(legend.textContent).toContain('Structure (square)');
+    expect(legend.querySelectorAll('li').length).toBeGreaterThanOrEqual(16);
+  });
+
+  it('lets the player choose map and length until the first turn is locked', () => {
+    expect($('rc-setup').hidden).toBe(false);
+    expect($('rc-turn').textContent).toBe('Turn 1');
+    const limit = $('rc-turn-limit') as HTMLSelectElement;
+    limit.value = '12';
+    limit.dispatchEvent(new Event('change'));
+    expect(state().turnLimit).toBe(12);
+    expect($('rc-turn').textContent).toBe('Turn 1 of 12');
+    const scenario = $('rc-scenario') as HTMLSelectElement;
+    scenario.value = 'ridge-valley';
+    scenario.dispatchEvent(new Event('change'));
+    expect(state().scenario).toBe('ridge-valley');
+    expect(state().turnLimit).toBe(12);
+    expect($('rc-map').getAttribute('data-cols')).toBe('20');
+    expect(ctx.context.root.querySelectorAll('[data-testid^="rc-unit-"]')).toHaveLength(14);
+    click('rc-lock');
+    expect($('rc-setup').hidden).toBe(true);
+  });
+
   it('maps pointer clicks on the canvas to cells', () => {
     const unit = firstMobile();
     const map = $('rc-map');
@@ -348,7 +399,7 @@ describe('Relay Command view', () => {
     click('rc-lock');
     expect(state().world.turn).toBe(1);
     expect(state().draft).toEqual([]);
-    expect($('rc-turn').textContent).toBe('Turn 2 of 12');
+    expect($('rc-turn').textContent).toBe('Turn 2');
     expect($('rc-summary').textContent).toContain('Damage dealt');
     expect($(`rc-unit-${unit.id}`).getAttribute('aria-pressed')).toBe('true');
   });

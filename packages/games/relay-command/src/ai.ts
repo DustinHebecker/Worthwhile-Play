@@ -26,7 +26,7 @@ export type Difficulty = (typeof DIFFICULTIES)[number];
 const SPOT_TOLERANCE = 8;
 
 /** Standing doctrine the opponent gives its fighters. */
-const AI_DOCTRINE: Doctrine = { ...DEFAULT_DOCTRINE, retreatBelow: 25 };
+const AI_DOCTRINE: Doctrine = { ...DEFAULT_DOCTRINE, retreatBelow: 25, lostContact: 'keep' };
 
 /** How far ahead of its Command Post the opponent may set up its relay truck (cells per axis). */
 const RELAY_FORWARD = 4;

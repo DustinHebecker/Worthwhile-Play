@@ -48,4 +48,38 @@ export const FIELD_EXERCISE: ScenarioSpec = symmetric(
   ]
 );
 
-export const SCENARIOS: readonly ScenarioSpec[] = [FIELD_EXERCISE];
+/**
+ * Ridge Valley: a 20×14 map with a river down the middle (two fords), a ridge, forests and
+ * hills. Each side has a Field Post and two Mast Trucks, so coverage can be pushed forward.
+ */
+export const RIDGE_VALLEY: ScenarioSpec = symmetric(
+  'ridge-valley',
+  24,
+  [
+    '....ff......~~....h.',
+    '..^^.ff.....~~...==.',
+    '..^^......h.~~..=...',
+    '......f...h.....=..f',
+    '=.......ff..~~..=...',
+    '==.....^^....~~.=.s.',
+    '..s....^^.....==...f'
+  ],
+  [
+    { kind: 'command-post', x: 17, y: 1 },
+    { kind: 'field-post', x: 17, y: 3 },
+    { kind: 'mast-truck', x: 16, y: 2 },
+    { kind: 'mast-truck', x: 18, y: 4 },
+    { kind: 'jammer', x: 19, y: 0 },
+    { kind: 'tracer', x: 18, y: 2 },
+    { kind: 'howitzer', x: 19, y: 2 },
+    { kind: 'rifles', x: 15, y: 1 },
+    { kind: 'rifles', x: 16, y: 4 },
+    { kind: 'rifles', x: 14, y: 3 },
+    { kind: 'lancer', x: 15, y: 3 },
+    { kind: 'lancer', x: 17, y: 5 },
+    { kind: 'warden', x: 16, y: 5 },
+    { kind: 'outrider', x: 14, y: 1 }
+  ]
+);
+
+export const SCENARIOS: readonly ScenarioSpec[] = [FIELD_EXERCISE, RIDGE_VALLEY];

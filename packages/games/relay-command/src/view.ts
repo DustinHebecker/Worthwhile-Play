@@ -2,6 +2,7 @@ import type { GameContext, GameInstance, GameResult, NewGameOptions } from '@wp/
 import { normalizeSeed } from '@wp/game-core';
 import {
   archetypeOf,
+  ARMOR_CLASSES,
   cellOf,
   computeNetwork,
   jammedCells,
@@ -38,10 +39,12 @@ import {
   RULESET,
   scenarioById,
   sideValue,
+  TURN_LIMITS,
   unitById,
   type RcState
 } from './rules';
 import { DIFFICULTIES, type Difficulty } from './ai';
+import { FIELD_EXERCISE, SCENARIOS } from './scenarios';
 import './styles.css';
 
 /** Map cell size in CSS pixels (the 44 px minimum touch target). */
@@ -59,7 +62,7 @@ const TERRAIN_NAMES: Readonly<Record<string, string>> = {
 };
 
 /** Automatic order ends worth telling the player (arrivals and regroups are expected outcomes). */
-const REPORTED_ENDS: ReadonlySet<string> = new Set(['occupied', 'unreachable', 'blocked', 'lost-target', 'retreat', 'outpaced']);
+const REPORTED_ENDS: ReadonlySet<string> = new Set(['occupied', 'unreachable', 'blocked', 'lost-target', 'retreat', 'outpaced', 'lost-contact']);
 
 let instanceCounter = 0;
 
@@ -89,6 +92,9 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   const sideName = (side: number) => t(side === PLAYER ? 'side.own' : 'side.enemy');
   const terrainName = (x: number, y: number) => t(`terrain.${TERRAIN_NAMES[world().map.terrain[y * world().map.w + x] ?? '.'] ?? 'plain'}`);
   const isMobile = (e: Entity) => (archetypeOf(RULESET, e.kind)?.speed ?? 0) > 0;
+  /** Structures never move: drawn as squares, told apart from vehicles that merely stand still. */
+  const isStructure = (e: Pick<Entity, 'kind'>) => (archetypeOf(RULESET, e.kind)?.speed ?? 0) === 0;
+  const isSetUp = (e: Entity) => (e.deploy ?? 0) >= RULESET.ticksPerTurn;
   const needsDeploy = (e: Entity) => needsDeployArch(archetypeOf(RULESET, e.kind));
   /** Message key prefix: relays and posts set up as network nodes, jammers as jammers. */
   const deployKind = (e: Pick<Entity, 'kind'>): 'deploy' | 'deployJammer' => (archetypeOf(RULESET, e.kind)?.ew?.role === 'jammer' ? 'deployJammer' : 'deploy');
@@ -224,8 +230,23 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   });
   const mapWrap = h('div', { class: 'rc-mapwrap', dir: 'ltr' }, canvas);
 
+  /** Game setup, until the first turn is locked: scenario and turn limit (open end by default). */
+  const scenarioSelect = h('select', { 'data-testid': 'rc-scenario', onchange: () => onSetup() });
+  for (const spec of SCENARIOS) scenarioSelect.append(h('option', { value: spec.id }, t(`scenario.${spec.id}`)));
+  const limitSelect = h('select', { 'data-testid': 'rc-turn-limit', onchange: () => onSetup() });
+  for (const limit of TURN_LIMITS) limitSelect.append(h('option', { value: limit === null ? 'open' : String(limit) }, limit === null ? t('setup.open') : t('setup.turns', { n: limit })));
+  const setupBox = h(
+    'fieldset',
+    { class: 'rc-setup', 'data-testid': 'rc-setup' },
+    h('legend', {}, t('setup.title')),
+    h('label', {}, h('span', {}, t('setup.scenario')), scenarioSelect),
+    h('label', {}, h('span', {}, t('setup.limit')), limitSelect)
+  );
+
   const selectionTitle = h('h3', {}, t('panel.selection'));
   const selectionText = h('p', { 'data-testid': 'rc-selection-text' });
+  /** Uniform stat card of the selected unit (own or known enemy). */
+  const cardEl = h('div', { class: 'rc-card', 'data-testid': 'rc-card', hidden: true });
   const holdBtn = h('button', { type: 'button', 'data-testid': 'rc-hold', onclick: () => onHold() }, t('action.hold'));
   const deployBtn = h('button', { type: 'button', 'data-testid': 'rc-deploy', onclick: () => orderSelected({ type: 'deploy' }) }, t('action.deploy'));
   const regroupBtn = h('button', { type: 'button', 'data-testid': 'rc-regroup', onclick: () => orderSelected({ type: 'regroup' }) }, t('action.regroup'));
@@ -246,6 +267,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   for (const p of TARGET_PRIORITIES) prioritySelect.append(h('option', { value: p }, t(`doctrine.priority.${p}`)));
   const coverBox = h('input', { type: 'checkbox', 'data-testid': 'rc-doctrine-cover', onchange: () => onDoctrine() });
   const holdFireBox = h('input', { type: 'checkbox', 'data-testid': 'rc-doctrine-holdfire', onchange: () => onDoctrine() });
+  const lostContactBox = h('input', { type: 'checkbox', 'data-testid': 'rc-doctrine-lostcontact', onchange: () => onDoctrine() });
   const doctrineBox = h(
     'fieldset',
     { class: 'rc-doctrine', 'data-testid': 'rc-doctrine' },
@@ -253,10 +275,12 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     h('label', {}, h('span', {}, t('doctrine.retreat')), retreatSelect),
     h('label', {}, h('span', {}, t('doctrine.priority')), prioritySelect),
     h('label', { class: 'rc-check' }, coverBox, h('span', {}, t('doctrine.seekCover'))),
-    h('label', { class: 'rc-check' }, holdFireBox, h('span', {}, t('doctrine.holdFire')))
+    h('label', { class: 'rc-check' }, holdFireBox, h('span', {}, t('doctrine.holdFire'))),
+    h('label', { class: 'rc-check' }, lostContactBox, h('span', {}, t('doctrine.lostContact')))
   );
   const selectionActions = h('div', { class: 'rc-orders' }, h('div', { class: 'rc-actions' }, holdBtn, regroupBtn, deployBtn, cancelBtn), modeGroup, modeHint, doctrineBox);
-  const selectionPanel = h('section', { class: 'rc-panel', 'data-testid': 'rc-selection' }, selectionTitle, selectionText, noticeEl, selectionActions);
+  const selectionPanel = h('section', { class: 'rc-panel', 'data-testid': 'rc-selection' }, selectionTitle, selectionText, cardEl, noticeEl, selectionActions);
+  const legendEl = h('details', { class: 'rc-legend', 'data-testid': 'rc-legend' }, h('summary', {}, t('legend.title')));
 
   const ownList = h('ul', { class: 'rc-units', 'data-testid': 'rc-own' });
   const enemyList = h('ul', { class: 'rc-units', 'data-testid': 'rc-enemy' });
@@ -273,10 +297,11 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     'div',
     { class: 'wp-relay-command', 'data-testid': 'rc-root' },
     h('div', { class: 'rc-bar' }, turnEl, statusEl, slotsEl, h('div', { class: 'rc-actions' }, lockBtn, concedeBtn), confirmBox),
+    setupBox,
     h(
       'div',
       { class: 'rc-main' },
-      h('div', { class: 'rc-board' }, mapWrap, cursorDesc),
+      h('div', { class: 'rc-board' }, mapWrap, cursorDesc, legendEl),
       h(
         'div',
         { class: 'rc-side' },
@@ -292,10 +317,20 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   root.append(shell);
 
   /* ---------- Rendering ---------- */
+  let legendDrawn = false;
   function render(): void {
+    if (!legendDrawn) {
+      legendDrawn = true;
+      renderLegend();
+    }
     const w = world();
     const finished = state.phase === 'finished';
-    turnEl.textContent = t('status.turn', { turn: Math.min(w.turn + 1, state.turnLimit), limit: state.turnLimit });
+    turnEl.textContent =
+      state.turnLimit === null ? t('status.turnOpen', { turn: w.turn + 1 }) : t('status.turn', { turn: Math.min(w.turn + 1, state.turnLimit), limit: state.turnLimit });
+    // Scenario and turn limit can be changed until the first turn is locked.
+    setupBox.hidden = state.phase !== 'plan' || state.log.length > 0;
+    scenarioSelect.value = state.scenario;
+    limitSelect.value = state.turnLimit === null ? 'open' : String(state.turnLimit);
     statusEl.textContent = statusText();
     statusEl.setAttribute('data-phase', state.phase);
     slotsEl.hidden = finished;
@@ -340,8 +375,10 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     } else if (unit.side === PLAYER && !reachable) {
       selectionText.textContent = `${describeUnit(unit)} ${t('panel.outOfContact')}`;
     } else {
-      selectionText.textContent = `${describeUnit(unit)} ${canOrder ? t('panel.hint') : ''}`.trim();
+      const hint = !canOrder ? '' : archetypeOf(RULESET, unit.kind)?.weapon ? t('panel.hint') : t('panel.hintUnarmed');
+      selectionText.textContent = `${describeUnit(unit)} ${hint}`.trim();
     }
+    renderCard(unit);
     selectionActions.hidden = !canOrder;
     deployBtn.hidden = !unit || !needsDeploy(unit) || isSetUpOrPending(unit);
     deployBtn.textContent = unit && deployKind(unit) === 'deployJammer' ? t('action.deployJammer') : t('action.deploy');
@@ -354,8 +391,242 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       prioritySelect.value = d.priority;
       coverBox.checked = d.seekCover;
       holdFireBox.checked = d.holdFire;
+      lostContactBox.checked = d.lostContact === 'regroup';
     }
     cancelBtn.disabled = !unit || !draftFor(state, unit.id);
+  }
+
+  /* ---------- Unit card and legend ---------- */
+  /** Roster maxima, so every bar uses the same scale for all units. */
+  const ROSTER = Object.values(RULESET.archetypes);
+  const MAX = {
+    hp: Math.max(...ROSTER.map((a) => a.hp)),
+    damage: Math.max(...ROSTER.map((a) => a.weapon?.damage ?? 0)),
+    range: Math.max(...ROSTER.map((a) => a.weapon?.range ?? 0)),
+    speed: Math.max(...ROSTER.map((a) => a.speed)),
+    vision: Math.max(...ROSTER.map((a) => a.vision))
+  };
+
+  /** One stat line: label, a bar on the roster scale, and the value as text (never the bar alone). */
+  const statRow = (label: string, value: string, fraction: number | null, testId?: string): HTMLElement =>
+    h(
+      'div',
+      { class: 'rc-stat', ...(testId && { 'data-testid': testId }) },
+      h('span', { class: 'rc-stat-label' }, label),
+      fraction === null
+        ? h('span', { class: 'rc-stat-bar rc-stat-bar-none', 'aria-hidden': 'true' })
+        : h('span', { class: 'rc-stat-bar', 'aria-hidden': 'true' }, h('span', { class: 'rc-stat-fill', style: `width:${Math.round(Math.max(0, Math.min(1, fraction)) * 100)}%` })),
+      h('span', { class: 'rc-stat-value' }, value)
+    );
+
+  /** Small icon of a unit kind: the map shape (circle / diamond / square) with its glyph. */
+  function unitIcon(kind: string, own: boolean): HTMLElement {
+    const icon = h('canvas', { class: 'rc-icon', width: CELL, height: CELL, 'aria-hidden': 'true' }) as HTMLCanvasElement;
+    let g: CanvasRenderingContext2D | null = null;
+    try {
+      g = icon.getContext('2d');
+    } catch {
+      g = null;
+    }
+    if (!g) return icon;
+    const colour = css(own ? '--wp-p1' : '--wp-p2', own ? '#24508f' : '#9a3412');
+    const surface = css('--wp-surface', '#ffffff');
+    const c = CELL / 2;
+    const r = CELL * 0.34;
+    g.lineWidth = 3;
+    g.strokeStyle = colour;
+    g.fillStyle = own ? colour : surface;
+    g.beginPath();
+    if (isStructure({ kind })) g.rect(c - r, c - r, r * 2, r * 2);
+    else if (own) g.arc(c, c, r, 0, Math.PI * 2);
+    else {
+      g.moveTo(c, c - r - 2);
+      g.lineTo(c + r + 2, c);
+      g.lineTo(c, c + r + 2);
+      g.lineTo(c - r - 2, c);
+      g.closePath();
+    }
+    g.fill();
+    g.stroke();
+    g.strokeStyle = own ? surface : colour;
+    g.fillStyle = own ? surface : colour;
+    g.lineWidth = 2;
+    drawGlyph(g, kind, c, c);
+    return icon;
+  }
+
+  function renderCard(unit: Entity | undefined): void {
+    clear(cardEl);
+    const arch = unit && archetypeOf(RULESET, unit.kind);
+    cardEl.hidden = !unit || !arch;
+    if (!unit || !arch) return;
+    const own = unit.side === PLAYER;
+    const cells = (n: number) => t('card.cells', { n });
+    cardEl.append(
+      h('div', { class: 'rc-card-head' }, unitIcon(unit.kind, own), h('strong', {}, unitName(unit)), h('span', { class: 'rc-muted' }, sideName(unit.side))),
+      statRow(t('card.health'), `${unit.hp} / ${arch.hp}`, unit.hp / arch.hp, 'rc-card-health'),
+      statRow(t('card.armor'), t(`armor.${arch.armor}`), null)
+    );
+    const w = arch.weapon;
+    if (w) {
+      cardEl.append(
+        statRow(t('card.damage'), `${w.damage} · ${t(`card.delivery.${w.delivery}`)}`, w.damage / MAX.damage, 'rc-card-damage'),
+        statRow(t('card.range'), w.minRange > 0 ? t('card.rangeBetween', { min: w.minRange, max: w.range }) : cells(w.range), w.range / MAX.range),
+        statRow(t('card.rate'), w.cooldown <= 1 ? t('card.everyTick') : t('card.everyTicks', { n: w.cooldown }), 1 / w.cooldown)
+      );
+      // Effect per armour class: what this weapon is good against (text and bar).
+      const vs = h('div', { class: 'rc-vs' }, h('span', { class: 'rc-stat-label' }, t('card.vs')));
+      for (const cls of ARMOR_CLASSES) vs.append(statRow(t(`armor.${cls}`), `${w.vs[cls]} %`, w.vs[cls] / 120));
+      cardEl.append(vs);
+      if (w.stationary) cardEl.append(h('p', { class: 'rc-muted' }, t('card.stationary')));
+    } else {
+      cardEl.append(statRow(t('card.weapon'), t('card.noWeapon'), null, 'rc-card-noweapon'));
+    }
+    cardEl.append(
+      statRow(t('card.speed'), arch.speed > 0 ? t('card.perTurn', { n: Math.round((arch.speed * RULESET.ticksPerTurn) / 4) }) : t('card.static'), arch.speed / MAX.speed),
+      statRow(t('card.vision'), cells(arch.vision), arch.vision / MAX.vision)
+    );
+    if (arch.comms) {
+      const text = arch.comms.role === 'source' ? t('card.source', { r: arch.comms.radius, slots: arch.comms.orderSlots }) : t('card.relay', { r: arch.comms.radius });
+      cardEl.append(statRow(t('card.radio'), arch.comms.needsDeploy ? `${text} ${t('card.needsSetUp')}` : text, null));
+    }
+    if (arch.ew) {
+      const text = arch.ew.role === 'jammer' ? t('card.jammer', { r: arch.ew.radius }) : t('card.tracer', { r: arch.ew.radius, b: arch.ew.burnThrough });
+      cardEl.append(statRow(t('card.ew'), arch.ew.needsDeploy ? `${text} ${t('card.needsSetUp')}` : text, null));
+    }
+  }
+
+  /** Swatch canvas painted by `paint`; the legend pairs each with its text. */
+  function swatch(paint: (g: CanvasRenderingContext2D) => void): HTMLElement {
+    const el = h('canvas', { class: 'rc-swatch', width: CELL, height: CELL, 'aria-hidden': 'true' }) as HTMLCanvasElement;
+    let g: CanvasRenderingContext2D | null = null;
+    try {
+      g = el.getContext('2d');
+    } catch {
+      g = null;
+    }
+    if (g) paint(g);
+    return el;
+  }
+
+  function renderLegend(): void {
+    const rows = h('ul', { class: 'rc-legend-list' });
+    const row = (el: HTMLElement, text: string) => rows.append(h('li', {}, el, h('span', {}, text)));
+    // Terrain: the same fill and pattern as on the map, with the numbers that matter.
+    for (const [code, spec] of Object.entries(RULESET.terrain)) {
+      const name = TERRAIN_NAMES[code] ?? 'plain';
+      const effect =
+        spec.cost === null
+          ? t('legend.impassable')
+          : [t('legend.move', { n: spec.cost }), spec.cover > 0 ? t('legend.cover', { n: spec.cover }) : '', spec.rangeBonus > 0 ? t('legend.rangeBonus', { n: spec.rangeBonus }) : '']
+              .filter(Boolean)
+              .join(' · ');
+      row(
+        swatch((g) => {
+          g.fillStyle = css(`--rc-${name}`, '#ddd');
+          g.fillRect(0, 0, CELL, CELL);
+          g.strokeStyle = css('--rc-mark', '#00000055');
+          g.fillStyle = css('--rc-mark', '#00000055');
+          g.lineWidth = 1.5;
+          drawTerrainMark(g, name, 0, 0);
+        }),
+        `${t(`terrain.${name}`)}: ${effect}`
+      );
+    }
+    // Shapes and overlays.
+    const colourOwn = css('--wp-p1', '#24508f');
+    const colourEnemy = css('--wp-p2', '#9a3412');
+    const shape = (own: boolean, kind: string) => unitIcon(kind, own);
+    row(shape(true, 'rifles'), t('legend.own'));
+    row(shape(false, 'rifles'), t('legend.enemy'));
+    row(shape(true, 'command-post'), t('legend.structure'));
+    row(
+      swatch((g) => {
+        const c = CELL / 2;
+        const r = CELL * 0.34;
+        g.fillStyle = css('--wp-border', '#cfcdc4');
+        g.fillRect(c - r - 4, c - r - 4, r * 2 + 8, r * 2 + 8);
+        g.fillStyle = colourOwn;
+        g.strokeStyle = colourOwn;
+        g.lineWidth = 3;
+        g.beginPath();
+        g.arc(c, c, r, 0, Math.PI * 2);
+        g.fill();
+        g.strokeStyle = css('--wp-surface', '#ffffff');
+        g.lineWidth = 2;
+        drawGlyph(g, 'mast-truck', c, c);
+      }),
+      t('legend.setUp')
+    );
+    row(
+      swatch((g) => {
+        const c = CELL / 2;
+        const r = CELL * 0.34;
+        g.globalAlpha = 0.55;
+        g.setLineDash([4, 3]);
+        g.strokeStyle = colourEnemy;
+        g.fillStyle = css('--wp-surface', '#ffffff');
+        g.lineWidth = 3;
+        g.beginPath();
+        g.moveTo(c, c - r - 2);
+        g.lineTo(c + r + 2, c);
+        g.lineTo(c, c + r + 2);
+        g.lineTo(c - r - 2, c);
+        g.closePath();
+        g.fill();
+        g.stroke();
+        g.globalAlpha = 1;
+        g.setLineDash([]);
+        g.fillStyle = colourEnemy;
+        g.font = `bold ${Math.round(CELL * 0.3)}px sans-serif`;
+        g.textAlign = 'center';
+        g.textBaseline = 'middle';
+        g.fillText('?', 9, 10);
+      }),
+      t('legend.ghost')
+    );
+    row(
+      swatch((g) => {
+        g.fillStyle = css('--rc-plain', '#e7e3d4');
+        g.fillRect(0, 0, CELL, CELL);
+        g.strokeStyle = css('--rc-nocover', 'rgba(29, 29, 27, 0.35)');
+        g.beginPath();
+        for (let k = 0; k < CELL; k += 11) {
+          g.moveTo(k, 0);
+          g.lineTo(0, k);
+          g.moveTo(CELL, k);
+          g.lineTo(k, CELL);
+        }
+        g.stroke();
+      }),
+      t('legend.noCover')
+    );
+    row(
+      swatch((g) => {
+        g.fillStyle = css('--rc-plain', '#e7e3d4');
+        g.fillRect(0, 0, CELL, CELL);
+        g.strokeStyle = css('--wp-danger', '#a1271b');
+        g.lineWidth = 1.5;
+        g.beginPath();
+        g.moveTo(4, CELL / 2);
+        for (let k = 1; k <= 4; k++) g.lineTo(4 + (k * (CELL - 8)) / 4, CELL / 2 + (k % 2 === 1 ? -5 : 5));
+        g.stroke();
+      }),
+      t('legend.jammed')
+    );
+    row(
+      swatch((g) => {
+        g.fillStyle = css('--rc-plain', '#e7e3d4');
+        g.fillRect(0, 0, CELL, CELL);
+        g.fillStyle = css('--rc-fog', 'rgba(29, 29, 27, 0.18)');
+        g.fillRect(0, 0, CELL, CELL);
+        g.beginPath();
+        g.arc(CELL - 7, CELL - 7, 2, 0, Math.PI * 2);
+        g.fill();
+      }),
+      t('legend.fog')
+    );
+    legendEl.append(rows);
   }
 
   function renderLists(): void {
@@ -684,8 +955,14 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       g.setLineDash([4, 3]);
       g.fillStyle = surface;
     }
+    // A set-up vehicle (relay, post, jammer) stands on a plate: it works like a structure now.
+    if (isSetUp(e) && !ghost) {
+      g.fillStyle = css('--wp-border', '#cfcdc4');
+      g.fillRect(cx - r - 4, cy - r - 4, r * 2 + 8, r * 2 + 8);
+      g.fillStyle = own ? colour : surface;
+    }
     g.beginPath();
-    if (e.kind === 'command-post') g.rect(cx - r, cy - r, r * 2, r * 2);
+    if (isStructure(e)) g.rect(cx - r, cy - r, r * 2, r * 2);
     else if (own) g.arc(cx, cy, r, 0, Math.PI * 2);
     else {
       g.moveTo(cx, cy - r - 2);
@@ -855,7 +1132,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
 
   /** Shows why an order was refused, visibly and for screen readers. */
   function showRefusal(refusal: string | null): void {
-    const specific = refusal === 'out-of-contact' || refusal === 'no-slots' || refusal === 'impassable' || refusal === 'not-visible';
+    const specific = refusal === 'out-of-contact' || refusal === 'no-slots' || refusal === 'impassable' || refusal === 'not-visible' || refusal === 'no-weapon';
     const message = specific ? t(`refuse.${refusal}`, { slots: orderSlots(state) }) : t('announce.refused');
     noticeEl.textContent = message;
     noticeEl.hidden = false;
@@ -876,7 +1153,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       retreatBelow: Number(retreatSelect.value) as Doctrine['retreatBelow'],
       priority: prioritySelect.value as Doctrine['priority'],
       seekCover: coverBox.checked,
-      holdFire: holdFireBox.checked
+      holdFire: holdFireBox.checked,
+      lostContact: lostContactBox.checked ? 'regroup' : 'keep'
     };
     const refusal = doctrineRefusal(state, unit.id, doctrine);
     const next = refusal === null ? planDoctrine(state, unit.id, doctrine) : undefined;
@@ -887,6 +1165,17 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     }
     noticeEl.hidden = true;
     commit(next, t('announce.doctrine', { name: unitName(unit) }));
+  }
+
+  /** Scenario or turn limit changed before the first turn: start the game afresh with them. */
+  function onSetup(): void {
+    if (state.phase !== 'plan' || state.log.length > 0) return;
+    const spec = scenarioById(scenarioSelect.value) ?? FIELD_EXERCISE;
+    const limit = limitSelect.value === 'open' ? null : Number(limitSelect.value);
+    selected = null;
+    commit(newGame(state.seed, spec, state.difficulty, limit), t('announce.setup', { scenario: t(`scenario.${spec.id}`) }));
+    homeCursor();
+    render();
   }
 
   function onHold(): void {
@@ -1001,7 +1290,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   /* ---------- Instance ---------- */
   return {
     newGame(options: NewGameOptions) {
-      state = newGame(normalizeSeed(options.seed), undefined, isDifficulty(options.difficulty) ? options.difficulty : 'normal');
+      state = newGame(normalizeSeed(options.seed), FIELD_EXERCISE, isDifficulty(options.difficulty) ? options.difficulty : 'normal', null);
       selected = null;
       confirming = false;
       reported = false;
@@ -1010,7 +1299,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     },
     restore(saved: RcState) {
       const spec = scenarioById(saved.scenario);
-      state = spec ? structuredClone(saved) : newGame(saved.seed, undefined, saved.difficulty);
+      state = spec ? structuredClone(saved) : newGame(saved.seed, FIELD_EXERCISE, saved.difficulty, null);
       selected = null;
       confirming = false;
       reported = state.phase === 'finished';
@@ -1021,7 +1310,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     pause() {},
     resume() {},
     reset() {
-      state = newGame(state.seed, undefined, state.difficulty);
+      state = newGame(state.seed, scenarioById(state.scenario) ?? FIELD_EXERCISE, state.difficulty, state.turnLimit);
       selected = null;
       confirming = false;
       reported = false;
