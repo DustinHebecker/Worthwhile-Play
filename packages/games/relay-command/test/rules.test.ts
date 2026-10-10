@@ -82,6 +82,8 @@ describe('Field Exercise scenario', () => {
     expect(isValidState({ ...open, turnLimit: 0 })).toBe(false);
     expect(isValidState({ ...open, quiet: -1 })).toBe(false);
     expect(isValidState({ ...open, quiet: 1.5 })).toBe(false);
+    expect(isValidState({ ...open, quiet: 1 })).toBe(false); // more quiet turns than turns played
+    expect(isValidState({ ...lockTurn(open), quiet: 1 })).toBe(true);
     expect(isValidState({ ...open, world: { ...open.world, turn: MAX_TURNS + 1 } })).toBe(false);
     expect(newGame(1, FIELD_EXERCISE, 'normal', 24).turnLimit).toBe(24);
   });
@@ -768,7 +770,9 @@ describe('opponent levels (I5)', () => {
     }
   }, 180_000);
 
-  it('a passive player (never giving an order) never comes out ahead at normal or hard: both maps, turn limit and open end', () => {
+  it('a passive player (never giving an order) does not come out ahead at normal or hard over these pre-nudged openings: both maps, turn limit and open end', () => {
+    // Only for openings nudged before turn 0: from the unperturbed Ridge Valley start a passive
+    // player beats normal, and hard in most mildly perturbed games (design notes; siege layer in I6).
     // Open end: the stall rule ends every game within the cap (nobody can win a game nobody fights).
     for (const spec of SCENARIOS) {
       for (const limit of MODES) {
