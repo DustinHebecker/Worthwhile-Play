@@ -12,7 +12,10 @@ export interface ScenarioSpec {
 
 const mirrorRows = (top: readonly string[]): string[] => [...top, ...[...top].reverse().map((row) => [...row].reverse().join(''))];
 
-function symmetric(id: string, turnLimit: number, top: readonly string[], units: readonly { kind: string; x: number; y: number }[]): ScenarioSpec {
+/** Supply a fresh deposit holds (docs/design/strategy.md § 8.1). */
+export const DEPOSIT_SUPPLY = 300;
+
+function symmetric(id: string, turnLimit: number, top: readonly string[], units: readonly { kind: string; x: number; y: number }[], deposits: readonly { x: number; y: number }[] = []): ScenarioSpec {
   const rows = mirrorRows(top);
   const w = rows[0]?.length ?? 0;
   const h = rows.length;
@@ -20,7 +23,9 @@ function symmetric(id: string, turnLimit: number, top: readonly string[], units:
     ...units.map((u) => ({ side: 0, kind: u.kind, x: w - 1 - u.x, y: h - 1 - u.y })),
     ...units.map((u) => ({ side: 1, kind: u.kind, x: u.x, y: u.y }))
   ];
-  return { id, turnLimit, scenario: { map: { w, h, terrain: rows.join('') }, sides: 2, entities, seed: 0 } };
+  // Deposits are mirrored too (each side has the same reach to the same yields).
+  const all = deposits.flatMap((d) => [d, { x: w - 1 - d.x, y: h - 1 - d.y }]).map((d) => ({ x: d.x, y: d.y, left: DEPOSIT_SUPPLY }));
+  return { id, turnLimit, scenario: { map: { w, h, terrain: rows.join(''), deposits: all }, sides: 2, entities, seed: 0 } };
 }
 
 /** Terrain: `.` plain, `=` road, `f` forest, `h` hill, `u` urban, `s` swamp, `~` water, `^` ridge. */
@@ -44,7 +49,13 @@ export const FIELD_EXERCISE: ScenarioSpec = symmetric(
     { kind: 'rifles', x: 10, y: 3 },
     { kind: 'mast-truck', x: 11, y: 2 },
     { kind: 'jammer', x: 9, y: 0 },
-    { kind: 'tracer', x: 11, y: 1 }
+    { kind: 'tracer', x: 11, y: 1 },
+    { kind: 'muster', x: 11, y: 3 }
+  ],
+  // One deposit behind each post, one on the road in the middle (contested).
+  [
+    { x: 7, y: 1 },
+    { x: 6, y: 4 }
   ]
 );
 
@@ -78,7 +89,14 @@ export const RIDGE_VALLEY: ScenarioSpec = symmetric(
     { kind: 'lancer', x: 15, y: 3 },
     { kind: 'lancer', x: 17, y: 5 },
     { kind: 'warden', x: 16, y: 5 },
-    { kind: 'outrider', x: 14, y: 1 }
+    { kind: 'outrider', x: 14, y: 1 },
+    { kind: 'muster', x: 18, y: 0 }
+  ],
+  // A deposit behind each post, one past the ridge, one at the ford in the middle (contested).
+  [
+    { x: 14, y: 0 },
+    { x: 12, y: 5 },
+    { x: 9, y: 6 }
   ]
 );
 

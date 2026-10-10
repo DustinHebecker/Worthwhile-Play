@@ -1,7 +1,7 @@
 import { isArrayOf, isInt, isOneOf, isRecord, isUint32, seedFromString } from '@wp/game-core';
 import { DEADLOCK_TICKS, STALL_TICKS, UNREACHABLE_TICKS } from './sim';
 import { archetypeOf, isValidDoctrine, needsDeploy } from './world';
-import { STATUS_KINDS, type Entity, type Order, type Projectile, type Report, type Ruleset, type Status, type World } from './types';
+import { MAX_QUEUE, MAX_SUPPLY, STATUS_KINDS, type Deposit, type Entity, type Order, type Projectile, type QueueItem, type Report, type Ruleset, type Status, type World } from './types';
 
 const MAX_DIM = 128;
 const MAX_ID = 0x7fff_ffff;
@@ -23,10 +23,19 @@ export const isValidOrder = (v: unknown, w: number, h: number): v is Order => {
       return isInt(v.target, 1, MAX_ID);
     case 'patrol':
       return isInt(v.x, 0, w - 1) && isInt(v.y, 0, h - 1) && isInt(v.rx, 0, w - 1) && isInt(v.ry, 0, h - 1);
+    case 'produce':
+      return isKind(v.kind);
+    case 'build':
+      return isKind(v.kind) && isInt(v.x, 0, w - 1) && isInt(v.y, 0, h - 1);
     default:
       return false;
   }
 };
+
+const isKind = (v: unknown): v is string => typeof v === 'string' && v.length > 0 && v.length <= 64;
+
+/** Orders a unit can stand under (`produce` and `build` are one-shot commands, never standing orders). */
+const isStandingOrder = (v: unknown, w: number, h: number): v is Order => isValidOrder(v, w, h) && v.type !== 'produce' && v.type !== 'build';
 
 const isStatus = (v: unknown): v is Status => isRecord(v) && isOneOf(v.kind, STATUS_KINDS) && isInt(v.ticks, 1, 10_000);
 
@@ -54,6 +63,10 @@ export function isValidWorld(value: unknown, ruleset?: Ruleset): value is World 
   const h = map.h;
   if (map.terrain.length !== w * h) return false;
   if (ruleset && [...map.terrain].some((ch) => !Object.hasOwn(ruleset.terrain, ch))) return false;
+  if (map.deposits !== undefined && !validDeposits(map.deposits, w, h)) return false;
+  // Economy: Supply per side exactly on economy rulesets.
+  if (ruleset && (ruleset.economy ? !isArrayOf(value.supply, (v) => isInt(v, 0, MAX_SUPPLY)) || value.supply.length !== value.sides : value.supply !== undefined)) return false;
+  if (!ruleset && value.supply !== undefined && !isArrayOf(value.supply, (v) => isInt(v, 0, MAX_SUPPLY))) return false;
   const sides = value.sides;
   const tick = value.tick;
   const nextId = value.nextId;
@@ -68,8 +81,10 @@ export function isValidWorld(value: unknown, ruleset?: Ruleset): value is World 
     isInt(e.hp, 1, ruleset ? (archetypeOf(ruleset, e.kind as string)?.hp ?? 0) : Number.MAX_SAFE_INTEGER) &&
     isInt(e.mp, 0, 10_000) &&
     isInt(e.cooldown, 0, 10_000) &&
-    isValidOrder(e.order, w, h) &&
+    isStandingOrder(e.order, w, h) &&
     isArrayOf(e.status, isStatus) &&
+    (e.queue === undefined || validQueue(e, ruleset)) &&
+    (e.build === undefined || validBuild(e, ruleset)) &&
     (e.beam === null || (isRecord(e.beam) && isInt(e.beam.target, 1, MAX_ID) && isInt(e.beam.stacks, 0, 1000))) &&
     (e.deploy === undefined || validDeploy(e, ruleset)) &&
     (e.doctrine === undefined || isValidDoctrine(e.doctrine)) &&
@@ -103,6 +118,35 @@ export function isValidWorld(value: unknown, ruleset?: Ruleset): value is World 
     }
   }
   return true;
+}
+
+const MAX_DEPOSIT = 1_000_000;
+
+/** Deposits: inside the map, sorted by cell without duplicates, with a non-negative remainder. */
+function validDeposits(v: unknown, w: number, h: number): v is Deposit[] {
+  if (!isArrayOf(v, (d): d is Deposit => isRecord(d) && isInt(d.x, 0, w - 1) && isInt(d.y, 0, h - 1) && isInt(d.left, 0, MAX_DEPOSIT))) return false;
+  for (let i = 1; i < v.length; i++) if ((v[i] as Deposit).y * w + (v[i] as Deposit).x <= (v[i - 1] as Deposit).y * w + (v[i - 1] as Deposit).x) return false;
+  return true;
+}
+
+/** A queue only on a yard, at most MAX_QUEUE known producible kinds with turns left within their build time. */
+function validQueue(e: Record<string, unknown>, ruleset: Ruleset | undefined): boolean {
+  const yard = ruleset ? archetypeOf(ruleset, e.kind as string) : undefined;
+  if (ruleset && !yard?.production) return false;
+  const isItem = (q: unknown): q is QueueItem => {
+    if (!isRecord(q) || !isKind(q.kind)) return false;
+    if (!ruleset) return isInt(q.left, 0, 1000);
+    const product = archetypeOf(ruleset, q.kind);
+    return !!product && product.buildTurns > 0 && (yard?.production?.includes(q.kind) ?? false) && isInt(q.left, 0, product.buildTurns);
+  };
+  return isArrayOf(e.queue, isItem) && e.queue.length <= MAX_QUEUE;
+}
+
+/** Construction only on structures that can be built, within their build time. */
+function validBuild(e: Record<string, unknown>, ruleset: Ruleset | undefined): boolean {
+  if (!ruleset) return isInt(e.build, 1, 1000);
+  const arch = archetypeOf(ruleset, e.kind as string);
+  return !!arch && arch.speed === 0 && arch.buildTurns > 0 && isInt(e.build, 1, arch.buildTurns);
 }
 
 /**

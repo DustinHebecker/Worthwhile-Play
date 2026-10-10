@@ -6,5 +6,6 @@ export * from './world';
 export * from './network';
 export * from './vision';
 export * from './observe';
+export * from './economy';
 export * from './sim';
 export * from './serialize';

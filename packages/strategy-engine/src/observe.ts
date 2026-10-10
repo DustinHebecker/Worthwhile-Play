@@ -1,6 +1,10 @@
 import { cellOf, dist2 } from './grid';
 import { computeNetwork, jammedCells, nodeRadius, type Network } from './network';
 import type { Entity, Report, Ruleset, World } from './types';
+import { observedCells } from './vision';
+
+/** `Deposit.left` in an observation for a deposit no reporting unit observes now. */
+export const UNKNOWN_LEFT = -1;
 
 /**
  * What one side may base its decisions on (docs/design/strategy.md § 11): its own units as they
@@ -30,8 +34,9 @@ export function observe(world: World, ruleset: Ruleset, side: number): Observati
   const entities: Entity[] = [];
   const hide = (e: Entity): Entity => {
     // Enemies: position, health and visible effects only; their orders and set-up are unknown.
-    const { id, side: s, kind, x, y, hp, status } = e;
-    return { id, side: s, kind, x, y, hp, mp: 0, cooldown: 0, order: { type: 'hold' }, status: structuredClone(status), beam: null };
+    const { id, side: s, kind, x, y, hp, status, build } = e;
+    // A site under construction looks like one; the queue inside a yard does not show.
+    return { id, side: s, kind, x, y, hp, mp: 0, cooldown: 0, order: { type: 'hold' }, status: structuredClone(status), beam: null, ...(build !== undefined && { build }) };
   };
   for (const e of world.entities) if (e.side === side) entities.push(structuredClone(e));
   if (!ruleset.fog) {
@@ -66,6 +71,13 @@ export function observe(world: World, ruleset: Ruleset, side: number): Observati
     ...(intel && { intel })
   };
   const network = computeNetwork(world, ruleset, side);
+  // Economy: only the own Supply is known; deposits are map knowledge, but how much is left in
+  // one is known only while a reporting unit observes it (UNKNOWN_LEFT otherwise).
+  if (world.supply) known.supply = world.supply.map((v, s) => (s === side ? v : 0));
+  if (world.map.deposits) {
+    const observed = ruleset.fog ? observedCells(world, ruleset, side, network) : undefined;
+    known.map = { ...world.map, deposits: world.map.deposits.map((d) => ({ x: d.x, y: d.y, left: !observed || observed[cellOf(world.map, d.x, d.y)] === 1 ? d.left : UNKNOWN_LEFT })) };
+  }
   return { side, ruleset: ruleset.id, world: known, ghosts, network, jammed: feltJamming(world, ruleset, side, network) };
 }
 

@@ -74,7 +74,16 @@ export interface Archetype {
   /** Movement points gained per tick; 0 = static (structure / tower). */
   readonly speed: number;
   readonly vision: number;
+  /** Supply it costs to produce or build (also its value in strength comparisons). */
   readonly cost: number;
+  /** Turns to produce (units) or construct (structures); 0 = cannot be produced or built. */
+  readonly buildTurns: number;
+  /** Supply per turn while connected to the own network (economy rulesets, D8). */
+  readonly income: number;
+  /** Must stand on a deposit and draws its income from it (an Extractor). */
+  readonly extractor: boolean;
+  /** Archetype ids this structure can produce (`produce` order), or null. */
+  readonly production: readonly string[] | null;
   readonly weapon: WeaponSpec | null;
   readonly comms: CommsSpec | null;
   readonly ew: EwSpec | null;
@@ -108,6 +117,20 @@ export interface Ruleset {
    * reported position (`World.intel`), and weapons only engage targets that are spotted.
    */
   readonly fog: boolean;
+  /**
+   * Economy (D8): each side holds Supply, income arrives on the last tick of a turn from
+   * connected posts and extractors on deposits, yards produce units and sources place structures.
+   */
+  readonly economy: boolean;
+  /** Supply each side starts with (economy rulesets). */
+  readonly startSupply: number;
+}
+
+/** A finite source of Supply on the map; an Extractor on it draws `left` down (D8). */
+export interface Deposit {
+  x: number;
+  y: number;
+  left: number;
 }
 
 export interface GameMap {
@@ -115,6 +138,8 @@ export interface GameMap {
   readonly h: number;
   /** Row-major, one terrain character per cell. */
   readonly terrain: string;
+  /** Economy rulesets: deposits, sorted by cell (row-major); absent = none. */
+  readonly deposits?: Deposit[];
 }
 
 export type Order =
@@ -128,7 +153,11 @@ export type Order =
   /** Walk to (x, y), then back to (rx, ry), and so on. */
   | { readonly type: 'patrol'; readonly x: number; readonly y: number; readonly rx: number; readonly ry: number }
   /** Return to the nearest cell inside the own command coverage, then hold. */
-  | { readonly type: 'regroup' };
+  | { readonly type: 'regroup' }
+  /** Economy: a yard queues one unit of `kind` (paid at once; the standing order is unchanged). */
+  | { readonly type: 'produce'; readonly kind: string }
+  /** Economy: a command source places a structure of `kind` on a free covered cell (paid at once). */
+  | { readonly type: 'build'; readonly kind: string; readonly x: number; readonly y: number };
 
 export const TARGET_PRIORITIES = ['weakest', 'nearest', 'armor', 'infantry', 'structures', 'emitters'] as const;
 export type TargetPriority = (typeof TARGET_PRIORITIES)[number];
@@ -201,7 +230,22 @@ export interface Entity {
   prev?: number;
   /** Consecutive ticks outside the own command coverage (doctrine `lostContact`); absent = 0. */
   noContact?: number;
+  /** Production queue of a yard: units in order, `left` turns each; at most MAX_QUEUE. */
+  queue?: QueueItem[];
+  /** Turns of construction left on a structure site (inactive until 0, then absent). */
+  build?: number;
 }
+
+export interface QueueItem {
+  kind: string;
+  left: number;
+}
+
+/** Longest production queue of a yard. */
+export const MAX_QUEUE = 2;
+
+/** Most Supply a side can hold (income beyond it is lost; keeps every save valid). */
+export const MAX_SUPPLY = 1_000_000;
 
 export interface Projectile {
   id: number;
@@ -239,6 +283,8 @@ export interface World {
   rng: number;
   map: GameMap;
   sides: number;
+  /** Economy rulesets only: Supply per side. */
+  supply?: number[];
   /** Sorted by ascending id. */
   entities: Entity[];
   projectiles: Projectile[];
@@ -265,7 +311,22 @@ export type SimEvent =
   | { t: 'hit'; tick: number; id: number; side: number; damage: number }
   | { t: 'destroyed'; tick: number; id: number; side: number; kind: string; x: number; y: number }
   /** A standing order changed without a command: why (never silently). */
-  | { t: 'order-ended'; tick: number; id: number; reason: OrderEndReason };
+  | { t: 'order-ended'; tick: number; id: number; reason: OrderEndReason }
+  /** Economy: Supply that reached a side at the end of a turn (reported to that side only). */
+  | { t: 'income'; tick: number; side: number; amount: number }
+  /** A yard (`id`) queued a unit. */
+  | { t: 'queued'; tick: number; id: number; kind: string }
+  /** A yard (`by`) finished a unit, standing on (x, y). */
+  | { t: 'produced'; tick: number; id: number; side: number; kind: string; x: number; y: number; by: number }
+  /** A structure site was placed (`id`), or finished (`built`). */
+  | { t: 'site'; tick: number; id: number; side: number; kind: string; x: number; y: number }
+  | { t: 'built'; tick: number; id: number }
+  /**
+   * A placement the side's knowledge allowed but the cell turned out taken (a hidden unit, a
+   * deposit run dry, or both sides placing on it in the same batch): refused unpaid, no slot used.
+   * Reported to the placing side only.
+   */
+  | { t: 'site-blocked'; tick: number; side: number; kind: string; x: number; y: number };
 
 /**
  * Why the engine replaced a unit's standing order on its own:
@@ -282,4 +343,6 @@ export interface Scenario {
   readonly sides: number;
   readonly entities: readonly { side: number; kind: string; x: number; y: number; order?: Order }[];
   readonly seed: number;
+  /** Economy rulesets: Supply per side at the start (default: the ruleset's `startSupply`). */
+  readonly supply?: readonly number[];
 }
