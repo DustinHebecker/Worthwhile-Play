@@ -8,6 +8,7 @@ import {
   isValidDoctrine,
   isValidOrder,
   isValidWorld,
+  observe,
   observedCells,
   resolveTurn,
   STRATEGY_RULESET,
@@ -21,7 +22,7 @@ import {
   type SimEvent,
   type World
 } from '@wp/strategy-engine';
-import { planAi } from './ai';
+import { DIFFICULTIES, planAi, type Difficulty } from './ai';
 import { FIELD_EXERCISE, SCENARIOS, type ScenarioSpec } from './scenarios';
 
 /** Strategy rules: orders and reports travel through the command network (coverage, order slots, fog). */
@@ -45,8 +46,10 @@ export interface TurnLog {
  * survives closing the game; `log` holds every locked plan so any game can be replayed exactly.
  */
 export interface RcState {
-  v: 3;
+  v: 4;
   seed: number;
+  /** Strength of the scripted opponent (chosen when the game starts). */
+  difficulty: Difficulty;
   scenario: string;
   turnLimit: number;
   world: World;
@@ -61,10 +64,11 @@ export interface RcState {
 
 export const scenarioById = (id: string): ScenarioSpec | undefined => SCENARIOS.find((s) => s.id === id);
 
-export function newGame(seed: number, spec: ScenarioSpec = FIELD_EXERCISE): RcState {
+export function newGame(seed: number, spec: ScenarioSpec = FIELD_EXERCISE, difficulty: Difficulty = 'normal'): RcState {
   return {
-    v: 3,
+    v: 4,
     seed: normalizeSeed(seed),
+    difficulty,
     scenario: spec.id,
     turnLimit: spec.turnLimit,
     world: createWorld({ ...spec.scenario, seed }, RULESET),
@@ -149,7 +153,8 @@ export function cancelOrder(state: RcState, unit: number): RcState {
 /** Locks the player's plan, lets the opponent plan blind, and resolves both simultaneously. */
 export function lockTurn(state: RcState): RcState {
   if (state.phase !== 'plan') return state;
-  const plans = [state.draft, planAi(state.world, RULESET, OPPONENT)];
+  // The opponent plans from its own observation only (never the world or the player's draft).
+  const plans = [state.draft, planAi(observe(state.world, RULESET, OPPONENT), RULESET, state.difficulty)];
   const { world, reported } = resolveTurn(state.world, RULESET, plans);
   const events = reported?.[PLAYER] ?? [];
   const result = outcome(world, state.turnLimit);
@@ -284,7 +289,8 @@ function matchesScenario(world: World, spec: ScenarioSpec): boolean {
 }
 
 export function isValidState(value: unknown): value is RcState {
-  if (!isRecord(value) || value.v !== 3 || !isUint32(value.seed) || typeof value.scenario !== 'string') return false;
+  if (!isRecord(value) || value.v !== 4 || !isUint32(value.seed) || typeof value.scenario !== 'string') return false;
+  if (!isOneOf(value.difficulty, DIFFICULTIES)) return false;
   const spec = scenarioById(value.scenario);
   if (!spec || !isInt(value.turnLimit, 1, 1000) || !isOneOf(value.phase, ['plan', 'finished'])) return false;
   if (!isValidWorld(value.world, RULESET) || value.world.sides !== 2 || !matchesScenario(value.world, spec)) return false;
@@ -311,11 +317,17 @@ export function isValidState(value: unknown): value is RcState {
  * filtered by what the player could know).
  */
 export function migrateState(state: unknown, fromVersion: number): RcState | undefined {
+  // Version 3 (before difficulty levels) plays on at 'normal'.
+  if (fromVersion === 3) {
+    if (!isRecord(state) || state.v !== 3) return undefined;
+    const migrated = { ...state, v: 4, difficulty: 'normal' };
+    return isValidState(migrated) ? migrated : undefined;
+  }
   if ((fromVersion !== 1 && fromVersion !== 2) || !isRecord(state) || state.v !== fromVersion || !isRecord(state.world)) return undefined;
   const world: Record<string, unknown> = { ...state.world, ruleset: RULESET.id };
   delete world.intel;
   if (!isValidWorld(world, { ...RULESET, fog: false })) return undefined;
-  const migrated = { ...state, v: 3, events: [], world: { ...world, intel: initialIntel(world as unknown as World, RULESET) } };
+  const migrated = { ...state, v: 4, difficulty: 'normal', events: [], world: { ...world, intel: initialIntel(world as unknown as World, RULESET) } };
   if (!isValidState(migrated)) return undefined;
   // Version 1 had no order limit or coverage: keep only the planned orders that are still allowed.
   let replanned: RcState = { ...migrated, draft: [] };

@@ -41,6 +41,7 @@ import {
   unitById,
   type RcState
 } from './rules';
+import { DIFFICULTIES, type Difficulty } from './ai';
 import './styles.css';
 
 /** Map cell size in CSS pixels (the 44 px minimum touch target). */
@@ -58,9 +59,11 @@ const TERRAIN_NAMES: Readonly<Record<string, string>> = {
 };
 
 /** Automatic order ends worth telling the player (arrivals and regroups are expected outcomes). */
-const REPORTED_ENDS: ReadonlySet<string> = new Set(['occupied', 'unreachable', 'blocked', 'lost-target', 'retreat']);
+const REPORTED_ENDS: ReadonlySet<string> = new Set(['occupied', 'unreachable', 'blocked', 'lost-target', 'retreat', 'outpaced']);
 
 let instanceCounter = 0;
+
+const isDifficulty = (v: unknown): v is Difficulty => (DIFFICULTIES as readonly unknown[]).includes(v);
 
 export function createRelayCommand(context: GameContext): GameInstance<RcState> {
   const { t, root } = context;
@@ -998,7 +1001,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   /* ---------- Instance ---------- */
   return {
     newGame(options: NewGameOptions) {
-      state = newGame(normalizeSeed(options.seed));
+      state = newGame(normalizeSeed(options.seed), undefined, isDifficulty(options.difficulty) ? options.difficulty : 'normal');
       selected = null;
       confirming = false;
       reported = false;
@@ -1007,7 +1010,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     },
     restore(saved: RcState) {
       const spec = scenarioById(saved.scenario);
-      state = spec ? structuredClone(saved) : newGame(saved.seed);
+      state = spec ? structuredClone(saved) : newGame(saved.seed, undefined, saved.difficulty);
       selected = null;
       confirming = false;
       reported = state.phase === 'finished';
@@ -1018,7 +1021,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     pause() {},
     resume() {},
     reset() {
-      state = newGame(state.seed);
+      state = newGame(state.seed, undefined, state.difficulty);
       selected = null;
       confirming = false;
       reported = false;

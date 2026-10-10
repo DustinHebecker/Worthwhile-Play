@@ -169,3 +169,13 @@ test('relay-command: a Static Jammer is set up in one turn and stays set up acro
   await page.getByTestId('continue').click();
   await expect(page.getByTestId(`rc-unit-${jammer.id}`)).toContainText('Jammer active');
 });
+
+test('relay-command: the opponent level chosen before a new game is kept in the save', async ({ page }) => {
+  await page.goto('/games/relay-command');
+  await page.getByTestId('difficulty').selectOption('hard');
+  await page.getByTestId('new-game').click();
+  await expect(page.getByTestId('rc-map')).toBeVisible();
+  await expect.poll(async () => ((await readSave(page, 'relay-command')) as { state: { difficulty: string } } | undefined)?.state.difficulty).toBe('hard');
+  await page.getByTestId('rc-lock').click();
+  await expect(page.getByTestId('rc-turn')).toHaveText('Turn 2 of 12');
+});
