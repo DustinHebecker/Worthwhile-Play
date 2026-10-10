@@ -350,8 +350,8 @@ export function isValidState(value: unknown): value is RcState {
   if (!isOneOf(value.difficulty, DIFFICULTIES)) return false;
   const spec = scenarioById(value.scenario);
   if (!spec || !(value.turnLimit === null || isInt(value.turnLimit, 1, MAX_TURNS)) || !isOneOf(value.phase, ['plan', 'finished'])) return false;
-  if (!isInt(value.quiet, 0, MAX_TURNS)) return false;
   if (!isValidWorld(value.world, RULESET) || value.world.sides !== 2 || !matchesScenario(value.world, spec)) return false;
+  if (!isInt(value.quiet, 0, value.world.turn)) return false; // quiet turns cannot outnumber the turns played
   const isCommand = commandGuard(value.world.map.w, value.world.map.h);
   if (!isArrayOf(value.draft, isCommand) || value.draft.some((c) => c.side !== PLAYER)) return false;
   // Bounded by the scenario (hostile saves must not freeze the tab): one command per unit and

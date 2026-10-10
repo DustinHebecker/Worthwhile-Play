@@ -4,7 +4,7 @@ import type { GameInstance, GameModule } from '@wp/game-core';
 import { createTestContext, type TestContext } from '@wp/testing';
 import game from '../src/index';
 import { initialIntel, passable, type Entity } from '@wp/strategy-engine';
-import { concede, OPPONENT, PLAYER, RULESET, type RcState } from '../src/rules';
+import { concede, lockTurn, OPPONENT, PLAYER, RULESET, STALL_TURNS, type RcState } from '../src/rules';
 import { CELL } from '../src/view';
 
 let ctx: TestContext;
@@ -31,6 +31,9 @@ function spotEnemy(): Entity {
   instance.restore(s);
   return foe;
 }
+
+/** The world with only the two Command Posts left (nothing can change any more). */
+const withoutMobileUnits = (w: RcState['world']) => ({ ...w, entities: w.entities.filter((e) => e.kind === 'command-post') });
 
 function setup(locale: 'en' | 'ar' | 'de' = 'en') {
   ctx = createTestContext(game as GameModule<unknown>, locale);
@@ -444,6 +447,12 @@ describe('Relay Command view', () => {
     // A turn limit has no stall rule.
     instance.restore({ ...state(), quiet: 5, turnLimit: 12 });
     expect($('rc-turn').textContent).toBe('Turn 1 of 12');
+    // A game the quiet rule ended says so instead of "after the last turn".
+    let quiet: RcState = { ...state(), turnLimit: null };
+    for (let i = 0; i < STALL_TURNS && quiet.phase === 'plan'; i++) quiet = lockTurn({ ...quiet, world: withoutMobileUnits(quiet.world) });
+    expect(quiet).toMatchObject({ phase: 'finished', result: 'draw', quiet: STALL_TURNS });
+    instance.restore(quiet);
+    expect($('rc-status').textContent).toBe(`Draw after ${STALL_TURNS} turns without losses (300 : 300).`);
   });
 
   it('keeps the map left-to-right in RTL locales and translates the interface', () => {

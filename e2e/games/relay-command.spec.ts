@@ -198,3 +198,16 @@ test('relay-command: map and length chosen before the first turn survive a reloa
   await expect(page.getByTestId('rc-turn')).toHaveText('Turn 2 of 12');
   await expect(page.getByTestId('rc-setup')).toBeHidden();
 });
+
+test('relay-command: the game setup never scrolls sideways on a 360 px phone (a wide option once broke the layout viewport)', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await start(page);
+  await expect(page.getByTestId('rc-setup')).toBeVisible();
+  const widths = await page.evaluate(() => ({ page: document.documentElement.scrollWidth, viewport: document.documentElement.clientWidth }));
+  expect(widths.page).toBeLessThanOrEqual(widths.viewport);
+  // Every setup control fits inside the viewport too.
+  for (const id of ['rc-scenario', 'rc-turn-limit']) {
+    const box = (await page.getByTestId(id).boundingBox())!;
+    expect(box.x + box.width).toBeLessThanOrEqual(360);
+  }
+});
