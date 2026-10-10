@@ -204,15 +204,12 @@ export function validateCommand(world: World, ruleset: Ruleset, command: Command
  * Entities on (x, y) as `side` knows them: own units always; with fog, other sides' units only
  * while they are spotted, and their structures from any report (structures do not move).
  */
-export function knownAt(world: World, ruleset: Ruleset, side: number, x: number, y: number): Entity[] {
-  const here = world.entities.filter((e) => e.x === x && e.y === y);
-  if (!ruleset.fog) return here;
-  const reports = world.intel?.[side] ?? [];
-  return here.filter((e) => {
-    if (e.side === side) return true;
-    const r = reports.find((q) => q.id === e.id);
-    return !!r && (r.live || ((archetypeOf(ruleset, e.kind)?.speed ?? 1) === 0 && r.x === x && r.y === y));
-  });
+export function knownAt(world: World, ruleset: Ruleset, side: number, x: number, y: number): Pick<Entity, 'id' | 'side' | 'kind' | 'x' | 'y'>[] {
+  if (!ruleset.fog) return world.entities.filter((e) => e.x === x && e.y === y);
+  // Other sides only from the side's reports (a structure destroyed unseen still stands as a ghost).
+  const own = world.entities.filter((e) => e.side === side && e.x === x && e.y === y);
+  const reported = (world.intel?.[side] ?? []).filter((r) => r.side !== side && r.x === x && r.y === y && (r.live || (archetypeOf(ruleset, r.kind)?.speed ?? 1) === 0));
+  return [...own, ...reported];
 }
 
 /** Copy of a validated order without foreign fields (commands may come from untrusted saves). */

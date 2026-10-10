@@ -227,4 +227,32 @@ describe('economy (I6a, D8)', () => {
     unit(post, 3).deploy = net.ticksPerTurn;
     expect(validateCommand(post, net, place)).toEqual({ ok: true });
   });
+
+  it('a refused placement does not block the other side; a structure destroyed unseen still counts as known; ring-2 spawns never cross a barrier', () => {
+    const w = worldOf(open(20, 3), [{ side: 0, kind: 'command-post', x: 0, y: 1 }, { side: 1, kind: 'command-post', x: 19, y: 1 }]);
+    const outside: Command = { side: 0, unit: 1, order: { type: 'build', kind: 'relay-mast', x: 16, y: 1 } };
+    const valid: Command = { side: 1, unit: 2, order: { type: 'build', kind: 'relay-mast', x: 16, y: 1 } };
+    const r = turn(w, [[outside], [valid]]);
+    expect(r.world.entities.some((e) => e.side === 1 && e.kind === 'relay-mast' && e.x === 16)).toBe(true);
+    expect(r.events.some((e) => e.t === 'site-blocked')).toBe(false);
+    // Side 0 knows an enemy Extractor at (11, 1) as a ghost; after it is destroyed unseen, the cell still reads taken.
+    const g = worldOf({ ...open(20, 3), deposits: [{ x: 11, y: 1, left: 100 }] }, [
+      { side: 0, kind: 'command-post', x: 0, y: 1 },
+      { side: 0, kind: 'relay-mast', x: 5, y: 1 },
+      { side: 1, kind: 'command-post', x: 19, y: 1 },
+      { side: 1, kind: 'extractor', x: 11, y: 1 }
+    ]);
+    const build: Command = { side: 0, unit: 1, order: { type: 'build', kind: 'extractor', x: 11, y: 1 } };
+    expect(g.intel?.[0]?.some((r) => r.id === 4)).toBe(true); // structures are known from the start
+    expect(validateCommand(g, net, build)).toEqual({ ok: false, reason: 'not-buildable' });
+    const gone = structuredClone(g);
+    gone.entities = gone.entities.filter((e) => e.id !== 4);
+    expect(validateCommand(gone, net, build)).toEqual({ ok: false, reason: 'not-buildable' });
+    // A yard whose neighbours are all water or taken, with land two cells out: no unit across the water.
+    const moat = worldOf({ w: 5, h: 5, terrain: '.....' + '.~~~.' + '.~.~.' + '.~~~.' + '.....' }, [{ side: 0, kind: 'command-post', x: 0, y: 0 }, { side: 0, kind: 'muster', x: 2, y: 2 }]);
+    unit(moat, 2).queue = [{ kind: 'rifles', left: 1 }];
+    const after = turn(moat).world;
+    expect(after.entities.some((e) => e.kind === 'rifles')).toBe(false);
+    expect(unit(after, 2).queue).toEqual([{ kind: 'rifles', left: 0 }]);
+  });
 });

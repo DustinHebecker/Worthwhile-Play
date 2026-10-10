@@ -30,6 +30,7 @@ import {
   PLAYER_DOCTRINE,
   MAX_TURNS,
   STALL_TURNS,
+  TURN_LIMITS,
   STALL_MARGIN,
   CONTACT_TURN,
   stalled,
@@ -802,7 +803,7 @@ describe('opponent levels (I5)', () => {
     }
     return lockTurn(s);
   }
-  /** Longest game the tests below accept (measured: 42 turns). */
+  /** Longest game the tests below accept for their strategies (measured: 42 turns); not a bound for every strategy. */
   const GAME_BOUND = 60;
 
   it('a passive player loses at normal and hard on both maps, with a turn limit and open end: from the unperturbed start, nudged openings and first-turn moves; every game ends within the bound', () => {
@@ -816,7 +817,7 @@ describe('opponent levels (I5)', () => {
           for (const [kind, games] of [['start', start], ['nudged', nudged]] as const) {
             expect(games.every((g) => g.phase === 'finished' && g.result === 'lost'), label(kind, games)).toBe(true);
           }
-          // First-turn moves can leave a player well placed: measured 1 win in 8 (Field Exercise, normal).
+          // First-turn moves can leave a player well placed: it wins some (on Field Exercise, at both levels).
           expect(moved.every((g) => g.phase === 'finished'), label('moved', moved)).toBe(true);
           expect(moved.filter((g) => g.result === 'lost').length, label('moved', moved)).toBeGreaterThanOrEqual(3);
         }
@@ -824,7 +825,27 @@ describe('opponent levels (I5)', () => {
     }
   }, 600_000);
 
-  it('a player who only produces and never moves loses too, and AI-vs-AI games in open end all end within the bound', () => {
+  it('every game stays a valid, resumable save after every turn: both maps, every length, passive and playing', () => {
+    for (const spec of SCENARIOS) {
+      for (const limit of TURN_LIMITS) {
+        for (const player of ['passive', 'normal'] as const) {
+          let s = newGame(3, spec, 'hard', limit);
+          for (let i = 0; i < GAME_BOUND && s.phase === 'plan'; i++) {
+            if (player !== 'passive') for (const c of ai(s.world, PLAYER, player)) s = planOrder(s, c.unit, c.order, c.doctrine) ?? s;
+            s = lockTurn(s);
+            const saved = JSON.parse(JSON.stringify(s)) as unknown;
+            expect(isValidState(saved), `${spec.id} limit=${limit} ${player} turn ${s.world.turn}`).toBe(true);
+          }
+          if (limit !== null) expect(s.lead).toEqual([]);
+        }
+      }
+    }
+  }, 600_000);
+
+  it('a player who only produces with the normal template and never moves loses, and AI-vs-AI games in open end end within the bound', () => {
+    // Narrow on purpose: a stronger turtle (Extractors on every deposit, then a Motor Pool and
+    // heavier units) can out-produce the opponent and win on strength (design notes, I6d).
+
     for (const spec of SCENARIOS) {
       for (const level of ['normal', 'hard'] as const) {
         let s = opening(spec, 1, 2, 2, null, level);

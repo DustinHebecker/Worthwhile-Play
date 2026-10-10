@@ -80,10 +80,11 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
   const slotsLeft = new Map<number, number>(networks?.map((n, side) => [side, n.slots]));
   // Placements of different sides on one cell in one batch: both refused (no side wins a tie by
   // the order in which the plans were handed in).
+  // Only placements that pass the rules count (a refused command must not block the other side).
   const placedBy = new Map<number, Set<number>>();
   for (const c of commands) {
     const o = isRecord(c) && isRecord(c.order) ? (c.order as Order) : undefined;
-    if (o?.type !== 'build' || !Number.isInteger(o.x) || !Number.isInteger(o.y)) continue;
+    if (o?.type !== 'build' || !validateCommand(w, rs, c, networks).ok) continue;
     const key = o.y * w.map.w + o.x;
     (placedBy.get(key) ?? placedBy.set(key, new Set()).get(key)!).add(c.side);
   }

@@ -49,10 +49,18 @@ export function spawnCell(world: World, ruleset: Ruleset, yard: Entity, arch: Ar
   const taken = new Set(world.entities.filter((e) => archetypeOf(ruleset, e.kind)?.layer === arch.layer).map((e) => cellOf(world.map, e.x, e.y)));
   // Neighbours first, then the ring two cells out (a yard ringed by its own units still delivers).
   const ring2 = RING2.map(([dx, dy]) => (yard.side === 1 ? ([-dx, -dy] as const) : ([dx, dy] as const)));
+  // A cell two out only when a passable neighbour of the yard leads to it (never across a barrier).
+  const bridged = (x: number, y: number): boolean =>
+    dirsFor(yard.side).some(([dx, dy]) => {
+      const nx = yard.x + dx;
+      const ny = yard.y + dy;
+      return inBounds(world.map, nx, ny) && passable(world.map, ruleset, nx, ny, arch.layer) && Math.max(Math.abs(nx - x), Math.abs(ny - y)) <= 1;
+    });
   for (const [dx, dy] of [...dirsFor(yard.side), ...ring2]) {
     const x = yard.x + dx;
     const y = yard.y + dy;
     if (!inBounds(world.map, x, y) || !passable(world.map, ruleset, x, y, arch.layer) || taken.has(cellOf(world.map, x, y))) continue;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) === 2 && !bridged(x, y)) continue;
     return { x, y };
   }
   return undefined;

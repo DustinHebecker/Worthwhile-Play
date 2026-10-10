@@ -230,8 +230,14 @@ export function lockTurn(state: RcState): RcState {
   const plans = [state.draft, planAi(observe(state.world, RULESET, OPPONENT), RULESET, state.difficulty)];
   const { world, events: all, reported } = resolveTurn(state.world, RULESET, plans);
   const events = reported?.[PLAYER] ?? [];
+  // The stalemate rule exists only for open-ended games (a turn limit ends the others).
   const fought = all.some((e) => e.t === 'hit');
-  const lead = nextLead(state.lead, world, fought || state.lead.length > 0 || world.turn >= CONTACT_TURN);
+  const counting = state.turnLimit === null && (fought || state.lead.length > 0 || world.turn >= CONTACT_TURN);
+  // Shelling the leader's Command Post is pressure even before it shows in the lead: count anew.
+  const leader = Math.sign(state.lead.at(-1) ?? 0) > 0 ? PLAYER : Math.sign(state.lead.at(-1) ?? 0) < 0 ? OPPONENT : undefined;
+  const leaderPost = leader === undefined ? undefined : commandPost(state.world, leader)?.id;
+  const pressed = leaderPost !== undefined && all.some((e) => e.t === 'hit' && e.id === leaderPost);
+  const lead = nextLead(pressed ? [] : state.lead, world, counting);
   const result = outcome(world, state.turnLimit, lead);
   return {
     ...state,
@@ -333,7 +339,7 @@ function nextLead(lead: readonly number[], world: World, counting: boolean): num
   if (!counting) return [];
   const now = sideValue(world, PLAYER) - sideValue(world, OPPONENT);
   const start = lead[0];
-  return start !== undefined && stalled(start, now) ? [...lead, now] : [now];
+  return start !== undefined && stalled(start, now) ? [...lead, now].slice(0, STALL_TURNS + 1) : [now];
 }
 
 /** Turns the stalemate rule has counted without progress (decides at STALL_TURNS). */
@@ -442,6 +448,7 @@ export function isValidState(value: unknown): value is RcState {
   if (!isValidWorld(value.world, RULESET) || value.world.sides !== 2 || !matchesScenario(value.world, spec)) return false;
   // The stalemate record holds at most one entry per turn played and never more than decides a game.
   if (!isArrayOf(value.lead, (v) => isInt(v, -MAX_STRENGTH, MAX_STRENGTH)) || value.lead.length > Math.min(value.world.turn, STALL_TURNS + 1)) return false;
+  if (value.turnLimit !== null && value.lead.length > 0) return false; // only open-ended games keep a stalemate record
   const isCommand = commandGuard(value.world.map.w, value.world.map.h);
   if (!isArrayOf(value.draft, isCommand) || value.draft.some((c) => c.side !== PLAYER)) return false;
   // Bounded by the scenario (hostile saves must not freeze the tab): one command per unit and
