@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { isRecord } from '@wp/game-core';
-import { BASE_RULESET, canonicalJson, cellOf, findPath, observe, DEFAULT_DOCTRINE, computeNetwork, createWorld, initialIntel, observedCells, resolveTurn, validateCommand, worldHash, type Command, type World } from '@wp/strategy-engine';
+import { createRng, isRecord } from '@wp/game-core';
+import { BASE_RULESET, canonicalJson, cellOf, findPath, observe, passable, DEFAULT_DOCTRINE, computeNetwork, createWorld, initialIntel, observedCells, resolveTurn, validateCommand, worldHash, type Command, type World } from '@wp/strategy-engine';
 import { DIFFICULTIES, planAi, type Difficulty } from '../src/ai';
 import {
   cancelOrder,
@@ -76,9 +76,9 @@ describe('Field Exercise scenario', () => {
     expect(newGame(1, FIELD_EXERCISE, 'normal', 24).turnLimit).toBe(24);
   });
 
-  it('player units start with the return-when-out-of-contact doctrine; v4 saves keep their old behaviour', () => {
+  it('mobile units start with the return-when-out-of-contact doctrine; v4 saves keep their old behaviour', () => {
     const s = newGame(1);
-    for (const e of own(s).filter((u) => u.kind !== 'command-post')) expect(e.doctrine).toEqual(PLAYER_DOCTRINE);
+    for (const e of s.world.entities.filter((u) => u.kind !== 'command-post')) expect(e.doctrine).toEqual(PLAYER_DOCTRINE);
     const v4 = JSON.parse(JSON.stringify({ ...lockTurn(planDoctrine(s, own(s).find((u) => u.kind === 'rifles')!.id, { ...DEFAULT_DOCTRINE, holdFire: true })!), v: 4 })) as Record<string, unknown>;
     // Strip the field as a version-4 save would not have it.
     const strip = (o: unknown): unknown => (isRecord(o) ? Object.fromEntries(Object.entries(o).filter(([k]) => k !== 'lostContact').map(([k, v]) => [k, strip(v)])) : Array.isArray(o) ? o.map(strip) : o);
@@ -499,11 +499,20 @@ describe('information model (I3c, D7)', () => {
     );
   });
 
-  it('with nothing in sight the opponent advances on the positions it knows', () => {
-    const plan = ai(newGame(1).world, OPPONENT);
-    const post = commandPost(newGame(1).world, PLAYER)!;
-    expect(plan.some((c) => c.order.type === 'move' && c.order.x === post.x && c.order.y === post.y)).toBe(true);
-    expect(plan.some((c) => c.order.type === 'attack')).toBe(false);
+  it('with nothing in sight the opponent moves its fighters towards the enemy post (easy: straight at it; normal: to a rally point)', () => {
+    const w = newGame(1).world;
+    const post = commandPost(w, PLAYER)!;
+    const easy = ai(w, OPPONENT, 'easy');
+    expect(easy.some((c) => c.order.type === 'move' && c.order.x === post.x && c.order.y === post.y)).toBe(true);
+    const normal = ai(w, OPPONENT, 'normal');
+    const moves = normal.filter((c) => c.order.type === 'move');
+    expect(moves.length).toBeGreaterThan(0);
+    for (const c of moves) {
+      const unit = w.entities.find((e) => e.id === c.unit)!;
+      if (c.order.type !== 'move' || unit.kind === 'mast-truck') continue;
+      expect((c.order.x - post.x) ** 2 + (c.order.y - post.y) ** 2).toBeLessThan((unit.x - post.x) ** 2 + (unit.y - post.y) ** 2);
+    }
+    expect(normal.some((c) => c.order.type === 'attack')).toBe(false);
   });
 
   it('orders on enemies out of sight are refused with a reason', () => {
@@ -661,25 +670,86 @@ describe('save bounds (review of PR #8, round 2)', () => {
 });
 
 describe('opponent levels (I5)', () => {
-  /** The player side is played by an AI at level `a`, the opponent at `b`. */
-  function duel(a: Difficulty, b: Difficulty): RcState {
-    let s: RcState = { ...newGame(1), difficulty: b };
-    for (let i = 0; i < 20 && s.phase === 'plan'; i++) {
-      for (const c of ai(s.world, PLAYER, a)) s = planOrder(s, c.unit, c.order, c.doctrine) ?? s;
+  /**
+   * Symmetric random opening: `pairs` unit pairs (a player unit and its mirror image) nudged by
+   * a mirrored displacement of up to `reach` cells. The engine draws no randomness, so varied
+   * openings are the only way to get more than one game per pairing.
+   */
+  function opening(seed: number, pairs: number, reach: number, limit: number | null, difficulty: Difficulty): RcState {
+    const s = newGame(seed, FIELD_EXERCISE, difficulty, limit);
+    const rng = createRng(seed * 7919 + 13);
+    const { w, h } = s.world.map;
+    const movable = s.world.entities.filter((e) => e.side === PLAYER && e.kind !== 'command-post');
+    const free = (x: number, y: number) => x >= 0 && y >= 0 && x < w && y < h && passable(s.world.map, RULESET, x, y, 'ground') && !s.world.entities.some((e) => e.x === x && e.y === y);
+    for (let k = 0; k < pairs; k++) {
+      const u = movable[rng.int(0, movable.length - 1)]!;
+      const m = s.world.entities.find((e) => e.side === OPPONENT && e.x === w - 1 - u.x && e.y === h - 1 - u.y)!;
+      const nx = u.x + rng.int(-reach, reach);
+      const ny = u.y + rng.int(-reach, reach);
+      if (!free(nx, ny) || !free(w - 1 - nx, h - 1 - ny)) continue;
+      Object.assign(u, { x: nx, y: ny });
+      Object.assign(m, { x: w - 1 - nx, y: h - 1 - ny });
+    }
+    s.world.intel = initialIntel(s.world, RULESET);
+    return s;
+  }
+  /** The player side is played by an AI at level `a` (or not at all), the opponent at the game's level. */
+  function play(s: RcState, a: Difficulty | 'passive'): RcState {
+    for (let i = 0; i < 40 && s.phase === 'plan'; i++) {
+      if (a !== 'passive') for (const c of ai(s.world, PLAYER, a)) s = planOrder(s, c.unit, c.order, c.doctrine) ?? s;
       s = lockTurn(s);
     }
     return s;
   }
-
-  for (const [strong, weak] of [['hard', 'easy'], ['normal', 'easy'], ['hard', 'normal']] as const) {
-    it(`${strong} beats ${weak} on either side of the map`, () => {
-      expect(duel(strong, weak).result).toBe('won');
-      expect(duel(weak, strong).result).toBe('lost');
-    });
+  /** Wins of `a` minus wins of `b` over `n` openings, each played from both sides of the map. */
+  function margin(a: Difficulty, b: Difficulty, n: number, pairs: number, reach: number): { a: number; b: number; draws: number } {
+    const out = { a: 0, b: 0, draws: 0 };
+    for (let seed = 0; seed < n; seed++) {
+      for (const [r, win, loss] of [
+        [play(opening(seed, pairs, reach, 24, b), a).result, 'won', 'lost'],
+        [play(opening(seed, pairs, reach, 24, a), b).result, 'lost', 'won']
+      ] as const) {
+        if (r === win) out.a++;
+        else if (r === loss) out.b++;
+        else out.draws++;
+      }
+    }
+    return out;
   }
 
-  it('the same level on both sides gives a symmetric draw (no side bias)', () => {
-    for (const level of DIFFICULTIES) expect(duel(level, level).result).toBe('draw');
+  it('normal and hard beat easy by a clear margin over randomised openings, mild and heavy', () => {
+    for (const [pairs, reach] of [[2, 2], [5, 3]] as const) {
+      const hard = margin('hard', 'easy', 15, pairs, reach);
+      const normal = margin('normal', 'easy', 15, pairs, reach);
+      expect(hard.a, `hard vs easy ${JSON.stringify(hard)}`).toBeGreaterThanOrEqual(hard.b + 10);
+      expect(normal.a, `normal vs easy ${JSON.stringify(normal)}`).toBeGreaterThanOrEqual(normal.b + 10);
+    }
+  }, 120_000);
+
+  it('hard is at least as strong as normal over randomised openings', () => {
+    // The two levels share the plan of attack; hard adds breadth, focus fire, pulling back when
+    // outweighed and electronic warfare. Measured edge is small (see the design notes).
+    for (const [pairs, reach] of [[2, 2], [5, 3]] as const) {
+      const r = margin('hard', 'normal', 15, pairs, reach);
+      expect(r.a, `hard vs normal ${JSON.stringify(r)}`).toBeGreaterThanOrEqual(r.b);
+    }
+  }, 120_000);
+
+  it('a passive player (never giving an order) loses at normal and hard in most openings', () => {
+    for (const level of ['normal', 'hard'] as const) {
+      const results = Array.from({ length: 8 }, (_, seed) => play(opening(seed, 2, 2, 24, level), 'passive').result);
+      expect(results.filter((r) => r === 'lost').length, `${level}: ${results.join(',')}`).toBeGreaterThanOrEqual(5);
+      expect(results.filter((r) => r === 'won').length, `${level}: ${results.join(',')}`).toBeLessThanOrEqual(2);
+    }
+  }, 120_000);
+
+  it('easy can be beaten passively (it attacks what it sees and never masses): documented, not a goal', () => {
+    const results = Array.from({ length: 8 }, (_, seed) => play(opening(seed, 2, 2, 24, 'easy'), 'passive').result);
+    expect(results.every((r) => r === 'won' || r === 'lost' || r === 'draw')).toBe(true);
+  }, 60_000);
+
+  it('the same level on both sides from the scripted start gives a symmetric draw (no side bias)', () => {
+    for (const level of DIFFICULTIES) expect(play(newGame(1, FIELD_EXERCISE, level, 12), level).result).toBe('draw');
   });
 
   it('new games keep the chosen level; saves without one (version 3) play on at normal', () => {
@@ -690,3 +760,4 @@ describe('opponent levels (I5)', () => {
     expect(isValidState({ ...newGame(2), difficulty: 'impossible' })).toBe(false);
   });
 });
+

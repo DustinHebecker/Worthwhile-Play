@@ -50,8 +50,15 @@ export const MAX_TURNS = 1000;
 /** Turn limits the player can choose before the first turn; `null` = open end (default). */
 export const TURN_LIMITS: readonly (number | null)[] = [null, 12, 24];
 
-/** Doctrine the player's units start with: return into coverage after a turn without contact. */
+/** Doctrine every mobile unit starts with: return into coverage after a turn without contact. */
 export const PLAYER_DOCTRINE: Doctrine = { ...DEFAULT_DOCTRINE, lostContact: 'regroup' };
+
+/** The scenario's world at the start of a game (both sides alike, so the start is symmetric). */
+export function initialWorld(spec: ScenarioSpec, seed: number): World {
+  const world = createWorld({ ...spec.scenario, seed }, RULESET);
+  for (const e of world.entities) if ((archetypeOf(RULESET, e.kind)?.speed ?? 0) > 0) e.doctrine = PLAYER_DOCTRINE;
+  return world;
+}
 
 export interface RcState {
   v: 5;
@@ -74,8 +81,7 @@ export interface RcState {
 export const scenarioById = (id: string): ScenarioSpec | undefined => SCENARIOS.find((s) => s.id === id);
 
 export function newGame(seed: number, spec: ScenarioSpec = FIELD_EXERCISE, difficulty: Difficulty = 'normal', turnLimit: number | null = spec.turnLimit): RcState {
-  const world = createWorld({ ...spec.scenario, seed }, RULESET);
-  for (const e of world.entities) if (e.side === PLAYER && (archetypeOf(RULESET, e.kind)?.speed ?? 0) > 0) e.doctrine = PLAYER_DOCTRINE;
+  const world = initialWorld(spec, seed);
   return {
     v: 5,
     seed: normalizeSeed(seed),
@@ -267,7 +273,7 @@ export function outcome(world: World, turnLimit: number | null): Outcome | null 
 
 /** Re-runs the logged plans from the scenario start (bug reports, tests). */
 export function replay(seed: number, log: readonly TurnLog[], spec: ScenarioSpec = FIELD_EXERCISE): World {
-  let world = createWorld({ ...spec.scenario, seed }, RULESET);
+  let world = initialWorld(spec, seed);
   for (const entry of log) world = resolveTurn(world, RULESET, entry.plans).world;
   return world;
 }

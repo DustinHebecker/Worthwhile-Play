@@ -1291,6 +1291,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   return {
     newGame(options: NewGameOptions) {
       state = newGame(normalizeSeed(options.seed), FIELD_EXERCISE, isDifficulty(options.difficulty) ? options.difficulty : 'normal', null);
+      context.setDifficulty?.(state.difficulty); // an unknown host value fell back to 'normal'
       selected = null;
       confirming = false;
       reported = false;
@@ -1300,6 +1301,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     restore(saved: RcState) {
       const spec = scenarioById(saved.scenario);
       state = spec ? structuredClone(saved) : newGame(saved.seed, FIELD_EXERCISE, saved.difficulty, null);
+      context.setDifficulty?.(state.difficulty); // the save decides the level, not the host's select
       selected = null;
       confirming = false;
       reported = state.phase === 'finished';
