@@ -23,13 +23,13 @@ test('relay-command: a planned but unlocked order survives a reload', async ({ p
   await expectResumeAfterReload(page, 'relay-command', async (p) => {
     await p.locator('[data-testid^="rc-unit-"]').nth(2).click();
     await p.getByTestId('rc-regroup').click();
-    await expect(p.getByTestId('rc-status')).toHaveText('Planning: 1 new orders. Lock the turn when you are ready.');
+    await expect(p.getByTestId('rc-slots')).toHaveText('Planning: 1/4');
   });
   const state = (await saved(page))!;
   expect(state.phase).toBe('plan');
   expect(state.draft).toHaveLength(1);
   expect(state.draft[0]!.order.type).toBe('regroup');
-  await expect(page.getByTestId('rc-status')).toHaveText('Planning: 1 new orders. Lock the turn when you are ready.');
+  await expect(page.getByTestId('rc-slots')).toHaveText('Planning: 1/4');
 });
 
 test('relay-command: fog of war — only reported enemies are shown; a ghost takes a move order', async ({ page }) => {
@@ -109,11 +109,11 @@ test('relay-command: keyboard-only orders, then playing to the natural end', asy
 
 test('relay-command: setting up the Mast Truck spends an order and activates the relay', async ({ page }) => {
   await start(page);
-  await expect(page.getByTestId('rc-slots')).toHaveText('Orders this turn: 0 of 4.');
+  await expect(page.getByTestId('rc-slots')).toHaveText('Planning: 0/4');
   const truck = (await saved(page))!.world.entities.find((e) => e.side === 0 && e.kind === 'mast-truck')!;
   await page.getByTestId(`rc-unit-${truck.id}`).click();
   await page.getByTestId('rc-deploy').click();
-  await expect(page.getByTestId('rc-slots')).toHaveText('Orders this turn: 1 of 4.');
+  await expect(page.getByTestId('rc-slots')).toHaveText('Planning: 1/4');
   await page.getByTestId('rc-lock').click();
   await expect(page.getByTestId(`rc-unit-${truck.id}`)).toContainText('Relay active.');
   await expect.poll(async () => (await saved(page))?.world.entities.find((e) => e.id === truck.id) as unknown).toMatchObject({ deploy: 6 });
@@ -139,7 +139,7 @@ test('relay-command: a doctrine and a patrol survive a reload and are carried ou
   await expect.poll(async () => (await saved(page))?.draft).toEqual([expected]);
   await page.reload();
   await page.getByTestId('continue').click();
-  await expect(page.getByTestId('rc-slots')).toHaveText('Orders this turn: 1 of 4.');
+  await expect(page.getByTestId('rc-slots')).toHaveText('Planning: 1/4');
   await page.getByTestId('rc-lock').click();
   await expect.poll(async () => (await saved(page))?.world.entities.find((e) => e.id === rifle.id) as unknown).toMatchObject({
     order: { type: 'patrol' },
@@ -196,7 +196,9 @@ test('relay-command: map and length chosen before the first turn survive a reloa
   await expect(page.getByTestId('rc-turn')).toHaveText('Turn 1 of 12');
   await page.getByTestId('rc-lock').click();
   await expect(page.getByTestId('rc-turn')).toHaveText('Turn 2 of 12');
-  await expect(page.getByTestId('rc-setup')).toBeHidden();
+  // The setup stays in place (the map does not jump) but can no longer be changed.
+  await expect(page.getByTestId('rc-scenario')).toBeDisabled();
+  await expect(page.getByTestId('rc-turn-limit')).toBeDisabled();
 });
 
 test('relay-command: the Command Post places an Extractor on a deposit by tapping the map', async ({ page, isMobile }) => {
@@ -215,27 +217,53 @@ test('relay-command: the Command Post places an Extractor on a deposit by tappin
   if (isMobile) await map.tap({ position });
   else await map.click({ position });
   await expect.poll(async () => (await saved(page))?.draft[0]?.order).toEqual({ type: 'build', kind: 'extractor', x: 4, y: 10 });
-  await expect(page.getByTestId('rc-supply')).toHaveText('Supply 300 (220 after planned orders) · income 20 per turn');
+  await expect(page.getByTestId('rc-supply')).toHaveText('Supply 300 → 220 (+20)');
 });
 
 test('relay-command: queueing a unit at the Muster Yard works on a phone and survives a reload', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 740 });
   await start(page);
-  await expect(page.getByTestId('rc-supply')).toHaveText('Supply 300 · income 20 per turn');
+  await expect(page.getByTestId('rc-supply')).toHaveText('Supply 300 (+20)');
   const yard = (await saved(page))!.world.entities.find((e) => e.side === 0 && e.kind === 'muster')!;
   await page.getByTestId(`rc-unit-${yard.id}`).click();
   await page.getByTestId('rc-job-rifles').click();
-  await expect(page.getByTestId('rc-supply')).toHaveText('Supply 300 (260 after planned orders) · income 20 per turn');
+  await expect(page.getByTestId('rc-supply')).toHaveText('Supply 300 → 260 (+20)');
   await expect.poll(async () => (await saved(page))?.draft[0]?.order.type).toBe('produce');
   // The production sheet fits the phone: no sideways scrolling.
   const widths = await page.evaluate(() => ({ page: document.documentElement.scrollWidth, viewport: document.documentElement.clientWidth }));
   expect(widths.page).toBeLessThanOrEqual(widths.viewport);
   await page.reload();
   await page.getByTestId('continue').click();
-  await expect(page.getByTestId('rc-supply')).toHaveText('Supply 300 (260 after planned orders) · income 20 per turn');
+  await expect(page.getByTestId('rc-supply')).toHaveText('Supply 300 → 260 (+20)');
   await page.getByTestId('rc-lock').click();
   await expect(page.getByTestId('rc-summary')).toContainText('Finished: Rifle Squad');
   await expect.poll(async () => (await saved(page))?.world.entities.filter((e) => e.side === 0 && e.kind === 'rifles').length).toBe(3);
+});
+
+test('relay-command: the map and the top bar stay in place between turns and when a unit is selected', async ({ page }) => {
+  await start(page);
+  const where = () =>
+    page.evaluate(() => {
+      const box = (id: string) => document.querySelector(`[data-testid="${id}"]`)!.getBoundingClientRect();
+      return { map: Math.round(box('rc-map').top + window.scrollY), mapX: Math.round(box('rc-map').left), lock: Math.round(box('rc-lock').top + window.scrollY), side: Math.round(box('rc-selection').width) };
+    });
+  // The first lock folds the game setup into one line (once); from then on nothing moves.
+  await page.getByTestId('rc-lock').click();
+  await expect(page.getByTestId('rc-turn')).toHaveText('Turn 2');
+  const first = await where();
+  await page.locator('[data-testid^="rc-unit-"]').nth(2).click();
+  expect(await where()).toEqual(first);
+  // Planning a production job changes the Supply line ("300 → 260"): it must not wrap.
+  const yard = (await saved(page))!.world.entities.find((e) => e.side === 0 && e.kind === 'muster')!;
+  await page.getByTestId(`rc-unit-${yard.id}`).click();
+  await page.getByTestId('rc-job-rifles').click();
+  await expect(page.getByTestId('rc-supply')).toContainText('→');
+  expect(await where()).toEqual(first);
+  for (let turn = 3; turn <= 4; turn++) {
+    await page.getByTestId('rc-lock').click();
+    await expect(page.getByTestId('rc-turn')).toHaveText(`Turn ${turn}`);
+    expect(await where()).toEqual(first);
+  }
 });
 
 test('relay-command: the game setup never scrolls sideways on a 360 px phone (a wide option once broke the layout viewport)', async ({ page }) => {
