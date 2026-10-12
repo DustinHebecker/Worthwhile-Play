@@ -51,11 +51,15 @@ import {
   type RcState
 } from './rules';
 import { DIFFICULTIES, type Difficulty } from './ai';
+import { drawIcon } from './icons';
 import { FIELD_EXERCISE, SCENARIOS } from './scenarios';
 import './styles.css';
 
 /** Open end: from this many quiet turns on the turn line says that strength will decide. */
 const QUIET_NOTICE = 3;
+
+/** Kinds the game uses, in the legend's order: fighters, support, structures. */
+const LEGEND_KINDS = ['rifles', 'lancer', 'outrider', 'warden', 'howitzer', 'mast-truck', 'field-post', 'jammer', 'tracer', 'command-post', 'muster', 'motor-pool', 'extractor', 'relay-mast'] as const;
 
 /** Map cell size in CSS pixels (the 44 px minimum touch target). */
 export const CELL = 44;
@@ -580,6 +584,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     if (!g) return icon;
     const colour = css(own ? '--wp-p1' : '--wp-p2', own ? '#24508f' : '#9a3412');
     const surface = css('--wp-surface', '#ffffff');
+    if (drawIcon(g, kind, 0, 0, CELL / 44, { own, colour, surface })) return icon;
     const c = CELL / 2;
     const r = CELL * 0.34;
     g.lineWidth = 3;
@@ -696,6 +701,10 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     row(shape(true, 'rifles'), t('legend.own'));
     row(shape(false, 'rifles'), t('legend.enemy'));
     row(shape(true, 'command-post'), t('legend.structure'));
+    // One row per kind in the game: its picture and its name (what the symbols on the map mean).
+    const kinds = h('ul', { class: 'rc-legend-list rc-legend-kinds', 'data-testid': 'rc-legend-kinds' });
+    for (const kind of LEGEND_KINDS) kinds.append(h('li', {}, unitIcon(kind, true), h('span', {}, t(`unit.${kind}`))));
+    legendEl.append(h('h4', {}, t('legend.kinds')), kinds);
     if (RULESET.economy) {
       row(
         swatch((g) => {
@@ -707,63 +716,10 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
         }),
         t('legend.deposit')
       );
-      row(
-        swatch((g) => {
-          const c = CELL / 2;
-          const r = CELL * 0.34;
-          g.strokeStyle = colourOwn;
-          g.lineWidth = 3;
-          g.strokeRect(c - r, c - r, r * 2, r * 2);
-          drawSiteHatch(g, c - r, c - r, r * 2, colourOwn, 2);
-        }),
-        t('legend.site')
-      );
+      row(swatch((g) => drawIcon(g, 'muster', 0, 0, CELL / 44, { own: true, colour: colourOwn, surface: css('--wp-surface', '#ffffff'), site: 2 })), t('legend.site'));
     }
-    row(
-      swatch((g) => {
-        const c = CELL / 2;
-        const r = CELL * 0.34;
-        g.fillStyle = css('--wp-border', '#cfcdc4');
-        g.fillRect(c - r - 4, c - r - 4, r * 2 + 8, r * 2 + 8);
-        g.fillStyle = colourOwn;
-        g.strokeStyle = colourOwn;
-        g.lineWidth = 3;
-        g.beginPath();
-        g.arc(c, c, r, 0, Math.PI * 2);
-        g.fill();
-        g.strokeStyle = css('--wp-surface', '#ffffff');
-        g.lineWidth = 2;
-        drawGlyph(g, 'mast-truck', c, c);
-      }),
-      t('legend.setUp')
-    );
-    row(
-      swatch((g) => {
-        const c = CELL / 2;
-        const r = CELL * 0.34;
-        g.globalAlpha = 0.55;
-        g.setLineDash([4, 3]);
-        g.strokeStyle = colourEnemy;
-        g.fillStyle = css('--wp-surface', '#ffffff');
-        g.lineWidth = 3;
-        g.beginPath();
-        g.moveTo(c, c - r - 2);
-        g.lineTo(c + r + 2, c);
-        g.lineTo(c, c + r + 2);
-        g.lineTo(c - r - 2, c);
-        g.closePath();
-        g.fill();
-        g.stroke();
-        g.globalAlpha = 1;
-        g.setLineDash([]);
-        g.fillStyle = colourEnemy;
-        g.font = `bold ${Math.round(CELL * 0.3)}px sans-serif`;
-        g.textAlign = 'center';
-        g.textBaseline = 'middle';
-        g.fillText('?', 9, 10);
-      }),
-      t('legend.ghost')
-    );
+    row(swatch((g) => drawIcon(g, 'mast-truck', 0, 0, CELL / 44, { own: true, colour: colourOwn, surface: css('--wp-surface', '#ffffff'), deployed: true })), t('legend.setUp'));
+    row(swatch((g) => drawIcon(g, 'rifles', 0, 0, CELL / 44, { own: false, colour: colourEnemy, surface: css('--wp-surface', '#ffffff'), ghost: true })), t('legend.ghost'));
     row(
       swatch((g) => {
         g.fillStyle = css('--rc-plain', '#e7e3d4');
@@ -1200,55 +1156,65 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     const r = CELL * 0.34;
     const ghost = isGhost(e);
     g.save();
-    g.lineWidth = 3;
-    g.strokeStyle = colour;
-    g.fillStyle = own ? colour : surface;
-    // Last known position: faded, dashed outline and a question mark (not colour alone).
-    if (ghost) {
-      g.globalAlpha = 0.55;
-      g.setLineDash([4, 3]);
-      g.fillStyle = surface;
-    }
-    // A set-up vehicle (relay, post, jammer) stands on a plate: it works like a structure now.
-    if (isSetUp(e) && !ghost) {
-      g.fillStyle = css('--wp-border', '#cfcdc4');
-      g.fillRect(cx - r - 4, cy - r - 4, r * 2 + 8, r * 2 + 8);
+    // Icon set A: frame for category and side, mark for function (icons.ts); the old token is the
+    // fallback where Path2D is missing.
+    const drawn = drawIcon(g, e.kind, e.x * CELL, e.y * CELL, CELL / 44, { own, colour, surface, ghost, deployed: isSetUp(e) && !ghost, ...(e.build !== undefined && { site: e.build }) });
+    if (!drawn) {
+      g.lineWidth = 3;
+      g.strokeStyle = colour;
       g.fillStyle = own ? colour : surface;
+      // Last known position: faded, dashed outline and a question mark (not colour alone).
+      if (ghost) {
+        g.globalAlpha = 0.55;
+        g.setLineDash([4, 3]);
+        g.fillStyle = surface;
+      }
+      // A set-up vehicle (relay, post, jammer) stands on a plate: it works like a structure now.
+      if (isSetUp(e) && !ghost) {
+        g.fillStyle = css('--wp-border', '#cfcdc4');
+        g.fillRect(cx - r - 4, cy - r - 4, r * 2 + 8, r * 2 + 8);
+        g.fillStyle = own ? colour : surface;
+      }
+      g.beginPath();
+      if (isStructure(e)) g.rect(cx - r, cy - r, r * 2, r * 2);
+      else if (own) g.arc(cx, cy, r, 0, Math.PI * 2);
+      else {
+        g.moveTo(cx, cy - r - 2);
+        g.lineTo(cx + r + 2, cy);
+        g.lineTo(cx, cy + r + 2);
+        g.lineTo(cx - r - 2, cy);
+        g.closePath();
+      }
+      if (e.build !== undefined) {
+        // A site: outlined and hatched, with the turns left instead of the glyph.
+        g.fillStyle = surface;
+        g.fill();
+        g.stroke();
+        g.setLineDash([]);
+        drawSiteHatch(g, cx - r, cy - r, r * 2, colour, e.build);
+      } else {
+        g.fill();
+        g.stroke();
+        g.setLineDash([]);
+        // Kind glyph, drawn in the contrasting colour.
+        g.strokeStyle = own && !ghost ? surface : colour;
+        g.fillStyle = own && !ghost ? surface : colour;
+        g.lineWidth = 2;
+        drawGlyph(g, e.kind, cx, cy);
+      }
     }
-    g.beginPath();
-    if (isStructure(e)) g.rect(cx - r, cy - r, r * 2, r * 2);
-    else if (own) g.arc(cx, cy, r, 0, Math.PI * 2);
-    else {
-      g.moveTo(cx, cy - r - 2);
-      g.lineTo(cx + r + 2, cy);
-      g.lineTo(cx, cy + r + 2);
-      g.lineTo(cx - r - 2, cy);
-      g.closePath();
-    }
-    if (e.build !== undefined) {
-      // A site: outlined and hatched, with the turns left instead of the glyph.
-      g.fillStyle = surface;
-      g.fill();
-      g.stroke();
-      g.setLineDash([]);
-      drawSiteHatch(g, cx - r, cy - r, r * 2, colour, e.build);
-    } else {
-      g.fill();
-      g.stroke();
-      g.setLineDash([]);
-      // Kind glyph, drawn in the contrasting colour.
-      g.strokeStyle = own && !ghost ? surface : colour;
-      g.fillStyle = own && !ghost ? surface : colour;
-      g.lineWidth = 2;
-      drawGlyph(g, e.kind, cx, cy);
-    }
-    // Health bar under the unit.
+    // Health bar under the unit, only when it is damaged (less clutter on the map).
     const max = RULESET.archetypes[e.kind]?.hp ?? e.hp;
-    const bw = CELL * 0.7;
-    g.fillStyle = css('--wp-border', '#cfcdc4');
-    g.fillRect(cx - bw / 2, cy + CELL * 0.38, bw, 4);
-    g.fillStyle = colour;
-    g.fillRect(cx - bw / 2, cy + CELL * 0.38, (bw * e.hp) / max, 4);
+    if (e.hp < max) {
+      const bw = CELL * 0.7;
+      g.globalAlpha = 1;
+      g.fillStyle = surface;
+      g.fillRect(cx - bw / 2 - 1, cy + CELL * 0.38 - 1, bw + 2, 6);
+      g.fillStyle = css('--wp-border', '#cfcdc4');
+      g.fillRect(cx - bw / 2, cy + CELL * 0.38, bw, 4);
+      g.fillStyle = colour;
+      g.fillRect(cx - bw / 2, cy + CELL * 0.38, (bw * e.hp) / max, 4);
+    }
     if (ghost) {
       g.globalAlpha = 1;
       g.fillStyle = colour;

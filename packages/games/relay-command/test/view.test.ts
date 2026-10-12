@@ -353,7 +353,7 @@ describe('Relay Command view', () => {
     for (const name of ['open ground', 'road', 'forest', 'hill', 'buildings', 'swamp', 'water', 'ridge']) expect(legend.textContent).toContain(name);
     expect(legend.textContent).toContain('move cost 6 · cover 25 %');
     expect(legend.textContent).toContain('impassable');
-    expect(legend.textContent).toContain('Structure (square)');
+    expect(legend.textContent).toContain('Structure (square on a bar)');
     expect(legend.querySelectorAll('li').length).toBeGreaterThanOrEqual(16);
   });
 
