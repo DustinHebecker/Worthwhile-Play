@@ -250,7 +250,12 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   const scenarioSelect = h('select', { 'data-testid': 'rc-scenario', onchange: () => onSetup() });
   for (const spec of SCENARIOS) scenarioSelect.append(h('option', { value: spec.id }, t(`scenario.${spec.id}`)));
   const limitSelect = h('select', { 'data-testid': 'rc-turn-limit', onchange: () => onSetup() });
-  for (const limit of TURN_LIMITS) limitSelect.append(h('option', { value: limit === null ? 'open' : String(limit) }, limit === null ? t('setup.open') : t('setup.turns', { n: limit })));
+  // Lengths: open end (default), quick match (strength decides once the side behind stops gaining
+  // ground), or a fixed number of turns.
+  for (const limit of TURN_LIMITS) {
+    limitSelect.append(h('option', { value: limit === null ? 'open' : String(limit) }, limit === null ? t('setup.open') : t('setup.turns', { n: limit })));
+    if (limit === null) limitSelect.append(h('option', { value: 'quick' }, t('setup.quick')));
+  }
   const setupBox = h(
     'fieldset',
     { class: 'rc-setup', 'data-testid': 'rc-setup' },
@@ -348,11 +353,11 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     turnEl.textContent =
       state.turnLimit === null ? t('status.turnOpen', { turn: w.turn + 1 }) : t('status.turn', { turn: Math.min(w.turn + 1, state.turnLimit), limit: state.turnLimit });
     // Open end: a stalled game is heading for a decision on strength (STALL_TURNS); say so early.
-    if (state.turnLimit === null && state.phase === 'plan' && stalemateTurns(state) >= QUIET_NOTICE) turnEl.textContent += ' ' + t('status.quiet', { n: STALL_TURNS - stalemateTurns(state) });
+    if (state.quick && state.turnLimit === null && state.phase === 'plan' && stalemateTurns(state) >= QUIET_NOTICE) turnEl.textContent += ' ' + t('status.quiet', { n: STALL_TURNS - stalemateTurns(state) });
     // Scenario and turn limit can be changed until the first turn is locked.
     setupBox.hidden = state.phase !== 'plan' || state.log.length > 0;
     scenarioSelect.value = state.scenario;
-    limitSelect.value = state.turnLimit === null ? 'open' : String(state.turnLimit);
+    limitSelect.value = state.turnLimit !== null ? String(state.turnLimit) : state.quick ? 'quick' : 'open';
     statusEl.textContent = statusText();
     statusEl.setAttribute('data-phase', state.phase);
     slotsEl.hidden = finished;
@@ -388,7 +393,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     const enemy = sideValue(state.world, OPPONENT);
     const decidedByPost = outcome({ ...state.world, turn: 0 }, state.turnLimit) !== null;
     // Open end: the quiet rule ended the game, not a last turn.
-    const quietEnd = !decidedByPost && state.turnLimit === null && stalemateTurns(state) >= STALL_TURNS;
+    const quietEnd = !decidedByPost && state.quick && stalemateTurns(state) >= STALL_TURNS;
     const args = { own, enemy, limit: STALL_TURNS };
     if (state.result === 'won') return decidedByPost ? t('status.won') : t(quietEnd ? 'status.wonQuiet' : 'status.wonScore', args);
     if (state.result === 'lost') return decidedByPost ? t('status.lost') : t(quietEnd ? 'status.lostQuiet' : 'status.lostScore', args);
@@ -1372,9 +1377,9 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   function onSetup(): void {
     if (state.phase !== 'plan' || state.log.length > 0) return;
     const spec = scenarioById(scenarioSelect.value) ?? FIELD_EXERCISE;
-    const limit = limitSelect.value === 'open' ? null : Number(limitSelect.value);
+    const limit = limitSelect.value === 'open' || limitSelect.value === 'quick' ? null : Number(limitSelect.value);
     selected = null;
-    commit(newGame(state.seed, spec, state.difficulty, limit), t('announce.setup', { scenario: t(`scenario.${spec.id}`) }));
+    commit(newGame(state.seed, spec, state.difficulty, limit, limitSelect.value === 'quick'), t('announce.setup', { scenario: t(`scenario.${spec.id}`) }));
     homeCursor();
     render();
   }
@@ -1525,7 +1530,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     pause() {},
     resume() {},
     reset() {
-      state = newGame(state.seed, scenarioById(state.scenario) ?? FIELD_EXERCISE, state.difficulty, state.turnLimit);
+      state = newGame(state.seed, scenarioById(state.scenario) ?? FIELD_EXERCISE, state.difficulty, state.turnLimit, state.quick);
       selected = null;
       confirming = false;
       reported = false;

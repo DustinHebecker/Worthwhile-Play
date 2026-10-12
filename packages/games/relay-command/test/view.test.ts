@@ -437,10 +437,10 @@ describe('Relay Command view', () => {
     expect(state().world.turn).toBe(0);
   });
 
-  it('in an open-ended game the turn line warns of a stalemate from three turns on; a stalemate end says so; the host learns the level', () => {
+  it('in a quick match the turn line warns of a stalemate from three turns on; a stalemate end says so; the host learns the level', () => {
     expect(ctx.difficulties).toEqual(['normal']); // newGame without a known level fell back to 'normal'
     // Only the two posts left: from CONTACT_TURN on, nothing changes and the stalemate rule counts.
-    let s: RcState = { ...state(), turnLimit: null, difficulty: 'hard', world: withoutMobileUnits(state().world) };
+    let s: RcState = { ...state(), turnLimit: null, quick: true, difficulty: 'hard', world: withoutMobileUnits(state().world) };
     while (s.phase === 'plan' && stalemateTurns(s) < 2) s = lockTurn(s);
     instance.restore(s);
     expect($('rc-turn').textContent).toBe(`Turn ${s.world.turn + 1}`);
