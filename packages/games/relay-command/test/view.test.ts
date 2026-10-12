@@ -58,7 +58,7 @@ describe('Relay Command view', () => {
     // Fog: of the enemy, only its structures (Command Post, Muster Yard) are known, from before the battle.
     expect($('rc-enemy').querySelectorAll('li')).toHaveLength(2);
     expect($('rc-enemy').textContent).toContain('Position known from before the battle');
-    expect($('rc-slots').textContent).toBe('Orders this turn: 0 of 4.');
+    expect($('rc-slots').textContent).toBe('Planning: 0/4');
     expect($('rc-map').getAttribute('data-cols')).toBe('12');
     expect($('rc-map').style.width).toBe(`${12 * CELL}px`);
     expect($('rc-summary').textContent).toContain('No turn played yet');
@@ -89,7 +89,9 @@ describe('Relay Command view', () => {
     click('rc-cancel');
     expect(state().draft).toEqual([]);
     expect(ctx.saveRequests()).toBe(3);
-    expect($('rc-status').textContent).toContain('0 new orders');
+    // While planning, the status line is empty: the counter says it all.
+    expect($('rc-status').textContent).toBe('');
+    expect($('rc-slots').hasAttribute('data-full')).toBe(false);
   });
 
   it('gives move orders with the keyboard cursor on the map', () => {
@@ -105,7 +107,7 @@ describe('Relay Command view', () => {
     key('ArrowLeft');
     key('ArrowUp');
     key('Enter');
-    expect($('rc-selection-text').textContent).toContain('Warden');
+    expect($('rc-selection-text').textContent).toContain('Battle Tank');
     click(`rc-unit-${unit.id}`);
     key('Escape');
     expect($('rc-selection-text').textContent).toContain('Select one of your units');
@@ -126,7 +128,7 @@ describe('Relay Command view', () => {
     click('rc-deploy');
     expect(state().draft).toEqual([{ side: PLAYER, unit: truck.id, order: { type: 'deploy' } }]);
     expect($('rc-deploy').hidden).toBe(true);
-    expect($('rc-slots').textContent).toBe('Orders this turn: 1 of 4.');
+    expect($('rc-slots').textContent).toBe('Planning: 1/4');
     // A rifle squad has no relay to set up.
     click(`rc-unit-${firstMobile().id}`);
     expect($('rc-deploy').hidden).toBe(true);
@@ -196,7 +198,7 @@ describe('Relay Command view', () => {
     click('rc-hold');
     expect(state().draft).toHaveLength(1);
     expect(state().draft[0]!.doctrine).toEqual({ retreatBelow: 50, priority: 'weakest', seekCover: true, holdFire: false, lostContact: 'regroup' });
-    expect($('rc-slots').textContent).toBe('Orders this turn: 1 of 4.');
+    expect($('rc-slots').textContent).toBe('Planning: 1/4');
     click('rc-lock');
     expect(state().world.entities.find((e) => e.id === unit.id)!.doctrine).toEqual({ retreatBelow: 50, priority: 'weakest', seekCover: true, holdFire: false, lostContact: 'regroup' });
     click(`rc-unit-${unit.id}`);
@@ -298,7 +300,8 @@ describe('Relay Command view', () => {
     const post = own().find((e) => e.kind === 'command-post')!;
     // The own Tracer starts next to the post and would burn through; take it away.
     enemyJammerNear(post.x, post.y, true);
-    expect($('rc-status').textContent).toBe('Your Command Post is jammed: no orders can be sent this turn. Destroy the jammer, or bring a Tracer next to the post.');
+    expect($('rc-slots').textContent).toBe('Planning: jammed');
+    expect($('rc-slots').hasAttribute('data-full')).toBe(true);
     // The silenced post shows no jam marks: they would pin down the (unlocated) jammer.
     const jammer = state().world.entities.find((e) => e.side === OPPONENT && e.kind === 'jammer')!;
     $('rc-map').focus();
@@ -339,6 +342,15 @@ describe('Relay Command view', () => {
     expect($('rc-card-noweapon').textContent).toContain('none');
     expect($('rc-card').textContent).toContain('relay, radius 5');
     expect($('rc-selection-text').textContent).toContain('This unit has no weapon');
+    // Stats and abilities are folded; an opened section stays open while the card is redrawn.
+    const stats = $('rc-card-stats') as HTMLDetailsElement;
+    expect(stats.open).toBe(false);
+    expect(($('rc-card-abilities') as HTMLDetailsElement).open).toBe(false);
+    stats.open = true;
+    stats.dispatchEvent(new Event('toggle'));
+    click(`rc-unit-${rifle.id}`);
+    expect(($('rc-card-stats') as HTMLDetailsElement).open).toBe(true);
+    click(`rc-unit-${truck.id}`);
     // Ordering the truck to attack is refused with a specific reason.
     const foe = spotEnemy();
     click(`rc-unit-${truck.id}`);
@@ -373,7 +385,11 @@ describe('Relay Command view', () => {
     expect($('rc-map').getAttribute('data-cols')).toBe('20');
     expect(ctx.context.root.querySelectorAll('[data-testid^="rc-unit-"]')).toHaveLength(15);
     click('rc-lock');
-    expect($('rc-setup').hidden).toBe(false); // stays in place, locked
+    // Locked, the setup folds into one closed line (map and length) that opens on demand.
+    const fold = $('rc-setup-fold') as HTMLDetailsElement;
+    expect(fold.open).toBe(false);
+    expect(fold.contains($('rc-setup'))).toBe(true);
+    expect($('rc-setup-summary').textContent).toBe('Ridge Valley (20×14, 14 units per side, with a Command Vehicle) · 12 turns, then strength decides');
     expect(($('rc-scenario') as HTMLSelectElement).disabled).toBe(true);
     expect(($('rc-turn-limit') as HTMLSelectElement).disabled).toBe(true);
   });
@@ -449,7 +465,8 @@ describe('Relay Command view', () => {
     s = lockTurn(s);
     instance.restore(s);
     expect($('rc-turn').textContent).toBe(`Turn ${s.world.turn + 1}`);
-    expect($('rc-stalemate').textContent).toBe(`Stalemate: strength decides in ${STALL_TURNS - 3} turns unless the side behind gains ground.`);
+    expect($('rc-stalemate-text').textContent).toBe(`Stalemate: strength decides after turn ${s.world.turn + STALL_TURNS - 3}`);
+    expect(($('rc-settle') as HTMLButtonElement).hidden).toBe(true); // a quick match decides on its own
     expect(ctx.difficulties).toEqual(['normal', 'hard', 'hard']);
     // A turn limit has no stalemate rule.
     instance.restore({ ...s, turnLimit: 100 });
@@ -464,21 +481,41 @@ describe('Relay Command view', () => {
     );
   });
 
+  it('a stalled plain open end offers to end on strength (two presses), and the result says so', () => {
+    let s: RcState = { ...state(), turnLimit: null, quick: false, world: withoutMobileUnits(state().world) };
+    instance.restore(s);
+    expect(($('rc-settle') as HTMLButtonElement).hidden).toBe(true);
+    while (s.phase === 'plan' && stalemateTurns(s) < STALL_TURNS) s = lockTurn(s);
+    expect(s.phase).toBe('plan'); // nothing forces the end
+    instance.restore(s);
+    const btn = $('rc-settle') as HTMLButtonElement;
+    expect(btn.hidden).toBe(false);
+    expect($('rc-stalemate-text').textContent).toBe(`Turns without progress: ${STALL_TURNS}`);
+    const score = `(${sideValue(s.world, PLAYER)} : ${sideValue(s.world, OPPONENT)})`;
+    expect(btn.textContent).toBe(`End now: you lose ${score}`); // the opponent built an Extractor
+    btn.click();
+    expect(state().phase).toBe('plan');
+    expect(($('rc-settle') as HTMLButtonElement).textContent).toBe('Press again to end the game');
+    ($('rc-settle') as HTMLButtonElement).click();
+    expect(state()).toMatchObject({ phase: 'finished', result: 'lost', settled: true });
+    expect($('rc-status').textContent).toBe(`You ended the game on strength; the opponent was stronger ${score}.`);
+  });
+
   it('shows Supply and income, lets a yard queue units (paid from the planned Supply) and cancel them', () => {
-    expect($('rc-supply').textContent).toBe('Supply 300 · income 20 per turn');
+    expect($('rc-supply').textContent).toBe('Supply 300 (+20)');
     const yard = own().find((e) => e.kind === 'muster')!;
     click(`rc-unit-${yard.id}`);
     expect($('rc-selection-text').textContent).toContain('Queue units below');
     expect($('rc-jobs').hidden).toBe(false);
-    expect($('rc-job-rifles').getAttribute('aria-label')).toBe('Rifle Squad · 40 Supply · 1 turns');
+    expect($('rc-job-rifles').getAttribute('aria-label')).toBe('Rifle Squad · 40 Supply · build time (turns): 1');
     expect($('rc-job-rifles').querySelector('canvas.rc-icon')).not.toBeNull(); // a picture of the unit
-    expect($('rc-job-rifles').textContent).toBe('Rifle Squad40 · 1 turns');
+    expect($('rc-job-rifles').textContent).toBe('Rifle Squad40 · ⌛1');
     expect($('rc-card-cost').textContent).toContain('100 Supply');
     click('rc-job-rifles');
     click('rc-job-lancer');
     expect(state().draft.map((c) => c.order)).toEqual([{ type: 'produce', kind: 'rifles' }, { type: 'produce', kind: 'lancer' }]);
-    expect($('rc-supply').textContent).toBe('Supply 300 (200 after planned orders) · income 20 per turn');
-    expect($('rc-slots').textContent).toBe('Orders this turn: 2 of 4.');
+    expect($('rc-supply').textContent).toBe('Supply 300 → 200 (+20)');
+    expect($('rc-slots').textContent).toBe('Planning: 2/4');
     expect($('rc-jobs').textContent).toContain('Planned: Rifle Squad');
     // A third one does not fit the queue of two.
     click('rc-job-rifles');
@@ -489,7 +526,7 @@ describe('Relay Command view', () => {
     // Locking: the lancer stands next to the yard at the end of the turn, told in the summary.
     click('rc-lock');
     expect(own().filter((e) => e.kind === 'lancer')).toHaveLength(2);
-    expect($('rc-summary').textContent).toContain('Finished: Lancer Team');
+    expect($('rc-summary').textContent).toContain('Finished: Anti-tank Team');
     expect($('rc-summary').textContent).toContain('Income: +20 Supply');
   });
 
@@ -528,13 +565,13 @@ describe('Relay Command view', () => {
     click('rc-lock');
     const site = own().find((e) => e.kind === 'extractor')!;
     expect(site).toMatchObject({ x: near.x, y: near.y, build: 1 });
-    expect($(`rc-unit-${site.id}`).textContent).toContain('under construction, 1 turns left');
+    expect($(`rc-unit-${site.id}`).textContent).toContain('under construction, turns left: 1');
     click(`rc-unit-${site.id}`);
-    expect($('rc-selection-text').textContent).toContain('Under construction: 1 turns left');
+    expect($('rc-selection-text').textContent).toContain('Under construction (turns left: 1)');
     expect($('rc-jobs').hidden).toBe(true);
     click('rc-lock');
     expect($('rc-summary').textContent).toContain('Built: Extractor');
-    expect($('rc-supply').textContent).toBe(`Supply ${300 - 80 + 20 + 20} · income 35 per turn`);
+    expect($('rc-supply').textContent).toBe(`Supply ${300 - 80 + 20 + 20} (+35)`);
   });
 
   it('keeps the map left-to-right in RTL locales and translates the interface', () => {

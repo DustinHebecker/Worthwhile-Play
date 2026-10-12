@@ -22,7 +22,11 @@ import { announce, clear, h } from '@wp/ui';
 import {
   cancelJob,
   cancelOrder,
+  canSettle,
   concede,
+  settle,
+  settleResult,
+  MAX_TURNS,
   STALL_TURNS,
   stalemateTurns,
   doctrineFor,
@@ -227,7 +231,16 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   const slotsEl = h('p', { class: 'rc-slots', 'data-testid': 'rc-slots' });
   const supplyEl = h('p', { class: 'rc-supply', 'data-testid': 'rc-supply' });
   /** Quick match only: the stalemate warning, in a slot of its own (the bar never reflows). */
-  const stalemateEl = h('p', { class: 'rc-stalemate', 'data-testid': 'rc-stalemate', 'aria-live': 'polite' });
+  const stalemateText = h('span', { 'data-testid': 'rc-stalemate-text' });
+  // Plain open end, stalled: the player may end on strength (two presses: the result is final).
+  let settleArmed = false;
+  const settleBtn = h('button', { type: 'button', 'data-testid': 'rc-settle', onclick: () => onSettle() }) as HTMLButtonElement;
+  settleBtn.addEventListener('blur', () => {
+    if (!settleArmed) return;
+    settleArmed = false;
+    render();
+  });
+  const stalemateEl = h('div', { class: 'rc-stalemate', 'data-testid': 'rc-stalemate', 'aria-live': 'polite' }, stalemateText, settleBtn);
   /** Visible reason for a refused order (the live region alone only reaches screen readers). */
   const noticeEl = h('p', { class: 'rc-notice', 'data-testid': 'rc-notice', hidden: true });
   const lockBtn = h('button', { type: 'button', class: 'primary', 'data-testid': 'rc-lock', onclick: () => onLock() }, t('action.lock'));
@@ -269,6 +282,11 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     h('label', {}, h('span', {}, t('setup.scenario')), scenarioSelect),
     h('label', {}, h('span', {}, t('setup.limit')), limitSelect)
   );
+  // After the first turn the setup folds into one line (map, length, level) that opens on demand:
+  // on a phone the locked choices would otherwise push the map a screen down.
+  const setupSummary = h('summary', { 'data-testid': 'rc-setup-summary' });
+  const setupFold = h('details', { class: 'rc-setup-fold', 'data-testid': 'rc-setup-fold' }, setupSummary) as HTMLDetailsElement;
+  const setupSlot = h('div', { class: 'rc-setup-slot' }, setupBox);
 
   const selectionTitle = h('h3', {}, t('panel.selection'));
   const selectionText = h('p', { 'data-testid': 'rc-selection-text' });
@@ -321,7 +339,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     'details',
     { class: 'rc-help' },
     h('summary', {}, t('help.title')),
-    ...['help.turns', 'help.orders', 'help.network', 'help.fog', 'help.ew', 'help.doctrine', 'help.economy', 'help.combat', 'help.goal', 'help.shapes', 'help.access'].map((k) => h('p', {}, t(k)))
+    ...['help.turns', 'help.bar', 'help.orders', 'help.network', 'help.fog', 'help.ew', 'help.doctrine', 'help.economy', 'help.combat', 'help.goal', 'help.shapes', 'help.access'].map((k) => h('p', {}, t(k)))
   );
 
   const shell = h(
@@ -335,7 +353,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       stalemateEl,
       h('div', { class: 'rc-actions rc-bar-actions' }, lockBtn, concedeBtn, confirmBox)
     ),
-    setupBox,
+    setupSlot,
     h(
       'div',
       { class: 'rc-main' },
@@ -367,25 +385,43 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       state.turnLimit === null ? t('status.turnOpen', { turn: w.turn + 1 }) : t('status.turn', { turn: Math.min(w.turn + 1, state.turnLimit), limit: state.turnLimit });
     // Open end: a stalled game is heading for a decision on strength (STALL_TURNS); say so early.
     const stalemate = state.quick && state.turnLimit === null && state.phase === 'plan' && stalemateTurns(state) >= QUIET_NOTICE;
-    stalemateEl.textContent = stalemate ? t('status.quiet', { n: STALL_TURNS - stalemateTurns(state) }) : '';
+    const settleable = canSettle(state);
+    stalemateText.textContent = stalemate ? t('status.quiet', { turn: w.turn + STALL_TURNS - stalemateTurns(state) }) : settleable ? t('status.settleOffer', { n: stalemateTurns(state) }) : '';
+    settleBtn.hidden = !settleable;
+    if (!settleable) settleArmed = false;
+    settleBtn.textContent = settleArmed
+      ? t('action.settleConfirm')
+      : t(`action.settle.${settleResult(state)}`, { own: sideValue(state.world, PLAYER), enemy: sideValue(state.world, OPPONENT) });
+    stalemateEl.toggleAttribute('data-empty', !stalemate && !settleable);
     // Scenario and turn limit can be changed until the first turn is locked.
     // Kept in place after the first turn (disabled), so the map does not jump up.
     const setupLocked = state.phase !== 'plan' || state.log.length > 0;
     scenarioSelect.disabled = setupLocked;
     limitSelect.disabled = setupLocked;
     setupBox.toggleAttribute('data-locked', setupLocked);
+    // Unlocked: the setup stands open on its own; locked: it moves into the fold (closed until opened).
+    if (setupLocked && setupBox.parentElement !== setupFold) {
+      setupFold.open = false;
+      setupFold.append(setupBox);
+      setupSlot.replaceChildren(setupFold);
+    } else if (!setupLocked && setupBox.parentElement !== setupSlot) setupSlot.replaceChildren(setupBox);
     scenarioSelect.value = state.scenario;
     limitSelect.value = state.turnLimit !== null ? String(state.turnLimit) : state.quick ? 'quick' : 'open';
+    setupSummary.textContent = t('setup.summary', { map: t(`scenario.${state.scenario}`), length: limitSelect.selectedOptions[0]?.textContent ?? '' });
     statusEl.textContent = statusText();
     statusEl.setAttribute('data-phase', state.phase);
     slotsEl.hidden = finished;
-    slotsEl.textContent = t('status.slots', { n: state.draft.length, slots: orderSlots(state) });
+    const slots = orderSlots(state);
+    slotsEl.textContent = postJammed() ? t('status.jammed') : t('status.slots', { n: state.draft.length, slots });
+    // Full plan (or no orders possible): highlighted, so the player notices without reading.
+    slotsEl.toggleAttribute('data-full', state.draft.length >= slots);
     // Supply and income (economy): what the planned jobs leave is shown while any are planned.
     const supply = w.supply?.[PLAYER] ?? 0;
     const left = plannedSupply(state);
     const income = incomeOfSide(state.world, RULESET, PLAYER);
     supplyEl.hidden = w.supply === undefined;
     supplyEl.textContent = left === supply ? t('status.supply', { n: supply, income }) : t('status.supplyPlanned', { n: supply, left, income });
+    supplyEl.title = t('status.supplyHint');
     lockBtn.disabled = finished;
     concedeBtn.disabled = finished;
     concedeBtn.hidden = confirming;
@@ -397,26 +433,31 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     draw();
   }
 
-  function statusText(): string {
-    // A jammed Command Post: no orders at all, and the player should know why.
-    if (state.phase === 'plan' && orderSlots(state) === 0) {
-      const post = commandPostOf(state.world, PLAYER);
-      // The post knows its own radio is jammed (this reveals nothing beyond its own cell).
-      if (post && jammedCells(state.world, RULESET, PLAYER)[cellOf(state.world.map, post.x, post.y)] === 1) return t('status.postJammed');
-    }
-    if (state.phase === 'plan') return t('status.plan', { n: state.draft.length });
-    if (state.conceded) return t('status.conceded');
-    // The result is decided on the true world, so it is told from it (not from the picture).
-    const own = sideValue(state.world, PLAYER);
-    const enemy = sideValue(state.world, OPPONENT);
-    const decidedByPost = outcome({ ...state.world, turn: 0 }, state.turnLimit) !== null;
-    // Open end: the quiet rule ended the game, not a last turn.
-    const quietEnd = !decidedByPost && state.quick && stalemateTurns(state) >= STALL_TURNS;
-    const args = { own, enemy, limit: STALL_TURNS };
-    if (state.result === 'won') return decidedByPost ? t('status.won') : t(quietEnd ? 'status.wonQuiet' : 'status.wonScore', args);
-    if (state.result === 'lost') return decidedByPost ? t('status.lost') : t(quietEnd ? 'status.lostQuiet' : 'status.lostScore', args);
-    return t(quietEnd ? 'status.drawQuiet' : 'status.draw', args);
+  /** The own Command Post is jammed: no orders this turn (the post knows its own radio; reveals nothing else). */
+  function postJammed(): boolean {
+    if (state.phase !== 'plan' || orderSlots(state) > 0) return false;
+    const post = commandPostOf(state.world, PLAYER);
+    return !!post && jammedCells(state.world, RULESET, PLAYER)[cellOf(state.world.map, post.x, post.y)] === 1;
   }
+
+  const statusText = (): string => statusOf(state);
+
+  /** The status line of `s`: empty while planning (the counter in the top bar says it all), the result at the end. */
+  function statusOf(s: RcState): string {
+    if (s.phase === 'plan') return '';
+    if (s.conceded) return t('status.conceded');
+    // The result is decided on the true world, so it is told from it (not from the picture).
+    const args = { own: sideValue(s.world, PLAYER), enemy: sideValue(s.world, OPPONENT), limit: STALL_TURNS };
+    const result = s.result ?? 'draw';
+    const decidedByPost = outcome({ ...s.world, turn: 0 }, s.turnLimit) !== null;
+    if (decidedByPost) return result === 'won' ? t('status.won') : result === 'lost' ? t('status.lost') : t('status.draw', args);
+    if (s.settled) return t(`status.settled.${result}`, args);
+    if (s.turnLimit !== null) return t(result === 'won' ? 'status.wonScore' : result === 'lost' ? 'status.lostScore' : 'status.draw', args);
+    // Open end: the turn cap, or else the stalemate rule (a quick match, or an older save that had it).
+    if (s.world.turn >= MAX_TURNS) return t(`status.cap.${result}`, args);
+    return t(result === 'won' ? 'status.wonQuiet' : result === 'lost' ? 'status.lostQuiet' : 'status.drawQuiet', args);
+  }
+
 
   /** The selection text: the short hint for the eye, the full description for screen readers (the card shows the rest). */
   function setSelectionText(unit: Entity, hint: string): void {
@@ -490,16 +531,18 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     for (const kind of kinds) {
       const a = archetypeOf(RULESET, kind);
       if (!a) continue;
-      const label = t('jobs.item', { name: t(`unit.${kind}`), cost: a.cost, turns: a.buildTurns });
+      const short = a.cost > left;
+      const label = short ? `${t('jobs.item', { name: t(`unit.${kind}`), cost: a.cost, turns: a.buildTurns })} (${t('tile.short')})` : t('jobs.item', { name: t(`unit.${kind}`), cost: a.cost, turns: a.buildTurns });
       const onclick = yard ? () => orderJob({ type: 'produce', kind }) : () => startPlacing(kind);
       // A tile: the picture of what is made, its name, and cost and time as numbers (the label says it all in words).
       list.append(
         h(
           'button',
-          { type: 'button', class: 'rc-tile', 'data-testid': `rc-job-${kind}`, 'aria-pressed': placing === kind ? 'true' : 'false', 'aria-label': label, 'data-short': a.cost > left ? 'true' : 'false', onclick },
+          { type: 'button', class: 'rc-tile', 'data-testid': `rc-job-${kind}`, 'aria-pressed': placing === kind ? 'true' : 'false', 'aria-label': label, 'data-short': short ? 'true' : 'false', onclick },
           h('span', { class: 'rc-tile-pic', 'aria-hidden': 'true' }, unitIcon(kind, true)),
           h('span', { class: 'rc-tile-name', 'aria-hidden': 'true' }, t(`unit.${kind}`)),
-          h('span', { class: 'rc-tile-meta', 'aria-hidden': 'true' }, t('jobs.costTime', { cost: a.cost, turns: a.buildTurns }))
+          h('span', { class: 'rc-tile-meta', 'aria-hidden': 'true' }, t('jobs.costTime', { cost: a.cost, turns: a.buildTurns })),
+          ...(short ? [h('span', { class: 'rc-tile-short', 'aria-hidden': 'true' }, t('tile.short'))] : [])
         )
       );
     }
@@ -609,6 +652,15 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     return icon;
   }
 
+  /** Card sections the player opened stay open while the card is redrawn (every render). */
+  const cardOpen = new Set<string>();
+  function section(id: string, title: string): HTMLDetailsElement {
+    const el = h('details', { class: 'rc-fold', 'data-testid': `rc-card-${id}` }, h('summary', {}, title)) as HTMLDetailsElement;
+    el.open = cardOpen.has(id);
+    el.addEventListener('toggle', () => (el.open ? cardOpen.add(id) : cardOpen.delete(id)));
+    return el;
+  }
+
   function renderCard(unit: Entity | undefined): void {
     clear(cardEl);
     const arch = unit && archetypeOf(RULESET, unit.kind);
@@ -618,43 +670,49 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     const cells = (n: number) => t('card.cells', { n });
     cardEl.append(
       h('div', { class: 'rc-card-head' }, unitIcon(unit.kind, own), h('strong', {}, unitName(unit)), h('span', { class: 'rc-muted' }, sideName(unit.side))),
-      statRow(t('card.health'), `${unit.hp} / ${arch.hp}`, unit.hp / arch.hp, 'rc-card-health'),
-      statRow(t('card.armor'), t(`armor.${arch.armor}`), null)
+      statRow(t('card.health'), `${unit.hp} / ${arch.hp}`, unit.hp / arch.hp, 'rc-card-health')
     );
+    // Folded by default (owner: short card, nothing lost): stats, then abilities.
+    const stats = section('stats', t('card.stats'));
+    const abilities = section('abilities', t('card.abilities'));
+    stats.append(statRow(t('card.armor'), t(`armor.${arch.armor}`), null));
     const w = arch.weapon;
     if (w) {
-      cardEl.append(
+      stats.append(
         statRow(t('card.damage'), `${w.damage} · ${t(`card.delivery.${w.delivery}`)}`, w.damage / MAX.damage, 'rc-card-damage'),
         statRow(t('card.range'), w.minRange > 0 ? t('card.rangeBetween', { min: w.minRange, max: w.range }) : cells(w.range), w.range / MAX.range),
         statRow(t('card.rate'), w.cooldown <= 1 ? t('card.everyTick') : t('card.everyTicks', { n: w.cooldown }), 1 / w.cooldown)
       );
       // Effect per armour class: what this weapon is good against (text and bar).
       // Folded away by default: the card stays short; the matchup is one tap away.
-      const vs = h('details', { class: 'rc-vs', 'data-testid': 'rc-card-vs' }, h('summary', {}, t('card.vs')));
+      const vs = section('vs', t('card.vs'));
+      vs.classList.add('rc-vs');
       for (const cls of ARMOR_CLASSES) vs.append(statRow(t(`armor.${cls}`), `${w.vs[cls]} %`, w.vs[cls] / 120));
-      cardEl.append(vs);
-      if (w.stationary) cardEl.append(h('p', { class: 'rc-muted' }, t('card.stationary')));
+      stats.append(vs);
+      if (w.stationary) abilities.append(h('p', { class: 'rc-muted' }, t('card.stationary')));
     } else {
-      cardEl.append(statRow(t('card.weapon'), t('card.noWeapon'), null, 'rc-card-noweapon'));
+      stats.append(statRow(t('card.weapon'), t('card.noWeapon'), null, 'rc-card-noweapon'));
     }
-    cardEl.append(
+    stats.append(
       statRow(t('card.speed'), arch.speed > 0 ? t('card.perTurn', { n: Math.round((arch.speed * RULESET.ticksPerTurn) / 4) }) : t('card.static'), arch.speed / MAX.speed),
       statRow(t('card.vision'), cells(arch.vision), arch.vision / MAX.vision)
     );
     if (arch.comms) {
       const text = arch.comms.role === 'source' ? t('card.source', { r: arch.comms.radius, slots: arch.comms.orderSlots }) : t('card.relay', { r: arch.comms.radius });
-      cardEl.append(statRow(t('card.radio'), arch.comms.needsDeploy ? `${text} ${t('card.needsSetUp')}` : text, null));
+      abilities.append(statRow(t('card.radio'), arch.comms.needsDeploy ? `${text} ${t('card.needsSetUp')}` : text, null));
     }
     if (arch.ew) {
       const text = arch.ew.role === 'jammer' ? t('card.jammer', { r: arch.ew.radius }) : t('card.tracer', { r: arch.ew.radius, b: arch.ew.burnThrough });
-      cardEl.append(statRow(t('card.ew'), arch.ew.needsDeploy ? `${text} ${t('card.needsSetUp')}` : text, null));
+      abilities.append(statRow(t('card.ew'), arch.ew.needsDeploy ? `${text} ${t('card.needsSetUp')}` : text, null));
     }
     // Economy: what it costs and takes, what it yields or produces.
     if (RULESET.economy) {
-      if (arch.buildTurns > 0) cardEl.append(statRow(t('card.cost'), t('card.supply', { n: arch.cost }), null, 'rc-card-cost'), statRow(t('card.buildTime'), t('card.turns', { n: arch.buildTurns }), null));
-      if (arch.income > 0) cardEl.append(statRow(t('card.income'), t('card.incomeValue', { n: arch.income }), null, 'rc-card-income'));
-      if (arch.production) cardEl.append(statRow(t('card.produces'), arch.production.map((k) => t(`unit.${k}`)).join(', '), null));
+      if (arch.buildTurns > 0) abilities.append(statRow(t('card.cost'), t('card.supply', { n: arch.cost }), null, 'rc-card-cost'), statRow(t('card.buildTime'), t('card.turns', { n: arch.buildTurns }), null));
+      if (arch.income > 0) abilities.append(statRow(t('card.income'), t('card.incomeValue', { n: arch.income }), null, 'rc-card-income'));
+      if (arch.production) abilities.append(statRow(t('card.produces'), arch.production.map((k) => t(`unit.${k}`)).join(', '), null));
     }
+    cardEl.append(stats);
+    if (abilities.childElementCount > 1) cardEl.append(abilities);
   }
 
   /** Swatch canvas painted by `paint`; the legend pairs each with its text. */
@@ -771,7 +829,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     return [
       h(
         'span',
-        { class: 'rc-row', 'aria-hidden': 'true' },
+        { class: 'rc-row', 'aria-hidden': 'true', 'data-side': e.side === PLAYER ? 'own' : 'enemy' },
         unitIcon(e.kind, e.side === PLAYER),
         h('span', { class: 'rc-row-name' }, unitName(e)),
         h('span', { class: 'rc-row-hp' }, h('span', { class: 'rc-stat-bar' }, h('span', { class: 'rc-stat-fill', style: `width:${Math.round((100 * e.hp) / max)}%` })), h('span', {}, `${e.hp}/${max}`)),
@@ -1163,9 +1221,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       g.lineWidth = 3;
       g.strokeStyle = colour;
       g.fillStyle = own ? colour : surface;
-      // Last known position: faded, dashed outline and a question mark (not colour alone).
+      // Last known position: hollow, dashed outline and a question mark (not colour alone).
       if (ghost) {
-        g.globalAlpha = 0.55;
         g.setLineDash([4, 3]);
         g.fillStyle = surface;
       }
@@ -1545,6 +1602,19 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     confirming = value;
     render();
     (value ? confirmBox.querySelector<HTMLElement>('[data-testid="rc-concede-no"]') : concedeBtn)?.focus();
+  }
+
+  function onSettle(): void {
+    if (!canSettle(state)) return;
+    if (!settleArmed) {
+      settleArmed = true;
+      render();
+      return;
+    }
+    settleArmed = false;
+    const next = settle(state);
+    commit(next, statusOf(next));
+    statusEl.focus();
   }
 
   function onConcede(): void {

@@ -104,6 +104,8 @@ export interface RcState {
   log: TurnLog[];
   result: Outcome | null;
   conceded: boolean;
+  /** The player ended a stalled open-ended game on strength (`settle`). */
+  settled: boolean;
 }
 
 export const scenarioById = (id: string): ScenarioSpec | undefined => SCENARIOS.find((s) => s.id === id);
@@ -124,7 +126,8 @@ export function newGame(seed: number, spec: ScenarioSpec = FIELD_EXERCISE, diffi
     events: [],
     log: [],
     result: null,
-    conceded: false
+    conceded: false,
+    settled: false
   };
 }
 
@@ -233,9 +236,10 @@ export function lockTurn(state: RcState): RcState {
   const plans = [state.draft, planAi(observe(state.world, RULESET, OPPONENT), RULESET, state.difficulty)];
   const { world, events: all, reported } = resolveTurn(state.world, RULESET, plans);
   const events = reported?.[PLAYER] ?? [];
-  // The stalemate rule exists only for open-ended games (a turn limit ends the others).
+  // The stalemate record is kept in open-ended games (a turn limit ends the others): a quick
+  // match is decided by it, a plain open end only offers the player to end on strength.
   const fought = all.some((e) => e.t === 'hit');
-  const counting = state.turnLimit === null && state.quick && (fought || state.lead.length > 0 || world.turn >= CONTACT_TURN);
+  const counting = state.turnLimit === null && (fought || state.lead.length > 0 || world.turn >= CONTACT_TURN);
   // Shelling the leader's Command Post is pressure even before it shows in the lead: count anew.
   const leader = Math.sign(state.lead.at(-1) ?? 0) > 0 ? PLAYER : Math.sign(state.lead.at(-1) ?? 0) < 0 ? OPPONENT : undefined;
   const leaderPost = leader === undefined ? undefined : commandPost(state.world, leader)?.id;
@@ -252,6 +256,24 @@ export function lockTurn(state: RcState): RcState {
     phase: result ? 'finished' : 'plan',
     result
   };
+}
+
+/**
+ * Plain open end: once no side has gained ground for STALL_TURNS turns (the quick match's rule),
+ * the player may end the game on strength instead of playing on (or giving up). Nothing forces it.
+ */
+export const canSettle = (state: RcState): boolean =>
+  state.phase === 'plan' && state.turnLimit === null && !state.quick && stalemateTurns(state) >= STALL_TURNS;
+
+/** The result `settle` would give now (strength as in every decision on strength). */
+export function settleResult(state: RcState): Outcome {
+  const diff = sideValue(state.world, PLAYER) - sideValue(state.world, OPPONENT);
+  return diff > 0 ? 'won' : diff < 0 ? 'lost' : 'draw';
+}
+
+export function settle(state: RcState): RcState {
+  if (!canSettle(state)) return state;
+  return { ...state, phase: 'finished', result: settleResult(state), settled: true, draft: [] };
 }
 
 export function concede(state: RcState): RcState {
@@ -380,7 +402,7 @@ function withEconomy(state: Record<string, unknown>): Record<string, unknown> {
   // The old quiet count meant something else (turns without losses): the stalemate rule starts afresh.
   const { quiet: _quiet, ...rest } = state;
   void _quiet;
-  return { ...rest, lead: [], quick: false, world: { ...state.world, ruleset: RULESET.id, supply } };
+  return { ...rest, lead: [], quick: false, settled: false, world: { ...state.world, ruleset: RULESET.id, supply } };
 }
 
 /**
@@ -452,7 +474,7 @@ export function isValidState(value: unknown): value is RcState {
   // The stalemate record holds at most one entry per turn played and never more than decides a game.
   if (!isArrayOf(value.lead, (v) => isInt(v, -MAX_STRENGTH, MAX_STRENGTH)) || value.lead.length > Math.min(value.world.turn, STALL_TURNS + 1)) return false;
   if (typeof value.quick !== 'boolean' || (value.quick && value.turnLimit !== null)) return false;
-  if (!value.quick && value.lead.length > 0) return false; // only quick matches keep a stalemate record
+  if (value.turnLimit !== null && value.lead.length > 0) return false; // only open-ended games keep a stalemate record
   const isCommand = commandGuard(value.world.map.w, value.world.map.h);
   if (!isArrayOf(value.draft, isCommand) || value.draft.some((c) => c.side !== PLAYER)) return false;
   // Bounded by the scenario (hostile saves must not freeze the tab): one command per unit and
@@ -464,7 +486,9 @@ export function isValidState(value: unknown): value is RcState {
   if (new Set(standing.map((c) => c.unit)).size !== standing.length) return false;
   if (!Array.isArray(value.events) || !value.events.every((e) => isRecord(e) && typeof e.t === 'string' && isInt(e.tick, 0))) return false;
   if (!isArrayOf(value.log, isTurnLog(isCommand)) || value.log.length !== value.world.turn) return false;
-  if (typeof value.conceded !== 'boolean') return false;
+  if (typeof value.conceded !== 'boolean' || typeof value.settled !== 'boolean') return false;
+  // Only a finished plain open end can have been settled (and never also conceded).
+  if (value.settled && (value.phase !== 'finished' || value.turnLimit !== null || value.quick || value.conceded)) return false;
   if (value.phase === 'plan') return value.result === null;
   return isOneOf(value.result, ['won', 'lost', 'draw']);
 }
@@ -483,7 +507,7 @@ export function migrateState(state: unknown, fromVersion: number): RcState | und
   // stalemate rule is now the separate quick match.
   if (fromVersion === 6) {
     if (!isRecord(state) || state.v !== 6) return undefined;
-    const migrated = { ...state, v: 7, quick: false, lead: [] };
+    const migrated = { ...state, v: 7, quick: false, settled: false, lead: [] };
     return isValidState(migrated) ? migrated : undefined;
   }
   if (fromVersion === 5) {

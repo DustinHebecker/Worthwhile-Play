@@ -1,5 +1,6 @@
 /* Relay Command — all rules scoped under .wp-relay-command. Uses shared --wp-* tokens.
-   Terrain colours are paired with pattern marks drawn on the canvas (never colour alone). */
+   Terrain colours are paired with pattern marks drawn on the canvas (never colour alone).
+   Side colours keep at least 3:1 against every terrain, veiled or not, in both themes (test/contrast.test.ts). */
 .wp-relay-command {
   --rc-plain: #e7e3d4;
   --rc-road: #cfc8b4;
@@ -8,11 +9,11 @@
   --rc-urban: #d3d1cc;
   --rc-swamp: #c4d3c2;
   --rc-water: #a9c7dd;
-  --rc-ridge: #a9a49a;
+  --rc-ridge: #c4bfb3;
   --rc-mark: rgba(29, 29, 27, 0.45);
   --rc-grid: rgba(29, 29, 27, 0.12);
   --rc-nocover: rgba(29, 29, 27, 0.3);
-  --rc-fog: rgba(29, 29, 27, 0.16);
+  --rc-fog: rgba(29, 29, 27, 0.12);
   display: grid;
   gap: var(--wp-gap, 1rem);
   width: 100%;
@@ -48,18 +49,20 @@
   background: var(--wp-surface);
 }
 .wp-relay-command .rc-bar-facts { grid-area: facts; display: flex; flex-wrap: wrap; gap: 0.3rem 1.2rem; align-items: baseline; }
-.wp-relay-command .rc-bar .rc-status { grid-area: status; margin: 0; min-block-size: 2.6em; }
+.wp-relay-command .rc-bar .rc-status { grid-area: status; margin: 0; }
 .wp-relay-command .rc-stalemate { grid-area: stalemate; margin: 0; min-block-size: 1.3em; font-weight: 600; }
 .wp-relay-command .rc-stalemate:empty { min-block-size: 0; }
 .wp-relay-command .rc-bar-actions { grid-area: actions; align-self: start; justify-content: flex-end; }
 @media (max-width: 40rem) {
   .wp-relay-command .rc-bar { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'facts' 'status' 'stalemate' 'actions'; }
-  .wp-relay-command .rc-bar .rc-status { min-block-size: 3.9em; }
+  /* Turn, Supply and the plan counter take one or two lines on a phone: two are reserved, so a planned job ("300 → 260") never moves the map. */
+  .wp-relay-command .rc-bar-facts { min-block-size: calc(3em + 0.3rem); align-content: start; }
   .wp-relay-command .rc-bar-actions { justify-content: flex-start; }
 }
 .wp-relay-command .rc-turn { margin: 0; font-weight: 700; }
 .wp-relay-command .rc-slots { margin: 0; font-weight: 600; }
-.wp-relay-command .rc-setup[data-locked] { opacity: 0.75; }
+.wp-relay-command .rc-setup-fold > summary { cursor: pointer; min-block-size: var(--wp-touch, 44px); display: flex; align-items: center; color: var(--wp-muted); }
+.wp-relay-command .rc-setup-fold[open] > summary { margin-block-end: 0.4rem; }
 .wp-relay-command .rc-notice { margin: 0 0 0.5rem; padding: 0.4rem 0.6rem; border-inline-start: 4px solid var(--wp-danger); background: var(--wp-surface-2); }
 .wp-relay-command .rc-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .wp-relay-command .rc-confirm { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
@@ -116,10 +119,14 @@
 .wp-relay-command .rc-tile .rc-icon { inline-size: 36px; block-size: 36px; }
 .wp-relay-command .rc-tile-name { font-weight: 600; font-size: 0.85em; line-height: 1.15; }
 .wp-relay-command .rc-tile-meta { font-size: 0.8em; color: var(--wp-muted); font-variant-numeric: tabular-nums; }
-.wp-relay-command .rc-tile[data-short='true'] { opacity: 0.55; }
+.wp-relay-command .rc-tile[data-short='true'] { border-style: dashed; }
+.wp-relay-command .rc-tile[data-short='true'] .rc-tile-pic { opacity: 0.45; }
+.wp-relay-command .rc-tile-short { font-size: 0.75em; font-weight: 600; }
 .wp-relay-command .rc-unit[aria-pressed='true'] { border-color: var(--wp-focus); border-width: 3px; }
 .wp-relay-command button { min-height: var(--wp-touch, 44px); }
 .wp-relay-command .rc-help p { margin: 0.5rem 0; }
+.wp-relay-command .rc-help > summary { cursor: pointer; min-block-size: var(--wp-touch, 44px); display: flex; align-items: center; }
+.wp-relay-command .rc-row[data-side='enemy'] .rc-stat-fill { background: var(--wp-p2); }
 .wp-relay-command .rc-orders { display: grid; gap: 0.6rem; }
 .wp-relay-command .rc-jobs { display: grid; gap: 0.5rem; margin-top: 0.6rem; padding: 0.6rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius, 10px); }
 .wp-relay-command .rc-jobs h4 { margin: 0; }
@@ -145,6 +152,11 @@
 .wp-relay-command .rc-stat-bar-none { visibility: hidden; }
 .wp-relay-command .rc-stat-fill { display: block; block-size: 100%; background: var(--wp-p1); }
 .wp-relay-command .rc-stat-value { text-align: end; font-variant-numeric: tabular-nums; }
+.wp-relay-command .rc-fold { display: grid; gap: 0.15rem; }
+.wp-relay-command .rc-fold[open] { gap: 0.35rem; }
+.wp-relay-command .rc-fold > summary { cursor: pointer; min-block-size: var(--wp-touch, 44px); display: flex; align-items: center; font-weight: 600; }
+.wp-relay-command .rc-slots[data-full] { color: var(--wp-accent, var(--wp-p1)); font-weight: 800; text-decoration: underline; text-underline-offset: 0.2em; }
+.wp-relay-command .rc-bar .rc-status:empty { display: none; }
 .wp-relay-command .rc-vs { display: grid; gap: 0.15rem; padding-inline-start: 0.5rem; border-inline-start: 2px solid var(--wp-border); }
 .wp-relay-command .rc-vs summary { cursor: pointer; min-block-size: var(--wp-touch, 44px); display: flex; align-items: center; color: var(--wp-muted); }
 .wp-relay-command .rc-vs .rc-stat { min-height: 1.2rem; font-size: 0.92em; }

@@ -261,10 +261,31 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
   // Units that did not try to move this tick start a fresh bump count.
   const claimed = new Set([...claims.values()].flat().map((c) => c.e.id));
   for (const e of w.entities) if (!claimed.has(e.id)) delete e.bumps;
+  // Entities by cell and layer: an escort at rest is looked up when a friendly unit wants its cell.
+  const standing = new Map<number, Entity>();
+  for (const e of w.entities) standing.set(cellOf(w.map, e.x, e.y) + (arch(e).layer === 'air' ? cells : 0), e);
   for (const [key, list] of claims) {
     const air = key >= cells;
     const cell = air ? key - cells : key;
-    const winner = (air ? occupied.air : occupied.ground).has(cell) ? undefined : contestWinner(list);
+    let winner = (air ? occupied.air : occupied.ground).has(cell) ? undefined : contestWinner(list);
+    // An escort standing beside its charge yields to a friendly unit that wants its cell: the
+    // two swap places (it follows its charge again from there). Counted as passable for routes
+    // but never moving, it would otherwise hold a crowd in a narrow pass for good.
+    const resting = winner ? undefined : standing.get(key);
+    if (resting && !moved.has(resting.id) && !claimed.has(resting.id) && escortAtRest(w, resting)) {
+      // Passing through only: a unit whose destination is the escort's cell still finds it taken ('occupied').
+      const passing = list.filter((c) => c.e.side === resting.side && !moved.has(c.e.id) && !(c.e.order.type === 'move' && cellOf(w.map, c.e.order.x, c.e.order.y) === cell));
+      const swap = passing.length > 0 ? contestWinner(passing) : undefined;
+      if (swap && passable(w.map, rs, swap.e.x, swap.e.y, arch(resting).layer)) {
+        winner = swap;
+        events.push({ t: 'move', tick: t, id: resting.id, x: swap.e.x, y: swap.e.y });
+        standing.set(cellOf(w.map, swap.e.x, swap.e.y) + (air ? cells : 0), resting);
+        resting.prev = cell;
+        resting.x = swap.e.x;
+        resting.y = swap.e.y;
+        moved.add(resting.id);
+      }
+    }
     for (const claim of list) {
       const e = claim.e;
       if (claim !== winner) {
@@ -279,6 +300,8 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
       }
       delete e.bumps;
       e.prev = cellOf(w.map, e.x, e.y);
+      if (standing.get(e.prev + (air ? cells : 0)) === e) standing.delete(e.prev + (air ? cells : 0));
+      standing.set(key, e);
       e.x = cell % w.map.w;
       e.y = Math.floor(cell / w.map.w);
       e.mp -= claim.cost;
@@ -705,6 +728,13 @@ const FIRING_SEARCH = 3;
 
 /** Escort / guard keeps within this many cells of its charge. */
 const ESCORT_RANGE = 2;
+
+/** An escort within ESCORT_RANGE of its (own-side) charge: it has no goal and stands. */
+function escortAtRest(w: World, e: Entity): boolean {
+  if (e.order.type !== 'escort') return false;
+  const target = findEntity(w, e.order.target);
+  return !!target && target.side === e.side && dist2(e.x, e.y, target.x, target.y) <= ESCORT_RANGE * ESCORT_RANGE;
+}
 
 /**
  * The free cell other than its own that the unit can reach most cheaply among those `accept`

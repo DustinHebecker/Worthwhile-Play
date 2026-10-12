@@ -477,6 +477,23 @@ describe('follow-ups from the review of PR #7 (round 3)', () => {
     expect(ended(events, 2)).toEqual(['occupied']);
   });
 
+  it('an escort at rest in a one-cell pass lets a friendly unit through (they swap places)', () => {
+    // Relay Command, Ridge Valley: a jammer and a tracer escorting a truck stood in the pass out
+    // of the base; counted as passable but never moving, they held every fighter behind them.
+    const w = worldOf({ w: 10, h: 2, terrain: '..........~~~~.~~~~~' }, [
+      { side: 0, kind: 'command-post', x: 0, y: 0 },
+      { side: 0, kind: 'lancer', x: 2, y: 0 },
+      { side: 0, kind: 'rifles', x: 4, y: 0 },
+      { side: 0, kind: 'mast-truck', x: 4, y: 1 }
+    ]);
+    unit(w, 3).order = { type: 'escort', target: 4 };
+    const { world, events } = play(w, 3, [{ side: 0, unit: 2, order: { type: 'move', x: 8, y: 0 } }]);
+    expect(ended(events, 2)).toEqual(['arrived']);
+    expect(unit(world, 2)).toMatchObject({ x: 8, y: 0 });
+    // The escort is back beside its charge.
+    expect(Math.abs(unit(world, 3).x - 4)).toBeLessThanOrEqual(2);
+  });
+
   it('a convoy unit whose held destination lies behind a held cell ends as occupied, not unreachable', () => {
     const w = worldOf(open(8, 1), [
       { side: 0, kind: 'command-post', x: 0, y: 0 },

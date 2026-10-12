@@ -86,7 +86,7 @@ export interface IconStyle {
   /** Side colour (frame, own fill) and the surface colour (halo, enemy fill, own mark). */
   readonly colour: string;
   readonly surface: string;
-  /** Last known position: faded, dashed frame. */
+  /** Last known position: dashed frame, surface fill (full opacity: it must stay readable on any terrain). */
   readonly ghost?: boolean;
   /** Set up in place: outrigger legs instead of wheels. */
   readonly deployed?: boolean;
@@ -115,7 +115,6 @@ export function drawIcon(g: CanvasRenderingContext2D, kind: string, x: number, y
   g.scale(scale, scale);
   g.lineJoin = 'round';
   g.lineCap = 'round';
-  if (style.ghost) g.globalAlpha = 0.6;
   // Halo: a surface-coloured outline so the icon stands out from any terrain, hatching or fog.
   g.strokeStyle = surface;
   g.lineWidth = FRAME_W + 3.5;
@@ -154,12 +153,16 @@ export function drawIcon(g: CanvasRenderingContext2D, kind: string, x: number, y
     g.stroke(new Path2D('M13,28 L8.5,34 M31,28 L35.5,34 M5,34 H39'));
   }
   if (style.site !== undefined) {
-    // Hatching inside the frame and the turns left.
+    // Hatching inside the frame, the kind's mark faintly (sites tell what they become), and the turns left.
     g.save();
     g.clip(frame);
     g.lineWidth = 1.3;
     const hatch = new Path2D(Array.from({ length: 27 }, (_, i) => `M${-44 + i * 5},44 L${i * 5},0`).join(' '));
     g.stroke(hatch);
+    g.restore();
+    g.save();
+    g.globalAlpha = 0.45;
+    drawMarks(g, marks, colour);
     g.restore();
     g.font = '800 14px system-ui, sans-serif';
     g.textAlign = 'center';
@@ -169,18 +172,22 @@ export function drawIcon(g: CanvasRenderingContext2D, kind: string, x: number, y
     g.fillStyle = colour;
     g.fillText(String(style.site), 22, 23.5);
   } else {
-    for (const part of marks) {
-      const p = new Path2D(part.d);
-      if (part.fill) {
-        g.fillStyle = ink;
-        g.fill(p);
-      } else {
-        g.strokeStyle = ink;
-        g.lineWidth = part.width ?? MARK_W;
-        g.stroke(p);
-      }
-    }
+    drawMarks(g, marks, ink);
   }
   g.restore();
   return true;
+}
+
+function drawMarks(g: CanvasRenderingContext2D, marks: readonly MarkPart[], ink: string): void {
+  for (const part of marks) {
+    const p = new Path2D(part.d);
+    if (part.fill) {
+      g.fillStyle = ink;
+      g.fill(p);
+    } else {
+      g.strokeStyle = ink;
+      g.lineWidth = part.width ?? MARK_W;
+      g.stroke(p);
+    }
+  }
 }

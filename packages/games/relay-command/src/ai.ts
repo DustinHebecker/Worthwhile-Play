@@ -11,6 +11,8 @@ import {
   inWeaponRange,
   observedCells,
   passable,
+  regions,
+  canReach,
   runTicks,
   validateCommand,
   type Command,
@@ -258,6 +260,12 @@ const DEFENCE_RADIUS = 7;
 const STORM_ODDS = 1.3;
 /** Fewest fighters the deadline storm goes ahead with while yards keep producing. */
 const MIN_STORM = 4;
+/**
+ * From this turn on the opponent stops waiting (open end, owner review of PR #13): no siege that
+ * waits for a spotter, no odds to wait for; it storms with what it has. Against a player who
+ * only holds, a waiting siege or a crowd that never reaches the odds would run to the turn cap.
+ */
+const ESCALATE_TURN = 60;
 /** On the way to the rally point a fighter that loses contact comes back (the storm orders keep). */
 const RALLY_DOCTRINE: Doctrine = { ...AI_DOCTRINE, lostContact: 'regroup' };
 
@@ -321,7 +329,7 @@ function assaultPlan(obs: Observation, ruleset: Ruleset, difficulty: Difficulty)
   const theirs = enemiesOf(obs)
     .filter((e) => archetypeOf(ruleset, e.kind)?.weapon && dist2(e.x, e.y, objective.x, objective.y) <= DEFENCE_RADIUS * DEFENCE_RADIUS)
     .reduce((sum, e) => sum + value(e), 0);
-  const storming = gathered && (!reinforcing || ours >= theirs * STORM_ODDS);
+  const storming = gathered && (!reinforcing || ours >= theirs * STORM_ODDS || world.turn >= ESCALATE_TURN);
   const besieging = all.some((f) => (archetypeOf(ruleset, f.kind)?.weapon?.minRange ?? 0) > 0 && (archetypeOf(ruleset, f.kind)?.weapon?.range ?? 0) > 3);
   return { objective, rally, all, storming, besieging };
 }
@@ -339,13 +347,16 @@ function assault(obs: Observation, ruleset: Ruleset, plan: AssaultPlan, fighters
   if (plan.storming) {
     // With a gun in the force the post is besieged, not stormed (artillery outranges a static
     // defence; a storm into one trades badly).
-    const siegeOrders = siege(obs, ruleset, plan, fighters);
+    const siegeOrders = world.turn < ESCALATE_TURN ? siege(obs, ruleset, plan, fighters) : undefined;
     if (siegeOrders) return siegeOrders;
     // Everyone goes for the post. Artillery attacks it from its range once the stormers report it
     // (only a spotted target can be attacked); a ghost it seeks within its own sight and then
     // fires on its own (a stand-off with nothing spotted would hold forever).
     const live = !obs.ghosts.has(objective.id);
-    for (const unit of fighters) {
+    const approach = approachCells(obs, ruleset, objective);
+    // Nearest first: the front of a crowd moves off first and the order slots go where they free the way.
+    const byDistance = [...fighters].sort((a, b) => dist2(a.x, a.y, objective.x, objective.y) - dist2(b.x, b.y, objective.x, objective.y) || frame(obs, a) - frame(obs, b));
+    for (const unit of byDistance) {
       if (unit.order.type === 'attack' && unit.order.target === objective.id) continue;
       const arch = archetypeOf(ruleset, unit.kind);
       if (!arch?.weapon) continue;
@@ -354,7 +365,7 @@ function assault(obs: Observation, ruleset: Ruleset, plan: AssaultPlan, fighters
         commands.push({ side, unit: unit.id, order: { type: 'attack', target: objective.id }, doctrine: AI_DOCTRINE });
         continue;
       }
-      const goal = standOff(obs, ruleset, unit, objective, guns ? Math.max(arch.weapon.minRange, Math.min(arch.weapon.range, arch.vision)) : undefined);
+      const goal = guns ? standOff(obs, ruleset, unit, objective, Math.max(arch.weapon.minRange, Math.min(arch.weapon.range, arch.vision))) : approach(unit);
       if (unit.order.type === 'move' && unit.order.x === goal.x && unit.order.y === goal.y) continue;
       if (goal.x === unit.x && goal.y === unit.y) continue;
       commands.push({ side, unit: unit.id, order: { type: 'move', x: goal.x, y: goal.y }, doctrine: AI_DOCTRINE });
@@ -389,6 +400,58 @@ function assault(obs: Observation, ruleset: Ruleset, plan: AssaultPlan, fighters
     commands.push({ side, unit: unit.id, order: { type: 'move', x: spot.x, y: spot.y }, doctrine: RALLY_DOCTRINE });
   }
   return commands;
+}
+
+/** How far around the objective a storming fighter looks for a free cell it can reach. */
+const APPROACH_RADIUS = 4;
+
+/**
+ * Where a storming fighter heads: the post itself while it can be reached. But every unit that
+ * holds is a wall to the engine's routes: defenders holding in a ring around their post wall it
+ * off for good, and a move onto it would never start. Then the fighter heads for the nearest
+ * free cell around the post that it can reach past every known unit that may not move
+ * (structures, own holding units, all known enemies); there it fires on what it sees, and the
+ * ring opens as defenders fall. Without such a cell: the post itself, as before.
+ */
+function approachCells(obs: Observation, ruleset: Ruleset, objective: Entity): (unit: Entity) => { x: number; y: number } {
+  const { world, side } = obs;
+  const { w, h } = world.map;
+  const walls = new Set<number>();
+  const taken = new Set<number>();
+  for (const e of world.entities) {
+    const c = cellOf(world.map, e.x, e.y);
+    taken.add(c);
+    const arch = archetypeOf(ruleset, e.kind);
+    if (e.side !== side || !arch || arch.speed === 0 || e.order.type === 'hold' || e.order.type === 'deploy') walls.add(c);
+  }
+  const region = regions(world.map, ruleset, 'ground', walls);
+  // Candidate cells ring by ring around the objective, in the side's frame (mirrored sides pick mirrored cells).
+  const rings: { x: number; y: number; r: number; f: number }[] = [];
+  for (let y = Math.max(0, objective.y - APPROACH_RADIUS); y <= Math.min(h - 1, objective.y + APPROACH_RADIUS); y++) {
+    for (let x = Math.max(0, objective.x - APPROACH_RADIUS); x <= Math.min(w - 1, objective.x + APPROACH_RADIUS); x++) {
+      const c = cellOf(world.map, x, y);
+      if (taken.has(c) || !passable(world.map, ruleset, x, y, 'ground')) continue;
+      rings.push({ x, y, r: Math.max(Math.abs(x - objective.x), Math.abs(y - objective.y)), f: frameIndex(c, side, w * h) });
+    }
+  }
+  rings.sort((a, b) => a.r - b.r || a.f - b.f);
+  const claimed = new Set<number>();
+  const target = cellOf(world.map, objective.x, objective.y);
+  return (unit) => {
+    const start = cellOf(world.map, unit.x, unit.y);
+    // The post can be reached (next to it): head for it, as always.
+    if (canReach(world.map, ruleset, 'ground', region, start, target)) return { x: objective.x, y: objective.y };
+    // Already as close as the ring allows: stay (it fires on its own).
+    const here = Math.max(Math.abs(unit.x - objective.x), Math.abs(unit.y - objective.y));
+    for (const cell of rings) {
+      if (cell.r >= here) break;
+      const c = cellOf(world.map, cell.x, cell.y);
+      if (claimed.has(c) || !canReach(world.map, ruleset, 'ground', region, start, c)) continue;
+      claimed.add(c);
+      return { x: cell.x, y: cell.y };
+    }
+    return here <= APPROACH_RADIUS ? { x: unit.x, y: unit.y } : { x: objective.x, y: objective.y };
+  };
 }
 
 /**
@@ -498,6 +561,10 @@ const ARMY_TEMPLATE: Record<Difficulty, readonly string[]> = {
 const POOL_TURN = 6;
 /** Turns of income the opponent is willing to wait for the unit it needs most. */
 const SAVE_TURNS = 3;
+/** Banked Supply from which the yards evidently cannot spend the income: another yard is built. */
+const SURPLUS = 800;
+/** Most yards a side builds for itself (the starting Muster Yard included). */
+const MAX_YARDS = 4;
 /** Easy keeps a cushion before it produces anything (it never builds). */
 const EASY_RESERVE = 150;
 
@@ -549,6 +616,15 @@ function economyOrders(obs: Observation, ruleset: Ruleset, own: readonly Entity[
   if (source && !hasPool && (extractors >= 2 || world.turn >= POOL_TURN) && supply >= costOf('motor-pool')) {
     const spot = buildSpot(obs, ruleset, source, 'motor-pool');
     if (spot) tryOrder({ side, unit: source.id, order: { type: 'build', kind: 'motor-pool', x: spot.x, y: spot.y } });
+  }
+  // 2b. Supply piling up (the yards produce flat out): another yard, infantry and vehicles in turn.
+  const yardCount = ownAll.filter((e) => arch(e)?.production).length;
+  if (source && hasPool && supply >= SURPLUS && yardCount < MAX_YARDS) {
+    const musters = ownAll.filter((e) => e.kind === 'muster').length;
+    const pools = ownAll.filter((e) => e.kind === 'motor-pool').length;
+    const kind = musters <= pools ? 'muster' : 'motor-pool';
+    const spot = buildSpot(obs, ruleset, source, kind);
+    if (spot) tryOrder({ side, unit: source.id, order: { type: 'build', kind, x: spot.x, y: spot.y } });
   }
   // 3. Units from the template: the first kind of the template that is short in the force.
   const counts = new Map<string, number>();
