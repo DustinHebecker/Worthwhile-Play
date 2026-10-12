@@ -414,6 +414,12 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     return t(quietEnd ? 'status.drawQuiet' : 'status.draw', args);
   }
 
+  /** The selection text: the short hint for the eye, the full description for screen readers (the card shows the rest). */
+  function setSelectionText(unit: Entity, hint: string): void {
+    clear(selectionText);
+    selectionText.append(h('span', { class: 'sr-only' }, `${describeUnit(unit)} `), h('span', {}, hint || shortState(unit)));
+  }
+
   function renderSelection(): void {
     const unit = selected === null ? undefined : known(selected);
     const reachable = !!unit && unit.side === PLAYER && inContact(unit);
@@ -421,12 +427,12 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     if (!unit) {
       selectionText.textContent = t('panel.none');
     } else if (!isMobile(unit)) {
-      selectionText.textContent = `${describeUnit(unit)} ${structureHint(unit)}`;
+      setSelectionText(unit, structureHint(unit));
     } else if (unit.side === PLAYER && !reachable) {
-      selectionText.textContent = `${describeUnit(unit)} ${t('panel.outOfContact')}`;
+      setSelectionText(unit, t('panel.outOfContact'));
     } else {
       const hint = !canOrder ? '' : archetypeOf(RULESET, unit.kind)?.weapon ? t('panel.hint') : t('panel.hintUnarmed');
-      selectionText.textContent = `${describeUnit(unit)} ${hint}`.trim();
+      setSelectionText(unit, hint);
     }
     renderCard(unit);
     renderJobs(unit);
@@ -618,7 +624,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
         statRow(t('card.rate'), w.cooldown <= 1 ? t('card.everyTick') : t('card.everyTicks', { n: w.cooldown }), 1 / w.cooldown)
       );
       // Effect per armour class: what this weapon is good against (text and bar).
-      const vs = h('div', { class: 'rc-vs' }, h('span', { class: 'rc-stat-label' }, t('card.vs')));
+      // Folded away by default: the card stays short; the matchup is one tap away.
+      const vs = h('details', { class: 'rc-vs', 'data-testid': 'rc-card-vs' }, h('summary', {}, t('card.vs')));
       for (const cls of ARMOR_CLASSES) vs.append(statRow(t(`armor.${cls}`), `${w.vs[cls]} %`, w.vs[cls] / 120));
       cardEl.append(vs);
       if (w.stationary) cardEl.append(h('p', { class: 'rc-muted' }, t('card.stationary')));

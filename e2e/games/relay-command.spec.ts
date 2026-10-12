@@ -240,6 +240,23 @@ test('relay-command: queueing a unit at the Muster Yard works on a phone and sur
   await expect.poll(async () => (await saved(page))?.world.entities.filter((e) => e.side === 0 && e.kind === 'rifles').length).toBe(3);
 });
 
+test('relay-command: the map and the top bar stay in place between turns and when a unit is selected', async ({ page }) => {
+  await start(page);
+  const where = () =>
+    page.evaluate(() => {
+      const box = (id: string) => document.querySelector(`[data-testid="${id}"]`)!.getBoundingClientRect();
+      return { map: Math.round(box('rc-map').top + window.scrollY), mapX: Math.round(box('rc-map').left), lock: Math.round(box('rc-lock').top + window.scrollY), side: Math.round(box('rc-selection').width) };
+    });
+  const first = await where();
+  await page.locator('[data-testid^="rc-unit-"]').nth(2).click();
+  expect(await where()).toEqual(first);
+  for (let turn = 2; turn <= 3; turn++) {
+    await page.getByTestId('rc-lock').click();
+    await expect(page.getByTestId('rc-turn')).toHaveText(`Turn ${turn}`);
+    expect(await where()).toEqual(first);
+  }
+});
+
 test('relay-command: the game setup never scrolls sideways on a 360 px phone (a wide option once broke the layout viewport)', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 740 });
   await start(page);
