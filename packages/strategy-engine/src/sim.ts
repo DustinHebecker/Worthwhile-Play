@@ -272,7 +272,7 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     // two swap places (it follows its charge again from there). Counted as passable for routes
     // but never moving, it would otherwise hold a crowd in a narrow pass for good.
     const resting = winner ? undefined : standing.get(key);
-    if (resting && !moved.has(resting.id) && !claimed.has(resting.id) && escortAtRest(w, resting)) {
+    if (resting && !moved.has(resting.id) && !claimed.has(resting.id) && escortAtRest(w, rs, resting)) {
       // Passing through only: a unit whose destination is the escort's cell still finds it taken ('occupied').
       const passing = list.filter((c) => c.e.side === resting.side && !moved.has(c.e.id) && !(c.e.order.type === 'move' && cellOf(w.map, c.e.order.x, c.e.order.y) === cell));
       const swap = passing.length > 0 ? contestWinner(passing) : undefined;
@@ -729,9 +729,12 @@ const FIRING_SEARCH = 3;
 /** Escort / guard keeps within this many cells of its charge. */
 const ESCORT_RANGE = 2;
 
-/** An escort within ESCORT_RANGE of its (own-side) charge: it has no goal and stands. */
-function escortAtRest(w: World, e: Entity): boolean {
-  if (e.order.type !== 'escort') return false;
+/**
+ * An escort within ESCORT_RANGE of its (own-side) charge that could move this tick: it has no
+ * goal and stands, so it may step aside. Never a unit that cannot move (disabled, immobile, a site).
+ */
+function escortAtRest(w: World, rs: Ruleset, e: Entity): boolean {
+  if (e.order.type !== 'escort' || has(e, 'disabled') || e.build !== undefined || (archetypeOf(rs, e.kind)?.speed ?? 0) === 0) return false;
   const target = findEntity(w, e.order.target);
   return !!target && target.side === e.side && dist2(e.x, e.y, target.x, target.y) <= ESCORT_RANGE * ESCORT_RANGE;
 }

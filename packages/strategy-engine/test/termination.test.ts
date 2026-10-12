@@ -494,6 +494,21 @@ describe('follow-ups from the review of PR #7 (round 3)', () => {
     expect(Math.abs(unit(world, 3).x - 4)).toBeLessThanOrEqual(2);
   });
 
+  it('an escort that cannot move (disabled, e.g. by EMP) never swaps: the unit behind it waits', () => {
+    const w = worldOf({ w: 10, h: 2, terrain: '..........~~~~.~~~~~' }, [
+      { side: 0, kind: 'command-post', x: 0, y: 0 },
+      { side: 0, kind: 'lancer', x: 2, y: 0 },
+      { side: 0, kind: 'rifles', x: 4, y: 0 },
+      { side: 0, kind: 'mast-truck', x: 4, y: 1 },
+      { side: 1, kind: 'command-post', x: 9, y: 0 }
+    ]);
+    Object.assign(unit(w, 3), { order: { type: 'escort', target: 4 }, status: [{ kind: 'disabled', ticks: 50 }] });
+    const { world, events } = play(w, 2, [{ side: 0, unit: 2, order: { type: 'move', x: 8, y: 0 } }]);
+    expect(unit(world, 3)).toMatchObject({ x: 4, y: 0 });
+    expect(events.some((e) => e.t === 'move' && e.id === 3)).toBe(false);
+    expect(unit(world, 2).x).toBeLessThan(4);
+  });
+
   it('a convoy unit whose held destination lies behind a held cell ends as occupied, not unreachable', () => {
     const w = worldOf(open(8, 1), [
       { side: 0, kind: 'command-post', x: 0, y: 0 },

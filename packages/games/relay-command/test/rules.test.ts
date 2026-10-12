@@ -125,6 +125,7 @@ describe('Field Exercise scenario', () => {
     expect(isValidState(JSON.parse(JSON.stringify(settled)))).toBe(true);
     expect(isValidState({ ...settled, phase: 'plan', result: null })).toBe(false); // settled only when finished
     expect(isValidState({ ...settled, conceded: true })).toBe(false);
+    expect(isValidState({ ...settled, lead: [] })).toBe(false); // settled only after a full stalemate record
     expect(settle(settled)).toBe(settled);
     // Quick match: the stalemate rule decides.
     const base = newGame(1, FIELD_EXERCISE, 'easy', null, true);

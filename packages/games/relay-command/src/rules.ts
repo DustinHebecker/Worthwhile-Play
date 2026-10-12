@@ -488,7 +488,7 @@ export function isValidState(value: unknown): value is RcState {
   if (!isArrayOf(value.log, isTurnLog(isCommand)) || value.log.length !== value.world.turn) return false;
   if (typeof value.conceded !== 'boolean' || typeof value.settled !== 'boolean') return false;
   // Only a finished plain open end can have been settled (and never also conceded).
-  if (value.settled && (value.phase !== 'finished' || value.turnLimit !== null || value.quick || value.conceded)) return false;
+  if (value.settled && (value.phase !== 'finished' || value.turnLimit !== null || value.quick || value.conceded || value.lead.length <= STALL_TURNS)) return false;
   if (value.phase === 'plan') return value.result === null;
   return isOneOf(value.result, ['won', 'lost', 'draw']);
 }
