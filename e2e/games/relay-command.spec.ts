@@ -196,7 +196,9 @@ test('relay-command: map and length chosen before the first turn survive a reloa
   await expect(page.getByTestId('rc-turn')).toHaveText('Turn 1 of 12');
   await page.getByTestId('rc-lock').click();
   await expect(page.getByTestId('rc-turn')).toHaveText('Turn 2 of 12');
-  await expect(page.getByTestId('rc-setup')).toBeHidden();
+  // The setup stays in place (the map does not jump) but can no longer be changed.
+  await expect(page.getByTestId('rc-scenario')).toBeDisabled();
+  await expect(page.getByTestId('rc-turn-limit')).toBeDisabled();
 });
 
 test('relay-command: the Command Post places an Extractor on a deposit by tapping the map', async ({ page, isMobile }) => {

@@ -222,6 +222,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   const statusEl = h('p', { class: 'rc-status', 'data-testid': 'rc-status', role: 'status', tabindex: -1 });
   const slotsEl = h('p', { class: 'rc-slots', 'data-testid': 'rc-slots' });
   const supplyEl = h('p', { class: 'rc-supply', 'data-testid': 'rc-supply' });
+  /** Quick match only: the stalemate warning, in a slot of its own (the bar never reflows). */
+  const stalemateEl = h('p', { class: 'rc-stalemate', 'data-testid': 'rc-stalemate', 'aria-live': 'polite' });
   /** Visible reason for a refused order (the live region alone only reaches screen readers). */
   const noticeEl = h('p', { class: 'rc-notice', 'data-testid': 'rc-notice', hidden: true });
   const lockBtn = h('button', { type: 'button', class: 'primary', 'data-testid': 'rc-lock', onclick: () => onLock() }, t('action.lock'));
@@ -321,7 +323,14 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   const shell = h(
     'div',
     { class: 'wp-relay-command', 'data-testid': 'rc-root' },
-    h('div', { class: 'rc-bar' }, turnEl, statusEl, supplyEl, slotsEl, h('div', { class: 'rc-actions' }, lockBtn, concedeBtn), confirmBox),
+    h(
+      'div',
+      { class: 'rc-bar' },
+      h('div', { class: 'rc-bar-facts' }, turnEl, supplyEl, slotsEl),
+      statusEl,
+      stalemateEl,
+      h('div', { class: 'rc-actions rc-bar-actions' }, lockBtn, concedeBtn, confirmBox)
+    ),
     setupBox,
     h(
       'div',
@@ -353,9 +362,14 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     turnEl.textContent =
       state.turnLimit === null ? t('status.turnOpen', { turn: w.turn + 1 }) : t('status.turn', { turn: Math.min(w.turn + 1, state.turnLimit), limit: state.turnLimit });
     // Open end: a stalled game is heading for a decision on strength (STALL_TURNS); say so early.
-    if (state.quick && state.turnLimit === null && state.phase === 'plan' && stalemateTurns(state) >= QUIET_NOTICE) turnEl.textContent += ' ' + t('status.quiet', { n: STALL_TURNS - stalemateTurns(state) });
+    const stalemate = state.quick && state.turnLimit === null && state.phase === 'plan' && stalemateTurns(state) >= QUIET_NOTICE;
+    stalemateEl.textContent = stalemate ? t('status.quiet', { n: STALL_TURNS - stalemateTurns(state) }) : '';
     // Scenario and turn limit can be changed until the first turn is locked.
-    setupBox.hidden = state.phase !== 'plan' || state.log.length > 0;
+    // Kept in place after the first turn (disabled), so the map does not jump up.
+    const setupLocked = state.phase !== 'plan' || state.log.length > 0;
+    scenarioSelect.disabled = setupLocked;
+    limitSelect.disabled = setupLocked;
+    setupBox.toggleAttribute('data-locked', setupLocked);
     scenarioSelect.value = state.scenario;
     limitSelect.value = state.turnLimit !== null ? String(state.turnLimit) : state.quick ? 'quick' : 'open';
     statusEl.textContent = statusText();
@@ -461,13 +475,23 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       return;
     }
     const kinds = yard ? (arch.production ?? []) : BUILDABLE;
-    const list = h('div', { class: 'rc-actions', role: 'group', 'aria-label': t(yard ? 'jobs.produce' : 'jobs.build') });
+    const list = h('div', { class: 'rc-tiles', role: 'group', 'aria-label': t(yard ? 'jobs.produce' : 'jobs.build') });
+    const left = plannedSupply(state);
     for (const kind of kinds) {
       const a = archetypeOf(RULESET, kind);
       if (!a) continue;
       const label = t('jobs.item', { name: t(`unit.${kind}`), cost: a.cost, turns: a.buildTurns });
       const onclick = yard ? () => orderJob({ type: 'produce', kind }) : () => startPlacing(kind);
-      list.append(h('button', { type: 'button', 'data-testid': `rc-job-${kind}`, 'aria-pressed': placing === kind ? 'true' : 'false', onclick }, label));
+      // A tile: the picture of what is made, its name, and cost and time as numbers (the label says it all in words).
+      list.append(
+        h(
+          'button',
+          { type: 'button', class: 'rc-tile', 'data-testid': `rc-job-${kind}`, 'aria-pressed': placing === kind ? 'true' : 'false', 'aria-label': label, 'data-short': a.cost > left ? 'true' : 'false', onclick },
+          h('span', { class: 'rc-tile-pic', 'aria-hidden': 'true' }, unitIcon(kind, true)),
+          h('span', { class: 'rc-tile-name', 'aria-hidden': 'true' }, t(`unit.${kind}`)),
+          h('span', { class: 'rc-tile-meta', 'aria-hidden': 'true' }, t('jobs.costTime', { cost: a.cost, turns: a.buildTurns }))
+        )
+      );
     }
     const rows = h('ul', { class: 'rc-joblist' });
     // A finished unit that found no free cell waits inside: say so instead of "0 turns left".
@@ -777,6 +801,33 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     legendEl.append(rows);
   }
 
+  /** A compact list row: the map icon, the name, a health bar and one short state; the full description for screen readers. */
+  function unitRow(e: Entity, short: string): HTMLElement[] {
+    const arch = archetypeOf(RULESET, e.kind);
+    const max = arch?.hp ?? e.hp;
+    return [
+      h(
+        'span',
+        { class: 'rc-row', 'aria-hidden': 'true' },
+        unitIcon(e.kind, e.side === PLAYER),
+        h('span', { class: 'rc-row-name' }, unitName(e)),
+        h('span', { class: 'rc-row-hp' }, h('span', { class: 'rc-stat-bar' }, h('span', { class: 'rc-stat-fill', style: `width:${Math.round((100 * e.hp) / max)}%` })), h('span', {}, `${e.hp}/${max}`)),
+        h('span', { class: 'rc-row-state' }, short)
+      ),
+      h('span', { class: 'sr-only' }, describeUnit(e))
+    ];
+  }
+
+  /** One short phrase for a list row: what matters most about the unit right now. */
+  function shortState(e: Entity): string {
+    if (e.side !== PLAYER) return !isGhost(e) ? t('row.inSight') : ghostTick(e) === 0 ? t('row.knownStart') : t('row.lastSeen', { turn: reportTurn(ghostTick(e) ?? 0) });
+    if (e.build !== undefined) return t('list.site', { n: e.build });
+    if (e.queue && e.queue.length > 0) return t('list.queue', { n: e.queue.map((q) => t(`unit.${q.kind}`)).join(', ') });
+    if (isMobile(e) && !inContact(e)) return t(!isGhost(e) && jammed(e.x, e.y) ? 'contact.jammed' : 'contact.out');
+    const planned = draftFor(state, e.id);
+    return planned ? `→ ${describeOrder(e, planned)}` : describeOrder(e, e.order);
+  }
+
   function renderLists(): void {
     clear(ownList);
     clear(enemyList);
@@ -785,8 +836,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     for (const e of own) {
       const btn = h(
         'button',
-        { type: 'button', class: 'rc-unit', 'data-testid': `rc-unit-${e.id}`, 'aria-pressed': selected === e.id ? 'true' : 'false', onclick: () => select(e.id) },
-        describeUnit(e)
+        { type: 'button', class: 'rc-unit', 'data-testid': `rc-unit-${e.id}`, 'aria-pressed': selected === e.id ? 'true' : 'false', 'data-planned': draftFor(state, e.id) ? 'true' : 'false', onclick: () => select(e.id) },
+        ...unitRow(e, shortState(e))
       );
       ownList.append(h('li', {}, btn));
     }
@@ -795,7 +846,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     const canAttack =
       !!attacker && attacker.side === PLAYER && isMobile(attacker) && inContact(attacker) && !!archetypeOf(RULESET, attacker.kind)?.weapon && state.phase === 'plan';
     for (const e of enemies) {
-      const item = h('li', { 'data-testid': `rc-enemy-${e.id}` }, h('span', {}, describeUnit(e)));
+      const item = h('li', { 'data-testid': `rc-enemy-${e.id}`, class: 'rc-enemy-row' }, ...unitRow(e, shortState(e)));
       if (canAttack && !isGhost(e) && canHurt(attacker, e)) {
         item.append(h('button', { type: 'button', 'data-testid': `rc-attack-${e.id}`, onclick: () => orderSelected({ type: 'attack', target: e.id }) }, t('action.attack', { name: unitName(e) })));
       }
@@ -1279,9 +1330,75 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
         g.lineTo(cx - 5, cy - 1);
         g.stroke();
         return;
+      case 'outrider':
+        // Two chevrons: fast.
+        for (const dx of [-5, 2]) {
+          g.moveTo(cx + dx - 3, cy - 6);
+          g.lineTo(cx + dx + 3, cy);
+          g.lineTo(cx + dx - 3, cy + 6);
+        }
+        g.stroke();
+        return;
+      case 'field-post':
+        // A small flag with a plus: a mobile command post.
+        g.moveTo(cx - 6, cy + 7);
+        g.lineTo(cx - 6, cy - 7);
+        g.lineTo(cx + 3, cy - 4);
+        g.lineTo(cx - 6, cy - 1);
+        g.moveTo(cx + 2, cy + 4);
+        g.lineTo(cx + 8, cy + 4);
+        g.moveTo(cx + 5, cy + 1);
+        g.lineTo(cx + 5, cy + 7);
+        g.stroke();
+        return;
+      case 'muster':
+        // A tent: where infantry musters.
+        g.moveTo(cx - 8, cy + 6);
+        g.lineTo(cx, cy - 7);
+        g.lineTo(cx + 8, cy + 6);
+        g.closePath();
+        g.moveTo(cx, cy - 7);
+        g.lineTo(cx, cy + 6);
+        g.stroke();
+        return;
+      case 'motor-pool':
+        // A wheel: where vehicles are built.
+        g.arc(cx, cy, 7, 0, Math.PI * 2);
+        g.moveTo(cx + 2.5, cy);
+        g.arc(cx, cy, 2.5, 0, Math.PI * 2);
+        for (const [dx, dy] of [[0, -7], [6, 3.5], [-6, 3.5]] as const) {
+          g.moveTo(cx, cy);
+          g.lineTo(cx + dx, cy + dy);
+        }
+        g.stroke();
+        return;
+      case 'extractor':
+        // A derrick over a drop: it draws Supply from a deposit.
+        g.moveTo(cx - 6, cy + 7);
+        g.lineTo(cx, cy - 7);
+        g.lineTo(cx + 6, cy + 7);
+        g.moveTo(cx - 3, cy);
+        g.lineTo(cx + 3, cy);
+        g.stroke();
+        return;
+      case 'relay-mast':
+        // A mast with waves on both sides.
+        g.moveTo(cx, cy + 7);
+        g.lineTo(cx, cy - 4);
+        g.moveTo(cx - 4, cy - 7);
+        g.arc(cx, cy - 4, 5, Math.PI * 1.15, Math.PI * 1.45);
+        g.moveTo(cx + 4, cy - 7);
+        g.arc(cx, cy - 4, 5, Math.PI * 1.85, Math.PI * 1.55, true);
+        g.stroke();
+        return;
       default:
-        g.arc(cx, cy, 3, 0, Math.PI * 2);
-        g.fill();
+        // Anything without its own glyph (towers): a ring with a cross.
+        g.arc(cx, cy, 6, 0, Math.PI * 2);
+        g.moveTo(cx - 4, cy);
+        g.lineTo(cx + 4, cy);
+        g.moveTo(cx, cy - 4);
+        g.lineTo(cx, cy + 4);
+        g.stroke();
     }
   }
 

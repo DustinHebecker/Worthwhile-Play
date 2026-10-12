@@ -35,15 +35,31 @@
     --rc-fog: rgba(0, 0, 0, 0.32);
   }
 }
+/* Top bar: fixed slots that never reflow between turns (facts, status, stalemate hint, actions). */
 .wp-relay-command .rc-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem 1rem;
+  display: grid;
+  gap: 0.4rem 1rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: 'facts actions' 'status actions' 'stalemate stalemate';
   align-items: center;
+  padding: 0.6rem;
+  border: 1px solid var(--wp-border);
+  border-radius: var(--wp-radius, 10px);
+  background: var(--wp-surface);
 }
-.wp-relay-command .rc-turn { margin: 0; font-weight: 600; }
-.wp-relay-command .rc-status { margin: 0; flex: 1 1 16rem; }
+.wp-relay-command .rc-bar-facts { grid-area: facts; display: flex; flex-wrap: wrap; gap: 0.3rem 1.2rem; align-items: baseline; }
+.wp-relay-command .rc-bar .rc-status { grid-area: status; margin: 0; min-block-size: 2.6em; }
+.wp-relay-command .rc-stalemate { grid-area: stalemate; margin: 0; min-block-size: 1.3em; font-weight: 600; }
+.wp-relay-command .rc-stalemate:empty { min-block-size: 0; }
+.wp-relay-command .rc-bar-actions { grid-area: actions; align-self: start; justify-content: flex-end; }
+@media (max-width: 40rem) {
+  .wp-relay-command .rc-bar { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'facts' 'status' 'stalemate' 'actions'; }
+  .wp-relay-command .rc-bar .rc-status { min-block-size: 3.9em; }
+  .wp-relay-command .rc-bar-actions { justify-content: flex-start; }
+}
+.wp-relay-command .rc-turn { margin: 0; font-weight: 700; }
 .wp-relay-command .rc-slots { margin: 0; font-weight: 600; }
+.wp-relay-command .rc-setup[data-locked] { opacity: 0.75; }
 .wp-relay-command .rc-notice { margin: 0 0 0.5rem; padding: 0.4rem 0.6rem; border-inline-start: 4px solid var(--wp-danger); background: var(--wp-surface-2); }
 .wp-relay-command .rc-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .wp-relay-command .rc-confirm { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
@@ -53,7 +69,8 @@
   grid-template-columns: minmax(0, 1fr);
 }
 @media (min-width: 60rem) {
-  .wp-relay-command .rc-main { grid-template-columns: minmax(0, auto) minmax(16rem, 1fr); align-items: start; }
+  /* A side column of fixed width: selecting a unit never moves the map. */
+  .wp-relay-command .rc-main { grid-template-columns: minmax(0, 1fr) 22rem; align-items: start; }
 }
 .wp-relay-command .rc-board { display: grid; gap: 0.5rem; min-width: 0; }
 .wp-relay-command .rc-mapwrap {
@@ -83,7 +100,23 @@
   text-align: start;
   justify-content: flex-start;
   white-space: normal;
+  padding: 0.25rem 0.5rem;
 }
+.wp-relay-command .rc-unit[data-planned='true'] { border-inline-start: 4px solid var(--wp-p1); }
+/* Compact rows: icon | name + state | health. */
+.wp-relay-command .rc-row { display: grid; grid-template-columns: 28px minmax(0, 1fr) 4.5rem; grid-template-areas: 'icon name hp' 'icon state state'; gap: 0 0.5rem; align-items: center; inline-size: 100%; }
+.wp-relay-command .rc-row .rc-icon { grid-area: icon; inline-size: 28px; block-size: 28px; }
+.wp-relay-command .rc-row-name { grid-area: name; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wp-relay-command .rc-row-hp { grid-area: hp; display: grid; gap: 0.1rem; font-size: 0.8em; font-variant-numeric: tabular-nums; text-align: end; }
+.wp-relay-command .rc-row-state { grid-area: state; font-size: 0.85em; color: var(--wp-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wp-relay-command .rc-enemy-row { padding: 0.25rem 0.5rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius, 10px); }
+/* Build and production tiles: picture, name, cost and time. */
+.wp-relay-command .rc-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr)); gap: 0.4rem; }
+.wp-relay-command .rc-tile { display: grid; justify-items: center; gap: 0.15rem; padding: 0.4rem 0.3rem; min-block-size: 5.5rem; white-space: normal; text-align: center; }
+.wp-relay-command .rc-tile .rc-icon { inline-size: 36px; block-size: 36px; }
+.wp-relay-command .rc-tile-name { font-weight: 600; font-size: 0.85em; line-height: 1.15; }
+.wp-relay-command .rc-tile-meta { font-size: 0.8em; color: var(--wp-muted); font-variant-numeric: tabular-nums; }
+.wp-relay-command .rc-tile[data-short='true'] { opacity: 0.55; }
 .wp-relay-command .rc-unit[aria-pressed='true'] { border-color: var(--wp-focus); border-width: 3px; }
 .wp-relay-command button { min-height: var(--wp-touch, 44px); }
 .wp-relay-command .rc-help p { margin: 0.5rem 0; }

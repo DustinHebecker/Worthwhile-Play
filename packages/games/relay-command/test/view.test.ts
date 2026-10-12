@@ -373,7 +373,9 @@ describe('Relay Command view', () => {
     expect($('rc-map').getAttribute('data-cols')).toBe('20');
     expect(ctx.context.root.querySelectorAll('[data-testid^="rc-unit-"]')).toHaveLength(15);
     click('rc-lock');
-    expect($('rc-setup').hidden).toBe(true);
+    expect($('rc-setup').hidden).toBe(false); // stays in place, locked
+    expect(($('rc-scenario') as HTMLSelectElement).disabled).toBe(true);
+    expect(($('rc-turn-limit') as HTMLSelectElement).disabled).toBe(true);
   });
 
   it('maps pointer clicks on the canvas to cells', () => {
@@ -446,7 +448,8 @@ describe('Relay Command view', () => {
     expect($('rc-turn').textContent).toBe(`Turn ${s.world.turn + 1}`);
     s = lockTurn(s);
     instance.restore(s);
-    expect($('rc-turn').textContent).toBe(`Turn ${s.world.turn + 1} Stalemate: strength decides in ${STALL_TURNS - 3} turns unless the side behind gains ground.`);
+    expect($('rc-turn').textContent).toBe(`Turn ${s.world.turn + 1}`);
+    expect($('rc-stalemate').textContent).toBe(`Stalemate: strength decides in ${STALL_TURNS - 3} turns unless the side behind gains ground.`);
     expect(ctx.difficulties).toEqual(['normal', 'hard', 'hard']);
     // A turn limit has no stalemate rule.
     instance.restore({ ...s, turnLimit: 100 });
@@ -467,7 +470,9 @@ describe('Relay Command view', () => {
     click(`rc-unit-${yard.id}`);
     expect($('rc-selection-text').textContent).toContain('Queue units below');
     expect($('rc-jobs').hidden).toBe(false);
-    expect($('rc-job-rifles').textContent).toBe('Rifle Squad · 40 Supply · 1 turns');
+    expect($('rc-job-rifles').getAttribute('aria-label')).toBe('Rifle Squad · 40 Supply · 1 turns');
+    expect($('rc-job-rifles').querySelector('canvas.rc-icon')).not.toBeNull(); // a picture of the unit
+    expect($('rc-job-rifles').textContent).toBe('Rifle Squad40 · 1 turns');
     expect($('rc-card-cost').textContent).toContain('100 Supply');
     click('rc-job-rifles');
     click('rc-job-lancer');
