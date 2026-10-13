@@ -19,6 +19,25 @@ export async function readSave(page: Page, gameId: string): Promise<unknown> {
   );
 }
 
+/** Raw library rows (ADR 0012) of one game, e.g. a game's saved maps, from the app's IndexedDB (sorted by id). */
+export async function readLibrary(page: Page, gameId: string): Promise<{ gameId: string; id: string; name: string; updatedAt: string; size: number; data: unknown }[]> {
+  return page.evaluate(
+    (id) =>
+      new Promise((resolve, reject) => {
+        const open = indexedDB.open('worthwhile-play');
+        open.onerror = () => reject(open.error);
+        open.onsuccess = () => {
+          const db = open.result;
+          if (!db.objectStoreNames.contains('library')) return resolve([]);
+          const all = db.transaction('library', 'readonly').objectStore('library').index('byGame').getAll(id);
+          all.onsuccess = () => resolve(all.result);
+          all.onerror = () => reject(all.error);
+        };
+      }),
+    gameId
+  );
+}
+
 /**
  * Universal resume contract (spec: "every game must be closable at any time and resumable later").
  * Opens the game by direct URL, starts a new game, performs `act`, reloads the page,

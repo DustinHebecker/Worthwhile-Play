@@ -185,7 +185,12 @@ const es: UiCatalogue = {
   'settings.learning': 'Registros de aprendizaje en este dispositivo: {count}',
   'settings.clearLearning': 'Borrar los registros de aprendizaje',
   'settings.clearLearningConfirm': '¿Borrar todos los registros de aprendizaje (el plan de repaso) de este dispositivo? Los mazos y las partidas guardadas no se ven afectados. No se puede deshacer.',
-  'settings.learningDeleted': 'Registros de aprendizaje borrados.'
+  'settings.learningDeleted': 'Registros de aprendizaje borrados.',
+  'settings.library': 'Creaciones propias en juegos (p. ej., mapas) en este dispositivo: {count}',
+  'settings.libraryGame': '{game}: {count}',
+  'settings.clearLibrary': 'Borrar mi contenido propio (p. ej., mapas)',
+  'settings.clearLibraryConfirm': '¿Borrar todo lo que creaste en juegos en este dispositivo (p. ej., mapas)? Las partidas guardadas, los mazos y los registros de aprendizaje no se ven afectados. No se puede deshacer.',
+  'settings.libraryDeleted': 'Contenido propio borrado.'
 };
 
 export default es;

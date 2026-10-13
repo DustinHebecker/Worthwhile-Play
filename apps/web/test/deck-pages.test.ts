@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CAPITALS } from '@wp/learning-content';
 import { createTranslator, SUPPORTED_LOCALES } from '@wp/localization';
-import { createMemoryDeckStore, createMemoryLearningStore, createMemoryStore, createSave, type DeckStore, type LearningStore } from '@wp/persistence';
+import { createMemoryDeckStore, createMemoryLearningStore, createMemoryLibraryStore, createMemoryStore, createSave, type DeckStore, type LearningStore } from '@wp/persistence';
 import type { AppContext } from '../src/app';
 import { UI_MESSAGES } from '../src/i18n';
 import { renderDeck, renderDeckImport, renderDecks } from '../src/pages/decks';
@@ -27,6 +27,7 @@ function app(locale: 'en' | 'de' = 'en', decks: DeckStore = createMemoryDeckStor
     store: Promise.resolve(store),
     decks: Promise.resolve(decks),
     learning: Promise.resolve(learning),
+    library: Promise.resolve(createMemoryLibraryStore()),
     navigate: vi.fn(),
     setLocale: vi.fn(),
     announce: vi.fn()

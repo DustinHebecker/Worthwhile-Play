@@ -184,7 +184,12 @@ const en = {
   'settings.learning': 'Learning records on this device: {count}',
   'settings.clearLearning': 'Delete learning records',
   'settings.clearLearningConfirm': 'Delete all learning records (the review schedule) on this device? Decks and saved games are not affected. This cannot be undone.',
-  'settings.learningDeleted': 'Learning records deleted.'
+  'settings.learningDeleted': 'Learning records deleted.',
+  'settings.library': 'Things you created in games (e.g. maps) on this device: {count}',
+  'settings.libraryGame': '{game}: {count}',
+  'settings.clearLibrary': 'Delete my own content (e.g. maps)',
+  'settings.clearLibraryConfirm': 'Delete everything you created in games on this device (e.g. maps)? Saved games, decks and learning records are not affected. This cannot be undone.',
+  'settings.libraryDeleted': 'Your own content deleted.'
 } as const;
 
 export type UiKey = keyof typeof en;

@@ -185,7 +185,12 @@ const hi: UiCatalogue = {
   'settings.learning': 'इस डिवाइस पर सीखने के रिकॉर्ड: {count}',
   'settings.clearLearning': 'सीखने के रिकॉर्ड हटाएँ',
   'settings.clearLearningConfirm': 'इस डिवाइस के सभी सीखने के रिकॉर्ड (दोहराव की योजना) हटाएँ? डेक और सहेजे गए खेल प्रभावित नहीं होंगे। इसे पूर्ववत नहीं किया जा सकता।',
-  'settings.learningDeleted': 'सीखने के रिकॉर्ड हटा दिए गए।'
+  'settings.learningDeleted': 'सीखने के रिकॉर्ड हटा दिए गए।',
+  'settings.library': 'इस डिवाइस पर खेलों में आपकी बनाई चीज़ें (जैसे नक्शे): {count}',
+  'settings.libraryGame': '{game}: {count}',
+  'settings.clearLibrary': 'मेरी अपनी बनाई सामग्री हटाएँ (जैसे नक्शे)',
+  'settings.clearLibraryConfirm': 'इस डिवाइस पर खेलों में आपने जो कुछ बनाया है (जैसे नक्शे), सब हटाएँ? सहेजे गए खेल, डेक और सीखने के रिकॉर्ड प्रभावित नहीं होंगे। इसे पूर्ववत नहीं किया जा सकता।',
+  'settings.libraryDeleted': 'आपकी अपनी बनाई सामग्री हटा दी गई।'
 };
 
 export default hi;

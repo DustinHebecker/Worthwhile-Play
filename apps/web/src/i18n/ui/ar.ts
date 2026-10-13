@@ -185,7 +185,12 @@ const ar: UiCatalogue = {
   'settings.learning': 'سجلات التعلّم على هذا الجهاز: {count}',
   'settings.clearLearning': 'حذف سجلات التعلّم',
   'settings.clearLearningConfirm': 'حذف كل سجلات التعلّم (جدول المراجعة) على هذا الجهاز؟ لا يتأثر بذلك المجموعات ولا الألعاب المحفوظة. لا يمكن التراجع عن ذلك.',
-  'settings.learningDeleted': 'حُذفت سجلات التعلّم.'
+  'settings.learningDeleted': 'حُذفت سجلات التعلّم.',
+  'settings.library': 'ما أنشأته في الألعاب (مثل الخرائط) على هذا الجهاز: {count}',
+  'settings.libraryGame': '{game}: {count}',
+  'settings.clearLibrary': 'حذف المحتوى الذي أنشأته (مثل الخرائط)',
+  'settings.clearLibraryConfirm': 'هل تريد حذف كل ما أنشأته في الألعاب على هذا الجهاز (مثل الخرائط)؟ لن تتأثر الألعاب المحفوظة ولا المجموعات ولا سجلات التعلّم. لا يمكن التراجع عن ذلك.',
+  'settings.libraryDeleted': 'حُذف المحتوى الذي أنشأته.'
 };
 
 export default ar;

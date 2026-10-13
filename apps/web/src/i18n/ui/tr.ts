@@ -185,7 +185,12 @@ const tr: UiCatalogue = {
   'settings.learning': 'Bu cihazdaki öğrenme kayıtları: {count}',
   'settings.clearLearning': 'Öğrenme kayıtlarını sil',
   'settings.clearLearningConfirm': 'Bu cihazdaki tüm öğrenme kayıtları (tekrar planı) silinsin mi? Desteler ve kayıtlı oyunlar etkilenmez. Bu işlem geri alınamaz.',
-  'settings.learningDeleted': 'Öğrenme kayıtları silindi.'
+  'settings.learningDeleted': 'Öğrenme kayıtları silindi.',
+  'settings.library': 'Bu cihazda oyunlarda oluşturduğun içerikler (ör. haritalar): {count}',
+  'settings.libraryGame': '{game}: {count}',
+  'settings.clearLibrary': 'Kendi içeriklerimi sil (ör. haritalar)',
+  'settings.clearLibraryConfirm': 'Bu cihazda oyunlarda oluşturduğun her şey (ör. haritalar) silinsin mi? Kayıtlı oyunlar, desteler ve öğrenme kayıtları etkilenmez. Bu işlem geri alınamaz.',
+  'settings.libraryDeleted': 'Kendi içeriklerin silindi.'
 };
 
 export default tr;

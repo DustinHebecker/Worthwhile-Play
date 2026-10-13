@@ -185,7 +185,12 @@ const de: UiCatalogue = {
   'settings.learning': 'Lernstände auf diesem Gerät: {count}',
   'settings.clearLearning': 'Lernstände löschen',
   'settings.clearLearningConfirm': 'Alle Lernstände (den Wiederholungsplan) auf diesem Gerät löschen? Decks und gespeicherte Spiele sind nicht betroffen. Das kann nicht rückgängig gemacht werden.',
-  'settings.learningDeleted': 'Lernstände gelöscht.'
+  'settings.learningDeleted': 'Lernstände gelöscht.',
+  'settings.library': 'Eigene Inhalte aus Spielen (z. B. selbst gebaute Karten) auf diesem Gerät: {count}',
+  'settings.libraryGame': '{game}: {count}',
+  'settings.clearLibrary': 'Meine eigenen Inhalte löschen (z. B. Karten)',
+  'settings.clearLibraryConfirm': 'Alles löschen, was du auf diesem Gerät in Spielen erstellt hast (z. B. Karten)? Gespeicherte Spiele, Decks und Lernstände sind nicht betroffen. Das kann nicht rückgängig gemacht werden.',
+  'settings.libraryDeleted': 'Eigene Inhalte gelöscht.'
 };
 
 export default de;
