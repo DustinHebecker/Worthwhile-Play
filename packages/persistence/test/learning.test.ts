@@ -10,6 +10,7 @@ import {
   DB_VERSION,
   DECKS_STORE,
   LEARNING_STORE,
+  LIBRARY_STORE,
   openDatabase,
   SAVES_STORE,
   type LearningRow,
@@ -80,7 +81,7 @@ describe.each([
   });
 });
 
-describe.each([1, 2] as const)('database upgrade %i → 3', (version) => {
+describe.each([1, 2] as const)('database upgrade %i → current', (version) => {
   it('adds the learning store and keeps saves (and decks) untouched', async () => {
     const factory = new FakeIDBFactory();
     await createOldDatabase(factory, 'upgrade', version);
@@ -97,8 +98,8 @@ describe.each([1, 2] as const)('database upgrade %i → 3', (version) => {
 
     const db = await openDatabase(factory, 'upgrade');
     expect(db.version).toBe(DB_VERSION);
-    expect(DB_VERSION).toBe(3);
-    expect([...db.objectStoreNames].sort()).toEqual([DECKS_STORE, LEARNING_STORE, SAVES_STORE].sort());
+    expect(DB_VERSION).toBe(4);
+    expect([...db.objectStoreNames].sort()).toEqual([DECKS_STORE, LEARNING_STORE, LIBRARY_STORE, SAVES_STORE].sort());
     db.close();
     expect(await learning.list()).toEqual([row('flags', 'de')]);
   });

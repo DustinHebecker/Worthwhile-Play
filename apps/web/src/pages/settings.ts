@@ -1,9 +1,11 @@
 import { LOCALE_DEFINITIONS, isSupportedLocale, readContentLanguages, writeContentLanguages } from '@wp/localization';
-import { h } from '@wp/ui';
+import { clear, h } from '@wp/ui';
 import type { Page } from '../app';
 import { SESSION_NOTE_KEY } from '../config';
 import { loadLearningRecords, removeUserDeckRecords } from '../lib/learning';
 import { clearPreferences, createPreferences } from '../lib/preferences';
+import { findGame } from '../registry';
+import { gameTranslator } from './shared';
 
 /** A small list of common learning languages; content languages are not limited to the 16 UI locales. */
 const CONTENT_LANGUAGES = ['ar', 'cs', 'da', 'de', 'el', 'en', 'es', 'fi', 'fr', 'he', 'hi', 'hu', 'id', 'it', 'ja', 'ko', 'nl', 'no', 'pl', 'pt', 'ro', 'ru', 'sv', 'sw', 'th', 'tr', 'uk', 'vi', 'zh-Hans'];
@@ -114,6 +116,34 @@ export const renderSettings: Page = (main, app) => {
   });
   void refreshLearning();
 
+  // Things players create in games (e.g. maps; ADR 0012) are kept when saved games are deleted; own confirmed control.
+  const libraryInfo = h('p', { class: 'wp-muted', 'data-testid': 'library-info' });
+  const libraryGames = h('ul', { class: 'wp-muted library-games', 'data-testid': 'library-games', hidden: true });
+  const clearLibraryButton = h('button', { type: 'button', 'data-testid': 'clear-library' }, t('settings.clearLibrary'));
+  const gameTitle = (id: string) => {
+    const entry = findGame(id);
+    return entry ? gameTranslator(entry.metadata, app.locale)('title') : id;
+  };
+  const refreshLibrary = async () => {
+    const counts = await (await app.library).counts().catch(() => new Map<string, number>());
+    let total = 0;
+    for (const count of counts.values()) total += count;
+    libraryInfo.textContent = t('settings.library', { count: total });
+    const rows = [...counts].map(([id, count]) => ({ title: gameTitle(id), count }));
+    rows.sort((a, b) => a.title.localeCompare(b.title, app.locale));
+    clear(libraryGames);
+    libraryGames.append(...rows.map(({ title, count }) => h('li', {}, t('settings.libraryGame', { game: title, count }))));
+    libraryGames.hidden = rows.length === 0;
+    clearLibraryButton.disabled = total === 0;
+  };
+  clearLibraryButton.addEventListener('click', async () => {
+    if (!confirm(t('settings.clearLibraryConfirm'))) return;
+    await (await app.library).clear();
+    await refreshLibrary();
+    app.announce(t('settings.libraryDeleted'));
+  });
+  void refreshLibrary();
+
   main.append(
     h('section', { class: 'prose settings' },
       h('h1', {}, t('settings.title')),
@@ -129,7 +159,8 @@ export const renderSettings: Page = (main, app) => {
       h('div', { class: 'field checkbox' }, sessionToggle, h('label', { for: 'session-note' }, t('settings.sessionNote'))),
       h('div', { class: 'field' }, savesInfo, clearButton),
       h('div', { class: 'field' }, decksInfo, clearDecksButton),
-      h('div', { class: 'field' }, learningInfo, clearLearningButton)
+      h('div', { class: 'field' }, learningInfo, clearLearningButton),
+      h('div', { class: 'field' }, libraryInfo, libraryGames, clearLibraryButton)
     )
   );
 };

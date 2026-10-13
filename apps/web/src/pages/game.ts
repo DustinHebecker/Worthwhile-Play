@@ -1,7 +1,7 @@
 import { randomSeed, type GameInstance, type GameModule, type GameResult } from '@wp/game-core';
 import type { GameContentLanguages, UserDeckSource } from '@wp/game-core';
 import { readContentLanguages } from '@wp/localization';
-import { createAutosave, createSave, interpretSave, type GameSave, type SaveStore } from '@wp/persistence';
+import { createAutosave, createGameLibrary, createSave, interpretSave, type GameSave, type SaveStore } from '@wp/persistence';
 import { clear, h } from '@wp/ui';
 import type { AppContext, Page } from '../app';
 import { SESSION_NOTE_MINUTES } from '../config';
@@ -64,6 +64,8 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
   let autosave: ReturnType<typeof createAutosave> | undefined;
   let current: { seed: number; difficulty: string | undefined } | undefined;
   let disposed = false;
+  // The game's own creations (ADR 0012), scoped to its id; asynchronous, so it needs no loading before `create`.
+  const library = createGameLibrary(app.library, metadata.id);
   let playMs = 0;
   let lastTick = Date.now();
   let noteShown = false;
@@ -143,6 +145,7 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
       contentLanguages: contentLanguages(),
       ...(userDecks ? { userDecks } : {}),
       ...(learning ? { learning } : {}),
+      library,
       // `?deck=<id>` applies to the first game started on this page only.
       ...(route.deck && !launched ? { launch: { deck: route.deck } } : {})
     });

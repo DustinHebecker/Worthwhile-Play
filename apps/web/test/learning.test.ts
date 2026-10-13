@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createTranslator } from '@wp/localization';
-import { createMemoryDeckStore, createMemoryLearningStore, createMemoryStore, type LearningStore } from '@wp/persistence';
+import { createMemoryDeckStore, createMemoryLearningStore, createMemoryLibraryStore, createMemoryStore, type LearningStore } from '@wp/persistence';
 import type { AppContext } from '../src/app';
 import { UI_MESSAGES } from '../src/i18n';
 import { hostLearning, loadLearningRecords, removeUserDeckRecords } from '../src/lib/learning';
@@ -84,6 +84,7 @@ describe('settings: delete learning records', () => {
       store: Promise.resolve(Object.assign(createMemoryStore(), { persistent: true })),
       decks: Promise.resolve(decks),
       learning: Promise.resolve(learningStore),
+      library: Promise.resolve(createMemoryLibraryStore()),
       navigate: vi.fn(),
       setLocale: vi.fn(),
       announce: vi.fn()

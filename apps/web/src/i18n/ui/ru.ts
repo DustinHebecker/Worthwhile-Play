@@ -185,7 +185,12 @@ const ru: UiCatalogue = {
   'settings.learning': 'Записей обучения на этом устройстве: {count}',
   'settings.clearLearning': 'Удалить записи обучения',
   'settings.clearLearningConfirm': 'Удалить все записи обучения (расписание повторений) на этом устройстве? Колоды и сохранённые игры не затрагиваются. Это действие нельзя отменить.',
-  'settings.learningDeleted': 'Записи обучения удалены.'
+  'settings.learningDeleted': 'Записи обучения удалены.',
+  'settings.library': 'Ваших творений в играх (например, карт) на этом устройстве: {count}',
+  'settings.libraryGame': '{game}: {count}',
+  'settings.clearLibrary': 'Удалить мой собственный контент (например, карты)',
+  'settings.clearLibraryConfirm': 'Удалить всё, что вы создали в играх на этом устройстве (например, карты)? Сохранённые игры, колоды и записи обучения не затрагиваются. Это действие нельзя отменить.',
+  'settings.libraryDeleted': 'Ваш собственный контент удалён.'
 };
 
 export default ru;

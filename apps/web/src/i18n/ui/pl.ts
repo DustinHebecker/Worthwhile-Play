@@ -185,7 +185,12 @@ const pl: UiCatalogue = {
   'settings.learning': 'Zapisy nauki na tym urządzeniu: {count}',
   'settings.clearLearning': 'Usuń zapisy nauki',
   'settings.clearLearningConfirm': 'Usunąć wszystkie zapisy nauki (harmonogram powtórek) z tego urządzenia? Talie i zapisane gry pozostaną. Tej operacji nie można cofnąć.',
-  'settings.learningDeleted': 'Zapisy nauki usunięte.'
+  'settings.learningDeleted': 'Zapisy nauki usunięte.',
+  'settings.library': 'Własne treści z gier (np. mapy) na tym urządzeniu: {count}',
+  'settings.libraryGame': '{game}: {count}',
+  'settings.clearLibrary': 'Usuń moje własne treści (np. mapy)',
+  'settings.clearLibraryConfirm': 'Usunąć wszystko, co utworzono w grach na tym urządzeniu (np. mapy)? Zapisane gry, talie i zapisy nauki pozostaną. Tej operacji nie można cofnąć.',
+  'settings.libraryDeleted': 'Własne treści usunięte.'
 };
 
 export default pl;

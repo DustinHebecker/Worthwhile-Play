@@ -185,7 +185,12 @@ const ja: UiCatalogue = {
   'settings.learning': 'この端末の学習記録：{count}',
   'settings.clearLearning': '学習記録を削除',
   'settings.clearLearningConfirm': 'この端末のすべての学習記録（復習スケジュール）を削除しますか？デッキと保存したゲームには影響しません。元に戻せません。',
-  'settings.learningDeleted': '学習記録を削除しました。'
+  'settings.learningDeleted': '学習記録を削除しました。',
+  'settings.library': 'この端末でゲーム内に作成したもの（マップなど）：{count} 個',
+  'settings.libraryGame': '{game}：{count} 個',
+  'settings.clearLibrary': '自分で作成したコンテンツを削除（マップなど）',
+  'settings.clearLibraryConfirm': 'この端末でゲーム内に作成したもの（マップなど）をすべて削除しますか？セーブデータ、デッキ、学習記録には影響しません。この操作は元に戻せません。',
+  'settings.libraryDeleted': '自分で作成したコンテンツを削除しました。'
 };
 
 export default ja;

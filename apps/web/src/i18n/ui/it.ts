@@ -185,7 +185,12 @@ const it: UiCatalogue = {
   'settings.learning': 'Dati di apprendimento su questo dispositivo: {count}',
   'settings.clearLearning': 'Elimina i dati di apprendimento',
   'settings.clearLearningConfirm': 'Eliminare tutti i dati di apprendimento (il piano di ripasso) da questo dispositivo? Mazzi e partite salvate non vengono toccati. L’operazione non può essere annullata.',
-  'settings.learningDeleted': 'Dati di apprendimento eliminati.'
+  'settings.learningDeleted': 'Dati di apprendimento eliminati.',
+  'settings.library': 'Le tue creazioni nei giochi (ad es. mappe) su questo dispositivo: {count}',
+  'settings.libraryGame': '{game}: {count}',
+  'settings.clearLibrary': 'Elimina i miei contenuti (ad es. mappe)',
+  'settings.clearLibraryConfirm': 'Eliminare tutto ciò che hai creato nei giochi su questo dispositivo (ad es. mappe)? Partite salvate, mazzi e dati di apprendimento non vengono toccati. L’operazione non può essere annullata.',
+  'settings.libraryDeleted': 'Contenuti personali eliminati.'
 };
 
 export default it;
