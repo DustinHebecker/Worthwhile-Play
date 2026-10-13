@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Map excerpt</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: system-ui, "Segoe UI", Roboto, "Noto Sans", sans-serif;
+        background: #8a887f;
+      }
+      #page {
+        display: flex;
+        gap: 0;
+        width: max-content;
+      }
+      .panel {
+        padding: 16px 20px 18px;
+        display: grid;
+        gap: 8px;
+        width: 480px;
+        box-sizing: border-box;
+      }
+      h1 {
+        font-size: 16px;
+        margin: 0;
+      }
+      .cap {
+        font-size: 12px;
+        line-height: 1.4;
+        margin: 0;
+      }
+      .frame {
+        border-radius: 10px;
+        overflow: hidden;
+        width: 440px;
+        height: 352px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="page"></div>
+    <script src="icons.js"></script>
+    <script>
+      const q = new URLSearchParams(location.search);
+      const setName = q.get("set") || "A";
+      const set = SETS[setName];
+      // Field Exercise (packages/games/relay-command/src/scenarios.ts), full 12x12, point mirror of the top half.
+      const topRows = [
+        "....ff....=.",
+        "..~~ff...==.",
+        "..~~...h.=..",
+        ".......h=...",
+        "ff....==..s.",
+        "f..u==.....f",
+      ];
+      const rows = [
+        ...topRows,
+        ...[...topRows].reverse().map((r) => [...r].reverse().join("")),
+      ];
+      const NAMES = {
+        ".": "plain",
+        "=": "road",
+        f: "forest",
+        h: "hill",
+        u: "urban",
+        s: "swamp",
+        "~": "water",
+        "^": "ridge",
+      };
+      const deposits = [
+        [7, 1],
+        [6, 4],
+        [4, 10],
+        [5, 7],
+      ];
+      const X0 = 0,
+        Y0 = 3,
+        W = 10,
+        H = 8; // 10 x 8 crop
+      // A plausible mid-game picture (turn ~7). Coordinates are full-map cells.
+      const ents = [
+        { k: "command-post", s: "own", x: 1, y: 10 },
+        { k: "muster", s: "own", x: 0, y: 8 },
+        { k: "motor-pool", s: "own", x: 1, y: 8, site: 2 },
+        { k: "extractor", s: "own", x: 4, y: 10 },
+        { k: "extractor", s: "own", x: 5, y: 7, site: 1 },
+        { k: "mast-truck", s: "own", x: 2, y: 8, deployed: true },
+        { k: "field-post", s: "own", x: 2, y: 6 },
+        { k: "howitzer", s: "own", x: 3, y: 9 },
+        { k: "tracer", s: "own", x: 4, y: 7 },
+        { k: "jammer", s: "own", x: 5, y: 9 },
+        { k: "lancer", s: "own", x: 3, y: 4, order: { attack: [8, 5] } },
+        { k: "rifles", s: "own", x: 5, y: 4, hp: 0.45 },
+        { k: "rifles", s: "own", x: 4, y: 5 },
+        {
+          k: "warden",
+          s: "own",
+          x: 5,
+          y: 5,
+          selected: true,
+          order: { move: [7, 4] },
+        },
+        { k: "outrider", s: "own", x: 6, y: 5 },
+        { k: "kite", s: "own", x: 9, y: 4, ghost: true },
+        { k: "extractor", s: "enemy", x: 6, y: 4 },
+        { k: "tower-gun", s: "enemy", x: 8, y: 3 },
+        { k: "rifles", s: "enemy", x: 7, y: 5 },
+        { k: "warden", s: "enemy", x: 8, y: 5, hp: 0.7 },
+        { k: "jammer", s: "enemy", x: 8, y: 7, deployed: true },
+        { k: "lancer", s: "enemy", x: 9, y: 3 },
+        { k: "outrider", s: "enemy", x: 9, y: 8 },
+      ];
+      const d2 = (a, b, c, d) => (a - c) ** 2 + (b - d) ** 2;
+      // Network: Command Post r5 + deployed Mast Truck r5 (linked); enemy jammer r3; own tracer burn-through r2.
+      const nodes = [
+        [1, 10, 5],
+        [2, 8, 5],
+      ];
+      const tracer = [4, 7];
+      const jam = [8, 7, 3];
+      const coveredRaw = (x, y) =>
+        nodes.some(([nx, ny, r]) => d2(x, y, nx, ny) <= r * r);
+      const jammed = (x, y) =>
+        coveredRaw(x, y) &&
+        d2(x, y, jam[0], jam[1]) <= 9 &&
+        d2(x, y, tracer[0], tracer[1]) > 4;
+      const covered = (x, y) => coveredRaw(x, y) && !jammed(x, y);
+      for (const e of ents)
+        if (e.s === "own" && !e.ghost) {
+          e.noContact = !covered(e.x, e.y) && KINDS[e.k].cat !== "str";
+          e.jammed = jammed(e.x, e.y);
+        }
+      // Fog: what own reporters (in coverage, not ghosts) see.
+      const reporters = ents.filter(
+        (e) =>
+          e.s === "own" &&
+          !e.ghost &&
+          covered(e.x, e.y) &&
+          e.site === undefined,
+      );
+      const observed = (x, y) =>
+        reporters.some((e) => d2(x, y, e.x, e.y) <= KINDS[e.k].vision ** 2);
+      for (const e of ents)
+        if (e.s === "enemy" && !observed(e.x, e.y) && e.k !== "jammer")
+          e.ghost = true; // active jammer = located emitter
+
+      function drawMap(th) {
+        let s = "";
+        for (let y = Y0; y < Y0 + H; y++)
+          for (let x = X0; x < X0 + W; x++) {
+            const name = NAMES[rows[y][x]];
+            let cell = terrainCell(th, name, {
+              fog: !observed(x, y),
+              nocover: !covered(x, y),
+              jammed: jammed(x, y),
+            });
+            const here = ents.filter((e) => e.x === x && e.y === y);
+            if (deposits.some(([dx, dy]) => dx === x && dy === y)) {
+              if (here.length === 0) cell += deposit(th);
+              else if (here[0].k !== "extractor")
+                cell += deposit(th, { mini: true });
+            }
+            s += g(cell, {
+              transform: `translate(${(x - X0) * 44} ${(y - Y0) * 44})`,
+            });
+          }
+        // Node rings (dotted, as today).
+        const clip = `<clipPath id="crop-${th.name}"><rect width="${W * 44}" height="${H * 44}"/></clipPath>`;
+        let rings = "";
+        for (const [nx, ny, r] of nodes)
+          rings += circle(
+            (nx - X0) * 44 + 22,
+            (ny - Y0) * 44 + 22,
+            r * 44 + 22,
+            {
+              fill: "none",
+              stroke: th.p1,
+              "stroke-width": 1,
+              "stroke-dasharray": "3 6",
+            },
+          );
+        s += clip + g(rings, { "clip-path": `url(#crop-${th.name})` });
+        // Order lines (as today: move dashed, attack solid with a cross).
+        for (const e of ents) {
+          if (!e.order) continue;
+          const ax = (e.x - X0) * 44 + 22,
+            ay = (e.y - Y0) * 44 + 22;
+          const [tx, ty] = (e.order.move || e.order.attack).map(
+            (v, i) => (v - (i ? Y0 : X0)) * 44 + 22,
+          );
+          s += line(ax, ay, tx, ty, {
+            stroke: th.p1,
+            "stroke-width": 3,
+            "stroke-dasharray": e.order.move ? "6 5" : undefined,
+          });
+          if (e.order.attack)
+            s += path(
+              `M${tx - 8},${ty - 8} L${tx + 8},${ty + 8} M${tx + 8},${ty - 8} L${tx - 8},${ty + 8}`,
+              { stroke: th.p1, "stroke-width": 3 },
+            );
+          if (e.order.move)
+            s += circle(tx, ty, 5, {
+              fill: "none",
+              stroke: th.p1,
+              "stroke-width": 3,
+            });
+        }
+        for (const e of ents) {
+          const st = {
+            side: e.s,
+            ghost: e.ghost,
+            deployed: e.deployed,
+            hp: e.hp,
+            site: e.site,
+            selected: e.selected,
+            noContact: e.noContact || (e.ghost && e.s === "own"),
+            jammed: e.jammed,
+          };
+          s += g(icon(setName, e.k, th, st), {
+            transform: `translate(${(e.x - X0) * 44} ${(e.y - Y0) * 44})`,
+          });
+        }
+        return `<svg xmlns="http://www.w3.org/2000/svg" width="${W * 44}" height="${H * 44}" viewBox="0 0 ${W * 44} ${H * 44}" style="display:block;stroke-linecap:round">${s}</svg>`;
+      }
+      let html = "";
+      for (const th of [TH.light, TH.dark]) {
+        html += `<div class="panel" style="background:${th.bg};color:${th.text}">
+    <h1>${set.title} · ${th.name}</h1>
+    <div class="frame" style="border:1px solid ${th.border}">${drawMap(th)}</div>
+    <p class="cap" style="color:${th.muted}">Field Exercise, 10 × 8 crop at the real cell size (44 px), mid-game. Yours bottom-left: Command Post, Muster Yard, Motor Pool site (2), Extractor + Extractor site (1) on the contested road deposit, set-up Mast Truck, packed Field Post, Field Gun, Tracer, Static Jammer, Lancer (attack order), two Rifle Squads, Warden (selected, move order), jammed Outrider, Kite out of contact (last known). Enemy: Extractor, Gun Tower, Rifle Squad, damaged Warden, set-up Jammer (located emitter), two last-seen units in the fog.</p>
+  </div>`;
+      }
+      document.getElementById("page").innerHTML = html;
+    </script>
+  </body>
+</html>

@@ -9,6 +9,7 @@ import {
   DB_VERSION,
   DECKS_STORE,
   LEARNING_STORE,
+  LIBRARY_STORE,
   openDatabase,
   SAVES_STORE,
   type DeckStore
@@ -78,7 +79,7 @@ describe('database upgrade 1 → current', () => {
     expect(await decks.list()).toEqual([{ id: 'user-x-1' }]);
     const db = await openDatabase(factory, 'upgrade');
     expect(db.version).toBe(DB_VERSION);
-    expect([...db.objectStoreNames].sort()).toEqual([DECKS_STORE, LEARNING_STORE, SAVES_STORE].sort());
+    expect([...db.objectStoreNames].sort()).toEqual([DECKS_STORE, LEARNING_STORE, LIBRARY_STORE, SAVES_STORE].sort());
     db.close();
   });
 

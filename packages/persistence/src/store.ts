@@ -36,11 +36,14 @@ export const DB_NAME = 'worthwhile-play';
  * 1 — `saves` (one game save per game id)
  * 2 — `decks` (learning decks imported by the user)
  * 3 — `learning` (spaced-repetition records, keyed by [deckId, itemId, direction])
+ * 4 — `library` (things players create in games, keyed by [gameId, id], index `byGame` on gameId; ADR 0012)
  */
-export const DB_VERSION = 3;
+export const DB_VERSION = 4;
 export const SAVES_STORE = 'saves';
 export const DECKS_STORE = 'decks';
 export const LEARNING_STORE = 'learning';
+export const LIBRARY_STORE = 'library';
+export const LIBRARY_BY_GAME_INDEX = 'byGame';
 /** How long to wait for another tab (running an older version) to release the database before giving up. */
 export const UPGRADE_BLOCKED_TIMEOUT_MS = 4000;
 
@@ -56,6 +59,9 @@ export function upgradeDatabase(db: IDBDatabase): void {
   if (!db.objectStoreNames.contains(SAVES_STORE)) db.createObjectStore(SAVES_STORE, { keyPath: 'gameId' });
   if (!db.objectStoreNames.contains(DECKS_STORE)) db.createObjectStore(DECKS_STORE, { keyPath: 'id' });
   if (!db.objectStoreNames.contains(LEARNING_STORE)) db.createObjectStore(LEARNING_STORE, { keyPath: ['deckId', 'itemId', 'direction'] });
+  if (!db.objectStoreNames.contains(LIBRARY_STORE)) {
+    db.createObjectStore(LIBRARY_STORE, { keyPath: ['gameId', 'id'] }).createIndex(LIBRARY_BY_GAME_INDEX, 'gameId');
+  }
 }
 
 export function openDatabase(factory: IDBFactory = globalThis.indexedDB, name = DB_NAME, blockedTimeoutMs = UPGRADE_BLOCKED_TIMEOUT_MS): Promise<IDBDatabase> {

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { GameContext, GameMetadata, GameModule } from '@wp/game-core';
-import { createMemoryStore } from '@wp/persistence';
+import { createMemoryLibraryStore, createMemoryStore, type LibraryStore } from '@wp/persistence';
 import type { AppContext, UiTranslator } from '../src/app';
 import { renderGamePage } from '../src/pages/game';
 
@@ -23,6 +23,9 @@ const metadata = (id: string): GameMetadata => ({
   messages: { en: { title: `Title ${id}`, tagline: 'Tagline', rules: 'Rules' } }
 });
 
+/** The context each fake game was created with, by game id. */
+const contexts = new Map<string, GameContext>();
+
 /** A game whose `preload` is controlled by the test and which renders the locale it was preloaded for. */
 function fakeGame(id: string, preload?: (locale: string) => Promise<void>) {
   const log: string[] = [];
@@ -41,6 +44,7 @@ function fakeGame(id: string, preload?: (locale: string) => Promise<void>) {
       : {}),
     create: (context: GameContext) => {
       log.push(`create:${context.t.locale}`);
+      contexts.set(id, context);
       return {
         newGame: () => {
           log.push('newGame');
@@ -59,7 +63,7 @@ function fakeGame(id: string, preload?: (locale: string) => Promise<void>) {
   return log;
 }
 
-function app(locale: AppContext['locale']): AppContext {
+function app(locale: AppContext['locale'], library: LibraryStore = createMemoryLibraryStore()): AppContext {
   const t = Object.assign((key: string) => key, { locale, direction: 'ltr' as const }) as unknown as UiTranslator;
   return {
     locale,
@@ -67,6 +71,7 @@ function app(locale: AppContext['locale']): AppContext {
     store: Promise.resolve(Object.assign(createMemoryStore(), { persistent: true })),
     decks: new Promise(() => undefined),
     learning: new Promise(() => undefined),
+    library: Promise.resolve(library),
     navigate: () => undefined,
     setLocale: async () => undefined,
     announce: () => undefined
@@ -74,10 +79,10 @@ function app(locale: AppContext['locale']): AppContext {
 }
 
 const cleanups: (() => Promise<void>)[] = [];
-function open(id: string, locale: AppContext['locale']) {
+function open(id: string, locale: AppContext['locale'], library?: LibraryStore) {
   const main = document.createElement('main');
   document.body.append(main);
-  cleanups.push(renderGamePage(main, app(locale), { name: 'game', id, seed: 7 } as never));
+  cleanups.push(renderGamePage(main, app(locale, library), { name: 'game', id, seed: 7 } as never));
   return main;
 }
 
@@ -85,6 +90,7 @@ afterEach(async () => {
   for (const cleanup of cleanups.splice(0)) await cleanup();
   document.body.innerHTML = '';
   registry.entries.clear();
+  contexts.clear();
 });
 
 window.matchMedia ??= ((query: string) => ({ matches: false, media: query, addEventListener: () => undefined, removeEventListener: () => undefined })) as never;
@@ -122,5 +128,24 @@ describe('game page: optional per-locale preload (ADR 0011)', () => {
     } finally {
       error.mockRestore();
     }
+  });
+});
+
+describe('game page: library for player creations (ADR 0012)', () => {
+  it('gives every game a library scoped to its id, backed by the app library store', async () => {
+    const store = createMemoryLibraryStore();
+    fakeGame('maps-a');
+    fakeGame('maps-b');
+    open('maps-a', 'en', store);
+    open('maps-b', 'en', store);
+    await vi.waitFor(() => expect(contexts.size).toBe(2));
+    const a = contexts.get('maps-a')!.library!;
+    const b = contexts.get('maps-b')!.library!;
+    await a.put({ id: 'ridge', name: 'Ridge', data: { cells: [0, 1] } });
+    expect(await b.get('ridge')).toBeUndefined();
+    expect(await b.list()).toEqual([]);
+    expect((await a.list()).map((e) => e.name)).toEqual(['Ridge']);
+    expect(await store.counts()).toEqual(new Map([['maps-a', 1]]));
+    await expect(a.put({ name: 'Too big', data: 'x'.repeat(70_000) })).rejects.toMatchObject({ reason: 'too-large' });
   });
 });

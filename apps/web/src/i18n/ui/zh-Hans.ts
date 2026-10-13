@@ -185,7 +185,12 @@ const zhHans: UiCatalogue = {
   'settings.learning': '此设备上的学习记录：{count}',
   'settings.clearLearning': '删除学习记录',
   'settings.clearLearningConfirm': '删除此设备上的所有学习记录（复习安排）？卡组和已保存的游戏不受影响。此操作无法撤销。',
-  'settings.learningDeleted': '学习记录已删除。'
+  'settings.learningDeleted': '学习记录已删除。',
+  'settings.library': '此设备上你在游戏中创建的内容（如地图）：{count}',
+  'settings.libraryGame': '{game}：{count}',
+  'settings.clearLibrary': '删除我自己创建的内容（如地图）',
+  'settings.clearLibraryConfirm': '要删除你在此设备上的游戏中创建的所有内容（如地图）吗？存档、卡组和学习记录不受影响。此操作无法撤销。',
+  'settings.libraryDeleted': '已删除你自己创建的内容。'
 };
 
 export default zhHans;

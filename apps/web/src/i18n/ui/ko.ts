@@ -185,7 +185,12 @@ const ko: UiCatalogue = {
   'settings.learning': '이 기기의 학습 기록: {count}',
   'settings.clearLearning': '학습 기록 삭제',
   'settings.clearLearningConfirm': '이 기기의 모든 학습 기록(복습 일정)을 삭제할까요? 덱과 저장된 게임은 영향을 받지 않습니다. 되돌릴 수 없습니다.',
-  'settings.learningDeleted': '학습 기록을 삭제했습니다.'
+  'settings.learningDeleted': '학습 기록을 삭제했습니다.',
+  'settings.library': '이 기기에서 게임으로 만든 콘텐츠(예: 맵): {count}개',
+  'settings.libraryGame': '{game}: {count}개',
+  'settings.clearLibrary': '내가 만든 콘텐츠 삭제(예: 맵)',
+  'settings.clearLibraryConfirm': '이 기기의 게임에서 만든 콘텐츠(예: 맵)를 모두 삭제할까요? 저장된 게임, 덱, 학습 기록은 그대로예요. 되돌릴 수 없어요.',
+  'settings.libraryDeleted': '내가 만든 콘텐츠를 삭제했어요.'
 };
 
 export default ko;

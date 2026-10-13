@@ -185,7 +185,12 @@ const nl: UiCatalogue = {
   'settings.learning': 'Leergegevens op dit apparaat: {count}',
   'settings.clearLearning': 'Leergegevens verwijderen',
   'settings.clearLearningConfirm': 'Alle leergegevens (het herhaalschema) op dit apparaat verwijderen? Decks en opgeslagen spellen blijven bewaard. Dit kan niet ongedaan worden gemaakt.',
-  'settings.learningDeleted': 'Leergegevens verwijderd.'
+  'settings.learningDeleted': 'Leergegevens verwijderd.',
+  'settings.library': 'Eigen creaties uit spellen (bijv. zelfgemaakte kaarten) op dit apparaat: {count}',
+  'settings.libraryGame': '{game}: {count}',
+  'settings.clearLibrary': 'Mijn eigen inhoud verwijderen (bijv. kaarten)',
+  'settings.clearLibraryConfirm': 'Alles verwijderen wat je op dit apparaat in spellen hebt gemaakt (bijv. kaarten)? Opgeslagen spellen, decks en leergegevens blijven bewaard. Dit kan niet ongedaan worden gemaakt.',
+  'settings.libraryDeleted': 'Je eigen inhoud is verwijderd.'
 };
 
 export default nl;

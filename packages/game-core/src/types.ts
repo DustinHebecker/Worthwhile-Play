@@ -119,6 +119,53 @@ export interface GameContext {
    * `newGame` only; a game that supports them should remember them in its preferences.
    */
   readonly launch?: GameLaunchOptions;
+  /**
+   * Optional per-game store for things the player creates (e.g. maps), on this device (ADR 0012). Asynchronous,
+   * separate from saves and preferences: "Delete all saved games" keeps it; Settings has its own confirmed delete.
+   * Items read back are untrusted (validate `data`). Games must keep working without it (e.g. older hosts, tests).
+   */
+  readonly library?: GameLibrary;
+}
+
+/** One item of a game's library without its data (for lists). */
+export interface LibraryEntry {
+  /** Host-made (random) or game-chosen id, `[A-Za-z0-9_-]{1,64}`. Game logic must not depend on its value. */
+  readonly id: string;
+  readonly name: string;
+  /** ISO-8601 timestamp of the last `put`. */
+  readonly updatedAt: string;
+  /** UTF-8 bytes of the serialized data. */
+  readonly size: number;
+}
+
+/** One item with its data. `data` is untrusted JSON: validate it like a save before using it. */
+export interface LibraryItem {
+  readonly id: string;
+  readonly name: string;
+  readonly data: unknown;
+  readonly updatedAt: string;
+}
+
+/** What a game passes to `GameLibrary.put`. Without `id` a new item is created; with an id it is created or replaced. */
+export interface LibraryItemInput {
+  readonly id?: string;
+  readonly name: string;
+  /** Plain JSON only: null, booleans, finite numbers, strings, arrays and plain objects (no cycles, no undefined). */
+  readonly data: unknown;
+}
+
+/**
+ * A game's own library (scoped to its id by the host). All methods are asynchronous and reject with a
+ * `GameLibraryError` only; reading never throws on stored junk (unreadable items are skipped).
+ */
+export interface GameLibrary {
+  /** Items of this game, most recently changed first. */
+  list(): Promise<LibraryEntry[]>;
+  get(id: string): Promise<LibraryItem | undefined>;
+  /** Creates or replaces an item (the data is copied). Resolves to the stored entry. */
+  put(item: LibraryItemInput): Promise<LibraryEntry>;
+  /** Removes an item; a missing id is not an error. */
+  delete(id: string): Promise<void>;
 }
 
 export interface GameLaunchOptions {

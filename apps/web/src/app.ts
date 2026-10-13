@@ -8,7 +8,16 @@ import {
   writeUiLocale,
   type SupportedLocale
 } from '@wp/localization';
-import { createIndexedDbDeckStore, createIndexedDbLearningStore, createIndexedDbStore, type DeckStore, type LearningStore, type SaveStore } from '@wp/persistence';
+import {
+  createIndexedDbDeckStore,
+  createIndexedDbLearningStore,
+  createIndexedDbLibraryStore,
+  createIndexedDbStore,
+  type DeckStore,
+  type LearningStore,
+  type LibraryStore,
+  type SaveStore
+} from '@wp/persistence';
 import { announce, clear, h } from '@wp/ui';
 import { APP_NAME } from './config';
 import { loadLocale, UI_MESSAGES, type UiKey } from './i18n';
@@ -32,6 +41,8 @@ export interface AppContext {
   decks: Promise<DeckStore>;
   /** Spaced-repetition records ("Items worth reviewing"); separate from saves and decks. */
   learning: Promise<LearningStore>;
+  /** Things players create in games, e.g. maps (ADR 0012); separate from saves, preferences, decks and learning records. */
+  library: Promise<LibraryStore>;
   navigate: (path: string) => void;
   /** Loads the locale's messages, then switches to it and re-renders (never shows keys or English meanwhile). */
   setLocale: (locale: SupportedLocale) => Promise<void>;
@@ -70,6 +81,7 @@ export async function startApp(root: HTMLElement): Promise<void> {
     store: createIndexedDbStore(),
     decks: createIndexedDbDeckStore(),
     learning: createIndexedDbLearningStore(),
+    library: createIndexedDbLibraryStore(),
     navigate: (path) => navigate(path),
     setLocale: async (next) => {
       // Only the latest choice wins when the user switches again while a locale is still loading.

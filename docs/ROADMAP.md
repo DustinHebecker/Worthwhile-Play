@@ -22,6 +22,8 @@ Legend — Priority: **P0** foundation/blocking · **P1** next · **P2** later. 
 
 Cross-cutting, continuous: accessibility review, native-speaker review of translations (currently AI-assisted), performance budget per game chunk, documentation/ADRs.
 
+Platform capabilities for games (host, ADRs 0002/0011/0012): preferences (small per-device options), per-locale content preload, and a per-game library for things players create (IndexedDB, 50 items × 64 KiB, own delete button in Settings; first user: Relay Command maps). Follow-ups: export/import of library items, per-game delete.
+
 ## Backlog
 
 | Area | Game / feature | Milestone | Status | Notes |

@@ -185,7 +185,12 @@ const fr: UiCatalogue = {
   'settings.learning': 'Données d’apprentissage sur cet appareil : {count}',
   'settings.clearLearning': 'Supprimer les données d’apprentissage',
   'settings.clearLearningConfirm': 'Supprimer toutes les données d’apprentissage (le planning de révision) de cet appareil ? Les paquets et les parties enregistrées ne sont pas concernés. Cette action est irréversible.',
-  'settings.learningDeleted': 'Données d’apprentissage supprimées.'
+  'settings.learningDeleted': 'Données d’apprentissage supprimées.',
+  'settings.library': 'Vos créations dans les jeux (p. ex. des cartes) sur cet appareil : {count}',
+  'settings.libraryGame': '{game} : {count}',
+  'settings.clearLibrary': 'Supprimer mon contenu personnel (p. ex. des cartes)',
+  'settings.clearLibraryConfirm': 'Supprimer tout ce que vous avez créé dans les jeux sur cet appareil (p. ex. des cartes) ? Les parties sauvegardées, les paquets et les données d’apprentissage ne sont pas concernés. Cette action est irréversible.',
+  'settings.libraryDeleted': 'Contenu personnel supprimé.'
 };
 
 export default fr;

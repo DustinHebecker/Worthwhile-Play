@@ -185,7 +185,12 @@ const pt: UiCatalogue = {
   'settings.learning': 'Registros de estudo neste aparelho: {count}',
   'settings.clearLearning': 'Apagar registros de estudo',
   'settings.clearLearningConfirm': 'Apagar todos os registros de estudo (o cronograma de revisão) deste aparelho? Baralhos e jogos salvos não são afetados. Isso não pode ser desfeito.',
-  'settings.learningDeleted': 'Registros de estudo apagados.'
+  'settings.learningDeleted': 'Registros de estudo apagados.',
+  'settings.library': 'Suas criações nos jogos (p. ex., mapas) neste dispositivo: {count}',
+  'settings.libraryGame': '{game}: {count}',
+  'settings.clearLibrary': 'Apagar meu conteúdo próprio (p. ex., mapas)',
+  'settings.clearLibraryConfirm': 'Apagar tudo o que você criou nos jogos neste dispositivo (p. ex., mapas)? Jogos gravados, baralhos e registros de estudo não são afetados. Esta ação não pode ser desfeita.',
+  'settings.libraryDeleted': 'Conteúdo próprio apagado.'
 };
 
 export default pt;

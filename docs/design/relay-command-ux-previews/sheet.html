@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Icon sheet</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: system-ui, "Segoe UI", Roboto, "Noto Sans", sans-serif;
+      }
+      .page {
+        padding: 20px 24px 28px;
+        width: 1290px;
+        box-sizing: border-box;
+      }
+      h1 {
+        font-size: 22px;
+        margin: 0 0 4px;
+      }
+      .sub {
+        margin: 0 0 14px;
+        font-size: 13.5px;
+        max-width: 1150px;
+        line-height: 1.45;
+      }
+      h2 {
+        font-size: 15px;
+        margin: 18px 0 8px;
+        letter-spacing: 0.02em;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 12px;
+      }
+      .tile {
+        border-radius: 8px;
+        padding: 8px;
+        display: grid;
+        gap: 6px;
+        justify-items: center;
+      }
+      .pair {
+        display: flex;
+        gap: 0;
+      }
+      .lbl {
+        font-size: 12.5px;
+        font-weight: 600;
+        text-align: center;
+      }
+      .cap {
+        font-size: 11px;
+        text-align: center;
+        line-height: 1.25;
+      }
+      .states {
+        display: grid;
+        grid-template-columns: 110px repeat(11, 88px);
+        gap: 6px 6px;
+        align-items: center;
+      }
+      .states .h {
+        font-size: 11px;
+        text-align: center;
+        line-height: 1.2;
+        align-self: end;
+      }
+      .rowlbl {
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .terrain {
+        display: grid;
+        grid-template-columns: repeat(10, auto);
+        gap: 10px;
+        justify-content: start;
+      }
+      .tcell {
+        display: grid;
+        gap: 4px;
+        justify-items: center;
+      }
+      .scale {
+        font-size: 11px;
+      }
+      .note {
+        font-size: 12px;
+        margin-top: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page" id="page"></div>
+    <script src="icons.js"></script>
+    <script>
+      const q = new URLSearchParams(location.search);
+      const setName = q.get("set") || "A";
+      const th = TH[q.get("theme") || "light"];
+      const set = SETS[setName];
+      document.body.style.background = th.bg;
+      document.body.style.color = th.text;
+      const cell = (inner, size, terrain = "plain", opts = {}) =>
+        svg(size, terrainCell(th, terrain, opts) + inner);
+      const DESC = {
+        A: "Frame = category and side: your units sit in a plain rectangle, enemy units in a frame with pointed ends; structures are squares on a foundation bar (enemy: cut corners), towers add battlements, the drone has an arched top, vehicles show two wheels. The mark inside = function, reused across categories (flag = command source, mast with arcs = relay, ballistic arc = artillery).",
+        B: "Keeps today's tokens (your units = filled circle, enemy = outlined diamond, structures = squares, enemy structures with cut corners) and replaces the glyphs with small filled silhouettes. Enemy pictograms face left (a second, non-colour cue). Vehicles of the support family share one truck body and differ by what is mounted on it.",
+        C: "Shape = category (circle infantry, rounded box vehicle, triangle air, house structure, shield tower); side = solid fill (yours) vs double outline (enemy); a letter code names the kind. Cheapest to draw, but the letters are English and would need a short code per locale (16 locales; CJK one character).",
+      };
+      let html = `<h1>${set.title} <span style="font-weight:400;font-size:15px;color:${th.muted}">— ${th.name} theme</span></h1><p class="sub" style="color:${th.muted}">${DESC[setName]}</p>`;
+      const tile = (
+        kind,
+        label,
+        mk,
+      ) => `<div class="tile" style="background:${th.surface};border:1px solid ${th.border}">
+  <div class="pair">${mk("own", 44)}${mk("enemy", 44)}</div>
+  <div class="pair">${mk("own", 88)}${mk("enemy", 88)}</div>
+  <div class="lbl">${label}</div></div>`;
+      const scaleNote = `<span class="scale" style="color:${th.muted}">Each tile: yours | enemy — top row at 1× (44 px = one map cell, real size on a 1× screen), bottom row 2× (88 px ≈ a phone at device-pixel-ratio 2).</span>`;
+      html += `<h2>Units (10) ${scaleNote}</h2><div class="grid">`;
+      for (const k of UNIT_KINDS)
+        html += tile(k, KINDS[k].name, (side, size) =>
+          cell(icon(setName, k, th, { side }), size),
+        );
+      html += `</div><h2>Structures (9) and economy marks</h2><div class="grid">`;
+      for (const k of STRUCT_KINDS)
+        html += tile(k, KINDS[k].name, (side, size) =>
+          cell(icon(setName, k, th, { side }), size),
+        );
+      // Economy: deposit fresh / dry, site, extractor on deposit.
+      html += `<div class="tile" style="background:${th.surface};border:1px solid ${th.border}">
+  <div class="pair">${cell(deposit(th), 44)}${cell(deposit(th, { depleted: true }), 44)}</div>
+  <div class="pair">${cell(deposit(th), 88)}${cell(deposit(th, { depleted: true }), 88)}</div>
+  <div class="lbl">Deposit: fresh | run dry</div></div>`;
+      html += tile("site", "Site (turns left)", (side, size) =>
+        cell(
+          icon(setName, side === "own" ? "motor-pool" : "extractor", th, {
+            side,
+            site: side === "own" ? 3 : 1,
+          }),
+          size,
+        ),
+      );
+      html += tile("rifles", "Unit on a deposit", (side, size) =>
+        cell(
+          icon(setName, side === "own" ? "rifles" : "warden", th, { side }) +
+            deposit(th, { mini: true }),
+          size,
+        ),
+      );
+      html += `</div>`;
+
+      // States
+      const cols = [
+        ["Normal", "own", {}],
+        ["Normal", "enemy", {}],
+        ["Set up", "own", { deployed: true }],
+        ["Set up", "enemy", { deployed: true }],
+        ["Last known / no report", "own", { ghost: true, noContact: true }],
+        ["Last seen", "enemy", { ghost: true }],
+        ["Out of contact", "own", { noContact: true }],
+        ["Jammed", "own", { jammed: true }],
+        ["Damaged 60 %", "own", { hp: 0.6 }],
+        ["Damaged 20 %", "enemy", { hp: 0.2 }],
+        ["Selected", "own", { selected: true, hp: 0.7 }],
+      ];
+      html += `<h2>States (shown on the units they apply to; set-up only exists for Mast Truck, Field Post, Static Jammer)</h2><div class="states"><div></div>`;
+      for (const [t, side] of cols)
+        html += `<div class="h" style="color:${th.muted}">${t}<br><b style="color:${th.text}">${side === "own" ? "yours" : "enemy"}</b></div>`;
+      for (const [kind, label] of [
+        ["mast-truck", "Mast Truck 1×"],
+        ["warden", "Warden 1×"],
+        ["mast-truck", "Mast Truck 2×"],
+        ["field-post", "Field Post 2×"],
+      ]) {
+        const size = label.endsWith("2×") ? 88 : 44;
+        html += `<div class="rowlbl">${label}</div>`;
+        for (const [, side, st] of cols) {
+          const s = { ...st, side };
+          if (s.deployed && !KINDS[kind].deploys) s.deployed = false;
+          html += `<div style="display:grid;place-items:center">${cell(icon(setName, kind, th, s), size)}</div>`;
+        }
+      }
+      html += `</div>`;
+
+      // Terrain stress strip (contrast): both sides on every terrain, plus no-coverage hatching, fog, jammed.
+      html += `<h2>Contrast check: Warden (yours, enemy) and Rifle Squad (yours, enemy) on every terrain and overlay, 1×</h2><div class="terrain">`;
+      const bgs = [
+        ["plain"],
+        ["road"],
+        ["forest"],
+        ["hill"],
+        ["urban"],
+        ["swamp"],
+        ["water"],
+        ["ridge"],
+        ["forest", { nocover: true }, "forest, no coverage"],
+        ["plain", { fog: true, nocover: true }, "fog + no coverage"],
+      ];
+      for (const [name, opts, lbl] of bgs) {
+        html += `<div class="tcell"><div class="pair">${cell(icon(setName, "warden", th, { side: "own" }), 44, name, opts)}${cell(icon(setName, "warden", th, { side: "enemy" }), 44, name, opts)}</div>
+  <div class="pair">${cell(icon(setName, "rifles", th, { side: "own" }), 44, name, opts)}${cell(icon(setName, "rifles", th, { side: "enemy", hp: 0.4 }), 44, name, opts)}</div>
+  <div class="cap" style="color:${th.muted}">${lbl || name}</div></div>`;
+      }
+      html += `</div><p class="note" style="color:${th.muted}">Every icon is drawn with a ${th.name === "light" ? "white" : "dark-surface"} halo around its frame, so the frame contrast is measured against the halo, not the terrain. Frame stroke 2.5 px, ${setName === "C" ? "letters 15 px (two-letter codes 11.5 px) extra-bold" : "mark stroke 2 px"} at 1× for all kinds. Health pips appear only when damaged (5 segments, countable). Badges: "?" top-left = last known position; top-right = out of contact (crossed signal) or jammed (zigzag).</p>`;
+      document.getElementById("page").innerHTML = html;
+    </script>
+  </body>
+</html>

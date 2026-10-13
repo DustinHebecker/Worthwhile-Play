@@ -3,7 +3,7 @@ import fc from 'fast-check';
 import { validateMetadata, type GameInstance, type GameModule } from '@wp/game-core';
 import { auditCatalogues, COMMON_MESSAGES, SUPPORTED_LOCALES } from '@wp/localization';
 import { createSave, createMemoryStore, interpretSave } from '@wp/persistence';
-import { createTestContext, type TestContextExtras } from './context';
+import { createTestContext, createTestLibrary, type TestContextExtras } from './context';
 
 export interface ContractOptions<S> {
   /** Seeds used for determinism checks. */
@@ -28,8 +28,8 @@ const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
  */
 export function runGameContract<S>(module: GameModule<S>, options: ContractOptions<S> = {}): void {
   const seeds = options.seeds ?? [1, 42, 0xdeadbeef];
-  const start = (seed: number) => {
-    const ctx = createTestContext(module as GameModule<unknown>, 'en', undefined, options.extras?.());
+  const start = (seed: number, extras: TestContextExtras | undefined = options.extras?.()) => {
+    const ctx = createTestContext(module as GameModule<unknown>, 'en', undefined, extras);
     const instance = module.create(ctx.context) as GameInstance<S>;
     instance.newGame({ seed });
     return { ctx, instance };
@@ -80,7 +80,10 @@ export function runGameContract<S>(module: GameModule<S>, options: ContractOptio
     });
 
     it('resumes exactly after close (save → reload → restore), including after interaction', async () => {
-      const { ctx, instance } = start(seeds[1] ?? 42);
+      // Same device, so the same library (ADR 0012) in both sessions, unless the suite provides its own.
+      const shared = createTestLibrary(module.metadata.id).library;
+      const extras = (): TestContextExtras => ({ library: shared, ...options.extras?.() });
+      const { ctx, instance } = start(seeds[1] ?? 42, extras());
       if (options.interact) {
         await options.interact(ctx.context.root, instance);
         expect(ctx.saveRequests(), 'interaction should request an autosave').toBeGreaterThan(0);
@@ -93,7 +96,7 @@ export function runGameContract<S>(module: GameModule<S>, options: ContractOptio
       const loaded = interpretSave(await store.read(module.metadata.id), module);
       expect(loaded.status).toBe('ok');
       if (loaded.status !== 'ok') return;
-      const ctx2 = createTestContext(module as GameModule<unknown>, 'en', undefined, options.extras?.());
+      const ctx2 = createTestContext(module as GameModule<unknown>, 'en', undefined, extras());
       const restored = module.create(ctx2.context) as GameInstance<S>;
       restored.restore(loaded.save.state);
       expect(restored.serialize()).toEqual(before);
@@ -141,6 +144,15 @@ export function runGameContract<S>(module: GameModule<S>, options: ContractOptio
         expect(ctx.missingKeys, `missing keys in ${locale}`).toEqual([]);
         instance.dispose();
       }
+    });
+
+    it('works without the optional library (older hosts, storage-less tests)', () => {
+      const ctx = createTestContext(module as GameModule<unknown>, 'en', undefined, { ...options.extras?.(), library: undefined });
+      expect(ctx.context.library).toBeUndefined();
+      const instance = module.create(ctx.context);
+      instance.newGame({ seed: 4 });
+      expect(module.isValidState(clone(instance.serialize()))).toBe(true);
+      instance.dispose();
     });
 
     it('cleans up its DOM on dispose', () => {

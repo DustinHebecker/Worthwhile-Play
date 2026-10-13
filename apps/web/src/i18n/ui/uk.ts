@@ -185,7 +185,12 @@ const uk: UiCatalogue = {
   'settings.learning': 'Записів навчання на цьому пристрої: {count}',
   'settings.clearLearning': 'Видалити записи навчання',
   'settings.clearLearningConfirm': 'Видалити всі записи навчання (розклад повторень) на цьому пристрої? Колоди та збережені ігри не зачіпаються. Цю дію не можна скасувати.',
-  'settings.learningDeleted': 'Записи навчання видалено.'
+  'settings.learningDeleted': 'Записи навчання видалено.',
+  'settings.library': 'Ваших творінь в іграх (наприклад, мап) на цьому пристрої: {count}',
+  'settings.libraryGame': '{game}: {count}',
+  'settings.clearLibrary': 'Видалити мій власний вміст (наприклад, мапи)',
+  'settings.clearLibraryConfirm': 'Видалити все, що ви створили в іграх на цьому пристрої (наприклад, мапи)? Збережені ігри, колоди та записи навчання не зачіпаються. Цю дію не можна скасувати.',
+  'settings.libraryDeleted': 'Ваш власний вміст видалено.'
 };
 
 export default uk;
