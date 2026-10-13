@@ -909,6 +909,9 @@ describe('opponent levels (I5)', () => {
    * produce-only, termination and resumability suites.
    */
   const MARGIN_MAPS: readonly ScenarioSpec[] = [FIELD_EXERCISE, RIDGE_VALLEY];
+  // Timeouts of the long suites: measured under `pnpm coverage` (CI runs with coverage, about
+  // 1.3–2× slower than a plain run): beat easy 63 s locally (133 s in CI), hard vs normal 46 s,
+  // passive 109 s, resumable 28 s, produce-only 11 s — each well under half its limit locally.
 
   it('normal and hard beat easy by a clear margin over randomised openings on Field Exercise and Ridge Valley', () => {
     for (const spec of MARGIN_MAPS) {
@@ -917,7 +920,7 @@ describe('opponent levels (I5)', () => {
       expect(hard.a, `${spec.id} hard vs easy ${JSON.stringify(hard)}`).toBeGreaterThanOrEqual(hard.b + 8);
       expect(normal.a, `${spec.id} normal vs easy ${JSON.stringify(normal)}`).toBeGreaterThanOrEqual(normal.b + 8);
     }
-  }, 180_000);
+  }, 300_000);
 
   it('hard beats normal on Field Exercise by at least 4 games; over Field Exercise and Ridge Valley it wins at least as often as it loses', () => {
     // The two share the plan of attack; hard adds breadth, focus fire, pulling back and jamming.
