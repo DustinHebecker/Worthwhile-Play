@@ -190,7 +190,21 @@ const pt: UiCatalogue = {
   'settings.libraryGame': '{game}: {count}',
   'settings.clearLibrary': 'Apagar meu conteúdo próprio (p. ex., mapas)',
   'settings.clearLibraryConfirm': 'Apagar tudo o que você criou nos jogos neste dispositivo (p. ex., mapas)? Jogos gravados, baralhos e registros de estudo não são afetados. Esta ação não pode ser desfeita.',
-  'settings.libraryDeleted': 'Conteúdo próprio apagado.'
+  'settings.libraryDeleted': 'Conteúdo próprio apagado.',
+  'settings.libraryDeleteGame': 'Apagar',
+  'settings.libraryDeleteGameLabel': 'Apagar o conteúdo próprio de {game}',
+  'settings.libraryDeleteGameConfirm': 'Apagar seu conteúdo próprio de {game} ({count})? Os outros jogos não são afetados. Esta ação não pode ser desfeita.',
+  'settings.libraryGameDeleted': 'Conteúdo próprio de {game} apagado.',
+  'settings.libraryTransfer': 'Fazer cópia ou transferir seu conteúdo próprio',
+  'settings.libraryTransferHint': 'A exportação salva um arquivo com tudo o que você criou nos jogos. O arquivo fica com você: nada é enviado. Importe-o aqui ou em outro dispositivo.',
+  'settings.libraryExport': 'Exportar meu conteúdo próprio (arquivo)',
+  'settings.libraryImport': 'Importar conteúdo próprio de um arquivo',
+  'settings.libraryImportReplace': 'Substituir itens que já existem (p. ex., um mapa na mesma posição)',
+  'settings.libraryImportResult': 'Importação concluída. Novos: {added} · Substituídos: {replaced} · Já existentes: {unchanged} · Mantidos, não substituídos: {kept} · Sem espaço: {full} · Ignorados (ilegíveis ou de jogo desconhecido): {skipped}',
+  'settings.libraryImportNotRecognised': 'Este arquivo não é uma exportação de conteúdo próprio do Worthwhile Play.',
+  'settings.libraryImportNewer': 'Este arquivo vem de uma versão mais recente do Worthwhile Play. Recarregue o app e tente de novo.',
+  'settings.libraryImportTooLarge': 'Este arquivo é grande demais (no máximo 8 MB).',
+  'settings.libraryImportFailed': 'Não foi possível concluir a importação. Os itens importados antes do problema são mantidos.'
 };
 
 export default pt;

@@ -190,7 +190,21 @@ const ja: UiCatalogue = {
   'settings.libraryGame': '{game}：{count} 個',
   'settings.clearLibrary': '自分で作成したコンテンツを削除（マップなど）',
   'settings.clearLibraryConfirm': 'この端末でゲーム内に作成したもの（マップなど）をすべて削除しますか？セーブデータ、デッキ、学習記録には影響しません。この操作は元に戻せません。',
-  'settings.libraryDeleted': '自分で作成したコンテンツを削除しました。'
+  'settings.libraryDeleted': '自分で作成したコンテンツを削除しました。',
+  'settings.libraryDeleteGame': '削除',
+  'settings.libraryDeleteGameLabel': '{game} の自作コンテンツを削除',
+  'settings.libraryDeleteGameConfirm': '{game} の自作コンテンツ（{count} 個）を削除しますか？ほかのゲームには影響しません。この操作は元に戻せません。',
+  'settings.libraryGameDeleted': '{game} の自作コンテンツを削除しました。',
+  'settings.libraryTransfer': '自作コンテンツのバックアップ・移行',
+  'settings.libraryTransferHint': 'エクスポートすると、ゲーム内で作成したものすべてを含むファイルが保存されます。ファイルは手元に残り、どこにもアップロードされません。ここか別の端末でインポートできます。',
+  'settings.libraryExport': '自作コンテンツをエクスポート（ファイル）',
+  'settings.libraryImport': 'ファイルから自作コンテンツをインポート',
+  'settings.libraryImportReplace': '既存の項目を置き換える（例：同じ場所のマップ）',
+  'settings.libraryImportResult': 'インポートが完了しました。新規：{added} · 置き換え：{replaced} · 既存と同じ：{unchanged} · 置き換えずに保持：{kept} · 空きなし：{full} · スキップ（読み取れない、または不明なゲーム）：{skipped}',
+  'settings.libraryImportNotRecognised': 'このファイルは Worthwhile Play の自作コンテンツのエクスポートではありません。',
+  'settings.libraryImportNewer': 'このファイルは新しいバージョンの Worthwhile Play で作成されました。アプリを再読み込みして、もう一度お試しください。',
+  'settings.libraryImportTooLarge': 'このファイルは大きすぎます（最大 8 MB）。',
+  'settings.libraryImportFailed': 'インポートを完了できませんでした。問題が起きる前にインポートされた項目は残ります。'
 };
 
 export default ja;

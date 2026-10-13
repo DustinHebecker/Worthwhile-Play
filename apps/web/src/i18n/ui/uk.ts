@@ -190,7 +190,21 @@ const uk: UiCatalogue = {
   'settings.libraryGame': '{game}: {count}',
   'settings.clearLibrary': 'Видалити мій власний вміст (наприклад, мапи)',
   'settings.clearLibraryConfirm': 'Видалити все, що ви створили в іграх на цьому пристрої (наприклад, мапи)? Збережені ігри, колоди та записи навчання не зачіпаються. Цю дію не можна скасувати.',
-  'settings.libraryDeleted': 'Ваш власний вміст видалено.'
+  'settings.libraryDeleted': 'Ваш власний вміст видалено.',
+  'settings.libraryDeleteGame': 'Видалити',
+  'settings.libraryDeleteGameLabel': 'Видалити власний вміст гри «{game}»',
+  'settings.libraryDeleteGameConfirm': 'Видалити ваш власний вміст гри «{game}» ({count})? Інші ігри не зачіпаються. Цю дію не можна скасувати.',
+  'settings.libraryGameDeleted': 'Власний вміст гри «{game}» видалено.',
+  'settings.libraryTransfer': 'Резервна копія або перенесення власного вмісту',
+  'settings.libraryTransferHint': 'Експорт зберігає файл з усім, що ви створили в іграх. Файл залишається у вас: нічого не завантажується в мережу. Імпортуйте його тут або на іншому пристрої.',
+  'settings.libraryExport': 'Експортувати мій вміст (файл)',
+  'settings.libraryImport': 'Імпортувати власний вміст із файлу',
+  'settings.libraryImportReplace': 'Замінювати наявні елементи (наприклад, мапу на тому самому місці)',
+  'settings.libraryImportResult': 'Імпорт завершено. Нових: {added} · Замінено: {replaced} · Уже були: {unchanged} · Залишено без заміни: {kept} · Немає місця: {full} · Пропущено (нечитабельні або невідома гра): {skipped}',
+  'settings.libraryImportNotRecognised': 'Цей файл не є експортом власного вмісту з Worthwhile Play.',
+  'settings.libraryImportNewer': 'Цей файл створено новішою версією Worthwhile Play. Перезавантажте застосунок і спробуйте ще раз.',
+  'settings.libraryImportTooLarge': 'Цей файл завеликий (не більше 8 МБ).',
+  'settings.libraryImportFailed': 'Не вдалося завершити імпорт. Елементи, імпортовані до збою, збережено.'
 };
 
 export default uk;

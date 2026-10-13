@@ -190,7 +190,21 @@ const pl: UiCatalogue = {
   'settings.libraryGame': '{game}: {count}',
   'settings.clearLibrary': 'Usuń moje własne treści (np. mapy)',
   'settings.clearLibraryConfirm': 'Usunąć wszystko, co utworzono w grach na tym urządzeniu (np. mapy)? Zapisane gry, talie i zapisy nauki pozostaną. Tej operacji nie można cofnąć.',
-  'settings.libraryDeleted': 'Własne treści usunięte.'
+  'settings.libraryDeleted': 'Własne treści usunięte.',
+  'settings.libraryDeleteGame': 'Usuń',
+  'settings.libraryDeleteGameLabel': 'Usuń własne treści z gry {game}',
+  'settings.libraryDeleteGameConfirm': 'Usunąć własne treści z gry {game} ({count})? Inne gry pozostaną bez zmian. Tej operacji nie można cofnąć.',
+  'settings.libraryGameDeleted': 'Usunięto własne treści z gry {game}.',
+  'settings.libraryTransfer': 'Kopia zapasowa lub przeniesienie własnych treści',
+  'settings.libraryTransferHint': 'Eksport zapisuje plik ze wszystkim, co utworzono w grach. Plik zostaje u Ciebie: nic nie jest wysyłane. Zaimportuj go tutaj lub na innym urządzeniu.',
+  'settings.libraryExport': 'Eksportuj moje własne treści (plik)',
+  'settings.libraryImport': 'Importuj własne treści z pliku',
+  'settings.libraryImportReplace': 'Zastępuj istniejące elementy (np. mapę w tym samym miejscu)',
+  'settings.libraryImportResult': 'Import zakończony. Nowe: {added} · Zastąpione: {replaced} · Już były: {unchanged} · Zachowane, niezastąpione: {kept} · Brak miejsca: {full} · Pominięte (nieczytelne lub nieznana gra): {skipped}',
+  'settings.libraryImportNotRecognised': 'Ten plik nie jest eksportem własnych treści z Worthwhile Play.',
+  'settings.libraryImportNewer': 'Ten plik pochodzi z nowszej wersji Worthwhile Play. Odśwież aplikację i spróbuj ponownie.',
+  'settings.libraryImportTooLarge': 'Ten plik jest za duży (maksymalnie 8 MB).',
+  'settings.libraryImportFailed': 'Nie udało się dokończyć importu. Elementy zaimportowane przed wystąpieniem problemu zostają zachowane.'
 };
 
 export default pl;

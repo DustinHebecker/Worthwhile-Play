@@ -59,3 +59,31 @@ test('own creations: kept by "Delete all saved games", removed by "Delete my own
   await expect(page.getByTestId('library-games')).toBeHidden();
   expect(await readLibrary(page, 'relay-command')).toEqual([]);
 });
+
+test('own creations: export to a file, delete one game, import the file again', async ({ page }) => {
+  await page.goto('/settings');
+  await expect(page.getByTestId('library-info')).toContainText(': 0');
+  await expect(page.getByTestId('export-library')).toBeDisabled();
+  await seedLibraryItem(page, 'relay-command', 'slot-0', 'Ridge');
+  await seedLibraryItem(page, 'relay-command', 'slot-1', 'Valley');
+  await page.reload();
+  await expect(page.getByTestId('library-info')).toContainText(': 2');
+
+  const [download] = await Promise.all([page.waitForEvent('download'), page.getByTestId('export-library').click()]);
+  expect(download.suggestedFilename()).toMatch(/^worthwhile-play-own-content-\d{4}-\d{2}-\d{2}\.json$/);
+  const path = await download.path();
+
+  page.once('dialog', (dialog) => void dialog.accept());
+  await page.getByTestId('clear-library-relay-command').click();
+  await expect(page.getByTestId('library-info')).toContainText(': 0');
+  expect(await readLibrary(page, 'relay-command')).toEqual([]);
+
+  await page.getByTestId('library-file').setInputFiles(path);
+  await expect(page.getByTestId('library-import-status')).toContainText('New: 2');
+  await expect(page.getByTestId('library-info')).toContainText(': 2');
+  expect((await readLibrary(page, 'relay-command')).map((row) => `${row.id}:${row.name}`)).toEqual(['slot-0:Ridge', 'slot-1:Valley']);
+
+  // The same file again changes nothing.
+  await page.getByTestId('library-file').setInputFiles(path);
+  await expect(page.getByTestId('library-import-status')).toContainText('Already there: 2');
+});

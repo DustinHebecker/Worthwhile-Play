@@ -190,7 +190,21 @@ const ar: UiCatalogue = {
   'settings.libraryGame': '{game}: {count}',
   'settings.clearLibrary': 'حذف المحتوى الذي أنشأته (مثل الخرائط)',
   'settings.clearLibraryConfirm': 'هل تريد حذف كل ما أنشأته في الألعاب على هذا الجهاز (مثل الخرائط)؟ لن تتأثر الألعاب المحفوظة ولا المجموعات ولا سجلات التعلّم. لا يمكن التراجع عن ذلك.',
-  'settings.libraryDeleted': 'حُذف المحتوى الذي أنشأته.'
+  'settings.libraryDeleted': 'حُذف المحتوى الذي أنشأته.',
+  'settings.libraryDeleteGame': 'حذف',
+  'settings.libraryDeleteGameLabel': 'حذف المحتوى الذي أنشأته في {game}',
+  'settings.libraryDeleteGameConfirm': 'هل تريد حذف المحتوى الذي أنشأته في {game} ({count})؟ لن تتأثر الألعاب الأخرى. لا يمكن التراجع عن ذلك.',
+  'settings.libraryGameDeleted': 'حُذف المحتوى الذي أنشأته في {game}.',
+  'settings.libraryTransfer': 'نسخ احتياطي أو نقل المحتوى الذي أنشأته',
+  'settings.libraryTransferHint': 'يحفظ التصدير ملفًا يحتوي على كل ما أنشأته في الألعاب. يبقى الملف معك: لا يُرفع أي شيء. استورده هنا أو على جهاز آخر.',
+  'settings.libraryExport': 'تصدير المحتوى الذي أنشأته (ملف)',
+  'settings.libraryImport': 'استيراد المحتوى الذي أنشأته من ملف',
+  'settings.libraryImportReplace': 'استبدال العناصر الموجودة بالفعل (مثل خريطة في المكان نفسه)',
+  'settings.libraryImportResult': 'اكتمل الاستيراد. جديدة: {added} · مستبدلة: {replaced} · موجودة من قبل: {unchanged} · محتفظ بها دون استبدال: {kept} · لا توجد مساحة: {full} · متخطاة (غير مقروءة أو لعبة غير معروفة): {skipped}',
+  'settings.libraryImportNotRecognised': 'هذا الملف ليس تصديرًا للمحتوى الذي أنشأته في Worthwhile Play.',
+  'settings.libraryImportNewer': 'هذا الملف من إصدار أحدث من Worthwhile Play. أعد تحميل التطبيق وحاول مرة أخرى.',
+  'settings.libraryImportTooLarge': 'هذا الملف كبير جدًا (8 ميغابايت كحد أقصى).',
+  'settings.libraryImportFailed': 'تعذّر إكمال الاستيراد. تبقى العناصر التي استُوردت قبل حدوث المشكلة محفوظة.'
 };
 
 export default ar;
