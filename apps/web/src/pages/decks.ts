@@ -35,7 +35,8 @@ const BUILTIN_TEXT: Readonly<Record<BuiltinDeckId, { title: UiKey; about: UiKey 
   symbols: { title: 'decks.symbols', about: 'decks.symbols.about' },
   'first-words': { title: 'decks.firstWords', about: 'decks.firstWords.about' },
   flags: { title: 'decks.flags', about: 'decks.flags.about' },
-  capitals: { title: 'decks.capitals', about: 'decks.capitals.about' }
+  capitals: { title: 'decks.capitals', about: 'decks.capitals.about' },
+  'ai-basics': { title: 'decks.aiBasics', about: 'decks.aiBasics.about' }
 };
 
 /** Memory variants offered for each built-in deck (own decks always play front ↔ back). */
@@ -46,7 +47,8 @@ const BUILTIN_PLAY: Readonly<Record<BuiltinDeckId, readonly { choice: string; la
     { choice: 'word-translation', label: 'decks.playWordTranslation' }
   ],
   flags: [{ choice: 'flag-country', label: 'decks.playFlags' }],
-  capitals: [{ choice: 'country-capital', label: 'decks.playCapitals' }]
+  capitals: [{ choice: 'country-capital', label: 'decks.playCapitals' }],
+  'ai-basics': [{ choice: 'ai-term-definition', label: 'decks.playAiBasics' }]
 };
 
 const contentChoice = () => {

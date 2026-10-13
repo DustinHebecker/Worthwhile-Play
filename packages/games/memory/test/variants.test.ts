@@ -1,14 +1,14 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { GameInstance, UserDeckSource } from '@wp/game-core';
-import { capitalName, countryName, findWord, type Deck } from '@wp/learning-content';
+import { aiTerm, capitalName, countryName, findWord, type Deck } from '@wp/learning-content';
 import { createMemoryStore, createSave, interpretSave } from '@wp/persistence';
 import { createTestContext, type TestContextExtras } from '@wp/testing';
 import game from '../src/index';
 import { parseChoice, choiceOf, userDeck } from '../src/decks';
 import { partnerOf, type MemoryState } from '../src/rules';
 import { hasVoice, browserSpeech, type Speech } from '../src/speech';
-import { createMemory } from '../src/view';
+import { createMemory, LONG_TEXT, textWidth } from '../src/view';
 
 let running: GameInstance<MemoryState>[] = [];
 afterEach(() => {
@@ -63,6 +63,7 @@ describe('card choice menu', () => {
       ['word-translation', 'Word ↔ translation', false],
       ['flag-country', 'Flag ↔ country', false],
       ['country-capital', 'Country ↔ capital', false],
+      ['ai-term-definition', 'AI term ↔ definition', false],
       ['own:user-colours-ab12', 'Colours (4 cards)', false],
       ['own:user-tiny-1', 'Tiny (1 cards)', true]
     ]);
@@ -247,6 +248,102 @@ describe('country ↔ capital', () => {
     const tampered = { ...state, itemIds: state.itemIds.map(za), cards: state.cards.map((c) => ({ ...c, item: za(c.item) })) };
     expect(interpretSave(createSave(game, state.seed, tampered), game).status).toBe('corrupt');
     expect(interpretSave(createSave(game, state.seed, { ...tampered, deckId: 'flags', variant: 'flag-country', languages: { back: 'en' } }), game).status).toBe('ok');
+  });
+});
+
+describe('AI term ↔ definition', () => {
+  it('pairs each term with its definition, both in the learning language', () => {
+    const { root, instance } = setup({ prefs: { cards: 'ai-term-definition' }, extras: { contentLanguages: { learning: 'ja' } }, difficulty: 'large' });
+    const s = instance.serialize();
+    expect(s).toMatchObject({ variant: 'ai-term-definition', deckId: 'ai-basics', languages: { back: 'ja' } });
+    expect(select(root).value).toBe('ai-term-definition');
+    expect(byId(root, 'memory-languages').textContent).toBe('AI terms and definitions in Japanese');
+    expect(byId(root, 'memory-notice').hidden).toBe(true);
+    const back = s.cards.findIndex((c) => c.side === 'back');
+    const entry = aiTerm(s.cards[back]?.item ?? '', 'ja');
+    card(root, back).click();
+    const definition = card(root, back).querySelector('.wp-memory__text');
+    expect(definition?.textContent).toBe(entry?.definition);
+    expect(definition?.getAttribute('lang')).toBe('ja');
+    expect(definition?.classList.contains('wp-memory__text--para')).toBe(textWidth(entry?.definition ?? '') > LONG_TEXT);
+    expect(card(root, back).getAttribute('aria-label')).toBe(`Card ${back + 1}: ${entry?.definition}`);
+    const front = partnerOf(s.cards, back);
+    card(root, front).click();
+    expect(card(root, front).textContent).toBe(entry?.term);
+    expect(card(root, front).dataset.state).toBe('matched');
+    expect(game.isValidState(JSON.parse(JSON.stringify(instance.serialize())))).toBe(true);
+  });
+
+  it('measures text width with Chinese, Japanese and Korean characters counting twice', () => {
+    expect(textWidth('Token')).toBe(5);
+    expect(textWidth('トークン')).toBe(8);
+    expect(textWidth('词元（token）')).toBe(13);
+    expect(textWidth('토큰 단위')).toBe(9);
+    expect(textWidth('मॉडल')).toBe(4);
+  });
+
+  it('lays definitions out in at most 3 columns with taller cards; hidden cards stay empty', () => {
+    const { root } = setup({ prefs: { cards: 'ai-term-definition' }, difficulty: 'large' });
+    const board = byId(root, 'memory-board');
+    expect(board.classList.contains('wp-memory__board--long')).toBe(true);
+    expect(board.style.getPropertyValue('--wp-memory-columns')).toBe('3');
+    expect(board.querySelectorAll('.wp-memory__text')).toHaveLength(0);
+    // Arrow keys follow the 3 visible columns.
+    card(root, 0).focus();
+    card(root, 0).dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    expect(document.activeElement).toBe(card(root, 3));
+    // Short texts keep the usual square cards and columns.
+    const capitals = setup({ prefs: { cards: 'country-capital' }, difficulty: 'large' });
+    expect(byId(capitals.root, 'memory-board').classList.contains('wp-memory__board--long')).toBe(false);
+    expect(byId(capitals.root, 'memory-board').style.getPropertyValue('--wp-memory-columns')).toBe('4');
+  });
+
+  it('shows the German term and definition of a known pair', () => {
+    const { root, instance } = setup({ prefs: { cards: 'ai-term-definition' }, locale: 'de' });
+    const s = instance.serialize();
+    expect(s.languages).toEqual({ back: 'de' });
+    const texts: string[] = [];
+    for (let i = 0; i < s.cards.length; i++) {
+      card(root, i).click();
+      texts.push(card(root, i).textContent ?? '');
+    }
+    for (const id of s.itemIds) {
+      expect(texts).toContain(aiTerm(id, 'de')?.term);
+      expect(texts).toContain(aiTerm(id, 'de')?.definition);
+    }
+    expect(aiTerm('token', 'de')?.term).toBe('Token');
+  });
+
+  it('falls back to the UI language with a notice when the learning language has no AI terms', () => {
+    const { instance, root } = setup({ prefs: { cards: 'ai-term-definition' }, extras: { contentLanguages: { learning: 'sv' } }, locale: 'de' });
+    expect(instance.serialize().languages).toEqual({ back: 'de' });
+    expect(byId(root, 'memory-notice').hidden).toBe(false);
+    expect(byId(root, 'memory-notice').textContent).toBe('Für Schwedisch gibt es noch keine KI-Begriffe, daher wird eine andere Sprache verwendet.');
+    expect(byId(root, 'memory-languages').textContent).toBe('KI-Begriffe und Definitionen auf Deutsch');
+  });
+
+  it('keeps the recorded language on restore, even if Settings changed', () => {
+    const first = setup({ prefs: { cards: 'ai-term-definition' }, extras: { contentLanguages: { learning: 'ar' } } });
+    card(first.root, 0).click();
+    const saved = first.instance.serialize();
+    const later = setup({ extras: { contentLanguages: { learning: 'pl' } } });
+    later.instance.restore(saved);
+    expect(later.instance.serialize()).toEqual(saved);
+    const text = card(later.root, 0).querySelector('.wp-memory__text');
+    expect(text?.getAttribute('lang')).toBe('ar');
+    const entry = aiTerm(saved.cards[0]?.item ?? '', 'ar');
+    expect(text?.textContent).toBe(saved.cards[0]?.side === 'front' ? entry?.term : entry?.definition);
+  });
+
+  it('round-trips through a real save; a card the deck does not have makes it unusable', () => {
+    const { instance } = setup({ prefs: { cards: 'ai-term-definition' } });
+    const state = instance.serialize();
+    const loaded = interpretSave(JSON.parse(JSON.stringify(createSave(game, state.seed, state, state.difficulty))), game);
+    expect(loaded).toMatchObject({ status: 'ok' });
+    const first = state.itemIds[0];
+    const other = (id: string) => (id === first ? 'apple' : id);
+    const tampered = { ...state, itemIds: state.itemIds.map(other), cards: state.cards.map((c) => ({ ...c, item: other(c.item) })) };
+    expect(interpretSave(createSave(game, state.seed, tampered), game).status).toBe('corrupt');
   });
 });
 

@@ -31,15 +31,26 @@ let instanceCounter = 0;
 export const DECK_PREFERENCE = 'deck';
 export const DIRECTION_PREFERENCE = 'direction';
 
-const DECK_LABEL: Readonly<Record<(typeof BUILTIN_REVIEW_DECKS)[number], string>> = { 'first-words': 'deck.firstWords', flags: 'deck.flags', capitals: 'deck.capitals' };
+const DECK_LABEL: Readonly<Record<(typeof BUILTIN_REVIEW_DECKS)[number], string>> = {
+  'first-words': 'deck.firstWords',
+  flags: 'deck.flags',
+  capitals: 'deck.capitals',
+  'ai-basics': 'deck.aiBasics'
+};
 const RATING_SYMBOL: Readonly<Record<LearningRating, string>> = { again: '↺', hard: '≈', good: '✓' };
+
+/** Texts longer than this (definitions, sentences) are set smaller and in normal weight. */
+export const LONG_TEXT = 40;
 
 /** Renders one card side (symbol, image, text in any combination). */
 export function renderSide(side: CardSide, description: string): HTMLElement {
   const face = h('div', { class: 'wp-review__face' });
   if (side.image) face.append(h('img', { class: 'wp-review__image', src: side.image, alt: description, draggable: 'false' }));
   if (side.symbol) face.append(h('span', { class: 'wp-review__symbol', role: 'img', 'aria-label': description }, side.symbol));
-  if (side.text) face.append(h('span', { class: 'wp-review__text', lang: side.lang, dir: 'auto' }, side.text));
+  if (side.text) {
+    const long = [...side.text].length > LONG_TEXT ? ' wp-review__text--long' : '';
+    face.append(h('span', { class: `wp-review__text${long}`, lang: side.lang, dir: 'auto' }, side.text));
+  }
   return face;
 }
 
@@ -187,6 +198,7 @@ export function createReview(context: GameContext, speech: Speech | undefined = 
     if (s.deckId === 'first-words') return t('languages.words', { learning: languageName(s.languages.learning), translation: languageName(s.languages.translation) });
     if (s.deckId === 'flags') return t('languages.countries', { language: languageName(s.languages.countries) });
     if (s.deckId === 'capitals') return t('languages.capitals', { language: languageName(s.languages.learning) });
+    if (s.deckId === 'ai-basics') return t('languages.aiBasics', { language: languageName(s.languages.learning) });
     return '';
   };
 
@@ -303,7 +315,10 @@ export function createReview(context: GameContext, speech: Speech | undefined = 
       notice = t('deck.fallback');
     }
     const { languages, learningFallback } = sessionLanguages(deck, context.contentLanguages, t.locale);
-    if (learningFallback) notice = t(deck === 'capitals' ? 'languages.capitalsFallback' : 'languages.fallback', { language: languageName(context.contentLanguages?.learning) });
+    if (learningFallback) {
+      const key = deck === 'capitals' ? 'languages.capitalsFallback' : deck === 'ai-basics' ? 'languages.aiBasicsFallback' : 'languages.fallback';
+      notice = t(key, { language: languageName(context.contentLanguages?.learning) });
+    }
     const key = recordDeckOf({ deckId: deck, languages });
     // A new session prefers the remembered direction; if nothing is due that way but something is in the other
     // direction, it reviews both (the deck library counts cards due in any direction).

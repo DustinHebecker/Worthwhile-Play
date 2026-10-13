@@ -32,9 +32,10 @@ export const MAX_MOVES = 1_000_000;
  * - `word-translation`: word in the learning language ↔ word in the translation language ("First words")
  * - `flag-country`: flag ↔ country name ("Flags & countries")
  * - `country-capital`: country name ↔ capital, both in the learning language ("Capitals")
+ * - `ai-term-definition`: term ↔ definition, both in the learning language ("AI basics")
  * - `own`: front ↔ back of a user deck
  */
-export const VARIANTS = ['symbols', 'picture-word', 'word-translation', 'flag-country', 'country-capital', 'own'] as const;
+export const VARIANTS = ['symbols', 'picture-word', 'word-translation', 'flag-country', 'country-capital', 'ai-term-definition', 'own'] as const;
 export type Variant = (typeof VARIANTS)[number];
 export type BuiltinVariant = Exclude<Variant, 'own'>;
 export const DEFAULT_VARIANT: Variant = 'symbols';
@@ -45,7 +46,8 @@ export const VARIANT_DECK: Readonly<Record<BuiltinVariant, string>> = {
   'picture-word': 'first-words',
   'word-translation': 'first-words',
   'flag-country': 'flags',
-  'country-capital': 'capitals'
+  'country-capital': 'capitals',
+  'ai-term-definition': 'ai-basics'
 };
 
 /** Smallest board for user decks with fewer items than the difficulty asks for. */
@@ -224,6 +226,7 @@ export function isValidLanguages(variant: Variant, value: unknown): value is Car
   switch (variant) {
     case 'picture-word':
     case 'country-capital':
+    case 'ai-term-definition':
       return front === undefined && isVocabularyLanguage(back);
     case 'word-translation':
       return isVocabularyLanguage(front) && isVocabularyLanguage(back) && front !== back;

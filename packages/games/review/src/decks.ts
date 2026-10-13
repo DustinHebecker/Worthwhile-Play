@@ -1,5 +1,6 @@
 import type { GameContentLanguages, Translator, UserDeckSource } from '@wp/game-core';
 import {
+  aiTerm,
   builtinItemIds,
   capitalName,
   countryName,
@@ -41,6 +42,8 @@ export function sessionLanguages(deckId: string, choice: GameContentLanguages | 
   if (deckId === 'flags') return { languages: { countries: resolved.countries }, learningFallback: false };
   // Capital names exist in the 16 "First words" languages only, so "Capitals" follows the learning language.
   if (deckId === 'capitals') return { languages: { learning: resolved.learning }, learningFallback: resolved.learningFallback };
+  // The same holds for the terms and definitions of "AI basics".
+  if (deckId === 'ai-basics') return { languages: { learning: resolved.learning }, learningFallback: resolved.learningFallback };
   return { languages: {}, learningFallback: false };
 }
 
@@ -102,6 +105,18 @@ export function faceResolver(state: Pick<ReviewState, 'deckId' | 'languages'>, t
         const capital = capitalName(code, learning) ?? '';
         const front: Face = { side: { text: country, lang: learning }, description: country };
         const back: Face = { side: { text: capital, lang: learning }, description: capital };
+        return orient(front, back, card);
+      };
+    }
+    case 'ai-basics': {
+      const { learning } = state.languages;
+      if (!learning || !isVocabularyLanguage(learning)) return undefined;
+      return (card) => {
+        const entry = aiTerm(card.item, learning);
+        const term = entry?.term ?? '';
+        const definition = entry?.definition ?? '';
+        const front: Face = { side: { text: term, lang: learning }, description: term };
+        const back: Face = { side: { text: definition, lang: learning }, description: definition };
         return orient(front, back, card);
       };
     }
