@@ -150,7 +150,7 @@ export interface GameLibraryOptions {
   /** Id for new items without one (tests); default `crypto.randomUUID()`. */
   newId?: () => string;
   /** Lower bounds for tests; never above `LIBRARY_LIMITS` in the app. */
-  limits?: Partial<typeof LIBRARY_LIMITS>;
+  limits?: Partial<Record<keyof typeof LIBRARY_LIMITS, number>>;
 }
 
 let fallbackCounter = 0;
@@ -198,7 +198,8 @@ export function createGameLibrary(store: LibraryStore | Promise<LibraryStore>, g
       });
     },
     put: async (item) => {
-      const input = isRecord(item) ? item : {};
+      // Games are typed, but the input is checked at runtime like any untrusted value.
+      const input: Record<string, unknown> = isRecord(item) ? item : {};
       const name = normalizeLibraryName(input.name);
       if (name === undefined || [...name].length > limits.maxNameLength) throw new GameLibraryError('invalid', 'name must have 1 to 60 characters');
       if (input.id !== undefined && !isLibraryId(input.id)) throw new GameLibraryError('invalid', 'malformed id');

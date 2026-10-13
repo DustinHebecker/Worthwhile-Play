@@ -1,0 +1,30 @@
+# 0012 — Per-game library for things players create
+
+Status: Accepted (2026-10-13; amends 0002)
+
+## Context
+Relay Command lets players build their own maps. The only per-game storage a game had was `GameContext.preferences`: synchronous localStorage values of at most 2 000 characters each, meant for small options. The maps were squeezed into it (8 slots of at most 1.5 KB), and preferences are removed by Settings → "Delete all saved games", which would silently delete the maps as well. Other planned features (own puzzles, levels, adventure notes) need the same thing: a place for content the player made, kept independently of saves, with honest bounds and its own delete control.
+
+## Decision
+- **Optional capability** `GameContext.library?: GameLibrary`, scoped by the host to the game id (a game never sees another game's items). Asynchronous, so it needs no loading before `create`, and games use it only in reaction to the player (save/load a map), never to restore a save:
+  - `list(): Promise<LibraryEntry[]>` — `{ id, name, updatedAt, size }`, most recently changed first;
+  - `get(id): Promise<LibraryItem | undefined>` — `{ id, name, data, updatedAt }`;
+  - `put({ id?, name, data }): Promise<LibraryEntry>` — creates (a random id from `crypto.randomUUID()` when none is given) or replaces; the data is copied;
+  - `delete(id): Promise<void>` — a missing id is not an error.
+- **Bounds** (`LIBRARY_LIMITS` in `@wp/game-core`): 50 items per game, 64 KiB per item (UTF-8 bytes of `JSON.stringify(data)`), names of 1–60 code points after trimming without control characters, ids `[A-Za-z0-9_-]{1,64}` (a game may choose its own ids, e.g. `slot-1`, which makes migrations idempotent). Data must be plain JSON (`isJsonData`: null, booleans, finite numbers, strings, dense arrays, plain objects; no cycles, `undefined`, functions, class instances, getters; at most 64 levels).
+- **Errors** are rejected promises with a `GameLibraryError` whose `reason` is `full` | `too-large` | `invalid` | `unavailable` (storage failed, e.g. quota). The message is for developers only; games translate the reason. `isGameLibraryError` checks the shape.
+- **Untrusted on read**: the host skips rows without a valid envelope; `data` is whatever was stored and the game validates it like a save (`isValidState`-style guard). Game logic must not depend on ids being random or on the item order beyond "most recent first".
+- **Storage**: IndexedDB store `library` in database `worthwhile-play` (schema version 4), key path `[gameId, id]`, index `byGame` on `gameId`. The upgrade is additive like the earlier ones (tested from a real version-3 database whose saves, decks and learning records survive). Creating an item checks the per-game count in the same transaction, so two tabs cannot exceed the bound. Without IndexedDB the store falls back to memory (the game page already tells the player that nothing persists).
+- **Layers**: `@wp/game-core` holds the types, bounds, error and pure checks; `@wp/persistence` holds `LibraryStore` (all games; IndexedDB and memory) and `createGameLibrary(store, gameId)` (validation, bounds, error mapping); the app creates one store (`AppContext.library`) and the game page passes `createGameLibrary(app.library, id)` to every game. `@wp/testing` gives every test context a fresh in-memory library with the same rules (`createTestLibrary` to share one between contexts or inspect rows; `library: undefined` to test without it). The contract suite shares one library between the two sessions of its resume check and checks that every game works without a library.
+- **Deleting**: "Delete all saved games" removes saves and preferences only. Settings has a separate, confirmed "Delete my own content (e.g. maps)" with the number of items per game (games no longer in the catalogue are listed by id and deleted too).
+- **Privacy**: items stay on the device like everything else; nothing is uploaded. The About text ("Saved games and settings are stored only on this device") is a general statement, not a list of stores, so it is unchanged.
+- **Not now**: export/import of items (e.g. a map as a JSON file or a link) and per-game delete in Settings are follow-ups; the format (`name` + JSON `data`) allows both without a migration.
+
+## Consequences
++ Player creations survive "Delete all saved games" and have honest, tested bounds instead of squeezing into preferences.
++ One reusable capability for every game that lets players make things; games without it are unchanged.
+− Asynchronous API: a game must handle pending and failed calls in its UI (e.g. disable "Save map" while saving, show the translated reason).
+− A save must not depend on a library item still existing (the player can delete it in Settings at any time): a game copies what a running game needs into its own state.
+
+## Migration note for games (e.g. Relay Command's preference slots)
+On `create`, if `context.library` exists and the old preference keys are present: read each old slot once, `put` it with a stable id derived from the slot (e.g. `slot-3`, so a repeated or interrupted migration only replaces), and only after every `put` resolved, clear the old preference keys (`preferences.set(key, undefined)`). If a `put` rejects, keep the preferences and try again next time. Without `context.library`, keep using the preferences.

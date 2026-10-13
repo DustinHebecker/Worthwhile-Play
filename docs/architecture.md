@@ -48,12 +48,15 @@ interface GameContext {
   userDecks?: { list(): UserDeckSummary[]; get(id): unknown };    // optional: snapshot of imported decks (metadata.usesUserDecks)
   learning?: { today(): string; list(deckId): LearningRecordSummary[]; record(reviews: LearningReview[]): void }; // optional (metadata.usesLearningRecords)
   launch?: { deck?: string };       // optional: parameters of the opening link (`?deck=<id>`), for the first newGame only
+  library?: { list(); get(id); put({ id?, name, data }); delete(id) }; // optional, async: the player's own creations (ADR 0012)
 }
 ```
 
 `contentLanguages` is independent of the UI language (`t.locale`); either entry may be missing and games must fall back explicitly (see `resolveContentLanguages` in `@wp/learning-content`). `userDecks` is a synchronous, read-only snapshot the host loads before creating a game whose metadata sets `usesUserDecks: true`, so `newGame`/`restore` stay synchronous. Decks can be deleted between sessions; a game must handle a saved game whose deck is gone (Memory shows an explanation and a "new game" button).
 
 `learning` is the minimal capability for spaced repetition (see "Learning records" below). The host provides it only to games whose metadata sets `usesLearningRecords: true`: a synchronous snapshot of the records loaded before the game is created, `today()` (the device's local calendar day, `YYYY-MM-DD`) and `record(reviews)`, which applies self-ratings in memory immediately and writes them to IndexedDB in order. `record` is idempotent per (card, session), so a game may send the same ratings again at any time (Review does so on every `restore`, which also completes writes lost when the page closed before they reached the store). Games without the capability keep working (Review then runs as practice without a schedule). `launch.deck` comes from `/games/<id>?deck=<id>` (which also starts a fresh game and is then removed from the URL); a game uses it for its first `newGame` and remembers it in its preferences.
+
+`library` (ADR 0012) stores things the player creates, e.g. Relay Command's maps: per game (the host scopes it to the game id), asynchronous, bounded (`LIBRARY_LIMITS`: 50 items, 64 KiB of JSON per item, names up to 60 characters), plain JSON only, read back as untrusted data (games validate it). Every method rejects with a `GameLibraryError` whose `reason` is `full`, `too-large`, `invalid` or `unavailable`. It is separate from saves and preferences: "Delete all saved games" keeps it, and Settings has its own confirmed "Delete my own content". A save must not depend on an item still existing (copy what a running game needs into its state). The host passes it to every game; games must work without it.
 
 The spec's `metadata()`/`initialize()` are expressed as the `metadata` object and `create()`. Every game package has:
 
@@ -75,13 +78,15 @@ After "New game" the host moves focus into the game: to the element marked `data
 
 ### Shared contract suite
 
-`runGameContract(module, { interact })` (`packages/testing`) checks for every game: valid metadata and complete translations in all 16 locales, determinism per seed, JSON-serializable state accepted by `isValidState`, rejection of arbitrary junk (fuzzed with fast-check), exact restore through the real persistence layer after interaction, pause/resume invariance, `reset()` to the seeded start, no missing translation keys when rendering in each locale, and DOM cleanup on `dispose()`. For games with `preload`, it awaits `preload('en')` before the suite and `preload(locale)` before rendering in each locale, and checks that every locale loads without a reported fallback. The e2e helper `expectResumeAfterReload` verifies the same across a real browser reload.
+`runGameContract(module, { interact })` (`packages/testing`) checks for every game: valid metadata and complete translations in all 16 locales, determinism per seed, JSON-serializable state accepted by `isValidState`, rejection of arbitrary junk (fuzzed with fast-check), exact restore through the real persistence layer after interaction, pause/resume invariance, `reset()` to the seeded start, no missing translation keys when rendering in each locale, and DOM cleanup on `dispose()`. For games with `preload`, it awaits `preload('en')` before the suite and `preload(locale)` before rendering in each locale, and checks that every locale loads without a reported fallback. Every test context has a fresh in-memory `library` (the resume check shares one between its two sessions), and the suite checks that the game also works without one. The e2e helper `expectResumeAfterReload` verifies the same across a real browser reload.
 
 ## Persistence
 
-IndexedDB database `worthwhile-play`, schema version 3. Upgrades are additive (`upgradeDatabase` only creates missing stores; tested with real version-1 and version-2 databases, whose saves and decks survive): 1 → `saves`, 2 → `decks`, 3 → `learning` (key path `[deckId, itemId, direction]`). A connection closes itself on `versionchange`, so a newer app version in another tab can upgrade; if an *older* tab blocks the upgrade for more than 4 s, the app falls back to in-memory storage and says so (it never hangs).
+IndexedDB database `worthwhile-play`, schema version 4. Upgrades are additive (`upgradeDatabase` only creates missing stores; tested with real version-1, -2 and -3 databases, whose saves, decks and learning records survive): 1 → `saves`, 2 → `decks`, 3 → `learning` (key path `[deckId, itemId, direction]`), 4 → `library` (key path `[gameId, id]`, index `byGame`; ADR 0012). A connection closes itself on `versionchange`, so a newer app version in another tab can upgrade; if an *older* tab blocks the upgrade for more than 4 s, the app falls back to in-memory storage and says so (it never hangs).
 
 `GameSave { schemaVersion, gameId, stateVersion, updatedAt, seed, difficulty?, state }` in `saves` (one active save per game). `interpretSave` validates and migrates untrusted data and returns `empty | ok | corrupt` — a corrupt save is reported and discarded, never crashes the app. If IndexedDB is unavailable, an in-memory store is used and the user is told that progress will not persist.
+
+`library` rows `{ gameId, id, name, updatedAt, size, data }` hold what players create (ADR 0012). `LibraryStore` (all games, used by Settings for counts and "Delete my own content") is wrapped per game by `createGameLibrary`, which validates names, ids and JSON data, enforces the bounds (the per-game item count is checked in the write transaction) and skips unreadable rows. Deleting saved games never touches it, and clearing it never touches saves, decks or learning records.
 
 ## Learning content and deck library
 

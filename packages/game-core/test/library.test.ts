@@ -34,10 +34,12 @@ describe('library helpers (ADR 0012)', () => {
     const cyclic: unknown[] = [];
     cyclic.push(cyclic);
     const extra = Object.assign([1], { name: 'x' });
+    const sparse = [1, 2, 3];
+    delete sparse[1];
     const getter = Object.defineProperty({}, 'x', { get: () => 1, enumerable: true });
     let deep: unknown = 1;
     for (let i = 0; i < 70; i++) deep = [deep];
-    for (const bad of [undefined, () => 1, Number.NaN, -Infinity, 1n, Symbol('s'), { a: undefined }, [undefined], cyclic, [1, , 3], extra, new Date(0), new Map(), /x/, getter, { [Symbol('k')]: 1 }, deep]) {
+    for (const bad of [undefined, () => 1, Number.NaN, -Infinity, 1n, Symbol('s'), { a: undefined }, [undefined], cyclic, sparse, extra, new Date(0), new Map(), /x/, getter, { [Symbol('k')]: 1 }, deep]) {
       expect(isJsonData(bad), String(bad)).toBe(false);
     }
     const shared = { a: 1 };
