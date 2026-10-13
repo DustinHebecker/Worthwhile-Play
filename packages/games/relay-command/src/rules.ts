@@ -15,6 +15,7 @@ import {
   validateCommand,
   isOneShotOrder,
   repairPrice,
+  sellRefund,
   type Command,
   type CommandRefusal,
   type Doctrine,
@@ -167,8 +168,9 @@ export function orderRefusal(state: RcState, unit: number, order: Order, doctrin
 
 /**
  * The world as the planned one-shot commands leave it: Supply paid, queues filled, planned sites
- * placed, planned repairs done and planned sales gone. A sale's refund is not counted: it arrives
- * when the turn is carried out, so it pays for nothing planned in the same turn.
+ * placed, planned repairs done. A structure planned for sale takes no more jobs but still holds
+ * its cell (the engine tears it down after the whole batch, so a placement there is blocked).
+ * A sale's refund is not counted: it arrives when the turn is carried out.
  */
 function afterJobs(state: RcState): World {
   const world = structuredClone(state.world);
@@ -184,7 +186,8 @@ function afterJobs(state: RcState): World {
       continue;
     }
     if (c.order.type === 'sell') {
-      world.entities = world.entities.filter((e) => e.id !== c.unit);
+      const structure = world.entities.find((e) => e.id === c.unit);
+      if (structure) structure.status = [...structure.status, { kind: 'disabled', ticks: 1 }];
       continue;
     }
     const arch = archetypeOf(RULESET, (c.order as { kind: string }).kind);
@@ -201,6 +204,14 @@ function afterJobs(state: RcState): World {
     }
   }
   return world;
+}
+
+/** Supply the planned sale of `id` will bring: half its remaining value plus its queue, planned production included. */
+export function plannedSaleRefund(state: RcState, id: number): number {
+  const structure = unitById(state, id);
+  if (!structure) return 0;
+  const planned = state.draft.filter((c) => c.unit === id && c.order.type === 'produce').reduce((sum, c) => sum + (archetypeOf(RULESET, (c.order as { kind: string }).kind)?.cost ?? 0), 0);
+  return sellRefund(RULESET, structure) + planned;
 }
 
 /** Supply left to plan with this turn: the side's Supply minus what the planned jobs cost. */

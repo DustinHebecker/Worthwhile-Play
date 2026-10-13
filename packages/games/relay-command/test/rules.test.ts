@@ -6,6 +6,7 @@ import { DIFFICULTIES, planAi, type Difficulty } from '../src/ai';
 import {
   cancelOrder,
   canSettle,
+  plannedSaleRefund,
   plannedSupply,
   settle,
   settleResult,
@@ -185,7 +186,15 @@ describe('Field Exercise scenario', () => {
     expect(orderRefusal(repaired, yard.id, { type: 'repair', target: rifle.id })).toBe('cannot-repair'); // already planned: full health then
     const sold = planOrder(repaired, yard.id, { type: 'sell' })!;
     expect(plannedSupply(sold)).toBe(300 - price); // the refund arrives with the turn
-    expect(orderRefusal(sold, yard.id, { type: 'produce', kind: 'rifles' })).toBe('unknown-unit');
+    expect(orderRefusal(sold, yard.id, { type: 'produce', kind: 'rifles' })).toBe('cannot-produce');
+    expect(orderRefusal(sold, yard.id, { type: 'sell' })).toBe('cannot-sell'); // planned once
+    // Its cell stays taken while planning: the engine tears it down after the whole batch (review of PR #14).
+    const post = commandPost(s.world, PLAYER)!;
+    expect(orderRefusal(sold, post.id, { type: 'build', kind: 'relay-mast', x: yard.x, y: yard.y })).toBe('not-buildable');
+    expect(plannedSaleRefund(sold, yard.id)).toBe(Math.floor(RULESET.archetypes.muster!.cost / 2));
+    const queued = planOrder(planOrder(s, yard.id, { type: 'produce', kind: 'rifles' })!, yard.id, { type: 'sell' })!;
+    expect(plannedSaleRefund(queued, yard.id)).toBe(Math.floor(RULESET.archetypes.muster!.cost / 2) + RULESET.archetypes.rifles!.cost);
+    expect(lockTurn(queued).world.supply?.[PLAYER]).toBe(300 + Math.floor(RULESET.archetypes.muster!.cost / 2) + 20);
     const after = lockTurn(sold);
     expect(after.world.entities.some((e) => e.id === yard.id)).toBe(false);
     expect(unitById(after, rifle.id)?.hp).toBe(RULESET.archetypes.rifles!.hp);

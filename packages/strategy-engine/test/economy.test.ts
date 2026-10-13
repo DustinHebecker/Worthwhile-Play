@@ -325,3 +325,52 @@ describe('repair and sale (owner request after PR #13)', () => {
     expect(reported?.[1]?.some((e) => e.t === 'sold')).toBe(false);
   });
 });
+
+describe('repair and sale: order of the plans and what others learn (review of PR #14)', () => {
+  const mastField = (extra: Scenario['entities'] = []) =>
+    worldOf(open(12, 3), [{ side: 0, kind: 'command-post', x: 0, y: 1 }, { side: 1, kind: 'command-post', x: 11, y: 0 }, { side: 0, kind: 'relay-mast', x: 5, y: 1 }, ...extra]);
+  const sell: Command = { side: 0, unit: 3, order: { type: 'sell' } };
+
+  it('an attack on a structure sold in the same batch is decided the same whichever plan comes first', () => {
+    const w = mastField([{ side: 1, kind: 'rifles', x: 7, y: 1 }]);
+    unit(w, 4).order = { type: 'move', x: 9, y: 0 };
+    delete w.intel; // all known: the attack is valid either way
+    const attack: Command = { side: 1, unit: 4, order: { type: 'attack', target: 3 } };
+    const a = resolveTurn(w, net, [[sell], [attack]]);
+    const b = resolveTurn(w, net, [[attack], [sell]]);
+    expect(JSON.stringify(b.world)).toBe(JSON.stringify(a.world));
+    expect(a.world.entities.some((e) => e.id === 3)).toBe(false);
+  });
+
+  it('a placement on the cell of a structure sold in the same batch is blocked whichever plan comes first', () => {
+    const w = mastField([{ side: 1, kind: 'field-post', x: 6, y: 2 }]);
+    unit(w, 4).deploy = net.ticksPerTurn;
+    const build: Command = { side: 1, unit: 4, order: { type: 'build', kind: 'extractor', x: 5, y: 1 } };
+    const a = resolveTurn(w, net, [[sell], [build]]);
+    const b = resolveTurn(w, net, [[build], [sell]]);
+    expect(JSON.stringify(b.world)).toBe(JSON.stringify(a.world));
+    expect(a.world.entities.some((e) => e.kind === 'extractor')).toBe(false);
+  });
+
+  it('another side seeing a sale learns no refund; a repair it sees without seeing the yard is not reported', () => {
+    // The enemy post stands close by: its own sight reports the yard.
+    const w = worldOf(open(12, 3), [{ side: 0, kind: 'command-post', x: 0, y: 1 }, { side: 1, kind: 'command-post', x: 4, y: 1 }, { side: 0, kind: 'muster', x: 2, y: 1 }]);
+    unit(w, 3).queue = [{ kind: 'rifles', left: 1 }];
+    const sold = resolveTurn(w, net, [[{ side: 0, unit: 3, order: { type: 'sell' } }], []]);
+    const enemySees = sold.reported?.[1]?.find((e) => e.t === 'sold');
+    expect(enemySees).toBeDefined();
+    expect(enemySees && 'refund' in enemySees).toBe(false);
+    expect(sold.reported?.[0]?.find((e) => e.t === 'sold')).toMatchObject({ refund: expect.any(Number) });
+    // The enemy post sees the unit at the edge of its sight, but not the yard one cell behind it.
+    const v = net.archetypes['command-post']!.vision;
+    const far = worldOf(open(16, 3), [{ side: 0, kind: 'command-post', x: 0, y: 0 }, { side: 1, kind: 'command-post', x: v + 2, y: 1 }, { side: 0, kind: 'muster', x: 1, y: 1 }, { side: 0, kind: 'rifles', x: 2, y: 1 }]);
+    unit(far, 4).hp = 10;
+    far.intel = far.intel!.map((list, side) => (side === 1 ? list.filter((r) => r.id !== 3) : list));
+    const repaired = resolveTurn(far, net, [[{ side: 0, unit: 3, order: { type: 'repair', target: 4 } }], []]);
+    expect(repaired.reported?.[0]?.some((e) => e.t === 'repaired')).toBe(true);
+    const yardSeen = repaired.world.intel?.[1]?.some((r) => r.id === 3 && r.live);
+    expect(yardSeen).toBe(false);
+    expect(repaired.world.intel?.[1]?.some((r) => r.id === 4 && r.live)).toBe(true); // the unit is seen
+    expect(repaired.reported?.[1]?.some((e) => e.t === 'repaired')).toBe(false);
+  });
+});

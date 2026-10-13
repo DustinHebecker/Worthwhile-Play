@@ -278,3 +278,23 @@ test('relay-command: the game setup never scrolls sideways on a 360 px phone (a 
     expect(box.x + box.width).toBeLessThanOrEqual(360);
   }
 });
+
+test('relay-command: selling a building takes two taps, survives a reload and pays out when the turn is locked', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await start(page);
+  const yard = (await saved(page))!.world.entities.find((e) => e.side === 0 && e.kind === 'muster')!;
+  await page.getByTestId(`rc-unit-${yard.id}`).click();
+  await expect(page.getByTestId('rc-sell')).toHaveText('Sell (+50 Supply)');
+  await page.getByTestId('rc-sell').click();
+  await expect(page.getByTestId('rc-sell')).toHaveText('Press again to sell (+50 Supply)');
+  await page.getByTestId('rc-sell').click();
+  await expect.poll(async () => (await saved(page))?.draft.map((c) => c.order.type)).toEqual(['sell']);
+  await page.reload();
+  await page.getByTestId('continue').click();
+  await page.getByTestId(`rc-unit-${yard.id}`).click();
+  await expect(page.getByTestId('rc-jobs')).toContainText('Planned: sell (+50 Supply)');
+  await page.getByTestId('rc-lock').click();
+  await expect(page.getByTestId('rc-summary')).toContainText('sold (+50 Supply)');
+  await expect(page.getByTestId('rc-supply')).toHaveText('Supply 370 (+20)');
+  await expect.poll(async () => (await saved(page))?.world.entities.some((e) => e.id === yard.id)).toBe(false);
+});

@@ -143,7 +143,8 @@ export function updateIntel(world: World, ruleset: Ruleset, gone: readonly Entit
     for (let i = from; i < events.length; i++) {
       const ev = events[i] as SimEvent;
       const knownAnyway = (ev.t === 'destroyed' && lost.has(ev.id)) || (ev.t === 'order-ended' && ev.reason === 'lost-contact' && own.has(ev.id));
-      if (eventVisible(ev, live, seen, side, own) || knownAnyway) list.push(ev);
+      // A sale seen by another side tells it nothing of the seller's Supply (the refund includes a paid queue).
+      if (eventVisible(ev, live, seen, side, own) || knownAnyway) list.push(ev.t === 'sold' && ev.side !== side ? { t: 'sold', tick: ev.tick, id: ev.id, side: ev.side, kind: ev.kind, x: ev.x, y: ev.y } : ev);
     }
   }
   world.intel = intel;
@@ -165,9 +166,10 @@ function eventVisible(ev: SimEvent, live: ReadonlySet<number>, seen: (x: number,
     case 'site':
     case 'sold':
       return ev.side === side || seen(ev.x, ev.y);
-    // A repair is the yard owner's business; others see it when they see the unit.
+    // A repair is the yard owner's business; another side hears of it only when it sees both the
+    // unit and the yard (the event names the yard).
     case 'repaired':
-      return ownIds.has(ev.id) || live.has(ev.id);
+      return ownIds.has(ev.id) || (live.has(ev.id) && live.has(ev.by));
     // A shot is reported only when the shooter is observed (its id would reveal it otherwise);
     // hits and landing shells on observed units and cells are reported on their own.
     case 'launch':

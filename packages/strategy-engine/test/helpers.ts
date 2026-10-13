@@ -78,7 +78,7 @@ export const arbScenario = fc
       fc.record({
         turn: fc.nat(3),
         unit: fc.integer({ min: 1, max: 14 }),
-        type: fc.constantFrom('hold', 'move', 'attack', 'deploy', 'escort', 'patrol', 'regroup', 'produce', 'build'),
+        type: fc.constantFrom('hold', 'move', 'attack', 'deploy', 'escort', 'patrol', 'regroup', 'produce', 'build', 'repair', 'sell'),
         kind: fc.constantFrom(...PRODUCTS, ...STRUCTURES),
         doctrine: fc.option(
           fc.record({
@@ -143,7 +143,11 @@ export const arbScenario = fc
                       ? { type: 'produce', kind: o.kind }
                       : o.type === 'build'
                         ? { type: 'build', kind: o.kind, x: o.x % w, y: o.y % h }
-                        : { type: 'hold' };
+                        : o.type === 'repair'
+                          ? { type: 'repair', target: o.target }
+                          : o.type === 'sell'
+                            ? { type: 'sell' }
+                            : { type: 'hold' };
       plans[o.turn]?.push(o.doctrine ? { side, unit: o.unit, order, doctrine: o.doctrine as Doctrine } : { side, unit: o.unit, order });
     }
     return { world, plans };

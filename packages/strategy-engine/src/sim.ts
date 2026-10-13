@@ -88,7 +88,10 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     const key = o.y * w.map.w + o.x;
     (placedBy.get(key) ?? placedBy.set(key, new Set()).get(key)!).add(c.side);
   }
-  // Structures sold in this batch (removed at once; reported to the intel like losses).
+  // Structures sold in this batch: torn down after every command of the batch is applied, so
+  // neither the order of the plans nor a sale decides whether another side's command applies
+  // (an attack on it, a placement on its cell). Reported to the intel like losses.
+  const selling: Entity[] = [];
   const sold: Entity[] = [];
   for (const c of commands) {
     if (!validateCommand(w, rs, c, networks).ok) continue;
@@ -132,12 +135,7 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
       continue;
     }
     if (order.type === 'sell') {
-      const supply = (w.supply ??= Array.from({ length: w.sides }, () => 0));
-      const refund = sellRefund(rs, unit);
-      supply[unit.side] = Math.min(MAX_SUPPLY, (supply[unit.side] ?? 0) + refund);
-      w.entities = w.entities.filter((e) => e !== unit);
-      sold.push(unit);
-      events.push({ t: 'sold', tick: t, id: unit.id, side: unit.side, kind: unit.kind, x: unit.x, y: unit.y, refund });
+      if (!selling.includes(unit)) selling.push(unit);
       continue;
     }
     if (order.type === 'build') {
@@ -171,6 +169,15 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     const vision = arch(e).vision;
     return spottedBy(e.side, target.id) || dist2(e.x, e.y, target.x, target.y) <= vision * vision;
   };
+
+  for (const unit of selling) {
+    const supply = (w.supply ??= Array.from({ length: w.sides }, () => 0));
+    const refund = sellRefund(rs, unit);
+    supply[unit.side] = Math.min(MAX_SUPPLY, (supply[unit.side] ?? 0) + refund);
+    w.entities = w.entities.filter((e) => e !== unit);
+    sold.push(unit);
+    events.push({ t: 'sold', tick: t, id: unit.id, side: unit.side, kind: unit.kind, x: unit.x, y: unit.y, refund });
+  }
 
   // 2 + 3. Intent (standing order + doctrine) and simultaneous movement
   const cells = w.map.w * w.map.h;

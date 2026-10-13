@@ -3,8 +3,8 @@ import { normalizeSeed } from '@wp/game-core';
 import {
   archetypeOf,
   depositAt,
+  isReady,
   repairPrice,
-  sellRefund,
   incomeOfSide,
   ARMOR_CLASSES,
   cellOf,
@@ -44,6 +44,7 @@ import {
   planDoctrine,
   planOrder,
   plannedJobs,
+  plannedSaleRefund,
   plannedSupply,
   commandPost as commandPostOf,
   lastSentOrder,
@@ -522,8 +523,9 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     const own = !!unit && unit.side === PLAYER && state.phase === 'plan' && RULESET.economy && inContact(unit) && unit.build === undefined;
     const yard = own && !!arch?.production;
     const source = own && arch?.comms?.role === 'source' && (!needsDeploy(unit) || isSetUp(unit));
-    // Any finished own structure but a command source can be sold.
-    const sellable = own && arch?.speed === 0 && arch.comms?.role !== 'source';
+    // Any finished own structure but a command source can be sold (not while disabled).
+    const sellable = own && arch?.speed === 0 && arch.comms?.role !== 'source' && isReady(unit);
+    const salePlanned = !!unit && plannedJobs(state, unit.id).some((c) => c.order.type === 'sell');
     jobsEl.hidden = !unit || !arch || (!yard && !source && !sellable);
     if (!unit || !arch || (!yard && !source && !sellable)) {
       placing = null;
@@ -531,7 +533,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       return;
     }
     if (settleSell !== unit.id) settleSell = null;
-    const kinds = yard ? (arch.production ?? []) : source ? BUILDABLE : [];
+    // Planned for sale: nothing more to produce, repair or place there (cancel the sale to change it).
+    const kinds = salePlanned ? [] : yard ? (arch.production ?? []) : source ? BUILDABLE : [];
     const list = h('div', { class: 'rc-tiles', role: 'group', 'aria-label': t(yard ? 'jobs.produce' : 'jobs.build') });
     const left = plannedSupply(state);
     for (const kind of kinds) {
@@ -565,19 +568,19 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
           : o.type === 'repair'
             ? t('jobs.plannedRepair', { name })
             : o.type === 'sell'
-              ? t('jobs.plannedSell', { n: sellRefund(RULESET, unit) })
+              ? t('jobs.plannedSell', { n: plannedSaleRefund(state, unit.id) })
               : t('jobs.planned', { name });
       rows.append(h('li', {}, h('span', {}, text), h('button', { type: 'button', 'data-testid': `rc-job-cancel-${index}`, onclick: () => commit(cancelJob(state, unit.id, index), t('announce.cancelled', { name })) }, t('jobs.cancel', { name }))));
     });
-    if (yard || source) jobsEl.append(h('h4', {}, t(yard ? 'jobs.produce' : 'jobs.build')), list);
-    if (yard) jobsEl.append(repairSection(unit, arch));
+    if ((yard || source) && !salePlanned) jobsEl.append(h('h4', {}, t(yard ? 'jobs.produce' : 'jobs.build')), list);
+    if (yard && !salePlanned) jobsEl.append(repairSection(unit, arch));
     jobsEl.append(rows);
-    if (sellable && !plannedJobs(state, unit.id).some((c) => c.order.type === 'sell')) {
-      const refund = sellRefund(RULESET, unit);
+    if (sellable && !salePlanned) {
+      const refund = plannedSaleRefund(state, unit.id);
       jobsEl.append(
         h(
           'button',
-          { type: 'button', class: 'rc-sell', 'data-testid': 'rc-sell', onclick: () => onSell(unit.id) },
+          { type: 'button', class: 'rc-sell', 'data-testid': 'rc-sell', onclick: (event: Event) => onSell(unit.id, event as MouseEvent) },
           settleSell === unit.id ? t('jobs.sellConfirm', { n: refund }) : t('jobs.sell', { n: refund })
         )
       );
@@ -604,12 +607,20 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     for (const e of candidates) {
       const a = archetypeOf(RULESET, e.kind)!;
       const price = repairPrice(a, e.hp);
+      const short = price > left;
+      const label = t('jobs.repairLabel', { name: unitName(e), hp: e.hp, max: a.hp, cost: price });
       box.append(
         h(
           'button',
-          { type: 'button', class: 'rc-repair-item', 'data-testid': `rc-repair-${e.id}`, 'data-short': price > left ? 'true' : 'false', onclick: () => orderJob({ type: 'repair', target: e.id }) },
+          { type: 'button', class: 'rc-repair-item', 'data-testid': `rc-repair-${e.id}`, 'data-short': short ? 'true' : 'false', 'aria-label': short ? `${label} (${t('tile.short')})` : label, onclick: () => orderJob({ type: 'repair', target: e.id }) },
           unitIcon(e.kind, true),
-          h('span', {}, t('jobs.repairItem', { name: unitName(e), hp: e.hp, max: a.hp, cost: price }))
+          h(
+            'span',
+            { class: 'rc-repair-text', 'aria-hidden': 'true' },
+            h('span', {}, unitName(e)),
+            h('span', { class: 'rc-repair-meta' }, t('jobs.repairItem', { hp: e.hp, max: a.hp, cost: price })),
+            ...(short ? [h('span', { class: 'rc-tile-short' }, t('tile.short'))] : [])
+          )
         )
       );
     }
@@ -618,7 +629,9 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
 
   /** Selling takes two presses: the first shows the refund on the button, the second plans it. */
   let settleSell: number | null = null;
-  function onSell(id: number): void {
+  function onSell(id: number, event?: MouseEvent): void {
+    // The second click of a double-click (or double tap) is not a second, deliberate press.
+    if ((event?.detail ?? 0) > 1) return;
     if (settleSell !== id) {
       settleSell = id;
       render();
@@ -781,7 +794,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       if (arch.production) abilities.append(statRow(t('card.produces'), arch.production.map((k) => t(`unit.${k}`)).join(', '), null));
       const repairers = Object.values(RULESET.archetypes).filter((a) => a.production?.includes(arch.id)).map((a) => t(`unit.${a.id}`));
       if (arch.speed > 0 && repairers.length > 0) abilities.append(statRow(t('card.repair'), t('card.repairAt', { yards: repairers.join(', ') }), null, 'rc-card-repair'));
-      if (unit.side === PLAYER && arch.speed === 0 && arch.comms?.role !== 'source' && arch.buildTurns > 0) abilities.append(statRow(t('card.sell'), t('card.sellValue', { n: sellRefund(RULESET, unit) }), null, 'rc-card-sell'));
+      if (unit.side === PLAYER && arch.speed === 0 && arch.comms?.role !== 'source' && arch.buildTurns > 0) abilities.append(statRow(t('card.sell'), t('card.sellValue', { n: plannedSaleRefund(state, unit.id) }), null, 'rc-card-sell'));
     }
     cardEl.append(stats);
     if (abilities.childElementCount > 1) cardEl.append(abilities);
@@ -981,7 +994,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
         const unit = unitById(state, e.id);
         if (unit?.side === PLAYER) lines.push(t('summary.repaired', { name: unitName(unit), hp: e.hp }));
       } else if (e.t === 'sold') {
-        lines.push(e.side === PLAYER ? t('summary.sold', { name: unitName(e), n: e.refund }) : t('summary.enemySold', { name: unitName(e) }));
+        lines.push(e.side === PLAYER ? t('summary.sold', { name: unitName(e), n: e.refund ?? 0 }) : t('summary.enemySold', { name: unitName(e) }));
       } else if (e.t === 'site-blocked') {
         if (e.side === PLAYER) lines.push(t('summary.siteBlocked', { name: t(`unit.${e.kind}`), x: e.x + 1, y: e.y + 1 }));
       } else if (e.t === 'order-ended' && REPORTED_ENDS.has(e.reason) && !told.has(`${e.id}:${e.reason}`)) {
@@ -1522,6 +1535,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   /* ---------- Interaction ---------- */
   function commit(next: RcState, message?: string): void {
     state = next;
+    settleSell = null; // an armed sale never survives a change (a planned order, a locked turn)
     context.requestSave();
     if (state.phase === 'finished' && !reported && state.result) {
       reported = true;
@@ -1754,6 +1768,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       render();
     },
     restore(saved: RcState) {
+      settleSell = null;
       const spec = scenarioById(saved.scenario);
       state = spec ? structuredClone(saved) : newGame(saved.seed, FIELD_EXERCISE, saved.difficulty, null);
       context.setDifficulty?.(state.difficulty); // the save decides the level, not the host's select

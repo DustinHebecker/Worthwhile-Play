@@ -193,3 +193,5 @@
 .wp-relay-command .rc-repair-item .rc-icon { inline-size: 28px; block-size: 28px; }
 .wp-relay-command .rc-repair-item[data-short='true'] { border-style: dashed; }
 .wp-relay-command .rc-sell { justify-self: start; margin-block-start: 0.4rem; }
+.wp-relay-command .rc-repair-text { display: grid; gap: 0.05rem; min-inline-size: 0; }
+.wp-relay-command .rc-repair-meta { font-size: 0.85em; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--wp-muted); }

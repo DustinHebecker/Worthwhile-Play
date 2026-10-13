@@ -330,8 +330,8 @@ export type SimEvent =
   | { t: 'built'; tick: number; id: number }
   /** A yard (`by`) repaired unit `id` by `hp` health. */
   | { t: 'repaired'; tick: number; id: number; by: number; hp: number }
-  /** A structure was sold (torn down) for `refund` Supply. */
-  | { t: 'sold'; tick: number; id: number; side: number; kind: string; x: number; y: number; refund: number }
+  /** A structure was sold (torn down) for `refund` Supply (the refund only in the seller's own reports). */
+  | { t: 'sold'; tick: number; id: number; side: number; kind: string; x: number; y: number; refund?: number }
   /**
    * A placement the side's knowledge allowed but the cell turned out taken (a hidden unit, a
    * deposit run dry, or both sides placing on it in the same batch): refused unpaid, no slot used.

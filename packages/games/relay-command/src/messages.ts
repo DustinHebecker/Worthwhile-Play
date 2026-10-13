@@ -281,7 +281,7 @@ const en = {
   'tile.short': 'not enough Supply',
   'jobs.repair': 'Repair',
   'jobs.repairNone': 'Damaged units of the kinds made here can be repaired when they stand next to this building.',
-  'jobs.repairItem': '{name} {hp}/{max} · {cost}',
+  'jobs.repairItem': '{hp}/{max} · {cost}',
   'jobs.plannedRepair': 'Planned: repair {name}',
   'jobs.plannedSell': 'Planned: sell (+{n} Supply)',
   'jobs.sell': 'Sell (+{n} Supply)',
@@ -298,6 +298,7 @@ const en = {
   'summary.sold': '{name} sold (+{n} Supply).',
   'summary.enemySold': 'The opponent tore down {name}.',
   'help.repair': 'Repair and sale: a damaged unit next to a Barracks (infantry) or Vehicle Factory (vehicles) is repaired to full health at once, for half the value of the missing health; select the building and pick the unit. Any own structure except the Command Post can be sold for half its remaining value plus what its queue was paid; the Supply arrives when the turn is carried out. Both take one order.',
+  'jobs.repairLabel': 'Repair {name}: health {hp} of {max}, {cost} Supply',
 };
 
 type Catalogue = Record<keyof typeof en, string>;
@@ -579,7 +580,7 @@ const de: Catalogue = {
   'tile.short': 'nicht genug Nachschub',
   'jobs.repair': 'Reparieren',
   'jobs.repairNone': 'Beschädigte Einheiten der hier gebauten Arten lassen sich reparieren, wenn sie neben diesem Gebäude stehen.',
-  'jobs.repairItem': '{name} {hp}/{max} · {cost}',
+  'jobs.repairItem': '{hp}/{max} · {cost}',
   'jobs.plannedRepair': 'Geplant: {name} reparieren',
   'jobs.plannedSell': 'Geplant: verkaufen (+{n} Nachschub)',
   'jobs.sell': 'Verkaufen (+{n} Nachschub)',
@@ -596,6 +597,7 @@ const de: Catalogue = {
   'summary.sold': '{name} verkauft (+{n} Nachschub).',
   'summary.enemySold': 'Der Gegner hat {name} abgerissen.',
   'help.repair': 'Reparieren und Verkaufen: Eine beschädigte Einheit neben einer Kaserne (Infanterie) oder Fahrzeugfabrik (Fahrzeuge) wird sofort voll repariert, für den halben Wert der fehlenden Gesundheit; wähle das Gebäude und dann die Einheit. Jedes eigene Bauwerk außer dem Gefechtsstand lässt sich für den halben Restwert verkaufen, dazu kommt, was seine Warteschlange gekostet hat; der Nachschub kommt, wenn die Runde ausgeführt wird. Beides kostet einen Befehl.',
+  'jobs.repairLabel': '{name} reparieren: Gesundheit {hp} von {max}, {cost} Nachschub',
 };
 
 // Translations other than en/de are AI-assisted and await native-speaker review.
@@ -876,7 +878,7 @@ const nl: Catalogue = {
   'tile.short': 'niet genoeg Voorraad',
   'jobs.repair': 'Repareren',
   'jobs.repairNone': 'Beschadigde eenheden van de soorten die hier worden gemaakt, kunnen worden gerepareerd als ze naast dit gebouw staan.',
-  'jobs.repairItem': '{name} {hp}/{max} · {cost}',
+  'jobs.repairItem': '{hp}/{max} · {cost}',
   'jobs.plannedRepair': 'Gepland: {name} repareren',
   'jobs.plannedSell': 'Gepland: verkopen (+{n} Voorraad)',
   'jobs.sell': 'Verkopen (+{n} Voorraad)',
@@ -893,6 +895,7 @@ const nl: Catalogue = {
   'summary.sold': '{name} verkocht (+{n} Voorraad).',
   'summary.enemySold': 'De tegenstander heeft {name} afgebroken.',
   'help.repair': 'Repareren en verkopen: een beschadigde eenheid naast een Kazerne (infanterie) of Voertuigfabriek (voertuigen) wordt meteen volledig gerepareerd, voor de halve waarde van de ontbrekende gezondheid; selecteer het gebouw en kies de eenheid. Elk eigen bouwwerk behalve de Commandopost kan worden verkocht voor de helft van zijn resterende waarde plus wat er voor zijn wachtrij is betaald; de Voorraad komt binnen als de beurt wordt uitgevoerd. Beide kosten één bevel.',
+  'jobs.repairLabel': '{name} repareren: gezondheid {hp} van {max}, {cost} Voorraad',
 };
 
 const es: Catalogue = {
@@ -1172,7 +1175,7 @@ const es: Catalogue = {
   'tile.short': 'no hay suficientes Suministros',
   'jobs.repair': 'Reparar',
   'jobs.repairNone': 'Las unidades dañadas de los tipos que se fabrican aquí pueden repararse cuando están junto a este edificio.',
-  'jobs.repairItem': '{name} {hp}/{max} · {cost}',
+  'jobs.repairItem': '{hp}/{max} · {cost}',
   'jobs.plannedRepair': 'Previsto: reparar {name}',
   'jobs.plannedSell': 'Previsto: vender (+{n} de Suministros)',
   'jobs.sell': 'Vender (+{n} de Suministros)',
@@ -1189,6 +1192,7 @@ const es: Catalogue = {
   'summary.sold': '{name} vendido (+{n} de Suministros).',
   'summary.enemySold': 'El oponente ha derribado {name}.',
   'help.repair': 'Reparar y vender: una unidad dañada junto a un Cuartel (infantería) o una Fábrica de vehículos (vehículos) se repara por completo al instante, por la mitad del valor de la salud que falta; selecciona el edificio y elige la unidad. Cualquier estructura propia excepto el Puesto de mando puede venderse por la mitad de su valor restante más lo pagado por su cola; los Suministros llegan cuando se ejecuta el turno. Ambas cosas cuestan una orden.',
+  'jobs.repairLabel': 'Reparar {name}: salud {hp} de {max}, {cost} de Suministros',
 };
 
 const fr: Catalogue = {
@@ -1468,7 +1472,7 @@ const fr: Catalogue = {
   'tile.short': 'pas assez de Ravitaillement',
   'jobs.repair': 'Réparer',
   'jobs.repairNone': 'Les unités endommagées des types produits ici peuvent être réparées lorsqu’elles se trouvent à côté de ce bâtiment.',
-  'jobs.repairItem': '{name} {hp}/{max} · {cost}',
+  'jobs.repairItem': '{hp}/{max} · {cost}',
   'jobs.plannedRepair': 'Prévu : réparer {name}',
   'jobs.plannedSell': 'Prévu : vendre (+{n} de Ravitaillement)',
   'jobs.sell': 'Vendre (+{n} de Ravitaillement)',
@@ -1485,6 +1489,7 @@ const fr: Catalogue = {
   'summary.sold': '{name} vendu (+{n} de Ravitaillement).',
   'summary.enemySold': 'L’adversaire a démoli {name}.',
   'help.repair': 'Réparer et vendre : une unité endommagée à côté d’une Caserne (infanterie) ou d’une Usine de véhicules (véhicules) est aussitôt entièrement réparée, pour la moitié de la valeur de la santé manquante ; sélectionne le bâtiment puis choisis l’unité. Toute structure alliée sauf le Poste de commandement peut être vendue pour la moitié de sa valeur restante, plus ce qui a été payé pour sa file d’attente ; le Ravitaillement arrive quand le tour est exécuté. Chacun coûte un ordre.',
+  'jobs.repairLabel': 'Réparer {name} : santé {hp} sur {max}, {cost} de Ravitaillement',
 };
 const ru: Catalogue = {
   title: 'Relay Command',
@@ -1763,7 +1768,7 @@ const ru: Catalogue = {
   'tile.short': 'не хватает Снабжения',
   'jobs.repair': 'Ремонт',
   'jobs.repairNone': 'Повреждённые подразделения тех типов, что производятся здесь, можно отремонтировать, когда они стоят рядом с этим зданием.',
-  'jobs.repairItem': '{name} {hp}/{max} · {cost}',
+  'jobs.repairItem': '{hp}/{max} · {cost}',
   'jobs.plannedRepair': 'Запланировано: ремонт — {name}',
   'jobs.plannedSell': 'Запланировано: продажа (+{n} Снабжения)',
   'jobs.sell': 'Продать (+{n} Снабжения)',
@@ -1780,6 +1785,7 @@ const ru: Catalogue = {
   'summary.sold': '{name}: продано (+{n} Снабжения).',
   'summary.enemySold': 'Противник снёс: {name}.',
   'help.repair': 'Ремонт и продажа: повреждённое подразделение рядом с Казармой (пехота) или Заводом техники (техника) сразу ремонтируется полностью за половину стоимости потерянного здоровья; выбери здание, затем подразделение. Любое своё сооружение, кроме Командного пункта, можно продать за половину его оставшейся стоимости плюс то, что оплачено за его очередь; Снабжение поступает, когда ход выполняется. И то и другое стоит один приказ.',
+  'jobs.repairLabel': 'Ремонт: {name}, здоровье {hp} из {max}, Снабжение: {cost}',
 };
 
 const zhHans: Catalogue = {
@@ -2059,7 +2065,7 @@ const zhHans: Catalogue = {
   'tile.short': '补给不足',
   'jobs.repair': '维修',
   'jobs.repairNone': '在此生产的类型的受损部队，站在这座建筑旁边时可以维修。',
-  'jobs.repairItem': '{name} {hp}/{max} · {cost}',
+  'jobs.repairItem': '{hp}/{max} · {cost}',
   'jobs.plannedRepair': '已计划：维修 {name}',
   'jobs.plannedSell': '已计划：出售（+{n} 补给）',
   'jobs.sell': '出售（+{n} 补给）',
@@ -2076,6 +2082,7 @@ const zhHans: Catalogue = {
   'summary.sold': '{name} 已出售（+{n} 补给）。',
   'summary.enemySold': '对手拆除了 {name}。',
   'help.repair': '维修与出售：站在兵营（步兵）或车辆工厂（车辆）旁边的受损部队会立即完全修复，费用为缺失生命值价值的一半；先选择建筑，再选择部队。除指挥所外，任何己方建筑都可以出售，获得其剩余价值的一半，外加其生产队列已支付的费用；补给在回合执行时到账。两者各消耗一条命令。',
+  'jobs.repairLabel': '维修{name}：生命值 {hp}/{max}，{cost} 补给',
 };
 const ko: Catalogue = {
   title: 'Relay Command',
@@ -2354,7 +2361,7 @@ const ko: Catalogue = {
   'tile.short': '보급 부족',
   'jobs.repair': '수리',
   'jobs.repairNone': '이곳에서 생산하는 종류의 손상된 유닛은 이 건물 옆에 있을 때 수리할 수 있습니다.',
-  'jobs.repairItem': '{name} {hp}/{max} · {cost}',
+  'jobs.repairItem': '{hp}/{max} · {cost}',
   'jobs.plannedRepair': '계획됨: {name} 수리',
   'jobs.plannedSell': '계획됨: 판매 (+{n} 보급)',
   'jobs.sell': '판매 (+{n} 보급)',
@@ -2371,6 +2378,7 @@ const ko: Catalogue = {
   'summary.sold': '{name} 판매됨 (+{n} 보급).',
   'summary.enemySold': '상대가 {name}을(를) 철거했습니다.',
   'help.repair': '수리와 판매: 병영(보병)이나 차량 공장(차량) 옆의 손상된 유닛은 잃은 체력 가치의 절반을 내고 즉시 완전히 수리됩니다. 건물을 선택한 뒤 유닛을 고르세요. 지휘소를 제외한 모든 아군 구조물은 남은 가치의 절반에 생산 대기열에 낸 비용을 더한 값으로 판매할 수 있으며, 보급은 턴이 실행될 때 들어옵니다. 둘 다 명령 하나를 소모합니다.',
+  'jobs.repairLabel': '{name} 수리: 체력 {hp}/{max}, 보급 {cost}',
 };
 
 const ja: Catalogue = {
@@ -2650,7 +2658,7 @@ const ja: Catalogue = {
   'tile.short': '補給が足りません',
   'jobs.repair': '修理',
   'jobs.repairNone': 'ここで生産する種類の損傷した部隊は、この建物の隣にいれば修理できます。',
-  'jobs.repairItem': '{name} {hp}/{max} · {cost}',
+  'jobs.repairItem': '{hp}/{max} · {cost}',
   'jobs.plannedRepair': '予定：{name}を修理',
   'jobs.plannedSell': '予定：売却（補給 +{n}）',
   'jobs.sell': '売却（補給 +{n}）',
@@ -2667,6 +2675,7 @@ const ja: Catalogue = {
   'summary.sold': '{name}を売却しました（補給 +{n}）。',
   'summary.enemySold': '相手が{name}を取り壊しました。',
   'help.repair': '修理と売却：兵舎（歩兵）か車両工場（車両）の隣にいる損傷した部隊は、失った耐久の価値の半分で即座に全快します。建物を選んでから部隊を選んでください。指揮所以外の自軍の建造物は、残りの価値の半分に生産キューの支払い分を加えた額で売却できます。補給はターンの実行時に入ります。どちらも命令をひとつ使います。',
+  'jobs.repairLabel': '{name}を修理：耐久 {hp}/{max}、補給 {cost}',
 };
 const ar: Catalogue = {
   title: 'Relay Command',
@@ -2945,7 +2954,7 @@ const ar: Catalogue = {
   'tile.short': 'الإمداد غير كافٍ',
   'jobs.repair': 'إصلاح',
   'jobs.repairNone': 'يمكن إصلاح الوحدات المتضررة من الأنواع التي تُصنع هنا عندما تقف بجوار هذا المبنى.',
-  'jobs.repairItem': '{name} {hp}/{max} · {cost}',
+  'jobs.repairItem': '{hp}/{max} · {cost}',
   'jobs.plannedRepair': 'مخطط: إصلاح {name}',
   'jobs.plannedSell': 'مخطط: بيع (+{n} من الإمداد)',
   'jobs.sell': 'بيع (+{n} من الإمداد)',
@@ -2962,6 +2971,7 @@ const ar: Catalogue = {
   'summary.sold': 'تم بيع {name} (+{n} من الإمداد).',
   'summary.enemySold': 'هدم الخصم {name}.',
   'help.repair': 'الإصلاح والبيع: تُصلَح الوحدة المتضررة بجوار الثكنة (المشاة) أو مصنع المركبات (المركبات) إصلاحًا كاملًا في الحال، مقابل نصف قيمة الصحة المفقودة؛ اختر المبنى ثم اختر الوحدة. يمكن بيع أي مبنى تابع لك عدا مركز القيادة مقابل نصف قيمته المتبقية مضافًا إليه ما دُفع لقائمة إنتاجه؛ ويصل الإمداد عند تنفيذ الدور. يكلّف كل منهما أمرًا واحدًا.',
+  'jobs.repairLabel': 'إصلاح {name}: الصحة {hp} من {max}، الإمداد: {cost}',
 };
 
 const pt: Catalogue = {
@@ -3241,7 +3251,7 @@ const pt: Catalogue = {
   'tile.short': 'Suprimentos insuficientes',
   'jobs.repair': 'Reparar',
   'jobs.repairNone': 'Unidades danificadas dos tipos produzidos aqui podem ser reparadas quando estão ao lado deste edifício.',
-  'jobs.repairItem': '{name} {hp}/{max} · {cost}',
+  'jobs.repairItem': '{hp}/{max} · {cost}',
   'jobs.plannedRepair': 'Planejado: reparar {name}',
   'jobs.plannedSell': 'Planejado: vender (+{n} de Suprimentos)',
   'jobs.sell': 'Vender (+{n} de Suprimentos)',
@@ -3258,6 +3268,7 @@ const pt: Catalogue = {
   'summary.sold': '{name} vendido (+{n} de Suprimentos).',
   'summary.enemySold': 'O oponente demoliu {name}.',
   'help.repair': 'Reparo e venda: uma unidade danificada ao lado de um Quartel (infantaria) ou de uma Fábrica de veículos (veículos) é reparada por completo na hora, pela metade do valor da saúde perdida; selecione o edifício e escolha a unidade. Qualquer estrutura própria, exceto o Posto de comando, pode ser vendida pela metade do seu valor restante mais o que foi pago pela sua fila; os Suprimentos chegam quando o turno é executado. Cada um custa uma ordem.',
+  'jobs.repairLabel': 'Reparar {name}: saúde {hp} de {max}, {cost} de Suprimentos',
 };
 const it: Catalogue = {
   title: 'Relay Command',
@@ -3536,7 +3547,7 @@ const it: Catalogue = {
   'tile.short': 'Rifornimenti insufficienti',
   'jobs.repair': 'Ripara',
   'jobs.repairNone': 'Le unità danneggiate dei tipi prodotti qui possono essere riparate quando si trovano accanto a questo edificio.',
-  'jobs.repairItem': '{name} {hp}/{max} · {cost}',
+  'jobs.repairItem': '{hp}/{max} · {cost}',
   'jobs.plannedRepair': 'Previsto: riparare {name}',
   'jobs.plannedSell': 'Previsto: vendere (+{n} Rifornimenti)',
   'jobs.sell': 'Vendi (+{n} Rifornimenti)',
@@ -3553,6 +3564,7 @@ const it: Catalogue = {
   'summary.sold': '{name} venduto (+{n} Rifornimenti).',
   'summary.enemySold': 'L’avversario ha demolito {name}.',
   'help.repair': 'Riparare e vendere: un’unità danneggiata accanto a una Caserma (fanteria) o a una Fabbrica di veicoli (veicoli) viene riparata del tutto subito, per metà del valore della salute mancante; seleziona l’edificio e scegli l’unità. Qualsiasi struttura propria tranne il Posto di comando può essere venduta per metà del suo valore residuo più quanto pagato per la sua coda; i Rifornimenti arrivano quando il turno viene eseguito. Entrambe le azioni costano un ordine.',
+  'jobs.repairLabel': 'Ripara {name}: salute {hp} su {max}, {cost} Rifornimenti',
 };
 
 const pl: Catalogue = {
@@ -3832,7 +3844,7 @@ const pl: Catalogue = {
   'tile.short': 'za mało Zaopatrzenia',
   'jobs.repair': 'Napraw',
   'jobs.repairNone': 'Uszkodzone oddziały rodzajów produkowanych tutaj można naprawić, gdy stoją obok tego budynku.',
-  'jobs.repairItem': '{name} {hp}/{max} · {cost}',
+  'jobs.repairItem': '{hp}/{max} · {cost}',
   'jobs.plannedRepair': 'Zaplanowano: naprawa – {name}',
   'jobs.plannedSell': 'Zaplanowano: sprzedaż (+{n} Zaopatrzenia)',
   'jobs.sell': 'Sprzedaj (+{n} Zaopatrzenia)',
@@ -3849,6 +3861,7 @@ const pl: Catalogue = {
   'summary.sold': 'Sprzedano: {name} (+{n} Zaopatrzenia).',
   'summary.enemySold': 'Przeciwnik rozebrał: {name}.',
   'help.repair': 'Naprawa i sprzedaż: uszkodzony oddział obok Koszar (piechota) lub Fabryki pojazdów (pojazdy) zostaje od razu w pełni naprawiony za połowę wartości brakującego zdrowia; wybierz budynek, a potem oddział. Każdą własną budowlę oprócz Stanowiska dowodzenia można sprzedać za połowę jej pozostałej wartości plus to, co zapłacono za jej kolejkę; Zaopatrzenie wpływa, gdy tura zostaje wykonana. Jedno i drugie kosztuje jeden rozkaz.',
+  'jobs.repairLabel': 'Napraw: {name}, zdrowie {hp} z {max}, zaopatrzenie: {cost}',
 };
 const tr: Catalogue = {
   title: 'Relay Command',
@@ -4127,7 +4140,7 @@ const tr: Catalogue = {
   'tile.short': 'yeterli İkmal yok',
   'jobs.repair': 'Onar',
   'jobs.repairNone': 'Burada üretilen türlerden hasarlı birlikler bu binanın yanında durduklarında onarılabilir.',
-  'jobs.repairItem': '{name} {hp}/{max} · {cost}',
+  'jobs.repairItem': '{hp}/{max} · {cost}',
   'jobs.plannedRepair': 'Planlandı: {name} onarımı',
   'jobs.plannedSell': 'Planlandı: satış (+{n} İkmal)',
   'jobs.sell': 'Sat (+{n} İkmal)',
@@ -4144,6 +4157,7 @@ const tr: Catalogue = {
   'summary.sold': '{name} satıldı (+{n} İkmal).',
   'summary.enemySold': 'Rakip şunu yıktı: {name}.',
   'help.repair': 'Onarım ve satış: Kışla (piyade) veya Araç Fabrikası (araçlar) yanındaki hasarlı bir birlik, eksik sağlığın değerinin yarısı karşılığında hemen tamamen onarılır; binayı seç, sonra birliği seç. Komuta Merkezi dışındaki her kendi yapın, kalan değerinin yarısı artı kuyruğu için ödenen miktar karşılığında satılabilir; İkmal tur uygulandığında gelir. İkisi de bir emre mal olur.',
+  'jobs.repairLabel': '{name} onar: sağlık {hp}/{max}, {cost} İkmal',
 };
 
 const uk: Catalogue = {
@@ -4423,7 +4437,7 @@ const uk: Catalogue = {
   'tile.short': 'бракує Постачання',
   'jobs.repair': 'Ремонт',
   'jobs.repairNone': 'Пошкоджені підрозділи тих типів, що виробляються тут, можна відремонтувати, коли вони стоять поруч із цією будівлею.',
-  'jobs.repairItem': '{name} {hp}/{max} · {cost}',
+  'jobs.repairItem': '{hp}/{max} · {cost}',
   'jobs.plannedRepair': 'Заплановано: ремонт — {name}',
   'jobs.plannedSell': 'Заплановано: продаж (+{n} Постачання)',
   'jobs.sell': 'Продати (+{n} Постачання)',
@@ -4440,6 +4454,7 @@ const uk: Catalogue = {
   'summary.sold': '{name}: продано (+{n} Постачання).',
   'summary.enemySold': 'Суперник зніс: {name}.',
   'help.repair': 'Ремонт і продаж: пошкоджений підрозділ поруч із Казармою (піхота) або Заводом техніки (техніка) одразу повністю ремонтується за половину вартості втраченого здоров’я; вибери будівлю, потім підрозділ. Будь-яку свою споруду, крім Командного пункту, можна продати за половину її залишкової вартості плюс те, що сплачено за її чергу; Постачання надходить, коли хід виконується. І те, і інше коштує один наказ.',
+  'jobs.repairLabel': 'Ремонт: {name}, здоров’я {hp} з {max}, постачання: {cost}',
 };
 
 const hi: Catalogue = {
@@ -4719,7 +4734,7 @@ const hi: Catalogue = {
   'tile.short': 'रसद काफ़ी नहीं',
   'jobs.repair': 'मरम्मत',
   'jobs.repairNone': 'यहाँ बनने वाली क़िस्मों की क्षतिग्रस्त टुकड़ियों की मरम्मत हो सकती है, जब वे इस इमारत के बगल में खड़ी हों।',
-  'jobs.repairItem': '{name} {hp}/{max} · {cost}',
+  'jobs.repairItem': '{hp}/{max} · {cost}',
   'jobs.plannedRepair': 'योजना: {name} की मरम्मत',
   'jobs.plannedSell': 'योजना: बेचना (+{n} रसद)',
   'jobs.sell': 'बेचो (+{n} रसद)',
@@ -4736,6 +4751,7 @@ const hi: Catalogue = {
   'summary.sold': '{name} बेचा गया (+{n} रसद)।',
   'summary.enemySold': 'विरोधी ने {name} गिरा दिया।',
   'help.repair': 'मरम्मत और बिक्री: बैरक (पैदल सेना) या वाहन कारख़ाने (वाहन) के बगल में खड़ी क्षतिग्रस्त टुकड़ी की तुरंत पूरी मरम्मत हो जाती है, खोए स्वास्थ्य के मूल्य के आधे में; इमारत चुनो, फिर टुकड़ी चुनो। कमान चौकी को छोड़कर अपना कोई भी ढाँचा उसके बचे मूल्य के आधे और उसकी कतार के लिए चुकाई रक़म को मिलाकर बेचा जा सकता है; रसद बारी पूरी होने पर आती है। दोनों में एक आदेश लगता है।',
+  'jobs.repairLabel': '{name} की मरम्मत: स्वास्थ्य {max} में से {hp}, {cost} रसद',
 };
 
 export const messages: GameMessages = {
