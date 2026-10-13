@@ -268,6 +268,22 @@ describe('map library: the host library (ADR 0012), preferences as fallback, and
     expect((await hostMapLibrary(lib, named).list()).filter((m) => m !== undefined)).toHaveLength(MAP_SLOTS);
   });
 
+  it('the slow window cannot overwrite a new map: places are created only while free (ifAbsent), even when its write lands after the other window checked', async () => {
+    const lib = host();
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((r) => (release = r));
+    // Window B lists (place 0 free), then its write is held until window A has saved and read back.
+    const slow = { ...lib, put: async (item: Parameters<typeof lib.put>[0], options?: Parameters<typeof lib.put>[1]) => { await gate; return lib.put(item, options); } };
+    const b = hostMapLibrary(slow, named).save({ ...playable(), name: 'B' }, null);
+    const a = await hostMapLibrary(lib, named).save({ ...playable(), name: 'A' }, null);
+    release();
+    const bResult = await b;
+    expect(a).toEqual({ ok: true, slot: 0 });
+    expect(bResult).toEqual({ ok: true, slot: 1 });
+    const listed = await hostMapLibrary(lib, named).list();
+    expect([listed[0]?.name, listed[1]?.name]).toEqual(['A', 'B']);
+  });
+
   it('moving old maps over while another window saves a new one loses neither', async () => {
     const store = memoryStore();
     saveToLibrary(store, { ...playable(), name: 'Old' }, 0);

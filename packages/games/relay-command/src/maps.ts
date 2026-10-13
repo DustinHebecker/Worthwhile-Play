@@ -284,7 +284,7 @@ export interface MapLibrary {
 export interface HostLibrary {
   list(): Promise<readonly { readonly id: string }[]>;
   get(id: string): Promise<{ readonly data: unknown } | undefined>;
-  put(item: { id?: string; name: string; data: unknown }): Promise<unknown>;
+  put(item: { id?: string; name: string; data: unknown }, options?: { ifAbsent?: boolean }): Promise<unknown>;
   delete(id: string): Promise<void>;
 }
 
@@ -328,37 +328,34 @@ export function hostMapLibrary(host: HostLibrary, nameOf: (map: EditMap) => stri
           return false;
         }
       };
-      const put = async (place: number): Promise<SaveFailure | null> => {
+      /** Writes `place`; with `ifAbsent` only while it is free ('exists': another writer has it). */
+      const put = async (place: number, ifAbsent: boolean): Promise<SaveFailure | 'exists' | null> => {
         try {
-          await host.put({ id: slotId(place), name: nameOf(map).slice(0, 60) || 'Map', data: JSON.parse(JSON.stringify(map)) as unknown });
+          const item = { id: slotId(place), name: nameOf(map).slice(0, 60) || 'Map', data: JSON.parse(JSON.stringify(map)) as unknown };
+          await (ifAbsent ? host.put(item, { ifAbsent: true }) : host.put(item));
           return null;
         } catch (error) {
-          return reasonOf(error);
+          const reason = typeof error === 'object' && error !== null ? (error as { reason?: unknown }).reason : undefined;
+          return ifAbsent && reason === 'exists' ? 'exists' : reasonOf(error);
         }
       };
       if (slot !== null && slot >= 0 && slot < MAP_SLOTS) {
-        const failed = await put(slot);
-        if (failed) return { ok: false, reason: failed };
+        const failed = await put(slot, false);
+        if (failed) return { ok: false, reason: failed === 'exists' ? 'conflict' : failed };
         // Another window may have written the same place at the same time: say so rather than "saved".
         return (await holds(slot)) ? { ok: true, slot } : { ok: false, reason: 'conflict' };
       }
-      // A new map goes into the first free place. The library has no "create if free", so two windows
-      // may pick the same place: check it is still free right before writing, read it back after, and
-      // move on to the next free place when another writer got there first.
+      // A new map goes into the first free place, created only while it is still free (ADR 0012:
+      // `ifAbsent`, decided in one transaction); when another window got there first, the next one.
       const tried = new Set<number>();
       for (;;) {
         const target = (await list()).findIndex((m, place) => m === undefined && !tried.has(place));
         if (target < 0) return { ok: false, reason: 'full' };
         tried.add(target);
-        let free: boolean;
-        try {
-          free = (await host.get(slotId(target))) === undefined;
-        } catch {
-          free = false;
-        }
-        if (!free) continue;
-        const failed = await put(target);
+        const failed = await put(target, true);
+        if (failed === 'exists') continue;
         if (failed) return { ok: false, reason: failed };
+        // A safety check only (a host without `ifAbsent` replaces): the place must hold this map.
         if (await holds(target)) return { ok: true, slot: target };
       }
     },
