@@ -75,6 +75,10 @@ describe('library helpers (ADR 0012)', () => {
     expect(error.message).toBe('full');
     expect(isGameLibraryError(error)).toBe(true);
     expect(isGameLibraryError({ name: 'GameLibraryError', reason: 'too-large' })).toBe(true);
+    for (const reason of ['full', 'too-large', 'invalid', 'unavailable', 'exists'] as const) {
+      expect(isGameLibraryError({ name: 'GameLibraryError', reason })).toBe(true);
+      expect(new GameLibraryError(reason, 'x').reason).toBe(reason);
+    }
     for (const other of [new Error('full'), { name: 'GameLibraryError', reason: 'nope' }, null, 'full']) expect(isGameLibraryError(other)).toBe(false);
   });
 });

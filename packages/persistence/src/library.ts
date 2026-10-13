@@ -7,7 +7,8 @@ import {
   normalizeLibraryName,
   type GameLibrary,
   type LibraryEntry,
-  type LibraryItem
+  type LibraryItem,
+  type LibraryPutOptions
 } from '@wp/game-core';
 import { DB_NAME, LIBRARY_BY_GAME_INDEX, LIBRARY_STORE, idbRequest, openDatabase } from './store';
 
@@ -22,8 +23,17 @@ export interface LibraryRow {
   readonly data: unknown;
 }
 
-/** Result of `LibraryStore.put`: `full` means nothing was written (the game already has `maxItems` items). */
-export type LibraryPutResult = 'created' | 'replaced' | 'full';
+/**
+ * Result of `LibraryStore.put`. `full` (the game already has `maxItems` items) and `exists` (create-if-absent found
+ * the id) mean nothing was written.
+ */
+export type LibraryPutResult = 'created' | 'replaced' | 'full' | 'exists';
+
+/** Options of `LibraryStore.put`. */
+export interface LibraryStorePutOptions {
+  /** Create only: if the row's id exists for its game, write nothing and return `exists` (checked before `full`). */
+  readonly ifAbsent?: boolean;
+}
 
 /**
  * Things players create in games (e.g. maps), for all games, separate from saves, preferences, decks and learning
@@ -36,8 +46,11 @@ export interface LibraryStore {
   /** Raw rows of one game. */
   list(gameId: string): Promise<unknown[]>;
   get(gameId: string, id: string): Promise<unknown>;
-  /** Creates or replaces a row; creating checks `maxItems` for its game in the same transaction. */
-  put(row: LibraryRow, maxItems: number): Promise<LibraryPutResult>;
+  /**
+   * Creates or replaces a row; creating checks `maxItems` for its game in the same transaction. With `ifAbsent` an
+   * existing row is left unchanged (`exists`); the existence check, the count and the write are one atomic step.
+   */
+  put(row: LibraryRow, maxItems: number, options?: LibraryStorePutOptions): Promise<LibraryPutResult>;
   remove(gameId: string, id: string): Promise<void>;
   /** Number of items per game id (only games that have items). */
   counts(): Promise<Map<string, number>>;
@@ -57,10 +70,12 @@ export function createMemoryLibraryStore(): LibraryStore {
       const value = data.get(gameId)?.get(id);
       return value === undefined ? undefined : (JSON.parse(value) as unknown);
     },
-    async put(row, maxItems) {
+    async put(row, maxItems, options = {}) {
+      // No await before the write: check and write happen in one synchronous step (atomic within the page).
       const encoded = JSON.stringify(row);
       const items = data.get(row.gameId) ?? new Map<string, string>();
       const exists = items.has(row.id);
+      if (exists && options.ifAbsent) return 'exists';
       if (!exists && items.size >= maxItems) return 'full';
       items.set(row.id, encoded);
       data.set(row.gameId, items);
@@ -94,17 +109,22 @@ export async function createIndexedDbLibraryStore(factory: IDBFactory | null = g
     persistent: true,
     list: (gameId) => idbRequest(store('readonly').index(LIBRARY_BY_GAME_INDEX).getAll(gameId)),
     get: (gameId, id) => idbRequest(store('readonly').get([gameId, id])),
-    put: (row, maxItems) => {
+    put: (row, maxItems, options = {}) => {
       // Serialize first, so a row that is not plain data rejects before a transaction starts.
       const plain = JSON.parse(JSON.stringify(row)) as LibraryRow;
       return new Promise<LibraryPutResult>((resolve, reject) => {
         const tx = db.transaction(LIBRARY_STORE, 'readwrite');
         const objects = tx.objectStore(LIBRARY_STORE);
         let result: LibraryPutResult = 'full';
-        // Check and write in one transaction, so two tabs cannot both add the 51st item.
+        // Check and write in one readwrite transaction (IndexedDB runs overlapping readwrite transactions one after
+        // the other), so two tabs can neither both add the 51st item nor both create the same id with `ifAbsent`.
         const existing = objects.count([plain.gameId, plain.id]);
         existing.onsuccess = () => {
           if (existing.result > 0) {
+            if (options.ifAbsent) {
+              result = 'exists';
+              return;
+            }
             result = 'replaced';
             objects.put(plain);
             return;
@@ -113,7 +133,9 @@ export async function createIndexedDbLibraryStore(factory: IDBFactory | null = g
           count.onsuccess = () => {
             if (count.result >= maxItems) return;
             result = 'created';
-            objects.put(plain);
+            // `add` never overwrites: if the key appeared anyway, the transaction aborts (`unavailable`), not replaces.
+            if (options.ifAbsent) objects.add(plain);
+            else objects.put(plain);
           };
         };
         tx.oncomplete = () => resolve(result);
@@ -197,7 +219,7 @@ export function createGameLibrary(store: LibraryStore | Promise<LibraryStore>, g
         return entry && entry.id === id ? ({ id: entry.id, name: entry.name, data: entry.data, updatedAt: entry.updatedAt } satisfies LibraryItem) : undefined;
       });
     },
-    put: async (item) => {
+    put: async (item, putOptions?: LibraryPutOptions) => {
       // Games are typed, but the input is checked at runtime like any untrusted value.
       const input: Record<string, unknown> = isRecord(item) ? item : {};
       const name = normalizeLibraryName(input.name);
@@ -214,8 +236,11 @@ export function createGameLibrary(store: LibraryStore | Promise<LibraryStore>, g
         size,
         data: JSON.parse(JSON.stringify(input.data)) as unknown
       };
-      const result = await run((s) => s.put(row, limits.maxItems));
+      // `ifAbsent` only matters for a game-chosen id; a generated id is always new (documented on `LibraryPutOptions`).
+      const ifAbsent = input.id !== undefined && isRecord(putOptions) && putOptions.ifAbsent === true;
+      const result = await run((s) => s.put(row, limits.maxItems, ifAbsent ? { ifAbsent } : undefined));
       if (result === 'full') throw new GameLibraryError('full', `at most ${limits.maxItems} items`);
+      if (result === 'exists') throw new GameLibraryError('exists', `an item with id ${row.id} already exists`);
       return { id: row.id, name: row.name, updatedAt: row.updatedAt, size: row.size };
     },
     delete: async (id) => {

@@ -122,6 +122,76 @@ describe.each([
     expect(await lib.list()).toHaveLength(4);
   });
 
+  it('creates with ifAbsent when the id is new, and refuses an existing id without changing it', async () => {
+    const store = await factory();
+    const lib = library(store);
+    const created = await lib.put({ id: 'slot-1', name: 'First', data: { v: 1 } }, { ifAbsent: true });
+    expect(created).toEqual({ id: 'slot-1', name: 'First', updatedAt: '2026-10-13T12:00:00.000Z', size: 7 });
+    expect(await reason(lib.put({ id: 'slot-1', name: 'Second', data: { v: 2 } }, { ifAbsent: true }))).toBe('exists');
+    expect(await lib.get('slot-1')).toEqual({ id: 'slot-1', name: 'First', data: { v: 1 }, updatedAt: '2026-10-13T12:00:00.000Z' });
+    expect(await lib.list()).toHaveLength(1);
+    // The same id in another game is a different item.
+    await expect(library(store, 'other').put({ id: 'slot-1', name: 'Other', data: 0 }, { ifAbsent: true })).resolves.toMatchObject({ id: 'slot-1' });
+    // Without the option (or with `false`) a put still replaces.
+    await expect(lib.put({ id: 'slot-1', name: 'Replaced', data: 3 }, { ifAbsent: false })).resolves.toMatchObject({ name: 'Replaced' });
+    await expect(lib.put({ id: 'slot-1', name: 'Again', data: 4 })).resolves.toMatchObject({ name: 'Again' });
+    expect((await lib.get('slot-1'))?.data).toBe(4);
+    // After deleting, the id is free again.
+    await lib.delete('slot-1');
+    await expect(lib.put({ id: 'slot-1', name: 'Fresh', data: 5 }, { ifAbsent: true })).resolves.toMatchObject({ name: 'Fresh' });
+  });
+
+  it('ignores ifAbsent without an id (a generated id is always new)', async () => {
+    const lib = library(await factory());
+    const a = await lib.put({ name: 'A', data: 1 }, { ifAbsent: true });
+    const b = await lib.put({ name: 'B', data: 2 }, { ifAbsent: true });
+    expect([a.id, b.id]).toEqual(['gen-1', 'gen-2']);
+    expect(await lib.list()).toHaveLength(2);
+  });
+
+  it('validates before checking existence (invalid and too-large win over exists)', async () => {
+    const lib = library(await factory());
+    await lib.put({ id: 'x', name: 'X', data: 1 });
+    expect(await reason(lib.put({ id: 'x', name: '', data: 1 }, { ifAbsent: true }))).toBe('invalid');
+    expect(await reason(lib.put({ id: 'x', name: 'X', data: 'a'.repeat(LIBRARY_LIMITS.maxBytes) }, { ifAbsent: true }))).toBe('too-large');
+    expect((await lib.get('x'))?.data).toBe(1);
+  });
+
+  it('reports exists before full: an existing id is "exists" even in a full library, a new id is "full"', async () => {
+    const lib = library(await factory(), 'g', { maxItems: 2 });
+    await lib.put({ id: 'a', name: 'A', data: 1 }, { ifAbsent: true });
+    await lib.put({ id: 'b', name: 'B', data: 2 }, { ifAbsent: true });
+    expect(await reason(lib.put({ id: 'a', name: 'A2', data: 9 }, { ifAbsent: true }))).toBe('exists');
+    expect(await reason(lib.put({ id: 'c', name: 'C', data: 3 }, { ifAbsent: true }))).toBe('full');
+    expect(await reason(lib.put({ name: 'D', data: 4 }, { ifAbsent: true }))).toBe('full');
+    expect((await lib.list()).map((e) => [e.id, e.name])).toEqual([['b', 'B'], ['a', 'A']]);
+    expect((await lib.get('a'))?.data).toBe(1);
+  });
+
+  it('lets exactly one of many concurrent ifAbsent puts of the same id succeed', async () => {
+    const store = await factory();
+    // Separate library instances share one store, like two tabs sharing one database.
+    const results = await Promise.allSettled(
+      Array.from({ length: 12 }, (_, i) => library(store, 'g').put({ id: 'shared', name: `Writer ${i}`, data: i }, { ifAbsent: true }))
+    );
+    const won = results.flatMap((r, i) => (r.status === 'fulfilled' ? [i] : []));
+    expect(won).toHaveLength(1);
+    expect(results.filter((r) => r.status === 'rejected').map((r) => ((r as PromiseRejectedResult).reason as GameLibraryError).reason)).toEqual(Array(11).fill('exists'));
+    const stored = await library(store, 'g').get('shared');
+    expect(stored).toMatchObject({ name: `Writer ${won[0]}`, data: won[0] });
+    expect(await store.counts()).toEqual(new Map([['g', 1]]));
+  });
+
+  it('keeps the limit with concurrent ifAbsent puts of different ids', async () => {
+    const lib = library(await factory(), 'g', { maxItems: 3 });
+    // Ids 0..9, each twice: at most 3 distinct items, every rejection is "full" or "exists".
+    const results = await Promise.allSettled(Array.from({ length: 20 }, (_, i) => lib.put({ id: `k${i % 10}`, name: `K${i}`, data: i }, { ifAbsent: true })));
+    expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(3);
+    const reasons = new Set(results.flatMap((r) => (r.status === 'rejected' ? [(r.reason as GameLibraryError).reason] : [])));
+    expect([...reasons].every((r) => r === 'full' || r === 'exists')).toBe(true);
+    expect(await lib.list()).toHaveLength(3);
+  });
+
   it('bounds the size of the data (UTF-8 bytes of its JSON)', async () => {
     const lib = library(await factory());
     const fits = 'a'.repeat(LIBRARY_LIMITS.maxBytes - 2); // plus two quotes
@@ -211,6 +281,30 @@ describe('untrusted rows and failures', () => {
     expect(a.id).toMatch(/^[A-Za-z0-9_-]{1,64}$/);
     expect(a.id).not.toBe(b.id);
     expect(Number.isNaN(Date.parse(a.updatedAt))).toBe(false);
+  });
+
+  it('create-if-absent is atomic across two connections to one database (two tabs)', async () => {
+    const factory = new FakeIDBFactory();
+    const tabA = await createIndexedDbLibraryStore(factory, 'tabs');
+    const tabB = await createIndexedDbLibraryStore(factory, 'tabs');
+    const results = await Promise.allSettled(
+      Array.from({ length: 10 }, (_, i) => library(i % 2 === 0 ? tabA : tabB, 'g').put({ id: 'slot-1', name: `Tab ${i % 2 === 0 ? 'A' : 'B'} ${i}`, data: i }, { ifAbsent: true }))
+    );
+    expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+    expect(results.filter((r) => r.status === 'rejected').map((r) => ((r as PromiseRejectedResult).reason as GameLibraryError).reason)).toEqual(Array(9).fill('exists'));
+    expect(await tabA.counts()).toEqual(new Map([['g', 1]]));
+    expect(await tabB.get('g', 'slot-1')).toEqual(await tabA.get('g', 'slot-1'));
+  });
+
+  it('store level: ifAbsent returns exists before full and writes nothing', async () => {
+    for (const store of [createMemoryLibraryStore(), await createIndexedDbLibraryStore(new FakeIDBFactory(), 'level')]) {
+      const row = { gameId: 'g', id: 'a', name: 'A', updatedAt: '2026-01-01T00:00:00.000Z', size: 1, data: 1 };
+      expect(await store.put(row, 1, { ifAbsent: true })).toBe('created');
+      expect(await store.put({ ...row, name: 'B', data: 2 }, 1, { ifAbsent: true })).toBe('exists');
+      expect(await store.put({ ...row, id: 'b' }, 1, { ifAbsent: true })).toBe('full');
+      expect(await store.get('g', 'a')).toEqual(row);
+      expect(await store.put({ ...row, name: 'C' }, 1)).toBe('replaced');
+    }
   });
 
   it('falls back to memory when IndexedDB is unavailable', async () => {
