@@ -31,4 +31,17 @@ describe('test context library (ADR 0012)', () => {
     expect('library' in without.context).toBe(false);
     expect(without.library).toBeUndefined();
   });
+
+  it('supports create-if-absent like the app: exists leaves the item unchanged, one of concurrent puts wins', async () => {
+    const { library } = createTestLibrary('maps');
+    await expect(library.put({ id: 'slot-1', name: 'First', data: 1 }, { ifAbsent: true })).resolves.toMatchObject({ id: 'slot-1' });
+    await expect(library.put({ id: 'slot-1', name: 'Second', data: 2 }, { ifAbsent: true })).rejects.toMatchObject({ name: 'GameLibraryError', reason: 'exists' });
+    expect(await library.get('slot-1')).toMatchObject({ name: 'First', data: 1 });
+    await expect(library.put({ id: 'slot-1', name: 'Replaced', data: 3 })).resolves.toMatchObject({ name: 'Replaced' });
+
+    const shared = createMemoryLibraryStore();
+    const results = await Promise.allSettled(Array.from({ length: 8 }, (_, i) => createTestLibrary('maps', shared).library.put({ id: 'race', name: `R${i}`, data: i }, { ifAbsent: true })));
+    expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+    expect(await shared.counts()).toEqual(new Map([['maps', 1]]));
+  });
 });

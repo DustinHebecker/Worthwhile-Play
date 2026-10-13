@@ -154,6 +154,18 @@ export interface LibraryItemInput {
   readonly data: unknown;
 }
 
+/** Options of `GameLibrary.put`. */
+export interface LibraryPutOptions {
+  /**
+   * Create only: with an explicit `id`, reject with reason `exists` (and change nothing) if this game already has an
+   * item with that id. The check and the write are atomic (one storage transaction), so of several concurrent
+   * create-if-absent puts of the same id (e.g. from two tabs) exactly one succeeds. `exists` takes precedence over
+   * `full` (an existing id is reported as `exists` even when the library is full). Without an `id` the option is
+   * ignored: the host generates a fresh id, so the item is always new. Default `false` (create or replace).
+   */
+  readonly ifAbsent?: boolean;
+}
+
 /**
  * A game's own library (scoped to its id by the host). All methods are asynchronous and reject with a
  * `GameLibraryError` only; reading never throws on stored junk (unreadable items are skipped).
@@ -162,8 +174,11 @@ export interface GameLibrary {
   /** Items of this game, most recently changed first. */
   list(): Promise<LibraryEntry[]>;
   get(id: string): Promise<LibraryItem | undefined>;
-  /** Creates or replaces an item (the data is copied). Resolves to the stored entry. */
-  put(item: LibraryItemInput): Promise<LibraryEntry>;
+  /**
+   * Creates or replaces an item (the data is copied). Resolves to the stored entry. With `{ ifAbsent: true }` and an
+   * explicit id it only creates, rejecting with reason `exists` if the id is taken (see `LibraryPutOptions`).
+   */
+  put(item: LibraryItemInput, options?: LibraryPutOptions): Promise<LibraryEntry>;
   /** Removes an item; a missing id is not an error. */
   delete(id: string): Promise<void>;
 }
