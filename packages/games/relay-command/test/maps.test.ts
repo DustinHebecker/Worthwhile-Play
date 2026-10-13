@@ -21,10 +21,14 @@ import {
   removeFromLibrary,
   resize,
   saveToLibrary,
+  hostMapLibrary,
+  migratePreferenceMaps,
+  preferenceMapLibrary,
   TERRAIN_CODES,
   type EditMap,
   type Tool
 } from '../src/maps';
+import { createTestLibrary } from '@wp/testing';
 import { isValidState, lockTurn, newGame, specOf } from '../src/rules';
 import { FIELD_EXERCISE, RIDGE_VALLEY } from '../src/scenarios';
 
@@ -216,5 +220,57 @@ describe('a game on a player-made map', () => {
     while (s.phase === 'plan') s = lockTurn(s);
     expect(s.phase).toBe('finished');
     expect(isValidState(JSON.parse(JSON.stringify(s)))).toBe(true);
+  });
+});
+
+describe('map library: the host library (ADR 0012), preferences as fallback, and moving maps over', () => {
+  const host = () => createTestLibrary('relay-command').library;
+  const named = (m: EditMap) => m.name || 'Untitled';
+
+  it('keeps maps in the host library as slot-<n> items, validated when read; failures come back as reasons', async () => {
+    const lib = host();
+    const maps = hostMapLibrary(lib, named);
+    expect(await maps.save(playable(), null)).toEqual({ ok: true, slot: 0 });
+    expect(await maps.save({ ...playable(), name: 'B' }, null)).toEqual({ ok: true, slot: 1 });
+    expect((await lib.list()).map((e) => e.id).sort()).toEqual(['slot-0', 'slot-1']);
+    expect((await lib.list()).find((e) => e.id === 'slot-1')?.name).toBe('B');
+    expect((await maps.list())[1]?.name).toBe('B');
+    // Junk stored under a slot id reads as an empty place.
+    await lib.put({ id: 'slot-2', name: 'junk', data: { w: 3 } });
+    expect((await maps.list())[2]).toBeUndefined();
+    await maps.remove(1);
+    expect((await maps.list())[1]).toBeUndefined();
+    const refusing = { ...lib, put: () => Promise.reject(Object.assign(new Error('x'), { reason: 'full' })) };
+    expect(await hostMapLibrary(refusing, named).save(playable(), null)).toEqual({ ok: false, reason: 'full' });
+    const broken = { list: () => Promise.reject(new Error('down')), get: () => Promise.reject(new Error('down')), put: () => Promise.reject(new Error('down')), delete: () => Promise.reject(new Error('down')) };
+    expect(await hostMapLibrary(broken, named).list()).toEqual(Array.from({ length: MAP_SLOTS }, () => undefined));
+    expect(await hostMapLibrary(broken, named).save(playable(), 3)).toEqual({ ok: false, reason: 'unavailable' });
+    await expect(hostMapLibrary(broken, named).remove(0)).resolves.toBeUndefined();
+  });
+
+  it('falls back to preferences without a host library (full and unavailable told apart)', async () => {
+    const store = memoryStore();
+    const maps = preferenceMapLibrary(store);
+    for (let i = 0; i < MAP_SLOTS; i++) expect((await maps.save(playable(), null)).ok).toBe(true);
+    expect(await maps.save(playable(), null)).toEqual({ ok: false, reason: 'full' });
+    const dropping = { get: () => undefined, set: () => undefined };
+    expect(await preferenceMapLibrary(dropping).save(playable(), null)).toEqual({ ok: false, reason: 'unavailable' });
+  });
+
+  it('moves maps kept in preferences into the host library once; a failing move leaves them in place; no duplicates on retry', async () => {
+    const store = memoryStore();
+    saveToLibrary(store, { ...playable(), name: 'Old A' }, 0);
+    saveToLibrary(store, { ...playable(), name: 'Old B' }, 3);
+    // The library refuses the second move: nothing is removed from preferences.
+    const lib = host();
+    let puts = 0;
+    const flaky = { ...lib, put: (item: Parameters<typeof lib.put>[0]) => (++puts === 2 ? Promise.reject(Object.assign(new Error('x'), { reason: 'unavailable' })) : lib.put(item)) };
+    expect(await migratePreferenceMaps(store, hostMapLibrary(flaky, named))).toBe(0);
+    expect(loadLibrary(store).filter((m) => m !== undefined)).toHaveLength(2);
+    // Next start: both arrive (the one moved before is not moved twice), then preferences are cleared.
+    expect(await migratePreferenceMaps(store, hostMapLibrary(lib, named))).toBe(2);
+    expect((await hostMapLibrary(lib, named).list()).filter((m) => m !== undefined).map((m) => m!.name).sort()).toEqual(['Old A', 'Old B']);
+    expect(loadLibrary(store).every((m) => m === undefined)).toBe(true);
+    expect(await migratePreferenceMaps(store, hostMapLibrary(lib, named))).toBe(0);
   });
 });

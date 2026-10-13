@@ -679,6 +679,11 @@ describe('own ghosts (owner report)', () => {
 });
 
 describe('Relay Command map editor', () => {
+  /** The map library is asynchronous: let its promises settle. */
+  const settle = async () => {
+    await vi.runAllTimersAsync();
+    for (let k = 0; k < 20; k++) await Promise.resolve();
+  };
   const edKey = (k: string) => $('ed-map').dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
   const moveTo = (x: number, y: number) => {
     for (let i = 0; i < 30; i++) edKey('ArrowLeft');
@@ -687,8 +692,9 @@ describe('Relay Command map editor', () => {
     for (let i = 0; i < y; i++) edKey('ArrowDown');
   };
 
-  it('opens from the setup, edits with the keyboard (mirrored), tells what is missing, saves, survives a restore and plays the map', () => {
+  it('opens from the setup, edits with the keyboard (mirrored), tells what is missing, saves, survives a restore and plays the map', async () => {
     click('rc-editor-open');
+    await settle();
     expect($('rc-editor').hidden).toBe(false);
     expect($('rc-map').closest('[hidden]')).not.toBeNull(); // the game waits behind the editor
     expect(state().edit).toMatchObject({ slot: null, mirror: true });
@@ -714,9 +720,10 @@ describe('Relay Command map editor', () => {
     name.value = 'Duel';
     name.dispatchEvent(new Event('change'));
     click('ed-save');
+    await settle();
     expect($('ed-notice').textContent).toBe('Saved: Duel.');
     expect(state().edit!.slot).toBe(0);
-    expect(typeof ctx.preferences.get('map:0')).toBe('string');
+    expect((await ctx.library!.list()).map((e) => e.id)).toEqual(['slot-0']); // the host's library (Settings counts it)
     expect($('ed-library').textContent).toContain('Duel (16×12)');
     // Closing and reopening the game keeps the draft (it is part of the state).
     const saved = state();
@@ -734,8 +741,9 @@ describe('Relay Command map editor', () => {
     expect($('rc-setup-summary').textContent).toContain('Duel');
   });
 
-  it('undoes the last change (one step, also a resize); a draft survives "New game"; a failed save says so', () => {
+  it('undoes the last change (one step, also a resize); a draft survives "New game"; a failed save says so', async () => {
     click('rc-editor-open');
+    await settle();
     click('ed-tool-command-post');
     moveTo(1, 9);
     edKey('Enter');
@@ -750,13 +758,15 @@ describe('Relay Command map editor', () => {
     expect(($('ed-undo') as HTMLButtonElement).disabled).toBe(true); // one step only
     instance.newGame({ seed: 9 });
     expect(state().edit!.map.units).toHaveLength(2);
-    // The device drops the value: no "Saved", but the way out (the map code).
-    ctx.context.preferences!.set = () => undefined;
+    // The library refuses: no "Saved", but the reason and the way out (the map code).
+    ctx.context.library!.put = () => Promise.reject(Object.assign(new Error('too-large'), { name: 'GameLibraryError', reason: 'too-large' }));
     click('ed-save');
-    expect($('ed-notice').textContent).toBe('This device did not keep the map (storage blocked or full). Copy the map code to keep it.');
+    await settle();
+    expect($('ed-notice').textContent).toBe('The map is too large to keep. Copy the map code to keep it.');
+    expect(state().edit!.slot).toBeNull();
   });
 
-  it('undo restores the whole draft (map and its saved place), and is forgotten when the editor closes', () => {
+  it('undo restores the whole draft (map and its saved place), and is forgotten when the editor closes', async () => {
     const name = (v: string) => {
       const input = $('ed-name') as HTMLInputElement;
       input.value = v;
@@ -764,22 +774,27 @@ describe('Relay Command map editor', () => {
     };
     const load = (value: string) => {
       ($('ed-start') as HTMLSelectElement).value = value;
+      expect(($('ed-start') as HTMLSelectElement).value).toBe(value);
       click('ed-load');
       later();
       click('ed-load');
     };
     click('rc-editor-open');
+    await settle();
     name('A');
-    click('ed-save'); // slot 0
+    click('ed-save');
+    await settle(); // slot 0
     load('blank');
     name('B');
-    click('ed-save'); // slot 1
+    click('ed-save');
+    await settle(); // slot 1
     expect(state().edit!.slot).toBe(1);
     load('slot:0');
     expect(state().edit).toMatchObject({ slot: 0, map: expect.objectContaining({ name: 'A' }) });
     click('ed-undo');
     expect(state().edit).toMatchObject({ slot: 1, map: expect.objectContaining({ name: 'B' }) });
     click('ed-save');
+    await settle();
     expect($('ed-library').textContent).toContain('A (16×12)');
     expect($('ed-library').textContent).toContain('B (16×12)');
     // Closing forgets the step: reopened, there is nothing to undo.
@@ -787,11 +802,36 @@ describe('Relay Command map editor', () => {
     expect(($('ed-undo') as HTMLButtonElement).disabled).toBe(false);
     click('ed-close');
     click('rc-editor-open');
+    await settle();
     expect(($('ed-undo') as HTMLButtonElement).disabled).toBe(true);
   });
 
-  it('shares a map as a code, refuses a bad code, and asks twice before replacing or deleting', () => {
+  it('without a host library the maps stay in preferences; with one, maps from preferences move over once', async () => {
+    const make = (extras: Parameters<typeof createTestContext>[3], seed?: (c: TestContext) => void) => {
+      instance.dispose();
+      ctx = createTestContext(game as GameModule<unknown>, 'en', document.createElement('div'), extras);
+      seed?.(ctx);
+      instance = game.create(ctx.context) as GameInstance<RcState>;
+      instance.newGame({ seed: 4 });
+    };
+    make({ library: undefined });
     click('rc-editor-open');
+    await settle();
+    click('ed-save');
+    await settle();
+    expect($('ed-notice').textContent).toBe('Saved: Untitled map.');
+    expect(typeof ctx.preferences.get('map:0')).toBe('string');
+    const code = ctx.preferences.get('map:0') as string;
+    // A newer host with a library: the map moves there, the preference is cleared.
+    make({}, (c) => c.preferences.set('map:0', code));
+    await settle();
+    expect((await ctx.library!.list()).map((e) => e.id)).toEqual(['slot-0']);
+    expect(ctx.preferences.has('map:0')).toBe(false);
+  });
+
+  it('shares a map as a code, refuses a bad code, and asks twice before replacing or deleting', async () => {
+    click('rc-editor-open');
+    await settle();
     click('ed-copy');
     const code = ($('ed-code') as HTMLTextAreaElement).value;
     expect(code.startsWith('RC1.')).toBe(true);
@@ -813,6 +853,7 @@ describe('Relay Command map editor', () => {
     click('ed-close');
     expect(state().edit).toBeNull();
     click('rc-editor-open');
+    await settle();
     ($('ed-start') as HTMLSelectElement).value = 'blank';
     click('ed-load');
     later();
@@ -825,12 +866,15 @@ describe('Relay Command map editor', () => {
     expect(state().edit!.map.units.length).toBeGreaterThan(20);
     // Save, then delete with two presses.
     click('ed-save');
+    await settle();
     expect($('ed-delete').hidden).toBe(false);
     click('ed-delete');
-    expect(ctx.preferences.has('map:0')).toBe(true);
+    await settle();
+    expect(await ctx.library!.list()).toHaveLength(1);
     later();
     click('ed-delete');
-    expect(ctx.preferences.has('map:0')).toBe(false);
+    await settle();
+    expect(await ctx.library!.list()).toHaveLength(0);
     expect(state().edit!.slot).toBeNull();
   });
 });

@@ -260,3 +260,111 @@ export function memoryStore(): MapStore {
   const values = new Map<string, unknown>();
   return { get: (key) => values.get(key), set: (key, value) => (value === undefined ? values.delete(key) : values.set(key, value)) };
 }
+
+// --- Map library (asynchronous): the host's per-game library (ADR 0012), else preferences ----------
+
+/** Why a map was not saved (the host library's reasons; `full` also when every place is taken). */
+export type SaveFailure = 'full' | 'too-large' | 'invalid' | 'unavailable';
+export type SaveResult = { readonly ok: true; readonly slot: number } | { readonly ok: false; readonly reason: SaveFailure };
+
+/** The device's maps by place (0…MAP_SLOTS-1), whatever keeps them. */
+export interface MapLibrary {
+  list(): Promise<(EditMap | undefined)[]>;
+  save(map: EditMap, slot: number | null): Promise<SaveResult>;
+  remove(slot: number): Promise<void>;
+}
+
+/** The host library as consumed here (structurally `GameContext.library`). */
+export interface HostLibrary {
+  list(): Promise<readonly { readonly id: string }[]>;
+  get(id: string): Promise<{ readonly data: unknown } | undefined>;
+  put(item: { id?: string; name: string; data: unknown }): Promise<unknown>;
+  delete(id: string): Promise<void>;
+}
+
+const FAILURES: readonly SaveFailure[] = ['full', 'too-large', 'invalid', 'unavailable'];
+const reasonOf = (error: unknown): SaveFailure => {
+  const reason = typeof error === 'object' && error !== null ? (error as { reason?: unknown }).reason : undefined;
+  return FAILURES.includes(reason as SaveFailure) ? (reason as SaveFailure) : 'unavailable';
+};
+const slotId = (slot: number) => `slot-${slot}`;
+
+/** Maps in the host's library: one item per place (`slot-<n>`), the map itself as data (validated when read). */
+export function hostMapLibrary(host: HostLibrary, nameOf: (map: EditMap) => string): MapLibrary {
+  const list = async (): Promise<(EditMap | undefined)[]> => {
+    let ids: Set<string>;
+    try {
+      ids = new Set((await host.list()).map((e) => e.id));
+    } catch {
+      return Array.from({ length: MAP_SLOTS }, () => undefined);
+    }
+    return Promise.all(
+      Array.from({ length: MAP_SLOTS }, async (_, slot) => {
+        if (!ids.has(slotId(slot))) return undefined;
+        try {
+          const item = await host.get(slotId(slot));
+          return isValidMap(item?.data) ? (item.data as EditMap) : undefined;
+        } catch {
+          return undefined;
+        }
+      })
+    );
+  };
+  return {
+    list,
+    async save(map, slot) {
+      const target = slot !== null && slot >= 0 && slot < MAP_SLOTS ? slot : (await list()).findIndex((m) => m === undefined);
+      if (target < 0) return { ok: false, reason: 'full' };
+      try {
+        await host.put({ id: slotId(target), name: nameOf(map).slice(0, 60) || 'Map', data: JSON.parse(JSON.stringify(map)) as unknown });
+        return { ok: true, slot: target };
+      } catch (error) {
+        return { ok: false, reason: reasonOf(error) };
+      }
+    },
+    async remove(slot) {
+      try {
+        await host.delete(slotId(slot));
+      } catch {
+        /* not removed: the list still shows it */
+      }
+    }
+  };
+}
+
+/** Maps in the game's preferences (hosts without a library): the synchronous slots above. */
+export function preferenceMapLibrary(store: MapStore | undefined): MapLibrary {
+  return {
+    list: () => Promise.resolve(loadLibrary(store)),
+    save: (map, slot) => {
+      const full = slot === null && loadLibrary(store).every((m) => m !== undefined);
+      const saved = saveToLibrary(store, map, slot);
+      return Promise.resolve(saved === null ? { ok: false, reason: full ? 'full' : 'unavailable' } : { ok: true, slot: saved });
+    },
+    remove: (slot) => {
+      removeFromLibrary(store, slot);
+      return Promise.resolve();
+    }
+  };
+}
+
+/**
+ * Moves maps kept in preferences (before the host library existed) into the library, each into a
+ * free place; the preference values are cleared only after every move succeeded, so a failure
+ * loses nothing (the next start tries again). Resolves to the number of maps moved.
+ */
+export async function migratePreferenceMaps(store: MapStore | undefined, library: MapLibrary): Promise<number> {
+  const old = loadLibrary(store);
+  const waiting = old.map((m, slot) => ({ m, slot })).filter((e): e is { m: EditMap; slot: number } => e.m !== undefined);
+  if (waiting.length === 0) return 0;
+  // A map already moved by an earlier, interrupted attempt is not moved twice.
+  const there = new Set((await library.list()).filter((m): m is EditMap => m !== undefined).map(encodeMap));
+  for (const { m } of waiting) {
+    if (there.has(encodeMap(m))) continue;
+    const result = await library.save(m, null);
+    if (!result.ok) return 0;
+    there.add(encodeMap(m));
+  }
+  for (const { slot } of waiting) removeFromLibrary(store, slot);
+  return waiting.length;
+}

@@ -61,7 +61,7 @@ import {
 import { DIFFICULTIES, type Difficulty } from './ai';
 import { drawIcon } from './icons';
 import { createEditor } from './editor';
-import { blankMap, loadLibrary, mapIssues, memoryStore, type EditMap, type MapStore } from './maps';
+import { blankMap, hostMapLibrary, mapIssues, memoryStore, migratePreferenceMaps, preferenceMapLibrary, type EditMap, type MapLibrary, type MapStore } from './maps';
 import { CELL, drawDeposit, drawTerrainMark, TERRAIN_NAMES } from './draw';
 import { FIELD_EXERCISE, SCENARIOS } from './scenarios';
 import './styles.css';
@@ -344,15 +344,21 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   );
 
   /* ---------- Map editor ---------- */
-  // Maps are kept per device (preferences); without them, for this session only.
+  // Maps are kept by the host's library for this game (ADR 0012: Settings counts and deletes them
+  // as the player's own content); without one, in the game's preferences; without those, for
+  // this session only. Maps kept in preferences before the library existed move over once.
   const store: MapStore = context.preferences ?? memoryStore();
-  const library = () => loadLibrary(store);
   const mapLabel = (m: EditMap) => m.name.trim() || t('editor.untitled');
+  const mapLibrary: MapLibrary = context.library ? hostMapLibrary(context.library, mapLabel) : preferenceMapLibrary(store);
+  const library = () => editor.maps();
   const editor = createEditor({
     t,
     css: (name, fallback) => css(name, fallback),
     icon: (kind, own) => unitIcon(kind, own),
-    store,
+    library: mapLibrary,
+    libraryChanged: () => {
+      if (!state.edit) render(); // the setup lists the device's maps
+    },
     draft: () => state.edit ?? { map: blankMap(16, 12), slot: null, mirror: true },
     change: (draft, message) => commit({ ...state, edit: draft }, message),
     close: () => closeEditor(),
@@ -360,6 +366,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     playEndsGame: () => state.phase === 'plan' && state.log.length > 0,
     announce: (text) => announce(live, text)
   });
+
+  if (context.library) void migratePreferenceMaps(context.preferences, mapLibrary).then((moved) => moved > 0 && editor.refresh());
 
   function openEditor(): void {
     editor.forget();

@@ -9,19 +9,16 @@ import {
   encodeMap,
   fromScenario,
   isFair,
-  loadLibrary,
   MAP_HEIGHTS,
   MAP_KINDS,
   MAP_SLOTS,
   MAP_WIDTHS,
   mapIssues,
   MAX_NAME,
-  removeFromLibrary,
   resize,
-  saveToLibrary,
   TERRAIN_CODES,
   type EditMap,
-  type MapStore,
+  type MapLibrary,
   type Tool
 } from './maps';
 import type { MapDraft } from './rules';
@@ -38,7 +35,10 @@ export interface EditorOptions {
   readonly t: Translator;
   readonly css: (name: string, fallback: string) => string;
   readonly icon: (kind: string, own: boolean) => HTMLElement;
-  readonly store: MapStore | undefined;
+  /** The device's maps (the host's library, else preferences); asynchronous. */
+  readonly library: MapLibrary;
+  /** The library changed (the game's setup lists the maps too). */
+  readonly libraryChanged?: (maps: readonly (EditMap | undefined)[]) => void;
   readonly draft: () => MapDraft;
   /** Stores a changed draft in the game state (and asks for a save); `message` is announced. */
   readonly change: (draft: MapDraft, message?: string) => void;
@@ -52,7 +52,7 @@ export interface EditorOptions {
 /** Milliseconds after arming a two-press button in which a second press does not count. */
 const CONFIRM_GAP = 400;
 
-export function createEditor(o: EditorOptions): { readonly el: HTMLElement; render(): void; forget(): void } {
+export function createEditor(o: EditorOptions): { readonly el: HTMLElement; render(): void; forget(): void; refresh(): void; maps(): readonly (EditMap | undefined)[] } {
   const { t } = o;
   let tool: Tool = { type: 'terrain', code: '=' };
   let side = 0;
@@ -343,16 +343,23 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
     say(t('editor.undone'));
   }
   function onSave(): void {
+    if (saving) return;
     const draft = o.draft();
-    const full = draft.slot === null && loadLibrary(o.store).every((m) => m !== undefined);
-    const slot = saveToLibrary(o.store, draft.map, draft.slot);
-    if (slot === null) {
-      // All places taken, or the device did not keep it (storage blocked or full): the code still works.
-      say(full ? t('editor.full', { n: MAP_SLOTS }) : t('editor.notStored'));
-      return;
-    }
-    o.change({ ...draft, slot }, t('editor.saved', { name: mapName(draft.map) }));
-    say(t('editor.saved', { name: mapName(draft.map) }));
+    saving = true;
+    render();
+    void o.library.save(draft.map, draft.slot).then((result) => {
+      saving = false;
+      if (!result.ok) {
+        // The reason in words; the map code always works as a way out.
+        say(result.reason === 'full' ? t('editor.full', { n: MAP_SLOTS }) : t(`editor.fail.${result.reason}`));
+        render();
+        return;
+      }
+      // The draft may have changed meanwhile: only the place is taken over.
+      o.change({ ...o.draft(), slot: result.slot }, t('editor.saved', { name: mapName(draft.map) }));
+      say(t('editor.saved', { name: mapName(draft.map) }));
+      refresh();
+    });
   }
   function onPlay(): void {
     if (mapIssues(map()).length > 0) return;
@@ -387,25 +394,39 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
   function onDelete(): void {
     const draft = o.draft();
     if (draft.slot === null || !confirmed('delete')) return;
-    removeFromLibrary(o.store, draft.slot);
-    o.change({ ...draft, slot: null }, t('editor.deleted', { name: mapName(draft.map) }));
-    say(t('editor.deleted', { name: mapName(draft.map) }));
+    const slot = draft.slot;
+    void o.library.remove(slot).then(() => {
+      if (o.draft().slot === slot) o.change({ ...o.draft(), slot: null }, t('editor.deleted', { name: mapName(draft.map) }));
+      say(t('editor.deleted', { name: mapName(draft.map) }));
+      refresh();
+    });
   }
   function onLoad(): void {
     if (!confirmed('load')) return;
     const value = startSelect.value;
     const spec = SCENARIOS.find((s) => s.id === value);
-    const library = loadLibrary(o.store);
     const slot = value.startsWith('slot:') ? Number(value.slice(5)) : null;
-    const saved = slot !== null ? library[slot] : undefined;
+    const saved = slot !== null ? maps[slot] : undefined;
     const next = saved ?? (spec ? fromScenario(spec, t(`scenario.${spec.id}`).replace(/\s*[(（].*$/, '').slice(0, MAX_NAME)) : blankMap(map().w, map().h));
     replace({ map: next, slot: saved ? slot : null, mirror: o.draft().mirror }, t('editor.loaded', { name: mapName(next) }));
     say(t('editor.loaded', { name: mapName(next) }));
   }
 
+  /** The device's maps as last read (the library is asynchronous; `refresh` reads it again). */
+  let maps: readonly (EditMap | undefined)[] = [];
+  let saving = false;
+  function refresh(): void {
+    void o.library.list().then((list) => {
+      maps = list;
+      o.libraryChanged?.(list);
+      render();
+    });
+  }
+  refresh();
+
   function renderLibrary(): void {
     clear(libraryEl);
-    const library = loadLibrary(o.store);
+    const library = maps;
     // The start select lists the device's maps too.
     const keep = startSelect.value;
     for (const opt of [...startSelect.querySelectorAll('option')]) if (opt.value.startsWith('slot:')) opt.remove();
@@ -445,6 +466,7 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
     playBtn.textContent = armed === 'play' ? t('editor.playConfirm') : t('editor.play');
     deleteBtn.hidden = draft.slot === null;
     undoBtn.disabled = previous === null;
+    saveBtn.disabled = saving;
     deleteBtn.textContent = armed === 'delete' ? t('editor.deleteConfirm', { name: mapName(draft.map) }) : t('editor.delete');
     codeBox.hidden = !codeOpen;
     copyBtn.setAttribute('aria-expanded', codeOpen ? 'true' : 'false');
@@ -481,5 +503,5 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
     painting = false;
   }
 
-  return { el, render, forget };
+  return { el, render, forget, refresh, maps: () => maps };
 }
