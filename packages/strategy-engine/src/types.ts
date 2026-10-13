@@ -157,7 +157,14 @@ export type Order =
   /** Economy: a yard queues one unit of `kind` (paid at once; the standing order is unchanged). */
   | { readonly type: 'produce'; readonly kind: string }
   /** Economy: a command source places a structure of `kind` on a free covered cell (paid at once). */
-  | { readonly type: 'build'; readonly kind: string; readonly x: number; readonly y: number };
+  | { readonly type: 'build'; readonly kind: string; readonly x: number; readonly y: number }
+  /**
+   * Economy: a yard repairs `target`, a damaged own unit of a kind it produces standing next to
+   * it, to full health at once; paid at once (half the value of the missing health).
+   */
+  | { readonly type: 'repair'; readonly target: number }
+  /** Economy: a finished own structure (not a command source) is torn down for half its remaining value. */
+  | { readonly type: 'sell' };
 
 export const TARGET_PRIORITIES = ['weakest', 'nearest', 'armor', 'infantry', 'structures', 'emitters'] as const;
 export type TargetPriority = (typeof TARGET_PRIORITIES)[number];
@@ -321,6 +328,10 @@ export type SimEvent =
   /** A structure site was placed (`id`), or finished (`built`). */
   | { t: 'site'; tick: number; id: number; side: number; kind: string; x: number; y: number }
   | { t: 'built'; tick: number; id: number }
+  /** A yard (`by`) repaired unit `id` by `hp` health. */
+  | { t: 'repaired'; tick: number; id: number; by: number; hp: number }
+  /** A structure was sold (torn down) for `refund` Supply (the refund only in the seller's own reports). */
+  | { t: 'sold'; tick: number; id: number; side: number; kind: string; x: number; y: number; refund?: number }
   /**
    * A placement the side's knowledge allowed but the cell turned out taken (a hidden unit, a
    * deposit run dry, or both sides placing on it in the same batch): refused unpaid, no slot used.

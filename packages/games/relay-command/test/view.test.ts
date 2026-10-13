@@ -530,6 +530,66 @@ describe('Relay Command view', () => {
     expect($('rc-summary').textContent).toContain('Income: +20 Supply');
   });
 
+  it('a yard repairs a damaged unit next to it (half price, at once); a structure is sold after two presses', () => {
+    const s = structuredClone(state());
+    const yard = s.world.entities.find((e) => e.side === PLAYER && e.kind === 'muster')!;
+    const rifle = s.world.entities.find((e) => e.side === PLAYER && e.kind === 'rifles')!;
+    const free = (x: number, y: number) => passable(s.world.map, RULESET, x, y, 'ground') && !s.world.entities.some((e) => e.x === x && e.y === y);
+    const spot = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]].map(([dx, dy]) => [yard.x + dx!, yard.y + dy!] as const).find(([x, y]) => free(x, y))!;
+    Object.assign(rifle, { x: spot[0], y: spot[1], hp: 10 });
+    for (const r of s.world.intel?.[PLAYER] ?? []) if (r.id === rifle.id) Object.assign(r, { x: spot[0], y: spot[1], hp: 10 });
+    instance.restore(s);
+    click(`rc-unit-${yard.id}`);
+    const arch = RULESET.archetypes.rifles!;
+    const price = Math.ceil((arch.cost * (arch.hp - 10)) / arch.hp / 2);
+    expect($(`rc-repair-${rifle.id}`).textContent).toContain(`10/${arch.hp} · ${price}`);
+    expect($(`rc-repair-${rifle.id}`).getAttribute('aria-label')).toBe(`Repair ${rifle.kind === 'rifles' ? 'Rifle Squad' : ''} ${rifle.id}: health 10 of ${arch.hp}, ${price} Supply`);
+    click(`rc-repair-${rifle.id}`);
+    expect(state().draft).toEqual([{ side: PLAYER, unit: yard.id, order: { type: 'repair', target: rifle.id } }]);
+    expect($('rc-supply').textContent).toBe(`Supply 300 → ${300 - price} (+20)`);
+    expect(ctx.context.root.querySelector(`[data-testid="rc-repair-${rifle.id}"]`)).toBeNull(); // planned once
+    // Selling: the first press shows the refund, the second plans it.
+    expect($('rc-sell').textContent).toBe('Sell (+50 Supply)');
+    click('rc-sell');
+    expect($('rc-sell').textContent).toBe('Press again to sell (+50 Supply)');
+    expect(state().draft).toHaveLength(1);
+    // The second click of a double-click is not a deliberate second press.
+    $('rc-sell').dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 2 }));
+    expect(state().draft).toHaveLength(1);
+    click('rc-sell');
+    expect(state().draft.map((c) => c.order.type)).toEqual(['repair', 'sell']);
+    expect($('rc-jobs').textContent).toContain('Planned: sell (+50 Supply)');
+    // Planned for sale: no more production or repair offered there.
+    expect(ctx.context.root.querySelector('[data-testid="rc-job-rifles"]')).toBeNull();
+    expect(ctx.context.root.querySelector('[data-testid="rc-repair"]')).toBeNull();
+    click('rc-lock');
+    expect(state().world.entities.find((e) => e.id === rifle.id)?.hp).toBe(arch.hp);
+    expect(state().world.entities.some((e) => e.id === yard.id)).toBe(false);
+    expect($('rc-summary').textContent).toContain('repaired (+30 health)');
+    expect($('rc-summary').textContent).toContain('sold (+50 Supply)');
+    // The Command Post cannot be sold.
+    click(`rc-unit-${own().find((e) => e.kind === 'command-post')!.id}`);
+    expect(ctx.context.root.querySelector('[data-testid="rc-sell"]')).toBeNull();
+  });
+
+  it('an armed sale does not survive the turn; a disabled structure offers no sale; the shown refund includes planned production', () => {
+    const yard = own().find((e) => e.kind === 'muster')!;
+    click(`rc-unit-${yard.id}`);
+    click('rc-job-rifles');
+    expect($('rc-sell').textContent).toBe(`Sell (+${50 + RULESET.archetypes.rifles!.cost} Supply)`);
+    click('rc-sell');
+    expect($('rc-sell').textContent).toContain('Press again');
+    click('rc-lock');
+    click(`rc-unit-${yard.id}`);
+    expect($('rc-sell').textContent).toContain('Sell (+');
+    expect($('rc-sell').textContent).not.toContain('Press again');
+    const s = structuredClone(state());
+    s.world.entities.find((e) => e.id === yard.id)!.status = [{ kind: 'disabled', ticks: 6 }];
+    instance.restore(s);
+    click(`rc-unit-${yard.id}`);
+    expect(ctx.context.root.querySelector('[data-testid="rc-sell"]')).toBeNull();
+  });
+
   it('lets the Command Post place an Extractor on a deposit inside coverage and explains a bad cell', () => {
     const post = own().find((e) => e.kind === 'command-post')!;
     click(`rc-unit-${post.id}`);

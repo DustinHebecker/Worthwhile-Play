@@ -5,7 +5,7 @@ import { DEFAULT_DOCTRINE, MAX_SUPPLY, type Archetype, type Command, type Doctri
 import { computeNetwork, isEmitter, type Network } from './network';
 import { initialIntel, updateIntel } from './vision';
 import { archetypeOf, findEntity, needsDeploy, normalizeDoctrine, normalizeOrder, spawn, validateCommand } from './world';
-import { depositAt, incomeOf, isReady, spawnCell } from './economy';
+import { depositAt, incomeOf, isReady, repairPrice, sellRefund, spawnCell } from './economy';
 
 export interface SimResult {
   world: World;
@@ -88,6 +88,11 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     const key = o.y * w.map.w + o.x;
     (placedBy.get(key) ?? placedBy.set(key, new Set()).get(key)!).add(c.side);
   }
+  // Structures sold in this batch: torn down after every command of the batch is applied, so
+  // neither the order of the plans nor a sale decides whether another side's command applies
+  // (an attack on it, a placement on its cell). Reported to the intel like losses.
+  const selling: Entity[] = [];
+  const sold: Entity[] = [];
   for (const c of commands) {
     if (!validateCommand(w, rs, c, networks).ok) continue;
     // A placement the side's knowledge allowed may still find the cell taken: refused unpaid.
@@ -118,6 +123,19 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
       supply[unit.side] = (supply[unit.side] ?? 0) - product.cost;
       (unit.queue ??= []).push({ kind: order.kind, left: product.buildTurns });
       events.push({ t: 'queued', tick: t, id: unit.id, kind: order.kind });
+      continue;
+    }
+    if (order.type === 'repair') {
+      const target = findEntity(w, order.target) as Entity;
+      const supply = (w.supply ??= Array.from({ length: w.sides }, () => 0));
+      const healed = arch(target).hp - target.hp;
+      supply[unit.side] = (supply[unit.side] ?? 0) - repairPrice(arch(target), target.hp);
+      target.hp = arch(target).hp;
+      events.push({ t: 'repaired', tick: t, id: target.id, by: unit.id, hp: healed });
+      continue;
+    }
+    if (order.type === 'sell') {
+      if (!selling.includes(unit)) selling.push(unit);
       continue;
     }
     if (order.type === 'build') {
@@ -151,6 +169,15 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     const vision = arch(e).vision;
     return spottedBy(e.side, target.id) || dist2(e.x, e.y, target.x, target.y) <= vision * vision;
   };
+
+  for (const unit of selling) {
+    const supply = (w.supply ??= Array.from({ length: w.sides }, () => 0));
+    const refund = sellRefund(rs, unit);
+    supply[unit.side] = Math.min(MAX_SUPPLY, (supply[unit.side] ?? 0) + refund);
+    w.entities = w.entities.filter((e) => e !== unit);
+    sold.push(unit);
+    events.push({ t: 'sold', tick: t, id: unit.id, side: unit.side, kind: unit.kind, x: unit.x, y: unit.y, refund });
+  }
 
   // 2 + 3. Intent (standing order + doctrine) and simultaneous movement
   const cells = w.map.w * w.map.h;
@@ -399,7 +426,7 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
 
   // 8. Removal
   const alive: Entity[] = [];
-  const gone: Entity[] = [];
+  const gone: Entity[] = [...sold];
   for (const e of w.entities) {
     if (e.hp > 0) alive.push(e);
     else {

@@ -13,6 +13,9 @@ import {
   resolveTurn,
   STRATEGY_RULESET,
   validateCommand,
+  isOneShotOrder,
+  repairPrice,
+  sellRefund,
   type Command,
   type CommandRefusal,
   type Doctrine,
@@ -132,8 +135,8 @@ export function newGame(seed: number, spec: ScenarioSpec = FIELD_EXERCISE, diffi
 }
 
 export const unitById = (state: RcState, id: number): Entity | undefined => state.world.entities.find((e) => e.id === id);
-/** Production and placement are one-shot commands: a structure may give several per turn, each costs a slot. */
-export const isOneShot = (order: Order): boolean => order.type === 'produce' || order.type === 'build';
+/** Production, placement, repair and sale are one-shot commands: a structure may give several per turn, each costs a slot. */
+export const isOneShot = (order: Order): boolean => isOneShotOrder(order);
 /** The standing order planned for a unit this turn (one-shot commands are listed by `plannedJobs`). */
 export const draftFor = (state: RcState, id: number): Order | undefined => state.draft.find((c) => c.unit === id && !isOneShot(c.order))?.order;
 /** The one-shot commands (produce, build) planned for a structure this turn, in order. */
@@ -163,11 +166,30 @@ export function orderRefusal(state: RcState, unit: number, order: Order, doctrin
   return null;
 }
 
-/** The world as the planned one-shot commands leave it: Supply paid and queues filled (sites are not placed: cells stay checked). */
+/**
+ * The world as the planned one-shot commands leave it: Supply paid, queues filled, planned sites
+ * placed, planned repairs done. A structure planned for sale takes no more jobs but still holds
+ * its cell (the engine tears it down after the whole batch, so a placement there is blocked).
+ * A sale's refund is not counted: it arrives when the turn is carried out.
+ */
 function afterJobs(state: RcState): World {
   const world = structuredClone(state.world);
   for (const c of state.draft) {
     if (!isOneShot(c.order) || c.order.type === 'hold') continue;
+    if (c.order.type === 'repair') {
+      const target = world.entities.find((e) => e.id === (c.order as { target: number }).target);
+      const arch = target && archetypeOf(RULESET, target.kind);
+      if (target && arch) {
+        if (world.supply) world.supply[PLAYER] = (world.supply[PLAYER] ?? 0) - repairPrice(arch, target.hp);
+        target.hp = arch.hp;
+      }
+      continue;
+    }
+    if (c.order.type === 'sell') {
+      const structure = world.entities.find((e) => e.id === c.unit);
+      if (structure) structure.status = [...structure.status, { kind: 'disabled', ticks: 1 }];
+      continue;
+    }
     const arch = archetypeOf(RULESET, (c.order as { kind: string }).kind);
     if (world.supply) world.supply[PLAYER] = (world.supply[PLAYER] ?? 0) - (arch?.cost ?? 0);
     if (c.order.type === 'produce') {
@@ -182,6 +204,14 @@ function afterJobs(state: RcState): World {
     }
   }
   return world;
+}
+
+/** Supply the planned sale of `id` will bring: half its remaining value plus its queue, planned production included. */
+export function plannedSaleRefund(state: RcState, id: number): number {
+  const structure = unitById(state, id);
+  if (!structure) return 0;
+  const planned = state.draft.filter((c) => c.unit === id && c.order.type === 'produce').reduce((sum, c) => sum + (archetypeOf(RULESET, (c.order as { kind: string }).kind)?.cost ?? 0), 0);
+  return sellRefund(RULESET, structure) + planned;
 }
 
 /** Supply left to plan with this turn: the side's Supply minus what the planned jobs cost. */
