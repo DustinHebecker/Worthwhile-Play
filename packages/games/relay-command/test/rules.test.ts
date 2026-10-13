@@ -6,6 +6,7 @@ import { DIFFICULTIES, planAi, type Difficulty } from '../src/ai';
 import {
   cancelOrder,
   canSettle,
+  plannedSupply,
   settle,
   settleResult,
   doctrineFor,
@@ -170,6 +171,26 @@ describe('Field Exercise scenario', () => {
     expect(migrated.settled).toBe(false);
     // Neither a quick match nor a turn limit can be settled (the rule or the limit decides there).
     expect(isValidState({ ...migrated, quick: true, settled: true, phase: 'finished', result: 'won' })).toBe(false);
+  });
+
+  it('plans repairs and sales against the world they leave: paid once, a sold structure takes no more jobs, the refund pays nothing this turn', () => {
+    const s = newGame(1);
+    const yard = own(s).find((e) => e.kind === 'muster')!;
+    const rifle = own(s).find((e) => e.kind === 'rifles')!;
+    const free = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]].map(([dx, dy]) => [yard.x + dx!, yard.y + dy!] as const).find(([x, y]) => passable(s.world.map, RULESET, x, y, 'ground') && !s.world.entities.some((e) => e.x === x && e.y === y))!;
+    Object.assign(rifle, { x: free[0], y: free[1], hp: 20 });
+    const price = Math.ceil((RULESET.archetypes.rifles!.cost * (RULESET.archetypes.rifles!.hp - 20)) / RULESET.archetypes.rifles!.hp / 2);
+    const repaired = planOrder(s, yard.id, { type: 'repair', target: rifle.id })!;
+    expect(plannedSupply(repaired)).toBe(300 - price);
+    expect(orderRefusal(repaired, yard.id, { type: 'repair', target: rifle.id })).toBe('cannot-repair'); // already planned: full health then
+    const sold = planOrder(repaired, yard.id, { type: 'sell' })!;
+    expect(plannedSupply(sold)).toBe(300 - price); // the refund arrives with the turn
+    expect(orderRefusal(sold, yard.id, { type: 'produce', kind: 'rifles' })).toBe('unknown-unit');
+    const after = lockTurn(sold);
+    expect(after.world.entities.some((e) => e.id === yard.id)).toBe(false);
+    expect(unitById(after, rifle.id)?.hp).toBe(RULESET.archetypes.rifles!.hp);
+    expect(isValidState(JSON.parse(JSON.stringify(after)))).toBe(true);
+    expect(orderRefusal(s, commandPost(s.world, PLAYER)!.id, { type: 'sell' })).toBe('cannot-sell');
   });
 
   it('settling decides on strength: the side ahead wins, whoever settles', () => {

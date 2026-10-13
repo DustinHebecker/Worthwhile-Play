@@ -27,6 +27,10 @@ export const isValidOrder = (v: unknown, w: number, h: number): v is Order => {
       return isKind(v.kind);
     case 'build':
       return isKind(v.kind) && isInt(v.x, 0, w - 1) && isInt(v.y, 0, h - 1);
+    case 'repair':
+      return isInt(v.target, 1, MAX_ID);
+    case 'sell':
+      return Object.keys(v).length === 1;
     default:
       return false;
   }
@@ -34,8 +38,11 @@ export const isValidOrder = (v: unknown, w: number, h: number): v is Order => {
 
 const isKind = (v: unknown): v is string => typeof v === 'string' && v.length > 0 && v.length <= 64;
 
-/** Orders a unit can stand under (`produce` and `build` are one-shot commands, never standing orders). */
-const isStandingOrder = (v: unknown, w: number, h: number): v is Order => isValidOrder(v, w, h) && v.type !== 'produce' && v.type !== 'build';
+/** Orders a unit can stand under (`produce`, `build`, `repair` and `sell` are one-shot commands, never standing orders). */
+const isStandingOrder = (v: unknown, w: number, h: number): v is Order => isValidOrder(v, w, h) && !isOneShotOrder(v);
+
+/** One-shot economy commands: carried out at once, the unit's standing order stays. */
+export const isOneShotOrder = (o: Order): boolean => o.type === 'produce' || o.type === 'build' || o.type === 'repair' || o.type === 'sell';
 
 const isStatus = (v: unknown): v is Status => isRecord(v) && isOneOf(v.kind, STATUS_KINDS) && isInt(v.ticks, 1, 10_000);
 

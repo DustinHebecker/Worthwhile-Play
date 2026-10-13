@@ -13,6 +13,8 @@ import {
   resolveTurn,
   STRATEGY_RULESET,
   validateCommand,
+  isOneShotOrder,
+  repairPrice,
   type Command,
   type CommandRefusal,
   type Doctrine,
@@ -132,8 +134,8 @@ export function newGame(seed: number, spec: ScenarioSpec = FIELD_EXERCISE, diffi
 }
 
 export const unitById = (state: RcState, id: number): Entity | undefined => state.world.entities.find((e) => e.id === id);
-/** Production and placement are one-shot commands: a structure may give several per turn, each costs a slot. */
-export const isOneShot = (order: Order): boolean => order.type === 'produce' || order.type === 'build';
+/** Production, placement, repair and sale are one-shot commands: a structure may give several per turn, each costs a slot. */
+export const isOneShot = (order: Order): boolean => isOneShotOrder(order);
 /** The standing order planned for a unit this turn (one-shot commands are listed by `plannedJobs`). */
 export const draftFor = (state: RcState, id: number): Order | undefined => state.draft.find((c) => c.unit === id && !isOneShot(c.order))?.order;
 /** The one-shot commands (produce, build) planned for a structure this turn, in order. */
@@ -163,11 +165,28 @@ export function orderRefusal(state: RcState, unit: number, order: Order, doctrin
   return null;
 }
 
-/** The world as the planned one-shot commands leave it: Supply paid and queues filled (sites are not placed: cells stay checked). */
+/**
+ * The world as the planned one-shot commands leave it: Supply paid, queues filled, planned sites
+ * placed, planned repairs done and planned sales gone. A sale's refund is not counted: it arrives
+ * when the turn is carried out, so it pays for nothing planned in the same turn.
+ */
 function afterJobs(state: RcState): World {
   const world = structuredClone(state.world);
   for (const c of state.draft) {
     if (!isOneShot(c.order) || c.order.type === 'hold') continue;
+    if (c.order.type === 'repair') {
+      const target = world.entities.find((e) => e.id === (c.order as { target: number }).target);
+      const arch = target && archetypeOf(RULESET, target.kind);
+      if (target && arch) {
+        if (world.supply) world.supply[PLAYER] = (world.supply[PLAYER] ?? 0) - repairPrice(arch, target.hp);
+        target.hp = arch.hp;
+      }
+      continue;
+    }
+    if (c.order.type === 'sell') {
+      world.entities = world.entities.filter((e) => e.id !== c.unit);
+      continue;
+    }
     const arch = archetypeOf(RULESET, (c.order as { kind: string }).kind);
     if (world.supply) world.supply[PLAYER] = (world.supply[PLAYER] ?? 0) - (arch?.cost ?? 0);
     if (c.order.type === 'produce') {

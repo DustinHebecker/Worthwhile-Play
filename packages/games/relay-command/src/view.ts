@@ -3,6 +3,8 @@ import { normalizeSeed } from '@wp/game-core';
 import {
   archetypeOf,
   depositAt,
+  repairPrice,
+  sellRefund,
   incomeOfSide,
   ARMOR_CLASSES,
   cellOf,
@@ -339,7 +341,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     'details',
     { class: 'rc-help' },
     h('summary', {}, t('help.title')),
-    ...['help.turns', 'help.bar', 'help.orders', 'help.network', 'help.fog', 'help.ew', 'help.doctrine', 'help.economy', 'help.combat', 'help.goal', 'help.shapes', 'help.access'].map((k) => h('p', {}, t(k)))
+    ...['help.turns', 'help.bar', 'help.orders', 'help.network', 'help.fog', 'help.ew', 'help.doctrine', 'help.economy', 'help.repair', 'help.combat', 'help.goal', 'help.shapes', 'help.access'].map((k) => h('p', {}, t(k)))
   );
 
   const shell = h(
@@ -520,12 +522,16 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     const own = !!unit && unit.side === PLAYER && state.phase === 'plan' && RULESET.economy && inContact(unit) && unit.build === undefined;
     const yard = own && !!arch?.production;
     const source = own && arch?.comms?.role === 'source' && (!needsDeploy(unit) || isSetUp(unit));
-    jobsEl.hidden = !unit || !arch || (!yard && !source);
-    if (!unit || !arch || (!yard && !source)) {
+    // Any finished own structure but a command source can be sold.
+    const sellable = own && arch?.speed === 0 && arch.comms?.role !== 'source';
+    jobsEl.hidden = !unit || !arch || (!yard && !source && !sellable);
+    if (!unit || !arch || (!yard && !source && !sellable)) {
       placing = null;
+      settleSell = null;
       return;
     }
-    const kinds = yard ? (arch.production ?? []) : BUILDABLE;
+    if (settleSell !== unit.id) settleSell = null;
+    const kinds = yard ? (arch.production ?? []) : source ? BUILDABLE : [];
     const list = h('div', { class: 'rc-tiles', role: 'group', 'aria-label': t(yard ? 'jobs.produce' : 'jobs.build') });
     const left = plannedSupply(state);
     for (const kind of kinds) {
@@ -551,11 +557,31 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     for (const q of unit.queue ?? []) rows.append(h('li', {}, q.left === 0 ? t('jobs.waiting', { name: t(`unit.${q.kind}`) }) : t('jobs.queue', { name: t(`unit.${q.kind}`), n: q.left })));
     plannedJobs(state, unit.id).forEach((job, index) => {
       const o = job.order;
-      const name = t(`unit.${o.type === 'produce' || o.type === 'build' ? o.kind : unit.kind}`);
-      const text = o.type === 'build' ? t('jobs.plannedAt', { name, x: o.x + 1, y: o.y + 1 }) : t('jobs.planned', { name });
+      const target = o.type === 'repair' ? state.world.entities.find((e) => e.id === o.target) : undefined;
+      const name = o.type === 'produce' || o.type === 'build' ? t(`unit.${o.kind}`) : target ? unitName(target) : unitName(unit);
+      const text =
+        o.type === 'build'
+          ? t('jobs.plannedAt', { name, x: o.x + 1, y: o.y + 1 })
+          : o.type === 'repair'
+            ? t('jobs.plannedRepair', { name })
+            : o.type === 'sell'
+              ? t('jobs.plannedSell', { n: sellRefund(RULESET, unit) })
+              : t('jobs.planned', { name });
       rows.append(h('li', {}, h('span', {}, text), h('button', { type: 'button', 'data-testid': `rc-job-cancel-${index}`, onclick: () => commit(cancelJob(state, unit.id, index), t('announce.cancelled', { name })) }, t('jobs.cancel', { name }))));
     });
-    jobsEl.append(h('h4', {}, t(yard ? 'jobs.produce' : 'jobs.build')), list, rows);
+    if (yard || source) jobsEl.append(h('h4', {}, t(yard ? 'jobs.produce' : 'jobs.build')), list);
+    if (yard) jobsEl.append(repairSection(unit, arch));
+    jobsEl.append(rows);
+    if (sellable && !plannedJobs(state, unit.id).some((c) => c.order.type === 'sell')) {
+      const refund = sellRefund(RULESET, unit);
+      jobsEl.append(
+        h(
+          'button',
+          { type: 'button', class: 'rc-sell', 'data-testid': 'rc-sell', onclick: () => onSell(unit.id) },
+          settleSell === unit.id ? t('jobs.sellConfirm', { n: refund }) : t('jobs.sell', { n: refund })
+        )
+      );
+    }
     if (placing) {
       const a = archetypeOf(RULESET, placing);
       jobsEl.append(
@@ -563,6 +589,44 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
         h('button', { type: 'button', 'data-testid': 'rc-placing-stop', onclick: () => stopPlacing() }, t('jobs.stop'))
       );
     }
+  }
+
+  /** Own damaged units of the kinds a yard makes, standing next to it: one button each (price in Supply). */
+  function repairSection(yard: Entity, arch: NonNullable<ReturnType<typeof archetypeOf>>): HTMLElement {
+    const box = h('div', { class: 'rc-repair', 'data-testid': 'rc-repair' }, h('h4', {}, t('jobs.repair')));
+    const left = plannedSupply(state);
+    const candidates = state.world.entities.filter((e) => {
+      const a = archetypeOf(RULESET, e.kind);
+      const planned = plannedJobs(state, yard.id).some((c) => c.order.type === 'repair' && c.order.target === e.id);
+      return e.side === PLAYER && a && !planned && arch.production?.includes(e.kind) && e.hp < a.hp && Math.max(Math.abs(e.x - yard.x), Math.abs(e.y - yard.y)) <= 1;
+    });
+    if (candidates.length === 0) box.append(h('p', { class: 'rc-muted' }, t('jobs.repairNone')));
+    for (const e of candidates) {
+      const a = archetypeOf(RULESET, e.kind)!;
+      const price = repairPrice(a, e.hp);
+      box.append(
+        h(
+          'button',
+          { type: 'button', class: 'rc-repair-item', 'data-testid': `rc-repair-${e.id}`, 'data-short': price > left ? 'true' : 'false', onclick: () => orderJob({ type: 'repair', target: e.id }) },
+          unitIcon(e.kind, true),
+          h('span', {}, t('jobs.repairItem', { name: unitName(e), hp: e.hp, max: a.hp, cost: price }))
+        )
+      );
+    }
+    return box;
+  }
+
+  /** Selling takes two presses: the first shows the refund on the button, the second plans it. */
+  let settleSell: number | null = null;
+  function onSell(id: number): void {
+    if (settleSell !== id) {
+      settleSell = id;
+      render();
+      jobsEl.querySelector<HTMLElement>('[data-testid="rc-sell"]')?.focus();
+      return;
+    }
+    settleSell = null;
+    orderJob({ type: 'sell' });
   }
 
   /** Queues a one-shot job (production) for the selected structure, or explains why not. */
@@ -576,6 +640,11 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       return;
     }
     noticeEl.hidden = true;
+    if (order.type === 'repair' || order.type === 'sell') {
+      const target = order.type === 'repair' ? state.world.entities.find((e) => e.id === order.target) : unit;
+      commit(next, t(order.type === 'repair' ? 'announce.repair' : 'announce.sell', { name: target ? unitName(target) : '' }));
+      return;
+    }
     const name = t(`unit.${order.type === 'produce' || order.type === 'build' ? order.kind : unit.kind}`);
     commit(next, order.type === 'build' ? t('announce.site', { name, x: order.x + 1, y: order.y + 1 }) : t('announce.job', { name }));
   }
@@ -710,6 +779,9 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       if (arch.buildTurns > 0) abilities.append(statRow(t('card.cost'), t('card.supply', { n: arch.cost }), null, 'rc-card-cost'), statRow(t('card.buildTime'), t('card.turns', { n: arch.buildTurns }), null));
       if (arch.income > 0) abilities.append(statRow(t('card.income'), t('card.incomeValue', { n: arch.income }), null, 'rc-card-income'));
       if (arch.production) abilities.append(statRow(t('card.produces'), arch.production.map((k) => t(`unit.${k}`)).join(', '), null));
+      const repairers = Object.values(RULESET.archetypes).filter((a) => a.production?.includes(arch.id)).map((a) => t(`unit.${a.id}`));
+      if (arch.speed > 0 && repairers.length > 0) abilities.append(statRow(t('card.repair'), t('card.repairAt', { yards: repairers.join(', ') }), null, 'rc-card-repair'));
+      if (unit.side === PLAYER && arch.speed === 0 && arch.comms?.role !== 'source' && arch.buildTurns > 0) abilities.append(statRow(t('card.sell'), t('card.sellValue', { n: sellRefund(RULESET, unit) }), null, 'rc-card-sell'));
     }
     cardEl.append(stats);
     if (abilities.childElementCount > 1) cardEl.append(abilities);
@@ -905,6 +977,11 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
         if (site?.side === PLAYER) lines.push(t('summary.built', { name: unitName(site) }));
       } else if (e.t === 'site') {
         if (e.side !== PLAYER) lines.push(t('summary.enemySite', { name: unitName(e) }));
+      } else if (e.t === 'repaired') {
+        const unit = unitById(state, e.id);
+        if (unit?.side === PLAYER) lines.push(t('summary.repaired', { name: unitName(unit), hp: e.hp }));
+      } else if (e.t === 'sold') {
+        lines.push(e.side === PLAYER ? t('summary.sold', { name: unitName(e), n: e.refund }) : t('summary.enemySold', { name: unitName(e) }));
       } else if (e.t === 'site-blocked') {
         if (e.side === PLAYER) lines.push(t('summary.siteBlocked', { name: t(`unit.${e.kind}`), x: e.x + 1, y: e.y + 1 }));
       } else if (e.t === 'order-ended' && REPORTED_ENDS.has(e.reason) && !told.has(`${e.id}:${e.reason}`)) {
@@ -1485,7 +1562,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
 
   /** Shows why an order was refused, visibly and for screen readers. */
   function showRefusal(refusal: string | null): void {
-    const specific = ['out-of-contact', 'no-slots', 'impassable', 'not-visible', 'no-weapon', 'no-supply', 'cannot-produce', 'queue-full', 'cannot-build', 'not-buildable'].includes(refusal ?? '');
+    const specific = ['out-of-contact', 'no-slots', 'impassable', 'not-visible', 'no-weapon', 'no-supply', 'cannot-produce', 'queue-full', 'cannot-build', 'not-buildable', 'cannot-repair', 'cannot-sell'].includes(refusal ?? '');
     const message = specific ? t(`refuse.${refusal}`, { slots: orderSlots(state) }) : t('announce.refused');
     noticeEl.textContent = message;
     noticeEl.hidden = false;

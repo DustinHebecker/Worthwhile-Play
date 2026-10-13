@@ -172,3 +172,24 @@
 .wp-relay-command .rc-side,
 .wp-relay-command .rc-side > * { min-inline-size: 0; max-inline-size: 100%; overflow-wrap: anywhere; }
 .wp-relay-command .rc-stat { min-inline-size: 0; }
+/* Every fold shows that it folds: a chevron at the end of its summary (down when closed, up when open). */
+.wp-relay-command details > summary { list-style: none; gap: 0.5rem; }
+.wp-relay-command details > summary::-webkit-details-marker { display: none; }
+.wp-relay-command details > summary::after {
+  content: '';
+  flex: none;
+  margin-inline-start: auto;
+  inline-size: 0.55em;
+  block-size: 0.55em;
+  border-inline-end: 2px solid currentColor;
+  border-block-end: 2px solid currentColor;
+  transform: translateY(-0.15em) rotate(45deg);
+  transition: transform 0.15s;
+}
+.wp-relay-command details[open] > summary::after { transform: translateY(0.15em) rotate(-135deg); }
+@media (prefers-reduced-motion: reduce) { .wp-relay-command details > summary::after { transition: none; } }
+.wp-relay-command .rc-repair { display: grid; gap: 0.3rem; }
+.wp-relay-command .rc-repair-item { display: flex; align-items: center; gap: 0.5rem; justify-content: flex-start; min-block-size: var(--wp-touch, 44px); text-align: start; }
+.wp-relay-command .rc-repair-item .rc-icon { inline-size: 28px; block-size: 28px; }
+.wp-relay-command .rc-repair-item[data-short='true'] { border-style: dashed; }
+.wp-relay-command .rc-sell { justify-self: start; margin-block-start: 0.4rem; }
