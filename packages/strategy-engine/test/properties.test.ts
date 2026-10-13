@@ -91,12 +91,23 @@ describe('engine properties with the command network (strategy ruleset)', () => 
   it('P1 determinism and P4 mirror symmetry hold with coverage gating, order slots and deploying', () => {
     fc.assert(
       fc.property(arbScenario, ({ world, plans }) => {
-        const w = asNet(world);
+        const w = { ...asNet(world), supply: [400, 400] };
         expect(worldHash(playNet(w, plans))).toBe(worldHash(playNet(structuredClone(w), structuredClone(plans))));
         const direct = mirrorWorld(playNet(w, plans));
         const mirrored = playNet(mirrorWorld(w), plans.map((p) => mirrorCommands(w, p)));
         expect(canonicalJson(mirrored)).toBe(canonicalJson(direct));
         expect(isValidWorld(playNet(w, plans), net)).toBe(true);
+      }),
+      RUNS
+    );
+  });
+
+  it('P6 plan order: handing in the sides\' plans the other way round changes nothing (ADR 0009), with the economy', () => {
+    fc.assert(
+      fc.property(arbScenario, ({ world, plans }) => {
+        const w = { ...asNet(world), supply: [400, 400] };
+        const bySide = (plan: readonly Command[], first: number) => [...plan.filter((c) => c.side === first), ...plan.filter((c) => c.side !== first)];
+        expect(canonicalJson(playNet(w, plans.map((p) => bySide(p, 1))))).toBe(canonicalJson(playNet(w, plans.map((p) => bySide(p, 0)))));
       }),
       RUNS
     );

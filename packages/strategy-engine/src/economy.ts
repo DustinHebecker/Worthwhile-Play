@@ -13,6 +13,17 @@ import { archetypeOf } from './world';
 /** Whether `e` is finished and able to work (not a site under construction, not disabled). */
 export const isReady = (e: Entity): boolean => (e.build ?? 0) === 0 && !e.status.some((s) => s.kind === 'disabled' && s.ticks > 0);
 
+/** Supply a repair to full health costs: half the value of the missing health (rounded up). */
+export const repairPrice = (arch: Archetype, hp: number): number => Math.ceil((arch.cost * Math.max(0, arch.hp - hp)) / arch.hp / 2);
+
+/** Supply selling `e` returns: half the value of its remaining health, plus what its queue was paid. */
+export function sellRefund(ruleset: Ruleset, e: Entity): number {
+  const arch = archetypeOf(ruleset, e.kind);
+  if (!arch) return 0;
+  const queued = (e.queue ?? []).reduce((sum, q) => sum + (archetypeOf(ruleset, q.kind)?.cost ?? 0), 0);
+  return Math.floor((arch.cost * e.hp) / arch.hp / 2) + queued;
+}
+
 export const depositAt = (map: GameMap, x: number, y: number): Deposit | undefined => map.deposits?.find((d) => d.x === x && d.y === y);
 
 /** The Supply `e` would yield this turn (0 when not connected, not ready, or on an exhausted deposit). */

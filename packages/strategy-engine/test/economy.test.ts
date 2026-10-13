@@ -256,3 +256,121 @@ describe('economy (I6a, D8)', () => {
     expect(unit(after, 2).queue).toEqual([{ kind: 'rifles', left: 0 }]);
   });
 });
+
+describe('repair and sale (owner request after PR #13)', () => {
+  const rifles = net.archetypes.rifles!;
+  const muster = net.archetypes.muster!;
+  /** Post (id 1), enemy post (2), a Muster Yard (3) at (2,1), a damaged Rifle Squad (4) next to it. */
+  const yard = (hp = 10, x = 3, supply?: readonly number[]) => {
+    const w = field([{ side: 0, kind: 'muster', x: 2, y: 1 }, { side: 0, kind: 'rifles', x, y: 1 }], supply);
+    unit(w, 4).hp = hp;
+    return w;
+  };
+  const repair = (_w: World, target = 4): Command => ({ side: 0, unit: 3, order: { type: 'repair', target } });
+
+  it('a yard repairs a damaged unit of a kind it produces next to it, to full health at once, for half the missing value', () => {
+    const w = yard(10);
+    const price = Math.ceil((rifles.cost * (rifles.hp - 10)) / rifles.hp / 2);
+    expect(validateCommand(w, net, repair(w))).toEqual({ ok: true });
+    const { world, events } = turn(w, [[repair(w)], []]);
+    expect(unit(world, 4).hp).toBe(rifles.hp);
+    expect(world.supply?.[0]).toBe(300 - price + 20);
+    expect(events).toContainEqual({ t: 'repaired', tick: 1, id: 4, by: 3, hp: rifles.hp - 10 });
+    expect(isValidWorld(world, net)).toBe(true);
+  });
+
+  it('refuses a repair that is not next to the yard, not damaged, of a kind the yard does not make, not own, or not paid for', () => {
+    expect(validateCommand(yard(10, 5), net, repair(yard(10, 5))).ok).toBe(false); // two cells away
+    expect(validateCommand(yard(rifles.hp), net, repair(yard(rifles.hp)))).toEqual({ ok: false, reason: 'cannot-repair' });
+    const vehicle = field([{ side: 0, kind: 'muster', x: 2, y: 1 }, { side: 0, kind: 'outrider', x: 3, y: 1 }]);
+    unit(vehicle, 4).hp = 5;
+    expect(validateCommand(vehicle, net, repair(vehicle))).toEqual({ ok: false, reason: 'cannot-repair' });
+    const enemy = field([{ side: 0, kind: 'muster', x: 2, y: 1 }, { side: 1, kind: 'rifles', x: 3, y: 1 }]);
+    unit(enemy, 4).hp = 5;
+    expect(validateCommand(enemy, net, repair(enemy)).ok).toBe(false);
+    expect(validateCommand(yard(10, 3, [5, 300]), net, repair(yard(10, 3, [5, 300])))).toEqual({ ok: false, reason: 'no-supply' });
+    const site = yard(10);
+    unit(site, 3).build = 1;
+    expect(validateCommand(site, net, repair(site))).toEqual({ ok: false, reason: 'cannot-repair' });
+    expect(validateCommand(yard(10), net, { side: 0, unit: 3, order: { type: 'repair', target: 99 } }).ok).toBe(false);
+  });
+
+  it('sells a finished structure for half its remaining value plus its paid queue; the post cannot be sold, units cannot sell', () => {
+    const w = yard(10);
+    unit(w, 3).hp = muster.hp / 2;
+    unit(w, 3).queue = [{ kind: 'rifles', left: 1 }];
+    const refund = Math.floor((muster.cost * (muster.hp / 2)) / muster.hp / 2) + rifles.cost;
+    const { world, events } = turn(w, [[{ side: 0, unit: 3, order: { type: 'sell' } }], []]);
+    expect(world.entities.some((e) => e.id === 3)).toBe(false);
+    expect(world.supply?.[0]).toBe(300 + refund + 20);
+    expect(events).toContainEqual({ t: 'sold', tick: 1, id: 3, side: 0, kind: 'muster', x: 2, y: 1, refund });
+    expect(isValidWorld(world, net)).toBe(true);
+    expect(validateCommand(w, net, { side: 0, unit: 1, order: { type: 'sell' } })).toEqual({ ok: false, reason: 'cannot-sell' });
+    expect(validateCommand(w, net, { side: 0, unit: 4, order: { type: 'sell' } })).toEqual({ ok: false, reason: 'cannot-sell' });
+    const site = yard(10);
+    unit(site, 3).build = 1;
+    expect(validateCommand(site, net, { side: 0, unit: 3, order: { type: 'sell' } })).toEqual({ ok: false, reason: 'cannot-sell' });
+    // Without an economy neither command exists.
+    expect(validateCommand(w, { ...net, economy: false }, { side: 0, unit: 3, order: { type: 'sell' } })).toEqual({ ok: false, reason: 'bad-order' });
+  });
+
+  it('a sale is the seller\'s knowledge: its own reports drop the structure, an enemy that does not see the cell keeps its report', () => {
+    const w = yard(10);
+    const enemyKnows = (world: World) => world.intel?.[1]?.some((r) => r.id === 3);
+    expect(enemyKnows(w)).toBe(true); // structures are known from before the battle
+    const { world, reported } = resolveTurn(w, net, [[{ side: 0, unit: 3, order: { type: 'sell' } }], []]);
+    expect(world.intel?.[0]?.some((r) => r.id === 3)).toBe(false);
+    expect(enemyKnows(world)).toBe(true);
+    expect(reported?.[0]?.some((e) => e.t === 'sold')).toBe(true);
+    expect(reported?.[1]?.some((e) => e.t === 'sold')).toBe(false);
+  });
+});
+
+describe('repair and sale: order of the plans and what others learn (review of PR #14)', () => {
+  const mastField = (extra: Scenario['entities'] = []) =>
+    worldOf(open(12, 3), [{ side: 0, kind: 'command-post', x: 0, y: 1 }, { side: 1, kind: 'command-post', x: 11, y: 0 }, { side: 0, kind: 'relay-mast', x: 5, y: 1 }, ...extra]);
+  const sell: Command = { side: 0, unit: 3, order: { type: 'sell' } };
+
+  it('an attack on a structure sold in the same batch is decided the same whichever plan comes first', () => {
+    const w = mastField([{ side: 1, kind: 'rifles', x: 7, y: 1 }]);
+    unit(w, 4).order = { type: 'move', x: 9, y: 0 };
+    delete w.intel; // all known: the attack is valid either way
+    const attack: Command = { side: 1, unit: 4, order: { type: 'attack', target: 3 } };
+    const a = resolveTurn(w, net, [[sell], [attack]]);
+    const b = resolveTurn(w, net, [[attack], [sell]]);
+    expect(JSON.stringify(b.world)).toBe(JSON.stringify(a.world));
+    expect(a.world.entities.some((e) => e.id === 3)).toBe(false);
+  });
+
+  it('a placement on the cell of a structure sold in the same batch is blocked whichever plan comes first', () => {
+    const w = mastField([{ side: 1, kind: 'field-post', x: 6, y: 2 }]);
+    unit(w, 4).deploy = net.ticksPerTurn;
+    const build: Command = { side: 1, unit: 4, order: { type: 'build', kind: 'extractor', x: 5, y: 1 } };
+    const a = resolveTurn(w, net, [[sell], [build]]);
+    const b = resolveTurn(w, net, [[build], [sell]]);
+    expect(JSON.stringify(b.world)).toBe(JSON.stringify(a.world));
+    expect(a.world.entities.some((e) => e.kind === 'extractor')).toBe(false);
+  });
+
+  it('another side seeing a sale learns no refund; a repair it sees without seeing the yard is not reported', () => {
+    // The enemy post stands close by: its own sight reports the yard.
+    const w = worldOf(open(12, 3), [{ side: 0, kind: 'command-post', x: 0, y: 1 }, { side: 1, kind: 'command-post', x: 4, y: 1 }, { side: 0, kind: 'muster', x: 2, y: 1 }]);
+    unit(w, 3).queue = [{ kind: 'rifles', left: 1 }];
+    const sold = resolveTurn(w, net, [[{ side: 0, unit: 3, order: { type: 'sell' } }], []]);
+    const enemySees = sold.reported?.[1]?.find((e) => e.t === 'sold');
+    expect(enemySees).toBeDefined();
+    expect(enemySees && 'refund' in enemySees).toBe(false);
+    expect(sold.reported?.[0]?.find((e) => e.t === 'sold')).toMatchObject({ refund: expect.any(Number) });
+    // The enemy post sees the unit at the edge of its sight, but not the yard one cell behind it.
+    const v = net.archetypes['command-post']!.vision;
+    const far = worldOf(open(16, 3), [{ side: 0, kind: 'command-post', x: 0, y: 0 }, { side: 1, kind: 'command-post', x: v + 2, y: 1 }, { side: 0, kind: 'muster', x: 1, y: 1 }, { side: 0, kind: 'rifles', x: 2, y: 1 }]);
+    unit(far, 4).hp = 10;
+    far.intel = far.intel!.map((list, side) => (side === 1 ? list.filter((r) => r.id !== 3) : list));
+    const repaired = resolveTurn(far, net, [[{ side: 0, unit: 3, order: { type: 'repair', target: 4 } }], []]);
+    expect(repaired.reported?.[0]?.some((e) => e.t === 'repaired')).toBe(true);
+    const yardSeen = repaired.world.intel?.[1]?.some((r) => r.id === 3 && r.live);
+    expect(yardSeen).toBe(false);
+    expect(repaired.world.intel?.[1]?.some((r) => r.id === 4 && r.live)).toBe(true); // the unit is seen
+    expect(repaired.reported?.[1]?.some((e) => e.t === 'repaired')).toBe(false);
+  });
+});

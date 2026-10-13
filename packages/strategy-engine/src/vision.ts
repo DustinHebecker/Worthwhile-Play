@@ -125,7 +125,8 @@ export function updateIntel(world: World, ruleset: Ruleset, gone: readonly Entit
     const network = ruleset.commandNetwork ? computeNetwork(world, ruleset, side) : undefined;
     const observed = observedCells(world, ruleset, side, network);
     // A side always learns of losing one of its own command sources: its network goes dark.
-    const knownLoss = (e: Entity): boolean => e.side === side && archetypeOf(ruleset, e.kind)?.comms?.role === 'source';
+    // So does it of selling one of its own structures.
+    const knownLoss = (e: Entity): boolean => e.side === side && (archetypeOf(ruleset, e.kind)?.comms?.role === 'source' || events?.some((ev, i) => i >= from && ev.t === 'sold' && ev.id === e.id) === true);
     const reports = updatedReports(world, side, observed, world.intel?.[side] ?? [], gone, knownLoss, revealedEmitters(world, ruleset, side, network));
     intel.push(reports);
     const list = reported?.[side];
@@ -142,7 +143,8 @@ export function updateIntel(world: World, ruleset: Ruleset, gone: readonly Entit
     for (let i = from; i < events.length; i++) {
       const ev = events[i] as SimEvent;
       const knownAnyway = (ev.t === 'destroyed' && lost.has(ev.id)) || (ev.t === 'order-ended' && ev.reason === 'lost-contact' && own.has(ev.id));
-      if (eventVisible(ev, live, seen, side, own) || knownAnyway) list.push(ev);
+      // A sale seen by another side tells it nothing of the seller's Supply (the refund includes a paid queue).
+      if (eventVisible(ev, live, seen, side, own) || knownAnyway) list.push(ev.t === 'sold' && ev.side !== side ? { t: 'sold', tick: ev.tick, id: ev.id, side: ev.side, kind: ev.kind, x: ev.x, y: ev.y } : ev);
     }
   }
   world.intel = intel;
@@ -162,7 +164,12 @@ function eventVisible(ev: SimEvent, live: ReadonlySet<number>, seen: (x: number,
       return ownIds.has(ev.id);
     case 'produced':
     case 'site':
+    case 'sold':
       return ev.side === side || seen(ev.x, ev.y);
+    // A repair is the yard owner's business; another side hears of it only when it sees both the
+    // unit and the yard (the event names the yard).
+    case 'repaired':
+      return ownIds.has(ev.id) || (live.has(ev.id) && live.has(ev.by));
     // A shot is reported only when the shooter is observed (its id would reveal it otherwise);
     // hits and landing shells on observed units and cells are reported on their own.
     case 'launch':

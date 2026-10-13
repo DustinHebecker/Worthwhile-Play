@@ -1,6 +1,6 @@
 import { isRecord, normalizeSeed } from '@wp/game-core';
 import { cellOf, inBounds, passable } from './grid';
-import { depositAt, isReady } from './economy';
+import { depositAt, isReady, repairPrice } from './economy';
 import { MAX_QUEUE } from './types';
 import { computeNetwork, isCommandable, type Network } from './network';
 import { initialIntel, isSpotted, observedCells } from './vision';
@@ -93,7 +93,9 @@ export type CommandCheck =
  * Why a command is refused. Economy (I6a): `no-supply` (cannot pay), `cannot-produce` (not a
  * yard for that kind, or the yard is still a site), `queue-full`, `cannot-build` (not a finished
  * command source, or the kind is no buildable structure), `not-buildable` (cell not free,
- * passable, inside own coverage, or an Extractor off a deposit / another structure on one).
+ * passable, inside own coverage, or an Extractor off a deposit / another structure on one),
+ * `cannot-repair` (not a finished yard making that kind, or the unit not own, damaged and next to
+ * it), `cannot-sell` (not a finished structure, or a command source).
  */
 export type CommandRefusal =
   | 'unknown-unit'
@@ -110,7 +112,9 @@ export type CommandRefusal =
   | 'cannot-produce'
   | 'queue-full'
   | 'cannot-build'
-  | 'not-buildable';
+  | 'not-buildable'
+  | 'cannot-repair'
+  | 'cannot-sell';
 
 /**
  * Rule check for a single command against the current world. Never throws. Pass `networks`
@@ -195,6 +199,19 @@ export function validateCommand(world: World, ruleset: Ruleset, command: Command
       if ((world.supply?.[unit.side] ?? 0) < structure.cost) return { ok: false, reason: 'no-supply' };
       return { ok: true };
     }
+    case 'repair': {
+      if (!ruleset.economy || !Number.isInteger(order.target)) return { ok: false, reason: 'bad-order' };
+      const target = findEntity(world, order.target);
+      const targetArch = target && archetypeOf(ruleset, target.kind);
+      if (!target || !targetArch || target.side !== unit.side || !arch.production?.includes(target.kind) || !isReady(unit)) return { ok: false, reason: 'cannot-repair' };
+      if (target.hp >= targetArch.hp || Math.max(Math.abs(target.x - unit.x), Math.abs(target.y - unit.y)) > 1) return { ok: false, reason: 'cannot-repair' };
+      if ((world.supply?.[unit.side] ?? 0) < repairPrice(targetArch, target.hp)) return { ok: false, reason: 'no-supply' };
+      return { ok: true };
+    }
+    case 'sell':
+      if (!ruleset.economy) return { ok: false, reason: 'bad-order' };
+      if (arch.speed !== 0 || arch.comms?.role === 'source' || !isReady(unit)) return { ok: false, reason: 'cannot-sell' };
+      return { ok: true };
     default:
       return { ok: false, reason: 'bad-order' };
   }
@@ -231,6 +248,10 @@ export function normalizeOrder(order: Order): Order {
       return { type: 'produce', kind: order.kind };
     case 'build':
       return { type: 'build', kind: order.kind, x: order.x, y: order.y };
+    case 'repair':
+      return { type: 'repair', target: order.target };
+    case 'sell':
+      return { type: 'sell' };
     default:
       return { type: 'hold' };
   }
