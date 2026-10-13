@@ -18,6 +18,7 @@ import {
   observe,
   resolveTurn,
   revealedEmitters,
+  runTicks,
   STRATEGY_RULESET,
   teamOf,
   validateCommand,
@@ -37,6 +38,8 @@ import { arbWorld, open, transformCommands, transformWorld } from './helpers';
  * neutral Command Posts, per-side frames, and the engine invariants for 3–8 sides.
  */
 const RUNS = { numRuns: 60 };
+/** See the fingerprint test below (computed with the engine of main at 30f9646). */
+const TWO_SIDE_FINGERPRINT = '72b5b82d';
 const play = (world: World, plans: readonly Command[][], rs = BASE_RULESET): World => plans.reduce((w, plan) => resolveTurn(w, rs, [plan]).world, world);
 
 describe('teams and hostility', () => {
@@ -118,6 +121,49 @@ describe('no leaks between opponents in the events a side is told (review of PR 
     expect(world.entities.find((e) => e.id === 4)!.hp).toBeLessThan(140);
     const mentions = (e: SimEvent) => ('target' in e && e.target === 4) || ('id' in e && e.id === 4) || ('x' in e && e.x === 10 && e.y === 1);
     expect(told.filter(mentions)).toEqual([]);
+  });
+
+  it('direct fire: a side that sees a squad firing does not learn of the third side\'s unseen target', () => {
+    const FOG2: Ruleset = { ...BASE_RULESET, id: 'fog-test', fog: true };
+    // Side 0 (x=1, sight 4) sees side 1's squad at x=5, not side 2's at x=7 that it fires on.
+    const w = createWorld({ map: open(12, 3), sides: 3, entities: [{ side: 0, kind: 'rifles', x: 1, y: 1 }, { side: 1, kind: 'rifles', x: 5, y: 1 }, { side: 2, kind: 'rifles', x: 7, y: 1 }], seed: 1 }, FOG2);
+    const r = resolveTurn(w, FOG2, [[{ side: 1, unit: 2, order: { type: 'attack', target: 3 } }]]);
+    expect(r.events.some((e) => e.t === 'fire' && e.id === 2 && e.target === 3)).toBe(true);
+    expect(r.reported![0]!.filter((e) => (e.t === 'fire' && e.target === 3) || ('id' in e && e.id === 3))).toEqual([]);
+  });
+
+  it('a side is told of its own shot also when the target slips out of sight in that tick (review of PR #21)', () => {
+    const FOG3: Ruleset = { ...BASE_RULESET, id: 'fog-test', fog: true };
+    // Side 0's gun (sight 3) shells side 1's warden that side 0's squad spots; the warden kills the
+    // squad in the same tick, so at the end of it side 0 no longer sees the warden's cell.
+    const w = createWorld({ map: open(9, 3), sides: 2, entities: [{ side: 0, kind: 'howitzer', x: 0, y: 1 }, { side: 0, kind: 'rifles', x: 5, y: 1 }, { side: 1, kind: 'warden', x: 6, y: 1 }], seed: 1 }, FOG3);
+    w.entities[1]!.hp = 1;
+    const r = runTicks(w, FOG3, [{ side: 0, unit: 1, order: { type: 'attack', target: 3 } }], 1);
+    expect(r.world.entities.some((e) => e.id === 2)).toBe(false);
+    const shot = r.events.find((e) => (e.t === 'launch' || e.t === 'fire') && e.id === 1);
+    expect(shot).toBeDefined();
+    expect(r.reported![0]!).toContainEqual(shot);
+  });
+
+  it('two sides are told exactly what they were told before several sides existed (fingerprint of every report list, review of PR #21)', () => {
+    // Fixed random two-side worlds (seeded sample), every turn's report lists and the final world.
+    // The expected fingerprint was produced by the engine before teams, neutral posts and the shot
+    // filter (main at 30f9646): own shots (the shooter dying in the same tick, the target slipping
+    // out of sight) and shots at own units must still be told as before.
+    let h = 0x811c9dc5;
+    const feed = (text: string) => {
+      for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193) >>> 0;
+    };
+    for (const { world, plans } of fc.sample(arbWorld({ sides: 2, supply: 300 }), { numRuns: 400, seed: 7 })) {
+      let w = world;
+      for (const plan of plans) {
+        const r = resolveTurn(w, STRATEGY_RULESET, [plan]);
+        feed(canonicalJson(r.reported));
+        w = r.world;
+      }
+      feed(canonicalJson(w));
+    }
+    expect(h.toString(16)).toBe(TWO_SIDE_FINGERPRINT);
   });
 
   it('property: every shot told to a side names an own unit or one the side knows of (3 sides)', () => {
@@ -242,6 +288,7 @@ describe('setup and save validation for several sides', () => {
         c.entities = c.entities.filter((e) => e.id !== r.id);
         r.kind = 'rifles';
         r.hp = 1;
+        r.live = false;
       })
     ).toBe(false);
   });

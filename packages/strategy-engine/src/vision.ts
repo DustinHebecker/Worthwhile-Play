@@ -155,8 +155,11 @@ export function updateIntel(world: World, ruleset: Ruleset, gone: readonly Entit
     const mine = [...world.entities, ...gone].filter((e) => e.side === side);
     const mineIds = new Set(mine.map((e) => e.id));
     const mineAt = new Set(mine.map((e) => cellOf(world.map, e.x, e.y)));
+    // The side's own shots are always its own business (also when the shooter died this tick or
+    // the target slipped out of sight): only another side's shots are filtered.
     const shotKnown = (ev: SimEvent): boolean =>
-      ev.t === 'fire' ? live.has(ev.target) || mineIds.has(ev.target) : ev.t === 'launch' ? seen(ev.x, ev.y) || mineAt.has(cellOf(world.map, ev.x, ev.y)) : true;
+      ((ev.t === 'fire' || ev.t === 'launch') && mineIds.has(ev.id)) ||
+      (ev.t === 'fire' ? live.has(ev.target) || mineIds.has(ev.target) : ev.t === 'launch' ? seen(ev.x, ev.y) || mineAt.has(cellOf(world.map, ev.x, ev.y)) : true);
     for (let i = from; i < events.length; i++) {
       const ev = events[i] as SimEvent;
       const knownAnyway = (ev.t === 'destroyed' && lost.has(ev.id)) || (ev.t === 'order-ended' && ev.reason === 'lost-contact' && own.has(ev.id));
