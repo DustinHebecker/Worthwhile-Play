@@ -1,7 +1,7 @@
 import { cellOf, dist2 } from './grid';
 import { computeNetwork, isActiveEw, isEmitter, type Network } from './network';
 import type { Entity, Report, Ruleset, SimEvent, World } from './types';
-import { archetypeOf } from './world';
+import { archetypeOf, hostile } from './world';
 
 /**
  * Information model D7 (docs/design/strategy.md § 5.3). Units still see when out of contact,
@@ -51,7 +51,7 @@ export function revealedEmitters(world: World, ruleset: Ruleset, side: number, n
   const near = (list: readonly Entity[], e: Entity, r: (u: Entity) => number): boolean => list.some((u) => dist2(u.x, u.y, e.x, e.y) <= r(u) ** 2);
   const out = new Set<number>();
   for (const e of world.entities) {
-    if (e.side === side || !isEmitter(ruleset, e)) continue;
+    if (!hostile(world, e.side, side) || !isEmitter(ruleset, e)) continue;
     const jammer = archetypeOf(ruleset, e.kind)?.ew?.role === 'jammer';
     if ((jammer && near(reporting, e, () => EMITTER_EXPOSURE)) || near(tracers, e, (u) => archetypeOf(ruleset, u.kind)?.ew?.radius ?? 0)) out.add(e.id);
   }

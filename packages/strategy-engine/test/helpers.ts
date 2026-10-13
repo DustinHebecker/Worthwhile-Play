@@ -1,5 +1,5 @@
 import fc from 'fast-check';
-import { BASE_RULESET, createWorld, type Command, type Doctrine, type GameMap, type Order, type Projectile, type Scenario, type World } from '../src';
+import { BASE_RULESET, createWorld, NEUTRAL, STRATEGY_RULESET, type Command, type Doctrine, type Frame, type GameMap, type Order, type Projectile, type Scenario, type World } from '../src';
 
 /** Map from rows of terrain characters. */
 export const mapOf = (...rows: string[]): GameMap => ({ w: rows[0]?.length ?? 0, h: rows.length, terrain: rows.join('') });
@@ -66,13 +66,20 @@ const STRUCTURES = ['muster', 'motor-pool', 'extractor', 'relay-mast'];
 const TERRAIN = ['.', '.', '.', '=', 'f', 'h', 'u', 's', '~', '^'];
 
 /** Random small valid world with two sides plus commands for a few turns. */
-export const arbScenario = fc
+export const arbScenario = arbWorld({ sides: 2 });
+
+/**
+ * Random small valid world plus commands for a few turns: `sides` playing sides (units spread
+ * over them), optionally square, with the given teams and frames.
+ */
+export function arbWorld(options: { sides: number; square?: boolean; teams?: number[]; frames?: Frame[]; neutral?: boolean; supply?: number }) {
+  return fc
   .record({
     w: fc.integer({ min: 4, max: 10 }),
     h: fc.integer({ min: 4, max: 10 }),
     seed: fc.integer({ min: 0, max: 0xffff }),
     terrain: fc.array(fc.constantFrom(...TERRAIN), { minLength: 100, maxLength: 100 }),
-    units: fc.array(fc.record({ side: fc.integer({ min: 0, max: 1 }), kind: fc.constantFrom(...KINDS), cell: fc.nat(99) }), { maxLength: 14 }),
+    units: fc.array(fc.record({ side: fc.integer({ min: options.neutral ? -1 : 0, max: options.sides - 1 }), kind: fc.constantFrom(...KINDS), cell: fc.nat(99) }), { maxLength: 14 }),
     deposits: fc.array(fc.record({ cell: fc.nat(99), left: fc.integer({ min: 0, max: 60 }) }), { maxLength: 4 }),
     orders: fc.array(
       fc.record({
@@ -97,7 +104,8 @@ export const arbScenario = fc
       { maxLength: 20 }
     )
   })
-  .map(({ w, h, seed, terrain, units, orders, deposits }) => {
+  .map(({ w, h: rawH, seed, terrain, units, orders, deposits }) => {
+    const h = options.square ? w : rawH;
     const terrainRow = terrain.slice(0, w * w * h > 0 ? w * h : 0).join('');
     const cells = new Map<number, { x: number; y: number; left: number }>();
     for (const d of deposits) {
@@ -121,7 +129,19 @@ export const arbScenario = fc
       used.add(key);
       entities.push({ side: u.side, kind: u.kind, x, y });
     }
-    const world = worldOf(map, entities, seed);
+    const world = createWorld(
+      {
+        map,
+        sides: options.sides,
+        // Neutral only for Command Posts; any other kind drawn as neutral joins side 0.
+        entities: entities.map((e) => (e.side === NEUTRAL && e.kind !== 'command-post' ? { ...e, side: 0 } : e)),
+        seed,
+        ...(options.teams && { teams: options.teams }),
+        ...(options.frames && { frames: options.frames }),
+        ...(options.supply !== undefined && { supply: Array.from({ length: options.sides }, () => options.supply as number) })
+      },
+      options.supply !== undefined ? STRATEGY_RULESET : BASE_RULESET
+    );
     const plans: Command[][] = [[], [], [], []];
     for (const o of orders) {
       const unit = world.entities.find((e) => e.id === o.unit);
@@ -151,4 +171,89 @@ export const arbScenario = fc
       plans[o.turn]?.push(o.doctrine ? { side, unit: o.unit, order, doctrine: o.doctrine as Doctrine } : { side, unit: o.unit, order });
     }
     return { world, plans };
+  });
+}
+
+/**
+ * A world carried over by a map symmetry: `at` maps a cell's coordinates, `side` permutes the
+ * sides (neutral stays neutral). Ids are kept; terrain, deposits, orders, reports, supply,
+ * projectiles and stored cell keys follow. For square maps when `at` turns the map.
+ */
+export function transformWorld(w: World, at: (x: number, y: number) => readonly [number, number], side: (s: number) => number): World {
+  const cells = w.map.w * w.map.h;
+  const cell = (c: number): number => {
+    const [x, y] = at(c % w.map.w, Math.floor(c / w.map.w));
+    return y * w.map.w + x;
+  };
+  const order = (o: Order): Order => {
+    if (o.type === 'move') {
+      const [x, y] = at(o.x, o.y);
+      return { type: 'move', x, y };
+    }
+    if (o.type === 'patrol') {
+      const [x, y] = at(o.x, o.y);
+      const [rx, ry] = at(o.rx, o.ry);
+      return { type: 'patrol', x, y, rx, ry };
+    }
+    if (o.type === 'build') {
+      const [x, y] = at(o.x, o.y);
+      return { type: 'build', kind: o.kind, x, y };
+    }
+    return o;
+  };
+  const terrain: string[] = new Array<string>(cells);
+  for (let c = 0; c < cells; c++) terrain[cell(c)] = w.map.terrain[c] ?? '.';
+  const deposits = w.map.deposits?.map((d) => {
+    const [x, y] = at(d.x, d.y);
+    return { x, y, left: d.left };
+  }).sort((a, b) => a.y * w.map.w + a.x - (b.y * w.map.w + b.x));
+  const bySide = <T>(list: readonly T[]): T[] => {
+    const out = [...list];
+    list.forEach((v, s) => (out[side(s)] = v));
+    return out;
+  };
+  return {
+    ...structuredClone(w),
+    map: { ...w.map, terrain: terrain.join(''), ...(deposits && { deposits }) },
+    ...(w.supply && { supply: bySide(w.supply) }),
+    ...(w.teams && { teams: bySide(w.teams) }),
+    entities: w.entities.map((e) => {
+      const [x, y] = at(e.x, e.y);
+      return {
+        ...structuredClone(e),
+        side: e.side === NEUTRAL ? NEUTRAL : side(e.side),
+        x,
+        y,
+        order: order(e.order),
+        ...(e.stall && { stall: { ...e.stall, goal: e.stall.goal < cells ? cell(e.stall.goal) : e.stall.goal } }),
+        ...(e.prev !== undefined && { prev: cell(e.prev) })
+      };
+    }),
+    projectiles: w.projectiles.map((p): Projectile => {
+      const [x, y] = at(p.x, p.y);
+      return { ...p, side: side(p.side), x, y };
+    }),
+    ...(w.intel && {
+      intel: bySide(w.intel.map((list) => list.map((r) => {
+        const [x, y] = at(r.x, r.y);
+        return { ...r, side: r.side === NEUTRAL ? NEUTRAL : side(r.side), x, y };
+      })))
+    })
+  };
+}
+
+/** Commands carried over by the same symmetry as `transformWorld`. */
+export const transformCommands = (commands: readonly Command[], at: (x: number, y: number) => readonly [number, number], side: (s: number) => number): Command[] =>
+  commands.map((c) => {
+    const o = c.order;
+    let order: Order = o;
+    if (o.type === 'move' || o.type === 'build') {
+      const [x, y] = at(o.x, o.y);
+      order = { ...o, x, y };
+    } else if (o.type === 'patrol') {
+      const [x, y] = at(o.x, o.y);
+      const [rx, ry] = at(o.rx, o.ry);
+      order = { type: 'patrol', x, y, rx, ry };
+    }
+    return { ...c, side: side(c.side), order };
   });

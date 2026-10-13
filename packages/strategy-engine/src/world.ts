@@ -1,10 +1,10 @@
 import { isRecord, normalizeSeed } from '@wp/game-core';
-import { cellOf, inBounds, passable } from './grid';
+import { cellOf, FRAMES, inBounds, passable } from './grid';
 import { depositAt, isReady, repairPrice } from './economy';
 import { MAX_QUEUE } from './types';
 import { computeNetwork, isCommandable, type Network } from './network';
 import { initialIntel, isSpotted, observedCells } from './vision';
-import { LOST_CONTACT, RETREAT_THRESHOLDS, TARGET_PRIORITIES, type Archetype, type Command, type Doctrine, type Entity, type Order, type Ruleset, type Scenario, type World } from './types';
+import { LOST_CONTACT, NEUTRAL, RETREAT_THRESHOLDS, TARGET_PRIORITIES, type Archetype, type Command, type Doctrine, type Entity, type Order, type Ruleset, type Scenario, type World } from './types';
 
 /** Build the initial world for a scenario. Throws on invalid authored content (programmer error). */
 export function createWorld(scenario: Scenario, ruleset: Ruleset): World {
@@ -17,7 +17,7 @@ export function createWorld(scenario: Scenario, ruleset: Ruleset): World {
   const entities: Entity[] = scenario.entities.map((spec, i) => {
     const arch = archetypeOf(ruleset, spec.kind);
     if (!arch) throw new RangeError(`Unknown archetype '${spec.kind}'.`);
-    if (!Number.isInteger(spec.side) || spec.side < 0 || spec.side >= scenario.sides) throw new RangeError('Invalid side.');
+    if (spec.side === NEUTRAL ? !canBeNeutral(arch) : !Number.isInteger(spec.side) || spec.side < 0 || spec.side >= scenario.sides) throw new RangeError('Invalid side.');
     if (!passable(map, ruleset, spec.x, spec.y, arch.layer)) throw new RangeError(`Cannot place ${spec.kind} at ${spec.x},${spec.y}.`);
     const key = `${arch.layer}:${spec.x},${spec.y}`;
     if (occupied.has(key)) throw new RangeError(`Cell ${spec.x},${spec.y} is occupied.`);
@@ -30,6 +30,9 @@ export function createWorld(scenario: Scenario, ruleset: Ruleset): World {
   }
   deposits.sort((a, b) => cellOf(map, a.x, a.y) - cellOf(map, b.x, b.y));
   for (let i = 1; i < deposits.length; i++) if (cellOf(map, deposits[i]!.x, deposits[i]!.y) === cellOf(map, deposits[i - 1]!.x, deposits[i - 1]!.y)) throw new RangeError('Duplicate deposit.');
+  if (!Number.isInteger(scenario.sides) || scenario.sides < 1 || scenario.sides > MAX_SIDES) throw new RangeError('Invalid number of sides.');
+  if (scenario.teams && (scenario.teams.length !== scenario.sides || scenario.teams.some((t) => !Number.isInteger(t) || t < 0 || t >= MAX_SIDES))) throw new RangeError('Invalid teams.');
+  if (scenario.frames && (scenario.frames.length !== scenario.sides || scenario.frames.some((f) => !FRAMES.includes(f)))) throw new RangeError('Invalid frames.');
   const world: World = {
     v: 1,
     ruleset: ruleset.id,
@@ -38,6 +41,8 @@ export function createWorld(scenario: Scenario, ruleset: Ruleset): World {
     rng: normalizeSeed(scenario.seed),
     map: { w: map.w, h: map.h, terrain: map.terrain, ...(deposits.length > 0 && { deposits }) },
     sides: scenario.sides,
+    ...(scenario.teams && { teams: [...scenario.teams] }),
+    ...(scenario.frames && { frames: [...scenario.frames] }),
     entities,
     projectiles: [],
     nextId: entities.length + 1
@@ -50,6 +55,24 @@ export function createWorld(scenario: Scenario, ruleset: Ruleset): World {
   if (ruleset.fog) world.intel = initialIntel(world, ruleset);
   return world;
 }
+
+/** Most playing sides a world may have. */
+export const MAX_SIDES = 8;
+
+/** Whether an archetype may stand on the map as neutral: only Command Posts (an immobile command source). */
+export const canBeNeutral = (arch: Archetype | undefined): boolean => !!arch && arch.speed === 0 && arch.comms?.role === 'source' && !arch.weapon;
+
+/** A side's team: its own number unless the world assigns teams; neutral is nobody's team. */
+export const teamOf = (world: Pick<World, 'teams'>, side: number): number => (side === NEUTRAL ? NEUTRAL : (world.teams?.[side] ?? side));
+
+/**
+ * Whether units of side `a` treat side `b` as an enemy (targets, jamming, attack orders). Sides
+ * of one team are not hostile to each other; a neutral post is hostile to every side (it can be
+ * fired on) but never acts itself. Every hostility check goes through here (teams, later, only
+ * change the data).
+ */
+export const hostile = (world: Pick<World, 'teams'>, a: number, b: number): boolean =>
+  a !== b && (a === NEUTRAL || b === NEUTRAL || teamOf(world, a) !== teamOf(world, b));
 
 export function spawn(id: number, side: number, arch: Archetype, x: number, y: number, order: Order = { type: 'hold' }): Entity {
   return { id, side, kind: arch.id, x, y, hp: arch.hp, mp: 0, cooldown: 0, order, status: [], beam: null };
@@ -124,7 +147,8 @@ export function validateCommand(world: World, ruleset: Ruleset, command: Command
   if (!isRecord(command) || !isRecord(command.order)) return { ok: false, reason: 'bad-order' };
   const unit = findEntity(world, command.unit);
   if (!unit) return { ok: false, reason: 'unknown-unit' };
-  if (unit.side !== command.side) return { ok: false, reason: 'not-yours' };
+  // Only playing sides give orders (a neutral post takes none).
+  if (unit.side !== command.side || unit.side === NEUTRAL) return { ok: false, reason: 'not-yours' };
   const arch = archetypeOf(ruleset, unit.kind);
   if (!arch) return { ok: false, reason: 'unknown-unit' };
   if (!isCommandable(world, ruleset, unit, networks?.[unit.side])) return { ok: false, reason: 'out-of-contact' };
@@ -163,7 +187,7 @@ export function validateCommand(world: World, ruleset: Ruleset, command: Command
       // Fog (D7): only a target the side has spotted can be ordered. Anything else, also an id
       // that no longer exists, is 'not-visible', so the answer reveals nothing the side does not know.
       if (ruleset.fog && target?.side !== unit.side && !isSpotted(world, ruleset, unit.side, order.target)) return { ok: false, reason: 'not-visible' };
-      if (!target || target.side === unit.side) return { ok: false, reason: 'bad-target' };
+      if (!target || !hostile(world, unit.side, target.side)) return { ok: false, reason: 'bad-target' };
       const armor = archetypeOf(ruleset, target.kind)?.armor;
       if (!armor || arch.weapon.vs[armor] <= 0) return { ok: false, reason: 'bad-target' };
       return { ok: true };

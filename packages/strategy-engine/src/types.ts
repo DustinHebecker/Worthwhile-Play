@@ -281,6 +281,21 @@ export interface Report {
   live: boolean;
 }
 
+/**
+ * A side's own view of the map (ADR 0009, several sides): ties between equally good cells and
+ * the order of neighbours are decided in this frame, so that a map that is symmetric under a
+ * rotation or mirror evolves symmetrically with the sides permuted. `id` is the map as stored;
+ * `r180` the point mirror; `r90`/`r270` the map turned a quarter clockwise/anticlockwise (exact
+ * symmetry needs a square map); `fx`/`fy` mirrored left-right/top-bottom.
+ */
+export type Frame = 'id' | 'r90' | 'r180' | 'r270' | 'fx' | 'fy';
+
+/**
+ * Side of a neutral Command Post: not a playing side — no plans, Supply, reports, coverage or
+ * team; it never moves or fires and can be captured (ADR 0009 amendment, several sides).
+ */
+export const NEUTRAL = -1;
+
 export interface World {
   v: 1;
   ruleset: string;
@@ -290,6 +305,13 @@ export interface World {
   rng: number;
   map: GameMap;
   sides: number;
+  /**
+   * Team of each side (several sides): sides of one team are not hostile to each other. Absent:
+   * every side is its own team (free-for-all). Hostility is only ever checked with `hostile`.
+   */
+  teams?: number[];
+  /** Each side's frame (`Frame`); absent: side 1 point-mirrored, every other side as stored. */
+  frames?: Frame[];
   /** Economy rulesets only: Supply per side. */
   supply?: number[];
   /** Sorted by ascending id. */
@@ -361,4 +383,8 @@ export interface Scenario {
   readonly seed: number;
   /** Economy rulesets: Supply per side at the start (default: the ruleset's `startSupply`). */
   readonly supply?: readonly number[];
+  /** Team per side (default: free-for-all). */
+  readonly teams?: readonly number[];
+  /** Frame per side (default: side 1 point-mirrored, the others as stored). */
+  readonly frames?: readonly Frame[];
 }

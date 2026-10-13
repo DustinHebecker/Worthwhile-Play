@@ -1,21 +1,104 @@
-import type { GameMap, Layer, Ruleset, TerrainSpec } from './types';
+import type { Frame, GameMap, Layer, Ruleset, TerrainSpec } from './types';
 
-/** Neighbour order in side 0's frame: orthogonal first, then diagonal. */
-const BASE_DIRS: readonly (readonly [number, number])[] = [
-  [1, 0], [0, 1], [-1, 0], [0, -1], [1, 1], [-1, 1], [-1, -1], [1, -1]
-];
-const MIRRORED_DIRS = BASE_DIRS.map(([dx, dy]) => [-dx, -dy] as const);
+export const FRAMES: readonly Frame[] = ['id', 'r90', 'r180', 'r270', 'fx', 'fy'];
+
+/** The frame of a side when a world declares none: side 1 sees the map point-mirrored (two-side default). */
+export const defaultFrame = (side: number): Frame => (side === 1 ? 'r180' : 'id');
+
+/** A side's frame in a world: the declared one, else the two-side default. */
+export const frameOf = (world: { readonly frames?: readonly Frame[] }, side: number): Frame => world.frames?.[side] ?? defaultFrame(side);
+
+/** A vector seen in `frame`, expressed in map coordinates (the inverse of the frame's turn). */
+export function frameVector(frame: Frame, dx: number, dy: number): readonly [number, number] {
+  switch (frame) {
+    case 'id':
+      return [dx, dy];
+    case 'r180':
+      return [-dx, -dy];
+    case 'r90':
+      return [dy, -dx];
+    case 'r270':
+      return [-dy, dx];
+    case 'fx':
+      return [-dx, dy];
+    case 'fy':
+      return [dx, -dy];
+  }
+}
 
 /** Air movement cost for an orthogonal step (terrain is ignored). */
 export const AIR_COST = 4;
 
-/**
- * Neighbour order seen from a side. Side 1 uses the point-mirrored order, so that a
- * point-mirrored world with swapped sides evolves as the exact mirror image (no side bias).
- */
-export const dirsFor = (side: number): readonly (readonly [number, number])[] => (side === 1 ? MIRRORED_DIRS : BASE_DIRS);
+/** Neighbour order in the map's own frame: orthogonal first, then diagonal. */
+const BASE_DIRS: readonly (readonly [number, number])[] = [
+  [1, 0], [0, 1], [-1, 0], [0, -1], [1, 1], [-1, 1], [-1, -1], [1, -1]
+];
+const DIRS: Readonly<Record<Frame, readonly (readonly [number, number])[]>> = Object.fromEntries(
+  FRAMES.map((f) => [f, BASE_DIRS.map(([dx, dy]) => frameVector(f, dx, dy))])
+) as unknown as Record<Frame, readonly (readonly [number, number])[]>;
 
-/** Cell index as seen from a side, used for deterministic, mirror-consistent tie-breaking. */
+/** Neighbour order as seen in a frame (the base order turned with the frame). */
+export const frameDirs = (frame: Frame): readonly (readonly [number, number])[] => DIRS[frame];
+
+/**
+ * Neighbour order seen from a side under the two-side default frames. Side 1 uses the
+ * point-mirrored order, so that a point-mirrored world with swapped sides evolves as the exact
+ * mirror image (no side bias). Worlds with declared frames use `frameDirs(frameOf(world, side))`.
+ */
+export const dirsFor = (side: number): readonly (readonly [number, number])[] => DIRS[defaultFrame(side)];
+
+/** Cell index as seen in a frame (row by row of the turned map), for deterministic, symmetry-consistent tie-breaking. */
+export function frameIndexIn(map: { readonly w: number; readonly h: number }, frame: Frame, cell: number): number {
+  const { w, h } = map;
+  const x = cell % w;
+  const y = (cell - x) / w;
+  switch (frame) {
+    case 'id':
+      return cell;
+    case 'r180':
+      return w * h - 1 - cell;
+    case 'r90':
+      return x * h + (h - 1 - y);
+    case 'r270':
+      return (w - 1 - x) * h + y;
+    case 'fx':
+      return y * w + (w - 1 - x);
+    case 'fy':
+      return (h - 1 - y) * w + x;
+  }
+}
+
+/** The cell whose index in `frame` is `index` (inverse of `frameIndexIn`). */
+export function frameCell(map: { readonly w: number; readonly h: number }, frame: Frame, index: number): number {
+  const { w, h } = map;
+  switch (frame) {
+    case 'id':
+      return index;
+    case 'r180':
+      return w * h - 1 - index;
+    case 'r90': {
+      const yy = index % h;
+      const x = (index - yy) / h;
+      return (h - 1 - yy) * w + x;
+    }
+    case 'r270': {
+      const y = index % h;
+      const xx = (index - y) / h;
+      return y * w + (w - 1 - xx);
+    }
+    case 'fx': {
+      const xx = index % w;
+      return index - xx + (w - 1 - xx);
+    }
+    case 'fy': {
+      const x = index % w;
+      const yy = (index - x) / w;
+      return (h - 1 - yy) * w + x;
+    }
+  }
+}
+
+/** Cell index as seen from a side under the two-side default frames (see `frameIndexIn` for declared frames). */
 export const frameIndex = (cell: number, side: number, cells: number): number => (side === 1 ? cells - 1 - cell : cell);
 
 export const cellOf = (map: GameMap, x: number, y: number): number => y * map.w + x;
