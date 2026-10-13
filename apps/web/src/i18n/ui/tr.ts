@@ -201,10 +201,12 @@ const tr: UiCatalogue = {
   'settings.libraryImport': 'Kendi içeriklerini bir dosyadan içe aktar',
   'settings.libraryImportReplace': 'Zaten var olan öğeleri değiştir (ör. aynı yerdeki bir harita)',
   'settings.libraryImportResult': 'İçe aktarma tamamlandı. Yeni: {added} · Değiştirilen: {replaced} · Zaten vardı: {unchanged} · Korunan, değiştirilmeyen: {kept} · Yer kalmadı: {full} · Atlanan (okunamayan veya bilinmeyen oyun): {skipped}',
-  'settings.libraryImportNotRecognised': 'Bu dosya Worthwhile Play’den alınmış bir kendi içerik dışa aktarımı değil.',
+  'settings.libraryImportNotRecognised': 'Bu dosya, Worthwhile Play’den kendi içeriklerinin dışa aktarımı değil.',
   'settings.libraryImportNewer': 'Bu dosya Worthwhile Play’in daha yeni bir sürümünden geliyor. Uygulamayı yeniden yükleyip tekrar dene.',
-  'settings.libraryImportTooLarge': 'Bu dosya çok büyük (en fazla 8 MB).',
-  'settings.libraryImportFailed': 'İçe aktarma tamamlanamadı. Sorundan önce içe aktarılan öğeler korunur.'
+  'settings.libraryImportTooLarge': 'Bu dosya çok büyük (en fazla 32 MB).',
+  'settings.libraryImportFailed': 'İçe aktarma tamamlanamadı. Sorundan önce içe aktarılan öğeler korunur.',
+  'settings.libraryImporting': 'İçe aktarılıyor…',
+  'settings.libraryActionFailed': 'Bu işlem olmadı. Lütfen tekrar dene.'
 };
 
 export default tr;

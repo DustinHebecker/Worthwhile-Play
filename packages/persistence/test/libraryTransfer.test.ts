@@ -9,6 +9,7 @@ import {
   exportLibrary,
   importLibrary,
   LIBRARY_EXPORT_FORMAT,
+  LIBRARY_IMPORT_MAX_BYTES,
   libraryExportToJson,
   parseLibraryExport,
   type LibraryRow,
@@ -74,8 +75,10 @@ describe.each([
   it('never exceeds the per-game limit', async () => {
     const store = await factory();
     await store.clear();
-    const items = Array.from({ length: LIBRARY_LIMITS.maxItems + 3 }, (_, i) => item('sokoban', `l-${i}`, `Level ${i}`, i));
-    expect(await importLibrary(store, parsed(file(items)))).toMatchObject({ added: LIBRARY_LIMITS.maxItems, full: 3 });
+    // Two places left: of five new items two are added, three find no space.
+    for (let i = 0; i < LIBRARY_LIMITS.maxItems - 2; i++) await createGameLibrary(store, 'sokoban').put({ id: `old-${i}`, name: `Old ${i}`, data: i });
+    const items = Array.from({ length: 5 }, (_, i) => item('sokoban', `l-${i}`, `Level ${i}`, i));
+    expect(await importLibrary(store, parsed(file(items)))).toEqual({ added: 2, replaced: 0, unchanged: 0, kept: 0, full: 3 });
     expect((await store.counts()).get('sokoban')).toBe(LIBRARY_LIMITS.maxItems);
   });
 
@@ -111,6 +114,7 @@ describe('parseLibraryExport (untrusted files)', () => {
         item('relay-command', 'c', 'x'.repeat(61), 1),
         item('relay-command', 'd', 'Too big', big),
         item('relay-command', 'e', 'Bad time', 1, 'yesterday'),
+        item('relay-command', 'e2', 'Loose time', 1, '0'),
         { gameId: 'relay-command', id: 'f', name: 'No data', updatedAt: AT.toISOString() },
         null,
         'text',
@@ -120,11 +124,38 @@ describe('parseLibraryExport (untrusted files)', () => {
     );
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.skipped).toBe(10);
+    expect(result.skipped).toBe(11);
     expect(result.rows).toEqual([
       { gameId: 'relay-command', id: 'slot-1', name: 'Ridge', updatedAt: AT.toISOString(), size: 13, data: { cells: [1] } },
       { gameId: 'sokoban', id: 'g', name: 'Level', updatedAt: AT.toISOString(), size: 16, data: [null, true, 'ü'] }
     ]);
+  });
+
+  it('keeps at most the per-game limit of a file and caps times in the future', () => {
+    const items = Array.from({ length: LIBRARY_LIMITS.maxItems + 5 }, (_, i) => item('sokoban', `l-${i}`, `Level ${i}`, i, '2999-01-01T00:00:00.000Z'));
+    const result = parseLibraryExport(file(items), known, AT);
+    expect(result.ok && result.rows.length).toBe(LIBRARY_LIMITS.maxItems);
+    expect(result.ok && result.skipped).toBe(5);
+    expect(result.ok && result.rows.every((row) => row.updatedAt === AT.toISOString())).toBe(true);
+  });
+
+  it('a game at its bounds fits the import size limit and survives the round trip', async () => {
+    const store = createMemoryLibraryStore();
+    // Array-heavy data is where pretty-printing would have multiplied the size.
+    const data = Array.from({ length: Math.floor((LIBRARY_LIMITS.maxBytes - 2) / 2) }, () => 0);
+    for (let i = 0; i < LIBRARY_LIMITS.maxItems; i++) await createGameLibrary(store, 'sokoban').put({ id: `l-${i}`, name: `Level ${i}`, data });
+    const text = libraryExportToJson(await exportLibrary(store, AT));
+    expect(new TextEncoder().encode(text).length).toBeLessThan(LIBRARY_IMPORT_MAX_BYTES / 9);
+    expect(parsed(text)).toHaveLength(LIBRARY_LIMITS.maxItems);
+  });
+
+  it('does not fail on corrupt stored data: such an item counts as different', async () => {
+    const store = createMemoryLibraryStore();
+    const corrupt = { gameId: 'sokoban', id: 'a', name: 'Level', updatedAt: AT.toISOString(), size: 1, data: 1 };
+    await store.put(corrupt, 50);
+    Object.assign(store, { list: async () => [{ ...corrupt, data: 10n }] });
+    const rows = parsed(file([item('sokoban', 'a', 'Level', 1)]));
+    expect(await importLibrary(store, rows)).toEqual({ added: 0, replaced: 0, unchanged: 0, kept: 1, full: 0 });
   });
 
   it('never throws and only returns rows within the bounds, for any input', () => {

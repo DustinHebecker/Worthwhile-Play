@@ -203,8 +203,10 @@ const ja: UiCatalogue = {
   'settings.libraryImportResult': 'インポートが完了しました。新規：{added} · 置き換え：{replaced} · 既存と同じ：{unchanged} · 置き換えずに保持：{kept} · 空きなし：{full} · スキップ（読み取れない、または不明なゲーム）：{skipped}',
   'settings.libraryImportNotRecognised': 'このファイルは Worthwhile Play の自作コンテンツのエクスポートではありません。',
   'settings.libraryImportNewer': 'このファイルは新しいバージョンの Worthwhile Play で作成されました。アプリを再読み込みして、もう一度お試しください。',
-  'settings.libraryImportTooLarge': 'このファイルは大きすぎます（最大 8 MB）。',
-  'settings.libraryImportFailed': 'インポートを完了できませんでした。問題が起きる前にインポートされた項目は残ります。'
+  'settings.libraryImportTooLarge': 'このファイルは大きすぎます（最大 32 MB）。',
+  'settings.libraryImportFailed': 'インポートを完了できませんでした。問題が起きる前にインポートされた項目は残ります。',
+  'settings.libraryImporting': 'インポート中…',
+  'settings.libraryActionFailed': 'うまくいきませんでした。もう一度お試しください。'
 };
 
 export default ja;

@@ -203,8 +203,10 @@ const ar: UiCatalogue = {
   'settings.libraryImportResult': 'اكتمل الاستيراد. جديدة: {added} · مستبدلة: {replaced} · موجودة من قبل: {unchanged} · محتفظ بها دون استبدال: {kept} · لا توجد مساحة: {full} · متخطاة (غير مقروءة أو لعبة غير معروفة): {skipped}',
   'settings.libraryImportNotRecognised': 'هذا الملف ليس تصديرًا للمحتوى الذي أنشأته في Worthwhile Play.',
   'settings.libraryImportNewer': 'هذا الملف من إصدار أحدث من Worthwhile Play. أعد تحميل التطبيق وحاول مرة أخرى.',
-  'settings.libraryImportTooLarge': 'هذا الملف كبير جدًا (8 ميغابايت كحد أقصى).',
-  'settings.libraryImportFailed': 'تعذّر إكمال الاستيراد. تبقى العناصر التي استُوردت قبل حدوث المشكلة محفوظة.'
+  'settings.libraryImportTooLarge': 'هذا الملف كبير جدًا (32 ميغابايت كحد أقصى).',
+  'settings.libraryImportFailed': 'تعذّر إكمال الاستيراد. تبقى العناصر التي استُوردت قبل حدوث المشكلة محفوظة.',
+  'settings.libraryImporting': 'جارٍ الاستيراد…',
+  'settings.libraryActionFailed': 'لم ينجح ذلك. يُرجى المحاولة مرة أخرى.'
 };
 
 export default ar;

@@ -203,8 +203,10 @@ const zhHans: UiCatalogue = {
   'settings.libraryImportResult': '导入完成。新增：{added} · 已替换：{replaced} · 已存在：{unchanged} · 保留未替换：{kept} · 空间已满：{full} · 已跳过（无法读取或游戏未知）：{skipped}',
   'settings.libraryImportNotRecognised': '此文件不是从 Worthwhile Play 导出的个人内容。',
   'settings.libraryImportNewer': '此文件来自更新版本的 Worthwhile Play。请重新加载应用后再试。',
-  'settings.libraryImportTooLarge': '此文件过大（最大 8 MB）。',
-  'settings.libraryImportFailed': '导入未能完成。出现问题之前已导入的项目会保留。'
+  'settings.libraryImportTooLarge': '此文件过大（最大 32 MB）。',
+  'settings.libraryImportFailed': '导入未能完成。出现问题之前已导入的项目会保留。',
+  'settings.libraryImporting': '正在导入…',
+  'settings.libraryActionFailed': '操作未成功，请重试。'
 };
 
 export default zhHans;

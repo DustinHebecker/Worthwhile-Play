@@ -119,7 +119,8 @@ export const renderSettings: Page = (main, app) => {
 
   // Things players create in games (e.g. maps; ADR 0012) are kept when saved games are deleted; own confirmed controls,
   // per game and for all, plus export to a file and import from one (the file never leaves the device by itself).
-  const libraryInfo = h('p', { class: 'wp-muted', 'data-testid': 'library-info' });
+  // Focus target after a per-game delete removes the button that had focus.
+  const libraryInfo = h('p', { class: 'wp-muted', 'data-testid': 'library-info', tabindex: '-1' });
   const libraryGames = h('ul', { class: 'wp-muted library-games', 'data-testid': 'library-games', hidden: true });
   const clearLibraryButton = h('button', { type: 'button', 'data-testid': 'clear-library' }, t('settings.clearLibrary'));
   const exportLibraryButton = h('button', { type: 'button', 'data-testid': 'export-library' }, t('settings.libraryExport'));
@@ -134,9 +135,14 @@ export const renderSettings: Page = (main, app) => {
     const button = h('button', { type: 'button', 'data-testid': `clear-library-${gameId}`, 'aria-label': t('settings.libraryDeleteGameLabel', { game: title }) }, t('settings.libraryDeleteGame'));
     button.addEventListener('click', async () => {
       if (!confirm(t('settings.libraryDeleteGameConfirm', { game: title, count }))) return;
-      await (await app.library).removeGame(gameId);
+      try {
+        await (await app.library).removeGame(gameId);
+        app.announce(t('settings.libraryGameDeleted', { game: title }));
+      } catch {
+        app.announce(t('settings.libraryActionFailed'));
+      }
       await refreshLibrary();
-      app.announce(t('settings.libraryGameDeleted', { game: title }));
+      libraryInfo.focus();
     });
     return button;
   };
@@ -156,13 +162,23 @@ export const renderSettings: Page = (main, app) => {
   }
   clearLibraryButton.addEventListener('click', async () => {
     if (!confirm(t('settings.clearLibraryConfirm'))) return;
-    await (await app.library).clear();
+    try {
+      await (await app.library).clear();
+      app.announce(t('settings.libraryDeleted'));
+    } catch {
+      app.announce(t('settings.libraryActionFailed'));
+    }
     await refreshLibrary();
-    app.announce(t('settings.libraryDeleted'));
   });
   exportLibraryButton.addEventListener('click', async () => {
     const now = new Date();
-    const text = libraryExportToJson(await exportLibrary(await app.library, now));
+    let text: string;
+    try {
+      text = libraryExportToJson(await exportLibrary(await app.library, now));
+    } catch {
+      app.announce(t('settings.libraryActionFailed'));
+      return;
+    }
     const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
     const link = h('a', { href: url, download: `worthwhile-play-own-content-${now.toISOString().slice(0, 10)}.json`, hidden: true });
     document.body.append(link);
@@ -176,6 +192,9 @@ export const renderSettings: Page = (main, app) => {
     const show = (text: string) => {
       importStatus.textContent = text;
     };
+    // A fresh message each time, so a repeated, identical result is announced again.
+    show(t('settings.libraryImporting'));
+    importFile.disabled = true;
     try {
       if (file.size > LIBRARY_IMPORT_MAX_BYTES) return show(t('settings.libraryImportTooLarge'));
       const parsed = parseLibraryExport(await file.text(), (id) => findGame(id) !== undefined);
@@ -187,6 +206,7 @@ export const renderSettings: Page = (main, app) => {
     } finally {
       // The same file can be chosen again (e.g. after ticking "replace").
       importFile.value = '';
+      importFile.disabled = false;
       await refreshLibrary();
     }
   });
@@ -213,8 +233,9 @@ export const renderSettings: Page = (main, app) => {
         h('legend', {}, t('settings.libraryTransfer')),
         h('p', { class: 'wp-muted' }, t('settings.libraryTransferHint')),
         h('div', { class: 'field' }, exportLibraryButton),
-        h('div', { class: 'field' }, h('label', { for: 'library-file' }, t('settings.libraryImport')), importFile),
+        // The option comes first: choosing a file starts the import.
         h('div', { class: 'field checkbox' }, importReplace, h('label', { for: 'library-replace' }, t('settings.libraryImportReplace'))),
+        h('div', { class: 'field' }, h('label', { for: 'library-file' }, t('settings.libraryImport')), importFile),
         importStatus
       )
     )

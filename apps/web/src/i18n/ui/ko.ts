@@ -203,8 +203,10 @@ const ko: UiCatalogue = {
   'settings.libraryImportResult': '가져오기를 마쳤어요. 새 항목: {added} · 바꿈: {replaced} · 이미 있음: {unchanged} · 바꾸지 않고 유지: {kept} · 공간 부족: {full} · 건너뜀(읽을 수 없거나 알 수 없는 게임): {skipped}',
   'settings.libraryImportNotRecognised': '이 파일은 Worthwhile Play에서 내보낸 콘텐츠 파일이 아니에요.',
   'settings.libraryImportNewer': '이 파일은 더 새로운 버전의 Worthwhile Play에서 만들어졌어요. 앱을 새로 고친 뒤 다시 시도해 주세요.',
-  'settings.libraryImportTooLarge': '파일이 너무 커요(최대 8MB).',
-  'settings.libraryImportFailed': '가져오기를 마치지 못했어요. 문제가 생기기 전에 가져온 항목은 그대로 남아 있어요.'
+  'settings.libraryImportTooLarge': '파일이 너무 커요(최대 32MB).',
+  'settings.libraryImportFailed': '가져오기를 마치지 못했어요. 문제가 생기기 전에 가져온 항목은 그대로 남아 있어요.',
+  'settings.libraryImporting': '가져오는 중…',
+  'settings.libraryActionFailed': '잘 되지 않았어요. 다시 시도해 주세요.'
 };
 
 export default ko;

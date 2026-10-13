@@ -202,8 +202,10 @@ const en = {
   'settings.libraryImportResult': 'Import finished. New: {added} · Replaced: {replaced} · Already there: {unchanged} · Kept, not replaced: {kept} · No space left: {full} · Skipped (unreadable or unknown game): {skipped}',
   'settings.libraryImportNotRecognised': 'This file is not an export of your own content from Worthwhile Play.',
   'settings.libraryImportNewer': 'This file comes from a newer version of Worthwhile Play. Reload the app and try again.',
-  'settings.libraryImportTooLarge': 'This file is too large (at most 8 MB).',
-  'settings.libraryImportFailed': 'The import could not be completed. Items imported before the problem are kept.'
+  'settings.libraryImportTooLarge': 'This file is too large (at most 32 MB).',
+  'settings.libraryImportFailed': 'The import could not be completed. Items imported before the problem are kept.',
+  'settings.libraryImporting': 'Importing …',
+  'settings.libraryActionFailed': 'That did not work. Please try again.'
 } as const;
 
 export type UiKey = keyof typeof en;

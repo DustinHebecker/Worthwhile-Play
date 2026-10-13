@@ -203,8 +203,10 @@ const fr: UiCatalogue = {
   'settings.libraryImportResult': 'Import terminé. Nouveaux : {added} · Remplacés : {replaced} · Déjà présents : {unchanged} · Conservés, non remplacés : {kept} · Plus de place : {full} · Ignorés (illisibles ou jeu inconnu) : {skipped}',
   'settings.libraryImportNotRecognised': 'Ce fichier n’est pas un export de contenu personnel de Worthwhile Play.',
   'settings.libraryImportNewer': 'Ce fichier provient d’une version plus récente de Worthwhile Play. Rechargez l’application et réessayez.',
-  'settings.libraryImportTooLarge': 'Ce fichier est trop volumineux (8 Mo au maximum).',
-  'settings.libraryImportFailed': 'L’import n’a pas pu aboutir. Les éléments importés avant le problème sont conservés.'
+  'settings.libraryImportTooLarge': 'Ce fichier est trop volumineux (32 Mo au maximum).',
+  'settings.libraryImportFailed': 'L’import n’a pas pu aboutir. Les éléments importés avant le problème sont conservés.',
+  'settings.libraryImporting': 'Import en cours…',
+  'settings.libraryActionFailed': 'Cela n’a pas fonctionné. Veuillez réessayer.'
 };
 
 export default fr;

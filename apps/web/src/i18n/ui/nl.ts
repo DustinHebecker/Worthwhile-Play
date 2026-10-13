@@ -203,8 +203,10 @@ const nl: UiCatalogue = {
   'settings.libraryImportResult': 'Import voltooid. Nieuw: {added} · Vervangen: {replaced} · Al aanwezig: {unchanged} · Behouden, niet vervangen: {kept} · Geen ruimte meer: {full} · Overgeslagen (onleesbaar of onbekend spel): {skipped}',
   'settings.libraryImportNotRecognised': 'Dit bestand is geen export van eigen inhoud uit Worthwhile Play.',
   'settings.libraryImportNewer': 'Dit bestand komt uit een nieuwere versie van Worthwhile Play. Laad de app opnieuw en probeer het nog eens.',
-  'settings.libraryImportTooLarge': 'Dit bestand is te groot (maximaal 8 MB).',
-  'settings.libraryImportFailed': 'De import kon niet worden voltooid. Wat vóór het probleem is geïmporteerd, blijft bewaard.'
+  'settings.libraryImportTooLarge': 'Dit bestand is te groot (maximaal 32 MB).',
+  'settings.libraryImportFailed': 'De import kon niet worden voltooid. Wat vóór het probleem is geïmporteerd, blijft bewaard.',
+  'settings.libraryImporting': 'Bezig met importeren…',
+  'settings.libraryActionFailed': 'Dat is niet gelukt. Probeer het opnieuw.'
 };
 
 export default nl;

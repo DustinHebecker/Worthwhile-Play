@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import type { GameModule } from '@wp/game-core';
 import { createTranslator, type SupportedLocale } from '@wp/localization';
 import {
@@ -153,6 +153,29 @@ describe('settings: delete per game, export and import my own content', () => {
     expect(await library.counts()).toEqual(new Map([['retired-game', 1]]));
     expect(context.announce).toHaveBeenCalledWith('Own content of Relay Command deleted.');
     expect(byId('library-info').textContent).toBe('Things you created in games (e.g. maps) on this device: 1');
+    // The pressed button is gone; focus moves to the count instead of the page body.
+    expect(document.activeElement).toBe(byId('library-info'));
+  });
+
+  it('says so when deleting or exporting fails', async () => {
+    const library = createMemoryLibraryStore();
+    await seed(library);
+    Object.assign(library, { removeGame: () => Promise.reject(new Error('io')), list: () => Promise.reject(new Error('io')) });
+    const { context, byId } = await setup('en', library);
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    byId('clear-library-relay-command').click();
+    await flush();
+    expect(context.announce).toHaveBeenLastCalledWith('That did not work. Please try again.');
+    byId('export-library').click();
+    await flush();
+    expect(context.announce).toHaveBeenCalledTimes(2);
+    expect(context.announce).toHaveBeenLastCalledWith('That did not work. Please try again.');
+  });
+
+  it('offers "replace" before the file input, since choosing a file starts the import', async () => {
+    const { main } = await setup('en');
+    const order = [...main.querySelectorAll('[data-testid="library-replace"], [data-testid="library-file"]')].map((el) => el.getAttribute('data-testid'));
+    expect(order).toEqual(['library-replace', 'library-file']);
   });
 
   it('exports a file named by the date, only when there is something to export', async () => {
@@ -163,6 +186,9 @@ describe('settings: delete per game, export and import my own content', () => {
     await seed(library);
     const { byId } = await setup('en', library);
     const blobs: Blob[] = [];
+    // jsdom has no object URLs: stub them for this test only.
+    const original = { createObjectURL: URL.createObjectURL, revokeObjectURL: URL.revokeObjectURL };
+    onTestFinished(() => void Object.assign(URL, original));
     Object.assign(URL, { createObjectURL: vi.fn((blob: Blob) => (blobs.push(blob), 'blob:own')), revokeObjectURL: vi.fn() });
     const clicked: HTMLAnchorElement[] = [];
     vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
@@ -213,8 +239,9 @@ describe('settings: delete per game, export and import my own content', () => {
     expect(status()).toBe('Diese Datei ist kein Export eigener Inhalte aus Worthwhile Play.');
     await chooseFile(input, JSON.stringify({ format: LIBRARY_EXPORT_FORMAT, version: 99, items: [] }));
     expect(status()).toBe('Diese Datei stammt aus einer neueren Version von Worthwhile Play. Lade die App neu und versuche es noch einmal.');
-    await chooseFile(input, '{}', 9 * 1024 * 1024);
-    expect(status()).toBe('Diese Datei ist zu groß (höchstens 8 MB).');
+    await chooseFile(input, '{}', 33 * 1024 * 1024);
+    expect(status()).toBe('Diese Datei ist zu groß (höchstens 32 MB).');
+    expect(input.disabled).toBe(false);
     expect(await library.counts()).toEqual(new Map());
     // Storage fails while writing (e.g. quota).
     Object.assign(library, { put: () => Promise.reject(new Error('quota')) });

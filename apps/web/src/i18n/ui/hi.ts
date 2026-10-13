@@ -203,8 +203,10 @@ const hi: UiCatalogue = {
   'settings.libraryImportResult': 'इम्पोर्ट पूरा हुआ। नई: {added} · बदली गईं: {replaced} · पहले से मौजूद: {unchanged} · रखी गईं, बदली नहीं: {kept} · जगह नहीं बची: {full} · छोड़ी गईं (पढ़ी नहीं जा सकीं या अज्ञात खेल): {skipped}',
   'settings.libraryImportNotRecognised': 'यह फ़ाइल Worthwhile Play से एक्सपोर्ट की गई अपनी सामग्री नहीं है।',
   'settings.libraryImportNewer': 'यह फ़ाइल Worthwhile Play के नए संस्करण से है। ऐप फिर से लोड करें और दोबारा कोशिश करें।',
-  'settings.libraryImportTooLarge': 'यह फ़ाइल बहुत बड़ी है (अधिकतम 8 MB)।',
-  'settings.libraryImportFailed': 'इम्पोर्ट पूरा नहीं हो सका। समस्या से पहले इम्पोर्ट की गई चीज़ें बनी रहेंगी।'
+  'settings.libraryImportTooLarge': 'यह फ़ाइल बहुत बड़ी है (अधिकतम 32 MB)।',
+  'settings.libraryImportFailed': 'इम्पोर्ट पूरा नहीं हो सका। समस्या से पहले इम्पोर्ट की गई चीज़ें बनी रहेंगी।',
+  'settings.libraryImporting': 'इम्पोर्ट हो रहा है…',
+  'settings.libraryActionFailed': 'यह नहीं हो सका। कृपया फिर से कोशिश करें।'
 };
 
 export default hi;

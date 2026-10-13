@@ -200,11 +200,13 @@ const uk: UiCatalogue = {
   'settings.libraryExport': 'Експортувати мій вміст (файл)',
   'settings.libraryImport': 'Імпортувати власний вміст із файлу',
   'settings.libraryImportReplace': 'Замінювати наявні елементи (наприклад, мапу на тому самому місці)',
-  'settings.libraryImportResult': 'Імпорт завершено. Нових: {added} · Замінено: {replaced} · Уже були: {unchanged} · Залишено без заміни: {kept} · Немає місця: {full} · Пропущено (нечитабельні або невідома гра): {skipped}',
+  'settings.libraryImportResult': 'Імпорт завершено. Додано: {added} · Замінено: {replaced} · Уже було: {unchanged} · Залишено без заміни: {kept} · Немає місця: {full} · Пропущено (нечитабельні або невідома гра): {skipped}',
   'settings.libraryImportNotRecognised': 'Цей файл не є експортом власного вмісту з Worthwhile Play.',
   'settings.libraryImportNewer': 'Цей файл створено новішою версією Worthwhile Play. Перезавантажте застосунок і спробуйте ще раз.',
-  'settings.libraryImportTooLarge': 'Цей файл завеликий (не більше 8 МБ).',
-  'settings.libraryImportFailed': 'Не вдалося завершити імпорт. Елементи, імпортовані до збою, збережено.'
+  'settings.libraryImportTooLarge': 'Цей файл завеликий (не більше 32 МБ).',
+  'settings.libraryImportFailed': 'Не вдалося завершити імпорт. Елементи, імпортовані до збою, збережено.',
+  'settings.libraryImporting': 'Триває імпорт…',
+  'settings.libraryActionFailed': 'Не вдалося. Спробуйте ще раз.'
 };
 
 export default uk;

@@ -200,11 +200,13 @@ const ru: UiCatalogue = {
   'settings.libraryExport': 'Экспортировать мой контент (файл)',
   'settings.libraryImport': 'Импортировать собственный контент из файла',
   'settings.libraryImportReplace': 'Заменять уже существующие элементы (например, карту на том же месте)',
-  'settings.libraryImportResult': 'Импорт завершён. Новых: {added} · Заменено: {replaced} · Уже были: {unchanged} · Оставлено без замены: {kept} · Нет места: {full} · Пропущено (нечитаемые или неизвестная игра): {skipped}',
+  'settings.libraryImportResult': 'Импорт завершён. Добавлено: {added} · Заменено: {replaced} · Уже было: {unchanged} · Оставлено без замены: {kept} · Не хватило места: {full} · Пропущено (нечитаемые или неизвестная игра): {skipped}',
   'settings.libraryImportNotRecognised': 'Этот файл не является экспортом собственного контента из Worthwhile Play.',
   'settings.libraryImportNewer': 'Этот файл создан более новой версией Worthwhile Play. Перезагрузите приложение и попробуйте ещё раз.',
-  'settings.libraryImportTooLarge': 'Этот файл слишком большой (не более 8 МБ).',
-  'settings.libraryImportFailed': 'Не удалось завершить импорт. Элементы, импортированные до сбоя, сохранены.'
+  'settings.libraryImportTooLarge': 'Этот файл слишком большой (не более 32 МБ).',
+  'settings.libraryImportFailed': 'Не удалось завершить импорт. Элементы, импортированные до сбоя, сохранены.',
+  'settings.libraryImporting': 'Идёт импорт…',
+  'settings.libraryActionFailed': 'Не получилось. Попробуйте ещё раз.'
 };
 
 export default ru;
