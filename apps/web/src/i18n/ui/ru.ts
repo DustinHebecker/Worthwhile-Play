@@ -190,7 +190,23 @@ const ru: UiCatalogue = {
   'settings.libraryGame': '{game}: {count}',
   'settings.clearLibrary': 'Удалить мой собственный контент (например, карты)',
   'settings.clearLibraryConfirm': 'Удалить всё, что вы создали в играх на этом устройстве (например, карты)? Сохранённые игры, колоды и записи обучения не затрагиваются. Это действие нельзя отменить.',
-  'settings.libraryDeleted': 'Ваш собственный контент удалён.'
+  'settings.libraryDeleted': 'Ваш собственный контент удалён.',
+  'settings.libraryDeleteGame': 'Удалить',
+  'settings.libraryDeleteGameLabel': 'Удалить собственный контент игры «{game}»',
+  'settings.libraryDeleteGameConfirm': 'Удалить ваш собственный контент игры «{game}» ({count})? Другие игры не затрагиваются. Это действие нельзя отменить.',
+  'settings.libraryGameDeleted': 'Собственный контент игры «{game}» удалён.',
+  'settings.libraryTransfer': 'Резервная копия или перенос собственного контента',
+  'settings.libraryTransferHint': 'Экспорт сохраняет файл со всем, что вы создали в играх. Файл остаётся у вас: ничего не загружается в сеть. Импортируйте его здесь или на другом устройстве.',
+  'settings.libraryExport': 'Экспортировать мой контент (файл)',
+  'settings.libraryImport': 'Импортировать собственный контент из файла',
+  'settings.libraryImportReplace': 'Заменять уже существующие элементы (например, карту на том же месте)',
+  'settings.libraryImportResult': 'Импорт завершён. Добавлено: {added} · Заменено: {replaced} · Уже было: {unchanged} · Оставлено без замены: {kept} · Не хватило места: {full} · Пропущено (нечитаемые или неизвестная игра): {skipped}',
+  'settings.libraryImportNotRecognised': 'Этот файл не является экспортом собственного контента из Worthwhile Play.',
+  'settings.libraryImportNewer': 'Этот файл создан более новой версией Worthwhile Play. Перезагрузите приложение и попробуйте ещё раз.',
+  'settings.libraryImportTooLarge': 'Этот файл слишком большой (не более 32 МБ).',
+  'settings.libraryImportFailed': 'Не удалось завершить импорт. Элементы, импортированные до сбоя, сохранены.',
+  'settings.libraryImporting': 'Идёт импорт…',
+  'settings.libraryActionFailed': 'Не получилось. Попробуйте ещё раз.'
 };
 
 export default ru;

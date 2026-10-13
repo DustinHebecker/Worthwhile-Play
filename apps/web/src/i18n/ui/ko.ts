@@ -190,7 +190,23 @@ const ko: UiCatalogue = {
   'settings.libraryGame': '{game}: {count}개',
   'settings.clearLibrary': '내가 만든 콘텐츠 삭제(예: 맵)',
   'settings.clearLibraryConfirm': '이 기기의 게임에서 만든 콘텐츠(예: 맵)를 모두 삭제할까요? 저장된 게임, 덱, 학습 기록은 그대로예요. 되돌릴 수 없어요.',
-  'settings.libraryDeleted': '내가 만든 콘텐츠를 삭제했어요.'
+  'settings.libraryDeleted': '내가 만든 콘텐츠를 삭제했어요.',
+  'settings.libraryDeleteGame': '삭제',
+  'settings.libraryDeleteGameLabel': '{game}에서 만든 콘텐츠 삭제',
+  'settings.libraryDeleteGameConfirm': '{game}에서 만든 콘텐츠({count}개)를 삭제할까요? 다른 게임에는 영향이 없어요. 되돌릴 수 없어요.',
+  'settings.libraryGameDeleted': '{game}에서 만든 콘텐츠를 삭제했어요.',
+  'settings.libraryTransfer': '내가 만든 콘텐츠 백업 또는 옮기기',
+  'settings.libraryTransferHint': '내보내기를 하면 게임에서 만든 모든 것이 담긴 파일이 저장돼요. 파일은 내 기기에만 남고 어디에도 업로드되지 않아요. 여기나 다른 기기에서 가져올 수 있어요.',
+  'settings.libraryExport': '내가 만든 콘텐츠 내보내기(파일)',
+  'settings.libraryImport': '파일에서 내가 만든 콘텐츠 가져오기',
+  'settings.libraryImportReplace': '이미 있는 항목 바꾸기(예: 같은 자리의 맵)',
+  'settings.libraryImportResult': '가져오기를 마쳤어요. 새 항목: {added} · 바꿈: {replaced} · 이미 있음: {unchanged} · 바꾸지 않고 유지: {kept} · 공간 부족: {full} · 건너뜀(읽을 수 없거나 알 수 없는 게임): {skipped}',
+  'settings.libraryImportNotRecognised': '이 파일은 Worthwhile Play에서 내보낸 콘텐츠 파일이 아니에요.',
+  'settings.libraryImportNewer': '이 파일은 더 새로운 버전의 Worthwhile Play에서 만들어졌어요. 앱을 새로 고친 뒤 다시 시도해 주세요.',
+  'settings.libraryImportTooLarge': '파일이 너무 커요(최대 32MB).',
+  'settings.libraryImportFailed': '가져오기를 마치지 못했어요. 문제가 생기기 전에 가져온 항목은 그대로 남아 있어요.',
+  'settings.libraryImporting': '가져오는 중…',
+  'settings.libraryActionFailed': '잘 되지 않았어요. 다시 시도해 주세요.'
 };
 
 export default ko;

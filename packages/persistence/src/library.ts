@@ -52,6 +52,8 @@ export interface LibraryStore {
    */
   put(row: LibraryRow, maxItems: number, options?: LibraryStorePutOptions): Promise<LibraryPutResult>;
   remove(gameId: string, id: string): Promise<void>;
+  /** Removes every item of one game (Settings: delete per game). */
+  removeGame(gameId: string): Promise<void>;
   /** Number of items per game id (only games that have items). */
   counts(): Promise<Map<string, number>>;
   /** Removes every item of every game. */
@@ -85,6 +87,9 @@ export function createMemoryLibraryStore(): LibraryStore {
       const items = data.get(gameId);
       items?.delete(id);
       if (items?.size === 0) data.delete(gameId);
+    },
+    async removeGame(gameId) {
+      data.delete(gameId);
     },
     async counts() {
       return new Map([...data].map(([gameId, items]) => [gameId, items.size] as const));
@@ -146,6 +151,19 @@ export async function createIndexedDbLibraryStore(factory: IDBFactory | null = g
     remove: async (gameId, id) => {
       await idbRequest(store('readwrite').delete([gameId, id]));
     },
+    removeGame: (gameId) =>
+      new Promise<void>((resolve, reject) => {
+        // One transaction: either every item of the game is removed or none.
+        const tx = db.transaction(LIBRARY_STORE, 'readwrite');
+        const objects = tx.objectStore(LIBRARY_STORE);
+        const keys = objects.index(LIBRARY_BY_GAME_INDEX).getAllKeys(gameId);
+        keys.onsuccess = () => {
+          for (const key of keys.result) objects.delete(key);
+        };
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error ?? new Error('IndexedDB delete failed'));
+        tx.onabort = () => reject(tx.error ?? new Error('IndexedDB delete aborted'));
+      }),
     counts: async () => {
       const counts = new Map<string, number>();
       for (const key of await idbRequest(store('readonly').getAllKeys())) {

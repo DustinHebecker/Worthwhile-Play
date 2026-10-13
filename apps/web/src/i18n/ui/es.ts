@@ -190,7 +190,23 @@ const es: UiCatalogue = {
   'settings.libraryGame': '{game}: {count}',
   'settings.clearLibrary': 'Borrar mi contenido propio (p. ej., mapas)',
   'settings.clearLibraryConfirm': '¿Borrar todo lo que creaste en juegos en este dispositivo (p. ej., mapas)? Las partidas guardadas, los mazos y los registros de aprendizaje no se ven afectados. No se puede deshacer.',
-  'settings.libraryDeleted': 'Contenido propio borrado.'
+  'settings.libraryDeleted': 'Contenido propio borrado.',
+  'settings.libraryDeleteGame': 'Borrar',
+  'settings.libraryDeleteGameLabel': 'Borrar el contenido propio de {game}',
+  'settings.libraryDeleteGameConfirm': '¿Borrar tu contenido propio de {game} ({count})? Los demás juegos no se ven afectados. No se puede deshacer.',
+  'settings.libraryGameDeleted': 'Contenido propio de {game} borrado.',
+  'settings.libraryTransfer': 'Guardar una copia o trasladar tu contenido propio',
+  'settings.libraryTransferHint': 'La exportación guarda un archivo con todo lo que creaste en los juegos. El archivo se queda contigo: no se sube nada. Impórtalo aquí o en otro dispositivo.',
+  'settings.libraryExport': 'Exportar mi contenido propio (archivo)',
+  'settings.libraryImport': 'Importar contenido propio desde un archivo',
+  'settings.libraryImportReplace': 'Reemplazar los elementos que ya existen (p. ej., un mapa en la misma posición)',
+  'settings.libraryImportResult': 'Importación terminada. Nuevos: {added} · Reemplazados: {replaced} · Ya estaban: {unchanged} · Conservados, sin reemplazar: {kept} · Sin espacio: {full} · Omitidos (ilegibles o de un juego desconocido): {skipped}',
+  'settings.libraryImportNotRecognised': 'Este archivo no es una exportación de contenido propio de Worthwhile Play.',
+  'settings.libraryImportNewer': 'Este archivo viene de una versión más reciente de Worthwhile Play. Recarga la aplicación e inténtalo de nuevo.',
+  'settings.libraryImportTooLarge': 'Este archivo es demasiado grande (máximo 32 MB).',
+  'settings.libraryImportFailed': 'No se pudo completar la importación. Se conservan los elementos importados antes del problema.',
+  'settings.libraryImporting': 'Importando…',
+  'settings.libraryActionFailed': 'No ha funcionado. Inténtalo de nuevo.'
 };
 
 export default es;

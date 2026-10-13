@@ -1,4 +1,5 @@
 import { LOCALE_DEFINITIONS, isSupportedLocale, readContentLanguages, writeContentLanguages } from '@wp/localization';
+import { exportLibrary, importLibrary, LIBRARY_IMPORT_MAX_BYTES, libraryExportToJson, parseLibraryExport } from '@wp/persistence';
 import { clear, h } from '@wp/ui';
 import type { Page } from '../app';
 import { SESSION_NOTE_KEY } from '../config';
@@ -116,31 +117,98 @@ export const renderSettings: Page = (main, app) => {
   });
   void refreshLearning();
 
-  // Things players create in games (e.g. maps; ADR 0012) are kept when saved games are deleted; own confirmed control.
-  const libraryInfo = h('p', { class: 'wp-muted', 'data-testid': 'library-info' });
+  // Things players create in games (e.g. maps; ADR 0012) are kept when saved games are deleted; own confirmed controls,
+  // per game and for all, plus export to a file and import from one (the file never leaves the device by itself).
+  // Focus target after a per-game delete removes the button that had focus.
+  const libraryInfo = h('p', { class: 'wp-muted', 'data-testid': 'library-info', tabindex: '-1' });
   const libraryGames = h('ul', { class: 'wp-muted library-games', 'data-testid': 'library-games', hidden: true });
   const clearLibraryButton = h('button', { type: 'button', 'data-testid': 'clear-library' }, t('settings.clearLibrary'));
+  const exportLibraryButton = h('button', { type: 'button', 'data-testid': 'export-library' }, t('settings.libraryExport'));
+  const importFile = h('input', { type: 'file', id: 'library-file', accept: '.json,application/json', 'data-testid': 'library-file' });
+  const importReplace = h('input', { type: 'checkbox', id: 'library-replace', 'data-testid': 'library-replace' });
+  const importStatus = h('p', { role: 'status', 'data-testid': 'library-import-status' });
   const gameTitle = (id: string) => {
     const entry = findGame(id);
     return entry ? gameTranslator(entry.metadata, app.locale)('title') : id;
   };
-  const refreshLibrary = async () => {
+  const deleteGameButton = (gameId: string, title: string, count: number) => {
+    const button = h('button', { type: 'button', 'data-testid': `clear-library-${gameId}`, 'aria-label': t('settings.libraryDeleteGameLabel', { game: title }) }, t('settings.libraryDeleteGame'));
+    button.addEventListener('click', async () => {
+      if (!confirm(t('settings.libraryDeleteGameConfirm', { game: title, count }))) return;
+      try {
+        await (await app.library).removeGame(gameId);
+        app.announce(t('settings.libraryGameDeleted', { game: title }));
+      } catch {
+        app.announce(t('settings.libraryActionFailed'));
+      }
+      await refreshLibrary();
+      libraryInfo.focus();
+    });
+    return button;
+  };
+  async function refreshLibrary() {
     const counts = await (await app.library).counts().catch(() => new Map<string, number>());
     let total = 0;
     for (const count of counts.values()) total += count;
     libraryInfo.textContent = t('settings.library', { count: total });
-    const rows = [...counts].map(([id, count]) => ({ title: gameTitle(id), count }));
+    const rows = [...counts].map(([id, count]) => ({ id, title: gameTitle(id), count }));
     rows.sort((a, b) => a.title.localeCompare(b.title, app.locale));
     clear(libraryGames);
-    libraryGames.append(...rows.map(({ title, count }) => h('li', {}, t('settings.libraryGame', { game: title, count }))));
+    libraryGames.append(...rows.map(({ id, title, count }) =>
+      h('li', {}, h('span', { class: 'library-game' }, t('settings.libraryGame', { game: title, count })), ' ', deleteGameButton(id, title, count))));
     libraryGames.hidden = rows.length === 0;
     clearLibraryButton.disabled = total === 0;
-  };
+    exportLibraryButton.disabled = total === 0;
+  }
   clearLibraryButton.addEventListener('click', async () => {
     if (!confirm(t('settings.clearLibraryConfirm'))) return;
-    await (await app.library).clear();
+    try {
+      await (await app.library).clear();
+      app.announce(t('settings.libraryDeleted'));
+    } catch {
+      app.announce(t('settings.libraryActionFailed'));
+    }
     await refreshLibrary();
-    app.announce(t('settings.libraryDeleted'));
+  });
+  exportLibraryButton.addEventListener('click', async () => {
+    const now = new Date();
+    let text: string;
+    try {
+      text = libraryExportToJson(await exportLibrary(await app.library, now));
+    } catch {
+      app.announce(t('settings.libraryActionFailed'));
+      return;
+    }
+    const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+    const link = h('a', { href: url, download: `worthwhile-play-own-content-${now.toISOString().slice(0, 10)}.json`, hidden: true });
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+  importFile.addEventListener('change', async () => {
+    const file = importFile.files?.[0];
+    if (!file) return;
+    const show = (text: string) => {
+      importStatus.textContent = text;
+    };
+    // A fresh message each time, so a repeated, identical result is announced again.
+    show(t('settings.libraryImporting'));
+    importFile.disabled = true;
+    try {
+      if (file.size > LIBRARY_IMPORT_MAX_BYTES) return show(t('settings.libraryImportTooLarge'));
+      const parsed = parseLibraryExport(await file.text(), (id) => findGame(id) !== undefined);
+      if (!parsed.ok) return show(t(parsed.problem === 'newer-version' ? 'settings.libraryImportNewer' : 'settings.libraryImportNotRecognised'));
+      const result = await importLibrary(await app.library, parsed.rows, { replace: importReplace.checked });
+      show(t('settings.libraryImportResult', { ...result, skipped: parsed.skipped }));
+    } catch {
+      show(t('settings.libraryImportFailed'));
+    } finally {
+      // The same file can be chosen again (e.g. after ticking "replace").
+      importFile.value = '';
+      importFile.disabled = false;
+      await refreshLibrary();
+    }
   });
   void refreshLibrary();
 
@@ -160,7 +228,16 @@ export const renderSettings: Page = (main, app) => {
       h('div', { class: 'field' }, savesInfo, clearButton),
       h('div', { class: 'field' }, decksInfo, clearDecksButton),
       h('div', { class: 'field' }, learningInfo, clearLearningButton),
-      h('div', { class: 'field' }, libraryInfo, libraryGames, clearLibraryButton)
+      h('div', { class: 'field' }, libraryInfo, libraryGames, clearLibraryButton),
+      h('fieldset', { class: 'library-transfer' },
+        h('legend', {}, t('settings.libraryTransfer')),
+        h('p', { class: 'wp-muted' }, t('settings.libraryTransferHint')),
+        h('div', { class: 'field' }, exportLibraryButton),
+        // The option comes first: choosing a file starts the import.
+        h('div', { class: 'field checkbox' }, importReplace, h('label', { for: 'library-replace' }, t('settings.libraryImportReplace'))),
+        h('div', { class: 'field' }, h('label', { for: 'library-file' }, t('settings.libraryImport')), importFile),
+        importStatus
+      )
     )
   );
 };

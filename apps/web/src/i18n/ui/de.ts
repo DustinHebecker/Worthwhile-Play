@@ -190,7 +190,23 @@ const de: UiCatalogue = {
   'settings.libraryGame': '{game}: {count}',
   'settings.clearLibrary': 'Meine eigenen Inhalte löschen (z. B. Karten)',
   'settings.clearLibraryConfirm': 'Alles löschen, was du auf diesem Gerät in Spielen erstellt hast (z. B. Karten)? Gespeicherte Spiele, Decks und Lernstände sind nicht betroffen. Das kann nicht rückgängig gemacht werden.',
-  'settings.libraryDeleted': 'Eigene Inhalte gelöscht.'
+  'settings.libraryDeleted': 'Eigene Inhalte gelöscht.',
+  'settings.libraryDeleteGame': 'Löschen',
+  'settings.libraryDeleteGameLabel': 'Eigene Inhalte von {game} löschen',
+  'settings.libraryDeleteGameConfirm': 'Deine eigenen Inhalte von {game} ({count}) löschen? Andere Spiele sind nicht betroffen. Das kann nicht rückgängig gemacht werden.',
+  'settings.libraryGameDeleted': 'Eigene Inhalte von {game} gelöscht.',
+  'settings.libraryTransfer': 'Eigene Inhalte sichern oder umziehen',
+  'settings.libraryTransferHint': 'Der Export speichert eine Datei mit allem, was du in Spielen erstellt hast. Die Datei bleibt bei dir: Es wird nichts hochgeladen. Importiere sie hier oder auf einem anderen Gerät.',
+  'settings.libraryExport': 'Meine eigenen Inhalte exportieren (Datei)',
+  'settings.libraryImport': 'Eigene Inhalte aus einer Datei importieren',
+  'settings.libraryImportReplace': 'Vorhandene Einträge ersetzen (z. B. eine Karte auf demselben Platz)',
+  'settings.libraryImportResult': 'Import abgeschlossen. Neu: {added} · Ersetzt: {replaced} · Schon vorhanden: {unchanged} · Behalten, nicht ersetzt: {kept} · Kein Platz mehr: {full} · Übersprungen (unlesbar oder unbekanntes Spiel): {skipped}',
+  'settings.libraryImportNotRecognised': 'Diese Datei ist kein Export eigener Inhalte aus Worthwhile Play.',
+  'settings.libraryImportNewer': 'Diese Datei stammt aus einer neueren Version von Worthwhile Play. Lade die App neu und versuche es noch einmal.',
+  'settings.libraryImportTooLarge': 'Diese Datei ist zu groß (höchstens 32 MB).',
+  'settings.libraryImportFailed': 'Der Import konnte nicht abgeschlossen werden. Was vor dem Problem importiert wurde, bleibt erhalten.',
+  'settings.libraryImporting': 'Wird importiert …',
+  'settings.libraryActionFailed': 'Das hat nicht geklappt. Bitte versuche es noch einmal.'
 };
 
 export default de;

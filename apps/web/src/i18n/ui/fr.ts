@@ -190,7 +190,23 @@ const fr: UiCatalogue = {
   'settings.libraryGame': '{game} : {count}',
   'settings.clearLibrary': 'Supprimer mon contenu personnel (p. ex. des cartes)',
   'settings.clearLibraryConfirm': 'Supprimer tout ce que vous avez créé dans les jeux sur cet appareil (p. ex. des cartes) ? Les parties sauvegardées, les paquets et les données d’apprentissage ne sont pas concernés. Cette action est irréversible.',
-  'settings.libraryDeleted': 'Contenu personnel supprimé.'
+  'settings.libraryDeleted': 'Contenu personnel supprimé.',
+  'settings.libraryDeleteGame': 'Supprimer',
+  'settings.libraryDeleteGameLabel': 'Supprimer le contenu personnel de {game}',
+  'settings.libraryDeleteGameConfirm': 'Supprimer votre contenu personnel de {game} ({count}) ? Les autres jeux ne sont pas concernés. Cette action est irréversible.',
+  'settings.libraryGameDeleted': 'Contenu personnel de {game} supprimé.',
+  'settings.libraryTransfer': 'Sauvegarder ou transférer votre contenu personnel',
+  'settings.libraryTransferHint': 'L’export enregistre un fichier contenant tout ce que vous avez créé dans les jeux. Le fichier reste chez vous : rien n’est envoyé en ligne. Importez-le ici ou sur un autre appareil.',
+  'settings.libraryExport': 'Exporter mon contenu personnel (fichier)',
+  'settings.libraryImport': 'Importer du contenu personnel depuis un fichier',
+  'settings.libraryImportReplace': 'Remplacer les éléments qui existent déjà (p. ex. une carte au même emplacement)',
+  'settings.libraryImportResult': 'Import terminé. Nouveaux : {added} · Remplacés : {replaced} · Déjà présents : {unchanged} · Conservés, non remplacés : {kept} · Plus de place : {full} · Ignorés (illisibles ou jeu inconnu) : {skipped}',
+  'settings.libraryImportNotRecognised': 'Ce fichier n’est pas un export de contenu personnel de Worthwhile Play.',
+  'settings.libraryImportNewer': 'Ce fichier provient d’une version plus récente de Worthwhile Play. Rechargez l’application et réessayez.',
+  'settings.libraryImportTooLarge': 'Ce fichier est trop volumineux (32 Mo au maximum).',
+  'settings.libraryImportFailed': 'L’import n’a pas pu aboutir. Les éléments importés avant le problème sont conservés.',
+  'settings.libraryImporting': 'Import en cours…',
+  'settings.libraryActionFailed': 'Cela n’a pas fonctionné. Veuillez réessayer.'
 };
 
 export default fr;

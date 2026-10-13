@@ -190,7 +190,23 @@ const nl: UiCatalogue = {
   'settings.libraryGame': '{game}: {count}',
   'settings.clearLibrary': 'Mijn eigen inhoud verwijderen (bijv. kaarten)',
   'settings.clearLibraryConfirm': 'Alles verwijderen wat je op dit apparaat in spellen hebt gemaakt (bijv. kaarten)? Opgeslagen spellen, decks en leergegevens blijven bewaard. Dit kan niet ongedaan worden gemaakt.',
-  'settings.libraryDeleted': 'Je eigen inhoud is verwijderd.'
+  'settings.libraryDeleted': 'Je eigen inhoud is verwijderd.',
+  'settings.libraryDeleteGame': 'Verwijderen',
+  'settings.libraryDeleteGameLabel': 'Eigen inhoud van {game} verwijderen',
+  'settings.libraryDeleteGameConfirm': 'Je eigen inhoud van {game} ({count}) verwijderen? Andere spellen blijven ongewijzigd. Dit kan niet ongedaan worden gemaakt.',
+  'settings.libraryGameDeleted': 'Eigen inhoud van {game} verwijderd.',
+  'settings.libraryTransfer': 'Je eigen inhoud bewaren of verhuizen',
+  'settings.libraryTransferHint': 'Exporteren slaat een bestand op met alles wat je in spellen hebt gemaakt. Het bestand blijft bij jou: er wordt niets geüpload. Importeer het hier of op een ander apparaat.',
+  'settings.libraryExport': 'Mijn eigen inhoud exporteren (bestand)',
+  'settings.libraryImport': 'Eigen inhoud uit een bestand importeren',
+  'settings.libraryImportReplace': 'Bestaande items vervangen (bijv. een kaart op dezelfde plek)',
+  'settings.libraryImportResult': 'Import voltooid. Nieuw: {added} · Vervangen: {replaced} · Al aanwezig: {unchanged} · Behouden, niet vervangen: {kept} · Geen ruimte meer: {full} · Overgeslagen (onleesbaar of onbekend spel): {skipped}',
+  'settings.libraryImportNotRecognised': 'Dit bestand is geen export van eigen inhoud uit Worthwhile Play.',
+  'settings.libraryImportNewer': 'Dit bestand komt uit een nieuwere versie van Worthwhile Play. Laad de app opnieuw en probeer het nog eens.',
+  'settings.libraryImportTooLarge': 'Dit bestand is te groot (maximaal 32 MB).',
+  'settings.libraryImportFailed': 'De import kon niet worden voltooid. Wat vóór het probleem is geïmporteerd, blijft bewaard.',
+  'settings.libraryImporting': 'Bezig met importeren…',
+  'settings.libraryActionFailed': 'Dat is niet gelukt. Probeer het opnieuw.'
 };
 
 export default nl;

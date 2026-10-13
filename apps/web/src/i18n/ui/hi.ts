@@ -190,7 +190,23 @@ const hi: UiCatalogue = {
   'settings.libraryGame': '{game}: {count}',
   'settings.clearLibrary': 'मेरी अपनी बनाई सामग्री हटाएँ (जैसे नक्शे)',
   'settings.clearLibraryConfirm': 'इस डिवाइस पर खेलों में आपने जो कुछ बनाया है (जैसे नक्शे), सब हटाएँ? सहेजे गए खेल, डेक और सीखने के रिकॉर्ड प्रभावित नहीं होंगे। इसे पूर्ववत नहीं किया जा सकता।',
-  'settings.libraryDeleted': 'आपकी अपनी बनाई सामग्री हटा दी गई।'
+  'settings.libraryDeleted': 'आपकी अपनी बनाई सामग्री हटा दी गई।',
+  'settings.libraryDeleteGame': 'हटाएँ',
+  'settings.libraryDeleteGameLabel': '{game} की अपनी बनाई सामग्री हटाएँ',
+  'settings.libraryDeleteGameConfirm': '{game} में आपकी बनाई सामग्री ({count}) हटाएँ? दूसरे खेल प्रभावित नहीं होंगे। इसे पूर्ववत नहीं किया जा सकता।',
+  'settings.libraryGameDeleted': '{game} की आपकी बनाई सामग्री हटा दी गई।',
+  'settings.libraryTransfer': 'अपनी बनाई सामग्री का बैकअप लें या उसे दूसरी जगह ले जाएँ',
+  'settings.libraryTransferHint': 'एक्सपोर्ट करने पर एक फ़ाइल सहेजी जाती है जिसमें वह सब होता है जो आपने खेलों में बनाया है। फ़ाइल आपके पास रहती है: कुछ भी अपलोड नहीं होता। इसे यहाँ या किसी दूसरे डिवाइस पर इम्पोर्ट करें।',
+  'settings.libraryExport': 'मेरी बनाई सामग्री एक्सपोर्ट करें (फ़ाइल)',
+  'settings.libraryImport': 'फ़ाइल से अपनी बनाई सामग्री इम्पोर्ट करें',
+  'settings.libraryImportReplace': 'पहले से मौजूद चीज़ें बदल दें (जैसे उसी जगह का नक्शा)',
+  'settings.libraryImportResult': 'इम्पोर्ट पूरा हुआ। नई: {added} · बदली गईं: {replaced} · पहले से मौजूद: {unchanged} · रखी गईं, बदली नहीं: {kept} · जगह नहीं बची: {full} · छोड़ी गईं (पढ़ी नहीं जा सकीं या अज्ञात खेल): {skipped}',
+  'settings.libraryImportNotRecognised': 'यह फ़ाइल Worthwhile Play से एक्सपोर्ट की गई अपनी सामग्री नहीं है।',
+  'settings.libraryImportNewer': 'यह फ़ाइल Worthwhile Play के नए संस्करण से है। ऐप फिर से लोड करें और दोबारा कोशिश करें।',
+  'settings.libraryImportTooLarge': 'यह फ़ाइल बहुत बड़ी है (अधिकतम 32 MB)।',
+  'settings.libraryImportFailed': 'इम्पोर्ट पूरा नहीं हो सका। समस्या से पहले इम्पोर्ट की गई चीज़ें बनी रहेंगी।',
+  'settings.libraryImporting': 'इम्पोर्ट हो रहा है…',
+  'settings.libraryActionFailed': 'यह नहीं हो सका। कृपया फिर से कोशिश करें।'
 };
 
 export default hi;

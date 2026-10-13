@@ -190,7 +190,23 @@ const zhHans: UiCatalogue = {
   'settings.libraryGame': '{game}：{count}',
   'settings.clearLibrary': '删除我自己创建的内容（如地图）',
   'settings.clearLibraryConfirm': '要删除你在此设备上的游戏中创建的所有内容（如地图）吗？存档、卡组和学习记录不受影响。此操作无法撤销。',
-  'settings.libraryDeleted': '已删除你自己创建的内容。'
+  'settings.libraryDeleted': '已删除你自己创建的内容。',
+  'settings.libraryDeleteGame': '删除',
+  'settings.libraryDeleteGameLabel': '删除 {game} 中你创建的内容',
+  'settings.libraryDeleteGameConfirm': '要删除你在 {game} 中创建的内容（{count} 项）吗？其他游戏不受影响。此操作无法撤销。',
+  'settings.libraryGameDeleted': '已删除 {game} 中你创建的内容。',
+  'settings.libraryTransfer': '备份或迁移你创建的内容',
+  'settings.libraryTransferHint': '导出会保存一个文件，包含你在游戏中创建的所有内容。文件只保存在你这里，不会上传任何内容。可以在此处或其他设备上导入。',
+  'settings.libraryExport': '导出我创建的内容（文件）',
+  'settings.libraryImport': '从文件导入你创建的内容',
+  'settings.libraryImportReplace': '替换已存在的项目（例如同一位置的地图）',
+  'settings.libraryImportResult': '导入完成。新增：{added} · 已替换：{replaced} · 已存在：{unchanged} · 保留未替换：{kept} · 空间已满：{full} · 已跳过（无法读取或游戏未知）：{skipped}',
+  'settings.libraryImportNotRecognised': '此文件不是从 Worthwhile Play 导出的个人内容。',
+  'settings.libraryImportNewer': '此文件来自更新版本的 Worthwhile Play。请重新加载应用后再试。',
+  'settings.libraryImportTooLarge': '此文件过大（最大 32 MB）。',
+  'settings.libraryImportFailed': '导入未能完成。出现问题之前已导入的项目会保留。',
+  'settings.libraryImporting': '正在导入…',
+  'settings.libraryActionFailed': '操作未成功，请重试。'
 };
 
 export default zhHans;

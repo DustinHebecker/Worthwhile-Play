@@ -190,7 +190,23 @@ const it: UiCatalogue = {
   'settings.libraryGame': '{game}: {count}',
   'settings.clearLibrary': 'Elimina i miei contenuti (ad es. mappe)',
   'settings.clearLibraryConfirm': 'Eliminare tutto ciò che hai creato nei giochi su questo dispositivo (ad es. mappe)? Partite salvate, mazzi e dati di apprendimento non vengono toccati. L’operazione non può essere annullata.',
-  'settings.libraryDeleted': 'Contenuti personali eliminati.'
+  'settings.libraryDeleted': 'Contenuti personali eliminati.',
+  'settings.libraryDeleteGame': 'Elimina',
+  'settings.libraryDeleteGameLabel': 'Elimina i contenuti personali di {game}',
+  'settings.libraryDeleteGameConfirm': 'Eliminare i tuoi contenuti personali di {game} ({count})? Gli altri giochi non vengono toccati. L’operazione non può essere annullata.',
+  'settings.libraryGameDeleted': 'Contenuti personali di {game} eliminati.',
+  'settings.libraryTransfer': 'Fai una copia o trasferisci i tuoi contenuti personali',
+  'settings.libraryTransferHint': 'L’esportazione salva un file con tutto ciò che hai creato nei giochi. Il file resta a te: non viene caricato nulla. Importalo qui o su un altro dispositivo.',
+  'settings.libraryExport': 'Esporta i miei contenuti personali (file)',
+  'settings.libraryImport': 'Importa contenuti personali da un file',
+  'settings.libraryImportReplace': 'Sostituisci gli elementi già presenti (ad es. una mappa nella stessa posizione)',
+  'settings.libraryImportResult': 'Importazione completata. Nuovi: {added} · Sostituiti: {replaced} · Già presenti: {unchanged} · Mantenuti, non sostituiti: {kept} · Spazio esaurito: {full} · Saltati (illeggibili o gioco sconosciuto): {skipped}',
+  'settings.libraryImportNotRecognised': 'Questo file non è un’esportazione di contenuti personali di Worthwhile Play.',
+  'settings.libraryImportNewer': 'Questo file proviene da una versione più recente di Worthwhile Play. Ricarica l’app e riprova.',
+  'settings.libraryImportTooLarge': 'Questo file è troppo grande (al massimo 32 MB).',
+  'settings.libraryImportFailed': 'Non è stato possibile completare l’importazione. Gli elementi importati prima del problema restano salvati.',
+  'settings.libraryImporting': 'Importazione in corso…',
+  'settings.libraryActionFailed': 'Non ha funzionato. Riprova.'
 };
 
 export default it;

@@ -189,7 +189,23 @@ const en = {
   'settings.libraryGame': '{game}: {count}',
   'settings.clearLibrary': 'Delete my own content (e.g. maps)',
   'settings.clearLibraryConfirm': 'Delete everything you created in games on this device (e.g. maps)? Saved games, decks and learning records are not affected. This cannot be undone.',
-  'settings.libraryDeleted': 'Your own content deleted.'
+  'settings.libraryDeleted': 'Your own content deleted.',
+  'settings.libraryDeleteGame': 'Delete',
+  'settings.libraryDeleteGameLabel': 'Delete own content of {game}',
+  'settings.libraryDeleteGameConfirm': 'Delete your own content of {game} ({count})? Other games are not affected. This cannot be undone.',
+  'settings.libraryGameDeleted': 'Own content of {game} deleted.',
+  'settings.libraryTransfer': 'Back up or move your own content',
+  'settings.libraryTransferHint': 'Export saves a file with everything you created in games. The file stays with you: nothing is uploaded. Import it here or on another device.',
+  'settings.libraryExport': 'Export my own content (file)',
+  'settings.libraryImport': 'Import own content from a file',
+  'settings.libraryImportReplace': 'Replace items that already exist (e.g. a map in the same place)',
+  'settings.libraryImportResult': 'Import finished. New: {added} · Replaced: {replaced} · Already there: {unchanged} · Kept, not replaced: {kept} · No space left: {full} · Skipped (unreadable or unknown game): {skipped}',
+  'settings.libraryImportNotRecognised': 'This file is not an export of your own content from Worthwhile Play.',
+  'settings.libraryImportNewer': 'This file comes from a newer version of Worthwhile Play. Reload the app and try again.',
+  'settings.libraryImportTooLarge': 'This file is too large (at most 32 MB).',
+  'settings.libraryImportFailed': 'The import could not be completed. Items imported before the problem are kept.',
+  'settings.libraryImporting': 'Importing …',
+  'settings.libraryActionFailed': 'That did not work. Please try again.'
 } as const;
 
 export type UiKey = keyof typeof en;
