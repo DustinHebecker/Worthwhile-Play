@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { createRng, isRecord } from '@wp/game-core';
-import { BASE_RULESET, canonicalJson, cellOf, findPath, observe, passable, DEFAULT_DOCTRINE, computeNetwork, createWorld, initialIntel, observedCells, resolveTurn, validateCommand, worldHash, type Command, type World } from '@wp/strategy-engine';
+import { BASE_RULESET, NEUTRAL, canonicalJson, cellOf, findPath, observe, passable, DEFAULT_DOCTRINE, computeNetwork, createWorld, initialIntel, observedCells, resolveTurn, validateCommand, worldHash, type Command, type World } from '@wp/strategy-engine';
 import { DIFFICULTIES, planAi, type Difficulty } from '../src/ai';
 import {
   cancelOrder,
@@ -96,6 +96,16 @@ describe('Field Exercise scenario', () => {
     expect(outcome({ ...open.world, turn: 5 }, 24, flat)).toBeNull();
     expect(isValidState(JSON.parse(JSON.stringify(open)))).toBe(true);
     expect(isValidState({ ...open, turnLimit: 0 })).toBe(false);
+    // Several-sides data is not part of a v8 save (review of PR #21): a crafted save must not turn
+    // the opponent's post neutral, or add teams or frames.
+    const post = open.world.entities.find((e) => e.side === OPPONENT && e.kind === 'command-post')!;
+    const neutral = structuredClone(open);
+    neutral.world.entities.find((e) => e.id === post.id)!.side = NEUTRAL;
+    for (const list of neutral.world.intel ?? []) for (const r of list) if (r.id === post.id) r.side = NEUTRAL;
+    expect(isValidState(neutral)).toBe(false);
+    expect(isValidState({ ...open, world: { ...open.world, teams: [0, 1] } })).toBe(false);
+    expect(isValidState({ ...open, world: { ...open.world, frames: ['id', 'r180'] } })).toBe(false);
+    expect(isValidState({ ...open, world: { ...open.world, out: [] } })).toBe(false);
     expect(isValidState({ ...open, lead: [1.5] })).toBe(false);
     expect(isValidState({ ...open, lead: [0] })).toBe(false); // more entries than turns played
     expect(isValidState({ ...lockTurn(open), lead: [0] })).toBe(true); // open-ended games keep the record (plain: it only offers to settle)

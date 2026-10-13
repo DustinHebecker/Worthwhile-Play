@@ -1,10 +1,10 @@
 import { isRecord } from '@wp/game-core';
-import { cellOf, dirsFor, dist2, frameIndex, maxStepCost, passable, stepCost, terrainAt } from './grid';
+import { cellOf, dirsFor, dist2, frameCell, frameDirs, frameIndexIn, frameOf, maxStepCost, passable, stepCost, terrainAt } from './grid';
 import { canReach, costGrid, findPath, NumberHeap, regions } from './path';
 import { DEFAULT_DOCTRINE, MAX_SUPPLY, type Archetype, type Command, type Doctrine, type Entity, type Order, type OrderEndReason, type Ruleset, type SimEvent, type Status, type TargetPriority, type WeaponSpec, type World } from './types';
 import { computeNetwork, isEmitter, type Network } from './network';
 import { initialIntel, updateIntel } from './vision';
-import { archetypeOf, findEntity, needsDeploy, normalizeDoctrine, normalizeOrder, spawn, validateCommand } from './world';
+import { archetypeOf, findEntity, hostile, needsDeploy, normalizeDoctrine, normalizeOrder, spawn, validateCommand } from './world';
 import { depositAt, incomeOf, isReady, repairPrice, sellRefund, spawnCell } from './economy';
 
 export interface SimResult {
@@ -171,7 +171,7 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
 
   // Ids by the cell in the placing side's own frame (mirror-consistent, P4), then side (a pair of
   // mirror-image placements by both sides in one batch is the one tie: side 0's site comes first).
-  placing.sort((a, b) => frameIndex(cellOf(w.map, a.x, a.y), a.unit.side, w.map.w * w.map.h) - frameIndex(cellOf(w.map, b.x, b.y), b.unit.side, w.map.w * w.map.h) || a.unit.side - b.unit.side);
+  placing.sort((a, b) => frameIndexIn(w.map, frameOf(w, a.unit.side), cellOf(w.map, a.x, a.y)) - frameIndexIn(w.map, frameOf(w, b.unit.side), cellOf(w.map, b.x, b.y)) || a.unit.side - b.unit.side);
   for (const p of placing) {
     const structure = arch({ kind: p.kind } as Entity);
     const site = spawn(w.nextId++, p.unit.side, structure, p.x, p.y);
@@ -363,7 +363,7 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     events.push({ t: 'land', tick: t, x: p.x, y: p.y });
     if (!weapon) continue;
     for (const target of w.entities) {
-      if (target.side === p.side || dist2(p.x, p.y, target.x, target.y) > weapon.splash * weapon.splash) continue;
+      if (!hostile(w, p.side, target.side) || dist2(p.x, p.y, target.x, target.y) > weapon.splash * weapon.splash) continue;
       const damage = computeDamage(weapon.damage, weapon, arch(target), 0);
       if (damage > 0) addHit(target.id, { damage, effect: weapon.effect });
     }
@@ -409,8 +409,8 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
       const below = doctrineOf(e).retreatBelow;
       // A unit already holding inside its coverage has nowhere to retreat to: no new order, no
       // repeated 'retreat' → 'regrouped' on every further hit.
-      const settled = e.order.type === 'hold' && (coverageOf(e.side)?.[cellOf(w.map, e.x, e.y)] ?? 1) === 1;
-      if (below > 0 && a.speed > 0 && e.hp > 0 && e.hp * 100 < a.hp * below && e.order.type !== 'regroup' && !settled) {
+      const settled = (): boolean => e.order.type === 'hold' && (coverageOf(e.side)?.[cellOf(w.map, e.x, e.y)] ?? 1) === 1;
+      if (below > 0 && a.speed > 0 && e.hp > 0 && e.hp * 100 < a.hp * below && e.order.type !== 'regroup' && !settled()) {
         e.order = { type: 'regroup' };
         events.push({ t: 'order-ended', tick: t, id: e.id, reason: 'retreat' });
       }
@@ -623,7 +623,7 @@ const pathCost = (ctx: Intent, e: Entity, a: Archetype, path: readonly number[])
 function nextStepTowards(ctx: Intent, e: Entity, a: Archetype, goal: number): { next: number; remaining: number } | undefined {
   const { w, rs } = ctx;
   const start = cellOf(w.map, e.x, e.y);
-  const base = findPath(w.map, rs, start, goal, { layer: a.layer, side: e.side, blocked: ctx.permanent[a.layer] });
+  const base = findPath(w.map, rs, start, goal, { layer: a.layer, side: e.side, frame: frameOf(w, e.side), blocked: ctx.permanent[a.layer] });
   if (!base || base.length === 0) return undefined;
   // Route cost past walls only: the progress measure (it does not depend on who is in the way).
   const remaining = pathCost(ctx, e, a, base);
@@ -635,7 +635,7 @@ function nextStepTowards(ctx: Intent, e: Entity, a: Archetype, goal: number): { 
   let aroundUnits = false;
   if (base.some((c) => occupied.has(c))) {
     // A route around the units in the way, if it costs at most DETOUR more (bounded search).
-    const around = findPath(w.map, rs, start, goal, { layer: a.layer, side: e.side, blocked: occupied, maxCost: remaining + DETOUR });
+    const around = findPath(w.map, rs, start, goal, { layer: a.layer, side: e.side, frame: frameOf(w, e.side), blocked: occupied, maxCost: remaining + DETOUR });
     if (around && around.length > 0) {
       next = around[0] as number;
       aroundUnits = true;
@@ -647,7 +647,7 @@ function nextStepTowards(ctx: Intent, e: Entity, a: Archetype, goal: number): { 
   // without such a way the unit steps back after all.
   if (next === e.prev && next !== goal) {
     const blocked = new Set(aroundUnits ? occupied : ctx.permanent[a.layer]).add(e.prev);
-    const other = findPath(w.map, rs, start, goal, { layer: a.layer, side: e.side, blocked, maxCost: remaining + DETOUR });
+    const other = findPath(w.map, rs, start, goal, { layer: a.layer, side: e.side, frame: frameOf(w, e.side), blocked, maxCost: remaining + DETOUR });
     if (other && other.length > 0) next = other[0] as number;
   }
   return { next, remaining };
@@ -790,7 +790,8 @@ function nearestCell(ctx: Intent, e: Entity, a: Archetype, accept: (cell: number
   const start = cellOf(w.map, e.x, e.y);
   const dist = new Int32Array(cells).fill(-1);
   // Ordering key (distance, cell index in the side's frame) packed into one number.
-  const frame = (c: number): number => frameIndex(c, e.side, cells);
+  const sideFrame = frameOf(w, e.side);
+  const frame = (c: number): number => frameIndexIn(w.map, sideFrame, c);
   const heap = new NumberHeap();
   dist[start] = 0;
   heap.push(frame(start));
@@ -798,12 +799,12 @@ function nearestCell(ctx: Intent, e: Entity, a: Archetype, accept: (cell: number
     const k = heap.pop();
     const f = k % FRAME;
     const d = (k - f) / FRAME;
-    const c = e.side === 1 ? cells - 1 - f : f;
+    const c = frameCell(w.map, sideFrame, f);
     if (d !== dist[c]) continue;
     if (c !== start && accept(c) && !occupied[a.layer].has(c)) return c;
     const cx = c % width;
     const cy = (c - cx) / width;
-    for (const [dx, dy] of dirsFor(e.side)) {
+    for (const [dx, dy] of frameDirs(sideFrame)) {
       const nx = cx + dx;
       const ny = cy + dy;
       if (nx < 0 || ny < 0 || nx >= width || ny >= w.map.h) continue;
@@ -829,7 +830,7 @@ const FRAME = 2 ** 14;
 function adjacentCover(ctx: Intent, e: Entity, a: Archetype): number | undefined {
   const { w, rs, occupied } = ctx;
   if (a.layer !== 'ground' || terrainAt(w.map, rs, e.x, e.y).cover > 0) return undefined;
-  for (const [dx, dy] of dirsFor(e.side)) {
+  for (const [dx, dy] of frameDirs(frameOf(w, e.side))) {
     const x = e.x + dx;
     const y = e.y + dy;
     if (!passable(w.map, rs, x, y, a.layer) || terrainAt(w.map, rs, x, y).cover === 0) continue;
@@ -865,7 +866,7 @@ function pickTarget(w: World, rs: Ruleset, e: Entity, a: Archetype, tick: number
   const classed = doctrine.priority !== 'weakest' && doctrine.priority !== 'nearest';
   let best: Entity | undefined;
   for (const target of w.entities) {
-    if (target.side === e.side || !visible(target) || !inWeaponRange(w, rs, e, a, target)) continue;
+    if (!hostile(w, e.side, target.side) || !visible(target) || !inWeaponRange(w, rs, e, a, target)) continue;
     if (!best) {
       best = target;
       continue;

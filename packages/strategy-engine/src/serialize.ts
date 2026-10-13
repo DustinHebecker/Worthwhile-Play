@@ -1,7 +1,8 @@
 import { isArrayOf, isInt, isOneOf, isRecord, isUint32, seedFromString } from '@wp/game-core';
 import { DEADLOCK_TICKS, STALL_TICKS, UNREACHABLE_TICKS } from './sim';
-import { archetypeOf, isValidDoctrine, needsDeploy } from './world';
-import { MAX_QUEUE, MAX_SUPPLY, STATUS_KINDS, type Deposit, type Entity, type Order, type Projectile, type QueueItem, type Report, type Ruleset, type Status, type World } from './types';
+import { archetypeOf, canBeNeutral, isValidDoctrine, MAX_SIDES, needsDeploy } from './world';
+import { FRAMES } from './grid';
+import { MAX_QUEUE, MAX_SUPPLY, NEUTRAL, STATUS_KINDS, type Deposit, type Entity, type Frame, type Order, type Projectile, type QueueItem, type Report, type Ruleset, type Status, type World } from './types';
 
 const MAX_DIM = 128;
 const MAX_ID = 0x7fff_ffff;
@@ -63,7 +64,7 @@ function validDeploy(e: Record<string, unknown>, ruleset: Ruleset | undefined): 
  */
 export function isValidWorld(value: unknown, ruleset?: Ruleset): value is World {
   if (!isRecord(value) || value.v !== 1 || typeof value.ruleset !== 'string') return false;
-  if (!isInt(value.tick, 0) || !isInt(value.turn, 0) || !isUint32(value.rng) || !isInt(value.sides, 1, 8) || !isInt(value.nextId, 1, MAX_ID)) return false;
+  if (!isInt(value.tick, 0) || !isInt(value.turn, 0) || !isUint32(value.rng) || !isInt(value.sides, 1, MAX_SIDES) || !isInt(value.nextId, 1, MAX_ID)) return false;
   const map = value.map;
   if (!isRecord(map) || !isInt(map.w, 1, MAX_DIM) || !isInt(map.h, 1, MAX_DIM) || typeof map.terrain !== 'string') return false;
   const w = map.w;
@@ -75,14 +76,20 @@ export function isValidWorld(value: unknown, ruleset?: Ruleset): value is World 
   if (ruleset && (ruleset.economy ? !isArrayOf(value.supply, (v) => isInt(v, 0, MAX_SUPPLY)) || value.supply.length !== value.sides : value.supply !== undefined)) return false;
   if (!ruleset && value.supply !== undefined && !isArrayOf(value.supply, (v) => isInt(v, 0, MAX_SUPPLY))) return false;
   const sides = value.sides;
+  if (value.teams !== undefined && (!isArrayOf(value.teams, (t) => isInt(t, 0, MAX_SIDES - 1)) || value.teams.length !== sides)) return false;
+  if (value.frames !== undefined && (!isArrayOf(value.frames, (f): f is Frame => (FRAMES as readonly unknown[]).includes(f)) || value.frames.length !== sides)) return false;
+  // A neutral Command Post (no playing side): only kinds that may stand neutral; projectiles never.
+  const sideOf = (side: unknown, kind: unknown): boolean => isInt(side, 0, sides - 1) || (side === NEUTRAL && (!ruleset || canBeNeutral(archetypeOf(ruleset, kind as string))));
   const tick = value.tick;
   const nextId = value.nextId;
   const inMap = (x: unknown, y: unknown): boolean => isInt(x, 0, w - 1) && isInt(y, 0, h - 1);
   const isEntity = (e: unknown): e is Entity =>
     isRecord(e) &&
     isInt(e.id, 1, nextId - 1) &&
-    isInt(e.side, 0, sides - 1) &&
     typeof e.kind === 'string' &&
+    sideOf(e.side, e.kind) &&
+    // A neutral post holds, without doctrine, set-up, queue or site (it takes no orders).
+    (e.side !== NEUTRAL || (isRecord(e.order) && e.order.type === 'hold' && e.doctrine === undefined && e.deploy === undefined && e.queue === undefined && e.build === undefined)) &&
     (!ruleset || Object.hasOwn(ruleset.archetypes, e.kind)) &&
     inMap(e.x, e.y) &&
     isInt(e.hp, 1, ruleset ? (archetypeOf(ruleset, e.kind as string)?.hp ?? 0) : Number.MAX_SAFE_INTEGER) &&
@@ -171,8 +178,8 @@ function validIntel(
   const isReport = (r: unknown): r is Report =>
     isRecord(r) &&
     isInt(r.id, 1, dims.nextId - 1) &&
-    isInt(r.side, 0, dims.sides - 1) &&
     typeof r.kind === 'string' &&
+    (isInt(r.side, 0, dims.sides - 1) || (r.side === NEUTRAL && (!ruleset || canBeNeutral(archetypeOf(ruleset, r.kind as string))))) &&
     (!ruleset || Object.hasOwn(ruleset.archetypes, r.kind)) &&
     isInt(r.x, 0, dims.w - 1) &&
     isInt(r.y, 0, dims.h - 1) &&

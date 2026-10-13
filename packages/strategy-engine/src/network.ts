@@ -1,6 +1,6 @@
 import { cellOf, dist2, terrainAt } from './grid';
 import type { Entity, Ruleset, World } from './types';
-import { archetypeOf } from './world';
+import { archetypeOf, hostile } from './world';
 
 /** A side's command network at one moment (derived data, never serialized). */
 export interface Network {
@@ -49,7 +49,7 @@ export function jammedCells(world: World, ruleset: Ruleset, side: number): Uint8
   let any = false;
   for (const e of world.entities) {
     const ew = archetypeOf(ruleset, e.kind)?.ew;
-    if (e.side !== side && ew?.role === 'jammer' && isActiveEw(ruleset, e)) {
+    if (hostile(world, e.side, side) && ew?.role === 'jammer' && isActiveEw(ruleset, e)) {
       disc(e, ew.radius, 1, jam);
       any = true;
     }

@@ -1,4 +1,4 @@
-import { cellOf, dirsFor, inBounds, passable } from './grid';
+import { cellOf, frameDirs, frameOf, frameVector, inBounds, passable } from './grid';
 import { computeNetwork, isActiveNode, type Network } from './network';
 import type { Archetype, Deposit, Entity, GameMap, Ruleset, World } from './types';
 import { archetypeOf } from './world';
@@ -54,20 +54,21 @@ const RING2: readonly (readonly [number, number])[] = (() => {
 
 /**
  * The free cell near `yard` where a produced unit of `arch` appears: the first free passable
- * neighbour, else a cell two out, in the side's own frame (mirrored sides choose mirrored cells), or `undefined`.
+ * neighbour, else a cell two out, in the side's own frame (symmetric sides choose symmetric cells), or `undefined`.
  */
 export function spawnCell(world: World, ruleset: Ruleset, yard: Entity, arch: Archetype): { x: number; y: number } | undefined {
   const taken = new Set(world.entities.filter((e) => archetypeOf(ruleset, e.kind)?.layer === arch.layer).map((e) => cellOf(world.map, e.x, e.y)));
   // Neighbours first, then the ring two cells out (a yard ringed by its own units still delivers).
-  const ring2 = RING2.map(([dx, dy]) => (yard.side === 1 ? ([-dx, -dy] as const) : ([dx, dy] as const)));
+  const frame = frameOf(world, yard.side);
+  const ring2 = RING2.map(([dx, dy]) => frameVector(frame, dx, dy));
   // A cell two out only when a passable neighbour of the yard leads to it (never across a barrier).
   const bridged = (x: number, y: number): boolean =>
-    dirsFor(yard.side).some(([dx, dy]) => {
+    frameDirs(frame).some(([dx, dy]) => {
       const nx = yard.x + dx;
       const ny = yard.y + dy;
       return inBounds(world.map, nx, ny) && passable(world.map, ruleset, nx, ny, arch.layer) && Math.max(Math.abs(nx - x), Math.abs(ny - y)) <= 1;
     });
-  for (const [dx, dy] of [...dirsFor(yard.side), ...ring2]) {
+  for (const [dx, dy] of [...frameDirs(frame), ...ring2]) {
     const x = yard.x + dx;
     const y = yard.y + dy;
     if (!inBounds(world.map, x, y) || !passable(world.map, ruleset, x, y, arch.layer) || taken.has(cellOf(world.map, x, y))) continue;
