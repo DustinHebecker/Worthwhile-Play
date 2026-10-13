@@ -7,6 +7,7 @@ import {
   NEUTRAL,
   observe,
   resolveTurn,
+  runTicks,
   STRATEGY_RULESET,
   validateCommand,
   worldHash,
@@ -143,6 +144,48 @@ describe('what a capture reveals', () => {
     const r = turn(w);
     expect(r.reported![2]!.some((e) => e.t === 'captured' && e.from === 2 && e.to === 1)).toBe(true);
     expect(r.world.intel![2]!.find((rep) => rep.x === 5 && rep.y === 6)?.side).toBe(1);
+  });
+});
+
+describe('no leaks through captures and eliminations (3+ sides)', () => {
+  it('property: a capture is told only to the old or new owner or a side that observes the post; an elimination names only the side', () => {
+    for (const sides of [3, 4]) {
+      fc.assert(
+        fc.property(arbWorld({ sides, neutral: true, supply: 300, ruleset: CAPTURE }), ({ world, plans }) => {
+          let w = world;
+          // Tick by tick: what a side may be told is judged against what it knew before or after that tick
+          // (an elimination at the end of a turn drops reports of pieces the side did see that tick).
+          for (const plan of plans) {
+            for (let t = 0; t < CAPTURE.ticksPerTurn; t++) {
+              const r = runTicks(w, CAPTURE, t === 0 ? plan : [], 1);
+              for (let side = 0; side < sides; side++) {
+                const knew = new Set([...(w.intel?.[side] ?? []), ...r.world.intel![side]!].map((rep) => rep.id));
+                const live = new Set(r.world.intel![side]!.filter((rep) => rep.live).map((rep) => rep.id));
+                const own = (id: number) => w.entities.some((u) => u.id === id && u.side === side);
+                for (const e of r.reported![side]!) {
+                  if (e.t === 'captured') expect(e.from === side || e.to === side || live.has(e.id), `side ${side} told of capture of ${e.id}`).toBe(true);
+                  if (e.t === 'eliminated') expect(Object.keys(e).sort()).toEqual(['side', 't', 'tick']);
+                  // A shot told to a side is its own, at its own unit, or at a unit it knows of.
+                  if (e.t === 'fire') expect(own(e.id) || own(e.target) || knew.has(e.target), `side ${side} told of a shot at ${e.target}`).toBe(true);
+                }
+              }
+              w = r.world;
+            }
+            w = { ...w, turn: w.turn + 1 };
+          }
+        }),
+        { numRuns: 80 }
+      );
+    }
+  });
+
+  it('a capture next to a side that sees it is told to that side too (the post\'s cell is observed)', () => {
+    // Side 2's scout watches from two cells off (a vehicle: it does not claim); side 1 is far away.
+    const w = worldOf(3, [{ side: NEUTRAL, kind: 'command-post', x: 5, y: 3 }, { side: 0, kind: 'rifles', x: 4, y: 3 }, { side: 2, kind: 'outrider', x: 7, y: 3 }]);
+    const r = turn(w);
+    expect(at(r.world, 5, 3)!.side).toBe(0);
+    expect(r.reported![2]!.some((e) => e.t === 'captured' && e.to === 0)).toBe(true);
+    expect(r.reported![1]!.some((e) => e.t === 'captured')).toBe(false);
   });
 });
 
