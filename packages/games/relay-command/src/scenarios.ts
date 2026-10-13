@@ -6,6 +6,10 @@ import type { Scenario } from '@wp/strategy-engine';
  */
 export interface ScenarioSpec {
   readonly id: string;
+  /**
+   * Default length when `newGame` is called without one (tests, replays). The app always passes
+   * the length chosen in the setup (open end, 12, 24 or quick match), so this is not shown anywhere.
+   */
   readonly turnLimit: number;
   readonly scenario: Scenario;
 }
@@ -132,7 +136,8 @@ export const CROSSROADS: ScenarioSpec = symmetric(
 
 /**
  * Marsh Delta: 20×12, channels of water cut the middle; a causeway road crosses it, a second
- * road runs along the far side. Two outriders per side scout the far deposits.
+ * road runs along the far side. Everyone starts inside the own radio cover; two outriders per side
+ * are there to scout the far deposits.
  */
 export const MARSH_DELTA: ScenarioSpec = symmetric(
   'marsh-delta',
@@ -156,12 +161,12 @@ export const MARSH_DELTA: ScenarioSpec = symmetric(
     { kind: 'howitzer', x: 18, y: 0 },
     { kind: 'rifles', x: 15, y: 1 },
     { kind: 'rifles', x: 14, y: 2 },
-    { kind: 'rifles', x: 13, y: 3 },
+    { kind: 'rifles', x: 14, y: 3 },
     { kind: 'lancer', x: 16, y: 4 },
     { kind: 'lancer', x: 17, y: 5 },
     { kind: 'warden', x: 18, y: 4 },
-    { kind: 'outrider', x: 12, y: 0 },
-    { kind: 'outrider', x: 11, y: 2 }
+    { kind: 'outrider', x: 14, y: 0 },
+    { kind: 'outrider', x: 16, y: 0 }
   ],
   [
     { x: 19, y: 3 },
