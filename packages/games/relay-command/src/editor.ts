@@ -52,7 +52,7 @@ export interface EditorOptions {
 /** Milliseconds after arming a two-press button in which a second press does not count. */
 const CONFIRM_GAP = 400;
 
-export function createEditor(o: EditorOptions): { readonly el: HTMLElement; render(): void } {
+export function createEditor(o: EditorOptions): { readonly el: HTMLElement; render(): void; forget(): void } {
   const { t } = o;
   let tool: Tool = { type: 'terrain', code: '=' };
   let side = 0;
@@ -63,15 +63,19 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
   let codeOpen = false;
   let painting = false;
   let lastCell = -1;
-  /** The map before the last change (one step of undo; covers resizing and loading too). */
-  let previous: EditMap | null = null;
+  /**
+   * The whole draft before the last change (map, library slot, mirror mode): one step of undo,
+   * covering resizing and loading too. Cleared whenever the editor opens or closes, a game starts
+   * or the state is replaced, so it never reaches into another session's map.
+   */
+  let previous: MapDraft | null = null;
 
   const map = () => o.draft().map;
   const mapName = (m: EditMap) => m.name.trim() || t('editor.untitled');
   const set = (next: EditMap, message?: string) => {
     if (next === map() && message === undefined) return;
     // A drag paints many cells: it is one change for undo (the map before it began).
-    if (!painting || lastStroke !== strokeId) previous = map();
+    if (!painting || lastStroke !== strokeId) previous = o.draft();
     lastStroke = strokeId;
     o.change({ ...o.draft(), map: next }, message);
   };
@@ -79,7 +83,7 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
   let lastStroke = -1;
   /** Replaces the whole map (load, map code): undoable like any edit. */
   const replace = (draft: MapDraft, message: string) => {
-    previous = map();
+    previous = o.draft();
     o.change(draft, message);
   };
   /** First press arms, a deliberate second press (not within CONFIRM_GAP) confirms. */
@@ -335,7 +339,7 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
     if (!previous) return;
     const back = previous;
     previous = null;
-    o.change({ ...o.draft(), map: back }, t('editor.undone'));
+    o.change(back, t('editor.undone'));
     say(t('editor.undone'));
   }
   function onSave(): void {
@@ -470,5 +474,12 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
     }
   }, true);
 
-  return { el, render };
+  /** Forgets the undo step and any armed button (the editor opened, closed, or its draft was replaced). */
+  function forget(): void {
+    previous = null;
+    armed = null;
+    painting = false;
+  }
+
+  return { el, render, forget };
 }

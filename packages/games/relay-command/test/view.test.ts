@@ -756,6 +756,40 @@ describe('Relay Command map editor', () => {
     expect($('ed-notice').textContent).toBe('This device did not keep the map (storage blocked or full). Copy the map code to keep it.');
   });
 
+  it('undo restores the whole draft (map and its saved place), and is forgotten when the editor closes', () => {
+    const name = (v: string) => {
+      const input = $('ed-name') as HTMLInputElement;
+      input.value = v;
+      input.dispatchEvent(new Event('change'));
+    };
+    const load = (value: string) => {
+      ($('ed-start') as HTMLSelectElement).value = value;
+      click('ed-load');
+      later();
+      click('ed-load');
+    };
+    click('rc-editor-open');
+    name('A');
+    click('ed-save'); // slot 0
+    load('blank');
+    name('B');
+    click('ed-save'); // slot 1
+    expect(state().edit!.slot).toBe(1);
+    load('slot:0');
+    expect(state().edit).toMatchObject({ slot: 0, map: expect.objectContaining({ name: 'A' }) });
+    click('ed-undo');
+    expect(state().edit).toMatchObject({ slot: 1, map: expect.objectContaining({ name: 'B' }) });
+    click('ed-save');
+    expect($('ed-library').textContent).toContain('A (16×12)');
+    expect($('ed-library').textContent).toContain('B (16×12)');
+    // Closing forgets the step: reopened, there is nothing to undo.
+    name('B2');
+    expect(($('ed-undo') as HTMLButtonElement).disabled).toBe(false);
+    click('ed-close');
+    click('rc-editor-open');
+    expect(($('ed-undo') as HTMLButtonElement).disabled).toBe(true);
+  });
+
   it('shares a map as a code, refuses a bad code, and asks twice before replacing or deleting', () => {
     click('rc-editor-open');
     click('ed-copy');

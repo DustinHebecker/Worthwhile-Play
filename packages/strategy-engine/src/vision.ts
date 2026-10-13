@@ -131,14 +131,16 @@ export function updateIntel(world: World, ruleset: Ruleset, gone: readonly Entit
     // So does it of selling one of its own structures.
     const knownLoss = (e: Entity): boolean => e.side === side && (archetypeOf(ruleset, e.kind)?.comms?.role === 'source' || events?.some((ev, i) => i >= from && ev.t === 'sold' && ev.id === e.id) === true);
     const previous = world.intel?.[side] ?? [];
+    const seenCell = (x: number, y: number): boolean => observed[cellOf(world.map, x, y)] === 1;
     const reports = updatedReports(world, side, observed, previous, gone, knownLoss, revealedEmitters(world, ruleset, side, network));
     intel.push(reports);
     const list = reported?.[side];
     if (!events || !list) continue;
-    // Own units found missing (destroyed out of contact, their last cell now seen empty): told once.
+    // Own units found missing (destroyed out of contact, their last cell now seen empty): told
+    // once, unless the side saw the destruction or knew of it (then `destroyed` tells it).
     const kept = new Set(reports.map((r) => r.id));
-    const goneIds = new Set(gone.map((e) => e.id));
-    for (const r of previous) if (r.side === side && !kept.has(r.id) && !goneIds.has(r.id)) list.push({ t: 'missing', tick: world.tick, id: r.id, side, kind: r.kind, x: r.x, y: r.y });
+    const toldLoss = new Set(gone.filter((e) => seenCell(e.x, e.y) || knownLoss(e)).map((e) => e.id));
+    for (const r of previous) if (r.side === side && !kept.has(r.id) && !toldLoss.has(r.id)) list.push({ t: 'missing', tick: world.tick, id: r.id, side, kind: r.kind, x: r.x, y: r.y });
     const seen = (x: number, y: number): boolean => observed[cellOf(world.map, x, y)] === 1;
     const live = new Set(reports.filter((r) => r.live).map((r) => r.id));
     const lost = new Set<number>();

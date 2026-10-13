@@ -194,6 +194,7 @@ describe('vision properties', () => {
       fc.property(arbScenario, ({ world, plans }) => {
         let w = asFog(world);
         for (const plan of plans) {
+          const before = w;
           const r = resolveTurn(w, rs, [plan]);
           w = r.world;
           for (let side = 0; side < w.sides; side++) {
@@ -208,6 +209,15 @@ describe('vision properties', () => {
             const truth = r.events.map((ev) => (ev.t === 'sold' && ev.side !== side ? JSON.stringify({ ...ev, refund: undefined }) : JSON.stringify(ev)));
             // `missing` exists in reports only (an own unit found lost long after it died unseen).
             for (const ev of r.reported?.[side] ?? []) if (ev.t !== 'missing') expect(truth).toContain(JSON.stringify(ev));
+            // A `missing` names an own unit that no longer exists and that the side no longer reports.
+            for (const ev of r.reported?.[side] ?? []) {
+              if (ev.t !== 'missing') continue;
+              expect(ev.side).toBe(side);
+              // Reported before the turn (or new during it: a unit produced and lost within one turn).
+              expect((before.intel?.[side]?.some((rep) => rep.id === ev.id) ?? false) || ev.id >= before.nextId).toBe(true);
+              expect(r.world.entities.some((e) => e.id === ev.id)).toBe(false);
+              expect(r.world.intel?.[side]?.some((rep) => rep.id === ev.id)).toBe(false);
+            }
           }
           expect(isValidWorld(JSON.parse(JSON.stringify(w)), rs)).toBe(true);
         }
@@ -398,6 +408,22 @@ describe('own units lost out of contact (owner report after PR #14)', () => {
     expect(report(second.world, 0, 3)).toBeUndefined();
     expect(second.reported[0]!.filter((e) => e.t === 'missing')).toEqual([expect.objectContaining({ t: 'missing', id: 3, side: 0, kind: 'rifles', x: 9, y: 1 })]);
     expect(second.reported[1]!.some((e) => e.t === 'missing')).toBe(false);
+  });
+
+  it('a unit killed unseen elsewhere while its last reported cell is in sight is told missing, never vanishing silently', () => {
+    const w = worldOf(open(12, 3), [
+      { side: 0, kind: 'command-post', x: 0, y: 1 },
+      { side: 1, kind: 'command-post', x: 11, y: 2 },
+      { side: 0, kind: 'rifles', x: 9, y: 1 },
+      { side: 1, kind: 'lancer', x: 10, y: 1 }
+    ]);
+    unit(w, 3).hp = 1;
+    // The side last heard of the squad at (3,1), a cell its post sees.
+    w.intel = w.intel!.map((list, side) => (side === 0 ? list.map((r) => (r.id === 3 ? { ...r, x: 3, y: 1, live: false } : r)) : list));
+    const r = play(w, 2);
+    expect(r.world.entities.some((e) => e.id === 3)).toBe(false);
+    expect(report(r.world, 0, 3)).toBeUndefined();
+    expect(r.reported[0]!.filter((e) => e.t === 'missing' || (e.t === 'destroyed' && e.id === 3))).toEqual([expect.objectContaining({ t: 'missing', id: 3 })]);
   });
 
   it('a unit alive out of contact keeps its ghost (the side cannot know where it went)', () => {

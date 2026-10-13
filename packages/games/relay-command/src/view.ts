@@ -362,18 +362,21 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   });
 
   function openEditor(): void {
+    editor.forget();
     // Start from the map being played (a player-made one), else an empty map; mirrored edits by default.
     if (!state.edit) commit({ ...state, edit: { map: state.map ?? blankMap(16, 12), slot: null, mirror: true } });
     render();
     editor.el.querySelector<HTMLElement>('[data-testid="ed-map"]')?.focus();
   }
   function closeEditor(): void {
+    editor.forget();
     commit({ ...state, edit: null });
     render();
     editorBtn.focus();
   }
   function playMap(m: EditMap): void {
     if (mapIssues(m).length > 0) return;
+    editor.forget();
     selected = null;
     const limit = state.turnLimit;
     commit(newGame(normalizeSeed(state.seed + 1), FIELD_EXERCISE, state.difficulty, limit, state.quick, m), t('announce.setup', { scenario: mapLabel(m) }));
@@ -1766,6 +1769,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     newGame(options: NewGameOptions) {
       // An open map draft survives "New game" (it is the player's work, not the game's).
       const draft = state.edit;
+      editor.forget();
       state = { ...newGame(normalizeSeed(options.seed), FIELD_EXERCISE, isDifficulty(options.difficulty) ? options.difficulty : 'normal', null), edit: draft };
       context.setDifficulty?.(state.difficulty); // an unknown host value fell back to 'normal'
       selected = null;
@@ -1776,6 +1780,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     },
     restore(saved: RcState) {
       settleSell = null;
+      editor.forget();
       const spec = specOf(saved);
       state = spec ? structuredClone(saved) : newGame(saved.seed, FIELD_EXERCISE, saved.difficulty, null);
       context.setDifficulty?.(state.difficulty); // the save decides the level, not the host's select
