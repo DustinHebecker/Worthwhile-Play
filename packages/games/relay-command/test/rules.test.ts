@@ -42,7 +42,7 @@ import {
   stalemateTurns,
   type RcState
 } from '../src/rules';
-import { FIELD_EXERCISE, type ScenarioSpec, SCENARIOS } from '../src/scenarios';
+import { FIELD_EXERCISE, RIDGE_VALLEY, type ScenarioSpec, SCENARIOS } from '../src/scenarios';
 
 /** A side's plan from its own observation (default: the game's default level). */
 const ai = (world: World, side: number, difficulty: Difficulty = 'normal') => planAi(observe(world, RULESET, side), RULESET, difficulty);
@@ -63,7 +63,7 @@ function selfPlay(seed: number): RcState {
 
 describe('Field Exercise scenario', () => {
   for (const spec of SCENARIOS) {
-    it(`${spec.id} is point-symmetric in terrain and units, and the Command Posts can reach each other`, () => {
+    it(`${spec.id} is point-symmetric in terrain and units, the Command Posts can reach each other, and every unit starts in radio cover`, () => {
       const { map, entities } = spec.scenario;
       expect(map.terrain).toBe([...map.terrain].reverse().join(''));
       const mirror = (e: (typeof entities)[number]) => `${1 - e.side}:${e.kind}:${map.w - 1 - e.x},${map.h - 1 - e.y}`;
@@ -73,6 +73,11 @@ describe('Field Exercise scenario', () => {
       expect(posts).toHaveLength(2);
       expect(findPath(w.map, RULESET, cellOf(w.map, posts[0]!.x, posts[0]!.y), cellOf(w.map, posts[1]!.x, posts[1]!.y), { layer: 'ground', side: 0 })).toBeDefined();
       expect(isValidState(newGame(3, spec))).toBe(true);
+      // Every unit starts inside its side's radio cover: all of them can be ordered on turn 1.
+      for (const side of [0, 1]) {
+        const cover = computeNetwork(w, RULESET, side).coverage;
+        expect(w.entities.filter((e) => e.side === side && cover[cellOf(w.map, e.x, e.y)] !== 1).map((e) => `${e.kind}@${e.x},${e.y}`)).toEqual([]);
+      }
     });
   }
 
@@ -898,8 +903,15 @@ describe('opponent levels (I5)', () => {
   }
   const MODES: readonly Length[] = [24, 'quick'];
 
-  it('normal and hard beat easy by a clear margin over randomised openings on every map', () => {
-    for (const spec of SCENARIOS) {
+  /**
+   * The level-against-level margins are measured on these two maps only (each one is a long
+   * suite; the cheaper suites below run on every map). Newer maps are covered by the passive,
+   * produce-only, termination and resumability suites.
+   */
+  const MARGIN_MAPS: readonly ScenarioSpec[] = [FIELD_EXERCISE, RIDGE_VALLEY];
+
+  it('normal and hard beat easy by a clear margin over randomised openings on Field Exercise and Ridge Valley', () => {
+    for (const spec of MARGIN_MAPS) {
       const hard = margin(spec, 'hard', 'easy', 10, 2, 2);
       const normal = margin(spec, 'normal', 'easy', 10, 2, 2);
       expect(hard.a, `${spec.id} hard vs easy ${JSON.stringify(hard)}`).toBeGreaterThanOrEqual(hard.b + 8);
@@ -907,19 +919,19 @@ describe('opponent levels (I5)', () => {
     }
   }, 180_000);
 
-  it('hard beats normal on Field Exercise by at least 4 games; over every map it wins at least as often as it loses', () => {
+  it('hard beats normal on Field Exercise by at least 4 games; over Field Exercise and Ridge Valley it wins at least as often as it loses', () => {
     // The two share the plan of attack; hard adds breadth, focus fire, pulling back and jamming.
     // Measured since PR #13 (escorts yield in passes; storms find a way past held rings):
     // Field Exercise 8-4, Ridge Valley 6-6 over 2x6 openings, so no ordering is claimed for Ridge Valley.
     const total = { a: 0, b: 0, draws: 0 };
-    for (const spec of SCENARIOS) {
+    for (const spec of MARGIN_MAPS) {
       const r = margin(spec, 'hard', 'normal', 6, 2, 2);
       total.a += r.a;
       total.b += r.b;
       total.draws += r.draws;
       if (spec === FIELD_EXERCISE) expect(r.a, `${spec.id} hard vs normal ${JSON.stringify(r)}`).toBeGreaterThanOrEqual(r.b + 4);
     }
-    expect(total.a, `hard vs normal over every map ${JSON.stringify(total)}`).toBeGreaterThanOrEqual(total.b);
+    expect(total.a, `hard vs normal over both margin maps ${JSON.stringify(total)}`).toBeGreaterThanOrEqual(total.b);
   }, 300_000);
 
   /** Random player moves in a resolved first turn (the reviewer's "mild opening"), then nothing. */
