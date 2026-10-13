@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { BASE_RULESET, canonicalJson, isValidWorld, resolveTurn, STRATEGY_RULESET, worldHash, type Command, type World } from '../src';
-import { arbScenario, mirrorCommands, mirrorWorld } from './helpers';
+import { BASE_RULESET, canonicalJson, createWorld, isValidWorld, resolveTurn, STRATEGY_RULESET, worldHash, type Command, type World } from '../src';
+import { arbScenario, mirrorCommands, mirrorWorld, open } from './helpers';
 
 const rs = BASE_RULESET;
 const play = (world: World, plans: readonly Command[][]): World =>
@@ -110,6 +110,54 @@ describe('engine properties with the command network (strategy ruleset)', () => 
         expect(canonicalJson(playNet(w, plans.map((p) => bySide(p, 1))))).toBe(canonicalJson(playNet(w, plans.map((p) => bySide(p, 0)))));
       }),
       RUNS
+    );
+  });
+});
+
+describe('contested sales (review of PR #14)', () => {
+  const net = STRATEGY_RULESET;
+  /**
+   * A structure is sold in the same batch in which the enemy attacks it and the enemy post places
+   * a site on its cell; small open map, overlapping coverage. Old code (sale applied mid-batch)
+   * failed this within a few dozen cases; the plan order must not matter.
+   */
+  const arbContested = fc.record({
+    kind: fc.constantFrom('relay-mast', 'muster', 'motor-pool'),
+    x: fc.integer({ min: 2, max: 5 }),
+    y: fc.integer({ min: 0, max: 3 }),
+    dx: fc.integer({ min: 1, max: 2 }),
+    dy: fc.integer({ min: -1, max: 1 }),
+    attacker: fc.constantFrom('rifles', 'lancer', 'outrider'),
+    site: fc.constantFrom('relay-mast', 'muster'),
+    extra: fc.boolean(),
+    hidden: fc.boolean(),
+    gx: fc.integer({ min: 0, max: 7 }),
+    gy: fc.integer({ min: 0, max: 3 })
+  });
+  it('P6b: a sale contested by an attack and a placement on its cell gives the same world in both plan orders', () => {
+    fc.assert(
+      fc.property(arbContested, ({ kind, x, y, dx, dy, attacker, site, extra, hidden, gx, gy }) => {
+        const ay = Math.max(0, Math.min(3, y + dy));
+        const entities = [
+          { side: 0, kind: 'command-post', x: 0, y: 1 },
+          { side: 1, kind: 'command-post', x: 7, y: 2 },
+          { side: 0, kind, x, y },
+          { side: 1, kind: attacker, x: Math.min(7, x + dx), y: ay === 2 && x + dx >= 7 ? 3 : ay }
+        ];
+        const w = createWorld({ map: open(8, 4), sides: 2, entities, seed: 1, supply: [400, 400] }, net);
+        // The attacker has somewhere to go if its attack is refused or ends; the structure is
+        // either known to the enemy (the attack is contested) or not (the placement is).
+        w.entities[3]!.order = { type: 'move', x: gx, y: gy };
+        if (hidden) w.intel = w.intel!.map((list, side) => (side === 1 ? list.filter((r) => r.id !== 3) : list));
+        const plans = [
+          [{ side: 0, unit: 3, order: { type: 'sell' } }, ...(extra ? [{ side: 0, unit: 1, order: { type: 'build', kind: 'relay-mast', x: 1, y: 3 } }] : [])],
+          [{ side: 1, unit: 4, order: { type: 'attack', target: 3 } }, { side: 1, unit: 2, order: { type: 'build', kind: site, x, y } }]
+        ] as Command[][];
+        const a = resolveTurn(w, net, [[...plans[0]!, ...plans[1]!]]);
+        const b = resolveTurn(w, net, [[...plans[1]!, ...plans[0]!]]);
+        expect(canonicalJson(b.world)).toBe(canonicalJson(a.world));
+      }),
+      { numRuns: 300 }
     );
   });
 });

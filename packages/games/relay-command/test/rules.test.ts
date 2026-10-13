@@ -202,6 +202,38 @@ describe('Field Exercise scenario', () => {
     expect(orderRefusal(s, commandPost(s.world, PLAYER)!.id, { type: 'sell' })).toBe('cannot-sell');
   });
 
+  it('a Relay Mast planned for sale still carries the network while planning (as in the engine, which tears it down after the batch)', () => {
+    const s = newGame(1);
+    const yard = own(s).find((e) => e.kind === 'muster')!;
+    const post = commandPost(s.world, PLAYER)!;
+    // A mast inside the post's coverage, and the yard moved to a free cell covered only through the mast.
+    const before = computeNetwork(s.world, RULESET, PLAYER).coverage;
+    const free = (x: number, y: number) => passable(s.world.map, RULESET, x, y, 'ground') && !s.world.entities.some((e) => e.x === x && e.y === y);
+    let placed = false;
+    for (let mx = 0; mx < s.world.map.w && !placed; mx++) {
+      for (let my = 0; my < s.world.map.h && !placed; my++) {
+        if (before[cellOf(s.world.map, mx, my)] !== 1 || !free(mx, my) || (mx === post.x && my === post.y)) continue;
+        const trial = structuredClone(s);
+        const mast = { ...structuredClone(yard), id: trial.world.nextId++, kind: 'relay-mast', x: mx, y: my, hp: RULESET.archetypes['relay-mast']!.hp };
+        delete (mast as { queue?: unknown }).queue;
+        trial.world.entities.push(mast);
+        const withMast = computeNetwork(trial.world, RULESET, PLAYER).coverage;
+        const target = [...withMast.keys()].find((c) => withMast[c] === 1 && before[c] !== 1 && free(c % s.world.map.w, Math.floor(c / s.world.map.w)));
+        if (target === undefined) continue;
+        const moved = trial.world.entities.find((e) => e.id === yard.id)!;
+        Object.assign(moved, { x: target % s.world.map.w, y: Math.floor(target / s.world.map.w) });
+        trial.world.entities.sort((a, b) => a.id - b.id);
+        delete trial.world.intel;
+        const sale = planOrder(trial, mast.id, { type: 'sell' });
+        expect(sale).toBeDefined();
+        expect(orderRefusal(sale!, yard.id, { type: 'produce', kind: 'rifles' })).toBeNull();
+        expect(orderRefusal(sale!, mast.id, { type: 'produce', kind: 'rifles' })).toBe('cannot-produce');
+        placed = true;
+      }
+    }
+    expect(placed).toBe(true);
+  });
+
   it('settling decides on strength: the side ahead wins, whoever settles', () => {
     const base = newGame(1, FIELD_EXERCISE, 'easy', null);
     const enemyUnits = base.world.entities.filter((e) => e.side === OPPONENT && e.kind !== 'command-post').map((e) => e.id);

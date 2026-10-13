@@ -62,6 +62,8 @@ import { drawIcon } from './icons';
 import { FIELD_EXERCISE, SCENARIOS } from './scenarios';
 import './styles.css';
 
+/** Milliseconds after arming a two-press confirmation in which a second press does not count. */
+const CONFIRM_GAP = 400;
 /** Open end: from this many quiet turns on the turn line says that strength will decide. */
 const QUIET_NOTICE = 3;
 
@@ -634,13 +636,23 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     if ((event?.detail ?? 0) > 1) return;
     if (settleSell !== id) {
       settleSell = id;
+      armedAt = performance.now();
       render();
       jobsEl.querySelector<HTMLElement>('[data-testid="rc-sell"]')?.focus();
       return;
     }
+    if (tooSoon()) return;
     settleSell = null;
     orderJob({ type: 'sell' });
   }
+
+  /**
+   * Two-press confirmations (sale, end on strength): a second press within CONFIRM_GAP ms of
+   * arming is not deliberate (a quick double tap, a held Enter's auto-repeat) and is ignored.
+   * A timestamp, not a timer: nothing waits.
+   */
+  let armedAt = 0;
+  const tooSoon = (): boolean => performance.now() - armedAt < CONFIRM_GAP;
 
   /** Queues a one-shot job (production) for the selected structure, or explains why not. */
   function orderJob(order: Order): void {
@@ -1699,9 +1711,11 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     if (!canSettle(state)) return;
     if (!settleArmed) {
       settleArmed = true;
+      armedAt = performance.now();
       render();
       return;
     }
+    if (tooSoon()) return;
     settleArmed = false;
     const next = settle(state);
     commit(next, statusOf(next));

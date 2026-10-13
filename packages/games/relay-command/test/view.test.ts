@@ -9,6 +9,8 @@ import { CELL } from '../src/view';
 
 let ctx: TestContext;
 let instance: GameInstance<RcState>;
+/** Two-press confirmations ignore a quick second press; the fake clock (vi.useFakeTimers below) moves on. */
+const later = () => vi.advanceTimersByTime(1000);
 
 const $ = (id: string) => ctx.context.root.querySelector<HTMLElement>(`[data-testid="${id}"]`)!;
 const click = (id: string) => $(id).dispatchEvent(new MouseEvent('click', { bubbles: true }));
@@ -496,6 +498,10 @@ describe('Relay Command view', () => {
     btn.click();
     expect(state().phase).toBe('plan');
     expect(($('rc-settle') as HTMLButtonElement).textContent).toBe('Press again to end the game');
+    // A second press right after arming (a quick double tap, a held Enter) does not count.
+    ($('rc-settle') as HTMLButtonElement).click();
+    expect(state().phase).toBe('plan');
+    later();
     ($('rc-settle') as HTMLButtonElement).click();
     expect(state()).toMatchObject({ phase: 'finished', result: 'lost', settled: true });
     expect($('rc-status').textContent).toBe(`You ended the game on strength; the opponent was stronger ${score}.`);
@@ -556,6 +562,10 @@ describe('Relay Command view', () => {
     // The second click of a double-click is not a deliberate second press.
     $('rc-sell').dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 2 }));
     expect(state().draft).toHaveLength(1);
+    // Nor is a press right after arming (a double tap 80 ms apart has detail 1, a held Enter detail 0).
+    click('rc-sell');
+    expect(state().draft).toHaveLength(1);
+    later();
     click('rc-sell');
     expect(state().draft.map((c) => c.order.type)).toEqual(['repair', 'sell']);
     expect($('rc-jobs').textContent).toContain('Planned: sell (+50 Supply)');

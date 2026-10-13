@@ -158,6 +158,8 @@ export function orderRefusal(state: RcState, unit: number, order: Order, doctrin
   if (state.phase !== 'plan') return 'finished';
   // One-shot commands are checked against the world as the planned ones leave it (Supply spent,
   // queues filled), so the player cannot plan more than can be paid for.
+  // A structure planned for sale takes no more jobs (it is torn down when the turn is carried out).
+  if (isOneShot(order) && state.draft.some((c) => c.unit === unit && c.order.type === 'sell')) return SALE_PLANNED[order.type] ?? 'bad-order';
   const world = isOneShot(order) ? afterJobs(state) : state.world;
   const check = validateCommand(world, RULESET, doctrine ? { side: PLAYER, unit, order, doctrine } : { side: PLAYER, unit, order });
   if (!check.ok) return check.reason;
@@ -166,10 +168,14 @@ export function orderRefusal(state: RcState, unit: number, order: Order, doctrin
   return null;
 }
 
+/** The refusal for a job on a structure already planned for sale, by the kind of job. */
+const SALE_PLANNED: Partial<Record<Order['type'], CommandRefusal>> = { produce: 'cannot-produce', build: 'cannot-build', repair: 'cannot-repair', sell: 'cannot-sell' };
+
 /**
  * The world as the planned one-shot commands leave it: Supply paid, queues filled, planned sites
- * placed, planned repairs done. A structure planned for sale takes no more jobs but still holds
- * its cell (the engine tears it down after the whole batch, so a placement there is blocked).
+ * placed, planned repairs done. A structure planned for sale stays as it is: it still holds its
+ * cell and works in the network, as in the engine, which tears it down after the whole batch
+ * (no more jobs for it: see `orderRefusal`).
  * A sale's refund is not counted: it arrives when the turn is carried out.
  */
 function afterJobs(state: RcState): World {
@@ -185,11 +191,7 @@ function afterJobs(state: RcState): World {
       }
       continue;
     }
-    if (c.order.type === 'sell') {
-      const structure = world.entities.find((e) => e.id === c.unit);
-      if (structure) structure.status = [...structure.status, { kind: 'disabled', ticks: 1 }];
-      continue;
-    }
+    if (c.order.type === 'sell') continue;
     const arch = archetypeOf(RULESET, (c.order as { kind: string }).kind);
     if (world.supply) world.supply[PLAYER] = (world.supply[PLAYER] ?? 0) - (arch?.cost ?? 0);
     if (c.order.type === 'produce') {

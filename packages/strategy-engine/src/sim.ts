@@ -93,6 +93,9 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
   // (an attack on it, a placement on its cell). Reported to the intel like losses.
   const selling: Entity[] = [];
   const sold: Entity[] = [];
+  // Sites placed in this batch: paid in the loop, set down after it with ids given by side and
+  // cell, so the order in which the plans were handed in never decides which site gets which id.
+  const placing: { unit: Entity; kind: string; x: number; y: number }[] = [];
   for (const c of commands) {
     if (!validateCommand(w, rs, c, networks).ok) continue;
     // A placement the side's knowledge allowed may still find the cell taken: refused unpaid.
@@ -103,6 +106,7 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
       const blocked =
         (placedBy.get(o.y * w.map.w + o.x)?.size ?? 0) > 1 ||
         w.entities.some((e) => e.x === o.x && e.y === o.y && arch(e).layer === structure.layer) ||
+        placing.some((p) => p.x === o.x && p.y === o.y && arch({ kind: p.kind } as Entity).layer === structure.layer) ||
         (structure.extractor && (deposit?.left ?? 0) <= 0);
       if (blocked) {
         events.push({ t: 'site-blocked', tick: t, side: c.side, kind: o.kind, x: o.x, y: o.y });
@@ -142,12 +146,7 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
       const structure = arch({ kind: order.kind } as Entity);
       const supply = (w.supply ??= Array.from({ length: w.sides }, () => 0));
       supply[unit.side] = (supply[unit.side] ?? 0) - structure.cost;
-      const site = spawn(w.nextId++, unit.side, structure, order.x, order.y);
-      site.build = structure.buildTurns;
-      if (unit.doctrine) site.doctrine = normalizeDoctrine(unit.doctrine);
-      w.entities.push(site);
-      if (w.intel) w.intel[unit.side]?.push({ id: site.id, side: site.side, kind: site.kind, x: site.x, y: site.y, hp: site.hp, tick: t, live: false });
-      events.push({ t: 'site', tick: t, id: site.id, side: site.side, kind: site.kind, x: site.x, y: site.y });
+      placing.push({ unit, kind: order.kind, x: order.x, y: order.y });
       continue;
     }
     unit.order = order;
@@ -170,6 +169,16 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     return spottedBy(e.side, target.id) || dist2(e.x, e.y, target.x, target.y) <= vision * vision;
   };
 
+  placing.sort((a, b) => a.unit.side - b.unit.side || cellOf(w.map, a.x, a.y) - cellOf(w.map, b.x, b.y));
+  for (const p of placing) {
+    const structure = arch({ kind: p.kind } as Entity);
+    const site = spawn(w.nextId++, p.unit.side, structure, p.x, p.y);
+    site.build = structure.buildTurns;
+    if (p.unit.doctrine) site.doctrine = normalizeDoctrine(p.unit.doctrine);
+    w.entities.push(site);
+    if (w.intel) w.intel[p.unit.side]?.push({ id: site.id, side: site.side, kind: site.kind, x: site.x, y: site.y, hp: site.hp, tick: t, live: false });
+    events.push({ t: 'site', tick: t, id: site.id, side: site.side, kind: site.kind, x: site.x, y: site.y });
+  }
   for (const unit of selling) {
     const supply = (w.supply ??= Array.from({ length: w.sides }, () => 0));
     const refund = sellRefund(rs, unit);

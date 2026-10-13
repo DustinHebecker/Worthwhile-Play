@@ -287,6 +287,8 @@ test('relay-command: selling a building takes two taps, survives a reload and pa
   await expect(page.getByTestId('rc-sell')).toHaveText('Sell (+50 Supply)');
   await page.getByTestId('rc-sell').click();
   await expect(page.getByTestId('rc-sell')).toHaveText('Press again to sell (+50 Supply)');
+  // A second tap within 400 ms is taken for a double tap (unit-tested); a deliberate one sells.
+  await page.waitForTimeout(450);
   await page.getByTestId('rc-sell').click();
   await expect.poll(async () => (await saved(page))?.draft.map((c) => c.order.type)).toEqual(['sell']);
   await page.reload();
