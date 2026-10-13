@@ -9,6 +9,8 @@ import { CELL } from '../src/view';
 
 let ctx: TestContext;
 let instance: GameInstance<RcState>;
+/** Two-press confirmations ignore a quick second press; the fake clock (vi.useFakeTimers below) moves on. */
+const later = () => vi.advanceTimersByTime(1000);
 
 const $ = (id: string) => ctx.context.root.querySelector<HTMLElement>(`[data-testid="${id}"]`)!;
 const click = (id: string) => $(id).dispatchEvent(new MouseEvent('click', { bubbles: true }));
@@ -496,6 +498,10 @@ describe('Relay Command view', () => {
     btn.click();
     expect(state().phase).toBe('plan');
     expect(($('rc-settle') as HTMLButtonElement).textContent).toBe('Press again to end the game');
+    // A second press right after arming (a quick double tap, a held Enter) does not count.
+    ($('rc-settle') as HTMLButtonElement).click();
+    expect(state().phase).toBe('plan');
+    later();
     ($('rc-settle') as HTMLButtonElement).click();
     expect(state()).toMatchObject({ phase: 'finished', result: 'lost', settled: true });
     expect($('rc-status').textContent).toBe(`You ended the game on strength; the opponent was stronger ${score}.`);
@@ -556,6 +562,10 @@ describe('Relay Command view', () => {
     // The second click of a double-click is not a deliberate second press.
     $('rc-sell').dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 2 }));
     expect(state().draft).toHaveLength(1);
+    // Nor is a press right after arming (a double tap 80 ms apart has detail 1, a held Enter detail 0).
+    click('rc-sell');
+    expect(state().draft).toHaveLength(1);
+    later();
     click('rc-sell');
     expect(state().draft.map((c) => c.order.type)).toEqual(['repair', 'sell']);
     expect($('rc-jobs').textContent).toContain('Planned: sell (+50 Supply)');
@@ -642,5 +652,229 @@ describe('Relay Command view', () => {
     instance.dispose();
     setup('de');
     expect($('rc-lock').textContent).toBe('Runde abschließen');
+  });
+});
+
+describe('own ghosts (owner report)', () => {
+  it('with a unit selected, a click on the cell of an own ghost moves it there instead of selecting the ghost', () => {
+    const s = structuredClone(state());
+    const rifle = s.world.entities.find((e) => e.side === PLAYER && e.kind === 'rifles')!;
+    const other = s.world.entities.filter((e) => e.side === PLAYER && e.kind === 'rifles')[1] ?? s.world.entities.find((e) => e.side === PLAYER && e.kind === 'lancer')!;
+    // The rifle squad's report sits elsewhere (out of contact): its ghost marks a free cell.
+    const free = (x: number, y: number) => passable(s.world.map, RULESET, x, y, 'ground') && !s.world.entities.some((e) => e.x === x && e.y === y);
+    const spot = [[2, 0], [0, 2], [-2, 0], [0, -2], [3, 0], [0, 3]].map(([dx, dy]) => [other.x + dx!, other.y + dy!] as const).find(([x, y]) => free(x, y))!;
+    const r = s.world.intel![PLAYER]!.find((e) => e.id === rifle.id)!;
+    Object.assign(r, { x: spot[0], y: spot[1], live: false });
+    // The squad itself is far away, out of contact (in the enemy's corner).
+    const far = [...Array(s.world.map.w * s.world.map.h).keys()].map((c) => [c % s.world.map.w, Math.floor(c / s.world.map.w)] as const).reverse().find(([x, y]) => free(x, y))!;
+    Object.assign(rifle, { x: far[0], y: far[1] });
+    instance.restore(s);
+    expect($(`rc-unit-${rifle.id}`).textContent).toContain('last'); // shown as out of contact
+    click(`rc-unit-${other.id}`);
+    const map = $('rc-map');
+    map.getBoundingClientRect = () => ({ left: 0, top: 0, width: s.world.map.w * CELL, height: s.world.map.h * CELL, right: s.world.map.w * CELL, bottom: s.world.map.h * CELL, x: 0, y: 0, toJSON: () => ({}) });
+    map.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: spot[0] * CELL + 5, clientY: spot[1] * CELL + 5 }));
+    expect(state().draft).toEqual([expect.objectContaining({ unit: other.id, order: { type: 'move', x: spot[0], y: spot[1] } })]);
+  });
+});
+
+describe('Relay Command map editor', () => {
+  /** The map library is asynchronous: let its promises settle. */
+  const settle = async () => {
+    await vi.runAllTimersAsync();
+    for (let k = 0; k < 20; k++) await Promise.resolve();
+  };
+  const edKey = (k: string) => $('ed-map').dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
+  const moveTo = (x: number, y: number) => {
+    for (let i = 0; i < 30; i++) edKey('ArrowLeft');
+    for (let i = 0; i < 20; i++) edKey('ArrowUp');
+    for (let i = 0; i < x; i++) edKey('ArrowRight');
+    for (let i = 0; i < y; i++) edKey('ArrowDown');
+  };
+
+  it('opens from the setup, edits with the keyboard (mirrored), tells what is missing, saves, survives a restore and plays the map', async () => {
+    click('rc-editor-open');
+    await settle();
+    expect($('rc-editor').hidden).toBe(false);
+    expect($('rc-map').closest('[hidden]')).not.toBeNull(); // the game waits behind the editor
+    expect(state().edit).toMatchObject({ slot: null, mirror: true });
+    expect($('ed-issues').textContent).toContain('Place exactly one Command Post for you.');
+    // A Command Post and a Rifle Squad for you; mirroring gives the opponent the same.
+    click('ed-tool-command-post');
+    moveTo(1, 9);
+    edKey('Enter');
+    expect($('ed-cursor').textContent).toBe('Cell 2, 10: open ground · You (blue): Command Post');
+    click('ed-tool-rifles');
+    moveTo(2, 9);
+    edKey(' ');
+    expect(state().edit!.map.units).toEqual([
+      { side: 0, kind: 'command-post', x: 1, y: 9 },
+      { side: 0, kind: 'rifles', x: 2, y: 9 },
+      { side: 1, kind: 'rifles', x: 13, y: 2 },
+      { side: 1, kind: 'command-post', x: 14, y: 2 }
+    ]);
+    expect($('ed-ok').textContent).toBe('Ready to play.');
+    expect($('ed-fair').textContent).toContain('Point-symmetric');
+    // Name and save: the map goes into the device's maps (preferences).
+    const name = $('ed-name') as HTMLInputElement;
+    name.value = 'Duel';
+    name.dispatchEvent(new Event('change'));
+    click('ed-save');
+    await settle();
+    expect($('ed-notice').textContent).toBe('Saved: Duel.');
+    expect(state().edit!.slot).toBe(0);
+    expect((await ctx.library!.list()).map((e) => e.id)).toEqual(['slot-0']); // the host's library (Settings counts it)
+    expect($('ed-library').textContent).toContain('Duel (16×12)');
+    // Closing and reopening the game keeps the draft (it is part of the state).
+    const saved = state();
+    setup();
+    instance.restore(saved);
+    expect($('rc-editor').hidden).toBe(false);
+    expect(state().edit!.map.name).toBe('Duel');
+    // Play: a new game on the map; the setup offers it among the maps.
+    click('ed-play');
+    expect(state()).toMatchObject({ scenario: 'custom', edit: null });
+    expect(state().map!.name).toBe('Duel');
+    expect($('rc-editor').hidden).toBe(true);
+    expect([...($('rc-scenario') as HTMLSelectElement).options].map((o) => o.textContent)).toContain('Duel');
+    click('rc-lock');
+    expect($('rc-setup-summary').textContent).toContain('Duel');
+  });
+
+  it('undoes the last change (one step, also a resize); a draft survives "New game"; a failed save says so', async () => {
+    click('rc-editor-open');
+    await settle();
+    click('ed-tool-command-post');
+    moveTo(1, 9);
+    edKey('Enter');
+    expect(state().edit!.map.units).toHaveLength(2);
+    const width = $('ed-width') as HTMLSelectElement;
+    width.value = '10';
+    width.dispatchEvent(new Event('change'));
+    expect(state().edit!.map.w).toBe(10);
+    click('ed-undo');
+    expect(state().edit!.map.w).toBe(16);
+    expect(state().edit!.map.units).toHaveLength(2);
+    expect(($('ed-undo') as HTMLButtonElement).disabled).toBe(true); // one step only
+    instance.newGame({ seed: 9 });
+    expect(state().edit!.map.units).toHaveLength(2);
+    // The library refuses: no "Saved", but the reason and the way out (the map code).
+    ctx.context.library!.put = () => Promise.reject(Object.assign(new Error('too-large'), { name: 'GameLibraryError', reason: 'too-large' }));
+    click('ed-save');
+    await settle();
+    expect($('ed-notice').textContent).toBe('The map is too large to keep. Copy the map code to keep it.');
+    expect(state().edit!.slot).toBeNull();
+  });
+
+  it('undo restores the whole draft (map and its saved place), and is forgotten when the editor closes', async () => {
+    const name = (v: string) => {
+      const input = $('ed-name') as HTMLInputElement;
+      input.value = v;
+      input.dispatchEvent(new Event('change'));
+    };
+    const load = (value: string) => {
+      ($('ed-start') as HTMLSelectElement).value = value;
+      expect(($('ed-start') as HTMLSelectElement).value).toBe(value);
+      click('ed-load');
+      later();
+      click('ed-load');
+    };
+    click('rc-editor-open');
+    await settle();
+    name('A');
+    click('ed-save');
+    await settle(); // slot 0
+    load('blank');
+    name('B');
+    click('ed-save');
+    await settle(); // slot 1
+    expect(state().edit!.slot).toBe(1);
+    load('slot:0');
+    expect(state().edit).toMatchObject({ slot: 0, map: expect.objectContaining({ name: 'A' }) });
+    click('ed-undo');
+    expect(state().edit).toMatchObject({ slot: 1, map: expect.objectContaining({ name: 'B' }) });
+    click('ed-save');
+    await settle();
+    expect($('ed-library').textContent).toContain('A (16×12)');
+    expect($('ed-library').textContent).toContain('B (16×12)');
+    // Closing forgets the step: reopened, there is nothing to undo.
+    name('B2');
+    expect(($('ed-undo') as HTMLButtonElement).disabled).toBe(false);
+    click('ed-close');
+    click('rc-editor-open');
+    await settle();
+    expect(($('ed-undo') as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('without a host library the maps stay in preferences; with one, maps from preferences move over once', async () => {
+    const make = (extras: Parameters<typeof createTestContext>[3], seed?: (c: TestContext) => void) => {
+      instance.dispose();
+      ctx = createTestContext(game as GameModule<unknown>, 'en', document.createElement('div'), extras);
+      seed?.(ctx);
+      instance = game.create(ctx.context) as GameInstance<RcState>;
+      instance.newGame({ seed: 4 });
+    };
+    make({ library: undefined });
+    click('rc-editor-open');
+    await settle();
+    click('ed-save');
+    await settle();
+    expect($('ed-notice').textContent).toBe('Saved: Untitled map.');
+    expect(typeof ctx.preferences.get('map:0')).toBe('string');
+    const code = ctx.preferences.get('map:0') as string;
+    // A newer host with a library: the map moves there, the preference is cleared.
+    make({}, (c) => c.preferences.set('map:0', code));
+    await settle();
+    expect((await ctx.library!.list()).map((e) => e.id)).toEqual(['slot-0']);
+    expect(ctx.preferences.has('map:0')).toBe(false);
+  });
+
+  it('shares a map as a code, refuses a bad code, and asks twice before replacing or deleting', async () => {
+    click('rc-editor-open');
+    await settle();
+    click('ed-copy');
+    const code = ($('ed-code') as HTMLTextAreaElement).value;
+    expect(code.startsWith('RC1.')).toBe(true);
+    ($('ed-code') as HTMLTextAreaElement).value = 'nonsense';
+    click('ed-use-code');
+    expect($('ed-notice').textContent).toBe('That is not a valid map code.');
+    // Load a built-in map to start from: two presses (with time between them).
+    ($('ed-start') as HTMLSelectElement).value = 'ridge-valley';
+    click('ed-load');
+    expect(state().edit!.map.w).toBe(16);
+    expect($('ed-load').textContent).toBe('Press again to replace the map');
+    later();
+    click('ed-load');
+    expect(state().edit!.map.w).toBe(20);
+    // The code of that map restores it exactly.
+    click('ed-copy');
+    click('ed-copy');
+    const ridge = ($('ed-code') as HTMLTextAreaElement).value;
+    click('ed-close');
+    expect(state().edit).toBeNull();
+    click('rc-editor-open');
+    await settle();
+    ($('ed-start') as HTMLSelectElement).value = 'blank';
+    click('ed-load');
+    later();
+    click('ed-load');
+    expect(state().edit!.map.units).toEqual([]);
+    click('ed-copy');
+    ($('ed-code') as HTMLTextAreaElement).value = ridge;
+    click('ed-use-code');
+    expect(state().edit!.map.w).toBe(20);
+    expect(state().edit!.map.units.length).toBeGreaterThan(20);
+    // Save, then delete with two presses.
+    click('ed-save');
+    await settle();
+    expect($('ed-delete').hidden).toBe(false);
+    click('ed-delete');
+    await settle();
+    expect(await ctx.library!.list()).toHaveLength(1);
+    later();
+    click('ed-delete');
+    await settle();
+    expect(await ctx.library!.list()).toHaveLength(0);
+    expect(state().edit!.slot).toBeNull();
   });
 });

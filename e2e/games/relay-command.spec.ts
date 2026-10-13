@@ -287,6 +287,8 @@ test('relay-command: selling a building takes two taps, survives a reload and pa
   await expect(page.getByTestId('rc-sell')).toHaveText('Sell (+50 Supply)');
   await page.getByTestId('rc-sell').click();
   await expect(page.getByTestId('rc-sell')).toHaveText('Press again to sell (+50 Supply)');
+  // A second tap within 400 ms is taken for a double tap (unit-tested); a deliberate one sells.
+  await page.waitForTimeout(450);
   await page.getByTestId('rc-sell').click();
   await expect.poll(async () => (await saved(page))?.draft.map((c) => c.order.type)).toEqual(['sell']);
   await page.reload();
@@ -297,4 +299,75 @@ test('relay-command: selling a building takes two taps, survives a reload and pa
   await expect(page.getByTestId('rc-summary')).toContainText('sold (+50 Supply)');
   await expect(page.getByTestId('rc-supply')).toHaveText('Supply 370 (+20)');
   await expect.poll(async () => (await saved(page))?.world.entities.some((e) => e.id === yard.id)).toBe(false);
+});
+
+test('relay-command: the map editor on a phone — paint with taps, save, resume after a reload, play the map', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await start(page);
+  await page.getByTestId('rc-editor-open').click();
+  await expect(page.getByTestId('rc-editor')).toBeVisible();
+  await expect(page.getByTestId('rc-map')).toBeHidden();
+  const map = page.getByTestId('ed-map');
+  // Taps at a cell (the map scrolls into view first: on a phone the palette sits below it).
+  const tap = async (x: number, y: number) => {
+    const box = (await map.boundingBox())!;
+    await map.click({ position: { x: ((x + 0.5) * box.width) / 16, y: ((y + 0.5) * box.height) / 12 } });
+  };
+  await page.getByTestId('ed-tool-command-post').click();
+  await tap(1, 9);
+  await page.getByTestId('ed-tool-rifles').click();
+  await tap(3, 9);
+  await page.getByTestId('ed-tool-t6').click(); // water
+  await tap(7, 5);
+  await expect(page.getByTestId('ed-ok')).toHaveText('Ready to play.');
+  await page.getByTestId('ed-name').fill('Lake');
+  await page.getByTestId('ed-name').press('Tab');
+  await page.getByTestId('ed-save').click();
+  await expect(page.getByTestId('ed-notice')).toHaveText('Saved: Lake.');
+  // Nothing scrolls sideways on the phone.
+  const widths = await page.evaluate(() => ({ page: document.documentElement.scrollWidth, viewport: document.documentElement.clientWidth }));
+  expect(widths.page).toBeLessThanOrEqual(widths.viewport);
+  await page.reload();
+  await page.getByTestId('continue').click();
+  await expect(page.getByTestId('rc-editor')).toBeVisible();
+  await expect(page.getByTestId('ed-library')).toContainText('Lake (16×12)');
+  await page.getByTestId('ed-play').click();
+  await expect(page.getByTestId('rc-editor')).toBeHidden();
+  await expect(page.getByTestId('rc-map')).toBeVisible();
+  await expect.poll(async () => ((await saved(page)) as unknown as { scenario: string } | undefined)?.scenario).toBe('custom');
+  await page.getByTestId('rc-lock').click();
+  await expect(page.getByTestId('rc-turn')).toHaveText('Turn 2');
+});
+
+test('relay-command: a saved map is the player\'s own content — Settings counts it, "Delete all saved games" keeps it, "Delete my own content" removes it', async ({ page }) => {
+  await start(page);
+  await page.getByTestId('rc-editor-open').click();
+  const map = page.getByTestId('ed-map');
+  const tap = async (x: number, y: number) => {
+    const box = (await map.boundingBox())!;
+    await map.click({ position: { x: ((x + 0.5) * box.width) / 16, y: ((y + 0.5) * box.height) / 12 } });
+  };
+  await page.getByTestId('ed-tool-command-post').click();
+  await tap(1, 9);
+  await page.getByTestId('ed-tool-rifles').click();
+  await tap(3, 9);
+  await page.getByTestId('ed-name').fill('Kept');
+  await page.getByTestId('ed-name').press('Tab');
+  await page.getByTestId('ed-save').click();
+  await expect(page.getByTestId('ed-notice')).toHaveText('Saved: Kept.');
+
+  await page.goto('/settings');
+  await expect(page.getByTestId('library-info')).toContainText(': 1');
+  page.once('dialog', (dialog) => void dialog.accept());
+  await page.getByTestId('clear-saves').click();
+  await expect.poll(() => saved(page)).toBeFalsy();
+  await expect(page.getByTestId('library-info')).toContainText(': 1');
+  page.once('dialog', (dialog) => void dialog.accept());
+  await page.getByTestId('clear-library').click();
+  await expect(page.getByTestId('library-info')).toContainText(': 0');
+
+  // Back in the game: the map is gone from the device's maps.
+  await start(page);
+  await page.getByTestId('rc-editor-open').click();
+  await expect(page.getByTestId('ed-library')).toContainText('No saved maps yet.');
 });

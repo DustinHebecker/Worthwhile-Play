@@ -330,6 +330,11 @@ export type SimEvent =
   | { t: 'built'; tick: number; id: number }
   /** A yard (`by`) repaired unit `id` by `hp` health. */
   | { t: 'repaired'; tick: number; id: number; by: number; hp: number }
+  /**
+   * Reports only (never in the world's own event list): an own unit out of contact, destroyed
+   * unseen, was found missing when its last reported cell was observed again.
+   */
+  | { t: 'missing'; tick: number; id: number; side: number; kind: string; x: number; y: number }
   /** A structure was sold (torn down) for `refund` Supply (the refund only in the seller's own reports). */
   | { t: 'sold'; tick: number; id: number; side: number; kind: string; x: number; y: number; refund?: number }
   /**

@@ -195,3 +195,38 @@
 .wp-relay-command .rc-sell { justify-self: start; margin-block-start: 0.4rem; }
 .wp-relay-command .rc-repair-text { display: grid; gap: 0.05rem; min-inline-size: 0; }
 .wp-relay-command .rc-repair-meta { font-size: 0.85em; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--wp-muted); }
+/* Map editor */
+.wp-relay-command .rc-editor { display: grid; gap: 0.75rem; grid-template-columns: minmax(0, 1fr); min-inline-size: 0; }
+.wp-relay-command .rc-editor > * { min-inline-size: 0; max-inline-size: 100%; }
+.wp-relay-command .rc-editor h3, .wp-relay-command .rc-editor h4 { margin: 0; }
+.wp-relay-command .rc-editor-open { justify-self: start; align-self: end; }
+.wp-relay-command .rc-ed-settings { display: flex; flex-wrap: wrap; gap: 0.6rem 1.2rem; align-items: end; }
+.wp-relay-command .rc-ed-settings label { display: grid; gap: 0.2rem; min-inline-size: 0; }
+.wp-relay-command .rc-ed-settings input[type='text'] { min-block-size: var(--wp-touch, 44px); inline-size: min(16rem, 100%); }
+.wp-relay-command .rc-ed-settings select { min-block-size: var(--wp-touch, 44px); max-inline-size: 100%; }
+.wp-relay-command .rc-ed-check { display: flex !important; align-items: center; gap: 0.5rem; min-block-size: var(--wp-touch, 44px); }
+.wp-relay-command .rc-ed-check input { inline-size: 1.4rem; block-size: 1.4rem; }
+.wp-relay-command .rc-ed-start { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: end; min-inline-size: 0; max-inline-size: 100%; }
+.wp-relay-command .rc-ed-start label { flex: 1 1 12rem; min-inline-size: 0; max-inline-size: 100%; }
+.wp-relay-command .rc-ed-start select { inline-size: 100%; }
+.wp-relay-command .rc-ed-main { display: grid; gap: 0.75rem; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 60rem) {
+  .wp-relay-command .rc-ed-main { grid-template-columns: minmax(0, 1fr) 22rem; align-items: start; }
+}
+.wp-relay-command .rc-ed-mapwrap { overflow: hidden; max-inline-size: 100%; min-inline-size: 0; }
+.wp-relay-command .rc-ed-map { display: block; inline-size: 100%; max-inline-size: 100%; block-size: auto; cursor: crosshair; touch-action: none; }
+.wp-relay-command .rc-ed-palette { display: grid; gap: 0.4rem; min-inline-size: 0; }
+.wp-relay-command .rc-ed-group { display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; }
+.wp-relay-command .rc-ed-tool { display: grid; justify-items: center; gap: 0.1rem; inline-size: 5.2rem; overflow-wrap: anywhere; hyphens: auto; min-inline-size: 0; min-block-size: var(--wp-touch, 44px); padding: 0.25rem; font-size: 0.75em; line-height: 1.1; white-space: normal; text-align: center; }
+.wp-relay-command .rc-ed-tool .rc-icon { inline-size: 28px; block-size: 28px; }
+.wp-relay-command .rc-ed-tool[aria-pressed='true'] { font-weight: 600; }
+.wp-relay-command .rc-ed-erase { font-size: 1.4rem; line-height: 28px; }
+.wp-relay-command .rc-ed-side { min-block-size: var(--wp-touch, 44px); }
+.wp-relay-command .rc-ed-issues ul { margin: 0.2rem 0; padding-inline-start: 1.2rem; }
+.wp-relay-command .rc-ed-issues p { margin: 0.2rem 0; }
+.wp-relay-command .rc-ed-actions { flex-wrap: wrap; }
+.wp-relay-command .rc-ed-code { display: grid; gap: 0.4rem; }
+.wp-relay-command .rc-ed-code textarea { inline-size: 100%; font-family: ui-monospace, monospace; font-size: 0.85em; word-break: break-all; }
+.wp-relay-command .rc-ed-library ul { margin: 0.2rem 0; padding-inline-start: 1.2rem; }
+.wp-relay-command .rc-ed-library li[data-current='true'] { font-weight: 700; }
+.wp-relay-command .rc-ed-map:focus-visible { outline: 3px solid var(--wp-focus); outline-offset: -3px; }

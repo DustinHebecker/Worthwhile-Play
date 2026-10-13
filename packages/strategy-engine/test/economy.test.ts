@@ -127,7 +127,8 @@ describe('economy (I6a, D8)', () => {
     expect(v(build('muster', 20, 1))).toEqual({ ok: false, reason: 'out-of-bounds' });
     expect(v({ ...build('muster', 2, 1), side: 1, unit: 2 })).toEqual({ ok: false, reason: 'not-buildable' });
     expect(validateCommand({ ...w, supply: [10, 10] }, net, build('extractor', 3, 1))).toEqual({ ok: false, reason: 'no-supply' });
-    const a = turn(w, [[build('extractor', 3, 1), build('muster', 2, 0)], []]);
+    // New sites get their ids by side, then cell (never by plan order): the Extractor's cell comes first.
+    const a = turn(w, [[build('muster', 2, 2), build('extractor', 3, 1)], []]);
     expect(a.world.supply?.[0]).toBe(300 - 80 - 100 + 20); // the sites yield nothing yet
     const site = unit(a.world, 3);
     expect(site).toMatchObject({ kind: 'extractor', x: 3, y: 1, build: 1, hp: 120 });
@@ -372,5 +373,20 @@ describe('repair and sale: order of the plans and what others learn (review of P
     expect(yardSeen).toBe(false);
     expect(repaired.world.intel?.[1]?.some((r) => r.id === 4 && r.live)).toBe(true); // the unit is seen
     expect(repaired.reported?.[1]?.some((e) => e.t === 'repaired')).toBe(false);
+  });
+});
+
+describe('placements in one batch (review of PR #14)', () => {
+  it('new sites get the same ids whichever side\'s plan comes first, and one side cannot place two sites on one cell', () => {
+    const w = worldOf(open(12, 3), [{ side: 0, kind: 'command-post', x: 0, y: 1 }, { side: 1, kind: 'command-post', x: 11, y: 1 }]);
+    const a: Command = { side: 0, unit: 1, order: { type: 'build', kind: 'relay-mast', x: 2, y: 1 } };
+    const b: Command = { side: 1, unit: 2, order: { type: 'build', kind: 'relay-mast', x: 9, y: 1 } };
+    const ab = resolveTurn(w, net, [[a], [b]]);
+    const ba = resolveTurn(w, net, [[b], [a]]);
+    expect(JSON.stringify(ba.world)).toBe(JSON.stringify(ab.world));
+    expect(ab.world.entities.find((e) => e.id === 3)).toMatchObject({ side: 0, x: 2 });
+    const twice = resolveTurn(w, net, [[a, { ...a, order: { type: 'build', kind: 'muster', x: 2, y: 1 } }], []]);
+    expect(twice.world.entities.filter((e) => e.x === 2 && e.y === 1)).toHaveLength(1);
+    expect(twice.events.some((e) => e.t === 'site-blocked')).toBe(true);
   });
 });
