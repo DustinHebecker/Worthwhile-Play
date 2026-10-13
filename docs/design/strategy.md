@@ -258,6 +258,32 @@ Difficulty = AI strength (easy / normal / hard), independent of map size.
 
 The turn limit guarantees a natural end; no "one more turn" escalation.
 
+### 9.4 More than one opponent *(plan, owner request after PR #14 — not built)*
+
+What exists: the engine already runs up to 8 sides (`Scenario.sides`, per-side supply, intel, coverage, order slots; every side is hostile to every other). Relay Command assumes two sides throughout: `PLAYER`/`OPPONENT` constants, one AI plan per turn, strength as a difference of two sides, point-mirrored maps, two side colours (`--wp-p1`, `--wp-p2`), and the mirror property P4 (point mirror + side swap).
+
+Proposed scope, in increments (each one PR, each with tests before the next):
+
+| # | Increment | Content |
+|---|---|---|
+| M1 | Engine | P4 generalised to a map's symmetry group: for a map with the 4-fold symmetry below, mirroring by any symmetry and permuting the sides accordingly gives the permuted outcome. Determinism (P1) and plan-order independence (P6) over 3–4 sides; elimination (a side whose Command Post falls is out: its remaining units are removed at the end of that tick, `eliminated` event). |
+| M2 | Rules | State v9: `opponents: number` (1–3), sides `0` (player) and `1…n`; a game ends when the player's post falls (lost) or every opponent's post has fallen (won); at a turn limit, or by the stalemate rule, the player wins only when ahead of every remaining opponent (equal to the best: draw). Strength compares the player with the strongest remaining opponent. v8 saves migrate as one opponent. |
+| M3 | AI | Each opponent plans on its own observation (as now) and picks a target side per turn: the nearest known Command Post, weighted by the known defenders; no coordination between opponents, and no rule that makes them prefer the player (they also fight each other). Budget: the plans of three opponents per locked turn must stay within the phone budget (today 35 ms mean on Ridge Valley for one) — measured before merge. |
+| M4 | UI | Four side colours with 3:1 contrast on every terrain, veiled or not, in both themes (extends the contrast test), and a non-colour mark per side (a letter or pattern on every unit; the legend explains it); lists and the turn summary grouped by side; setup option "Opponents: 1 / 2 / 3" (only for maps with that many bases). |
+| M5 | Maps | Four-base maps: square maps with 4-fold rotational symmetry (90°), or rectangles mirrored on both axes; a 3-opponent game uses all four bases, a 2-opponent game the two opposite ones plus an empty base (fair: every side sees the same map up to symmetry). Editor: mirror mode "four ways", a map says how many bases it has. |
+
+Decisions for the owner (recommendation first):
+- **Free-for-all first** (every side against every other). Teams (e.g. you plus an AI ally against two) need alliances in the engine (shared sight, no fire on allies, shared victory) — a later increment if wanted.
+- **When your Command Post falls, the game ends as lost** (no watching the others play on — that would be autoplay).
+- **At most 3 opponents** (4 sides): more does not fit a phone screen, and every side costs AI time per turn.
+- **Three sides exactly** (2 opponents) use a four-base map with one empty base rather than a three-way map: a square grid has no exact three-fold symmetry, so a three-base map cannot be fair by construction.
+
+Risks: AI time grows linearly with opponents (mitigation: measure first, cap at 3); readability with four colours on a 360 px map (mitigation: marks per side, larger maps scroll); balancing — two opponents fighting each other leave the player an easy third-party win (accepted: it is part of free-for-all; the AI's target choice weighs threats, so a player who sits back is not ignored).
+
+### 9.5 More maps
+
+Four hand-made, point-symmetric maps (two sides): Field Exercise (12×12), Crossroads (16×12, a town fight on a road junction), Ridge Valley (20×14), Marsh Delta (20×12, water channels crossed by a causeway, a second road on the far side). Every built-in map is tested like the first two (symmetry, posts connected, the AI-quality and termination suites). Tried and not shipped: larger maps (22×14, 24×16) and a third new 20×14 map (Highlands, hills and short ridges). On them the opponent sends units in one by one once its storm is on (when it knows no defenders, the odds always say "go", and a fighter released by a yard counts as the wave), so a passive player sometimes held out for 65–200 turns or even won on strength. Requiring a minimum wave helped but did not fix every opening; this is AI work for I6d and a precondition for larger maps. Next: the seeded generator with its independent validator (I6c), offered as "Random map" with its seed shown so a map can be played again.
+
 ---
 
 ## 10. Engine architecture (`@wp/strategy-engine`)
