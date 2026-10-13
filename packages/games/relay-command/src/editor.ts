@@ -355,8 +355,10 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
         render();
         return;
       }
-      // The draft may have changed meanwhile: only the place is taken over.
-      o.change({ ...o.draft(), slot: result.slot }, t('editor.saved', { name: mapName(draft.map) }));
+      // The draft may have become another map meanwhile (undo, a code, a load): it takes over the
+      // place only while it is still the map that was saved.
+      const now = o.draft();
+      if (encodeMap(now.map) === encodeMap(draft.map)) o.change({ ...now, slot: result.slot }, t('editor.saved', { name: mapName(draft.map) }));
       say(t('editor.saved', { name: mapName(draft.map) }));
       refresh();
     });
@@ -395,7 +397,12 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
     const draft = o.draft();
     if (draft.slot === null || !confirmed('delete')) return;
     const slot = draft.slot;
-    void o.library.remove(slot).then(() => {
+    void o.library.remove(slot).then((removed) => {
+      if (!removed) {
+        say(t('editor.deleteFailed', { name: mapName(draft.map) }));
+        refresh();
+        return;
+      }
       if (o.draft().slot === slot) o.change({ ...o.draft(), slot: null }, t('editor.deleted', { name: mapName(draft.map) }));
       say(t('editor.deleted', { name: mapName(draft.map) }));
       refresh();

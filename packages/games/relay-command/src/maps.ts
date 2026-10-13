@@ -247,11 +247,13 @@ export function saveToLibrary(store: MapStore | undefined, map: EditMap, slot: n
   return target;
 }
 
-export function removeFromLibrary(store: MapStore | undefined, slot: number): void {
+/** Frees `slot`; whether it is free afterwards. */
+export function removeFromLibrary(store: MapStore | undefined, slot: number): boolean {
   try {
     store?.set(`map:${slot}`, undefined);
+    return store !== undefined && store.get(`map:${slot}`) === undefined;
   } catch {
-    /* not removed */
+    return false;
   }
 }
 
@@ -263,15 +265,19 @@ export function memoryStore(): MapStore {
 
 // --- Map library (asynchronous): the host's per-game library (ADR 0012), else preferences ----------
 
-/** Why a map was not saved (the host library's reasons; `full` also when every place is taken). */
-export type SaveFailure = 'full' | 'too-large' | 'invalid' | 'unavailable';
+/**
+ * Why a map was not saved: the host library's reasons (`full` also when every place is taken), or
+ * `conflict` when another window wrote the same place at the same time (the other map is kept).
+ */
+export type SaveFailure = 'full' | 'too-large' | 'invalid' | 'unavailable' | 'conflict';
 export type SaveResult = { readonly ok: true; readonly slot: number } | { readonly ok: false; readonly reason: SaveFailure };
 
 /** The device's maps by place (0…MAP_SLOTS-1), whatever keeps them. */
 export interface MapLibrary {
   list(): Promise<(EditMap | undefined)[]>;
   save(map: EditMap, slot: number | null): Promise<SaveResult>;
-  remove(slot: number): Promise<void>;
+  /** Whether the place is free afterwards (false: the map is still there). */
+  remove(slot: number): Promise<boolean>;
 }
 
 /** The host library as consumed here (structurally `GameContext.library`). */
@@ -313,20 +319,55 @@ export function hostMapLibrary(host: HostLibrary, nameOf: (map: EditMap) => stri
   return {
     list,
     async save(map, slot) {
-      const target = slot !== null && slot >= 0 && slot < MAP_SLOTS ? slot : (await list()).findIndex((m) => m === undefined);
-      if (target < 0) return { ok: false, reason: 'full' };
-      try {
-        await host.put({ id: slotId(target), name: nameOf(map).slice(0, 60) || 'Map', data: JSON.parse(JSON.stringify(map)) as unknown });
-        return { ok: true, slot: target };
-      } catch (error) {
-        return { ok: false, reason: reasonOf(error) };
+      const code = encodeMap(map);
+      const holds = async (place: number): Promise<boolean> => {
+        try {
+          const item = await host.get(slotId(place));
+          return isValidMap(item?.data) && encodeMap(item.data as EditMap) === code;
+        } catch {
+          return false;
+        }
+      };
+      const put = async (place: number): Promise<SaveFailure | null> => {
+        try {
+          await host.put({ id: slotId(place), name: nameOf(map).slice(0, 60) || 'Map', data: JSON.parse(JSON.stringify(map)) as unknown });
+          return null;
+        } catch (error) {
+          return reasonOf(error);
+        }
+      };
+      if (slot !== null && slot >= 0 && slot < MAP_SLOTS) {
+        const failed = await put(slot);
+        if (failed) return { ok: false, reason: failed };
+        // Another window may have written the same place at the same time: say so rather than "saved".
+        return (await holds(slot)) ? { ok: true, slot } : { ok: false, reason: 'conflict' };
+      }
+      // A new map goes into the first free place. The library has no "create if free", so two windows
+      // may pick the same place: check it is still free right before writing, read it back after, and
+      // move on to the next free place when another writer got there first.
+      const tried = new Set<number>();
+      for (;;) {
+        const target = (await list()).findIndex((m, place) => m === undefined && !tried.has(place));
+        if (target < 0) return { ok: false, reason: 'full' };
+        tried.add(target);
+        let free: boolean;
+        try {
+          free = (await host.get(slotId(target))) === undefined;
+        } catch {
+          free = false;
+        }
+        if (!free) continue;
+        const failed = await put(target);
+        if (failed) return { ok: false, reason: failed };
+        if (await holds(target)) return { ok: true, slot: target };
       }
     },
     async remove(slot) {
       try {
         await host.delete(slotId(slot));
+        return true;
       } catch {
-        /* not removed: the list still shows it */
+        return false;
       }
     }
   };
@@ -341,10 +382,7 @@ export function preferenceMapLibrary(store: MapStore | undefined): MapLibrary {
       const saved = saveToLibrary(store, map, slot);
       return Promise.resolve(saved === null ? { ok: false, reason: full ? 'full' : 'unavailable' } : { ok: true, slot: saved });
     },
-    remove: (slot) => {
-      removeFromLibrary(store, slot);
-      return Promise.resolve();
-    }
+    remove: (slot) => Promise.resolve(removeFromLibrary(store, slot))
   };
 }
 

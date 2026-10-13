@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { GameInstance, GameModule } from '@wp/game-core';
-import { createTestContext, type TestContext } from '@wp/testing';
+import { createTestContext, createTestLibrary, type TestContext } from '@wp/testing';
 import game from '../src/index';
 import { initialIntel, passable, type Entity } from '@wp/strategy-engine';
 import { concede, lockTurn, OPPONENT, PLAYER, RULESET, sideValue, STALL_TURNS, stalemateTurns, type RcState } from '../src/rules';
@@ -827,6 +827,55 @@ describe('Relay Command map editor', () => {
     await settle();
     expect((await ctx.library!.list()).map((e) => e.id)).toEqual(['slot-0']);
     expect(ctx.preferences.has('map:0')).toBe(false);
+  });
+
+  it('a failed delete says so and keeps the place; a save finishing after the draft became another map does not hand it the place', async () => {
+    instance.dispose();
+    const lib = createTestLibrary('relay-command').library;
+    let refuseDelete = true;
+    let hold: (() => void) | null = null;
+    const host = {
+      ...lib,
+      delete: (id: string) => (refuseDelete ? Promise.reject(new Error('blocked')) : lib.delete(id)),
+      put: (item: Parameters<typeof lib.put>[0]) => (hold === null ? lib.put(item) : new Promise<void>((r) => (hold = r)).then(() => lib.put(item)))
+    };
+    ctx = createTestContext(game as GameModule<unknown>, 'en', document.createElement('div'), { library: host });
+    instance = game.create(ctx.context) as GameInstance<RcState>;
+    instance.newGame({ seed: 4 });
+    click('rc-editor-open');
+    await settle();
+    click('ed-save');
+    await settle();
+    expect(state().edit!.slot).toBe(0);
+    click('ed-delete');
+    later();
+    click('ed-delete');
+    await settle();
+    expect($('ed-notice').textContent).toBe('Could not delete Untitled map: it is still in the list.');
+    expect(state().edit!.slot).toBe(0);
+    expect($('ed-library').textContent).toContain('Untitled map');
+    refuseDelete = false;
+    // Save as a new map; while the save is pending, the draft becomes another map (a blank one).
+    ($('ed-start') as HTMLSelectElement).value = 'ridge-valley';
+    click('ed-load');
+    later();
+    click('ed-load');
+    hold = () => undefined;
+    click('ed-save');
+    await settle();
+    ($('ed-start') as HTMLSelectElement).value = 'blank';
+    click('ed-load');
+    later();
+    click('ed-load');
+    expect(state().edit).toMatchObject({ slot: null, map: expect.objectContaining({ units: [] }) });
+    const release = hold as () => void;
+    hold = null;
+    release();
+    await settle();
+    expect($('ed-notice').textContent).toMatch(/^Saved: /);
+    // The ridge map was saved (place 1), but the blank draft is not that map: it stays unsaved.
+    expect(state().edit!.slot).toBeNull();
+    expect((await lib.list()).map((e) => e.id).sort()).toEqual(['slot-0', 'slot-1']);
   });
 
   it('shares a map as a code, refuses a bad code, and asks twice before replacing or deleting', async () => {
