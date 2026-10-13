@@ -88,6 +88,8 @@ export function isValidWorld(value: unknown, ruleset?: Ruleset): value is World 
     isInt(e.id, 1, nextId - 1) &&
     typeof e.kind === 'string' &&
     sideOf(e.side, e.kind) &&
+    // A neutral post holds, without doctrine, set-up, queue or site (it takes no orders).
+    (e.side !== NEUTRAL || (isRecord(e.order) && e.order.type === 'hold' && e.doctrine === undefined && e.deploy === undefined && e.queue === undefined && e.build === undefined)) &&
     (!ruleset || Object.hasOwn(ruleset.archetypes, e.kind)) &&
     inMap(e.x, e.y) &&
     isInt(e.hp, 1, ruleset ? (archetypeOf(ruleset, e.kind as string)?.hp ?? 0) : Number.MAX_SAFE_INTEGER) &&

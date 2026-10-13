@@ -150,11 +150,20 @@ export function updateIntel(world: World, ruleset: Ruleset, gone: readonly Entit
     }
     // A side knows which of its own units fell silent: their return by doctrine is reported too.
     const own = new Set(world.entities.filter((e) => e.side === side).map((e) => e.id));
+    // The side's own units, also those lost this tick, and where they stand: a shot at one of them
+    // is the side's own business (it is not news who or where the target is).
+    const mine = [...world.entities, ...gone].filter((e) => e.side === side);
+    const mineIds = new Set(mine.map((e) => e.id));
+    const mineAt = new Set(mine.map((e) => cellOf(world.map, e.x, e.y)));
+    const shotKnown = (ev: SimEvent): boolean =>
+      ev.t === 'fire' ? live.has(ev.target) || mineIds.has(ev.target) : ev.t === 'launch' ? seen(ev.x, ev.y) || mineAt.has(cellOf(world.map, ev.x, ev.y)) : true;
     for (let i = from; i < events.length; i++) {
       const ev = events[i] as SimEvent;
       const knownAnyway = (ev.t === 'destroyed' && lost.has(ev.id)) || (ev.t === 'order-ended' && ev.reason === 'lost-contact' && own.has(ev.id));
       // A sale seen by another side tells it nothing of the seller's Supply (the refund includes a paid queue).
-      if (eventVisible(ev, live, seen, side, own) || knownAnyway) list.push(ev.t === 'sold' && ev.side !== side ? { t: 'sold', tick: ev.tick, id: ev.id, side: ev.side, kind: ev.kind, x: ev.x, y: ev.y } : ev);
+      // A shot names its target (or the target's cell): with three or more sides an observer that
+      // sees the shooter must not learn of a third side's unit it does not see (review of PR #21).
+      if ((eventVisible(ev, live, seen, side, own) && shotKnown(ev)) || knownAnyway) list.push(ev.t === 'sold' && ev.side !== side ? { t: 'sold', tick: ev.tick, id: ev.id, side: ev.side, kind: ev.kind, x: ev.x, y: ev.y } : ev);
     }
   }
   world.intel = intel;

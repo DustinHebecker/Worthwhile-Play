@@ -409,8 +409,8 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
       const below = doctrineOf(e).retreatBelow;
       // A unit already holding inside its coverage has nowhere to retreat to: no new order, no
       // repeated 'retreat' → 'regrouped' on every further hit.
-      const settled = e.order.type === 'hold' && (coverageOf(e.side)?.[cellOf(w.map, e.x, e.y)] ?? 1) === 1;
-      if (below > 0 && a.speed > 0 && e.hp > 0 && e.hp * 100 < a.hp * below && e.order.type !== 'regroup' && !settled) {
+      const settled = (): boolean => e.order.type === 'hold' && (coverageOf(e.side)?.[cellOf(w.map, e.x, e.y)] ?? 1) === 1;
+      if (below > 0 && a.speed > 0 && e.hp > 0 && e.hp * 100 < a.hp * below && e.order.type !== 'regroup' && !settled()) {
         e.order = { type: 'regroup' };
         events.push({ t: 'order-ended', tick: t, id: e.id, reason: 'retreat' });
       }

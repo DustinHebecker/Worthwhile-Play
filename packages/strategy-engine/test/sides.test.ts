@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import {
   BASE_RULESET,
+  canBeNeutral,
   canonicalJson,
   computeNetwork,
   createWorld,
@@ -16,13 +17,17 @@ import {
   NEUTRAL,
   observe,
   resolveTurn,
+  revealedEmitters,
   STRATEGY_RULESET,
   teamOf,
   validateCommand,
   worldHash,
   type Command,
   type Frame,
+  type Order,
+  type Ruleset,
   type Scenario,
+  type SimEvent,
   type World
 } from '../src';
 import { arbWorld, open, transformCommands, transformWorld } from './helpers';
@@ -62,13 +67,73 @@ describe('teams and hostility', () => {
     // Without teams the same neighbours fight.
     const ffa = resolveTurn(createWorld(scenario, BASE_RULESET), BASE_RULESET, [[]]).world;
     expect(ffa.entities.filter((e) => e.side !== 1).some((e) => e.hp < 40)).toBe(true);
-    // An allied jammer does not cut the own network; a hostile one does.
-    const jam = (teams?: number[]) => {
-      const w = createWorld({ map: open(9, 3), sides: 2, entities: [{ side: 0, kind: 'command-post', x: 0, y: 1 }, { side: 1, kind: 'jammer', x: 3, y: 1 }], seed: 1, ...(teams && { teams }) }, STRATEGY_RULESET);
-      w.entities[1]!.deploy = { done: true } as never;
+    // An allied jammer does not cut the own network; a hostile one does (set up: it works).
+    const cover = (jammer: boolean, teams?: number[]) => {
+      const w = createWorld({ map: open(9, 3), sides: 2, entities: [{ side: 0, kind: 'command-post', x: 0, y: 1 }, ...(jammer ? [{ side: 1, kind: 'jammer', x: 3, y: 1 }] : [])], seed: 1, ...(teams && { teams }) }, STRATEGY_RULESET);
+      if (jammer) w.entities[1]!.deploy = STRATEGY_RULESET.ticksPerTurn;
       return computeNetwork(w, STRATEGY_RULESET, 0).coverage.reduce((n, v) => n + v, 0);
     };
-    expect(jam([0, 0])).toBeGreaterThanOrEqual(jam());
+    expect(cover(true, [0, 0])).toBe(cover(false));
+    expect(cover(true)).toBeLessThan(cover(false));
+  });
+
+  it('allies are spared by splash, and an allied jammer is not located like an enemy one', () => {
+    // A shell aimed at side 2's squad lands next to side 1's: spared when allied with the shooter.
+    const shell = (teams?: number[]) => {
+      // Unarmed structures, so only the shells do damage.
+      const w = createWorld({ map: open(8, 3), sides: 3, entities: [{ side: 0, kind: 'howitzer', x: 0, y: 1 }, { side: 2, kind: 'muster', x: 5, y: 1 }, { side: 1, kind: 'muster', x: 6, y: 1 }], seed: 1, ...(teams && { teams }) }, BASE_RULESET);
+      const after = play(w, [[{ side: 0, unit: 1, order: { type: 'attack', target: 2 } }], [], []]);
+      return after.entities.find((e) => e.side === 1)?.hp ?? 0;
+    };
+    expect(shell([0, 0, 1])).toBe(200);
+    expect(shell()).toBeLessThan(200);
+    // A working jammer of an ally near the side's units is not located as an emitter; an enemy one is.
+    const located = (teams?: number[]) => {
+      const w = createWorld({ map: open(12, 3), sides: 2, entities: [{ side: 0, kind: 'command-post', x: 0, y: 1 }, { side: 0, kind: 'rifles', x: 1, y: 1 }, { side: 1, kind: 'jammer', x: 8, y: 1 }], seed: 1, ...(teams && { teams }) }, STRATEGY_RULESET);
+      w.entities[2]!.deploy = STRATEGY_RULESET.ticksPerTurn;
+      return revealedEmitters(w, STRATEGY_RULESET, 0).has(3);
+    };
+    expect(located()).toBe(true);
+    expect(located([0, 0])).toBe(false);
+  });
+});
+
+describe('no leaks between opponents in the events a side is told (review of PR #21)', () => {
+  const FOG: Ruleset = { ...BASE_RULESET, id: 'fog-test', fog: true };
+  it('a side that sees a shooter does not learn the id or cell of a third side\'s unseen target', () => {
+    // Side 0's squad sees side 1's gun (2 cells off, inside its minimum range); side 1's scout
+    // spots side 2's squad far beyond side 0's sight, and the gun shells it.
+    const w = createWorld(
+      { map: open(16, 3), sides: 3, entities: [{ side: 0, kind: 'rifles', x: 2, y: 1 }, { side: 1, kind: 'howitzer', x: 4, y: 1 }, { side: 1, kind: 'outrider', x: 8, y: 1 }, { side: 2, kind: 'warden', x: 10, y: 1 }], seed: 1 },
+      FOG
+    );
+    let world = w;
+    const told: SimEvent[] = [];
+    for (let i = 0; i < 3; i++) {
+      const r = resolveTurn(world, FOG, [i === 0 ? [{ side: 1, unit: 2, order: { type: 'attack', target: 4 } }] : []]);
+      told.push(...r.reported![0]!);
+      world = r.world;
+    }
+    // The gun did fire at side 2's unit, and side 0 saw the gun.
+    expect(world.entities.find((e) => e.id === 4)!.hp).toBeLessThan(140);
+    const mentions = (e: SimEvent) => ('target' in e && e.target === 4) || ('id' in e && e.id === 4) || ('x' in e && e.x === 10 && e.y === 1);
+    expect(told.filter(mentions)).toEqual([]);
+  });
+
+  it('property: every shot told to a side names an own unit or one the side knows of (3 sides)', () => {
+    fc.assert(
+      fc.property(arbWorld({ sides: 3, supply: 300 }), ({ world, plans }) => {
+        let w = world;
+        for (const plan of plans) {
+          const own = new Set(w.entities.filter((e) => e.side === 0).map((e) => e.id));
+          const r = resolveTurn(w, STRATEGY_RULESET, [plan]);
+          const known = new Set([...own, ...r.world.intel![0]!.map((rep) => rep.id), ...r.reported![0]!.filter((e) => e.t === 'destroyed').map((e) => (e as { id: number }).id)]);
+          for (const e of r.reported![0]!) if (e.t === 'fire') expect(known.has(e.target), `fire at ${e.target}`).toBe(true);
+          w = r.world;
+        }
+      }),
+      { numRuns: 150 }
+    );
   });
 });
 
@@ -94,7 +159,8 @@ describe('neutral Command Posts', () => {
     let w = neutralWorld();
     const post = w.entities.find((e) => e.side === NEUTRAL)!;
     expect(validateCommand(w, STRATEGY_RULESET, { side: NEUTRAL, unit: post.id, order: { type: 'hold' } })).toEqual({ ok: false, reason: 'not-yours' });
-    for (const side of [0, 1]) expect(computeNetwork(w, STRATEGY_RULESET, side).coverage[3 + 7]).toBe(side === 0 ? 1 : computeNetwork(w, STRATEGY_RULESET, side).coverage[3 + 7]);
+    // It is no node of anybody's network.
+    for (const side of [0, 1]) expect(computeNetwork(w, STRATEGY_RULESET, side).nodes).not.toContain(post.id);
     const supply = [...w.supply!];
     for (let i = 0; i < 3; i++) w = resolveTurn(w, STRATEGY_RULESET, [[]]).world;
     // Income goes to the two posts' owners only (20 a turn each).
@@ -115,6 +181,78 @@ describe('neutral Command Posts', () => {
       expect(report?.side).toBe(NEUTRAL);
       expect(observe(w, STRATEGY_RULESET, side).world.entities.some((e) => e.side === NEUTRAL)).toBe(true);
     }
+  });
+});
+
+describe('setup and save validation for several sides', () => {
+  const base = { map: open(5, 2), entities: [{ side: 0, kind: 'command-post', x: 0, y: 0 }], seed: 1 };
+  it('createWorld checks sides, teams and frames', () => {
+    expect(() => createWorld({ ...base, sides: 0 }, BASE_RULESET)).toThrow(RangeError);
+    expect(() => createWorld({ ...base, sides: 9 }, BASE_RULESET)).toThrow(RangeError);
+    expect(() => createWorld({ ...base, sides: 8 }, BASE_RULESET)).not.toThrow();
+    expect(() => createWorld({ ...base, sides: 2, teams: [0] }, BASE_RULESET)).toThrow(RangeError);
+    expect(() => createWorld({ ...base, sides: 2, teams: [0, 8] }, BASE_RULESET)).toThrow(RangeError);
+    expect(() => createWorld({ ...base, sides: 2, teams: [0, 1.5] }, BASE_RULESET)).toThrow(RangeError);
+    expect(createWorld({ ...base, sides: 2, teams: [3, 3] }, BASE_RULESET).teams).toEqual([3, 3]);
+    expect(() => createWorld({ ...base, sides: 2, frames: ['id'] }, BASE_RULESET)).toThrow(RangeError);
+    expect(() => createWorld({ ...base, sides: 2, frames: ['id', 'r45' as Frame] }, BASE_RULESET)).toThrow(RangeError);
+    expect(createWorld({ ...base, sides: 2, frames: ['id', 'fy'] }, BASE_RULESET).frames).toEqual(['id', 'fy']);
+    expect(() => createWorld({ ...base, sides: 2, entities: [{ side: NEUTRAL, kind: 'command-post', x: 0, y: 0, order: { type: 'move', x: 1, y: 0 } }] }, BASE_RULESET)).toThrow(RangeError);
+  });
+
+  it('only immobile, unarmed command sources may stand neutral', () => {
+    const arch = BASE_RULESET.archetypes['command-post']!;
+    expect(canBeNeutral(arch)).toBe(true);
+    expect(canBeNeutral(BASE_RULESET.archetypes['field-post'])).toBe(false); // a source, but it drives
+    expect(canBeNeutral(BASE_RULESET.archetypes['relay-mast'])).toBe(false); // immobile, but a relay
+    expect(canBeNeutral({ ...arch, speed: 1 })).toBe(false);
+    expect(canBeNeutral({ ...arch, weapon: BASE_RULESET.archetypes.rifles!.weapon! })).toBe(false);
+    expect(canBeNeutral(undefined)).toBe(false);
+  });
+
+  it('isValidWorld checks teams, frames, neutral kinds and what a neutral post may carry', () => {
+    const w = createWorld({ map: open(7, 3), sides: 2, teams: [0, 1], frames: ['id', 'r180'], entities: [{ side: 0, kind: 'command-post', x: 0, y: 1 }, { side: NEUTRAL, kind: 'command-post', x: 3, y: 1 }, { side: 1, kind: 'command-post', x: 6, y: 1 }], seed: 1, supply: [0, 0] }, STRATEGY_RULESET);
+    expect(isValidWorld(w, STRATEGY_RULESET)).toBe(true);
+    const bad = (change: (c: World) => void) => {
+      const c = structuredClone(w);
+      change(c);
+      return isValidWorld(c, STRATEGY_RULESET);
+    };
+    expect(bad((c) => (c.teams = [0]))).toBe(false);
+    expect(bad((c) => (c.teams = [0, 8]))).toBe(false);
+    expect(bad((c) => (c.frames = ['id']))).toBe(false);
+    expect(bad((c) => (c.frames = ['id', 'r45' as Frame]))).toBe(false);
+    const neutral = (c: World) => c.entities.find((e) => e.side === NEUTRAL)!;
+    expect(bad((c) => (neutral(c).order = { type: 'move', x: 1, y: 1 }))).toBe(false);
+    expect(bad((c) => (neutral(c).doctrine = { retreatBelow: 0, priority: 'weakest', seekCover: false, holdFire: false, lostContact: 'keep' }))).toBe(false);
+    expect(bad((c) => (neutral(c).deploy = 1))).toBe(false);
+    // A neutral entity of any other kind, in the world or in a report.
+    // (Everything else about the entity stays consistent, so only the neutral rule can reject it.)
+    const asKind = (c: World, kind: string) => {
+      const e = neutral(c);
+      e.kind = kind;
+      e.hp = 50;
+      for (const list of c.intel ?? []) for (const r of list) if (r.id === e.id) Object.assign(r, { kind, hp: 50 });
+    };
+    expect(bad((c) => asKind(c, 'command-post'))).toBe(true);
+    expect(bad((c) => asKind(c, 'relay-mast'))).toBe(false);
+    expect(
+      bad((c) => {
+        const r = c.intel![0]!.find((rep) => rep.side === NEUTRAL)!;
+        c.entities = c.entities.filter((e) => e.id !== r.id);
+        r.kind = 'rifles';
+        r.hp = 1;
+      })
+    ).toBe(false);
+  });
+
+  it('observe() carries teams and frames: the observation judges allies and ties like the world', () => {
+    const w = createWorld({ map: open(6, 3), sides: 3, teams: [0, 1, 0], frames: ['id', 'fx', 'r180'], entities: [{ side: 0, kind: 'rifles', x: 1, y: 1 }, { side: 2, kind: 'rifles', x: 2, y: 1 }, { side: 1, kind: 'rifles', x: 5, y: 1 }], seed: 1 }, BASE_RULESET);
+    const obs = observe(w, BASE_RULESET, 0);
+    expect(obs.world.teams).toEqual([0, 1, 0]);
+    expect(obs.world.frames).toEqual(['id', 'fx', 'r180']);
+    const attackAlly: Command = { side: 0, unit: 1, order: { type: 'attack', target: 2 } };
+    expect(validateCommand(obs.world, BASE_RULESET, attackAlly)).toEqual(validateCommand(w, BASE_RULESET, attackAlly));
   });
 });
 
@@ -247,6 +385,40 @@ describe('engine invariants for several sides', () => {
         expect(canonicalJson(turned)).toBe(canonicalJson(direct));
       }),
       { numRuns: 200 }
+    );
+  });
+
+  it('P4 tie-breaks under a quarter turn with walls and cover: detours, firing positions and seeking cover', () => {
+    // Walls make equally long detours around them (a tie only the frame decides); forest next to a
+    // holding squad that seeks cover gives it a choice of cells; an attacker picks among firing cells.
+    const cell = fc.record({ x: fc.integer({ min: 0, max: 6 }), y: fc.integer({ min: 0, max: 6 }) });
+    fc.assert(
+      fc.property(
+        fc.array(fc.constantFrom('.', '.', '.', '^', 'f', 'f'), { minLength: 49, maxLength: 49 }),
+        fc.array(fc.record({ side: fc.integer({ min: 0, max: 3 }), kind: fc.constantFrom('rifles', 'outrider', 'warden'), at: cell, order: fc.constantFrom('move', 'attack', 'cover'), to: cell, target: fc.nat(7) }), { minLength: 1, maxLength: 6 }),
+        (terrain, units) => {
+          const used = new Set<string>();
+          const entities: { side: number; kind: string; x: number; y: number }[] = [];
+          for (const u of units) {
+            if (terrain[u.at.y * 7 + u.at.x] === '^' || used.has(`${u.at.x},${u.at.y}`)) continue;
+            used.add(`${u.at.x},${u.at.y}`);
+            entities.push({ side: u.side, kind: u.kind, x: u.at.x, y: u.at.y });
+          }
+          if (entities.length === 0) return;
+          const w = createWorld({ map: { w: 7, h: 7, terrain: terrain.join('') }, sides: 4, frames: FOUR, entities, seed: 1 }, BASE_RULESET);
+          const plan: Command[] = w.entities.map((e, i) => {
+            const u = units[i % units.length]!;
+            const doctrine = { retreatBelow: 0, priority: 'nearest', seekCover: u.order === 'cover', holdFire: false, lostContact: 'keep' } as const;
+            const order: Order = u.order === 'move' ? { type: 'move', x: u.to.x, y: u.to.y } : u.order === 'attack' ? { type: 'attack', target: (u.target % w.entities.length) + 1 } : { type: 'hold' };
+            return { side: e.side, unit: e.id, order, doctrine };
+          });
+          const plans = [plan, [], []];
+          const direct = transformWorld(play(w, plans), turn(7), next(4));
+          const turned = play(transformWorld(w, turn(7), next(4)), plans.map((p) => transformCommands(p, turn(7), next(4))));
+          expect(canonicalJson(turned)).toBe(canonicalJson(direct));
+        }
+      ),
+      { numRuns: 400 }
     );
   });
 

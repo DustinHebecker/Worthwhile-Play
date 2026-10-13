@@ -528,6 +528,11 @@ export function isValidState(value: unknown): value is RcState {
   const spec = value.map ? customSpec(value.map) : scenarioById(value.scenario);
   if (!spec || !(value.turnLimit === null || isInt(value.turnLimit, 1, MAX_TURNS)) || !isOneOf(value.phase, ['plan', 'finished'])) return false;
   if (!isValidWorld(value.world, RULESET) || value.world.sides !== 2 || !matchesScenario(value.world, spec)) return false;
+  // Two sides only (several sides come with a later save version): no teams, frames, sides that
+  // are out, neutral posts or reports of them — a crafted save must not turn the opponent's post neutral.
+  const w = value.world;
+  if (w.teams !== undefined || w.frames !== undefined || (w as { out?: unknown }).out !== undefined) return false;
+  if (w.entities.some((e) => e.side !== PLAYER && e.side !== OPPONENT) || (w.intel ?? []).some((list) => list.some((r) => r.side !== PLAYER && r.side !== OPPONENT))) return false;
   // The stalemate record holds at most one entry per turn played and never more than decides a game.
   if (!isArrayOf(value.lead, (v) => isInt(v, -MAX_STRENGTH, MAX_STRENGTH)) || value.lead.length > Math.min(value.world.turn, STALL_TURNS + 1)) return false;
   if (typeof value.quick !== 'boolean' || (value.quick && value.turnLimit !== null)) return false;

@@ -276,7 +276,7 @@ Owner decisions (2026-10-13):
 - **Free-for-all first, teams later** (not dropped: alliances — shared sight, no fire on allies, shared victory — stay on the list as an increment after M5).
 - **Elimination by Command Posts, with capture.** A side is out when it holds no Command Post any more. Command Posts can be **taken over** (captured), so a side that lost its own post but took another one plays on until both are destroyed. Maps may also hold **neutral, passive Command Posts** that any side can capture (e.g. the empty base of a four-base map in a three-side game).
 - **The number of opponents is the player's choice** (up to the engine's 8 sides), not capped at 3. Maps need not be symmetric: an **asymmetric map** may pit the player against many opponents and balance it with a resource advantage (start Supply and deposits per side). Fairness by construction (P4 mirror) then only holds for symmetric maps; asymmetric ones are balanced by measurement.
-- Three sides on a four-base map with one empty (neutral, capturable) base.
+- Three sides on a four-base map with one empty (neutral, capturable) base (its fairness is measured: see P4 below).
 
 Binding rules for several sides (to be implemented in the increments below; tests named per rule):
 
@@ -298,7 +298,7 @@ Binding rules for several sides (to be implemented in the increments below; test
 
 *Invariants (engine, tested before any game code):*
 - **P1 determinism** for 3–8 sides.
-- **P4 symmetry:** for a map whose terrain, deposits and units are invariant under a symmetry g of the grid (point mirror, 90° rotation on square maps, either axis mirror) together with a permutation π of the sides, resolving the g-mapped plans with sides permuted by π gives the g/π-mapped outcome (ids canonicalised). **No symmetry claim for asymmetric maps** (the editor says so; their balance is measured).
+- **P4 symmetry:** for a symmetry g of the grid (point mirror, 90° rotation on square maps, either axis mirror) and a permutation π of the sides **that moves every playing side** (no side is mapped onto itself or onto a neutral post), with frames chosen so that g carries each side's frame onto the frame of π(side): resolving the g-mapped world and plans with sides permuted by π gives the g/π-mapped outcome (ids canonicalised where same-batch placements of different sides tie). A side that a symmetry leaves in place (e.g. a side on the mirror axis) has no cell order that is symmetric under it, so such setups are not covered. **No symmetry claim for asymmetric maps**, and none for three sides on a four-base map with one empty base (the empty base is fixed or turned into a neutral post by the symmetry): their fairness is measured, not built in (the editor says so).
 - **P6/P6b plan-order independence:** permuting the order of plans and the order of sides in the batch changes nothing (captures and contested captures included).
 - **No leaks:** `observe(world, side)` for side A is unchanged when only units that A neither sees nor has reports of change, also with 3+ sides; events told to A (captures, eliminations, sales, repairs) follow the existing rules per side.
 - **Saves:** state version bump with a migration of v8 saves (2 sides, no neutral posts, `team = side`).

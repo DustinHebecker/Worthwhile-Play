@@ -22,6 +22,8 @@ export function createWorld(scenario: Scenario, ruleset: Ruleset): World {
     const key = `${arch.layer}:${spec.x},${spec.y}`;
     if (occupied.has(key)) throw new RangeError(`Cell ${spec.x},${spec.y} is occupied.`);
     occupied.add(key);
+    // A neutral post only ever holds (it takes no orders).
+    if (spec.side === NEUTRAL && spec.order && spec.order.type !== 'hold') throw new RangeError('A neutral post only holds.');
     return spawn(i + 1, spec.side, arch, spec.x, spec.y, spec.order ?? { type: 'hold' });
   });
   const deposits = (map.deposits ?? []).map((d) => ({ x: d.x, y: d.y, left: d.left }));
