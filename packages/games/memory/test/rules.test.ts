@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import type { Deck } from '@wp/learning-content';
-import { capitalsDeck, SYMBOL_DECK } from '@wp/learning-content';
+import { aiBasicsDeck, capitalsDeck, SYMBOL_DECK } from '@wp/learning-content';
 import { lookupDeckItems } from '../src/decks';
 import { metadata } from '../src/metadata';
 import { SYMBOL_IDS } from '../src/messages';
@@ -85,8 +85,15 @@ describe('deck lookup', () => {
   });
 
   it('maps built-in variants to decks', () => {
-    expect(VARIANTS).toEqual(['symbols', 'picture-word', 'word-translation', 'flag-country', 'country-capital', 'own']);
-    expect(VARIANT_DECK).toEqual({ symbols: 'symbols', 'picture-word': 'first-words', 'word-translation': 'first-words', 'flag-country': 'flags', 'country-capital': 'capitals' });
+    expect(VARIANTS).toEqual(['symbols', 'picture-word', 'word-translation', 'flag-country', 'country-capital', 'ai-term-definition', 'own']);
+    expect(VARIANT_DECK).toEqual({
+      symbols: 'symbols',
+      'picture-word': 'first-words',
+      'word-translation': 'first-words',
+      'flag-country': 'flags',
+      'country-capital': 'capitals',
+      'ai-term-definition': 'ai-basics'
+    });
   });
 });
 
@@ -412,6 +419,10 @@ describe('isValidMemoryState', () => {
     expect(isValidLanguages('country-capital', { back: 'sv' })).toBe(false); // no capital names in Swedish
     expect(isValidLanguages('country-capital', { front: 'ja', back: 'ja' })).toBe(false);
     expect(isValidLanguages('country-capital', {})).toBe(false);
+    expect(isValidLanguages('ai-term-definition', { back: 'hi' })).toBe(true);
+    expect(isValidLanguages('ai-term-definition', { back: 'sv' })).toBe(false); // no AI terms in Swedish
+    expect(isValidLanguages('ai-term-definition', { front: 'en', back: 'en' })).toBe(false);
+    expect(isValidLanguages('ai-term-definition', {})).toBe(false);
     expect(isValidLanguages('symbols', { other: 'x' })).toBe(false);
     expect(isValidLanguages('symbols', null)).toBe(false);
   });
@@ -447,6 +458,29 @@ describe('isValidMemoryState', () => {
     expect(valid(swap(first, 'za'))).toBe(false); // in the flags deck, but without a capital
     expect(valid(swap(first, 'xx'))).toBe(false);
     const unused = (lookupDeckItems('capitals') ?? []).find((id) => !capitals.itemIds.includes(id)) as string;
+    expect(valid(swap(first, unused))).toBe(true);
+  });
+
+  it('validates AI term ↔ definition games against the AI basics deck', () => {
+    const ai = deal(aiBasicsDeck('es'), 'large', 21, { variant: 'ai-term-definition', languages: { back: 'es' } });
+    expect(ai.deckId).toBe('ai-basics');
+    expect(valid(ai)).toBe(true);
+    expect(valid(JSON.parse(JSON.stringify(ai)))).toBe(true);
+    expect(lookupDeckItems('ai-basics')).toContain('token');
+    // Another deck id or variant, a language without AI terms, or a card the deck does not have: rejected.
+    expect(valid({ ...ai, deckId: 'capitals' })).toBe(false);
+    expect(valid({ ...ai, variant: 'country-capital' })).toBe(false);
+    expect(valid({ ...ai, languages: { back: 'sv' } })).toBe(false);
+    expect(valid({ ...ai, languages: {} })).toBe(false);
+    const swap = (from: string, to: string) =>
+      mutate(ai, (s) => {
+        s.itemIds = (s.itemIds as string[]).map((id) => (id === from ? to : id));
+        s.cards = (s.cards as Card[]).map((c) => (c.item === from ? { ...c, item: to } : c));
+      });
+    const first = ai.itemIds[0] as string;
+    expect(valid(swap(first, 'de'))).toBe(false); // a capitals item
+    expect(valid(swap(first, 'robot'))).toBe(false);
+    const unused = (lookupDeckItems('ai-basics') ?? []).find((id) => !ai.itemIds.includes(id)) as string;
     expect(valid(swap(first, unused))).toBe(true);
   });
 

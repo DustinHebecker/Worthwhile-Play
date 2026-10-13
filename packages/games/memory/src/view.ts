@@ -32,8 +32,24 @@ const CHOICE_LABEL: Readonly<Record<(typeof BUILTIN_CHOICES)[number], string>> =
   'picture-word': 'cards.pictureWord',
   'word-translation': 'cards.wordTranslation',
   'flag-country': 'cards.flags',
-  'country-capital': 'cards.capitals'
+  'country-capital': 'cards.capitals',
+  'ai-term-definition': 'cards.aiBasics'
 };
+
+/** Texts wider than this (definitions, sentences; see `textWidth`) are set as a small paragraph, and their board gets taller cards. */
+export const LONG_TEXT = 40;
+/** At most this many columns on a board with long texts, so a definition gets a readable line length on a phone. */
+export const LONG_TEXT_COLUMNS = 3;
+
+/** Approximate display width in Latin characters: Chinese, Japanese and Korean characters count twice. */
+const WIDE = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\u3000-\u30ff\uff00-\uffef]/u;
+export function textWidth(text: string): number {
+  let width = 0;
+  for (const char of text) width += WIDE.test(char) ? 2 : 1;
+  return width;
+}
+
+const isLongText = (text: string | undefined): boolean => textWidth(text ?? '') > LONG_TEXT;
 
 /**
  * Renders one side of a learning item generically, so that symbol, image, text (and
@@ -45,9 +61,10 @@ export function renderSide(side: CardSide, description: string): HTMLElement {
   if (side.image) face.append(h('img', { class: 'wp-memory__image', src: side.image, alt: description, draggable: 'false' }));
   if (side.symbol) face.append(h('span', { class: 'wp-memory__symbol', role: 'img', 'aria-label': description }, side.symbol));
   if (side.text) {
-    // Long single words ("der Schlüssel", "Wassermelone") get a smaller size instead of breaking mid-word.
-    const longest = Math.max(...side.text.split(/\s+/).map((word) => [...word].length));
-    const size = longest > 11 ? ' wp-memory__text--xlong' : longest > 7 ? ' wp-memory__text--long' : '';
+    // Long single words ("der Schlüssel", "Wassermelone", "アラインメント") get a smaller size instead of breaking
+    // mid-word; long texts (definitions) are set as a small paragraph.
+    const longest = Math.max(...side.text.split(/\s+/).map(textWidth));
+    const size = isLongText(side.text) ? ' wp-memory__text--para' : longest > 11 ? ' wp-memory__text--xlong' : longest > 7 ? ' wp-memory__text--long' : '';
     face.append(h('span', { class: `wp-memory__text${size}`, lang: side.lang, dir: 'auto' }, side.text));
   }
   // Audio sides are not played yet (bundled audio packs are a later increment); text can be read aloud.
@@ -142,6 +159,8 @@ export function createMemory(context: GameContext, speech: Speech | undefined = 
         return t('languages.countries', { language: languageName(s.languages.back) });
       case 'country-capital':
         return t('languages.capitals', { language: languageName(s.languages.back) });
+      case 'ai-term-definition':
+        return t('languages.aiBasics', { language: languageName(s.languages.back) });
       default:
         return '';
     }
@@ -221,7 +240,12 @@ export function createMemory(context: GameContext, speech: Speech | undefined = 
     missingEl.hidden = !missing;
     board.hidden = missing;
     statusEl.hidden = missing;
-    const { columns } = BOARD[state.difficulty];
+    // Boards with long texts (term ↔ definition) get fewer columns and taller cards, decided for the whole
+    // board up front so that turning a card over never changes the layout. Hidden cards stay empty in the DOM.
+    const resolve = faces;
+    const longText = resolve !== undefined && state.cards.some((card) => isLongText(resolve(card).side.text));
+    const columns = longText ? Math.min(BOARD[state.difficulty].columns, LONG_TEXT_COLUMNS) : BOARD[state.difficulty].columns;
+    board.classList.toggle('wp-memory__board--long', longText);
     board.style.setProperty('--wp-memory-columns', String(columns));
     cards = missing
       ? []
@@ -316,6 +340,7 @@ export function createMemory(context: GameContext, speech: Speech | undefined = 
       const language = languageName(context.contentLanguages?.learning);
       if (parsed.variant === 'picture-word' || parsed.variant === 'word-translation') notice = t('languages.fallback', { language });
       if (parsed.variant === 'country-capital') notice = t('languages.capitalsFallback', { language });
+      if (parsed.variant === 'ai-term-definition') notice = t('languages.aiBasicsFallback', { language });
     }
     return { next: deal(deck, difficulty, seed, { variant: parsed.variant, languages }), notice };
   };

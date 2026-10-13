@@ -101,6 +101,19 @@
 .wp-memory__face--text .wp-memory__text--xlong { font-size: clamp(0.7rem, 3vw, 0.95rem); }
 .wp-memory__text--long { font-size: clamp(0.7rem, 3vw, 0.9rem); }
 .wp-memory__text--xlong { font-size: clamp(0.65rem, 2.6vw, 0.8rem); }
+
+/* Boards with long texts (term ↔ definition): at most 3 columns (set by the view), a wider board on large
+   screens and cards as tall as a short definition needs, so revealing one rarely changes the layout.
+   A longer text still grows its row instead of being cut off. */
+.wp-memory__board--long { max-width: calc(var(--wp-memory-columns) * 12rem); }
+/* Room above and below the text for the check badge of a found pair. */
+.wp-memory__board--long .wp-memory__card { aspect-ratio: auto; min-block-size: clamp(8.5rem, 40vw, 10rem); padding-block: 1rem; }
+.wp-memory__face--text .wp-memory__text--para {
+  font-size: clamp(0.75rem, 3.3vw, 0.95rem);
+  font-weight: 400;
+  line-height: 1.25;
+  overflow-wrap: break-word;
+}
 .wp-memory__actions { min-height: var(--wp-touch); display: flex; justify-content: center; }
 
 .wp-memory--motion .wp-memory__face { animation: wp-memory-flip 160ms ease-out; }

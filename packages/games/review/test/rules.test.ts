@@ -225,6 +225,7 @@ describe('sessions', () => {
     expect(recordDeckOf({ deckId: 'first-words', languages: { learning: 'ja', translation: 'en' } })).toBe('first-words:ja');
     expect(recordDeckOf({ deckId: 'flags', languages: { countries: 'de' } })).toBe('flags');
     expect(recordDeckOf({ deckId: 'capitals', languages: { learning: 'ja' } })).toBe('capitals');
+    expect(recordDeckOf({ deckId: 'ai-basics', languages: { learning: 'ja' } })).toBe('ai-basics');
     expect(recordDeckOf({ deckId: DECK, languages: {} })).toBe(DECK);
   });
 });
@@ -328,6 +329,22 @@ describe('validation of untrusted saves', () => {
       { ...capitals, cards: [{ item: 'za', dir: 'forward' }, ...capitals.cards.slice(1)] },
       { ...capitals, cards: [{ item: 'xx', dir: 'forward' }, ...capitals.cards.slice(1)] },
       { ...capitals, deckId: 'capital' }
+    ];
+    for (const value of broken) expect(isValidReviewState(value), JSON.stringify(value)?.slice(0, 200)).toBe(false);
+  });
+
+  it('AI basics: accepts real sessions; rejects other languages and cards the deck does not have', () => {
+    const ai = startSession(options({ deckId: 'ai-basics', languages: { learning: 'uk' }, itemIds: builtinItemIds('ai-basics')!, mode: 'new', direction: 'mixed' }));
+    expect(isValidReviewState(ai)).toBe(true);
+    expect(isValidReviewState(JSON.parse(JSON.stringify(ai)))).toBe(true);
+    const broken: unknown[] = [
+      { ...ai, languages: { learning: 'sv' } },
+      { ...ai, languages: { countries: 'de' } },
+      { ...ai, languages: { learning: 'de', translation: 'en' } },
+      { ...ai, languages: {} },
+      { ...ai, cards: [{ item: 'de', dir: 'forward' }, ...ai.cards.slice(1)] },
+      { ...ai, cards: [{ item: 'robot', dir: 'forward' }, ...ai.cards.slice(1)] },
+      { ...ai, deckId: 'ai' }
     ];
     for (const value of broken) expect(isValidReviewState(value), JSON.stringify(value)?.slice(0, 200)).toBe(false);
   });

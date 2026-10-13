@@ -1,4 +1,5 @@
 import type { Deck } from './deck';
+import { AI_TERMS } from './builtin/ai-basics';
 import { CAPITALS } from './builtin/capitals';
 import { COUNTRY_CODES, countryName, flagEmoji, hasCountryNames } from './builtin/countries';
 import { FIRST_WORDS, toVocabularyLanguage, VOCABULARY_LANGUAGES, type VocabularyLanguage } from './builtin/first-words';
@@ -11,7 +12,7 @@ export interface ContentLanguageChoice {
 }
 
 export interface ResolvedLanguages {
-  /** Language of the words in "First words" games, and of country and capital names in "Capitals". */
+  /** Language of the words in "First words" games, of country and capital names in "Capitals" and of "AI basics". */
   learning: VocabularyLanguage;
   /** Language of translations (always different from `learning`). */
   translation: VocabularyLanguage;
@@ -29,7 +30,8 @@ export interface ResolvedLanguages {
  * - translation: chosen translation language → UI language → English → German, skipping the learning language;
  * - country names ("Flags & countries"): chosen learning language if the platform knows it → UI language;
  * - "Capitals" (country and capital names in one language): the learning language above, because capital
- *   names exist only in the 16 languages of "First words" (`learningFallback` tells when it is a fallback).
+ *   names exist only in the 16 languages of "First words" (`learningFallback` tells when it is a fallback);
+ * - "AI basics" (term and definition in one language): the learning language above, for the same reason.
  */
 export function resolveContentLanguages(choice: ContentLanguageChoice | undefined, uiLocale: string): ResolvedLanguages {
   const chosenLearning = toVocabularyLanguage(choice?.learning);
@@ -46,7 +48,7 @@ export function resolveContentLanguages(choice: ContentLanguageChoice | undefine
   };
 }
 
-export const BUILTIN_DECK_IDS = ['symbols', 'first-words', 'flags', 'capitals'] as const;
+export const BUILTIN_DECK_IDS = ['symbols', 'first-words', 'flags', 'capitals', 'ai-basics'] as const;
 export type BuiltinDeckId = (typeof BUILTIN_DECK_IDS)[number];
 
 export function isBuiltinDeckId(value: unknown): value is BuiltinDeckId {
@@ -54,12 +56,12 @@ export function isBuiltinDeckId(value: unknown): value is BuiltinDeckId {
 }
 
 /** Built-in decks that make sense for review (front and back differ). */
-export const REVIEW_BUILTIN_DECK_IDS = ['first-words', 'flags', 'capitals'] as const satisfies readonly BuiltinDeckId[];
+export const REVIEW_BUILTIN_DECK_IDS = ['first-words', 'flags', 'capitals', 'ai-basics'] as const satisfies readonly BuiltinDeckId[];
 
 /**
  * Key under which learning records of a deck are kept, or `undefined` if the deck is not reviewable.
  * "First words" is learned per learning language (`first-words:ja`); the translation language does not matter.
- * Flags and capitals are language-independent knowledge; imported decks use their (unique) id.
+ * Flags, capitals and AI basics are language-independent knowledge; imported decks use their (unique) id.
  */
 export function learningDeckId(deckId: string, languages: Pick<ResolvedLanguages, 'learning'>): string | undefined {
   if (deckId === 'symbols') return undefined;
@@ -78,6 +80,8 @@ export function builtinItemIds(id: string): readonly string[] | undefined {
       return COUNTRY_CODES.map((code) => code.toLowerCase());
     case 'capitals':
       return CAPITALS.map((entry) => entry.code.toLowerCase());
+    case 'ai-basics':
+      return AI_TERMS.map((entry) => entry.id);
     default:
       return undefined;
   }
@@ -134,6 +138,23 @@ export function capitalsDeck(language: VocabularyLanguage): Deck {
   };
 }
 
+/** "AI basics" as a deck: term ↔ definition, both in `language`. */
+export function aiBasicsDeck(language: VocabularyLanguage): Deck {
+  return {
+    schemaVersion: 1,
+    id: 'ai-basics',
+    title: { en: 'AI basics', de: 'KI-Grundbegriffe' },
+    license: 'PolyForm-Perimeter-1.0.0 (authored for Worthwhile Play)',
+    source: 'Worthwhile Play',
+    items: AI_TERMS.map((entry) => ({
+      id: entry.id,
+      front: { text: entry.terms[language], lang: language },
+      back: { text: entry.definitions[language], lang: language },
+      category: 'ai'
+    }))
+  };
+}
+
 /** Builds a built-in deck for the given content languages. */
 export function builtinDeck(id: BuiltinDeckId, languages: ResolvedLanguages): Deck {
   switch (id) {
@@ -145,6 +166,8 @@ export function builtinDeck(id: BuiltinDeckId, languages: ResolvedLanguages): De
       return flagsDeck(languages.countries);
     case 'capitals':
       return capitalsDeck(languages.learning);
+    case 'ai-basics':
+      return aiBasicsDeck(languages.learning);
   }
 }
 

@@ -24,7 +24,7 @@ export const RATINGS: readonly LearningRating[] = ['again', 'hard', 'good'];
 /** Session sizes: short and bounded. */
 export const SESSION_LIMITS: Readonly<Record<Mode, number>> = { review: 20, new: 10, practice: 10 };
 /** Built-in decks that can be reviewed (front and back differ). */
-export const BUILTIN_REVIEW_DECKS = ['first-words', 'flags', 'capitals'] as const;
+export const BUILTIN_REVIEW_DECKS = ['first-words', 'flags', 'capitals', 'ai-basics'] as const;
 export const DEFAULT_DECK = 'first-words';
 export const MAX_ITEM_ID_LENGTH = 200;
 export const MAX_TYPED_LENGTH = 300;
@@ -212,7 +212,7 @@ export function summary(state: ReviewState): Record<LearningRating, number> & { 
   return counts;
 }
 
-/** Key of the learning records for a session's deck (`first-words:<learning language>`, `flags`, `capitals`, user deck id). */
+/** Key of the learning records for a session's deck (`first-words:<learning language>`, `flags`, `capitals`, `ai-basics`, user deck id). */
 export function recordDeckOf(state: Pick<ReviewState, 'deckId' | 'languages'>): string {
   return state.deckId === 'first-words' ? `first-words:${state.languages.learning ?? ''}` : state.deckId;
 }
@@ -245,7 +245,7 @@ function isValidLanguages(deckId: string, value: unknown): value is ReviewLangua
   if (deckId === 'first-words') {
     return keys === 'learning,translation' && isVocabularyLanguage(value.learning) && isVocabularyLanguage(value.translation) && value.learning !== value.translation;
   }
-  if (deckId === 'capitals') return keys === 'learning' && isVocabularyLanguage(value.learning);
+  if (deckId === 'capitals' || deckId === 'ai-basics') return keys === 'learning' && isVocabularyLanguage(value.learning);
   if (deckId === 'flags') return keys === 'countries' && typeof value.countries === 'string' && /^[a-zA-Z]{2,3}(?:-[a-zA-Z0-9]{2,8})*$/.test(value.countries);
   return keys === '';
 }

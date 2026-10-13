@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  AI_TERM_IDS,
+  AI_TERMS,
+  aiBasicsDeck,
+  aiTerm,
   builtinDeck,
   builtinItemIds,
   CAPITAL_CODES,
@@ -11,6 +15,7 @@ import {
   countryName,
   FIRST_WORDS,
   firstWordsDeck,
+  isAiTermId,
   flagEmoji,
   flagsDeck,
   hasCountryNames,
@@ -269,6 +274,159 @@ describe('Capitals', () => {
   });
 });
 
+/** Main term and the alternatives in brackets: "Künstliche Intelligenz (KI)" → ["Künstliche Intelligenz", "KI"]. */
+function termParts(term: string): string[] {
+  const alternatives = [...term.matchAll(/[(（]([^)）]+)[)）]/gu)].map((m) => (m[1] ?? '').trim());
+  return [term.replace(/\s*[(（][^)）]*[)）]/gu, '').trim(), ...alternatives].filter((part) => part !== '');
+}
+
+/** Languages written without spaces between words: there, a term is found anywhere in the text. */
+const UNSPACED = new Set(['ja', 'zh-Hans']);
+
+/** True if `text` contains `term` (case-insensitive) starting at a word start (anywhere for ja/zh). */
+function mentions(text: string, term: string, lang: string): boolean {
+  const haystack = text.toLocaleLowerCase(lang);
+  const needle = term.toLocaleLowerCase(lang);
+  if (UNSPACED.has(lang)) return haystack.includes(needle);
+  const escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(?<![\\p{L}\\p{M}\\p{N}])${escaped}`, 'u').test(haystack);
+}
+
+describe('AI basics', () => {
+  it('has 36–40 terms with unique, readable ids', () => {
+    expect(AI_TERMS.length).toBeGreaterThanOrEqual(36);
+    expect(AI_TERMS.length).toBeLessThanOrEqual(40);
+    expect(AI_TERMS.map((entry) => entry.id)).toEqual([...AI_TERM_IDS]);
+    expect(new Set(AI_TERM_IDS).size).toBe(AI_TERM_IDS.length);
+    for (const id of AI_TERM_IDS) expect(id).toMatch(/^[a-z]+(-[a-z]+)*$/);
+  });
+
+  it('has a trimmed term and definition in every supported language', () => {
+    for (const entry of AI_TERMS) {
+      expect(Object.keys(entry.terms).sort(), entry.id).toEqual([...VOCABULARY_LANGUAGES].sort());
+      expect(Object.keys(entry.definitions).sort(), entry.id).toEqual([...VOCABULARY_LANGUAGES].sort());
+      for (const lang of VOCABULARY_LANGUAGES) {
+        const where = `${lang}/${entry.id}`;
+        for (const text of [entry.terms[lang], entry.definitions[lang]]) {
+          expect(typeof text, where).toBe('string');
+          expect(text.trim(), where).not.toBe('');
+          expect(text.trim(), where).toBe(text);
+          expect(text, where).not.toMatch(/\s{2}|\n/);
+          expect(text, where).not.toMatch(/'/); // typographic apostrophes and quotes only
+        }
+        expect([...entry.terms[lang]].length, where).toBeLessThanOrEqual(45);
+        expect([...entry.definitions[lang]].length, where).toBeLessThanOrEqual(160);
+        expect([...entry.definitions[lang]].length, where).toBeGreaterThan([...entry.terms[lang]].length);
+      }
+    }
+  });
+
+  it('keeps English definitions short: one sentence of at most 140 characters', () => {
+    for (const entry of AI_TERMS) {
+      const definition = entry.definitions.en;
+      expect(definition.length, entry.id).toBeLessThanOrEqual(140);
+      expect(definition, entry.id).toMatch(/^[A-Z“].*\.$/u);
+      expect(definition.slice(0, -1), entry.id).not.toMatch(/[.!?]\s/);
+    }
+  });
+
+  it('ends every definition like a sentence in its script', () => {
+    const end: Partial<Record<string, RegExp>> = { ja: /。$/u, 'zh-Hans': /。$/u, hi: /।$/u };
+    for (const lang of VOCABULARY_LANGUAGES) {
+      for (const entry of AI_TERMS) expect(entry.definitions[lang], `${lang}/${entry.id}`).toMatch(end[lang] ?? /\.$/u);
+    }
+  });
+
+  it('is unambiguous in every language: no duplicate terms or definitions', () => {
+    for (const lang of VOCABULARY_LANGUAGES) {
+      const terms = AI_TERMS.map((entry) => entry.terms[lang].toLocaleLowerCase(lang));
+      const definitions = AI_TERMS.map((entry) => entry.definitions[lang].toLocaleLowerCase(lang));
+      expect(new Set(terms).size, lang).toBe(terms.length);
+      expect(new Set(definitions).size, lang).toBe(definitions.length);
+      for (const definition of definitions) expect(terms, lang).not.toContain(definition);
+    }
+  });
+
+  it('never gives a pair away: no definition contains its own term or the term’s abbreviation', () => {
+    for (const lang of VOCABULARY_LANGUAGES) {
+      for (const entry of AI_TERMS) {
+        for (const part of termParts(entry.terms[lang])) {
+          expect(mentions(entry.definitions[lang], part, lang), `${lang}/${entry.id}: “${part}” in “${entry.definitions[lang]}”`).toBe(false);
+        }
+      }
+    }
+    // The helpers themselves: alternatives in brackets, word starts, unspaced scripts.
+    expect(termParts('Künstliche Intelligenz (KI)')).toEqual(['Künstliche Intelligenz', 'KI']);
+    expect(termParts('人工知能（AI）')).toEqual(['人工知能', 'AI']);
+    expect(mentions('Ein Modell lernt.', 'Modell', 'de')).toBe(true);
+    expect(mentions('Systemen wie diesem', 'istem', 'tr')).toBe(false);
+    expect(mentions('モデルの値', 'モデル', 'ja')).toBe(true);
+  });
+
+  it('uses the script of each language for the terms (no copy-paste slips between columns)', () => {
+    const scripts: Partial<Record<string, RegExp>> = {
+      ru: /^[\p{Script=Cyrillic} ,()-]+(\((LLM|RAG|open weights|bias|fine-tuning|alignment|guardrails)\))?$/u,
+      uk: /^[\p{Script=Cyrillic}’ ,()-]+(\((LLM|RAG|open weights|bias|fine-tuning|alignment|guardrails)\))?$/u,
+      ar: /^[\p{Script=Arabic}\p{M} ]+( \((LLM|RAG)\))?$/u,
+      hi: /^[\p{Script=Devanagari}\p{M} ()-]+( \((LLM|RAG)\))?$/u,
+      ko: /^[\p{Script=Hangul} ()]+(\((LLM|RAG|AI)\))?$|^AI [\p{Script=Hangul}]+$|^생성형 AI$/u,
+      ja: /^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}ー（）]+(（(AI|LLM|RAG)）)?$|^(生成AI|AIエージェント)$/u,
+      'zh-Hans': /^[\p{Script=Han}（）]+(（(AI|LLM|RAG|token)）)?$|^(Transformer|AI智能体)$/u
+    };
+    for (const [lang, pattern] of Object.entries(scripts)) {
+      for (const entry of AI_TERMS) expect(entry.terms[lang as 'ru'], `${lang}/${entry.id}`).toMatch(pattern!);
+    }
+    for (const lang of ['de', 'en', 'nl', 'es', 'fr', 'pt', 'it', 'pl', 'tr'] as const) {
+      for (const entry of AI_TERMS) expect(entry.terms[lang], `${lang}/${entry.id}`).toMatch(/^[\p{Script=Latin}’ ()-]+$/u);
+    }
+  });
+
+  it('spot checks: established terms per language', () => {
+    expect(aiTerm('token', 'de')?.term).toBe('Token');
+    expect(aiTerm('token', 'ja')?.term).toBe('トークン');
+    expect(aiTerm('machine-learning', 'fr')?.term).toBe('Apprentissage automatique');
+    expect(aiTerm('large-language-model', 'en')).toEqual({ term: 'Large language model (LLM)', definition: AI_TERMS.find((e) => e.id === 'large-language-model')?.definitions.en });
+    expect(aiTerm('hallucination', 'es')?.term).toBe('Alucinación');
+    expect(aiTerm('nope', 'en')).toBeUndefined();
+    expect(isAiTermId('token')).toBe(true);
+    expect(isAiTermId('toString')).toBe(false);
+  });
+
+  it('builds a valid deck in every supported language: term ↔ definition in one language', () => {
+    for (const lang of VOCABULARY_LANGUAGES) {
+      const deck = aiBasicsDeck(lang);
+      expect(validateDeck(deck).ok, lang).toBe(true);
+      expect(deck.items).toHaveLength(AI_TERMS.length);
+      for (const item of deck.items) {
+        expect(item.front.lang).toBe(lang);
+        expect(item.back.lang).toBe(lang);
+        expect(item.category).toBe('ai');
+      }
+    }
+    expect(aiBasicsDeck('de').items.find((i) => i.id === 'token')).toEqual({
+      id: 'token',
+      front: { text: 'Token', lang: 'de' },
+      back: { text: 'Kleines Textstück, oft ein Wort oder Wortteil, das ein Sprachmodell liest und schreibt.', lang: 'de' },
+      category: 'ai'
+    });
+    expect(builtinItemIds('ai-basics')).toEqual([...AI_TERM_IDS]);
+  });
+
+  it('follows the learning language with the explicit fallbacks (UI language, then English)', () => {
+    expect(builtinDeck('ai-basics', resolveContentLanguages({ learning: 'ko' }, 'de')).items[0]?.back.lang).toBe('ko');
+    const swedish = resolveContentLanguages({ learning: 'sv' }, 'de');
+    expect(swedish.learningFallback).toBe(true);
+    expect(builtinDeck('ai-basics', swedish).items.find((i) => i.id === 'model')?.front).toEqual({ text: 'Modell', lang: 'de' });
+    expect(builtinDeck('ai-basics', resolveContentLanguages(undefined, 'sv')).items[0]?.front.lang).toBe('en');
+  });
+
+  it('is reviewable and keeps one set of learning records for all languages (like capitals)', () => {
+    expect(REVIEW_BUILTIN_DECK_IDS).toContain('ai-basics');
+    expect(learningDeckId('ai-basics', { learning: 'ja' })).toBe('ai-basics');
+    expect(learningDeckId('ai-basics', { learning: 'de' })).toBe('ai-basics');
+  });
+});
+
 describe('built-in deck registry', () => {
   it('lists item ids per deck independently of languages', () => {
     expect(builtinItemIds('symbols')).toEqual(SYMBOL_DECK.items.map((i) => i.id));
@@ -279,12 +437,14 @@ describe('built-in deck registry', () => {
     expect(builtinItemIds('user-x')).toBeUndefined();
     expect(isBuiltinDeckId('flags')).toBe(true);
     expect(isBuiltinDeckId('capitals')).toBe(true);
+    expect(isBuiltinDeckId('ai-basics')).toBe(true);
+    expect(builtinItemIds('ai-basics')).toContain('token');
     expect(isBuiltinDeckId('toString')).toBe(false);
   });
 
   it('builds each built-in deck with matching item ids', () => {
     const languages = resolveContentLanguages({ learning: 'es' }, 'en');
-    for (const id of ['symbols', 'first-words', 'flags', 'capitals'] as const) {
+    for (const id of ['symbols', 'first-words', 'flags', 'capitals', 'ai-basics'] as const) {
       const deck = builtinDeck(id, languages);
       expect(deck.id).toBe(id);
       expect(deck.license).toBeTruthy();

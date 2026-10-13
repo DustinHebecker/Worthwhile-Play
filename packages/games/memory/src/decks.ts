@@ -1,5 +1,7 @@
 import type { Translator, UserDeckSource } from '@wp/game-core';
 import {
+  aiBasicsDeck,
+  aiTerm,
   builtinItemIds,
   capitalName,
   capitalsDeck,
@@ -19,12 +21,12 @@ import {
 } from '@wp/learning-content';
 import type { BuiltinVariant, CardLanguages, Card, DeckLookup, MemoryState, Variant } from './rules';
 
-/** Item ids of the built-in decks (symbols, first words, flags, capitals) for save validation. */
+/** Item ids of the built-in decks (symbols, first words, flags, capitals, AI basics) for save validation. */
 export const lookupDeckItems: DeckLookup = (deckId) => builtinItemIds(deckId);
 
 /** What the player can choose in the "Cards" menu: a built-in variant or `own:<deck id>`. */
 export type CardChoice = BuiltinVariant | `own:${string}`;
-export const BUILTIN_CHOICES: readonly BuiltinVariant[] = ['symbols', 'picture-word', 'word-translation', 'flag-country', 'country-capital'];
+export const BUILTIN_CHOICES: readonly BuiltinVariant[] = ['symbols', 'picture-word', 'word-translation', 'flag-country', 'country-capital', 'ai-term-definition'];
 
 export function parseChoice(value: unknown): { variant: Variant; deckId?: string } | undefined {
   if (typeof value !== 'string') return undefined;
@@ -64,6 +66,9 @@ export function builtinDeal(variant: BuiltinVariant, choice: ContentLanguageChoi
     case 'country-capital':
       // Capital names exist in the 16 "First words" languages only, so this follows the learning language.
       return { deck: capitalsDeck(resolved.learning), languages: { back: resolved.learning } };
+    case 'ai-term-definition':
+      // Terms and definitions exist in the 16 "First words" languages only, so this follows the learning language.
+      return { deck: aiBasicsDeck(resolved.learning), languages: { back: resolved.learning } };
   }
 }
 
@@ -117,6 +122,15 @@ export function faceResolver(state: MemoryState, t: Translator, userDecks: UserD
         const code = card.item.toUpperCase();
         // Both cards are plain text in the same language: the country name (CLDR) and its capital.
         const text = card.side === 'front' ? countryName(code, lang) : (capitalName(code, lang) ?? '');
+        return { side: { text, lang }, description: text };
+      };
+    }
+    case 'ai-term-definition': {
+      const lang = backLang && isVocabularyLanguage(backLang) ? backLang : vocabularyUiLanguage(t.locale);
+      return (card) => {
+        // Both cards are plain text in the same language: the term and its (longer) definition.
+        const entry = aiTerm(card.item, lang);
+        const text = (card.side === 'front' ? entry?.term : entry?.definition) ?? '';
         return { side: { text, lang }, description: text };
       };
     }

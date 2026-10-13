@@ -4,6 +4,7 @@ export * from './import';
 export * from './library';
 export { SYMBOL_DECK } from './builtin/symbols';
 export { FIRST_WORDS, findWord, isVocabularyLanguage, toVocabularyLanguage, type VocabularyEntry, type VocabularyLanguage } from './builtin/first-words';
+export { AI_TERM_IDS, AI_TERMS, aiTerm, isAiTermId, type AiTermEntry, type AiTermId } from './builtin/ai-basics';
 export { CAPITAL_CODES, CAPITAL_EXCLUSIONS, CAPITALS, capitalName, type CapitalEntry } from './builtin/capitals';
 export { COUNTRY_CODES, countryName, flagEmoji, hasCountryNames, isCountryCode, type CountryCode } from './builtin/countries';
 export * from './schedule';

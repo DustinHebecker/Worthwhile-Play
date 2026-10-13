@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { CAPITALS } from '@wp/learning-content';
+import { AI_TERMS, aiTerm, CAPITALS } from '@wp/learning-content';
 import { createTranslator, SUPPORTED_LOCALES } from '@wp/localization';
 import { createMemoryDeckStore, createMemoryLearningStore, createMemoryLibraryStore, createMemoryStore, createSave, type DeckStore, type LearningStore } from '@wp/persistence';
 import type { AppContext } from '../src/app';
@@ -106,6 +106,8 @@ describe('deck library pages', () => {
     expect(byId(main, 'deck-card-flags')?.textContent).toContain('60 Karten');
     expect(byId(main, 'deck-card-capitals')?.textContent).toContain('Hauptstädte');
     expect(byId(main, 'deck-card-capitals')?.textContent).toContain(`${CAPITALS.length} Karten`);
+    expect(byId(main, 'deck-card-ai-basics')?.textContent).toContain('KI-Grundbegriffe');
+    expect(byId(main, 'deck-card-ai-basics')?.textContent).toContain(`${AI_TERMS.length} Karten`);
     expect(byId(main, 'own-decks-empty')?.hidden).toBe(true);
   });
 
@@ -141,6 +143,34 @@ describe('deck library pages', () => {
       const about = UI_MESSAGES[locale]?.['decks.capitals.about'] ?? '';
       expect(about, locale).toContain(String(CAPITALS.length));
       expect(UI_MESSAGES[locale]?.['decks.playCapitals'], locale).toBeTruthy();
+    }
+  });
+
+  it('shows the AI basics deck: term ↔ definition in one language, playable in Memory and reviewable', async () => {
+    const { context, main } = app('de');
+    renderDeck(main, context, 'ai-basics');
+    expect(main.querySelector('h1')?.textContent).toBe('KI-Grundbegriffe');
+    const rows = [...(byId(main, 'deck-preview')?.querySelectorAll('tbody tr') ?? [])].map((tr) => [...tr.querySelectorAll('td')].slice(1).map((td) => td.textContent?.trim()));
+    expect(rows).toContainEqual(['Token', aiTerm('token', 'de')?.definition]);
+    expect(rows).toContainEqual(['Halluzination', aiTerm('hallucination', 'de')?.definition]);
+    expect(rows).toHaveLength(AI_TERMS.length);
+    expect(byId(main, 'deck-count')?.textContent).toBe(`${AI_TERMS.length} Karten`);
+    expect(main.textContent).toContain('Sprachen: Deutsch');
+    expect(main.textContent).not.toContain('Deutsch ↔ Deutsch');
+    expect(byId(main, 'delete-deck')).toBeNull();
+    expect(byId(main, 'review-deck')?.getAttribute('href')).toBe('/games/review?deck=ai-basics');
+    byId(main, 'play-ai-term-definition')?.click();
+    await flush();
+    expect(JSON.parse(localStorage.getItem('wp:pref:memory:cards') ?? 'null')).toBe('ai-term-definition');
+    expect(context.navigate).toHaveBeenLastCalledWith('/games/memory?new=1');
+  });
+
+  it('the AI basics description states the real number of terms in every locale', () => {
+    for (const locale of SUPPORTED_LOCALES) {
+      const about = UI_MESSAGES[locale]?.['decks.aiBasics.about'] ?? '';
+      expect(about, locale).toContain(String(AI_TERMS.length));
+      expect(UI_MESSAGES[locale]?.['decks.aiBasics'], locale).toBeTruthy();
+      expect(UI_MESSAGES[locale]?.['decks.playAiBasics'], locale).toBeTruthy();
     }
   });
 

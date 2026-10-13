@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest';
 import type { GameModule, UserDeckSource } from '@wp/game-core';
-import { applyReview, builtinItemIds, capitalName, countryName, createLearningRecords, type Deck, type LearningRecord, type Speech } from '@wp/learning-content';
+import { aiTerm, applyReview, builtinItemIds, capitalName, countryName, createLearningRecords, type Deck, type LearningRecord, type Speech } from '@wp/learning-content';
 import { createTestContext, type TestContextExtras } from '@wp/testing';
 import game from '../src/index';
 import { isValidReviewState, type ReviewState } from '../src/rules';
@@ -199,6 +199,51 @@ describe('Review view', () => {
     expect(q('review-languages').textContent).toBe('Länder und Hauptstädte auf Deutsch');
   });
 
+  it('AI basics: term → definition in the learning language; backward shows the definition and asks for the term', () => {
+    const { q, reveal, instance } = setup({ extras: { learning: learningWith(), contentLanguages: { learning: 'fr' } }, prefs: { [DECK_PREFERENCE]: 'ai-basics', [DIRECTION_PREFERENCE]: 'forward' } });
+    q('review-practice').click();
+    const state = instance.serialize();
+    expect(state).toMatchObject({ mode: 'practice', deckId: 'ai-basics', languages: { learning: 'fr' }, direction: 'forward' });
+    expect(isValidReviewState(JSON.parse(JSON.stringify(state)))).toBe(true);
+    const entry = aiTerm(state.cards[0]!.item, 'fr')!;
+    expect(q('review-prompt').textContent).toBe(entry.term);
+    expect(q('review-prompt').querySelector('[lang]')!.getAttribute('lang')).toBe('fr');
+    expect(q('review-session').textContent).not.toContain(entry.definition);
+    reveal();
+    expect(q('review-answer').textContent).toContain(entry.definition);
+    // The definition is long: set as a paragraph rather than a big bold word.
+    expect(q('review-answer').querySelector('.wp-review__text--long')).not.toBeNull();
+    expect(q('review-languages').textContent).toBe('AI terms and definitions in French');
+
+    const backward = setup({ extras: { contentLanguages: { learning: 'de' } }, prefs: { [DECK_PREFERENCE]: 'ai-basics', [DIRECTION_PREFERENCE]: 'backward' } });
+    const s = backward.instance.serialize();
+    const item = aiTerm(s.cards[0]!.item, 'de')!;
+    expect(backward.q('review-prompt').textContent).toBe(item.definition);
+    backward.reveal(item.term.toUpperCase());
+    expect(backward.q('review-answer').textContent).toContain(item.term);
+    expect(backward.q('review-typed-result').textContent).toContain('Matches the card.');
+  });
+
+  it('AI basics: items worth reviewing come from records kept under one deck key for all languages', () => {
+    const ids = (builtinItemIds('ai-basics') ?? []).slice(0, 2);
+    const learning = learningWith([dueRecord('ai-basics', ids[0]!), dueRecord('ai-basics', ids[1]!)]);
+    const { q, click, reveal, instance } = setup({ extras: { learning, contentLanguages: { learning: 'ja' } }, prefs: { [DECK_PREFERENCE]: 'ai-basics' } });
+    expect(q<HTMLSelectElement>('review-mode').selectedOptions[0]!.textContent).toBe('Worth reviewing (2)');
+    const state = instance.serialize();
+    expect(state).toMatchObject({ mode: 'review', deckId: 'ai-basics', languages: { learning: 'ja' } });
+    expect(state.cards.map((c) => c.item).sort()).toEqual([...ids].sort());
+    reveal();
+    click('review-rate-good');
+    expect(learning.list('ai-basics').some((r) => r.reviews === 2)).toBe(true);
+  });
+
+  it('AI basics: a learning language without AI terms falls back to the UI language with a notice', () => {
+    const { q, instance } = setup({ locale: 'de', extras: { contentLanguages: { learning: 'sv' } }, prefs: { [DECK_PREFERENCE]: 'ai-basics' } });
+    expect(instance.serialize()).toMatchObject({ deckId: 'ai-basics', languages: { learning: 'de' } });
+    expect(q('review-notice').textContent).toBe('Für Schwedisch gibt es noch keine KI-Begriffe, daher wird eine andere Sprache verwendet.');
+    expect(q('review-languages').textContent).toBe('KI-Begriffe und Definitionen auf Deutsch');
+  });
+
   it('first words: the picture is shown with the answer only; backward asks for the word in the learning language', () => {
     const { q, reveal, instance, root } = setup({ extras: { contentLanguages: { learning: 'es', translation: 'en' } }, prefs: { [DIRECTION_PREFERENCE]: 'backward' } });
     const state = instance.serialize();
@@ -215,7 +260,7 @@ describe('Review view', () => {
     const userDecks = decks(OWN);
     const { q, instance, ctx, reveal } = setup({ extras: { userDecks, learning: learningWith() } });
     const select = q<HTMLSelectElement>('review-deck');
-    expect([...select.options].map((o) => o.value)).toEqual(['first-words', 'flags', 'capitals', OWN.id]);
+    expect([...select.options].map((o) => o.value)).toEqual(['first-words', 'flags', 'capitals', 'ai-basics', OWN.id]);
     select.value = OWN.id;
     select.dispatchEvent(new Event('change'));
     expect(ctx.preferences.get(DECK_PREFERENCE)).toBe(OWN.id);

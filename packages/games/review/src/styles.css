@@ -56,6 +56,8 @@
 .wp-review__symbol { font-size: clamp(2.6rem, 14vw, 3.6rem); line-height: 1.1; }
 .wp-review__image { max-width: min(100%, 14rem); max-height: 10rem; object-fit: contain; }
 .wp-review__text { font-size: clamp(1.15rem, 5.5vw, 1.6rem); font-weight: 600; text-align: center; overflow-wrap: anywhere; hyphens: auto; }
+/* Definitions and other long texts: smaller, normal weight, at a comfortable line length. */
+.wp-review__text--long { max-inline-size: 32rem; font-size: clamp(1rem, 4.2vw, 1.2rem); font-weight: 400; line-height: 1.4; }
 
 .wp-review__reveal { display: grid; gap: 0.5rem; justify-items: center; width: 100%; }
 .wp-review__typed { display: grid; gap: 0.25rem; width: min(100%, 22rem); }
