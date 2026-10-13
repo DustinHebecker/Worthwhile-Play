@@ -217,9 +217,9 @@
 .wp-relay-command .rc-ed-map { display: block; inline-size: 100%; max-inline-size: 100%; block-size: auto; cursor: crosshair; touch-action: none; }
 .wp-relay-command .rc-ed-palette { display: grid; gap: 0.4rem; min-inline-size: 0; }
 .wp-relay-command .rc-ed-group { display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; }
-.wp-relay-command .rc-ed-tool { display: grid; justify-items: center; gap: 0.1rem; inline-size: 4.6rem; min-block-size: var(--wp-touch, 44px); padding: 0.25rem; font-size: 0.75em; line-height: 1.1; white-space: normal; text-align: center; }
+.wp-relay-command .rc-ed-tool { display: grid; justify-items: center; gap: 0.1rem; inline-size: 5.2rem; overflow-wrap: anywhere; hyphens: auto; min-inline-size: 0; min-block-size: var(--wp-touch, 44px); padding: 0.25rem; font-size: 0.75em; line-height: 1.1; white-space: normal; text-align: center; }
 .wp-relay-command .rc-ed-tool .rc-icon { inline-size: 28px; block-size: 28px; }
-.wp-relay-command .rc-ed-tool[aria-pressed='true'] { font-weight: 700; }
+.wp-relay-command .rc-ed-tool[aria-pressed='true'] { font-weight: 600; }
 .wp-relay-command .rc-ed-erase { font-size: 1.4rem; line-height: 28px; }
 .wp-relay-command .rc-ed-side { min-block-size: var(--wp-touch, 44px); }
 .wp-relay-command .rc-ed-issues ul { margin: 0.2rem 0; padding-inline-start: 1.2rem; }

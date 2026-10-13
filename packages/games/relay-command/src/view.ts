@@ -1048,6 +1048,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
         if (site?.side === PLAYER) lines.push(t('summary.built', { name: unitName(site) }));
       } else if (e.t === 'site') {
         if (e.side !== PLAYER) lines.push(t('summary.enemySite', { name: unitName(e) }));
+      } else if (e.t === 'missing') {
+        lines.push(t('summary.missing', { name: unitName(e) }));
       } else if (e.t === 'repaired') {
         const unit = unitById(state, e.id);
         if (unit?.side === PLAYER) lines.push(t('summary.repaired', { name: unitName(unit), hp: e.hp }));
@@ -1653,6 +1655,12 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       orderSelected({ type: 'escort', target: ownHere.id });
       return;
     }
+    // An own ghost marks where a unit out of contact was last reported, not where it is: with a
+    // unit selected, its cell takes a move order (the ghost stays selectable in the list).
+    if (canOrder && mode === 'move' && ownHere && isGhost(ownHere) && !here.some((e) => e.side === PLAYER && !isGhost(e))) {
+      orderSelected({ type: 'move', x, y });
+      return;
+    }
     if (ownHere && ownHere.id !== selected) {
       select(ownHere.id);
       return;
@@ -1756,7 +1764,9 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   /* ---------- Instance ---------- */
   return {
     newGame(options: NewGameOptions) {
-      state = newGame(normalizeSeed(options.seed), FIELD_EXERCISE, isDifficulty(options.difficulty) ? options.difficulty : 'normal', null);
+      // An open map draft survives "New game" (it is the player's work, not the game's).
+      const draft = state.edit;
+      state = { ...newGame(normalizeSeed(options.seed), FIELD_EXERCISE, isDifficulty(options.difficulty) ? options.difficulty : 'normal', null), edit: draft };
       context.setDifficulty?.(state.difficulty); // an unknown host value fell back to 'normal'
       selected = null;
       confirming = false;

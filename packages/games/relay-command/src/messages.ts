@@ -351,6 +351,10 @@ const en = {
   'editor.untitled': 'Untitled map',
   'setup.myMaps': 'My map',
   'help.editor': 'Map editor (in the game setup): paint terrain, place deposits, Command Posts, structures and units for you and the opponent, mirrored by default so both sides start equal. A map can be played once each side has exactly one Command Post, something else, and the posts are connected over passable ground. Your maps are kept on this device (up to 8); a map code shares one. A game keeps its map even if you delete it later.',
+  'editor.undo': 'Undo',
+  'editor.undone': 'Last change undone.',
+  'editor.notStored': 'This device did not keep the map (storage blocked or full). Copy the map code to keep it.',
+  'summary.missing': '{name}: not found at its last reported position; it was lost out of contact.',
 };
 
 type Catalogue = Record<keyof typeof en, string>;
@@ -702,6 +706,10 @@ const de: Catalogue = {
   'editor.untitled': 'Karte ohne Namen',
   'setup.myMaps': 'Meine Karte',
   'help.editor': 'Karteneditor (in den Spieleinstellungen): Male Gelände, setze Lagerstätten, Gefechtsstände, Bauwerke und Einheiten für dich und den Gegner – standardmäßig gespiegelt, damit beide Seiten gleich starten. Spielbar ist eine Karte, sobald jede Seite genau einen Gefechtsstand und noch etwas anderes hat und die Gefechtsstände über begehbares Gelände verbunden sind. Deine Karten bleiben auf diesem Gerät (bis zu 8); ein Kartencode teilt eine Karte. Ein Spiel behält seine Karte, auch wenn du sie später löschst.',
+  'editor.undo': 'Rückgängig',
+  'editor.undone': 'Letzte Änderung rückgängig gemacht.',
+  'editor.notStored': 'Dieses Gerät hat die Karte nicht behalten (Speicher gesperrt oder voll). Kopiere den Kartencode, um sie zu behalten.',
+  'summary.missing': '{name}: an der zuletzt gemeldeten Stelle nicht gefunden; ohne Verbindung verloren gegangen.',
 };
 
 // Translations other than en/de are AI-assisted and await native-speaker review.
@@ -1052,6 +1060,10 @@ const nl: Catalogue = {
   'editor.untitled': 'Naamloze kaart',
   'setup.myMaps': 'Mijn kaart',
   'help.editor': 'Kaarteditor (in de spelinstellingen): schilder terrein, plaats vindplaatsen, commandoposten, bouwwerken en eenheden voor jou en de tegenstander, standaard gespiegeld zodat beide kanten gelijk beginnen. Een kaart is speelbaar zodra elke kant precies één commandopost en nog iets anders heeft en de posten via begaanbaar terrein verbonden zijn. Je kaarten blijven op dit apparaat (maximaal 8); met een kaartcode deel je er een. Een spel houdt zijn kaart, ook als je die later verwijdert.',
+  'editor.undo': 'Ongedaan maken',
+  'editor.undone': 'Laatste wijziging ongedaan gemaakt.',
+  'editor.notStored': 'Dit apparaat heeft de kaart niet bewaard (opslag geblokkeerd of vol). Kopieer de kaartcode om hem te bewaren.',
+  'summary.missing': '{name}: niet gevonden op de laatst gemelde positie; zonder verbinding verloren gegaan.',
 };
 
 const es: Catalogue = {
@@ -1401,6 +1413,10 @@ const es: Catalogue = {
   'editor.untitled': 'Mapa sin nombre',
   'setup.myMaps': 'Mi mapa',
   'help.editor': 'Editor de mapas (en la configuración de la partida): pinta el terreno y coloca yacimientos, puestos de mando, estructuras y unidades para ti y para el oponente, reflejados por defecto para que ambos bandos empiecen igual. Un mapa se puede jugar cuando cada bando tiene exactamente un puesto de mando y algo más, y los puestos están conectados por terreno transitable. Tus mapas se guardan en este dispositivo (hasta 8); un código de mapa sirve para compartir uno. Una partida conserva su mapa aunque lo borres después.',
+  'editor.undo': 'Deshacer',
+  'editor.undone': 'Último cambio deshecho.',
+  'editor.notStored': 'Este dispositivo no guardó el mapa (almacenamiento bloqueado o lleno). Copia el código de mapa para conservarlo.',
+  'summary.missing': '{name}: no se encontró en su última posición conocida; se perdió sin contacto.',
 };
 
 const fr: Catalogue = {
@@ -1750,6 +1766,10 @@ const fr: Catalogue = {
   'editor.untitled': 'Carte sans nom',
   'setup.myMaps': 'Ma carte',
   'help.editor': 'Éditeur de cartes (dans les réglages de la partie) : peins le terrain, place gisements, postes de commandement, structures et unités pour toi et pour l’adversaire, en symétrie par défaut pour que les deux camps partent à égalité. Une carte est jouable dès que chaque camp a exactement un poste de commandement et autre chose, et que les postes sont reliés par un terrain praticable. Tes cartes restent sur cet appareil (jusqu’à 8) ; un code de carte permet d’en partager une. Une partie garde sa carte même si tu la supprimes plus tard.',
+  'editor.undo': 'Annuler',
+  'editor.undone': 'Dernière modification annulée.',
+  'editor.notStored': 'Cet appareil n’a pas conservé la carte (stockage bloqué ou plein). Copie le code de carte pour la garder.',
+  'summary.missing': '{name} : introuvable à sa dernière position signalée ; perdu hors liaison.',
 };
 const ru: Catalogue = {
   title: 'Relay Command',
@@ -2098,6 +2118,10 @@ const ru: Catalogue = {
   'editor.untitled': 'Карта без названия',
   'setup.myMaps': 'Моя карта',
   'help.editor': 'Редактор карт (в настройке игры): рисуй местность, расставляй месторождения, командные пункты, постройки и подразделения для себя и для противника — по умолчанию зеркально, чтобы обе стороны начинали на равных. На карте можно играть, когда у каждой стороны ровно один командный пункт и что-то ещё, а пункты соединены проходимой местностью. Твои карты хранятся на этом устройстве (до 8); кодом карты можно поделиться. Игра сохраняет свою карту, даже если ты потом её удалишь.',
+  'editor.undo': 'Отменить',
+  'editor.undone': 'Последнее изменение отменено.',
+  'editor.notStored': 'Это устройство не сохранило карту (хранилище заблокировано или заполнено). Скопируй код карты, чтобы сохранить её.',
+  'summary.missing': '{name}: не найдено на последней известной позиции; потеряно без связи.',
 };
 
 const zhHans: Catalogue = {
@@ -2447,6 +2471,10 @@ const zhHans: Catalogue = {
   'editor.untitled': '未命名地图',
   'setup.myMaps': '我的地图',
   'help.editor': '地图编辑器（在对局设置中）：为你和对手绘制地形，放置矿藏、指挥所、建筑物和部队；默认镜像，让双方起点相同。当每一方恰好有一个指挥所和其他单位，并且两个指挥所通过可通行的地形相连时，地图即可用于对局。你的地图保存在此设备上（最多 8 张）；地图代码可用来分享地图。即使你之后删除了地图，已开始的对局仍会保留它。',
+  'editor.undo': '撤销',
+  'editor.undone': '已撤销上一次更改。',
+  'editor.notStored': '此设备未能保存地图（存储被阻止或已满）。请复制地图代码以保留它。',
+  'summary.missing': '{name}：在最后报告的位置未找到；在失去联络时丢失。',
 };
 const ko: Catalogue = {
   title: 'Relay Command',
@@ -2795,6 +2823,10 @@ const ko: Catalogue = {
   'editor.untitled': '이름 없는 지도',
   'setup.myMaps': '내 지도',
   'help.editor': '지도 편집기 (게임 설정에서): 나와 상대를 위해 지형을 칠하고 매장지, 지휘소, 구조물, 유닛을 배치합니다. 기본적으로 대칭으로 적용되어 양쪽이 같은 조건으로 시작합니다. 양쪽 모두 지휘소가 정확히 하나씩 있고 그 밖의 것도 있으며 두 지휘소가 통과 가능한 지형으로 연결되어 있으면 그 지도로 플레이할 수 있습니다. 내 지도는 이 기기에 보관됩니다(최대 8개). 지도 코드로 지도를 공유할 수 있습니다. 나중에 지도를 삭제해도 게임은 그 지도를 유지합니다.',
+  'editor.undo': '실행 취소',
+  'editor.undone': '마지막 변경을 취소했습니다.',
+  'editor.notStored': '이 기기에 지도가 저장되지 않았습니다 (저장소가 차단되었거나 가득 참). 지도를 보관하려면 지도 코드를 복사하세요.',
+  'summary.missing': '{name}: 마지막으로 보고된 위치에서 찾을 수 없습니다. 통신 두절 상태에서 잃었습니다.',
 };
 
 const ja: Catalogue = {
@@ -3144,6 +3176,10 @@ const ja: Catalogue = {
   'editor.untitled': '名前のないマップ',
   'setup.myMaps': '自分のマップ',
   'help.editor': 'マップエディター（ゲーム設定内）：あなたと相手のために地形を塗り、資源地、指揮所、施設、部隊を配置します。初期設定ではミラーリングされ、両陣営が同じ条件で始まります。各陣営に指揮所がちょうど1つとそれ以外の何かがあり、指揮所どうしが通行可能な地形でつながっていれば、そのマップで遊べます。自分のマップはこの端末に保存されます（最大8個）。マップコードでマップを共有できます。あとでマップを削除しても、ゲームはそのマップを保持します。',
+  'editor.undo': '元に戻す',
+  'editor.undone': '直前の変更を元に戻しました。',
+  'editor.notStored': 'この端末にマップを保存できませんでした（ストレージがブロックされているか満杯です）。マップを残すにはマップコードをコピーしてください。',
+  'summary.missing': '{name}：最後に報告された位置に見当たりません。通信途絶中に失われました。',
 };
 const ar: Catalogue = {
   title: 'Relay Command',
@@ -3492,6 +3528,10 @@ const ar: Catalogue = {
   'editor.untitled': 'خريطة بلا اسم',
   'setup.myMaps': 'خريطتي',
   'help.editor': 'محرر الخرائط (في إعداد اللعبة): ارسم التضاريس، وضع المكامن ومراكز القيادة والمنشآت والوحدات لك وللخصم، بانعكاس افتراضي ليبدأ الجانبان متساويين. يمكن اللعب على الخريطة متى كان لكل جانب مركز قيادة واحد بالضبط وشيء آخر، وكان المركزان متصلين عبر أرض يمكن عبورها. تبقى خرائطك على هذا الجهاز (حتى 8)؛ ورمز الخريطة يتيح مشاركة إحداها. تحتفظ اللعبة بخريطتها حتى لو حذفتها لاحقًا.',
+  'editor.undo': 'تراجع',
+  'editor.undone': 'تم التراجع عن آخر تغيير.',
+  'editor.notStored': 'لم يحتفظ هذا الجهاز بالخريطة (التخزين محظور أو ممتلئ). انسخ رمز الخريطة للاحتفاظ بها.',
+  'summary.missing': '{name}: لم يُعثر عليها في آخر موقع مُبلَّغ عنه؛ فُقدت خارج الاتصال.',
 };
 
 const pt: Catalogue = {
@@ -3841,6 +3881,10 @@ const pt: Catalogue = {
   'editor.untitled': 'Mapa sem nome',
   'setup.myMaps': 'Meu mapa',
   'help.editor': 'Editor de mapas (na configuração da partida): pinte o terreno e coloque jazidas, postos de comando, estruturas e unidades para você e para o oponente, espelhados por padrão para que os dois lados comecem iguais. Um mapa pode ser jogado quando cada lado tem exatamente um posto de comando e algo mais, e os postos estão ligados por terreno transitável. Seus mapas ficam neste dispositivo (até 8); um código de mapa serve para compartilhar um. Uma partida mantém seu mapa mesmo que você o apague depois.',
+  'editor.undo': 'Desfazer',
+  'editor.undone': 'Última alteração desfeita.',
+  'editor.notStored': 'Este dispositivo não guardou o mapa (armazenamento bloqueado ou cheio). Copie o código do mapa para mantê-lo.',
+  'summary.missing': '{name}: não encontrado na última posição informada; perdido sem contato.',
 };
 const it: Catalogue = {
   title: 'Relay Command',
@@ -4189,6 +4233,10 @@ const it: Catalogue = {
   'editor.untitled': 'Mappa senza nome',
   'setup.myMaps': 'La mia mappa',
   'help.editor': 'Editor di mappe (nelle impostazioni della partita): dipingi il terreno, piazza giacimenti, posti di comando, strutture e unità per te e per l’avversario, specchiati per impostazione predefinita così entrambe le parti partono alla pari. Una mappa si può giocare quando ogni parte ha esattamente un posto di comando e qualcos’altro, e i posti sono collegati da terreno percorribile. Le tue mappe restano su questo dispositivo (fino a 8); un codice mappa serve a condividerne una. Una partita mantiene la sua mappa anche se la elimini in seguito.',
+  'editor.undo': 'Annulla',
+  'editor.undone': 'Ultima modifica annullata.',
+  'editor.notStored': 'Questo dispositivo non ha conservato la mappa (memoria bloccata o piena). Copia il codice mappa per tenerla.',
+  'summary.missing': '{name}: non trovato nell’ultima posizione segnalata; perso fuori contatto.',
 };
 
 const pl: Catalogue = {
@@ -4538,6 +4586,10 @@ const pl: Catalogue = {
   'editor.untitled': 'Mapa bez nazwy',
   'setup.myMaps': 'Moja mapa',
   'help.editor': 'Edytor map (w ustawieniach gry): maluj teren, rozmieszczaj złoża, stanowiska dowodzenia, budowle i oddziały dla siebie i dla przeciwnika — domyślnie z odbiciem, aby obie strony zaczynały na równi. Na mapie można grać, gdy każda strona ma dokładnie jedno stanowisko dowodzenia i coś jeszcze, a stanowiska są połączone przejezdnym terenem. Twoje mapy zostają na tym urządzeniu (do 8); kodem mapy można się nią podzielić. Gra zachowuje swoją mapę, nawet jeśli później ją usuniesz.',
+  'editor.undo': 'Cofnij',
+  'editor.undone': 'Cofnięto ostatnią zmianę.',
+  'editor.notStored': 'To urządzenie nie zachowało mapy (pamięć zablokowana lub pełna). Skopiuj kod mapy, aby ją zachować.',
+  'summary.missing': '{name}: nie znaleziono w ostatnio zgłoszonej pozycji; utracony poza łącznością.',
 };
 const tr: Catalogue = {
   title: 'Relay Command',
@@ -4886,6 +4938,10 @@ const tr: Catalogue = {
   'editor.untitled': 'Adsız harita',
   'setup.myMaps': 'Haritam',
   'help.editor': 'Harita düzenleyici (oyun ayarlarında): kendin ve rakip için arazi boya; yataklar, Komuta Merkezleri, yapılar ve birlikler yerleştir. Varsayılan olarak yansıtılır, böylece iki taraf da eşit başlar. Her tarafın tam olarak bir Komuta Merkezi ve başka bir şeyi olduğunda ve merkezler geçilebilir araziyle bağlı olduğunda harita oynanabilir. Haritaların bu cihazda kalır (en fazla 8); bir harita kodu ile harita paylaşılır. Bir oyun, haritayı sonradan silsen bile kendi haritasını korur.',
+  'editor.undo': 'Geri al',
+  'editor.undone': 'Son değişiklik geri alındı.',
+  'editor.notStored': 'Bu cihaz haritayı saklayamadı (depolama engelli ya da dolu). Haritayı saklamak için harita kodunu kopyala.',
+  'summary.missing': '{name}: son bildirilen konumunda bulunamadı; bağlantı yokken kaybedildi.',
 };
 
 const uk: Catalogue = {
@@ -5235,6 +5291,10 @@ const uk: Catalogue = {
   'editor.untitled': 'Карта без назви',
   'setup.myMaps': 'Моя карта',
   'help.editor': 'Редактор карт (у налаштуваннях гри): малюй місцевість, розставляй родовища, командні пункти, споруди та підрозділи для себе й для суперника — за замовчуванням дзеркально, щоб обидві сторони починали на рівних. На карті можна грати, коли в кожної сторони рівно один командний пункт і ще щось, а пункти з’єднані прохідною місцевістю. Твої карти зберігаються на цьому пристрої (до 8); кодом карти можна поділитися. Гра зберігає свою карту, навіть якщо ти згодом її видалиш.',
+  'editor.undo': 'Скасувати',
+  'editor.undone': 'Останню зміну скасовано.',
+  'editor.notStored': 'Цей пристрій не зберіг карту (сховище заблоковане або заповнене). Скопіюй код карти, щоб зберегти її.',
+  'summary.missing': '{name}: не знайдено на останній відомій позиції; втрачено без зв’язку.',
 };
 
 const hi: Catalogue = {
@@ -5584,6 +5644,10 @@ const hi: Catalogue = {
   'editor.untitled': 'बिना नाम का नक्शा',
   'setup.myMaps': 'मेरा नक्शा',
   'help.editor': 'नक्शा संपादक (खेल की सेटिंग में): अपने और विरोधी के लिए भूभाग रंगो, भंडार, कमान चौकियाँ, ढाँचे और टुकड़ियाँ रखो; डिफ़ॉल्ट रूप से प्रतिबिंबित, ताकि दोनों पक्ष बराबरी से शुरू करें। नक्शा तब खेला जा सकता है जब हर पक्ष के पास ठीक एक कमान चौकी और कुछ और हो, और चौकियाँ पार करने लायक़ ज़मीन से जुड़ी हों। तुम्हारे नक्शे इसी डिवाइस पर रहते हैं (8 तक); नक्शा कोड से कोई नक्शा साझा किया जा सकता है। कोई खेल अपना नक्शा रखता है, भले ही तुम उसे बाद में मिटा दो।',
+  'editor.undo': 'पूर्ववत करो',
+  'editor.undone': 'आख़िरी बदलाव पूर्ववत किया गया।',
+  'editor.notStored': 'इस डिवाइस ने नक्शा नहीं रखा (स्टोरेज अवरुद्ध या भरा हुआ है)। नक्शा रखने के लिए नक्शा कोड कॉपी करो।',
+  'summary.missing': '{name}: आख़िरी बताई गई जगह पर नहीं मिली; संपर्क से बाहर खो गई।',
 };
 
 export const messages: GameMessages = {

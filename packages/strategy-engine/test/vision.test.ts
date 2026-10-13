@@ -204,7 +204,10 @@ describe('vision properties', () => {
             expect(live).toEqual(expected);
             // Every own unit is known to its side.
             for (const e of w.entities.filter((x) => x.side === side)) expect(report(w, side, e.id)).toBeDefined();
-            for (const ev of r.reported?.[side] ?? []) expect(r.events).toContain(ev);
+            // By content: another side's copy of a sale carries no refund (the seller's Supply is its own business).
+            const truth = r.events.map((ev) => (ev.t === 'sold' && ev.side !== side ? JSON.stringify({ ...ev, refund: undefined }) : JSON.stringify(ev)));
+            // `missing` exists in reports only (an own unit found lost long after it died unseen).
+            for (const ev of r.reported?.[side] ?? []) if (ev.t !== 'missing') expect(truth).toContain(JSON.stringify(ev));
           }
           expect(isValidWorld(JSON.parse(JSON.stringify(w)), rs)).toBe(true);
         }
@@ -370,5 +373,40 @@ describe('ghost of an enemy that died unseen (review of PR #8, N8)', () => {
     const alive = structuredClone(w);
     updateIntel(alive, rs, []);
     expect(report(alive, 0, 2)).toBeUndefined();
+  });
+});
+
+describe('own units lost out of contact (owner report after PR #14)', () => {
+  it('a unit destroyed unseen stays a ghost until its last cell is observed again; then it is reported missing and dropped', () => {
+    // Own post far left; own squad out of coverage at (9,1), next to an enemy squad that kills it.
+    const w = worldOf(open(12, 3), [
+      { side: 0, kind: 'command-post', x: 0, y: 1 },
+      { side: 1, kind: 'command-post', x: 11, y: 2 },
+      { side: 0, kind: 'rifles', x: 9, y: 1 },
+      { side: 1, kind: 'lancer', x: 10, y: 1 }
+    ]);
+    unit(w, 3).hp = 1;
+    const first = play(w, 2);
+    expect(first.world.entities.some((e) => e.id === 3)).toBe(false); // destroyed
+    expect(report(first.world, 0, 3)).toBeDefined(); // unseen: still a ghost
+    expect(first.reported[0]!.some((e) => e.t === 'missing')).toBe(false);
+    // A Radio Mast brings the cell into sight: the ghost goes, and the loss is told once.
+    const later = structuredClone(first.world);
+    later.entities.push({ ...structuredClone(later.entities[0]!), id: later.nextId++, kind: 'relay-mast', x: 5, y: 1, hp: rs.archetypes['relay-mast']!.hp });
+    later.entities.sort((a, b) => a.id - b.id);
+    const second = play(later, 1);
+    expect(report(second.world, 0, 3)).toBeUndefined();
+    expect(second.reported[0]!.filter((e) => e.t === 'missing')).toEqual([expect.objectContaining({ t: 'missing', id: 3, side: 0, kind: 'rifles', x: 9, y: 1 })]);
+    expect(second.reported[1]!.some((e) => e.t === 'missing')).toBe(false);
+  });
+
+  it('a unit alive out of contact keeps its ghost (the side cannot know where it went)', () => {
+    const w = worldOf(open(12, 3), [
+      { side: 0, kind: 'command-post', x: 0, y: 1 },
+      { side: 1, kind: 'command-post', x: 11, y: 2 },
+      { side: 0, kind: 'rifles', x: 9, y: 1 }
+    ]);
+    const r = play(w, 1);
+    expect(report(r.world, 0, 3)).toBeDefined();
   });
 });

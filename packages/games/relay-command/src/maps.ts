@@ -231,13 +231,16 @@ export function loadLibrary(store: MapStore | undefined): (EditMap | undefined)[
   });
 }
 
-/** Saves `map` into `slot` (or the first free slot when `slot` is null); the slot used, or null when all are taken. */
+/** Saves `map` into `slot` (or the first free slot when `slot` is null); the slot used, or null when all are taken or the store did not keep it. */
 export function saveToLibrary(store: MapStore | undefined, map: EditMap, slot: number | null): number | null {
   const library = loadLibrary(store);
   const target = slot !== null && slot >= 0 && slot < MAP_SLOTS ? slot : library.findIndex((m) => m === undefined);
   if (target < 0) return null;
+  const code = encodeMap(map);
   try {
-    store?.set(`map:${target}`, encodeMap(map));
+    store?.set(`map:${target}`, code);
+    // A store may drop a value silently (size limit, private window, quota): read it back.
+    if (!store || store.get(`map:${target}`) !== code) return null;
   } catch {
     return null;
   }

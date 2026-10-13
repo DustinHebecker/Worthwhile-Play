@@ -77,14 +77,17 @@ function updatedReports(
   const next = new Map<number, Report>();
   for (const e of world.entities) if (seen(e.x, e.y) || revealed.has(e.id)) next.set(e.id, reportOf(e, world.tick));
   const goneAt = new Map(gone.map((e) => [e.id, e]));
+  const alive = new Set(world.entities.map((e) => e.id));
   for (const r of previous) {
     if (next.has(r.id)) continue;
     const dead = goneAt.get(r.id);
     if (dead && (seen(dead.x, dead.y) || knownLoss(dead))) continue; // destruction observed
     // An enemy ghost disappears once its cell is observed empty, also when it died elsewhere
-    // unseen (it is gone from the cell all the same); own units are never forgotten while they
-    // may still exist.
+    // unseen (it is gone from the cell all the same). An own unit is never forgotten while it may
+    // still exist; one destroyed out of contact is found lost when its last reported cell is
+    // observed again (owner report: its ghost stayed on a cell the side could see).
     if (r.side !== side && seen(r.x, r.y)) continue;
+    if (r.side === side && seen(r.x, r.y) && !alive.has(r.id)) continue;
     next.set(r.id, r.live ? { ...r, live: false } : r);
   }
   return [...next.values()].sort((a, b) => a.id - b.id);
@@ -127,10 +130,15 @@ export function updateIntel(world: World, ruleset: Ruleset, gone: readonly Entit
     // A side always learns of losing one of its own command sources: its network goes dark.
     // So does it of selling one of its own structures.
     const knownLoss = (e: Entity): boolean => e.side === side && (archetypeOf(ruleset, e.kind)?.comms?.role === 'source' || events?.some((ev, i) => i >= from && ev.t === 'sold' && ev.id === e.id) === true);
-    const reports = updatedReports(world, side, observed, world.intel?.[side] ?? [], gone, knownLoss, revealedEmitters(world, ruleset, side, network));
+    const previous = world.intel?.[side] ?? [];
+    const reports = updatedReports(world, side, observed, previous, gone, knownLoss, revealedEmitters(world, ruleset, side, network));
     intel.push(reports);
     const list = reported?.[side];
     if (!events || !list) continue;
+    // Own units found missing (destroyed out of contact, their last cell now seen empty): told once.
+    const kept = new Set(reports.map((r) => r.id));
+    const goneIds = new Set(gone.map((e) => e.id));
+    for (const r of previous) if (r.side === side && !kept.has(r.id) && !goneIds.has(r.id)) list.push({ t: 'missing', tick: world.tick, id: r.id, side, kind: r.kind, x: r.x, y: r.y });
     const seen = (x: number, y: number): boolean => observed[cellOf(world.map, x, y)] === 1;
     const live = new Set(reports.filter((r) => r.live).map((r) => r.id));
     const lost = new Set<number>();

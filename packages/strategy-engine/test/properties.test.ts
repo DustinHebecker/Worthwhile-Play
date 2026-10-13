@@ -162,6 +162,49 @@ describe('contested sales (review of PR #14)', () => {
   });
 });
 
+describe('contested placements (review of PR #15)', () => {
+  const net = STRATEGY_RULESET;
+  /**
+   * Ids of entities renumbered by position (row, column, layer), references rewritten: worlds
+   * that differ only in which of two sites placed in the same batch got which id compare equal.
+   */
+  function canonicalIds(w: World): World {
+    const order = [...w.entities].sort((a, b) => a.y - b.y || a.x - b.x || a.kind.localeCompare(b.kind));
+    const map = new Map(order.map((e, i) => [e.id, i + 1]));
+    const id = (n: number) => map.get(n) ?? -n;
+    const entities = w.entities
+      .map((e) => ({ ...e, id: id(e.id), ...('target' in e.order ? { order: { ...e.order, target: id((e.order as { target: number }).target) } } : {}) }))
+      .sort((a, b) => a.id - b.id);
+    const intel = w.intel?.map((list) => list.map((r) => ({ ...r, id: id(r.id) })).sort((a, b) => a.id - b.id));
+    return { ...w, entities, ...(intel && { intel }) } as World;
+  }
+  const arbPlacements = fc.array(fc.record({ side: fc.integer({ min: 0, max: 1 }), kind: fc.constantFrom('relay-mast', 'muster', 'motor-pool'), x: fc.integer({ min: 1, max: 6 }), y: fc.integer({ min: 0, max: 3 }) }), { minLength: 2, maxLength: 4 });
+  it('P4 with both sides placing in one batch: the mirror image evolves as the mirror, apart from which same-batch site got which id', () => {
+    fc.assert(
+      fc.property(arbPlacements, (placements) => {
+        const w = createWorld({ map: open(8, 4), sides: 2, entities: [{ side: 0, kind: 'command-post', x: 0, y: 1 }, { side: 1, kind: 'command-post', x: 7, y: 2 }], seed: 1, supply: [400, 400] }, net);
+        const plan = placements.map((p): Command => ({ side: p.side, unit: p.side + 1, order: { type: 'build', kind: p.kind, x: p.x, y: p.y } }));
+        const direct = mirrorWorld(resolveTurn(w, net, [plan]).world);
+        const mirrored = resolveTurn(mirrorWorld(w), net, [mirrorCommands(w, plan)]).world;
+        expect(canonicalJson(canonicalIds(mirrored))).toBe(canonicalJson(canonicalIds(direct)));
+      }),
+      { numRuns: 500 }
+    );
+  });
+  it('one side placing several sites in a batch keeps exact mirror symmetry, ids included', () => {
+    fc.assert(
+      fc.property(arbPlacements, (placements) => {
+        const w = createWorld({ map: open(8, 4), sides: 2, entities: [{ side: 0, kind: 'command-post', x: 0, y: 1 }, { side: 1, kind: 'command-post', x: 7, y: 2 }], seed: 1, supply: [400, 400] }, net);
+        const plan = placements.map((p): Command => ({ side: 1, unit: 2, order: { type: 'build', kind: p.kind, x: p.x, y: p.y } }));
+        const direct = mirrorWorld(resolveTurn(w, net, [plan]).world);
+        const mirrored = resolveTurn(mirrorWorld(w), net, [mirrorCommands(w, plan)]).world;
+        expect(canonicalJson(mirrored)).toBe(canonicalJson(direct));
+      }),
+      { numRuns: 300 }
+    );
+  });
+});
+
 describe('isValidWorld', () => {
   it('never throws and rejects junk', () => {
     fc.assert(

@@ -63,12 +63,24 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
   let codeOpen = false;
   let painting = false;
   let lastCell = -1;
+  /** The map before the last change (one step of undo; covers resizing and loading too). */
+  let previous: EditMap | null = null;
 
   const map = () => o.draft().map;
   const mapName = (m: EditMap) => m.name.trim() || t('editor.untitled');
   const set = (next: EditMap, message?: string) => {
     if (next === map() && message === undefined) return;
+    // A drag paints many cells: it is one change for undo (the map before it began).
+    if (!painting || lastStroke !== strokeId) previous = map();
+    lastStroke = strokeId;
     o.change({ ...o.draft(), map: next }, message);
+  };
+  let strokeId = 0;
+  let lastStroke = -1;
+  /** Replaces the whole map (load, map code): undoable like any edit. */
+  const replace = (draft: MapDraft, message: string) => {
+    previous = map();
+    o.change(draft, message);
   };
   /** First press arms, a deliberate second press (not within CONFIRM_GAP) confirms. */
   const confirmed = (key: string): boolean => {
@@ -192,6 +204,7 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
     const cell = cellAt(event);
     if (!cell) return;
     painting = true;
+    strokeId += 1;
     lastCell = cell.y * map().w + cell.x;
     canvas.setPointerCapture?.(event.pointerId);
     applyAt(cell.x, cell.y);
@@ -298,6 +311,7 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
     o.announce(text);
   };
   const saveBtn = h('button', { type: 'button', 'data-testid': 'ed-save', onclick: () => onSave() }, t('editor.save'));
+  const undoBtn = h('button', { type: 'button', 'data-testid': 'ed-undo', onclick: () => onUndo() }, t('editor.undo'));
   const playBtn = h('button', { type: 'button', class: 'primary', 'data-testid': 'ed-play', onclick: () => onPlay() });
   const copyBtn = h('button', { type: 'button', 'data-testid': 'ed-copy', 'aria-expanded': 'false', onclick: () => onCopy() }, t('editor.copy'));
   const deleteBtn = h('button', { type: 'button', 'data-testid': 'ed-delete', onclick: () => onDelete() });
@@ -317,11 +331,20 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
     playBtn.toggleAttribute('disabled', issues.length > 0);
   }
 
+  function onUndo(): void {
+    if (!previous) return;
+    const back = previous;
+    previous = null;
+    o.change({ ...o.draft(), map: back }, t('editor.undone'));
+    say(t('editor.undone'));
+  }
   function onSave(): void {
     const draft = o.draft();
+    const full = draft.slot === null && loadLibrary(o.store).every((m) => m !== undefined);
     const slot = saveToLibrary(o.store, draft.map, draft.slot);
     if (slot === null) {
-      say(t('editor.full', { n: MAP_SLOTS }));
+      // All places taken, or the device did not keep it (storage blocked or full): the code still works.
+      say(full ? t('editor.full', { n: MAP_SLOTS }) : t('editor.notStored'));
       return;
     }
     o.change({ ...draft, slot }, t('editor.saved', { name: mapName(draft.map) }));
@@ -354,7 +377,7 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
       say(t('editor.badCode'));
       return;
     }
-    o.change({ map: next, slot: null, mirror: o.draft().mirror }, t('editor.loaded', { name: mapName(next) }));
+    replace({ map: next, slot: null, mirror: o.draft().mirror }, t('editor.loaded', { name: mapName(next) }));
     say(t('editor.loaded', { name: mapName(next) }));
   }
   function onDelete(): void {
@@ -372,7 +395,7 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
     const slot = value.startsWith('slot:') ? Number(value.slice(5)) : null;
     const saved = slot !== null ? library[slot] : undefined;
     const next = saved ?? (spec ? fromScenario(spec, t(`scenario.${spec.id}`).replace(/\s*[(（].*$/, '').slice(0, MAX_NAME)) : blankMap(map().w, map().h));
-    o.change({ map: next, slot: saved ? slot : null, mirror: o.draft().mirror }, t('editor.loaded', { name: mapName(next) }));
+    replace({ map: next, slot: saved ? slot : null, mirror: o.draft().mirror }, t('editor.loaded', { name: mapName(next) }));
     say(t('editor.loaded', { name: mapName(next) }));
   }
 
@@ -402,7 +425,7 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
     cursorDesc,
     issuesEl,
     noticeEl,
-    h('div', { class: 'rc-actions rc-ed-actions' }, playBtn, saveBtn, copyBtn, deleteBtn, closeBtn),
+    h('div', { class: 'rc-actions rc-ed-actions' }, playBtn, undoBtn, saveBtn, copyBtn, deleteBtn, closeBtn),
     codeBox,
     libraryEl
   );
@@ -417,6 +440,7 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
     loadBtn.textContent = armed === 'load' ? t('editor.loadConfirm') : t('editor.load');
     playBtn.textContent = armed === 'play' ? t('editor.playConfirm') : t('editor.play');
     deleteBtn.hidden = draft.slot === null;
+    undoBtn.disabled = previous === null;
     deleteBtn.textContent = armed === 'delete' ? t('editor.deleteConfirm', { name: mapName(draft.map) }) : t('editor.delete');
     codeBox.hidden = !codeOpen;
     copyBtn.setAttribute('aria-expanded', codeOpen ? 'true' : 'false');
@@ -426,6 +450,15 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
     renderIssues();
     renderLibrary();
   }
+
+  // Ctrl/Cmd+Z undoes the last change (not while typing a name or a code).
+  el.addEventListener('keydown', (event) => {
+    const typing = event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement;
+    if (!typing && (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
+      event.preventDefault();
+      onUndo();
+    }
+  });
 
   // Any press elsewhere disarms a two-press button.
   el.addEventListener('click', (event) => {

@@ -655,6 +655,29 @@ describe('Relay Command view', () => {
   });
 });
 
+describe('own ghosts (owner report)', () => {
+  it('with a unit selected, a click on the cell of an own ghost moves it there instead of selecting the ghost', () => {
+    const s = structuredClone(state());
+    const rifle = s.world.entities.find((e) => e.side === PLAYER && e.kind === 'rifles')!;
+    const other = s.world.entities.filter((e) => e.side === PLAYER && e.kind === 'rifles')[1] ?? s.world.entities.find((e) => e.side === PLAYER && e.kind === 'lancer')!;
+    // The rifle squad's report sits elsewhere (out of contact): its ghost marks a free cell.
+    const free = (x: number, y: number) => passable(s.world.map, RULESET, x, y, 'ground') && !s.world.entities.some((e) => e.x === x && e.y === y);
+    const spot = [[2, 0], [0, 2], [-2, 0], [0, -2], [3, 0], [0, 3]].map(([dx, dy]) => [other.x + dx!, other.y + dy!] as const).find(([x, y]) => free(x, y))!;
+    const r = s.world.intel![PLAYER]!.find((e) => e.id === rifle.id)!;
+    Object.assign(r, { x: spot[0], y: spot[1], live: false });
+    // The squad itself is far away, out of contact (in the enemy's corner).
+    const far = [...Array(s.world.map.w * s.world.map.h).keys()].map((c) => [c % s.world.map.w, Math.floor(c / s.world.map.w)] as const).reverse().find(([x, y]) => free(x, y))!;
+    Object.assign(rifle, { x: far[0], y: far[1] });
+    instance.restore(s);
+    expect($(`rc-unit-${rifle.id}`).textContent).toContain('last'); // shown as out of contact
+    click(`rc-unit-${other.id}`);
+    const map = $('rc-map');
+    map.getBoundingClientRect = () => ({ left: 0, top: 0, width: s.world.map.w * CELL, height: s.world.map.h * CELL, right: s.world.map.w * CELL, bottom: s.world.map.h * CELL, x: 0, y: 0, toJSON: () => ({}) });
+    map.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: spot[0] * CELL + 5, clientY: spot[1] * CELL + 5 }));
+    expect(state().draft).toEqual([expect.objectContaining({ unit: other.id, order: { type: 'move', x: spot[0], y: spot[1] } })]);
+  });
+});
+
 describe('Relay Command map editor', () => {
   const edKey = (k: string) => $('ed-map').dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
   const moveTo = (x: number, y: number) => {
@@ -709,6 +732,28 @@ describe('Relay Command map editor', () => {
     expect([...($('rc-scenario') as HTMLSelectElement).options].map((o) => o.textContent)).toContain('Duel');
     click('rc-lock');
     expect($('rc-setup-summary').textContent).toContain('Duel');
+  });
+
+  it('undoes the last change (one step, also a resize); a draft survives "New game"; a failed save says so', () => {
+    click('rc-editor-open');
+    click('ed-tool-command-post');
+    moveTo(1, 9);
+    edKey('Enter');
+    expect(state().edit!.map.units).toHaveLength(2);
+    const width = $('ed-width') as HTMLSelectElement;
+    width.value = '10';
+    width.dispatchEvent(new Event('change'));
+    expect(state().edit!.map.w).toBe(10);
+    click('ed-undo');
+    expect(state().edit!.map.w).toBe(16);
+    expect(state().edit!.map.units).toHaveLength(2);
+    expect(($('ed-undo') as HTMLButtonElement).disabled).toBe(true); // one step only
+    instance.newGame({ seed: 9 });
+    expect(state().edit!.map.units).toHaveLength(2);
+    // The device drops the value: no "Saved", but the way out (the map code).
+    ctx.context.preferences!.set = () => undefined;
+    click('ed-save');
+    expect($('ed-notice').textContent).toBe('This device did not keep the map (storage blocked or full). Copy the map code to keep it.');
   });
 
   it('shares a map as a code, refuses a bad code, and asks twice before replacing or deleting', () => {

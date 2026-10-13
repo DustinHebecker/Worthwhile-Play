@@ -93,8 +93,8 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
   // (an attack on it, a placement on its cell). Reported to the intel like losses.
   const selling: Entity[] = [];
   const sold: Entity[] = [];
-  // Sites placed in this batch: paid in the loop, set down after it with ids given by side and
-  // cell, so the order in which the plans were handed in never decides which site gets which id.
+  // Sites placed in this batch: paid in the loop, set down after it with ids by each site's cell in
+  // its side's own frame, so the order in which the plans were handed in never decides the ids.
   const placing: { unit: Entity; kind: string; x: number; y: number }[] = [];
   for (const c of commands) {
     if (!validateCommand(w, rs, c, networks).ok) continue;
@@ -169,7 +169,9 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     return spottedBy(e.side, target.id) || dist2(e.x, e.y, target.x, target.y) <= vision * vision;
   };
 
-  placing.sort((a, b) => a.unit.side - b.unit.side || cellOf(w.map, a.x, a.y) - cellOf(w.map, b.x, b.y));
+  // Ids by the cell in the placing side's own frame (mirror-consistent, P4), then side (a pair of
+  // mirror-image placements by both sides in one batch is the one tie: side 0's site comes first).
+  placing.sort((a, b) => frameIndex(cellOf(w.map, a.x, a.y), a.unit.side, w.map.w * w.map.h) - frameIndex(cellOf(w.map, b.x, b.y), b.unit.side, w.map.w * w.map.h) || a.unit.side - b.unit.side);
   for (const p of placing) {
     const structure = arch({ kind: p.kind } as Entity);
     const site = spawn(w.nextId++, p.unit.side, structure, p.x, p.y);
