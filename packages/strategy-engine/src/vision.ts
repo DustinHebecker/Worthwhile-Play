@@ -199,6 +199,12 @@ function eventVisible(ev: SimEvent, live: ReadonlySet<number>, seen: (x: number,
       return live.has(ev.id);
     case 'destroyed':
       return seen(ev.x, ev.y);
+    // A capture: to whoever owns or owned the post or sees its cell (a third side with only an old
+    // report learns nothing). Elimination: to every side.
+    case 'captured':
+      return ev.from === side || ev.to === side || seen(ev.x, ev.y);
+    case 'eliminated':
+      return true;
     default:
       return live.has(ev.id);
   }

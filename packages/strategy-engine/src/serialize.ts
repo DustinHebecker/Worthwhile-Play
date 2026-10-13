@@ -78,6 +78,9 @@ export function isValidWorld(value: unknown, ruleset?: Ruleset): value is World 
   const sides = value.sides;
   if (value.teams !== undefined && (!isArrayOf(value.teams, (t) => isInt(t, 0, MAX_SIDES - 1)) || value.teams.length !== sides)) return false;
   if (value.frames !== undefined && (!isArrayOf(value.frames, (f): f is Frame => (FRAMES as readonly unknown[]).includes(f)) || value.frames.length !== sides)) return false;
+  // Sides that are out (capture rulesets): ascending, distinct, and without pieces (checked below).
+  if (value.out !== undefined && (!isArrayOf(value.out, (v) => isInt(v, 0, sides - 1)) || value.out.some((v, i, a) => i > 0 && v <= (a[i - 1] as number)))) return false;
+  const out = new Set((value.out as number[] | undefined) ?? []);
   // A neutral Command Post (no playing side): only kinds that may stand neutral; projectiles never.
   const sideOf = (side: unknown, kind: unknown): boolean => isInt(side, 0, sides - 1) || (side === NEUTRAL && (!ruleset || canBeNeutral(archetypeOf(ruleset, kind as string))));
   const tick = value.tick;
@@ -90,6 +93,7 @@ export function isValidWorld(value: unknown, ruleset?: Ruleset): value is World 
     sideOf(e.side, e.kind) &&
     // A neutral post holds, without doctrine, set-up, queue or site (it takes no orders).
     (e.side !== NEUTRAL || (isRecord(e.order) && e.order.type === 'hold' && e.doctrine === undefined && e.deploy === undefined && e.queue === undefined && e.build === undefined)) &&
+    !out.has(e.side as number) &&
     (!ruleset || Object.hasOwn(ruleset.archetypes, e.kind)) &&
     inMap(e.x, e.y) &&
     isInt(e.hp, 1, ruleset ? (archetypeOf(ruleset, e.kind as string)?.hp ?? 0) : Number.MAX_SAFE_INTEGER) &&
@@ -113,6 +117,7 @@ export function isValidWorld(value: unknown, ruleset?: Ruleset): value is World 
     isRecord(p) &&
     isInt(p.id, 1, nextId - 1) &&
     isInt(p.side, 0, sides - 1) &&
+    !out.has(p.side as number) &&
     typeof p.kind === 'string' &&
     (!ruleset || Object.hasOwn(ruleset.archetypes, p.kind)) &&
     inMap(p.x, p.y) &&
@@ -122,6 +127,8 @@ export function isValidWorld(value: unknown, ruleset?: Ruleset): value is World 
   for (let i = 1; i < entities.length; i++) if ((entities[i] as Entity).id <= (entities[i - 1] as Entity).id) return false;
   if (ruleset && (ruleset.fog ? value.intel === undefined : value.intel !== undefined)) return false;
   if (value.intel !== undefined && !validIntel(value.intel, entities, { w, h, sides, tick, nextId }, ruleset)) return false;
+  // A side that is out knows nothing any more.
+  if (Array.isArray(value.intel) && [...out].some((side) => (value.intel as unknown[][])[side]?.length !== 0)) return false;
   if (ruleset) {
     const cells = new Set<string>();
     for (const e of entities) {
@@ -192,7 +199,8 @@ function validIntel(
     for (let i = 1; i < reports.length; i++) if ((reports[i] as Report).id <= (reports[i - 1] as Report).id) return false;
     for (const r of reports) {
       const e = byId.get(r.id);
-      if (e && (e.side !== r.side || e.kind !== r.kind)) return false;
+      // A post captured out of this side's sight keeps its old owner in an old report.
+      if (e && (e.kind !== r.kind || (e.side !== r.side && (r.live || !(ruleset ? canBeNeutral(archetypeOf(ruleset, e.kind)) : true))))) return false;
       if (r.live && (!e || r.tick !== dims.tick || e.x !== r.x || e.y !== r.y || e.hp !== r.hp)) return false;
     }
     const known = new Set(reports.map((r) => r.id));

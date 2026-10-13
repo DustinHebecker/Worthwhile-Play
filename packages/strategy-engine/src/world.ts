@@ -150,7 +150,7 @@ export function validateCommand(world: World, ruleset: Ruleset, command: Command
   const unit = findEntity(world, command.unit);
   if (!unit) return { ok: false, reason: 'unknown-unit' };
   // Only playing sides give orders (a neutral post takes none).
-  if (unit.side !== command.side || unit.side === NEUTRAL) return { ok: false, reason: 'not-yours' };
+  if (unit.side !== command.side || unit.side === NEUTRAL || world.out?.includes(unit.side)) return { ok: false, reason: 'not-yours' };
   const arch = archetypeOf(ruleset, unit.kind);
   if (!arch) return { ok: false, reason: 'unknown-unit' };
   if (!isCommandable(world, ruleset, unit, networks?.[unit.side])) return { ok: false, reason: 'out-of-contact' };
