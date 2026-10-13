@@ -15,6 +15,8 @@ import {
   canReach,
   runTicks,
   validateCommand,
+  hostile,
+  NEUTRAL,
   type Command,
   type Doctrine,
   type Entity,
@@ -242,7 +244,7 @@ function lookaheadFighters(obs: Observation, ruleset: Ruleset, fighters: readonl
 
 const sumEnemies = (w: World, side: number, value: (w: World, s: number) => number): number => {
   let total = 0;
-  for (let s = 0; s < w.sides; s++) if (s !== side) total += value(w, s);
+  for (let s = 0; s < w.sides; s++) if (s !== side && hostile(w, side, s)) total += value(w, s);
   return total;
 };
 
@@ -301,8 +303,13 @@ interface AssaultPlan {
 /** The side's plan of attack from what it knows: rally point in front of the enemy post and whether to storm. */
 function assaultPlan(obs: Observation, ruleset: Ruleset, difficulty: Difficulty): AssaultPlan | undefined {
   const { world, side } = obs;
-  const objective = enemiesOf(obs).find((e) => e.kind === 'command-post');
   const home = world.entities.find((e) => e.side === side && e.kind === 'command-post');
+  // The nearest known enemy Command Post (several opponents: no coordination between them).
+  const objective = home
+    ? enemiesOf(obs)
+        .filter((e) => e.kind === 'command-post')
+        .sort((a, b) => dist2(a.x, a.y, home.x, home.y) - dist2(b.x, b.y, home.x, home.y) || frame(obs, a) - frame(obs, b))[0]
+    : undefined;
   if (!objective || !home) return undefined;
   const dx = home.x - objective.x;
   const dy = home.y - objective.y;
@@ -851,8 +858,11 @@ const staysPut = (ruleset: Ruleset, e: Entity): boolean => {
   return arch?.layer === 'ground' && (arch.speed === 0 || e.order.type === 'hold' || e.order.type === 'deploy');
 };
 
-/** Enemies the side knows of: current sightings and last reports. */
-const enemiesOf = (obs: Observation): Entity[] => obs.world.entities.filter((e) => e.side !== obs.side);
+/**
+ * Enemies the side knows of: current sightings and last reports of hostile sides. A neutral
+ * post is no enemy (it never fires; taking it is a matter for later, docs/design/strategy.md § 9.4).
+ */
+const enemiesOf = (obs: Observation): Entity[] => obs.world.entities.filter((e) => e.side !== NEUTRAL && hostile(obs.world, obs.side, e.side));
 
 type Positioned = Pick<Entity, 'id' | 'x' | 'y'>;
 

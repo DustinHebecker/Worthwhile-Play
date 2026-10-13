@@ -1,4 +1,4 @@
-import type { Scenario } from '@wp/strategy-engine';
+import { NEUTRAL, type Frame, type Scenario } from '@wp/strategy-engine';
 
 /**
  * Hand-made, point-symmetric scenarios. Only the top half (side 1, top-right) is written down;
@@ -11,7 +11,42 @@ export interface ScenarioSpec {
    * the length chosen in the setup (open end, 12, 24 or quick match), so this is not shown anywhere.
    */
   readonly turnLimit: number;
+  /**
+   * The map as authored. Two-side maps: sides 0 and 1. Maps with seats: an entity's side is its
+   * seat; `scenarioFor` turns seats into sides for the chosen number of opponents.
+   */
   readonly scenario: Scenario;
+  /** Maps for several sides: the seats (bases) and which of them play for each opponent count. */
+  readonly seats?: Seats;
+}
+
+/**
+ * Seats of a map for several sides (docs/design/strategy.md § 9.4). `frames[seat]` is how that
+ * seat sees the map (so a symmetric map stays fair, ADR 0009); `layouts[n]` lists the seats that
+ * play against `n` opponents, the player's first. A seat left empty keeps its Command Post as a
+ * neutral post anyone can capture; its other pieces are not set up.
+ */
+export interface Seats {
+  readonly frames: readonly Frame[];
+  readonly layouts: Readonly<Record<number, readonly number[]>>;
+}
+
+/** The opponent counts a map offers (two-side maps: one). */
+export const opponentCounts = (spec: ScenarioSpec): number[] =>
+  spec.seats ? Object.keys(spec.seats.layouts).map(Number).sort((a, b) => a - b) : [1];
+
+/** The scenario for `opponents` opponents: seats become sides 0…n (the player is side 0), empty seats neutral posts. */
+export function scenarioFor(spec: ScenarioSpec, opponents: number): Scenario | undefined {
+  if (!spec.seats) return opponents === 1 ? spec.scenario : undefined;
+  const layout = spec.seats.layouts[opponents];
+  if (!layout) return undefined;
+  const sideOf = new Map(layout.map((seat, side) => [seat, side]));
+  const entities = spec.scenario.entities.flatMap((e) => {
+    const side = sideOf.get(e.side);
+    if (side !== undefined) return [{ ...e, side }];
+    return e.kind === 'command-post' ? [{ ...e, side: NEUTRAL }] : [];
+  });
+  return { ...spec.scenario, sides: layout.length, entities, frames: layout.map((seat) => spec.seats!.frames[seat] ?? 'id') };
 }
 
 const mirrorRows = (top: readonly string[]): string[] => [...top, ...[...top].reverse().map((row) => [...row].reverse().join(''))];
@@ -176,4 +211,81 @@ export const MARSH_DELTA: ScenarioSpec = symmetric(
   ]
 );
 
-export const SCENARIOS: readonly ScenarioSpec[] = [FIELD_EXERCISE, CROSSROADS, RIDGE_VALLEY, MARSH_DELTA];
+/**
+ * A square map with four bases, the same under a quarter turn: only the bottom-left quarter
+ * (seat 0) is written down, the other seats are it turned clockwise (seat 1 top left, seat 2
+ * top right, seat 3 bottom right). `rows` are the quarter's rows from the centre line down.
+ */
+function fourBases(id: string, turnLimit: number, rows: readonly string[], units: readonly { kind: string; x: number; y: number }[], deposits: readonly { x: number; y: number }[]): ScenarioSpec {
+  const half = rows.length;
+  const n = 2 * half;
+  // Clockwise quarter turn and its powers (seat k = seat 0 turned k times).
+  const turn = (x: number, y: number, k: number): [number, number] => {
+    let p: [number, number] = [x, y];
+    for (let i = 0; i < k; i++) p = [n - 1 - p[1], p[0]];
+    return p;
+  };
+  const terrain: string[] = [];
+  for (let y = 0; y < n; y++) {
+    for (let x = 0; x < n; x++) {
+      // Which quarter-turn of seat 0's quarter holds (x, y): turn it back into that quarter.
+      let k = 0;
+      let [bx, by] = [x, y];
+      while (!(bx < half && by >= half)) {
+        [bx, by] = [by, n - 1 - bx];
+        k++;
+      }
+      void k;
+      terrain.push(rows[by - half]?.[bx] ?? '.');
+    }
+  }
+  const entities = [0, 1, 2, 3].flatMap((seat) => units.map((u) => {
+    const [x, y] = turn(u.x, u.y, seat);
+    return { side: seat, kind: u.kind, x, y };
+  }));
+  const all = [0, 1, 2, 3].flatMap((seat) => deposits.map((d) => {
+    const [x, y] = turn(d.x, d.y, seat);
+    return { x, y, left: DEPOSIT_SUPPLY };
+  }));
+  return {
+    id,
+    turnLimit,
+    scenario: { map: { w: n, h: n, terrain: terrain.join(''), deposits: all }, sides: 4, entities, seed: 0 },
+    // Seat k sees the map turned back k quarters, so the quarter turn carries each seat's view
+    // onto the next one's. One opponent sits across; with two, the fourth base is a neutral post.
+    seats: { frames: ['id', 'r270', 'r180', 'r90'], layouts: { 1: [0, 2], 2: [0, 1, 2], 3: [0, 1, 2, 3] } }
+  };
+}
+
+/** Four Corners: 16×16, four bases in the corners, a lake and roads to a contested middle. */
+export const FOUR_CORNERS: ScenarioSpec = fourBases(
+  'four-corners',
+  24,
+  [
+    '..f...=.',
+    '.ff..==.',
+    '....=...',
+    '~~..=.h.',
+    '~...=...',
+    '..=====.',
+    '..u.....',
+    '........'
+  ],
+  [
+    { kind: 'command-post', x: 2, y: 13 },
+    { kind: 'muster', x: 3, y: 14 },
+    { kind: 'rifles', x: 4, y: 12 },
+    { kind: 'rifles', x: 5, y: 13 },
+    { kind: 'lancer', x: 3, y: 12 },
+    { kind: 'outrider', x: 5, y: 11 },
+    { kind: 'mast-truck', x: 1, y: 14 },
+    { kind: 'howitzer', x: 0, y: 15 },
+    { kind: 'warden', x: 6, y: 12 }
+  ],
+  [
+    { x: 6, y: 14 },
+    { x: 7, y: 9 }
+  ]
+);
+
+export const SCENARIOS: readonly ScenarioSpec[] = [FIELD_EXERCISE, CROSSROADS, RIDGE_VALLEY, MARSH_DELTA, FOUR_CORNERS];

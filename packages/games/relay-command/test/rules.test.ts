@@ -40,9 +40,12 @@ import {
   CONTACT_TURN,
   stalled,
   stalemateTurns,
-  type RcState
+  type RcState,
+  initialWorld,
+  rulesetFor,
+  SIDES_RULESET,
 } from '../src/rules';
-import { FIELD_EXERCISE, RIDGE_VALLEY, type ScenarioSpec, SCENARIOS } from '../src/scenarios';
+import { FIELD_EXERCISE, opponentCounts, RIDGE_VALLEY, type ScenarioSpec, SCENARIOS } from '../src/scenarios';
 
 /** A side's plan from its own observation (default: the game's default level). */
 const ai = (world: World, side: number, difficulty: Difficulty = 'normal') => planAi(observe(world, RULESET, side), RULESET, difficulty);
@@ -63,20 +66,47 @@ function selfPlay(seed: number): RcState {
 
 describe('Field Exercise scenario', () => {
   for (const spec of SCENARIOS) {
-    it(`${spec.id} is point-symmetric in terrain and units, the Command Posts can reach each other, and every unit starts in radio cover`, () => {
+    it(`${spec.id} is symmetric in terrain and units, the Command Posts can reach each other, and every unit starts in radio cover (every opponent count)`, () => {
       const { map, entities } = spec.scenario;
-      expect(map.terrain).toBe([...map.terrain].reverse().join(''));
-      const mirror = (e: (typeof entities)[number]) => `${1 - e.side}:${e.kind}:${map.w - 1 - e.x},${map.h - 1 - e.y}`;
-      expect(new Set(entities.map(mirror))).toEqual(new Set(entities.map((e) => `${e.side}:${e.kind}:${e.x},${e.y}`)));
-      const w = createWorld({ ...spec.scenario, seed: 1 }, RULESET);
-      const posts = w.entities.filter((e) => e.kind === 'command-post');
-      expect(posts).toHaveLength(2);
-      expect(findPath(w.map, RULESET, cellOf(w.map, posts[0]!.x, posts[0]!.y), cellOf(w.map, posts[1]!.x, posts[1]!.y), { layer: 'ground', side: 0 })).toBeDefined();
-      expect(isValidState(newGame(3, spec))).toBe(true);
-      // Every unit starts inside its side's radio cover: all of them can be ordered on turn 1.
-      for (const side of [0, 1]) {
-        const cover = computeNetwork(w, RULESET, side).coverage;
-        expect(w.entities.filter((e) => e.side === side && cover[cellOf(w.map, e.x, e.y)] !== 1).map((e) => `${e.kind}@${e.x},${e.y}`)).toEqual([]);
+      const key = (e: (typeof entities)[number]) => `${e.side}:${e.kind}:${e.x},${e.y}`;
+      if (!spec.seats) {
+        // Two sides: the point mirror with the sides swapped.
+        expect(map.terrain).toBe([...map.terrain].reverse().join(''));
+        const mirror = (e: (typeof entities)[number]) => `${1 - e.side}:${e.kind}:${map.w - 1 - e.x},${map.h - 1 - e.y}`;
+        expect(new Set(entities.map(mirror))).toEqual(new Set(entities.map(key)));
+      } else {
+        // Four seats: a clockwise quarter turn carries seat k onto seat k+1, terrain and deposits onto themselves.
+        const n = map.w;
+        expect(map.h).toBe(n);
+        const turn = (x: number, y: number) => [n - 1 - y, x] as const;
+        for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+          const [tx, ty] = turn(x, y);
+          expect(map.terrain[ty * n + tx]).toBe(map.terrain[y * n + x]);
+        }
+        const seats = spec.seats.frames.length;
+        const turned = (e: (typeof entities)[number]) => {
+          const [x, y] = turn(e.x, e.y);
+          return `${(e.side + 1) % seats}:${e.kind}:${x},${y}`;
+        };
+        expect(new Set(entities.map(turned))).toEqual(new Set(entities.map(key)));
+        const deposits = (map.deposits ?? []).map((d) => `${d.x},${d.y}`);
+        expect(new Set((map.deposits ?? []).map((d) => turn(d.x, d.y).join(',')))).toEqual(new Set(deposits));
+      }
+      for (const opponents of opponentCounts(spec)) {
+        const w = initialWorld(spec, 1, opponents);
+        expect(w.sides).toBe(opponents + 1);
+        const rules = rulesetFor(spec, opponents);
+        const own = w.entities.find((e) => e.side === 0 && e.kind === 'command-post')!;
+        for (let side = 1; side <= opponents; side++) {
+          const post = w.entities.find((e) => e.side === side && e.kind === 'command-post')!;
+          expect(findPath(w.map, rules, cellOf(w.map, own.x, own.y), cellOf(w.map, post.x, post.y), { layer: 'ground', side: 0 }), `${spec.id} ${opponents}: post of ${side}`).toBeDefined();
+        }
+        expect(isValidState(newGame(3, spec, 'normal', 12, false, null, opponents))).toBe(true);
+        // Every unit starts inside its side's radio cover: all of them can be ordered on turn 1.
+        for (let side = 0; side <= opponents; side++) {
+          const cover = computeNetwork(w, rules, side).coverage;
+          expect(w.entities.filter((e) => e.side === side && cover[cellOf(w.map, e.x, e.y)] !== 1).map((e) => `${e.kind}@${e.x},${e.y}`)).toEqual([]);
+        }
       }
     });
   }
@@ -164,7 +194,7 @@ describe('Field Exercise scenario', () => {
     // Strip the field as a version-4 save would not have it.
     const strip = (o: unknown): unknown => (isRecord(o) ? Object.fromEntries(Object.entries(o).filter(([k]) => k !== 'lostContact').map(([k, v]) => [k, strip(v)])) : Array.isArray(o) ? o.map(strip) : o);
     const migrated = migrateState(strip(v4), 4)!;
-    expect(migrated.v).toBe(8);
+    expect(migrated.v).toBe(9);
     expect(isValidState(migrated)).toBe(true);
     const rifle = own(migrated).find((u) => u.kind === 'rifles')!;
     expect(rifle.doctrine?.lostContact).toBe('keep');
@@ -180,9 +210,9 @@ describe('Field Exercise scenario', () => {
     delete v7.map;
     delete v7.edit;
     const migrated = migrateState(v7, 7)!;
-    expect(migrated).toMatchObject({ v: 8, map: null, edit: null, scenario: 'field-exercise' });
+    expect(migrated).toMatchObject({ v: 9, opponents: 1, map: null, edit: null, scenario: 'field-exercise' });
     expect(isValidState(migrated)).toBe(true);
-    expect(migrateState({ ...v7, v: 8 }, 7)).toBeUndefined();
+    expect(migrateState({ ...v7, v: 9 }, 7)).toBeUndefined();
     expect(isValidState(v7)).toBe(false);
   });
 
@@ -191,7 +221,7 @@ describe('Field Exercise scenario', () => {
     const v6 = JSON.parse(JSON.stringify({ ...s, v: 6, lead: [5] })) as Record<string, unknown>;
     delete v6.quick;
     const migrated = migrateState(v6, 6)!;
-    expect(migrated).toMatchObject({ v: 8, quick: false, lead: [], turnLimit: null, map: null, edit: null });
+    expect(migrated).toMatchObject({ v: 9, opponents: 1, quick: false, lead: [], turnLimit: null, map: null, edit: null });
     expect(isValidState(migrated)).toBe(true);
     expect(migrateState({ ...v6, v: 5 }, 6)).toBeUndefined();
     expect(isValidState({ ...newGame(2, FIELD_EXERCISE, 'normal', 12), quick: true })).toBe(false);
@@ -392,7 +422,7 @@ describe('command network (I3a)', () => {
     };
     expect(v1.draft).toHaveLength(5);
     const migrated = migrateState(JSON.parse(JSON.stringify(v1)), 1)!;
-    expect(migrated.v).toBe(8);
+    expect(migrated.v).toBe(9);
     expect(migrated.draft.length).toBeLessThanOrEqual(orderSlots(migrated));
     expect(migrated.draft.every((c) => orderRefusal({ ...migrated, draft: [] }, c.unit, c.order) === null)).toBe(true);
     expect(isValidState(migrated)).toBe(true);
@@ -402,7 +432,7 @@ describe('command network (I3a)', () => {
     const v1 = { ...structuredClone(newGame(3)), v: 1 } as Record<string, unknown>;
     (v1.world as Record<string, unknown>).ruleset = 'base-1';
     const migrated = migrateState(v1, 1);
-    expect(migrated?.v).toBe(8);
+    expect(migrated?.v).toBe(9);
     expect(migrated?.world.ruleset).toBe(RULESET.id);
     expect(migrateState(v1, 2)).toBeUndefined();
     expect(migrateState(null, 1)).toBeUndefined();
@@ -717,7 +747,7 @@ describe('information model (I3c, D7)', () => {
     const s = lockTurn(newGame(5));
     const v2 = JSON.parse(JSON.stringify({ ...s, v: 2, world: { ...s.world, ruleset: 'strategy-1', intel: undefined } })) as Record<string, unknown>;
     const migrated = migrateState(v2, 2)!;
-    expect(migrated.v).toBe(8);
+    expect(migrated.v).toBe(9);
     expect(migrated.world.ruleset).toBe(RULESET.id);
     expect(migrated.events).toEqual([]);
     expect(migrated.world.intel).toEqual(initialIntel(s.world, RULESET));
@@ -1033,3 +1063,84 @@ describe('opponent levels (I5)', () => {
   });
 });
 
+
+describe('several sides (docs/design/strategy.md § 9.4)', () => {
+  const corners = SCENARIOS.find((s) => s.id === 'four-corners')!;
+
+  it('a four-base map offers 1 to 3 opponents; the empty seats hold neutral posts; two-side maps offer one', () => {
+    expect(opponentCounts(corners)).toEqual([1, 2, 3]);
+    expect(opponentCounts(FIELD_EXERCISE)).toEqual([1]);
+    for (const n of [1, 2, 3]) {
+      const s = newGame(1, corners, 'normal', 12, false, null, n);
+      expect(s.opponents).toBe(n);
+      expect(s.world.sides).toBe(n + 1);
+      expect(s.world.entities.filter((e) => e.side === NEUTRAL)).toHaveLength(3 - n);
+      expect(s.world.ruleset).toBe(SIDES_RULESET.id);
+      expect(isValidState(JSON.parse(JSON.stringify(s)))).toBe(true);
+    }
+    // An undeclared count falls back to one; a two-side map keeps the two-side rules.
+    expect(newGame(1, FIELD_EXERCISE, 'normal', 12, false, null, 3)).toMatchObject({ opponents: 1, world: { sides: 2, ruleset: RULESET.id } });
+  });
+
+  it('every opponent plans and fights; a game with three opponents ends and stays a valid save every turn', () => {
+    let s = newGame(2, corners, 'normal', 30, false, null, 3);
+    for (let i = 0; i < 30 && s.phase === 'plan'; i++) {
+      s = lockTurn(s);
+      expect(s.log.at(-1)!.plans).toHaveLength(4);
+      expect(isValidState(JSON.parse(JSON.stringify(s))), `turn ${s.world.turn}`).toBe(true);
+    }
+    expect(s.phase).toBe('finished');
+    // Opponents gave orders (each plans for itself).
+    for (const side of [1, 2, 3]) expect(s.log.some((t) => (t.plans[side] ?? []).length > 0), `side ${side}`).toBe(true);
+  });
+
+  it('the result: lost when the player is out, won when every opponent is out, on strength against the strongest opponent left', () => {
+    const s = newGame(1, corners, 'normal', 12, false, null, 2);
+    const without = (sides: number[]) => ({ ...s.world, entities: s.world.entities.filter((e) => !sides.includes(e.side)), out: sides.filter((x) => x !== NEUTRAL).sort() });
+    expect(outcome(without([0]), 12)).toBe('lost');
+    expect(outcome(without([1]), 12)).toBeNull(); // one opponent left
+    expect(outcome(without([1, 2]), 12)).toBe('won');
+    expect(outcome(without([0, 1, 2]), 12)).toBe('draw');
+    // At the turn limit: ahead of every opponent wins; behind the strongest loses.
+    const atLimit = { ...s.world, turn: 12 };
+    expect(outcome(atLimit, 12)).toBe('draw'); // all start equal
+    const strong = structuredClone(atLimit);
+    strong.supply![2] = 10_000;
+    expect(outcome(strong, 12)).toBe('lost');
+    const ahead = structuredClone(atLimit);
+    ahead.supply![0] = 10_000;
+    expect(outcome(ahead, 12)).toBe('won');
+  });
+
+  it('infantry next to a neutral post takes it over at the end of the turn and the player is told', () => {
+    let s = newGame(1, corners, 'normal', 12, false, null, 2);
+    const post = s.world.entities.find((e) => e.side === NEUTRAL)!;
+    const rifle = s.world.entities.find((e) => e.side === PLAYER && e.kind === 'rifles')!;
+    const spot = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, 1], [-1, 1], [1, -1]].map(([dx, dy]) => [post.x + dx!, post.y + dy!] as const).find(([x, y]) => x >= 0 && y >= 0 && x < 16 && y < 16 && !s.world.entities.some((e) => e.x === x && e.y === y) && passable(s.world.map, SIDES_RULESET, x, y, 'ground'))!;
+    s = structuredClone(s);
+    Object.assign(s.world.entities.find((e) => e.id === rifle.id)!, { x: spot[0], y: spot[1] });
+    s.world.intel = initialIntel(s.world, SIDES_RULESET);
+    s = lockTurn(s);
+    expect(s.world.entities.find((e) => e.id === post.id)?.side).toBe(PLAYER);
+    expect(s.events.some((e) => e.t === 'captured' && e.to === PLAYER && e.id === post.id)).toBe(true);
+  });
+
+  it('saves: v8 migrates to v9 with one opponent; a v9 save must match its map, count, rules and frames', () => {
+    const v8 = JSON.parse(JSON.stringify({ ...newGame(4), v: 8 })) as Record<string, unknown>;
+    delete v8.opponents;
+    expect(migrateState(v8, 8)).toMatchObject({ v: 9, opponents: 1 });
+    expect(migrateState({ ...v8, v: 9 }, 8)).toBeUndefined();
+    const s = newGame(1, corners, 'normal', 12, false, null, 2);
+    expect(isValidState({ ...s, opponents: 3 })).toBe(false);
+    expect(isValidState({ ...newGame(1), opponents: 2 })).toBe(false);
+    expect(isValidState({ ...s, world: { ...s.world, frames: ['id', 'id', 'id'] } })).toBe(false);
+    expect(isValidState({ ...s, world: { ...s.world, ruleset: RULESET.id } })).toBe(false);
+    expect(isValidState({ ...s, world: { ...s.world, teams: [0, 1, 1] } })).toBe(false);
+    // A player-side unit turned neutral (not one of the map's empty seats) is refused.
+    const crafted = structuredClone(s);
+    const rifle = crafted.world.entities.find((e) => e.side === 1 && e.kind === 'command-post')!;
+    rifle.side = NEUTRAL;
+    for (const list of crafted.world.intel ?? []) for (const r of list) if (r.id === rifle.id) r.side = NEUTRAL;
+    expect(isValidState(crafted)).toBe(false);
+  });
+});
