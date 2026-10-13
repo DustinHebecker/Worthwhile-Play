@@ -67,6 +67,8 @@ export function observe(world: World, ruleset: Ruleset, side: number): Observati
     // Who is allied with whom and how each side sees the map are public setup information.
     ...(world.teams && { teams: [...world.teams] }),
     ...(world.frames && { frames: [...world.frames] }),
+    // Which sides are out is told to every side.
+    ...(world.out && { out: [...world.out] }),
     entities,
     projectiles: world.projectiles.filter((p) => p.side === side).map((p) => ({ ...p })),
     // Only ids the side knows: the true counter would reveal every unseen enemy shot.

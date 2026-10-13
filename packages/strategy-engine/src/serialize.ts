@@ -117,6 +117,7 @@ export function isValidWorld(value: unknown, ruleset?: Ruleset): value is World 
     isRecord(p) &&
     isInt(p.id, 1, nextId - 1) &&
     isInt(p.side, 0, sides - 1) &&
+    !out.has(p.side as number) &&
     typeof p.kind === 'string' &&
     (!ruleset || Object.hasOwn(ruleset.archetypes, p.kind)) &&
     inMap(p.x, p.y) &&
@@ -126,6 +127,8 @@ export function isValidWorld(value: unknown, ruleset?: Ruleset): value is World 
   for (let i = 1; i < entities.length; i++) if ((entities[i] as Entity).id <= (entities[i - 1] as Entity).id) return false;
   if (ruleset && (ruleset.fog ? value.intel === undefined : value.intel !== undefined)) return false;
   if (value.intel !== undefined && !validIntel(value.intel, entities, { w, h, sides, tick, nextId }, ruleset)) return false;
+  // A side that is out knows nothing any more.
+  if (Array.isArray(value.intel) && [...out].some((side) => (value.intel as unknown[][])[side]?.length !== 0)) return false;
   if (ruleset) {
     const cells = new Set<string>();
     for (const e of entities) {

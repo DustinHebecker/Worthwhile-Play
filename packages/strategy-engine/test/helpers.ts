@@ -217,6 +217,7 @@ export function transformWorld(w: World, at: (x: number, y: number) => readonly 
     map: { ...w.map, terrain: terrain.join(''), ...(deposits && { deposits }) },
     ...(w.supply && { supply: bySide(w.supply) }),
     ...(w.teams && { teams: bySide(w.teams) }),
+    ...(w.out && { out: w.out.map(side).sort((a, b) => a - b) }),
     entities: w.entities.map((e) => {
       const [x, y] = at(e.x, e.y);
       return {

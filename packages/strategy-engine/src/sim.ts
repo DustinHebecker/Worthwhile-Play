@@ -730,6 +730,9 @@ function attackAim(ctx: Intent, e: Entity, a: Archetype, id: number): number | '
   const weapon = a.weapon;
   const target = findEntity(w, id);
   const seen = target !== undefined && ctx.visible(e, target);
+  // A target that turned friendly (a captured post): the order ends once the unit sees it (with
+  // fog an ally learns of the capture only by looking; it holds fire meanwhile, see pickTarget).
+  if (target && (seen || !rs.fog) && !hostile(w, e.side, target.side)) return 'lost';
   let at: { x: number; y: number; kind: string } | undefined;
   if (seen || !rs.fog) at = target;
   else at = w.intel?.[e.side]?.find((r) => r.id === id);
@@ -862,7 +865,8 @@ function pickTarget(w: World, rs: Ruleset, e: Entity, a: Archetype, tick: number
   const doctrine = doctrineOf(e);
   if (e.order.type === 'attack') {
     const ordered = findEntity(w, e.order.target);
-    if (ordered && visible(ordered) && inWeaponRange(w, rs, e, a, ordered)) return ordered;
+    // Never at a friendly target (a post captured by the own side or an ally keeps no attack on it).
+    if (ordered && hostile(w, e.side, ordered.side) && visible(ordered) && inWeaponRange(w, rs, e, a, ordered)) return ordered;
   }
   if (doctrine.holdFire && (e.hitAt === undefined || tick - e.hitAt > rs.ticksPerTurn)) return undefined;
   const classed = doctrine.priority !== 'weakest' && doctrine.priority !== 'nearest';
@@ -911,7 +915,8 @@ function captureAndEliminate(w: World, rs: Ruleset, t: number, events: SimEvent[
     const next = (e: Entity) => e.id !== post.id && Math.max(Math.abs(e.x - post.x), Math.abs(e.y - post.y)) <= 1;
     if (post.side !== NEUTRAL) {
       if (post.hp >= max * CAPTURE_BELOW) continue;
-      if (w.entities.some((e) => next(e) && !hostile(w, post.side, e.side))) continue;
+      // Defenders are units of the owner or an ally that can move (not structures or sites next to it).
+      if (w.entities.some((e) => next(e) && !hostile(w, post.side, e.side) && (archetypeOf(rs, e.kind)?.speed ?? 0) > 0 && e.build === undefined)) continue;
     }
     const claimants = new Set<number>();
     for (const e of w.entities) {
@@ -929,6 +934,9 @@ function captureAndEliminate(w: World, rs: Ruleset, t: number, events: SimEvent[
     delete post.doctrine;
     delete post.queue;
     events.push({ t: 'captured', tick: t, id: post.id, kind: post.kind, x: post.x, y: post.y, from, to });
+    // The new owner knows it took the post: its attack orders on it end at once (allies end theirs
+    // when they see it, attackAim).
+    for (const e of w.entities) if (e.side === to && e.order.type === 'attack' && e.order.target === post.id) endOrder(e, 'lost-target', t, events);
     // The old owner is told (its report now names the new owner); the new owner knows its post.
     if (w.intel) {
       const report = { id: post.id, side: to, kind: post.kind, x: post.x, y: post.y, hp: post.hp, tick: t, live: false };
