@@ -267,18 +267,49 @@ Proposed scope, in increments (each one PR, each with tests before the next):
 | # | Increment | Content |
 |---|---|---|
 | M1 | Engine | P4 generalised to a map's symmetry group: for a map with the 4-fold symmetry below, mirroring by any symmetry and permuting the sides accordingly gives the permuted outcome. Determinism (P1) and plan-order independence (P6) over 3–4 sides; elimination (a side whose Command Post falls is out: its remaining units are removed at the end of that tick, `eliminated` event). |
-| M2 | Rules | State v9: `opponents: number` (1–3), sides `0` (player) and `1…n`; a game ends when the player's post falls (lost) or every opponent's post has fallen (won); at a turn limit, or by the stalemate rule, the player wins only when ahead of every remaining opponent (equal to the best: draw). Strength compares the player with the strongest remaining opponent. v8 saves migrate as one opponent. |
+| M2 | Rules | State v9: `opponents: number` (1–7, see decisions below), sides `0` (player) and `1…n`; a game ends when the player's post falls (lost) or every opponent's post has fallen (won); at a turn limit, or by the stalemate rule, the player wins only when ahead of every remaining opponent (equal to the best: draw). Strength compares the player with the strongest remaining opponent. v8 saves migrate as one opponent. |
 | M3 | AI | Each opponent plans on its own observation (as now) and picks a target side per turn: the nearest known Command Post, weighted by the known defenders; no coordination between opponents, and no rule that makes them prefer the player (they also fight each other). Budget: the plans of three opponents per locked turn must stay within the phone budget (today 35 ms mean on Ridge Valley for one) — measured before merge. |
 | M4 | UI | Four side colours with 3:1 contrast on every terrain, veiled or not, in both themes (extends the contrast test), and a non-colour mark per side (a letter or pattern on every unit; the legend explains it); lists and the turn summary grouped by side; setup option "Opponents: 1 / 2 / 3" (only for maps with that many bases). |
 | M5 | Maps | Four-base maps: square maps with 4-fold rotational symmetry (90°), or rectangles mirrored on both axes; a 3-opponent game uses all four bases, a 2-opponent game the two opposite ones plus an empty base (fair: every side sees the same map up to symmetry). Editor: mirror mode "four ways", a map says how many bases it has. |
 
-Decisions for the owner (recommendation first):
-- **Free-for-all first** (every side against every other). Teams (e.g. you plus an AI ally against two) need alliances in the engine (shared sight, no fire on allies, shared victory) — a later increment if wanted.
-- **When your Command Post falls, the game ends as lost** (no watching the others play on — that would be autoplay).
-- **At most 3 opponents** (4 sides): more does not fit a phone screen, and every side costs AI time per turn.
-- **Three sides exactly** (2 opponents) use a four-base map with one empty base rather than a three-way map: a square grid has no exact three-fold symmetry, so a three-base map cannot be fair by construction.
+Owner decisions (2026-10-13):
+- **Free-for-all first, teams later** (not dropped: alliances — shared sight, no fire on allies, shared victory — stay on the list as an increment after M5).
+- **Elimination by Command Posts, with capture.** A side is out when it holds no Command Post any more. Command Posts can be **taken over** (captured), so a side that lost its own post but took another one plays on until both are destroyed. Maps may also hold **neutral, passive Command Posts** that any side can capture (e.g. the empty base of a four-base map in a three-side game).
+- **The number of opponents is the player's choice** (up to the engine's 8 sides), not capped at 3. Maps need not be symmetric: an **asymmetric map** may pit the player against many opponents and balance it with a resource advantage (start Supply and deposits per side). Fairness by construction (P4 mirror) then only holds for symmetric maps; asymmetric ones are balanced by measurement.
+- Three sides on a four-base map with one empty (neutral, capturable) base.
 
-Risks: AI time grows linearly with opponents (mitigation: measure first, cap at 3); readability with four colours on a 360 px map (mitigation: marks per side, larger maps scroll); balancing — two opponents fighting each other leave the player an easy third-party win (accepted: it is part of free-for-all; the AI's target choice weighs threats, so a player who sits back is not ignored).
+Binding rules for several sides (to be implemented in the increments below; tests named per rule):
+
+*Sides and the data model.* A world has `sides` playing sides (2–8) and optionally neutral Command Posts. Neutral is not a side number: a neutral post is an entity with `side: NEUTRAL` (−1 in the data, never in `plans`, no supply, no intel, no coverage, never fires, never moves, takes no orders). Every playing side carries `team: number` (default: its own side number, i.e. free-for-all). All hostility checks go through one function `hostile(a, b) = a !== b && teamOf(a) !== teamOf(b)` (neutral is hostile to everyone for targeting, but nobody's ally). Teams later only change the `team` values and add shared sight/victory; no free-for-all code may compare sides directly for hostility. Free-for-all ships with `team = side`.
+
+*Capture.* At the end of each turn (after the command batch, sales and placements, before vision), for every Command Post P (owned or neutral), in the order of P's cell in absolute map order (ties impossible: one entity per cell):
+1. The *claimants* of P are the hostile sides with at least one living, not disabled infantry unit (Rifle Squad, Anti-tank Team) adjacent to P (Chebyshev 1). If P is owned, also: P is below 25 % of its health, and no living unit of P's owner (or, later, of its team) stands adjacent to P.
+2. Exactly one claimant → P changes to that side (keeps its health; its coverage, order slots and income go to the new owner from the next turn; event `captured {id, from, to}`, in reports like `destroyed`: told to a side only if it sees P's cell or owns/owned P).
+3. Two or more claimants → P is contested: nobody takes it this turn (no tie-break by side number, so the outcome does not depend on side order).
+4. An eliminated side never claims (its units are already removed, see below). A side that is not eliminated may capture even if it lost its own post earlier.
+5. A neutral post is claimed without the health condition. It can be fired on like any post (it does not fire back); a neutral post that is destroyed is simply gone.
+
+*Elimination and the end of the game.*
+- A side is **out** at the end of a turn in which it owns no Command Post. Its remaining units and structures are removed at once (`eliminated {side}` event, told to every side); its reports are dropped. Being out is final.
+- **For the player**, the game ends as **lost** when the player's side is out (no watching on).
+- It ends as **won** when every other playing side is out (with teams later: every side not in the player's team).
+- Turn limit and quick-match strength rule with several sides: the player wins only with strictly more strength than every remaining opponent, draws when equal to the strongest, else loses.
+- Capturing the last post of a side eliminates that side at the end of the same turn.
+
+*Invariants (engine, tested before any game code):*
+- **P1 determinism** for 3–8 sides.
+- **P4 symmetry:** for a map whose terrain, deposits and units are invariant under a symmetry g of the grid (point mirror, 90° rotation on square maps, either axis mirror) together with a permutation π of the sides, resolving the g-mapped plans with sides permuted by π gives the g/π-mapped outcome (ids canonicalised). **No symmetry claim for asymmetric maps** (the editor says so; their balance is measured).
+- **P6/P6b plan-order independence:** permuting the order of plans and the order of sides in the batch changes nothing (captures and contested captures included).
+- **No leaks:** `observe(world, side)` for side A is unchanged when only units that A neither sees nor has reports of change, also with 3+ sides; events told to A (captures, eliminations, sales, repairs) follow the existing rules per side.
+- **Saves:** state version bump with a migration of v8 saves (2 sides, no neutral posts, `team = side`).
+
+*Opponent count and asymmetric maps.* A map declares the opponent counts it supports (`bases`: which posts belong to which seat; a seat left empty becomes a neutral post or is removed, as the map says) and optional per-seat start Supply. The setup offers only declared counts. Built-in symmetric four-base maps declare 1–3 opponents; an asymmetric map may declare e.g. "5 opponents, the player starts with 3× Supply".
+
+*UI for 3+ sides.* Every side has a colour and a non-colour mark (a letter A–H on the unit and in lists) plus a name in words ("Opponent B"); colours keep 3:1 against every terrain, veiled or not, in both themes; all new texts in 16 locales.
+
+*Increments (one PR each, CI green, AI suites under 50 % of their timeout under coverage):* (1) engine for N sides + neutral posts + invariants; (2) capture rule + elimination; (3) game rules, state bump, maps with declared opponent counts, setup choice, UI marks, e2e resume of a 3-side game; (4) AI for several opponents (target choice per opponent; measured per-turn time at the largest supported count). Teams after that.
+
+Risks: AI time grows linearly with opponents (mitigation: measured at the largest opponent count a map declares); readability with four colours on a 360 px map (mitigation: marks per side, larger maps scroll); balancing — two opponents fighting each other leave the player an easy third-party win (accepted: it is part of free-for-all; the AI's target choice weighs threats, so a player who sits back is not ignored).
 
 ### 9.5 More maps
 
