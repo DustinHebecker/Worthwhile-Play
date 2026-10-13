@@ -48,7 +48,7 @@ interface GameContext {
   userDecks?: { list(): UserDeckSummary[]; get(id): unknown };    // optional: snapshot of imported decks (metadata.usesUserDecks)
   learning?: { today(): string; list(deckId): LearningRecordSummary[]; record(reviews: LearningReview[]): void }; // optional (metadata.usesLearningRecords)
   launch?: { deck?: string };       // optional: parameters of the opening link (`?deck=<id>`), for the first newGame only
-  library?: { list(); get(id); put({ id?, name, data }); delete(id) }; // optional, async: the player's own creations (ADR 0012)
+  library?: { list(); get(id); put({ id?, name, data }, { ifAbsent? }?); delete(id) }; // optional, async: the player's own creations (ADR 0012)
 }
 ```
 
@@ -56,7 +56,7 @@ interface GameContext {
 
 `learning` is the minimal capability for spaced repetition (see "Learning records" below). The host provides it only to games whose metadata sets `usesLearningRecords: true`: a synchronous snapshot of the records loaded before the game is created, `today()` (the device's local calendar day, `YYYY-MM-DD`) and `record(reviews)`, which applies self-ratings in memory immediately and writes them to IndexedDB in order. `record` is idempotent per (card, session), so a game may send the same ratings again at any time (Review does so on every `restore`, which also completes writes lost when the page closed before they reached the store). Games without the capability keep working (Review then runs as practice without a schedule). `launch.deck` comes from `/games/<id>?deck=<id>` (which also starts a fresh game and is then removed from the URL); a game uses it for its first `newGame` and remembers it in its preferences.
 
-`library` (ADR 0012) stores things the player creates, e.g. Relay Command's maps: per game (the host scopes it to the game id), asynchronous, bounded (`LIBRARY_LIMITS`: 50 items, 64 KiB of JSON per item, names up to 60 characters), plain JSON only, read back as untrusted data (games validate it). Every method rejects with a `GameLibraryError` whose `reason` is `full`, `too-large`, `invalid` or `unavailable`. It is separate from saves and preferences: "Delete all saved games" keeps it, and Settings has its own confirmed "Delete my own content". A save must not depend on an item still existing (copy what a running game needs into its state). The host passes it to every game; games must work without it.
+`library` (ADR 0012) stores things the player creates, e.g. Relay Command's maps: per game (the host scopes it to the game id), asynchronous, bounded (`LIBRARY_LIMITS`: 50 items, 64 KiB of JSON per item, names up to 60 characters), plain JSON only, read back as untrusted data (games validate it). `put` creates or replaces; `put(item, { ifAbsent: true })` with an explicit id creates atomically only if the id is free (otherwise reason `exists`, nothing written; ignored without an id). Every method rejects with a `GameLibraryError` whose `reason` is `full`, `too-large`, `invalid`, `unavailable` or `exists` (games treat unknown reasons like `unavailable`). It is separate from saves and preferences: "Delete all saved games" keeps it, and Settings has its own confirmed "Delete my own content". A save must not depend on an item still existing (copy what a running game needs into its state). The host passes it to every game; games must work without it.
 
 The spec's `metadata()`/`initialize()` are expressed as the `metadata` object and `create()`. Every game package has:
 
@@ -86,7 +86,7 @@ IndexedDB database `worthwhile-play`, schema version 4. Upgrades are additive (`
 
 `GameSave { schemaVersion, gameId, stateVersion, updatedAt, seed, difficulty?, state }` in `saves` (one active save per game). `interpretSave` validates and migrates untrusted data and returns `empty | ok | corrupt` — a corrupt save is reported and discarded, never crashes the app. If IndexedDB is unavailable, an in-memory store is used and the user is told that progress will not persist.
 
-`library` rows `{ gameId, id, name, updatedAt, size, data }` hold what players create (ADR 0012). `LibraryStore` (all games, used by Settings for counts and "Delete my own content") is wrapped per game by `createGameLibrary`, which validates names, ids and JSON data, enforces the bounds (the per-game item count is checked in the write transaction) and skips unreadable rows. Deleting saved games never touches it, and clearing it never touches saves, decks or learning records.
+`library` rows `{ gameId, id, name, updatedAt, size, data }` hold what players create (ADR 0012). `LibraryStore` (all games, used by Settings for counts and "Delete my own content") is wrapped per game by `createGameLibrary`, which validates names, ids and JSON data, enforces the bounds (the per-game item count, and for `ifAbsent` the id, are checked in the write transaction) and skips unreadable rows. Deleting saved games never touches it, and clearing it never touches saves, decks or learning records.
 
 ## Learning content and deck library
 

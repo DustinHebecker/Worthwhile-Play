@@ -18,10 +18,15 @@ export const LIBRARY_ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
 
 /**
  * Why a library call was refused: `full` (already `maxItems` items), `too-large` (data over `maxBytes`),
- * `invalid` (empty or too long name, malformed id, data that is not plain JSON), `unavailable` (storage failed).
+ * `invalid` (empty or too long name, malformed id, data that is not plain JSON), `unavailable` (storage failed),
+ * `exists` (a `put` with `{ ifAbsent: true }` found an item with that id; nothing was written).
+ *
+ * The union may grow in later versions. A game that maps reasons to messages should treat any reason it does not
+ * know like `unavailable` (a generic "could not save" message) instead of failing; `exists` only occurs for games
+ * that pass `ifAbsent`.
  */
-export type LibraryErrorReason = 'full' | 'too-large' | 'invalid' | 'unavailable';
-const REASONS: readonly string[] = ['full', 'too-large', 'invalid', 'unavailable'];
+export type LibraryErrorReason = 'full' | 'too-large' | 'invalid' | 'unavailable' | 'exists';
+const REASONS: readonly string[] = ['full', 'too-large', 'invalid', 'unavailable', 'exists'];
 
 /** Rejection value of every `GameLibrary` method. Check `reason`, not the message (which is not translated). */
 export class GameLibraryError extends Error {
