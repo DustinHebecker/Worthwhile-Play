@@ -52,6 +52,7 @@ import {
   reportTurn,
   RULESET,
   scenarioById,
+  specOf,
   sideValue,
   TURN_LIMITS,
   unitById,
@@ -59,9 +60,14 @@ import {
 } from './rules';
 import { DIFFICULTIES, type Difficulty } from './ai';
 import { drawIcon } from './icons';
+import { createEditor } from './editor';
+import { blankMap, hostMapLibrary, mapIssues, memoryStore, migratePreferenceMaps, preferenceMapLibrary, type EditMap, type MapLibrary, type MapStore } from './maps';
+import { CELL, drawDeposit, drawTerrainMark, TERRAIN_NAMES } from './draw';
 import { FIELD_EXERCISE, SCENARIOS } from './scenarios';
 import './styles.css';
 
+/** Milliseconds after arming a two-press confirmation in which a second press does not count. */
+const CONFIRM_GAP = 400;
 /** Open end: from this many quiet turns on the turn line says that strength will decide. */
 const QUIET_NOTICE = 3;
 
@@ -69,18 +75,7 @@ const QUIET_NOTICE = 3;
 const LEGEND_KINDS = ['rifles', 'lancer', 'outrider', 'warden', 'howitzer', 'mast-truck', 'field-post', 'jammer', 'tracer', 'command-post', 'muster', 'motor-pool', 'extractor', 'relay-mast'] as const;
 
 /** Map cell size in CSS pixels (the 44 px minimum touch target). */
-export const CELL = 44;
-
-const TERRAIN_NAMES: Readonly<Record<string, string>> = {
-  '.': 'plain',
-  '=': 'road',
-  f: 'forest',
-  h: 'hill',
-  u: 'urban',
-  s: 'swamp',
-  '~': 'water',
-  '^': 'ridge'
-};
+export { CELL };
 
 /** Automatic order ends worth telling the player (arrivals and regroups are expected outcomes). */
 const REPORTED_ENDS: ReadonlySet<string> = new Set(['occupied', 'unreachable', 'blocked', 'lost-target', 'retreat', 'outpaced', 'lost-contact']);
@@ -278,12 +273,15 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     limitSelect.append(h('option', { value: limit === null ? 'open' : String(limit) }, limit === null ? t('setup.open') : t('setup.turns', { n: limit })));
     if (limit === null) limitSelect.append(h('option', { value: 'quick' }, t('setup.quick')));
   }
+  // The map editor opens from the setup (also after the first turn, through the fold).
+  const editorBtn = h('button', { type: 'button', class: 'rc-editor-open', 'data-testid': 'rc-editor-open', onclick: () => openEditor() }, t('editor.open'));
   const setupBox = h(
     'fieldset',
     { class: 'rc-setup', 'data-testid': 'rc-setup' },
     h('legend', {}, t('setup.title')),
     h('label', {}, h('span', {}, t('setup.scenario')), scenarioSelect),
-    h('label', {}, h('span', {}, t('setup.limit')), limitSelect)
+    h('label', {}, h('span', {}, t('setup.limit')), limitSelect),
+    editorBtn
   );
   // After the first turn the setup folds into one line (map, length, level) that opens on demand:
   // on a phone the locked choices would otherwise push the map a screen down.
@@ -342,8 +340,58 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     'details',
     { class: 'rc-help' },
     h('summary', {}, t('help.title')),
-    ...['help.turns', 'help.bar', 'help.orders', 'help.network', 'help.fog', 'help.ew', 'help.doctrine', 'help.economy', 'help.repair', 'help.combat', 'help.goal', 'help.shapes', 'help.access'].map((k) => h('p', {}, t(k)))
+    ...['help.turns', 'help.bar', 'help.orders', 'help.network', 'help.fog', 'help.ew', 'help.doctrine', 'help.economy', 'help.repair', 'help.editor', 'help.combat', 'help.goal', 'help.shapes', 'help.access'].map((k) => h('p', {}, t(k)))
   );
+
+  /* ---------- Map editor ---------- */
+  // Maps are kept by the host's library for this game (ADR 0012: Settings counts and deletes them
+  // as the player's own content); without one, in the game's preferences; without those, for
+  // this session only. Maps kept in preferences before the library existed move over once.
+  const store: MapStore = context.preferences ?? memoryStore();
+  const mapLabel = (m: EditMap) => m.name.trim() || t('editor.untitled');
+  const mapLibrary: MapLibrary = context.library ? hostMapLibrary(context.library, mapLabel) : preferenceMapLibrary(store);
+  const library = () => editor.maps();
+  const editor = createEditor({
+    t,
+    css: (name, fallback) => css(name, fallback),
+    icon: (kind, own) => unitIcon(kind, own),
+    library: mapLibrary,
+    libraryChanged: () => {
+      if (!state.edit) render(); // the setup lists the device's maps
+    },
+    draft: () => state.edit ?? { map: blankMap(16, 12), slot: null, mirror: true },
+    change: (draft, message) => commit({ ...state, edit: draft }, message),
+    close: () => closeEditor(),
+    play: (m) => playMap(m),
+    playEndsGame: () => state.phase === 'plan' && state.log.length > 0,
+    announce: (text) => announce(live, text)
+  });
+
+  if (context.library) void migratePreferenceMaps(context.preferences, mapLibrary).then((moved) => moved > 0 && editor.refresh());
+
+  function openEditor(): void {
+    editor.forget();
+    // Start from the map being played (a player-made one), else an empty map; mirrored edits by default.
+    if (!state.edit) commit({ ...state, edit: { map: state.map ?? blankMap(16, 12), slot: null, mirror: true } });
+    render();
+    editor.el.querySelector<HTMLElement>('[data-testid="ed-map"]')?.focus();
+  }
+  function closeEditor(): void {
+    editor.forget();
+    commit({ ...state, edit: null });
+    render();
+    editorBtn.focus();
+  }
+  function playMap(m: EditMap): void {
+    if (mapIssues(m).length > 0) return;
+    editor.forget();
+    selected = null;
+    const limit = state.turnLimit;
+    commit(newGame(normalizeSeed(state.seed + 1), FIELD_EXERCISE, state.difficulty, limit, state.quick, m), t('announce.setup', { scenario: mapLabel(m) }));
+    homeCursor();
+    render();
+    canvas.focus();
+  }
 
   const shell = h(
     'div',
@@ -371,9 +419,12 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       )
     ),
     help,
+    editor.el,
     live
   );
   root.append(shell);
+  // While the editor is open, the game waits behind it (state kept, nothing lost).
+  const gameParts = [...shell.children].filter((el) => el !== editor.el && el !== live) as HTMLElement[];
 
   /* ---------- Rendering ---------- */
   let legendDrawn = false;
@@ -381,6 +432,13 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     if (!legendDrawn) {
       legendDrawn = true;
       renderLegend();
+    }
+    const editing = state.edit !== null;
+    for (const part of gameParts) part.hidden = editing;
+    editor.el.hidden = !editing;
+    if (editing) {
+      editor.render();
+      return;
     }
     const w = world();
     const finished = state.phase === 'finished';
@@ -408,9 +466,10 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       setupFold.append(setupBox);
       setupSlot.replaceChildren(setupFold);
     } else if (!setupLocked && setupBox.parentElement !== setupSlot) setupSlot.replaceChildren(setupBox);
-    scenarioSelect.value = state.scenario;
+    syncScenarioOptions();
+    scenarioSelect.value = state.map ? 'custom' : state.scenario;
     limitSelect.value = state.turnLimit !== null ? String(state.turnLimit) : state.quick ? 'quick' : 'open';
-    setupSummary.textContent = t('setup.summary', { map: t(`scenario.${state.scenario}`), length: limitSelect.selectedOptions[0]?.textContent ?? '' });
+    setupSummary.textContent = t('setup.summary', { map: state.map ? mapLabel(state.map) : t(`scenario.${state.scenario}`), length: limitSelect.selectedOptions[0]?.textContent ?? '' });
     statusEl.textContent = statusText();
     statusEl.setAttribute('data-phase', state.phase);
     slotsEl.hidden = finished;
@@ -634,13 +693,23 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     if ((event?.detail ?? 0) > 1) return;
     if (settleSell !== id) {
       settleSell = id;
+      armedAt = performance.now();
       render();
       jobsEl.querySelector<HTMLElement>('[data-testid="rc-sell"]')?.focus();
       return;
     }
+    if (tooSoon()) return;
     settleSell = null;
     orderJob({ type: 'sell' });
   }
+
+  /**
+   * Two-press confirmations (sale, end on strength): a second press within CONFIRM_GAP ms of
+   * arming is not deliberate (a quick double tap, a held Enter's auto-repeat) and is ignored.
+   * A timestamp, not a timer: nothing waits.
+   */
+  let armedAt = 0;
+  const tooSoon = (): boolean => performance.now() - armedAt < CONFIRM_GAP;
 
   /** Queues a one-shot job (production) for the selected structure, or explains why not. */
   function orderJob(order: Order): void {
@@ -990,6 +1059,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
         if (site?.side === PLAYER) lines.push(t('summary.built', { name: unitName(site) }));
       } else if (e.t === 'site') {
         if (e.side !== PLAYER) lines.push(t('summary.enemySite', { name: unitName(e) }));
+      } else if (e.t === 'missing') {
+        lines.push(t('summary.missing', { name: unitName(e) }));
       } else if (e.t === 'repaired') {
         const unit = unitById(state, e.id);
         if (unit?.side === PLAYER) lines.push(t('summary.repaired', { name: unitName(unit), hp: e.hp }));
@@ -1131,23 +1202,6 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     }
   }
 
-  /** A deposit: a small diamond with a dot in the cell's corner (a mark, not a colour). */
-  function drawDeposit(g: CanvasRenderingContext2D, px: number, py: number): void {
-    const cx = px + CELL - 9;
-    const cy = py + 9;
-    g.lineWidth = 1.5;
-    g.beginPath();
-    g.moveTo(cx, cy - 6);
-    g.lineTo(cx + 6, cy);
-    g.lineTo(cx, cy + 6);
-    g.lineTo(cx - 6, cy);
-    g.closePath();
-    g.stroke();
-    g.beginPath();
-    g.arc(cx, cy, 1.5, 0, Math.PI * 2);
-    g.fill();
-  }
-
   /** Diagonal hatching inside a structure under construction, and the turns left as a number. */
   function drawSiteHatch(g: CanvasRenderingContext2D, x: number, y: number, size: number, colour: string, left: number): void {
     g.save();
@@ -1167,64 +1221,6 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     g.restore();
   }
 
-  /** Pattern marks so that terrain is never told apart by colour alone. */
-  function drawTerrainMark(g: CanvasRenderingContext2D, name: string, px: number, py: number): void {
-    const c = CELL;
-    g.beginPath();
-    switch (name) {
-      case 'road':
-        g.moveTo(px, py + c / 2);
-        g.lineTo(px + c, py + c / 2);
-        g.setLineDash([4, 4]);
-        g.stroke();
-        g.setLineDash([]);
-        return;
-      case 'forest':
-        for (const [dx, dy] of [[0.25, 0.3], [0.7, 0.25], [0.45, 0.7]] as const) {
-          g.moveTo(px + dx * c + 4, py + dy * c);
-          g.arc(px + dx * c, py + dy * c, 4, 0, Math.PI * 2);
-        }
-        g.fill();
-        return;
-      case 'hill':
-        g.moveTo(px + c * 0.2, py + c * 0.75);
-        g.lineTo(px + c * 0.5, py + c * 0.3);
-        g.lineTo(px + c * 0.8, py + c * 0.75);
-        g.stroke();
-        return;
-      case 'urban':
-        g.rect(px + c * 0.2, py + c * 0.2, c * 0.22, c * 0.22);
-        g.rect(px + c * 0.55, py + c * 0.5, c * 0.22, c * 0.22);
-        g.stroke();
-        return;
-      case 'swamp':
-        for (const dy of [0.35, 0.65]) {
-          g.moveTo(px + c * 0.2, py + dy * c);
-          g.lineTo(px + c * 0.45, py + dy * c);
-          g.moveTo(px + c * 0.55, py + dy * c);
-          g.lineTo(px + c * 0.8, py + dy * c);
-        }
-        g.stroke();
-        return;
-      case 'water':
-        for (const dy of [0.35, 0.65]) {
-          g.moveTo(px + c * 0.15, py + dy * c);
-          g.quadraticCurveTo(px + c * 0.32, py + dy * c - 6, px + c * 0.5, py + dy * c);
-          g.quadraticCurveTo(px + c * 0.68, py + dy * c + 6, px + c * 0.85, py + dy * c);
-        }
-        g.stroke();
-        return;
-      case 'ridge':
-        for (let i = 0; i < 4; i++) {
-          g.moveTo(px + (i * c) / 4, py + c);
-          g.lineTo(px + ((i + 1) * c) / 4, py);
-        }
-        g.stroke();
-        return;
-      default:
-        return;
-    }
-  }
 
   const centre = (x: number, y: number) => [x * CELL + CELL / 2, y * CELL + CELL / 2] as const;
 
@@ -1612,12 +1608,24 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   }
 
   /** Scenario or turn limit changed before the first turn: start the game afresh with them. */
+  /** The map select: the built-in maps, the map being played if it is player-made, and the device's maps. */
+  function syncScenarioOptions(): void {
+    for (const opt of [...scenarioSelect.querySelectorAll('option')]) if (opt.value === 'custom' || opt.value.startsWith('slot:')) opt.remove();
+    if (state.map) scenarioSelect.append(h('option', { value: 'custom' }, mapLabel(state.map)));
+    library().forEach((m, slot) => {
+      if (m && mapIssues(m).length === 0) scenarioSelect.append(h('option', { value: `slot:${slot}` }, `${t('setup.myMaps')}: ${mapLabel(m)}`));
+    });
+  }
+
   function onSetup(): void {
     if (state.phase !== 'plan' || state.log.length > 0) return;
-    const spec = scenarioById(scenarioSelect.value) ?? FIELD_EXERCISE;
+    const value = scenarioSelect.value;
+    const own = value.startsWith('slot:') ? library()[Number(value.slice(5))] : value === 'custom' ? state.map : null;
+    const spec = scenarioById(value) ?? FIELD_EXERCISE;
     const limit = limitSelect.value === 'open' || limitSelect.value === 'quick' ? null : Number(limitSelect.value);
     selected = null;
-    commit(newGame(state.seed, spec, state.difficulty, limit, limitSelect.value === 'quick'), t('announce.setup', { scenario: t(`scenario.${spec.id}`) }));
+    const map = own && mapIssues(own).length === 0 ? own : null;
+    commit(newGame(state.seed, spec, state.difficulty, limit, limitSelect.value === 'quick', map), t('announce.setup', { scenario: map ? mapLabel(map) : t(`scenario.${spec.id}`) }));
     homeCursor();
     render();
   }
@@ -1656,6 +1664,12 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     }
     if (canOrder && mode === 'escort' && ownHere && ownHere.id !== selected) {
       orderSelected({ type: 'escort', target: ownHere.id });
+      return;
+    }
+    // An own ghost marks where a unit out of contact was last reported, not where it is: with a
+    // unit selected, its cell takes a move order (the ghost stays selectable in the list).
+    if (canOrder && mode === 'move' && ownHere && isGhost(ownHere) && !here.some((e) => e.side === PLAYER && !isGhost(e))) {
+      orderSelected({ type: 'move', x, y });
       return;
     }
     if (ownHere && ownHere.id !== selected) {
@@ -1699,9 +1713,11 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     if (!canSettle(state)) return;
     if (!settleArmed) {
       settleArmed = true;
+      armedAt = performance.now();
       render();
       return;
     }
+    if (tooSoon()) return;
     settleArmed = false;
     const next = settle(state);
     commit(next, statusOf(next));
@@ -1759,7 +1775,10 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   /* ---------- Instance ---------- */
   return {
     newGame(options: NewGameOptions) {
-      state = newGame(normalizeSeed(options.seed), FIELD_EXERCISE, isDifficulty(options.difficulty) ? options.difficulty : 'normal', null);
+      // An open map draft survives "New game" (it is the player's work, not the game's).
+      const draft = state.edit;
+      editor.forget();
+      state = { ...newGame(normalizeSeed(options.seed), FIELD_EXERCISE, isDifficulty(options.difficulty) ? options.difficulty : 'normal', null), edit: draft };
       context.setDifficulty?.(state.difficulty); // an unknown host value fell back to 'normal'
       selected = null;
       confirming = false;
@@ -1769,7 +1788,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     },
     restore(saved: RcState) {
       settleSell = null;
-      const spec = scenarioById(saved.scenario);
+      editor.forget();
+      const spec = specOf(saved);
       state = spec ? structuredClone(saved) : newGame(saved.seed, FIELD_EXERCISE, saved.difficulty, null);
       context.setDifficulty?.(state.difficulty); // the save decides the level, not the host's select
       selected = null;
@@ -1782,7 +1802,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     pause() {},
     resume() {},
     reset() {
-      state = newGame(state.seed, scenarioById(state.scenario) ?? FIELD_EXERCISE, state.difficulty, state.turnLimit, state.quick);
+      state = { ...newGame(state.seed, scenarioById(state.scenario) ?? FIELD_EXERCISE, state.difficulty, state.turnLimit, state.quick, state.map), edit: state.edit };
       selected = null;
       confirming = false;
       reported = false;

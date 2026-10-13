@@ -149,7 +149,7 @@ describe('Field Exercise scenario', () => {
     // Strip the field as a version-4 save would not have it.
     const strip = (o: unknown): unknown => (isRecord(o) ? Object.fromEntries(Object.entries(o).filter(([k]) => k !== 'lostContact').map(([k, v]) => [k, strip(v)])) : Array.isArray(o) ? o.map(strip) : o);
     const migrated = migrateState(strip(v4), 4)!;
-    expect(migrated.v).toBe(7);
+    expect(migrated.v).toBe(8);
     expect(isValidState(migrated)).toBe(true);
     const rifle = own(migrated).find((u) => u.kind === 'rifles')!;
     expect(rifle.doctrine?.lostContact).toBe('keep');
@@ -159,12 +159,24 @@ describe('Field Exercise scenario', () => {
     expect(migrateState({ ...(strip(v4) as Record<string, unknown>), v: 7 }, 4)).toBeUndefined();
   });
 
+  it('version-7 saves (before the map editor) play on: no player-made map, no draft', () => {
+    const s = lockTurn(newGame(2, FIELD_EXERCISE, 'normal', 24));
+    const v7 = JSON.parse(JSON.stringify({ ...s, v: 7 })) as Record<string, unknown>;
+    delete v7.map;
+    delete v7.edit;
+    const migrated = migrateState(v7, 7)!;
+    expect(migrated).toMatchObject({ v: 8, map: null, edit: null, scenario: 'field-exercise' });
+    expect(isValidState(migrated)).toBe(true);
+    expect(migrateState({ ...v7, v: 8 }, 7)).toBeUndefined();
+    expect(isValidState(v7)).toBe(false);
+  });
+
   it('version-6 saves (open end always had the stalemate rule) play on as a plain open end', () => {
     const s = lockTurn(newGame(2, FIELD_EXERCISE, 'normal', null, true));
     const v6 = JSON.parse(JSON.stringify({ ...s, v: 6, lead: [5] })) as Record<string, unknown>;
     delete v6.quick;
     const migrated = migrateState(v6, 6)!;
-    expect(migrated).toMatchObject({ v: 7, quick: false, lead: [], turnLimit: null });
+    expect(migrated).toMatchObject({ v: 8, quick: false, lead: [], turnLimit: null, map: null, edit: null });
     expect(isValidState(migrated)).toBe(true);
     expect(migrateState({ ...v6, v: 5 }, 6)).toBeUndefined();
     expect(isValidState({ ...newGame(2, FIELD_EXERCISE, 'normal', 12), quick: true })).toBe(false);
@@ -200,6 +212,38 @@ describe('Field Exercise scenario', () => {
     expect(unitById(after, rifle.id)?.hp).toBe(RULESET.archetypes.rifles!.hp);
     expect(isValidState(JSON.parse(JSON.stringify(after)))).toBe(true);
     expect(orderRefusal(s, commandPost(s.world, PLAYER)!.id, { type: 'sell' })).toBe('cannot-sell');
+  });
+
+  it('a Relay Mast planned for sale still carries the network while planning (as in the engine, which tears it down after the batch)', () => {
+    const s = newGame(1);
+    const yard = own(s).find((e) => e.kind === 'muster')!;
+    const post = commandPost(s.world, PLAYER)!;
+    // A mast inside the post's coverage, and the yard moved to a free cell covered only through the mast.
+    const before = computeNetwork(s.world, RULESET, PLAYER).coverage;
+    const free = (x: number, y: number) => passable(s.world.map, RULESET, x, y, 'ground') && !s.world.entities.some((e) => e.x === x && e.y === y);
+    let placed = false;
+    for (let mx = 0; mx < s.world.map.w && !placed; mx++) {
+      for (let my = 0; my < s.world.map.h && !placed; my++) {
+        if (before[cellOf(s.world.map, mx, my)] !== 1 || !free(mx, my) || (mx === post.x && my === post.y)) continue;
+        const trial = structuredClone(s);
+        const mast = { ...structuredClone(yard), id: trial.world.nextId++, kind: 'relay-mast', x: mx, y: my, hp: RULESET.archetypes['relay-mast']!.hp };
+        delete (mast as { queue?: unknown }).queue;
+        trial.world.entities.push(mast);
+        const withMast = computeNetwork(trial.world, RULESET, PLAYER).coverage;
+        const target = [...withMast.keys()].find((c) => withMast[c] === 1 && before[c] !== 1 && free(c % s.world.map.w, Math.floor(c / s.world.map.w)));
+        if (target === undefined) continue;
+        const moved = trial.world.entities.find((e) => e.id === yard.id)!;
+        Object.assign(moved, { x: target % s.world.map.w, y: Math.floor(target / s.world.map.w) });
+        trial.world.entities.sort((a, b) => a.id - b.id);
+        delete trial.world.intel;
+        const sale = planOrder(trial, mast.id, { type: 'sell' });
+        expect(sale).toBeDefined();
+        expect(orderRefusal(sale!, yard.id, { type: 'produce', kind: 'rifles' })).toBeNull();
+        expect(orderRefusal(sale!, mast.id, { type: 'produce', kind: 'rifles' })).toBe('cannot-produce');
+        placed = true;
+      }
+    }
+    expect(placed).toBe(true);
   });
 
   it('settling decides on strength: the side ahead wins, whoever settles', () => {
@@ -333,7 +377,7 @@ describe('command network (I3a)', () => {
     };
     expect(v1.draft).toHaveLength(5);
     const migrated = migrateState(JSON.parse(JSON.stringify(v1)), 1)!;
-    expect(migrated.v).toBe(7);
+    expect(migrated.v).toBe(8);
     expect(migrated.draft.length).toBeLessThanOrEqual(orderSlots(migrated));
     expect(migrated.draft.every((c) => orderRefusal({ ...migrated, draft: [] }, c.unit, c.order) === null)).toBe(true);
     expect(isValidState(migrated)).toBe(true);
@@ -343,7 +387,7 @@ describe('command network (I3a)', () => {
     const v1 = { ...structuredClone(newGame(3)), v: 1 } as Record<string, unknown>;
     (v1.world as Record<string, unknown>).ruleset = 'base-1';
     const migrated = migrateState(v1, 1);
-    expect(migrated?.v).toBe(7);
+    expect(migrated?.v).toBe(8);
     expect(migrated?.world.ruleset).toBe(RULESET.id);
     expect(migrateState(v1, 2)).toBeUndefined();
     expect(migrateState(null, 1)).toBeUndefined();
@@ -658,7 +702,7 @@ describe('information model (I3c, D7)', () => {
     const s = lockTurn(newGame(5));
     const v2 = JSON.parse(JSON.stringify({ ...s, v: 2, world: { ...s.world, ruleset: 'strategy-1', intel: undefined } })) as Record<string, unknown>;
     const migrated = migrateState(v2, 2)!;
-    expect(migrated.v).toBe(7);
+    expect(migrated.v).toBe(8);
     expect(migrated.world.ruleset).toBe(RULESET.id);
     expect(migrated.events).toEqual([]);
     expect(migrated.world.intel).toEqual(initialIntel(s.world, RULESET));

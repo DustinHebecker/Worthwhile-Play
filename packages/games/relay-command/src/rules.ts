@@ -29,6 +29,7 @@ import {
 } from '@wp/strategy-engine';
 import { DIFFICULTIES, planAi, type Difficulty } from './ai';
 import { FIELD_EXERCISE, SCENARIOS, type ScenarioSpec } from './scenarios';
+import { customSpec, isValidMap, mapIssues, MAP_SLOTS, type EditMap } from './maps';
 
 /** Strategy rules: orders and reports travel through the command network (coverage, order slots, fog). */
 export const RULESET: Ruleset = STRATEGY_RULESET;
@@ -85,7 +86,7 @@ export function initialWorld(spec: ScenarioSpec, seed: number): World {
 }
 
 export interface RcState {
-  v: 7;
+  v: 8;
   seed: number;
   /** Strength of the scripted opponent (chosen when the game starts). */
   difficulty: Difficulty;
@@ -109,14 +110,29 @@ export interface RcState {
   conceded: boolean;
   /** The player ended a stalled open-ended game on strength (`settle`). */
   settled: boolean;
+  /** The player-made map this game runs on (`scenario` is then 'custom'), or null for a built-in one. */
+  map: EditMap | null;
+  /** The map editor's open draft (kept in the save, so editing can be closed and resumed), or null. */
+  edit: MapDraft | null;
+}
+
+/** A map being edited: the map, the library slot it came from (null = not saved yet), and mirror mode. */
+export interface MapDraft {
+  map: EditMap;
+  slot: number | null;
+  mirror: boolean;
 }
 
 export const scenarioById = (id: string): ScenarioSpec | undefined => SCENARIOS.find((s) => s.id === id);
 
-export function newGame(seed: number, spec: ScenarioSpec = FIELD_EXERCISE, difficulty: Difficulty = 'normal', turnLimit: number | null = spec.turnLimit, quick = false): RcState {
+/** The scenario a game runs on: its player-made map, else the built-in one. */
+export const specOf = (state: Pick<RcState, 'scenario' | 'map'>): ScenarioSpec | undefined => (state.map ? customSpec(state.map) : scenarioById(state.scenario));
+
+export function newGame(seed: number, base: ScenarioSpec = FIELD_EXERCISE, difficulty: Difficulty = 'normal', turnLimit: number | null = base.turnLimit, quick = false, map: EditMap | null = null): RcState {
+  const spec = map ? customSpec(map) : base;
   const world = initialWorld(spec, seed);
   return {
-    v: 7,
+    v: 8,
     seed: normalizeSeed(seed),
     difficulty,
     scenario: spec.id,
@@ -130,7 +146,9 @@ export function newGame(seed: number, spec: ScenarioSpec = FIELD_EXERCISE, diffi
     log: [],
     result: null,
     conceded: false,
-    settled: false
+    settled: false,
+    map,
+    edit: null
   };
 }
 
@@ -158,6 +176,8 @@ export function orderRefusal(state: RcState, unit: number, order: Order, doctrin
   if (state.phase !== 'plan') return 'finished';
   // One-shot commands are checked against the world as the planned ones leave it (Supply spent,
   // queues filled), so the player cannot plan more than can be paid for.
+  // A structure planned for sale takes no more jobs (it is torn down when the turn is carried out).
+  if (isOneShot(order) && state.draft.some((c) => c.unit === unit && c.order.type === 'sell')) return SALE_PLANNED[order.type] ?? 'bad-order';
   const world = isOneShot(order) ? afterJobs(state) : state.world;
   const check = validateCommand(world, RULESET, doctrine ? { side: PLAYER, unit, order, doctrine } : { side: PLAYER, unit, order });
   if (!check.ok) return check.reason;
@@ -166,10 +186,14 @@ export function orderRefusal(state: RcState, unit: number, order: Order, doctrin
   return null;
 }
 
+/** The refusal for a job on a structure already planned for sale, by the kind of job. */
+const SALE_PLANNED: Partial<Record<Order['type'], CommandRefusal>> = { produce: 'cannot-produce', build: 'cannot-build', repair: 'cannot-repair', sell: 'cannot-sell' };
+
 /**
  * The world as the planned one-shot commands leave it: Supply paid, queues filled, planned sites
- * placed, planned repairs done. A structure planned for sale takes no more jobs but still holds
- * its cell (the engine tears it down after the whole batch, so a placement there is blocked).
+ * placed, planned repairs done. A structure planned for sale stays as it is: it still holds its
+ * cell and works in the network, as in the engine, which tears it down after the whole batch
+ * (no more jobs for it: see `orderRefusal`).
  * A sale's refund is not counted: it arrives when the turn is carried out.
  */
 function afterJobs(state: RcState): World {
@@ -185,11 +209,7 @@ function afterJobs(state: RcState): World {
       }
       continue;
     }
-    if (c.order.type === 'sell') {
-      const structure = world.entities.find((e) => e.id === c.unit);
-      if (structure) structure.status = [...structure.status, { kind: 'disabled', ticks: 1 }];
-      continue;
-    }
+    if (c.order.type === 'sell') continue;
     const arch = archetypeOf(RULESET, (c.order as { kind: string }).kind);
     if (world.supply) world.supply[PLAYER] = (world.supply[PLAYER] ?? 0) - (arch?.cost ?? 0);
     if (c.order.type === 'produce') {
@@ -432,7 +452,7 @@ function withEconomy(state: Record<string, unknown>): Record<string, unknown> {
   // The old quiet count meant something else (turns without losses): the stalemate rule starts afresh.
   const { quiet: _quiet, ...rest } = state;
   void _quiet;
-  return { ...rest, lead: [], quick: false, settled: false, world: { ...state.world, ruleset: RULESET.id, supply } };
+  return { ...rest, lead: [], quick: false, settled: false, map: null, edit: null, world: { ...state.world, ruleset: RULESET.id, supply } };
 }
 
 /**
@@ -495,10 +515,17 @@ function matchesScenario(world: World, spec: ScenarioSpec): boolean {
   return world.entities.length <= n && world.entities.every((e) => kinds.has(e.kind)) && world.projectiles.length <= n * 4;
 }
 
+const isValidDraft = (v: unknown): v is MapDraft | null =>
+  v === null || (isRecord(v) && isValidMap(v.map) && (v.slot === null || isInt(v.slot, 0, MAP_SLOTS - 1)) && typeof v.mirror === 'boolean');
+
 export function isValidState(value: unknown): value is RcState {
-  if (!isRecord(value) || value.v !== 7 || !isUint32(value.seed) || typeof value.scenario !== 'string') return false;
+  if (!isRecord(value) || value.v !== 8 || !isUint32(value.seed) || typeof value.scenario !== 'string') return false;
   if (!isOneOf(value.difficulty, DIFFICULTIES)) return false;
-  const spec = scenarioById(value.scenario);
+  // A player-made map: well-formed and playable, and then the scenario is 'custom'.
+  if (value.map !== null && (!isValidMap(value.map) || mapIssues(value.map).length > 0)) return false;
+  if ((value.map !== null) !== (value.scenario === 'custom')) return false;
+  if (!isValidDraft(value.edit)) return false;
+  const spec = value.map ? customSpec(value.map) : scenarioById(value.scenario);
   if (!spec || !(value.turnLimit === null || isInt(value.turnLimit, 1, MAX_TURNS)) || !isOneOf(value.phase, ['plan', 'finished'])) return false;
   if (!isValidWorld(value.world, RULESET) || value.world.sides !== 2 || !matchesScenario(value.world, spec)) return false;
   // The stalemate record holds at most one entry per turn played and never more than decides a game.
@@ -535,27 +562,33 @@ export function migrateState(state: unknown, fromVersion: number): RcState | und
   // and no yards, so the game plays on as it did (nothing to build on, posts still yield).
   // Version 6 (open end always had the stalemate rule): plays on as a plain open end; the
   // stalemate rule is now the separate quick match.
+  // Version 7 (before the map editor): no player-made map, no draft.
+  if (fromVersion === 7) {
+    if (!isRecord(state) || state.v !== 7) return undefined;
+    const migrated = { ...state, v: 8, map: null, edit: null };
+    return isValidState(migrated) ? migrated : undefined;
+  }
   if (fromVersion === 6) {
     if (!isRecord(state) || state.v !== 6) return undefined;
-    const migrated = { ...state, v: 7, quick: false, settled: false, lead: [] };
+    const migrated = { ...state, v: 8, quick: false, settled: false, lead: [], map: null, edit: null };
     return isValidState(migrated) ? migrated : undefined;
   }
   if (fromVersion === 5) {
     if (!isRecord(state) || state.v !== 5) return undefined;
-    const migrated = withEconomy({ ...state, v: 7 });
+    const migrated = withEconomy({ ...state, v: 8 });
     return isValidState(migrated) ? migrated : undefined;
   }
   // Version 4 (before the lost-contact doctrine and open end): doctrines keep their old meaning
   // (carry on out of contact); player units without a doctrine get the current default.
   if (fromVersion === 4) {
     if (!isRecord(state) || state.v !== 4) return undefined;
-    const migrated = withEconomy(withLostContact({ ...state, v: 7 }));
+    const migrated = withEconomy(withLostContact({ ...state, v: 8 }));
     return isValidState(migrated) ? migrated : undefined;
   }
   // Version 3 (before difficulty levels) plays on at 'normal'.
   if (fromVersion === 3) {
     if (!isRecord(state) || state.v !== 3) return undefined;
-    const migrated = withEconomy(withLostContact({ ...state, v: 7, difficulty: 'normal' }));
+    const migrated = withEconomy(withLostContact({ ...state, v: 8, difficulty: 'normal' }));
     return isValidState(migrated) ? migrated : undefined;
   }
   if ((fromVersion !== 1 && fromVersion !== 2) || !isRecord(state) || state.v !== fromVersion || !isRecord(state.world)) return undefined;
@@ -563,7 +596,7 @@ export function migrateState(state: unknown, fromVersion: number): RcState | und
   delete world.intel;
   delete world.supply;
   if (!isValidWorld(world, { ...RULESET, fog: false, economy: false })) return undefined;
-  const migrated = withEconomy(withLostContact({ ...state, v: 7, difficulty: 'normal', events: [], world: { ...world, intel: initialIntel(world as unknown as World, RULESET) } }));
+  const migrated = withEconomy(withLostContact({ ...state, v: 8, difficulty: 'normal', events: [], world: { ...world, intel: initialIntel(world as unknown as World, RULESET) } }));
   if (!isValidState(migrated)) return undefined;
   // Version 1 had no order limit or coverage: keep only the planned orders that are still allowed.
   let replanned: RcState = { ...migrated, draft: [] };
