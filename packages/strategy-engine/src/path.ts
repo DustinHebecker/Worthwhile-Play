@@ -1,11 +1,13 @@
-import { AIR_COST, cellOf, dirsFor, minStepCost, passable, stepCost, terrainAt, xOf, yOf } from './grid';
+import { AIR_COST, cellOf, defaultFrame, dirsFor, frameCell, frameDirs, frameIndexIn, minStepCost, passable, stepCost, terrainAt, xOf, yOf } from './grid';
 import { TupleHeap } from './heap';
-import type { GameMap, Layer, Ruleset } from './types';
+import type { Frame, GameMap, Layer, Ruleset } from './types';
 
 export interface PathOptions {
   readonly layer: Layer;
   /** Side whose frame decides tie-breaks (keeps mirrored worlds mirrored). */
   readonly side: number;
+  /** That side's frame when the world declares frames (`frameOf`); default: the two-side default of `side`. */
+  readonly frame?: Frame;
   /** Cells that may not be entered (e.g. structures). The goal itself is always allowed. */
   readonly blocked?: ReadonlySet<number>;
   /** Give up on routes costing more than this (bounds the search; `undefined` if none is cheap enough). */
@@ -65,16 +67,15 @@ export function findPath(map: GameMap, ruleset: Ruleset, start: number, goal: nu
   const parent = new Int32Array(n).fill(-1);
   const closed = new Uint8Array(n);
   const heap = new NumberHeap();
-  const mirrored = side === 1;
-  const key = (f: number, hn: number, c: number): number => f * F_SHIFT + hn * H_SHIFT + (mirrored ? n - 1 - c : c);
+  const frame = options.frame ?? defaultFrame(side);
+  const key = (f: number, hn: number, c: number): number => f * F_SHIFT + hn * H_SHIFT + frameIndexIn(map, frame, c);
   g[start] = 0;
   heap.push(key(h(start), h(start), start));
-  const dirs = dirsFor(side);
+  const dirs = frameDirs(frame);
   const air = layer === 'air';
   while (heap.size > 0) {
     const k = heap.pop();
-    const frame = k % H_SHIFT;
-    const c = mirrored ? n - 1 - frame : frame;
+    const c = frameCell(map, frame, k % H_SHIFT);
     if (closed[c]) continue;
     closed[c] = 1;
     if (c === goal) break;
@@ -254,14 +255,14 @@ export function flowField(map: GameMap, ruleset: Ruleset, goals: readonly number
 }
 
 /** Best next cell along a flow field (ties broken in the side's frame), or `undefined` at a goal / when stuck. */
-export function nextStep(map: GameMap, ruleset: Ruleset, field: Int32Array, cell: number, layer: Layer, side: number): number | undefined {
+export function nextStep(map: GameMap, ruleset: Ruleset, field: Int32Array, cell: number, layer: Layer, side: number, frame: Frame = defaultFrame(side)): number | undefined {
   const here = field[cell] ?? -1;
   if (here <= 0) return undefined;
   const cx = xOf(map, cell);
   const cy = yOf(map, cell);
   let best: number | undefined;
   let bestScore = Infinity;
-  for (const [dx, dy] of dirsFor(side)) {
+  for (const [dx, dy] of frameDirs(frame)) {
     const cost = stepCost(map, ruleset, cx, cy, cx + dx, cy + dy, layer);
     if (cost === undefined) continue;
     const nc = cellOf(map, cx + dx, cy + dy);
