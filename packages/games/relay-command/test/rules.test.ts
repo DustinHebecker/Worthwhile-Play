@@ -1125,6 +1125,28 @@ describe('several sides (docs/design/strategy.md § 9.4)', () => {
     expect(s.events.some((e) => e.t === 'captured' && e.to === PLAYER && e.id === post.id)).toBe(true);
   });
 
+  it('after the player takes a post, its own units no longer fire on it (regression of the PR #22 blocker, in the game)', () => {
+    let s = newGame(1, corners, 'normal', 30, false, null, 2);
+    const post = s.world.entities.find((e) => e.side === NEUTRAL)!;
+    const free = (x: number, y: number) => x >= 0 && y >= 0 && x < 16 && y < 16 && !s.world.entities.some((e) => e.x === x && e.y === y) && passable(s.world.map, SIDES_RULESET, x, y, 'ground');
+    const around = [[-1, 0], [0, -1], [-1, -1], [1, 0], [0, 1], [1, -1], [-1, 1], [1, 1]].map(([dx, dy]) => [post.x + dx!, post.y + dy!] as const).filter(([x, y]) => free(x, y));
+    s = structuredClone(s);
+    const rifle = s.world.entities.find((e) => e.side === PLAYER && e.kind === 'rifles')!;
+    const lancer = s.world.entities.find((e) => e.side === PLAYER && e.kind === 'lancer')!;
+    Object.assign(rifle, { x: around[0]![0], y: around[0]![1] });
+    Object.assign(lancer, { x: around[1]![0], y: around[1]![1], order: { type: 'attack', target: post.id } });
+    s.world.intel = initialIntel(s.world, SIDES_RULESET);
+    s = lockTurn(s);
+    expect(s.world.entities.find((e) => e.id === post.id)?.side).toBe(PLAYER);
+    const hp = s.world.entities.find((e) => e.id === post.id)!.hp;
+    for (let i = 0; i < 3 && s.phase === 'plan'; i++) {
+      s = lockTurn(s);
+      expect(s.events.some((e) => e.t === 'fire' && e.target === post.id && unitById(s, e.id)?.side === PLAYER)).toBe(false);
+    }
+    // Nobody else reached it in these turns: its health is what the capture left.
+    expect(s.world.entities.find((e) => e.id === post.id)?.hp).toBe(hp);
+  });
+
   it('saves: v8 migrates to v9 with one opponent; a v9 save must match its map, count, rules and frames', () => {
     const v8 = JSON.parse(JSON.stringify({ ...newGame(4), v: 8 })) as Record<string, unknown>;
     delete v8.opponents;
