@@ -345,6 +345,7 @@ const en = {
   'editor.delete': 'Delete from my maps',
   'editor.deleteConfirm': 'Press again to delete {name}',
   'editor.deleted': 'Deleted: {name}.',
+  'editor.deleteFailed': 'Could not delete {name}: it is still in the list.',
   'editor.close': 'Close editor',
   'editor.library': 'My maps',
   'editor.libraryEmpty': 'No saved maps yet.',
@@ -357,6 +358,7 @@ const en = {
   'summary.missing': '{name}: not found at its last reported position; it was lost out of contact.',
   'editor.fail.too-large': 'The map is too large to keep. Copy the map code to keep it.',
   'editor.fail.invalid': 'The map could not be kept (it was refused as invalid). Copy the map code to keep it.',
+  'editor.fail.conflict': 'Another window saved a map in the same place at the same time; that map was kept. Save again or copy the map code.',
 };
 
 type Catalogue = Record<keyof typeof en, string>;
@@ -702,6 +704,7 @@ const de: Catalogue = {
   'editor.delete': 'Aus meinen Karten löschen',
   'editor.deleteConfirm': 'Zum Löschen von {name} erneut drücken',
   'editor.deleted': 'Gelöscht: {name}.',
+  'editor.deleteFailed': '{name} konnte nicht gelöscht werden: Die Karte ist noch in der Liste.',
   'editor.close': 'Editor schließen',
   'editor.library': 'Meine Karten',
   'editor.libraryEmpty': 'Noch keine gespeicherten Karten.',
@@ -714,6 +717,7 @@ const de: Catalogue = {
   'summary.missing': '{name}: an der zuletzt gemeldeten Stelle nicht gefunden; ohne Verbindung verloren gegangen.',
   'editor.fail.too-large': 'Die Karte ist zu groß zum Speichern. Kopiere den Kartencode, um sie zu behalten.',
   'editor.fail.invalid': 'Die Karte konnte nicht gespeichert werden (als ungültig abgelehnt). Kopiere den Kartencode, um sie zu behalten.',
+  'editor.fail.conflict': 'Ein anderes Fenster hat gleichzeitig eine Karte am selben Platz gespeichert; diese Karte wurde behalten. Speichere erneut oder kopiere den Kartencode.',
 };
 
 // Translations other than en/de are AI-assisted and await native-speaker review.
@@ -1058,6 +1062,7 @@ const nl: Catalogue = {
   'editor.delete': 'Verwijderen uit mijn kaarten',
   'editor.deleteConfirm': 'Druk nogmaals om {name} te verwijderen',
   'editor.deleted': 'Verwijderd: {name}.',
+  'editor.deleteFailed': '{name} kon niet worden verwijderd: de kaart staat nog in de lijst.',
   'editor.close': 'Editor sluiten',
   'editor.library': 'Mijn kaarten',
   'editor.libraryEmpty': 'Nog geen opgeslagen kaarten.',
@@ -1070,6 +1075,7 @@ const nl: Catalogue = {
   'summary.missing': '{name}: niet gevonden op de laatst gemelde positie; zonder verbinding verloren gegaan.',
   'editor.fail.too-large': 'De kaart is te groot om te bewaren. Kopieer de kaartcode om hem te bewaren.',
   'editor.fail.invalid': 'De kaart kon niet worden bewaard (geweigerd als ongeldig). Kopieer de kaartcode om hem te bewaren.',
+  'editor.fail.conflict': 'Een ander venster heeft tegelijkertijd een kaart op dezelfde plek opgeslagen; die kaart is bewaard. Sla opnieuw op of kopieer de kaartcode.',
 };
 
 const es: Catalogue = {
@@ -1413,6 +1419,7 @@ const es: Catalogue = {
   'editor.delete': 'Borrar de mis mapas',
   'editor.deleteConfirm': 'Pulsa de nuevo para borrar {name}',
   'editor.deleted': 'Borrado: {name}.',
+  'editor.deleteFailed': 'No se pudo borrar {name}: sigue en la lista.',
   'editor.close': 'Cerrar editor',
   'editor.library': 'Mis mapas',
   'editor.libraryEmpty': 'Aún no hay mapas guardados.',
@@ -1425,6 +1432,7 @@ const es: Catalogue = {
   'summary.missing': '{name}: no se encontró en su última posición conocida; se perdió sin contacto.',
   'editor.fail.too-large': 'El mapa es demasiado grande para guardarlo. Copia el código de mapa para conservarlo.',
   'editor.fail.invalid': 'No se pudo guardar el mapa (se rechazó por no ser válido). Copia el código de mapa para conservarlo.',
+  'editor.fail.conflict': 'Otra ventana guardó un mapa en el mismo lugar al mismo tiempo; se conservó ese mapa. Guarda de nuevo o copia el código de mapa.',
 };
 
 const fr: Catalogue = {
@@ -1768,6 +1776,7 @@ const fr: Catalogue = {
   'editor.delete': 'Supprimer de mes cartes',
   'editor.deleteConfirm': 'Appuie encore pour supprimer {name}',
   'editor.deleted': 'Supprimée : {name}.',
+  'editor.deleteFailed': 'Impossible de supprimer {name} : la carte est toujours dans la liste.',
   'editor.close': 'Fermer l’éditeur',
   'editor.library': 'Mes cartes',
   'editor.libraryEmpty': 'Aucune carte enregistrée pour l’instant.',
@@ -1780,6 +1789,7 @@ const fr: Catalogue = {
   'summary.missing': '{name} : introuvable à sa dernière position signalée ; perdu hors liaison.',
   'editor.fail.too-large': 'La carte est trop grande pour être conservée. Copie le code de carte pour la garder.',
   'editor.fail.invalid': 'La carte n’a pas pu être conservée (refusée car invalide). Copie le code de carte pour la garder.',
+  'editor.fail.conflict': 'Une autre fenêtre a enregistré une carte au même endroit au même moment ; c’est cette carte qui a été conservée. Enregistre à nouveau ou copie le code de carte.',
 };
 const ru: Catalogue = {
   title: 'Relay Command',
@@ -2122,6 +2132,7 @@ const ru: Catalogue = {
   'editor.delete': 'Удалить из моих карт',
   'editor.deleteConfirm': 'Нажми ещё раз, чтобы удалить {name}',
   'editor.deleted': 'Удалено: {name}.',
+  'editor.deleteFailed': 'Не удалось удалить {name}: карта всё ещё в списке.',
   'editor.close': 'Закрыть редактор',
   'editor.library': 'Мои карты',
   'editor.libraryEmpty': 'Сохранённых карт пока нет.',
@@ -2134,6 +2145,7 @@ const ru: Catalogue = {
   'summary.missing': '{name}: не найдено на последней известной позиции; потеряно без связи.',
   'editor.fail.too-large': 'Карта слишком большая, чтобы её сохранить. Скопируй код карты, чтобы сохранить её.',
   'editor.fail.invalid': 'Не удалось сохранить карту (она отклонена как недопустимая). Скопируй код карты, чтобы сохранить её.',
+  'editor.fail.conflict': 'Другое окно одновременно сохранило карту в то же место; сохранена та карта. Сохрани ещё раз или скопируй код карты.',
 };
 
 const zhHans: Catalogue = {
@@ -2477,6 +2489,7 @@ const zhHans: Catalogue = {
   'editor.delete': '从我的地图中删除',
   'editor.deleteConfirm': '再按一次以删除{name}',
   'editor.deleted': '已删除：{name}。',
+  'editor.deleteFailed': '无法删除{name}：它仍在列表中。',
   'editor.close': '关闭编辑器',
   'editor.library': '我的地图',
   'editor.libraryEmpty': '还没有保存的地图。',
@@ -2489,6 +2502,7 @@ const zhHans: Catalogue = {
   'summary.missing': '{name}：在最后报告的位置未找到；在失去联络时丢失。',
   'editor.fail.too-large': '地图太大，无法保存。请复制地图代码以保留它。',
   'editor.fail.invalid': '无法保存地图（因无效被拒绝）。请复制地图代码以保留它。',
+  'editor.fail.conflict': '另一个窗口同时在同一位置保存了地图；已保留那张地图。请重新保存或复制地图代码。',
 };
 const ko: Catalogue = {
   title: 'Relay Command',
@@ -2831,6 +2845,7 @@ const ko: Catalogue = {
   'editor.delete': '내 지도에서 삭제',
   'editor.deleteConfirm': '삭제하려면 한 번 더 누르세요: {name}',
   'editor.deleted': '삭제됨: {name}.',
+  'editor.deleteFailed': '{name}을(를) 삭제할 수 없습니다: 아직 목록에 있습니다.',
   'editor.close': '편집기 닫기',
   'editor.library': '내 지도',
   'editor.libraryEmpty': '아직 저장된 지도가 없습니다.',
@@ -2843,6 +2858,7 @@ const ko: Catalogue = {
   'summary.missing': '{name}: 마지막으로 보고된 위치에서 찾을 수 없습니다. 통신 두절 상태에서 잃었습니다.',
   'editor.fail.too-large': '지도가 너무 커서 저장할 수 없습니다. 지도를 보관하려면 지도 코드를 복사하세요.',
   'editor.fail.invalid': '지도를 저장할 수 없습니다 (유효하지 않아 거부됨). 지도를 보관하려면 지도 코드를 복사하세요.',
+  'editor.fail.conflict': '다른 창에서 같은 시간에 같은 위치에 지도를 저장했고, 그 지도가 보관되었습니다. 다시 저장하거나 지도 코드를 복사하세요.',
 };
 
 const ja: Catalogue = {
@@ -3186,6 +3202,7 @@ const ja: Catalogue = {
   'editor.delete': '自分のマップから削除',
   'editor.deleteConfirm': 'もう一度押すと削除します：{name}',
   'editor.deleted': '削除しました：{name}。',
+  'editor.deleteFailed': '{name}を削除できませんでした：まだ一覧に残っています。',
   'editor.close': 'エディターを閉じる',
   'editor.library': '自分のマップ',
   'editor.libraryEmpty': '保存したマップはまだありません。',
@@ -3198,6 +3215,7 @@ const ja: Catalogue = {
   'summary.missing': '{name}：最後に報告された位置に見当たりません。通信途絶中に失われました。',
   'editor.fail.too-large': 'マップが大きすぎて保存できません。マップを残すにはマップコードをコピーしてください。',
   'editor.fail.invalid': 'マップを保存できませんでした（無効として拒否されました）。マップを残すにはマップコードをコピーしてください。',
+  'editor.fail.conflict': '別のウィンドウが同時に同じ場所にマップを保存したため、そちらのマップが残されました。もう一度保存するか、マップコードをコピーしてください。',
 };
 const ar: Catalogue = {
   title: 'Relay Command',
@@ -3540,6 +3558,7 @@ const ar: Catalogue = {
   'editor.delete': 'احذف من خرائطي',
   'editor.deleteConfirm': 'اضغط مرة أخرى لحذف {name}',
   'editor.deleted': 'تم الحذف: {name}.',
+  'editor.deleteFailed': 'تعذّر حذف {name}: لا تزال في القائمة.',
   'editor.close': 'أغلق المحرر',
   'editor.library': 'خرائطي',
   'editor.libraryEmpty': 'لا توجد خرائط محفوظة بعد.',
@@ -3552,6 +3571,7 @@ const ar: Catalogue = {
   'summary.missing': '{name}: لم يُعثر عليها في آخر موقع مُبلَّغ عنه؛ فُقدت خارج الاتصال.',
   'editor.fail.too-large': 'الخريطة أكبر من أن يُحتفظ بها. انسخ رمز الخريطة للاحتفاظ بها.',
   'editor.fail.invalid': 'تعذّر الاحتفاظ بالخريطة (رُفضت لأنها غير صالحة). انسخ رمز الخريطة للاحتفاظ بها.',
+  'editor.fail.conflict': 'حفظت نافذة أخرى خريطة في المكان نفسه في الوقت نفسه، وتم الاحتفاظ بتلك الخريطة. احفظ مرة أخرى أو انسخ رمز الخريطة.',
 };
 
 const pt: Catalogue = {
@@ -3895,6 +3915,7 @@ const pt: Catalogue = {
   'editor.delete': 'Apagar de meus mapas',
   'editor.deleteConfirm': 'Pressione de novo para apagar {name}',
   'editor.deleted': 'Apagado: {name}.',
+  'editor.deleteFailed': 'Não foi possível apagar {name}: ainda está na lista.',
   'editor.close': 'Fechar editor',
   'editor.library': 'Meus mapas',
   'editor.libraryEmpty': 'Ainda não há mapas salvos.',
@@ -3907,6 +3928,7 @@ const pt: Catalogue = {
   'summary.missing': '{name}: não encontrado na última posição informada; perdido sem contato.',
   'editor.fail.too-large': 'O mapa é grande demais para ser guardado. Copie o código do mapa para mantê-lo.',
   'editor.fail.invalid': 'Não foi possível guardar o mapa (foi recusado como inválido). Copie o código do mapa para mantê-lo.',
+  'editor.fail.conflict': 'Outra janela salvou um mapa no mesmo lugar ao mesmo tempo; esse mapa foi mantido. Salve novamente ou copie o código do mapa.',
 };
 const it: Catalogue = {
   title: 'Relay Command',
@@ -4249,6 +4271,7 @@ const it: Catalogue = {
   'editor.delete': 'Elimina dalle mie mappe',
   'editor.deleteConfirm': 'Premi di nuovo per eliminare {name}',
   'editor.deleted': 'Eliminata: {name}.',
+  'editor.deleteFailed': 'Impossibile eliminare {name}: è ancora nell’elenco.',
   'editor.close': 'Chiudi editor',
   'editor.library': 'Le mie mappe',
   'editor.libraryEmpty': 'Nessuna mappa salvata finora.',
@@ -4261,6 +4284,7 @@ const it: Catalogue = {
   'summary.missing': '{name}: non trovato nell’ultima posizione segnalata; perso fuori contatto.',
   'editor.fail.too-large': 'La mappa è troppo grande per essere conservata. Copia il codice mappa per tenerla.',
   'editor.fail.invalid': 'Non è stato possibile conservare la mappa (rifiutata perché non valida). Copia il codice mappa per tenerla.',
+  'editor.fail.conflict': 'Un’altra finestra ha salvato una mappa nello stesso posto nello stesso momento; è stata tenuta quella mappa. Salva di nuovo o copia il codice mappa.',
 };
 
 const pl: Catalogue = {
@@ -4604,6 +4628,7 @@ const pl: Catalogue = {
   'editor.delete': 'Usuń z moich map',
   'editor.deleteConfirm': 'Naciśnij ponownie, aby usunąć {name}',
   'editor.deleted': 'Usunięto: {name}.',
+  'editor.deleteFailed': 'Nie udało się usunąć {name}: nadal jest na liście.',
   'editor.close': 'Zamknij edytor',
   'editor.library': 'Moje mapy',
   'editor.libraryEmpty': 'Nie ma jeszcze zapisanych map.',
@@ -4616,6 +4641,7 @@ const pl: Catalogue = {
   'summary.missing': '{name}: nie znaleziono w ostatnio zgłoszonej pozycji; utracony poza łącznością.',
   'editor.fail.too-large': 'Mapa jest za duża, aby ją zachować. Skopiuj kod mapy, aby ją zachować.',
   'editor.fail.invalid': 'Nie udało się zachować mapy (odrzucona jako nieprawidłowa). Skopiuj kod mapy, aby ją zachować.',
+  'editor.fail.conflict': 'Inne okno zapisało mapę w tym samym miejscu w tym samym czasie; zachowano tamtą mapę. Zapisz ponownie lub skopiuj kod mapy.',
 };
 const tr: Catalogue = {
   title: 'Relay Command',
@@ -4958,6 +4984,7 @@ const tr: Catalogue = {
   'editor.delete': 'Haritalarımdan sil',
   'editor.deleteConfirm': 'Silmek için tekrar bas: {name}',
   'editor.deleted': 'Silindi: {name}.',
+  'editor.deleteFailed': '{name} silinemedi: hâlâ listede.',
   'editor.close': 'Düzenleyiciyi kapat',
   'editor.library': 'Haritalarım',
   'editor.libraryEmpty': 'Henüz kayıtlı harita yok.',
@@ -4970,6 +4997,7 @@ const tr: Catalogue = {
   'summary.missing': '{name}: son bildirilen konumunda bulunamadı; bağlantı yokken kaybedildi.',
   'editor.fail.too-large': 'Harita saklanamayacak kadar büyük. Haritayı saklamak için harita kodunu kopyala.',
   'editor.fail.invalid': 'Harita saklanamadı (geçersiz olduğu için reddedildi). Haritayı saklamak için harita kodunu kopyala.',
+  'editor.fail.conflict': 'Başka bir pencere aynı anda aynı yere bir harita kaydetti; o harita saklandı. Yeniden kaydet ya da harita kodunu kopyala.',
 };
 
 const uk: Catalogue = {
@@ -5313,6 +5341,7 @@ const uk: Catalogue = {
   'editor.delete': 'Видалити з моїх карт',
   'editor.deleteConfirm': 'Натисни ще раз, щоб видалити {name}',
   'editor.deleted': 'Видалено: {name}.',
+  'editor.deleteFailed': 'Не вдалося видалити {name}: карта досі в списку.',
   'editor.close': 'Закрити редактор',
   'editor.library': 'Мої карти',
   'editor.libraryEmpty': 'Збережених карт ще немає.',
@@ -5325,6 +5354,7 @@ const uk: Catalogue = {
   'summary.missing': '{name}: не знайдено на останній відомій позиції; втрачено без зв’язку.',
   'editor.fail.too-large': 'Карта завелика, щоб її зберегти. Скопіюй код карти, щоб зберегти її.',
   'editor.fail.invalid': 'Не вдалося зберегти карту (її відхилено як недійсну). Скопіюй код карти, щоб зберегти її.',
+  'editor.fail.conflict': 'Інше вікно одночасно зберегло карту в те саме місце; збережено ту карту. Збережи ще раз або скопіюй код карти.',
 };
 
 const hi: Catalogue = {
@@ -5668,6 +5698,7 @@ const hi: Catalogue = {
   'editor.delete': 'मेरे नक्शों से मिटाओ',
   'editor.deleteConfirm': 'मिटाने के लिए फिर से दबाओ: {name}',
   'editor.deleted': 'मिटाया गया: {name}।',
+  'editor.deleteFailed': '{name} को मिटाया नहीं जा सका: वह अब भी सूची में है।',
   'editor.close': 'संपादक बंद करो',
   'editor.library': 'मेरे नक्शे',
   'editor.libraryEmpty': 'अभी कोई सहेजा हुआ नक्शा नहीं है।',
@@ -5680,6 +5711,7 @@ const hi: Catalogue = {
   'summary.missing': '{name}: आख़िरी बताई गई जगह पर नहीं मिली; संपर्क से बाहर खो गई।',
   'editor.fail.too-large': 'नक्शा रखने के लिए बहुत बड़ा है। नक्शा रखने के लिए नक्शा कोड कॉपी करो।',
   'editor.fail.invalid': 'नक्शा नहीं रखा जा सका (अमान्य मानकर अस्वीकार किया गया)। नक्शा रखने के लिए नक्शा कोड कॉपी करो।',
+  'editor.fail.conflict': 'किसी दूसरी विंडो ने उसी समय उसी जगह एक नक्शा सहेजा; वही नक्शा रखा गया। फिर से सहेजो या नक्शा कोड कॉपी करो।',
 };
 
 export const messages: GameMessages = {
