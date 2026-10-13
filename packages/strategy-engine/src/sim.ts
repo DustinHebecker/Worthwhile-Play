@@ -1,7 +1,7 @@
 import { isRecord } from '@wp/game-core';
 import { cellOf, dirsFor, dist2, frameCell, frameDirs, frameIndexIn, frameOf, maxStepCost, passable, stepCost, terrainAt } from './grid';
 import { canReach, costGrid, findPath, NumberHeap, regions } from './path';
-import { DEFAULT_DOCTRINE, MAX_SUPPLY, type Archetype, type Command, type Doctrine, type Entity, type Order, type OrderEndReason, type Ruleset, type SimEvent, type Status, type TargetPriority, type WeaponSpec, type World } from './types';
+import { DEFAULT_DOCTRINE, MAX_SUPPLY, NEUTRAL, type Archetype, type Command, type Doctrine, type Entity, type Order, type OrderEndReason, type Report, type Ruleset, type SimEvent, type Status, type TargetPriority, type WeaponSpec, type World } from './types';
 import { computeNetwork, isEmitter, type Network } from './network';
 import { initialIntel, updateIntel } from './vision';
 import { archetypeOf, findEntity, hostile, needsDeploy, normalizeDoctrine, normalizeOrder, spawn, validateCommand } from './world';
@@ -503,6 +503,8 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     w.entities.sort((a, b) => a.id - b.id);
     for (const list of w.intel ?? []) list.sort((a, b) => a.id - b.id);
   }
+  // 10b. Capture and elimination (several sides): at the end of a turn, after everything else.
+  if (rs.capture && t % rs.ticksPerTurn === 0) captureAndEliminate(w, rs, t, events);
   // 11. Vision (fog rulesets): reports and per-side event filter (D7)
   if (rs.fog) updateIntel(w, rs, gone, events, firstEvent, reported);
   // 12. Victory is decided by the mode (game rules).
@@ -880,3 +882,84 @@ function pickTarget(w: World, rs: Ruleset, e: Entity, a: Archetype, tick: number
   return best;
 }
 
+
+/** A post is captured below this share of its health (owned posts; neutral ones at any health). */
+export const CAPTURE_BELOW = 0.25;
+
+/** Whether an entity is a Command Post in the sense of capture and elimination (an immobile command source). */
+export const isCommandPost = (rs: Ruleset, e: Entity): boolean => {
+  const a = archetypeOf(rs, e.kind);
+  return !!a && a.speed === 0 && a.comms?.role === 'source';
+};
+
+/**
+ * Capture and elimination at the end of a turn (docs/design/strategy.md § 9.4). All claims are
+ * judged on the world as it stands before any capture of this turn, then applied, so neither the
+ * order of the posts nor of the sides decides anything:
+ * - the claimants of a post are the hostile sides with a living, not disabled infantry unit next
+ *   to it; an owned post must also be below a quarter of its health with none of its owner's
+ *   (or allies') units next to it; a neutral post has no health condition;
+ * - exactly one claimant takes it (it keeps its damage); two or more: contested, nobody does.
+ * Then every side that owns no post is out: its pieces are removed and every side is told.
+ */
+function captureAndEliminate(w: World, rs: Ruleset, t: number, events: SimEvent[]): void {
+  const out = new Set(w.out ?? []);
+  const takes: { post: Entity; to: number }[] = [];
+  for (const post of w.entities) {
+    if (!isCommandPost(rs, post)) continue;
+    const max = archetypeOf(rs, post.kind)?.hp ?? 0;
+    const next = (e: Entity) => e.id !== post.id && Math.max(Math.abs(e.x - post.x), Math.abs(e.y - post.y)) <= 1;
+    if (post.side !== NEUTRAL) {
+      if (post.hp >= max * CAPTURE_BELOW) continue;
+      if (w.entities.some((e) => next(e) && !hostile(w, post.side, e.side))) continue;
+    }
+    const claimants = new Set<number>();
+    for (const e of w.entities) {
+      if (!next(e) || out.has(e.side) || !hostile(w, e.side, post.side)) continue;
+      const a = archetypeOf(rs, e.kind);
+      if (a?.armor !== 'infantry' || a.layer !== 'ground' || has(e, 'disabled')) continue;
+      claimants.add(e.side);
+    }
+    if (claimants.size === 1) takes.push({ post, to: [...claimants][0] as number });
+  }
+  for (const { post, to } of takes) {
+    const from = post.side;
+    post.side = to;
+    post.order = { type: 'hold' };
+    delete post.doctrine;
+    delete post.queue;
+    events.push({ t: 'captured', tick: t, id: post.id, kind: post.kind, x: post.x, y: post.y, from, to });
+    // The old owner is told (its report now names the new owner); the new owner knows its post.
+    if (w.intel) {
+      const report = { id: post.id, side: to, kind: post.kind, x: post.x, y: post.y, hp: post.hp, tick: t, live: false };
+      for (const side of from === NEUTRAL ? [to] : [from, to]) {
+        const list: Report[] | undefined = w.intel[side];
+        if (!list) continue;
+        const i = list.findIndex((r) => r.id === post.id);
+        if (i >= 0) list[i] = { ...(list[i] as Report), side: to };
+        else {
+          list.push(report);
+          list.sort((a, b) => a.id - b.id);
+        }
+      }
+    }
+  }
+  // Elimination: after all captures (a side that lost its own post but took another plays on).
+  const owners = new Set(w.entities.filter((e) => isCommandPost(rs, e)).map((e) => e.side));
+  const eliminated: number[] = [];
+  for (let side = 0; side < w.sides; side++) if (!out.has(side) && !owners.has(side)) eliminated.push(side);
+  if (eliminated.length === 0) return;
+  const removed = new Set(eliminated);
+  const ids = new Set(w.entities.filter((e) => removed.has(e.side)).map((e) => e.id));
+  w.entities = w.entities.filter((e) => !removed.has(e.side));
+  w.projectiles = w.projectiles.filter((p) => !removed.has(p.side));
+  for (const side of eliminated) {
+    out.add(side);
+    events.push({ t: 'eliminated', tick: t, side });
+  }
+  w.out = [...out].sort((a, b) => a - b);
+  // Every side is told: reports of the removed pieces go, and so do old reports that still name the
+  // side as owner of a post it lost unseen (nobody can hold it for a side that is out; who holds it
+  // now is learned only by looking again).
+  if (w.intel) w.intel = w.intel.map((list, side) => (removed.has(side) ? [] : list.filter((r) => !ids.has(r.id) && !removed.has(r.side))));
+}

@@ -124,6 +124,12 @@ export interface Ruleset {
   readonly economy: boolean;
   /** Supply each side starts with (economy rulesets). */
   readonly startSupply: number;
+  /**
+   * Several sides (ADR 0009 amendment): Command Posts can be captured, and a side that owns no
+   * Command Post at the end of a turn is out (its pieces are removed). Off: posts are only ever
+   * destroyed and the mode decides what that means (the two-side game).
+   */
+  readonly capture?: boolean;
 }
 
 /** A finite source of Supply on the map; an Extractor on it draws `left` down (D8). */
@@ -312,6 +318,8 @@ export interface World {
   teams?: number[];
   /** Each side's frame (`Frame`); absent: side 1 point-mirrored, every other side as stored. */
   frames?: Frame[];
+  /** Capture rulesets: the sides that are out, ascending (final; they have no pieces and give no orders). */
+  out?: number[];
   /** Economy rulesets only: Supply per side. */
   supply?: number[];
   /** Sorted by ascending id. */
@@ -357,6 +365,10 @@ export type SimEvent =
    * unseen, was found missing when its last reported cell was observed again.
    */
   | { t: 'missing'; tick: number; id: number; side: number; kind: string; x: number; y: number }
+  /** A Command Post changed sides (`from` may be NEUTRAL): told to whoever sees its cell or owns or owned it. */
+  | { t: 'captured'; tick: number; id: number; kind: string; x: number; y: number; from: number; to: number }
+  /** A side owned no Command Post at the end of a turn and is out (told to every side). */
+  | { t: 'eliminated'; tick: number; side: number }
   /** A structure was sold (torn down) for `refund` Supply (the refund only in the seller's own reports). */
   | { t: 'sold'; tick: number; id: number; side: number; kind: string; x: number; y: number; refund?: number }
   /**

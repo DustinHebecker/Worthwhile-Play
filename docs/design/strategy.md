@@ -282,7 +282,7 @@ Binding rules for several sides (to be implemented in the increments below; test
 
 *Sides and the data model.* A world has `sides` playing sides (2–8) and optionally neutral Command Posts. Neutral is not a side number: a neutral post is an entity with `side: NEUTRAL` (−1 in the data, never in `plans`, no supply, no intel, no coverage, never fires, never moves, takes no orders). Every playing side carries `team: number` (default: its own side number, i.e. free-for-all). All hostility checks go through one function `hostile(a, b) = a !== b && teamOf(a) !== teamOf(b)` (neutral is hostile to everyone for targeting, but nobody's ally). Teams later only change the `team` values and add shared sight/victory; no free-for-all code may compare sides directly for hostility. Free-for-all ships with `team = side`.
 
-*Capture.* At the end of each turn (after the command batch, sales and placements, before vision), for every Command Post P (owned or neutral), in the order of P's cell in absolute map order (ties impossible: one entity per cell):
+*Capture.* At the end of each turn (after the command batch, sales and placements, before vision), every Command Post P (owned or neutral) is judged on the world as it stands before any capture of that turn, and the captures are applied afterwards (so neither the order of the posts nor of the sides matters, also for neighbouring posts). Implemented in the engine behind `Ruleset.capture` (increment 2):
 1. The *claimants* of P are the hostile sides with at least one living, not disabled infantry unit (Rifle Squad, Anti-tank Team) adjacent to P (Chebyshev 1). If P is owned, also: P is below 25 % of its health, and no living unit of P's owner (or, later, of its team) stands adjacent to P.
 2. Exactly one claimant → P changes to that side (keeps its health; its coverage, order slots and income go to the new owner from the next turn; event `captured {id, from, to}`, in reports like `destroyed`: told to a side only if it sees P's cell or owns/owned P).
 3. Two or more claimants → P is contested: nobody takes it this turn (no tie-break by side number, so the outcome does not depend on side order).
@@ -291,6 +291,7 @@ Binding rules for several sides (to be implemented in the increments below; test
 
 *Elimination and the end of the game.*
 - A side is **out** at the end of a turn in which it owns no Command Post. Its remaining units and structures are removed at once (`eliminated {side}` event, told to every side); its reports are dropped. Being out is final.
+- Every side is told: reports of the removed pieces go, and so do old reports that still name the side as the owner of a post it lost unseen (who holds that post now is learned only by looking again).
 - **For the player**, the game ends as **lost** when the player's side is out (no watching on).
 - It ends as **won** when every other playing side is out (with teams later: every side not in the player's team).
 - Turn limit and quick-match strength rule with several sides: the player wins only with strictly more strength than every remaining opponent, draws when equal to the strongest, else loses.
