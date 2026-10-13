@@ -898,7 +898,7 @@ describe('opponent levels (I5)', () => {
   }
   const MODES: readonly Length[] = [24, 'quick'];
 
-  it('normal and hard beat easy by a clear margin over randomised openings on both maps', () => {
+  it('normal and hard beat easy by a clear margin over randomised openings on every map', () => {
     for (const spec of SCENARIOS) {
       const hard = margin(spec, 'hard', 'easy', 10, 2, 2);
       const normal = margin(spec, 'normal', 'easy', 10, 2, 2);
@@ -907,7 +907,7 @@ describe('opponent levels (I5)', () => {
     }
   }, 180_000);
 
-  it('hard beats normal on Field Exercise by at least 4 games; over both maps it wins at least as often as it loses', () => {
+  it('hard beats normal on Field Exercise by at least 4 games; over every map it wins at least as often as it loses', () => {
     // The two share the plan of attack; hard adds breadth, focus fire, pulling back and jamming.
     // Measured since PR #13 (escorts yield in passes; storms find a way past held rings):
     // Field Exercise 8-4, Ridge Valley 6-6 over 2x6 openings, so no ordering is claimed for Ridge Valley.
@@ -919,7 +919,7 @@ describe('opponent levels (I5)', () => {
       total.draws += r.draws;
       if (spec === FIELD_EXERCISE) expect(r.a, `${spec.id} hard vs normal ${JSON.stringify(r)}`).toBeGreaterThanOrEqual(r.b + 4);
     }
-    expect(total.a, `hard vs normal over both maps ${JSON.stringify(total)}`).toBeGreaterThanOrEqual(total.b);
+    expect(total.a, `hard vs normal over every map ${JSON.stringify(total)}`).toBeGreaterThanOrEqual(total.b);
   }, 300_000);
 
   /** Random player moves in a resolved first turn (the reviewer's "mild opening"), then nothing. */
@@ -936,7 +936,7 @@ describe('opponent levels (I5)', () => {
   /** Longest game the tests below accept for their strategies (measured: 42 turns); not a bound for every strategy. */
   const GAME_BOUND = 60;
 
-  it('a passive player loses at normal and hard on both maps, with a turn limit and open end: from the unperturbed start, nudged openings and first-turn moves; every game ends within the bound', () => {
+  it('a passive player loses at normal and hard on every map, with a turn limit and open end: from the unperturbed start, nudged openings and first-turn moves; every game ends within the bound', () => {
     for (const spec of SCENARIOS) {
       for (const limit of [...MODES, null]) {
         // Plain open end (no stalemate rule; measured longest 39 turns): not a bound for every strategy —
@@ -958,7 +958,7 @@ describe('opponent levels (I5)', () => {
     }
   }, 600_000);
 
-  it('every game stays a valid, resumable save after every turn: both maps, every length, passive and playing', () => {
+  it('every game stays a valid, resumable save after every turn: every map, every length, passive and playing', () => {
     for (const spec of SCENARIOS) {
       for (const limit of [...TURN_LIMITS, 'quick'] as const) {
         for (const player of ['passive', 'normal'] as const) {

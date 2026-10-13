@@ -100,4 +100,75 @@ export const RIDGE_VALLEY: ScenarioSpec = symmetric(
   ]
 );
 
-export const SCENARIOS: readonly ScenarioSpec[] = [FIELD_EXERCISE, RIDGE_VALLEY];
+/** Crossroads: a small 16×12 town fight — the roads meet in the town, where the contested deposit lies. */
+export const CROSSROADS: ScenarioSpec = symmetric(
+  'crossroads',
+  16,
+  [
+    '..ff....=.....h.',
+    '.ff.....=.......',
+    '.....uu.=..ff...',
+    '~~...uu.=====...',
+    '~~..uuu.=...h...',
+    '====uu=u=..s....'
+  ],
+  [
+    { kind: 'command-post', x: 13, y: 1 },
+    { kind: 'muster', x: 14, y: 2 },
+    { kind: 'howitzer', x: 15, y: 0 },
+    { kind: 'rifles', x: 11, y: 1 },
+    { kind: 'rifles', x: 12, y: 3 },
+    { kind: 'lancer', x: 10, y: 2 },
+    { kind: 'outrider', x: 13, y: 4 },
+    { kind: 'warden', x: 11, y: 4 },
+    { kind: 'mast-truck', x: 15, y: 3 },
+    { kind: 'tracer', x: 14, y: 0 }
+  ],
+  [
+    { x: 11, y: 0 },
+    { x: 6, y: 4 }
+  ]
+);
+
+/**
+ * Marsh Delta: 20×12, channels of water cut the middle; a causeway road crosses it, a second
+ * road runs along the far side. Two outriders per side scout the far deposits.
+ */
+export const MARSH_DELTA: ScenarioSpec = symmetric(
+  'marsh-delta',
+  24,
+  [
+    '..ss...~~.....f..=..',
+    '.s.....~~....ff..=..',
+    '...=...~~.h......=f.',
+    '..f=..=====....===..',
+    '..f=..=..~~~...=..s.',
+    '~~.=..=..~..~~.=....'
+  ],
+  [
+    { kind: 'command-post', x: 18, y: 1 },
+    { kind: 'field-post', x: 16, y: 3 },
+    { kind: 'muster', x: 19, y: 0 },
+    { kind: 'mast-truck', x: 17, y: 2 },
+    { kind: 'mast-truck', x: 14, y: 4 },
+    { kind: 'jammer', x: 19, y: 1 },
+    { kind: 'tracer', x: 19, y: 2 },
+    { kind: 'howitzer', x: 18, y: 0 },
+    { kind: 'rifles', x: 15, y: 1 },
+    { kind: 'rifles', x: 14, y: 2 },
+    { kind: 'rifles', x: 13, y: 3 },
+    { kind: 'lancer', x: 16, y: 4 },
+    { kind: 'lancer', x: 17, y: 5 },
+    { kind: 'warden', x: 18, y: 4 },
+    { kind: 'outrider', x: 12, y: 0 },
+    { kind: 'outrider', x: 11, y: 2 }
+  ],
+  [
+    { x: 19, y: 3 },
+    { x: 11, y: 0 },
+    { x: 10, y: 5 },
+    { x: 4, y: 5 }
+  ]
+);
+
+export const SCENARIOS: readonly ScenarioSpec[] = [FIELD_EXERCISE, CROSSROADS, RIDGE_VALLEY, MARSH_DELTA];
