@@ -181,14 +181,15 @@ describe('map editor: share codes and the library', () => {
     expect(loadLibrary(store)[0]?.name).toBe('A2');
     for (let i = 2; i < MAP_SLOTS; i++) saveToLibrary(store, playable(), null);
     expect(saveToLibrary(store, playable(), null)).toBeNull();
-    removeFromLibrary(store, 1);
+    expect(removeFromLibrary(store, 1)).toBe(true);
     expect(loadLibrary(store)[1]).toBeUndefined();
     store.set('map:2', 'junk');
     expect(loadLibrary(store)[2]).toBeUndefined();
     const broken = { get: () => { throw new Error('blocked'); }, set: () => { throw new Error('blocked'); } };
     expect(loadLibrary(broken)).toHaveLength(MAP_SLOTS);
     expect(saveToLibrary(broken, playable(), null)).toBeNull();
-    expect(() => removeFromLibrary(broken, 0)).not.toThrow();
+    expect(removeFromLibrary(broken, 0)).toBe(false);
+    expect(removeFromLibrary({ get: () => 'kept', set: () => undefined }, 0)).toBe(false);
     expect(loadLibrary(undefined)).toHaveLength(MAP_SLOTS);
   });
 });
@@ -238,14 +239,57 @@ describe('map library: the host library (ADR 0012), preferences as fallback, and
     // Junk stored under a slot id reads as an empty place.
     await lib.put({ id: 'slot-2', name: 'junk', data: { w: 3 } });
     expect((await maps.list())[2]).toBeUndefined();
-    await maps.remove(1);
+    expect(await maps.remove(1)).toBe(true);
     expect((await maps.list())[1]).toBeUndefined();
     const refusing = { ...lib, put: () => Promise.reject(Object.assign(new Error('x'), { reason: 'full' })) };
     expect(await hostMapLibrary(refusing, named).save(playable(), null)).toEqual({ ok: false, reason: 'full' });
     const broken = { list: () => Promise.reject(new Error('down')), get: () => Promise.reject(new Error('down')), put: () => Promise.reject(new Error('down')), delete: () => Promise.reject(new Error('down')) };
     expect(await hostMapLibrary(broken, named).list()).toEqual(Array.from({ length: MAP_SLOTS }, () => undefined));
     expect(await hostMapLibrary(broken, named).save(playable(), 3)).toEqual({ ok: false, reason: 'unavailable' });
-    await expect(hostMapLibrary(broken, named).remove(0)).resolves.toBeUndefined();
+    expect(await hostMapLibrary(broken, named).remove(0)).toBe(false);
+  });
+
+  it('two windows saving new maps at the same time keep both, each in the place it was told', async () => {
+    for (let n = 2; n <= MAP_SLOTS; n++) {
+      const lib = host();
+      const windows = Array.from({ length: n }, () => hostMapLibrary(lib, named));
+      const results = await Promise.all(windows.map((w, i) => w.save({ ...playable(), name: `M${i}` }, null)));
+      const listed = await windows[0]!.list();
+      results.forEach((r, i) => {
+        expect(r.ok, `${n} windows, map ${i}`).toBe(true);
+        if (r.ok) expect(listed[r.slot]?.name).toBe(`M${i}`);
+      });
+      expect(new Set(results.map((r) => (r.ok ? r.slot : -1))).size).toBe(n);
+    }
+    // One more than there are places: exactly one is told "full", the others are all kept.
+    const lib = host();
+    const results = await Promise.all(Array.from({ length: MAP_SLOTS + 1 }, (_, i) => hostMapLibrary(lib, named).save({ ...playable(), name: `M${i}` }, null)));
+    expect(results.filter((r) => !r.ok)).toEqual([{ ok: false, reason: 'full' }]);
+    expect((await hostMapLibrary(lib, named).list()).filter((m) => m !== undefined)).toHaveLength(MAP_SLOTS);
+  });
+
+  it('moving old maps over while another window saves a new one loses neither', async () => {
+    const store = memoryStore();
+    saveToLibrary(store, { ...playable(), name: 'Old' }, 0);
+    const lib = host();
+    const [moved, saved] = await Promise.all([migratePreferenceMaps(store, hostMapLibrary(lib, named)), hostMapLibrary(lib, named).save({ ...playable(), name: 'New' }, null)]);
+    expect(moved).toBe(1);
+    expect(saved.ok).toBe(true);
+    const listed = await hostMapLibrary(lib, named).list();
+    expect(listed.filter((m) => m !== undefined).map((m) => m!.name).sort()).toEqual(['New', 'Old']);
+    if (saved.ok) expect(listed[saved.slot]?.name).toBe('New');
+  });
+
+  it('says "conflict" when another writer replaced the place it saved into, and false when a delete failed', async () => {
+    const lib = host();
+    await lib.put({ id: 'slot-4', name: 'Other', data: { ...playable(), name: 'Other' } });
+    // Another window writes slot-4 right after this one did.
+    const racing = { ...lib, put: async (item: Parameters<typeof lib.put>[0]) => { const r = await lib.put(item); await lib.put({ id: 'slot-4', name: 'Other', data: { ...playable(), name: 'Other' } }); return r; } };
+    expect(await hostMapLibrary(racing, named).save(playable(), 4)).toEqual({ ok: false, reason: 'conflict' });
+    expect((await hostMapLibrary(lib, named).list())[4]?.name).toBe('Other');
+    const refusing = { ...lib, delete: () => Promise.reject(new Error('blocked')) };
+    expect(await hostMapLibrary(refusing, named).remove(4)).toBe(false);
+    expect((await hostMapLibrary(lib, named).list())[4]?.name).toBe('Other');
   });
 
   it('falls back to preferences without a host library (full and unavailable told apart)', async () => {
