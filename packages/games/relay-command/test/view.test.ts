@@ -654,3 +654,104 @@ describe('Relay Command view', () => {
     expect($('rc-lock').textContent).toBe('Runde abschließen');
   });
 });
+
+describe('Relay Command map editor', () => {
+  const edKey = (k: string) => $('ed-map').dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
+  const moveTo = (x: number, y: number) => {
+    for (let i = 0; i < 30; i++) edKey('ArrowLeft');
+    for (let i = 0; i < 20; i++) edKey('ArrowUp');
+    for (let i = 0; i < x; i++) edKey('ArrowRight');
+    for (let i = 0; i < y; i++) edKey('ArrowDown');
+  };
+
+  it('opens from the setup, edits with the keyboard (mirrored), tells what is missing, saves, survives a restore and plays the map', () => {
+    click('rc-editor-open');
+    expect($('rc-editor').hidden).toBe(false);
+    expect($('rc-map').closest('[hidden]')).not.toBeNull(); // the game waits behind the editor
+    expect(state().edit).toMatchObject({ slot: null, mirror: true });
+    expect($('ed-issues').textContent).toContain('Place exactly one Command Post for you.');
+    // A Command Post and a Rifle Squad for you; mirroring gives the opponent the same.
+    click('ed-tool-command-post');
+    moveTo(1, 9);
+    edKey('Enter');
+    expect($('ed-cursor').textContent).toBe('Cell 2, 10: open ground · You (blue): Command Post');
+    click('ed-tool-rifles');
+    moveTo(2, 9);
+    edKey(' ');
+    expect(state().edit!.map.units).toEqual([
+      { side: 0, kind: 'command-post', x: 1, y: 9 },
+      { side: 0, kind: 'rifles', x: 2, y: 9 },
+      { side: 1, kind: 'rifles', x: 13, y: 2 },
+      { side: 1, kind: 'command-post', x: 14, y: 2 }
+    ]);
+    expect($('ed-ok').textContent).toBe('Ready to play.');
+    expect($('ed-fair').textContent).toContain('Point-symmetric');
+    // Name and save: the map goes into the device's maps (preferences).
+    const name = $('ed-name') as HTMLInputElement;
+    name.value = 'Duel';
+    name.dispatchEvent(new Event('change'));
+    click('ed-save');
+    expect($('ed-notice').textContent).toBe('Saved: Duel.');
+    expect(state().edit!.slot).toBe(0);
+    expect(typeof ctx.preferences.get('map:0')).toBe('string');
+    expect($('ed-library').textContent).toContain('Duel (16×12)');
+    // Closing and reopening the game keeps the draft (it is part of the state).
+    const saved = state();
+    setup();
+    instance.restore(saved);
+    expect($('rc-editor').hidden).toBe(false);
+    expect(state().edit!.map.name).toBe('Duel');
+    // Play: a new game on the map; the setup offers it among the maps.
+    click('ed-play');
+    expect(state()).toMatchObject({ scenario: 'custom', edit: null });
+    expect(state().map!.name).toBe('Duel');
+    expect($('rc-editor').hidden).toBe(true);
+    expect([...($('rc-scenario') as HTMLSelectElement).options].map((o) => o.textContent)).toContain('Duel');
+    click('rc-lock');
+    expect($('rc-setup-summary').textContent).toContain('Duel');
+  });
+
+  it('shares a map as a code, refuses a bad code, and asks twice before replacing or deleting', () => {
+    click('rc-editor-open');
+    click('ed-copy');
+    const code = ($('ed-code') as HTMLTextAreaElement).value;
+    expect(code.startsWith('RC1.')).toBe(true);
+    ($('ed-code') as HTMLTextAreaElement).value = 'nonsense';
+    click('ed-use-code');
+    expect($('ed-notice').textContent).toBe('That is not a valid map code.');
+    // Load a built-in map to start from: two presses (with time between them).
+    ($('ed-start') as HTMLSelectElement).value = 'ridge-valley';
+    click('ed-load');
+    expect(state().edit!.map.w).toBe(16);
+    expect($('ed-load').textContent).toBe('Press again to replace the map');
+    later();
+    click('ed-load');
+    expect(state().edit!.map.w).toBe(20);
+    // The code of that map restores it exactly.
+    click('ed-copy');
+    click('ed-copy');
+    const ridge = ($('ed-code') as HTMLTextAreaElement).value;
+    click('ed-close');
+    expect(state().edit).toBeNull();
+    click('rc-editor-open');
+    ($('ed-start') as HTMLSelectElement).value = 'blank';
+    click('ed-load');
+    later();
+    click('ed-load');
+    expect(state().edit!.map.units).toEqual([]);
+    click('ed-copy');
+    ($('ed-code') as HTMLTextAreaElement).value = ridge;
+    click('ed-use-code');
+    expect(state().edit!.map.w).toBe(20);
+    expect(state().edit!.map.units.length).toBeGreaterThan(20);
+    // Save, then delete with two presses.
+    click('ed-save');
+    expect($('ed-delete').hidden).toBe(false);
+    click('ed-delete');
+    expect(ctx.preferences.has('map:0')).toBe(true);
+    later();
+    click('ed-delete');
+    expect(ctx.preferences.has('map:0')).toBe(false);
+    expect(state().edit!.slot).toBeNull();
+  });
+});

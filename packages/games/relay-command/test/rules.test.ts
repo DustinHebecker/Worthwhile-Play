@@ -149,7 +149,7 @@ describe('Field Exercise scenario', () => {
     // Strip the field as a version-4 save would not have it.
     const strip = (o: unknown): unknown => (isRecord(o) ? Object.fromEntries(Object.entries(o).filter(([k]) => k !== 'lostContact').map(([k, v]) => [k, strip(v)])) : Array.isArray(o) ? o.map(strip) : o);
     const migrated = migrateState(strip(v4), 4)!;
-    expect(migrated.v).toBe(7);
+    expect(migrated.v).toBe(8);
     expect(isValidState(migrated)).toBe(true);
     const rifle = own(migrated).find((u) => u.kind === 'rifles')!;
     expect(rifle.doctrine?.lostContact).toBe('keep');
@@ -159,12 +159,24 @@ describe('Field Exercise scenario', () => {
     expect(migrateState({ ...(strip(v4) as Record<string, unknown>), v: 7 }, 4)).toBeUndefined();
   });
 
+  it('version-7 saves (before the map editor) play on: no player-made map, no draft', () => {
+    const s = lockTurn(newGame(2, FIELD_EXERCISE, 'normal', 24));
+    const v7 = JSON.parse(JSON.stringify({ ...s, v: 7 })) as Record<string, unknown>;
+    delete v7.map;
+    delete v7.edit;
+    const migrated = migrateState(v7, 7)!;
+    expect(migrated).toMatchObject({ v: 8, map: null, edit: null, scenario: 'field-exercise' });
+    expect(isValidState(migrated)).toBe(true);
+    expect(migrateState({ ...v7, v: 8 }, 7)).toBeUndefined();
+    expect(isValidState(v7)).toBe(false);
+  });
+
   it('version-6 saves (open end always had the stalemate rule) play on as a plain open end', () => {
     const s = lockTurn(newGame(2, FIELD_EXERCISE, 'normal', null, true));
     const v6 = JSON.parse(JSON.stringify({ ...s, v: 6, lead: [5] })) as Record<string, unknown>;
     delete v6.quick;
     const migrated = migrateState(v6, 6)!;
-    expect(migrated).toMatchObject({ v: 7, quick: false, lead: [], turnLimit: null });
+    expect(migrated).toMatchObject({ v: 8, quick: false, lead: [], turnLimit: null, map: null, edit: null });
     expect(isValidState(migrated)).toBe(true);
     expect(migrateState({ ...v6, v: 5 }, 6)).toBeUndefined();
     expect(isValidState({ ...newGame(2, FIELD_EXERCISE, 'normal', 12), quick: true })).toBe(false);
@@ -365,7 +377,7 @@ describe('command network (I3a)', () => {
     };
     expect(v1.draft).toHaveLength(5);
     const migrated = migrateState(JSON.parse(JSON.stringify(v1)), 1)!;
-    expect(migrated.v).toBe(7);
+    expect(migrated.v).toBe(8);
     expect(migrated.draft.length).toBeLessThanOrEqual(orderSlots(migrated));
     expect(migrated.draft.every((c) => orderRefusal({ ...migrated, draft: [] }, c.unit, c.order) === null)).toBe(true);
     expect(isValidState(migrated)).toBe(true);
@@ -375,7 +387,7 @@ describe('command network (I3a)', () => {
     const v1 = { ...structuredClone(newGame(3)), v: 1 } as Record<string, unknown>;
     (v1.world as Record<string, unknown>).ruleset = 'base-1';
     const migrated = migrateState(v1, 1);
-    expect(migrated?.v).toBe(7);
+    expect(migrated?.v).toBe(8);
     expect(migrated?.world.ruleset).toBe(RULESET.id);
     expect(migrateState(v1, 2)).toBeUndefined();
     expect(migrateState(null, 1)).toBeUndefined();
@@ -690,7 +702,7 @@ describe('information model (I3c, D7)', () => {
     const s = lockTurn(newGame(5));
     const v2 = JSON.parse(JSON.stringify({ ...s, v: 2, world: { ...s.world, ruleset: 'strategy-1', intel: undefined } })) as Record<string, unknown>;
     const migrated = migrateState(v2, 2)!;
-    expect(migrated.v).toBe(7);
+    expect(migrated.v).toBe(8);
     expect(migrated.world.ruleset).toBe(RULESET.id);
     expect(migrated.events).toEqual([]);
     expect(migrated.world.intel).toEqual(initialIntel(s.world, RULESET));
