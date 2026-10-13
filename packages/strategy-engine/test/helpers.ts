@@ -1,5 +1,5 @@
 import fc from 'fast-check';
-import { BASE_RULESET, createWorld, NEUTRAL, STRATEGY_RULESET, type Command, type Doctrine, type Frame, type GameMap, type Order, type Projectile, type Scenario, type World } from '../src';
+import { BASE_RULESET, createWorld, NEUTRAL, STRATEGY_RULESET, type Command, type Doctrine, type Frame, type GameMap, type Order, type Projectile, type Ruleset, type Scenario, type World } from '../src';
 
 /** Map from rows of terrain characters. */
 export const mapOf = (...rows: string[]): GameMap => ({ w: rows[0]?.length ?? 0, h: rows.length, terrain: rows.join('') });
@@ -72,7 +72,7 @@ export const arbScenario = arbWorld({ sides: 2 });
  * Random small valid world plus commands for a few turns: `sides` playing sides (units spread
  * over them), optionally square, with the given teams and frames.
  */
-export function arbWorld(options: { sides: number; square?: boolean; teams?: number[]; frames?: Frame[]; neutral?: boolean; supply?: number }) {
+export function arbWorld(options: { sides: number; square?: boolean; teams?: number[]; frames?: Frame[]; neutral?: boolean; supply?: number; ruleset?: Ruleset }) {
   return fc
   .record({
     w: fc.integer({ min: 4, max: 10 }),
@@ -140,7 +140,7 @@ export function arbWorld(options: { sides: number; square?: boolean; teams?: num
         ...(options.frames && { frames: options.frames }),
         ...(options.supply !== undefined && { supply: Array.from({ length: options.sides }, () => options.supply as number) })
       },
-      options.supply !== undefined ? STRATEGY_RULESET : BASE_RULESET
+      options.ruleset ?? (options.supply !== undefined ? STRATEGY_RULESET : BASE_RULESET)
     );
     const plans: Command[][] = [[], [], [], []];
     for (const o of orders) {
@@ -217,6 +217,7 @@ export function transformWorld(w: World, at: (x: number, y: number) => readonly 
     map: { ...w.map, terrain: terrain.join(''), ...(deposits && { deposits }) },
     ...(w.supply && { supply: bySide(w.supply) }),
     ...(w.teams && { teams: bySide(w.teams) }),
+    ...(w.out && { out: w.out.map(side).sort((a, b) => a - b) }),
     entities: w.entities.map((e) => {
       const [x, y] = at(e.x, e.y);
       return {
