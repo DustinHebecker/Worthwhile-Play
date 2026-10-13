@@ -36,6 +36,18 @@ function edgesOf(size: number, islands: readonly Island[]): [number, number][] {
   return edges;
 }
 
+/** True when one edge is horizontal, the other vertical, and they meet strictly between their end points. */
+function edgesCross(islands: readonly Island[], [a1, b1]: [number, number], [a2, b2]: [number, number]): boolean {
+  const horizontal = (a: number, b: number) => (islands[a] as Island)[0] === (islands[b] as Island)[0];
+  if (horizontal(a1, b1) === horizontal(a2, b2)) return false;
+  const [[ha, hb], [va, vb]] = horizontal(a1, b1) ? [[a1, b1], [a2, b2]] : [[a2, b2], [a1, b1]];
+  const [hr, hc1] = islands[ha as number] as Island;
+  const hc2 = (islands[hb as number] as Island)[1];
+  const [vr1, vc] = islands[va as number] as Island;
+  const vr2 = (islands[vb as number] as Island)[0];
+  return vr1 < hr && hr < vr2 && hc1 < vc && vc < hc2;
+}
+
 /** Islands as rendered (coordinates from the test ids, numbers from data-need). */
 async function renderedIslands(page: Page): Promise<Island[]> {
   const list = await root(page)
@@ -66,8 +78,11 @@ const bridgeId = (islands: readonly Island[], [a, b]: [number, number]) => {
 test('bridges: built bridges survive a reload exactly', async ({ page }) => {
   await expectResumeAfterReload(page, 'bridges', async (p) => {
     const islands = await renderedIslands(p);
-    const [first, second] = edgesOf(7, islands);
-    if (!first || !second) throw new Error('puzzle without two edges');
+    const edges = edgesOf(7, islands);
+    const first = edges[0];
+    // The game refuses a bridge that crosses a built one, so the second edge must not cross the first.
+    const second = first && edges.slice(1).find((edge) => !edgesCross(islands, first, edge));
+    if (!first || !second) throw new Error('puzzle without two non-crossing edges');
     for (const edge of [first, second]) {
       await tapEdge(p, islands, edge);
       await expect(root(p).getByTestId(bridgeId(islands, edge))).toHaveAttribute('data-count', '1');
