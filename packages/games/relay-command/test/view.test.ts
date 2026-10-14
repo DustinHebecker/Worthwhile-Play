@@ -384,28 +384,44 @@ describe('Relay Command view', () => {
     expect($('rc-cursor').textContent).not.toContain('jammed');
   });
 
-  it('shows a uniform stat card for the selected unit, and says when a unit has no weapon', () => {
+  it('shows the unit card as a meter list (owner: Proposal 2), and says when a unit has no weapon', () => {
     expect($('rc-card').hidden).toBe(true);
     const rifle = firstMobile();
     click(`rc-unit-${rifle.id}`);
     expect($('rc-card').hidden).toBe(false);
-    expect($('rc-card-health').textContent).toContain('40 / 40');
-    expect($('rc-card-damage').textContent).toContain('6');
-    expect($('rc-card').textContent).toContain('Effect against');
+    // A description list: one term (pictogram and word) and one value per stat; the segments are decoration.
+    const meters = $('rc-card-meters');
+    expect(meters.tagName).toBe('DL');
+    expect([...meters.querySelectorAll('dt')].map((dt) => dt.textContent)).toEqual(['Health', 'Damage', 'Range', 'Speed', 'Vision']);
+    expect($('rc-card-health').textContent).toBe('40 / 40');
+    expect($('rc-card-damage').textContent).toBe('6');
+    expect(meters.querySelectorAll('.rc-seg[aria-hidden="true"]')).toHaveLength(5);
+    expect(meters.querySelectorAll('svg[aria-hidden="true"]')).toHaveLength(5);
+    // The match-up in words, with the exact %, never colour alone.
+    const matchup = $('rc-card-matchup').textContent!;
+    expect(matchup).toMatch(/Strong against.*infantry.*100 %/);
+    expect(matchup).toContain('Weaker against');
+    // The full effect table sits behind "More".
+    expect($('rc-card-vs').closest('details')).toBe($('rc-card-more'));
+    expect($('rc-card-vs').querySelectorAll('th[scope="row"]')).toHaveLength(5);
+    // Segments on the roster scale: damage 6 of the roster's 25 fills 2 of 5; full health fills all 5.
+    expect($('rc-card-damage').querySelectorAll('.rc-seg i.on')).toHaveLength(2);
+    expect($('rc-card-health').querySelectorAll('.rc-seg i.on')).toHaveLength(5);
     expect($('rc-selection-text').textContent).toContain('or an enemy to attack it');
     const truck = own().find((e) => e.kind === 'mast-truck')!;
     click(`rc-unit-${truck.id}`);
     expect($('rc-card-noweapon').textContent).toContain('none');
     expect($('rc-card').textContent).toContain('relay, radius 5');
     expect($('rc-selection-text').textContent).toContain('This unit has no weapon');
-    // Stats and abilities are folded; an opened section stays open while the card is redrawn.
-    const stats = $('rc-card-stats') as HTMLDetailsElement;
-    expect(stats.open).toBe(false);
-    expect(($('rc-card-abilities') as HTMLDetailsElement).open).toBe(false);
-    stats.open = true;
-    stats.dispatchEvent(new Event('toggle'));
+    // Unarmed: radio range as a meter instead of damage and range.
+    expect([...$('rc-card-meters').querySelectorAll('dt')].map((dt) => dt.textContent)).toEqual(['Health', 'Radio', 'Speed', 'Vision']);
+    // "More" is folded; once opened it stays open while the card is redrawn.
+    const more = $('rc-card-more') as HTMLDetailsElement;
+    expect(more.open).toBe(false);
+    more.open = true;
+    more.dispatchEvent(new Event('toggle'));
     click(`rc-unit-${rifle.id}`);
-    expect(($('rc-card-stats') as HTMLDetailsElement).open).toBe(true);
+    expect(($('rc-card-more') as HTMLDetailsElement).open).toBe(true);
     click(`rc-unit-${truck.id}`);
     // Ordering the truck to attack is refused with a specific reason.
     const foe = spotEnemy();

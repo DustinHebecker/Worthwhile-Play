@@ -1,6 +1,6 @@
 # Relay Command: icon set and unit card previews
 
-> Status: proposals awaiting the owner's choice (2026-10-12). The rendered PNGs are not committed; open `sheet.html`, `map.html` or `cards.html` in a browser (they load `icons.js` from this folder) to see the sets. Recommendation: Set A for the map, card Proposal 1.
+> Status: the owner chose card **Proposal 2 (meter list)** on 2026-10-14; it is built in `view.ts` (`renderCard`): meters as a `<dl>` (pictogram and word, five decorative segments, the exact value as text), "Strong against / Weaker against / Cannot hurt" in words with the armour pictograms (the map icons of a kind standing for each class) and the exact %, and everything else plus the full effect table behind "More"; tested at 360 px left to right and right to left. Earlier status: proposals awaiting the owner's choice (2026-10-12). The rendered PNGs are not committed; open `sheet.html`, `map.html` or `cards.html` in a browser (they load `icons.js` from this folder) to see the sets. Recommendation: Set A for the map, card Proposal 1.
 
 These are previews only. Nothing in the repository was changed. All artwork is hand-written SVG (no fonts, icon libraries or images), so no licence review is needed. Each file is described below.
 
