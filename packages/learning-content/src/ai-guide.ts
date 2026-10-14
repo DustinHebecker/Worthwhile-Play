@@ -110,7 +110,8 @@ const fill = (text: string, params: Readonly<Record<string, string>>) => text.re
 export function deckGuideMarkdown(locale: VocabularyLanguage, origin: string = DEFAULT_GUIDE_ORIGIN): string {
   const t = DECK_GUIDE_TEXT[locale];
   const base = origin.replace(/\/+$/, '');
-  const params = { max: n(DECK_LINK_RECOMMENDED_MAX_CHARS), importUrl: `${base}${DECK_LINK_PATH}` };
+  // The translated prose writes numbers the local way (8.000, 8 000, 8,000); the technical reference stays en-US.
+  const params = { max: DECK_LINK_RECOMMENDED_MAX_CHARS.toLocaleString(locale), importUrl: `${base}${DECK_LINK_PATH}` };
   const json = exampleJson();
   const others = DECK_GUIDE_LOCALES.filter((l) => l !== locale).map((l) => `[${l}](${base}${deckGuidePath(l)})`).join(' · ');
   return `# ${t.title}
