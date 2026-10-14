@@ -68,6 +68,10 @@ const es: UiCatalogue = {
   'settings.sessionNote': 'Mostrar un breve aviso tras 20 minutos de juego continuo',
   'settings.saved': 'Ajustes guardados.',
   'settings.storage': 'Partidas guardadas en este dispositivo: {count}',
+  'settings.usage': 'Almacenamiento que usa esta aplicación en este dispositivo: {used}',
+  'settings.usageDetail': 'Archivos de la aplicación para usarla sin conexión: {app} · Tus datos: {data}',
+  'settings.usageHint': 'Incluye la propia aplicación (todos los juegos e idiomas, para que todo funcione sin conexión) y tus partidas guardadas, mazos, registros de aprendizaje y contenido propio. Los navegadores suman algo de espacio adicional de gestión.',
+  'settings.usageUnavailable': 'Tu navegador no indica cuánto almacenamiento usa esta aplicación.',
   'settings.clearSaves': 'Borrar todas las partidas guardadas',
   'settings.clearConfirm': '¿Borrar todas las partidas guardadas en este dispositivo? No se puede deshacer.',
 

@@ -68,6 +68,10 @@ const pt: UiCatalogue = {
   'settings.sessionNote': 'Mostrar uma nota breve após 20 minutos de jogo contínuo',
   'settings.saved': 'Ajustes salvos.',
   'settings.storage': 'Jogos salvos neste dispositivo: {count}',
+  'settings.usage': 'Armazenamento usado por este aplicativo neste dispositivo: {used}',
+  'settings.usageDetail': 'Arquivos do aplicativo para uso offline: {app} · Seus dados: {data}',
+  'settings.usageHint': 'Isso inclui o próprio aplicativo (todos os jogos e idiomas, para que tudo funcione offline) e seus jogos salvos, baralhos, registros de estudo e conteúdo próprio. Os navegadores somam um pouco de espaço de gerenciamento.',
+  'settings.usageUnavailable': 'Seu navegador não informa quanto armazenamento este aplicativo usa.',
   'settings.clearSaves': 'Excluir todos os jogos salvos',
   'settings.clearConfirm': 'Excluir todos os jogos salvos neste dispositivo? Esta ação não pode ser desfeita.',
 

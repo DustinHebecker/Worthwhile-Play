@@ -68,6 +68,10 @@ const tr: UiCatalogue = {
   'settings.sessionNote': '20 dakika kesintisiz oynadıktan sonra kısa bir not göster',
   'settings.saved': 'Ayarlar kaydedildi.',
   'settings.storage': 'Bu cihazdaki kayıtlı oyunlar: {count}',
+  'settings.usage': 'Bu uygulamanın bu cihazda kullandığı depolama alanı: {used}',
+  'settings.usageDetail': 'Çevrimdışı kullanım için uygulama dosyaları: {app} · Senin verilerin: {data}',
+  'settings.usageHint': 'Buna uygulamanın kendisi (her şey çevrimdışı çalışsın diye tüm oyunlar ve diller) ile kayıtlı oyunların, destelerin, öğrenme kayıtların ve kendi içeriklerin dahildir. Tarayıcılar biraz yönetim payı ekler.',
+  'settings.usageUnavailable': 'Tarayıcın bu uygulamanın ne kadar depolama alanı kullandığını bildirmiyor.',
   'settings.clearSaves': 'Tüm kayıtlı oyunları sil',
   'settings.clearConfirm': 'Bu cihazdaki tüm kayıtlı oyunlar silinsin mi? Bu işlem geri alınamaz.',
 

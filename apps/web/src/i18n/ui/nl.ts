@@ -68,6 +68,10 @@ const nl: UiCatalogue = {
   'settings.sessionNote': 'Na 20 minuten onafgebroken spelen een korte melding tonen',
   'settings.saved': 'Instellingen opgeslagen.',
   'settings.storage': 'Opgeslagen spellen op dit apparaat: {count}',
+  'settings.usage': 'Opslag die deze app op dit apparaat gebruikt: {used}',
+  'settings.usageDetail': 'App-bestanden voor offline gebruik: {app} · Je gegevens: {data}',
+  'settings.usageHint': 'Dit omvat de app zelf (alle spellen en talen, zodat alles offline werkt) en je opgeslagen spellen, decks, leergegevens en eigen inhoud. Browsers rekenen er wat beheerruimte bij.',
+  'settings.usageUnavailable': 'Je browser geeft niet aan hoeveel opslag deze app gebruikt.',
   'settings.clearSaves': 'Alle opgeslagen spellen verwijderen',
   'settings.clearConfirm': 'Alle opgeslagen spellen op dit apparaat verwijderen? Dit kan niet ongedaan worden gemaakt.',
 

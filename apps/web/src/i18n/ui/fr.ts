@@ -68,6 +68,10 @@ const fr: UiCatalogue = {
   'settings.sessionNote': 'Afficher un court message après 20 minutes de jeu continu',
   'settings.saved': 'Paramètres enregistrés.',
   'settings.storage': 'Parties sauvegardées sur cet appareil : {count}',
+  'settings.usage': 'Stockage utilisé par cette application sur cet appareil : {used}',
+  'settings.usageDetail': 'Fichiers de l’application pour l’utilisation hors ligne : {app} · Vos données : {data}',
+  'settings.usageHint': 'Cela comprend l’application elle-même (tous les jeux et toutes les langues, pour que tout fonctionne hors ligne) ainsi que vos parties sauvegardées, paquets, données d’apprentissage et contenus personnels. Les navigateurs ajoutent un peu d’espace de gestion.',
+  'settings.usageUnavailable': 'Votre navigateur n’indique pas l’espace de stockage utilisé par cette application.',
   'settings.clearSaves': 'Supprimer toutes les parties sauvegardées',
   'settings.clearConfirm': 'Supprimer toutes les parties sauvegardées sur cet appareil ? Cette action est irréversible.',
 

@@ -68,6 +68,10 @@ const zhHans: UiCatalogue = {
   'settings.sessionNote': '连续游戏 20 分钟后显示简短提醒',
   'settings.saved': '设置已保存。',
   'settings.storage': '此设备上的存档：{count}',
+  'settings.usage': '此应用在本设备上占用的存储空间：{used}',
+  'settings.usageDetail': '离线使用所需的应用文件：{app} · 你的数据：{data}',
+  'settings.usageHint': '其中包括应用本身（所有游戏和语言，确保离线可用）以及你的存档、卡组、学习记录和自建内容。浏览器还会额外计入一些管理开销。',
+  'settings.usageUnavailable': '你的浏览器不提供此应用的存储占用信息。',
   'settings.clearSaves': '删除所有存档',
   'settings.clearConfirm': '要删除此设备上的所有存档吗？此操作无法撤销。',
 

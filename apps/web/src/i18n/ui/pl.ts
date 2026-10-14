@@ -68,6 +68,10 @@ const pl: UiCatalogue = {
   'settings.sessionNote': 'Pokazuj krótką informację po 20 minutach nieprzerwanej gry',
   'settings.saved': 'Zapisano ustawienia.',
   'settings.storage': 'Zapisane gry na tym urządzeniu: {count}',
+  'settings.usage': 'Miejsce zajmowane przez tę aplikację na tym urządzeniu: {used}',
+  'settings.usageDetail': 'Pliki aplikacji do pracy offline: {app} · Twoje dane: {data}',
+  'settings.usageHint': 'Obejmuje to samą aplikację (wszystkie gry i języki, aby wszystko działało offline) oraz zapisane gry, talie, zapisy nauki i własne treści. Przeglądarki doliczają trochę miejsca na zarządzanie.',
+  'settings.usageUnavailable': 'Twoja przeglądarka nie podaje, ile miejsca zajmuje ta aplikacja.',
   'settings.clearSaves': 'Usuń wszystkie zapisane gry',
   'settings.clearConfirm': 'Usunąć wszystkie zapisane gry na tym urządzeniu? Tej operacji nie można cofnąć.',
 
