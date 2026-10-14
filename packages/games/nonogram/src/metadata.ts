@@ -5,7 +5,7 @@ export const metadata: GameMetadata = {
   id: 'nonogram',
   stateVersion: 1,
   skills: ['deduction', 'spatial'],
-  typicalMinutes: [3, 20],
+  typicalMinutes: [3, 30],
   inputMethods: ['pointer', 'touch', 'keyboard'],
   capabilities: {
     offline: true,
@@ -15,6 +15,6 @@ export const metadata: GameMetadata = {
     network: 'none',
     pauseable: true
   },
-  difficulties: ['easy', 'medium', 'hard'],
+  difficulties: ['easy', 'medium', 'hard', 'expert'],
   messages
 };
