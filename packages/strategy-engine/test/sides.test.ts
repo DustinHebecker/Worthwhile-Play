@@ -179,6 +179,21 @@ describe('no leaks between opponents in the events a side is told (review of PR 
     expect(h.toString(16)).toBe(TWO_SIDE_FINGERPRINT);
   });
 
+  it('a shot by an own unit out of contact at an enemy the side never saw is not told (gate find, 2026-10-14)', () => {
+    // The Warden stands out of its Command Post's radio range: what it sees is not the side's. A
+    // Rifle Squad in contact sees the Warden (so its shots are visible) but not the enemy it shoots.
+    const w = createWorld(
+      { map: open(10, 4), sides: 3, entities: [{ side: 0, kind: 'command-post', x: 7, y: 3 }, { side: 0, kind: 'rifles', x: 5, y: 0 }, { side: 0, kind: 'warden', x: 2, y: 1 }, { side: 1, kind: 'rifles', x: 0, y: 0 }], seed: 1, supply: [300, 300, 300] },
+      STRATEGY_RULESET
+    );
+    const warden = w.entities.find((e) => e.kind === 'warden')!;
+    const enemy = w.entities.find((e) => e.side === 1)!;
+    const r = resolveTurn(w, STRATEGY_RULESET, [[]]);
+    expect(r.events.some((e) => e.t === 'fire' && e.id === warden.id && e.target === enemy.id)).toBe(true);
+    expect(r.world.intel![0]!.some((rep) => rep.id === enemy.id)).toBe(false);
+    expect(r.reported![0]!.filter((e) => e.t === 'fire')).toEqual([]);
+  });
+
   it('property: every shot told to a side names an own unit or one the side knows of (3 sides)', () => {
     fc.assert(
       fc.property(arbWorld({ sides: 3, supply: 300 }), ({ world, plans }) => {
@@ -186,7 +201,11 @@ describe('no leaks between opponents in the events a side is told (review of PR 
         for (const plan of plans) {
           const own = new Set(w.entities.filter((e) => e.side === 0).map((e) => e.id));
           const r = resolveTurn(w, STRATEGY_RULESET, [plan]);
-          const known = new Set([...own, ...r.world.intel![0]!.map((rep) => rep.id), ...r.reported![0]!.filter((e) => e.t === 'destroyed').map((e) => (e as { id: number }).id)]);
+          // Known: own units, enemies reported before or after the turn, and any unit the side
+          // was told it saw during the turn (a move, hit or loss names it; it may have slipped out
+          // of sight by the end of the turn and its report been dropped).
+          const seenInTurn = r.reported![0]!.flatMap((e) => (e.t === 'destroyed' || e.t === 'hit' || e.t === 'move' ? [e.id] : []));
+          const known = new Set([...own, ...(w.intel?.[0] ?? []).map((rep) => rep.id), ...r.world.intel![0]!.map((rep) => rep.id), ...seenInTurn]);
           for (const e of r.reported![0]!) if (e.t === 'fire') expect(known.has(e.target), `fire at ${e.target}`).toBe(true);
           w = r.world;
         }
