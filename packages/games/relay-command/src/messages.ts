@@ -4048,7 +4048,7 @@ const pt: Catalogue = {
   'editor.cell': 'Casa {x}, {y}: {terrain}',
   'editor.cellDeposit': 'jazida',
   'editor.cellUnit': '{side}: {name}',
-  'editor.issues': 'Antes de este mapa poder ser jogado:',
+  'editor.issues': 'Antes que este mapa possa ser jogado:',
   'editor.ok': 'Pronto para jogar.',
   'editor.fair': 'Simetria central: os dois lados começam iguais.',
   'editor.unfair': 'Não simétrico: um lado pode começar em vantagem.',
@@ -4078,10 +4078,10 @@ const pt: Catalogue = {
   'help.editor': 'Editor de mapas (na configuração da partida): pinte o terreno e coloque jazidas, postos de comando, estruturas e unidades para você e para o oponente, espelhados por padrão para que os dois lados comecem iguais. Um mapa pode ser jogado quando cada lado tem exatamente um posto de comando e algo mais, e os postos estão ligados por terreno transitável. Seus mapas ficam neste dispositivo (até 8); um código de mapa serve para compartilhar um. Uma partida mantém seu mapa mesmo que você o apague depois.',
   'editor.undo': 'Desfazer',
   'editor.undone': 'Última alteração desfeita.',
-  'editor.fail.unavailable': 'Este dispositivo não guardou o mapa (armazenamento bloqueado ou cheio). Copie o código do mapa para mantê-lo.',
+  'editor.fail.unavailable': 'Este dispositivo não salvou o mapa (armazenamento bloqueado ou cheio). Copie o código do mapa para mantê-lo.',
   'summary.missing': '{name}: não encontrado na última posição informada; perdido sem contato.',
-  'editor.fail.too-large': 'O mapa é grande demais para ser guardado. Copie o código do mapa para mantê-lo.',
-  'editor.fail.invalid': 'Não foi possível guardar o mapa (foi recusado como inválido). Copie o código do mapa para mantê-lo.',
+  'editor.fail.too-large': 'O mapa é grande demais para ser salvo. Copie o código do mapa para mantê-lo.',
+  'editor.fail.invalid': 'Não foi possível salvar o mapa (foi recusado como inválido). Copie o código do mapa para mantê-lo.',
   'editor.fail.conflict': 'Outra janela salvou um mapa no mesmo lugar ao mesmo tempo; esse mapa foi mantido. Salve novamente ou copie o código do mapa.',
 };
 const it: Catalogue = {
