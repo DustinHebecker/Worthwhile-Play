@@ -248,7 +248,7 @@ export const messages: GameMessages = {
   pt: {
     title: 'Luzes apagadas',
     tagline: 'Apague todas as luzes com o mínimo de toques que conseguir deduzir.',
-    rules: 'Tocar numa casa alterna-a e às vizinhas de cima, de baixo, da esquerda e da direita. Apague todas as luzes. Tocar duas vezes na mesma casa anula-se e a ordem dos toques não importa, por isso pense em quais casas tocar, não em quando.',
+    rules: 'Tocar numa casa alterna o estado dela e das vizinhas de cima, de baixo, da esquerda e da direita. Apague todas as luzes. Tocar duas vezes na mesma casa se anula, e a ordem dos toques não importa, por isso pense em quais casas tocar, não em quando.',
     'difficulty.easy': 'Fácil (3 × 3)',
     'difficulty.medium': 'Médio (5 × 5)',
     'difficulty.hard': 'Difícil (7 × 7)',

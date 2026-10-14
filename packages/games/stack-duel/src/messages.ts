@@ -575,7 +575,7 @@ export const messages = {
     'difficulty.hard': 'Difícil',
     mode: 'Modo',
     'mode.computer': 'Duelo contra o computador',
-    'mode.human': 'Duelo: duas pessoas, um aparelho',
+    'mode.human': 'Duelo: duas pessoas, um dispositivo',
     'mode.solo': 'Desafio da torre (sozinho)',
     board: 'Torre com {count} pedras e {height} de altura. Pedra na mão: {piece}, a {pos} do centro, girada {deg}°.',
     moveLeft: 'Mover para a esquerda',

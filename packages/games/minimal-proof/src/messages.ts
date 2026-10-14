@@ -420,11 +420,11 @@ export const messages: GameMessages = {
 
   pt: withVocab({
     title: 'Cadeia de prova',
-    tagline: 'Prove o objetivo a partir de factos e regras no menor número de passos.',
-    rules: 'Comece pelas afirmações conhecidas. Toque numa regra cujas premissas sejam todas conhecidas para acrescentar a conclusão. Prove o objetivo – depois vê o tamanho da prova mais curta; provas mais longas valem o mesmo.',
+    tagline: 'Prove o objetivo a partir de fatos e regras no menor número de passos.',
+    rules: 'Comece pelas afirmações conhecidas. Toque numa regra cujas premissas sejam todas conhecidas para acrescentar a conclusão. Prove o objetivo – depois você vê o tamanho da prova mais curta; provas mais longas valem o mesmo.',
     'difficulty.easy': 'Fácil (se – então)',
-    'difficulty.medium': 'Médio (com «e»)',
-    'difficulty.hard': 'Difícil (com «ou» e «não»)',
+    'difficulty.medium': 'Médio (com “e”)',
+    'difficulty.hard': 'Difícil (com “ou” e “não”)',
     goal: 'Objetivo: provar {goal}',
     'goal.proved': 'Objetivo provado: {goal}',
     'facts.title': 'Afirmações conhecidas',
@@ -442,7 +442,7 @@ export const messages: GameMessages = {
     'atom.nameNot': 'não {letter} ({label})',
     'status.steps': 'Passos até agora: {steps}',
     'status.solved': 'Provado! Passos usados: {steps}. Mínimo possível: {minimal}.',
-    'status.shortest': 'A sua prova é a mais curta possível.',
+    'status.shortest': 'Sua prova é a mais curta possível.',
     'status.longer': 'Também existe um caminho mais curto.',
     'refuse.missing': 'Ainda não. Falta: {missing}.',
     'refuse.missingOr': 'Ainda não. É preciso {a} ou {b}.',
@@ -455,8 +455,8 @@ export const messages: GameMessages = {
     legend: 'Sinais: → então, ∧ e, ∨ ou, ¬ não',
     'result.completed': 'Objetivo provado.'
   },
-  ['chave', 'moeda', 'candeeiro', 'mapa', 'barco', 'ponte', 'tocha', 'corda', 'escada', 'bússola'],
-  ['sem chave', 'sem moeda', 'sem candeeiro', 'sem mapa', 'sem barco', 'sem ponte', 'sem tocha', 'sem corda', 'sem escada', 'sem bússola']),
+  ['chave', 'moeda', 'lampião', 'mapa', 'barco', 'ponte', 'tocha', 'corda', 'escada', 'bússola'],
+  ['sem chave', 'sem moeda', 'sem lampião', 'sem mapa', 'sem barco', 'sem ponte', 'sem tocha', 'sem corda', 'sem escada', 'sem bússola']),
 
   it: withVocab({
     title: 'Catena di prove',

@@ -358,7 +358,7 @@ export const messages: GameMessages = {
   pt: {
     title: 'Pontes',
     tagline: 'Ligue ilhas com pontes de acordo com os seus números.',
-    rules: 'Ligue todas as ilhas num único grupo com pontes retas horizontais ou verticais. Cada número indica quantas pontes terminam nessa ilha; entre duas ilhas há no máximo duas pontes, e as pontes nunca se cruzam. Cada quebra-cabeça resolve-se só com lógica, sem adivinhar.',
+    rules: 'Ligue todas as ilhas num único grupo com pontes retas horizontais ou verticais. Cada número indica quantas pontes terminam nessa ilha; entre duas ilhas há no máximo duas pontes, e as pontes nunca se cruzam. Cada quebra-cabeça se resolve só com lógica, sem adivinhar.',
     'difficulty.easy': 'Fácil (7×7)',
     'difficulty.medium': 'Médio (9×9)',
     'difficulty.hard': 'Difícil (11×11)',
@@ -379,7 +379,7 @@ export const messages: GameMessages = {
     'result.completed': 'Todas as ilhas ligadas.',
     'announce.bridge': 'Pontes entre linha {r1}, coluna {c1} e linha {r2}, coluna {c2}: {n}',
     'announce.selected': 'Ilha na linha {row}, coluna {col} selecionada. Agora escolha uma ilha na mesma linha ou coluna.',
-    'announce.deselected': 'Seleção anulada.',
+    'announce.deselected': 'Seleção cancelada.',
     'announce.blocked': 'Não é possível: esta ponte cruzaria outra ponte.',
     'announce.notInLine': 'Estas ilhas não são vizinhas na mesma linha ou coluna.',
     'announce.noNeighbour': 'Não há nenhuma ilha nessa direção.',

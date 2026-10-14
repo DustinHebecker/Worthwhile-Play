@@ -545,7 +545,7 @@ const pt = build({
   ui: {
     title: 'Grade lógica',
     tagline: 'Combine as pistas para descobrir quem mora onde e quem tem o quê.',
-    rules: 'Cada pessoa tem exatamente um item de cada categoria, e duas pessoas nunca partilham o mesmo. Use as pistas para marcar as grades: ✗ exclui um par, ✓ confirma-o. O andar 1 é o mais baixo; o enigma está resolvido quando todos os ✓ corretos estiverem colocados.',
+    rules: 'Cada pessoa tem exatamente um item de cada categoria, e duas pessoas nunca compartilham o mesmo. Use as pistas para marcar as grades: ✗ exclui um par, ✓ o confirma. O andar 1 é o mais baixo; o enigma está resolvido quando todos os ✓ corretos estiverem colocados.',
     'difficulty.easy': 'Fácil (3 pessoas, 3 categorias)',
     'difficulty.medium': 'Médio (4 pessoas, 3 categorias)',
     'difficulty.hard': 'Difícil (5 pessoas, 4 categorias)',
@@ -574,17 +574,17 @@ const pt = build({
     'status.solved': 'Resolvido! Jogadas: {moves}.',
     'status.undone': 'Última alteração desfeita.',
     'result.completed': 'Todos os ✓ estão no lugar: o enigma está resolvido.',
-    'keys.help': 'Teclado: Tab passa de uma grade para outra, as setas movem dentro de uma grade, Espaço ou Enter alternam uma casa, Delete limpa-a.'
+    'keys.help': 'Teclado: Tab passa de uma grade para outra, as setas movem dentro de uma grade, Espaço ou Enter alternam uma casa, Delete a limpa.'
   },
   categories: ['Nome', 'Andar', 'Animal', 'Bebida', 'Cor'],
   names: ['Ben', 'Clara', 'David', 'Félix', 'Lena', 'Mia', 'Noah', 'Sara'],
   items: {
-    pet: ['Gato', 'Cão', 'Pássaro', 'Peixe', 'Coelho', 'Tartaruga'],
+    pet: ['Gato', 'Cachorro', 'Pássaro', 'Peixe', 'Coelho', 'Tartaruga'],
     drink: ['Chá', 'Café', 'Leite', 'Suco', 'Água', 'Cacau'],
     colour: ['Vermelho', 'Azul', 'Verde', 'Amarelo', 'Preto', 'Branco']
   },
   subjects: {
-    pet: ['a pessoa que tem o gato', 'a pessoa que tem o cão', 'a pessoa que tem o pássaro', 'a pessoa que tem o peixe', 'a pessoa que tem o coelho', 'a pessoa que tem a tartaruga'],
+    pet: ['a pessoa que tem o gato', 'a pessoa que tem o cachorro', 'a pessoa que tem o pássaro', 'a pessoa que tem o peixe', 'a pessoa que tem o coelho', 'a pessoa que tem a tartaruga'],
     drink: ['a pessoa que bebe chá', 'a pessoa que bebe café', 'a pessoa que bebe leite', 'a pessoa que bebe suco', 'a pessoa que bebe água', 'a pessoa que bebe cacau'],
     colour: ['a pessoa vestida de vermelho', 'a pessoa vestida de azul', 'a pessoa vestida de verde', 'a pessoa vestida de amarelo', 'a pessoa vestida de preto', 'a pessoa vestida de branco']
   }

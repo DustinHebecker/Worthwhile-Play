@@ -354,8 +354,8 @@ export const messages: GameMessages = {
     'status.solved': 'Circuito completo! Jogadas: {moves}.',
     'result.completed': 'Circuito completo.',
     'legend.help': 'Fios com energia são grossos e contínuos sobre uma peça sombreada; fios sem energia são finos e tracejados. Um anel marca uma ponta de fio solta.',
-    'touch.help': 'Tocar gira uma peça no sentido horário; tocar e segurar ou clicar com o botão direito gira-a ao contrário.',
-    'keys.help': 'Teclado: as setas movem, Espaço ou Enter gira no sentido horário, Shift+Espaço gira ao contrário, L bloqueia uma peça.'
+    'touch.help': 'Tocar gira uma peça no sentido horário; tocar e segurar ou clicar com o botão direito a gira no sentido anti-horário.',
+    'keys.help': 'Teclado: as setas movem, Espaço ou Enter gira no sentido horário, Shift+Espaço gira no sentido anti-horário, L bloqueia uma peça.'
   },
   it: {
     title: 'Circuito',

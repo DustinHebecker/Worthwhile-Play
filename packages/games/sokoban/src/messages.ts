@@ -472,7 +472,7 @@ export const messages: GameMessages = {
     'tile.goal': 'alvo',
     'tile.box': 'caixa',
     'tile.boxOnGoal': 'caixa num alvo',
-    'tile.boxStuck': 'caixa que já não consegue chegar a nenhum alvo',
+    'tile.boxStuck': 'caixa que não consegue mais chegar a nenhum alvo',
     'tile.player': 'você',
     'tile.playerOnGoal': 'você, sobre um alvo',
     'announce.moved': 'Você está na linha {row}, coluna {col}.',
@@ -483,10 +483,10 @@ export const messages: GameMessages = {
     'announce.restarted': 'Nível recomeçado. Desfazer traz seus passos de volta.',
     'announce.level': 'Nível {n} de {total} iniciado.',
     'status.solved': 'Resolvido: todas as caixas estão em alvos. Passos: {moves}. Empurrões: {pushes} (mínimo possível: {minimum}).',
-    'status.stuck': 'Uma caixa marcada com ! já não consegue chegar a nenhum alvo. Desfaça alguns passos ou recomece o nível.',
+    'status.stuck': 'Uma caixa marcada com ! não consegue mais chegar a nenhum alvo. Desfaça alguns passos ou recomece o nível.',
     'help.keys': 'Teclado: as setas (ou W A S D) movem; Backspace ou U desfaz.',
     'help.touch': 'Toque numa casa livre para andar até lá, toque numa caixa ao seu lado para empurrá-la ou use os botões de seta.',
-    'help.restart': 'Recomeçar também fica registrado, então Desfazer pode trazer seus passos de volta. Escolher um nível começa-o do zero.',
+    'help.restart': 'Recomeçar também fica registrado, então Desfazer pode trazer seus passos de volta. Escolher um nível o inicia do zero.',
     'result.completed': 'Todas as caixas estão em alvos.'
   },
   it: {
