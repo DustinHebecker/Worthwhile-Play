@@ -16,7 +16,7 @@
 import { isInt, isOneOf, isRecord, isUint32, normalizeSeed } from '@wp/game-core';
 import { LEVELS } from './levels';
 
-export const DIFFICULTIES = ['easy', 'medium', 'hard'] as const;
+export const DIFFICULTIES = ['easy', 'medium', 'hard', 'expert'] as const;
 export type Difficulty = (typeof DIFFICULTIES)[number];
 export const DEFAULT_DIFFICULTY: Difficulty = 'easy';
 

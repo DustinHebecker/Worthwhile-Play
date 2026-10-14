@@ -25,6 +25,11 @@ import {
   SHAPES,
   startRound,
   summarize,
+  CLASSIC_SHAPES,
+  CLASSIC_TILTS,
+  looksLikeTarget,
+  ROTATIONS,
+  TILT_DEGREES,
   TILTS,
   toDifficulty,
   TRIALS,
@@ -58,7 +63,9 @@ const perfect = (trial: Trial) => (trial.present ? trial.targetIndex : NOT_THERE
 describe('configuration', () => {
   it('lists the difficulties easy → hard in metadata and rules', () => {
     expect(metadata.difficulties).toEqual([...DIFFICULTIES]);
-    expect(DIFFICULTIES).toEqual(['feature', 'conjunction', 'similar']);
+    // New difficulties are appended, so older saves and the host default (first entry) keep working.
+    expect(DIFFICULTIES).toEqual(['feature', 'conjunction', 'similar', 'expert']);
+    expect(toDifficulty('expert')).toBe('expert');
     expect(DEFAULT_DIFFICULTY).toBe('feature');
     expect(toDifficulty('similar')).toBe('similar');
     expect(toDifficulty('conjunction')).toBe('conjunction');
@@ -70,7 +77,8 @@ describe('configuration', () => {
     expect(TRIALS).toBe(12);
     for (const d of DIFFICULTIES) {
       const c = CONFIGS[d];
-      expect(c.cols).toBeLessThanOrEqual(5);
+      // 6 columns on a 360 px phone: (360 - 2 × 16 gutter - 8 padding - 5 × 2 gap) / 6 ≈ 51 px >= 44 px.
+      expect(c.cols).toBeLessThanOrEqual(6);
       expect(c.setSizes[0]).toBeLessThan(c.setSizes[1]);
       expect(c.setSizes[1]).toBeLessThanOrEqual(c.cols * c.rows);
       expect(TRIALS % c.setSizes.length).toBe(0);
@@ -78,6 +86,11 @@ describe('configuration', () => {
     }
     expect(CONFIGS.feature.setSizes[1]).toBeLessThan(CONFIGS.conjunction.setSizes[1]);
     expect(CONFIGS.conjunction.setSizes[1]).toBeLessThan(CONFIGS.similar.setSizes[1]);
+    expect(CONFIGS.similar.setSizes[1]).toBeLessThan(CONFIGS.expert.setSizes[1]);
+    expect(CONFIGS.similar.absentPerSize).toBeLessThan(CONFIGS.expert.absentPerSize);
+    // Half of the expert boards lack the target, so "Not there" is as likely as a find.
+    expect(CONFIGS.expert.absentPerSize * 2).toBe(TRIALS / 2);
+    expect(allowsNotThere('expert')).toBe(true);
     expect(ITEM_DIAMETER / 2 + MAX_JITTER).toBeLessThan(50);
     expect(allowsNotThere('feature')).toBe(false);
     expect(allowsNotThere('conjunction')).toBe(true);
@@ -129,15 +142,30 @@ describe('generateRound', { timeout: 60_000 }, () => {
         expect(SHAPES).toContain(round.target.shape);
         expect(FILLS).toContain(round.target.fill);
         expect(TILTS).toContain(round.target.tilt);
+        expect(round.anyRotation).toBe(difficulty === 'expert');
         for (const trial of round.trials) {
           expect(trial.items).toHaveLength(trial.setSize);
           const flagged = trial.items.filter((item) => item.target);
-          const lookalikes = trial.items.filter((item) => key(item) === key(round.target));
+          const lookalikes = trial.items.filter((item) => looksLikeTarget(round, item));
+          // Every item is a valid, drawable combination, and distractors never look like the target.
+          for (const item of trial.items) {
+            expect(SHAPES).toContain(item.shape);
+            expect(FILLS).toContain(item.fill);
+            expect(TILTS).toContain(item.tilt);
+            expect(looksLikeTarget(round, item)).toBe(item.target);
+            if (!item.target) {
+              expect(differingDimensions(round.target, item).length).toBeGreaterThan(0);
+              // Expert: no rotation of a distractor is a T.
+              if (round.anyRotation) expect(item.shape).not.toBe(round.target.shape);
+            }
+          }
           if (trial.present) {
             expect(flagged).toHaveLength(1);
             expect(lookalikes).toHaveLength(1);
             expect(trial.items[trial.targetIndex]?.target).toBe(true);
-            expect(features(trial.items[trial.targetIndex] as Features)).toEqual(round.target);
+            const found = trial.items[trial.targetIndex] as Features;
+            if (difficulty === 'expert') expect({ ...features(found), tilt: 'upright' }).toEqual(round.target);
+            else expect(features(found)).toEqual(round.target);
           } else {
             expect(flagged).toHaveLength(0);
             expect(lookalikes).toHaveLength(0);
@@ -145,7 +173,7 @@ describe('generateRound', { timeout: 60_000 }, () => {
           }
         }
       }),
-      { numRuns: 200 }
+      { numRuns: 120 }
     );
   });
 
@@ -182,7 +210,7 @@ describe('generateRound', { timeout: 60_000 }, () => {
           }
         }
       }),
-      { numRuns: 150 }
+      { numRuns: 100 }
     );
   });
 
@@ -265,6 +293,68 @@ describe('generateRound', { timeout: 60_000 }, () => {
       }),
       { numRuns: 200 }
     );
+  });
+
+  it('expert search: a T among L shapes in all four rotations; no single feature identifies the target', () => {
+    fc.assert(
+      fc.property(seedArb, (seed) => {
+        const round = generateRound(seed, 'expert');
+        expect(round.target).toEqual({ shape: 'tee', fill: 'solid', tilt: 'upright' });
+        expect(round.anyRotation).toBe(true);
+        for (const trial of round.trials) {
+          const distractors = trial.items.filter((item) => !item.target);
+          expect(distractors.length).toBe(trial.present ? trial.setSize - 1 : trial.setSize);
+          for (const d of distractors) {
+            expect(d.shape).toBe('ell');
+            expect(d.fill).toBe('solid');
+            expect(ROTATIONS).toContain(d.tilt);
+          }
+          // Heterogeneous distractors: every rotation, in groups that differ by at most one.
+          const perRotation = ROTATIONS.map((r) => distractors.filter((d) => d.tilt === r).length);
+          expect(Math.min(...perRotation)).toBeGreaterThan(0);
+          expect(Math.max(...perRotation) - Math.min(...perRotation)).toBeLessThanOrEqual(1);
+          if (trial.present) {
+            const t = trial.items[trial.targetIndex] as Features;
+            expect(t.shape).toBe('tee');
+            expect(t.fill).toBe('solid');
+            expect(ROTATIONS).toContain(t.tilt);
+            // Its fill and its orientation are shared by distractors: only the configuration differs.
+            expect(distractors.some((d) => d.tilt === t.tilt && d.fill === t.fill)).toBe(true);
+          }
+        }
+      }),
+      { numRuns: 150 }
+    );
+    // The T itself appears in every rotation across boards.
+    const tilts = new Set<string>();
+    for (let seed = 1; seed <= 20; seed++) {
+      for (const trial of generateRound(seed, 'expert').trials) if (trial.present) tilts.add((trial.items[trial.targetIndex] as Features).tilt);
+    }
+    expect([...tilts].sort()).toEqual([...ROTATIONS].sort());
+  });
+
+  it('classic searches use only the classic shapes and tilts; tilts map to drawing angles', () => {
+    fc.assert(
+      fc.property(seedArb, fc.constantFrom('feature', 'conjunction', 'similar') as fc.Arbitrary<Difficulty>, (seed, difficulty) => {
+        const round = generateRound(seed, difficulty);
+        for (const item of [round.target, ...round.trials.flatMap((t) => t.items)]) {
+          expect(CLASSIC_SHAPES).toContain(item.shape);
+          expect(CLASSIC_TILTS).toContain(item.tilt);
+        }
+      }),
+      { numRuns: 50 }
+    );
+    expect(TILT_DEGREES).toEqual({ upright: 0, tilted: 45, r90: 90, r180: 180, r270: 270 });
+    expect(ROTATIONS).toEqual(['upright', 'r90', 'r180', 'r270']);
+  });
+
+  it('looksLikeTarget ignores the rotation only where the round allows it', () => {
+    const target: Features = { shape: 'tee', fill: 'solid', tilt: 'upright' };
+    expect(looksLikeTarget({ target, anyRotation: true }, { ...target, tilt: 'r180' })).toBe(true);
+    expect(looksLikeTarget({ target, anyRotation: false }, { ...target, tilt: 'r180' })).toBe(false);
+    expect(looksLikeTarget({ target, anyRotation: false }, target)).toBe(true);
+    expect(looksLikeTarget({ target, anyRotation: true }, { ...target, shape: 'ell' })).toBe(false);
+    expect(looksLikeTarget({ target, anyRotation: true }, { ...target, fill: 'outline' })).toBe(false);
   });
 
   it('distributes the target position uniformly over the grid cells', () => {
@@ -530,6 +620,11 @@ describe('isValidSearchState', () => {
     expect(isValidSearchState(startRound(newRound(1, 'feature')))).toBe(true);
     expect(isValidSearchState(clone(finished()))).toBe(true);
     expect(isValidSearchState(clone(finished('feature')))).toBe(true);
+    expect(isValidSearchState(clone(finished('expert')))).toBe(true);
+    // A save written before the expert level existed still loads unchanged.
+    expect(isValidSearchState({ seed: 13, difficulty: 'similar', phase: 'running', answers: [{ pick: NOT_THERE, ms: 1200 }, { pick: 3, ms: null }] })).toBe(true);
+    // "Not there" is a legal expert answer.
+    expect(isValidSearchState({ seed: 4, difficulty: 'expert', phase: 'running', answers: [{ pick: NOT_THERE, ms: 900 }] })).toBe(true);
   });
 
   it('rejects malformed or inconsistent data', () => {

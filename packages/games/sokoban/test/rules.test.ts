@@ -45,11 +45,14 @@ import {
   type Position,
   type SokobanState
 } from '../src/rules';
-import { isSolved as oracleSolved, play, readLevel, solve, walkDistance } from './oracle';
+import { isSolved as oracleSolved, play, readLevel, solve, solveAStar, walkDistance } from './oracle';
 import { SOLUTIONS } from './solutions';
 
 /* ---------- Helpers ---------- */
 
+/** Levels per difficulty (easy, medium, hard, expert). */
+const COUNTS = [16, 16, 16, 14] as const;
+const PUSH_BOUNDS: Record<Difficulty, [number, number]> = { easy: [2, 16], medium: [12, 24], hard: [19, 35], expert: [36, 61] };
 const ALL = DIFFICULTIES.flatMap((difficulty) => LEVELS[difficulty].map((source, index) => ({ difficulty, index, ...source })));
 const cell = (level: Level, row: number, col: number) => row * level.width + col;
 const stateOf = (difficulty: Difficulty, level: number, history: string[] = []): SokobanState => ({ seed: level, difficulty, level, history });
@@ -69,11 +72,12 @@ const walkArb = fc.record({
 /* ---------- Configuration and level set ---------- */
 
 describe('configuration', () => {
-  it('declares difficulties easy → hard and 8 levels each', () => {
-    expect(DIFFICULTIES).toEqual(['easy', 'medium', 'hard']);
+  it('declares difficulties easy → expert with their level counts', () => {
+    expect(DIFFICULTIES).toEqual(['easy', 'medium', 'hard', 'expert']);
     expect(metadata.difficulties).toEqual(DIFFICULTIES);
     expect(DEFAULT_DIFFICULTY).toBe('easy');
-    for (const d of DIFFICULTIES) expect(levelCount(d)).toBe(8);
+    expect(DIFFICULTIES.map(levelCount)).toEqual(COUNTS);
+    expect(ALL.length).toBeGreaterThanOrEqual(60);
     expect(DIRECTIONS).toEqual(['u', 'd', 'l', 'r']);
     expect(RESTART).toBe('*');
     expect(MAX_HISTORY).toBe(100_000);
@@ -83,13 +87,14 @@ describe('configuration', () => {
     expect(toDifficulty('easy')).toBe('easy');
     expect(toDifficulty('medium')).toBe('medium');
     expect(toDifficulty('hard')).toBe('hard');
+    expect(toDifficulty('expert')).toBe('expert');
     expect(toDifficulty('HARD')).toBe('easy');
     expect(toDifficulty(undefined)).toBe('easy');
     expect(toDifficulty(2)).toBe('easy');
   });
 
   it('has distinct levels that fit a phone (≤ 7 × 9) with growing crate counts', () => {
-    const crates: Record<Difficulty, [number, number]> = { easy: [1, 2], medium: [2, 3], hard: [3, 5] };
+    const crates: Record<Difficulty, [number, number]> = { easy: [1, 2], medium: [2, 3], hard: [3, 5], expert: [4, 6] };
     expect(new Set(ALL.map((l) => l.map)).size).toBe(ALL.length);
     for (const { difficulty, index } of ALL) {
       const level = getLevel(difficulty, index);
@@ -102,7 +107,7 @@ describe('configuration', () => {
   });
 
   it('orders levels by their optimal push count within each difficulty, within bounds', () => {
-    const bounds: Record<Difficulty, [number, number]> = { easy: [2, 12], medium: [12, 17], hard: [19, 29] };
+    const bounds: Record<Difficulty, [number, number]> = PUSH_BOUNDS;
     for (const d of DIFFICULTIES) {
       const pushes = LEVELS[d].map((l) => l.minPushes);
       expect([...pushes].sort((a, b) => a - b)).toEqual(pushes);
@@ -112,21 +117,39 @@ describe('configuration', () => {
     }
   });
 
+  it('the top end is harder: every expert level needs more pushes than any hard level', () => {
+    expect(Math.min(...LEVELS.expert.map((l) => l.minPushes))).toBeGreaterThan(Math.max(...LEVELS.hard.map((l) => l.minPushes)));
+  });
+
+  it('keeps the original 24 levels first and unchanged, so older saves still open the same level', () => {
+    expect(LEVELS.easy.slice(0, 8).map((l) => l.minPushes)).toEqual([2, 5, 5, 5, 6, 7, 11, 12]);
+    expect(LEVELS.medium.slice(0, 8).map((l) => l.minPushes)).toEqual([12, 13, 14, 15, 16, 16, 17, 17]);
+    expect(LEVELS.hard.slice(0, 8).map((l) => l.minPushes)).toEqual([19, 19, 22, 23, 25, 26, 28, 29]);
+    expect(LEVELS.easy[0].map).toBe('#######|#   # #|# # $@#|#  .# #|##    #| ######');
+    expect(LEVELS.medium[7].map).toBe('######|#.#  ##|#+$  .#|# $$  #|###   #|#     #|#######');
+    expect(LEVELS.hard[7].map).toBe(' ######|##... #|# #  .#|#   @ #|## $$##|#  #  #|# $$  #|##    #| ######');
+  });
+
   it('getLevel caches, and both lookups reject unknown indices', () => {
     expect(getLevel('easy', 3)).toBe(getLevel('easy', 3));
-    expect(() => getLevel('easy', 8)).toThrow(RangeError);
+    expect(() => getLevel('easy', COUNTS[0])).toThrow(RangeError);
     expect(() => getLevel('hard', -1)).toThrow(RangeError);
-    expect(() => getLevel('hard', 9)).toThrow('No level 9 in hard');
-    expect(() => minPushesOf('medium', 8)).toThrow(RangeError);
+    expect(() => getLevel('hard', COUNTS[2] + 1)).toThrow(`No level ${COUNTS[2] + 1} in hard`);
+    expect(() => getLevel('expert', COUNTS[3])).toThrow(RangeError);
+    expect(() => minPushesOf('medium', COUNTS[1])).toThrow(RangeError);
     expect(() => minPushesOf('medium', -1)).toThrow(/No level -1 in medium/);
+    expect(minPushesOf('expert', COUNTS[3] - 1)).toBe(PUSH_BOUNDS.expert[1]);
   });
 });
 
 describe('solver proof: every level is solvable in exactly its recorded minimum of pushes', () => {
   it.each(ALL.map((l) => [`${l.difficulty} ${l.index + 1}`, l] as const))('%s', (_, { difficulty, index, map, minPushes }) => {
     const level = readLevel(map);
-    // Easy and medium are also searched without dead-square pruning, which cross-checks the pruning.
-    const result = solve(level, level, { prune: difficulty === 'hard' });
+    // Easy and medium are searched breadth-first without dead-square pruning, which cross-checks
+    // the pruning; the larger hard and expert levels are proven optimal with the A* search, whose
+    // agreement with breadth-first search is checked separately below.
+    const result =
+      difficulty === 'easy' || difficulty === 'medium' ? solve(level, level, { prune: false }) : solveAStar(level, { maxStates: 400_000 });
     expect(result?.pushes).toBe(minPushes);
     const end = play(level, result!.path);
     expect(end && oracleSolved(level, end.boxes)).toBe(true);
@@ -135,6 +158,16 @@ describe('solver proof: every level is solvable in exactly its recorded minimum 
     expect(fixture?.pushes).toBe(minPushes);
     expect(oracleSolved(level, fixture!.boxes)).toBe(true);
   }, 30_000);
+
+  it('A* and breadth-first search agree on the optimal push count of the easy, medium and original hard levels', () => {
+    for (const { difficulty, index, map } of ALL) {
+      if (difficulty === 'expert' || (difficulty === 'hard' && index >= 8)) continue;
+      const level = readLevel(map);
+      expect(solveAStar(level)?.pushes).toBe(solve(level)?.pushes);
+    }
+    // An unsolvable position: the crate in a goal-less corner.
+    expect(solveAStar(readLevel('#####|#$  #|# @.#|#####'))).toBeNull();
+  }, 60_000);
 
   it('the stored solutions solve every level through the real rules, one key press at a time', () => {
     for (const { difficulty, index, minPushes } of ALL) {
@@ -493,14 +526,16 @@ describe('replay', () => {
 describe('game state', () => {
   it('createInitialState picks the level from the seed and is deterministic', () => {
     expect(createInitialState(0)).toEqual({ seed: 0, difficulty: 'easy', level: 0, history: [] });
-    expect(createInitialState(13, 'hard')).toEqual({ seed: 13, difficulty: 'hard', level: 5, history: [] });
-    expect(createInitialState(-1, 'medium')).toEqual({ seed: 0xffff_ffff, difficulty: 'medium', level: 7, history: [] });
-    expect(createInitialState(9.9).level).toBe(1);
+    expect(createInitialState(13, 'hard')).toEqual({ seed: 13, difficulty: 'hard', level: 13 % COUNTS[2], history: [] });
+    expect(createInitialState(-1, 'medium')).toEqual({ seed: 0xffff_ffff, difficulty: 'medium', level: 0xffff_ffff % COUNTS[1], history: [] });
+    expect(createInitialState(20, 'expert')).toEqual({ seed: 20, difficulty: 'expert', level: 20 % COUNTS[3], history: [] });
+    expect(createInitialState(9.9).level).toBe(9);
+    expect(createInitialState(17.5).level).toBe(1);
     fc.assert(
       fc.property(fc.integer({ min: 0, max: 0xffff_ffff }), difficultyArb, (seed, difficulty) => {
         const a = createInitialState(seed, difficulty);
         expect(a).toEqual(createInitialState(seed, difficulty));
-        expect(a.level).toBe(seed % 8);
+        expect(a.level).toBe(seed % levelCount(difficulty));
         expect(isSokobanState(a)).toBe(true);
       })
     );
@@ -588,7 +623,8 @@ describe('game state', () => {
     expect(chooseLevel(s0, 2)).toEqual({ ...s0, history: [] });
     expect(chooseLevel(s0, 7).level).toBe(7);
     expect(chooseLevel(s0, 0).level).toBe(0);
-    for (const bad of [-1, 8, 1.5, Number.NaN]) expect(chooseLevel(s0, bad)).toBe(s0);
+    expect(chooseLevel(s0, COUNTS[1] - 1).level).toBe(COUNTS[1] - 1);
+    for (const bad of [-1, COUNTS[1], 1.5, Number.NaN]) expect(chooseLevel(s0, bad)).toBe(s0);
     expect(chooseLevel(stateOf('hard', 1), 4)).toEqual({ seed: 1, difficulty: 'hard', level: 4, history: [] });
     const solved = stateOf('easy', 0, [solution('easy', 0)]);
     expect(chooseLevel(solved, 0).history).toEqual([]);
@@ -643,6 +679,7 @@ describe('isSokobanState', () => {
     expect(isSokobanState(createInitialState(5, 'hard'))).toBe(true);
     expect(isSokobanState(valid)).toBe(true);
     expect(isSokobanState(stateOf('hard', 7, [solution('hard', 7)]))).toBe(true);
+    expect(isSokobanState(stateOf('expert', COUNTS[3] - 1, [solution('expert', COUNTS[3] - 1)]))).toBe(true);
   });
 
   it.each([
@@ -653,9 +690,9 @@ describe('isSokobanState', () => {
     ['a negative seed', { ...valid, seed: -1 }],
     ['a seed above 32 bits', { ...valid, seed: 0x1_0000_0000 }],
     ['a fractional seed', { ...valid, seed: 1.5 }],
-    ['an unknown difficulty', { ...valid, difficulty: 'expert' }],
+    ['an unknown difficulty', { ...valid, difficulty: 'master' }],
     ['a negative level', { ...valid, level: -1 }],
-    ['a level past the end', { ...valid, level: 8 }],
+    ['a level past the end', { ...valid, level: 16 }],
     ['a fractional level', { ...valid, level: 1.5 }],
     ['a level given as text', { ...valid, level: '3' }],
     ['a history object', { ...valid, history: { 0: 'u' } }],

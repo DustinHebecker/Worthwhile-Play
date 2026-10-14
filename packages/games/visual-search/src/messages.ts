@@ -55,6 +55,14 @@ const en = {
     'Feature search: the target differed from all other shapes in a single feature, so it tends to stand out at a glance. In visual-search research, search time then barely grows with the number of shapes.',
   'explain.conjunction':
     'Conjunction search: the target differed only by its combination of features, so shapes usually have to be checked one after another. Search time then typically grows with the number of shapes, and "Not there" answers take longest, because every shape has to be ruled out.',
+  'difficulty.expert': 'Expert (T among L shapes)',
+  'shape.tee': 'T shape',
+  'shape.ell': 'L shape',
+  'tilt.r90': 'rotated 90°',
+  'tilt.r180': 'rotated 180°',
+  'tilt.r270': 'rotated 270°',
+  'features.anyRotation': '{shape}, {fill}, in any rotation',
+  'explain.configuration': 'Spatial-configuration search: T and L are made of the same two strokes and appear in every rotation, so no single feature stands out and each shape has to be looked at closely. In visual-search research, search time then grows clearly with the number of shapes, most of all for "Not there" answers.',
   'summary.note': 'This is a practice exercise. Results naturally vary with tiredness, device and time of day.'
 };
 
@@ -108,6 +116,14 @@ const de: Catalogue = {
     'Merkmalssuche: Die Zielform unterschied sich von allen anderen Formen in nur einem Merkmal und fällt deshalb meist sofort auf. In der Forschung zur visuellen Suche wächst die Suchzeit dann kaum mit der Zahl der Formen.',
   'explain.conjunction':
     'Konjunktionssuche: Die Zielform unterschied sich nur durch ihre Kombination von Merkmalen, daher müssen die Formen meist nacheinander geprüft werden. Die Suchzeit wächst dann typischerweise mit der Zahl der Formen, und „Nicht da“-Antworten dauern am längsten, weil jede Form ausgeschlossen werden muss.',
+  'difficulty.expert': 'Experte (T zwischen L-Formen)',
+  'shape.tee': 'T-Form',
+  'shape.ell': 'L-Form',
+  'tilt.r90': 'um 90° gedreht',
+  'tilt.r180': 'um 180° gedreht',
+  'tilt.r270': 'um 270° gedreht',
+  'features.anyRotation': '{shape}, {fill}, in jeder Drehung',
+  'explain.configuration': 'Suche nach räumlicher Anordnung: T und L bestehen aus denselben zwei Strichen und kommen in jeder Drehung vor, daher sticht kein einzelnes Merkmal hervor und jede Form muss genau angesehen werden. In der Forschung zur visuellen Suche wächst die Suchzeit dann deutlich mit der Zahl der Formen, am stärksten bei „Nicht da“-Antworten.',
   'summary.note': 'Dies ist eine Übung. Ergebnisse schwanken natürlicherweise mit Müdigkeit, Gerät und Tageszeit.'
 };
 
@@ -159,6 +175,14 @@ const nl: Catalogue = {
     'Kenmerkzoeken: de doelvorm verschilde van alle andere vormen in één kenmerk en springt daardoor meestal meteen in het oog. In onderzoek naar visueel zoeken groeit de zoektijd dan nauwelijks met het aantal vormen.',
   'explain.conjunction':
     'Conjunctiezoeken: de doelvorm verschilde alleen door zijn combinatie van kenmerken, dus moeten vormen meestal een voor een worden bekeken. De zoektijd groeit dan meestal met het aantal vormen, en "Niet aanwezig"-antwoorden duren het langst, omdat elke vorm moet worden uitgesloten.',
+  'difficulty.expert': 'Expert (T tussen L-vormen)',
+  'shape.tee': 'T-vorm',
+  'shape.ell': 'L-vorm',
+  'tilt.r90': '90° gedraaid',
+  'tilt.r180': '180° gedraaid',
+  'tilt.r270': '270° gedraaid',
+  'features.anyRotation': '{shape}, {fill}, in elke draaiing',
+  'explain.configuration': 'Zoeken naar ruimtelijke opbouw: T en L bestaan uit dezelfde twee strepen en komen in elke draaiing voor, dus geen enkel kenmerk springt eruit en elke vorm moet goed bekeken worden. In onderzoek naar visueel zoeken groeit de zoektijd dan duidelijk met het aantal vormen, het sterkst bij "Niet aanwezig"-antwoorden.',
   'summary.note': 'Dit is een oefening. Resultaten variëren vanzelf met vermoeidheid, apparaat en tijdstip.'
 };
 
@@ -210,6 +234,14 @@ const es: Catalogue = {
     'Búsqueda de rasgos: el objetivo se diferenciaba de todas las demás formas en un solo rasgo, por lo que suele destacar a primera vista. En la investigación sobre búsqueda visual, el tiempo de búsqueda apenas crece entonces con el número de formas.',
   'explain.conjunction':
     'Búsqueda de conjunción: el objetivo solo se diferenciaba por su combinación de rasgos, así que normalmente hay que revisar las formas una tras otra. El tiempo de búsqueda suele crecer entonces con el número de formas, y las respuestas «No está» son las más lentas, porque hay que descartar cada forma.',
+  'difficulty.expert': 'Experto (T entre formas de L)',
+  'shape.tee': 'Forma de T',
+  'shape.ell': 'Forma de L',
+  'tilt.r90': 'girada 90°',
+  'tilt.r180': 'girada 180°',
+  'tilt.r270': 'girada 270°',
+  'features.anyRotation': '{shape}, {fill}, en cualquier giro',
+  'explain.configuration': 'Búsqueda de configuración espacial: la T y la L están hechas de los mismos dos trazos y aparecen en todos los giros, así que ningún rasgo por sí solo destaca y hay que mirar cada forma con atención. En la investigación sobre búsqueda visual, el tiempo de búsqueda crece entonces claramente con el número de formas, sobre todo en las respuestas "No está".',
   'summary.note': 'Esto es un ejercicio de práctica. Los resultados varían de forma natural con el cansancio, el dispositivo y la hora del día.'
 };
 
@@ -261,6 +293,14 @@ const fr: Catalogue = {
     'Recherche de caractéristique : la cible différait de toutes les autres formes par une seule caractéristique, elle ressort donc souvent au premier coup d’œil. Dans la recherche sur la recherche visuelle, le temps de recherche augmente alors à peine avec le nombre de formes.',
   'explain.conjunction':
     'Recherche de conjonction : la cible ne différait que par sa combinaison de caractéristiques, il faut donc généralement examiner les formes l’une après l’autre. Le temps de recherche augmente alors typiquement avec le nombre de formes, et les réponses « Absente » sont les plus longues, car chaque forme doit être écartée.',
+  'difficulty.expert': 'Expert (T parmi des L)',
+  'shape.tee': 'Forme en T',
+  'shape.ell': 'Forme en L',
+  'tilt.r90': 'tournée de 90°',
+  'tilt.r180': 'tournée de 180°',
+  'tilt.r270': 'tournée de 270°',
+  'features.anyRotation': '{shape}, {fill}, dans n’importe quelle rotation',
+  'explain.configuration': 'Recherche de configuration spatiale : le T et le L sont faits des deux mêmes traits et apparaissent dans toutes les rotations, donc aucun trait isolé ne ressort et chaque forme doit être regardée attentivement. Dans la recherche sur la recherche visuelle, le temps de recherche augmente alors nettement avec le nombre de formes, surtout pour les réponses « Absente ».',
   'summary.note': 'Ceci est un exercice d’entraînement. Les résultats varient naturellement selon la fatigue, l’appareil et le moment de la journée.'
 };
 
@@ -312,6 +352,14 @@ const ru: Catalogue = {
     'Поиск по признаку: цель отличалась от всех остальных фигур одним признаком, поэтому обычно сразу бросается в глаза. По данным исследований зрительного поиска, время поиска тогда почти не растёт с числом фигур.',
   'explain.conjunction':
     'Поиск по сочетанию признаков: цель отличалась только сочетанием признаков, поэтому фигуры обычно приходится проверять одну за другой. Время поиска тогда, как правило, растёт с числом фигур, а ответы «Нет на поле» занимают больше всего времени, потому что нужно исключить каждую фигуру.',
+  'difficulty.expert': 'Эксперт (T среди L)',
+  'shape.tee': 'Фигура T',
+  'shape.ell': 'Фигура L',
+  'tilt.r90': 'повёрнута на 90°',
+  'tilt.r180': 'повёрнута на 180°',
+  'tilt.r270': 'повёрнута на 270°',
+  'features.anyRotation': '{shape}, {fill}, в любом повороте',
+  'explain.configuration': 'Поиск по пространственной конфигурации: T и L состоят из одних и тех же двух линий и встречаются в любом повороте, поэтому ни один признак не выделяется и каждую фигуру нужно рассмотреть внимательно. В исследованиях зрительного поиска время поиска тогда заметно растёт с числом фигур, сильнее всего для ответов «Нет на поле».',
   'summary.note': 'Это тренировочное упражнение. Результаты естественно меняются в зависимости от усталости, устройства и времени суток.'
 };
 
@@ -363,6 +411,14 @@ const zhHans: Catalogue = {
     '特征搜索：目标与其他所有图形只在一个特征上不同，所以往往一眼就能看出。视觉搜索研究发现，这时搜索时间几乎不随图形数量增加。',
   'explain.conjunction':
     '组合搜索：目标只在特征组合上与众不同，所以通常需要逐个检查图形。这时搜索时间通常随图形数量增加，而“不在”的回答最慢，因为每个图形都要排除。',
+  'difficulty.expert': '专家（L 形中找 T 形）',
+  'shape.tee': 'T 形',
+  'shape.ell': 'L 形',
+  'tilt.r90': '旋转 90°',
+  'tilt.r180': '旋转 180°',
+  'tilt.r270': '旋转 270°',
+  'features.anyRotation': '{shape}，{fill}，任意旋转方向',
+  'explain.configuration': '空间构型搜索：T 形和 L 形由相同的两笔组成，并以各种旋转方向出现，因此没有单一特征会突显出来，每个图形都需要仔细看。在视觉搜索研究中，这时搜索时间会随图形数量明显增加，“不在”的回答增加得最多。',
   'summary.note': '这是一项练习。结果会自然地随疲劳程度、设备和一天中的时间而变化。'
 };
 
@@ -414,6 +470,14 @@ const ko: Catalogue = {
     '특징 탐색: 목표가 다른 모든 도형과 특징 하나만 달라서 대개 한눈에 띄어요. 시각 탐색 연구에서는 이때 탐색 시간이 도형 수에 따라 거의 늘지 않아요.',
   'explain.conjunction':
     '결합 탐색: 목표가 특징의 조합으로만 달라서 보통 도형을 하나씩 확인해야 해요. 이때 탐색 시간은 대개 도형 수에 따라 늘고, 모든 도형을 배제해야 하므로 "없음" 답이 가장 오래 걸려요.',
+  'difficulty.expert': '전문가 (L 모양 사이의 T 모양)',
+  'shape.tee': 'T 모양',
+  'shape.ell': 'L 모양',
+  'tilt.r90': '90° 회전',
+  'tilt.r180': '180° 회전',
+  'tilt.r270': '270° 회전',
+  'features.anyRotation': '{shape}, {fill}, 어느 방향으로든 회전',
+  'explain.configuration': '공간 배치 탐색: T와 L은 같은 두 획으로 이루어져 있고 모든 방향으로 회전해 나타나므로, 하나의 특징만으로는 눈에 띄지 않고 도형을 하나하나 자세히 봐야 해요. 시각 탐색 연구에서는 이때 탐색 시간이 도형 수에 따라 뚜렷하게 늘어나며, "없음" 답에서 가장 많이 늘어나요.',
   'summary.note': '이것은 연습용 활동이에요. 결과는 피로, 기기, 시간대에 따라 자연스럽게 달라져요.'
 };
 
@@ -465,6 +529,14 @@ const ja: Catalogue = {
     '特徴探索：目標は他のすべての図形と特徴が1つだけ違うため、たいていひと目で目立ちます。視覚探索の研究では、このとき探索時間は図形の数が増えてもほとんど伸びません。',
   'explain.conjunction':
     '結合探索：目標は特徴の組み合わせだけが違うため、ふつうは図形を1つずつ確かめる必要があります。このとき探索時間は図形の数とともに伸びることが多く、すべての図形を除外する必要があるため「ない」の答えが最も時間がかかります。',
+  'difficulty.expert': 'エキスパート（L字の中からT字）',
+  'shape.tee': 'T字',
+  'shape.ell': 'L字',
+  'tilt.r90': '90°回転',
+  'tilt.r180': '180°回転',
+  'tilt.r270': '270°回転',
+  'features.anyRotation': '{shape}、{fill}、どの向きでも',
+  'explain.configuration': '空間配置の探索：T字とL字は同じ2本の線でできていて、あらゆる向きで現れるため、一つの特徴だけでは目立たず、図形を一つずつよく見る必要があります。視覚探索の研究では、このとき探索時間は図形の数とともにはっきり増え、「ない」の回答で最も大きく増えます。',
   'summary.note': 'これは練習用のエクササイズです。結果は疲れ、端末、時間帯によって自然に変わります。'
 };
 
@@ -516,6 +588,14 @@ const ar: Catalogue = {
     'البحث بالخاصية: اختلف الهدف عن كل الأشكال الأخرى في خاصية واحدة، لذلك يبرز عادةً من النظرة الأولى. في أبحاث البحث البصري لا يكاد زمن البحث حينها يزداد مع عدد الأشكال.',
   'explain.conjunction':
     'البحث بالتركيب: اختلف الهدف فقط بتركيبة خصائصه، لذلك يلزم عادةً فحص الأشكال واحدًا تلو الآخر. يزداد زمن البحث حينها عادةً مع عدد الأشكال، وتستغرق إجابات «غير موجود» أطول وقت لأن كل شكل يجب استبعاده.',
+  'difficulty.expert': 'خبير (T بين أشكال L)',
+  'shape.tee': 'شكل T',
+  'shape.ell': 'شكل L',
+  'tilt.r90': 'مُدار بزاوية 90°',
+  'tilt.r180': 'مُدار بزاوية 180°',
+  'tilt.r270': 'مُدار بزاوية 270°',
+  'features.anyRotation': '{shape}، {fill}، بأي دوران',
+  'explain.configuration': 'بحث الترتيب المكاني: يتكوّن الشكلان T وL من الخطين نفسيهما ويظهران بكل الاتجاهات، لذلك لا تبرز أي سمة وحدها ويجب النظر إلى كل شكل بعناية. في أبحاث البحث البصري يزداد وقت البحث حينها بوضوح مع عدد الأشكال، وأكثر ما يزداد في إجابات "غير موجود".',
   'summary.note': 'هذا تمرين للممارسة. تختلف النتائج طبيعيًا باختلاف التعب والجهاز ووقت اليوم.'
 };
 
@@ -567,6 +647,14 @@ const pt: Catalogue = {
     'Busca por característica: o alvo diferia de todas as outras formas em uma única característica, por isso costuma se destacar à primeira vista. Na pesquisa sobre busca visual, o tempo de busca então quase não cresce com o número de formas.',
   'explain.conjunction':
     'Busca por conjunção: o alvo diferia apenas pela combinação de características, então normalmente é preciso verificar as formas uma após a outra. O tempo de busca costuma crescer com o número de formas, e as respostas "Não está" demoram mais, porque cada forma precisa ser descartada.',
+  'difficulty.expert': 'Especialista (T entre formas de L)',
+  'shape.tee': 'Forma de T',
+  'shape.ell': 'Forma de L',
+  'tilt.r90': 'girada 90°',
+  'tilt.r180': 'girada 180°',
+  'tilt.r270': 'girada 270°',
+  'features.anyRotation': '{shape}, {fill}, em qualquer rotação',
+  'explain.configuration': 'Busca de configuração espacial: o T e o L são feitos dos mesmos dois traços e aparecem em todas as rotações, por isso nenhuma característica isolada se destaca e cada forma tem de ser vista com atenção. Na pesquisa sobre busca visual, o tempo de busca cresce então claramente com o número de formas, sobretudo nas respostas "Não está".',
   'summary.note': 'Este é um exercício de prática. Os resultados variam naturalmente com o cansaço, o dispositivo e a hora do dia.'
 };
 
@@ -618,6 +706,14 @@ const it: Catalogue = {
     'Ricerca per caratteristica: il bersaglio differiva da tutte le altre forme per una sola caratteristica, quindi di solito salta all’occhio subito. Nella ricerca sulla ricerca visiva, il tempo di ricerca allora cresce appena con il numero di forme.',
   'explain.conjunction':
     'Ricerca per congiunzione: il bersaglio differiva solo per la combinazione di caratteristiche, quindi di solito le forme vanno controllate una dopo l’altra. Il tempo di ricerca allora tende a crescere con il numero di forme, e le risposte «Non c’è» sono le più lente, perché ogni forma va esclusa.',
+  'difficulty.expert': 'Esperto (T tra forme a L)',
+  'shape.tee': 'Forma a T',
+  'shape.ell': 'Forma a L',
+  'tilt.r90': 'ruotata di 90°',
+  'tilt.r180': 'ruotata di 180°',
+  'tilt.r270': 'ruotata di 270°',
+  'features.anyRotation': '{shape}, {fill}, in qualsiasi rotazione',
+  'explain.configuration': 'Ricerca per configurazione spaziale: la T e la L sono fatte degli stessi due tratti e compaiono in ogni rotazione, quindi nessuna singola caratteristica spicca e ogni forma va guardata con attenzione. Nella ricerca sulla ricerca visiva, il tempo di ricerca cresce allora chiaramente con il numero di forme, soprattutto per le risposte «Non c’è».',
   'summary.note': 'Questo è un esercizio di pratica. I risultati variano naturalmente con la stanchezza, il dispositivo e l’ora del giorno.'
 };
 
@@ -669,6 +765,14 @@ const pl: Catalogue = {
     'Wyszukiwanie cechy: cel różnił się od wszystkich innych kształtów jedną cechą, więc zwykle od razu rzuca się w oczy. W badaniach nad wyszukiwaniem wzrokowym czas wyszukiwania prawie wtedy nie rośnie wraz z liczbą kształtów.',
   'explain.conjunction':
     'Wyszukiwanie koniunkcji: cel różnił się tylko połączeniem cech, więc kształty zwykle trzeba sprawdzać jeden po drugim. Czas wyszukiwania zwykle rośnie wtedy z liczbą kształtów, a odpowiedzi „Nie ma” trwają najdłużej, bo trzeba wykluczyć każdy kształt.',
+  'difficulty.expert': 'Ekspert (T wśród kształtów L)',
+  'shape.tee': 'Kształt T',
+  'shape.ell': 'Kształt L',
+  'tilt.r90': 'obrócony o 90°',
+  'tilt.r180': 'obrócony o 180°',
+  'tilt.r270': 'obrócony o 270°',
+  'features.anyRotation': '{shape}, {fill}, w dowolnym obrocie',
+  'explain.configuration': 'Wyszukiwanie konfiguracji przestrzennej: T i L składają się z tych samych dwóch kresek i pojawiają się w każdym obrocie, więc żadna pojedyncza cecha się nie wyróżnia i każdemu kształtowi trzeba się dokładnie przyjrzeć. W badaniach nad wyszukiwaniem wzrokowym czas szukania wyraźnie rośnie wtedy z liczbą kształtów, najbardziej przy odpowiedziach „Nie ma”.',
   'summary.note': 'To ćwiczenie praktyczne. Wyniki naturalnie zależą od zmęczenia, urządzenia i pory dnia.'
 };
 
@@ -720,6 +824,14 @@ const tr: Catalogue = {
     'Özellik araması: hedef diğer tüm şekillerden tek bir özellikte farklıydı, bu yüzden genellikle ilk bakışta göze çarpar. Görsel arama araştırmalarında arama süresi bu durumda şekil sayısıyla neredeyse hiç artmaz.',
   'explain.conjunction':
     'Birleşim araması: hedef yalnızca özelliklerinin birleşimiyle farklıydı, bu yüzden şekiller genellikle tek tek kontrol edilmelidir. Arama süresi bu durumda genellikle şekil sayısıyla artar ve "Yok" yanıtları en uzun sürer, çünkü her şeklin elenmesi gerekir.',
+  'difficulty.expert': 'Uzman (L şekilleri arasında T)',
+  'shape.tee': 'T şekli',
+  'shape.ell': 'L şekli',
+  'tilt.r90': '90° döndürülmüş',
+  'tilt.r180': '180° döndürülmüş',
+  'tilt.r270': '270° döndürülmüş',
+  'features.anyRotation': '{shape}, {fill}, herhangi bir dönüşte',
+  'explain.configuration': 'Uzamsal düzen araması: T ve L aynı iki çizgiden oluşur ve her dönüşte görünür, bu yüzden tek bir özellik öne çıkmaz ve her şekle dikkatle bakmak gerekir. Görsel arama araştırmalarında arama süresi bu durumda şekil sayısıyla belirgin biçimde artar, en çok da "Yok" yanıtlarında.',
   'summary.note': 'Bu bir alıştırmadır. Sonuçlar yorgunluğa, cihaza ve günün saatine göre doğal olarak değişir.'
 };
 
@@ -771,6 +883,14 @@ const uk: Catalogue = {
     'Пошук за ознакою: ціль відрізнялася від усіх інших фігур однією ознакою, тому зазвичай одразу впадає в око. За даними досліджень зорового пошуку, час пошуку тоді майже не зростає з кількістю фігур.',
   'explain.conjunction':
     'Пошук за поєднанням ознак: ціль відрізнялася лише поєднанням ознак, тому фігури зазвичай доводиться перевіряти одну за одною. Час пошуку тоді, як правило, зростає з кількістю фігур, а відповіді «Немає на полі» займають найбільше часу, бо треба виключити кожну фігуру.',
+  'difficulty.expert': 'Експерт (T серед L)',
+  'shape.tee': 'Фігура T',
+  'shape.ell': 'Фігура L',
+  'tilt.r90': 'повернута на 90°',
+  'tilt.r180': 'повернута на 180°',
+  'tilt.r270': 'повернута на 270°',
+  'features.anyRotation': '{shape}, {fill}, у будь-якому повороті',
+  'explain.configuration': 'Пошук за просторовою конфігурацією: T і L складаються з тих самих двох ліній і трапляються в будь-якому повороті, тому жодна ознака не виділяється і кожну фігуру треба уважно роздивитися. У дослідженнях зорового пошуку час пошуку тоді помітно зростає з кількістю фігур, найбільше для відповідей «Немає на полі».',
   'summary.note': 'Це тренувальна вправа. Результати природно змінюються залежно від втоми, пристрою та часу доби.'
 };
 
@@ -822,6 +942,14 @@ const hi: Catalogue = {
     'विशेषता खोज: लक्ष्य बाकी सभी आकृतियों से केवल एक विशेषता में अलग था, इसलिए वह अक्सर पहली नज़र में दिख जाता है। दृश्य खोज के शोध में तब खोज का समय आकृतियों की संख्या के साथ लगभग नहीं बढ़ता।',
   'explain.conjunction':
     'संयोजन खोज: लक्ष्य केवल अपनी विशेषताओं के मेल से अलग था, इसलिए आमतौर पर आकृतियों को एक-एक करके जाँचना पड़ता है। तब खोज का समय आमतौर पर आकृतियों की संख्या के साथ बढ़ता है, और "नहीं है" वाले उत्तर सबसे ज़्यादा समय लेते हैं, क्योंकि हर आकृति को खारिज करना होता है।',
+  'difficulty.expert': 'विशेषज्ञ (L आकृतियों के बीच T)',
+  'shape.tee': 'T आकृति',
+  'shape.ell': 'L आकृति',
+  'tilt.r90': '90° घुमाई हुई',
+  'tilt.r180': '180° घुमाई हुई',
+  'tilt.r270': '270° घुमाई हुई',
+  'features.anyRotation': '{shape}, {fill}, किसी भी घुमाव में',
+  'explain.configuration': 'स्थानिक विन्यास खोज: T और L एक जैसी दो रेखाओं से बने हैं और हर घुमाव में दिखते हैं, इसलिए कोई अकेली विशेषता अलग नहीं दिखती और हर आकृति को ध्यान से देखना पड़ता है। दृश्य खोज के शोध में तब खोज का समय आकृतियों की संख्या के साथ स्पष्ट रूप से बढ़ता है, सबसे ज़्यादा "नहीं है" वाले उत्तरों में।',
   'summary.note': 'यह एक अभ्यास है। थकान, डिवाइस और दिन के समय के साथ परिणाम स्वाभाविक रूप से बदलते हैं।'
 };
 

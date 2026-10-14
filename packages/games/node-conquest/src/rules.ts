@@ -60,8 +60,12 @@ export const PRODUCED_KIND: Record<NodeType, UnitKind> = { standard: 0, shipyard
 /** History: one sample of node counts every HISTORY_EVERY ticks; above HISTORY_CAP samples every other one is dropped. */
 export const HISTORY_EVERY = 50;
 export const HISTORY_CAP = 120;
-/** A defence platform fires once every SHOT_INTERVAL ticks at the nearest hostile unit in range. */
-export const SHOT_INTERVAL = 6;
+/**
+ * A defence platform fires once every SHOT_INTERVAL ticks at the nearest hostile unit in range.
+ * (6 until state version 2: a full platform then shot down a single stream of drones completely,
+ * which froze fronts where a lone lane ended at a platform.)
+ */
+export const SHOT_INTERVAL = 9;
 export const SHOT_DAMAGE = 1;
 export const RANGE_BASE = 70;
 export const RANGE_PER_LEVEL = 3;
@@ -134,6 +138,8 @@ export interface NcState {
   hist: History;
   /** [tick, faction] of the first conversion of the centre node, or []. */
   centre: number[];
+  /** Tick of the most recent change of node ownership (0 before the first one). */
+  moved: number;
 }
 
 export type Refusal = 'finished' | 'notOwn' | 'notAdjacent' | 'limit' | 'reverse' | 'self';
@@ -198,7 +204,8 @@ export function createGame(seed: number, options: GameOptions = {}): NcState {
     result: 'playing',
     stats: emptyStats(),
     hist: { start: 0, every: HISTORY_EVERY, rows: [countsOf({ owner }, map.factions)] },
-    centre: []
+    centre: [],
+    moved: 0
   };
 }
 
@@ -437,6 +444,7 @@ function capture(s: NcState, map: GameMap, v: number, f: number, events: StepEve
   events.captures.push([v, f, s.owner[v]!]);
   if (f === 0) s.stats.captured++;
   if (v === map.center && s.centre.length === 0) s.centre = [s.tick + 1, f];
+  s.moved = s.tick + 1;
   s.owner[v] = f;
   s.level[v] = 1;
   s.out[v] = [];
@@ -548,6 +556,12 @@ export function accountedUnits(s: NcState): number {
 
 export const seconds = (s: Pick<NcState, 'tick'>): number => Math.floor(s.tick / TICKS_PER_SECOND);
 
+/** After this many ticks without any change of node ownership (5 minutes of game time) the view names the standoff. */
+export const STANDOFF_TICKS = 3000;
+/** Ticks since a node last changed owner (since the start before the first change). */
+export const quietTicks = (s: Pick<NcState, 'tick' | 'moved'>): number => s.tick - s.moved;
+export const isStandoff = (s: Pick<NcState, 'tick' | 'moved' | 'result'>): boolean => s.result === 'playing' && quietTicks(s) >= STANDOFF_TICKS;
+
 /* ---------- Validation of untrusted saves ---------- */
 
 const STAT_KEYS: readonly (keyof Stats)[] = ['produced', 'reinforced', 'passed', 'absorbed', 'hits', 'fought', 'shot', 'captured'];
@@ -567,7 +581,7 @@ function validate(value: unknown): value is NcState {
   if (!isUint32(s.seed) || !isOneOf(s.difficulty, DIFFICULTIES) || !isOneOf(s.opponents, OPPONENT_COUNTS)) return false;
   if (!isInt(s.map, INTRO_MAP, MAPS_PER_SET - 1) || !isOneOf(s.layout, LAYOUTS)) return false;
   if (s.map === INTRO_MAP && (s.opponents !== 1 || s.layout !== 2)) return false;
-  if (!isCount(s.tick) || !isOneOf(s.speed, [1, 2]) || !isUint32(s.rng) || !isOneOf(s.result, RESULTS)) return false;
+  if (!isCount(s.tick) || !isInt(s.moved, 0, s.tick as number) || !isOneOf(s.speed, [1, 2]) || !isUint32(s.rng) || !isOneOf(s.result, RESULTS)) return false;
   if (!isRecord(s.stats) || !STAT_KEYS.every((k) => isCount((s.stats as Record<string, unknown>)[k]))) return false;
   const map = mapOf(s as unknown as NcState);
   const n = map.nodes.length;
@@ -622,7 +636,7 @@ function validHistory(value: unknown, tick: number, factions: number, n: number)
   return true;
 }
 
-/* ---------- Saves from state version 1 ---------- */
+/* ---------- Saves from older state versions ---------- */
 
 /**
  * Version 1 stored `difficulty` easy/medium/hard, which fixed both the number of opponents (1/2/3)
@@ -637,8 +651,17 @@ export const V1_MAPPING: Record<string, [Difficulty, OpponentCount]> = {
   hard: ['advanced', 3]
 };
 
+/**
+ * Version 2 had no `moved` (tick of the last change of ownership). Migrated matches count it from
+ * 0, so a resumed standoff is recognised (and the opponents start to concentrate) right away.
+ */
 export function migrateState(old: unknown, fromVersion: number): NcState | undefined {
   try {
+    if (fromVersion === 2) {
+      if (!isRecord(old)) return undefined;
+      const next = { ...old, moved: 0 };
+      return isValidState(next) ? next : undefined;
+    }
     if (fromVersion !== 1 || !isRecord(old) || typeof old.difficulty !== 'string') return undefined;
     const mapping = Object.hasOwn(V1_MAPPING, old.difficulty) ? V1_MAPPING[old.difficulty] : undefined;
     if (!mapping || !Array.isArray(old.owner) || !isInt(old.tick, 0) || !isInt(old.map, 0, MAPS_PER_SET - 1)) return undefined;
@@ -652,7 +675,8 @@ export function migrateState(old: unknown, fromVersion: number): NcState | undef
       layout: 1,
       half: owner.map(() => 0),
       hist: { start: old.tick, every: HISTORY_EVERY, rows: [countsOf({ owner: owner.map((o) => (isInt(o, -1, factions - 1) ? o : -1)) }, factions)] },
-      centre: []
+      centre: [],
+      moved: 0
     };
     return isValidState(next) ? next : undefined;
   } catch {

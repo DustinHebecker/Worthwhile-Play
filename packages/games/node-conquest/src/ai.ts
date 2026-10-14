@@ -45,6 +45,12 @@ import {
  * free-for-all rewards different things: e.g. strong then uses the reply-aware simulation as well.
  * Every rival (player or opponent) is treated alike; preferring the weakest one applies to all.
  *
+ * Standoffs: when no node has changed owner for a while (`focus` ticks: master soonest, beginner
+ * latest), every level concentrates its front on one target (see focusTarget/focusCommands): the
+ * own neighbours of the target send only there, other own nodes use free path capacity to feed
+ * them, and only defence keeps running beside it. Without this, evenly matched fronts settled into
+ * equilibria where every stream was met head-on or shot down and nothing ever changed hands.
+ *
  * Cost is bounded by a fixed simulation budget (units + nodes summed over simulated ticks), never
  * by wall-clock time, so results do not depend on the device.
  */
@@ -95,7 +101,22 @@ export interface AiProfile {
   weakest: boolean;
   /** Introduction opponent: only reinforces its own nodes when attacked. */
   passive: boolean;
+  /**
+   * Ticks without any change of node ownership after which the opponent concentrates its front on
+   * one target (0 = never). Breaks standoffs where every stream is met head-on or shot down.
+   */
+  focus: number;
 }
+
+/**
+ * Standoffs: after `focus` quiet ticks (no node changed owner) an opponent concentrates on one
+ * target. It picks among the FOCUS_CHOICES cheapest targets and moves on to the next one every
+ * FOCUS_ROTATION quiet ticks; rivals start at different ranks, so mirrored opponents on a
+ * symmetric map do not freeze each other's fronts in the same pattern.
+ */
+export const FOCUS_CHOICES = 3;
+export const FOCUS_ROTATION = 600;
+const FOCUS: Record<Difficulty, number> = { beginner: 1200, advanced: 900, strong: 600, master: 450 };
 
 const BASE: AiProfile = {
   period: 25,
@@ -109,17 +130,19 @@ const BASE: AiProfile = {
   aware: false,
   lookahead: null,
   weakest: false,
-  passive: false
+  passive: false,
+  focus: 0
 };
 
 export const PROFILES: Record<Difficulty, AiProfile> = {
-  beginner: { ...BASE, period: 40, actions: 1, hesitation: 0.1, attackLevel: 6, frontierOnly: true, impulsive: 0.45 },
-  advanced: { ...BASE, period: 35, actions: 2, hesitation: 0.2, attackLevel: 12, counter: true, defend: true, aware: true },
+  beginner: { ...BASE, period: 40, actions: 1, hesitation: 0.1, attackLevel: 6, frontierOnly: true, impulsive: 0.45, focus: FOCUS.beginner },
+  advanced: { ...BASE, period: 35, actions: 2, hesitation: 0.2, attackLevel: 12, counter: true, defend: true, aware: true, focus: FOCUS.advanced },
   strong: {
     ...BASE,
     period: 25,
     actions: 2,
     attackLevel: 14,
+    focus: FOCUS.strong,
     counter: true,
     defend: true,
     aware: true,
@@ -130,6 +153,7 @@ export const PROFILES: Record<Difficulty, AiProfile> = {
     period: 10,
     actions: 3,
     attackLevel: 16,
+    focus: FOCUS.master,
     counter: true,
     defend: true,
     aware: true,
@@ -348,6 +372,79 @@ export function options(s: NcState, map: GameMap, faction: number, profile: AiPr
   return sortOptions(result);
 }
 
+/**
+ * The target a stalled faction concentrates on: a non-own node next to its sending nodes, ranked
+ * by cost (effective level + 10 per hostile helper next to it + 15 per hostile platform at or next
+ * to it − 20 per own sending neighbour; the lower index on ties). -1 when there is none.
+ */
+export function focusTarget(s: NcState, map: GameMap, faction: number, rank = 0): number {
+  const found: [number, number][] = [];
+  for (let t = 0; t < map.nodes.length; t++) {
+    const o = s.owner[t]!;
+    if (o === faction) continue;
+    let attackers = 0;
+    let helpers = 0;
+    let platforms = map.nodes[t]!.type === 'station' && o >= 0 ? 1 : 0;
+    for (const w of map.adjacent[t]!) {
+      if (s.owner[w] === faction) attackers += canSendFrom(s, map, w) ? 1 : 0;
+      else if (o >= 0 && s.owner[w] === o) {
+        helpers++;
+        if (map.nodes[w]!.type === 'station') platforms++;
+      }
+    }
+    if (attackers === 0) continue;
+    found.push([effectiveLevel(map, s, t) + 10 * helpers + 15 * platforms - 20 * attackers, t]);
+  }
+  if (found.length === 0) return -1;
+  found.sort((x, y) => x[0] - y[0] || x[1] - y[1]);
+  // Rank r picks the r-th cheapest target, cycling through the first FOCUS_CHOICES.
+  return found[rank % Math.min(found.length, FOCUS_CHOICES)]![1];
+}
+
+const canSendFrom = (s: NcState, map: GameMap, v: number): boolean => map.nodes[v]!.type !== 'station' || s.level[v] === MAX_LEVEL;
+
+/**
+ * Commands that turn every own neighbour of `target` into a single stream towards it: their
+ * other paths into non-own nodes stop (so everything they relay goes to the target), then the
+ * path to the target starts (stopping a path into an own node first when the limit is reached).
+ */
+export function focusCommands(s: NcState, map: GameMap, faction: number, target: number): Command[] {
+  const cmds: Command[] = [];
+  for (const v of map.adjacent[target]!) {
+    if (s.owner[v] !== faction || !canSendFrom(s, map, v)) continue;
+    const paths = s.out[v]!;
+    for (const t of paths) if (t !== target && s.owner[t] !== faction) cmds.push({ from: v, to: t });
+    if (paths.includes(target)) continue;
+    const kept = paths.filter((t) => t === target || s.owner[t] === faction);
+    if (kept.length >= maxPaths(s.level[v]!)) cmds.push({ from: v, to: kept[kept.length - 1]! });
+    cmds.push({ from: v, to: target });
+  }
+  // Every other own node uses its free path capacity to feed the nodes next to the target.
+  const dist = s.owner.map((): number => -1);
+  dist[target] = 0;
+  const queue = [target];
+  for (let q = 0; q < queue.length; q++) {
+    const w = queue[q]!;
+    for (const v of map.adjacent[w]!) {
+      if (dist[v] !== -1 || s.owner[v] !== faction) continue;
+      dist[v] = dist[w]! + 1;
+      queue.push(v);
+    }
+  }
+  for (const v of queue) {
+    if (dist[v]! < 2 || !canSendFrom(s, map, v)) continue;
+    const free = maxPaths(s.level[v]!) - s.out[v]!.length;
+    let added = 0;
+    for (const w of map.adjacent[v]!) {
+      if (added >= free) break;
+      if (s.owner[w] !== faction || dist[w]! >= dist[v]! || s.out[v]!.includes(w) || s.out[w]!.includes(v)) continue;
+      cmds.push({ from: v, to: w });
+      added++;
+    }
+  }
+  return cmds;
+}
+
 const sortOptions = (list: Option[]): Option[] => list.map((o, i) => [o, i] as const).sort((a, b) => b[0].score - a[0].score || a[1] - b[1]).map(([o]) => o);
 
 /** Applies the commands of an option to `work` (all or nothing); true when every change applied. */
@@ -449,8 +546,13 @@ function policyFor(factions: number): Controller {
 export function decide(s: NcState, map: GameMap, faction: number, profile: AiProfile, rng: Rng): Command[] {
   lastPlan.ticks = 0;
   lastPlan.work = 0;
-  const list = options(s, map, faction, profile, rng);
-  if (list.length === 0) return [];
+  const quiet = s.tick - s.moved - profile.focus;
+  const target = profile.focus > 0 && quiet >= 0 ? focusTarget(s, map, faction, Math.floor(quiet / FOCUS_ROTATION) + ((faction + 1) % map.factions)) : -1;
+  let list = options(s, map, faction, profile, rng);
+  if (target >= 0) {
+    // Concentrate: only defence and housekeeping stay; nothing else opens a second front.
+    list = list.filter((o) => o.score >= 200);
+  }
   const work: NcState = { ...s, out: s.out.map((o) => [...o]) };
   const commands: Command[] = [];
   const take = (cmds: readonly Command[]): boolean => {
@@ -472,6 +574,16 @@ export function decide(s: NcState, map: GameMap, faction: number, profile: AiPro
     used.add(from);
     for (const c of option.cmds) changed.add(`${c.from}-${c.to}`);
   };
+  if (target >= 0) {
+    for (const c of focusCommands(s, map, faction, target)) {
+      if (commands.length >= profile.actions) break;
+      const { outcome } = toggleMut(work, map, faction, c.from, c.to);
+      if (outcome !== 'on' && outcome !== 'off') continue;
+      commands.push(c);
+      changed.add(`${c.from}-${c.to}`);
+    }
+  }
+  if (list.length === 0) return commands;
 
   const look = profile.lookahead;
   if (!look) {
