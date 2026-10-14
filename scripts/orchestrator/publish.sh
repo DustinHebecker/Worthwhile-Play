@@ -20,7 +20,7 @@ git fetch -q origin main
 rm -rf "$W"; git worktree prune
 git worktree add -q --detach "$W" HEAD
 cd "$W"
-if git grep -l "@ts-nocheck" -- . ":!node_modules" >/dev/null; then echo "ABORT: committed files contain @ts-nocheck (in-place Stryker leftovers)"; exit 1; fi
+if git grep -l "@ts-nocheck" -- "*.ts" "*.tsx" ":!node_modules" >/dev/null; then echo "ABORT: committed files contain @ts-nocheck (in-place Stryker leftovers)"; exit 1; fi
 for g in "$@"; do
   find "packages/games/$g" -mindepth 1 -maxdepth 1 ! -name package.json -exec rm -rf {} +; rm -f "e2e/games/$g.spec.ts"
   git checkout -q origin/main -- "packages/games/$g" 2>/dev/null || true
