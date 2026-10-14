@@ -88,7 +88,7 @@ Catalogue order (done): the large games first (Relay Command; then strategy/towe
 | Black Box | allow stating the rule as a formula instead of only predicting example outputs | 🚧 |
 | Nonogram | a harder level, e.g. 15×15 | ✅ Expert 15×15: line-solvable, unique, at least 7 solver rounds (hard: ~3); "larger cells" option on phones |
 | Crate Pusher | more levels | 🚧 |
-| Laser Paths | far too easy even on hard: more optical elements, many more pieces to place | 🚧 |
+| Laser Paths | far too easy even on hard: more optical elements, many more pieces to place | ✅ one-way gates and portal pairs; 4 new hard levels (5–6 pieces) and an Expert set (8 levels, 7×9, 7–8 pieces), each unique by an exact solver |
 | Review / AI basics | prompts appear in the learning language; they should be in the main (UI) language | ✅ Flags, Capitals and AI basics always in the UI language (Review, Memory, deck pages); only First words uses the learning language |
 | Four in a Row | far too hard even on easy | ✅ easy overlooks some threats and plays casual moves; each level beats the one below by a measured margin |
 | Orbit Links | already good, but frequent stalemates | 🚧 |
