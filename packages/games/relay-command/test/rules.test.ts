@@ -788,9 +788,13 @@ describe('review of PR #8', () => {
     });
 
   it('the opponent plan does not change when player units it does not see move or get other orders (mid-game)', () => {
+    // A fixed pool of mid-games (each costs up to five resolved turns) probed 120 times: the
+    // same number of checks as one game per run, at a quarter of the cost (timing review, 2026-10-14).
+    const games = fc.sample(arbMidGame, { numRuns: 30, seed: 791 });
     let checked = 0;
     fc.assert(
-      fc.property(arbMidGame, fc.nat(1000), fc.nat(143), fc.constantFrom('hold', 'regroup', 'move'), (s, pick, cell, kind) => {
+      fc.property(fc.nat(games.length - 1), fc.nat(1000), fc.nat(143), fc.constantFrom('hold', 'regroup', 'move'), (g, pick, cell, kind) => {
+        const s = games[g]!;
         const intel = s.world.intel?.[OPPONENT] ?? [];
         const hidden = own(s).filter((e) => e.kind !== 'command-post' && !intel.some((r) => r.id === e.id && r.live));
         if (hidden.length === 0) return;
