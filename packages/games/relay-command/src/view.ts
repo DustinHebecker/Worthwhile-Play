@@ -39,6 +39,7 @@ import {
   newGame,
   opponentValue,
   orderRefusal,
+  rulesOf,
   orderSlots,
   outcome,
   picture,
@@ -121,7 +122,9 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   const known = (id: number): Entity | undefined => world().entities.find((e) => e.id === id);
   const unitName = (e: Pick<Entity, 'kind' | 'id'>) => t('unit.name', { name: t(`unit.${e.kind}`), id: e.id });
   /** Several sides: every side has a letter (A = you) and a name besides its colour (never colour alone). */
-  const several = (): boolean => state.opponents > 1 || state.world.entities.some((e) => e.side === NEUTRAL);
+  // A fixed property of the game (its opponents and rules), never of what is left on the map: whether
+  // a neutral post still stands must not show in the interface (review of PR #23).
+  const several = (): boolean => state.opponents > 1 || rulesOf(state).capture === true;
   const sideMark = (side: number): string => (side === NEUTRAL ? 'N' : (SIDE_MARKS[side] ?? '?'));
   const sideName = (side: number): string =>
     side === PLAYER ? t('side.own') : side === NEUTRAL ? t('side.neutral') : several() ? t('side.opponent', { mark: sideMark(side) }) : t('side.enemy');
@@ -1080,7 +1083,9 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
         if (e.side === PLAYER) taken += e.damage;
         else dealt += e.damage;
       } else if (e.t === 'bump') {
-        if (unitById(state, e.id)?.side === PLAYER) bumps += 1;
+        // As before several sides: every bump told to the player except a known enemy's (own units, also lost ones).
+        const side = unitById(state, e.id)?.side;
+        if (side === undefined || side === PLAYER) bumps += 1;
       } else if (e.t === 'destroyed') {
         lines.push(t(e.side === PLAYER ? 'summary.lostUnit' : 'summary.destroyedUnit', { name: unitName(e) }));
       } else if (e.t === 'income') {

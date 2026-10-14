@@ -3,8 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { GameInstance, GameModule } from '@wp/game-core';
 import { createTestContext, createTestLibrary, type TestContext } from '@wp/testing';
 import game from '../src/index';
-import { initialIntel, passable, type Entity } from '@wp/strategy-engine';
-import { concede, lockTurn, OPPONENT, PLAYER, RULESET, sideValue, STALL_TURNS, stalemateTurns, type RcState } from '../src/rules';
+import { initialIntel, NEUTRAL, passable, type Entity } from '@wp/strategy-engine';
+import { concede, lockTurn, newGame, OPPONENT, PLAYER, RULESET, sideValue, STALL_TURNS, stalemateTurns, type RcState } from '../src/rules';
+import { SCENARIOS } from '../src/scenarios';
 import { CELL } from '../src/view';
 
 let ctx: TestContext;
@@ -53,6 +54,21 @@ afterEach(() => {
 });
 
 describe('Relay Command view', () => {
+  it('side letters are a fixed property of the game: they stay when the neutral posts are gone out of sight (review of PR #23)', () => {
+    const corners = SCENARIOS.find((spec) => spec.id === 'four-corners')!;
+    const s = newGame(1, corners, 'normal', 12, false, null, 1);
+    instance.restore(s);
+    const marks = () => ctx.context.root.querySelectorAll('[data-testid^="rc-mark-"]').length;
+    const before = marks();
+    expect(before).toBeGreaterThan(0);
+    // Both neutral posts destroyed where the player cannot see: its reports still show them.
+    const gone = structuredClone(s);
+    gone.world.entities = gone.world.entities.filter((e) => e.side !== NEUTRAL);
+    instance.restore(gone);
+    expect(marks()).toBe(before);
+    expect(ctx.context.root.textContent).toContain('Opponent B');
+  });
+
   it('renders the turn, the status, both unit lists and the map', () => {
     expect($('rc-turn').textContent).toBe('Turn 1');
     expect($('rc-status').getAttribute('data-phase')).toBe('plan');

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { createRng, isRecord } from '@wp/game-core';
-import { BASE_RULESET, NEUTRAL, canonicalJson, cellOf, findPath, observe, passable, DEFAULT_DOCTRINE, computeNetwork, createWorld, initialIntel, observedCells, resolveTurn, validateCommand, worldHash, type Command, type World } from '@wp/strategy-engine';
-import { DIFFICULTIES, planAi, type Difficulty } from '../src/ai';
+import { BASE_RULESET, NEUTRAL, canonicalJson, cellOf, findPath, observe, passable, DEFAULT_DOCTRINE, computeNetwork, createWorld, initialIntel, observedCells, resolveTurn, validateCommand, worldHash, type Command, type Entity, type Order, type World } from '@wp/strategy-engine';
+import { DIFFICULTIES, objectiveOf, planAi, type Difficulty } from '../src/ai';
 import {
   cancelOrder,
   canSettle,
@@ -44,6 +44,7 @@ import {
   initialWorld,
   rulesetFor,
   SIDES_RULESET,
+  strongestOpponent,
 } from '../src/rules';
 import { FIELD_EXERCISE, opponentCounts, RIDGE_VALLEY, type ScenarioSpec, SCENARIOS } from '../src/scenarios';
 
@@ -1147,6 +1148,89 @@ describe('several sides (docs/design/strategy.md § 9.4)', () => {
     expect(s.world.entities.find((e) => e.id === post.id)?.hp).toBe(hp);
   });
 
+  it('every seat plans alike: on the map turned a quarter, the next seat\'s plan is the turned plan (AI uses its seat\'s frame)', () => {
+    // Quarter turn of Four Corners carries seat k onto seat k+1; the map itself is the same.
+    const n = 16;
+    const at = (x: number, y: number): [number, number] => [n - 1 - y, x];
+    const cell = (c: number) => {
+      const [x, y] = at(c % n, Math.floor(c / n));
+      return y * n + x;
+    };
+    const next = (side: number) => (side === NEUTRAL ? NEUTRAL : (side + 1) % 4);
+    const order = (o: Order): Order => {
+      if (o.type === 'move' || o.type === 'build') {
+        const [x, y] = at(o.x, o.y);
+        return { ...o, x, y };
+      }
+      if (o.type === 'patrol') {
+        const [x, y] = at(o.x, o.y);
+        const [rx, ry] = at(o.rx, o.ry);
+        return { ...o, x, y, rx, ry };
+      }
+      return o;
+    };
+    const turned = (w: World): World => {
+      const perm = <T,>(list: readonly T[]): T[] => {
+        const out = [...list];
+        list.forEach((v, s) => (out[next(s)] = v));
+        return out;
+      };
+      return {
+        ...structuredClone(w),
+        map: { ...w.map, deposits: (w.map.deposits ?? []).map((d) => ({ ...d, x: at(d.x, d.y)[0], y: at(d.x, d.y)[1] })).sort((a, b) => a.y * n + a.x - (b.y * n + b.x)) },
+        ...(w.supply && { supply: perm(w.supply) }),
+        ...(w.out && { out: w.out.map(next).sort((a, b) => a - b) }),
+        entities: w.entities.map((e) => ({
+          ...structuredClone(e),
+          side: next(e.side),
+          x: at(e.x, e.y)[0],
+          y: at(e.x, e.y)[1],
+          order: order(e.order),
+          ...(e.stall && { stall: { ...e.stall, goal: e.stall.goal < n * n ? cell(e.stall.goal) : e.stall.goal } }),
+          ...(e.prev !== undefined && { prev: cell(e.prev) })
+        })),
+        projectiles: w.projectiles.map((p) => ({ ...p, side: next(p.side), x: at(p.x, p.y)[0], y: at(p.x, p.y)[1] })),
+        ...(w.intel && { intel: perm(w.intel.map((list) => list.map((r) => ({ ...r, side: next(r.side), x: at(r.x, r.y)[0], y: at(r.x, r.y)[1] })))) })
+      };
+    };
+    const rules = SIDES_RULESET;
+    for (const level of ['normal', 'hard'] as const) {
+      let s = newGame(1, corners, level, 30, false, null, 3);
+      for (let t = 0; t < 12 && s.phase === 'plan'; t++) {
+        const r = turned(s.world);
+        for (let side = 0; side < 4; side++) {
+          if (s.world.out?.includes(side)) continue;
+          const plan = planAi(observe(s.world, rules, side), rules, level).map((c) => ({ ...c, side: next(c.side), order: order(c.order) }));
+          expect(planAi(observe(r, rules, next(side)), rules, level), `${level} turn ${t} seat ${side}`).toEqual(plan);
+        }
+        s = lockTurn(s);
+      }
+    }
+  });
+
+  it('the opponent goes for the nearest enemy post it knows of; the strongest opponent is the one with most strength', () => {
+    const s = newGame(1, corners, 'normal', 30, false, null, 3);
+    // Seat 1 (top left) is as close to the player (bottom left) as to seat 2 (top right); seat 2 to seats 1 and 3.
+    const posts = (side: number) => s.world.entities.find((e) => e.side === side && e.kind === 'command-post')!;
+    const target = (side: number) => objectiveOf(observe(s.world, SIDES_RULESET, side))!;
+    const d = (a: Entity, b: Entity) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
+    for (const side of [1, 2, 3]) {
+      const chosen = target(side);
+      const others = [0, 1, 2, 3].filter((x) => x !== side).map(posts);
+      expect(d(chosen, posts(side))).toBe(Math.min(...others.map((p) => d(p, posts(side)))));
+    }
+    // Without the far ones known, it still picks among what it knows: drop all but the farthest from the observation.
+    const obs = observe(s.world, SIDES_RULESET, 1);
+    const far = posts(3);
+    obs.world.entities = obs.world.entities.filter((e) => e.kind !== 'command-post' || e.side === 1 || e.id === far.id);
+    expect(objectiveOf(obs)?.id).toBe(far.id);
+    const w = structuredClone(s.world);
+    w.supply = [0, 10, 900, 20];
+    expect(strongestOpponent(w)).toBe(2);
+    w.supply = [0, 950, 900, 20];
+    expect(strongestOpponent(w)).toBe(1);
+  });
+
   it('saves: v8 migrates to v9 with one opponent; a v9 save must match its map, count, rules and frames', () => {
     const v8 = JSON.parse(JSON.stringify({ ...newGame(4), v: 8 })) as Record<string, unknown>;
     delete v8.opponents;
@@ -1158,11 +1242,21 @@ describe('several sides (docs/design/strategy.md § 9.4)', () => {
     expect(isValidState({ ...s, world: { ...s.world, frames: ['id', 'id', 'id'] } })).toBe(false);
     expect(isValidState({ ...s, world: { ...s.world, ruleset: RULESET.id } })).toBe(false);
     expect(isValidState({ ...s, world: { ...s.world, teams: [0, 1, 1] } })).toBe(false);
-    // A player-side unit turned neutral (not one of the map's empty seats) is refused.
+    // An opponent's post turned neutral (not one of the map's empty seats) is refused: in the world
+    // (its reports agreeing) and, separately, only in an old report of it (a ghost may keep a stale
+    // owner, but never claim a neutral post that is not one of the map's).
     const crafted = structuredClone(s);
-    const rifle = crafted.world.entities.find((e) => e.side === 1 && e.kind === 'command-post')!;
-    rifle.side = NEUTRAL;
-    for (const list of crafted.world.intel ?? []) for (const r of list) if (r.id === rifle.id) r.side = NEUTRAL;
+    const post = crafted.world.entities.find((e) => e.side === 1 && e.kind === 'command-post')!;
+    post.side = NEUTRAL;
+    for (const list of crafted.world.intel ?? []) for (const r of list) if (r.id === post.id) r.side = NEUTRAL;
     expect(isValidState(crafted)).toBe(false);
+    const ghost = structuredClone(s);
+    const report = ghost.world.intel![0]!.find((r) => r.id === post.id)!;
+    report.side = NEUTRAL;
+    report.live = false;
+    expect(isValidState(ghost)).toBe(false);
+    const fine = structuredClone(s);
+    fine.world.intel![0]!.find((r) => r.id === post.id)!.live = false;
+    expect(isValidState(fine)).toBe(true);
   });
 });
