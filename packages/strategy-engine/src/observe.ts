@@ -89,7 +89,7 @@ export function observe(world: World, ruleset: Ruleset, side: number): Observati
   // one is known only while a reporting unit observes it (UNKNOWN_LEFT otherwise).
   if (world.supply) known.supply = world.supply.map((v, s) => (s === side ? v : 0));
   if (world.map.deposits) {
-    known.map = { ...world.map, deposits: world.map.deposits.map((d) => ({ x: d.x, y: d.y, left: !observed || observed[cellOf(world.map, d.x, d.y)] === 1 ? d.left : UNKNOWN_LEFT })) };
+    known.map = { ...world.map, deposits: world.map.deposits.map((d) => ({ x: d.x, y: d.y, left: !observed || observed[cellOf(world.map, d.x, d.y)] === 1 ? d.left : UNKNOWN_LEFT, ...(d.endless && { endless: true as const }) })) };
   }
   return { side, ruleset: ruleset.id, world: known, ghosts, network, jammed: feltJamming(world, ruleset, side, network) };
 }

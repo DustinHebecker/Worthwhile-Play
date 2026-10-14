@@ -14,18 +14,30 @@ export const TERRAIN_NAMES: Readonly<Record<string, string>> = {
   '^': 'ridge'
 };
 
-/** A deposit: a small diamond with a dot in the cell's corner (a mark, not a colour). */
-export function drawDeposit(g: CanvasRenderingContext2D, px: number, py: number): void {
+/**
+ * A deposit: a small diamond with a dot in the cell's corner (a mark, not a colour). A rich one
+ * has a second diamond inside, an endless one a ring around the diamond (shapes, never colour).
+ */
+export function drawDeposit(g: CanvasRenderingContext2D, px: number, py: number, size: 'plain' | 'rich' | 'endless' = 'plain'): void {
   const cx = px + CELL - 9;
   const cy = py + 9;
   g.lineWidth = 1.5;
-  g.beginPath();
-  g.moveTo(cx, cy - 6);
-  g.lineTo(cx + 6, cy);
-  g.lineTo(cx, cy + 6);
-  g.lineTo(cx - 6, cy);
-  g.closePath();
-  g.stroke();
+  const diamond = (r: number) => {
+    g.beginPath();
+    g.moveTo(cx, cy - r);
+    g.lineTo(cx + r, cy);
+    g.lineTo(cx, cy + r);
+    g.lineTo(cx - r, cy);
+    g.closePath();
+    g.stroke();
+  };
+  diamond(6);
+  if (size === 'rich') diamond(3.5);
+  if (size === 'endless') {
+    g.beginPath();
+    g.arc(cx, cy, 8, 0, Math.PI * 2);
+    g.stroke();
+  }
   g.beginPath();
   g.arc(cx, cy, 1.5, 0, Math.PI * 2);
   g.fill();

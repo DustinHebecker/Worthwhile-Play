@@ -35,7 +35,7 @@ export function incomeOf(world: World, ruleset: Ruleset, e: Entity, network: Net
   if (!connected) return 0;
   if (!arch.extractor) return arch.income;
   const deposit = depositAt(world.map, e.x, e.y);
-  return deposit ? Math.min(arch.income, deposit.left) : 0;
+  return deposit ? (deposit.endless ? arch.income : Math.min(arch.income, deposit.left)) : 0;
 }
 
 /** Supply `side` will receive at the end of this turn from the world as it is now. */

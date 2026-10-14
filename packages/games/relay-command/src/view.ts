@@ -276,7 +276,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     if (!revealed() && jammed(x, y)) terrain = `${terrain} ${t('cell.jammed')}`;
     // Deposits are told in words as well; how much is left only while the cell is observed.
     const deposit = depositAt(world().map, x, y);
-    if (deposit) terrain = `${terrain} ${observedAt(x, y) ? t('cell.deposit', { n: deposit.left }) : t('cell.depositUnknown')}`;
+    if (deposit) terrain = `${terrain} ${deposit.endless ? t('cell.depositEndless') : observedAt(x, y) ? t('cell.deposit', { n: deposit.left }) : t('cell.depositUnknown')}`;
     if (units.length === 0) return t('cell.describe', { x: x + 1, y: y + 1, terrain });
     return t('cell.describeUnit', { x: x + 1, y: y + 1, terrain, unit: units.map(describeUnit).join(' ') });
   };
@@ -341,6 +341,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
    * the opponent count; several persons pass the device on each turn.
    */
   const seatsBox = h('fieldset', { class: 'rc-seats', 'data-testid': 'rc-seats' });
+  /** Game option (owner decision 2026-10-14): no deposit runs dry. */
+  const endlessInput = h('input', { type: 'checkbox', 'data-testid': 'rc-endless', onchange: () => onSetup() }) as HTMLInputElement;
   /** Several persons with an open end: such a game ends only by sides being out or giving up. */
   const hotSeatHint = h('p', { class: 'rc-hint', 'data-testid': 'rc-hotseat-hint', hidden: true }, t('setup.hotSeatOpen'));
   // The map editor opens from the setup (also after the first turn, through the fold).
@@ -352,6 +354,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     h('label', {}, h('span', {}, t('setup.scenario')), scenarioSelect),
     h('label', {}, h('span', {}, t('setup.limit')), limitSelect),
     h('label', { 'data-testid': 'rc-opponents-label' }, h('span', {}, t('setup.opponents')), opponentsSelect),
+    h('label', { class: 'rc-check' }, endlessInput, h('span', {}, t('setup.endless'))),
     seatsBox,
     hotSeatHint,
     editorBtn
@@ -466,7 +469,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     editor.forget();
     selected = null;
     const limit = state.turnLimit;
-    commit(newGame(normalizeSeed(state.seed + 1), FIELD_EXERCISE, state.difficulty, limit, state.quick, m), t('announce.setup', { scenario: mapLabel(m) }));
+    commit(newGame(normalizeSeed(state.seed + 1), FIELD_EXERCISE, state.difficulty, limit, state.quick, m, 1, [], state.endless), t('announce.setup', { scenario: mapLabel(m) }));
     homeCursor();
     render();
     canvas.focus();
@@ -602,6 +605,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     scenarioSelect.disabled = setupLocked;
     limitSelect.disabled = setupLocked;
     opponentsSelect.disabled = setupLocked;
+    endlessInput.disabled = setupLocked;
+    endlessInput.checked = state.endless;
     syncSeatRows(setupLocked);
     setupBox.toggleAttribute('data-locked', setupLocked);
     // Unlocked: the setup stands open on its own; locked: it moves into the fold (closed until opened).
@@ -617,7 +622,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     opponentsSelect.value = String(state.opponents);
     const mapText = state.map ? mapLabel(state.map) : t(`scenario.${state.scenario}`);
     const length = limitSelect.selectedOptions[0]?.textContent ?? '';
-    setupSummary.textContent = state.opponents > 1 ? t('setup.summaryOpponents', { map: mapText, length, n: state.opponents }) : t('setup.summary', { map: mapText, length });
+    const summary = state.opponents > 1 ? t('setup.summaryOpponents', { map: mapText, length, n: state.opponents }) : t('setup.summary', { map: mapText, length });
+    setupSummary.textContent = state.endless ? `${summary} · ${t('setup.endlessShort')}` : summary;
     statusEl.textContent = statusText();
     statusEl.setAttribute('data-phase', state.phase);
     slotsEl.hidden = finished;
@@ -1179,6 +1185,16 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
         }),
         t('legend.deposit')
       );
+      row(
+        swatch((g) => {
+          g.fillStyle = css('--rc-plain', '#ddd');
+          g.fillRect(0, 0, CELL, CELL);
+          g.strokeStyle = css('--rc-mark', '#00000055');
+          g.fillStyle = css('--rc-mark', '#00000055');
+          drawDeposit(g, 0, 0, 'endless');
+        }),
+        t('legend.depositEndless')
+      );
       row(swatch((g) => drawIcon(g, 'muster', 0, 0, CELL / 44, { own: true, colour: colourOwn, surface: css('--wp-surface', '#ffffff'), site: 2 })), t('legend.site'));
     }
     row(swatch((g) => drawIcon(g, 'mast-truck', 0, 0, CELL / 44, { own: true, colour: colourOwn, surface: css('--wp-surface', '#ffffff'), deployed: true })), t('legend.setUp'));
@@ -1475,7 +1491,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
         g.fillStyle = css('--rc-mark', '#00000055');
         g.lineWidth = 1.5;
         drawTerrainMark(g, name, px, py);
-        if (depositAt(w.map, x, y)) drawDeposit(g, px, py);
+        const deposit = depositAt(w.map, x, y);
+        if (deposit) drawDeposit(g, px, py, deposit.endless ? 'endless' : 'plain');
         g.strokeStyle = line;
         g.lineWidth = 1;
         g.strokeRect(px + 0.5, py + 0.5, CELL - 1, CELL - 1);
@@ -1942,7 +1959,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     const map = own && mapIssues(own).length === 0 ? own : null;
     syncOpponentOptions();
     const opponents = map ? 1 : Number(opponentsSelect.value) || 1;
-    commit(newGame(state.seed, spec, state.difficulty, limit, limitSelect.value === 'quick', map, opponents, chosenSeats()), t('announce.setup', { scenario: map ? mapLabel(map) : t(`scenario.${spec.id}`) }));
+    commit(newGame(state.seed, spec, state.difficulty, limit, limitSelect.value === 'quick', map, opponents, chosenSeats(), endlessInput.checked), t('announce.setup', { scenario: map ? mapLabel(map) : t(`scenario.${spec.id}`) }));
     homeCursor();
     render();
   }
@@ -2136,7 +2153,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     pause() {},
     resume() {},
     reset() {
-      state = { ...newGame(state.seed, scenarioById(state.scenario) ?? FIELD_EXERCISE, state.difficulty, state.turnLimit, state.quick, state.map, state.opponents, state.seats), edit: state.edit };
+      state = { ...newGame(state.seed, scenarioById(state.scenario) ?? FIELD_EXERCISE, state.difficulty, state.turnLimit, state.quick, state.map, state.opponents, state.seats, state.endless), edit: state.edit };
       selected = null;
       confirming = false;
       reported = false;
