@@ -2,6 +2,9 @@ import {
   BUILTIN_DECK_IDS,
   isBuiltinDeckId,
   builtinDeck,
+  decodeDeckLinkData,
+  deckGuidePath,
+  deckLinkData,
   deckToJson,
   importDeck,
   IMPORT_LIMITS,
@@ -304,6 +307,43 @@ export function renderDeck(main: HTMLElement, app: AppContext, id: string): void
 
 // --- /decks/import ------------------------------------------------------------------------
 
+/**
+ * "Create with an AI": the guide for AIs in the UI language (a static file served by the app), to copy into an
+ * AI of the person's choice. The app itself never contacts an AI service.
+ */
+function aiGuideSection(app: AppContext): HTMLElement {
+  const { t } = app;
+  const url = `${location.origin}${deckGuidePath(app.locale)}`;
+  const input = h('input', { type: 'text', id: 'ai-guide-url', value: url, readonly: true, dir: 'ltr', spellcheck: 'false', autocomplete: 'off', 'data-testid': 'ai-guide-url' });
+  const copy = h('button', { type: 'button', 'data-testid': 'ai-guide-copy' }, t('import.ai.copy'));
+  const status = h('p', { class: 'wp-status', role: 'status', 'data-testid': 'ai-guide-status' });
+  input.addEventListener('focus', () => input.select());
+  copy.addEventListener('click', async () => {
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error('clipboard unavailable');
+      await navigator.clipboard.writeText(url);
+      status.textContent = t('import.ai.copied');
+    } catch {
+      // Without clipboard access (permissions, insecure context): select the link so it can be copied by hand.
+      input.focus();
+      input.select();
+      status.textContent = t('import.ai.copyFailed');
+    }
+  });
+  return h('section', { class: 'ai-guide', 'aria-labelledby': 'ai-guide-title', 'data-testid': 'ai-guide' },
+    h('h2', { id: 'ai-guide-title' }, t('import.ai.title')),
+    h('p', {}, t('import.ai.intro')),
+    h('p', {}, t('import.ai.how')),
+    h('div', { class: 'field' },
+      h('label', { for: 'ai-guide-url' }, t('import.ai.guideLabel')),
+      h('div', { class: 'ai-guide-link' }, input, copy)
+    ),
+    status,
+    h('p', {}, h('a', { href: url, target: '_blank', rel: 'noopener', 'data-testid': 'ai-guide-open' }, t('import.ai.open'))),
+    h('p', { class: 'notice' }, t('import.ai.note'))
+  );
+}
+
 export const renderDeckImport: Page = (main, app) => {
   const { t } = app;
   const fileInput = h('input', { type: 'file', id: 'deck-file', accept: '.csv,.json,.txt,text/csv,application/json,text/plain', 'data-testid': 'deck-file' });
@@ -332,13 +372,15 @@ export const renderDeckImport: Page = (main, app) => {
         h('p', { class: 'wp-muted' }, t('import.limits', { items: IMPORT_LIMITS.maxItems, size: IMPORT_LIMITS.maxInputChars / 1_000_000, image: IMPORT_LIMITS.maxImageChars / 1000 }))
       ),
       form,
-      result
+      result,
+      aiGuideSection(app)
     )
   );
 
   const title = (format: 'csv' | 'json') => nameInput.value.trim() || (format === 'csv' ? fileName || t('import.defaultName') : '');
 
-  const showResult = (outcome: ImportResult) => {
+  /** `fromLink`: the text came from a direct link (`#deck=…`), not from the person's own file or paste. */
+  const showResult = (outcome: ImportResult, fromLink = false) => {
     clear(result);
     const warnings = outcome.warnings.map((w) => importWarningText(t, w));
     if (!outcome.ok) {
@@ -346,9 +388,12 @@ export const renderDeckImport: Page = (main, app) => {
         h('div', { class: 'notice import-errors', role: 'alert', 'data-testid': 'import-errors' },
           h('p', {}, h('strong', {}, t('import.errorsTitle'))),
           h('ul', {}, ...outcome.errors.slice(0, 50).map((e) => h('li', {}, importErrorText(t, e)))),
-          outcome.errors.length > 50 ? h('p', {}, t('import.moreErrors', { count: outcome.errors.length - 50 })) : null
+          outcome.errors.length > 50 ? h('p', {}, t('import.moreErrors', { count: outcome.errors.length - 50 })) : null,
+          fromLink ? h('p', {}, t('import.link.errorsHint')) : null
         )
       );
+    } else if (fromLink) {
+      result.append(h('p', { class: 'notice', 'data-testid': 'import-from-link' }, t('import.link.loaded')));
     }
     if (warnings.length > 0) {
       result.append(
@@ -390,12 +435,45 @@ export const renderDeckImport: Page = (main, app) => {
     result.querySelector<HTMLElement>('#import-preview-title')?.focus();
   };
 
-  const check = () => {
+  const check = (fromLink = false) => {
     const text = textArea.value;
-    const format = text.replace(/^\uFEFF/, '').trimStart().startsWith('{') ? 'json' : 'csv';
+    // A direct link always carries JSON (docs/content/deck-format.md); anything else is reported as invalid JSON.
+    const format = fromLink ? 'json' : text.replace(/^\uFEFF/, '').trimStart().startsWith('{') ? 'json' : 'csv';
     const name = title(format);
-    showResult(importDeck(text, { id: newDeckId(name || 'deck'), titleLanguage: app.locale, ...(name ? { title: name } : {}) }));
+    showResult(importDeck(text, { id: newDeckId(name || 'deck'), titleLanguage: app.locale, ...(fromLink ? { format } : {}), ...(name ? { title: name } : {}) }), fromLink);
   };
+
+  /**
+   * Direct link `/decks/import#deck=<base64url(JSON)>`: the fragment never reaches a server. Its content is
+   * untrusted text like a pasted file: decoded with a size cap, then checked by the importer and shown in the
+   * normal preview. Nothing is saved without "Save deck". The fragment is removed from the address bar (and
+   * this history entry) right away, so the deck does not linger in the URL or come back on "Back".
+   */
+  const openLink = () => {
+    const data = deckLinkData(location.hash);
+    if (data === undefined) return;
+    history.replaceState(history.state, '', location.pathname + location.search);
+    const decoded = decodeDeckLinkData(data);
+    fileName = '';
+    nameInput.value = '';
+    if (!decoded.ok) {
+      clear(result);
+      const message = decoded.code === 'too-large' ? t('import.link.tooLarge', { size: IMPORT_LIMITS.maxInputChars / 1_000_000 }) : t('import.link.invalid');
+      const alert = h('p', { class: 'notice import-errors', role: 'alert', tabindex: '-1', 'data-testid': 'import-link-error' }, message);
+      result.append(alert);
+      alert.focus();
+      return;
+    }
+    textArea.value = decoded.text;
+    check(true);
+  };
+  openLink();
+  // A new link opened while this page is shown (only the fragment changes, so the page is not rendered again).
+  const onHashChange = () => {
+    if (!form.isConnected) window.removeEventListener('hashchange', onHashChange);
+    else openLink();
+  };
+  window.addEventListener('hashchange', onHashChange);
 
   form.addEventListener('submit', (event) => {
     event.preventDefault();

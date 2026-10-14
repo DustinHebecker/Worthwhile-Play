@@ -2,6 +2,7 @@ export * from './deck';
 export * from './csv';
 export * from './import';
 export * from './library';
+export * from './link';
 export { SYMBOL_DECK } from './builtin/symbols';
 export { FIRST_WORDS, findWord, isVocabularyLanguage, toVocabularyLanguage, type VocabularyEntry, type VocabularyLanguage } from './builtin/first-words';
 export { AI_TERM_IDS, AI_TERMS, aiTerm, isAiTermId, type AiTermEntry, type AiTermId } from './builtin/ai-basics';

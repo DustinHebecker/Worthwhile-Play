@@ -1,10 +1,12 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { AI_TERMS, aiTerm, CAPITALS } from '@wp/learning-content';
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
+import { AI_TERMS, aiTerm, CAPITALS, DECK_LINK_MAX_CHARS, deckToJson, encodeDeckLinkData, type Deck } from '@wp/learning-content';
+import { DECK_GUIDE_EXAMPLE } from '@wp/learning-content/ai-guide';
 import { createTranslator, SUPPORTED_LOCALES } from '@wp/localization';
 import { createMemoryDeckStore, createMemoryLearningStore, createMemoryLibraryStore, createMemoryStore, createSave, type DeckStore, type LearningStore } from '@wp/persistence';
 import type { AppContext } from '../src/app';
 import { UI_MESSAGES } from '../src/i18n';
+import { renderAbout } from '../src/pages/about';
 import { renderDeck, renderDeckImport, renderDecks } from '../src/pages/decks';
 import { loadAllLocales } from './locales';
 
@@ -43,6 +45,216 @@ afterEach(() => {
   document.body.innerHTML = '';
   localStorage.clear();
   vi.restoreAllMocks();
+  history.replaceState(null, '', '/');
+});
+
+async function chooseFile(input: HTMLInputElement, text: string, name: string) {
+  Object.defineProperty(input, 'files', { value: [new File([text], name)], configurable: true });
+  input.dispatchEvent(new Event('change'));
+  await flush();
+}
+
+const stubClipboard = (writeText: ((text: string) => Promise<void>) | undefined) => {
+  const original = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
+  Object.defineProperty(navigator, 'clipboard', { value: writeText ? { writeText } : undefined, configurable: true });
+  onTestFinished(() => {
+    if (original) Object.defineProperty(navigator, 'clipboard', original);
+    else delete (navigator as { clipboard?: unknown }).clipboard;
+  });
+};
+
+describe('create a deck with an AI', () => {
+  it('offers the guide for the UI language as an absolute link and copies it', async () => {
+    const writeText = vi.fn((_text: string) => Promise.resolve());
+    stubClipboard(writeText);
+    const { context, main } = app('de');
+    renderDeckImport(main, context);
+    const url = `${location.origin}/ai/deck-guide.de.md`;
+    expect(byId(main, 'ai-guide')?.querySelector('h2')?.textContent).toBe('Mit einer KI erstellen');
+    expect((byId(main, 'ai-guide-url') as HTMLInputElement).value).toBe(url);
+    expect(byId(main, 'ai-guide-url')?.hasAttribute('readonly')).toBe(true);
+    expect(main.querySelector('label[for="ai-guide-url"]')?.textContent).toContain('Anleitung für KIs');
+    expect(byId(main, 'ai-guide-open')?.getAttribute('href')).toBe(url);
+    expect(byId(main, 'ai-guide')?.textContent).toContain('ChatGPT');
+    expect(byId(main, 'ai-guide')?.textContent).toContain('nur technisch');
+    byId(main, 'ai-guide-copy')?.click();
+    await flush();
+    expect(writeText).toHaveBeenCalledWith(url);
+    expect(byId(main, 'ai-guide-status')?.textContent).toBe('Link kopiert.');
+  });
+
+  it('selects the link when the clipboard is unavailable or refused', async () => {
+    for (const writeText of [undefined, () => Promise.reject(new Error('denied'))]) {
+      stubClipboard(writeText);
+      const { context, main } = app('en');
+      renderDeckImport(main, context);
+      const input = byId(main, 'ai-guide-url') as HTMLInputElement;
+      byId(main, 'ai-guide-copy')?.click();
+      await flush();
+      expect(document.activeElement).toBe(input);
+      expect([input.selectionStart, input.selectionEnd]).toEqual([0, input.value.length]);
+      expect(byId(main, 'ai-guide-status')?.textContent).toContain('The link is selected');
+      document.body.innerHTML = '';
+    }
+  });
+
+  it('is mentioned on the About page, with a link to the import page', () => {
+    const { context, main } = app('en');
+    renderAbout(main, context);
+    expect(byId(main, 'about-ai-decks')?.textContent).toContain('never contacts an AI service');
+    expect(byId(main, 'about-ai-decks')?.querySelector('a')?.getAttribute('href')).toBe('/decks/import');
+  });
+
+  it('has the texts in every locale', () => {
+    const keys = ['import.ai.title', 'import.ai.intro', 'import.ai.how', 'import.ai.guideLabel', 'import.ai.copy', 'import.ai.copied', 'import.ai.copyFailed', 'import.ai.open', 'import.ai.note', 'import.link.loaded', 'import.link.invalid', 'import.link.tooLarge', 'import.link.errorsHint', 'about.aiDecks'] as const;
+    for (const locale of SUPPORTED_LOCALES) {
+      for (const key of keys) {
+        expect(UI_MESSAGES[locale]?.[key]?.trim(), `${locale}/${key}`).toBeTruthy();
+        if (locale !== 'en') expect(UI_MESSAGES[locale]?.[key], `${locale}/${key}`).not.toBe(UI_MESSAGES.en?.[key]);
+      }
+      expect(UI_MESSAGES[locale]?.['import.link.tooLarge'], locale).toContain('{size}');
+    }
+  });
+});
+
+describe('direct link import (#deck=…)', () => {
+  const linkTo = (text: string) => history.replaceState(null, '', `/decks/import#deck=${encodeDeckLinkData(text)}`);
+
+  it('opens the normal preview, clears the fragment and saves only after confirmation', async () => {
+    linkTo(JSON.stringify(DECK_GUIDE_EXAMPLE));
+    const { context, main, decks } = app('en');
+    renderDeckImport(main, context);
+    expect(location.hash).toBe('');
+    expect(location.pathname).toBe('/decks/import');
+    expect(byId(main, 'import-from-link')?.textContent).toContain('nothing is saved until you choose “Save deck”');
+    expect(byId(main, 'deck-preview')?.textContent).toContain('la manzana');
+    expect(main.textContent).toContain(`Preview: ${DECK_GUIDE_EXAMPLE.items.length} cards`);
+    expect(document.activeElement?.id).toBe('import-preview-title');
+    expect(await decks.list()).toEqual([]);
+    byId(main, 'deck-save')?.click();
+    await flush();
+    const stored = (await decks.list()) as { id: string; deck: Deck }[];
+    expect(stored).toHaveLength(1);
+    expect(stored[0]?.id).toMatch(/^user-deck-[0-9a-f]{8}$/);
+    expect(stored[0]?.deck.title).toEqual(DECK_GUIDE_EXAMPLE.title);
+    expect(stored[0]?.deck.items.map((i) => i.id)).toEqual(DECK_GUIDE_EXAMPLE.items.map((i) => i.id));
+    expect(context.navigate).toHaveBeenCalledWith(`/decks/${stored[0]?.id}`);
+  });
+
+  it('explains unreadable and too large links and suggests a JSON file', () => {
+    const cases = [
+      ['#deck=%%%not-base64', 'does not contain a readable deck'],
+      ['#deck=', 'does not contain a readable deck'],
+      [`#deck=${'A'.repeat(DECK_LINK_MAX_CHARS + 4)}`, 'larger than 2 MB']
+    ] as const;
+    for (const [hash, text] of cases) {
+      history.replaceState(null, '', `/decks/import${hash}`);
+      const { context, main } = app('en');
+      renderDeckImport(main, context);
+      expect(byId(main, 'import-link-error')?.textContent, hash.slice(0, 20)).toContain(text);
+      expect(byId(main, 'import-link-error')?.textContent).toContain('JSON file');
+      expect(document.activeElement).toBe(byId(main, 'import-link-error'));
+      expect(byId(main, 'deck-save')).toBeNull();
+      expect(location.hash).toBe('');
+      document.body.innerHTML = '';
+    }
+  });
+
+  it('a link with a broken deck shows the importer errors in the UI language, plus a hint for the AI', () => {
+    linkTo('{"title":{"en":"x"},"items":[{"id":"a","front":{"text":"Hund"},"back":{}}]}');
+    const { context, main } = app('de');
+    renderDeckImport(main, context);
+    expect(byId(main, 'import-errors')?.textContent).toContain('Karte 1: Die Rückseite ist leer.');
+    expect(byId(main, 'import-errors')?.textContent).toContain('Bitte die KI');
+    expect(byId(main, 'deck-save')).toBeNull();
+  });
+
+  it('a link always carries JSON: CSV in a link is not imported', () => {
+    linkTo('front_text,back_text\nHund,dog');
+    const { context, main } = app('en');
+    renderDeckImport(main, context);
+    expect(byId(main, 'import-errors')?.textContent).toContain('The JSON is not valid');
+  });
+
+  it('strips remote media from a link deck like from any import', () => {
+    linkTo(JSON.stringify({ title: { en: 'x' }, items: [{ id: 'a', front: { text: 'cat', image: 'https://example.com/cat.png' }, back: { text: 'Katze' } }] }));
+    const { context, main } = app('en');
+    renderDeckImport(main, context);
+    expect(byId(main, 'import-warnings')?.textContent).toContain('A link to another website was removed');
+    expect(main.querySelector('img')).toBeNull();
+  });
+
+  it('reacts to a new link while the page is open, and stops listening once it is gone', () => {
+    const { context, main } = app('en');
+    renderDeckImport(main, context);
+    expect(byId(main, 'deck-preview')).toBeNull();
+    linkTo(JSON.stringify(DECK_GUIDE_EXAMPLE));
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    expect(byId(main, 'deck-preview')?.textContent).toContain('la fresa');
+    expect(location.hash).toBe('');
+    main.remove();
+    linkTo(JSON.stringify(DECK_GUIDE_EXAMPLE));
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    expect(location.hash).not.toBe(''); // no longer handled by the old page
+  });
+});
+
+describe('save and upload manually', () => {
+  const own: Deck = {
+    schemaVersion: 1,
+    id: 'user-mixed-1',
+    title: { en: 'Mixed', de: 'Gemischt' },
+    description: { en: 'Everything a deck can hold' },
+    license: 'CC0-1.0',
+    source: 'Me',
+    items: [
+      { id: 'a', front: { text: 'Hund', lang: 'de', symbol: '🐕' }, back: { text: 'dog', lang: 'en' }, tags: ['animals', 'pets'], difficulty: 2, category: 'nouns' },
+      { id: 'b', front: { symbol: '🐈', alt: 'cat' }, back: { text: 'say "hi",\nfriend', lang: 'en' } },
+      { id: 'c', front: { image: 'data:image/png;base64,iVBORw0KGgo=' }, back: { text: 'Bild' } }
+    ]
+  };
+
+  it('an exported own deck re-imports identically from its JSON file (apart from the fresh id)', async () => {
+    const decks = createMemoryDeckStore();
+    await decks.put({ id: own.id, importedAt: '2026-01-01T00:00:00Z', deck: own });
+    const blobs: Blob[] = [];
+    const original = { createObjectURL: URL.createObjectURL, revokeObjectURL: URL.revokeObjectURL };
+    onTestFinished(() => void Object.assign(URL, original));
+    Object.assign(URL, { createObjectURL: vi.fn((blob: Blob) => (blobs.push(blob), 'blob:deck')), revokeObjectURL: vi.fn() });
+    const clicked: HTMLAnchorElement[] = [];
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+      clicked.push(this);
+    });
+    const first = app('en', decks);
+    renderDeck(first.main, first.context, own.id);
+    await flush();
+    byId(first.main, 'export-deck')?.click();
+    expect(clicked[0]?.download).toBe(`${own.id}.json`);
+    const json = await blobs[0]!.text();
+    expect(json).toBe(deckToJson(own));
+    document.body.innerHTML = '';
+
+    const second = app('en', decks);
+    renderDeckImport(second.main, second.context);
+    await chooseFile(byId(second.main, 'deck-file') as HTMLInputElement, json, `${own.id}.json`);
+    expect(byId(second.main, 'import-warnings')).toBeNull();
+    byId(second.main, 'deck-save')?.click();
+    await flush();
+    const stored = ((await decks.list()) as { id: string; deck: Deck }[]).find((d) => d.id !== own.id);
+    expect(stored?.deck).toEqual({ ...own, id: stored?.id });
+  });
+
+  it('imports a CSV file, named after the file', async () => {
+    const { context, main, decks } = app('en');
+    renderDeckImport(main, context);
+    await chooseFile(byId(main, 'deck-file') as HTMLInputElement, 'front_text,back_text,front_lang,back_lang,tags\nHund,dog,de,en,animals; pets\n', 'German animals.csv');
+    expect(byId(main, 'deck-preview')?.textContent).toContain('Hund');
+    byId(main, 'deck-save')?.click();
+    await flush();
+    const [stored] = (await decks.list()) as { deck: Deck }[];
+    expect(stored?.deck.title).toEqual({ en: 'German animals' });
+    expect(stored?.deck.items[0]).toMatchObject({ front: { text: 'Hund', lang: 'de' }, back: { text: 'dog', lang: 'en' }, tags: ['animals', 'pets'] });
+  });
 });
 
 describe('deck import page', () => {

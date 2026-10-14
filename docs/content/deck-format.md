@@ -40,13 +40,22 @@ Only bundled audio is guaranteed offline. Browser speech synthesis is a best-eff
 
 ## Importing your own decks (`/decks/import`)
 
-Import and storage are **local only**: the file is read in the browser, checked, previewed and stored in IndexedDB on this device. Nothing is uploaded and there is no telemetry. Export (`/decks/<id>` → "Export as JSON") produces the JSON format above and can be re-imported.
+Import and storage are **local only**: the file is read in the browser, checked, previewed and stored in IndexedDB on this device. Nothing is uploaded and there is no telemetry. Export (`/decks/<id>` → "Export as JSON") produces the JSON format above and re-imports identically (only the deck id is new; item ids, titles, descriptions, licence, source, tags, categories and difficulties are kept; tested).
 
 The importer (`importDeck` in `packages/learning-content/src/import.ts`):
 
 - detects the format (text starting with `{` is JSON, anything else CSV) and always assigns a fresh id `user-<name>-<random hex>`, so imports never collide with built-in or earlier decks; item ids from JSON are kept;
 - reports every problem with the card number and, for CSV, the line (e.g. "Line 4 (card 3): The back is empty."), translated in all 16 UI languages;
 - shows a preview of the first 20 cards before anything is saved.
+
+### Create with an AI (ADR 0013)
+
+The import page has a section "Create with an AI": the person copies a link to a **guide for AIs** in the UI language and gives it, with a description of the deck they want, to an AI of their choice. The app itself never calls an AI service.
+
+- Guides: `/ai/deck-guide.<locale>.md` for the 16 UI locales (e.g. `https://worthwhile-play.pages.dev/ai/deck-guide.de.md`), Markdown, generated at build time from `packages/learning-content/src/ai-guide.ts` (prose per locale in `ai-guide-text.ts`; the technical reference is English, identical in all locales and built from `IMPORT_LIMITS`). Never edit the generated files; a test imports the example of every guide with `importDeck`.
+- The guide asks the AI for original content in its own words, checked facts, short sides, unique fronts and backs, language tags and no personal data, and to deliver either a direct link or a JSON file.
+- **Direct link**: `https://worthwhile-play.pages.dev/decks/import#deck=<DATA>`, where `DATA` is base64url (RFC 4648 §5, no padding; standard base64 is accepted too) of the UTF-8 bytes of the deck JSON (`deckLink`, `decodeDeckLinkData` in `packages/learning-content/src/link.ts`). The fragment is never sent to a server. The page decodes it on the device (at most 2,000,000 bytes, checked before decoding; strict UTF-8), removes it from the address bar at once and opens the normal preview with all checks above (JSON only). Nothing is saved before "Save deck". An unreadable or too large link shows a message suggesting a JSON file. The guide recommends links of at most 8,000 characters, because longer links are often cut off by chat apps and browsers.
+- **JSON file**: the fallback; selected under "File" like any other file.
 
 ### Privacy: images and audio
 

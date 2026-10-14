@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { defineConfig, loadEnv } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { legalFromEnv } from '../../scripts/legal-env.mjs';
+import { aiGuidePlugin } from './ai-guide-plugin';
 import { cataloguePlugin } from './catalogue-plugin';
 
 const pkg = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')) as { version: string };
@@ -17,6 +18,7 @@ export default defineConfig(({ mode }) => ({
   build: { target: 'es2022', sourcemap: true },
   plugins: [
     cataloguePlugin(),
+    aiGuidePlugin(),
     VitePWA({
       registerType: 'prompt',
       injectRegister: false,
@@ -45,6 +47,8 @@ export default defineConfig(({ mode }) => ({
         // The link-preview image is only fetched by link unfurlers, never by the app.
         globIgnores: ['og-image.png', 'favicon-16.png', 'favicon-48.png'],
         navigateFallback: '/index.html',
+        // The guides for AIs (/ai/deck-guide.<locale>.md) are files, not app routes.
+        navigateFallbackDenylist: [/^\/ai\//],
         cleanupOutdatedCaches: true
       },
       devOptions: { enabled: false }
