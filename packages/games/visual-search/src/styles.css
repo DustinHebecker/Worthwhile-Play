@@ -44,7 +44,7 @@
 .wp-vs__find-sample svg { width: 100%; height: 100%; display: block; }
 .wp-vs__status { font-variant-numeric: tabular-nums; }
 
-/* At most 5 columns: on a 360 px phone each cell is still about 60 px wide (>= 44 px targets). */
+/* At most 6 columns: on a 360 px phone each cell is still about 50 px wide (>= 44 px targets). */
 .wp-vs__board {
   display: grid;
   grid-template-columns: repeat(var(--wp-vs-cols, 4), minmax(0, 1fr));

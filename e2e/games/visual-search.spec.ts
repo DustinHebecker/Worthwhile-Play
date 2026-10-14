@@ -82,3 +82,61 @@ test('visual-search: a board can be solved with the keyboard only', async ({ pag
   await expect(page.getByTestId('vs-board')).toHaveAttribute('data-trial', '1');
   await expect(page.getByTestId('vs-item-0')).toBeFocused();
 });
+
+test('visual-search: an expert round (T among L shapes) resumes on the same board after a reload', async ({ page }) => {
+  let layout: string[] = [];
+  await expectResumeAfterReload(page, 'visual-search', async (p) => {
+    await p.getByTestId('difficulty').selectOption('expert');
+    await p.getByTestId('new-game').click();
+    await p.getByTestId('vs-start').click();
+    await expect(p.getByTestId('vs-board')).toHaveAttribute('data-trial', '0');
+    await expect(p.getByTestId('vs-find-sample')).toHaveAttribute('data-tilt', 'any');
+    await p.getByTestId('vs-not-there').click();
+    await p.getByTestId('vs-next').click();
+    await expect(p.getByTestId('vs-board')).toHaveAttribute('data-trial', '1');
+    layout = await boardSignature(p);
+    expect(layout.length).toBeGreaterThanOrEqual(12);
+    expect(layout.every((s) => /:(tee|ell):solid:/.test(s))).toBe(true);
+  });
+
+  const state = await savedState(page);
+  expect(state?.difficulty).toBe('expert');
+  expect(state?.answers).toEqual([expect.objectContaining({ pick: -1 })]);
+  await expect(page.getByTestId('vs-board')).toHaveAttribute('data-trial', '1');
+  expect(await boardSignature(page)).toEqual(layout);
+});
+
+test('visual-search: the 6 × 6 expert board fits a 360 px phone in RTL with targets of at least 44 px', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await page.goto('/settings');
+  await page.getByTestId('ui-language').selectOption('ar');
+  await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+  await page.goto('/games/visual-search');
+  await page.getByTestId('difficulty').selectOption('expert');
+  await page.getByTestId('new-game').click();
+  await page.getByTestId('vs-start').click();
+  const board = page.getByTestId('vs-board');
+  await expect(board).toBeVisible();
+  await expect(board.locator('.wp-vs__cell')).toHaveCount(36);
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
+  const boxes = await board.locator('[data-item]').evaluateAll((items) =>
+    items.map((el) => {
+      const r = el.getBoundingClientRect();
+      return { left: r.left, right: r.right, width: r.width, height: r.height };
+    })
+  );
+  expect(boxes.length).toBeGreaterThanOrEqual(12);
+  for (const b of boxes) {
+    expect(b.width).toBeGreaterThanOrEqual(44);
+    expect(b.height).toBeGreaterThanOrEqual(44);
+    expect(b.left).toBeGreaterThanOrEqual(0);
+    expect(b.right).toBeLessThanOrEqual(360);
+  }
+  // RTL: the grid starts on the right.
+  const first = await board.locator('.wp-vs__cell').first().boundingBox();
+  const sixth = await board.locator('.wp-vs__cell').nth(5).boundingBox();
+  expect(first?.x ?? 0).toBeGreaterThan(sixth?.x ?? 0);
+  await expect(page.getByTestId('vs-not-there')).toBeVisible();
+  if (process.env.VS_SCREENSHOT) await page.screenshot({ path: process.env.VS_SCREENSHOT, fullPage: true });
+});
