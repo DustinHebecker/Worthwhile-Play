@@ -6,6 +6,8 @@ import {
   applyTool,
   blankMap,
   decodeMap,
+  DEPOSIT_SIZES,
+  depositSize,
   encodeMap,
   fromScenario,
   isFair,
@@ -153,18 +155,22 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
     const terrain = h('div', { class: 'rc-ed-group', role: 'group', 'aria-label': t('editor.terrain') });
     for (const code of TERRAIN_CODES) terrain.append(toolButton({ type: 'terrain', code }, t(`terrain.${TERRAIN_NAMES[code] ?? 'plain'}`), swatch(code), `t${TERRAIN_CODES.indexOf(code)}`));
     const objects = h('div', { class: 'rc-ed-group', role: 'group', 'aria-label': t('editor.objects') });
-    const deposit = h('canvas', { class: 'rc-icon', width: CELL, height: CELL, 'aria-hidden': 'true' }) as HTMLCanvasElement;
-    try {
-      const g = deposit.getContext('2d');
-      if (g) {
-        g.strokeStyle = o.css('--wp-text', '#1d1d1b');
-        g.fillStyle = o.css('--wp-text', '#1d1d1b');
-        drawDeposit(g, -CELL / 2 + 9, CELL / 2 - 9);
+    // One tool per deposit size (on a deposit, the tool sets its size).
+    for (const size of DEPOSIT_SIZES) {
+      const icon = h('canvas', { class: 'rc-icon', width: CELL, height: CELL, 'aria-hidden': 'true' }) as HTMLCanvasElement;
+      try {
+        const g = icon.getContext('2d');
+        if (g) {
+          g.strokeStyle = o.css('--wp-text', '#1d1d1b');
+          g.fillStyle = o.css('--wp-text', '#1d1d1b');
+          drawDeposit(g, -CELL / 2 + 9, CELL / 2 - 9, size);
+        }
+      } catch {
+        /* no canvas: the label says it */
       }
-    } catch {
-      /* no canvas: the label says it */
+      objects.append(toolButton(size === 'plain' ? { type: 'deposit' } : { type: 'deposit', size }, t(size === 'plain' ? 'editor.deposit' : size === 'rich' ? 'editor.depositRich' : 'editor.depositEndless'), icon, size === 'plain' ? 'deposit' : `deposit-${size}`));
     }
-    objects.append(toolButton({ type: 'deposit' }, t('editor.deposit'), deposit, 'deposit'), toolButton({ type: 'erase' }, t('editor.erase'), h('span', { class: 'rc-ed-erase', 'aria-hidden': 'true' }, '⌫'), 'erase'));
+    objects.append(toolButton({ type: 'erase' }, t('editor.erase'), h('span', { class: 'rc-ed-erase', 'aria-hidden': 'true' }, '⌫'), 'erase'));
     const units = h('div', { class: 'rc-ed-group', role: 'group', 'aria-label': t('editor.units') });
     for (const kind of MAP_KINDS) units.append(toolButton({ type: 'unit', kind, side }, t(`unit.${kind}`), o.icon(kind, side === 0), kind));
     palette.append(
@@ -269,7 +275,8 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
         g.fillStyle = o.css('--rc-mark', '#00000055');
         g.lineWidth = 1.5;
         drawTerrainMark(g, name, x * CELL, y * CELL);
-        if (m.deposits.some((d) => d.x === x && d.y === y)) drawDeposit(g, x * CELL, y * CELL);
+        const deposit = m.deposits.find((d) => d.x === x && d.y === y);
+        if (deposit) drawDeposit(g, x * CELL, y * CELL, depositSize(deposit));
         g.strokeStyle = grid;
         g.lineWidth = 1;
         g.strokeRect(x * CELL + 0.5, y * CELL + 0.5, CELL - 1, CELL - 1);
@@ -301,7 +308,8 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
     const terrain = t(`terrain.${TERRAIN_NAMES[m.terrain[cursor.y * m.w + cursor.x] ?? '.'] ?? 'plain'}`);
     const unit = m.units.find((u) => u.x === cursor.x && u.y === cursor.y);
     const parts = [t('editor.cell', { x: cursor.x + 1, y: cursor.y + 1, terrain })];
-    if (m.deposits.some((d) => d.x === cursor.x && d.y === cursor.y)) parts.push(t('editor.cellDeposit'));
+    const deposit = m.deposits.find((d) => d.x === cursor.x && d.y === cursor.y);
+    if (deposit) parts.push(t(deposit.size === 'rich' ? 'editor.cellDepositRich' : deposit.size === 'endless' ? 'editor.cellDepositEndless' : 'editor.cellDeposit'));
     if (unit) parts.push(t('editor.cellUnit', { side: t(unit.side === 0 ? 'editor.sideOwn' : 'editor.sideEnemy'), name: t(`unit.${unit.kind}`) }));
     return parts.join(' · ');
   }

@@ -4,6 +4,7 @@ import {
   applyTool,
   blankMap,
   customSpec,
+  DEPOSIT_SIZES,
   decodeMap,
   encodeMap,
   fromScenario,
@@ -15,7 +16,6 @@ import {
   MAP_SLOTS,
   MAP_WIDTHS,
   mapIssues,
-  MAX_DEPOSITS,
   MAX_UNITS_PER_SIDE,
   memoryStore,
   removeFromLibrary,
@@ -25,6 +25,7 @@ import {
   migratePreferenceMaps,
   preferenceMapLibrary,
   TERRAIN_CODES,
+  toScenario,
   type EditMap,
   type Tool
 } from '../src/maps';
@@ -87,16 +88,45 @@ describe('map editor: editing', () => {
     expect(applyTool(m, { type: 'unit', kind: 'kite', side: 0 }, 0, 0, true)).toBe(m);
   });
 
-  it('caps units per side and deposits; resizing cuts off what lies outside', () => {
+  it('caps units per side but not deposits (owner, 2026-10-14); resizing cuts off what lies outside', () => {
     let m = blankMap(24, 16);
     for (let i = 0; i < 40; i++) m = applyTool(m, { type: 'unit', kind: 'rifles', side: 0 }, i % 24, Math.floor(i / 24), false);
     expect(m.units).toHaveLength(MAX_UNITS_PER_SIDE);
-    for (let i = 0; i < 20; i++) m = applyTool(m, { type: 'deposit' }, i, 10, false);
-    expect(m.deposits).toHaveLength(MAX_DEPOSITS);
+    // A deposit on every free cell of the largest map: valid, and its share code reads back.
+    for (let y = 2; y < 16; y++) for (let x = 0; x < 24; x++) m = applyTool(m, { type: 'deposit', size: DEPOSIT_SIZES[(x + y) % 3]! }, x, y, false);
+    expect(m.deposits).toHaveLength(24 * 14);
+    expect(isValidMap(m)).toBe(true);
+    expect(decodeMap(encodeMap(m))).toEqual(m);
     const small = resize(m, 10, 8);
     expect(small.terrain).toHaveLength(80);
     expect(small.units.every((u) => u.x < 10 && u.y < 8)).toBe(true);
     expect(isValidMap(small)).toBe(true);
+  });
+
+  it('deposit sizes: plain, rich, endless; the tool sets the size of a deposit already there; fairness, codes and scenarios carry it', () => {
+    let m = blankMap(12, 8);
+    m = applyTool(m, { type: 'deposit' }, 2, 3, true);
+    expect(m.deposits).toEqual([{ x: 2, y: 3 }, { x: 9, y: 4 }]);
+    // Re-sizing one side only: the map is no longer fair.
+    m = applyTool(m, { type: 'deposit', size: 'rich' }, 2, 3, false);
+    expect(m.deposits).toEqual([{ x: 2, y: 3, size: 'rich' }, { x: 9, y: 4 }]);
+    expect(isFair(m)).toBe(false);
+    m = applyTool(m, { type: 'deposit', size: 'rich' }, 9, 4, false);
+    expect(isFair(m)).toBe(true);
+    // The same size again changes nothing (the same object comes back).
+    expect(applyTool(m, { type: 'deposit', size: 'rich' }, 2, 3, false)).toBe(m);
+    // An Extractor on a deposit stays when the size changes.
+    m = applyTool(m, { type: 'unit', kind: 'extractor', side: 0 }, 2, 3, false);
+    m = applyTool(m, { type: 'deposit', size: 'endless' }, 2, 3, false);
+    expect(m.deposits[0]).toEqual({ x: 2, y: 3, size: 'endless' });
+    expect(m.units.some((u) => u.kind === 'extractor' && u.x === 2 && u.y === 3)).toBe(true);
+    expect(decodeMap(encodeMap(m))).toEqual(m);
+    // The engine scenario: plain 300, rich 600, endless keeps 300 on show and never runs dry.
+    expect(toScenario(m).map.deposits).toEqual([{ x: 2, y: 3, left: 300, endless: true }, { x: 9, y: 4, left: 600 }]);
+    expect(fromScenario({ id: 'custom', turnLimit: 12, scenario: toScenario(m) }).deposits).toEqual(m.deposits);
+    // Unknown sizes are refused, in maps and in codes.
+    expect(isValidMap({ ...m, deposits: [{ x: 2, y: 3, size: 'huge' }] })).toBe(false);
+    expect(applyTool(m, { type: 'deposit', size: 'huge' as never }, 5, 5, false)).toBe(m);
   });
 
   it('tells what is missing: a post per side, something besides it, and a ground path between the posts', () => {

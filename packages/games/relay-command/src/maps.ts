@@ -1,6 +1,6 @@
 import { isRecord } from '@wp/game-core';
 import { cellOf, findPath, STRATEGY_RULESET as RULESET, type Scenario } from '@wp/strategy-engine';
-import { DEPOSIT_SUPPLY, type ScenarioSpec } from './scenarios';
+import { DEPOSIT_SUPPLY, RICH_DEPOSIT_SUPPLY, type ScenarioSpec } from './scenarios';
 
 /**
  * Player-made maps (map editor, owner request after PR #14). A map is plain JSON: size, terrain
@@ -14,9 +14,23 @@ export interface EditMap {
   readonly h: number;
   /** One terrain code per cell, row by row (see TERRAIN_CODES). */
   readonly terrain: string;
-  readonly deposits: readonly { readonly x: number; readonly y: number }[];
+  readonly deposits: readonly MapDeposit[];
   readonly units: readonly MapUnit[];
 }
+
+/**
+ * A deposit of a map: plain (DEPOSIT_SUPPLY), rich (RICH_DEPOSIT_SUPPLY) or endless (never runs
+ * dry; owner decision 2026-10-14). `size` is absent for a plain one.
+ */
+export interface MapDeposit {
+  readonly x: number;
+  readonly y: number;
+  readonly size?: 'rich' | 'endless';
+}
+export type DepositSize = 'plain' | 'rich' | 'endless';
+export const DEPOSIT_SIZES: readonly DepositSize[] = ['plain', 'rich', 'endless'];
+export const depositSize = (d: MapDeposit): DepositSize => d.size ?? 'plain';
+const withSize = (x: number, y: number, size: DepositSize): MapDeposit => (size === 'plain' ? { x, y } : { x, y, size });
 
 export interface MapUnit {
   readonly side: number;
@@ -31,9 +45,8 @@ export const TERRAIN_CODES = ['.', '=', 'f', 'h', 'u', 's', '~', '^'] as const;
 export const MAP_KINDS = ['command-post', 'muster', 'motor-pool', 'extractor', 'relay-mast', 'rifles', 'lancer', 'outrider', 'warden', 'howitzer', 'mast-truck', 'field-post', 'jammer', 'tracer'] as const;
 export const MAP_WIDTHS = [10, 12, 14, 16, 18, 20, 22, 24] as const;
 export const MAP_HEIGHTS = [8, 10, 12, 14, 16] as const;
-/** Bounds that keep a map playable on a phone and every save small. */
+/** Bounds that keep a map playable on a phone and every save small (deposits: any number of cells). */
 export const MAX_UNITS_PER_SIDE = 24;
-export const MAX_DEPOSITS = 12;
 export const MAX_NAME = 40;
 /** Maps a device keeps (one preference value each). */
 export const MAP_SLOTS = 8;
@@ -49,15 +62,15 @@ export function fromScenario(spec: ScenarioSpec, name = ''): EditMap {
     w: map.w,
     h: map.h,
     terrain: map.terrain,
-    deposits: (map.deposits ?? []).map((d) => ({ x: d.x, y: d.y })),
+    deposits: (map.deposits ?? []).map((d) => withSize(d.x, d.y, d.endless ? 'endless' : d.left > DEPOSIT_SUPPLY ? 'rich' : 'plain')),
     units: entities.map((e) => ({ side: e.side, kind: e.kind, x: e.x, y: e.y }))
   };
 }
 
-/** The engine scenario of a map (every deposit full). */
+/** The engine scenario of a map (every deposit full; an endless one keeps the plain amount on show). */
 export function toScenario(map: EditMap): Scenario {
   return {
-    map: { w: map.w, h: map.h, terrain: map.terrain, deposits: map.deposits.map((d) => ({ x: d.x, y: d.y, left: DEPOSIT_SUPPLY })) },
+    map: { w: map.w, h: map.h, terrain: map.terrain, deposits: map.deposits.map((d) => ({ x: d.x, y: d.y, left: d.size === 'rich' ? RICH_DEPOSIT_SUPPLY : DEPOSIT_SUPPLY, ...(d.size === 'endless' && { endless: true as const }) })) },
     sides: 2,
     entities: map.units.map((u) => ({ side: u.side, kind: u.kind, x: u.x, y: u.y })),
     seed: 0
@@ -68,7 +81,7 @@ export function toScenario(map: EditMap): Scenario {
 export const customSpec = (map: EditMap): ScenarioSpec => ({ id: 'custom', turnLimit: 12, scenario: toScenario(map) });
 
 /** What an edit does at one cell. */
-export type Tool = { readonly type: 'terrain'; readonly code: string } | { readonly type: 'deposit' } | { readonly type: 'unit'; readonly kind: string; readonly side: number } | { readonly type: 'erase' };
+export type Tool = { readonly type: 'terrain'; readonly code: string } | { readonly type: 'deposit'; readonly size?: DepositSize } | { readonly type: 'unit'; readonly kind: string; readonly side: number } | { readonly type: 'erase' };
 
 const inside = (map: EditMap, x: number, y: number) => Number.isInteger(x) && Number.isInteger(y) && x >= 0 && y >= 0 && x < map.w && y < map.h;
 const blocks = (code: string) => code === '~' || code === '^';
@@ -94,10 +107,13 @@ function applyAt(map: EditMap, tool: Tool, x: number, y: number): EditMap {
       return blocks(tool.code) ? { ...map, terrain, units: without(map.units), deposits: without(map.deposits) } : { ...map, terrain };
     }
     case 'deposit': {
-      if (blocks(map.terrain[cell] ?? '.') || map.deposits.length >= MAX_DEPOSITS) return map;
-      if (map.deposits.some((d) => d.x === x && d.y === y)) return map;
+      const size = tool.size ?? 'plain';
+      if (blocks(map.terrain[cell] ?? '.') || !DEPOSIT_SIZES.includes(size)) return map;
+      // On a deposit, the tool sets its size (an Extractor on it stays).
+      const at = map.deposits.findIndex((d) => d.x === x && d.y === y);
+      if (at >= 0) return depositSize(map.deposits[at]!) === size ? map : { ...map, deposits: map.deposits.map((d, i) => (i === at ? withSize(x, y, size) : d)) };
       // A deposit takes only an Extractor.
-      return { ...map, deposits: [...map.deposits, { x, y }], units: map.units.filter((u) => u.x !== x || u.y !== y || u.kind === 'extractor') };
+      return { ...map, deposits: [...map.deposits, withSize(x, y, size)], units: map.units.filter((u) => u.x !== x || u.y !== y || u.kind === 'extractor') };
     }
     case 'unit': {
       if (!(MAP_KINDS as readonly string[]).includes(tool.kind) || (tool.side !== 0 && tool.side !== 1) || blocks(map.terrain[cell] ?? '.')) return map;
@@ -149,7 +165,7 @@ export function isFair(map: EditMap): boolean {
   const n = map.w * map.h;
   for (let c = 0; c < n; c++) if (map.terrain[c] !== map.terrain[n - 1 - c]) return false;
   const mirror = (p: { x: number; y: number }) => ({ x: map.w - 1 - p.x, y: map.h - 1 - p.y });
-  if (!map.deposits.every((d) => map.deposits.some((o) => o.x === mirror(d).x && o.y === mirror(d).y))) return false;
+  if (!map.deposits.every((d) => map.deposits.some((o) => o.x === mirror(d).x && o.y === mirror(d).y && depositSize(o) === depositSize(d)))) return false;
   return map.units.every((u) => map.units.some((o) => o.kind === u.kind && o.side === 1 - u.side && o.x === mirror(u).x && o.y === mirror(u).y));
 }
 
@@ -162,9 +178,10 @@ export function isValidMap(value: unknown): value is EditMap {
   const width = w as number;
   const height = h as number;
   if (typeof terrain !== 'string' || terrain.length !== width * height || [...terrain].some((c) => !(TERRAIN_CODES as readonly string[]).includes(c))) return false;
-  if (!Array.isArray(deposits) || deposits.length > MAX_DEPOSITS || !Array.isArray(units) || units.length > 2 * MAX_UNITS_PER_SIDE) return false;
+  if (!Array.isArray(deposits) || deposits.length > width * height || !Array.isArray(units) || units.length > 2 * MAX_UNITS_PER_SIDE) return false;
   const cellOk = (p: unknown): p is { x: number; y: number } => isRecord(p) && Number.isInteger(p.x) && Number.isInteger(p.y) && (p.x as number) >= 0 && (p.y as number) >= 0 && (p.x as number) < width && (p.y as number) < height && !blocks(terrain[(p.y as number) * width + (p.x as number)] ?? '.');
-  if (!deposits.every(cellOk) || new Set(deposits.map((d) => `${d.x},${d.y}`)).size !== deposits.length) return false;
+  const sizeOk = (d: unknown): boolean => isRecord(d) && (d.size === undefined || d.size === 'rich' || d.size === 'endless');
+  if (!deposits.every((d) => cellOk(d) && sizeOk(d)) || new Set(deposits.map((d) => `${d.x},${d.y}`)).size !== deposits.length) return false;
   const unitOk = (u: unknown): boolean => isRecord(u) && (u.side === 0 || u.side === 1) && (MAP_KINDS as readonly unknown[]).includes(u.kind) && cellOk(u);
   if (!units.every(unitOk)) return false;
   const typed = units as MapUnit[];
@@ -177,10 +194,12 @@ export function isValidMap(value: unknown): value is EditMap {
 // --- Share codes -----------------------------------------------------------------------------
 
 const PREFIX = 'RC1.';
+/** Longest share code read: the largest map with a deposit on every cell and a full army fits. */
+const MAX_CODE = 16_000;
 
 /** A short text that carries the whole map (copy, paste, keep). */
 export function encodeMap(map: EditMap): string {
-  const json = JSON.stringify([map.name, map.w, map.h, map.terrain, map.deposits.map((d) => [d.x, d.y]), map.units.map((u) => [u.side, MAP_KINDS.indexOf(u.kind as (typeof MAP_KINDS)[number]), u.x, u.y])]);
+  const json = JSON.stringify([map.name, map.w, map.h, map.terrain, map.deposits.map((d) => (d.size ? [d.x, d.y, DEPOSIT_SIZES.indexOf(d.size)] : [d.x, d.y])), map.units.map((u) => [u.side, MAP_KINDS.indexOf(u.kind as (typeof MAP_KINDS)[number]), u.x, u.y])]);
   const bytes = new TextEncoder().encode(json);
   let binary = '';
   for (const b of bytes) binary += String.fromCharCode(b);
@@ -189,7 +208,7 @@ export function encodeMap(map: EditMap): string {
 
 /** The map in a share code, or `undefined` for anything that is not a valid one. Never throws. */
 export function decodeMap(code: unknown): EditMap | undefined {
-  if (typeof code !== 'string' || !code.startsWith(PREFIX) || code.length > 4000) return undefined;
+  if (typeof code !== 'string' || !code.startsWith(PREFIX) || code.length > MAX_CODE) return undefined;
   try {
     const b64 = code.slice(PREFIX.length).replace(/-/g, '+').replace(/_/g, '/');
     const binary = atob(b64 + '='.repeat((4 - (b64.length % 4)) % 4));
@@ -203,7 +222,7 @@ export function decodeMap(code: unknown): EditMap | undefined {
       w,
       h,
       terrain,
-      deposits: deposits.map((d: unknown) => (Array.isArray(d) ? { x: d[0], y: d[1] } : null)),
+      deposits: deposits.map((d: unknown) => (!Array.isArray(d) || d.length > 3 ? null : d.length === 3 ? (d[2] === 1 || d[2] === 2 ? { x: d[0], y: d[1], size: DEPOSIT_SIZES[d[2]] } : null) : { x: d[0], y: d[1] })),
       units: units.map((u: unknown) => (Array.isArray(u) ? { side: u[0], kind: MAP_KINDS[u[1] as number] ?? '', x: u[2], y: u[3] } : null))
     };
     return isValidMap(map) ? { ...map, units: sortUnits(map.units) } : undefined;

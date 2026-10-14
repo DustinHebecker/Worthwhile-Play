@@ -132,11 +132,13 @@ export interface Ruleset {
   readonly capture?: boolean;
 }
 
-/** A finite source of Supply on the map; an Extractor on it draws `left` down (D8). */
+/** A source of Supply on the map; an Extractor on it draws `left` down (D8), unless it is endless. */
 export interface Deposit {
   x: number;
   y: number;
   left: number;
+  /** Never runs dry: an Extractor on it yields its full income and `left` stays as it is (owner, 2026-10-14). */
+  endless?: true;
 }
 
 export interface GameMap {

@@ -107,7 +107,7 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
         (placedBy.get(o.y * w.map.w + o.x)?.size ?? 0) > 1 ||
         w.entities.some((e) => e.x === o.x && e.y === o.y && arch(e).layer === structure.layer) ||
         placing.some((p) => p.x === o.x && p.y === o.y && arch({ kind: p.kind } as Entity).layer === structure.layer) ||
-        (structure.extractor && (deposit?.left ?? 0) <= 0);
+        (structure.extractor && (deposit?.left ?? 0) <= 0 && !deposit?.endless);
       if (blocked) {
         events.push({ t: 'site-blocked', tick: t, side: c.side, kind: o.kind, x: o.x, y: o.y });
         continue;
@@ -476,7 +476,8 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
         const yield_ = incomeOf(w, rs, e, network(side));
         if (yield_ <= 0) continue;
         amount += yield_;
-        if (arch(e).extractor) (depositAt(w.map, e.x, e.y) as { left: number }).left -= yield_;
+        const deposit = arch(e).extractor ? depositAt(w.map, e.x, e.y) : undefined;
+        if (deposit && !deposit.endless) deposit.left -= yield_;
       }
       supply[side] = Math.min(MAX_SUPPLY, (supply[side] ?? 0) + amount);
       if (amount > 0) events.push({ t: 'income', tick: t, side, amount });

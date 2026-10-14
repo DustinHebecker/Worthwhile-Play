@@ -4,7 +4,7 @@ import { depositAt, isReady, repairPrice } from './economy';
 import { MAX_QUEUE } from './types';
 import { computeNetwork, isCommandable, type Network } from './network';
 import { initialIntel, isSpotted, observedCells } from './vision';
-import { LOST_CONTACT, NEUTRAL, RETREAT_THRESHOLDS, TARGET_PRIORITIES, type Archetype, type Command, type Doctrine, type Entity, type Order, type Ruleset, type Scenario, type World } from './types';
+import { LOST_CONTACT, NEUTRAL, RETREAT_THRESHOLDS, TARGET_PRIORITIES, type Archetype, type Command, type Deposit, type Doctrine, type Entity, type Order, type Ruleset, type Scenario, type World } from './types';
 
 /** Build the initial world for a scenario. Throws on invalid authored content (programmer error). */
 export function createWorld(scenario: Scenario, ruleset: Ruleset): World {
@@ -26,7 +26,7 @@ export function createWorld(scenario: Scenario, ruleset: Ruleset): World {
     if (spec.side === NEUTRAL && spec.order && spec.order.type !== 'hold') throw new RangeError('A neutral post only holds.');
     return spawn(i + 1, spec.side, arch, spec.x, spec.y, spec.order ?? { type: 'hold' });
   });
-  const deposits = (map.deposits ?? []).map((d) => ({ x: d.x, y: d.y, left: d.left }));
+  const deposits = (map.deposits ?? []).map((d): Deposit => ({ x: d.x, y: d.y, left: d.left, ...(d.endless && { endless: true as const }) }));
   for (const d of deposits) {
     if (!inBounds(map, d.x, d.y) || !passable(map, ruleset, d.x, d.y, 'ground') || !Number.isInteger(d.left) || d.left < 0) throw new RangeError(`Invalid deposit at ${d.x},${d.y}.`);
   }
@@ -220,7 +220,7 @@ export function validateCommand(world: World, ruleset: Ruleset, command: Command
       // the side knows: an unobserved deposit's remainder is unknown, `UNKNOWN_LEFT` in observations).
       const deposit = depositAt(world.map, order.x, order.y);
       const observed = ruleset.fog ? observedCells(world, ruleset, unit.side, networks?.[unit.side])[cell] === 1 : true;
-      const fits = structure.extractor ? deposit !== undefined && (deposit.left > 0 || !observed) : deposit === undefined;
+      const fits = structure.extractor ? deposit !== undefined && (deposit.left > 0 || deposit.endless === true || !observed) : deposit === undefined;
       if (taken || coverage[cell] !== 1 || !fits) return { ok: false, reason: 'not-buildable' };
       if ((world.supply?.[unit.side] ?? 0) < structure.cost) return { ok: false, reason: 'no-supply' };
       return { ok: true };

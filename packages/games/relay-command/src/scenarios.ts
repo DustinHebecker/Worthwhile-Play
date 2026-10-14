@@ -53,6 +53,8 @@ const mirrorRows = (top: readonly string[]): string[] => [...top, ...[...top].re
 
 /** Supply a fresh deposit holds (docs/design/strategy.md § 8.1). */
 export const DEPOSIT_SUPPLY = 300;
+/** Supply a rich deposit holds (map editor, owner decision 2026-10-14). */
+export const RICH_DEPOSIT_SUPPLY = 600;
 
 function symmetric(id: string, turnLimit: number, top: readonly string[], units: readonly { kind: string; x: number; y: number }[], deposits: readonly { x: number; y: number }[] = []): ScenarioSpec {
   const rows = mirrorRows(top);

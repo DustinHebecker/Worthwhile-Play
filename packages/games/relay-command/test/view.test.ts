@@ -472,6 +472,36 @@ describe('Relay Command view', () => {
     expect(($('rc-turn-limit') as HTMLSelectElement).disabled).toBe(true);
   });
 
+  it('offers "Deposits never run dry" until the first turn: the game starts afresh with it, the map and the summary tell it', () => {
+    const box = $('rc-endless') as HTMLInputElement;
+    expect(box.checked).toBe(false);
+    expect(box.closest('label')!.textContent).toBe('Deposits never run dry');
+    box.checked = true;
+    box.dispatchEvent(new Event('change'));
+    expect(state().endless).toBe(true);
+    expect((state().world.map.deposits ?? []).every((d) => d.endless)).toBe(true);
+    // The cell description tells it in words (also where the deposit is not observed).
+    const post = own().find((e) => e.kind === 'command-post')!;
+    const deposit = state().world.map.deposits![0]!;
+    for (let i = 0; i < Math.abs(deposit.x - post.x); i++) key(deposit.x > post.x ? 'ArrowRight' : 'ArrowLeft');
+    for (let i = 0; i < Math.abs(deposit.y - post.y); i++) key(deposit.y > post.y ? 'ArrowDown' : 'ArrowUp');
+    expect($('rc-cursor').textContent).toContain('Deposit: never runs dry.');
+    expect($('rc-legend').textContent).toContain('Endless deposit (diamond in a ring): never runs dry');
+    // Another map keeps the option; after the first turn it is locked and in the summary.
+    const scenario = $('rc-scenario') as HTMLSelectElement;
+    scenario.value = 'ridge-valley';
+    scenario.dispatchEvent(new Event('change'));
+    expect(state().endless).toBe(true);
+    click('rc-lock');
+    expect(box.disabled).toBe(true);
+    expect($('rc-setup-summary').textContent).toContain(' · endless deposits');
+    // Restored from the save, the option shows as it was.
+    const saved = state();
+    setup();
+    instance.restore(saved);
+    expect(($('rc-endless') as HTMLInputElement).checked).toBe(true);
+  });
+
   it('maps pointer clicks on the canvas to cells', () => {
     const unit = firstMobile();
     const map = $('rc-map');
@@ -815,6 +845,25 @@ describe('Relay Command map editor', () => {
     expect([...($('rc-scenario') as HTMLSelectElement).options].map((o) => o.textContent)).toContain('Duel');
     click('rc-lock');
     expect($('rc-setup-summary').textContent).toContain('Duel');
+  });
+
+  it('places plain, rich and endless deposits; on a deposit the tool sets its size; the cell tells which', async () => {
+    click('rc-editor-open');
+    await settle();
+    for (const id of ['ed-tool-deposit', 'ed-tool-deposit-rich', 'ed-tool-deposit-endless']) expect($(id)).not.toBeNull();
+    expect($('ed-tool-deposit-rich').textContent).toBe('Rich deposit (600)');
+    click('ed-tool-deposit');
+    moveTo(3, 4);
+    edKey('Enter');
+    expect($('ed-cursor').textContent).toBe('Cell 4, 5: open ground · deposit');
+    click('ed-tool-deposit-rich');
+    edKey('Enter');
+    expect($('ed-cursor').textContent).toBe('Cell 4, 5: open ground · rich deposit');
+    click('ed-tool-deposit-endless');
+    edKey('Enter');
+    expect($('ed-cursor').textContent).toBe('Cell 4, 5: open ground · endless deposit');
+    // Mirrored by default: the opposite cell has the same size.
+    expect(state().edit!.map.deposits).toEqual([{ x: 3, y: 4, size: 'endless' }, { x: 12, y: 7, size: 'endless' }]);
   });
 
   it('undoes the last change (one step, also a resize); a draft survives "New game"; a failed save says so', async () => {
