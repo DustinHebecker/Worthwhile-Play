@@ -1524,6 +1524,46 @@ describe('hot-seat (docs/design/strategy.md § 9.4, D10)', () => {
     expect(valid(d)).toBe(true);
   });
 
+  it('a person who is out is skipped: the device goes from A straight to C in the next turns (review of PR #25)', () => {
+    let s = game(['person', 'person', 'person', 'computer']);
+    s = lockTurn(plan(s));
+    s = concede(confirmHandover(s)); // B gives up; C plans
+    expect(s.planning).toBe(2);
+    s = lockTurn(plan(confirmHandover(s))); // turn carried out
+    expect(s).toMatchObject({ planning: 0, handover: true });
+    s = lockTurn(plan(confirmHandover(s)));
+    expect(s).toMatchObject({ planning: 2, handover: true });
+    expect(s.inbox[1]).toEqual([]);
+    expect(valid(s)).toBe(true);
+  });
+
+  it('no person left ends the game at once (computers do not play on alone), the strongest computer side winning (review of PR #25)', () => {
+    let s = game(['person', 'person', 'computer', 'computer']);
+    s = confirmHandover(lockTurn(plan(s)));
+    // Both persons' posts are gone by the end of this turn: both are out, two computers are left.
+    s = structuredClone(s);
+    s.world.entities = s.world.entities.filter((e) => !(e.kind === 'command-post' && (e.side === 0 || e.side === 1)));
+    s = lockTurn(s);
+    expect(s.world.out).toEqual([0, 1]);
+    expect(s.phase).toBe('finished');
+    const strength = [2, 3].map((side) => sideValue(s.world, side));
+    expect(s.winner).toBe(strength[0]! > strength[1]! ? 2 : strength[1]! > strength[0]! ? 3 : null);
+    expect(valid(s)).toBe(true);
+  });
+
+  it('at the turn limit the strongest side wins and equal strength is a draw (review of PR #25)', () => {
+    // Two persons on a point-symmetric map who give no orders stay equal: a draw.
+    const even = newGame(1, FIELD_EXERCISE, 'normal', 1, false, null, 1, ['person', 'person']);
+    const tied = lockTurn(confirmHandover(lockTurn(even)));
+    expect(sideValue(tied.world, 0)).toBe(sideValue(tied.world, 1));
+    expect(tied).toMatchObject({ phase: 'finished', winner: null, result: 'draw' });
+    // The same with more Supply for B: B wins.
+    const rich = structuredClone(even);
+    rich.world.supply![1] = 900;
+    const won = lockTurn(confirmHandover(lockTurn(rich)));
+    expect(won).toMatchObject({ phase: 'finished', winner: 1, result: 'lost' });
+  });
+
   it('a hot-seat game is a valid save at every step, also mid-hand-over, and stays so when finished', () => {
     let s = game(['person', 'person', 'person', 'person'], 3, 6);
     for (let i = 0; i < 100 && s.phase === 'plan'; i++) {
@@ -1556,9 +1596,12 @@ describe('hot-seat (docs/design/strategy.md § 9.4, D10)', () => {
       ['a winner in a running game', { ...hot, winner: 1 }],
       ['a winner in a single-player game', { ...solo, phase: 'finished', result: 'won', winner: 0 }],
       ['a retired side that is not out', { ...hot, retired: [1] }],
-      ['a quick match with several persons', { ...hot, turnLimit: null, quick: true }]
+      ['a quick match with several persons', { ...hot, turnLimit: null, quick: true }],
+      ['a finished hot-seat game holding a plan', { ...hot, phase: 'finished', result: 'draw', winner: null, handover: false, locked: hot.seats.map(() => []), draft: hot.locked[0]!.map((c) => ({ ...c, side: 1 })) }],
+      ['a finished hot-seat game holding a summary', { ...hot, phase: 'finished', result: 'draw', winner: null, handover: false, locked: hot.seats.map(() => []), events: [{ t: 'income', tick: 1, side: 1, amount: 1 }] as RcState['events'] }]
     ];
     for (const [why, state] of bad) expect(valid(state), why).toBe(false);
+    expect(valid({ ...hot, phase: 'finished', result: 'draw', winner: null, handover: false, locked: hot.seats.map(() => []), draft: [], events: [] }), 'the same finished save, empty').toBe(true);
     // A person who is out has no plan and no waiting summary.
     const gone = concede(confirmHandover(hot));
     expect(valid(gone)).toBe(true);

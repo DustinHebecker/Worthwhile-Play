@@ -256,7 +256,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   };
 
   /* ---------- DOM ---------- */
-  const live = h('p', { class: 'sr-only', 'aria-live': 'polite', 'data-testid': 'rc-live' });
+  let live = h('p', { class: 'sr-only', 'aria-live': 'polite', 'data-testid': 'rc-live' });
   /** Hot-seat: whose plan is open (letter, colour and words). */
   const seatEl = h('p', { class: 'rc-seat', 'data-testid': 'rc-seat', hidden: true });
   const turnEl = h('p', { class: 'rc-turn', 'data-testid': 'rc-turn' });
@@ -492,7 +492,11 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   function showHandover(on: boolean): void {
     if (on) {
       for (const part of gameParts) part.remove();
-      live.textContent = '';
+      // A fresh, empty live region: an announcement still pending for the previous person (they
+      // are written a moment later) lands in the old one, which has left the document.
+      const fresh = h('p', { class: 'sr-only', 'aria-live': 'polite', 'data-testid': 'rc-live' });
+      live.replaceWith(fresh);
+      live = fresh;
       if (!handoverEl.isConnected) shell.prepend(handoverEl);
       const mark = sideMark(me());
       handoverTitle.textContent = t('handover.title', { mark });
@@ -501,7 +505,13 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       return;
     }
     handoverEl.remove();
-    for (const part of gameParts) if (!part.isConnected) shell.insertBefore(part, editor.el);
+    // Back in their places, in order (the result screen takes the map's part out as well).
+    let next: Element = editor.el;
+    for (let i = gameParts.length - 1; i >= 0; i--) {
+      const part = gameParts[i]!;
+      if (!part.isConnected) shell.insertBefore(part, next);
+      next = part;
+    }
   }
 
   /* ---------- Rendering ---------- */
@@ -526,11 +536,14 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     }
     // A finished hot-seat game shows no map, list or summary of any side: the result only.
     const hotEnd = isHotSeat(state) && state.phase === 'finished';
-    mainEl.hidden = hotEnd;
-    if (hotEnd) renderResult();
+    // Out of the document and not drawn at all: no lists, reports, cursor text or map of any side.
+    if (hotEnd) {
+      mainEl.remove();
+      renderResult();
+    }
     seatEl.hidden = !isHotSeat(state) || state.phase !== 'plan';
+    clear(seatEl);
     if (!seatEl.hidden) {
-      clear(seatEl);
       seatEl.append(h('span', { class: 'rc-row-mark', style: `color:${sideColour(me())}` }, sideMark(me())), ' ', t('hot.planning', { mark: sideMark(me()) }));
     }
     const w = world();
@@ -543,9 +556,12 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     stalemateText.textContent = stalemate ? t('status.quiet', { turn: w.turn + STALL_TURNS - stalemateTurns(state) }) : settleable ? t('status.settleOffer', { n: stalemateTurns(state) }) : '';
     settleBtn.hidden = !settleable;
     if (!settleable) settleArmed = false;
-    settleBtn.textContent = settleArmed
-      ? t('action.settleConfirm')
-      : t(`action.settle.${settleResult(state)}`, { own: sideValue(state.world, me()), enemy: opponentValue(state.world) });
+    // Strength figures only while the offer stands (never left behind in the document).
+    settleBtn.textContent = !settleable
+      ? ''
+      : settleArmed
+        ? t('action.settleConfirm')
+        : t(`action.settle.${settleResult(state)}`, { own: sideValue(state.world, me()), enemy: opponentValue(state.world) });
     stalemateEl.toggleAttribute('data-empty', !stalemate && !settleable);
     // Scenario and turn limit can be changed until the first turn is locked.
     // Kept in place after the first turn (disabled), so the map does not jump up.
@@ -589,6 +605,12 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     concedeBtn.disabled = finished;
     concedeBtn.hidden = confirming;
     confirmBox.hidden = !confirming || finished;
+    if (hotEnd) {
+      // No counters of the side that planned last either.
+      supplyEl.textContent = '';
+      slotsEl.textContent = '';
+      return;
+    }
     cursorDesc.textContent = describeCell(cursor.x, cursor.y);
     renderSelection();
     renderLists();

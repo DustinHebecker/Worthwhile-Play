@@ -1049,6 +1049,23 @@ describe('hot-seat (D10)', () => {
     expect($('rc-result').hidden).toBe(false);
     expect($('rc-result-winner').textContent).toMatch(/Player [CD] won\.|Draw/);
     expect($('rc-result-out').textContent).toContain('B');
-    expect($('rc-main').hidden).toBe(true);
+    // No map, list, report, cursor text or selection of any side is in the document (review of PR #25).
+    for (const id of ['rc-main', 'rc-map', 'rc-own', 'rc-enemy', 'rc-summary', 'rc-cursor', 'rc-selection']) expect(ctx.context.root.querySelector(`[data-testid="${id}"]`), id).toBeNull();
+    expect(ctx.context.root.querySelectorAll('[data-testid^="rc-unit-"]')).toHaveLength(0);
+    expect(ctx.context.root.textContent).not.toMatch(/known from before the battle|last seen turn|\(\d+ : \d+\)/);
+    expect([$('rc-supply').textContent, $('rc-slots').textContent, $('rc-seat').textContent]).toEqual(['', '', '']);
+    // A new game brings the map back, in its place (before the help).
+    instance.newGame({ seed: 5 });
+    const order = [...$('rc-root').children].map((el) => el.getAttribute('data-testid') ?? el.className);
+    expect(order.indexOf('rc-main')).toBeLessThan(order.findIndex((x) => x.includes('rc-help')));
+  });
+
+  it('an announcement still pending for the previous person never reaches the hand-over', () => {
+    open(hot());
+    const rifle = state().world.entities.find((e) => e.side === 0 && e.kind === 'rifles')!;
+    click(`rc-unit-${rifle.id}`); // announces the selection a moment later
+    click('rc-lock');
+    later();
+    expect([...ctx.context.root.querySelectorAll('[aria-live]')].map((el) => el.textContent).join('|')).not.toMatch(/Rifle|selected/i);
   });
 });
