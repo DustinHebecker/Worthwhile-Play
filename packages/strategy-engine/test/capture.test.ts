@@ -8,6 +8,7 @@ import {
   NEUTRAL,
   observe,
   resolveTurn,
+  retire,
   runTicks,
   STRATEGY_RULESET,
   validateCommand,
@@ -532,5 +533,75 @@ describe('capture keeps the engine invariants', () => {
       }),
       { numRuns: 200 }
     );
+  });
+});
+
+describe('retire (giving up, hot-seat)', () => {
+  const NO_CAPTURE: Ruleset = { ...CAPTURE, capture: false };
+
+  it('retire = the elimination step: a turn whose end eliminates sides equals the turn without capture rules plus retiring those sides', () => {
+    let compared = 0;
+    fc.assert(
+      fc.property(arbDense(4), ({ world, plans }) => {
+        let w = world;
+        for (const plan of plans) {
+          const r = resolveTurn(w, CAPTURE, [plan]);
+          const gone = r.events.flatMap((e) => (e.t === 'eliminated' ? [e.side] : []));
+          if (gone.length > 0 && !r.events.some((e) => e.t === 'captured')) {
+            const plain = resolveTurn(w, NO_CAPTURE, [plan]);
+            let v = plain.world;
+            const told: SimEvent[] = [];
+            for (const side of gone) {
+              const step = retire(v, side);
+              v = step.world;
+              told.push(...step.events);
+            }
+            expect(canonicalJson(v)).toBe(canonicalJson(r.world));
+            expect(told).toEqual(r.events.filter((e) => e.t === 'eliminated'));
+            compared++;
+          }
+          w = r.world;
+        }
+      }),
+      { numRuns: 300, seed: 11 }
+    );
+    expect(compared).toBeGreaterThan(5);
+  });
+
+  it('giving up reveals nothing of the retiring side: the others only lose what they knew of it and are told `eliminated`', () => {
+    fc.assert(
+      fc.property(arbDense(4), fc.nat(3), ({ world, plans }, pick) => {
+        const w = plans.slice(0, 2).reduce((acc, plan) => resolveTurn(acc, CAPTURE, [plan]).world, world);
+        const left = [0, 1, 2, 3].filter((x) => !w.out?.includes(x));
+        if (left.length === 0) return;
+        const side = left[pick % left.length]!;
+        const r = retire(w, side);
+        expect(r.events).toEqual([{ t: 'eliminated', tick: w.tick, side }]);
+        expect(r.world.out).toContain(side);
+        expect(isValidWorld(r.world, CAPTURE)).toBe(true);
+        expect(r.world.entities.some((e) => e.side === side) || r.world.projectiles.some((p) => p.side === side)).toBe(false);
+        expect(r.world.intel?.[side]).toEqual([]);
+        for (const other of left.filter((x) => x !== side)) {
+          const before = observe(w, CAPTURE, other);
+          const after = observe(r.world, CAPTURE, other);
+          // Nothing new: every piece the other side sees or remembers afterwards it saw or remembered as it was.
+          for (const e of after.world.entities) expect(before.world.entities.find((b) => b.id === e.id)).toEqual(e);
+          expect(after.world.entities.some((e) => e.side === side)).toBe(false);
+        }
+      }),
+      { numRuns: 200, seed: 12 }
+    );
+  });
+
+  it('only a side still in the game can retire, and the world passed in is left as it was', () => {
+    const w = worldOf(3, [{ side: 2, kind: 'rifles', x: 5, y: 5 }]);
+    const copy = structuredClone(w);
+    const r = retire(w, 2);
+    expect(w).toEqual(copy);
+    expect(r.world.out).toEqual([2]);
+    expect(() => retire(r.world, 2)).toThrow(RangeError);
+    expect(() => retire(w, 3)).toThrow(RangeError);
+    expect(() => retire(w, -1)).toThrow(RangeError);
+    expect(() => retire(w, NEUTRAL)).toThrow(RangeError);
   });
 });

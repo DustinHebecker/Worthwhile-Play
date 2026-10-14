@@ -943,3 +943,129 @@ describe('Relay Command map editor', () => {
     expect(state().edit!.slot).toBeNull();
   });
 });
+
+describe('hot-seat (D10)', () => {
+  const corners = SCENARIOS.find((spec) => spec.id === 'four-corners')!;
+  /** Everything a person could read, hear or reach: the document text, the title and every live region. */
+  const visible = () => ({
+    text: ctx.context.root.textContent ?? '',
+    title: document.title,
+    live: [...ctx.context.root.querySelectorAll('[aria-live]')].map((el) => el.textContent ?? '').join('|')
+  });
+  const hot = () => newGame(3, corners, 'normal', 12, false, null, 2, ['person', 'person', 'computer']);
+  /** Opens a hot-seat game: like any resumed one, it starts at the hand-over to the person planning. */
+  function open(s: RcState): void {
+    instance.restore(s);
+    expect(state().handover).toBe(true);
+    click('rc-handover-confirm');
+  }
+  /** Plans a move for the first rifle squad of the side planning and returns its id and the cell. */
+  function planMove(): { id: number; x: number; y: number } {
+    const s = state();
+    const rifle = s.world.entities.find((e) => e.side === s.planning && e.kind === 'rifles')!;
+    click(`rc-unit-${rifle.id}`);
+    const x = rifle.x + (rifle.x < 8 ? 1 : -1);
+    const y = rifle.y;
+    const rect = { left: 0, top: 0, width: 16 * CELL, height: 16 * CELL } as DOMRect;
+    $('rc-map').getBoundingClientRect = () => rect;
+    $('rc-map').dispatchEvent(new MouseEvent('click', { clientX: x * CELL + CELL / 2, clientY: y * CELL + CELL / 2, bubbles: true }));
+    expect(state().draft.some((c) => c.unit === rifle.id)).toBe(true);
+    return { id: rifle.id, x, y };
+  }
+
+  it('the setup offers person or computer per side (A is you); several persons hide the quick match and explain the open end', () => {
+    instance.restore(newGame(3, corners, 'normal', null, false, null, 3));
+    expect($('rc-seat-0').textContent).toContain('Player A: you');
+    for (const side of [1, 2, 3]) expect(($(`rc-seat-${side}-computer`) as HTMLInputElement).checked).toBe(true);
+    expect($('rc-hotseat-hint').hidden).toBe(true);
+    const person = $('rc-seat-2-person') as HTMLInputElement;
+    person.checked = true;
+    person.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(state().seats).toEqual(['person', 'computer', 'person', 'computer']);
+    expect($('rc-hotseat-hint').hidden).toBe(false);
+    expect(($('rc-turn-limit').querySelector('option[value="quick"]') as HTMLOptionElement).disabled).toBe(true);
+    expect($('rc-lock').textContent).toBe('Done: hand over');
+  });
+
+  it('a lock hands over: the document holds nothing of the previous side (no map, list, summary, live text, title or focus) until the next person confirms', () => {
+    open(hot());
+    const titleBefore = document.title;
+    const aMove = planMove();
+    const aName = $(`rc-unit-${aMove.id}`).textContent!;
+    click('rc-lock');
+    expect(state()).toMatchObject({ planning: 1, handover: true });
+    const shown = visible();
+    expect($('rc-handover').getAttribute('role')).toBe('dialog');
+    expect(shown.text).toContain('Pass the device to Player B');
+    for (const id of ['rc-map', 'rc-own', 'rc-enemy', 'rc-summary', 'rc-selection', 'rc-slots', 'rc-supply', 'rc-lock']) expect(ctx.context.root.querySelector(`[data-testid="${id}"]`), id).toBeNull();
+    expect(shown.text).not.toContain(aName);
+    expect(shown.title).toBe(titleBefore);
+    expect(shown.live).not.toMatch(/Player A|Rifle|Turn 2/);
+    expect(document.activeElement).toBe($('rc-handover-confirm'));
+    // B confirms: B's own units are listed, A's plan is nowhere (no route, no order text, no planned count).
+    click('rc-handover-confirm');
+    expect(ctx.context.root.querySelector('[data-testid="rc-handover"]')).toBeNull();
+    expect($('rc-seat').textContent).toContain('Player B plans');
+    expect($('rc-slots').textContent).toMatch(/^Planning: 0\//);
+    expect($('rc-own').textContent).not.toContain(aName);
+    expect(ctx.context.root.textContent).not.toContain(`(${aMove.x + 1}, ${aMove.y + 1})`);
+    expect($('rc-lock').textContent).toBe('Done: carry out the turn');
+  });
+
+  it('after the turn each person sees their own summary only after the hand-over; a reload always opens at the hand-over', () => {
+    open(hot());
+    planMove();
+    click('rc-lock');
+    click('rc-handover-confirm');
+    click('rc-lock');
+    expect(state()).toMatchObject({ planning: 0, handover: true });
+    expect(state().log).toHaveLength(1);
+    expect(ctx.context.root.querySelector('[data-testid="rc-summary"]')).toBeNull();
+    click('rc-handover-confirm');
+    expect($('rc-turn').textContent).toBe('Turn 2 of 12');
+    // Reopening the game: whoever opens it passes the device to the person planning.
+    const saved = state();
+    instance.dispose();
+    setup();
+    instance.restore(saved);
+    expect(state().handover).toBe(true);
+    expect(ctx.context.root.querySelector('[data-testid="rc-map"]')).toBeNull();
+    expect($('rc-handover').textContent).toContain('Player A');
+  });
+
+  it('giving up takes only that side out and hands over; the result names the winner and the sides out, and shows no map', () => {
+    open(newGame(3, corners, 'normal', 12, false, null, 3, ['person', 'person', 'computer', 'computer']));
+    click('rc-lock');
+    click('rc-handover-confirm');
+    click('rc-concede');
+    click('rc-concede-yes');
+    // B was the last person: the turn is carried out, and A plans on (no hand-over with one person left).
+    expect(state().world.out).toEqual([1]);
+    expect(state()).toMatchObject({ planning: 0, handover: false, phase: 'plan' });
+    expect($('rc-summary').textContent).toContain('Opponent B');
+    click('rc-concede');
+    click('rc-concede-yes');
+    expect(state().phase).toBe('finished');
+    expect($('rc-result').hidden).toBe(false);
+    expect($('rc-result-winner').textContent).toMatch(/Player [CD] won\.|Draw/);
+    expect($('rc-result-out').textContent).toContain('B');
+    // No map, list, report, cursor text or selection of any side is in the document (review of PR #25).
+    for (const id of ['rc-main', 'rc-map', 'rc-own', 'rc-enemy', 'rc-summary', 'rc-cursor', 'rc-selection']) expect(ctx.context.root.querySelector(`[data-testid="${id}"]`), id).toBeNull();
+    expect(ctx.context.root.querySelectorAll('[data-testid^="rc-unit-"]')).toHaveLength(0);
+    expect(ctx.context.root.textContent).not.toMatch(/known from before the battle|last seen turn|\(\d+ : \d+\)/);
+    expect([$('rc-supply').textContent, $('rc-slots').textContent, $('rc-seat').textContent]).toEqual(['', '', '']);
+    // A new game brings the map back, in its place (before the help).
+    instance.newGame({ seed: 5 });
+    const order = [...$('rc-root').children].map((el) => el.getAttribute('data-testid') ?? el.className);
+    expect(order.indexOf('rc-main')).toBeLessThan(order.findIndex((x) => x.includes('rc-help')));
+  });
+
+  it('an announcement still pending for the previous person never reaches the hand-over', () => {
+    open(hot());
+    const rifle = state().world.entities.find((e) => e.side === 0 && e.kind === 'rifles')!;
+    click(`rc-unit-${rifle.id}`); // announces the selection a moment later
+    click('rc-lock');
+    later();
+    expect([...ctx.context.root.querySelectorAll('[aria-live]')].map((el) => el.textContent).join('|')).not.toMatch(/Rifle|selected/i);
+  });
+});

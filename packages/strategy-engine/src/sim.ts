@@ -956,18 +956,40 @@ function captureAndEliminate(w: World, rs: Ruleset, t: number, events: SimEvent[
   const owners = new Set(w.entities.filter((e) => isCommandPost(rs, e)).map((e) => e.side));
   const eliminated: number[] = [];
   for (let side = 0; side < w.sides; side++) if (!out.has(side) && !owners.has(side)) eliminated.push(side);
-  if (eliminated.length === 0) return;
-  const removed = new Set(eliminated);
+  if (eliminated.length > 0) removeSides(w, eliminated, t, events);
+}
+
+/**
+ * The elimination step: the sides are out, their pieces and projectiles are removed, and every
+ * side is told (`eliminated`). Reports of the removed pieces go, and so do old reports that still
+ * name such a side as owner of a post it lost unseen (nobody can hold it for a side that is out;
+ * who holds it now is learned only by looking again). A side that is out has no reports.
+ */
+function removeSides(w: World, sides: readonly number[], t: number, events: SimEvent[]): void {
+  const removed = new Set(sides);
+  const out = new Set(w.out ?? []);
   const ids = new Set(w.entities.filter((e) => removed.has(e.side)).map((e) => e.id));
   w.entities = w.entities.filter((e) => !removed.has(e.side));
   w.projectiles = w.projectiles.filter((p) => !removed.has(p.side));
-  for (const side of eliminated) {
+  for (const side of sides) {
     out.add(side);
     events.push({ t: 'eliminated', tick: t, side });
   }
   w.out = [...out].sort((a, b) => a - b);
-  // Every side is told: reports of the removed pieces go, and so do old reports that still name the
-  // side as owner of a post it lost unseen (nobody can hold it for a side that is out; who holds it
-  // now is learned only by looking again).
   if (w.intel) w.intel = w.intel.map((list, side) => (removed.has(side) ? [] : list.filter((r) => !ids.has(r.id) && !removed.has(r.side))));
+}
+
+/**
+ * A side gives up (retires) between turns: exactly the elimination step, applied at once — its
+ * pieces and projectiles are removed, it is out, and every side is told `eliminated` (nothing
+ * else: no positions or plans of the retiring side are revealed). For games with capture rules
+ * (several sides); the game decides what follows (docs/design/strategy.md § 9.4, hot-seat).
+ * A side that is out already, or not a playing side, is refused (RangeError).
+ */
+export function retire(world: World, side: number): { world: World; events: SimEvent[] } {
+  if (!Number.isInteger(side) || side < 0 || side >= world.sides || world.out?.includes(side)) throw new RangeError('Not a side in the game.');
+  const w = structuredClone(world);
+  const events: SimEvent[] = [];
+  removeSides(w, [side], w.tick, events);
+  return { world: w, events };
 }
