@@ -973,7 +973,7 @@ describe('opponent levels (I5)', () => {
       expect(hard.a, `${spec.id} hard vs easy ${JSON.stringify(hard)}`).toBeGreaterThanOrEqual(hard.b + 8);
       expect(normal.a, `${spec.id} normal vs easy ${JSON.stringify(normal)}`).toBeGreaterThanOrEqual(normal.b + 8);
     }
-  }, 300_000);
+  }, 600_000); // 2 maps x 2 levels x 12 AI-vs-AI games: 154 s under coverage on a loaded 4-core machine (2026-10-14), kept under half of this
 
   it('hard beats normal on Field Exercise by at least 4 games; over Field Exercise and Ridge Valley it wins at least as often as it loses', () => {
     // The two share the plan of attack; hard adds breadth, focus fire, pulling back and jamming.
