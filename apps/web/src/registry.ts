@@ -20,8 +20,27 @@ const entry = <S>(id: string, load: () => Promise<{ default: GameModule<S> }>): 
   return { metadata: { ...metadata, messages: gameCatalogueMessages(id) }, load: async () => (await load()).default as GameModule<unknown> };
 };
 
-/** Catalogue order = order of this list. Adding a game: one line here + a package under packages/games. */
+/**
+ * Catalogue order = order of this list (owner, 2026-10-14). Adding a game: one line here + a package under packages/games.
+ * 1. The large games first: strategy (Relay Command), strategy/tower hybrid, Tower Defense, the point-and-click adventures
+ *    (each joins this group when it ships).
+ * 2. Then the small games in the owner's order: Nonogram, Orbit Links, Chess, Mine Logic, Letter Logic, Stack Duel,
+ *    Skyscrapers, Lights Out, Crate Pusher, Laser Paths, Circuit, Memory; then the rest.
+ */
 export const GAMES: readonly GameEntry[] = [
+  entry('relay-command', () => import('@wp/game-relay-command')),
+  entry('nonogram', () => import('@wp/game-nonogram')),
+  entry('node-conquest', () => import('@wp/game-node-conquest')),
+  entry('chess', () => import('@wp/game-chess')),
+  entry('minesweeper', () => import('@wp/game-minesweeper')),
+  entry('word-guess', () => import('@wp/game-word-guess')),
+  entry('stack-duel', () => import('@wp/game-stack-duel')),
+  entry('skyscrapers', () => import('@wp/game-skyscrapers')),
+  entry('lights-out', () => import('@wp/game-lights-out')),
+  entry('sokoban', () => import('@wp/game-sokoban')),
+  entry('laser-circuit', () => import('@wp/game-laser-circuit')),
+  entry('circuit-puzzle', () => import('@wp/game-circuit-puzzle')),
+  entry('memory', () => import('@wp/game-memory')),
   entry('mastermind', () => import('@wp/game-mastermind')),
   entry('black-box', () => import('@wp/game-black-box')),
   entry('rule-discovery', () => import('@wp/game-rule-discovery')),
@@ -31,17 +50,9 @@ export const GAMES: readonly GameEntry[] = [
   entry('debug-system', () => import('@wp/game-debug-system')),
   entry('constraint-grid', () => import('@wp/game-constraint-grid')),
   entry('minimal-proof', () => import('@wp/game-minimal-proof')),
-  entry('nonogram', () => import('@wp/game-nonogram')),
-  entry('skyscrapers', () => import('@wp/game-skyscrapers')),
   entry('bridges', () => import('@wp/game-bridges')),
-  entry('minesweeper', () => import('@wp/game-minesweeper')),
-  entry('lights-out', () => import('@wp/game-lights-out')),
-  entry('sokoban', () => import('@wp/game-sokoban')),
   entry('sliding-blocks', () => import('@wp/game-sliding-blocks')),
   entry('river-crossing', () => import('@wp/game-river-crossing')),
-  entry('laser-circuit', () => import('@wp/game-laser-circuit')),
-  entry('circuit-puzzle', () => import('@wp/game-circuit-puzzle')),
-  entry('memory', () => import('@wp/game-memory')),
   entry('review', () => import('@wp/game-review')),
   entry('sequence-memory', () => import('@wp/game-sequence-memory')),
   entry('spatial-memory', () => import('@wp/game-spatial-memory')),
@@ -49,12 +60,7 @@ export const GAMES: readonly GameEntry[] = [
   entry('distractor-control', () => import('@wp/game-distractor-control')),
   entry('connect-four', () => import('@wp/game-connect-four')),
   entry('tic-tac-toe', () => import('@wp/game-tic-tac-toe')),
-  entry('node-conquest', () => import('@wp/game-node-conquest')),
-  entry('relay-command', () => import('@wp/game-relay-command')),
   entry('slitherlink', () => import('@wp/game-slitherlink')),
-  entry('chess', () => import('@wp/game-chess')),
-  entry('word-guess', () => import('@wp/game-word-guess')),
-  entry('stack-duel', () => import('@wp/game-stack-duel')),
   entry('n-back', () => import('@wp/game-n-back')),
   entry('visual-search', () => import('@wp/game-visual-search')),
   entry('prospective-memory', () => import('@wp/game-prospective-memory')),

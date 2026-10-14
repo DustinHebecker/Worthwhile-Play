@@ -79,6 +79,26 @@ Platform capabilities for games (host, ADRs 0002/0011/0012): preferences (small 
 | Adventure | Adventure B — original temporal sci-fi (pause/slow/fast-forward/rewind/travel) | M8 | ⏳ | design reference only |
 | AI | Local AI pack (WebLLM), AI interface, golden eval set | M9 | ⏳ | never required |
 
+### Owner feedback on the small games (2026-10-14)
+
+Catalogue order (done): the large games first (Relay Command; then strategy/tower hybrid, Tower Defense and the adventures as they ship), then Nonogram, Orbit Links, Chess, Mine Logic, Letter Logic, Stack Duel, Skyscrapers, Lights Out, Crate Pusher, Laser Paths, Circuit, Memory, then the rest (`apps/web/test/catalogue.test.ts`).
+
+| Game | Feedback | Status |
+|---|---|---|
+| Black Box | allow stating the rule as a formula instead of only predicting example outputs | 🚧 |
+| Nonogram | a harder level, e.g. 15×15 | 🚧 |
+| Crate Pusher | more levels | 🚧 |
+| Laser Paths | far too easy even on hard: more optical elements, many more pieces to place | 🚧 |
+| Review / AI basics | prompts appear in the learning language; they should be in the main (UI) language | 🚧 |
+| Four in a Row | far too hard even on easy | 🚧 |
+| Orbit Links | already good, but frequent stalemates | 🚧 |
+| Visual search | too easy | 🚧 |
+| Circuit | **backlog:** a variant with electronic components (capacitors, inductors, …) where e.g. oscillators with the right frequency and other circuits must be built | ⏳ |
+| Four in a Row | **backlog:** variants that make it more interesting (3D / 4×4×4, five in a row, …) | ⏳ |
+| Tic-Tac-Toe | **backlog:** variants (3D, 4×4, …) | ⏳ |
+
+Decisions on the large games (strategy, Tower Defense, adventures) are made by the owner in their own contexts, not via the orchestrator.
+
 ## Next steps (suggested agent assignments)
 
 1. **M2 kickoff (orchestrator)**: design `packages/puzzle-core` (grid model, generator/solver interfaces, difficulty metrics) via ADR; then one feature agent per puzzle in parallel.

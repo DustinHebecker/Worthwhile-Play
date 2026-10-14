@@ -27,6 +27,25 @@ describe('game registry', () => {
     for (const { metadata } of GAMES) expect(validateMetadata(metadata, SUPPORTED_LOCALES), metadata.id).toEqual([]);
   });
 
+  it("lists the games in the owner's order: the large games first, then the favourite small games", () => {
+    const ids = GAMES.map((g) => g.metadata.id);
+    expect(ids.slice(0, 13)).toEqual([
+      'relay-command',
+      'nonogram',
+      'node-conquest',
+      'chess',
+      'minesweeper',
+      'word-guess',
+      'stack-duel',
+      'skyscrapers',
+      'lights-out',
+      'sokoban',
+      'laser-circuit',
+      'circuit-puzzle',
+      'memory'
+    ]);
+  });
+
   it('translates every declared difficulty in every locale', () => {
     for (const { metadata } of GAMES) {
       for (const difficulty of metadata.difficulties ?? []) {
