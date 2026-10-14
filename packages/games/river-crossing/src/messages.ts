@@ -1395,7 +1395,7 @@ export const messages: GameMessages = {
     'entity.robot': 'Robô',
     'entity.crate': 'Caixote',
     'entity.gardener': 'Jardineira',
-    'entity.dog': 'Cão',
+    'entity.dog': 'Cachorro',
     'entity.goose': 'Ganso',
     'entity.seeds': 'Sementes',
     'entity.hiker': 'Caminhante',

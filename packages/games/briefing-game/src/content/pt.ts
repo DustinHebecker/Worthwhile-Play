@@ -6,7 +6,7 @@ export const content: ContentText = {
     situation: 'Sua empresa lança uma nova luminária de mesa em 14 de maio. O fornecedor das cúpulas avisa que vai atrasar. Prepare um briefing.',
     recipient: 'a gerente de produto',
     cards: {
-      c1: 'A nova luminária de mesa será lançada em 14 de maio; 350 clientes já fizeram a pré-encomenda.',
+      c1: 'A nova luminária de mesa será lançada em 14 de maio; 350 clientes já fizeram pedidos na pré-venda.',
       c2: 'O fornecedor só enviou 200 das 500 cúpulas que encomendamos.',
       c3: 'Assim que as peças chegarem, nossa oficina consegue montar 100 luminárias por dia.',
       c4: 'O fornecedor ainda não deu uma data para enviar as cúpulas restantes.',

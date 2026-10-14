@@ -24,7 +24,7 @@ export const LOCALE_DEFINITIONS: readonly LocaleDefinition[] = [
   { code: 'ko', direction: 'ltr', nativeName: '한국어' },
   { code: 'ja', direction: 'ltr', nativeName: '日本語' },
   { code: 'ar', direction: 'rtl', nativeName: 'العربية' },
-  { code: 'pt', direction: 'ltr', nativeName: 'Português' },
+  { code: 'pt', direction: 'ltr', nativeName: 'Português (Brasil)' },
   { code: 'it', direction: 'ltr', nativeName: 'Italiano' },
   { code: 'pl', direction: 'ltr', nativeName: 'Polski' },
   { code: 'tr', direction: 'ltr', nativeName: 'Türkçe' },
