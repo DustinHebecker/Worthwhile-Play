@@ -511,7 +511,7 @@ test('relay-command: the unit card (meter list) fits a 360 px phone in en, de, r
     await expect(page.getByTestId('rc-card-vs')).toBeVisible();
     const widths = await page.evaluate(() => ({ page: document.documentElement.scrollWidth, viewport: document.documentElement.clientWidth }));
     expect(widths.page, lang).toBeLessThanOrEqual(widths.viewport);
-    for (const id of ['rc-card-meters', 'rc-card-matchup', 'rc-card-vs']) {
+    for (const id of ['rc-card-meters', 'rc-card-vs']) {
       const box = (await page.getByTestId(id).boundingBox())!;
       expect(box.x, `${lang} ${id}`).toBeGreaterThanOrEqual(0);
       expect(box.x + box.width, `${lang} ${id}`).toBeLessThanOrEqual(360);
@@ -520,5 +520,8 @@ test('relay-command: the unit card (meter list) fits a 360 px phone in en, de, r
     const lines = await page.locator('[data-testid="rc-card-meters"] dt span, [data-testid="rc-card-vs"] th span').evaluateAll((spans) => spans.map((el) => [el.textContent, el.getClientRects().length] as const));
     expect(lines.length, lang).toBeGreaterThan(5);
     for (const [text, rects] of lines) expect(rects, `${lang} "${text}"`).toBe(1);
+    // Every bar has the same width, so the segments read on one scale (review of PR #30).
+    const bars = await page.locator('[data-testid="rc-card-meters"] .rc-seg').evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().width)));
+    expect(new Set(bars).size, `${lang} bar widths ${bars.join(',')}`).toBe(1);
   }
 });

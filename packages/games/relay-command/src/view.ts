@@ -1074,28 +1074,9 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       ...meterRow('sight', t('card.vision'), segments(arch.vision, MAX.vision), cells(arch.vision))
     );
     cardEl.append(meters);
-    // What the weapon is good against, in words with the armour pictograms (never colour alone).
-    if (w) {
-      const groups: [string, (v: number) => boolean][] = [
-        ['card.strongVs', (v) => v >= 100],
-        ['card.weakerVs', (v) => v > 0 && v < 100],
-        ['card.cantHit', (v) => v === 0]
-      ];
-      const matchup = h('dl', { class: 'rc-matchup', 'data-testid': 'rc-card-matchup' });
-      for (const [key, test] of groups) {
-        const classes = ARMOR_CLASSES.filter((cls) => test(w.vs[cls]));
-        if (classes.length === 0) continue;
-        matchup.append(
-          h(
-            'div',
-            {},
-            h('dt', {}, t(key)),
-            ...classes.map((cls) => h('dd', {}, unitIcon(ARMOR_ICON[cls], false, me() === 0 ? 1 : 0), h('span', {}, t(`armor.${cls}`)), ' ', h('small', { class: 'rc-muted' }, `${w.vs[cls]} %`)))
-          )
-        );
-      }
-      cardEl.append(matchup);
-    } else {
+    // What the weapon does against each armour class is told once: the effect table behind "More"
+    // (owner, 2026-10-14). An unarmed unit says so right here.
+    if (!w) {
       cardEl.append(h('p', { class: 'rc-hint', 'data-testid': 'rc-card-noweapon' }, pictogram('noweapon'), h('span', {}, `${t('card.weapon')}: ${t('card.noWeapon')}`)));
     }
     // Everything else behind "More" (folded by default; stays open across redraws once opened).

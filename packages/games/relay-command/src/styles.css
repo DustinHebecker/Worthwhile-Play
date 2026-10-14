@@ -272,15 +272,11 @@
 .wp-relay-command .rc-meters { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 0.35rem 0.6rem; align-items: center; margin: 0; overflow-wrap: normal; }
 .wp-relay-command .rc-meters dt { display: flex; align-items: center; gap: 0.4rem; margin: 0; white-space: nowrap; }
 .wp-relay-command .rc-meters dd { display: flex; flex-wrap: wrap; align-items: center; gap: 0.2rem 0.6rem; margin: 0; min-inline-size: 0; }
-.wp-relay-command .rc-seg { display: flex; gap: 2px; flex: 1 1 3rem; min-inline-size: 3rem; }
+/* One bar width for every row, so the five segments read on the same scale (review of PR #30). */
+.wp-relay-command .rc-seg { display: flex; gap: 2px; flex: 0 0 6rem; inline-size: 6rem; }
 .wp-relay-command .rc-seg i { flex: 1; block-size: 0.5rem; border-radius: 2px; border: 1px solid var(--wp-p1); background: var(--wp-surface); }
 .wp-relay-command .rc-seg i.on { background: var(--wp-p1); }
 .wp-relay-command .rc-meter-value { flex: 0 1 auto; font-variant-numeric: tabular-nums; font-weight: 600; }
-.wp-relay-command .rc-matchup { display: grid; gap: 0.3rem; margin: 0; }
-.wp-relay-command .rc-matchup > div { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.6rem; }
-.wp-relay-command .rc-matchup dt { font-weight: 600; margin: 0; }
-.wp-relay-command .rc-matchup dd { display: inline-flex; align-items: center; gap: 0.25rem; margin: 0; }
-.wp-relay-command .rc-matchup .rc-icon,
 .wp-relay-command .rc-vs-table .rc-icon { inline-size: 1.4rem; block-size: 1.4rem; }
 .wp-relay-command .rc-card .rc-hint { display: flex; gap: 0.4rem; align-items: center; }
 .wp-relay-command .rc-facts { display: grid; grid-template-columns: auto 1fr; gap: 0.25rem 0.75rem; margin: 0; }
