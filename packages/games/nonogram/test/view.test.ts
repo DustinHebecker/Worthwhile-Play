@@ -57,6 +57,74 @@ describe('Nonogram view', () => {
     expect(states(setup(1, 'bogus').root)).toHaveLength(25);
   });
 
+  it('renders the expert 15×15 board with guide lines every five cells', () => {
+    const { root, instance, ctx } = setup(3, 'expert');
+    expect(states(root)).toHaveLength(225);
+    expect(instance.serialize()).toMatchObject({ difficulty: 'expert', size: 15 });
+    expect(byId(root, 'ng-board').getAttribute('aria-label')).toBe('Puzzle grid, 15 by 15');
+    expect(byId(root, 'ng-board').dataset.size).toBe('15');
+    expect(root.querySelectorAll('[data-testid^="col-clue-"]')).toHaveLength(15);
+    const majorCols = [...Array(15).keys()].filter((c) => cell(root, 0, c).classList.contains('ng-major-col'));
+    const majorRows = [...Array(15).keys()].filter((r) => cell(root, r, 0).classList.contains('ng-major-row'));
+    expect(majorCols).toEqual([4, 9]);
+    expect(majorRows).toEqual([4, 9]);
+    expect(byId(root, 'ng-status').textContent).toMatch(/ of 30$/);
+    // Keyboard navigation reaches the far corner.
+    cell(root, 14, 13).focus();
+    key(cell(root, 14, 13), 'ArrowRight');
+    expect(document.activeElement).toBe(cell(root, 14, 14));
+    key(cell(root, 14, 14), ' ');
+    expect(cell(root, 14, 14).dataset.state).toBe('filled');
+    expect(ctx.missingKeys).toEqual([]);
+  });
+
+  it('offers larger cells on 15×15 boards only, as a remembered view option that is never saved', () => {
+    const hard = setup(1, 'hard');
+    expect(byId(hard.root, 'ng-zoom').closest<HTMLElement>('.ng-view-options')?.hidden).toBe(true);
+
+    const { root, ctx, instance } = setup(1, 'expert');
+    const zoom = byId(root, 'ng-zoom');
+    const board = byId(root, 'ng-board');
+    expect(zoom.closest<HTMLElement>('.ng-view-options')?.hidden).toBe(false);
+    expect(zoom.textContent).toContain('Larger cells');
+    expect(zoom.getAttribute('aria-pressed')).toBe('false');
+    expect(board.classList.contains('is-zoomed')).toBe(false);
+    const before = instance.serialize();
+    zoom.click();
+    expect(zoom.getAttribute('aria-pressed')).toBe('true');
+    expect(board.classList.contains('is-zoomed')).toBe(true);
+    expect(ctx.preferences.get('largeCells')).toBe(true);
+    expect(ctx.saveRequests()).toBe(0);
+    expect(instance.serialize()).toEqual(before);
+    // A new game keeps the view option; a smaller board does not show it.
+    instance.newGame({ seed: 2, difficulty: 'expert' });
+    expect(byId(root, 'ng-board').classList.contains('is-zoomed')).toBe(true);
+    instance.newGame({ seed: 2, difficulty: 'medium' });
+    expect(byId(root, 'ng-board').classList.contains('is-zoomed')).toBe(false);
+    expect(zoom.closest<HTMLElement>('.ng-view-options')?.hidden).toBe(true);
+    instance.restore(before);
+    expect(byId(root, 'ng-board').classList.contains('is-zoomed')).toBe(true);
+    zoom.click();
+    expect(byId(root, 'ng-board').classList.contains('is-zoomed')).toBe(false);
+    expect(ctx.preferences.get('largeCells')).toBe(false);
+  });
+
+  it('reads the larger-cells preference on creation and ignores invalid values', () => {
+    const ctx = createTestContext(game as never, 'en');
+    ctx.preferences.set('largeCells', true);
+    const instance = game.create(ctx.context);
+    running.push(instance);
+    instance.newGame({ seed: 4, difficulty: 'expert' });
+    expect(byId(ctx.context.root, 'ng-board').classList.contains('is-zoomed')).toBe(true);
+
+    const other = createTestContext(game as never, 'en');
+    other.preferences.set('largeCells', 'yes');
+    const second = game.create(other.context);
+    running.push(second);
+    second.newGame({ seed: 4, difficulty: 'expert' });
+    expect(byId(other.context.root, 'ng-board').classList.contains('is-zoomed')).toBe(false);
+  });
+
   it('toggles fill on tap and cross in cross mode, saving each change', () => {
     const { root, ctx, instance } = setup();
     cell(root, 0, 0).click();
