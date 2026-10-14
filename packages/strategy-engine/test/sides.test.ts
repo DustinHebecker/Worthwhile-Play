@@ -132,7 +132,7 @@ describe('no leaks between opponents in the events a side is told (review of PR 
     expect(r.reported![0]!.filter((e) => (e.t === 'fire' && e.target === 3) || ('id' in e && e.id === 3))).toEqual([]);
   });
 
-  it('a side is told of its own shot also when the target slips out of sight in that tick (review of PR #21)', () => {
+  it('an own shell towards a cell the side no longer observes is told nowhere: not in the reports, not in observe() (review of PR #28)', () => {
     const FOG3: Ruleset = { ...BASE_RULESET, id: 'fog-test', fog: true };
     // Side 0's gun (sight 3) shells side 1's warden that side 0's squad spots; the warden kills the
     // squad in the same tick, so at the end of it side 0 no longer sees the warden's cell.
@@ -140,16 +140,26 @@ describe('no leaks between opponents in the events a side is told (review of PR 
     w.entities[1]!.hp = 1;
     const r = runTicks(w, FOG3, [{ side: 0, unit: 1, order: { type: 'attack', target: 3 } }], 1);
     expect(r.world.entities.some((e) => e.id === 2)).toBe(false);
-    const shot = r.events.find((e) => (e.t === 'launch' || e.t === 'fire') && e.id === 1);
-    expect(shot).toBeDefined();
-    expect(r.reported![0]!).toContainEqual(shot);
+    const shot = r.events.find((e) => e.t === 'launch' && e.id === 1);
+    expect(shot).toMatchObject({ x: 6, y: 1 });
+    expect(r.reported![0]!.some((e) => e.t === 'launch')).toBe(false);
+    expect(observe(r.world, FOG3, 0).world.projectiles).toEqual([]);
+    expect(JSON.stringify(r.reported![0])).not.toContain('"x":6,"y":1');
+    // The same shot while the squad survives (the cell observed): told, and the shell is known.
+    const seen = structuredClone(w);
+    seen.entities[1]!.hp = 40;
+    const s = runTicks(seen, FOG3, [{ side: 0, unit: 1, order: { type: 'attack', target: 3 } }], 1);
+    expect(s.reported![0]!.some((e) => e.t === 'launch' && e.id === 1)).toBe(true);
+    expect(observe(s.world, FOG3, 0).world.projectiles).toHaveLength(1);
   });
 
   it('two sides are told exactly what they were told before several sides existed (fingerprint of every report list, review of PR #21)', () => {
     // Fixed random two-side worlds (seeded sample), every turn's report lists and the final world.
     // The expected fingerprint was produced by the engine before teams, neutral posts and the shot
     // filter (main at 30f9646): own shots (the shooter dying in the same tick, the target slipping
-    // out of sight) and shots at own units must still be told as before.
+    // out of sight) and shots at own units must still be told as before. Since the PR #28 review an
+    // own shell towards a cell the side does not observe is no longer told; none of these sampled
+    // worlds has one, so the fingerprint stands.
     let h = 0x811c9dc5;
     const feed = (text: string) => {
       for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193) >>> 0;

@@ -55,6 +55,12 @@ export function observe(world: World, ruleset: Ruleset, side: number): Observati
     }
   }
   entities.sort((a, b) => a.id - b.id);
+  const network = computeNetwork(world, ruleset, side);
+  const observed = ruleset.fog ? observedCells(world, ruleset, side, network) : undefined;
+  // Own shells in flight, but only towards cells the side observes now: a shot fired by a unit
+  // out of contact at what only it saw would otherwise tell where an unreported enemy stood
+  // (review of PR #21). Shots are only ever aimed at units, so no other shell keeps its cell.
+  const shells = world.projectiles.filter((p) => p.side === side && (!observed || observed[cellOf(world.map, p.x, p.y)] === 1));
   const intel = world.intel ? world.intel.map((list, s) => (s === side ? structuredClone(list) : [])) : undefined;
   const known: World = {
     v: 1,
@@ -70,17 +76,15 @@ export function observe(world: World, ruleset: Ruleset, side: number): Observati
     // Which sides are out is told to every side.
     ...(world.out && { out: [...world.out] }),
     entities,
-    projectiles: world.projectiles.filter((p) => p.side === side).map((p) => ({ ...p })),
+    projectiles: shells.map((p) => ({ ...p })),
     // Only ids the side knows: the true counter would reveal every unseen enemy shot.
-    nextId: Math.max(0, ...entities.map((e) => e.id), ...world.projectiles.filter((p) => p.side === side).map((p) => p.id)) + 1,
+    nextId: Math.max(0, ...entities.map((e) => e.id), ...shells.map((p) => p.id)) + 1,
     ...(intel && { intel })
   };
-  const network = computeNetwork(world, ruleset, side);
   // Economy: only the own Supply is known; deposits are map knowledge, but how much is left in
   // one is known only while a reporting unit observes it (UNKNOWN_LEFT otherwise).
   if (world.supply) known.supply = world.supply.map((v, s) => (s === side ? v : 0));
   if (world.map.deposits) {
-    const observed = ruleset.fog ? observedCells(world, ruleset, side, network) : undefined;
     known.map = { ...world.map, deposits: world.map.deposits.map((d) => ({ x: d.x, y: d.y, left: !observed || observed[cellOf(world.map, d.x, d.y)] === 1 ? d.left : UNKNOWN_LEFT })) };
   }
   return { side, ruleset: ruleset.id, world: known, ghosts, network, jammed: feltJamming(world, ruleset, side, network) };
