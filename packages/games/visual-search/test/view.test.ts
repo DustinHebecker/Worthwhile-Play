@@ -75,6 +75,48 @@ describe('Visual Search view', () => {
     expect(items.some((b) => b.dataset.revealed)).toBe(false);
   });
 
+  it('expert: T among rotated L shapes, described as "in any rotation", with "Not there" and its own explanation', () => {
+    const g = setup({ seed: 6, difficulty: 'expert' });
+    expect(g.el('vs-intro-target').textContent).toBe('Your target this round: T shape, solid, in any rotation');
+    expect(g.el('vs-intro').textContent).toContain('"Not there"');
+    g.button('vs-start').click();
+    expect(g.el('vs-find').textContent).toBe('Find: T shape, solid, in any rotation');
+    expect(g.el('vs-find-sample').dataset.tilt).toBe('any');
+    expect(g.el('vs-board').querySelectorAll('.wp-vs__cell')).toHaveLength(36);
+    expect(g.el('vs-board').style.getPropertyValue('--wp-vs-cols')).toBe('6');
+    expect(g.button('vs-not-there').hidden).toBe(false);
+    const labels = g.items().map((b) => b.getAttribute('aria-label') ?? '');
+    for (const label of labels) expect(label).toMatch(/^(T shape|L shape), solid, (straight|rotated 90°|rotated 180°|rotated 270°); row \d, column \d$/);
+    // Glyphs differ by geometry alone (no colour): apply each item's rotation to its outline
+    // and compare vertex sets; a T in any rotation never coincides with an L in any rotation.
+    const outline = (b: HTMLElement) => {
+      const deg = Number(/rotate\((\d+)\)/.exec(b.querySelector('g')?.getAttribute('transform') ?? '')?.[1] ?? 0);
+      const rad = (deg * Math.PI) / 180;
+      const pts = (b.querySelector('polygon')?.getAttribute('points') ?? '').split(' ').map((p) => p.split(',').map(Number) as [number, number]);
+      return pts
+        .map(([x, y]) => `${Math.round(x * Math.cos(rad) - y * Math.sin(rad))},${Math.round(x * Math.sin(rad) + y * Math.cos(rad))}`)
+        .sort()
+        .join(' ');
+    };
+    const items = g.items();
+    for (const b of items) {
+      expect(b.querySelector('polygon')?.getAttribute('fill')).toBe('currentColor');
+      expect(b.querySelector('polygon')?.getAttribute('stroke')).toBe('currentColor');
+    }
+    const tees = new Set(items.filter((b) => b.dataset.shape === 'tee').map(outline));
+    const ells = new Set(items.filter((b) => b.dataset.shape === 'ell').map(outline));
+    expect(ells.size).toBe(4);
+    for (const tee of tees) expect(ells.has(tee)).toBe(false);
+    // Answer every board; the summary explains spatial-configuration search.
+    for (let i = 0; i < TRIALS; i++) {
+      const trial = g.trial();
+      g.items()[trial.present ? trial.targetIndex : 0]?.click();
+      if (i < TRIALS - 1) g.button('vs-next').click();
+    }
+    expect(g.el('vs-summary').textContent).toContain('Spatial-configuration search');
+    expect(g.el('vs-summary').textContent).toContain(`Shapes on the board: ${CONFIGS.expert.setSizes[1]}`);
+  });
+
   it('hides "Not there" on feature search, where the target is always present', () => {
     const g = setup({ seed: 2 });
     g.button('vs-start').click();
