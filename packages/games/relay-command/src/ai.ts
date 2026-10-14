@@ -69,6 +69,10 @@ const SLOT_MARGIN = 2;
  * - easy: fighters engage the nearest spotted enemy they can hit, or advance on a known position;
  * - normal: fighters choose among candidate orders by a one-turn lookahead (spotted enemies are
  *   assumed to hold), spending a slot only where it pays;
+ * - several sides (normal / hard, docs/design/strategy.md § 9.4): the target post is chosen by
+ *   distance, known defence and damage (`objectiveOf`), neutral posts are taken over by infantry,
+ *   a damaged own post with raiders near gets a guard, and the relay truck moves to reconnect
+ *   fighters cut off away from the objective;
  * - hard: as normal, plus electronic warfare (jammer set up near known enemy relays and posts,
  *   tracer with the relay truck) and a bolder weighting of damage dealt against damage taken.
  */
@@ -82,10 +86,16 @@ export function planAi(obs: Observation, ruleset: Ruleset, difficulty: Difficult
   // Economy (I6a): spend first, on at most half the slots, so the army still gets its orders.
   if (ruleset.economy) commands.push(...economyOrders(obs, ruleset, own, difficulty, Math.max(1, Math.floor(budget / 2))));
 
+  // Fighters cut off from the net away from the current objective (left behind when a target
+  // fell or the objective changed): the relay truck moves to bring them back into contact.
+  const cutOff = strandedFighters(obs, ruleset);
   for (const truck of own) {
-    if (!archetypeOf(ruleset, truck.kind)?.comms?.needsDeploy || truck.order.type === 'deploy') continue;
-    if ((truck.deploy ?? 0) >= ruleset.ticksPerTurn) continue; // already set up: leave it standing
-    const spot = relaySpot(obs, ruleset, truck);
+    if (!archetypeOf(ruleset, truck.kind)?.comms?.needsDeploy) continue;
+    const reconnect = cutOff.length >= STRANDED_MIN ? relaySpot(obs, ruleset, truck, cutOff) : undefined;
+    const settled = truck.order.type === 'deploy' || (truck.deploy ?? 0) >= ruleset.ticksPerTurn;
+    // Already set up (or setting up) where it is to stand: leave it standing.
+    if (settled && (!reconnect || (reconnect.x === truck.x && reconnect.y === truck.y))) continue;
+    const spot = reconnect ?? relaySpot(obs, ruleset, truck);
     if (!spot) continue;
     if (truck.x === spot.x && truck.y === spot.y) commands.push({ side, unit: truck.id, order: { type: 'deploy' } });
     else if (truck.order.type !== 'move' || truck.order.x !== spot.x || truck.order.y !== spot.y) {
@@ -97,8 +107,11 @@ export function planAi(obs: Observation, ruleset: Ruleset, difficulty: Difficult
   // the fight would only spend a slot on an order the doctrine is meant to prevent.
   const retreating = (u: Entity) => u.hp * 100 < (archetypeOf(ruleset, u.kind)?.hp ?? 0) * AI_DOCTRINE.retreatBelow;
   const known = enemiesOf(obs);
+  // Damaged own posts with raiders near get a guard first (capture rule): it leaves the attack.
+  const guarded = ruleset.capture ? guardPosts(obs, ruleset, own) : { commands: [], guards: new Set<number>() };
+  commands.push(...guarded.commands);
   const fighters = own
-    .filter((u) => archetypeOf(ruleset, u.kind)?.weapon && (archetypeOf(ruleset, u.kind)?.speed ?? 0) > 0 && !retreating(u))
+    .filter((u) => archetypeOf(ruleset, u.kind)?.weapon && (archetypeOf(ruleset, u.kind)?.speed ?? 0) > 0 && !retreating(u) && !guarded.guards.has(u.id))
     .map((u) => ({ u, d: nearestDistance(u, known) }))
     .sort((a, b) => a.d - b.d || frame(obs, a.u) - frame(obs, b.u))
     .map((x) => x.u);
@@ -179,7 +192,7 @@ function lookaheadFighters(obs: Observation, ruleset: Ruleset, fighters: readonl
   delete base.intel;
   const known = enemiesOf(obs);
   const spotted = known.filter((e) => !obs.ghosts.has(e.id));
-  const objective = known.find((e) => e.kind === 'command-post') ?? known[0];
+  const objective = plan.objective;
   const seen = observedCells(world, ruleset, side, obs.network);
   const value = (w: World, s: number): number =>
     w.entities.reduce((sum, e) => {
@@ -300,23 +313,55 @@ interface AssaultPlan {
   readonly besieging: boolean;
 }
 
+/** Weight of the known defence of a post against the own army in the choice of target. */
+const DEFENCE_WEIGHT = 1;
+/** A post the side already goes for costs this share of its distance (no switching back and forth). */
+const STICKY = 0.6;
+/** A post's lost health lowers its cost by up to this share (a damaged post falls sooner). */
+const DAMAGE_WEIGHT = 0.5;
+/** Own fighters within this many cells of a post count as being at it (the attack is on). */
+const AT_POST = 4;
+
 /**
- * The enemy Command Post the side goes for: the nearest one it knows of from its own post (ties
- * in its frame). Several opponents: each picks its own, with no coordination between them.
+ * The Command Post the side goes for (docs/design/strategy.md § 9.4, increment 4): among the
+ * hostile posts it knows of, and the neutral ones to take over, the one with the lowest cost:
+ * the distance from its own post, raised by the known defence around the target against the
+ * side's own army, lowered for a damaged post and for the target its fighters already attack.
+ * Several opponents: each picks its own, with no coordination between them and no rule that
+ * prefers the player.
  */
-export function objectiveOf(obs: Observation): Entity | undefined {
-  const home = obs.world.entities.find((e) => e.side === obs.side && e.kind === 'command-post');
+export function objectiveOf(obs: Observation, ruleset: Ruleset): Entity | undefined {
+  const { world, side } = obs;
+  const home = world.entities.find((e) => e.side === side && e.kind === 'command-post');
   if (!home) return undefined;
-  return enemiesOf(obs)
-    .filter((e) => e.kind === 'command-post')
-    .sort((a, b) => dist2(a.x, a.y, home.x, home.y) - dist2(b.x, b.y, home.x, home.y) || frame(obs, a) - frame(obs, b))[0];
+  const value = (e: Entity) => ((archetypeOf(ruleset, e.kind)?.cost ?? 0) * e.hp) / (archetypeOf(ruleset, e.kind)?.hp || 1);
+  const mobile = (e: Entity) => archetypeOf(ruleset, e.kind)?.weapon && (archetypeOf(ruleset, e.kind)?.speed ?? 0) > 0;
+  const army = world.entities.filter((e) => e.side === side && mobile(e));
+  const ours = Math.max(1, army.reduce((sum, e) => sum + value(e), 0));
+  const armed = enemiesOf(obs).filter((e) => archetypeOf(ruleset, e.kind)?.weapon);
+  let best: { post: Entity; cost: number; f: number } | undefined;
+  for (const post of targetPosts(obs)) {
+    const defence = armed.filter((e) => dist2(e.x, e.y, post.x, post.y) <= DEFENCE_RADIUS * DEFENCE_RADIUS).reduce((sum, e) => sum + value(e), 0);
+    const health = post.hp / (archetypeOf(ruleset, post.kind)?.hp || 1);
+    const engaged =
+      army.some((f) => f.order.type === 'attack' && f.order.target === post.id) ||
+      army.filter((f) => dist2(f.x, f.y, post.x, post.y) <= AT_POST * AT_POST).length * 2 >= Math.max(1, army.length);
+    const cost = Math.sqrt(dist2(home.x, home.y, post.x, post.y)) * (1 + (DEFENCE_WEIGHT * defence) / ours) * (1 - DAMAGE_WEIGHT * (1 - health)) * (engaged ? STICKY : 1);
+    const f = frame(obs, post);
+    if (!best || cost < best.cost || (cost === best.cost && f < best.f)) best = { post, cost, f };
+  }
+  return best?.post;
 }
+
+/** Posts the side may go for: hostile ones it knows of, and neutral ones to take over. */
+const targetPosts = (obs: Observation): Entity[] =>
+  obs.world.entities.filter((e) => e.kind === 'command-post' && e.side !== obs.side && hostile(obs.world, obs.side, e.side));
 
 /** The side's plan of attack from what it knows: rally point in front of the enemy post and whether to storm. */
 function assaultPlan(obs: Observation, ruleset: Ruleset, difficulty: Difficulty): AssaultPlan | undefined {
   const { world, side } = obs;
   const home = world.entities.find((e) => e.side === side && e.kind === 'command-post');
-  const objective = objectiveOf(obs);
+  const objective = objectiveOf(obs, ruleset);
   if (!objective || !home) return undefined;
   const dx = home.x - objective.x;
   const dy = home.y - objective.y;
@@ -343,7 +388,8 @@ function assaultPlan(obs: Observation, ruleset: Ruleset, difficulty: Difficulty)
   const theirs = enemiesOf(obs)
     .filter((e) => archetypeOf(ruleset, e.kind)?.weapon && dist2(e.x, e.y, objective.x, objective.y) <= DEFENCE_RADIUS * DEFENCE_RADIUS)
     .reduce((sum, e) => sum + value(e), 0);
-  const storming = gathered && (!reinforcing || ours >= theirs * STORM_ODDS || world.turn >= ESCALATE_TURN);
+  // A neutral post is taken over, not stormed: the infantry goes as soon as the known guards allow.
+  const storming = objective.side === NEUTRAL ? ours >= theirs * STORM_ODDS : gathered && (!reinforcing || ours >= theirs * STORM_ODDS || world.turn >= ESCALATE_TURN);
   const besieging = all.some((f) => (archetypeOf(ruleset, f.kind)?.weapon?.minRange ?? 0) > 0 && (archetypeOf(ruleset, f.kind)?.weapon?.range ?? 0) > 3);
   return { objective, rally, all, storming, besieging };
 }
@@ -358,6 +404,7 @@ function assault(obs: Observation, ruleset: Ruleset, plan: AssaultPlan, fighters
   const { world, side } = obs;
   const { objective, rally, all } = plan;
   const commands: Command[] = [];
+  if (plan.storming && objective.side === NEUTRAL) return occupy(obs, ruleset, plan, fighters);
   if (plan.storming) {
     // With a gun in the force the post is besieged, not stormed (artillery outranges a static
     // defence; a storm into one trades badly).
@@ -414,6 +461,87 @@ function assault(obs: Observation, ruleset: Ruleset, plan: AssaultPlan, fighters
     commands.push({ side, unit: unit.id, order: { type: 'move', x: spot.x, y: spot.y }, doctrine: RALLY_DOCTRINE });
   }
   return commands;
+}
+
+/** Infantry units sent to take over a neutral post (one suffices; a second covers a loss on the way). */
+const OCCUPIERS = 2;
+
+const isInfantry = (ruleset: Ruleset, e: Entity): boolean => {
+  const arch = archetypeOf(ruleset, e.kind);
+  return arch?.armor === 'infantry' && arch.layer === 'ground' && arch.speed > 0;
+};
+
+/**
+ * Taking over a neutral post (capture rule, docs/design/strategy.md § 9.4): the nearest infantry
+ * moves next to it; the other fighters wait out of their weapons' reach of it, so their own fire
+ * does not wear down the post they are about to own.
+ */
+function occupy(obs: Observation, ruleset: Ruleset, plan: AssaultPlan, fighters: readonly Entity[]): Command[] {
+  const { side } = obs;
+  const { objective } = plan;
+  const approach = approachCells(obs, ruleset, objective);
+  const byDistance = [...fighters].sort((a, b) => dist2(a.x, a.y, objective.x, objective.y) - dist2(b.x, b.y, objective.x, objective.y) || frame(obs, a) - frame(obs, b));
+  const occupiers = byDistance.filter((u) => isInfantry(ruleset, u)).slice(0, OCCUPIERS);
+  const commands: Command[] = [];
+  for (const unit of byDistance) {
+    const range = archetypeOf(ruleset, unit.kind)?.weapon?.range ?? 0;
+    const goal = occupiers.includes(unit) ? approach(unit) : standOff(obs, ruleset, unit, objective, range + 1);
+    if (dist2(unit.x, unit.y, objective.x, objective.y) > (range + 1) ** 2 || occupiers.includes(unit)) {
+      if (goal.x === unit.x && goal.y === unit.y) continue;
+      if (unit.order.type === 'move' && unit.order.x === goal.x && unit.order.y === goal.y) continue;
+      commands.push({ side, unit: unit.id, order: { type: 'move', x: goal.x, y: goal.y }, doctrine: AI_DOCTRINE });
+    }
+  }
+  return commands;
+}
+
+/** An own post below this share of its health is guarded against capture. */
+const GUARD_BELOW = 0.5;
+/** Known hostile infantry within this many cells of a damaged own post makes it guarded. */
+const GUARD_RADIUS = 5;
+
+/**
+ * Guards for damaged own posts: a post below GUARD_BELOW of its health with known hostile
+ * infantry near it gets one own mobile unit next to it (a mobile unit next to a post blocks its
+ * capture, § 9.4). Returns the orders and the units that guard (left out of the attack).
+ */
+function guardPosts(obs: Observation, ruleset: Ruleset, own: readonly Entity[]): { commands: Command[]; guards: Set<number> } {
+  const { world, side } = obs;
+  const commands: Command[] = [];
+  const guards = new Set<number>();
+  const mobile = (e: Entity) => (archetypeOf(ruleset, e.kind)?.speed ?? 0) > 0 && e.build === undefined;
+  const raiders = enemiesOf(obs).filter((e) => isInfantry(ruleset, e));
+  const taken = new Set(world.entities.map((e) => cellOf(world.map, e.x, e.y)));
+  for (const post of world.entities) {
+    if (post.side !== side || post.kind !== 'command-post') continue;
+    if (post.hp >= (archetypeOf(ruleset, post.kind)?.hp ?? 0) * GUARD_BELOW) continue;
+    if (!raiders.some((e) => dist2(e.x, e.y, post.x, post.y) <= GUARD_RADIUS * GUARD_RADIUS)) continue;
+    const next = (e: Positioned) => Math.max(Math.abs(e.x - post.x), Math.abs(e.y - post.y)) <= 1;
+    const there = world.entities.find((e) => e.side === side && mobile(e) && next(e));
+    if (there) {
+      guards.add(there.id);
+      if (own.includes(there) && there.order.type !== 'hold') commands.push({ side, unit: there.id, order: { type: 'hold' }, doctrine: AI_DOCTRINE });
+      continue;
+    }
+    // The nearest unit that can be ordered, to the nearest free cell next to the post (in the side's frame).
+    const cells: { x: number; y: number; f: number }[] = [];
+    for (let y = post.y - 1; y <= post.y + 1; y++) {
+      for (let x = post.x - 1; x <= post.x + 1; x++) {
+        if (x < 0 || y < 0 || x >= world.map.w || y >= world.map.h || (x === post.x && y === post.y)) continue;
+        const c = cellOf(world.map, x, y);
+        if (taken.has(c) || !passable(world.map, ruleset, x, y, 'ground')) continue;
+        cells.push({ x, y, f: sideFrame(obs, c) });
+      }
+    }
+    const unit = nearest(post as Entity, own.filter((e) => mobile(e) && !guards.has(e.id) && archetypeOf(ruleset, e.kind)?.layer === 'ground' && e.kind !== 'mast-truck'), obs);
+    if (!unit) continue;
+    const cell = cells.sort((a, b) => dist2(a.x, a.y, unit.x, unit.y) - dist2(b.x, b.y, unit.x, unit.y) || a.f - b.f)[0];
+    if (!cell) continue;
+    guards.add(unit.id);
+    taken.add(cellOf(world.map, cell.x, cell.y));
+    if (!(unit.order.type === 'move' && unit.order.x === cell.x && unit.order.y === cell.y)) commands.push({ side, unit: unit.id, order: { type: 'move', x: cell.x, y: cell.y }, doctrine: AI_DOCTRINE });
+  }
+  return { commands, guards };
 }
 
 /** How far around the objective a storming fighter looks for a free cell it can reach. */
@@ -776,18 +904,37 @@ function electronicWarfare(obs: Observation, ruleset: Ruleset, own: readonly Ent
   return commands;
 }
 
+/** Fewest cut-off fighters the relay truck moves for. */
+const STRANDED_MIN = 3;
+
+/**
+ * Own mobile fighters outside the side's coverage and away from the objective (beyond its
+ * DEFENCE_RADIUS, or with no objective at all): no order reaches them, and no storm needs them there.
+ */
+function strandedFighters(obs: Observation, ruleset: Ruleset): Entity[] {
+  if (!ruleset.commandNetwork) return [];
+  const { world, side, network } = obs;
+  const objective = objectiveOf(obs, ruleset);
+  return world.entities.filter((e) => {
+    const arch = archetypeOf(ruleset, e.kind);
+    if (e.side !== side || !arch?.weapon || arch.speed === 0 || network.coverage[cellOf(world.map, e.x, e.y)] === 1) return false;
+    return !objective || dist2(e.x, e.y, objective.x, objective.y) > DEFENCE_RADIUS * DEFENCE_RADIUS;
+  });
+}
+
 /**
  * Where to set up a relay truck: the passable cell closest to the enemy Command Post that is
  * covered by the network *without* this truck (so the truck is still in contact when it
  * arrives and can be told to set up), at most RELAY_FORWARD cells from the own post along each
  * axis. Ties are broken in the side's own frame, so mirrored positions give mirrored choices.
  */
-function relaySpot(obs: Observation, ruleset: Ruleset, truck: Entity): { x: number; y: number } | undefined {
+function relaySpot(obs: Observation, ruleset: Ruleset, truck: Entity, toward?: readonly Positioned[]): { x: number; y: number } | undefined {
   const { world, side } = obs;
   const post = world.entities.find((e) => e.side === side && e.kind === 'command-post');
   const known = enemiesOf(obs);
-  const enemyPost = known.find((e) => e.kind === 'command-post');
-  if (!post || !enemyPost) return undefined;
+  const objective = objectiveOf(obs, ruleset);
+  const goals: readonly Positioned[] = toward ?? (objective ? [objective] : []);
+  if (!post || goals.length === 0) return undefined;
   const without = { ...world, entities: world.entities.filter((e) => e.id !== truck.id) };
   const coverage = computeNetwork(without, ruleset, side).coverage;
   // Cells to avoid: own units that stay put, and enemies the side knows to stand there (spotted
@@ -804,7 +951,7 @@ function relaySpot(obs: Observation, ruleset: Ruleset, truck: Entity): { x: numb
       if (!passable(world.map, ruleset, x, y, 'ground')) continue;
       if (taken(x, y)) continue;
       // Out of reach of known enemy fighters first (a relay lost to a Warden freezes the whole advance).
-      const d = dangerAt(obs, ruleset, x, y) * 1000 + dist2(x, y, enemyPost.x, enemyPost.y);
+      const d = dangerAt(obs, ruleset, x, y) * 1000 * goals.length + goals.reduce((sum, g) => sum + dist2(x, y, g.x, g.y), 0);
       const f = sideFrame(obs, cell);
       if (!best || d < best.d || (d === best.d && f < best.f)) best = { x, y, d, f };
       if (x === truck.x && y === truck.y) here = d;
@@ -865,7 +1012,7 @@ const staysPut = (ruleset: Ruleset, e: Entity): boolean => {
 
 /**
  * Enemies the side knows of: current sightings and last reports of hostile sides. A neutral
- * post is no enemy (it never fires; taking it is a matter for later, docs/design/strategy.md § 9.4).
+ * post is no enemy (it never fires); it is a target to take over (`objectiveOf`, `occupy`).
  */
 const enemiesOf = (obs: Observation): Entity[] => obs.world.entities.filter((e) => e.side !== NEUTRAL && hostile(obs.world, obs.side, e.side));
 
