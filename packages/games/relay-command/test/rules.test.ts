@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { createRng, isRecord } from '@wp/game-core';
-import { BASE_RULESET, NEUTRAL, canonicalJson, cellOf, findPath, observe, passable, DEFAULT_DOCTRINE, computeNetwork, createWorld, initialIntel, observedCells, resolveTurn, validateCommand, worldHash, type Command, type Entity, type Order, type World } from '@wp/strategy-engine';
+import { BASE_RULESET, NEUTRAL, archetypeOf, canonicalJson, cellOf, findPath, observe, passable, DEFAULT_DOCTRINE, computeNetwork, createWorld, initialIntel, observedCells, resolveTurn, validateCommand, worldHash, type Command, type Entity, type Order, type World } from '@wp/strategy-engine';
 import { DIFFICULTIES, objectiveOf, planAi, type Difficulty } from '../src/ai';
 import {
   cancelOrder,
@@ -49,6 +49,8 @@ import {
 import { FIELD_EXERCISE, opponentCounts, RIDGE_VALLEY, type ScenarioSpec, SCENARIOS } from '../src/scenarios';
 
 /** A side's plan from its own observation (default: the game's default level). */
+/** Fingerprint of AI-vs-AI plans on the two-side maps before increment 4 (see the test). */
+const TWO_SIDE_AI_FINGERPRINT = '965772b3';
 const ai = (world: World, side: number, difficulty: Difficulty = 'normal') => planAi(observe(world, RULESET, side), RULESET, difficulty);
 const own = (s: RcState) => s.world.entities.filter((e) => e.side === PLAYER);
 const enemy = (s: RcState) => s.world.entities.filter((e) => e.side === OPPONENT);
@@ -1212,7 +1214,7 @@ describe('several sides (docs/design/strategy.md § 9.4)', () => {
     const s = newGame(1, corners, 'normal', 30, false, null, 3);
     // Seat 1 (top left) is as close to the player (bottom left) as to seat 2 (top right); seat 2 to seats 1 and 3.
     const posts = (side: number) => s.world.entities.find((e) => e.side === side && e.kind === 'command-post')!;
-    const target = (side: number) => objectiveOf(observe(s.world, SIDES_RULESET, side))!;
+    const target = (side: number) => objectiveOf(observe(s.world, SIDES_RULESET, side), SIDES_RULESET)!;
     const d = (a: Entity, b: Entity) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
     for (const side of [1, 2, 3]) {
       const chosen = target(side);
@@ -1223,13 +1225,132 @@ describe('several sides (docs/design/strategy.md § 9.4)', () => {
     const obs = observe(s.world, SIDES_RULESET, 1);
     const far = posts(3);
     obs.world.entities = obs.world.entities.filter((e) => e.kind !== 'command-post' || e.side === 1 || e.id === far.id);
-    expect(objectiveOf(obs)?.id).toBe(far.id);
+    expect(objectiveOf(obs, SIDES_RULESET)?.id).toBe(far.id);
     const w = structuredClone(s.world);
     w.supply = [0, 10, 900, 20];
     expect(strongestOpponent(w)).toBe(2);
     w.supply = [0, 950, 900, 20];
     expect(strongestOpponent(w)).toBe(1);
   });
+
+  it('target choice: a known defence makes a post a worse target, a damaged one a better, a post under attack stays the target; no side is preferred', () => {
+    const s = newGame(1, corners, 'normal', 30, false, null, 3);
+    const post = (side: number) => s.world.entities.find((e) => e.side === side && e.kind === 'command-post')!;
+    // Seat 1 (top left) is as far from the player (bottom left) as from seat 2 (top right).
+    const base = observe(s.world, SIDES_RULESET, 1);
+    const pick = (edit: (obs: typeof base) => void) => {
+      const obs = structuredClone(base);
+      edit(obs);
+      return objectiveOf(obs, SIDES_RULESET)?.side;
+    };
+    let id = 10_000;
+    const guards = (obs: typeof base, side: number, n: number) => {
+      const p = post(side);
+      for (let i = 0; i < n; i++) obs.world.entities.push({ ...structuredClone(s.world.entities.find((e) => e.kind === 'warden')!), id: id++, side, x: p.x + (i % 3) - 1, y: p.y + (side === 0 ? -2 : 2) });
+    };
+    // Defended: the other one is chosen, whichever side it is.
+    expect(pick((obs) => guards(obs, 0, 3))).toBe(2);
+    expect(pick((obs) => guards(obs, 2, 3))).toBe(0);
+    // Damaged: preferred.
+    expect(pick((obs) => (obs.world.entities.find((e) => e.id === post(0).id)!.hp = 60))).toBe(0);
+    expect(pick((obs) => (obs.world.entities.find((e) => e.id === post(2).id)!.hp = 60))).toBe(2);
+    // Under attack by the side's own fighters: it stays the target despite a guard more.
+    for (const target of [0, 2]) {
+      expect(
+        pick((obs) => {
+          guards(obs, target, 1);
+          for (const e of obs.world.entities) if (e.side === 1 && archetypeOf(SIDES_RULESET, e.kind)?.weapon && (archetypeOf(SIDES_RULESET, e.kind)?.speed ?? 0) > 0) e.order = { type: 'attack', target: post(target).id };
+        })
+      ).toBe(target);
+    }
+  });
+
+  it('a neutral post is a target to take over: an opponent next to one goes for it and takes it within the first turns', () => {
+    let s = newGame(1, corners, 'normal', 30, false, null, 2);
+    const neutral = s.world.entities.find((e) => e.side === NEUTRAL)!;
+    // Seat 2 (top right) is as far from seat 1 as from the empty seat below it, which nobody defends.
+    expect(objectiveOf(observe(s.world, SIDES_RULESET, 2), SIDES_RULESET)?.id).toBe(neutral.id);
+    // Without infantry, or a yard to train some, a neutral post is no target (nobody could take it).
+    const bare = observe(s.world, SIDES_RULESET, 2);
+    bare.world.entities = bare.world.entities.filter((e) => e.side !== 2 || !['rifles', 'lancer', 'muster'].includes(e.kind));
+    expect(objectiveOf(bare, SIDES_RULESET)?.side).toBe(1);
+    const yard = observe(s.world, SIDES_RULESET, 2);
+    yard.world.entities = yard.world.entities.filter((e) => e.side !== 2 || !['rifles', 'lancer'].includes(e.kind));
+    expect(objectiveOf(yard, SIDES_RULESET)?.id).toBe(neutral.id);
+    for (let i = 0; i < 10 && s.phase === 'plan'; i++) s = lockTurn(s);
+    const taken = s.world.entities.find((e) => e.id === neutral.id);
+    expect(taken?.side, 'taken over, not destroyed').toBeGreaterThan(PLAYER);
+  });
+
+  it('a damaged own post with hostile infantry near gets a guard next to it', () => {
+    const s = structuredClone(newGame(1, corners, 'normal', 30, false, null, 3));
+    const w = s.world;
+    const post = w.entities.find((e) => e.side === 1 && e.kind === 'command-post')!;
+    const next = (e: Entity) => Math.max(Math.abs(e.x - post.x), Math.abs(e.y - post.y)) <= 1;
+    const free = (x: number, y: number) => x >= 0 && y >= 0 && x < 16 && y < 16 && !w.entities.some((e) => e.x === x && e.y === y) && passable(w.map, SIDES_RULESET, x, y, 'ground');
+    // Nobody of its own next to it; a hostile rifle squad two cells off.
+    for (const e of w.entities.filter((e) => e.side === 1 && e !== post && next(e) && (archetypeOf(SIDES_RULESET, e.kind)?.speed ?? 0) > 0)) {
+      const [x, y] = [[6, 1], [6, 2], [6, 3], [5, 3]].find(([x, y]) => free(x!, y!))!;
+      Object.assign(e, { x, y });
+    }
+    const raider = w.entities.find((e) => e.side === 0 && e.kind === 'rifles')!;
+    const [rx, ry] = [[post.x + 2, post.y + 2], [post.x + 2, post.y], [post.x, post.y + 2]].find(([x, y]) => free(x!, y!))!;
+    Object.assign(raider, { x: rx, y: ry });
+    w.intel = initialIntel(w, SIDES_RULESET);
+    const guardOrders = (hp: number) => {
+      post.hp = hp;
+      return planAi(observe(w, SIDES_RULESET, 1), SIDES_RULESET, 'normal').filter((c) => c.order.type === 'move' && Math.max(Math.abs(c.order.x - post.x), Math.abs(c.order.y - post.y)) <= 1);
+    };
+    expect(guardOrders(150)).toHaveLength(1);
+    // Healthy post: no guard needed.
+    expect(guardOrders(400)).toHaveLength(0);
+  });
+
+  it('fighters cut off from the net away from the objective make the set-up relay truck move to reach them', () => {
+    const s = structuredClone(newGame(1, corners, 'normal', 30, false, null, 3));
+    const w = s.world;
+    const side = 1;
+    const truck = w.entities.find((e) => e.side === side && e.kind === 'mast-truck')!;
+    Object.assign(truck, { order: { type: 'deploy' }, deploy: SIDES_RULESET.ticksPerTurn });
+    const truckOrders = () => planAi(observe(w, SIDES_RULESET, side), SIDES_RULESET, 'normal').filter((c) => c.unit === truck.id);
+    w.intel = initialIntel(w, SIDES_RULESET);
+    expect(truckOrders()).toHaveLength(0);
+    const coverage = computeNetwork(w, SIDES_RULESET, side).coverage;
+    const posts = w.entities.filter((e) => e.kind === 'command-post' && e.side !== side);
+    const home = w.entities.find((e) => e.side === side && e.kind === 'command-post')!;
+    const cells: [number, number][] = [];
+    for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
+      if (coverage[cellOf(w.map, x, y)] === 1 || w.entities.some((e) => e.x === x && e.y === y) || !passable(w.map, SIDES_RULESET, x, y, 'ground')) continue;
+      if (posts.some((p) => (p.x - x) ** 2 + (p.y - y) ** 2 <= 49)) continue;
+      cells.push([x, y]);
+    }
+    cells.sort((a, b) => (a[0] - home.x) ** 2 + (a[1] - home.y) ** 2 - ((b[0] - home.x) ** 2 + (b[1] - home.y) ** 2));
+    const fighters = w.entities.filter((e) => e.side === side && (e.kind === 'rifles' || e.kind === 'lancer' || e.kind === 'warden'));
+    expect(fighters.length).toBeGreaterThanOrEqual(3);
+    fighters.slice(0, 3).forEach((f, i) => Object.assign(f, { x: cells[i]![0], y: cells[i]![1] }));
+    w.intel = initialIntel(w, SIDES_RULESET);
+    expect(truckOrders().map((c) => c.order.type)).toEqual(['move']);
+  });
+
+  it('two-side maps keep their measured AI exactly: plans of AI-vs-AI games match the fingerprint from before increment 4 (PR #24 review)', () => {
+    // Produced by the AI of main at 080fab6 (before increment 4): every change for several sides
+    // must leave the one-opponent games on the two-side maps byte-identical.
+    let h = 0x811c9dc5;
+    const feed = (text: string) => {
+      for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193) >>> 0;
+    };
+    for (const spec of SCENARIOS.filter((x) => !x.seats)) {
+      for (const [mine, theirs] of [['hard', 'normal'], ['normal', 'hard']] as const) {
+        let s = newGame(3, spec, theirs, 24);
+        while (s.phase === 'plan') {
+          for (const c of ai(s.world, PLAYER, mine)) s = planOrder(s, c.unit, c.order, c.doctrine) ?? s;
+          s = lockTurn(s);
+        }
+        feed(canonicalJson(s.log));
+      }
+    }
+    expect(h.toString(16)).toBe(TWO_SIDE_AI_FINGERPRINT);
+  }, 300_000);
 
   it('saves: v8 migrates to v9 with one opponent; a v9 save must match its map, count, rules and frames', () => {
     const v8 = JSON.parse(JSON.stringify({ ...newGame(4), v: 8 })) as Record<string, unknown>;
