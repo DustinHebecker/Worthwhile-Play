@@ -1,7 +1,7 @@
 import type { Deck } from './deck';
 import { AI_TERMS } from './builtin/ai-basics';
 import { CAPITALS } from './builtin/capitals';
-import { COUNTRY_CODES, countryName, flagEmoji, hasCountryNames } from './builtin/countries';
+import { COUNTRY_CODES, countryName, flagEmoji } from './builtin/countries';
 import { FIRST_WORDS, toVocabularyLanguage, VOCABULARY_LANGUAGES, type VocabularyLanguage } from './builtin/first-words';
 import { SYMBOL_DECK } from './builtin/symbols';
 
@@ -12,12 +12,14 @@ export interface ContentLanguageChoice {
 }
 
 export interface ResolvedLanguages {
-  /** Language of the words in "First words" games, of country and capital names in "Capitals" and of "AI basics". */
+  /** Language being learned: the words of "First words" (the only language-learning pair among the built-in decks). */
   learning: VocabularyLanguage;
   /** Language of translations (always different from `learning`). */
   translation: VocabularyLanguage;
-  /** Language of country names (any language the platform has CLDR names for). */
+  /** Language of country names in "Flags & countries": the UI language (general knowledge, not language learning). */
   countries: string;
+  /** The UI language as a content language: "Capitals" and "AI basics" (both sides in one language). */
+  ui: VocabularyLanguage;
   /** The chosen learning language has no "First words" yet; `learning` is a fallback. */
   learningFallback: boolean;
   /** The chosen translation language was unavailable or equal to the learning language. */
@@ -28,21 +30,22 @@ export interface ResolvedLanguages {
  * Explicit, tested fallback rules for content languages (spec: "Fallback behavior must be explicit"):
  * - learning: chosen learning language → UI language → English (first that has "First words");
  * - translation: chosen translation language → UI language → English → German, skipping the learning language;
- * - country names ("Flags & countries"): chosen learning language if the platform knows it → UI language;
- * - "Capitals" (country and capital names in one language): the learning language above, because capital
- *   names exist only in the 16 languages of "First words" (`learningFallback` tells when it is a fallback);
- * - "AI basics" (term and definition in one language): the learning language above, for the same reason.
+ * - general-knowledge decks are not language practice, so they always use the UI (main) language, never the
+ *   learning language: country names ("Flags & countries"), "Capitals" (country and capital names) and
+ *   "AI basics" (term and definition). The 16 UI locales all have capital names and AI terms (`ui`);
+ *   an unknown UI tag falls back to English.
  */
 export function resolveContentLanguages(choice: ContentLanguageChoice | undefined, uiLocale: string): ResolvedLanguages {
   const chosenLearning = toVocabularyLanguage(choice?.learning);
   const learning = chosenLearning ?? toVocabularyLanguage(uiLocale) ?? 'en';
   const candidates = [choice?.translation, uiLocale, 'en', 'de'].map(toVocabularyLanguage);
   const translation = candidates.find((l): l is VocabularyLanguage => l !== undefined && l !== learning) ?? 'en';
-  const countries = choice?.learning && hasCountryNames(choice.learning) ? choice.learning : uiLocale;
+  const ui = toVocabularyLanguage(uiLocale) ?? 'en';
   return {
     learning,
     translation,
-    countries,
+    countries: uiLocale,
+    ui,
     learningFallback: Boolean(choice?.learning) && chosenLearning === undefined,
     translationFallback: Boolean(choice?.translation) && toVocabularyLanguage(choice?.translation) !== translation
   };
@@ -165,9 +168,9 @@ export function builtinDeck(id: BuiltinDeckId, languages: ResolvedLanguages): De
     case 'flags':
       return flagsDeck(languages.countries);
     case 'capitals':
-      return capitalsDeck(languages.learning);
+      return capitalsDeck(languages.ui);
     case 'ai-basics':
-      return aiBasicsDeck(languages.learning);
+      return aiBasicsDeck(languages.ui);
   }
 }
 

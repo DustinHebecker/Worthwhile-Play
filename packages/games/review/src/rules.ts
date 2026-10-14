@@ -44,11 +44,14 @@ export interface ReviewAnswer {
 
 /** Content languages fixed when the session started (built-in decks only), so a resumed session looks the same. */
 export interface ReviewLanguages {
-  /** "First words": language being learned (front). "Capitals": language of country and capital names. */
+  /**
+   * "First words": language being learned (front). "Capitals" / "AI basics": the UI language at the start
+   * (kept for save compatibility; cards of these general-knowledge decks are always shown in the UI language).
+   */
   learning?: string;
   /** "First words": translation language (back). */
   translation?: string;
-  /** "Flags & countries": language of the country names. */
+  /** "Flags & countries": the UI language at the start (cards always follow the current UI language). */
   countries?: string;
 }
 

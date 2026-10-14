@@ -152,72 +152,96 @@ describe('Review view', () => {
   });
 
   it('flags: the question never reveals the country; the answer is not in the DOM before revealing', () => {
-    const { q, reveal, instance } = setup({ extras: { learning: learningWith(), contentLanguages: { learning: 'de' } }, prefs: { [DECK_PREFERENCE]: 'flags' } });
+    // Country names follow the UI language, not the learning language (Japanese here).
+    const { q, reveal, instance } = setup({ locale: 'de', extras: { learning: learningWith(), contentLanguages: { learning: 'ja' } }, prefs: { [DECK_PREFERENCE]: 'flags' } });
     // nothing due → practise anyway
     q('review-practice').click();
     const state = instance.serialize();
     expect(state).toMatchObject({ mode: 'practice', deckId: 'flags', languages: { countries: 'de' } });
     const code = state.cards[0]!.item.toUpperCase();
     const name = countryName(code, 'de');
-    expect(q('review-prompt').querySelector('[role="img"]')!.getAttribute('aria-label')).toBe('Flag');
+    expect(q('review-prompt').querySelector('[role="img"]')!.getAttribute('aria-label')).toBe('Flagge');
     expect(q('review-session').textContent).not.toContain(name);
     expect(q('review-typed').closest('.wp-review__typed')!.hasAttribute('hidden')).toBe(false);
     reveal(name.toLowerCase());
     expect(q('review-answer').textContent).toContain(name);
-    expect(q('review-typed-result').textContent).toContain('Matches the card.');
-    expect(q('review-languages').textContent).toBe('Country names in German');
+    expect(q('review-languages').textContent).toBe('Ländernamen auf Deutsch');
   });
 
-  it('capitals: country → capital in the learning language; backward asks for the country', () => {
-    const { q, reveal, instance } = setup({ extras: { learning: learningWith(), contentLanguages: { learning: 'it' } }, prefs: { [DECK_PREFERENCE]: 'capitals', [DIRECTION_PREFERENCE]: 'forward' } });
+  it('capitals: country → capital in the UI language (not the learning language); backward asks for the country', () => {
+    const { q, reveal, instance } = setup({ extras: { learning: learningWith(), contentLanguages: { learning: 'it', translation: 'de' } }, prefs: { [DECK_PREFERENCE]: 'capitals', [DIRECTION_PREFERENCE]: 'forward' } });
     q('review-practice').click();
     const state = instance.serialize();
-    expect(state).toMatchObject({ mode: 'practice', deckId: 'capitals', languages: { learning: 'it' }, direction: 'forward' });
+    expect(state).toMatchObject({ mode: 'practice', deckId: 'capitals', languages: { learning: 'en' }, direction: 'forward' });
     expect(isValidReviewState(JSON.parse(JSON.stringify(state)))).toBe(true);
     const code = state.cards[0]!.item.toUpperCase();
-    const capital = capitalName(code, 'it')!;
-    expect(q('review-prompt').textContent).toBe(countryName(code, 'it'));
-    expect(q('review-prompt').querySelector('[lang]')!.getAttribute('lang')).toBe('it');
+    const capital = capitalName(code, 'en')!;
+    expect(q('review-prompt').textContent).toBe(countryName(code, 'en'));
+    expect(q('review-prompt').querySelector('[lang]')!.getAttribute('lang')).toBe('en');
     expect(q('review-session').textContent).not.toContain(capital);
     reveal(capital.toUpperCase());
     expect(q('review-answer').textContent).toContain(capital);
     expect(q('review-typed-result').textContent).toContain('Matches the card.');
-    expect(q('review-languages').textContent).toBe('Countries and capitals in Italian');
+    expect(q('review-languages').textContent).toBe('Countries and capitals in English');
 
-    const backward = setup({ extras: { contentLanguages: { learning: 'ja' } }, prefs: { [DECK_PREFERENCE]: 'capitals', [DIRECTION_PREFERENCE]: 'backward' } });
+    const backward = setup({ locale: 'de', extras: { contentLanguages: { learning: 'ja' } }, prefs: { [DECK_PREFERENCE]: 'capitals', [DIRECTION_PREFERENCE]: 'backward' } });
     const s = backward.instance.serialize();
     const c = s.cards[0]!.item;
-    expect(backward.q('review-prompt').textContent).toBe(capitalName(c, 'ja'));
+    expect(backward.q('review-prompt').textContent).toBe(capitalName(c, 'de'));
     backward.reveal();
-    expect(backward.q('review-answer').textContent).toContain(countryName(c.toUpperCase(), 'ja'));
+    expect(backward.q('review-answer').textContent).toContain(countryName(c.toUpperCase(), 'de'));
   });
 
-  it('capitals: a learning language without capital names falls back to the UI language with a notice', () => {
+  it('capitals: a learning language without capital names needs no notice (the UI language is used anyway)', () => {
     const { q, instance } = setup({ locale: 'de', extras: { contentLanguages: { learning: 'sv' } }, prefs: { [DECK_PREFERENCE]: 'capitals' } });
     expect(instance.serialize()).toMatchObject({ deckId: 'capitals', languages: { learning: 'de' } });
-    expect(q('review-notice').textContent).toBe('Für Schwedisch gibt es noch keine Hauptstadtnamen, daher wird eine andere Sprache verwendet.');
+    expect(q('review-notice').hidden).toBe(true);
     expect(q('review-languages').textContent).toBe('Länder und Hauptstädte auf Deutsch');
   });
 
-  it('AI basics: term → definition in the learning language; backward shows the definition and asks for the term', () => {
-    const { q, reveal, instance } = setup({ extras: { learning: learningWith(), contentLanguages: { learning: 'fr' } }, prefs: { [DECK_PREFERENCE]: 'ai-basics', [DIRECTION_PREFERENCE]: 'forward' } });
+  it('general-knowledge sessions saved in the learning language resume in the UI language; learning records keep their keys', () => {
+    for (const deckId of ['capitals', 'ai-basics', 'flags'] as const) {
+      const ids = (builtinItemIds(deckId) ?? []).slice(0, 2);
+      const learning = learningWith([dueRecord(deckId, ids[0]!), dueRecord(deckId, ids[1]!)]);
+      const first = setup({ locale: 'de', extras: { learning }, prefs: { [DECK_PREFERENCE]: deckId, [DIRECTION_PREFERENCE]: 'forward' } });
+      // A save from before the fix recorded the learning language (Japanese).
+      const saved: ReviewState = { ...first.instance.serialize(), languages: deckId === 'flags' ? { countries: 'ja' } : { learning: 'ja' } };
+      expect(isValidReviewState(JSON.parse(JSON.stringify(saved)))).toBe(true);
+      const later = setup({ locale: 'de', extras: { learning } });
+      later.instance.restore(saved);
+      const code = saved.cards[0]!.item;
+      const expected = deckId === 'capitals' ? countryName(code.toUpperCase(), 'de') : deckId === 'ai-basics' ? aiTerm(code, 'de')!.term : undefined;
+      if (expected) {
+        expect(later.q('review-prompt').textContent, deckId).toBe(expected);
+        expect(later.q('review-prompt').querySelector('[lang]')!.getAttribute('lang'), deckId).toBe('de');
+      }
+      later.reveal();
+      if (deckId === 'flags') expect(later.q('review-answer').textContent).toContain(countryName(code.toUpperCase(), 'de'));
+      expect(later.q('review-languages').textContent, deckId).toContain('Deutsch');
+      later.click('review-rate-good');
+      expect(learning.list(deckId).some((r) => r.reviews === 2), deckId).toBe(true);
+    }
+  });
+
+  it('AI basics: term → definition in the UI language (not the learning language); backward shows the definition and asks for the term', () => {
+    const { q, reveal, instance } = setup({ locale: 'de', extras: { learning: learningWith(), contentLanguages: { learning: 'fr', translation: 'en' } }, prefs: { [DECK_PREFERENCE]: 'ai-basics', [DIRECTION_PREFERENCE]: 'forward' } });
     q('review-practice').click();
     const state = instance.serialize();
-    expect(state).toMatchObject({ mode: 'practice', deckId: 'ai-basics', languages: { learning: 'fr' }, direction: 'forward' });
+    expect(state).toMatchObject({ mode: 'practice', deckId: 'ai-basics', languages: { learning: 'de' }, direction: 'forward' });
     expect(isValidReviewState(JSON.parse(JSON.stringify(state)))).toBe(true);
-    const entry = aiTerm(state.cards[0]!.item, 'fr')!;
+    const entry = aiTerm(state.cards[0]!.item, 'de')!;
     expect(q('review-prompt').textContent).toBe(entry.term);
-    expect(q('review-prompt').querySelector('[lang]')!.getAttribute('lang')).toBe('fr');
+    expect(q('review-prompt').querySelector('[lang]')!.getAttribute('lang')).toBe('de');
     expect(q('review-session').textContent).not.toContain(entry.definition);
     reveal();
     expect(q('review-answer').textContent).toContain(entry.definition);
     // The definition is long: set as a paragraph rather than a big bold word.
     expect(q('review-answer').querySelector('.wp-review__text--long')).not.toBeNull();
-    expect(q('review-languages').textContent).toBe('AI terms and definitions in French');
+    expect(q('review-languages').textContent).toBe('KI-Begriffe und Definitionen auf Deutsch');
 
     const backward = setup({ extras: { contentLanguages: { learning: 'de' } }, prefs: { [DECK_PREFERENCE]: 'ai-basics', [DIRECTION_PREFERENCE]: 'backward' } });
     const s = backward.instance.serialize();
-    const item = aiTerm(s.cards[0]!.item, 'de')!;
+    const item = aiTerm(s.cards[0]!.item, 'en')!;
     expect(backward.q('review-prompt').textContent).toBe(item.definition);
     backward.reveal(item.term.toUpperCase());
     expect(backward.q('review-answer').textContent).toContain(item.term);
@@ -230,17 +254,17 @@ describe('Review view', () => {
     const { q, click, reveal, instance } = setup({ extras: { learning, contentLanguages: { learning: 'ja' } }, prefs: { [DECK_PREFERENCE]: 'ai-basics' } });
     expect(q<HTMLSelectElement>('review-mode').selectedOptions[0]!.textContent).toBe('Worth reviewing (2)');
     const state = instance.serialize();
-    expect(state).toMatchObject({ mode: 'review', deckId: 'ai-basics', languages: { learning: 'ja' } });
+    expect(state).toMatchObject({ mode: 'review', deckId: 'ai-basics', languages: { learning: 'en' } });
     expect(state.cards.map((c) => c.item).sort()).toEqual([...ids].sort());
     reveal();
     click('review-rate-good');
     expect(learning.list('ai-basics').some((r) => r.reviews === 2)).toBe(true);
   });
 
-  it('AI basics: a learning language without AI terms falls back to the UI language with a notice', () => {
+  it('AI basics: a learning language without AI terms needs no notice (the UI language is used anyway)', () => {
     const { q, instance } = setup({ locale: 'de', extras: { contentLanguages: { learning: 'sv' } }, prefs: { [DECK_PREFERENCE]: 'ai-basics' } });
     expect(instance.serialize()).toMatchObject({ deckId: 'ai-basics', languages: { learning: 'de' } });
-    expect(q('review-notice').textContent).toBe('Für Schwedisch gibt es noch keine KI-Begriffe, daher wird eine andere Sprache verwendet.');
+    expect(q('review-notice').hidden).toBe(true);
     expect(q('review-languages').textContent).toBe('KI-Begriffe und Definitionen auf Deutsch');
   });
 

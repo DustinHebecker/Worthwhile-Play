@@ -283,7 +283,8 @@ export function renderDeck(main: HTMLElement, app: AppContext, id: string): void
       h('h1', { dir: 'auto' }, deckTitle(app, deck)),
       about ? h('p', { class: 'lead' }, about) : null,
       facts,
-      builtin && builtin !== 'symbols' ? h('p', { class: 'wp-muted' }, t('decks.languageHint'), ' ', h('a', { href: '/settings' }, t('nav.settings'))) : null,
+      // Only "First words" follows the learning languages; general-knowledge decks use the UI language.
+      builtin === 'first-words' ? h('p', { class: 'wp-muted', 'data-testid': 'deck-language-hint' }, t('decks.languageHint'), ' ', h('a', { href: '/settings' }, t('nav.settings'))) : null,
       actions,
       reviewFacts,
       builtin !== 'symbols' ? scheduleDetails(app) : null,
