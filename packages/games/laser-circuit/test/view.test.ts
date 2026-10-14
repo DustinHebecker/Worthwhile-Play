@@ -272,11 +272,46 @@ describe('view', () => {
     cell(0, 0).click();
     const saved = instance.serialize();
     instance.newGame({ seed: 3, difficulty: 'hard' });
-    expect(q('level-status').textContent).toBe('Level 4 of 8');
+    expect(q('level-status').textContent).toBe('Level 4 of 12');
     expect(instance.serialize()).toEqual(createInitialState(3, 'hard'));
     instance.restore(saved);
     expect(cell(0, 0).dataset.element).toBe('mirror');
     expect(instance.serialize()).toEqual(saved);
+  });
+
+  it('draws one-way gates and portals with labels and explains them in a legend on levels that have them', () => {
+    const easy = start();
+    expect(easy.q('legend').hidden).toBe(true);
+    expect(easy.q('legend').childElementCount).toBe(0);
+    easy.instance.dispose();
+
+    const { root, q } = start({ seed: 0, difficulty: 'expert' });
+    // Expert levels are 7 wide and 9 tall.
+    expect(root.querySelectorAll('[data-testid^="cell-"]')).toHaveLength(63);
+    expect(q('board').style.getPropertyValue('--lc-cols')).toBe('7');
+    const legend = q('legend');
+    expect(legend.hidden).toBe(false);
+    expect([...legend.querySelectorAll('li')].map((li) => li.dataset.kind)).toEqual(['gate', 'portal']);
+    expect(legend.textContent).toContain('One-way gate (triangle against a bar)');
+    expect(legend.textContent).toContain('Portal (hexagon with a number)');
+    expect(legend.getAttribute('aria-label')).toBe('Special squares');
+
+    const gates = [...root.querySelectorAll<HTMLElement>('[data-element="gate"]')];
+    const portals = [...root.querySelectorAll<HTMLElement>('[data-element="portal"]')];
+    expect(gates.length).toBeGreaterThan(0);
+    expect(portals).toHaveLength(2);
+    for (const gate of gates) {
+      expect(gate.getAttribute('aria-label')).toMatch(/: one-way gate, pointing (up|right|down|left): light passes only in the direction of the arrow$/);
+      // A diode pictogram (triangle + bar), turned to its direction: shape, not colour.
+      expect(gate.querySelector('.lc-gate')).not.toBeNull();
+      expect(gate.querySelector('.lc-gate-bar')).not.toBeNull();
+    }
+    for (const portal of portals) {
+      expect(portal.getAttribute('aria-label')).toMatch(/: portal 1: light that enters comes out of the other portal 1$/);
+      expect(portal.querySelector('.lc-portal')?.tagName).toBe('polygon');
+      expect(portal.querySelector('.lc-letter')?.textContent).toBe('1');
+    }
+    expect(q('level-status').textContent).toBe(`Level 1 of ${root.querySelector('[data-testid="level-select"]')!.childElementCount}`);
   });
 
   it('renders right-to-left text with a left-to-right board, and animates beams only without reduced motion', () => {

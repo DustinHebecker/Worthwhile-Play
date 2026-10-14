@@ -2,7 +2,7 @@
  * Laser Paths rules: pure, DOM-free logic and the serializable state.
  *
  * The board is a small grid. Fixed elements (lasers, mirrors, splitters, colour filters,
- * blockers, targets and forbidden sensors) come from the level; the player places pieces from
+ * blockers, one-way gates, portals, targets and forbidden sensors) come from the level; the player places pieces from
  * a limited inventory (mirrors, splitters, blockers) on empty squares and turns them. The level
  * is solved when every target receives exactly the colour it asks for and no forbidden sensor
  * receives any light.
@@ -82,7 +82,14 @@ export type Element =
   /** Absorbs light; must end up receiving exactly `colour`. */
   | { readonly kind: 'target'; readonly colour: number }
   /** Absorbs light; must receive none. */
-  | { readonly kind: 'sensor' };
+  | { readonly kind: 'sensor' }
+  /** One-way gate: light travelling `dir` passes straight through; light from any other side is absorbed. */
+  | { readonly kind: 'gate'; readonly dir: Dir }
+  /**
+   * Portal of pair `pair` (1–3). Light that enters it comes out of the other portal of the same
+   * pair, still travelling the same way. Both portals count as lit.
+   */
+  | { readonly kind: 'portal'; readonly pair: number };
 
 export type ElementKind = Element['kind'];
 
@@ -108,7 +115,8 @@ export interface BeamTrace {
 
 /**
  * Directions in which light travelling `dir` leaves an element it has entered, together with the
- * colour mask that survives. Absorbing elements return no exits.
+ * colour mask that survives. Absorbing elements return no exits. A portal also returns none here:
+ * its light leaves from the *other* portal of the pair, which `traceBeams` handles.
  */
 export function exits(element: Element, dir: Dir, colour: number): { dir: Dir; colour: number }[] {
   switch (element.kind) {
@@ -122,6 +130,8 @@ export function exits(element: Element, dir: Dir, colour: number): { dir: Dir; c
       const passed = colour & element.colour;
       return passed === 0 ? [] : [{ dir, colour: passed }];
     }
+    case 'gate':
+      return element.dir === dir ? [{ dir, colour }] : [];
     default:
       return [];
   }
@@ -135,11 +145,15 @@ export function exits(element: Element, dir: Dir, colour: number): { dir: Dir; c
  * same way is handled together as one colour mask, and light arriving at a square from several
  * beams mixes additively (bitwise OR).
  *
+ * Light entering a portal reappears in the other portal of its pair and leaves it in the same
+ * direction (a portal without a partner absorbs).
+ *
  * The tracer is a work-list fixpoint over (square, travel direction): it remembers which colours
  * have already travelled each way through each square and only propagates colours that are new.
  * Since a mask has only three bits, every (square, direction) pair is expanded at most three
- * times, so tracing always terminates — also for beams caught in mirror loops — in
- * O(width × height) steps. The result does not depend on the order of the emitters.
+ * times, so tracing always terminates — also for beams caught in mirror, splitter or portal
+ * loops — in O(width × height) steps. The result is the least fixpoint, so it does not depend on
+ * the order in which work is processed or of the emitters.
  */
 export function traceBeams(board: Board): BeamTrace {
   const { width, height, cells } = board;
@@ -161,8 +175,18 @@ export function traceBeams(board: Board): BeamTrace {
     if (next >= 0) queue.push([next, dir, colour]);
   };
 
+  /** The other portal of each portal's pair (-1 when it has none). */
+  const partner = new Map<number, number>();
+  const firstOfPair = new Map<number, number>();
   cells.forEach((element, cell) => {
     if (element.kind === 'emitter' && element.colour > 0) leave(cell, element.dir, element.colour & WHITE);
+    if (element.kind !== 'portal') return;
+    const first = firstOfPair.get(element.pair);
+    if (first === undefined) firstOfPair.set(element.pair, cell);
+    else if (!partner.has(first)) {
+      partner.set(first, cell);
+      partner.set(cell, first);
+    }
   });
 
   while (queue.length > 0) {
@@ -172,7 +196,16 @@ export function traceBeams(board: Board): BeamTrace {
     mix(seen, cell * 4 + dir, fresh);
     mix(sides, cell * 4 + opposite(dir), fresh);
     mix(lit, cell, fresh);
-    for (const out of exits(cells[cell] as Element, dir, fresh)) leave(cell, out.dir, out.colour);
+    const element = cells[cell] as Element;
+    if (element.kind === 'portal') {
+      const other = partner.get(cell);
+      if (other !== undefined) {
+        mix(lit, other, fresh);
+        leave(other, dir, fresh);
+      }
+      continue;
+    }
+    for (const out of exits(element, dir, fresh)) leave(cell, out.dir, out.colour);
   }
   return { width, height, sides, lit };
 }
@@ -209,7 +242,7 @@ export function evaluate(board: Board, trace: BeamTrace = traceBeams(board)): Ev
 
 /* ---------- Levels ---------- */
 
-export const DIFFICULTIES = ['easy', 'medium', 'hard'] as const;
+export const DIFFICULTIES = ['easy', 'medium', 'hard', 'expert'] as const;
 export type Difficulty = (typeof DIFFICULTIES)[number];
 export const DEFAULT_DIFFICULTY: Difficulty = 'easy';
 export const toDifficulty = (value: unknown): Difficulty => (isOneOf(value, DIFFICULTIES) ? value : DEFAULT_DIFFICULTY);
@@ -218,8 +251,14 @@ export const toDifficulty = (value: unknown): Difficulty => (isOneOf(value, DIFF
 export const PIECE_KINDS = ['mirror', 'splitter', 'blocker'] as const;
 export type PieceKind = (typeof PIECE_KINDS)[number];
 
-/** Largest supported board side (7 squares of 44 px fit a 360 px phone). */
+/** Widest supported board (7 squares of 44 px fit a 360 px phone). */
 export const MAX_SIDE = 7;
+/** Tallest supported board (taller boards scroll with the page, never sideways). */
+export const MAX_HEIGHT = 9;
+/** Most pieces of one kind in an inventory. */
+export const MAX_PER_KIND = 9;
+/** Portal pairs are numbered 1 to this. */
+export const MAX_PORTAL_PAIRS = 3;
 
 export interface Level {
   readonly width: number;
@@ -237,7 +276,8 @@ const ARROWS: Readonly<Record<string, Dir>> = { '^': 0, '>': 1, v: 2, '<': 3 };
 /**
  * Reads one level token:
  * `.` empty · `#` blocker · `/` `\` mirror · `S/` `S\` splitter · `X` forbidden sensor ·
- * `^R` `>G` `vB` `<W` laser (arrow + colour letter) · `FR` filter · `TM` target (+ colour letter).
+ * `^R` `>G` `vB` `<W` laser (arrow + colour letter) · `FR` filter · `TM` target (+ colour letter) ·
+ * `D^` `D>` `Dv` `D<` one-way gate (+ arrow) · `@1` `@2` `@3` portal (+ pair number).
  */
 export function parseToken(token: string): Element {
   switch (token) {
@@ -255,6 +295,12 @@ export function parseToken(token: string): Element {
       return { kind: 'splitter', orient: token === 'S/' ? 0 : 1 };
   }
   const [head = '', letter = '', ...rest] = token;
+  if (head === 'D' && rest.length === 0 && ARROWS[letter] !== undefined) return { kind: 'gate', dir: ARROWS[letter] };
+  if (head === '@' && rest.length === 0 && /^[1-9]$/.test(letter)) {
+    const pair = Number(letter);
+    if (pair > MAX_PORTAL_PAIRS) throw new LevelFormatError(`portal pair ${pair} is out of range`);
+    return { kind: 'portal', pair };
+  }
   const colour = colourFromLetter(letter);
   if (rest.length > 0 || colour === 0) throw new LevelFormatError(`unknown token "${token}"`);
   const dir = ARROWS[head];
@@ -268,22 +314,26 @@ export function parseToken(token: string): Element {
 }
 
 /**
- * Parses and validates a level: a rectangle of at most 7×7 whitespace-separated tokens with at
- * least one laser, at least one target and a non-empty inventory, not already solved without pieces.
+ * Parses and validates a level: a rectangle of whitespace-separated tokens, at most 7 wide and 9
+ * tall, with at least one laser, at least one target, portals only in complete pairs and a
+ * non-empty inventory, not already solved without pieces.
  */
 export function parseLevel(source: LevelSource): Level {
   const grid = source.rows.map((row) => row.trim().split(/\s+/));
   const height = grid.length;
   const width = grid[0]?.length ?? 0;
-  if (height < 2 || width < 2 || height > MAX_SIDE || width > MAX_SIDE) throw new LevelFormatError('board must be between 2×2 and 7×7');
+  if (height < 2 || width < 2 || height > MAX_HEIGHT || width > MAX_SIDE) throw new LevelFormatError('board must be between 2×2 and 7×9');
   if (grid.some((row) => row.length !== width)) throw new LevelFormatError('rows have different lengths');
   const cells = grid.flat().map(parseToken);
   if (!cells.some((cell) => cell.kind === 'emitter')) throw new LevelFormatError('level has no laser');
   if (!cells.some((cell) => cell.kind === 'target')) throw new LevelFormatError('level has no target');
+  const portals = new Map<number, number>();
+  for (const cell of cells) if (cell.kind === 'portal') portals.set(cell.pair, (portals.get(cell.pair) ?? 0) + 1);
+  if ([...portals.values()].some((count) => count !== 2)) throw new LevelFormatError('portals must come in pairs');
   const inventory = { mirror: 0, splitter: 0, blocker: 0 };
   for (const kind of PIECE_KINDS) {
     const count = source.inventory[kind] ?? 0;
-    if (!isInt(count, 0, 4)) throw new LevelFormatError(`bad ${kind} count`);
+    if (!isInt(count, 0, MAX_PER_KIND)) throw new LevelFormatError(`bad ${kind} count`);
     inventory[kind] = count;
   }
   if (PIECE_KINDS.every((kind) => inventory[kind] === 0)) throw new LevelFormatError('inventory is empty');
