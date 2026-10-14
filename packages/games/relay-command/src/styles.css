@@ -257,3 +257,16 @@
   font-weight: 700;
   font-size: 0.8em;
 }
+
+/* Hot-seat (D10): seats in the setup, whose plan is open, the hand-over and the result. */
+.wp-relay-command .rc-seats { flex: 1 1 100%; display: grid; gap: 0.4rem; margin: 0; padding: 0.4rem 0.6rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius, 10px); }
+.wp-relay-command .rc-setup .rc-seats label.rc-seat-choice { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 0.35rem; min-block-size: var(--wp-touch, 44px); margin-inline-start: 0.75rem; }
+.wp-relay-command .rc-seat-choice input { inline-size: 1.25rem; block-size: 1.25rem; margin: 0; }
+.wp-relay-command .rc-seat-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem; min-block-size: var(--wp-touch, 44px); }
+.wp-relay-command .rc-setup .rc-hint { flex: 1 1 100%; }
+.wp-relay-command .rc-seat { margin: 0; font-weight: 600; }
+.wp-relay-command .rc-handover { display: grid; gap: 1rem; justify-items: start; padding: 1.5rem 1rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius, 10px); background: var(--wp-surface); }
+.wp-relay-command .rc-handover h2 { margin: 0; font-size: 1.3rem; }
+.wp-relay-command .rc-handover p { margin: 0; }
+.wp-relay-command .rc-handover button { min-block-size: var(--wp-touch, 44px); }
+.wp-relay-command .rc-result h3 { margin-block-start: 0; }

@@ -26,6 +26,10 @@ import {
   cancelJob,
   cancelOrder,
   canSettle,
+  confirmHandover,
+  isHotSeat,
+  personsLeft,
+  type Seat,
   concede,
   settle,
   settleResult,
@@ -50,7 +54,6 @@ import {
   plannedSupply,
   commandPost as commandPostOf,
   lastSentOrder,
-  PLAYER,
   reportTurn,
   RULESET,
   scenarioById,
@@ -107,17 +110,20 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   let selected: number | null = null;
   let cursor = { x: 0, y: 0 };
   let confirming = false;
+  /** The side whose view is shown: the player's, or in a hot-seat game the person planning (D10). */
+  const me = (): number => state.planning;
   /** Whether `finished()` was already reported for the current game. */
   let reported = false;
 
   /* ---------- Text helpers ---------- */
   /** The world as the player knows it (fog, D7); rule checks use the true world in `rules.ts`. */
   // Once the game is over everything is revealed: the map and the result show the true world.
-  const revealed = (): boolean => state.phase === 'finished';
-  const world = (): World => (revealed() ? state.world : picture(state.world).world);
+  // Hot-seat: never (no side may see the others' positions, not even afterwards — D10).
+  const revealed = (): boolean => state.phase === 'finished' && !isHotSeat(state);
+  const world = (): World => (revealed() ? state.world : picture(state.world, me()).world);
   /** Tick of the last report for units shown at their last known position, else `undefined`. */
-  const ghostTick = (e: Pick<Entity, 'id'>): number | undefined => (revealed() ? undefined : picture(state.world).ghosts.get(e.id));
-  const observedAt = (x: number, y: number): boolean => revealed() || picture(state.world).observed[cellOf(state.world.map, x, y)] === 1;
+  const ghostTick = (e: Pick<Entity, 'id'>): number | undefined => (revealed() ? undefined : picture(state.world, me()).ghosts.get(e.id));
+  const observedAt = (x: number, y: number): boolean => revealed() || picture(state.world, me()).observed[cellOf(state.world.map, x, y)] === 1;
   const isGhost = (e: Pick<Entity, 'id'>): boolean => ghostTick(e) !== undefined;
   const known = (id: number): Entity | undefined => world().entities.find((e) => e.id === id);
   const unitName = (e: Pick<Entity, 'kind' | 'id'>) => t('unit.name', { name: t(`unit.${e.kind}`), id: e.id });
@@ -127,7 +133,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   const several = (): boolean => state.opponents > 1 || rulesOf(state).capture === true;
   const sideMark = (side: number): string => (side === NEUTRAL ? 'N' : (SIDE_MARKS[side] ?? '?'));
   const sideName = (side: number): string =>
-    side === PLAYER ? t('side.own') : side === NEUTRAL ? t('side.neutral') : several() ? t('side.opponent', { mark: sideMark(side) }) : t('side.enemy');
+    side === me() ? t('side.own') : side === NEUTRAL ? t('side.neutral') : several() ? t('side.opponent', { mark: sideMark(side) }) : t('side.enemy');
   const sideColour = (side: number): string => {
     if (side === NEUTRAL) return css('--rc-neutral', '#4b5563');
     const token = SIDE_COLOURS[side] ?? SIDE_COLOURS[1]!;
@@ -146,7 +152,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   const network = (): Network => {
     // From the true world: the player's own radio net is felt directly, enemy jamming included
     // (the picture strips enemy set-up state, so it cannot tell a working jammer).
-    if (cachedNet?.state !== state) cachedNet = { state, net: computeNetwork(state.world, RULESET, PLAYER) };
+    if (cachedNet?.state !== state) cachedNet = { state, net: computeNetwork(state.world, RULESET, me()) };
     return cachedNet.net;
   };
   /** Cells where the player's radio is jammed (the player notices the interference). */
@@ -157,7 +163,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     if (cachedJam?.state !== state) {
       // Expected reach: the discs of the nodes that really are connected now. A silenced post
       // then shows no marks at all (the status line explains it) instead of the jammer's disc.
-      const jam = jammedCells(state.world, RULESET, PLAYER);
+      const jam = jammedCells(state.world, RULESET, me());
       const { w: mw, h: mh } = state.world.map;
       const expected = new Uint8Array(mw * mh);
       for (const id of network().nodes) {
@@ -216,13 +222,13 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   const describeUnit = (e: Entity): string => {
     const max = archetypeOf(RULESET, e.kind)?.hp ?? e.hp;
     const ghost = ghostTick(e);
-    if (ghost !== undefined && e.side !== PLAYER) {
+    if (ghost !== undefined && e.side !== me()) {
       // Enemies out of sight: only where and how strong they were when last reported.
       const where = t('unit.lastSeen', { name: unitName(e), side: sideName(e.side), x: e.x + 1, y: e.y + 1, hp: e.hp, max });
       return `${where} ${ghost === 0 ? t('unit.ghostStart') : t('unit.ghost', { turn: reportTurn(ghost) })}`;
     }
     // Enemy orders are never known, not even for enemies in sight.
-    if (e.side !== PLAYER) return t('unit.enemySummary', { name: unitName(e), side: sideName(e.side), x: e.x + 1, y: e.y + 1, hp: e.hp, max });
+    if (e.side !== me()) return t('unit.enemySummary', { name: unitName(e), side: sideName(e.side), x: e.x + 1, y: e.y + 1, hp: e.hp, max });
     // Own units out of contact: the last order sent, which the player cannot confirm.
     const order = ghost !== undefined ? t('unit.unconfirmed', { order: describeOrder(e, lastSentOrder(state, e.id) ?? { type: 'hold' }) }) : describeOrder(e, e.order);
     let text = t('unit.summary', { name: unitName(e), side: sideName(e.side), x: e.x + 1, y: e.y + 1, hp: e.hp, max, order });
@@ -250,7 +256,9 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   };
 
   /* ---------- DOM ---------- */
-  const live = h('p', { class: 'sr-only', 'aria-live': 'polite', 'data-testid': 'rc-live' });
+  let live = h('p', { class: 'sr-only', 'aria-live': 'polite', 'data-testid': 'rc-live' });
+  /** Hot-seat: whose plan is open (letter, colour and words). */
+  const seatEl = h('p', { class: 'rc-seat', 'data-testid': 'rc-seat', hidden: true });
   const turnEl = h('p', { class: 'rc-turn', 'data-testid': 'rc-turn' });
   const statusEl = h('p', { class: 'rc-status', 'data-testid': 'rc-status', role: 'status', tabindex: -1 });
   const slotsEl = h('p', { class: 'rc-slots', 'data-testid': 'rc-slots' });
@@ -302,6 +310,13 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     limitSelect.append(h('option', { value: limit === null ? 'open' : String(limit) }, limit === null ? t('setup.open') : t('setup.turns', { n: limit })));
     if (limit === null) limitSelect.append(h('option', { value: 'quick' }, t('setup.quick')));
   }
+  /**
+   * Hot-seat (D10): who plays each side, person or computer (side A is always you). Rows follow
+   * the opponent count; several persons pass the device on each turn.
+   */
+  const seatsBox = h('fieldset', { class: 'rc-seats', 'data-testid': 'rc-seats' });
+  /** Several persons with an open end: such a game ends only by sides being out or giving up. */
+  const hotSeatHint = h('p', { class: 'rc-hint', 'data-testid': 'rc-hotseat-hint', hidden: true }, t('setup.hotSeatOpen'));
   // The map editor opens from the setup (also after the first turn, through the fold).
   const editorBtn = h('button', { type: 'button', class: 'rc-editor-open', 'data-testid': 'rc-editor-open', onclick: () => openEditor() }, t('editor.open'));
   const setupBox = h(
@@ -311,6 +326,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     h('label', {}, h('span', {}, t('setup.scenario')), scenarioSelect),
     h('label', {}, h('span', {}, t('setup.limit')), limitSelect),
     h('label', { 'data-testid': 'rc-opponents-label' }, h('span', {}, t('setup.opponents')), opponentsSelect),
+    seatsBox,
+    hotSeatHint,
     editorBtn
   );
   // After the first turn the setup folds into one line (map, length, level) that opens on demand:
@@ -370,7 +387,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     'details',
     { class: 'rc-help' },
     h('summary', {}, t('help.title')),
-    ...['help.turns', 'help.bar', 'help.orders', 'help.network', 'help.fog', 'help.ew', 'help.doctrine', 'help.economy', 'help.repair', 'help.editor', 'help.sides', 'help.combat', 'help.goal', 'help.shapes', 'help.access'].map((k) => h('p', {}, t(k)))
+    ...['help.turns', 'help.bar', 'help.orders', 'help.network', 'help.fog', 'help.ew', 'help.doctrine', 'help.economy', 'help.repair', 'help.editor', 'help.sides', 'help.hotSeat', 'help.combat', 'help.goal', 'help.shapes', 'help.access'].map((k) => h('p', {}, t(k)))
   );
 
   /* ---------- Map editor ---------- */
@@ -423,31 +440,43 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     canvas.focus();
   }
 
+  const mainEl = h(
+    'div',
+    { class: 'rc-main', 'data-testid': 'rc-main' },
+    h('div', { class: 'rc-board' }, mapWrap, cursorDesc, legendEl),
+    h(
+      'div',
+      { class: 'rc-side' },
+      selectionPanel,
+      h('section', { class: 'rc-panel' }, h('h3', {}, t('list.own')), ownList),
+      h('section', { class: 'rc-panel' }, h('h3', {}, t('list.enemy')), enemyList),
+      h('section', { class: 'rc-panel' }, h('h3', {}, t('summary.title')), summaryList)
+    )
+  );
+  /** Hot-seat result: only what every side was told — the winner and the sides that are out (no map). */
+  const resultEl = h('section', { class: 'rc-panel rc-result', 'data-testid': 'rc-result', hidden: true });
+  /**
+   * Hot-seat hand-over (D10): the device goes to the next person. While it shows, nothing of any
+   * side is in the document — no map, list, summary or live text — until that person confirms.
+   */
+  const handoverTitle = h('h2', { id: `${uid}-handover` });
+  const handoverText = h('p', {});
+  const handoverBtn = h('button', { type: 'button', class: 'primary', 'data-testid': 'rc-handover-confirm', onclick: () => onHandover() }) as HTMLButtonElement;
+  const handoverEl = h('section', { class: 'rc-handover', 'data-testid': 'rc-handover', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': `${uid}-handover` }, handoverTitle, handoverText, handoverBtn);
   const shell = h(
     'div',
     { class: 'wp-relay-command', 'data-testid': 'rc-root' },
     h(
       'div',
       { class: 'rc-bar' },
-      h('div', { class: 'rc-bar-facts' }, turnEl, supplyEl, slotsEl),
+      h('div', { class: 'rc-bar-facts' }, seatEl, turnEl, supplyEl, slotsEl),
       statusEl,
       stalemateEl,
       h('div', { class: 'rc-actions rc-bar-actions' }, lockBtn, concedeBtn, confirmBox)
     ),
     setupSlot,
-    h(
-      'div',
-      { class: 'rc-main' },
-      h('div', { class: 'rc-board' }, mapWrap, cursorDesc, legendEl),
-      h(
-        'div',
-        { class: 'rc-side' },
-        selectionPanel,
-        h('section', { class: 'rc-panel' }, h('h3', {}, t('list.own')), ownList),
-        h('section', { class: 'rc-panel' }, h('h3', {}, t('list.enemy')), enemyList),
-        h('section', { class: 'rc-panel' }, h('h3', {}, t('summary.title')), summaryList)
-      )
-    ),
+    mainEl,
+    resultEl,
     help,
     editor.el,
     live
@@ -455,6 +484,35 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   root.append(shell);
   // While the editor is open, the game waits behind it (state kept, nothing lost).
   const gameParts = [...shell.children].filter((el) => el !== editor.el && el !== live) as HTMLElement[];
+
+  /**
+   * Hot-seat: behind the hand-over the game's parts leave the document (not just hidden), and the
+   * live region is emptied, so nothing of the previous side can be read, heard or focused.
+   */
+  function showHandover(on: boolean): void {
+    if (on) {
+      for (const part of gameParts) part.remove();
+      // A fresh, empty live region: an announcement still pending for the previous person (they
+      // are written a moment later) lands in the old one, which has left the document.
+      const fresh = h('p', { class: 'sr-only', 'aria-live': 'polite', 'data-testid': 'rc-live' });
+      live.replaceWith(fresh);
+      live = fresh;
+      if (!handoverEl.isConnected) shell.prepend(handoverEl);
+      const mark = sideMark(me());
+      handoverTitle.textContent = t('handover.title', { mark });
+      handoverText.textContent = t('handover.text', { turn: state.world.turn + 1, mark });
+      handoverBtn.textContent = t('handover.confirm', { mark });
+      return;
+    }
+    handoverEl.remove();
+    // Back in their places, in order (the result screen takes the map's part out as well).
+    let next: Element = editor.el;
+    for (let i = gameParts.length - 1; i >= 0; i--) {
+      const part = gameParts[i]!;
+      if (!part.isConnected) shell.insertBefore(part, next);
+      next = part;
+    }
+  }
 
   /* ---------- Rendering ---------- */
   let legendDrawn = false;
@@ -464,11 +522,29 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       renderLegend();
     }
     const editing = state.edit !== null;
-    for (const part of gameParts) part.hidden = editing;
+    const handing = !editing && state.phase === 'plan' && state.handover;
+    showHandover(handing);
+    if (handing) {
+      editor.el.hidden = true;
+      return;
+    }
+    for (const part of gameParts) part.hidden = editing || (part === resultEl && !(isHotSeat(state) && state.phase === 'finished'));
     editor.el.hidden = !editing;
     if (editing) {
       editor.render();
       return;
+    }
+    // A finished hot-seat game shows no map, list or summary of any side: the result only.
+    const hotEnd = isHotSeat(state) && state.phase === 'finished';
+    // Out of the document and not drawn at all: no lists, reports, cursor text or map of any side.
+    if (hotEnd) {
+      mainEl.remove();
+      renderResult();
+    }
+    seatEl.hidden = !isHotSeat(state) || state.phase !== 'plan';
+    clear(seatEl);
+    if (!seatEl.hidden) {
+      seatEl.append(h('span', { class: 'rc-row-mark', style: `color:${sideColour(me())}` }, sideMark(me())), ' ', t('hot.planning', { mark: sideMark(me()) }));
     }
     const w = world();
     const finished = state.phase === 'finished';
@@ -480,9 +556,12 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     stalemateText.textContent = stalemate ? t('status.quiet', { turn: w.turn + STALL_TURNS - stalemateTurns(state) }) : settleable ? t('status.settleOffer', { n: stalemateTurns(state) }) : '';
     settleBtn.hidden = !settleable;
     if (!settleable) settleArmed = false;
-    settleBtn.textContent = settleArmed
-      ? t('action.settleConfirm')
-      : t(`action.settle.${settleResult(state)}`, { own: sideValue(state.world, PLAYER), enemy: opponentValue(state.world) });
+    // Strength figures only while the offer stands (never left behind in the document).
+    settleBtn.textContent = !settleable
+      ? ''
+      : settleArmed
+        ? t('action.settleConfirm')
+        : t(`action.settle.${settleResult(state)}`, { own: sideValue(state.world, me()), enemy: opponentValue(state.world) });
     stalemateEl.toggleAttribute('data-empty', !stalemate && !settleable);
     // Scenario and turn limit can be changed until the first turn is locked.
     // Kept in place after the first turn (disabled), so the map does not jump up.
@@ -490,6 +569,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     scenarioSelect.disabled = setupLocked;
     limitSelect.disabled = setupLocked;
     opponentsSelect.disabled = setupLocked;
+    syncSeatRows(setupLocked);
     setupBox.toggleAttribute('data-locked', setupLocked);
     // Unlocked: the setup stands open on its own; locked: it moves into the fold (closed until opened).
     if (setupLocked && setupBox.parentElement !== setupFold) {
@@ -513,16 +593,24 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     // Full plan (or no orders possible): highlighted, so the player notices without reading.
     slotsEl.toggleAttribute('data-full', state.draft.length >= slots);
     // Supply and income (economy): what the planned jobs leave is shown while any are planned.
-    const supply = w.supply?.[PLAYER] ?? 0;
+    const supply = w.supply?.[me()] ?? 0;
     const left = plannedSupply(state);
-    const income = incomeOfSide(state.world, RULESET, PLAYER);
-    supplyEl.hidden = w.supply === undefined;
+    const income = incomeOfSide(state.world, RULESET, me());
+    supplyEl.hidden = w.supply === undefined || hotEnd;
     supplyEl.textContent = left === supply ? t('status.supply', { n: supply, income }) : t('status.supplyPlanned', { n: supply, left, income });
     supplyEl.title = t('status.supplyHint');
     lockBtn.disabled = finished;
+    // Hot-seat: the lock hands the device on, or (the last person) resolves the turn; it is final.
+    lockBtn.textContent = !isHotSeat(state) ? t('action.lock') : personsLeft(state).some((x) => x > me()) ? t('action.lockHandOver') : t('action.lockResolve');
     concedeBtn.disabled = finished;
     concedeBtn.hidden = confirming;
     confirmBox.hidden = !confirming || finished;
+    if (hotEnd) {
+      // No counters of the side that planned last either.
+      supplyEl.textContent = '';
+      slotsEl.textContent = '';
+      return;
+    }
     cursorDesc.textContent = describeCell(cursor.x, cursor.y);
     renderSelection();
     renderLists();
@@ -530,11 +618,74 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     draw();
   }
 
+  /** Hot-seat result: the winner and the sides that are out, in words and letters (no positions). */
+  function renderResult(): void {
+    clear(resultEl);
+    resultEl.append(h('h3', {}, t('result.title')), h('p', { 'data-testid': 'rc-result-winner' }, statusOf(state)));
+    const out = state.world.out ?? [];
+    if (out.length > 0) resultEl.append(h('p', { 'data-testid': 'rc-result-out' }, t('result.out', { sides: out.map(sideMark).join(', ') })));
+  }
+
+  /** The seat rows of the setup: one per side of the chosen count (A: you, a person). */
+  function syncSeatRows(locked: boolean): void {
+    const sides = state.seats.length;
+    if (seatsBox.childElementCount !== sides + 1) {
+      clear(seatsBox);
+      seatsBox.append(h('legend', {}, t('setup.players')));
+      for (let side = 0; side < sides; side++) {
+        const mark = sideMark(side);
+        const badge = h('span', { class: 'rc-row-mark', style: `color:${sideColour(side)}` }, mark);
+        if (side === 0) {
+          seatsBox.append(h('div', { class: 'rc-seat-row', 'data-testid': 'rc-seat-0' }, badge, ' ', h('span', {}, t('setup.seat.you', { mark }))));
+          continue;
+        }
+        const name = `${uid}-seat-${side}`;
+        const choice = (seat: Seat) =>
+          h('label', { class: 'rc-seat-choice' }, h('input', { type: 'radio', name, value: seat, 'data-testid': `rc-seat-${side}-${seat}`, onchange: () => onSetup() }), h('span', {}, t(`setup.seat.${seat}`)));
+        seatsBox.append(
+          h('div', { class: 'rc-seat-row', role: 'radiogroup', 'aria-label': t('setup.seat.label', { mark }), 'data-testid': `rc-seat-${side}` }, badge, ' ', h('span', {}, t('setup.seat.label', { mark })), choice('computer'), choice('person'))
+        );
+      }
+    }
+    for (const input of seatsBox.querySelectorAll<HTMLInputElement>('input[type="radio"]')) {
+      const side = Number(input.name.slice(input.name.lastIndexOf('-') + 1));
+      input.checked = state.seats[side] === input.value;
+      input.disabled = locked;
+    }
+    const hot = isHotSeat(state);
+    hotSeatHint.hidden = !hot || state.turnLimit !== null || locked;
+    // Several persons have no quick match (an open end is decided by the posts or giving up).
+    const quick = limitSelect.querySelector<HTMLOptionElement>('option[value="quick"]');
+    if (quick) quick.disabled = hot;
+  }
+
+  /** The seats chosen in the setup rows (missing rows: the computer). */
+  function chosenSeats(): Seat[] {
+    const seats: Seat[] = ['person'];
+    for (const input of seatsBox.querySelectorAll<HTMLInputElement>('input[type="radio"]:checked')) {
+      const side = Number(input.name.slice(input.name.lastIndexOf('-') + 1));
+      seats[side] = input.value === 'person' ? 'person' : 'computer';
+    }
+    return seats;
+  }
+
+  /** Hot-seat: the person who now has the device confirms; their own map and summary show. */
+  function onHandover(): void {
+    if (!state.handover) return;
+    // Nothing of the previous person carries over: no selection, placing mode, notice or armed sale.
+    select(null);
+    commit(confirmHandover(state));
+    homeCursor();
+    render();
+    canvas.focus();
+    announce(live, `${t('hot.planning', { mark: sideMark(me()) })} ${[...summaryList.querySelectorAll('li')].map((li) => li.textContent).join(' ')}`);
+  }
+
   /** The own Command Post is jammed: no orders this turn (the post knows its own radio; reveals nothing else). */
   function postJammed(): boolean {
     if (state.phase !== 'plan' || orderSlots(state) > 0) return false;
-    const post = commandPostOf(state.world, PLAYER);
-    return !!post && jammedCells(state.world, RULESET, PLAYER)[cellOf(state.world.map, post.x, post.y)] === 1;
+    const post = commandPostOf(state.world, me());
+    return !!post && jammedCells(state.world, RULESET, me())[cellOf(state.world.map, post.x, post.y)] === 1;
   }
 
   const statusText = (): string => statusOf(state);
@@ -542,9 +693,10 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   /** The status line of `s`: empty while planning (the counter in the top bar says it all), the result at the end. */
   function statusOf(s: RcState): string {
     if (s.phase === 'plan') return '';
+    if (isHotSeat(s)) return s.winner === null ? t('result.drawSides') : t('result.winner', { mark: sideMark(s.winner) });
     if (s.conceded) return t('status.conceded');
     // The result is decided on the true world, so it is told from it (not from the picture).
-    const args = { own: sideValue(s.world, PLAYER), enemy: opponentValue(s.world), limit: STALL_TURNS };
+    const args = { own: sideValue(s.world, me()), enemy: opponentValue(s.world), limit: STALL_TURNS };
     const result = s.result ?? 'draw';
     const decidedByPost = outcome({ ...s.world, turn: 0 }, s.turnLimit) !== null;
     if (decidedByPost) return result === 'won' ? t('status.won') : result === 'lost' ? t('status.lost') : t('status.draw', args);
@@ -564,13 +716,13 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
 
   function renderSelection(): void {
     const unit = selected === null ? undefined : known(selected);
-    const reachable = !!unit && unit.side === PLAYER && inContact(unit);
-    const canOrder = !!unit && unit.side === PLAYER && isMobile(unit) && reachable && state.phase === 'plan';
+    const reachable = !!unit && unit.side === me() && inContact(unit);
+    const canOrder = !!unit && unit.side === me() && isMobile(unit) && reachable && state.phase === 'plan';
     if (!unit) {
       selectionText.textContent = t('panel.none');
     } else if (!isMobile(unit)) {
       setSelectionText(unit, structureHint(unit));
-    } else if (unit.side === PLAYER && !reachable) {
+    } else if (unit.side === me() && !reachable) {
       setSelectionText(unit, t('panel.outOfContact'));
     } else {
       const hint = !canOrder ? '' : archetypeOf(RULESET, unit.kind)?.weapon ? t('panel.hint') : t('panel.hintUnarmed');
@@ -600,7 +752,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     const arch = archetypeOf(RULESET, unit.kind);
     if (!arch) return t('panel.structure');
     if (unit.build !== undefined) return t('panel.site', { n: unit.build });
-    if (unit.side !== PLAYER) return t('panel.structure');
+    if (unit.side !== me()) return t('panel.structure');
     if (arch.production) return t('panel.yard');
     if (arch.comms?.role === 'source' && RULESET.economy) return `${unit.kind === 'command-post' ? t('panel.static') : ''} ${t('panel.source')}`.trim();
     if (arch.extractor) return t('panel.extractor', { n: arch.income });
@@ -614,7 +766,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   function renderJobs(unit: Entity | undefined): void {
     clear(jobsEl);
     const arch = unit && archetypeOf(RULESET, unit.kind);
-    const own = !!unit && unit.side === PLAYER && state.phase === 'plan' && RULESET.economy && inContact(unit) && unit.build === undefined;
+    const own = !!unit && unit.side === me() && state.phase === 'plan' && RULESET.economy && inContact(unit) && unit.build === undefined;
     const yard = own && !!arch?.production;
     const source = own && arch?.comms?.role === 'source' && (!needsDeploy(unit) || isSetUp(unit));
     // Any finished own structure but a command source can be sold (not while disabled).
@@ -695,7 +847,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     const candidates = state.world.entities.filter((e) => {
       const a = archetypeOf(RULESET, e.kind);
       const planned = plannedJobs(state, yard.id).some((c) => c.order.type === 'repair' && c.order.target === e.id);
-      return e.side === PLAYER && a && !planned && arch.production?.includes(e.kind) && e.hp < a.hp && Math.max(Math.abs(e.x - yard.x), Math.abs(e.y - yard.y)) <= 1;
+      return e.side === me() && a && !planned && arch.production?.includes(e.kind) && e.hp < a.hp && Math.max(Math.abs(e.x - yard.x), Math.abs(e.y - yard.y)) <= 1;
     });
     if (candidates.length === 0) box.append(h('p', { class: 'rc-muted' }, t('jobs.repairNone')));
     for (const e of candidates) {
@@ -802,7 +954,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     );
 
   /** Small icon of a unit kind: the map shape (circle / diamond / square) with its glyph. */
-  function unitIcon(kind: string, own: boolean, side: number = own ? PLAYER : 1): HTMLElement {
+  function unitIcon(kind: string, own: boolean, side: number = own ? me() : 1): HTMLElement {
     const icon = h('canvas', { class: 'rc-icon', width: CELL, height: CELL, 'aria-hidden': 'true' }) as HTMLCanvasElement;
     let g: CanvasRenderingContext2D | null = null;
     try {
@@ -852,7 +1004,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     const arch = unit && archetypeOf(RULESET, unit.kind);
     cardEl.hidden = !unit || !arch;
     if (!unit || !arch) return;
-    const own = unit.side === PLAYER;
+    const own = unit.side === me();
     const cells = (n: number) => t('card.cells', { n });
     cardEl.append(
       h('div', { class: 'rc-card-head' }, unitIcon(unit.kind, own, unit.side), h('strong', {}, unitName(unit)), h('span', { class: 'rc-muted' }, sideName(unit.side))),
@@ -898,7 +1050,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       if (arch.production) abilities.append(statRow(t('card.produces'), arch.production.map((k) => t(`unit.${k}`)).join(', '), null));
       const repairers = Object.values(RULESET.archetypes).filter((a) => a.production?.includes(arch.id)).map((a) => t(`unit.${a.id}`));
       if (arch.speed > 0 && repairers.length > 0) abilities.append(statRow(t('card.repair'), t('card.repairAt', { yards: repairers.join(', ') }), null, 'rc-card-repair'));
-      if (unit.side === PLAYER && arch.speed === 0 && arch.comms?.role !== 'source' && arch.buildTurns > 0) abilities.append(statRow(t('card.sell'), t('card.sellValue', { n: plannedSaleRefund(state, unit.id) }), null, 'rc-card-sell'));
+      if (unit.side === me() && arch.speed === 0 && arch.comms?.role !== 'source' && arch.buildTurns > 0) abilities.append(statRow(t('card.sell'), t('card.sellValue', { n: plannedSaleRefund(state, unit.id) }), null, 'rc-card-sell'));
     }
     cardEl.append(stats);
     if (abilities.childElementCount > 1) cardEl.append(abilities);
@@ -1018,9 +1170,9 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     return [
       h(
         'span',
-        { class: 'rc-row', 'aria-hidden': 'true', 'data-side': e.side === PLAYER ? 'own' : 'enemy' },
-        unitIcon(e.kind, e.side === PLAYER, e.side),
-        several() && e.side !== PLAYER ? h('span', { class: 'rc-row-mark', 'data-testid': `rc-mark-${e.id}`, style: `color:${sideColour(e.side)}` }, sideMark(e.side)) : null,
+        { class: 'rc-row', 'aria-hidden': 'true', 'data-side': e.side === me() ? 'own' : 'enemy' },
+        unitIcon(e.kind, e.side === me(), e.side),
+        several() && e.side !== me() ? h('span', { class: 'rc-row-mark', 'data-testid': `rc-mark-${e.id}`, style: `color:${sideColour(e.side)}` }, sideMark(e.side)) : null,
         h('span', { class: 'rc-row-name' }, unitName(e)),
         h('span', { class: 'rc-row-hp' }, h('span', { class: 'rc-stat-bar' }, h('span', { class: 'rc-stat-fill', style: `width:${Math.round((100 * e.hp) / max)}%` })), h('span', {}, `${e.hp}/${max}`)),
         h('span', { class: 'rc-row-state' }, short)
@@ -1031,7 +1183,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
 
   /** One short phrase for a list row: what matters most about the unit right now. */
   function shortState(e: Entity): string {
-    if (e.side !== PLAYER) return !isGhost(e) ? t('row.inSight') : ghostTick(e) === 0 ? t('row.knownStart') : t('row.lastSeen', { turn: reportTurn(ghostTick(e) ?? 0) });
+    if (e.side !== me()) return !isGhost(e) ? t('row.inSight') : ghostTick(e) === 0 ? t('row.knownStart') : t('row.lastSeen', { turn: reportTurn(ghostTick(e) ?? 0) });
     if (e.build !== undefined) return t('list.site', { n: e.build });
     if (e.queue && e.queue.length > 0) return t('list.queue', { n: e.queue.map((q) => t(`unit.${q.kind}`)).join(', ') });
     if (isMobile(e) && !inContact(e)) return t(!isGhost(e) && jammed(e.x, e.y) ? 'contact.jammed' : 'contact.out');
@@ -1042,8 +1194,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   function renderLists(): void {
     clear(ownList);
     clear(enemyList);
-    const own = world().entities.filter((e) => e.side === PLAYER);
-    const enemies = world().entities.filter((e) => e.side !== PLAYER);
+    const own = world().entities.filter((e) => e.side === me());
+    const enemies = world().entities.filter((e) => e.side !== me());
     for (const e of own) {
       const btn = h(
         'button',
@@ -1055,7 +1207,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     if (own.length === 0) ownList.append(h('li', {}, t('list.empty')));
     const attacker = selected === null ? undefined : known(selected);
     const canAttack =
-      !!attacker && attacker.side === PLAYER && isMobile(attacker) && inContact(attacker) && !!archetypeOf(RULESET, attacker.kind)?.weapon && state.phase === 'plan';
+      !!attacker && attacker.side === me() && isMobile(attacker) && inContact(attacker) && !!archetypeOf(RULESET, attacker.kind)?.weapon && state.phase === 'plan';
     for (const e of enemies) {
       const item = h('li', { 'data-testid': `rc-enemy-${e.id}`, class: 'rc-enemy-row' }, ...unitRow(e, shortState(e)));
       if (canAttack && !isGhost(e) && canHurt(attacker, e)) {
@@ -1080,43 +1232,43 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     const told = new Set<string>();
     for (const e of events) {
       if (e.t === 'hit') {
-        if (e.side === PLAYER) taken += e.damage;
+        if (e.side === me()) taken += e.damage;
         else dealt += e.damage;
       } else if (e.t === 'bump') {
         // As before several sides: every bump told to the player except a known enemy's (own units, also lost ones).
         const side = unitById(state, e.id)?.side;
-        if (side === undefined || side === PLAYER) bumps += 1;
+        if (side === undefined || side === me()) bumps += 1;
       } else if (e.t === 'destroyed') {
-        lines.push(t(e.side === PLAYER ? 'summary.lostUnit' : 'summary.destroyedUnit', { name: unitName(e) }));
+        lines.push(t(e.side === me() ? 'summary.lostUnit' : 'summary.destroyedUnit', { name: unitName(e) }));
       } else if (e.t === 'income') {
-        if (e.side === PLAYER) lines.push(t('summary.income', { n: e.amount }));
+        if (e.side === me()) lines.push(t('summary.income', { n: e.amount }));
       } else if (e.t === 'produced') {
-        if (e.side === PLAYER) lines.push(t('summary.produced', { name: unitName(e), yard: unitName(unitById(state, e.by) ?? { kind: 'muster', id: e.by }) }));
+        if (e.side === me()) lines.push(t('summary.produced', { name: unitName(e), yard: unitName(unitById(state, e.by) ?? { kind: 'muster', id: e.by }) }));
       } else if (e.t === 'built') {
         const site = unitById(state, e.id);
-        if (site?.side === PLAYER) lines.push(t('summary.built', { name: unitName(site) }));
+        if (site?.side === me()) lines.push(t('summary.built', { name: unitName(site) }));
       } else if (e.t === 'site') {
-        if (e.side !== PLAYER) lines.push(t('summary.enemySite', { name: unitName(e) }));
+        if (e.side !== me()) lines.push(t('summary.enemySite', { name: unitName(e) }));
       } else if (e.t === 'captured') {
         const post = { kind: e.kind, id: e.id };
-        lines.push(e.to === PLAYER ? t('summary.captured', { name: unitName(post) }) : e.from === PLAYER ? t('summary.postLost', { name: unitName(post), side: sideName(e.to) }) : t('summary.capturedBy', { name: unitName(post), side: sideName(e.to) }));
+        lines.push(e.to === me() ? t('summary.captured', { name: unitName(post) }) : e.from === me() ? t('summary.postLost', { name: unitName(post), side: sideName(e.to) }) : t('summary.capturedBy', { name: unitName(post), side: sideName(e.to) }));
       } else if (e.t === 'eliminated') {
-        lines.push(t(e.side === PLAYER ? 'summary.youOut' : 'summary.sideOut', { side: sideName(e.side) }));
+        lines.push(t(e.side === me() ? 'summary.youOut' : 'summary.sideOut', { side: sideName(e.side) }));
       } else if (e.t === 'missing') {
         lines.push(t('summary.missing', { name: unitName(e) }));
       } else if (e.t === 'repaired') {
         const unit = unitById(state, e.id);
-        if (unit?.side === PLAYER) lines.push(t('summary.repaired', { name: unitName(unit), hp: e.hp }));
+        if (unit?.side === me()) lines.push(t('summary.repaired', { name: unitName(unit), hp: e.hp }));
       } else if (e.t === 'sold') {
-        lines.push(e.side === PLAYER ? t('summary.sold', { name: unitName(e), n: e.refund ?? 0 }) : t('summary.enemySold', { name: unitName(e) }));
+        lines.push(e.side === me() ? t('summary.sold', { name: unitName(e), n: e.refund ?? 0 }) : t('summary.enemySold', { name: unitName(e) }));
       } else if (e.t === 'site-blocked') {
-        if (e.side === PLAYER) lines.push(t('summary.siteBlocked', { name: t(`unit.${e.kind}`), x: e.x + 1, y: e.y + 1 }));
+        if (e.side === me()) lines.push(t('summary.siteBlocked', { name: t(`unit.${e.kind}`), x: e.x + 1, y: e.y + 1 }));
       } else if (e.t === 'order-ended' && REPORTED_ENDS.has(e.reason) && !told.has(`${e.id}:${e.reason}`)) {
         // Orders the engine ended on its own are reported for the player's units, once per
         // unit and reason in a turn.
         const unit = unitById(state, e.id);
         told.add(`${e.id}:${e.reason}`);
-        if (unit?.side === PLAYER) lines.push(t(`summary.ended.${e.reason}`, { name: unitName(unit) }));
+        if (unit?.side === me()) lines.push(t(`summary.ended.${e.reason}`, { name: unitName(unit) }));
       }
     }
     summaryList.append(h('li', {}, t('summary.damage', { dealt, taken })));
@@ -1208,7 +1360,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   /** Veils cells the player does not see now: a translucent wash plus a dot (not colour alone). */
   function drawFog(g: CanvasRenderingContext2D, w: World): void {
     if (revealed()) return;
-    const observed = picture(state.world).observed;
+    const observed = picture(state.world, me()).observed;
     g.save();
     g.fillStyle = css('--rc-fog', 'rgba(29, 29, 27, 0.18)');
     for (let y = 0; y < w.map.h; y++) {
@@ -1269,7 +1421,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
 
   function drawOrders(g: CanvasRenderingContext2D, w: World): void {
     for (const e of w.entities) {
-      if (e.side !== PLAYER) continue;
+      if (e.side !== me()) continue;
       const planned = draftFor(state, e.id);
       const order = planned ?? e.order;
       const [ax, ay] = centre(e.x, e.y);
@@ -1337,7 +1489,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
 
   function drawUnit(g: CanvasRenderingContext2D, e: Entity): void {
     const [cx, cy] = centre(e.x, e.y);
-    const own = e.side === PLAYER;
+    const own = e.side === me();
     const colour = sideColour(e.side);
     const surface = css('--wp-surface', '#ffffff');
     const r = CELL * 0.34;
@@ -1704,7 +1856,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     const map = own && mapIssues(own).length === 0 ? own : null;
     syncOpponentOptions();
     const opponents = map ? 1 : Number(opponentsSelect.value) || 1;
-    commit(newGame(state.seed, spec, state.difficulty, limit, limitSelect.value === 'quick', map, opponents), t('announce.setup', { scenario: map ? mapLabel(map) : t(`scenario.${spec.id}`) }));
+    commit(newGame(state.seed, spec, state.difficulty, limit, limitSelect.value === 'quick', map, opponents, chosenSeats()), t('announce.setup', { scenario: map ? mapLabel(map) : t(`scenario.${spec.id}`) }));
     homeCursor();
     render();
   }
@@ -1724,13 +1876,13 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   function activateCell(x: number, y: number): void {
     cursor = { x, y };
     const here = unitsAt(x, y);
-    const ownHere = here.find((e) => e.side === PLAYER);
+    const ownHere = here.find((e) => e.side === me());
     // A ghost marks where an enemy was, not where it is: its cell takes a move order.
-    const enemyHere = here.find((e) => e.side !== PLAYER && !isGhost(e));
+    const enemyHere = here.find((e) => e.side !== me() && !isGhost(e));
     const current = selected === null ? undefined : known(selected);
-    const canOrder = !!current && current.side === PLAYER && isMobile(current) && state.phase === 'plan';
+    const canOrder = !!current && current.side === me() && isMobile(current) && state.phase === 'plan';
     // Placing a structure: the clicked cell is where it goes (the source stays selected).
-    if (placing && current && current.side === PLAYER && state.phase === 'plan') {
+    if (placing && current && current.side === me() && state.phase === 'plan') {
       const kind = placing;
       orderJob({ type: 'build', kind, x, y });
       if (!noticeEl.hidden) {
@@ -1747,7 +1899,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     }
     // An own ghost marks where a unit out of contact was last reported, not where it is: with a
     // unit selected, its cell takes a move order (the ghost stays selectable in the list).
-    if (canOrder && mode === 'move' && ownHere && isGhost(ownHere) && !here.some((e) => e.side === PLAYER && !isGhost(e))) {
+    if (canOrder && mode === 'move' && ownHere && isGhost(ownHere) && !here.some((e) => e.side === me() && !isGhost(e))) {
       orderSelected({ type: 'move', x, y });
       return;
     }
@@ -1777,6 +1929,13 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     const next = lockTurn(state);
     if (selected !== null && !unitById(next, selected)) selected = null;
     commit(next);
+    // Hot-seat: the device goes on; only the hand-over is announced (no side's summary).
+    if (next.handover) {
+      selected = null;
+      announce(live, handoverTitle.textContent ?? '');
+      handoverBtn.focus();
+      return;
+    }
     // render() has rebuilt the summary list; announce its fresh text.
     announce(live, `${t('announce.resolved', { turn: next.world.turn })} ${[...summaryList.querySelectorAll('li')].map((li) => li.textContent).join(' ')}`);
   }
@@ -1805,7 +1964,15 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
 
   function onConcede(): void {
     confirming = false;
-    commit(concede(state), t('status.conceded'));
+    const next = concede(state);
+    if (next.handover) {
+      selected = null;
+      commit(next);
+      announce(live, handoverTitle.textContent ?? '');
+      handoverBtn.focus();
+      return;
+    }
+    commit(next, isHotSeat(next) ? statusOf(next) : t('status.conceded'));
     // The game buttons are now disabled; move focus to the result instead of losing it.
     statusEl.focus();
   }
@@ -1847,7 +2014,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   canvas.addEventListener('blur', () => draw());
 
   const homeCursor = () => {
-    const post = world().entities.find((e) => e.side === PLAYER && e.kind === 'command-post');
+    const post = world().entities.find((e) => e.side === me() && e.kind === 'command-post');
     cursor = post ? { x: post.x, y: post.y } : { x: 0, y: 0 };
   };
 
@@ -1870,6 +2037,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       editor.forget();
       const spec = specOf(saved);
       state = spec ? structuredClone(saved) : newGame(saved.seed, FIELD_EXERCISE, saved.difficulty, null);
+      // Hot-seat: whoever opens the game first passes it to the person planning (nobody's plan shows).
+      if (state.phase === 'plan' && isHotSeat(state) && personsLeft(state).length > 1) state = { ...state, handover: true };
       context.setDifficulty?.(state.difficulty); // the save decides the level, not the host's select
       selected = null;
       confirming = false;
@@ -1881,7 +2050,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     pause() {},
     resume() {},
     reset() {
-      state = { ...newGame(state.seed, scenarioById(state.scenario) ?? FIELD_EXERCISE, state.difficulty, state.turnLimit, state.quick, state.map), edit: state.edit };
+      state = { ...newGame(state.seed, scenarioById(state.scenario) ?? FIELD_EXERCISE, state.difficulty, state.turnLimit, state.quick, state.map, state.opponents, state.seats), edit: state.edit };
       selected = null;
       confirming = false;
       reported = false;

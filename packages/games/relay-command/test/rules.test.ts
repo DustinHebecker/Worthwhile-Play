@@ -45,6 +45,11 @@ import {
   rulesetFor,
   SIDES_RULESET,
   strongestOpponent,
+  confirmHandover,
+  isHotSeat,
+  personsLeft,
+  rulesOf,
+  type Seat,
 } from '../src/rules';
 import { FIELD_EXERCISE, opponentCounts, RIDGE_VALLEY, type ScenarioSpec, SCENARIOS } from '../src/scenarios';
 
@@ -197,7 +202,7 @@ describe('Field Exercise scenario', () => {
     // Strip the field as a version-4 save would not have it.
     const strip = (o: unknown): unknown => (isRecord(o) ? Object.fromEntries(Object.entries(o).filter(([k]) => k !== 'lostContact').map(([k, v]) => [k, strip(v)])) : Array.isArray(o) ? o.map(strip) : o);
     const migrated = migrateState(strip(v4), 4)!;
-    expect(migrated.v).toBe(9);
+    expect(migrated.v).toBe(10);
     expect(isValidState(migrated)).toBe(true);
     const rifle = own(migrated).find((u) => u.kind === 'rifles')!;
     expect(rifle.doctrine?.lostContact).toBe('keep');
@@ -213,7 +218,7 @@ describe('Field Exercise scenario', () => {
     delete v7.map;
     delete v7.edit;
     const migrated = migrateState(v7, 7)!;
-    expect(migrated).toMatchObject({ v: 9, opponents: 1, map: null, edit: null, scenario: 'field-exercise' });
+    expect(migrated).toMatchObject({ v: 10, opponents: 1, map: null, edit: null, scenario: 'field-exercise' });
     expect(isValidState(migrated)).toBe(true);
     expect(migrateState({ ...v7, v: 9 }, 7)).toBeUndefined();
     expect(isValidState(v7)).toBe(false);
@@ -224,7 +229,7 @@ describe('Field Exercise scenario', () => {
     const v6 = JSON.parse(JSON.stringify({ ...s, v: 6, lead: [5] })) as Record<string, unknown>;
     delete v6.quick;
     const migrated = migrateState(v6, 6)!;
-    expect(migrated).toMatchObject({ v: 9, opponents: 1, quick: false, lead: [], turnLimit: null, map: null, edit: null });
+    expect(migrated).toMatchObject({ v: 10, opponents: 1, quick: false, lead: [], turnLimit: null, map: null, edit: null });
     expect(isValidState(migrated)).toBe(true);
     expect(migrateState({ ...v6, v: 5 }, 6)).toBeUndefined();
     expect(isValidState({ ...newGame(2, FIELD_EXERCISE, 'normal', 12), quick: true })).toBe(false);
@@ -425,7 +430,7 @@ describe('command network (I3a)', () => {
     };
     expect(v1.draft).toHaveLength(5);
     const migrated = migrateState(JSON.parse(JSON.stringify(v1)), 1)!;
-    expect(migrated.v).toBe(9);
+    expect(migrated.v).toBe(10);
     expect(migrated.draft.length).toBeLessThanOrEqual(orderSlots(migrated));
     expect(migrated.draft.every((c) => orderRefusal({ ...migrated, draft: [] }, c.unit, c.order) === null)).toBe(true);
     expect(isValidState(migrated)).toBe(true);
@@ -435,7 +440,7 @@ describe('command network (I3a)', () => {
     const v1 = { ...structuredClone(newGame(3)), v: 1 } as Record<string, unknown>;
     (v1.world as Record<string, unknown>).ruleset = 'base-1';
     const migrated = migrateState(v1, 1);
-    expect(migrated?.v).toBe(9);
+    expect(migrated?.v).toBe(10);
     expect(migrated?.world.ruleset).toBe(RULESET.id);
     expect(migrateState(v1, 2)).toBeUndefined();
     expect(migrateState(null, 1)).toBeUndefined();
@@ -750,7 +755,7 @@ describe('information model (I3c, D7)', () => {
     const s = lockTurn(newGame(5));
     const v2 = JSON.parse(JSON.stringify({ ...s, v: 2, world: { ...s.world, ruleset: 'strategy-1', intel: undefined } })) as Record<string, unknown>;
     const migrated = migrateState(v2, 2)!;
-    expect(migrated.v).toBe(9);
+    expect(migrated.v).toBe(10);
     expect(migrated.world.ruleset).toBe(RULESET.id);
     expect(migrated.events).toEqual([]);
     expect(migrated.world.intel).toEqual(initialIntel(s.world, RULESET));
@@ -1355,7 +1360,7 @@ describe('several sides (docs/design/strategy.md § 9.4)', () => {
   it('saves: v8 migrates to v9 with one opponent; a v9 save must match its map, count, rules and frames', () => {
     const v8 = JSON.parse(JSON.stringify({ ...newGame(4), v: 8 })) as Record<string, unknown>;
     delete v8.opponents;
-    expect(migrateState(v8, 8)).toMatchObject({ v: 9, opponents: 1 });
+    expect(migrateState(v8, 8)).toMatchObject({ v: 10, opponents: 1 });
     expect(migrateState({ ...v8, v: 9 }, 8)).toBeUndefined();
     const s = newGame(1, corners, 'normal', 12, false, null, 2);
     expect(isValidState({ ...s, opponents: 3 })).toBe(false);
@@ -1379,5 +1384,228 @@ describe('several sides (docs/design/strategy.md § 9.4)', () => {
     const fine = structuredClone(s);
     fine.world.intel![0]!.find((r) => r.id === post.id)!.live = false;
     expect(isValidState(fine)).toBe(true);
+  });
+});
+
+
+describe('hot-seat (docs/design/strategy.md § 9.4, D10)', () => {
+  const corners = SCENARIOS.find((x) => x.id === 'four-corners')!;
+  /** The person planning gives the orders the AI would (a stand-in for a person's plan). */
+  const plan = (s: RcState, level: Difficulty = 'normal'): RcState => {
+    let next = s;
+    for (const c of planAi(observe(s.world, rulesOf(s), s.planning), rulesOf(s), level)) next = planOrder(next, c.unit, c.order, c.doctrine) ?? next;
+    return next;
+  };
+  const valid = (s: RcState) => isValidState(JSON.parse(JSON.stringify(s)));
+  const game = (seats: Seat[], opponents = 3, limit: number | null = 30) => newGame(7, corners, 'normal', limit, false, null, opponents, seats);
+
+  it('one person is the single-player game, byte for byte: every map and opponent count matches the fingerprint taken before hot-seat (main at f2ee871)', () => {
+    let h = 0x811c9dc5;
+    const feed = (text: string) => {
+      for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193) >>> 0;
+    };
+    for (const spec of SCENARIOS) {
+      for (const n of opponentCounts(spec)) {
+        let s = newGame(5, spec, 'normal', 12, false, null, n);
+        expect(isHotSeat(s)).toBe(false);
+        while (s.phase === 'plan') {
+          s = plan(s, 'hard');
+          s = lockTurn(s);
+          expect(s.handover).toBe(false);
+          feed(canonicalJson({ world: s.world, events: s.events, entry: s.log.at(-1), lead: s.lead, result: s.result }));
+        }
+      }
+    }
+    expect(h.toString(16)).toBe('cdaa78b6');
+  }, 300_000);
+
+  it('the seats: side 0 is always a person, the default is the computer; several persons have no quick match', () => {
+    expect(newGame(1, corners, 'normal', null, true, null, 3).seats).toEqual(['person', 'computer', 'computer', 'computer']);
+    const s = newGame(1, corners, 'normal', null, true, null, 3, ['computer', 'person', 'computer', 'person']);
+    expect(s.seats).toEqual(['person', 'person', 'computer', 'person']);
+    expect(isHotSeat(s)).toBe(true);
+    expect(s.quick).toBe(false);
+    expect(canSettle({ ...s, lead: Array.from({ length: STALL_TURNS + 1 }, () => 0) })).toBe(false);
+    expect(valid(s)).toBe(true);
+  });
+
+  it('a lock hands the device on: final for that person, nothing resolved, nothing playable until the next person confirms; the last lock resolves all plans at once', () => {
+    let s = game(['person', 'person', 'computer', 'person']);
+    s = plan(s);
+    const aPlan = s.draft;
+    expect(aPlan.length).toBeGreaterThan(0);
+    s = lockTurn(s);
+    expect(s).toMatchObject({ planning: 1, handover: true, draft: [], log: [] });
+    expect(s.locked[0]).toEqual(aPlan);
+    expect(s.world.turn).toBe(0);
+    expect(valid(s)).toBe(true);
+    // Behind the hand-over nothing can be planned, locked or given up.
+    const unit = s.world.entities.find((e) => e.side === 1 && e.kind === 'rifles')!;
+    expect(orderRefusal(s, unit.id, { type: 'hold' })).toBe('finished');
+    expect(lockTurn(s)).toBe(s);
+    expect(concede(s)).toBe(s);
+    s = confirmHandover(s);
+    expect(s.handover).toBe(false);
+    // B plans its own side only; A's units are not B's to order.
+    const aUnit = s.world.entities.find((e) => e.side === 0 && e.kind === 'rifles')!;
+    expect(planOrder(s, aUnit.id, { type: 'hold' })).toBeUndefined();
+    s = plan(s);
+    const bPlan = s.draft;
+    expect(bPlan.every((c) => c.side === 1)).toBe(true);
+    s = confirmHandover(lockTurn(s));
+    expect(s.planning).toBe(3);
+    s = plan(s);
+    const dPlan = s.draft;
+    const before = s.world;
+    s = lockTurn(s);
+    expect(s.log).toHaveLength(1);
+    const plans = s.log[0]!.plans;
+    expect(plans[0]).toEqual(aPlan);
+    expect(plans[1]).toEqual(bPlan);
+    expect(plans[3]).toEqual(dPlan);
+    expect(plans[2]).toEqual(planAi(observe(before, SIDES_RULESET, 2), SIDES_RULESET, 'normal'));
+    // Each person gets their own summary: A now (after the hand-over), B and D when it is their turn.
+    const r = resolveTurn(before, SIDES_RULESET, plans);
+    expect(s).toMatchObject({ planning: 0, handover: true, events: r.reported![0], locked: [[], [], [], []] });
+    expect(s.inbox).toEqual([[], r.reported![1], [], r.reported![3]]);
+    expect(valid(s)).toBe(true);
+    s = lockTurn(confirmHandover(s));
+    expect(s).toMatchObject({ planning: 1, events: r.reported![1] });
+    expect(s.inbox[1]).toEqual([]);
+  });
+
+  it('giving up retires only that side: the others play on, its plan is gone, everyone is told with the next summary, and the log replays it', () => {
+    let s = game(['person', 'person', 'computer', 'person']);
+    s = lockTurn(plan(s));
+    s = plan(confirmHandover(s));
+    s = concede(s);
+    expect(s.phase).toBe('plan');
+    expect(s.world.out).toEqual([1]);
+    expect(s.world.entities.some((e) => e.side === 1)).toBe(false);
+    expect(s).toMatchObject({ planning: 3, handover: true, retired: [1], draft: [] });
+    expect(s.locked[1]).toEqual([]);
+    expect(valid(s)).toBe(true);
+    s = lockTurn(plan(confirmHandover(s)));
+    expect(s.log[0]).toMatchObject({ retired: [1] });
+    expect(s.log[0]!.plans[1]).toEqual([]);
+    expect(s.events[0]).toMatchObject({ t: 'eliminated', side: 1 });
+    expect(s.inbox[3]![0]).toMatchObject({ t: 'eliminated', side: 1 });
+    expect(personsLeft(s)).toEqual([0, 3]);
+    expect(canonicalJson(replay(7, s.log, corners, 3))).toBe(canonicalJson(s.world));
+    expect(valid(s)).toBe(true);
+    // The person planning last gives up: the turn is resolved at once.
+    let t = lockTurn(plan(game(['person', 'person', 'computer', 'computer'])));
+    t = concede(confirmHandover(t));
+    expect(t.log).toHaveLength(1);
+    expect(t.log[0]).toMatchObject({ retired: [1] });
+    expect(t).toMatchObject({ planning: 0, handover: false });
+  });
+
+  it('the game ends when at most one side is left or no person is; the strongest side left wins (a tie: draw); nothing of any side is shown afterwards', () => {
+    // Two persons on a two-side map: giving up ends it, the other wins.
+    let s = newGame(1, FIELD_EXERCISE, 'normal', 24, false, null, 1, ['person', 'person']);
+    expect(isHotSeat(s)).toBe(true);
+    s = concede(confirmHandover(lockTurn(plan(s))));
+    expect(s).toMatchObject({ phase: 'finished', winner: 0, result: 'won', conceded: true, events: [], draft: [], handover: false });
+    expect(valid(s)).toBe(true);
+    // The last person gives up while computers are left: the strongest computer side wins.
+    let c = game(['person', 'person', 'computer', 'computer']);
+    c = concede(c);
+    expect(c.phase).toBe('plan');
+    c = concede(confirmHandover(c));
+    expect(c.phase).toBe('finished');
+    expect(c.winner === 2 || c.winner === 3 || c.winner === null).toBe(true);
+    expect(valid(c)).toBe(true);
+    // At the turn limit the strongest side wins; equal strength is a draw.
+    let d = game(['person', 'person', 'computer', 'computer'], 3, 1);
+    d = lockTurn(confirmHandover(lockTurn(d)));
+    expect(d.phase).toBe('finished');
+    expect(d.inbox.every((e) => e.length === 0) && d.locked.every((p) => p.length === 0)).toBe(true);
+    expect(valid(d)).toBe(true);
+  });
+
+  it('a person who is out is skipped: the device goes from A straight to C in the next turns (review of PR #25)', () => {
+    let s = game(['person', 'person', 'person', 'computer']);
+    s = lockTurn(plan(s));
+    s = concede(confirmHandover(s)); // B gives up; C plans
+    expect(s.planning).toBe(2);
+    s = lockTurn(plan(confirmHandover(s))); // turn carried out
+    expect(s).toMatchObject({ planning: 0, handover: true });
+    s = lockTurn(plan(confirmHandover(s)));
+    expect(s).toMatchObject({ planning: 2, handover: true });
+    expect(s.inbox[1]).toEqual([]);
+    expect(valid(s)).toBe(true);
+  });
+
+  it('no person left ends the game at once (computers do not play on alone), the strongest computer side winning (review of PR #25)', () => {
+    let s = game(['person', 'person', 'computer', 'computer']);
+    s = confirmHandover(lockTurn(plan(s)));
+    // Both persons' posts are gone by the end of this turn: both are out, two computers are left.
+    s = structuredClone(s);
+    s.world.entities = s.world.entities.filter((e) => !(e.kind === 'command-post' && (e.side === 0 || e.side === 1)));
+    s = lockTurn(s);
+    expect(s.world.out).toEqual([0, 1]);
+    expect(s.phase).toBe('finished');
+    const strength = [2, 3].map((side) => sideValue(s.world, side));
+    expect(s.winner).toBe(strength[0]! > strength[1]! ? 2 : strength[1]! > strength[0]! ? 3 : null);
+    expect(valid(s)).toBe(true);
+  });
+
+  it('at the turn limit the strongest side wins and equal strength is a draw (review of PR #25)', () => {
+    // Two persons on a point-symmetric map who give no orders stay equal: a draw.
+    const even = newGame(1, FIELD_EXERCISE, 'normal', 1, false, null, 1, ['person', 'person']);
+    const tied = lockTurn(confirmHandover(lockTurn(even)));
+    expect(sideValue(tied.world, 0)).toBe(sideValue(tied.world, 1));
+    expect(tied).toMatchObject({ phase: 'finished', winner: null, result: 'draw' });
+    // The same with more Supply for B: B wins.
+    const rich = structuredClone(even);
+    rich.world.supply![1] = 900;
+    const won = lockTurn(confirmHandover(lockTurn(rich)));
+    expect(won).toMatchObject({ phase: 'finished', winner: 1, result: 'lost' });
+  });
+
+  it('a hot-seat game is a valid save at every step, also mid-hand-over, and stays so when finished', () => {
+    let s = game(['person', 'person', 'person', 'person'], 3, 6);
+    for (let i = 0; i < 100 && s.phase === 'plan'; i++) {
+      s = s.handover ? confirmHandover(s) : lockTurn(plan(s));
+      expect(valid(s), `step ${i}`).toBe(true);
+    }
+    expect(s.phase).toBe('finished');
+    expect(s.winner === null || (s.winner >= 0 && s.winner <= 3)).toBe(true);
+  });
+
+  it('saves: v9 migrates to v10 as a single-player game; a crafted hot-seat save is refused', () => {
+    const v9 = JSON.parse(JSON.stringify({ ...newGame(4, corners, 'normal', 12, false, null, 2), v: 9 })) as Record<string, unknown>;
+    for (const k of ['seats', 'planning', 'handover', 'locked', 'inbox', 'retired', 'winner']) delete v9[k];
+    expect(migrateState(v9, 9)).toMatchObject({ v: 10, seats: ['person', 'computer', 'computer'], planning: 0, handover: false, locked: [[], [], []], inbox: [[], [], []], retired: [], winner: null });
+    expect(migrateState({ ...v9, v: 10 }, 9)).toBeUndefined();
+    const solo = newGame(1, corners, 'normal', 12, false, null, 3);
+    const hot = lockTurn(plan(game(['person', 'person', 'computer', 'person'])));
+    expect(valid(hot)).toBe(true);
+    const bad: [string, RcState][] = [
+      ['side 0 a computer', { ...hot, seats: ['computer', 'person', 'computer', 'person'] }],
+      ['seats not one per side', { ...hot, seats: ['person', 'person'] }],
+      ['planning a computer side', { ...hot, planning: 2 }],
+      ['single player planning another side', { ...solo, planning: 1 }],
+      ['single player behind a hand-over', { ...solo, handover: true }],
+      ['a locked plan for a side after the one planning', { ...hot, locked: [hot.locked[0]!, [], [], hot.locked[0]!.map((c) => ({ ...c, side: 3 }))] }],
+      ['a locked plan for a computer', { ...hot, locked: [hot.locked[0]!, [], hot.locked[0]!.map((c) => ({ ...c, side: 2 })), []] }],
+      ['a locked plan of another side', { ...hot, locked: [hot.locked[0]!.map((c) => ({ ...c, side: 1 })), [], [], []] }],
+      ['a waiting summary for a side before the one planning', { ...hot, inbox: [[{ t: 'income', tick: 1, side: 0, amount: 1 }], [], [], []] as RcState['inbox'] }],
+      ['a draft of another side', { ...hot, draft: hot.locked[0]! }],
+      ['a winner in a running game', { ...hot, winner: 1 }],
+      ['a winner in a single-player game', { ...solo, phase: 'finished', result: 'won', winner: 0 }],
+      ['a retired side that is not out', { ...hot, retired: [1] }],
+      ['a quick match with several persons', { ...hot, turnLimit: null, quick: true }],
+      ['a finished hot-seat game holding a plan', { ...hot, phase: 'finished', result: 'draw', winner: null, handover: false, locked: hot.seats.map(() => []), draft: hot.locked[0]!.map((c) => ({ ...c, side: 1 })) }],
+      ['a finished hot-seat game holding a summary', { ...hot, phase: 'finished', result: 'draw', winner: null, handover: false, locked: hot.seats.map(() => []), events: [{ t: 'income', tick: 1, side: 1, amount: 1 }] as RcState['events'] }]
+    ];
+    for (const [why, state] of bad) expect(valid(state), why).toBe(false);
+    expect(valid({ ...hot, phase: 'finished', result: 'draw', winner: null, handover: false, locked: hot.seats.map(() => []), draft: [], events: [] }), 'the same finished save, empty').toBe(true);
+    // A person who is out has no plan and no waiting summary.
+    const gone = concede(confirmHandover(hot));
+    expect(valid(gone)).toBe(true);
+    expect(valid({ ...gone, locked: gone.locked.map((p, side) => (side === 1 ? hot.locked[0]!.map((c) => ({ ...c, side: 1 })) : p)) })).toBe(false);
+    expect(valid({ ...gone, inbox: gone.inbox.map((e, side) => (side === 1 ? [{ t: 'income', tick: 1, side: 1, amount: 1 }] : e)) as RcState['inbox'] })).toBe(false);
   });
 });

@@ -11,6 +11,7 @@ import {
   observe,
   observedCells,
   resolveTurn,
+  retire,
   STRATEGY_RULESET,
   validateCommand,
   NEUTRAL,
@@ -55,7 +56,13 @@ export type Outcome = 'won' | 'lost' | 'draw';
 export interface TurnLog {
   turn: number;
   plans: Command[][];
+  /** Sides that gave up (hot-seat) before this turn was resolved: retired first on replay. */
+  retired?: number[];
 }
+
+/** Who plays a side: a person at this device (hot-seat) or the computer. */
+export type Seat = 'person' | 'computer';
+export const SEATS: readonly Seat[] = ['person', 'computer'];
 
 /**
  * Logical game state (plain JSON). `draft` holds the player's orders for the coming turn and
@@ -108,7 +115,7 @@ export function initialWorld(spec: ScenarioSpec, seed: number, opponents = 1): W
 }
 
 export interface RcState {
-  v: 9;
+  v: 10;
   seed: number;
   /** Number of computer opponents (sides 1…n; 1 for two-side maps). */
   opponents: number;
@@ -138,6 +145,23 @@ export interface RcState {
   map: EditMap | null;
   /** The map editor's open draft (kept in the save, so editing can be closed and resumed), or null. */
   edit: MapDraft | null;
+  /**
+   * Hot-seat (docs/design/strategy.md § 9.4): who plays each side. Side 0 is always a person;
+   * with one person this is the single-player game, unchanged.
+   */
+  seats: Seat[];
+  /** The person side whose plan is open (`draft` is its plan, `events` its summary); 0 with one person. */
+  planning: number;
+  /** Hot-seat: the device is to be passed to the `planning` side; nothing of any side is shown until it confirms. */
+  handover: boolean;
+  /** Hot-seat: plans already locked this turn (final for that person), per side; empty for the others. */
+  locked: Command[][];
+  /** Hot-seat: the last turn's summary of each person still to plan this turn (shown when it is their turn). */
+  inbox: SimEvent[][];
+  /** Hot-seat: sides that gave up this turn; logged with the turn so a replay retires them first. */
+  retired: number[];
+  /** Hot-seat: the side that won, or null (draw, or a single-player game: see `result`). */
+  winner: number | null;
 }
 
 /** A map being edited: the map, the library slot it came from (null = not saved yet), and mirror mode. */
@@ -152,19 +176,23 @@ export const scenarioById = (id: string): ScenarioSpec | undefined => SCENARIOS.
 /** The scenario a game runs on: its player-made map, else the built-in one. */
 export const specOf = (state: Pick<RcState, 'scenario' | 'map'>): ScenarioSpec | undefined => (state.map ? customSpec(state.map) : scenarioById(state.scenario));
 
-export function newGame(seed: number, base: ScenarioSpec = FIELD_EXERCISE, difficulty: Difficulty = 'normal', turnLimit: number | null = base.turnLimit, quick = false, map: EditMap | null = null, opponents = 1): RcState {
+export function newGame(seed: number, base: ScenarioSpec = FIELD_EXERCISE, difficulty: Difficulty = 'normal', turnLimit: number | null = base.turnLimit, quick = false, map: EditMap | null = null, opponents = 1, seats: readonly Seat[] = []): RcState {
   const spec = map ? customSpec(map) : base;
   // Only the counts the map declares (two-side maps and player-made ones: one).
   const count = opponentCounts(spec).includes(opponents) ? opponents : 1;
   const world = initialWorld(spec, seed, count);
+  // Side 0 is always a person; seats not given are the computer's.
+  const seating: Seat[] = Array.from({ length: count + 1 }, (_, side) => (side === PLAYER ? 'person' : seats[side] === 'person' ? 'person' : 'computer'));
+  const several = seating.filter((x) => x === 'person').length > 1;
   return {
-    v: 9,
+    v: 10,
     seed: normalizeSeed(seed),
     opponents: count,
     difficulty,
     scenario: spec.id,
     turnLimit,
-    quick: turnLimit === null && quick,
+    // Hot-seat has no quick match: an open end is decided by the posts or giving up.
+    quick: turnLimit === null && quick && !several,
     lead: [],
     world,
     phase: 'plan',
@@ -175,8 +203,27 @@ export function newGame(seed: number, base: ScenarioSpec = FIELD_EXERCISE, diffi
     conceded: false,
     settled: false,
     map,
-    edit: null
+    edit: null,
+    seats: seating,
+    planning: PLAYER,
+    handover: false,
+    locked: seating.map(() => []),
+    inbox: seating.map(() => []),
+    retired: [],
+    winner: null
   };
+}
+
+/** Whether a game has several persons at one device (hot-seat): a fixed property of the game. */
+export const isHotSeat = (state: Pick<RcState, 'seats'>): boolean => state.seats.filter((x) => x === 'person').length > 1;
+
+/** The person sides still in the game, in side order. */
+export const personsLeft = (state: Pick<RcState, 'seats' | 'world'>): number[] =>
+  state.seats.flatMap((seat, side) => (seat === 'person' && !state.world.out?.includes(side) && commandPost(state.world, side) !== undefined ? [side] : []));
+
+/** Hot-seat: the person who has the device now confirms it is them; their plan and summary show. */
+export function confirmHandover(state: RcState): RcState {
+  return state.handover ? { ...state, handover: false } : state;
 }
 
 export const unitById = (state: RcState, id: number): Entity | undefined => state.world.entities.find((e) => e.id === id);
@@ -194,19 +241,20 @@ export function doctrineFor(state: RcState, id: number): Doctrine {
 }
 
 /** Orders the player may give this turn: the connected sources' order slots. */
-export const orderSlots = (state: RcState): number => computeNetwork(state.world, RULESET, PLAYER).slots;
+export const orderSlots = (state: RcState): number => computeNetwork(state.world, RULESET, state.planning).slots;
 
 export type OrderRefusal = 'finished' | 'no-slots' | CommandRefusal;
 
 /** Why an order cannot be planned, or `null` if it can (replacing a unit's planned order is free). */
 export function orderRefusal(state: RcState, unit: number, order: Order, doctrine?: Doctrine): OrderRefusal | null {
-  if (state.phase !== 'plan') return 'finished';
+  if (state.phase !== 'plan' || state.handover) return 'finished';
   // One-shot commands are checked against the world as the planned ones leave it (Supply spent,
   // queues filled), so the player cannot plan more than can be paid for.
   // A structure planned for sale takes no more jobs (it is torn down when the turn is carried out).
   if (isOneShot(order) && state.draft.some((c) => c.unit === unit && c.order.type === 'sell')) return SALE_PLANNED[order.type] ?? 'bad-order';
   const world = isOneShot(order) ? afterJobs(state) : state.world;
-  const check = validateCommand(world, RULESET, doctrine ? { side: PLAYER, unit, order, doctrine } : { side: PLAYER, unit, order });
+  const side = state.planning;
+  const check = validateCommand(world, RULESET, doctrine ? { side, unit, order, doctrine } : { side, unit, order });
   if (!check.ok) return check.reason;
   const replaces = !isOneShot(order) && state.draft.some((c) => c.unit === unit && !isOneShot(c.order));
   if (!replaces && state.draft.length >= orderSlots(state)) return 'no-slots';
@@ -225,29 +273,30 @@ const SALE_PLANNED: Partial<Record<Order['type'], CommandRefusal>> = { produce: 
  */
 function afterJobs(state: RcState): World {
   const world = structuredClone(state.world);
+  const me = state.planning;
   for (const c of state.draft) {
     if (!isOneShot(c.order) || c.order.type === 'hold') continue;
     if (c.order.type === 'repair') {
       const target = world.entities.find((e) => e.id === (c.order as { target: number }).target);
       const arch = target && archetypeOf(RULESET, target.kind);
       if (target && arch) {
-        if (world.supply) world.supply[PLAYER] = (world.supply[PLAYER] ?? 0) - repairPrice(arch, target.hp);
+        if (world.supply) world.supply[me] = (world.supply[me] ?? 0) - repairPrice(arch, target.hp);
         target.hp = arch.hp;
       }
       continue;
     }
     if (c.order.type === 'sell') continue;
     const arch = archetypeOf(RULESET, (c.order as { kind: string }).kind);
-    if (world.supply) world.supply[PLAYER] = (world.supply[PLAYER] ?? 0) - (arch?.cost ?? 0);
+    if (world.supply) world.supply[me] = (world.supply[me] ?? 0) - (arch?.cost ?? 0);
     if (c.order.type === 'produce') {
       const yard = world.entities.find((e) => e.id === c.unit);
       if (yard) (yard.queue ??= []).push({ kind: c.order.kind, left: 1 });
     } else if (c.order.type === 'build' && arch) {
       // The planned site takes its cell, so a second placement there is refused while planning.
-      const site = spawn(world.nextId++, PLAYER, arch, c.order.x, c.order.y);
+      const site = spawn(world.nextId++, me, arch, c.order.x, c.order.y);
       site.build = arch.buildTurns;
       world.entities.push(site);
-      world.intel?.[PLAYER]?.push({ id: site.id, side: PLAYER, kind: site.kind, x: site.x, y: site.y, hp: site.hp, tick: world.tick, live: false });
+      world.intel?.[me]?.push({ id: site.id, side: me, kind: site.kind, x: site.x, y: site.y, hp: site.hp, tick: world.tick, live: false });
     }
   }
   return world;
@@ -262,7 +311,7 @@ export function plannedSaleRefund(state: RcState, id: number): number {
 }
 
 /** Supply left to plan with this turn: the side's Supply minus what the planned jobs cost. */
-export const plannedSupply = (state: RcState): number => afterJobs(state).supply?.[PLAYER] ?? 0;
+export const plannedSupply = (state: RcState): number => afterJobs(state).supply?.[state.planning] ?? 0;
 
 /**
  * Adds or replaces the player's order for one unit. A doctrine planned earlier in the same turn
@@ -272,7 +321,8 @@ export function planOrder(state: RcState, unit: number, order: Order, doctrine?:
   const oneShot = isOneShot(order);
   const keep = oneShot ? undefined : (doctrine ?? state.draft.find((c) => c.unit === unit && !isOneShot(c.order))?.doctrine);
   if (orderRefusal(state, unit, order, keep) !== null) return undefined;
-  const command: Command = keep ? { side: PLAYER, unit, order, doctrine: keep } : { side: PLAYER, unit, order };
+  const side = state.planning;
+  const command: Command = keep ? { side, unit, order, doctrine: keep } : { side, unit, order };
   // A standing order replaces the unit's planned one; a one-shot command is added (stable order).
   const draft = oneShot ? [...state.draft] : state.draft.filter((c) => c.unit !== unit || isOneShot(c.order));
   draft.push(command);
@@ -306,15 +356,61 @@ export function cancelOrder(state: RcState, unit: number): RcState {
   return { ...state, draft: state.draft.filter((c) => c.unit !== unit) };
 }
 
-/** Locks the player's plan, lets the opponent plan blind, and resolves both simultaneously. */
+/**
+ * Locks the plan of the person planning. With one person (or the last person of a hot-seat turn)
+ * the computer sides plan blind and all plans are resolved simultaneously. In a hot-seat game an
+ * earlier person's lock hands the device on: the lock is final for that person this turn (no
+ * take-back), and the next person plans after confirming it is them (`confirmHandover`).
+ */
 export function lockTurn(state: RcState): RcState {
-  if (state.phase !== 'plan') return state;
-  // Each opponent plans from its own observation only (never the world, the player's draft or
-  // another opponent's plan); a side that is out plans nothing.
+  if (state.phase !== 'plan' || state.handover) return state;
+  const next = personsLeft(state).find((side) => side > state.planning);
+  if (next !== undefined) {
+    return {
+      ...state,
+      locked: state.locked.map((plan, side) => (side === state.planning ? state.draft : plan)),
+      inbox: state.inbox.map((events, side) => (side === next ? [] : events)),
+      events: state.inbox[next] ?? [],
+      draft: [],
+      planning: next,
+      handover: true
+    };
+  }
+  return resolveAll(state);
+}
+
+/** Resolves the turn: persons' locked plans (and the open one), the computers' plans, all at once. */
+function resolveAll(state: RcState): RcState {
+  // Each computer side plans from its own observation only (never the world, a person's plan or
+  // another side's plan); a side that is out plans nothing.
   const rules = rulesOf(state);
   const out = new Set(state.world.out ?? []);
-  const plans = [state.draft, ...Array.from({ length: state.opponents }, (_, i) => (out.has(i + 1) ? [] : planAi(observe(state.world, rules, i + 1), rules, state.difficulty)))];
+  const plans = Array.from({ length: state.world.sides }, (_, side): Command[] => {
+    if (out.has(side)) return [];
+    if (state.seats[side] === 'person') return side === state.planning ? state.draft : (state.locked[side] ?? []);
+    return planAi(observe(state.world, rules, side), rules, state.difficulty);
+  });
   const { world, events: all, reported } = resolveTurn(state.world, rules, plans);
+  const entry: TurnLog = state.retired.length > 0 ? { turn: state.world.turn, plans, retired: state.retired } : { turn: state.world.turn, plans };
+  const cleared = { locked: state.seats.map((): Command[] => []), inbox: state.seats.map((): SimEvent[] => []), retired: [], draft: [], log: [...state.log, entry] };
+  if (isHotSeat(state)) {
+    const after = { ...state, world };
+    const winner = hotSeatEnd(after);
+    if (winner !== undefined) return finishHotSeat({ ...after, ...cleared }, winner);
+    // Every person sees their own summary (what was reported to their side), the first one now;
+    // sides that gave up this turn are told with it.
+    const left = personsLeft(after);
+    const first = left[0] ?? PLAYER;
+    const told = (side: number): SimEvent[] => [...state.retired.map((gone): SimEvent => ({ t: 'eliminated', tick: state.world.tick, side: gone })), ...(reported?.[side] ?? [])];
+    return {
+      ...after,
+      ...cleared,
+      events: told(first),
+      inbox: state.seats.map((_, side) => (side !== first && left.includes(side) ? told(side) : [])),
+      planning: first,
+      handover: left.length > 1
+    };
+  }
   const events = reported?.[PLAYER] ?? [];
   // The stalemate record is kept in open-ended games (a turn limit ends the others): a quick
   // match is decided by it, a plain open end only offers the player to end on strength.
@@ -328,13 +424,61 @@ export function lockTurn(state: RcState): RcState {
   const result = outcome(world, state.turnLimit, lead, state.quick);
   return {
     ...state,
+    ...cleared,
     world,
     lead,
     events,
-    draft: [],
-    log: [...state.log, { turn: state.world.turn, plans }],
     phase: result ? 'finished' : 'plan',
     result
+  };
+}
+
+/** Sides still in the game: not out, holding a Command Post. */
+const sidesLeft = (world: World): number[] =>
+  Array.from({ length: world.sides }, (_, side) => side).filter((side) => !world.out?.includes(side) && commandPost(world, side) !== undefined);
+
+/** The strongest of `sides`, or null when two share the top (or none is given). */
+function strongest(world: World, sides: readonly number[]): number | null {
+  let best: number | null = null;
+  let top = -Infinity;
+  let tie = false;
+  for (const side of sides) {
+    const v = sideValue(world, side);
+    if (v > top) [best, top, tie] = [side, v, false];
+    else if (v === top) tie = true;
+  }
+  return tie ? null : best;
+}
+
+/**
+ * Hot-seat end of the game (docs/design/strategy.md § 9.4): when at most one side is left, or no
+ * person is (computers do not play on alone), or at the turn limit (open end: MAX_TURNS) — then
+ * the strongest side left wins, a tie is a draw (null). `undefined`: the game goes on.
+ */
+function hotSeatEnd(state: Pick<RcState, 'seats' | 'world' | 'turnLimit'>): number | null | undefined {
+  const { world } = state;
+  const left = sidesLeft(world);
+  if (left.length <= 1) return left[0] ?? null;
+  const decided = personsLeft(state).length === 0 || world.turn >= (state.turnLimit ?? MAX_TURNS);
+  return decided ? strongest(world, left) : undefined;
+}
+
+/**
+ * A finished hot-seat game: the winner (null: draw), and for the record of side 0 its outcome.
+ * Nothing of any side is left to show: no plan, no summary (the result names only the winner and
+ * the sides that are out, which every side was told).
+ */
+function finishHotSeat(state: RcState, winner: number | null): RcState {
+  return {
+    ...state,
+    phase: 'finished',
+    winner,
+    result: winner === null ? 'draw' : winner === PLAYER ? 'won' : 'lost',
+    events: [],
+    draft: [],
+    handover: false,
+    locked: state.seats.map(() => []),
+    inbox: state.seats.map(() => [])
   };
 }
 
@@ -343,7 +487,8 @@ export function lockTurn(state: RcState): RcState {
  * the player may end the game on strength instead of playing on (or giving up). Nothing forces it.
  */
 export const canSettle = (state: RcState): boolean =>
-  state.phase === 'plan' && state.turnLimit === null && !state.quick && stalemateTurns(state) >= STALL_TURNS;
+  state.phase === 'plan' &&
+  !isHotSeat(state) && state.turnLimit === null && !state.quick && stalemateTurns(state) >= STALL_TURNS;
 
 /** The result `settle` would give now (strength as in every decision on strength). */
 export function settleResult(state: RcState): Outcome {
@@ -356,9 +501,35 @@ export function settle(state: RcState): RcState {
   return { ...state, phase: 'finished', result: settleResult(state), settled: true, draft: [] };
 }
 
+/**
+ * The player gives up. Hot-seat: the person planning gives up (after confirming the hand-over);
+ * only that side is out (`retire`, the elimination step) and the others play on — unless that
+ * leaves at most one side or no person, which ends the game. Its plan is discarded.
+ */
 export function concede(state: RcState): RcState {
   if (state.phase !== 'plan') return state;
-  return { ...state, phase: 'finished', result: 'lost', conceded: true, draft: [] };
+  if (!isHotSeat(state)) return { ...state, phase: 'finished', result: 'lost', conceded: true, draft: [] };
+  if (state.handover) return state;
+  const side = state.planning;
+  const rest = sidesLeft(state.world).filter((x) => x !== side);
+  const people = personsLeft(state).filter((x) => x !== side);
+  if (rest.length <= 1 || people.length === 0 || !rulesOf(state).capture) {
+    const winner = rest.length <= 1 ? (rest[0] ?? null) : strongest(state.world, rest);
+    return finishHotSeat({ ...state, conceded: true }, winner);
+  }
+  const gone: RcState = {
+    ...state,
+    world: retire(state.world, side).world,
+    retired: [...state.retired, side],
+    locked: state.locked.map((plan, x) => (x === side ? [] : plan)),
+    inbox: state.inbox.map((events, x) => (x === side ? [] : events)),
+    draft: [],
+    events: []
+  };
+  // The next person in this turn plans; when the one giving up was the last, the turn is resolved.
+  const next = personsLeft(gone).find((x) => x > side);
+  if (next === undefined) return resolveAll(gone);
+  return { ...gone, events: gone.inbox[next] ?? [], inbox: gone.inbox.map((events, x) => (x === next ? [] : events)), planning: next, handover: true };
 }
 
 /**
@@ -374,27 +545,30 @@ export interface Picture {
   observed: Uint8Array;
 }
 
-const pictureCache = new WeakMap<World, Picture>();
+const pictureCache = new WeakMap<World, Map<number, Picture>>();
 
-export function picture(world: World): Picture {
-  const cached = pictureCache.get(world);
+/** What `side` knows of the world (the player's side unless given; hot-seat: the person planning). */
+export function picture(world: World, side: number = PLAYER): Picture {
+  const cached = pictureCache.get(world)?.get(side);
   if (cached) return cached;
-  const reports: readonly Report[] = world.intel?.[PLAYER] ?? [];
+  const reports: readonly Report[] = world.intel?.[side] ?? [];
   const ghosts = new Map<number, number>();
   const entities: Entity[] = [];
   for (const r of reports) {
     const actual = world.entities.find((e) => e.id === r.id);
     if (r.live && actual) {
       // Enemies: position, health and visible effects only.
-      const { id, side, kind, x, y, hp, status } = actual;
-      entities.push(r.side === PLAYER ? actual : { id, side, kind, x, y, hp, mp: 0, cooldown: 0, order: { type: 'hold' }, status, beam: null });
+      const { id, kind, x, y, hp, status } = actual;
+      entities.push(r.side === side ? actual : { id, side: actual.side, kind, x, y, hp, mp: 0, cooldown: 0, order: { type: 'hold' }, status, beam: null });
       continue;
     }
     ghosts.set(r.id, r.tick);
     entities.push({ id: r.id, side: r.side, kind: r.kind, x: r.x, y: r.y, hp: r.hp, mp: 0, cooldown: 0, order: { type: 'hold' }, status: [], beam: null });
   }
-  const result: Picture = { world: { ...world, entities }, ghosts, observed: observedCells(world, RULESET, PLAYER) };
-  pictureCache.set(world, result);
+  const result: Picture = { world: { ...world, entities }, ghosts, observed: observedCells(world, RULESET, side) };
+  const perSide = pictureCache.get(world) ?? new Map<number, Picture>();
+  perSide.set(side, result);
+  pictureCache.set(world, perSide);
   return result;
 }
 
@@ -404,7 +578,7 @@ export function picture(world: World): Picture {
  */
 export function lastSentOrder(state: RcState, id: number): Order | undefined {
   for (let i = state.log.length - 1; i >= 0; i--) {
-    const sent = state.log[i]?.plans[PLAYER]?.find((c) => c.unit === id);
+    const sent = state.log[i]?.plans[state.planning]?.find((c) => c.unit === id);
     if (sent) return sent.order;
   }
   return undefined;
@@ -492,8 +666,18 @@ export function outcome(world: World, turnLimit: number | null, lead: readonly n
 export function replay(seed: number, log: readonly TurnLog[], spec: ScenarioSpec = FIELD_EXERCISE, opponents = 1): World {
   let world = initialWorld(spec, seed, opponents);
   const rules = rulesetFor(spec, opponents);
-  for (const entry of log) world = resolveTurn(world, rules, entry.plans).world;
+  for (const entry of log) {
+    for (const side of entry.retired ?? []) world = retire(world, side).world;
+    world = resolveTurn(world, rules, entry.plans).world;
+  }
   return world;
+}
+
+/** Adds the hot-seat fields of a single-player game (v10) to an older save: side 0 the only person. */
+function withSeats(state: Record<string, unknown>): Record<string, unknown> {
+  const sides = typeof state.opponents === 'number' && Number.isInteger(state.opponents) && state.opponents >= 1 && state.opponents <= MAX_OPPONENTS ? state.opponents + 1 : 2;
+  const seats: Seat[] = Array.from({ length: sides }, (_, side) => (side === PLAYER ? 'person' : 'computer'));
+  return { ...state, seats, planning: PLAYER, handover: false, locked: seats.map(() => []), inbox: seats.map(() => []), retired: [], winner: null };
 }
 
 /** Switches an older save's world to the current ruleset and gives each side the starting Supply if it has none. */
@@ -541,7 +725,8 @@ const commandGuard =
     isRecord(v) && isInt(v.side, 0, sides - 1) && isInt(v.unit, 1) && isValidOrder(v.order, w, h) && (v.doctrine === undefined || isValidDoctrine(v.doctrine));
 
 const isTurnLog = (isCommand: (v: unknown) => v is Command, sides: number) => (v: unknown): v is TurnLog =>
-  isRecord(v) && isInt(v.turn, 0) && Array.isArray(v.plans) && v.plans.length === sides && v.plans.every((p) => isArrayOf(p, isCommand));
+  isRecord(v) && isInt(v.turn, 0) && Array.isArray(v.plans) && v.plans.length === sides && v.plans.every((p) => isArrayOf(p, isCommand)) &&
+  (v.retired === undefined || (isArrayOf(v.retired, (x) => isInt(x, 0, sides - 1)) && v.retired.length > 0));
 
 /**
  * The world must belong to the saved scenario: same map and ruleset, only the scenario's unit
@@ -569,11 +754,54 @@ function matchesScenario(world: World, spec: ScenarioSpec, opponents: number): b
   return world.entities.length <= n && world.entities.every((e) => kinds.has(e.kind)) && world.projectiles.length <= n * 4;
 }
 
+/** Bound for one plan or one summary (see `isValidState`): one command per unit of the scenario, a dozen events per unit and tick. */
+const n0 = (scenario: { entities: readonly unknown[] }): number => scenario.entities.length;
+
+/**
+ * Hot-seat fields (docs/design/strategy.md § 9.4): side 0 a person; one person means the
+ * single-player game (planning side 0, no hand-over, nothing locked or waiting); several persons
+ * have no quick match or stalemate record. Locked plans only for persons before the one planning,
+ * waiting summaries only for persons after it, never for a side that is out (its plan is
+ * discarded); sides given up this turn are out; a finished hot-seat game shows nothing of any side.
+ */
+function isValidSeating(value: Record<string, unknown>, n: number, isCommand: (v: unknown) => v is Command): boolean {
+  const w = value.world as World;
+  const sides = w.sides;
+  const out = new Set(w.out ?? []);
+  const { seats, planning, handover, locked, inbox, retired, winner, phase } = value;
+  if (!isArrayOf(seats, (x): x is Seat => isOneOf(x, SEATS)) || seats.length !== sides || seats[0] !== 'person') return false;
+  if (!isInt(planning, 0, sides - 1) || seats[planning] !== 'person' || typeof handover !== 'boolean') return false;
+  const hot = seats.filter((x) => x === 'person').length > 1;
+  if (!hot && (planning !== PLAYER || handover)) return false;
+  if (hot && (value.quick === true || (Array.isArray(value.lead) && value.lead.length > 0))) return false;
+  const playing = phase === 'plan';
+  if (handover && !playing) return false;
+  if (playing && hot && out.has(planning)) return false;
+  const isEvent = (e: unknown) => isRecord(e) && typeof e.t === 'string' && isInt(e.tick, 0);
+  if (!Array.isArray(locked) || locked.length !== sides) return false;
+  for (let side = 0; side < sides; side++) {
+    const plan: unknown = locked[side];
+    if (!isArrayOf(plan, isCommand) || plan.length > n || plan.some((c) => c.side !== side)) return false;
+    if (plan.length > 0 && !(playing && seats[side] === 'person' && side < planning && !out.has(side))) return false;
+  }
+  if (!Array.isArray(inbox) || inbox.length !== sides) return false;
+  for (let side = 0; side < sides; side++) {
+    const events: unknown = inbox[side];
+    if (!Array.isArray(events) || events.length > n * RULESET.ticksPerTurn * 12 || !events.every(isEvent)) return false;
+    if (events.length > 0 && !(playing && seats[side] === 'person' && side > planning && !out.has(side))) return false;
+  }
+  if (!isArrayOf(retired, (x): x is number => isInt(x, 0, sides - 1)) || new Set(retired).size !== retired.length) return false;
+  if (retired.some((x) => !hot || !out.has(x) || seats[x] !== 'person')) return false;
+  if (!(winner === null || (isInt(winner, 0, sides - 1) && hot && !playing))) return false;
+  if (hot && !playing && ((Array.isArray(value.draft) && value.draft.length > 0) || (Array.isArray(value.events) && value.events.length > 0))) return false;
+  return true;
+}
+
 const isValidDraft = (v: unknown): v is MapDraft | null =>
   v === null || (isRecord(v) && isValidMap(v.map) && (v.slot === null || isInt(v.slot, 0, MAP_SLOTS - 1)) && typeof v.mirror === 'boolean');
 
 export function isValidState(value: unknown): value is RcState {
-  if (!isRecord(value) || value.v !== 9 || !isUint32(value.seed) || typeof value.scenario !== 'string' || !isInt(value.opponents, 1, MAX_OPPONENTS)) return false;
+  if (!isRecord(value) || value.v !== 10 || !isUint32(value.seed) || typeof value.scenario !== 'string' || !isInt(value.opponents, 1, MAX_OPPONENTS)) return false;
   if (!isOneOf(value.difficulty, DIFFICULTIES)) return false;
   // A player-made map: well-formed and playable, and then the scenario is 'custom'.
   if (value.map !== null && (!isValidMap(value.map) || mapIssues(value.map).length > 0)) return false;
@@ -600,7 +828,8 @@ export function isValidState(value: unknown): value is RcState {
   if (typeof value.quick !== 'boolean' || (value.quick && value.turnLimit !== null)) return false;
   if (value.turnLimit !== null && value.lead.length > 0) return false; // only open-ended games keep a stalemate record
   const isCommand = commandGuard(value.world.map.w, value.world.map.h, value.world.sides);
-  if (!isArrayOf(value.draft, isCommand) || value.draft.some((c) => c.side !== PLAYER)) return false;
+  if (!isValidSeating(value, n0(scenario), isCommand)) return false;
+  if (!isArrayOf(value.draft, isCommand) || value.draft.some((c) => c.side !== value.planning)) return false;
   // Bounded by the scenario (hostile saves must not freeze the tab): one command per unit and
   // plan, and at most a dozen events per unit and tick in the last turn's summary.
   const n = scenario.entities.length;
@@ -629,39 +858,45 @@ export function migrateState(state: unknown, fromVersion: number): RcState | und
   // and no yards, so the game plays on as it did (nothing to build on, posts still yield).
   // Version 6 (open end always had the stalemate rule): plays on as a plain open end; the
   // stalemate rule is now the separate quick match.
+  // Version 9 (before hot-seat): every opponent is the computer's; side 0 plans, nothing waits.
+  if (fromVersion === 9) {
+    if (!isRecord(state) || state.v !== 9) return undefined;
+    const migrated = withSeats({ ...state, v: 10 });
+    return isValidState(migrated) ? migrated : undefined;
+  }
   // Version 8 (two sides only): one opponent; everything else carries over.
   if (fromVersion === 8) {
     if (!isRecord(state) || state.v !== 8) return undefined;
-    const migrated = { ...state, v: 9, opponents: 1 };
+    const migrated = withSeats({ ...state, v: 10, opponents: 1 });
     return isValidState(migrated) ? migrated : undefined;
   }
   // Version 7 (before the map editor): no player-made map, no draft.
   if (fromVersion === 7) {
     if (!isRecord(state) || state.v !== 7) return undefined;
-    const migrated = { ...state, v: 9, opponents: 1, map: null, edit: null };
+    const migrated = withSeats({ ...state, v: 10, opponents: 1, map: null, edit: null });
     return isValidState(migrated) ? migrated : undefined;
   }
   if (fromVersion === 6) {
     if (!isRecord(state) || state.v !== 6) return undefined;
-    const migrated = { ...state, v: 9, opponents: 1, quick: false, settled: false, lead: [], map: null, edit: null };
+    const migrated = withSeats({ ...state, v: 10, opponents: 1, quick: false, settled: false, lead: [], map: null, edit: null });
     return isValidState(migrated) ? migrated : undefined;
   }
   if (fromVersion === 5) {
     if (!isRecord(state) || state.v !== 5) return undefined;
-    const migrated = withEconomy({ ...state, v: 9, opponents: 1 });
+    const migrated = withSeats(withEconomy({ ...state, v: 10, opponents: 1 }));
     return isValidState(migrated) ? migrated : undefined;
   }
   // Version 4 (before the lost-contact doctrine and open end): doctrines keep their old meaning
   // (carry on out of contact); player units without a doctrine get the current default.
   if (fromVersion === 4) {
     if (!isRecord(state) || state.v !== 4) return undefined;
-    const migrated = withEconomy(withLostContact({ ...state, v: 9, opponents: 1 }));
+    const migrated = withSeats(withEconomy(withLostContact({ ...state, v: 10, opponents: 1 })));
     return isValidState(migrated) ? migrated : undefined;
   }
   // Version 3 (before difficulty levels) plays on at 'normal'.
   if (fromVersion === 3) {
     if (!isRecord(state) || state.v !== 3) return undefined;
-    const migrated = withEconomy(withLostContact({ ...state, v: 9, opponents: 1, difficulty: 'normal' }));
+    const migrated = withSeats(withEconomy(withLostContact({ ...state, v: 10, opponents: 1, difficulty: 'normal' })));
     return isValidState(migrated) ? migrated : undefined;
   }
   if ((fromVersion !== 1 && fromVersion !== 2) || !isRecord(state) || state.v !== fromVersion || !isRecord(state.world)) return undefined;
@@ -669,7 +904,7 @@ export function migrateState(state: unknown, fromVersion: number): RcState | und
   delete world.intel;
   delete world.supply;
   if (!isValidWorld(world, { ...RULESET, fog: false, economy: false })) return undefined;
-  const migrated = withEconomy(withLostContact({ ...state, v: 9, opponents: 1, difficulty: 'normal', events: [], world: { ...world, intel: initialIntel(world as unknown as World, RULESET) } }));
+  const migrated = withSeats(withEconomy(withLostContact({ ...state, v: 10, opponents: 1, difficulty: 'normal', events: [], world: { ...world, intel: initialIntel(world as unknown as World, RULESET) } })));
   if (!isValidState(migrated)) return undefined;
   // Version 1 had no order limit or coverage: keep only the planned orders that are still allowed.
   let replanned: RcState = { ...migrated, draft: [] };
