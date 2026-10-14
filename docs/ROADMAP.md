@@ -33,7 +33,7 @@ Platform capabilities for games (host, ADRs 0002/0011/0012): preferences (small 
 | Memory | Classic Memory | M0 | ✅ | reference game; first consumer of the deck model |
 | Memory | image↔word, word↔image, word↔definition, audio↔word, audio↔translation | M1 | 🚧 | picture↔word, word↔translation (any pair of the 16 languages from Settings → learning languages), flag↔country, country↔capital, AI term↔definition (*AI basics*) and own decks (front↔back, also word↔definition) done; read aloud via speech synthesis (best effort); audio↔word with bundled audio pending |
 | Learning | Language decks, geography (flag/capital/map/neighbours), AI & business vocabulary, user decks | M1 | 🚧 | done: deck library with CSV/JSON import/export (local only), *First words* (60 nouns, 16 languages), *Flags & countries* (60 countries, CLDR names from the browser), *Capitals* (56 countries × 16 languages), *AI basics* (40 AI terms with definitions × 16 languages), spaced repetition ("Items worth reviewing", *Review* game), "Create with an AI" (guide link, direct import links); pending: maps/neighbours, business vocabulary, larger vocabulary as downloadable packs |
-| Logic | Sokoban → shown as **Crate Pusher** | M2 | ✅ | 24 original levels, solver-verified optimal push counts |
+| Logic | Sokoban → shown as **Crate Pusher** | M2 | ✅ | 62 original levels in 4 difficulties, solver-verified optimal push counts |
 | Logic | Nonogram | M2 | ✅ | line-solvable + unique (independent oracle in tests) |
 | Logic | Bridges / Hashi | M2 | ✅ | generated, solvable by logic (capacity, crossing, isolation); uniqueness via oracle |
 | Logic | Slitherlink ("Loop") | M2 | ✅ | unique solution checked by an independent exhaustive solver |
@@ -85,14 +85,14 @@ Catalogue order (done): the large games first (Relay Command; then strategy/towe
 
 | Game | Feedback | Status |
 |---|---|---|
-| Black Box | allow stating the rule as a formula instead of only predicting example outputs | 🚧 |
+| Black Box | allow stating the rule as a formula instead of only predicting example outputs | ✅ prove by formula (checked on the whole domain; own parser, no eval) or by predictions; 12 of 15 families (list rules: predictions only) |
 | Nonogram | a harder level, e.g. 15×15 | ✅ Expert 15×15: line-solvable, unique, at least 7 solver rounds (hard: ~3); "larger cells" option on phones |
-| Crate Pusher | more levels | 🚧 |
+| Crate Pusher | more levels | ✅ 62 original levels (was 24) incl. a new Expert set (4–6 crates, 36–61 pushes); every push count proven optimal by an independent A* solver |
 | Laser Paths | far too easy even on hard: more optical elements, many more pieces to place | ✅ one-way gates and portal pairs; 4 new hard levels (5–6 pieces) and an Expert set (8 levels, 7×9, 7–8 pieces), each unique by an exact solver |
 | Review / AI basics | prompts appear in the learning language; they should be in the main (UI) language | ✅ Flags, Capitals and AI basics always in the UI language (Review, Memory, deck pages); only First words uses the learning language |
 | Four in a Row | far too hard even on easy | ✅ easy overlooks some threats and plays casual moves; each level beats the one below by a measured margin |
 | Orbit Links | already good, but frequent stalemates | 🚧 |
-| Visual search | too easy | 🚧 |
+| Visual search | too easy | ✅ Expert level: T among rotated L shapes (spatial-configuration search, 12/30 items, half without target); further option: mirrored L's |
 | Circuit | **backlog:** a variant with electronic components (capacitors, inductors, …) where e.g. oscillators with the right frequency and other circuits must be built | ⏳ |
 | Four in a Row | **backlog:** variants that make it more interesting (3D / 4×4×4, five in a row, …) | ⏳ |
 | Tic-Tac-Toe | **backlog:** variants (3D, 4×4, …) | ⏳ |
