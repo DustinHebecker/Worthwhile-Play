@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { GameContext, GameMetadata, GameModule } from '@wp/game-core';
-import { createMemoryLibraryStore, createMemoryStore, type LibraryStore } from '@wp/persistence';
+import { createMemoryLibraryStore, createMemoryStore, createSave, type LibraryStore, type SaveStore } from '@wp/persistence';
 import type { AppContext, UiTranslator } from '../src/app';
 import { renderGamePage } from '../src/pages/game';
 
@@ -27,11 +27,11 @@ const metadata = (id: string): GameMetadata => ({
 const contexts = new Map<string, GameContext>();
 
 /** A game whose `preload` is controlled by the test and which renders the locale it was preloaded for. */
-function fakeGame(id: string, preload?: (locale: string) => Promise<void>) {
+function fakeGame(id: string, preload?: (locale: string) => Promise<void>, extra: Partial<GameMetadata> = {}) {
   const log: string[] = [];
   let content = '(none)';
   const module: GameModule<{ n: number }> = {
-    metadata: metadata(id),
+    metadata: { ...metadata(id), ...extra },
     isValidState: (value): value is { n: number } => typeof (value as { n?: unknown })?.n === 'number',
     ...(preload
       ? {
@@ -46,11 +46,14 @@ function fakeGame(id: string, preload?: (locale: string) => Promise<void>) {
       log.push(`create:${context.t.locale}`);
       contexts.set(id, context);
       return {
-        newGame: () => {
-          log.push('newGame');
-          context.root.replaceChildren(Object.assign(document.createElement('p'), { textContent: content }));
+        newGame: (options) => {
+          log.push(options.difficulty === undefined ? 'newGame' : `newGame:${options.difficulty}`);
+          const setup = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Map' });
+          context.root.replaceChildren(Object.assign(document.createElement('p'), { textContent: content }), setup);
         },
-        restore: () => undefined,
+        restore: () => {
+          log.push('restore');
+        },
         serialize: () => ({ n: 1 }),
         pause: () => undefined,
         resume: () => undefined,
@@ -63,12 +66,12 @@ function fakeGame(id: string, preload?: (locale: string) => Promise<void>) {
   return log;
 }
 
-function app(locale: AppContext['locale'], library: LibraryStore = createMemoryLibraryStore()): AppContext {
+function app(locale: AppContext['locale'], library: LibraryStore = createMemoryLibraryStore(), saves: SaveStore = createMemoryStore()): AppContext {
   const t = Object.assign((key: string) => key, { locale, direction: 'ltr' as const }) as unknown as UiTranslator;
   return {
     locale,
     t,
-    store: Promise.resolve(Object.assign(createMemoryStore(), { persistent: true })),
+    store: Promise.resolve(Object.assign(saves, { persistent: true })),
     decks: new Promise(() => undefined),
     learning: new Promise(() => undefined),
     library: Promise.resolve(library),
@@ -83,6 +86,14 @@ function open(id: string, locale: AppContext['locale'], library?: LibraryStore) 
   const main = document.createElement('main');
   document.body.append(main);
   cleanups.push(renderGamePage(main, app(locale, library), { name: 'game', id, seed: 7 } as never));
+  return main;
+}
+
+/** Opens `/games/<id>` as a person would: no seed, no `?new=1`. */
+function openPlain(id: string, saves?: SaveStore) {
+  const main = document.createElement('main');
+  document.body.append(main);
+  cleanups.push(renderGamePage(main, app('en', undefined, saves), { name: 'game', id }));
   return main;
 }
 
@@ -106,7 +117,7 @@ describe('game page: optional per-locale preload (ADR 0011)', () => {
     expect(log).toEqual(['preload:de']);
     expect(main.querySelector('[data-testid="loading"]')).not.toBeNull();
     release();
-    await vi.waitFor(() => expect(main.querySelector('[data-testid="game-root"]')?.textContent).toBe('content:de'));
+    await vi.waitFor(() => expect(main.querySelector('[data-testid="game-root"] p')?.textContent).toBe('content:de'));
     expect(log).toEqual(['preload:de', 'create:de', 'newGame']);
   });
 
@@ -114,7 +125,7 @@ describe('game page: optional per-locale preload (ADR 0011)', () => {
     const log = fakeGame('plain');
     const main = open('plain', 'ja');
     await vi.waitFor(() => expect(log).toEqual(['create:ja', 'newGame']));
-    expect(main.querySelector('[data-testid="game-root"]')?.textContent).toBe('(none)');
+    expect(main.querySelector('[data-testid="game-root"] p')?.textContent).toBe('(none)');
   });
 
   it('shows the generic load error when preload fails', async () => {
@@ -147,5 +158,56 @@ describe('game page: library for player creations (ADR 0012)', () => {
     expect((await a.list()).map((e) => e.name)).toEqual(['Ridge']);
     expect(await store.counts()).toEqual(new Map([['maps-a', 1]]));
     await expect(a.put({ name: 'Too big', data: 'x'.repeat(70_000) })).rejects.toMatchObject({ reason: 'too-large' });
+  });
+});
+
+describe('game page: games whose first screen is their own setup (ADR 0015)', () => {
+  const setupGame = (id: string) =>
+    fakeGame(id, undefined, { setupInGame: true, difficulties: ['easy', 'hard'], messages: { en: { title: 't', tagline: 't', rules: 'r', 'difficulty.easy': 'Easy', 'difficulty.hard': 'Hard' } } });
+
+  it('without a save, starts a fresh game directly: no start panel, the game has focus, New game stays available', async () => {
+    const log = setupGame('setup-first');
+    const main = openPlain('setup-first');
+    await vi.waitFor(() => expect(log).toEqual(['create:en', 'newGame:easy']));
+    expect(main.querySelector('.start')).toBeNull();
+    expect(main.querySelector('[data-testid="continue"]')).toBeNull();
+    expect(main.querySelector<HTMLElement>('[data-testid="game-root"]')!.hidden).toBe(false);
+    await vi.waitFor(() => expect(document.activeElement?.textContent).toBe('Map'));
+    const newGame = main.querySelector<HTMLButtonElement>('[data-testid="new-game"]')!;
+    expect(newGame).not.toBeNull();
+    expect(main.querySelector<HTMLSelectElement>('#difficulty')!.value).toBe('easy');
+    newGame.click();
+    await vi.waitFor(() => expect(log).toEqual(['create:en', 'newGame:easy', 'newGame:easy']));
+  });
+
+  it('with a save, offers Continue as before and starts nothing', async () => {
+    const log = setupGame('setup-saved');
+    const saves = createMemoryStore();
+    const module = (await registry.entries.get('setup-saved')!.load()) as GameModule<{ n: number }>;
+    await saves.write(createSave(module, 3, { n: 1 }, 'hard'));
+    const main = openPlain('setup-saved', saves);
+    await vi.waitFor(() => expect(main.querySelector('[data-testid="continue"]')).not.toBeNull());
+    expect(log).toEqual([]);
+    expect(main.querySelector<HTMLElement>('[data-testid="game-root"]')!.hidden).toBe(true);
+    main.querySelector<HTMLButtonElement>('[data-testid="continue"]')!.click();
+    await vi.waitFor(() => expect(log).toEqual(['create:en', 'restore']));
+  });
+
+  it('without the flag, shows the start panel unchanged', async () => {
+    const log = fakeGame('no-flag');
+    const main = openPlain('no-flag');
+    await vi.waitFor(() => expect(main.querySelector('.start [data-testid="new-game"]')).not.toBeNull());
+    expect(log).toEqual([]);
+    expect(main.querySelector<HTMLElement>('[data-testid="game-root"]')!.hidden).toBe(true);
+  });
+
+  it('never starts another game after a natural end', async () => {
+    const log = setupGame('setup-end');
+    const main = openPlain('setup-end');
+    await vi.waitFor(() => expect(log).toEqual(['create:en', 'newGame:easy']));
+    contexts.get('setup-end')!.finished({ outcome: 'won' });
+    await vi.waitFor(() => expect(main.querySelector('[data-testid="finished"]')).not.toBeNull());
+    await new Promise((r) => setTimeout(r, 20));
+    expect(log).toEqual(['create:en', 'newGame:easy']);
   });
 });

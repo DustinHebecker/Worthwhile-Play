@@ -24,10 +24,16 @@ describe('validateMetadata', () => {
     [{ skills: ['telepathy'] as never }, 'unknown skill'],
     [{ typicalMinutes: [5, 1] as const }, 'typicalMinutes'],
     [{ typicalMinutes: [0, 1] as const }, 'typicalMinutes'],
-    [{ inputMethods: [] }, 'input method']
+    [{ inputMethods: [] }, 'input method'],
+    [{ setupInGame: 'yes' as never }, 'setupInGame']
   ])('reports %o', (patch, fragment) => {
     const problems = validateMetadata({ ...base, ...patch } as GameMetadata, ['en']);
     expect(problems.join('\n')).toContain(fragment);
+  });
+
+  it('accepts the optional setupInGame flag', () => {
+    expect(validateMetadata({ ...base, setupInGame: true }, ['en'])).toEqual([]);
+    expect(validateMetadata({ ...base, setupInGame: false }, ['en'])).toEqual([]);
   });
 
   it('reports missing locales and required keys', () => {
