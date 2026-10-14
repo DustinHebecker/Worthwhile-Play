@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./ai-guide": "./src/ai-guide.ts"
   },
   "dependencies": {
     "@wp/game-core": "workspace:*"

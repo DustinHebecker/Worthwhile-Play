@@ -67,7 +67,7 @@ packages/adventure-engine/src/
   view/       scene renderer (SVG), hotspot list, inventory, dialogue, journal, map, hint panel — DOM
 ```
 
-Depends only on `@wp/game-core` (RNG, types) and `@wp/ui`. No third-party dependencies. Each adventure is a normal game package (`packages/games/<id>`) whose `rules.ts` is "the engine + this content" and whose `view.ts` mounts the engine view kit. Games never import each other; both import the engine. Ownership: Q8 (recommendation: a dedicated adventure workstream owns the engine, like ADR 0009). The engine API is recorded in a new **ADR 0013** with increment E1.
+Depends only on `@wp/game-core` (RNG, types) and `@wp/ui`. No third-party dependencies. Each adventure is a normal game package (`packages/games/<id>`) whose `rules.ts` is "the engine + this content" and whose `view.ts` mounts the engine view kit. Games never import each other; both import the engine. Ownership: Q8 (recommendation: a dedicated adventure workstream owns the engine, like ADR 0009). The engine API is recorded in a new **ADR 0014** with increment E1.
 
 ### 3.2 Content model (language-independent structure)
 
@@ -476,7 +476,7 @@ Sizes: S ≈ ≤ 1 k lines incl. tests, M ≈ 1–3 k, L ≈ 3–6 k (content PR
 
 | # | Increment | Acceptance tests | Size |
 |---|---|---|---|
-| E0 | Owner decisions (§ 13) recorded here; ADR 0013 *Proposed* (engine API, ownership) | — (docs) | S |
+| E0 | Owner decisions (§ 13) recorded here; ADR 0014 *Proposed* (engine API, ownership) | — (docs) | S |
 | E1 | **Engine core**: content types, conditions/effects, `step`, `available`, items/combinations, dialogue, clues/deductions, goals/hints, state + `isValidState` + hash; 3-scene fixture adventure | unit suite; P1–P6, P12; mutation ≥ 75 % on `logic/`; fixture walkthrough | M |
 | E2 | **Checker**: static checks, BFS explorer, softlock/coverage/fair-clue/budget, metrics report, independent interpreter | broken-fixture suite (each failure reason), cross-check property, shortest-path replay | M |
 | E3 | **Mechanisms**: `rings`, `network`, `balance`, `sequence` (+ `beam`, `tiles` when a premise needs them) with solvers and accessible views | per-kind unit + oracle tests; solver ≡ oracle on random instances; keyboard view tests | M |
@@ -506,7 +506,7 @@ Order: E1 → E2 → E3/E4 (parallel) → A1 → A2…A5; T1 may start after A1 
 | **Rewind confused with undo** / time rules feel arbitrary. | Eight explicit rules on one card; rewind only on marked objects within 24 beats in the current place; teaching chapter introduces one power at a time. |
 | **Mobile usability** (small scenes, many hotspots). | 640 px minimum scene width with pan; hotspot list as the primary phone input; target-size check in the checker. |
 | **IP proximity** to the references. | IP list at the top of this document; premises reviewed in Q5; name check in Q9; no reference titles in shipped text. |
-| **Engine API churn** between A and B. | B's needs (time objects, eras) are designed now (§ 4) and the state shape reserves `time`; ADR 0013 records the API before A1. |
+| **Engine API churn** between A and B. | B's needs (time objects, eras) are designed now (§ 4) and the state shape reserves `time`; ADR 0014 records the API before A1. |
 | **Save compatibility** across content updates. | Append-only ids, `contentVersion` + pure content migrations, tested with saves from every released content version (fixtures). |
 
 ---
@@ -524,7 +524,7 @@ Each with options and my recommendation (★).
 | **Q5** | Premises | A: (a) A1 *Drowned Archive*, (b) A2 *Unlit Beacons*; B: (a) B1 *Folded Station*, (b) B2 *Seed Vault Clock*; or own ideas | ★ A1 + B1: most varied regions/puzzle styles in A; three eras of one place make B's causality easiest to read. |
 | **Q6** | Hints | (a) three tiers per goal, always available, counted only in the final summary; (b) no hints; (c) hints unlocked after some time | ★ (a); (c) would add a timer and waiting, which the product rules exclude. |
 | **Q7** | Time flow in Adventure B | (a) beats: time moves only when you act or wait, optional "Play" presentation; (b) real time with pause; (c) real time only | ★ (a): no time pressure, exact puzzles, deterministic saves; (b)/(c) conflict with accessibility and "no timers for correctness". |
-| **Q8** | Ownership of `packages/adventure-engine` | (a) a dedicated adventure workstream owns it (like the strategy engine, ADR 0009); (b) orchestrator owns it, the adventure agent proposes changes | ★ (a): engine and content evolve together; API changes still go through ADR 0013. Changes CLAUDE.md roles → needs your confirmation. |
+| **Q8** | Ownership of `packages/adventure-engine` | (a) a dedicated adventure workstream owns it (like the strategy engine, ADR 0009); (b) orchestrator owns it, the adventure agent proposes changes | ★ (a): engine and content evolve together; API changes still go through ADR 0014. Changes CLAUDE.md roles → needs your confirmation. |
 | **Q9** | Names and ids | (a) final titles now, ids from titles; (b) neutral ids now (`adventure-a`, `temporal-adventure` as in the spec), titles before release after a name check | ★ (b): ids are permanent (saves, URLs); titles can wait for the premise decision and a trademark search. |
 | **Q10** | Delivery | (a) bundled and precached like every game (~1 MB per adventure for all locales); (b) "Additional Adventure" download pack with size shown first (spec's PWA example) | ★ (a): small enough with vector art; (b) only if art (c) is chosen. |
 | **Q11** | Failure | (a) no death and no dead ends (checker-proven); (b) death with instant retry at the last scene | ★ (a): nothing to lose, consistent with "closing must never punish"; danger stays in the fiction. |

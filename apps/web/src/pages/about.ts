@@ -9,6 +9,7 @@ export const renderAbout: Page = (main, { t }) => {
       h('p', {}, t('about.purpose')),
       h('p', {}, t('about.privacy')),
       h('p', {}, t('about.ai')),
+      h('p', { class: 'about-ai-decks', 'data-testid': 'about-ai-decks' }, t('about.aiDecks'), ' ', h('a', { href: '/decks/import' }, t('decks.import'))),
       h('p', {}, t('about.source'), ' ', h('a', { href: REPOSITORY_URL, rel: 'noopener' }, t('about.sourceLink'))),
       h('p', {}, t('about.license')),
       h('p', { class: 'wp-muted' }, `v${APP_VERSION}`)
