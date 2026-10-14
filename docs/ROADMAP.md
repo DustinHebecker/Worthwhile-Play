@@ -96,6 +96,7 @@ Catalogue order (done): the large games first (Relay Command; then strategy/towe
 | Circuit | **backlog:** a variant with electronic components (capacitors, inductors, …) where e.g. oscillators with the right frequency and other circuits must be built | ⏳ |
 | Four in a Row | **backlog:** variants that make it more interesting (3D / 4×4×4, five in a row, …) | ⏳ |
 | Tic-Tac-Toe | **backlog:** variants (3D, 4×4, …) | ⏳ |
+| Catalogue (all games) | **backlog:** small preview images or representative graphics on the overview page so people can picture each game (own SVG drawn in code, no third-party art; light/dark, RTL-neutral, decorative `aria-hidden` with the title as text) | ⏳ |
 
 Decisions on the large games (strategy, Tower Defense, adventures) are made by the owner in their own contexts, not via the orchestrator.
 
