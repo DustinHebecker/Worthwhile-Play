@@ -440,3 +440,43 @@ test('relay-command: infantry next to the neutral post takes it over, and the tu
   const state = (await saved(page))!;
   expect(state.world.entities.filter((e) => e.kind === 'command-post' && e.side === 0)).toHaveLength(2);
 });
+
+test('relay-command: hot-seat on a 360 px phone — two people and a computer, a hand-over that hides everything and survives a reload', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await start(page);
+  await page.getByTestId('rc-scenario').selectOption('four-corners');
+  await page.getByTestId('rc-opponents').selectOption('2');
+  await page.getByTestId('rc-seat-1-person').check();
+  await expect.poll(async () => ((await saved(page)) as unknown as { seats?: string[] } | undefined)?.seats).toEqual(['person', 'person', 'computer']);
+  await expect(page.getByTestId('rc-hotseat-hint')).toBeVisible();
+  // The setup with its seat rows never scrolls sideways.
+  const widths = await page.evaluate(() => ({ page: document.documentElement.scrollWidth, viewport: document.documentElement.clientWidth }));
+  expect(widths.page).toBeLessThanOrEqual(widths.viewport);
+  // Player A plans one order and hands over.
+  await page.locator('[data-testid^="rc-unit-"]').nth(2).click();
+  await page.getByTestId('rc-regroup').click();
+  await expect(page.getByTestId('rc-slots')).toHaveText('Planning: 1/4');
+  await page.getByTestId('rc-lock').click();
+  await expect(page.getByTestId('rc-handover')).toContainText('Pass the device to Player B');
+  await expect(page.getByTestId('rc-map')).toHaveCount(0);
+  await expect(page.getByTestId('rc-handover-confirm')).toBeFocused();
+  // Reload at the hand-over: it opens at the hand-over again, nothing of A is shown.
+  await expect.poll(async () => ((await saved(page)) as unknown as { planning?: number } | undefined)?.planning).toBe(1);
+  await page.reload();
+  await page.getByTestId('continue').click();
+  await expect(page.getByTestId('rc-handover')).toContainText('Player B');
+  await expect(page.getByTestId('rc-map')).toHaveCount(0);
+  // Keyboard only: the confirm button takes Enter; B sees an empty plan of its own.
+  await page.getByTestId('rc-handover-confirm').focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByTestId('rc-seat')).toContainText('Player B plans');
+  await expect(page.getByTestId('rc-slots')).toHaveText('Planning: 0/4');
+  await page.getByTestId('rc-lock').click();
+  // The turn is carried out; the device goes back to A, whose order was carried out.
+  await expect(page.getByTestId('rc-handover')).toContainText('Player A');
+  await expect.poll(async () => (await saved(page))?.world.turn).toBe(1);
+  await page.getByTestId('rc-handover-confirm').click();
+  await expect(page.getByTestId('rc-turn')).toContainText('Turn 2');
+  const widthsAfter = await page.evaluate(() => ({ page: document.documentElement.scrollWidth, viewport: document.documentElement.clientWidth }));
+  expect(widthsAfter.page).toBeLessThanOrEqual(widthsAfter.viewport);
+});
