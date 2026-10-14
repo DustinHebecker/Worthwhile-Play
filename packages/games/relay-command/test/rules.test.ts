@@ -1402,8 +1402,10 @@ describe('hot-seat (docs/design/strategy.md § 9.4, D10)', () => {
   // Taken before hot-seat (main at f2ee871: 'cdaa78b6'); updated when a side stopped being told
   // where its own shells land in cells it does not observe (PR #28): first `observe()` (the AI on
   // Four Corners plans differently in a few turns: '4af64ac7'), then the reports (the player's turn
-  // summaries lose such `launch` events; no plan changes: 'fe0a5277'). The two-side AI plans are
-  // unchanged, see their own fingerprint.
+  // summaries lose such `launch` events; no plan changes: 'fe0a5277'); then when a side stopped
+  // being told of a shot by its own unit out of contact at an enemy it never had reported (gate
+  // find, 2026-10-14: the summaries lose such `fire` events; world, log and result unchanged:
+  // '83a1b8af'). The two-side AI plans are unchanged, see their own fingerprint.
   it('one person is the single-player game, byte for byte: every map and opponent count matches the fingerprint taken before hot-seat (main at f2ee871)', () => {
     let h = 0x811c9dc5;
     const feed = (text: string) => {
@@ -1421,7 +1423,7 @@ describe('hot-seat (docs/design/strategy.md § 9.4, D10)', () => {
         }
       }
     }
-    expect(h.toString(16)).toBe('fe0a5277');
+    expect(h.toString(16)).toBe('83a1b8af');
   }, 300_000);
 
   it('the seats: side 0 is always a person, the default is the computer; several persons have no quick match', () => {
