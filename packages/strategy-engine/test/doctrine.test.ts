@@ -153,7 +153,7 @@ describe('doctrines (D6)', () => {
 });
 
 describe('lost-contact doctrine (UX round after I5)', () => {
-  const worldWith = (lostContact: 'keep' | 'regroup') => {
+  const worldWith = (lostContact: 'keep' | 'regroup' | 'finish') => {
     const w = worldOf(open(20, 1), [{ side: 0, kind: 'command-post', x: 0, y: 0 }, { side: 0, kind: 'rifles', x: 7, y: 0 }]);
     Object.assign(unit(w, 2), { order: { type: 'move', x: 18, y: 0 }, doctrine: doctrine({ lostContact }) });
     return w;
@@ -179,6 +179,42 @@ describe('lost-contact doctrine (UX round after I5)', () => {
     for (let i = 0; i < 4; i++) w = resolveTurn(w, net, [[]]).world;
     expect(unit(w, 2)).toMatchObject({ order: { type: 'hold' }, x: 18 });
     expect(unit(w, 2).noContact).toBe(net.ticksPerTurn);
+  });
+
+  it("'finish': the unit carries its order out, then returns once it holds and sees no enemy itself", () => {
+    let w = worldWith('finish');
+    const path: number[] = [];
+    let ended = false;
+    for (let i = 0; i < 10; i++) {
+      const r = resolveTurn(w, net, [[]]);
+      w = r.world;
+      path.push(unit(w, 2).x);
+      ended ||= r.events.some((e) => e.t === 'order-ended' && e.id === 2 && e.reason === 'lost-contact');
+    }
+    // It reached its goal (18) out of contact, and only then came back into coverage.
+    expect(Math.max(...path)).toBe(18);
+    expect(path.indexOf(18)).toBeLessThan(path.findIndex((x, i) => i > path.indexOf(18) && x < 18));
+    expect(ended).toBe(true);
+    expect(unit(w, 2).x).toBeLessThanOrEqual(5);
+    expect(isValidWorld(JSON.parse(JSON.stringify(w)), net)).toBe(true);
+  });
+
+  it("'finish': with an enemy in its own sight the unit stays where its order took it", () => {
+    const w = worldOf(open(20, 1), [
+      { side: 0, kind: 'command-post', x: 0, y: 0 },
+      { side: 0, kind: 'rifles', x: 15, y: 0 },
+      { side: 1, kind: 'command-post', x: 19, y: 0 }
+    ]);
+    Object.assign(unit(w, 2), { order: { type: 'hold' }, doctrine: doctrine({ lostContact: 'finish', holdFire: true }) });
+    let world = w;
+    for (let i = 0; i < 3; i++) world = resolveTurn(world, net, [[]]).world;
+    expect(unit(world, 2)).toMatchObject({ x: 15, order: { type: 'hold' } });
+    // The same without the enemy in sight: it comes back.
+    const alone = structuredClone(w);
+    alone.entities = alone.entities.filter((e) => e.side === 0);
+    let back = alone;
+    for (let i = 0; i < 8; i++) back = resolveTurn(back, net, [[]]).world;
+    expect(unit(back, 2).x).toBeLessThanOrEqual(5);
   });
 
   it('a set-up relay out of contact stays set up (it does not pack up and drive home)', () => {

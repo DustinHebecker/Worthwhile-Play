@@ -104,6 +104,10 @@ Behind `Ruleset.capture` (off in `STRATEGY_RULESET`, so the two-side game is unc
 - `observe()` holds a side's own projectiles only while their landing cell is observed by the side (with fog; without fog all of them), and `nextId` counts only those. A shot fired by a unit out of contact at what only it saw no longer tells the side where an unreported enemy stood (backlog of the PR #21 review). Property: where an own shell lands in a cell the side does not observe never changes its observation.
 - The reports match it (PR #28 review): a side's own `launch` is told only when its landing cell is observed or holds an own unit, like another side's; the own-shooter exception now covers direct `fire` only (the shooter saw its target). Saved turn summaries of two-side games can lose such `launch` events; no AI plan changes (the AI reads no events). A shell becomes known again if its landing cell comes into view during the flight — accepted (it lands within a few ticks).
 
+## Amendment (doctrine `lostContact: 'finish'`)
+
+- A third value for `Doctrine.lostContact`: `finish` — the unit carries on with its order out of contact and, after a whole turn without contact, returns into coverage once it only holds and sees no hostile unit itself (neutral posts do not count). `regroup` and `keep` are unchanged. Saves with the old values stay valid; the two-side fingerprints are unchanged (no existing unit uses the value).
+
 ## Consequences
 + One implementation per mechanic; determinism and save/restore are guaranteed once, for all modes; TD can start against the documented API.
 + Property tests (determinism, purity, mirror symmetry, round-trip) cover every mode.

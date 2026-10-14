@@ -247,6 +247,21 @@ describe('Relay Command view', () => {
     expect(($('rc-doctrine-cover') as HTMLInputElement).checked).toBe(true);
   });
 
+  it('offers three choices without radio contact: return after a turn (default), carry out the order then return, carry on', () => {
+    const unit = firstMobile();
+    click(`rc-unit-${unit.id}`);
+    const lost = $('rc-doctrine-lostcontact') as HTMLSelectElement;
+    expect([...lost.options].map((o) => o.textContent)).toEqual(['Return into coverage after a turn', 'Carry out the order, then return', 'Carry on (stay out of contact)']);
+    expect(lost.value).toBe('regroup');
+    lost.value = 'finish';
+    lost.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(state().draft[0]!.doctrine?.lostContact).toBe('finish');
+    click('rc-lock');
+    expect(state().world.entities.find((e) => e.id === unit.id)!.doctrine?.lostContact).toBe('finish');
+    click(`rc-unit-${unit.id}`);
+    expect(($('rc-doctrine-lostcontact') as HTMLSelectElement).value).toBe('finish');
+  });
+
   it('reports orders the engine ended on its own in the turn summary', () => {
     const s = structuredClone(state());
     const rifle = s.world.entities.find((e) => e.side === PLAYER && e.kind === 'rifles')!;
