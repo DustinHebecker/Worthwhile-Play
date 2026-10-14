@@ -403,13 +403,13 @@ describe('Relay Command view', () => {
     expect($('rc-card-damage').textContent).toBe('6');
     expect(meters.querySelectorAll('.rc-seg[aria-hidden="true"]')).toHaveLength(5);
     expect(meters.querySelectorAll('svg[aria-hidden="true"]')).toHaveLength(5);
-    // The match-up in words, with the exact %, never colour alone.
-    const matchup = $('rc-card-matchup').textContent!;
-    expect(matchup).toMatch(/Strong against.*infantry.*100 %/);
-    expect(matchup).toContain('Weaker against');
+    // Owner: the match-up is told once, in the effect table behind "More" (no block on top).
+    expect(ctx.context.root.querySelector('[data-testid="rc-card-matchup"]')).toBeNull();
+    expect($('rc-card').textContent).not.toMatch(/Strong against|Weaker against|Cannot hurt/);
     // The full effect table sits behind "More".
     expect($('rc-card-vs').closest('details')).toBe($('rc-card-more'));
     expect($('rc-card-vs').querySelectorAll('th[scope="row"]')).toHaveLength(5);
+    expect([...$('rc-card-vs').querySelectorAll('tr')].map((tr) => tr.textContent)).toEqual(['infantry100 %', 'light vehicle60 %', 'heavy armour20 %', 'structure30 %', 'air40 %']);
     // Segments on the roster scale: damage 6 of the roster's 25 fills 2 of 5; full health fills all 5.
     expect($('rc-card-damage').querySelectorAll('.rc-seg i.on')).toHaveLength(2);
     expect($('rc-card-health').querySelectorAll('.rc-seg i.on')).toHaveLength(5);
