@@ -159,10 +159,11 @@ describe('no leaks between opponents in the events a side is told (review of PR 
   it('two sides are told exactly what they were told before several sides existed (fingerprint of every report list, review of PR #21)', () => {
     // Fixed random two-side worlds (seeded sample), every turn's report lists and the final world.
     // The expected fingerprint was produced by the engine before teams, neutral posts and the shot
-    // filter (main at 30f9646): own shots (the shooter dying in the same tick, the target slipping
-    // out of sight) and shots at own units must still be told as before. Since the PR #28 review an
-    // own shell towards a cell the side does not observe is no longer told; none of these sampled
-    // worlds has one, so the fingerprint stands.
+    // filter (main at 30f9646): own shots at a known target (the shooter dying in the same tick,
+    // the target slipping out of sight) and shots at own units must still be told as before. Since
+    // the PR #28 review an own shell towards a cell the side does not observe is no longer told, and
+    // since PR #34 no own shot at an enemy the side never had reported; none of these sampled worlds
+    // has either, so the fingerprint stands.
     let h = 0x811c9dc5;
     const feed = (text: string) => {
       for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193) >>> 0;
@@ -194,20 +195,57 @@ describe('no leaks between opponents in the events a side is told (review of PR 
     expect(r.reported![0]!.filter((e) => e.t === 'fire')).toEqual([]);
   });
 
+  it('a shot by an own unit out of contact at an enemy the side has a report of is told (review of PR #34)', () => {
+    // As above, but side 0 still holds a report of the enemy (seen earlier, now a ghost).
+    const w = createWorld(
+      { map: open(10, 4), sides: 3, entities: [{ side: 0, kind: 'command-post', x: 7, y: 3 }, { side: 0, kind: 'rifles', x: 5, y: 0 }, { side: 0, kind: 'warden', x: 2, y: 1 }, { side: 1, kind: 'rifles', x: 0, y: 0 }], seed: 1, supply: [300, 300, 300] },
+      STRATEGY_RULESET
+    );
+    const warden = w.entities.find((e) => e.kind === 'warden')!;
+    const enemy = w.entities.find((e) => e.side === 1)!;
+    w.intel![0]!.push({ id: enemy.id, side: 1, kind: enemy.kind, x: enemy.x, y: enemy.y, hp: enemy.hp, tick: 0, live: false });
+    const r = resolveTurn(w, STRATEGY_RULESET, [[]]);
+    const shots = r.reported![0]!.filter((e) => e.t === 'fire');
+    expect(shots.length).toBeGreaterThan(0);
+    expect(shots.every((e) => e.t === 'fire' && e.id === warden.id && e.target === enemy.id)).toBe(true);
+  });
+
+  it('observe(): an own beam at an enemy the side does not know of is dropped, at a known one kept (review of PR #34)', () => {
+    // A Laser Tower out of radio contact (the post is far away) burns an enemy squad only it sees.
+    const w = createWorld(
+      { map: open(12, 3), sides: 2, entities: [{ side: 0, kind: 'command-post', x: 11, y: 1 }, { side: 0, kind: 'tower-laser', x: 0, y: 1 }, { side: 1, kind: 'rifles', x: 2, y: 1 }], seed: 1, supply: [300, 300] },
+      STRATEGY_RULESET
+    );
+    const tower = w.entities.find((e) => e.kind === 'tower-laser')!;
+    const enemy = w.entities.find((e) => e.side === 1)!;
+    const r = runTicks(w, STRATEGY_RULESET, [], 3);
+    expect(r.world.entities.find((e) => e.id === tower.id)!.beam).toMatchObject({ target: enemy.id });
+    const obs = observe(r.world, STRATEGY_RULESET, 0);
+    expect(obs.world.entities.some((e) => e.id === enemy.id)).toBe(false);
+    expect(obs.world.entities.find((e) => e.id === tower.id)!.beam).toBeNull();
+    expect(JSON.stringify(obs.world.entities)).not.toContain(`"target":${enemy.id}`);
+    // With a report of the enemy (a ghost), the beam is the side's own business again.
+    const known = structuredClone(r.world);
+    known.intel![0]!.push({ id: enemy.id, side: 1, kind: enemy.kind, x: enemy.x, y: enemy.y, hp: enemy.hp, tick: 0, live: false });
+    expect(observe(known, STRATEGY_RULESET, 0).world.entities.find((e) => e.id === tower.id)!.beam).toMatchObject({ target: enemy.id });
+  });
+
   it('property: every shot told to a side names an own unit or one the side knows of (3 sides)', () => {
+    // Checked tick by tick: the target is an own unit, or the side had a report of it before the
+    // tick or holds one after it, or saw it destroyed in that tick (a loss is told by its cell).
     fc.assert(
       fc.property(arbWorld({ sides: 3, supply: 300 }), ({ world, plans }) => {
         let w = world;
         for (const plan of plans) {
-          const own = new Set(w.entities.filter((e) => e.side === 0).map((e) => e.id));
-          const r = resolveTurn(w, STRATEGY_RULESET, [plan]);
-          // Known: own units, enemies reported before or after the turn, and any unit the side
-          // was told it saw during the turn (a move, hit or loss names it; it may have slipped out
-          // of sight by the end of the turn and its report been dropped).
-          const seenInTurn = r.reported![0]!.flatMap((e) => (e.t === 'destroyed' || e.t === 'hit' || e.t === 'move' ? [e.id] : []));
-          const known = new Set([...own, ...(w.intel?.[0] ?? []).map((rep) => rep.id), ...r.world.intel![0]!.map((rep) => rep.id), ...seenInTurn]);
-          for (const e of r.reported![0]!) if (e.t === 'fire') expect(known.has(e.target), `fire at ${e.target}`).toBe(true);
-          w = r.world;
+          for (let t = 0; t < STRATEGY_RULESET.ticksPerTurn; t++) {
+            const own = w.entities.filter((e) => e.side === 0).map((e) => e.id);
+            const r = runTicks(w, STRATEGY_RULESET, t === 0 ? plan : [], 1);
+            const seenLost = r.reported![0]!.flatMap((e) => (e.t === 'destroyed' ? [e.id] : []));
+            const known = new Set([...own, ...(w.intel?.[0] ?? []).map((rep) => rep.id), ...r.world.intel![0]!.map((rep) => rep.id), ...seenLost]);
+            for (const e of r.reported![0]!) if (e.t === 'fire') expect(known.has(e.target), `fire at ${e.target}`).toBe(true);
+            w = r.world;
+          }
+          w = { ...w, turn: w.turn + 1 };
         }
       }),
       { numRuns: 150 }

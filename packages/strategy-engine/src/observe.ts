@@ -54,6 +54,10 @@ export function observe(world: World, ruleset: Ruleset, side: number): Observati
       entities.push({ id: r.id, side: r.side, kind: r.kind, x: r.x, y: r.y, hp: r.hp, mp: 0, cooldown: 0, order: { type: 'hold' }, status: [], beam: null });
     }
   }
+  // An own beam names its target: towards an enemy the side does not know of (a unit out of
+  // contact firing at what only it sees) it is dropped, like the shell below (review of PR #34).
+  const knownIds = new Set(entities.map((e) => e.id));
+  for (const e of entities) if (e.side === side && e.beam && !knownIds.has(e.beam.target)) e.beam = null;
   entities.sort((a, b) => a.id - b.id);
   const network = computeNetwork(world, ruleset, side);
   const observed = ruleset.fog ? observedCells(world, ruleset, side, network) : undefined;
