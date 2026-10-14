@@ -15,6 +15,6 @@ export const metadata: GameMetadata = {
     network: 'none',
     pauseable: true
   },
-  difficulties: ['easy', 'medium', 'hard'],
+  difficulties: ['easy', 'medium', 'hard', 'expert'],
   messages
 };

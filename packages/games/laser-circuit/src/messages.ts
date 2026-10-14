@@ -12,7 +12,7 @@ export const messages: GameMessages = {
     rules: 'Lasers send light in straight lines. Place your mirrors, splitters and blockers on empty squares and tap them to turn them, so that every target receives exactly the colour it asks for and every forbidden sensor stays dark. Light that meets on a target mixes: red + blue = magenta.',
     'difficulty.easy': 'Easy (5×5, 1–2 pieces)',
     'difficulty.medium': 'Medium (6×6, 2–3 pieces)',
-    'difficulty.hard': 'Hard (7×7, 3–4 pieces)',
+    'difficulty.hard': 'Hard (7×7, 3–6 pieces)',
     board: 'Light grid',
     'level.status': 'Level {n} of {total}',
     'level.choose': 'Level',
@@ -76,7 +76,13 @@ export const messages: GameMessages = {
     'help.keys': 'Keyboard: arrow keys move between squares, P places the selected piece, R turns a piece, Delete takes it back, 1–3 choose a piece, U undoes.',
     'help.touch': 'Choose a piece below the board, then tap an empty square to place it. Tap a placed piece to turn it; long-press it or use “Remove” to take it back.',
     'help.colours': 'Letters name the colours: R red, G green, B blue, Y yellow (red + green), M magenta (red + blue), C cyan (green + blue), W white (all three). Lines show them too: red solid, green dashed, blue dotted.',
-    'result.completed': 'Every target receives its colour.'
+    'result.completed': 'Every target receives its colour.',
+    'difficulty.expert': 'Expert (7×9, 7–8 pieces)',
+    'el.gate': 'one-way gate, {dir}: light passes only in the direction of the arrow',
+    'el.portal': 'portal {n}: light that enters comes out of the other portal {n}',
+    'legend': 'Special squares',
+    'legend.gate': 'One-way gate (triangle against a bar): light passes only in the direction the triangle points; from any other side it is absorbed.',
+    'legend.portal': 'Portal (hexagon with a number): light that enters it comes out of the other portal with the same number and keeps its direction.'
   },
   de: {
     title: 'Laserpfade',
@@ -84,7 +90,7 @@ export const messages: GameMessages = {
     rules: 'Laser senden Licht in geraden Linien. Setze deine Spiegel, Strahlteiler und Blocker auf leere Felder und tippe sie an, um sie zu drehen – so, dass jedes Ziel genau die verlangte Farbe erhält und jeder verbotene Sensor dunkel bleibt. Licht, das sich auf einem Ziel trifft, mischt sich: Rot + Blau = Magenta.',
     'difficulty.easy': 'Leicht (5×5, 1–2 Teile)',
     'difficulty.medium': 'Mittel (6×6, 2–3 Teile)',
-    'difficulty.hard': 'Schwer (7×7, 3–4 Teile)',
+    'difficulty.hard': 'Schwer (7×7, 3–6 Teile)',
     board: 'Lichtraster',
     'level.status': 'Level {n} von {total}',
     'level.choose': 'Level',
@@ -148,7 +154,13 @@ export const messages: GameMessages = {
     'help.keys': 'Tastatur: Pfeiltasten wechseln das Feld, P setzt das gewählte Teil, R dreht ein Teil, Entf nimmt es zurück, 1–3 wählen ein Teil, U macht rückgängig.',
     'help.touch': 'Wähle unter dem Spielfeld ein Teil und tippe dann auf ein leeres Feld, um es zu setzen. Tippe ein gesetztes Teil an, um es zu drehen; halte es gedrückt oder nutze „Entfernen“, um es zurückzunehmen.',
     'help.colours': 'Buchstaben benennen die Farben: R Rot, G Grün, B Blau, Y Gelb (Rot + Grün), M Magenta (Rot + Blau), C Cyan (Grün + Blau), W Weiß (alle drei). Auch die Linien zeigen sie: Rot durchgezogen, Grün gestrichelt, Blau gepunktet.',
-    'result.completed': 'Jedes Ziel erhält seine Farbe.'
+    'result.completed': 'Jedes Ziel erhält seine Farbe.',
+    'difficulty.expert': 'Experte (7×9, 7–8 Teile)',
+    'el.gate': 'Einbahn-Tor, {dir}: Licht kommt nur in Pfeilrichtung durch',
+    'el.portal': 'Portal {n}: Licht, das hineinfällt, kommt aus dem anderen Portal {n} wieder heraus',
+    'legend': 'Besondere Felder',
+    'legend.gate': 'Einbahn-Tor (Dreieck vor einem Balken): Licht kommt nur in der Richtung durch, in die das Dreieck zeigt; von jeder anderen Seite wird es verschluckt.',
+    'legend.portal': 'Portal (Sechseck mit Zahl): Licht, das hineinfällt, kommt aus dem anderen Portal mit derselben Zahl heraus und behält seine Richtung.'
   },
   nl: {
     title: 'Laserpaden',
@@ -156,7 +168,7 @@ export const messages: GameMessages = {
     rules: 'Lasers sturen licht in rechte lijnen. Zet je spiegels, splitsers en blokken op lege vakjes en tik erop om ze te draaien, zodat elk doel precies de gevraagde kleur krijgt en elke verboden sensor donker blijft. Licht dat op een doel samenkomt, mengt: rood + blauw = magenta.',
     'difficulty.easy': 'Makkelijk (5×5, 1–2 stukken)',
     'difficulty.medium': 'Gemiddeld (6×6, 2–3 stukken)',
-    'difficulty.hard': 'Moeilijk (7×7, 3–4 stukken)',
+    'difficulty.hard': 'Moeilijk (7×7, 3–6 stukken)',
     board: 'Lichtrooster',
     'level.status': 'Level {n} van {total}',
     'level.choose': 'Level',
@@ -220,7 +232,13 @@ export const messages: GameMessages = {
     'help.keys': 'Toetsenbord: pijltjestoetsen gaan naar een ander vakje, P plaatst het gekozen stuk, R draait een stuk, Delete neemt het terug, 1–3 kiezen een stuk, U maakt ongedaan.',
     'help.touch': 'Kies onder het bord een stuk en tik dan op een leeg vakje om het te plaatsen. Tik op een geplaatst stuk om het te draaien; houd het ingedrukt of gebruik ‘Weghalen’ om het terug te nemen.',
     'help.colours': 'Letters geven de kleuren aan: R rood, G groen, B blauw, Y geel (rood + groen), M magenta (rood + blauw), C cyaan (groen + blauw), W wit (alle drie). Ook de lijnen tonen ze: rood doorgetrokken, groen gestreept, blauw gestippeld.',
-    'result.completed': 'Elk doel krijgt zijn kleur.'
+    'result.completed': 'Elk doel krijgt zijn kleur.',
+    'difficulty.expert': 'Expert (7×9, 7–8 stukken)',
+    'el.gate': 'eenrichtingspoort, {dir}: licht gaat alleen in de richting van de pijl door',
+    'el.portal': 'portaal {n}: licht dat erin valt, komt uit het andere portaal {n} weer naar buiten',
+    'legend': 'Bijzondere vakjes',
+    'legend.gate': 'Eenrichtingspoort (driehoek tegen een balk): licht gaat alleen door in de richting waarin de driehoek wijst; van elke andere kant wordt het geabsorbeerd.',
+    'legend.portal': 'Portaal (zeshoek met een getal): licht dat erin valt, komt uit het andere portaal met hetzelfde getal en houdt zijn richting.'
   },
   es: {
     title: 'Caminos de láser',
@@ -228,7 +246,7 @@ export const messages: GameMessages = {
     rules: 'Los láseres emiten luz en línea recta. Coloca tus espejos, divisores y bloqueos en casillas vacías y tócalos para girarlos, de modo que cada objetivo reciba exactamente el color que pide y cada sensor prohibido quede a oscuras. La luz que coincide en un objetivo se mezcla: rojo + azul = magenta.',
     'difficulty.easy': 'Fácil (5×5, 1–2 piezas)',
     'difficulty.medium': 'Media (6×6, 2–3 piezas)',
-    'difficulty.hard': 'Difícil (7×7, 3–4 piezas)',
+    'difficulty.hard': 'Difícil (7×7, 3–6 piezas)',
     board: 'Cuadrícula de luz',
     'level.status': 'Nivel {n} de {total}',
     'level.choose': 'Nivel',
@@ -292,7 +310,13 @@ export const messages: GameMessages = {
     'help.keys': 'Teclado: las flechas cambian de casilla, P coloca la pieza elegida, R gira una pieza, Supr la retira, 1–3 eligen una pieza, U deshace.',
     'help.touch': 'Elige una pieza bajo el tablero y toca una casilla vacía para colocarla. Toca una pieza colocada para girarla; mantenla pulsada o usa «Quitar» para retirarla.',
     'help.colours': 'Las letras indican los colores: R rojo, G verde, B azul, Y amarillo (rojo + verde), M magenta (rojo + azul), C cian (verde + azul), W blanco (los tres). Las líneas también los muestran: rojo continua, verde discontinua, azul punteada.',
-    'result.completed': 'Cada objetivo recibe su color.'
+    'result.completed': 'Cada objetivo recibe su color.',
+    'difficulty.expert': 'Experto (7×9, 7–8 piezas)',
+    'el.gate': 'puerta de un solo sentido, {dir}: la luz solo pasa en la dirección de la flecha',
+    'el.portal': 'portal {n}: la luz que entra sale por el otro portal {n}',
+    'legend': 'Casillas especiales',
+    'legend.gate': 'Puerta de un solo sentido (triángulo contra una barra): la luz solo pasa en la dirección a la que apunta el triángulo; desde cualquier otro lado se absorbe.',
+    'legend.portal': 'Portal (hexágono con un número): la luz que entra sale por el otro portal con el mismo número y conserva su dirección.'
   },
   fr: {
     title: 'Chemins laser',
@@ -300,7 +324,7 @@ export const messages: GameMessages = {
     rules: 'Les lasers envoient la lumière en ligne droite. Posez vos miroirs, séparateurs et blocs sur des cases vides et touchez-les pour les tourner, afin que chaque cible reçoive exactement la couleur demandée et que chaque capteur interdit reste dans le noir. La lumière qui se rejoint sur une cible se mélange : rouge + bleu = magenta.',
     'difficulty.easy': 'Facile (5×5, 1–2 pièces)',
     'difficulty.medium': 'Moyen (6×6, 2–3 pièces)',
-    'difficulty.hard': 'Difficile (7×7, 3–4 pièces)',
+    'difficulty.hard': 'Difficile (7×7, 3–6 pièces)',
     board: 'Grille de lumière',
     'level.status': 'Niveau {n} sur {total}',
     'level.choose': 'Niveau',
@@ -364,7 +388,13 @@ export const messages: GameMessages = {
     'help.keys': 'Clavier : les flèches changent de case, P pose la pièce choisie, R tourne une pièce, Suppr la reprend, 1–3 choisissent une pièce, U annule.',
     'help.touch': 'Choisissez une pièce sous la grille, puis touchez une case vide pour la poser. Touchez une pièce posée pour la tourner ; appuyez longuement dessus ou utilisez « Retirer » pour la reprendre.',
     'help.colours': 'Des lettres désignent les couleurs : R rouge, G vert, B bleu, Y jaune (rouge + vert), M magenta (rouge + bleu), C cyan (vert + bleu), W blanc (les trois). Les lignes les montrent aussi : rouge continue, vert en tirets, bleu en pointillés.',
-    'result.completed': 'Chaque cible reçoit sa couleur.'
+    'result.completed': 'Chaque cible reçoit sa couleur.',
+    'difficulty.expert': 'Expert (7×9, 7–8 pièces)',
+    'el.gate': 'porte à sens unique, {dir} : la lumière ne passe que dans le sens de la flèche',
+    'el.portal': 'portail {n} : la lumière qui y entre ressort par l’autre portail {n}',
+    'legend': 'Cases spéciales',
+    'legend.gate': 'Porte à sens unique (triangle contre une barre) : la lumière ne passe que dans le sens où pointe le triangle ; de tout autre côté, elle est absorbée.',
+    'legend.portal': 'Portail (hexagone avec un numéro) : la lumière qui y entre ressort par l’autre portail portant le même numéro et garde sa direction.'
   },
   ru: {
     title: 'Лазерные пути',
@@ -372,7 +402,7 @@ export const messages: GameMessages = {
     rules: 'Лазеры посылают свет по прямой. Ставьте свои зеркала, делители и блоки на пустые клетки и касайтесь их, чтобы повернуть, так чтобы каждая мишень получала ровно нужный цвет, а каждый запретный датчик оставался тёмным. Свет, сходящийся на мишени, смешивается: красный + синий = пурпурный.',
     'difficulty.easy': 'Легко (5×5, 1–2 детали)',
     'difficulty.medium': 'Средне (6×6, 2–3 детали)',
-    'difficulty.hard': 'Сложно (7×7, 3–4 детали)',
+    'difficulty.hard': 'Сложно (7×7, 3–6 деталей)',
     board: 'Световое поле',
     'level.status': 'Уровень {n} из {total}',
     'level.choose': 'Уровень',
@@ -436,7 +466,13 @@ export const messages: GameMessages = {
     'help.keys': 'Клавиатура: стрелки — переход между клетками, P — поставить выбранную деталь, R — повернуть деталь, Delete — убрать её, 1–3 — выбрать деталь, U — отменить.',
     'help.touch': 'Выберите деталь под полем, затем коснитесь пустой клетки, чтобы поставить её. Коснитесь поставленной детали, чтобы повернуть её; удерживайте её или используйте «Убрать», чтобы забрать.',
     'help.colours': 'Буквы обозначают цвета: R красный, G зелёный, B синий, Y жёлтый (красный + зелёный), M пурпурный (красный + синий), C голубой (зелёный + синий), W белый (все три). Линии тоже их показывают: красный — сплошная, зелёный — штрихи, синий — точки.',
-    'result.completed': 'Каждая мишень получает свой цвет.'
+    'result.completed': 'Каждая мишень получает свой цвет.',
+    'difficulty.expert': 'Эксперт (7×9, 7–8 деталей)',
+    'el.gate': 'односторонние ворота, {dir}: свет проходит только по направлению стрелки',
+    'el.portal': 'портал {n}: вошедший свет выходит из другого портала {n}',
+    'legend': 'Особые клетки',
+    'legend.gate': 'Односторонние ворота (треугольник у планки): свет проходит только туда, куда указывает треугольник; с любой другой стороны он поглощается.',
+    'legend.portal': 'Портал (шестиугольник с числом): вошедший в него свет выходит из другого портала с тем же числом и сохраняет направление.'
   },
   'zh-Hans': {
     title: '激光路径',
@@ -444,7 +480,7 @@ export const messages: GameMessages = {
     rules: '激光沿直线发光。把你的镜子、分光镜和挡板放到空格上，点按它们可以旋转，使每个目标恰好得到所需的颜色，并让每个禁止传感器保持黑暗。在目标上汇合的光会混合：红 + 蓝 = 品红。',
     'difficulty.easy': '简单（5×5，1–2 个部件）',
     'difficulty.medium': '中等（6×6，2–3 个部件）',
-    'difficulty.hard': '困难（7×7，3–4 个部件）',
+    'difficulty.hard': '困难（7×7，3–6 个部件）',
     board: '光线网格',
     'level.status': '第 {n} 关，共 {total} 关',
     'level.choose': '关卡',
@@ -508,7 +544,13 @@ export const messages: GameMessages = {
     'help.keys': '键盘：方向键在格子间移动，P 放置所选部件，R 旋转部件，Delete 取回部件，1–3 选择部件，U 撤销。',
     'help.touch': '在棋盘下方选择一个部件，然后点按空格放置。点按已放置的部件可旋转；长按或使用“移除”可取回。',
     'help.colours': '字母表示颜色：R 红，G 绿，B 蓝，Y 黄（红 + 绿），M 品红（红 + 蓝），C 青（绿 + 蓝），W 白（三色）。线条样式也表示颜色：红为实线，绿为虚线，蓝为点线。',
-    'result.completed': '每个目标都得到了它的颜色。'
+    'result.completed': '每个目标都得到了它的颜色。',
+    'difficulty.expert': '专家（7×9，7–8 个部件）',
+    'el.gate': '单向门，{dir}：光只能沿箭头方向通过',
+    'el.portal': '传送门 {n}：进入的光会从另一个传送门 {n} 射出',
+    'legend': '特殊格子',
+    'legend.gate': '单向门（抵着横杠的三角形）：光只能沿三角形所指的方向通过；从其他方向射来的光会被吸收。',
+    'legend.portal': '传送门（带数字的六边形）：进入的光会从编号相同的另一个传送门射出，方向保持不变。'
   },
   ko: {
     title: '레이저 경로',
@@ -516,7 +558,7 @@ export const messages: GameMessages = {
     rules: '레이저는 빛을 직선으로 보냅니다. 거울, 분광기, 차단벽을 빈칸에 놓고 탭해서 돌리세요. 모든 표적이 요구하는 색을 정확히 받고, 모든 금지 센서는 어둡게 남아야 합니다. 한 표적에서 만나는 빛은 섞입니다: 빨강 + 파랑 = 자홍.',
     'difficulty.easy': '쉬움 (5×5, 조각 1–2개)',
     'difficulty.medium': '보통 (6×6, 조각 2–3개)',
-    'difficulty.hard': '어려움 (7×7, 조각 3–4개)',
+    'difficulty.hard': '어려움 (7×7, 조각 3–6개)',
     board: '빛 격자',
     'level.status': '레벨 {n} / {total}',
     'level.choose': '레벨',
@@ -580,7 +622,13 @@ export const messages: GameMessages = {
     'help.keys': '키보드: 화살표 키로 칸 이동, P는 선택한 조각 놓기, R은 조각 돌리기, Delete는 회수, 1–3은 조각 선택, U는 실행 취소.',
     'help.touch': '판 아래에서 조각을 고른 뒤 빈칸을 탭해 놓으세요. 놓은 조각을 탭하면 돌아가고, 길게 누르거나 ‘회수’를 쓰면 되돌립니다.',
     'help.colours': '글자가 색을 나타냅니다: R 빨강, G 초록, B 파랑, Y 노랑(빨강 + 초록), M 자홍(빨강 + 파랑), C 청록(초록 + 파랑), W 하양(세 가지 모두). 선 모양으로도 구분됩니다: 빨강은 실선, 초록은 파선, 파랑은 점선.',
-    'result.completed': '모든 표적이 제 색을 받습니다.'
+    'result.completed': '모든 표적이 제 색을 받습니다.',
+    'difficulty.expert': '전문가 (7×9, 조각 7–8개)',
+    'el.gate': '일방통행 문, {dir}: 빛은 화살표 방향으로만 통과합니다',
+    'el.portal': '포털 {n}: 들어간 빛은 다른 포털 {n}에서 나옵니다',
+    'legend': '특수 칸',
+    'legend.gate': '일방통행 문(막대에 붙은 삼각형): 빛은 삼각형이 가리키는 방향으로만 통과하고, 다른 쪽에서 오면 흡수됩니다.',
+    'legend.portal': '포털(숫자가 있는 육각형): 들어간 빛은 같은 숫자의 다른 포털에서 나오며 방향은 그대로입니다.'
   },
   ja: {
     title: 'レーザーの道',
@@ -588,7 +636,7 @@ export const messages: GameMessages = {
     rules: 'レーザーは光をまっすぐに送ります。鏡・ビームスプリッター・ブロックを空いたマスに置き、タップして向きを変えます。すべてのターゲットが求める色をちょうど受け取り、禁止センサーがすべて暗いままなら成功です。ひとつのターゲットに集まった光は混ざります：赤 + 青 = マゼンタ。',
     'difficulty.easy': 'かんたん（5×5、ピース1～2個）',
     'difficulty.medium': 'ふつう（6×6、ピース2～3個）',
-    'difficulty.hard': 'むずかしい（7×7、ピース3～4個）',
+    'difficulty.hard': 'むずかしい（7×7、ピース3～6個）',
     board: '光の盤面',
     'level.status': 'レベル {n}／{total}',
     'level.choose': 'レベル',
@@ -652,7 +700,13 @@ export const messages: GameMessages = {
     'help.keys': 'キーボード：矢印キーでマスを移動、P で選んだピースを置く、R でピースを回す、Delete で回収、1～3 でピースを選ぶ、U で元に戻す。',
     'help.touch': '盤面の下でピースを選び、空いたマスをタップして置きます。置いたピースをタップすると回り、長押しするか「回収」を使うと手元に戻ります。',
     'help.colours': '文字が色を表します：R 赤、G 緑、B 青、Y 黄（赤 + 緑）、M マゼンタ（赤 + 青）、C シアン（緑 + 青）、W 白（3色すべて）。線の種類でも区別できます：赤は実線、緑は破線、青は点線。',
-    'result.completed': 'すべてのターゲットが自分の色を受け取りました。'
+    'result.completed': 'すべてのターゲットが自分の色を受け取りました。',
+    'difficulty.expert': 'エキスパート（7×9、ピース7～8個）',
+    'el.gate': '一方通行ゲート、{dir}：光は矢印の向きにだけ通ります',
+    'el.portal': 'ポータル {n}：入った光はもう一方のポータル {n} から出てきます',
+    'legend': '特別なマス',
+    'legend.gate': '一方通行ゲート（棒に向かう三角形）：光は三角形の向きにだけ通り、ほかの向きから来た光は吸収されます。',
+    'legend.portal': 'ポータル（数字入りの六角形）：入った光は同じ数字のもう一方のポータルから、同じ向きのまま出てきます。'
   },
   ar: {
     title: 'مسارات الليزر',
@@ -660,7 +714,7 @@ export const messages: GameMessages = {
     rules: 'تُرسل أجهزة الليزر الضوء في خطوط مستقيمة. ضع مراياك ومقسِّماتك وحواجزك في المربعات الفارغة واضغط عليها لتدويرها، بحيث يتلقى كل هدف اللون المطلوب تمامًا ويبقى كل مستشعر محظور مظلمًا. الضوء الذي يلتقي على هدف واحد يمتزج: أحمر + أزرق = أرجواني.',
     'difficulty.easy': 'سهل (5×5، قطعة أو قطعتان)',
     'difficulty.medium': 'متوسط (6×6، من 2 إلى 3 قطع)',
-    'difficulty.hard': 'صعب (7×7، من 3 إلى 4 قطع)',
+    'difficulty.hard': 'صعب (7×7، من 3 إلى 6 قطع)',
     board: 'شبكة الضوء',
     'level.status': 'المستوى {n} من {total}',
     'level.choose': 'المستوى',
@@ -724,7 +778,13 @@ export const messages: GameMessages = {
     'help.keys': 'لوحة المفاتيح: الأسهم للتنقل بين المربعات، P لوضع القطعة المختارة، R لتدوير قطعة، Delete لاستعادتها، 1–3 لاختيار قطعة، U للتراجع.',
     'help.touch': 'اختر قطعة أسفل اللوحة، ثم اضغط على مربع فارغ لوضعها. اضغط على قطعة موضوعة لتدويرها؛ اضغط عليها مطولًا أو استخدم «إزالة» لاستعادتها.',
     'help.colours': 'تدل الحروف على الألوان: R أحمر، G أخضر، B أزرق، Y أصفر (أحمر + أخضر)، M أرجواني (أحمر + أزرق)، C سماوي (أخضر + أزرق)، W أبيض (الثلاثة معًا). وتُظهرها الخطوط أيضًا: الأحمر متصل، والأخضر متقطع، والأزرق منقّط.',
-    'result.completed': 'كل هدف يتلقى لونه.'
+    'result.completed': 'كل هدف يتلقى لونه.',
+    'difficulty.expert': 'خبير (7×9، من 7 إلى 8 قطع)',
+    'el.gate': 'بوابة باتجاه واحد، {dir}: لا يمر الضوء إلا في اتجاه السهم',
+    'el.portal': 'بوابة عبور {n}: الضوء الذي يدخلها يخرج من بوابة العبور الأخرى {n}',
+    'legend': 'مربعات خاصة',
+    'legend.gate': 'بوابة باتجاه واحد (مثلث مقابل قضيب): لا يمر الضوء إلا في الاتجاه الذي يشير إليه المثلث؛ ومن أي جهة أخرى يُمتص.',
+    'legend.portal': 'بوابة عبور (سداسي يحمل رقمًا): الضوء الذي يدخلها يخرج من بوابة العبور الأخرى التي تحمل الرقم نفسه ويحافظ على اتجاهه.'
   },
   pt: {
     title: 'Caminhos de laser',
@@ -732,7 +792,7 @@ export const messages: GameMessages = {
     rules: 'Os lasers enviam luz em linha reta. Coloque seus espelhos, divisores e bloqueios em casas vazias e toque neles para girá-los, de modo que cada alvo receba exatamente a cor pedida e cada sensor proibido continue no escuro. A luz que se encontra num alvo se mistura: vermelho + azul = magenta.',
     'difficulty.easy': 'Fácil (5×5, 1–2 peças)',
     'difficulty.medium': 'Médio (6×6, 2–3 peças)',
-    'difficulty.hard': 'Difícil (7×7, 3–4 peças)',
+    'difficulty.hard': 'Difícil (7×7, 3–6 peças)',
     board: 'Grade de luz',
     'level.status': 'Nível {n} de {total}',
     'level.choose': 'Nível',
@@ -796,7 +856,13 @@ export const messages: GameMessages = {
     'help.keys': 'Teclado: as setas mudam de casa, P coloca a peça escolhida, R gira uma peça, Delete a retira, 1–3 escolhem uma peça, U desfaz.',
     'help.touch': 'Escolha uma peça abaixo do tabuleiro e toque numa casa vazia para colocá-la. Toque numa peça colocada para girá-la; mantenha pressionado ou use “Retirar” para recuperá-la.',
     'help.colours': 'Letras indicam as cores: R vermelho, G verde, B azul, Y amarelo (vermelho + verde), M magenta (vermelho + azul), C ciano (verde + azul), W branco (as três). As linhas também as mostram: vermelho contínua, verde tracejada, azul pontilhada.',
-    'result.completed': 'Cada alvo recebe sua cor.'
+    'result.completed': 'Cada alvo recebe sua cor.',
+    'difficulty.expert': 'Especialista (7×9, 7–8 peças)',
+    'el.gate': 'portão de sentido único, {dir}: a luz só passa no sentido da seta',
+    'el.portal': 'portal {n}: a luz que entra sai pelo outro portal {n}',
+    'legend': 'Casas especiais',
+    'legend.gate': 'Portão de sentido único (triângulo contra uma barra): a luz só passa no sentido para onde o triângulo aponta; vinda de qualquer outro lado, é absorvida.',
+    'legend.portal': 'Portal (hexágono com um número): a luz que entra sai pelo outro portal com o mesmo número e mantém a sua direção.'
   },
   it: {
     title: 'Percorsi laser',
@@ -804,7 +870,7 @@ export const messages: GameMessages = {
     rules: 'I laser inviano luce in linea retta. Metti specchi, divisori e blocchi sulle caselle vuote e toccali per ruotarli, in modo che ogni bersaglio riceva esattamente il colore richiesto e ogni sensore vietato resti al buio. La luce che si incontra su un bersaglio si mescola: rosso + blu = magenta.',
     'difficulty.easy': 'Facile (5×5, 1–2 pezzi)',
     'difficulty.medium': 'Medio (6×6, 2–3 pezzi)',
-    'difficulty.hard': 'Difficile (7×7, 3–4 pezzi)',
+    'difficulty.hard': 'Difficile (7×7, 3–6 pezzi)',
     board: 'Griglia di luce',
     'level.status': 'Livello {n} di {total}',
     'level.choose': 'Livello',
@@ -868,7 +934,13 @@ export const messages: GameMessages = {
     'help.keys': 'Tastiera: le frecce cambiano casella, P posiziona il pezzo scelto, R ruota un pezzo, Canc lo riprende, 1–3 scelgono un pezzo, U annulla.',
     'help.touch': 'Scegli un pezzo sotto la griglia, poi tocca una casella vuota per posizionarlo. Tocca un pezzo posizionato per ruotarlo; tienilo premuto o usa «Togli» per riprenderlo.',
     'help.colours': 'Le lettere indicano i colori: R rosso, G verde, B blu, Y giallo (rosso + verde), M magenta (rosso + blu), C ciano (verde + blu), W bianco (tutti e tre). Anche le linee li mostrano: rosso continua, verde tratteggiata, blu punteggiata.',
-    'result.completed': 'Ogni bersaglio riceve il suo colore.'
+    'result.completed': 'Ogni bersaglio riceve il suo colore.',
+    'difficulty.expert': 'Esperto (7×9, 7–8 pezzi)',
+    'el.gate': 'porta a senso unico, {dir}: la luce passa solo nel verso della freccia',
+    'el.portal': 'portale {n}: la luce che entra esce dall’altro portale {n}',
+    'legend': 'Caselle speciali',
+    'legend.gate': 'Porta a senso unico (triangolo contro una barra): la luce passa solo nel verso in cui punta il triangolo; da ogni altro lato viene assorbita.',
+    'legend.portal': 'Portale (esagono con un numero): la luce che entra esce dall’altro portale con lo stesso numero e mantiene la sua direzione.'
   },
   pl: {
     title: 'Ścieżki lasera',
@@ -876,7 +948,7 @@ export const messages: GameMessages = {
     rules: 'Lasery wysyłają światło w linii prostej. Stawiaj lustra, dzielniki i blokery na pustych polach i dotykaj ich, aby je obracać, tak by każdy cel otrzymał dokładnie żądany kolor, a każdy zakazany czujnik pozostał ciemny. Światło spotykające się na celu miesza się: czerwony + niebieski = magenta.',
     'difficulty.easy': 'Łatwy (5×5, 1–2 elementy)',
     'difficulty.medium': 'Średni (6×6, 2–3 elementy)',
-    'difficulty.hard': 'Trudny (7×7, 3–4 elementy)',
+    'difficulty.hard': 'Trudny (7×7, 3–6 elementów)',
     board: 'Siatka światła',
     'level.status': 'Poziom {n} z {total}',
     'level.choose': 'Poziom',
@@ -940,7 +1012,13 @@ export const messages: GameMessages = {
     'help.keys': 'Klawiatura: strzałki przenoszą między polami, P stawia wybrany element, R obraca element, Delete go zdejmuje, 1–3 wybierają element, U cofa.',
     'help.touch': 'Wybierz element pod planszą, a potem dotknij pustego pola, aby go postawić. Dotknij postawionego elementu, aby go obrócić; przytrzymaj go lub użyj „Zdejmij”, aby go zabrać.',
     'help.colours': 'Litery oznaczają kolory: R czerwony, G zielony, B niebieski, Y żółty (czerwony + zielony), M magenta (czerwony + niebieski), C cyjan (zielony + niebieski), W biały (wszystkie trzy). Pokazują je też linie: czerwony ciągła, zielony kreskowana, niebieski kropkowana.',
-    'result.completed': 'Każdy cel otrzymuje swój kolor.'
+    'result.completed': 'Każdy cel otrzymuje swój kolor.',
+    'difficulty.expert': 'Ekspert (7×9, 7–8 elementów)',
+    'el.gate': 'bramka jednokierunkowa, {dir}: światło przechodzi tylko w kierunku strzałki',
+    'el.portal': 'portal {n}: światło, które wpada, wychodzi z drugiego portalu {n}',
+    'legend': 'Specjalne pola',
+    'legend.gate': 'Bramka jednokierunkowa (trójkąt oparty o belkę): światło przechodzi tylko w kierunku, który wskazuje trójkąt; z każdej innej strony zostaje pochłonięte.',
+    'legend.portal': 'Portal (sześciokąt z liczbą): światło, które do niego wpada, wychodzi z drugiego portalu o tej samej liczbie i zachowuje kierunek.'
   },
   tr: {
     title: 'Lazer Yolları',
@@ -948,7 +1026,7 @@ export const messages: GameMessages = {
     rules: 'Lazerler ışığı düz çizgiler hâlinde gönderir. Aynalarını, bölücülerini ve engellerini boş karelere yerleştir ve döndürmek için onlara dokun; her hedef tam istediği rengi almalı, her yasak sensör karanlık kalmalı. Bir hedefte buluşan ışıklar karışır: kırmızı + mavi = macenta.',
     'difficulty.easy': 'Kolay (5×5, 1–2 parça)',
     'difficulty.medium': 'Orta (6×6, 2–3 parça)',
-    'difficulty.hard': 'Zor (7×7, 3–4 parça)',
+    'difficulty.hard': 'Zor (7×7, 3–6 parça)',
     board: 'Işık ızgarası',
     'level.status': 'Seviye {n} / {total}',
     'level.choose': 'Seviye',
@@ -1012,7 +1090,13 @@ export const messages: GameMessages = {
     'help.keys': 'Klavye: ok tuşları kareler arasında gezer, P seçili parçayı yerleştirir, R parçayı döndürür, Delete geri alır, 1–3 parça seçer, U geri alır.',
     'help.touch': 'Tahtanın altından bir parça seç, sonra yerleştirmek için boş bir kareye dokun. Döndürmek için yerleştirilmiş parçaya dokun; geri almak için basılı tut ya da “Kaldır”ı kullan.',
     'help.colours': 'Harfler renkleri gösterir: R kırmızı, G yeşil, B mavi, Y sarı (kırmızı + yeşil), M macenta (kırmızı + mavi), C camgöbeği (yeşil + mavi), W beyaz (üçü birden). Çizgiler de gösterir: kırmızı düz, yeşil kesikli, mavi noktalı.',
-    'result.completed': 'Her hedef kendi rengini alıyor.'
+    'result.completed': 'Her hedef kendi rengini alıyor.',
+    'difficulty.expert': 'Uzman (7×9, 7–8 parça)',
+    'el.gate': 'tek yönlü kapı, {dir}: ışık yalnızca ok yönünde geçer',
+    'el.portal': 'geçit {n}: içine giren ışık diğer {n} numaralı geçitten çıkar',
+    'legend': 'Özel kareler',
+    'legend.gate': 'Tek yönlü kapı (bir çubuğa dayanan üçgen): ışık yalnızca üçgenin gösterdiği yönde geçer; başka herhangi bir yönden gelirse soğurulur.',
+    'legend.portal': 'Geçit (numaralı altıgen): içine giren ışık aynı numaralı diğer geçitten çıkar ve yönünü korur.'
   },
   uk: {
     title: 'Лазерні шляхи',
@@ -1020,7 +1104,7 @@ export const messages: GameMessages = {
     rules: 'Лазери посилають світло по прямій. Ставте свої дзеркала, подільники й блоки на порожні клітинки й торкайтеся їх, щоб повернути, так щоб кожна мішень отримувала саме потрібний колір, а кожен заборонений датчик лишався темним. Світло, що сходиться на мішені, змішується: червоний + синій = пурпуровий.',
     'difficulty.easy': 'Легко (5×5, 1–2 деталі)',
     'difficulty.medium': 'Середньо (6×6, 2–3 деталі)',
-    'difficulty.hard': 'Складно (7×7, 3–4 деталі)',
+    'difficulty.hard': 'Складно (7×7, 3–6 деталей)',
     board: 'Світлове поле',
     'level.status': 'Рівень {n} з {total}',
     'level.choose': 'Рівень',
@@ -1084,7 +1168,13 @@ export const messages: GameMessages = {
     'help.keys': 'Клавіатура: стрілки — перехід між клітинками, P — поставити вибрану деталь, R — повернути деталь, Delete — прибрати її, 1–3 — вибрати деталь, U — скасувати.',
     'help.touch': 'Виберіть деталь під полем, потім торкніться порожньої клітинки, щоб поставити її. Торкніться поставленої деталі, щоб повернути її; утримуйте її або скористайтеся «Прибрати», щоб забрати.',
     'help.colours': 'Літери позначають кольори: R червоний, G зелений, B синій, Y жовтий (червоний + зелений), M пурпуровий (червоний + синій), C блакитний (зелений + синій), W білий (усі три). Лінії теж їх показують: червоний — суцільна, зелений — штрихи, синій — крапки.',
-    'result.completed': 'Кожна мішень отримує свій колір.'
+    'result.completed': 'Кожна мішень отримує свій колір.',
+    'difficulty.expert': 'Експерт (7×9, 7–8 деталей)',
+    'el.gate': 'односторонні ворота, {dir}: світло проходить лише в напрямку стрілки',
+    'el.portal': 'портал {n}: світло, що входить, виходить з іншого порталу {n}',
+    'legend': 'Особливі клітинки',
+    'legend.gate': 'Односторонні ворота (трикутник біля планки): світло проходить лише туди, куди вказує трикутник; з будь-якого іншого боку воно поглинається.',
+    'legend.portal': 'Портал (шестикутник із числом): світло, що входить у нього, виходить з іншого порталу з тим самим числом і зберігає напрямок.'
   },
   hi: {
     title: 'लेज़र पथ',
@@ -1092,7 +1182,7 @@ export const messages: GameMessages = {
     rules: 'लेज़र सीधी रेखाओं में प्रकाश भेजते हैं। अपने दर्पण, स्प्लिटर और अवरोधक खाली खानों पर रखें और घुमाने के लिए उन्हें टैप करें, ताकि हर लक्ष्य को ठीक वही रंग मिले जो वह माँगता है और हर वर्जित सेंसर अँधेरे में रहे। किसी लक्ष्य पर मिलने वाला प्रकाश मिश्रित होता है: लाल + नीला = मैजेंटा।',
     'difficulty.easy': 'आसान (5×5, 1–2 टुकड़े)',
     'difficulty.medium': 'मध्यम (6×6, 2–3 टुकड़े)',
-    'difficulty.hard': 'कठिन (7×7, 3–4 टुकड़े)',
+    'difficulty.hard': 'कठिन (7×7, 3–6 टुकड़े)',
     board: 'प्रकाश ग्रिड',
     'level.status': 'स्तर {n} / {total}',
     'level.choose': 'स्तर',
@@ -1156,6 +1246,12 @@ export const messages: GameMessages = {
     'help.keys': 'कीबोर्ड: तीर कुंजियाँ खानों के बीच ले जाती हैं, P चुना हुआ टुकड़ा रखता है, R टुकड़ा घुमाता है, Delete उसे वापस लेता है, 1–3 टुकड़ा चुनते हैं, U पूर्ववत करता है।',
     'help.touch': 'बोर्ड के नीचे से एक टुकड़ा चुनें, फिर उसे रखने के लिए किसी खाली खाने को टैप करें। रखे गए टुकड़े को घुमाने के लिए टैप करें; वापस लेने के लिए उसे देर तक दबाएँ या “हटाएँ” का उपयोग करें।',
     'help.colours': 'अक्षर रंग बताते हैं: R लाल, G हरा, B नीला, Y पीला (लाल + हरा), M मैजेंटा (लाल + नीला), C सियान (हरा + नीला), W सफ़ेद (तीनों)। रेखाएँ भी इन्हें दिखाती हैं: लाल ठोस, हरा डैश वाली, नीला बिंदीदार।',
-    'result.completed': 'हर लक्ष्य को उसका रंग मिल रहा है।'
+    'result.completed': 'हर लक्ष्य को उसका रंग मिल रहा है।',
+    'difficulty.expert': 'विशेषज्ञ (7×9, 7–8 टुकड़े)',
+    'el.gate': 'एकतरफ़ा द्वार, {dir}: रोशनी केवल तीर की दिशा में गुज़रती है',
+    'el.portal': 'पोर्टल {n}: अंदर जाने वाली रोशनी दूसरे पोर्टल {n} से बाहर निकलती है',
+    'legend': 'ख़ास खाने',
+    'legend.gate': 'एकतरफ़ा द्वार (डंडे से सटा त्रिकोण): रोशनी केवल उस दिशा में गुज़रती है जिधर त्रिकोण इशारा करता है; किसी और तरफ़ से आने पर वह सोख ली जाती है।',
+    'legend.portal': 'पोर्टल (संख्या वाला षट्भुज): अंदर जाने वाली रोशनी उसी संख्या वाले दूसरे पोर्टल से निकलती है और अपनी दिशा बनाए रखती है।'
   }
 };
