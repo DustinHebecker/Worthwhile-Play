@@ -118,7 +118,7 @@ const ko: UiCatalogue = {
   'decks.flags': '국기와 나라',
   'decks.flags.about': '60개 나라의 국기와 이름. 이름은 브라우저가 학습 언어로 제공해요.',
   'decks.capitals': '수도',
-  'decks.capitals.about': '55개 나라의 수도, 16개 언어. 학습 언어로 나라 ↔ 수도를 연습해요.',
+  'decks.capitals.about': '56개 나라의 수도, 16개 언어. 학습 언어로 나라 ↔ 수도를 연습해요.',
   'decks.aiBasics': 'AI 기초 용어',
   'decks.aiBasics.about': 'AI 관련 글에서 자주 보는 용어 40개와 짧은 정의, 16개 언어. 학습 언어로 용어 ↔ 정의를 연습해요.',
   'decks.all': '모든 덱',

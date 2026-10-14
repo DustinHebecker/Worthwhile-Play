@@ -118,7 +118,7 @@ const ja: UiCatalogue = {
   'decks.flags': '国旗と国',
   'decks.flags.about': '60 か国の国旗と国名。国名はブラウザーが学習する言語で提供します。',
   'decks.capitals': '首都',
-  'decks.capitals.about': '55 か国の首都（16 言語）。学習する言語で国 ↔ 首都を練習します。',
+  'decks.capitals.about': '56 か国の首都（16 言語）。学習する言語で国 ↔ 首都を練習します。',
   'decks.aiBasics': 'AIの基本用語',
   'decks.aiBasics.about': 'AIについて読むときによく出てくる 40 の用語と短い定義（16 言語）。学習する言語で用語 ↔ 定義を練習します。',
   'decks.all': 'すべてのデッキ',

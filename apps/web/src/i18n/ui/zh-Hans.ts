@@ -118,7 +118,7 @@ const zhHans: UiCatalogue = {
   'decks.flags': '国旗与国家',
   'decks.flags.about': '60 个国家的国旗及名称，名称由你的浏览器以你的学习语言提供。',
   'decks.capitals': '首都',
-  'decks.capitals.about': '55 个国家的首都，共 16 种语言：以你的学习语言进行国家 ↔ 首都配对。',
+  'decks.capitals.about': '56 个国家的首都，共 16 种语言：以你的学习语言进行国家 ↔ 首都配对。',
   'decks.aiBasics': '人工智能基础',
   'decks.aiBasics.about': '阅读人工智能相关内容时常见的 40 个术语及简短定义，共 16 种语言：以你的学习语言进行术语 ↔ 定义配对。',
   'decks.all': '全部卡组',

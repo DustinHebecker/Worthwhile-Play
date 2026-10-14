@@ -118,7 +118,7 @@ const pl: UiCatalogue = {
   'decks.flags': 'Flagi i kraje',
   'decks.flags.about': 'Flagi 60 krajów z nazwami, które przeglądarka podaje w Twoim języku nauki.',
   'decks.capitals': 'Stolice',
-  'decks.capitals.about': 'Stolice 55 krajów w 16 językach: kraj ↔ stolica w Twoim języku nauki.',
+  'decks.capitals.about': 'Stolice 56 krajów w 16 językach: kraj ↔ stolica w Twoim języku nauki.',
   'decks.aiBasics': 'Podstawy AI',
   'decks.aiBasics.about': '40 pojęć, które pojawiają się w tekstach o AI, z krótkimi definicjami w 16 językach: pojęcie ↔ definicja w Twoim języku nauki.',
   'decks.all': 'Wszystkie talie',

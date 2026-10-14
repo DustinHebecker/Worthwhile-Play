@@ -232,6 +232,18 @@ describe('Capitals', () => {
     expect(capitalName('XX', 'en')).toBeUndefined();
   });
 
+  it('includes Ukraine with the current standard exonym of each language', () => {
+    expect(CAPITAL_EXCLUSIONS.UA).toBeUndefined();
+    expect(CAPITAL_CODES).toContain('UA');
+    expect(CAPITALS).toHaveLength(56);
+    const expected = {
+      en: 'Kyiv', de: 'Kyjiw', uk: 'Київ', ru: 'Киев', pl: 'Kijów', fr: 'Kyiv', es: 'Kiev', it: 'Kiev',
+      pt: 'Kiev', nl: 'Kyiv', tr: 'Kiev', ar: 'كييف', hi: 'कीव', ja: 'キーウ', ko: '키이우', 'zh-Hans': '基辅'
+    } as const;
+    for (const lang of VOCABULARY_LANGUAGES) expect(capitalName('UA', lang), lang).toBe(expected[lang]);
+    expect(capitalsDeck('de').items.find((i) => i.id === 'ua')).toEqual({ id: 'ua', front: { text: 'Ukraine', lang: 'de' }, back: { text: 'Kyjiw', lang: 'de' }, category: 'geography' });
+  });
+
   it('a capital never has the same name as its country (both cards of a pair stay distinguishable)', () => {
     for (const lang of VOCABULARY_LANGUAGES) {
       for (const entry of CAPITALS) {

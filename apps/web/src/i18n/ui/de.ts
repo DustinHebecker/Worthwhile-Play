@@ -118,7 +118,7 @@ const de: UiCatalogue = {
   'decks.flags': 'Flaggen & Länder',
   'decks.flags.about': 'Flaggen von 60 Ländern mit ihren Namen, die dein Browser in deiner Lernsprache liefert.',
   'decks.capitals': 'Hauptstädte',
-  'decks.capitals.about': 'Hauptstädte von 55 Ländern in 16 Sprachen: Land ↔ Hauptstadt in deiner Lernsprache.',
+  'decks.capitals.about': 'Hauptstädte von 56 Ländern in 16 Sprachen: Land ↔ Hauptstadt in deiner Lernsprache.',
   'decks.aiBasics': 'KI-Grundbegriffe',
   'decks.aiBasics.about': '40 Begriffe, die dir beim Lesen über KI begegnen, mit kurzen Definitionen in 16 Sprachen: Begriff ↔ Definition in deiner Lernsprache.',
   'decks.all': 'Alle Decks',

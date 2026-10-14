@@ -118,7 +118,7 @@ const nl: UiCatalogue = {
   'decks.flags': 'Vlaggen & landen',
   'decks.flags.about': 'Vlaggen van 60 landen met hun namen, geleverd door je browser in je leertaal.',
   'decks.capitals': 'Hoofdsteden',
-  'decks.capitals.about': 'Hoofdsteden van 55 landen in 16 talen: land ↔ hoofdstad in je leertaal.',
+  'decks.capitals.about': 'Hoofdsteden van 56 landen in 16 talen: land ↔ hoofdstad in je leertaal.',
   'decks.aiBasics': 'AI-basisbegrippen',
   'decks.aiBasics.about': '40 begrippen die je tegenkomt als je over AI leest, met korte definities in 16 talen: begrip ↔ definitie in je leertaal.',
   'decks.all': 'Alle decks',

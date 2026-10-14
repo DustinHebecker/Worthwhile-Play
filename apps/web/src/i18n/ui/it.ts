@@ -118,7 +118,7 @@ const it: UiCatalogue = {
   'decks.flags': 'Bandiere e paesi',
   'decks.flags.about': 'Bandiere di 60 paesi con i loro nomi, forniti dal browser nella tua lingua di apprendimento.',
   'decks.capitals': 'Capitali',
-  'decks.capitals.about': 'Capitali di 55 paesi in 16 lingue: paese ↔ capitale nella tua lingua di apprendimento.',
+  'decks.capitals.about': 'Capitali di 56 paesi in 16 lingue: paese ↔ capitale nella tua lingua di apprendimento.',
   'decks.aiBasics': 'Basi dell’IA',
   'decks.aiBasics.about': '40 termini che si incontrano leggendo di IA, con brevi definizioni in 16 lingue: termine ↔ definizione nella tua lingua di apprendimento.',
   'decks.all': 'Tutti i mazzi',

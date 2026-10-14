@@ -118,7 +118,7 @@ const tr: UiCatalogue = {
   'decks.flags': 'Bayraklar ve ülkeler',
   'decks.flags.about': '60 ülkenin bayrakları ve adları; adlar tarayıcın tarafından öğrenme dilinde sağlanır.',
   'decks.capitals': 'Başkentler',
-  'decks.capitals.about': '16 dilde 55 ülkenin başkenti: öğrenme dilinde ülke ↔ başkent.',
+  'decks.capitals.about': '16 dilde 56 ülkenin başkenti: öğrenme dilinde ülke ↔ başkent.',
   'decks.aiBasics': 'Yapay zekâ temelleri',
   'decks.aiBasics.about': 'Yapay zekâ hakkında okurken karşılaşılan 40 terim ve kısa tanımları, 16 dilde: öğrenme dilinde terim ↔ tanım.',
   'decks.all': 'Tüm desteler',

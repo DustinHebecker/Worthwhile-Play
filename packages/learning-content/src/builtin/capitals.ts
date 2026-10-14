@@ -13,6 +13,11 @@ import { VOCABULARY_LANGUAGES, type VocabularyLanguage } from './first-words';
  *   ("Madri", "Moscou"), like the UI translations; Chinese is Simplified (zh-Hans).
  * - Where the city and the country have the same name in a language, the city is marked
  *   (Polish "Meksyk (miasto)"), so both cards of a pair are distinguishable.
+ * - Kyiv (Ukraine) uses the current standard exonym of each language: the form recommended by the
+ *   language authority or official usage where one exists (German "Kyjiw" as used by the Federal
+ *   Foreign Office since 2022, Japanese "キーウ" and Korean "키이우" since 2022, Spanish "Kiev" per
+ *   RAE/FundéuRAE), otherwise the established everyday form ("Kiev" in Italian, Brazilian Portuguese
+ *   and Turkish, "Kijów" in Polish).
  * - Bern is Switzerland's "federal city" (the de facto capital; the constitution names none);
  *   Amsterdam is the constitutional capital of the Netherlands (the government sits in The Hague).
  *
@@ -22,7 +27,6 @@ export const CAPITAL_EXCLUSIONS: Readonly<Partial<Record<CountryCode, string>>> 
   ZA: 'three capitals (Pretoria, Cape Town, Bloemfontein)',
   ID: 'capital is being moved from Jakarta to Nusantara (law of 2022, move not completed)',
   TN: 'capital and country share the same name in Arabic (تونس) and Chinese (突尼斯)',
-  UA: 'conventional exonym in transition in several languages (Kyiv/Kiev, Kyjiw/Kiew)',
   MN: 'transliteration varies widely between and within languages (Ulaanbaatar/Ulan Bator/Oulan-Bator)'
 };
 
@@ -83,6 +87,7 @@ const ROWS: readonly Row[] = [
   ['SN', ['Dakar', 'Dakar', 'Dakar', 'Dakar', 'Dakar', 'Дакар', '达喀尔', '다카르', 'ダカール', 'داكار', 'Dacar', 'Dakar', 'Dakar', 'Dakar', 'Дакар', 'डकार']],
   ['TH', ['Bangkok', 'Bangkok', 'Bangkok', 'Bangkok', 'Bangkok', 'Бангкок', '曼谷', '방콕', 'バンコク', 'بانكوك', 'Bangkok', 'Bangkok', 'Bangkok', 'Bangkok', 'Бангкок', 'बैंकॉक']],
   ['TR', ['Ankara', 'Ankara', 'Ankara', 'Ankara', 'Ankara', 'Анкара', '安卡拉', '앙카라', 'アンカラ', 'أنقرة', 'Ancara', 'Ankara', 'Ankara', 'Ankara', 'Анкара', 'अंकारा']],
+  ['UA', ['Kyjiw', 'Kyiv', 'Kyiv', 'Kiev', 'Kyiv', 'Киев', '基辅', '키이우', 'キーウ', 'كييف', 'Kiev', 'Kiev', 'Kijów', 'Kiev', 'Київ', 'कीव']],
   ['US', ['Washington, D.C.', 'Washington, D.C.', 'Washington D.C.', 'Washington D. C.', 'Washington', 'Вашингтон', '华盛顿', '워싱턴 D.C.', 'ワシントンD.C.', 'واشنطن العاصمة', 'Washington, D.C.', 'Washington', 'Waszyngton', 'Washington, D.C.', 'Вашингтон', 'वॉशिंगटन डी.सी.']],
   ['UY', ['Montevideo', 'Montevideo', 'Montevideo', 'Montevideo', 'Montevideo', 'Монтевидео', '蒙得维的亚', '몬테비데오', 'モンテビデオ', 'مونتيفيديو', 'Montevidéu', 'Montevideo', 'Montevideo', 'Montevideo', 'Монтевідео', 'मोंटेवीडियो']],
   ['VN', ['Hanoi', 'Hanoi', 'Hanoi', 'Hanói', 'Hanoï', 'Ханой', '河内', '하노이', 'ハノイ', 'هانوي', 'Hanói', 'Hanoi', 'Hanoi', 'Hanoi', 'Ханой', 'हनोई']]

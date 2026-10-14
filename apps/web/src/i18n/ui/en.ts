@@ -117,7 +117,7 @@ const en = {
   'decks.flags': 'Flags & countries',
   'decks.flags.about': 'Flags of 60 countries with their names, provided by your browser in your learning language.',
   'decks.capitals': 'Capitals',
-  'decks.capitals.about': 'Capitals of 55 countries in 16 languages: country ↔ capital in your learning language.',
+  'decks.capitals.about': 'Capitals of 56 countries in 16 languages: country ↔ capital in your learning language.',
   'decks.aiBasics': 'AI basics',
   'decks.aiBasics.about': '40 terms you meet when reading about AI, with short definitions in 16 languages: term ↔ definition in your learning language.',
   'decks.all': 'All decks',

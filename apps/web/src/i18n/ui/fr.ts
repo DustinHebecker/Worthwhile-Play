@@ -118,7 +118,7 @@ const fr: UiCatalogue = {
   'decks.flags': 'Drapeaux et pays',
   'decks.flags.about': 'Les drapeaux de 60 pays avec leur nom, fourni par votre navigateur dans votre langue d’apprentissage.',
   'decks.capitals': 'Capitales',
-  'decks.capitals.about': 'Les capitales de 55 pays en 16 langues : pays ↔ capitale dans votre langue d’apprentissage.',
+  'decks.capitals.about': 'Les capitales de 56 pays en 16 langues : pays ↔ capitale dans votre langue d’apprentissage.',
   'decks.aiBasics': 'Notions de base de l’IA',
   'decks.aiBasics.about': '40 termes que l’on croise en lisant sur l’IA, avec de courtes définitions en 16 langues : terme ↔ définition dans votre langue d’apprentissage.',
   'decks.all': 'Tous les paquets',
