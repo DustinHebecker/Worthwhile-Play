@@ -6,6 +6,7 @@ interface SavedRelay {
   draft: { unit: number; order: { type: string } }[];
   world: { turn: number; entities: { id: number; side: number; kind: string; x: number; y: number }[] };
   result: string | null;
+  endless: boolean;
 }
 
 const saved = async (page: Page) => ((await readSave(page, 'relay-command')) as { state: SavedRelay } | undefined)?.state;
@@ -199,6 +200,22 @@ test('relay-command: map and length chosen before the first turn survive a reloa
   // The setup stays in place (the map does not jump) but can no longer be changed.
   await expect(page.getByTestId('rc-scenario')).toBeDisabled();
   await expect(page.getByTestId('rc-turn-limit')).toBeDisabled();
+});
+
+test('relay-command: "Deposits never run dry" chosen before the first turn survives a reload and stays locked after it', async ({ page }) => {
+  await start(page);
+  const box = page.getByTestId('rc-endless');
+  await expect(box).not.toBeChecked();
+  // The label is the touch target (44 px), not only the small box.
+  await page.getByTestId('rc-setup').getByText('Deposits never run dry', { exact: true }).click();
+  await expect(box).toBeChecked();
+  await expect.poll(async () => (await saved(page))?.endless).toBe(true);
+  await page.reload();
+  await page.getByTestId('continue').click();
+  await expect(page.getByTestId('rc-endless')).toBeChecked();
+  await page.getByTestId('rc-lock').click();
+  await expect(page.getByTestId('rc-endless')).toBeDisabled();
+  await expect(page.getByTestId('rc-setup-summary')).toContainText('endless deposits');
 });
 
 test('relay-command: the Command Post places an Extractor on a deposit by tapping the map', async ({ page, isMobile }) => {

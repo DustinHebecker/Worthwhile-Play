@@ -145,7 +145,7 @@ const MAX_DEPOSIT = 1_000_000;
 
 /** Deposits: inside the map, sorted by cell without duplicates, with a non-negative remainder. */
 function validDeposits(v: unknown, w: number, h: number): v is Deposit[] {
-  if (!isArrayOf(v, (d): d is Deposit => isRecord(d) && isInt(d.x, 0, w - 1) && isInt(d.y, 0, h - 1) && isInt(d.left, 0, MAX_DEPOSIT))) return false;
+  if (!isArrayOf(v, (d): d is Deposit => isRecord(d) && isInt(d.x, 0, w - 1) && isInt(d.y, 0, h - 1) && isInt(d.left, 0, MAX_DEPOSIT) && (d.endless === undefined || d.endless === true))) return false;
   for (let i = 1; i < v.length; i++) if ((v[i] as Deposit).y * w + (v[i] as Deposit).x <= (v[i - 1] as Deposit).y * w + (v[i - 1] as Deposit).x) return false;
   return true;
 }

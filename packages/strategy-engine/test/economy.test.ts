@@ -65,6 +65,23 @@ describe('economy (I6a, D8)', () => {
     expect(incomeOfSide(drained, net, 0)).toBe(20);
   });
 
+  it('an endless deposit yields the full income every turn and never runs down; it survives validation and observation (owner, 2026-10-14)', () => {
+    const w = worldOf({ ...open(12, 3), deposits: [{ x: 3, y: 1, left: 0, endless: true }, { x: 10, y: 1, left: 300, endless: true }] }, [{ side: 0, kind: 'command-post', x: 0, y: 1 }, { side: 1, kind: 'command-post', x: 11, y: 0 }]);
+    expect(w.map.deposits).toEqual([{ x: 3, y: 1, left: 0, endless: true }, { x: 10, y: 1, left: 300, endless: true }]);
+    expect(isValidWorld(w, net)).toBe(true);
+    expect(isValidWorld({ ...w, map: { ...w.map, deposits: [{ x: 3, y: 1, left: 0, endless: false as never }] } }, net)).toBe(false);
+    // An Extractor may be placed on it although `left` reads 0.
+    const post = w.entities.find((e) => e.kind === 'command-post' && e.side === 0)!;
+    const build: Command = { side: 0, unit: post.id, order: { type: 'build', kind: 'extractor', x: 3, y: 1 } };
+    expect(validateCommand(w, net, build)).toEqual({ ok: true });
+    let world = turn(w, [[build], []]).world;
+    for (let i = 0; i < 6; i++) world = turn(world).world;
+    expect(incomeOfSide(world, net, 0)).toBe(35);
+    expect(world.map.deposits?.[0]).toEqual({ x: 3, y: 1, left: 0, endless: true });
+    // A side knows a deposit is endless (map knowledge), also where it does not observe it.
+    expect(observe(world, net, 1).world.map.deposits).toEqual([{ x: 3, y: 1, left: UNKNOWN_LEFT, endless: true }, { x: 10, y: 1, left: 300, endless: true }]);
+  });
+
   it('a yard produces into a free neighbouring cell after the build time, paid when queued; the unit follows the yard\'s doctrine', () => {
     const w = field([{ side: 0, kind: 'muster', x: 2, y: 0 }]);
     unit(w, 3).doctrine = { ...DEFAULT_DOCTRINE, holdFire: true };
