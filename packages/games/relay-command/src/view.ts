@@ -1124,15 +1124,15 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       if (unit.side === me() && arch.speed === 0 && arch.comms?.role !== 'source' && arch.buildTurns > 0) facts.append(...fact(t('card.sell'), t('card.sellValue', { n: plannedSaleRefund(state, unit.id) }), 'rc-card-sell'));
     }
     more.append(facts);
-    // The full effect table: one column per armour class, the exact % below.
+    // The full effect table: one row per armour class with the exact %.
     if (w) {
       more.append(
         h(
           'table',
           { class: 'rc-vs-table', 'data-testid': 'rc-card-vs' },
           h('caption', {}, t('card.vs')),
-          h('tr', {}, ...ARMOR_CLASSES.map((cls) => h('th', { scope: 'col' }, unitIcon(ARMOR_ICON[cls], false, me() === 0 ? 1 : 0), h('span', {}, t(`armor.${cls}`))))),
-          h('tr', {}, ...ARMOR_CLASSES.map((cls) => h('td', {}, `${w.vs[cls]} %`)))
+          // One row per armour class (fits a phone in every language; words never break).
+          ...ARMOR_CLASSES.map((cls) => h('tr', {}, h('th', { scope: 'row' }, unitIcon(ARMOR_ICON[cls], false, me() === 0 ? 1 : 0), h('span', {}, t(`armor.${cls}`))), h('td', {}, `${w.vs[cls]} %`)))
         )
       );
     }

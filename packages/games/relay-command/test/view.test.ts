@@ -403,7 +403,10 @@ describe('Relay Command view', () => {
     expect(matchup).toContain('Weaker against');
     // The full effect table sits behind "More".
     expect($('rc-card-vs').closest('details')).toBe($('rc-card-more'));
-    expect($('rc-card-vs').querySelectorAll('th[scope="col"]')).toHaveLength(5);
+    expect($('rc-card-vs').querySelectorAll('th[scope="row"]')).toHaveLength(5);
+    // Segments on the roster scale: damage 6 of the roster's 25 fills 2 of 5; full health fills all 5.
+    expect($('rc-card-damage').querySelectorAll('.rc-seg i.on')).toHaveLength(2);
+    expect($('rc-card-health').querySelectorAll('.rc-seg i.on')).toHaveLength(5);
     expect($('rc-selection-text').textContent).toContain('or an enemy to attack it');
     const truck = own().find((e) => e.kind === 'mast-truck')!;
     click(`rc-unit-${truck.id}`);

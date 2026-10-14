@@ -189,8 +189,9 @@
   margin-inline-start: auto;
   inline-size: 0.55em;
   block-size: 0.55em;
-  border-inline-end: 2px solid currentColor;
-  border-block-end: 2px solid currentColor;
+  /* Physical sides on purpose: the chevron points down (up when open) in either direction of writing. */
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
   transform: translateY(-0.15em) rotate(45deg);
   transition: transform 0.15s;
 }
@@ -267,13 +268,14 @@
 /* Unit card, Proposal 2 (owner's choice): meters, match-up in words, facts and table behind "More". */
 .wp-relay-command .rc-card-who { display: grid; gap: 0.1rem; min-inline-size: 0; }
 .wp-relay-command .rc-pict { flex: none; color: var(--wp-muted); }
-.wp-relay-command .rc-meters { display: grid; grid-template-columns: auto minmax(3rem, 1fr) auto; gap: 0.35rem 0.6rem; align-items: center; margin: 0; }
-.wp-relay-command .rc-meters dt { display: flex; align-items: center; gap: 0.4rem; margin: 0; }
-.wp-relay-command .rc-meters dd { display: contents; margin: 0; }
-.wp-relay-command .rc-seg { display: flex; gap: 2px; }
+/* Labels never break inside a word (the side column's overflow-wrap is reset here); the value may wrap below the segments. */
+.wp-relay-command .rc-meters { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 0.35rem 0.6rem; align-items: center; margin: 0; overflow-wrap: normal; }
+.wp-relay-command .rc-meters dt { display: flex; align-items: center; gap: 0.4rem; margin: 0; white-space: nowrap; }
+.wp-relay-command .rc-meters dd { display: flex; flex-wrap: wrap; align-items: center; gap: 0.2rem 0.6rem; margin: 0; min-inline-size: 0; }
+.wp-relay-command .rc-seg { display: flex; gap: 2px; flex: 1 1 3rem; min-inline-size: 3rem; }
 .wp-relay-command .rc-seg i { flex: 1; block-size: 0.5rem; border-radius: 2px; border: 1px solid var(--wp-p1); background: var(--wp-surface); }
 .wp-relay-command .rc-seg i.on { background: var(--wp-p1); }
-.wp-relay-command .rc-meter-value { text-align: end; font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+.wp-relay-command .rc-meter-value { flex: 0 1 auto; font-variant-numeric: tabular-nums; font-weight: 600; }
 .wp-relay-command .rc-matchup { display: grid; gap: 0.3rem; margin: 0; }
 .wp-relay-command .rc-matchup > div { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.6rem; }
 .wp-relay-command .rc-matchup dt { font-weight: 600; margin: 0; }
@@ -284,8 +286,9 @@
 .wp-relay-command .rc-facts { display: grid; grid-template-columns: auto 1fr; gap: 0.25rem 0.75rem; margin: 0; }
 .wp-relay-command .rc-facts dt { color: var(--wp-muted); }
 .wp-relay-command .rc-facts dd { margin: 0; }
-.wp-relay-command .rc-vs-table { border-collapse: collapse; inline-size: 100%; font-size: 0.9em; }
+.wp-relay-command .rc-vs-table { border-collapse: collapse; inline-size: 100%; font-size: 0.9em; overflow-wrap: normal; }
 .wp-relay-command .rc-vs-table caption { text-align: start; color: var(--wp-muted); }
-.wp-relay-command .rc-vs-table th { font-weight: 400; padding: 0.15rem; vertical-align: bottom; }
-.wp-relay-command .rc-vs-table th span { display: block; }
-.wp-relay-command .rc-vs-table td { text-align: center; font-variant-numeric: tabular-nums; padding: 0.15rem; }
+.wp-relay-command .rc-vs-table th { font-weight: 400; padding: 0.15rem; text-align: start; }
+.wp-relay-command .rc-vs-table th > * { vertical-align: middle; }
+.wp-relay-command .rc-vs-table th span { margin-inline-start: 0.4rem; }
+.wp-relay-command .rc-vs-table td { text-align: end; font-variant-numeric: tabular-nums; padding: 0.15rem; white-space: nowrap; }
