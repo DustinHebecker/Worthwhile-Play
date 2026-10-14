@@ -69,6 +69,29 @@ describe('Relay Command view', () => {
     expect(ctx.context.root.textContent).toContain('Opponent B');
   });
 
+  it('neutral posts have a list of their own on maps with empty seats; it stays when they are gone (a fixed property)', () => {
+    const corners = SCENARIOS.find((spec) => spec.id === 'four-corners')!;
+    const s = newGame(1, corners, 'normal', 12, false, null, 2);
+    instance.restore(s);
+    const post = s.world.entities.find((e) => e.side === NEUTRAL)!;
+    expect($('rc-neutral-panel').hidden).toBe(false);
+    expect($('rc-neutral-panel').textContent).toContain('Neutral Command Posts');
+    expect($(`rc-neutral-${post.id}`).textContent).toContain('neutral');
+    expect(ctx.context.root.querySelector(`[data-testid="rc-enemy-${post.id}"]`)).toBeNull();
+    // Gone where the player cannot see: the report keeps it; gone from the reports too: the heading stays, the list says so.
+    const gone = structuredClone(s);
+    gone.world.entities = gone.world.entities.filter((e) => e.side !== NEUTRAL);
+    for (const list of gone.world.intel ?? []) list.splice(0, list.length, ...list.filter((r) => r.side !== NEUTRAL));
+    instance.restore(gone);
+    expect($('rc-neutral-panel').hidden).toBe(false);
+    expect($('rc-neutral').textContent).toBe('none left');
+    // Maps without empty seats have no such list.
+    instance.restore(newGame(1, corners, 'normal', 12, false, null, 3));
+    expect($('rc-neutral-panel').hidden).toBe(true);
+    instance.newGame({ seed: 2 });
+    expect($('rc-neutral-panel').hidden).toBe(true);
+  });
+
   it('renders the turn, the status, both unit lists and the map', () => {
     expect($('rc-turn').textContent).toBe('Turn 1');
     expect($('rc-status').getAttribute('data-phase')).toBe('plan');
