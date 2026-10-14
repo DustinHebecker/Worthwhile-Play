@@ -480,3 +480,17 @@ test('relay-command: hot-seat on a 360 px phone — two people and a computer, a
   const widthsAfter = await page.evaluate(() => ({ page: document.documentElement.scrollWidth, viewport: document.documentElement.clientWidth }));
   expect(widthsAfter.page).toBeLessThanOrEqual(widthsAfter.viewport);
 });
+
+test('relay-command: in Arabic on a 360 px phone the doctrine choices of a selected unit never widen the page', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await page.goto('/settings');
+  await page.getByTestId('ui-language').selectOption('ar');
+  await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+  await page.goto('/games/relay-command');
+  await page.getByTestId('new-game').click();
+  await page.locator('[data-testid^="rc-unit-"]').nth(2).click();
+  await expect(page.getByTestId('rc-doctrine-lostcontact')).toBeVisible();
+  await expect(page.getByTestId('rc-doctrine-lostcontact').locator('option')).toHaveCount(3);
+  const widths = await page.evaluate(() => ({ page: document.documentElement.scrollWidth, viewport: document.documentElement.clientWidth }));
+  expect(widths.page).toBeLessThanOrEqual(widths.viewport);
+});

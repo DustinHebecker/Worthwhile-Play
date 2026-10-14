@@ -15,6 +15,8 @@ import {
   nodeRadius,
   RETREAT_THRESHOLDS,
   TARGET_PRIORITIES,
+  LOST_CONTACT,
+  type LostContact,
   type Doctrine,
   type Entity,
   type Network,
@@ -360,7 +362,10 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   for (const p of TARGET_PRIORITIES) prioritySelect.append(h('option', { value: p }, t(`doctrine.priority.${p}`)));
   const coverBox = h('input', { type: 'checkbox', 'data-testid': 'rc-doctrine-cover', onchange: () => onDoctrine() });
   const holdFireBox = h('input', { type: 'checkbox', 'data-testid': 'rc-doctrine-holdfire', onchange: () => onDoctrine() });
-  const lostContactBox = h('input', { type: 'checkbox', 'data-testid': 'rc-doctrine-lostcontact', onchange: () => onDoctrine() });
+  /** Without radio contact: return after a turn, carry the order out and then return, or carry on. */
+  const lostContactSelect = h('select', { 'data-testid': 'rc-doctrine-lostcontact', onchange: () => onDoctrine() });
+  // From the most careful to the boldest.
+  for (const v of ['regroup', 'finish', 'keep'] as const) lostContactSelect.append(h('option', { value: v }, t(`doctrine.lost.${v}`)));
   const doctrineBox = h(
     'fieldset',
     { class: 'rc-doctrine', 'data-testid': 'rc-doctrine' },
@@ -369,7 +374,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     h('label', {}, h('span', {}, t('doctrine.priority')), prioritySelect),
     h('label', { class: 'rc-check' }, coverBox, h('span', {}, t('doctrine.seekCover'))),
     h('label', { class: 'rc-check' }, holdFireBox, h('span', {}, t('doctrine.holdFire'))),
-    h('label', { class: 'rc-check' }, lostContactBox, h('span', {}, t('doctrine.lostContact')))
+    h('label', {}, h('span', {}, t('doctrine.lostContact')), lostContactSelect)
   );
   const selectionActions = h('div', { class: 'rc-orders' }, h('div', { class: 'rc-actions' }, holdBtn, regroupBtn, deployBtn, cancelBtn), modeGroup, modeHint, doctrineBox);
   /** Production (yards) and placement (command sources) of the selected structure (I6a). */
@@ -746,7 +751,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       prioritySelect.value = d.priority;
       coverBox.checked = d.seekCover;
       holdFireBox.checked = d.holdFire;
-      lostContactBox.checked = d.lostContact === 'regroup';
+      lostContactSelect.value = d.lostContact;
     }
     cancelBtn.disabled = !unit || !draftFor(state, unit.id);
   }
@@ -1834,7 +1839,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       priority: prioritySelect.value as Doctrine['priority'],
       seekCover: coverBox.checked,
       holdFire: holdFireBox.checked,
-      lostContact: lostContactBox.checked ? 'regroup' : 'keep'
+      lostContact: (LOST_CONTACT as readonly string[]).includes(lostContactSelect.value) ? (lostContactSelect.value as LostContact) : 'regroup'
     };
     const refusal = doctrineRefusal(state, unit.id, doctrine);
     const next = refusal === null ? planDoctrine(state, unit.id, doctrine) : undefined;

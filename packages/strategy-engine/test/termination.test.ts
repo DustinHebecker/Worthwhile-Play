@@ -271,7 +271,7 @@ const arbDoctrine: fc.Arbitrary<Doctrine> = fc.record({
   priority: fc.constantFrom('weakest', 'nearest', 'armor', 'infantry', 'structures', 'emitters'),
   seekCover: fc.boolean(),
   holdFire: fc.boolean(),
-  lostContact: fc.constantFrom('regroup', 'keep')
+  lostContact: fc.constantFrom('regroup', 'keep', 'finish')
 });
 
 /**

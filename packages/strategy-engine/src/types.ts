@@ -191,13 +191,15 @@ export interface Doctrine {
   /** Return fire only: shoot only after being hit within the last turn, or at an ordered target. */
   readonly holdFire: boolean;
   /**
-   * What to do after a whole turn without radio contact: `regroup` (return into coverage) or
-   * `keep` (carry on with the standing order, e.g. for a deliberate deep push).
+   * What to do after a whole turn without radio contact: `regroup` (return into coverage),
+   * `keep` (carry on with the standing order, e.g. for a deliberate deep push), or `finish`
+   * (carry on until the order is done, then return: once the unit only holds and sees no enemy
+   * itself, it comes back instead of standing cut off where its target was).
    */
   readonly lostContact: LostContact;
 }
 
-export const LOST_CONTACT = ['regroup', 'keep'] as const;
+export const LOST_CONTACT = ['regroup', 'keep', 'finish'] as const;
 export type LostContact = (typeof LOST_CONTACT)[number];
 
 /** Engine default: a unit without a doctrine carries on out of contact (games may give their units another). */
@@ -386,7 +388,13 @@ export type SimEvent =
  * `outpaced` (an attacker could not close in on its target for three turns), `lost-contact` (a
  * whole turn without radio contact; the unit returns into coverage, doctrine).
  */
-export type OrderEndReason = 'arrived' | 'occupied' | 'unreachable' | 'blocked' | 'lost-target' | 'retreat' | 'regrouped' | 'outpaced' | 'lost-contact';
+/**
+ * Why an order ended. `lost-contact`: doctrine 'regroup' after a whole turn without contact (its
+ * side is always told: the timing is fixed). `turned-back`: doctrine 'finish', the order done and no
+ * enemy in the unit's own sight — told only like any event of an unobserved unit (normal
+ * visibility), since its timing depends on what the unit sees out of contact (review of PR #29).
+ */
+export type OrderEndReason = 'arrived' | 'occupied' | 'unreachable' | 'blocked' | 'lost-target' | 'retreat' | 'regrouped' | 'outpaced' | 'lost-contact' | 'turned-back';
 
 export interface Scenario {
   readonly map: GameMap;

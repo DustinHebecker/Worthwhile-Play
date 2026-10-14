@@ -39,7 +39,10 @@ import { arbWorld, open, transformCommands, transformWorld } from './helpers';
  */
 const RUNS = { numRuns: 60 };
 /** See the fingerprint test below (computed with the engine of main at 30f9646). */
-const TWO_SIDE_FINGERPRINT = '72b5b82d';
+// '72b5b82d' from main at 30f9646; 'd1534738' since the generators also draw the doctrine
+// lostContact 'finish' (PR #29 review). With the old generator values ('regroup', 'keep') the
+// current engine still gives '72b5b82d': what is told for the existing doctrines is unchanged.
+const TWO_SIDE_FINGERPRINT = 'd1534738';
 const play = (world: World, plans: readonly Command[][], rs = BASE_RULESET): World => plans.reduce((w, plan) => resolveTurn(w, rs, [plan]).world, world);
 
 describe('teams and hostility', () => {

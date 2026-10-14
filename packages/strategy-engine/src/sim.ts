@@ -223,7 +223,8 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
   const aims = new Map<number, number>();
   const intent: Intent = { w, rs, occupied, permanent, coverageOf, end, visible, spottedBy, regionsOf, aims };
   // Doctrine 'lostContact': a mobile unit that spent a whole turn outside its side's coverage
-  // returns into it (unless it is a node at work or already on its way back).
+  // returns into it (unless it is a node at work or already on its way back): 'regroup' at once,
+  // 'finish' once its order is done (it holds) and no enemy is in its own sight, 'keep' never.
   if (rs.commandNetwork) {
     for (const e of w.entities) {
       const a = arch(e);
@@ -235,13 +236,20 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
       }
       e.noContact = Math.min(rs.ticksPerTurn, (e.noContact ?? 0) + 1);
       const atWork = needsDeploy(a) && (e.order.type === 'deploy' || (e.deploy ?? 0) >= rs.ticksPerTurn);
-      if (e.noContact >= rs.ticksPerTurn && doctrineOf(e).lostContact === 'regroup' && e.order.type !== 'regroup' && !atWork) {
+      // 'finish': carry on out of contact, and return once the unit only holds with no enemy in its own sight.
+      const lost = doctrineOf(e).lostContact;
+      const done = lost === 'finish' && e.order.type === 'hold' && !w.entities.some((o) => o.side !== NEUTRAL && hostile(w, e.side, o.side) && dist2(e.x, e.y, o.x, o.y) <= a.vision * a.vision);
+      if (e.noContact >= rs.ticksPerTurn && (lost === 'regroup' || done) && e.order.type !== 'regroup' && !atWork) {
         e.order = { type: 'regroup' };
         delete e.bumps;
         delete e.stuck;
         delete e.stall;
         delete e.prev;
-        events.push({ t: 'order-ended', tick: t, id: e.id, reason: 'lost-contact' });
+        // 'regroup' turns back after a fixed time, which the side is always told ('lost-contact').
+        // When a 'finish' unit turns back depends on what it sees out of contact: its own reason
+        // travels by normal visibility only, so it reveals no enemy the side does not know of
+        // (review of PR #29); out of sight, its side learns of it when the unit is back in contact.
+        events.push({ t: 'order-ended', tick: t, id: e.id, reason: lost === 'regroup' ? 'lost-contact' : 'turned-back' });
       }
     }
   }
