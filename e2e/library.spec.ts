@@ -87,3 +87,8 @@ test('own creations: export to a file, delete one game, import the file again', 
   await page.getByTestId('library-file').setInputFiles(path);
   await expect(page.getByTestId('library-import-status')).toContainText('Already there: 2');
 });
+
+test('settings show how much storage the app uses on this device', async ({ page }) => {
+  await page.goto('/settings');
+  await expect(page.getByTestId('storage-usage')).toHaveText(/\d.*(kB|MB)/);
+});

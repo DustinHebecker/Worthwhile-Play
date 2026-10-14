@@ -68,6 +68,10 @@ const it: UiCatalogue = {
   'settings.sessionNote': 'Mostra un breve avviso dopo 20 minuti di gioco continuato',
   'settings.saved': 'Impostazioni salvate.',
   'settings.storage': 'Partite salvate su questo dispositivo: {count}',
+  'settings.usage': 'Spazio occupato da questa app su questo dispositivo: {used}',
+  'settings.usageDetail': 'File dell’app per l’uso offline: {app} · I tuoi dati: {data}',
+  'settings.usageHint': 'Comprende l’app stessa (tutti i giochi e le lingue, così tutto funziona offline) e le tue partite salvate, i mazzi, i dati di apprendimento e i contenuti personali. I browser aggiungono un po’ di spazio di gestione.',
+  'settings.usageUnavailable': 'Il tuo browser non indica quanto spazio occupa questa app.',
   'settings.clearSaves': 'Elimina tutte le partite salvate',
   'settings.clearConfirm': 'Eliminare tutte le partite salvate su questo dispositivo? L’operazione non può essere annullata.',
 

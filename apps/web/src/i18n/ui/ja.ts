@@ -68,6 +68,10 @@ const ja: UiCatalogue = {
   'settings.sessionNote': '20分間続けて遊んだら短いお知らせを表示する',
   'settings.saved': '設定を保存しました。',
   'settings.storage': 'このデバイスのセーブデータ：{count}件',
+  'settings.usage': 'この端末でこのアプリが使っている容量：{used}',
+  'settings.usageDetail': 'オフライン用のアプリファイル：{app} · あなたのデータ：{data}',
+  'settings.usageHint': 'アプリ本体（オフラインで使えるよう、すべてのゲームと言語）と、セーブデータ、デッキ、学習記録、自作コンテンツが含まれます。ブラウザーは管理用の領域を少し上乗せします。',
+  'settings.usageUnavailable': 'お使いのブラウザーは、このアプリの使用容量を表示しません。',
   'settings.clearSaves': 'すべてのセーブデータを削除',
   'settings.clearConfirm': 'このデバイスのすべてのセーブデータを削除しますか？この操作は元に戻せません。',
 

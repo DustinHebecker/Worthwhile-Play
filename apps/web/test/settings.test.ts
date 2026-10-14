@@ -17,7 +17,7 @@ import {
 import type { AppContext } from '../src/app';
 import { UI_MESSAGES } from '../src/i18n';
 import { createPreferences } from '../src/lib/preferences';
-import { renderSettings } from '../src/pages/settings';
+import { formatBytes, measureStorage, renderSettings } from '../src/pages/settings';
 import { loadAllLocales } from './locales';
 
 await loadAllLocales();
@@ -248,5 +248,42 @@ describe('settings: delete per game, export and import my own content', () => {
     const text = JSON.stringify({ format: LIBRARY_EXPORT_FORMAT, version: 1, items: [{ gameId: 'relay-command', id: 'a', name: 'A', updatedAt: new Date().toISOString(), data: 1 }] });
     await chooseFile(input, text);
     expect(status()).toBe('Der Import konnte nicht abgeschlossen werden. Was vor dem Problem importiert wurde, bleibt erhalten.');
+  });
+});
+
+describe('settings: storage used on this device', () => {
+  const nav = (estimate: unknown) => ({ storage: { estimate: () => (estimate instanceof Error ? Promise.reject(estimate) : Promise.resolve(estimate)) } }) as unknown as Navigator;
+
+  it('formats bytes in the UI language (decimal units)', () => {
+    expect(formatBytes(7_780_000, 'en')).toBe('7.8 MB');
+    expect(formatBytes(7_780_000, 'de')).toBe('7,8 MB');
+    expect(formatBytes(830_000, 'en')).toBe('830 kB');
+  });
+
+  it('reads the estimate, splits app files from data where the browser reports details, and never throws', async () => {
+    expect(await measureStorage(nav({ usage: 8_000_000, quota: 1e9 }))).toEqual({ used: 8_000_000 });
+    expect(await measureStorage(nav({ usage: 8_000_000, usageDetails: { caches: 7_600_000, indexedDB: 400_000 } }))).toEqual({ used: 8_000_000, app: 7_600_000, data: 400_000 });
+    expect(await measureStorage(nav({}))).toBeUndefined();
+    expect(await measureStorage(nav(new Error('denied')))).toBeUndefined();
+    expect(await measureStorage({} as Navigator)).toBeUndefined();
+    expect(await measureStorage(undefined)).toBeUndefined();
+  });
+
+  it('shows the total and, where available, the split; says so when the browser reports nothing', async () => {
+    const original = Object.getOwnPropertyDescriptor(navigator, 'storage');
+    onTestFinished(() => {
+      if (original) Object.defineProperty(navigator, 'storage', original);
+      else delete (navigator as unknown as Record<string, unknown>).storage;
+    });
+    Object.defineProperty(navigator, 'storage', { configurable: true, value: { estimate: () => Promise.resolve({ usage: 7_800_000, usageDetails: { caches: 7_500_000 } }) } });
+    const { byId } = await setup('de');
+    expect(byId('storage-usage').textContent).toBe('Von dieser App auf diesem Gerät belegter Speicher: 7,8 MB');
+    expect(byId('storage-usage-detail').hidden).toBe(false);
+    expect(byId('storage-usage-detail').textContent).toBe('App-Dateien für die Offline-Nutzung: 7,5 MB · Deine Daten: 300 kB');
+    document.body.innerHTML = '';
+    Object.defineProperty(navigator, 'storage', { configurable: true, value: undefined });
+    const none = await setup('en');
+    expect(none.byId('storage-usage').textContent).toBe('Your browser does not report how much storage this app uses.');
+    expect(none.byId('storage-usage-detail').hidden).toBe(true);
   });
 });
