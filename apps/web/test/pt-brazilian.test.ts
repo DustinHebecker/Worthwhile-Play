@@ -29,8 +29,8 @@ const EUROPEAN_ONLY = [
   'prémio', 'prémios' // prêmio
 ] as const;
 
-/** Maintained by another team (strategy engine, ADR 0009); audited separately and excluded from this guard for now. */
-const EXCLUDED_GAMES = new Set(['relay-command']);
+/** Games excluded from this guard (none: relay-command joined after its pt-BR pass, PR #24). */
+const EXCLUDED_GAMES = new Set<string>();
 
 const PATTERN = new RegExp(`(?<![\\p{L}\\p{M}-])(?:${EUROPEAN_ONLY.join('|')})(?![\\p{L}\\p{M}-])`, 'iu');
 
