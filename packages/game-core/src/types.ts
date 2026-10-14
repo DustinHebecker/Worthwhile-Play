@@ -57,6 +57,13 @@ export interface GameMetadata {
   readonly usesUserDecks?: boolean;
   /** Optional: the game reads and writes spaced-repetition learning records; the host then provides `GameContext.learning`. */
   readonly usesLearningRecords?: boolean;
+  /**
+   * Optional (ADR 0015): the game's first screen is its own setup (map, options…). With no save, the host starts
+   * a fresh game directly instead of showing the start panel; the game's setup is the first thing visible.
+   * Only on opening the game page: never after a game finishes (no autoplay into the next game). With a save,
+   * the host offers "Continue" as usual, and "New game" stays available in the host toolbar.
+   */
+  readonly setupInGame?: boolean;
 }
 
 export interface Translator {
