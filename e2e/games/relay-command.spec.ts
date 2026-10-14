@@ -13,8 +13,8 @@ const saved = async (page: Page) => ((await readSave(page, 'relay-command')) as 
 const firstRifle = (s: SavedRelay) => s.world.entities.find((e) => e.side === 0 && e.kind === 'rifles')!;
 
 async function start(page: Page) {
+  // No save: the game starts at once and its setup is the first screen (ADR 0015).
   await page.goto('/games/relay-command');
-  await page.getByTestId('new-game').click();
   await expect(page.getByTestId('rc-map')).toBeVisible();
   // The host saves the fresh game; positions are read from that save.
   await expect.poll(async () => (await saved(page))?.world.entities.length ?? 0).toBeGreaterThan(0);
@@ -175,8 +175,25 @@ test('relay-command: a Static Jammer is set up in one turn and stays set up acro
   await expect(page.getByTestId(`rc-unit-${jammer.id}`)).toContainText('Jammer active');
 });
 
-test('relay-command: the opponent level chosen before a new game is kept in the save', async ({ page }) => {
+test('opening relay-command with no save shows the map setup directly, without a start panel (ADR 0015)', async ({ page }) => {
   await page.goto('/games/relay-command');
+  await expect(page.getByTestId('rc-setup')).toBeVisible();
+  await expect(page.getByTestId('rc-scenario')).toBeEnabled();
+  await expect(page.getByTestId('rc-map')).toBeVisible();
+  await expect(page.getByTestId('continue')).toHaveCount(0);
+  // The map is chosen right away, before any turn; the game is saved and resumes on reload.
+  await page.getByTestId('rc-scenario').selectOption('ridge-valley');
+  await expect(page.getByTestId('rc-map')).toHaveAttribute('data-cols', '20');
+  await expect.poll(async () => (await saved(page))?.world.entities.length).toBe(30);
+  await page.reload();
+  await page.getByTestId('continue').click();
+  await expect(page.getByTestId('rc-map')).toHaveAttribute('data-cols', '20');
+});
+
+test('relay-command: the opponent level chosen before a new game is kept in the save', async ({ page }) => {
+  // The game opens at once (ADR 0015); the level is chosen in the toolbar and New game starts afresh with it.
+  await page.goto('/games/relay-command');
+  await expect(page.getByTestId('rc-map')).toBeVisible();
   await page.getByTestId('difficulty').selectOption('hard');
   await page.getByTestId('new-game').click();
   await expect(page.getByTestId('rc-map')).toBeVisible();
@@ -504,7 +521,6 @@ test('relay-command: in Arabic on a 360 px phone the doctrine choices of a selec
   await page.getByTestId('ui-language').selectOption('ar');
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
   await page.goto('/games/relay-command');
-  await page.getByTestId('new-game').click();
   await page.locator('[data-testid^="rc-unit-"]').nth(2).click();
   await expect(page.getByTestId('rc-doctrine-lostcontact')).toBeVisible();
   await expect(page.getByTestId('rc-doctrine-lostcontact').locator('option')).toHaveCount(3);
