@@ -105,6 +105,30 @@ let instanceCounter = 0;
 
 const isDifficulty = (v: unknown): v is Difficulty => (DIFFICULTIES as readonly unknown[]).includes(v);
 
+const SVG_NS = 'http://www.w3.org/2000/svg';
+/** Small line pictograms of the unit card (20-unit box, current colour; hand-drawn, no third-party art). */
+const PICTOGRAMS = {
+  health: ['M10 4v12M4 10h12', 'M6 2h8a4 4 0 0 1 4 4v8a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V6a4 4 0 0 1 4-4z'],
+  attack: ['M10 4a6 6 0 1 0 0 12a6 6 0 1 0 0-12z', 'M10 1.5v4M10 14.5v4M1.5 10h4M14.5 10h4'],
+  range: ['M2.5 10h11M10.5 6.5 14 10l-3.5 3.5M17 4.5v11'],
+  move: ['M4 5l5 5-5 5M10 5l5 5-5 5'],
+  sight: ['M1.5 10Q10 2 18.5 10Q10 18 1.5 10Z', 'M10 8.2a1.8 1.8 0 1 0 0 3.6a1.8 1.8 0 1 0 0-3.6z'],
+  radio: ['M10 18V8M6.6 5.2a4.5 4.5 0 0 0 0 5.6M13.4 5.2a4.5 4.5 0 0 1 0 5.6M4.2 2.8a8 8 0 0 0 0 10.4M15.8 2.8a8 8 0 0 1 0 10.4'],
+  noweapon: ['M10 4a6 6 0 1 0 0 12a6 6 0 1 0 0-12z', 'M10 1.5v4M10 14.5v4M1.5 10h4M14.5 10h4M3 17 17 3']
+} as const;
+
+/** A pictogram as inline SVG (decorative: the word next to it carries the meaning). */
+function pictogram(name: keyof typeof PICTOGRAMS): SVGSVGElement {
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  for (const [k, v] of Object.entries({ class: 'rc-pict', viewBox: '0 0 20 20', width: '18', height: '18', 'aria-hidden': 'true', focusable: 'false', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' })) svg.setAttribute(k, v);
+  for (const d of PICTOGRAMS[name]) {
+    const path = document.createElementNS(SVG_NS, 'path');
+    path.setAttribute('d', d);
+    svg.append(path);
+  }
+  return svg;
+}
+
 export function createRelayCommand(context: GameContext): GameInstance<RcState> {
   const { t, root } = context;
   const uid = `rc-${++instanceCounter}`;
@@ -947,20 +971,30 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     damage: Math.max(...ROSTER.map((a) => a.weapon?.damage ?? 0)),
     range: Math.max(...ROSTER.map((a) => a.weapon?.range ?? 0)),
     speed: Math.max(...ROSTER.map((a) => a.speed)),
-    vision: Math.max(...ROSTER.map((a) => a.vision))
+    vision: Math.max(...ROSTER.map((a) => a.vision)),
+    radius: Math.max(...ROSTER.map((a) => a.comms?.radius ?? 0))
   };
+  /** The armour classes drawn as the kind that stands for each (one picture vocabulary for map and card). */
+  const ARMOR_ICON: Record<(typeof ARMOR_CLASSES)[number], string> = { infantry: 'rifles', light: 'outrider', heavy: 'warden', structure: 'command-post', air: 'kite' };
 
-  /** One stat line: label, a bar on the roster scale, and the value as text (never the bar alone). */
-  const statRow = (label: string, value: string, fraction: number | null, testId?: string): HTMLElement =>
-    h(
-      'div',
-      { class: 'rc-stat', ...(testId && { 'data-testid': testId }) },
-      h('span', { class: 'rc-stat-label' }, label),
-      fraction === null
-        ? h('span', { class: 'rc-stat-bar rc-stat-bar-none', 'aria-hidden': 'true' })
-        : h('span', { class: 'rc-stat-bar', 'aria-hidden': 'true' }, h('span', { class: 'rc-stat-fill', style: `width:${Math.round(Math.max(0, Math.min(1, fraction)) * 100)}%` })),
-      h('span', { class: 'rc-stat-value' }, value)
-    );
+  /** Segments (of 5) for a value on the roster scale: at least one for anything above zero. */
+  const segments = (value: number, max: number): number => (value <= 0 || max <= 0 ? 0 : Math.max(1, Math.ceil((value / max) * 5 - 1e-9)));
+
+  /**
+   * One meter of the unit card (Proposal 2): pictogram and word in the term, five segments and
+   * the exact value in the description. The segments are decoration (aria-hidden); the value is
+   * always text, never the bar alone.
+   */
+  function meterRow(icon: keyof typeof PICTOGRAMS, label: string, filled: number, value: string, testId?: string): HTMLElement[] {
+    const seg = h('span', { class: 'rc-seg', 'aria-hidden': 'true' }, ...Array.from({ length: 5 }, (_, i) => h('i', { class: i < filled ? 'on' : '' })));
+    return [
+      h('dt', {}, pictogram(icon), h('span', {}, label)),
+      h('dd', testId ? { 'data-testid': testId } : {}, seg, h('bdi', { class: 'rc-meter-value' }, value))
+    ];
+  }
+
+  /** A fact of the "More" fold: term and value. */
+  const fact = (label: string, value: string, testId?: string): HTMLElement[] => [h('dt', {}, label), h('dd', testId ? { 'data-testid': testId } : {}, value)];
 
   /** Small icon of a unit kind: the map shape (circle / diamond / square) with its glyph. */
   function unitIcon(kind: string, own: boolean, side: number = own ? me() : 1): HTMLElement {
@@ -1016,53 +1050,93 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     const own = unit.side === me();
     const cells = (n: number) => t('card.cells', { n });
     cardEl.append(
-      h('div', { class: 'rc-card-head' }, unitIcon(unit.kind, own, unit.side), h('strong', {}, unitName(unit)), h('span', { class: 'rc-muted' }, sideName(unit.side))),
-      statRow(t('card.health'), `${unit.hp} / ${arch.hp}`, unit.hp / arch.hp, 'rc-card-health')
+      h(
+        'div',
+        { class: 'rc-card-head' },
+        unitIcon(unit.kind, own, unit.side),
+        h('div', { class: 'rc-card-who' }, h('strong', {}, unitName(unit)), h('span', { class: 'rc-muted' }, `${sideName(unit.side)} · ${shortState(unit)}`))
+      )
     );
-    // Folded by default (owner: short card, nothing lost): stats, then abilities.
-    const stats = section('stats', t('card.stats'));
-    const abilities = section('abilities', t('card.abilities'));
-    stats.append(statRow(t('card.armor'), t(`armor.${arch.armor}`), null));
+    // The meters (owner's choice, Proposal 2): one row per stat on the roster scale.
+    const meters = h('dl', { class: 'rc-meters', 'data-testid': 'rc-card-meters' });
+    meters.append(...meterRow('health', t('card.health'), segments(unit.hp, arch.hp), `${unit.hp} / ${arch.hp}`, 'rc-card-health'));
     const w = arch.weapon;
     if (w) {
-      stats.append(
-        statRow(t('card.damage'), `${w.damage} · ${t(`card.delivery.${w.delivery}`)}`, w.damage / MAX.damage, 'rc-card-damage'),
-        statRow(t('card.range'), w.minRange > 0 ? t('card.rangeBetween', { min: w.minRange, max: w.range }) : cells(w.range), w.range / MAX.range),
-        statRow(t('card.rate'), w.cooldown <= 1 ? t('card.everyTick') : t('card.everyTicks', { n: w.cooldown }), 1 / w.cooldown)
+      meters.append(
+        ...meterRow('attack', t('card.damage'), segments(w.damage, MAX.damage), String(w.damage), 'rc-card-damage'),
+        ...meterRow('range', t('card.range'), segments(w.range, MAX.range), w.minRange > 0 ? t('card.rangeBetween', { min: w.minRange, max: w.range }) : cells(w.range))
       );
-      // Effect per armour class: what this weapon is good against (text and bar).
-      // Folded away by default: the card stays short; the matchup is one tap away.
-      const vs = section('vs', t('card.vs'));
-      vs.classList.add('rc-vs');
-      for (const cls of ARMOR_CLASSES) vs.append(statRow(t(`armor.${cls}`), `${w.vs[cls]} %`, w.vs[cls] / 120));
-      stats.append(vs);
-      if (w.stationary) abilities.append(h('p', { class: 'rc-muted' }, t('card.stationary')));
-    } else {
-      stats.append(statRow(t('card.weapon'), t('card.noWeapon'), null, 'rc-card-noweapon'));
+    } else if (arch.comms && arch.comms.radius > 0) {
+      meters.append(...meterRow('radio', t('card.radio'), segments(arch.comms.radius, MAX.radius), cells(arch.comms.radius)));
     }
-    stats.append(
-      statRow(t('card.speed'), arch.speed > 0 ? t('card.perTurn', { n: Math.round((arch.speed * RULESET.ticksPerTurn) / 4) }) : t('card.static'), arch.speed / MAX.speed),
-      statRow(t('card.vision'), cells(arch.vision), arch.vision / MAX.vision)
+    meters.append(
+      ...meterRow('move', t('card.speed'), segments(arch.speed, MAX.speed), arch.speed > 0 ? t('card.perTurn', { n: Math.round((arch.speed * RULESET.ticksPerTurn) / 4) }) : t('card.static')),
+      ...meterRow('sight', t('card.vision'), segments(arch.vision, MAX.vision), cells(arch.vision))
     );
+    cardEl.append(meters);
+    // What the weapon is good against, in words with the armour pictograms (never colour alone).
+    if (w) {
+      const groups: [string, (v: number) => boolean][] = [
+        ['card.strongVs', (v) => v >= 100],
+        ['card.weakerVs', (v) => v > 0 && v < 100],
+        ['card.cantHit', (v) => v === 0]
+      ];
+      const matchup = h('dl', { class: 'rc-matchup', 'data-testid': 'rc-card-matchup' });
+      for (const [key, test] of groups) {
+        const classes = ARMOR_CLASSES.filter((cls) => test(w.vs[cls]));
+        if (classes.length === 0) continue;
+        matchup.append(
+          h(
+            'div',
+            {},
+            h('dt', {}, t(key)),
+            ...classes.map((cls) => h('dd', {}, unitIcon(ARMOR_ICON[cls], false, me() === 0 ? 1 : 0), h('span', {}, t(`armor.${cls}`)), ' ', h('small', { class: 'rc-muted' }, `${w.vs[cls]} %`)))
+          )
+        );
+      }
+      cardEl.append(matchup);
+    } else {
+      cardEl.append(h('p', { class: 'rc-hint', 'data-testid': 'rc-card-noweapon' }, pictogram('noweapon'), h('span', {}, `${t('card.weapon')}: ${t('card.noWeapon')}`)));
+    }
+    // Everything else behind "More" (folded by default; stays open across redraws once opened).
+    const more = section('more', t('card.more'));
+    const facts = h('dl', { class: 'rc-facts' });
+    facts.append(...fact(t('card.armor'), t(`armor.${arch.armor}`)));
+    if (w) {
+      facts.append(...fact(t('card.rate'), `${w.cooldown <= 1 ? t('card.everyTick') : t('card.everyTicks', { n: w.cooldown })} · ${t(`card.delivery.${w.delivery}`)}`));
+      if (w.stationary) facts.append(...fact(t('card.weapon'), t('card.stationary')));
+    }
     if (arch.comms) {
       const text = arch.comms.role === 'source' ? t('card.source', { r: arch.comms.radius, slots: arch.comms.orderSlots }) : t('card.relay', { r: arch.comms.radius });
-      abilities.append(statRow(t('card.radio'), arch.comms.needsDeploy ? `${text} ${t('card.needsSetUp')}` : text, null));
+      facts.append(...fact(t('card.radio'), arch.comms.needsDeploy ? `${text} ${t('card.needsSetUp')}` : text));
     }
     if (arch.ew) {
       const text = arch.ew.role === 'jammer' ? t('card.jammer', { r: arch.ew.radius }) : t('card.tracer', { r: arch.ew.radius, b: arch.ew.burnThrough });
-      abilities.append(statRow(t('card.ew'), arch.ew.needsDeploy ? `${text} ${t('card.needsSetUp')}` : text, null));
+      facts.append(...fact(t('card.ew'), arch.ew.needsDeploy ? `${text} ${t('card.needsSetUp')}` : text));
     }
     // Economy: what it costs and takes, what it yields or produces.
     if (RULESET.economy) {
-      if (arch.buildTurns > 0) abilities.append(statRow(t('card.cost'), t('card.supply', { n: arch.cost }), null, 'rc-card-cost'), statRow(t('card.buildTime'), t('card.turns', { n: arch.buildTurns }), null));
-      if (arch.income > 0) abilities.append(statRow(t('card.income'), t('card.incomeValue', { n: arch.income }), null, 'rc-card-income'));
-      if (arch.production) abilities.append(statRow(t('card.produces'), arch.production.map((k) => t(`unit.${k}`)).join(', '), null));
+      if (arch.buildTurns > 0) facts.append(...fact(t('card.cost'), t('card.supply', { n: arch.cost }), 'rc-card-cost'), ...fact(t('card.buildTime'), t('card.turns', { n: arch.buildTurns })));
+      if (arch.income > 0) facts.append(...fact(t('card.income'), t('card.incomeValue', { n: arch.income }), 'rc-card-income'));
+      if (arch.production) facts.append(...fact(t('card.produces'), arch.production.map((k) => t(`unit.${k}`)).join(', ')));
       const repairers = Object.values(RULESET.archetypes).filter((a) => a.production?.includes(arch.id)).map((a) => t(`unit.${a.id}`));
-      if (arch.speed > 0 && repairers.length > 0) abilities.append(statRow(t('card.repair'), t('card.repairAt', { yards: repairers.join(', ') }), null, 'rc-card-repair'));
-      if (unit.side === me() && arch.speed === 0 && arch.comms?.role !== 'source' && arch.buildTurns > 0) abilities.append(statRow(t('card.sell'), t('card.sellValue', { n: plannedSaleRefund(state, unit.id) }), null, 'rc-card-sell'));
+      if (arch.speed > 0 && repairers.length > 0) facts.append(...fact(t('card.repair'), t('card.repairAt', { yards: repairers.join(', ') }), 'rc-card-repair'));
+      if (unit.side === me() && arch.speed === 0 && arch.comms?.role !== 'source' && arch.buildTurns > 0) facts.append(...fact(t('card.sell'), t('card.sellValue', { n: plannedSaleRefund(state, unit.id) }), 'rc-card-sell'));
     }
-    cardEl.append(stats);
-    if (abilities.childElementCount > 1) cardEl.append(abilities);
+    more.append(facts);
+    // The full effect table: one column per armour class, the exact % below.
+    if (w) {
+      more.append(
+        h(
+          'table',
+          { class: 'rc-vs-table', 'data-testid': 'rc-card-vs' },
+          h('caption', {}, t('card.vs')),
+          h('tr', {}, ...ARMOR_CLASSES.map((cls) => h('th', { scope: 'col' }, unitIcon(ARMOR_ICON[cls], false, me() === 0 ? 1 : 0), h('span', {}, t(`armor.${cls}`))))),
+          h('tr', {}, ...ARMOR_CLASSES.map((cls) => h('td', {}, `${w.vs[cls]} %`)))
+        )
+      );
+    }
+    cardEl.append(more);
   }
 
   /** Swatch canvas painted by `paint`; the legend pairs each with its text. */

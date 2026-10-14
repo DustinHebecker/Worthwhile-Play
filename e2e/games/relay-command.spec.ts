@@ -494,3 +494,27 @@ test('relay-command: in Arabic on a 360 px phone the doctrine choices of a selec
   const widths = await page.evaluate(() => ({ page: document.documentElement.scrollWidth, viewport: document.documentElement.clientWidth }));
   expect(widths.page).toBeLessThanOrEqual(widths.viewport);
 });
+
+test('relay-command: the unit card (meter list) fits a 360 px phone, left to right and right to left, with "More" open', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  for (const lang of ['en', 'ar'] as const) {
+    if (lang === 'ar') {
+      await page.goto('/settings');
+      await page.getByTestId('ui-language').selectOption('ar');
+      await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+      await page.goto('/games/relay-command');
+      await page.getByTestId('continue').click();
+    } else await start(page);
+    await page.locator('[data-testid^="rc-unit-"]').nth(2).click();
+    await expect(page.getByTestId('rc-card-meters')).toBeVisible();
+    await page.getByTestId('rc-card-more').locator('summary').click();
+    await expect(page.getByTestId('rc-card-vs')).toBeVisible();
+    const widths = await page.evaluate(() => ({ page: document.documentElement.scrollWidth, viewport: document.documentElement.clientWidth }));
+    expect(widths.page, lang).toBeLessThanOrEqual(widths.viewport);
+    for (const id of ['rc-card-meters', 'rc-card-matchup', 'rc-card-vs']) {
+      const box = (await page.getByTestId(id).boundingBox())!;
+      expect(box.x, `${lang} ${id}`).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width, `${lang} ${id}`).toBeLessThanOrEqual(360);
+    }
+  }
+});
