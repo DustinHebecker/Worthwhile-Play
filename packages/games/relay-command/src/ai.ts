@@ -748,7 +748,7 @@ function economyOrders(obs: Observation, ruleset: Ruleset, own: readonly Entity[
   // 1. Extractors on free deposits inside coverage (nearest to the post first).
   if (source) {
     const free = (world.map.deposits ?? [])
-      .filter((d) => (d.left > 0 || d.left === UNKNOWN_LEFT) && !world.entities.some((e) => e.x === d.x && e.y === d.y))
+      .filter((d) => (d.left > 0 || d.left === UNKNOWN_LEFT || d.endless) && !world.entities.some((e) => e.x === d.x && e.y === d.y))
       .sort((a, b) => dist2(a.x, a.y, source.x, source.y) - dist2(b.x, b.y, source.x, source.y) || sideFrame(obs, cellOf(world.map, a.x, a.y)) - sideFrame(obs, cellOf(world.map, b.x, b.y)));
     for (const d of free) {
       if (supply < costOf('extractor')) break;
@@ -779,7 +779,7 @@ function economyOrders(obs: Observation, ruleset: Ruleset, own: readonly Entity[
   const template = ARMY_TEMPLATE[difficulty];
   const wanted = template.filter((kind) => (counts.get(kind) ?? 0) < template.filter((k) => k === kind).length + (difficulty === 'hard' ? 1 : 0));
   // Keep a cushion for the next Extractor while a free deposit out of enemy reach remains.
-  const reserve = (world.map.deposits ?? []).some((d) => (d.left > 0 || d.left === UNKNOWN_LEFT) && !world.entities.some((e) => e.x === d.x && e.y === d.y) && dangerAt(obs, ruleset, d.x, d.y) === 0) ? costOf('extractor') : 0;
+  const reserve = (world.map.deposits ?? []).some((d) => (d.left > 0 || d.left === UNKNOWN_LEFT || d.endless) && !world.entities.some((e) => e.x === d.x && e.y === d.y) && dangerAt(obs, ruleset, d.x, d.y) === 0) ? costOf('extractor') : 0;
   const income = incomeOfSide(world, ruleset, side, network);
   const fighters = ownAll.filter((e) => arch(e)?.weapon && (arch(e)?.speed ?? 0) > 0).length;
   // Queue lengths including what this plan already put in (a yard never gets more than it holds).

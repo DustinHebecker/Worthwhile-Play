@@ -41,6 +41,23 @@ describe('observe (AI input, § 11)', () => {
     expect([...o.network.coverage]).toEqual([...computeNetwork(w, rs, 0).coverage]);
   });
 
+  it('a stale report shows the unit where and as it was last seen, not where and as it is now (review of PR #36)', () => {
+    // Side 1's squad was seen at x=6 with full health; it has since moved out of sight and been hit.
+    const w = worldOf(open(20, 1), [
+      { side: 0, kind: 'command-post', x: 0, y: 0 },
+      { side: 0, kind: 'rifles', x: 1, y: 0 },
+      { side: 1, kind: 'rifles', x: 14, y: 0 },
+      { side: 1, kind: 'command-post', x: 19, y: 0 }
+    ]);
+    const squad = w.entities.find((e) => e.id === 3)!;
+    squad.hp = 17;
+    w.intel![0] = [...w.intel![0]!.filter((r) => r.id !== 3), { id: 3, side: 1, kind: 'rifles', x: 6, y: 0, hp: 40, tick: 0, live: false }].sort((a, b) => a.id - b.id);
+    const o = observe(w, rs, 0);
+    expect(o.ghosts.get(3)).toBe(0);
+    expect(o.world.entities.find((e) => e.id === 3)).toMatchObject({ x: 6, y: 0, hp: 40 });
+    expect(JSON.stringify(o.world.entities)).not.toContain('"x":14');
+  });
+
   it('without fog knows every enemy, still without orders', () => {
     const w = createWorld({ map: open(10, 1), sides: 2, seed: 1, entities: [
       { side: 0, kind: 'rifles', x: 0, y: 0 },

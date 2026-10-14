@@ -558,3 +558,40 @@ test('relay-command: the unit card (meter list) fits a 360 px phone in en, de, r
     expect(new Set(bars).size, `${lang} bar widths ${bars.join(',')}`).toBe(1);
   }
 });
+
+test('relay-command: map editor tools on a 360 px phone in en, de, ru and ar: no label breaks inside a word, the page never widens (review of PR #36)', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  for (const lang of ['en', 'de', 'ru', 'ar'] as const) {
+    if (lang !== 'en') {
+      await page.goto('/settings');
+      await page.getByTestId('ui-language').selectOption(lang);
+      await expect(page.locator('html')).toHaveAttribute('lang', lang);
+      await page.goto('/games/relay-command');
+      await page.getByTestId('continue').click();
+    } else await start(page);
+    if (!(await page.getByTestId('rc-editor').isVisible())) await page.getByTestId('rc-editor-open').click();
+    await expect(page.getByTestId('ed-tool-deposit-endless')).toBeVisible();
+    const widths = await page.evaluate(() => ({ page: document.documentElement.scrollWidth, viewport: document.documentElement.clientWidth }));
+    expect(widths.page, lang).toBeLessThanOrEqual(widths.viewport);
+    // Every word of every tool label lies on one line (a word split across lines has two rects);
+    // a compound may break at its own hyphen.
+    const split = await page.locator('.rc-ed-tool span').evaluateAll((spans) =>
+      spans.flatMap((span) => {
+        const text = span.firstChild;
+        if (!text || text.nodeType !== Node.TEXT_NODE) return [];
+        const out: string[] = [];
+        const value = text.textContent ?? '';
+        const re = /[^\s\-‐]+/g;
+        for (let m = re.exec(value); m; m = re.exec(value)) {
+          const range = document.createRange();
+          range.setStart(text, m.index);
+          range.setEnd(text, m.index + m[0].length);
+          const tops = new Set([...range.getClientRects()].map((r) => Math.round(r.top)));
+          if (tops.size > 1) out.push(m[0]);
+        }
+        return out;
+      })
+    );
+    expect(split, lang).toEqual([]);
+  }
+});

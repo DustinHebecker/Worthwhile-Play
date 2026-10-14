@@ -789,9 +789,11 @@ describe('review of PR #8', () => {
     });
 
   it('the opponent plan does not change when player units it does not see move or get other orders (mid-game)', () => {
-    // A fixed pool of mid-games (each costs up to five resolved turns) probed 120 times: the
-    // same number of checks as one game per run, at a quarter of the cost (timing review, 2026-10-14).
-    const games = fc.sample(arbMidGame, { numRuns: 30, seed: 791 });
+    // A pool of mid-games (each costs up to five resolved turns), drawn afresh on every run like
+    // the rest of the property, probed 120 times: the same number of checks as one game per run at
+    // about half the cost (timing review, 2026-10-14). Stale reports are pinned down by a fixed
+    // engine test as well (observe.test.ts, review of PR #36).
+    const games = fc.sample(arbMidGame, 30);
     let checked = 0;
     fc.assert(
       fc.property(fc.nat(games.length - 1), fc.nat(1000), fc.nat(143), fc.constantFrom('hold', 'regroup', 'move'), (g, pick, cell, kind) => {
@@ -1649,6 +1651,14 @@ describe('deposits that never run dry (owner decision 2026-10-14, state v11)', (
       plain = lockTurn(plain);
     }
     expect(deposits(plain).some((d) => d.left < 300)).toBe(true);
+  });
+
+  it('the opponent builds on an endless deposit whatever its amount reads (review of PR #36)', () => {
+    const s = newGame(5, FIELD_EXERCISE, 'normal', 12, false, null, 1, [], true);
+    const drained = { ...s.world, map: { ...s.world.map, deposits: deposits(s).map((d) => ({ ...d, left: 0 })) } };
+    const builds = (w: World) => planAi(observe(w, rulesOf(s), OPPONENT), rulesOf(s), 'normal').filter((c) => c.order.type === 'build' && c.order.kind === 'extractor');
+    expect(builds(s.world).length).toBeGreaterThan(0);
+    expect(builds(drained)).toEqual(builds(s.world));
   });
 
   it('a save must agree with its option: the flag, every deposit and its amount; v10 saves migrate with the option off', () => {
