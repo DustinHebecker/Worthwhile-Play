@@ -91,7 +91,7 @@ Catalogue order (done): the large games first (Relay Command; then strategy/towe
 | Laser Paths | far too easy even on hard: more optical elements, many more pieces to place | ✅ one-way gates and portal pairs; 4 new hard levels (5–6 pieces) and an Expert set (8 levels, 7×9, 7–8 pieces), each unique by an exact solver |
 | Review / AI basics | prompts appear in the learning language; they should be in the main (UI) language | ✅ Flags, Capitals and AI basics always in the UI language (Review, Memory, deck pages); only First words uses the learning language |
 | Four in a Row | far too hard even on easy | ✅ easy overlooks some threats and plays casual moves; each level beats the one below by a measured margin |
-| Orbit Links | already good, but frequent stalemates | 🚧 |
+| Orbit Links | already good, but frequent stalemates | ✅ AI concentrates on one target after a quiet spell; platforms fire every 9 ticks (was 6); calm standoff note. Stalls vs AI 18% → 2% (human-like script). Open: map 4 (all single lanes) can still stall in AI-vs-AI |
 | Visual search | too easy | ✅ Expert level: T among rotated L shapes (spatial-configuration search, 12/30 items, half without target); further option: mirrored L's |
 | Circuit | **backlog:** a variant with electronic components (capacitors, inductors, …) where e.g. oscillators with the right frequency and other circuits must be built | ⏳ |
 | Four in a Row | **backlog:** variants that make it more interesting (3D / 4×4×4, five in a row, …) | ⏳ |
