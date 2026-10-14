@@ -12,6 +12,7 @@
  * All transitions are immutable and return the very same object when nothing changed.
  */
 import { createRng, createRngFromState, isArrayOf, isInt, isOneOf, isRecord, isUint32, normalizeSeed, type Rng } from '@wp/game-core';
+import { MAX_FORMULA_LENGTH, evaluateFormula, parseFormula, type Dialect, type Expr, type FormulaError } from './formula';
 
 export const DIFFICULTIES = ['easy', 'medium', 'hard'] as const;
 export type Difficulty = (typeof DIFFICULTIES)[number];
@@ -507,6 +508,18 @@ export interface Attempt {
   predictions: Prediction[];
 }
 
+/** How the player proves a hypothesis on the test step. */
+export const PROOF_MODES = ['predict', 'formula'] as const;
+export type ProofMode = (typeof PROOF_MODES)[number];
+
+/** The most recent formula check (shown until the next test starts). */
+export interface FormulaResult {
+  text: string;
+  correct: boolean;
+  /** A counterexample input (now in the log) for a wrong formula; `null` when correct. */
+  input: number[] | null;
+}
+
 export interface BlackBoxState {
   seed: number;
   difficulty: Difficulty;
@@ -524,6 +537,14 @@ export interface BlackBoxState {
   attempts: number;
   hintUsed: boolean;
   solved: boolean;
+  /**
+   * The following fields were added with formula proofs; saves from before lack them and
+   * mean `'predict'`, `''` and `null`. A formula check counts as a hypothesis test (`attempts`).
+   */
+  proofMode?: ProofMode;
+  /** The formula text typed on the test step (kept between tests). */
+  formula?: string;
+  lastFormula?: FormulaResult | null;
 }
 
 export type Phase = 'experimenting' | 'testing' | 'solved';
@@ -571,7 +592,10 @@ export function createInitialState(seed: number, difficulty: Difficulty = DEFAUL
     lastAttempt: null,
     attempts: 0,
     hintUsed: false,
-    solved: false
+    solved: false,
+    proofMode: 'predict',
+    formula: '',
+    lastFormula: null
   };
 }
 
@@ -598,7 +622,7 @@ export function startTest(state: BlackBoxState): BlackBoxState {
   if (phaseOf(state) !== 'experimenting') return state;
   const rng = createRngFromState(state.rng);
   const inputs = buildChallenge(ruleOf(state), state.log.map((entry) => entry.input), rng);
-  return { ...state, rng: rng.state(), challenge: { inputs, predictions: inputs.map(() => null) }, lastAttempt: null };
+  return { ...state, rng: rng.state(), challenge: { inputs, predictions: inputs.map(() => null) }, lastAttempt: null, lastFormula: null };
 }
 
 /** Closes the open test without counting it. */
@@ -639,12 +663,132 @@ export function submitTest(state: BlackBoxState): BlackBoxState {
       if (!log.some((entry) => sameNumbers(entry.input, input))) log.push({ input: [...input], source: 'test' });
     }
   }
-  return { ...state, log, challenge: null, lastAttempt: attempt, attempts: state.attempts + 1, solved };
+  return { ...state, log, challenge: null, lastAttempt: attempt, lastFormula: null, attempts: state.attempts + 1, solved };
+}
+
+// --- Formula proofs --------------------------------------------------------------------------
+
+/** The formula dialect of an input domain; `null` for list rules (predictions only). */
+export function formulaDialect(spec: InputSpec): Dialect | null {
+  switch (spec.kind) {
+    case 'int':
+      return { logic: false, vars: ['x'] };
+    case 'pair':
+      return { logic: false, vars: ['x', 'y'] };
+    case 'bits':
+      return { logic: true, vars: Array.from({ length: spec.count }, (_, i) => `b${i + 1}`) };
+    case 'list':
+      return null;
+  }
+}
+
+export type FormulaCheck =
+  | { readonly kind: 'error'; readonly error: FormulaError }
+  | { readonly kind: 'unsupported' }
+  | { readonly kind: 'correct' }
+  /** `got` is the formula's value at `input` (`null` = undefined there). */
+  | { readonly kind: 'wrong'; readonly input: number[]; readonly got: number | null };
+
+/** Value of a parsed formula at an input, or `null` where it is undefined. */
+export const formulaValue = (expr: Expr, input: Input): number | null => evaluateFormula(expr, input);
+
+/**
+ * Checks a formula against the hidden rule on EVERY input of the (small, finite) domain, so
+ * any equivalent formula is accepted. A wrong formula yields one counterexample: the first
+ * in domain order that is not in `logged`, or the first overall if all are logged.
+ */
+export function checkFormula(rule: Rule, text: string, logged: readonly Input[] = []): FormulaCheck {
+  const spec = FAMILIES[rule.family].input;
+  const dialect = formulaDialect(spec);
+  if (!dialect) return { kind: 'unsupported' };
+  const parsed = parseFormula(text, dialect);
+  if (!parsed.ok) return { kind: 'error', error: parsed.error };
+  const known = new Set(logged.map(inputKey));
+  let first: { input: number[]; got: number | null } | null = null;
+  for (const input of enumerateDomain(spec)) {
+    const got = formulaValue(parsed.expr, input);
+    if (got === evaluate(rule, input)) continue;
+    if (!known.has(inputKey(input))) return { kind: 'wrong', input, got };
+    first ??= { input, got };
+  }
+  return first ? { kind: 'wrong', ...first } : { kind: 'correct' };
+}
+
+export function isProofMode(value: unknown): value is ProofMode {
+  return isOneOf(value, PROOF_MODES);
+}
+
+/** Whether the hidden rule can be proven with a formula (all but list rules). */
+export const formulaSupported = (state: Pick<BlackBoxState, 'family'>): boolean => formulaDialect(familyOf(state).input) !== null;
+
+/** The effective proof mode (old saves and list rules: predictions). */
+export function proofModeOf(state: BlackBoxState): ProofMode {
+  return state.proofMode === 'formula' && formulaSupported(state) ? 'formula' : 'predict';
+}
+
+export const formulaOf = (state: BlackBoxState): string => state.formula ?? '';
+export const lastFormulaOf = (state: BlackBoxState): FormulaResult | null => state.lastFormula ?? null;
+
+/** Chooses how to prove the hypothesis on the open test step. */
+export function setProofMode(state: BlackBoxState, mode: ProofMode): BlackBoxState {
+  if (phaseOf(state) !== 'testing' || !isProofMode(mode) || proofModeOf(state) === mode) return state;
+  if (mode === 'formula' && !formulaSupported(state)) return state;
+  return { ...state, proofMode: mode };
+}
+
+/** Stores the typed formula text (bounded length). */
+export function setFormula(state: BlackBoxState, text: string): BlackBoxState {
+  if (state.solved || typeof text !== 'string' || text.length > MAX_FORMULA_LENGTH || formulaOf(state) === text) return state;
+  return { ...state, formula: text };
+}
+
+/**
+ * Checks the typed formula (test step, formula mode). A parse error changes nothing and is not
+ * counted. Otherwise the check counts as a hypothesis test: a correct formula solves the
+ * game; a wrong one reveals one counterexample, which is added to the log like a revealed test
+ * input, and the test step stays open so the formula can be corrected. If the counterexample
+ * was one of the open challenge inputs, the challenge is rebuilt. Re-checking the formula that
+ * was just found wrong is ignored (not counted twice).
+ */
+export function submitFormula(state: BlackBoxState): BlackBoxState {
+  if (phaseOf(state) !== 'testing' || proofModeOf(state) !== 'formula') return state;
+  const text = formulaOf(state);
+  const last = lastFormulaOf(state);
+  if (last && !last.correct && last.text === text) return state;
+  const check = checkFormula(ruleOf(state), text, state.log.map((entry) => entry.input));
+  if (check.kind === 'error' || check.kind === 'unsupported') return state;
+  const attempts = state.attempts + 1;
+  if (check.kind === 'correct') {
+    return { ...state, challenge: null, lastAttempt: null, lastFormula: { text, correct: true, input: null }, attempts, solved: true };
+  }
+  const input = [...check.input];
+  const log = findLogIndex(state, input) >= 0 ? state.log : [...state.log, { input: [...input], source: 'test' as const }];
+  let next: BlackBoxState = { ...state, log, lastFormula: { text, correct: false, input }, attempts };
+  const challenge = state.challenge;
+  if (challenge && challenge.inputs.some((i) => sameNumbers(i, input))) {
+    const rng = createRngFromState(state.rng);
+    const inputs = buildChallenge(ruleOf(next), log.map((entry) => entry.input), rng);
+    next = { ...next, rng: rng.state(), challenge: { inputs, predictions: inputs.map(() => null) } };
+  }
+  return next;
 }
 
 // --- Validation ----------------------------------------------------------------------------
 
 const STATE_KEYS = ['seed', 'difficulty', 'family', 'params', 'rng', 'log', 'draft', 'challenge', 'lastAttempt', 'attempts', 'hintUsed', 'solved'];
+
+/** A stored formula result must be reproducible: same verdict, and a real, logged counterexample. */
+function isFormulaResult(value: unknown, rule: Rule, log: readonly LogEntry[]): value is FormulaResult {
+  if (!isRecord(value) || typeof value.text !== 'string' || value.text.length > MAX_FORMULA_LENGTH || typeof value.correct !== 'boolean') return false;
+  const dialect = formulaDialect(FAMILIES[rule.family].input);
+  if (!dialect) return false;
+  const parsed = parseFormula(value.text, dialect);
+  if (!parsed.ok) return false;
+  if (value.correct) return value.input === null && checkFormula(rule, value.text).kind === 'correct';
+  const input = value.input;
+  if (!isValidInput(FAMILIES[rule.family].input, input)) return false;
+  return formulaValue(parsed.expr, input) !== evaluate(rule, input) && log.some((entry) => sameNumbers(entry.input, input));
+}
 
 function distinctInputs(inputs: readonly Input[]): boolean {
   return new Set(inputs.map(inputKey)).size === inputs.length;
@@ -683,6 +827,16 @@ function checkState(value: unknown): boolean {
     const c = v.challenge;
     if (v.solved || !isRecord(c) || !inputsOk(c.inputs) || !Array.isArray(c.predictions) || c.predictions.length !== c.inputs.length) return false;
     if (!c.predictions.every((p) => p === null || isValidPrediction(family, p))) return false;
+  }
+
+  // Fields added with formula proofs are optional (older saves lack them).
+  if ('proofMode' in v && !isProofMode(v.proofMode)) return false;
+  if ('formula' in v && (typeof v.formula !== 'string' || v.formula.length > MAX_FORMULA_LENGTH)) return false;
+  const lastFormula = 'lastFormula' in v ? v.lastFormula : null;
+  if (lastFormula !== null) {
+    if (v.lastAttempt !== null || !isFormulaResult(lastFormula, ruleOf({ family, params: v.params as number[] }), log)) return false;
+    if (!isInt(v.attempts, 1, 1_000_000)) return false;
+    return lastFormula.correct === v.solved && (!v.solved || v.challenge === null);
   }
 
   if (v.lastAttempt === null) return !v.solved;
