@@ -88,7 +88,8 @@ export function planAi(obs: Observation, ruleset: Ruleset, difficulty: Difficult
 
   // Fighters cut off from the net away from the current objective (left behind when a target
   // fell or the objective changed): the relay truck moves to bring them back into contact.
-  const cutOff = strandedFighters(obs, ruleset);
+  // Capture rules only: two-side games keep their measured behaviour (PR #24 review).
+  const cutOff = ruleset.capture ? strandedFighters(obs, ruleset) : [];
   for (const truck of own) {
     if (!archetypeOf(ruleset, truck.kind)?.comms?.needsDeploy) continue;
     const reconnect = cutOff.length >= STRANDED_MIN ? relaySpot(obs, ruleset, truck, cutOff) : undefined;
@@ -339,8 +340,11 @@ export function objectiveOf(obs: Observation, ruleset: Ruleset): Entity | undefi
   const army = world.entities.filter((e) => e.side === side && mobile(e));
   const ours = Math.max(1, army.reduce((sum, e) => sum + value(e), 0));
   const armed = enemiesOf(obs).filter((e) => archetypeOf(ruleset, e.kind)?.weapon);
+  // A neutral post is taken over by infantry: without any, or a yard to train some, it is no target.
+  const infantry = world.entities.some((e) => e.side === side && (isInfantry(ruleset, e) || (archetypeOf(ruleset, e.kind)?.production ?? []).some((k) => isInfantry(ruleset, { ...e, kind: k }))));
   let best: { post: Entity; cost: number; f: number } | undefined;
   for (const post of targetPosts(obs)) {
+    if (post.side === NEUTRAL && !infantry) continue;
     const defence = armed.filter((e) => dist2(e.x, e.y, post.x, post.y) <= DEFENCE_RADIUS * DEFENCE_RADIUS).reduce((sum, e) => sum + value(e), 0);
     const health = post.hp / (archetypeOf(ruleset, post.kind)?.hp || 1);
     const engaged =

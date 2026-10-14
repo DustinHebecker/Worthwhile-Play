@@ -49,6 +49,8 @@ import {
 import { FIELD_EXERCISE, opponentCounts, RIDGE_VALLEY, type ScenarioSpec, SCENARIOS } from '../src/scenarios';
 
 /** A side's plan from its own observation (default: the game's default level). */
+/** Fingerprint of AI-vs-AI plans on the two-side maps before increment 4 (see the test). */
+const TWO_SIDE_AI_FINGERPRINT = '965772b3';
 const ai = (world: World, side: number, difficulty: Difficulty = 'normal') => planAi(observe(world, RULESET, side), RULESET, difficulty);
 const own = (s: RcState) => s.world.entities.filter((e) => e.side === PLAYER);
 const enemy = (s: RcState) => s.world.entities.filter((e) => e.side === OPPONENT);
@@ -1268,6 +1270,13 @@ describe('several sides (docs/design/strategy.md § 9.4)', () => {
     const neutral = s.world.entities.find((e) => e.side === NEUTRAL)!;
     // Seat 2 (top right) is as far from seat 1 as from the empty seat below it, which nobody defends.
     expect(objectiveOf(observe(s.world, SIDES_RULESET, 2), SIDES_RULESET)?.id).toBe(neutral.id);
+    // Without infantry, or a yard to train some, a neutral post is no target (nobody could take it).
+    const bare = observe(s.world, SIDES_RULESET, 2);
+    bare.world.entities = bare.world.entities.filter((e) => e.side !== 2 || !['rifles', 'lancer', 'muster'].includes(e.kind));
+    expect(objectiveOf(bare, SIDES_RULESET)?.side).toBe(1);
+    const yard = observe(s.world, SIDES_RULESET, 2);
+    yard.world.entities = yard.world.entities.filter((e) => e.side !== 2 || !['rifles', 'lancer'].includes(e.kind));
+    expect(objectiveOf(yard, SIDES_RULESET)?.id).toBe(neutral.id);
     for (let i = 0; i < 10 && s.phase === 'plan'; i++) s = lockTurn(s);
     const taken = s.world.entities.find((e) => e.id === neutral.id);
     expect(taken?.side, 'taken over, not destroyed').toBeGreaterThan(PLAYER);
@@ -1322,6 +1331,26 @@ describe('several sides (docs/design/strategy.md § 9.4)', () => {
     w.intel = initialIntel(w, SIDES_RULESET);
     expect(truckOrders().map((c) => c.order.type)).toEqual(['move']);
   });
+
+  it('two-side maps keep their measured AI exactly: plans of AI-vs-AI games match the fingerprint from before increment 4 (PR #24 review)', () => {
+    // Produced by the AI of main at 080fab6 (before increment 4): every change for several sides
+    // must leave the one-opponent games on the two-side maps byte-identical.
+    let h = 0x811c9dc5;
+    const feed = (text: string) => {
+      for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193) >>> 0;
+    };
+    for (const spec of SCENARIOS.filter((x) => !x.seats)) {
+      for (const [mine, theirs] of [['hard', 'normal'], ['normal', 'hard']] as const) {
+        let s = newGame(3, spec, theirs, 24);
+        while (s.phase === 'plan') {
+          for (const c of ai(s.world, PLAYER, mine)) s = planOrder(s, c.unit, c.order, c.doctrine) ?? s;
+          s = lockTurn(s);
+        }
+        feed(canonicalJson(s.log));
+      }
+    }
+    expect(h.toString(16)).toBe(TWO_SIDE_AI_FINGERPRINT);
+  }, 300_000);
 
   it('saves: v8 migrates to v9 with one opponent; a v9 save must match its map, count, rules and frames', () => {
     const v8 = JSON.parse(JSON.stringify({ ...newGame(4), v: 8 })) as Record<string, unknown>;
