@@ -3,6 +3,7 @@ import fc from 'fast-check';
 import { createRngFromState, type Rng } from '@wp/game-core';
 import {
   CENTRE_WEIGHT,
+  LEVEL_POLICY,
   MOVE_ORDER,
   SEARCH_DEPTH,
   THREE_WEIGHT,
@@ -14,6 +15,7 @@ import {
   computerReply,
   evaluate,
   playTurn,
+  safeMoves,
   startRound
 } from '../src/ai';
 import {
@@ -115,6 +117,14 @@ describe('configuration', () => {
     expect(MOVE_ORDER).toEqual([3, 2, 4, 1, 5, 0, 6]);
     expect(WIN_SCORE).toBe(1_000_000);
     expect([THREE_WEIGHT, TWO_WEIGHT, CENTRE_WEIGHT]).toEqual([50, 5, 3]);
+  });
+
+  it('grades the levels: easy errs often, medium a little, hard never', () => {
+    expect(LEVEL_POLICY).toEqual({
+      easy: { depth: 2, missBlock: 0.4, loose: 0.5 },
+      medium: { depth: 5, missBlock: 0, loose: 0.15 },
+      hard: { depth: 8, missBlock: 0, loose: 0 }
+    });
   });
 });
 
@@ -271,7 +281,7 @@ describe('chooseMove', () => {
     }
   }, 30_000);
 
-  it('property: takes an immediate win, otherwise blocks a single immediate threat (every level)', () => {
+  it('property: every level takes an immediate win; medium and hard always block a single threat', () => {
     let wins = 0;
     let blocks = 0;
     fc.assert(
@@ -279,7 +289,7 @@ describe('chooseMove', () => {
         const me = toMove(board);
         const mine = winningColumns(board, me);
         const theirs = winningColumns(board, other(me));
-        fc.pre(mine.length > 0 || theirs.length === 1);
+        fc.pre(mine.length > 0 || (theirs.length === 1 && difficulty !== 'easy'));
         const move = chooseMove(board, difficulty, createRngFromState(seed));
         if (mine.length > 0) {
           wins++;
@@ -294,6 +304,52 @@ describe('chooseMove', () => {
     expect(wins).toBeGreaterThan(0);
     expect(blocks).toBeGreaterThan(0);
   }, 30_000);
+
+  it('easy sometimes overlooks a single threat, depending on the PRNG', () => {
+    // Player 2 threatens column 3 (see "blocks a single threat" above).
+    const threat = B('....... ....... ....... ....... 1.1.... 222.1..');
+    expect(chooseMove(threat, 'easy', stubRng(0.99))).toBe(3);
+    expect(chooseMove(threat, 'easy', stubRng(0.39))).not.toBe(3);
+    expect(chooseMove(threat, 'medium', stubRng(0))).toBe(3);
+    expect(chooseMove(threat, 'hard', stubRng(0))).toBe(3);
+    // Over many seeds easy blocks most of the time, but not always.
+    let blocked = 0;
+    for (let seed = 0; seed < 200; seed++) if (chooseMove(threat, 'easy', createRngFromState(seed)) === 3) blocked++;
+    expect(blocked).toBeGreaterThan(90);
+    expect(blocked).toBeLessThan(160);
+  });
+
+  it('a casual move is any column that does not hand over an immediate win', () => {
+    expect(safeMoves(emptyBoard())).toEqual([0, 1, 2, 3, 4, 5, 6]);
+    // Player 2 waits on row 5, column 3: player 1 dropping into the empty column 3 would be a gift.
+    const board = B('....... ....... ....... ....... 222.... 121..11');
+    expect(toMove(board)).toBe(1);
+    expect(winningColumns(board, 1)).toEqual([]);
+    expect(winningColumns(board, 2)).toEqual([]);
+    expect(safeMoves(board)).toEqual([0, 1, 2, 4, 5, 6]);
+    // With a low PRNG value easy plays a casual move (the first safe column) ...
+    const rng = stubRng(0);
+    expect(chooseMove(board, 'easy', rng)).toBe(0);
+    expect(rng.offered).toEqual([[0, 1, 2, 4, 5, 6]]);
+    // ... and with a high one the searched move; hard never plays casually.
+    expect(chooseMove(board, 'easy', stubRng(0.99))).toBe(bestMoves(board, 'easy').at(-1));
+    expect(chooseMove(board, 'hard', stubRng(0))).toBe(bestMoves(board, 'hard')[0]);
+    expect(chooseMove(board, 'medium', stubRng(0.14))).toBe(0);
+    expect(chooseMove(board, 'medium', stubRng(0.15))).toBe(bestMoves(board, 'medium')[0]);
+  });
+
+  it('property: no level ever hands over an immediate win when it can avoid it', () => {
+    fc.assert(
+      fc.property(arbPosition(36), fc.constantFrom<Difficulty>('easy', 'medium'), fc.nat(), (board, difficulty, seed) => {
+        const me = toMove(board);
+        fc.pre(winningColumns(board, me).length === 0 && winningColumns(board, other(me)).length === 0);
+        const safe = safeMoves(board);
+        fc.pre(safe.length > 0);
+        expect(safe).toContain(chooseMove(board, difficulty, createRngFromState(seed)));
+      }),
+      { numRuns: 80 }
+    );
+  }, 30_000);
 });
 
 describe('turns against the computer', () => {
@@ -302,7 +358,7 @@ describe('turns against the computer', () => {
   it('opens the game when the computer starts and advances the PRNG', () => {
     const opened = startRound({ ...options, starter: 'computer' });
     const rng = createRngFromState(5);
-    expect(opened.moves).toEqual([rng.pick(bestMoves(emptyBoard(), 'medium'))]);
+    expect(opened.moves).toEqual([chooseMove(emptyBoard(), 'medium', rng)]);
     expect(opened.rng).toBe(rng.state());
     expect(opened.rng).not.toBe(5);
     expect(isValidState(opened)).toBe(true);
