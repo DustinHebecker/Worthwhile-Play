@@ -68,7 +68,7 @@ import { drawIcon } from './icons';
 import { createEditor } from './editor';
 import { blankMap, hostMapLibrary, mapIssues, memoryStore, migratePreferenceMaps, preferenceMapLibrary, type EditMap, type MapLibrary, type MapStore } from './maps';
 import { CELL, drawDeposit, drawTerrainMark, TERRAIN_NAMES } from './draw';
-import { FIELD_EXERCISE, opponentCounts, SCENARIOS } from './scenarios';
+import { FIELD_EXERCISE, opponentCounts, SCENARIOS, scenarioFor } from './scenarios';
 import './styles.css';
 
 /** Letters of the sides (A = the player), shown on every unit and row when there are several sides. */
@@ -381,6 +381,9 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
 
   const ownList = h('ul', { class: 'rc-units', 'data-testid': 'rc-own' });
   const enemyList = h('ul', { class: 'rc-units', 'data-testid': 'rc-enemy' });
+  /** Maps with empty seats: the neutral posts in a list of their own (not among the enemies). */
+  const neutralList = h('ul', { class: 'rc-units', 'data-testid': 'rc-neutral' });
+  const neutralPanel = h('section', { class: 'rc-panel', 'data-testid': 'rc-neutral-panel', hidden: true }, h('h3', {}, t('list.neutral')), neutralList);
   const summaryList = h('ul', { class: 'rc-summary', 'data-testid': 'rc-summary' });
 
   const help = h(
@@ -450,6 +453,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       selectionPanel,
       h('section', { class: 'rc-panel' }, h('h3', {}, t('list.own')), ownList),
       h('section', { class: 'rc-panel' }, h('h3', {}, t('list.enemy')), enemyList),
+      neutralPanel,
       h('section', { class: 'rc-panel' }, h('h3', {}, t('summary.title')), summaryList)
     )
   );
@@ -1194,8 +1198,13 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   function renderLists(): void {
     clear(ownList);
     clear(enemyList);
+    clear(neutralList);
     const own = world().entities.filter((e) => e.side === me());
-    const enemies = world().entities.filter((e) => e.side !== me());
+    // The neutral list stands whenever the game has empty seats (a fixed property: whether a neutral
+    // post is still known or was taken must not show by a heading appearing or vanishing).
+    const neutralSeats = hasNeutralSeats();
+    neutralPanel.hidden = !neutralSeats;
+    const enemies = world().entities.filter((e) => e.side !== me() && !(neutralSeats && e.side === NEUTRAL));
     for (const e of own) {
       const btn = h(
         'button',
@@ -1216,6 +1225,23 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       enemyList.append(item);
     }
     if (enemies.length === 0) enemyList.append(h('li', {}, t('list.empty')));
+    if (!neutralSeats) return;
+    const neutral = world().entities.filter((e) => e.side === NEUTRAL);
+    for (const e of neutral) {
+      const item = h('li', { 'data-testid': `rc-neutral-${e.id}`, class: 'rc-enemy-row' }, ...unitRow(e, shortState(e)));
+      // A neutral post can be fired on like any post (it does not fire back), also from the list.
+      if (canAttack && !isGhost(e) && canHurt(attacker, e)) {
+        item.append(h('button', { type: 'button', 'data-testid': `rc-attack-${e.id}`, onclick: () => orderSelected({ type: 'attack', target: e.id }) }, t('action.attack', { name: unitName(e) })));
+      }
+      neutralList.append(item);
+    }
+    if (neutral.length === 0) neutralList.append(h('li', {}, t('list.empty')));
+  }
+
+  /** Whether the game's map leaves seats empty (their posts start neutral): from the setup, never from the board. */
+  function hasNeutralSeats(): boolean {
+    const spec = specOf(state);
+    return !!spec && (scenarioFor(spec, state.opponents)?.entities.some((e) => e.side === NEUTRAL) ?? false);
   }
 
   function renderSummary(): void {
