@@ -155,15 +155,17 @@ export function updateIntel(world: World, ruleset: Ruleset, gone: readonly Entit
     const mine = [...world.entities, ...gone].filter((e) => e.side === side);
     const mineIds = new Set(mine.map((e) => e.id));
     const mineAt = new Set(mine.map((e) => cellOf(world.map, e.x, e.y)));
-    // The side's own direct shots are its own business when the shooter reports (its sight is the
-    // side's, also when the target slipped out of sight this tick) or the side knows the target
-    // (reported before or now, also when the shooter died this tick). A unit out of contact that
-    // fires at an enemy the side never had reported is not told of: the shot's target id would
-    // tell of a unit the side does not know of. An own shell is told like the shell in `observe()`:
-    // only towards a cell the side observes or holds a unit in (a shot fired out of contact must
-    // not tell where an unreported enemy stood; PR #28 review).
+    // The side's own direct shots are its own business when the side knows the target: reported
+    // before this tick (also when the shooter died this tick or the target slipped out of sight),
+    // or seen now (`live`, below). A unit out of contact that fires at an enemy the side never had
+    // reported is not told of: the shot's target id would tell of a unit the side does not know of.
+    // A shooter that reports is always told of as a safeguard: its sight is the side's, and no
+    // weapon outranges its sight today (range plus hill bonus), so this adds nothing yet.
+    // An own shell is told like the shell in `observe()`: only towards a cell the side observes or
+    // holds a unit in (a shot fired out of contact must not tell where an unreported enemy stood;
+    // PR #28 review).
     const reporting = new Set(reportingUnits(world, ruleset, side, network).map((e) => e.id));
-    const knownIds = new Set([...previous, ...reports].map((r) => r.id));
+    const knownIds = new Set(previous.map((r) => r.id));
     const shotKnown = (ev: SimEvent): boolean =>
       (ev.t === 'fire' && mineIds.has(ev.id) && (reporting.has(ev.id) || knownIds.has(ev.target))) ||
       (ev.t === 'fire' ? live.has(ev.target) || mineIds.has(ev.target) : ev.t === 'launch' ? seen(ev.x, ev.y) || mineAt.has(cellOf(world.map, ev.x, ev.y)) : true);
