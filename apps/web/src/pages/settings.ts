@@ -62,9 +62,34 @@ export const renderSettings: Page = (main, app) => {
     app.announce(t('settings.saved'));
   });
 
+  // How much this app occupies on the device (StorageManager estimate: app files cached for offline use plus saved data).
+  const usageInfo = h('p', { 'data-testid': 'storage-usage' });
+  const usageDetail = h('p', { class: 'wp-muted', 'data-testid': 'storage-usage-detail', hidden: true });
+  let usageQueued = false;
+  function refreshUsage() {
+    if (usageQueued) return;
+    usageQueued = true;
+    // Several deletes may refresh at once; measure once after they have settled.
+    setTimeout(() => {
+      usageQueued = false;
+      void measureStorage().then((usage) => {
+        if (!usage) {
+          usageInfo.textContent = t('settings.usageUnavailable');
+          usageDetail.hidden = true;
+          return;
+        }
+        usageInfo.textContent = t('settings.usage', { used: formatBytes(usage.used, app.locale) });
+        usageDetail.hidden = usage.app === undefined || usage.data === undefined;
+        if (!usageDetail.hidden) usageDetail.textContent = t('settings.usageDetail', { app: formatBytes(usage.app ?? 0, app.locale), data: formatBytes(usage.data ?? 0, app.locale) });
+      });
+    }, 0);
+  }
+  refreshUsage();
+
   const savesInfo = h('p', { class: 'wp-muted' });
   const clearButton = h('button', { type: 'button', 'data-testid': 'clear-saves' }, t('settings.clearSaves'));
   const refreshSaves = async () => {
+    refreshUsage();
     const keys = await (await app.store).keys();
     savesInfo.textContent = t('settings.storage', { count: keys.length });
     clearButton.disabled = keys.length === 0;
@@ -83,6 +108,7 @@ export const renderSettings: Page = (main, app) => {
   const decksInfo = h('p', { class: 'wp-muted', 'data-testid': 'decks-info' });
   const clearDecksButton = h('button', { type: 'button', 'data-testid': 'clear-decks' }, t('settings.clearDecks'));
   const refreshDecks = async () => {
+    refreshUsage();
     const { loadUserDecks } = await import('../lib/decks');
     const count = (await loadUserDecks(app.decks)).length;
     decksInfo.textContent = t('settings.decks', { count });
@@ -105,6 +131,7 @@ export const renderSettings: Page = (main, app) => {
   const learningInfo = h('p', { class: 'wp-muted', 'data-testid': 'learning-info' });
   const clearLearningButton = h('button', { type: 'button', 'data-testid': 'clear-learning' }, t('settings.clearLearning'));
   async function refreshLearning() {
+    refreshUsage();
     const count = (await loadLearningRecords(app.learning)).length;
     learningInfo.textContent = t('settings.learning', { count });
     clearLearningButton.disabled = count === 0;
@@ -147,6 +174,7 @@ export const renderSettings: Page = (main, app) => {
     return button;
   };
   async function refreshLibrary() {
+    refreshUsage();
     const counts = await (await app.library).counts().catch(() => new Map<string, number>());
     let total = 0;
     for (const count of counts.values()) total += count;
@@ -225,6 +253,7 @@ export const renderSettings: Page = (main, app) => {
           contentSelect('translation-language', content.translation, (v) => storage && writeContentLanguages(storage, { translation: v })))
       ),
       h('div', { class: 'field checkbox' }, sessionToggle, h('label', { for: 'session-note' }, t('settings.sessionNote'))),
+      h('div', { class: 'field' }, usageInfo, usageDetail, h('p', { class: 'wp-muted' }, t('settings.usageHint'))),
       h('div', { class: 'field' }, savesInfo, clearButton),
       h('div', { class: 'field' }, decksInfo, clearDecksButton),
       h('div', { class: 'field' }, learningInfo, clearLearningButton),
@@ -241,3 +270,28 @@ export const renderSettings: Page = (main, app) => {
     )
   );
 };
+
+/** Bytes the app occupies on this device, if the browser reports it; `app`/`data` only where the browser splits it up. */
+export async function measureStorage(nav: Navigator | undefined = globalThis.navigator): Promise<{ used: number; app?: number; data?: number } | undefined> {
+  try {
+    const estimate = await nav?.storage?.estimate?.();
+    if (!estimate || typeof estimate.usage !== 'number' || !Number.isFinite(estimate.usage)) return undefined;
+    // Chromium reports a breakdown (non-standard): Cache Storage holds the app files, IndexedDB the player's data.
+    const details = (estimate as StorageEstimate & { usageDetails?: Record<string, number> }).usageDetails;
+    if (!details) return { used: estimate.usage };
+    const app = (details.caches ?? 0) + (details.serviceWorkerRegistrations ?? 0);
+    return { used: estimate.usage, app, data: Math.max(0, estimate.usage - app) };
+  } catch {
+    return undefined;
+  }
+}
+
+/** A byte count as "7.4 MB" / "830 kB" in the UI language (decimal units, like the browsers' own storage pages). */
+export function formatBytes(bytes: number, locale: string): string {
+  const [value, unit] = bytes >= 1e6 ? [bytes / 1e6, 'megabyte'] : [bytes / 1e3, 'kilobyte'];
+  try {
+    return new Intl.NumberFormat(locale, { style: 'unit', unit, maximumFractionDigits: 1 }).format(value);
+  } catch {
+    return `${value.toFixed(1)} ${unit === 'megabyte' ? 'MB' : 'kB'}`;
+  }
+}

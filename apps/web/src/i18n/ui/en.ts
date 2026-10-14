@@ -67,6 +67,10 @@ const en = {
   'settings.sessionNote': 'Show a short note after 20 minutes of continuous play',
   'settings.saved': 'Settings saved.',
   'settings.storage': 'Saved games on this device: {count}',
+  'settings.usage': 'Storage used by this app on this device: {used}',
+  'settings.usageDetail': 'App files for offline use: {app} · Your data: {data}',
+  'settings.usageHint': 'This includes the app itself (all games and languages, so everything works offline) and your saved games, decks, learning records and own content. Browsers count some extra overhead.',
+  'settings.usageUnavailable': 'Your browser does not report how much storage this app uses.',
   'settings.clearSaves': 'Delete all saved games',
   'settings.clearConfirm': 'Delete all saved games on this device? This cannot be undone.',
 

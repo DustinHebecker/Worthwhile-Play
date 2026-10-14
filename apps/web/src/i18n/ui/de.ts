@@ -68,6 +68,10 @@ const de: UiCatalogue = {
   'settings.sessionNote': 'Nach 20 Minuten ununterbrochenem Spielen einen kurzen Hinweis zeigen',
   'settings.saved': 'Einstellungen gespeichert.',
   'settings.storage': 'Gespeicherte Spiele auf diesem Gerät: {count}',
+  'settings.usage': 'Von dieser App auf diesem Gerät belegter Speicher: {used}',
+  'settings.usageDetail': 'App-Dateien für die Offline-Nutzung: {app} · Deine Daten: {data}',
+  'settings.usageHint': 'Darin enthalten sind die App selbst (alle Spiele und Sprachen, damit alles offline funktioniert) sowie deine Spielstände, Decks, Lernstände und eigenen Inhalte. Browser rechnen etwas Verwaltungsaufwand hinzu.',
+  'settings.usageUnavailable': 'Dein Browser gibt nicht an, wie viel Speicher diese App belegt.',
   'settings.clearSaves': 'Alle gespeicherten Spiele löschen',
   'settings.clearConfirm': 'Alle gespeicherten Spiele auf diesem Gerät löschen? Das kann nicht rückgängig gemacht werden.',
 

@@ -68,6 +68,10 @@ const ko: UiCatalogue = {
   'settings.sessionNote': '20분 동안 쉬지 않고 플레이하면 짧은 알림 표시',
   'settings.saved': '설정을 저장했어요.',
   'settings.storage': '이 기기에 저장된 게임: {count}개',
+  'settings.usage': '이 기기에서 이 앱이 사용하는 저장 공간: {used}',
+  'settings.usageDetail': '오프라인 사용을 위한 앱 파일: {app} · 내 데이터: {data}',
+  'settings.usageHint': '앱 자체(모든 게임과 언어가 오프라인에서도 작동하도록)와 저장된 게임, 덱, 학습 기록, 내가 만든 콘텐츠가 포함돼요. 브라우저가 관리용 공간을 조금 더 계산해요.',
+  'settings.usageUnavailable': '이 브라우저는 앱이 사용하는 저장 공간을 알려 주지 않아요.',
   'settings.clearSaves': '저장된 게임 모두 삭제',
   'settings.clearConfirm': '이 기기에 저장된 게임을 모두 삭제할까요? 되돌릴 수 없어요.',
 
