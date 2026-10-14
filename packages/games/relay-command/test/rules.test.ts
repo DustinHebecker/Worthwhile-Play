@@ -1399,9 +1399,11 @@ describe('hot-seat (docs/design/strategy.md § 9.4, D10)', () => {
   const valid = (s: RcState) => isValidState(JSON.parse(JSON.stringify(s)));
   const game = (seats: Seat[], opponents = 3, limit: number | null = 30) => newGame(7, corners, 'normal', limit, false, null, opponents, seats);
 
-  // Taken before hot-seat (main at f2ee871: 'cdaa78b6'); updated once when `observe()` stopped
-  // telling a side where its own shells land in cells it does not observe (the AI on Four Corners
-  // plans differently in a few turns; the two-side maps are unchanged, see their own fingerprint).
+  // Taken before hot-seat (main at f2ee871: 'cdaa78b6'); updated when a side stopped being told
+  // where its own shells land in cells it does not observe (PR #28): first `observe()` (the AI on
+  // Four Corners plans differently in a few turns: '4af64ac7'), then the reports (the player's turn
+  // summaries lose such `launch` events; no plan changes: 'fe0a5277'). The two-side AI plans are
+  // unchanged, see their own fingerprint.
   it('one person is the single-player game, byte for byte: every map and opponent count matches the fingerprint taken before hot-seat (main at f2ee871)', () => {
     let h = 0x811c9dc5;
     const feed = (text: string) => {
@@ -1419,7 +1421,7 @@ describe('hot-seat (docs/design/strategy.md § 9.4, D10)', () => {
         }
       }
     }
-    expect(h.toString(16)).toBe('4af64ac7');
+    expect(h.toString(16)).toBe('fe0a5277');
   }, 300_000);
 
   it('the seats: side 0 is always a person, the default is the computer; several persons have no quick match', () => {
