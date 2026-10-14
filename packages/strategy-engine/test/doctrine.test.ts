@@ -262,6 +262,26 @@ describe('lost-contact doctrine (UX round after I5)', () => {
     }
   });
 
+  it("'finish': the turning back is told to the side only while an own reporting unit sees the unit", () => {
+    const told = (observer: number) => {
+      const w = worldOf(open(20, 1), [{ side: 0, kind: 'command-post', x: 0, y: 0 }, { side: 0, kind: 'rifles', x: 9, y: 0 }, { side: 0, kind: 'rifles', x: observer, y: 0 }]);
+      Object.assign(unit(w, 2), { order: { type: 'hold' }, doctrine: doctrine({ lostContact: 'finish', holdFire: true }) });
+      Object.assign(unit(w, 3), { order: { type: 'hold' }, doctrine: doctrine({ lostContact: 'keep' }) });
+      let world = w;
+      const reported: string[] = [];
+      for (let i = 0; i < 3; i++) {
+        const r = resolveTurn(world, net, [[]]);
+        for (const e of r.reported![0]!) if (e.t === 'order-ended' && e.id === 2) reported.push(e.reason);
+        world = r.world;
+      }
+      return reported;
+    };
+    // An own squad inside coverage (radius 5) at x = 5 sees x = 9 (vision 4): the side is told.
+    expect(told(5)).toContain('turned-back');
+    // Nobody of its own sees it: not told (it would depend on what the unit alone saw).
+    expect(told(1)).not.toContain('turned-back');
+  });
+
   it('a set-up relay out of contact stays set up (it does not pack up and drive home)', () => {
     const w = worldOf(open(20, 1), [{ side: 0, kind: 'command-post', x: 0, y: 0 }, { side: 0, kind: 'mast-truck', x: 12, y: 0 }]);
     Object.assign(unit(w, 2), { order: { type: 'hold' }, deploy: net.ticksPerTurn, doctrine: doctrine({ lostContact: 'regroup' }) });
