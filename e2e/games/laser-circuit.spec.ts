@@ -34,7 +34,7 @@ test('laser-circuit: a 7×7 hard level fits a 360 px phone with 44 px squares an
   await page.setViewportSize({ width: 360, height: 740 });
   // Hard level 8: four splitters; the unique solution is S\ at (2,3) and (3,4), S/ at (4,1) and (4,4).
   await page.goto('/games/laser-circuit?seed=7&difficulty=hard');
-  await expect(root(page).getByTestId('level-status')).toHaveText('Level 8 of 8');
+  await expect(root(page).getByTestId('level-status')).toHaveText('Level 8 of 12');
   const first = await root(page).getByTestId('cell-0-0').boundingBox();
   const last = await root(page).getByTestId('cell-6-6').boundingBox();
   expect(first && last).toBeTruthy();
@@ -57,6 +57,54 @@ test('laser-circuit: a 7×7 hard level fits a 360 px phone with 44 px squares an
   await expect(root(page).getByTestId('cell-6-0')).toHaveAttribute('data-lit', 'W');
   await expect(root(page).getByTestId('status')).toHaveAttribute('data-state', 'solved');
   await expect(page.getByTestId('finished')).toBeVisible();
+});
+
+test('laser-circuit: an expert level with gates and portals resumes after a reload', async ({ page }) => {
+  let before: string[] = [];
+  let level: string | null = null;
+  await expectResumeAfterReload(page, 'laser-circuit', async (p) => {
+    await p.getByTestId('difficulty').selectOption('expert');
+    await p.getByTestId('new-game').click();
+    await expect(root(p).locator('[data-testid^="cell-"]')).toHaveCount(63);
+    await expect(root(p).getByTestId('legend')).toBeVisible();
+    await expect(root(p).locator('[data-element="portal"]')).toHaveCount(2);
+    // Move on to the next expert level, then place and turn two pieces.
+    const select = root(p).getByTestId('level-select');
+    const current = Number(await select.inputValue());
+    await select.selectOption(String((current + 1) % (await select.locator('option').count())));
+    await root(p).getByTestId('level-play').click();
+    const empty = root(p).locator('[data-testid^="cell-"][data-element="empty"]');
+    const first = (await empty.nth(0).getAttribute('data-testid')) ?? '';
+    const second = (await empty.nth(5).getAttribute('data-testid')) ?? '';
+    await root(p).getByTestId(first).click();
+    await root(p).getByTestId(first).click();
+    await root(p).getByTestId(second).click();
+    await expect(root(p).getByTestId(first)).toHaveAttribute('data-orient', '1');
+    await expect(root(p).locator('[data-placed="true"]')).toHaveCount(2);
+    level = await root(p).getByTestId('level-status').textContent();
+    before = await cells(p);
+  });
+
+  expect(level).toMatch(/ of \d+$/);
+  await expect(root(page).getByTestId('level-status')).toHaveText(level ?? '');
+  expect(await cells(page)).toEqual(before);
+  await expect(root(page).getByTestId('legend')).toBeVisible();
+});
+
+test('laser-circuit: a 7×9 expert board fits a 360 px phone with 44 px squares, no sideways scrolling', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await page.goto('/games/laser-circuit?seed=0&difficulty=expert');
+  await expect(root(page).getByTestId('level-status')).toHaveText(/^Level 1 of \d+$/);
+  for (const id of ['cell-0-0', 'cell-8-6']) {
+    const box = await root(page).getByTestId(id).boundingBox();
+    expect(box).toBeTruthy();
+    expect(box!.width).toBeGreaterThanOrEqual(44);
+    expect(box!.height).toBeGreaterThanOrEqual(44);
+    expect(box!.x).toBeGreaterThanOrEqual(0);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(360);
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+  await expect(root(page).getByTestId('legend').locator('li')).toHaveCount(2);
 });
 
 test('laser-circuit: keyboard play places, turns and takes back a piece', async ({ page }) => {
