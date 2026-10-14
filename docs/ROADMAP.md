@@ -86,11 +86,11 @@ Catalogue order (done): the large games first (Relay Command; then strategy/towe
 | Game | Feedback | Status |
 |---|---|---|
 | Black Box | allow stating the rule as a formula instead of only predicting example outputs | 🚧 |
-| Nonogram | a harder level, e.g. 15×15 | 🚧 |
+| Nonogram | a harder level, e.g. 15×15 | ✅ Expert 15×15: line-solvable, unique, at least 7 solver rounds (hard: ~3); "larger cells" option on phones |
 | Crate Pusher | more levels | 🚧 |
 | Laser Paths | far too easy even on hard: more optical elements, many more pieces to place | 🚧 |
-| Review / AI basics | prompts appear in the learning language; they should be in the main (UI) language | 🚧 |
-| Four in a Row | far too hard even on easy | 🚧 |
+| Review / AI basics | prompts appear in the learning language; they should be in the main (UI) language | ✅ Flags, Capitals and AI basics always in the UI language (Review, Memory, deck pages); only First words uses the learning language |
+| Four in a Row | far too hard even on easy | ✅ easy overlooks some threats and plays casual moves; each level beats the one below by a measured margin |
 | Orbit Links | already good, but frequent stalemates | 🚧 |
 | Visual search | too easy | 🚧 |
 | Circuit | **backlog:** a variant with electronic components (capacitors, inductors, …) where e.g. oscillators with the right frequency and other circuits must be built | ⏳ |
