@@ -72,3 +72,63 @@ test('nonogram: the 10×10 board fits a phone without page-level horizontal scro
   const box = await cell(page, 9, 9).boundingBox();
   expect(box?.width ?? 0).toBeGreaterThanOrEqual(24);
 });
+
+test('nonogram: an expert 15×15 game survives a reload exactly', async ({ page }) => {
+  await expectResumeAfterReload(page, 'nonogram', async (p) => {
+    await p.getByTestId('difficulty').selectOption('expert');
+    await p.getByTestId('new-game').click();
+    await expect(cell(p, 14, 14)).toBeVisible();
+    await cell(p, 14, 14).click();
+    await expect(cell(p, 14, 14)).toHaveAttribute('data-state', 'filled');
+    await cell(p, 7, 3).click({ button: 'right' });
+    await expect(cell(p, 7, 3)).toHaveAttribute('data-state', 'crossed');
+  });
+
+  const state = await saved(page);
+  expect(state.size).toBe(15);
+  expect(state.cells).toHaveLength(225);
+  await expect(root(page).getByTestId('ng-board')).toHaveAttribute('data-size', '15');
+  await expect(cell(page, 14, 14)).toHaveAttribute('data-state', 'filled');
+  await expect(cell(page, 7, 3)).toHaveAttribute('data-state', 'crossed');
+  for (let i = 0; i < state.cells.length; i++) {
+    const [r, c] = [Math.floor(i / state.size), i % state.size];
+    await expect(cell(page, r, c)).toHaveAttribute('data-state', STATES[state.cells[i] as number] as string);
+  }
+  await expect(root(page).getByTestId('col-clue-14')).toBeVisible();
+  await expect(root(page).getByTestId('row-clue-14')).toBeVisible();
+});
+
+test('nonogram: the 15×15 board fits a phone and offers larger, scrollable cells', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await page.goto('/games/nonogram?difficulty=expert');
+  await page.getByTestId('new-game').click();
+  const overflow = () => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  const scroller = root(page).getByTestId('ng-scroll');
+
+  // Fitted: the whole board is visible without any horizontal scrolling.
+  await expect(cell(page, 14, 14)).toBeVisible();
+  expect(await overflow()).toBeLessThanOrEqual(0);
+  expect(await scroller.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(0);
+  const last = await cell(page, 0, 14).boundingBox();
+  expect((last?.x ?? 0) + (last?.width ?? 0)).toBeLessThanOrEqual(360);
+  expect(last?.width ?? 0).toBeGreaterThanOrEqual(15);
+
+  // Larger cells: touch-sized cells scroll inside the frame, never the page; the row clues stay in view.
+  const zoom = root(page).getByTestId('ng-zoom');
+  await zoom.click();
+  await expect(zoom).toHaveAttribute('aria-pressed', 'true');
+  expect((await cell(page, 0, 0).boundingBox())?.width ?? 0).toBeGreaterThanOrEqual(44);
+  expect(await overflow()).toBeLessThanOrEqual(0);
+  expect(await scroller.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeGreaterThan(0);
+
+  // Keyboard navigation scrolls the focused cell into view.
+  await cell(page, 3, 0).focus();
+  for (let c = 0; c < 14; c++) await page.keyboard.press('ArrowRight');
+  await expect(cell(page, 3, 14)).toBeFocused();
+  await expect(cell(page, 3, 14)).toBeInViewport();
+  await expect(root(page).getByTestId('row-clue-3')).toBeInViewport();
+
+  // The choice is remembered for the next game.
+  await page.getByTestId('new-game').click();
+  await expect(root(page).getByTestId('ng-zoom')).toHaveAttribute('aria-pressed', 'true');
+});

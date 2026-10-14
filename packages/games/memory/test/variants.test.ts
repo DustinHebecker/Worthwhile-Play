@@ -171,30 +171,34 @@ describe('flag ↔ country', () => {
     expect(card(root, front).getAttribute('aria-label')).toBe(`Karte ${front + 1}: Flagge: ${countryName(code, 'de')}, Paar gefunden`);
   });
 
-  it('uses the learning language for country names when the platform knows it', () => {
-    const { instance } = setup({ prefs: { cards: 'flag-country' }, extras: { contentLanguages: { learning: 'sv' } } });
-    expect(instance.serialize().languages).toEqual({ back: 'sv' });
+  it('uses the UI language for country names, never the learning language', () => {
+    const { instance, root } = setup({ prefs: { cards: 'flag-country' }, extras: { contentLanguages: { learning: 'sv' } }, locale: 'de', difficulty: 'large' });
+    const s = instance.serialize();
+    expect(s.languages).toEqual({ back: 'de' });
+    const back = s.cards.findIndex((c) => c.side === 'back');
+    card(root, back).click();
+    expect(card(root, back).textContent).toBe(countryName((s.cards[back]?.item ?? '').toUpperCase(), 'de'));
   });
 });
 
 describe('country ↔ capital', () => {
-  it('pairs the country name with its capital, both in the learning language', () => {
-    const { root, instance } = setup({ prefs: { cards: 'country-capital' }, extras: { contentLanguages: { learning: 'fr' } }, difficulty: 'large' });
+  it('pairs the country name with its capital, both in the UI language (not the learning language)', () => {
+    const { root, instance } = setup({ prefs: { cards: 'country-capital' }, extras: { contentLanguages: { learning: 'fr', translation: 'de' } }, difficulty: 'large' });
     const s = instance.serialize();
-    expect(s).toMatchObject({ variant: 'country-capital', deckId: 'capitals', languages: { back: 'fr' } });
+    expect(s).toMatchObject({ variant: 'country-capital', deckId: 'capitals', languages: { back: 'en' } });
     expect(select(root).value).toBe('country-capital');
-    expect(byId(root, 'memory-languages').textContent).toBe('Countries and capitals in French');
+    expect(byId(root, 'memory-languages').textContent).toBe('Countries and capitals in English');
     expect(byId(root, 'memory-notice').hidden).toBe(true);
     const back = s.cards.findIndex((c) => c.side === 'back');
     const code = (s.cards[back]?.item ?? '').toUpperCase();
     card(root, back).click();
     const capital = card(root, back).querySelector('.wp-memory__text');
-    expect(capital?.textContent).toBe(capitalName(code, 'fr'));
-    expect(capital?.getAttribute('lang')).toBe('fr');
-    expect(card(root, back).getAttribute('aria-label')).toBe(`Card ${back + 1}: ${capitalName(code, 'fr')}`);
+    expect(capital?.textContent).toBe(capitalName(code, 'en'));
+    expect(capital?.getAttribute('lang')).toBe('en');
+    expect(card(root, back).getAttribute('aria-label')).toBe(`Card ${back + 1}: ${capitalName(code, 'en')}`);
     const front = partnerOf(s.cards, back);
     card(root, front).click();
-    expect(card(root, front).textContent).toBe(countryName(code, 'fr'));
+    expect(card(root, front).textContent).toBe(countryName(code, 'en'));
     expect(card(root, front).dataset.state).toBe('matched');
     expect(game.isValidState(JSON.parse(JSON.stringify(instance.serialize())))).toBe(true);
   });
@@ -216,25 +220,26 @@ describe('country ↔ capital', () => {
     expect(capitalName('pl', 'de')).toBe('Warschau');
   });
 
-  it('falls back to the UI language with a notice when the learning language has no capital names', () => {
+  it('needs no notice when the learning language has no capital names (the UI language is used anyway)', () => {
     const { instance, root } = setup({ prefs: { cards: 'country-capital' }, extras: { contentLanguages: { learning: 'sv' } }, locale: 'de' });
     expect(instance.serialize().languages).toEqual({ back: 'de' });
-    expect(byId(root, 'memory-notice').hidden).toBe(false);
-    expect(byId(root, 'memory-notice').textContent).toBe('Für Schwedisch gibt es noch keine Hauptstadtnamen, daher wird eine andere Sprache verwendet.');
+    expect(byId(root, 'memory-notice').hidden).toBe(true);
     expect(byId(root, 'memory-languages').textContent).toBe('Länder und Hauptstädte auf Deutsch');
   });
 
-  it('keeps the recorded language on restore, even if Settings changed', () => {
-    const first = setup({ prefs: { cards: 'country-capital' }, extras: { contentLanguages: { learning: 'ja' } } });
+  it('shows a game saved in the learning language (before the fix) in the UI language; the save is unchanged', () => {
+    const first = setup({ prefs: { cards: 'country-capital' }, locale: 'de' });
     card(first.root, 0).click();
-    const saved = first.instance.serialize();
-    const later = setup({ extras: { contentLanguages: { learning: 'pl' } } });
+    const saved: MemoryState = { ...first.instance.serialize(), languages: { back: 'ja' } };
+    expect(game.isValidState(JSON.parse(JSON.stringify(saved)))).toBe(true);
+    const later = setup({ extras: { contentLanguages: { learning: 'pl' } }, locale: 'de' });
     later.instance.restore(saved);
     expect(later.instance.serialize()).toEqual(saved);
     const text = card(later.root, 0).querySelector('.wp-memory__text');
-    expect(text?.getAttribute('lang')).toBe('ja');
+    expect(text?.getAttribute('lang')).toBe('de');
     const item = saved.cards[0]?.item ?? '';
-    expect(text?.textContent).toBe(saved.cards[0]?.side === 'front' ? countryName(item.toUpperCase(), 'ja') : capitalName(item, 'ja'));
+    expect(text?.textContent).toBe(saved.cards[0]?.side === 'front' ? countryName(item.toUpperCase(), 'de') : capitalName(item, 'de'));
+    expect(byId(later.root, 'memory-languages').textContent).toBe('Länder und Hauptstädte auf Deutsch');
   });
 
   it('round-trips through a real save', () => {
@@ -252,19 +257,19 @@ describe('country ↔ capital', () => {
 });
 
 describe('AI term ↔ definition', () => {
-  it('pairs each term with its definition, both in the learning language', () => {
-    const { root, instance } = setup({ prefs: { cards: 'ai-term-definition' }, extras: { contentLanguages: { learning: 'ja' } }, difficulty: 'large' });
+  it('pairs each term with its definition, both in the UI language (not the learning language)', () => {
+    const { root, instance } = setup({ prefs: { cards: 'ai-term-definition' }, extras: { contentLanguages: { learning: 'ja', translation: 'de' } }, difficulty: 'large' });
     const s = instance.serialize();
-    expect(s).toMatchObject({ variant: 'ai-term-definition', deckId: 'ai-basics', languages: { back: 'ja' } });
+    expect(s).toMatchObject({ variant: 'ai-term-definition', deckId: 'ai-basics', languages: { back: 'en' } });
     expect(select(root).value).toBe('ai-term-definition');
-    expect(byId(root, 'memory-languages').textContent).toBe('AI terms and definitions in Japanese');
+    expect(byId(root, 'memory-languages').textContent).toBe('AI terms and definitions in English');
     expect(byId(root, 'memory-notice').hidden).toBe(true);
     const back = s.cards.findIndex((c) => c.side === 'back');
-    const entry = aiTerm(s.cards[back]?.item ?? '', 'ja');
+    const entry = aiTerm(s.cards[back]?.item ?? '', 'en');
     card(root, back).click();
     const definition = card(root, back).querySelector('.wp-memory__text');
     expect(definition?.textContent).toBe(entry?.definition);
-    expect(definition?.getAttribute('lang')).toBe('ja');
+    expect(definition?.getAttribute('lang')).toBe('en');
     expect(definition?.classList.contains('wp-memory__text--para')).toBe(textWidth(entry?.definition ?? '') > LONG_TEXT);
     expect(card(root, back).getAttribute('aria-label')).toBe(`Card ${back + 1}: ${entry?.definition}`);
     const front = partnerOf(s.cards, back);
@@ -314,24 +319,24 @@ describe('AI term ↔ definition', () => {
     expect(aiTerm('token', 'de')?.term).toBe('Token');
   });
 
-  it('falls back to the UI language with a notice when the learning language has no AI terms', () => {
+  it('needs no notice when the learning language has no AI terms (the UI language is used anyway)', () => {
     const { instance, root } = setup({ prefs: { cards: 'ai-term-definition' }, extras: { contentLanguages: { learning: 'sv' } }, locale: 'de' });
     expect(instance.serialize().languages).toEqual({ back: 'de' });
-    expect(byId(root, 'memory-notice').hidden).toBe(false);
-    expect(byId(root, 'memory-notice').textContent).toBe('Für Schwedisch gibt es noch keine KI-Begriffe, daher wird eine andere Sprache verwendet.');
+    expect(byId(root, 'memory-notice').hidden).toBe(true);
     expect(byId(root, 'memory-languages').textContent).toBe('KI-Begriffe und Definitionen auf Deutsch');
   });
 
-  it('keeps the recorded language on restore, even if Settings changed', () => {
-    const first = setup({ prefs: { cards: 'ai-term-definition' }, extras: { contentLanguages: { learning: 'ar' } } });
+  it('shows a game saved in the learning language (before the fix) in the UI language; the save is unchanged', () => {
+    const first = setup({ prefs: { cards: 'ai-term-definition' }, locale: 'de' });
     card(first.root, 0).click();
-    const saved = first.instance.serialize();
-    const later = setup({ extras: { contentLanguages: { learning: 'pl' } } });
+    const saved: MemoryState = { ...first.instance.serialize(), languages: { back: 'ar' } };
+    expect(game.isValidState(JSON.parse(JSON.stringify(saved)))).toBe(true);
+    const later = setup({ extras: { contentLanguages: { learning: 'pl' } }, locale: 'de' });
     later.instance.restore(saved);
     expect(later.instance.serialize()).toEqual(saved);
     const text = card(later.root, 0).querySelector('.wp-memory__text');
-    expect(text?.getAttribute('lang')).toBe('ar');
-    const entry = aiTerm(saved.cards[0]?.item ?? '', 'ar');
+    expect(text?.getAttribute('lang')).toBe('de');
+    const entry = aiTerm(saved.cards[0]?.item ?? '', 'de');
     expect(text?.textContent).toBe(saved.cards[0]?.side === 'front' ? entry?.term : entry?.definition);
   });
 

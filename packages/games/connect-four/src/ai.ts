@@ -18,10 +18,13 @@
  * reproducible from seed + actions while the computer does not always play the same
  * game.
  *
- * Difficulty semantics (plies searched; an immediate win is always seen one ply further):
- *  - easy:   2 — takes wins, blocks direct threats, otherwise plays positionally.
- *  - medium: 5 — also sees most short combinations.
- *  - hard:   8 — sees double threats several moves ahead.
+ * Difficulty semantics (plies searched; an immediate win is always seen one ply further),
+ * see LEVEL_POLICY for the deliberate imperfections of the lower levels:
+ *  - easy:   2 — always takes a win, but overlooks a direct threat fairly often and
+ *              plays a casual (yet never gift-giving) move about half the time.
+ *              Meant to be beatable by a casual adult player.
+ *  - medium: 5 — sees short combinations; now and then plays a casual safe move.
+ *  - hard:   8 — always plays the searched move; sees double threats several moves ahead.
  */
 import { createRngFromState, type Rng } from '@wp/game-core';
 import {
@@ -35,6 +38,7 @@ import {
   createRound,
   drop,
   isComputerTurn,
+  legalMoves,
   other,
   outcomeOf,
   toMove,
@@ -245,9 +249,70 @@ export function bestMoves(board: Board, difficulty: Difficulty): number[] {
   return analyse(board, SEARCH_DEPTH[difficulty]).best;
 }
 
-/** Chooses the computer's column for the side to move. Throws if the game is already over. */
+/**
+ * How each level plays, beyond its search depth. Probabilities are drawn from the
+ * seeded PRNG stored in the game state, so games stay reproducible.
+ *  - `missBlock`: chance of overlooking a single immediate threat (the level then plays
+ *    as if it were not there). Immediate wins are always taken.
+ *  - `loose`: chance of a casual move instead of the searched one: any column that does
+ *    not hand the opponent an immediate win (never an absurd gift).
+ */
+export interface LevelPolicy {
+  depth: number;
+  missBlock: number;
+  loose: number;
+}
+
+export const LEVEL_POLICY: Readonly<Record<Difficulty, LevelPolicy>> = {
+  easy: { depth: SEARCH_DEPTH.easy, missBlock: 0.4, loose: 0.5 },
+  medium: { depth: SEARCH_DEPTH.medium, missBlock: 0, loose: 0.15 },
+  hard: { depth: SEARCH_DEPTH.hard, missBlock: 0, loose: 0 }
+};
+
+/** Columns where `player` completes four right now. */
+function immediateWins(board: Board, player: Player): number[] {
+  const search = new Search(board);
+  return MOVE_ORDER.filter((col) => search.winsNow(col, player)).sort((a, b) => a - b);
+}
+
+/** Legal columns after which the opponent has no immediate win (ascending). */
+export function safeMoves(board: Board): number[] {
+  const search = new Search(board);
+  const player = toMove(board);
+  const opponent = other(player);
+  const safe: number[] = [];
+  for (let col = 0; col < COLS; col++) {
+    if (search.row(col) < 0) continue;
+    search.play(col, player);
+    if (!MOVE_ORDER.some((c) => search.winsNow(c, opponent))) safe.push(col);
+    search.unplay(col);
+  }
+  return safe;
+}
+
+/**
+ * Chooses the computer's column for the side to move according to the level's policy.
+ * Throws if the game is already over.
+ */
 export function chooseMove(board: Board, difficulty: Difficulty, rng: Rng): number {
-  return rng.pick(bestMoves(board, difficulty));
+  if (outcomeOf(board).kind !== 'playing') throw new RangeError('No move: the game is over');
+  const policy = LEVEL_POLICY[difficulty];
+  const player = toMove(board);
+  const wins = immediateWins(board, player);
+  if (wins.length > 0) return rng.pick(wins);
+  if (policy.missBlock > 0 || policy.loose > 0) {
+    const threats = immediateWins(board, other(player));
+    if (threats.length === 1 && policy.missBlock > 0 && rng.next() < policy.missBlock) {
+      // Overlooks the threat: plays a casual move elsewhere.
+      const others = legalMoves(board).filter((col) => col !== threats[0]);
+      if (others.length > 0) return rng.pick(others);
+    }
+    if (threats.length === 0 && policy.loose > 0 && rng.next() < policy.loose) {
+      const safe = safeMoves(board);
+      if (safe.length > 0) return rng.pick(safe);
+    }
+  }
+  return rng.pick(analyse(board, policy.depth).best);
 }
 
 /**

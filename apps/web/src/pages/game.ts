@@ -161,7 +161,7 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
       current ? h('span', { class: 'wp-muted seed', 'data-testid': 'seed' }, t('game.seed', { seed: current.seed })) : null));
   };
 
-  const startNew = async (seed = randomSeed(), difficulty = chosenDifficulty()) => {
+  const startNew = async (seed = randomSeed(), difficulty = chosenDifficulty(), focus = true) => {
     current = { seed, difficulty };
     // Reuse a running instance so game-internal options (e.g. opponent type) carry over to the next round.
     const game = instance ?? mount();
@@ -171,7 +171,7 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
     await autosave?.flush(true);
     // A game can mark its main play area with data-autofocus (e.g. so arrow keys move pieces instead of
     // changing an options select that happens to come first); otherwise focus the first control.
-    (gameRoot.querySelector<HTMLElement>('[data-autofocus]') ?? gameRoot.querySelector<HTMLElement>('button, [tabindex="0"], input, select'))?.focus();
+    if (focus) (gameRoot.querySelector<HTMLElement>('[data-autofocus]') ?? gameRoot.querySelector<HTMLElement>('button, [tabindex="0"], input, select'))?.focus();
   };
 
   const resume = async (save: GameSave<unknown>) => {
@@ -268,6 +268,13 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
       // "Play" from another page: start right away, then drop `?new=1` so that a reload resumes this game.
       history.replaceState(null, '', `/games/${metadata.id}`);
       await startNew(randomSeed(), loaded.status === 'ok' && loaded.save.difficulty && metadata.difficulties?.includes(loaded.save.difficulty) ? loaded.save.difficulty : chosenDifficulty());
+    } else if (metadata.setupInGame && loaded.status !== 'ok') {
+      // ADR 0015: the game's own setup screen is its start screen, so with no save there is nothing to choose
+      // in the host panel first. Only here, on opening the page; a finished game never starts another one.
+      // As in showStart, do not pull focus from a control the person is using while the module loads.
+      const active = document.activeElement;
+      const focus = !active || active === document.body || main.contains(active);
+      await startNew(randomSeed(), route.difficulty && metadata.difficulties?.includes(route.difficulty) ? route.difficulty : chosenDifficulty(), focus);
     } else {
       showStart(loaded.status === 'ok' ? loaded.save : undefined);
     }

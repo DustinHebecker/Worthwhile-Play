@@ -2,7 +2,7 @@ import './styles.css';
 import type { GameContext, GameInstance, LearningRating, NewGameOptions } from '@wp/game-core';
 import { browserSpeech, pickText, type CardSide, type Speech } from '@wp/learning-content';
 import { announce, clear, h } from '@wp/ui';
-import { deckItemIds, faceResolver, hasAllItems, isBuiltinReviewDeck, sessionLanguages, userDeck, type CardFaces, type FaceResolver } from './decks';
+import { deckItemIds, faceResolver, hasAllItems, isBuiltinReviewDeck, knowledgeLanguage, sessionLanguages, userDeck, type CardFaces, type FaceResolver } from './decks';
 import {
   availableCounts,
   BUILTIN_REVIEW_DECKS,
@@ -196,9 +196,10 @@ export function createReview(context: GameContext, speech: Speech | undefined = 
 
   const languagesText = (s: ReviewState): string => {
     if (s.deckId === 'first-words') return t('languages.words', { learning: languageName(s.languages.learning), translation: languageName(s.languages.translation) });
-    if (s.deckId === 'flags') return t('languages.countries', { language: languageName(s.languages.countries) });
-    if (s.deckId === 'capitals') return t('languages.capitals', { language: languageName(s.languages.learning) });
-    if (s.deckId === 'ai-basics') return t('languages.aiBasics', { language: languageName(s.languages.learning) });
+    // General knowledge always follows the UI language (see knowledgeLanguage).
+    if (s.deckId === 'flags') return t('languages.countries', { language: languageName(t.locale) });
+    if (s.deckId === 'capitals') return t('languages.capitals', { language: languageName(knowledgeLanguage(t)) });
+    if (s.deckId === 'ai-basics') return t('languages.aiBasics', { language: languageName(knowledgeLanguage(t)) });
     return '';
   };
 
@@ -315,10 +316,7 @@ export function createReview(context: GameContext, speech: Speech | undefined = 
       notice = t('deck.fallback');
     }
     const { languages, learningFallback } = sessionLanguages(deck, context.contentLanguages, t.locale);
-    if (learningFallback) {
-      const key = deck === 'capitals' ? 'languages.capitalsFallback' : deck === 'ai-basics' ? 'languages.aiBasicsFallback' : 'languages.fallback';
-      notice = t(key, { language: languageName(context.contentLanguages?.learning) });
-    }
+    if (learningFallback) notice = t('languages.fallback', { language: languageName(context.contentLanguages?.learning) });
     const key = recordDeckOf({ deckId: deck, languages });
     // A new session prefers the remembered direction; if nothing is due that way but something is in the other
     // direction, it reviews both (the deck library counts cards due in any direction).

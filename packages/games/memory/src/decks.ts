@@ -61,14 +61,13 @@ export function builtinDeal(variant: BuiltinVariant, choice: ContentLanguageChoi
       return { deck: firstWordsDeck(resolved.learning, resolved.translation), languages: { back: resolved.learning } };
     case 'word-translation':
       return { deck: firstWordsDeck(resolved.learning, resolved.translation), languages: { front: resolved.learning, back: resolved.translation } };
+    // General knowledge is not language practice: always the UI (main) language, never the learning language.
     case 'flag-country':
       return { deck: flagsDeck(resolved.countries), languages: { back: resolved.countries } };
     case 'country-capital':
-      // Capital names exist in the 16 "First words" languages only, so this follows the learning language.
-      return { deck: capitalsDeck(resolved.learning), languages: { back: resolved.learning } };
+      return { deck: capitalsDeck(resolved.ui), languages: { back: resolved.ui } };
     case 'ai-term-definition':
-      // Terms and definitions exist in the 16 "First words" languages only, so this follows the learning language.
-      return { deck: aiBasicsDeck(resolved.learning), languages: { back: resolved.learning } };
+      return { deck: aiBasicsDeck(resolved.ui), languages: { back: resolved.ui } };
   }
 }
 
@@ -82,6 +81,13 @@ export interface CardFace {
 export type FaceResolver = (card: Card) => CardFace;
 
 const vocabularyUiLanguage = (locale: string) => (isVocabularyLanguage(locale) ? locale : 'en');
+
+/**
+ * Language of the general-knowledge variants (flag ↔ country, country ↔ capital, AI term ↔ definition): always
+ * the current UI language, also for games saved before this rule (they recorded the learning language in
+ * `languages.back`, which stays in the save format for compatibility only).
+ */
+export const knowledgeLanguage = (t: Pick<Translator, 'locale'>) => vocabularyUiLanguage(t.locale);
 
 /**
  * Returns a resolver for the faces of `state`'s cards, or `undefined` if the cards cannot be shown
@@ -113,11 +119,11 @@ export function faceResolver(state: MemoryState, t: Translator, userDecks: UserD
       return (card) => {
         const code = card.item.toUpperCase();
         if (card.side === 'front') return { side: { symbol: flagEmoji(code) }, description: t('card.flag', { name: countryName(code, t.locale) }) };
-        const text = countryName(code, backLang ?? t.locale);
-        return { side: { text, lang: backLang ?? t.locale }, description: text };
+        const text = countryName(code, t.locale);
+        return { side: { text, lang: t.locale }, description: text };
       };
     case 'country-capital': {
-      const lang = backLang && isVocabularyLanguage(backLang) ? backLang : vocabularyUiLanguage(t.locale);
+      const lang = knowledgeLanguage(t);
       return (card) => {
         const code = card.item.toUpperCase();
         // Both cards are plain text in the same language: the country name (CLDR) and its capital.
@@ -126,7 +132,7 @@ export function faceResolver(state: MemoryState, t: Translator, userDecks: UserD
       };
     }
     case 'ai-term-definition': {
-      const lang = backLang && isVocabularyLanguage(backLang) ? backLang : vocabularyUiLanguage(t.locale);
+      const lang = knowledgeLanguage(t);
       return (card) => {
         // Both cards are plain text in the same language: the term and its (longer) definition.
         const entry = aiTerm(card.item, lang);
