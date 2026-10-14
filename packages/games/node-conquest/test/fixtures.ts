@@ -52,7 +52,8 @@ export function stateFor(map: GameMap): NcState {
     result: 'playing',
     stats: { produced: 0, reinforced: 0, passed: 0, absorbed: 0, hits: 0, fought: 0, shot: 0, captured: 0 },
     hist: { start: 0, every: HISTORY_EVERY, rows: [] },
-    centre: []
+    centre: [],
+    moved: 0
   };
 }
 
@@ -78,7 +79,8 @@ export const quiet: AiProfile = {
   aware: false,
   lookahead: null,
   weakest: false,
-  passive: false
+  passive: false,
+  focus: 0
 };
 
 export interface StubRng extends Rng {

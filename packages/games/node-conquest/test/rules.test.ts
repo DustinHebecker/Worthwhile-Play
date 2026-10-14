@@ -121,7 +121,8 @@ function stateFor(map: GameMap): NcState {
     result: 'playing',
     stats: { produced: 0, reinforced: 0, passed: 0, absorbed: 0, hits: 0, fought: 0, shot: 0, captured: 0 },
     hist: { start: 0, every: HISTORY_EVERY, rows: [] },
-    centre: []
+    centre: [],
+    moved: 0
   };
 }
 
@@ -160,7 +161,8 @@ const quiet: AiProfile = {
   aware: false,
   lookahead: null,
   weakest: false,
-  passive: false
+  passive: false,
+  focus: 0
 };
 
 /* ---------- Constants and thresholds ---------- */
@@ -184,7 +186,7 @@ describe('levels and limits', () => {
 
   it('keeps metadata difficulties in sync and maps unknown difficulties to beginner', () => {
     expect(metadata.difficulties).toEqual([...DIFFICULTIES]);
-    expect(metadata.stateVersion).toBe(2);
+    expect(metadata.stateVersion).toBe(3);
     expect(toDifficulty('master')).toBe('master');
     expect(toDifficulty('hard')).toBe('beginner');
     expect(toDifficulty('nope')).toBe('beginner');
@@ -1650,7 +1652,7 @@ describe('introduction map', () => {
 describe('migration from state version 1', () => {
   const v1 = (difficulty: string, opponents: 1 | 2 | 3, ticks: number) => {
     const played = simulate(createGame(9, { difficulty: V1_MAPPING[difficulty]![0], opponents, map: 3, layout: 1 }), ticks);
-    const { opponents: _o, layout: _l, half: _h, hist: _hi, centre: _c, ...rest } = clone(played);
+    const { opponents: _o, layout: _l, half: _h, hist: _hi, centre: _c, moved: _m, ...rest } = clone(played);
     return { played, old: { ...rest, difficulty } };
   };
 
@@ -1670,10 +1672,11 @@ describe('migration from state version 1', () => {
         ...played,
         half: played.half.map(() => 0),
         hist: { start: 230, every: HISTORY_EVERY, rows: [countsOf(played, n + 1)] },
-        centre: []
+        centre: [],
+        moved: 0
       });
       // The match continues exactly like a native state of the same position.
-      expect(simulate(migrated, 200).owner).toEqual(simulate({ ...played, hist: migrated.hist, centre: [] }, 200).owner);
+      expect(simulate(migrated, 200).owner).toEqual(simulate({ ...played, hist: migrated.hist, centre: [], moved: 0 }, 200).owner);
     }
   }, 30_000);
 

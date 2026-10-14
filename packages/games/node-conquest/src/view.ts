@@ -15,6 +15,8 @@ import {
   maxPaths,
   nodeCount,
   OPPONENT_COUNTS,
+  isStandoff,
+  quietTicks,
   seconds,
   stationRange,
   stepMut,
@@ -169,6 +171,7 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
 
   const statusEl = h('p', { class: 'wp-status nc-status', 'data-testid': 'nc-status' });
   const countsEl = h('p', { class: 'nc-counts', 'data-testid': 'nc-counts' });
+  const standoffEl = h('p', { class: 'nc-standoff', 'data-testid': 'nc-standoff', hidden: true });
   const pauseBtn = h('button', { type: 'button', class: 'primary nc-pause', 'data-testid': 'nc-pause', onclick: () => togglePause() });
   const speedBtn = h('button', { type: 'button', class: 'nc-speed', 'data-testid': 'nc-speed', onclick: () => toggleSpeed() });
   const mapSelect = h('select', { 'data-testid': 'nc-map-select', id: 'nc-map-select', onchange: () => requestSetup() });
@@ -249,6 +252,7 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
     { class: `wp-nc${context.reducedMotion ? ' nc-reduced' : ''}`, dir: t.direction, lang: t.locale },
     statusEl,
     countsEl,
+    standoffEl,
     toolbar,
     confirmBox,
     hintEl,
@@ -463,6 +467,9 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
     let rivals = 0;
     for (let f = 1; f < board!.map.factions; f++) rivals += nodeCount(state, f);
     countsEl.textContent = t('status.counts', { own: nodeCount(state, 0), rivals, neutral: nodeCount(state, -1) });
+    // A calm, factual note on long standoffs (no countdown, nothing happens because of it).
+    standoffEl.hidden = !isStandoff(state);
+    if (!standoffEl.hidden) standoffEl.textContent = t('status.standoff', { time: formatTime(Math.floor(quietTicks(state) / TICKS_PER_SECOND)) });
     pauseBtn.textContent = running ? t('action.pause') : state.tick === 0 ? t('action.start') : t('action.resume');
     pauseBtn.hidden = finished;
     pauseBtn.setAttribute('aria-pressed', String(!running));
