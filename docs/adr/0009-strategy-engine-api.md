@@ -99,6 +99,10 @@ Behind `Ruleset.capture` (off in `STRATEGY_RULESET`, so the two-side game is unc
 - **`retire(world, side)`** applies exactly the elimination step of the capture rules to one side at once, between turns: its pieces and projectiles are removed, the side is out, every side is told `eliminated {side}` (nothing else), its own reports are cleared, and the others lose their reports of its pieces (and old reports naming it as a post's owner). It is pure (returns `{ world, events }`; the world passed in is unchanged) and refuses a side that is out already or not a playing side (`RangeError`). Games use it for giving up in hot-seat games with several sides (docs/design/strategy.md § 9.4); the others play on.
 - Elimination at the end of a turn and `retire` share one implementation. Property tests: a turn whose end eliminates sides (without captures) equals the same turn without capture rules followed by retiring those sides — the same world and the same `eliminated` events; after `retire` every other side's observation holds only pieces it already saw or remembered, unchanged, and none of the retiring side.
 
+## Amendment (observation of own shells)
+
+- `observe()` holds a side's own projectiles only while their landing cell is observed by the side (with fog; without fog all of them), and `nextId` counts only those. A shot fired by a unit out of contact at what only it saw no longer tells the side where an unreported enemy stood (backlog of the PR #21 review). Property: where an own shell lands in a cell the side does not observe never changes its observation.
+
 ## Consequences
 + One implementation per mechanic; determinism and save/restore are guaranteed once, for all modes; TD can start against the documented API.
 + Property tests (determinism, purity, mirror symmetry, round-trip) cover every mode.

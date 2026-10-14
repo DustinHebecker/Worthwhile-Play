@@ -85,6 +85,50 @@ describe('observe (AI input, § 11)', () => {
   });
 });
 
+describe('observe: own shells (backlog of PR #21)', () => {
+  it('keeps an own shell only while its landing cell is observed: a shot fired out of contact does not tell where the target stood', () => {
+    const w = worldOf(open(30, 1), [
+      { side: 0, kind: 'command-post', x: 0, y: 0 },
+      { side: 0, kind: 'howitzer', x: 20, y: 0 },
+      { side: 1, kind: 'command-post', x: 29, y: 0 }
+    ]);
+    const seen = cellOf(w.map, 2, 0);
+    const unseen = cellOf(w.map, 25, 0);
+    const observed = observedCells(w, rs, 0);
+    expect([observed[seen], observed[unseen]]).toEqual([1, 0]);
+    w.projectiles.push({ id: w.nextId++, side: 0, kind: 'howitzer', x: 2, y: 0, ticks: 2 });
+    w.projectiles.push({ id: w.nextId++, side: 0, kind: 'howitzer', x: 25, y: 0, ticks: 2 });
+    const o = observe(w, rs, 0);
+    expect(o.world.projectiles.map((p) => p.x)).toEqual([2]);
+    // Its id is not given away by the id counter either.
+    expect(o.world.nextId).toBe(w.nextId - 1);
+    // Without fog every own shell is known.
+    expect(observe({ ...w, ruleset: BASE_RULESET.id }, BASE_RULESET, 0).world.projectiles).toHaveLength(2);
+  });
+
+  it('P8 for shells: where an own shell lands in a cell the side does not observe never changes its observation', () => {
+    fc.assert(
+      fc.property(arbScenario, fc.nat(999), ({ world, plans }, cell) => {
+        let w: World = { ...world, ruleset: rs.id };
+        delete w.intel;
+        for (const plan of plans.slice(0, 2)) w = resolveTurn(w, rs, [plan]).world;
+        for (const side of [0, 1]) {
+          const observed = observedCells(w, rs, side);
+          const unseen = [...observed.keys()].filter((c) => observed[c] !== 1);
+          if (unseen.length < 2) continue;
+          const at = (c: number) => ({ x: c % w.map.w, y: Math.floor(c / w.map.w) });
+          const a = structuredClone(w);
+          const b = structuredClone(w);
+          a.projectiles.push({ id: a.nextId++, side, kind: 'howitzer', ...at(unseen[cell % unseen.length]!), ticks: 2 });
+          b.projectiles.push({ id: b.nextId++, side, kind: 'howitzer', ...at(unseen[(cell + 1) % unseen.length]!), ticks: 2 });
+          expect(asText(observe(a, rs, side))).toBe(asText(observe(b, rs, side)));
+        }
+      }),
+      { numRuns: 100 }
+    );
+  });
+});
+
 describe('observe: felt jamming (review of PR #10, N1)', () => {
   it('marks jammed cells only within reach of the own connected nodes', () => {
     const w = worldOf(open(20, 1), [
