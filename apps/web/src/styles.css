@@ -1,19 +1,40 @@
 /* App shell layout. Uses logical properties so the Arabic RTL layout mirrors automatically. */
-#app { min-height: 100dvh; display: grid; grid-template-rows: auto 1fr auto; }
-.app-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; padding: 0.75rem 1rem; border-block-end: 1px solid var(--wp-border); background: var(--wp-surface); }
+/* minmax(0, 1fr): the page column never grows wider than the viewport because of a wide child (e.g. a long select). */
+#app { min-height: 100dvh; display: grid; grid-template-rows: auto 1fr auto; grid-template-columns: minmax(0, 1fr); }
+.app-header { display: grid; grid-template-columns: 1fr auto auto; grid-template-areas: 'brand nav lang'; align-items: center; gap: 0.5rem 1rem; padding: 0.75rem 1rem; border-block-end: 1px solid var(--wp-border); background: var(--wp-surface); }
+.app-header .brand { grid-area: brand; }
+.app-header nav { grid-area: nav; }
+.app-header .language-menu { grid-area: lang; }
+@media (max-width: 640px) { .app-header { grid-template-columns: 1fr auto; grid-template-areas: 'brand lang' 'nav nav'; } }
 .brand { display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 700; text-decoration: none; color: var(--wp-text); min-height: var(--wp-touch); }
-.brand-mark { display: inline-grid; place-items: center; width: 2rem; height: 2rem; border-radius: 8px; background: var(--wp-accent); color: var(--wp-accent-contrast); }
+.brand-mark { display: block; width: 2.5rem; height: 2.5rem; object-fit: contain; }
 .app-header nav { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+.language-menu { position: relative; }
+.language-menu summary { min-height: var(--wp-touch); display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.7rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius); background: var(--wp-surface); cursor: pointer; list-style: none; font-weight: 600; }
+.language-menu summary::-webkit-details-marker { display: none; }
+.language-menu summary::after { content: '▾'; color: var(--wp-muted); font-size: 0.75rem; }
+.language-menu[open] summary, .language-menu summary:hover { border-color: var(--wp-accent); }
+.language-icon { font-size: 0.85rem; letter-spacing: -0.02em; }
+.language-menu-panel { position: absolute; z-index: 60; inset-inline-end: 0; top: calc(100% + 0.4rem); width: min(18rem, calc(100vw - 2rem)); display: grid; gap: 0.75rem; padding: 1rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius); background: var(--wp-surface); box-shadow: 0 12px 28px rgb(0 0 0 / 0.18); }
+.language-menu-panel label { display: grid; gap: 0.35rem; color: var(--wp-muted); }
+.language-menu-panel select { width: 100%; color: var(--wp-text); }
+@media (max-width: 380px) { .brand > span:last-child { display: none; } }
 .app-header nav a { padding: 0.5rem 0.75rem; border-radius: var(--wp-radius); text-decoration: none; min-height: var(--wp-touch); display: inline-flex; align-items: center; }
 .app-header nav a[aria-current='page'] { background: var(--wp-surface-2); font-weight: 600; }
 .skip-link { position: absolute; inset-inline-start: -999px; }
 .skip-link:focus { inset-inline-start: 1rem; top: 0.5rem; background: var(--wp-surface); padding: 0.5rem; z-index: 10; }
-main { width: min(100%, 64rem); margin-inline: auto; padding: 1rem; }
+main { width: min(100%, 64rem); min-width: 0; margin-inline: auto; padding: 1rem; }
+main select { max-width: 100%; }
 main:focus { outline: none; }
 .app-footer { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; align-items: center; justify-content: center; padding: 1rem; border-block-start: 1px solid var(--wp-border); color: var(--wp-muted); font-size: 0.9rem; }
 .app-footer a { min-height: var(--wp-touch); display: inline-flex; align-items: center; }
 .hero h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); margin-block: 0.5rem; }
 .lead { font-size: 1.1rem; color: var(--wp-muted); max-width: 46rem; }
+.chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-block: 0.5rem 1rem; }
+.chip { min-height: 40px; padding: 0.3rem 0.85rem; border-radius: 999px; font-size: 0.9rem; }
+.chip[aria-pressed='true'] { background: var(--wp-accent); color: var(--wp-accent-contrast); border-color: var(--wp-accent); font-weight: 600; }
+.chip[aria-pressed='true']::before { content: '✓ '; }
+.badge.saved { font-weight: 600; border-color: var(--wp-accent); font-size: 0.75rem; vertical-align: middle; }
 .game-grid { list-style: none; padding: 0; display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr)); }
 .game-card { display: grid; gap: 0.35rem; height: 100%; padding: 1rem; border-radius: var(--wp-radius); border: 1px solid var(--wp-border); background: var(--wp-surface); color: var(--wp-text); text-decoration: none; }
 .game-card:hover { border-color: var(--wp-accent); }
@@ -33,7 +54,8 @@ main:focus { outline: none; }
 .host-panel { margin-block: 1rem; }
 .toolbar { justify-content: flex-start; }
 .field { display: grid; gap: 0.3rem; margin-block: 0.75rem; }
-.field.inline { display: inline-flex; align-items: center; gap: 0.5rem; margin: 0; }
+.field.inline { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin: 0; max-width: 100%; min-width: 0; }
+.field.inline select { min-width: 0; max-width: 100%; text-overflow: ellipsis; }
 .field.checkbox { display: flex; align-items: center; gap: 0.6rem; }
 .field.checkbox input { width: 1.4rem; height: 1.4rem; min-height: 0; }
 fieldset { border: 1px solid var(--wp-border); border-radius: var(--wp-radius); padding: 0.5rem 1rem; }
@@ -41,3 +63,40 @@ fieldset { border: 1px solid var(--wp-border); border-radius: var(--wp-radius); 
 .finished { margin-block: 1rem; }
 .session-note { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
 .seed { font-size: 0.85rem; }
+/* Deck library (/decks, /decks/<id>, /decks/import) */
+.deck-card .badges { margin-block-start: auto; }
+.deck-facts { padding-inline-start: 1.2rem; }
+.deck-actions { margin-block: 1rem; }
+button.danger { border-color: var(--wp-danger); color: var(--wp-danger); }
+button.danger::before { content: '✕ '; }
+.deck-preview { max-width: 100%; overflow-x: auto; }
+.deck-preview table { width: 100%; border-collapse: collapse; }
+.deck-preview th, .deck-preview td { padding: 0.4rem 0.5rem; border-block-end: 1px solid var(--wp-border); text-align: start; vertical-align: middle; overflow-wrap: anywhere; }
+.deck-preview th { font-weight: 600; color: var(--wp-muted); }
+.deck-preview td:first-child, .deck-preview th:first-child { width: 2.5rem; }
+.deck-symbol { font-size: 1.6rem; line-height: 1; }
+.deck-image { max-width: 4rem; max-height: 3rem; object-fit: contain; vertical-align: middle; }
+.import-form .field { min-width: 0; grid-template-columns: minmax(0, 1fr); }
+.import-form textarea, .import-form input { box-sizing: border-box; max-width: 100%; min-width: 0; }
+.import-form textarea { width: 100%; font-family: ui-monospace, monospace; font-size: 0.9rem; }
+.import-form input[type='text'] { width: min(100%, 24rem); }
+.import-form input[type='file'] { width: 100%; }
+.import-example { overflow-x: auto; padding: 0.5rem; border-radius: 6px; background: var(--wp-surface-2); font-size: 0.85rem; }
+.import-errors { border-inline-start-color: var(--wp-danger); }
+/* "Create with an AI" on /decks/import: the guide link and its copy button wrap on narrow screens. */
+.ai-guide { margin-block: 1.5rem; }
+.ai-guide .field { min-width: 0; grid-template-columns: minmax(0, 1fr); }
+.ai-guide-link { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; min-width: 0; }
+.ai-guide-link input { flex: 1 1 16rem; box-sizing: border-box; min-width: 0; max-width: 100%; font-family: ui-monospace, monospace; font-size: 0.9rem; }
+.ai-guide a, .about-ai-decks a { min-height: var(--wp-touch); display: inline-flex; align-items: center; }
+/* Items worth reviewing (neutral overview: no colours that urge, no counters that grow louder) */
+.review-overview { margin-block: 1.25rem; }
+.review-list { list-style: none; padding: 0; margin: 0.5rem 0; display: grid; gap: 0.5rem; }
+.review-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.75rem; padding: 0.5rem 0.75rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius); background: var(--wp-surface); }
+.review-list .review-deck { font-weight: 600; }
+.review-list .wp-button { margin-inline-start: auto; }
+.review-badge { border-style: dashed; }
+.review-how { max-width: 46rem; }
+.import-errors ul, .import-warnings ul { margin-block: 0.25rem; padding-inline-start: 1.2rem; }
+.import-errors strong::before { content: '⚠ '; }
+.import-result { margin-block: 1rem; display: grid; gap: 0.75rem; }

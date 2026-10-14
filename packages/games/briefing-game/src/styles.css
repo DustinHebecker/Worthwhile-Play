@@ -1,0 +1,104 @@
+/* Briefing Game. All rules are scoped under .wp-briefing-game and use logical properties (RTL-safe). */
+.wp-briefing-game {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 52rem;
+  margin-inline: auto;
+}
+.wp-briefing-game .bg-board { display: grid; gap: 0.75rem; }
+.wp-briefing-game p { margin: 0; }
+.wp-briefing-game h2 { margin: 0; font-size: 1.15rem; }
+.wp-briefing-game h3 { margin: 0; font-size: 1.05rem; }
+.wp-briefing-game h4 { margin: 0; font-size: 1rem; }
+.wp-briefing-game h5 { margin: 0; font-size: 0.95rem; }
+.wp-briefing-game fieldset { margin: 0; padding: 0; border: 0; min-width: 0; display: grid; gap: 0.5rem; }
+.wp-briefing-game legend { padding: 0; margin-block-end: 0.5rem; font-weight: 600; }
+
+.wp-briefing-game .bg-situation { display: grid; gap: 0.5rem; }
+.wp-briefing-game .bg-recipient { font-weight: 600; }
+.wp-briefing-game .bg-guide summary { cursor: pointer; min-height: var(--wp-touch); display: flex; align-items: center; color: var(--wp-accent); }
+.wp-briefing-game .bg-guide dl { margin: 0; display: grid; gap: 0.15rem 0.75rem; grid-template-columns: minmax(7rem, max-content) 1fr; }
+.wp-briefing-game .bg-guide dt { font-weight: 600; }
+.wp-briefing-game .bg-guide dd { margin: 0; }
+@media (max-width: 30rem) {
+  .wp-briefing-game .bg-guide dl { grid-template-columns: 1fr; }
+  .wp-briefing-game .bg-guide dd { margin-block-end: 0.35rem; }
+}
+
+/* Step chips: status shown by symbol and position, not colour alone. */
+.wp-briefing-game .bg-progress { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0; padding: 0; list-style: none; }
+.wp-briefing-game .bg-chip {
+  display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.75rem;
+  border: 1px solid var(--wp-border); border-radius: 999px; background: var(--wp-surface);
+}
+.wp-briefing-game .bg-chip-current { border-color: var(--wp-accent); border-width: 2px; font-weight: 600; }
+.wp-briefing-game .bg-chip-done { color: var(--wp-muted); }
+.wp-briefing-game .bg-chip-mark { font-weight: 700; }
+
+.wp-briefing-game .bg-step { display: grid; gap: 0.75rem; }
+.wp-briefing-game .bg-step > h2:focus { outline-offset: 4px; }
+
+/* Inbox: each card has its own section menu (no drag needed). */
+.wp-briefing-game .bg-inbox { display: grid; gap: 0.5rem; margin: 0; padding: 0; list-style: none; }
+.wp-briefing-game .bg-card {
+  display: grid; grid-template-columns: auto 1fr; gap: 0.4rem 0.6rem; align-items: start;
+  padding: 0.6rem 0.75rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius); background: var(--wp-surface);
+}
+.wp-briefing-game .bg-card.is-placed { border-inline-start: 4px solid var(--wp-accent); }
+.wp-briefing-game .bg-card-number {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 1.6rem; height: 1.6rem;
+  border-radius: 50%; background: var(--wp-surface-2); font-weight: 700; font-size: 0.9rem;
+}
+.wp-briefing-game .bg-card select { grid-column: 2; min-height: var(--wp-touch); max-width: 100%; justify-self: start; font: inherit; }
+
+.wp-briefing-game .bg-option,
+.wp-briefing-game .bg-check {
+  display: flex; align-items: flex-start; gap: 0.6rem; min-height: var(--wp-touch);
+  padding: 0.6rem 0.75rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius);
+  background: var(--wp-surface); cursor: pointer;
+}
+.wp-briefing-game .bg-option input,
+.wp-briefing-game .bg-check input { width: 1.4rem; height: 1.4rem; min-height: 0; margin: 0.1rem 0 0; flex: none; accent-color: var(--wp-accent); }
+.wp-briefing-game .is-checked { border-color: var(--wp-accent); border-width: 2px; }
+.wp-briefing-game .bg-option.is-revealed { display: grid; gap: 0.35rem; cursor: default; }
+.wp-briefing-game .bg-option.is-fit { border-inline-start: 6px solid var(--wp-ok); }
+.wp-briefing-game .bg-choices { display: grid; gap: 1rem; }
+.wp-briefing-game .bg-revealed { display: grid; gap: 0.5rem; }
+.wp-briefing-game .bg-badge { display: inline-block; margin-inline-start: 0.4rem; padding: 0 0.5rem; border-radius: 999px; background: var(--wp-surface-2); font-size: 0.9rem; }
+.wp-briefing-game .bg-badge-yours { border: 1px solid var(--wp-accent); }
+
+.wp-briefing-game .bg-panel {
+  display: grid; gap: 0.6rem; padding: 0.75rem; border: 1px solid var(--wp-border);
+  border-radius: var(--wp-radius); background: var(--wp-surface);
+}
+.wp-briefing-game .bg-score { font-weight: 600; }
+.wp-briefing-game .bg-overview { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+.wp-briefing-game .bg-overview ul { margin: 0.35rem 0 0; padding-inline-start: 1.1rem; }
+.wp-briefing-game .bg-by-section { list-style: none; padding-inline-start: 0 !important; }
+.wp-briefing-game .bg-verdicts { display: grid; gap: 0.5rem; margin: 0; padding: 0; list-style: none; }
+.wp-briefing-game .bg-verdict { display: flex; gap: 0.6rem; align-items: flex-start; padding: 0.5rem; border-radius: 8px; background: var(--wp-surface-2); }
+.wp-briefing-game .bg-verdict > div { display: grid; gap: 0.2rem; }
+.wp-briefing-game .bg-symbol {
+  flex: none; display: inline-flex; align-items: center; justify-content: center;
+  width: 1.8rem; height: 1.8rem; border-radius: 50%; border: 2px solid currentColor; font-weight: 700;
+}
+.wp-briefing-game .bg-verdict-correct .bg-symbol { color: var(--wp-ok); }
+.wp-briefing-game .bg-verdict-wrong .bg-symbol { color: var(--wp-danger); }
+.wp-briefing-game .bg-verdict-label { font-weight: 600; }
+.wp-briefing-game .bg-reason { font-size: 0.92rem; }
+
+/* Side by side on wide screens, stacked on phones. */
+.wp-briefing-game .bg-compare { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); }
+.wp-briefing-game .bg-briefing { display: grid; gap: 0.5rem; align-content: start; padding: 0.6rem 0.75rem; background: var(--wp-surface-2); border-radius: 8px; }
+.wp-briefing-game .bg-briefing[data-testid='bg-model'] { border-inline-start: 4px solid var(--wp-accent); }
+.wp-briefing-game .bg-briefing-section ul { margin: 0.2rem 0 0; padding-inline-start: 1.1rem; }
+.wp-briefing-game .bg-briefing-lead { font-weight: 600; margin-block-start: 0.2rem; }
+
+.wp-briefing-game .bg-reflect label[for] { font-weight: 600; }
+.wp-briefing-game textarea { width: 100%; box-sizing: border-box; resize: vertical; font: inherit; }
+.wp-briefing-game .bg-checks { gap: 0.4rem; }
+.wp-briefing-game .bg-notes-text { white-space: pre-wrap; }
+
+.wp-briefing-game .bg-notice { padding: 0.5rem 0.75rem; border-inline-start: 4px solid var(--wp-focus); background: var(--wp-surface-2); border-radius: 6px; }
+.wp-briefing-game .bg-actions { justify-content: flex-start; }
+.wp-briefing-game .bg-summary-list { margin: 0; padding-block: 0.75rem; padding-inline: 2rem 0.75rem; display: grid; gap: 0.25rem; }

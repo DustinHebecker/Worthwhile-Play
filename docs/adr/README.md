@@ -7,7 +7,13 @@ Short, durable records of decisions that are not obvious from the code. New ADR:
 | [0001](0001-monorepo-typescript-vanilla-dom.md) | TypeScript monorepo, pnpm, Vite, framework-free DOM |
 | [0002](0002-game-module-contract.md) | GameModule contract, seeded determinism and save envelope |
 | [0003](0003-localization-ui-vs-content.md) | 16 UI locales, separate content languages |
-| [0004](0004-cloudflare-workers-static-assets.md) | Cloudflare Workers Static Assets |
+| [0004](0004-cloudflare-workers-static-assets.md) | Cloudflare Workers Static Assets (superseded) |
 | [0005](0005-legal-notice-outside-git.md) | Legal-notice data injected at build time |
 | [0006](0006-multi-agent-workflow.md) | Orchestrator and feature agents |
 | [0007](0007-license.md) | Source-available license (PolyForm Perimeter 1.0.0) |
+| [0008](0008-cloudflare-pages.md) | Cloudflare Pages (supersedes 0004) |
+| [0009](0009-strategy-engine-api.md) | Shared strategy engine and its API |
+| [0010](0010-communication-and-reading-evaluation.md) | Deterministic evaluation for reading and communication exercises |
+| [0011](0011-per-locale-game-content.md) | Per-locale game content, loaded by an optional `preload` hook |
+| [0012](0012-game-library.md) | Per-game library for things players create |
+| [0013](0013-decks-made-with-an-ai.md) | Decks made with an AI: a guide link and direct import links |

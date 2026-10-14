@@ -3,7 +3,7 @@ import tseslint from 'typescript-eslint';
 import globals from 'globals';
 
 export default tseslint.config(
-  { ignores: ['**/dist/**', '**/node_modules/**', 'coverage/**', 'reports/**', '.stryker-tmp/**', 'playwright-report/**', 'test-results/**', '.wrangler/**'] },
+  { ignores: ['**/dist/**', '**/node_modules/**', 'coverage/**', 'reports/**', '.stryker-tmp*/**', 'playwright-report/**', 'test-results/**', '.wrangler/**'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
@@ -14,6 +14,13 @@ export default tseslint.config(
       eqeqeq: ['error', 'always'],
       // Determinism rule: game logic must use the seeded PRNG from @wp/game-core.
       'no-restricted-properties': ['error', { object: 'Math', property: 'random', message: 'Use the seeded PRNG from @wp/game-core (createRng) instead of Math.random().' }]
+    }
+  },
+  {
+    // Stryker's instrumenter crashes on `a[i]!++` (non-null assertion inside ++/--) in mutated source files.
+    files: ['packages/**/src/**/*.ts'],
+    rules: {
+      'no-restricted-syntax': ['error', { selector: 'UpdateExpression > TSNonNullExpression', message: 'Write `x = x! + 1` instead of `x!++` / `x!--` (Stryker cannot instrument it).' }]
     }
   },
   {

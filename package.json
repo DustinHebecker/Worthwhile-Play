@@ -22,7 +22,7 @@
     "mutation": "stryker run",
     "check:licenses": "node scripts/check-licenses.mjs",
     "check": "pnpm check:licenses && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
-    "deploy:cloudflare": "node scripts/check-release-env.mjs && pnpm build && wrangler deploy"
+    "deploy:cloudflare": "node scripts/check-release-env.mjs && pnpm build && wrangler pages deploy --branch main"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

@@ -1,0 +1,154 @@
+/* River Crossing — all rules scoped under .wp-river-crossing. Uses shared --wp-* tokens. */
+.wp-river-crossing {
+  --rc-land: #e7dfc8;
+  --rc-land-edge: #b9ab84;
+  --rc-water: #cfe3ec;
+  --rc-wave: #b4d1de;
+  --rc-boat: #c98b3a;
+  --rc-boat-edge: #6e4512;
+  --rc-boat-inner: #f4e3c6;
+  --rc-icon: var(--wp-text);
+  container-type: inline-size;
+  display: grid;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 60rem;
+  margin-inline: auto;
+}
+@media (prefers-color-scheme: dark) {
+  .wp-river-crossing {
+    --rc-land: #34312a;
+    --rc-land-edge: #5d5646;
+    --rc-water: #1f3640;
+    --rc-wave: #284653;
+    --rc-boat: #8a5a1f;
+    --rc-boat-edge: #d39a4c;
+    --rc-boat-inner: #3d2f1c;
+  }
+}
+.wp-river-crossing p,
+.wp-river-crossing h3,
+.wp-river-crossing ul { margin: 0; }
+.wp-river-crossing h3 { font-size: 1rem; }
+
+.wp-river-crossing .rc-puzzle { font-weight: 600; text-align: center; }
+.wp-river-crossing .rc-stats { text-align: center; font-variant-numeric: tabular-nums; }
+
+.wp-river-crossing .rc-rules {
+  background: var(--wp-surface);
+  border: 1px solid var(--wp-border);
+  border-radius: var(--wp-radius, 10px);
+  padding: 0.6rem 0.9rem;
+}
+.wp-river-crossing .rc-rule-list { padding-inline-start: 1.2rem; display: grid; gap: 0.2rem; margin-block-start: 0.3rem; }
+
+/* Scene: start bank | river with boat | goal bank. Stacked vertically on narrow screens. */
+.wp-river-crossing .rc-scene {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(11rem, 1fr) minmax(0, 1.1fr);
+  border-radius: var(--wp-radius, 10px);
+  overflow: hidden;
+  border: 1px solid var(--wp-border);
+}
+.wp-river-crossing .rc-bank {
+  display: grid;
+  align-content: start;
+  gap: 0.5rem;
+  padding: 0.6rem;
+  min-height: 8rem;
+  background: var(--rc-land);
+}
+.wp-river-crossing .rc-bank[data-bank='left'] { border-inline-end: 3px solid var(--rc-land-edge); }
+.wp-river-crossing .rc-bank[data-bank='right'] { border-inline-start: 3px solid var(--rc-land-edge); }
+.wp-river-crossing .rc-bank-title { display: flex; align-items: center; gap: 0.4rem; }
+.wp-river-crossing .rc-bank-mark { font-size: 0.9rem; }
+
+.wp-river-crossing .rc-river {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0.6rem;
+  background:
+    repeating-linear-gradient(170deg, transparent 0 14px, var(--rc-wave) 14px 17px),
+    var(--rc-water);
+}
+.wp-river-crossing .rc-scene[data-boat='right'] .rc-river { justify-content: flex-end; }
+
+.wp-river-crossing .rc-boat {
+  display: grid;
+  gap: 0.35rem;
+  width: min(80%, 14rem);
+  padding: 0.5rem 0.6rem 0.9rem;
+  background: var(--rc-boat-inner);
+  border: 3px solid var(--rc-boat-edge);
+  border-radius: 0.6rem 0.6rem 2.5rem 2.5rem;
+  box-shadow: inset 0 -0.45rem 0 var(--rc-boat);
+}
+.wp-river-crossing .rc-boat-title { font-weight: 600; display: flex; justify-content: space-between; gap: 0.4rem; }
+.wp-river-crossing .rc-boat-info { font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+.wp-river-crossing .rc-boat-empty { font-size: 0.85rem; }
+.wp-river-crossing:not(.rc-reduced) .rc-boat { transition: transform 0.25s ease; }
+
+.wp-river-crossing .rc-slot { display: flex; flex-wrap: wrap; gap: 0.4rem; align-content: flex-start; }
+
+.wp-river-crossing .rc-token {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+  min-height: var(--wp-touch, 44px);
+  min-width: var(--wp-touch, 44px);
+  padding: 0.3rem 0.55rem;
+  text-align: start;
+  line-height: 1.2;
+}
+.wp-river-crossing .rc-token[data-side='boat'] { border-style: dashed; border-width: 2px; }
+.wp-river-crossing .rc-token[aria-disabled='true'] { cursor: default; }
+.wp-river-crossing .rc-icon { width: 1.4rem; height: 1.4rem; flex: none; fill: var(--rc-icon); }
+.wp-river-crossing .rc-icon .rc-hole { fill: var(--wp-surface); }
+.wp-river-crossing .rc-icon .rc-stroke { fill: none; stroke: var(--rc-icon); stroke-width: 2; stroke-linecap: round; }
+.wp-river-crossing .rc-icon .rc-on-fill { stroke: var(--wp-surface); }
+.wp-river-crossing .rc-name { font-weight: 600; }
+.wp-river-crossing .rc-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem;
+  padding: 0 0.3rem;
+  border: 1px solid var(--wp-border);
+  border-radius: 0.4rem;
+  font-variant-numeric: tabular-nums;
+}
+.wp-river-crossing .rc-badge-oar { border: none; padding: 0; }
+.wp-river-crossing .rc-oar { width: 1.1rem; height: 1.1rem; fill: var(--rc-boat-edge); }
+.wp-river-crossing .rc-oar .rc-stroke { fill: none; stroke: var(--rc-boat-edge); stroke-width: 2.4; stroke-linecap: round; }
+
+.wp-river-crossing .rc-status { text-align: center; padding-inline: 0.5rem; }
+.wp-river-crossing .rc-status[data-state='blocked'] {
+  border-inline-start: 4px solid var(--wp-focus);
+  text-align: start;
+  font-weight: 500;
+}
+.wp-river-crossing .rc-status[data-state='blocked']::before { content: '! '; font-weight: 700; }
+.wp-river-crossing .rc-status[data-state='solved']::before { content: '✓ '; }
+
+.wp-river-crossing .rc-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; }
+.wp-river-crossing .rc-chooser { justify-content: center; }
+.wp-river-crossing .rc-chooser select { max-width: 100%; }
+.wp-river-crossing .rc-help { display: grid; gap: 0.25rem; font-size: 0.85rem; text-align: center; }
+
+@container (max-width: 40rem) {
+  .wp-river-crossing .rc-scene { grid-template-columns: minmax(0, 1fr); }
+  .wp-river-crossing .rc-bank { min-height: 4.5rem; }
+  .wp-river-crossing .rc-bank[data-bank='left'] { border-inline-end: none; border-block-end: 3px solid var(--rc-land-edge); }
+  .wp-river-crossing .rc-bank[data-bank='right'] { border-inline-start: none; border-block-start: 3px solid var(--rc-land-edge); }
+  .wp-river-crossing .rc-river { flex-direction: column; align-items: stretch; justify-content: flex-start; min-height: 9rem; padding-block-end: 2.5rem; }
+  .wp-river-crossing .rc-scene[data-boat='right'] .rc-river { justify-content: flex-end; padding-block: 2.5rem 0.6rem; }
+  .wp-river-crossing .rc-boat { width: 100%; }
+}
+
+@media (forced-colors: active) {
+  .wp-river-crossing .rc-icon, .wp-river-crossing .rc-oar { fill: CanvasText; }
+  .wp-river-crossing .rc-icon .rc-hole { fill: Canvas; }
+  .wp-river-crossing .rc-icon .rc-stroke, .wp-river-crossing .rc-oar .rc-stroke { stroke: CanvasText; }
+  .wp-river-crossing .rc-boat { border-color: CanvasText; }
+}

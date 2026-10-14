@@ -1,14 +1,25 @@
 import { randomSeed, type GameInstance, type GameModule, type GameResult } from '@wp/game-core';
-import { createAutosave, createSave, interpretSave, type GameSave, type SaveStore } from '@wp/persistence';
+import type { GameContentLanguages, UserDeckSource } from '@wp/game-core';
+import { readContentLanguages } from '@wp/localization';
+import { createAutosave, createGameLibrary, createSave, interpretSave, type GameSave, type SaveStore } from '@wp/persistence';
 import { clear, h } from '@wp/ui';
 import type { AppContext, Page } from '../app';
 import { SESSION_NOTE_MINUTES } from '../config';
 import { findGame } from '../registry';
 import type { Route } from '../router';
-import { sessionNoteEnabled } from './settings';
+import { hostLearning, loadLearningRecords, type HostLearning } from '../lib/learning';
+import { createPreferences } from '../lib/preferences';
+import { safeStorage, sessionNoteEnabled } from './settings';
 import { gameBadges, gameTranslator } from './shared';
 
 type GameRoute = Extract<Route, { name: 'game' }>;
+
+/** Learning languages from Settings, passed to games (undefined entries are left out). */
+function contentLanguages(): GameContentLanguages {
+  const storage = safeStorage();
+  const { learning, translation } = storage ? readContentLanguages(storage) : { learning: undefined, translation: undefined };
+  return { ...(learning ? { learning } : {}), ...(translation ? { translation } : {}) };
+}
 
 /**
  * Game host: loads a game module lazily, offers "Continue"/"New game", wires the
@@ -23,7 +34,9 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
     return async () => undefined;
   }
   const { metadata } = entry;
-  const gt = gameTranslator(metadata, app.locale);
+  // Until the game's chunk is loaded, only its catalogue messages are available (title, tagline, rules,
+  // difficulty labels); the game itself always gets a translator over its complete messages.
+  let gt = gameTranslator(metadata, app.locale);
 
   const status = h('div', { class: 'host-status' });
   const panel = h('div', { class: 'host-panel' });
@@ -44,11 +57,15 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
   );
 
   let module: GameModule<unknown> | undefined;
+  let userDecks: UserDeckSource | undefined;
+  let learning: HostLearning | undefined;
   let store: (SaveStore & { persistent: boolean }) | undefined;
   let instance: GameInstance<unknown> | undefined;
   let autosave: ReturnType<typeof createAutosave> | undefined;
   let current: { seed: number; difficulty: string | undefined } | undefined;
   let disposed = false;
+  // The game's own creations (ADR 0012), scoped to its id; asynchronous, so it needs no loading before `create`.
+  const library = createGameLibrary(app.library, metadata.id);
   let playMs = 0;
   let lastTick = Date.now();
   let noteShown = false;
@@ -67,11 +84,23 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
     await store.write(createSave(module, current.seed, instance.serialize(), current.difficulty) as GameSave);
   };
 
+  let interactedAfterFinish = false;
+  const markInteraction = () => {
+    if (finishedSlot.childElementCount > 0) interactedAfterFinish = true;
+  };
+  gameRoot.addEventListener('pointerdown', markInteraction);
+  gameRoot.addEventListener('keydown', markInteraction);
+  const clearFinished = () => {
+    clear(finishedSlot);
+    interactedAfterFinish = false;
+  };
+
   const showFinished = (result: GameResult) => {
     clear(finishedSlot);
+    interactedAfterFinish = false;
     // A game may phrase its own outcome (`result.<outcome>`), e.g. "Player X wins"; otherwise use the shared wording.
     const own = `result.${result.outcome}`;
-    const outcome = metadata.messages.en?.[own] ? own : { won: 'common.won', lost: 'common.lost', draw: 'common.draw', completed: 'common.solved' }[result.outcome];
+    const outcome = (module?.metadata ?? metadata).messages.en?.[own] ? own : { won: 'common.won', lost: 'common.lost', draw: 'common.draw', completed: 'common.solved' }[result.outcome];
     const another = h('button', { type: 'button', class: 'primary', 'data-testid': 'another-round' }, t('game.anotherRound'));
     another.addEventListener('click', () => void startNew());
     finishedSlot.append(
@@ -85,6 +114,7 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
     void autosave?.flush(true);
   };
 
+  let launched = false;
   const mount = () => {
     instance?.dispose();
     autosave?.dispose();
@@ -95,9 +125,31 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
       root: gameRoot,
       t: gt,
       reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
-      requestSave: () => autosave?.request(),
-      finished: showFinished
+      requestSave: () => {
+        // Continued play inside the game (e.g. choosing another level) after a natural end
+        // hides the calm "finished" panel again; the save itself is unaffected.
+        if (interactedAfterFinish) clearFinished();
+        autosave?.request();
+      },
+      finished: showFinished,
+      // The game changed its own difficulty (e.g. a strength chosen in an in-game menu): keep the host's
+      // select, the next "New game" and the save envelope in line with it.
+      setDifficulty: (difficulty: string) => {
+        if (!current || !metadata.difficulties?.includes(difficulty) || current.difficulty === difficulty) return;
+        current = { ...current, difficulty };
+        const select = main.querySelector<HTMLSelectElement>('#difficulty');
+        if (select) select.value = difficulty;
+        autosave?.request();
+      },
+      preferences: createPreferences(safeStorage(), metadata.id),
+      contentLanguages: contentLanguages(),
+      ...(userDecks ? { userDecks } : {}),
+      ...(learning ? { learning } : {}),
+      library,
+      // `?deck=<id>` applies to the first game started on this page only.
+      ...(route.deck && !launched ? { launch: { deck: route.deck } } : {})
     });
+    launched = true;
     return instance;
   };
 
@@ -117,7 +169,9 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
     game.newGame(difficulty === undefined ? { seed } : { seed, difficulty });
     toolbar();
     await autosave?.flush(true);
-    gameRoot.querySelector<HTMLElement>('button, [tabindex="0"], input, select')?.focus();
+    // A game can mark its main play area with data-autofocus (e.g. so arrow keys move pieces instead of
+    // changing an options select that happens to come first); otherwise focus the first control.
+    (gameRoot.querySelector<HTMLElement>('[data-autofocus]') ?? gameRoot.querySelector<HTMLElement>('button, [tabindex="0"], input, select'))?.focus();
   };
 
   const resume = async (save: GameSave<unknown>) => {
@@ -140,7 +194,12 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
     }
     items.push(h('div', { class: 'wp-row' }, difficultySelect(route.difficulty ?? save?.difficulty), newButton));
     panel.append(h('div', { class: 'start wp-card wp-stack' }, ...items));
-    (save ? panel.querySelector<HTMLElement>('[data-testid="continue"]') : newButton)?.focus();
+    // The game module loads asynchronously; do not pull focus away from a control the person is
+    // using meanwhile (e.g. the header language menu after switching language).
+    const active = document.activeElement;
+    if (!active || active === document.body || main.contains(active)) {
+      (save ? panel.querySelector<HTMLElement>('[data-testid="continue"]') : newButton)?.focus();
+    }
   };
 
   // Pause when hidden; informational (never blocking) note after long continuous play.
@@ -172,7 +231,22 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
   void (async () => {
     status.append(h('p', { class: 'wp-muted', 'data-testid': 'loading' }, t('game.loading')));
     try {
-      [module, store] = await Promise.all([entry.load(), app.store]);
+      let decks;
+      let records;
+      [module, store, decks, records] = await Promise.all([
+        // Games with per-locale content (ADR 0011) load the UI locale's content and the English fallback before
+        // they are created. A language switch re-renders this page, so it runs again for the new locale.
+        entry.load().then(async (game) => {
+          await game.preload?.(app.locale);
+          return game;
+        }),
+        app.store,
+        // The deck library code (validation shared with the importer) is a separate chunk: only some games use it.
+        metadata.usesUserDecks ? import('../lib/decks').then(async (lib) => lib.userDeckSource(await lib.loadUserDecks(app.decks))) : undefined,
+        metadata.usesLearningRecords ? loadLearningRecords(app.learning) : undefined
+      ]);
+      if (decks) userDecks = decks;
+      if (records) learning = hostLearning(records, await app.learning);
     } catch (error) {
       console.error(error);
       clear(status);
@@ -180,6 +254,7 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
       return;
     }
     if (disposed) return;
+    gt = gameTranslator(module.metadata, app.locale);
     clear(status);
     if (!store.persistent) status.append(h('p', { class: 'notice' }, t('game.saveUnavailable')));
     const loaded = interpretSave(await store.read(metadata.id).catch(() => undefined), module);
@@ -189,6 +264,10 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
     }
     if (route.seed !== undefined) {
       await startNew(route.seed, route.difficulty && metadata.difficulties?.includes(route.difficulty) ? route.difficulty : chosenDifficulty());
+    } else if (route.fresh) {
+      // "Play" from another page: start right away, then drop `?new=1` so that a reload resumes this game.
+      history.replaceState(null, '', `/games/${metadata.id}`);
+      await startNew(randomSeed(), loaded.status === 'ok' && loaded.save.difficulty && metadata.difficulties?.includes(loaded.save.difficulty) ? loaded.save.difficulty : chosenDifficulty());
     } else {
       showStart(loaded.status === 'ok' ? loaded.save : undefined);
     }
@@ -200,6 +279,7 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
     document.removeEventListener('visibilitychange', onVisibility);
     try {
       await autosave?.flush(true);
+      await learning?.flush();
     } finally {
       autosave?.dispose();
       instance?.dispose();

@@ -1,0 +1,77 @@
+/* Signal Watch: all rules scoped under .wp-sw. Uses shared --wp-* tokens. */
+.wp-sw {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: center;
+  width: 100%;
+  max-width: 100%;
+  text-align: center;
+}
+.wp-sw p { margin: 0; }
+.wp-sw__intro,
+.wp-sw__play {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: center;
+  width: 100%;
+}
+.wp-sw__intro[hidden],
+.wp-sw__play[hidden] { display: none; }
+.wp-sw__sample {
+  font-size: 3.5rem;
+  line-height: 1;
+  font-variant-emoji: text;
+}
+.wp-sw__target { font-weight: 700; }
+.wp-sw__muted { color: var(--wp-muted); font-size: 0.95rem; }
+.wp-sw__muted[hidden] { display: none; }
+.wp-sw__status {
+  max-width: 36rem;
+  font-variant-numeric: tabular-nums;
+}
+.wp-sw__ack {
+  min-height: 1.5em;
+  color: var(--wp-muted);
+}
+/* Fixed-size stage so that swapping symbols never shifts the layout. */
+.wp-sw__stimulus {
+  display: grid;
+  place-items: center;
+  width: min(100%, 10rem);
+  aspect-ratio: 1;
+  border: 2px solid var(--wp-border);
+  border-radius: var(--wp-radius);
+  background: var(--wp-surface);
+  color: var(--wp-text);
+  font-size: 6rem;
+  line-height: 1;
+  font-variant-emoji: text;
+  user-select: none;
+}
+.wp-sw__respond {
+  min-height: calc(var(--wp-touch) * 1.75);
+  min-width: var(--wp-touch);
+  width: min(100%, 20rem);
+  font-size: 1.25rem;
+  touch-action: manipulation;
+  user-select: none;
+}
+/* Already answered: dashed border and the "Response noted" text (not colour alone). */
+.wp-sw__respond[aria-disabled='true'] {
+  border-style: dashed;
+  opacity: 0.8;
+}
+.wp-sw__summary {
+  display: grid;
+  gap: 0.35rem;
+}
+.wp-sw__summary[hidden] { display: none; }
+
+.wp-sw--motion .wp-sw__glyph { animation: wp-sw-in 160ms ease-out; }
+@keyframes wp-sw-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wp-sw--motion .wp-sw__glyph { animation: none; }
+}

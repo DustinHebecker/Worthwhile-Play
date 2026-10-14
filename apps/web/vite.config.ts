@@ -1,34 +1,28 @@
 import { readFileSync } from 'node:fs';
 import { defineConfig, loadEnv } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import { legalFromEnv } from '../../scripts/legal-env.mjs';
+import { aiGuidePlugin } from './ai-guide-plugin';
+import { cataloguePlugin } from './catalogue-plugin';
 
 const pkg = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')) as { version: string };
 
-/**
- * Legal-notice data is read from the environment at build time (WP_LEGAL_NAME,
- * WP_LEGAL_ADDRESS as pipe-separated lines, optional WP_LEGAL_EMAIL) and is never
- * committed. See docs/deployment.md.
- */
-function legalFromEnv(mode: string) {
-  const env = { ...loadEnv(mode, new URL('../..', import.meta.url).pathname, 'WP_'), ...process.env };
-  return {
-    name: (env.WP_LEGAL_NAME ?? '').trim(),
-    address: (env.WP_LEGAL_ADDRESS ?? '').split('|').map((line) => line.trim()).filter(Boolean),
-    email: (env.WP_LEGAL_EMAIL ?? '').trim()
-  };
-}
+/** Legal-notice data comes from the environment at build time and is never committed (docs/deployment.md). */
+const legalConfig = (mode: string) => legalFromEnv({ ...loadEnv(mode, new URL('../..', import.meta.url).pathname, 'WP_'), ...process.env });
 
 export default defineConfig(({ mode }) => ({
   define: {
-    __WP_LEGAL__: JSON.stringify(legalFromEnv(mode)),
+    __WP_LEGAL__: JSON.stringify(legalConfig(mode)),
     __WP_VERSION__: JSON.stringify(pkg.version)
   },
   build: { target: 'es2022', sourcemap: true },
   plugins: [
+    cataloguePlugin(),
+    aiGuidePlugin(),
     VitePWA({
       registerType: 'prompt',
       injectRegister: false,
-      includeAssets: ['icon.svg', 'maskable-icon.svg', 'apple-touch-icon.png', 'robots.txt'],
+      includeAssets: ['favicon.ico', 'favicon-32.png', 'apple-touch-icon.png', 'logo.png', 'robots.txt'],
       manifest: {
         id: '/',
         name: 'Worthwhile Play',
@@ -43,15 +37,18 @@ export default defineConfig(({ mode }) => ({
         icons: [
           { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
-          { src: '/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
-          { src: '/icon.svg', sizes: 'any', type: 'image/svg+xml' }
+          { src: '/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
         ]
       },
       workbox: {
         // Core app and all bundled games are precached: they must work offline after the first visit.
         // Large optional packs (audio, AI models) will use separate, explicitly user-triggered caches.
-        globPatterns: ['**/*.{js,css,html,svg,png,webmanifest,txt}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,webmanifest,txt}'],
+        // The link-preview image is only fetched by link unfurlers, never by the app.
+        globIgnores: ['og-image.png', 'favicon-16.png', 'favicon-48.png'],
         navigateFallback: '/index.html',
+        // The guides for AIs (/ai/deck-guide.<locale>.md) are files, not app routes.
+        navigateFallbackDenylist: [/^\/ai\//],
         cleanupOutdatedCaches: true
       },
       devOptions: { enabled: false }

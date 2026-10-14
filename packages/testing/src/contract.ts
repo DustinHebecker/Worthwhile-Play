@@ -1,9 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import fc from 'fast-check';
 import { validateMetadata, type GameInstance, type GameModule } from '@wp/game-core';
 import { auditCatalogues, COMMON_MESSAGES, SUPPORTED_LOCALES } from '@wp/localization';
 import { createSave, createMemoryStore, interpretSave } from '@wp/persistence';
-import { createTestContext } from './context';
+import { createTestContext, createTestLibrary, type TestContextExtras } from './context';
 
 export interface ContractOptions<S> {
   /** Seeds used for determinism checks. */
@@ -13,26 +13,34 @@ export interface ContractOptions<S> {
    * so that save/restore is verified on a non-initial state. Should trigger `requestSave`.
    */
   interact?: (root: HTMLElement, instance: GameInstance<S>) => void | Promise<void>;
+  /** Optional host services for every context the suite creates (fresh per context, e.g. learning records). */
+  extras?: () => TestContextExtras;
 }
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
 /**
- * Shared contract every game must satisfy. Call from a test file running in jsdom:
+ * Shared contract every game must satisfy. Games with `preload` (ADR 0011) get it awaited for English before
+ * the suite and for each locale before rendering in it, as the app shell does. Call from a test file running in jsdom:
  *
  *   // @vitest-environment jsdom
  *   runGameContract(game, { interact: (root) => root.querySelector('button')!.click() });
  */
 export function runGameContract<S>(module: GameModule<S>, options: ContractOptions<S> = {}): void {
   const seeds = options.seeds ?? [1, 42, 0xdeadbeef];
-  const start = (seed: number) => {
-    const ctx = createTestContext(module as GameModule<unknown>);
+  const start = (seed: number, extras: TestContextExtras | undefined = options.extras?.()) => {
+    const ctx = createTestContext(module as GameModule<unknown>, 'en', undefined, extras);
     const instance = module.create(ctx.context) as GameInstance<S>;
     instance.newGame({ seed });
     return { ctx, instance };
   };
 
   describe(`GameModule contract: ${module.metadata.id}`, () => {
+    // Games with per-locale content (ADR 0011) need it loaded before `create`, like in the app shell.
+    beforeAll(async () => {
+      await module.preload?.('en');
+    });
+
     it('has valid metadata with required messages for all 16 UI locales', () => {
       expect(validateMetadata(module.metadata, SUPPORTED_LOCALES)).toEqual([]);
     });
@@ -72,7 +80,10 @@ export function runGameContract<S>(module: GameModule<S>, options: ContractOptio
     });
 
     it('resumes exactly after close (save → reload → restore), including after interaction', async () => {
-      const { ctx, instance } = start(seeds[1] ?? 42);
+      // Same device, so the same library (ADR 0012) in both sessions, unless the suite provides its own.
+      const shared = createTestLibrary(module.metadata.id).library;
+      const extras = (): TestContextExtras => ({ library: shared, ...options.extras?.() });
+      const { ctx, instance } = start(seeds[1] ?? 42, extras());
       if (options.interact) {
         await options.interact(ctx.context.root, instance);
         expect(ctx.saveRequests(), 'interaction should request an autosave').toBeGreaterThan(0);
@@ -85,7 +96,7 @@ export function runGameContract<S>(module: GameModule<S>, options: ContractOptio
       const loaded = interpretSave(await store.read(module.metadata.id), module);
       expect(loaded.status).toBe('ok');
       if (loaded.status !== 'ok') return;
-      const ctx2 = createTestContext(module as GameModule<unknown>);
+      const ctx2 = createTestContext(module as GameModule<unknown>, 'en', undefined, extras());
       const restored = module.create(ctx2.context) as GameInstance<S>;
       restored.restore(loaded.save.state);
       expect(restored.serialize()).toEqual(before);
@@ -106,14 +117,42 @@ export function runGameContract<S>(module: GameModule<S>, options: ContractOptio
       instance.dispose();
     });
 
-    it('renders without missing translation keys in every locale', () => {
+    if (module.preload) {
+      const preload = module.preload.bind(module);
+      it('preloads the content of every UI locale (repeatable, nothing reported)', async () => {
+        // A locale that fails to load falls back to English and is reported via console.error.
+        const reported = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+        try {
+          for (const locale of SUPPORTED_LOCALES) {
+            await expect(preload(locale), `preload ${locale}`).resolves.toBeUndefined();
+            await expect(preload(locale), `preload ${locale} again`).resolves.toBeUndefined();
+          }
+          expect(reported.mock.calls).toEqual([]);
+        } finally {
+          reported.mockRestore();
+        }
+      });
+    }
+
+    it('renders without missing translation keys in every locale', async () => {
       for (const locale of SUPPORTED_LOCALES) {
-        const ctx = createTestContext(module as GameModule<unknown>, locale);
+        // The host awaits `preload(locale)` for the locale the game is shown in.
+        await module.preload?.(locale);
+        const ctx = createTestContext(module as GameModule<unknown>, locale, undefined, options.extras?.());
         const instance = module.create(ctx.context);
         instance.newGame({ seed: 3 });
         expect(ctx.missingKeys, `missing keys in ${locale}`).toEqual([]);
         instance.dispose();
       }
+    });
+
+    it('works without the optional library (older hosts, storage-less tests)', () => {
+      const ctx = createTestContext(module as GameModule<unknown>, 'en', undefined, { ...options.extras?.(), library: undefined });
+      expect(ctx.context.library).toBeUndefined();
+      const instance = module.create(ctx.context);
+      instance.newGame({ seed: 4 });
+      expect(module.isValidState(clone(instance.serialize()))).toBe(true);
+      instance.dispose();
     });
 
     it('cleans up its DOM on dispose', () => {

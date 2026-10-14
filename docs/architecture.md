@@ -30,6 +30,7 @@ interface GameModule<S> {
   create(ctx: GameContext): GameInstance<S>;
   isValidState(value: unknown): value is S;     // validates untrusted saves, never throws
   migrateState?(state: unknown, fromVersion: number): S | undefined;
+  preload?(locale: string): Promise<void>;      // optional: per-locale content (+ English) before create (ADR 0011)
 }
 interface GameInstance<S> {
   newGame({ seed, difficulty }): void;
@@ -41,13 +42,26 @@ interface GameContext {
   root: HTMLElement; t: Translator; reducedMotion: boolean;
   requestSave(): void;               // after each logical change
   finished(result: GameResult): void;// once, on natural end
+  setDifficulty?(id: string): void;  // optional: in-game difficulty change → host select, next round, save
+  preferences?: { get(key): unknown; set(key, value): void }; // optional: per-device options (localStorage, cleared with saves)
+  contentLanguages?: { learning?: string; translation?: string }; // optional: learning languages from Settings (any BCP-47 tag)
+  userDecks?: { list(): UserDeckSummary[]; get(id): unknown };    // optional: snapshot of imported decks (metadata.usesUserDecks)
+  learning?: { today(): string; list(deckId): LearningRecordSummary[]; record(reviews: LearningReview[]): void }; // optional (metadata.usesLearningRecords)
+  launch?: { deck?: string };       // optional: parameters of the opening link (`?deck=<id>`), for the first newGame only
+  library?: { list(); get(id); put({ id?, name, data }, { ifAbsent? }?); delete(id) }; // optional, async: the player's own creations (ADR 0012)
 }
 ```
+
+`contentLanguages` is independent of the UI language (`t.locale`); either entry may be missing and games must fall back explicitly (see `resolveContentLanguages` in `@wp/learning-content`). `userDecks` is a synchronous, read-only snapshot the host loads before creating a game whose metadata sets `usesUserDecks: true`, so `newGame`/`restore` stay synchronous. Decks can be deleted between sessions; a game must handle a saved game whose deck is gone (Memory shows an explanation and a "new game" button).
+
+`learning` is the minimal capability for spaced repetition (see "Learning records" below). The host provides it only to games whose metadata sets `usesLearningRecords: true`: a synchronous snapshot of the records loaded before the game is created, `today()` (the device's local calendar day, `YYYY-MM-DD`) and `record(reviews)`, which applies self-ratings in memory immediately and writes them to IndexedDB in order. `record` is idempotent per (card, session), so a game may send the same ratings again at any time (Review does so on every `restore`, which also completes writes lost when the page closed before they reached the store). Games without the capability keep working (Review then runs as practice without a schedule). `launch.deck` comes from `/games/<id>?deck=<id>` (which also starts a fresh game and is then removed from the URL); a game uses it for its first `newGame` and remembers it in its preferences.
+
+`library` (ADR 0012) stores things the player creates, e.g. Relay Command's maps: per game (the host scopes it to the game id), asynchronous, bounded (`LIBRARY_LIMITS`: 50 items, 64 KiB of JSON per item, names up to 60 characters), plain JSON only, read back as untrusted data (games validate it). `put` creates or replaces; `put(item, { ifAbsent: true })` with an explicit id creates atomically only if the id is free (otherwise reason `exists`, nothing written; ignored without an id). Every method rejects with a `GameLibraryError` whose `reason` is `full`, `too-large`, `invalid`, `unavailable` or `exists` (games treat unknown reasons like `unavailable`). It is separate from saves and preferences: "Delete all saved games" keeps it, and Settings has its own confirmed "Delete my own content". A save must not depend on an item still existing (copy what a running game needs into its state). The host passes it to every game; games must work without it.
 
 The spec's `metadata()`/`initialize()` are expressed as the `metadata` object and `create()`. Every game package has:
 
 ```text
-src/metadata.ts   light: metadata + messages (bundled with the catalogue)
+src/metadata.ts   light: metadata + messages (catalogue keys bundled per locale)
 src/messages.ts   16 locales; keys `title`, `tagline`, `rules`, `difficulty.<id>` …
 src/rules.ts      pure logic (DOM-free) — unit, property and mutation tested
 src/ai.ts         optional pure opponent logic
@@ -56,29 +70,67 @@ src/index.ts      export default defineGame({...})
 test/rules.test.ts, test/contract.test.ts (runGameContract), e2e/games/<id>.spec.ts
 ```
 
+The home page and the game page header need every game's metadata, but only a few of its messages. `apps/web/catalogue-plugin.ts` therefore generates two kinds of virtual modules at build time: `virtual:wp-catalogue` holds each game's metadata *without* messages, and `virtual:wp-catalogue/<locale>` holds, per game id, only the catalogue keys (`title`, `tagline`, `rules`, `difficulty.*`) of one locale. The registry (`apps/web/src/registry.ts`) lists game ids and lazy loaders; each entry's `metadata.messages` is a live object that holds the locales loaded so far (see Localization). A game's complete messages arrive with its own chunk, so the main bundle carries no game translations at all.
+
+**Per-locale game content (ADR 0011).** Games with large texts (Deep Read, Audience Switch, Compression Challenge, Briefing Game, Ambiguity Detector) keep each locale's content in `src/content/<locale>.ts` and list them in `src/content/index.ts` as `CONTENT_LOADERS`, an explicit `Record<SupportedLocale, () => Promise<…>>` of dynamic imports, so each locale is its own chunk. `createLocaleContent` (`@wp/game-core`) caches them; the module's `preload(locale)` loads the UI locale and English in parallel, and the view reads `contentFor(locale)` synchronously (English if the locale is not loaded). The host awaits `module.preload?.(app.locale)` after loading the game chunk and before `create`; a language switch re-renders the game page, so the new locale is loaded before the saved game continues. If only the locale fails to load, the game shows English content and reports it via `console.error`; if English fails too, the host shows its generic load error. UI messages stay in `metadata.messages`. Saves hold ids only, so they do not change.
+
+After "New game" the host moves focus into the game: to the element marked `data-autofocus` (usually the board), otherwise to the first control.
+
 ### Shared contract suite
 
-`runGameContract(module, { interact })` (`packages/testing`) checks for every game: valid metadata and complete translations in all 16 locales, determinism per seed, JSON-serializable state accepted by `isValidState`, rejection of arbitrary junk (fuzzed with fast-check), exact restore through the real persistence layer after interaction, pause/resume invariance, `reset()` to the seeded start, no missing translation keys when rendering in each locale, and DOM cleanup on `dispose()`. The e2e helper `expectResumeAfterReload` verifies the same across a real browser reload.
+`runGameContract(module, { interact })` (`packages/testing`) checks for every game: valid metadata and complete translations in all 16 locales, determinism per seed, JSON-serializable state accepted by `isValidState`, rejection of arbitrary junk (fuzzed with fast-check), exact restore through the real persistence layer after interaction, pause/resume invariance, `reset()` to the seeded start, no missing translation keys when rendering in each locale, and DOM cleanup on `dispose()`. For games with `preload`, it awaits `preload('en')` before the suite and `preload(locale)` before rendering in each locale, and checks that every locale loads without a reported fallback. Every test context has a fresh in-memory `library` (the resume check shares one between its two sessions), and the suite checks that the game also works without one. The e2e helper `expectResumeAfterReload` verifies the same across a real browser reload.
 
 ## Persistence
 
-`GameSave { schemaVersion, gameId, stateVersion, updatedAt, seed, difficulty?, state }` in IndexedDB (`worthwhile-play` → `saves`, one active save per game). `interpretSave` validates and migrates untrusted data and returns `empty | ok | corrupt` — a corrupt save is reported and discarded, never crashes the app. If IndexedDB is unavailable, an in-memory store is used and the user is told that progress will not persist.
+IndexedDB database `worthwhile-play`, schema version 4. Upgrades are additive (`upgradeDatabase` only creates missing stores; tested with real version-1, -2 and -3 databases, whose saves, decks and learning records survive): 1 → `saves`, 2 → `decks`, 3 → `learning` (key path `[deckId, itemId, direction]`), 4 → `library` (key path `[gameId, id]`, index `byGame`; ADR 0012). A connection closes itself on `versionchange`, so a newer app version in another tab can upgrade; if an *older* tab blocks the upgrade for more than 4 s, the app falls back to in-memory storage and says so (it never hangs).
+
+`GameSave { schemaVersion, gameId, stateVersion, updatedAt, seed, difficulty?, state }` in `saves` (one active save per game). `interpretSave` validates and migrates untrusted data and returns `empty | ok | corrupt` — a corrupt save is reported and discarded, never crashes the app. If IndexedDB is unavailable, an in-memory store is used and the user is told that progress will not persist.
+
+`library` rows `{ gameId, id, name, updatedAt, size, data }` hold what players create (ADR 0012). `LibraryStore` (all games, used by Settings for counts and "Delete my own content") is wrapped per game by `createGameLibrary`, which validates names, ids and JSON data, enforces the bounds (the per-game item count, and for `ifAbsent` the id, are checked in the write transaction) and skips unreadable rows. Deleting saved games never touches it, and clearing it never touches saves, decks or learning records.
+
+## Learning content and deck library
+
+`@wp/learning-content` holds the generic card model (`Deck`, `LearningItem`, `CardSide`; format in [content/deck-format.md](content/deck-format.md)), CSV/JSON import and export, and the built-in decks:
+
+- **Symbols** (24 emoji, classic Memory), **First words** (60 everyday nouns with an emoji picture, authored in all 16 UI languages), **Flags & countries** (60 ISO codes; names from the browser's CLDR data via `Intl.DisplayNames`, flags from regional-indicator emoji). Built-in decks are generated in code and never stored.
+- `resolveContentLanguages(choice, uiLocale)` is the single, tested place for content-language fallbacks: learning → UI language → English; translation → UI language → English → German, never equal to the learning language; country names in the learning language if the platform knows it, else the UI language.
+- `importDeck(text, { id, title })` turns untrusted CSV/JSON into a validated deck: size limits (`IMPORT_LIMITS`), removal of every media reference that could cause a network request (http(s), protocol-relative, other schemes; only bundled relative paths and small `data:image/png|jpeg|gif|webp|avif` are kept, matching the CSP `img-src 'self' data: blob:`), and errors/warnings with card number and CSV line for translated messages.
+
+**Imported decks** are stored only on the device in the `decks` store (`{ id: 'user-…', importedAt, deck }`), independent of saves: "Delete all saved games" keeps them, "Delete my imported decks" (Settings, confirmed) removes them. The app validates every record on read and skips broken ones. Pages: `/decks` (library), `/decks/<id>` (preview, play, export JSON, delete), `/decks/import` (file or paste → check → preview → save; direct links `#deck=<base64url JSON>` open the same preview; "Create with an AI" shows the guide link for the UI locale). The deck pages are a lazily loaded chunk.
+
+**Guides for AIs (ADR 0013)** are static files `/ai/deck-guide.<locale>.md`, generated at build time by `apps/web/ai-guide-plugin.ts` from `@wp/learning-content/ai-guide` (served from memory by the dev server, emitted into `dist/` by the build; not precached; excluded from the service worker's navigation fallback). The app never calls an AI service.
+
+**Memory** uses the deck system with five variants (symbols, picture ↔ word, word ↔ translation, flag ↔ country, own deck front ↔ back). Its state stores only the variant, deck id, item ids and the content languages fixed at deal time (never deck contents), so a resumed game looks exactly as before even if Settings changed. Saves from state version 1 are migrated (`variant: 'symbols'`). A saved game whose own deck was deleted stays valid (validation is structural, `isValidState` is pure); the view explains that the deck is gone and offers a new game. "Read aloud" uses the browser's speech synthesis only when the player presses the button and a voice exists for the language (best effort; hidden otherwise).
+
+## Learning records ("Items worth reviewing")
+
+Optional spaced repetition without engagement mechanics (spec "Spaced repetition"): no streaks, daily goals, reminders, notifications, badges or guilt messages; nothing happens unless the person opens the library or the *Review* game.
+
+- **Model** (`packages/learning-content/src/schedule.ts`): Leitner boxes with whole days. One record per (learning deck, item, direction): `box` (1–7), `due` (local calendar day), `lastDay`, `last` rating, `reviews`, `lapses`, `session`. Ratings are "Not yet" (`again` → box 1, due tomorrow), "Almost" (`hard` → same box, half its interval, at least one day) and "Knew it" (`good` → next box). Box n is suggested again after 1, 2, 4, 8, 16, 32, 64 days; a never-rated card counts as box 1. The due day is always after the rating day. Three buttons instead of four (no "Easy"): fewer decisions, and the scale stays explainable in one sentence; "Knew it" on a new card already skips box 1.
+- **Dates**: only the device's local calendar day is used, and only to decide what is due. No timers, no time of day; tests inject "today".
+- **Idempotency**: every session has an id (start day + seed). A record accepts at most one rating per session, so resending ratings (reload, resume, lost write) never counts twice. Consequence: re-rating a card in the same session (e.g. after `reset()`) keeps the first rating.
+- **Keys**: "First words" is learned per learning language (`first-words:<lang>`); flags are language-independent (`flags`); imported decks use their unique id. Deleting an imported deck deletes its records.
+- **Storage**: IndexedDB store `learning`, separate from saves and decks; "Delete all saved games" keeps it, Settings has its own confirmed "Delete learning records". Records are validated on read (`toLearningRecord`); broken ones are skipped.
+- **Library**: `/decks` shows a neutral "Items worth reviewing" overview (decks with cards whose day has arrived, counted per card in any direction) with a "Review" link each, a per-deck badge, and a short explanation of the schedule ("tends to help people remember … only a suggestion"). The strings of these parts live in `apps/web/src/i18n/learning.ts`, imported only by the lazily loaded deck pages, so they do not grow the main bundle.
+- **Review game** (`packages/games/review`): a session is a fixed queue built once — due cards (most overdue first, at most 20), new cards (at most 10) or practice (any 10 cards, schedule unchanged). "Not yet" brings a card back once at the end of the session (not recorded). The state stores deck id, content languages fixed at start, the queue, the index and the answers (rating + day), never card contents. Memory does not write records (L2 decision: keeps Memory a game rather than an assessment).
 
 ## Localization
 
 - 16 UI locales (`packages/localization/src/locales.ts`), BCP-47, Arabic RTL (`<html dir>`; CSS uses logical properties).
 - Resolution: stored choice → first matching browser language → English. Traditional Chinese is *not* mapped to `zh-Hans`.
 - Catalogues: shell (`apps/web/src/i18n/ui/<locale>.ts`, type-checked key sets), shared game vocabulary (`common.*`), and one namespace per game (`metadata.messages`). Tests enforce complete key sets and identical placeholders; the English fallback exists only as a safety net and is reported.
+- Loading: the main chunk contains no shell or catalogue translations. `apps/web/src/i18n/locales/<locale>.ts` bundles one locale's shell UI (`i18n/ui/<locale>.ts`), deck-page (`i18n/learning/<locale>.ts`) and game catalogue messages (`virtual:wp-catalogue/<locale>`) into one chunk. `loadLocale(locale)` (`apps/web/src/i18n/index.ts`) loads it together with English (the translator's fallback) in parallel; the app awaits it before the first render, and a language switch awaits the new locale before re-rendering (the last choice wins; if a locale cannot be loaded, the current language stays). Key types (`UiKey`, `LearningUiKey`) come from the English modules. All locale chunks are precached by the service worker, so switching the language works offline (e2e-tested). `common.*` (`packages/localization`) is still bundled eagerly (≈ 11 KB). Games with large texts load them per locale the same way (one chunk per locale, plus English; see "Per-locale game content" above).
 - Content languages (learning/translation) are separate preferences that accept any BCP-47 tag.
+- Portuguese: the single locale `pt` is **Brazilian Portuguese (pt-BR)** everywhere — shell, game messages, per-locale content and built-in decks ("você", "arquivo", "tela", "salvar", "excluir", gerund progressive). The code stays `pt` (CLDR's `pt` already means Brazilian Portuguese for `Intl`); the language picker shows "Português (Brasil)". `apps/web/test/pt-brazilian.test.ts` rejects unambiguous European-Portuguese words in Portuguese strings.
 - Translations other than en/de are AI-assisted and await native-speaker review.
 
 ## PWA and offline
 
-`vite-plugin-pwa` (Workbox `generateSW`) precaches the shell and all bundled game chunks. Updates use `registerType: 'prompt'`: the app shows "Update now" and never reloads on its own (a running game is never interrupted). Large optional content (audio packs, AI models) will use separate caches downloaded only on explicit request with the size shown first.
+`vite-plugin-pwa` (Workbox `generateSW`) precaches the shell and all bundled game chunks, including every per-locale content chunk (a game continues offline in a language never opened before; e2e-tested with Deep Read). Updates: a new release is applied automatically (reload) whenever no game page is open; on a game page it waits and is offered via "Update now", and is applied on the next navigation away — a running game is never interrupted. Open tabs check for updates hourly. Large optional content (audio packs, AI models) will use separate caches downloaded only on explicit request with the size shown first.
 
 ## Deployment
 
-Cloudflare Workers Static Assets (assets-only Worker, SPA fallback for deep links). Security headers via `public/_headers`. See [deployment.md](deployment.md).
+Cloudflare Pages (SPA fallback for deep links, ADR 0008). Security headers via `public/_headers`. See [deployment.md](deployment.md).
 
 ## Determinism and randomness
 

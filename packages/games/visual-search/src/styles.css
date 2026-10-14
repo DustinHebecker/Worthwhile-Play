@@ -1,0 +1,99 @@
+/* Visual Search: all rules scoped under .wp-vs. Uses shared --wp-* tokens. */
+.wp-vs {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: center;
+  width: 100%;
+  max-width: 100%;
+  text-align: center;
+}
+.wp-vs p { margin: 0; }
+.wp-vs__defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+.wp-vs__intro,
+.wp-vs__play,
+.wp-vs__summary {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: center;
+  width: 100%;
+}
+.wp-vs__summary { gap: 0.35rem; max-width: 40rem; }
+.wp-vs__intro[hidden],
+.wp-vs__play[hidden],
+.wp-vs__summary[hidden] { display: none; }
+.wp-vs__sample {
+  width: 4.5rem;
+  height: 4.5rem;
+  color: var(--wp-text);
+}
+.wp-vs__sample svg { width: 100%; height: 100%; display: block; }
+.wp-vs__target { font-weight: 700; }
+.wp-vs__muted { color: var(--wp-muted); font-size: 0.95rem; }
+.wp-vs__find {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+}
+.wp-vs__find-sample {
+  display: inline-block;
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+}
+.wp-vs__find-sample svg { width: 100%; height: 100%; display: block; }
+.wp-vs__status { font-variant-numeric: tabular-nums; }
+
+/* At most 5 columns: on a 360 px phone each cell is still about 60 px wide (>= 44 px targets). */
+.wp-vs__board {
+  display: grid;
+  grid-template-columns: repeat(var(--wp-vs-cols, 4), minmax(0, 1fr));
+  gap: 2px;
+  width: min(100%, calc(var(--wp-vs-cols, 4) * 5.5rem));
+  padding: 4px;
+  border: 1px solid var(--wp-border);
+  border-radius: var(--wp-radius);
+  background: var(--wp-surface);
+}
+.wp-vs__cell {
+  aspect-ratio: 1;
+  min-width: var(--wp-touch);
+  min-height: var(--wp-touch);
+}
+.wp-vs__item {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 3px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--wp-text);
+  touch-action: manipulation;
+  user-select: none;
+}
+.wp-vs__item:hover:not([aria-disabled='true']) { border-color: var(--wp-border); }
+.wp-vs__item:focus-visible { outline: 3px solid var(--wp-focus); outline-offset: -3px; }
+.wp-vs__shape { display: block; }
+.wp-vs__item > .wp-vs__shape {
+  position: absolute;
+  display: block;
+  overflow: visible;
+  pointer-events: none;
+}
+/* Revealed answer: the target gets a dashed frame, the chosen shape a solid one (line style, not colour). */
+.wp-vs__item[aria-disabled='true'] { cursor: default; }
+.wp-vs__item.is-chosen { border: 3px solid var(--wp-text); }
+.wp-vs__item.is-target { border: 3px dashed var(--wp-text); }
+.wp-vs__item.is-target.is-chosen { border-style: double; border-width: 5px; }
+.wp-vs__feedback { min-height: 1.5em; }
+.wp-vs__actions { justify-content: center; }
+.wp-vs__not-there { min-width: 10rem; }
+
+.wp-vs--motion .wp-vs__item { transition: border-color 120ms ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .wp-vs--motion .wp-vs__item { transition: none; }
+}

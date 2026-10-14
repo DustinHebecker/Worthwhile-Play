@@ -1,0 +1,16 @@
+{
+  "name": "@wp/game-black-box",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts", "./metadata": "./src/metadata.ts" },
+  "dependencies": {
+    "@wp/game-core": "workspace:*",
+    "@wp/ui": "workspace:*"
+  },
+  "devDependencies": {
+    "@wp/localization": "workspace:*",
+    "@wp/persistence": "workspace:*",
+    "@wp/testing": "workspace:*"
+  }
+}

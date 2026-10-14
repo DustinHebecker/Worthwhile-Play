@@ -2,7 +2,9 @@ node_modules/
 dist/
 coverage/
 reports/
-.stryker-tmp/
+.stryker-tmp*/
+# Per-agent local Stryker configs
+packages/games/*/stryker.*
 test-results/
 playwright-report/
 blob-report/
@@ -14,3 +16,4 @@ blob-report/
 .env.*
 !.env.example
 .dev.vars
+vitest.mut-*.config.ts

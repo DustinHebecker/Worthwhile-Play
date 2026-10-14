@@ -1,0 +1,122 @@
+/* Stack Duel — all rules scoped under .wp-stack-duel. Uses shared --wp-* tokens.
+   Stones carry a pattern (stripes, dots, grid, waves, checks, rings, cross) on top of
+   their colour, so colour is never the only cue. */
+.wp-stack-duel {
+  --sd-ink: rgba(20, 20, 18, 0.45);
+  --sd-edge: #2b2a26;
+  --sd-h0: #d9b44a;
+  --sd-h1: #8fb8d8;
+  --sd-h2: #d99a7a;
+  --sd-h3: #9fc79a;
+  --sd-h4: #c4a3d6;
+  --sd-h5: #e3c9a0;
+  --sd-h6: #a8c4c0;
+  --sd-platform: #6f6a5e;
+  display: grid;
+  gap: 0.6rem;
+  justify-items: center;
+  width: 100%;
+  max-width: 32rem;
+  margin-inline: auto;
+}
+@media (prefers-color-scheme: dark) {
+  .wp-stack-duel {
+    --sd-ink: rgba(255, 255, 255, 0.4);
+    --sd-edge: #f0eee6;
+    --sd-h0: #8a6d16;
+    --sd-h1: #355f80;
+    --sd-h2: #8a4a2e;
+    --sd-h3: #3f6b3a;
+    --sd-h4: #65467a;
+    --sd-h5: #7d6440;
+    --sd-h6: #3f6460;
+    --sd-platform: #8d877a;
+  }
+}
+.wp-stack-duel .sd-toolbar,
+.wp-stack-duel .sd-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  width: 100%;
+}
+.wp-stack-duel .sd-field {
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.9rem;
+  min-width: 0;
+  max-width: 100%;
+}
+.wp-stack-duel .sd-field select { max-width: 100%; }
+.wp-stack-duel .sd-status,
+.wp-stack-duel .sd-progress {
+  margin: 0;
+  text-align: center;
+}
+.wp-stack-duel .sd-status { font-weight: 600; min-height: 1.5em; }
+.wp-stack-duel .sd-progress { color: var(--wp-muted); font-size: 0.95rem; }
+
+.wp-stack-duel .sd-board {
+  width: 100%;
+  max-width: min(30rem, 100%);
+  border: 1px solid var(--wp-border);
+  border-radius: var(--wp-radius);
+  background: var(--wp-surface);
+  touch-action: pan-y;
+  cursor: ew-resize;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.wp-stack-duel .sd-board:focus-visible { outline: 3px solid var(--wp-focus); outline-offset: 2px; }
+.wp-stack-duel .sd-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1.05;
+}
+.wp-stack-duel .sd-platform { fill: var(--sd-platform); stroke: var(--sd-edge); stroke-width: 0.03; }
+.wp-stack-duel .sd-piece .sd-fill { stroke: none; }
+.wp-stack-duel .sd-piece .sd-pattern { stroke: var(--sd-edge); stroke-width: 0.035; stroke-linejoin: round; }
+.wp-stack-duel .sd-h0 .sd-fill { fill: var(--sd-h0); }
+.wp-stack-duel .sd-h1 .sd-fill { fill: var(--sd-h1); }
+.wp-stack-duel .sd-h2 .sd-fill { fill: var(--sd-h2); }
+.wp-stack-duel .sd-h3 .sd-fill { fill: var(--sd-h3); }
+.wp-stack-duel .sd-h4 .sd-fill { fill: var(--sd-h4); }
+.wp-stack-duel .sd-h5 .sd-fill { fill: var(--sd-h5); }
+.wp-stack-duel .sd-h6 .sd-fill { fill: var(--sd-h6); }
+.wp-stack-duel .sd-pat line,
+.wp-stack-duel .sd-pat path,
+.wp-stack-duel .sd-pat circle { stroke: var(--sd-ink); stroke-width: 0.035; fill: none; }
+.wp-stack-duel .sd-pat .sd-dot { fill: var(--sd-ink); stroke: none; }
+.wp-stack-duel .sd-held { opacity: 0.85; }
+.wp-stack-duel .sd-held .sd-pattern { stroke-dasharray: 0.12 0.06; }
+.wp-stack-duel .sd-guide { stroke: var(--wp-muted); stroke-width: 0.03; stroke-dasharray: 0.12 0.12; opacity: 0.7; }
+.wp-stack-duel .sd-goal { stroke: var(--wp-accent); stroke-width: 0.04; stroke-dasharray: 0.3 0.15; }
+.wp-stack-duel .sd-goal-label { fill: var(--wp-accent); font-size: 0.4px; font-family: var(--wp-font); }
+.wp-stack-duel [hidden] { display: none; }
+
+.wp-stack-duel .sd-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: center;
+  width: 100%;
+}
+.wp-stack-duel .sd-btn {
+  min-width: var(--wp-touch, 44px);
+  min-height: var(--wp-touch, 44px);
+  padding: 0.25rem 0.6rem;
+  font-size: 1.2rem;
+  line-height: 1;
+}
+.wp-stack-duel .sd-drop { min-height: var(--wp-touch, 44px); min-width: 6rem; font-weight: 600; }
+.wp-stack-duel .sd-next {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+}
+.wp-stack-duel .sd-next[hidden] { display: none; }
+.wp-stack-duel .sd-next-svg { width: 2.5rem; height: 2.5rem; flex: none; }
+.wp-stack-duel .sd-help { margin: 0; font-size: 0.85rem; text-align: center; max-width: 30rem; }

@@ -1,0 +1,138 @@
+/* Laser Paths — all rules scoped under .wp-laser-circuit. Uses shared --wp-* tokens. */
+.wp-laser-circuit {
+  --lc-floor: #1e2430;
+  --lc-grid: #343c4c;
+  --lc-red: #ff5a4f;
+  --lc-green: #3fd46a;
+  --lc-blue: #58a6ff;
+  --lc-fixed: #c9ced8;
+  --lc-mine: #ffd166;
+  --lc-blocker: #59606e;
+  --lc-text-dark: #10131a;
+  --lc-ok: #8fe3a5;
+  --lc-warn: #ffb347;
+  display: grid;
+  gap: 0.75rem;
+  justify-items: center;
+  width: 100%;
+  max-width: 34rem;
+  margin-inline: auto;
+}
+.wp-laser-circuit p { margin: 0; }
+.wp-laser-circuit [hidden] { display: none; }
+
+.wp-laser-circuit .lc-level { font-weight: 600; }
+.wp-laser-circuit .lc-stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.25rem 1.25rem;
+  font-variant-numeric: tabular-nums;
+}
+.wp-laser-circuit .lc-status { text-align: center; }
+.wp-laser-circuit .lc-status[data-state='warning'] { border-inline-start: 4px solid var(--wp-focus); padding-inline-start: 0.5rem; }
+
+/* Board: at most 7 columns of at least 44 px = 308 px, which fits a 360 px phone. */
+.wp-laser-circuit .lc-board {
+  direction: ltr;
+  display: grid;
+  /* minmax(0, 1fr): never wider than the container (7 columns still give ≥ 44 px on a 360 px phone). */
+  grid-template-columns: repeat(var(--lc-cols, 7), minmax(0, 1fr));
+  width: min(100%, calc(var(--lc-cols, 7) * 3.75rem));
+  padding: 1px;
+  gap: 1px;
+  background: var(--lc-grid);
+  border-radius: var(--wp-radius, 10px);
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.wp-laser-circuit .lc-cell {
+  position: relative;
+  display: block;
+  aspect-ratio: 1;
+  min-width: var(--wp-touch, 44px);
+  min-height: var(--wp-touch, 44px);
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: var(--lc-floor);
+  color: var(--lc-fixed);
+}
+.wp-laser-circuit .lc-cell:focus-visible { outline: 3px solid var(--wp-focus); outline-offset: -3px; z-index: 1; }
+.wp-laser-circuit .lc-cell[data-element='empty']:hover { background: #283042; }
+.wp-laser-circuit[data-solved='true'] .lc-cell { cursor: default; }
+
+.wp-laser-circuit .lc-glyph { display: block; width: 100%; height: 100%; overflow: visible; }
+
+/* Beams: one lane per primary colour, each with its own line pattern (never colour alone). */
+.wp-laser-circuit .lc-beam { stroke-width: 5; stroke-linecap: round; fill: none; animation: lc-beam-in 220ms ease-out; }
+.wp-laser-circuit .lc-beam-r { stroke: var(--lc-red); }
+.wp-laser-circuit .lc-beam-g { stroke: var(--lc-green); stroke-dasharray: 12 7; stroke-linecap: butt; }
+.wp-laser-circuit .lc-beam-b { stroke: var(--lc-blue); stroke-dasharray: 0.1 9; stroke-width: 7; }
+.wp-laser-circuit.lc-reduced .lc-beam { animation: none; }
+@keyframes lc-beam-in { from { opacity: 0; } to { opacity: 1; } }
+
+.wp-laser-circuit .lc-letter { font: 700 30px var(--wp-font); fill: #ffffff; paint-order: stroke; stroke: var(--lc-floor); stroke-width: 5px; }
+.wp-laser-circuit .lc-letter.lc-on-dark { stroke: none; fill: var(--lc-text-dark); }
+.wp-laser-circuit .lc-got { font: 700 22px var(--wp-font); fill: var(--lc-warn); paint-order: stroke; stroke: var(--lc-floor); stroke-width: 4px; }
+
+.wp-laser-circuit .lc-emitter { fill: var(--lc-fixed); stroke: var(--lc-text-dark); stroke-width: 3; }
+.wp-laser-circuit .lc-emitter[data-colour='R'] { fill: var(--lc-red); }
+.wp-laser-circuit .lc-emitter[data-colour='G'] { fill: var(--lc-green); }
+.wp-laser-circuit .lc-emitter[data-colour='B'] { fill: var(--lc-blue); }
+.wp-laser-circuit .lc-emitter[data-colour='W'] { fill: #f4f4f4; }
+.wp-laser-circuit .lc-arrow { fill: #f4f4f4; stroke: var(--lc-text-dark); stroke-width: 3; stroke-linejoin: round; }
+
+.wp-laser-circuit .lc-mirror { stroke: var(--lc-fixed); stroke-width: 9; stroke-linecap: round; }
+.wp-laser-circuit .lc-splitter { stroke: var(--lc-fixed); stroke-width: 6; stroke-linecap: round; stroke-dasharray: 8 6; }
+.wp-laser-circuit .lc-splitter-box { fill: none; stroke: var(--lc-fixed); stroke-width: 2.5; }
+.wp-laser-circuit .lc-mine { stroke: var(--lc-mine); }
+.wp-laser-circuit .lc-bolt { fill: var(--lc-floor); stroke: var(--lc-fixed); stroke-width: 2.5; }
+.wp-laser-circuit .lc-blocker { fill: var(--lc-blocker); stroke: #8b93a3; stroke-width: 3; }
+.wp-laser-circuit .lc-blocker.lc-mine { stroke: var(--lc-mine); stroke-width: 5; }
+
+.wp-laser-circuit .lc-filter { fill: rgba(255, 255, 255, 0.08); stroke: var(--lc-fixed); stroke-width: 3; stroke-dasharray: 6 4; }
+.wp-laser-circuit .lc-target { fill: none; stroke: var(--lc-fixed); stroke-width: 5; }
+.wp-laser-circuit .lc-target-inner { fill: rgba(255, 255, 255, 0.06); stroke: var(--lc-fixed); stroke-width: 2; }
+.wp-laser-circuit .lc-check { fill: none; stroke: var(--lc-ok); stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; }
+.wp-laser-circuit .lc-sensor { fill: #3a2030; stroke: var(--lc-warn); stroke-width: 4; }
+.wp-laser-circuit .lc-sensor-x { fill: none; stroke: var(--lc-warn); stroke-width: 7; stroke-linecap: round; }
+.wp-laser-circuit [data-element='sensor']:not([data-lit='']) .lc-sensor { fill: var(--lc-warn); stroke: #ffffff; }
+.wp-laser-circuit [data-element='sensor']:not([data-lit='']) .lc-sensor-x { stroke: var(--lc-text-dark); }
+
+/* Inventory and actions */
+.wp-laser-circuit .lc-inventory,
+.wp-laser-circuit .lc-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.wp-laser-circuit .lc-inv { gap: 0.35rem; padding-inline: 0.6rem; }
+.wp-laser-circuit .lc-inv[aria-pressed='true'],
+.wp-laser-circuit .lc-remove[aria-pressed='true'] {
+  border: 2px solid var(--wp-accent);
+  box-shadow: inset 0 0 0 2px var(--wp-accent);
+  font-weight: 600;
+}
+.wp-laser-circuit .lc-inv[data-count='0'] .lc-inv-count { opacity: 0.7; }
+.wp-laser-circuit .lc-inv-icon { width: 1.6rem; height: 1.6rem; background: var(--lc-floor); border-radius: 4px; }
+.wp-laser-circuit .lc-inv-count {
+  min-width: 1.6rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: var(--wp-surface-2);
+  font-variant-numeric: tabular-nums;
+}
+.wp-laser-circuit .lc-chooser { justify-content: center; }
+.wp-laser-circuit .lc-help { display: grid; gap: 0.25rem; font-size: 0.85rem; text-align: center; max-width: 32rem; }
+
+@media (forced-colors: active) {
+  .wp-laser-circuit .lc-cell { border: 1px solid CanvasText; }
+  .wp-laser-circuit .lc-beam { stroke: Highlight; }
+  .wp-laser-circuit .lc-mirror, .wp-laser-circuit .lc-splitter, .wp-laser-circuit .lc-target, .wp-laser-circuit .lc-sensor-x { stroke: CanvasText; }
+  .wp-laser-circuit .lc-mine { stroke: Highlight; }
+  .wp-laser-circuit .lc-letter { fill: CanvasText; }
+}

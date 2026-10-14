@@ -1,0 +1,63 @@
+/* Fix the Machine. All rules are scoped under .wp-debug-system. */
+.wp-debug-system { display: grid; gap: 0.75rem; max-width: 40rem; margin-inline: auto; }
+.wp-debug-system .ds-board { display: grid; gap: 0.75rem; }
+.wp-debug-system p { margin: 0; }
+.wp-debug-system h3 { margin: 0; font-size: 1.05rem; }
+.wp-debug-system .ds-small { font-size: 0.9rem; }
+.wp-debug-system .ds-legend { font-size: 0.85rem; }
+.wp-debug-system .ds-status-solved { color: var(--wp-ok); }
+.wp-debug-system .ds-code {
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace; font-size: 1rem;
+  unicode-bidi: isolate; white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+
+.wp-debug-system .ds-panel {
+  display: grid; gap: 0.6rem; padding: 0.75rem; border: 1px solid var(--wp-border);
+  border-radius: var(--wp-radius); background: var(--wp-surface);
+}
+
+/* Rules */
+.wp-debug-system .ds-rules { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; }
+.wp-debug-system .ds-rule-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.6rem; padding-inline-start: 0.25rem; border-inline-start: 4px solid transparent; }
+.wp-debug-system .ds-rule-row.is-next { border-inline-start-color: var(--wp-accent); }
+.wp-debug-system .ds-rule { display: inline-flex; align-items: center; gap: 0.6rem; text-align: start; padding-inline: 0.6rem; }
+.wp-debug-system .ds-rule:disabled { opacity: 1; cursor: default; }
+.wp-debug-system .ds-rule[aria-pressed='true'] { border: 3px solid var(--wp-focus); background: var(--wp-surface-2); font-weight: 700; }
+.wp-debug-system .ds-num {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 1.6rem; height: 1.6rem;
+  border-radius: 50%; background: var(--wp-surface-2); font-weight: 700; font-size: 0.85rem;
+}
+.wp-debug-system .is-fixed .ds-rule { border: 3px double var(--wp-ok); }
+.wp-debug-system .ds-fixed-mark { color: var(--wp-ok); font-weight: 700; }
+.wp-debug-system .ds-mark { font-size: 0.85rem; white-space: nowrap; }
+.wp-debug-system .ds-mark.is-skipped { color: var(--wp-muted); }
+.wp-debug-system .ds-mark.is-next { font-weight: 700; color: var(--wp-accent); }
+
+/* Fix options */
+.wp-debug-system .ds-fixes { display: grid; grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr)); gap: 0.4rem; }
+.wp-debug-system .ds-fix { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 0.1rem; text-align: start; }
+.wp-debug-system .ds-fix[aria-pressed='true'] { border: 3px solid var(--wp-accent); background: var(--wp-surface-2); font-weight: 700; }
+.wp-debug-system .ds-fix.is-tried { border-style: dashed; }
+.wp-debug-system .ds-tried { font-size: 0.8rem; color: var(--wp-danger); }
+
+/* Registers */
+.wp-debug-system .ds-regs { display: inline-flex; flex-wrap: wrap; gap: 0.2rem 0.8rem; font-variant-numeric: tabular-nums; unicode-bidi: isolate; }
+.wp-debug-system .ds-reg { white-space: nowrap; }
+.wp-debug-system .ds-var { font-weight: 700; font-style: italic; }
+.wp-debug-system [data-testid='ds-run'] .ds-regs { font-size: 1.25rem; }
+
+/* Test cases */
+.wp-debug-system .ds-tests { display: grid; gap: 0.5rem; }
+.wp-debug-system .ds-test { display: grid; gap: 0.2rem; text-align: start; padding: 0.5rem 0.75rem; }
+.wp-debug-system .ds-test.is-selected { border: 3px solid var(--wp-accent); }
+.wp-debug-system .ds-test-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.5rem; }
+.wp-debug-system .ds-test-row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: baseline; }
+.wp-debug-system .ds-test-key { min-width: 6rem; color: var(--wp-muted); font-size: 0.9rem; }
+.wp-debug-system .ds-verdict { font-weight: 700; }
+.wp-debug-system .is-pass .ds-verdict { color: var(--wp-ok); }
+.wp-debug-system .is-fail .ds-verdict { color: var(--wp-danger); }
+
+@media (max-width: 400px) {
+  .wp-debug-system .ds-panel { padding: 0.5rem; }
+  .wp-debug-system .ds-test-key { min-width: 0; flex-basis: 100%; }
+}

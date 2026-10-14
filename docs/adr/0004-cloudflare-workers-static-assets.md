@@ -1,6 +1,6 @@
 # 0004 — Cloudflare Workers Static Assets
 
-Status: Accepted (2026-10-03)
+Status: Superseded by [0008](0008-cloudflare-pages.md) (2026-10-03)
 
 ## Context
 The owner has a Cloudflare account; Home Workout uses Cloudflare Pages. The spec prefers the current Workers Static Assets architecture while keeping the app client-side.

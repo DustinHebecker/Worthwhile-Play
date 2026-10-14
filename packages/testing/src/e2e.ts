@@ -9,10 +9,50 @@ export async function readSave(page: Page, gameId: string): Promise<unknown> {
         open.onerror = () => reject(open.error);
         open.onsuccess = () => {
           const db = open.result;
-          if (!db.objectStoreNames.contains('saves')) return resolve(undefined);
+          // Never hold the database open: the app's own (upgrading) open would be blocked by this connection.
+          db.onversionchange = () => db.close();
+          if (!db.objectStoreNames.contains('saves')) {
+            db.close();
+            return resolve(undefined);
+          }
           const get = db.transaction('saves', 'readonly').objectStore('saves').get(id);
-          get.onsuccess = () => resolve(get.result);
-          get.onerror = () => reject(get.error);
+          get.onsuccess = () => {
+            db.close();
+            resolve(get.result);
+          };
+          get.onerror = () => {
+            db.close();
+            reject(get.error);
+          };
+        };
+      }),
+    gameId
+  );
+}
+
+/** Raw library rows (ADR 0012) of one game, e.g. a game's saved maps, from the app's IndexedDB (sorted by id). */
+export async function readLibrary(page: Page, gameId: string): Promise<{ gameId: string; id: string; name: string; updatedAt: string; size: number; data: unknown }[]> {
+  return page.evaluate(
+    (id) =>
+      new Promise((resolve, reject) => {
+        const open = indexedDB.open('worthwhile-play');
+        open.onerror = () => reject(open.error);
+        open.onsuccess = () => {
+          const db = open.result;
+          db.onversionchange = () => db.close();
+          if (!db.objectStoreNames.contains('library')) {
+            db.close();
+            return resolve([]);
+          }
+          const all = db.transaction('library', 'readonly').objectStore('library').index('byGame').getAll(id);
+          all.onsuccess = () => {
+            db.close();
+            resolve(all.result);
+          };
+          all.onerror = () => {
+            db.close();
+            reject(all.error);
+          };
         };
       }),
     gameId
