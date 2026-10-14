@@ -57,8 +57,9 @@ describe('map contrast', () => {
       for (const terrain of TERRAINS) {
         const ground = pick('game', `--rc-${terrain}`);
         for (const [veil, bg] of [['open', ground], ['veiled', over(ground, fog)]] as const) {
-          for (const side of ['--wp-p1', '--wp-p2']) {
-            const ratio = contrast(pick('ui', side), bg);
+          // The two shared player colours, and the game's own for further sides and neutral posts.
+          for (const side of ['--wp-p1', '--wp-p2', '--rc-p3', '--rc-p4', '--rc-p5', '--rc-p6', '--rc-p7', '--rc-p8', '--rc-neutral']) {
+            const ratio = contrast(pick(side.startsWith('--wp-') ? 'ui' : 'game', side), bg);
             expect(ratio, `${theme} ${terrain} ${veil} ${side}: ${ratio.toFixed(2)}`).toBeGreaterThanOrEqual(3);
           }
         }

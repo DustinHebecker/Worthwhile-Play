@@ -371,3 +371,72 @@ test('relay-command: a saved map is the player\'s own content — Settings count
   await page.getByTestId('rc-editor-open').click();
   await expect(page.getByTestId('ed-library')).toContainText('No saved maps yet.');
 });
+
+test('relay-command: a game against two opponents (four bases) shows side letters and resumes after a reload', async ({ page }) => {
+  await start(page);
+  // Only the four-base map offers more than one opponent.
+  await expect(page.getByTestId('rc-opponents-label')).toBeHidden();
+  await page.getByTestId('rc-scenario').selectOption('four-corners');
+  await expect(page.getByTestId('rc-opponents-label')).toBeVisible();
+  await page.getByTestId('rc-opponents').selectOption('2');
+  await expect.poll(async () => ((await saved(page)) as unknown as { opponents?: number } | undefined)?.opponents).toBe(2);
+  // The opponents' known structures carry their letters (colour is never the only cue).
+  await expect(page.locator('[data-testid^="rc-mark-"]').first()).toBeVisible();
+  await expect(page.getByTestId('rc-enemy')).toContainText('B');
+  await page.getByTestId('rc-lock').click();
+  await expect(page.getByTestId('rc-turn')).toContainText('Turn 2');
+  await expect.poll(async () => (await saved(page))?.world.turn).toBe(1);
+  await page.reload();
+  await page.getByTestId('continue').click();
+  await expect(page.getByTestId('rc-map')).toHaveAttribute('data-cols', '16');
+  await expect(page.getByTestId('rc-turn')).toContainText('Turn 2');
+  await expect(page.getByTestId('rc-opponents')).toBeDisabled();
+  await expect(page.getByTestId('rc-opponents')).toHaveValue('2');
+  const state = (await saved(page)) as unknown as { opponents: number; world: { sides: number } };
+  expect(state).toMatchObject({ opponents: 2, world: { sides: 3 } });
+});
+
+test('relay-command: infantry next to the neutral post takes it over, and the turn summary says so', async ({ page }) => {
+  await start(page);
+  await page.getByTestId('rc-scenario').selectOption('four-corners');
+  await page.getByTestId('rc-opponents').selectOption('2');
+  await expect.poll(async () => ((await saved(page)) as unknown as { opponents?: number } | undefined)?.opponents).toBe(2);
+  // Put the player's first Rifle Squad next to the neutral post (the empty fourth base) in the save.
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve, reject) => {
+        const open = indexedDB.open('worthwhile-play');
+        open.onerror = () => reject(open.error);
+        open.onsuccess = () => {
+          const db = open.result;
+          db.onversionchange = () => db.close();
+          const store = db.transaction('saves', 'readwrite').objectStore('saves');
+          const get = store.get('relay-command');
+          get.onsuccess = () => {
+            const record = get.result as { state: { world: { entities: { id: number; side: number; kind: string; x: number; y: number }[]; intel: { id: number; x: number; y: number; live: boolean }[][] } } };
+            const world = record.state.world;
+            const post = world.entities.find((e) => e.side === -1)!;
+            const rifle = world.entities.find((e) => e.side === 0 && e.kind === 'rifles')!;
+            const free = [[-1, 0], [0, -1], [-1, -1], [1, 0], [0, 1]].map(([dx, dy]) => [post.x + dx!, post.y + dy!]).find(([x, y]) => x! >= 0 && y! >= 0 && x! < 16 && y! < 16 && !world.entities.some((e) => e.x === x && e.y === y))!;
+            rifle.x = free[0]!;
+            rifle.y = free[1]!;
+            for (const list of world.intel) for (const r of list) if (r.id === rifle.id) Object.assign(r, { x: rifle.x, y: rifle.y, live: false });
+            const put = store.put(record);
+            put.onsuccess = () => {
+              db.close();
+              resolve();
+            };
+            put.onerror = () => reject(put.error);
+          };
+          get.onerror = () => reject(get.error);
+        };
+      })
+  );
+  await page.reload();
+  await page.getByTestId('continue').click();
+  await expect(page.getByTestId('rc-map')).toHaveAttribute('data-cols', '16');
+  await page.getByTestId('rc-lock').click();
+  await expect(page.getByTestId('rc-summary')).toContainText('You captured Command Post');
+  const state = (await saved(page))!;
+  expect(state.world.entities.filter((e) => e.kind === 'command-post' && e.side === 0)).toHaveLength(2);
+});
