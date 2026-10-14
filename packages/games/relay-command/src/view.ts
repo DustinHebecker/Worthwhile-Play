@@ -99,7 +99,7 @@ const LEGEND_KINDS = ['rifles', 'lancer', 'outrider', 'warden', 'howitzer', 'mas
 export { CELL };
 
 /** Automatic order ends worth telling the player (arrivals and regroups are expected outcomes). */
-const REPORTED_ENDS: ReadonlySet<string> = new Set(['occupied', 'unreachable', 'blocked', 'lost-target', 'retreat', 'outpaced', 'lost-contact']);
+const REPORTED_ENDS: ReadonlySet<string> = new Set(['occupied', 'unreachable', 'blocked', 'lost-target', 'retreat', 'outpaced', 'lost-contact', 'turned-back']);
 
 let instanceCounter = 0;
 

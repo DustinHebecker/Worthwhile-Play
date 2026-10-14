@@ -279,6 +279,12 @@ describe('Relay Command view', () => {
     expect($('rc-summary').textContent).toContain(`Rifle Squad ${rifle.id}: the destination is occupied; now holding position.`);
   });
 
+  it('tells when a unit turned back after carrying out its order out of contact (doctrine), from an observed event', () => {
+    const rifle = firstMobile();
+    instance.restore({ ...state(), events: [{ t: 'order-ended', tick: 3, id: rifle.id, reason: 'turned-back' }] });
+    expect($('rc-summary').textContent).toContain(`Rifle Squad ${rifle.id}: order carried out without radio contact; returning into coverage (doctrine).`);
+  });
+
   it('reports each automatic order end at most once per unit and turn', () => {
     const rifle = firstMobile();
     const retreat = (tick: number) => ({ t: 'order-ended' as const, tick, id: rifle.id, reason: 'retreat' as const });
