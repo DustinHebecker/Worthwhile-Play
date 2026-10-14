@@ -47,7 +47,7 @@ describe('view', () => {
     expect(kind(5, 0)).toBe('outside');
     expect(q('tile-5-0').getAttribute('aria-hidden')).toBe('true');
     expect(q('tile-2-4').getAttribute('aria-label')).toBe('Row 3, column 5: crate');
-    expect(q('level-status').textContent).toBe('Level 1 of 8');
+    expect(q('level-status').textContent).toBe('Level 1 of 16');
     expect(q('board').getAttribute('dir')).toBe('ltr');
     expect(q('status').hidden).toBe(true);
   });
@@ -151,13 +151,13 @@ describe('view', () => {
 
   it('chooses another level of the same difficulty from the level list', () => {
     const { q, press, instance, ctx } = start({ seed: 3, difficulty: 'medium' });
-    expect(q('level-status').textContent).toBe('Level 4 of 8');
+    expect(q('level-status').textContent).toBe('Level 4 of 16');
     expect((q('level-select') as HTMLSelectElement).value).toBe('3');
     press('ArrowDown');
     (q('level-select') as HTMLSelectElement).value = '6';
     q('level-play').click();
     expect(instance.serialize()).toEqual({ seed: 3, difficulty: 'medium', level: 6, history: [] });
-    expect(q('level-status').textContent).toBe('Level 7 of 8');
+    expect(q('level-status').textContent).toBe('Level 7 of 16');
     expect(ctx.saveRequests()).toBe(2);
     // reset() goes back to the seeded level.
     instance.reset();
@@ -205,7 +205,7 @@ describe('view', () => {
   });
 
   it('ignores input while paused and restores exactly', () => {
-    const { press, instance, value, q } = start({ seed: 13, difficulty: 'hard' });
+    const { press, instance, value, q } = start({ seed: 5, difficulty: 'hard' });
     press('ArrowDown');
     const mid = instance.serialize();
     instance.pause();
