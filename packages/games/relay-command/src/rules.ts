@@ -13,6 +13,7 @@ import {
   resolveTurn,
   STRATEGY_RULESET,
   validateCommand,
+  NEUTRAL,
   isOneShotOrder,
   repairPrice,
   sellRefund,
@@ -28,13 +29,22 @@ import {
   spawn
 } from '@wp/strategy-engine';
 import { DIFFICULTIES, planAi, type Difficulty } from './ai';
-import { FIELD_EXERCISE, SCENARIOS, type ScenarioSpec } from './scenarios';
+import { FIELD_EXERCISE, opponentCounts, SCENARIOS, scenarioFor, type ScenarioSpec } from './scenarios';
 import { customSpec, isValidMap, mapIssues, MAP_SLOTS, type EditMap } from './maps';
 
 /** Strategy rules: orders and reports travel through the command network (coverage, order slots, fog). */
 export const RULESET: Ruleset = STRATEGY_RULESET;
+/**
+ * Several sides (docs/design/strategy.md § 9.4): the same rules plus capture and elimination —
+ * Command Posts change hands, and a side without one is out. Used when a game has more than one
+ * opponent or a neutral post; the two-side game keeps RULESET (its measured behaviour).
+ */
+export const SIDES_RULESET: Ruleset = { ...STRATEGY_RULESET, id: `${STRATEGY_RULESET.id}-sides`, capture: true };
 export const PLAYER = 0;
+/** The opponent of a two-side game (with several opponents: sides 1…n). */
 export const OPPONENT = 1;
+/** Most opponents a game can have (the engine's eight sides). */
+export const MAX_OPPONENTS = 7;
 const COMMAND_POST = 'command-post';
 /** Weight of the Command Post in the end-of-game value comparison (it has no build cost). */
 const COMMAND_POST_VALUE = 300;
@@ -74,9 +84,21 @@ export const TURN_LIMITS: readonly (number | null)[] = [null, 12, 24];
 /** Doctrine every mobile unit starts with: return into coverage after a turn without contact. */
 export const PLAYER_DOCTRINE: Doctrine = { ...DEFAULT_DOCTRINE, lostContact: 'regroup' };
 
-/** The scenario's world at the start of a game (both sides alike, so the start is symmetric). */
-export function initialWorld(spec: ScenarioSpec, seed: number): World {
-  const world = createWorld({ ...spec.scenario, seed }, RULESET);
+/** The rules of a game: capture and elimination once there are several opponents or a neutral post. */
+export const rulesetFor = (spec: ScenarioSpec, opponents: number): Ruleset =>
+  opponents > 1 || (scenarioFor(spec, opponents)?.entities.some((e) => e.side === NEUTRAL) ?? false) ? SIDES_RULESET : RULESET;
+/** The rules of a running game. */
+export const rulesOf = (state: Pick<RcState, 'scenario' | 'map' | 'opponents'>): Ruleset => {
+  const spec = specOf(state);
+  return spec ? rulesetFor(spec, state.opponents) : RULESET;
+};
+
+/** The scenario's world at the start of a game (every side alike, so the start is fair). */
+export function initialWorld(spec: ScenarioSpec, seed: number, opponents = 1): World {
+  const scenario = scenarioFor(spec, opponents);
+  if (!scenario) throw new RangeError(`${spec.id} has no layout for ${opponents} opponents.`);
+  const rules = rulesetFor(spec, opponents);
+  const world = createWorld({ ...scenario, seed }, rules);
   // Mobile units follow it; yards carry it so the units they produce follow it too.
   for (const e of world.entities) {
     const arch = archetypeOf(RULESET, e.kind);
@@ -86,8 +108,10 @@ export function initialWorld(spec: ScenarioSpec, seed: number): World {
 }
 
 export interface RcState {
-  v: 8;
+  v: 9;
   seed: number;
+  /** Number of computer opponents (sides 1…n; 1 for two-side maps). */
+  opponents: number;
   /** Strength of the scripted opponent (chosen when the game starts). */
   difficulty: Difficulty;
   scenario: string;
@@ -128,12 +152,15 @@ export const scenarioById = (id: string): ScenarioSpec | undefined => SCENARIOS.
 /** The scenario a game runs on: its player-made map, else the built-in one. */
 export const specOf = (state: Pick<RcState, 'scenario' | 'map'>): ScenarioSpec | undefined => (state.map ? customSpec(state.map) : scenarioById(state.scenario));
 
-export function newGame(seed: number, base: ScenarioSpec = FIELD_EXERCISE, difficulty: Difficulty = 'normal', turnLimit: number | null = base.turnLimit, quick = false, map: EditMap | null = null): RcState {
+export function newGame(seed: number, base: ScenarioSpec = FIELD_EXERCISE, difficulty: Difficulty = 'normal', turnLimit: number | null = base.turnLimit, quick = false, map: EditMap | null = null, opponents = 1): RcState {
   const spec = map ? customSpec(map) : base;
-  const world = initialWorld(spec, seed);
+  // Only the counts the map declares (two-side maps and player-made ones: one).
+  const count = opponentCounts(spec).includes(opponents) ? opponents : 1;
+  const world = initialWorld(spec, seed, count);
   return {
-    v: 8,
+    v: 9,
     seed: normalizeSeed(seed),
+    opponents: count,
     difficulty,
     scenario: spec.id,
     turnLimit,
@@ -282,16 +309,19 @@ export function cancelOrder(state: RcState, unit: number): RcState {
 /** Locks the player's plan, lets the opponent plan blind, and resolves both simultaneously. */
 export function lockTurn(state: RcState): RcState {
   if (state.phase !== 'plan') return state;
-  // The opponent plans from its own observation only (never the world or the player's draft).
-  const plans = [state.draft, planAi(observe(state.world, RULESET, OPPONENT), RULESET, state.difficulty)];
-  const { world, events: all, reported } = resolveTurn(state.world, RULESET, plans);
+  // Each opponent plans from its own observation only (never the world, the player's draft or
+  // another opponent's plan); a side that is out plans nothing.
+  const rules = rulesOf(state);
+  const out = new Set(state.world.out ?? []);
+  const plans = [state.draft, ...Array.from({ length: state.opponents }, (_, i) => (out.has(i + 1) ? [] : planAi(observe(state.world, rules, i + 1), rules, state.difficulty)))];
+  const { world, events: all, reported } = resolveTurn(state.world, rules, plans);
   const events = reported?.[PLAYER] ?? [];
   // The stalemate record is kept in open-ended games (a turn limit ends the others): a quick
   // match is decided by it, a plain open end only offers the player to end on strength.
   const fought = all.some((e) => e.t === 'hit');
   const counting = state.turnLimit === null && (fought || state.lead.length > 0 || world.turn >= CONTACT_TURN);
   // Shelling the leader's Command Post is pressure even before it shows in the lead: count anew.
-  const leader = Math.sign(state.lead.at(-1) ?? 0) > 0 ? PLAYER : Math.sign(state.lead.at(-1) ?? 0) < 0 ? OPPONENT : undefined;
+  const leader = Math.sign(state.lead.at(-1) ?? 0) > 0 ? PLAYER : Math.sign(state.lead.at(-1) ?? 0) < 0 ? strongestOpponent(state.world) : undefined;
   const leaderPost = leader === undefined ? undefined : commandPost(state.world, leader)?.id;
   const pressed = leaderPost !== undefined && all.some((e) => e.t === 'hit' && e.id === leaderPost);
   const lead = nextLead(pressed ? [] : state.lead, world, counting);
@@ -317,7 +347,7 @@ export const canSettle = (state: RcState): boolean =>
 
 /** The result `settle` would give now (strength as in every decision on strength). */
 export function settleResult(state: RcState): Outcome {
-  const diff = sideValue(state.world, PLAYER) - sideValue(state.world, OPPONENT);
+  const diff = sideValue(state.world, PLAYER) - opponentValue(state.world);
   return diff > 0 ? 'won' : diff < 0 ? 'lost' : 'draw';
 }
 
@@ -386,6 +416,26 @@ export const reportTurn = (tick: number): number => Math.ceil(tick / RULESET.tic
 export const commandPost = (world: World, side: number): Entity | undefined =>
   world.entities.find((e) => e.side === side && e.kind === COMMAND_POST);
 
+/** The opponents still in the game (they hold a Command Post). */
+export const opponentsLeft = (world: World): number[] =>
+  Array.from({ length: world.sides - 1 }, (_, i) => i + 1).filter((side) => !world.out?.includes(side) && commandPost(world, side) !== undefined);
+
+/** The strongest opponent still in the game (ties: the lowest side), or OPPONENT when none is left. */
+export function strongestOpponent(world: World): number {
+  let best: number | undefined;
+  for (const side of opponentsLeft(world)) if (best === undefined || sideValue(world, side) > sideValue(world, best)) best = side;
+  return best ?? OPPONENT;
+}
+
+/**
+ * The strength the player is measured against: the strongest opponent still in the game. With
+ * several opponents the player wins on strength only when ahead of every one of them.
+ */
+export const opponentValue = (world: World): number => {
+  const left = opponentsLeft(world);
+  return left.length === 0 ? 0 : Math.max(...left.map((side) => sideValue(world, side)));
+};
+
 /** Remaining strength of a side: build value scaled by remaining health. */
 /**
  * A side's strength: units and structures at cost scaled by health (the Command Post counts
@@ -412,7 +462,7 @@ export const stalled = (from: number, to: number): boolean =>
 /** The stalemate record after a turn: restarts whenever the trailing side gained ground. */
 function nextLead(lead: readonly number[], world: World, counting: boolean): number[] {
   if (!counting) return [];
-  const now = sideValue(world, PLAYER) - sideValue(world, OPPONENT);
+  const now = sideValue(world, PLAYER) - opponentValue(world);
   const start = lead[0];
   return start !== undefined && stalled(start, now) ? [...lead, now].slice(0, STALL_TURNS + 1) : [now];
 }
@@ -426,21 +476,23 @@ export const stalemateTurns = (state: Pick<RcState, 'lead'>): number => Math.max
  * side gaining ground) or at MAX_TURNS, so a game nobody can win any more still ends.
  */
 export function outcome(world: World, turnLimit: number | null, lead: readonly number[] = [], quick = true): Outcome | null {
-  const own = commandPost(world, PLAYER);
-  const enemy = commandPost(world, OPPONENT);
-  if (!own && !enemy) return 'draw';
-  if (!enemy) return 'won';
+  // The player is out without a Command Post; it wins when no opponent holds one any more.
+  const own = commandPost(world, PLAYER) !== undefined && !world.out?.includes(PLAYER);
+  const enemies = opponentsLeft(world).length > 0;
+  if (!own && !enemies) return 'draw';
+  if (!enemies) return 'won';
   if (!own) return 'lost';
   const decided = turnLimit === null ? (quick && stalemateTurns({ lead: [...lead] }) >= STALL_TURNS) || world.turn >= MAX_TURNS : world.turn >= turnLimit;
   if (!decided) return null;
-  const diff = sideValue(world, PLAYER) - sideValue(world, OPPONENT);
+  const diff = sideValue(world, PLAYER) - opponentValue(world);
   return diff > 0 ? 'won' : diff < 0 ? 'lost' : 'draw';
 }
 
 /** Re-runs the logged plans from the scenario start (bug reports, tests). */
-export function replay(seed: number, log: readonly TurnLog[], spec: ScenarioSpec = FIELD_EXERCISE): World {
-  let world = initialWorld(spec, seed);
-  for (const entry of log) world = resolveTurn(world, RULESET, entry.plans).world;
+export function replay(seed: number, log: readonly TurnLog[], spec: ScenarioSpec = FIELD_EXERCISE, opponents = 1): World {
+  let world = initialWorld(spec, seed, opponents);
+  const rules = rulesetFor(spec, opponents);
+  for (const entry of log) world = resolveTurn(world, rules, entry.plans).world;
   return world;
 }
 
@@ -484,21 +536,23 @@ function withLostContact(state: Record<string, unknown>): Record<string, unknown
 
 /** A command whose order is structurally valid on a `w`×`h` map. */
 const commandGuard =
-  (w: number, h: number) =>
+  (w: number, h: number, sides: number) =>
   (v: unknown): v is Command =>
-    isRecord(v) && isInt(v.side, 0, 1) && isInt(v.unit, 1) && isValidOrder(v.order, w, h) && (v.doctrine === undefined || isValidDoctrine(v.doctrine));
+    isRecord(v) && isInt(v.side, 0, sides - 1) && isInt(v.unit, 1) && isValidOrder(v.order, w, h) && (v.doctrine === undefined || isValidDoctrine(v.doctrine));
 
-const isTurnLog = (isCommand: (v: unknown) => v is Command) => (v: unknown): v is TurnLog =>
-  isRecord(v) && isInt(v.turn, 0) && Array.isArray(v.plans) && v.plans.length === 2 && v.plans.every((p) => isArrayOf(p, isCommand));
+const isTurnLog = (isCommand: (v: unknown) => v is Command, sides: number) => (v: unknown): v is TurnLog =>
+  isRecord(v) && isInt(v.turn, 0) && Array.isArray(v.plans) && v.plans.length === sides && v.plans.every((p) => isArrayOf(p, isCommand));
 
 /**
  * The world must belong to the saved scenario: same map and ruleset, only the scenario's unit
  * kinds and never more units than at the start. This keeps manipulated or foreign saves (huge
  * maps, hundreds of units) from freezing the tab.
  */
-function matchesScenario(world: World, spec: ScenarioSpec): boolean {
-  const { map, entities } = spec.scenario;
-  if (world.ruleset !== RULESET.id || world.map.w !== map.w || world.map.h !== map.h || world.map.terrain !== map.terrain) return false;
+function matchesScenario(world: World, spec: ScenarioSpec, opponents: number): boolean {
+  const scenario = scenarioFor(spec, opponents);
+  if (!scenario) return false;
+  const { map, entities } = scenario;
+  if (world.ruleset !== rulesetFor(spec, opponents).id || world.map.w !== map.w || world.map.h !== map.h || world.map.terrain !== map.terrain) return false;
   // Deposits: the scenario's cells (or none, for maps from before the economy), never fuller than at the start.
   const deposits = world.map.deposits ?? [];
   const start = map.deposits ?? [];
@@ -519,7 +573,7 @@ const isValidDraft = (v: unknown): v is MapDraft | null =>
   v === null || (isRecord(v) && isValidMap(v.map) && (v.slot === null || isInt(v.slot, 0, MAP_SLOTS - 1)) && typeof v.mirror === 'boolean');
 
 export function isValidState(value: unknown): value is RcState {
-  if (!isRecord(value) || value.v !== 8 || !isUint32(value.seed) || typeof value.scenario !== 'string') return false;
+  if (!isRecord(value) || value.v !== 9 || !isUint32(value.seed) || typeof value.scenario !== 'string' || !isInt(value.opponents, 1, MAX_OPPONENTS)) return false;
   if (!isOneOf(value.difficulty, DIFFICULTIES)) return false;
   // A player-made map: well-formed and playable, and then the scenario is 'custom'.
   if (value.map !== null && (!isValidMap(value.map) || mapIssues(value.map).length > 0)) return false;
@@ -527,27 +581,35 @@ export function isValidState(value: unknown): value is RcState {
   if (!isValidDraft(value.edit)) return false;
   const spec = value.map ? customSpec(value.map) : scenarioById(value.scenario);
   if (!spec || !(value.turnLimit === null || isInt(value.turnLimit, 1, MAX_TURNS)) || !isOneOf(value.phase, ['plan', 'finished'])) return false;
-  if (!isValidWorld(value.world, RULESET) || value.world.sides !== 2 || !matchesScenario(value.world, spec)) return false;
-  // Two sides only (several sides come with a later save version): no teams, frames, sides that
-  // are out, neutral posts or reports of them — a crafted save must not turn the opponent's post neutral.
+  // The opponent count must be one the map offers, and the world must be set up for it: its sides,
+  // frames and rules (capture only with several sides or a neutral post), no teams (free-for-all).
+  const opponents = value.opponents;
+  const scenario = opponentCounts(spec).includes(opponents) ? scenarioFor(spec, opponents) : undefined;
+  if (!scenario) return false;
+  const rules = rulesetFor(spec, opponents);
+  if (!isValidWorld(value.world, rules) || value.world.sides !== opponents + 1 || !matchesScenario(value.world, spec, opponents)) return false;
+  // A crafted save must not turn a side's post neutral, add teams or change how a side sees the map.
   const w = value.world;
-  if (w.teams !== undefined || w.frames !== undefined || (w as { out?: unknown }).out !== undefined) return false;
-  if (w.entities.some((e) => e.side !== PLAYER && e.side !== OPPONENT) || (w.intel ?? []).some((list) => list.some((r) => r.side !== PLAYER && r.side !== OPPONENT))) return false;
+  if (w.teams !== undefined || JSON.stringify(w.frames ?? null) !== JSON.stringify(scenario.frames ?? null)) return false;
+  if (rules.capture ? false : w.out !== undefined) return false;
+  const neutralIds = new Set(scenario.entities.flatMap((e, i) => (e.side === NEUTRAL ? [i + 1] : [])));
+  if (w.entities.some((e) => e.side === NEUTRAL && !neutralIds.has(e.id))) return false;
+  if ((w.intel ?? []).some((list) => list.some((r) => r.side === NEUTRAL && !neutralIds.has(r.id)))) return false;
   // The stalemate record holds at most one entry per turn played and never more than decides a game.
   if (!isArrayOf(value.lead, (v) => isInt(v, -MAX_STRENGTH, MAX_STRENGTH)) || value.lead.length > Math.min(value.world.turn, STALL_TURNS + 1)) return false;
   if (typeof value.quick !== 'boolean' || (value.quick && value.turnLimit !== null)) return false;
   if (value.turnLimit !== null && value.lead.length > 0) return false; // only open-ended games keep a stalemate record
-  const isCommand = commandGuard(value.world.map.w, value.world.map.h);
+  const isCommand = commandGuard(value.world.map.w, value.world.map.h, value.world.sides);
   if (!isArrayOf(value.draft, isCommand) || value.draft.some((c) => c.side !== PLAYER)) return false;
   // Bounded by the scenario (hostile saves must not freeze the tab): one command per unit and
   // plan, and at most a dozen events per unit and tick in the last turn's summary.
-  const n = spec.scenario.entities.length;
+  const n = scenario.entities.length;
   if (value.draft.length > n || !Array.isArray(value.events) || value.events.length > n * RULESET.ticksPerTurn * 12) return false;
   if (!Array.isArray(value.log) || value.log.some((t) => !isRecord(t) || !Array.isArray(t.plans) || t.plans.some((p) => !Array.isArray(p) || p.length > n))) return false;
   const standing = value.draft.filter((c) => !isOneShot(c.order));
   if (new Set(standing.map((c) => c.unit)).size !== standing.length) return false;
   if (!Array.isArray(value.events) || !value.events.every((e) => isRecord(e) && typeof e.t === 'string' && isInt(e.tick, 0))) return false;
-  if (!isArrayOf(value.log, isTurnLog(isCommand)) || value.log.length !== value.world.turn) return false;
+  if (!isArrayOf(value.log, isTurnLog(isCommand, value.world.sides)) || value.log.length !== value.world.turn) return false;
   if (typeof value.conceded !== 'boolean' || typeof value.settled !== 'boolean') return false;
   // Only a finished plain open end can have been settled (and never also conceded).
   if (value.settled && (value.phase !== 'finished' || value.turnLimit !== null || value.quick || value.conceded || value.lead.length <= STALL_TURNS)) return false;
@@ -567,33 +629,39 @@ export function migrateState(state: unknown, fromVersion: number): RcState | und
   // and no yards, so the game plays on as it did (nothing to build on, posts still yield).
   // Version 6 (open end always had the stalemate rule): plays on as a plain open end; the
   // stalemate rule is now the separate quick match.
+  // Version 8 (two sides only): one opponent; everything else carries over.
+  if (fromVersion === 8) {
+    if (!isRecord(state) || state.v !== 8) return undefined;
+    const migrated = { ...state, v: 9, opponents: 1 };
+    return isValidState(migrated) ? migrated : undefined;
+  }
   // Version 7 (before the map editor): no player-made map, no draft.
   if (fromVersion === 7) {
     if (!isRecord(state) || state.v !== 7) return undefined;
-    const migrated = { ...state, v: 8, map: null, edit: null };
+    const migrated = { ...state, v: 9, opponents: 1, map: null, edit: null };
     return isValidState(migrated) ? migrated : undefined;
   }
   if (fromVersion === 6) {
     if (!isRecord(state) || state.v !== 6) return undefined;
-    const migrated = { ...state, v: 8, quick: false, settled: false, lead: [], map: null, edit: null };
+    const migrated = { ...state, v: 9, opponents: 1, quick: false, settled: false, lead: [], map: null, edit: null };
     return isValidState(migrated) ? migrated : undefined;
   }
   if (fromVersion === 5) {
     if (!isRecord(state) || state.v !== 5) return undefined;
-    const migrated = withEconomy({ ...state, v: 8 });
+    const migrated = withEconomy({ ...state, v: 9, opponents: 1 });
     return isValidState(migrated) ? migrated : undefined;
   }
   // Version 4 (before the lost-contact doctrine and open end): doctrines keep their old meaning
   // (carry on out of contact); player units without a doctrine get the current default.
   if (fromVersion === 4) {
     if (!isRecord(state) || state.v !== 4) return undefined;
-    const migrated = withEconomy(withLostContact({ ...state, v: 8 }));
+    const migrated = withEconomy(withLostContact({ ...state, v: 9, opponents: 1 }));
     return isValidState(migrated) ? migrated : undefined;
   }
   // Version 3 (before difficulty levels) plays on at 'normal'.
   if (fromVersion === 3) {
     if (!isRecord(state) || state.v !== 3) return undefined;
-    const migrated = withEconomy(withLostContact({ ...state, v: 8, difficulty: 'normal' }));
+    const migrated = withEconomy(withLostContact({ ...state, v: 9, opponents: 1, difficulty: 'normal' }));
     return isValidState(migrated) ? migrated : undefined;
   }
   if ((fromVersion !== 1 && fromVersion !== 2) || !isRecord(state) || state.v !== fromVersion || !isRecord(state.world)) return undefined;
@@ -601,7 +669,7 @@ export function migrateState(state: unknown, fromVersion: number): RcState | und
   delete world.intel;
   delete world.supply;
   if (!isValidWorld(world, { ...RULESET, fog: false, economy: false })) return undefined;
-  const migrated = withEconomy(withLostContact({ ...state, v: 8, difficulty: 'normal', events: [], world: { ...world, intel: initialIntel(world as unknown as World, RULESET) } }));
+  const migrated = withEconomy(withLostContact({ ...state, v: 9, opponents: 1, difficulty: 'normal', events: [], world: { ...world, intel: initialIntel(world as unknown as World, RULESET) } }));
   if (!isValidState(migrated)) return undefined;
   // Version 1 had no order limit or coverage: keep only the planned orders that are still allowed.
   let replanned: RcState = { ...migrated, draft: [] };

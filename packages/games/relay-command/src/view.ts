@@ -9,6 +9,7 @@ import {
   ARMOR_CLASSES,
   cellOf,
   computeNetwork,
+  NEUTRAL,
   jammedCells,
   needsDeploy as needsDeployArch,
   nodeRadius,
@@ -36,8 +37,9 @@ import {
   draftFor,
   lockTurn,
   newGame,
-  OPPONENT,
+  opponentValue,
   orderRefusal,
+  rulesOf,
   orderSlots,
   outcome,
   picture,
@@ -63,8 +65,22 @@ import { drawIcon } from './icons';
 import { createEditor } from './editor';
 import { blankMap, hostMapLibrary, mapIssues, memoryStore, migratePreferenceMaps, preferenceMapLibrary, type EditMap, type MapLibrary, type MapStore } from './maps';
 import { CELL, drawDeposit, drawTerrainMark, TERRAIN_NAMES } from './draw';
-import { FIELD_EXERCISE, SCENARIOS } from './scenarios';
+import { FIELD_EXERCISE, opponentCounts, SCENARIOS } from './scenarios';
 import './styles.css';
+
+/** Letters of the sides (A = the player), shown on every unit and row when there are several sides. */
+const SIDE_MARKS = 'ABCDEFGH';
+/** Colour tokens of the sides (and fallbacks): the first two are the shared player colours. */
+const SIDE_COLOURS: readonly (readonly [string, string])[] = [
+  ['--wp-p1', '#24508f'],
+  ['--wp-p2', '#9a3412'],
+  ['--rc-p3', '#6b21a8'],
+  ['--rc-p4', '#0f5f57'],
+  ['--rc-p5', '#854d0e'],
+  ['--rc-p6', '#9d174d'],
+  ['--rc-p7', '#3f6212'],
+  ['--rc-p8', '#1e3a8a']
+];
 
 /** Milliseconds after arming a two-press confirmation in which a second press does not count. */
 const CONFIRM_GAP = 400;
@@ -105,7 +121,18 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   const isGhost = (e: Pick<Entity, 'id'>): boolean => ghostTick(e) !== undefined;
   const known = (id: number): Entity | undefined => world().entities.find((e) => e.id === id);
   const unitName = (e: Pick<Entity, 'kind' | 'id'>) => t('unit.name', { name: t(`unit.${e.kind}`), id: e.id });
-  const sideName = (side: number) => t(side === PLAYER ? 'side.own' : 'side.enemy');
+  /** Several sides: every side has a letter (A = you) and a name besides its colour (never colour alone). */
+  // A fixed property of the game (its opponents and rules), never of what is left on the map: whether
+  // a neutral post still stands must not show in the interface (review of PR #23).
+  const several = (): boolean => state.opponents > 1 || rulesOf(state).capture === true;
+  const sideMark = (side: number): string => (side === NEUTRAL ? 'N' : (SIDE_MARKS[side] ?? '?'));
+  const sideName = (side: number): string =>
+    side === PLAYER ? t('side.own') : side === NEUTRAL ? t('side.neutral') : several() ? t('side.opponent', { mark: sideMark(side) }) : t('side.enemy');
+  const sideColour = (side: number): string => {
+    if (side === NEUTRAL) return css('--rc-neutral', '#4b5563');
+    const token = SIDE_COLOURS[side] ?? SIDE_COLOURS[1]!;
+    return css(token[0], token[1]);
+  };
   const terrainName = (x: number, y: number) => t(`terrain.${TERRAIN_NAMES[world().map.terrain[y * world().map.w + x] ?? '.'] ?? 'plain'}`);
   const isMobile = (e: Entity) => (archetypeOf(RULESET, e.kind)?.speed ?? 0) > 0;
   /** Structures never move: drawn as squares, told apart from vehicles that merely stand still. */
@@ -267,6 +294,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   const scenarioSelect = h('select', { 'data-testid': 'rc-scenario', onchange: () => onSetup() });
   for (const spec of SCENARIOS) scenarioSelect.append(h('option', { value: spec.id }, t(`scenario.${spec.id}`)));
   const limitSelect = h('select', { 'data-testid': 'rc-turn-limit', onchange: () => onSetup() });
+  /** Opponents: only the counts the chosen map declares (two-side maps: one). */
+  const opponentsSelect = h('select', { 'data-testid': 'rc-opponents', onchange: () => onSetup() });
   // Lengths: open end (default), quick match (strength decides once the side behind stops gaining
   // ground), or a fixed number of turns.
   for (const limit of TURN_LIMITS) {
@@ -281,6 +310,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     h('legend', {}, t('setup.title')),
     h('label', {}, h('span', {}, t('setup.scenario')), scenarioSelect),
     h('label', {}, h('span', {}, t('setup.limit')), limitSelect),
+    h('label', { 'data-testid': 'rc-opponents-label' }, h('span', {}, t('setup.opponents')), opponentsSelect),
     editorBtn
   );
   // After the first turn the setup folds into one line (map, length, level) that opens on demand:
@@ -340,7 +370,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     'details',
     { class: 'rc-help' },
     h('summary', {}, t('help.title')),
-    ...['help.turns', 'help.bar', 'help.orders', 'help.network', 'help.fog', 'help.ew', 'help.doctrine', 'help.economy', 'help.repair', 'help.editor', 'help.combat', 'help.goal', 'help.shapes', 'help.access'].map((k) => h('p', {}, t(k)))
+    ...['help.turns', 'help.bar', 'help.orders', 'help.network', 'help.fog', 'help.ew', 'help.doctrine', 'help.economy', 'help.repair', 'help.editor', 'help.sides', 'help.combat', 'help.goal', 'help.shapes', 'help.access'].map((k) => h('p', {}, t(k)))
   );
 
   /* ---------- Map editor ---------- */
@@ -452,13 +482,14 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     if (!settleable) settleArmed = false;
     settleBtn.textContent = settleArmed
       ? t('action.settleConfirm')
-      : t(`action.settle.${settleResult(state)}`, { own: sideValue(state.world, PLAYER), enemy: sideValue(state.world, OPPONENT) });
+      : t(`action.settle.${settleResult(state)}`, { own: sideValue(state.world, PLAYER), enemy: opponentValue(state.world) });
     stalemateEl.toggleAttribute('data-empty', !stalemate && !settleable);
     // Scenario and turn limit can be changed until the first turn is locked.
     // Kept in place after the first turn (disabled), so the map does not jump up.
     const setupLocked = state.phase !== 'plan' || state.log.length > 0;
     scenarioSelect.disabled = setupLocked;
     limitSelect.disabled = setupLocked;
+    opponentsSelect.disabled = setupLocked;
     setupBox.toggleAttribute('data-locked', setupLocked);
     // Unlocked: the setup stands open on its own; locked: it moves into the fold (closed until opened).
     if (setupLocked && setupBox.parentElement !== setupFold) {
@@ -469,7 +500,11 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     syncScenarioOptions();
     scenarioSelect.value = state.map ? 'custom' : state.scenario;
     limitSelect.value = state.turnLimit !== null ? String(state.turnLimit) : state.quick ? 'quick' : 'open';
-    setupSummary.textContent = t('setup.summary', { map: state.map ? mapLabel(state.map) : t(`scenario.${state.scenario}`), length: limitSelect.selectedOptions[0]?.textContent ?? '' });
+    syncOpponentOptions();
+    opponentsSelect.value = String(state.opponents);
+    const mapText = state.map ? mapLabel(state.map) : t(`scenario.${state.scenario}`);
+    const length = limitSelect.selectedOptions[0]?.textContent ?? '';
+    setupSummary.textContent = state.opponents > 1 ? t('setup.summaryOpponents', { map: mapText, length, n: state.opponents }) : t('setup.summary', { map: mapText, length });
     statusEl.textContent = statusText();
     statusEl.setAttribute('data-phase', state.phase);
     slotsEl.hidden = finished;
@@ -509,7 +544,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     if (s.phase === 'plan') return '';
     if (s.conceded) return t('status.conceded');
     // The result is decided on the true world, so it is told from it (not from the picture).
-    const args = { own: sideValue(s.world, PLAYER), enemy: sideValue(s.world, OPPONENT), limit: STALL_TURNS };
+    const args = { own: sideValue(s.world, PLAYER), enemy: opponentValue(s.world), limit: STALL_TURNS };
     const result = s.result ?? 'draw';
     const decidedByPost = outcome({ ...s.world, turn: 0 }, s.turnLimit) !== null;
     if (decidedByPost) return result === 'won' ? t('status.won') : result === 'lost' ? t('status.lost') : t('status.draw', args);
@@ -767,7 +802,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     );
 
   /** Small icon of a unit kind: the map shape (circle / diamond / square) with its glyph. */
-  function unitIcon(kind: string, own: boolean): HTMLElement {
+  function unitIcon(kind: string, own: boolean, side: number = own ? PLAYER : 1): HTMLElement {
     const icon = h('canvas', { class: 'rc-icon', width: CELL, height: CELL, 'aria-hidden': 'true' }) as HTMLCanvasElement;
     let g: CanvasRenderingContext2D | null = null;
     try {
@@ -776,7 +811,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       g = null;
     }
     if (!g) return icon;
-    const colour = css(own ? '--wp-p1' : '--wp-p2', own ? '#24508f' : '#9a3412');
+    const colour = sideColour(side);
     const surface = css('--wp-surface', '#ffffff');
     if (drawIcon(g, kind, 0, 0, CELL / 44, { own, colour, surface })) return icon;
     const c = CELL / 2;
@@ -820,7 +855,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     const own = unit.side === PLAYER;
     const cells = (n: number) => t('card.cells', { n });
     cardEl.append(
-      h('div', { class: 'rc-card-head' }, unitIcon(unit.kind, own), h('strong', {}, unitName(unit)), h('span', { class: 'rc-muted' }, sideName(unit.side))),
+      h('div', { class: 'rc-card-head' }, unitIcon(unit.kind, own, unit.side), h('strong', {}, unitName(unit)), h('span', { class: 'rc-muted' }, sideName(unit.side))),
       statRow(t('card.health'), `${unit.hp} / ${arch.hp}`, unit.hp / arch.hp, 'rc-card-health')
     );
     // Folded by default (owner: short card, nothing lost): stats, then abilities.
@@ -984,7 +1019,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       h(
         'span',
         { class: 'rc-row', 'aria-hidden': 'true', 'data-side': e.side === PLAYER ? 'own' : 'enemy' },
-        unitIcon(e.kind, e.side === PLAYER),
+        unitIcon(e.kind, e.side === PLAYER, e.side),
+        several() && e.side !== PLAYER ? h('span', { class: 'rc-row-mark', 'data-testid': `rc-mark-${e.id}`, style: `color:${sideColour(e.side)}` }, sideMark(e.side)) : null,
         h('span', { class: 'rc-row-name' }, unitName(e)),
         h('span', { class: 'rc-row-hp' }, h('span', { class: 'rc-stat-bar' }, h('span', { class: 'rc-stat-fill', style: `width:${Math.round((100 * e.hp) / max)}%` })), h('span', {}, `${e.hp}/${max}`)),
         h('span', { class: 'rc-row-state' }, short)
@@ -1047,7 +1083,9 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
         if (e.side === PLAYER) taken += e.damage;
         else dealt += e.damage;
       } else if (e.t === 'bump') {
-        if (unitById(state, e.id)?.side !== OPPONENT) bumps += 1;
+        // As before several sides: every bump told to the player except a known enemy's (own units, also lost ones).
+        const side = unitById(state, e.id)?.side;
+        if (side === undefined || side === PLAYER) bumps += 1;
       } else if (e.t === 'destroyed') {
         lines.push(t(e.side === PLAYER ? 'summary.lostUnit' : 'summary.destroyedUnit', { name: unitName(e) }));
       } else if (e.t === 'income') {
@@ -1059,6 +1097,11 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
         if (site?.side === PLAYER) lines.push(t('summary.built', { name: unitName(site) }));
       } else if (e.t === 'site') {
         if (e.side !== PLAYER) lines.push(t('summary.enemySite', { name: unitName(e) }));
+      } else if (e.t === 'captured') {
+        const post = { kind: e.kind, id: e.id };
+        lines.push(e.to === PLAYER ? t('summary.captured', { name: unitName(post) }) : e.from === PLAYER ? t('summary.postLost', { name: unitName(post), side: sideName(e.to) }) : t('summary.capturedBy', { name: unitName(post), side: sideName(e.to) }));
+      } else if (e.t === 'eliminated') {
+        lines.push(t(e.side === PLAYER ? 'summary.youOut' : 'summary.sideOut', { side: sideName(e.side) }));
       } else if (e.t === 'missing') {
         lines.push(t('summary.missing', { name: unitName(e) }));
       } else if (e.t === 'repaired') {
@@ -1295,7 +1338,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   function drawUnit(g: CanvasRenderingContext2D, e: Entity): void {
     const [cx, cy] = centre(e.x, e.y);
     const own = e.side === PLAYER;
-    const colour = css(own ? '--wp-p1' : '--wp-p2', own ? '#24508f' : '#9a3412');
+    const colour = sideColour(e.side);
     const surface = css('--wp-surface', '#ffffff');
     const r = CELL * 0.34;
     const ghost = isGhost(e);
@@ -1377,6 +1420,25 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       g.moveTo(bx - 6, by + 6);
       g.lineTo(bx + 6, by - 6);
       g.stroke();
+    }
+    if (several()) {
+      // Several sides: the side's letter in a corner badge (colour is never the only cue).
+      const bx = e.x * CELL + 9;
+      const by = e.y * CELL + CELL - 9;
+      g.globalAlpha = 1;
+      g.setLineDash([]);
+      g.fillStyle = surface;
+      g.strokeStyle = colour;
+      g.lineWidth = 1.5;
+      g.beginPath();
+      g.arc(bx, by, 7.5, 0, Math.PI * 2);
+      g.fill();
+      g.stroke();
+      g.fillStyle = colour;
+      g.font = `bold ${Math.round(CELL * 0.24)}px sans-serif`;
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillText(sideMark(e.side), bx, by + 0.5);
     }
     if (selected === e.id) {
       g.strokeStyle = css('--wp-focus', '#b4530a');
@@ -1617,6 +1679,21 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     });
   }
 
+  /** The opponent counts the map in the select offers (player-made maps: one). */
+  function syncOpponentOptions(): void {
+    const value = scenarioSelect.value;
+    const spec = scenarioById(value);
+    const counts = spec ? opponentCounts(spec) : [1];
+    const current = [...opponentsSelect.querySelectorAll('option')].map((o) => o.value).join(',');
+    if (current !== counts.join(',')) {
+      clear(opponentsSelect);
+      for (const n of counts) opponentsSelect.append(h('option', { value: String(n) }, t('setup.opponentCount', { n })));
+    }
+    // A single choice is no choice: the row is shown only for maps with several.
+    const label = opponentsSelect.parentElement;
+    if (label) label.hidden = counts.length < 2;
+  }
+
   function onSetup(): void {
     if (state.phase !== 'plan' || state.log.length > 0) return;
     const value = scenarioSelect.value;
@@ -1625,7 +1702,9 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     const limit = limitSelect.value === 'open' || limitSelect.value === 'quick' ? null : Number(limitSelect.value);
     selected = null;
     const map = own && mapIssues(own).length === 0 ? own : null;
-    commit(newGame(state.seed, spec, state.difficulty, limit, limitSelect.value === 'quick', map), t('announce.setup', { scenario: map ? mapLabel(map) : t(`scenario.${spec.id}`) }));
+    syncOpponentOptions();
+    const opponents = map ? 1 : Number(opponentsSelect.value) || 1;
+    commit(newGame(state.seed, spec, state.difficulty, limit, limitSelect.value === 'quick', map, opponents), t('announce.setup', { scenario: map ? mapLabel(map) : t(`scenario.${spec.id}`) }));
     homeCursor();
     render();
   }

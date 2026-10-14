@@ -14,6 +14,14 @@
   --rc-grid: rgba(29, 29, 27, 0.12);
   --rc-nocover: rgba(29, 29, 27, 0.3);
   --rc-fog: rgba(29, 29, 27, 0.12);
+  /* Sides beyond the first two (several opponents) and neutral posts; each also carries a letter. */
+  --rc-p3: #6b21a8;
+  --rc-p4: #0f5f57;
+  --rc-p5: #854d0e;
+  --rc-p6: #9d174d;
+  --rc-p7: #3f6212;
+  --rc-p8: #1e3a8a;
+  --rc-neutral: #4b5563;
   display: grid;
   gap: var(--wp-gap, 1rem);
   width: 100%;
@@ -34,6 +42,13 @@
     --rc-grid: rgba(236, 235, 228, 0.12);
     --rc-nocover: rgba(236, 235, 228, 0.3);
     --rc-fog: rgba(0, 0, 0, 0.32);
+    --rc-p3: #d8b4fe;
+    --rc-p4: #5eead4;
+    --rc-p5: #fcd34d;
+    --rc-p6: #f9a8d4;
+    --rc-p7: #bef264;
+    --rc-p8: #93c5fd;
+    --rc-neutral: #d1d5db;
   }
 }
 /* Top bar: fixed slots that never reflow between turns (facts, status, stalemate hint, actions). */
@@ -230,3 +245,15 @@
 .wp-relay-command .rc-ed-library ul { margin: 0.2rem 0; padding-inline-start: 1.2rem; }
 .wp-relay-command .rc-ed-library li[data-current='true'] { font-weight: 700; }
 .wp-relay-command .rc-ed-map:focus-visible { outline: 3px solid var(--wp-focus); outline-offset: -3px; }
+
+/* Several sides: the side's letter next to the unit's name in the lists. */
+.wp-relay-command .rc-row-mark {
+  display: inline-grid;
+  place-items: center;
+  min-inline-size: 1.4em;
+  block-size: 1.4em;
+  border: 1.5px solid currentColor;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.8em;
+}

@@ -7,7 +7,8 @@ import {
   dist2,
   incomeOfSide,
   MAX_QUEUE,
-  frameIndex,
+  frameIndexIn,
+  frameOf,
   inWeaponRange,
   observedCells,
   passable,
@@ -15,6 +16,8 @@ import {
   canReach,
   runTicks,
   validateCommand,
+  hostile,
+  NEUTRAL,
   type Command,
   type Doctrine,
   type Entity,
@@ -242,7 +245,7 @@ function lookaheadFighters(obs: Observation, ruleset: Ruleset, fighters: readonl
 
 const sumEnemies = (w: World, side: number, value: (w: World, s: number) => number): number => {
   let total = 0;
-  for (let s = 0; s < w.sides; s++) if (s !== side) total += value(w, s);
+  for (let s = 0; s < w.sides; s++) if (s !== side && hostile(w, side, s)) total += value(w, s);
   return total;
 };
 
@@ -271,16 +274,15 @@ const RALLY_DOCTRINE: Doctrine = { ...AI_DOCTRINE, lostContact: 'regroup' };
 
 /** The passable cell inside the side's coverage nearest to `at` (ties in the side's frame), or `at` itself when nothing is covered. */
 function coveredNear(obs: Observation, ruleset: Ruleset, at: { x: number; y: number }): { x: number; y: number } {
-  const { world, side, network } = obs;
+  const { world, network } = obs;
   if (!ruleset.commandNetwork) return at;
-  const cells = world.map.w * world.map.h;
   let best: { x: number; y: number; d: number; f: number } | undefined;
   for (let y = 0; y < world.map.h; y++) {
     for (let x = 0; x < world.map.w; x++) {
       const cell = cellOf(world.map, x, y);
       if (network.coverage[cell] !== 1 || !passable(world.map, ruleset, x, y, 'ground')) continue;
       const d = dist2(x, y, at.x, at.y);
-      const f = frameIndex(cell, side, cells);
+      const f = sideFrame(obs, cell);
       if (!best || d < best.d || (d === best.d && f < best.f)) best = { x, y, d, f };
     }
   }
@@ -298,11 +300,23 @@ interface AssaultPlan {
   readonly besieging: boolean;
 }
 
+/**
+ * The enemy Command Post the side goes for: the nearest one it knows of from its own post (ties
+ * in its frame). Several opponents: each picks its own, with no coordination between them.
+ */
+export function objectiveOf(obs: Observation): Entity | undefined {
+  const home = obs.world.entities.find((e) => e.side === obs.side && e.kind === 'command-post');
+  if (!home) return undefined;
+  return enemiesOf(obs)
+    .filter((e) => e.kind === 'command-post')
+    .sort((a, b) => dist2(a.x, a.y, home.x, home.y) - dist2(b.x, b.y, home.x, home.y) || frame(obs, a) - frame(obs, b))[0];
+}
+
 /** The side's plan of attack from what it knows: rally point in front of the enemy post and whether to storm. */
 function assaultPlan(obs: Observation, ruleset: Ruleset, difficulty: Difficulty): AssaultPlan | undefined {
   const { world, side } = obs;
-  const objective = enemiesOf(obs).find((e) => e.kind === 'command-post');
   const home = world.entities.find((e) => e.side === side && e.kind === 'command-post');
+  const objective = objectiveOf(obs);
   if (!objective || !home) return undefined;
   const dx = home.x - objective.x;
   const dy = home.y - objective.y;
@@ -385,7 +399,7 @@ function assault(obs: Observation, ruleset: Ruleset, plan: AssaultPlan, fighters
         const c = cellOf(world.map, x, y);
         if (taken.has(c)) continue;
         taken.add(c);
-        ring.push({ x, y, f: frameIndex(c, side, world.map.w * world.map.h) });
+        ring.push({ x, y, f: sideFrame(obs, c) });
       }
     }
     ring.sort((a, b) => a.f - b.f);
@@ -431,7 +445,7 @@ function approachCells(obs: Observation, ruleset: Ruleset, objective: Entity): (
     for (let x = Math.max(0, objective.x - APPROACH_RADIUS); x <= Math.min(w - 1, objective.x + APPROACH_RADIUS); x++) {
       const c = cellOf(world.map, x, y);
       if (taken.has(c) || !passable(world.map, ruleset, x, y, 'ground')) continue;
-      rings.push({ x, y, r: Math.max(Math.abs(x - objective.x), Math.abs(y - objective.y)), f: frameIndex(c, side, w * h) });
+      rings.push({ x, y, r: Math.max(Math.abs(x - objective.x), Math.abs(y - objective.y)), f: sideFrame(obs, c) });
     }
   }
   rings.sort((a, b) => a.r - b.r || a.f - b.f);
@@ -543,7 +557,7 @@ function spottingCell(obs: Observation, ruleset: Ruleset, spotter: Entity, objec
       margin = Math.min(margin, Math.sqrt(dist2(x, y, objective.x, objective.y)) - (archetypeOf(ruleset, (objective as Entity).kind)?.vision ?? 0));
       margin = Math.min(margin, 3); // beyond three cells of slack, nearer is better
       const d = dist2(x, y, spotter.x, spotter.y);
-      const f = frameIndex(c, obs.side, w * h);
+      const f = sideFrame(obs, c);
       if (!best || margin > best.margin || (margin === best.margin && (d < best.d || (d === best.d && f < best.f)))) best = { x, y, margin, d, f };
     }
   }
@@ -603,7 +617,7 @@ function economyOrders(obs: Observation, ruleset: Ruleset, own: readonly Entity[
   if (source) {
     const free = (world.map.deposits ?? [])
       .filter((d) => (d.left > 0 || d.left === UNKNOWN_LEFT) && !world.entities.some((e) => e.x === d.x && e.y === d.y))
-      .sort((a, b) => dist2(a.x, a.y, source.x, source.y) - dist2(b.x, b.y, source.x, source.y) || frameIndex(cellOf(world.map, a.x, a.y), side, world.map.w * world.map.h) - frameIndex(cellOf(world.map, b.x, b.y), side, world.map.w * world.map.h));
+      .sort((a, b) => dist2(a.x, a.y, source.x, source.y) - dist2(b.x, b.y, source.x, source.y) || sideFrame(obs, cellOf(world.map, a.x, a.y)) - sideFrame(obs, cellOf(world.map, b.x, b.y)));
     for (const d of free) {
       if (supply < costOf('extractor')) break;
       if (dangerAt(obs, ruleset, d.x, d.y) > 0) continue; // within reach of a known enemy fighter: it would only be shelled
@@ -669,7 +683,7 @@ function buildSpot(obs: Observation, ruleset: Ruleset, source: Entity, kind: str
       // Not adjacent to the post or a yard: their neighbours are where produced units appear.
       if (world.entities.some((e) => e.side === side && (archetypeOf(ruleset, e.kind)?.production || e.kind === source.kind) && Math.max(Math.abs(e.x - x), Math.abs(e.y - y)) <= 1)) continue;
       const d = dist2(x, y, source.x, source.y);
-      const f = frameIndex(c, side, world.map.w * world.map.h);
+      const f = sideFrame(obs, c);
       if (!best || d < best.d || (d === best.d && f < best.f)) best = { x, y, d, f };
     }
   }
@@ -709,7 +723,7 @@ function standOff(obs: Observation, ruleset: Ruleset, unit: Entity, objective: P
       const d2 = dist2(x, y, objective.x, objective.y);
       if (d2 < near * near || d2 > keep * keep) continue;
       const d = dist2(x, y, want.x, want.y);
-      const f = frameIndex(cellOf(obs.world.map, x, y), obs.side, w * h);
+      const f = sideFrame(obs, cellOf(obs.world.map, x, y));
       if (!best || d < best.d || (d === best.d && f < best.f)) best = { x, y, d, f };
     }
   }
@@ -776,7 +790,6 @@ function relaySpot(obs: Observation, ruleset: Ruleset, truck: Entity): { x: numb
   if (!post || !enemyPost) return undefined;
   const without = { ...world, entities: world.entities.filter((e) => e.id !== truck.id) };
   const coverage = computeNetwork(without, ruleset, side).coverage;
-  const cells = world.map.w * world.map.h;
   // Cells to avoid: own units that stay put, and enemies the side knows to stand there (spotted
   // units, reported structures). Enemy orders are unknown, so spotted enemies always count.
   const taken = (x: number, y: number): boolean =>
@@ -792,7 +805,7 @@ function relaySpot(obs: Observation, ruleset: Ruleset, truck: Entity): { x: numb
       if (taken(x, y)) continue;
       // Out of reach of known enemy fighters first (a relay lost to a Warden freezes the whole advance).
       const d = dangerAt(obs, ruleset, x, y) * 1000 + dist2(x, y, enemyPost.x, enemyPost.y);
-      const f = frameIndex(cell, side, cells);
+      const f = sideFrame(obs, cell);
       if (!best || d < best.d || (d === best.d && f < best.f)) best = { x, y, d, f };
       if (x === truck.x && y === truck.y) here = d;
     }
@@ -815,7 +828,6 @@ function jamSpot(obs: Observation, ruleset: Ruleset, jammer: Entity, radius: num
   if (targets.length === 0) return undefined;
   const without = { ...world, entities: world.entities.filter((e) => e.id !== jammer.id) };
   const coverage = computeNetwork(without, ruleset, side).coverage;
-  const cells = world.map.w * world.map.h;
   let best: { x: number; y: number; d: number; f: number } | undefined;
   for (let y = 0; y < world.map.h; y++) {
     for (let x = 0; x < world.map.w; x++) {
@@ -828,7 +840,7 @@ function jamSpot(obs: Observation, ruleset: Ruleset, jammer: Entity, radius: num
       if (taken) continue;
       // Prefer cells out of reach of known enemy fighters, then the nearest to the jammer.
       const d = dangerAt(obs, ruleset, x, y) * 1000 + dist2(x, y, jammer.x, jammer.y);
-      const f = frameIndex(cell, side, cells);
+      const f = sideFrame(obs, cell);
       if (!best || d < best.d || (d === best.d && f < best.f)) best = { x, y, d, f };
     }
   }
@@ -851,8 +863,11 @@ const staysPut = (ruleset: Ruleset, e: Entity): boolean => {
   return arch?.layer === 'ground' && (arch.speed === 0 || e.order.type === 'hold' || e.order.type === 'deploy');
 };
 
-/** Enemies the side knows of: current sightings and last reports. */
-const enemiesOf = (obs: Observation): Entity[] => obs.world.entities.filter((e) => e.side !== obs.side);
+/**
+ * Enemies the side knows of: current sightings and last reports of hostile sides. A neutral
+ * post is no enemy (it never fires; taking it is a matter for later, docs/design/strategy.md § 9.4).
+ */
+const enemiesOf = (obs: Observation): Entity[] => obs.world.entities.filter((e) => e.side !== NEUTRAL && hostile(obs.world, obs.side, e.side));
 
 type Positioned = Pick<Entity, 'id' | 'x' | 'y'>;
 
@@ -860,7 +875,12 @@ const nearestDistance = (unit: Entity, candidates: readonly Positioned[]): numbe
   candidates.reduce((best, e) => Math.min(best, dist2(unit.x, unit.y, e.x, e.y)), Number.POSITIVE_INFINITY);
 
 /** Cell index of an entity in its side's own frame: tie-breaks that stay mirror-consistent. */
-const frame = (obs: Observation, e: Positioned): number => frameIndex(cellOf(obs.world.map, e.x, e.y), obs.side, obs.world.map.w * obs.world.map.h);
+/**
+ * A cell's index in the side's own frame (ADR 0009): the map's frame for its seat on maps with
+ * several sides (so every seat plans alike), the two-side default otherwise.
+ */
+const sideFrame = (obs: Observation, cell: number): number => frameIndexIn(obs.world.map, frameOf(obs.world, obs.side), cell);
+const frame = (obs: Observation, e: Positioned): number => sideFrame(obs, cellOf(obs.world.map, e.x, e.y));
 
 function nearest<T extends Positioned>(unit: Entity, candidates: readonly T[], obs?: Observation): T | undefined {
   let best: T | undefined;

@@ -119,6 +119,54 @@ describe('after a capture (review of PR #22)', () => {
     expect(at(r2.world, 5, 6)!.hp).toBe(at(r.world, 5, 6)!.hp);
   });
 
+  it('a distant ally under fog is not told: its attack order stays, no event, its report keeps the old owner until it sees the post', () => {
+    // Sides 0 and 1 are allies; side 0's lancer, far away, has a standing attack order on side 2's post.
+    const w = createWorld(
+      {
+        map: open(24, 7),
+        sides: 3,
+        teams: [0, 0, 1],
+        entities: [
+          { side: 0, kind: 'command-post', x: 22, y: 0 },
+          { side: 1, kind: 'command-post', x: 0, y: 0 },
+          { side: 2, kind: 'command-post', x: 5, y: 6 },
+          { side: 1, kind: 'rifles', x: 5, y: 5 },
+          { side: 0, kind: 'lancer', x: 21, y: 1, order: { type: 'attack', target: 3 } },
+          // Side 2 keeps a second post (out of everyone's sight), so it is not out and its name stays in reports.
+          { side: 2, kind: 'command-post', x: 0, y: 6 }
+        ],
+        seed: 1,
+        supply: [100, 100, 100]
+      },
+      CAPTURE
+    );
+    at(w, 5, 6)!.hp = 50;
+    const lancer = at(w, 21, 1)!;
+    const r = turn(w);
+    expect(at(r.world, 5, 6)!.side).toBe(1);
+    expect(r.world.entities.find((e) => e.id === lancer.id)!.order).toEqual({ type: 'attack', target: 3 });
+    expect(r.reported![0]!.some((e) => e.t === 'captured' || (e.t === 'order-ended' && e.id === lancer.id))).toBe(false);
+    expect(r.world.intel![0]!.find((rep) => rep.id === 3)?.side).toBe(2);
+    // Walking on, the order ends only when the lancer itself sees the post (in its own sight); until
+    // then side 0's report keeps the old owner (the lancer, out of radio cover, reports nothing).
+    let world = r.world;
+    let endedAt: number | undefined;
+    for (let i = 0; i < 12 && endedAt === undefined; i++) {
+      const next = turn(world);
+      const unit = next.world.entities.find((e) => e.id === lancer.id)!;
+      if (unit.order.type !== 'attack') {
+        endedAt = i;
+        expect((unit.x - 5) ** 2 + (unit.y - 6) ** 2).toBeLessThanOrEqual(4 * 4);
+      } else {
+        expect(next.world.intel![0]!.find((rep) => rep.id === 3)?.side).toBe(2);
+        expect(next.reported![0]!.some((e) => e.t === 'captured')).toBe(false);
+      }
+      world = next.world;
+    }
+    expect(endedAt).toBeDefined();
+    expect(at(world, 5, 6)!.hp).toBe(at(r.world, 5, 6)!.hp);
+  });
+
   it('a capture clears the post\'s doctrine and order', () => {
     const w = worldOf(3, [{ side: 1, kind: 'rifles', x: 5, y: 5 }]);
     const post = at(w, 5, 6)!;
@@ -325,7 +373,8 @@ describe('save validation', () => {
     const r = turn(w).world;
     expect(isValidWorld({ ...r, out: [2, 2] }, CAPTURE)).toBe(false);
     expect(isValidWorld({ ...r, out: [5] }, CAPTURE)).toBe(false);
-    expect(isValidWorld({ ...r, out: [1, 2] }, CAPTURE)).toBe(false); // side 1 still has pieces
+    // Side 1 still has pieces (its reports cleared, so only the pieces rule can reject it).
+    expect(isValidWorld({ ...r, out: [1, 2], intel: r.intel!.map((list, side) => (side === 1 ? [] : list)) }, CAPTURE)).toBe(false);
     const live = structuredClone(r);
     const report = live.intel![1]!.find((rep) => rep.live && rep.kind === 'command-post' && rep.x === 5);
     if (report) {
