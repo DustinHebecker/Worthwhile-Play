@@ -3,6 +3,7 @@
  * Mathematical notation (formulas, lists, bits) is language-neutral; rules that need
  * words are returned as a message key plus parameters.
  */
+import { normalizeDigits } from './formula';
 import { COMPARATORS, FAMILIES, GATES, PREDICTION_LIMIT, otherBits, type Input, type InputSpec, type Output, type OutputKind, type Rule } from './rules';
 
 export const MINUS = '−';
@@ -117,18 +118,7 @@ export const outputKindOf = (rule: Rule): OutputKind => FAMILIES[rule.family].ou
 
 // --- Parsing typed predictions --------------------------------------------------------------
 
-/** Digit blocks that users may type with their locale's keyboard (Arabic-Indic, Persian, Devanagari, full-width). */
-const DIGIT_ZEROS = [0x0660, 0x06f0, 0x0966, 0xff10];
-
-export function normalizeDigits(text: string): string {
-  let result = '';
-  for (const ch of text) {
-    const code = ch.codePointAt(0) as number;
-    const zero = DIGIT_ZEROS.find((z) => code >= z && code <= z + 9);
-    result += zero === undefined ? ch : String(code - zero);
-  }
-  return result;
-}
+export { normalizeDigits } from './formula';
 
 /** Parses a typed whole number (accepts locale digits and minus signs). Returns `null` if invalid. */
 export function parseInteger(text: string): number | null {

@@ -15,12 +15,15 @@ const type = (field: HTMLInputElement, value: string) => {
 
 runGameContract(game, {
   interact: (root) => {
-    // Two experiments (the default difficulty uses a single number x), then an open test with one prediction.
+    // Two experiments (the default difficulty uses a single number x), then an open test with one
+    // prediction, switched to a formula proof with a typed (unchecked) formula.
     el(root, 'bb-run').click();
     type(el<HTMLInputElement>(root, 'bb-input-0'), '7');
     el(root, 'bb-run').click();
     el(root, 'bb-inc-0').click();
     el(root, 'bb-test').click();
     type(el<HTMLInputElement>(root, 'bb-predict-0'), '12');
+    el(root, 'bb-proof-formula').click();
+    type(el<HTMLInputElement>(root, 'bb-formula'), '2x + 1');
   }
 });
