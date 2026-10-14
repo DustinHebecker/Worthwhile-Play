@@ -14,6 +14,7 @@ export function validateMetadata(metadata: GameMetadata, requiredLocales: readon
   const [min, max] = metadata.typicalMinutes;
   if (!(min > 0 && max >= min)) problems.push('typicalMinutes must satisfy 0 < min <= max');
   if (metadata.inputMethods.length === 0) problems.push('at least one input method is required');
+  if (metadata.setupInGame !== undefined && typeof metadata.setupInGame !== 'boolean') problems.push('setupInGame must be a boolean');
   for (const locale of requiredLocales) {
     const catalogue = metadata.messages[locale];
     if (!catalogue) {

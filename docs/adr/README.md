@@ -18,3 +18,4 @@ Short, durable records of decisions that are not obvious from the code. New ADR:
 | [0012](0012-game-library.md) | Per-game library for things players create |
 | [0013](0013-decks-made-with-an-ai.md) | Decks made with an AI: a guide link and direct import links |
 | [0014](0014-adventure-engine.md) | Adventure engine: declarative content, checker-proven completability (proposed) |
+| [0015](0015-setup-in-game.md) | Games whose first screen is their own setup (`setupInGame`) |

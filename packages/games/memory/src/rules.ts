@@ -55,7 +55,10 @@ export const MIN_PAIRS = 2;
 /** Upper bound for item ids of user decks in untrusted saves. */
 export const MAX_ITEM_ID_LENGTH = 200;
 
-/** Content languages fixed when the cards were dealt (so a resumed game looks the same). */
+/**
+ * Content languages fixed when the cards were dealt (so a resumed game looks the same). The general-knowledge
+ * variants (flags, capitals, AI basics) record the UI language but are always shown in the current UI language.
+ */
 export interface CardLanguages {
   front?: string;
   back?: string;

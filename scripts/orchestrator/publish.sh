@@ -30,8 +30,9 @@ pnpm install --frozen-lockfile --prefer-offline >/dev/null 2>&1
 pnpm check:licenses | tail -1
 pnpm lint >/dev/null && echo "lint ok"
 pnpm typecheck >/dev/null && echo "types ok"
-pnpm test > "$SCRATCH/last-test.log" 2>&1 || true
-grep -E 'Tests ' "$SCRATCH/last-test.log" | tee /dev/stderr | grep -qv failed || { grep -E 'FAIL|AssertionError|Error:' "$SCRATCH/last-test.log" | head -20; exit 1; }
+# Decide by the exit code: the summary also has a "Failed Tests 1" banner line, which a text match let through.
+if ! pnpm test > "$SCRATCH/last-test.log" 2>&1; then grep -E 'Tests |FAIL|AssertionError|Error:' "$SCRATCH/last-test.log" | head -20; exit 1; fi
+grep -E '^\s+Tests ' "$SCRATCH/last-test.log"
 pnpm build >/dev/null 2>&1 && echo "build ok"
 E2E_PORT=${E2E_PORT:-4793} pnpm exec playwright test --reporter=line > "$SCRATCH/last-e2e.log" 2>&1 || true
 sed 's/\x1b\[[0-9;]*[A-Za-z]//g' "$SCRATCH/last-e2e.log" | grep -E '^\s+[0-9]+\) \[|Error:|passed|failed|flaky' | head -12 | tee /dev/stderr | grep -q ' failed' && exit 1 || true

@@ -38,12 +38,12 @@ export function deckItemIds(deckId: string, userDecks: UserDeckSource | undefine
 /** Content languages to fix for a new session on a built-in deck (Memory uses the same fallbacks). */
 export function sessionLanguages(deckId: string, choice: GameContentLanguages | undefined, uiLocale: string): { languages: ReviewLanguages; learningFallback: boolean } {
   const resolved = resolveContentLanguages(choice, uiLocale);
+  // Only "First words" is a language pair (learning language ↔ translation).
   if (deckId === 'first-words') return { languages: { learning: resolved.learning, translation: resolved.translation }, learningFallback: resolved.learningFallback };
+  // General knowledge is shown in the UI (main) language, never the learning language. The `learning`
+  // field name of "Capitals" and "AI basics" is kept so that saves stay valid (it holds the UI language).
   if (deckId === 'flags') return { languages: { countries: resolved.countries }, learningFallback: false };
-  // Capital names exist in the 16 "First words" languages only, so "Capitals" follows the learning language.
-  if (deckId === 'capitals') return { languages: { learning: resolved.learning }, learningFallback: resolved.learningFallback };
-  // The same holds for the terms and definitions of "AI basics".
-  if (deckId === 'ai-basics') return { languages: { learning: resolved.learning }, learningFallback: resolved.learningFallback };
+  if (deckId === 'capitals' || deckId === 'ai-basics') return { languages: { learning: resolved.ui }, learningFallback: false };
   return { languages: {}, learningFallback: false };
 }
 
@@ -62,6 +62,12 @@ export interface CardFaces {
 export type FaceResolver = (card: ReviewCard) => CardFaces;
 
 const uiVocabulary = (locale: string) => (isVocabularyLanguage(locale) ? locale : 'en');
+
+/**
+ * Language of a general-knowledge deck ("Flags & countries", "Capitals", "AI basics"): always the current UI
+ * language, also for sessions saved before this rule (they recorded the learning language).
+ */
+export const knowledgeLanguage = (t: Pick<Translator, 'locale'>) => uiVocabulary(t.locale);
 
 const textFace = (side: CardSide, t: Translator): Face => ({ side, description: side.text ?? side.alt ?? t('card.image') });
 
@@ -85,7 +91,7 @@ export function faceResolver(state: Pick<ReviewState, 'deckId' | 'languages'>, t
       };
     }
     case 'flags': {
-      const language = state.languages.countries ?? t.locale;
+      const language = t.locale;
       return (card) => {
         const code = card.item.toUpperCase();
         const name = countryName(code, language);
@@ -97,8 +103,7 @@ export function faceResolver(state: Pick<ReviewState, 'deckId' | 'languages'>, t
       };
     }
     case 'capitals': {
-      const { learning } = state.languages;
-      if (!learning || !isVocabularyLanguage(learning)) return undefined;
+      const learning = knowledgeLanguage(t);
       return (card) => {
         const code = card.item.toUpperCase();
         const country = countryName(code, learning);
@@ -109,8 +114,7 @@ export function faceResolver(state: Pick<ReviewState, 'deckId' | 'languages'>, t
       };
     }
     case 'ai-basics': {
-      const { learning } = state.languages;
-      if (!learning || !isVocabularyLanguage(learning)) return undefined;
+      const learning = knowledgeLanguage(t);
       return (card) => {
         const entry = aiTerm(card.item, learning);
         const term = entry?.term ?? '';
