@@ -17,7 +17,7 @@ Legend — Priority: **P0** foundation/blocking · **P1** next · **P2** later. 
 | M5 | **Memory & attention exercises**, Faces & Names (synthetic/licensed faces only) | P1 | M1 | 🚧 Sequence Memory, Pattern Memory, Signal Watch, Stay on Task, Deep Read, Faces & Names done |
 | M6 | **Communication exercises** with deterministic evaluation (ADR 0010) | P2 | M0 | ✅ Ambiguity Detector, Audience Switch, Briefing Game, Compression Challenge |
 | M7 | **Strategy engine** (fresh agent context): shared simulation → Tower Defense → turn-based strategy → 4 hybrid modes | P2 | stable M0–M2 | 🚧 |
-| M8 | **Adventure engine** → Adventure A (dark fantasy) → Adventure B (temporal) | P2 | M0 | ⏳ design draft: [docs/design/adventure.md](design/adventure.md), awaiting owner decisions |
+| M8 | **Adventure engine** → Adventure A (dark fantasy) → Adventure B (temporal) | P2 | M0 | 🚧 design with owner decisions: [docs/design/adventures.md](design/adventures.md) (ADR 0014); next: engine core (E1) |
 | M9 | **Optional local AI** (WebLLM, explicit download, deterministic checks first) | P2 | M6 | ⏳ |
 
 Cross-cutting, continuous: accessibility review, native-speaker review of translations (currently AI-assisted; Portuguese is consistently Brazilian Portuguese, guarded by a test), performance budget per game chunk, documentation/ADRs.
