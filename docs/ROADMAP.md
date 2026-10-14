@@ -20,7 +20,7 @@ Legend — Priority: **P0** foundation/blocking · **P1** next · **P2** later. 
 | M8 | **Adventure engine** → Adventure A (dark fantasy) → Adventure B (temporal) | P2 | M0 | ⏳ design draft: [docs/design/adventure.md](design/adventure.md), awaiting owner decisions |
 | M9 | **Optional local AI** (WebLLM, explicit download, deterministic checks first) | P2 | M6 | ⏳ |
 
-Cross-cutting, continuous: accessibility review, native-speaker review of translations (currently AI-assisted), performance budget per game chunk, documentation/ADRs.
+Cross-cutting, continuous: accessibility review, native-speaker review of translations (currently AI-assisted; Portuguese is consistently Brazilian Portuguese, guarded by a test), performance budget per game chunk, documentation/ADRs.
 
 Platform capabilities for games (host, ADRs 0002/0011/0012): preferences (small per-device options), per-locale content preload, and a per-game library for things players create (IndexedDB, 50 items × 64 KiB, first user: Relay Command maps) with Settings controls: delete all or per game, export everything to one JSON file (local only) and import it again (untrusted, checked item by item; existing items kept unless "replace" is chosen). Follow-up: sharing a single item from inside a game.
 
