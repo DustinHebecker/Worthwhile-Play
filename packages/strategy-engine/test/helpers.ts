@@ -93,7 +93,7 @@ export function arbWorld(options: { sides: number; square?: boolean; teams?: num
             priority: fc.constantFrom('weakest', 'nearest', 'armor', 'infantry', 'structures', 'emitters'),
             seekCover: fc.boolean(),
             holdFire: fc.boolean(),
-            lostContact: fc.constantFrom('regroup', 'keep')
+            lostContact: fc.constantFrom('regroup', 'keep', 'finish')
           }),
           { nil: undefined }
         ),
