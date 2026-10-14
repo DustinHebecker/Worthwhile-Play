@@ -106,7 +106,8 @@ Behind `Ruleset.capture` (off in `STRATEGY_RULESET`, so the two-side game is unc
 
 ## Amendment (doctrine `lostContact: 'finish'`)
 
-- A third value for `Doctrine.lostContact`: `finish` — the unit carries on with its order out of contact and, after a whole turn without contact, returns into coverage once it only holds and sees no hostile unit itself (neutral posts do not count). `regroup` and `keep` are unchanged. Saves with the old values stay valid; the two-side fingerprints are unchanged (no existing unit uses the value).
+- A third value for `Doctrine.lostContact`: `finish` — the unit carries on with its order out of contact and, after a whole turn without contact, returns into coverage once it only holds and sees no hostile unit itself (neutral posts do not count). `regroup` and `keep` are unchanged. Saves with the old values stay valid. Patrol and escort orders never come to holding, so with them `finish` behaves like `keep`; a unit holding with an enemy in its sight stays, also when it cannot harm that enemy (a structure, say).
+- The turning back of a `finish` unit ends its order with its own reason `turned-back`, told only by normal visibility (an own unit that is not observed is not reported): its timing depends on what the unit sees out of contact, so the always-told `lost-contact` (fixed timing, `regroup`) would reveal enemies the side does not know of (review of PR #29). Tests: a differential test (an unseen enemy near the unit changes none of the side's reports, for all three values), neutral posts and allies do not hold the unit back, and the no-leak property of `observe()` also removes an unseen unit entirely. The generators draw `finish` too; the two-side report fingerprint changes only because of that (with the old values it is unchanged).
 
 ## Consequences
 + One implementation per mechanic; determinism and save/restore are guaranteed once, for all modes; TD can start against the documented API.

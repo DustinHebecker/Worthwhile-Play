@@ -388,7 +388,13 @@ export type SimEvent =
  * `outpaced` (an attacker could not close in on its target for three turns), `lost-contact` (a
  * whole turn without radio contact; the unit returns into coverage, doctrine).
  */
-export type OrderEndReason = 'arrived' | 'occupied' | 'unreachable' | 'blocked' | 'lost-target' | 'retreat' | 'regrouped' | 'outpaced' | 'lost-contact';
+/**
+ * Why an order ended. `lost-contact`: doctrine 'regroup' after a whole turn without contact (its
+ * side is always told: the timing is fixed). `turned-back`: doctrine 'finish', the order done and no
+ * enemy in the unit's own sight — told only like any event of an unobserved unit (normal
+ * visibility), since its timing depends on what the unit sees out of contact (review of PR #29).
+ */
+export type OrderEndReason = 'arrived' | 'occupied' | 'unreachable' | 'blocked' | 'lost-target' | 'retreat' | 'regrouped' | 'outpaced' | 'lost-contact' | 'turned-back';
 
 export interface Scenario {
   readonly map: GameMap;

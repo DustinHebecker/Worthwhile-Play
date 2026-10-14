@@ -78,6 +78,10 @@ describe('observe (AI input, § 11)', () => {
           }
           changed.projectiles.push({ id: changed.nextId++, side: unit.side, kind: 'howitzer', x: 0, y: 0, ticks: 2 });
           expect(asText(observe(changed, rs, side))).toBe(before);
+          // Presence too (PR #29 review): the unseen unit not there at all changes nothing either.
+          const without = structuredClone(w);
+          without.entities = without.entities.filter((e) => e.id !== unit.id || revealedEmitters(w, rs, side).has(e.id) || !!archetypeOf(rs, e.kind)?.ew);
+          expect(asText(observe(without, rs, side))).toBe(before);
         }
       }),
       { numRuns: 150 }

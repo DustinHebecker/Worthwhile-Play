@@ -5,6 +5,7 @@ import {
   DEFAULT_DOCTRINE,
   isValidDoctrine,
   isValidWorld,
+  NEUTRAL,
   resolveTurn,
   runTicks,
   STRATEGY_RULESET,
@@ -189,9 +190,12 @@ describe('lost-contact doctrine (UX round after I5)', () => {
       const r = resolveTurn(w, net, [[]]);
       w = r.world;
       path.push(unit(w, 2).x);
-      ended ||= r.events.some((e) => e.t === 'order-ended' && e.id === 2 && e.reason === 'lost-contact');
+      ended ||= r.events.some((e) => e.t === 'order-ended' && e.id === 2 && e.reason === 'turned-back');
+      // Out of every own unit's sight: the turning back is not reported to the side.
+      expect(r.reported![0]!.some((e) => e.t === 'order-ended' && e.id === 2 && e.reason === 'turned-back')).toBe(false);
     }
-    // It reached its goal (18) out of contact, and only then came back into coverage.
+    // It reached its goal (18) out of contact, and only then came back into coverage. It turned back
+    // with its own reason, which is not reported unseen (it depends on what the unit sees; PR #29 review).
     expect(Math.max(...path)).toBe(18);
     expect(path.indexOf(18)).toBeLessThan(path.findIndex((x, i) => i > path.indexOf(18) && x < 18));
     expect(ended).toBe(true);
@@ -215,6 +219,47 @@ describe('lost-contact doctrine (UX round after I5)', () => {
     let back = alone;
     for (let i = 0; i < 8; i++) back = resolveTurn(back, net, [[]]).world;
     expect(unit(back, 2).x).toBeLessThanOrEqual(5);
+  });
+
+  it("'finish': a neutral post or an ally in sight does not hold the unit back; an enemy does", () => {
+    const at = (others: Scenario['entities'], teams?: number[]) => {
+      const w = createWorld({ map: open(20, 1), sides: 3, seed: 1, ...(teams && { teams }), entities: [{ side: 0, kind: 'command-post', x: 0, y: 0 }, { side: 0, kind: 'rifles', x: 15, y: 0 }, ...others] }, net);
+      Object.assign(unit(w, 2), { order: { type: 'hold' }, doctrine: doctrine({ lostContact: 'finish', holdFire: true }) });
+      let world = w;
+      for (let i = 0; i < 8; i++) world = resolveTurn(world, net, [[]]).world;
+      return unit(world, 2).x;
+    };
+    expect(at([{ side: NEUTRAL, kind: 'command-post', x: 17, y: 0 }])).toBeLessThanOrEqual(5);
+    expect(at([{ side: 1, kind: 'rifles', x: 17, y: 0 }], [0, 0, 2])).toBeLessThanOrEqual(5);
+    expect(at([{ side: 2, kind: 'command-post', x: 17, y: 0 }], [0, 0, 2])).toBe(15);
+  });
+
+  it("'finish' tells the side nothing that depends on enemies it does not know of (review of PR #29)", () => {
+    // The unit holds out of contact; an enemy it alone would see is there or not. The side's
+    // reports must be the same either way while the unit is out of contact.
+    for (const lost of ['finish', 'regroup', 'keep'] as const) {
+      const make = (enemy: boolean) => {
+        const w = worldOf(open(24, 1), [
+          { side: 0, kind: 'command-post', x: 0, y: 0 },
+          { side: 0, kind: 'rifles', x: 15, y: 0 },
+          ...(enemy ? [{ side: 1, kind: 'rifles', x: 18, y: 0 }] : []),
+          { side: 1, kind: 'command-post', x: 23, y: 0 }
+        ]);
+        Object.assign(unit(w, 2), { order: { type: 'hold' }, doctrine: doctrine({ lostContact: lost, holdFire: true }) });
+        for (const e of w.entities) if (e.side === 1) e.doctrine = doctrine({ holdFire: true });
+        w.intel = w.intel!.map((list, side) => (side === 0 ? list.filter((r) => r.side === 0 || r.kind === 'command-post') : list));
+        return w;
+      };
+      let a = make(true);
+      let b = make(false);
+      for (let turn = 0; turn < 2; turn++) {
+        const ra = resolveTurn(a, net, [[]]);
+        const rb = resolveTurn(b, net, [[]]);
+        expect(JSON.stringify(ra.reported![0]), `${lost} turn ${turn}`).toBe(JSON.stringify(rb.reported![0]));
+        a = ra.world;
+        b = rb.world;
+      }
+    }
   });
 
   it('a set-up relay out of contact stays set up (it does not pack up and drive home)', () => {

@@ -245,7 +245,11 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
         delete e.stuck;
         delete e.stall;
         delete e.prev;
-        events.push({ t: 'order-ended', tick: t, id: e.id, reason: 'lost-contact' });
+        // 'regroup' turns back after a fixed time, which the side is always told ('lost-contact').
+        // When a 'finish' unit turns back depends on what it sees out of contact: its own reason
+        // travels by normal visibility only, so it reveals no enemy the side does not know of
+        // (review of PR #29); out of sight, its side learns of it when the unit is back in contact.
+        events.push({ t: 'order-ended', tick: t, id: e.id, reason: lost === 'regroup' ? 'lost-contact' : 'turned-back' });
       }
     }
   }
