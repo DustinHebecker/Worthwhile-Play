@@ -332,6 +332,32 @@ describe('deck library pages', () => {
     expect(byId(main, 'play-flag-country')).not.toBeNull();
   });
 
+  // Owner bug: general-knowledge decks were shown in the learning language instead of the main (UI) language.
+  it('shows flags, capitals and AI basics in the UI language even when a learning language is set; First words follows the learning language', () => {
+    localStorage.setItem('worthwhile-play:learning-language', 'ja');
+    localStorage.setItem('worthwhile-play:translation-language', 'fr');
+    const preview = (id: string) => {
+      const { context, main } = app('de');
+      renderDeck(main, context, id);
+      const rows = [...(byId(main, 'deck-preview')?.querySelectorAll('tbody tr') ?? [])].map((tr) => [...tr.querySelectorAll('td')].slice(1).map((td) => td.textContent?.trim()));
+      return { main, rows };
+    };
+    const flags = preview('flags');
+    expect(byId(flags.main, 'deck-preview')?.textContent).toContain('Deutschland');
+    expect(flags.main.textContent).toContain('Sprachen: Bilder ↔ Deutsch');
+    expect(byId(flags.main, 'deck-language-hint')).toBeNull();
+    const capitals = preview('capitals');
+    expect(capitals.rows).toContainEqual(['Polen', 'Warschau']);
+    expect(byId(capitals.main, 'deck-language-hint')).toBeNull();
+    const ai = preview('ai-basics');
+    expect(ai.rows).toContainEqual(['Token', aiTerm('token', 'de')?.definition]);
+    expect(ai.main.textContent).toContain('Sprachen: Deutsch');
+    expect(byId(ai.main, 'deck-language-hint')).toBeNull();
+    const words = preview('first-words');
+    expect(words.main.textContent).toContain('Japanisch');
+    expect(byId(words.main, 'deck-language-hint')).not.toBeNull();
+  });
+
   it('shows the capitals deck: country ↔ capital in one language, playable in Memory and reviewable', async () => {
     const { context, main } = app('de');
     renderDeck(main, context, 'capitals');

@@ -2,7 +2,7 @@ import './styles.css';
 import type { GameContext, GameInstance, NewGameOptions } from '@wp/game-core';
 import { pickText, resolveContentLanguages, SYMBOL_DECK, type CardSide } from '@wp/learning-content';
 import { announce, clear, gridKeyboard, h } from '@wp/ui';
-import { BUILTIN_CHOICES, builtinDeal, choiceOf, faceResolver, parseChoice, userDeck, type CardChoice, type CardFace, type FaceResolver } from './decks';
+import { BUILTIN_CHOICES, builtinDeal, choiceOf, faceResolver, knowledgeLanguage, parseChoice, userDeck, type CardChoice, type CardFace, type FaceResolver } from './decks';
 import {
   BOARD,
   cardView,
@@ -155,12 +155,13 @@ export function createMemory(context: GameContext, speech: Speech | undefined = 
         return t('languages.words', { language: languageName(s.languages.back) });
       case 'word-translation':
         return t('languages.pair', { learning: languageName(s.languages.front), translation: languageName(s.languages.back) });
+      // General knowledge always follows the UI language (see knowledgeLanguage).
       case 'flag-country':
-        return t('languages.countries', { language: languageName(s.languages.back) });
+        return t('languages.countries', { language: languageName(t.locale) });
       case 'country-capital':
-        return t('languages.capitals', { language: languageName(s.languages.back) });
+        return t('languages.capitals', { language: languageName(knowledgeLanguage(t)) });
       case 'ai-term-definition':
-        return t('languages.aiBasics', { language: languageName(s.languages.back) });
+        return t('languages.aiBasics', { language: languageName(knowledgeLanguage(t)) });
       default:
         return '';
     }
@@ -336,11 +337,9 @@ export function createMemory(context: GameContext, speech: Speech | undefined = 
     const { deck, languages } = builtinDeal(parsed.variant, context.contentLanguages, t.locale);
     let notice = '';
     const resolved = resolveContentLanguages(context.contentLanguages, t.locale);
-    if (resolved.learningFallback) {
-      const language = languageName(context.contentLanguages?.learning);
-      if (parsed.variant === 'picture-word' || parsed.variant === 'word-translation') notice = t('languages.fallback', { language });
-      if (parsed.variant === 'country-capital') notice = t('languages.capitalsFallback', { language });
-      if (parsed.variant === 'ai-term-definition') notice = t('languages.aiBasicsFallback', { language });
+    // Only the word variants use the learning language; general knowledge follows the UI language.
+    if (resolved.learningFallback && (parsed.variant === 'picture-word' || parsed.variant === 'word-translation')) {
+      notice = t('languages.fallback', { language: languageName(context.contentLanguages?.learning) });
     }
     return { next: deal(deck, difficulty, seed, { variant: parsed.variant, languages }), notice };
   };

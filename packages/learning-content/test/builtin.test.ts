@@ -108,14 +108,30 @@ describe('toVocabularyLanguage', () => {
 describe('resolveContentLanguages (explicit fallbacks)', () => {
   it('uses the chosen languages when available', () => {
     expect(resolveContentLanguages({ learning: 'ja', translation: 'de' }, 'en')).toEqual({
-      learning: 'ja', translation: 'de', countries: 'ja', learningFallback: false, translationFallback: false
+      learning: 'ja', translation: 'de', countries: 'en', ui: 'en', learningFallback: false, translationFallback: false
     });
   });
 
+  // Owner bug: general-knowledge decks (flags, capitals, AI basics) were shown in the learning language.
+  it('uses the UI (main) language, never the learning language, for general-knowledge decks', () => {
+    expect(resolveContentLanguages({ learning: 'ja', translation: 'fr' }, 'de')).toMatchObject({ learning: 'ja', countries: 'de', ui: 'de' });
+    expect(resolveContentLanguages({ learning: 'sv' }, 'pt')).toMatchObject({ countries: 'pt', ui: 'pt' });
+    expect(resolveContentLanguages(undefined, 'xx')).toMatchObject({ ui: 'en' });
+    const languages = resolveContentLanguages({ learning: 'ja', translation: 'fr' }, 'de');
+    for (const id of ['flags', 'capitals', 'ai-basics'] as const) {
+      const item = builtinDeck(id, languages).items[0]!;
+      expect(item.back.lang, id).toBe('de');
+      if (id !== 'flags') expect(item.front.lang, id).toBe('de');
+    }
+    // "First words" stays a language pair: the learning language on the front, the translation on the back.
+    const words = builtinDeck('first-words', languages).items[0]!;
+    expect([words.front.lang, words.back.lang]).toEqual(['ja', 'fr']);
+  });
+
   it('falls back to the UI language, then English, and never pairs a language with itself', () => {
-    expect(resolveContentLanguages(undefined, 'fr')).toMatchObject({ learning: 'fr', translation: 'en', countries: 'fr', learningFallback: false });
+    expect(resolveContentLanguages(undefined, 'fr')).toMatchObject({ learning: 'fr', translation: 'en', countries: 'fr', ui: 'fr', learningFallback: false });
     expect(resolveContentLanguages({}, 'en')).toMatchObject({ learning: 'en', translation: 'de' });
-    expect(resolveContentLanguages({ learning: 'sv' }, 'de')).toMatchObject({ learning: 'de', translation: 'en', countries: 'sv', learningFallback: true });
+    expect(resolveContentLanguages({ learning: 'sv' }, 'de')).toMatchObject({ learning: 'de', translation: 'en', countries: 'de', learningFallback: true });
     expect(resolveContentLanguages({ learning: 'es', translation: 'es' }, 'es')).toMatchObject({ learning: 'es', translation: 'en', translationFallback: true });
     expect(resolveContentLanguages({ learning: 'ja' }, 'ja')).toMatchObject({ learning: 'ja', translation: 'en', translationFallback: false });
     expect(resolveContentLanguages({ translation: 'ko' }, 'ko')).toMatchObject({ learning: 'ko', translation: 'en', translationFallback: true });
@@ -270,13 +286,11 @@ describe('Capitals', () => {
     for (const id of builtinItemIds('capitals') ?? []) expect(flagIds.has(id), id).toBe(true);
   });
 
-  it('follows the learning language with the explicit fallbacks (UI language, then English)', () => {
-    expect(builtinDeck('capitals', resolveContentLanguages({ learning: 'fr' }, 'de')).items[0]?.back.lang).toBe('fr');
-    // A learning language without capital names: the UI language (country names follow, so both cards match).
-    const swedish = resolveContentLanguages({ learning: 'sv' }, 'de');
-    expect(swedish.learningFallback).toBe(true);
-    expect(builtinDeck('capitals', swedish).items.find((i) => i.id === 'at')).toMatchObject({ front: { text: 'Österreich', lang: 'de' }, back: { text: 'Wien', lang: 'de' } });
-    expect(builtinDeck('capitals', resolveContentLanguages({ learning: 'pt-BR' }, 'en')).items[0]?.back.lang).toBe('pt');
+  it('follows the UI language, not the learning language (English for an unknown UI tag)', () => {
+    expect(builtinDeck('capitals', resolveContentLanguages({ learning: 'fr' }, 'de')).items.find((i) => i.id === 'at')).toMatchObject({ front: { text: 'Österreich', lang: 'de' }, back: { text: 'Wien', lang: 'de' } });
+    expect(builtinDeck('capitals', resolveContentLanguages({ learning: 'sv' }, 'de')).items[0]?.back.lang).toBe('de');
+    expect(builtinDeck('capitals', resolveContentLanguages({ learning: 'de' }, 'pt-BR')).items[0]?.back.lang).toBe('pt');
+    expect(builtinDeck('capitals', resolveContentLanguages(undefined, 'sv')).items[0]?.front.lang).toBe('en');
   });
 
   it('is reviewable and keeps one set of learning records for all languages (like flags)', () => {
@@ -424,11 +438,9 @@ describe('AI basics', () => {
     expect(builtinItemIds('ai-basics')).toEqual([...AI_TERM_IDS]);
   });
 
-  it('follows the learning language with the explicit fallbacks (UI language, then English)', () => {
-    expect(builtinDeck('ai-basics', resolveContentLanguages({ learning: 'ko' }, 'de')).items[0]?.back.lang).toBe('ko');
-    const swedish = resolveContentLanguages({ learning: 'sv' }, 'de');
-    expect(swedish.learningFallback).toBe(true);
-    expect(builtinDeck('ai-basics', swedish).items.find((i) => i.id === 'model')?.front).toEqual({ text: 'Modell', lang: 'de' });
+  it('follows the UI language, not the learning language (English for an unknown UI tag)', () => {
+    expect(builtinDeck('ai-basics', resolveContentLanguages({ learning: 'ko' }, 'de')).items.find((i) => i.id === 'model')?.front).toEqual({ text: 'Modell', lang: 'de' });
+    expect(builtinDeck('ai-basics', resolveContentLanguages({ learning: 'sv' }, 'de')).items[0]?.back.lang).toBe('de');
     expect(builtinDeck('ai-basics', resolveContentLanguages(undefined, 'sv')).items[0]?.front.lang).toBe('en');
   });
 
