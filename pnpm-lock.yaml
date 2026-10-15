@@ -217,6 +217,16 @@ importers:
         specifier: ^7.4.1
         version: 7.4.1
 
+  packages/cards:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../game-core
+    devDependencies:
+      '@wp/localization':
+        specifier: workspace:*
+        version: link:../localization
+
   packages/game-core: {}
 
   packages/games/ambiguity-detector:
