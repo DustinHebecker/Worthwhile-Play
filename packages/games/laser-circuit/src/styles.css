@@ -110,6 +110,26 @@
 .wp-laser-circuit .lc-portal { fill: rgba(255, 255, 255, 0.06); stroke: var(--lc-fixed); stroke-width: 4; stroke-linejoin: round; }
 .wp-laser-circuit .lc-portal-inner { fill: none; stroke: var(--lc-fixed); stroke-width: 2; stroke-dasharray: 5 4; }
 
+/* Optical pieces: shapes and text carry the meaning (angle line + "45°", grey grid + "½", crossed-out letter). */
+.wp-laser-circuit .lc-small { font: 700 22px var(--wp-font); fill: #ffffff; paint-order: stroke; stroke: var(--lc-floor); stroke-width: 4px; }
+.wp-laser-circuit .lc-need { font-size: 24px; }
+.wp-laser-circuit .lc-polariser { fill: rgba(255, 255, 255, 0.06); stroke: var(--lc-fixed); stroke-width: 4; }
+.wp-laser-circuit .lc-polariser-axis { stroke: var(--lc-fixed); stroke-width: 8; stroke-linecap: round; }
+.wp-laser-circuit .lc-neutral { fill: rgba(150, 156, 168, 0.35); stroke: var(--lc-fixed); stroke-width: 3; }
+.wp-laser-circuit .lc-neutral-grid { fill: none; stroke: #8b93a3; stroke-width: 2; }
+.wp-laser-circuit .lc-strike { stroke: var(--lc-warn); stroke-width: 5; stroke-linecap: round; }
+.wp-laser-circuit .lc-letter.lc-minus { font-size: 28px; }
+.wp-laser-circuit .lc-target-pol { stroke: #ffffff; stroke-width: 4; stroke-dasharray: 7 4; stroke-linecap: butt; }
+.wp-laser-circuit .lc-filter.lc-mine,
+.wp-laser-circuit .lc-neutral.lc-mine,
+.wp-laser-circuit .lc-polariser.lc-mine,
+.wp-laser-circuit .lc-polariser-axis.lc-mine { stroke: var(--lc-mine); }
+/* Fainter light is drawn thinner. */
+.wp-laser-circuit .lc-beam[data-dim='1'] { stroke-width: 3.5; }
+.wp-laser-circuit .lc-beam[data-dim='2'] { stroke-width: 2.5; }
+.wp-laser-circuit .lc-beam-b[data-dim='1'] { stroke-width: 5.5; }
+.wp-laser-circuit .lc-beam-b[data-dim='2'] { stroke-width: 4.5; }
+
 /* Legend for the less common elements of the current level. */
 .wp-laser-circuit .lc-legend {
   display: grid;
@@ -122,6 +142,7 @@
 }
 .wp-laser-circuit .lc-legend-item { display: flex; align-items: center; gap: 0.5rem; text-align: start; }
 .wp-laser-circuit .lc-legend-icon { flex: none; width: 2.25rem; height: 2.25rem; background: var(--lc-floor); border-radius: 4px; }
+.wp-laser-circuit .lc-legend-note { padding-inline-start: 2.75rem; font-style: italic; }
 
 /* Inventory and actions */
 .wp-laser-circuit .lc-inventory,
@@ -154,7 +175,10 @@
   .wp-laser-circuit .lc-cell { border: 1px solid CanvasText; }
   .wp-laser-circuit .lc-beam { stroke: Highlight; }
   .wp-laser-circuit .lc-mirror, .wp-laser-circuit .lc-splitter, .wp-laser-circuit .lc-target, .wp-laser-circuit .lc-sensor-x,
-  .wp-laser-circuit .lc-gate-bar, .wp-laser-circuit .lc-gate-rail, .wp-laser-circuit .lc-portal, .wp-laser-circuit .lc-portal-inner { stroke: CanvasText; }
+  .wp-laser-circuit .lc-gate-bar, .wp-laser-circuit .lc-gate-rail, .wp-laser-circuit .lc-portal, .wp-laser-circuit .lc-portal-inner,
+  .wp-laser-circuit .lc-polariser, .wp-laser-circuit .lc-polariser-axis, .wp-laser-circuit .lc-neutral, .wp-laser-circuit .lc-neutral-grid,
+  .wp-laser-circuit .lc-strike, .wp-laser-circuit .lc-target-pol { stroke: CanvasText; }
+  .wp-laser-circuit .lc-small { fill: CanvasText; }
   .wp-laser-circuit .lc-gate { fill: CanvasText; }
   .wp-laser-circuit .lc-mine { stroke: Highlight; }
   .wp-laser-circuit .lc-letter { fill: CanvasText; }
