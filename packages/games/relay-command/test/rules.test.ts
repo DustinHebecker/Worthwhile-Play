@@ -4,7 +4,9 @@ import { isRecord } from '@wp/game-core';
 import { BASE_RULESET, NEUTRAL, archetypeOf, canonicalJson, cellOf, findPath, observe, passable, DEFAULT_DOCTRINE, computeNetwork, createWorld, initialIntel, observedCells, resolveTurn, validateCommand, worldHash, type Command, type Entity, type Order, type World } from '@wp/strategy-engine';
 import { objectiveOf, planAi, type Difficulty } from '../src/ai';
 import {
+  cancelJob,
   cancelOrder,
+  plannedJobs,
   canSettle,
   plannedSaleRefund,
   plannedSupply,
@@ -1512,5 +1514,93 @@ describe('deposits that never run dry (owner decision 2026-10-14, state v11)', (
     const byCell = <T extends { x: number; y: number }>(list: readonly T[]) => [...list].sort((a, b) => a.y - b.y || a.x - b.x);
     expect(byCell(deposits(custom)).map((d) => [d.left, d.endless ?? false])).toEqual(byCell(sized.deposits).map((d) => [d.size === 'rich' ? 600 : 300, d.size === 'endless']));
     expect(valid(withDeposits(custom, (d) => (d.endless ? { endless: undefined, left: 300 } : {})))).toBe(false);
+  });
+});
+
+describe('planning ledger, stalemate pressure, save bounds (mutation run on rules.ts, 2026-10-15)', () => {
+  const cost = (kind: string) => RULESET.archetypes[kind]!.cost;
+
+  it('plans production and placement against the Supply and cells they leave; a cancelled job gives both back', () => {
+    const s = newGame(1);
+    const yard = own(s).find((e) => e.kind === 'muster')!;
+    const post = commandPost(s.world, PLAYER)!;
+    const a = planOrder(s, yard.id, { type: 'produce', kind: 'rifles' })!;
+    const b = planOrder(a, yard.id, { type: 'produce', kind: 'lancer' })!;
+    expect(plannedSupply(b)).toBe(300 - cost('rifles') - cost('lancer'));
+    expect(plannedJobs(b, yard.id).map((c) => (c.order as { kind: string }).kind)).toEqual(['rifles', 'lancer']);
+    // The planned jobs fill the yard's queue (MAX_QUEUE = 2): a third is refused while planning.
+    expect(orderRefusal(b, yard.id, { type: 'produce', kind: 'rifles' })).not.toBeNull();
+    expect(orderRefusal(a, yard.id, { type: 'produce', kind: 'rifles' })).toBeNull();
+    // Planned production counts towards what a sale of the yard would bring.
+    expect(plannedSaleRefund(b, yard.id)).toBe(Math.floor(cost('muster') / 2) + cost('rifles') + cost('lancer'));
+    // A placement takes its cell (and its price) while planning; a second one there is refused.
+    const cell = (() => {
+      for (let y = 0; y < s.world.map.h; y++) for (let x = 0; x < s.world.map.w; x++) if (planOrder(b, post.id, { type: 'build', kind: 'relay-mast', x, y })) return { x, y };
+      throw new Error('no free covered cell');
+    })();
+    const c = planOrder(b, post.id, { type: 'build', kind: 'relay-mast', ...cell })!;
+    expect(plannedSupply(c)).toBe(300 - cost('rifles') - cost('lancer') - cost('relay-mast'));
+    expect(orderRefusal(c, post.id, { type: 'build', kind: 'relay-mast', ...cell })).toBe('not-buildable');
+    // A planned sale costs nothing; a hold is no job.
+    expect(plannedSupply(planOrder(c, yard.id, { type: 'sell' })!)).toBe(plannedSupply(c));
+    // Cancelling the first production returns its price, the second stays planned.
+    const d = cancelJob(c, yard.id, 0);
+    expect(plannedJobs(d, yard.id).map((x) => (x.order as { kind: string }).kind)).toEqual(['lancer']);
+    expect(plannedSupply(d)).toBe(300 - cost('lancer') - cost('relay-mast'));
+    expect(cancelJob(d, yard.id, 5)).toBe(d);
+  });
+
+  it("a hit on the leader's Command Post restarts the stalemate count; a hit on the trailing side's does not", () => {
+    // Open end, the record running at the real lead (so it would go on); a player squad next to the
+    // opponent's post fires on it by itself (out of contact; structures first, the post the only one).
+    const shelling = (playerLeads: boolean) => {
+      const s = lockTurn(lockTurn(newGame(3, FIELD_EXERCISE, 'normal', null, true)));
+      const post = commandPost(s.world, OPPONENT)!;
+      const squad = s.world.entities.find((e) => e.side === PLAYER && e.kind === 'rifles')!;
+      const spot = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => ({ x: post.x + dx!, y: post.y + dy! })).find((p) => passable(s.world.map, RULESET, p.x, p.y, 'ground') && !s.world.entities.some((e) => e.x === p.x && e.y === p.y))!;
+      Object.assign(squad, spot, { order: { type: 'hold' }, doctrine: { ...PLAYER_DOCTRINE, priority: 'structures', lostContact: 'keep' } });
+      const otherStructure = (e: Entity, side: number) => e.side === side && e.kind !== 'command-post' && (RULESET.archetypes[e.kind]?.speed ?? 0) === 0;
+      // The opponent loses its yard (the post is the squad's only structure in reach); to make the
+      // opponent the leader, the player loses its yard and every unit but the squad as well.
+      s.world.entities = s.world.entities.filter((e) => !otherStructure(e, OPPONENT) && (playerLeads || e.side !== PLAYER || e.kind === 'command-post' || e.id === squad.id));
+      s.world.intel = initialIntel(s.world, RULESET);
+      const now = sideValue(s.world, PLAYER) - sideValue(s.world, OPPONENT);
+      expect(Math.sign(now)).toBe(playerLeads ? 1 : -1);
+      const next = lockTurn({ ...s, lead: [now, now, now] });
+      expect(next.world.entities.find((e) => e.id === post.id)!.hp).toBeLessThan(RULESET.archetypes['command-post']!.hp);
+      return next.lead;
+    };
+    // The opponent leads: its post is shelled, so the count starts anew (one entry).
+    expect(shelling(false)).toHaveLength(1);
+    // The player leads: shelling the trailing side's post is no pressure; the record goes on.
+    expect(shelling(true)).toHaveLength(4);
+  });
+
+  it('migrations refuse a save whose version does not match the one they migrate from', () => {
+    for (const from of [3, 5]) {
+      const old = JSON.parse(JSON.stringify({ ...newGame(2), v: from })) as Record<string, unknown>;
+      expect(migrateState({ ...old, v: from + 1 }, from)).toBeUndefined();
+      expect(migrateState('save', from)).toBeUndefined();
+    }
+  });
+
+  it('refuses hostile saves: report lists and ids beyond the scenario, oversized summaries, foreign kinds, too many shells, malformed logs', () => {
+    const s = lockTurn(newGame(1));
+    expect(isValidState(s)).toBe(true);
+    const n = s.world.entities.length * 4;
+    const bad: [string, (x: RcState) => void][] = [
+      ['a report id beyond the scenario', (x) => { x.world.intel![PLAYER]!.push({ id: 9_999, side: OPPONENT, kind: 'rifles', x: 0, y: 0, hp: 1, tick: 0, live: false }); }],
+      ['a summary of a million events', (x) => { x.events = Array.from({ length: 1_000_000 }, () => ({ t: 'income', tick: 1, side: 0, amount: 1 })); }],
+      ['a kind the scenario cannot have', (x) => { x.world.entities[1]!.kind = 'kite'; }],
+      ['a flood of shells', (x) => { x.world.projectiles = Array.from({ length: n * 10 }, (_, i) => ({ id: 1000 + i, side: OPPONENT, x: 0, y: 0, tx: 1, ty: 1, ticks: 1, kind: 'howitzer' }) as never); }],
+      ['a log entry with an empty "retired" list', (x) => { x.log[0] = { ...x.log[0]!, retired: [] }; }],
+      ['a log entry with too few plans', (x) => { x.log[0] = { ...x.log[0]!, plans: [x.log[0]!.plans[0]!] }; }]
+    ];
+    for (const [label, corrupt] of bad) {
+      const x = structuredClone(s);
+      corrupt(x);
+      expect(() => isValidState(x), label).not.toThrow();
+      expect(isValidState(x), label).toBe(false);
+    }
   });
 });
