@@ -1,0 +1,89 @@
+/* Skat — all rules scoped under .wp-skat; shared --wp-* tokens; logical properties only (RTL-safe). */
+.wp-skat {
+  display: grid;
+  gap: 0.75rem;
+  inline-size: 100%;
+  max-inline-size: 46rem;
+  margin-inline: auto;
+  min-inline-size: 0;
+}
+.wp-skat [hidden] { display: none !important; }
+.wp-skat .sk-bar {
+  display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: end; justify-content: space-between;
+}
+.wp-skat .sk-progress { margin: 0; font-weight: 600; }
+.wp-skat .sk-field { display: grid; gap: 0.2rem; font-size: 0.9rem; min-inline-size: 0; max-inline-size: 100%; }
+.wp-skat .sk-field select { max-inline-size: 100%; min-block-size: 44px; }
+.wp-skat .sk-check, .wp-skat .sk-radio {
+  display: flex; gap: 0.5rem; align-items: center; min-block-size: 44px; cursor: pointer;
+}
+.wp-skat .sk-check input, .wp-skat .sk-radio input { inline-size: 1.25rem; block-size: 1.25rem; flex: none; }
+.wp-skat .sk-check input:disabled + span { color: var(--wp-muted); }
+.wp-skat .sk-setup { display: grid; gap: 0.75rem; }
+.wp-skat .sk-setup h2, .wp-skat .sk-summary h2 { margin: 0; font-size: 1.2rem; }
+.wp-skat .sk-hint { margin: 0; color: var(--wp-muted); font-size: 0.9rem; }
+.wp-skat button { min-block-size: 44px; min-inline-size: 44px; }
+
+/* Table */
+.wp-skat .sk-table, .wp-skat .sk-dynamic { display: grid; gap: 0.6rem; min-inline-size: 0; }
+.wp-skat .sk-opponents { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+.wp-skat .sk-seat {
+  border: 1px solid var(--wp-border); border-radius: var(--wp-radius, 10px); padding: 0.4rem 0.6rem;
+  background: var(--wp-surface); min-inline-size: 0;
+}
+.wp-skat .sk-seat--active { border-color: var(--wp-accent); box-shadow: inset 0 0 0 1px var(--wp-accent); }
+.wp-skat .sk-seat--declarer .sk-seat-name strong::before { content: '★ '; }
+.wp-skat .sk-seat-name, .wp-skat .sk-seat-info { margin: 0; font-size: 0.9rem; overflow-wrap: anywhere; }
+.wp-skat .sk-tags, .wp-skat .sk-seat-info { color: var(--wp-muted); }
+.wp-skat .sk-backs { display: flex; padding-block-start: 0.3rem; padding-inline-end: 1.4rem; min-block-size: 2.4rem; }
+.wp-skat .sk-backs .wp-pc { --wp-card-w: 1.7rem; inline-size: 1.7rem; flex: none; margin-inline-end: -1rem; }
+@media (min-width: 30rem) { .wp-skat .sk-backs .wp-pc { margin-inline-end: -0.9rem; inline-size: 2.2rem; } }
+
+.wp-skat .sk-center { display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center; align-items: start; }
+.wp-skat .sk-trick-box, .wp-skat .sk-skat { display: grid; gap: 0.25rem; justify-items: center; }
+.wp-skat .sk-trick-label { margin: 0; font-size: 0.85rem; color: var(--wp-muted); text-align: center; }
+.wp-skat .sk-trick { display: flex; gap: 0.4rem; list-style: none; margin: 0; padding: 0; min-block-size: 5rem; }
+.wp-skat .sk-trick-card { display: grid; gap: 0.15rem; justify-items: center; inline-size: 4.4rem; }
+.wp-skat .sk-trick-card .wp-pc { --wp-card-w: 3.6rem; inline-size: 3.6rem; }
+.wp-skat .sk-trick-who { font-size: 0.75rem; text-align: center; overflow-wrap: break-word; }
+.wp-skat .sk-trick-card--winner .wp-pc { outline: 3px solid var(--wp-accent); outline-offset: 1px; border-radius: 6px; }
+.wp-skat .sk-trick-card--winner .sk-trick-who { font-weight: 700; }
+.wp-skat [data-testid='last-trick'] .wp-pc { --wp-card-w: 2.8rem; inline-size: 2.8rem; }
+.wp-skat [data-testid='last-trick'] .sk-trick-card { inline-size: 3.6rem; }
+.wp-skat .sk-skat-cards { display: flex; gap: 0.25rem; }
+.wp-skat .sk-skat .wp-pc { --wp-card-w: 2.8rem; inline-size: 2.8rem; }
+
+.wp-skat .sk-contract { margin: 0; text-align: center; font-weight: 600; }
+.wp-skat .sk-status { margin: 0; text-align: center; }
+.wp-skat .sk-panel { display: grid; gap: 0.5rem; justify-items: center; }
+.wp-skat .sk-panel > p { margin: 0; text-align: center; }
+.wp-skat .sk-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
+.wp-skat .sk-log {
+  display: flex; flex-wrap: wrap; gap: 0.25rem 0.75rem; justify-content: center;
+  margin: 0; padding: 0; list-style: none; font-size: 0.9rem; color: var(--wp-muted);
+}
+.wp-skat .sk-kinds, .wp-skat .sk-extras {
+  border: 1px solid var(--wp-border); border-radius: var(--wp-radius, 10px); margin: 0; padding: 0.25rem 0.75rem;
+  display: flex; flex-wrap: wrap; gap: 0 1rem; inline-size: 100%; box-sizing: border-box;
+}
+.wp-skat .sk-result { display: grid; gap: 0.2rem; text-align: center; }
+.wp-skat .sk-result p { margin: 0; }
+.wp-skat .sk-summary { display: grid; gap: 0.4rem; inline-size: 100%; box-sizing: border-box; }
+.wp-skat .sk-summary ul { margin: 0; padding-inline-start: 1.25rem; }
+
+/* Score sheet */
+.wp-skat .sk-list summary, .wp-skat .sk-help summary { cursor: pointer; min-block-size: 44px; box-sizing: border-box; padding-block: 0.65rem; font-weight: 600; }
+.wp-skat .sk-list-scroll { overflow-x: auto; max-inline-size: 100%; }
+.wp-skat .sk-list table { border-collapse: collapse; inline-size: 100%; font-size: 0.85rem; }
+.wp-skat .sk-list th, .wp-skat .sk-list td { border-block-end: 1px solid var(--wp-border); padding: 0.25rem 0.4rem; text-align: start; vertical-align: top; }
+.wp-skat .sk-list td:nth-child(n + 3), .wp-skat .sk-list tfoot td { text-align: end; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.wp-skat .sk-help p { margin-block: 0.4rem; font-size: 0.9rem; }
+
+@media (max-width: 30rem) {
+  .wp-skat .sk-trick-card { inline-size: 3.9rem; }
+  .wp-skat .sk-trick-card .wp-pc { --wp-card-w: 3.1rem; inline-size: 3.1rem; }
+}
+@media (forced-colors: active) {
+  .wp-skat .sk-seat--active { border: 3px solid Highlight; }
+  .wp-skat .sk-trick-card--winner .wp-pc { outline-color: Highlight; }
+}
