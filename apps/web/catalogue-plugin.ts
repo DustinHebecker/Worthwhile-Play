@@ -56,11 +56,22 @@ export interface Catalogue {
   messages: Record<string, Record<string, Record<string, string>>>;
 }
 
+/** Metadata only needs plain data, but a game's messages may import a shared package whose barrel also pulls in
+ *  rendering code with a side-effect stylesheet (e.g. `@wp/cards`); the bare runner cannot process CSS, so
+ *  stylesheets become empty modules while the catalogue is built. */
+const CSS_STUB = '\0wp-catalogue-css-stub';
+const ignoreCss: Plugin = {
+  name: 'wp-catalogue-ignore-css',
+  enforce: 'pre',
+  resolveId: (id) => (/\.css(?:$|\?)/.test(id) ? CSS_STUB : undefined),
+  load: (id) => (id === CSS_STUB ? 'export default "";' : undefined)
+};
+
 export async function buildCatalogue(): Promise<Catalogue> {
   const games = gamePackages();
   const loaded = await Promise.all(
     games.map(async ({ name, metadata }) => {
-      const { module } = await runnerImport<{ metadata: Metadata }>(metadata, { configFile: false, root: webRoot, logLevel: 'silent' });
+      const { module } = await runnerImport<{ metadata: Metadata }>(metadata, { configFile: false, root: webRoot, logLevel: 'silent', plugins: [ignoreCss] });
       if (!module.metadata?.id) throw new Error(`${name}: src/metadata.ts does not export metadata`);
       return module.metadata;
     })

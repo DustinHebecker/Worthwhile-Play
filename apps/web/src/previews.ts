@@ -21,6 +21,7 @@
  *   game palettes: sun/sui/sus lights · wl/wll walls · cr/cre/cd crates · wd/fr wood · wh/wn letter tiles · mc covered
  *   cell · m0–m5 code symbols · chl/chd/pw/pb chess · lf/lgd/lgr/lgf/lmr/lbk/ltg/lsel laser · tp/trd/tf/th/tw/tm/tmf
  *   terrain · rl/rw/rwv/bt/bi river · s0–s2/pf stones · fw/fh water · st star · win tower windows · fbg/fsk/fsh/fhr face · hb hole
+ *   pcf/pci/pcr/pcb/pcl playing cards (face, black and red suits, back, back line)
  *   text: t  ts contrast  tm2 muted  n1/n2 counts  tz/tli laser labels  tsm small  txs tiny  tl large
  */
 
@@ -83,6 +84,22 @@ const lines = (x: number, y: number, widths: number[], gap = 5, c = 'mu') => wid
 /** A check-box row: box, tick box and a line of text. */
 const row = (x: number, y: number, w: number, h: number, text: number) =>
   R(x, y, w, h, 'c', 2) + R(x + 3, y + h / 2 - 2, 4, 4, 'c', 1) + L(x + 10, y + h / 2, x + 10 + text, y + h / 2, 'mu');
+
+/** French card suits as small shapes centred on (x, y), size r (the playing-card games' faces). */
+const suit = (k: string, x: number, y: number, r: number, c: string) => {
+  const h = r / 2;
+  if (k === 'D') return diamond(x, y, r, c);
+  if (k === 'H') return P(`M${n(x)} ${n(y + r)}L${n(x - r)} ${n(y - 0.1 * r)}A${n(h)} ${n(h)} 0 0 1 ${n(x)} ${n(y - 0.5 * r)}A${n(h)} ${n(h)} 0 0 1 ${n(x + r)} ${n(y - 0.1 * r)}Z`, c);
+  const stem = P(`M${n(x)} ${n(y + 0.1 * r)}L${n(x + 0.45 * r)} ${n(y + r)}H${n(x - 0.45 * r)}Z`, c);
+  if (k === 'S') return P(`M${n(x)} ${n(y - r)}L${n(x + r)} ${n(y + 0.15 * r)}A${n(h)} ${n(h)} 0 0 1 ${n(x)} ${n(y + 0.45 * r)}A${n(h)} ${n(h)} 0 0 1 ${n(x - r)} ${n(y + 0.15 * r)}Z`, c) + stem;
+  return C(x, y - 0.45 * r, n(0.42 * r), c) + C(x - 0.45 * r, y + 0.15 * r, n(0.42 * r), c) + C(x + 0.45 * r, y + 0.15 * r, n(0.42 * r), c) + stem;
+};
+/** A face-up card (rank in the corner, suit in the middle; hearts and diamonds red) and a card back. */
+const card = (x: number, y: number, w: number, h: number, rank: string, k: string) => {
+  const red = k === 'H' || k === 'D';
+  return R(x, y, w, h, 'pcf', 1.2) + T(x + 2.3, y + 2.8, rank, `t txs${red ? ' pcr' : ''}`) + suit(k, x + w / 2, y + h / 2 + 0.6, Math.min(w, h) * 0.24, red ? 'pcr' : 'pci');
+};
+const back = (x: number, y: number, w: number, h: number) => R(x, y, w, h, 'pcb', 0.8) + R(x + 1, y + 1, w - 2, h - 2, 'pcl', 0.5);
 
 const PREVIEWS: Record<string, () => string> = {
   // Relay Command: the terrain grid (plain, road, forest dots, water waves, hill marks), the fog of war hatched,
@@ -277,6 +294,33 @@ const PREVIEWS: Record<string, () => string> = {
     return out + R(x0, y0, s, s, 'c ab', 2.5) + R(x0 + s + gap, y0, s, s, 'c ab', 2.5) +
       P(`M${u - 6} ${cy}a6 5.5 0 0 1 12 0z`, 'm4') + P(`M${u} ${cy}v4.5a1.4 1.4 0 0 1-2.8 0`, 'fn') +
       C(b - 3.8, cy + 2, 2.6, 'fn') + C(b + 3.8, cy + 2, 2.6, 'fn') + P(`M${b - 3.8} ${cy + 2}l2.5-5h4l1.3 5M${b - 1.3} ${cy - 3}l2.5 5`, 'ab');
+  },
+  // Texas Hold'em: the calm table as in the game: seat tiles in a row (yours active, one folded and dashed, the others
+  // with two card backs), the community cards (flop out, turn and river slots dashed), the pot, your two hole cards.
+  poker: () => {
+    const seats = [0, 1, 2, 3].map((i) => {
+      const x = 3 + i * 23;
+      if (i === 1) return R(x, 2, 21, 15, 'c ds', 2) + L(x + 3, 6.5, x + 13, 6.5, 'g');
+      return R(x, 2, 21, 15, i ? 'c' : 'c ab', 2) + L(x + 3, 6.5, x + (i ? 15 : 9), 6.5, i ? 'mu' : 'k') +
+        (i ? back(x + 3, 9.5, 4.5, 6) + back(x + 8.5, 9.5, 4.5, 6) : L(x + 3, 11.5, x + 12, 11.5, 'g'));
+    }).join('');
+    const board = [['Q', 'D'], ['3', 'H'], ['9', 'S']].map(([r, k], i) => card(20 + i * 11.5, 20, 10, 14, r!, k!)).join('') +
+      R(20 + 3 * 11.5, 20, 10, 14, 'c ds', 1.2) + R(20 + 4 * 11.5, 20, 10, 14, 'c ds', 1.2);
+    return seats + board + C(18.5, 6.5, 2.2, 'o') + card(28, 37.5, 17.5, 24.5, 'J', 'C') + card(49, 37.5, 17.5, 24.5, '2', 'S') +
+      L(72, 49, 78, 49, 'mu') + T(83, 49.5, 6, 't tsm');
+  },
+  // Skat: the two computer players' rows of card backs, the Skat face down beside the current trick, and your hand
+  // as an overlapping fan of ten cards (default French faces: the corners show rank and suit, the last card in full).
+  skat: () => {
+    const backs = (x: number) => Array.from({ length: 7 }, (_, i) => back(x + 3 + i * 3.6, 7.5, 6, 8)).join('');
+    const hand: [string, string][] = [['J', 'C'], ['J', 'S'], ['J', 'H'], ['10', 'C'], ['K', 'C'], ['9', 'C'], ['A', 'S'], ['8', 'S'], ['K', 'H'], ['8', 'H']];
+    return R(3, 2, 44, 16, 'c', 2) + L(6, 5, 20, 5, 'mu') + backs(3) + R(49, 2, 44, 16, 'c', 2) + L(52, 5, 66, 5, 'mu') + backs(49) +
+      back(19, 22.5, 7, 10) + back(27.5, 22.5, 7, 10) + card(46, 21, 9, 13, 'A', 'H') + card(57, 21, 9, 13, 'K', 'H') +
+      R(3, 37, 90, 25, 'c ab', 2) +
+      hand.map(([r, k], i) => {
+        const x = 8 + i * 7.4, red = k === 'H';
+        return R(x, 41, 11, 17, 'pcf', 1.2) + T(x + 2.6, 43.8, r, `t txs${red ? ' pcr' : ''}`) + suit(k, x + 2.6, 48.2, 1.6, red ? 'pcr' : 'pci');
+      }).join('') + suit('H', 82.5, 50, 3, 'pcr');
   },
   // Code Breaker: earlier guesses as rows of coloured symbols with black/white feedback pegs, the draft row being
   // filled in, and the palette of the six symbols.
