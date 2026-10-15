@@ -2,6 +2,7 @@ import { SKILLS, type Skill } from '@wp/game-core';
 import { h } from '@wp/ui';
 import type { Page } from '../app';
 import { ROADMAP_URL } from '../config';
+import { gamePreview } from '../previews';
 import { GAMES } from '../registry';
 import { gameBadges, gameTranslator } from './shared';
 
@@ -18,6 +19,8 @@ export const renderHome: Page = (main, app) => {
     const saved = h('span', { class: 'badge saved', hidden: true, 'data-testid': `saved-${metadata.id}` }, `● ${t('home.inProgress')}`);
     const item = h('li', { 'data-skills': metadata.skills.join(' ') },
       h('a', { class: 'game-card', href: `/games/${metadata.id}`, 'data-testid': `game-card-${metadata.id}` },
+        // Decorative (aria-hidden): the title and tagline stay the link's accessible name.
+        gamePreview(metadata.id),
         h('span', { class: 'game-card-title' }, gt('title'), ' ', saved),
         h('span', { class: 'game-card-tagline' }, gt('tagline')),
         gameBadges(metadata, t)

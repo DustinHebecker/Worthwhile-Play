@@ -36,10 +36,49 @@ main:focus { outline: none; }
 .chip[aria-pressed='true']::before { content: '✓ '; }
 .badge.saved { font-weight: 600; border-color: var(--wp-accent); font-size: 0.75rem; vertical-align: middle; }
 .game-grid { list-style: none; padding: 0; display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr)); }
-.game-card { display: grid; gap: 0.35rem; height: 100%; padding: 1rem; border-radius: var(--wp-radius); border: 1px solid var(--wp-border); background: var(--wp-surface); color: var(--wp-text); text-decoration: none; }
+.game-card { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: 'preview title' 'preview tagline' 'badges badges'; grid-template-rows: auto 1fr auto; gap: 0.35rem 0.75rem; align-content: start; height: 100%; padding: 1rem; border-radius: var(--wp-radius); border: 1px solid var(--wp-border); background: var(--wp-surface); color: var(--wp-text); text-decoration: none; }
 .game-card:hover { border-color: var(--wp-accent); }
-.game-card-title { font-weight: 700; font-size: 1.15rem; }
-.game-card-tagline { color: var(--wp-muted); }
+.game-card-title { grid-area: title; font-weight: 700; font-size: 1.15rem; overflow-wrap: anywhere; }
+.game-card-tagline { grid-area: tagline; color: var(--wp-muted); }
+.game-card .badges { grid-area: badges; }
+.game-card .game-preview { grid-area: preview; }
+
+/* Game previews (src/previews.ts): one flat family drawn from the design tokens. Decorative only. */
+.game-preview { display: block; inline-size: 6rem; block-size: 4rem; border-radius: 6px; border: 1px solid var(--wp-border); background: var(--wp-bg); fill: none; stroke-linecap: round; stroke-linejoin: round; }
+/* Only the pure "text and flow" sketches follow the reading direction; boards, digits and letters never mirror. */
+[dir='rtl'] .game-preview--flow { transform: scaleX(-1); }
+.game-preview .c { fill: var(--wp-surface); stroke: var(--wp-muted); stroke-width: 1; }
+.game-preview .e { fill: var(--wp-surface-2); stroke: var(--wp-muted); stroke-width: 1; }
+.game-preview .o { fill: var(--wp-surface); stroke: var(--wp-text); stroke-width: 1.2; }
+.game-preview .d { fill: var(--wp-muted); }
+.game-preview .i { fill: var(--wp-text); }
+.game-preview .a { fill: var(--wp-accent); }
+.game-preview .w { fill: var(--wp-focus); }
+.game-preview .p1 { fill: var(--wp-p1); }
+.game-preview .p2 { fill: var(--wp-p2); }
+.game-preview .sf { fill: var(--wp-accent-contrast); }
+.game-preview .k { stroke: var(--wp-text); stroke-width: 2; }
+.game-preview .g { stroke: var(--wp-muted); stroke-width: 1; }
+.game-preview .tx { stroke: var(--wp-muted); stroke-width: 3; }
+.game-preview .al { stroke: var(--wp-accent); stroke-width: 2.5; }
+.game-preview .pr { stroke: var(--wp-focus); stroke-width: 2; }
+.game-preview .x1 { stroke: var(--wp-p1); stroke-width: 2.5; }
+.game-preview .x2 { stroke: var(--wp-p2); stroke-width: 2.5; }
+.game-preview .sk { stroke: var(--wp-accent-contrast); stroke-width: 1.5; }
+.game-preview .ds { stroke-dasharray: 3 2.5; }
+.game-preview .t { fill: var(--wp-text); stroke: none; font: 700 9px var(--wp-font); text-anchor: middle; dominant-baseline: central; }
+.game-preview .ts { fill: var(--wp-accent-contrast); }
+.game-preview .tl { font-size: 16px; }
+@media (forced-colors: active) {
+  .game-preview { forced-color-adjust: none; background: Canvas; border-color: CanvasText; }
+  .game-preview .c, .game-preview .e, .game-preview .o { fill: Canvas; stroke: CanvasText; }
+  .game-preview .d, .game-preview .i, .game-preview .t { fill: CanvasText; }
+  .game-preview .a, .game-preview .w, .game-preview .p1, .game-preview .p2 { fill: Highlight; }
+  .game-preview .sf, .game-preview .ts { fill: Canvas; }
+  .game-preview .k, .game-preview .g, .game-preview .tx, .game-preview .x1 { stroke: CanvasText; }
+  .game-preview .al, .game-preview .pr, .game-preview .x2 { stroke: Highlight; }
+  .game-preview .sk { stroke: Canvas; }
+}
 .badges { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-block-start: 0.25rem; }
 .badge { font-size: 0.8rem; padding: 0.1rem 0.5rem; border-radius: 999px; background: var(--wp-surface-2); border: 1px solid var(--wp-border); }
 .badge.warn { border-style: dashed; }

@@ -9,6 +9,34 @@ test.describe('app shell', () => {
     await expect(page.getByTestId('legal-link')).toBeVisible();
   });
 
+  for (const locale of ['en', 'ar']) {
+    test(`home at 360 px (${locale}): every card shows its decorative preview, no horizontal scroll`, async ({ page }) => {
+      await page.setViewportSize({ width: 360, height: 780 });
+      await page.addInitScript((l) => localStorage.setItem('worthwhile-play:ui-locale', l), locale);
+      await page.goto('/');
+      await expect(page.locator('html')).toHaveAttribute('dir', locale === 'ar' ? 'rtl' : 'ltr');
+      const cards = page.locator('.game-card');
+      const count = await cards.count();
+      expect(count).toBeGreaterThan(40);
+      await expect(page.locator('.game-card > svg.game-preview[aria-hidden="true"]')).toHaveCount(count);
+      await expect(page.locator('.game-preview--generic')).toHaveCount(0);
+      for (const id of ['relay-command', 'black-box', 'compression-challenge']) {
+        const card = page.getByTestId(`game-card-${id}`);
+        await card.scrollIntoViewIfNeeded();
+        const preview = card.locator('svg.game-preview');
+        await expect(preview).toBeVisible();
+        const [cardBox, previewBox] = [await card.boundingBox(), await preview.boundingBox()];
+        expect(previewBox!.width).toBeGreaterThan(80);
+        expect(previewBox!.x).toBeGreaterThanOrEqual(cardBox!.x);
+        expect(previewBox!.x + previewBox!.width).toBeLessThanOrEqual(cardBox!.x + cardBox!.width);
+        // The preview's glyphs (e.g. "3 ? 7" in Black Box) never become part of the link's name: it starts with the title.
+        const title = (await card.locator('.game-card-title').innerText()).trim();
+        await expect(card).toHaveAccessibleName(new RegExp(`^${title.slice(0, 4).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`));
+      }
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
+    });
+  }
+
   test('skill filter narrows the catalogue and saved games are marked', async ({ page }) => {
     await page.goto('/');
     await page.getByTestId('filter-memory').click();
