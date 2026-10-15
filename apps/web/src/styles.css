@@ -34,50 +34,132 @@ main:focus { outline: none; }
 .chip { min-height: 40px; padding: 0.3rem 0.85rem; border-radius: 999px; font-size: 0.9rem; }
 .chip[aria-pressed='true'] { background: var(--wp-accent); color: var(--wp-accent-contrast); border-color: var(--wp-accent); font-weight: 600; }
 .chip[aria-pressed='true']::before { content: '✓ '; }
-.badge.saved { font-weight: 600; border-color: var(--wp-accent); font-size: 0.75rem; vertical-align: middle; }
+/* The saved-game badge is one unbreakable pill: if it does not fit beside the title it moves to its own line as a whole. */
+.badge.saved { display: inline-flex; align-items: center; white-space: nowrap; max-inline-size: 100%; font-weight: 600; border-color: var(--wp-accent); font-size: 0.75rem; vertical-align: middle; }
 .game-grid { list-style: none; padding: 0; display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr)); }
-.game-card { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: 'preview title' 'preview tagline' 'badges badges'; grid-template-rows: auto 1fr auto; gap: 0.35rem 0.75rem; align-content: start; height: 100%; padding: 1rem; border-radius: var(--wp-radius); border: 1px solid var(--wp-border); background: var(--wp-surface); color: var(--wp-text); text-decoration: none; }
+/* Card: the preview is a band across the top, then title, tagline and badges. */
+.game-card { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: 'preview' 'title' 'tagline' 'badges'; grid-template-rows: auto auto 1fr auto; gap: 0.35rem; align-content: start; height: 100%; padding: 1rem; border-radius: var(--wp-radius); border: 1px solid var(--wp-border); background: var(--wp-surface); color: var(--wp-text); text-decoration: none; }
 .game-card:hover { border-color: var(--wp-accent); }
 .game-card-title { grid-area: title; font-weight: 700; font-size: 1.15rem; overflow-wrap: anywhere; }
 .game-card-tagline { grid-area: tagline; color: var(--wp-muted); }
 .game-card .badges { grid-area: badges; }
-.game-card .game-preview { grid-area: preview; }
+/* Full card width, 3:2 up to 7.5rem high (the drawing is centred); the height is known before paint, so no layout shift. */
+.game-card .game-preview { grid-area: preview; inline-size: 100%; block-size: auto; aspect-ratio: 96 / 64; max-block-size: 7.5rem; margin-block-end: 0.4rem; }
 
-/* Game previews (src/previews.ts): one flat family drawn from the design tokens. Decorative only. */
-.game-preview { display: block; inline-size: 6rem; block-size: 4rem; border-radius: 6px; border: 1px solid var(--wp-border); background: var(--wp-bg); fill: none; stroke-linecap: round; stroke-linejoin: round; }
+/* Game previews (src/previews.ts): flat sketches of each game's own screen, drawn from the design tokens and, where a
+   game has its own palette (lights, walls, crates, terrain…), from the same colours as the game. Decorative only. */
+.game-preview {
+  --pv-sun: #f6d36b; --pv-sun-ink: #3d2c00; --pv-wall: #6b6558; --pv-wall-line: #59544a; --pv-crate: #c98b3a; --pv-crate-edge: #6e4512;
+  --pv-done: #4f8f5b; --pv-done-edge: #1f4a29; --pv-wood: #d8b98a; --pv-wood-edge: #7a5a2e; --pv-frame: #6f5a43; --pv-hit: #0f6e6a; --pv-near: #b0560c;
+  --pv-cov: #d9d6cb; --pv-cov-edge: #a9a69b; --pv-n1: #1f4fa3; --pv-n2: #2b6b2f; --pv-star: #a86b00;
+  --pv-m0: #c62828; --pv-m1: #1565c0; --pv-m2: #2e7d32; --pv-m3: #a35f00; --pv-m4: #6a1b9a; --pv-m5: #00727d;
+  --pv-plain: #e7e3d4; --pv-road: #cfc8b4; --pv-forest: #b9d0ae; --pv-hill: #ddcfa8; --pv-water: #a9c7dd; --pv-mark: rgb(29 29 27 / 0.45);
+  --pv-land: #e7dfc8; --pv-land-edge: #b9ab84; --pv-river: #cfe3ec; --pv-wave: #b4d1de; --pv-boat-in: #f4e3c6;
+  --pv-s0: #d9b44a; --pv-s1: #8fb8d8; --pv-s2: #d99a7a; --pv-stone-edge: #2b2a26; --pv-platform: #6f6a5e; --pv-flow: #9cc9e0; --pv-hatch: #2f6f8f;
+  display: block; inline-size: 6rem; block-size: 4rem; border-radius: 6px; border: 1px solid var(--wp-border); background: var(--wp-bg); fill: none; stroke-linecap: round; stroke-linejoin: round;
+}
+@media (prefers-color-scheme: dark) {
+  .game-preview {
+    --pv-sun: #e7c65a; --pv-sun-ink: #2a1e00; --pv-wall: #4a4740; --pv-wall-line: #3b3933; --pv-crate: #d39a4c; --pv-crate-edge: #3d2507;
+    --pv-done: #6fb47c; --pv-done-edge: #143019; --pv-wood: #b8976a; --pv-wood-edge: #3c2a12; --pv-frame: #4d3f30; --pv-hit: #5cc4b8; --pv-near: #f0a95e;
+    --pv-cov: #43443d; --pv-cov-edge: #66675e; --pv-n1: #8db4f0; --pv-n2: #8fd19e; --pv-star: #f0c060;
+    --pv-m0: #ef9a9a; --pv-m1: #90caf9; --pv-m2: #a5d6a7; --pv-m3: #ffcc80; --pv-m4: #ce93d8; --pv-m5: #80deea;
+    --pv-plain: #3a3a32; --pv-road: #4a473d; --pv-forest: #2f4a33; --pv-hill: #514832; --pv-water: #2a4356; --pv-mark: rgb(236 235 228 / 0.45);
+    --pv-land: #34312a; --pv-land-edge: #5d5646; --pv-river: #1f3640; --pv-wave: #284653; --pv-boat-in: #3d2f1c;
+    --pv-s0: #8a6d16; --pv-s1: #355f80; --pv-s2: #8a4a2e; --pv-stone-edge: #f0eee6; --pv-platform: #8d877a; --pv-flow: #24546b; --pv-hatch: #8fd0ee;
+  }
+}
 /* Only the pure "text and flow" sketches follow the reading direction; boards, digits and letters never mirror. */
 [dir='rtl'] .game-preview--flow { transform: scaleX(-1); }
-.game-preview .c { fill: var(--wp-surface); stroke: var(--wp-muted); stroke-width: 1; }
-.game-preview .e { fill: var(--wp-surface-2); stroke: var(--wp-muted); stroke-width: 1; }
+/* Shared tokens. */
+.game-preview .c { fill: var(--wp-surface); stroke: var(--wp-muted); stroke-width: 0.8; }
+.game-preview .e { fill: var(--wp-surface-2); stroke: var(--wp-border); stroke-width: 0.8; }
 .game-preview .o { fill: var(--wp-surface); stroke: var(--wp-text); stroke-width: 1.2; }
+.game-preview .ob { fill: var(--wp-surface); stroke: var(--wp-text); stroke-width: 1.8; }
 .game-preview .d { fill: var(--wp-muted); }
+.game-preview .bd { fill: var(--wp-border); }
+.game-preview .hb { fill: var(--wp-bg); stroke: var(--wp-border); stroke-width: 0.8; }
 .game-preview .i { fill: var(--wp-text); }
 .game-preview .a { fill: var(--wp-accent); }
+.game-preview .sh { fill: var(--wp-accent); fill-opacity: 0.2; }
 .game-preview .w { fill: var(--wp-focus); }
+.game-preview .ok { fill: var(--wp-ok); }
 .game-preview .p1 { fill: var(--wp-p1); }
 .game-preview .p2 { fill: var(--wp-p2); }
 .game-preview .sf { fill: var(--wp-accent-contrast); }
 .game-preview .k { stroke: var(--wp-text); stroke-width: 2; }
+.game-preview .fn { stroke: var(--wp-text); stroke-width: 0.8; }
 .game-preview .g { stroke: var(--wp-muted); stroke-width: 1; }
-.game-preview .tx { stroke: var(--wp-muted); stroke-width: 3; }
+.game-preview .mu { stroke: var(--wp-muted); stroke-width: 1.6; }
+.game-preview .gk { stroke: var(--wp-muted); stroke-width: 2.2; }
+.game-preview .ln { stroke: var(--wp-muted); stroke-opacity: 0.55; stroke-width: 3; }
+.game-preview .tx { stroke: var(--wp-muted); stroke-width: 2.4; }
 .game-preview .al { stroke: var(--wp-accent); stroke-width: 2.5; }
-.game-preview .pr { stroke: var(--wp-focus); stroke-width: 2; }
+.game-preview .ab { stroke: var(--wp-accent); stroke-width: 1.4; }
+.game-preview .okl { stroke: var(--wp-ok); stroke-width: 1.6; }
+.game-preview .dn { stroke: var(--wp-danger); stroke-width: 1.2; }
+.game-preview .pr { stroke: var(--wp-focus); stroke-width: 1.6; }
 .game-preview .x1 { stroke: var(--wp-p1); stroke-width: 2.5; }
 .game-preview .x2 { stroke: var(--wp-p2); stroke-width: 2.5; }
+.game-preview .y2 { stroke: var(--wp-p2); stroke-width: 1.2; }
 .game-preview .sk { stroke: var(--wp-accent-contrast); stroke-width: 1.5; }
+.game-preview .skf { stroke: var(--wp-accent-contrast); stroke-opacity: 0.3; stroke-width: 1.1; }
+.game-preview .bl { stroke: var(--wp-border); stroke-width: 1.4; }
 .game-preview .ds { stroke-dasharray: 3 2.5; }
+.game-preview .dt { stroke-dasharray: 0.1 2.6; }
+/* Game palettes (the same colours the games use). */
+.game-preview .sun { fill: var(--pv-sun); stroke: var(--wp-border); stroke-width: 0.6; }
+.game-preview .sui { fill: var(--pv-sun-ink); }
+.game-preview .sus { stroke: var(--pv-sun-ink); stroke-width: 1.2; }
+.game-preview .wl { fill: var(--pv-wall); }
+.game-preview .wll { stroke: var(--pv-wall-line); stroke-width: 0.8; }
+.game-preview .cr { fill: var(--pv-crate); stroke: var(--pv-crate-edge); stroke-width: 1; }
+.game-preview .cre { stroke: var(--pv-crate-edge); stroke-width: 1; }
+.game-preview .cd { fill: var(--pv-done); stroke: var(--pv-done-edge); stroke-width: 1; }
+.game-preview .wd { fill: var(--pv-wood); stroke: var(--pv-wood-edge); stroke-width: 0.8; }
+.game-preview .fr { fill: var(--pv-frame); }
+.game-preview .wh { fill: var(--pv-hit); }
+.game-preview .wn { fill: var(--pv-near); }
+.game-preview .mc { fill: var(--pv-cov); stroke: var(--pv-cov-edge); stroke-width: 0.8; }
+.game-preview .st { fill: var(--pv-star); }
+.game-preview .m0 { fill: var(--pv-m0); } .game-preview .m1 { fill: var(--pv-m1); } .game-preview .m2 { fill: var(--pv-m2); }
+.game-preview .m3 { fill: var(--pv-m3); } .game-preview .m4 { fill: var(--pv-m4); } .game-preview .m5 { fill: var(--pv-m5); }
+.game-preview .chl { fill: #e9dfc8; } .game-preview .chd { fill: #a98c68; }
+.game-preview .pw { fill: #fbfbf7; stroke: #141414; stroke-width: 0.8; } .game-preview .pb { fill: #141414; stroke: #fbfbf7; stroke-width: 0.4; }
+.game-preview .lf { fill: #1e2430; } .game-preview .lgd { stroke: #343c4c; stroke-width: 0.7; }
+.game-preview .lgr { stroke: #3fd46a; stroke-width: 1.4; stroke-dasharray: 2.5 1.8; } .game-preview .lgf { fill: #3fd46a; }
+.game-preview .lmr { stroke: #c9ced8; stroke-width: 2; } .game-preview .lbk { fill: #59606e; stroke: #8b93a3; stroke-width: 0.6; }
+.game-preview .ltg { stroke: #c9ced8; stroke-width: 1.1; } .game-preview .lsel { fill: #283042; }
+.game-preview .tp { fill: var(--pv-plain); } .game-preview .trd { fill: var(--pv-road); } .game-preview .tf { fill: var(--pv-forest); }
+.game-preview .th { fill: var(--pv-hill); } .game-preview .tw { fill: var(--pv-water); } .game-preview .tm { stroke: var(--pv-mark); stroke-width: 0.7; }
+.game-preview .tmf { fill: var(--pv-mark); } .game-preview .tmd { stroke: var(--pv-mark); stroke-width: 1.8; }
+.game-preview .rl { fill: var(--pv-land); stroke: var(--pv-land-edge); stroke-width: 0.8; } .game-preview .rw { fill: var(--pv-river); }
+.game-preview .rwv { stroke: var(--pv-wave); stroke-width: 1.6; } .game-preview .bt { fill: var(--pv-crate); stroke: var(--pv-crate-edge); stroke-width: 1.2; }
+.game-preview .bi { fill: var(--pv-boat-in); }
+.game-preview .s0, .game-preview .s1, .game-preview .s2, .game-preview .pf { stroke: var(--pv-stone-edge); stroke-width: 0.7; }
+.game-preview .s0 { fill: var(--pv-s0); } .game-preview .s1 { fill: var(--pv-s1); } .game-preview .s2 { fill: var(--pv-s2); } .game-preview .pf { fill: var(--pv-platform); }
+.game-preview .fw { fill: var(--pv-flow); } .game-preview .fh { stroke: var(--pv-hatch); stroke-width: 0.7; }
+.game-preview .win { stroke: color-mix(in srgb, var(--wp-surface) 80%, var(--wp-text)); stroke-width: 0.6; stroke-linecap: butt; }
+.game-preview .fbg { fill: #e9e4db; } .game-preview .fsk { fill: #e0b089; stroke: #8c5a37; stroke-width: 0.6; } .game-preview .fsh { fill: #5f8f5a; } .game-preview .fhr { fill: #d4a94a; }
+/* Text. */
 .game-preview .t { fill: var(--wp-text); stroke: none; font: 700 9px var(--wp-font); text-anchor: middle; dominant-baseline: central; }
 .game-preview .ts { fill: var(--wp-accent-contrast); }
-.game-preview .tl { font-size: 16px; }
+.game-preview .tm2 { fill: var(--wp-muted); }
+.game-preview .n1 { fill: var(--pv-n1); } .game-preview .n2 { fill: var(--pv-n2); }
+.game-preview .tz { fill: #10131a; } .game-preview .tli { fill: #f4f4f4; }
+.game-preview .tsm { font-size: 6.5px; }
+.game-preview .txs { font-size: 4.2px; }
+.game-preview .tl { font-size: 15px; }
 @media (forced-colors: active) {
   .game-preview { forced-color-adjust: none; background: Canvas; border-color: CanvasText; }
-  .game-preview .c, .game-preview .e, .game-preview .o { fill: Canvas; stroke: CanvasText; }
-  .game-preview .d, .game-preview .i, .game-preview .t { fill: CanvasText; }
-  .game-preview .a, .game-preview .w, .game-preview .p1, .game-preview .p2 { fill: Highlight; }
-  .game-preview .sf, .game-preview .ts { fill: Canvas; }
-  .game-preview .k, .game-preview .g, .game-preview .tx, .game-preview .x1 { stroke: CanvasText; }
-  .game-preview .al, .game-preview .pr, .game-preview .x2 { stroke: Highlight; }
-  .game-preview .sk { stroke: Canvas; }
+  .game-preview :is(.c, .e, .o, .ob, .mc, .rl, .rw, .bi, .hb, .tp, .trd, .tf, .th, .tw, .chl, .pw, .wd, .fbg, .lf, .lsel, .sh) { fill: Canvas; stroke: CanvasText; }
+  .game-preview :is(.d, .bd, .i, .t, .wl, .cr, .fr, .chd, .pb, .pf, .s1, .lbk, .fsk, .fsh, .fhr, .tmf) { fill: CanvasText; }
+  .game-preview :is(.a, .w, .ok, .p1, .p2, .sun, .cd, .wh, .wn, .st, .m0, .m1, .m2, .m3, .m4, .m5, .lgf, .bt, .s0, .s2, .fw) { fill: Highlight; }
+  .game-preview :is(.sf, .ts, .sui, .tz, .tli, .n1, .n2, .tm2) { fill: Canvas; }
+  .game-preview :is(.t.n1, .t.n2, .t.tm2) { fill: CanvasText; }
+  .game-preview :is(.k, .fn, .g, .mu, .gk, .ln, .tx, .x1, .bl, .wll, .cre, .tm, .lgd, .ltg, .lmr, .rwv, .fh, .dn, .sus, .tmd) { stroke: CanvasText; }
+  .game-preview :is(.al, .ab, .okl, .pr, .x2, .y2, .lgr) { stroke: Highlight; }
+  .game-preview .sk, .game-preview .skf, .game-preview .win { stroke: Canvas; }
 }
 .badges { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-block-start: 0.25rem; }
 .badge { font-size: 0.8rem; padding: 0.1rem 0.5rem; border-radius: 999px; background: var(--wp-surface-2); border: 1px solid var(--wp-border); }
