@@ -105,6 +105,21 @@ describe('economy (I6a, D8)', () => {
     expect(r.reported?.[0]?.some((e) => e.t === 'missing')).toBe(false);
   });
 
+  it('an Extractor placed on a deposit run dry unseen is refused when carried out, also at exactly 0 left (mutation run, 2026-10-15)', () => {
+    // The mast covers x=11 (radius 6) but sees only to x=9: the side cannot know the deposit is empty.
+    const w = worldOf({ ...open(14, 1), deposits: [{ x: 11, y: 0, left: 0 }] }, [
+      { side: 0, kind: 'command-post', x: 0, y: 0 },
+      { side: 0, kind: 'relay-mast', x: 5, y: 0 },
+      { side: 1, kind: 'command-post', x: 13, y: 0 }
+    ]);
+    const build: Command = { side: 0, unit: 1, order: { type: 'build', kind: 'extractor', x: 11, y: 0 } };
+    expect(validateCommand(w, net, build)).toEqual({ ok: true });
+    const r = turn(w, [[build], []]);
+    expect(r.world.entities.some((e) => e.kind === 'extractor')).toBe(false);
+    expect(r.world.supply?.[0]).toBe(300 + 20); // unpaid
+    expect(r.events.some((e) => e.t === 'site-blocked')).toBe(true);
+  });
+
   it('a world whose reports are a sparse array is refused, never read (review of PR #36)', () => {
     const w = field();
     const reports = w.intel![0]!;

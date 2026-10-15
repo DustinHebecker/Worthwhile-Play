@@ -184,11 +184,13 @@ describe('electronic warfare (I4, § 6)', () => {
     ]);
     expect(isSpotted(w, rs, 0, 2)).toBe(true); // seen
     expect(isSpotted(w, rs, 0, 3)).toBe(false); // not seen
-    expect(isSpotted({ ...w, intel: undefined }, rs, 0, 2)).toBe(false);
+    const blind = structuredClone(w);
+    delete blind.intel;
+    expect(isSpotted(blind, rs, 0, 2)).toBe(false);
     const ghost = structuredClone(w);
     ghost.intel![0] = ghost.intel![0]!.map((r) => (r.id === 2 ? { ...r, live: false } : r));
     expect(isSpotted(ghost, rs, 0, 2)).toBe(false);
-    expect(isSpotted({ ...w, intel: undefined }, { ...rs, fog: false }, 0, 3)).toBe(true);
+    expect(isSpotted(blind, { ...rs, fog: false }, 0, 3)).toBe(true);
   });
 
   it('P6: adding a working enemy jammer never grows coverage; adding an own Tracer never shrinks it', () => {
