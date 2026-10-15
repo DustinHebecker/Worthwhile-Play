@@ -1604,3 +1604,86 @@ describe('planning ledger, stalemate pressure, save bounds (mutation run on rule
     }
   });
 });
+
+describe('opponent economy and easy fighters (mutation run on ai.ts, 2026-10-15)', () => {
+  const plan = (world: World, level: Difficulty) => planAi(observe(world, RULESET, OPPONENT), RULESET, level);
+  const jobs = (cmds: readonly Command[]) => cmds.filter((c) => c.order.type === 'produce' || c.order.type === 'build').map((c) => (c.order.type === 'build' || c.order.type === 'produce' ? c.order.kind : ''));
+  const fresh = () => structuredClone(newGame(1).world);
+  const setSupply = (w: World, n: number) => { w.supply![OPPONENT] = n; return w; };
+
+  it('easy only trains Rifle Squads, one per idle yard, and only with a cushion of 150 left; it never builds', () => {
+    const cushion = 150 + RULESET.archetypes.rifles!.cost;
+    expect(jobs(plan(setSupply(fresh(), cushion - 1), 'easy'))).toEqual([]);
+    expect(jobs(plan(setSupply(fresh(), cushion), 'easy'))).toEqual(['rifles']);
+    expect(jobs(plan(setSupply(fresh(), 5_000), 'easy'))).toEqual(['rifles']); // one yard, one squad: no building
+    const busy = setSupply(fresh(), 5_000);
+    busy.entities.find((e) => e.side === OPPONENT && e.kind === 'muster')!.queue = [{ kind: 'rifles', left: 1 }];
+    expect(jobs(plan(busy, 'easy'))).toEqual([]);
+  });
+
+  it('normal places an Extractor on the nearest free deposit in cover first, never on one a known enemy fighter can reach', () => {
+    const w = fresh();
+    const first = plan(w, 'normal').find((c) => c.order.type === 'build');
+    expect(first?.order).toMatchObject({ type: 'build', kind: 'extractor' });
+    const at = first!.order as { x: number; y: number };
+    // A player squad next to that deposit (and known to the opponent): it goes elsewhere or waits.
+    const danger = structuredClone(w);
+    const squad = danger.entities.find((e) => e.side === PLAYER && e.kind === 'rifles')!;
+    const spot = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1]].map(([dx, dy]) => ({ x: at.x + dx!, y: at.y + dy! })).find((p) => passable(danger.map, RULESET, p.x, p.y, 'ground') && !danger.entities.some((e) => e.x === p.x && e.y === p.y))!;
+    Object.assign(squad, spot);
+    danger.intel = initialIntel(danger, RULESET);
+    expect(danger.intel[OPPONENT]!.some((r) => r.id === squad.id && r.live)).toBe(true);
+    const builds = plan(danger, 'normal').filter((c) => c.order.type === 'build' && c.order.kind === 'extractor').map((c) => c.order as { x: number; y: number });
+    expect(builds.some((b) => b.x === at.x && b.y === at.y)).toBe(false);
+  });
+
+  it('normal builds a Motor Pool from turn 6 (not before), and with 800 Supply banked another yard, at most four', () => {
+    // No deposits on this copy of the map: no Extractor competes for the Supply or the order slots.
+    const pool = (turn: number, supply: number) => {
+      const w = setSupply(fresh(), supply);
+      w.turn = turn;
+      w.map = { ...w.map, deposits: [] };
+      return jobs(plan(w, 'normal'));
+    };
+    expect(pool(5, 200)).not.toContain('motor-pool');
+    expect(pool(6, 200)).toContain('motor-pool');
+    // With a Motor Pool standing and Supply piling up: another Barracks (one of each, then the other).
+    const rich = setSupply(fresh(), 900);
+    rich.turn = 10;
+    rich.map = { ...rich.map, deposits: [] };
+    const yard = rich.entities.find((e) => e.side === OPPONENT && e.kind === 'muster')!;
+    const spot = (() => {
+      for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) {
+        const x = yard.x + dx, y = yard.y + dy;
+        if (Math.max(Math.abs(dx), Math.abs(dy)) >= 2 && passable(rich.map, RULESET, x, y, 'ground') && !rich.entities.some((e) => e.x === x && e.y === y)) return { x, y };
+      }
+      throw new Error('no cell');
+    })();
+    rich.entities.push({ ...structuredClone(yard), id: rich.nextId++, kind: 'motor-pool', hp: RULESET.archetypes['motor-pool']!.hp, ...spot });
+    rich.intel = initialIntel(rich, RULESET);
+    expect(jobs(plan(rich, 'normal'))).toContain('muster');
+    expect(jobs(plan(setSupply(structuredClone(rich), 700), 'normal'))).not.toContain('muster');
+    // Four yards stand already: no fifth.
+    const full = structuredClone(rich);
+    const cells: { x: number; y: number }[] = [];
+    for (let y = 0; y < full.map.h && cells.length < 2; y++) for (let x = 0; x < full.map.w && cells.length < 2; x++) if (y < 3 && passable(full.map, RULESET, x, y, 'ground') && !full.entities.some((e) => e.x === x && e.y === y)) cells.push({ x, y });
+    for (const [i, c] of cells.entries()) full.entities.push({ ...structuredClone(yard), id: full.nextId++, kind: i === 0 ? 'muster' : 'motor-pool', ...c });
+    full.intel = initialIntel(full, RULESET);
+    expect(full.entities.filter((e) => e.side === OPPONENT && RULESET.archetypes[e.kind]?.production).length).toBe(4);
+    expect(jobs(plan(full, 'normal')).filter((k) => k === 'muster' || k === 'motor-pool')).toEqual([]);
+  });
+
+  it('easy fighters attack the nearest spotted enemy out of their range', () => {
+    // No Supply: no production takes an order slot.
+    const w = setSupply(fresh(), 0);
+    const squad = w.entities.find((e) => e.side === OPPONENT && e.kind === 'rifles')!;
+    const near = w.entities.find((e) => e.side === PLAYER && e.kind === 'rifles')!;
+    // Put a player squad three cells from the opponent's squad: in its sight, out of its range
+    // (a holding squad with an enemy in range fires by itself and gets no order).
+    const spot = [[3, 0], [-3, 0], [0, 3], [0, -3]].map(([dx, dy]) => ({ x: squad.x + dx!, y: squad.y + dy! })).find((p) => passable(w.map, RULESET, p.x, p.y, 'ground') && !w.entities.some((e) => e.x === p.x && e.y === p.y))!;
+    Object.assign(near, spot);
+    w.intel = initialIntel(w, RULESET);
+    const orders = plan(w, 'easy');
+    expect(orders.find((c) => c.unit === squad.id)?.order).toEqual({ type: 'attack', target: near.id });
+  });
+});
