@@ -43,6 +43,7 @@ export const GAMES: readonly GameEntry[] = [
   entry('memory', () => import('@wp/game-memory')),
   entry('poker', () => import('@wp/game-poker')),
   entry('skat', () => import('@wp/game-skat')),
+  entry('card-quest', () => import('@wp/game-card-quest')),
   entry('mastermind', () => import('@wp/game-mastermind')),
   entry('black-box', () => import('@wp/game-black-box')),
   entry('rule-discovery', () => import('@wp/game-rule-discovery')),
