@@ -273,7 +273,7 @@ Monster boosters, item upgrades and a few one-shots are **world-neutral in effec
 ### 6.2 Structure and text are separate (ADR 0011)
 
 - `src/content/structure/<world>.ts` — language-free: id, kind, level, bonus, slot, value, base kind, traits, item class, set mark, effect in a **small closed effect language** (`{ when: 'vs-kind', kind: 'digger', bonus: 3 }`, `{ when: 'vs-trait', trait: 'fiery', bonus: 3 }`, `{ blunder: 'lose-slot', slot: 'head' }`, …). Rules read only this.
-- `src/content/<locale>.ts` — per locale, loaded via `preload`: per card `name` (≤ 26 characters) and `flavour` (≤ 70 characters), plus the monster's Blunder flavour. **Rule text is generated from the effect data** with translated templates ("+{n} against {kind}"), so rule wording is consistent, short and never mistranslated; humour lives in names and flavour.
+- `src/content/<locale>.ts` — per locale, loaded via `preload`: per card `name` (≤ 32 characters) and `flavour` (≤ 90 characters; checked per locale by a test), plus the monster's Blunder flavour. **Rule text is generated from the effect data** with translated templates ("+{n} against {kind}"), so rule wording is consistent, short and never mistranslated; humour lives in names and flavour.
 - UI messages (setup, phases, offers, coach hints, log templates, base kinds, traits, item classes) in `metadata.messages`, all 16 locales.
 
 ### 6.3 Volume
@@ -287,7 +287,7 @@ Per world per locale: ~140 names + ~140 flavour lines + ~36 Blunder lines ≈ 3 
 ### 7.1 Play without reading the rules (owner requirement)
 
 - **No rules screen before the first game.** Setup has defaults; one tap on "Play" starts.
-- **One primary action at a time**: a large button names the next sensible step ("Open the door", "Fight", "Ask for help", "Flee", "End turn"); secondary actions are smaller.
+- **One primary action at a time**: a large button names the next sensible step ("Peek around the corner", "Fight", "Ask for help", "Flee", "End turn"); secondary actions are smaller.
 - **Cards explain themselves where they are**: playable cards are marked (with an icon and text, not colour only) with the reason ("+3 here: monster is `fiery`"); unplayable cards say why ("only in a fight"). Tapping a card opens a sheet that offers only legal actions.
 - **Live forecast** in a fight: "You 11 : 9 Monster — you would win if nobody interferes", with every part of both sums listed.
 - **Coach hints** (on in the first game, switchable): one short line the first time a concept appears (first curse, first offer, first booster, first Change Sides), never a blocking modal; shown hints are stored in the state.
@@ -335,7 +335,7 @@ Per world per locale: ~140 names + ~140 flavour lines + ~36 Blunder lines ≈ 3 
 
 We avoid the reference's characteristic rule terms and phrases (e.g. its words for revealing the encounter, searching for trouble, looting the room, giving away surplus cards, the "bad stuff" line, wandering monsters, mixed-race and super-class cards, divine intervention) and its name.
 
-Ours: **encounter pile / loot pile**, **Open** (reveal), **Challenge** (fight a monster from hand), **Rummage** (draw unseen), **Pack up** (hand limit), **Blunder** (what happens on a loss), **booster**, **reinforcement**, **upgrade**, **set**, **base kind**, **origin / profession**, **Patchwork Ancestry**, **Second Job**, **Change Sides**, **reputation**. German working terms: *Begegnungsstapel, Beutestapel, Aufmachen, Herausfordern, Stöbern, Einpacken, Blamage, Aufwerter, Verstärkung, Aufrüstung, Set, Grundart, Herkunft/Beruf, Flickwerk-Abstammung, Zweitjob, Seitenwechsel, Ruf*.
+Ours: **encounter pile / loot pile**, **Peek around the corner** (reveal the top encounter card; never “door”), **Challenge** (fight a monster from hand), **Rummage** (draw unseen), **Pack up** (hand limit), **Blunder** (what happens on a loss), **booster**, **reinforcement**, **upgrade**, **set**, **base kind**, **origin / profession**, **Patchwork Ancestry**, **Second Job**, **Change Sides**, **reputation**. German working terms: *Begegnungsstapel, Beutestapel, Um die Ecke schauen, Herausfordern, Stöbern, Einpacken, Blamage, Aufwerter, Verstärkung, Aufrüstung, Set, Grundart, Herkunft/Beruf, Flickwerk-Abstammung, Zweitjob, Seitenwechsel, Ruf*.
 
 ---
 
@@ -374,7 +374,15 @@ K1 is large (140 cards × 16 locales). If it becomes too big for one review, it 
 | AI feels unfair or cheating | observation-only AI (tested), visible personalities, deals in the log |
 | Name conflicts | register search (DPMA/EUIPO/USPTO) for "Lootlinge/Lootlings" before release; neutral id |
 
-### 10.4 Open points (none blocks K1)
+### 10.4 K1 as built (2026-10-15)
+
+- Kampfzwerge: 140 cards, 123 distinct texts, 16 locales (card texts as per-locale chunks, UI in `metadata.messages`).
+- Rules in `rules.ts` (`step` per action, `observe` per seat, `isValidState` with card conservation and log validation); computer players in `ai.ts` decide from `observe` only; `driver.ts` runs them until the person must decide. The person's turn in another player's fight window is passed automatically when no card of theirs could be played there, so only real decisions are asked.
+- No timers: computer turns are applied at once and shown as "Since your last move" plus the log.
+- Self-play (all seats AI, 40 games each): median 10–14 rounds at target 8–10 with 2–6 players, max ≤ 32; ≈ 10–90 ms per whole game.
+- Not yet in K1 (K2): help offers, deals, Change Sides, reputation, grudges.
+
+### 10.5 Open points (none blocks K1)
 
 - **O1** Default target level: **10** assumed (owner: length open). Selectable 6/8/10/12.
 - **O2** Title in the other 14 locales: "Lootlings" unless a locale has a natural form.
