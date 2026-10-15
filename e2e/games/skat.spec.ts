@@ -6,7 +6,50 @@ const GAME = 'skat';
 interface SavedDeal {
   hands: string[][];
   skat: string[];
+  bids: unknown[];
+  trick: string[];
+  tricks: string[][];
   result: unknown;
+}
+
+/**
+ * The save that belongs to what the page shows right now. The game redraws synchronously on every click, but the
+ * host writes the save about 50 ms later (debounced autosave, then IndexedDB). A save read right after a click
+ * can therefore still describe an earlier moment, e.g. before the computers played cards that the page already
+ * shows in the trick. Waits until the save shows the same own hand, current and last trick, bidding log and
+ * result as the DOM.
+ */
+async function synced(page: Page): Promise<SavedDeal> {
+  let match: SavedDeal | undefined;
+  await expect
+    .poll(
+      async () => {
+        const dom = await page.evaluate(() => {
+          const cards = (sel: string) => [...document.querySelectorAll(`${sel} [data-card]`)].map((e) => e.getAttribute('data-card') ?? '');
+          return {
+            hand: cards('[data-testid="my-hand"]').sort(),
+            trick: cards('[data-testid="trick"]'),
+            last: cards('[data-testid="last-trick"]'),
+            bids: document.querySelectorAll('[data-testid="bidding-log"] li').length,
+            hasLog: document.querySelector('[data-testid="bidding-log"]') !== null,
+            result: document.querySelector('[data-testid="result"]') !== null
+          };
+        });
+        const deal = ((await readSave(page, GAME)) as { state?: { deal?: SavedDeal } } | undefined)?.state?.deal;
+        const same =
+          deal !== undefined &&
+          JSON.stringify([...(deal.hands[0] ?? [])].sort()) === JSON.stringify(dom.hand) &&
+          JSON.stringify(deal.trick) === JSON.stringify(dom.trick) &&
+          JSON.stringify(deal.tricks[deal.tricks.length - 1] ?? []) === JSON.stringify(dom.last) &&
+          (!dom.hasLog || deal.bids.length === dom.bids) &&
+          (deal.result !== null) === dom.result;
+        match = same ? deal : undefined;
+        return same;
+      },
+      { intervals: [50, 100, 200] }
+    )
+    .toBe(true);
+  return match as SavedDeal;
 }
 
 /** Card ids of the person's hand in display order. */
@@ -53,8 +96,8 @@ test('bid, play a card, reload and resume the identical table', async ({ page })
 test('opponents’ cards and the Skat never reach the DOM', async ({ page }) => {
   await startSeries(page);
   await passAndPlay(page);
-  await expect.poll(async () => ((await readSave(page, GAME)) as { state?: unknown } | undefined)?.state !== undefined).toBe(true);
-  const deal = ((await readSave(page, GAME)) as { state: { deal: SavedDeal } }).state.deal;
+  // Compare with the save of exactly what is shown (not an older one; see `synced`).
+  const deal = await synced(page);
   if (deal.result) return; // the game already ended: everything may be shown
   const html = await page.content();
   for (const card of [...(deal.hands[1] ?? []), ...(deal.hands[2] ?? []), ...deal.skat]) {
