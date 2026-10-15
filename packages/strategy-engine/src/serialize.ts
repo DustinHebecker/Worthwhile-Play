@@ -195,7 +195,8 @@ function validIntel(
     typeof r.live === 'boolean';
   for (let side = 0; side < dims.sides; side++) {
     const reports: unknown = intel[side];
-    if (!isArrayOf(reports, isReport)) return false;
+    // A sparse array (holes are skipped by the element check) is refused, never read (it would throw).
+    if (!isArrayOf(reports, isReport) || reports.includes(undefined as never)) return false;
     for (let i = 1; i < reports.length; i++) if ((reports[i] as Report).id <= (reports[i - 1] as Report).id) return false;
     for (const r of reports) {
       const e = byId.get(r.id);
