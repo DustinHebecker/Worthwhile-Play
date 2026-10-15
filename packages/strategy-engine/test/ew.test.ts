@@ -5,6 +5,7 @@ import {
   computeNetwork,
   createWorld,
   EMITTER_EXPOSURE,
+  isSpotted,
   isValidWorld,
   resolveTurn,
   revealedEmitters,
@@ -156,6 +157,40 @@ describe('electronic warfare (I4, § 6)', () => {
     const after = play(w, 1, [{ side: 0, unit: 2, order: { type: 'deploy' } }]).world;
     expect(unit(after, 2).deploy).toBe(rs.ticksPerTurn);
     expect(isValidWorld(JSON.parse(JSON.stringify(after)), rs)).toBe(true);
+  });
+
+  it('only a working Tracer locates a distant emitter: not a disabled one, not another unit in its place (mutation run, 2026-10-14)', () => {
+    // An enemy Relay Mast 7 cells from the Tracer: beyond every unit's sight, within the Tracer's radius (8).
+    const scene = (kind: string) =>
+      worldOf(open(20, 1), [
+        { side: 0, kind: 'command-post', x: 0, y: 0 },
+        { side: 0, kind, x: 1, y: 0 },
+        { side: 1, kind: 'relay-mast', x: 8, y: 0 },
+        { side: 1, kind: 'command-post', x: 19, y: 0 }
+      ]);
+    const traced = scene('tracer');
+    expect(revealedEmitters(traced, rs, 0).has(3)).toBe(true);
+    const stunned = structuredClone(traced);
+    unit(stunned, 2).status = [{ kind: 'disabled', ticks: 3 }];
+    expect(revealedEmitters(stunned, rs, 0).has(3)).toBe(false);
+    expect(revealedEmitters(scene('rifles'), rs, 0).has(3)).toBe(false);
+  });
+
+  it('isSpotted: without fog every unit; with fog only one the side holds a live report of', () => {
+    const w = worldOf(open(20, 1), [
+      { side: 0, kind: 'command-post', x: 0, y: 0 },
+      { side: 1, kind: 'rifles', x: 3, y: 0 },
+      { side: 1, kind: 'rifles', x: 15, y: 0 }
+    ]);
+    expect(isSpotted(w, rs, 0, 2)).toBe(true); // seen
+    expect(isSpotted(w, rs, 0, 3)).toBe(false); // not seen
+    const blind = structuredClone(w);
+    delete blind.intel;
+    expect(isSpotted(blind, rs, 0, 2)).toBe(false);
+    const ghost = structuredClone(w);
+    ghost.intel![0] = ghost.intel![0]!.map((r) => (r.id === 2 ? { ...r, live: false } : r));
+    expect(isSpotted(ghost, rs, 0, 2)).toBe(false);
+    expect(isSpotted(blind, { ...rs, fog: false }, 0, 3)).toBe(true);
   });
 
   it('P6: adding a working enemy jammer never grows coverage; adding an own Tracer never shrinks it', () => {
