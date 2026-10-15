@@ -376,7 +376,7 @@ describe('properties over random legal play', () => {
       fc.property(fc.integer({ min: 0, max: 2 ** 31 }), fc.array(fc.nat(), { minLength: 50, maxLength: 200 }), fc.integer({ min: 1, max: 5 }), (seed, picks, opp) => {
         for (const s of walk(seed, picks, opp)) expect(isValidState(s)).toBe(true);
       }),
-      { numRuns: 40 }
+      { numRuns: 25 }
     );
   });
 

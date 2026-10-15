@@ -57,13 +57,31 @@ test('card-quest: resumes in the middle of a fight after a reload', async ({ pag
 
 test('card-quest: equipping an item from the hand raises the strength', async ({ page }) => {
   await start(page);
-  await playUntil(page, (s) => s.active === 0 && (s.phase === 'prepare' || s.phase === 'after' || s.phase === 'end'));
-  const item = page.locator('[data-testid="hand"] .cq-tile[data-type="item"]').first();
+  // Play on (by the visible buttons) until it is the person's own turn before opening the door.
+  for (let i = 0; i < 200 && (await page.getByTestId('open').count()) === 0; i++) {
+    for (const id of ['rummage', 'pass', 'roll', 'end']) {
+      const b = page.getByTestId(id);
+      if ((await b.count()) > 0 && (await b.isEnabled())) {
+        await b.click();
+        break;
+      }
+    }
+    const end = page.getByTestId('end');
+    if ((await end.count()) > 0 && (await end.isDisabled())) {
+      const tiles = page.locator('[data-testid="hand"] .cq-tile[aria-pressed="false"]');
+      while (await end.isDisabled()) await tiles.first().click();
+    }
+  }
+  await expect(page.getByTestId('open')).toBeVisible();
+  const item = page.locator('[data-testid="hand"] .cq-tile[data-type="item"]').filter({ hasNot: page.locator('.cq-tile-num', { hasText: '+0' }) }).first();
   test.skip((await item.count()) === 0, 'no item in this hand');
-  const card = await item.getAttribute('data-card');
+  const card = (await item.getAttribute('data-card'))!;
+  const strength = page.getByTestId('player-0');
+  const before = await strength.textContent();
   await item.click();
   await page.getByTestId('act-equip').click();
-  await expect.poll(async () => (await saved(page))?.players[0]?.equipped ?? []).toContain(card);
+  await expect(page.getByTestId('mine').locator(`[data-card="${card}"]`)).toBeVisible();
+  await expect(strength).not.toHaveText(before ?? '');
 });
 
 for (const locale of ['en', 'ar']) {
