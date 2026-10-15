@@ -98,6 +98,30 @@ test('node-conquest: a paused battle resumes exactly after a reload', async ({ p
   await expect.poll(async () => (await savedState(page)).tick).toBeGreaterThan(state.tick);
 });
 
+test('node-conquest: a match on a hand-built map with crossing lanes (bridges) resumes after a reload', async ({ page }) => {
+  let bridges = 0;
+  let from = -1;
+  let to = -1;
+  await expectResumeAfterReload(page, 'node-conquest', async (p) => {
+    // Map 8 (index 7, "bridges"): neighbouring factions are linked by lanes that cross.
+    await p.getByTestId('nc-map-select').selectOption('7');
+    await expect.poll(async () => (await savedState(p))?.map).toBe(7);
+    bridges = await p.locator('[data-testid^="bridge-"]').count();
+    expect(bridges).toBeGreaterThan(0);
+    [from, to] = await startAndNeighbour(p);
+    await clickNode(p, from);
+    await clickNode(p, to);
+    await expect(p.getByTestId(laneId(from, to))).toHaveAttribute('data-active', `${from}-${to}`);
+  });
+  const state = await savedState(page);
+  expect(state.map).toBe(7);
+  expect(state.out[from]).toContain(to);
+  await expect(page.getByTestId('nc-map-select')).toHaveValue('7');
+  await expect(page.locator('[data-testid^="bridge-"]')).toHaveCount(bridges);
+  await expect(page.locator('[data-testid^="gap-"]')).toHaveCount(bridges);
+  await expect(page.getByTestId(laneId(from, to))).toHaveAttribute('data-active', new RegExp(`${from}-${to}`));
+});
+
 test('node-conquest: dragging from node to node activates a path; Space pauses', async ({ page }) => {
   await page.goto('/games/node-conquest');
   await page.getByTestId('new-game').click();
@@ -140,7 +164,7 @@ test('node-conquest: changing the opponent count or map asks first during a matc
   await clickNode(page, to);
   await expect(page.getByTestId(laneId(from, to))).toHaveAttribute('data-active', `${from}-${to}`);
   const map = (await savedState(page))!.map;
-  const other = String((map + 1) % 7);
+  const other = String((map + 1) % 13);
   await page.getByTestId('nc-map-select').selectOption(other);
   await expect(page.getByTestId('nc-confirm')).toBeVisible();
   await page.getByTestId('nc-confirm-no').click();
@@ -187,6 +211,9 @@ test('node-conquest: the introduction guides step by step; zoom buttons work', a
 test('node-conquest: a save from the previous version continues as an equivalent match', async ({ page }) => {
   await page.goto('/games/node-conquest');
   await page.getByTestId('new-game').click();
+  // Version-1 saves only ever had the generated maps 0–6 (the seed may pick a newer, hand-built one).
+  await page.getByTestId('nc-map-select').selectOption('2');
+  await expect.poll(async () => (await savedState(page))?.map).toBe(2);
   await page.getByTestId('nc-opponents').selectOption('3');
   await expect.poll(async () => (await savedState(page))?.opponents).toBe(3);
   await downgradeSave(page, 'hard');

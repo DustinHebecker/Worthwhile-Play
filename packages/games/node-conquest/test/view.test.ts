@@ -4,8 +4,9 @@ import { createTestContext, type TestContext } from '@wp/testing';
 import type { GameInstance, GameModule } from '@wp/game-core';
 import game from '../src/index';
 import { createSave, interpretSave } from '@wp/persistence';
-import { BOARD, createGame, INTRO_MAP, mapOf, MAX_LEVEL, type NcState } from '../src/rules';
-import { battlements, MAX_ZOOM, shapePath } from '../src/view';
+import { BOARD, createGame, INTRO_MAP, mapOf, MAPS_PER_SET, MAX_LEVEL, type NcState } from '../src/rules';
+import { crossings } from '../src/maps';
+import { battlements, laneLayers, MAX_ZOOM, shapePath } from '../src/view';
 
 let ctx: TestContext;
 let instance: GameInstance<NcState>;
@@ -45,6 +46,58 @@ describe('Orbit Links view', () => {
     expect(($('nc-map-select') as unknown as HTMLSelectElement).value).toBe(String(s.map));
     expect($('nc-list').children).toHaveLength(map.nodes.length);
     expect(ctx.missingKeys).toEqual([]);
+  });
+
+  it('draws crossing lanes as bridges: a gap cut into the lower lane and two rails along the upper one', () => {
+    for (const [seed, locale] of [[7, 'en'], [11, 'ar']] as const) {
+      setup(seed, 'beginner', locale);
+      const map = mapOf(instance.serialize());
+      expect(map.index).toBe(seed);
+      const cross = crossings(map);
+      expect(cross.length).toBeGreaterThan(0);
+      const { order, over } = laneLayers(map);
+      const groups = [...ctx.context.root.querySelectorAll<SVGGElement>('.nc-lanes > .nc-lane')];
+      // Lanes appear bottom to top in the drawing order.
+      expect(groups.map((g) => g.dataset.testid)).toEqual(order.map((i) => `lane-${map.lanes[i]![0]}-${map.lanes[i]![1]}`));
+      expect(ctx.context.root.querySelectorAll('.nc-bridge')).toHaveLength(cross.length);
+      expect(ctx.context.root.querySelectorAll('.nc-bridge-gap')).toHaveLength(cross.length);
+      over.forEach((list, top) => {
+        const [a, b] = map.lanes[top]!;
+        const g = $(`lane-${a}-${b}`);
+        for (const [bottom] of list) {
+          const [c, e] = map.lanes[bottom]!;
+          const id = `${a}-${b}-under-${c}-${e}`;
+          const bridge = $(`bridge-${id}`);
+          const gap = $(`gap-${id}`);
+          expect(bridge.parentElement).toBe(g);
+          expect(bridge.querySelectorAll('.nc-bridge-rail')).toHaveLength(2);
+          // The gap sits under the upper lane's own line but over every lower lane.
+          expect(gap.parentElement).toBe(g);
+          expect(gap.compareDocumentPosition(g.querySelector('.nc-lane-line')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+          expect(groups.indexOf(g as unknown as SVGGElement)).toBeGreaterThan(groups.indexOf($(`lane-${c}-${e}`) as unknown as SVGGElement));
+        }
+      });
+      expect(ctx.missingKeys).toEqual([]);
+      instance.dispose();
+    }
+  });
+
+  it('puts the shorter of two crossing lanes on top (ties: the higher lane index), and generated maps have no bridges', () => {
+    setup(7);
+    const map = mapOf(instance.serialize());
+    const { order, over } = laneLayers(map);
+    expect([...order].sort((x, y) => x - y)).toEqual(map.lanes.map((_, i) => i));
+    for (let p = 1; p < order.length; p++) {
+      const [lower, upper] = [map.lanes[order[p - 1]!]![2], map.lanes[order[p]!]![2]];
+      expect(lower > upper || (lower === upper && order[p - 1]! < order[p]!)).toBe(true);
+    }
+    over.forEach((list, top) => {
+      for (const [bottom] of list) expect(order.indexOf(top)).toBeGreaterThan(order.indexOf(bottom));
+    });
+    instance.dispose();
+    setup(13);
+    expect(instance.serialize().map).toBe(0);
+    expect(ctx.context.root.querySelectorAll('.nc-bridge, .nc-bridge-gap')).toHaveLength(0);
   });
 
   it('names a long standoff calmly, without changing anything else', () => {
@@ -249,10 +302,11 @@ describe('Orbit Links view', () => {
   it('switches maps with the picker at once while the match is untouched, keeping seed and difficulty', () => {
     setup(9, 'advanced');
     const select = $('nc-map-select') as unknown as HTMLSelectElement;
-    expect(select.options).toHaveLength(8);
+    expect(select.options).toHaveLength(MAPS_PER_SET + 1);
+    expect(select.options[MAPS_PER_SET]!.textContent).toMatch(/^Map 13 · \d+ nodes$/);
     expect(select.options[0]!.textContent).toBe('Introduction');
     expect(select.options[1]!.textContent).toMatch(/^Map 1 · \d+ nodes$/);
-    const next = (instance.serialize().map + 1) % 7;
+    const next = (instance.serialize().map + 1) % MAPS_PER_SET;
     select.value = String(next);
     select.dispatchEvent(new Event('change'));
     const s = instance.serialize();
@@ -262,7 +316,7 @@ describe('Orbit Links view', () => {
     instance.reset();
     expect(instance.serialize()).toEqual(createGame(9, { difficulty: 'advanced', map: next }));
     instance.newGame({ seed: 9, difficulty: 'advanced' });
-    expect(instance.serialize().map).toBe(9 % 7);
+    expect(instance.serialize().map).toBe(9 % MAPS_PER_SET);
   });
 
   it('renders in RTL locales without mirroring the board', () => {
@@ -351,7 +405,7 @@ describe('Orbit Links view', () => {
     vi.advanceTimersByTime(500);
     const before = instance.serialize();
     const select = $('nc-map-select') as unknown as HTMLSelectElement;
-    const other = (before.map + 3) % 7;
+    const other = (before.map + 3) % MAPS_PER_SET;
     select.value = String(other);
     select.dispatchEvent(new Event('change'));
     expect($('nc-confirm').hidden).toBe(false);

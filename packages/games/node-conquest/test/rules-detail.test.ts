@@ -9,6 +9,7 @@ import {
   isActive,
   isValidState,
   mapOf,
+  LEGACY_MAPS,
   MAPS_PER_SET,
   MAX_UNITS,
   migrateState,
@@ -315,9 +316,14 @@ describe('rules in detail: validation of saves', () => {
   });
 
   it('rejects map indices beyond the set and an introduction map in another layout', () => {
-    const beyond = clone(createGame(3, { map: MAPS_PER_SET }));
-    expect(beyond.map).toBe(MAPS_PER_SET);
+    const beyond = { ...clone(createGame(3)), map: MAPS_PER_SET };
     expect(isValidState(beyond)).toBe(false);
+    const last = clone(createGame(3, { map: MAPS_PER_SET - 1 }));
+    expect(isValidState(last)).toBe(true);
+    // Hand-built maps exist in layout 2 only (layout 1 is for migrated version-1 saves of maps 0–6).
+    expect(createGame(3, { map: LEGACY_MAPS, layout: 1 }).layout).toBe(2);
+    expect(isValidState({ ...clone(createGame(3, { map: LEGACY_MAPS })), layout: 1 })).toBe(false);
+    expect(isValidState({ ...clone(createGame(3, { map: LEGACY_MAPS - 1, layout: 1 })), layout: 1 })).toBe(true);
     const intro = clone(createGame(3, { map: INTRO_MAP }));
     expect(isValidState(intro)).toBe(true);
     expect(isValidState({ ...intro, layout: 1 })).toBe(false);
