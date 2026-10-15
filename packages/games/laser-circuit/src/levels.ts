@@ -1,24 +1,34 @@
 /**
- * The original Laser Paths level set.
+ * The Laser Paths level sets.
  *
  * Levels were designed for this project with a seeded "build the solution first" generator (lasers,
  * fixed elements and the solution pieces are laid out, targets go where the light ends up and
  * forbidden sensors into the dark, then the solution pieces become the inventory) and curated by
- * hand for variety and a gentle progression. Boards are at most 7×7 so that 44 px squares fit a
+ * hand for variety and a gentle progression. Boards are at most 7 wide so that 44 px squares fit a
  * 360 px phone.
  *
- * The later hard levels (9–12) and the expert levels came from a second seeded generator in the
- * same spirit, with one-way gates and portals on the solution's light path and bigger
- * inventories. It makes the solution unique by adding forbidden sensors, one-way gates or extra
+ * The later medium levels (9–12) and the hard levels came from a second seeded generator in the
+ * same spirit, with optical diodes and portals on the solution's light path and bigger
+ * inventories. It makes the solution unique by adding forbidden sensors, optical diodes or extra
  * targets that only alternative solutions would violate (found with the exact solver in
  * `test/oracle.ts`). Each such level notes its generator seed, how many pieces it needs and how
  * many nodes the exact solver's search tree has (a rough measure of how much there is to try).
  *
+ * The expert levels come from `test/generator.ts` (reproducible from the seed noted on each level):
+ * the player also places colour filters, chromatic blockers, neutral-density filters and
+ * polarisers, and targets may ask for an exact intensity or polarisation (see the optics model in
+ * `rules.ts`).
+ *
+ * The sets were renamed one step up in state version 2 (old easy = `intro`, old medium = `easy`,
+ * old hard = `medium`, old expert = `hard`); levels and their order are unchanged.
+ *
  * Format: one string per row, squares separated by spaces:
  *   `.` empty · `#` blocker · `/` `\` mirror · `S/` `S\` beam splitter · `X` forbidden sensor ·
  *   `^R` `>G` `vB` `<W` laser pointing up/right/down/left with its colour ·
- *   `FC` colour filter · `TM` target needing that colour ·
- *   `D^` `D>` `Dv` `D<` one-way gate letting light through only in the arrow's direction ·
+ *   `FC` colour filter · `-R` chromatic blocker absorbing that colour · `N` neutral-density filter ·
+ *   `P0` `P45` `P90` `P135` polariser · `TM` target needing that colour, `TR4` … exactly ¼ of a
+ *   laser's intensity, `TG:45` … only light polarised at 45°, `TW2:90` both ·
+ *   `D^` `D>` `Dv` `D<` optical diode letting light through only in the arrow's direction ·
  *   `@1` `@2` `@3` portal (light entering one portal leaves the other one of the same number).
  * Colour letters: R red, G green, B blue, Y yellow (R+G), M magenta (R+B), C cyan (G+B), W white.
  *
@@ -28,13 +38,28 @@
  */
 export interface LevelSource {
   readonly rows: readonly string[];
-  readonly inventory: { readonly mirror?: number; readonly splitter?: number; readonly blocker?: number };
+  readonly inventory: {
+    readonly mirror?: number;
+    readonly splitter?: number;
+    readonly blocker?: number;
+    readonly polariser?: number;
+    readonly neutral?: number;
+    readonly filterR?: number;
+    readonly filterG?: number;
+    readonly filterB?: number;
+    readonly minusR?: number;
+    readonly minusG?: number;
+    readonly minusB?: number;
+  };
   readonly solutions: number;
 }
 
 export const LEVELS = {
-  /** 5×5, one laser, one or two pieces. */
-  easy: [
+  /**
+   * 5×5, one laser, one or two pieces. The original first level set ("easy" in state version 1): no
+   * longer offered for new games, kept so that saves of these levels still load and play.
+   */
+  intro: [
     {
       rows: [
         '.  /  .  .  <R',
@@ -124,8 +149,8 @@ export const LEVELS = {
       solutions: 1
     }
   ],
-  /** 6×6: colour filters, white light, and blockers that keep light away from where it must not go. */
-  medium: [
+  /** 6×6: colour filters, white light, and blockers that keep light away from where it must not go. ("medium" in state version 1.) */
+  easy: [
     {
       rows: [
         '\\  .  .  .  .  .',
@@ -223,8 +248,8 @@ export const LEVELS = {
       solutions: 1
     }
   ],
-  /** 7×7: several lasers, colour mixing on targets, three to six pieces and exactly one solution; levels 9–12 add one-way gates and portals. */
-  hard: [
+  /** 7×7: several lasers, colour mixing on targets, three to six pieces and exactly one solution; levels 9–12 add optical diodes and portals. ("hard" in state version 1.) */
+  medium: [
     {
       rows: [
         '.  TB .  .  .  X  .',
@@ -386,8 +411,8 @@ export const LEVELS = {
       solutions: 1
     }
   ],
-  /** 7×9 (wider would not fit a phone): seven or eight pieces, portals, one-way gates and exactly one solution. */
-  expert: [
+  /** 7×9 (wider would not fit a phone): seven or eight pieces, portals, optical diodes and exactly one solution. ("expert" in state version 1.) */
+  hard: [
     {
       // generator seed 3040; 7 pieces; exact solver: 413466 search nodes
       rows: [
@@ -514,6 +539,137 @@ export const LEVELS = {
         '.  ^R .  .  .  ^B #'
       ],
       inventory: { mirror: 5, splitter: 2 },
+      solutions: 1
+    }
+  ],
+  /** 7×9: placeable filters and polarisers, targets that need an exact intensity or polarisation. */
+  expert: [
+    {
+      // generator seed 10283; 6 pieces; exact solver: 2054738 search nodes
+      rows: [
+        '.   .   .   .   TY2  X   TY2',
+        '>W  D>  D>  .   .    .   .',
+        '.   .   .   .   .    .   .',
+        'X   .   .   .   .    .   .',
+        'X   X   .   .   .    .   .',
+        '.   .   .   .   .    .   .',
+        '.   .   .   .   .    #   X',
+        '.   D<  D<  D<  .    .   .',
+        'TB  .   .   .   .    ^W  .'
+      ],
+      inventory: { mirror: 3, splitter: 1, filterB: 1, minusB: 1 },
+      solutions: 1
+    },
+    {
+      // generator seed 20194; 6 pieces; exact solver: 2240517 search nodes
+      rows: [
+        'X    .   .   .   .   .    .',
+        'X    .   .   .   .   .    X',
+        '.    .   .   .   .   .    .',
+        '>C   .   .   .   .   TB4  X',
+        'TC2  .   X   .   .   .    TB4',
+        '.    Dv  .   .   .   .    .',
+        '.    .   .   .   .   D^   .',
+        'TG2  .   .   .   X   D^   .',
+        '.    .   .   X   .   ^B   #'
+      ],
+      inventory: { mirror: 2, splitter: 2, neutral: 1, filterG: 1 },
+      solutions: 1
+    },
+    {
+      // generator seed 20101; 6 pieces; exact solver: 2327349 search nodes
+      rows: [
+        '.   .   .    X     X     .   .',
+        '.   .   .    .     .     .   TB8',
+        'X   X   #    .     .     .   .',
+        '#   .   TM2  .     .     .   .',
+        '.   .   .    .     .     .   .',
+        '.   .   .    FM    .     .   .',
+        '.   .   .    .     .     X   .',
+        '.   .   .    .     .     X   .',
+        '.   .   ^M   TM16  P135  .   .'
+      ],
+      inventory: { mirror: 2, splitter: 2, neutral: 1, minusR: 1 },
+      solutions: 1
+    },
+    {
+      // generator seed 20219; 6 pieces; exact solver: 2652305 search nodes
+      rows: [
+        '.   .      vW  X   .   .   X',
+        '.   TW8:0  .   X   .   .   .',
+        'D^  .      Dv  .   .   .   .',
+        'D^  .      Dv  .   .   .   .',
+        '.   TW4:0  .   .   X   .   X',
+        'D^  #      Dv  .   .   .   X',
+        '.   D<     .   .   .   .   #',
+        'X   .      .   .   .   .   .',
+        'X   #      .   .   .   .   .'
+      ],
+      inventory: { mirror: 3, splitter: 1, polariser: 1, neutral: 1 },
+      solutions: 1
+    },
+    {
+      // generator seed 10556; 7 pieces; exact solver: 2752990 search nodes
+      rows: [
+        '.    .   .    .   .    X   .',
+        '.    .   .    .   .    X   .',
+        '.    .   .    .   #    .   P45',
+        '.    .   .    .   TR8  .   .',
+        '.    D^  TM8  .   D<   .   <M',
+        '.    .   D<   .   .    .   .',
+        'TM2  .   .    .   .    X   .',
+        'X    .   .    .   .    .   .',
+        '.    .   X    .   .    .   .'
+      ],
+      inventory: { mirror: 3, splitter: 2, neutral: 1, filterR: 1 },
+      solutions: 1
+    },
+    {
+      // generator seed 130; 6 pieces; exact solver: 3439529 search nodes
+      rows: [
+        '.   .   .   .   X   .   .',
+        '>M  D>  D>  .   .   .   X',
+        '.   #   .   .   .   .   TR4:45',
+        '.   .   .   .   Dv  X   .',
+        '.   X   .   .   .   .   TR4:135',
+        '.   .   .   .   .   .   .',
+        '.   .   .   .   .   #   .',
+        '.   .   .   .   .   .   .',
+        '.   .   .   .   X   .   .'
+      ],
+      inventory: { mirror: 2, splitter: 1, polariser: 2, filterR: 1 },
+      solutions: 1
+    },
+    {
+      // generator seed 10011; 7 pieces; exact solver: 4700212 search nodes
+      rows: [
+        '.    .   .   .   .   .    .',
+        '#    X   .   .   .   X    .',
+        'TR4  .   .   .   .   X    .',
+        '.    D>  D>  D>  D>  .    TR8:90',
+        '.    .   D>  D>  D>  .    X',
+        'D^   .   .   X   .   TR4  .',
+        '.    D<  D<  D<  D<  .    <W',
+        '.    .   .   .   .   .    .',
+        '.    .   .   .   .   .    .'
+      ],
+      inventory: { mirror: 2, splitter: 2, polariser: 1, neutral: 1, filterR: 1 },
+      solutions: 1
+    },
+    {
+      // generator seed 20065; 6 pieces; exact solver: 7977191 search nodes
+      rows: [
+        'TW4  .    .   .   .   .   .',
+        'D^   .    .   .   X   X   .',
+        '.    .    .   .   .   .   <W',
+        '.    X    .   .   .   .   .',
+        '.    .    .   .   .   .   X',
+        '.    X    .   .   .   .   .',
+        '.    .    .   .   .   .   X',
+        '.    X    .   .   D>  D>  TR4',
+        '#    TW4  .   .   .   X   .'
+      ],
+      inventory: { mirror: 2, splitter: 2, neutral: 1, filterR: 1 },
       solutions: 1
     }
   ]

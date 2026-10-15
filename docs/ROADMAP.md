@@ -94,6 +94,7 @@ Catalogue order (done): the large games first (Relay Command; then strategy/towe
 | Orbit Links | already good, but frequent stalemates | ✅ AI concentrates on one target after a quiet spell; platforms fire every 9 ticks (was 6); calm standoff note. Stalls vs AI 18% → 2% (human-like script). Map 4 may stay (owner, 2026-10-15) |
 | Orbit Links | owner: build more maps; lanes may cross | ✅ 6 new maps (13 per set: Bridges, Ring road, Gates, Pinwheel, Lattice, Spine), hostile streams fight where lanes cross, own streams fly past (owner: no bridges in space); old maps pinned. Open (pre-existing): node tap circles are 42.5 px at 360 px (< 44 px) |
 | Laser Paths | owner: a forbidden sensor lit at the start of a level is fine (fixed in play) | ✅ |
+| Laser Paths | owner: hard was too easy; drop easy and move everything up; call it an optical diode; let players place other optics | ✅ difficulties shifted (old easy kept for saves as `intro`), optical diode, new Expert: polarisers (Malus, 45° steps), ND filters, colour filters, chromatic blockers; targets may require intensity/polarisation |
 | Catalogue | preview graphics on the overview page | ✅ hand-drawn inline SVG per game (decorative, light/dark/forced colours, RTL-aware), ~6 KB gzip; a test requires one for every new game |
 | Speech | `pt` → `pt-BR` for `lang` and voice choice | ✅ `bcp47Tag` in game-core used by the app and all games; voices pt-BR first (pt-PT last resort), zh-Hans prefers zh-CN |
 | Visual search | too easy | ✅ Expert level: T among rotated L shapes (spatial-configuration search, 12/30 items, half without target); further option: mirrored L's |
@@ -104,6 +105,12 @@ Catalogue order (done): the large games first (Relay Command; then strategy/towe
 | Catalogue (all games) | ✅ (see below) small preview images or representative graphics on the overview page so people can picture each game (own SVG drawn in code, no third-party art; light/dark, RTL-neutral, decorative `aria-hidden` with the title as text) | ⏳ |
 
 Decisions on the large games (strategy, Tower Defense, adventures) are made by the owner in their own contexts, not via the orchestrator.
+
+### Owner notes for the next orchestrator session (2026-10-15, pause)
+
+1. **Skat – lost Hand games:** read the original International Skat Order (ISkO, current edition, from the ISPA/DSkV) and follow it exactly; today lost Hand games count double like all lost games, unverified against the text.
+2. **Skat – overbid Null games:** follow how it is typically played (research common practice and the ISkO wording; today a Null game at bid 24 counts as the next Null value that reaches the bid, 46).
+3. **Start flow (all games):** many games show the host's difficulty select and "New game", and then the game shows a second difficulty/options panel. Owner: either "New game" → settings → start, or settings + start directly — not two selections. Unify across all games (host start panel vs. each game's own options; extend ADR 0015 `setupInGame` or a shared options schema), then check every game.
 
 ## Next steps (suggested agent assignments)
 

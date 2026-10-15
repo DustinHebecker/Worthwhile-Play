@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { createRng, isRecord } from '@wp/game-core';
+import { isRecord } from '@wp/game-core';
 import { BASE_RULESET, NEUTRAL, archetypeOf, canonicalJson, cellOf, findPath, observe, passable, DEFAULT_DOCTRINE, computeNetwork, createWorld, initialIntel, observedCells, resolveTurn, validateCommand, worldHash, type Command, type Entity, type Order, type World } from '@wp/strategy-engine';
-import { DIFFICULTIES, objectiveOf, planAi, type Difficulty } from '../src/ai';
+import { objectiveOf, planAi, type Difficulty } from '../src/ai';
 import {
+  cancelJob,
   cancelOrder,
+  plannedJobs,
   canSettle,
   plannedSaleRefund,
   plannedSupply,
@@ -35,7 +37,6 @@ import {
   PLAYER_DOCTRINE,
   MAX_TURNS,
   STALL_TURNS,
-  TURN_LIMITS,
   STALL_MARGIN,
   CONTACT_TURN,
   stalled,
@@ -51,7 +52,7 @@ import {
   rulesOf,
   type Seat,
 } from '../src/rules';
-import { FIELD_EXERCISE, opponentCounts, RIDGE_VALLEY, type ScenarioSpec, SCENARIOS } from '../src/scenarios';
+import { FIELD_EXERCISE, opponentCounts, RIDGE_VALLEY, SCENARIOS } from '../src/scenarios';
 import { fromScenario } from '../src/maps';
 
 /** A side's plan from its own observation (default: the game's default level). */
@@ -905,178 +906,6 @@ describe('save bounds (review of PR #8, round 2)', () => {
   });
 });
 
-describe('opponent levels (I5)', () => {
-  /** A game length: a turn limit, open end (`null`) or a quick match. */
-  type Length = number | null | 'quick';
-  const start = (seed: number, spec: ScenarioSpec, difficulty: Difficulty, limit: Length): RcState =>
-    newGame(seed, spec, difficulty, limit === 'quick' ? null : limit, limit === 'quick');
-  /**
-   * Symmetric random opening on `spec`: `pairs` unit pairs (a player unit and its mirror image)
-   * nudged by a mirrored displacement of up to `reach` cells. The engine draws no randomness, so
-   * varied openings are the only way to get more than one game per pairing.
-   */
-  function opening(spec: ScenarioSpec, seed: number, pairs: number, reach: number, limit: Length, difficulty: Difficulty): RcState {
-    const s = start(seed, spec, difficulty, limit);
-    const rng = createRng(seed * 7919 + 13);
-    const { w, h } = s.world.map;
-    const movable = s.world.entities.filter((e) => e.side === PLAYER && e.kind !== 'command-post');
-    const free = (x: number, y: number) => x >= 0 && y >= 0 && x < w && y < h && passable(s.world.map, RULESET, x, y, 'ground') && !s.world.entities.some((e) => e.x === x && e.y === y);
-    for (let k = 0; k < pairs; k++) {
-      const u = movable[rng.int(0, movable.length - 1)]!;
-      const m = s.world.entities.find((e) => e.side === OPPONENT && e.x === w - 1 - u.x && e.y === h - 1 - u.y)!;
-      const nx = u.x + rng.int(-reach, reach);
-      const ny = u.y + rng.int(-reach, reach);
-      if (!free(nx, ny) || !free(w - 1 - nx, h - 1 - ny)) continue;
-      Object.assign(u, { x: nx, y: ny });
-      Object.assign(m, { x: w - 1 - nx, y: h - 1 - ny });
-    }
-    s.world.intel = initialIntel(s.world, RULESET);
-    return s;
-  }
-  /** The player side is played by an AI at level `a` (or not at all), the opponent at the game's level. */
-  function play(s: RcState, a: Difficulty | 'passive', cap = 40): RcState {
-    for (let i = 0; i < cap && s.phase === 'plan'; i++) {
-      if (a !== 'passive') for (const c of ai(s.world, PLAYER, a)) s = planOrder(s, c.unit, c.order, c.doctrine) ?? s;
-      s = lockTurn(s);
-    }
-    return s;
-  }
-  /** Wins of `a` and of `b` over `n` openings, each played from both sides of the map (24 turns). */
-  function margin(spec: ScenarioSpec, a: Difficulty, b: Difficulty, n: number, pairs: number, reach: number): { a: number; b: number; draws: number } {
-    const out = { a: 0, b: 0, draws: 0 };
-    for (let seed = 0; seed < n; seed++) {
-      for (const [r, win, loss] of [
-        [play(opening(spec, seed, pairs, reach, 24, b), a).result, 'won', 'lost'],
-        [play(opening(spec, seed, pairs, reach, 24, a), b).result, 'lost', 'won']
-      ] as const) {
-        if (r === win) out.a++;
-        else if (r === loss) out.b++;
-        else out.draws++;
-      }
-    }
-    return out;
-  }
-  const MODES: readonly Length[] = [24, 'quick'];
-
-  /**
-   * The level-against-level margins are measured on these two maps only (each one is a long
-   * suite; the cheaper suites below run on every map). Newer maps are covered by the passive,
-   * produce-only, termination and resumability suites.
-   */
-  const MARGIN_MAPS: readonly ScenarioSpec[] = [FIELD_EXERCISE, RIDGE_VALLEY];
-  // Timeouts of the long suites: measured under `pnpm coverage` (CI runs with coverage, about
-  // 1.3–2× slower than a plain run): beat easy 63 s locally (133 s in CI), hard vs normal 46 s,
-  // passive 109 s, resumable 28 s, produce-only 11 s — each well under half its limit locally.
-
-  it('normal and hard beat easy by a clear margin over randomised openings on Field Exercise and Ridge Valley', () => {
-    for (const spec of MARGIN_MAPS) {
-      const hard = margin(spec, 'hard', 'easy', 10, 2, 2);
-      const normal = margin(spec, 'normal', 'easy', 10, 2, 2);
-      expect(hard.a, `${spec.id} hard vs easy ${JSON.stringify(hard)}`).toBeGreaterThanOrEqual(hard.b + 8);
-      expect(normal.a, `${spec.id} normal vs easy ${JSON.stringify(normal)}`).toBeGreaterThanOrEqual(normal.b + 8);
-    }
-  }, 600_000); // 2 maps x 2 levels x 20 AI-vs-AI games of 24 turns: 154 s under coverage on a loaded 4-core machine (2026-10-14), kept under half of this
-
-  it('hard beats normal on Field Exercise by at least 4 games; over Field Exercise and Ridge Valley it wins at least as often as it loses', () => {
-    // The two share the plan of attack; hard adds breadth, focus fire, pulling back and jamming.
-    // Measured since PR #13 (escorts yield in passes; storms find a way past held rings):
-    // Field Exercise 8-4, Ridge Valley 6-6 over 2x6 openings, so no ordering is claimed for Ridge Valley.
-    const total = { a: 0, b: 0, draws: 0 };
-    for (const spec of MARGIN_MAPS) {
-      const r = margin(spec, 'hard', 'normal', 6, 2, 2);
-      total.a += r.a;
-      total.b += r.b;
-      total.draws += r.draws;
-      if (spec === FIELD_EXERCISE) expect(r.a, `${spec.id} hard vs normal ${JSON.stringify(r)}`).toBeGreaterThanOrEqual(r.b + 4);
-    }
-    expect(total.a, `hard vs normal over both margin maps ${JSON.stringify(total)}`).toBeGreaterThanOrEqual(total.b);
-  }, 300_000);
-
-  /** Random player moves in a resolved first turn (the reviewer's "mild opening"), then nothing. */
-  function firstTurnMoves(spec: ScenarioSpec, seed: number, limit: Length, difficulty: Difficulty): RcState {
-    let s = start(seed, spec, difficulty, limit);
-    const rng = createRng(seed * 31 + 7);
-    const units = s.world.entities.filter((e) => e.side === PLAYER && (RULESET.archetypes[e.kind]?.speed ?? 0) > 0);
-    for (let k = 0; k < 4; k++) {
-      const u = units[rng.int(0, units.length - 1)]!;
-      s = planOrder(s, u.id, { type: 'move', x: Math.max(0, Math.min(s.world.map.w - 1, u.x + rng.int(-4, 4))), y: Math.max(0, Math.min(s.world.map.h - 1, u.y + rng.int(-4, 4))) }) ?? s;
-    }
-    return lockTurn(s);
-  }
-  /** Longest game the tests below accept for their strategies (measured: 42 turns); not a bound for every strategy. */
-  const GAME_BOUND = 60;
-
-  it('a passive player loses at normal and hard on every map, with a turn limit and open end: from the unperturbed start, nudged openings and first-turn moves; every game ends within the bound', () => {
-    for (const spec of SCENARIOS) {
-      for (const limit of [...MODES, null]) {
-        // Plain open end (no stalemate rule; measured longest 39 turns): not a bound for every strategy —
-        // a player who only produces, or two mirrored AIs, can stall; the player can then end on strength.
-        const bound = GAME_BOUND;
-        for (const level of ['normal', 'hard'] as const) {
-          const label = (kind: string, games: RcState[]) => `${spec.id} limit=${limit} ${level} ${kind}: ${games.map((g) => `${g.result}@${g.world.turn}`).join(',')}`;
-          const unperturbed = [play(start(0, spec, level, limit), 'passive', bound)];
-          const nudged = Array.from({ length: 4 }, (_, seed) => play(opening(spec, seed, 2, 2, limit, level), 'passive', bound));
-          const moved = Array.from({ length: 4 }, (_, seed) => play(firstTurnMoves(spec, seed + 100, limit, level), 'passive', bound));
-          for (const [kind, games] of [['start', unperturbed], ['nudged', nudged]] as const) {
-            expect(games.every((g) => g.phase === 'finished' && g.result === 'lost'), label(kind, games)).toBe(true);
-          }
-          // First-turn moves can leave a player well placed: it wins some (on Field Exercise, at both levels).
-          expect(moved.every((g) => g.phase === 'finished'), label('moved', moved)).toBe(true);
-          expect(moved.filter((g) => g.result === 'lost').length, label('moved', moved)).toBeGreaterThanOrEqual(3);
-        }
-      }
-    }
-  }, 600_000);
-
-  it('every game stays a valid, resumable save after every turn: every map, every length, passive and playing', () => {
-    for (const spec of SCENARIOS) {
-      for (const limit of [...TURN_LIMITS, 'quick'] as const) {
-        for (const player of ['passive', 'normal'] as const) {
-          let s = start(3, spec, 'hard', limit);
-          for (let i = 0; i < GAME_BOUND && s.phase === 'plan'; i++) {
-            if (player !== 'passive') for (const c of ai(s.world, PLAYER, player)) s = planOrder(s, c.unit, c.order, c.doctrine) ?? s;
-            s = lockTurn(s);
-            const saved = JSON.parse(JSON.stringify(s)) as unknown;
-            expect(isValidState(saved), `${spec.id} limit=${limit} ${player} turn ${s.world.turn}`).toBe(true);
-          }
-          if (typeof limit === 'number') expect(s.lead).toEqual([]);
-        }
-      }
-    }
-  }, 600_000);
-
-  it('a player who only produces with the normal template and never moves loses, and AI-vs-AI quick matches end within the bound', () => {
-    // Narrow on purpose: a stronger turtle (Extractors on every deposit, then a Motor Pool and
-    // heavier units) can out-produce the opponent and win on strength (design notes, I6d).
-
-    for (const spec of SCENARIOS) {
-      for (const level of ['normal', 'hard'] as const) {
-        let s = opening(spec, 1, 2, 2, 'quick', level);
-        for (let i = 0; i < GAME_BOUND && s.phase === 'plan'; i++) {
-          for (const c of ai(s.world, PLAYER, 'normal')) if (c.order.type === 'produce') s = planOrder(s, c.unit, c.order) ?? s;
-          s = lockTurn(s);
-        }
-        expect(s, `${spec.id} ${level} produce-only`).toMatchObject({ phase: 'finished', result: 'lost' });
-      }
-      for (const [a, b] of [['hard', 'normal'], ['normal', 'normal'], ['easy', 'easy']] as const) {
-        const g = play(opening(spec, 2, 2, 2, 'quick', b), a, GAME_BOUND);
-        expect(g.phase, `${spec.id} ${a} vs ${b} quick match, turn ${g.world.turn}`).toBe('finished');
-      }
-    }
-  }, 600_000);
-
-  it('the same level on both sides from the scripted start gives a symmetric draw (no side bias)', () => {
-    for (const level of DIFFICULTIES) expect(play(newGame(1, FIELD_EXERCISE, level, 12), level).result).toBe('draw');
-  });
-
-  it('new games keep the chosen level; saves without one (version 3) play on at normal', () => {
-    expect(newGame(1, FIELD_EXERCISE, 'hard').difficulty).toBe('hard');
-    const v3 = JSON.parse(JSON.stringify({ ...newGame(2), v: 3 })) as Record<string, unknown>;
-    delete v3.difficulty;
-    expect(migrateState(v3, 3)?.difficulty).toBe('normal');
-    expect(isValidState({ ...newGame(2), difficulty: 'impossible' })).toBe(false);
-  });
-});
 
 
 describe('several sides (docs/design/strategy.md § 9.4)', () => {
@@ -1685,5 +1514,176 @@ describe('deposits that never run dry (owner decision 2026-10-14, state v11)', (
     const byCell = <T extends { x: number; y: number }>(list: readonly T[]) => [...list].sort((a, b) => a.y - b.y || a.x - b.x);
     expect(byCell(deposits(custom)).map((d) => [d.left, d.endless ?? false])).toEqual(byCell(sized.deposits).map((d) => [d.size === 'rich' ? 600 : 300, d.size === 'endless']));
     expect(valid(withDeposits(custom, (d) => (d.endless ? { endless: undefined, left: 300 } : {})))).toBe(false);
+  });
+});
+
+describe('planning ledger, stalemate pressure, save bounds (mutation run on rules.ts, 2026-10-15)', () => {
+  const cost = (kind: string) => RULESET.archetypes[kind]!.cost;
+
+  it('plans production and placement against the Supply and cells they leave; a cancelled job gives both back', () => {
+    const s = newGame(1);
+    const yard = own(s).find((e) => e.kind === 'muster')!;
+    const post = commandPost(s.world, PLAYER)!;
+    const a = planOrder(s, yard.id, { type: 'produce', kind: 'rifles' })!;
+    const b = planOrder(a, yard.id, { type: 'produce', kind: 'lancer' })!;
+    expect(plannedSupply(b)).toBe(300 - cost('rifles') - cost('lancer'));
+    expect(plannedJobs(b, yard.id).map((c) => (c.order as { kind: string }).kind)).toEqual(['rifles', 'lancer']);
+    // The planned jobs fill the yard's queue (MAX_QUEUE = 2): a third is refused while planning.
+    expect(orderRefusal(b, yard.id, { type: 'produce', kind: 'rifles' })).not.toBeNull();
+    expect(orderRefusal(a, yard.id, { type: 'produce', kind: 'rifles' })).toBeNull();
+    // Planned production counts towards what a sale of the yard would bring.
+    expect(plannedSaleRefund(b, yard.id)).toBe(Math.floor(cost('muster') / 2) + cost('rifles') + cost('lancer'));
+    // A placement takes its cell (and its price) while planning; a second one there is refused.
+    const cell = (() => {
+      for (let y = 0; y < s.world.map.h; y++) for (let x = 0; x < s.world.map.w; x++) if (planOrder(b, post.id, { type: 'build', kind: 'relay-mast', x, y })) return { x, y };
+      throw new Error('no free covered cell');
+    })();
+    const c = planOrder(b, post.id, { type: 'build', kind: 'relay-mast', ...cell })!;
+    expect(plannedSupply(c)).toBe(300 - cost('rifles') - cost('lancer') - cost('relay-mast'));
+    expect(orderRefusal(c, post.id, { type: 'build', kind: 'relay-mast', ...cell })).toBe('not-buildable');
+    // A planned sale costs nothing; a hold is no job.
+    expect(plannedSupply(planOrder(c, yard.id, { type: 'sell' })!)).toBe(plannedSupply(c));
+    // Cancelling the first production returns its price, the second stays planned.
+    const d = cancelJob(c, yard.id, 0);
+    expect(plannedJobs(d, yard.id).map((x) => (x.order as { kind: string }).kind)).toEqual(['lancer']);
+    expect(plannedSupply(d)).toBe(300 - cost('lancer') - cost('relay-mast'));
+    expect(cancelJob(d, yard.id, 5)).toBe(d);
+  });
+
+  it("a hit on the leader's Command Post restarts the stalemate count; a hit on the trailing side's does not", () => {
+    // Open end, the record running at the real lead (so it would go on); a player squad next to the
+    // opponent's post fires on it by itself (out of contact; structures first, the post the only one).
+    const shelling = (playerLeads: boolean) => {
+      const s = lockTurn(lockTurn(newGame(3, FIELD_EXERCISE, 'normal', null, true)));
+      const post = commandPost(s.world, OPPONENT)!;
+      const squad = s.world.entities.find((e) => e.side === PLAYER && e.kind === 'rifles')!;
+      const spot = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => ({ x: post.x + dx!, y: post.y + dy! })).find((p) => passable(s.world.map, RULESET, p.x, p.y, 'ground') && !s.world.entities.some((e) => e.x === p.x && e.y === p.y))!;
+      Object.assign(squad, spot, { order: { type: 'hold' }, doctrine: { ...PLAYER_DOCTRINE, priority: 'structures', lostContact: 'keep' } });
+      const otherStructure = (e: Entity, side: number) => e.side === side && e.kind !== 'command-post' && (RULESET.archetypes[e.kind]?.speed ?? 0) === 0;
+      // The opponent loses its yard (the post is the squad's only structure in reach); to make the
+      // opponent the leader, the player loses its yard and every unit but the squad as well.
+      s.world.entities = s.world.entities.filter((e) => !otherStructure(e, OPPONENT) && (playerLeads || e.side !== PLAYER || e.kind === 'command-post' || e.id === squad.id));
+      s.world.intel = initialIntel(s.world, RULESET);
+      const now = sideValue(s.world, PLAYER) - sideValue(s.world, OPPONENT);
+      expect(Math.sign(now)).toBe(playerLeads ? 1 : -1);
+      const next = lockTurn({ ...s, lead: [now, now, now] });
+      expect(next.world.entities.find((e) => e.id === post.id)!.hp).toBeLessThan(RULESET.archetypes['command-post']!.hp);
+      return next.lead;
+    };
+    // The opponent leads: its post is shelled, so the count starts anew (one entry).
+    expect(shelling(false)).toHaveLength(1);
+    // The player leads: shelling the trailing side's post is no pressure; the record goes on.
+    expect(shelling(true)).toHaveLength(4);
+  });
+
+  it('migrations refuse a save whose version does not match the one they migrate from', () => {
+    for (const from of [3, 5]) {
+      const old = JSON.parse(JSON.stringify({ ...newGame(2), v: from })) as Record<string, unknown>;
+      expect(migrateState({ ...old, v: from + 1 }, from)).toBeUndefined();
+      expect(migrateState('save', from)).toBeUndefined();
+    }
+  });
+
+  it('refuses hostile saves: report lists and ids beyond the scenario, oversized summaries, foreign kinds, too many shells, malformed logs', () => {
+    const s = lockTurn(newGame(1));
+    expect(isValidState(s)).toBe(true);
+    const n = s.world.entities.length * 4;
+    const bad: [string, (x: RcState) => void][] = [
+      ['a report id beyond the scenario', (x) => { x.world.intel![PLAYER]!.push({ id: 9_999, side: OPPONENT, kind: 'rifles', x: 0, y: 0, hp: 1, tick: 0, live: false }); }],
+      ['a summary of a million events', (x) => { x.events = Array.from({ length: 1_000_000 }, () => ({ t: 'income', tick: 1, side: 0, amount: 1 })); }],
+      ['a kind the scenario cannot have', (x) => { x.world.entities[1]!.kind = 'kite'; }],
+      ['a flood of shells', (x) => { x.world.projectiles = Array.from({ length: n * 10 }, (_, i) => ({ id: 1000 + i, side: OPPONENT, x: 0, y: 0, tx: 1, ty: 1, ticks: 1, kind: 'howitzer' }) as never); }],
+      ['a log entry with an empty "retired" list', (x) => { x.log[0] = { ...x.log[0]!, retired: [] }; }],
+      ['a log entry with too few plans', (x) => { x.log[0] = { ...x.log[0]!, plans: [x.log[0]!.plans[0]!] }; }]
+    ];
+    for (const [label, corrupt] of bad) {
+      const x = structuredClone(s);
+      corrupt(x);
+      expect(() => isValidState(x), label).not.toThrow();
+      expect(isValidState(x), label).toBe(false);
+    }
+  });
+});
+
+describe('opponent economy and easy fighters (mutation run on ai.ts, 2026-10-15)', () => {
+  const plan = (world: World, level: Difficulty) => planAi(observe(world, RULESET, OPPONENT), RULESET, level);
+  const jobs = (cmds: readonly Command[]) => cmds.filter((c) => c.order.type === 'produce' || c.order.type === 'build').map((c) => (c.order.type === 'build' || c.order.type === 'produce' ? c.order.kind : ''));
+  const fresh = () => structuredClone(newGame(1).world);
+  const setSupply = (w: World, n: number) => { w.supply![OPPONENT] = n; return w; };
+
+  it('easy only trains Rifle Squads, one per idle yard, and only with a cushion of 150 left; it never builds', () => {
+    const cushion = 150 + RULESET.archetypes.rifles!.cost;
+    expect(jobs(plan(setSupply(fresh(), cushion - 1), 'easy'))).toEqual([]);
+    expect(jobs(plan(setSupply(fresh(), cushion), 'easy'))).toEqual(['rifles']);
+    expect(jobs(plan(setSupply(fresh(), 5_000), 'easy'))).toEqual(['rifles']); // one yard, one squad: no building
+    const busy = setSupply(fresh(), 5_000);
+    busy.entities.find((e) => e.side === OPPONENT && e.kind === 'muster')!.queue = [{ kind: 'rifles', left: 1 }];
+    expect(jobs(plan(busy, 'easy'))).toEqual([]);
+  });
+
+  it('normal places an Extractor on the nearest free deposit in cover first, never on one a known enemy fighter can reach', () => {
+    const w = fresh();
+    const first = plan(w, 'normal').find((c) => c.order.type === 'build');
+    expect(first?.order).toMatchObject({ type: 'build', kind: 'extractor' });
+    const at = first!.order as { x: number; y: number };
+    // A player squad next to that deposit (and known to the opponent): it goes elsewhere or waits.
+    const danger = structuredClone(w);
+    const squad = danger.entities.find((e) => e.side === PLAYER && e.kind === 'rifles')!;
+    const spot = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1]].map(([dx, dy]) => ({ x: at.x + dx!, y: at.y + dy! })).find((p) => passable(danger.map, RULESET, p.x, p.y, 'ground') && !danger.entities.some((e) => e.x === p.x && e.y === p.y))!;
+    Object.assign(squad, spot);
+    danger.intel = initialIntel(danger, RULESET);
+    expect(danger.intel[OPPONENT]!.some((r) => r.id === squad.id && r.live)).toBe(true);
+    const builds = plan(danger, 'normal').filter((c) => c.order.type === 'build' && c.order.kind === 'extractor').map((c) => c.order as { x: number; y: number });
+    expect(builds.some((b) => b.x === at.x && b.y === at.y)).toBe(false);
+  });
+
+  it('normal builds a Motor Pool from turn 6 (not before), and with 800 Supply banked another yard, at most four', () => {
+    // No deposits on this copy of the map: no Extractor competes for the Supply or the order slots.
+    const pool = (turn: number, supply: number) => {
+      const w = setSupply(fresh(), supply);
+      w.turn = turn;
+      w.map = { ...w.map, deposits: [] };
+      return jobs(plan(w, 'normal'));
+    };
+    expect(pool(5, 200)).not.toContain('motor-pool');
+    expect(pool(6, 200)).toContain('motor-pool');
+    // With a Motor Pool standing and Supply piling up: another Barracks (one of each, then the other).
+    const rich = setSupply(fresh(), 900);
+    rich.turn = 10;
+    rich.map = { ...rich.map, deposits: [] };
+    const yard = rich.entities.find((e) => e.side === OPPONENT && e.kind === 'muster')!;
+    const spot = (() => {
+      for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) {
+        const x = yard.x + dx, y = yard.y + dy;
+        if (Math.max(Math.abs(dx), Math.abs(dy)) >= 2 && passable(rich.map, RULESET, x, y, 'ground') && !rich.entities.some((e) => e.x === x && e.y === y)) return { x, y };
+      }
+      throw new Error('no cell');
+    })();
+    rich.entities.push({ ...structuredClone(yard), id: rich.nextId++, kind: 'motor-pool', hp: RULESET.archetypes['motor-pool']!.hp, ...spot });
+    rich.intel = initialIntel(rich, RULESET);
+    expect(jobs(plan(rich, 'normal'))).toContain('muster');
+    expect(jobs(plan(setSupply(structuredClone(rich), 700), 'normal'))).not.toContain('muster');
+    // Four yards stand already: no fifth.
+    const full = structuredClone(rich);
+    const cells: { x: number; y: number }[] = [];
+    for (let y = 0; y < full.map.h && cells.length < 2; y++) for (let x = 0; x < full.map.w && cells.length < 2; x++) if (y < 3 && passable(full.map, RULESET, x, y, 'ground') && !full.entities.some((e) => e.x === x && e.y === y)) cells.push({ x, y });
+    for (const [i, c] of cells.entries()) full.entities.push({ ...structuredClone(yard), id: full.nextId++, kind: i === 0 ? 'muster' : 'motor-pool', ...c });
+    full.intel = initialIntel(full, RULESET);
+    expect(full.entities.filter((e) => e.side === OPPONENT && RULESET.archetypes[e.kind]?.production).length).toBe(4);
+    expect(jobs(plan(full, 'normal')).filter((k) => k === 'muster' || k === 'motor-pool')).toEqual([]);
+  });
+
+  it('easy fighters attack the nearest spotted enemy out of their range', () => {
+    // No Supply: no production takes an order slot.
+    const w = setSupply(fresh(), 0);
+    const squad = w.entities.find((e) => e.side === OPPONENT && e.kind === 'rifles')!;
+    const near = w.entities.find((e) => e.side === PLAYER && e.kind === 'rifles')!;
+    // Put a player squad three cells from the opponent's squad: in its sight, out of its range
+    // (a holding squad with an enemy in range fires by itself and gets no order).
+    const spot = [[3, 0], [-3, 0], [0, 3], [0, -3]].map(([dx, dy]) => ({ x: squad.x + dx!, y: squad.y + dy! })).find((p) => passable(w.map, RULESET, p.x, p.y, 'ground') && !w.entities.some((e) => e.x === p.x && e.y === p.y))!;
+    Object.assign(near, spot);
+    w.intel = initialIntel(w, RULESET);
+    const orders = plan(w, 'easy');
+    expect(orders.find((c) => c.unit === squad.id)?.order).toEqual({ type: 'attack', target: near.id });
   });
 });

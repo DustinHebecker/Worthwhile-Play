@@ -3,46 +3,65 @@ import fc from 'fast-check';
 import { metadata } from '../src/metadata';
 import { LEVELS, type LevelSource } from '../src/levels';
 import {
+  ANGLES,
   BLUE,
   COLOUR_LETTERS,
   DEFAULT_DIFFICULTY,
   DIFFICULTIES,
   DIRS,
   GREEN,
+  LEGACY_LEVEL_SETS,
+  LEVEL_SETS,
   LevelFormatError,
   MAX_HEIGHT,
+  MAX_LEVEL,
   MAX_MOVES,
   MAX_PER_KIND,
   MAX_UNDO,
   PIECE_KINDS,
   PRIMARIES,
   RED,
+  UNPOLARISED,
   WHITE,
+  angleDegrees,
   boardOf,
   boardWith,
+  brightness,
   canClear,
   canPlace,
+  canRotate,
   canUndo,
   chooseLevel,
   clearBoard,
   colourFromLetter,
   colourLetter,
+  componentIntensity,
   createInitialState,
   evaluate,
   evaluateState,
   exits,
   getLevel,
+  intensityOf,
   isColour,
   isLaserState,
+  isSelectable,
   isSolved,
+  laserLight,
   levelCount,
   levelOf,
+  linear,
+  migrateLaserState,
   neighbour,
   opposite,
+  orientationCount,
   parseLevel,
   parseToken,
   pieceAt,
+  pieceElement,
   placePiece,
+  polarisationAngle,
+  polarisations,
+  polariserTransmission,
   reflect,
   remaining,
   removePiece,
@@ -52,14 +71,21 @@ import {
   traceBeams,
   undo,
   type Board,
-  type Difficulty,
   type Dir,
   type Element,
   type LaserState,
+  type LevelSet,
+  type Light,
   type Orientation,
-  type PieceKind
+  type Piece,
+  type PieceKind,
+  type Polarisation
 } from '../src/rules';
-import { letterOf, oracleSolved, oracleTrace, parseSolution, readGrid, solveByDecision, solveByLight, solveExhaustively, type DecisionSearch } from './oracle';
+import { interpretSave } from '@wp/persistence';
+import game from '../src/index';
+import legacyTraces from './fixtures/legacy-traces.json';
+import { letterOf, oracleLight, oracleSolved, oracleTrace, parseSolution, readGrid, solveByDecision, solveByLight, solveExhaustively, type DecisionSearch } from './oracle';
+import { ALL, HARD_MAX_NODES, applySolution, pieceCount, stateOf, usesOptics } from './helpers';
 
 /* ---------- Helpers ---------- */
 
@@ -72,24 +98,6 @@ const at = (board: Board, row: number, col: number) => row * board.width + col;
 
 /** Number of expert levels. */
 const EXPERT_LEVELS = LEVELS.expert.length;
-
-const ALL = DIFFICULTIES.flatMap((difficulty) => LEVELS[difficulty].map((source: LevelSource, index: number) => ({ difficulty, index, source })));
-
-const stateOf = (difficulty: Difficulty, level: number): LaserState => ({ seed: level, difficulty, level, pieces: [], moves: 0, undo: [] });
-
-/** Applies an oracle solution through the game's own actions. */
-function applySolution(state: LaserState, solution: string): LaserState {
-  let s = state;
-  for (const { row, col, token } of parseSolution(solution)) {
-    const cell = row * levelOf(s).width + col;
-    const kind: PieceKind = token === '#' ? 'blocker' : token.startsWith('S') ? 'splitter' : 'mirror';
-    const before = s;
-    s = placePiece(s, cell, kind);
-    expect(s).not.toBe(before);
-    if (token.endsWith('\\')) s = rotatePiece(s, cell);
-  }
-  return s;
-}
 
 /** Rotates a board 90° clockwise (directions turn with it, mirrors flip between / and \). */
 function rotateBoard(board: Board): Board {
@@ -108,9 +116,12 @@ function rotateBoard(board: Board): Board {
 }
 
 const TOKENS = ['.', '#', 'X', '/', '\\', 'S/', 'S\\', '^R', '>G', 'vB', '<W', '>Y', '^M', 'vC', 'FR', 'FG', 'FB', 'FY', 'FM', 'FC', 'TR', 'TG', 'TB', 'TY', 'TM', 'TC', 'TW', 'D^', 'D>', 'Dv', 'D<', '@1', '@2'];
+/** Optical elements and targets that ask for an intensity or a polarisation. */
+const OPTICS_TOKENS = ['P0', 'P45', 'P90', 'P135', 'N', '-R', '-G', '-B', '-Y', 'TR2', 'TW4', 'TG1', 'TR:45', 'TC2:90', 'TW8:0', 'TB:135'];
 const tokenArb = fc.oneof(
   { weight: 6, arbitrary: fc.constant('.') },
   { weight: 1, arbitrary: fc.constantFrom('D^', 'D>', 'Dv', 'D<', '@1', '@1', '@2') },
+  { weight: 2, arbitrary: fc.constantFrom(...OPTICS_TOKENS) },
   { weight: 3, arbitrary: fc.constantFrom('/', '\\', 'S/', 'S\\') },
   { weight: 2, arbitrary: fc.constantFrom(...TOKENS) }
 );
@@ -175,17 +186,219 @@ describe('directions and mirrors', () => {
   });
 
   it('lists where light leaves each element', () => {
-    expect(exits({ kind: 'empty' }, 1, 5)).toEqual([{ dir: 1, colour: 5 }]);
-    expect(exits({ kind: 'mirror', orient: 0 }, 1, 2)).toEqual([{ dir: 0, colour: 2 }]);
-    expect(exits({ kind: 'mirror', orient: 1 }, 1, 2)).toEqual([{ dir: 2, colour: 2 }]);
-    expect(exits({ kind: 'splitter', orient: 1 }, 0, 7)).toEqual([{ dir: 0, colour: 7 }, { dir: 3, colour: 7 }]);
-    expect(exits({ kind: 'filter', colour: RED | BLUE }, 2, WHITE)).toEqual([{ dir: 2, colour: RED | BLUE }]);
-    expect(exits({ kind: 'filter', colour: RED }, 2, GREEN)).toEqual([]);
-    expect(exits({ kind: 'gate', dir: 1 }, 1, 6)).toEqual([{ dir: 1, colour: 6 }]);
-    for (const dir of [0, 2, 3] as Dir[]) expect(exits({ kind: 'gate', dir: 1 }, dir, 6)).toEqual([]);
+    const light = (colour: number): Light => laserLight(colour);
+    const half = (colour: number): Light => ({ ...laserLight(colour), level: 1 });
+    expect(exits({ kind: 'empty' }, 1, light(5))).toEqual([{ dir: 1, light: light(5) }]);
+    expect(exits({ kind: 'mirror', orient: 0 }, 1, light(2))).toEqual([{ dir: 0, light: light(2) }]);
+    expect(exits({ kind: 'mirror', orient: 1 }, 1, light(2))).toEqual([{ dir: 2, light: light(2) }]);
+    expect(exits({ kind: 'splitter', orient: 1 }, 0, light(7))).toEqual([{ dir: 0, light: half(7) }, { dir: 3, light: half(7) }]);
+    expect(exits({ kind: 'filter', colour: RED | BLUE }, 2, light(WHITE))).toEqual([{ dir: 2, light: light(RED | BLUE) }]);
+    expect(exits({ kind: 'filter', colour: RED }, 2, light(GREEN))).toEqual([]);
+    expect(exits({ kind: 'gate', dir: 1 }, 1, light(6))).toEqual([{ dir: 1, light: light(6) }]);
+    for (const dir of [0, 2, 3] as Dir[]) expect(exits({ kind: 'gate', dir: 1 }, dir, light(6))).toEqual([]);
     for (const element of [{ kind: 'blocker' }, { kind: 'sensor' }, { kind: 'target', colour: 1 }, { kind: 'emitter', dir: 0, colour: 1 }, { kind: 'portal', pair: 1 }] as Element[]) {
-      expect(exits(element, 1, WHITE)).toEqual([]);
+      expect(exits(element, 1, light(WHITE))).toEqual([]);
     }
+  });
+});
+
+/* ---------- Optics: polarisation and intensity ---------- */
+
+describe('optics model', () => {
+  const lightOf = (colour: number, pol: Polarisation = UNPOLARISED, level = 0): Light => ({ colour, pol, level });
+
+  it('follows Malus’s law exactly for 45° steps: unpolarised ½, cos²(θ − φ) for polarised light', () => {
+    for (const angle of ANGLES) {
+      expect(polariserTransmission(UNPOLARISED, angle)).toBe(0.5);
+      for (const from of ANGLES) {
+        const expected = Math.cos(((angleDegrees(angle) - angleDegrees(from)) * Math.PI) / 180) ** 2;
+        expect(polariserTransmission(linear(from), angle)).toBeCloseTo(expected, 12);
+      }
+    }
+    expect(polariserTransmission(linear(0), 0)).toBe(1);
+    expect(polariserTransmission(linear(0), 1)).toBe(0.5);
+    expect(polariserTransmission(linear(0), 2)).toBe(0);
+    expect(polariserTransmission(linear(3), 1)).toBe(0);
+    expect(polarisationAngle(UNPOLARISED)).toBeUndefined();
+    expect(ANGLES.map((angle) => polarisationAngle(linear(angle)))).toEqual([0, 1, 2, 3]);
+  });
+
+  it('turns unpolarised light into linear light at the polariser’s angle with half the intensity', () => {
+    expect(exits({ kind: 'polariser', angle: 1 }, 1, lightOf(WHITE))).toEqual([{ dir: 1, light: lightOf(WHITE, linear(1), 1) }]);
+    expect(exits({ kind: 'polariser', angle: 1 }, 2, lightOf(RED, linear(1), 2))).toEqual([{ dir: 2, light: lightOf(RED, linear(1), 2) }]);
+    expect(exits({ kind: 'polariser', angle: 2 }, 0, lightOf(RED, linear(1), 2))).toEqual([{ dir: 0, light: lightOf(RED, linear(2), 3) }]);
+    expect(exits({ kind: 'polariser', angle: 3 }, 0, lightOf(RED, linear(1)))).toEqual([]);
+  });
+
+  it('halves intensity at a neutral-density filter and at each splitter output, keeping colour and polarisation', () => {
+    expect(exits({ kind: 'neutral' }, 3, lightOf(GREEN | BLUE, linear(2), 1))).toEqual([{ dir: 3, light: lightOf(GREEN | BLUE, linear(2), 2) }]);
+    expect(exits({ kind: 'splitter', orient: 0 }, 1, lightOf(RED, linear(0)))).toEqual([
+      { dir: 1, light: lightOf(RED, linear(0), 1) },
+      { dir: 0, light: lightOf(RED, linear(0), 1) }
+    ]);
+    // Halving stops at the faintest level: such light still counts as light.
+    expect(exits({ kind: 'neutral' }, 1, lightOf(RED, UNPOLARISED, MAX_LEVEL))).toEqual([{ dir: 1, light: lightOf(RED, UNPOLARISED, MAX_LEVEL) }]);
+    expect(intensityOf(MAX_LEVEL)).toBe(1 / 64);
+  });
+
+  it('a chromatic blocker absorbs only its colour; a colour filter passes only its colour', () => {
+    expect(exits({ kind: 'absorber', colour: RED }, 1, lightOf(WHITE, linear(3), 1))).toEqual([{ dir: 1, light: lightOf(GREEN | BLUE, linear(3), 1) }]);
+    expect(exits({ kind: 'absorber', colour: RED }, 1, lightOf(RED))).toEqual([]);
+    expect(exits({ kind: 'filter', colour: RED }, 1, lightOf(WHITE, linear(0), 2))).toEqual([{ dir: 1, light: lightOf(RED, linear(0), 2) }]);
+    // A chromatic blocker for red is the same as a cyan filter.
+    for (let colour = 1; colour <= WHITE; colour++) {
+      expect(exits({ kind: 'absorber', colour: RED }, 0, lightOf(colour))).toEqual(exits({ kind: 'filter', colour: GREEN | BLUE }, 0, lightOf(colour)));
+    }
+  });
+
+  it('crossed polarisers block; a third one at 45° between them lets ⅛ through (Malus twice)', () => {
+    const crossed = boardFrom(['>W P0 P90 TW']);
+    expect(traceBeams(crossed).lit).toEqual([0, WHITE, WHITE, 0]);
+    const three = boardFrom(['>R P0 P45 P90 TR8:90']);
+    const trace = traceBeams(three);
+    expect(trace.lit[4]).toBe(RED);
+    expect(trace.arrivals[4]).toEqual([{ dir: 1, colour: RED, pol: linear(2), level: 3 }]);
+    expect(componentIntensity(trace.arrivals[4]!, RED)).toBe(1 / 8);
+    expect(evaluate(three).solved).toBe(true);
+    expect(evaluate(boardFrom(['>R P0 P45 P90 TR4:90'])).solved).toBe(false);
+    expect(evaluate(boardFrom(['>R P0 P45 P90 TR8:0'])).solved).toBe(false);
+  });
+
+  it('a polariser and an ND filter commute: the order does not change the light', () => {
+    const a = traceBeams(boardFrom(['>W N P45 TW'])).arrivals[3];
+    const b = traceBeams(boardFrom(['>W P45 N TW'])).arrivals[3];
+    expect(a).toEqual(b);
+    expect(a).toEqual([{ dir: 1, colour: WHITE, pol: linear(1), level: 2 }]);
+  });
+
+  it('adds up the intensity of all beams reaching a target, per colour component', () => {
+    // A splitter sends ½ straight on (and ½ off the board).
+    expect(componentIntensity(traceBeams(boardFrom(['>R S\\ TR'])).arrivals[2]!, RED)).toBe(0.5);
+    // Two lasers of different colours on one target: each component counts on its own.
+    const mixed = boardFrom(['>R TM <B']);
+    const both = traceBeams(mixed).arrivals[1]!;
+    expect(componentIntensity(both, RED)).toBe(1);
+    expect(componentIntensity(both, BLUE)).toBe(1);
+    expect(componentIntensity(both, GREEN)).toBe(0);
+    expect(brightness(both)).toBe(1);
+    expect(evaluate(boardFrom(['>R TM1 <B'])).solved).toBe(true);
+    expect(evaluate(boardFrom(['>R TM1 N <B'])).solved).toBe(false);
+    // Two halves from both sides add up to a whole.
+    expect(evaluate(boardFrom(['>R N TR1 N <R'])).solved).toBe(true);
+    expect(evaluate(boardFrom(['>R N TR2 N <R'])).solved).toBe(false);
+    expect(evaluate(boardFrom(['>R N TR . <R'])).targets[0]).toMatchObject({ intensity: 1.5, ok: true });
+  });
+
+  it('checks a target’s intensity and polarisation only when it asks for them', () => {
+    expect(evaluate(boardFrom(['>R N TR'])).solved).toBe(true);
+    expect(evaluate(boardFrom(['>R N TR2'])).solved).toBe(true);
+    expect(evaluate(boardFrom(['>R N TR4'])).solved).toBe(false);
+    expect(evaluate(boardFrom(['>R P45 TR'])).solved).toBe(true);
+    expect(evaluate(boardFrom(['>R P45 TR2:45'])).solved).toBe(true);
+    expect(evaluate(boardFrom(['>R P45 TR:90'])).solved).toBe(false);
+    expect(evaluate(boardFrom(['>R . TR:0'])).solved).toBe(false); // unpolarised light is not polarised at 0°
+    const status = evaluate(boardFrom(['>R P45 TR4:45'])).targets[0]!;
+    expect(status).toMatchObject({ need: RED, needLevel: 2, needPol: 1, got: RED, intensity: 0.5, pols: [linear(1)], ok: false });
+    expect(polarisations([{ dir: 1, colour: RED, pol: 3, level: 0 }, { dir: 0, colour: RED, pol: 0, level: 1 }, { dir: 2, colour: RED, pol: 3, level: 2 }])).toEqual([0, 3]);
+  });
+
+  it('agrees with the oracle’s Malus computation on random chains of polarisers and filters (property)', () => {
+    const chain = fc.array(fc.constantFrom('.', 'P0', 'P45', 'P90', 'P135', 'N', '-R', '-G', 'FY', 'FC', 'S/'), { minLength: 1, maxLength: 5 });
+    fc.assert(
+      fc.property(fc.constantFrom('R', 'G', 'B', 'W', 'Y'), chain, (colour, tokens) => {
+        const rows = [`>${colour} ${tokens.join(' ')} TW`];
+        const grid = readGrid(rows);
+        const end = tokens.length + 1;
+        const trace = traceBeams(boardFrom(rows));
+        const cell = oracleLight(grid)[0]![end]!;
+        expect(colourLetter(trace.lit[end] ?? 0)).toBe(letterOf(cell.primaries));
+        for (const primary of PRIMARIES) {
+          const name = (['red', 'green', 'blue'] as const)[PRIMARIES.indexOf(primary)]!;
+          const oracleSum = [...(cell.photons.get(name) ?? [])].reduce((sum, state) => sum + Number(state.split('|')[2]), 0);
+          expect(componentIntensity(trace.arrivals[end] ?? [], primary)).toBe(oracleSum);
+        }
+      }),
+      { numRuns: 300 }
+    );
+  });
+});
+
+/* ---------- Old levels are unchanged ---------- */
+
+describe('the levels from before the optics trace exactly as before', () => {
+  /** Light of every level before the optics, traced on the empty board and on every solution (pinned before the change). */
+  const fixture = legacyTraces as Record<string, { rows: string[]; boards: { pieces: string; lit: string; sides: string }[] }>;
+
+  it('pins every original, medium and hard level', () => {
+    expect(Object.keys(fixture)).toHaveLength(ALL.filter((l) => l.set !== 'expert').length);
+  });
+
+  for (const [key, entry] of Object.entries(fixture)) {
+    it(key, () => {
+      const found = ALL.find((l) => l.source.rows.join('|') === entry.rows.join('|'));
+      expect(found, 'level still exists with the same rows').toBeDefined();
+      const level = getLevel(found!.set, found!.index);
+      // Old set ids: easy → intro, medium → easy, hard → medium, expert → hard.
+      expect(found!.set).toBe(LEGACY_LEVEL_SETS[key.split('/')[0]!]);
+      expect(found!.index).toBe(Number(key.split('/')[1]));
+      for (const { pieces, lit, sides } of entry.boards) {
+        const cells = [...level.cells];
+        if (pieces) for (const p of parseSolution(pieces)) cells[p.row * level.width + p.col] = parseToken(p.token);
+        const trace = traceBeams({ width: level.width, height: level.height, cells });
+        expect(trace.lit.join('')).toBe(lit);
+        expect(trace.sides.join('')).toBe(sides);
+      }
+    });
+  }
+});
+
+/* ---------- Migration of old saves ---------- */
+
+describe('migrating state version 1', () => {
+  const v1 = (difficulty: string, level: number, pieces: Piece[] = []) => ({ seed: 7, difficulty, level, pieces, moves: pieces.length, undo: [] });
+
+  it('moves every old set to its new name, keeping level, pieces and undo', () => {
+    const oldEasy = v1('easy', 7, [{ cell: 0, kind: 'mirror', orient: 1 }]);
+    expect(migrateLaserState(oldEasy, 1)).toEqual({ ...oldEasy, difficulty: 'intro' });
+    expect(migrateLaserState(v1('medium', 5, [{ cell: 1, kind: 'blocker', orient: 0 }]), 1)).toMatchObject({ difficulty: 'easy', level: 5 });
+    expect(migrateLaserState(v1('hard', 11), 1)).toMatchObject({ difficulty: 'medium', level: 11 });
+    expect(migrateLaserState(v1('expert', 7), 1)).toMatchObject({ difficulty: 'hard', level: 7 });
+    for (const [old, set] of Object.entries(LEGACY_LEVEL_SETS)) {
+      const migrated = migrateLaserState(v1(old, 0), 1);
+      expect(migrated?.difficulty).toBe(set);
+      expect(isLaserState(migrated)).toBe(true);
+      // The board the player sees is the same one as before.
+      expect(levelOf(migrated!).cells).toEqual(parseLevel(LEVELS[set][0]!).cells);
+    }
+  });
+
+  it('refuses what it cannot migrate', () => {
+    expect(migrateLaserState(v1('easy', 0), 2)).toBeUndefined();
+    expect(migrateLaserState(v1('intro', 0), 1)).toBeUndefined();
+    expect(migrateLaserState(v1('extreme', 0), 1)).toBeUndefined();
+    expect(migrateLaserState(v1('toString', 0), 1)).toBeUndefined();
+    expect(migrateLaserState(v1('easy', 8), 1)).toBeUndefined();
+    expect(migrateLaserState(v1('expert', 8), 1)).toBeUndefined();
+    expect(migrateLaserState({ ...v1('easy', 0), difficulty: 3 }, 1)).toBeUndefined();
+    expect(migrateLaserState(null, 1)).toBeUndefined();
+    expect(migrateLaserState('state', 1)).toBeUndefined();
+    const throwing = { get difficulty(): string { throw new Error('boom'); } };
+    expect(migrateLaserState(throwing, 1)).toBeUndefined();
+  });
+
+  it('restores an old save of an introductory level through the shared save loader', () => {
+    const save = { schemaVersion: 1, gameId: 'laser-circuit', stateVersion: 1, updatedAt: '2026-01-01T00:00:00.000Z', seed: 7, difficulty: 'easy', state: v1('easy', 7, [{ cell: 0, kind: 'mirror', orient: 0 }]) };
+    const loaded = interpretSave(save, game);
+    expect(loaded.status).toBe('ok');
+    if (loaded.status !== 'ok') return;
+    expect(loaded.migrated).toBe(true);
+    expect(loaded.save.state).toMatchObject({ difficulty: 'intro', level: 7, pieces: [{ cell: 0, kind: 'mirror', orient: 0 }] });
+    // An old "expert" save becomes a hard one.
+    const expert = interpretSave({ ...save, difficulty: 'expert', state: v1('expert', 3) }, game);
+    expect(expert.status === 'ok' && expert.save.state.difficulty).toBe('hard');
+    // A current save is not migrated.
+    const current = interpretSave({ ...save, stateVersion: 2, state: createInitialState(3, 'expert') }, game);
+    expect(current.status === 'ok' && current.migrated).toBe(false);
   });
 });
 
@@ -468,8 +681,8 @@ describe('evaluate', () => {
     const board = boardFrom(['>R TR', '>B TM']);
     const result = evaluate(board);
     expect(result.targets).toEqual([
-      { cell: 1, need: RED, got: RED },
-      { cell: 3, need: RED | BLUE, got: BLUE }
+      { cell: 1, need: RED, got: RED, intensity: 1, pols: [UNPOLARISED], ok: true },
+      { cell: 3, need: RED | BLUE, got: BLUE, intensity: 1, pols: [UNPOLARISED], ok: false }
     ]);
     expect(result.correct).toBe(1);
     expect(result.solved).toBe(false);
@@ -519,6 +732,23 @@ describe('parseToken and parseLevel', () => {
     expect(parseToken('@3')).toEqual({ kind: 'portal', pair: 3 });
   });
 
+  it('reads the optics tokens', () => {
+    expect(parseToken('N')).toEqual({ kind: 'neutral' });
+    expect(ANGLES.map((angle) => parseToken(`P${angle * 45}`))).toEqual(ANGLES.map((angle) => ({ kind: 'polariser', angle })));
+    expect(parseToken('-R')).toEqual({ kind: 'absorber', colour: RED });
+    expect(parseToken('-C')).toEqual({ kind: 'absorber', colour: GREEN | BLUE });
+    expect(parseToken('TR2')).toEqual({ kind: 'target', colour: RED, level: 1 });
+    expect(parseToken('TW1')).toEqual({ kind: 'target', colour: WHITE, level: 0 });
+    expect(parseToken('TG64')).toEqual({ kind: 'target', colour: GREEN, level: 6 });
+    expect(parseToken('TM:135')).toEqual({ kind: 'target', colour: RED | BLUE, pol: 3 });
+    expect(parseToken('TC4:0')).toEqual({ kind: 'target', colour: GREEN | BLUE, level: 2, pol: 0 });
+    expect(() => parseToken('TR3')).toThrow(/intensity/);
+    expect(() => parseToken('TR128')).toThrow(/intensity/);
+    expect(() => parseToken('TR:30')).toThrow(/polarisation/);
+    expect(() => parseToken('-W')).toThrow(/white chromatic blocker/);
+    for (const bad of ['P', 'P30', 'P180', 'NN', 'N1', '-', '-Q', 'TR:', 'TR2:', 'TR:45:90', 'T:45']) expect(() => parseToken(bad), bad).toThrow(LevelFormatError);
+  });
+
   it('rejects unknown tokens and a white filter', () => {
     for (const bad of ['', '?', 'S', 'S|', 'T', 'TQ', 'TRR', 'Q1', 'xR', '>', '>Z', 'F', 'R', 'D', 'DR', 'D^^', 'D>R', '@', '@0', '@a', '@11', '@4', '@9']) expect(() => parseToken(bad), bad).toThrow(LevelFormatError);
     expect(() => parseToken('@4')).toThrow(/portal pair 4 is out of range/);
@@ -535,7 +765,9 @@ describe('parseToken and parseLevel', () => {
   it('parses a valid level with its inventory', () => {
     const level = parseLevel({ rows: ['>R . .', '. . TR'], inventory: { mirror: 1, splitter: 2 }, solutions: 1 });
     expect([level.width, level.height]).toEqual([3, 2]);
-    expect(level.inventory).toEqual({ mirror: 1, splitter: 2, blocker: 0 });
+    expect(level.inventory).toEqual({ mirror: 1, splitter: 2, blocker: 0, polariser: 0, neutral: 0, filterR: 0, filterG: 0, filterB: 0, minusR: 0, minusG: 0, minusB: 0 });
+    expect(parseLevel({ rows: ['>R . .', '. . TR2'], inventory: { neutral: 1, polariser: 2, minusB: 1 }, solutions: 1 }).inventory).toMatchObject({ neutral: 1, polariser: 2, minusB: 1, mirror: 0 });
+    expect(() => parseLevel({ rows: ['>R . .', '. . TR'], inventory: { laser: 1 } as LevelSource['inventory'], solutions: 1 })).toThrow(/unknown piece "laser"/);
     expect(level.cells[5]).toEqual({ kind: 'target', colour: RED });
   });
 
@@ -564,13 +796,15 @@ describe('parseToken and parseLevel', () => {
   });
 });
 
-/* ---------- The level set ---------- */
+/* ---------- The level sets ---------- */
 
-describe('level set', () => {
-  /** The original 24 levels (and their ids) that existed before the gates, portals and expert levels. */
-  const ORIGINAL = { easy: 8, medium: 8, hard: 8, expert: 0 } as const;
-  const isOriginal = (difficulty: Difficulty, index: number) => index < ORIGINAL[difficulty];
-  const pieceCount = (source: LevelSource) => PIECE_KINDS.reduce((sum, kind) => sum + (source.inventory[kind] ?? 0), 0);
+describe('level sets', () => {
+  /**
+   * The original 24 levels (and their ids) from before the optical diodes, portals and optics:
+   * "easy", "medium" and the first eight "hard" levels of state version 1.
+   */
+  const ORIGINAL: Readonly<Record<LevelSet, number>> = { intro: 8, easy: 8, medium: 8, hard: 0, expert: 0 };
+  const isOriginal = (set: LevelSet, index: number) => index < ORIGINAL[set];
   const searches = new Map<LevelSource, DecisionSearch>();
   /** The exact decision search for a level (computed once per test run). */
   const decide = (source: LevelSource) => {
@@ -581,30 +815,52 @@ describe('level set', () => {
     }
     return result;
   };
+  /** Levels whose solution is checked here; the expert levels have their own test file (they take longest). */
+  const CHECKED = ALL.filter((l) => l.set !== 'expert');
 
-  it('keeps the original levels first, adds hard levels and an expert set, and matches the metadata', () => {
+  it('offers four difficulties, keeps the introductory set for old saves, and matches the metadata', () => {
     expect(metadata.difficulties).toEqual([...DIFFICULTIES]);
     expect(DIFFICULTIES).toEqual(['easy', 'medium', 'hard', 'expert']);
+    expect(LEVEL_SETS).toEqual(['intro', ...DIFFICULTIES]);
+    expect(LEVEL_SETS.every((set) => isSelectable(set) === (set !== 'intro'))).toBe(true);
+    expect(metadata.stateVersion).toBe(2);
+    expect(levelCount('intro')).toBe(8);
     expect(levelCount('easy')).toBe(8);
-    expect(levelCount('medium')).toBe(8);
-    expect(levelCount('hard')).toBe(12);
+    expect(levelCount('medium')).toBe(12);
+    expect(levelCount('hard')).toBe(8);
     expect(levelCount('expert')).toBe(EXPERT_LEVELS);
+    expect(EXPERT_LEVELS).toBeGreaterThanOrEqual(8);
+  });
+
+  it('labels every difficulty with the honest board size and piece range', () => {
+    const range = (set: LevelSet) => {
+      const counts = LEVELS[set].map(pieceCount);
+      const [min, max] = [Math.min(...counts), Math.max(...counts)];
+      return min === max ? `${min}` : `${min}–${max}`;
+    };
+    for (const set of DIFFICULTIES) {
+      const level = getLevel(set, 0);
+      const label = metadata.messages.en![`difficulty.${set}`]!;
+      expect(label).toContain(`${level.width}×${level.height}`);
+      expect(label).toContain(`${range(set)} pieces`);
+    }
   });
 
   it('parses every level, fits a phone (≤ 7 wide) and grows with difficulty', () => {
-    const sizes: Record<Difficulty, [number, number]> = { easy: [5, 5], medium: [6, 6], hard: [7, 7], expert: [7, 9] };
-    const pieces: Record<Difficulty, [number, number]> = { easy: [1, 2], medium: [2, 3], hard: [3, 6], expert: [7, 8] };
-    for (const { difficulty, index, source } of ALL) {
-      const level = getLevel(difficulty, index);
-      expect([level.width, level.height]).toEqual(sizes[difficulty]);
+    const sizes: Record<LevelSet, [number, number]> = { intro: [5, 5], easy: [6, 6], medium: [7, 7], hard: [7, 9], expert: [7, 9] };
+    const pieces: Record<LevelSet, [number, number]> = { intro: [1, 2], easy: [2, 3], medium: [3, 6], hard: [7, 8], expert: [6, 9] };
+    for (const { set, index, source } of ALL) {
+      const level = getLevel(set, index);
+      expect([level.width, level.height]).toEqual(sizes[set]);
       const count = PIECE_KINDS.reduce((sum, kind) => sum + level.inventory[kind], 0);
       expect(count).toBe(pieceCount(source));
-      expect(count).toBeGreaterThanOrEqual(pieces[difficulty][0]);
-      expect(count).toBeLessThanOrEqual(pieces[difficulty][1]);
-      // Gates and portals appear only in the new levels.
+      expect(count).toBeGreaterThanOrEqual(pieces[set][0]);
+      expect(count).toBeLessThanOrEqual(pieces[set][1]);
+      // Diodes and portals appear only in the newer levels, the optics only in the expert set.
       const special = level.cells.some((cell) => cell.kind === 'gate' || cell.kind === 'portal');
-      expect(special).toBe(!isOriginal(difficulty, index));
-      expect(getLevel(difficulty, index)).toBe(level);
+      if (set !== 'expert') expect(special).toBe(!isOriginal(set, index));
+      expect(usesOptics(level)).toBe(set === 'expert');
+      expect(getLevel(set, index)).toBe(level);
     }
   });
 
@@ -614,56 +870,73 @@ describe('level set', () => {
   });
 
   it('throws for a level index out of range', () => {
-    expect(() => getLevel('easy', 8)).toThrow(RangeError);
-    expect(() => getLevel('easy', -1)).toThrow(/No level -1 in easy/);
+    expect(() => getLevel('intro', 8)).toThrow(RangeError);
+    expect(() => getLevel('intro', -1)).toThrow(/No level -1 in intro/);
     expect(() => getLevel('expert', EXPERT_LEVELS)).toThrow(/No level/);
   });
 
   describe('every level is solvable and has the recorded number of solutions (independent oracle)', { timeout: 120_000 }, () => {
-    for (const { difficulty, index, source } of ALL) {
-      it(`${difficulty} ${index + 1}`, () => {
-        // The original levels are counted by the light-guided search; the big new ones by the exact decision search.
-        const search = isOriginal(difficulty, index) ? undefined : decide(source);
+    for (const { set, index, source } of CHECKED) {
+      it(`${set} ${index + 1}`, () => {
+        // The original levels are counted by the light-guided search; the big newer ones by the exact decision search.
+        const search = isOriginal(set, index) ? undefined : decide(source);
         if (search) expect(search.complete).toBe(true);
         const solutions = search ? search.solutions : solveByLight(source.rows, source.inventory);
         expect(solutions.length).toBe(source.solutions);
-        if (difficulty === 'hard' || difficulty === 'expert') expect(solutions.length).toBe(1);
+        if (set === 'medium' || set === 'hard') expect(solutions.length).toBe(1);
         else expect(solutions.length).toBeLessThanOrEqual(2);
         for (const solution of solutions) {
           // The solution needs the whole inventory: every piece matters.
           expect(parseSolution(solution)).toHaveLength(pieceCount(source));
           // Playing it with the game's own actions solves the level.
-          const solved = applySolution(stateOf(difficulty, index), solution);
+          const solved = applySolution(stateOf(set, index), solution);
           expect(isSolved(solved)).toBe(true);
           expect(PIECE_KINDS.every((kind) => remaining(solved, kind) === 0)).toBe(true);
         }
-        expect(isSolved(stateOf(difficulty, index))).toBe(false);
+        expect(isSolved(stateOf(set, index))).toBe(false);
       });
     }
   });
 
-  it('light-guided search finds exactly what exhaustive enumeration finds (easy and medium)', { timeout: 120_000 }, () => {
-    for (const { source } of ALL.filter((l) => l.difficulty === 'easy' || l.difficulty === 'medium')) {
+  it('light-guided search finds exactly what exhaustive enumeration finds (intro and easy)', { timeout: 120_000 }, () => {
+    for (const { source } of ALL.filter((l) => l.set === 'intro' || l.set === 'easy')) {
       expect(solveExhaustively(source.rows, source.inventory)).toEqual(solveByLight(source.rows, source.inventory));
     }
   });
 
   it('the exact decision search finds exactly what the light-guided search finds (original levels)', { timeout: 120_000 }, () => {
-    for (const { difficulty, index, source } of ALL) {
-      if (!isOriginal(difficulty, index)) continue;
+    for (const { set, index, source } of ALL) {
+      if (!isOriginal(set, index)) continue;
       const search = decide(source);
       expect(search.complete).toBe(true);
       expect(search.solutions).toEqual(solveByLight(source.rows, source.inventory));
     }
   });
 
-  it('the decision search agrees with the light-guided search on small random puzzles with gates and portals (property)', () => {
+  it('the decision search agrees with the light-guided search on small random puzzles with diodes, portals and optics (property)', { timeout: 60_000 }, () => {
     const puzzleArb = fc
       .tuple(
-        fc.array(fc.array(fc.oneof({ weight: 8, arbitrary: fc.constant('.') }, { weight: 2, arbitrary: fc.constantFrom('#', 'X', 'D^', 'D>', 'Dv', 'D<', '@1', 'TR', 'TM', 'TB', 'FM') }), { minLength: 4, maxLength: 4 }), { minLength: 4, maxLength: 4 }),
+        fc.array(
+          fc.array(
+            fc.oneof(
+              { weight: 8, arbitrary: fc.constant('.') },
+              { weight: 3, arbitrary: fc.constantFrom('#', 'X', 'D^', 'D>', 'Dv', 'D<', '@1', 'TR', 'TM', 'TB', 'FM', 'P0', 'P45', 'N', '-R', 'TR2', 'TW4', 'TR:0', 'TB2:45', 'TM:90') }
+            ),
+            { minLength: 4, maxLength: 4 }
+          ),
+          { minLength: 4, maxLength: 4 }
+        ),
         fc.constantFrom('>R', '>M', 'vB', '<W'),
         fc.integer({ min: 0, max: 3 }),
-        fc.record({ mirror: fc.integer({ min: 0, max: 2 }), splitter: fc.integer({ min: 0, max: 1 }), blocker: fc.integer({ min: 0, max: 1 }) })
+        fc.record({
+          mirror: fc.integer({ min: 0, max: 2 }),
+          splitter: fc.integer({ min: 0, max: 1 }),
+          blocker: fc.integer({ min: 0, max: 1 }),
+          polariser: fc.integer({ min: 0, max: 1 }),
+          neutral: fc.integer({ min: 0, max: 1 }),
+          filterR: fc.integer({ min: 0, max: 1 }),
+          minusB: fc.integer({ min: 0, max: 1 })
+        })
       )
       .map(([grid, laser, row, inventory]) => {
         const copy: string[][] = grid.map((r) => [...r]);
@@ -676,22 +949,24 @@ describe('level set', () => {
         expect(search.complete).toBe(true);
         expect(search.solutions).toEqual(solveByLight(rows, inventory));
       }),
-      { numRuns: 150 }
+      { numRuns: 120 }
     );
   });
 
-  it('the new levels need more pieces and a bigger exact search than the original hard levels', { timeout: 120_000 }, () => {
-    const hard = ALL.filter((l) => l.difficulty === 'hard');
-    const original = hard.filter((l) => isOriginal('hard', l.index));
-    const added = hard.filter((l) => !isOriginal('hard', l.index));
-    const expert = ALL.filter((l) => l.difficulty === 'expert');
+  it('the newer levels need more pieces and a bigger exact search than the original medium levels', { timeout: 120_000 }, () => {
+    const medium = ALL.filter((l) => l.set === 'medium');
+    const original = medium.filter((l) => isOriginal('medium', l.index));
+    const added = medium.filter((l) => !isOriginal('medium', l.index));
+    const hard = ALL.filter((l) => l.set === 'hard');
     const maxOriginalNodes = Math.max(...original.map((l) => decide(l.source).nodes));
     const maxOriginalPieces = Math.max(...original.map((l) => pieceCount(l.source)));
-    for (const { source } of [...added, ...expert]) {
+    for (const { source } of [...added, ...hard]) {
       expect(decide(source).nodes).toBeGreaterThan(maxOriginalNodes);
       expect(pieceCount(source)).toBeGreaterThan(maxOriginalPieces);
     }
-    for (const { source } of expert) expect(pieceCount(source)).toBeGreaterThan(Math.max(...added.map((l) => pieceCount(l.source))));
+    for (const { source } of hard) expect(pieceCount(source)).toBeGreaterThan(Math.max(...added.map((l) => pieceCount(l.source))));
+    // The expert test file compares its search trees with this bound.
+    expect(Math.max(...hard.map((l) => decide(l.source).nodes))).toBe(HARD_MAX_NODES);
   });
 });
 
@@ -700,20 +975,25 @@ describe('level set', () => {
 describe('game state', () => {
   it('chooses the level from the seed and difficulty', () => {
     expect(createInitialState(0)).toEqual({ seed: 0, difficulty: DEFAULT_DIFFICULTY, level: 0, pieces: [], moves: 0, undo: [] });
-    expect(createInitialState(13, 'hard').level).toBe(1);
-    expect(createInitialState(13, 'medium').level).toBe(5);
-    expect(createInitialState(11, 'hard').level).toBe(11);
-    expect(createInitialState(EXPERT_LEVELS + 2, 'expert').level).toBe(2);
+    expect(createInitialState(13, 'medium').level).toBe(1);
+    expect(createInitialState(13, 'easy').level).toBe(5);
+    expect(createInitialState(11, 'medium').level).toBe(11);
+    expect(createInitialState(10, 'hard').level).toBe(2);
+    expect(createInitialState(EXPERT_LEVELS + 3, 'expert').level).toBe(3);
+    expect(createInitialState(13, 'intro').level).toBe(5);
     expect(createInitialState(-1).seed).toBe(0xffffffff);
     expect(createInitialState(-1).level).toBe(0xffffffff % 8);
     expect(toDifficulty('medium')).toBe('medium');
+    expect(toDifficulty('expert')).toBe('expert');
+    // The introductory set is not offered for new games any more.
+    expect(toDifficulty('intro')).toBe('easy');
     expect(toDifficulty('extreme')).toBe('easy');
     expect(toDifficulty(undefined)).toBe('easy');
   });
 
   it('is deterministic for every seed (property)', () => {
     fc.assert(
-      fc.property(fc.nat(), fc.constantFrom(...DIFFICULTIES), (seed, difficulty) => {
+      fc.property(fc.nat(), fc.constantFrom(...LEVEL_SETS), (seed, difficulty) => {
         expect(createInitialState(seed, difficulty)).toEqual(createInitialState(seed, difficulty));
         expect(createInitialState(seed, difficulty).level).toBe(seed % LEVELS[difficulty].length);
       })
@@ -721,7 +1001,7 @@ describe('game state', () => {
   });
 
   // Easy level 1: '.  /  .  .  <R' / '.  .  .  .  #' / ... / 'TR . . . .' — one mirror.
-  const easy1 = stateOf('easy', 0);
+  const easy1 = stateOf('intro', 0);
   const mirrorCell = 3 * 5 + 1;
 
   it('places a piece only on empty squares while the inventory lasts', () => {
@@ -747,7 +1027,7 @@ describe('game state', () => {
   });
 
   it('keeps pieces sorted, never on the same square twice', () => {
-    let s = stateOf('hard', 7); // four splitters
+    let s = stateOf('medium', 7); // four splitters
     s = placePiece(s, 30, 'splitter');
     s = placePiece(s, 10, 'splitter');
     s = placePiece(s, 20, 'splitter');
@@ -765,7 +1045,7 @@ describe('game state', () => {
     expect(rotatePiece(rotatePiece(turned, 0), 0)).toMatchObject({ pieces: turned.pieces, moves: 4 });
     expect(pieceAt(rotatePiece(turned, 0), 0)?.orient).toBe(0);
     expect(rotatePiece(placed, 2)).toBe(placed);
-    const medium = placePiece(stateOf('medium', 5), 1, 'blocker'); // a level with a blocker
+    const medium = placePiece(stateOf('easy', 5), 1, 'blocker'); // a level with a blocker
     expect(medium.pieces).toEqual([{ cell: 1, kind: 'blocker', orient: 0 }]);
     expect(rotatePiece(medium, 1)).toBe(medium);
   });
@@ -780,7 +1060,7 @@ describe('game state', () => {
     expect(undo(solved)).toBe(solved);
     expect(canUndo(solved)).toBe(false);
     expect(canClear(solved)).toBe(false);
-    expect(canPlace(stateOf('easy', 5), 0, 'mirror')).toBe(true);
+    expect(canPlace(stateOf('intro', 5), 0, 'mirror')).toBe(true);
     // Turning it the other way breaks the solution again.
     const wrong = rotatePiece(placePiece(easy1, mirrorCell + 1, 'mirror'), mirrorCell + 1);
     expect(isSolved(wrong)).toBe(false);
@@ -794,12 +1074,12 @@ describe('game state', () => {
     expect(remaining(removed, 'mirror')).toBe(1);
     expect(removePiece(removed, 0)).toBe(removed);
     expect(removePiece(placed, 1)).toBe(placed);
-    const two = placePiece(placePiece(stateOf('easy', 7), 0, 'mirror'), 1, 'splitter');
+    const two = placePiece(placePiece(stateOf('intro', 7), 0, 'mirror'), 1, 'splitter');
     expect(removePiece(two, 0).pieces).toEqual([{ cell: 1, kind: 'splitter', orient: 0 }]);
   });
 
   it('clears the board and undoes step by step, including the clearing', () => {
-    let s = stateOf('easy', 7); // mirror + splitter
+    let s = stateOf('intro', 7); // mirror + splitter
     s = placePiece(s, 0, 'mirror');
     s = placePiece(s, 1, 'splitter');
     s = rotatePiece(s, 1);
@@ -816,12 +1096,12 @@ describe('game state', () => {
     expect(twice.pieces).toEqual([{ cell: 0, kind: 'mirror', orient: 0 }, { cell: 1, kind: 'splitter', orient: 0 }]);
     expect(twice.moves).toBe(2);
     expect(undo(undo(twice))).toMatchObject({ pieces: [], moves: 0, undo: [] });
-    expect(canUndo(stateOf('easy', 7))).toBe(false);
+    expect(canUndo(stateOf('intro', 7))).toBe(false);
     expect(undo(easy1)).toBe(easy1);
   });
 
   it(`keeps at most ${MAX_UNDO} undo steps`, () => {
-    let s = placePiece(stateOf('easy', 7), 0, 'mirror');
+    let s = placePiece(stateOf('intro', 7), 0, 'mirror');
     for (let i = 0; i < MAX_UNDO + 5; i++) s = rotatePiece(s, 0);
     expect(s.undo).toHaveLength(MAX_UNDO);
     expect(s.moves).toBe(MAX_UNDO + 6);
@@ -830,33 +1110,71 @@ describe('game state', () => {
   });
 
   it('caps the move counter', () => {
-    const s = { ...placePiece(stateOf('easy', 7), 0, 'mirror'), moves: MAX_MOVES };
+    const s = { ...placePiece(stateOf('intro', 7), 0, 'mirror'), moves: MAX_MOVES };
     expect(rotatePiece(s, 0).moves).toBe(MAX_MOVES);
   });
 
   it('switches levels with an empty board and resets to the seeded level', () => {
-    const s = placePiece(stateOf('medium', 2), 0, 'mirror');
+    const s = placePiece(stateOf('easy', 2), 0, 'mirror');
     const other = chooseLevel(s, 5);
     expect(other).toEqual({ ...s, level: 5, pieces: [], moves: 0, undo: [] });
     expect(chooseLevel(other, 5)).toBe(other);
     expect(chooseLevel(s, 2)).toEqual({ ...s, pieces: [], moves: 0, undo: [] });
     expect(chooseLevel(s, 8)).toBe(s);
     expect(chooseLevel(s, -1)).toBe(s);
-    expect(chooseLevel({ ...stateOf('easy', 1), moves: 3 }, 1).moves).toBe(0);
-    expect(chooseLevel({ ...stateOf('easy', 1), pieces: [{ cell: 0, kind: 'mirror', orient: 0 }] }, 1).pieces).toEqual([]);
-    expect(chooseLevel({ ...stateOf('easy', 1), undo: [{ pieces: [], moves: 0 }] }, 1).undo).toEqual([]);
-    const seeded = createInitialState(11, 'hard');
+    expect(chooseLevel({ ...stateOf('intro', 1), moves: 3 }, 1).moves).toBe(0);
+    expect(chooseLevel({ ...stateOf('intro', 1), pieces: [{ cell: 0, kind: 'mirror', orient: 0 }] }, 1).pieces).toEqual([]);
+    expect(chooseLevel({ ...stateOf('intro', 1), undo: [{ pieces: [], moves: 0 }] }, 1).undo).toEqual([]);
+    const seeded = createInitialState(11, 'medium');
     expect(resetState(chooseLevel(placePiece(seeded, 0, 'mirror'), 0))).toEqual(seeded);
   });
 
   it('builds the board with the pieces on it', () => {
-    const s = rotatePiece(placePiece(placePiece(stateOf('medium', 5), 1, 'blocker'), 2, 'splitter'), 2);
+    const s = rotatePiece(placePiece(placePiece(stateOf('easy', 5), 1, 'blocker'), 2, 'splitter'), 2);
     const board = boardOf(s);
     expect(board.cells[0]).toEqual({ kind: 'blocker' }); // a fixed blocker of the level
     expect(board.cells[1]).toEqual({ kind: 'blocker' });
     expect(board.cells[2]).toEqual({ kind: 'splitter', orient: 1 });
     expect(boardWith(levelOf(s), [])).toEqual({ width: 6, height: 6, cells: levelOf(s).cells });
     expect(levelOf(s).cells[1]).toEqual({ kind: 'empty' });
+  });
+
+  it('knows how each piece turns and what it becomes on the board', () => {
+    expect(PIECE_KINDS.map(orientationCount)).toEqual([2, 2, 1, 4, 1, 1, 1, 1, 1, 1, 1]);
+    expect(pieceElement('mirror', 1)).toEqual({ kind: 'mirror', orient: 1 });
+    expect(pieceElement('splitter', 0)).toEqual({ kind: 'splitter', orient: 0 });
+    expect(pieceElement('blocker', 0)).toEqual({ kind: 'blocker' });
+    expect(pieceElement('polariser', 3)).toEqual({ kind: 'polariser', angle: 3 });
+    expect(pieceElement('neutral', 0)).toEqual({ kind: 'neutral' });
+    expect(pieceElement('filterG', 0)).toEqual({ kind: 'filter', colour: GREEN });
+    expect(pieceElement('minusB', 0)).toEqual({ kind: 'absorber', colour: BLUE });
+    const kinds: PieceKind[] = [...PIECE_KINDS];
+    expect(kinds.map((kind) => colourLetter(Math.max(0, colourFromLetter(kind.slice(-1)))))).toEqual(['', '', '', '', '', 'R', 'G', 'B', 'R', 'G', 'B']);
+  });
+
+  it('turns a polariser in 45° steps, and has nothing to turn on filters', () => {
+    const { set, index } = ALL.find((l) => l.set === 'expert' && (l.source.inventory.polariser ?? 0) > 0)!;
+    const level = getLevel(set, index);
+    const cell = level.cells.findIndex((element) => element.kind === 'empty');
+    let s = placePiece(stateOf(set, index), cell, 'polariser');
+    expect(pieceAt(s, cell)).toEqual({ cell, kind: 'polariser', orient: 0 });
+    expect(canRotate(s, cell)).toBe(true);
+    const angles = [0];
+    for (let i = 0; i < 4; i++) {
+      s = rotatePiece(s, cell);
+      angles.push(pieceAt(s, cell)!.orient);
+    }
+    expect(angles).toEqual([0, 1, 2, 3, 0]);
+    expect(boardOf(rotatePiece(s, cell)).cells[cell]).toEqual({ kind: 'polariser', angle: 1 });
+    expect(isLaserState(s)).toBe(true);
+    for (const kind of PIECE_KINDS.filter((k) => orientationCount(k) === 1 && level.inventory[k] > 0)) {
+      const other = level.cells.findIndex((element, c) => element.kind === 'empty' && c !== cell);
+      const placed = placePiece(s, other, kind);
+      expect(pieceAt(placed, other)?.kind).toBe(kind);
+      expect(canRotate(placed, other)).toBe(false);
+      expect(rotatePiece(placed, other)).toBe(placed);
+    }
+    expect(canRotate(s, -1)).toBe(false);
   });
 
   it('random play keeps the state valid and the inventory respected (property)', () => {
@@ -866,7 +1184,7 @@ describe('game state', () => {
       kind: fc.constantFrom(...PIECE_KINDS)
     });
     fc.assert(
-      fc.property(fc.constantFrom(...DIFFICULTIES), fc.nat(), fc.array(action, { maxLength: 40 }), (difficulty, seed, actions) => {
+      fc.property(fc.constantFrom(...LEVEL_SETS), fc.nat(), fc.array(action, { maxLength: 40 }), (difficulty, seed, actions) => {
         let s = createInitialState(seed, difficulty);
         for (const a of actions) {
           if (a.type === 'place') s = placePiece(s, a.cell, a.kind);
@@ -886,12 +1204,12 @@ describe('game state', () => {
 /* ---------- Validation ---------- */
 
 describe('isLaserState', () => {
-  const base = (): LaserState => rotatePiece(placePiece(placePiece(stateOf('easy', 7), 0, 'mirror'), 1, 'splitter'), 1);
+  const base = (): LaserState => rotatePiece(placePiece(placePiece(stateOf('intro', 7), 0, 'mirror'), 1, 'splitter'), 1);
 
   it('accepts real states', () => {
     expect(isLaserState(base())).toBe(true);
-    expect(isLaserState(createInitialState(99, 'hard'))).toBe(true);
-    expect(isLaserState(placePiece(stateOf('medium', 5), 1, 'blocker'))).toBe(true);
+    expect(isLaserState(createInitialState(99, 'medium'))).toBe(true);
+    expect(isLaserState(placePiece(stateOf('easy', 5), 1, 'blocker'))).toBe(true);
   });
 
   it('rejects broken or tampered states', () => {
@@ -912,15 +1230,18 @@ describe('isLaserState', () => {
       { ...s, pieces: [null] },
       { ...s, pieces: [{ cell: 0, kind: 'laser', orient: 0 }] },
       { ...s, pieces: [{ cell: 0, kind: 'mirror', orient: 2 }] },
+      { ...s, pieces: [{ cell: 0, kind: 'polariser', orient: 0 }] },
+      { ...s, pieces: [{ cell: 0, kind: 'neutral', orient: 0 }] },
+      { ...s, difficulty: 'toString' },
       { ...s, pieces: [{ cell: 25, kind: 'mirror', orient: 0 }] },
       { ...s, pieces: [{ cell: -1, kind: 'mirror', orient: 0 }] },
-      // Easy level 8, last row 'X  TR ^R .  .': cell 20 is a forbidden sensor.
+      // Intro level 8, last row 'X  TR ^R .  .': cell 20 is a forbidden sensor.
       { ...s, pieces: [{ cell: 20, kind: 'mirror', orient: 0 }] },
       { ...s, pieces: [{ cell: 1, kind: 'splitter', orient: 0 }, { cell: 0, kind: 'mirror', orient: 0 }] },
       { ...s, pieces: [{ cell: 0, kind: 'mirror', orient: 0 }, { cell: 0, kind: 'splitter', orient: 0 }] },
       { ...s, pieces: [{ cell: 0, kind: 'mirror', orient: 0 }, { cell: 1, kind: 'mirror', orient: 0 }] },
       { ...s, pieces: [{ cell: 0, kind: 'blocker', orient: 0 }] },
-      { ...stateOf('medium', 5), pieces: [{ cell: 1, kind: 'blocker', orient: 1 }] },
+      { ...stateOf('easy', 5), pieces: [{ cell: 1, kind: 'blocker', orient: 1 }] },
       { ...s, moves: -1 },
       { ...s, moves: MAX_MOVES + 1 },
       { ...s, moves: '3' },
