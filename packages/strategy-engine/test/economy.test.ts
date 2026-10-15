@@ -82,6 +82,29 @@ describe('economy (I6a, D8)', () => {
     expect(observe(world, net, 1).world.map.deposits).toEqual([{ x: 3, y: 1, left: UNKNOWN_LEFT, endless: true }, { x: 10, y: 1, left: 300, endless: true }]);
   });
 
+  it('a repair another side sees, the unit and the yard both in sight, is reported to it (mutation run, 2026-10-14)', () => {
+    const w = worldOf(open(12, 3), [{ side: 0, kind: 'command-post', x: 0, y: 1 }, { side: 1, kind: 'command-post', x: 5, y: 1 }, { side: 0, kind: 'muster', x: 2, y: 1 }, { side: 0, kind: 'rifles', x: 3, y: 1 }]);
+    unit(w, 4).hp = 10;
+    const r = resolveTurn(w, net, [[{ side: 0, unit: 3, order: { type: 'repair', target: 4 } }], []]);
+    expect(r.world.intel?.[1]?.some((rep) => rep.id === 3 && rep.live) && r.world.intel?.[1]?.some((rep) => rep.id === 4 && rep.live)).toBe(true);
+    expect(r.reported?.[1]?.some((e) => e.t === 'repaired' && e.id === 4 && e.by === 3)).toBe(true);
+  });
+
+  it('a structure sold where the side does not look is gone from its reports, not kept as a ghost (mutation run, 2026-10-14)', () => {
+    // The mast covers x=11 (radius 6) but sees only to x=9 (sight 4): the Extractor saw its own cell.
+    const w = worldOf({ ...open(14, 1), deposits: [{ x: 11, y: 0, left: 300 }] }, [
+      { side: 0, kind: 'command-post', x: 0, y: 0 },
+      { side: 0, kind: 'relay-mast', x: 5, y: 0 },
+      { side: 0, kind: 'extractor', x: 11, y: 0 },
+      { side: 1, kind: 'command-post', x: 13, y: 0 }
+    ]);
+    const r = turn(w, [[{ side: 0, unit: 3, order: { type: 'sell' } }], []]);
+    expect(r.world.entities.some((e) => e.id === 3)).toBe(false);
+    expect(r.reported?.[0]?.some((e) => e.t === 'sold' && e.id === 3)).toBe(true);
+    expect(r.world.intel?.[0]?.some((rep) => rep.id === 3)).toBe(false);
+    expect(r.reported?.[0]?.some((e) => e.t === 'missing')).toBe(false);
+  });
+
   it('a world whose reports are a sparse array is refused, never read (review of PR #36)', () => {
     const w = field();
     const reports = w.intel![0]!;
