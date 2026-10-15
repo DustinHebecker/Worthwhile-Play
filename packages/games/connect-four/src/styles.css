@@ -37,13 +37,59 @@
   text-align: center;
 }
 
-/* Board: seven column buttons; each column is one large touch target. Fits 7 × 44px on a 360px phone. */
+/* Variant options: a labelled group of three selects. */
+.wp-connect-four .c4-variant {
+  margin: 0;
+  padding: 0.25rem 0.5rem 0.5rem;
+  border: 1px solid var(--wp-border);
+  border-radius: var(--wp-radius, 10px);
+  min-width: 0;
+}
+.wp-connect-four .c4-variant legend { padding-inline: 0.25rem; font-size: 0.9rem; }
+
+/* Drop / pull choice (pull-out rule only): two large radio "buttons"; the choice is written out, not colour-coded. */
+.wp-connect-four .c4-actions-choice {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  border: none;
+  min-width: 0;
+}
+.wp-connect-four .c4-actions-choice[hidden] { display: none; }
+.wp-connect-four .c4-actions-choice legend { width: 100%; padding: 0; margin-block-end: 0.25rem; text-align: center; font-size: 0.9rem; }
+.wp-connect-four .c4-choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: var(--wp-touch, 44px);
+  padding-inline: 0.75rem;
+  border: 2px solid var(--wp-border);
+  border-radius: 999px;
+  background: var(--wp-surface);
+  cursor: pointer;
+}
+.wp-connect-four .c4-choice:has(input:checked) { border-color: var(--wp-text); font-weight: 600; }
+.wp-connect-four .c4-choice:has(input:disabled) { opacity: 0.55; cursor: default; }
+.wp-connect-four .c4-choice:has(input:focus-visible) { outline: 3px solid var(--wp-focus); outline-offset: 2px; }
+.wp-connect-four .c4-choice input { width: 1.1rem; height: 1.1rem; margin: 0; }
+.wp-connect-four .c4-help { margin: 0; max-width: 34rem; font-size: 0.9rem; color: var(--wp-muted); text-align: start; }
+.wp-connect-four .c4-help[hidden] { display: none; }
+
+/*
+ * Board: one button per column; each column is one tall touch target. The column buttons
+ * touch each other (no gap), so the whole board width is hit area: 7 columns are about
+ * 45 px wide on a 360 px phone, 8 columns about 40 px and 9 columns about 35 px — narrower
+ * than 44 px, but each is a full-height strip several times taller (see the e2e check).
+ */
 .wp-connect-four .c4-board {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: var(--c4-gap);
-  padding: 4px;
-  width: min(100%, 30rem);
+  grid-template-columns: repeat(var(--c4-cols, 7), minmax(0, 1fr));
+  gap: 0;
+  padding: 2px;
+  width: min(100%, calc(var(--c4-cols, 7) * 4.25rem));
   background: var(--wp-surface-2);
   border: 1px solid var(--wp-border);
   border-radius: var(--wp-radius, 10px);
@@ -51,13 +97,13 @@
 .wp-connect-four .c4-column {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: repeat(6, auto);
+  grid-template-rows: repeat(var(--c4-rows, 6), auto);
   align-content: start;
   justify-content: stretch;
   gap: var(--c4-gap);
   min-width: 0;
   min-height: var(--wp-touch, 44px);
-  padding: 2px 0;
+  padding: 2px 1px;
   border: none;
   border-radius: 8px;
   background: transparent;
@@ -112,6 +158,20 @@
 }
 .wp-connect-four[data-turn='1'] .c4-cell.is-next::before { background: var(--wp-p1); }
 .wp-connect-four[data-turn='2'] .c4-cell.is-next::before { color: var(--wp-p2); background: var(--c4-ring); }
+
+/* Pull-out mode: own bottom discs that can be pulled get a dashed frame and a downward arrow below the disc. */
+.wp-connect-four .c4-column[data-pull-target]:hover { background: color-mix(in srgb, var(--wp-accent) 14%, transparent); }
+.wp-connect-four .c4-cell[data-pullable] { outline: 3px dashed var(--wp-text); outline-offset: 1px; }
+.wp-connect-four .c4-cell[data-pullable]::after {
+  content: '';
+  position: absolute;
+  inset-block-end: -2px;
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+  border-inline: 6px solid transparent;
+  border-block-start: 7px solid var(--wp-text);
+}
+[dir='rtl'].wp-connect-four .c4-cell[data-pullable]::after { transform: translateX(50%); }
 
 /* Last move: dashed frame. Winning four: solid frame plus a diamond marker — never colour alone. */
 .wp-connect-four .c4-cell[data-last] { outline: 2px dashed var(--wp-muted); outline-offset: 1px; }
