@@ -16,5 +16,7 @@ export const metadata: GameMetadata = {
     pauseable: true
   },
   difficulties: ['easy', 'normal', 'hard'],
+  // The game's own setup (map, length, opponents, seats) is its start screen (ADR 0015).
+  setupInGame: true,
   messages
 };

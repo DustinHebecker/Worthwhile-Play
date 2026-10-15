@@ -82,6 +82,16 @@ describe('economy (I6a, D8)', () => {
     expect(observe(world, net, 1).world.map.deposits).toEqual([{ x: 3, y: 1, left: UNKNOWN_LEFT, endless: true }, { x: 10, y: 1, left: 300, endless: true }]);
   });
 
+  it('a world whose reports are a sparse array is refused, never read (review of PR #36)', () => {
+    const w = field();
+    const reports = w.intel![0]!;
+    expect(reports.length).toBeGreaterThan(1);
+    const sparse: typeof reports = [];
+    sparse[1] = reports[1]!; // index 0 is a hole
+    expect(() => isValidWorld({ ...w, intel: [sparse, w.intel![1]!] }, net)).not.toThrow();
+    expect(isValidWorld({ ...w, intel: [sparse, w.intel![1]!] }, net)).toBe(false);
+  });
+
   it('a yard produces into a free neighbouring cell after the build time, paid when queued; the unit follows the yard\'s doctrine', () => {
     const w = field([{ side: 0, kind: 'muster', x: 2, y: 0 }]);
     unit(w, 3).doctrine = { ...DEFAULT_DOCTRINE, holdFire: true };
