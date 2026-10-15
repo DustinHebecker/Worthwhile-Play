@@ -424,6 +424,18 @@ const PREVIEWS: Record<string, () => string> = {
     R(34, 12, 28, 25, 'c', 3) + T(48, 25, 55, 't tl') + R(60, 2, 32, 8, 'c ds', 4) + R(64, 4.3, 5, 3.6, 'fn', 0.5) + P('M64 4.3l2.5 2 2.5-2', 'fn') + L(72, 6, 88, 6, 'g') +
     R(12.5, 41.5, 36, 17, 'pr', 4) + R(14, 43, 33, 14, 'c', 3) + R(49, 43, 33, 14, 'c', 3),
   // Four in a Row: the light board with round holes; filled blue discs and red ring discs, the last move dashed.
+  // Lootlings: the player rows at the top, the fight (a monster card with its jagged red frame against your strength)
+  // and the hand of rounded card tiles below, as on the game screen.
+  'card-quest': () => {
+    let out = '';
+    for (let i = 0; i < 3; i++) out += R(6, 4 + i * 7, 84, 5.5, i === 0 ? 'e' : 'c', 1.5) + (i === 0 ? R(6, 4, 2.4, 5.5, 'w') : '') + L(12, 6.8 + i * 7, 30, 6.8 + i * 7, 'mu');
+    out += R(6, 26, 40, 20, 'o', 1) + P('M8 28h36v16H8z', 'dn ds');
+    out += P('M16 43V35c0-5 2-7 5-7s5 2 5 7v8l-2-2-1.5 2-1.5-2-1.5 2-1.5-2z', 'd') + C(19.5, 33.5, 0.9, 'sf') + C(22.5, 33.5, 0.9, 'sf');
+    out += L(30, 32, 42, 32, 'k') + L(30, 38, 39, 38, 'mu');
+    out += R(50, 26, 40, 20, 'e', 3) + T(70, 40, '11:9', 'tl');
+    for (let i = 0; i < 4; i++) out += R(6 + i * 21.5, 49, 19.5, 12, 'o', 3) + C(11 + i * 21.5, 55, 2.6, i === 1 ? 'a' : 'd') + L(15.5 + i * 21.5, 55, 22 + i * 21.5, 55, 'g');
+    return out;
+  },
   'connect-four': () => {
     const discs: Record<string, string> = { '2,2': 'p2', '2,3': 'p1', '2,4': 'p1', '2,5': 'p2', '3,3': 'p2', '3,4': 'p1', '3,5': 'p1', '4,4': 'p2', '4,5': 'p1', '6,5': 'p2' };
     const cx = (q: number) => 19.25 + q * 9.5, cy = (r: number) => 8 + r * 9.5;

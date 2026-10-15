@@ -59,6 +59,7 @@ export const GAMES: readonly GameEntry[] = [
   entry('signal-watch', () => import('@wp/game-signal-watch')),
   entry('distractor-control', () => import('@wp/game-distractor-control')),
   entry('connect-four', () => import('@wp/game-connect-four')),
+  entry('card-quest', () => import('@wp/game-card-quest')),
   entry('tic-tac-toe', () => import('@wp/game-tic-tac-toe')),
   entry('slitherlink', () => import('@wp/game-slitherlink')),
   entry('n-back', () => import('@wp/game-n-back')),

@@ -273,7 +273,7 @@ Monster boosters, item upgrades and a few one-shots are **world-neutral in effec
 ### 6.2 Structure and text are separate (ADR 0011)
 
 - `src/content/structure/<world>.ts` — language-free: id, kind, level, bonus, slot, value, base kind, traits, item class, set mark, effect in a **small closed effect language** (`{ when: 'vs-kind', kind: 'digger', bonus: 3 }`, `{ when: 'vs-trait', trait: 'fiery', bonus: 3 }`, `{ blunder: 'lose-slot', slot: 'head' }`, …). Rules read only this.
-- `src/content/<locale>.ts` — per locale, loaded via `preload`: per card `name` (≤ 26 characters) and `flavour` (≤ 70 characters), plus the monster's Blunder flavour. **Rule text is generated from the effect data** with translated templates ("+{n} against {kind}"), so rule wording is consistent, short and never mistranslated; humour lives in names and flavour.
+- `src/content/<locale>.ts` — per locale, loaded via `preload`: per card `name` (≤ 32 characters) and `flavour` (≤ 90 characters; checked per locale by a test), plus the monster's Blunder flavour. **Rule text is generated from the effect data** with translated templates ("+{n} against {kind}"), so rule wording is consistent, short and never mistranslated; humour lives in names and flavour.
 - UI messages (setup, phases, offers, coach hints, log templates, base kinds, traits, item classes) in `metadata.messages`, all 16 locales.
 
 ### 6.3 Volume
@@ -374,7 +374,15 @@ K1 is large (140 cards × 16 locales). If it becomes too big for one review, it 
 | AI feels unfair or cheating | observation-only AI (tested), visible personalities, deals in the log |
 | Name conflicts | register search (DPMA/EUIPO/USPTO) for "Lootlinge/Lootlings" before release; neutral id |
 
-### 10.4 Open points (none blocks K1)
+### 10.4 K1 as built (2026-10-15)
+
+- Kampfzwerge: 140 cards, 123 distinct texts, 16 locales (card texts as per-locale chunks, UI in `metadata.messages`).
+- Rules in `rules.ts` (`step` per action, `observe` per seat, `isValidState` with card conservation and log validation); computer players in `ai.ts` decide from `observe` only; `driver.ts` runs them until the person must decide. The person's turn in another player's fight window is passed automatically when no card of theirs could be played there, so only real decisions are asked.
+- No timers: computer turns are applied at once and shown as "Since your last move" plus the log.
+- Self-play (all seats AI, 40 games each): median 10–14 rounds at target 8–10 with 2–6 players, max ≤ 32; ≈ 10–90 ms per whole game.
+- Not yet in K1 (K2): help offers, deals, Change Sides, reputation, grudges.
+
+### 10.5 Open points (none blocks K1)
 
 - **O1** Default target level: **10** assumed (owner: length open). Selectable 6/8/10/12.
 - **O2** Title in the other 14 locales: "Lootlings" unless a locale has a natural form.
