@@ -101,9 +101,8 @@
 .wp-nc .nc-moments { margin: 0; padding-inline-start: 1.5rem; }
 
 .wp-nc .nc-lane-line { stroke: var(--nc-lane); stroke-width: 5; stroke-linecap: round; }
-/* Crossing lanes: the upper lane passes over a gap in the lower one, between two rails. */
-.wp-nc .nc-bridge-gap { stroke: var(--nc-space); stroke-linecap: butt; }
-.wp-nc .nc-bridge-rail { stroke: var(--nc-ink); stroke-width: 2.5; stroke-linecap: round; opacity: 0.75; }
+/* Crossing lanes simply cross; a small neutral ring with a cross marks where hostile streams fight. */
+.wp-nc .nc-crossing { fill: var(--nc-space); stroke: var(--nc-ink); stroke-width: 2; stroke-linecap: round; opacity: 0.8; }
 .wp-nc .nc-flow-line { stroke-width: 4; stroke-linecap: butt; stroke-dasharray: 10 8; fill: none; }
 .wp-nc .nc-arrow { fill: none; stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; }
 .wp-nc .nc-flow[data-faction='0'] { stroke: var(--nc-f0); }
@@ -166,8 +165,8 @@
 .wp-nc .nc-list { margin: 0; padding-inline-start: 1.25rem; font-size: 0.9rem; }
 
 @media (forced-colors: active) {
-  .wp-nc .nc-body, .wp-nc .nc-deco, .wp-nc .nc-lane-line, .wp-nc .nc-bridge-rail { stroke: CanvasText; }
-  .wp-nc .nc-bridge-gap { stroke: Canvas; }
+  .wp-nc .nc-body, .wp-nc .nc-deco, .wp-nc .nc-lane-line, .wp-nc .nc-crossing { stroke: CanvasText; }
+  .wp-nc .nc-crossing { fill: Canvas; }
   .wp-nc .nc-flow, .wp-nc .nc-sel, .wp-nc .nc-range { stroke: Highlight; }
   .wp-nc .nc-unit, .wp-nc .nc-level { fill: CanvasText; }
 }
