@@ -382,7 +382,13 @@ K1 is large (140 cards × 16 locales). If it becomes too big for one review, it 
 - Self-play (all seats AI, 40 games each): median 10–14 rounds at target 8–10 with 2–6 players, max ≤ 32; ≈ 10–90 ms per whole game.
 - Not yet in K1 (K2): help offers, deals, Change Sides, reputation, grudges.
 
-### 10.5 Open points (none blocks K1)
+### 10.5 Owner feedback after the first play-test (2026-10-15) — backlog
+
+- **B1 Card text while choosing cards to give away or sell.** In the give-away and sell modes a tap selects the card, so its description cannot be read before choosing. Fix: an info button on every tile (or a long press) that opens the card detail in every mode; selection stays on the tile itself.
+- **B2 Visual upgrade.** The owner expects clearly better pictures, not only icons: a real picture per card (monsters, items, curses …), larger on the detail view. Options to decide with the owner: richer code-drawn illustrations per card (original, no third-party art) or agent-generated raster art behind the swappable art layer (§ 7.3; needs precache rules for webp/avif from the orchestrator and a licence note in docs/third-party.md).
+- Confirmed: playing without reading the rules works (owner knows the genre; a test with someone new to it is still open).
+
+### 10.6 Open points (none blocks K1)
 
 - **O1** Default target level: **10** assumed (owner: length open). Selectable 6/8/10/12.
 - **O2** Title in the other 14 locales: "Lootlings" unless a locale has a natural form.
