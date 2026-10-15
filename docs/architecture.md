@@ -15,7 +15,7 @@
 apps/web (shell)  ──uses──►  game-core · persistence · localization · ui · learning-content
      │ lazy import()
      ▼
-packages/games/<id>  ──uses──►  game-core · ui · (learning-content | puzzle-core | strategy-engine | adventure-engine …)
+packages/games/<id>  ──uses──►  game-core · ui · (learning-content | puzzle-core | strategy-engine | adventure-engine | cards …)
 ```
 
 Future shared engines (`puzzle-core`, `strategy-engine`, `adventure-engine`, `ai`, `audio`) are separate packages owned by the orchestrator.
