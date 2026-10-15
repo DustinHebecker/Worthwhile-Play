@@ -1,6 +1,7 @@
 import { createRngFromState, type Rng } from '@wp/game-core';
 import {
   cloneState,
+  crossingsOf,
   INTRO_MAP,
   isActive,
   mapOf,
@@ -29,7 +30,8 @@ import {
  *   threats; does not see that bastions are armoured.
  * - advanced: weighs targets by value and cost (level, type, armour, lane length), defends when
  *   incoming hostile strength outweighs a node's level (or would push it below 10/20), grows
- *   nodes towards 10/20 and supplies the front from the interior.
+ *   nodes towards 10/20 and supplies the front from the interior. Rates an attack lower for every
+ *   hostile stream that crosses its lane (on hand-built maps the two meet and fight at the crossing).
  * - strong: advanced, plus a short forward simulation (lookahead) of its best candidate path
  *   changes, assuming everyone keeps their current paths. Possible because the simulation is
  *   deterministic. Joint attacks, head-on fights and platform cover show up in the outcome.
@@ -234,6 +236,36 @@ export function frontierDistance(s: NcState, map: GameMap, faction: number): num
 
 const TYPE_BONUS = { standard: 0, shipyard: 6, station: 3, bastion: 4 } as const;
 
+/** Score lost per hostile stream that crosses the lane of an attack (aware levels; it meets the attack there). */
+export const CROSS_PENALTY = 12;
+
+const crossingLanes = new WeakMap<GameMap, number[][]>();
+/** Per lane, the lanes that cross it. */
+function crossersOf(map: GameMap): number[][] {
+  let list = crossingLanes.get(map);
+  if (!list) {
+    const result: number[][] = map.lanes.map(() => []);
+    for (const [i, j] of crossingsOf(map)) {
+      result[i]!.push(j);
+      result[j]!.push(i);
+    }
+    crossingLanes.set(map, result);
+    list = result;
+  }
+  return list;
+}
+
+/** Number of active streams of factions other than `faction` (either direction) on lanes that cross `lane`. */
+export function crossFire(s: NcState, map: GameMap, faction: number, lane: number): number {
+  let count = 0;
+  for (const other of crossersOf(map)[lane]!) {
+    const [c, e] = map.lanes[other]!;
+    if (s.owner[c] !== faction && s.owner[c]! >= 0 && s.out[c]!.includes(e)) count++;
+    if (s.owner[e] !== faction && s.owner[e]! >= 0 && s.out[e]!.includes(c)) count++;
+  }
+  return count;
+}
+
 /** Level points needed to take node `w` (bastions need twice as many). */
 export const effectiveLevel = (map: GameMap, s: NcState, w: number): number =>
   map.nodes[w]!.type === 'bastion' ? 2 * s.level[w]! - s.half[w]! : s.level[w]!;
@@ -348,7 +380,9 @@ export function options(s: NcState, map: GameMap, faction: number, profile: AiPr
         const focus = map.adjacent[w]!.some((x) => x !== v && s.owner[x] === faction && s.out[x]!.includes(w)) ? 15 : 0;
         const hostile = o >= 0 ? (level > profile.attackLevel ? 60 : 8) : 0;
         const rivalBonus = profile.weakest && o >= 0 && o === weakestRival && map.factions > 2 ? 12 : 0;
-        score = 100 - 6 * level - Math.floor(length / 20) + TYPE_BONUS[map.nodes[w]!.type] - hostile + focus + rivalBonus + rng.int(0, 3);
+        // Hostile streams crossing this lane meet the attack at the crossing point (hand-built maps only).
+        const crossed = profile.aware ? CROSS_PENALTY * crossFire(s, map, faction, map.laneOf[v]![w]!) : 0;
+        score = 100 - 6 * level - Math.floor(length / 20) + TYPE_BONUS[map.nodes[w]!.type] - hostile + focus + rivalBonus - crossed + rng.int(0, 3);
         if (w === impulsiveTarget) score += 200;
       }
       if (!saturated) {

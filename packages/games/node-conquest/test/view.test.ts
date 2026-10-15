@@ -6,7 +6,7 @@ import game from '../src/index';
 import { createSave, interpretSave } from '@wp/persistence';
 import { BOARD, createGame, INTRO_MAP, mapOf, MAPS_PER_SET, MAX_LEVEL, type NcState } from '../src/rules';
 import { crossings } from '../src/maps';
-import { battlements, laneLayers, MAX_ZOOM, shapePath } from '../src/view';
+import { battlements, crossingMark, MAX_ZOOM, shapePath } from '../src/view';
 
 let ctx: TestContext;
 let instance: GameInstance<NcState>;
@@ -48,56 +48,44 @@ describe('Orbit Links view', () => {
     expect(ctx.missingKeys).toEqual([]);
   });
 
-  it('draws crossing lanes as bridges: a gap cut into the lower lane and two rails along the upper one', () => {
+  it('draws crossing lanes simply crossing, with a neutral ring-and-cross marker at each crossing point (no bridges)', () => {
     for (const [seed, locale] of [[7, 'en'], [11, 'ar']] as const) {
       setup(seed, 'beginner', locale);
       const map = mapOf(instance.serialize());
       expect(map.index).toBe(seed);
       const cross = crossings(map);
       expect(cross.length).toBeGreaterThan(0);
-      const { order, over } = laneLayers(map);
       const groups = [...ctx.context.root.querySelectorAll<SVGGElement>('.nc-lanes > .nc-lane')];
-      // Lanes appear bottom to top in the drawing order.
-      expect(groups.map((g) => g.dataset.testid)).toEqual(order.map((i) => `lane-${map.lanes[i]![0]}-${map.lanes[i]![1]}`));
-      expect(ctx.context.root.querySelectorAll('.nc-bridge')).toHaveLength(cross.length);
-      expect(ctx.context.root.querySelectorAll('.nc-bridge-gap')).toHaveLength(cross.length);
-      over.forEach((list, top) => {
-        const [a, b] = map.lanes[top]!;
-        const g = $(`lane-${a}-${b}`);
-        for (const [bottom] of list) {
-          const [c, e] = map.lanes[bottom]!;
-          const id = `${a}-${b}-under-${c}-${e}`;
-          const bridge = $(`bridge-${id}`);
-          const gap = $(`gap-${id}`);
-          expect(bridge.parentElement).toBe(g);
-          expect(bridge.querySelectorAll('.nc-bridge-rail')).toHaveLength(2);
-          // The gap sits under the upper lane's own line but over every lower lane.
-          expect(gap.parentElement).toBe(g);
-          expect(gap.compareDocumentPosition(g.querySelector('.nc-lane-line')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-          expect(groups.indexOf(g as unknown as SVGGElement)).toBeGreaterThan(groups.indexOf($(`lane-${c}-${e}`) as unknown as SVGGElement));
-        }
-      });
+      // Lanes in map order, each just a line plus its two streams: no gaps, no rails, no layering.
+      expect(groups.map((g) => g.dataset.testid)).toEqual(map.lanes.map(([a, b]) => `lane-${a}-${b}`));
+      for (const g of groups) expect([...g.children].map((c) => c.getAttribute('class'))).toEqual(['nc-lane-line', 'nc-flow nc-fwd', 'nc-flow nc-bwd']);
+      expect(ctx.context.root.querySelectorAll('[class*="bridge"], [data-testid^="bridge-"], [data-testid^="gap-"]')).toHaveLength(0);
+      const marks = ctx.context.root.querySelectorAll('.nc-crossings > .nc-crossing');
+      expect(marks).toHaveLength(cross.length);
+      for (const [i, j, x, y] of cross) {
+        const [a, b] = map.lanes[i]!;
+        const [c, e] = map.lanes[j]!;
+        const mark = $(`crossing-${a}-${b}-${c}-${e}`);
+        expect(mark.getAttribute('d')).toBe(crossingMark(x, y));
+      }
+      // Markers lie above the lanes and below units and nodes; they are decoration (explained in the help).
+      const layer = ctx.context.root.querySelector('.nc-crossings')!;
+      expect(layer.getAttribute('aria-hidden')).toBe('true');
+      expect(layer.previousElementSibling!.getAttribute('class')).toBe('nc-lanes');
+      expect(layer.nextElementSibling!.getAttribute('class')).toBe('nc-units');
       expect(ctx.missingKeys).toEqual([]);
       instance.dispose();
     }
   });
 
-  it('puts the shorter of two crossing lanes on top (ties: the higher lane index), and generated maps have no bridges', () => {
-    setup(7);
-    const map = mapOf(instance.serialize());
-    const { order, over } = laneLayers(map);
-    expect([...order].sort((x, y) => x - y)).toEqual(map.lanes.map((_, i) => i));
-    for (let p = 1; p < order.length; p++) {
-      const [lower, upper] = [map.lanes[order[p - 1]!]![2], map.lanes[order[p]!]![2]];
-      expect(lower > upper || (lower === upper && order[p - 1]! < order[p]!)).toBe(true);
-    }
-    over.forEach((list, top) => {
-      for (const [bottom] of list) expect(order.indexOf(top)).toBeGreaterThan(order.indexOf(bottom));
-    });
-    instance.dispose();
+  it('crossing marker: a ring with a cross inside, centred on the point; generated maps have none; the help explains crossings', () => {
+    expect(crossingMark(100, 50)).toBe('M91.0 50.0A9 9 0 1 0 109.0 50.0A9 9 0 1 0 91.0 50.0ZM96.0 46.0L104.0 54.0M96.0 54.0L104.0 46.0');
     setup(13);
     expect(instance.serialize().map).toBe(0);
-    expect(ctx.context.root.querySelectorAll('.nc-bridge, .nc-bridge-gap')).toHaveLength(0);
+    expect(ctx.context.root.querySelectorAll('.nc-crossing')).toHaveLength(0);
+    const help = ctx.context.root.querySelector('.nc-help')!.textContent!;
+    expect(help).toContain('Where two lanes cross (small ring with ✕), hostile streams meet and fight just as on a shared lane; your own streams fly past each other.');
+    expect(help).not.toMatch(/bridge/i);
   });
 
   it('names a long standoff calmly, without changing anything else', () => {

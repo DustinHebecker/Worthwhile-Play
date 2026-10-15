@@ -120,7 +120,7 @@ describe('hand-built maps: crossing lanes', () => {
     expect(total).toBeGreaterThan(10);
   });
 
-  it('crossing points lie on both lanes and well away from every node (room for a visible bridge)', () => {
+  it('crossing points lie on both lanes and well away from every node (room for the crossing marker and a fight zone)', () => {
     each((map) => {
       for (const [i, j, x, y] of crossings(map)) {
         for (const lane of [i, j]) {
@@ -132,7 +132,7 @@ describe('hand-built maps: crossing lanes', () => {
     });
   });
 
-  it('maps 8 (Bridges) and 12 (Lattice) have crossings for every number of opponents, symmetric per faction', () => {
+  it('maps 8 (Crossroads) and 12 (Lattice) have crossings for every number of opponents, symmetric per faction', () => {
     for (const m of [7, 11]) {
       for (const f of FACTION_COUNTS) {
         const count = crossings(getMap(f, m)).length;

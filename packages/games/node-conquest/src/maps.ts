@@ -11,7 +11,7 @@ import { createRng, type Rng } from '@wp/game-core';
  * integer table), so maps are identical on every device.
  *
  * Maps from LEGACY_MAPS on are hand-built sector templates (BUILT): the same rotation scheme, but
- * explicit lanes that may cross each other (the view draws the upper lane as a bridge). Each spot's
+ * explicit lanes that may cross each other (hostile streams meet and fight at the crossing point). Each spot's
  * sector-local position is rounded to integers once and then rotated with the integer table, so
  * these maps are exactly symmetric too.
  */
@@ -350,7 +350,7 @@ type Link = readonly [number, number] | readonly [number, number, readonly Facti
 /**
  * A sector template, copied to every faction by rotation. Spot 0 is the start. Lanes: `inner`
  * inside a sector, `next` from a spot of sector s to a spot of sector s + 1, `hub` from a spot to the
- * centre node. Lanes may cross (the view draws the upper lane as a bridge); they never run through
+ * centre node. Lanes may cross (hostile streams fight at the crossing point); they never run through
  * a node.
  */
 interface Template {
@@ -365,7 +365,7 @@ const spot = (r: number, a: number, type: NodeType, level: number, only?: readon
 
 /** The hand-built maps, in index order from LEGACY_MAPS. */
 const BUILT: readonly Template[] = [
-  // 7 · Bridges: two flanks per faction; the links between neighbours cross in an X.
+  // 7 · Crossroads: two flanks per faction; the links between neighbours cross in an X.
   {
     spots: [spot(255, 0, 'standard', 10), spot(190, -0.5, 'standard', 3), spot(190, 0.5, 'shipyard', 7), spot(125, 0, 'standard', 9)],
     centre: { type: 'station', level: 14 },
@@ -483,8 +483,11 @@ function buildTemplate(factions: FactionCount, index: number, template: Template
   return { index, layout: 2, factions: n, nodes, lanes, laneOf, adjacent, center };
 }
 
-/** The point where two lanes cross (both strictly inside), or null; lanes sharing a node never cross. */
-export function laneCrossing(map: GameMap, i: number, j: number): [number, number] | null {
+/**
+ * Where two lanes cross (both strictly inside), as fractions [t, u] of the way along lane `i` and
+ * lane `j` (each from its lower node index), or null; lanes sharing a node never cross.
+ */
+export function laneCrossingParams(map: GameMap, i: number, j: number): [number, number] | null {
   const [a, b] = map.lanes[i]!;
   const [c, e] = map.lanes[j]!;
   if (a === c || a === e || b === c || b === e) return null;
@@ -496,7 +499,34 @@ export function laneCrossing(map: GameMap, i: number, j: number): [number, numbe
   if (side(R, S, P) * side(R, S, Q) >= 0 || side(P, Q, R) * side(P, Q, S) >= 0) return null;
   const denom = (Q.x - P.x) * (S.y - R.y) - (Q.y - P.y) * (S.x - R.x);
   const t = ((R.x - P.x) * (S.y - R.y) - (R.y - P.y) * (S.x - R.x)) / denom;
+  const u = ((R.x - P.x) * (Q.y - P.y) - (R.y - P.y) * (Q.x - P.x)) / denom;
+  return [t, u];
+}
+
+/** The point where two lanes cross (both strictly inside), or null; lanes sharing a node never cross. */
+export function laneCrossing(map: GameMap, i: number, j: number): [number, number] | null {
+  const params = laneCrossingParams(map, i, j);
+  if (!params) return null;
+  const P = map.nodes[map.lanes[i]![0]]!;
+  const Q = map.nodes[map.lanes[i]![1]]!;
+  const t = params[0];
   return [P.x + t * (Q.x - P.x), P.y + t * (Q.y - P.y)];
+}
+
+/**
+ * Every pair of crossing lanes as [lane i, lane j, distance along i, distance along j] with i < j,
+ * in the order of `crossings`. Distances are integers in lane units (as `Unit.d`), measured from
+ * each lane's lower node index; they decide where streams on crossing lanes meet.
+ */
+export function crossingDistances(map: GameMap): [number, number, number, number][] {
+  const out: [number, number, number, number][] = [];
+  for (let i = 0; i < map.lanes.length; i++) {
+    for (let j = i + 1; j < map.lanes.length; j++) {
+      const p = laneCrossingParams(map, i, j);
+      if (p) out.push([i, j, Math.round(p[0] * map.lanes[i]![2]), Math.round(p[1] * map.lanes[j]![2])]);
+    }
+  }
+  return out;
 }
 
 /** Every pair of crossing lanes as [lane, lane, x, y], lane indices ascending. */

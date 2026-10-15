@@ -1,5 +1,5 @@
 import { isArrayOf, isInt, isOneOf, isRecord, isUint32 } from '@wp/game-core';
-import { BOARD, getMap, INTRO_MAP, LAYOUTS, LEGACY_MAPS, MAPS_PER_SET, NODE_TYPES, type FactionCount, type GameMap, type Layout, type NodeType } from './maps';
+import { BOARD, crossingDistances, getMap, INTRO_MAP, LAYOUTS, LEGACY_MAPS, MAPS_PER_SET, NODE_TYPES, type FactionCount, type GameMap, type Layout, type NodeType } from './maps';
 
 export { BOARD, getMap, INTRO_MAP, LAYOUTS, LEGACY_MAPS, MAPS_PER_SET, NODE_TYPES };
 export type { FactionCount, GameMap, Layout, NodeType };
@@ -31,6 +31,10 @@ export type OpponentCount = (typeof OPPONENT_COUNTS)[number];
  *   Only owned platforms fire.
  * - Units of different factions moving in opposite directions on one lane fight when they meet:
  *   both deal their attack at once until at least one is destroyed.
+ * - Crossing lanes (hand-built maps): there is no bridge, streams fly through the same point. Units
+ *   of different factions on the two lanes that are inside the crossing zone (CROSS_REACH lane
+ *   units around the crossing point, judged by the stretch a unit covered during the tick, so no
+ *   unit can skip it) fight there by the same rule as on a lane; own streams pass each other.
  * - Bastions (armoured nodes) take half damage: every hostile point that arrives first fills the
  *   bastion's armour bit (`half[v]` 0 → 1, no level change); the next hostile point empties it
  *   (1 → 0) and lowers the level by one (or converts the node at level 1). So 2 hostile points =
@@ -69,6 +73,11 @@ export const SHOT_INTERVAL = 9;
 export const SHOT_DAMAGE = 1;
 export const RANGE_BASE = 70;
 export const RANGE_PER_LEVEL = 3;
+/**
+ * Half-width of a crossing zone in lane units. Wider than a tick's travel (and as wide as a steady
+ * drone stream's spacing), so crossing streams always meet, just as opposing streams on one lane do.
+ */
+export const CROSS_REACH = 24;
 
 export const RESULTS = ['playing', 'won', 'lost'] as const;
 export type Result = (typeof RESULTS)[number];
@@ -96,7 +105,7 @@ export interface Stats {
   absorbed: number;
   /** Units that hit a neutral or hostile node. */
   hits: number;
-  /** Units destroyed in head-on fights. */
+  /** Units destroyed in head-on fights (on a lane or at a crossing). */
   fought: number;
   /** Units destroyed by defence platforms. */
   shot: number;
@@ -401,6 +410,79 @@ function fight(s: NcState, map: GameMap): void {
   }
 }
 
+/** Crossings of a map as [lane i, lane j, distance along i, distance along j] (i < j, fixed order). */
+const crossingCache = new WeakMap<GameMap, [number, number, number, number][]>();
+export function crossingsOf(map: GameMap): readonly (readonly [number, number, number, number])[] {
+  let list = crossingCache.get(map);
+  if (!list) {
+    list = crossingDistances(map);
+    crossingCache.set(map, list);
+  }
+  return list;
+}
+
+/**
+ * Whether unit `u` (on lane `lane` of length `len`) passed through the zone around the point at
+ * distance `at` (from the lane's lower node) during this tick: the stretch it covered,
+ * [d − speed, d] in its own direction, overlaps [at − CROSS_REACH, at + CROSS_REACH].
+ */
+export function inCrossingZone(u: Unit, lane: readonly [number, number, number], at: number): boolean {
+  const point = u.a === lane[0] ? at : lane[2] - at;
+  return u.d - UNIT_SPEED[u.k] <= point + CROSS_REACH && u.d >= point - CROSS_REACH;
+}
+
+/** Fixed order of the units in one crossing zone (independent of their order in `s.units`). */
+function zoneOrder(at: number, lane: readonly [number, number, number]) {
+  const past = (u: Unit) => u.d - (u.a === lane[0] ? at : lane[2] - at);
+  return (x: Unit, y: Unit): number => past(y) - past(x) || x.f - y.f || x.k - y.k || x.hp - y.hp || x.a - y.a || x.h - y.h;
+}
+
+/**
+ * Fights at crossing points: per crossing (in the fixed order of `crossingsOf`), every unit in the
+ * zone on the first lane — the one furthest through first — meets the units of other factions in the
+ * zone on the second lane, as in a head-on fight. Units destroyed at an earlier crossing take no part.
+ */
+function crossFight(s: NcState, map: GameMap): void {
+  const list = crossingsOf(map);
+  if (list.length === 0) return;
+  const n = map.nodes.length;
+  const { lane: laneAt } = scratchOf(map);
+  const onLane = new Map<number, Unit[]>();
+  for (const [i, j] of list) {
+    onLane.set(i, []);
+    onLane.set(j, []);
+  }
+  for (const u of s.units) onLane.get(laneAt[u.a * n + u.b]!)?.push(u);
+  let died = false;
+  for (const [i, j, di, dj] of list) {
+    const laneI = map.lanes[i]!;
+    const laneJ = map.lanes[j]!;
+    const zi = onLane.get(i)!.filter((u) => u.hp > 0 && inCrossingZone(u, laneI, di));
+    if (zi.length === 0) continue;
+    const zj = onLane.get(j)!.filter((u) => u.hp > 0 && inCrossingZone(u, laneJ, dj));
+    if (zj.length === 0) continue;
+    zi.sort(zoneOrder(di, laneI));
+    zj.sort(zoneOrder(dj, laneJ));
+    for (const x of zi) {
+      for (const y of zj) {
+        if (x.hp <= 0) break;
+        if (y.hp <= 0 || y.f === x.f) continue;
+        while (x.hp > 0 && y.hp > 0) {
+          const hitX = UNIT_POWER[y.k];
+          y.hp -= UNIT_POWER[x.k];
+          x.hp -= hitX;
+        }
+        died = true;
+      }
+    }
+  }
+  if (died) {
+    const before = s.units.length;
+    s.units = s.units.filter((u) => u.hp > 0);
+    s.stats.fought += before - s.units.length;
+  }
+}
+
 function defend(s: NcState, map: GameMap, events: StepEvents): void {
   let died = false;
   const { near, lane: laneAt } = scratchOf(map);
@@ -530,6 +612,7 @@ export function stepMut(s: NcState, map: GameMap = mapOf(s), controller?: Contro
   produce(s, map);
   move(s);
   fight(s, map);
+  crossFight(s, map);
   defend(s, map, events);
   arrive(s, map, events);
   trimPaths(s);

@@ -98,16 +98,17 @@ test('node-conquest: a paused battle resumes exactly after a reload', async ({ p
   await expect.poll(async () => (await savedState(page)).tick).toBeGreaterThan(state.tick);
 });
 
-test('node-conquest: a match on a hand-built map with crossing lanes (bridges) resumes after a reload', async ({ page }) => {
-  let bridges = 0;
+test('node-conquest: a match on a hand-built map with crossing lanes resumes after a reload', async ({ page }) => {
+  let marks = 0;
   let from = -1;
   let to = -1;
   await expectResumeAfterReload(page, 'node-conquest', async (p) => {
-    // Map 8 (index 7, "bridges"): neighbouring factions are linked by lanes that cross.
+    // Map 8 (index 7): neighbouring factions are linked by lanes that cross (marked crossing points, no bridges).
     await p.getByTestId('nc-map-select').selectOption('7');
     await expect.poll(async () => (await savedState(p))?.map).toBe(7);
-    bridges = await p.locator('[data-testid^="bridge-"]').count();
-    expect(bridges).toBeGreaterThan(0);
+    marks = await p.locator('[data-testid^="crossing-"]').count();
+    expect(marks).toBeGreaterThan(0);
+    await expect(p.locator('[data-testid^="bridge-"], [data-testid^="gap-"]')).toHaveCount(0);
     [from, to] = await startAndNeighbour(p);
     await clickNode(p, from);
     await clickNode(p, to);
@@ -117,8 +118,7 @@ test('node-conquest: a match on a hand-built map with crossing lanes (bridges) r
   expect(state.map).toBe(7);
   expect(state.out[from]).toContain(to);
   await expect(page.getByTestId('nc-map-select')).toHaveValue('7');
-  await expect(page.locator('[data-testid^="bridge-"]')).toHaveCount(bridges);
-  await expect(page.locator('[data-testid^="gap-"]')).toHaveCount(bridges);
+  await expect(page.locator('[data-testid^="crossing-"]')).toHaveCount(marks);
   await expect(page.getByTestId(laneId(from, to))).toHaveAttribute('data-active', new RegExp(`${from}-${to}`));
 });
 
