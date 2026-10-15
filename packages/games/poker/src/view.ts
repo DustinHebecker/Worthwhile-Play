@@ -440,6 +440,8 @@ export function createPoker(context: GameContext): GameInstance<PokerState> {
     hand = undefined;
     clear(body);
     container.dataset.phase = state.phase;
+    // Public facts only (hand number, phase): lets tests match the DOM with the (asynchronously written) save.
+    container.dataset.hand = String(state.handNumber);
     container.dataset.seats = String(state.seats.length);
     if (state.phase === 'setup') {
       body.append(renderSetup());

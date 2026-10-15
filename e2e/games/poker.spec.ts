@@ -19,6 +19,38 @@ interface SavedPoker {
 
 const saved = async (page: Page) => ((await readSave(page, GAME)) as { state: SavedPoker } | undefined)?.state;
 
+/**
+ * The save that belongs to what the page shows right now. The game renders synchronously, but the host writes
+ * the save about 50 ms later (debounced autosave, then IndexedDB), so a save read right after a click can still
+ * describe the previous moment (e.g. the betting state while the page already shows that hand's showdown).
+ * Waits until the save shows the same hand, phase, board and own cards as the DOM.
+ */
+async function synced(page: Page): Promise<SavedPoker> {
+  let match: SavedPoker | undefined;
+  await expect
+    .poll(
+      async () => {
+        const dom = await page.evaluate(() => {
+          const root = document.querySelector<HTMLElement>('.wp-poker');
+          const cards = (sel: string) => [...document.querySelectorAll(`${sel} [data-card]`)].map((e) => e.getAttribute('data-card'));
+          return { hand: Number(root?.dataset.hand ?? -1), phase: root?.dataset.phase ?? '', board: cards('[data-testid="pk-board"]'), hole: cards('[data-testid="pk-hole"]') };
+        });
+        const state = await saved(page);
+        const same =
+          state !== undefined &&
+          state.handNumber === dom.hand &&
+          state.phase === dom.phase &&
+          JSON.stringify(state.board) === JSON.stringify(dom.board) &&
+          JSON.stringify(state.seats[0]?.hole ?? []) === JSON.stringify(dom.hole);
+        match = same ? state : undefined;
+        return same;
+      },
+      { intervals: [50, 100, 200] }
+    )
+    .toBe(true);
+  return match as SavedPoker;
+}
+
 /** One calm step: next hand, check, or call. */
 async function step(page: Page) {
   for (const id of ['pk-next', 'pk-check', 'pk-call']) {
@@ -44,7 +76,7 @@ const hiddenCards = (state: SavedPoker) =>
   state.seats.flatMap((seat, i) => (i === 0 || (state.phase !== 'betting' && state.result?.shown.includes(i)) ? [] : seat.hole));
 
 async function expectNoHiddenCardsInDom(page: Page) {
-  const state = (await saved(page))!;
+  const state = await synced(page);
   for (const card of hiddenCards(state)) await expect(page.locator(`[data-card="${card}"]`)).toHaveCount(0);
   // Accessible names and text never mention a hidden card either.
   const text = await page.evaluate(() => {
@@ -67,7 +99,7 @@ test('resumes mid-hand after a reload with the identical table', async ({ page }
     await p.getByTestId('pk-start').click();
     // Play until a flop is out and it is the player's turn (still mid-hand).
     for (let i = 0; i < 40; i++) {
-      const s = await saved(p);
+      const s = await synced(p);
       if (s && s.phase === 'betting' && s.board.length >= 3) break;
       await step(p);
     }
@@ -75,7 +107,7 @@ test('resumes mid-hand after a reload with the identical table', async ({ page }
     board = await p.locator('[data-testid="pk-board"] [data-card]').evaluateAll((els) => els.map((e) => e.getAttribute('data-card')));
     hole = await p.locator('[data-testid="pk-hole"] [data-card]').evaluateAll((els) => els.map((e) => e.getAttribute('data-card')));
   });
-  const state = (await saved(page))!;
+  const state = await synced(page);
   expect(state.phase).toBe('betting');
   await expect(page.getByTestId('pk-actions')).toBeVisible();
   expect(await page.locator('[data-testid="pk-board"] [data-card]').evaluateAll((els) => els.map((e) => e.getAttribute('data-card')))).toEqual(board);
@@ -89,7 +121,7 @@ test('opponents’ cards are never in the page before a showdown', async ({ page
   let showdown = false;
   for (let i = 0; i < 60 && !showdown; i++) {
     await expectNoHiddenCardsInDom(page);
-    const state = (await saved(page))!;
+    const state = await synced(page);
     showdown = state.phase !== 'betting' && (state.result?.shown.some((s) => s !== 0) ?? false);
     if (!showdown) await step(page);
   }
