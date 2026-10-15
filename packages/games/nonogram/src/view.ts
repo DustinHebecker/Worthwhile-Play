@@ -1,4 +1,4 @@
-import type { GameContext, GameInstance, NewGameOptions } from '@wp/game-core';
+import { bcp47Tag, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
 import { announce, clear, gridKeyboard, h } from '@wp/ui';
 import {
   CROSSED,
@@ -80,7 +80,7 @@ export function createNonogram(context: GameContext): GameInstance<NonogramState
     h('p', {}, t('keys.help'))
   );
   const controls = h('div', { class: 'ng-controls' }, modeGroup, h('div', { class: 'wp-row ng-actions' }, checkButton, showButton), checkResult);
-  const container = h('div', { class: 'wp-nonogram', dir: t.direction, lang: t.locale }, status, scroller, viewOptions, controls, help, live);
+  const container = h('div', { class: 'wp-nonogram', dir: t.direction, lang: bcp47Tag(t.locale) }, status, scroller, viewOptions, controls, help, live);
 
   // --- Labels --------------------------------------------------------------------------------
 

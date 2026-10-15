@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { GameInstance } from '@wp/game-core';
+import { bcp47Tag, type GameInstance } from '@wp/game-core';
 import { SUPPORTED_LOCALES } from '@wp/localization';
 import { createTestContext } from '@wp/testing';
 import game from '../src/index';
@@ -284,7 +284,7 @@ describe('Constraint Grid view', () => {
       const { root, ctx } = setup(7, 'hard', locale);
       expect(ctx.missingKeys, locale).toEqual([]);
       const wrapper = root.querySelector<HTMLElement>('.wp-constraint-grid');
-      expect(wrapper?.getAttribute('lang')).toBe(locale);
+      expect(wrapper?.getAttribute('lang')).toBe(bcp47Tag(locale));
       expect(wrapper?.getAttribute('dir')).toBe(locale === 'ar' ? 'rtl' : 'ltr');
       expect(root.textContent).not.toMatch(/\{\w+\}/);
     }

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import fc from 'fast-check';
 import {
   auditCatalogues,
+  bcp47Tag,
   COMMON_MESSAGES,
   createTranslator,
   interpolate,
@@ -45,6 +46,10 @@ describe('locales', () => {
     ['EN-gb', 'en']
   ])('matchLocale(%s) = %s', (tag, expected) => {
     expect(matchLocale(tag)).toBe(expected);
+  });
+
+  it('re-exports bcp47Tag from game-core (pt → pt-BR)', () => {
+    expect(bcp47Tag('pt')).toBe('pt-BR');
   });
 
   it('resolves stored → browser → English', () => {

@@ -1,4 +1,4 @@
-import type { GameContext, GameInstance, NewGameOptions } from '@wp/game-core';
+import { bcp47Tag, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
 import { announce, clear, gridKeyboard, h } from '@wp/ui';
 import {
   applyRule,
@@ -44,7 +44,7 @@ export function createMinimalProof(context: GameContext): GameInstance<MinimalPr
   const resetButton = h('button', { type: 'button', 'data-testid': 'mp-reset', onclick: () => clearProof() }, t('action.resetProof'));
   const controls = h('div', { class: 'wp-row mp-controls' }, undoButton, resetButton);
   const help = h('div', { class: 'mp-help wp-muted' }, h('p', {}, t('help')), h('p', { dir: 'auto' }, t('legend')));
-  const container = h('div', { class: 'wp-minimal-proof', dir: t.direction, lang: t.locale },
+  const container = h('div', { class: 'wp-minimal-proof', dir: t.direction, lang: bcp47Tag(t.locale) },
     goal,
     status,
     h('section', { class: 'mp-section' }, h('h3', { id: 'mp-facts-title' }, t('facts.title')), facts),

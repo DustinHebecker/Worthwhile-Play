@@ -1,5 +1,5 @@
 import './styles.css';
-import type { GameContext, GameInstance, NewGameOptions } from '@wp/game-core';
+import { bcp47Tag, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
 import { pickText, resolveContentLanguages, SYMBOL_DECK, type CardSide } from '@wp/learning-content';
 import { announce, clear, gridKeyboard, h } from '@wp/ui';
 import { BUILTIN_CHOICES, builtinDeal, choiceOf, faceResolver, knowledgeLanguage, parseChoice, userDeck, type CardChoice, type CardFace, type FaceResolver } from './decks';
@@ -65,7 +65,7 @@ export function renderSide(side: CardSide, description: string): HTMLElement {
     // mid-word; long texts (definitions) are set as a small paragraph.
     const longest = Math.max(...side.text.split(/\s+/).map(textWidth));
     const size = isLongText(side.text) ? ' wp-memory__text--para' : longest > 11 ? ' wp-memory__text--xlong' : longest > 7 ? ' wp-memory__text--long' : '';
-    face.append(h('span', { class: `wp-memory__text${size}`, lang: side.lang, dir: 'auto' }, side.text));
+    face.append(h('span', { class: `wp-memory__text${size}`, lang: side.lang && bcp47Tag(side.lang), dir: 'auto' }, side.text));
   }
   // Audio sides are not played yet (bundled audio packs are a later increment); text can be read aloud.
   return face;

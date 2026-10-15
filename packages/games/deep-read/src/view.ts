@@ -1,4 +1,4 @@
-import type { GameContext, GameInstance, NewGameOptions } from '@wp/game-core';
+import { bcp47Tag, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
 import { announce, append, clear, h } from '@wp/ui';
 import { contentFor } from './content';
 import type { OptionId, OptionText, QuestionStructure, TextContent } from './content/types';
@@ -52,7 +52,7 @@ export function createDeepRead(context: GameContext): GameInstance<DeepReadState
 
   const live = h('div', { class: 'sr-only', 'aria-live': 'polite', 'data-testid': 'dr-live' });
   const board = h('div', { class: 'dr-board' });
-  const container = h('div', { class: 'wp-deep-read', dir: t.direction, lang: t.locale }, board, live);
+  const container = h('div', { class: 'wp-deep-read', dir: t.direction, lang: bcp47Tag(t.locale) }, board, live);
 
   const text = (): TextContent => content[state.textId] as TextContent;
   const optionText = (question: QuestionStructure, id: string): OptionText =>

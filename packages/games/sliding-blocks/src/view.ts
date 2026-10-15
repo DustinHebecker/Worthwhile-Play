@@ -1,4 +1,4 @@
-import type { GameContext, GameInstance, NewGameOptions } from '@wp/game-core';
+import { bcp47Tag, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
 import { announce, clear, h } from '@wp/ui';
 import {
   SIZE,
@@ -106,7 +106,7 @@ export function createSlidingBlocks(context: GameContext): GameInstance<SlidingB
 
   const container = h(
     'div',
-    { class: 'wp-sliding-blocks', dir: t.direction, lang: t.locale, onkeydown: (event: Event) => onKey(event as KeyboardEvent) },
+    { class: 'wp-sliding-blocks', dir: t.direction, lang: bcp47Tag(t.locale), onkeydown: (event: Event) => onKey(event as KeyboardEvent) },
     goal,
     moves,
     status,

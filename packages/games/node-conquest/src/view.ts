@@ -1,5 +1,5 @@
 import './styles.css';
-import { isOneOf, isRecord, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
+import { bcp47Tag, isOneOf, isRecord, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
 import { announce, clear, h } from '@wp/ui';
 import { opponents } from './ai';
 import { reviewOf, type Moment } from './review';
@@ -249,7 +249,7 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
   const live = h('div', { class: 'sr-only', 'aria-live': 'polite', role: 'status', 'data-testid': 'nc-live' });
   const container = h(
     'div',
-    { class: `wp-nc${context.reducedMotion ? ' nc-reduced' : ''}`, dir: t.direction, lang: t.locale },
+    { class: `wp-nc${context.reducedMotion ? ' nc-reduced' : ''}`, dir: t.direction, lang: bcp47Tag(t.locale) },
     statusEl,
     countsEl,
     standoffEl,
