@@ -3,9 +3,10 @@ import { messages } from './messages';
 
 export const metadata: GameMetadata = {
   id: 'tic-tac-toe',
-  stateVersion: 1,
+  // 2: three variants (classic, nested "board in board", Order & Chaos); v1 saves migrate to classic.
+  stateVersion: 2,
   skills: ['planning', 'strategy'],
-  typicalMinutes: [1, 3],
+  typicalMinutes: [1, 15],
   inputMethods: ['pointer', 'touch', 'keyboard'],
   capabilities: {
     offline: true,
@@ -16,6 +17,6 @@ export const metadata: GameMetadata = {
     pauseable: true
   },
   messages,
-  // Strength of the built-in (deterministic, minimax-based) computer opponent.
+  // Strength of the built-in deterministic computer opponent ("perfect" is shown as "Hard").
   difficulties: ['easy', 'medium', 'perfect']
 };

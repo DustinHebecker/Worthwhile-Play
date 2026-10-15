@@ -5,14 +5,16 @@ import type { SupportedLocale } from '@wp/localization';
 import { createTestContext, type TestContext } from '@wp/testing';
 import game from '../src/index';
 import { COMPUTER_REVEAL_MS } from '../src/view';
-import { isValidState, type TicTacToeState } from '../src/rules';
+import type { ClassicState } from '../src/rules';
+import { isValidState } from '../src/state';
 
-let instances: GameInstance<TicTacToeState>[] = [];
+/** These tests cover the classic variant (the default without remembered preferences). */
+let instances: GameInstance<ClassicState>[] = [];
 
 function mount(options: { reducedMotion?: boolean; locale?: SupportedLocale } = {}) {
   const ctx: TestContext = createTestContext(game as GameModule<unknown>, options.locale ?? 'en');
   const context = { ...ctx.context, reducedMotion: options.reducedMotion ?? true };
-  const instance = game.create(context);
+  const instance = game.create(context) as GameInstance<ClassicState>;
   instances.push(instance);
   const root = context.root;
   const cell = (i: number) => root.querySelector<HTMLButtonElement>(`[data-testid="cell-${i}"]`)!;
@@ -165,7 +167,7 @@ describe('tic-tac-toe view', () => {
     instance.newGame({ seed: 21, difficulty: 'medium' });
     cell(4).click();
     select('strength', 'perfect');
-    expect(instance.serialize()).toEqual({ seed: 21, difficulty: 'perfect', opponent: 'computer', starter: 'human', moves: [], rng: 21 });
+    expect(instance.serialize()).toEqual({ variant: 'classic', seed: 21, difficulty: 'perfect', opponent: 'computer', starter: 'human', moves: [], rng: 21 });
     cell(4).click();
     button('restart').click();
     expect(instance.serialize().moves).toEqual([]);
@@ -181,7 +183,7 @@ describe('tic-tac-toe view', () => {
     instance.reset();
     expect(instance.serialize()).toEqual(start);
     instance.newGame({ seed: 3, difficulty: 'nonsense' });
-    expect(instance.serialize()).toEqual({ seed: 3, difficulty: 'medium', opponent: 'human', starter: 'human', moves: [], rng: 3 });
+    expect(instance.serialize()).toEqual({ variant: 'classic', seed: 3, difficulty: 'medium', opponent: 'human', starter: 'human', moves: [], rng: 3 });
   });
 
   it('delays only the drawing of the computer’s reply; the logical state is complete at once', () => {

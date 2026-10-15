@@ -116,8 +116,9 @@ export function boardFromMoves(moves: readonly number[]): Cell[] {
 /* Game state                                                                 */
 /* ------------------------------------------------------------------------ */
 
-/** Serialized logical state. Plain JSON. */
-export interface TicTacToeState {
+/** Serialized logical state of the classic 3×3 game. Plain JSON. */
+export interface ClassicState {
+  variant: 'classic';
   /** Seed of the current game (uint32). A fresh round restarts the PRNG from it. */
   seed: number;
   /** Computer strength. Kept in human-vs-human mode so switching back restores it. */
@@ -139,8 +140,8 @@ export interface RoundOptions {
 }
 
 /** An empty board for the given options. The computer's opening move (if any) is added by `ai.ts`. */
-export function createRound({ seed, difficulty, opponent, starter }: RoundOptions): TicTacToeState {
-  return { seed, difficulty, opponent, starter, moves: [], rng: seed };
+export function createRound({ seed, difficulty, opponent, starter }: RoundOptions): ClassicState {
+  return { variant: 'classic', seed, difficulty, opponent, starter, moves: [], rng: seed };
 }
 
 /** Mark played by the person at the device in a game against the computer. */
@@ -148,19 +149,19 @@ export const humanMark = (starter: Starter): Mark => (starter === 'human' ? 'X' 
 
 export const computerMark = (starter: Starter): Mark => other(humanMark(starter));
 
-export const boardOf = (state: TicTacToeState): Cell[] => boardFromMoves(state.moves);
+export const boardOf = (state: ClassicState): Cell[] => boardFromMoves(state.moves);
 
-export const outcomeOfState = (state: TicTacToeState): Outcome => outcomeOf(boardOf(state));
+export const outcomeOfState = (state: ClassicState): Outcome => outcomeOf(boardOf(state));
 
 /** True when it is the computer's turn in an unfinished game against the computer. */
-export function isComputerTurn(state: TicTacToeState): boolean {
+export function isComputerTurn(state: ClassicState): boolean {
   if (state.opponent !== 'computer') return false;
   const board = boardOf(state);
   return outcomeOf(board).kind === 'playing' && toMove(board) === computerMark(state.starter);
 }
 
 /** Adds one move to the state (no computer reply). Throws on an illegal or post-game move. */
-export function applyMove(state: TicTacToeState, index: number): TicTacToeState {
+export function applyMove(state: ClassicState, index: number): ClassicState {
   const board = boardOf(state);
   if (outcomeOf(board).kind !== 'playing') throw new RangeError('The game is already over');
   place(board, index, toMove(board));
@@ -171,7 +172,7 @@ export function applyMove(state: TicTacToeState, index: number): TicTacToeState 
  * Undo is offered only while the game is still running.
  * Against the computer it needs at least one move by the person.
  */
-export function canUndo(state: TicTacToeState): boolean {
+export function canUndo(state: ClassicState): boolean {
   if (outcomeOfState(state).kind !== 'playing') return false;
   if (state.opponent === 'human') return state.moves.length > 0;
   const firstHumanMove = state.starter === 'human' ? 0 : 1;
@@ -182,7 +183,7 @@ export function canUndo(state: TicTacToeState): boolean {
  * Takes back the last move; against the computer, takes back the person's last move
  * together with the computer's reply. The PRNG is not rewound.
  */
-export function undo(state: TicTacToeState): TicTacToeState {
+export function undo(state: ClassicState): ClassicState {
   if (!canUndo(state)) return state;
   const moves = [...state.moves];
   if (state.opponent === 'human') {
@@ -196,10 +197,10 @@ export function undo(state: TicTacToeState): TicTacToeState {
 }
 
 /** Thorough structural validation of untrusted data. Never throws. */
-export function isValidState(value: unknown): value is TicTacToeState {
+export function isValidClassicState(value: unknown): value is ClassicState {
   if (!isRecord(value)) return false;
   const keys = Object.keys(value);
-  if (keys.length !== 6) return false;
+  if (keys.length !== 7 || value.variant !== 'classic') return false;
   const { seed, difficulty, opponent, starter, moves, rng } = value;
   if (!isUint32(seed) || !isUint32(rng)) return false;
   if (!isOneOf(difficulty, DIFFICULTIES) || !isOneOf(opponent, OPPONENTS) || !isOneOf(starter, STARTERS)) return false;
