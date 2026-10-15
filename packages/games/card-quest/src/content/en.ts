@@ -92,7 +92,7 @@ export const en: LocaleContent = {
   'kz.gnome-overalls': { name: 'Gnome Dungarees', flavour: 'Blue, practical and painted on.' },
   'kz.compost-cloak': { name: 'Compost-Scented Cloak', flavour: 'Bugs keep their distance. So does everyone else.' },
   'kz.hi-vis-vest': { name: 'Hi-Vis Vest', flavour: 'Nobody can miss you. That’s the problem when running.' },
-  'kz.steel-toe-boots': { name: 'Steel-Toe Boots', flavour: 'Kick doors, rocks and the occasional snail.' },
+  'kz.steel-toe-boots': { name: 'Steel-Toe Boots', flavour: 'Rocks, roots, snails: nothing can hurt your toes any more.' },
   'kz.garden-clogs': { name: 'Garden Clogs', flavour: 'Clip-clop. Surprisingly quick on a lawn.' },
   'kz.league-slippers': { name: 'Seven-League Slippers', flavour: 'One step to the fence, two to the next village.' },
   'kz.rubber-boots': { name: 'Rubber Boots', flavour: 'Puddles fear you now.' },

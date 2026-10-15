@@ -89,7 +89,7 @@ export const pl: LocaleContent = {
   'kz.gnome-overalls': { name: 'Krasnalowe Ogrodniczki', flavour: 'Niebieskie, praktyczne i namalowane.' },
   'kz.compost-cloak': { name: 'Płaszcz o Zapachu Kompostu', flavour: 'Robaki trzymają się z daleka. Wszyscy inni też.' },
   'kz.hi-vis-vest': { name: 'Kamizelka Odblaskowa', flavour: 'Nikt cię nie przeoczy. I w tym problem, gdy uciekasz.' },
-  'kz.steel-toe-boots': { name: 'Buty ze Stalowymi Noskami', flavour: 'Kopią drzwi, kamienie i od czasu do czasu ślimaka.' },
+  'kz.steel-toe-boots': { name: 'Buty ze Stalowymi Noskami', flavour: 'Kamienie, korzenie, ślimaki: twoje palce są wreszcie bezpieczne.' },
   'kz.garden-clogs': { name: 'Ogrodowe Chodaki', flavour: 'Klap-klap. Na trawniku zaskakująco szybkie.' },
   'kz.league-slippers': { name: 'Siedmiomilowe Kapcie', flavour: 'Jeden krok do płotu, dwa do sąsiedniej wsi.' },
   'kz.rubber-boots': { name: 'Gumiaki', flavour: 'Kałuże się ciebie teraz boją.' },

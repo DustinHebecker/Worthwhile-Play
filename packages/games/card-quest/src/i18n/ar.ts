@@ -19,7 +19,7 @@ export const ar: Catalogue = {
   'setup.targetLevel': 'المستوى {n}',
   'setup.roundLimit': 'حد الجولات',
   'setup.roundLimit.off': 'بلا حد',
-  'setup.roundLimit.n': '{n} جولات',
+  'setup.roundLimit.n': '{n} جولة',
   'setup.roundLimit.hint': 'مع وجود حد، يفوز صاحب أعلى مستوى بعد الجولة الأخيرة.',
   'setup.coach': 'عرض نصائح قصيرة أثناء اللعب',
   'setup.start': 'العب',

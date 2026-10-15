@@ -89,7 +89,7 @@ export const it: LocaleContent = {
   'kz.gnome-overalls': { name: 'Salopette da nano', flavour: 'Blu, pratica e dipinta addosso.' },
   'kz.compost-cloak': { name: 'Mantello al profumo di compost', flavour: 'Gli insetti stanno alla larga. Anche tutti gli altri.' },
   'kz.hi-vis-vest': { name: 'Gilet catarifrangente', flavour: 'Nessuno può non vederti. Ed è un problema quando scappi.' },
-  'kz.steel-toe-boots': { name: 'Scarponi antinfortunistici', flavour: 'Prendono a calci porte, sassi e ogni tanto una lumaca.' },
+  'kz.steel-toe-boots': { name: 'Scarponi antinfortunistici', flavour: 'Sassi, radici, lumache: le tue dita sono finalmente al sicuro.' },
   'kz.garden-clogs': { name: 'Zoccoli da giardino', flavour: 'Cloc-cloc. Sorprendentemente veloci sul prato.' },
   'kz.league-slippers': { name: 'Pantofole delle sette leghe', flavour: 'Un passo fino allo steccato, due fino al paese vicino.' },
   'kz.rubber-boots': { name: 'Stivali di gomma', flavour: 'Ora sono le pozzanghere ad avere paura di te.' },

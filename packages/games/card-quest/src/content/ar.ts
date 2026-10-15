@@ -89,7 +89,7 @@ export const ar: LocaleContent = {
   'kz.gnome-overalls': { name: 'سروال الأقزام بحمّالات', flavour: 'أزرق، عملي، ومرسوم على الجسم.' },
   'kz.compost-cloak': { name: 'عباءة بعطر السماد', flavour: 'الحشرات تبتعد. والجميع أيضًا.' },
   'kz.hi-vis-vest': { name: 'سترة عاكسة', flavour: 'لا أحد يمكنه ألا يراك. وهذه مشكلة حين تهرب.' },
-  'kz.steel-toe-boots': { name: 'أحذية بمقدمة فولاذية', flavour: 'تركل الأبواب والصخور وأحيانًا حلزونًا.' },
+  'kz.steel-toe-boots': { name: 'أحذية بمقدمة فولاذية', flavour: 'صخور وجذور وحلزونات: أصابع قدميك في أمان الآن.' },
   'kz.garden-clogs': { name: 'قباقيب الحديقة', flavour: 'طق-طق. سريعة على العشب بشكل مدهش.' },
   'kz.league-slippers': { name: 'خفّ الخطوات العملاقة', flavour: 'خطوة إلى السياج، وخطوتان إلى القرية المجاورة.' },
   'kz.rubber-boots': { name: 'جزمة مطاطية', flavour: 'البِرك تخشاك الآن.' },
