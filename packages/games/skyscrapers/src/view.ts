@@ -16,6 +16,8 @@ import {
 } from './rules';
 import './styles.css';
 
+const TOWERS_PREF = 'towers';
+
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
 export function createSkyscrapers(context: GameContext): GameInstance<SkyscrapersState> {
@@ -27,6 +29,8 @@ export function createSkyscrapers(context: GameContext): GameInstance<Skyscraper
   let cellEls: HTMLElement[] = [];
   let padButtons: HTMLButtonElement[] = [];
   let disposeKeyboard: () => void = () => undefined;
+  /** Per-device display preference: draw placed heights as towers (default) or digits only. */
+  let towers = context.preferences?.get(TOWERS_PREF) !== false;
 
   const live = h('div', { class: 'sr-only', 'aria-live': 'polite', 'data-testid': 'sk-live' });
   const status = h('p', { class: 'wp-status sk-status', 'data-testid': 'sk-status' });
@@ -41,6 +45,10 @@ export function createSkyscrapers(context: GameContext): GameInstance<Skyscraper
     h('span', { 'aria-hidden': 'true' }, '⌫'),
     t('action.erase')
   );
+  const towersButton = h('button', { type: 'button', class: 'sk-towers-toggle', 'data-testid': 'sk-towers', onclick: () => toggleTowers() },
+    h('span', { class: 'sk-towers-icon', 'aria-hidden': 'true' }),
+    t('action.towers')
+  );
   const checkButton = h('button', { type: 'button', 'data-testid': 'sk-check', 'aria-describedby': 'sk-check-help', onclick: () => runCheck() }, t('common.check'));
   const checkResult = h('p', { class: 'sk-check-result', 'data-testid': 'sk-check-result' });
   const keysHelp = h('p', {});
@@ -49,7 +57,7 @@ export function createSkyscrapers(context: GameContext): GameInstance<Skyscraper
     h('p', { id: 'sk-check-help' }, t('check.help')),
     keysHelp
   );
-  const controls = h('div', { class: 'sk-controls' }, pad, h('div', { class: 'wp-row sk-actions' }, notesButton, eraseButton, checkButton), checkResult);
+  const controls = h('div', { class: 'sk-controls' }, pad, h('div', { class: 'wp-row sk-actions' }, notesButton, eraseButton, checkButton, towersButton), checkResult);
   const container = h('div', { class: 'wp-skyscrapers', dir: t.direction, lang: bcp47Tag(t.locale) }, status, h('div', { class: 'sk-scroll' }, board), controls, help, live);
 
   // --- Labels --------------------------------------------------------------------------------
@@ -96,6 +104,13 @@ export function createSkyscrapers(context: GameContext): GameInstance<Skyscraper
   const togglePencil = () => {
     if (paused) return;
     commit(setPencil(state, !state.pencil));
+  };
+
+  /** View-only: changes no game state, so no save is requested. Works while paused too. */
+  const toggleTowers = () => {
+    towers = !towers;
+    context.preferences?.set(TOWERS_PREF, towers);
+    update();
   };
 
   const runCheck = () => {
@@ -156,6 +171,7 @@ export function createSkyscrapers(context: GameContext): GameInstance<Skyscraper
         const cell = h('div', { class: c === n - 1 ? 'sk-cell sk-last-col' : 'sk-cell', role: 'gridcell', 'data-cell': i, 'data-testid': `cell-${r}-${c}`, tabindex: -1 },
           h('span', { class: 'sk-value', 'aria-hidden': 'true' }),
           notes,
+          h('span', { class: 'sk-tower', 'aria-hidden': 'true', 'data-testid': `tower-${r}-${c}` }),
           h('span', { class: 'sk-flag', 'aria-hidden': 'true' }, '!')
         );
         cellEls.push(cell);
@@ -184,6 +200,8 @@ export function createSkyscrapers(context: GameContext): GameInstance<Skyscraper
     const selRow = Math.floor(selected / n);
     const selCol = selected % n;
     board.classList.toggle('is-solved', solved);
+    board.classList.toggle('is-towers', towers);
+    towersButton.setAttribute('aria-pressed', String(towers));
     board.setAttribute('aria-readonly', solved ? 'true' : 'false');
     cellEls.forEach((cell, i) => {
       const value = state.cells[i] as number;
@@ -202,6 +220,11 @@ export function createSkyscrapers(context: GameContext): GameInstance<Skyscraper
       const [valueEl, notesEl] = [cell.children[0] as HTMLElement, cell.children[1] as HTMLElement];
       valueEl.textContent = value === 0 ? '' : String(value);
       notesEl.hidden = value !== 0;
+      // The tower is decoration only: the digit stays visible and the accessible name carries the value.
+      const towerEl = cell.children[2] as HTMLElement;
+      towerEl.hidden = !towers || value === 0;
+      towerEl.style.setProperty('--sk-v', String(value));
+      towerEl.style.setProperty('--sk-h', String(value / n));
       [...notesEl.children].forEach((note, k) => {
         note.textContent = (state.notes[i] as number) & (1 << (k + 1)) ? String(k + 1) : '';
       });
