@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BASE_ARCHETYPES, BASE_RULESET, computeDamage, createWorld, resolveTurn, runTicks, validateCommand, type Command, type World } from '../src';
+import { BASE_ARCHETYPES, BASE_RULESET, computeDamage, createWorld, DEFAULT_DOCTRINE, resolveTurn, runTicks, STRATEGY_RULESET, validateCommand, type Command, type World } from '../src';
 import { mapOf, open, worldOf } from './helpers';
 
 const rs = BASE_RULESET;
@@ -234,5 +234,72 @@ describe('combat', () => {
     unit(w, 2)!.hp = 1;
     const { world } = runTicks(w, rs, [{ side: 0, unit: 1, order: { type: 'attack', target: 2 } }], 1);
     expect(unit(world, 1)?.order).toEqual({ type: 'hold' });
+  });
+});
+
+describe('doctrine in combat (mutation run on sim.ts, 2026-10-15)', () => {
+  // Side 0's squad at (3,2), range 2. In range: a hurt squad (20 hp), a badly hurt Outrider (10 hp),
+  // a gun tower and a squad next to it (the nearest).
+  const scene = (priority: (typeof DEFAULT_DOCTRINE)['priority'], order?: Command['order']) => {
+    const w = worldOf(open(7, 5), [
+      { side: 0, kind: 'rifles', x: 3, y: 2 },
+      { side: 1, kind: 'rifles', x: 3, y: 0 },
+      { side: 1, kind: 'outrider', x: 5, y: 2 },
+      { side: 1, kind: 'tower-gun', x: 3, y: 4 },
+      { side: 1, kind: 'rifles', x: 2, y: 2 }
+    ]);
+    unit(w, 1)!.doctrine = { ...DEFAULT_DOCTRINE, priority };
+    unit(w, 2)!.hp = 20;
+    unit(w, 3)!.hp = 10;
+    return runTicks(w, rs, order ? [{ side: 0, unit: 1, order }] : [], 1).events.find((e) => e.t === 'fire' && e.id === 1);
+  };
+
+  it('picks its target by priority: weakest, nearest, a class first; an ordered target in range before all', () => {
+    expect(scene('weakest')).toMatchObject({ target: 3 });
+    expect(scene('nearest')).toMatchObject({ target: 5 });
+    expect(scene('infantry')).toMatchObject({ target: 2 }); // the weaker of the two squads, not the weaker Outrider
+    expect(scene('structures')).toMatchObject({ target: 4 });
+    expect(scene('armor')).toMatchObject({ target: 3 });
+    expect(scene('weakest', { type: 'attack', target: 4 })).toMatchObject({ target: 4 });
+  });
+
+  it('retreats on a hit that leaves it below its threshold, not at it; never a structure or a unit the hit destroyed', () => {
+    const hitFor = computeDamage(A.rifles!.weapon!.damage, A.rifles!.weapon!, A.rifles!, 0);
+    const hit = (kind: string, hp: number) => {
+      const w = worldOf(open(5, 1), [
+        { side: 0, kind, x: 1, y: 0 },
+        { side: 1, kind: 'rifles', x: 3, y: 0 }
+      ]);
+      const own = unit(w, 1)!;
+      own.doctrine = { ...DEFAULT_DOCTRINE, retreatBelow: 50, holdFire: true };
+      own.hp = hp;
+      // Not holding (a holding unit in place has nowhere to retreat to).
+      const order: Command['order'] = A[kind]!.speed > 0 ? { type: 'move', x: 0, y: 0 } : { type: 'hold' };
+      const r = runTicks(w, rs, [{ side: 0, unit: 1, order }], 1);
+      return { retreat: r.events.some((e) => e.t === 'order-ended' && e.id === 1 && e.reason === 'retreat'), after: unit(r.world, 1) };
+    };
+    const at = (A.rifles!.hp * 50) / 100;
+    expect(hit('rifles', at + hitFor)).toMatchObject({ retreat: false, after: { hp: at } });
+    expect(hit('rifles', at + hitFor - 1)).toMatchObject({ retreat: true, after: { hp: at - 1, order: { type: 'regroup' } } });
+    expect(hit('rifles', hitFor).retreat).toBe(false); // destroyed by the hit
+    expect(hit('tower-gun', 10).retreat).toBe(false);
+    // A tower outside its side's coverage (so not "holding in place"): still no retreat, it cannot move.
+    const net = createWorld({ map: open(16, 1), sides: 2, seed: 1, entities: [{ side: 0, kind: 'command-post', x: 0, y: 0 }, { side: 0, kind: 'tower-gun', x: 12, y: 0 }, { side: 1, kind: 'rifles', x: 14, y: 0 }] }, STRATEGY_RULESET);
+    unit(net, 2)!.doctrine = { ...DEFAULT_DOCTRINE, retreatBelow: 50, holdFire: true };
+    unit(net, 2)!.hp = 10;
+    const r = runTicks(net, STRATEGY_RULESET, [], 1);
+    expect(r.events.some((e) => e.t === 'hit' && e.id === 2)).toBe(true);
+    expect(r.events.some((e) => e.t === 'order-ended' && e.id === 2)).toBe(false);
+    expect(unit(r.world, 2)!.order).toEqual({ type: 'hold' });
+  });
+
+  it('a vehicle setting up out of contact keeps setting up; its "regroup" doctrine does not call it back', () => {
+    const w = createWorld({ map: open(20, 1), sides: 2, seed: 1, entities: [{ side: 0, kind: 'command-post', x: 0, y: 0 }, { side: 0, kind: 'mast-truck', x: 15, y: 0 }, { side: 1, kind: 'command-post', x: 19, y: 0 }] }, STRATEGY_RULESET);
+    unit(w, 2)!.doctrine = { ...DEFAULT_DOCTRINE, lostContact: 'regroup' };
+    unit(w, 2)!.order = { type: 'deploy' };
+    const r = resolveTurn(w, STRATEGY_RULESET, [[], []]);
+    expect(unit(r.world, 2)!.noContact).toBe(STRATEGY_RULESET.ticksPerTurn);
+    expect(unit(r.world, 2)!.order).toEqual({ type: 'deploy' });
+    expect(unit(r.world, 2)!.deploy).toBe(STRATEGY_RULESET.ticksPerTurn);
   });
 });
