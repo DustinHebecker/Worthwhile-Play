@@ -253,6 +253,73 @@ describe('Skyscrapers view', () => {
     expect(root.querySelectorAll('.wp-skyscrapers')).toHaveLength(1);
   });
 
+  it('draws every placed height as a tower of height value/N and keeps the digit visible', () => {
+    const { root, instance } = setup(8, 'medium');
+    const s = instance.serialize();
+    const board = byId(root, 'sk-board');
+    expect(board.classList.contains('is-towers')).toBe(true);
+    expect(byId(root, 'sk-towers').getAttribute('aria-pressed')).toBe('true');
+    const [a, b] = openCells(s) as [number, number];
+    const tower = (i: number) => cells(root)[i]?.querySelector<HTMLElement>('.sk-tower') as HTMLElement;
+    // Empty cell: no tower.
+    expect(tower(a).hidden).toBe(true);
+    cells(root)[a]?.click();
+    byId(root, 'sk-pad-3').click();
+    const el = cells(root)[a] as HTMLElement;
+    expect(tower(a).hidden).toBe(false);
+    expect(tower(a).getAttribute('aria-hidden')).toBe('true');
+    expect(tower(a).style.getPropertyValue('--sk-h')).toBe(String(3 / 5));
+    expect(tower(a).style.getPropertyValue('--sk-v')).toBe('3');
+    expect(el.querySelector('.sk-value')?.textContent).toBe('3');
+    expect(el.getAttribute('aria-label')).toBe(`Row ${Math.floor(a / 5) + 1}, column ${(a % 5) + 1}: height 3`);
+    cells(root)[b]?.click();
+    byId(root, 'sk-pad-5').click();
+    expect(tower(b).style.getPropertyValue('--sk-h')).toBe('1');
+    // Givens are drawn as towers too.
+    const given = s.givens.findIndex((g) => g !== 0);
+    expect(tower(given).hidden).toBe(false);
+    expect(tower(given).style.getPropertyValue('--sk-h')).toBe(String((s.givens[given] as number) / 5));
+    // Erasing removes the tower; notes stay readable on empty cells.
+    cells(root)[a]?.click();
+    byId(root, 'sk-erase').click();
+    expect(tower(a).hidden).toBe(true);
+    expect(el.querySelector('.sk-value')?.textContent).toBe('');
+  });
+
+  it('switches to digits only and remembers the choice per device without touching game state', () => {
+    const { root, instance, ctx } = setup(8, 'easy');
+    const a = openCells(instance.serialize())[0] as number;
+    cells(root)[a]?.click();
+    byId(root, 'sk-pad-2').click();
+    const before = instance.serialize();
+    const saves = ctx.saveRequests();
+    byId(root, 'sk-towers').click();
+    expect(byId(root, 'sk-towers').getAttribute('aria-pressed')).toBe('false');
+    expect(byId(root, 'sk-board').classList.contains('is-towers')).toBe(false);
+    expect(cells(root)[a]?.querySelector<HTMLElement>('.sk-tower')?.hidden).toBe(true);
+    expect(cells(root)[a]?.querySelector('.sk-value')?.textContent).toBe('2');
+    expect(ctx.preferences.get('towers')).toBe(false);
+    expect(instance.serialize()).toEqual(before);
+    expect(ctx.saveRequests()).toBe(saves);
+    // A new instance on the same device starts with the remembered choice.
+    const second = game.create(ctx.context);
+    running.push(second);
+    second.newGame({ seed: 3 });
+    const buttons = [...root.querySelectorAll<HTMLElement>('[data-testid="sk-towers"]')];
+    expect(buttons.at(-1)?.getAttribute('aria-pressed')).toBe('false');
+    byId(root, 'sk-towers').click();
+    expect(ctx.preferences.get('towers')).toBe(true);
+  });
+
+  it('ignores an invalid stored tower preference (towers stay on)', () => {
+    const ctx = createTestContext(game as never, 'en');
+    ctx.preferences.set('towers', 'nope');
+    const instance = game.create(ctx.context);
+    running.push(instance);
+    instance.newGame({ seed: 4 });
+    expect(byId(ctx.context.root, 'sk-towers').getAttribute('aria-pressed')).toBe('true');
+  });
+
   it('renders in Arabic with an RTL container but an LTR board', () => {
     const { root, ctx } = setup(2, 'easy', 'ar');
     expect(ctx.missingKeys).toEqual([]);
