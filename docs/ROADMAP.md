@@ -100,7 +100,7 @@ Catalogue order (done): the large games first (Relay Command; then strategy/towe
 | Circuit | **backlog:** a variant with electronic components (capacitors, inductors, …) where e.g. oscillators with the right frequency and other circuits must be built | ⏳ |
 | Four in a Row | variants (owner chose 2 of the researched options) | ✅ boards 7×6/8×7/9×7, goal four or five, optional pull-out rule; 3D (gravity 4×4×4) stays backlog |
 | Tic-Tac-Toe | variants (owner chose 2 of the researched options) | ✅ Board in board (nine small boards), Order & Chaos (6×6); 4×4×4 stays backlog |
-| Card games | Poker and Skat (owner request) | 🚧 shared `@wp/cards` (ADR 0016); Poker built, Skat in progress |
+| Card games | Poker and Skat (owner request) | ✅ shared `@wp/cards` (ADR 0016); Poker (Texas Hold'em, chips only at one table), Skat (ISkO; to confirm: lost Hand games count double, Null overbid reading) |
 | Catalogue (all games) | ✅ (see below) small preview images or representative graphics on the overview page so people can picture each game (own SVG drawn in code, no third-party art; light/dark, RTL-neutral, decorative `aria-hidden` with the title as text) | ⏳ |
 
 Decisions on the large games (strategy, Tower Defense, adventures) are made by the owner in their own contexts, not via the orchestrator.
