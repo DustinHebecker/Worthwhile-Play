@@ -1,7 +1,7 @@
 import { isArrayOf, isInt, isOneOf, isRecord, isUint32 } from '@wp/game-core';
-import { BOARD, getMap, INTRO_MAP, LAYOUTS, MAPS_PER_SET, NODE_TYPES, type FactionCount, type GameMap, type Layout, type NodeType } from './maps';
+import { BOARD, getMap, INTRO_MAP, LAYOUTS, LEGACY_MAPS, MAPS_PER_SET, NODE_TYPES, type FactionCount, type GameMap, type Layout, type NodeType } from './maps';
 
-export { BOARD, getMap, INTRO_MAP, LAYOUTS, MAPS_PER_SET, NODE_TYPES };
+export { BOARD, getMap, INTRO_MAP, LAYOUTS, LEGACY_MAPS, MAPS_PER_SET, NODE_TYPES };
 export type { FactionCount, GameMap, Layout, NodeType };
 
 /** Opponent intelligence, easiest first (the host's difficulty select). Every level plays by the same rules. */
@@ -117,7 +117,7 @@ export interface NcState {
   difficulty: Difficulty;
   /** Number of opponents (the intro map always has one). */
   opponents: OpponentCount;
-  /** Map index 0–6, or INTRO_MAP. */
+  /** Map index 0 … MAPS_PER_SET − 1, or INTRO_MAP (0–6 generated, 7 and up hand-built). */
   map: number;
   layout: Layout;
   tick: number;
@@ -174,7 +174,7 @@ export const countsOf = (s: Pick<NcState, 'owner'>, factions: number): number[] 
 
 export interface GameOptions {
   difficulty?: Difficulty;
-  /** Map index 0–6 or INTRO_MAP; default: chosen by the seed. */
+  /** Map index 0 … MAPS_PER_SET − 1 or INTRO_MAP; default: chosen by the seed. */
   map?: number;
   opponents?: OpponentCount;
   layout?: Layout;
@@ -183,7 +183,7 @@ export interface GameOptions {
 export function createGame(seed: number, options: GameOptions = {}): NcState {
   const mapIndex = options.map ?? mapForSeed(seed);
   const opponents: OpponentCount = mapIndex === INTRO_MAP ? 1 : (options.opponents ?? 1);
-  const layout: Layout = mapIndex === INTRO_MAP ? 2 : (options.layout ?? 2);
+  const layout: Layout = mapIndex === INTRO_MAP || mapIndex >= LEGACY_MAPS ? 2 : (options.layout ?? 2);
   const map = getMap((opponents + 1) as FactionCount, mapIndex, layout);
   const owner = map.nodes.map((n) => n.owner);
   return {
@@ -581,6 +581,8 @@ function validate(value: unknown): value is NcState {
   if (!isUint32(s.seed) || !isOneOf(s.difficulty, DIFFICULTIES) || !isOneOf(s.opponents, OPPONENT_COUNTS)) return false;
   if (!isInt(s.map, INTRO_MAP, MAPS_PER_SET - 1) || !isOneOf(s.layout, LAYOUTS)) return false;
   if (s.map === INTRO_MAP && (s.opponents !== 1 || s.layout !== 2)) return false;
+  // Layout 1 belongs to migrated version-1 saves (maps 0–6 only); hand-built maps exist in layout 2.
+  if ((s.map as number) >= LEGACY_MAPS && s.layout !== 2) return false;
   if (!isCount(s.tick) || !isInt(s.moved, 0, s.tick as number) || !isOneOf(s.speed, [1, 2]) || !isUint32(s.rng) || !isOneOf(s.result, RESULTS)) return false;
   if (!isRecord(s.stats) || !STAT_KEYS.every((k) => isCount((s.stats as Record<string, unknown>)[k]))) return false;
   const map = mapOf(s as unknown as NcState);
@@ -664,7 +666,7 @@ export function migrateState(old: unknown, fromVersion: number): NcState | undef
     }
     if (fromVersion !== 1 || !isRecord(old) || typeof old.difficulty !== 'string') return undefined;
     const mapping = Object.hasOwn(V1_MAPPING, old.difficulty) ? V1_MAPPING[old.difficulty] : undefined;
-    if (!mapping || !Array.isArray(old.owner) || !isInt(old.tick, 0) || !isInt(old.map, 0, MAPS_PER_SET - 1)) return undefined;
+    if (!mapping || !Array.isArray(old.owner) || !isInt(old.tick, 0) || !isInt(old.map, 0, LEGACY_MAPS - 1)) return undefined;
     const [difficulty, opponents] = mapping;
     const factions = opponents + 1;
     const owner = old.owner as number[];
