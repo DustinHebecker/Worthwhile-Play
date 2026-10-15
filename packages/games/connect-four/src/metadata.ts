@@ -3,7 +3,8 @@ import { messages } from './messages';
 
 export const metadata: GameMetadata = {
   id: 'connect-four',
-  stateVersion: 1,
+  // 2: variants (board size, goal, pull-out rule) in the state; v1 saves migrate to the standard variant.
+  stateVersion: 2,
   skills: ['planning', 'strategy'],
   typicalMinutes: [3, 10],
   inputMethods: ['pointer', 'touch', 'keyboard'],
@@ -16,6 +17,6 @@ export const metadata: GameMetadata = {
     pauseable: true
   },
   messages,
-  // Search depth of the built-in (deterministic, alpha-beta) computer opponent; easy → hard.
+  // Search depth and care of the built-in (deterministic, alpha-beta) computer opponent; easy → hard.
   difficulties: ['easy', 'medium', 'hard']
 };
