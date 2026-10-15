@@ -1,5 +1,5 @@
 import { controllerFor, effectiveLevel, frontierDistance, PROFILES, type AiProfile } from '../src/ai';
-import { createGame, mapOf, MAX_LEVEL, maxPaths, refusal, stepMut, toggleMut, type Controller, type Difficulty, type GameMap, type NcState } from '../src/rules';
+import { createGame, mapOf, MAX_LEVEL, maxPaths, refusal, stepMut, toggleMut, type Controller, type Difficulty, type OpponentCount, type GameMap, type NcState } from '../src/rules';
 
 /*
  * Headless match harness for stalemate measurements: plays full seeded matches between two
@@ -60,11 +60,22 @@ export type Side = Difficulty | 'human';
 const sideProfile = (side: Side, override: Partial<AiProfile>): AiProfile | null =>
   side === 'human' ? null : { ...PROFILES[side], ...override };
 
-/** Plays a 1-vs-1 match on `map` (layout 2) until it ends or `cap` ticks have passed; `override` adjusts both bots. */
-export function playMatch(seed: number, player: Side, opponent: Difficulty, cap: number, map = seed % 7, override: Partial<AiProfile> = {}): MatchResult {
-  const s = createGame(seed, { map, difficulty: opponent });
+/**
+ * Plays a match on `map` (layout 2) until it ends or `cap` ticks have passed; `override` adjusts all
+ * bots. One opponent by default (1-vs-1); with more, they all play at the `opponent` level.
+ */
+export function playMatch(
+  seed: number,
+  player: Side,
+  opponent: Difficulty,
+  cap: number,
+  map = seed % 7,
+  override: Partial<AiProfile> = {},
+  opponents: OpponentCount = 1
+): MatchResult {
+  const s = createGame(seed, { map, difficulty: opponent, opponents });
   const m = mapOf(s);
-  const bots = controllerFor([sideProfile(player, override), sideProfile(opponent, override)]);
+  const bots = controllerFor([sideProfile(player, override), ...Array.from({ length: opponents }, () => sideProfile(opponent, override))]);
   const human = player === 'human' ? humanProxy() : null;
   const control: Controller = (x, mm) => {
     human?.(x, mm);

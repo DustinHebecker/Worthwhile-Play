@@ -1,4 +1,4 @@
-import type { GameContext, GameInstance, NewGameOptions, Translator } from '@wp/game-core';
+import { bcp47Tag, type GameContext, type GameInstance, type NewGameOptions, type Translator } from '@wp/game-core';
 import { announce, clear, h } from '@wp/ui';
 import {
   canRestart,
@@ -262,7 +262,7 @@ export function createRiverCrossing(context: GameContext): GameInstance<RiverSta
 
   const container = h(
     'div',
-    { class: `wp-river-crossing${context.reducedMotion ? ' rc-reduced' : ''}`, dir: t.direction, lang: t.locale, onkeydown: (event: Event) => onKey(event as KeyboardEvent) },
+    { class: `wp-river-crossing${context.reducedMotion ? ' rc-reduced' : ''}`, dir: t.direction, lang: bcp47Tag(t.locale), onkeydown: (event: Event) => onKey(event as KeyboardEvent) },
     puzzleStatus,
     rulesBox,
     crossings,

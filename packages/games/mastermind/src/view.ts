@@ -1,4 +1,4 @@
-import type { GameContext, GameInstance, NewGameOptions } from '@wp/game-core';
+import { bcp47Tag, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
 import { announce, clear, h } from '@wp/ui';
 import {
   MAX_GUESSES,
@@ -59,7 +59,7 @@ export function createMastermind(context: GameContext): GameInstance<MastermindS
 
   const live = h('div', { class: 'sr-only', 'aria-live': 'polite', 'data-testid': 'mm-live' });
   const board = h('div', { class: 'mm-board' });
-  const container = h('div', { class: 'wp-mastermind', dir: t.direction, lang: t.locale }, board, live);
+  const container = h('div', { class: 'wp-mastermind', dir: t.direction, lang: bcp47Tag(t.locale) }, board, live);
 
   const symbolName = (symbol: number) => t(`shape.${SHAPES[symbol]?.name ?? 'circle'}`);
   const codeText = (code: readonly number[]) => code.map(symbolName).join(t('code.separator'));

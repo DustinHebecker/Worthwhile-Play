@@ -1,4 +1,4 @@
-import type { GameContext, GameInstance, NewGameOptions } from '@wp/game-core';
+import { bcp47Tag, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
 import { announce, clear, gridKeyboard, h } from '@wp/ui';
 import {
   DIRECTIONS,
@@ -86,7 +86,7 @@ export function createCircuit(context: GameContext): GameInstance<CircuitState> 
   const undoButton = h('button', { type: 'button', 'data-testid': 'cp-undo', onclick: () => runUndo() }, t('common.undo'));
   const controls = h('div', { class: 'wp-row cp-controls' }, undoButton);
   const help = h('div', { class: 'cp-help wp-muted' }, h('p', {}, t('legend.help')), h('p', {}, t('touch.help')), h('p', {}, t('keys.help')));
-  const container = h('div', { class: 'wp-circuit-puzzle', dir: t.direction, lang: t.locale }, status, board, controls, help, live);
+  const container = h('div', { class: 'wp-circuit-puzzle', dir: t.direction, lang: bcp47Tag(t.locale) }, status, board, controls, help, live);
 
   // --- Labels --------------------------------------------------------------------------------
 

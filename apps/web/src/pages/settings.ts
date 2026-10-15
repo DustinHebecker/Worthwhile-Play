@@ -1,4 +1,4 @@
-import { LOCALE_DEFINITIONS, isSupportedLocale, readContentLanguages, writeContentLanguages } from '@wp/localization';
+import { bcp47Tag, LOCALE_DEFINITIONS, isSupportedLocale, readContentLanguages, writeContentLanguages } from '@wp/localization';
 import { exportLibrary, importLibrary, LIBRARY_IMPORT_MAX_BYTES, libraryExportToJson, parseLibraryExport } from '@wp/persistence';
 import { clear, h } from '@wp/ui';
 import type { Page } from '../app';
@@ -35,7 +35,7 @@ export const renderSettings: Page = (main, app) => {
   };
 
   const uiSelect = h('select', { id: 'ui-language', 'data-testid': 'ui-language' },
-    ...LOCALE_DEFINITIONS.map((d) => h('option', { value: d.code, selected: d.code === app.locale, lang: d.code }, d.nativeName))
+    ...LOCALE_DEFINITIONS.map((d) => h('option', { value: d.code, selected: d.code === app.locale, lang: bcp47Tag(d.code) }, d.nativeName))
   );
   uiSelect.addEventListener('change', () => {
     if (!isSupportedLocale(uiSelect.value)) return;

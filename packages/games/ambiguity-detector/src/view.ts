@@ -1,4 +1,4 @@
-import type { GameContext, GameInstance, NewGameOptions } from '@wp/game-core';
+import { bcp47Tag, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
 import { announce, append, clear, h } from '@wp/ui';
 import { contentFor } from './content';
 import type { ItemText } from './content/items';
@@ -44,7 +44,7 @@ export function createAmbiguityDetector(context: GameContext): GameInstance<Ambi
 
   const live = h('div', { class: 'sr-only', 'aria-live': 'polite', 'data-testid': 'ad-live' });
   const board = h('div', { class: 'ad-board' });
-  const container = h('div', { class: 'wp-ambiguity-detector', dir: t.direction, lang: t.locale }, board, live);
+  const container = h('div', { class: 'wp-ambiguity-detector', dir: t.direction, lang: bcp47Tag(t.locale) }, board, live);
 
   const textOf = (id: string): ItemText => (texts[id] ?? fallback[id]) as ItemText;
   const dimLabel = (dim: DimId) => t(`dim.${dim}`);

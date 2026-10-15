@@ -1,4 +1,4 @@
-import type { GameContext, GameInstance, NewGameOptions } from '@wp/game-core';
+import { bcp47Tag, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
 import { announce, append, clear, h } from '@wp/ui';
 import {
   MAX_VALUE,
@@ -34,7 +34,7 @@ export function createRuleDiscovery(context: GameContext): GameInstance<RuleDisc
 
   const live = h('div', { class: 'sr-only', 'aria-live': 'polite', 'data-testid': 'rd-live' });
   const board = h('div', { class: 'rd-board' });
-  const container = h('div', { class: 'wp-rule-discovery', dir: t.direction, lang: t.locale }, board, live);
+  const container = h('div', { class: 'wp-rule-discovery', dir: t.direction, lang: bcp47Tag(t.locale) }, board, live);
 
   const tripleText = (x: Triple) => x.join(', ');
   const ltr = (text: string, cls = '') => h('span', { dir: 'ltr', class: `rd-notation ${cls}`.trim() }, text);

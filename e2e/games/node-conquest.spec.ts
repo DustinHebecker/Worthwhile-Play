@@ -98,6 +98,30 @@ test('node-conquest: a paused battle resumes exactly after a reload', async ({ p
   await expect.poll(async () => (await savedState(page)).tick).toBeGreaterThan(state.tick);
 });
 
+test('node-conquest: a match on a hand-built map with crossing lanes resumes after a reload', async ({ page }) => {
+  let marks = 0;
+  let from = -1;
+  let to = -1;
+  await expectResumeAfterReload(page, 'node-conquest', async (p) => {
+    // Map 8 (index 7): neighbouring factions are linked by lanes that cross (marked crossing points, no bridges).
+    await p.getByTestId('nc-map-select').selectOption('7');
+    await expect.poll(async () => (await savedState(p))?.map).toBe(7);
+    marks = await p.locator('[data-testid^="crossing-"]').count();
+    expect(marks).toBeGreaterThan(0);
+    await expect(p.locator('[data-testid^="bridge-"], [data-testid^="gap-"]')).toHaveCount(0);
+    [from, to] = await startAndNeighbour(p);
+    await clickNode(p, from);
+    await clickNode(p, to);
+    await expect(p.getByTestId(laneId(from, to))).toHaveAttribute('data-active', `${from}-${to}`);
+  });
+  const state = await savedState(page);
+  expect(state.map).toBe(7);
+  expect(state.out[from]).toContain(to);
+  await expect(page.getByTestId('nc-map-select')).toHaveValue('7');
+  await expect(page.locator('[data-testid^="crossing-"]')).toHaveCount(marks);
+  await expect(page.getByTestId(laneId(from, to))).toHaveAttribute('data-active', new RegExp(`${from}-${to}`));
+});
+
 test('node-conquest: dragging from node to node activates a path; Space pauses', async ({ page }) => {
   await page.goto('/games/node-conquest');
   await page.getByTestId('new-game').click();
@@ -140,7 +164,7 @@ test('node-conquest: changing the opponent count or map asks first during a matc
   await clickNode(page, to);
   await expect(page.getByTestId(laneId(from, to))).toHaveAttribute('data-active', `${from}-${to}`);
   const map = (await savedState(page))!.map;
-  const other = String((map + 1) % 7);
+  const other = String((map + 1) % 13);
   await page.getByTestId('nc-map-select').selectOption(other);
   await expect(page.getByTestId('nc-confirm')).toBeVisible();
   await page.getByTestId('nc-confirm-no').click();
@@ -187,6 +211,9 @@ test('node-conquest: the introduction guides step by step; zoom buttons work', a
 test('node-conquest: a save from the previous version continues as an equivalent match', async ({ page }) => {
   await page.goto('/games/node-conquest');
   await page.getByTestId('new-game').click();
+  // Version-1 saves only ever had the generated maps 0–6 (the seed may pick a newer, hand-built one).
+  await page.getByTestId('nc-map-select').selectOption('2');
+  await expect.poll(async () => (await savedState(page))?.map).toBe(2);
   await page.getByTestId('nc-opponents').selectOption('3');
   await expect.poll(async () => (await savedState(page))?.opponents).toBe(3);
   await downgradeSave(page, 'hard');
@@ -215,4 +242,73 @@ test('node-conquest: touch taps on nodes select and target (no page scroll from 
   await tap(2);
   await expect(page.getByTestId(laneId(0, 2))).toHaveAttribute('data-active', '0-2');
   await expect(page.getByTestId('nc-board')).toHaveCSS('touch-action', 'pan-y');
+});
+
+test.describe('node-conquest at 360 px', () => {
+  test.use({ viewport: { width: 360, height: 780 } });
+
+  /** Every node's hit circle and the closest pair of node centres, in CSS px. */
+  const measure = (page: Page) =>
+    page.locator('.nc-node .nc-hit').evaluateAll((els) => {
+      const boxes = els.map((el) => el.getBoundingClientRect());
+      const centres = boxes.map((b) => [b.x + b.width / 2, b.y + b.height / 2] as const);
+      let minDistance = Infinity;
+      for (let i = 0; i < centres.length; i++)
+        for (let j = i + 1; j < centres.length; j++) minDistance = Math.min(minDistance, Math.hypot(centres[i]![0] - centres[j]![0], centres[i]![1] - centres[j]![1]));
+      return { minSide: Math.min(...boxes.map((b) => Math.min(b.width, b.height))), minDistance, board: document.querySelector('.nc-board')!.getBoundingClientRect().width };
+    });
+
+  test('node-conquest: every node has a ≥ 44 × 44 px hit target on all maps and opponent counts', async ({ page }, testInfo) => {
+    test.skip(!testInfo.project.use.hasTouch, 'phone viewport only');
+    await page.goto('/games/node-conquest');
+    await page.getByTestId('new-game').click();
+    const rows: string[] = [];
+    for (const opponents of ['1', '2', '3']) {
+      await page.getByTestId('nc-opponents').selectOption(opponents);
+      for (let map = 0; map < 13; map++) {
+        await page.getByTestId('nc-map-select').selectOption(String(map));
+        await expect.poll(async () => (await savedState(page))?.map).toBe(map);
+        await expect(page.locator('.nc-legend li[data-faction]')).toHaveCount(Number(opponents) + 1);
+        const m = await measure(page);
+        rows.push(`${Number(opponents) + 1}f map ${map}: hit ${m.minSide.toFixed(1)} px, closest centres ${m.minDistance.toFixed(1)} px (board ${m.board.toFixed(1)} px)`);
+        expect(m.minSide, rows.at(-1)).toBeGreaterThanOrEqual(44);
+        // Half the closest spacing (the area that only ever picks one node) is itself ≥ 44 px wide.
+        expect(m.minDistance, rows.at(-1)).toBeGreaterThanOrEqual(44);
+      }
+    }
+    testInfo.annotations.push({ type: 'measurements', description: rows.join('\n') });
+  });
+
+  test('node-conquest: taps near the edge of a hit target pick that node, also on a dense map', async ({ page }, testInfo) => {
+    test.skip(!testInfo.project.use.hasTouch, 'touch devices only');
+    await page.goto('/games/node-conquest');
+    await page.getByTestId('new-game').click();
+    const centre = async (v: number) => {
+      const box = (await page.getByTestId(`node-${v}`).locator('.nc-hit').boundingBox())!;
+      return [box.x + box.width / 2, box.y + box.height / 2] as const;
+    };
+    /** Taps 21 px from node v's centre, towards node w (inside v's own 22 px half-spacing). */
+    const tapToward = async (v: number, w: number) => {
+      await page.getByTestId(`node-${v}`).scrollIntoViewIfNeeded();
+      const [a, b] = [await centre(v), await centre(w)];
+      const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      await page.touchscreen.tap(a[0] + ((b[0] - a[0]) / len) * 21, a[1] + ((b[1] - a[1]) / len) * 21);
+    };
+    for (const [opponents, map] of [
+      ['2', '12'],
+      ['3', '7'],
+      ['1', '0']
+    ] as const) {
+      await page.getByTestId('nc-opponents').selectOption(opponents);
+      await page.getByTestId('nc-map-select').selectOption(map);
+      if (await page.getByTestId('nc-confirm').isVisible()) await page.getByTestId('nc-confirm-yes').click();
+      await expect.poll(async () => (await savedState(page))?.map).toBe(Number(map));
+      await expect.poll(async () => (await savedState(page))?.opponents).toBe(Number(opponents));
+      const [from, to] = await startAndNeighbour(page);
+      await tapToward(from, to);
+      await expect(page.getByTestId(`node-${from}`)).toHaveAttribute('aria-pressed', 'true');
+      await tapToward(to, from);
+      await expect(page.getByTestId(laneId(from, to))).toHaveAttribute('data-active', `${from}-${to}`);
+    }
+  });
 });

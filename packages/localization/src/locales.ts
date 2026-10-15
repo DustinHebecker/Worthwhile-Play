@@ -42,6 +42,9 @@ export function localeDirection(locale: SupportedLocale): TextDirection {
   return LOCALE_DEFINITIONS.find((d) => d.code === locale)?.direction ?? 'ltr';
 }
 
+/** Defined in @wp/game-core (games depend only on it); re-exported for the shell's language helpers. */
+export { bcp47Tag } from '@wp/game-core';
+
 /**
  * Maps an arbitrary BCP-47 tag to a supported UI locale, or `undefined` if there is
  * no match. Simplified-Chinese variants map to `zh-Hans`; traditional Chinese does not

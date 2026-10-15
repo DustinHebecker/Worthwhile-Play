@@ -1,4 +1,4 @@
-import type { GameContext, GameInstance, NewGameOptions } from '@wp/game-core';
+import { bcp47Tag, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
 import { announce, clear, h } from '@wp/ui';
 import {
   LAYOUTS,
@@ -53,7 +53,7 @@ export function createWordGuess(context: GameContext): GameInstance<WordGuessSta
 
   const live = h('div', { class: 'sr-only', 'aria-live': 'polite', 'data-testid': 'wg-live' });
   const board = h('div', { class: 'wg-board' });
-  const container = h('div', { class: 'wp-word-guess', dir: t.direction, lang: t.locale }, board, live);
+  const container = h('div', { class: 'wp-word-guess', dir: t.direction, lang: bcp47Tag(t.locale) }, board, live);
 
   const upper = (text: string) => text.toLocaleUpperCase(state.language);
   const markText = (mark: Mark) => t(`mark.${mark}`);
@@ -169,7 +169,7 @@ export function createWordGuess(context: GameContext): GameInstance<WordGuessSta
       'data-testid': 'wg-grid',
       'aria-label': t('grid.label'),
       dir: info.direction,
-      lang: state.language,
+      lang: bcp47Tag(state.language),
       style: `--wg-len: ${length}`
     });
     for (let r = 0; r < tries; r++) {
@@ -222,7 +222,7 @@ export function createWordGuess(context: GameContext): GameInstance<WordGuessSta
   const renderKeyboard = () => {
     const info = LANGUAGE_INFO[state.language];
     const known = letterStatus(state);
-    const keyboard = h('div', { class: `wg-keyboard wg-layout-${state.layout}`, role: 'group', 'aria-label': t('keyboard.label'), dir: info.direction, lang: state.language, 'data-testid': 'wg-keyboard' });
+    const keyboard = h('div', { class: `wg-keyboard wg-layout-${state.layout}`, role: 'group', 'aria-label': t('keyboard.label'), dir: info.direction, lang: bcp47Tag(state.language), 'data-testid': 'wg-keyboard' });
     if (state.layout === 'large') {
       for (const letter of info.alphabet) keyboard.appendChild(keyButton(letter, known.get(letter)));
       keyboard.append(backKey(), enterKey());
@@ -253,7 +253,7 @@ export function createWordGuess(context: GameContext): GameInstance<WordGuessSta
           rememberOptions();
         }
       }
-    }, ...WORD_LANGUAGES.map((id) => h('option', { value: id, selected: id === state.language, lang: id }, LANGUAGE_INFO[id].nativeName)));
+    }, ...WORD_LANGUAGES.map((id) => h('option', { value: id, selected: id === state.language, lang: bcp47Tag(id) }, LANGUAGE_INFO[id].nativeName)));
     const layout = h('select', {
       id: `${uid}-layout`, 'data-focus': 'layout', 'data-testid': 'wg-layout',
       onchange: (event: Event) => {

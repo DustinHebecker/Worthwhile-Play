@@ -4,8 +4,9 @@ import { createTestContext, type TestContext } from '@wp/testing';
 import type { GameInstance, GameModule } from '@wp/game-core';
 import game from '../src/index';
 import { createSave, interpretSave } from '@wp/persistence';
-import { BOARD, createGame, INTRO_MAP, mapOf, MAX_LEVEL, type NcState } from '../src/rules';
-import { battlements, MAX_ZOOM, shapePath } from '../src/view';
+import { BOARD, createGame, INTRO_MAP, mapOf, MAPS_PER_SET, MAX_LEVEL, type NcState } from '../src/rules';
+import { crossings, FACTION_COUNTS, getMap, LAYOUTS, LEGACY_MAPS, type GameMap } from '../src/maps';
+import { battlements, crossingMark, MAX_ZOOM, PICK_R, pickNode, shapePath } from '../src/view';
 
 let ctx: TestContext;
 let instance: GameInstance<NcState>;
@@ -45,6 +46,46 @@ describe('Orbit Links view', () => {
     expect(($('nc-map-select') as unknown as HTMLSelectElement).value).toBe(String(s.map));
     expect($('nc-list').children).toHaveLength(map.nodes.length);
     expect(ctx.missingKeys).toEqual([]);
+  });
+
+  it('draws crossing lanes simply crossing, with a neutral ring-and-cross marker at each crossing point (no bridges)', () => {
+    for (const [seed, locale] of [[7, 'en'], [11, 'ar']] as const) {
+      setup(seed, 'beginner', locale);
+      const map = mapOf(instance.serialize());
+      expect(map.index).toBe(seed);
+      const cross = crossings(map);
+      expect(cross.length).toBeGreaterThan(0);
+      const groups = [...ctx.context.root.querySelectorAll<SVGGElement>('.nc-lanes > .nc-lane')];
+      // Lanes in map order, each just a line plus its two streams: no gaps, no rails, no layering.
+      expect(groups.map((g) => g.dataset.testid)).toEqual(map.lanes.map(([a, b]) => `lane-${a}-${b}`));
+      for (const g of groups) expect([...g.children].map((c) => c.getAttribute('class'))).toEqual(['nc-lane-line', 'nc-flow nc-fwd', 'nc-flow nc-bwd']);
+      expect(ctx.context.root.querySelectorAll('[class*="bridge"], [data-testid^="bridge-"], [data-testid^="gap-"]')).toHaveLength(0);
+      const marks = ctx.context.root.querySelectorAll('.nc-crossings > .nc-crossing');
+      expect(marks).toHaveLength(cross.length);
+      for (const [i, j, x, y] of cross) {
+        const [a, b] = map.lanes[i]!;
+        const [c, e] = map.lanes[j]!;
+        const mark = $(`crossing-${a}-${b}-${c}-${e}`);
+        expect(mark.getAttribute('d')).toBe(crossingMark(x, y));
+      }
+      // Markers lie above the lanes and below units and nodes; they are decoration (explained in the help).
+      const layer = ctx.context.root.querySelector('.nc-crossings')!;
+      expect(layer.getAttribute('aria-hidden')).toBe('true');
+      expect(layer.previousElementSibling!.getAttribute('class')).toBe('nc-lanes');
+      expect(layer.nextElementSibling!.getAttribute('class')).toBe('nc-units');
+      expect(ctx.missingKeys).toEqual([]);
+      instance.dispose();
+    }
+  });
+
+  it('crossing marker: a ring with a cross inside, centred on the point; generated maps have none; the help explains crossings', () => {
+    expect(crossingMark(100, 50)).toBe('M91.0 50.0A9 9 0 1 0 109.0 50.0A9 9 0 1 0 91.0 50.0ZM96.0 46.0L104.0 54.0M96.0 54.0L104.0 46.0');
+    setup(13);
+    expect(instance.serialize().map).toBe(0);
+    expect(ctx.context.root.querySelectorAll('.nc-crossing')).toHaveLength(0);
+    const help = ctx.context.root.querySelector('.nc-help')!.textContent!;
+    expect(help).toContain('Where two lanes cross (small ring with ✕), hostile streams meet and fight just as on a shared lane; your own streams fly past each other.');
+    expect(help).not.toMatch(/bridge/i);
   });
 
   it('names a long standoff calmly, without changing anything else', () => {
@@ -249,10 +290,11 @@ describe('Orbit Links view', () => {
   it('switches maps with the picker at once while the match is untouched, keeping seed and difficulty', () => {
     setup(9, 'advanced');
     const select = $('nc-map-select') as unknown as HTMLSelectElement;
-    expect(select.options).toHaveLength(8);
+    expect(select.options).toHaveLength(MAPS_PER_SET + 1);
+    expect(select.options[MAPS_PER_SET]!.textContent).toMatch(/^Map 13 · \d+ nodes$/);
     expect(select.options[0]!.textContent).toBe('Introduction');
     expect(select.options[1]!.textContent).toMatch(/^Map 1 · \d+ nodes$/);
-    const next = (instance.serialize().map + 1) % 7;
+    const next = (instance.serialize().map + 1) % MAPS_PER_SET;
     select.value = String(next);
     select.dispatchEvent(new Event('change'));
     const s = instance.serialize();
@@ -262,7 +304,7 @@ describe('Orbit Links view', () => {
     instance.reset();
     expect(instance.serialize()).toEqual(createGame(9, { difficulty: 'advanced', map: next }));
     instance.newGame({ seed: 9, difficulty: 'advanced' });
-    expect(instance.serialize().map).toBe(9 % 7);
+    expect(instance.serialize().map).toBe(9 % MAPS_PER_SET);
   });
 
   it('renders in RTL locales without mirroring the board', () => {
@@ -351,7 +393,7 @@ describe('Orbit Links view', () => {
     vi.advanceTimersByTime(500);
     const before = instance.serialize();
     const select = $('nc-map-select') as unknown as HTMLSelectElement;
-    const other = (before.map + 3) % 7;
+    const other = (before.map + 3) % MAPS_PER_SET;
     select.value = String(other);
     select.dispatchEvent(new Event('change'));
     expect($('nc-confirm').hidden).toBe(false);
@@ -487,5 +529,72 @@ describe('Orbit Links view', () => {
     expect(restored.owner).toEqual(v1.owner);
     expect(ctx.context.root.querySelectorAll('[data-type="bastion"].nc-node')).toHaveLength(0);
     expect(ctx.context.root.querySelectorAll('.nc-legend li[data-faction]')).toHaveLength(3);
+  });
+});
+
+/* Touch targets: the board is 328 px wide at a 360 px viewport (16 px gutters), so 1 unit = 0.5125 px. */
+describe('Orbit Links touch targets', () => {
+  const PX = 328 / BOARD;
+  const TOUCH = 44;
+  const allMaps = (): GameMap[] => {
+    const maps: GameMap[] = [getMap(2, INTRO_MAP)];
+    for (const f of FACTION_COUNTS)
+      for (let m = 0; m < MAPS_PER_SET; m++) for (const layout of m < LEGACY_MAPS ? LAYOUTS : ([2] as const)) maps.push(getMap(f, m, layout));
+    return maps;
+  };
+  const minDistance = (map: GameMap) => {
+    let min = Infinity;
+    map.nodes.forEach((a, i) => map.nodes.forEach((b, j) => i < j && (min = Math.min(min, Math.hypot(a.x - b.x, a.y - b.y)))));
+    return min;
+  };
+
+  it('every node has a hit circle ≥ 44 px wide at 360 px, and a tap within half the closest spacing is never ambiguous', () => {
+    expect(2 * PICK_R * PX).toBeGreaterThanOrEqual(TOUCH);
+    const maps = allMaps();
+    expect(maps).toHaveLength(1 + 3 * (MAPS_PER_SET + LEGACY_MAPS));
+    for (const map of maps) {
+      const min = minDistance(map);
+      // The region that can only ever pick this node (half the closest spacing) is itself ≥ 44 px wide.
+      expect(2 * Math.min(PICK_R, min / 2) * PX, `${map.factions}:${map.index}`).toBeGreaterThanOrEqual(TOUCH);
+    }
+  });
+
+  it('a tap picks the nearest node centre within reach, deterministically (lower index on a tie)', () => {
+    for (const map of allMaps()) {
+      const reach = Math.min(PICK_R, minDistance(map) / 2) - 0.01;
+      map.nodes.forEach((node, v) => {
+        expect(pickNode(map, node.x, node.y)).toBe(v);
+        // Towards every neighbour and in the eight compass directions, the near half stays with this node.
+        const dirs: [number, number][] = map.adjacent[v]!.map((w) => {
+          const o = map.nodes[w]!;
+          const len = Math.hypot(o.x - node.x, o.y - node.y);
+          return [(o.x - node.x) / len, (o.y - node.y) / len];
+        });
+        for (let k = 0; k < 8; k++) dirs.push([Math.cos((k * Math.PI) / 4), Math.sin((k * Math.PI) / 4)]);
+        for (const [dx, dy] of dirs) expect(pickNode(map, node.x + dx * reach, node.y + dy * reach)).toBe(v);
+      });
+      // Every point within PICK_R of some node goes to its nearest centre.
+      for (let x = 0; x <= BOARD; x += 16)
+        for (let y = 0; y <= BOARD; y += 16) {
+          const d = map.nodes.map((n) => Math.hypot(n.x - x, n.y - y));
+          const best = Math.min(...d);
+          expect(pickNode(map, x, y)).toBe(best <= PICK_R ? d.indexOf(best) : null);
+        }
+    }
+    const tie: GameMap = { ...getMap(2, 0), nodes: [{ ...getMap(2, 0).nodes[0]!, x: 100, y: 100 }, { ...getMap(2, 0).nodes[0]!, x: 180, y: 100 }] };
+    expect(pickNode(tie, 140, 100)).toBe(0);
+    expect(pickNode(tie, 100 + PICK_R + 0.5, 300)).toBeNull();
+  });
+
+  it('draws an invisible hit circle of radius PICK_R on every node', () => {
+    setup(1);
+    const map = mapOf(instance.serialize());
+    const hits = ctx.context.root.querySelectorAll<SVGCircleElement>('.nc-node .nc-hit');
+    expect(hits).toHaveLength(map.nodes.length);
+    hits.forEach((hit, v) => {
+      expect(Number(hit.getAttribute('r'))).toBe(PICK_R);
+      expect(Number(hit.getAttribute('cx'))).toBe(map.nodes[v]!.x);
+      expect(Number(hit.getAttribute('cy'))).toBe(map.nodes[v]!.y);
+    });
   });
 });

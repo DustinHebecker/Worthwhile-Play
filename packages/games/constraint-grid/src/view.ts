@@ -1,4 +1,4 @@
-import type { GameContext, GameInstance, NewGameOptions } from '@wp/game-core';
+import { bcp47Tag, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
 import { announce, clear, gridKeyboard, h } from '@wp/ui';
 import {
   MARK_UNKNOWN,
@@ -54,7 +54,7 @@ export function createConstraintGrid(context: GameContext): GameInstance<Constra
     h('p', { id: 'cg-check-help' }, t('check.help')),
     h('p', {}, t('keys.help'))
   );
-  const container = h('div', { class: 'wp-constraint-grid', dir: t.direction, lang: t.locale },
+  const container = h('div', { class: 'wp-constraint-grid', dir: t.direction, lang: bcp47Tag(t.locale) },
     status,
     h('div', { class: 'cg-layout' },
       h('section', { class: 'cg-clues', 'aria-labelledby': 'cg-clues-heading' },

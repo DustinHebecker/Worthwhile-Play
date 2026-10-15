@@ -29,6 +29,9 @@ describe('app bootstrap and language switching (per-locale message chunks)', () 
     expect(document.documentElement.lang).toBe('de');
     expect(navText()).toBe(UI_MESSAGES.de?.['nav.home']);
     expect(document.querySelector('[data-testid="game-card-memory"] .game-card-title')?.textContent).not.toMatch(/^title\b/);
+    // The decorative preview comes first (a band above the heading), then the title.
+    const card = document.querySelector('[data-testid="game-card-memory"]')!;
+    expect([...card.children].map((el) => el.getAttribute('class'))).toEqual(['game-preview', 'game-card-title', 'game-card-tagline', 'badges']);
 
     const select = document.querySelector<HTMLSelectElement>('[data-testid="header-language"]')!;
     select.value = 'ja';
@@ -52,5 +55,26 @@ describe('app bootstrap and language switching (per-locale message chunks)', () 
     expect(document.documentElement.lang).toBe('ko');
     expect(document.documentElement.dir).toBe('ltr');
     expect(navText()).toBe(UI_MESSAGES.ko?.['nav.home']);
+  });
+
+  it('declares Portuguese pages as Brazilian (lang="pt-BR") while storing the locale code `pt`', async () => {
+    window.scrollTo = () => undefined;
+    localStorage.setItem(STORAGE_KEYS.uiLocale, 'de');
+    document.body.replaceChildren();
+    const root = document.createElement('div');
+    document.body.append(root);
+
+    await startApp(root);
+    const select = document.querySelector<HTMLSelectElement>('[data-testid="header-language"]')!;
+    expect(select.querySelector('option[value="pt"]')?.getAttribute('lang')).toBe('pt-BR');
+    expect(select.querySelector('option[value="zh-Hans"]')?.getAttribute('lang')).toBe('zh-Hans');
+    select.value = 'pt';
+    select.dispatchEvent(new Event('change'));
+    await vi.waitFor(() => expect(document.documentElement.lang).toBe('pt-BR'));
+    await flush();
+    expect(navText()).toBe(UI_MESSAGES.pt?.['nav.home']);
+    expect(localStorage.getItem(STORAGE_KEYS.uiLocale)).toBe('pt');
+    expect(document.querySelector('.language-current')?.getAttribute('lang')).toBe('pt-BR');
+    expect(document.querySelector<HTMLSelectElement>('[data-testid="header-language"]')?.value).toBe('pt');
   });
 });

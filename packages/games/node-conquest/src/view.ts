@@ -1,7 +1,8 @@
 import './styles.css';
-import { isOneOf, isRecord, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
+import { bcp47Tag, isOneOf, isRecord, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
 import { announce, clear, h } from '@wp/ui';
 import { opponents } from './ai';
+import { crossings } from './maps';
 import { reviewOf, type Moment } from './review';
 import {
   BOARD,
@@ -47,10 +48,43 @@ export const TICK_MS = 100;
 /** Autosave cadence while running (ticks of game time). */
 export const SAVE_EVERY = 30;
 const NODE_R = 25;
-const PICK_R = 46;
+/**
+ * Pick radius (board units) around each node centre, drawn as an invisible hit circle. At the
+ * narrowest board (328 px wide on a 360 px phone, 0.5125 px per unit) its diameter is 47 px, above
+ * the 44 px touch-target minimum. Neighbouring circles may overlap a little (maps keep nodes ≥ 86
+ * apart); a tap in the overlap goes to the nearest node centre, so it is never ambiguous.
+ */
+export const PICK_R = 46;
 const DRAG_START = 16;
 /** Sideways offset of a stream from the lane centre (each direction keeps to its own side). */
 const STREAM_OFFSET = 6;
+/** Radius of the neutral marker where two lanes cross (hostile streams fight there). */
+const CROSS_MARK = 9;
+
+/**
+ * The node a board point picks: the nearest node centre within PICK_R; on an exact tie the lower
+ * index (deterministic). Null when no node is within reach.
+ */
+export function pickNode(map: GameMap, x: number, y: number): number | null {
+  let best: number | null = null;
+  let bestD = Infinity;
+  map.nodes.forEach((node, v) => {
+    const d = Math.hypot(node.x - x, node.y - y);
+    if (d <= PICK_R && d < bestD) [best, bestD] = [v, d];
+  });
+  return best;
+}
+
+/** Path of the crossing marker: a small ring with a ✕ inside (a shape, so it never relies on colour). */
+export function crossingMark(x: number, y: number): string {
+  const r = CROSS_MARK;
+  const k = 4;
+  const f = (n: number) => n.toFixed(1);
+  return (
+    `M${f(x - r)} ${f(y)}A${r} ${r} 0 1 0 ${f(x + r)} ${f(y)}A${r} ${r} 0 1 0 ${f(x - r)} ${f(y)}Z` +
+    `M${f(x - k)} ${f(y - k)}L${f(x + k)} ${f(y + k)}M${f(x - k)} ${f(y + k)}L${f(x + k)} ${f(y - k)}`
+  );
+}
 
 /** Faction marker shapes: 0 circle (player), 1 triangle, 2 square, 3 diamond. */
 export function shapePath(faction: number, r: number): string {
@@ -244,12 +278,12 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
     'details',
     { class: 'nc-details nc-help' },
     h('summary', {}, t('help.title')),
-    ...['help.tap', 'help.levels', 'help.capture', 'help.types', 'help.bastion', 'help.zoom', 'help.keys'].map((key) => h('p', {}, t(key)))
+    ...['help.tap', 'help.levels', 'help.capture', 'help.types', 'help.bastion', 'help.crossings', 'help.zoom', 'help.keys'].map((key) => h('p', {}, t(key)))
   );
   const live = h('div', { class: 'sr-only', 'aria-live': 'polite', role: 'status', 'data-testid': 'nc-live' });
   const container = h(
     'div',
-    { class: `wp-nc${context.reducedMotion ? ' nc-reduced' : ''}`, dir: t.direction, lang: t.locale },
+    { class: `wp-nc${context.reducedMotion ? ' nc-reduced' : ''}`, dir: t.direction, lang: bcp47Tag(t.locale) },
     statusEl,
     countsEl,
     standoffEl,
@@ -270,17 +304,27 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
   const build = (map: GameMap) => {
     clear(svgEl);
     svgEl.setAttribute('aria-label', t('board.label', { count: map.nodes.length }));
-    const lanes = map.lanes.map(([a, b]) => {
+    const cross = crossings(map);
+    const crossAt = map.lanes.map((): [number, number][] => []);
+    for (const [i, j, x, y] of cross) {
+      crossAt[i]!.push([x, y]);
+      crossAt[j]!.push([x, y]);
+    }
+    const lanes = map.lanes.map(([a, b], i) => {
       const A = map.nodes[a]!;
       const B = map.nodes[b]!;
       const len = Math.hypot(B.x - A.x, B.y - A.y) || 1;
+      // The direction arrows sit at the middle unless a crossing is there (then a third of the way).
+      const clearOf = (t: number) => crossAt[i]!.every(([x, y]) => Math.hypot(A.x + (B.x - A.x) * t - x, A.y + (B.y - A.y) * t - y) > CROSS_MARK + 22);
+      const at = [0.5, 0.35, 0.65, 0.25, 0.75].find(clearOf) ?? 0.5;
       const flow = (from: typeof A, to: typeof A, dir: 'fwd' | 'bwd') => {
         const nx = (-(to.y - from.y) / len) * STREAM_OFFSET;
         const ny = ((to.x - from.x) / len) * STREAM_OFFSET;
         const ux = (to.x - from.x) / len;
         const uy = (to.y - from.y) / len;
-        const mx = (from.x + to.x) / 2 + nx;
-        const my = (from.y + to.y) / 2 + ny;
+        const along = dir === 'fwd' ? at : 1 - at;
+        const mx = from.x + (to.x - from.x) * along + nx;
+        const my = from.y + (to.y - from.y) * along + ny;
         const arrow = `M${(mx - ux * 7 + nx * 1.4).toFixed(1)} ${(my - uy * 7 + ny * 1.4).toFixed(1)}L${(mx + ux * 5).toFixed(1)} ${(my + uy * 5).toFixed(1)}L${(mx - ux * 7 - nx * 1.4).toFixed(1)} ${(my - uy * 7 - ny * 1.4).toFixed(1)}`;
         return svg(
           'g',
@@ -317,6 +361,7 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
       const g = svg(
         'g',
         { class: 'nc-node', role: 'button', tabindex: -1, 'data-node': v, 'data-testid': `node-${v}`, 'data-type': node.type },
+        svg('circle', { class: 'nc-hit', cx: x, cy: y, r: PICK_R }),
         svg('circle', { class: 'nc-focus', cx: x, cy: y, r: NODE_R + 15 }),
         svg('circle', { class: 'nc-sel', cx: x, cy: y, r: NODE_R + 10 }),
         deco,
@@ -335,6 +380,16 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
       svg('rect', { class: 'nc-bg', x: 0, y: 0, width: BOARD, height: BOARD, rx: 16 }),
       ring,
       svg('g', { class: 'nc-lanes' }, ...lanes.map((l) => l.g)),
+      // Crossing points: lanes simply cross (no bridge); hostile streams meet and fight there.
+      svg(
+        'g',
+        { class: 'nc-crossings', 'aria-hidden': 'true' },
+        ...cross.map(([i, j, x, y]) => {
+          const [a, b] = map.lanes[i]!;
+          const [c, e] = map.lanes[j]!;
+          return svg('path', { class: 'nc-crossing', 'data-testid': `crossing-${a}-${b}-${c}-${e}`, d: crossingMark(x, y) });
+        })
+      ),
       units,
       shots,
       preview,
@@ -759,13 +814,7 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
 
   const nearestNode = (p: [number, number] | null): number | null => {
     if (!p || !board) return null;
-    let best: number | null = null;
-    let bestD = PICK_R;
-    board.map.nodes.forEach((node, v) => {
-      const d = Math.hypot(node.x - p[0], node.y - p[1]);
-      if (d <= bestD) [best, bestD] = [v, d];
-    });
-    return best;
+    return pickNode(board.map, p[0], p[1]);
   };
 
   const nodeFromEvent = (event: MouseEvent): number | null => {

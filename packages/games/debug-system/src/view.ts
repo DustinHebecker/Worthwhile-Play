@@ -1,4 +1,4 @@
-import type { GameContext, GameInstance, NewGameOptions } from '@wp/game-core';
+import { bcp47Tag, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
 import { announce, append, clear, h } from '@wp/ui';
 import {
   VARS,
@@ -29,7 +29,7 @@ export function createDebugSystem(context: GameContext): GameInstance<DebugState
 
   const live = h('div', { class: 'sr-only', 'aria-live': 'polite', 'data-testid': 'ds-live' });
   const board = h('div', { class: 'ds-board' });
-  const container = h('div', { class: 'wp-debug-system', dir: t.direction, lang: t.locale }, board, live);
+  const container = h('div', { class: 'wp-debug-system', dir: t.direction, lang: bcp47Tag(t.locale) }, board, live);
 
   const code = (text: string) => h('code', { class: 'ds-code', dir: 'ltr' }, text);
   const regsView = (regs: Readonly<Regs>, testId?: string) =>
