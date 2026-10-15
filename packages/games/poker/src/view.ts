@@ -67,12 +67,14 @@ export function createPoker(context: GameContext): GameInstance<PokerState> {
   const seatName = (seat: number) => (seat === 0 ? t('seat.you') : t('seat.opponent', { n: seat }));
   const cardsText = (cards: readonly Card[]) => cards.map((c) => cardLabel(c, t)).join(t('separator'));
 
+  /** The person (seat 0) gets second-person forms ("You call 2", "Du gehst mit 2"); opponents third-person ones. */
   const actionText = (entry: LogEntry): string => {
+    const prefix = entry.seat === 0 ? 'actionYou' : 'action';
     const amountText = String(entry.amount);
-    if (entry.allIn && (entry.kind === 'call' || entry.kind === 'bet' || entry.kind === 'raise')) return t('action.allIn', { amount: amountText });
-    return t(`action.${entry.kind}`, { amount: amountText });
+    if (entry.allIn && (entry.kind === 'call' || entry.kind === 'bet' || entry.kind === 'raise')) return t(`${prefix}.allIn`, { amount: amountText });
+    return t(`${prefix}.${entry.kind}`, { amount: amountText });
   };
-  const entryText = (entry: LogEntry) => t('log.entry', { name: seatName(entry.seat), action: actionText(entry) });
+  const entryText = (entry: LogEntry) => t(entry.seat === 0 ? 'log.entryYou' : 'log.entry', { name: seatName(entry.seat), action: actionText(entry) });
 
   /* ---------------------------------------------------------------- DOM skeleton */
   const live = h('div', { class: 'sr-only', 'aria-live': 'polite', role: 'status', 'data-testid': 'pk-announcer' });
@@ -225,7 +227,7 @@ export function createPoker(context: GameContext): GameInstance<PokerState> {
       : !seat.inHand
         ? ''
         : seat.folded
-          ? t('seat.folded')
+          ? t(index === 0 ? 'seat.foldedYou' : 'seat.folded')
           : seat.stack === 0 && state.phase === 'betting'
             ? t('seat.allIn')
             : (() => {
