@@ -4,18 +4,27 @@ import {
   DIRS,
   PIECE_KINDS,
   PRIMARIES,
+  angleDegrees,
   boardOf,
+  brightness,
   canClear,
   canUndo,
   chooseLevel,
   clearBoard,
+  colourFromLetter,
   colourLetter,
   createInitialState,
   evaluate,
+  intensityOf,
+  isSelectable,
   levelCount,
   levelOf,
+  orientationCount,
   pieceAt,
+  pieceElement,
   placePiece,
+  polarisationAngle,
+  polarisations,
   remaining,
   removePiece,
   resetState,
@@ -23,13 +32,17 @@ import {
   toDifficulty,
   traceBeams,
   undo,
+  type Angle,
+  type Arrival,
   type Board,
   type BeamTrace,
   type Element as BoardElement,
   type Evaluation,
   type LaserState,
+  type Level,
   type Orientation,
-  type PieceKind
+  type PieceKind,
+  type Polarisation
 } from './rules';
 import './styles.css';
 
@@ -59,10 +72,13 @@ function beamLines(trace: BeamTrace, cell: number): SVGElement[] {
       if ((mask & primary) === 0) continue;
       const lane = LANE[primary] ?? 0;
       const vertical = dir % 2 === 0;
+      // Fainter light is drawn thinner (½ thinner, ¼ and below thinnest), never only lighter.
+      const dim = Math.min(2, Math.max(0, trace.sideLevels[cell * 4 + dir] ?? 0));
       // All half-segments of one primary meet at (50 + lane, 50 + lane), so turns stay connected.
       lines.push(
         svg('line', {
           class: `lc-beam ${PRIMARY_CLASS[primary]}`,
+          'data-dim': dim,
           x1: 50 + lane,
           y1: 50 + lane,
           x2: vertical ? 50 + lane : SIDE_X[dir],
@@ -79,9 +95,34 @@ const ARROW_POINTS = ['50,3 68,27 32,27', '97,50 73,68 73,32', '50,97 32,73 68,7
 const DIAGONAL: Readonly<Record<Orientation, SvgAttrs>> = { 0: { x1: 18, y1: 82, x2: 82, y2: 18 }, 1: { x1: 18, y1: 18, x2: 82, y2: 82 } };
 
 const label = (text: string, extra = '') => svg('text', { x: 50, y: 52, class: `lc-letter ${extra}`.trim(), 'text-anchor': 'middle', 'dominant-baseline': 'central' }, text);
+const smallText = (x: number, y: number, text: string, extra = '') =>
+  svg('text', { x, y, class: `lc-small ${extra}`.trim(), 'text-anchor': 'middle', 'dominant-baseline': 'central' }, text);
+
+/** An intensity as a fraction of a laser's: 1, ½, ¼, ⅛, 1/16 … (other sums as n/64). */
+export function fractionText(value: number): string {
+  const symbols: Readonly<Record<number, string>> = { 1: '1', 0.5: '½', 0.25: '¼', 0.125: '⅛' };
+  const symbol = symbols[value];
+  if (symbol) return symbol;
+  if (Number.isInteger(1 / value)) return `1/${1 / value}`;
+  let numerator = Math.round(value * 64);
+  let denominator = 64;
+  while (numerator % 2 === 0 && denominator > 1) {
+    numerator /= 2;
+    denominator /= 2;
+  }
+  return `${numerator}/${denominator}`;
+}
+
+/** End points of a line through (50, cy) at `angle` (0° horizontal, counter-clockwise, as seen on the board). */
+function axisLine(angle: Angle, cy: number, half: number): SvgAttrs {
+  const radians = (angleDegrees(angle) * Math.PI) / 180;
+  const dx = Math.round(Math.cos(radians) * half * 10) / 10;
+  const dy = Math.round(Math.sin(radians) * half * 10) / 10;
+  return { x1: 50 - dx, y1: cy + dy, x2: 50 + dx, y2: cy - dy };
+}
 
 /** Picture of an element. Shape and letters carry the meaning; colour only reinforces it. */
-function elementGlyph(element: BoardElement, placed: boolean, got: number): SVGElement[] {
+function elementGlyph(element: BoardElement, placed: boolean, got: number, targetOk = false): SVGElement[] {
   switch (element.kind) {
     case 'empty':
       return [];
@@ -103,16 +144,42 @@ function elementGlyph(element: BoardElement, placed: boolean, got: number): SVGE
         ...(placed ? [] : [svg('circle', { class: 'lc-bolt', cx: 50, cy: 50, r: 5 })])
       ];
     case 'filter':
-      return [svg('rect', { class: 'lc-filter', x: 12, y: 12, width: 76, height: 76, rx: 6, 'data-colour': colourLetter(element.colour) }), label(colourLetter(element.colour))];
+      return [
+        svg('rect', { class: `lc-filter${placed ? ' lc-mine' : ''}`, x: 12, y: 12, width: 76, height: 76, rx: 6, 'data-colour': colourLetter(element.colour) }),
+        label(colourLetter(element.colour))
+      ];
+    case 'absorber':
+      // A crossed-out letter: this colour is taken out, the rest passes.
+      return [
+        svg('rect', { class: `lc-filter${placed ? ' lc-mine' : ''}`, x: 12, y: 12, width: 76, height: 76, rx: 6 }),
+        svg('line', { class: 'lc-strike', x1: 22, y1: 78, x2: 78, y2: 22 }),
+        label(`−${colourLetter(element.colour)}`, 'lc-minus')
+      ];
+    case 'neutral':
+      return [
+        svg('rect', { class: `lc-neutral${placed ? ' lc-mine' : ''}`, x: 14, y: 14, width: 72, height: 72, rx: 6 }),
+        svg('path', { class: 'lc-neutral-grid', d: 'M32 14 V86 M50 14 V86 M68 14 V86 M14 32 H86 M14 50 H86 M14 68 H86' }),
+        label('½')
+      ];
+    case 'polariser':
+      return [
+        svg('circle', { class: `lc-polariser${placed ? ' lc-mine' : ''}`, cx: 50, cy: 42, r: 30 }),
+        svg('line', { class: `lc-polariser-axis${placed ? ' lc-mine' : ''}`, ...axisLine(element.angle, 42, 30) }),
+        ...(placed ? [] : [svg('circle', { class: 'lc-bolt', cx: 50, cy: 42, r: 5 })]),
+        smallText(50, 88, `${angleDegrees(element.angle)}°`)
+      ];
     case 'blocker':
       return [svg('rect', { class: `lc-blocker${placed ? ' lc-mine' : ''}`, x: 16, y: 16, width: 68, height: 68, rx: placed ? 14 : 4 })];
     case 'target': {
-      const ok = got === element.colour;
+      const ok = targetOk;
       const shapes: SVGElement[] = [
         svg('circle', { class: 'lc-target', cx: 50, cy: 50, r: 34, 'data-colour': colourLetter(element.colour) }),
-        svg('circle', { class: 'lc-target-inner', cx: 50, cy: 50, r: 24 }),
-        label(colourLetter(element.colour))
+        svg('circle', { class: 'lc-target-inner', cx: 50, cy: 50, r: 24 })
       ];
+      // An analyser target shows the polarisation it needs as a line across it; an intensity target its fraction.
+      if (element.pol !== undefined) shapes.push(svg('line', { class: 'lc-target-pol', ...axisLine(element.pol, 50, 46) }));
+      shapes.push(label(colourLetter(element.colour)));
+      if (element.level !== undefined) shapes.push(smallText(17, 15, fractionText(intensityOf(element.level)), 'lc-need'));
       if (ok) shapes.push(svg('path', { class: 'lc-check', d: 'M64 80 L72 88 L90 66' }));
       else if (got !== 0) shapes.push(svg('text', { class: 'lc-got', x: 84, y: 86, 'text-anchor': 'middle', 'dominant-baseline': 'central' }, colourLetter(got)));
       return shapes;
@@ -141,16 +208,39 @@ function elementGlyph(element: BoardElement, placed: boolean, got: number): SVGE
   }
 }
 
-/** Fixed element kinds that get a line in the legend when a level contains them. */
-const LEGEND_KINDS = ['gate', 'portal'] as const;
-const LEGEND_SAMPLE: Readonly<Record<(typeof LEGEND_KINDS)[number], BoardElement>> = {
+/** Legend lines, shown when a level contains such an element (fixed or in the inventory). */
+const LEGEND_KINDS = ['gate', 'portal', 'filter', 'absorber', 'neutral', 'polariser', 'intensity', 'analyser'] as const;
+type LegendKind = (typeof LEGEND_KINDS)[number];
+const LEGEND_SAMPLE: Readonly<Record<LegendKind, BoardElement>> = {
   gate: { kind: 'gate', dir: 1 },
-  portal: { kind: 'portal', pair: 1 }
+  portal: { kind: 'portal', pair: 1 },
+  filter: { kind: 'filter', colour: 1 },
+  absorber: { kind: 'absorber', colour: 1 },
+  neutral: { kind: 'neutral' },
+  polariser: { kind: 'polariser', angle: 1 },
+  intensity: { kind: 'target', colour: 1, level: 2 },
+  analyser: { kind: 'target', colour: 1, pol: 1 }
 };
+
+/** The legend lines an element needs (a target can need two). */
+function legendKinds(element: BoardElement): LegendKind[] {
+  if (element.kind === 'target') return [...(element.level !== undefined ? ['intensity' as const] : []), ...(element.pol !== undefined ? ['analyser' as const] : [])];
+  return (LEGEND_KINDS as readonly string[]).includes(element.kind) ? [element.kind as LegendKind] : [];
+}
+
+/** Elements of a level, including those its inventory can place. */
+function levelElements(level: Level): BoardElement[] {
+  const elements = [...level.cells];
+  for (const kind of PIECE_KINDS) if (level.inventory[kind] > 0) elements.push(pieceElement(kind, 0));
+  return elements;
+}
+
+/** True when polarisation or intensity can matter in a level (then light descriptions mention them). */
+const hasOptics = (level: Level): boolean =>
+  levelElements(level).some((element) => element.kind === 'polariser' || element.kind === 'neutral' || (element.kind === 'target' && (element.level !== undefined || element.pol !== undefined)));
 
 const ORIENT_KEY: Readonly<Record<Orientation, string>> = { 0: 'orient.slash', 1: 'orient.backslash' };
 const DIR_KEY = ['dir.up', 'dir.right', 'dir.down', 'dir.left'] as const;
-const PIECE_KEY: Readonly<Record<PieceKind, string>> = { mirror: 'piece.mirror', splitter: 'piece.splitter', blocker: 'piece.blocker' };
 
 /** Long-press duration that takes a placed piece back (an alternative to Remove mode). */
 const LONG_PRESS_MS = 550;
@@ -172,7 +262,29 @@ export function createLaserCircuit(context: GameContext): GameInstance<LaserStat
   let pressStart = { x: 0, y: 0 };
 
   const colourName = (mask: number) => (mask === 0 ? t('light.none') : t(`colour.${colourLetter(mask)}`));
-  const pieceName = (kind: PieceKind) => t(PIECE_KEY[kind]);
+  const pieceName = (kind: PieceKind) => {
+    if (kind.startsWith('filter')) return t('piece.filter', { colour: colourName(colourFromLetter(kind.charAt(6))) });
+    if (kind.startsWith('minus')) return t('piece.minus', { colour: colourName(colourFromLetter(kind.charAt(5))) });
+    return t(`piece.${kind}`);
+  };
+  const angleText = (angle: Angle) => t('orient.angle', { angle: angleDegrees(angle) });
+  const polText = (pol: Polarisation) => {
+    const angle = polarisationAngle(pol);
+    return angle === undefined ? t('light.unpolarised') : t('light.polarised', { angle: angleDegrees(angle) });
+  };
+  /** A colour with intensity and polarisation details. */
+  const withDetails = (colour: string, details: string[]) => (details.length === 0 ? colour : t('light.details', { colour, details: details.join(t('light.separator')) }));
+  /** Polarisation and intensity matter in the current level (then light descriptions mention them). */
+  let optics = false;
+  /** Light received by a square, described for screen readers. */
+  const lightText = (got: number, arrivals: readonly Arrival[]) => {
+    if (got === 0 || !optics) return colourName(got);
+    const pols = polarisations(arrivals);
+    return withDetails(colourName(got), [
+      t('light.intensity', { value: fractionText(brightness(arrivals)) }),
+      pols.length === 1 ? polText(pols[0] as Polarisation) : t('light.mixed')
+    ]);
+  };
 
   const levelStatus = h('p', { class: 'lc-level', 'data-testid': 'level-status' });
   const targetsStat = h('span', { 'data-testid': 'targets' });
@@ -273,9 +385,11 @@ export function createLaserCircuit(context: GameContext): GameInstance<LaserStat
     selected = PIECE_KINDS.find((kind) => level.inventory[kind] > 0) ?? 'mirror';
     removeMode = false;
 
+    optics = hasOptics(level);
     clear(legend);
+    const present = new Set(levelElements(level).flatMap(legendKinds));
     for (const kind of LEGEND_KINDS) {
-      if (!level.cells.some((element) => element.kind === kind)) continue;
+      if (!present.has(kind)) continue;
       legend.append(
         h('li', { class: 'lc-legend-item', 'data-kind': kind },
           svg('svg', { viewBox: '0 0 100 100', class: 'lc-legend-icon', 'aria-hidden': 'true', focusable: 'false' }, ...elementGlyph(LEGEND_SAMPLE[kind], false, 0)),
@@ -283,6 +397,7 @@ export function createLaserCircuit(context: GameContext): GameInstance<LaserStat
         )
       );
     }
+    if (optics) legend.append(h('li', { class: 'lc-legend-item lc-legend-note', 'data-kind': 'optics' }, h('span', {}, t('legend.optics'))));
     legend.hidden = legend.childElementCount === 0;
 
     const count = levelCount(state.difficulty);
@@ -291,15 +406,21 @@ export function createLaserCircuit(context: GameContext): GameInstance<LaserStat
     levelSelect.value = String(state.level);
   };
 
-  const pieceIcon = (kind: PieceKind) => {
-    const element: BoardElement = kind === 'blocker' ? { kind } : { kind, orient: 0 };
-    return svg('svg', { viewBox: '0 0 100 100', class: 'lc-inv-icon', 'aria-hidden': 'true', focusable: 'false' }, ...elementGlyph(element, true, 0));
+  const pieceIcon = (kind: PieceKind) =>
+    svg('svg', { viewBox: '0 0 100 100', class: 'lc-inv-icon', 'aria-hidden': 'true', focusable: 'false' }, ...elementGlyph(pieceElement(kind, 0), true, 0));
+
+  /** What a target needs, with intensity and polarisation when it asks for them. */
+  const needText = (element: Extract<BoardElement, { kind: 'target' }>) => {
+    const details: string[] = [];
+    if (element.level !== undefined) details.push(t('light.intensity', { value: fractionText(intensityOf(element.level)) }));
+    if (element.pol !== undefined) details.push(t('light.polarised', { angle: angleDegrees(element.pol) }));
+    return withDetails(colourName(element.colour), details);
   };
 
-  const describe = (element: BoardElement, placed: boolean, got: number): string => {
+  const describe = (element: BoardElement, placed: boolean, got: number, arrivals: readonly Arrival[], ok: boolean): string => {
     switch (element.kind) {
       case 'empty':
-        return got === 0 ? t('el.empty') : t('el.emptyLit', { colour: colourName(got) });
+        return got === 0 ? t('el.empty') : t('el.emptyLit', { colour: lightText(got, arrivals) });
       case 'emitter':
         return t('el.emitter', { colour: colourName(element.colour), dir: t(DIR_KEY[element.dir]) });
       case 'mirror':
@@ -309,9 +430,15 @@ export function createLaserCircuit(context: GameContext): GameInstance<LaserStat
       case 'blocker':
         return t(placed ? 'el.yourBlocker' : 'el.blocker');
       case 'filter':
-        return t('el.filter', { colour: colourName(element.colour) });
+        return t(placed ? 'el.yourFilter' : 'el.filter', { colour: colourName(element.colour) });
+      case 'absorber':
+        return t(placed ? 'el.yourAbsorber' : 'el.absorber', { colour: colourName(element.colour) });
+      case 'neutral':
+        return t(placed ? 'el.yourNeutral' : 'el.neutral');
+      case 'polariser':
+        return t(placed ? 'el.yourPolariser' : 'el.polariser', { orient: angleText(element.angle) });
       case 'target':
-        return got === element.colour ? t('el.targetOk', { need: colourName(element.colour) }) : t('el.target', { need: colourName(element.colour), got: colourName(got) });
+        return ok ? t('el.targetOk', { need: needText(element) }) : t('el.target', { need: needText(element), got: lightText(got, arrivals) });
       case 'sensor':
         return got === 0 ? t('el.sensor') : t('el.sensorLit', { colour: colourName(got) });
       case 'gate':
@@ -321,25 +448,32 @@ export function createLaserCircuit(context: GameContext): GameInstance<LaserStat
     }
   };
 
-  const renderCells = (boardNow: Board, trace: BeamTrace) => {
+  const renderCells = (boardNow: Board, trace: BeamTrace, result: Evaluation) => {
+    const okTargets = new Set(result.targets.filter((target) => target.ok).map((target) => target.cell));
     boardNow.cells.forEach((element, cell) => {
       const button = cells[cell] as HTMLButtonElement;
       const placed = !!pieceAt(state, cell);
       const got = trace.lit[cell] ?? 0;
-      const sides = trace.sides.slice(cell * 4, cell * 4 + 4).join('');
-      const signature = `${JSON.stringify(element)}|${placed}|${got}|${sides}|${t.locale}`;
+      const arrivals = trace.arrivals[cell] ?? [];
+      const ok = okTargets.has(cell);
+      const sides = `${trace.sides.slice(cell * 4, cell * 4 + 4).join('')}/${trace.sideLevels.slice(cell * 4, cell * 4 + 4).join(',')}`;
+      const light = optics ? JSON.stringify(arrivals) : '';
+      const signature = `${JSON.stringify(element)}|${placed}|${got}|${ok}|${sides}|${light}|${t.locale}`;
       if (signatures[cell] === signature) return;
       signatures[cell] = signature;
       button.dataset.element = element.kind;
       button.dataset.lit = colourLetter(got);
       button.dataset.placed = String(placed);
       if ('orient' in element) button.dataset.orient = String(element.orient);
+      else if (element.kind === 'polariser') button.dataset.orient = String(element.angle);
       else delete button.dataset.orient;
-      button.setAttribute('aria-label', t('cell.label', { ...coords(cell), content: describe(element, placed, got) }));
+      if (element.kind === 'target') button.dataset.ok = String(ok);
+      else delete button.dataset.ok;
+      button.setAttribute('aria-label', t('cell.label', { ...coords(cell), content: describe(element, placed, got, arrivals, ok) }));
       button.replaceChildren(
         svg('svg', { viewBox: '0 0 100 100', class: 'lc-glyph', 'aria-hidden': 'true', focusable: 'false' },
           svg('g', { class: 'lc-beams' }, ...beamLines(trace, cell)),
-          svg('g', { class: 'lc-element' }, ...elementGlyph(element, placed, got))
+          svg('g', { class: 'lc-element' }, ...elementGlyph(element, placed, got, ok))
         )
       );
     });
@@ -350,9 +484,9 @@ export function createLaserCircuit(context: GameContext): GameInstance<LaserStat
     const boardNow = boardOf(state);
     const trace = traceBeams(boardNow);
     const result = evaluate(boardNow, trace);
-    renderCells(boardNow, trace);
+    renderCells(boardNow, trace, result);
 
-    levelStatus.textContent = t('level.status', { n: state.level + 1, total: levelCount(state.difficulty) });
+    levelStatus.textContent = t(state.difficulty === 'intro' ? 'level.statusIntro' : 'level.status', { n: state.level + 1, total: levelCount(state.difficulty) });
     targetsStat.textContent = t('stats.targets', { done: result.correct, total: result.targets.length });
     targetsStat.dataset.value = String(result.correct);
     movesStat.textContent = t('stats.moves', { n: state.moves });
@@ -453,13 +587,14 @@ export function createLaserCircuit(context: GameContext): GameInstance<LaserStat
       announce(live, t(levelOf(state).cells[cell]?.kind === 'empty' ? 'announce.noPiece' : 'announce.fixed'));
       return;
     }
-    if (piece.kind === 'blocker') {
-      announce(live, t('announce.noTurn'));
+    if (orientationCount(piece.kind) === 1) {
+      announce(live, piece.kind === 'blocker' ? t('announce.noTurn') : t('announce.noTurnPiece', { piece: pieceName(piece.kind) }));
       return;
     }
     const next = rotatePiece(state, cell);
-    const turned = pieceAt(next, cell);
-    commit(next, t('announce.rotated', { piece: pieceName(piece.kind), ...coords(cell), orient: t(ORIENT_KEY[turned?.orient ?? 0]) }));
+    const orient = pieceAt(next, cell)?.orient ?? 0;
+    const orientText = piece.kind === 'polariser' ? angleText(orient as Angle) : t(ORIENT_KEY[orient === 1 ? 1 : 0]);
+    commit(next, t('announce.rotated', { piece: pieceName(piece.kind), ...coords(cell), orient: orientText }));
   };
 
   const remove = (cell: number) => {
@@ -571,7 +706,7 @@ export function createLaserCircuit(context: GameContext): GameInstance<LaserStat
       onUndo();
       return;
     }
-    const slot = ['1', '2', '3'].indexOf(event.key);
+    const slot = ['1', '2', '3', '4', '5', '6', '7', '8', '9'].indexOf(event.key);
     if (slot >= 0) {
       const kind = [...inventoryButtons.keys()][slot];
       if (kind) {
@@ -611,6 +746,8 @@ export function createLaserCircuit(context: GameContext): GameInstance<LaserStat
     },
     restore(saved: LaserState) {
       show(cloneState(saved));
+      // Keep the host's difficulty select in step with the save (old saves name their sets differently).
+      if (isSelectable(state.difficulty)) context.setDifficulty?.(state.difficulty);
     },
     serialize: () => cloneState(state),
     pause() {

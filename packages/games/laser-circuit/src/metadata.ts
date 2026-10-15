@@ -3,7 +3,8 @@ import { messages } from './messages';
 
 export const metadata: GameMetadata = {
   id: 'laser-circuit',
-  stateVersion: 1,
+  // Version 2 renamed the level sets one step up (the old easy set is no longer offered); see migrateLaserState.
+  stateVersion: 2,
   skills: ['spatial', 'systems'],
   typicalMinutes: [2, 12],
   inputMethods: ['pointer', 'touch', 'keyboard'],

@@ -4,7 +4,10 @@ import { createTestContext, type TestContext } from '@wp/testing';
 import type { GameInstance, GameModule } from '@wp/game-core';
 import type { SupportedLocale } from '@wp/localization';
 import game from '../src/index';
-import { createInitialState, placePiece, type LaserState } from '../src/rules';
+import { LEVELS, type LevelSource } from '../src/levels';
+import { SUPPORTED_LOCALES } from '@wp/localization';
+import { createInitialState, getLevel, placePiece, type LaserState } from '../src/rules';
+import { fractionText } from '../src/view';
 
 let cleanup: (() => void)[] = [];
 afterEach(() => {
@@ -15,7 +18,7 @@ afterEach(() => {
 });
 
 /**
- * Easy level 1 (seed 0):
+ * Introductory level 1 (seed 0; "easy" before state version 2):
  *   .  /  .  .  <R
  *   .  .  .  .  #
  *   .  .  .  .  .
@@ -28,7 +31,9 @@ function start(options: { seed?: number; difficulty?: string; locale?: Supported
   const context = options.reducedMotion === false ? { ...ctx.context, reducedMotion: false } : ctx.context;
   const instance = game.create(context) as GameInstance<LaserState>;
   if (options.state) instance.restore(options.state);
-  else instance.newGame({ seed: options.seed ?? 0, ...(options.difficulty ? { difficulty: options.difficulty } : {}) });
+  // Without a difficulty: the introductory set (the original easy levels, kept for old saves).
+  else if (!options.difficulty) instance.restore(createInitialState(options.seed ?? 0, 'intro'));
+  else instance.newGame({ seed: options.seed ?? 0, difficulty: options.difficulty });
   cleanup.push(() => instance.dispose());
   const root = ctx.context.root;
   const q = (id: string) => root.querySelector<HTMLElement>(`[data-testid="${id}"]`)!;
@@ -63,7 +68,7 @@ describe('view', () => {
     expect(q('inv-mirror').getAttribute('aria-pressed')).toBe('true');
     expect(q('inv-mirror').getAttribute('aria-label')).toBe('Mirror: 1 left');
     expect(root.querySelector('[data-testid="inv-splitter"]')).toBeNull();
-    expect(q('level-status').textContent).toBe('Level 1 of 8');
+    expect(q('level-status').textContent).toBe('Introductory level 1 of 8');
     expect(q('targets').textContent).toBe('Targets correct: 0 of 1');
     expect(q('moves').dataset.value).toBe('0');
     expect(q('status').hidden).toBe(true);
@@ -74,8 +79,8 @@ describe('view', () => {
   });
 
   it('draws beams as lines with one pattern lane per primary colour', () => {
-    const { cell } = start({ difficulty: 'medium', seed: 1 });
-    // Medium level 2: a white laser in the bottom row enters a yellow filter (white below it, yellow above).
+    const { cell } = start({ difficulty: 'easy', seed: 1 });
+    // Easy level 2 ("medium" before state version 2): a white laser in the bottom row enters a yellow filter (white below it, yellow above).
     const lines = (r: number, c: number) => [...cell(r, c).querySelectorAll('.lc-beam')].map((l) => l.getAttribute('class'));
     expect(cell(5, 2).dataset.element).toBe('emitter');
     expect(cell(4, 2).dataset.lit).toBe('W');
@@ -160,14 +165,14 @@ describe('view', () => {
   });
 
   it('does not report a restored solved game as finished again', () => {
-    const solved = placePiece(createInitialState(0), 16, 'mirror');
+    const solved = placePiece(createInitialState(0, 'intro'), 16, 'mirror');
     const { ctx, q } = start({ state: solved });
     expect(q('status').dataset.state).toBe('solved');
     expect(ctx.results).toEqual([]);
   });
 
   it('warns when a forbidden sensor is lit', () => {
-    // Easy level 3 (seed 2): green laser along row 3; a mirror \ at row 3, column 2 sends it down onto the sensor.
+    // Introductory level 3 (seed 2): green laser along row 3; a mirror \ at row 3, column 2 sends it down onto the sensor.
     const { cell, q } = start({ seed: 2 });
     expect(cell(3, 1).dataset.element).toBe('sensor');
     cell(2, 1).click();
@@ -252,7 +257,7 @@ describe('view', () => {
     expect(select.options[2]!.textContent).toBe('Level 3');
     select.value = '4';
     q('level-play').click();
-    expect(q('level-status').textContent).toBe('Level 5 of 8');
+    expect(q('level-status').textContent).toBe('Introductory level 5 of 8');
     expect(cell(0, 3).dataset.element).toBe('emitter');
   });
 
@@ -271,28 +276,29 @@ describe('view', () => {
     const { instance, cell, q } = start({ seed: 7 });
     cell(0, 0).click();
     const saved = instance.serialize();
-    instance.newGame({ seed: 3, difficulty: 'hard' });
+    instance.newGame({ seed: 3, difficulty: 'medium' });
     expect(q('level-status').textContent).toBe('Level 4 of 12');
-    expect(instance.serialize()).toEqual(createInitialState(3, 'hard'));
+    expect(instance.serialize()).toEqual(createInitialState(3, 'medium'));
     instance.restore(saved);
     expect(cell(0, 0).dataset.element).toBe('mirror');
     expect(instance.serialize()).toEqual(saved);
   });
 
-  it('draws one-way gates and portals with labels and explains them in a legend on levels that have them', () => {
+  it('draws optical diodes and portals with labels and explains them in a legend on levels that have them', () => {
     const easy = start();
     expect(easy.q('legend').hidden).toBe(true);
     expect(easy.q('legend').childElementCount).toBe(0);
     easy.instance.dispose();
 
-    const { root, q } = start({ seed: 0, difficulty: 'expert' });
-    // Expert levels are 7 wide and 9 tall.
+    const { root, q } = start({ seed: 0, difficulty: 'hard' });
+    // Hard levels are 7 wide and 9 tall.
     expect(root.querySelectorAll('[data-testid^="cell-"]')).toHaveLength(63);
     expect(q('board').style.getPropertyValue('--lc-cols')).toBe('7');
     const legend = q('legend');
     expect(legend.hidden).toBe(false);
-    expect([...legend.querySelectorAll('li')].map((li) => li.dataset.kind)).toEqual(['gate', 'portal']);
-    expect(legend.textContent).toContain('One-way gate (triangle against a bar)');
+    expect([...legend.querySelectorAll('li')].map((li) => li.dataset.kind)).toEqual(['gate', 'portal', 'filter']);
+    expect(legend.textContent).toContain('Optical diode (triangle against a bar)');
+    expect(legend.textContent).toContain('Faraday effect');
     expect(legend.textContent).toContain('Portal (hexagon with a number)');
     expect(legend.getAttribute('aria-label')).toBe('Special squares');
 
@@ -301,7 +307,7 @@ describe('view', () => {
     expect(gates.length).toBeGreaterThan(0);
     expect(portals).toHaveLength(2);
     for (const gate of gates) {
-      expect(gate.getAttribute('aria-label')).toMatch(/: one-way gate, pointing (up|right|down|left): light passes only in the direction of the arrow$/);
+      expect(gate.getAttribute('aria-label')).toMatch(/: optical diode, pointing (up|right|down|left): light passes only in the direction of the arrow$/);
       // A diode pictogram (triangle + bar), turned to its direction: shape, not colour.
       expect(gate.querySelector('.lc-gate')).not.toBeNull();
       expect(gate.querySelector('.lc-gate-bar')).not.toBeNull();
@@ -312,6 +318,86 @@ describe('view', () => {
       expect(portal.querySelector('.lc-letter')?.textContent).toBe('1');
     }
     expect(q('level-status').textContent).toBe(`Level 1 of ${root.querySelector('[data-testid="level-select"]')!.childElementCount}`);
+  });
+
+  it('places, turns and describes optical pieces on an expert level, with a legend for each', () => {
+    vi.useFakeTimers();
+    const index = LEVELS.expert.findIndex((source: LevelSource) => (source.inventory.polariser ?? 0) > 0);
+    expect(index).toBeGreaterThanOrEqual(0);
+    const level = getLevel('expert', index);
+    const { root, q, ctx } = start({ state: { ...createInitialState(index, 'expert'), level: index } });
+    expect(ctx.difficulties).toEqual(['expert']);
+    const kinds = [...q('legend').querySelectorAll('li')].map((li) => li.dataset.kind);
+    expect(kinds).toContain('polariser');
+    expect(kinds.at(-1)).toBe('optics');
+    expect(q('legend').textContent).toContain('Malus’s law, cos²');
+    expect(q('legend').textContent).toContain('mirrors and beam splitters keep the polarisation');
+
+    q('inv-polariser').click();
+    const cell = level.cells.findIndex((element) => element.kind === 'empty');
+    const square = root.querySelector<HTMLElement>(`[data-cell="${cell}"]`)!;
+    square.click();
+    expect(square.dataset.element).toBe('polariser');
+    expect(square.dataset.orient).toBe('0');
+    expect(square.querySelector('.lc-polariser-axis')).not.toBeNull();
+    expect(square.textContent).toBe('0°');
+    expect(square.getAttribute('aria-label')).toMatch(/: your polariser, axis at 0°$/);
+    square.click();
+    expect(square.dataset.orient).toBe('1');
+    expect(square.textContent).toBe('45°');
+    vi.advanceTimersByTime(40);
+    expect(q('announcer').textContent).toMatch(/^Polariser at row \d+, column \d+ turned: now axis at 45°\./);
+    // Light after it is described with its polarisation and intensity.
+    expect(q('inv-polariser').getAttribute('aria-label')).toMatch(/^Polariser: \d+ left$/);
+
+    // Pieces without a direction say so instead of turning.
+    const still = ['neutral', 'filterR', 'filterG', 'filterB', 'minusR', 'minusG', 'minusB'].find((kind) => root.querySelector(`[data-testid="inv-${kind}"]`));
+    expect(still).toBeDefined();
+    q(`inv-${still}`).click();
+    const other = level.cells.findIndex((element, c) => element.kind === 'empty' && c !== cell);
+    const second = root.querySelector<HTMLElement>(`[data-cell="${other}"]`)!;
+    second.click();
+    expect(second.dataset.placed).toBe('true');
+    second.click();
+    vi.advanceTimersByTime(40);
+    expect(q('announcer').textContent).toMatch(/works the same from every side/);
+    expect(second.dataset.orient).toBeUndefined();
+  });
+
+  it('shows what a target needs as text and shapes: colour letter, intensity fraction, polarisation line', () => {
+    const index = LEVELS.expert.findIndex((source) => source.rows.some((row) => /T[RGBYMCW]\d/.test(row)));
+    expect(index).toBeGreaterThanOrEqual(0);
+    const { root } = start({ state: { ...createInitialState(index, 'expert'), level: index } });
+    const level = getLevel('expert', index);
+    const cell = level.cells.findIndex((element) => element.kind === 'target' && element.level !== undefined);
+    const target = level.cells[cell] as { kind: 'target'; colour: number; level: number; pol?: number };
+    const square = root.querySelector<HTMLElement>(`[data-cell="${cell}"]`)!;
+    expect(square.querySelector('.lc-need')?.textContent).toBe(fractionText(2 ** -target.level));
+    expect(square.getAttribute('aria-label')).toMatch(new RegExp(`target – needs \\w+ \\(intensity ${fractionText(2 ** -target.level)}`));
+    expect(square.dataset.ok).toBe('false');
+    if (target.pol !== undefined) expect(square.querySelector('.lc-target-pol')).not.toBeNull();
+  });
+
+  it('writes intensities as fractions', () => {
+    expect([1, 0.5, 0.25, 0.125, 1 / 16, 1 / 64, 0.75, 1.5, 3 / 64].map(fractionText)).toEqual(['1', '½', '¼', '⅛', '1/16', '1/64', '3/4', '3/2', '3/64']);
+  });
+
+  it('names the optical pieces and the diode in every language', () => {
+    const index = LEVELS.expert.findIndex((source: LevelSource) => (source.inventory.polariser ?? 0) > 0);
+    for (const locale of SUPPORTED_LOCALES) {
+      const { q, ctx, instance } = start({ locale, state: { ...createInitialState(index, 'expert'), level: index } });
+      expect(ctx.missingKeys).toEqual([]);
+      expect(q('inv-polariser').textContent).not.toBe('');
+      instance.dispose();
+    }
+  });
+
+  it('tells the host the difficulty of a restored save, but not for the introductory set', () => {
+    const old = start({ state: createInitialState(3, 'intro') });
+    expect(old.ctx.difficulties).toEqual([]);
+    expect(old.q('level-status').textContent).toBe('Introductory level 4 of 8');
+    const medium = start({ state: createInitialState(3, 'medium') });
+    expect(medium.ctx.difficulties).toEqual(['medium']);
   });
 
   it('renders right-to-left text with a left-to-right board, and animates beams only without reduced motion', () => {
