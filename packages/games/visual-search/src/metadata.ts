@@ -17,5 +17,5 @@ export const metadata: GameMetadata = {
   },
   messages,
   // Keep in sync with DIFFICULTIES in rules.ts (checked by a unit test). Feature search first.
-  difficulties: ['feature', 'conjunction', 'similar']
+  difficulties: ['feature', 'conjunction', 'similar', 'expert']
 };

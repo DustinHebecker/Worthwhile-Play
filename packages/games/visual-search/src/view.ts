@@ -15,6 +15,7 @@ import {
   startRound,
   summarize,
   toDifficulty,
+  TILT_DEGREES,
   TRIALS,
   type Difficulty,
   type Features,
@@ -51,7 +52,12 @@ const SHAPE_PATHS: Readonly<Record<Features['shape'], () => SVGElement>> = {
   bar: () => svg('rect', { x: -38, y: -14, width: 76, height: 28 }),
   triangle: () => svg('polygon', { points: '0,-40 34.6,20 -34.6,20' }),
   cross: () =>
-    svg('polygon', { points: '-13,-38 13,-38 13,-13 38,-13 38,13 13,13 13,38 -13,38 -13,13 -38,13 -38,-13 -13,-13' })
+    svg('polygon', { points: '-13,-38 13,-38 13,-13 38,-13 38,13 13,13 13,38 -13,38 -13,13 -38,13 -38,-13 -13,-13' }),
+  // Expert search: T and L share the cross stroke (68 × 16) and the stem (16 × 52); in the L the
+  // stem sits near one end with a small overhang (an "offset L"), so only their configuration differs.
+  // Both stay inside ±37 (stroke included), so 90° rotations never leave the view box.
+  tee: () => svg('polygon', { points: '-34,-34 34,-34 34,-18 8,-18 8,34 -8,34 -8,-18 -34,-18' }),
+  ell: () => svg('polygon', { points: '-34,-34 34,-34 34,-18 26,-18 26,34 10,34 10,-18 -34,-18' })
 };
 
 const ARROWS: Readonly<Record<string, Move>> = {
@@ -77,6 +83,9 @@ export function createVisualSearch(context: GameContext): GameInstance<SearchSta
 
   const describe = (f: Features) =>
     t('features', { shape: t(`shape.${f.shape}`), fill: t(`fill.${f.fill}`), tilt: t(`tilt.${f.tilt}`) });
+  /** The round's target; in the expert search it counts in any rotation. */
+  const describeTarget = (r: Round) =>
+    r.anyRotation ? t('features.anyRotation', { shape: t(`shape.${r.target.shape}`), fill: t(`fill.${r.target.fill}`) }) : describe(r.target);
 
   const drawShape = (f: Features): SVGElement => {
     const shape = SHAPE_PATHS[f.shape]();
@@ -85,7 +94,8 @@ export function createVisualSearch(context: GameContext): GameInstance<SearchSta
     shape.setAttribute('stroke', 'currentColor');
     shape.setAttribute('stroke-width', '6');
     shape.setAttribute('stroke-linejoin', 'round');
-    const group = svg('g', f.tilt === 'tilted' ? { transform: 'rotate(45)' } : {}, shape);
+    const degrees = TILT_DEGREES[f.tilt];
+    const group = svg('g', degrees === 0 ? {} : { transform: `rotate(${degrees})` }, shape);
     // The shapes reach a radius of about 43.5 (stroke included), so rotation never leaves the view box.
     return svg('svg', { viewBox: '-44 -44 88 88', class: 'wp-vs__shape', 'aria-hidden': 'true', focusable: 'false' }, group);
   };
@@ -159,7 +169,8 @@ export function createVisualSearch(context: GameContext): GameInstance<SearchSta
     for (const { setSize, ms } of sum.medians) {
       lines.push(ms === null ? t('summary.noTime', { size: setSize }) : t('summary.median', { size: setSize, seconds: seconds(ms) }));
     }
-    lines.push(t('summary.timeNote'), t(s.difficulty === 'feature' ? 'explain.feature' : 'explain.conjunction'), t('summary.note'));
+    const explain = s.difficulty === 'feature' ? 'explain.feature' : s.difficulty === 'expert' ? 'explain.configuration' : 'explain.conjunction';
+    lines.push(t('summary.timeNote'), t(explain), t('summary.note'));
     return lines;
   };
 
@@ -220,7 +231,7 @@ export function createVisualSearch(context: GameContext): GameInstance<SearchSta
     intro.hidden = s.phase !== 'ready';
     clear(introSample);
     introSample.append(drawShape(r.target));
-    introTarget.textContent = t('intro.target', { features: describe(r.target) });
+    introTarget.textContent = t('intro.target', { features: describeTarget(r) });
     introPresence.textContent = t(allowNotThere ? 'intro.sometimes' : 'intro.always');
 
     const index = shownIndex();
@@ -237,8 +248,8 @@ export function createVisualSearch(context: GameContext): GameInstance<SearchSta
 
     clear(findSample);
     findSample.append(drawShape(r.target));
-    Object.assign(findSample.dataset, { shape: r.target.shape, fill: r.target.fill, tilt: r.target.tilt });
-    findText.textContent = t('status.find', { features: describe(r.target) });
+    Object.assign(findSample.dataset, { shape: r.target.shape, fill: r.target.fill, tilt: r.anyRotation ? 'any' : r.target.tilt });
+    findText.textContent = t('status.find', { features: describeTarget(r) });
     statusEl.textContent = t('status.progress', { n: index + 1, total: TRIALS });
 
     const key = `${roundKey}:${index}`;

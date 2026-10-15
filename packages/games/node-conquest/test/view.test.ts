@@ -47,6 +47,25 @@ describe('Orbit Links view', () => {
     expect(ctx.missingKeys).toEqual([]);
   });
 
+  it('names a long standoff calmly, without changing anything else', () => {
+    setup(4);
+    expect($('nc-standoff').hidden).toBe(true);
+    const s = instance.serialize();
+    s.tick = 3600;
+    s.hist = { start: 0, every: 50, rows: [s.hist.rows[0]!] };
+    s.moved = 601;
+    instance.restore(s);
+    expect($('nc-standoff').hidden).toBe(true);
+    s.moved = 600;
+    instance.restore(s);
+    expect($('nc-standoff').hidden).toBe(false);
+    expect($('nc-standoff').textContent).toBe(
+      'Standoff: no node has changed hands for 5:00. Several streams aimed at one single node break through more easily. You can also start a new match whenever you like.'
+    );
+    expect(instance.serialize()).toEqual(s);
+    expect(ctx.missingKeys).toEqual([]);
+  });
+
   it('activates and stops a path by tapping, with direction on the lane', () => {
     setup(2);
     const v = start();

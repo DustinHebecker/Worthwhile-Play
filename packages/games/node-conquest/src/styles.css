@@ -23,6 +23,7 @@
 .wp-nc p { margin: 0; }
 .wp-nc [hidden] { display: none !important; }
 .wp-nc .nc-status { font-weight: 600; font-variant-numeric: tabular-nums; }
+.wp-nc .nc-standoff { font-size: 0.9rem; max-inline-size: 60ch; }
 .wp-nc .nc-counts { color: var(--wp-muted); font-size: 0.9rem; font-variant-numeric: tabular-nums; }
 .wp-nc .nc-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
 .wp-nc .nc-toolbar button,

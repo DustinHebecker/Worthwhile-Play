@@ -16,6 +16,12 @@ import { createRng, isArrayOf, isInt, isOneOf, isRecord, isUint32, type Rng } fr
  *                feature identifies the target. Some boards have no target.
  * - similar:     every distractor differs from the target in exactly one of the three
  *                features, with all three kinds present. Some boards have no target.
+ * - expert:      spatial-configuration search: a T among L's. Both are built from the same
+ *                two strokes (the L's cross stroke is offset towards one end, so it looks like
+ *                an off-centre T), and every item is shown in one of four rotations, so no
+ *                single feature (shape outline, fill, orientation) guides attention to the
+ *                target; the T counts in any rotation. Larger boards, half without target.
+ *                Appended last so older saves and the host default (first entry) still work.
  *
  * Search times are information only and never needed for correctness: each answer stores the
  * measured time or `null`. The view measures from the moment a board is shown; a board that
@@ -23,16 +29,23 @@ import { createRng, isArrayOf, isInt, isOneOf, isRecord, isUint32, type Rng } fr
  * and reopening the game is timed from that moment on (the earlier part is simply not counted).
  */
 
-export const DIFFICULTIES = ['feature', 'conjunction', 'similar'] as const;
+export const DIFFICULTIES = ['feature', 'conjunction', 'similar', 'expert'] as const;
 export type Difficulty = (typeof DIFFICULTIES)[number];
 export const DEFAULT_DIFFICULTY: Difficulty = 'feature';
 
-export const SHAPES = ['bar', 'triangle', 'cross'] as const;
+export const SHAPES = ['bar', 'triangle', 'cross', 'tee', 'ell'] as const;
 export type Shape = (typeof SHAPES)[number];
 export const FILLS = ['solid', 'outline', 'striped'] as const;
 export type Fill = (typeof FILLS)[number];
-export const TILTS = ['upright', 'tilted'] as const;
+export const TILTS = ['upright', 'tilted', 'r90', 'r180', 'r270'] as const;
 export type Tilt = (typeof TILTS)[number];
+/** Shapes and tilts of the feature, conjunction and similar searches. */
+export const CLASSIC_SHAPES = ['bar', 'triangle', 'cross'] as const satisfies readonly Shape[];
+export const CLASSIC_TILTS = ['upright', 'tilted'] as const satisfies readonly Tilt[];
+/** Rotations used by the spatial-configuration (expert) search. */
+export const ROTATIONS = ['upright', 'r90', 'r180', 'r270'] as const satisfies readonly Tilt[];
+/** Drawing angle of each tilt, in degrees clockwise. */
+export const TILT_DEGREES: Readonly<Record<Tilt, number>> = { upright: 0, tilted: 45, r90: 90, r180: 180, r270: 270 };
 export const DIMENSIONS = ['shape', 'fill', 'tilt'] as const;
 export type Dimension = (typeof DIMENSIONS)[number];
 
@@ -48,7 +61,7 @@ export const TRIALS = 12;
 export const NOT_THERE = -1;
 
 export interface DifficultyConfig {
-  /** Grid of possible item positions. At most 5 columns, so cells stay >= 56 px wide on a 360 px screen. */
+  /** Grid of possible item positions. At most 6 columns, so cells stay >= 48 px wide on a 360 px screen. */
   readonly cols: number;
   readonly rows: number;
   /** The two set sizes; each is used on exactly half of the boards. */
@@ -60,7 +73,8 @@ export interface DifficultyConfig {
 export const CONFIGS: Readonly<Record<Difficulty, DifficultyConfig>> = {
   feature: { cols: 4, rows: 4, setSizes: [6, 12], absentPerSize: 0 },
   conjunction: { cols: 5, rows: 4, setSizes: [8, 16], absentPerSize: 2 },
-  similar: { cols: 5, rows: 5, setSizes: [10, 20], absentPerSize: 2 }
+  similar: { cols: 5, rows: 5, setSizes: [10, 20], absentPerSize: 2 },
+  expert: { cols: 6, rows: 6, setSizes: [12, 30], absentPerSize: 3 }
 };
 
 /**
@@ -91,7 +105,10 @@ export interface Trial {
 
 export interface Round {
   readonly difficulty: Difficulty;
+  /** The target as shown in the instructions (for the expert search: upright). */
   readonly target: Features;
+  /** True when the target counts in any rotation (expert search). */
+  readonly anyRotation: boolean;
   readonly trials: readonly Trial[];
 }
 
@@ -125,7 +142,11 @@ export function differingDimensions(a: Features, b: Features): Dimension[] {
   return DIMENSIONS.filter((d) => a[d] !== b[d]);
 }
 
-const VALUES: { readonly [D in Dimension]: readonly Features[D][] } = { shape: SHAPES, fill: FILLS, tilt: TILTS };
+/** Whether a shape looks like the round's target (in any rotation where the round allows it). */
+export const looksLikeTarget = (round: Pick<Round, 'target' | 'anyRotation'>, f: Features): boolean =>
+  f.shape === round.target.shape && f.fill === round.target.fill && (round.anyRotation || f.tilt === round.target.tilt);
+
+const VALUES: { readonly [D in Dimension]: readonly Features[D][] } = { shape: CLASSIC_SHAPES, fill: FILLS, tilt: CLASSIC_TILTS };
 
 /** The target with one feature replaced by a different value. */
 function variant(rng: Rng, target: Features, dimension: Dimension): Features {
@@ -147,8 +168,21 @@ function distractorKinds(rng: Rng, difficulty: Difficulty, target: Features, fea
   return DIMENSIONS.map((d) => variant(rng, target, d));
 }
 
-function buildTrial(rng: Rng, difficulty: Difficulty, target: Features, setSize: number, present: boolean, featureDimension: Dimension): Trial {
-  const { cols, rows } = CONFIGS[difficulty];
+/**
+ * Expert search: the four rotations of the L, each used equally often (heterogeneous
+ * distractors); the T itself is drawn in a random rotation.
+ */
+function configurationLooks(rng: Rng, setSize: number, present: boolean): { features: Features; target: boolean }[] {
+  const looks: { features: Features; target: boolean }[] = [];
+  if (present) looks.push({ features: { shape: 'tee', fill: 'solid', tilt: rng.pick(ROTATIONS) }, target: true });
+  const sizes = split(rng, present ? setSize - 1 : setSize, ROTATIONS.length);
+  ROTATIONS.forEach((tilt, k) => {
+    for (let i = 0; i < (sizes[k] as number); i++) looks.push({ features: { shape: 'ell', fill: 'solid', tilt }, target: false });
+  });
+  return looks;
+}
+
+function classicLooks(rng: Rng, difficulty: Difficulty, target: Features, setSize: number, present: boolean, featureDimension: Dimension) {
   const kinds = distractorKinds(rng, difficulty, target, featureDimension);
   const distractorCount = present ? setSize - 1 : setSize;
   const sizes = split(rng, distractorCount, kinds.length);
@@ -157,6 +191,12 @@ function buildTrial(rng: Rng, difficulty: Difficulty, target: Features, setSize:
   kinds.forEach((kind, k) => {
     for (let i = 0; i < (sizes[k] as number); i++) looks.push({ features: kind, target: false });
   });
+  return looks;
+}
+
+function buildTrial(rng: Rng, difficulty: Difficulty, target: Features, setSize: number, present: boolean, featureDimension: Dimension): Trial {
+  const { cols, rows } = CONFIGS[difficulty];
+  const looks = difficulty === 'expert' ? configurationLooks(rng, setSize, present) : classicLooks(rng, difficulty, target, setSize, present, featureDimension);
   // A uniformly random subset of cells, in random order: the target's cell is uniform over the grid.
   const cells = rng.shuffle(Array.from({ length: cols * rows }, (_, i) => i)).slice(0, setSize);
   const placed: Item[] = looks.map((look, i) => ({
@@ -173,7 +213,11 @@ function buildTrial(rng: Rng, difficulty: Difficulty, target: Features, setSize:
 /** Deterministically generates the round (target and all boards) for a seed and difficulty. */
 export function generateRound(seed: number, difficulty: Difficulty): Round {
   const rng = createRng(seed);
-  const target: Features = { shape: rng.pick(SHAPES), fill: rng.pick(FILLS), tilt: rng.pick(TILTS) };
+  // The classic searches draw exactly as before (old saves keep their boards).
+  const anyRotation = difficulty === 'expert';
+  const target: Features = anyRotation
+    ? { shape: 'tee', fill: 'solid', tilt: 'upright' }
+    : { shape: rng.pick(CLASSIC_SHAPES), fill: rng.pick(FILLS), tilt: rng.pick(CLASSIC_TILTS) };
   const config = CONFIGS[difficulty];
   const perSize = TRIALS / config.setSizes.length;
   const plan: { setSize: number; present: boolean }[] = [];
@@ -184,7 +228,7 @@ export function generateRound(seed: number, difficulty: Difficulty): Round {
   // Feature search: each dimension is the differing one on an equal share of the boards.
   const featureDimensions = rng.shuffle(Array.from({ length: TRIALS }, (_, i) => DIMENSIONS[i % DIMENSIONS.length] as Dimension));
   const trials = order.map((p, i) => buildTrial(rng, difficulty, target, p.setSize, p.present, featureDimensions[i] as Dimension));
-  return { difficulty, target, trials };
+  return { difficulty, target, anyRotation, trials };
 }
 
 export function newRound(seed: number, difficulty: Difficulty): SearchState {

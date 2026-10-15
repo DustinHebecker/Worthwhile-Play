@@ -122,8 +122,31 @@ function elementGlyph(element: BoardElement, placed: boolean, got: number): SVGE
         svg('polygon', { class: 'lc-sensor', points: '50,14 86,50 50,86 14,50' }),
         svg('path', { class: 'lc-sensor-x', d: got === 0 ? 'M40 40 L60 60 M60 40 L40 60' : 'M50 34 L50 56 M50 64 L50 68' })
       ];
+    case 'gate':
+      // A diode symbol (triangle against a bar) pointing the way light may pass; drawn pointing up, then turned.
+      return [
+        svg('g', { transform: `rotate(${element.dir * 90} 50 50)` },
+          svg('path', { class: 'lc-gate-rail', d: 'M22 16 L22 84 M78 16 L78 84' }),
+          svg('polygon', { class: 'lc-gate', points: '50,26 70,66 30,66' }),
+          svg('line', { class: 'lc-gate-bar', x1: 28, y1: 24, x2: 72, y2: 24 })
+        )
+      ];
+    case 'portal':
+      // A hexagon (never a circle like targets) with the pair's number (never a colour letter).
+      return [
+        svg('polygon', { class: 'lc-portal', points: '50,10 85,30 85,70 50,90 15,70 15,30' }),
+        svg('polygon', { class: 'lc-portal-inner', points: '50,22 74,36 74,64 50,78 26,64 26,36' }),
+        label(String(element.pair), 'lc-portal-number')
+      ];
   }
 }
+
+/** Fixed element kinds that get a line in the legend when a level contains them. */
+const LEGEND_KINDS = ['gate', 'portal'] as const;
+const LEGEND_SAMPLE: Readonly<Record<(typeof LEGEND_KINDS)[number], BoardElement>> = {
+  gate: { kind: 'gate', dir: 1 },
+  portal: { kind: 'portal', pair: 1 }
+};
 
 const ORIENT_KEY: Readonly<Record<Orientation, string>> = { 0: 'orient.slash', 1: 'orient.backslash' };
 const DIR_KEY = ['dir.up', 'dir.right', 'dir.down', 'dir.left'] as const;
@@ -190,6 +213,7 @@ export function createLaserCircuit(context: GameContext): GameInstance<LaserStat
     h('p', {}, t('help.colours'))
   );
   const live = h('div', { class: 'sr-only', 'aria-live': 'polite', role: 'status', 'data-testid': 'announcer' });
+  const legend = h('ul', { class: 'lc-legend', 'aria-label': t('legend'), 'data-testid': 'legend', hidden: true });
 
   const container = h(
     'div',
@@ -201,6 +225,7 @@ export function createLaserCircuit(context: GameContext): GameInstance<LaserStat
     board,
     inventory,
     actions,
+    legend,
     chooser,
     help,
     live
@@ -248,6 +273,18 @@ export function createLaserCircuit(context: GameContext): GameInstance<LaserStat
     selected = PIECE_KINDS.find((kind) => level.inventory[kind] > 0) ?? 'mirror';
     removeMode = false;
 
+    clear(legend);
+    for (const kind of LEGEND_KINDS) {
+      if (!level.cells.some((element) => element.kind === kind)) continue;
+      legend.append(
+        h('li', { class: 'lc-legend-item', 'data-kind': kind },
+          svg('svg', { viewBox: '0 0 100 100', class: 'lc-legend-icon', 'aria-hidden': 'true', focusable: 'false' }, ...elementGlyph(LEGEND_SAMPLE[kind], false, 0)),
+          h('span', {}, t(`legend.${kind}`))
+        )
+      );
+    }
+    legend.hidden = legend.childElementCount === 0;
+
     const count = levelCount(state.difficulty);
     clear(levelSelect);
     for (let i = 0; i < count; i++) levelSelect.append(h('option', { value: i }, t('level.option', { n: i + 1 })));
@@ -277,6 +314,10 @@ export function createLaserCircuit(context: GameContext): GameInstance<LaserStat
         return got === element.colour ? t('el.targetOk', { need: colourName(element.colour) }) : t('el.target', { need: colourName(element.colour), got: colourName(got) });
       case 'sensor':
         return got === 0 ? t('el.sensor') : t('el.sensorLit', { colour: colourName(got) });
+      case 'gate':
+        return t('el.gate', { dir: t(DIR_KEY[element.dir]) });
+      case 'portal':
+        return t('el.portal', { n: element.pair });
     }
   };
 

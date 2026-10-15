@@ -32,7 +32,7 @@
 .wp-laser-circuit .lc-status { text-align: center; }
 .wp-laser-circuit .lc-status[data-state='warning'] { border-inline-start: 4px solid var(--wp-focus); padding-inline-start: 0.5rem; }
 
-/* Board: at most 7 columns of at least 44 px = 308 px, which fits a 360 px phone. */
+/* Board: at most 7 columns of at least 44 px = 308 px, which fits a 360 px phone; up to 9 rows scroll with the page. */
 .wp-laser-circuit .lc-board {
   direction: ltr;
   display: grid;
@@ -102,6 +102,27 @@
 .wp-laser-circuit [data-element='sensor']:not([data-lit='']) .lc-sensor { fill: var(--lc-warn); stroke: #ffffff; }
 .wp-laser-circuit [data-element='sensor']:not([data-lit='']) .lc-sensor-x { stroke: var(--lc-text-dark); }
 
+/* One-way gate: a diode symbol (triangle against a bar) between two rails. */
+.wp-laser-circuit .lc-gate { fill: var(--lc-fixed); stroke: var(--lc-text-dark); stroke-width: 3; stroke-linejoin: round; }
+.wp-laser-circuit .lc-gate-bar { stroke: var(--lc-fixed); stroke-width: 7; stroke-linecap: round; }
+.wp-laser-circuit .lc-gate-rail { fill: none; stroke: var(--lc-fixed); stroke-width: 3; stroke-dasharray: 4 5; }
+/* Portal: a double hexagon with its pair number. */
+.wp-laser-circuit .lc-portal { fill: rgba(255, 255, 255, 0.06); stroke: var(--lc-fixed); stroke-width: 4; stroke-linejoin: round; }
+.wp-laser-circuit .lc-portal-inner { fill: none; stroke: var(--lc-fixed); stroke-width: 2; stroke-dasharray: 5 4; }
+
+/* Legend for the less common elements of the current level. */
+.wp-laser-circuit .lc-legend {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-width: 32rem;
+  font-size: 0.9rem;
+}
+.wp-laser-circuit .lc-legend-item { display: flex; align-items: center; gap: 0.5rem; text-align: start; }
+.wp-laser-circuit .lc-legend-icon { flex: none; width: 2.25rem; height: 2.25rem; background: var(--lc-floor); border-radius: 4px; }
+
 /* Inventory and actions */
 .wp-laser-circuit .lc-inventory,
 .wp-laser-circuit .lc-actions {
@@ -132,7 +153,9 @@
 @media (forced-colors: active) {
   .wp-laser-circuit .lc-cell { border: 1px solid CanvasText; }
   .wp-laser-circuit .lc-beam { stroke: Highlight; }
-  .wp-laser-circuit .lc-mirror, .wp-laser-circuit .lc-splitter, .wp-laser-circuit .lc-target, .wp-laser-circuit .lc-sensor-x { stroke: CanvasText; }
+  .wp-laser-circuit .lc-mirror, .wp-laser-circuit .lc-splitter, .wp-laser-circuit .lc-target, .wp-laser-circuit .lc-sensor-x,
+  .wp-laser-circuit .lc-gate-bar, .wp-laser-circuit .lc-gate-rail, .wp-laser-circuit .lc-portal, .wp-laser-circuit .lc-portal-inner { stroke: CanvasText; }
+  .wp-laser-circuit .lc-gate { fill: CanvasText; }
   .wp-laser-circuit .lc-mine { stroke: Highlight; }
   .wp-laser-circuit .lc-letter { fill: CanvasText; }
 }

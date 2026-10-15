@@ -5,34 +5,52 @@ import {
   attemptResults,
   canSubmit,
   cancelTest,
+  checkFormula,
   createInitialState,
   evaluate,
   experimentCount,
   familyOf,
   findLogIndex,
+  formulaDialect,
+  formulaOf,
+  formulaSupported,
+  formulaValue,
+  lastFormulaOf,
   phaseOf,
+  proofModeOf,
   ruleOf,
   runExperiment,
   setDraftValue,
+  setFormula,
   setPrediction,
+  setProofMode,
   startTest,
+  submitFormula,
   submitTest,
   toDifficulty,
   useHint,
   valueBounds,
   type BlackBoxState,
+  type FormulaResult,
   type Input,
   type Output,
-  type Prediction
+  type Prediction,
+  type ProofMode
 } from './rules';
+import { MAX_FORMULA_LENGTH, parseFormula, type FormulaError } from './formula';
 import './styles.css';
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
+
+/** Examples shown under the formula field, per input domain (language-neutral notation). */
+const FORMULA_EXAMPLES = { int: 'x mod 2 == 0 ? x / 2 : 3*x + 1', pair: 'max(x, y) - min(x, y) + 1', bits: '(b1 and not b2) or b3' } as const;
 
 export function createBlackBox(context: GameContext): GameInstance<BlackBoxState> {
   const { t } = context;
   let state = createInitialState(0);
   let paused = false;
+  /** Parse error of the last formula check (transient; parse errors are never counted). */
+  let formulaError = '';
   /** Transient feedback in the active panel (not part of the logical state). */
   let notice = '';
   /** Log row to highlight after re-running a known input. */
@@ -62,6 +80,7 @@ export function createBlackBox(context: GameContext): GameInstance<BlackBoxState
     state = next;
     if (options.render !== false) {
       notice = '';
+      formulaError = '';
       highlight = -1;
       invalidFields.clear();
       render();
@@ -133,12 +152,56 @@ export function createBlackBox(context: GameContext): GameInstance<BlackBoxState
     if (next.solved) message += ` ${solvedText(next)}`;
     commit(next, message);
     board.querySelector<HTMLElement>(next.solved ? '[data-focus="status"]' : '[data-focus="attempt"]')?.focus();
-    if (next.solved) {
-      context.finished({ outcome: 'won', stats: { experiments: experimentCount(next), tests: next.attempts, hints: next.hintUsed ? 1 : 0 } });
-    }
+    if (next.solved) finish(next);
   };
 
   const solvedText = (s: BlackBoxState) => t('status.solved', { experiments: experimentCount(s), tests: s.attempts });
+
+  const finish = (s: BlackBoxState) => context.finished({ outcome: 'won', stats: { experiments: experimentCount(s), tests: s.attempts, hints: s.hintUsed ? 1 : 0 } });
+
+  // --- Formula proofs --------------------------------------------------------------------------
+
+  const formulaErrorText = (error: FormulaError) => t(`formula.error.${error.code}`, { pos: error.pos, text: error.text, n: error.n });
+
+  /** "Not the hidden rule: for input … the box gives …, your formula gives …" for a wrong result. */
+  const formulaVerdict = (result: FormulaResult): string => {
+    if (result.correct || !result.input) return t('formula.correct');
+    const dialect = formulaDialect(spec());
+    const parsed = dialect ? parseFormula(result.text, dialect) : null;
+    const got = parsed?.ok ? formulaValue(parsed.expr, result.input) : null;
+    const params = { input: inputText(result.input), output: outputText(evaluate(ruleOf(state), result.input)) };
+    return got === null ? t('formula.undefined', params) : t('formula.wrong', { ...params, got: outputText(got) });
+  };
+
+  const chooseProof = (mode: ProofMode) => {
+    commit(setProofMode(state, mode));
+  };
+
+  const checkTypedFormula = () => {
+    const field = board.querySelector<HTMLInputElement>('[data-testid="bb-formula"]');
+    if (field) commit(setFormula(state, field.value), undefined, { render: false });
+    const check = checkFormula(ruleOf(state), formulaOf(state), state.log.map((entry) => entry.input));
+    if (check.kind === 'error') {
+      formulaError = formulaErrorText(check.error);
+      render();
+      announce(live, formulaError);
+      return;
+    }
+    const last = lastFormulaOf(state);
+    const next = submitFormula(state);
+    if (next === state) {
+      if (last && !last.correct && last.text === formulaOf(state)) say(t('formula.same'));
+      return;
+    }
+    const result = lastFormulaOf(next) as FormulaResult;
+    let message = formulaVerdict(result);
+    if (next.solved) message += ` ${solvedText(next)}`;
+    commit(next, message);
+    if (next.solved) {
+      board.querySelector<HTMLElement>('[data-focus="status"]')?.focus();
+      finish(next);
+    }
+  };
 
   // --- Rendering ---------------------------------------------------------------------------
 
@@ -172,7 +235,7 @@ export function createBlackBox(context: GameContext): GameInstance<BlackBoxState
     else if (phase === 'testing') board.appendChild(renderChallenge());
     else board.appendChild(renderSolved());
 
-    board.append(...[renderAttempt(), renderLog()].filter((el): el is HTMLElement => el !== null));
+    board.append(...[renderAttempt(), phase === 'testing' && proofModeOf(state) === 'formula' ? null : renderFormulaResult(), renderLog()].filter((el): el is HTMLElement => el !== null));
 
     if (previousFocus) {
       const target = board.querySelector<HTMLElement>(`[data-focus="${previousFocus}"]`) ?? board.querySelector<HTMLElement>('[data-focus="status"]');
@@ -183,7 +246,8 @@ export function createBlackBox(context: GameContext): GameInstance<BlackBoxState
   const statusText = () => {
     const phase = phaseOf(state);
     if (phase === 'solved') return solvedText(state);
-    return t(phase === 'testing' ? 'status.testing' : 'status.experimenting');
+    if (phase === 'testing') return t(proofModeOf(state) === 'formula' ? 'status.formula' : 'status.testing');
+    return t('status.experimenting');
   };
 
   const renderStats = () => {
@@ -384,42 +448,175 @@ export function createBlackBox(context: GameContext): GameInstance<BlackBoxState
 
   const renderChallenge = () => {
     const challenge = state.challenge;
-    const form = h('form', { class: 'bb-panel', 'data-testid': 'bb-challenge', 'aria-labelledby': 'bb-test-heading', novalidate: true });
+    const mode = proofModeOf(state);
+    const form = h('form', { class: 'bb-panel', 'data-testid': 'bb-challenge', 'data-mode': mode, 'aria-labelledby': 'bb-test-heading', novalidate: true });
     form.addEventListener('submit', (event) => {
       event.preventDefault();
-      if (!paused) submit();
+      if (paused) return;
+      if (proofModeOf(state) === 'formula') checkTypedFormula();
+      else submit();
     });
-    const list = h('ol', { class: 'bb-predictions' });
-    challenge?.inputs.forEach((input, i) => {
-      list.appendChild(
-        h('li', { class: 'bb-prediction', 'data-testid': `bb-challenge-${i}`, 'data-input': input.join(',') },
-          ltr(inputText(input), { class: 'bb-notation bb-challenge-input' }),
-          h('span', { class: 'bb-arrow', 'aria-hidden': 'true' }, '→'),
-          renderPrediction(i, input, challenge.predictions[i] ?? null)
-        )
+    const body: (HTMLElement | null)[] = [];
+    if (mode === 'formula') {
+      body.push(...renderFormulaBody());
+    } else {
+      const list = h('ol', { class: 'bb-predictions' });
+      challenge?.inputs.forEach((input, i) => {
+        list.appendChild(
+          h('li', { class: 'bb-prediction', 'data-testid': `bb-challenge-${i}`, 'data-input': input.join(',') },
+            ltr(inputText(input), { class: 'bb-notation bb-challenge-input' }),
+            h('span', { class: 'bb-arrow', 'aria-hidden': 'true' }, '→'),
+            renderPrediction(i, input, challenge.predictions[i] ?? null)
+          )
+        );
+      });
+      body.push(
+        h('p', { class: 'wp-muted' }, t('test.intro')),
+        list,
+        outputKind() === 'list' ? h('p', { class: 'wp-muted bb-small', id: 'bb-list-help' }, t('predict.listHelp')) : null
       );
-    });
+    }
     append(form,
       h('h3', { id: 'bb-test-heading' }, t('test.heading')),
-      h('p', { class: 'wp-muted' }, t('test.intro')),
-      list,
-      outputKind() === 'list' ? h('p', { class: 'wp-muted bb-small', id: 'bb-list-help' }, t('predict.listHelp')) : null,
+      renderProofChoice(),
+      ...body,
       h('p', { class: 'bb-notice', 'data-testid': 'bb-notice', role: 'status', hidden: notice === '' }, notice),
       h('div', { class: 'wp-row bb-actions' },
-        h('button', { type: 'submit', class: 'primary', 'data-testid': 'bb-submit', 'data-focus': 'submit' }, t('action.submit')),
+        mode === 'formula'
+          ? h('button', { type: 'submit', class: 'primary', 'data-testid': 'bb-check-formula', 'data-focus': 'check-formula' }, t('action.checkFormula'))
+          : h('button', { type: 'submit', class: 'primary', 'data-testid': 'bb-submit', 'data-focus': 'submit' }, t('action.submit')),
         h('button', { type: 'button', 'data-testid': 'bb-back', 'data-focus': 'back', 'aria-describedby': 'bb-back-help', onclick: () => {
           if (!paused && commit(cancelTest(state))) board.querySelector<HTMLElement>('[data-focus="test"]')?.focus();
         } }, t('action.back'))
       ),
-      h('p', { class: 'wp-muted bb-small', id: 'bb-back-help' }, t('test.backNote'))
+      h('p', { class: 'wp-muted bb-small', id: 'bb-back-help' }, t('test.backNote')),
+      mode === 'formula' ? renderFormulaHelp() : null
     );
     return form;
   };
 
-  const renderSolved = () =>
-    h('section', { class: 'bb-panel bb-solved', 'data-testid': 'bb-solved' },
-      h('p', { class: 'bb-rule', 'data-testid': 'bb-rule' }, t('solved.rule', { rule: ruleText() }))
+  /** Translated text with one placeholder rendered as an isolated left-to-right notation span. */
+  const withNotation = (key: string, name: string, notation: string, attrs: Record<string, string> = {}) => {
+    const marker = '\u0000';
+    const [before = '', after = ''] = t(key, { [name]: marker }).split(marker);
+    return [before, ltr(notation, attrs), after];
+  };
+
+  const formulaPrefix = () => {
+    const s = spec();
+    return s.kind === 'bits' ? 'f =' : `f${s.kind === 'pair' ? '(x, y)' : '(x)'} =`;
+  };
+
+  const renderProofChoice = () => {
+    if (!formulaSupported(state)) return h('p', { class: 'wp-muted bb-small', 'data-testid': 'bb-proof-note' }, t('proof.listOnly'));
+    const mode = proofModeOf(state);
+    const option = (value: ProofMode) =>
+      h('label', { class: 'bb-radio' },
+        h('input', {
+          type: 'radio',
+          name: 'bb-proof',
+          value,
+          checked: mode === value,
+          'data-testid': `bb-proof-${value}`,
+          'data-focus': `proof-${value}`,
+          onchange: () => {
+            if (!paused) chooseProof(value);
+          }
+        }),
+        h('span', {}, t(`proof.${value}`))
+      );
+    return h('fieldset', { class: 'bb-proof', 'data-testid': 'bb-proof' }, h('legend', {}, t('proof.legend')), option('predict'), option('formula'));
+  };
+
+  const renderFormulaBody = (): (HTMLElement | null)[] => {
+    const s = spec();
+    const field = h('input', {
+      type: 'text',
+      id: 'bb-formula-input',
+      class: 'bb-formula-input',
+      value: formulaOf(state),
+      maxlength: MAX_FORMULA_LENGTH,
+      autocomplete: 'off',
+      autocapitalize: 'off',
+      autocorrect: 'off',
+      spellcheck: 'false',
+      dir: 'ltr',
+      'aria-invalid': formulaError === '' ? 'false' : 'true',
+      'aria-describedby': 'bb-formula-error bb-formula-example',
+      'data-testid': 'bb-formula',
+      'data-focus': 'formula'
+    });
+    const error = h('p', { class: 'bb-formula-error', id: 'bb-formula-error', 'data-testid': 'bb-formula-error', hidden: formulaError === '' }, formulaError);
+    field.addEventListener('input', () => {
+      if (paused) return;
+      if (formulaError !== '') {
+        formulaError = '';
+        error.textContent = '';
+        error.hidden = true;
+        field.setAttribute('aria-invalid', 'false');
+      }
+      commit(setFormula(state, field.value), undefined, { render: false });
+    });
+    const kind = s.kind === 'bits' ? 'bits' : s.kind === 'pair' ? 'pair' : 'int';
+    return [
+      h('p', { class: 'wp-muted' }, t('formula.intro')),
+      h('div', { class: 'bb-formula-field' },
+        h('label', { for: 'bb-formula-input', class: 'bb-formula-label' }, t('formula.label')),
+        h('span', { class: 'bb-formula-row', dir: 'ltr' },
+          h('span', { class: 'bb-notation bb-formula-prefix', 'aria-hidden': 'true' }, formulaPrefix()),
+          field
+        )
+      ),
+      error,
+      h('p', { class: 'wp-muted bb-small', id: 'bb-formula-example' }, ...withNotation('formula.example', 'example', FORMULA_EXAMPLES[kind], { class: 'bb-notation bb-code' })),
+      renderFormulaResult()
+    ];
+  };
+
+  const renderFormulaHelp = () => {
+    const s = spec();
+    const items: [string, string][] =
+      s.kind === 'bits'
+        ? [
+            [`b1 … b${s.count}   0   1   ( )`, 'formula.help.bits'],
+            ['not  and  xor  or   nand  nor  xnor   !  &  ^  |', 'formula.help.logic'],
+            ['maj(a, b, c)', 'formula.help.maj']
+          ]
+        : [
+            [`${s.kind === 'pair' ? 'x  y' : 'x'}   12   ( )`, 'formula.help.inputs'],
+            ['+  -  *  /  mod  %  ^', 'formula.help.arith'],
+            ['abs(a)  min(a, b)  max(a, b)  S(a)  even(a)  odd(a)', 'formula.help.functions'],
+            ['<  <=  >  >=  ==  !=   and  or  not', 'formula.help.compare'],
+            ['c ? a : b    if(c, a, b)', 'formula.help.choice']
+          ];
+    return h('section', { class: 'bb-formula-help', 'data-testid': 'bb-formula-help', 'aria-labelledby': 'bb-formula-help-heading' },
+      h('h4', { id: 'bb-formula-help-heading' }, t('formula.helpHeading')),
+      h('ul', {}, ...items.map(([code, key]) => h('li', {}, h('code', { dir: 'ltr', class: 'bb-code' }, code), h('span', {}, t(key)))))
     );
+  };
+
+  /** The latest wrong formula check (a correct one ends the game and is shown in the solved panel). */
+  const renderFormulaResult = () => {
+    const result = lastFormulaOf(state);
+    if (!result || result.correct || state.solved) return null;
+    return h('section', { class: 'bb-formula-result', 'data-testid': 'bb-formula-result', 'data-correct': 'false', 'aria-labelledby': 'bb-formula-result-heading' },
+      h('h4', { id: 'bb-formula-result-heading', tabindex: -1, 'data-focus': 'formula-result' }, t('formula.resultHeading', { n: state.attempts })),
+      h('p', {}, ltr(`${formulaPrefix()} ${result.text}`, { class: 'bb-notation bb-code', 'data-testid': 'bb-formula-checked' })),
+      h('p', { class: 'bb-formula-verdict' },
+        h('span', { class: 'bb-verdict-mark', 'aria-hidden': 'true' }, '✗ '),
+        h('span', { 'data-testid': 'bb-formula-verdict' }, formulaVerdict(result))
+      ),
+      h('p', { class: 'wp-muted bb-small' }, t('formula.logged'))
+    );
+  };
+
+  const renderSolved = () => {
+    const result = lastFormulaOf(state);
+    return h('section', { class: 'bb-panel bb-solved', 'data-testid': 'bb-solved' },
+      h('p', { class: 'bb-rule', 'data-testid': 'bb-rule' }, t('solved.rule', { rule: ruleText() })),
+      result?.correct ? h('p', { 'data-testid': 'bb-solved-formula' }, ...withNotation('solved.formula', 'formula', `${formulaPrefix()} ${result.text}`, { class: 'bb-notation bb-code' })) : null
+    );
+  };
 
   const renderAttempt = () => {
     const attempt = state.lastAttempt;
@@ -496,6 +693,7 @@ export function createBlackBox(context: GameContext): GameInstance<BlackBoxState
   const mount = () => {
     if (!container.isConnected) context.root.appendChild(container);
     notice = '';
+    formulaError = '';
     highlight = -1;
     invalidFields.clear();
     render();
