@@ -92,15 +92,15 @@ Catalogue order (done): the large games first (Relay Command; then strategy/towe
 | Review / AI basics | prompts appear in the learning language; they should be in the main (UI) language | ✅ Flags, Capitals and AI basics always in the UI language (Review, Memory, deck pages); only First words uses the learning language |
 | Four in a Row | far too hard even on easy | ✅ easy overlooks some threats and plays casual moves; each level beats the one below by a measured margin |
 | Orbit Links | already good, but frequent stalemates | ✅ AI concentrates on one target after a quiet spell; platforms fire every 9 ticks (was 6); calm standoff note. Stalls vs AI 18% → 2% (human-like script). Map 4 may stay (owner, 2026-10-15) |
-| Orbit Links | owner: build more maps; lanes may cross | 🚧 |
+| Orbit Links | owner: build more maps; lanes may cross | ✅ 6 new maps (13 per set: Bridges, Ring road, Gates, Pinwheel, Lattice, Spine), crossings drawn as bridges; old maps pinned. Open (pre-existing): node tap circles are 42.5 px at 360 px (< 44 px) |
 | Laser Paths | owner: a forbidden sensor lit at the start of a level is fine (fixed in play) | ✅ |
-| Catalogue | preview graphics on the overview page | 🚧 |
-| Speech | `pt` → `pt-BR` for `lang` and voice choice | 🚧 |
+| Catalogue | preview graphics on the overview page | ✅ hand-drawn inline SVG per game (decorative, light/dark/forced colours, RTL-aware), ~6 KB gzip; a test requires one for every new game |
+| Speech | `pt` → `pt-BR` for `lang` and voice choice | ✅ `bcp47Tag` in game-core used by the app and all games; voices pt-BR first (pt-PT last resort), zh-Hans prefers zh-CN |
 | Visual search | too easy | ✅ Expert level: T among rotated L shapes (spatial-configuration search, 12/30 items, half without target); further option: mirrored L's |
 | Circuit | **backlog:** a variant with electronic components (capacitors, inductors, …) where e.g. oscillators with the right frequency and other circuits must be built | ⏳ |
 | Four in a Row | **backlog:** variants that make it more interesting (3D / 4×4×4, five in a row, …) | ⏳ |
 | Tic-Tac-Toe | **backlog:** variants (3D, 4×4, …) | ⏳ |
-| Catalogue (all games) | **backlog:** small preview images or representative graphics on the overview page so people can picture each game (own SVG drawn in code, no third-party art; light/dark, RTL-neutral, decorative `aria-hidden` with the title as text) | ⏳ |
+| Catalogue (all games) | ✅ (see below) small preview images or representative graphics on the overview page so people can picture each game (own SVG drawn in code, no third-party art; light/dark, RTL-neutral, decorative `aria-hidden` with the title as text) | ⏳ |
 
 Decisions on the large games (strategy, Tower Defense, adventures) are made by the owner in their own contexts, not via the orchestrator.
 
