@@ -131,6 +131,8 @@
 
 /* Nodes */
 .wp-nc .nc-node { outline: none; }
+/* Invisible touch target (≥ 44 px at 360 px); taps resolve to the nearest node centre in script. */
+.wp-nc .nc-hit { fill: transparent; stroke: none; pointer-events: all; }
 .wp-nc .nc-body { stroke: var(--nc-ink); stroke-width: 2.5; fill: var(--nc-neutral); }
 .wp-nc .nc-node[data-owner='neutral'] .nc-body { stroke-dasharray: 5 4; }
 .wp-nc .nc-node[data-owner='0'] .nc-body { fill: var(--nc-f0); }
