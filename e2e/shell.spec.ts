@@ -29,11 +29,36 @@ test.describe('app shell', () => {
         expect(previewBox!.width).toBeGreaterThan(80);
         expect(previewBox!.x).toBeGreaterThanOrEqual(cardBox!.x);
         expect(previewBox!.x + previewBox!.width).toBeLessThanOrEqual(cardBox!.x + cardBox!.width);
+        // The preview is a band above the title.
+        const titleBox = await card.locator('.game-card-title').boundingBox();
+        expect(previewBox!.y + previewBox!.height).toBeLessThanOrEqual(titleBox!.y + 1);
+        expect(previewBox!.height).toBeLessThanOrEqual(122);
         // The preview's glyphs (e.g. "3 ? 7" in Black Box) never become part of the link's name: it starts with the title.
         const title = (await card.locator('.game-card-title').innerText()).trim();
         await expect(card).toHaveAccessibleName(new RegExp(`^${title.slice(0, 4).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`));
       }
       expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
+    });
+  }
+
+  for (const locale of ['de', 'ru']) {
+    test(`saved-game badge stays one unbroken pill at 360 px (${locale})`, async ({ page }) => {
+      await page.setViewportSize({ width: 360, height: 780 });
+      await page.addInitScript((l) => localStorage.setItem('worthwhile-play:ui-locale', l), locale);
+      await page.goto('/games/memory');
+      await page.getByTestId('new-game').click();
+      await expect(page.getByTestId('game-root')).toBeVisible();
+      await expect.poll(() => readSave(page, 'memory')).toBeTruthy();
+      await page.goto('/');
+      await page.reload();
+      const badge = page.getByTestId('saved-memory');
+      await expect(badge).toBeVisible();
+      // Exactly one line box: the pill may move below the title as a whole, but never wraps inside.
+      expect(await badge.evaluate((el) => el.getClientRects().length)).toBe(1);
+      const [badgeBox, cardBox] = [await badge.boundingBox(), await page.getByTestId('game-card-memory').boundingBox()];
+      expect(badgeBox!.height).toBeLessThan(30);
+      expect(badgeBox!.x).toBeGreaterThanOrEqual(cardBox!.x);
+      expect(badgeBox!.x + badgeBox!.width).toBeLessThanOrEqual(cardBox!.x + cardBox!.width);
     });
   }
 

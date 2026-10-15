@@ -29,6 +29,9 @@ describe('app bootstrap and language switching (per-locale message chunks)', () 
     expect(document.documentElement.lang).toBe('de');
     expect(navText()).toBe(UI_MESSAGES.de?.['nav.home']);
     expect(document.querySelector('[data-testid="game-card-memory"] .game-card-title')?.textContent).not.toMatch(/^title\b/);
+    // The decorative preview comes first (a band above the heading), then the title.
+    const card = document.querySelector('[data-testid="game-card-memory"]')!;
+    expect([...card.children].map((el) => el.getAttribute('class'))).toEqual(['game-preview', 'game-card-title', 'game-card-tagline', 'badges']);
 
     const select = document.querySelector<HTMLSelectElement>('[data-testid="header-language"]')!;
     select.value = 'ja';
