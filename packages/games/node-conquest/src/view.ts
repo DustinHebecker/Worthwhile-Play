@@ -48,12 +48,32 @@ export const TICK_MS = 100;
 /** Autosave cadence while running (ticks of game time). */
 export const SAVE_EVERY = 30;
 const NODE_R = 25;
-const PICK_R = 46;
+/**
+ * Pick radius (board units) around each node centre, drawn as an invisible hit circle. At the
+ * narrowest board (328 px wide on a 360 px phone, 0.5125 px per unit) its diameter is 47 px, above
+ * the 44 px touch-target minimum. Neighbouring circles may overlap a little (maps keep nodes ≥ 86
+ * apart); a tap in the overlap goes to the nearest node centre, so it is never ambiguous.
+ */
+export const PICK_R = 46;
 const DRAG_START = 16;
 /** Sideways offset of a stream from the lane centre (each direction keeps to its own side). */
 const STREAM_OFFSET = 6;
 /** Radius of the neutral marker where two lanes cross (hostile streams fight there). */
 const CROSS_MARK = 9;
+
+/**
+ * The node a board point picks: the nearest node centre within PICK_R; on an exact tie the lower
+ * index (deterministic). Null when no node is within reach.
+ */
+export function pickNode(map: GameMap, x: number, y: number): number | null {
+  let best: number | null = null;
+  let bestD = Infinity;
+  map.nodes.forEach((node, v) => {
+    const d = Math.hypot(node.x - x, node.y - y);
+    if (d <= PICK_R && d < bestD) [best, bestD] = [v, d];
+  });
+  return best;
+}
 
 /** Path of the crossing marker: a small ring with a ✕ inside (a shape, so it never relies on colour). */
 export function crossingMark(x: number, y: number): string {
@@ -341,6 +361,7 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
       const g = svg(
         'g',
         { class: 'nc-node', role: 'button', tabindex: -1, 'data-node': v, 'data-testid': `node-${v}`, 'data-type': node.type },
+        svg('circle', { class: 'nc-hit', cx: x, cy: y, r: PICK_R }),
         svg('circle', { class: 'nc-focus', cx: x, cy: y, r: NODE_R + 15 }),
         svg('circle', { class: 'nc-sel', cx: x, cy: y, r: NODE_R + 10 }),
         deco,
@@ -793,13 +814,7 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
 
   const nearestNode = (p: [number, number] | null): number | null => {
     if (!p || !board) return null;
-    let best: number | null = null;
-    let bestD = PICK_R;
-    board.map.nodes.forEach((node, v) => {
-      const d = Math.hypot(node.x - p[0], node.y - p[1]);
-      if (d <= bestD) [best, bestD] = [v, d];
-    });
-    return best;
+    return pickNode(board.map, p[0], p[1]);
   };
 
   const nodeFromEvent = (event: MouseEvent): number | null => {
