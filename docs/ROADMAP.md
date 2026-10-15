@@ -106,6 +106,12 @@ Catalogue order (done): the large games first (Relay Command; then strategy/towe
 
 Decisions on the large games (strategy, Tower Defense, adventures) are made by the owner in their own contexts, not via the orchestrator.
 
+### Owner notes for the next orchestrator session (2026-10-15, pause)
+
+1. **Skat – lost Hand games:** read the original International Skat Order (ISkO, current edition, from the ISPA/DSkV) and follow it exactly; today lost Hand games count double like all lost games, unverified against the text.
+2. **Skat – overbid Null games:** follow how it is typically played (research common practice and the ISkO wording; today a Null game at bid 24 counts as the next Null value that reaches the bid, 46).
+3. **Start flow (all games):** many games show the host's difficulty select and "New game", and then the game shows a second difficulty/options panel. Owner: either "New game" → settings → start, or settings + start directly — not two selections. Unify across all games (host start panel vs. each game's own options; extend ADR 0015 `setupInGame` or a shared options schema), then check every game.
+
 ## Next steps (suggested agent assignments)
 
 1. **M2 kickoff (orchestrator)**: design `packages/puzzle-core` (grid model, generator/solver interfaces, difficulty metrics) via ADR; then one feature agent per puzzle in parallel.
