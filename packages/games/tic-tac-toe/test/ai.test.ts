@@ -9,7 +9,7 @@ import {
   emptyBoard,
   findWin,
   isLegalMove,
-  isValidState,
+  isValidClassicState,
   legalMoves,
   outcomeOf,
   place,
@@ -18,7 +18,7 @@ import {
   type Cell,
   type Difficulty,
   type Mark,
-  type TicTacToeState
+  type ClassicState
 } from '../src/rules';
 
 const B = (picture: string): Cell[] => [...picture.replace(/\s/g, '')].map((c) => (c === '.' ? '' : (c as Mark)));
@@ -264,7 +264,8 @@ describe('perfect play never loses', () => {
 });
 
 describe('computer turns in the game state', () => {
-  const base = (overrides: Partial<TicTacToeState> = {}): TicTacToeState => ({
+  const base = (overrides: Partial<ClassicState> = {}): ClassicState => ({
+    variant: 'classic',
     seed: 5,
     difficulty: 'perfect',
     opponent: 'computer',
@@ -281,7 +282,7 @@ describe('computer turns in the game state', () => {
     expect(s.moves[0]).toBe(chooseMove(emptyBoard(), 'easy', rng));
     expect(s.rng).toBe(rng.state());
     expect(s.rng).not.toBe(5);
-    expect(isValidState(s)).toBe(true);
+    expect(isValidClassicState(s)).toBe(true);
   });
 
   it('waits for the person when the person starts or plays against another person', () => {
@@ -309,7 +310,7 @@ describe('computer turns in the game state', () => {
     const s = playTurn(base(), 4);
     expect(s.moves).toHaveLength(2);
     expect(s.moves[0]).toBe(4);
-    expect(isValidState(s)).toBe(true);
+    expect(isValidClassicState(s)).toBe(true);
     const people = playTurn(base({ opponent: 'human' }), 4);
     expect(people.moves).toEqual([4]);
     expect(people.rng).toBe(5);
@@ -330,7 +331,7 @@ describe('computer turns in the game state', () => {
         fc.array(fc.nat(), { maxLength: 6 }),
         (seed, difficulty, starter, choices) => {
           const run = () => {
-            const states: TicTacToeState[] = [];
+            const states: ClassicState[] = [];
             let s = startRound({ seed, difficulty, opponent: 'computer', starter });
             states.push(s);
             for (const choice of choices) {
@@ -344,7 +345,7 @@ describe('computer turns in the game state', () => {
           };
           const a = run();
           expect(run()).toEqual(a);
-          for (const s of a) expect(isValidState(s)).toBe(true);
+          for (const s of a) expect(isValidClassicState(s)).toBe(true);
         }
       ),
       { numRuns: 300 }

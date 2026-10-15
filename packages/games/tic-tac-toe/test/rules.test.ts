@@ -19,7 +19,7 @@ import {
   humanMark,
   isComputerTurn,
   isLegalMove,
-  isValidState,
+  isValidClassicState,
   legalMoves,
   markOfMove,
   other,
@@ -31,7 +31,7 @@ import {
   type Board,
   type Cell,
   type Mark,
-  type TicTacToeState
+  type ClassicState
 } from '../src/rules';
 
 /** Builds a board from a 9-character picture such as 'XO.X.O...' ('.' = empty). */
@@ -65,7 +65,8 @@ const arbMoves = fc.array(fc.nat(), { maxLength: 9 }).map((choices) => {
   return moves;
 });
 
-const state = (overrides: Partial<TicTacToeState> = {}): TicTacToeState => ({
+const state = (overrides: Partial<ClassicState> = {}): ClassicState => ({
+  variant: 'classic',
   seed: 1,
   difficulty: 'medium',
   opponent: 'human',
@@ -224,6 +225,7 @@ describe('win and draw detection', () => {
 describe('game state transitions', () => {
   it('creates an empty round whose PRNG starts at the seed', () => {
     expect(createRound({ seed: 77, difficulty: 'easy', opponent: 'computer', starter: 'computer' })).toEqual({
+      variant: 'classic',
       seed: 77,
       difficulty: 'easy',
       opponent: 'computer',
@@ -310,17 +312,17 @@ describe('game state transitions', () => {
   });
 });
 
-describe('isValidState', () => {
+describe('isValidClassicState', () => {
   it('accepts valid states', () => {
-    expect(isValidState(state())).toBe(true);
-    expect(isValidState(state({ moves: [0, 3, 1, 4, 2] }))).toBe(true);
-    expect(isValidState(state({ moves: [0, 1, 2, 4, 3, 5, 7, 6, 8] }))).toBe(true);
-    expect(isValidState(state({ seed: 0xffffffff, rng: 0 }))).toBe(true);
-    expect(isValidState(state({ opponent: 'computer', starter: 'human', moves: [4, 0] }))).toBe(true);
-    expect(isValidState(state({ opponent: 'computer', starter: 'computer', moves: [4] }))).toBe(true);
+    expect(isValidClassicState(state())).toBe(true);
+    expect(isValidClassicState(state({ moves: [0, 3, 1, 4, 2] }))).toBe(true);
+    expect(isValidClassicState(state({ moves: [0, 1, 2, 4, 3, 5, 7, 6, 8] }))).toBe(true);
+    expect(isValidClassicState(state({ seed: 0xffffffff, rng: 0 }))).toBe(true);
+    expect(isValidClassicState(state({ opponent: 'computer', starter: 'human', moves: [4, 0] }))).toBe(true);
+    expect(isValidClassicState(state({ opponent: 'computer', starter: 'computer', moves: [4] }))).toBe(true);
     // Finished games may end on either side's move.
-    expect(isValidState(state({ opponent: 'computer', starter: 'human', moves: [0, 3, 1, 4, 2] }))).toBe(true);
-    for (const difficulty of DIFFICULTIES) expect(isValidState(state({ difficulty }))).toBe(true);
+    expect(isValidClassicState(state({ opponent: 'computer', starter: 'human', moves: [0, 3, 1, 4, 2] }))).toBe(true);
+    for (const difficulty of DIFFICULTIES) expect(isValidClassicState(state({ difficulty }))).toBe(true);
   });
 
   it.each([
@@ -329,6 +331,8 @@ describe('isValidState', () => {
     ['null', null],
     ['missing field', (({ rng: _rng, ...rest }) => rest)(state())],
     ['extra field', { ...state(), board: [] }],
+    ['missing variant', (({ variant: _variant, ...rest }) => rest)(state())],
+    ['other variant', { ...state(), variant: 'nested' }],
     ['negative seed', state({ seed: -1 })],
     ['seed above uint32', state({ seed: 2 ** 32 })],
     ['fractional seed', state({ seed: 1.5 })],
@@ -347,17 +351,17 @@ describe('isValidState', () => {
     ['half a turn against the computer', state({ opponent: 'computer', starter: 'human', moves: [4] })],
     ['computer to open but has not', state({ opponent: 'computer', starter: 'computer', moves: [] })]
   ])('rejects %s', (_label, value) => {
-    expect(isValidState(value)).toBe(false);
+    expect(isValidClassicState(value)).toBe(false);
   });
 
   it('accepts an unfinished position with either side to move between two people', () => {
-    expect(isValidState(state({ opponent: 'human', moves: [4] }))).toBe(true);
+    expect(isValidClassicState(state({ opponent: 'human', moves: [4] }))).toBe(true);
   });
 
   it('property: every state reached by legal play is valid', () => {
     fc.assert(
       fc.property(arbMoves, fc.constantFrom(...DIFFICULTIES), fc.integer({ min: 0, max: 0xffffffff }), (moves, difficulty, seed) => {
-        expect(isValidState(state({ moves, difficulty, seed, rng: seed }))).toBe(true);
+        expect(isValidClassicState(state({ moves, difficulty, seed, rng: seed }))).toBe(true);
       })
     );
   });
@@ -365,13 +369,13 @@ describe('isValidState', () => {
   it('property: never throws on arbitrary input', () => {
     fc.assert(
       fc.property(fc.anything(), (value) => {
-        expect(() => isValidState(value)).not.toThrow();
+        expect(() => isValidClassicState(value)).not.toThrow();
       }),
       { numRuns: 500 }
     );
     fc.assert(
       fc.property(fc.array(fc.integer({ min: -2, max: 10 }), { maxLength: 12 }), (moves) => {
-        expect(() => isValidState(state({ moves }))).not.toThrow();
+        expect(() => isValidClassicState(state({ moves }))).not.toThrow();
       })
     );
   });
