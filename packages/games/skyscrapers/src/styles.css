@@ -4,6 +4,8 @@
   --sk-clue: 1.75rem;
   --sk-line: var(--wp-border);
   --sk-frame: var(--wp-muted);
+  --sk-tower: var(--wp-text);
+  --sk-window: color-mix(in srgb, var(--wp-surface) 80%, var(--wp-text));
   display: grid;
   gap: 0.75rem;
   max-width: 34rem;
@@ -67,6 +69,44 @@
   .wp-skyscrapers .sk-cell-notes { font-size: 24cqi; }
 }
 
+/* Tower view (default): each placed height is drawn as a bold building, 60 % of the cell wide and
+   value/N × 82 % of the cell high, rising from the bottom, with one window band per storey. The digit
+   stays visible on a chip in the top corner, so the exact value never depends on the drawing; the
+   cell's accessible name carries it as text. Given towers are hatched and outlined (not colour only). */
+.wp-skyscrapers .sk-tower {
+  position: absolute; z-index: 0; pointer-events: none;
+  inset-block-end: 2px; inset-inline-start: 20%; inline-size: 60%;
+  block-size: calc(var(--sk-h, 0) * 82%);
+  box-sizing: border-box;
+  background: var(--sk-tower);
+  border: 2px solid var(--sk-tower);
+  border-block-end: 0;
+  border-start-start-radius: 3px; border-start-end-radius: 3px;
+}
+.wp-skyscrapers .sk-tower::before {
+  content: ''; position: absolute; inset-block: 0; inset-inline: 16%;
+  background-image: linear-gradient(to bottom, transparent 0 36%, var(--sk-window) 36% 58%, transparent 58%);
+  background-size: 100% calc(100% / var(--sk-v, 1));
+  background-repeat: repeat-y;
+}
+.wp-skyscrapers .sk-cell.is-given .sk-tower {
+  background: repeating-linear-gradient(135deg, var(--sk-tower) 0 2px, var(--wp-surface) 2px 5px);
+}
+.wp-skyscrapers .sk-board.is-towers .sk-cell { align-items: flex-start; justify-content: flex-start; }
+.wp-skyscrapers .sk-board.is-towers .sk-value:not(:empty) {
+  position: relative; z-index: 1;
+  margin-block-start: 3px; margin-inline-start: 3px;
+  padding: 1px 3px;
+  font-size: 0.85rem; line-height: 1.1;
+  color: var(--wp-text);
+  background: var(--wp-surface);
+  border: 1px solid var(--sk-line);
+  border-radius: 4px;
+}
+@supports (font-size: 1cqi) {
+  .wp-skyscrapers .sk-board.is-towers .sk-value:not(:empty) { font-size: max(0.75rem, 26cqi); }
+}
+
 .wp-skyscrapers .sk-cell:hover { background: var(--wp-surface-2); }
 .wp-skyscrapers .sk-cell.is-peer { background: color-mix(in srgb, var(--wp-accent) 7%, var(--wp-surface)); }
 /* Given digits: heavier type and an inset frame (not colour alone). */
@@ -98,6 +138,16 @@
 .wp-skyscrapers .sk-actions { justify-content: center; }
 .wp-skyscrapers .sk-notes-toggle[aria-pressed='true'] { border: 2px solid var(--wp-accent); font-weight: 700; }
 .wp-skyscrapers .sk-notes-toggle[aria-pressed='true'] .sk-notes-icon::after { content: ' ✓'; }
+.wp-skyscrapers .sk-towers-toggle[aria-pressed='true'] { border: 2px solid var(--wp-accent); font-weight: 700; }
+.wp-skyscrapers .sk-towers-toggle[aria-pressed='true']::after { content: '✓'; }
+/* Three small bars of rising height (drawn, so no font glyph is needed). */
+.wp-skyscrapers .sk-towers-icon {
+  display: inline-block; inline-size: 1em; block-size: 1em; margin-inline-end: 0.3em; vertical-align: -0.1em;
+  background:
+    linear-gradient(currentColor, currentColor) 0 100% / 26% 40% no-repeat,
+    linear-gradient(currentColor, currentColor) 50% 100% / 26% 70% no-repeat,
+    linear-gradient(currentColor, currentColor) 100% 100% / 26% 100% no-repeat;
+}
 .wp-skyscrapers .sk-check-result {
   padding: 0.5rem 0.75rem; border-inline-start: 4px solid var(--wp-accent);
   background: var(--wp-surface-2); border-radius: 6px;
@@ -107,4 +157,12 @@
 @media (max-width: 400px) {
   .wp-skyscrapers { --sk-clue: 1.5rem; }
   .wp-skyscrapers .sk-pad { gap: 0.3rem; }
+}
+
+@media (forced-colors: active) {
+  .wp-skyscrapers .sk-tower { forced-color-adjust: none; background: CanvasText; border-color: CanvasText; }
+  .wp-skyscrapers .sk-cell.is-given .sk-tower { background: repeating-linear-gradient(135deg, CanvasText 0 2px, Canvas 2px 5px); }
+  .wp-skyscrapers .sk-board.is-towers .sk-value:not(:empty) { border-color: CanvasText; }
+  .wp-skyscrapers .sk-tower::before { forced-color-adjust: none; background-image: linear-gradient(to bottom, transparent 0 32%, Canvas 32% 62%, transparent 62%); }
+  .wp-skyscrapers .sk-towers-icon { forced-color-adjust: none; color: ButtonText; }
 }
