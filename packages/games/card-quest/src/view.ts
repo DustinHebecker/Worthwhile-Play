@@ -229,6 +229,9 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     const focusKey = keyOf(document.activeElement && root.contains(document.activeElement) ? document.activeElement : null);
     clear(main);
     main.setAttribute('dir', t.direction);
+    // Phase and seat on turn, for tests and styling (public information only).
+    main.dataset.phase = state.phase;
+    main.dataset.active = String(state.active);
     if (state.phase === 'setup') main.append(renderSetup());
     else main.append(...renderPlay());
     if (focusKey) main.querySelector<HTMLElement>(`[data-key="${CSS.escape(focusKey)}"]`)?.focus();

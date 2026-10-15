@@ -1,16 +1,18 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, readSave } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload } from '../../packages/testing/src/e2e';
 
 const GAME = 'card-quest';
 
-interface Saved {
+/** Phase and seat on turn as the page shows them (the autosave can lag the redraw, so tests read the DOM). */
+interface Shown {
   phase: string;
   active: number;
-  players: { level: number; hand: string[]; equipped: string[] }[];
-  fight: unknown;
 }
 
-const saved = async (page: Page) => ((await readSave(page, GAME)) as { state: Saved } | undefined)?.state;
+const shown = async (page: Page): Promise<Shown> => {
+  const root = page.getByTestId('card-quest');
+  return { phase: (await root.getAttribute('data-phase')) ?? '', active: Number(await root.getAttribute('data-active')) };
+};
 
 /** Opens the game (its setup is the first screen, ADR 0015) and starts with the given number of computer players. */
 async function start(page: Page, opponents = '3') {
@@ -22,10 +24,10 @@ async function start(page: Page, opponents = '3') {
 }
 
 /** Clicks the main action button until the person is in the given phase (or the game is over). */
-async function playUntil(page: Page, done: (s: Saved) => boolean, limit = 200) {
+async function playUntil(page: Page, done: (s: Shown) => boolean, limit = 200) {
   for (let i = 0; i < limit; i++) {
-    const s = await saved(page);
-    if (s && (done(s) || s.phase === 'over')) return;
+    const s = await shown(page);
+    if (done(s) || s.phase === 'over') return;
     const end = page.getByTestId('end');
     if ((await end.count()) > 0 && (await end.isDisabled())) {
       const tiles = page.locator('[data-testid="hand"] .cq-tile[aria-pressed="false"]');
@@ -57,21 +59,7 @@ test('card-quest: resumes in the middle of a fight after a reload', async ({ pag
 
 test('card-quest: equipping an item from the hand raises the strength', async ({ page }) => {
   await start(page);
-  // Play on (by the visible buttons) until it is the person's own turn before opening the door.
-  for (let i = 0; i < 200 && (await page.getByTestId('open').count()) === 0; i++) {
-    for (const id of ['rummage', 'pass', 'roll', 'end']) {
-      const b = page.getByTestId(id);
-      if ((await b.count()) > 0 && (await b.isEnabled())) {
-        await b.click();
-        break;
-      }
-    }
-    const end = page.getByTestId('end');
-    if ((await end.count()) > 0 && (await end.isDisabled())) {
-      const tiles = page.locator('[data-testid="hand"] .cq-tile[aria-pressed="false"]');
-      while (await end.isDisabled()) await tiles.first().click();
-    }
-  }
+  await playUntil(page, (st) => st.phase === 'prepare' && st.active === 0);
   await expect(page.getByTestId('open')).toBeVisible();
   const item = page.locator('[data-testid="hand"] .cq-tile[data-type="item"]').filter({ hasNot: page.locator('.cq-tile-num', { hasText: '+0' }) }).first();
   test.skip((await item.count()) === 0, 'no item in this hand');
