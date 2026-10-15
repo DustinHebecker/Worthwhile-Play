@@ -19,7 +19,7 @@ import {
   type ImportResult,
   type LearningRecord
 } from '@wp/learning-content';
-import { createTranslator, readContentLanguages } from '@wp/localization';
+import { bcp47Tag, createTranslator, readContentLanguages } from '@wp/localization';
 import { append, clear, h } from '@wp/ui';
 import type { AppContext, Page } from '../app';
 import { APP_NAME } from '../config';
@@ -191,7 +191,7 @@ function renderSideCell(side: CardSide): HTMLElement {
   const cell = h('td', {});
   if (side.image) cell.append(h('img', { class: 'deck-image', src: side.image, alt: side.alt ?? '', loading: 'lazy' }));
   if (side.symbol) cell.append(h('span', { class: 'deck-symbol', role: side.alt ? 'img' : undefined, 'aria-label': side.alt }, side.symbol), ' ');
-  if (side.text) cell.append(h('span', { lang: side.lang, dir: 'auto' }, side.text));
+  if (side.text) cell.append(h('span', { lang: side.lang && bcp47Tag(side.lang), dir: 'auto' }, side.text));
   if (side.audio) cell.append(' ', h('span', { class: 'wp-muted' }, '♪'));
   return cell;
 }

@@ -1,4 +1,4 @@
-import type { GameContext, GameInstance, NewGameOptions } from '@wp/game-core';
+import { bcp47Tag, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
 import { announce, clear, h } from '@wp/ui';
 import {
   append,
@@ -93,7 +93,7 @@ export function createLogicPath(context: GameContext): GameInstance<LogicPathSta
 
   const container = h(
     'div',
-    { class: `wp-logic-path${context.reducedMotion ? ' lp-reduced' : ''}`, dir: t.direction, lang: t.locale, onkeydown: (event: Event) => onKey(event as KeyboardEvent) },
+    { class: `wp-logic-path${context.reducedMotion ? ' lp-reduced' : ''}`, dir: t.direction, lang: bcp47Tag(t.locale), onkeydown: (event: Event) => onKey(event as KeyboardEvent) },
     h('div', { class: 'lp-top' }, levelStatus, stats),
     board,
     status,

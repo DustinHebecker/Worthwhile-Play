@@ -9,4 +9,4 @@ export { AI_TERM_IDS, AI_TERMS, aiTerm, isAiTermId, type AiTermEntry, type AiTer
 export { CAPITAL_CODES, CAPITAL_EXCLUSIONS, CAPITALS, capitalName, type CapitalEntry } from './builtin/capitals';
 export { COUNTRY_CODES, countryName, flagEmoji, hasCountryNames, isCountryCode, type CountryCode } from './builtin/countries';
 export * from './schedule';
-export { browserSpeech, hasVoice, type Speech } from './speech';
+export { browserSpeech, hasVoice, pickVoice, type Speech, type VoiceLike } from './speech';

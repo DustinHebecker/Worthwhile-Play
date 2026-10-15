@@ -1,4 +1,4 @@
-import type { GameContext, GameInstance, NewGameOptions } from '@wp/game-core';
+import { bcp47Tag, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
 import { announce, clear, gridKeyboard, h } from '@wp/ui';
 import {
   DIRS,
@@ -217,7 +217,7 @@ export function createLaserCircuit(context: GameContext): GameInstance<LaserStat
 
   const container = h(
     'div',
-    { class: `wp-laser-circuit${context.reducedMotion ? ' lc-reduced' : ''}`, dir: t.direction, lang: t.locale, onkeydown: (event: Event) => onKey(event as KeyboardEvent) },
+    { class: `wp-laser-circuit${context.reducedMotion ? ' lc-reduced' : ''}`, dir: t.direction, lang: bcp47Tag(t.locale), onkeydown: (event: Event) => onKey(event as KeyboardEvent) },
     // The board comes first so the host's initial focus lands on a square.
     levelStatus,
     stats,

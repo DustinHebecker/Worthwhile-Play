@@ -1,4 +1,4 @@
-import type { GameContext, GameInstance, NewGameOptions } from '@wp/game-core';
+import { bcp47Tag, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
 import { announce, clear, gridKeyboard, h } from '@wp/ui';
 import {
   check,
@@ -50,7 +50,7 @@ export function createSkyscrapers(context: GameContext): GameInstance<Skyscraper
     keysHelp
   );
   const controls = h('div', { class: 'sk-controls' }, pad, h('div', { class: 'wp-row sk-actions' }, notesButton, eraseButton, checkButton), checkResult);
-  const container = h('div', { class: 'wp-skyscrapers', dir: t.direction, lang: t.locale }, status, h('div', { class: 'sk-scroll' }, board), controls, help, live);
+  const container = h('div', { class: 'wp-skyscrapers', dir: t.direction, lang: bcp47Tag(t.locale) }, status, h('div', { class: 'sk-scroll' }, board), controls, help, live);
 
   // --- Labels --------------------------------------------------------------------------------
 

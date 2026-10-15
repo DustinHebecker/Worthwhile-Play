@@ -1,4 +1,4 @@
-import type { GameContext, GameInstance, NewGameOptions } from '@wp/game-core';
+import { bcp47Tag, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
 import { announce, append, clear, h } from '@wp/ui';
 import { bitName, describeRule, formatInput, formatList, formatNumber, formatOutput, inputHeader, parseDigitList, parseInteger } from './format';
 import {
@@ -60,7 +60,7 @@ export function createBlackBox(context: GameContext): GameInstance<BlackBoxState
 
   const live = h('div', { class: 'sr-only', 'aria-live': 'polite', 'data-testid': 'bb-live' });
   const board = h('div', { class: 'bb-board' });
-  const container = h('div', { class: 'wp-black-box', dir: t.direction, lang: t.locale }, board, live);
+  const container = h('div', { class: 'wp-black-box', dir: t.direction, lang: bcp47Tag(t.locale) }, board, live);
 
   const spec = () => familyOf(state).input;
   const outputKind = () => familyOf(state).output;

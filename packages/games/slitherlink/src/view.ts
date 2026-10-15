@@ -1,4 +1,4 @@
-import type { GameContext, GameInstance, NewGameOptions } from '@wp/game-core';
+import { bcp47Tag, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
 import { announce, clear, h } from '@wp/ui';
 import {
   LINE,
@@ -64,7 +64,7 @@ export function createSlitherlink(context: GameContext): GameInstance<Slitherlin
     h('p', { id: 'sl-check-help' }, t('check.help'))
   );
   const controls = h('div', { class: 'sl-controls' }, h('div', { class: 'wp-row sl-actions' }, undoButton, checkButton), checkResult);
-  const container = h('div', { class: 'wp-slitherlink', dir: t.direction, lang: t.locale },
+  const container = h('div', { class: 'wp-slitherlink', dir: t.direction, lang: bcp47Tag(t.locale) },
     status, h('div', { class: 'sl-wrap' }, board), controls, help, live);
 
   // --- Labels --------------------------------------------------------------------------------

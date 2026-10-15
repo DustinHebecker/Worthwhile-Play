@@ -1,4 +1,4 @@
-import type { GameContext, GameInstance, NewGameOptions } from '@wp/game-core';
+import { bcp47Tag, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
 import { announce, append, clear, h } from '@wp/ui';
 import { contentFor, type ScenarioText } from './content';
 import {
@@ -45,7 +45,7 @@ export function createAudienceSwitch(context: GameContext): GameInstance<Audienc
 
   const live = h('div', { class: 'sr-only', 'aria-live': 'polite', 'data-testid': 'as-live' });
   const board = h('div', { class: 'as-board' });
-  const container = h('div', { class: 'wp-audience-switch', dir: t.direction, lang: t.locale }, board, live);
+  const container = h('div', { class: 'wp-audience-switch', dir: t.direction, lang: bcp47Tag(t.locale) }, board, live);
 
   const text = (): ScenarioText => contentFor(t.locale)[state.scenario] as ScenarioText;
   const audienceName = (a: AudienceId) => t(`audience.${a}`);

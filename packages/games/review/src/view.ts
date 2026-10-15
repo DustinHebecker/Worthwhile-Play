@@ -1,5 +1,5 @@
 import './styles.css';
-import type { GameContext, GameInstance, LearningRating, NewGameOptions } from '@wp/game-core';
+import { bcp47Tag, type GameContext, type GameInstance, type LearningRating, type NewGameOptions } from '@wp/game-core';
 import { browserSpeech, pickText, type CardSide, type Speech } from '@wp/learning-content';
 import { announce, clear, h } from '@wp/ui';
 import { deckItemIds, faceResolver, hasAllItems, isBuiltinReviewDeck, knowledgeLanguage, sessionLanguages, userDeck, type CardFaces, type FaceResolver } from './decks';
@@ -49,7 +49,7 @@ export function renderSide(side: CardSide, description: string): HTMLElement {
   if (side.symbol) face.append(h('span', { class: 'wp-review__symbol', role: 'img', 'aria-label': description }, side.symbol));
   if (side.text) {
     const long = [...side.text].length > LONG_TEXT ? ' wp-review__text--long' : '';
-    face.append(h('span', { class: `wp-review__text${long}`, lang: side.lang, dir: 'auto' }, side.text));
+    face.append(h('span', { class: `wp-review__text${long}`, lang: side.lang && bcp47Tag(side.lang), dir: 'auto' }, side.text));
   }
   return face;
 }

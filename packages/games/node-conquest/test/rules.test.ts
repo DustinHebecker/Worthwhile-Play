@@ -3,7 +3,7 @@ import fc from 'fast-check';
 import { createRng } from '@wp/game-core';
 import { metadata } from '../src/metadata';
 import { reviewOf } from '../src/review';
-import { BOARD, FACTION_COUNTS, getMap as getLayoutMap, hops, isFairMap, isqrt, MAX_LANE_LENGTH, MIN_NODE_DISTANCE, rotate, type MapNode } from '../src/maps';
+import { BOARD, FACTION_COUNTS, getMap as getLayoutMap, hops, isFairMap, isqrt, LEGACY_MAPS, MAX_LANE_LENGTH, MIN_NODE_DISTANCE, rotate, type MapNode } from '../src/maps';
 import {
   accountedUnits,
   cloneState,
@@ -237,10 +237,11 @@ function distanceToSegment(p: MapNode, a: MapNode, b: MapNode): number {
 }
 
 describe('maps', () => {
-  it('offers seven original maps for 1, 2 or 3 opponents, in both layouts', () => {
-    expect(MAPS_PER_SET).toBe(7);
+  it('offers seven generated maps for 1, 2 or 3 opponents in both layouts, then six hand-built ones', () => {
+    expect(LEGACY_MAPS).toBe(7);
+    expect(MAPS_PER_SET).toBe(13);
     for (const f of FACTION_COUNTS) {
-      for (let m = 0; m < MAPS_PER_SET; m++) {
+      for (let m = 0; m < LEGACY_MAPS; m++) {
         for (const layout of [1, 2] as const) {
           const map = getMap(f, m, layout);
           expect(map.factions).toBe(f);
@@ -251,9 +252,9 @@ describe('maps', () => {
     }
   });
 
-  it('are geometrically clean: inside the board, spaced, planar, no lane through a node', () => {
+  it('generated maps (0–6) are geometrically clean: inside the board, spaced, planar, no lane through a node', () => {
     for (const d of FACTION_COUNTS) {
-      for (let m = 0; m < MAPS_PER_SET; m++) {
+      for (let m = 0; m < LEGACY_MAPS; m++) {
         const { nodes, lanes } = getMap(d, m);
         expect(nodes.length).toBeGreaterThanOrEqual(10);
         expect(nodes.length).toBeLessThanOrEqual(17);
@@ -339,8 +340,9 @@ describe('maps', () => {
 
   it('selects the map by seed and generates identical maps every time', () => {
     expect(mapForSeed(0)).toBe(0);
-    expect(mapForSeed(15)).toBe(1);
-    expect(mapForSeed(-1)).toBe(0xffffffff % 7);
+    expect(mapForSeed(15)).toBe(2);
+    expect(mapForSeed(12)).toBe(12);
+    expect(mapForSeed(-1)).toBe(0xffffffff % 13);
     expect(getMap(3, 3)).toBe(getMap(3, 3));
     // Layout 1 is the unchanged original generator (saves of state version 1 depend on it).
     expect(clone(getMap(4, 2, 1).lanes)).toMatchSnapshot();
@@ -354,7 +356,7 @@ describe('createGame', () => {
   it('starts paused at tick 0 with the map’s owners and levels', () => {
     const s = createGame(42, { difficulty: 'advanced', opponents: 2 });
     const map = mapOf(s);
-    expect(s.map).toBe(42 % 7);
+    expect(s.map).toBe(42 % 13);
     expect(s.tick).toBe(0);
     expect(s.speed).toBe(1);
     expect(s.result).toBe('playing');
@@ -1513,7 +1515,7 @@ describe('bastions', () => {
 
   it('are placed symmetrically by layout 2 only, never on starts or the first expansion', () => {
     for (const f of FACTION_COUNTS) {
-      for (let m = 0; m < MAPS_PER_SET; m++) {
+      for (let m = 0; m < LEGACY_MAPS; m++) {
         const one = getLayoutMap(f, m, 1);
         const two = getLayoutMap(f, m, 2);
         expect(one.nodes.some((n) => n.type === 'bastion')).toBe(false);
