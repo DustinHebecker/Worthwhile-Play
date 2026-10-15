@@ -323,7 +323,121 @@ describe('equipment, selling, curses, end of turn', () => {
   });
 });
 
+describe('penalties and boundaries', () => {
+  it('a hand-card penalty discards exactly n cards from the hand', () => {
+    const s = arranged((s) => {
+      for (let i = 0; i < 4; i++) s.players[1]!.hand.push(s.loot.pop()!);
+      take(s, 'kz.neighbour-complaint', me(s).hand);
+    });
+    const n = step(s, 0, { a: 'curse', card: 'kz.neighbour-complaint', target: 1 })!;
+    expect(n.players[1]!.hand).toHaveLength(2);
+    expect(n.lootDiscard).toHaveLength(2);
+    expect(isValidState(n)).toBe(true);
+  });
+
+  it('a slot penalty takes only the item of that slot; a best-item penalty takes the strongest anywhere', () => {
+    const s = arranged((s) => {
+      take(s, 'kz.flowerpot-helmet', s.players[1]!.equipped);
+      take(s, 'kz.wheelbarrow-ram', s.players[1]!.equipped);
+      take(s, 'kz.wrong-hat', me(s).hand);
+      take(s, 'kz.fence-dispute', me(s).hand);
+    });
+    const hat = step(s, 0, { a: 'curse', card: 'kz.wrong-hat', target: 1 })!;
+    expect(hat.players[1]!.equipped).toEqual(['kz.wheelbarrow-ram']);
+    const best = step(s, 0, { a: 'curse', card: 'kz.fence-dispute', target: 1 })!;
+    expect(best.players[1]!.equipped).toEqual(['kz.flowerpot-helmet']);
+  });
+
+  it('the round limit ends the game only after the last round', () => {
+    const at = (round: number) =>
+      arranged((s) => {
+        s.round = round;
+        s.active = 2;
+        s.starter = 0;
+        s.phase = 'end';
+      }, { opponents: 2, roundLimit: 20 });
+    expect(step(at(19), 2, { a: 'end', give: [] })!.phase).toBe('prepare');
+    expect(step(at(20), 2, { a: 'end', give: [] })!.phase).toBe('over');
+  });
+
+  it('surplus goes to the first lowest player after the active one on ties', () => {
+    const s = arranged((s) => {
+      me(s).level = 3;
+      s.players[1]!.level = 2;
+      s.players[2]!.level = 2;
+    });
+    expect(charityTarget(s)).toBe(1);
+    s.active = 1;
+    s.players[1]!.level = 3;
+    expect(charityTarget(s)).toBe(2);
+    s.players[0]!.level = 2;
+    expect(charityTarget(s)).toBe(2);
+  });
+
+  it('only boosters boost and flee one-shots only help the fighter', () => {
+    const s = arranged((s) => {
+      s.encounter.splice(s.encounter.indexOf('kz.pebble-golem'), 1);
+      s.encounter.push('kz.pebble-golem');
+      take(s, 'kz.firecracker', me(s).hand);
+      take(s, 'kz.shiny-distraction#1', me(s).hand);
+    });
+    const n = step(s, 0, { a: 'open' })!;
+    expect(step(n, 0, { a: 'boost', card: 'kz.firecracker', monster: 0 })).toBeNull();
+    expect(step(n, 0, { a: 'oneshot', card: 'kz.shiny-distraction#1', side: 'monster' })).toBeNull();
+    expect(step(n, 0, { a: 'oneshot', card: 'kz.shiny-distraction#1', side: 'hero' })!.fight!.flee).toBe(3);
+  });
+
+  it('a monster without escape applies its Blunder on the roll', () => {
+    const s = arranged((s) => {
+      me(s).level = 3;
+      s.encounter.splice(s.encounter.indexOf('kz.last-shift-ghost'), 1);
+      s.encounter.push('kz.last-shift-ghost');
+    });
+    let n = step(s, 0, { a: 'open' })!;
+    for (let i = 0; i < 3; i++) n = step(n, n.fight!.actor, { a: 'pass' })!;
+    n = step(n, 0, { a: 'roll' })!;
+    expect(me(n).level).toBe(2);
+    expect(n.log.some((e) => e.e === 'flee' && !e.ok)).toBe(true);
+  });
+});
+
 describe('validation', () => {
+  it('rejects a fight whose flee rolls are complete (it could not continue)', () => {
+    const s = arranged((s) => {
+      s.encounter.splice(s.encounter.indexOf('kz.dust-bunny'), 1);
+      s.encounter.push('kz.dust-bunny');
+    });
+    let n = step(s, 0, { a: 'open' })!;
+    for (let i = 0; i < 3; i++) n = step(n, n.fight!.actor, { a: 'pass' })!;
+    expect(n.phase).toBe('flee');
+    expect(isValidState(n)).toBe(true);
+    const done = structuredClone(n);
+    done.fight!.rolls = [3];
+    expect(isValidState(done)).toBe(false);
+    const fight = structuredClone(n);
+    fight.phase = 'fight';
+    fight.fight!.rolls = [3];
+    expect(isValidState(fight)).toBe(false);
+  });
+
+  it('rejects crafted wins, duplicated winners and cards in the wrong pile', () => {
+    const s = start(3, { opponents: 2 });
+    const win = structuredClone(s);
+    win.phase = 'over';
+    win.players[0]!.level = win.settings.target;
+    win.winners = [0];
+    expect(isValidState(win)).toBe(false);
+    win.log.push({ e: 'win', seats: [0] });
+    win.logSeq++;
+    expect(isValidState(win)).toBe(true);
+    const twice = structuredClone(win);
+    twice.winners = [0, 0];
+    expect(isValidState(twice)).toBe(false);
+    const pile = structuredClone(s);
+    pile.loot.push(pile.encounter.pop()!);
+    expect(isValidState(pile)).toBe(false);
+  });
+
   it('rejects broken card conservation, unknown cards and fake wins', () => {
     const s = start(3);
     const dup = structuredClone(s);

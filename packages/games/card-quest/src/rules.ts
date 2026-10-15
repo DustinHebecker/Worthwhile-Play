@@ -1,7 +1,7 @@
 import { createRng, createRngFromState, isArrayOf, isInt, isOneOf, isRecord, isUint32 } from '@wp/game-core';
 import type { BaseKind, Cond, Family, ItemCard, MonsterCard, Mod, Penalty, Slot, Trait } from './cards';
 import { HANDS, baseId } from './cards';
-import { WORLD_IDS, allSets, defOf, instanceSet, worldDecks, type WorldId } from './worlds';
+import { WORLD_IDS, allSets, defOf, instanceSet, isLootType, worldDecks, type WorldId } from './worlds';
 
 /*
  * Rules of Lootlings (design docs/design/card-quest.md § 5). Pure functions over plain-JSON state:
@@ -1052,6 +1052,13 @@ function check(v: unknown): v is CardQuestState {
   if (state.players[0]!.personality !== null || state.players.slice(1).some((p) => p.personality === null)) return false;
   const inFight = state.phase === 'fight' || state.phase === 'flee';
   if (inFight ? !isValidFight(state.fight, known, seats) : state.fight !== null) return false;
+  // A fight window has no flee rolls yet; while fleeing, at least one monster is still to roll for.
+  if (state.phase === 'fight' && state.fight!.rolls.length !== 0) return false;
+  if (state.phase === 'flee' && state.fight!.rolls.length >= state.fight!.monsters.length) return false;
+  // Piles hold only cards of their kind.
+  if ([...state.encounter, ...state.encounterDiscard].some((c) => isLootType(defOf(c).type))) return false;
+  if ([...state.loot, ...state.lootDiscard].some((c) => !isLootType(defOf(c).type))) return false;
+  if (state.players.some((p) => p.hand.some((c) => !known.has(c)))) return false;
   // Card conservation: every card of the chosen worlds exactly once.
   const seen: string[] = [...state.encounter, ...state.loot, ...state.encounterDiscard, ...state.lootDiscard];
   for (const p of state.players) {
@@ -1075,7 +1082,10 @@ function check(v: unknown): v is CardQuestState {
   if (seen.length !== known.size || new Set(seen).size !== seen.length) return false;
   // A win must be a reached target (or a round limit), never a crafted claim.
   if (state.phase === 'over') {
-    if (state.winners.length === 0) return false;
+    if (state.winners.length === 0 || new Set(state.winners).size !== state.winners.length) return false;
+    // The game's last event announces exactly these winners.
+    const last = state.log[state.log.length - 1];
+    if (!last || last.e !== 'win' || last.seats.join() !== state.winners.join()) return false;
     const reached = state.winners.every((w) => state.players[w]!.level >= state.settings.target);
     const limited = state.settings.roundLimit > 0 && state.round > state.settings.roundLimit;
     if (!reached && !limited) return false;

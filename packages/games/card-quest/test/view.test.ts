@@ -51,6 +51,19 @@ describe('view', () => {
     });
   }
 
+  it('keeps the keyboard focus inside the game after a main action', () => {
+    const ctx = createTestContext(game as GameModule<unknown>, 'en');
+    const instance = game.create(ctx.context as never);
+    instance.newGame({ seed: 5 });
+    const startButton = q(ctx.context.root, 'start')!;
+    startButton.focus();
+    startButton.click();
+    const focused = document.activeElement as HTMLElement;
+    expect(ctx.context.root.contains(focused)).toBe(true);
+    expect(focused.matches('button.primary, .cq-next-text')).toBe(true);
+    instance.dispose();
+  });
+
   it('equips an item from the card detail', () => {
     const ctx = createTestContext(game as GameModule<unknown>, 'en');
     const instance = game.create(ctx.context as never);

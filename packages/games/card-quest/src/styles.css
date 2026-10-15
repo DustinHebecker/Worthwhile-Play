@@ -32,7 +32,8 @@
 
 /* Setup */
 .cq-setup { padding: 0.25rem; }
-.cq-field { display: grid; gap: 0.25rem; }
+.cq-field { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.25rem; }
+.cq-field select { min-inline-size: 0; max-inline-size: 100%; }
 .cq-check { display: flex; align-items: center; gap: 0.5rem; min-block-size: var(--wp-touch); }
 .cq-check input { inline-size: 1.4rem; block-size: 1.4rem; min-block-size: auto; }
 .cq-worlds { border: 1px solid var(--wp-border); border-radius: var(--wp-radius); padding: 0.5rem 0.75rem; display: grid; gap: 0.25rem; }

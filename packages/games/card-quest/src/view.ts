@@ -111,6 +111,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
         if (state.active === HUMAN) return t(someoneInterfered() ? 'next.fight.youAgain' : 'next.fight.you');
         return t('next.fight.react', { name: seatName(state.active) });
       case 'flee':
+        if (currentMonsterNoFlee()) return t('next.flee.none');
         return t('next.flee', { need: Math.max(1, FLEE_TARGET - fleeBonus(state) - fleeMod()) });
       case 'end': {
         const n = surplus(state);
@@ -127,6 +128,12 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
   }
 
   const someoneInterfered = () => (state.fight?.against.length ?? 0) > 0 || (state.fight?.monsters.some((m) => m.boosters.length > 0) ?? false) || (state.fight?.monsters.length ?? 0) > 1;
+
+  /** Whether the monster the person flees from next cannot be fled from at all. */
+  function currentMonsterNoFlee(): boolean {
+    const m = state.fight?.monsters[state.fight.rolls.length];
+    return m ? ((defOf(m.card) as MonsterCard).noFlee ?? false) : false;
+  }
 
   function fleeMod(): number {
     const fight = state.fight;
@@ -234,7 +241,11 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     main.dataset.active = String(state.active);
     if (state.phase === 'setup') main.append(renderSetup());
     else main.append(...renderPlay());
-    if (focusKey) main.querySelector<HTMLElement>(`[data-key="${CSS.escape(focusKey)}"]`)?.focus();
+    if (!focusKey) return;
+    // Keep focus on the same control; if it is gone (the step moved on), go to the next main action or its text.
+    const same = main.querySelector<HTMLElement>(`[data-key="${CSS.escape(focusKey)}"]`);
+    const fallback = main.querySelector<HTMLElement>('.cq-actions button.primary:not([disabled])') ?? main.querySelector<HTMLElement>('.cq-next-text');
+    (same ?? fallback)?.focus();
   }
 
   function pic(card: string): HTMLElement {
@@ -308,6 +319,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       select('roundLimit', t('setup.roundLimit'), ROUND_LIMITS, (v) => (v === 0 ? t('setup.roundLimit.off') : t('setup.roundLimit.n', { n: v })), s.roundLimit, (v) => {
         if (isOneOf(v, ROUND_LIMITS)) set({ roundLimit: v });
       }),
+      h('p', { class: 'cq-muted' }, t('setup.roundLimit.hint')),
       h('label', { class: 'cq-check', for: 'cq-coach' }, coach, h('span', {}, t('setup.coach'))),
       button(t('setup.start'), () => act({ a: 'start', settings: state.settings }), { primary: true, testid: 'start' }),
       h('p', { class: 'cq-muted' }, t('setup.note'))
@@ -327,7 +339,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       )
     );
     out.push(renderPlayers());
-    const next = h('div', { class: 'cq-next', 'data-testid': 'next' }, h('p', { class: 'cq-next-text' }, nextText()));
+    const next = h('div', { class: 'cq-next', 'data-testid': 'next' }, h('p', { class: 'cq-next-text', tabindex: '-1' }, nextText()));
     const hint = currentHint();
     if (hint) next.append(h('p', { class: 'cq-hint', 'data-testid': 'hint' }, t(`hint.${hint}`)));
     out.push(next);
@@ -448,7 +460,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
         bar.append(button(t(state.active === HUMAN ? 'btn.fight' : 'btn.letBe'), () => act({ a: 'pass' }), { primary: true, testid: 'pass' }));
         break;
       case 'flee':
-        bar.append(button(t('btn.roll'), () => act({ a: 'roll' }), { primary: true, testid: 'roll' }));
+        bar.append(button(t(currentMonsterNoFlee() ? 'btn.blunder' : 'btn.roll'), () => act({ a: 'roll' }), { primary: true, testid: 'roll' }));
         break;
       case 'end': {
         const n = surplus(state);
@@ -669,8 +681,14 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       mode = 'play';
       picked.clear();
       finishedSent = state.phase === 'over';
-      if (computerToAct(state)) state = advance(state);
       render();
+      // Saves are written after the computer players moved; an older save may still owe their moves.
+      if (computerToAct(state)) {
+        state = advance(state);
+        context.requestSave();
+        render();
+        finishIfOver();
+      }
     },
     serialize: () => JSON.parse(JSON.stringify(state)) as CardQuestState,
     pause() {},

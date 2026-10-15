@@ -82,3 +82,24 @@ for (const locale of ['en', 'ar']) {
     expect(overflow).toBeLessThanOrEqual(0);
   });
 }
+
+const LOCALES = ['de', 'en', 'nl', 'es', 'fr', 'ru', 'zh-Hans', 'ko', 'ja', 'ar', 'pt', 'it', 'pl', 'tr', 'uk', 'hi'];
+
+test('card-quest: the setup screen fits 360 px in all 16 languages', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  for (const locale of LOCALES) {
+    await page.addInitScript((l) => localStorage.setItem('worthwhile-play:ui-locale', l), locale);
+    await page.goto(`/games/${GAME}?seed=11`);
+    await expect(page.getByTestId('start')).toBeVisible();
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(overflow, locale).toBeLessThanOrEqual(0);
+  }
+});
+
+test('card-quest: after a main action the focus moves to the next main action', async ({ page }) => {
+  await start(page);
+  await playUntil(page, (st) => st.phase === 'prepare' && st.active === 0);
+  await page.getByTestId('open').focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('.cq button.primary:focus, .cq .cq-next-text:focus')).toHaveCount(1);
+});
