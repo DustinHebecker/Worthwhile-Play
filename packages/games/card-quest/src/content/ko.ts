@@ -89,7 +89,7 @@ export const ko: LocaleContent = {
   'kz.gnome-overalls': { name: '노움 멜빵바지', flavour: '파랗고 실용적이고, 사실 칠한 거야.' },
   'kz.compost-cloak': { name: '퇴비 향 망토', flavour: '벌레가 거리를 둬. 다른 모두도.' },
   'kz.hi-vis-vest': { name: '형광 조끼', flavour: '아무도 널 못 놓쳐. 도망칠 땐 그게 문제지.' },
-  'kz.steel-toe-boots': { name: '강철 앞코 부츠', flavour: '문도 바위도, 가끔은 달팽이도 걷어차.' },
+  'kz.steel-toe-boots': { name: '강철 앞코 부츠', flavour: '돌, 뿌리, 달팽이: 이제 발가락은 안전해.' },
   'kz.garden-clogs': { name: '정원 나막신', flavour: '딸깍딸깍. 잔디 위에선 의외로 빨라.' },
   'kz.league-slippers': { name: '축지법 슬리퍼', flavour: '한 걸음이면 울타리, 두 걸음이면 옆 마을.' },
   'kz.rubber-boots': { name: '고무장화', flavour: '이제 웅덩이가 널 무서워해.' },

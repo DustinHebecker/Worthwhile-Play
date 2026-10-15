@@ -89,7 +89,7 @@ export const zhHans: LocaleContent = {
   'kz.gnome-overalls': { name: '地精背带裤', flavour: '蓝色、实用，而且是画上去的。' },
   'kz.compost-cloak': { name: '堆肥味斗篷', flavour: '虫子都绕着走。其他人也是。' },
   'kz.hi-vis-vest': { name: '反光背心', flavour: '谁都看得见你。逃跑时这就是问题。' },
-  'kz.steel-toe-boots': { name: '钢头靴', flavour: '踢门、踢石头，偶尔踢只蜗牛。' },
+  'kz.steel-toe-boots': { name: '钢头靴', flavour: '石头、树根、蜗牛：脚趾再也不怕磕了。' },
   'kz.garden-clogs': { name: '园艺木屐', flavour: '嗒嗒嗒。在草坪上快得惊人。' },
   'kz.league-slippers': { name: '日行千里拖鞋', flavour: '一步到篱笆，两步到邻村。' },
   'kz.rubber-boots': { name: '雨靴', flavour: '水坑现在怕你了。' },

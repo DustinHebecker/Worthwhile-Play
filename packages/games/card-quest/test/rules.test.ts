@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { createRngFromState } from '@wp/game-core';
 import fc from 'fast-check';
 import { BASE_KINDS, TRAITS, instanceIds, type MonsterCard } from '../src/cards';
 import {
@@ -398,6 +399,110 @@ describe('penalties and boundaries', () => {
     n = step(n, 0, { a: 'roll' })!;
     expect(me(n).level).toBe(2);
     expect(n.log.some((e) => e.e === 'flee' && !e.ok)).toBe(true);
+  });
+});
+
+/** A generator state whose next die roll (1–6) is `roll`. */
+const stateRolling = (roll: number): number => {
+  for (let st = 1; ; st++) if (createRngFromState(st).int(1, 6) === roll) return st;
+};
+
+/** The person lost against the Dust Bunny (level 2 vs level 2) and must roll; their table and hand are known. */
+function lostAgainstBunny(): CardQuestState {
+  const s = arranged((s) => {
+    me(s).level = 2;
+    take(s, 'kz.firecracker', me(s).hand);
+    s.encounter.splice(s.encounter.indexOf('kz.dust-bunny'), 1);
+    s.encounter.push('kz.dust-bunny');
+  });
+  let n = step(s, 0, { a: 'open' })!;
+  for (let i = 0; i < 3; i++) n = step(n, n.fight!.actor, { a: 'pass' })!;
+  expect(n.phase).toBe('flee');
+  return n;
+}
+
+describe('fleeing', () => {
+  it('a high roll escapes without the Blunder', () => {
+    const n = lostAgainstBunny();
+    n.rng = stateRolling(6);
+    const after = step(n, 0, { a: 'roll' })!;
+    const flee = after.log.find((e) => e.e === 'flee');
+    expect(flee).toMatchObject({ e: 'flee', roll: 6, total: 6, ok: true });
+    expect(me(after).hand).toEqual(['kz.firecracker']);
+    expect(me(after).level).toBe(2);
+    expect(after.log.some((e) => e.e === 'penalty')).toBe(false);
+    expect(after.phase).toBe('end');
+  });
+
+  it('a low roll is caught and takes the Blunder', () => {
+    const n = lostAgainstBunny();
+    n.rng = stateRolling(1);
+    const after = step(n, 0, { a: 'roll' })!;
+    expect(after.log.find((e) => e.e === 'flee')).toMatchObject({ roll: 1, ok: false });
+    expect(me(after).hand).toEqual([]);
+    expect(after.log.some((e) => e.e === 'penalty' && e.p === 'cards')).toBe(true);
+  });
+
+  it('flee bonuses count: a roll of 3 escapes with +2 from items', () => {
+    const n = lostAgainstBunny();
+    take(n, 'kz.allotment-map', me(n).equipped);
+    n.rng = stateRolling(3);
+    const after = step(n, 0, { a: 'roll' })!;
+    expect(after.log.find((e) => e.e === 'flee')).toMatchObject({ roll: 3, total: 5, ok: true });
+  });
+
+  it('only the fighter rolls, and only while fleeing', () => {
+    const n = lostAgainstBunny();
+    expect(step(n, 1, { a: 'roll' })).toBeNull();
+    const calm = arranged(() => undefined);
+    expect(step(calm, 0, { a: 'roll' })).toBeNull();
+  });
+});
+
+describe('illegal actions are refused', () => {
+  const fight = () =>
+    step(
+      arranged((s) => {
+        me(s).level = 9;
+        s.encounter.splice(s.encounter.indexOf('kz.pebble-golem'), 1);
+        s.encounter.push('kz.pebble-golem');
+        take(s, 'kz.come-in-pairs#1', me(s).hand);
+        take(s, 'kz.cave-slime', me(s).hand);
+        take(s, 'kz.firecracker', me(s).hand);
+        take(s, 'kz.side-tunnel#1', s.players[1]!.hand);
+        take(s, 'kz.pickaxe', s.players[1]!.hand);
+      }),
+      0,
+      { a: 'open' }
+    )!;
+
+  it('reinforce needs a reinforcement card and a monster, both in the hand', () => {
+    const n = fight();
+    expect(step(n, 0, { a: 'reinforce', card: 'kz.firecracker', monster: 'kz.cave-slime' })).toBeNull();
+    expect(step(n, 0, { a: 'reinforce', card: 'kz.come-in-pairs#1', monster: 'kz.firecracker' })).toBeNull();
+    expect(step(n, 0, { a: 'reinforce', card: 'kz.come-in-pairs#1', monster: 'kz.lawnmower' })).toBeNull();
+    expect(step(n, 0, { a: 'reinforce', card: 'kz.come-in-pairs#1', monster: 'kz.cave-slime' })).not.toBeNull();
+  });
+
+  it('one-shots must be one-shots in the hand; escaping is only for the fighter', () => {
+    const n = fight();
+    expect(step(n, 0, { a: 'oneshot', card: 'kz.cave-slime', side: 'hero' })).toBeNull();
+    expect(step(n, 0, { a: 'oneshot', card: 'kz.mine-gas', side: 'hero' })).toBeNull();
+    const other = step(n, 0, { a: 'pass' })!;
+    expect(step(other, 1, { a: 'oneshot', card: 'kz.side-tunnel#1', side: 'hero' })).toBeNull();
+    expect(step(other, 1, { a: 'oneshot', card: 'kz.pickaxe', side: 'monster' })).toBeNull();
+  });
+
+  it('ending the turn only in the end phase, giving cards from the own hand only', () => {
+    expect(step(fight(), 0, { a: 'end', give: [] })).toBeNull();
+    const s = arranged((s) => {
+      for (let i = 0; i < 6; i++) me(s).hand.push(s.loot.pop()!);
+      s.phase = 'end';
+    });
+    expect(step(s, 0, { a: 'end', give: [s.loot[0]!] })).toBeNull();
+    expect(step(s, 0, { a: 'end', give: [me(s).hand[0]!, me(s).hand[0]!] })).toBeNull();
+    expect(step(s, 1, { a: 'end', give: [me(s).hand[0]!] })).toBeNull();
+    expect(step(s, 0, { a: 'end', give: [me(s).hand[0]!] })).not.toBeNull();
   });
 });
 

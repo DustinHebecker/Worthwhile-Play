@@ -89,7 +89,7 @@ export const ja: LocaleContent = {
   'kz.gnome-overalls': { name: 'ノームのオーバーオール', flavour: '青くて実用的。しかも塗装。' },
   'kz.compost-cloak': { name: 'たい肥の香りのマント', flavour: '虫は近づかない。ほかの誰も近づかない。' },
   'kz.hi-vis-vest': { name: '反射ベスト', flavour: '誰にも見落とされない。逃げるときはそこが問題。' },
-  'kz.steel-toe-boots': { name: '鉄板入り安全靴', flavour: 'ドアも岩も、たまにカタツムリも蹴る。' },
+  'kz.steel-toe-boots': { name: '鉄板入り安全靴', flavour: '石も根っこもカタツムリも、もう足の指は痛くない。' },
   'kz.garden-clogs': { name: '庭げた', flavour: 'カランコロン。芝生の上では意外と速い。' },
   'kz.league-slippers': { name: '千里スリッパ', flavour: '一歩でフェンス、二歩でとなり村。' },
   'kz.rubber-boots': { name: '長ぐつ', flavour: '水たまりがきみを恐れはじめた。' },

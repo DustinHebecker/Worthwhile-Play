@@ -89,7 +89,7 @@ export const de: LocaleContent = {
   'kz.gnome-overalls': { name: 'Zwergenlatzhose', flavour: 'Blau, praktisch und aufgemalt.' },
   'kz.compost-cloak': { name: 'Umhang „Kompostduft“', flavour: 'Käfer halten Abstand. Alle anderen auch.' },
   'kz.hi-vis-vest': { name: 'Warnweste', flavour: 'Dich übersieht keiner. Genau das ist beim Weglaufen das Problem.' },
-  'kz.steel-toe-boots': { name: 'Stahlkappenstiefel', flavour: 'Treten Türen, Steine und gelegentlich eine Schnecke.' },
+  'kz.steel-toe-boots': { name: 'Stahlkappenstiefel', flavour: 'Steine, Wurzeln, Schnecken: Deinen Zehen passiert nichts mehr.' },
   'kz.garden-clogs': { name: 'Gartenclogs', flavour: 'Klipp-klapp. Auf dem Rasen erstaunlich flott.' },
   'kz.league-slippers': { name: 'Siebenmeilenpantoffeln', flavour: 'Ein Schritt zum Zaun, zwei bis ins Nachbardorf.' },
   'kz.rubber-boots': { name: 'Gummistiefel', flavour: 'Pfützen fürchten dich jetzt.' },

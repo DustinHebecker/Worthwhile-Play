@@ -89,7 +89,7 @@ export const pt: LocaleContent = {
   'kz.gnome-overalls': { name: 'Jardineira de Gnomo', flavour: 'Azul, prática e pintada direto no corpo.' },
   'kz.compost-cloak': { name: 'Capa com Cheirinho de Composto', flavour: 'Os bichos mantêm distância. Todo mundo também.' },
   'kz.hi-vis-vest': { name: 'Colete Refletivo', flavour: 'Ninguém deixa de ver você. Esse é o problema na hora de fugir.' },
-  'kz.steel-toe-boots': { name: 'Botina com Bico de Aço', flavour: 'Chuta portas, pedras e, às vezes, um caracol.' },
+  'kz.steel-toe-boots': { name: 'Botina com Bico de Aço', flavour: 'Pedras, raízes, caracóis: seus dedões agora estão a salvo.' },
   'kz.garden-clogs': { name: 'Tamancos de Jardim', flavour: 'Toc-toc. Surpreendentemente rápidos no gramado.' },
   'kz.league-slippers': { name: 'Pantufas de Sete Léguas', flavour: 'Um passo até a cerca, dois até a próxima vila.' },
   'kz.rubber-boots': { name: 'Galochas', flavour: 'Agora as poças têm medo de você.' },

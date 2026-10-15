@@ -89,7 +89,7 @@ export const tr: LocaleContent = {
   'kz.gnome-overalls': { name: 'Cüce Tulumu', flavour: 'Mavi, kullanışlı ve üstüne boyanmış.' },
   'kz.compost-cloak': { name: 'Kompost Kokulu Pelerin', flavour: 'Böcekler uzak durur. Diğer herkes de.' },
   'kz.hi-vis-vest': { name: 'Reflektörlü Yelek', flavour: 'Kimse seni gözden kaçıramaz. Kaçarken sorun da bu.' },
-  'kz.steel-toe-boots': { name: 'Çelik Burunlu Botlar', flavour: 'Kapıları, taşları ve arada bir salyangozu tekmeler.' },
+  'kz.steel-toe-boots': { name: 'Çelik Burunlu Botlar', flavour: 'Taşlar, kökler, salyangozlar: ayak parmakların artık güvende.' },
   'kz.garden-clogs': { name: 'Bahçe Takunyası', flavour: 'Tak-tuk. Çimde şaşırtıcı derecede hızlı.' },
   'kz.league-slippers': { name: 'Yedi Fersahlık Terlikler', flavour: 'Bir adımda çite, iki adımda komşu köye.' },
   'kz.rubber-boots': { name: 'Lastik Çizmeler', flavour: 'Artık su birikintileri senden korkuyor.' },

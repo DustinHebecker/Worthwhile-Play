@@ -89,7 +89,7 @@ export const nl: LocaleContent = {
   'kz.gnome-overalls': { name: 'Kabouter-Tuinbroek', flavour: 'Blauw, praktisch en erop geschilderd.' },
   'kz.compost-cloak': { name: 'Mantel met Compostgeur', flavour: 'Insecten houden afstand. Iedereen eigenlijk.' },
   'kz.hi-vis-vest': { name: 'Veiligheidshesje', flavour: 'Niemand kan je missen. Lastig als je moet vluchten.' },
-  'kz.steel-toe-boots': { name: 'Werkschoenen met Stalen Neus', flavour: 'Schopt deuren, stenen en af en toe een slak.' },
+  'kz.steel-toe-boots': { name: 'Werkschoenen met Stalen Neus', flavour: 'Stenen, wortels, slakken: je tenen zijn eindelijk veilig.' },
   'kz.garden-clogs': { name: 'Tuinklompen', flavour: 'Klik-klak. Verrassend snel op het gazon.' },
   'kz.league-slippers': { name: 'Zevenmijlspantoffels', flavour: 'Eén stap naar de schutting, twee naar het volgende dorp.' },
   'kz.rubber-boots': { name: 'Regenlaarzen', flavour: 'Plassen zijn nu bang voor jou.' },

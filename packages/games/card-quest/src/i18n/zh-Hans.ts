@@ -48,7 +48,7 @@ export const zhHans: Catalogue = {
   'next.fight.youAgain': '有人捣乱了。用一张牌回应——或者就这样开打。',
   'next.fight.react': '{name} 正在战斗。你可以打出一张牌捣乱——或者随它去。',
   'next.flee': '这场战斗你输了。掷骰子逃跑：掷出 {need} 或以上就能逃脱。',
-  'next.flee.none': '这场战斗你输了，而且这个怪物逃不掉。',
+  'next.flee.none': '这场战斗你输了，而且你逃不掉这个怪物。',
   'next.end': '你还可以穿戴和出售物品。然后结束回合。',
   'next.end.give': '手牌太多：选出 {n} 张送给 {name}（等级最低）。',
   'next.end.discard': '手牌太多：选出 {n} 张弃掉（你的等级最低）。',
