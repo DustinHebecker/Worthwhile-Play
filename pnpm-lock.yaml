@@ -143,6 +143,9 @@ importers:
       '@wp/game-nonogram':
         specifier: workspace:*
         version: link:../../packages/games/nonogram
+      '@wp/game-poker':
+        specifier: workspace:*
+        version: link:../../packages/games/poker
       '@wp/game-prospective-memory':
         specifier: workspace:*
         version: link:../../packages/games/prospective-memory
@@ -164,6 +167,9 @@ importers:
       '@wp/game-signal-watch':
         specifier: workspace:*
         version: link:../../packages/games/signal-watch
+      '@wp/game-skat':
+        specifier: workspace:*
+        version: link:../../packages/games/skat
       '@wp/game-skyscrapers':
         specifier: workspace:*
         version: link:../../packages/games/skyscrapers
