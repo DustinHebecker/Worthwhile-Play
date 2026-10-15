@@ -1,4 +1,4 @@
-import type { GameContext, GameInstance, NewGameOptions } from '@wp/game-core';
+import { bcp47Tag, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
 import { announce, clear, gridKeyboard, h } from '@wp/ui';
 import {
   FLAGGED,
@@ -93,7 +93,7 @@ export function createMineLogic(context: GameContext): GameInstance<MinesState> 
     h('p', {}, t('help.touch')),
     h('p', {}, t('help.keys'))
   );
-  const container = h('div', { class: 'wp-minesweeper', dir: t.direction, lang: t.locale }, status, counters, mistake, scroller, modeGroup, help, live);
+  const container = h('div', { class: 'wp-minesweeper', dir: t.direction, lang: bcp47Tag(t.locale) }, status, counters, mistake, scroller, modeGroup, help, live);
 
   // --- Labels --------------------------------------------------------------------------------
 

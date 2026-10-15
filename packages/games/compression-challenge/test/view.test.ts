@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import type { GameInstance } from '@wp/game-core';
+import { bcp47Tag, type GameInstance } from '@wp/game-core';
 import { SUPPORTED_LOCALES } from '@wp/localization';
 import { createTestContext } from '@wp/testing';
 import game from '../src/index';
@@ -258,7 +258,7 @@ describe('Compression Challenge view', () => {
       expect(ctx.missingKeys, locale).toEqual([]);
       const box = root.querySelector<HTMLElement>('.wp-compression-challenge')!;
       expect(box.getAttribute('dir'), locale).toBe(locale === 'ar' ? 'rtl' : 'ltr');
-      expect(box.getAttribute('lang'), locale).toBe(locale);
+      expect(box.getAttribute('lang'), locale).toBe(bcp47Tag(locale));
       for (const p of root.querySelectorAll('p')) expect(p.textContent?.includes('undefined'), locale).toBe(false);
     }
   }, 90_000);

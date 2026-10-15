@@ -1,4 +1,4 @@
-import type { GameContext, GameInstance, NewGameOptions } from '@wp/game-core';
+import { bcp47Tag, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
 import { announce, clear, gridKeyboard, h } from '@wp/ui';
 import {
   canUndo,
@@ -66,7 +66,7 @@ export function createLightsOut(context: GameContext): GameInstance<LightsOutSta
 
   const container = h(
     'div',
-    { class: `wp-lights-out${context.reducedMotion ? ' lo-reduced' : ''}`, dir: t.direction, lang: t.locale },
+    { class: `wp-lights-out${context.reducedMotion ? ' lo-reduced' : ''}`, dir: t.direction, lang: bcp47Tag(t.locale) },
     progress,
     status,
     legend,

@@ -1,4 +1,4 @@
-import type { GameContext, GameInstance, NewGameOptions } from '@wp/game-core';
+import { bcp47Tag, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
 import { announce, clear, h } from '@wp/ui';
 import {
   MAX_CHOICE,
@@ -122,7 +122,7 @@ export function createGraphDetective(context: GameContext): GameInstance<GdState
 
   const container = h(
     'div',
-    { class: `wp-graph-detective${context.reducedMotion ? ' gd-reduced' : ''}`, dir: t.direction, lang: t.locale },
+    { class: `wp-graph-detective${context.reducedMotion ? ' gd-reduced' : ''}`, dir: t.direction, lang: bcp47Tag(t.locale) },
     progressEl,
     taskEl,
     helpEl,

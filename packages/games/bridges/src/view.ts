@@ -1,4 +1,4 @@
-import type { GameContext, GameInstance, NewGameOptions } from '@wp/game-core';
+import { bcp47Tag, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
 import { announce, clear, h } from '@wp/ui';
 import {
   canUndo,
@@ -59,7 +59,7 @@ export function createBridges(context: GameContext): GameInstance<BridgesState> 
     h('p', { id: 'br-check-help' }, t('check.help'))
   );
   const controls = h('div', { class: 'br-controls' }, h('div', { class: 'wp-row br-actions' }, undoButton, checkButton), checkResult);
-  const container = h('div', { class: 'wp-bridges', dir: t.direction, lang: t.locale },
+  const container = h('div', { class: 'wp-bridges', dir: t.direction, lang: bcp47Tag(t.locale) },
     status, h('div', { class: 'br-wrap' }, board), controls, help, live);
 
   // --- Labels --------------------------------------------------------------------------------

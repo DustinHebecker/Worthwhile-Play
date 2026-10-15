@@ -1,4 +1,4 @@
-import type { GameContext, GameInstance, NewGameOptions, Translator } from '@wp/game-core';
+import { bcp47Tag, type GameContext, type GameInstance, type NewGameOptions, type Translator } from '@wp/game-core';
 import { announce, clear, h } from '@wp/ui';
 import {
   canUndo,
@@ -142,7 +142,7 @@ export function createSystemsPuzzle(context: GameContext): GameInstance<FlowStat
     {
       class: `wp-systems-puzzle${context.reducedMotion ? ' fl-reduced' : ''}`,
       dir: t.direction,
-      lang: t.locale,
+      lang: bcp47Tag(t.locale),
       onkeydown: (event: Event) => onKey(event as KeyboardEvent)
     },
     h('div', { class: 'fl-head' }, puzzleStatus, tickStatus),

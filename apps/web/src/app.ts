@@ -1,5 +1,6 @@
 import type { Translator } from '@wp/game-core';
 import {
+  bcp47Tag,
   createTranslator,
   isSupportedLocale,
   LOCALE_DEFINITIONS,
@@ -105,7 +106,7 @@ export async function startApp(root: HTMLElement): Promise<void> {
       sources: [UI_MESSAGES],
       onMissing: import.meta.env.DEV ? (key) => console.warn(`[i18n] missing "${key}" in ${locale}`) : undefined
     }) as UiTranslator;
-    document.documentElement.lang = locale;
+    document.documentElement.lang = bcp47Tag(locale);
     document.documentElement.dir = localeDirection(locale);
   };
 
@@ -141,12 +142,12 @@ export async function startApp(root: HTMLElement): Promise<void> {
     const { t } = app;
     const current = LOCALE_DEFINITIONS.find((d) => d.code === locale)?.nativeName ?? locale;
     const select = h('select', { id: 'header-language', 'data-testid': 'header-language' },
-      ...LOCALE_DEFINITIONS.map((d) => h('option', { value: d.code, selected: d.code === locale, lang: d.code }, d.nativeName))
+      ...LOCALE_DEFINITIONS.map((d) => h('option', { value: d.code, selected: d.code === locale, lang: bcp47Tag(d.code) }, d.nativeName))
     );
     const menu = h('details', { class: 'language-menu', 'data-testid': 'language-menu' },
       h('summary', { 'aria-label': `${t('settings.uiLanguage')}: ${current}` },
         h('span', { class: 'language-icon', 'aria-hidden': 'true' }, '文/A'),
-        h('span', { class: 'language-current', lang: locale }, current)
+        h('span', { class: 'language-current', lang: bcp47Tag(locale) }, current)
       ),
       h('div', { class: 'language-menu-panel' },
         h('label', { for: 'header-language' }, h('span', {}, t('settings.uiLanguage')), select),

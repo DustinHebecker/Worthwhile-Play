@@ -1,4 +1,4 @@
-import type { GameContext, GameInstance, NewGameOptions } from '@wp/game-core';
+import { bcp47Tag, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
 import { announce, append, clear, h } from '@wp/ui';
 import { contentFor, type PieceText } from './content';
 import { NOTED_BULLETS, NOTED_SUMMARIES, type BulletId, type SummaryId, type VersionId } from './pieces';
@@ -56,7 +56,7 @@ export function createCompressionChallenge(context: GameContext): GameInstance<C
 
   const live = h('div', { class: 'sr-only', 'aria-live': 'polite', 'data-testid': 'cc-live' });
   const board = h('div', { class: 'cc-board' });
-  const container = h('div', { class: 'wp-compression-challenge', dir: t.direction, lang: t.locale }, board, live);
+  const container = h('div', { class: 'wp-compression-challenge', dir: t.direction, lang: bcp47Tag(t.locale) }, board, live);
 
   const text = (): PieceText => contentFor(t.locale)[state.piece] as PieceText;
   const sentenceText = (id: string) => text().sentences[id] ?? '';
