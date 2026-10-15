@@ -92,7 +92,7 @@ Catalogue order (done): the large games first (Relay Command; then strategy/towe
 | Review / AI basics | prompts appear in the learning language; they should be in the main (UI) language | ✅ Flags, Capitals and AI basics always in the UI language (Review, Memory, deck pages); only First words uses the learning language |
 | Four in a Row | far too hard even on easy | ✅ easy overlooks some threats and plays casual moves; each level beats the one below by a measured margin |
 | Orbit Links | already good, but frequent stalemates | ✅ AI concentrates on one target after a quiet spell; platforms fire every 9 ticks (was 6); calm standoff note. Stalls vs AI 18% → 2% (human-like script). Map 4 may stay (owner, 2026-10-15) |
-| Orbit Links | owner: build more maps; lanes may cross | ✅ 6 new maps (13 per set: Bridges, Ring road, Gates, Pinwheel, Lattice, Spine), crossings drawn as bridges; old maps pinned. Open (pre-existing): node tap circles are 42.5 px at 360 px (< 44 px) |
+| Orbit Links | owner: build more maps; lanes may cross | ✅ 6 new maps (13 per set: Bridges, Ring road, Gates, Pinwheel, Lattice, Spine), hostile streams fight where lanes cross, own streams fly past (owner: no bridges in space); old maps pinned. Open (pre-existing): node tap circles are 42.5 px at 360 px (< 44 px) |
 | Laser Paths | owner: a forbidden sensor lit at the start of a level is fine (fixed in play) | ✅ |
 | Catalogue | preview graphics on the overview page | ✅ hand-drawn inline SVG per game (decorative, light/dark/forced colours, RTL-aware), ~6 KB gzip; a test requires one for every new game |
 | Speech | `pt` → `pt-BR` for `lang` and voice choice | ✅ `bcp47Tag` in game-core used by the app and all games; voices pt-BR first (pt-PT last resort), zh-Hans prefers zh-CN |
