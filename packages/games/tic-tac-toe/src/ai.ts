@@ -28,7 +28,7 @@ import {
   type Difficulty,
   type Mark,
   type RoundOptions,
-  type TicTacToeState
+  type ClassicState
 } from './rules';
 
 /** Probability that the medium computer ignores the search and plays a random move. */
@@ -106,7 +106,7 @@ export function chooseMove(board: Board, difficulty: Difficulty, rng: Rng): numb
  * Otherwise returns the state unchanged. After this, a game against the computer is
  * always either finished or waiting for the person — never "half a turn".
  */
-export function computerReply(state: TicTacToeState): TicTacToeState {
+export function computerReply(state: ClassicState): ClassicState {
   if (!isComputerTurn(state)) return state;
   const board = boardOf(state);
   const rng = createRngFromState(state.rng);
@@ -117,12 +117,12 @@ export function computerReply(state: TicTacToeState): TicTacToeState {
 }
 
 /** Starts a fresh round from the seed, including the computer's opening move if it starts. */
-export function startRound(options: RoundOptions): TicTacToeState {
+export function startRound(options: RoundOptions): ClassicState {
   return computerReply(createRound(options));
 }
 
 /** The person's move followed by the computer's reply (if the opponent is the computer). */
-export function playTurn(state: TicTacToeState, index: number): TicTacToeState {
+export function playTurn(state: ClassicState, index: number): ClassicState {
   if (isComputerTurn(state)) throw new RangeError('It is the computer’s turn');
   return computerReply(applyMove(state, index));
 }

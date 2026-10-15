@@ -1,0 +1,100 @@
+/*
+ * Playing cards (@wp/cards). Class prefix `wp-pc` (playing card) and `wp-hand`;
+ * `.wp-card` is already the generic panel class of @wp/ui.
+ * Colours are custom properties so games and themes can override them.
+ */
+:root {
+  --wp-pc-face: #fffefa;
+  --wp-pc-edge: #9a9890;
+  --wp-pc-tint: #f3f1ea;
+  --wp-pc-ink: #1d1d1b;
+  --wp-pc-red: #b3261e;
+  --wp-pc-blue: #1f4f9c;
+  --wp-pc-green: #1d6b35;
+  --wp-pc-brown: #6b3f1d;
+  --wp-pc-gold: #8a5a00;
+  --wp-pc-back: var(--wp-accent, #2f5d50);
+  --wp-pc-back-line: #a9cfc0;
+  --wp-pc-selected: var(--wp-focus, #b4530a);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --wp-pc-face: #2a2b27;
+    --wp-pc-edge: #5d5e57;
+    --wp-pc-tint: #33342f;
+    --wp-pc-ink: #ecebe4;
+    --wp-pc-red: #ff8f84;
+    --wp-pc-blue: #8fb6f5;
+    --wp-pc-green: #86cf9a;
+    --wp-pc-brown: #d9ab7e;
+    --wp-pc-gold: #f0c35a;
+    --wp-pc-back: #24473d;
+    --wp-pc-back-line: #6f9c8b;
+  }
+}
+
+.wp-pc { display: block; inline-size: var(--wp-card-w, 80px); block-size: auto; aspect-ratio: 5 / 7; color: var(--wp-pc-ink); overflow: visible; }
+.wp-pc .wp-pc-face { fill: var(--wp-pc-face); stroke: var(--wp-pc-edge); }
+.wp-pc .wp-pc-cut { stroke: var(--wp-pc-face); }
+.wp-pc .wp-pc-cut-fill { fill: var(--wp-pc-face); }
+.wp-pc .wp-pc-court { fill: var(--wp-pc-tint); }
+.wp-pc .wp-pc-backface { fill: var(--wp-pc-back); stroke: var(--wp-pc-edge); }
+.wp-pc .wp-pc-back-line { stroke: var(--wp-pc-back-line); }
+.wp-pc .wp-pc-back-dots { fill: var(--wp-pc-back-line); }
+
+/* Two colours: French ♥ ♦ red; German hearts and bells red. */
+.wp-pc--two.wp-pc-s-H, .wp-pc--two.wp-pc-s-D { color: var(--wp-pc-red); }
+/* Four colours. French: ♠ black, ♥ red, ♦ blue, ♣ green. German: acorns brown, leaves green, hearts red, bells gold. */
+.wp-pc--four.wp-pc-s-H { color: var(--wp-pc-red); }
+.wp-pc--french.wp-pc--four.wp-pc-s-D { color: var(--wp-pc-blue); }
+.wp-pc--french.wp-pc--four.wp-pc-s-C { color: var(--wp-pc-green); }
+.wp-pc--german.wp-pc--four.wp-pc-s-C { color: var(--wp-pc-brown); }
+.wp-pc--german.wp-pc--four.wp-pc-s-S { color: var(--wp-pc-green); }
+.wp-pc--german.wp-pc--four.wp-pc-s-D { color: var(--wp-pc-gold); }
+
+@media (forced-colors: active) {
+  .wp-pc { forced-color-adjust: none; color: CanvasText; }
+  .wp-pc .wp-pc-ink { color: CanvasText; }
+  .wp-pc .wp-pc-face, .wp-pc .wp-pc-backface { fill: Canvas; stroke: CanvasText; }
+  .wp-pc .wp-pc-cut { stroke: Canvas; }
+  .wp-pc .wp-pc-cut-fill { fill: Canvas; }
+  .wp-pc .wp-pc-court { fill: Canvas; }
+  .wp-pc .wp-pc-back-line { stroke: CanvasText; }
+  .wp-pc .wp-pc-back-dots { fill: CanvasText; }
+}
+
+/* ------------------------------------------------------------------ hand */
+.wp-hand {
+  --wp-hand-card-w: clamp(56px, 17vw, 88px);
+  --wp-hand-step: 44px;
+  display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center;
+  padding-block: 0.75rem 0.25rem;
+  min-inline-size: 0;
+}
+.wp-hand--fan {
+  display: grid; gap: 0.5rem 0; justify-content: center;
+  grid-auto-rows: auto;
+}
+.wp-hand-card {
+  position: relative; display: block; inline-size: var(--wp-hand-card-w); min-inline-size: 0; min-block-size: 0;
+  padding: 0; margin: 0; border: 0; border-radius: 6px; background: none; color: inherit; font: inherit;
+  justify-self: start; transition: transform 120ms ease;
+}
+.wp-hand-card > .wp-pc { inline-size: 100%; }
+button.wp-hand-card { cursor: pointer; min-block-size: 44px; }
+button.wp-hand-card:hover:not([aria-disabled='true']) { transform: translateY(-4px); }
+.wp-hand-card--selected, button.wp-hand-card--selected:hover { transform: translateY(-14%); }
+.wp-hand-card--selected > .wp-pc { outline: 3px solid var(--wp-pc-selected); outline-offset: -1px; border-radius: 6px; }
+.wp-hand-card[aria-disabled='true'] { cursor: not-allowed; }
+/* Dimmed with an opaque veil (not opacity), so overlapped cards never show through. */
+.wp-hand-card[aria-disabled='true'] > .wp-pc { filter: grayscale(0.7); }
+.wp-hand-card[aria-disabled='true']::after {
+  content: ''; position: absolute; inset: 0; border-radius: 6px; pointer-events: none;
+  background: color-mix(in srgb, var(--wp-pc-face) 55%, transparent);
+}
+.wp-hand-card:focus-visible { z-index: 1; outline: 3px solid var(--wp-focus, #b4530a); outline-offset: 2px; }
+@media (forced-colors: active) {
+  .wp-hand-card[aria-disabled='true']::after { background: none; border: 2px dashed GrayText; }
+  .wp-hand-card--selected > .wp-pc { outline-color: Highlight; }
+  .wp-hand-card:focus-visible { outline-color: Highlight; }
+}
