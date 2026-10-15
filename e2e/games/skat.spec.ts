@@ -62,27 +62,44 @@ const englishLabel = (card: string) => {
   return `${ranks[card[0] as string] ?? card[0]} of ${suits[card[1] as string]}`;
 };
 
+/**
+ * The computers' moves are revealed one by one (presentation only; the state is already decided and saved).
+ * Shows the rest at once via the skip control. In-page, so a reveal that ends by itself meanwhile is no problem.
+ */
+async function settle(page: Page) {
+  await page.evaluate(() => document.querySelector<HTMLElement>('[data-testid="reveal-skip"]')?.click());
+  await expect(page.getByTestId('reveal-skip')).toHaveCount(0);
+}
+
 async function startSeries(page: Page) {
   await page.goto(`/games/${GAME}`);
   await page.getByTestId('new-game').click();
   await expect(page.getByTestId('game-root')).toBeVisible();
   await page.getByTestId('start').click();
   await expect(page.getByTestId('my-hand')).toBeVisible();
+  await settle(page);
 }
 
 /** Passes in the bidding (if asked) and plays the first legal card (if it is the person's turn). */
 async function passAndPlay(page: Page) {
+  await settle(page);
   const pass = page.getByTestId('bid-pass');
   if (await pass.isVisible()) await pass.click();
+  await settle(page);
   const card = page.locator('[data-testid="my-hand"] button:not([aria-disabled="true"])').first();
   if (await card.isVisible()) await card.click();
+  await settle(page);
 }
+
+/** Card ids in the current trick, as shown. */
+const shownTrick = (page: Page) => page.locator('[data-testid="trick"] [data-card]').evaluateAll((els) => els.map((el) => el.getAttribute('data-card')).join(' '));
 
 test('bid, play a card, reload and resume the identical table', async ({ page }) => {
   let before: (string | null)[] = [];
   let trick = '';
   await expectResumeAfterReload(page, GAME, async (p) => {
     await p.getByTestId('start').click();
+    await settle(p);
     await passAndPlay(p);
     await passAndPlay(p);
     before = await myCards(p);
@@ -133,4 +150,48 @@ test('is playable with the keyboard', async ({ page }) => {
     await page.keyboard.press('ArrowRight');
     await expect(page.locator('[data-testid="my-hand"] button').nth(1)).toBeFocused();
   }
+});
+
+test('computer moves are revealed one by one; Space or the skip control shows the rest at once', async ({ page }) => {
+  await startSeries(page);
+  const playable = page.locator('[data-testid="my-hand"] button:not([aria-disabled="true"])');
+  // Pass through the bidding until the person may play a card (computers declare).
+  for (let i = 0; i < 6 && !(await playable.first().isVisible()); i++) {
+    const pass = page.getByTestId('bid-pass');
+    if (await pass.isVisible()) await pass.click();
+    else await page.getByTestId('panel').locator('button').first().click();
+    await settle(page);
+    if (await page.getByTestId('result').isVisible()) return; // everybody passed: no card play in this deal
+  }
+  await expect(playable.first()).toBeVisible();
+
+  // Normal speed: the decided turn is shown step by step, without any input.
+  await playable.first().click();
+  await expect(page.getByTestId('reveal-skip')).toBeVisible();
+  const first = await shownTrick(page);
+  await expect.poll(() => shownTrick(page), { timeout: 5000 }).not.toBe(first);
+  // Meanwhile nothing can be played on the earlier picture.
+  if (await page.getByTestId('reveal-skip').isVisible()) await expect(playable).toHaveCount(0);
+  await expect(page.getByTestId('reveal-skip')).toHaveCount(0, { timeout: 15_000 });
+  await synced(page);
+
+  // Skip with the keyboard right away: the real state appears at once.
+  if (await page.getByTestId('result').isVisible()) return;
+  await playable.first().focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByTestId('reveal-skip')).toBeVisible();
+  await page.keyboard.press('Space');
+  await expect(page.getByTestId('reveal-skip')).toHaveCount(0, { timeout: 300 });
+  await synced(page);
+
+  // The skip control itself, and the speed preference: Instant needs no skipping.
+  if (await page.getByTestId('result').isVisible()) return;
+  await playable.first().click();
+  await page.getByTestId('reveal-skip').click();
+  await expect(page.getByTestId('reveal-skip')).toHaveCount(0);
+  await page.getByTestId('option-speed').selectOption('instant');
+  if (await page.getByTestId('result').isVisible()) return;
+  await playable.first().click();
+  await expect(page.getByTestId('reveal-skip')).toHaveCount(0);
+  await synced(page);
 });

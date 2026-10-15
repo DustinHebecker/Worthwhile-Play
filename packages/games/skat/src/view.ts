@@ -2,7 +2,8 @@ import { cardLabel, renderCard, renderHand, suitName, type Card, type HandView, 
 import type { GameContext, GameInstance, NewGameOptions } from '@wp/game-core';
 import { isOneOf, normalizeSeed } from '@wp/game-core';
 import { announce, clear, h } from '@wp/ui';
-import { advance, type ComputerMove } from './ai';
+import { advance } from './ai';
+import { DEFAULT_SPEED, SPEEDS, buildReveal, timing, waitAfter, type RevealStep, type Speed, type Timing } from './pacing';
 import {
   DEFAULT_DIFFICULTY,
   DEFAULT_OPTIONS,
@@ -45,10 +46,12 @@ import {
   type Seat,
   type SkatState
 } from './rules';
+import { type PersonKey } from './messages';
 import './styles.css';
 
 const PREF_FACES = 'faces';
 const PREF_OPTIONS = 'options';
+const PREF_SPEED = 'speed';
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
@@ -60,6 +63,15 @@ export function createSkat(context: GameContext): GameInstance<SkatState> {
   let chosen: Card[] = [];
   /** Declaration being prepared in the panel. */
   let draft: Contract = { kind: 'grand', hand: false, schneider: false, schwarz: false, ouvert: false };
+  const storedSpeed = context.preferences?.get(PREF_SPEED);
+  let speed: Speed = isOneOf(storedSpeed as string, SPEEDS) ? (storedSpeed as Speed) : DEFAULT_SPEED;
+  /**
+   * What the table shows. Equals `state` except while computer moves are being revealed one by one: then it is
+   * an earlier picture of the same deal (`state` itself is already final and saved).
+   */
+  let shown: SkatState = state;
+  /** The step being shown holds a completed trick in the middle (before it is collected). */
+  let shownStep: RevealStep | null = null;
 
   const storedOptions = (): Options => {
     const raw = context.preferences?.get(PREF_OPTIONS);
@@ -74,6 +86,12 @@ export function createSkat(context: GameContext): GameInstance<SkatState> {
 
   // ---------------------------------------------------------------- words
   const player = (seat: Seat) => t(`seat.${seat}`);
+  /**
+   * A sentence whose subject is `seat`. For the person a separate `<key>.you` sentence is used ("Du gewinnst",
+   * "You win"), since inserting "Du"/"You" into the third-person sentence breaks the verb agreement.
+   */
+  const said = (key: PersonKey, seat: Seat, params: Record<string, string | number> = {}): string =>
+    seat === HUMAN ? t(`${key}.you`, params) : t(key, { ...params, player: player(seat) });
   const card = (c: Card) => cardLabel(c, t, faces);
   const gameName = (kind: GameKind | 'ramsch'): string => {
     if (kind === 'grand' || kind === 'null' || kind === 'ramsch') return t(`game.${kind}`);
@@ -91,19 +109,19 @@ export function createSkat(context: GameContext): GameInstance<SkatState> {
     const who = player(seat);
     switch (action.type) {
       case 'bid':
-        return t('log.bid', { player: who, value: action.value });
+        return said('log.bid', seat, { value: action.value });
       case 'yes':
         return t('log.yes', { player: who });
       case 'pass':
-        return t('log.pass', { player: who });
+        return said('log.pass', seat);
       case 'pickup':
-        return t('log.pickup', { player: who });
+        return said('log.pickup', seat);
       case 'hand':
-        return t('log.hand', { player: who });
+        return said('log.hand', seat);
       case 'discard':
-        return t('log.discard', { player: who });
+        return said('log.discard', seat);
       case 'declare':
-        return t('log.declare', { player: who, game: contractName(action.contract) });
+        return said('log.declare', seat, { game: contractName(action.contract) });
       case 'play':
         return t('log.play', { player: who, card: card(action.card) });
     }
@@ -113,8 +131,17 @@ export function createSkat(context: GameContext): GameInstance<SkatState> {
   const live = h('div', { class: 'sr-only', 'aria-live': 'polite', role: 'status', 'data-testid': 'announcer' });
   const facesSelect = h('select', { 'data-testid': 'option-faces', onchange: () => setFaces(facesSelect.value === 'german' ? 'german' : 'french') });
   for (const f of ['french', 'german'] as const) facesSelect.append(h('option', { value: f }, t(`faces.${f}`)));
+  const speedSelect = h('select', { 'data-testid': 'option-speed', onchange: () => setSpeed(speedSelect.value) });
+  for (const v of SPEEDS) speedSelect.append(h('option', { value: v }, t(`speed.${v}`)));
   const progress = h('p', { class: 'sk-progress', 'data-testid': 'progress' });
-  const bar = h('div', { class: 'sk-bar' }, progress, h('label', { class: 'sk-field sk-field--inline' }, h('span', {}, t('setup.faces')), facesSelect));
+  const bar = h(
+    'div',
+    { class: 'sk-bar' },
+    progress,
+    h('div', { class: 'sk-bar-options' },
+      h('label', { class: 'sk-field sk-field--inline' }, h('span', {}, t('setup.speed')), speedSelect),
+      h('label', { class: 'sk-field sk-field--inline' }, h('span', {}, t('setup.faces')), facesSelect))
+  );
 
   const setupSection = h('section', { class: 'sk-setup wp-card', 'data-testid': 'setup', 'aria-labelledby': 'sk-setup-title' });
   const tableSection = h('section', { class: 'sk-table', 'aria-label': t('table') });
@@ -128,6 +155,18 @@ export function createSkat(context: GameContext): GameInstance<SkatState> {
 
   const container = h('div', { class: 'wp-skat', dir: t.direction }, bar, setupSection, tableSection, listDetails, helpDetails, live);
   root.append(container);
+  // Skip the reveal: click/tap anywhere on the table, or Space/Enter there (not the very event that started it).
+  const remember = (event: Event) => void (inFlight = event);
+  container.addEventListener('click', remember, true);
+  container.addEventListener('keydown', remember, true);
+  tableSection.addEventListener('click', (event) => {
+    if (revealing() && event !== startedBy) finishReveal();
+  });
+  tableSection.addEventListener('keydown', (event) => {
+    if (!revealing() || event === startedBy || (event.key !== ' ' && event.key !== 'Enter')) return;
+    event.preventDefault();
+    finishReveal();
+  });
 
   // Hands are long-lived widgets (keep keyboard focus across updates).
   // Toggle selection (putting two cards away) and "press to play" are different widgets (aria-pressed or not),
@@ -244,7 +283,7 @@ export function createSkat(context: GameContext): GameInstance<SkatState> {
     const declarer = declarerOf(d);
     if (d.ramsch) return t('contract.ramsch');
     if (declarer === null || !d.contract) return null;
-    return t('contract.line', { player: player(declarer), game: contractName(d.contract), bid: highBid(d) });
+    return said('contract.line', declarer, { game: contractName(d.contract), bid: highBid(d) });
   };
 
   // ---------------------------------------------------------------- panels
@@ -340,7 +379,7 @@ export function createSkat(context: GameContext): GameInstance<SkatState> {
     if (r.type === 'passed') return [t('outcome.passed')];
     if (r.type === 'ramsch') {
       const sweep = r.tricks.findIndex((n) => n === 10);
-      if (sweep >= 0) return [t('outcome.durchmarsch', { player: player(sweep as Seat) })];
+      if (sweep >= 0) return [said('outcome.durchmarsch', sweep as Seat)];
       const most = Math.max(...r.points);
       const losers = SEATS.filter((s) => r.points[s] === most).map(player).join(t('separator'));
       return [t('outcome.ramsch', { players: losers, points: most }), SEATS.map((s) => t('outcome.points', { player: player(s), points: r.points[s] })).join(t('separator'))];
@@ -348,8 +387,8 @@ export function createSkat(context: GameContext): GameInstance<SkatState> {
     const v = r.valuation;
     const lines: string[] = [];
     const who = player(r.declarer);
-    if (r.contract.kind === 'null') lines.push(t(v.won ? 'outcome.nullWon' : 'outcome.nullLost', { player: who }));
-    else lines.push(t(v.won ? 'outcome.won' : 'outcome.lost', { player: who, points: r.declarerPoints, defenders: 120 - r.declarerPoints }));
+    if (r.contract.kind === 'null') lines.push(said(v.won ? 'outcome.nullWon' : 'outcome.nullLost', r.declarer));
+    else lines.push(said(v.won ? 'outcome.won' : 'outcome.lost', r.declarer, { points: r.declarerPoints, defenders: 120 - r.declarerPoints }));
     if (v.overbid) lines.push(t('outcome.overbid', { bid: r.bid, value: v.value }));
     if (v.matadors) {
       const levels = t(v.matadors.with ? 'value.with' : 'value.without', { count: v.matadors.count });
@@ -371,12 +410,12 @@ export function createSkat(context: GameContext): GameInstance<SkatState> {
     const box = h('div', { class: 'sk-result', 'data-testid': 'result' });
     for (const line of resultText(r)) box.append(h('p', {}, line));
     panel.append(box);
-    if (state.stage === 'over') {
-      const sums = totals(state.list, state.options.scoring);
+    if (shown.stage === 'over') {
+      const sums = totals(shown.list, shown.options.scoring);
       panel.append(
         h('div', { class: 'sk-summary wp-card', 'data-testid': 'summary' },
           h('h2', {}, t('summary.title')),
-          h('p', {}, t('summary.games', { count: state.list.length })),
+          h('p', {}, t('summary.games', { count: shown.list.length })),
           h('ul', {}, ...SEATS.map((s) => h('li', {}, t('summary.total', { player: player(s), points: sums[s] })))))
       );
       return;
@@ -391,25 +430,25 @@ export function createSkat(context: GameContext): GameInstance<SkatState> {
     clear(listDetails);
     listDetails.open = open;
     listDetails.append(h('summary', {}, t('list.title')));
-    if (state.list.length === 0) {
+    if (shown.list.length === 0) {
       listDetails.append(h('p', {}, t('list.empty')));
       return;
     }
     const head = h('tr', {}, h('th', { scope: 'col' }, t('list.number')), h('th', { scope: 'col' }, t('list.game')), ...SEATS.map((s) => h('th', { scope: 'col' }, player(s))));
     const body = h('tbody', {});
     const running: [number, number, number] = [0, 0, 0];
-    state.list.forEach((entry, i) => {
-      const scores = entryScores(entry, state.options.scoring);
+    shown.list.forEach((entry, i) => {
+      const scores = entryScores(entry, shown.options.scoring);
       SEATS.forEach((s) => (running[s] += scores[s]));
       const r = entry.result;
       const label = r.type === 'passed' ? t('list.passed') : r.type === 'ramsch' ? t('game.ramsch') :
         t('list.entry', { player: player(r.declarer), game: contractName(r.contract), outcome: t(r.valuation.won ? 'list.won' : 'list.lost'), value: r.valuation.value });
       body.append(h('tr', {}, h('th', { scope: 'row' }, String(i + 1)), h('td', {}, label), ...SEATS.map((s) => h('td', {}, scores[s] === 0 ? '–' : `${scores[s] > 0 ? '+' : ''}${scores[s]} (${running[s]})`))));
     });
-    const sums = totals(state.list, state.options.scoring);
+    const sums = totals(shown.list, shown.options.scoring);
     const foot = h('tfoot', {}, h('tr', {}, h('th', { scope: 'row', colspan: 2 }, t('list.total')), ...SEATS.map((s) => h('td', { 'data-testid': `total-${s}` }, String(sums[s])))));
     listDetails.append(
-      h('p', { class: 'sk-hint' }, t(`scoring.${state.options.scoring}.hint`)),
+      h('p', { class: 'sk-hint' }, t(`scoring.${shown.options.scoring}.hint`)),
       h('div', { class: 'sk-list-scroll' }, h('table', {}, h('caption', { class: 'sr-only' }, t('list.title')), h('thead', {}, head), body, foot))
     );
   }
@@ -439,7 +478,7 @@ export function createSkat(context: GameContext): GameInstance<SkatState> {
 
   function renderTable() {
     clear(dynamicPart);
-    const d = state.deal;
+    const d = shown.deal;
     if (!d) return;
     const phase = dealPhase(d);
     const kind = playKind(d) ?? (phase === 'declare' ? draft.kind : 'grand');
@@ -454,17 +493,27 @@ export function createSkat(context: GameContext): GameInstance<SkatState> {
     const skat = skatView(d);
     if (skat) center.append(skat);
     const leaders = trickLeaders(d);
-    const currentLeader = leaders[leaders.length - 1] as Seat;
-    if (phase === 'play' || d.trick.length) center.append(trickView(d.trick, currentLeader, t('trick.current'), 'trick'));
-    const lastTrick = d.tricks[d.tricks.length - 1];
+    const winners = trickWinners(d);
+    // While a just completed trick is being revealed, it still lies in the middle (with its winner marked).
+    const held = shownStep?.hold ? d.tricks.length - 1 : -1;
+    const heldTrick = held >= 0 ? d.tricks[held] : undefined;
+    if (heldTrick) center.append(trickView(heldTrick, leaders[held] as Seat, t('trick.current'), 'trick', winners[held]));
+    else if (phase === 'play' || d.trick.length) center.append(trickView(d.trick, leaders[leaders.length - 1] as Seat, t('trick.current'), 'trick'));
+    const lastIndex = d.tricks.length - 1 - (heldTrick ? 1 : 0);
+    const lastTrick = d.tricks[lastIndex];
     if (lastTrick) {
-      const winner = trickWinners(d)[d.tricks.length - 1] as Seat;
-      center.append(trickView(lastTrick, leaders[d.tricks.length - 1] as Seat, t('trick.last', { player: player(winner), points: sumPoints(lastTrick) }), 'last-trick', winner));
+      const winner = winners[lastIndex] as Seat;
+      center.append(trickView(lastTrick, leaders[lastIndex] as Seat, said('trick.last', winner, { points: sumPoints(lastTrick) }), 'last-trick', winner));
     }
     const line = contractLine(d);
-    const status = h('p', { class: 'wp-status sk-status', 'data-testid': 'status' }, statusText(d));
+    const status = h('p', { class: 'wp-status sk-status', 'data-testid': 'status' },
+      heldTrick ? said('log.trick', winners[held] as Seat, { points: sumPoints(heldTrick) }) : revealing() ? t('common.thinking') : statusText(d));
     const panel = h('div', { class: 'sk-panel', 'data-testid': 'panel' });
-    if (phase === 'bidding') biddingPanel(d, panel);
+    if (revealing()) {
+      // Earlier picture of a decided turn: nothing to act on here, only the bidding so far and a way to see all now.
+      if (phase === 'bidding') panel.append(biddingLog(d));
+      panel.append(h('div', { class: 'sk-actions' }, button(t('reveal.skip'), 'reveal-skip', () => finishReveal())));
+    } else if (phase === 'bidding') biddingPanel(d, panel);
     else if (phase === 'skat' && toAct(d) === HUMAN) {
       panel.append(h('div', { class: 'sk-actions' },
         button(t('skat.pickup'), 'skat-pickup', () => act({ type: 'pickup' }), true),
@@ -495,7 +544,11 @@ export function createSkat(context: GameContext): GameInstance<SkatState> {
     let disabled: number[] = [];
     let selectable = false;
     let selected: number[] | undefined;
-    if (toAct(d) === HUMAN && phase === 'play') {
+    if (revealing()) {
+      // Not the person's turn in the picture shown: the cards stay focusable (keyboard place kept) but cannot be played.
+      selectable = true;
+      disabled = shownHand.map((_, i) => i);
+    } else if (toAct(d) === HUMAN && phase === 'play') {
       const legal = legalCards(d.hands[HUMAN], d.trick, kind);
       selectable = true;
       disabled = shownHand.flatMap((c, i) => (legal.includes(c) ? [] : [i]));
@@ -516,29 +569,31 @@ export function createSkat(context: GameContext): GameInstance<SkatState> {
   }
 
   function renderProgress() {
-    if (state.stage === 'setup') {
+    if (shown.stage === 'setup') {
       progress.textContent = t('setup.title');
       return;
     }
-    const n = state.list.length + (state.deal && !state.deal.result ? 1 : 0);
-    const shown = Math.max(1, n);
-    progress.textContent = state.options.series > 0 ? t('progress.of', { n: shown, total: state.options.series }) : t('progress.open', { n: shown });
+    const n = shown.list.length + (shown.deal && !shown.deal.result ? 1 : 0);
+    const number = Math.max(1, n);
+    progress.textContent = shown.options.series > 0 ? t('progress.of', { n: number, total: shown.options.series }) : t('progress.open', { n: number });
   }
 
   function render() {
+    if (!revealing()) shown = state;
     const active = document.activeElement;
     const focusInPanel = active instanceof HTMLElement && tableSection.contains(active) && !myHand.element.contains(active);
     const focusTestId = active instanceof HTMLElement ? active.dataset.testid : undefined;
     facesSelect.value = faces;
-    container.dataset.stage = state.stage;
-    container.dataset.phase = state.deal ? dealPhase(state.deal) : 'setup';
-    setupSection.hidden = state.stage !== 'setup';
-    tableSection.hidden = state.stage === 'setup';
-    listDetails.hidden = state.stage === 'setup';
-    if (state.stage === 'setup') renderSetup();
+    speedSelect.value = speed;
+    container.dataset.stage = shown.stage;
+    container.dataset.phase = shown.deal ? dealPhase(shown.deal) : 'setup';
+    setupSection.hidden = shown.stage !== 'setup';
+    tableSection.hidden = shown.stage === 'setup';
+    listDetails.hidden = shown.stage === 'setup';
+    if (shown.stage === 'setup') renderSetup();
     else renderTable();
     renderList();
-    if (state.stage === 'over') listDetails.open = true;
+    if (shown.stage === 'over') listDetails.open = true;
     renderProgress();
     if (focusInPanel) {
       // Keep keyboard users in place: same control if it still exists, else the panel's first control or the hand.
@@ -548,48 +603,159 @@ export function createSkat(context: GameContext): GameInstance<SkatState> {
     }
   }
 
-  // ---------------------------------------------------------------- actions
-  function describe(moves: readonly ComputerMove[], before: DealState | null): string {
-    const parts = moves.map((m) => actionText(m.seat, m.action));
-    const d = state.deal;
-    if (d && before && d.tricks.length > before.tricks.length) {
-      const winners = trickWinners(d);
-      for (let i = before.tricks.length; i < d.tricks.length; i++) {
-        parts.push(t('log.trick', { player: player(winners[i] as Seat), points: sumPoints(d.tricks[i] as Card[]) }));
-      }
-    }
-    return parts.join(' ');
+  // ---------------------------------------------------------------- reveal queue (presentation only)
+  /**
+   * The computers' moves are decided and saved at once; the table then reveals them one after another
+   * (a card flies from its player to the trick, a completed trick stays for a moment and is collected toward
+   * its winner). Skipping, closing or reloading just shows `state` — no timer is ever needed for correctness.
+   */
+  interface Reveal {
+    steps: RevealStep[];
+    index: number;
+    prefix: string;
+    time: Timing;
+    timer: ReturnType<typeof setTimeout> | null;
   }
+  let queue: Reveal | null = null;
+  function revealing(): boolean {
+    return queue !== null;
+  }
+  /** The event that started the current reveal: its own click/key press must not skip it again. */
+  let inFlight: Event | null = null;
+  let startedBy: Event | null = null;
 
-  function commit(next: SkatState, spoken: string) {
-    const wasOver = state.stage === 'over';
-    state = next;
-    chosen = [];
-    context.requestSave();
+  const stepText = (step: RevealStep): string => {
+    if (step.kind !== 'move' || !step.move) return '';
+    const parts = [actionText(step.move.seat, step.move.action)];
+    const d = step.state.deal;
+    if (step.hold && step.winner !== null && d) parts.push(said('log.trick', step.winner, { points: sumPoints(d.tricks[d.tricks.length - 1] as Card[]) }));
+    return parts.join(' ');
+  };
+
+  const statusTextSafe = () => (state.deal && state.stage === 'play' && !state.deal.result ? statusText(state.deal) : '');
+
+  /** Shows the real state and says what is still unsaid, then the result and whose turn it is. */
+  function endReveal(spoken: string) {
+    if (queue?.timer) clearTimeout(queue.timer);
+    queue = null;
+    shownStep = null;
     render();
     const result = state.deal?.result;
     const extra = result && dealPhase(state.deal as DealState) === 'done' ? resultText(result).join(' ') : '';
     announce(live, [spoken, extra, statusTextSafe()].filter(Boolean).join(' '));
+  }
+
+  /** Skip: show everything at once (also on pause, so nothing stale waits in the background). */
+  function finishReveal() {
+    const q = queue;
+    if (!q) return;
+    endReveal(q.steps.slice(q.index + 1).map(stepText).filter(Boolean).join(' '));
+  }
+
+  const rectOf = (el: Element | null | undefined): DOMRect | null => (el ? el.getBoundingClientRect() : null);
+  const canAnimate = (el: Element | null): el is HTMLElement => !!el && typeof (el as HTMLElement).animate === 'function';
+
+  /** Where a played card comes from: the person's card in the hand, or the face-down hand of a computer. */
+  function flightSource(step: RevealStep): DOMRect | null {
+    const action = step.move?.action;
+    if (step.kind !== 'move' || !step.move || action?.type !== 'play') return null;
+    if (step.move.seat === HUMAN) return rectOf(myHand.element.querySelector(`[data-card="${action.card}"]`));
+    const backs = tableSection.querySelector(`[data-testid="hand-${step.move.seat}"]`);
+    return rectOf(backs?.lastElementChild ?? backs);
+  }
+
+  const centre = (r: DOMRect) => ({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+
+  function animateFlight(step: RevealStep, from: DOMRect | null, duration: number) {
+    const action = step.move?.action;
+    if (!from || duration <= 0 || action?.type !== 'play') return;
+    const target = tableSection.querySelector(`[data-testid="trick"] [data-card="${action.card}"]`);
+    if (!canAnimate(target)) return;
+    // Viewport coordinates from both rects: correct in either writing direction.
+    const a = centre(from);
+    const b = centre(target.getBoundingClientRect());
+    target.animate(
+      [
+        { transform: `translate(${a.x - b.x}px, ${a.y - b.y}px) scale(0.75)`, opacity: 0.7 },
+        { transform: 'none', opacity: 1 }
+      ],
+      { duration, easing: 'cubic-bezier(0.2, 0.7, 0.3, 1)' }
+    );
+  }
+
+  function animateCollect(winner: Seat | null, duration: number) {
+    if (winner === null || duration <= 0) return;
+    const seat = rectOf(tableSection.querySelector(`[data-testid="seat-${winner}"]`));
+    if (!seat) return;
+    const to = centre(seat);
+    tableSection.querySelectorAll('[data-testid="trick"] .sk-trick-card').forEach((el) => {
+      if (!canAnimate(el)) return;
+      const from = centre(el.getBoundingClientRect());
+      el.animate(
+        [{ transform: 'none', opacity: 1 }, { transform: `translate(${to.x - from.x}px, ${to.y - from.y}px) scale(0.5)`, opacity: 0.15 }],
+        { duration, easing: 'ease-in', fill: 'forwards' }
+      );
+    });
+  }
+
+  function showStep(index: number) {
+    const q = queue;
+    const step = q?.steps[index];
+    if (!q || !step) return;
+    q.index = index;
+    q.timer = null;
+    const from = flightSource(step);
+    if (step.kind === 'move') {
+      shown = step.state;
+      shownStep = step;
+      render();
+      animateFlight(step, from, q.time.flight);
+    } else animateCollect(step.winner, q.time.collect);
+    const text = [index === 0 ? q.prefix : '', stepText(step)].filter(Boolean).join(' ');
+    const last = index === q.steps.length - 1;
+    if (last && step.kind === 'move' && !step.hold) {
+      // The last picture is the real state: nothing left to wait for.
+      endReveal(text);
+      return;
+    }
+    if (text) announce(live, text);
+    q.timer = setTimeout(() => (last ? endReveal('') : showStep(index + 1)), waitAfter(step, q.time));
+  }
+
+  /** Commits `next` (saved at once), then reveals `steps` toward it at the chosen speed. */
+  function commit(next: SkatState, steps: RevealStep[], prefix: string) {
+    if (queue?.timer) clearTimeout(queue.timer);
+    queue = null;
+    const wasOver = state.stage === 'over';
+    state = next;
+    chosen = [];
+    context.requestSave();
     if (!wasOver && state.stage === 'over') {
       context.finished({ outcome: 'completed', stats: { games: state.list.length, points: totals(state.list, state.options.scoring)[HUMAN] } });
     }
+    const time = timing(speed, context.reducedMotion);
+    if (!time || steps.length === 0) {
+      endReveal([prefix, ...steps.map(stepText)].filter(Boolean).join(' '));
+      return;
+    }
+    queue = { steps, index: 0, prefix, time, timer: null };
+    startedBy = inFlight;
+    showStep(0);
   }
-  const statusTextSafe = () => (state.deal && state.stage === 'play' && !state.deal.result ? statusText(state.deal) : '');
 
   function act(action: Action) {
-    if (!state.deal || toAct(state.deal) !== HUMAN) return;
-    const before = state.deal;
+    if (revealing() || !state.deal || toAct(state.deal) !== HUMAN) return;
     const after = applyAction(state, HUMAN, action);
     if (!after) return;
     if (action.type === 'declare') draft = { ...action.contract };
     const { state: advanced, moves } = advance(after);
-    commit(advanced, [actionText(HUMAN, action), describe(moves, before)].filter(Boolean).join(' '));
+    commit(advanced, buildReveal(state, [{ seat: HUMAN, action }, ...moves], false), '');
   }
 
   function onCard(index: number) {
     const d = state.deal;
     const c = shownHand[index];
-    if (!d || !c || toAct(d) !== HUMAN) return;
+    if (revealing() || !d || !c || toAct(d) !== HUMAN) return;
     const phase = dealPhase(d);
     if (phase === 'play') act({ type: 'play', card: c });
     else if (phase === 'discard') {
@@ -602,25 +768,26 @@ export function createSkat(context: GameContext): GameInstance<SkatState> {
   }
 
   function onStart() {
+    if (revealing()) return;
     const started = startSeries(state);
     const { state: advanced, moves } = advance(started);
-    commit(advanced, [t('announce.started'), describe(moves, started.deal)].join(' '));
+    commit(advanced, buildReveal(started, moves, true), t('announce.started'));
     myHand.focusCard(0);
   }
 
   function onNext() {
-    const next = nextDeal(state);
+    const next = revealing() ? null : nextDeal(state);
     if (!next) return;
     draft = { kind: 'grand', hand: false, schneider: false, schwarz: false, ouvert: false };
     const { state: advanced, moves } = advance(next);
-    commit(advanced, [t('announce.newDeal', { player: player((next.deal as DealState).dealer) }), describe(moves, next.deal)].join(' '));
+    commit(advanced, buildReveal(next, moves, true), said('announce.newDeal', (next.deal as DealState).dealer));
     const firstButton = tableSection.querySelector<HTMLElement>('[data-testid="panel"] button');
     (firstButton ?? myHand.element.querySelector<HTMLElement>('button'))?.focus();
   }
 
   function onEndSeries() {
-    const next = endSeries(state);
-    if (next) commit(next, t('summary.title'));
+    const next = revealing() ? null : endSeries(state);
+    if (next) commit(next, [], t('summary.title'));
   }
 
   function setFaces(next: SuitSet) {
@@ -629,7 +796,17 @@ export function createSkat(context: GameContext): GameInstance<SkatState> {
     render();
   }
 
+  function setSpeed(value: string) {
+    if (!isOneOf(value, SPEEDS)) return;
+    speed = value;
+    context.preferences?.set(PREF_SPEED, value);
+    if (value === 'instant') finishReveal();
+  }
+
   const start = (s: SkatState) => {
+    if (queue?.timer) clearTimeout(queue.timer);
+    queue = null;
+    shownStep = null;
     state = s;
     chosen = [];
     draft = { kind: 'grand', hand: false, schneider: false, schwarz: false, ouvert: false };
@@ -646,13 +823,17 @@ export function createSkat(context: GameContext): GameInstance<SkatState> {
       context.setDifficulty?.(state.difficulty);
     },
     serialize: () => clone(state),
-    pause() {},
+    pause() {
+      finishReveal();
+    },
     resume() {},
     reset() {
       start(newGame(state.seed, state.difficulty, state.options));
       context.requestSave();
     },
     dispose() {
+      if (queue?.timer) clearTimeout(queue.timer);
+      queue = null;
       myHand.destroy();
       clear(root);
     }

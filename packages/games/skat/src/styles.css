@@ -12,6 +12,7 @@
   display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: end; justify-content: space-between;
 }
 .wp-skat .sk-progress { margin: 0; font-weight: 600; }
+.wp-skat .sk-bar-options { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: end; min-inline-size: 0; }
 .wp-skat .sk-field { display: grid; gap: 0.2rem; font-size: 0.9rem; min-inline-size: 0; max-inline-size: 100%; }
 .wp-skat .sk-field select { max-inline-size: 100%; min-block-size: 44px; }
 .wp-skat .sk-check, .wp-skat .sk-radio {
@@ -55,7 +56,9 @@
 
 .wp-skat .sk-contract { margin: 0; text-align: center; font-weight: 600; }
 .wp-skat .sk-status { margin: 0; text-align: center; }
-.wp-skat .sk-panel { display: grid; gap: 0.5rem; justify-items: center; }
+.wp-skat .sk-panel { display: grid; gap: 0.5rem; justify-items: center; min-block-size: 44px; }
+/* Revealed cards fly in from their player (Web Animations API, skipped under reduced motion); keep them above. */
+.wp-skat .sk-trick-card { position: relative; will-change: transform; }
 .wp-skat .sk-panel > p { margin: 0; text-align: center; }
 .wp-skat .sk-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
 .wp-skat .sk-log {
