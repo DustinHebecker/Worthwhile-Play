@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, startGame } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, startGame, type StartOptions } from '../../packages/testing/src/e2e';
 
 const GAME = 'stack-duel';
 
@@ -9,11 +9,11 @@ const settled = (page: Page) => expect(page.locator('.wp-stack-duel')).toHaveAtt
 const poses = (page: Page) =>
   page.locator('[data-testid^="piece-"]').evaluateAll((els) => els.map((el) => `${el.getAttribute('data-kind')}@${el.getAttribute('data-pose')}`));
 
-async function startNewGame(page: Page) {
-  await startGame(page, GAME);
+async function startNewGame(page: Page, options: StartOptions = {}) {
+  await startGame(page, GAME, options);
   await expect(page.getByTestId('game-root')).toBeVisible();
   await expect(page.getByTestId('board')).toBeVisible();
-  // The board, not the mode select, gets focus, so arrow keys move the stone right away.
+  // The board gets focus, so arrow keys move the stone right away.
   await expect(page.getByTestId('board')).toBeFocused();
 }
 
@@ -47,8 +47,7 @@ test('is playable with the keyboard', async ({ page }) => {
 });
 
 test('two people can play until a stone falls', async ({ page }) => {
-  await startNewGame(page);
-  await page.getByTestId('option-mode').selectOption('human');
+  await startNewGame(page, { settings: { mode: 'human' } });
   await page.getByTestId('drop').click();
   await settled(page);
   await expect(page.getByTestId('status')).toContainText('Player 2');
@@ -85,4 +84,12 @@ test('with a mouse the wheel turns the stone and a click on the board drops it',
   await page.mouse.click(box.x + box.width / 2, box.y + box.height / 3);
   // The person's stone and the computer's reply.
   await expect(page.locator('[data-testid^="piece-"]')).toHaveCount(2, { timeout: 15_000 });
+});
+
+test('the solo tower challenge starts with the goal of the chosen difficulty', async ({ page }) => {
+  await startNewGame(page, { difficulty: 'hard', settings: { mode: 'solo' } });
+  await expect(page.locator('.wp-stack-duel')).toHaveAttribute('data-mode', 'solo');
+  // Hard: a tower of 7 with 14 stones.
+  await expect(page.getByTestId('progress')).toContainText(/of 7[.,]0 · 14 stones left/);
+  await expect(page.getByTestId('game-root').locator('select')).toHaveCount(0);
 });

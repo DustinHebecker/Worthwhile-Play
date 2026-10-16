@@ -5,6 +5,7 @@ import { playTurn, type TurnResult } from './ai';
 import { PATTERNS, PIECE_KINDS, type Pattern } from './pieces';
 import {
   DEFAULT_DIFFICULTY,
+  DEFAULT_MODE,
   DIFFICULTIES,
   MODES,
   PLATFORM_DEPTH,
@@ -112,15 +113,11 @@ export function createStackDuel(context: GameContext): GameInstance<StackDuelSta
   const number = new Intl.NumberFormat(t.locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   const fmt = (value: number) => number.format(Math.round(value * 10) / 10);
   const position = new Intl.NumberFormat(t.locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  // The mode chosen last on this device (duel vs computer, two people, solo) for fresh games after a reload.
-  const rememberedMode = context.preferences?.get('mode');
-  let state: StackDuelState = newState(0, DEFAULT_DIFFICULTY, isOneOf(rememberedMode, MODES) ? rememberedMode : 'computer');
+  let state: StackDuelState = newState(0, DEFAULT_DIFFICULTY, DEFAULT_MODE);
   let anim: Animation | undefined;
   let dragging = false;
 
   /* ---------- DOM ---------- */
-  const modeSelect = h('select', { 'data-testid': 'option-mode', onchange: () => onMode(modeSelect.value) });
-  for (const m of MODES) modeSelect.append(h('option', { value: m }, t(`mode.${m}`)));
   const status = h('p', { class: 'wp-status sd-status', 'data-testid': 'status' });
   const progress = h('p', { class: 'sd-progress', 'data-testid': 'progress' });
   const live = h('div', { class: 'sr-only', 'aria-live': 'polite', role: 'status', 'data-testid': 'announcer' });
@@ -184,7 +181,6 @@ export function createStackDuel(context: GameContext): GameInstance<StackDuelSta
   const container = h(
     'div',
     { class: 'wp-stack-duel', dir: t.direction },
-    h('div', { class: 'sd-toolbar' }, h('label', { class: 'sd-field' }, h('span', {}, t('mode')), modeSelect)),
     status,
     progress,
     boardBox,
@@ -314,7 +310,6 @@ export function createStackDuel(context: GameContext): GameInstance<StackDuelSta
     status.textContent = playing ? turnText() : endText();
     progress.textContent = progressText();
     boardBox.setAttribute('aria-label', boardLabel());
-    modeSelect.value = state.mode;
     setControlsEnabled(playing);
     container.dataset.mode = state.mode;
     container.dataset.outcome = playing ? 'playing' : state.result!.kind;
@@ -422,14 +417,6 @@ export function createStackDuel(context: GameContext): GameInstance<StackDuelSta
     render();
   };
 
-  const onMode = (value: string) => {
-    if (!isOneOf(value, MODES)) return;
-    start(state.seed, state.difficulty, value);
-    context.preferences?.set('mode', value);
-    context.requestSave();
-    announce(live, `${t(`mode.${value}`)}. ${status.textContent ?? ''}`);
-  };
-
   const restart = () => {
     start(state.seed, state.difficulty, state.mode);
     context.requestSave();
@@ -509,8 +496,10 @@ export function createStackDuel(context: GameContext): GameInstance<StackDuelSta
   return {
     newGame(options: NewGameOptions) {
       const difficulty = isOneOf(options.difficulty, DIFFICULTIES) ? options.difficulty : DEFAULT_DIFFICULTY;
-      // The mode is an in-game preference and carries over to a new game.
-      start(normalizeSeed(options.seed), difficulty, state.mode);
+      // The mode is chosen on the host's start screen (ADR 0017).
+      const chosen = options.settings?.mode;
+      const mode = isOneOf(chosen, MODES) ? chosen : DEFAULT_MODE;
+      start(normalizeSeed(options.seed), difficulty, mode);
     },
     restore(saved: StackDuelState) {
       cancelAnimation();
