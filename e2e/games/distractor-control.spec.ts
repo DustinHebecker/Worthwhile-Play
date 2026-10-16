@@ -13,8 +13,8 @@ const savedState = async (page: Page) => ((await readSave(page, 'distractor-cont
 test('distractor-control: a session resumes at the same number after a reload', async ({ page }) => {
   let shown = '';
   await expectResumeAfterReload(page, 'distractor-control', async (p) => {
-    await expect(p.getByTestId('dc-length')).toContainText('40');
-    await p.getByTestId('dc-start').click();
+    // Start on the host's start screen begins the session at once.
+    await expect(p.getByTestId('dc-intro')).toBeHidden();
     await expect(p.getByTestId('dc-item')).toHaveAttribute('data-index', '0');
     await p.getByTestId('dc-answer-even').click();
     await p.getByTestId('dc-answer-odd').click();
@@ -39,7 +39,6 @@ test('distractor-control: a session resumes at the same number after a reload', 
 
 test('distractor-control: tapping an extra is saved neutrally and the extra stays gone after reload', async ({ page }) => {
   await startGame(page, 'distractor-control', { difficulty: 'busy' });
-  await page.getByTestId('dc-start').click();
   const extra = page.getByTestId('dc-distractor');
   // Answer until the first extra appears (busy: half of the 40 numbers carry one).
   for (let i = 0; i < 40 && !(await extra.isVisible()); i++) await page.getByTestId('dc-answer-even').click();

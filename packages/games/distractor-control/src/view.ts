@@ -241,6 +241,8 @@ export function createDistractorControl(context: GameContext): GameInstance<Dist
   return {
     newGame(options: NewGameOptions) {
       begin(options.seed, toDifficulty(options.difficulty));
+      // The player has just pressed Start on the host's start screen: no second "ready?" step (ADR 0017).
+      if (options.begin) start();
     },
     restore(saved: DistractorState) {
       // Closed mid-session? It waits for "Continue" and resumes at the same item.

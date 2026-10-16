@@ -378,6 +378,8 @@ export function createVisualSearch(context: GameContext): GameInstance<SearchSta
   return {
     newGame(options: NewGameOptions) {
       begin(options.seed, toDifficulty(options.difficulty));
+      // The player has just pressed Start on the host's start screen: no second "ready?" step (ADR 0017).
+      if (options.begin) start();
     },
     restore(saved: SearchState) {
       // The current board is shown again (same seeded layout) and timed from now on.

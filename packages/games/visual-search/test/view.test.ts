@@ -319,3 +319,17 @@ describe('Visual Search view', () => {
     }
   });
 });
+
+describe('Visual search view: host start screen (ADR 0017)', () => {
+  it('shows the first board at once after the host\'s Start (begin), with the target named', () => {
+    const ctx = createTestContext(game as GameModule<unknown>, 'en');
+    const instance = game.create(ctx.context);
+    instances.push(instance);
+    instance.newGame({ seed: 3, difficulty: 'conjunction', begin: true });
+    const el = (id: string) => ctx.context.root.querySelector<HTMLElement>(`[data-testid="${id}"]`) as HTMLElement;
+    expect(instance.serialize()).toMatchObject({ phase: 'running', answers: [] });
+    expect(el('vs-intro').hidden).toBe(true);
+    expect(el('vs-board').dataset.trial).toBe('0');
+    expect(el('vs-find').textContent).not.toBe('');
+  });
+});
