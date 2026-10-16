@@ -36,87 +36,70 @@ const fakeSpeech = (voices: string[]): Speech & { spoken: [string, string][] } =
   return { spoken, canSpeak: (lang) => hasVoice(voices.map((v) => ({ lang: v })), lang), speak: (text, lang) => void spoken.push([text, lang]), onVoicesChanged: () => () => undefined };
 };
 
-function setup(options: { locale?: 'en' | 'de' | 'ar'; extras?: TestContextExtras; prefs?: Record<string, unknown>; speech?: Speech; seed?: number; difficulty?: string } = {}) {
+function setup(options: { locale?: 'en' | 'de' | 'ar'; extras?: TestContextExtras; cards?: string; speech?: Speech; seed?: number; difficulty?: string } = {}) {
   const ctx = createTestContext(game as never, options.locale ?? 'en', document.createElement('div'), options.extras ?? {});
-  for (const [k, v] of Object.entries(options.prefs ?? {})) ctx.preferences.set(k, v);
   const instance = createMemory(ctx.context, options.speech);
   running.push(instance);
-  instance.newGame({ seed: options.seed ?? 11, ...(options.difficulty ? { difficulty: options.difficulty } : {}) });
+  // The cards are chosen on the host's start screen (ADR 0017).
+  instance.newGame({ seed: options.seed ?? 11, ...(options.difficulty ? { difficulty: options.difficulty } : {}), ...(options.cards ? { settings: { cards: options.cards } } : {}) });
   return { ctx, instance, root: ctx.context.root };
 }
 
 const card = (root: HTMLElement, i: number) => root.querySelector<HTMLButtonElement>(`[data-testid="card-${i}"]`) as HTMLButtonElement;
-const select = (root: HTMLElement) => root.querySelector<HTMLSelectElement>('[data-testid="memory-cards"]') as HTMLSelectElement;
-const choose = (root: HTMLElement, value: string) => {
-  select(root).value = value;
-  select(root).dispatchEvent(new Event('change', { bubbles: true }));
+const specs = (extras: TestContextExtras = {}, locale: 'en' | 'de' = 'en') => {
+  const declared = game.settings;
+  return typeof declared === 'function' ? declared(createTestContext(game as never, locale, document.createElement('div'), extras).settingsEnv) : declared ?? [];
 };
 const byId = (root: HTMLElement, id: string) => root.querySelector<HTMLElement>(`[data-testid="${id}"]`) as HTMLElement;
 
-describe('card choice menu', () => {
-  it('offers the built-in variants and the user decks, defaulting to picture pairs', () => {
-    const { root, instance } = setup({ extras: { userDecks: decks(OWN, { ...OWN, id: 'user-tiny-1', title: { en: 'Tiny' }, items: OWN.items.slice(0, 1) }) } });
-    const options = [...select(root).options].map((o) => [o.value, o.textContent, o.disabled]);
-    expect(options).toEqual([
-      ['symbols', 'Picture pairs', false],
-      ['picture-word', 'Picture ↔ word', false],
-      ['word-translation', 'Word ↔ translation', false],
-      ['flag-country', 'Flag ↔ country', false],
-      ['country-capital', 'Country ↔ capital', false],
-      ['ai-term-definition', 'AI term ↔ definition', false],
-      ['own:user-colours-ab12', 'Colours (4 cards)', false],
-      ['own:user-tiny-1', 'Tiny (1 cards)', true]
-    ]);
-    expect(select(root).value).toBe('symbols');
-    expect(root.querySelector('optgroup')?.getAttribute('label')).toBe('Your decks');
+describe('card choice (start-screen setting, ADR 0017)', () => {
+  it('offers the built-in variants and the usable user decks, defaulting to picture pairs', () => {
+    const [cards] = specs({ userDecks: decks(OWN, { ...OWN, id: 'user-tiny-1', title: { en: 'Tiny' }, items: OWN.items.slice(0, 1) }) });
+    expect(cards).toEqual({
+      kind: 'choice',
+      id: 'cards',
+      labelKey: 'cards.label',
+      display: 'select',
+      default: 'symbols',
+      values: ['symbols', 'picture-word', 'word-translation', 'flag-country', 'country-capital', 'ai-term-definition', 'own:user-colours-ab12'],
+      valueLabels: {
+        symbols: 'Picture pairs',
+        'picture-word': 'Picture ↔ word',
+        'word-translation': 'Word ↔ translation',
+        'flag-country': 'Flag ↔ country',
+        'country-capital': 'Country ↔ capital',
+        'ai-term-definition': 'AI term ↔ definition',
+        'own:user-colours-ab12': 'Your decks: Colours (4 cards)'
+      }
+    });
+    expect(specs({ userDecks: { list: () => { throw new Error('broken'); }, get: () => undefined } })[0]).toMatchObject({ values: expect.not.arrayContaining([expect.stringMatching(/^own:/)]) });
+    const { root, instance } = setup();
+    expect(root.querySelector('select')).toBeNull();
     expect(instance.serialize().variant).toBe('symbols');
     expect(byId(root, 'memory-languages').hidden).toBe(true);
   });
 
-  it('starts a new game with the chosen cards (same seed) and remembers the choice', () => {
-    const { root, instance, ctx } = setup({ extras: { contentLanguages: { learning: 'ja', translation: 'de' } } });
-    card(root, 0).click();
-    const saves = ctx.saveRequests();
-    choose(root, 'word-translation');
-    const s = instance.serialize();
-    expect(s).toMatchObject({ seed: 11, variant: 'word-translation', deckId: 'first-words', languages: { front: 'ja', back: 'de' }, moves: 0, revealed: [] });
-    expect(ctx.saveRequests()).toBe(saves + 1);
-    expect(ctx.preferences.get('cards')).toBe('word-translation');
+  it('starts a new game with the chosen cards', () => {
+    const { root, instance } = setup({ cards: 'word-translation', extras: { contentLanguages: { learning: 'ja', translation: 'de' } } });
+    expect(instance.serialize()).toMatchObject({ seed: 11, variant: 'word-translation', deckId: 'first-words', languages: { front: 'ja', back: 'de' }, moves: 0, revealed: [] });
     expect(byId(root, 'memory-languages').textContent).toBe('Words in Japanese, translations in German');
-    expect(document.activeElement).toBe(select(root));
-    // A fresh game (host "New game") keeps the chosen cards.
+    // A fresh game without settings (e.g. an old deep link) deals picture pairs.
     instance.newGame({ seed: 5 });
-    expect(instance.serialize()).toMatchObject({ seed: 5, variant: 'word-translation' });
+    expect(instance.serialize()).toMatchObject({ seed: 5, variant: 'symbols' });
   });
 
-  it('a remembered choice is used for the first new game', () => {
-    const { instance, root } = setup({ prefs: { cards: 'flag-country' }, locale: 'de' });
-    expect(instance.serialize()).toMatchObject({ variant: 'flag-country', deckId: 'flags', languages: { back: 'de' } });
-    expect(select(root).value).toBe('flag-country');
-  });
-
-  it('ignores unusable remembered choices', () => {
+  it('ignores unusable choices', () => {
     expect(parseChoice('own:')).toBeUndefined();
     expect(parseChoice(42)).toBeUndefined();
     expect(parseChoice('own:user-x-1')).toEqual({ variant: 'own', deckId: 'user-x-1' });
-    const { instance } = setup({ prefs: { cards: 'nonsense' } });
+    const { instance } = setup({ cards: 'nonsense' });
     expect(instance.serialize().variant).toBe('symbols');
-  });
-
-  it('changing cards does not count as tapping the board (a pending mismatch stays until the new deal)', () => {
-    const { root, instance } = setup();
-    const s = instance.serialize();
-    const other = s.cards.findIndex((_, i) => i > 0 && i !== partnerOf(s.cards, 0));
-    card(root, 0).click();
-    card(root, other).click();
-    select(root).click();
-    expect(instance.serialize().revealed).toHaveLength(2);
   });
 });
 
 describe('picture ↔ word', () => {
   it('shows the picture on one card and the word in the learning language on the other', () => {
-    const { root, instance } = setup({ prefs: { cards: 'picture-word' }, extras: { contentLanguages: { learning: 'es' } } });
+    const { root, instance } = setup({ cards: 'picture-word', extras: { contentLanguages: { learning: 'es' } } });
     const s = instance.serialize();
     expect(s.languages).toEqual({ back: 'es' });
     const front = s.cards.findIndex((c) => c.side === 'front');
@@ -134,18 +117,18 @@ describe('picture ↔ word', () => {
   });
 
   it('falls back to the UI language with a notice when the learning language has no words yet', () => {
-    const { instance, root } = setup({ prefs: { cards: 'picture-word' }, extras: { contentLanguages: { learning: 'sv' } }, locale: 'de' });
+    const { instance, root } = setup({ cards: 'picture-word', extras: { contentLanguages: { learning: 'sv' } }, locale: 'de' });
     expect(instance.serialize().languages).toEqual({ back: 'de' });
     expect(byId(root, 'memory-notice').hidden).toBe(false);
     expect(byId(root, 'memory-notice').textContent).toBe('Für Schwedisch gibt es noch keine Wörter, daher wird eine andere Sprache verwendet.');
   });
 
   it('keeps the recorded languages on restore and reset, even if Settings changed', () => {
-    const first = setup({ prefs: { cards: 'word-translation' }, extras: { contentLanguages: { learning: 'ko', translation: 'fr' } } });
+    const first = setup({ cards: 'word-translation', extras: { contentLanguages: { learning: 'ko', translation: 'fr' } } });
     card(first.root, 0).click();
     const saved = first.instance.serialize();
     const initial = (() => {
-      const fresh = setup({ prefs: { cards: 'word-translation' }, extras: { contentLanguages: { learning: 'ko', translation: 'fr' } } });
+      const fresh = setup({ cards: 'word-translation', extras: { contentLanguages: { learning: 'ko', translation: 'fr' } } });
       return fresh.instance.serialize();
     })();
     const later = setup({ extras: { contentLanguages: { learning: 'pl', translation: 'it' } } });
@@ -159,7 +142,7 @@ describe('picture ↔ word', () => {
 
 describe('flag ↔ country', () => {
   it('shows country names in the UI language when no learning language is set', () => {
-    const { root, instance } = setup({ prefs: { cards: 'flag-country' }, locale: 'de', difficulty: 'large' });
+    const { root, instance } = setup({ cards: 'flag-country', locale: 'de', difficulty: 'large' });
     const s = instance.serialize();
     const back = s.cards.findIndex((c) => c.side === 'back');
     card(root, back).click();
@@ -172,7 +155,7 @@ describe('flag ↔ country', () => {
   });
 
   it('uses the UI language for country names, never the learning language', () => {
-    const { instance, root } = setup({ prefs: { cards: 'flag-country' }, extras: { contentLanguages: { learning: 'sv' } }, locale: 'de', difficulty: 'large' });
+    const { instance, root } = setup({ cards: 'flag-country', extras: { contentLanguages: { learning: 'sv' } }, locale: 'de', difficulty: 'large' });
     const s = instance.serialize();
     expect(s.languages).toEqual({ back: 'de' });
     const back = s.cards.findIndex((c) => c.side === 'back');
@@ -183,10 +166,9 @@ describe('flag ↔ country', () => {
 
 describe('country ↔ capital', () => {
   it('pairs the country name with its capital, both in the UI language (not the learning language)', () => {
-    const { root, instance } = setup({ prefs: { cards: 'country-capital' }, extras: { contentLanguages: { learning: 'fr', translation: 'de' } }, difficulty: 'large' });
+    const { root, instance } = setup({ cards: 'country-capital', extras: { contentLanguages: { learning: 'fr', translation: 'de' } }, difficulty: 'large' });
     const s = instance.serialize();
     expect(s).toMatchObject({ variant: 'country-capital', deckId: 'capitals', languages: { back: 'en' } });
-    expect(select(root).value).toBe('country-capital');
     expect(byId(root, 'memory-languages').textContent).toBe('Countries and capitals in English');
     expect(byId(root, 'memory-notice').hidden).toBe(true);
     const back = s.cards.findIndex((c) => c.side === 'back');
@@ -204,7 +186,7 @@ describe('country ↔ capital', () => {
   });
 
   it('a known pair shows the expected names (Poland ↔ Warsaw in German)', () => {
-    const { root, instance } = setup({ prefs: { cards: 'country-capital' }, locale: 'de' });
+    const { root, instance } = setup({ cards: 'country-capital', locale: 'de' });
     const s = instance.serialize();
     expect(s.languages).toEqual({ back: 'de' });
     // Reveal every card once (pairs of two) and collect the visible texts.
@@ -221,14 +203,14 @@ describe('country ↔ capital', () => {
   });
 
   it('needs no notice when the learning language has no capital names (the UI language is used anyway)', () => {
-    const { instance, root } = setup({ prefs: { cards: 'country-capital' }, extras: { contentLanguages: { learning: 'sv' } }, locale: 'de' });
+    const { instance, root } = setup({ cards: 'country-capital', extras: { contentLanguages: { learning: 'sv' } }, locale: 'de' });
     expect(instance.serialize().languages).toEqual({ back: 'de' });
     expect(byId(root, 'memory-notice').hidden).toBe(true);
     expect(byId(root, 'memory-languages').textContent).toBe('Länder und Hauptstädte auf Deutsch');
   });
 
   it('shows a game saved in the learning language (before the fix) in the UI language; the save is unchanged', () => {
-    const first = setup({ prefs: { cards: 'country-capital' }, locale: 'de' });
+    const first = setup({ cards: 'country-capital', locale: 'de' });
     card(first.root, 0).click();
     const saved: MemoryState = { ...first.instance.serialize(), languages: { back: 'ja' } };
     expect(game.isValidState(JSON.parse(JSON.stringify(saved)))).toBe(true);
@@ -243,7 +225,7 @@ describe('country ↔ capital', () => {
   });
 
   it('round-trips through a real save', () => {
-    const { instance } = setup({ prefs: { cards: 'country-capital' } });
+    const { instance } = setup({ cards: 'country-capital' });
     const state = instance.serialize();
     const loaded = interpretSave(JSON.parse(JSON.stringify(createSave(game, state.seed, state, state.difficulty))), game);
     expect(loaded).toMatchObject({ status: 'ok' });
@@ -258,10 +240,9 @@ describe('country ↔ capital', () => {
 
 describe('AI term ↔ definition', () => {
   it('pairs each term with its definition, both in the UI language (not the learning language)', () => {
-    const { root, instance } = setup({ prefs: { cards: 'ai-term-definition' }, extras: { contentLanguages: { learning: 'ja', translation: 'de' } }, difficulty: 'large' });
+    const { root, instance } = setup({ cards: 'ai-term-definition', extras: { contentLanguages: { learning: 'ja', translation: 'de' } }, difficulty: 'large' });
     const s = instance.serialize();
     expect(s).toMatchObject({ variant: 'ai-term-definition', deckId: 'ai-basics', languages: { back: 'en' } });
-    expect(select(root).value).toBe('ai-term-definition');
     expect(byId(root, 'memory-languages').textContent).toBe('AI terms and definitions in English');
     expect(byId(root, 'memory-notice').hidden).toBe(true);
     const back = s.cards.findIndex((c) => c.side === 'back');
@@ -288,7 +269,7 @@ describe('AI term ↔ definition', () => {
   });
 
   it('lays definitions out in at most 3 columns with taller cards; hidden cards stay empty', () => {
-    const { root } = setup({ prefs: { cards: 'ai-term-definition' }, difficulty: 'large' });
+    const { root } = setup({ cards: 'ai-term-definition', difficulty: 'large' });
     const board = byId(root, 'memory-board');
     expect(board.classList.contains('wp-memory__board--long')).toBe(true);
     expect(board.style.getPropertyValue('--wp-memory-columns')).toBe('3');
@@ -298,13 +279,13 @@ describe('AI term ↔ definition', () => {
     card(root, 0).dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
     expect(document.activeElement).toBe(card(root, 3));
     // Short texts keep the usual square cards and columns.
-    const capitals = setup({ prefs: { cards: 'country-capital' }, difficulty: 'large' });
+    const capitals = setup({ cards: 'country-capital', difficulty: 'large' });
     expect(byId(capitals.root, 'memory-board').classList.contains('wp-memory__board--long')).toBe(false);
     expect(byId(capitals.root, 'memory-board').style.getPropertyValue('--wp-memory-columns')).toBe('4');
   });
 
   it('shows the German term and definition of a known pair', () => {
-    const { root, instance } = setup({ prefs: { cards: 'ai-term-definition' }, locale: 'de' });
+    const { root, instance } = setup({ cards: 'ai-term-definition', locale: 'de' });
     const s = instance.serialize();
     expect(s.languages).toEqual({ back: 'de' });
     const texts: string[] = [];
@@ -320,14 +301,14 @@ describe('AI term ↔ definition', () => {
   });
 
   it('needs no notice when the learning language has no AI terms (the UI language is used anyway)', () => {
-    const { instance, root } = setup({ prefs: { cards: 'ai-term-definition' }, extras: { contentLanguages: { learning: 'sv' } }, locale: 'de' });
+    const { instance, root } = setup({ cards: 'ai-term-definition', extras: { contentLanguages: { learning: 'sv' } }, locale: 'de' });
     expect(instance.serialize().languages).toEqual({ back: 'de' });
     expect(byId(root, 'memory-notice').hidden).toBe(true);
     expect(byId(root, 'memory-languages').textContent).toBe('KI-Begriffe und Definitionen auf Deutsch');
   });
 
   it('shows a game saved in the learning language (before the fix) in the UI language; the save is unchanged', () => {
-    const first = setup({ prefs: { cards: 'ai-term-definition' }, locale: 'de' });
+    const first = setup({ cards: 'ai-term-definition', locale: 'de' });
     card(first.root, 0).click();
     const saved: MemoryState = { ...first.instance.serialize(), languages: { back: 'ar' } };
     expect(game.isValidState(JSON.parse(JSON.stringify(saved)))).toBe(true);
@@ -341,7 +322,7 @@ describe('AI term ↔ definition', () => {
   });
 
   it('round-trips through a real save; a card the deck does not have makes it unusable', () => {
-    const { instance } = setup({ prefs: { cards: 'ai-term-definition' } });
+    const { instance } = setup({ cards: 'ai-term-definition' });
     const state = instance.serialize();
     const loaded = interpretSave(JSON.parse(JSON.stringify(createSave(game, state.seed, state, state.difficulty))), game);
     expect(loaded).toMatchObject({ status: 'ok' });
@@ -354,25 +335,24 @@ describe('AI term ↔ definition', () => {
 
 describe('own decks', () => {
   it('plays front ↔ back of a user deck, smaller than the board if needed', () => {
-    const { root, instance } = setup({ prefs: { cards: 'own:user-colours-ab12' }, extras: { userDecks: decks(OWN) } });
+    const { root, instance } = setup({ cards: 'own:user-colours-ab12', extras: { userDecks: decks(OWN) } });
     const s = instance.serialize();
     expect(s).toMatchObject({ variant: 'own', deckId: 'user-colours-ab12', languages: {} });
     expect(s.itemIds).toHaveLength(4);
     expect(root.querySelectorAll('[data-testid^="card-"]')).toHaveLength(8);
-    expect(select(root).value).toBe('own:user-colours-ab12');
     card(root, 0).click();
     expect(card(root, 0).textContent).toMatch(/^(rot|blau|grün|gelb|red|blue|green|yellow)$/);
     expect(game.isValidState(JSON.parse(JSON.stringify(instance.serialize())))).toBe(true);
   });
 
   it('falls back to picture pairs with a notice when the chosen deck is gone', () => {
-    const { instance, root } = setup({ prefs: { cards: 'own:user-deleted-1' }, extras: { userDecks: decks(OWN) } });
+    const { instance, root } = setup({ cards: 'own:user-deleted-1', extras: { userDecks: decks(OWN) } });
     expect(instance.serialize().variant).toBe('symbols');
     expect(byId(root, 'memory-notice').textContent).toBe('That deck is no longer on this device, so picture pairs were dealt.');
   });
 
   it('restoring a game whose deck was deleted explains it and offers a new game', () => {
-    const first = setup({ prefs: { cards: 'own:user-colours-ab12' }, extras: { userDecks: decks(OWN) } });
+    const first = setup({ cards: 'own:user-colours-ab12', extras: { userDecks: decks(OWN) } });
     card(first.root, 0).click();
     const saved = first.instance.serialize();
     const { root, instance, ctx } = setup({ extras: { userDecks: decks() } });
@@ -386,11 +366,10 @@ describe('own decks', () => {
     expect(instance.serialize()).toMatchObject({ variant: 'symbols', seed: saved.seed, difficulty: saved.difficulty, moves: 0 });
     expect(byId(root, 'memory-missing').hidden).toBe(true);
     expect(ctx.saveRequests()).toBe(saves + 1);
-    expect(ctx.preferences.get('cards')).toBe('symbols');
   });
 
   it('a deck that no longer contains the dealt items counts as missing; broken host data never throws', () => {
-    const first = setup({ prefs: { cards: 'own:user-colours-ab12' }, extras: { userDecks: decks(OWN) } });
+    const first = setup({ cards: 'own:user-colours-ab12', extras: { userDecks: decks(OWN) } });
     const saved = first.instance.serialize();
     const changed = { ...OWN, items: OWN.items.map((item, i) => ({ ...item, id: `other${i}` })) };
     const { root, instance } = setup({ extras: { userDecks: decks(changed) } });
@@ -411,7 +390,7 @@ describe('own decks', () => {
 describe('read aloud (best effort)', () => {
   it('appears for a revealed word with an installed voice and speaks it on request only', () => {
     const speech = fakeSpeech(['de-DE', 'en-US']);
-    const { root, instance } = setup({ prefs: { cards: 'own:user-colours-ab12' }, extras: { userDecks: decks(OWN) }, speech });
+    const { root, instance } = setup({ cards: 'own:user-colours-ab12', extras: { userDecks: decks(OWN) }, speech });
     const speak = byId(root, 'memory-speak');
     expect(speak.hidden).toBe(true);
     card(root, 0).click();
@@ -428,13 +407,13 @@ describe('read aloud (best effort)', () => {
   });
 
   it('stays hidden without a voice for the language, for pictures and without speech support', () => {
-    const none = setup({ prefs: { cards: 'own:user-colours-ab12' }, extras: { userDecks: decks(OWN) }, speech: fakeSpeech(['fr-FR']) });
+    const none = setup({ cards: 'own:user-colours-ab12', extras: { userDecks: decks(OWN) }, speech: fakeSpeech(['fr-FR']) });
     card(none.root, 0).click();
     expect(byId(none.root, 'memory-speak').hidden).toBe(true);
     const symbols = setup({ speech: fakeSpeech(['en-US']) });
     card(symbols.root, 0).click();
     expect(byId(symbols.root, 'memory-speak').hidden).toBe(true);
-    const unsupported = setup({ prefs: { cards: 'own:user-colours-ab12' }, extras: { userDecks: decks(OWN) } });
+    const unsupported = setup({ cards: 'own:user-colours-ab12', extras: { userDecks: decks(OWN) } });
     card(unsupported.root, 0).click();
     expect(byId(unsupported.root, 'memory-speak').hidden).toBe(true);
   });

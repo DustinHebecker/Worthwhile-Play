@@ -29,8 +29,11 @@ import { loadLearningRecords } from '../lib/learning';
 import { createPreferences } from '../lib/preferences';
 import { safeStorage } from './settings';
 
-/** Memory's preference key for the chosen cards (see packages/games/memory/src/view.ts). */
-const MEMORY_CARDS_PREFERENCE = 'cards';
+/**
+ * The host's remembered start-screen settings of a game (REMEMBERED_SETTINGS in pages/game.ts, ADR 0017); Memory's
+ * cards are its `cards` setting (packages/games/memory/src/settings.ts).
+ */
+const REMEMBERED_SETTINGS = '@settings';
 const PREVIEW_ROWS = 200;
 const IMPORT_PREVIEW_ROWS = 20;
 
@@ -209,7 +212,9 @@ function previewTable(app: AppContext, deck: Deck, rows: number): HTMLElement {
 }
 
 async function playMemory(app: AppContext, choice: string): Promise<void> {
-  createPreferences(safeStorage(), 'memory').set(MEMORY_CARDS_PREFERENCE, choice);
+  const preferences = createPreferences(safeStorage(), 'memory');
+  const remembered = preferences.get(REMEMBERED_SETTINGS);
+  preferences.set(REMEMBERED_SETTINGS, { ...(remembered && typeof remembered === 'object' && !Array.isArray(remembered) ? remembered : {}), cards: choice });
   const store = await app.store;
   const existing = await store.read('memory').catch(() => undefined);
   // Never replace an unfinished game silently.

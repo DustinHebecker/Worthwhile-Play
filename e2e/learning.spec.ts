@@ -30,7 +30,7 @@ test('import a CSV deck, find it in the library, play Memory with it and resume 
 
   await page.getByTestId(`play-own-${id}`).click();
   await expect(page).toHaveURL(/\/games\/memory$/);
-  await expect(page.getByTestId('memory-cards')).toHaveValue(`own:${id}`);
+  await expect.poll(async () => ((await readSave(page, 'memory')) as { state?: { deckId?: string } } | undefined)?.state?.deckId).toBe(id);
   await expect(page.getByTestId('card-11')).toBeVisible(); // small board: 6 of the 7 cards → 12 cards
   await page.getByTestId('card-0').click();
   await expect(page.getByTestId('card-0')).toHaveAttribute('data-state', 'revealed');
@@ -120,7 +120,7 @@ test('deleting an own deck: confirmed, gone from the library, a saved game expla
   await page.getByTestId('memory-missing-new').click();
   await expect(page.getByTestId('memory-missing')).toBeHidden();
   await expect(page.getByTestId('card-0')).toBeVisible();
-  await expect(page.getByTestId('memory-cards')).toHaveValue('symbols');
+  await expect.poll(async () => ((await readSave(page, 'memory')) as { state?: { variant?: string } } | undefined)?.state?.variant).toBe('symbols');
 });
 
 test('"Delete all saved games" keeps decks; "Delete my imported decks" removes them after confirmation', async ({ page }) => {
@@ -149,8 +149,7 @@ test('"Delete all saved games" keeps decks; "Delete my imported decks" removes t
 test('picture ↔ word uses the learning language from Settings', async ({ page }) => {
   await page.goto('/settings');
   await page.locator('#learning-language').selectOption('es');
-  await startGame(page, 'memory');
-  await page.getByTestId('memory-cards').selectOption('picture-word');
+  await startGame(page, 'memory', { settings: { cards: 'picture-word' } });
   await expect(page.getByTestId('memory-languages')).toHaveText('Words in Spanish');
   const save = await expect.poll(async () => ((await readSave(page, 'memory')) as { state?: { variant?: string } } | undefined)?.state?.variant).toBe('picture-word');
   void save;

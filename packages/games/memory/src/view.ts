@@ -1,8 +1,9 @@
 import './styles.css';
 import { bcp47Tag, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
-import { pickText, resolveContentLanguages, SYMBOL_DECK, type CardSide } from '@wp/learning-content';
+import { resolveContentLanguages, SYMBOL_DECK, type CardSide } from '@wp/learning-content';
 import { announce, clear, gridKeyboard, h } from '@wp/ui';
-import { BUILTIN_CHOICES, builtinDeal, choiceOf, faceResolver, knowledgeLanguage, parseChoice, userDeck, type CardChoice, type CardFace, type FaceResolver } from './decks';
+import { builtinDeal, faceResolver, knowledgeLanguage, parseChoice, userDeck, type CardChoice, type CardFace, type FaceResolver } from './decks';
+import { choiceFrom } from './settings';
 import {
   BOARD,
   cardView,
@@ -22,19 +23,6 @@ import {
 import { browserSpeech, type Speech } from './speech';
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
-let instanceCounter = 0;
-
-/** Preference key for the chosen cards (a `CardChoice`), remembered for fresh games on this device. */
-export const CARDS_PREFERENCE = 'cards';
-
-const CHOICE_LABEL: Readonly<Record<(typeof BUILTIN_CHOICES)[number], string>> = {
-  symbols: 'cards.symbols',
-  'picture-word': 'cards.pictureWord',
-  'word-translation': 'cards.wordTranslation',
-  'flag-country': 'cards.flags',
-  'country-capital': 'cards.capitals',
-  'ai-term-definition': 'cards.aiBasics'
-};
 
 /** Texts wider than this (definitions, sentences; see `textWidth`) are set as a small paragraph, and their board gets taller cards. */
 export const LONG_TEXT = 40;
@@ -73,7 +61,6 @@ export function renderSide(side: CardSide, description: string): HTMLElement {
 
 export function createMemory(context: GameContext, speech: Speech | undefined = browserSpeech()): GameInstance<MemoryState> {
   const { root, t } = context;
-  const uid = `wp-memory-${++instanceCounter}`;
   let state: MemoryState | undefined;
   let faces: FaceResolver | undefined;
   let lastEvent: MemoryEvent | undefined;
@@ -83,8 +70,6 @@ export function createMemory(context: GameContext, speech: Speech | undefined = 
   let cards: HTMLButtonElement[] = [];
   let disposeKeyboard: (() => void) | undefined;
   let speakTarget: { text: string; lang: string } | undefined;
-  const remembered = parseChoice(context.preferences?.get(CARDS_PREFERENCE));
-  let choice: CardChoice = remembered ? (remembered.variant === 'own' ? `own:${remembered.deckId ?? ''}` : remembered.variant) : 'symbols';
 
   const languageName = (tag: string | undefined): string => {
     if (!tag) return '';
@@ -96,15 +81,9 @@ export function createMemory(context: GameContext, speech: Speech | undefined = 
   };
 
   // --- Elements ---------------------------------------------------------------------------
-  const cardSelect = h('select', { id: `${uid}-cards`, 'data-testid': 'memory-cards', 'aria-describedby': `${uid}-hint` });
+  // The cards are chosen on the host's start screen (ADR 0017, settings.ts); the game only names the languages.
   const languagesEl = h('p', { class: 'wp-memory__languages', 'data-testid': 'memory-languages' });
-  const options = h(
-    'div',
-    { class: 'wp-memory__options', 'data-keep': '' },
-    h('div', { class: 'wp-memory__field' }, h('label', { for: `${uid}-cards` }, t('cards.label')), cardSelect),
-    languagesEl,
-    h('p', { class: 'wp-memory__hint', id: `${uid}-hint` }, t('cards.hint'))
-  );
+  const options = h('div', { class: 'wp-memory__options', 'data-keep': '' }, languagesEl);
   const noticeEl = h('p', { class: 'wp-memory__notice', role: 'status', 'data-testid': 'memory-notice', hidden: true });
   const newGameButton = h('button', { type: 'button', 'data-testid': 'memory-missing-new' }, t('deck.newGame'));
   const missingEl = h('div', { class: 'wp-memory__missing', role: 'alert', 'data-testid': 'memory-missing', 'data-keep': '', hidden: true }, h('p', {}, t('deck.missing')), newGameButton);
@@ -167,23 +146,6 @@ export function createMemory(context: GameContext, speech: Speech | undefined = 
     }
   };
 
-  const renderOptions = () => {
-    const selected = state ? choiceOf(state) : choice;
-    clear(cardSelect);
-    cardSelect.append(...BUILTIN_CHOICES.map((c) => h('option', { value: c, selected: c === selected }, t(CHOICE_LABEL[c]))));
-    const own = context.userDecks?.list() ?? [];
-    if (own.length > 0) {
-      cardSelect.append(
-        h('optgroup', { label: t('cards.own') },
-          ...own.map((deck) => {
-            const value = `own:${deck.id}`;
-            return h('option', { value, selected: value === selected, disabled: deck.itemCount < MIN_PAIRS }, t('cards.ownItem', { title: pickText(deck.title, t.locale), count: deck.itemCount }));
-          })
-        )
-      );
-    }
-  };
-
   // --- Rendering --------------------------------------------------------------------------
   const setFocusIndex = (index: number) => {
     focusIndex = index;
@@ -232,7 +194,6 @@ export function createMemory(context: GameContext, speech: Speech | undefined = 
     shown = [];
     lastEvent = undefined;
     speakTarget = undefined;
-    renderOptions();
     const text = languagesText(state);
     languagesEl.textContent = text;
     languagesEl.hidden = text === '';
@@ -381,19 +342,9 @@ export function createMemory(context: GameContext, speech: Speech | undefined = 
       proceed();
     }
   };
-  const onChoose = () => {
-    const parsed = parseChoice(cardSelect.value);
-    if (!parsed || paused) return;
-    choice = cardSelect.value as CardChoice;
-    context.preferences?.set(CARDS_PREFERENCE, choice);
-    start(state?.seed ?? 0, state?.difficulty ?? 'small', choice);
-    cardSelect.focus();
-  };
   const onMissingNewGame = () => {
     if (!state || paused) return;
-    choice = 'symbols';
-    context.preferences?.set(CARDS_PREFERENCE, choice);
-    start(state.seed, state.difficulty, choice);
+    start(state.seed, state.difficulty, 'symbols');
     cards[0]?.focus();
   };
   const onSpeak = () => {
@@ -402,19 +353,16 @@ export function createMemory(context: GameContext, speech: Speech | undefined = 
   const disposeVoices = speech?.onVoicesChanged(updateSpeak);
   container.addEventListener('click', onClick);
   container.addEventListener('keydown', onKeyDown);
-  cardSelect.addEventListener('change', onChoose);
   newGameButton.addEventListener('click', onMissingNewGame);
   speakButton.addEventListener('click', onSpeak);
 
   return {
     newGame(opts: NewGameOptions) {
-      start(opts.seed, toDifficulty(opts.difficulty), choice);
+      start(opts.seed, toDifficulty(opts.difficulty), choiceFrom(opts.settings));
     },
     restore(saved: MemoryState) {
       state = clone(saved);
       faces = faceResolver(state, t, context.userDecks);
-      // "New game" continues with the cards shown in the menu (unless that deck is gone).
-      if (faces) choice = choiceOf(state);
       focusIndex = 0;
       showNotice('');
       mount();
@@ -443,7 +391,6 @@ export function createMemory(context: GameContext, speech: Speech | undefined = 
       disposeVoices?.();
       container.removeEventListener('click', onClick);
       container.removeEventListener('keydown', onKeyDown);
-      cardSelect.removeEventListener('change', onChoose);
       newGameButton.removeEventListener('click', onMissingNewGame);
       speakButton.removeEventListener('click', onSpeak);
       clear(root);
