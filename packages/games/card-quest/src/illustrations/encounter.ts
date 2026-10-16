@@ -5,8 +5,6 @@ export const ENCOUNTER: Readonly<Record<string, string>> = {
     <rect class="il-sky" x="0" y="0" width="160" height="120"/>
     <path class="il-grass" d="M0 104h160v16H0z"/>
     <path class="il-line il-thin" opacity="0.35" d="M10 112l2-4 2 4M40 118l2-4 2 4M122 114l2-4 2 4M148 119l2-4 2 4"/>
-    <path class="il-white il-ink il-thin" d="M6 22h18v10H6z"/>
-    <path class="il-line il-thin" d="M9 26h12M9 29h8"/>
     <g transform="translate(86 116) scale(2.05 2.05)">
     <ellipse class="il-dark" cx="0" cy="0" rx="26" ry="3" opacity="0.3"/>
     <ellipse class="il-purple-dark il-ink" cx="-12" cy="-2" rx="8" ry="4"/>
@@ -29,7 +27,7 @@ export const ENCOUNTER: Readonly<Record<string, string>> = {
     <path class="il-blue il-ink" d="M-6 0l-6 20 7-4 4 6 3-22zM6 0l6 20-7-4-4 6-3-22z"/>
     <circle class="il-gold il-ink" cx="0" cy="0" r="10"/>
     <circle class="il-yellow il-ink il-thin" cx="0" cy="0" r="6"/>
-    <path class="il-gold il-ink il-thin" d="M-2 -3l3-2v8"/>
+    <path class="il-gold il-ink il-thin" d="M0 -4l1.2 2.6 2.8.3-2.1 1.9.6 2.8L0 2.2-2.5 3.6l.6-2.8-2.1-1.9 2.8-.3z"/>
     </g>
     </g>
     <g transform="translate(22 112) scale(0.32 0.32)">
@@ -65,10 +63,11 @@ export const ENCOUNTER: Readonly<Record<string, string>> = {
     <path class="il-stone" opacity="0.25" d="M0 0h160v14c-20 6-40-4-60 4s-50-2-70 6S10 18 0 22z"/>
     <path class="il-earth-dark" d="M0 104h160v16H0z"/>
     <path class="il-line il-thin" opacity="0.3" d="M12 30l8 4M140 40l-8 6M20 70l6-3M150 80l-6-2"/>
-    <path class="il-dark il-ink" d="M110 104V70h34v34z"/>
-    <path class="il-wood il-ink" d="M106 104V66h6v38zM142 104V66h6v38zM102 62h50v7h-50z"/>
-    <path class="il-line il-thin" d="M126 104l-10-8M134 104l10-8"/>
-    <g transform="translate(66 112) scale(1.75 1.75)">
+    <path class="il-dark il-ink" d="M118 104V58h34v46z"/>
+    <path class="il-wood il-ink" d="M114 104V54h6v50zM150 104V54h6v50zM110 48h50v8h-50z"/>
+    <path class="il-line il-thin" d="M134 104l-10-8M142 104l10-8"/>
+    <path class="il-metal il-ink il-thin" d="M126 104l4-10h10l4 10z"/>
+    <g transform="translate(62 112) scale(1.75 1.75)">
     <ellipse class="il-dark" cx="0" cy="0" rx="26" ry="3" opacity="0.3"/>
     <ellipse class="il-dark il-ink" cx="-12" cy="-2" rx="8" ry="4"/>
     <ellipse class="il-dark il-ink" cx="12" cy="-2" rx="8" ry="4"/>
@@ -79,16 +78,16 @@ export const ENCOUNTER: Readonly<Record<string, string>> = {
     <circle class="il-dark" cx="-14" cy="-10" r="1.6"/>
     <circle class="il-dark" cx="16" cy="-24" r="1.3"/>
     <ellipse class="il-grey il-ink" cx="-27" cy="-20" rx="5" ry="6"/>
-    <path class="il-wood-dark il-ink" d="M29 0V-22h3V0z"/>
-    <path class="il-wood-dark il-ink" d="M26 -24q4-6 9 0z"/>
-    <ellipse class="il-grey il-ink" cx="30" cy="-20" rx="5" ry="5"/>
+    <path class="il-line il-thick" d="M32 0V-24q0-6-5-6t-5 5"/>
+    <ellipse class="il-grey il-ink" cx="31" cy="-22" rx="5" ry="5"/>
     <path class="il-white il-ink il-thin" d="M-13 -31a5 5 0 0 0 10 0zM3 -31a5 5 0 0 0 10 0z"/>
     <circle class="il-dark" cx="-8" cy="-29" r="2"/>
     <circle class="il-dark" cx="8" cy="-29" r="2"/>
     <path class="il-line il-thin" d="M-13 -33h10M3 -33h10"/>
     <path class="il-line" d="M-8 -20q8 5 16-2"/>
     <path class="il-white il-ink il-thin" d="M4 -20l2 4 2-5z"/>
-    <path class="il-beard il-ink il-thin" d="M-16 -40q4-5 10-2-4 2-10 2zM16 -40q-4-5-10-2 4 2 10 2z"/>
+    <path class="il-beard il-ink il-thin" d="M-17 -38q2-8 12-4-6 0-12 4zM17 -38q-2-8-12-4 6 0 12 4z"/>
+    <path class="il-beard il-ink il-thin" d="M-6 -16q6 6 12 0-6 2-12 0z"/>
     <circle class="il-line il-thin" cx="-8" cy="-31" r="6"/>
     <circle class="il-line il-thin" cx="8" cy="-31" r="6"/>
     <path class="il-line il-thin" d="M-2 -31h4"/>
@@ -164,7 +163,7 @@ export const ENCOUNTER: Readonly<Record<string, string>> = {
     <circle class="il-dark" cx="8" cy="-30" r="2.4"/>
     <path class="il-dark il-ink il-thin" d="M-9 -22q9 9 18 0z"/>
     </g>
-    <g transform="translate(130 92) scale(0.9 0.9)">
+    <g transform="translate(136 90) scale(0.9 0.9)">
     <ellipse class="il-dark" cx="0" cy="0" rx="26" ry="3" opacity="0.3"/>
     <ellipse class="il-earth-dark il-ink" cx="-12" cy="-2" rx="8" ry="4"/>
     <ellipse class="il-earth-dark il-ink" cx="12" cy="-2" rx="8" ry="4"/>
@@ -175,11 +174,10 @@ export const ENCOUNTER: Readonly<Record<string, string>> = {
     <circle class="il-earth-dark" cx="-14" cy="-10" r="1.6"/>
     <circle class="il-earth-dark" cx="16" cy="-24" r="1.3"/>
     <ellipse class="il-orange il-ink" cx="-26" cy="-18" rx="5" ry="7"/>
-    <g transform="rotate(25 26 -30)">
-    <rect class="il-wood il-ink" x="22" y="-60" width="10" height="38" rx="2"/>
-    <circle class="il-metal il-ink il-thin" cx="24" cy="-54" r="2"/>
-    <circle class="il-metal il-ink il-thin" cx="30" cy="-46" r="2"/>
-    <circle class="il-metal il-ink il-thin" cx="24" cy="-38" r="2"/>
+    <g transform="rotate(-20 26 -24)">
+    <rect class="il-wood il-ink" x="20" y="-74" width="14" height="52" rx="2"/>
+    <path class="il-line il-thin" opacity="0.4" d="M24 -68v20M30 -60v14"/>
+    <path class="il-metal il-ink il-thin" d="M18 -66h-4M36 -60h4M18 -52h-4M36 -46h4M18 -38h-4"/>
     </g>
     <ellipse class="il-orange il-ink" cx="26" cy="-22" rx="6" ry="6"/>
     <circle class="il-white il-ink il-thin" cx="-8" cy="-31" r="5"/>
@@ -299,18 +297,17 @@ export const ENCOUNTER: Readonly<Record<string, string>> = {
     <path class="il-light" transform="translate(104 30) scale(1.2)" d="M0 0h7l-7 7h7M10 -10h5l-5 5h5M18 -18h4l-4 4h4"/>
     <path class="il-blue il-ink" d="M18 92h14v14H18z"/>
     <path class="il-line" d="M32 96q6 0 6 4t-6 4"/>
-    <path class="il-light il-thin" d="M22 88q-2-4 0-7M27 88q2-4 0-7"/>
-    <path class="il-white il-ink il-thin" d="M130 104l14-4 4 6-14 4z"/>`,
+    <path class="il-light il-thin" d="M22 88q-2-4 0-7M27 88q2-4 0-7"/>`,
 
-  // A dark rain cloud drops a second, surprised monster straight onto a first one that is sheltering under a little umbrella.
+  // A dark rain cloud drops a second, surprised monster straight onto the little umbrella of a first one that was just sheltering from the rain.
   'kz.come-in-pairs': `
     <rect class="il-sky" x="0" y="0" width="160" height="120"/>
     <path class="il-grass" d="M0 104h160v16H0z"/>
     <path class="il-line il-thin" opacity="0.35" d="M10 112l2-4 2 4M40 118l2-4 2 4M122 114l2-4 2 4M148 119l2-4 2 4"/>
-    <path class="il-smoke il-ink" d="M30 28c-10 0-12-14 0-14 2-10 18-12 22-4 6-8 22-6 22 4 8-2 16 4 12 12 6 4 2 12-6 10H34c-6 0-8-6-4-8z"/>
-    <path class="il-grey" opacity="0.5" d="M34 32h48c-4 4-44 4-48 0z"/>
-    <path class="il-water-line" d="M24 44l-4 10M40 44l-4 10M96 40l-4 10M112 46l-4 10M140 30l-4 10M130 70l-4 10M20 74l-4 10M140 92l-3 6"/>
-    <g transform="translate(60 62) scale(0.95 0.95)">
+    <path class="il-smoke il-ink" d="M66 22c-10 0-12-12 0-12 2-8 18-10 22-3 6-7 22-5 22 3 8-2 16 4 12 10 4 4 0 8-6 8H70c-6 0-8-4-4-6z"/>
+    <path class="il-grey" opacity="0.5" d="M70 24h48c-4 3-44 3-48 0z"/>
+    <path class="il-water-line" d="M20 30l-4 10M40 50l-4 10M14 70l-4 10M140 40l-4 10M150 66l-4 10M30 88l-3 6M136 90l-3 6"/>
+    <g transform="translate(96 54) scale(0.6 0.6)">
     <ellipse class="il-dark" cx="0" cy="0" rx="26" ry="3" opacity="0.3"/>
     <ellipse class="il-dark il-ink" cx="-12" cy="-2" rx="8" ry="4"/>
     <ellipse class="il-dark il-ink" cx="12" cy="-2" rx="8" ry="4"/>
@@ -320,18 +317,16 @@ export const ENCOUNTER: Readonly<Record<string, string>> = {
     <circle class="il-dark" cx="12" cy="-14" r="2"/>
     <circle class="il-dark" cx="-14" cy="-10" r="1.6"/>
     <circle class="il-dark" cx="16" cy="-24" r="1.3"/>
-    <ellipse class="il-teal il-ink" cx="-26" cy="-30" rx="5" ry="7" transform="rotate(30 -26 -30)"/>
-    <ellipse class="il-teal il-ink" cx="26" cy="-30" rx="5" ry="7" transform="rotate(-30 26 -30)"/>
+    <ellipse class="il-teal il-ink" cx="-28" cy="-34" rx="5" ry="8" transform="rotate(30 -28 -34)"/>
+    <ellipse class="il-teal il-ink" cx="28" cy="-34" rx="5" ry="8" transform="rotate(-30 28 -34)"/>
     <circle class="il-white il-ink il-thin" cx="-8" cy="-31" r="5.5"/>
     <circle class="il-white il-ink il-thin" cx="8" cy="-31" r="5.5"/>
     <circle class="il-dark" cx="-8" cy="-31" r="1.6"/>
     <circle class="il-dark" cx="8" cy="-31" r="1.6"/>
     <ellipse class="il-dark il-ink il-thin" cx="0" cy="-18" rx="4" ry="5"/>
     </g>
-    <path class="il-line il-thin" d="M44 6v6M60 4v6M76 6v6"/>
-    <path class="il-line" d="M106 72v34"/>
-    <path class="il-red il-ink" d="M84 74q22-26 44 0q-5-4-11 0-5-4-11 0-5-4-11 0-6-4-11 0z"/>
-    <g transform="translate(104 114) scale(1.1 1.1)">
+    <path class="il-line il-thin" d="M80 30l-3-4M112 30l3-4M96 24v-3"/>
+    <g transform="translate(92 114) scale(1 1)">
     <ellipse class="il-dark" cx="0" cy="0" rx="26" ry="3" opacity="0.3"/>
     <ellipse class="il-purple-dark il-ink" cx="-12" cy="-2" rx="8" ry="4"/>
     <ellipse class="il-purple-dark il-ink" cx="12" cy="-2" rx="8" ry="4"/>
@@ -342,12 +337,15 @@ export const ENCOUNTER: Readonly<Record<string, string>> = {
     <circle class="il-purple-dark" cx="-14" cy="-10" r="1.6"/>
     <circle class="il-purple-dark" cx="16" cy="-24" r="1.3"/>
     <ellipse class="il-purple il-ink" cx="-26" cy="-18" rx="5" ry="7"/>
-    <ellipse class="il-purple il-ink" cx="2" cy="-30" rx="5" ry="5"/>
     <circle class="il-white il-ink il-thin" cx="-8" cy="-31" r="5.5"/>
     <circle class="il-white il-ink il-thin" cx="8" cy="-31" r="5.5"/>
     <circle class="il-dark" cx="-8" cy="-31" r="1.6"/>
     <circle class="il-dark" cx="8" cy="-31" r="1.6"/>
     <ellipse class="il-dark il-ink il-thin" cx="0" cy="-18" rx="4" ry="5"/>
+    <path class="il-line" d="M24 -22V-50"/>
+    <path class="il-red il-ink" d="M-4 -50q28-28 56 0q-7-5-14 0-7-5-14 0-7-5-14 0-7-5-14 0z"/>
+    <path class="il-line il-thin" d="M24 -64v-4"/>
+    <ellipse class="il-purple il-ink" cx="24" cy="-24" rx="5" ry="6"/>
     </g>`,
 
   // In the mine, a dwarf clobbers the rock (bang star, sound waves); from a neighbouring hole a monster with a huge cupped ear leans in to listen, more eyes glowing behind it.
@@ -450,8 +448,14 @@ export const ENCOUNTER: Readonly<Record<string, string>> = {
     <path class="il-dark" d="M21 40l4-8 2 1-4 8z"/>
     <path class="il-dark" d="M25 28h4v4h-4z" transform="rotate(25 27 30)"/>
     <path class="il-line il-thick" d="M18 28l12 12"/>
-    <path class="il-gold il-ink" d="M84 10l14 18-8 12 22 18-10 14 24 20-6 12-24-18 8-14-22-18 8-12-14-18z"/>
-    <path class="il-glow" opacity="0.5" d="M92 22l4 6M104 52l6 6M118 82l6 6"/>
+    <path class="il-gold il-ink" d="M90 0l10 26-8 12 22 16-8 16 26 18-4 6-28-20 8-16-22-16 8-12-10-30z"/>
+    <g class="il-yellow il-ink il-thin">
+    <circle cx="96" cy="18" r="3"/>
+    <circle cx="102" cy="48" r="3.4"/>
+    <circle cx="112" cy="70" r="3"/>
+    <circle cx="128" cy="88" r="3.2"/>
+    </g>
+    <path class="il-light il-thin" d="M92 12l3 6M106 50l5 4M122 84l5 3"/>
     <g transform="translate(66 110) scale(0.95 0.95)">
     <ellipse class="il-dark" cx="0" cy="0" rx="25" ry="3" opacity="0.3"/>
     <path class="il-dark il-ink" d="M-20 0v-8h12v8zM8 0v-8h12v8z"/>
@@ -527,7 +531,7 @@ export const ENCOUNTER: Readonly<Record<string, string>> = {
     <path class="il-wood il-ink" d="M140 106V60h8v46z"/>
     <path class="il-wood il-ink" d="M86 22l58 30-4 6-58-28z"/>
     <path class="il-smoke" opacity="0.6" d="M20 70c-10-6-4-18 8-14 4-10 20-10 24-2 10-6 26 0 22 12 14 0 20 14 8 18H24c-10 0-12-10-4-14z"/>
-    <g transform="translate(80 104) scale(1.05 1.05)">
+    <g transform="translate(80 102) scale(1 1)">
     <ellipse class="il-dark" cx="0" cy="0" rx="25" ry="3" opacity="0.3"/>
     <path class="il-dark il-ink" d="M-20 0v-8h12v8zM8 0v-8h12v8z"/>
     <path class="il-green il-ink" d="M-22 -6C-25 -30-18-46 0-46S25-30 22-6Z"/>
@@ -553,6 +557,9 @@ export const ENCOUNTER: Readonly<Record<string, string>> = {
     <ellipse cx="118" cy="102" rx="12" ry="9"/>
     <ellipse cx="62" cy="108" rx="10" ry="7"/>
     <ellipse cx="100" cy="110" rx="11" ry="7"/>
+    <ellipse cx="64" cy="86" rx="10" ry="7"/>
+    <ellipse cx="96" cy="84" rx="9" ry="7"/>
+    <ellipse cx="82" cy="82" rx="8" ry="5"/>
     </g>
     <path class="il-line il-thin" opacity="0.4" d="M44 96l4 3M90 92l4 4M114 100l4 2"/>
     <path class="il-skin il-ink" d="M118 88v-8a4 4 0 0 1 8 0v8z"/>
@@ -588,7 +595,8 @@ export const ENCOUNTER: Readonly<Record<string, string>> = {
     <path class="il-orange il-ink" d="M-22 -54C-24 -90 24-90 22-54Z"/>
     <path class="il-teal il-ink il-thin" d="M-23 -64h46l-1 6h-44zM-20 -76h40l-3 6h-34z"/>
     <path class="il-line il-thin" opacity="0.4" d="M-14 -82v24M-6 -84v26M2 -84v26M10 -83v25M17 -78v20"/>
-    <path class="il-dark il-ink il-thin" d="M14 -62a4 5 0 1 1 8 0z"/>
+    <path class="il-dark il-ink il-thin" d="M13 -58a4.5 6 0 1 1 9 0zM-22 -58a4.5 6 0 1 1 9 0z"/>
+    <path class="il-orange il-ink" d="M-23 -56q3 4 6 0t6 0 6 0 6 0 6 0 6 0 6 0 6 0"/>
     <circle class="il-pink il-ink" cx="0" cy="-88" r="6"/>
     <path class="il-line il-thin" d="M-3 -90l6 4M-3 -86l6-4"/>
     </g>
@@ -721,7 +729,8 @@ export const ENCOUNTER: Readonly<Record<string, string>> = {
     <path class="il-wood-dark il-ink il-thin" d="M-23 -16h46v6h-46z"/>
     <rect class="il-metal il-ink il-thin" x="-4" y="-17" width="8" height="8" rx="1"/>
     <circle class="il-skin il-ink" cx="-24" cy="-24" r="5.5"/>
-    <path class="il-wood il-ink" d="M22 -24l14-20 4 3-6 4 2 3-4 2-1 4-5 5z"/>
+    <path class="il-wood il-ink" d="M20 -22l10-34 3 4 2-5 2 5 2-2-10 34z"/>
+    <path class="il-line il-thin" d="M38 -62l4-4M40 -54l6-1"/>
     <circle class="il-skin il-ink" cx="24" cy="-24" r="5.5"/>
     <ellipse class="il-skin il-ink" cx="0" cy="-54" rx="15" ry="13"/>
     <path class="il-orange il-ink" d="M-16 -54C-19 -30-7-16 0-13 7-16 19-30 16-54 11-46-11-46-16-54Z"/>
@@ -744,7 +753,6 @@ export const ENCOUNTER: Readonly<Record<string, string>> = {
     <path class="il-wood il-ink il-thin" d="M-3 -12l1-4 2 2 2-3 1 5z"/>
     </g>
     <path class="il-line il-thin" d="M118 82l-4-6M126 80l2-7M132 84l6-5"/>
-    <path class="il-line" d="M106 44l4-6 2 6 4-6"/>
     <path class="il-yellow il-ink il-thin" d="M36 21l1.5 3.5 3.5 1.5-3.5 1.5-1.5 3.5-1.5-3.5-3.5-1.5 3.5-1.5z"/>`,
 
   // Under a clear sky with a smug little bird, a gnome holds up his ice-cream cone just as a big white splat lands right on the scoop.
@@ -947,37 +955,37 @@ export const ENCOUNTER: Readonly<Record<string, string>> = {
     </g>
     <circle class="il-red il-ink il-thin" cx="138" cy="58" r="3.5"/>
     <path class="il-line il-thin" d="M138 55q2-4 5-4"/>
-    <g transform="translate(118 72)">
+    <g transform="translate(118 72) scale(1.5)">
     <ellipse class="il-dark" cx="-3" cy="0" rx="2" ry="1.6"/>
     <ellipse class="il-dark" cx="0" cy="0" rx="1.4" ry="1.2"/>
     <ellipse class="il-dark" cx="3" cy="0" rx="2.2" ry="1.8"/>
     <path class="il-line il-thin" d="M-2 1l-1 3M0 1v3M2 1l1 3"/>
     </g>
-    <g transform="translate(124 72)">
+    <g transform="translate(124 72) scale(1.5)">
     <ellipse class="il-dark" cx="-3" cy="0" rx="2" ry="1.6"/>
     <ellipse class="il-dark" cx="0" cy="0" rx="1.4" ry="1.2"/>
     <ellipse class="il-dark" cx="3" cy="0" rx="2.2" ry="1.8"/>
     <path class="il-line il-thin" d="M-2 1l-1 3M0 1v3M2 1l1 3"/>
     </g>
-    <g transform="translate(136 62)">
+    <g transform="translate(136 62) scale(1.5)">
     <ellipse class="il-dark" cx="-3" cy="0" rx="2" ry="1.6"/>
     <ellipse class="il-dark" cx="0" cy="0" rx="1.4" ry="1.2"/>
     <ellipse class="il-dark" cx="3" cy="0" rx="2.2" ry="1.8"/>
     <path class="il-line il-thin" d="M-2 1l-1 3M0 1v3M2 1l1 3"/>
     </g>
-    <g transform="translate(142 64)">
+    <g transform="translate(142 64) scale(1.5)">
     <ellipse class="il-dark" cx="-3" cy="0" rx="2" ry="1.6"/>
     <ellipse class="il-dark" cx="0" cy="0" rx="1.4" ry="1.2"/>
     <ellipse class="il-dark" cx="3" cy="0" rx="2.2" ry="1.8"/>
     <path class="il-line il-thin" d="M-2 1l-1 3M0 1v3M2 1l1 3"/>
     </g>
-    <g transform="translate(100 86)">
+    <g transform="translate(100 86) scale(1.5)">
     <ellipse class="il-dark" cx="-3" cy="0" rx="2" ry="1.6"/>
     <ellipse class="il-dark" cx="0" cy="0" rx="1.4" ry="1.2"/>
     <ellipse class="il-dark" cx="3" cy="0" rx="2.2" ry="1.8"/>
     <path class="il-line il-thin" d="M-2 1l-1 3M0 1v3M2 1l1 3"/>
     </g>
-    <g transform="translate(110 82)">
+    <g transform="translate(110 82) scale(1.5)">
     <ellipse class="il-dark" cx="-3" cy="0" rx="2" ry="1.6"/>
     <ellipse class="il-dark" cx="0" cy="0" rx="1.4" ry="1.2"/>
     <ellipse class="il-dark" cx="3" cy="0" rx="2.2" ry="1.8"/>

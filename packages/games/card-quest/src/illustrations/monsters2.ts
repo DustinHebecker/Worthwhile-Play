@@ -53,7 +53,6 @@ export const MONSTERS2: Readonly<Record<string, string>> = {
     <path class="il-teal il-ink" d="M66 82c4-6 10-6 12-2-2 4-8 6-12 2z"/>
     <rect class="il-dark il-ink il-thin" x="84" y="83" width="10" height="6" rx="1" transform="rotate(31 89 86)"/>
     <ellipse class="il-metal il-ink" cx="112" cy="104" rx="11" ry="3.4"/>
-    <path class="il-light il-thin" d="M104 112h4M114 112h4"/>
     <path class="il-line il-thin" d="M146 70l4-3 1 4 4-3M146 82l4 2-1 3 4 2M118 66l-4-3-1 4-4-3"/>
     <path class="il-white il-ink il-thin" d="M142 66l1.5-4 1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5z"/>
     <path class="il-wood-dark il-ink" d="M124 66h24v34h-24z"/>
