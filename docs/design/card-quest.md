@@ -386,6 +386,14 @@ K1 is large (140 cards × 16 locales). If it becomes too big for one review, it 
 
 - **B1 Card text while choosing cards to give away or sell.** In the give-away and sell modes a tap selects the card, so its description cannot be read before choosing. Fix: an info button on every tile (or a long press) that opens the card detail in every mode; selection stays on the tile itself.
 - **B2 Visual upgrade.** The owner expects clearly better pictures, not only icons: a real picture per card (monsters, items, curses …), larger on the detail view. Options to decide with the owner: richer code-drawn illustrations per card (original, no third-party art) or agent-generated raster art behind the swappable art layer (§ 7.3; needs precache rules for webp/avif from the orchestrator and a licence note in docs/third-party.md).
+  *Done (code-drawn, owner chose this after a 6-card sample):* one original SVG illustration per Kampfzwerge card
+  (`src/illustrations/`, 123 base cards), 160 × 120, colours only from the `--il-*` palette (one dusky palette in
+  light and dark, the owner preferred the dark look; forced colours fall back to outlines). Large on top of the card
+  detail, small in the tile; cards without one (future worlds) keep the pictogram. Guard rails from the owner: the
+  picture must match the name and be funny alone or with it; no suggestive shapes (a coiled hose was redrawn).
+  Tests: every card has one, static well-formed SVG with allowed elements, attributes and classes only, no text.
+  Cost: about 300 KB source in the lazily loaded game chunk (~130 KB gzip for the whole chunk). AI raster art stays
+  an option behind the same `illustration()` seam.
 - **B3 Better wordplay.** Names and flavour lines should be funnier, with more real puns per language (German first, then transcreated). Plan: a joke pass over all 123 texts in de and en with a brief per card (what is the joke), then the other 14 locales re-transcreated from it; keep situational humour so it survives translation.
 - **B4 Funny Blunder text per monster.** Today the Blunder is only the generated rule line ("level −1"). Each monster gets its own short, funny Blunder sentence (≤ 90 characters, per locale, original — no texts from the reference), shown on the card and in the log when it hits, next to the generated rule line that stays the binding effect (content field `blunder`, see § 6.2/6.3; content test for presence and length).
 - Confirmed: playing without reading the rules works (owner knows the genre; a test with someone new to it is still open).
