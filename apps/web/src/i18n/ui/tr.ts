@@ -54,6 +54,8 @@ const tr: UiCatalogue = {
   'game.saveUnavailable': 'Bu tarayıcı modunda ilerleme kaydedilemez; sayfayı kapattığında kaybolur.',
   'game.finished': 'Bitti.',
   'game.anotherRound': 'Bir tur daha',
+  'game.changeSettings': 'Ayarları değiştir',
+  'game.started': 'Yeni oyun başladı.',
   'game.sessionNote': '{minutes} dakikadır oynuyorsun.',
   'game.dismiss': 'Kapat',
   'game.seed': 'Oyun no. {seed}',

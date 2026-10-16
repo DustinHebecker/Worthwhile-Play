@@ -5,6 +5,7 @@ import type { SupportedLocale } from '@wp/localization';
 import { createTestContext, type TestContext } from '@wp/testing';
 import game from '../src/index';
 import { COMPUTER_REVEAL_MS } from '../src/view';
+import { connectFourSettings } from '../src/settings';
 import { isValidState, type ConnectFourState } from '../src/rules';
 
 const STANDARD = { size: '7x6', connect: 4, pullOut: false };
@@ -30,10 +31,18 @@ function mount(options: { reducedMotion?: boolean; locale?: SupportedLocale; pre
     return Array.from({ length: rows }, (_, r) => Array.from({ length: cols }, (_, c) => cell(r, c).dataset.disc || '.').join('')).join('/');
   };
   const status = () => root.querySelector('[data-testid="status"]')!.textContent;
+  /** Like the host's start screen (ADR 0017): a new game with the current settings, one of them changed. */
   const select = (name: string, value: string) => {
-    const el = root.querySelector<HTMLSelectElement>(`[data-testid="option-${name}"]`)!;
-    el.value = value;
-    el.dispatchEvent(new Event('change'));
+    const s = instance.serialize();
+    const settings: Record<string, string | number> = {
+      opponent: s.opponent,
+      starter: s.starter,
+      size: s.variant.size,
+      goal: s.variant.connect,
+      rule: s.variant.pullOut ? 'pullOut' : 'classic'
+    };
+    if (name !== 'strength') settings[name] = value;
+    instance.newGame({ seed: s.seed, difficulty: name === 'strength' ? value : s.difficulty, settings });
   };
   const button = (id: string) => root.querySelector<HTMLButtonElement>(`[data-testid="${id}"]`)!;
   const play = (...cols: number[]) => cols.forEach((c) => column(c).click());
@@ -211,12 +220,11 @@ describe('four-in-a-row view', () => {
     button('restart').click();
     expect(instance.serialize().moves).toEqual([]);
     expect(instance.serialize().difficulty).toBe('hard');
-    select('opponent', 'human');
-    expect(root.querySelector('[data-testid="option-starter"]')!.closest('label')!.hidden).toBe(true);
-    expect(root.querySelector('[data-testid="option-strength"]')!.closest('label')!.hidden).toBe(true);
+    // The options live only on the host's start screen (ADR 0017).
+    expect(root.querySelector('select, [data-testid^="option-"]')).toBeNull();
   });
 
-  it('reset returns to the seeded start, and newGame keeps opponent preferences', () => {
+  it('reset returns to the seeded start; newGame takes the start-screen settings, defaults for invalid ones', () => {
     const { instance, column, select } = mount();
     instance.newGame({ seed: 2, difficulty: 'medium' });
     select('opponent', 'human');
@@ -224,8 +232,10 @@ describe('four-in-a-row view', () => {
     column(0).click();
     instance.reset();
     expect(instance.serialize()).toEqual(start);
-    instance.newGame({ seed: 3, difficulty: 'nonsense' });
+    instance.newGame({ seed: 3, difficulty: 'nonsense', settings: { opponent: 'human', size: '10x10', goal: 6, rule: 'nope' } });
     expect(instance.serialize()).toEqual({ seed: 3, difficulty: 'easy', opponent: 'human', starter: 'human', variant: STANDARD, moves: [], rng: 3 });
+    instance.newGame({ seed: 4 });
+    expect(instance.serialize()).toEqual({ seed: 4, difficulty: 'easy', opponent: 'computer', starter: 'human', variant: STANDARD, moves: [], rng: 4 });
   });
 
   it('delays only the drawing of the computer’s reply; the logical state is complete at once', () => {
@@ -329,14 +339,10 @@ describe('four-in-a-row view', () => {
 describe('variants: board size, goal and the pull-out rule', () => {
   const human = (m: ReturnType<typeof mount>) => m.select('opponent', 'human');
 
-  it('offers the variant options as a labelled group and rebuilds the board for a new size', () => {
+  it('declares the variant as start-screen settings and rebuilds the board for a new size', () => {
+    expect(connectFourSettings()).toEqual(expect.arrayContaining([expect.objectContaining({ id: 'size', values: ['7x6', '8x7', '9x7'] })]));
     const m = mount();
     m.instance.newGame({ seed: 5 });
-    const group = m.root.querySelector('.c4-variant')!;
-    expect(group.tagName).toBe('FIELDSET');
-    expect(group.querySelector('legend')!.textContent).toBe('Variant');
-    for (const name of ['size', 'goal', 'rule']) expect(m.root.querySelector(`[data-testid="option-${name}"]`)!.closest('label')!.textContent).not.toBe('');
-    expect([...m.root.querySelectorAll<HTMLOptionElement>('[data-testid="option-size"] option')].map((o) => o.textContent)).toEqual(['7 × 6 (standard)', '8 × 7', '9 × 7']);
     m.select('size', '9x7');
     m.select('goal', '5');
     expect(m.root.querySelectorAll('[data-column]')).toHaveLength(9);
@@ -344,7 +350,6 @@ describe('variants: board size, goal and the pull-out rule', () => {
     expect(m.root.querySelector('[data-testid="board"]')!.getAttribute('aria-label')).toBe('Board with 9 columns and 7 rows');
     expect(m.column(4).tabIndex).toBe(0);
     expect(m.instance.serialize().variant).toEqual({ size: '9x7', connect: 5, pullOut: false });
-    expect(m.ctx.preferences.get('variant')).toEqual({ size: '9x7', connect: 5, pullOut: false });
     m.column(8).click();
     expect(m.cell(6, 8).dataset.disc).toBe('1');
     // Back to the standard size.
@@ -352,14 +357,13 @@ describe('variants: board size, goal and the pull-out rule', () => {
     expect(m.root.querySelectorAll('[data-testid^="cell-"]')).toHaveLength(42);
   });
 
-  it('starts with the remembered variant and ignores an invalid preference', () => {
-    const remembered = mount({ preferences: { variant: { size: '8x7', connect: 4, pullOut: true } } });
-    remembered.instance.newGame({ seed: 1 });
-    expect(remembered.instance.serialize().variant).toEqual({ size: '8x7', connect: 4, pullOut: true });
-    expect(remembered.root.querySelectorAll('[data-column]')).toHaveLength(8);
-    expect((remembered.root.querySelector('[data-testid="option-rule"]') as HTMLSelectElement).value).toBe('pullOut');
-    const broken = mount({ preferences: { variant: { size: '10x10', connect: 4, pullOut: false } } });
-    broken.instance.newGame({ seed: 1 });
+  it('starts with the chosen variant and ignores invalid settings', () => {
+    const chosen = mount();
+    chosen.instance.newGame({ seed: 1, settings: { size: '8x7', goal: 4, rule: 'pullOut' } });
+    expect(chosen.instance.serialize().variant).toEqual({ size: '8x7', connect: 4, pullOut: true });
+    expect(chosen.root.querySelectorAll('[data-column]')).toHaveLength(8);
+    const broken = mount();
+    broken.instance.newGame({ seed: 1, settings: { size: '10x10', goal: '9', rule: 1 } });
     expect(broken.instance.serialize().variant).toEqual(STANDARD);
   });
 
@@ -430,8 +434,8 @@ describe('variants: board size, goal and the pull-out rule', () => {
   });
 
   it('lets the computer answer a pull-out and restores a pull-out game exactly', () => {
-    const m = mount({ preferences: { variant: { size: '7x6', connect: 4, pullOut: true } } });
-    m.instance.newGame({ seed: 12, difficulty: 'medium' });
+    const m = mount();
+    m.instance.newGame({ seed: 12, difficulty: 'medium', settings: { rule: 'pullOut' } });
     m.play(3);
     m.pull(3);
     const saved = m.instance.serialize();
@@ -441,7 +445,7 @@ describe('variants: board size, goal and the pull-out rule', () => {
     other.instance.restore(saved);
     expect(other.instance.serialize()).toEqual(saved);
     expect(other.picture()).toBe(m.picture());
-    expect((other.root.querySelector('[data-testid="option-rule"]') as HTMLSelectElement).value).toBe('pullOut');
+    expect(other.root.querySelector<HTMLElement>('[data-testid="help"]')!.hidden).toBe(false);
   });
 
   it('calls the third repetition of a position a draw', () => {

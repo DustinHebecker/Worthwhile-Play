@@ -1,10 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, readSave } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, readSave, startGame } from '../../packages/testing/src/e2e';
 import { wordList } from '../../packages/games/word-guess/src/words';
 
 interface SavedWordGuess {
   difficulty: 'easy' | 'medium' | 'hard';
   language: 'en' | 'de';
+  strict: boolean;
   answer: number;
   guesses: string[];
   input: string;
@@ -85,4 +86,17 @@ test('word-guess: the keyboard fits a 360 px phone; the large layout keeps 44 px
     expect(box.height).toBeGreaterThanOrEqual(44);
     expect(box.x + box.width).toBeLessThanOrEqual(360);
   }
+});
+
+test('word-guess: word language, strict mode and difficulty come from the start screen', async ({ page }) => {
+  await startGame(page, 'word-guess', { difficulty: 'hard', settings: { language: 'de', strict: true } });
+  await expect(root(page).getByTestId('wg-key-ä')).toBeVisible();
+  // Six-letter words on hard.
+  await expect(tile(page, 0, 5)).toBeVisible();
+  await expect.poll(async () => (await readSave(page, 'word-guess')) !== undefined).toBe(true);
+  expect(await saved(page)).toMatchObject({ language: 'de', strict: true, difficulty: 'hard' });
+  // Only display options remain in the game.
+  await expect(root(page).getByTestId('wg-language')).toHaveCount(0);
+  await expect(root(page).getByTestId('wg-strict')).toHaveCount(0);
+  await expect(root(page).getByTestId('wg-layout')).toBeVisible();
 });

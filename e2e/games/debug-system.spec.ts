@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, startGame } from '../../packages/testing/src/e2e';
 
 const root = (page: Page) => page.getByTestId('game-root');
 
@@ -20,8 +20,7 @@ test('debug-system: step position, suspected rule and chosen fix survive a reloa
 });
 
 test('debug-system: trying fixes eventually repairs the machine and all tests pass', async ({ page }) => {
-  await page.goto('/games/debug-system');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'debug-system');
   const r = root(page);
   await expect(r.getByTestId('ds-test-0')).toHaveAttribute('data-pass', 'false');
   const ruleCount = await r.locator('[data-testid^="ds-rule-"]').count();

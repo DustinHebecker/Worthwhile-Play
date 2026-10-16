@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, startGame } from '../../packages/testing/src/e2e';
 
 const root = (page: Page) => page.getByTestId('game-root');
 
@@ -27,8 +27,7 @@ test('ambiguity-detector: a checked message keeps its result after a reload', as
 });
 
 test('ambiguity-detector: choosing a reply reveals the best one and moves on by keyboard', async ({ page }) => {
-  await page.goto('/games/ambiguity-detector');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'ambiguity-detector');
   const first = root(page).getByTestId('ad-dim-what');
   await first.focus();
   await page.keyboard.press('Space');

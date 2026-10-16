@@ -79,7 +79,9 @@ export function createDistractorControl(context: GameContext): GameInstance<Dist
   ) as Record<Choice, HTMLButtonElement>;
   const answers = h('div', { class: 'wp-dc__answers', role: 'group', 'aria-label': t('answer.group') }, answerBtns.even, answerBtns.odd);
   const continueBtn = h('button', { type: 'button', class: 'primary', 'data-testid': 'dc-continue', onclick: () => proceed() }, t('action.continue'));
-  const play = h('div', { class: 'wp-dc__play' }, laneAbove, itemEl, answers, laneBelow, continueBtn);
+  // The intro is skipped after the host's Start (ADR 0017): the note on the extras stays visible during the session.
+  const reminderEl = h('p', { class: 'wp-dc__muted', 'data-testid': 'dc-reminder' }, t('intro.distractors'));
+  const play = h('div', { class: 'wp-dc__play' }, laneAbove, itemEl, answers, laneBelow, continueBtn, reminderEl);
   const summaryEl = h('div', { class: 'wp-dc__summary', 'data-testid': 'dc-summary', hidden: true, tabindex: -1 });
   const live = h('div', { class: 'sr-only', 'aria-live': 'polite', role: 'status' });
   const container = h(
@@ -241,6 +243,8 @@ export function createDistractorControl(context: GameContext): GameInstance<Dist
   return {
     newGame(options: NewGameOptions) {
       begin(options.seed, toDifficulty(options.difficulty));
+      // The player has just pressed Start on the host's start screen: no second "ready?" step (ADR 0017).
+      if (options.begin) start();
     },
     restore(saved: DistractorState) {
       // Closed mid-session? It waits for "Continue" and resumes at the same item.

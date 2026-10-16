@@ -23,6 +23,8 @@
   font-variant-emoji: text;
 }
 .wp-sw__target { font-weight: 700; }
+.wp-sw__reminder { color: var(--wp-muted); }
+.wp-sw__reminder-glyph { font-size: 1.5rem; vertical-align: middle; font-variant-emoji: text; }
 .wp-sw__muted { color: var(--wp-muted); font-size: 0.95rem; }
 .wp-sw__muted[hidden] { display: none; }
 .wp-sw__status {

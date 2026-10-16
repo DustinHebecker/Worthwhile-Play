@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, readSave } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, readSave, startGame, submitStart } from '../../packages/testing/src/e2e';
 
 interface SavedNBack {
   variant: string;
@@ -26,8 +26,8 @@ async function visibleItem(page: Page) {
 test('n-back: a self-paced block resumes at the same item after a reload (keyboard answers)', async ({ page }) => {
   let before: Awaited<ReturnType<typeof visibleItem>> | undefined;
   await expectResumeAfterReload(page, 'n-back', async (p) => {
-    await expect(p.getByTestId('nb-task')).toContainText('1');
-    await p.getByTestId('nb-start').click();
+    // Start on the host's start screen begins the block at once (no second "Start block").
+    await expect(p.getByTestId('nb-intro')).toBeHidden();
     await expect(p.getByTestId('nb-item')).toHaveAttribute('data-index', '0');
     // Item 1 cannot be compared yet: Enter on the focused "Next" button moves on.
     await expect(p.getByTestId('nb-next')).toBeFocused();
@@ -52,12 +52,11 @@ test('n-back: a self-paced block resumes at the same item after a reload (keyboa
   await expect(page.getByTestId('nb-item')).toHaveAttribute('data-index', '4');
 });
 
-test('n-back: dual variant answers with A / L / Enter and the options survive a new game', async ({ page }) => {
-  await page.goto('/games/n-back');
-  await page.getByTestId('new-game').click();
-  await page.getByTestId('nb-variant-dual').click();
-  await expect(page.getByTestId('nb-variant-dual')).toHaveAttribute('aria-pressed', 'true');
-  await page.getByTestId('nb-start').click();
+test('n-back: variant, pace and N are chosen on the start screen; dual answers with A / L / Enter', async ({ page }) => {
+  await startGame(page, 'n-back', { difficulty: 'n1', settings: { variant: 'dual', pace: 'self' } });
+  // The options live only on the start screen now.
+  await expect(page.locator('[data-testid^="nb-variant-"]')).toHaveCount(0);
+  await expect(page.getByTestId('nb-item')).toHaveAttribute('data-index', '0');
   await page.keyboard.press('Enter');
   await expect(page.getByTestId('nb-same-position')).toBeVisible();
   await page.keyboard.press('a');
@@ -67,9 +66,21 @@ test('n-back: dual variant answers with A / L / Enter and the options survive a 
   await page.getByTestId('nb-next').click();
   await expect(page.getByTestId('nb-item')).toHaveAttribute('data-index', '2');
   await expect.poll(async () => (await savedState(page))?.answers).toEqual([0, 2]);
+  await expect(page.getByTestId('settings-summary')).toContainText('Both (dual)');
 
+  // The start screen remembers the choices; a new game keeps them.
   await page.reload();
-  await page.getByTestId('new-game').click();
-  await expect(page.getByTestId('nb-variant-dual')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('setting-variant').locator('input[value="dual"]')).toBeChecked();
+  await submitStart(page);
   await expect.poll(async () => (await savedState(page))?.variant).toBe('dual');
+});
+
+test('n-back: the calm timed pace from the start screen closes an unanswered item by itself', async ({ page }) => {
+  await startGame(page, 'n-back', { difficulty: 'n2', settings: { variant: 'symbol', pace: 'timed' } });
+  await expect(page.getByTestId('nb-shape')).toBeVisible();
+  await expect.poll(async () => await savedState(page)).toMatchObject({ variant: 'symbol', pace: 'timed', phase: 'running' });
+  // Nothing pressed: after about 3 s the item counts as answered and the next one appears.
+  await expect(page.getByTestId('nb-item')).toHaveAttribute('data-index', '1', { timeout: 8000 });
+  const save = (await readSave(page, 'n-back')) as { difficulty: string; settings: Record<string, unknown> };
+  expect(save).toMatchObject({ difficulty: 'n2', settings: { variant: 'symbol', pace: 'timed' } });
 });

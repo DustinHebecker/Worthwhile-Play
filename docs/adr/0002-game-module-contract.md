@@ -12,6 +12,7 @@ Spec requirements: universal resumability, direct URLs, determinism for bug repr
 - Save envelope `{ schemaVersion: 1, gameId, stateVersion, updatedAt, seed, difficulty?, state }`; `interpretSave` → `empty | ok | corrupt`, migrations via `migrateState`.
 - Every game must pass the shared contract suite (`@wp/testing`), including in all 16 locales.
 - Amendment (ADR 0011): the optional `preload(locale)` lets a game load per-locale content before `create`; the host awaits it, so `newGame`/`restore` stay synchronous.
+- Amendment (ADR 0017): the optional `GameModule.settings` declares the settings the host draws on the one start screen; `NewGameOptions` gains `settings` and `begin`; the save envelope gains an optional `settings`.
 - Amendment (ADR 0012): the optional, asynchronous `GameContext.library` stores things the player creates (e.g. maps), per game and bounded, separately from saves and preferences.
 
 ## Consequences

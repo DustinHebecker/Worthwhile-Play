@@ -54,6 +54,8 @@ const uk: UiCatalogue = {
   'game.saveUnavailable': 'У цьому режимі браузера прогрес не можна зберегти: він зникне, коли ви закриєте сторінку.',
   'game.finished': 'Гру завершено.',
   'game.anotherRound': 'Ще раунд',
+  'game.changeSettings': 'Змінити налаштування',
+  'game.started': 'Нову гру розпочато.',
   'game.sessionNote': 'Ви граєте вже {minutes} хв.',
   'game.dismiss': 'Приховати',
   'game.seed': 'Гра № {seed}',

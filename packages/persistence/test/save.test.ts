@@ -85,6 +85,31 @@ describe('interpretSave', () => {
   });
 });
 
+describe('settings in the save envelope (ADR 0017)', () => {
+  it('stores settings next to the difficulty and reads them back', () => {
+    const save = createSave(module(), 1, { count: 1 }, { difficulty: 'hard', settings: { opponents: 3, wild: true, deck: 'flags' } });
+    expect(save).toMatchObject({ difficulty: 'hard', settings: { opponents: 3, wild: true, deck: 'flags' } });
+    expect(isGameSave(save)).toBe(true);
+    const loaded = interpretSave(JSON.parse(JSON.stringify(save)), module());
+    expect(loaded.status === 'ok' && loaded.save.settings).toEqual({ opponents: 3, wild: true, deck: 'flags' });
+  });
+
+  it('keeps the old signature (difficulty as a string) and leaves out empty settings', () => {
+    expect(createSave(module(), 1, { count: 1 }, 'easy').difficulty).toBe('easy');
+    expect('settings' in createSave(module(), 1, { count: 1 }, { settings: {} })).toBe(false);
+  });
+
+  it('drops unreadable settings but keeps the game', () => {
+    const save = createSave(module(), 1, { count: 1 });
+    for (const settings of [[1], 'x', { a: { nested: 1 } }, { a: Number.NaN }, null]) {
+      expect(isGameSave({ ...save, settings })).toBe(false);
+      const loaded = interpretSave({ ...save, settings }, module());
+      expect(loaded.status).toBe('ok');
+      expect(loaded.status === 'ok' && 'settings' in loaded.save).toBe(false);
+    }
+  });
+});
+
 describe('stores', () => {
   it.each([
     ['memory', async () => createMemoryStore()],

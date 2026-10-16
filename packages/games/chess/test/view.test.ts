@@ -171,135 +171,37 @@ describe('chess view', () => {
     expect(byId('board').lastElementChild?.getAttribute('data-square')).toBe('a8');
   });
 
-  it('starts new games from the menu above the board (computer moves first when the person plays black)', () => {
-    const { instance, byId, root, plies, status } = mount();
-    instance.newGame({ seed: 9, difficulty: 'intermediate' });
-    const container = root.querySelector('.wp-chess')!;
-    // The menu comes before the board and shows the running game as current.
-    expect(container.firstElementChild).toBe(byId('menu'));
-    expect(byId<HTMLInputElement>('mode-computer').checked).toBe(true);
-    expect(byId('current-computer').hidden).toBe(false);
-    expect(byId('current-human').hidden).toBe(true);
-    // The host's difficulty is the preselected strength.
-    expect(byId<HTMLInputElement>('strength-intermediate').checked).toBe(true);
-    expect(byId('menu-strength').hidden).toBe(false);
-    expect(byId('menu-mate').hidden).toBe(true);
-    byId('color-b').click();
-    byId('start').click();
-    expect(instance.serialize().humanColor).toBe('b');
-    expect(instance.serialize().difficulty).toBe('intermediate');
+  it('starts the game chosen on the start screen (computer moves first when the person plays black)', () => {
+    const { ctx, instance, byId, root, plies, status } = mount();
+    instance.newGame({ seed: 9, difficulty: 'intermediate', settings: { game: 'computer', color: 'b' } });
+    // What to play is chosen only on the host's start screen (ADR 0017).
+    expect(root.querySelector('[data-testid="menu"], [data-testid="start"], input[type="radio"]')).toBeNull();
+    expect(instance.serialize()).toMatchObject({ opponent: 'computer', humanColor: 'b', difficulty: 'intermediate', mode: 'play' });
     expect(plies()).toHaveLength(1);
     expect(status()).toBe('Your move — you play Black.');
     expect(byId('board').firstElementChild?.getAttribute('data-square')).toBe('h1');
-    // Only the computer's opening move so far: no confirmation needed.
-    byId('mode-human').click();
-    expect(byId('menu-color').hidden).toBe(true);
-    expect(byId('menu-strength').hidden).toBe(true);
-    // Choosing alone does not start anything.
-    expect(instance.serialize().opponent).toBe('computer');
-    expect(byId('current-computer').hidden).toBe(false);
-    byId('start').click();
-    expect(byId('start-confirm').hidden).toBe(true);
-    expect(instance.serialize().opponent).toBe('human');
-    expect(byId('current-human').hidden).toBe(false);
-    expect(byId('current-computer').hidden).toBe(true);
+    instance.newGame({ seed: 10, difficulty: 'strong', settings: { game: 'human' } });
+    expect(instance.serialize()).toMatchObject({ opponent: 'human', difficulty: 'strong', mode: 'play', moves: [] });
     expect(byId('why').hidden).toBe(true);
     expect(byId('mode').textContent).toBe('Two players on this device.');
-    // The host's "new game" keeps opponent and colour and sets the strength.
-    instance.newGame({ seed: 10, difficulty: 'strong' });
-    expect(instance.serialize()).toMatchObject({ opponent: 'human', difficulty: 'strong', moves: [] });
-    expect(byId<HTMLInputElement>('strength-strong').checked).toBe(true);
+    // The host is the source of the difficulty: nothing is reported back.
+    expect(ctx.difficulties).toEqual([]);
   });
 
-  it('reports a strength chosen in the menu to the host and remembers the menu choice across instances', () => {
-    const first = mount();
-    first.instance.newGame({ seed: 9, difficulty: 'beginner' });
-    first.byId('strength-strong').click();
-    first.byId('color-b').click();
-    first.byId('start').click();
-    expect(first.ctx.difficulties).toEqual(['strong']);
-    expect(first.ctx.preferences.get('menu')).toEqual({ opponent: 'computer', humanColor: 'b', mode: 'play', mateN: first.instance.serialize().mateN });
-    // Two players: no strength is reported.
-    first.byId('mode-human').click();
-    first.byId('start').click();
-    if (!first.byId('start-confirm').hidden) first.byId('start-yes').click();
-    expect(first.ctx.difficulties).toEqual(['strong']);
-    // A fresh instance (e.g. after a reload) on the same device starts the remembered kind of game.
-    const ctx = createTestContext(game as GameModule<unknown>, 'en');
-    for (const [k, v] of first.ctx.preferences) ctx.preferences.set(k, v);
-    const second = game.create({ ...ctx.context, preferences: { get: (k) => ctx.preferences.get(k), set: (k, v) => void ctx.preferences.set(k, v) } });
-    instances.push(second);
-    second.newGame({ seed: 3, difficulty: 'beginner' });
-    expect(second.serialize()).toMatchObject({ opponent: 'human', humanColor: 'b', mode: 'play' });
-    // Unexpected stored values are ignored.
-    const odd = createTestContext(game as GameModule<unknown>, 'en');
-    const third = game.create({ ...odd.context, preferences: { get: () => ({ opponent: 'robot', humanColor: 7, mode: 'x', mateN: 9 }), set: () => undefined } });
-    instances.push(third);
-    third.newGame({ seed: 3, difficulty: 'beginner' });
-    expect(third.serialize()).toMatchObject({ opponent: 'computer', humanColor: 'w', mode: 'play' });
-  });
-
-  it('asks before a running game with own moves is replaced, and keeps it on “keep playing”', () => {
-    const { ctx, instance, byId, tap } = mount();
-    instance.newGame({ seed: 3 });
-    tap('e2', 'e4');
-    const before = instance.serialize();
-    byId('mode-mate').click();
-    expect(byId('menu-mate').hidden).toBe(false);
-    byId('mate-2').click();
-    byId('start').click();
-    expect(byId('start-confirm').hidden).toBe(false);
-    expect(byId('start').hidden).toBe(true);
-    expect(document.activeElement).toBe(byId('start-yes'));
-    expect(instance.serialize()).toEqual(before);
-    byId('start-no').click();
-    expect(byId('start-confirm').hidden).toBe(true);
-    expect(document.activeElement).toBe(byId('start'));
-    expect(instance.serialize()).toEqual(before);
-    // Escape also keeps the game.
-    byId('start').click();
-    byId('start-yes').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-    expect(byId('start-confirm').hidden).toBe(true);
-    expect(instance.serialize()).toEqual(before);
-    // Changing the choice closes an open question.
-    byId('start').click();
-    byId('mate-3').click();
-    expect(byId('start-confirm').hidden).toBe(true);
-    byId('start').click();
-    byId('start-yes').click();
+  it('starts mate-in-N puzzles of the chosen length', () => {
+    const { ctx, instance, byId } = mount();
+    instance.newGame({ seed: 3, settings: { game: 'mate', mateN: 3 } });
     expect(instance.serialize()).toMatchObject({ mode: 'mate', mateN: 3, moves: [] });
-    expect(byId('current-mate').hidden).toBe(false);
-    expect(byId<HTMLInputElement>('mate-3').checked).toBe(true);
     expect(byId('mode').textContent).toMatch(/^Mate in \(moves\): 3 — Puzzle \d+ of \d+$/);
-    expect(document.activeElement?.getAttribute('data-square')).toBeTruthy();
     expect(ctx.results).toEqual([]);
   });
 
-  it('starts directly when the game is over or untouched, and uses native radio groups for the keyboard', () => {
-    const { instance, byId, root } = mount();
-    instance.restore({ ...humanGame({ opponent: 'computer', start: '6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1', moves: ['a1a8'] }) });
-    byId('mode-best').click();
-    expect(byId('menu-color').hidden).toBe(true);
-    expect(byId('menu-mate').hidden).toBe(true);
-    byId('start').click();
-    expect(byId('start-confirm').hidden).toBe(true);
-    expect(instance.serialize().mode).toBe('best');
-    // Each group is one radio group (one tab stop, arrow keys handled by the browser) with a legend.
-    for (const name of ['mode', 'strength', 'color', 'mate']) {
-      const group = byId(`menu-${name}`);
-      expect(group.tagName).toBe('FIELDSET');
-      expect(group.querySelector('legend')!.textContent).not.toBe('');
-      const radios = [...group.querySelectorAll<HTMLInputElement>('input[type="radio"]')];
-      expect(radios.length).toBeGreaterThan(1);
-      expect(new Set(radios.map((r) => r.name)).size).toBe(1);
-      expect(radios.filter((r) => r.checked)).toHaveLength(1);
-    }
-    expect(byId('menu-mode').textContent).toContain('Against the computer');
-    // Two boards on one page do not share radio groups.
-    const other = mount();
-    expect(other.byId<HTMLInputElement>('mode-computer').name).not.toBe(byId<HTMLInputElement>('mode-computer').name);
-    // The old collapsed settings panel is gone.
-    expect(root.querySelector('details')).toBeNull();
+  it('falls back to a game against the computer as White for missing or invalid settings', () => {
+    const { instance } = mount();
+    instance.newGame({ seed: 3, difficulty: 'grandmaster', settings: { game: 'robot', color: 7, mateN: 9 } });
+    expect(instance.serialize()).toMatchObject({ opponent: 'computer', humanColor: 'w', mode: 'play', difficulty: 'beginner' });
+    instance.newGame({ seed: 4 });
+    expect(instance.serialize()).toMatchObject({ opponent: 'computer', humanColor: 'w', mode: 'play' });
   });
 
   it('explains the computer’s move and gives hints on request', () => {
@@ -363,10 +265,8 @@ describe('chess view', () => {
 
   it('offers "find the best move" puzzles with explanations for wrong tries', () => {
     const { ctx, instance, byId, tap, status, root } = mount();
-    instance.newGame({ seed: 0 });
-    byId('mode-best').click();
-    expect(root.querySelector('[data-testid="menu-strength"]')!.hasAttribute('hidden')).toBe(true);
-    byId('start').click();
+    instance.newGame({ seed: 0, settings: { game: 'best' } });
+    expect(root.querySelector('[data-testid="menu"]')).toBeNull();
     const state = instance.serialize();
     expect(state.mode).toBe('best');
     const ref = puzzlesFor('best', 1)[state.puzzle]!;
@@ -388,8 +288,8 @@ describe('chess view', () => {
     byId('next-puzzle').click();
     expect(instance.serialize().puzzle).toBe((state.puzzle + 1) % puzzlesFor('best', 1).length);
     expect(instance.serialize().moves).toEqual([]);
-    // The host's "new game" keeps the mode; the seed picks the puzzle.
-    instance.newGame({ seed: 5 });
+    // A new game from the start screen: the seed picks the puzzle.
+    instance.newGame({ seed: 5, settings: { game: 'best' } });
     expect(instance.serialize()).toMatchObject({ mode: 'best', puzzle: 5 % puzzlesFor('best', 1).length });
   });
 

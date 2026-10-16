@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest';
-import type { GameModule, UserDeckSource } from '@wp/game-core';
+import type { GameModule, SettingValue, UserDeckSource } from '@wp/game-core';
 import { aiTerm, applyReview, builtinItemIds, capitalName, countryName, createLearningRecords, type Deck, type LearningRecord, type Speech } from '@wp/learning-content';
 import { createTestContext, type TestContextExtras } from '@wp/testing';
-import game from '../src/index';
+import game, { reviewSettings } from '../src/index';
 import { isValidReviewState, type ReviewState } from '../src/rules';
 import { createReview, DECK_PREFERENCE, DIRECTION_PREFERENCE } from '../src/view';
 
@@ -30,12 +30,12 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-function setup(options: { extras?: TestContextExtras; prefs?: Record<string, unknown>; seed?: number; locale?: 'en' | 'ar' | 'de'; speech?: Speech } = {}) {
+function setup(options: { extras?: TestContextExtras; prefs?: Record<string, unknown>; settings?: Record<string, SettingValue>; seed?: number; locale?: 'en' | 'ar' | 'de'; speech?: Speech } = {}) {
   const ctx = createTestContext(game as GameModule<unknown>, options.locale ?? 'en', undefined, options.extras ?? {});
   for (const [key, value] of Object.entries(options.prefs ?? {})) ctx.preferences.set(key, value);
   const instance = createReview(ctx.context, options.speech);
   cleanup.push(() => instance.dispose());
-  instance.newGame({ seed: options.seed ?? 11 });
+  instance.newGame({ seed: options.seed ?? 11, ...(options.settings ? { settings: options.settings } : {}) });
   const root = ctx.context.root;
   const q = <T extends HTMLElement = HTMLElement>(id: string) => root.querySelector<T>(`[data-testid="${id}"]`)!;
   const click = (id: string) => q(id).click();
@@ -54,7 +54,10 @@ describe('Review view', () => {
   it('without learning records it is practice only and says so', () => {
     const { q, instance } = setup();
     expect(q('review-practice-only').hidden).toBe(false);
-    expect(q('review-mode').closest('div')!.hidden).toBe(true);
+    // Deck, direction and cards are chosen on the host's start screen only (ADR 0017).
+    expect(q('review-deck')).toBeNull();
+    expect(q('review-direction')).toBeNull();
+    expect(q('review-mode')).toBeNull();
     const state = instance.serialize();
     expect(state).toMatchObject({ mode: 'practice', session: '', deckId: 'first-words' });
     expect(state.cards).toHaveLength(10);
@@ -67,7 +70,6 @@ describe('Review view', () => {
     expect(q('review-empty').hidden).toBe(false);
     expect(q('review-session').hidden).toBe(true);
     expect(q('review-learn-new').textContent).toBe('Learn new cards (60)');
-    expect(q<HTMLSelectElement>('review-mode').value).toBe('review');
     expect(q('review-empty').hasAttribute('data-autofocus') || q('review-empty').querySelector('[data-autofocus]')).toBeTruthy();
 
     click('review-learn-new');
@@ -84,15 +86,13 @@ describe('Review view', () => {
     expect(persisted[0]![0]).toMatchObject({ deckId: 'first-words:en', box: 2, due: '2026-03-12', reviews: 1 });
     expect(q('review-progress').textContent).toBe('Card 2 of 10');
     expect(ctx.saveRequests()).toBeGreaterThanOrEqual(3);
-    expect(q<HTMLSelectElement>('review-mode').selectedOptions[0]!.textContent).toBe('Not seen yet (59)');
   });
 
   it('plays a full session, appends one repetition for "Not yet", calls finished once and shows a neutral summary', () => {
     const records = (builtinItemIds('flags') ?? []).slice(0, 3).map((id) => dueRecord('flags', id));
     const learning = learningWith(records);
-    const { q, click, reveal, ctx, instance } = setup({ extras: { learning }, prefs: { [DECK_PREFERENCE]: 'flags' } });
+    const { q, click, reveal, ctx, instance } = setup({ extras: { learning }, settings: { deck: 'flags' } });
     expect(instance.serialize().cards).toHaveLength(3);
-    expect(q<HTMLSelectElement>('review-mode').selectedOptions[0]!.textContent).toBe('Worth reviewing (3)');
     for (const rating of ['again', 'good', 'hard']) {
       reveal();
       click(`review-rate-${rating}`);
@@ -153,7 +153,7 @@ describe('Review view', () => {
 
   it('flags: the question never reveals the country; the answer is not in the DOM before revealing', () => {
     // Country names follow the UI language, not the learning language (Japanese here).
-    const { q, reveal, instance } = setup({ locale: 'de', extras: { learning: learningWith(), contentLanguages: { learning: 'ja' } }, prefs: { [DECK_PREFERENCE]: 'flags' } });
+    const { q, reveal, instance } = setup({ locale: 'de', extras: { learning: learningWith(), contentLanguages: { learning: 'ja' } }, settings: { deck: 'flags' } });
     // nothing due → practise anyway
     q('review-practice').click();
     const state = instance.serialize();
@@ -169,7 +169,7 @@ describe('Review view', () => {
   });
 
   it('capitals: country → capital in the UI language (not the learning language); backward asks for the country', () => {
-    const { q, reveal, instance } = setup({ extras: { learning: learningWith(), contentLanguages: { learning: 'it', translation: 'de' } }, prefs: { [DECK_PREFERENCE]: 'capitals', [DIRECTION_PREFERENCE]: 'forward' } });
+    const { q, reveal, instance } = setup({ extras: { learning: learningWith(), contentLanguages: { learning: 'it', translation: 'de' } }, settings: { deck: 'capitals', direction: 'forward' } });
     q('review-practice').click();
     const state = instance.serialize();
     expect(state).toMatchObject({ mode: 'practice', deckId: 'capitals', languages: { learning: 'en' }, direction: 'forward' });
@@ -184,7 +184,7 @@ describe('Review view', () => {
     expect(q('review-typed-result').textContent).toContain('Matches the card.');
     expect(q('review-languages').textContent).toBe('Countries and capitals in English');
 
-    const backward = setup({ locale: 'de', extras: { contentLanguages: { learning: 'ja' } }, prefs: { [DECK_PREFERENCE]: 'capitals', [DIRECTION_PREFERENCE]: 'backward' } });
+    const backward = setup({ locale: 'de', extras: { contentLanguages: { learning: 'ja' } }, settings: { deck: 'capitals', direction: 'backward' } });
     const s = backward.instance.serialize();
     const c = s.cards[0]!.item;
     expect(backward.q('review-prompt').textContent).toBe(capitalName(c, 'de'));
@@ -193,7 +193,7 @@ describe('Review view', () => {
   });
 
   it('capitals: a learning language without capital names needs no notice (the UI language is used anyway)', () => {
-    const { q, instance } = setup({ locale: 'de', extras: { contentLanguages: { learning: 'sv' } }, prefs: { [DECK_PREFERENCE]: 'capitals' } });
+    const { q, instance } = setup({ locale: 'de', extras: { contentLanguages: { learning: 'sv' } }, settings: { deck: 'capitals' } });
     expect(instance.serialize()).toMatchObject({ deckId: 'capitals', languages: { learning: 'de' } });
     expect(q('review-notice').hidden).toBe(true);
     expect(q('review-languages').textContent).toBe('Länder und Hauptstädte auf Deutsch');
@@ -203,7 +203,7 @@ describe('Review view', () => {
     for (const deckId of ['capitals', 'ai-basics', 'flags'] as const) {
       const ids = (builtinItemIds(deckId) ?? []).slice(0, 2);
       const learning = learningWith([dueRecord(deckId, ids[0]!), dueRecord(deckId, ids[1]!)]);
-      const first = setup({ locale: 'de', extras: { learning }, prefs: { [DECK_PREFERENCE]: deckId, [DIRECTION_PREFERENCE]: 'forward' } });
+      const first = setup({ locale: 'de', extras: { learning }, settings: { deck: deckId, direction: 'forward' } });
       // A save from before the fix recorded the learning language (Japanese).
       const saved: ReviewState = { ...first.instance.serialize(), languages: deckId === 'flags' ? { countries: 'ja' } : { learning: 'ja' } };
       expect(isValidReviewState(JSON.parse(JSON.stringify(saved)))).toBe(true);
@@ -224,7 +224,7 @@ describe('Review view', () => {
   });
 
   it('AI basics: term → definition in the UI language (not the learning language); backward shows the definition and asks for the term', () => {
-    const { q, reveal, instance } = setup({ locale: 'de', extras: { learning: learningWith(), contentLanguages: { learning: 'fr', translation: 'en' } }, prefs: { [DECK_PREFERENCE]: 'ai-basics', [DIRECTION_PREFERENCE]: 'forward' } });
+    const { q, reveal, instance } = setup({ locale: 'de', extras: { learning: learningWith(), contentLanguages: { learning: 'fr', translation: 'en' } }, settings: { deck: 'ai-basics', direction: 'forward' } });
     q('review-practice').click();
     const state = instance.serialize();
     expect(state).toMatchObject({ mode: 'practice', deckId: 'ai-basics', languages: { learning: 'de' }, direction: 'forward' });
@@ -239,7 +239,7 @@ describe('Review view', () => {
     expect(q('review-answer').querySelector('.wp-review__text--long')).not.toBeNull();
     expect(q('review-languages').textContent).toBe('KI-Begriffe und Definitionen auf Deutsch');
 
-    const backward = setup({ extras: { contentLanguages: { learning: 'de' } }, prefs: { [DECK_PREFERENCE]: 'ai-basics', [DIRECTION_PREFERENCE]: 'backward' } });
+    const backward = setup({ extras: { contentLanguages: { learning: 'de' } }, settings: { deck: 'ai-basics', direction: 'backward' } });
     const s = backward.instance.serialize();
     const item = aiTerm(s.cards[0]!.item, 'en')!;
     expect(backward.q('review-prompt').textContent).toBe(item.definition);
@@ -251,8 +251,7 @@ describe('Review view', () => {
   it('AI basics: items worth reviewing come from records kept under one deck key for all languages', () => {
     const ids = (builtinItemIds('ai-basics') ?? []).slice(0, 2);
     const learning = learningWith([dueRecord('ai-basics', ids[0]!), dueRecord('ai-basics', ids[1]!)]);
-    const { q, click, reveal, instance } = setup({ extras: { learning, contentLanguages: { learning: 'ja' } }, prefs: { [DECK_PREFERENCE]: 'ai-basics' } });
-    expect(q<HTMLSelectElement>('review-mode').selectedOptions[0]!.textContent).toBe('Worth reviewing (2)');
+    const { click, reveal, instance } = setup({ extras: { learning, contentLanguages: { learning: 'ja' } }, settings: { deck: 'ai-basics' } });
     const state = instance.serialize();
     expect(state).toMatchObject({ mode: 'review', deckId: 'ai-basics', languages: { learning: 'en' } });
     expect(state.cards.map((c) => c.item).sort()).toEqual([...ids].sort());
@@ -262,14 +261,14 @@ describe('Review view', () => {
   });
 
   it('AI basics: a learning language without AI terms needs no notice (the UI language is used anyway)', () => {
-    const { q, instance } = setup({ locale: 'de', extras: { contentLanguages: { learning: 'sv' } }, prefs: { [DECK_PREFERENCE]: 'ai-basics' } });
+    const { q, instance } = setup({ locale: 'de', extras: { contentLanguages: { learning: 'sv' } }, settings: { deck: 'ai-basics' } });
     expect(instance.serialize()).toMatchObject({ deckId: 'ai-basics', languages: { learning: 'de' } });
     expect(q('review-notice').hidden).toBe(true);
     expect(q('review-languages').textContent).toBe('KI-Begriffe und Definitionen auf Deutsch');
   });
 
   it('first words: the picture is shown with the answer only; backward asks for the word in the learning language', () => {
-    const { q, reveal, instance, root } = setup({ extras: { contentLanguages: { learning: 'es', translation: 'en' } }, prefs: { [DIRECTION_PREFERENCE]: 'backward' } });
+    const { q, reveal, instance, root } = setup({ extras: { contentLanguages: { learning: 'es', translation: 'en' } }, settings: { direction: 'backward' } });
     const state = instance.serialize();
     expect(state).toMatchObject({ direction: 'backward', languages: { learning: 'es', translation: 'en' } });
     expect(q('review-prompt').querySelector('[role="img"]')).toBeNull();
@@ -280,19 +279,17 @@ describe('Review view', () => {
     expect(root.querySelector('[data-testid="review-languages"]')!.textContent).toBe('Words in Spanish, translations in English');
   });
 
-  it('own decks: chosen in the menu, remembered, and resolved from the host snapshot; a deleted deck is explained', () => {
+  it('own decks: chosen on the start screen and resolved from the host snapshot; a deleted deck is explained', () => {
     const userDecks = decks(OWN);
-    const { q, instance, ctx, reveal } = setup({ extras: { userDecks, learning: learningWith() } });
-    const select = q<HTMLSelectElement>('review-deck');
-    expect([...select.options].map((o) => o.value)).toEqual(['first-words', 'flags', 'capitals', 'ai-basics', OWN.id]);
-    select.value = OWN.id;
-    select.dispatchEvent(new Event('change'));
-    expect(ctx.preferences.get(DECK_PREFERENCE)).toBe(OWN.id);
+    const { instance, q } = setup({ extras: { userDecks, learning: learningWith() }, settings: { deck: OWN.id } });
     expect(instance.serialize()).toMatchObject({ deckId: OWN.id, mode: 'review', cards: [] });
+    // "Learn new cards" on the "nothing to review" panel keeps the deck.
     q('review-learn-new').click();
-    expect(instance.serialize().cards).toHaveLength(3);
-    reveal('fowl');
-    const saved = instance.serialize();
+    expect(instance.serialize()).toMatchObject({ deckId: OWN.id, mode: 'new' });
+    const own = setup({ extras: { userDecks, learning: learningWith() }, settings: { deck: OWN.id, mode: 'new' } });
+    expect(own.instance.serialize().cards).toHaveLength(3);
+    own.reveal('fowl');
+    const saved = own.instance.serialize();
 
     const gone = setup({ extras: { userDecks: decks(), learning: learningWith() } });
     gone.instance.restore(saved);
@@ -300,50 +297,67 @@ describe('Review view', () => {
     expect(gone.q('review-session').hidden).toBe(true);
     gone.q('review-missing-new').click();
     expect(gone.instance.serialize()).toMatchObject({ deckId: 'first-words' });
-    expect(gone.ctx.preferences.get(DECK_PREFERENCE)).toBe('first-words');
-    // A remembered deck that is gone falls back to First words.
-    const fallback = setup({ extras: { userDecks: decks() }, prefs: { [DECK_PREFERENCE]: OWN.id } });
-    expect(fallback.instance.serialize().deckId).toBe('first-words');
+    // A chosen (or remembered) deck that is gone falls back to First words.
+    expect(setup({ extras: { userDecks: decks() }, settings: { deck: OWN.id } }).instance.serialize().deckId).toBe('first-words');
+    expect(setup({ extras: { userDecks: decks() }, prefs: { [DECK_PREFERENCE]: OWN.id } }).instance.serialize().deckId).toBe('first-words');
   });
 
-  it('a link with ?deck= opens that deck once and remembers it', () => {
-    const { instance, ctx } = setup({ extras: { userDecks: decks(OWN), launch: { deck: OWN.id } } });
+  it('a link with ?deck= opens that deck once; later sessions use the start screen\'s deck', () => {
+    const { instance } = setup({ extras: { userDecks: decks(OWN), launch: { deck: OWN.id } }, settings: { deck: 'capitals' } });
     expect(instance.serialize().deckId).toBe(OWN.id);
-    expect(ctx.preferences.get(DECK_PREFERENCE)).toBe(OWN.id);
-    ctx.preferences.set(DECK_PREFERENCE, 'flags');
-    instance.newGame({ seed: 2 });
+    instance.newGame({ seed: 2, settings: { deck: 'flags' } });
     expect(instance.serialize().deckId).toBe('flags');
     const unknown = setup({ extras: { launch: { deck: 'user-missing-1' } } });
     expect(unknown.instance.serialize().deckId).toBe('first-words');
   });
 
-  it('direction and mode menus start a new session; direction is remembered', () => {
+  it('direction and cards come from the start screen; without a chosen direction a review falls back to both directions', () => {
     const records = (builtinItemIds('first-words') ?? []).slice(0, 2).map((id) => dueRecord('first-words:en', id, 'backward'));
-    const { q, instance, ctx } = setup({ extras: { learning: learningWith(records) } });
-    // Nothing due front → back, but two cards back → front: a new session reviews both directions.
+    const learning = learningWith(records);
+    const { instance } = setup({ extras: { learning } });
+    // No direction given (older hosts, tests): nothing due front → back, but two cards back → front.
     expect(instance.serialize()).toMatchObject({ direction: 'mixed', mode: 'review' });
     expect(instance.serialize().cards).toHaveLength(2);
-    expect(ctx.preferences.get(DIRECTION_PREFERENCE)).toBeUndefined();
-    const direction = q<HTMLSelectElement>('review-direction');
-    direction.value = 'forward';
-    direction.dispatchEvent(new Event('change'));
+    // A direction chosen on the start screen is kept as it is.
+    instance.newGame({ seed: 3, settings: { direction: 'forward', mode: 'review' } });
     expect(instance.serialize()).toMatchObject({ direction: 'forward', cards: [] });
-    direction.value = 'backward';
-    direction.dispatchEvent(new Event('change'));
-    expect(ctx.preferences.get(DIRECTION_PREFERENCE)).toBe('backward');
+    instance.newGame({ seed: 4, settings: { direction: 'backward', mode: 'review' } });
     expect(instance.serialize()).toMatchObject({ direction: 'backward', mode: 'review' });
     expect(instance.serialize().cards).toHaveLength(2);
-    const mode = q<HTMLSelectElement>('review-mode');
-    mode.value = 'practice';
-    mode.dispatchEvent(new Event('change'));
+    instance.newGame({ seed: 5, settings: { direction: 'backward', mode: 'practice' } });
     expect(instance.serialize()).toMatchObject({ mode: 'practice', session: '' });
+    instance.newGame({ seed: 6, settings: { direction: 'sideways', mode: 'later', deck: 7 } });
+    expect(instance.serialize()).toMatchObject({ deckId: 'first-words', mode: 'review' });
+  });
+
+  it('declares deck (with the device\'s own decks), direction and, with learning records, the cards', () => {
+    const ctx = createTestContext(game as GameModule<unknown>, 'en', undefined, { userDecks: decks(OWN), learning: learningWith() });
+    const specs = reviewSettings(ctx.settingsEnv);
+    expect(specs.map((spec) => (spec.kind === 'choice' ? [spec.id, spec.default] : spec.kind))).toEqual([
+      ['deck', 'first-words'],
+      ['direction', 'forward'],
+      ['mode', 'review']
+    ]);
+    const deck = specs[0]!;
+    expect(deck.kind === 'choice' && deck.values).toEqual(['first-words', 'flags', 'capitals', 'ai-basics', OWN.id]);
+    expect(deck.kind === 'choice' && deck.valueLabels).toMatchObject({ flags: 'Flags & countries', [OWN.id]: 'Animals (3 cards)' });
+    // Without learning records there is nothing to choose about the cards.
+    const plain = createTestContext(game as GameModule<unknown>, 'en');
+    expect(reviewSettings(plain.settingsEnv).map((spec) => (spec.kind === 'choice' ? spec.id : spec.kind))).toEqual(['deck', 'direction']);
+    // Defaults: a deck link first, else what older versions remembered.
+    plain.preferences.set(DECK_PREFERENCE, 'capitals');
+    plain.preferences.set(DIRECTION_PREFERENCE, 'backward');
+    expect(reviewSettings(plain.settingsEnv).map((spec) => spec.kind === 'choice' && spec.default)).toEqual(['capitals', 'backward']);
+    expect(reviewSettings({ ...plain.settingsEnv, launch: { deck: 'flags' } })[0]).toMatchObject({ default: 'flags' });
+    plain.preferences.set(DECK_PREFERENCE, 'user-gone-1');
+    expect(reviewSettings({ ...plain.settingsEnv, launch: { deck: 'user-gone-2' } })[0]).toMatchObject({ default: 'first-words' });
   });
 
   it('pause blocks input; reset restarts the same session without recording again', () => {
     const records = (builtinItemIds('flags') ?? []).slice(0, 2).map((id) => dueRecord('flags', id));
     const persisted: LearningRecord[][] = [];
     const learning = learningWith(records, persisted);
-    const { reveal, click, instance } = setup({ extras: { learning }, prefs: { [DECK_PREFERENCE]: 'flags' } });
+    const { reveal, click, instance } = setup({ extras: { learning }, settings: { deck: 'flags' } });
     const initial = instance.serialize();
     instance.pause();
     reveal();
@@ -362,7 +376,7 @@ describe('Review view', () => {
   it('works right-to-left in Arabic and reads aloud only on request', () => {
     const spoken: string[] = [];
     const speech: Speech = { canSpeak: (lang) => lang.startsWith('en'), speak: (text, lang) => void spoken.push(`${lang}:${text}`), onVoicesChanged: () => () => undefined };
-    const { root, q, reveal } = setup({ locale: 'ar', speech, extras: { userDecks: decks(OWN) }, prefs: { [DECK_PREFERENCE]: OWN.id } });
+    const { root, q, reveal } = setup({ locale: 'ar', speech, extras: { userDecks: decks(OWN) }, settings: { deck: OWN.id } });
     expect(root.querySelector('.wp-review')!.getAttribute('dir')).toBe('rtl');
     expect(q('review-reveal').textContent).toBe('إظهار الإجابة');
     expect(q('review-speak').hidden).toBe(true); // German prompt, no German voice

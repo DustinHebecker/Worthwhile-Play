@@ -151,3 +151,19 @@ describe('Stay on Task view', () => {
     expect(g.el('dc-intro')?.hidden).toBe(false);
   });
 });
+
+describe('Stay on Task view: host start screen (ADR 0017)', () => {
+  it('begins at once after the host\'s Start (begin), without the intro', () => {
+    const ctx = createTestContext(game as GameModule<unknown>, 'en');
+    const instance = game.create({ ...ctx.context, reducedMotion: true });
+    instances.push(instance);
+    instance.newGame({ seed: 3, begin: true });
+    const el = (id: string) => ctx.context.root.querySelector<HTMLElement>(`[data-testid="${id}"]`) as HTMLElement;
+    expect(instance.serialize()).toMatchObject({ phase: 'running', index: 0 });
+    expect(el('dc-intro').hidden).toBe(true);
+    expect(el('dc-answer-even').hidden).toBe(false);
+    // The intro's note on the extras stays visible during the session.
+    expect(el('dc-reminder').textContent).toBe(ctx.context.t('intro.distractors'));
+    expect(el('dc-reminder').closest<HTMLElement>('[hidden]')).toBeNull();
+  });
+});

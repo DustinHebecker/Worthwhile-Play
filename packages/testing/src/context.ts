@@ -1,4 +1,4 @@
-import type { GameContext, GameLibrary, GameModule, GameResult } from '@wp/game-core';
+import type { GameContext, GameLibrary, GameModule, GameResult, SettingsEnv } from '@wp/game-core';
 import { COMMON_MESSAGES, createTranslator, type SupportedLocale } from '@wp/localization';
 import { createGameLibrary, createMemoryLibraryStore, type LibraryStore } from '@wp/persistence';
 
@@ -13,6 +13,8 @@ export interface TestContext {
   preferences: Map<string, unknown>;
   /** `context.library`: in memory, with the app's bounds, unless the test passed its own (or `library: undefined`). */
   library: GameLibrary | undefined;
+  /** What the host passes to `GameModule.settings(env)` (ADR 0017) for this context. */
+  settingsEnv: SettingsEnv;
 }
 
 /**
@@ -52,21 +54,31 @@ export function createTestContext(
   const { library: requested, ...services } = extras;
   // A fresh in-memory library per context by default; `library: undefined` leaves it out.
   const library = 'library' in extras ? requested : createTestLibrary(module.metadata.id).library;
+  const context: GameContext = {
+    root,
+    t,
+    reducedMotion: true,
+    requestSave: () => void saves++,
+    finished: (result) => void results.push(result),
+    setDifficulty: (difficulty) => void difficulties.push(difficulty),
+    preferences: {
+      // JSON round trip, like the app's storage, so games cannot rely on object identity.
+      get: (key) => (preferences.has(key) ? (JSON.parse(JSON.stringify(preferences.get(key))) as unknown) : undefined),
+      set: (key, value) => void (value === undefined ? preferences.delete(key) : preferences.set(key, JSON.parse(JSON.stringify(value)) as unknown))
+    },
+    ...services,
+    ...(library ? { library } : {})
+  };
+  const { contentLanguages, userDecks, learning, launch } = services;
   return {
-    context: {
-      root,
+    context,
+    settingsEnv: {
       t,
-      reducedMotion: true,
-      requestSave: () => void saves++,
-      finished: (result) => void results.push(result),
-      setDifficulty: (difficulty) => void difficulties.push(difficulty),
-      preferences: {
-        // JSON round trip, like the app's storage, so games cannot rely on object identity.
-        get: (key) => (preferences.has(key) ? (JSON.parse(JSON.stringify(preferences.get(key))) as unknown) : undefined),
-        set: (key, value) => void (value === undefined ? preferences.delete(key) : preferences.set(key, JSON.parse(JSON.stringify(value)) as unknown))
-      },
-      ...services,
-      ...(library ? { library } : {})
+      preferences: context.preferences!,
+      ...(contentLanguages ? { contentLanguages } : {}),
+      ...(userDecks ? { userDecks } : {}),
+      ...(learning ? { learning } : {}),
+      ...(launch ? { launch } : {})
     },
     saveRequests: () => saves,
     results,

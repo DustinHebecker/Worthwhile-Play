@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { readLibrary, readSave } from '../packages/testing/src/e2e';
+import { readLibrary, readSave, startGame } from '../packages/testing/src/e2e';
 
 /**
  * Puts a row into the app's library store (ADR 0012) as a game would through `GameContext.library`. Only call it
@@ -28,8 +28,7 @@ async function seedLibraryItem(page: Page, gameId: string, id: string, name: str
 }
 
 test('own creations: kept by "Delete all saved games", removed by "Delete my own content" after confirmation', async ({ page }) => {
-  await page.goto('/games/memory');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'memory');
   await expect.poll(() => readSave(page, 'memory')).toBeTruthy();
 
   await page.goto('/settings');

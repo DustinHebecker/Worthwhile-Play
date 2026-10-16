@@ -1,12 +1,8 @@
 import type { GameContext, GameInstance, GameResult, NewGameOptions } from '@wp/game-core';
-import { isOneOf, normalizeSeed } from '@wp/game-core';
 import { announce, clear, h } from '@wp/ui';
 import { computerReply, evaluatePosition, explainMove, playTurn, puzzleHint, puzzleTurn, suggestMove, type Evaluation, type Reason } from './ai';
-import { GLYPH, OUTLINE, createBoard, createPromotion, figurine, renderMoveList } from './board';
+import { createBoard, createPromotion, figurine, renderMoveList } from './board';
 import {
-  COLOR_CHOICES,
-  DEFAULT_DIFFICULTY,
-  DIFFICULTIES,
   FLAG_CASTLE_K,
   FLAG_CASTLE_Q,
   FLAG_EP,
@@ -24,10 +20,6 @@ import {
   movePromo,
   moveTo,
   moveToUci,
-  MATE_LENGTHS,
-  MODES,
-  OPPONENTS,
-  nextSeed,
   parseFen,
   puzzleOf,
   puzzlesFor,
@@ -45,13 +37,13 @@ import {
   variationView,
   type ChessState,
   type Color,
-  type ColorChoice,
   type GameOptions,
   type Outcome,
   type Position,
   type Replay,
   type Variation
 } from './rules';
+import { gameOptions } from './settings';
 import './styles.css';
 
 export { figurine } from './board';
@@ -59,15 +51,6 @@ export { figurine } from './board';
 /** Short pause before the computer's reply becomes visible (skipped with reduced motion). */
 export const COMPUTER_REVEAL_MS = 450;
 
-/** What the menu offers: the two ways to play a game, and the two puzzle modes. */
-export const CHOICES = ['computer', 'human', 'best', 'mate'] as const;
-export type Choice = (typeof CHOICES)[number];
-/** Small symbols next to the menu labels (decorative; the text carries the meaning). */
-const CHOICE_ICON: Record<Choice, string> = { computer: '⚙︎', human: '♔♚', best: '★', mate: '#' };
-/** Colour choices: outline king, solid king, a die for "random". */
-const COLOR_ICON: Record<ColorChoice, string> = { w: OUTLINE[6], b: GLYPH[6], random: '⚄︎' };
-/** The menu entry describing a game. */
-export const choiceOf = (state: ChessState): Choice => (state.mode === 'play' ? state.opponent : state.mode);
 /** Unique radio-group names when several boards share one document. */
 let instanceCount = 0;
 
@@ -104,22 +87,9 @@ export function formatEvaluation(evaluation: Pick<Evaluation, 'white' | 'mate'>)
 
 export function createChess(context: GameContext): GameInstance<ChessState> {
   const { t, root } = context;
-  // Menu choices remembered on this device (opponent, colour, mode, mate length): after a reload the next
-  // "New game" starts in the same kind of game. Read defensively; anything unexpected is ignored.
-  const remembered = ((): Partial<GameOptions> => {
-    const raw = context.preferences?.get('menu');
-    if (typeof raw !== 'object' || raw === null) return {};
-    const r = raw as Record<string, unknown>;
-    return {
-      ...(isOneOf(r.opponent, OPPONENTS) ? { opponent: r.opponent } : {}),
-      ...(isOneOf(r.humanColor, COLOR_CHOICES) ? { humanColor: r.humanColor } : {}),
-      ...(isOneOf(r.mode, MODES) ? { mode: r.mode } : {}),
-      ...(isOneOf(r.mateN, MATE_LENGTHS) ? { mateN: r.mateN } : {})
-    };
-  })();
-  /** The person's colour choice for games against the computer (kept while puzzles or two-player games run). */
-  let colorPref: ColorChoice = remembered.humanColor ?? 'w';
-  let state: ChessState = startGame({ seed: 0, difficulty: DEFAULT_DIFFICULTY, opponent: 'computer', humanColor: 'w', puzzle: 0, ...remembered });
+  // What to play (game against the computer or a person, puzzles; colour, strength, mate length) is chosen on the
+  // host's start screen (ADR 0017, settings.ts).
+  let state: ChessState = startGame(gameOptions({ seed: 0 }));
   /** Number of plies drawn; lags behind `state.moves` only while the computer's reply is revealed. */
   let shown = 0;
   /** The person's move while the computer is still to answer (never saved; see `flushPending`). */
@@ -134,7 +104,6 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
   /** Explanation panel: "Why?" for the computer's move, or why a puzzle attempt fails. */
   let note: { title: string; reasons: Reason[] } | null = null;
   let confirmResign = false;
-  let confirmStart = false;
   let view: Replay = replay(state.start, state.moves)!;
 
   /* Variation board (transient UI; the line itself lives in `state.variation`). */
@@ -204,81 +173,7 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
   const explanation = h('div', { class: 'ch-explain', 'data-testid': 'explanation', 'aria-live': 'polite', hidden: true });
   const moveList = h('ol', { class: 'ch-moves', 'data-testid': 'move-list', 'aria-label': t('common.moves') });
 
-  /* What to play: an always-visible menu above the board. Choosing an option only changes the
-     selection (radio semantics: arrow keys move the choice); "Start" begins the new game and asks
-     first when an unfinished game with own moves would be replaced. */
   const groupName = `ch-${++instanceCount}`;
-  const radioGroup = <V extends string>(name: string, legend: string, values: readonly V[], label: (value: V) => string, icon?: (value: V) => string) => {
-    const inputs = values.map((value) =>
-      h('input', { type: 'radio', class: 'ch-seg-input', name: `${groupName}-${name}`, value, 'data-testid': `${name}-${value}`, onchange: () => onMenuChange() })
-    );
-    const fieldset = h(
-      'fieldset',
-      { class: `ch-seg ch-seg-${name}`, 'data-testid': `menu-${name}` },
-      h('legend', {}, legend),
-      h(
-        'div',
-        { class: 'ch-seg-options' },
-        ...values.map((value, i) =>
-          h(
-            'label',
-            { class: 'ch-seg-option', 'data-value': value },
-            inputs[i]!,
-            h(
-              'span',
-              { class: 'ch-seg-body' },
-              icon && h('span', { class: 'ch-seg-icon', 'aria-hidden': 'true' }, icon(value)),
-              h('span', { class: 'ch-seg-text' }, label(value))
-            )
-          )
-        )
-      )
-    );
-    return {
-      fieldset,
-      inputs,
-      value: (): V | undefined => values[inputs.findIndex((input) => input.checked)],
-      set: (value: V) => inputs.forEach((input, i) => (input.checked = values[i] === value)),
-      focus: () => (inputs.find((input) => input.checked) ?? inputs[0])!.focus()
-    };
-  };
-  const modeGroup = radioGroup('mode', t('menu.legend'), CHOICES, (v) => t(v === 'best' || v === 'mate' ? `mode.${v}` : `menu.${v}`), (v) => CHOICE_ICON[v]);
-  const strengthGroup = radioGroup('strength', t('strength'), DIFFICULTIES, (v) => t(`difficulty.${v}`));
-  const colorGroup = radioGroup('color', t('yourColor'), COLOR_CHOICES, (v) => t(`color.${v}`), (v) => COLOR_ICON[v]);
-  const mateGroup = radioGroup('mate', t('mateN'), MATE_LENGTHS.map(String), (v) => v);
-  // The active game's mode carries a visible text badge (not only a colour).
-  const currentBadges = modeGroup.inputs.map((input) => {
-    const badge = h('span', { class: 'ch-seg-current', 'data-testid': `current-${input.value}` }, t('menu.current'));
-    input.parentElement!.append(badge);
-    return badge;
-  });
-  const startButton = h('button', { type: 'button', class: 'primary ch-start', 'data-testid': 'start', onclick: () => onStart() }, t('start'));
-  const startYes = button('start-yes', t('menu.confirm.yes'), () => {
-    confirmStart = false;
-    startChosen();
-  });
-  const startNo = button('start-no', t('menu.confirm.no'), () => closeStartConfirm());
-  const startConfirm = h(
-    'div',
-    { class: 'ch-confirm', role: 'group', 'aria-label': t('menu.confirm'), 'data-testid': 'start-confirm', hidden: true },
-    h('span', {}, t('menu.confirm')),
-    startYes,
-    startNo
-  );
-  startConfirm.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      closeStartConfirm();
-    }
-  });
-  const menu = h(
-    'section',
-    { class: 'ch-menu', 'aria-label': t('menu.legend'), 'data-testid': 'menu' },
-    modeGroup.fieldset,
-    h('div', { class: 'ch-menu-options' }, strengthGroup.fieldset, colorGroup.fieldset, mateGroup.fieldset, startButton),
-    startConfirm
-  );
-
   const modeLine = h('p', { class: 'ch-mode', 'data-testid': 'mode' });
 
   /* ---------- Variation board DOM ---------- */
@@ -362,7 +257,6 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
   const container = h(
     'div',
     { class: `wp-chess${context.reducedMotion ? ' ch-reduced' : ''}`, dir: t.direction },
-    menu,
     modeLine,
     h('div', { class: 'ch-stage' }, main, variationSection),
     live
@@ -518,8 +412,6 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
     variationButton.hidden = state.variation !== undefined;
     resignConfirm.hidden = !confirmResign || !playing;
     promoDialog.hidden = promotion === null;
-    startConfirm.hidden = !confirmStart;
-    startButton.hidden = confirmStart;
 
     if (hint || note) {
       explanation.hidden = false;
@@ -588,84 +480,6 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
 
   const sanOf = (move: number): string => toSan(view.pos, move);
 
-  /** Shows only the options that belong to the chosen menu entry. */
-  function syncMenuFields(): void {
-    const choice = modeGroup.value() ?? choiceOf(state);
-    strengthGroup.fieldset.hidden = choice !== 'computer';
-    colorGroup.fieldset.hidden = choice !== 'computer';
-    mateGroup.fieldset.hidden = choice !== 'mate';
-    const active = choiceOf(state);
-    modeGroup.inputs.forEach((input, i) => {
-      input.parentElement!.toggleAttribute('data-active', input.value === active);
-      currentBadges[i]!.hidden = input.value !== active;
-    });
-  }
-
-  /** Puts the menu back to the running game's settings. */
-  function syncMenu(): void {
-    modeGroup.set(choiceOf(state));
-    strengthGroup.set(state.difficulty);
-    // Puzzles and two-player games keep the person's own colour choice for games against the computer.
-    if (state.mode === 'play' && state.opponent === 'computer') colorPref = colorChoiceOf(state);
-    colorGroup.set(colorPref);
-    mateGroup.set(String(state.mateN));
-    confirmStart = false;
-    syncMenuFields();
-  }
-
-  function onMenuChange(): void {
-    confirmStart = false;
-    syncMenuFields();
-    render();
-  }
-
-  /** Whether starting now would throw away moves the person made in an unfinished game. */
-  function hasProgress(): boolean {
-    const game = replay(state.start, state.moves);
-    if (!game || isOver(stateOutcome(state, game))) return false;
-    const twoPlayers = state.mode === 'play' && state.opponent === 'human';
-    const first = colorOfSide(parseFen(state.start)!.side);
-    return state.moves.some((_, i) => twoPlayers || (i % 2 === 0 ? first : first === 'w' ? 'b' : 'w') === state.humanColor);
-  }
-
-  function onStart(): void {
-    // Complete a move the computer is still answering, so the check below sees it.
-    if (pending !== null) flushPending();
-    if (timer !== undefined) showAll();
-    if (hasProgress()) {
-      confirmStart = true;
-      render();
-      startYes.focus();
-      announce(live, t('menu.confirm'));
-      return;
-    }
-    startChosen();
-  }
-
-  function closeStartConfirm(): void {
-    confirmStart = false;
-    render();
-    startButton.focus();
-  }
-
-  function startChosen(): void {
-    const choice = modeGroup.value() ?? choiceOf(state);
-    const mode = choice === 'computer' || choice === 'human' ? 'play' : choice;
-    const opponent = choice === 'human' ? 'human' : choice === 'computer' ? 'computer' : state.opponent;
-    if (choice === 'computer') colorPref = colorGroup.value() ?? colorPref;
-    const difficulty = choice === 'computer' ? (strengthGroup.value() ?? state.difficulty) : state.difficulty;
-    const mateN = mode === 'mate' ? Number(mateGroup.value() ?? state.mateN) : state.mateN;
-    // A fresh seed for every start from the menu (so "random" can draw a different colour).
-    const seed = nextSeed(state.seed);
-    // Same puzzle category: continue with the next puzzle; otherwise let the seed pick one.
-    const puzzle = mode === state.mode && mateN === state.mateN ? state.puzzle + 1 : seed;
-    startFresh({ seed, opponent, humanColor: colorPref, difficulty, mode, mateN, puzzle });
-    context.preferences?.set('menu', { opponent, humanColor: colorPref, mode, mateN });
-    // The strength chosen here is the game's difficulty now: keep the host's select and next round in line.
-    if (choice === 'computer') context.setDifficulty?.(difficulty);
-    squares[cursor]?.focus();
-  }
-
   /* ---------- Transitions ---------- */
   const cancelTimer = () => {
     if (timer !== undefined) clearTimeout(timer);
@@ -697,7 +511,6 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
     hint = null;
     note = null;
     confirmResign = false;
-    confirmStart = false;
   };
 
   const resetVariationTransient = () => {
@@ -1036,7 +849,6 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
     orientation = next.opponent === 'computer' ? next.humanColor : 'w';
     const intro = next.colorRandom ? `${t('newRound')} ${t('color.drawn', { color: t(`color.${next.humanColor}`) })}` : t('newRound');
     commit(next, `${intro} ${describeMoves(0, next.moves, next.start)}`.trim());
-    syncMenu();
     focusCursor();
   }
 
@@ -1065,7 +877,6 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
       const pos = variationView(state.variation).pos;
       varCursor = kingSquare(pos, pos.side);
     }
-    syncMenu();
     focusCursor();
   };
 
@@ -1074,10 +885,8 @@ export function createChess(context: GameContext): GameInstance<ChessState> {
   /* ---------- Instance ---------- */
   return {
     newGame(options: NewGameOptions) {
-      const difficulty = isOneOf(options.difficulty, DIFFICULTIES) ? options.difficulty : DEFAULT_DIFFICULTY;
-      // Opponent, colour and mode are in-game preferences; in the puzzle modes the seed picks the puzzle.
-      const seed = normalizeSeed(options.seed);
-      load(startGame({ seed, difficulty, opponent: state.opponent, humanColor: colorPref, mode: state.mode, mateN: state.mateN, puzzle: seed }));
+      // Game, colour, strength and mate length come from the start screen; in the puzzle modes the seed picks the puzzle.
+      load(startGame(gameOptions(options)));
     },
     restore(saved: ChessState) {
       load(cloneState(saved));

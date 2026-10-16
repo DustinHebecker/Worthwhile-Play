@@ -4,7 +4,7 @@ import { clear, h } from '@wp/ui';
 import type { Page } from '../app';
 import { SESSION_NOTE_KEY } from '../config';
 import { loadLearningRecords, removeUserDeckRecords } from '../lib/learning';
-import { clearPreferences, createPreferences } from '../lib/preferences';
+import { clearPreferences } from '../lib/preferences';
 import { findGame } from '../registry';
 import { gameTranslator } from './shared';
 
@@ -120,8 +120,6 @@ export const renderSettings: Page = (main, app) => {
     // Learning records of imported decks would only be orphans now.
     await removeUserDeckRecords(await app.learning).catch(() => undefined);
     await refreshLearning();
-    // A remembered "own deck" choice would only fall back to picture pairs; forget it with the decks.
-    createPreferences(storage, 'memory').set('cards', undefined);
     await refreshDecks();
     app.announce(t('settings.decksDeleted'));
   });

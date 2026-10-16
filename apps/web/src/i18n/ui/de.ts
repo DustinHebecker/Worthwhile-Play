@@ -54,6 +54,8 @@ const de: UiCatalogue = {
   'game.saveUnavailable': 'In diesem Browsermodus kann kein Fortschritt gespeichert werden; er geht beim Schließen der Seite verloren.',
   'game.finished': 'Beendet.',
   'game.anotherRound': 'Noch eine Runde',
+  'game.changeSettings': 'Einstellungen ändern',
+  'game.started': 'Neues Spiel gestartet.',
   'game.sessionNote': 'Du spielst seit {minutes} Minuten.',
   'game.dismiss': 'Ausblenden',
   'game.seed': 'Spielnummer {seed}',

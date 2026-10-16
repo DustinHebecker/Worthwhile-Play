@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, readSave } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, readSave, startGame, newGame } from '../../packages/testing/src/e2e';
 
 interface SavedSearch {
   seed: number;
@@ -34,7 +34,8 @@ const targetIndex = (page: Page) =>
 test('visual-search: a round resumes on the same board with the identical layout after a reload', async ({ page }) => {
   let layout: string[] = [];
   await expectResumeAfterReload(page, 'visual-search', async (p) => {
-    await p.getByTestId('vs-start').click();
+    // Start on the host's start screen shows the first board at once (no second "Start").
+    await expect(p.getByTestId('vs-intro')).toBeHidden();
     await expect(p.getByTestId('vs-board')).toHaveAttribute('data-trial', '0');
     await p.getByTestId('vs-item-0').click();
     await expect(p.getByTestId('vs-feedback')).not.toBeEmpty();
@@ -54,11 +55,7 @@ test('visual-search: a round resumes on the same board with the identical layout
 });
 
 test('visual-search: a board can be solved with the keyboard only', async ({ page }) => {
-  await page.goto('/games/visual-search');
-  await page.getByTestId('difficulty').selectOption('conjunction');
-  await page.getByTestId('new-game').click();
-  await page.getByTestId('vs-start').focus();
-  await page.keyboard.press('Enter');
+  await startGame(page, 'visual-search', { difficulty: 'conjunction' });
   const first = page.getByTestId('vs-item-0');
   await expect(first).toBeFocused();
 
@@ -86,9 +83,7 @@ test('visual-search: a board can be solved with the keyboard only', async ({ pag
 test('visual-search: an expert round (T among L shapes) resumes on the same board after a reload', async ({ page }) => {
   let layout: string[] = [];
   await expectResumeAfterReload(page, 'visual-search', async (p) => {
-    await p.getByTestId('difficulty').selectOption('expert');
-    await p.getByTestId('new-game').click();
-    await p.getByTestId('vs-start').click();
+    await newGame(p, { difficulty: 'expert' });
     await expect(p.getByTestId('vs-board')).toHaveAttribute('data-trial', '0');
     await expect(p.getByTestId('vs-find-sample')).toHaveAttribute('data-tilt', 'any');
     await p.getByTestId('vs-not-there').click();
@@ -111,10 +106,7 @@ test('visual-search: the 6 × 6 expert board fits a 360 px phone in RTL with tar
   await page.goto('/settings');
   await page.getByTestId('ui-language').selectOption('ar');
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
-  await page.goto('/games/visual-search');
-  await page.getByTestId('difficulty').selectOption('expert');
-  await page.getByTestId('new-game').click();
-  await page.getByTestId('vs-start').click();
+  await startGame(page, 'visual-search', { difficulty: 'expert' });
   const board = page.getByTestId('vs-board');
   await expect(board).toBeVisible();
   await expect(board.locator('.wp-vs__cell')).toHaveCount(36);

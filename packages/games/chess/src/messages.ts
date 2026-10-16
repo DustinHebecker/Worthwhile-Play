@@ -9,6 +9,14 @@ import type { GameMessages } from '@wp/game-core';
  * translation. Generic words (undo, hint, moves, opponent…) come from `common.*`.
  */
 const en = {
+  'game.computer': 'Against the computer',
+  'game.human': 'Two players',
+  'game.best': 'Find the best move',
+  'game.mate': 'Mate in N',
+  'mate.1': '1',
+  'mate.2': '2',
+  'mate.3': '3',
+  'mate.4': '4',
   title: 'Chess',
   tagline: 'The classic game of planning and tactics — against a thoughtful computer or a friend.',
   rules:
@@ -116,10 +124,6 @@ const en = {
   'menu.legend': 'What would you like to play?',
   'menu.computer': 'Against the computer',
   'menu.human': 'Two players',
-  'menu.current': 'current',
-  'menu.confirm': 'The current game is not finished. Start a new one anyway?',
-  'menu.confirm.yes': 'Yes, start a new one',
-  'menu.confirm.no': 'Keep playing',
   'color.random': 'Random',
   'color.drawn': 'You play {color} (drawn at random).',
   'mode.computer.random': 'You play {color} (drawn at random) against the computer ({level}).',
@@ -148,6 +152,14 @@ const en = {
 type Catalogue = Record<keyof typeof en, string>;
 
 const de: Catalogue = {
+  'game.computer': 'Gegen den Computer',
+  'game.human': 'Zu zweit',
+  'game.best': 'Finde den besten Zug',
+  'game.mate': 'Matt in N',
+  'mate.1': '1',
+  'mate.2': '2',
+  'mate.3': '3',
+  'mate.4': '4',
   title: 'Schach',
   tagline: 'Das klassische Spiel aus Planung und Taktik – gegen einen bedachten Computer oder gegen jemanden neben dir.',
   rules:
@@ -255,10 +267,6 @@ const de: Catalogue = {
   'menu.legend': 'Was möchtest du spielen?',
   'menu.computer': 'Gegen den Computer',
   'menu.human': 'Zu zweit',
-  'menu.current': 'aktuell',
-  'menu.confirm': 'Die laufende Partie ist noch nicht beendet. Trotzdem eine neue beginnen?',
-  'menu.confirm.yes': 'Ja, neu beginnen',
-  'menu.confirm.no': 'Weiterspielen',
   'color.random': 'Zufällig',
   'color.drawn': 'Du spielst {color} (ausgelost).',
   'mode.computer.random': 'Du spielst {color} (ausgelost) gegen den Computer ({level}).',
@@ -284,6 +292,14 @@ const de: Catalogue = {
 };
 
 const nl: Catalogue = {
+  'game.computer': 'Tegen de computer',
+  'game.human': 'Met z’n tweeën',
+  'game.best': 'Vind de beste zet',
+  'game.mate': 'Mat in N',
+  'mate.1': '1',
+  'mate.2': '2',
+  'mate.3': '3',
+  'mate.4': '4',
   title: 'Schaken',
   tagline: 'Het klassieke spel van planning en tactiek – tegen een bedachtzame computer of tegen iemand naast je.',
   rules:
@@ -391,10 +407,6 @@ const nl: Catalogue = {
   'menu.legend': 'Wat wil je spelen?',
   'menu.computer': 'Tegen de computer',
   'menu.human': 'Met z’n tweeën',
-  'menu.current': 'huidig',
-  'menu.confirm': 'De huidige partij is nog niet afgelopen. Toch een nieuwe beginnen?',
-  'menu.confirm.yes': 'Ja, nieuwe beginnen',
-  'menu.confirm.no': 'Verder spelen',
   'color.random': 'Willekeurig',
   'color.drawn': 'Je speelt {color} (geloot).',
   'mode.computer.random': 'Je speelt {color} (geloot) tegen de computer ({level}).',
@@ -420,6 +432,14 @@ const nl: Catalogue = {
 };
 
 const es: Catalogue = {
+  'game.computer': 'Contra el ordenador',
+  'game.human': 'Dos jugadores',
+  'game.best': 'Encuentra la mejor jugada',
+  'game.mate': 'Mate en N',
+  'mate.1': '1',
+  'mate.2': '2',
+  'mate.3': '3',
+  'mate.4': '4',
   title: 'Ajedrez',
   tagline: 'El clásico juego de planificación y táctica, contra un ordenador reflexivo o contra alguien a tu lado.',
   rules:
@@ -527,10 +547,6 @@ const es: Catalogue = {
   'menu.legend': '¿Qué quieres jugar?',
   'menu.computer': 'Contra el ordenador',
   'menu.human': 'Dos jugadores',
-  'menu.current': 'actual',
-  'menu.confirm': 'La partida actual no ha terminado. ¿Empezar una nueva de todos modos?',
-  'menu.confirm.yes': 'Sí, empezar otra',
-  'menu.confirm.no': 'Seguir jugando',
   'color.random': 'Al azar',
   'color.drawn': 'Juegas con {color} (sorteado).',
   'mode.computer.random': 'Juegas con {color} (sorteado) contra el ordenador ({level}).',
@@ -556,6 +572,14 @@ const es: Catalogue = {
 };
 
 const fr: Catalogue = {
+  'game.computer': 'Contre l’ordinateur',
+  'game.human': 'À deux',
+  'game.best': 'Trouve le meilleur coup',
+  'game.mate': 'Mat en N',
+  'mate.1': '1',
+  'mate.2': '2',
+  'mate.3': '3',
+  'mate.4': '4',
   title: 'Échecs',
   tagline: 'Le jeu classique de planification et de tactique, contre un ordinateur réfléchi ou une personne à tes côtés.',
   rules:
@@ -663,10 +687,6 @@ const fr: Catalogue = {
   'menu.legend': 'À quoi veux-tu jouer ?',
   'menu.computer': 'Contre l’ordinateur',
   'menu.human': 'À deux',
-  'menu.current': 'en cours',
-  'menu.confirm': 'La partie en cours n’est pas terminée. En commencer une nouvelle quand même ?',
-  'menu.confirm.yes': 'Oui, recommencer',
-  'menu.confirm.no': 'Continuer la partie',
   'color.random': 'Au hasard',
   'color.drawn': 'Tu joues les {color} (tirés au sort).',
   'mode.computer.random': 'Tu joues les {color} (tirés au sort) contre l’ordinateur ({level}).',
@@ -692,6 +712,14 @@ const fr: Catalogue = {
 };
 
 const ru: Catalogue = {
+  'game.computer': 'Против компьютера',
+  'game.human': 'Вдвоём',
+  'game.best': 'Найдите лучший ход',
+  'game.mate': 'Мат в N ходов',
+  'mate.1': '1',
+  'mate.2': '2',
+  'mate.3': '3',
+  'mate.4': '4',
   title: 'Шахматы',
   tagline: 'Классическая игра планирования и тактики — против вдумчивого компьютера или человека рядом.',
   rules:
@@ -799,10 +827,6 @@ const ru: Catalogue = {
   'menu.legend': 'Во что хотите сыграть?',
   'menu.computer': 'Против компьютера',
   'menu.human': 'Вдвоём',
-  'menu.current': 'текущий',
-  'menu.confirm': 'Текущая партия не окончена. Всё равно начать новую?',
-  'menu.confirm.yes': 'Да, начать новую',
-  'menu.confirm.no': 'Продолжить партию',
   'color.random': 'Случайно',
   'color.drawn': 'Ваш цвет: {color} (выбран жребием).',
   'mode.computer.random': 'Ваш цвет: {color} (выбран жребием); соперник — компьютер ({level}).',
@@ -828,6 +852,14 @@ const ru: Catalogue = {
 };
 
 const zhHans: Catalogue = {
+  'game.computer': '对战电脑',
+  'game.human': '双人对弈',
+  'game.best': '找出最佳着法',
+  'game.mate': 'N 步杀',
+  'mate.1': '1',
+  'mate.2': '2',
+  'mate.3': '3',
+  'mate.4': '4',
   title: '国际象棋',
   tagline: '经典的计划与战术游戏——与深思熟虑的电脑或身边的人对弈。',
   rules:
@@ -935,10 +967,6 @@ const zhHans: Catalogue = {
   'menu.legend': '想玩什么？',
   'menu.computer': '对战电脑',
   'menu.human': '双人对弈',
-  'menu.current': '当前',
-  'menu.confirm': '当前对局尚未结束。仍要开始新的一局吗？',
-  'menu.confirm.yes': '是，开始新局',
-  'menu.confirm.no': '继续下棋',
   'color.random': '随机',
   'color.drawn': '你执{color}（随机抽取）。',
   'mode.computer.random': '你执{color}（随机抽取），对手是电脑（{level}）。',
@@ -964,6 +992,14 @@ const zhHans: Catalogue = {
 };
 
 const ko: Catalogue = {
+  'game.computer': '컴퓨터와 대국',
+  'game.human': '두 사람이 대국',
+  'game.best': '최선의 수 찾기',
+  'game.mate': 'N수 메이트',
+  'mate.1': '1',
+  'mate.2': '2',
+  'mate.3': '3',
+  'mate.4': '4',
   title: '체스',
   tagline: '계획과 전술의 고전 게임 — 신중한 컴퓨터나 옆에 있는 사람과 둡니다.',
   rules:
@@ -1071,10 +1107,6 @@ const ko: Catalogue = {
   'menu.legend': '무엇을 하시겠어요?',
   'menu.computer': '컴퓨터와 대국',
   'menu.human': '두 사람이 대국',
-  'menu.current': '현재',
-  'menu.confirm': '진행 중인 대국이 아직 끝나지 않았습니다. 그래도 새로 시작할까요?',
-  'menu.confirm.yes': '네, 새로 시작',
-  'menu.confirm.no': '계속 두기',
   'color.random': '무작위',
   'color.drawn': '{color}을(를) 둡니다 (무작위 추첨).',
   'mode.computer.random': '컴퓨터를 상대로 {color}을(를) 둡니다 (무작위 추첨, {level}).',
@@ -1100,6 +1132,14 @@ const ko: Catalogue = {
 };
 
 const ja: Catalogue = {
+  'game.computer': 'コンピューターと対局',
+  'game.human': '二人で対局',
+  'game.best': '最善手を探す',
+  'game.mate': 'N手メイト',
+  'mate.1': '1',
+  'mate.2': '2',
+  'mate.3': '3',
+  'mate.4': '4',
   title: 'チェス',
   tagline: '計画と戦術の古典ゲーム。思慮深いコンピューターや、となりの人と対局できます。',
   rules:
@@ -1207,10 +1247,6 @@ const ja: Catalogue = {
   'menu.legend': '何をプレイしますか？',
   'menu.computer': 'コンピューターと対局',
   'menu.human': '二人で対局',
-  'menu.current': '現在',
-  'menu.confirm': '対局はまだ終わっていません。それでも新しく始めますか？',
-  'menu.confirm.yes': 'はい、新しく始める',
-  'menu.confirm.no': '対局を続ける',
   'color.random': 'ランダム',
   'color.drawn': 'あなたは{color}です（抽選）。',
   'mode.computer.random': 'あなたは{color}（抽選）でコンピューター（{level}）と対局中。',
@@ -1236,6 +1272,14 @@ const ja: Catalogue = {
 };
 
 const ar: Catalogue = {
+  'game.computer': 'ضد الحاسوب',
+  'game.human': 'لاعبان',
+  'game.best': 'اعثر على أفضل نقلة',
+  'game.mate': 'مات في N',
+  'mate.1': '1',
+  'mate.2': '2',
+  'mate.3': '3',
+  'mate.4': '4',
   title: 'الشطرنج',
   tagline: 'اللعبة الكلاسيكية للتخطيط والتكتيك — أمام حاسوب متأنٍّ أو أمام شخص بجانبك.',
   rules:
@@ -1343,10 +1387,6 @@ const ar: Catalogue = {
   'menu.legend': 'ماذا تريد أن تلعب؟',
   'menu.computer': 'ضد الحاسوب',
   'menu.human': 'لاعبان',
-  'menu.current': 'الحالي',
-  'menu.confirm': 'المباراة الحالية لم تنتهِ بعد. هل تريد بدء مباراة جديدة رغم ذلك؟',
-  'menu.confirm.yes': 'نعم، ابدأ من جديد',
-  'menu.confirm.no': 'تابع اللعب',
   'color.random': 'عشوائي',
   'color.drawn': 'لونك: {color} (بالقرعة).',
   'mode.computer.random': 'لونك: {color} (بالقرعة)، والخصم هو الحاسوب ({level}).',
@@ -1372,6 +1412,14 @@ const ar: Catalogue = {
 };
 
 const pt: Catalogue = {
+  'game.computer': 'Contra o computador',
+  'game.human': 'Dois jogadores',
+  'game.best': 'Encontre o melhor lance',
+  'game.mate': 'Mate em N',
+  'mate.1': '1',
+  'mate.2': '2',
+  'mate.3': '3',
+  'mate.4': '4',
   title: 'Xadrez',
   tagline: 'O clássico jogo de planejamento e tática — contra um computador ponderado ou alguém ao seu lado.',
   rules:
@@ -1479,10 +1527,6 @@ const pt: Catalogue = {
   'menu.legend': 'O que você quer jogar?',
   'menu.computer': 'Contra o computador',
   'menu.human': 'Dois jogadores',
-  'menu.current': 'atual',
-  'menu.confirm': 'A partida atual ainda não terminou. Começar uma nova mesmo assim?',
-  'menu.confirm.yes': 'Sim, começar nova',
-  'menu.confirm.no': 'Continuar jogando',
   'color.random': 'Aleatória',
   'color.drawn': 'Você joga com as {color} (sorteadas).',
   'mode.computer.random': 'Você joga com as {color} (sorteadas) contra o computador ({level}).',
@@ -1508,6 +1552,14 @@ const pt: Catalogue = {
 };
 
 const it: Catalogue = {
+  'game.computer': 'Contro il computer',
+  'game.human': 'In due',
+  'game.best': 'Trova la mossa migliore',
+  'game.mate': 'Matto in N',
+  'mate.1': '1',
+  'mate.2': '2',
+  'mate.3': '3',
+  'mate.4': '4',
   title: 'Scacchi',
   tagline: 'Il classico gioco di pianificazione e tattica, contro un computer riflessivo o contro qualcuno accanto a te.',
   rules:
@@ -1615,10 +1667,6 @@ const it: Catalogue = {
   'menu.legend': 'A cosa vuoi giocare?',
   'menu.computer': 'Contro il computer',
   'menu.human': 'In due',
-  'menu.current': 'in corso',
-  'menu.confirm': 'La partita in corso non è finita. Iniziarne comunque una nuova?',
-  'menu.confirm.yes': 'Sì, iniziane una nuova',
-  'menu.confirm.no': 'Continua a giocare',
   'color.random': 'Casuale',
   'color.drawn': 'Giochi con il {color} (sorteggiato).',
   'mode.computer.random': 'Giochi con il {color} (sorteggiato) contro il computer ({level}).',
@@ -1644,6 +1692,14 @@ const it: Catalogue = {
 };
 
 const pl: Catalogue = {
+  'game.computer': 'Przeciw komputerowi',
+  'game.human': 'Dwie osoby',
+  'game.best': 'Znajdź najlepszy ruch',
+  'game.mate': 'Mat w N',
+  'mate.1': '1',
+  'mate.2': '2',
+  'mate.3': '3',
+  'mate.4': '4',
   title: 'Szachy',
   tagline: 'Klasyczna gra planowania i taktyki — z rozważnym komputerem albo z kimś obok ciebie.',
   rules:
@@ -1751,10 +1807,6 @@ const pl: Catalogue = {
   'menu.legend': 'W co chcesz zagrać?',
   'menu.computer': 'Przeciw komputerowi',
   'menu.human': 'Dwie osoby',
-  'menu.current': 'aktualny',
-  'menu.confirm': 'Bieżąca partia nie jest zakończona. Mimo to rozpocząć nową?',
-  'menu.confirm.yes': 'Tak, zacznij nową',
-  'menu.confirm.no': 'Graj dalej',
   'color.random': 'Losowo',
   'color.drawn': 'Twój kolor: {color} (wylosowany).',
   'mode.computer.random': 'Twój kolor: {color} (wylosowany); przeciwnik: komputer ({level}).',
@@ -1780,6 +1832,14 @@ const pl: Catalogue = {
 };
 
 const tr: Catalogue = {
+  'game.computer': 'Bilgisayara karşı',
+  'game.human': 'İki kişi',
+  'game.best': 'En iyi hamleyi bul',
+  'game.mate': 'N hamlede mat',
+  'mate.1': '1',
+  'mate.2': '2',
+  'mate.3': '3',
+  'mate.4': '4',
   title: 'Satranç',
   tagline: 'Planlama ve taktiğin klasik oyunu — düşünceli bir bilgisayara ya da yanındaki birine karşı.',
   rules:
@@ -1887,10 +1947,6 @@ const tr: Catalogue = {
   'menu.legend': 'Ne oynamak istersin?',
   'menu.computer': 'Bilgisayara karşı',
   'menu.human': 'İki kişi',
-  'menu.current': 'şu an',
-  'menu.confirm': 'Mevcut oyun henüz bitmedi. Yine de yeni bir oyun başlatılsın mı?',
-  'menu.confirm.yes': 'Evet, yeni başlat',
-  'menu.confirm.no': 'Oynamaya devam et',
   'color.random': 'Rastgele',
   'color.drawn': 'Rengin: {color} (kurayla).',
   'mode.computer.random': 'Rengin: {color} (kurayla); rakip: bilgisayar ({level}).',
@@ -1916,6 +1972,14 @@ const tr: Catalogue = {
 };
 
 const uk: Catalogue = {
+  'game.computer': 'Проти комп’ютера',
+  'game.human': 'Удвох',
+  'game.best': 'Знайдіть найкращий хід',
+  'game.mate': 'Мат у N ходів',
+  'mate.1': '1',
+  'mate.2': '2',
+  'mate.3': '3',
+  'mate.4': '4',
   title: 'Шахи',
   tagline: 'Класична гра планування й тактики — проти вдумливого комп’ютера або людини поруч.',
   rules:
@@ -2023,10 +2087,6 @@ const uk: Catalogue = {
   'menu.legend': 'У що хочете зіграти?',
   'menu.computer': 'Проти комп’ютера',
   'menu.human': 'Удвох',
-  'menu.current': 'поточний',
-  'menu.confirm': 'Поточна партія ще не закінчена. Однаково почати нову?',
-  'menu.confirm.yes': 'Так, почати нову',
-  'menu.confirm.no': 'Продовжити партію',
   'color.random': 'Випадково',
   'color.drawn': 'Ваш колір: {color} (обрано жеребом).',
   'mode.computer.random': 'Ваш колір: {color} (обрано жеребом); суперник — комп’ютер ({level}).',
@@ -2052,6 +2112,14 @@ const uk: Catalogue = {
 };
 
 const hi: Catalogue = {
+  'game.computer': 'कंप्यूटर के ख़िलाफ़',
+  'game.human': 'दो खिलाड़ी',
+  'game.best': 'सबसे अच्छी चाल खोजें',
+  'game.mate': 'N चालों में मात',
+  'mate.1': '1',
+  'mate.2': '2',
+  'mate.3': '3',
+  'mate.4': '4',
   title: 'शतरंज',
   tagline: 'योजना और चालबाज़ी का क्लासिक खेल — सोच-समझकर खेलने वाले कंप्यूटर या पास बैठे किसी व्यक्ति के साथ।',
   rules:
@@ -2159,10 +2227,6 @@ const hi: Catalogue = {
   'menu.legend': 'आप क्या खेलना चाहते हैं?',
   'menu.computer': 'कंप्यूटर के ख़िलाफ़',
   'menu.human': 'दो खिलाड़ी',
-  'menu.current': 'वर्तमान',
-  'menu.confirm': 'मौजूदा बाज़ी अभी ख़त्म नहीं हुई है। फिर भी नई शुरू करें?',
-  'menu.confirm.yes': 'हाँ, नई शुरू करें',
-  'menu.confirm.no': 'खेलना जारी रखें',
   'color.random': 'यादृच्छिक',
   'color.drawn': 'आपका रंग: {color} (ड्रॉ से)।',
   'mode.computer.random': 'आपका रंग: {color} (ड्रॉ से); प्रतिद्वंद्वी: कंप्यूटर ({level})।',
