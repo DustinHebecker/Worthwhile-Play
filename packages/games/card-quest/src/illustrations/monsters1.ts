@@ -36,8 +36,10 @@ export const MONSTERS1: Readonly<Record<string, string>> = {
     <ellipse class="il-grey il-ink" cx="84" cy="38" rx="6" ry="16" transform="rotate(25 84 38)"/>
     <ellipse class="il-pink" cx="56" cy="42" rx="2.4" ry="10" transform="rotate(-20 56 40)"/>
     <ellipse class="il-pink" cx="84" cy="40" rx="2.4" ry="10" transform="rotate(25 84 38)"/>
-    <polygon class="il-grey il-ink" points="107 74 100 79 104 87 94 89 94 98 84 96 80 104 72 99 64 104 60 96 50 98 50 89 40 87 44 79 37 74 44 69 40 61 50 59 50 50 60 52 64 44 72 49 80 44 84 52 94 50 94 59 104 61 100 69"/>
+    <polygon class="il-grey il-ink" points="106 74 101 78 105 82 99 85 101 90 94 91 94 96 88 96 86 101 80 99 77 103 72 100 67 103 64 99 58 101 56 96 50 96 50 91 43 90 45 85 39 82 43 78 38 74 43 70 39 66 45 63 43 58 50 57 50 52 56 52 58 47 64 49 67 45 72 48 77 45 80 49 86 47 88 52 94 52 94 57 101 58 99 63 105 66 101 70"/>
     <path class="il-smoke" opacity="0.6" d="M52 64c4-8 12-10 18-8-8 2-12 6-14 10z"/>
+    <path class="il-light il-thin" d="M48 80l4 2M96 78l-4 3M60 96l2-3M86 94l-2-3M66 52l2 3M82 52l-1 3"/>
+    <path class="il-wood il-ink" d="M126 104l4-40h4l-2 40z"/><path class="il-wood-dark il-ink" d="M122 104l4-12h8l4 12z"/><path class="il-line il-thin" d="M126 98l-1 6M130 98v6M134 98l1 6"/>
     <path class="il-line" d="M56 66l8 4-8 4M88 66l-8 4 8 4"/>
     <path class="il-line il-thin" d="M54 60l9 3M90 60l-9 3"/>
     <circle class="il-pink il-ink" cx="72" cy="76" r="4"/>
@@ -78,8 +80,7 @@ export const MONSTERS1: Readonly<Record<string, string>> = {
     <path class="il-line il-thin" d="M24 50h24"/>
     <path class="il-paper il-ink il-thin" d="M42 68h8v6h-8z"/>
     <path class="il-grass il-ink il-thin" d="M120 100l3-9 2 9M134 100l2-8 3 8M14 100l2-7 3 7"/>
-    <path class="il-red il-ink il-thin" d="M126 24a6 6 0 0 1 12 0z"/><path class="il-blue il-ink il-thin" d="M138 24a6 6 0 0 1 12 0z"/>
-    <path class="il-line il-thin" d="M124 24h28M132 14l2 4M144 14l-2 4"/>`,
+    <path class="il-line il-thin" d="M118 40l6-3M120 48h7"/>`,
 
   // A big happy green cave slime blissfully hugging a pair of empty boots; bare footprints run away; hearts float up.
   'kz.cave-slime': `
@@ -93,11 +94,13 @@ export const MONSTERS1: Readonly<Record<string, string>> = {
     <path class="il-line" d="M46 64q5-5 10 0M70 64q5-5 10 0"/>
     <path class="il-dark il-ink il-thin" d="M54 74q9 10 18 0z"/>
     <ellipse class="il-pink" opacity="0.7" cx="44" cy="74" rx="5" ry="3"/><ellipse class="il-pink" opacity="0.7" cx="82" cy="74" rx="5" ry="3"/>
-    <path class="il-wood-dark il-ink" d="M42 84h14v14h8c4 0 6 2 6 6H42z"/>
-    <path class="il-wood-dark il-ink" d="M66 84h14v14h8c4 0 6 2 6 6H66z"/>
-    <path class="il-line il-thin" d="M42 88h14M66 88h14"/>
-    <path class="il-slime il-ink" d="M28 82c6-2 14 2 20 6l-4 6c-6-2-12-4-16-6z"/>
-    <path class="il-slime il-ink" d="M106 82c-6-2-14 2-20 6l4 6c6-2 12-4 16-6z"/>
+    <path class="il-wood-dark il-ink" d="M40 78h16v18h10c4 0 6 3 6 8H40z"/>
+    <path class="il-wood-dark il-ink" d="M70 78h16v18h10c4 0 6 3 6 8H70z"/>
+    <path class="il-dark il-ink il-thin" d="M40 100h32v4H40zM70 100h32v4H70z"/>
+    <path class="il-wood il-ink il-thin" d="M38 76h20v4H38zM68 76h20v4H68z"/>
+    <path class="il-line il-thin" d="M50 86l4 2M50 91l4 2M80 86l4 2M80 91l4 2"/>
+    <path class="il-slime il-ink" d="M24 84c8-4 18-2 26 4l-4 6c-8-4-14-4-20-4z"/>
+    <path class="il-slime il-ink" d="M110 84c-8-4-18-2-26 4l4 6c8-4 14-4 20-4z"/>
     <path class="il-slime il-ink il-thin" d="M58 22c2 6 2 10 0 12-2-2-2-6 0-12z"/>
     <path class="il-red il-ink il-thin" d="M66 38c-5-3-6-7-3-9 2-1 3 0 3 2 1-2 2-3 4-2 2 2 1 6-4 9z"/>
     <path class="il-red il-ink il-thin" d="M84 32c-4-3-5-6-2-8 1-1 2 0 2 2 1-2 2-2 3-1 2 2 1 5-3 7z"/>
@@ -139,16 +142,18 @@ export const MONSTERS1: Readonly<Record<string, string>> = {
   'kz.ambitious-moss': `
     <rect class="il-sky" x="0" y="0" width="160" height="120"/>
     <path class="il-grass" d="M0 96 160 60v60H0z"/>
-    <polygon class="il-green il-ink" points="94 72 89 78 91 85 83 88 81 94 73 94 68 99 61 95 53 97 49 91 42 90 41 83 35 78 38 72 35 66 41 61 42 54 49 53 53 47 61 49 68 45 73 50 81 50 83 56 91 59 89 66"/>
+    <polygon class="il-green il-ink" points="93 72 90 76 91 81 87 84 86 89 81 90 79 95 73 94 69 98 64 95 59 98 55 94 50 95 47 90 42 89 41 84 37 81 38 76 35 72 38 68 37 63 41 60 42 55 47 54 49 49 55 50 59 46 64 49 69 46 73 50 78 49 81 54 86 55 87 60 91 63 90 68"/>
     <path class="il-grass il-ink il-thin" d="M46 60l2 5M58 54l1 5M80 58l-2 4M44 82l3 3M86 80l-3 3"/>
     <path class="il-line" d="M52 66l8 2M76 66l-8 2"/>
     <circle class="il-white il-ink il-thin" cx="56" cy="72" r="4"/><circle class="il-dark" cx="57" cy="73" r="2"/>
     <circle class="il-white il-ink il-thin" cx="72" cy="72" r="4"/><circle class="il-dark" cx="73" cy="73" r="2"/>
     <path class="il-line" d="M58 84q8 4 14-2"/>
-    <path class="il-green il-ink" d="M42 88c8-4 18-2 22 2-8 2-16 2-22-2zM86 88c-8-4-18-2-22 2 8 2 16 2 22-2z"/>
+    <path class="il-green il-ink" d="M42 88c8-4 18-2 22 2-8 2-16 2-22-2z"/>
+    <path class="il-green il-ink" d="M86 70c4-2 8-2 10 0 2 3 0 6-2 6h-8z"/>
+    <path class="il-line il-thin" d="M96 52c-4 4-4 10 0 14M100 48c-6 6-6 16 0 22"/>
     <path class="il-line" d="M64 46V18"/>
     <path class="il-red il-ink" d="M64 18l20 6-20 6z"/>
-    <circle class="il-stone il-ink" cx="116" cy="54" r="20"/>
+    <circle class="il-stone il-ink" cx="114" cy="56" r="20"/>
     <path class="il-grey il-ink il-thin" d="M104 46c2-2 4-2 6 0M120 66c2 1 4 1 6-1M126 42l4 2"/>
     <circle class="il-white il-ink il-thin" cx="108" cy="54" r="5"/><circle class="il-dark" cx="106" cy="54" r="2.2"/>
     <circle class="il-white il-ink il-thin" cx="120" cy="52" r="5"/><circle class="il-dark" cx="118" cy="52" r="2.2"/>
@@ -165,22 +170,25 @@ export const MONSTERS1: Readonly<Record<string, string>> = {
     <path class="il-earth" d="M0 10h160v8H0z"/>
     <path class="il-cave il-ink" d="M14 104c-6-30 10-60 46-64 40-4 70 16 76 46 3 12-2 20-10 22H22c-4 0-7-2-8-4z"/>
     <path class="il-stone il-ink il-thin" d="M8 30h8v6H8zM146 34h8v5h-8zM120 20h6v4h-6z"/>
-    <path class="il-white il-ink" d="M34 102c-10-14-8-34 8-44 16-10 36-6 46 6 6 8 6 18 0 24-6 6-16 4-18-4 2-6-4-10-10-8-8 2-10 12-6 20 2 4 6 6 10 6z"/>
-    <path class="il-line il-thin" d="M40 64l4 6M50 58l2 7M62 56v7M74 58l-2 7M84 64l-4 5M36 76l6 2M36 90l6-2"/>
-    <path class="il-orange il-ink il-thin" d="M60 84l-4 4M64 88l-4 4M68 90l-2 5"/>
-    <circle class="il-orange il-ink" cx="80" cy="82" r="10"/>
-    <path class="il-line il-thin" d="M74 80q2 2 4 0"/>
-    <circle class="il-white il-ink il-thin" cx="85" cy="79" r="4"/><circle class="il-dark" cx="86" cy="79" r="2"/>
-    <path class="il-line il-thin" d="M82 73l6 1"/>
-    <path class="il-line il-thin" d="M76 88q4 2 8-1"/>
-    <path class="il-blue il-ink" d="M72 74c-2-10 4-18 14-16 6 2 10 6 10 10-4-2-8-2-10 0z"/>
-    <circle class="il-white il-ink il-thin" cx="98" cy="70" r="4"/>
-    <path class="il-line il-thin" d="M40 40l6 0-6 6h6M52 30h5l-5 5h5"/>
-    <circle class="il-red il-ink" cx="116" cy="84" r="14"/>
-    <circle class="il-white il-ink il-thin" cx="116" cy="84" r="10"/>
-    <path class="il-line" d="M116 84v-7M116 84l5 3"/>
-    <path class="il-metal il-ink il-thin" d="M104 70a6 6 0 0 1 8-6zM128 70a6 6 0 0 0-8-6z"/>
-    <path class="il-line il-thin" d="M108 96l-3 6M124 96l3 6M100 64l-4-4M132 64l4-4M98 78l-6-1M134 78l6-1"/>`,
+    <g class="il-paper il-ink">
+      <circle cx="81" cy="89" r="16"/><circle cx="65" cy="91" r="15"/><circle cx="52" cy="82" r="13.8"/><circle cx="48" cy="66" r="12.6"/>
+      <circle cx="57" cy="52" r="11.4"/><circle cx="73" cy="48" r="10.2"/><circle cx="87" cy="56" r="9"/>
+    </g>
+    <path class="il-light il-thin" d="M44 60c2-4 4-6 8-6M58 86c2 2 6 4 10 4"/>
+    <path class="il-orange il-ink il-thin" d="M86 66l-2 6M92 64l0 6"/>
+    <circle class="il-orange il-ink" cx="96" cy="64" r="10"/>
+    <path class="il-line il-thin" d="M90 63q2 2 4 0"/>
+    <circle class="il-white il-ink il-thin" cx="101" cy="62" r="4"/><circle class="il-dark" cx="102" cy="62" r="2"/>
+    <path class="il-line il-thin" d="M97 56l7 2M94 70q4 2 8-1"/>
+    <path class="il-blue il-ink" d="M88 58c-2-10 4-16 12-14 6 2 8 6 8 10-4-2-8-2-10 0z"/>
+    <circle class="il-white il-ink il-thin" cx="84" cy="44" r="3.6"/>
+    <path class="il-blue il-ink il-thin" d="M98 44c-6-2-12 0-14 0"/>
+    <path class="il-line il-thin" d="M30 40l6 0-6 6h6M40 28h5l-5 5h5"/>
+    <circle class="il-red il-ink" cx="122" cy="84" r="14"/>
+    <circle class="il-white il-ink il-thin" cx="122" cy="84" r="10"/>
+    <path class="il-line" d="M122 84v-7M122 84l5 3"/>
+    <path class="il-metal il-ink il-thin" d="M110 70a6 6 0 0 1 8-6zM134 70a6 6 0 0 0-8-6z"/>
+    <path class="il-line il-thin" d="M114 96l-3 6M130 96l3 6M110 60l-2-4M134 60l2-4M140 78l6-1M140 88l6 1"/>`,
 
   // A battalion of tiny green aphids in helmets marches in formation behind a general pointing a twig at a red rose.
   'kz.aphid-army': `
@@ -240,9 +248,9 @@ export const MONSTERS1: Readonly<Record<string, string>> = {
     <path class="il-gold il-ink il-thin" d="M72 56q8 10 16 0" opacity="1"/>
     <circle class="il-gold il-ink" cx="80" cy="66" r="5"/>
     <path class="il-green il-ink il-thin" d="M106 64l10-14c2-2 4 0 3 2l-8 14"/>
-    <path class="il-wood il-ink" d="M18 106 60 96l1 4-42 10z"/>
-    <path class="il-metal il-ink" d="M14 98l4 16 6-2-4-16z"/>
-    <path class="il-line il-thin" d="M10 100l4-1M11 104l4-1M12 108l4-1"/>
+    <path class="il-wood il-ink" d="M22 104 62 96l1 4-40 8z"/>
+    <path class="il-metal il-ink" d="M18 94h5v20h-5z" transform="rotate(-12 20 104)"/>
+    <path class="il-line" d="M18 95l-8 2M19 100l-8 2M20 105l-8 2M21 110l-8 2M22 115l-6 1" transform="rotate(-12 20 104)"/>
     <path class="il-green il-ink il-thin" d="M132 104c-2-8 2-14 6-14 2 4 2 10-2 14zM140 108c2-6 8-8 10-6-2 4-6 6-10 6z"/>
     <path class="il-line il-thin" d="M124 22c4-4 10-4 12 0M126 30c4-2 8-2 10 0"/>`,
 
@@ -304,8 +312,10 @@ export const MONSTERS1: Readonly<Record<string, string>> = {
     <rect class="il-cave" x="0" y="0" width="160" height="120"/>
     <path class="il-earth-dark" d="M0 104h160v16H0z"/>
     <path class="il-wood il-ink" d="M10 12h10v92H10zM140 12h10v92h-10zM6 8h148v8H6z"/>
-    <path class="il-pink il-ink" d="M98 104c0-10 8-16 16-12s10 12 18 12z"/>
-    <path class="il-line il-thin" d="M106 96v8M114 94v10M122 98v6"/>
+    <g class="il-pink il-ink">
+      <ellipse cx="124" cy="100" rx="14" ry="5"/><ellipse cx="124" cy="94" rx="12" ry="4.6"/><ellipse cx="124" cy="88.5" rx="9" ry="4"/>
+    </g>
+    <path class="il-line il-thin" d="M114 100h3M131 100h3M116 94h3M129 94h3"/>
     <path class="il-pink il-ink" d="M62 70c-4-6-4-14 0-18h24c4 4 4 12 0 18z"/>
     <path class="il-line il-thin" d="M62 60h24M62 66h24"/>
     <circle class="il-pink il-ink" cx="74" cy="40" r="17"/>
@@ -403,8 +413,8 @@ export const MONSTERS1: Readonly<Record<string, string>> = {
   // At dawn an orange leaf-blower engine with an angry face blasts from a wide flared horn over a spotless lawn; no leaves, just a gnome hat blown away.
   'kz.leaf-blower': `
     <rect class="il-sky" x="0" y="0" width="160" height="120"/>
-    <path class="il-yellow il-ink" d="M10 64a20 20 0 0 1 40 0z"/>
-    <path class="il-line il-thin" d="M30 38v-6M14 46l-4-4M46 46l4-4"/>
+    <path class="il-yellow il-ink" d="M96 64a16 16 0 0 1 32 0z"/>
+    <path class="il-line il-thin" d="M112 42v-6M98 50l-4-3M126 50l4-3"/>
     <path class="il-grass" d="M0 64h160v56H0z"/>
     <path class="il-line il-thin" d="M8 80h20M40 90h22M6 104h24M44 110h20"/>
     <rect class="il-orange il-ink" x="20" y="60" width="48" height="40" rx="8"/>
