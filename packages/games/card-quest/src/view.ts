@@ -3,7 +3,7 @@ import { isOneOf } from '@wp/game-core';
 import { announce, clear, h } from '@wp/ui';
 import { pictogram } from './art';
 import type { MonsterCard } from './cards';
-import { cardFlavour, cardName, cardRules, keyNumber } from './cardtext';
+import { cardBlunder, cardFlavour, cardName, cardRules, keyNumber } from './cardtext';
 import { HUMAN, advance, computerToAct } from './driver';
 import {
   DEFAULT_SETTINGS,
@@ -172,8 +172,11 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
         return t('log.won', { name: n(e.seat), levels: e.levels, loot: e.loot });
       case 'lost':
         return t('log.lost', { name: n(e.seat) });
-      case 'flee':
-        return t(e.ok ? 'log.flee.ok' : 'log.flee.fail', { name: n(e.seat), roll: e.roll, total: e.total, monster: name(e.monster) });
+      case 'flee': {
+        const line = t(e.ok ? 'log.flee.ok' : 'log.flee.fail', { name: n(e.seat), roll: e.roll, total: e.total, monster: name(e.monster) });
+        const blunder = e.ok ? '' : cardBlunder(t, e.monster);
+        return blunder ? `${line} ${blunder}` : line;
+      }
       case 'penalty':
         switch (e.p) {
           case 'level':
@@ -574,6 +577,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       h('div', { class: 'cq-detail-head' }, pic(card), h('div', {}, h('h3', { id: 'cq-detail-title' }, name(card)), h('p', { class: 'cq-tile-type' }, type))),
       h('ul', { class: 'cq-rules' }, ...lines.map((l) => h('li', {}, l))),
       h('p', { class: 'cq-flavour' }, cardFlavour(t, card)),
+      cardBlunder(t, card) ? h('p', { class: 'cq-blunder', 'data-testid': 'detail-blunder' }, t('detail.blunder', { text: cardBlunder(t, card) })) : null,
       h(
         'div',
         { class: 'cq-detail-actions' },

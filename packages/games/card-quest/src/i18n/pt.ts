@@ -106,6 +106,7 @@ export const pt: Catalogue = {
   'card.why.fightOnly': 'Só durante uma luta.',
   'card.why.ownTurn': 'Só na sua própria vez, fora das lutas.',
   'card.why.notNow': 'Agora não.',
+  'detail.blunder': 'Se você perder: {text}',
 
   'act.equip': 'Equipar',
   'act.unequip': 'Tirar',

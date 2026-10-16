@@ -106,6 +106,7 @@ export const hi: Catalogue = {
   'card.why.fightOnly': 'सिर्फ़ लड़ाई में।',
   'card.why.ownTurn': 'सिर्फ़ अपनी बारी में, लड़ाई के बाहर।',
   'card.why.notNow': 'अभी नहीं।',
+  'detail.blunder': 'हारे तो: {text}',
 
   'act.equip': 'पहनो',
   'act.unequip': 'उतारो',

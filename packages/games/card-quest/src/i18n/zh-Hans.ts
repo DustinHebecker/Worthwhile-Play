@@ -106,6 +106,7 @@ export const zhHans: Catalogue = {
   'card.why.fightOnly': '只能在战斗中使用。',
   'card.why.ownTurn': '只能在自己的回合、战斗之外使用。',
   'card.why.notNow': '现在不行。',
+  'detail.blunder': '如果输了：{text}',
 
   'act.equip': '穿戴',
   'act.unequip': '卸下',

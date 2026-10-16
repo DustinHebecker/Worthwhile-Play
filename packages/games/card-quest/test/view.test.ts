@@ -4,6 +4,7 @@ import { createTestContext } from '@wp/testing';
 import type { GameModule } from '@wp/game-core';
 import game, { type CardQuestState } from '../src/index';
 import { isValidState } from '../src/rules';
+import { en } from '../src/content/en';
 
 const q = (root: HTMLElement, id: string) => root.querySelector<HTMLButtonElement>(`[data-testid="${id}"]`);
 
@@ -68,6 +69,23 @@ describe('view', () => {
     }
     expect(misuse).toEqual([]);
     instance.dispose();
+  });
+
+  it('shows a monster\'s Blunder sentence in the log when it hits', () => {
+    const ctx = createTestContext(game as GameModule<unknown>, 'en');
+    const instance = game.create(ctx.context as never);
+    for (let seed = 1; seed < 200; seed++) {
+      instance.newGame({ seed });
+      clickThrough(ctx.context.root, instance, 3000);
+      const s = instance.serialize();
+      const caught = s.log.slice(-25).find((e) => e.e === 'flee' && !e.ok);
+      if (!caught || caught.e !== 'flee') continue;
+      const log = ctx.context.root.querySelector('[data-testid="log"]')!.textContent!;
+      expect(log).toContain(en[caught.monster.split('#')[0]!]!.blunder!);
+      instance.dispose();
+      return;
+    }
+    throw new Error('no caught flee in the log of the sampled games');
   });
 
   it('keeps the keyboard focus inside the game after a main action', () => {
