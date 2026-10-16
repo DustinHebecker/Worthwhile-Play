@@ -17,7 +17,6 @@ export const metadata: GameMetadata = {
   },
   messages,
   // Strength of the built-in computer opponents (seeded Monte Carlo equity); easy → hard.
-  difficulties: ['easy', 'medium', 'hard'],
-  // The table setup (number of opponents, their level) is the game's first screen (ADR 0015).
-  setupInGame: true
+  // The level and number of opponents are chosen on the host's start screen (ADR 0017, settings.ts).
+  difficulties: ['easy', 'medium', 'hard']
 };

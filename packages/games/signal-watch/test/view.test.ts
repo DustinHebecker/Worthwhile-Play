@@ -280,3 +280,18 @@ describe('Signal Watch view', () => {
     }
   });
 });
+
+describe('Signal Watch view: host start screen (ADR 0017)', () => {
+  it('begins at once after the host\'s Start (begin) and keeps the target named during the session', () => {
+    const ctx = createTestContext(game as GameModule<unknown>, 'en');
+    const instance = game.create({ ...ctx.context, reducedMotion: true });
+    instances.push(instance);
+    instance.newGame({ seed: 3, difficulty: 'medium', begin: true });
+    const el = (id: string) => ctx.context.root.querySelector<HTMLElement>(`[data-testid="${id}"]`) as HTMLElement;
+    expect(instance.serialize()).toMatchObject({ phase: 'running', index: 0 });
+    expect(el('sw-intro').hidden).toBe(true);
+    expect(el('sw-respond').hidden).toBe(false);
+    expect(el('sw-target').textContent).toContain('Respond only to this target: Filled triangle, point up');
+    expect(el('sw-stimulus').dataset.symbol).not.toBe('');
+  });
+});

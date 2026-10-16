@@ -10,7 +10,6 @@
   max-width: 34rem;
   margin-inline: auto;
 }
-.wp-connect-four .c4-toolbar,
 .wp-connect-four .c4-actions {
   display: flex;
   flex-wrap: wrap;
@@ -19,15 +18,6 @@
   justify-content: center;
   width: 100%;
 }
-.wp-connect-four .c4-field {
-  display: grid;
-  gap: 0.2rem;
-  font-size: 0.9rem;
-  min-width: 0;
-  max-width: 100%;
-}
-.wp-connect-four .c4-field[hidden] { display: none; }
-.wp-connect-four .c4-field select { max-width: 100%; }
 .wp-connect-four .c4-status {
   display: flex;
   align-items: center;
@@ -36,16 +26,6 @@
   margin: 0;
   text-align: center;
 }
-
-/* Variant options: a labelled group of three selects. */
-.wp-connect-four .c4-variant {
-  margin: 0;
-  padding: 0.25rem 0.5rem 0.5rem;
-  border: 1px solid var(--wp-border);
-  border-radius: var(--wp-radius, 10px);
-  min-width: 0;
-}
-.wp-connect-four .c4-variant legend { padding-inline: 0.25rem; font-size: 0.9rem; }
 
 /* Drop / pull choice (pull-out rule only): two large radio "buttons"; the choice is written out, not colour-coded. */
 .wp-connect-four .c4-actions-choice {

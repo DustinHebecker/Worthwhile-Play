@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, readSave } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, readSave, startGame } from '../../packages/testing/src/e2e';
 import { aiTerm } from '../../packages/learning-content/src/builtin/ai-basics';
 import { capitalName } from '../../packages/learning-content/src/builtin/capitals';
 import { isVocabularyLanguage } from '../../packages/learning-content/src/builtin/first-words';
@@ -68,7 +68,7 @@ test('memory: the Capitals deck pairs a country with its capital and survives a 
   // After the reload the found pair is still face up with the same capital.
   await expect(card(page, back)).toHaveAttribute('data-state', 'matched');
   await expect(card(page, back)).toHaveText(capital);
-  await expect(page.getByTestId('memory-cards')).toHaveValue('country-capital');
+  expect(((await readSave(page, 'memory')) as { state: SavedMemory }).state.variant).toBe('country-capital');
 });
 
 test('memory: the AI basics deck pairs a term with its definition, fits a 360 px phone and survives a reload', async ({ page }) => {
@@ -117,5 +117,15 @@ test('memory: the AI basics deck pairs a term with its definition, fits a 360 px
   // After the reload the found pair is still face up with the same definition.
   await expect(card(page, back)).toHaveAttribute('data-state', 'matched');
   await expect(card(page, back)).toHaveText(definition);
-  await expect(page.getByTestId('memory-cards')).toHaveValue('ai-term-definition');
+  expect(((await readSave(page, 'memory')) as { state: SavedMemory }).state.variant).toBe('ai-term-definition');
+});
+
+test('memory: the cards and the board size are chosen on the start screen', async ({ page }) => {
+  await startGame(page, 'memory', { difficulty: 'large', settings: { cards: 'flag-country' } });
+  // Large board: 12 pairs.
+  await expect(page.locator('[data-testid^="card-"]')).toHaveCount(24);
+  await expect.poll(async () => ((await readSave(page, 'memory')) as { state?: SavedMemory } | undefined)?.state?.variant).toBe('flag-country');
+  await expect(page.getByTestId('memory-languages')).toBeVisible();
+  // No card choice inside the game any more.
+  await expect(page.getByTestId('game-root').locator('select')).toHaveCount(0);
 });

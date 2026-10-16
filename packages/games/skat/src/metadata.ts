@@ -17,7 +17,6 @@ export const metadata: GameMetadata = {
   },
   messages,
   // Strength of the two computer players (easy → hard); never time pressure.
-  difficulties: ['easy', 'normal', 'hard'],
-  // The first screen is the series setup (length, scoring, Ramsch, card faces, strength).
-  setupInGame: true
+  // The series (length, scoring, Ramsch) and the strength are chosen on the host's start screen (ADR 0017).
+  difficulties: ['easy', 'normal', 'hard']
 };

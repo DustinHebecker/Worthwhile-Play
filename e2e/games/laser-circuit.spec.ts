@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, readSave } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, readSave, newGame } from '../../packages/testing/src/e2e';
 
 const root = (page: Page) => page.getByTestId('game-root');
 const cells = (page: Page) =>
@@ -24,7 +24,7 @@ async function expectFitsPhone(page: Page, last: string) {
 
 test('laser-circuit: offers four difficulties, from easy (the old medium) to the new expert', async ({ page }) => {
   await page.goto('/games/laser-circuit');
-  const options = page.getByTestId('difficulty').locator('option');
+  const options = page.getByTestId('difficulty').locator('label');
   await expect(options).toHaveText([/^Easy \(6×6, 2–3 pieces\)$/, /^Medium \(7×7, 3–6 pieces\)$/, /^Hard \(7×9, 7–8 pieces\)$/, /^Expert \(7×9, \d–\d pieces, filters and polarisers\)$/]);
 });
 
@@ -88,8 +88,7 @@ test('laser-circuit: an expert level with optical pieces resumes after a reload,
   let level: string | null = null;
   let polariser = '';
   await expectResumeAfterReload(page, 'laser-circuit', async (p) => {
-    await p.getByTestId('difficulty').selectOption('expert');
-    await p.getByTestId('new-game').click();
+    await newGame(p, { difficulty: 'expert' });
     await expect(root(p).locator('[data-testid^="cell-"]')).toHaveCount(63);
     await expectFitsPhone(p, 'cell-8-6');
     // Go to the first expert level with a polariser in its inventory.
@@ -125,12 +124,12 @@ test('laser-circuit: an expert level with optical pieces resumes after a reload,
   await expect(root(page).getByTestId('level-status')).toHaveText(level ?? '');
   expect(await cells(page)).toEqual(before);
   await expect(root(page).getByTestId(polariser)).toHaveAttribute('aria-label', /your polariser, axis at 90°/);
-  await expect(page.getByTestId('difficulty')).toHaveValue('expert');
+  await expect(page.getByTestId('settings-summary')).toContainText('Expert');
 });
 
 test('laser-circuit: a save from before the difficulty shift (an old easy level) still continues', async ({ page }) => {
   await page.goto('/games/laser-circuit');
-  await expect(page.getByTestId('new-game')).toBeVisible();
+  await expect(page.getByTestId('start-game')).toBeVisible();
   // Old "easy" level 1 with a mirror / at row 4, column 2: solved. Written as state version 1.
   await page.evaluate(
     () =>

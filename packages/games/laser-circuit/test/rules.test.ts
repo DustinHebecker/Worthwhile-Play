@@ -937,6 +937,9 @@ describe('level sets', () => {
           filterR: fc.integer({ min: 0, max: 1 }),
           minusB: fc.integer({ min: 0, max: 1 })
         })
+        // The light-guided oracle grows steeply with the piece count: 7 pieces on a 4x4 board can take 10+ s, which
+        // made this property's runtime depend on the random seed. Five pieces keep every kind in play.
+        .filter((inventory) => Object.values(inventory).reduce((sum, n) => sum + n, 0) <= 5)
       )
       .map(([grid, laser, row, inventory]) => {
         const copy: string[][] = grid.map((r) => [...r]);

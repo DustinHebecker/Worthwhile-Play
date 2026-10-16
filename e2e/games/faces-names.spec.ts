@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, readSave } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, readSave, startGame } from '../../packages/testing/src/e2e';
 
 interface SavedFacesNames {
   difficulty: string;
@@ -72,8 +72,7 @@ test('faces-names: the test phase resumes after a reload with the answered quest
 
 test('faces-names: a full short session on a phone, with a hint, ends in a summary', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 760 });
-  await page.goto('/games/faces-names');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'faces-names');
   for (let i = 0; i < 4; i++) {
     await page.getByTestId('fn-note').fill(`link ${i + 1}`);
     await page.getByTestId('fn-next').click();

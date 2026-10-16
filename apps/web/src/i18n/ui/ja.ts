@@ -54,6 +54,8 @@ const ja: UiCatalogue = {
   'game.saveUnavailable': 'このブラウザーのモードでは進行状況を保存できません。ページを閉じると失われます。',
   'game.finished': '終了しました。',
   'game.anotherRound': 'もう一回',
+  'game.changeSettings': '設定を変える',
+  'game.started': '新しいゲームを始めました。',
   'game.sessionNote': '{minutes}分間プレイしています。',
   'game.dismiss': '閉じる',
   'game.seed': 'ゲーム番号 {seed}',

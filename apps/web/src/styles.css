@@ -188,6 +188,26 @@ main:focus { outline: none; }
 fieldset { border: 1px solid var(--wp-border); border-radius: var(--wp-radius); padding: 0.5rem 1rem; }
 .game-root { margin-block: 1rem; }
 .finished { margin-block: 1rem; }
+/* Start screen (ADR 0017): Continue, then "New game" with the game's settings and Start. */
+.start-form h2 { margin: 0; font-size: 1.15rem; }
+.setup-fields { gap: 0.75rem; }
+.setting { margin: 0; min-width: 0; }
+.setting[hidden] { display: none; }
+.setting legend { font-weight: 600; padding-inline: 0.25rem; }
+.setting.field { margin: 0; }
+.setting.field > label { font-weight: 600; }
+.setting select, .setting input[type='number'] { max-width: 100%; min-width: 0; justify-self: start; }
+.setting input[type='number'] { width: 8rem; }
+/* On a phone a select takes the whole line, so long option labels have the most room (they cannot wrap). */
+@media (max-width: 30rem) { .setting select { inline-size: 100%; text-overflow: ellipsis; } }
+.setting-options { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.setting-option { display: inline-flex; align-items: center; gap: 0.5rem; min-height: var(--wp-touch); padding: 0.25rem 0.75rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius); cursor: pointer; max-width: 100%; box-sizing: border-box; }
+.setting-option input { width: 1.25rem; height: 1.25rem; min-height: 0; margin: 0; flex: none; accent-color: var(--wp-accent); }
+.setting-option:has(input:checked) { border-color: var(--wp-accent); box-shadow: inset 0 0 0 1px var(--wp-accent); font-weight: 600; }
+.setting-option:has(input:focus-visible) { outline: 2px solid var(--wp-focus); outline-offset: 2px; }
+.setting-toggle .field.checkbox { margin: 0; min-height: var(--wp-touch); }
+.setting-hint { margin: 0.25rem 0 0; font-size: 0.9rem; }
+.settings-summary { font-size: 0.9rem; }
 .session-note { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
 .seed { font-size: 0.85rem; }
 /* Deck library (/decks, /decks/<id>, /decks/import) */

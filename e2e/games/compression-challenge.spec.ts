@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, readSave } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, readSave, startGame } from '../../packages/testing/src/e2e';
 
 const root = (page: Page) => page.getByTestId('game-root');
 const sentenceBoxes = (page: Page) => root(page).locator('input[data-testid^="cc-sentence-"]');
@@ -27,8 +27,7 @@ test('compression-challenge: a checked first step survives a reload with its fee
 });
 
 test('compression-challenge: steps 1–3 work with the keyboard and the own sentence is kept', async ({ page }) => {
-  await page.goto('/games/compression-challenge');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'compression-challenge');
   const first = sentenceBoxes(page).first();
   await first.focus();
   await page.keyboard.press('Space');

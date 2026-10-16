@@ -25,6 +25,7 @@ export const DEFAULT_DIFFICULTY: Difficulty = 'easy';
 
 export const MODES = ['computer', 'human', 'solo'] as const;
 export type Mode = (typeof MODES)[number];
+export const DEFAULT_MODE: Mode = 'computer';
 
 /** Half the width of the platform top (world units). */
 export const PLATFORM_HALF = 2.5;

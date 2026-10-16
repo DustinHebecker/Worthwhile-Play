@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, readSave } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, readSave, startGame } from '../../packages/testing/src/e2e';
 
 const root = (page: Page) => page.getByTestId('game-root');
 
@@ -40,8 +40,7 @@ test('mastermind: submitted guesses and an unfinished draft survive a reload', a
 });
 
 test('mastermind: keyboard entry works and incomplete guesses are not submitted', async ({ page }) => {
-  await page.goto('/games/mastermind');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'mastermind');
   await root(page).getByTestId('mm-slot-0').focus();
   await page.keyboard.press('1');
   await page.keyboard.press('Enter');

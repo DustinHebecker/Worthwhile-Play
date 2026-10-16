@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, readSave } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, readSave, startGame } from '../../packages/testing/src/e2e';
 
 interface SavedProspective {
   difficulty: string;
@@ -52,9 +52,7 @@ test('prospective-memory: a block resumes at the same shape after a reload (keyb
 });
 
 test('prospective-memory: responding to the star cue with the N key records a note', async ({ page }) => {
-  await page.goto('/games/prospective-memory');
-  await page.getByTestId('difficulty').selectOption('easy');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'prospective-memory', { difficulty: 'easy' });
   await page.getByTestId('pm-start').click();
   const item = page.getByTestId('pm-item');
   // Sort shapes with the keyboard until the first star appears (never within the first 4 shapes).
@@ -79,9 +77,7 @@ test('prospective-memory: responding to the star cue with the N key records a no
 });
 
 test('prospective-memory: hard offers Check in by keyboard (C) and keeps it across a reload', async ({ page }) => {
-  await page.goto('/games/prospective-memory');
-  await page.getByTestId('difficulty').selectOption('hard');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'prospective-memory', { difficulty: 'hard' });
   await expect(page.getByTestId('pm-intentions')).toContainText('20');
   await page.getByTestId('pm-start').click();
   await expect(page.getByTestId('pm-checkIn')).toBeVisible();

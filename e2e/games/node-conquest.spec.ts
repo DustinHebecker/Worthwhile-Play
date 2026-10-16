@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, readSave } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, newGame, readSave, startGame } from '../../packages/testing/src/e2e';
 
 interface SavedConquest {
   map: number;
@@ -102,29 +102,31 @@ test('node-conquest: a match on a hand-built map with crossing lanes resumes aft
   let marks = 0;
   let from = -1;
   let to = -1;
-  await expectResumeAfterReload(page, 'node-conquest', async (p) => {
-    // Map 8 (index 7): neighbouring factions are linked by lanes that cross (marked crossing points, no bridges).
-    await p.getByTestId('nc-map-select').selectOption('7');
-    await expect.poll(async () => (await savedState(p))?.map).toBe(7);
-    marks = await p.locator('[data-testid^="crossing-"]').count();
-    expect(marks).toBeGreaterThan(0);
-    await expect(p.locator('[data-testid^="bridge-"], [data-testid^="gap-"]')).toHaveCount(0);
-    [from, to] = await startAndNeighbour(p);
-    await clickNode(p, from);
-    await clickNode(p, to);
-    await expect(p.getByTestId(laneId(from, to))).toHaveAttribute('data-active', `${from}-${to}`);
-  });
+  await expectResumeAfterReload(
+    page,
+    'node-conquest',
+    async (p) => {
+      // Map 8 (index 7): neighbouring factions are linked by lanes that cross (marked crossing points, no bridges).
+      await expect.poll(async () => (await savedState(p))?.map).toBe(7);
+      marks = await p.locator('[data-testid^="crossing-"]').count();
+      expect(marks).toBeGreaterThan(0);
+      await expect(p.locator('[data-testid^="bridge-"], [data-testid^="gap-"]')).toHaveCount(0);
+      [from, to] = await startAndNeighbour(p);
+      await clickNode(p, from);
+      await clickNode(p, to);
+      await expect(p.getByTestId(laneId(from, to))).toHaveAttribute('data-active', `${from}-${to}`);
+    },
+    { settings: { map: '8' } }
+  );
   const state = await savedState(page);
   expect(state.map).toBe(7);
   expect(state.out[from]).toContain(to);
-  await expect(page.getByTestId('nc-map-select')).toHaveValue('7');
   await expect(page.locator('[data-testid^="crossing-"]')).toHaveCount(marks);
   await expect(page.getByTestId(laneId(from, to))).toHaveAttribute('data-active', new RegExp(`${from}-${to}`));
 });
 
 test('node-conquest: dragging from node to node activates a path; Space pauses', async ({ page }) => {
-  await page.goto('/games/node-conquest');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'node-conquest');
   const [from, to] = await startAndNeighbour(page);
   // The map is seeded randomly, so the start node may lie below the fold: centre the pair first.
   await page.evaluate(([f, t]) => {
@@ -148,52 +150,37 @@ test('node-conquest: dragging from node to node activates a path; Space pauses',
   await expect.poll(async () => (await savedState(page))?.out[from] ?? []).toContain(to);
 });
 
-test('node-conquest: changing the opponent count or map asks first during a match', async ({ page }) => {
-  await page.goto('/games/node-conquest');
-  await page.getByTestId('new-game').click();
-  await expect(page.getByTestId('nc-opponents')).toHaveValue('1');
-  // Untouched: switches at once.
-  await page.getByTestId('nc-opponents').selectOption('2');
-  await expect(page.getByTestId('nc-confirm')).toBeHidden();
+test('node-conquest: map, opponent count and difficulty come from the start screen and are offered again', async ({ page }) => {
+  await startGame(page, 'node-conquest', { difficulty: 'master', settings: { map: '5', opponents: 2 } });
+  // No setup controls inside the game (ADR 0017).
+  await expect(page.getByTestId('game-root').locator('select')).toHaveCount(0);
   await expect(page.locator('.nc-legend li[data-faction]')).toHaveCount(3);
-  await expect.poll(async () => (await savedState(page))?.opponents).toBe(2);
-
-  // Under way: asks, and No keeps the match.
+  await expect.poll(async () => await savedState(page)).toMatchObject({ map: 4, opponents: 2, difficulty: 'master' });
   const [from, to] = await startAndNeighbour(page);
   await clickNode(page, from);
   await clickNode(page, to);
   await expect(page.getByTestId(laneId(from, to))).toHaveAttribute('data-active', `${from}-${to}`);
-  const map = (await savedState(page))!.map;
-  const other = String((map + 1) % 13);
-  await page.getByTestId('nc-map-select').selectOption(other);
-  await expect(page.getByTestId('nc-confirm')).toBeVisible();
-  await page.getByTestId('nc-confirm-no').click();
-  await expect(page.getByTestId('nc-confirm')).toBeHidden();
-  await expect(page.getByTestId('nc-map-select')).toHaveValue(String(map));
+
+  // "New game": the start screen offers the same settings; the introduction has no opponent count.
+  await page.getByTestId('new-game').click();
+  await expect(page.getByTestId('setting-map')).toHaveValue('5');
+  await expect(page.getByTestId('setting-opponents').locator('input[value="2"]')).toBeChecked();
+  await expect(page.getByTestId('difficulty').locator('input[value="master"]')).toBeChecked();
+  await page.getByTestId('setting-map').selectOption('intro');
+  await expect(page.getByTestId('setting-opponents')).toBeHidden();
+  await page.getByTestId('continue').click();
   await expect(page.getByTestId(laneId(from, to))).toHaveAttribute('data-active', `${from}-${to}`);
 
-  // Yes starts the new setup.
-  await page.getByTestId('nc-map-select').selectOption(other);
-  await page.getByTestId('nc-confirm-yes').click();
-  await expect(page.getByTestId('nc-confirm')).toBeHidden();
-  await expect.poll(async () => (await savedState(page))?.map).toBe(Number(other));
-  expect((await savedState(page))!.opponents).toBe(2);
+  // "Any map" follows the game number.
+  await newGame(page, { settings: { map: 'random', opponents: 3 } });
+  await expect(page.locator('.nc-legend li[data-faction]')).toHaveCount(4);
+  await expect.poll(async () => (await savedState(page))?.opponents).toBe(3);
   expect((await savedState(page))!.out.every((o) => o.length === 0)).toBe(true);
-
-  // The opponent count is remembered on this device: after a reload a fresh new match keeps it.
-  await page.reload();
-  await page.getByTestId('new-game').click();
-  await expect(page.getByTestId('nc-opponents')).toHaveValue('2');
-  await expect(page.locator('.nc-legend li[data-faction]')).toHaveCount(3);
-  await expect.poll(async () => (await savedState(page))?.opponents).toBe(2);
 });
 
 test('node-conquest: the introduction guides step by step; zoom buttons work', async ({ page }) => {
-  await page.goto('/games/node-conquest');
-  await page.getByTestId('new-game').click();
-  await page.getByTestId('nc-map-select').selectOption('-1');
+  await startGame(page, 'node-conquest', { settings: { map: 'intro' } });
   await expect(page.getByTestId('nc-hint')).toContainText('1');
-  await expect(page.getByTestId('nc-opponents')).toBeDisabled();
   await clickNode(page, 0);
   await expect(page.getByTestId('nc-hint')).toContainText('2');
   await clickNode(page, 1);
@@ -209,28 +196,22 @@ test('node-conquest: the introduction guides step by step; zoom buttons work', a
 });
 
 test('node-conquest: a save from the previous version continues as an equivalent match', async ({ page }) => {
-  await page.goto('/games/node-conquest');
-  await page.getByTestId('new-game').click();
   // Version-1 saves only ever had the generated maps 0–6 (the seed may pick a newer, hand-built one).
-  await page.getByTestId('nc-map-select').selectOption('2');
+  await startGame(page, 'node-conquest', { settings: { map: '3', opponents: 3 } });
   await expect.poll(async () => (await savedState(page))?.map).toBe(2);
-  await page.getByTestId('nc-opponents').selectOption('3');
   await expect.poll(async () => (await savedState(page))?.opponents).toBe(3);
   await downgradeSave(page, 'hard');
   await page.reload();
   await page.getByTestId('continue').click();
   await expect(page.getByTestId('nc-board')).toBeVisible();
   await expect(page.getByTestId('save-corrupt')).toHaveCount(0);
-  await expect(page.getByTestId('nc-opponents')).toHaveValue('3');
   await expect(page.locator('.nc-legend li[data-faction]')).toHaveCount(4);
   await expect(page.getByTestId('nc-status')).toHaveAttribute('data-state', 'paused');
 });
 
 test('node-conquest: touch taps on nodes select and target (no page scroll from nodes)', async ({ page }, testInfo) => {
   test.skip(!testInfo.project.use.hasTouch, 'touch devices only');
-  await page.goto('/games/node-conquest');
-  await page.getByTestId('new-game').click();
-  await page.getByTestId('nc-map-select').selectOption('-1');
+  await startGame(page, 'node-conquest', { settings: { map: 'intro' } });
   const tap = async (v: number) => {
     const body = page.getByTestId(`node-${v}`).locator('.nc-body');
     await body.scrollIntoViewIfNeeded();
@@ -260,13 +241,11 @@ test.describe('node-conquest at 360 px', () => {
 
   test('node-conquest: every node has a ≥ 44 × 44 px hit target on all maps and opponent counts', async ({ page }, testInfo) => {
     test.skip(!testInfo.project.use.hasTouch, 'phone viewport only');
-    await page.goto('/games/node-conquest');
-    await page.getByTestId('new-game').click();
+    await startGame(page, 'node-conquest');
     const rows: string[] = [];
     for (const opponents of ['1', '2', '3']) {
-      await page.getByTestId('nc-opponents').selectOption(opponents);
       for (let map = 0; map < 13; map++) {
-        await page.getByTestId('nc-map-select').selectOption(String(map));
+        await newGame(page, { settings: { map: String(map + 1), opponents: Number(opponents) } });
         await expect.poll(async () => (await savedState(page))?.map).toBe(map);
         await expect(page.locator('.nc-legend li[data-faction]')).toHaveCount(Number(opponents) + 1);
         const m = await measure(page);
@@ -281,8 +260,7 @@ test.describe('node-conquest at 360 px', () => {
 
   test('node-conquest: taps near the edge of a hit target pick that node, also on a dense map', async ({ page }, testInfo) => {
     test.skip(!testInfo.project.use.hasTouch, 'touch devices only');
-    await page.goto('/games/node-conquest');
-    await page.getByTestId('new-game').click();
+    await startGame(page, 'node-conquest');
     const centre = async (v: number) => {
       const box = (await page.getByTestId(`node-${v}`).locator('.nc-hit').boundingBox())!;
       return [box.x + box.width / 2, box.y + box.height / 2] as const;
@@ -299,9 +277,7 @@ test.describe('node-conquest at 360 px', () => {
       ['3', '7'],
       ['1', '0']
     ] as const) {
-      await page.getByTestId('nc-opponents').selectOption(opponents);
-      await page.getByTestId('nc-map-select').selectOption(map);
-      if (await page.getByTestId('nc-confirm').isVisible()) await page.getByTestId('nc-confirm-yes').click();
+      await newGame(page, { settings: { map: String(Number(map) + 1), opponents: Number(opponents) } });
       await expect.poll(async () => (await savedState(page))?.map).toBe(Number(map));
       await expect.poll(async () => (await savedState(page))?.opponents).toBe(Number(opponents));
       const [from, to] = await startAndNeighbour(page);

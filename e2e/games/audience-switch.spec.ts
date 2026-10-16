@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, readSave } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, readSave, startGame } from '../../packages/testing/src/e2e';
 
 const root = (page: Page) => page.getByTestId('game-root');
 const factBoxes = (page: Page) => root(page).locator('input[data-testid^="as-fact-"]');
@@ -29,8 +29,7 @@ test('audience-switch: a checked selection for the first audience survives a rel
 });
 
 test('audience-switch: the whole first round works with the keyboard and the own version is kept', async ({ page }) => {
-  await page.goto('/games/audience-switch');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'audience-switch');
   const first = factBoxes(page).first();
   await first.focus();
   await page.keyboard.press('Space');

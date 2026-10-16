@@ -4,7 +4,7 @@ import { isValidState, migrateState } from '../src/state';
 import { createRound } from '../src/rules';
 import { createNestedRound } from '../src/nested';
 import { createOcRound } from '../src/order-chaos';
-import { readSetup } from '../src/view';
+import { readSetup } from '../src/settings';
 
 describe('state of all variants', () => {
   it('accepts a fresh round of each variant and rejects unknown variants', () => {

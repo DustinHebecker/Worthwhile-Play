@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, readSave } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, readSave, startGame } from '../../packages/testing/src/e2e';
 
 interface SavedCircuit {
   size: number;
@@ -37,8 +37,7 @@ test('circuit: turned tiles survive a reload exactly', async ({ page }) => {
 });
 
 test('circuit: keyboard play and completing the circuit ends the game calmly', async ({ page }) => {
-  await page.goto('/games/circuit-puzzle?seed=1234&difficulty=easy');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'circuit-puzzle', { difficulty: 'easy' });
   const first = tile(page, 0, 0);
   await first.focus();
   const m0 = await first.getAttribute('data-mask');
@@ -66,8 +65,7 @@ test('circuit: keyboard play and completing the circuit ends the game calmly', a
 
 test('circuit: the 9×9 board fits a phone with tiles of at least 36 px', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 740 });
-  await page.goto('/games/circuit-puzzle?difficulty=hard');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'circuit-puzzle', { difficulty: 'hard' });
   await expect(tile(page, 8, 8)).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(0);

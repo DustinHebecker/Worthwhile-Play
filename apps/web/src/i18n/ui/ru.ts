@@ -54,6 +54,8 @@ const ru: UiCatalogue = {
   'game.saveUnavailable': 'В этом режиме браузера прогресс нельзя сохранить: он пропадёт, когда вы закроете страницу.',
   'game.finished': 'Игра окончена.',
   'game.anotherRound': 'Ещё раунд',
+  'game.changeSettings': 'Изменить настройки',
+  'game.started': 'Новая игра началась.',
   'game.sessionNote': 'Вы играете уже {minutes} мин.',
   'game.dismiss': 'Скрыть',
   'game.seed': 'Игра № {seed}',

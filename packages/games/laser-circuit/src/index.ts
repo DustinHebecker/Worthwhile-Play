@@ -9,5 +9,7 @@ export default defineGame<LaserState>({
   metadata,
   create: createLaserCircuit,
   isValidState: isLaserState,
-  migrateState: migrateLaserState
+  migrateState: migrateLaserState,
+  // The level set is the difficulty; a migrated version-1 save names it here, not in its envelope (ADR 0017).
+  settingsOf: (state) => (metadata.difficulties?.includes(state.difficulty) ? { difficulty: state.difficulty } : {})
 });

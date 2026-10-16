@@ -74,9 +74,6 @@
 .wp-word-guess .wg-options { display: grid; gap: 0.5rem; padding: 0.75rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius); background: var(--wp-surface); }
 .wp-word-guess .wg-field { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; min-width: 0; }
 .wp-word-guess .wg-field select { min-width: 0; max-width: 100%; }
-.wp-word-guess .wg-check { min-height: var(--wp-touch); flex-wrap: nowrap; }
-.wp-word-guess .wg-check input { width: 1.5rem; height: 1.5rem; min-height: 0; flex: none; margin: 0; }
-.wp-word-guess .wg-check label { padding-block: 0.6rem; }
 .wp-word-guess .wg-hint { font-size: 0.85rem; }
 
 @media (max-width: 400px) {

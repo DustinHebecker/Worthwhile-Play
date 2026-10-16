@@ -9,9 +9,6 @@
 }
 .wp-review [hidden] { display: none !important; }
 .wp-review__options { display: grid; gap: 0.35rem; justify-items: center; text-align: center; max-width: 100%; }
-.wp-review__fields { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem 1rem; max-width: 100%; }
-.wp-review__field { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.4rem; max-width: 100%; }
-.wp-review__field select { min-height: var(--wp-touch); max-width: 100%; min-width: 0; }
 .wp-review__muted { margin: 0; color: var(--wp-muted); font-size: 0.9rem; }
 .wp-review__notice, .wp-review__panel > p:first-child:not(.wp-review__muted) {
   margin: 0;

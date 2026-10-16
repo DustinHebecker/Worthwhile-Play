@@ -4,7 +4,7 @@ import type { GameInstance, GameModule } from '@wp/game-core';
 import { createTestContext, type TestContext } from '@wp/testing';
 import game from '../src/index';
 import { COMPUTER_REVEAL_MS, formatEvaluation } from '../src/view';
-import { createGame, isValidState, legalMoves, moveToUci, nextSeed, puzzlesFor, randomColor, replay, toFen, type ChessState } from '../src/rules';
+import { createGame, isValidState, legalMoves, moveToUci, puzzlesFor, randomColor, replay, toFen, type ChessState } from '../src/rules';
 
 let instances: GameInstance<ChessState>[] = [];
 
@@ -36,13 +36,12 @@ afterEach(() => {
 });
 
 describe('random colour', () => {
-  it('draws the colour from the seed, says so, and remembers "random" as the choice', () => {
-    const { ctx, instance, byId, status } = mount();
-    instance.newGame({ seed: 9, difficulty: 'beginner' });
-    byId('color-random').click();
-    byId('start').click();
+  it('draws the colour from the seed and says so', () => {
+    const { instance, byId, status } = mount();
+    const random = { game: 'computer', color: 'random' };
+    instance.newGame({ seed: 9, difficulty: 'beginner', settings: random });
     const state = instance.serialize();
-    expect(state.seed).toBe(nextSeed(9));
+    expect(state.seed).toBe(9);
     expect(state.colorRandom).toBe(true);
     expect(state.humanColor).toBe(randomColor(state.seed));
     expect(isValidState(state)).toBe(true);
@@ -50,16 +49,10 @@ describe('random colour', () => {
     expect(byId('mode').textContent).toBe(`You play ${colour} (drawn at random) against the computer (Beginner).`);
     expect(status()).toBe(`Your move — you play ${colour}.`);
     expect(byId('board').firstElementChild?.getAttribute('data-square')).toBe(state.humanColor === 'w' ? 'a8' : 'h1');
-    expect(ctx.preferences.get('menu')).toMatchObject({ opponent: 'computer', humanColor: 'random' });
-    expect(byId<HTMLInputElement>('color-random').checked).toBe(true);
-    expect(byId('menu-color').textContent).toContain('Random');
-    // Each start from the menu draws again from a fresh seed.
-    byId('start').click();
-    expect(instance.serialize().seed).toBe(nextSeed(nextSeed(9)));
-    // The host's "new game" keeps drawing; both colours occur, and the computer opens as White.
+    // Every new game draws again; both colours occur, and the computer opens as White.
     const drawn = new Set<string>();
     for (let seed = 1; seed <= 8; seed++) {
-      instance.newGame({ seed, difficulty: 'beginner' });
+      instance.newGame({ seed, difficulty: 'beginner', settings: random });
       const s = instance.serialize();
       expect(s).toMatchObject({ colorRandom: true, humanColor: randomColor(seed) });
       expect(s.moves).toHaveLength(s.humanColor === 'b' ? 1 : 0);
@@ -70,32 +63,6 @@ describe('random colour', () => {
     const saved = instance.serialize();
     instance.restore(saved);
     expect(instance.serialize()).toEqual(saved);
-  });
-
-  it('keeps "random" while puzzles or two-player games run in between', () => {
-    const { instance, byId } = mount();
-    instance.newGame({ seed: 2 });
-    byId('color-random').click();
-    byId('start').click();
-    byId('mode-mate').click();
-    byId('start').click();
-    expect(instance.serialize().mode).toBe('mate');
-    expect(instance.serialize().colorRandom).toBeUndefined();
-    byId('mode-computer').click();
-    expect(byId<HTMLInputElement>('color-random').checked).toBe(true);
-    byId('start').click();
-    expect(instance.serialize().colorRandom).toBe(true);
-  });
-
-  it('a fresh instance on the same device starts with the remembered random choice', () => {
-    const ctx = createTestContext(game as GameModule<unknown>, 'en');
-    ctx.preferences.set('menu', { opponent: 'computer', humanColor: 'random', mode: 'play', mateN: 1 });
-    const { instance, byId } = mount({
-      ctx: { ...ctx, context: { ...ctx.context, preferences: { get: (k) => ctx.preferences.get(k), set: (k, v) => void ctx.preferences.set(k, v) } } }
-    });
-    instance.newGame({ seed: 5 });
-    expect(instance.serialize()).toMatchObject({ colorRandom: true, humanColor: randomColor(5) });
-    expect(byId<HTMLInputElement>('color-random').checked).toBe(true);
   });
 });
 

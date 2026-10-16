@@ -58,7 +58,7 @@ describe('view', () => {
     expect(ctx.saveRequests()).toBe(3);
     // Modifier shortcuts and typing into form fields are left alone.
     document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', ctrlKey: true, bubbles: true }));
-    press('c', q('wg-language')!);
+    press('c', q('wg-layout')!);
     expect(instance.serialize().input).toBe('a');
   });
 
@@ -145,19 +145,29 @@ describe('view', () => {
     expect(start({ locale: 'fr' }).instance.serialize().language).toBe('en');
   });
 
-  it('switches the word language from the options and keeps it for the next game', () => {
-    const { q, instance, ctx } = start({ seed: 5 });
-    const select = q('wg-language') as HTMLSelectElement;
-    select.value = 'de';
-    select.dispatchEvent(new Event('change', { bubbles: true }));
-    expect(instance.serialize()).toEqual(createInitialState(5, 'easy', { language: 'de', strict: false, layout: 'familiar' }));
-    expect(ctx.saveRequests()).toBe(1);
+  it('starts in the word language and strict mode chosen on the start screen (ADR 0017)', () => {
+    const { q, instance } = start({ seed: 5 });
+    // Only display options remain in the game.
+    expect(q('wg-language')).toBeNull();
+    expect(q('wg-strict')).toBeNull();
+    instance.newGame({ seed: 5, difficulty: 'easy', settings: { language: 'de', strict: true } });
+    expect(instance.serialize()).toEqual(createInitialState(5, 'easy', { language: 'de', strict: true, layout: 'familiar' }));
     instance.newGame({ seed: 6, difficulty: 'hard' });
-    expect(instance.serialize().language).toBe('de');
-    expect(instance.serialize().difficulty).toBe('hard');
+    expect(instance.serialize()).toMatchObject({ language: 'en', strict: false, difficulty: 'hard' });
+    // Invalid values fall back to the defaults (the UI language when there are words for it).
+    instance.newGame({ seed: 6, settings: { language: 'xx', strict: 'yes' } });
+    expect(instance.serialize()).toMatchObject({ language: 'en', strict: false });
+    const german = start({ locale: 'de' });
+    expect(german.instance.serialize().language).toBe('de');
   });
 
-  it('switches to the large alphabetical keyboard and toggles strict mode', () => {
+  it('declares the word language with the UI language as its default, and strict mode', () => {
+    const specs = (locale: SupportedLocale) => (typeof game.settings === 'function' ? game.settings(createTestContext(game as GameModule<unknown>, locale).settingsEnv) : game.settings);
+    expect(specs('de')).toEqual([expect.objectContaining({ id: 'language', values: ['en', 'de'], default: 'de' }), expect.objectContaining({ id: 'strict', kind: 'toggle', default: false })]);
+    expect(specs('ja')).toEqual([expect.objectContaining({ default: 'en' }), expect.anything()]);
+  });
+
+  it('switches to the large alphabetical keyboard in the game', () => {
     const { q, instance } = start({ locale: 'de' });
     const layout = q('wg-layout') as HTMLSelectElement;
     layout.value = 'large';
@@ -166,32 +176,22 @@ describe('view', () => {
     expect(q('wg-keyboard')!.classList.contains('wg-layout-large')).toBe(true);
     const keys = [...q('wg-keyboard')!.querySelectorAll('[data-testid^="wg-key-"]')].map((k) => k.getAttribute('data-testid')!.slice(7)).join('');
     expect(keys).toBe('abcdefghijklmnopqrstuvwxyzäöü');
-    const strict = q('wg-strict') as HTMLInputElement;
-    strict.checked = true;
-    strict.dispatchEvent(new Event('change', { bubbles: true }));
-    expect(instance.serialize().strict).toBe(true);
   });
 
-  it('remembers word language, strict mode and keyboard layout on this device for fresh games', () => {
+  it('remembers the keyboard layout on this device for fresh games', () => {
     const { q, ctx } = start({ seed: 5 });
-    const select = q('wg-language') as HTMLSelectElement;
-    select.value = 'de';
-    select.dispatchEvent(new Event('change', { bubbles: true }));
-    const strict = q('wg-strict') as HTMLInputElement;
-    strict.checked = true;
-    strict.dispatchEvent(new Event('change', { bubbles: true }));
     const layout = q('wg-layout') as HTMLSelectElement;
     layout.value = 'large';
     layout.dispatchEvent(new Event('change', { bubbles: true }));
-    expect(ctx.preferences.get('options')).toEqual({ language: 'de', strict: true, layout: 'large' });
+    expect(ctx.preferences.get('options')).toEqual({ layout: 'large' });
     const fresh = createTestContext(game as GameModule<unknown>, 'en');
     const second = game.create({ ...fresh.context, preferences: { get: (k) => ctx.preferences.get(k), set: () => undefined } }) as GameInstance<WordGuessState>;
     cleanup.push(() => second.dispose());
     second.newGame({ seed: 7 });
-    expect(second.serialize()).toMatchObject({ language: 'de', strict: true, layout: 'large' });
-    // Unexpected stored values fall back to the defaults.
+    expect(second.serialize()).toMatchObject({ language: 'en', strict: false, layout: 'large' });
+    // Unexpected stored values fall back to the defaults; an old remembered language is ignored.
     const odd = createTestContext(game as GameModule<unknown>, 'en');
-    const third = game.create({ ...odd.context, preferences: { get: () => ({ language: 'xx', strict: 'yes', layout: 'tiny' }), set: () => undefined } }) as GameInstance<WordGuessState>;
+    const third = game.create({ ...odd.context, preferences: { get: () => ({ language: 'de', strict: true, layout: 'tiny' }), set: () => undefined } }) as GameInstance<WordGuessState>;
     cleanup.push(() => third.dispose());
     third.newGame({ seed: 7 });
     expect(third.serialize()).toMatchObject({ language: 'en', strict: false, layout: 'familiar' });

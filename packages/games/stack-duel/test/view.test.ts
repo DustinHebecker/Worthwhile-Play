@@ -18,10 +18,10 @@ function mount(options: { reducedMotion?: boolean; locale?: SupportedLocale } = 
   const $ = <T extends Element = HTMLElement>(id: string) => root.querySelector(`[data-testid="${id}"]`) as T;
   const click = (id: string) => $<HTMLButtonElement>(id).click();
   const key = (k: string, extra: KeyboardEventInit = {}) => $('board').dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true, ...extra }));
-  const select = (value: string) => {
-    const el = $<HTMLSelectElement>('option-mode');
-    el.value = value;
-    el.dispatchEvent(new Event('change'));
+  /** Like the host's start screen (ADR 0017): a new game in another mode. */
+  const select = (mode: string) => {
+    const s = instance.serialize();
+    instance.newGame({ seed: s.seed, difficulty: s.difficulty, settings: { mode } });
   };
   const text = (id: string) => $(id).textContent ?? '';
   return { ctx, instance, root, $, click, key, select, text };
@@ -108,12 +108,12 @@ describe('stack duel view', () => {
     click('drop');
     expect(instance.serialize().bodies).toHaveLength(1);
     expect(text('status')).toMatch(/^Player 2: place the /);
-    // The mode survives a new game from the host.
-    instance.newGame({ seed: 5, difficulty: 'medium' });
+    // The mode comes from the start screen; without (or with an invalid) one the duel against the computer.
+    instance.newGame({ seed: 5, difficulty: 'medium', settings: { mode: 'human' } });
     expect(instance.serialize().mode).toBe('human');
     expect(instance.serialize().difficulty).toBe('medium');
     select('nonsense');
-    expect(instance.serialize().mode).toBe('human');
+    expect(instance.serialize().mode).toBe('computer');
   });
 
   it('reports the end exactly once, disables the controls and does not re-report on restore', () => {
@@ -183,20 +183,11 @@ describe('stack duel view', () => {
     expect(instance.serialize().cursor.x).toBeCloseTo(Math.round(at(150) * 20) / 20, 9);
   });
 
-  it('remembers the chosen mode on this device for fresh games after a reload', () => {
-    const first = mount();
-    first.instance.newGame({ seed: 1, difficulty: 'easy' });
-    first.select('solo');
-    expect(first.ctx.preferences.get('mode')).toBe('solo');
-    const ctx = createTestContext(game as GameModule<unknown>, 'en');
-    const second = game.create({ ...ctx.context, preferences: { get: (k) => first.ctx.preferences.get(k), set: () => undefined } });
-    instances.push(second);
-    second.newGame({ seed: 2, difficulty: 'easy' });
-    expect(second.serialize().mode).toBe('solo');
-    const odd = game.create({ ...ctx.context, root: document.createElement('div'), preferences: { get: () => 'flying', set: () => undefined } });
-    instances.push(odd);
-    odd.newGame({ seed: 2, difficulty: 'easy' });
-    expect(odd.serialize().mode).toBe('computer');
+  it('has no in-game mode select: the mode is a start-screen setting (ADR 0017)', () => {
+    const { instance, root } = mount();
+    instance.newGame({ seed: 1, difficulty: 'easy', settings: { mode: 'solo' } });
+    expect(instance.serialize().mode).toBe('solo');
+    expect(root.querySelector('select')).toBeNull();
   });
 
   const pointer = (type: string, pointerType: string, init: MouseEventInit = {}) => {

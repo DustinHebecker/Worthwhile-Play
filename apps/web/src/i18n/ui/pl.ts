@@ -54,6 +54,8 @@ const pl: UiCatalogue = {
   'game.saveUnavailable': 'W tym trybie przeglądarki nie można zapisać postępów – przepadną po zamknięciu strony.',
   'game.finished': 'Koniec.',
   'game.anotherRound': 'Jeszcze jedna runda',
+  'game.changeSettings': 'Zmień ustawienia',
+  'game.started': 'Nowa gra rozpoczęta.',
   'game.sessionNote': 'Grasz już {minutes} min.',
   'game.dismiss': 'Zamknij',
   'game.seed': 'Gra nr {seed}',

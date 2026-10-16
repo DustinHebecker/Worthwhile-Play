@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, readSave } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, readSave, newGame, startGame, submitStart } from '../../packages/testing/src/e2e';
 
 interface SavedRelay {
   phase: string;
@@ -7,14 +7,15 @@ interface SavedRelay {
   world: { turn: number; entities: { id: number; side: number; kind: string; x: number; y: number }[] };
   result: string | null;
   endless: boolean;
+  random: { w: number; h: number; seed: number } | null;
 }
 
 const saved = async (page: Page) => ((await readSave(page, 'relay-command')) as { state: SavedRelay } | undefined)?.state;
 const firstRifle = (s: SavedRelay) => s.world.entities.find((e) => e.side === 0 && e.kind === 'rifles')!;
 
 async function start(page: Page) {
-  // No save: the game starts at once and its setup is the first screen (ADR 0015).
-  await page.goto('/games/relay-command');
+  // No save: the host's start screen (difficulty), then the game's own setup (ADR 0015, ADR 0017).
+  await startGame(page, 'relay-command');
   await expect(page.getByTestId('rc-map')).toBeVisible();
   // The host saves the fresh game; positions are read from that save.
   await expect.poll(async () => (await saved(page))?.world.entities.length ?? 0).toBeGreaterThan(0);
@@ -175,8 +176,11 @@ test('relay-command: a Static Jammer is set up in one turn and stays set up acro
   await expect(page.getByTestId(`rc-unit-${jammer.id}`)).toContainText('Jammer active');
 });
 
-test('opening relay-command with no save shows the map setup directly, without a start panel (ADR 0015)', async ({ page }) => {
+test('opening relay-command with no save: the start screen with the difficulty, then Start shows the map setup (ADR 0015, ADR 0017)', async ({ page }) => {
   await page.goto('/games/relay-command');
+  await expect(page.getByTestId('difficulty')).toBeVisible();
+  await expect(page.getByTestId('continue')).toHaveCount(0);
+  await submitStart(page);
   await expect(page.getByTestId('rc-setup')).toBeVisible();
   await expect(page.getByTestId('rc-scenario')).toBeEnabled();
   await expect(page.getByTestId('rc-map')).toBeVisible();
@@ -191,13 +195,16 @@ test('opening relay-command with no save shows the map setup directly, without a
 });
 
 test('relay-command: the opponent level chosen before a new game is kept in the save', async ({ page }) => {
-  // The game opens at once (ADR 0015); the level is chosen in the toolbar and New game starts afresh with it.
-  await page.goto('/games/relay-command');
-  await expect(page.getByTestId('rc-map')).toBeVisible();
-  await page.getByTestId('difficulty').selectOption('hard');
-  await page.getByTestId('new-game').click();
+  // The start screen preselects the level of a `?difficulty=` link (ADR 0017); Start passes it to the game's setup,
+  // and New game → Start keeps it (remembered).
+  await page.goto('/games/relay-command?difficulty=hard');
+  await expect(page.getByTestId('difficulty').locator('input[value="hard"]')).toBeChecked();
+  await submitStart(page);
   await expect(page.getByTestId('rc-map')).toBeVisible();
   await expect.poll(async () => ((await readSave(page, 'relay-command')) as { state: { difficulty: string } } | undefined)?.state.difficulty).toBe('hard');
+  await newGame(page);
+  await expect(page.getByTestId('rc-map')).toBeVisible();
+  await expect.poll(async () => ((await readSave(page, 'relay-command')) as { state: { difficulty: string; seed: number } } | undefined)?.state.difficulty).toBe('hard');
   await page.getByTestId('rc-lock').click();
   await expect(page.getByTestId('rc-turn')).toHaveText('Turn 2');
 });
@@ -233,6 +240,30 @@ test('relay-command: "Deposits never run dry" chosen before the first turn survi
   await page.getByTestId('rc-lock').click();
   await expect(page.getByTestId('rc-endless')).toBeDisabled();
   await expect(page.getByTestId('rc-setup-summary')).toContainText('endless deposits');
+});
+
+test('relay-command: a random map chosen in the setup (size, map number) survives a reload; it fits a 360 px phone', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await start(page);
+  await page.getByTestId('rc-scenario').selectOption('random');
+  await expect(page.getByTestId('rc-random')).toBeVisible();
+  await page.getByTestId('rc-random-size').selectOption('20x14');
+  await expect(page.getByTestId('rc-map')).toHaveAttribute('data-cols', '20');
+  await page.getByTestId('rc-random-seed').fill('4711');
+  await page.getByTestId('rc-random-seed').press('Enter');
+  await page.getByTestId('rc-random-seed').blur();
+  await expect.poll(async () => (await saved(page))?.random).toEqual({ w: 20, h: 14, seed: 4711 });
+  const widths = await page.evaluate(() => ({ page: document.documentElement.scrollWidth, viewport: document.documentElement.clientWidth }));
+  expect(widths.page).toBeLessThanOrEqual(widths.viewport);
+  const terrain = (await saved(page) as unknown as { map: { terrain: string } }).map.terrain;
+  await page.reload();
+  await page.getByTestId('continue').click();
+  await expect(page.getByTestId('rc-scenario')).toHaveValue('random');
+  await expect(page.getByTestId('rc-random-seed')).toHaveValue('4711');
+  expect((await saved(page) as unknown as { map: { terrain: string } }).map.terrain).toBe(terrain);
+  await page.getByTestId('rc-lock').click();
+  await expect(page.getByTestId('rc-random-seed')).toBeDisabled();
+  await expect(page.getByTestId('rc-setup-summary')).toContainText('Random map 20×14 · No. 4711');
 });
 
 test('relay-command: the Command Post places an Extractor on a deposit by tapping the map', async ({ page, isMobile }) => {
@@ -520,7 +551,7 @@ test('relay-command: in Arabic on a 360 px phone the doctrine choices of a selec
   await page.goto('/settings');
   await page.getByTestId('ui-language').selectOption('ar');
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
-  await page.goto('/games/relay-command');
+  await startGame(page, 'relay-command');
   await page.locator('[data-testid^="rc-unit-"]').nth(2).click();
   await expect(page.getByTestId('rc-doctrine-lostcontact')).toBeVisible();
   await expect(page.getByTestId('rc-doctrine-lostcontact').locator('option')).toHaveCount(3);

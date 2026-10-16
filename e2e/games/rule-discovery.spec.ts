@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, startGame } from '../../packages/testing/src/e2e';
 
 const root = (page: Page) => page.getByTestId('game-root');
 
@@ -29,8 +29,7 @@ test('rule-discovery: tests and an edited draft survive a reload', async ({ page
 });
 
 test('rule-discovery: Enter runs a test and repeated triples are not logged twice', async ({ page }) => {
-  await page.goto('/games/rule-discovery');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'rule-discovery');
   const field = root(page).getByTestId('rd-input-2');
   await root(page).getByTestId('rd-input-0').fill('7');
   await root(page).getByTestId('rd-input-1').fill('7');

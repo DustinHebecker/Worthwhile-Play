@@ -1,9 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest';
-import type { GameInstance, GameModule } from '@wp/game-core';
+import type { GameInstance, GameModule, NewGameOptions } from '@wp/game-core';
 import { createTestContext, type TestContext } from '@wp/testing';
 import game from '../src/index';
-import { PREFERENCES_KEY } from '../src/view';
 import { isValidState, type TicTacToeState } from '../src/state';
 import type { NestedState } from '../src/nested';
 import type { OrderChaosState } from '../src/order-chaos';
@@ -11,17 +10,21 @@ import { nestedFromMoves } from '../src/nested';
 
 let instances: GameInstance<TicTacToeState>[] = [];
 
-function mount(preferences?: unknown) {
+/** `initial`: the settings chosen on the host's start screen for every new game of this instance. */
+function mount(initial: Record<string, string> = {}) {
   const ctx: TestContext = createTestContext(game as GameModule<unknown>, 'en');
-  if (preferences !== undefined) ctx.preferences.set(PREFERENCES_KEY, preferences);
   const instance = game.create(ctx.context);
+  const start = instance.newGame.bind(instance);
+  instance.newGame = (options: NewGameOptions) => start({ ...options, settings: { ...initial, ...options.settings } });
   instances.push(instance);
   const root = ctx.context.root;
   const q = <T extends HTMLElement = HTMLElement>(id: string) => root.querySelector<T>(`[data-testid="${id}"]`)!;
+  /** Like the host's start screen (ADR 0017): a new game with the current settings, one of them changed. */
   const select = (name: string, value: string) => {
-    const el = q<HTMLSelectElement>(`option-${name}`);
-    el.value = value;
-    el.dispatchEvent(new Event('change'));
+    const s = instance.serialize() as TicTacToeState;
+    const settings: Record<string, string> = { ...initial, variant: s.variant, opponent: s.opponent, ...(s.variant === 'order-chaos' ? { role: s.role } : { starter: s.starter }) };
+    if (name !== 'strength') settings[name] = value;
+    start({ seed: s.seed, difficulty: name === 'strength' ? value : s.difficulty, settings });
   };
   const key = (target: HTMLElement, k: string) => target.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true }));
   return { ctx, instance, root, q, select, key };
@@ -33,23 +36,24 @@ afterEach(() => {
 });
 
 describe('variant choice', () => {
-  it('switches variants from the options, remembers the choice and keeps it for new games', () => {
-    const { ctx, instance, q, select } = mount();
+  it('starts the variant chosen on the start screen; without settings the classic game', () => {
+    const { instance, q, select } = mount();
     instance.newGame({ seed: 4 });
     expect(instance.serialize().variant).toBe('classic');
     select('variant', 'nested');
     expect(instance.serialize().variant).toBe('nested');
     expect(q('overview')).not.toBeNull();
-    expect(ctx.preferences.get(PREFERENCES_KEY)).toMatchObject({ variant: 'nested' });
     instance.newGame({ seed: 5 });
-    expect(instance.serialize().variant).toBe('nested');
+    expect(instance.serialize().variant).toBe('classic');
+    instance.newGame({ seed: 5, settings: { variant: 'ultimate' } });
+    expect(instance.serialize().variant).toBe('classic');
     select('variant', 'order-chaos');
     expect(q('oc-board')).not.toBeNull();
     expect(q('overview')).toBeNull();
     expect(q('variant-hint').textContent).toContain('exactly five');
   });
 
-  it('starts with the remembered variant on a new device session', () => {
+  it('starts Order & Chaos in the chosen role', () => {
     const { instance, q } = mount({ variant: 'order-chaos', opponent: 'computer', role: 'chaos' });
     instance.newGame({ seed: 8 });
     const s = instance.serialize() as OrderChaosState;
@@ -58,11 +62,12 @@ describe('variant choice', () => {
     // The computer plays Order and has opened.
     expect(s.moves).toHaveLength(1);
     expect(q('status').textContent).toBe('Your turn — you are Chaos: prevent every line of five.');
-    expect(q<HTMLSelectElement>('option-role').closest('label')!.hidden).toBe(false);
-    expect(q<HTMLSelectElement>('option-starter').closest('label')!.hidden).toBe(true);
+    // The options live only on the host's start screen (ADR 0017).
+    expect(q('option-role')).toBeNull();
+    expect(q('option-strength')).toBeNull();
   });
 
-  it('restores each variant exactly, even when another variant is remembered', () => {
+  it('restores each variant exactly, even when another variant was chosen for new games', () => {
     const a = mount({ variant: 'nested' });
     a.instance.newGame({ seed: 12, difficulty: 'easy' });
     a.q('board-4').click();
@@ -73,7 +78,6 @@ describe('variant choice', () => {
     b.instance.restore(JSON.parse(JSON.stringify(saved)) as TicTacToeState);
     expect(b.instance.serialize()).toEqual(saved);
     expect(b.q('overview')).not.toBeNull();
-    expect(b.q<HTMLSelectElement>('option-variant').value).toBe('nested');
   });
 });
 

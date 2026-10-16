@@ -8,11 +8,8 @@ import {
   deleteLetter,
   historyOf,
   letterStatus,
-  optionsOf,
   restart,
-  setLanguage,
   setLayout,
-  setStrict,
   statusOf,
   submitGuess,
   toDifficulty,
@@ -22,7 +19,8 @@ import {
   type SubmitError,
   type WordGuessState
 } from './rules';
-import { LANGUAGE_INFO, WORD_LANGUAGES, defaultLanguage, isWordLanguage } from './words';
+import { optionsFrom } from './settings';
+import { LANGUAGE_INFO } from './words';
 import './styles.css';
 
 /** Shape symbols that carry the feedback independently of colour. */
@@ -35,19 +33,19 @@ let instanceCounter = 0;
 export function createWordGuess(context: GameContext): GameInstance<WordGuessState> {
   const { t } = context;
   const uid = `wg${++instanceCounter}`;
-  // Options remembered on this device (word language, strict mode, keyboard layout) for fresh games after a
-  // reload; read defensively, anything unexpected falls back to the defaults.
-  const remembered = (() => {
+  // The keyboard layout is a display preference remembered on this device (read defensively); the word language
+  // and strict mode change the game and are chosen on the host's start screen (ADR 0017, see settings.ts).
+  const rememberedLayout = (() => {
     const raw = context.preferences?.get('options');
     const r = typeof raw === 'object' && raw !== null ? (raw as Record<string, unknown>) : {};
-    return {
-      language: typeof r.language === 'string' && isWordLanguage(r.language) ? r.language : defaultLanguage(t.locale),
-      strict: r.strict === true,
-      layout: (LAYOUTS as readonly unknown[]).includes(r.layout) ? (r.layout as KeyboardLayout) : 'familiar'
-    };
+    return (LAYOUTS as readonly unknown[]).includes(r.layout) ? (r.layout as KeyboardLayout) : 'familiar';
   })();
-  const rememberOptions = () => context.preferences?.set('options', { language: state.language, strict: state.strict, layout: state.layout });
-  let state = createInitialState(0, undefined, remembered);
+  // Other entries (word language and strict mode of older versions) stay: they are the start screen's defaults.
+  const rememberOptions = () => {
+    const raw = context.preferences?.get('options');
+    context.preferences?.set('options', { ...(typeof raw === 'object' && raw !== null ? raw : {}), layout: state.layout });
+  };
+  let state = createInitialState(0, undefined, optionsFrom(undefined, t.locale, rememberedLayout));
   let paused = false;
   let message = '';
 
@@ -244,16 +242,6 @@ export function createWordGuess(context: GameContext): GameInstance<WordGuessSta
     );
 
   const renderOptions = () => {
-    const language = h('select', {
-      id: `${uid}-language`, 'data-focus': 'language', 'data-testid': 'wg-language', 'aria-describedby': `${uid}-language-note`,
-      onchange: (event: Event) => {
-        const value = (event.target as HTMLSelectElement).value;
-        if (isWordLanguage(value) && !paused) {
-          commit(setLanguage(state, value));
-          rememberOptions();
-        }
-      }
-    }, ...WORD_LANGUAGES.map((id) => h('option', { value: id, selected: id === state.language, lang: bcp47Tag(id) }, LANGUAGE_INFO[id].nativeName)));
     const layout = h('select', {
       id: `${uid}-layout`, 'data-focus': 'layout', 'data-testid': 'wg-layout',
       onchange: (event: Event) => {
@@ -264,19 +252,7 @@ export function createWordGuess(context: GameContext): GameInstance<WordGuessSta
         }
       }
     }, ...LAYOUTS.map((id) => h('option', { value: id, selected: id === state.layout }, t(`layout.${id}`))));
-    const strict = h('input', {
-      type: 'checkbox', id: `${uid}-strict`, 'data-focus': 'strict', 'data-testid': 'wg-strict', checked: state.strict,
-      onchange: (event: Event) => {
-        if (!paused) {
-          commit(setStrict(state, (event.target as HTMLInputElement).checked));
-          rememberOptions();
-        }
-      }
-    });
     return h('section', { class: 'wg-options', 'aria-label': t('options.label') },
-      h('div', { class: 'wg-field' }, h('label', { for: `${uid}-language` }, t('language.label')), language),
-      h('p', { class: 'wg-hint wp-muted', id: `${uid}-language-note` }, t('language.note')),
-      h('div', { class: 'wg-field wg-check' }, strict, h('label', { for: `${uid}-strict` }, t('strict.label'))),
       h('div', { class: 'wg-field' }, h('label', { for: `${uid}-layout` }, t('layout.label')), layout),
       h('p', { class: 'wg-hint wp-muted' }, t('help.keys'))
     );
@@ -323,8 +299,8 @@ export function createWordGuess(context: GameContext): GameInstance<WordGuessSta
 
   return {
     newGame(options: NewGameOptions) {
-      // Word language, strict mode and keyboard layout are the player's choices and carry over.
-      state = createInitialState(options.seed, toDifficulty(options.difficulty), optionsOf(state));
+      // Word language and strict mode come from the start screen; the keyboard layout (display) carries over.
+      state = createInitialState(options.seed, toDifficulty(options.difficulty), optionsFrom(options.settings, t.locale, state.layout));
       message = '';
       mount();
     },
