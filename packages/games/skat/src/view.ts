@@ -21,6 +21,7 @@ import {
   endSeries,
   entryScores,
   highBid,
+  isDeclarableAt,
   isLegalContract,
   legalCards,
   minimumValue,
@@ -361,17 +362,21 @@ export function createSkat(context: GameContext): GameInstance<SkatState> {
     box('schwarz', hand && suitLike);
     box('ouvert', draft.kind === 'null' || hand);
     const cards = declarerCards(d, HUMAN);
-    const legal = isLegalContract(draft);
+    const declarable = isDeclarableAt(draft, bid);
+    const legal = isLegalContract(draft) && declarable;
     const value = minimumValue(draft, cards);
-    const info = h('p', { class: 'sk-hint', 'data-testid': 'declare-value' }, value >= bid ? t('declare.value', { value, bid }) : t('declare.overbid', { value, bid }));
+    const hint = !declarable ? t('declare.nullTooLow', { value, bid }) : value >= bid ? t('declare.value', { value, bid }) : t('declare.overbid', { value, bid });
+    const info = h('p', { class: 'sk-hint', 'data-testid': 'declare-value' }, hint);
+    const confirm = button(t('declare.confirm', { game: contractName(draft) }), 'declare-confirm', () => {
+      if (legal) act({ type: 'declare', contract: draft });
+    }, true);
+    confirm.disabled = !legal;
     panel.append(
       h('p', {}, hand ? t('declare.handPrompt', { bid }) : t('declare.prompt', { bid })),
       fieldset,
       extras,
       info,
-      h('div', { class: 'sk-actions' }, button(t('declare.confirm', { game: contractName(draft) }), 'declare-confirm', () => {
-        if (legal) act({ type: 'declare', contract: draft });
-      }, true))
+      h('div', { class: 'sk-actions' }, confirm)
     );
   }
 
