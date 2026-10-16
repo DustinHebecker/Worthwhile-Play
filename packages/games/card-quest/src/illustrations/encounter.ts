@@ -1044,17 +1044,20 @@ export const ENCOUNTER: Readonly<Record<string, string>> = {
     <path class="il-water il-ink il-thin" d="M-24 0h48" opacity="0.6"/>
     </g>`,
 
-  // A grim dwarf trudges along with each boot stuck in a huge lump of mud, splats flying, a trail of muddy footprints behind him.
+  // A grim dwarf trudges through a wide mud puddle, boots sunk in up to the ankles, brown splashes flying up with every step and a trail of muddy footprints behind him.
   'kz.muddy-boots': `
     <rect class="il-sky" x="0" y="0" width="160" height="120"/>
     <path class="il-earth" d="M0 90h160v30H0z"/>
     <g class="il-earth-dark">
-    <ellipse cx="14" cy="104" rx="7" ry="3"/>
-    <ellipse cx="34" cy="110" rx="7" ry="3"/>
-    <ellipse cx="54" cy="102" rx="7" ry="3"/>
+    <ellipse cx="12" cy="104" rx="6" ry="2.6"/>
+    <ellipse cx="30" cy="112" rx="6" ry="2.6"/>
+    <ellipse cx="46" cy="102" rx="6" ry="2.6"/>
     </g>
-    <g transform="translate(96 104) scale(1.05 1.05)">
+    <ellipse class="il-earth-dark il-ink" cx="100" cy="106" rx="50" ry="10"/>
+    <path class="il-line il-thin" opacity="0.4" d="M66 106q6-3 12 0M118 110q6-3 12 0"/>
+    <g transform="translate(100 104) scale(1.05 1.05)">
     <ellipse class="il-dark" cx="0" cy="0" rx="25" ry="3" opacity="0.3"/>
+    <path class="il-earth-dark il-ink" d="M-20 0v-8h12v8zM8 0v-8h12v8z"/>
     <path class="il-green il-ink" d="M-22 -6C-25 -30-18-46 0-46S25-30 22-6Z"/>
     <path class="il-wood-dark il-ink il-thin" d="M-23 -16h46v6h-46z"/>
     <rect class="il-metal il-ink il-thin" x="-4" y="-17" width="8" height="8" rx="1"/>
@@ -1072,12 +1075,20 @@ export const ENCOUNTER: Readonly<Record<string, string>> = {
     <rect class="il-yellow il-ink" x="-21" y="-64" width="42" height="5" rx="2.5"/>
     <path class="il-line il-thin" d="M0 -78v14"/>
     <circle class="il-glow il-ink il-thin" cx="0" cy="-70" r="4"/>
-    <path class="il-earth-dark il-ink" d="M-28 4c-6-4-4-14 4-14 2-6 14-4 14 2 6 2 6 10 0 12z"/>
-    <path class="il-earth-dark il-ink" d="M6 2c-4-6 0-14 8-12 4-6 14-2 12 4 6 4 2 10-4 10z"/>
-    <path class="il-line il-thin" opacity="0.5" d="M-22 -4q4-2 6 0M12 -4q4-2 6 0"/>
+    <path class="il-earth-dark il-ink" d="M-24 -6q-4 -6 2 -10 4 -4 8 0 6 -2 6 4 2 6-6 8-8 4z"/>
+    <path class="il-earth-dark il-ink" d="M6 -6q-4 -6 2 -10 4 -4 8 0 6 -2 6 4 2 6-6 8-8 4z"/>
+    <path class="il-earth-dark il-ink il-thin" d="M-26 -2q4-4 8 0t8 0M6 -2q4-4 8 0t8 0"/>
+    <path class="il-earth il-thin" d="M-18 -12a1.5 1.5 0 1 0 .1 0zM12 -12a1.5 1.5 0 1 0 .1 0z"/>
     </g>
-    <path class="il-earth-dark il-ink il-thin" d="M58 92a3 3 0 1 0 0.1 0zM136 90a3 3 0 1 0 0.1 0zM130 80a2 2 0 1 0 0.1 0zM62 80a2 2 0 1 0 0.1 0z"/>
-    <path class="il-line il-thin" d="M64 98l-6-4M126 98l8-4M60 104h-6M132 104h6"/>`,
+    <g class="il-earth-dark il-ink il-thin">
+    <circle cx="64" cy="88" r="3"/>
+    <circle cx="58" cy="78" r="2"/>
+    <circle cx="140" cy="86" r="3"/>
+    <circle cx="146" cy="76" r="2"/>
+    <circle cx="72" cy="80" r="1.6"/>
+    <circle cx="132" cy="78" r="1.6"/>
+    </g>
+    <path class="il-line il-thin" d="M68 96l-6-4M132 96l8-4M66 102h-6M134 102h6"/>`,
 
   // A dwarf scratches his head in front of a heavy mine door with a keypad flashing a red cross; next to him waits a cardboard box with his mug and lantern already packed.
   'kz.forgot-password': `
