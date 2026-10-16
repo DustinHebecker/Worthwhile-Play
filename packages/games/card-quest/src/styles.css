@@ -186,3 +186,4 @@
 /* Offers (K2) */
 .cq-help { border: 1px solid var(--wp-border); border-radius: var(--wp-radius); padding: 0.5rem 0.75rem; display: grid; gap: 0.35rem; }
 .cq-help select { min-inline-size: 0; max-inline-size: 100%; }
+.cq-stars { color: var(--cq-loot); letter-spacing: 0.05em; }

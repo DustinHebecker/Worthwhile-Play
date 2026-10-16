@@ -43,7 +43,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
   let selected: string | null = null;
   let mode: Mode = 'play';
   /** The player chosen in the help form. */
-  let offerSeat = 1;
+  let offerSeat = -1;
   const picked = new Set<string>();
   let finishedSent = false;
 
@@ -75,6 +75,8 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     const before = state.logSeq;
     const next = step(state, HUMAN, action);
     if (!next) return;
+    // A new choice of helper starts from the strongest again after anything but choosing.
+    offerSeat = -1;
     next.seen = before;
     if (hint && !next.hints.includes(hint)) next.hints.push(hint);
     state = advance(next);
@@ -402,7 +404,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     state.players.forEach((p, seat) => {
       const facts = [t('table.level', { n: p.level }), t('table.strength', { n: strengthOf(seat) }), t('table.cards', { n: p.hand.length })];
       if (p.malus > 0) facts.push(t('table.malus', { n: p.malus }));
-      facts.push(`${'★'.repeat(p.rep)}${'☆'.repeat(REP_MAX - p.rep)} ${t('table.rep', { n: p.rep })}`);
+      facts.push(t('table.rep', { n: p.rep }));
       if (p.favours.length > 0) facts.push(t('table.favours', { n: p.favours.length }));
       const gear = [...p.origins, ...p.professions, ...p.equipped].map(name).join(t('r.separator')) || t('table.nothing');
       list.append(
@@ -413,7 +415,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
             'summary',
             {},
             h('span', { class: 'cq-player-name' }, seatName(seat), p.personality ? h('span', { class: 'cq-muted' }, ` · ${t(`personality.${p.personality}`)}`) : null, seat === state.active ? h('span', { class: 'cq-turn' }, ` · ${t('table.active')}`) : null),
-            h('span', { class: 'cq-player-facts' }, facts.join(' · '))
+            h('span', { class: 'cq-player-facts' }, facts.join(' · '), h('span', { class: 'cq-stars', 'aria-hidden': 'true' }, ` ${'★'.repeat(p.rep)}${'☆'.repeat(REP_MAX - p.rep)}`))
           ), h('p', { class: 'cq-player-gear' }, p.personality ? `${t(`personality.${p.personality}.desc`)} ` : '', gear))
         )
       );
@@ -483,7 +485,8 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     if (!fight || state.phase !== 'fight' || state.active !== HUMAN || actorOf(state) !== HUMAN || fight.offer) return null;
     const offers = legalActions(state, HUMAN).filter((a): a is Extract<Action, { a: 'offer' }> => a.a === 'offer');
     if (offers.length === 0) return null;
-    const seats = [...new Set(offers.map((o) => o.to))];
+    // Strongest possible helper first (ties: seat order).
+    const seats = [...new Set(offers.map((o) => o.to))].sort((a, b) => tableStrength(state, b) - tableStrength(state, a) || a - b);
     if (!seats.includes(offerSeat)) offerSeat = seats[0]!;
     const who = h('select', { id: 'cq-help-who', 'data-testid': 'help-who', 'data-key': 'help-who' }) as HTMLSelectElement;
     for (const seat of seats) {
