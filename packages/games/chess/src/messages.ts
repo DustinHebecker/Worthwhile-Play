@@ -9,6 +9,14 @@ import type { GameMessages } from '@wp/game-core';
  * translation. Generic words (undo, hint, moves, opponent…) come from `common.*`.
  */
 const en = {
+  'game.computer': 'Against the computer',
+  'game.human': 'Two players',
+  'game.best': 'Find the best move',
+  'game.mate': 'Mate in N',
+  'mate.1': '1',
+  'mate.2': '2',
+  'mate.3': '3',
+  'mate.4': '4',
   title: 'Chess',
   tagline: 'The classic game of planning and tactics — against a thoughtful computer or a friend.',
   rules:
@@ -148,6 +156,14 @@ const en = {
 type Catalogue = Record<keyof typeof en, string>;
 
 const de: Catalogue = {
+  'game.computer': 'Gegen den Computer',
+  'game.human': 'Zu zweit',
+  'game.best': 'Finde den besten Zug',
+  'game.mate': 'Matt in N',
+  'mate.1': '1',
+  'mate.2': '2',
+  'mate.3': '3',
+  'mate.4': '4',
   title: 'Schach',
   tagline: 'Das klassische Spiel aus Planung und Taktik – gegen einen bedachten Computer oder gegen jemanden neben dir.',
   rules:
@@ -284,6 +300,14 @@ const de: Catalogue = {
 };
 
 const nl: Catalogue = {
+  'game.computer': 'Tegen de computer',
+  'game.human': 'Met z’n tweeën',
+  'game.best': 'Vind de beste zet',
+  'game.mate': 'Mat in N',
+  'mate.1': '1',
+  'mate.2': '2',
+  'mate.3': '3',
+  'mate.4': '4',
   title: 'Schaken',
   tagline: 'Het klassieke spel van planning en tactiek – tegen een bedachtzame computer of tegen iemand naast je.',
   rules:
@@ -420,6 +444,14 @@ const nl: Catalogue = {
 };
 
 const es: Catalogue = {
+  'game.computer': 'Contra el ordenador',
+  'game.human': 'Dos jugadores',
+  'game.best': 'Encuentra la mejor jugada',
+  'game.mate': 'Mate en N',
+  'mate.1': '1',
+  'mate.2': '2',
+  'mate.3': '3',
+  'mate.4': '4',
   title: 'Ajedrez',
   tagline: 'El clásico juego de planificación y táctica, contra un ordenador reflexivo o contra alguien a tu lado.',
   rules:
@@ -556,6 +588,14 @@ const es: Catalogue = {
 };
 
 const fr: Catalogue = {
+  'game.computer': 'Contre l’ordinateur',
+  'game.human': 'À deux',
+  'game.best': 'Trouve le meilleur coup',
+  'game.mate': 'Mat en N',
+  'mate.1': '1',
+  'mate.2': '2',
+  'mate.3': '3',
+  'mate.4': '4',
   title: 'Échecs',
   tagline: 'Le jeu classique de planification et de tactique, contre un ordinateur réfléchi ou une personne à tes côtés.',
   rules:
@@ -692,6 +732,14 @@ const fr: Catalogue = {
 };
 
 const ru: Catalogue = {
+  'game.computer': 'Против компьютера',
+  'game.human': 'Вдвоём',
+  'game.best': 'Найдите лучший ход',
+  'game.mate': 'Мат в N ходов',
+  'mate.1': '1',
+  'mate.2': '2',
+  'mate.3': '3',
+  'mate.4': '4',
   title: 'Шахматы',
   tagline: 'Классическая игра планирования и тактики — против вдумчивого компьютера или человека рядом.',
   rules:
@@ -828,6 +876,14 @@ const ru: Catalogue = {
 };
 
 const zhHans: Catalogue = {
+  'game.computer': '对战电脑',
+  'game.human': '双人对弈',
+  'game.best': '找出最佳着法',
+  'game.mate': 'N 步杀',
+  'mate.1': '1',
+  'mate.2': '2',
+  'mate.3': '3',
+  'mate.4': '4',
   title: '国际象棋',
   tagline: '经典的计划与战术游戏——与深思熟虑的电脑或身边的人对弈。',
   rules:
@@ -964,6 +1020,14 @@ const zhHans: Catalogue = {
 };
 
 const ko: Catalogue = {
+  'game.computer': '컴퓨터와 대국',
+  'game.human': '두 사람이 대국',
+  'game.best': '최선의 수 찾기',
+  'game.mate': 'N수 메이트',
+  'mate.1': '1',
+  'mate.2': '2',
+  'mate.3': '3',
+  'mate.4': '4',
   title: '체스',
   tagline: '계획과 전술의 고전 게임 — 신중한 컴퓨터나 옆에 있는 사람과 둡니다.',
   rules:
@@ -1100,6 +1164,14 @@ const ko: Catalogue = {
 };
 
 const ja: Catalogue = {
+  'game.computer': 'コンピューターと対局',
+  'game.human': '二人で対局',
+  'game.best': '最善手を探す',
+  'game.mate': 'N手メイト',
+  'mate.1': '1',
+  'mate.2': '2',
+  'mate.3': '3',
+  'mate.4': '4',
   title: 'チェス',
   tagline: '計画と戦術の古典ゲーム。思慮深いコンピューターや、となりの人と対局できます。',
   rules:
@@ -1236,6 +1308,14 @@ const ja: Catalogue = {
 };
 
 const ar: Catalogue = {
+  'game.computer': 'ضد الحاسوب',
+  'game.human': 'لاعبان',
+  'game.best': 'اعثر على أفضل نقلة',
+  'game.mate': 'مات في N',
+  'mate.1': '1',
+  'mate.2': '2',
+  'mate.3': '3',
+  'mate.4': '4',
   title: 'الشطرنج',
   tagline: 'اللعبة الكلاسيكية للتخطيط والتكتيك — أمام حاسوب متأنٍّ أو أمام شخص بجانبك.',
   rules:
@@ -1372,6 +1452,14 @@ const ar: Catalogue = {
 };
 
 const pt: Catalogue = {
+  'game.computer': 'Contra o computador',
+  'game.human': 'Dois jogadores',
+  'game.best': 'Encontre o melhor lance',
+  'game.mate': 'Mate em N',
+  'mate.1': '1',
+  'mate.2': '2',
+  'mate.3': '3',
+  'mate.4': '4',
   title: 'Xadrez',
   tagline: 'O clássico jogo de planejamento e tática — contra um computador ponderado ou alguém ao seu lado.',
   rules:
@@ -1508,6 +1596,14 @@ const pt: Catalogue = {
 };
 
 const it: Catalogue = {
+  'game.computer': 'Contro il computer',
+  'game.human': 'In due',
+  'game.best': 'Trova la mossa migliore',
+  'game.mate': 'Matto in N',
+  'mate.1': '1',
+  'mate.2': '2',
+  'mate.3': '3',
+  'mate.4': '4',
   title: 'Scacchi',
   tagline: 'Il classico gioco di pianificazione e tattica, contro un computer riflessivo o contro qualcuno accanto a te.',
   rules:
@@ -1644,6 +1740,14 @@ const it: Catalogue = {
 };
 
 const pl: Catalogue = {
+  'game.computer': 'Przeciw komputerowi',
+  'game.human': 'Dwie osoby',
+  'game.best': 'Znajdź najlepszy ruch',
+  'game.mate': 'Mat w N',
+  'mate.1': '1',
+  'mate.2': '2',
+  'mate.3': '3',
+  'mate.4': '4',
   title: 'Szachy',
   tagline: 'Klasyczna gra planowania i taktyki — z rozważnym komputerem albo z kimś obok ciebie.',
   rules:
@@ -1780,6 +1884,14 @@ const pl: Catalogue = {
 };
 
 const tr: Catalogue = {
+  'game.computer': 'Bilgisayara karşı',
+  'game.human': 'İki kişi',
+  'game.best': 'En iyi hamleyi bul',
+  'game.mate': 'N hamlede mat',
+  'mate.1': '1',
+  'mate.2': '2',
+  'mate.3': '3',
+  'mate.4': '4',
   title: 'Satranç',
   tagline: 'Planlama ve taktiğin klasik oyunu — düşünceli bir bilgisayara ya da yanındaki birine karşı.',
   rules:
@@ -1916,6 +2028,14 @@ const tr: Catalogue = {
 };
 
 const uk: Catalogue = {
+  'game.computer': 'Проти комп’ютера',
+  'game.human': 'Удвох',
+  'game.best': 'Знайдіть найкращий хід',
+  'game.mate': 'Мат у N ходів',
+  'mate.1': '1',
+  'mate.2': '2',
+  'mate.3': '3',
+  'mate.4': '4',
   title: 'Шахи',
   tagline: 'Класична гра планування й тактики — проти вдумливого комп’ютера або людини поруч.',
   rules:
@@ -2052,6 +2172,14 @@ const uk: Catalogue = {
 };
 
 const hi: Catalogue = {
+  'game.computer': 'कंप्यूटर के ख़िलाफ़',
+  'game.human': 'दो खिलाड़ी',
+  'game.best': 'सबसे अच्छी चाल खोजें',
+  'game.mate': 'N चालों में मात',
+  'mate.1': '1',
+  'mate.2': '2',
+  'mate.3': '3',
+  'mate.4': '4',
   title: 'शतरंज',
   tagline: 'योजना और चालबाज़ी का क्लासिक खेल — सोच-समझकर खेलने वाले कंप्यूटर या पास बैठे किसी व्यक्ति के साथ।',
   rules:
