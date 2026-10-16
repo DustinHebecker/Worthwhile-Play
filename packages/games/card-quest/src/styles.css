@@ -73,7 +73,7 @@
 .cq-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); gap: 0.4rem; }
 .cq-tile {
   display: grid;
-  grid-template-columns: 2.6rem 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.4rem;
   min-block-size: 3.4rem;
@@ -99,6 +99,8 @@
 .cq-tile-type { font-size: 0.78rem; color: var(--wp-muted); }
 .cq-tile-num { font-weight: 800; font-size: 1.1rem; }
 .cq-art { display: block; inline-size: 2.6rem; block-size: 2.6rem; }
+.cq-art-il { inline-size: 3.6rem; block-size: auto; align-self: center; }
+.cq-detail-pic { max-inline-size: 26rem; inline-size: 100%; justify-self: center; }
 .cq-pic { inline-size: 100%; block-size: 100%; }
 .cq-pic .b { fill: var(--cq-body); stroke: var(--wp-text); stroke-width: 1.5; }
 .cq-pic .a { fill: var(--cq-accent); stroke: var(--wp-text); stroke-width: 1; }
@@ -131,4 +133,56 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .cq * { transition: none !important; animation: none !important; }
+}
+
+/* Card illustrations (illustrations/): one fixed, dusky palette in both themes (owner preferred the dark look). */
+.cq { --il-ink: #120f0c; --il-sky: #3a4d5c; --il-night: #161c2e; --il-cave: #2a2420; --il-grass: #4f7d3a; --il-earth: #b8633a;
+  --il-earth-dark: #8f4626; --il-red: #d2402f; --il-orange: #e07a2c; --il-pink: #e48aa6; --il-green: #3f8f46; --il-blue: #3d6fb6;
+  --il-teal: #2f8f8a; --il-yellow: #f2c530; --il-gold: #e0a92a; --il-white: #e9e7df; --il-dark: #241f1b; --il-grey: #6e6a64;
+  --il-skin: #f1c7a1; --il-beard: #ecebe6; --il-stone: #a8a59c; --il-metal: #b9c0c7; --il-wood: #b07b48; --il-wood-dark: #7d5330;
+  --il-water: #6bb8e8; --il-smoke: #cfcfcf; --il-glow: #f4ff6a; --il-purple: #7b4fa8; --il-purple-dark: #4b2d6b; --il-torch: #b8ad5c;
+  --il-slime: #8fd14f; --il-paper: #efe6cf; }
+.cq-il { inline-size: 100%; block-size: auto; display: block; border-radius: 8px; }
+.cq-art-il .cq-il { border-radius: 4px; }
+.cq-il .il-ink { stroke: var(--il-ink); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.cq-il .il-line { fill: none; stroke: var(--il-ink); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.cq-il .il-light { fill: none; stroke: var(--il-white); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.cq-il .il-thin { stroke-width: 1.2; }
+.cq-il .il-thick { stroke-width: 3.5; }
+.cq-il .il-dash { stroke-dasharray: 6 4; }
+.cq-il .il-sky { fill: var(--il-sky); }
+.cq-il .il-night { fill: var(--il-night); }
+.cq-il .il-cave { fill: var(--il-cave); }
+.cq-il .il-grass { fill: var(--il-grass); }
+.cq-il .il-earth { fill: var(--il-earth); }
+.cq-il .il-earth-dark { fill: var(--il-earth-dark); }
+.cq-il .il-red { fill: var(--il-red); }
+.cq-il .il-orange { fill: var(--il-orange); }
+.cq-il .il-pink { fill: var(--il-pink); }
+.cq-il .il-green { fill: var(--il-green); }
+.cq-il .il-blue { fill: var(--il-blue); }
+.cq-il .il-teal { fill: var(--il-teal); }
+.cq-il .il-yellow { fill: var(--il-yellow); }
+.cq-il .il-gold { fill: var(--il-gold); }
+.cq-il .il-white { fill: var(--il-white); }
+.cq-il .il-dark { fill: var(--il-dark); }
+.cq-il .il-grey { fill: var(--il-grey); }
+.cq-il .il-skin { fill: var(--il-skin); }
+.cq-il .il-beard { fill: var(--il-beard); }
+.cq-il .il-stone { fill: var(--il-stone); }
+.cq-il .il-metal { fill: var(--il-metal); }
+.cq-il .il-wood { fill: var(--il-wood); }
+.cq-il .il-wood-dark { fill: var(--il-wood-dark); }
+.cq-il .il-water { fill: var(--il-water); }
+.cq-il .il-smoke { fill: var(--il-smoke); }
+.cq-il .il-glow { fill: var(--il-glow); }
+.cq-il .il-purple { fill: var(--il-purple); }
+.cq-il .il-purple-dark { fill: var(--il-purple-dark); }
+.cq-il .il-slime { fill: var(--il-slime); }
+.cq-il .il-paper { fill: var(--il-paper); }
+.cq-il .il-torch { fill: var(--il-torch); opacity: 0.7; }
+.cq-il .il-hose { fill: none; stroke: var(--il-green); stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; }
+.cq-il .il-water-line { fill: none; stroke: var(--il-water); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 6 4; }
+@media (forced-colors: active) {
+  .cq-il * { fill: Canvas !important; stroke: CanvasText !important; }
 }

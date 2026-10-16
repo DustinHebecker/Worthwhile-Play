@@ -59,10 +59,12 @@ export interface GameMetadata {
   readonly usesLearningRecords?: boolean;
   /**
    * Optional (ADR 0015, narrowed by ADR 0017): the game's own setup (map, seats…) follows the host's start screen,
-   * which still offers the difficulty and any declared settings. Only when there is nothing to choose there (no
-   * difficulties, no settings) and no save does the host start a fresh game directly on the game's setup.
-   * Only on opening the game page: never after a game finishes (no autoplay into the next game). With a save,
-   * the host offers "Continue" as usual, and "New game" stays available in the host toolbar.
+   * which offers any declared settings and — only when the module declares no `settings` at all — the difficulty.
+   * A game that declares `settings` (even `[]`) chooses the difficulty in its own setup and reports it with
+   * `context.setDifficulty` (and `settingsOf(state).difficulty` for saves); see `GameModule.settings`.
+   * When there is nothing for the start screen and no save, the host starts a fresh game directly on the game's
+   * setup. Only on opening the game page: never after a game finishes (no autoplay into the next game). With a save,
+   * the host offers "Continue" and "New game" (which starts the game's own setup with `begin`).
    */
   readonly setupInGame?: boolean;
 }
@@ -185,7 +187,8 @@ export interface GameContext {
   finished(result: GameResult): void;
   /**
    * Optional: tell the host which of `metadata.difficulties` the game now runs at, when the game lets the
-   * player change it inside the game (so the host's select, its next "New game" and the save agree).
+   * player change it inside the game (so the host's start screen, its next "New game"/"Another round" and the save
+   * agree). The way a `setupInGame` game that declares `settings` reports the difficulty chosen in its own setup.
    */
   setDifficulty?(difficulty: string): void;
   /**
@@ -386,7 +389,11 @@ export interface GameModule<S = unknown> {
    * Optional (ADR 0017): the settings that change the game, drawn by the host on the start screen and passed to
    * `newGame` as `NewGameOptions.settings`. A function when the list depends on the device (e.g. imported decks).
    * Without it the host shows the difficulty (if `metadata.difficulties`) and nothing else. When `metadata.difficulties`
-   * exists and no `{ kind: 'difficulty' }` entry is listed, the host puts the difficulty first.
+   * exists and no `{ kind: 'difficulty' }` entry is listed, the host puts the difficulty first — except for a
+   * `metadata.setupInGame` game that declares this field (an array, `[]` included, or a function): the host then
+   * shows exactly the declared settings and the game picks the difficulty in its own setup, reporting it with
+   * `context.setDifficulty` (validated against `metadata.difficulties`, kept in the save and passed to `newGame`
+   * for "Another round" and "New game"). `?difficulty=` links still reach `newGame`.
    * Pure display preferences (zoom, card faces, speed…) stay inside the game.
    */
   readonly settings?: readonly SettingSpec[] | ((env: SettingsEnv) => readonly SettingSpec[]);

@@ -153,7 +153,9 @@ describe('view', () => {
       // Focus returns to the card, never to "Give away".
       expect(document.activeElement).toBe(q(root, 'info-kz.cave-slime'));
       // A tile tap toggles and opens nothing.
-      root.querySelector<HTMLButtonElement>('[data-testid="hand"] .cq-tile[data-card="kz.firecracker"]')!.click();
+      const other = () => root.querySelector<HTMLButtonElement>('[data-testid="hand"] .cq-tile[data-card="kz.firecracker"]')!;
+      other().click();
+      expect(other().getAttribute('aria-pressed')).toBe('true');
       expect(q(root, 'detail')).toBeNull();
       expect(instance.serialize().players[0]!.hand).toHaveLength(7);
       instance.dispose();
@@ -178,7 +180,8 @@ describe('view', () => {
       instance.dispose();
     });
 
-    it('entering the give-away step closes a detail left open from playing', () => {
+    it('moving on to the give-away step (after Rummage) closes a detail left open from playing', () => {
+      // The person's action (act) clears the selection before the give-away mode starts.
       const s = arranged((s) => {
         s.phase = 'after';
         for (const c of ['kz.cave-slime', 'kz.firecracker', 'kz.pickaxe', 'kz.mine-collapse', 'kz.tool-shed', 'kz.shovel']) take(s, c, s.players[0]!.hand);
@@ -191,6 +194,19 @@ describe('view', () => {
       expect(q(root, 'detail')).toBeNull();
       instance.dispose();
     });
+  });
+
+  it('shows the illustration small on the tile and large in the card detail (B2)', () => {
+    const s = arranged((s) => take(s, 'kz.garden-hose', s.players[0]!.hand));
+    const ctx = createTestContext(game as GameModule<unknown>, 'en');
+    const instance = game.create(ctx.context as never);
+    instance.restore(s);
+    const tile = ctx.context.root.querySelector<HTMLButtonElement>('[data-testid="hand"] .cq-tile[data-card="kz.garden-hose"]')!;
+    expect(tile.querySelector('.cq-art-il svg.cq-il')).not.toBeNull();
+    expect(q(ctx.context.root, 'detail-pic')).toBeNull();
+    tile.click();
+    expect(q(ctx.context.root, 'detail-pic')!.querySelector('svg.cq-il[aria-hidden="true"]')).not.toBeNull();
+    instance.dispose();
   });
 
   it('keeps the keyboard focus inside the game after a main action', () => {

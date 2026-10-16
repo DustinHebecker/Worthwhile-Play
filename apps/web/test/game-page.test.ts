@@ -252,6 +252,120 @@ describe('game page: games whose first screen is their own setup (ADR 0015)', ()
   });
 });
 
+describe('game page: setupInGame games that choose the difficulty in their own setup (ADR 0017 amendment)', () => {
+  const diffMessages = { en: { title: 't', tagline: 't', rules: 'r', 'difficulty.easy': 'Easy', 'difficulty.hard': 'Hard' } };
+  /** Like Relay Command: difficulties, but `settings: []` — the start screen shows only Continue / New game. */
+  const ownGame = (id: string, moduleExtra: Partial<Pick<GameModule<{ n: number }>, 'settingsOf'>> = {}) =>
+    fakeGame(id, undefined, { setupInGame: true, difficulties: ['easy', 'hard'], messages: diffMessages }, { settings: [], ...moduleExtra });
+  const q = <T extends HTMLElement = HTMLElement>(main: HTMLElement, testId: string) => main.querySelector<T>(`[data-testid="${testId}"]`);
+  const saveWith = async (id: string, difficulty: string) => {
+    const saves = createMemoryStore();
+    const module = (await registry.entries.get(id)!.load()) as GameModule<{ n: number }>;
+    await saves.write(createSave(module, 3, { n: 1 }, difficulty));
+    return saves;
+  };
+
+  it('without a save, opens straight into the game\'s own setup (no host difficulty)', async () => {
+    const log = ownGame('own-fresh');
+    const main = openPlain('own-fresh');
+    await vi.waitFor(() => expect(log).toEqual(['create:en', 'newGame']));
+    expect(q(main, 'start-screen')).toBeNull();
+    expect(q(main, 'difficulty')).toBeNull();
+    expect(starts.get('own-fresh')![0]).toEqual({ seed: expect.any(Number) });
+    await vi.waitFor(() => expect(document.activeElement?.textContent).toBe('Map'));
+  });
+
+  it('setDifficulty reaches the save envelope and the summary; Another round passes it back with begin', async () => {
+    ownGame('own-report');
+    const saves = createMemoryStore();
+    const main = openPlain('own-report', saves);
+    await vi.waitFor(() => expect(contexts.has('own-report')).toBe(true));
+    const context = contexts.get('own-report')!;
+    context.setDifficulty!('zzz');
+    context.setDifficulty!('hard');
+    context.requestSave();
+    await vi.waitFor(async () => expect(await saves.read('own-report')).toMatchObject({ difficulty: 'hard' }));
+    expect(q(main, 'settings-summary')!.textContent).toBe('Hard');
+    context.finished({ outcome: 'won' });
+    await vi.waitFor(() => expect(q(main, 'another-round')).not.toBeNull());
+    q(main, 'another-round')!.click();
+    await vi.waitFor(() => expect(starts.get('own-report')).toHaveLength(2));
+    expect(starts.get('own-report')![1]).toEqual({ seed: expect.any(Number), difficulty: 'hard', begin: true });
+  });
+
+  it('during play, New game shows Continue and a New game button (no empty form); it starts the own setup with the difficulty and begin', async () => {
+    const log = ownGame('own-toolbar');
+    const main = openPlain('own-toolbar');
+    await vi.waitFor(() => expect(contexts.has('own-toolbar')).toBe(true));
+    contexts.get('own-toolbar')!.setDifficulty!('easy');
+    q(main, 'new-game')!.click();
+    await vi.waitFor(() => expect(q(main, 'start-game')).not.toBeNull());
+    expect(q(main, 'start-form')).toBeNull();
+    expect(q(main, 'start-game')!.textContent).toBe('game.newGame');
+    expect(q(main, 'continue')).not.toBeNull();
+    q(main, 'start-game')!.click();
+    await vi.waitFor(() => expect(starts.get('own-toolbar')).toHaveLength(2));
+    expect(starts.get('own-toolbar')![1]).toEqual({ seed: expect.any(Number), difficulty: 'easy', begin: true });
+    expect(log).toEqual(['create:en', 'newGame', 'pause', 'resume', 'newGame:easy']);
+  });
+
+  it('with a save: Continue restores it (difficulty from the envelope); New game passes it and begin', async () => {
+    const log = ownGame('own-saved');
+    const saves = await saveWith('own-saved', 'hard');
+    const main = openPlain('own-saved', saves);
+    await vi.waitFor(() => expect(q(main, 'continue')).not.toBeNull());
+    expect(log).toEqual([]);
+    expect(q(main, 'start-form')).toBeNull();
+    expect(q(main, 'difficulty')).toBeNull();
+    expect(document.activeElement).toBe(q(main, 'continue'));
+    q(main, 'continue')!.click();
+    await vi.waitFor(() => expect(log).toEqual(['create:en', 'restore']));
+    expect(q(main, 'settings-summary')!.textContent).toBe('Hard');
+  });
+
+  it('with a save: New game starts the own setup with the save\'s difficulty and begin', async () => {
+    const log = ownGame('own-saved-new');
+    const saves = await saveWith('own-saved-new', 'hard');
+    const main = openPlain('own-saved-new', saves);
+    await vi.waitFor(() => expect(q(main, 'start-game')).not.toBeNull());
+    q(main, 'start-game')!.click();
+    await vi.waitFor(() => expect(log).toEqual(['create:en', 'newGame:hard']));
+    expect(starts.get('own-saved-new')![0]).toEqual({ seed: expect.any(Number), difficulty: 'hard', begin: true });
+  });
+
+  it('takes the difficulty of a save from settingsOf(state) over the envelope', async () => {
+    ownGame('own-derived', { settingsOf: () => ({ difficulty: 'easy' }) });
+    const saves = await saveWith('own-derived', 'hard');
+    const main = openPlain('own-derived', saves);
+    await vi.waitFor(() => expect(q(main, 'continue')).not.toBeNull());
+    q(main, 'continue')!.click();
+    await vi.waitFor(() => expect(contexts.has('own-derived')).toBe(true));
+    expect(q(main, 'settings-summary')!.textContent).toBe('Easy');
+    contexts.get('own-derived')!.finished({ outcome: 'won' });
+    await vi.waitFor(() => expect(q(main, 'another-round')).not.toBeNull());
+    q(main, 'another-round')!.click();
+    await vi.waitFor(() => expect(starts.get('own-derived')).toHaveLength(1));
+    expect(starts.get('own-derived')![0]).toMatchObject({ difficulty: 'easy', begin: true });
+  });
+
+  it('a ?difficulty= link passes a valid difficulty to newGame (on opening and as a seed deep link); junk is dropped', async () => {
+    ownGame('own-link');
+    openPlain('own-link', undefined, { difficulty: 'hard' });
+    await vi.waitFor(() => expect(starts.get('own-link')).toHaveLength(1));
+    expect(starts.get('own-link')![0]).toEqual({ seed: expect.any(Number), difficulty: 'hard' });
+
+    ownGame('own-deep');
+    openPlain('own-deep', undefined, { seed: 5, difficulty: 'easy' });
+    await vi.waitFor(() => expect(starts.get('own-deep')).toHaveLength(1));
+    expect(starts.get('own-deep')![0]).toEqual({ seed: 5, difficulty: 'easy' });
+
+    ownGame('own-junk');
+    openPlain('own-junk', undefined, { difficulty: 'zzz' });
+    await vi.waitFor(() => expect(starts.get('own-junk')).toHaveLength(1));
+    expect(starts.get('own-junk')![0]).toEqual({ seed: expect.any(Number) });
+  });
+});
+
 describe('game page: one start screen with host-drawn settings (ADR 0017)', () => {
   const en = {
     title: 'Demo', tagline: 't', rules: 'r',

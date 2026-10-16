@@ -61,13 +61,27 @@ export function declaredSettings(module: Pick<GameModule, 'settings'>, env: Sett
 
 /**
  * What the host draws on the start screen (ADR 0017): the declared settings, with the difficulty first when the
- * game has `metadata.difficulties` but lists no difficulty entry — also for games whose own setup follows
- * (`setupInGame`, ADR 0015): the difficulty is chosen on the start screen, the game's setup holds the rest.
+ * game has `metadata.difficulties` but lists no difficulty entry.
+ *
+ * Exception for games whose own setup follows (`setupInGame`, ADR 0015): when such a game declares `settings`
+ * explicitly (an array, `[]` included, or a function), the host shows exactly what it declares and adds no
+ * difficulty — the game chooses the difficulty in its own setup and reports it with `context.setDifficulty` (and
+ * `settingsOf(state).difficulty` for saves). A `setupInGame` game that declares nothing (`settings` undefined) still
+ * gets the difficulty on the start screen.
  */
 export function hostSettings(module: Pick<GameModule, 'settings' | 'metadata'>, env: SettingsEnv): readonly SettingSpec[] {
   const declared = declaredSettings(module, env);
+  if (ownsDifficulty(module)) return declared;
   const hasDifficulty = declared.some((spec) => spec.kind === 'difficulty');
   return module.metadata.difficulties?.length && !hasDifficulty ? [{ kind: 'difficulty' }, ...declared] : declared;
+}
+
+/**
+ * True when the host must not add a difficulty to the start screen because the game chooses it in its own setup:
+ * a `setupInGame` game that declares `settings` explicitly (see `hostSettings`).
+ */
+export function ownsDifficulty(module: Pick<GameModule, 'settings' | 'metadata'>): boolean {
+  return module.metadata.setupInGame === true && module.settings !== undefined;
 }
 
 /** Sanitized settings, ready for `newGame` and the save. */
