@@ -1,15 +1,15 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
 import { cardLabel, type Card } from '@wp/cards';
-import type { GameModule } from '@wp/game-core';
+import type { GameModule, NewGameOptions } from '@wp/game-core';
 import { createTestContext } from '@wp/testing';
 import game from '../src/index';
 import { newDeal, newGame, type DealState, type SkatState } from '../src/rules';
 
-const start = (locale: 'en' | 'de' | 'ar' = 'en', seed = 42) => {
+const start = (locale: 'en' | 'de' | 'ar' = 'en', seed = 42, options: Omit<NewGameOptions, 'seed'> = {}) => {
   const ctx = createTestContext(game as GameModule<unknown>, locale);
   const instance = game.create(ctx.context);
-  instance.newGame({ seed });
+  instance.newGame({ seed, ...options });
   return { ctx, instance, root: ctx.context.root };
 };
 const q = <T extends HTMLElement = HTMLElement>(root: HTMLElement, testid: string) => root.querySelector<T>(`[data-testid="${testid}"]`);
@@ -49,29 +49,29 @@ function playOneGame(root: HTMLElement, check?: () => void) {
 }
 
 describe('Skat view', () => {
-  it('opens on the setup screen and remembers options', () => {
-    const { ctx, root, instance } = start();
+  it('a direct start shows the chosen series first; Start on the start screen deals at once', () => {
+    const { ctx, root, instance } = start('en', 42, { difficulty: 'hard', settings: { series: 3, scoring: 'seeger', ramsch: true } });
     expect(q(root, 'setup')?.hidden).toBe(false);
-    const series = q<HTMLSelectElement>(root, 'option-series') as HTMLSelectElement;
-    series.value = '3';
-    series.dispatchEvent(new Event('change'));
-    const ramsch = q<HTMLInputElement>(root, 'option-ramsch') as HTMLInputElement;
-    ramsch.checked = true;
-    ramsch.dispatchEvent(new Event('change'));
-    expect(ctx.preferences.get('options')).toEqual({ series: 3, scoring: 'simple', ramsch: true });
-    expect((instance.serialize() as SkatState).options.series).toBe(3);
+    // The series is set up on the host's start screen only (ADR 0017).
+    expect(root.querySelector('[data-testid="setup"] select, [data-testid="option-ramsch"]')).toBeNull();
+    expect((instance.serialize() as SkatState)).toMatchObject({ difficulty: 'hard', options: { series: 3, scoring: 'seeger', ramsch: true } });
+    expect(q(root, 'setup-summary')?.textContent).toContain('3 games');
     q(root, 'start')?.click();
     expect(q(root, 'setup')?.hidden).toBe(true);
     expect(q(root, 'progress')?.textContent).toBe('Game 1 of 3');
+    instance.newGame({ seed: 43, settings: { series: 6 }, begin: true });
+    expect(q(root, 'setup')?.hidden).toBe(true);
+    expect((instance.serialize() as SkatState)).toMatchObject({ stage: 'play', options: { series: 6, scoring: 'simple', ramsch: false } });
+    // Invalid settings fall back to the defaults; nothing is reported back to the host or stored on the device.
+    instance.newGame({ seed: 44, difficulty: 'x', settings: { series: 5, scoring: 'x', ramsch: 'yes' } });
+    expect((instance.serialize() as SkatState)).toMatchObject({ difficulty: 'normal', options: { series: 6, scoring: 'simple', ramsch: false } });
+    expect(ctx.difficulties).toEqual([]);
+    expect(ctx.preferences.get('options')).toBeUndefined();
     instance.dispose();
   });
 
   it('plays a whole series through the DOM, never showing hidden cards', () => {
-    const { ctx, root, instance } = start('en', 7);
-    const series = q<HTMLSelectElement>(root, 'option-series') as HTMLSelectElement;
-    series.value = '3';
-    series.dispatchEvent(new Event('change'));
-    q(root, 'start')?.click();
+    const { ctx, root, instance } = start('en', 7, { settings: { series: 3 }, begin: true });
     const check = () => expectNothingHidden(root, instance.serialize() as SkatState, ctx.context.t);
     for (let g = 0; g < 3; g++) {
       playOneGame(root, check);

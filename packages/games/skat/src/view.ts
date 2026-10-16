@@ -6,13 +6,10 @@ import { advance } from './ai';
 import { DEFAULT_SPEED, SPEEDS, buildReveal, timing, waitAfter, type RevealStep, type Speed, type Timing } from './pacing';
 import {
   DEFAULT_DIFFICULTY,
-  DEFAULT_OPTIONS,
   DIFFICULTIES,
   GAME_KINDS,
   HUMAN,
-  SCORINGS,
   SEATS,
-  SERIES_LENGTHS,
   applyAction,
   biddingStatus,
   dealPhase,
@@ -42,15 +39,14 @@ import {
   type Difficulty,
   type GameKind,
   type GameResult,
-  type Options,
   type Seat,
   type SkatState
 } from './rules';
 import { type PersonKey } from './messages';
+import { optionsFrom } from './settings';
 import './styles.css';
 
 const PREF_FACES = 'faces';
-const PREF_OPTIONS = 'options';
 const PREF_SPEED = 'speed';
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
@@ -72,17 +68,6 @@ export function createSkat(context: GameContext): GameInstance<SkatState> {
   let shown: SkatState = state;
   /** The step being shown holds a completed trick in the middle (before it is collected). */
   let shownStep: RevealStep | null = null;
-
-  const storedOptions = (): Options => {
-    const raw = context.preferences?.get(PREF_OPTIONS);
-    if (raw && typeof raw === 'object') {
-      const o = raw as Record<string, unknown>;
-      if (isOneOf(o.series as number, SERIES_LENGTHS) && isOneOf(o.scoring as string, SCORINGS) && typeof o.ramsch === 'boolean') {
-        return { series: o.series as Options['series'], scoring: o.scoring as Options['scoring'], ramsch: o.ramsch };
-      }
-    }
-    return { ...DEFAULT_OPTIONS };
-  };
 
   // ---------------------------------------------------------------- words
   const player = (seat: Seat) => t(`seat.${seat}`);
@@ -195,38 +180,20 @@ export function createSkat(context: GameContext): GameInstance<SkatState> {
   function renderSetup() {
     clear(setupSection);
     const o = state.options;
-    const select = (name: string, values: readonly (string | number)[], current: string | number, label: (v: string) => string, onChange: (v: string) => void) => {
-      const el = h('select', { 'data-testid': `option-${name}`, onchange: () => onChange(el.value) });
-      for (const v of values) el.append(h('option', { value: String(v) }, label(String(v))));
-      el.value = String(current);
-      return el;
-    };
-    const field = (label: string, control: HTMLElement) => h('label', { class: 'sk-field' }, h('span', {}, label), control);
-    const update = (patch: Partial<Options>) => {
-      state = { ...state, options: { ...state.options, ...patch } };
-      context.preferences?.set(PREF_OPTIONS, state.options);
-      context.requestSave();
-    };
-    const ramschBox = h('input', { type: 'checkbox', 'data-testid': 'option-ramsch', onchange: () => update({ ramsch: ramschBox.checked }) });
-    ramschBox.checked = o.ramsch;
-    const scoringHint = h('p', { class: 'sk-hint' }, t(`scoring.${o.scoring}.hint`));
     const startButton = h('button', { type: 'button', class: 'primary', 'data-testid': 'start', 'data-autofocus': '', onclick: () => onStart() }, t('setup.start'));
     setupSection.append(
       h('h2', { id: 'sk-setup-title' }, t('setup.title')),
       h('p', {}, t('rules')),
-      field(t('setup.series'), select('series', SERIES_LENGTHS, o.series, (v) => (v === '0' ? t('series.open') : t('series.games', { count: Number(v) })), (v) => update({ series: Number(v) as Options['series'] }))),
-      field(t('setup.scoring'), select('scoring', SCORINGS, o.scoring, (v) => t(`scoring.${v}`), (v) => {
-        update({ scoring: v === 'seeger' ? 'seeger' : 'simple' });
-        scoringHint.textContent = t(`scoring.${state.options.scoring}.hint`);
-      })),
-      scoringHint,
-      h('label', { class: 'sk-check' }, ramschBox, h('span', {}, t('setup.ramsch'))),
-      field(t('setup.level'), select('level', DIFFICULTIES, state.difficulty, (v) => t(`difficulty.${v}`), (v) => {
-        if (!isOneOf(v, DIFFICULTIES)) return;
-        state = { ...state, difficulty: v };
-        context.setDifficulty?.(v);
-        context.requestSave();
-      })),
+      // The series is set up on the host's start screen (ADR 0017); here it is only summarised.
+      h(
+        'ul',
+        { class: 'sk-summary-setup', 'data-testid': 'setup-summary' },
+        h('li', {}, `${t('setup.series')}: ${t(`series.${o.series}`)}`),
+        h('li', {}, `${t('setup.scoring')}: ${t(`scoring.${o.scoring}`)}`),
+        o.ramsch ? h('li', {}, t('setup.ramsch')) : null,
+        h('li', {}, `${t('setup.level')}: ${t(`difficulty.${state.difficulty}`)}`)
+      ),
+      h('p', { class: 'sk-hint' }, t(`scoring.${o.scoring}.hint`)),
       startButton
     );
   }
@@ -816,11 +783,13 @@ export function createSkat(context: GameContext): GameInstance<SkatState> {
   return {
     newGame(options: NewGameOptions) {
       const difficulty: Difficulty = isOneOf(options.difficulty, DIFFICULTIES) ? options.difficulty : DEFAULT_DIFFICULTY;
-      start(newGame(normalizeSeed(options.seed), difficulty, storedOptions()));
+      start(newGame(normalizeSeed(options.seed), difficulty, optionsFrom(options.settings)));
+      // After Start on the host's start screen the first game is dealt at once; a direct start (deep link) shows
+      // the chosen series first and waits for "Deal the first game".
+      if (options.begin) onStart();
     },
     restore(saved: SkatState) {
       start(clone(saved));
-      context.setDifficulty?.(state.difficulty);
     },
     serialize: () => clone(state),
     pause() {
