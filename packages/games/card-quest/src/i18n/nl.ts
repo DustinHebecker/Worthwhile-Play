@@ -107,6 +107,9 @@ export const nl: Catalogue = {
   'card.why.ownTurn': 'Alleen in je eigen beurt, buiten gevechten.',
   'card.why.notNow': 'Nu even niet.',
   'detail.blunder': 'Als je verliest: {text}',
+  'card.info': 'Details: {name}',
+  'act.pick': 'Kiezen',
+  'act.unpick': 'Niet kiezen',
 
   'act.equip': 'Aandoen',
   'act.unequip': 'Uitdoen',

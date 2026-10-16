@@ -107,6 +107,9 @@ export const tr: Catalogue = {
   'card.why.ownTurn': 'Yalnızca kendi sıranda, dövüş dışında.',
   'card.why.notNow': 'Şu an olmaz.',
   'detail.blunder': 'Kaybedersen: {text}',
+  'card.info': 'Ayrıntılar: {name}',
+  'act.pick': 'Seç',
+  'act.unpick': 'Seçimi kaldır',
 
   'act.equip': 'Tak',
   'act.unequip': 'Çıkar',

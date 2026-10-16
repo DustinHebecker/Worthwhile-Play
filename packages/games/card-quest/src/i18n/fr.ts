@@ -107,6 +107,9 @@ export const fr: Catalogue = {
   'card.why.ownTurn': 'Seulement pendant ton tour, hors combat.',
   'card.why.notNow': 'Pas maintenant.',
   'detail.blunder': 'Si tu perds : {text}',
+  'card.info': 'Détails : {name}',
+  'act.pick': 'Choisir',
+  'act.unpick': 'Retirer',
 
   'act.equip': 'Équiper',
   'act.unequip': 'Retirer',

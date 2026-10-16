@@ -107,6 +107,9 @@ export const pl: Catalogue = {
   'card.why.ownTurn': 'Tylko we własnej turze, poza walką.',
   'card.why.notNow': 'Nie teraz.',
   'detail.blunder': 'Gdy przegrasz: {text}',
+  'card.info': 'Szczegóły: {name}',
+  'act.pick': 'Wybierz',
+  'act.unpick': 'Odznacz',
 
   'act.equip': 'Załóż',
   'act.unequip': 'Zdejmij',

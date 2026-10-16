@@ -107,6 +107,9 @@ export const de: Catalogue = {
   'card.why.ownTurn': 'Nur in deinem eigenen Zug, außerhalb von Kämpfen.',
   'card.why.notNow': 'Gerade nicht.',
   'detail.blunder': 'Wenn du verlierst: {text}',
+  'card.info': 'Details: {name}',
+  'act.pick': 'Auswählen',
+  'act.unpick': 'Abwählen',
 
   'act.equip': 'Anlegen',
   'act.unequip': 'Ablegen',

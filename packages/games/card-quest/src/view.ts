@@ -564,9 +564,22 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     return t('card.why.notNow');
   }
 
+  /** Whether a card can be picked in the current give-away or sell mode. */
+  function pickable(card: string): boolean {
+    const me = state.players[HUMAN] as Player;
+    if (mode === 'give') return me.hand.includes(card);
+    if (mode === 'sell') return ['item', 'oneshot'].includes(defOf(card).type) && (me.hand.includes(card) || me.pack.includes(card) || me.equipped.includes(card));
+    return false;
+  }
+
   function renderDetail(card: string): HTMLElement {
     const { type, lines } = cardRules(t, card);
-    const actions = actionsFor(card);
+    const actions =
+      mode === 'play'
+        ? actionsFor(card)
+        : pickable(card)
+          ? [{ label: t(picked.has(card) ? 'act.unpick' : 'act.pick'), action: null, testid: 'act-pick' }]
+          : [];
     const close = button(t('btn.close'), () => {
       selected = null;
       render();
@@ -581,8 +594,8 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       h(
         'div',
         { class: 'cq-detail-actions' },
-        ...actions.map((a) => button(a.label, () => act(a.action), { primary: true, testid: a.testid, key: `${a.testid}-${card}` })),
-        actions.length === 0 && (state.players[HUMAN] as Player).hand.includes(card) ? h('p', { class: 'cq-muted' }, why(card)) : null,
+        ...actions.map((a) => button(a.label, () => (a.action ? act(a.action) : toggle(card)), { primary: true, testid: a.testid, key: `${a.testid}-${card}` })),
+        actions.length === 0 && mode === 'play' && (state.players[HUMAN] as Player).hand.includes(card) ? h('p', { class: 'cq-muted' }, why(card)) : null,
         close
       )
     );
@@ -594,13 +607,10 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     const playable = (c: string) => legal.some((a) => ('card' in a && a.card === c) || (a.a === 'reinforce' && a.monster === c));
     const grid = h('div', { class: 'cq-grid', role: 'group', 'aria-labelledby': 'cq-hand-title' });
     for (const c of me.hand) {
-      const selectable = mode === 'give' || (mode === 'sell' && ['item', 'oneshot'].includes(defOf(c).type));
       grid.append(
-        tile(c, {
-          key: `hand-${c}`,
-          pressed: selectable ? picked.has(c) : mode === 'play' ? selected === c : undefined,
-          hint: mode === 'play' && playable(c) ? t('hand.playable') : undefined,
-          onClick: () => (selectable ? toggle(c) : mode === 'play' ? select(c) : undefined)
+        pickOrTile(c, 'hand', {
+          pressed: mode === 'play' ? selected === c : undefined,
+          hint: mode === 'play' && playable(c) ? t('hand.playable') : undefined
         })
       );
     }
@@ -610,7 +620,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       h('h3', { id: 'cq-hand-title' }, t('hand.title', { n: me.hand.length })),
       me.hand.length === 0 ? h('p', { class: 'cq-muted' }, t('hand.empty')) : grid
     );
-    if (selected && mode === 'play' && (me.hand.includes(selected) || me.equipped.includes(selected) || me.pack.includes(selected) || isInFight(selected) || me.origins.includes(selected) || me.professions.includes(selected) || me.doubles.includes(selected))) {
+    if (selected && (me.hand.includes(selected) || me.equipped.includes(selected) || me.pack.includes(selected) || isInFight(selected) || me.origins.includes(selected) || me.professions.includes(selected) || me.doubles.includes(selected))) {
       section.append(renderDetail(selected));
     } else if (selected && !isVisible(selected)) selected = null;
     return section;
@@ -628,22 +638,37 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     render();
   }
 
+  /**
+   * A card tile. In the give-away and sell modes a pickable tile toggles its selection, and an info button next
+   * to it opens the card detail, so the card can be read before it is chosen (owner feedback B1). Elsewhere the
+   * tile opens the detail.
+   */
+  function pickOrTile(c: string, prefix: string, extra: { pressed?: boolean | undefined; hint?: string | undefined } = {}): HTMLElement {
+    if (!pickable(c)) return tile(c, { key: `${prefix}-${c}`, pressed: extra.pressed, hint: extra.hint, onClick: () => select(c) });
+    return h(
+      'div',
+      { class: 'cq-pick' },
+      tile(c, { key: `${prefix}-${c}`, pressed: picked.has(c), hint: extra.hint, onClick: () => toggle(c) }),
+      h(
+        'button',
+        {
+          type: 'button',
+          class: 'cq-info',
+          'data-testid': `info-${c}`,
+          'data-key': `info-${prefix}-${c}`,
+          'aria-label': t('card.info', { name: name(c) }),
+          'aria-expanded': String(selected === c),
+          onclick: () => select(c)
+        },
+        h('span', { 'aria-hidden': 'true' }, 'i')
+      )
+    );
+  }
+
   function renderMine(): HTMLElement {
     const me = state.players[HUMAN] as Player;
-    const selectable = (c: string) => mode === 'sell' && ['item', 'oneshot'].includes(defOf(c).type);
     const tiles = (cards: string[], prefix: string) =>
-      h(
-        'div',
-        { class: 'cq-grid' },
-        ...cards.map((c) =>
-          tile(c, {
-            key: `${prefix}-${c}`,
-            pressed: selectable(c) ? picked.has(c) : undefined,
-            hint: prefix === 'eq' ? upgradesOf(c) : undefined,
-            onClick: () => (selectable(c) ? toggle(c) : mode === 'play' ? select(c) : undefined)
-          })
-        )
-      );
+      h('div', { class: 'cq-grid' }, ...cards.map((c) => pickOrTile(c, prefix, { hint: prefix === 'eq' ? upgradesOf(c) : undefined })));
     const character = [...me.origins, ...me.professions, ...me.doubles];
     return h(
       'section',

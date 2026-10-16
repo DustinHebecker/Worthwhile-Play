@@ -107,6 +107,9 @@ export const uk: Catalogue = {
   'card.why.ownTurn': 'Лише у свій хід, поза боєм.',
   'card.why.notNow': 'Не зараз.',
   'detail.blunder': 'Якщо програєш: {text}',
+  'card.info': 'Докладно: {name}',
+  'act.pick': 'Вибрати',
+  'act.unpick': 'Прибрати',
 
   'act.equip': 'Вдягнути',
   'act.unequip': 'Зняти',

@@ -107,6 +107,9 @@ export const es: Catalogue = {
   'card.why.ownTurn': 'Solo en tu propio turno, fuera de los combates.',
   'card.why.notNow': 'Ahora mismo no.',
   'detail.blunder': 'Si pierdes: {text}',
+  'card.info': 'Detalles: {name}',
+  'act.pick': 'Elegir',
+  'act.unpick': 'Quitar',
 
   'act.equip': 'Equipar',
   'act.unequip': 'Quitar',

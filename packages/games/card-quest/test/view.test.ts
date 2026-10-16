@@ -88,6 +88,37 @@ describe('view', () => {
     throw new Error('no caught flee in the log of the sampled games');
   });
 
+  it('in the give-away mode a card can be read (info button) before it is chosen', () => {
+    const ctx = createTestContext(game as GameModule<unknown>, 'en');
+    const instance = game.create(ctx.context as never);
+    const root = ctx.context.root;
+    for (let seed = 1; seed < 300; seed++) {
+      instance.newGame({ seed });
+      // Play on until the person has to give cards away at the end of a turn.
+      for (let i = 0; i < 400 && !(q(root, 'end')?.disabled ?? false); i++) {
+        if (instance.serialize().phase === 'over') break;
+        const next = ['start', 'open', 'rummage', 'pass', 'roll', 'end'].map((id) => q(root, id)).find((b) => b && !b.disabled);
+        next?.click();
+      }
+      if (!q(root, 'end')?.disabled) continue;
+      const info = root.querySelector<HTMLButtonElement>('[data-testid="hand"] .cq-info')!;
+      const card = info.dataset.testid!.slice('info-'.length);
+      info.click();
+      const detail = q(root, 'detail')!;
+      expect(detail.textContent).toContain(en[card.split('#')[0]!]!.name);
+      expect(instance.serialize().players[0]!.hand).toContain(card);
+      // Reading did not choose it; the detail's button does.
+      const tile = root.querySelector<HTMLButtonElement>(`[data-testid="hand"] [data-card="${card}"]`)!;
+      expect(tile.getAttribute('aria-pressed')).toBe('false');
+      q(root, 'act-pick')!.click();
+      expect(root.querySelector(`[data-testid="hand"] [data-card="${card}"]`)!.getAttribute('aria-pressed')).toBe('true');
+      expect(q(root, 'detail')).not.toBeNull();
+      instance.dispose();
+      return;
+    }
+    throw new Error('no give-away situation in the sampled games');
+  });
+
   it('keeps the keyboard focus inside the game after a main action', () => {
     const ctx = createTestContext(game as GameModule<unknown>, 'en');
     const instance = game.create(ctx.context as never);

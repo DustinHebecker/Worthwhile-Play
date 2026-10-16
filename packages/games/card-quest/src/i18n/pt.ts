@@ -107,6 +107,9 @@ export const pt: Catalogue = {
   'card.why.ownTurn': 'Só na sua própria vez, fora das lutas.',
   'card.why.notNow': 'Agora não.',
   'detail.blunder': 'Se você perder: {text}',
+  'card.info': 'Detalhes: {name}',
+  'act.pick': 'Escolher',
+  'act.unpick': 'Desmarcar',
 
   'act.equip': 'Equipar',
   'act.unequip': 'Tirar',

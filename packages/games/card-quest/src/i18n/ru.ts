@@ -107,6 +107,9 @@ export const ru: Catalogue = {
   'card.why.ownTurn': 'Только в свой ход, вне боя.',
   'card.why.notNow': 'Не сейчас.',
   'detail.blunder': 'Если проиграешь: {text}',
+  'card.info': 'Подробнее: {name}',
+  'act.pick': 'Выбрать',
+  'act.unpick': 'Убрать',
 
   'act.equip': 'Надеть',
   'act.unequip': 'Снять',
