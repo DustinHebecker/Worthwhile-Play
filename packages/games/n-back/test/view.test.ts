@@ -65,6 +65,15 @@ describe('N-back view: intro and options', () => {
     expect(g.el('nb-intro').hidden).toBe(true);
     expect(g.el('nb-play').hidden).toBe(false);
     expect(g.activeCells()).toEqual([generateBlock(5, 'n2')[0]?.position]);
+    // Nothing more to remind of at N = 2 and the player's own pace.
+    expect(g.el('nb-reminder').hidden).toBe(true);
+  });
+
+  it('keeps the intro\'s notes on look-alikes (N = 3) and the timed pace visible during the block', () => {
+    const g = setup({ seed: 5, difficulty: 'n3', settings: { pace: 'timed' }, begin: true });
+    expect(g.el('nb-reminder').hidden).toBe(false);
+    expect(g.el('nb-reminder').textContent).toContain('look-alikes');
+    expect(g.el('nb-reminder').textContent).toContain('Timed pace');
   });
 
   it('declares variant and pace; their defaults follow the options older versions remembered', () => {

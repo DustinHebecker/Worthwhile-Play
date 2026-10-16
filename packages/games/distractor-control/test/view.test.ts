@@ -162,5 +162,8 @@ describe('Stay on Task view: host start screen (ADR 0017)', () => {
     expect(instance.serialize()).toMatchObject({ phase: 'running', index: 0 });
     expect(el('dc-intro').hidden).toBe(true);
     expect(el('dc-answer-even').hidden).toBe(false);
+    // The intro's note on the extras stays visible during the session.
+    expect(el('dc-reminder').textContent).toBe(ctx.context.t('intro.distractors'));
+    expect(el('dc-reminder').closest<HTMLElement>('[hidden]')).toBeNull();
   });
 });

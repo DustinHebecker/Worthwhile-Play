@@ -105,7 +105,9 @@ export function createNBack(context: GameContext): GameInstance<NBackState> {
   const continueBtn = h('button', { type: 'button', class: 'primary wp-nb__answer', 'data-testid': 'nb-continue', onclick: () => proceed() }, t('action.continue'));
   const answers = h('div', { class: 'wp-nb__answers' }, matchBtn, noMatchBtn, posBtn, shapeBtn, nextBtn, continueBtn);
   const keysEl = h('p', { class: 'wp-nb__muted', 'data-testid': 'nb-keys' });
-  const play = h('div', { class: 'wp-nb__play', 'data-testid': 'nb-play', tabindex: -1 }, promptEl, stage, itemEl, answers, keysEl);
+  // The intro is skipped after the host's Start (ADR 0017): its notes on look-alikes and the timed pace stay visible.
+  const reminderEl = h('p', { class: 'wp-nb__muted', 'data-testid': 'nb-reminder' });
+  const play = h('div', { class: 'wp-nb__play', 'data-testid': 'nb-play', tabindex: -1 }, promptEl, stage, itemEl, answers, keysEl, reminderEl);
   const summaryEl = h('div', { class: 'wp-nb__summary', 'data-testid': 'nb-summary', tabindex: -1, hidden: true });
   const live = h('div', { class: 'sr-only', 'aria-live': 'polite', role: 'status' });
   const container = h('div', { class: `wp-nb${context.reducedMotion ? '' : ' wp-nb--motion'}`, dir: t.direction }, statusEl, intro, play, summaryEl, live);
@@ -183,6 +185,8 @@ export function createNBack(context: GameContext): GameInstance<NBackState> {
     luresEl.hidden = s.difficulty !== 'n3';
     luresEl.textContent = luresEl.hidden ? '' : t('intro.lures', { n });
     timedNote.hidden = s.pace !== 'timed';
+    reminderEl.textContent = [luresEl.textContent, timedNote.hidden ? '' : (timedNote.textContent ?? '')].filter(Boolean).join(' ');
+    reminderEl.hidden = reminderEl.textContent === '';
 
     // Status
     if (s.phase === 'ready') statusEl.textContent = t('status.ready');

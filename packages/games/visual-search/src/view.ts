@@ -130,7 +130,10 @@ export function createVisualSearch(context: GameContext): GameInstance<SearchSta
   const notThereBtn = h('button', { type: 'button', class: 'wp-vs__not-there', 'data-testid': 'vs-not-there', 'aria-keyshortcuts': 'N', onclick: () => pick(NOT_THERE) }, t('action.notThere'));
   const nextBtn = h('button', { type: 'button', class: 'primary', 'data-testid': 'vs-next', onclick: () => next() }, t('action.next'));
   const feedbackEl = h('p', { class: 'wp-vs__feedback', 'data-testid': 'vs-feedback' });
-  const play = h('div', { class: 'wp-vs__play' }, findEl, statusEl, board, feedbackEl, h('div', { class: 'wp-row wp-vs__actions' }, notThereBtn, nextBtn));
+  // The intro is skipped after the host's Start (ADR 0017): whether the target can be missing and the keys stay
+  // visible as one compact line during the round.
+  const reminderEl = h('p', { class: 'wp-vs__muted', 'data-testid': 'vs-reminder' });
+  const play = h('div', { class: 'wp-vs__play' }, findEl, statusEl, board, feedbackEl, h('div', { class: 'wp-row wp-vs__actions' }, notThereBtn, nextBtn), reminderEl);
   const summaryEl = h('div', { class: 'wp-vs__summary', 'data-testid': 'vs-summary', tabindex: -1 });
   const live = h('div', { class: 'sr-only', 'aria-live': 'polite', role: 'status' });
   const container = h(
@@ -233,6 +236,7 @@ export function createVisualSearch(context: GameContext): GameInstance<SearchSta
     introSample.append(drawShape(r.target));
     introTarget.textContent = t('intro.target', { features: describeTarget(r) });
     introPresence.textContent = t(allowNotThere ? 'intro.sometimes' : 'intro.always');
+    reminderEl.textContent = `${t(allowNotThere ? 'intro.sometimes' : 'intro.always')} ${t('intro.keys')}`;
 
     const index = shownIndex();
     play.hidden = index === undefined;
