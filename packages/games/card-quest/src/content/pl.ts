@@ -4,7 +4,7 @@ import type { LocaleContent } from './types';
 export const pl: LocaleContent = {
   // Monsters
   'kz.pebble-golem': { name: 'Kamyczkowy Golem z Kompleksami', flavour: 'Serce z kamienia? Skąd! To straszny wrażliwiec. Powiedz mu coś miłego.', blunder: 'Płacze kamyczkami. Poślizgujesz się i tracisz kartę.' },
-  'kz.grumpy-snail': { name: 'Zrzędliwy Ślimak', flavour: 'Idzie do ciebie od kilku dni. W ślimaczym tempie i z humorem do kompletu.', blunder: 'Obśliznia ci buty. Teraz to jego buty.' },
+  'kz.grumpy-snail': { name: 'Zrzędliwy Ślimak', flavour: 'Idzie do ciebie od kilku dni. W ślimaczym tempie i z humorem do kompletu.', blunder: 'Obślinił ci buty. Teraz to jego buty.' },
   'kz.dust-bunny': { name: 'Kot z Kurzu ze Sztolni 4', flavour: '300 lat bez miotły. Teraz ma alergię… na ciebie.', blunder: 'Apsik! Karta wylatuje ci z ręki i przepada na zawsze.' },
   'kz.lawn-flamingo': { name: 'Plastikowy Flaming, Patrol', flavour: 'Stoi na jednej nodze, a i tak jest ponad prawem.', blunder: 'Dziobem zrywa ci czapkę. Dowód rzeczowy A.' },
   'kz.cave-slime': { name: 'Jaskiniowy Śluz', flavour: 'Niegroźny. Tylko bardzo, bardzo przylepny. Czepia się jak rzep.', blunder: 'Przytula ci stopy. Buty zostają u niego.' },

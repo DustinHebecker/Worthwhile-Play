@@ -106,7 +106,7 @@ export const ja: Catalogue = {
   'card.why.fightOnly': '戦闘中のみ。',
   'card.why.ownTurn': '自分の番の、戦闘以外のときのみ。',
   'card.why.notNow': '今はダメ。',
-  'detail.blunder': '負けたら：{text}',
+  'detail.blunder': '捕まったら：{text}',
 
   'act.equip': '装備する',
   'act.unequip': '外す',

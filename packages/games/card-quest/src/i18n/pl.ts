@@ -106,7 +106,7 @@ export const pl: Catalogue = {
   'card.why.fightOnly': 'Tylko podczas walki.',
   'card.why.ownTurn': 'Tylko we własnej turze, poza walką.',
   'card.why.notNow': 'Nie teraz.',
-  'detail.blunder': 'Gdy przegrasz: {text}',
+  'detail.blunder': 'Jeśli cię dopadnie: {text}',
 
   'act.equip': 'Załóż',
   'act.unequip': 'Zdejmij',

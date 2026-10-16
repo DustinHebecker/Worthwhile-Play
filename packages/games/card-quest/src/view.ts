@@ -147,6 +147,19 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     return state.log.filter((_, i) => firstSeq + i >= state.seen);
   };
 
+  /** Whether every penalty line that followed this failed flee in the log actually took something. */
+  function blunderHit(flee: LogEvent): boolean {
+    const i = state.log.indexOf(flee);
+    if (i < 0) return false;
+    const lines: LogEvent[] = [];
+    for (let j = i + 1; j < state.log.length; j++) {
+      const e = state.log[j]!;
+      if (e.e !== 'penalty' || e.seat !== flee.seat) break;
+      lines.push(e);
+    }
+    return lines.length > 0 && lines.every((e) => e.e === 'penalty' && (e.card !== undefined || (e.n ?? 0) > 0));
+  }
+
   function eventText(e: LogEvent): string {
     const n = (seat: number) => seatName(seat);
     switch (e.e) {
@@ -174,7 +187,8 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
         return t('log.lost', { name: n(e.seat) });
       case 'flee': {
         const line = t(e.ok ? 'log.flee.ok' : 'log.flee.fail', { name: n(e.seat), roll: e.roll, total: e.total, monster: name(e.monster) });
-        const blunder = e.ok ? '' : cardBlunder(t, e.monster);
+        // The sentence speaks to the person ("you …"): only for their own loss, and only when the Blunder fully hit.
+        const blunder = !e.ok && e.seat === HUMAN && blunderHit(e) ? cardBlunder(t, e.monster) : '';
         return blunder ? `${line} ${blunder}` : line;
       }
       case 'penalty':
@@ -566,6 +580,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
 
   function renderDetail(card: string): HTMLElement {
     const { type, lines } = cardRules(t, card);
+    const blunder = cardBlunder(t, card);
     const actions = actionsFor(card);
     const close = button(t('btn.close'), () => {
       selected = null;
@@ -577,7 +592,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       h('div', { class: 'cq-detail-head' }, pic(card), h('div', {}, h('h3', { id: 'cq-detail-title' }, name(card)), h('p', { class: 'cq-tile-type' }, type))),
       h('ul', { class: 'cq-rules' }, ...lines.map((l) => h('li', {}, l))),
       h('p', { class: 'cq-flavour' }, cardFlavour(t, card)),
-      cardBlunder(t, card) ? h('p', { class: 'cq-blunder', 'data-testid': 'detail-blunder' }, t('detail.blunder', { text: cardBlunder(t, card) })) : null,
+      blunder ? h('p', { class: 'cq-blunder', 'data-testid': 'detail-blunder' }, t('detail.blunder', { text: blunder })) : null,
       h(
         'div',
         { class: 'cq-detail-actions' },
