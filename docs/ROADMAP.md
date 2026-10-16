@@ -108,8 +108,8 @@ Decisions on the large games (strategy, Tower Defense, adventures) are made by t
 
 ### Owner notes for the next orchestrator session (2026-10-15, pause)
 
-1. **Skat – lost Hand games:** read the original International Skat Order (ISkO, current edition, from the ISPA/DSkV) and follow it exactly; today lost Hand games count double like all lost games, unverified against the text.
-2. **Skat – overbid Null games:** follow how it is typically played (research common practice and the ISkO wording; today a Null game at bid 24 counts as the next Null value that reaches the bid, 46).
+1. ✅ **Skat – lost Hand games:** checked against the ISkO text (5.3.4 and Skatgericht 5.3.4 Fall 1): all lost games, Hand included, count double — already implemented.
+2. ✅ **Skat – overbid Null games:** ISkO 3.4.4 makes a Null below the bid an invalid declaration; it can no longer be declared (old saves: lost as the cheapest suit/Grand at the bid).
 3. **Start flow (all games):** many games show the host's difficulty select and "New game", and then the game shows a second difficulty/options panel. Owner: either "New game" → settings → start, or settings + start directly — not two selections. Unify across all games (host start panel vs. each game's own options; extend ADR 0015 `setupInGame` or a shared options schema), then check every game.
 
 ## Next steps (suggested agent assignments)

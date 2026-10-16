@@ -92,6 +92,33 @@ describe('Skat view', () => {
     restored.dispose();
   });
 
+  it('does not let the person declare a Null game below the bid (ISkO 3.4.4)', () => {
+    const { root, instance } = start();
+    const { deal } = newDeal(2, 555);
+    // Mittelhand says 24, the person (Vorhand) holds, then both others pass: the person plays at 24.
+    deal.bids = [24, 'yes', 'pass', 'pass'];
+    instance.restore({ ...newGame(42), stage: 'play', deal: deal as DealState });
+    q(root, 'skat-pickup')?.click();
+    const cards = () => Array.from(root.querySelectorAll<HTMLButtonElement>('[data-testid="my-hand"] button'));
+    cards()[10]?.click();
+    cards()[11]?.click();
+    q(root, 'discard-confirm')?.click();
+    const confirm = () => q<HTMLButtonElement>(root, 'declare-confirm') as HTMLButtonElement;
+    q<HTMLInputElement>(root, 'declare-null')?.click();
+    expect(q(root, 'declare-value')?.textContent).toBe(
+      'This Null is worth only 23 – below your bid of 24. A Null game that cannot reach the bid cannot be declared; choose another game.'
+    );
+    expect(confirm().disabled).toBe(true);
+    confirm().click();
+    expect((instance.serialize() as SkatState).deal?.contract).toBeNull();
+    // Null ouvert (46) reaches the bid.
+    q<HTMLInputElement>(root, 'declare-ouvert')?.click();
+    expect(confirm().disabled).toBe(false);
+    confirm().click();
+    expect((instance.serialize() as SkatState).deal?.contract).toEqual({ kind: 'null', hand: false, schneider: false, schwarz: false, ouvert: true });
+    instance.dispose();
+  });
+
   it('lets the person declare: Skat, two cards away, game choice, value hint', () => {
     const { root, instance } = start();
     const { deal } = newDeal(2, 555);
