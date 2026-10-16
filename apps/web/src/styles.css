@@ -198,6 +198,8 @@ fieldset { border: 1px solid var(--wp-border); border-radius: var(--wp-radius); 
 .setting.field > label { font-weight: 600; }
 .setting select, .setting input[type='number'] { max-width: 100%; min-width: 0; justify-self: start; }
 .setting input[type='number'] { width: 8rem; }
+/* On a phone a select takes the whole line, so long option labels have the most room (they cannot wrap). */
+@media (max-width: 30rem) { .setting select { inline-size: 100%; text-overflow: ellipsis; } }
 .setting-options { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .setting-option { display: inline-flex; align-items: center; gap: 0.5rem; min-height: var(--wp-touch); padding: 0.25rem 0.75rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius); cursor: pointer; max-width: 100%; box-sizing: border-box; }
 .setting-option input { width: 1.25rem; height: 1.25rem; min-height: 0; margin: 0; flex: none; accent-color: var(--wp-accent); }

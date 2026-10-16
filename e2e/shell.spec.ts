@@ -16,8 +16,9 @@ test.describe('app shell', () => {
       await page.goto('/');
       await expect(page.locator('html')).toHaveAttribute('dir', locale === 'ar' ? 'rtl' : 'ltr');
       const cards = page.locator('.game-card');
+      // The catalogue renders after the locale has loaded: wait for the cards before counting them.
+      await expect.poll(() => cards.count()).toBeGreaterThan(40);
       const count = await cards.count();
-      expect(count).toBeGreaterThan(40);
       await expect(page.locator('.game-card > svg.game-preview[aria-hidden="true"]')).toHaveCount(count);
       await expect(page.locator('.game-preview--generic')).toHaveCount(0);
       for (const id of ['relay-command', 'black-box', 'compression-challenge']) {
