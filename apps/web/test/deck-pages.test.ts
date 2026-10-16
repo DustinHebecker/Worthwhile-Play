@@ -372,7 +372,7 @@ describe('deck library pages', () => {
     expect(byId(main, 'review-deck')?.getAttribute('href')).toBe('/games/review?deck=capitals');
     byId(main, 'play-country-capital')?.click();
     await flush();
-    expect(JSON.parse(localStorage.getItem('wp:pref:memory:cards') ?? 'null')).toBe('country-capital');
+    expect(JSON.parse(localStorage.getItem('wp:pref:memory:@settings') ?? 'null')?.cards).toBe('country-capital');
     expect(context.navigate).toHaveBeenLastCalledWith('/games/memory?new=1');
   });
 
@@ -399,7 +399,7 @@ describe('deck library pages', () => {
     expect(byId(main, 'review-deck')?.getAttribute('href')).toBe('/games/review?deck=ai-basics');
     byId(main, 'play-ai-term-definition')?.click();
     await flush();
-    expect(JSON.parse(localStorage.getItem('wp:pref:memory:cards') ?? 'null')).toBe('ai-term-definition');
+    expect(JSON.parse(localStorage.getItem('wp:pref:memory:@settings') ?? 'null')?.cards).toBe('ai-term-definition');
     expect(context.navigate).toHaveBeenLastCalledWith('/games/memory?new=1');
   });
 
@@ -421,7 +421,7 @@ describe('deck library pages', () => {
     byId(main, 'play-own-user-pets-1')?.click();
     await flush();
     expect(context.navigate).toHaveBeenLastCalledWith('/games/memory?new=1');
-    expect(JSON.parse(localStorage.getItem('wp:pref:memory:cards') ?? 'null')).toBe('own:user-pets-1');
+    expect(JSON.parse(localStorage.getItem('wp:pref:memory:@settings') ?? 'null')?.cards).toBe('own:user-pets-1');
 
     await store.write(createSave({ metadata: { id: 'memory', stateVersion: 2 } } as never, 1, {}));
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
