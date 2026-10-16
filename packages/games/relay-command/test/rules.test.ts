@@ -1695,20 +1695,50 @@ describe('random maps (I6c, state v12)', () => {
   const valid = (s: RcState) => isValidState(JSON.parse(JSON.stringify(s)));
   const random = (w: number, h: number, seed: number) => newGame(1, FIELD_EXERCISE, 'normal', 12, false, generateMap(w, h, seed, `Random ${w}×${h} · No. ${seed}`), 1, [], false, { w, h, seed });
 
-  it('a game on a generated map keeps its recipe; the save must be exactly the map the recipe generates', () => {
+  it('a game on a generated map keeps its recipe as a label; the stored map is what is played', () => {
     const s = random(20, 14, 4711);
     expect(s).toMatchObject({ scenario: 'custom', random: { w: 20, h: 14, seed: 4711 } });
     expect(s.map).toEqual(generateMap(20, 14, 4711, 'Random 20×14 · No. 4711'));
     expect(valid(s)).toBe(true);
     expect(valid(lockTurn(s))).toBe(true);
-    // The recipe and the map must agree; only sizes offered in the setup; a 32-bit seed.
-    expect(valid({ ...s, random: { w: 20, h: 14, seed: 4712 } })).toBe(false);
+    // Only sizes offered in the setup, matching the map; a 32-bit seed; a recipe needs its map.
     expect(valid({ ...s, random: { w: 22, h: 14, seed: 4711 } })).toBe(false);
+    expect(valid({ ...s, random: { w: 16, h: 12, seed: 4711 } })).toBe(false);
     expect(valid({ ...s, random: { w: 20, h: 14, seed: -1 } })).toBe(false);
-    expect(valid({ ...s, map: { ...s.map!, terrain: (s.map!.terrain[0] === 'f' ? '.' : 'f') + s.map!.terrain.slice(1) } })).toBe(false);
+    expect(valid({ ...s, random: { w: 20, h: 14, seed: 2 ** 32 } })).toBe(false);
+    expect(valid({ ...s, random: { w: 20, h: 14, seed: 1.5 } })).toBe(false);
+    expect(valid({ ...s, random: [20, 14, 4711] as never })).toBe(false);
     expect(valid({ ...s, random: null })).toBe(true); // a player-made map that happens to look generated
-    expect(valid({ ...newGame(1), random: { w: 20, h: 14, seed: 1 } })).toBe(false); // a recipe needs its map
+    expect(valid({ ...newGame(1), random: { w: 20, h: 14, seed: 1 } })).toBe(false);
     expect(RANDOM_SIZES.every(([w, h]) => valid(random(w, h, 7)))).toBe(true);
+  });
+
+  it('a save stays loadable when the generator changes: the recipe is never regenerated (review of PR #48)', () => {
+    const s = random(16, 12, 99);
+    // Simulate a changed generator: the stored map is no longer what this recipe generates today.
+    const other = generateMap(16, 12, 100, s.map!.name);
+    expect(other).not.toEqual(s.map);
+    const old = JSON.parse(JSON.stringify({ ...newGame(1, FIELD_EXERCISE, 'normal', 12, false, other, 1, [], false, { w: 16, h: 12, seed: 100 }), random: { w: 16, h: 12, seed: 99 } })) as unknown;
+    expect(isValidState(old)).toBe(true);
+    expect(valid(lockTurn(old as RcState))).toBe(true);
+    // A hand-edited map that is still a valid map of that size also loads.
+    expect(valid({ ...s, map: { ...s.map!, name: 'renamed' } })).toBe(true);
+  });
+
+  it('property: any seed × any offered size gives a game that survives save, reload and a turn', () => {
+    fc.assert(
+      fc.property(fc.integer({ min: 0, max: 2 ** 32 - 1 }), fc.integer({ min: 0, max: RANDOM_SIZES.length - 1 }), (seed, i) => {
+        const [w, h] = RANDOM_SIZES[i]!;
+        const s = random(w, h, seed);
+        const loaded = JSON.parse(JSON.stringify(s)) as unknown;
+        expect(isValidState(loaded)).toBe(true);
+        expect(migrateState(loaded, 12)).toBeUndefined(); // current version: nothing to migrate
+        const next = lockTurn(loaded as RcState);
+        expect(valid(next)).toBe(true);
+        expect(next.random).toEqual({ w, h, seed });
+      }),
+      { numRuns: 24 },
+    );
   });
 
   it('v11 saves migrate without a random map', () => {

@@ -533,6 +533,27 @@ describe('Relay Command view', () => {
     expect(state().random!.seed).toBe(first.seed);
     expect(seed.value).toBe(String(first.seed));
     expect(scenario.value).toBe('random');
+    // Empty or not a number keeps the map being played; a negative number wraps; the field shows the number used.
+    const keep = state().map;
+    for (const typed of ['', '   ']) {
+      seed.value = typed;
+      seed.dispatchEvent(new Event('change'));
+      expect(state().random!.seed).toBe(first.seed);
+      expect(state().map).toEqual(keep);
+      expect(seed.value).toBe(String(first.seed));
+    }
+    seed.value = '-1';
+    seed.dispatchEvent(new Event('change'));
+    expect(state().random!.seed).toBe(2 ** 32 - 1);
+    expect(seed.value).toBe(String(2 ** 32 - 1));
+    seed.value = '7.9';
+    seed.dispatchEvent(new Event('change'));
+    expect(state().random!.seed).toBe(7);
+    expect(seed.value).toBe('7');
+    seed.value = String(first.seed);
+    seed.dispatchEvent(new Event('change'));
+    // The sizes are announced in words.
+    expect([...size.options].map((o) => o.getAttribute('aria-label'))).toEqual(['12 by 10', '16 by 12', '20 by 14', '24 by 16']);
     // The map editor opens the map being played.
     click('rc-editor-open');
     expect(state().edit!.map).toEqual(old);

@@ -33,7 +33,6 @@ import {
 import { DIFFICULTIES, planAi, type Difficulty } from './ai';
 import { FIELD_EXERCISE, opponentCounts, SCENARIOS, scenarioFor, type ScenarioSpec } from './scenarios';
 import { customSpec, isValidMap, mapIssues, MAP_SLOTS, type EditMap } from './maps';
-import { generateMap } from './generator';
 
 /** Strategy rules: orders and reports travel through the command network (coverage, order slots, fog). */
 export const RULESET: Ruleset = STRATEGY_RULESET;
@@ -146,7 +145,7 @@ export interface RcState {
   quick: boolean;
   /** Game option (owner decision 2026-10-14): no deposit runs dry in this game. */
   endless: boolean;
-  /** The recipe of the generated map this game runs on (`map` is that map), or null. */
+  /** The recipe (size, map number) the map of this game was generated from, or null; a label: `map` is authoritative. */
   random: RandomMap | null;
   /**
    * Stalemate record: the player's lead in strength at the end of each turn since the trailing
@@ -826,12 +825,15 @@ function isValidSeating(value: Record<string, unknown>, n: number, isCommand: (v
 const isValidDraft = (v: unknown): v is MapDraft | null =>
   v === null || (isRecord(v) && isValidMap(v.map) && (v.slot === null || isInt(v.slot, 0, MAP_SLOTS - 1)) && typeof v.mirror === 'boolean');
 
-/** A random map's recipe: a size offered in the setup, a 32-bit seed, and the map is exactly what it generates. */
+/**
+ * A random map's recipe: a size offered in the setup and a 32-bit seed, on a game with a map of
+ * that size. The recipe is a label: the stored map is what the game runs on (it is checked like any
+ * player-made map), so a later change of the generator never invalidates a save (review of PR #48).
+ */
 function isValidRandom(random: unknown, map: unknown): boolean {
   if (random === null) return true;
   if (!isRecord(random) || !isUint32(random.seed) || !RANDOM_SIZES.some(([w, h]) => w === random.w && h === random.h)) return false;
-  if (!isValidMap(map)) return false;
-  return JSON.stringify(generateMap(random.w as number, random.h as number, random.seed, map.name)) === JSON.stringify(map);
+  return isRecord(map) && map.w === random.w && map.h === random.h;
 }
 
 export function isValidState(value: unknown): value is RcState {

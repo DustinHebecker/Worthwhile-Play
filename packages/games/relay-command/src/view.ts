@@ -332,7 +332,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   // A generated map (I6c): size and map number (its seed; the same number gives the same map again).
   scenarioSelect.append(h('option', { value: 'random' }, t('setup.random')));
   const randomSize = h('select', { 'data-testid': 'rc-random-size', onchange: () => onSetup() });
-  for (const [w, h_] of RANDOM_SIZES) randomSize.append(h('option', { value: `${w}x${h_}` }, `${w}×${h_}`));
+  for (const [w, h_] of RANDOM_SIZES) randomSize.append(h('option', { value: `${w}x${h_}`, 'aria-label': t('setup.randomSizeLabel', { w, h: h_ }) }, `${w}×${h_}`));
   randomSize.value = '16x12'; // a medium map unless another size is chosen
   const randomSeed = h('input', { type: 'number', min: '0', max: '4294967295', step: '1', inputmode: 'numeric', 'data-testid': 'rc-random-seed', onchange: () => onSetup() }) as HTMLInputElement;
   const randomNew = h('button', { type: 'button', 'data-testid': 'rc-random-new', onclick: () => newRandomMap() }, t('setup.randomNew'));
@@ -1990,9 +1990,17 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       // Coming from another map: the map number starts from the game's seed.
       // Read the number as the generator does (an unsigned 32-bit integer: fractions dropped, wrapped).
       const typed = Number(randomSeed.value);
-      const seed = state.random && randomSeed.value.trim() !== '' && Number.isFinite(typed) ? Math.trunc(typed) >>> 0 : state.seed;
+      // Empty or not a number: keep the map being played (coming from another map: start from the game's seed).
+      const seed = state.random && randomSeed.value.trim() !== '' && Number.isFinite(typed) ? Math.trunc(typed) >>> 0 : (state.random?.seed ?? state.seed);
+      randomSeed.value = String(seed);
       const limit = limitSelect.value === 'open' || limitSelect.value === 'quick' ? null : Number(limitSelect.value);
-      const map = generateMap(size[0], size[1], seed, t('setup.randomName', { w: size[0], h: size[1], n: seed }).slice(0, MAX_NAME));
+      let map: EditMap;
+      try {
+        map = generateMap(size[0], size[1], seed, t('setup.randomName', { w: size[0], h: size[1], n: seed }).slice(0, MAX_NAME));
+      } catch {
+        render(); // cannot happen for the offered sizes; the game stays as it is
+        return;
+      }
       selected = null;
       syncOpponentOptions();
       commit(newGame(state.seed, FIELD_EXERCISE, state.difficulty, limit, limitSelect.value === 'quick', map, 1, chosenSeats(), endlessInput.checked, { w: size[0], h: size[1], seed }), t('announce.setup', { scenario: mapLabel(map) }));
