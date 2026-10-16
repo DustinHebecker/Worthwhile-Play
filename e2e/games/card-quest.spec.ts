@@ -103,3 +103,34 @@ test('card-quest: after a main action the focus moves to the next main action', 
   await page.keyboard.press('Enter');
   await expect(page.locator('.cq button.primary:focus, .cq .cq-next-text:focus')).toHaveCount(1);
 });
+
+test('card-quest: in the give-away step a card can be read and closed without giving anything away', async ({ page }) => {
+  await start(page);
+  // Play on until the person must give cards away (the end button waits for a choice).
+  for (let i = 0; i < 400; i++) {
+    const end = page.getByTestId('end');
+    if ((await end.count()) > 0 && (await end.isDisabled())) break;
+    const s = await shown(page);
+    if (s.phase === 'over') break;
+    for (const id of ['open', 'rummage', 'pass', 'roll', 'end']) {
+      const b = page.getByTestId(id);
+      if ((await b.count()) > 0 && (await b.isEnabled())) {
+        await b.click();
+        break;
+      }
+    }
+  }
+  test.skip(!(await page.getByTestId('end').isDisabled().catch(() => false)), 'no give-away step in this game');
+  const hand = page.locator('[data-testid="hand"] .cq-tile');
+  const before = await hand.count();
+  const info = page.locator('[data-testid="hand"] .cq-info').first();
+  await info.click();
+  await expect(page.getByTestId('detail')).toBeVisible();
+  await page.getByTestId('detail-close').click();
+  await expect(page.getByTestId('detail')).toHaveCount(0);
+  await expect(info).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page.getByTestId('detail')).toBeVisible();
+  await expect(hand).toHaveCount(before);
+  await expect(page.getByTestId('end')).toBeDisabled();
+});

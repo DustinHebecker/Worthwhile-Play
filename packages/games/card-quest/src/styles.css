@@ -91,6 +91,8 @@
 .cq-tile[data-type='double'] { border-color: var(--cq-loot); border-style: double; border-width: 4px; }
 .cq-tile[aria-pressed='true'] { outline: 3px solid var(--wp-accent); outline-offset: 1px; background: var(--wp-surface-2); }
 .cq-tile { position: relative; }
+.cq-pick { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.25rem; align-items: stretch; }
+.cq-info { min-inline-size: var(--wp-touch); padding: 0; font-weight: 800; font-style: italic; font-family: Georgia, serif; font-size: 1.2rem; border-radius: 50%; align-self: center; block-size: var(--wp-touch); }
 .cq-tile[aria-pressed='true']::after { content: '✓'; position: absolute; inset-inline-end: 0.3rem; inset-block-start: 0.1rem; font-size: 0.8rem; font-weight: 700; }
 .cq-tile-text { display: grid; min-inline-size: 0; }
 .cq-tile-name { font-weight: 600; font-size: 0.95rem; line-height: 1.2; overflow-wrap: break-word; hyphens: auto; }

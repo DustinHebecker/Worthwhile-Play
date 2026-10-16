@@ -107,6 +107,9 @@ export const zhHans: Catalogue = {
   'card.why.ownTurn': '只能在自己的回合、战斗之外使用。',
   'card.why.notNow': '现在不行。',
   'detail.blunder': '如果被它抓住：{text}',
+  'card.info': '详情：{name}',
+  'act.pick': '选择',
+  'act.unpick': '取消选择',
 
   'act.equip': '穿戴',
   'act.unequip': '卸下',
