@@ -103,6 +103,20 @@ describe('view', () => {
     it('does not appear when the slot was empty', () => {
       expect(pageText(caught(0, false), (root) => q(root, 'roll')!.click())).not.toContain(sentence);
     });
+    it('does not appear when the Blunder only partly hit (level lost, but no shoes to lose)', () => {
+      const s = arranged((s) => {
+        s.players[0]!.level = 3;
+        s.encounter.splice(s.encounter.indexOf('kz.runaway-cart'), 1);
+        s.encounter.push('kz.runaway-cart');
+      });
+      let n = step(s, 0, { a: 'open' })!;
+      for (let i = 0; i < 3; i++) n = step(n, n.fight!.actor, { a: 'pass' })!;
+      for (let st = 1; ; st++) if (createRngFromState(st).int(1, 6) === 1) { n = { ...n, rng: st }; break; }
+      const after = step(n, 0, { a: 'roll' })!;
+      expect(after.players[0]!.level).toBe(2);
+      expect(pageText(after, () => undefined)).not.toContain(en['kz.runaway-cart']!.blunder!);
+    });
+
     it('does not appear for a computer player (it speaks to "you")', () => {
       const s = step(caught(1, true), 1, { a: 'roll' })!;
       expect(s.log.some((e) => e.e === 'flee' && !e.ok)).toBe(true);
@@ -110,35 +124,73 @@ describe('view', () => {
     });
   });
 
-  it('in the give-away mode a card can be read (info button) before it is chosen', () => {
-    const ctx = createTestContext(game as GameModule<unknown>, 'en');
-    const instance = game.create(ctx.context as never);
-    const root = ctx.context.root;
-    for (let seed = 1; seed < 300; seed++) {
-      instance.newGame({ seed });
-      // Play on until the person has to give cards away at the end of a turn.
-      for (let i = 0; i < 400 && !(q(root, 'end')?.disabled ?? false); i++) {
-        if (instance.serialize().phase === 'over') break;
-        const next = ['start', 'open', 'rummage', 'pass', 'roll', 'end'].map((id) => q(root, id)).find((b) => b && !b.disabled);
-        next?.click();
-      }
-      if (!q(root, 'end')?.disabled) continue;
-      const info = root.querySelector<HTMLButtonElement>('[data-testid="hand"] .cq-info')!;
-      const card = info.dataset.testid!.slice('info-'.length);
+  describe('reading cards while choosing (B1)', () => {
+    const mount = (state: CardQuestState) => {
+      const ctx = createTestContext(game as GameModule<unknown>, 'en');
+      const instance = game.create(ctx.context as never);
+      instance.restore(state);
+      return { root: ctx.context.root, instance };
+    };
+    const giveAway = () =>
+      arranged((s) => {
+        s.phase = 'end';
+        for (const c of ['kz.cave-slime', 'kz.firecracker', 'kz.pickaxe', 'kz.mine-collapse', 'kz.tool-shed', 'kz.lunch-break#1', 'kz.shovel']) take(s, c, s.players[0]!.hand);
+      });
+
+    it('give-away: the info button opens the card without choosing it; Select chooses it; tapping a tile only toggles', () => {
+      const { root, instance } = mount(giveAway());
+      const info = q(root, 'info-kz.cave-slime')!;
       info.click();
-      const detail = q(root, 'detail')!;
-      expect(detail.textContent).toContain(en[card.split('#')[0]!]!.name);
-      expect(instance.serialize().players[0]!.hand).toContain(card);
-      // Reading did not choose it; the detail's button does.
-      const tile = root.querySelector<HTMLButtonElement>(`[data-testid="hand"] [data-card="${card}"]`)!;
-      expect(tile.getAttribute('aria-pressed')).toBe('false');
+      expect(q(root, 'detail')!.textContent).toContain(en['kz.cave-slime']!.name);
+      expect(document.activeElement).toBe(q(root, 'detail'));
+      expect(q(root, 'info-kz.cave-slime')!.getAttribute('aria-controls')).toBe('cq-detail');
+      const tile = () => root.querySelector<HTMLButtonElement>('[data-testid="hand"] .cq-tile[data-card="kz.cave-slime"]')!;
+      expect(tile().getAttribute('aria-pressed')).toBe('false');
       q(root, 'act-pick')!.click();
-      expect(root.querySelector(`[data-testid="hand"] [data-card="${card}"]`)!.getAttribute('aria-pressed')).toBe('true');
-      expect(q(root, 'detail')).not.toBeNull();
+      expect(tile().getAttribute('aria-pressed')).toBe('true');
+      q(root, 'detail-close')!.click();
+      expect(q(root, 'detail')).toBeNull();
+      // Focus returns to the card, never to "Give away".
+      expect(document.activeElement).toBe(q(root, 'info-kz.cave-slime'));
+      // A tile tap toggles and opens nothing.
+      root.querySelector<HTMLButtonElement>('[data-testid="hand"] .cq-tile[data-card="kz.firecracker"]')!.click();
+      expect(q(root, 'detail')).toBeNull();
+      expect(instance.serialize().players[0]!.hand).toHaveLength(7);
       instance.dispose();
-      return;
-    }
-    throw new Error('no give-away situation in the sampled games');
+    });
+
+    it('sell: hand, carried and equipped items and one-shots get an info button, other cards do not', () => {
+      const s = arranged((s) => {
+        take(s, 'kz.gold-nugget', s.players[0]!.hand);
+        take(s, 'kz.firecracker', s.players[0]!.hand);
+        take(s, 'kz.cave-slime', s.players[0]!.hand);
+        take(s, 'kz.hard-hat', s.players[0]!.pack);
+        take(s, 'kz.shovel', s.players[0]!.equipped);
+      });
+      const { root, instance } = mount(s);
+      q(root, 'sell-mode')!.click();
+      for (const c of ['kz.gold-nugget', 'kz.firecracker', 'kz.hard-hat', 'kz.shovel']) expect(q(root, `info-${c}`), c).not.toBeNull();
+      expect(q(root, 'info-kz.cave-slime')).toBeNull();
+      q(root, 'info-kz.shovel')!.click();
+      expect(q(root, 'detail')!.textContent).toContain(en['kz.shovel']!.name);
+      q(root, 'act-pick')!.click();
+      expect(root.querySelector('[data-testid="mine"] .cq-tile[data-card="kz.shovel"]')!.getAttribute('aria-pressed')).toBe('true');
+      instance.dispose();
+    });
+
+    it('entering the give-away step closes a detail left open from playing', () => {
+      const s = arranged((s) => {
+        s.phase = 'after';
+        for (const c of ['kz.cave-slime', 'kz.firecracker', 'kz.pickaxe', 'kz.mine-collapse', 'kz.tool-shed', 'kz.shovel']) take(s, c, s.players[0]!.hand);
+      });
+      const { root, instance } = mount(s);
+      root.querySelector<HTMLButtonElement>('[data-testid="hand"] .cq-tile[data-card="kz.pickaxe"]')!.click();
+      expect(q(root, 'detail')).not.toBeNull();
+      q(root, 'rummage')!.click();
+      expect(q(root, 'end')!.disabled).toBe(true);
+      expect(q(root, 'detail')).toBeNull();
+      instance.dispose();
+    });
   });
 
   it('keeps the keyboard focus inside the game after a main action', () => {

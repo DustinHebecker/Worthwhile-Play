@@ -486,6 +486,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
           if (mode !== 'give') {
             mode = 'give';
             picked.clear();
+            selected = null;
           }
           const label = charityTarget(state) >= 0 ? t('btn.give', { n }) : t('btn.discard', { n });
           bar.append(button(label, () => act({ a: 'end', give: [...picked] }), { primary: true, testid: 'end', disabled: picked.size !== n }));
@@ -568,7 +569,15 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
   function select(card: string): void {
     selected = selected === card ? null : card;
     render();
-    main.querySelector<HTMLElement>('[data-testid="detail"]')?.focus();
+    if (selected) main.querySelector<HTMLElement>('[data-testid="detail"]')?.focus();
+    else focusCard(card);
+  }
+
+  /** Focus back on a card's info button (or its tile), e.g. after its detail was closed — never on a main action. */
+  function focusCard(card: string): void {
+    const info = [...main.querySelectorAll<HTMLElement>('.cq-info')].find((b) => b.dataset.testid === `info-${card}`);
+    const tileEl = [...main.querySelectorAll<HTMLElement>('.cq-tile')].find((b) => b.dataset.card === card);
+    (info ?? tileEl)?.focus();
   }
 
   function why(card: string): string {
@@ -598,10 +607,11 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     const close = button(t('btn.close'), () => {
       selected = null;
       render();
+      focusCard(card);
     }, { testid: 'detail-close' });
     return h(
       'section',
-      { class: 'cq-detail', 'data-type': defOf(card).type, tabindex: '-1', 'data-testid': 'detail', 'aria-labelledby': 'cq-detail-title' },
+      { class: 'cq-detail', id: 'cq-detail', 'data-type': defOf(card).type, tabindex: '-1', 'data-testid': 'detail', 'aria-labelledby': 'cq-detail-title' },
       h('div', { class: 'cq-detail-head' }, pic(card), h('div', {}, h('h3', { id: 'cq-detail-title' }, name(card)), h('p', { class: 'cq-tile-type' }, type))),
       h('ul', { class: 'cq-rules' }, ...lines.map((l) => h('li', {}, l))),
       h('p', { class: 'cq-flavour' }, cardFlavour(t, card)),
@@ -673,6 +683,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
           'data-key': `info-${prefix}-${c}`,
           'aria-label': t('card.info', { name: name(c) }),
           'aria-expanded': String(selected === c),
+          'aria-controls': selected === c ? 'cq-detail' : undefined,
           onclick: () => select(c)
         },
         h('span', { 'aria-hidden': 'true' }, 'i')
