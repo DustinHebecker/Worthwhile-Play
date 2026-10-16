@@ -11,12 +11,9 @@ import {
   GLYPHS,
   newBlock,
   nOf,
-  PACES,
   POSITION_BIT,
   POSITIONS,
   scoreBlock,
-  setPace,
-  setVariant,
   SHAPES,
   startBlock,
   SYMBOL_BIT,
@@ -25,7 +22,6 @@ import {
   toPace,
   togglePending,
   toVariant,
-  VARIANTS,
   type Difficulty,
   type Item,
   type NBackState,
@@ -45,7 +41,8 @@ import {
  * match", or with the toggled dual claims). It stops on pause() and after a restore, and
  * the logical state is exact at item boundaries, so timers are never needed for correctness.
  */
-const PREFERENCES_KEY = 'options';
+/** Variant and pace as remembered by older versions (before the host's start screen, ADR 0017). */
+export const PREFERENCES_KEY = 'options';
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
@@ -65,38 +62,18 @@ export function createNBack(context: GameContext): GameInstance<NBackState> {
   let held = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
 
-  const readOptions = (): { variant: Variant; pace: Pace } => {
-    const raw = context.preferences?.get(PREFERENCES_KEY);
-    return isRecord(raw) ? { variant: toVariant(raw.variant), pace: toPace(raw.pace) } : { variant: toVariant(undefined), pace: toPace(undefined) };
-  };
-
-  // --- intro (ready phase) ---
+  // --- intro (ready phase; skipped after the host's Start, ADR 0017) ---
   const taskEl = h('p', { class: 'wp-nb__task', 'data-testid': 'nb-task' });
   const lengthEl = h('p', { 'data-testid': 'nb-length' });
   const luresEl = h('p', { class: 'wp-nb__muted' });
-  const optionButton = (group: string, value: string, label: string, onclick: () => void) =>
-    h('button', { type: 'button', class: 'wp-nb__option', 'data-testid': `nb-${group}-${value}`, 'aria-pressed': 'false', onclick }, label);
-  const variantButtons = VARIANTS.map((v) => optionButton('variant', v, t(`variant.${v}`), () => chooseVariant(v)));
-  const paceButtons = PACES.map((p) => optionButton('pace', p, t(`pace.${p}`, { seconds }), () => choosePace(p)));
   const timedNote = h('p', { class: 'wp-nb__muted' }, t('intro.timed', { seconds }));
   const startBtn = h('button', { type: 'button', class: 'primary', 'data-testid': 'nb-start', 'data-autofocus': true, onclick: () => start() }, t('action.start'));
-  const optionGroup = (labelKey: string, buttons: HTMLElement[]) => {
-    const id = `wp-nb-${labelKey.replace('.', '-')}`;
-    return h(
-      'div',
-      { class: 'wp-nb__options', role: 'group', 'aria-labelledby': id },
-      h('span', { id, class: 'wp-nb__options-label' }, t(labelKey)),
-      ...buttons
-    );
-  };
   const intro = h(
     'div',
     { class: 'wp-nb__intro', 'data-testid': 'nb-intro' },
     taskEl,
     lengthEl,
     luresEl,
-    optionGroup('variant.label', variantButtons),
-    optionGroup('pace.label', paceButtons),
     timedNote,
     startBtn
   );
@@ -205,8 +182,6 @@ export function createNBack(context: GameContext): GameInstance<NBackState> {
     lengthEl.textContent = t('intro.length', { count: total });
     luresEl.hidden = s.difficulty !== 'n3';
     luresEl.textContent = luresEl.hidden ? '' : t('intro.lures', { n });
-    variantButtons.forEach((b, i) => b.setAttribute('aria-pressed', String(VARIANTS[i] === s.variant)));
-    paceButtons.forEach((b, i) => b.setAttribute('aria-pressed', String(PACES[i] === s.pace)));
     timedNote.hidden = s.pace !== 'timed';
 
     // Status
@@ -326,22 +301,6 @@ export function createNBack(context: GameContext): GameInstance<NBackState> {
     context.requestSave();
   };
 
-  const chooseVariant = (variant: Variant) => {
-    if (!state || state.phase !== 'ready' || state.variant === variant) return;
-    state = setVariant(state, variant);
-    context.preferences?.set(PREFERENCES_KEY, { variant: state.variant, pace: state.pace });
-    update();
-    context.requestSave();
-  };
-
-  const choosePace = (pace: Pace) => {
-    if (!state || state.phase !== 'ready' || state.pace === pace) return;
-    state = setPace(state, pace);
-    context.preferences?.set(PREFERENCES_KEY, { variant: state.variant, pace: state.pace });
-    update();
-    context.requestSave();
-  };
-
   const start = () => {
     if (!state || paused || state.phase !== 'ready') return;
     state = startBlock(state);
@@ -403,8 +362,11 @@ export function createNBack(context: GameContext): GameInstance<NBackState> {
 
   return {
     newGame(options: NewGameOptions) {
-      const { variant, pace } = readOptions();
-      begin(options.seed, toDifficulty(options.difficulty), variant, pace);
+      // Variant and pace come from the host's start screen (ADR 0017); junk falls back to the defaults.
+      const settings = isRecord(options.settings) ? options.settings : {};
+      begin(options.seed, toDifficulty(options.difficulty), toVariant(settings.variant), toPace(settings.pace));
+      // The player has just pressed Start: no second "Start block" step.
+      if (options.begin) start();
     },
     restore(saved: NBackState) {
       // Closed mid-block: the same item is shown again. The timed pace waits for "Continue".
