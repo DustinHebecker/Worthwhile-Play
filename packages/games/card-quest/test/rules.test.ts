@@ -21,44 +21,11 @@ import {
   type Action,
   type CardQuestState,
   type Player,
-  type Settings
 } from '../src/rules';
 import { KAMPFZWERGE } from '../src/worlds/kampfzwerge';
 import { defOf, worldDecks } from '../src/worlds';
+import { arranged, me, start, take } from './harness';
 
-const start = (seed: number, settings: Partial<Settings> = {}): CardQuestState => step(newGame(seed), 0, { a: 'start', settings: { ...DEFAULT_SETTINGS, ...settings } })!;
-
-/** A state for focused rule tests: seat `active` on turn in `phase`, hands and table as given. */
-function arranged(patch: (s: CardQuestState) => void, settings: Partial<Settings> = { opponents: 2 }): CardQuestState {
-  const s = start(1, settings);
-  // Put every card back into the piles, then deal what the test wants.
-  const all = worldDecks(s.settings.worlds);
-  s.encounter = [...all.encounter];
-  s.loot = [...all.loot];
-  s.encounterDiscard = [];
-  s.lootDiscard = [];
-  for (const p of s.players) Object.assign(p, { level: 1, hand: [], equipped: [], pack: [], upgrades: [], origins: [], professions: [], doubles: [], malus: 0 });
-  s.active = 0;
-  s.phase = 'prepare';
-  s.fight = null;
-  patch(s);
-  return s;
-}
-
-/** Moves a card from wherever it is in the piles to a target list. */
-function take(s: CardQuestState, card: string, to: string[]): void {
-  for (const pile of [s.encounter, s.loot]) {
-    const i = pile.indexOf(card);
-    if (i >= 0) {
-      pile.splice(i, 1);
-      to.push(card);
-      return;
-    }
-  }
-  throw new Error(`card ${card} not in a pile`);
-}
-
-const me = (s: CardQuestState): Player => s.players[0]!;
 
 describe('Kampfzwerge content', () => {
   it('has 140 cards: 76 encounter and 64 loot in the designed composition', () => {
