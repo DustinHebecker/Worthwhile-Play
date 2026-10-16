@@ -713,6 +713,21 @@ const SURPLUS = 800;
 const MAX_YARDS = 4;
 /** Easy keeps a cushion before it produces anything (it never builds). */
 const EASY_RESERVE = 150;
+/** A known enemy fighter this close (cells) to the post or an Extractor threatens it: a tower goes up. */
+const TOWER_THREAT = 7;
+/**
+ * Known enemy fighters near an asset before a tower goes up (and they must outnumber the own fighters
+ * within `TOWER_GUARD_FIGHTERS`). Measured in docs/design/strategy.md ("Defence towers"): with these,
+ * both levels beat the previous opponent on every two-side map and keep the level margins; towers on
+ * any threat cost hard its edge over normal (0–12 on Field Exercise), Laser Towers against armour too.
+ */
+const TOWER_THREATS: Record<Difficulty, number> = { easy: Number.POSITIVE_INFINITY, normal: 3, hard: 1 };
+/** Own fighters this close (cells) to an asset defend it themselves. */
+const TOWER_GUARD_FIGHTERS = 4;
+/** A tower this close (cells) to an asset already guards it. */
+const TOWER_GUARD = 3;
+/** Most towers a side builds: one, plus one per two Extractors, at most four. */
+const maxTowers = (extractors: number): number => Math.min(4, 1 + Math.floor(extractors / 2));
 
 /**
  * Strategic spending (I6a, § 11): Extractors on free covered deposits first (income compounds),
@@ -756,8 +771,26 @@ function economyOrders(obs: Observation, ruleset: Ruleset, own: readonly Entity[
       tryOrder({ side, unit: source.id, order: { type: 'build', kind: 'extractor', x: d.x, y: d.y } });
     }
   }
-  // 2. A Motor Pool next to the post once the economy runs (vehicles: scouts that spot from afar, guns).
+  // 1b. Defence towers (owner decision 2026-10-16) where known enemy fighters threaten the post or an
+  // Extractor that is outnumbered on the spot and no tower guards yet: a Gun Tower.
   const extractors = ownAll.filter((e) => arch(e)?.extractor).length;
+  if (source) {
+    const towers = () => [...ownAll.filter((e) => e.kind.startsWith('tower-')), ...commands.flatMap((c) => (c.order.type === 'build' && c.order.kind.startsWith('tower-') ? [{ x: c.order.x, y: c.order.y }] : []))];
+    const threats = enemiesOf(obs).filter((e) => arch(e)?.weapon && (arch(e)?.speed ?? 0) > 0);
+    const assets = ownAll.filter((e) => e.id === source.id || (arch(e)?.extractor && (e.build ?? 0) === 0));
+    for (const asset of assets) {
+      if (towers().length >= maxTowers(extractors)) break;
+      const near = threats.filter((e) => dist2(e.x, e.y, asset.x, asset.y) <= TOWER_THREAT * TOWER_THREAT);
+      // Only where the asset is outnumbered: own fighters close by meet the threat themselves.
+      const defenders = ownAll.filter((e) => arch(e)?.weapon && (arch(e)?.speed ?? 0) > 0 && dist2(e.x, e.y, asset.x, asset.y) <= TOWER_GUARD_FIGHTERS * TOWER_GUARD_FIGHTERS).length;
+      if (near.length < TOWER_THREATS[difficulty] || defenders >= near.length || towers().some((t) => dist2(t.x, t.y, asset.x, asset.y) <= TOWER_GUARD * TOWER_GUARD)) continue;
+      const kind = 'tower-gun';
+      if (supply < costOf(kind)) continue;
+      const spot = towerSpot(obs, ruleset, asset, near);
+      if (spot) tryOrder({ side, unit: source.id, order: { type: 'build', kind, x: spot.x, y: spot.y } });
+    }
+  }
+  // 2. A Motor Pool next to the post once the economy runs (vehicles: scouts that spot from afar, guns).
   const hasPool = ownAll.some((e) => e.kind === 'motor-pool');
   if (source && !hasPool && (extractors >= 2 || world.turn >= POOL_TURN) && supply >= costOf('motor-pool')) {
     const spot = buildSpot(obs, ruleset, source, 'motor-pool');
@@ -815,6 +848,27 @@ function buildSpot(obs: Observation, ruleset: Ruleset, source: Entity, kind: str
       // Not adjacent to the post or a yard: their neighbours are where produced units appear.
       if (world.entities.some((e) => e.side === side && (archetypeOf(ruleset, e.kind)?.production || e.kind === source.kind) && Math.max(Math.abs(e.x - x), Math.abs(e.y - y)) <= 1)) continue;
       const d = dist2(x, y, source.x, source.y);
+      const f = sideFrame(obs, c);
+      if (!best || d < best.d || (d === best.d && f < best.f)) best = { x, y, d, f };
+    }
+  }
+  return best;
+}
+
+/**
+ * A free covered cell for a tower within 2 cells of `asset`, towards the threat (nearest to the
+ * nearest threatening enemy), never on a deposit or next to the post or a yard (where produced units appear).
+ */
+function towerSpot(obs: Observation, ruleset: Ruleset, asset: Entity, threats: readonly Entity[]): { x: number; y: number } | undefined {
+  const { world, side, network } = obs;
+  const taken = new Set(world.entities.map((e) => cellOf(world.map, e.x, e.y)));
+  let best: { x: number; y: number; d: number; f: number } | undefined;
+  for (let y = Math.max(0, asset.y - 2); y <= Math.min(world.map.h - 1, asset.y + 2); y++) {
+    for (let x = Math.max(0, asset.x - 2); x <= Math.min(world.map.w - 1, asset.x + 2); x++) {
+      const c = cellOf(world.map, x, y);
+      if (taken.has(c) || network.coverage[c] !== 1 || !passable(world.map, ruleset, x, y, 'ground') || depositAt(world.map, x, y)) continue;
+      if (world.entities.some((e) => e.side === side && (archetypeOf(ruleset, e.kind)?.production || archetypeOf(ruleset, e.kind)?.comms?.role === 'source') && Math.max(Math.abs(e.x - x), Math.abs(e.y - y)) <= 1)) continue;
+      const d = threats.reduce((m, e) => Math.min(m, dist2(x, y, e.x, e.y)), Number.POSITIVE_INFINITY);
       const f = sideFrame(obs, c);
       if (!best || d < best.d || (d === best.d && f < best.f)) best = { x, y, d, f };
     }

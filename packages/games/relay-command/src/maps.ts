@@ -42,7 +42,7 @@ export interface MapUnit {
 /** Terrain codes in palette order: plain, road, forest, hill, urban, swamp, water, ridge. */
 export const TERRAIN_CODES = ['.', '=', 'f', 'h', 'u', 's', '~', '^'] as const;
 /** What can be placed: the Command Post, structures, then units (palette order). */
-export const MAP_KINDS = ['command-post', 'muster', 'motor-pool', 'extractor', 'relay-mast', 'rifles', 'lancer', 'outrider', 'warden', 'howitzer', 'mast-truck', 'field-post', 'jammer', 'tracer'] as const;
+export const MAP_KINDS = ['command-post', 'muster', 'motor-pool', 'extractor', 'relay-mast', 'rifles', 'lancer', 'outrider', 'warden', 'howitzer', 'mast-truck', 'field-post', 'jammer', 'tracer', 'tower-gun', 'tower-artillery', 'tower-laser', 'tower-emp'] as const;
 export const MAP_WIDTHS = [10, 12, 14, 16, 18, 20, 22, 24] as const;
 export const MAP_HEIGHTS = [8, 10, 12, 14, 16] as const;
 /** Bounds that keep a map playable on a phone and every save small (deposits: any number of cells). */

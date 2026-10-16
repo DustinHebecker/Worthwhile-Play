@@ -58,8 +58,12 @@ import { fromScenario } from '../src/maps';
 import { generateMap } from '../src/generator';
 
 /** A side's plan from its own observation (default: the game's default level). */
-/** Fingerprint of AI-vs-AI plans on the two-side maps before increment 4 (see the test). */
-const TWO_SIDE_AI_FINGERPRINT = '965772b3';
+/**
+ * Fingerprint of AI-vs-AI plans on the two-side maps (see the test): '965772b3' before increment 4;
+ * '61865917' since the opponent builds defence towers (owner decision 2026-10-16, a measured gain,
+ * docs/design/strategy.md "Defence towers").
+ */
+const TWO_SIDE_AI_FINGERPRINT = '61865917';
 const ai = (world: World, side: number, difficulty: Difficulty = 'normal') => planAi(observe(world, RULESET, side), RULESET, difficulty);
 const own = (s: RcState) => s.world.entities.filter((e) => e.side === PLAYER);
 const enemy = (s: RcState) => s.world.entities.filter((e) => e.side === OPPONENT);
@@ -1243,7 +1247,8 @@ describe('hot-seat (docs/design/strategy.md § 9.4, D10)', () => {
   // summaries lose such `launch` events; no plan changes: 'fe0a5277'); then when a side stopped
   // being told of a shot by its own unit out of contact at an enemy it never had reported (gate
   // find, 2026-10-14: the summaries lose such `fire` events; world, log and result unchanged:
-  // '83a1b8af'). The two-side AI plans are unchanged, see their own fingerprint.
+  // '83a1b8af'); then when the opponent started to build defence towers (owner decision 2026-10-16,
+  // a deliberate AI change with a measured gain, like the two-side fingerprint: '8bd3c67f').
   it('one person is the single-player game, byte for byte: every map and opponent count matches the fingerprint taken before hot-seat (main at f2ee871)', () => {
     let h = 0x811c9dc5;
     const feed = (text: string) => {
@@ -1261,7 +1266,7 @@ describe('hot-seat (docs/design/strategy.md § 9.4, D10)', () => {
         }
       }
     }
-    expect(h.toString(16)).toBe('83a1b8af');
+    expect(h.toString(16)).toBe('8bd3c67f');
   }, 300_000);
 
   it('the seats: side 0 is always a person, the default is the computer; several persons have no quick match', () => {
@@ -1622,6 +1627,55 @@ describe('opponent economy and easy fighters (mutation run on ai.ts, 2026-10-15)
     const busy = setSupply(fresh(), 5_000);
     busy.entities.find((e) => e.side === OPPONENT && e.kind === 'muster')!.queue = [{ kind: 'rifles', left: 1 }];
     expect(jobs(plan(busy, 'easy'))).toEqual([]);
+  });
+
+  it('defence towers (owner decision 2026-10-16): an outnumbered post gets a Gun Tower towards the threat; hard at one fighter, normal at three, easy never; one per guarded asset', () => {
+    /**
+     * The opponent's post with `kinds` of player fighters placed 4–6 cells from it, all known to the
+     * opponent, and `defenders` of its own fighters left (the others are taken off the map).
+     */
+    const threatened = (kinds: readonly string[], defenders = 0, supply = 2_000) => {
+      const w = setSupply(fresh(), supply);
+      const post = w.entities.find((e) => e.side === OPPONENT && e.kind === 'command-post')!;
+      const fighters = w.entities.filter((e) => e.side === OPPONENT && (RULESET.archetypes[e.kind]?.weapon && (RULESET.archetypes[e.kind]?.speed ?? 0) > 0));
+      const gone = new Set(fighters.slice(defenders).map((e) => e.id));
+      w.entities = w.entities.filter((e) => !gone.has(e.id));
+      const spots: { x: number; y: number }[] = [];
+      for (let r = 4; r <= 6 && spots.length < kinds.length; r++) {
+        for (let dy = -r; dy <= r && spots.length < kinds.length; dy++) {
+          for (let dx = -r; dx <= r && spots.length < kinds.length; dx++) {
+            const x = post.x + dx, y = post.y + dy;
+            if (Math.max(Math.abs(dx), Math.abs(dy)) !== r || x < 0 || y < 0 || x >= w.map.w || y >= w.map.h) continue;
+            if (!passable(w.map, RULESET, x, y, 'ground') || w.entities.some((e) => e.x === x && e.y === y) || spots.some((p) => p.x === x && p.y === y)) continue;
+            spots.push({ x, y });
+          }
+        }
+      }
+      const players = w.entities.filter((e) => e.side === PLAYER && e.kind !== 'command-post' && e.kind !== 'muster');
+      kinds.forEach((kind, i) => Object.assign(players[i]!, { kind, hp: RULESET.archetypes[kind]!.hp, x: spots[i]!.x, y: spots[i]!.y }));
+      w.intel = initialIntel(w, RULESET);
+      return { w, post };
+    };
+    const towers = (cmds: readonly Command[]) => cmds.filter((c) => c.order.type === 'build' && c.order.kind.startsWith('tower-')).map((c) => c.order as { kind: string; x: number; y: number });
+    // No threat: no tower, whatever the Supply.
+    expect(towers(plan(setSupply(fresh(), 5_000), 'hard'))).toEqual([]);
+    // One fighter against a post without defenders: hard builds a Gun Tower 2 cells from the post (not next to it or a yard).
+    const one = threatened(['rifles']);
+    const [tower] = towers(plan(one.w, 'hard'));
+    expect(tower?.kind).toBe('tower-gun');
+    expect(Math.max(Math.abs(tower!.x - one.post.x), Math.abs(tower!.y - one.post.y))).toBe(2);
+    expect(towers(plan(one.w, 'normal'))).toEqual([]);
+    expect(towers(plan(one.w, 'easy'))).toEqual([]);
+    // Normal waits for three; armour gets a Gun Tower too (Laser Towers measured worse).
+    expect(towers(plan(threatened(['rifles', 'lancer']).w, 'normal'))).toEqual([]);
+    expect(towers(plan(threatened(['rifles', 'lancer', 'rifles']).w, 'normal')).map((t) => t.kind)).toEqual(['tower-gun']);
+    expect(towers(plan(threatened(['warden']).w, 'hard')).map((t) => t.kind)).toEqual(['tower-gun']);
+    // Not when own fighters near the post match the threat; not without the Supply; not when a tower already guards it.
+    expect(towers(plan(threatened(['rifles'], 99).w, 'hard'))).toEqual([]);
+    expect(towers(plan(threatened(['rifles'], 0, RULESET.archetypes['tower-gun']!.cost - 1).w, 'hard'))).toEqual([]);
+    const guarded = threatened(['rifles']);
+    guarded.w.entities.push({ ...guarded.post, id: guarded.w.nextId++, kind: 'tower-gun', hp: 150, x: tower!.x, y: tower!.y });
+    expect(towers(plan(guarded.w, 'hard'))).toEqual([]);
   });
 
   it('normal places an Extractor on the nearest free deposit in cover first, never on one a known enemy fighter can reach', () => {

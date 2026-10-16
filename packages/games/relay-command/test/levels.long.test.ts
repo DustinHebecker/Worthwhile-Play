@@ -89,6 +89,7 @@ describe('opponent levels (I5)', () => {
     // The two share the plan of attack; hard adds breadth, focus fire, pulling back and jamming.
     // Measured since PR #13 (escorts yield in passes; storms find a way past held rings):
     // Field Exercise 8-4, Ridge Valley 6-6 over 2x6 openings, so no ordering is claimed for Ridge Valley.
+    // With defence towers (2026-10-16): Field Exercise 8-4, Ridge Valley 4-8 (12-12 over both maps).
     const total = { a: 0, b: 0, draws: 0 };
     for (const spec of MARGIN_MAPS) {
       const r = margin(spec, 'hard', 'normal', 6, 2, 2);

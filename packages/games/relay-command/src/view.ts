@@ -95,7 +95,7 @@ const CONFIRM_GAP = 400;
 const QUIET_NOTICE = 3;
 
 /** Kinds the game uses, in the legend's order: fighters, support, structures. */
-const LEGEND_KINDS = ['rifles', 'lancer', 'outrider', 'warden', 'howitzer', 'mast-truck', 'field-post', 'jammer', 'tracer', 'command-post', 'muster', 'motor-pool', 'extractor', 'relay-mast'] as const;
+const LEGEND_KINDS = ['rifles', 'lancer', 'outrider', 'warden', 'howitzer', 'mast-truck', 'field-post', 'jammer', 'tracer', 'command-post', 'muster', 'motor-pool', 'extractor', 'relay-mast', 'tower-gun', 'tower-artillery', 'tower-laser', 'tower-emp'] as const;
 
 /** Map cell size in CSS pixels (the 44 px minimum touch target). */
 export { CELL };
@@ -445,7 +445,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     'details',
     { class: 'rc-help' },
     h('summary', {}, t('help.title')),
-    ...['help.turns', 'help.bar', 'help.orders', 'help.network', 'help.fog', 'help.ew', 'help.doctrine', 'help.economy', 'help.repair', 'help.editor', 'help.random', 'help.sides', 'help.hotSeat', 'help.combat', 'help.goal', 'help.shapes', 'help.access'].map((k) => h('p', {}, t(k)))
+    ...['help.turns', 'help.bar', 'help.orders', 'help.network', 'help.fog', 'help.ew', 'help.doctrine', 'help.economy', 'help.towers', 'help.repair', 'help.editor', 'help.random', 'help.sides', 'help.hotSeat', 'help.combat', 'help.goal', 'help.shapes', 'help.access'].map((k) => h('p', {}, t(k)))
   );
 
   /* ---------- Map editor ---------- */
@@ -1128,6 +1128,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     if (w) {
       facts.append(...fact(t('card.rate'), `${w.cooldown <= 1 ? t('card.everyTick') : t('card.everyTicks', { n: w.cooldown })} · ${t(`card.delivery.${w.delivery}`)}`));
       if (w.stationary) facts.append(...fact(t('card.weapon'), t('card.stationary')));
+      if (w.effect?.kind === 'disabled') facts.append(...fact(t('card.weapon'), t('card.stun', { n: w.effect.ticks }), 'rc-card-stun'));
     }
     if (arch.comms) {
       const text = arch.comms.role === 'source' ? t('card.source', { r: arch.comms.radius, slots: arch.comms.orderSlots }) : t('card.relay', { r: arch.comms.radius });
@@ -1206,6 +1207,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     row(shape(true, 'rifles'), t('legend.own'));
     row(shape(false, 'rifles'), t('legend.enemy'));
     row(shape(true, 'command-post'), t('legend.structure'));
+    row(shape(true, 'tower-gun'), t('legend.tower'));
     // One row per kind in the game: its picture and its name (what the symbols on the map mean).
     const kinds = h('ul', { class: 'rc-legend-list rc-legend-kinds', 'data-testid': 'rc-legend-kinds' });
     for (const kind of LEGEND_KINDS) kinds.append(h('li', {}, unitIcon(kind, true), h('span', {}, t(`unit.${kind}`))));
