@@ -17,7 +17,5 @@ export const metadata: GameMetadata = {
   },
   // How cunning the computer players are (design § 5.7).
   difficulties: ['easy', 'normal', 'sharp'],
-  // The game's own setup (worlds, opponents, target level, round limit) is its start screen (ADR 0015).
-  setupInGame: true,
   messages
 };

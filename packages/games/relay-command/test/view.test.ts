@@ -467,7 +467,7 @@ describe('Relay Command view', () => {
     const fold = $('rc-setup-fold') as HTMLDetailsElement;
     expect(fold.open).toBe(false);
     expect(fold.contains($('rc-setup'))).toBe(true);
-    expect($('rc-setup-summary').textContent).toBe('Ridge Valley (20×14, 14 units per side, with a Command Vehicle) · 12 turns, then strength decides');
+    expect($('rc-setup-summary').textContent).toBe('Ridge Valley (20×14, 14 units per side, with a Command Vehicle) · 12 turns, then strength decides · Normal (thinks one turn ahead)');
     expect(($('rc-scenario') as HTMLSelectElement).disabled).toBe(true);
     expect(($('rc-turn-limit') as HTMLSelectElement).disabled).toBe(true);
   });
@@ -500,6 +500,34 @@ describe('Relay Command view', () => {
     setup();
     instance.restore(saved);
     expect(($('rc-endless') as HTMLInputElement).checked).toBe(true);
+  });
+
+  it('the opponent level is chosen in the setup with the map (owner decision 2026-10-16); locked after the first turn', () => {
+    const level = $('rc-difficulty') as HTMLSelectElement;
+    expect(level.value).toBe('normal');
+    expect([...level.options].map((o) => o.value)).toEqual(['easy', 'normal', 'hard']);
+    const units = state().world.entities.length;
+    level.value = 'hard';
+    level.dispatchEvent(new Event('change'));
+    expect(state().difficulty).toBe('hard');
+    expect(state().world.entities).toHaveLength(units); // the map stays as it is
+    expect(ctx.difficulties).toEqual(['normal', 'hard']); // the host follows (its next "New game", the save envelope)
+    vi.advanceTimersByTime(50);
+    expect(ctx.context.root.textContent).toContain('Opponent: Hard (thinks ahead, uses jamming).');
+    // Another map keeps the chosen level.
+    const scenario = $('rc-scenario') as HTMLSelectElement;
+    scenario.value = 'ridge-valley';
+    scenario.dispatchEvent(new Event('change'));
+    expect(state().difficulty).toBe('hard');
+    expect(level.value).toBe('hard');
+    click('rc-lock');
+    expect(level.disabled).toBe(true);
+    expect($('rc-setup-summary').textContent).toContain(' · Hard (thinks ahead, uses jamming)');
+    // A save restores its level into the select.
+    const saved = state();
+    setup();
+    instance.restore(saved);
+    expect(($('rc-difficulty') as HTMLSelectElement).value).toBe('hard');
   });
 
   it('offers a random map: size and map number pick it, "New map" draws another; the same number gives it back; locked after the first turn', () => {
