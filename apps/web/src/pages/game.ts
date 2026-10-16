@@ -1,4 +1,4 @@
-import { coerceSetting, hostSettings, randomSeed, resolveSettings, settingId, type GameInstance, type GameModule, type GameResult, type SettingSpec, type SettingValue, type SettingsEnv } from '@wp/game-core';
+import { coerceSetting, hostSettings, ownsDifficulty, randomSeed, resolveSettings, settingId, type GameInstance, type GameModule, type GameResult, type SettingSpec, type SettingValue, type SettingsEnv } from '@wp/game-core';
 import type { GameContentLanguages, GamePreferences, UserDeckSource } from '@wp/game-core';
 import { readContentLanguages } from '@wp/localization';
 import { createAutosave, createGameLibrary, createSave, interpretSave, type GameSave, type SaveStore } from '@wp/persistence';
@@ -112,12 +112,24 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
    * their last value for the next time they are shown.
    */
   const remember = (setup: Partial<Setup>) => preferences.set(REMEMBERED_SETTINGS, { ...remembered(), ...choices(setup) });
-  /** Resolves untrusted choices against the start-screen settings. */
-  const resolve = (chosen: Record<string, unknown>): Setup => {
-    const { difficulty, settings } = resolveSettings(specs(), metadata, chosen);
-    return { difficulty, settings };
-  };
   const validDifficulty = (value: unknown): string | undefined => (typeof value === 'string' && metadata.difficulties?.includes(value) ? value : undefined);
+  /**
+   * A setupInGame game that declares its settings chooses the difficulty in its own setup (ADR 0017 amendment): the
+   * start screen has no difficulty, but the one the game reports (setDifficulty, settingsOf) still flows through the
+   * host — into the save, "Another round", "New game" and the toolbar summary.
+   */
+  const gameOwnsDifficulty = (list: readonly SettingSpec[]) => (module ? ownsDifficulty(module) && !list.some((spec) => spec.kind === 'difficulty') : false);
+  /** Resolves untrusted choices against the start-screen settings (plus a game-owned difficulty, validated). */
+  const resolve = (chosen: Record<string, unknown>): Setup => {
+    const list = specs();
+    const { difficulty, settings } = resolveSettings(list, metadata, chosen);
+    return { difficulty: gameOwnsDifficulty(list) ? validDifficulty(chosen.difficulty) : difficulty, settings };
+  };
+  /** The settings named in the toolbar summary: a game-owned difficulty first, then the start-screen ones. */
+  const summarySpecs = (): readonly SettingSpec[] => {
+    const list = specs();
+    return gameOwnsDifficulty(list) ? [{ kind: 'difficulty' }, ...list] : list;
+  };
   /**
    * What a save tells about the settings it was started with (difficulty under `difficulty`), and whether that
    * covers every setting the start screen would show for it. The game's `settingsOf(state)` is the source of truth
@@ -227,7 +239,7 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
     // During play only "New game": it opens the start screen; the running game stays saved and "Continue" returns.
     const button = h('button', { type: 'button', 'data-testid': 'new-game' }, t('game.newGame'));
     button.addEventListener('click', () => void openStart());
-    const summary = current?.known ? settingsSummary(specs(), current, gt, t) : '';
+    const summary = current?.known ? settingsSummary(summarySpecs(), current, gt, t) : '';
     panel.append(h('div', { class: 'wp-row toolbar' }, button,
       summary ? h('span', { class: 'settings-summary', 'data-testid': 'settings-summary' }, summary) : null,
       current ? h('span', { class: 'wp-muted seed', 'data-testid': 'seed' }, t('game.seed', { seed: current.seed })) : null));
@@ -299,6 +311,23 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
       items.push(h('div', { class: 'wp-row start-continue' }, cont, date ? h('span', { class: 'wp-muted' }, t('game.savedAt', { date })) : null));
     }
     const list = specs();
+    // The game module loads asynchronously; do not pull focus away from a control the person is
+    // using meanwhile (e.g. the header language menu after switching language).
+    const focusFirst = (fallback: HTMLElement) => {
+      const active = document.activeElement;
+      if (!active || active === document.body || main.contains(active)) (continueWith ? panel.querySelector<HTMLElement>('[data-testid="continue"]') : fallback)?.focus();
+    };
+    if (!list.length && metadata.setupInGame) {
+      // Nothing to choose here: the game's own setup is where the choices are made (ADR 0015). Instead of an empty
+      // "New game" form with only Start, one "New game" button that opens that setup (with `begin`).
+      const fresh = h('button', { type: 'button', class: continueWith ? '' : 'primary', 'data-testid': 'start-game' }, t('game.newGame'));
+      fresh.addEventListener('click', () => {
+        app.announce(t('game.started'));
+        void startNew({ ...resolve(initial), begin: true });
+      });
+      panel.append(h('section', { class: 'start wp-card wp-stack', 'data-testid': 'start-screen' }, ...items, h('div', { class: 'wp-row' }, fresh)));
+      return focusFirst(fresh);
+    }
     const setup = renderSetupForm(list, metadata, initial, gt, t);
     const startButton = h('button', { type: 'submit', class: continueWith ? '' : 'primary', 'data-testid': 'start-game' }, t('game.start'));
     const headingId = `start-heading-${metadata.id}`;
@@ -316,12 +345,7 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
       void startNew({ ...chosen, begin: true });
     });
     panel.append(h('section', { class: 'start wp-card wp-stack', 'data-testid': 'start-screen' }, ...items, form));
-    // The game module loads asynchronously; do not pull focus away from a control the person is
-    // using meanwhile (e.g. the header language menu after switching language).
-    const active = document.activeElement;
-    if (!active || active === document.body || main.contains(active)) {
-      (continueWith ? panel.querySelector<HTMLElement>('[data-testid="continue"]') : startButton)?.focus();
-    }
+    focusFirst(startButton);
   };
 
   /** "New game" in the toolbar and "Change settings" after a finished game: back to the start screen. */
@@ -413,7 +437,8 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
       await startNew(resolve(initial));
     } else if (metadata.setupInGame && !save && specs().length === 0) {
       // ADR 0015: the game's own setup screen is its start screen, so with no save and nothing for the host's start
-      // screen (no settings, no difficulty) there is nothing to choose first. Only here, on opening the page; a finished game never
+      // screen (no settings, no host difficulty — none at all, or one the game chooses itself, ADR 0017 amendment)
+      // there is nothing to choose first. A remembered or `?difficulty=` difficulty still reaches newGame. Only here, on opening the page; a finished game never
       // starts another one. As in showStart, do not pull focus from a control the person is using meanwhile.
       const active = document.activeElement;
       const focus = !active || active === document.body || main.contains(active);
