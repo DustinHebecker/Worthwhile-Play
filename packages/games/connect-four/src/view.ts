@@ -1,15 +1,8 @@
 import type { GameContext, GameInstance, GameResult, NewGameOptions } from '@wp/game-core';
-import { isOneOf, normalizeSeed } from '@wp/game-core';
+import { normalizeSeed } from '@wp/game-core';
 import { announce, clear, h } from '@wp/ui';
 import { playTurn, startRound } from './ai';
 import {
-  CONNECTS,
-  DEFAULT_DIFFICULTY,
-  DIFFICULTIES,
-  OPPONENTS,
-  SIZES,
-  STANDARD_VARIANT,
-  STARTERS,
   canPull,
   canUndo,
   cellIndex,
@@ -20,7 +13,6 @@ import {
   isComputerTurn,
   isLegalMove,
   isPull,
-  isValidVariant,
   moveColumn,
   moveLimit,
   playerOfMove,
@@ -34,18 +26,14 @@ import {
   type Move,
   type Outcome,
   type Player,
-  type RoundOptions,
-  type Variant
+  type RoundOptions
 } from './rules';
+import { roundOptions } from './settings';
 import './styles.css';
 
 /** Short pause before the computer's reply becomes visible (skipped with reduced motion). */
 export const COMPUTER_REVEAL_MS = 400;
 
-/** `context.preferences` key of the last chosen variant (board size, goal, pull-out rule). */
-export const VARIANT_PREFERENCE = 'variant';
-
-const RULES = ['classic', 'pullOut'] as const;
 const ACTIONS = ['drop', 'pull'] as const;
 type Action = (typeof ACTIONS)[number];
 
@@ -65,9 +53,7 @@ const discElement = () => h('span', { class: 'c4-disc', 'aria-hidden': 'true' })
 export function createConnectFour(context: GameContext): GameInstance<ConnectFourState> {
   const { t, root } = context;
   const rtl = t.direction === 'rtl';
-  const saved = context.preferences?.get(VARIANT_PREFERENCE);
-  const initialVariant: Variant = isValidVariant(saved) ? { ...saved } : { ...STANDARD_VARIANT };
-  let state: ConnectFourState = startRound({ seed: 0, difficulty: DEFAULT_DIFFICULTY, opponent: 'computer', starter: 'human', variant: initialVariant });
+  let state: ConnectFourState = startRound(roundOptions({ seed: 0 }, 0));
   /** Number of moves currently drawn; lags behind `state.moves` only while the computer's reply is being revealed. */
   let shown = 0;
   let revealTimer: ReturnType<typeof setTimeout> | undefined;
@@ -77,40 +63,7 @@ export function createConnectFour(context: GameContext): GameInstance<ConnectFou
   /** Moves already animated; a pull-out shown beyond this lets its whole column fall one cell. */
   let animatedPly = 0;
 
-  /* ---------- Options ---------- */
-  const select = (name: string, values: readonly string[], label: (value: string) => string, onChange: (value: string) => void) => {
-    const el = h('select', { 'data-testid': `option-${name}`, onchange: () => onChange(el.value) });
-    for (const value of values) el.append(h('option', { value }, label(value)));
-    return el;
-  };
-  const opponentSelect = select('opponent', OPPONENTS, (v) => t(`common.opponent.${v}`), (v) => {
-    if (isOneOf(v, OPPONENTS)) changeOptions({ ...optionsOf(state), opponent: v });
-  });
-  const starterSelect = select('starter', STARTERS, (v) => t(`starter.${v}`), (v) => {
-    if (isOneOf(v, STARTERS)) changeOptions({ ...optionsOf(state), starter: v });
-  });
-  const strengthSelect = select('strength', DIFFICULTIES, (v) => t(`difficulty.${v}`), (v) => {
-    if (isOneOf(v, DIFFICULTIES)) changeOptions({ ...optionsOf(state), difficulty: v });
-  });
-  const changeVariant = (patch: Partial<Variant>) => {
-    const variant: Variant = { ...state.variant, ...patch };
-    context.preferences?.set(VARIANT_PREFERENCE, variant);
-    changeOptions({ ...optionsOf(state), variant });
-  };
-  const sizeSelect = select('size', SIZES, (v) => t(`size.${v}`), (v) => {
-    if (isOneOf(v, SIZES)) changeVariant({ size: v });
-  });
-  const goalSelect = select('goal', CONNECTS.map(String), (v) => t(`goal.${v}`), (v) => {
-    const connect = Number(v);
-    if (isOneOf(connect, CONNECTS)) changeVariant({ connect });
-  });
-  const ruleSelect = select('rule', RULES, (v) => t(`rule.${v}`), (v) => {
-    if (isOneOf(v, RULES)) changeVariant({ pullOut: v === 'pullOut' });
-  });
-  const field = (label: string, control: HTMLSelectElement) => h('label', { class: 'c4-field' }, h('span', {}, label), control);
-  const starterField = field(t('starter'), starterSelect);
-  const strengthField = field(t('strength'), strengthSelect);
-
+  /* ---------- Controls ---------- */
   const undoButton = h('button', { type: 'button', 'data-testid': 'undo', onclick: () => onUndo() }, t('common.undo'));
   const restartButton = h('button', { type: 'button', 'data-testid': 'restart', onclick: () => changeOptions(optionsOf(state)) }, t('restart'));
 
@@ -200,8 +153,6 @@ export function createConnectFour(context: GameContext): GameInstance<ConnectFou
   const container = h(
     'div',
     { class: `wp-connect-four${context.reducedMotion ? ' c4-reduced' : ''}`, dir: t.direction },
-    h('div', { class: 'c4-toolbar' }, field(t('common.opponent'), opponentSelect), starterField, strengthField),
-    h('fieldset', { class: 'c4-toolbar c4-variant' }, h('legend', {}, t('variant')), field(t('size'), sizeSelect), field(t('goal'), goalSelect), field(t('rule'), ruleSelect)),
     status,
     actionGroup,
     board,
@@ -310,14 +261,6 @@ export function createConnectFour(context: GameContext): GameInstance<ConnectFou
     help.hidden = !state.variant.pullOut;
     help.textContent = state.variant.pullOut ? t('help.pullOut', { limit: moveLimit(state.variant) }) : '';
 
-    opponentSelect.value = state.opponent;
-    starterSelect.value = state.starter;
-    strengthSelect.value = state.difficulty;
-    sizeSelect.value = state.variant.size;
-    goalSelect.value = String(state.variant.connect);
-    ruleSelect.value = state.variant.pullOut ? 'pullOut' : 'classic';
-    starterField.hidden = state.opponent !== 'computer';
-    strengthField.hidden = state.opponent !== 'computer';
     undoButton.disabled = revealing || !canUndo(state);
   };
 
@@ -410,11 +353,10 @@ export function createConnectFour(context: GameContext): GameInstance<ConnectFou
   /* ---------- Instance ---------- */
   return {
     newGame(options: NewGameOptions) {
-      const difficulty = isOneOf(options.difficulty, DIFFICULTIES) ? options.difficulty : DEFAULT_DIFFICULTY;
       cancelReveal();
       pendingAnnouncement = '';
-      // Opponent, "who starts" and the variant are in-game preferences and carry over to a new game.
-      state = startRound({ ...optionsOf(state), seed: normalizeSeed(options.seed), difficulty });
+      // Opponent, "who starts", strength and variant come from the host's start screen (ADR 0017).
+      state = startRound(roundOptions(options, normalizeSeed(options.seed)));
       showFresh();
     },
     restore(saved: ConnectFourState) {

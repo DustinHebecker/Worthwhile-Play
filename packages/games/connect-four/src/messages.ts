@@ -14,6 +14,9 @@ import type { GameMessages } from '@wp/game-core';
  */
 export const messages = {
   en: {
+    opponent: 'Opponent',
+    'opponent.computer': 'Computer',
+    'opponent.human': 'Another person (same device)',
     title: 'Four in a Row',
     tagline: 'Drop discs, line up four — and keep an eye on your opponent’s threats.',
     rules: 'Players take turns dropping a disc into a column; it falls to the lowest free space. The first to line up four of their own discs (five in the five-in-a-row variant) — across, up and down, or diagonally — wins; a full board without such a line is a draw. Before you start, choose the board size, the goal and, if you like, the pull-out rule (instead of dropping, take one of your own discs out of the bottom row).',
@@ -76,6 +79,9 @@ export const messages = {
     'draw.limit': 'Draw — {moves} moves have been played.'
   },
   de: {
+    opponent: 'Gegner',
+    'opponent.computer': 'Computer',
+    'opponent.human': 'Andere Person (gleiches Gerät)',
     title: 'Vier gewinnt',
     tagline: 'Scheiben einwerfen, vier in eine Reihe bringen – und die Drohungen des Gegners im Blick behalten.',
     rules: 'Abwechselnd wird eine Scheibe in eine Spalte geworfen; sie fällt auf den untersten freien Platz. Wer zuerst vier eigene Scheiben in einer Reihe hat (in der Fünfer-Variante fünf) – waagerecht, senkrecht oder diagonal –, gewinnt; ist das Feld ohne eine solche Reihe voll, endet es unentschieden. Vor dem Start wählst du Spielfeldgröße, Ziel und auf Wunsch die Herausziehen-Regel (statt einzuwerfen eine eigene Scheibe unten herausziehen).',
@@ -138,6 +144,9 @@ export const messages = {
     'draw.limit': 'Unentschieden – {moves} Züge sind gespielt.'
   },
   nl: {
+    opponent: 'Tegenstander',
+    'opponent.computer': 'Computer',
+    'opponent.human': 'Iemand anders (zelfde apparaat)',
     title: 'Vier op een rij',
     tagline: 'Laat schijven vallen, maak vier op een rij – en let op de dreigingen van je tegenstander.',
     rules: 'Om de beurt laten de spelers een schijf in een kolom vallen; die valt naar de laagste vrije plek. Wie als eerste vier eigen schijven op een rij heeft (vijf in de variant vijf op een rij) – horizontaal, verticaal of diagonaal – wint; is het bord vol zonder zo’n rij, dan is het gelijkspel. Kies vooraf de bordgrootte, het doel en desgewenst de uittrekregel (in plaats van een schijf te laten vallen trek je een eigen schijf uit de onderste rij).',
@@ -200,6 +209,9 @@ export const messages = {
     'draw.limit': 'Gelijkspel – er zijn {moves} zetten gespeeld.'
   },
   es: {
+    opponent: 'Rival',
+    'opponent.computer': 'Ordenador',
+    'opponent.human': 'Otra persona (mismo dispositivo)',
     title: 'Cuatro en raya',
     tagline: 'Deja caer fichas, alinea cuatro y vigila las amenazas de tu rival.',
     rules: 'Por turnos, cada jugador deja caer una ficha en una columna; la ficha cae al hueco libre más bajo. Gana quien primero alinee cuatro fichas propias (cinco en la variante de cinco en raya) en horizontal, vertical o diagonal; si el tablero se llena sin esa línea, es empate. Antes de empezar, elige el tamaño del tablero, el objetivo y, si quieres, la regla de sacar fichas (en vez de dejar caer una ficha, sacas una propia de la fila de abajo).',
@@ -262,6 +274,9 @@ export const messages = {
     'draw.limit': 'Empate: se han jugado {moves} jugadas.'
   },
   fr: {
+    opponent: 'Adversaire',
+    'opponent.computer': 'Ordinateur',
+    'opponent.human': 'Une autre personne (même appareil)',
     title: 'Quatre en ligne',
     tagline: 'Lâchez des jetons, alignez-en quatre — et surveillez les menaces de l’adversaire.',
     rules: 'Chacun à son tour lâche un jeton dans une colonne ; il tombe dans la case libre la plus basse. Le premier à aligner quatre de ses jetons (cinq dans la variante à cinq) — horizontalement, verticalement ou en diagonale — gagne ; si la grille se remplit sans un tel alignement, la partie est nulle. Avant de commencer, choisissez la taille de la grille, l’objectif et, si vous le souhaitez, la règle du retrait (au lieu de lâcher un jeton, retirer l’un des vôtres de la rangée du bas).',
@@ -324,6 +339,9 @@ export const messages = {
     'draw.limit': 'Partie nulle — {moves} coups ont été joués.'
   },
   ru: {
+    opponent: 'Соперник',
+    'opponent.computer': 'Компьютер',
+    'opponent.human': 'Другой человек (на этом устройстве)',
     title: 'Четыре в ряд',
     tagline: 'Бросайте фишки, выстройте четыре в ряд — и следите за угрозами соперника.',
     rules: 'Игроки по очереди бросают фишку в столбец; она падает на самую нижнюю свободную клетку. Побеждает тот, кто первым выстроит четыре свои фишки в ряд (в варианте «пять в ряд» — пять) по горизонтали, вертикали или диагонали; если поле заполнено, а такого ряда нет, — ничья. Перед началом выберите размер поля, цель и, по желанию, правило вытягивания (вместо броска можно вытянуть свою фишку из нижнего ряда).',
@@ -386,6 +404,9 @@ export const messages = {
     'draw.limit': 'Ничья — сыграно ходов: {moves}.'
   },
   'zh-Hans': {
+    opponent: '对手',
+    'opponent.computer': '电脑',
+    'opponent.human': '另一个人（同一设备）',
     title: '四子棋',
     tagline: '投下棋子，连成四子——同时留意对手的威胁。',
     rules: '双方轮流把一枚棋子投入某一列，棋子会落到该列最低的空位。谁先把自己的四枚棋子（“五子连线”变体中为五枚）连成一线（横、竖或斜），谁就获胜；棋盘填满仍无人连成，则为平局。开始前可选择棋盘大小、目标，以及可选的“抽出”规则（不投子，而是从最底行抽出一枚自己的棋子）。',
@@ -448,6 +469,9 @@ export const messages = {
     'draw.limit': '平局——已走满 {moves} 步。'
   },
   ko: {
+    opponent: '상대',
+    'opponent.computer': '컴퓨터',
+    'opponent.human': '다른 사람 (같은 기기)',
     title: '네 개 잇기',
     tagline: '말을 떨어뜨려 네 개를 한 줄로 — 상대의 노림수도 살펴보세요.',
     rules: '번갈아 가며 한 열에 말을 떨어뜨립니다. 말은 그 열의 가장 낮은 빈칸까지 떨어집니다. 자기 말 네 개(다섯 개 잇기 변형에서는 다섯 개)를 가로, 세로 또는 대각선으로 먼저 한 줄로 놓는 사람이 이기고, 그런 줄 없이 판이 가득 차면 무승부입니다. 시작하기 전에 판 크기와 목표, 그리고 원하면 빼내기 규칙(떨어뜨리는 대신 맨 아래 줄에서 자기 말 하나를 빼냄)을 고르세요.',
@@ -510,6 +534,9 @@ export const messages = {
     'draw.limit': '무승부 — {moves}수를 두었습니다.'
   },
   ja: {
+    opponent: '対戦相手',
+    'opponent.computer': 'コンピューター',
+    'opponent.human': 'ほかの人（同じデバイス）',
     title: '四目並べ',
     tagline: '駒を落として四つ並べよう — 相手の狙いにも気を配って。',
     rules: '交互にどれかの列に駒を落とします。駒はその列のいちばん下の空きマスまで落ちます。自分の駒を縦・横・斜めのいずれかに先に四つ（五目のバリエーションでは五つ）並べた人の勝ちで、並ばないまま盤が埋まれば引き分けです。始める前に盤の大きさ、目標、そして必要なら「抜き取り」ルール（駒を落とす代わりに、いちばん下の段から自分の駒を一つ抜く）を選べます。',
@@ -572,6 +599,9 @@ export const messages = {
     'draw.limit': '引き分け — {moves} 手に達しました。'
   },
   ar: {
+    opponent: 'الخصم',
+    'opponent.computer': 'الحاسوب',
+    'opponent.human': 'شخص آخر (على الجهاز نفسه)',
     title: 'أربعة في صف',
     tagline: 'أسقِط الأقراص واصنع صفًّا من أربعة — وانتبه لتهديدات خصمك.',
     rules: 'يتناوب اللاعبان على إسقاط قرص في أحد الأعمدة، فيسقط إلى أدنى خانة فارغة فيه. يفوز أول من يصفّ أربعة من أقراصه (خمسة في نسخة الخمسة في صف) أفقيًا أو عموديًا أو قطريًا، وإذا امتلأت اللوحة دون صف كهذا فالنتيجة تعادل. قبل البدء اختر حجم اللوحة والهدف، وإن شئت قاعدة السحب (بدلًا من الإسقاط تسحب أحد أقراصك من الصف السفلي).',
@@ -634,6 +664,9 @@ export const messages = {
     'draw.limit': 'تعادل — لُعبت {moves} حركة.'
   },
   pt: {
+    opponent: 'Adversário',
+    'opponent.computer': 'Computador',
+    'opponent.human': 'Outra pessoa (mesmo dispositivo)',
     title: 'Quatro em linha',
     tagline: 'Solte peças, alinhe quatro — e fique de olho nas ameaças do adversário.',
     rules: 'Os jogadores se revezam soltando uma peça em uma coluna; ela cai até o espaço livre mais baixo. Vence quem primeiro alinhar quatro peças próprias (cinco na variante cinco em linha) — na horizontal, na vertical ou na diagonal; se o tabuleiro encher sem essa linha, é empate. Antes de começar, escolha o tamanho do tabuleiro, o objetivo e, se quiser, a regra de retirar (em vez de soltar, você tira uma peça sua da fileira de baixo).',
@@ -696,6 +729,9 @@ export const messages = {
     'draw.limit': 'Empate — foram feitas {moves} jogadas.'
   },
   it: {
+    opponent: 'Avversario',
+    'opponent.computer': 'Computer',
+    'opponent.human': 'Un’altra persona (stesso dispositivo)',
     title: 'Quattro in fila',
     tagline: 'Lascia cadere le pedine, allineane quattro e tieni d’occhio le minacce dell’avversario.',
     rules: 'A turno, ogni giocatore lascia cadere una pedina in una colonna; la pedina scende nella casella libera più in basso. Vince chi per primo allinea quattro pedine proprie (cinque nella variante cinque in fila) in orizzontale, in verticale o in diagonale; se il tabellone si riempie senza una fila così, è patta. Prima di iniziare scegli la grandezza del tabellone, l’obiettivo e, se vuoi, la regola dell’estrazione (invece di lasciar cadere una pedina, ne estrai una tua dalla fila più bassa).',
@@ -758,6 +794,9 @@ export const messages = {
     'draw.limit': 'Patta: sono state giocate {moves} mosse.'
   },
   pl: {
+    opponent: 'Przeciwnik',
+    'opponent.computer': 'Komputer',
+    'opponent.human': 'Inna osoba (to samo urządzenie)',
     title: 'Cztery w rzędzie',
     tagline: 'Wrzucaj krążki, ułóż cztery w rzędzie – i pilnuj zagrożeń ze strony przeciwnika.',
     rules: 'Gracze na zmianę wrzucają krążek do kolumny; spada on na najniższe wolne pole. Wygrywa ten, kto pierwszy ułoży cztery swoje krążki w rzędzie (pięć w wariancie „pięć w rzędzie”) – poziomo, pionowo lub po przekątnej; jeśli plansza zapełni się bez takiego rzędu, jest remis. Przed startem wybierz rozmiar planszy, cel i – jeśli chcesz – zasadę wyciągania (zamiast wrzucać, wyciągasz swój krążek z dolnego rzędu).',
@@ -820,6 +859,9 @@ export const messages = {
     'draw.limit': 'Remis – rozegrano ruchów: {moves}.'
   },
   tr: {
+    opponent: 'Rakip',
+    'opponent.computer': 'Bilgisayar',
+    'opponent.human': 'Başka biri (aynı cihaz)',
     title: 'Dört Taş',
     tagline: 'Taşları bırak, dördünü bir sıraya diz — rakibinin tehditlerine de dikkat et.',
     rules: 'Oyuncular sırayla bir sütuna taş bırakır; taş o sütundaki en alttaki boş yere düşer. Kendi dört taşını (beşli varyantta beş taşını) yatay, dikey ya da çapraz olarak ilk sıralayan kazanır; tahta böyle bir sıra olmadan dolarsa oyun berabere biter. Başlamadan önce tahta boyutunu, hedefi ve istersen çekme kuralını (taş bırakmak yerine en alt sıradan kendi taşlarından birini çekmek) seç.',
@@ -882,6 +924,9 @@ export const messages = {
     'draw.limit': 'Berabere — {moves} hamle oynandı.'
   },
   uk: {
+    opponent: 'Суперник',
+    'opponent.computer': 'Комп’ютер',
+    'opponent.human': 'Інша людина (на цьому пристрої)',
     title: 'Чотири в ряд',
     tagline: 'Кидайте фішки, складіть чотири в ряд — і стежте за загрозами суперника.',
     rules: 'Гравці по черзі кидають фішку в стовпець; вона падає на найнижчу вільну клітинку. Перемагає той, хто першим складе чотири свої фішки в ряд (у варіанті «п’ять у ряд» — п’ять) по горизонталі, вертикалі або діагоналі; якщо поле заповнилося без такого ряду — нічия. Перед початком оберіть розмір поля, мету й, за бажанням, правило витягування (замість кидка можна витягти свою фішку з нижнього ряду).',
@@ -944,6 +989,9 @@ export const messages = {
     'draw.limit': 'Нічия — зіграно ходів: {moves}.'
   },
   hi: {
+    opponent: 'विरोधी',
+    'opponent.computer': 'कंप्यूटर',
+    'opponent.human': 'कोई और व्यक्ति (इसी डिवाइस पर)',
     title: 'चार की कतार',
     tagline: 'गोटियाँ गिराइए, चार की कतार बनाइए — और विरोधी के ख़तरों पर नज़र रखिए।',
     rules: 'खिलाड़ी बारी-बारी से किसी स्तंभ में गोटी गिराते हैं; गोटी उस स्तंभ की सबसे निचली ख़ाली जगह पर जाती है। जो पहले अपनी चार गोटियाँ (पाँच वाले रूप में पाँच) एक कतार में — आड़ी, खड़ी या तिरछी — लगा दे, वह जीतता है; ऐसी कतार के बिना बोर्ड भर जाए तो खेल बराबरी पर ख़त्म होता है। शुरू करने से पहले बोर्ड का आकार, लक्ष्य और चाहें तो खींचने का नियम चुनिए (गोटी गिराने के बजाय सबसे नीचे की पंक्ति से अपनी एक गोटी खींच लेना)।',
