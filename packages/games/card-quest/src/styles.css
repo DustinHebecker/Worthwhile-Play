@@ -132,3 +132,29 @@
 @media (prefers-reduced-motion: reduce) {
   .cq * { transition: none !important; animation: none !important; }
 }
+
+/* Card illustrations (illustrations.ts): own palette, readable in light and dark. */
+.cq { --il-ink: #2a241e; --il-sky: #dceef7; --il-night: #2b3550; --il-grass: #7fb75a; --il-earth: #b8633a; --il-earth-dark: #8f4626;
+  --il-red: #d2402f; --il-green: #3f8f46; --il-blue: #3d6fb6; --il-yellow: #f2c530; --il-white: #fbfaf5; --il-dark: #241f1b;
+  --il-skin: #f1c7a1; --il-beard: #ecebe6; --il-stone: #a8a59c; --il-metal: #b9c0c7; --il-wood: #b07b48; --il-wood-dark: #7d5330;
+  --il-water: #6bb8e8; --il-smoke: #cfcfcf; --il-glow: #f4ff6a; --il-purple: #7b4fa8; --il-purple-dark: #4b2d6b; --il-torch: #fff3a8; }
+@media (prefers-color-scheme: dark) {
+  .cq { --il-ink: #120f0c; --il-sky: #3a4d5c; --il-night: #161c2e; --il-grass: #4f7d3a; --il-white: #e9e7df; --il-torch: #b8ad5c; }
+}
+.cq-il { inline-size: 100%; block-size: auto; display: block; border-radius: 8px; }
+.cq-il .il-ink { stroke: var(--il-ink); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.cq-il .il-line { fill: none; stroke: var(--il-ink); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.cq-il .il-thin { stroke-width: 1.2; }
+.cq-il .il-sky { fill: var(--il-sky); } .cq-il .il-night { fill: var(--il-night); } .cq-il .il-grass { fill: var(--il-grass); }
+.cq-il .il-earth { fill: var(--il-earth); } .cq-il .il-earth-dark { fill: var(--il-earth-dark); } .cq-il .il-red { fill: var(--il-red); }
+.cq-il .il-green { fill: var(--il-green); } .cq-il .il-blue { fill: var(--il-blue); } .cq-il .il-yellow { fill: var(--il-yellow); }
+.cq-il .il-white { fill: var(--il-white); } .cq-il .il-dark { fill: var(--il-dark); } .cq-il .il-skin { fill: var(--il-skin); }
+.cq-il .il-beard { fill: var(--il-beard); } .cq-il .il-stone { fill: var(--il-stone); } .cq-il .il-metal { fill: var(--il-metal); }
+.cq-il .il-wood { fill: var(--il-wood); } .cq-il .il-wood-dark { fill: var(--il-wood-dark); } .cq-il .il-water { fill: var(--il-water); }
+.cq-il .il-smoke { fill: var(--il-smoke); } .cq-il .il-glow { fill: var(--il-glow); } .cq-il .il-purple { fill: var(--il-purple); }
+.cq-il .il-purple-dark { fill: var(--il-purple-dark); } .cq-il .il-torch { fill: var(--il-torch); opacity: 0.7; }
+.cq-il .il-water-line { fill: none; stroke: var(--il-water); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 6 4; }
+.cq-il .il-hose { fill: none; stroke: var(--il-green); stroke-width: 7; stroke-linecap: round; }
+@media (forced-colors: active) {
+  .cq-il * { fill: Canvas !important; stroke: CanvasText !important; }
+}
