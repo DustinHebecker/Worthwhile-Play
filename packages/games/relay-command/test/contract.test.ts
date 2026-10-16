@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
+import { describe, expect, it } from 'vitest';
 import type { GameInstance } from '@wp/game-core';
 import { runGameContract } from '@wp/testing';
 import game from '../src/index';
-import type { RcState } from '../src/rules';
+import { newGame, type RcState } from '../src/rules';
 
 const click = (root: HTMLElement, id: string) => {
   const el = root.querySelector<HTMLElement>(`[data-testid="${id}"]`);
@@ -21,3 +22,11 @@ function playOneTurn(root: HTMLElement, instance: GameInstance<RcState>) {
 }
 
 runGameContract(game, { interact: playOneTurn });
+
+
+describe('start screen (ADR 0017)', () => {
+  it('reports the difficulty a save was started with, and nothing for an unknown one', () => {
+    expect(game.settingsOf!(newGame(1, undefined, 'hard'))).toEqual({ difficulty: 'hard' });
+    expect(game.settingsOf!({ ...newGame(1), difficulty: 'nonsense' as never })).toEqual({});
+  });
+});

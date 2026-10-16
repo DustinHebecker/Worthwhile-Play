@@ -9,5 +9,7 @@ export default defineGame<RcState>({
   metadata,
   create: createRelayCommand,
   isValidState,
-  migrateState
+  migrateState,
+  // ADR 0017: the start screen's only setting is the difficulty; the map setup stays in the game.
+  settingsOf: (state) => (metadata.difficulties?.includes(state.difficulty) ? { difficulty: state.difficulty } : {})
 });
