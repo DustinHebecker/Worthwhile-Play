@@ -106,6 +106,7 @@ export const de: Catalogue = {
   'card.why.fightOnly': 'Nur im Kampf.',
   'card.why.ownTurn': 'Nur in deinem eigenen Zug, außerhalb von Kämpfen.',
   'card.why.notNow': 'Gerade nicht.',
+  'detail.blunder': 'Wenn es dich erwischt: {text}',
 
   'act.equip': 'Anlegen',
   'act.unequip': 'Ablegen',
