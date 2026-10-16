@@ -16,7 +16,6 @@ import {
   createInitialState,
   evaluate,
   intensityOf,
-  isSelectable,
   levelCount,
   levelOf,
   orientationCount,
@@ -746,8 +745,6 @@ export function createLaserCircuit(context: GameContext): GameInstance<LaserStat
     },
     restore(saved: LaserState) {
       show(cloneState(saved));
-      // Keep the host's difficulty select in step with the save (old saves name their sets differently).
-      if (isSelectable(state.difficulty)) context.setDifficulty?.(state.difficulty);
     },
     serialize: () => cloneState(state),
     pause() {
