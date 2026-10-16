@@ -344,6 +344,9 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     randomNew
   );
   const limitSelect = h('select', { 'data-testid': 'rc-turn-limit', onchange: () => onSetup() });
+  /** Opponent level (owner decision 2026-10-16): chosen here with the map, not on the host's start screen. */
+  const difficultySelect = h('select', { 'data-testid': 'rc-difficulty', onchange: () => onDifficulty() }) as HTMLSelectElement;
+  for (const d of DIFFICULTIES) difficultySelect.append(h('option', { value: d }, t(`difficulty.${d}`)));
   /** Opponents: only the counts the chosen map declares (two-side maps: one). */
   const opponentsSelect = h('select', { 'data-testid': 'rc-opponents', onchange: () => onSetup() });
   // Lengths: open end (default), quick match (strength decides once the side behind stops gaining
@@ -370,6 +373,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     h('label', {}, h('span', {}, t('setup.scenario')), scenarioSelect),
     h('label', {}, h('span', {}, t('setup.limit')), limitSelect),
     randomBox,
+    h('label', {}, h('span', {}, t('setup.difficulty')), difficultySelect),
     h('label', { 'data-testid': 'rc-opponents-label' }, h('span', {}, t('setup.opponents')), opponentsSelect),
     h('label', { class: 'rc-check' }, endlessInput, h('span', {}, t('setup.endless'))),
     seatsBox,
@@ -621,6 +625,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     const setupLocked = state.phase !== 'plan' || state.log.length > 0;
     scenarioSelect.disabled = setupLocked;
     limitSelect.disabled = setupLocked;
+    difficultySelect.disabled = setupLocked;
+    difficultySelect.value = state.difficulty;
     opponentsSelect.disabled = setupLocked;
     endlessInput.disabled = setupLocked;
     randomSize.disabled = setupLocked;
@@ -648,7 +654,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     const mapText = state.map ? mapLabel(state.map) : t(`scenario.${state.scenario}`);
     const length = limitSelect.selectedOptions[0]?.textContent ?? '';
     const summary = state.opponents > 1 ? t('setup.summaryOpponents', { map: mapText, length, n: state.opponents }) : t('setup.summary', { map: mapText, length });
-    setupSummary.textContent = state.endless ? `${summary} · ${t('setup.endlessShort')}` : summary;
+    const level = difficultySelect.selectedOptions[0]?.textContent ?? '';
+    setupSummary.textContent = [summary, ...(state.endless ? [t('setup.endlessShort')] : []), level].join(' · ');
     statusEl.textContent = statusText();
     statusEl.setAttribute('data-phase', state.phase);
     slotsEl.hidden = finished;
@@ -1979,6 +1986,14 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     if (state.phase !== 'plan' || state.log.length > 0 || !state.random) return;
     randomSeed.value = String((Math.imul(state.random.seed, 1664525) + 1013904223) >>> 0);
     onSetup();
+  }
+
+  function onDifficulty(): void {
+    if (state.phase !== 'plan' || state.log.length > 0) return;
+    const difficulty = difficultySelect.value;
+    if (!isDifficulty(difficulty) || difficulty === state.difficulty) return;
+    context.setDifficulty?.(difficulty); // the host's next "New game" and save envelope follow
+    commit({ ...state, difficulty }, t('announce.difficulty', { level: t(`difficulty.${difficulty}`) }));
   }
 
   function onSetup(): void {
