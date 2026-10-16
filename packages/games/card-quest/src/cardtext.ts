@@ -10,6 +10,8 @@ const signed = (n: number) => ({ sign: n < 0 ? '−' : '+', n: Math.abs(n) });
 
 export const cardName = (t: Translator, card: string): string => contentFor(t.locale)[baseId(card)]?.name ?? baseId(card);
 export const cardFlavour = (t: Translator, card: string): string => contentFor(t.locale)[baseId(card)]?.flavour ?? '';
+/** The monster's funny Blunder sentence (empty for other cards). */
+export const cardBlunder = (t: Translator, card: string): string => contentFor(t.locale)[baseId(card)]?.blunder ?? '';
 
 export function condText(t: Translator, mod: Mod): string {
   const when: Cond | undefined = mod.when;

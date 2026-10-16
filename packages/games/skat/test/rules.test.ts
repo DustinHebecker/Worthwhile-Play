@@ -15,6 +15,7 @@ import {
   endSeries,
   entryScores,
   finishedResult,
+  isDeclarableAt,
   isLegalContract,
   isValidState,
   legalCards,
@@ -195,7 +196,8 @@ describe('bid values and game values', () => {
     { name: 'Null Hand lost', contract: C('null', { hand: true }), bid: 18, cards: [], points: 10, dTricks: 1, won: false, value: 35, score: -70 },
     { name: 'Null ouvert', contract: C('null', { ouvert: true }), bid: 46, cards: [], points: 0, dTricks: 0, won: true, value: 46, score: 46 },
     { name: 'Null ouvert Hand', contract: C('null', { ouvert: true, hand: true }), bid: 59, cards: [], points: 0, dTricks: 0, won: true, value: 59, score: 59 },
-    { name: 'Null bid 24 → overbid, 46', contract: C('null'), bid: 24, cards: [], points: 0, dTricks: 0, won: false, value: 46, score: -92, overbid: true }
+    // ISkO 3.4.4 (only from old saves): lost as the cheapest suit/Grand game at the bid – Clubs without 1 → 24.
+    { name: 'Null at a bid of 24 (ISkO 3.4.4) → lost as Clubs, 24', contract: C('null'), bid: 24, cards: ['JS'], points: 0, dTricks: 0, won: false, value: 24, score: -48, overbid: true }
   ];
   it.each(cases.map((c) => [c.name, c] as const))('game value: %s', (_, c) => {
     const v = valueGame({ contract: c.contract, bid: c.bid, declarerCards: twelve(c.cards), declarerPoints: c.points, declarerTricks: c.dTricks, defenderTricks: 10 - c.dTricks });
@@ -221,6 +223,96 @@ describe('bid values and game values', () => {
     expect(minimumValue(C('C'), ['JC', 'JS'])).toBe(36);
     expect(minimumValue(C('grand', { hand: true, schneider: true, schwarz: true, ouvert: true }), ['JC'])).toBe(24 * 8);
     expect(minimumValue(C('null', { hand: true }), [])).toBe(35);
+  });
+});
+
+describe('worked examples from the International Skat Order (ISkO) and the Skatgericht', () => {
+  const value = (contract: Contract, bid: number, cards: Card[], points: number, dTricks = points >= 61 ? 6 : 4) =>
+    valueGame({ contract, bid, declarerCards: cards, declarerPoints: points, declarerTricks: dTricks, defenderTricks: 10 - dTricks });
+
+  it('ISkO 5.3.4: every lost game counts double – Hand games too (Skatgericht 5.3.4 Fall 1: Herz-Hand ohne 2 → 80)', () => {
+    // Hearts Hand without 2 (no ♣J, no ♠J): 10 × (2 + game + Hand) = 40, lost → −80, not −40.
+    expect(value(C('H', { hand: true }), 18, ['JH', 'AH'], 50)).toMatchObject({ won: false, overbid: false, value: 40, score: -80 });
+    // The same for a lost Null Hand: −2 × 35.
+    expect(value(C('null', { hand: true }), 18, [], 0, 1)).toMatchObject({ won: false, value: 35, score: -70 });
+  });
+
+  it('ISkO 5.4.1: bid 50, ♣J in the Skat, Hearts declared → "Herz mit 1 überreizt = −100"', () => {
+    expect(value(C('H'), 50, ['JC', 'AH', 'TH'], 80)).toMatchObject({ won: false, overbid: true, value: 50, score: -100 });
+  });
+
+  it('ISkO 5.4.1: bid 59, ♠J in the Skat → "Kreuz bzw. Herz ohne 1 überreizt = −120"', () => {
+    expect(value(C('C'), 59, ['JS', 'AC'], 80)).toMatchObject({ won: false, overbid: true, value: 60, score: -120 });
+    expect(value(C('H'), 59, ['JS', 'AH'], 80)).toMatchObject({ won: false, overbid: true, value: 60, score: -120 });
+  });
+
+  it('ISkO 5.4.2: Herz-Hand ohne 3 at 36, ♣J in the Skat → lost although won on points, 4 × 10 → −80', () => {
+    expect(value(C('H', { hand: true }), 36, ['JC', 'AH'], 75)).toMatchObject({ won: false, overbid: true, value: 40, score: -80 });
+  });
+
+  it('Skatgericht 5.4.2 Fall 1: Karo-Hand ohne 4 at 48, ♠J in the Skat, 64 points → 54 × 2 = −108', () => {
+    expect(value(C('D', { hand: true }), 48, ['JS', 'AD'], 64)).toMatchObject({ won: false, overbid: true, value: 54, score: -108 });
+  });
+
+  it('Skatgericht 5.4.2 Fall 2: Pik-Hand ohne 4 at 60, ♣J in the Skat, opponents Schneider → 66 × 2 = −132', () => {
+    expect(value(C('S', { hand: true }), 60, ['JC', 'AS'], 95, 8)).toMatchObject({ won: false, overbid: true, schneider: true, value: 66, score: -132 });
+  });
+
+  it('ISkO 3.4.4: a Null game below the bid cannot be declared; one that reaches it can', () => {
+    expect(isDeclarableAt(C('null'), 23)).toBe(true);
+    expect(isDeclarableAt(C('null'), 24)).toBe(false);
+    expect(isDeclarableAt(C('null', { hand: true }), 35)).toBe(true);
+    expect(isDeclarableAt(C('null', { hand: true }), 36)).toBe(false);
+    expect(isDeclarableAt(C('null', { ouvert: true }), 46)).toBe(true);
+    expect(isDeclarableAt(C('null', { ouvert: true }), 48)).toBe(false); // Skatgericht 3.3.2 Fall 5: Null ouvert after 48
+    expect(isDeclarableAt(C('null', { ouvert: true, hand: true }), 59)).toBe(true);
+    expect(isDeclarableAt(C('null', { ouvert: true, hand: true }), 60)).toBe(false);
+    // Suit and Grand games may always be declared – an overbid one is lost (ISkO 5.4).
+    expect(isDeclarableAt(C('D'), 264)).toBe(true);
+  });
+
+  it('ISkO 3.4.4: the declaration of a Null game below the bid is refused during play', () => {
+    // Mittelhand (1) says 24, Vorhand (0) holds, Mittelhand and Hinterhand pass: Vorhand plays at 24.
+    let d: DealState | null = declarerDeal(
+      [
+        ['JC', 'JS', 'AC', 'TC', 'KC', 'QC', '9C', 'AH', 'TH', '7D'],
+        ['JH', 'JD', '8C', '7C', 'AS', 'TS', 'KS', 'QS', '9S', '8S'],
+        ['7S', 'KH', 'QH', '9H', '8H', '7H', 'AD', 'TD', 'KD', 'QD']
+      ],
+      ['9D', '8D']
+    );
+    d = { ...d, bids: [24, 'yes', 'pass', 'pass'] };
+    expect(biddingStatus(d.bids, d.dealer)).toMatchObject({ done: true, declarer: 0, high: 24 });
+    d = applyDealAction(applyDealAction(d, 0, { type: 'pickup' }) as DealState, 0, { type: 'discard', cards: ['9D', '8D'] }) as DealState;
+    expect(dealPhase(d)).toBe('declare');
+    expect(applyDealAction(d, 0, { type: 'declare', contract: C('null') })).toBeNull();
+    expect(applyDealAction(d, 0, { type: 'declare', contract: C('null', { ouvert: true }) })?.contract).toEqual(C('null', { ouvert: true }));
+    expect(applyDealAction(d, 0, { type: 'declare', contract: C('D') })?.contract).toEqual(C('D'));
+  });
+
+  it('ISkO 3.4.4: a Null game below the bid (old save) is lost as a suit/Grand game with the bid and matadors', () => {
+    // Null Hand (35) at a bid of 48, declarer holds ♣J: Clubs with 1 rounds up to exactly 48 (Hearts 50, Diamonds 54, Grand 72).
+    expect(value(C('null', { hand: true }), 48, ['JC'], 0, 0)).toMatchObject({ won: false, overbid: true, base: 12, value: 48, score: -96 });
+    // Matadors count: with all four jacks and ♣A, Hearts with 4 is cheapest at 50 (Diamonds 54, Clubs with 5: 72).
+    expect(value(C('null'), 46, ['JC', 'JS', 'JH', 'JD', 'AC'], 0, 0)).toMatchObject({ won: false, value: 50, score: -100 });
+  });
+
+  it('SkWO 5.1 (Seeger–Fabian): +50 / −50 for the declarer, 40 to each of the two opponents at a three-player table', () => {
+    const entry = (won: boolean, v: number): ListEntry => ({
+      dealer: 0,
+      result: {
+        type: 'game',
+        declarer: 1,
+        contract: C('H', { hand: true }),
+        bid: 18,
+        declarerPoints: won ? 70 : 50,
+        declarerTricks: 5,
+        valuation: { won, overbid: false, value: v, base: 10, multiplier: v / 10, matadors: { with: false, count: 2 }, schneider: false, schwarz: false, score: won ? v : -2 * v }
+      }
+    });
+    // Lost Herz-Hand ohne 2 (40): −80 − 50 for the declarer, +40 for each opponent.
+    expect(entryScores(entry(false, 40), 'seeger')).toEqual([40, -130, 40]);
+    expect(entryScores(entry(true, 40), 'seeger')).toEqual([0, 90, 0]);
   });
 });
 

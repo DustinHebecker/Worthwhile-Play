@@ -22,6 +22,7 @@ import {
   biddingStatus,
   cardPoints,
   effectiveSuit,
+  isDeclarableAt,
   isTrump,
   legalCards,
   matadors,
@@ -177,6 +178,7 @@ function bestDeclaration(cards10: readonly Card[], allCards: readonly Card[], di
   for (const kind of ['C', 'S', 'H', 'D', 'grand', 'null'] as const) {
     let score = margin(cards10, kind, difficulty, withSkat);
     const contract: Contract = { kind, hand: !withSkat, schneider: false, schwarz: false, ouvert: false };
+    if (!isDeclarableAt(contract, minBid)) continue; // ISkO 3.4.4: a Null game below the bid cannot be declared
     if (minimumValue(contract, allCards) < minBid) score -= 20; // would be overbid
     if (!best || score > best.score) best = { kind, score };
   }

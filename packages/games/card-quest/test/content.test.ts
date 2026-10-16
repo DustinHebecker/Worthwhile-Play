@@ -25,8 +25,14 @@ describe('card texts per locale', () => {
       expect(flavour.trim(), `${locale} ${id}`).not.toBe('');
       expect(name.length, `${locale} ${id} name`).toBeLessThanOrEqual(NAME_MAX);
       expect(flavour.length, `${locale} ${id} flavour`).toBeLessThanOrEqual(FLAVOUR_MAX);
+      const isMonster = Object.values(WORLDS).some((w) => w.cards.some((c) => c.id === id && c.type === 'monster'));
+      const blunder = content[id]!.blunder;
+      if (isMonster) {
+        expect(blunder?.trim(), `${locale} ${id} blunder`).toBeTruthy();
+        expect(blunder!.length, `${locale} ${id} blunder`).toBeLessThanOrEqual(FLAVOUR_MAX);
+      } else expect(blunder, `${locale} ${id} has a blunder but is no monster`).toBeUndefined();
       // Plain text only: never markup.
-      expect(`${name}${flavour}`, `${locale} ${id}`).not.toMatch(/[<>]/);
+      expect(`${name}${flavour}${blunder ?? ''}`, `${locale} ${id}`).not.toMatch(/[<>]/);
     }
   });
 

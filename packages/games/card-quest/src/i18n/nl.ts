@@ -106,6 +106,7 @@ export const nl: Catalogue = {
   'card.why.fightOnly': 'Alleen in een gevecht.',
   'card.why.ownTurn': 'Alleen in je eigen beurt, buiten gevechten.',
   'card.why.notNow': 'Nu even niet.',
+  'detail.blunder': 'Als het je te pakken krijgt: {text}',
 
   'act.equip': 'Aandoen',
   'act.unequip': 'Uitdoen',

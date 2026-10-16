@@ -106,6 +106,7 @@ export const ru: Catalogue = {
   'card.why.fightOnly': 'Только в бою.',
   'card.why.ownTurn': 'Только в свой ход, вне боя.',
   'card.why.notNow': 'Не сейчас.',
+  'detail.blunder': 'Если догонит: {text}',
 
   'act.equip': 'Надеть',
   'act.unequip': 'Снять',
