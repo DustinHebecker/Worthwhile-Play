@@ -179,7 +179,12 @@ export const ITEMS1: Readonly<Record<string, string>> = {
       <circle cx="82" cy="69" r="4"/><circle cx="104" cy="69" r="4"/><circle cx="82" cy="91" r="4"/>
       <circle cx="60" cy="91" r="4"/><circle cx="104" cy="91" r="4"/><circle cx="71" cy="80" r="4"/><circle cx="93" cy="80" r="4"/>
     </g>
-    <path class="il-line il-thin il-dash" d="M56 58h52M56 80h52M56 102h52"/>
+    <g class="il-dark">
+      <circle cx="60" cy="58" r="1.4"/><circle cx="82" cy="58" r="1.4"/><circle cx="104" cy="58" r="1.4"/><circle cx="71" cy="69" r="1.4"/>
+      <circle cx="93" cy="69" r="1.4"/><circle cx="60" cy="80" r="1.4"/><circle cx="82" cy="80" r="1.4"/><circle cx="104" cy="80" r="1.4"/>
+      <circle cx="71" cy="91" r="1.4"/><circle cx="93" cy="91" r="1.4"/><circle cx="60" cy="102" r="1.4"/><circle cx="82" cy="102" r="1.4"/>
+      <circle cx="104" cy="102" r="1.4"/>
+    </g>
     <path class="il-red il-ink" d="M64 30 80 0l16 30z"/>
     <ellipse class="il-skin il-ink" cx="80" cy="36" rx="16" ry="8"/>
     <path class="il-beard il-ink" d="M64 38c2 10 8 14 16 15 8-1 14-5 16-15-5 3-10 4-16 4s-11-1-16-4z"/>
@@ -205,7 +210,7 @@ export const ITEMS1: Readonly<Record<string, string>> = {
     <path class="il-beard il-ink" d="M48 46c2 14 10 20 18 21 8-1 16-7 18-21-6 4-12 5-18 5s-12-1-18-5z"/>
     <path class="il-blue il-ink" d="M50 68h32v18h6v20H70v-12h-8v12H44V86h6z"/>
     <path class="il-blue il-ink" d="M50 70l-4-14h6l4 14z"/>
-    <path class="il-line il-thin il-dash" d="M82 70l4-14h-6l-4 14z"/>
+    <path class="il-white il-ink il-thin il-dash" d="M82 70l4-14h-6l-4 14z"/>
     <circle class="il-gold il-ink il-thin" cx="54" cy="72" r="2"/>
     <circle class="il-gold il-ink il-thin" cx="78" cy="72" r="2"/>
     <rect class="il-blue il-ink il-thin" x="58" y="74" width="16" height="10" rx="1"/>
@@ -215,9 +220,11 @@ export const ITEMS1: Readonly<Record<string, string>> = {
     <circle class="il-dark" cx="62" cy="42" r="1.4"/><circle class="il-dark" cx="74" cy="42" r="1.4"/>
     <path class="il-line il-thin" d="M62 49q4-2 8 0"/>
     <g transform="rotate(-38 104 64)">
-      <rect class="il-wood il-ink" x="96" y="60" width="44" height="8" rx="3"/>
-      <rect class="il-metal il-ink" x="88" y="58" width="10" height="12" rx="1"/>
-      <path class="il-blue il-ink" d="M88 58h-8q-4 6 0 12h8z"/>
+      <rect class="il-wood il-ink" x="100" y="60" width="26" height="8" rx="4"/>
+      <circle class="il-wood-dark il-ink il-thin" cx="122" cy="64" r="1.6"/>
+      <rect class="il-metal il-ink" x="90" y="56" width="11" height="16" rx="1"/>
+      <path class="il-blue il-ink" d="M90 55h-10q-5 9 0 18h10z"/>
+      <path class="il-line il-thin" d="M84 59h-4M84 64h-5M84 69h-4"/>
     </g>
     <path class="il-metal il-ink" d="M116 92h28v20h-28z"/>
     <ellipse class="il-blue il-ink" cx="130" cy="92" rx="14" ry="4"/>
@@ -306,8 +313,8 @@ export const ITEMS1: Readonly<Record<string, string>> = {
   'kz.garden-clogs': `
     <rect class="il-sky" x="0" y="0" width="160" height="120"/>
     <path class="il-grass" d="M0 100h160v20H0z"/>
-    <path class="il-line il-thin" d="M6 40h20M2 52h26M8 64h16"/>
-    <path class="il-red il-ink il-thin" d="M66 58l-14 14 6 4 14-14zM84 58l10 18 6-2-10-18z"/>
+    <path class="il-line il-thin" d="M6 26h20M2 36h26M8 46h16"/>
+    <path class="il-red il-ink il-thin" d="M68 58l-44 6 1 6 45-6zM84 58l10 22 6-2-10-22z"/>
     <path class="il-blue il-ink" d="M64 36h28v26H64z"/>
     <path class="il-line il-thin" d="M70 36v10M86 36v10"/>
     <circle class="il-skin il-ink" cx="80" cy="26" r="10"/>
@@ -315,28 +322,31 @@ export const ITEMS1: Readonly<Record<string, string>> = {
     <path class="il-red il-ink" d="M72 20 42 8l28 2 18 4z"/>
     <circle class="il-dark" cx="84" cy="24" r="1.8"/><circle class="il-dark" cx="90" cy="24" r="1.8"/>
     <path class="il-dark" d="M84 31q4 3 8 0z"/>
-    <g transform="translate(26 62) rotate(-16)">
+    <g transform="translate(12 62) rotate(-14)">
       <path class="il-green il-ink" d="M0 24V12q0-6 6-8h10q8-6 20-6 20 0 24 18l2 8z"/>
       <rect class="il-dark il-ink" x="-2" y="22" width="66" height="6" rx="3"/>
       <circle class="il-dark" cx="34" cy="6" r="2"/><circle class="il-dark" cx="44" cy="5" r="2"/>
       <circle class="il-dark" cx="52" cy="10" r="2"/><circle class="il-dark" cx="40" cy="13" r="2"/><circle class="il-dark" cx="50" cy="17" r="2"/>
       <path class="il-line il-thick" d="M6 6q-10 6-2 16"/>
+      <path class="il-light il-thin" d="M22 2q10-4 18-2"/>
     </g>
-    <g transform="translate(86 72)">
+    <g transform="translate(86 76)">
       <path class="il-green il-ink" d="M0 24V12q0-6 6-8h10q8-6 20-6 20 0 24 18l2 8z"/>
       <rect class="il-dark il-ink" x="-2" y="22" width="66" height="6" rx="3"/>
       <circle class="il-dark" cx="34" cy="6" r="2"/><circle class="il-dark" cx="44" cy="5" r="2"/>
       <circle class="il-dark" cx="52" cy="10" r="2"/><circle class="il-dark" cx="40" cy="13" r="2"/><circle class="il-dark" cx="50" cy="17" r="2"/>
       <path class="il-line il-thick" d="M6 6q-10 6-2 16"/>
+      <path class="il-light il-thin" d="M22 2q10-4 18-2"/>
     </g>
-    <path class="il-line il-thin" d="M80 108l-4 4 4 4M72 108l-4 4 4 4M22 92l-4 4 4 4"/>
+    <path class="il-line il-thin" d="M92 108l-4 4 4 4M84 108l-4 4 4 4M14 86l-4 4 4 4"/>
     <path class="il-grass il-ink il-thin" d="M10 90l-4-6 6 2zM4 100l-2-8 5 4z"/>
-    <path class="il-skin il-ink il-thin" d="M120 112q0-6 6-6h18q6 0 6 6z"/>
-    <circle class="il-earth il-ink il-thin" cx="138" cy="102" r="7"/>
-    <path class="il-line il-thin" d="M138 102a2 2 0 1 1 2 2 4 4 0 1 1-4-4"/>
-    <path class="il-line il-thin" d="M124 106l-4-8M122 108l-6-6"/>
-    <circle class="il-white il-ink il-thin" cx="119" cy="97" r="2.2"/><circle class="il-white il-ink il-thin" cx="115" cy="101" r="2.2"/>
-    <circle class="il-dark" cx="119" cy="97" r="1"/><circle class="il-dark" cx="115" cy="101" r="1"/>`,
+    <path class="il-skin il-ink il-thin" d="M36 114q0-6 6-6h18q6 0 6 6z"/>
+    <circle class="il-earth il-ink il-thin" cx="46" cy="104" r="7"/>
+    <path class="il-line il-thin" d="M46 104a2 2 0 1 1 2 2 4 4 0 1 1-4-4"/>
+    <path class="il-line il-thin" d="M62 108l4-8M64 110l6-6"/>
+    <circle class="il-white il-ink il-thin" cx="66" cy="99" r="2.2"/><circle class="il-white il-ink il-thin" cx="70" cy="103" r="2.2"/>
+    <circle class="il-dark" cx="67" cy="99" r="1"/><circle class="il-dark" cx="71" cy="103" r="1"/>
+    <path class="il-line il-thin" d="M74 96l4-3M76 101h5"/>`,
 
   // A gnome in pyjamas doing a gigantic stride in fluffy pink slippers, from the fence straight to Grandma's cottage.
   'kz.league-slippers': `
@@ -357,10 +367,16 @@ export const ITEMS1: Readonly<Record<string, string>> = {
     <path class="il-beard il-ink" d="M62 26c2 10 8 14 14 14s12-4 14-14c-4 3-9 4-14 4s-10-1-14-4z"/>
     <circle class="il-dark" cx="72" cy="22" r="1.6"/><circle class="il-dark" cx="82" cy="22" r="1.6"/>
     <path class="il-line il-thin" d="M73 30q4 3 8 0"/>
-    <path class="il-pink il-ink il-dash" d="M14 100q0-10 14-10h12q8 0 8 10z"/>
-    <circle class="il-white il-ink il-thin" cx="44" cy="92" r="4"/>
-    <path class="il-pink il-ink il-dash" d="M116 82q2-10 16-8l12 2q8 2 6 10z"/>
-    <circle class="il-white il-ink il-thin" cx="146" cy="79" r="4"/>
+    <path class="il-pink il-ink" d="M8 104q0-16 20-16h14q14 0 14 16z"/>
+    <path class="il-white il-ink il-thin" d="M8 104h48v4H8z"/>
+    <path class="il-line il-thin" d="M30 92v6M38 92v6"/>
+    <circle class="il-white il-ink" cx="50" cy="92" r="6"/>
+    <g transform="rotate(10 132 80)">
+      <path class="il-pink il-ink" d="M108 86q0-16 20-16h14q14 0 14 16z"/>
+      <path class="il-white il-ink il-thin" d="M108 86h48v4h-48z"/>
+      <path class="il-line il-thin" d="M130 74v6M138 74v6"/>
+      <circle class="il-white il-ink" cx="150" cy="74" r="6"/>
+    </g>
     <path class="il-line il-thin" d="M108 92l-8 2M110 98l-10 4"/>
     <ellipse class="il-earth-dark" cx="30" cy="112" rx="8" ry="2"/><ellipse class="il-earth-dark" cx="62" cy="112" rx="8" ry="2"/>`,
 
