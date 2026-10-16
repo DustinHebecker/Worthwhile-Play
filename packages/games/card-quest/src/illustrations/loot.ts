@@ -66,7 +66,8 @@ export const LOOT: Readonly<Record<string, string>> = {
     <path class="il-stone il-ink" d="M48 104h64v8H48z"/>
     <path class="il-blue il-ink" d="M54 104c0-18 10-30 26-30s26 12 26 30z"/>
     <path class="il-dark il-ink il-thin" d="M56 94h48v6H56z"/><rect class="il-gold il-ink il-thin" x="76" y="93" width="8" height="8" rx="1"/>
-    <path class="il-light" d="M62 90q2-7 7-9"/>
+    <path class="il-light" d="M98 90q-2-7-7-9"/>
+    <path class="il-line il-thick" d="M70 78l6 5-4 4 6 6"/>
     <circle class="il-skin il-ink" cx="54" cy="90" r="6"/><circle class="il-skin il-ink" cx="106" cy="90" r="6"/>
     <path class="il-skin il-ink" d="M58 48h44v16c0 6-10 10-22 10s-22-4-22-10z"/>
     <path class="il-beard il-ink" d="M58 62c2 18 12 28 22 30 10-2 20-12 22-30-6 6-14 8-22 8s-16-2-22-8z"/>
@@ -79,7 +80,6 @@ export const LOOT: Readonly<Record<string, string>> = {
     <circle class="il-pink il-ink il-thin" cx="80" cy="60" r="4.4"/>
     <path class="il-red il-ink" d="M54 50 80 4l26 46z"/>
     <path class="il-light" d="M74 18l-7 18"/>
-    <path class="il-line" d="M102 80l-7 6 5 4-8 6 3 6"/>
     <path class="il-line il-thin" d="M84 18l4 4-3 3 5 5"/>
     <rect class="il-paper il-ink il-thin" x="80" y="24" width="18" height="8" rx="2" transform="rotate(-35 89 28)"/>
     <path class="il-line il-thin" d="M86 28l1 1M90 25l1 1M92 30l1 1"/>
@@ -137,9 +137,12 @@ export const LOOT: Readonly<Record<string, string>> = {
       <circle cx="16" cy="76" r="2.6"/><circle cx="30" cy="76" r="2.6"/><circle cx="36" cy="76" r="2.6"/>
       <circle cx="22" cy="84" r="2.6"/><circle cx="28" cy="84" r="2.6"/></g>
     <circle class="il-skin il-ink" cx="46" cy="78" r="5"/>
-    <path class="il-gold il-ink" d="M104 90c0-10 6-16 14-16 4-6 14-6 18 0 8 0 14 6 14 16z"/>
-    <path class="il-gold il-ink" d="M116 72c-2-8 4-14 10-12 6-2 12 4 10 12z"/>
-    <path class="il-light" d="M112 84l4-4M124 66l3-3M140 84l3-3"/>
+    <g class="il-gold il-ink">
+      <path d="M102 90l4-10 10-2 6 6-2 6z"/><path d="M118 90l2-8 10-4 8 4 2 8z"/><path d="M138 90l2-8 8-2 6 6v4z"/>
+      <path d="M110 78l4-8 10-1 4 7-6 6h-10z"/><path d="M128 78l2-8 10 0 4 8-8 4z"/>
+      <path d="M118 66l4-7 8 1 2 7-7 4z"/>
+    </g>
+    <path class="il-light" d="M108 84l3-3M124 84l3-3M116 74l3-3M134 74l3-3M122 64l2-2"/>
     <path class="il-line il-thin" d="M126 60l-12-14M126 60l2-18M126 60l14-12"/>
     <path class="il-paper il-ink il-thin" d="M106 38l10-4 4 8-10 4z"/><circle class="il-dark" cx="113" cy="41" r="1"/>
     <path class="il-paper il-ink il-thin" d="M122 30h10v9h-10z"/><circle class="il-dark" cx="127" cy="36" r="1"/>
