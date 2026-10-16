@@ -6,6 +6,23 @@ import type { GameMessages } from '@wp/game-core';
  * or phrasing with a colon.
  */
 const en = {
+  'map.random': 'Any map (by game number)',
+  'map.1': 'Map 1',
+  'map.2': 'Map 2',
+  'map.3': 'Map 3',
+  'map.4': 'Map 4',
+  'map.5': 'Map 5',
+  'map.6': 'Map 6',
+  'map.7': 'Map 7',
+  'map.8': 'Map 8',
+  'map.9': 'Map 9',
+  'map.10': 'Map 10',
+  'map.11': 'Map 11',
+  'map.12': 'Map 12',
+  'map.13': 'Map 13',
+  'opponents.1': '1',
+  'opponents.2': '2',
+  'opponents.3': '3',
   title: 'Orbit Links',
   tagline: 'Send streams of small ships along orbital lanes and take over a map of nodes, at your own pace.',
   rules:
@@ -97,6 +114,23 @@ const en = {
 type Catalogue = Record<keyof typeof en, string>;
 
 const de: Catalogue = {
+  'map.random': 'Beliebige Karte (nach Spielnummer)',
+  'map.1': 'Karte 1',
+  'map.2': 'Karte 2',
+  'map.3': 'Karte 3',
+  'map.4': 'Karte 4',
+  'map.5': 'Karte 5',
+  'map.6': 'Karte 6',
+  'map.7': 'Karte 7',
+  'map.8': 'Karte 8',
+  'map.9': 'Karte 9',
+  'map.10': 'Karte 10',
+  'map.11': 'Karte 11',
+  'map.12': 'Karte 12',
+  'map.13': 'Karte 13',
+  'opponents.1': '1',
+  'opponents.2': '2',
+  'opponents.3': '3',
   title: 'Orbit-Verbindungen',
   tagline: 'Schicke Ströme kleiner Schiffe über Orbitalbahnen und übernimm eine Karte aus Knoten – in deinem eigenen Tempo.',
   rules:
@@ -186,6 +220,23 @@ const de: Catalogue = {
 };
 
 const nl: Catalogue = {
+  'map.random': 'Willekeurige kaart (volgens spelnummer)',
+  'map.1': 'Kaart 1',
+  'map.2': 'Kaart 2',
+  'map.3': 'Kaart 3',
+  'map.4': 'Kaart 4',
+  'map.5': 'Kaart 5',
+  'map.6': 'Kaart 6',
+  'map.7': 'Kaart 7',
+  'map.8': 'Kaart 8',
+  'map.9': 'Kaart 9',
+  'map.10': 'Kaart 10',
+  'map.11': 'Kaart 11',
+  'map.12': 'Kaart 12',
+  'map.13': 'Kaart 13',
+  'opponents.1': '1',
+  'opponents.2': '2',
+  'opponents.3': '3',
   title: 'Baanverbindingen',
   tagline: 'Stuur stromen kleine schepen over banen in een baan om de planeet en neem een kaart met knooppunten over, in je eigen tempo.',
   rules:
@@ -275,6 +326,23 @@ const nl: Catalogue = {
 };
 
 const es: Catalogue = {
+  'map.random': 'Cualquier mapa (según el número de partida)',
+  'map.1': 'Mapa 1',
+  'map.2': 'Mapa 2',
+  'map.3': 'Mapa 3',
+  'map.4': 'Mapa 4',
+  'map.5': 'Mapa 5',
+  'map.6': 'Mapa 6',
+  'map.7': 'Mapa 7',
+  'map.8': 'Mapa 8',
+  'map.9': 'Mapa 9',
+  'map.10': 'Mapa 10',
+  'map.11': 'Mapa 11',
+  'map.12': 'Mapa 12',
+  'map.13': 'Mapa 13',
+  'opponents.1': '1',
+  'opponents.2': '2',
+  'opponents.3': '3',
   title: 'Enlaces orbitales',
   tagline: 'Envía corrientes de pequeñas naves por rutas orbitales y conquista un mapa de nodos, a tu propio ritmo.',
   rules:
@@ -364,6 +432,23 @@ const es: Catalogue = {
 };
 
 const fr: Catalogue = {
+  'map.random': 'N’importe quelle carte (selon le numéro de partie)',
+  'map.1': 'Carte 1',
+  'map.2': 'Carte 2',
+  'map.3': 'Carte 3',
+  'map.4': 'Carte 4',
+  'map.5': 'Carte 5',
+  'map.6': 'Carte 6',
+  'map.7': 'Carte 7',
+  'map.8': 'Carte 8',
+  'map.9': 'Carte 9',
+  'map.10': 'Carte 10',
+  'map.11': 'Carte 11',
+  'map.12': 'Carte 12',
+  'map.13': 'Carte 13',
+  'opponents.1': '1',
+  'opponents.2': '2',
+  'opponents.3': '3',
   title: 'Liens orbitaux',
   tagline: 'Envoyez des flux de petits vaisseaux le long de couloirs orbitaux et prenez le contrôle d’une carte de nœuds, à votre rythme.',
   rules:
@@ -453,6 +538,23 @@ const fr: Catalogue = {
 };
 
 const ru: Catalogue = {
+  'map.random': 'Любая карта (по номеру игры)',
+  'map.1': 'Карта 1',
+  'map.2': 'Карта 2',
+  'map.3': 'Карта 3',
+  'map.4': 'Карта 4',
+  'map.5': 'Карта 5',
+  'map.6': 'Карта 6',
+  'map.7': 'Карта 7',
+  'map.8': 'Карта 8',
+  'map.9': 'Карта 9',
+  'map.10': 'Карта 10',
+  'map.11': 'Карта 11',
+  'map.12': 'Карта 12',
+  'map.13': 'Карта 13',
+  'opponents.1': '1',
+  'opponents.2': '2',
+  'opponents.3': '3',
   title: 'Орбитальные связи',
   tagline: 'Отправляйте потоки маленьких кораблей по орбитальным трассам и занимайте карту узлов в своём темпе.',
   rules:
@@ -542,6 +644,23 @@ const ru: Catalogue = {
 };
 
 const zhHans: Catalogue = {
+  'map.random': '任意地图（按对局编号）',
+  'map.1': '地图 1',
+  'map.2': '地图 2',
+  'map.3': '地图 3',
+  'map.4': '地图 4',
+  'map.5': '地图 5',
+  'map.6': '地图 6',
+  'map.7': '地图 7',
+  'map.8': '地图 8',
+  'map.9': '地图 9',
+  'map.10': '地图 10',
+  'map.11': '地图 11',
+  'map.12': '地图 12',
+  'map.13': '地图 13',
+  'opponents.1': '1',
+  'opponents.2': '2',
+  'opponents.3': '3',
   title: '轨道连线',
   tagline: '沿着轨道航线派出小型飞船流，按自己的节奏占领节点地图。',
   rules:
@@ -631,6 +750,23 @@ const zhHans: Catalogue = {
 };
 
 const ko: Catalogue = {
+  'map.random': '아무 지도 (게임 번호에 따라)',
+  'map.1': '지도 1',
+  'map.2': '지도 2',
+  'map.3': '지도 3',
+  'map.4': '지도 4',
+  'map.5': '지도 5',
+  'map.6': '지도 6',
+  'map.7': '지도 7',
+  'map.8': '지도 8',
+  'map.9': '지도 9',
+  'map.10': '지도 10',
+  'map.11': '지도 11',
+  'map.12': '지도 12',
+  'map.13': '지도 13',
+  'opponents.1': '1',
+  'opponents.2': '2',
+  'opponents.3': '3',
   title: '궤도 링크',
   tagline: '궤도 항로를 따라 작은 함선의 흐름을 보내 노드 지도를 차지하세요. 내 속도대로 하면 됩니다.',
   rules:
@@ -720,6 +856,23 @@ const ko: Catalogue = {
 };
 
 const ja: Catalogue = {
+  'map.random': 'おまかせのマップ（ゲーム番号で決定）',
+  'map.1': 'マップ 1',
+  'map.2': 'マップ 2',
+  'map.3': 'マップ 3',
+  'map.4': 'マップ 4',
+  'map.5': 'マップ 5',
+  'map.6': 'マップ 6',
+  'map.7': 'マップ 7',
+  'map.8': 'マップ 8',
+  'map.9': 'マップ 9',
+  'map.10': 'マップ 10',
+  'map.11': 'マップ 11',
+  'map.12': 'マップ 12',
+  'map.13': 'マップ 13',
+  'opponents.1': '1',
+  'opponents.2': '2',
+  'opponents.3': '3',
   title: 'オービット・リンク',
   tagline: '軌道航路に沿って小さな船の流れを送り、ノードの地図を自分のペースで制圧しましょう。',
   rules:
@@ -809,6 +962,23 @@ const ja: Catalogue = {
 };
 
 const ar: Catalogue = {
+  'map.random': 'أي خريطة (حسب رقم اللعبة)',
+  'map.1': 'الخريطة 1',
+  'map.2': 'الخريطة 2',
+  'map.3': 'الخريطة 3',
+  'map.4': 'الخريطة 4',
+  'map.5': 'الخريطة 5',
+  'map.6': 'الخريطة 6',
+  'map.7': 'الخريطة 7',
+  'map.8': 'الخريطة 8',
+  'map.9': 'الخريطة 9',
+  'map.10': 'الخريطة 10',
+  'map.11': 'الخريطة 11',
+  'map.12': 'الخريطة 12',
+  'map.13': 'الخريطة 13',
+  'opponents.1': '1',
+  'opponents.2': '2',
+  'opponents.3': '3',
   title: 'روابط المدار',
   tagline: 'أرسل تدفقات من السفن الصغيرة عبر ممرات مدارية واستولِ على خريطة من العُقد، على مهلك.',
   rules:
@@ -898,6 +1068,23 @@ const ar: Catalogue = {
 };
 
 const pt: Catalogue = {
+  'map.random': 'Qualquer mapa (pelo número do jogo)',
+  'map.1': 'Mapa 1',
+  'map.2': 'Mapa 2',
+  'map.3': 'Mapa 3',
+  'map.4': 'Mapa 4',
+  'map.5': 'Mapa 5',
+  'map.6': 'Mapa 6',
+  'map.7': 'Mapa 7',
+  'map.8': 'Mapa 8',
+  'map.9': 'Mapa 9',
+  'map.10': 'Mapa 10',
+  'map.11': 'Mapa 11',
+  'map.12': 'Mapa 12',
+  'map.13': 'Mapa 13',
+  'opponents.1': '1',
+  'opponents.2': '2',
+  'opponents.3': '3',
   title: 'Ligações orbitais',
   tagline: 'Envie fluxos de pequenas naves por rotas orbitais e conquiste um mapa de nós, no seu próprio ritmo.',
   rules:
@@ -987,6 +1174,23 @@ const pt: Catalogue = {
 };
 
 const it: Catalogue = {
+  'map.random': 'Mappa qualsiasi (in base al numero di partita)',
+  'map.1': 'Mappa 1',
+  'map.2': 'Mappa 2',
+  'map.3': 'Mappa 3',
+  'map.4': 'Mappa 4',
+  'map.5': 'Mappa 5',
+  'map.6': 'Mappa 6',
+  'map.7': 'Mappa 7',
+  'map.8': 'Mappa 8',
+  'map.9': 'Mappa 9',
+  'map.10': 'Mappa 10',
+  'map.11': 'Mappa 11',
+  'map.12': 'Mappa 12',
+  'map.13': 'Mappa 13',
+  'opponents.1': '1',
+  'opponents.2': '2',
+  'opponents.3': '3',
   title: 'Collegamenti orbitali',
   tagline: 'Invia flussi di piccole navi lungo rotte orbitali e conquista una mappa di nodi, con i tuoi tempi.',
   rules:
@@ -1076,6 +1280,23 @@ const it: Catalogue = {
 };
 
 const pl: Catalogue = {
+  'map.random': 'Dowolna mapa (według numeru gry)',
+  'map.1': 'Mapa 1',
+  'map.2': 'Mapa 2',
+  'map.3': 'Mapa 3',
+  'map.4': 'Mapa 4',
+  'map.5': 'Mapa 5',
+  'map.6': 'Mapa 6',
+  'map.7': 'Mapa 7',
+  'map.8': 'Mapa 8',
+  'map.9': 'Mapa 9',
+  'map.10': 'Mapa 10',
+  'map.11': 'Mapa 11',
+  'map.12': 'Mapa 12',
+  'map.13': 'Mapa 13',
+  'opponents.1': '1',
+  'opponents.2': '2',
+  'opponents.3': '3',
   title: 'Orbitalne połączenia',
   tagline: 'Wysyłaj strumienie małych statków po orbitalnych trasach i przejmij mapę węzłów we własnym tempie.',
   rules:
@@ -1165,6 +1386,23 @@ const pl: Catalogue = {
 };
 
 const tr: Catalogue = {
+  'map.random': 'Herhangi bir harita (oyun numarasına göre)',
+  'map.1': 'Harita 1',
+  'map.2': 'Harita 2',
+  'map.3': 'Harita 3',
+  'map.4': 'Harita 4',
+  'map.5': 'Harita 5',
+  'map.6': 'Harita 6',
+  'map.7': 'Harita 7',
+  'map.8': 'Harita 8',
+  'map.9': 'Harita 9',
+  'map.10': 'Harita 10',
+  'map.11': 'Harita 11',
+  'map.12': 'Harita 12',
+  'map.13': 'Harita 13',
+  'opponents.1': '1',
+  'opponents.2': '2',
+  'opponents.3': '3',
   title: 'Yörünge Bağları',
   tagline: 'Yörünge hatları boyunca küçük gemi akışları gönder ve düğümlerden oluşan bir haritayı kendi hızında ele geçir.',
   rules:
@@ -1254,6 +1492,23 @@ const tr: Catalogue = {
 };
 
 const uk: Catalogue = {
+  'map.random': 'Будь-яка мапа (за номером гри)',
+  'map.1': 'Мапа 1',
+  'map.2': 'Мапа 2',
+  'map.3': 'Мапа 3',
+  'map.4': 'Мапа 4',
+  'map.5': 'Мапа 5',
+  'map.6': 'Мапа 6',
+  'map.7': 'Мапа 7',
+  'map.8': 'Мапа 8',
+  'map.9': 'Мапа 9',
+  'map.10': 'Мапа 10',
+  'map.11': 'Мапа 11',
+  'map.12': 'Мапа 12',
+  'map.13': 'Мапа 13',
+  'opponents.1': '1',
+  'opponents.2': '2',
+  'opponents.3': '3',
   title: 'Орбітальні зв’язки',
   tagline: 'Надсилайте потоки маленьких кораблів орбітальними трасами й займайте мапу вузлів у власному темпі.',
   rules:
@@ -1343,6 +1598,23 @@ const uk: Catalogue = {
 };
 
 const hi: Catalogue = {
+  'map.random': 'कोई भी नक्शा (खेल संख्या के अनुसार)',
+  'map.1': 'नक्शा 1',
+  'map.2': 'नक्शा 2',
+  'map.3': 'नक्शा 3',
+  'map.4': 'नक्शा 4',
+  'map.5': 'नक्शा 5',
+  'map.6': 'नक्शा 6',
+  'map.7': 'नक्शा 7',
+  'map.8': 'नक्शा 8',
+  'map.9': 'नक्शा 9',
+  'map.10': 'नक्शा 10',
+  'map.11': 'नक्शा 11',
+  'map.12': 'नक्शा 12',
+  'map.13': 'नक्शा 13',
+  'opponents.1': '1',
+  'opponents.2': '2',
+  'opponents.3': '3',
   title: 'कक्षा कड़ियाँ',
   tagline: 'कक्षीय मार्गों पर छोटे यानों की धाराएँ भेजें और अपनी गति से नोड्स के नक्शे पर कब्ज़ा करें।',
   rules:

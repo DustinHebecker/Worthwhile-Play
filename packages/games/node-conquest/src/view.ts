@@ -1,35 +1,28 @@
 import './styles.css';
-import { bcp47Tag, isOneOf, isRecord, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
+import { bcp47Tag, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
 import { announce, clear, h } from '@wp/ui';
 import { opponents } from './ai';
 import { crossings } from './maps';
 import { reviewOf, type Moment } from './review';
+import { matchOptions } from './settings';
 import {
   BOARD,
   cloneState,
   createGame,
-  getMap,
   INTRO_MAP,
-  mapForSeed,
-  MAPS_PER_SET,
   mapOf,
   maxPaths,
   nodeCount,
-  OPPONENT_COUNTS,
   isStandoff,
   quietTicks,
   seconds,
   stationRange,
   stepMut,
   TICKS_PER_SECOND,
-  toDifficulty,
   toggleMut,
-  toOpponents,
   UNIT_SPEED,
-  type FactionCount,
   type GameMap,
   type NcState,
-  type OpponentCount,
   type StepEvents
 } from './rules';
 
@@ -194,8 +187,6 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
   let pinch: { distance: number; zoom: number; mid: [number, number]; centre: [number, number] } | null = null;
   let pan: { x: number; y: number; cx: number; cy: number } | null = null;
   let lastTouchTap = -Infinity;
-  /** A map/opponent change waiting for confirmation. */
-  let pending: { map: number; opponents: OpponentCount } | null = null;
 
   const nodeName = (v: number) => t('node.name', { id: v + 1 });
   const ownerName = (o: number) => (o < 0 ? t('faction.neutral') : t(`faction.${o}`));
@@ -208,32 +199,13 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
   const standoffEl = h('p', { class: 'nc-standoff', 'data-testid': 'nc-standoff', hidden: true });
   const pauseBtn = h('button', { type: 'button', class: 'primary nc-pause', 'data-testid': 'nc-pause', onclick: () => togglePause() });
   const speedBtn = h('button', { type: 'button', class: 'nc-speed', 'data-testid': 'nc-speed', onclick: () => toggleSpeed() });
-  const mapSelect = h('select', { 'data-testid': 'nc-map-select', id: 'nc-map-select', onchange: () => requestSetup() });
-  const mapLabel = h('label', { for: 'nc-map-select', class: 'nc-map-label' }, t('map.label'));
-  const oppSelect = h(
-    'select',
-    { 'data-testid': 'nc-opponents', id: 'nc-opponents', onchange: () => requestSetup() },
-    ...OPPONENT_COUNTS.map((n) => h('option', { value: n }, String(n)))
-  );
-  const oppLabel = h('label', { for: 'nc-opponents', class: 'nc-map-label' }, t('opponents.label'));
   const retryBtn = h('button', { type: 'button', class: 'primary', 'data-testid': 'nc-retry', hidden: true, onclick: () => retry() });
   const toolbar = h(
     'div',
     { class: 'nc-toolbar' },
     pauseBtn,
     speedBtn,
-    h('span', { class: 'nc-map' }, mapLabel, mapSelect),
-    h('span', { class: 'nc-map' }, oppLabel, oppSelect),
     retryBtn
-  );
-  const confirmText = h('p', { id: 'nc-confirm-text', class: 'nc-confirm-text', 'data-testid': 'nc-confirm-text' });
-  const confirmYes = h('button', { type: 'button', class: 'primary', 'data-testid': 'nc-confirm-yes', onclick: () => confirmSetup(true) }, t('confirm.yes'));
-  const confirmNo = h('button', { type: 'button', 'data-testid': 'nc-confirm-no', onclick: () => confirmSetup(false) }, t('confirm.no'));
-  const confirmBox = h(
-    'div',
-    { class: 'nc-confirm', role: 'group', 'aria-labelledby': 'nc-confirm-text', 'data-testid': 'nc-confirm', hidden: true },
-    confirmText,
-    h('div', { class: 'nc-confirm-actions' }, confirmYes, confirmNo)
   );
   const messageEl = h('p', { class: 'nc-message', 'data-testid': 'nc-message' });
   const hintEl = h('p', { class: 'nc-hint', 'data-testid': 'nc-hint', hidden: true });
@@ -288,7 +260,6 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
     countsEl,
     standoffEl,
     toolbar,
-    confirmBox,
     hintEl,
     messageEl,
     boardWrap,
@@ -411,16 +382,6 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
       h('li', {}, legendIcon(svg('path', { class: 'nc-legend-type', d: crosshair(10, 10, 3, 9) })), t('type.station')),
       h('li', { 'data-type': 'bastion' }, legendIcon(svg('path', { class: 'nc-legend-type', d: battlements(10, 10, 6) })), t('type.bastion'))
     );
-    fillMapOptions(state.opponents);
-  };
-
-  const fillMapOptions = (opponentCount: OpponentCount) => {
-    clear(mapSelect);
-    mapSelect.append(h('option', { value: INTRO_MAP }, t('map.intro')));
-    for (let i = 0; i < MAPS_PER_SET; i++) {
-      const count = getMap((opponentCount + 1) as FactionCount, i, state.layout).nodes.length;
-      mapSelect.append(h('option', { value: i }, t('map.option', { n: i + 1, count })));
-    }
   };
 
   const legendIcon = (shape: SVGElement): Node => svg('svg', { viewBox: '0 0 20 20', width: 20, height: 20, 'aria-hidden': 'true', class: 'nc-legend-icon' }, shape);
@@ -530,11 +491,6 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
     pauseBtn.setAttribute('aria-pressed', String(!running));
     speedBtn.textContent = t('action.speed', { n: state.speed });
     speedBtn.dataset.speed = String(state.speed);
-    if (!pending) {
-      mapSelect.value = String(state.map);
-      oppSelect.value = String(state.opponents);
-    }
-    oppSelect.disabled = Number(mapSelect.value) === INTRO_MAP;
     retryBtn.hidden = !finished;
     retryBtn.textContent = state.result === 'won' ? t('action.replay') : t('action.retry');
     container.classList.toggle('is-running', running);
@@ -1097,8 +1053,6 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
     state = next;
     controller = opponents();
     selected = null;
-    pending = null;
-    confirmBox.hidden = true;
     pointers.clear();
     pinch = null;
     pan = null;
@@ -1116,67 +1070,6 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
     renderShots(null);
   };
 
-  /** A match counts as untouched before the first tick when the player has no active path. */
-  const untouched = () => state.result !== 'playing' || (state.tick === 0 && state.out.every((o, v) => o.length === 0 || state.owner[v] !== 0));
-
-  const setupText = (map: number, count: OpponentCount) =>
-    map === INTRO_MAP ? t('confirm.intro') : t('confirm.text', { n: map + 1, opponents: count });
-
-  /** Per-device setting: the opponent count chosen last (the map of a new match comes from its seed). */
-  const PREF_SETUP = 'setup';
-  const preferredOpponents = (): OpponentCount | null => {
-    const saved: unknown = context.preferences?.get(PREF_SETUP);
-    return isRecord(saved) && isOneOf(saved.opponents, OPPONENT_COUNTS) ? saved.opponents : null;
-  };
-
-  const startSetup = (map: number, count: OpponentCount) => {
-    pending = null;
-    confirmBox.hidden = true;
-    // The introduction always has one opponent; it does not change the remembered setting.
-    if (map !== INTRO_MAP) context.preferences?.set(PREF_SETUP, { opponents: count });
-    load(createGame(state.seed, { difficulty: state.difficulty, map, opponents: count }));
-    context.requestSave();
-  };
-
-  /** Map or opponent count changed in the toolbar: start at once, or ask first if a match is under way. */
-  const requestSetup = () => {
-    const map = Number(mapSelect.value);
-    const count = map === INTRO_MAP ? 1 : toOpponents(Number(oppSelect.value));
-    if (!Number.isInteger(map) || map < INTRO_MAP || map >= MAPS_PER_SET) return;
-    if (map !== INTRO_MAP && count !== state.opponents) fillMapOptions(count);
-    mapSelect.value = String(map);
-    oppSelect.value = String(count);
-    oppSelect.disabled = map === INTRO_MAP;
-    if (map === state.map && count === state.opponents) {
-      pending = null;
-      confirmBox.hidden = true;
-      return;
-    }
-    if (untouched()) {
-      startSetup(map, count);
-      return;
-    }
-    stop();
-    pending = { map, opponents: count };
-    confirmText.textContent = setupText(map, count);
-    confirmBox.hidden = false;
-    announce(live, confirmText.textContent);
-  };
-
-  const confirmSetup = (yes: boolean) => {
-    const choice = pending;
-    pending = null;
-    confirmBox.hidden = true;
-    if (yes && choice) {
-      startSetup(choice.map, choice.opponents);
-      pauseBtn.focus({ preventScroll: true });
-      return;
-    }
-    fillMapOptions(state.opponents);
-    renderStatus();
-    mapSelect.focus({ preventScroll: true });
-  };
-
   const retry = () => {
     load(createGame(state.seed, { difficulty: state.difficulty, map: state.map, opponents: state.opponents, layout: state.layout }));
     context.requestSave();
@@ -1185,10 +1078,9 @@ export function createNodeConquest(context: GameContext): GameInstance<NcState> 
 
   return {
     newGame(options: NewGameOptions) {
-      // The opponent count is a game setting: a new match keeps it (the introduction is a one-off),
-      // also after a reload (per-device preference).
-      const count = preferredOpponents() ?? state.opponents;
-      load(createGame(options.seed, { difficulty: toDifficulty(options.difficulty), map: mapForSeed(options.seed), opponents: count }));
+      // Map, opponent count and difficulty come from the host's start screen (ADR 0017).
+      const match = matchOptions(options);
+      load(createGame(match.seed, match.options));
       context.requestSave();
     },
     restore(saved: NcState) {
