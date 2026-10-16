@@ -148,7 +148,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
   };
 
   /** Whether every penalty line that followed this failed flee in the log actually took something. */
-  function blunderHit(flee: LogEvent): boolean {
+  function blunderHit(flee: Extract<LogEvent, { e: 'flee' }>): boolean {
     const i = state.log.indexOf(flee);
     if (i < 0) return false;
     const lines: LogEvent[] = [];
