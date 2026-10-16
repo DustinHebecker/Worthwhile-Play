@@ -29,7 +29,7 @@ const contexts = new Map<string, GameContext>();
 const starts = new Map<string, NewGameOptions[]>();
 
 /** A game whose `preload` is controlled by the test and which renders the locale it was preloaded for. */
-function fakeGame(id: string, preload?: (locale: string) => Promise<void>, extra: Partial<GameMetadata> = {}, moduleExtra: Partial<Pick<GameModule, 'settings'>> = {}) {
+function fakeGame(id: string, preload?: (locale: string) => Promise<void>, extra: Partial<GameMetadata> = {}, moduleExtra: Partial<Pick<GameModule<{ n: number }>, 'settings' | 'settingsOf'>> = {}) {
   const log: string[] = [];
   let content = '(none)';
   const module: GameModule<{ n: number }> = {
@@ -48,15 +48,19 @@ function fakeGame(id: string, preload?: (locale: string) => Promise<void>, extra
     create: (context: GameContext) => {
       log.push(`create:${context.t.locale}`);
       contexts.set(id, context);
+      const render = () => {
+        const setup = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Map' });
+        context.root.replaceChildren(Object.assign(document.createElement('p'), { textContent: content }), setup);
+      };
       return {
         newGame: (options) => {
           log.push(options.difficulty === undefined ? 'newGame' : `newGame:${options.difficulty}`);
           starts.set(id, [...(starts.get(id) ?? []), options]);
-          const setup = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Map' });
-          context.root.replaceChildren(Object.assign(document.createElement('p'), { textContent: content }), setup);
+          render();
         },
         restore: () => {
           log.push('restore');
+          render();
         },
         serialize: () => ({ n: 1 }),
         pause: () => void log.push('pause'),
@@ -168,42 +172,51 @@ describe('game page: library for player creations (ADR 0012)', () => {
 });
 
 describe('game page: games whose first screen is their own setup (ADR 0015)', () => {
-  const setupGame = (id: string) =>
-    fakeGame(id, undefined, { setupInGame: true, difficulties: ['easy', 'hard'], messages: { en: { title: 't', tagline: 't', rules: 'r', 'difficulty.easy': 'Easy', 'difficulty.hard': 'Hard' } } });
+  const diffMessages = { en: { title: 't', tagline: 't', rules: 'r', 'difficulty.easy': 'Easy', 'difficulty.hard': 'Hard' } };
+  /** A setup game with difficulties (card-quest, relay-command): the difficulty is chosen on the host's start screen. */
+  const setupGame = (id: string) => fakeGame(id, undefined, { setupInGame: true, difficulties: ['easy', 'hard'], messages: diffMessages });
+  /** A setup game with nothing for the host's start screen. */
+  const bareSetupGame = (id: string) => fakeGame(id, undefined, { setupInGame: true });
 
-  it('without a save, starts a fresh game directly: no start panel, the game has focus, New game stays available', async () => {
-    const log = setupGame('setup-first');
+  it('without a save and with nothing to choose, starts a fresh game directly: the game has focus, New game stays available', async () => {
+    const log = bareSetupGame('setup-first');
     const main = openPlain('setup-first');
     await vi.waitFor(() => expect(log).toEqual(['create:en', 'newGame']));
     expect(main.querySelector('.start')).toBeNull();
     expect(main.querySelector('[data-testid="continue"]')).toBeNull();
     expect(main.querySelector<HTMLElement>('[data-testid="game-root"]')!.hidden).toBe(false);
     await vi.waitFor(() => expect(document.activeElement?.textContent).toBe('Map'));
-    // No host difficulty for a game whose own setup holds its settings (ADR 0017).
-    expect(main.querySelector('#difficulty, [data-testid="difficulty"]')).toBeNull();
-    // The game reports its difficulty; New game → Start keeps it for the game's own setup.
-    contexts.get('setup-first')!.setDifficulty!('hard');
     main.querySelector<HTMLButtonElement>('[data-testid="new-game"]')!.click();
     await vi.waitFor(() => expect(main.querySelector('[data-testid="start-game"]')).not.toBeNull());
     expect(main.querySelector('[data-testid="start-screen"] fieldset, [data-testid="start-screen"] select')).toBeNull();
     main.querySelector<HTMLButtonElement>('[data-testid="start-game"]')!.click();
-    await vi.waitFor(() => expect(log).toEqual(['create:en', 'newGame', 'pause', 'resume', 'newGame:hard']));
+    await vi.waitFor(() => expect(log).toEqual(['create:en', 'newGame', 'pause', 'resume', 'newGame']));
+    expect(starts.get('setup-first')![1]).toEqual({ seed: expect.any(Number), begin: true });
   });
 
-  it('honours a valid ?difficulty= when it starts directly', async () => {
-    const log = setupGame('setup-linked');
-    openPlain('setup-linked', undefined, { difficulty: 'hard' });
-    await vi.waitFor(() => expect(log).toEqual(['create:en', 'newGame:hard']));
-  });
-
-  it('shows the start screen first when the game declares host settings', async () => {
-    const log = fakeGame('setup-declared', undefined, { setupInGame: true, difficulties: ['easy', 'hard'], messages: { en: { title: 't', tagline: 't', rules: 'r', 'difficulty.easy': 'Easy', 'difficulty.hard': 'Hard' } } }, { settings: [{ kind: 'difficulty' }] });
-    const main = openPlain('setup-declared');
+  it('without a save but with difficulties: the start screen has the difficulty; Start passes it and begin, then the game shows its setup', async () => {
+    const log = setupGame('setup-diff');
+    const main = openPlain('setup-diff');
     await vi.waitFor(() => expect(main.querySelector('[data-testid="difficulty"]')).not.toBeNull());
     expect(log).toEqual([]);
+    expect(main.querySelector('[data-testid="continue"]')).toBeNull();
+    const hard = main.querySelector<HTMLInputElement>('[data-testid="difficulty"] input[value="hard"]')!;
+    hard.checked = true;
+    main.querySelector<HTMLFormElement>('[data-testid="start-form"]')!.requestSubmit();
+    await vi.waitFor(() => expect(log).toEqual(['create:en', 'newGame:hard']));
+    expect(starts.get('setup-diff')![0]).toEqual({ seed: expect.any(Number), difficulty: 'hard', begin: true });
+    await vi.waitFor(() => expect(document.activeElement?.textContent).toBe('Map'));
+    expect(main.querySelector('[data-testid="settings-summary"]')!.textContent).toBe('Hard');
   });
 
-  it('with a save, offers Continue as before and starts nothing', async () => {
+  it('preselects a valid ?difficulty= on the start screen', async () => {
+    setupGame('setup-linked');
+    const main = openPlain('setup-linked', undefined, { difficulty: 'hard' });
+    await vi.waitFor(() => expect(main.querySelector('[data-testid="difficulty"]')).not.toBeNull());
+    expect(main.querySelector<HTMLInputElement>('[data-testid="difficulty"] input:checked')!.value).toBe('hard');
+  });
+
+  it('with a save: Continue (and the difficulty for a new game); Continue restores without starting anything', async () => {
     const log = setupGame('setup-saved');
     const saves = createMemoryStore();
     const module = (await registry.entries.get('setup-saved')!.load()) as GameModule<{ n: number }>;
@@ -211,9 +224,13 @@ describe('game page: games whose first screen is their own setup (ADR 0015)', ()
     const main = openPlain('setup-saved', saves);
     await vi.waitFor(() => expect(main.querySelector('[data-testid="continue"]')).not.toBeNull());
     expect(log).toEqual([]);
+    expect(main.querySelector<HTMLInputElement>('[data-testid="difficulty"] input:checked')!.value).toBe('hard');
     expect(main.querySelector<HTMLElement>('[data-testid="game-root"]')!.hidden).toBe(true);
     main.querySelector<HTMLButtonElement>('[data-testid="continue"]')!.click();
     await vi.waitFor(() => expect(log).toEqual(['create:en', 'restore']));
+    // The game has focus after Continue, not the page.
+    expect(document.activeElement?.textContent).toBe('Map');
+    expect(main.querySelector('[data-testid="settings-summary"]')!.textContent).toBe('Hard');
   });
 
   it('without the flag, shows the start panel unchanged', async () => {
@@ -225,7 +242,7 @@ describe('game page: games whose first screen is their own setup (ADR 0015)', ()
   });
 
   it('never starts another game after a natural end', async () => {
-    const log = setupGame('setup-end');
+    const log = bareSetupGame('setup-end');
     const main = openPlain('setup-end');
     await vi.waitFor(() => expect(log).toEqual(['create:en', 'newGame']));
     contexts.get('setup-end')!.finished({ outcome: 'won' });
@@ -243,8 +260,9 @@ describe('game page: one start screen with host-drawn settings (ADR 0017)', () =
     'set.size': 'Board', 'size.4': 'Four', 'size.5': 'Five', 'size.6': 'Six', 'size.7': 'Seven', 'size.8': 'Eight',
     'set.hints': 'Hints', 'hint.hints': 'Shows a hint after each move.', 'set.rounds': 'Rounds'
   };
-  const declare = (id: string) =>
+  const declare = (id: string, extra: Partial<Pick<GameModule<{ n: number }>, 'settingsOf'>> = {}) =>
     fakeGame(id, undefined, { difficulties: ['easy', 'hard'], messages: { en } }, {
+      ...extra,
       settings: [
         { kind: 'choice', id: 'mode', labelKey: 'set.mode', values: ['computer', 'person'], valueKey: 'mode', default: 'computer' },
         { kind: 'difficulty', when: { mode: ['computer'] } },
@@ -380,6 +398,132 @@ describe('game page: one start screen with host-drawn settings (ADR 0017)', () =
     await vi.waitFor(() => expect(starts.get('saved')).toHaveLength(1));
     expect(starts.get('saved')![0]).toMatchObject({ difficulty: 'hard', settings: { size: 7, hints: true, rounds: 9 } });
     await vi.waitFor(async () => expect(await saves.read('saved')).toMatchObject({ difficulty: 'hard', settings: { mode: 'computer', size: 7, hints: true, rounds: 9 } }));
+  });
+
+  it('remembers by merging: a setting hidden at Start keeps its last value for the next time it is shown', async () => {
+    declare('merge');
+    const main = openPlain('merge');
+    await ready(main);
+    pick(main, 'difficulty', 'hard');
+    submit(main);
+    await vi.waitFor(() => expect(starts.get('merge')).toHaveLength(1));
+    // Two people: the strength is hidden and not passed, but stays remembered.
+    q(main, 'new-game')!.click();
+    await ready(main);
+    pick(main, 'setting-mode', 'person');
+    submit(main);
+    await vi.waitFor(() => expect(starts.get('merge')).toHaveLength(2));
+    expect(starts.get('merge')![1]!.difficulty).toBeUndefined();
+    expect(JSON.parse(localStorage.getItem('wp:pref:merge:@settings')!)).toMatchObject({ mode: 'person', difficulty: 'hard' });
+    // Back to the computer: Hard is still selected.
+    q(main, 'new-game')!.click();
+    await ready(main);
+    pick(main, 'setting-mode', 'computer');
+    expect(q(main, 'difficulty')!.querySelector<HTMLInputElement>('input:checked')!.value).toBe('hard');
+    const again = openPlain('merge');
+    await ready(again);
+    pick(again, 'setting-mode', 'computer');
+    expect(q(again, 'difficulty')!.querySelector<HTMLInputElement>('input:checked')!.value).toBe('hard');
+  });
+
+  describe('saves written before the envelope kept the settings', () => {
+    /** An old save (no `settings`) whose state holds the setup; `settingsOf` reads it. */
+    const oldSave = async (id: string, state: Record<string, unknown>, difficulty?: string) => {
+      const saves = createMemoryStore();
+      const module = (await registry.entries.get(id)!.load()) as GameModule<{ n: number }>;
+      await saves.write(createSave(module, 3, { n: 1, ...state } as { n: number }, difficulty));
+      return saves;
+    };
+    const fromState = (state: { n: number }) => {
+      const { n: _n, ...setup } = state as { n: number } & Record<string, string | number | boolean>;
+      return setup;
+    };
+
+    it('uses settingsOf: the summary and Another round follow the state, not the remembered settings', async () => {
+      declare('old', { settingsOf: fromState });
+      localStorage.setItem('wp:pref:old:@settings', JSON.stringify({ mode: 'computer', size: 4, difficulty: 'easy' }));
+      const saves = await oldSave('old', { mode: 'person', size: 8, hints: true, rounds: 7 });
+      const main = openPlain('old', saves);
+      await vi.waitFor(() => expect(q(main, 'continue')).not.toBeNull());
+      q(main, 'continue')!.click();
+      await vi.waitFor(() => expect(q(main, 'settings-summary')).not.toBeNull());
+      expect(q(main, 'settings-summary')!.textContent).toBe('Person · Eight · Hints · Rounds: 7');
+      contexts.get('old')!.finished({ outcome: 'won' });
+      await vi.waitFor(() => expect(q(main, 'another-round')).not.toBeNull());
+      q(main, 'another-round')!.click();
+      await vi.waitFor(() => expect(starts.get('old')).toHaveLength(1));
+      expect(starts.get('old')![0]).toEqual({ seed: expect.any(Number), settings: { mode: 'person', size: 8, hints: true, rounds: 7 }, begin: true });
+    });
+
+    it('takes the difficulty from the state over the envelope (renamed by a migration)', async () => {
+      declare('renamed', { settingsOf: fromState });
+      const saves = await oldSave('renamed', { mode: 'computer', size: 6, hints: false, rounds: 3, difficulty: 'easy' }, 'hard');
+      const main = openPlain('renamed', saves);
+      await vi.waitFor(() => expect(q(main, 'continue')).not.toBeNull());
+      q(main, 'continue')!.click();
+      await vi.waitFor(() => expect(q(main, 'settings-summary')).not.toBeNull());
+      expect(q(main, 'settings-summary')!.textContent).toBe('Computer · Easy · Six · Rounds: 3');
+    });
+
+    it('without settingsOf (or when it cannot tell everything): no summary, only Change settings', async () => {
+      declare('untold', { settingsOf: () => ({ mode: 'computer', difficulty: 'hard' }) });
+      localStorage.setItem('wp:pref:untold:@settings', JSON.stringify({ size: 4 }));
+      const saves = await oldSave('untold', {}, 'easy');
+      const main = openPlain('untold', saves);
+      await vi.waitFor(() => expect(q(main, 'continue')).not.toBeNull());
+      q(main, 'continue')!.click();
+      await vi.waitFor(() => expect(q(main, 'new-game')).not.toBeNull());
+      expect(q(main, 'settings-summary')).toBeNull();
+      contexts.get('untold')!.finished({ outcome: 'won' });
+      await vi.waitFor(() => expect(q(main, 'change-settings')).not.toBeNull());
+      expect(q(main, 'another-round')).toBeNull();
+      // The save keeps not pretending to know the settings.
+      await vi.waitFor(async () => expect(await saves.read('untold')).toMatchObject({ difficulty: 'hard' }));
+      expect((await saves.read('untold'))!.settings).toBeUndefined();
+      // Change settings: the start screen with what is known (difficulty) over the remembered settings.
+      q(main, 'change-settings')!.click();
+      await ready(main);
+      expect(q(main, 'difficulty')!.querySelector<HTMLInputElement>('input:checked')!.value).toBe('hard');
+      expect(q<HTMLSelectElement>(main, 'setting-size')!.value).toBe('4');
+    });
+
+    it('a game with only the difficulty: a valid envelope difficulty is enough; junk is never shown', async () => {
+      fakeGame('only-diff', undefined, { difficulties: ['easy', 'hard'], messages: { en } });
+      const saves = await oldSave('only-diff', {}, 'hard');
+      const main = openPlain('only-diff', saves);
+      await vi.waitFor(() => expect(q(main, 'continue')).not.toBeNull());
+      q(main, 'continue')!.click();
+      await vi.waitFor(() => expect(q(main, 'settings-summary')).not.toBeNull());
+      expect(q(main, 'settings-summary')!.textContent).toBe('Hard');
+
+      fakeGame('junk-diff', undefined, { difficulties: ['easy', 'hard'], messages: { en } });
+      const junk = await oldSave('junk-diff', {}, 'brutal');
+      const other = openPlain('junk-diff', junk);
+      await vi.waitFor(() => expect(q(other, 'continue')).not.toBeNull());
+      expect(q(other, 'difficulty')!.querySelector<HTMLInputElement>('input:checked')!.value).toBe('easy');
+      q(other, 'continue')!.click();
+      await vi.waitFor(() => expect(contexts.has('junk-diff')).toBe(true));
+      expect(other.textContent).not.toContain('difficulty.');
+      expect(q(other, 'settings-summary')).toBeNull();
+      contexts.get('junk-diff')!.finished({ outcome: 'won' });
+      await vi.waitFor(() => expect(q(other, 'change-settings')).not.toBeNull());
+      expect(q(other, 'another-round')).toBeNull();
+    });
+
+    it('a throwing settingsOf counts as telling nothing', async () => {
+      const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      try {
+        declare('throws', { settingsOf: () => { throw new Error('x'); } });
+        const saves = await oldSave('throws', {}, 'hard');
+        const main = openPlain('throws', saves);
+        await vi.waitFor(() => expect(q(main, 'continue')).not.toBeNull());
+        q(main, 'continue')!.click();
+        await vi.waitFor(() => expect(q(main, 'new-game')).not.toBeNull());
+        expect(q(main, 'settings-summary')).toBeNull();
+      } finally {
+        error.mockRestore();
+      }
+    });
   });
 
   it('a deep link starts at once with the remembered settings, overridden by ?difficulty=', async () => {

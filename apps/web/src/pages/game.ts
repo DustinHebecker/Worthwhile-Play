@@ -1,4 +1,4 @@
-import { hostSettings, randomSeed, resolveSettings, type GameInstance, type GameModule, type GameResult, type SettingSpec, type SettingValue, type SettingsEnv } from '@wp/game-core';
+import { coerceSetting, hostSettings, randomSeed, resolveSettings, settingId, type GameInstance, type GameModule, type GameResult, type SettingSpec, type SettingValue, type SettingsEnv } from '@wp/game-core';
 import type { GameContentLanguages, GamePreferences, UserDeckSource } from '@wp/game-core';
 import { readContentLanguages } from '@wp/localization';
 import { createAutosave, createGameLibrary, createSave, interpretSave, type GameSave, type SaveStore } from '@wp/persistence';
@@ -72,7 +72,11 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
   let store: (SaveStore & { persistent: boolean }) | undefined;
   let instance: GameInstance<unknown> | undefined;
   let autosave: ReturnType<typeof createAutosave> | undefined;
-  let current: ({ seed: number } & Setup) | undefined;
+  /**
+   * The running game's seed and setup. `known` is false for a save that does not tell its settings (written before
+   * the envelope kept them, by a game without `settingsOf`): then no summary and no "Another round".
+   */
+  let current: ({ seed: number; known: boolean } & Setup) | undefined;
   /** The start screen is shown over a running (paused) game after "New game" / "Change settings". */
   let onStartScreen = false;
   const preferences: GamePreferences = createPreferences(safeStorage(), metadata.id);
@@ -103,23 +107,48 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
   };
   /** A setup as untrusted choices (difficulty under `difficulty`). */
   const choices = (setup: Partial<Setup> | undefined): Record<string, unknown> => ({ ...setup?.settings, ...(setup?.difficulty !== undefined ? { difficulty: setup.difficulty } : {}) });
-  const remember = (setup: Setup) => preferences.set(REMEMBERED_SETTINGS, choices(setup));
   /**
-   * Resolves untrusted choices against the start-screen settings. Games without a host difficulty (ADR 0015
-   * setups) keep the difficulty they reported (`setDifficulty`) or a valid one from the URL for their own setup.
+   * Merged into what is remembered, so settings that are hidden now (e.g. the strength while two people play) keep
+   * their last value for the next time they are shown.
    */
+  const remember = (setup: Partial<Setup>) => preferences.set(REMEMBERED_SETTINGS, { ...remembered(), ...choices(setup) });
+  /** Resolves untrusted choices against the start-screen settings. */
   const resolve = (chosen: Record<string, unknown>): Setup => {
-    const list = specs();
-    const resolved = resolveSettings(list, metadata, chosen);
-    let difficulty = resolved.difficulty;
-    if (!list.some((spec) => spec.kind === 'difficulty') && typeof chosen.difficulty === 'string' && metadata.difficulties?.includes(chosen.difficulty)) difficulty = chosen.difficulty;
-    return { difficulty, settings: resolved.settings };
+    const { difficulty, settings } = resolveSettings(specs(), metadata, chosen);
+    return { difficulty, settings };
   };
-  const saveChoices = (save: GameSave<unknown> | undefined) => choices(save ? { difficulty: save.difficulty, settings: save.settings ?? {} } : undefined);
+  const validDifficulty = (value: unknown): string | undefined => (typeof value === 'string' && metadata.difficulties?.includes(value) ? value : undefined);
+  /**
+   * What a save tells about the settings it was started with (difficulty under `difficulty`), and whether that
+   * covers every setting the start screen would show for it. The game's `settingsOf(state)` is the source of truth
+   * for the difficulty (e.g. renamed by a state migration) and stands in for the settings of saves written before
+   * the envelope kept them. Without it, the envelope's difficulty counts when it is one of the game's difficulties.
+   */
+  const fromSave = (save: GameSave<unknown>): { chosen: Record<string, unknown>; known: boolean } => {
+    let derived: Record<string, unknown> = {};
+    try {
+      const value: unknown = module?.settingsOf?.(save.state);
+      if (value && typeof value === 'object' && !Array.isArray(value)) derived = { ...(value as Record<string, unknown>) };
+    } catch (error) {
+      console.error('settingsOf failed', error);
+    }
+    const { difficulty: derivedDifficulty, ...derivedSettings } = derived;
+    // A game that implements settingsOf tells the difficulty itself (none: the state has no valid one).
+    const difficulty = module?.settingsOf ? validDifficulty(derivedDifficulty) : validDifficulty(save.difficulty);
+    const chosen: Record<string, unknown> = { ...(save.settings ?? derivedSettings), ...(difficulty !== undefined ? { difficulty } : {}) };
+    const list = specs();
+    const { visible } = resolveSettings(list, metadata, chosen);
+    const known = list.every((spec) => {
+      const id = settingId(spec);
+      return !visible.has(id) || (Object.prototype.hasOwnProperty.call(chosen, id) && coerceSetting(spec, metadata, chosen[id]) !== undefined);
+    });
+    return { chosen, known };
+  };
 
   const persist = async () => {
     if (!instance || !module || !store || !current) return;
-    await store.write(createSave(module, current.seed, instance.serialize(), { difficulty: current.difficulty, settings: current.settings }) as GameSave);
+    // Settings a save did not tell are not written as if they were known.
+    await store.write(createSave(module, current.seed, instance.serialize(), { difficulty: current.difficulty, ...(current.known ? { settings: current.settings } : {}) }) as GameSave);
   };
 
   let interactedAfterFinish = false;
@@ -140,9 +169,10 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
     const own = `result.${result.outcome}`;
     const outcome = (module?.metadata ?? metadata).messages.en?.[own] ? own : { won: 'common.won', lost: 'common.lost', draw: 'common.draw', completed: 'common.solved' }[result.outcome];
     // "Another round" repeats the current settings with one deliberate press; "Change settings" opens the start screen.
-    const another = h('button', { type: 'button', class: 'primary', 'data-testid': 'another-round' }, t('game.anotherRound'));
-    another.addEventListener('click', () => void startNew({ ...resolve(choices(current)), begin: true }));
-    const change = h('button', { type: 'button', 'data-testid': 'change-settings' }, t('game.changeSettings'));
+    // Without known settings (an older save) only "Change settings": repeating guessed settings would mislead.
+    const another = current?.known ? h('button', { type: 'button', class: 'primary', 'data-testid': 'another-round' }, t('game.anotherRound')) : null;
+    another?.addEventListener('click', () => void startNew({ ...resolve(choices(current)), begin: true }));
+    const change = h('button', { type: 'button', class: another ? '' : 'primary', 'data-testid': 'change-settings' }, t('game.changeSettings'));
     change.addEventListener('click', () => void openStart());
     finishedSlot.append(
       h('section', { class: 'finished wp-card', role: 'status', 'data-testid': 'finished' },
@@ -177,7 +207,7 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
       setDifficulty: (difficulty: string) => {
         if (!current || !metadata.difficulties?.includes(difficulty) || current.difficulty === difficulty) return;
         current = { ...current, difficulty };
-        remember(current);
+        remember({ difficulty });
         if (!onStartScreen) toolbar();
         autosave?.request();
       },
@@ -197,7 +227,7 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
     // During play only "New game": it opens the start screen; the running game stays saved and "Continue" returns.
     const button = h('button', { type: 'button', 'data-testid': 'new-game' }, t('game.newGame'));
     button.addEventListener('click', () => void openStart());
-    const summary = current ? settingsSummary(specs(), current, gt, t) : '';
+    const summary = current?.known ? settingsSummary(specs(), current, gt, t) : '';
     panel.append(h('div', { class: 'wp-row toolbar' }, button,
       summary ? h('span', { class: 'settings-summary', 'data-testid': 'settings-summary' }, summary) : null,
       current ? h('span', { class: 'wp-muted seed', 'data-testid': 'seed' }, t('game.seed', { seed: current.seed })) : null));
@@ -219,7 +249,7 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
   };
 
   const startNew = async ({ seed = randomSeed(), difficulty, settings = {}, begin = false, focus = true }: Partial<Setup> & { seed?: number; begin?: boolean; focus?: boolean }) => {
-    current = { seed, difficulty, settings };
+    current = { seed, difficulty, settings, known: true };
     // Reuse a running instance so game-internal options (e.g. opponent type) carry over to the next round.
     const game = instance ?? mount();
     showGame();
@@ -237,13 +267,16 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
     if (focus) focusGame();
   };
 
-  const resume = async (save: GameSave<unknown>) => {
-    // The save's own settings (re-checked), so "Another round" repeats them; older saves fall back to the remembered ones.
-    const { settings } = resolve({ ...remembered(), ...saveChoices(save) });
-    current = { seed: save.seed, difficulty: save.difficulty, settings };
+  const resume = (save: GameSave<unknown>) => {
+    // The save's own settings (re-checked), so "Another round" repeats them. When the save cannot tell them all,
+    // the remembered ones fill the gaps for the start screen only (no summary, no "Another round").
+    const { chosen, known } = fromSave(save);
+    const resolved = resolve(known ? chosen : { ...remembered(), ...chosen });
+    current = { seed: save.seed, difficulty: known ? resolved.difficulty : validDifficulty(chosen.difficulty), settings: resolved.settings, known };
     const game = mount();
     game.restore(save.state);
     toolbar();
+    focusGame();
   };
 
   /**
@@ -257,7 +290,7 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
     if (continueWith) {
       const cont = h('button', { type: 'button', class: 'primary', 'data-testid': 'continue' }, t('game.continue'));
       cont.addEventListener('click', () => {
-        if (continueWith !== 'running') return void resume(continueWith);
+        if (continueWith !== 'running') return resume(continueWith);
         showGame();
         toolbar();
         focusGame();
@@ -276,15 +309,9 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
     );
     form.addEventListener('submit', (event) => {
       event.preventDefault();
-      let chosen: Setup;
-      if (list.length) {
-        const { difficulty, settings } = setup.read();
-        chosen = { difficulty, settings };
-        remember(chosen);
-      } else {
-        // Nothing to choose here (e.g. a game whose own setup follows): keep the difficulty the game last reported.
-        chosen = resolve(initial);
-      }
+      const { difficulty, settings } = setup.read();
+      const chosen: Setup = { difficulty, settings };
+      if (list.length) remember(chosen);
       app.announce(t('game.started'));
       void startNew({ ...chosen, begin: true });
     });
@@ -376,7 +403,7 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
     const save = loaded.status === 'ok' ? loaded.save : undefined;
     // Remembered settings (else the save's), overridden by a `?difficulty=` link and a `?deck=` link (a game's
     // `deck` setting, e.g. "Review" on a deck page; dropped by resolveSettings where it is not a valid choice).
-    const initial = { ...saveChoices(save), ...remembered(), ...(route.difficulty ? { difficulty: route.difficulty } : {}), ...(route.deck ? { deck: route.deck } : {}) };
+    const initial = { ...(save ? fromSave(save).chosen : {}), ...remembered(), ...(route.difficulty ? { difficulty: route.difficulty } : {}), ...(route.deck ? { deck: route.deck } : {}) };
     if (route.seed !== undefined) {
       // Deep links start at once (bug reports, sharing).
       await startNew({ seed: route.seed, ...resolve(initial) });
@@ -385,8 +412,8 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
       history.replaceState(null, '', `/games/${metadata.id}`);
       await startNew(resolve(initial));
     } else if (metadata.setupInGame && !save && specs().length === 0) {
-      // ADR 0015: the game's own setup screen is its start screen, so with no save and nothing declared for the
-      // host's start screen there is nothing to choose first. Only here, on opening the page; a finished game never
+      // ADR 0015: the game's own setup screen is its start screen, so with no save and nothing for the host's start
+      // screen (no settings, no difficulty) there is nothing to choose first. Only here, on opening the page; a finished game never
       // starts another one. As in showStart, do not pull focus from a control the person is using meanwhile.
       const active = document.activeElement;
       const focus = !active || active === document.body || main.contains(active);

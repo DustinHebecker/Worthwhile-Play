@@ -71,6 +71,11 @@ describe('validateSettings', () => {
     expect(validateSettings(mod([{ kind: 'difficulty' }], { difficulties: ['easy', 'brutal'] }), ['en']).join('\n')).toContain('"difficulty.brutal"');
   });
 
+  it('checks the default of a difficulty entry', () => {
+    expect(validateSettings(mod([{ kind: 'difficulty', default: 'hard' }]), ['en'])).toEqual([]);
+    expect(validateSettings(mod([{ kind: 'difficulty', default: 'brutal' }]), ['en']).join('\n')).toContain('difficulty default "brutal"');
+  });
+
   it('reports a throwing or non-array declaration instead of throwing', () => {
     expect(validateSettings(mod(() => { throw new Error('x'); }), ['en'])[0]).toContain('threw');
     expect(validateSettings(mod('nope' as never), ['en'])[0]).toContain('must be an array');
@@ -86,9 +91,10 @@ describe('hostSettings', () => {
     expect(hostSettings(mod(undefined, { difficulties: undefined }), env)).toEqual([]);
   });
 
-  it('gives setupInGame games only what they declare', () => {
-    expect(hostSettings(mod(undefined, { setupInGame: true }), env)).toEqual([]);
-    expect(hostSettings(mod([specs[3]!], { setupInGame: true }), env)).toEqual([specs[3]]);
+  it('puts the difficulty first for setupInGame games too (their own setup follows Start)', () => {
+    expect(hostSettings(mod(undefined, { setupInGame: true }), env)).toEqual([{ kind: 'difficulty' }]);
+    expect(hostSettings(mod([specs[3]!], { setupInGame: true }), env)).toEqual([{ kind: 'difficulty' }, specs[3]]);
+    expect(hostSettings(mod(undefined, { setupInGame: true, difficulties: undefined }), env)).toEqual([]);
   });
 
   it('treats a throwing declaration as none', () => {
@@ -103,6 +109,13 @@ describe('hostSettings', () => {
 });
 
 describe('resolveSettings', () => {
+  it('preselects the default of the difficulty entry, else the first difficulty', () => {
+    expect(resolveSettings([{ kind: 'difficulty', default: 'hard' }], metadata).difficulty).toBe('hard');
+    expect(resolveSettings([{ kind: 'difficulty', default: 'brutal' }], metadata).difficulty).toBe('easy');
+    expect(resolveSettings([{ kind: 'difficulty' }], metadata).difficulty).toBe('easy');
+    expect(resolveSettings([{ kind: 'difficulty', default: 'hard' }], metadata, { difficulty: 'easy' }).difficulty).toBe('easy');
+  });
+
   it('fills defaults and hides settings whose condition does not hold', () => {
     expect(resolveSettings(specs, metadata)).toEqual({ difficulty: 'easy', settings: { mode: 'computer', size: 4, hints: true, rounds: 3 }, visible: new Set(['mode', 'difficulty', 'size', 'hints', 'rounds']) });
     const person = resolveSettings(specs, metadata, { mode: 'person', difficulty: 'hard', hints: false, rounds: 5 });

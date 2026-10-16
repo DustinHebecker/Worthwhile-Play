@@ -61,6 +61,7 @@ export function validateSettings(module: Pick<GameModule, 'metadata' | 'settings
       if (!metadata.difficulties?.length) problems.push('a difficulty entry needs metadata.difficulties');
       for (const d of metadata.difficulties ?? []) keys.push(`difficulty.${d}`);
       if (spec.labelKey) keys.push(spec.labelKey);
+      if (spec.default !== undefined && !metadata.difficulties?.includes(spec.default)) problems.push(`difficulty default ${JSON.stringify(spec.default)} is not one of metadata.difficulties`);
     } else {
       if (!SETTING_ID.test(spec.id) || spec.id === DIFFICULTY_SETTING) problems.push(`setting id "${spec.id}" must match ${SETTING_ID.source} and not be "${DIFFICULTY_SETTING}"`);
       keys.push(spec.labelKey);

@@ -13,9 +13,9 @@ export function settingChoices(spec: SettingSpec, metadata: GameMetadata): reado
   return undefined;
 }
 
-/** The value a setting starts with (difficulty: the first of `metadata.difficulties`). */
+/** The value a setting starts with (difficulty: its `default` when that is one of `metadata.difficulties`, else the first). */
 export function settingDefault(spec: SettingSpec, metadata: GameMetadata): SettingValue | undefined {
-  if (spec.kind === 'difficulty') return metadata.difficulties?.[0];
+  if (spec.kind === 'difficulty') return spec.default !== undefined && metadata.difficulties?.includes(spec.default) ? spec.default : metadata.difficulties?.[0];
   return spec.default;
 }
 
@@ -61,12 +61,11 @@ export function declaredSettings(module: Pick<GameModule, 'settings'>, env: Sett
 
 /**
  * What the host draws on the start screen (ADR 0017): the declared settings, with the difficulty first when the
- * game has `metadata.difficulties` but lists no difficulty entry. Games whose first screen is their own setup
- * (`setupInGame`, ADR 0015) get only what they declare: their setup holds the rest, difficulty included.
+ * game has `metadata.difficulties` but lists no difficulty entry — also for games whose own setup follows
+ * (`setupInGame`, ADR 0015): the difficulty is chosen on the start screen, the game's setup holds the rest.
  */
 export function hostSettings(module: Pick<GameModule, 'settings' | 'metadata'>, env: SettingsEnv): readonly SettingSpec[] {
   const declared = declaredSettings(module, env);
-  if (module.metadata.setupInGame) return declared;
   const hasDifficulty = declared.some((spec) => spec.kind === 'difficulty');
   return module.metadata.difficulties?.length && !hasDifficulty ? [{ kind: 'difficulty' }, ...declared] : declared;
 }

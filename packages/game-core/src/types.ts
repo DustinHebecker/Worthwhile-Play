@@ -58,8 +58,9 @@ export interface GameMetadata {
   /** Optional: the game reads and writes spaced-repetition learning records; the host then provides `GameContext.learning`. */
   readonly usesLearningRecords?: boolean;
   /**
-   * Optional (ADR 0015): the game's first screen is its own setup (map, options…). With no save, the host starts
-   * a fresh game directly instead of showing the start panel; the game's setup is the first thing visible.
+   * Optional (ADR 0015, narrowed by ADR 0017): the game's own setup (map, seats…) follows the host's start screen,
+   * which still offers the difficulty and any declared settings. Only when there is nothing to choose there (no
+   * difficulties, no settings) and no save does the host start a fresh game directly on the game's setup.
    * Only on opening the game page: never after a game finishes (no autoplay into the next game). With a save,
    * the host offers "Continue" as usual, and "New game" stays available in the host toolbar.
    */
@@ -117,6 +118,8 @@ export type SettingSpec =
       /** Default: the host's "Difficulty". */
       readonly labelKey?: string;
       readonly hintKey?: string;
+      /** The preselected difficulty (one of `metadata.difficulties`); without it the first one. */
+      readonly default?: string;
       readonly when?: SettingCondition;
     }
   | {
@@ -387,6 +390,15 @@ export interface GameModule<S = unknown> {
    * Pure display preferences (zoom, card faces, speed…) stay inside the game.
    */
   readonly settings?: readonly SettingSpec[] | ((env: SettingsEnv) => readonly SettingSpec[]);
+  /**
+   * Optional (ADR 0017): the start-screen settings a (validated) state was started with, as far as the state holds
+   * them, keyed like the start screen (the difficulty under `difficulty`). The host uses it for saves written before
+   * the save envelope kept the settings, and takes the difficulty only from it, never from the envelope (the state
+   * is the source of truth, e.g. after a migration renamed difficulties). Leave out what the state cannot tell; the
+   * host then shows no settings summary and offers "Change settings" instead of "Another round" for that save.
+   * Must not throw (the host treats a throw as `{}`); values are re-validated by the host.
+   */
+  settingsOf?(state: S): Readonly<Record<string, SettingValue>>;
 }
 
 export type { Rng };

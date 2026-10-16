@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import fc from 'fast-check';
-import { hostSettings, resolveSettings, settingChoices, settingId, validateMetadata, validateSettings, type GameInstance, type GameModule, type NewGameOptions, type SettingSpec, type SettingValue } from '@wp/game-core';
+import { coerceSetting, hostSettings, resolveSettings, settingChoices, settingId, validateMetadata, validateSettings, type GameInstance, type GameModule, type NewGameOptions, type SettingSpec, type SettingValue } from '@wp/game-core';
 import { auditCatalogues, COMMON_MESSAGES, SUPPORTED_LOCALES } from '@wp/localization';
 import { createSave, createMemoryStore, interpretSave } from '@wp/persistence';
 import { createTestContext, createTestLibrary, type TestContextExtras } from './context';
@@ -100,10 +100,21 @@ export function runGameContract<S>(module: GameModule<S>, options: ContractOptio
       );
     });
 
-    it('never throws on junk settings (old saves, deep links, tests)', () => {
+    it('never throws on junk settings (old saves, deep links, tests), also under its own setting ids', () => {
+      const env = createTestContext(module as GameModule<unknown>, 'en', undefined, options.extras?.());
+      const ids = hostSettings(module as GameModule<unknown>, env.settingsEnv).map(settingId).filter((id) => id !== 'difficulty');
+      env.context.root.remove();
+      const junkValue = fc.oneof(
+        fc.string(),
+        fc.integer(),
+        fc.double(),
+        fc.boolean(),
+        fc.constantFrom('', 'zzz', '__proto__', 'own:missing', 'random', -1, 0, 1, 3.5, 1e9, Number.NaN, Number.POSITIVE_INFINITY)
+      ) as fc.Arbitrary<SettingValue>;
+      const own = fc.record(Object.fromEntries(ids.map((id) => [id, junkValue])) as Record<string, fc.Arbitrary<SettingValue>>, { requiredKeys: [] });
       const junk = fc.record({
         difficulty: fc.option(fc.oneof(fc.string(), fc.constantFrom(...(module.metadata.difficulties ?? ['x']))), { nil: undefined }),
-        settings: fc.dictionary(fc.string({ maxLength: 8 }), fc.oneof(fc.string(), fc.integer(), fc.double(), fc.boolean()) as fc.Arbitrary<SettingValue>, { maxKeys: 4 }),
+        settings: fc.tuple(fc.dictionary(fc.string({ maxLength: 8 }), junkValue, { maxKeys: 4 }), own).map(([other, mine]) => ({ ...other, ...mine }) as Record<string, SettingValue>),
         begin: fc.boolean()
       });
       fc.assert(
@@ -116,9 +127,43 @@ export function runGameContract<S>(module: GameModule<S>, options: ContractOptio
           instance.dispose();
           ctx.context.root.remove();
         }),
-        { numRuns: module.settings ? 15 : 3 }
+        { numRuns: module.settings ? 25 : 3 }
       );
     });
+
+    if (module.settingsOf) {
+      const settingsOf = module.settingsOf.bind(module) as (state: unknown) => Readonly<Record<string, SettingValue>>;
+      it('settingsOf tells every start-screen setting a game was started with (older saves, ADR 0017)', () => {
+        const env = createTestContext(module as GameModule<unknown>, 'en', undefined, options.extras?.());
+        const specs = hostSettings(module as GameModule<unknown>, env.settingsEnv);
+        env.context.root.remove();
+        fc.assert(
+          fc.property(fc.integer({ min: 0, max: 0xffffffff }), arbitraryOptions(module as GameModule<unknown>, specs), (seed, opts) => {
+            const play = (start: Omit<NewGameOptions, 'seed'>) => {
+              const ctx = createTestContext(module as GameModule<unknown>, 'en', undefined, options.extras?.());
+              const instance = module.create(ctx.context);
+              instance.newGame({ seed, ...start });
+              const state = clone(instance.serialize());
+              instance.dispose();
+              ctx.context.root.remove();
+              return state;
+            };
+            const state = play(opts);
+            const derived = settingsOf(state);
+            // "Another round" with what settingsOf tells starts the same game (equivalent choices may differ in name,
+            // e.g. "any map" and the map the game number picks).
+            const actual = resolveSettings(specs, module.metadata, derived);
+            expect(play({ ...(actual.difficulty !== undefined ? { difficulty: actual.difficulty } : {}), settings: actual.settings, begin: true })).toEqual(state);
+            // As the host checks it: every visible setting comes from the state (none filled in by a default).
+            for (const spec of specs) {
+              const id = settingId(spec);
+              if (actual.visible.has(id)) expect(coerceSetting(spec, module.metadata, derived[id]), `settingsOf lacks "${id}"`).not.toBeUndefined();
+            }
+          }),
+          { numRuns: 20 }
+        );
+      });
+    }
 
     it('is deterministic for a given seed', () => {
       for (const seed of seeds) {
