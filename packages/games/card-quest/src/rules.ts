@@ -966,15 +966,7 @@ function apply(s: CardQuestState, seat: number, action: Action): boolean {
     case 'offer': {
       const fight = s.fight;
       const { to, terms } = action;
-      if (s.phase !== 'fight' || !fight || seat !== s.active || !isInt(to, 0, seatCount(s) - 1) || to === seat) return false;
-      if (fight.asked.includes(to) || to === fight.turncoat || !isValidTerms(terms)) return false;
-      if (terms.t === 'stay') {
-        if (!player.hand.includes(terms.card) || fight.stayOut.includes(to) || to === fight.helper) return false;
-      } else {
-        if (fight.helper !== null) return false;
-        if (terms.t === 'item' && !player.equipped.includes(terms.item)) return false;
-        if (terms.t === 'free' && !player.favours.includes(to)) return false;
-      }
+      if (!canOffer(s, seat, to, terms) || !fight) return false;
       fight.offer = { to, terms: clone(terms) };
       fight.asked.push(to);
       fight.actor = to;
@@ -1112,7 +1104,8 @@ export function legalActions(state: CardQuestState, seat: number): Action[] {
         out.push({ a: 'accept' }, { a: 'decline' });
         break;
       }
-      if (seat === state.active) for (const to of others) for (const terms of offerTerms(player, to)) tryAdd({ a: 'offer', to, terms });
+      // Checked directly (no state copy per shape): offers change nothing until answered.
+      if (seat === state.active) for (const to of others) for (const terms of offerTerms(player, to)) if (canOffer(state, seat, to, terms)) out.push({ a: 'offer', to, terms });
       out.push({ a: 'pass' });
       break;
     }
@@ -1123,7 +1116,20 @@ export function legalActions(state: CardQuestState, seat: number): Action[] {
   return out;
 }
 
-/** Every offer shape the fighter could make to `to` (legality is checked by `step`). */
+/** Whether the fighter `seat` may make this offer now (the only check `step` applies to an offer). */
+export function canOffer(state: CardQuestState, seat: number, to: number, terms: unknown): terms is Terms {
+  const fight = state.fight;
+  const player = state.players[seat];
+  if (state.phase !== 'fight' || !fight || !player || fight.offer || seat !== state.active || actorOf(state) !== seat) return false;
+  if (!isInt(to, 0, seatCount(state) - 1) || to === seat || fight.asked.includes(to) || to === fight.turncoat || !isValidTerms(terms)) return false;
+  if (terms.t === 'stay') return player.hand.includes(terms.card) && !fight.stayOut.includes(to) && to !== fight.helper;
+  if (fight.helper !== null) return false;
+  if (terms.t === 'item') return player.equipped.includes(terms.item);
+  if (terms.t === 'free') return player.favours.includes(to);
+  return true;
+}
+
+/** Every offer shape the fighter could make to `to` (legality: `canOffer`). */
 export function offerTerms(player: Player, to: number): Terms[] {
   const out: Terms[] = [{ t: 'loot', n: 1 }, { t: 'loot', n: 2 }, { t: 'most' }, { t: 'favour' }];
   for (const item of player.equipped) out.push({ t: 'item', item });
