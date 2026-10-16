@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { GameInstance, GameModule } from '@wp/game-core';
+import type { GameInstance, GameModule, NewGameOptions } from '@wp/game-core';
 import type { SupportedLocale } from '@wp/localization';
 import { createTestContext, type TestContext } from '@wp/testing';
 import game from '../src/index';
 import { COMPUTER_REVEAL_MS } from '../src/view';
 import type { ClassicState } from '../src/rules';
+import type { TicTacToeState } from '../src/state';
 import { isValidState } from '../src/state';
 
 /** These tests cover the classic variant (the default without remembered preferences). */
@@ -20,10 +21,14 @@ function mount(options: { reducedMotion?: boolean; locale?: SupportedLocale } = 
   const cell = (i: number) => root.querySelector<HTMLButtonElement>(`[data-testid="cell-${i}"]`)!;
   const marks = () => Array.from({ length: 9 }, (_, i) => cell(i).dataset.mark).join(',');
   const status = () => root.querySelector('[data-testid="status"]')!.textContent;
+  const initial: Record<string, string> = {};
+  const start = (options: NewGameOptions) => instance.newGame(options);
+  /** Like the host's start screen (ADR 0017): a new game with the current settings, one of them changed. */
   const select = (name: string, value: string) => {
-    const el = root.querySelector<HTMLSelectElement>(`[data-testid="option-${name}"]`)!;
-    el.value = value;
-    el.dispatchEvent(new Event('change'));
+    const s = instance.serialize() as TicTacToeState;
+    const settings: Record<string, string> = { ...initial, variant: s.variant, opponent: s.opponent, ...(s.variant === 'order-chaos' ? { role: s.role } : { starter: s.starter }) };
+    if (name !== 'strength') settings[name] = value;
+    start({ seed: s.seed, difficulty: name === 'strength' ? value : s.difficulty, settings });
   };
   const button = (id: string) => root.querySelector<HTMLButtonElement>(`[data-testid="${id}"]`)!;
   return { ctx, instance, root, cell, marks, status, select, button };
@@ -78,7 +83,7 @@ describe('tic-tac-toe view', () => {
     const { instance, cell, status, select, button, root } = mount();
     instance.newGame({ seed: 1 });
     select('opponent', 'human');
-    expect(root.querySelector<HTMLElement>('[data-testid="option-starter"]')!.closest('label')!.hidden).toBe(true);
+    expect(root.querySelector('select, [data-testid^="option-"]')).toBeNull();
     expect(status()).toBe('X to move');
     expect(button('undo').disabled).toBe(true);
     cell(4).click();
@@ -174,7 +179,7 @@ describe('tic-tac-toe view', () => {
     expect(instance.serialize().difficulty).toBe('perfect');
   });
 
-  it('reset returns to the seeded start, and newGame keeps opponent preferences', () => {
+  it('reset returns to the seeded start; newGame takes the start-screen settings, defaults for invalid ones', () => {
     const { instance, cell, select } = mount();
     instance.newGame({ seed: 2, difficulty: 'easy' });
     select('opponent', 'human');
@@ -182,8 +187,10 @@ describe('tic-tac-toe view', () => {
     cell(0).click();
     instance.reset();
     expect(instance.serialize()).toEqual(start);
-    instance.newGame({ seed: 3, difficulty: 'nonsense' });
+    instance.newGame({ seed: 3, difficulty: 'nonsense', settings: { opponent: 'human', starter: 'robot' } });
     expect(instance.serialize()).toEqual({ variant: 'classic', seed: 3, difficulty: 'medium', opponent: 'human', starter: 'human', moves: [], rng: 3 });
+    instance.newGame({ seed: 4 });
+    expect(instance.serialize()).toMatchObject({ variant: 'classic', opponent: 'computer', starter: 'human' });
   });
 
   it('delays only the drawing of the computer’s reply; the logical state is complete at once', () => {
