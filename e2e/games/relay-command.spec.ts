@@ -7,6 +7,7 @@ interface SavedRelay {
   world: { turn: number; entities: { id: number; side: number; kind: string; x: number; y: number }[] };
   result: string | null;
   endless: boolean;
+  random: { w: number; h: number; seed: number } | null;
 }
 
 const saved = async (page: Page) => ((await readSave(page, 'relay-command')) as { state: SavedRelay } | undefined)?.state;
@@ -233,6 +234,30 @@ test('relay-command: "Deposits never run dry" chosen before the first turn survi
   await page.getByTestId('rc-lock').click();
   await expect(page.getByTestId('rc-endless')).toBeDisabled();
   await expect(page.getByTestId('rc-setup-summary')).toContainText('endless deposits');
+});
+
+test('relay-command: a random map chosen in the setup (size, map number) survives a reload; it fits a 360 px phone', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await start(page);
+  await page.getByTestId('rc-scenario').selectOption('random');
+  await expect(page.getByTestId('rc-random')).toBeVisible();
+  await page.getByTestId('rc-random-size').selectOption('20x14');
+  await expect(page.getByTestId('rc-map')).toHaveAttribute('data-cols', '20');
+  await page.getByTestId('rc-random-seed').fill('4711');
+  await page.getByTestId('rc-random-seed').press('Enter');
+  await page.getByTestId('rc-random-seed').blur();
+  await expect.poll(async () => (await saved(page))?.random).toEqual({ w: 20, h: 14, seed: 4711 });
+  const widths = await page.evaluate(() => ({ page: document.documentElement.scrollWidth, viewport: document.documentElement.clientWidth }));
+  expect(widths.page).toBeLessThanOrEqual(widths.viewport);
+  const terrain = (await saved(page) as unknown as { map: { terrain: string } }).map.terrain;
+  await page.reload();
+  await page.getByTestId('continue').click();
+  await expect(page.getByTestId('rc-scenario')).toHaveValue('random');
+  await expect(page.getByTestId('rc-random-seed')).toHaveValue('4711');
+  expect((await saved(page) as unknown as { map: { terrain: string } }).map.terrain).toBe(terrain);
+  await page.getByTestId('rc-lock').click();
+  await expect(page.getByTestId('rc-random-seed')).toBeDisabled();
+  await expect(page.getByTestId('rc-setup-summary')).toContainText('Random map 20×14 · No. 4711');
 });
 
 test('relay-command: the Command Post places an Extractor on a deposit by tapping the map', async ({ page, isMobile }) => {

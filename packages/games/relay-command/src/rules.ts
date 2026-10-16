@@ -33,6 +33,7 @@ import {
 import { DIFFICULTIES, planAi, type Difficulty } from './ai';
 import { FIELD_EXERCISE, opponentCounts, SCENARIOS, scenarioFor, type ScenarioSpec } from './scenarios';
 import { customSpec, isValidMap, mapIssues, MAP_SLOTS, type EditMap } from './maps';
+import { generateMap } from './generator';
 
 /** Strategy rules: orders and reports travel through the command network (coverage, order slots, fog). */
 export const RULESET: Ruleset = STRATEGY_RULESET;
@@ -116,8 +117,23 @@ export function initialWorld(spec: ScenarioSpec, seed: number, opponents = 1, en
   return world;
 }
 
+/** A generated map's recipe (I6c): the same size and seed always give the same map. */
+export interface RandomMap {
+  w: number;
+  h: number;
+  seed: number;
+}
+
+/** Sizes offered for a random map in the setup (small to the largest the editor allows). */
+export const RANDOM_SIZES: readonly (readonly [number, number])[] = [
+  [12, 10],
+  [16, 12],
+  [20, 14],
+  [24, 16]
+];
+
 export interface RcState {
-  v: 11;
+  v: 12;
   seed: number;
   /** Number of computer opponents (sides 1…n; 1 for two-side maps). */
   opponents: number;
@@ -130,6 +146,8 @@ export interface RcState {
   quick: boolean;
   /** Game option (owner decision 2026-10-14): no deposit runs dry in this game. */
   endless: boolean;
+  /** The recipe of the generated map this game runs on (`map` is that map), or null. */
+  random: RandomMap | null;
   /**
    * Stalemate record: the player's lead in strength at the end of each turn since the trailing
    * side last gained ground (empty until the stalemate rule counts; see STALL_TURNS).
@@ -180,7 +198,7 @@ export const scenarioById = (id: string): ScenarioSpec | undefined => SCENARIOS.
 /** The scenario a game runs on: its player-made map, else the built-in one. */
 export const specOf = (state: Pick<RcState, 'scenario' | 'map'>): ScenarioSpec | undefined => (state.map ? customSpec(state.map) : scenarioById(state.scenario));
 
-export function newGame(seed: number, base: ScenarioSpec = FIELD_EXERCISE, difficulty: Difficulty = 'normal', turnLimit: number | null = base.turnLimit, quick = false, map: EditMap | null = null, opponents = 1, seats: readonly Seat[] = [], endless = false): RcState {
+export function newGame(seed: number, base: ScenarioSpec = FIELD_EXERCISE, difficulty: Difficulty = 'normal', turnLimit: number | null = base.turnLimit, quick = false, map: EditMap | null = null, opponents = 1, seats: readonly Seat[] = [], endless = false, random: RandomMap | null = null): RcState {
   const spec = map ? customSpec(map) : base;
   // Only the counts the map declares (two-side maps and player-made ones: one).
   const count = opponentCounts(spec).includes(opponents) ? opponents : 1;
@@ -189,7 +207,7 @@ export function newGame(seed: number, base: ScenarioSpec = FIELD_EXERCISE, diffi
   const seating: Seat[] = Array.from({ length: count + 1 }, (_, side) => (side === PLAYER ? 'person' : seats[side] === 'person' ? 'person' : 'computer'));
   const several = seating.filter((x) => x === 'person').length > 1;
   return {
-    v: 11,
+    v: 12,
     seed: normalizeSeed(seed),
     opponents: count,
     difficulty,
@@ -198,6 +216,7 @@ export function newGame(seed: number, base: ScenarioSpec = FIELD_EXERCISE, diffi
     // Hot-seat has no quick match: an open end is decided by the posts or giving up.
     quick: turnLimit === null && quick && !several,
     endless,
+    random: map && random ? { ...random } : null,
     lead: [],
     world,
     phase: 'plan',
@@ -682,7 +701,7 @@ export function replay(seed: number, log: readonly TurnLog[], spec: ScenarioSpec
 function withSeats(state: Record<string, unknown>): Record<string, unknown> {
   const sides = typeof state.opponents === 'number' && Number.isInteger(state.opponents) && state.opponents >= 1 && state.opponents <= MAX_OPPONENTS ? state.opponents + 1 : 2;
   const seats: Seat[] = Array.from({ length: sides }, (_, side) => (side === PLAYER ? 'person' : 'computer'));
-  return { ...state, seats, planning: PLAYER, handover: false, locked: seats.map(() => []), inbox: seats.map(() => []), retired: [], winner: null, endless: false };
+  return { ...state, seats, planning: PLAYER, handover: false, locked: seats.map(() => []), inbox: seats.map(() => []), retired: [], winner: null, endless: false, random: null };
 }
 
 /** Switches an older save's world to the current ruleset and gives each side the starting Supply if it has none. */
@@ -807,8 +826,16 @@ function isValidSeating(value: Record<string, unknown>, n: number, isCommand: (v
 const isValidDraft = (v: unknown): v is MapDraft | null =>
   v === null || (isRecord(v) && isValidMap(v.map) && (v.slot === null || isInt(v.slot, 0, MAP_SLOTS - 1)) && typeof v.mirror === 'boolean');
 
+/** A random map's recipe: a size offered in the setup, a 32-bit seed, and the map is exactly what it generates. */
+function isValidRandom(random: unknown, map: unknown): boolean {
+  if (random === null) return true;
+  if (!isRecord(random) || !isUint32(random.seed) || !RANDOM_SIZES.some(([w, h]) => w === random.w && h === random.h)) return false;
+  if (!isValidMap(map)) return false;
+  return JSON.stringify(generateMap(random.w as number, random.h as number, random.seed, map.name)) === JSON.stringify(map);
+}
+
 export function isValidState(value: unknown): value is RcState {
-  if (!isRecord(value) || value.v !== 11 || typeof value.endless !== 'boolean' || !isUint32(value.seed) || typeof value.scenario !== 'string' || !isInt(value.opponents, 1, MAX_OPPONENTS)) return false;
+  if (!isRecord(value) || value.v !== 12 || typeof value.endless !== 'boolean' || !isValidRandom(value.random, value.map) || !isUint32(value.seed) || typeof value.scenario !== 'string' || !isInt(value.opponents, 1, MAX_OPPONENTS)) return false;
   if (!isOneOf(value.difficulty, DIFFICULTIES)) return false;
   // A player-made map: well-formed and playable, and then the scenario is 'custom'.
   if (value.map !== null && (!isValidMap(value.map) || mapIssues(value.map).length > 0)) return false;
@@ -865,51 +892,57 @@ export function migrateState(state: unknown, fromVersion: number): RcState | und
   // and no yards, so the game plays on as it did (nothing to build on, posts still yield).
   // Version 6 (open end always had the stalemate rule): plays on as a plain open end; the
   // stalemate rule is now the separate quick match.
+  // Version 11 (before random maps): no generated map.
+  if (fromVersion === 11) {
+    if (!isRecord(state) || state.v !== 11) return undefined;
+    const migrated = { ...state, v: 12, random: null };
+    return isValidState(migrated) ? migrated : undefined;
+  }
   // Version 10 (before endless deposits): deposits run dry as they did.
   if (fromVersion === 10) {
     if (!isRecord(state) || state.v !== 10) return undefined;
-    const migrated = { ...state, v: 11, endless: false };
+    const migrated = { ...state, v: 12, endless: false, random: null };
     return isValidState(migrated) ? migrated : undefined;
   }
   // Version 9 (before hot-seat): every opponent is the computer's; side 0 plans, nothing waits.
   if (fromVersion === 9) {
     if (!isRecord(state) || state.v !== 9) return undefined;
-    const migrated = withSeats({ ...state, v: 11 });
+    const migrated = withSeats({ ...state, v: 12 });
     return isValidState(migrated) ? migrated : undefined;
   }
   // Version 8 (two sides only): one opponent; everything else carries over.
   if (fromVersion === 8) {
     if (!isRecord(state) || state.v !== 8) return undefined;
-    const migrated = withSeats({ ...state, v: 11, opponents: 1 });
+    const migrated = withSeats({ ...state, v: 12, opponents: 1 });
     return isValidState(migrated) ? migrated : undefined;
   }
   // Version 7 (before the map editor): no player-made map, no draft.
   if (fromVersion === 7) {
     if (!isRecord(state) || state.v !== 7) return undefined;
-    const migrated = withSeats({ ...state, v: 11, opponents: 1, map: null, edit: null });
+    const migrated = withSeats({ ...state, v: 12, opponents: 1, map: null, edit: null });
     return isValidState(migrated) ? migrated : undefined;
   }
   if (fromVersion === 6) {
     if (!isRecord(state) || state.v !== 6) return undefined;
-    const migrated = withSeats({ ...state, v: 11, opponents: 1, quick: false, settled: false, lead: [], map: null, edit: null });
+    const migrated = withSeats({ ...state, v: 12, opponents: 1, quick: false, settled: false, lead: [], map: null, edit: null });
     return isValidState(migrated) ? migrated : undefined;
   }
   if (fromVersion === 5) {
     if (!isRecord(state) || state.v !== 5) return undefined;
-    const migrated = withSeats(withEconomy({ ...state, v: 11, opponents: 1 }));
+    const migrated = withSeats(withEconomy({ ...state, v: 12, opponents: 1 }));
     return isValidState(migrated) ? migrated : undefined;
   }
   // Version 4 (before the lost-contact doctrine and open end): doctrines keep their old meaning
   // (carry on out of contact); player units without a doctrine get the current default.
   if (fromVersion === 4) {
     if (!isRecord(state) || state.v !== 4) return undefined;
-    const migrated = withSeats(withEconomy(withLostContact({ ...state, v: 11, opponents: 1 })));
+    const migrated = withSeats(withEconomy(withLostContact({ ...state, v: 12, opponents: 1 })));
     return isValidState(migrated) ? migrated : undefined;
   }
   // Version 3 (before difficulty levels) plays on at 'normal'.
   if (fromVersion === 3) {
     if (!isRecord(state) || state.v !== 3) return undefined;
-    const migrated = withSeats(withEconomy(withLostContact({ ...state, v: 11, opponents: 1, difficulty: 'normal' })));
+    const migrated = withSeats(withEconomy(withLostContact({ ...state, v: 12, opponents: 1, difficulty: 'normal' })));
     return isValidState(migrated) ? migrated : undefined;
   }
   if ((fromVersion !== 1 && fromVersion !== 2) || !isRecord(state) || state.v !== fromVersion || !isRecord(state.world)) return undefined;
@@ -917,7 +950,7 @@ export function migrateState(state: unknown, fromVersion: number): RcState | und
   delete world.intel;
   delete world.supply;
   if (!isValidWorld(world, { ...RULESET, fog: false, economy: false })) return undefined;
-  const migrated = withSeats(withEconomy(withLostContact({ ...state, v: 11, opponents: 1, difficulty: 'normal', events: [], world: { ...world, intel: initialIntel(world as unknown as World, RULESET) } })));
+  const migrated = withSeats(withEconomy(withLostContact({ ...state, v: 12, opponents: 1, difficulty: 'normal', events: [], world: { ...world, intel: initialIntel(world as unknown as World, RULESET) } })));
   if (!isValidState(migrated)) return undefined;
   // Version 1 had no order limit or coverage: keep only the planned orders that are still allowed.
   let replanned: RcState = { ...migrated, draft: [] };

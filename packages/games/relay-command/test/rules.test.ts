@@ -35,6 +35,7 @@ import {
   sideValue,
   unitById,
   PLAYER_DOCTRINE,
+  RANDOM_SIZES,
   MAX_TURNS,
   STALL_TURNS,
   STALL_MARGIN,
@@ -54,6 +55,7 @@ import {
 } from '../src/rules';
 import { FIELD_EXERCISE, opponentCounts, RIDGE_VALLEY, SCENARIOS } from '../src/scenarios';
 import { fromScenario } from '../src/maps';
+import { generateMap } from '../src/generator';
 
 /** A side's plan from its own observation (default: the game's default level). */
 /** Fingerprint of AI-vs-AI plans on the two-side maps before increment 4 (see the test). */
@@ -204,7 +206,7 @@ describe('Field Exercise scenario', () => {
     // Strip the field as a version-4 save would not have it.
     const strip = (o: unknown): unknown => (isRecord(o) ? Object.fromEntries(Object.entries(o).filter(([k]) => k !== 'lostContact').map(([k, v]) => [k, strip(v)])) : Array.isArray(o) ? o.map(strip) : o);
     const migrated = migrateState(strip(v4), 4)!;
-    expect(migrated.v).toBe(11);
+    expect(migrated.v).toBe(12);
     expect(isValidState(migrated)).toBe(true);
     const rifle = own(migrated).find((u) => u.kind === 'rifles')!;
     expect(rifle.doctrine?.lostContact).toBe('keep');
@@ -220,7 +222,7 @@ describe('Field Exercise scenario', () => {
     delete v7.map;
     delete v7.edit;
     const migrated = migrateState(v7, 7)!;
-    expect(migrated).toMatchObject({ v: 11, endless: false, opponents: 1, map: null, edit: null, scenario: 'field-exercise' });
+    expect(migrated).toMatchObject({ v: 12, random: null, endless: false, opponents: 1, map: null, edit: null, scenario: 'field-exercise' });
     expect(isValidState(migrated)).toBe(true);
     expect(migrateState({ ...v7, v: 9 }, 7)).toBeUndefined();
     expect(isValidState(v7)).toBe(false);
@@ -231,7 +233,7 @@ describe('Field Exercise scenario', () => {
     const v6 = JSON.parse(JSON.stringify({ ...s, v: 6, lead: [5] })) as Record<string, unknown>;
     delete v6.quick;
     const migrated = migrateState(v6, 6)!;
-    expect(migrated).toMatchObject({ v: 11, endless: false, opponents: 1, quick: false, lead: [], turnLimit: null, map: null, edit: null });
+    expect(migrated).toMatchObject({ v: 12, random: null, endless: false, opponents: 1, quick: false, lead: [], turnLimit: null, map: null, edit: null });
     expect(isValidState(migrated)).toBe(true);
     expect(migrateState({ ...v6, v: 5 }, 6)).toBeUndefined();
     expect(isValidState({ ...newGame(2, FIELD_EXERCISE, 'normal', 12), quick: true })).toBe(false);
@@ -432,7 +434,7 @@ describe('command network (I3a)', () => {
     };
     expect(v1.draft).toHaveLength(5);
     const migrated = migrateState(JSON.parse(JSON.stringify(v1)), 1)!;
-    expect(migrated.v).toBe(11);
+    expect(migrated.v).toBe(12);
     expect(migrated.draft.length).toBeLessThanOrEqual(orderSlots(migrated));
     expect(migrated.draft.every((c) => orderRefusal({ ...migrated, draft: [] }, c.unit, c.order) === null)).toBe(true);
     expect(isValidState(migrated)).toBe(true);
@@ -442,7 +444,7 @@ describe('command network (I3a)', () => {
     const v1 = { ...structuredClone(newGame(3)), v: 1 } as Record<string, unknown>;
     (v1.world as Record<string, unknown>).ruleset = 'base-1';
     const migrated = migrateState(v1, 1);
-    expect(migrated?.v).toBe(11);
+    expect(migrated?.v).toBe(12);
     expect(migrated?.world.ruleset).toBe(RULESET.id);
     expect(migrateState(v1, 2)).toBeUndefined();
     expect(migrateState(null, 1)).toBeUndefined();
@@ -757,7 +759,7 @@ describe('information model (I3c, D7)', () => {
     const s = lockTurn(newGame(5));
     const v2 = JSON.parse(JSON.stringify({ ...s, v: 2, world: { ...s.world, ruleset: 'strategy-1', intel: undefined } })) as Record<string, unknown>;
     const migrated = migrateState(v2, 2)!;
-    expect(migrated.v).toBe(11);
+    expect(migrated.v).toBe(12);
     expect(migrated.world.ruleset).toBe(RULESET.id);
     expect(migrated.events).toEqual([]);
     expect(migrated.world.intel).toEqual(initialIntel(s.world, RULESET));
@@ -1196,7 +1198,7 @@ describe('several sides (docs/design/strategy.md § 9.4)', () => {
   it('saves: v8 migrates to v9 with one opponent; a v9 save must match its map, count, rules and frames', () => {
     const v8 = JSON.parse(JSON.stringify({ ...newGame(4), v: 8 })) as Record<string, unknown>;
     delete v8.opponents;
-    expect(migrateState(v8, 8)).toMatchObject({ v: 11, endless: false, opponents: 1 });
+    expect(migrateState(v8, 8)).toMatchObject({ v: 12, random: null, endless: false, opponents: 1 });
     expect(migrateState({ ...v8, v: 9 }, 8)).toBeUndefined();
     const s = newGame(1, corners, 'normal', 12, false, null, 2);
     expect(isValidState({ ...s, opponents: 3 })).toBe(false);
@@ -1419,8 +1421,8 @@ describe('hot-seat (docs/design/strategy.md § 9.4, D10)', () => {
 
   it('saves: v9 migrates to v10 as a single-player game; a crafted hot-seat save is refused', () => {
     const v9 = JSON.parse(JSON.stringify({ ...newGame(4, corners, 'normal', 12, false, null, 2), v: 9 })) as Record<string, unknown>;
-    for (const k of ['seats', 'planning', 'handover', 'locked', 'inbox', 'retired', 'winner', 'endless']) delete v9[k];
-    expect(migrateState(v9, 9)).toMatchObject({ v: 11, endless: false, seats: ['person', 'computer', 'computer'], planning: 0, handover: false, locked: [[], [], []], inbox: [[], [], []], retired: [], winner: null });
+    for (const k of ['seats', 'planning', 'handover', 'locked', 'inbox', 'retired', 'winner', 'endless', 'random']) delete v9[k];
+    expect(migrateState(v9, 9)).toMatchObject({ v: 12, random: null, endless: false, seats: ['person', 'computer', 'computer'], planning: 0, handover: false, locked: [[], [], []], inbox: [[], [], []], retired: [], winner: null });
     expect(migrateState({ ...v9, v: 10 }, 9)).toBeUndefined();
     const solo = newGame(1, corners, 'normal', 12, false, null, 3);
     const hot = lockTurn(plan(game(['person', 'person', 'computer', 'person'])));
@@ -1503,7 +1505,8 @@ describe('deposits that never run dry (owner decision 2026-10-14, state v11)', (
     // Version 10: no option; deposits run dry as they did.
     const v10 = JSON.parse(JSON.stringify({ ...off, v: 10 })) as Record<string, unknown>;
     delete v10.endless;
-    expect(migrateState(v10, 10)).toMatchObject({ v: 11, endless: false });
+    delete v10.random;
+    expect(migrateState(v10, 10)).toMatchObject({ v: 12, random: null, endless: false });
     expect(migrateState({ ...v10, v: 11 }, 10)).toBeUndefined();
     expect(migrateState(JSON.parse(JSON.stringify({ ...on, v: 10 })), 10)).toBeUndefined(); // endless deposits in a v10 save: crafted
     // A player-made map with its own sizes: rich and endless deposits are its own, with the option off.
@@ -1685,5 +1688,33 @@ describe('opponent economy and easy fighters (mutation run on ai.ts, 2026-10-15)
     w.intel = initialIntel(w, RULESET);
     const orders = plan(w, 'easy');
     expect(orders.find((c) => c.unit === squad.id)?.order).toEqual({ type: 'attack', target: near.id });
+  });
+});
+
+describe('random maps (I6c, state v12)', () => {
+  const valid = (s: RcState) => isValidState(JSON.parse(JSON.stringify(s)));
+  const random = (w: number, h: number, seed: number) => newGame(1, FIELD_EXERCISE, 'normal', 12, false, generateMap(w, h, seed, `Random ${w}×${h} · No. ${seed}`), 1, [], false, { w, h, seed });
+
+  it('a game on a generated map keeps its recipe; the save must be exactly the map the recipe generates', () => {
+    const s = random(20, 14, 4711);
+    expect(s).toMatchObject({ scenario: 'custom', random: { w: 20, h: 14, seed: 4711 } });
+    expect(s.map).toEqual(generateMap(20, 14, 4711, 'Random 20×14 · No. 4711'));
+    expect(valid(s)).toBe(true);
+    expect(valid(lockTurn(s))).toBe(true);
+    // The recipe and the map must agree; only sizes offered in the setup; a 32-bit seed.
+    expect(valid({ ...s, random: { w: 20, h: 14, seed: 4712 } })).toBe(false);
+    expect(valid({ ...s, random: { w: 22, h: 14, seed: 4711 } })).toBe(false);
+    expect(valid({ ...s, random: { w: 20, h: 14, seed: -1 } })).toBe(false);
+    expect(valid({ ...s, map: { ...s.map!, terrain: (s.map!.terrain[0] === 'f' ? '.' : 'f') + s.map!.terrain.slice(1) } })).toBe(false);
+    expect(valid({ ...s, random: null })).toBe(true); // a player-made map that happens to look generated
+    expect(valid({ ...newGame(1), random: { w: 20, h: 14, seed: 1 } })).toBe(false); // a recipe needs its map
+    expect(RANDOM_SIZES.every(([w, h]) => valid(random(w, h, 7)))).toBe(true);
+  });
+
+  it('v11 saves migrate without a random map', () => {
+    const v11 = JSON.parse(JSON.stringify({ ...newGame(3), v: 11 })) as Record<string, unknown>;
+    delete v11.random;
+    expect(migrateState(v11, 11)).toMatchObject({ v: 12, random: null });
+    expect(migrateState({ ...v11, v: 12 }, 11)).toBeUndefined();
   });
 });

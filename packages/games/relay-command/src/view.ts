@@ -63,12 +63,14 @@ import {
   sideValue,
   TURN_LIMITS,
   unitById,
+  RANDOM_SIZES,
   type RcState
 } from './rules';
 import { DIFFICULTIES, type Difficulty } from './ai';
 import { drawIcon } from './icons';
 import { createEditor } from './editor';
-import { blankMap, hostMapLibrary, mapIssues, memoryStore, migratePreferenceMaps, preferenceMapLibrary, type EditMap, type MapLibrary, type MapStore } from './maps';
+import { blankMap, hostMapLibrary, mapIssues, MAX_NAME, memoryStore, migratePreferenceMaps, preferenceMapLibrary, type EditMap, type MapLibrary, type MapStore } from './maps';
+import { generateMap } from './generator';
 import { CELL, drawDeposit, drawTerrainMark, TERRAIN_NAMES } from './draw';
 import { FIELD_EXERCISE, opponentCounts, SCENARIOS, scenarioFor } from './scenarios';
 import './styles.css';
@@ -327,6 +329,20 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   /** Game setup, until the first turn is locked: scenario and turn limit (open end by default). */
   const scenarioSelect = h('select', { 'data-testid': 'rc-scenario', onchange: () => onSetup() });
   for (const spec of SCENARIOS) scenarioSelect.append(h('option', { value: spec.id }, t(`scenario.${spec.id}`)));
+  // A generated map (I6c): size and map number (its seed; the same number gives the same map again).
+  scenarioSelect.append(h('option', { value: 'random' }, t('setup.random')));
+  const randomSize = h('select', { 'data-testid': 'rc-random-size', onchange: () => onSetup() });
+  for (const [w, h_] of RANDOM_SIZES) randomSize.append(h('option', { value: `${w}x${h_}` }, `${w}×${h_}`));
+  randomSize.value = '16x12'; // a medium map unless another size is chosen
+  const randomSeed = h('input', { type: 'number', min: '0', max: '4294967295', step: '1', inputmode: 'numeric', 'data-testid': 'rc-random-seed', onchange: () => onSetup() }) as HTMLInputElement;
+  const randomNew = h('button', { type: 'button', 'data-testid': 'rc-random-new', onclick: () => newRandomMap() }, t('setup.randomNew'));
+  const randomBox = h(
+    'div',
+    { class: 'rc-random', 'data-testid': 'rc-random', hidden: true },
+    h('label', {}, h('span', {}, t('setup.randomSize')), randomSize),
+    h('label', {}, h('span', {}, t('setup.randomSeed')), randomSeed),
+    randomNew
+  );
   const limitSelect = h('select', { 'data-testid': 'rc-turn-limit', onchange: () => onSetup() });
   /** Opponents: only the counts the chosen map declares (two-side maps: one). */
   const opponentsSelect = h('select', { 'data-testid': 'rc-opponents', onchange: () => onSetup() });
@@ -353,6 +369,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     h('legend', {}, t('setup.title')),
     h('label', {}, h('span', {}, t('setup.scenario')), scenarioSelect),
     h('label', {}, h('span', {}, t('setup.limit')), limitSelect),
+    randomBox,
     h('label', { 'data-testid': 'rc-opponents-label' }, h('span', {}, t('setup.opponents')), opponentsSelect),
     h('label', { class: 'rc-check' }, endlessInput, h('span', {}, t('setup.endless'))),
     seatsBox,
@@ -422,7 +439,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     'details',
     { class: 'rc-help' },
     h('summary', {}, t('help.title')),
-    ...['help.turns', 'help.bar', 'help.orders', 'help.network', 'help.fog', 'help.ew', 'help.doctrine', 'help.economy', 'help.repair', 'help.editor', 'help.sides', 'help.hotSeat', 'help.combat', 'help.goal', 'help.shapes', 'help.access'].map((k) => h('p', {}, t(k)))
+    ...['help.turns', 'help.bar', 'help.orders', 'help.network', 'help.fog', 'help.ew', 'help.doctrine', 'help.economy', 'help.repair', 'help.editor', 'help.random', 'help.sides', 'help.hotSeat', 'help.combat', 'help.goal', 'help.shapes', 'help.access'].map((k) => h('p', {}, t(k)))
   );
 
   /* ---------- Map editor ---------- */
@@ -606,6 +623,14 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     limitSelect.disabled = setupLocked;
     opponentsSelect.disabled = setupLocked;
     endlessInput.disabled = setupLocked;
+    randomSize.disabled = setupLocked;
+    randomSeed.disabled = setupLocked;
+    randomNew.disabled = setupLocked;
+    randomBox.hidden = state.random === null;
+    if (state.random) {
+      randomSize.value = `${state.random.w}x${state.random.h}`;
+      if (document.activeElement !== randomSeed) randomSeed.value = String(state.random.seed);
+    }
     endlessInput.checked = state.endless;
     syncSeatRows(setupLocked);
     setupBox.toggleAttribute('data-locked', setupLocked);
@@ -616,7 +641,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       setupSlot.replaceChildren(setupFold);
     } else if (!setupLocked && setupBox.parentElement !== setupSlot) setupSlot.replaceChildren(setupBox);
     syncScenarioOptions();
-    scenarioSelect.value = state.map ? 'custom' : state.scenario;
+    scenarioSelect.value = state.random ? 'random' : state.map ? 'custom' : state.scenario;
     limitSelect.value = state.turnLimit !== null ? String(state.turnLimit) : state.quick ? 'quick' : 'open';
     syncOpponentOptions();
     opponentsSelect.value = String(state.opponents);
@@ -1928,7 +1953,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   /** The map select: the built-in maps, the map being played if it is player-made, and the device's maps. */
   function syncScenarioOptions(): void {
     for (const opt of [...scenarioSelect.querySelectorAll('option')]) if (opt.value === 'custom' || opt.value.startsWith('slot:')) opt.remove();
-    if (state.map) scenarioSelect.append(h('option', { value: 'custom' }, mapLabel(state.map)));
+    if (state.map && !state.random) scenarioSelect.append(h('option', { value: 'custom' }, mapLabel(state.map)));
     library().forEach((m, slot) => {
       if (m && mapIssues(m).length === 0) scenarioSelect.append(h('option', { value: `slot:${slot}` }, `${t('setup.myMaps')}: ${mapLabel(m)}`));
     });
@@ -1949,9 +1974,31 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     if (label) label.hidden = counts.length < 2;
   }
 
+  /** Another random map: the next map number (a fixed step from the current one, no Math.random). */
+  function newRandomMap(): void {
+    if (state.phase !== 'plan' || state.log.length > 0 || !state.random) return;
+    randomSeed.value = String((Math.imul(state.random.seed, 1664525) + 1013904223) >>> 0);
+    onSetup();
+  }
+
   function onSetup(): void {
     if (state.phase !== 'plan' || state.log.length > 0) return;
     const value = scenarioSelect.value;
+    if (value === 'random') {
+      const [w, hh] = randomSize.value.split('x').map(Number);
+      const size = RANDOM_SIZES.find(([a, b]) => a === w && b === hh) ?? RANDOM_SIZES[1]!;
+      // Coming from another map: the map number starts from the game's seed.
+      const typed = Number(randomSeed.value);
+      const seed = state.random && randomSeed.value !== '' && Number.isInteger(typed) && typed >= 0 && typed <= 0xffffffff ? typed : state.seed;
+      const limit = limitSelect.value === 'open' || limitSelect.value === 'quick' ? null : Number(limitSelect.value);
+      const map = generateMap(size[0], size[1], seed, t('setup.randomName', { w: size[0], h: size[1], n: seed }).slice(0, MAX_NAME));
+      selected = null;
+      syncOpponentOptions();
+      commit(newGame(state.seed, FIELD_EXERCISE, state.difficulty, limit, limitSelect.value === 'quick', map, 1, chosenSeats(), endlessInput.checked, { w: size[0], h: size[1], seed }), t('announce.setup', { scenario: mapLabel(map) }));
+      homeCursor();
+      render();
+      return;
+    }
     const own = value.startsWith('slot:') ? library()[Number(value.slice(5))] : value === 'custom' ? state.map : null;
     const spec = scenarioById(value) ?? FIELD_EXERCISE;
     const limit = limitSelect.value === 'open' || limitSelect.value === 'quick' ? null : Number(limitSelect.value);
@@ -2153,7 +2200,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     pause() {},
     resume() {},
     reset() {
-      state = { ...newGame(state.seed, scenarioById(state.scenario) ?? FIELD_EXERCISE, state.difficulty, state.turnLimit, state.quick, state.map, state.opponents, state.seats, state.endless), edit: state.edit };
+      state = { ...newGame(state.seed, scenarioById(state.scenario) ?? FIELD_EXERCISE, state.difficulty, state.turnLimit, state.quick, state.map, state.opponents, state.seats, state.endless, state.random), edit: state.edit };
       selected = null;
       confirming = false;
       reported = false;

@@ -502,6 +502,41 @@ describe('Relay Command view', () => {
     expect(($('rc-endless') as HTMLInputElement).checked).toBe(true);
   });
 
+  it('offers a random map: size and map number pick it, "New map" draws another; the same number gives it back; locked after the first turn', () => {
+    expect($('rc-random').hidden).toBe(true);
+    const scenario = $('rc-scenario') as HTMLSelectElement;
+    scenario.value = 'random';
+    scenario.dispatchEvent(new Event('change'));
+    expect($('rc-random').hidden).toBe(false);
+    const first = state().random!;
+    expect(first).toMatchObject({ w: 16, h: 12 });
+    expect(state().map!.name).toBe(`Random map 16×12 · No. ${first.seed}`);
+    expect($('rc-map').getAttribute('data-cols')).toBe('16');
+    // Another size.
+    const size = $('rc-random-size') as HTMLSelectElement;
+    size.value = '24x16';
+    size.dispatchEvent(new Event('change'));
+    expect(state().random).toEqual({ w: 24, h: 16, seed: first.seed });
+    expect($('rc-map').getAttribute('data-cols')).toBe('24');
+    // "New map" draws the next number; typing the old one brings the old map back.
+    const old = state().map;
+    click('rc-random-new');
+    expect(state().random!.seed).not.toBe(first.seed);
+    expect(state().map!.terrain).not.toBe(old!.terrain);
+    const seed = $('rc-random-seed') as HTMLInputElement;
+    seed.value = String(first.seed);
+    seed.dispatchEvent(new Event('change'));
+    expect(state().map).toEqual(old);
+    expect(scenario.value).toBe('random');
+    // The map editor opens the map being played.
+    click('rc-editor-open');
+    expect(state().edit!.map).toEqual(old);
+    click('ed-close');
+    click('rc-lock');
+    expect(size.disabled && seed.disabled && ($('rc-random-new') as HTMLButtonElement).disabled).toBe(true);
+    expect($('rc-setup-summary').textContent).toContain(`Random map 24×16 · No. ${first.seed}`);
+  });
+
   it('maps pointer clicks on the canvas to cells', () => {
     const unit = firstMobile();
     const map = $('rc-map');
