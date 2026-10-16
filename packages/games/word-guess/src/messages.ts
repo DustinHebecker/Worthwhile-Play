@@ -6,6 +6,8 @@ import type { GameMessages } from '@wp/game-core';
  */
 export const messages: GameMessages = {
   en: {
+    'language.en': 'English',
+    'language.de': 'Deutsch',
     title: 'Letter Logic',
     tagline: 'Find a hidden word by reasoning about letter clues.',
     rules: 'Guess the hidden word. After each guess every letter is marked: ● right place, ◐ in the word but elsewhere, ✕ not in the word (or not that often). Any letters of the right length count as a guess.',
@@ -45,6 +47,8 @@ export const messages: GameMessages = {
     'help.keys': 'You can also type: letters, Backspace to delete, Enter to submit.'
   },
   de: {
+    'language.en': 'English',
+    'language.de': 'Deutsch',
     title: 'Buchstabenlogik',
     tagline: 'Finde ein verborgenes Wort, indem du Buchstaben-Hinweise auswertest.',
     rules: 'Errate das verborgene Wort. Nach jedem Versuch wird jeder Buchstabe markiert: ● richtige Stelle, ◐ im Wort, aber woanders, ✕ nicht im Wort (oder nicht so oft). Jede Buchstabenfolge der richtigen Länge zählt als Versuch.',
@@ -84,6 +88,8 @@ export const messages: GameMessages = {
     'help.keys': 'Du kannst auch tippen: Buchstaben, Rücktaste zum Löschen, Eingabe zum Abschicken.'
   },
   nl: {
+    'language.en': 'English',
+    'language.de': 'Deutsch',
     title: 'Letterlogica',
     tagline: 'Vind een verborgen woord door letteraanwijzingen te beredeneren.',
     rules: 'Raad het verborgen woord. Na elke poging krijgt elke letter een teken: ● juiste plek, ◐ in het woord maar elders, ✕ niet in het woord (of niet zo vaak). Elke lettercombinatie van de juiste lengte telt als poging.',
@@ -123,6 +129,8 @@ export const messages: GameMessages = {
     'help.keys': 'Je kunt ook typen: letters, Backspace om te wissen, Enter om in te dienen.'
   },
   es: {
+    'language.en': 'English',
+    'language.de': 'Deutsch',
     title: 'Lógica de letras',
     tagline: 'Encuentra una palabra oculta razonando con pistas de letras.',
     rules: 'Adivina la palabra oculta. Tras cada intento, cada letra se marca: ● lugar correcto, ◐ está en la palabra pero en otro lugar, ✕ no está en la palabra (o no tantas veces). Cualquier combinación de letras de la longitud correcta cuenta como intento.',
@@ -162,6 +170,8 @@ export const messages: GameMessages = {
     'help.keys': 'También puedes teclear: letras, Retroceso para borrar, Intro para enviar.'
   },
   fr: {
+    'language.en': 'English',
+    'language.de': 'Deutsch',
     title: 'Logique des lettres',
     tagline: 'Trouvez un mot caché en raisonnant sur des indices de lettres.',
     rules: 'Devinez le mot caché. Après chaque essai, chaque lettre est marquée : ● bonne place, ◐ dans le mot mais ailleurs, ✕ absente du mot (ou pas aussi souvent). Toute suite de lettres de la bonne longueur compte comme essai.',
@@ -201,6 +211,8 @@ export const messages: GameMessages = {
     'help.keys': 'Vous pouvez aussi taper : lettres, Retour arrière pour effacer, Entrée pour valider.'
   },
   ru: {
+    'language.en': 'English',
+    'language.de': 'Deutsch',
     title: 'Логика букв',
     tagline: 'Найдите скрытое слово, рассуждая над подсказками по буквам.',
     rules: 'Угадайте скрытое слово. После каждой попытки каждая буква отмечается: ● на своём месте, ◐ есть в слове, но в другом месте, ✕ нет в слове (или не столько раз). Любой набор букв нужной длины считается попыткой.',
@@ -240,6 +252,8 @@ export const messages: GameMessages = {
     'help.keys': 'Можно печатать и с клавиатуры: буквы, Backspace — удалить, Enter — отправить.'
   },
   'zh-Hans': {
+    'language.en': 'English',
+    'language.de': 'Deutsch',
     title: '字母推理',
     tagline: '根据字母线索推理，找出隐藏的单词。',
     rules: '猜出隐藏的单词。每次猜测后，每个字母都会被标记：● 位置正确，◐ 在单词中但位置不同，✕ 不在单词中（或没有那么多个）。任何长度正确的字母组合都算一次猜测。',
@@ -279,6 +293,8 @@ export const messages: GameMessages = {
     'help.keys': '也可以用键盘输入：字母，退格键删除，回车键提交。'
   },
   ko: {
+    'language.en': 'English',
+    'language.de': 'Deutsch',
     title: '글자 추리',
     tagline: '글자 단서를 추론해 숨겨진 단어를 찾으세요.',
     rules: '숨겨진 단어를 맞혀 보세요. 추측할 때마다 각 글자에 표시가 붙습니다: ● 올바른 자리, ◐ 단어에 있지만 다른 자리, ✕ 단어에 없음(또는 그만큼 많지 않음). 길이가 맞는 글자 조합이면 무엇이든 추측으로 인정됩니다.',
@@ -318,6 +334,8 @@ export const messages: GameMessages = {
     'help.keys': '키보드로도 입력할 수 있습니다: 글자, 백스페이스로 지우기, Enter로 제출.'
   },
   ja: {
+    'language.en': 'English',
+    'language.de': 'Deutsch',
     title: '文字推理',
     tagline: '文字のヒントから推理して、隠れた単語を見つけましょう。',
     rules: '隠れた単語を当ててください。推測するたびに各文字に印が付きます：● 正しい位置、◐ 単語にあるが別の位置、✕ 単語にない（またはそれほど多くない）。正しい長さの文字の並びなら何でも推測として数えられます。',
@@ -357,6 +375,8 @@ export const messages: GameMessages = {
     'help.keys': 'キーボードでも入力できます：文字、Backspaceで削除、Enterで送信。'
   },
   ar: {
+    'language.en': 'English',
+    'language.de': 'Deutsch',
     title: 'منطق الحروف',
     tagline: 'اعثر على كلمة مخفية بالاستدلال من تلميحات الحروف.',
     rules: 'خمّن الكلمة المخفية. بعد كل محاولة يُعلَّم كل حرف: ● في مكانه الصحيح، ◐ موجود في الكلمة لكن في مكان آخر، ✕ غير موجود في الكلمة (أو ليس بهذا العدد). أي تتابع حروف بالطول الصحيح يُحسب محاولة.',
@@ -396,6 +416,8 @@ export const messages: GameMessages = {
     'help.keys': 'يمكنك الكتابة أيضًا: الحروف، Backspace للحذف، Enter للإرسال.'
   },
   pt: {
+    'language.en': 'English',
+    'language.de': 'Deutsch',
     title: 'Lógica das letras',
     tagline: 'Encontre uma palavra escondida raciocinando com pistas de letras.',
     rules: 'Adivinhe a palavra escondida. Após cada tentativa, cada letra é marcada: ● lugar certo, ◐ está na palavra, mas em outro lugar, ✕ não está na palavra (ou não tantas vezes). Qualquer combinação de letras com o comprimento certo conta como tentativa.',
@@ -435,6 +457,8 @@ export const messages: GameMessages = {
     'help.keys': 'Você também pode digitar: letras, Backspace para apagar, Enter para enviar.'
   },
   it: {
+    'language.en': 'English',
+    'language.de': 'Deutsch',
     title: 'Logica delle lettere',
     tagline: 'Trova una parola nascosta ragionando sugli indizi delle lettere.',
     rules: 'Indovina la parola nascosta. Dopo ogni tentativo ogni lettera viene segnata: ● posto giusto, ◐ nella parola ma altrove, ✕ non nella parola (o non così spesso). Qualsiasi sequenza di lettere della lunghezza giusta vale come tentativo.',
@@ -474,6 +498,8 @@ export const messages: GameMessages = {
     'help.keys': 'Puoi anche digitare: lettere, Backspace per cancellare, Invio per inviare.'
   },
   pl: {
+    'language.en': 'English',
+    'language.de': 'Deutsch',
     title: 'Logika liter',
     tagline: 'Znajdź ukryte słowo, rozumując na podstawie wskazówek o literach.',
     rules: 'Odgadnij ukryte słowo. Po każdej próbie każda litera dostaje oznaczenie: ● właściwe miejsce, ◐ jest w słowie, ale gdzie indziej, ✕ nie ma jej w słowie (lub nie tyle razy). Każdy ciąg liter o właściwej długości liczy się jako próba.',
@@ -513,6 +539,8 @@ export const messages: GameMessages = {
     'help.keys': 'Możesz też pisać: litery, Backspace usuwa, Enter wysyła.'
   },
   tr: {
+    'language.en': 'English',
+    'language.de': 'Deutsch',
     title: 'Harf Mantığı',
     tagline: 'Harf ipuçları üzerine akıl yürüterek gizli bir kelimeyi bulun.',
     rules: 'Gizli kelimeyi tahmin edin. Her tahminden sonra her harf işaretlenir: ● doğru yer, ◐ kelimede var ama başka yerde, ✕ kelimede yok (ya da o kadar çok yok). Doğru uzunluktaki her harf dizisi tahmin sayılır.',
@@ -552,6 +580,8 @@ export const messages: GameMessages = {
     'help.keys': 'Klavyeyle de yazabilirsiniz: harfler, silmek için Backspace, göndermek için Enter.'
   },
   uk: {
+    'language.en': 'English',
+    'language.de': 'Deutsch',
     title: 'Логіка літер',
     tagline: 'Знайдіть приховане слово, міркуючи над підказками щодо літер.',
     rules: 'Вгадайте приховане слово. Після кожної спроби кожна літера позначається: ● на своєму місці, ◐ є в слові, але в іншому місці, ✕ немає в слові (або не стільки разів). Будь-який набір літер потрібної довжини вважається спробою.',
@@ -591,6 +621,8 @@ export const messages: GameMessages = {
     'help.keys': 'Можна друкувати й з клавіатури: літери, Backspace — видалити, Enter — надіслати.'
   },
   hi: {
+    'language.en': 'English',
+    'language.de': 'Deutsch',
     title: 'अक्षर तर्क',
     tagline: 'अक्षरों के संकेतों पर तर्क करके छिपा हुआ शब्द खोजिए।',
     rules: 'छिपा हुआ शब्द अनुमान लगाइए। हर अनुमान के बाद हर अक्षर पर निशान लगता है: ● सही जगह, ◐ शब्द में है पर कहीं और, ✕ शब्द में नहीं (या उतनी बार नहीं)। सही लंबाई का कोई भी अक्षर-क्रम अनुमान माना जाता है।',
