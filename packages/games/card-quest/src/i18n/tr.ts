@@ -106,7 +106,7 @@ export const tr: Catalogue = {
   'card.why.fightOnly': 'Yalnızca dövüşte.',
   'card.why.ownTurn': 'Yalnızca kendi sıranda, dövüş dışında.',
   'card.why.notNow': 'Şu an olmaz.',
-  'detail.blunder': 'Kaybedersen: {text}',
+  'detail.blunder': 'Seni yakalarsa: {text}',
   'card.info': 'Ayrıntılar: {name}',
   'act.pick': 'Seç',
   'act.unpick': 'Seçimi kaldır',

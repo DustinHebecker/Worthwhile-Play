@@ -114,7 +114,7 @@ export const en = {
   'card.why.fightOnly': 'Only in a fight.',
   'card.why.ownTurn': 'Only on your own turn, outside fights.',
   'card.why.notNow': 'Not right now.',
-  'detail.blunder': 'If you lose: {text}',
+  'detail.blunder': 'If it catches you: {text}',
   'card.info': 'Details: {name}',
   'act.pick': 'Select',
   'act.unpick': 'Deselect',

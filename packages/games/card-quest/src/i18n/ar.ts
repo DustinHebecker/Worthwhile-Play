@@ -106,7 +106,7 @@ export const ar: Catalogue = {
   'card.why.fightOnly': 'في المعركة فقط.',
   'card.why.ownTurn': 'في دورك فقط، خارج المعارك.',
   'card.why.notNow': 'ليس الآن.',
-  'detail.blunder': 'إن خسرت: {text}',
+  'detail.blunder': 'إن أمسك بك: {text}',
   'card.info': 'التفاصيل: {name}',
   'act.pick': 'اختر',
   'act.unpick': 'ألغِ الاختيار',
