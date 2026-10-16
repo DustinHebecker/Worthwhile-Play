@@ -3,7 +3,10 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { createTestContext } from '@wp/testing';
 import type { GameModule } from '@wp/game-core';
 import game, { type CardQuestState } from '../src/index';
-import { isValidState } from '../src/rules';
+import { createRngFromState } from '@wp/game-core';
+import { isValidState, step } from '../src/rules';
+import { arranged, take } from './harness';
+import { en } from '../src/content/en';
 
 const q = (root: HTMLElement, id: string) => root.querySelector<HTMLButtonElement>(`[data-testid="${id}"]`);
 
@@ -68,6 +71,43 @@ describe('view', () => {
     }
     expect(misuse).toEqual([]);
     instance.dispose();
+  });
+
+  describe('the Blunder sentence in the log', () => {
+    /** The given seat lost against the Cave Slime and must roll; the die will show 1. */
+    function caught(seat: number, wearsShoes: boolean): CardQuestState {
+      const s = arranged((s) => {
+        s.active = seat;
+        if (wearsShoes) take(s, 'kz.league-slippers', s.players[seat]!.equipped);
+        s.encounter.splice(s.encounter.indexOf('kz.cave-slime'), 1);
+        s.encounter.push('kz.cave-slime');
+      });
+      let n = step(s, seat, { a: 'open' })!;
+      for (let i = 0; i < 3; i++) n = step(n, n.fight!.actor, { a: 'pass' })!;
+      for (let st = 1; ; st++) if (createRngFromState(st).int(1, 6) === 1) return { ...n, rng: st };
+    }
+    const sentence = en['kz.cave-slime']!.blunder!;
+    const pageText = (state: CardQuestState, act: (root: HTMLElement) => void) => {
+      const ctx = createTestContext(game as GameModule<unknown>, 'en');
+      const instance = game.create(ctx.context as never);
+      instance.restore(state);
+      act(ctx.context.root);
+      const text = ctx.context.root.textContent ?? '';
+      instance.dispose();
+      return text;
+    };
+
+    it('appears when the person is caught and loses what it says', () => {
+      expect(pageText(caught(0, true), (root) => q(root, 'roll')!.click())).toContain(sentence);
+    });
+    it('does not appear when the slot was empty', () => {
+      expect(pageText(caught(0, false), (root) => q(root, 'roll')!.click())).not.toContain(sentence);
+    });
+    it('does not appear for a computer player (it speaks to "you")', () => {
+      const s = step(caught(1, true), 1, { a: 'roll' })!;
+      expect(s.log.some((e) => e.e === 'flee' && !e.ok)).toBe(true);
+      expect(pageText(s, () => undefined)).not.toContain(sentence);
+    });
   });
 
   it('keeps the keyboard focus inside the game after a main action', () => {

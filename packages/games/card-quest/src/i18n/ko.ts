@@ -106,6 +106,7 @@ export const ko: Catalogue = {
   'card.why.fightOnly': '전투 중에만.',
   'card.why.ownTurn': '내 차례에만, 전투 밖에서.',
   'card.why.notNow': '지금은 안 된다.',
+  'detail.blunder': '붙잡히면: {text}',
 
   'act.equip': '착용',
   'act.unequip': '벗기',
