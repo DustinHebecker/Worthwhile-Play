@@ -1,15 +1,17 @@
 import { createRng, type Rng } from '@wp/game-core';
-import { cellOf, computeNetwork, createWorld, findPath, STRATEGY_RULESET as RULESET } from '@wp/strategy-engine';
-import { isFair, isValidMap, mapIssues, toScenario, type EditMap, type MapDeposit, type MapUnit } from './maps';
+import { archetypeOf, cellOf, computeNetwork, createWorld, findPath, flowField, passable, STRATEGY_RULESET as RULESET, type GameMap } from '@wp/strategy-engine';
+import { isFair, isValidMap, MAP_HEIGHTS, MAP_WIDTHS, mapIssues, MAX_NAME, toScenario, type EditMap, type MapDeposit, type MapUnit } from './maps';
 
 /**
  * Seeded map generator (I6c, owner decisions 2026-10-16): point-symmetric two-side maps of every
  * editor size. Only the top half is generated (side 1); the bottom half and side 0 are its point
  * mirror, so both sides start equal. Deposits grow with the map's area (about two per side on
- * 12×10, five on 24×16), and maps from 200 cells up get a pair of rich deposits near the contested
- * middle. Every map is checked by `generatedMapProblems`, an independent validator; a candidate
- * that fails is thrown away and the next one drawn from the same seed, so a seed always gives the
- * same map. Pure: no DOM, no Math.random.
+ * 12×10, five on 24×16), and maps from 200 cells up get a pair of rich deposits in the contested
+ * middle: each about as far from one post as from the other, by ground path cost. Every map is
+ * checked by `generatedMapProblems`, an independent validator; a candidate that fails is thrown
+ * away and the next one drawn from the same seed, so a seed always gives the same map. The seed is
+ * taken as an unsigned 32-bit integer (`seed >>> 0`: wraps modulo 2^32, drops fractions, NaN → 0);
+ * callers that show it should normalise it the same way. Pure: no DOM, no Math.random.
  */
 
 /** Deposits per side for a map of `w`×`h` cells (the map rule: more ground, more Supply). */
@@ -18,6 +20,8 @@ export const depositsPerSide = (w: number, h: number): number => Math.max(2, Mat
 export const RICH_MIDDLE_FROM = 200;
 /** Command Posts stand at least this share of the map's longer side apart. */
 export const POST_DISTANCE_SHARE = 0.5;
+/** A rich deposit's ground path cost from the farther post is at most this multiple of the nearer one's. */
+export const RICH_BALANCE = 1.25;
 /** Candidates drawn per seed before the plain fallback (which always passes). */
 const ATTEMPTS = 40;
 
@@ -30,6 +34,8 @@ function startingKinds(area: number): string[] {
 
 /** A generated map: the same `w`, `h` and `seed` always give the same map. */
 export function generateMap(w: number, h: number, seed: number, name = ''): EditMap {
+  if (!(MAP_WIDTHS as readonly number[]).includes(w) || !(MAP_HEIGHTS as readonly number[]).includes(h) || h % 2 !== 0) throw new RangeError(`No editor size: ${w}×${h}.`);
+  if (name.length > MAX_NAME) throw new RangeError(`Map name longer than ${MAX_NAME} characters.`);
   const rng = createRng(((seed >>> 0) ^ Math.imul(w * 64 + h, 0x9e3779b1)) >>> 0);
   for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
     const map = candidate(w, h, rng, name, true);
@@ -140,7 +146,19 @@ function candidate(w: number, h: number, rng: Rng, name: string, features: boole
   }
   if (deposits.length < own) return undefined;
   if (area >= RICH_MIDDLE_FROM) {
-    const middle = near(Math.floor(w / 2), half - 1, 3).filter((c) => spaced(c.x, c.y));
+    // The cell near the middle whose ground path costs from the two posts are closest to equal.
+    const map: GameMap = { w, h, terrain: terrain.join('') };
+    const fromOwn = flowField(map, RULESET, [cellOf(map, post.x, post.y)], 'ground');
+    const m = mirror(post.x, post.y);
+    const fromOther = flowField(map, RULESET, [cellOf(map, m.x, m.y)], 'ground');
+    const balance = (c: { x: number; y: number }) => {
+      const a = fromOwn[cellOf(map, c.x, c.y)] ?? -1;
+      const b = fromOther[cellOf(map, c.x, c.y)] ?? -1;
+      return a <= 0 || b <= 0 ? Infinity : Math.max(a, b) / Math.min(a, b);
+    };
+    const middle = near(Math.floor(w / 2), half - 1, 3)
+      .filter((c) => spaced(c.x, c.y) && balance(c) <= RICH_BALANCE)
+      .sort((p, q) => balance(p) - balance(q));
     if (!middle[0]) return undefined;
     deposits.push({ x: middle[0].x, y: middle[0].y, size: 'rich' });
   }
@@ -154,7 +172,9 @@ function candidate(w: number, h: number, rng: Rng, name: string, features: boole
  * Independent validator of a generated map (P9): written against the map only, not the generator.
  * Empty when the map is fair and playable: a valid editor map with no issues, point-symmetric,
  * posts far enough apart, every deposit reachable over ground from both posts, the map rule's
- * deposits per side, every starting unit inside its side's radio cover, no unit on a deposit.
+ * deposits per side (a side's own are those in its half by row; by symmetry both sides have as
+ * many), each rich deposit about as far from both posts by ground path cost (RICH_BALANCE),
+ * every starting unit inside its side's radio cover and every mobile one able to step off its cell.
  */
 export function generatedMapProblems(map: EditMap): string[] {
   const problems: string[] = [];
@@ -173,7 +193,20 @@ export function generatedMapProblems(map: EditMap): string[] {
   const rich = map.deposits.filter((d) => d.size === 'rich').length;
   if (perSide - rich / 2 < depositsPerSide(map.w, map.h)) problems.push('too few deposits');
   if (map.w * map.h >= RICH_MIDDLE_FROM && rich < 2) problems.push('no rich middle');
-  if (map.units.some((u) => map.deposits.some((d) => d.x === u.x && d.y === u.y))) problems.push('unit on a deposit');
+  const fromA = flowField(scenario.map, RULESET, [cellOf(scenario.map, a.x, a.y)], 'ground');
+  const fromB = flowField(scenario.map, RULESET, [cellOf(scenario.map, b.x, b.y)], 'ground');
+  for (const d of map.deposits.filter((x) => x.size === 'rich')) {
+    const ca = fromA[cellOf(scenario.map, d.x, d.y)] ?? -1;
+    const cb = fromB[cellOf(scenario.map, d.x, d.y)] ?? -1;
+    if (ca <= 0 || cb <= 0 || Math.max(ca, cb) > RICH_BALANCE * Math.min(ca, cb)) problems.push(`rich deposit ${d.x},${d.y} not contested`);
+  }
+  // Every mobile starting unit can step off its cell (terrain only: the others move too).
+  for (const u of map.units) {
+    if ((archetypeOf(RULESET, u.kind)?.speed ?? 0) === 0) continue;
+    let free = false;
+    for (let dy = -1; dy <= 1 && !free; dy++) for (let dx = -1; dx <= 1 && !free; dx++) if ((dx || dy) && passable(scenario.map, RULESET, u.x + dx, u.y + dy, 'ground')) free = true;
+    if (!free) problems.push(`unit ${u.x},${u.y} walled in`);
+  }
   const world = createWorld({ ...scenario, seed: 1 }, RULESET);
   for (const side of [0, 1]) {
     const cover = computeNetwork(world, RULESET, side).coverage;

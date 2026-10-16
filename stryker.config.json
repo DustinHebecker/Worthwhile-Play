@@ -15,6 +15,7 @@
     "packages/localization/src/translate.ts",
     "packages/games/*/src/rules.ts",
     "packages/games/*/src/ai.ts",
+    "packages/games/relay-command/src/generator.ts",
     "packages/strategy-engine/src/*.ts",
     "!packages/strategy-engine/src/{content,index,types}.ts",
     "!**/*.d.ts",

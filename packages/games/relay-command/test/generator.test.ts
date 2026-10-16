@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { observe } from '@wp/strategy-engine';
 import { planAi } from '../src/ai';
-import { depositsPerSide, generatedMapProblems, generateMap, POST_DISTANCE_SHARE, RICH_MIDDLE_FROM } from '../src/generator';
+import { depositsPerSide, generatedMapProblems, generateMap, POST_DISTANCE_SHARE, RICH_BALANCE, RICH_MIDDLE_FROM } from '../src/generator';
 import { applyTool, blankMap, isFair, MAP_HEIGHTS, MAP_WIDTHS, type EditMap } from '../src/maps';
 import { isValidState, lockTurn, newGame, planOrder, PLAYER, OPPONENT, rulesOf } from '../src/rules';
 import { FIELD_EXERCISE } from '../src/scenarios';
@@ -73,6 +73,67 @@ describe('map generator (I6c, P9)', () => {
     let close = applyTool(blankMap(12, 8), { type: 'unit', kind: 'command-post', side: 1 }, 6, 3, true);
     close = applyTool(close, { type: 'unit', kind: 'rifles', side: 1 }, 7, 3, true);
     expect(generatedMapProblems(close)).toContain('posts too close');
+  });
+
+  it('the validator, check by check (review of PR #45): each planted defect is named, a clean map has none', () => {
+    const big = generateMap(24, 16, 5);
+    expect(generatedMapProblems(big)).toEqual([]);
+    // Not a map at all; no posts; posts with nothing else (not playable).
+    expect(generatedMapProblems({ ...big, terrain: big.terrain.slice(1) })).toEqual(['invalid map']);
+    expect(generatedMapProblems({ ...big, units: big.units.filter((u) => u.kind !== 'command-post') })).toContain('no posts');
+    expect(generatedMapProblems({ ...big, units: big.units.filter((u) => u.kind === 'command-post') })).toContain('not playable');
+    // Post distance against half the LONGER side (16×8: 8 cells, not 4): exactly 8 is far enough, 7 is not.
+    const pair = (bx: number) => {
+      let m = applyTool(blankMap(16, 8), { type: 'unit', kind: 'command-post', side: 0 }, 0, 0, false);
+      m = applyTool(m, { type: 'unit', kind: 'command-post', side: 1 }, bx, 0, false);
+      m = applyTool(m, { type: 'unit', kind: 'rifles', side: 0 }, 0, 1, false);
+      return applyTool(m, { type: 'unit', kind: 'rifles', side: 1 }, bx, 1, false);
+    };
+    expect(generatedMapProblems(pair(8))).not.toContain('posts too close');
+    expect(generatedMapProblems(pair(7))).toContain('posts too close');
+    // A deposit one post reaches and the other does not (a river splits the map).
+    let split = pair(12);
+    for (let y = 0; y < 8; y++) split = applyTool(split, { type: 'terrain', code: '~' }, 6, y, false);
+    split = applyTool(split, { type: 'deposit' }, 2, 4, false);
+    expect(generatedMapProblems(split)).toContain('deposit 2,4 unreachable');
+    // The deposit rule on a map with a rich pair: one plain pair fewer is too few; the rich pair gone is named.
+    const plain = big.deposits.filter((d) => d.size === undefined && d.y < 8);
+    const last = plain[plain.length - 1]!;
+    const withoutPair = (x: number, y: number) => ({ ...big, deposits: big.deposits.filter((d) => !(d.x === x && d.y === y) && !(d.x === 23 - x && d.y === 15 - y)) });
+    expect(generatedMapProblems(withoutPair(last.x, last.y))).toEqual(['too few deposits']);
+    const rich = big.deposits.find((d) => d.size === 'rich' && d.y < 8)!;
+    expect(generatedMapProblems(withoutPair(rich.x, rich.y))).toEqual(['no rich middle']);
+    // The rich pair moved into the corners: symmetric, but no longer contested.
+    const corners = { ...withoutPair(rich.x, rich.y) };
+    const cornered = { ...corners, deposits: [...corners.deposits, { x: 0, y: 0, size: 'rich' as const }, { x: 23, y: 15, size: 'rich' as const }] };
+    expect(cornered.units.some((u) => (u.x === 0 && u.y === 0) || (u.x === 23 && u.y === 15)) || '~^'.includes(cornered.terrain[0]!)).toBe(false);
+    expect(generatedMapProblems(cornered)).toEqual(expect.arrayContaining(['rich deposit 0,0 not contested', 'rich deposit 23,15 not contested']));
+    // A squad walled in by ridges on every side (a small mirrored map): it could never move off its cell.
+    let walled = applyTool(blankMap(16, 8), { type: 'unit', kind: 'command-post', side: 1 }, 14, 1, true);
+    walled = applyTool(walled, { type: 'unit', kind: 'rifles', side: 1 }, 10, 3, true);
+    expect(generatedMapProblems(walled).some((p) => p.includes('walled in'))).toBe(false);
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (dx || dy) walled = applyTool(walled, { type: 'terrain', code: '^' }, 10 + dx, 3 + dy, true);
+    expect(generatedMapProblems(walled)).toEqual(expect.arrayContaining(['unit 10,3 walled in', 'unit 5,4 walled in']));
+  });
+
+  it('every rich deposit is contested: about as far from both posts by ground path cost (owner decision)', () => {
+    for (const [w, h] of SIZES.filter(([w, h]) => w * h >= RICH_MIDDLE_FROM)) {
+      for (let seed = 0; seed < 4; seed++) {
+        const map = generateMap(w, h, seed);
+        expect(map.deposits.filter((d) => d.size === 'rich'), `${w}×${h} seed ${seed}`).toHaveLength(2);
+        expect(generatedMapProblems(map).filter((p) => p.startsWith('rich')), `${w}×${h} seed ${seed}`).toEqual([]);
+      }
+    }
+    expect(RICH_BALANCE).toBeLessThanOrEqual(1.25);
+  });
+
+  it('refuses inputs it cannot honour: a size the editor does not offer, an odd height, a name too long', () => {
+    expect(() => generateMap(13, 10, 1)).toThrow(RangeError);
+    expect(() => generateMap(12, 9, 1)).toThrow(RangeError);
+    expect(() => generateMap(12, 10, 1, 'x'.repeat(41))).toThrow(RangeError);
+    // The seed is taken as an unsigned 32-bit integer.
+    expect(generateMap(12, 10, 2 ** 32 + 5)).toEqual(generateMap(12, 10, 5));
+    expect(generateMap(12, 10, 5.7)).toEqual(generateMap(12, 10, 5));
   });
 
   it('the opponent plays generated maps of every size class: every turn a valid save', () => {
