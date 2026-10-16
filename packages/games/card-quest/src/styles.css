@@ -113,6 +113,7 @@
 .cq-detail-head .cq-art { inline-size: 4rem; block-size: 4rem; }
 .cq-rules { margin: 0; padding-inline-start: 1.1rem; }
 .cq-flavour { font-style: italic; color: var(--wp-muted); }
+.cq-blunder { border-inline-start: 4px solid var(--cq-monster); padding-inline-start: 0.5rem; }
 .cq-detail-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 
 .cq-hand,
