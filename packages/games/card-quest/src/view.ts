@@ -2,7 +2,8 @@ import type { GameContext, GameInstance, GameResult, NewGameOptions } from '@wp/
 import { isOneOf } from '@wp/game-core';
 import { announce, clear, h } from '@wp/ui';
 import { pictogram } from './art';
-import type { MonsterCard } from './cards';
+import { illustration } from './illustrations';
+import { baseId, type MonsterCard } from './cards';
 import { cardBlunder, cardFlavour, cardName, cardRules, keyNumber } from './cardtext';
 import { HUMAN, advance, computerToAct } from './driver';
 import {
@@ -249,7 +250,17 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
 
   const keyOf = (el: Element | null): string | null => el?.closest('[data-key]')?.getAttribute('data-key') ?? null;
 
+  /** Enters the give-away mode when the person must give cards away (before drawing, so rendering stays pure). An open
+   * detail is already closed by the action that led here (act). */
+  function syncMode(): void {
+    if (state.phase === 'end' && actorOf(state) === HUMAN && surplus(state) > 0 && mode !== 'give') {
+      mode = 'give';
+      picked.clear();
+    }
+  }
+
   function render(): void {
+    syncMode();
     const focusKey = keyOf(document.activeElement && root.contains(document.activeElement) ? document.activeElement : null);
     clear(main);
     main.setAttribute('dir', t.direction);
@@ -265,10 +276,21 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     (same ?? fallback)?.focus();
   }
 
+  /** The card's picture: its illustration (small in tiles), or the pictogram for cards without one. */
   function pic(card: string): HTMLElement {
-    const span = h('span', { class: 'cq-art' });
-    span.innerHTML = pictogram(card);
+    const drawn = illustration(baseId(card));
+    const span = h('span', { class: drawn ? 'cq-art cq-art-il' : 'cq-art' });
+    span.innerHTML = drawn ?? pictogram(card);
     return span;
+  }
+
+  /** The large illustration at the top of the card detail (none for cards without one). */
+  function bigPic(card: string): HTMLElement | null {
+    const drawn = illustration(baseId(card));
+    if (!drawn) return null;
+    const figure = h('div', { class: 'cq-detail-pic', 'data-testid': 'detail-pic' });
+    figure.innerHTML = drawn;
+    return figure;
   }
 
   /** A compact card tile (button). */
@@ -483,11 +505,6 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
         const n = surplus(state);
         if (n === 0) bar.append(button(t('btn.end'), () => act({ a: 'end', give: [] }), { primary: true, testid: 'end' }));
         else {
-          if (mode !== 'give') {
-            mode = 'give';
-            picked.clear();
-            selected = null;
-          }
           const label = charityTarget(state) >= 0 ? t('btn.give', { n }) : t('btn.discard', { n });
           bar.append(button(label, () => act({ a: 'end', give: [...picked] }), { primary: true, testid: 'end', disabled: picked.size !== n }));
         }
@@ -609,10 +626,12 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       render();
       focusCard(card);
     }, { testid: 'detail-close' });
+    const big = bigPic(card);
     return h(
       'section',
       { class: 'cq-detail', id: 'cq-detail', 'data-type': defOf(card).type, tabindex: '-1', 'data-testid': 'detail', 'aria-labelledby': 'cq-detail-title' },
-      h('div', { class: 'cq-detail-head' }, pic(card), h('div', {}, h('h3', { id: 'cq-detail-title' }, name(card)), h('p', { class: 'cq-tile-type' }, type))),
+      big,
+      h('div', { class: 'cq-detail-head' }, big ? null : pic(card), h('div', {}, h('h3', { id: 'cq-detail-title' }, name(card)), h('p', { class: 'cq-tile-type' }, type))),
       h('ul', { class: 'cq-rules' }, ...lines.map((l) => h('li', {}, l))),
       h('p', { class: 'cq-flavour' }, cardFlavour(t, card)),
       blunder ? h('p', { class: 'cq-blunder', 'data-testid': 'detail-blunder' }, t('detail.blunder', { text: blunder })) : null,

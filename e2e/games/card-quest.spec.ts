@@ -120,7 +120,8 @@ test('card-quest: in the give-away step a card can be read and closed without gi
       }
     }
   }
-  test.skip(!(await page.getByTestId('end').isDisabled().catch(() => false)), 'no give-away step in this game');
+  // Seed 11 with three computer players reaches a give-away step; if that ever changes, the test must say so.
+  await expect(page.getByTestId('end'), 'no give-away step in this game').toBeDisabled();
   const hand = page.locator('[data-testid="hand"] .cq-tile');
   const before = await hand.count();
   const info = page.locator('[data-testid="hand"] .cq-info').first();
