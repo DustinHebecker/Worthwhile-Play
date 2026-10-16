@@ -34,7 +34,7 @@ async function playUntil(page: Page, done: (s: Shown) => boolean, limit = 200) {
       const tiles = page.locator('[data-testid="hand"] .cq-tile[aria-pressed="false"]');
       while (await end.isDisabled()) await tiles.first().click();
     }
-    for (const id of ['open', 'rummage', 'pass', 'roll', 'end']) {
+    for (const id of ['open', 'rummage', 'pass', 'accept', 'roll', 'end']) {
       const b = page.getByTestId(id);
       if ((await b.count()) > 0 && (await b.isEnabled())) {
         await b.click();
@@ -112,7 +112,7 @@ test('card-quest: in the give-away step a card can be read and closed without gi
     if ((await end.count()) > 0 && (await end.isDisabled())) break;
     const s = await shown(page);
     if (s.phase === 'over') break;
-    for (const id of ['open', 'rummage', 'pass', 'roll', 'end']) {
+    for (const id of ['open', 'rummage', 'pass', 'accept', 'roll', 'end']) {
       const b = page.getByTestId(id);
       if ((await b.count()) > 0 && (await b.isEnabled())) {
         await b.click();
@@ -134,4 +134,16 @@ test('card-quest: in the give-away step a card can be read and closed without gi
   await expect(page.getByTestId('detail')).toBeVisible();
   await expect(hand).toHaveCount(before);
   await expect(page.getByTestId('end')).toBeDisabled();
+});
+
+test('card-quest: in an own fight the person can ask another player for help', async ({ page }) => {
+  await start(page);
+  await playUntil(page, (st) => st.phase === 'fight' && st.active === 0);
+  const ask = page.getByTestId('help-ask');
+  await expect(ask, 'no help form in this fight').toBeVisible();
+  await page.getByTestId('help-terms').selectOption({ index: 0 });
+  await ask.click();
+  await page.getByTestId('log').locator('summary').click();
+  await expect(page.getByTestId('log')).toContainText(/asks .* for help/);
+  await expect(page.getByTestId('help-ask').or(page.getByTestId('pass')).or(page.getByTestId('roll')).first()).toBeVisible();
 });

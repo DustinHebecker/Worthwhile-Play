@@ -860,5 +860,70 @@ export const LOOT: Readonly<Record<string, string>> = {
     <path class="il-dark il-ink il-thin" d="M110 90h16v4h-16z"/>
     <path class="il-line il-thin" d="M112 58a6 6 0 0 1 12 0"/>
     <circle class="il-skin il-ink" cx="118" cy="56" r="5"/>
-    <path class="il-light" d="M132 42h8l-8 8h8M140 30h6l-6 6h6"/>`
+    <path class="il-light" d="M132 42h8l-8 8h8M140 30h6l-6 6h6"/>`,
+
+  // Backstab: the dwarf who fought beside the gnome now stands arm in arm with the grinning monster, waving the
+  // monster's purple pennant and wearing its purple scarf, the monster's arm round his shoulders; the betrayed gnome,
+  // shovel still raised for the fight, gapes ("!"), a cracked heart between them.
+  'kz.change-sides': `
+    <rect class="il-sky" x="0" y="0" width="160" height="120"/>
+    <path class="il-grass" d="M0 94h160v26H0z"/>
+    <path class="il-green" d="M0 108h160v12H0z" opacity="0.6"/>
+    <path class="il-grass il-ink il-thin" d="M4 94l2-6 2 6M152 94l2-7 2 7M88 94l2-5 2 5"/>
+    <path class="il-white il-ink il-thin" d="M120 14c0-5 7-7 10-3 3-4 11-2 10 3 4 0 4 6 0 6h-20c-4 0-4-6 0-6z"/>
+    <path class="il-purple-dark il-ink" d="M106 46l-8-16 14 9zM138 46l8-16-14 9z"/>
+    <path class="il-purple il-ink" d="M108 64q-22 2-40 10l2 6q18-7 38-8z"/>
+    <path class="il-purple il-ink" d="M96 98c-4-30 2-60 26-60s30 30 26 60z"/>
+    <ellipse class="il-pink il-ink il-thin" cx="122" cy="84" rx="15" ry="12" opacity="0.8"/>
+    <circle class="il-purple-dark" cx="102" cy="76" r="3"/><circle class="il-purple-dark" cx="142" cy="66" r="3.4"/><circle class="il-purple-dark" cx="140" cy="88" r="2.4"/>
+    <circle class="il-white il-ink" cx="113" cy="54" r="5.4"/><circle class="il-dark" cx="110.6" cy="55.6" r="2.4"/>
+    <circle class="il-white il-ink" cx="131" cy="54" r="5.4"/><circle class="il-dark" cx="128.6" cy="55.6" r="2.4"/>
+    <path class="il-purple-dark il-ink il-thin" d="M107.6 54a5.4 5.4 0 0 1 10.8 0zM125.6 54a5.4 5.4 0 0 1 10.8 0z"/>
+    <path class="il-dark il-ink" d="M106 66q16 16 32 0q-16 6-32 0z"/>
+    <path class="il-white il-ink il-thin" d="M110 67.4l2.4 4 2.4-3.2zM129 68.2l2.4 3.2 2.4-4z"/>
+    <path class="il-line il-thin" d="M106 46l8 3M138 46l-8 3"/>
+    <path class="il-purple-dark il-ink" d="M148 70q12 4 6 18l-5-2q4-8-3-11z"/>
+    <ellipse class="il-purple-dark il-ink" cx="108" cy="99" rx="9" ry="4"/><ellipse class="il-purple-dark il-ink" cx="136" cy="99" rx="9" ry="4"/>
+    <path class="il-orange il-ink" d="M66 98c0-14 5-24 12-24s12 10 12 24z"/>
+    <path class="il-dark il-ink il-thin" d="M66 90h24v4H66z"/>
+    <ellipse class="il-dark il-ink" cx="72" cy="99" rx="6" ry="3"/><ellipse class="il-dark il-ink" cx="85" cy="99" rx="6" ry="3"/>
+    <path class="il-orange il-ink" d="M86 80q8 2 16 2v5q-10 0-17-2z"/>
+    <circle class="il-skin il-ink" cx="104" cy="84.4" r="4"/>
+    <path class="il-purple il-ink" d="M68 72h20v6H68zM70 77l-6 12 5 1 5-11z"/>
+    <path class="il-skin il-ink" d="M68 62c0-8 4-12 10-12s10 4 10 12-4 11-10 11-10-3-10-11z"/>
+    <path class="il-beard il-ink" d="M68 64c2 16 18 16 20 0-4 4-16 4-20 0z"/>
+    <path class="il-line il-thin" d="M74 76l1 4M78 77v5M82 76l-1 4"/>
+    <path class="il-dark il-ink il-thin" d="M72 66q6 6 12 0z"/><path class="il-white" d="M73.4 66.4h9.2l-1 1.4h-7.2z"/>
+    <path class="il-line" d="M70 60q3-3 6 0M80 60q3-3 6 0"/>
+    <circle class="il-pink" cx="70" cy="64" r="2" opacity="0.8"/><circle class="il-pink" cx="86" cy="64" r="2" opacity="0.8"/>
+    <path class="il-yellow il-ink" d="M67 55c0-9 5-14 11-14s11 5 11 14z"/>
+    <path class="il-yellow il-ink" d="M63 54h30v3.4H63z"/>
+    <circle class="il-metal il-ink il-thin" cx="78" cy="48" r="3"/><circle class="il-glow" cx="78" cy="48" r="1.6"/>
+    <path class="il-wood il-ink il-thin" d="M61 37l2-0.4 4.4 52-2 .4z"/>
+    <path class="il-purple il-ink" d="M62 38l1.2 13-17-6z"/>
+    <circle class="il-white il-ink il-thin" cx="57" cy="45" r="2"/><circle class="il-dark" cx="56.4" cy="45.2" r="0.9"/>
+    <circle class="il-skin il-ink" cx="65.6" cy="87" r="3.6"/>
+    <path class="il-purple il-ink" d="M72 72c-5-2-8 3-6 7 1 3 5 3 7 1 2 0 3-2 2-4z"/>
+    <path class="il-line il-thin" d="M68.4 76.4l2.4-1M69.4 79l2.4-1"/>
+    <path class="il-red il-ink il-thin" d="M50 18c-3-5-10-2-8 3l8 8 8-8c2-5-5-8-8-3z"/>
+    <path class="il-line il-thin" d="M50 18l-2 4 3 2-1 5"/>
+    <g class="il-dark" opacity="0.4"><ellipse cx="46" cy="103" rx="2.4" ry="1.4"/><ellipse cx="53" cy="100" rx="2.4" ry="1.4"/><ellipse cx="59" cy="104" rx="2.4" ry="1.4"/></g>
+    <path class="il-blue il-ink" d="M16 98c0-14 4-24 12-24s12 10 12 24z"/>
+    <ellipse class="il-dark il-ink" cx="22" cy="99" rx="6" ry="3"/><ellipse class="il-dark il-ink" cx="34" cy="99" rx="6" ry="3"/>
+    <path class="il-wood il-ink il-thin" d="M44 92l2 .4 5-40-2-.4z"/>
+    <path class="il-metal il-ink" d="M44 54c0-6 3-12 7-14 3 3 4 9 2 15z"/>
+    <path class="il-blue il-ink" d="M19 82l-3-12 4-1 4 11zM38 82l7-4 2 4-8 4z"/>
+    <circle class="il-skin il-ink" cx="46.6" cy="78" r="3.6"/>
+    <circle class="il-skin il-ink" cx="28" cy="64" r="10"/>
+    <path class="il-beard il-ink" d="M18 66c2 14 18 14 20 0-4 3-16 3-20 0z"/>
+    <ellipse class="il-dark il-ink il-thin" cx="28" cy="70" rx="2.6" ry="3.6"/>
+    <circle class="il-white il-ink il-thin" cx="23.6" cy="61" r="3.4"/><circle class="il-dark" cx="25" cy="61" r="1.3"/>
+    <circle class="il-white il-ink il-thin" cx="32.4" cy="61" r="3.4"/><circle class="il-dark" cx="33.8" cy="61" r="1.3"/>
+    <circle class="il-skin il-ink" cx="18" cy="68" r="3.6"/>
+    <path class="il-red il-ink" d="M17 57 30 20l10 37z"/>
+    <path class="il-light il-dash" d="M19 54h19"/>
+    <path class="il-light" d="M26 34l-4 12"/>
+    <ellipse class="il-water il-ink il-thin" cx="40" cy="52" rx="1.8" ry="2.6"/>
+    <path class="il-line il-thin" d="M5 54l-3-3M6 60H1M44 58l4-2"/>
+    <path class="il-yellow il-ink" d="M8 14h6l-1.4 16h-3.2z"/><circle class="il-yellow il-ink" cx="11" cy="35" r="2.6"/>`
 };

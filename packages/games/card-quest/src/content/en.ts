@@ -124,6 +124,7 @@ export const en: LocaleContent = {
   'kz.shiny-distraction': { name: 'Look, Something Shiny!', flavour: 'Works on crows, rats and most dwarves.' },
   'kz.side-tunnel': { name: 'Off Through the Side Tunnel', flavour: 'You were never here. Sadly, neither was the loot.' },
   'kz.watering-ambush': { name: 'Watering-Can Ambush', flavour: 'From above. Cold. Unforgettable.' },
+  'kz.change-sides': { name: 'Change Sides', flavour: 'Teamwork is lovely. Winning alone is lovelier.' },
   'kz.senior-gnome': { name: 'Promoted to Senior Gnome', flavour: 'New hat, same garden, higher pay (in pebbles).' },
   'kz.mine-birthday': { name: 'Birthday in the Mine', flavour: 'Candles underground: bad idea. Cake: never a bad idea.' },
   'kz.overnight-beard': { name: 'Beard Grew Overnight', flavour: 'A whole centimetre. The family is proud.' },

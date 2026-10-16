@@ -128,6 +128,7 @@ export const ar: LocaleContent = {
   'kz.shiny-distraction': { name: 'انظر، شيء لامع!', flavour: 'ينجح مع الغربان والجرذان ومعظم الأقزام.' },
   'kz.side-tunnel': { name: 'عبر النفق الجانبي', flavour: 'لم تكن هنا قط. وعدت بخفّي حنين.' },
   'kz.watering-ambush': { name: 'كمين إبريق السقي', flavour: 'من فوق. باردًا. لا يُنسى.' },
+  'kz.change-sides': { name: 'تبديل الجانب', flavour: 'العمل الجماعي جميل. والفوز وحدك أجمل.' },
   // Level-ups and doubles
   'kz.senior-gnome': { name: 'ترقية إلى كبير الأقزام', flavour: 'قبعة جديدة، والحديقة نفسها، وراتب أعلى (بالحصى).' },
   'kz.mine-birthday': { name: 'عيد ميلاد في المنجم', flavour: 'الشموع تحت الأرض: فكرة سيئة. الكعكة: ليست فكرة سيئة أبدًا.' },

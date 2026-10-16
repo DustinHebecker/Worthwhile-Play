@@ -128,6 +128,7 @@ export const pl: LocaleContent = {
   'kz.shiny-distraction': { name: 'Patrz, Coś Błyszczy!', flavour: 'Działa na wrony, szczury i większość krasnoludów.' },
   'kz.side-tunnel': { name: 'Nogi za Pas, Bocznym Tunelem', flavour: 'Nigdy cię tu nie było. Łupu niestety też nie.' },
   'kz.watering-ambush': { name: 'Zasadzka z Konewką', flavour: 'Z góry. Zimno. Niezapomniane.' },
+  'kz.change-sides': { name: 'Zmiana Strony', flavour: 'Praca zespołowa jest piękna. Wygrana w pojedynkę — piękniejsza.' },
   // Level-ups and doubles
   'kz.senior-gnome': { name: 'Awans na Starszego Krasnala', flavour: 'Nowa czapka, ten sam ogród, wyższa pensja (w kamykach).' },
   'kz.mine-birthday': { name: 'Urodziny w Kopalni', flavour: 'Świeczki pod ziemią: zły pomysł. Tort: nigdy zły pomysł.' },

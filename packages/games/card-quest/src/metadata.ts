@@ -3,7 +3,7 @@ import { messages } from './messages';
 
 export const metadata: GameMetadata = {
   id: 'card-quest',
-  stateVersion: 1,
+  stateVersion: 2,
   skills: ['strategy', 'communication'],
   typicalMinutes: [15, 45],
   inputMethods: ['pointer', 'touch', 'keyboard'],

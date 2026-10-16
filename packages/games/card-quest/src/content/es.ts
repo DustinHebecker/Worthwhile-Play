@@ -128,6 +128,7 @@ export const es: LocaleContent = {
   'kz.shiny-distraction': { name: '¡Mira, Algo Brillante!', flavour: 'Funciona con cuervos, ratas y casi todos los enanos.' },
   'kz.side-tunnel': { name: 'Por el Túnel Lateral', flavour: 'Nunca estuviste aquí. El botín, por desgracia, tampoco.' },
   'kz.watering-ambush': { name: 'Emboscada con Regadera', flavour: 'Desde arriba. Fría. Inolvidable.' },
+  'kz.change-sides': { name: 'Cambio de Bando', flavour: 'El trabajo en equipo es precioso. Ganar a solas, más todavía.' },
   // Level-ups and doubles
   'kz.senior-gnome': { name: 'Ascenso a Gnomo Jefe', flavour: 'Gorro nuevo, mismo jardín, más sueldo (en guijarros).' },
   'kz.mine-birthday': { name: 'Cumpleaños en la Mina', flavour: 'Velas bajo tierra: mala idea. Tarta: nunca es mala idea.' },

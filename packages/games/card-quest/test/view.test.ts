@@ -26,7 +26,7 @@ function clickThrough(root: HTMLElement, instance: { serialize(): CardQuestState
       q(root, 'end')!.click();
       continue;
     }
-    const next = ['open', 'rummage', 'pass', 'roll', 'end'].map((id) => q(root, id)).find((b) => b && !b.disabled);
+    const next = ['open', 'rummage', 'pass', 'accept', 'roll', 'end'].map((id) => q(root, id)).find((b) => b && !b.disabled);
     if (!next) throw new Error(`no action button in phase ${state.phase}`);
     next.click();
   }
@@ -207,6 +207,63 @@ describe('view', () => {
     tile.click();
     expect(q(ctx.context.root, 'detail-pic')!.querySelector('svg.cq-il[aria-hidden="true"]')).not.toBeNull();
     instance.dispose();
+  });
+
+  describe('offers and deals (K2)', () => {
+    const mount = (state: CardQuestState) => {
+      const ctx = createTestContext(game as GameModule<unknown>, 'en');
+      const instance = game.create(ctx.context as never);
+      instance.restore(state);
+      return { root: ctx.context.root, instance, ctx };
+    };
+    /** The person fights the Gold Rat (level 5) at level 1; seat 1 (strength 6) could help. */
+    const ratFight = () =>
+      step(
+        arranged((s) => {
+          s.players[1]!.level = 4;
+          take(s, 'kz.hard-hat', s.players[1]!.equipped);
+          s.encounter.splice(s.encounter.indexOf('kz.gold-rat'), 1);
+          s.encounter.push('kz.gold-rat');
+        }),
+        0,
+        { a: 'open' }
+      )!;
+
+    it('the person asks for help through the form; the answer and the helper appear', () => {
+      const { root, instance } = mount(ratFight());
+      expect(root.textContent).toContain('Reputation 3/5');
+      const who = root.querySelector<HTMLSelectElement>('[data-testid="help-who"]')!;
+      expect(who.options.length).toBe(2);
+      const terms = root.querySelector<HTMLSelectElement>('[data-testid="help-terms"]')!;
+      expect([...terms.options].map((o) => o.textContent)).toContain('2 loot cards');
+      q(root, 'help-ask')!.click();
+      const s = instance.serialize();
+      // The computer answered at once (accepted or declined); the offer is never left open for a computer.
+      expect(s.fight?.offer ?? null).toBeNull();
+      expect(s.log.some((e) => e.e === 'offer' && e.seat === 0)).toBe(true);
+      if (s.fight?.helper === 1) expect(q(root, 'helper')!.textContent).toContain('Brumbo');
+      instance.dispose();
+    });
+
+    it('an offer to the person waits for Accept or Decline', () => {
+      const s = arranged((s) => {
+        s.active = 1;
+        s.players[0]!.level = 4;
+        take(s, 'kz.hard-hat', s.players[0]!.equipped);
+        s.encounter.splice(s.encounter.indexOf('kz.gold-rat'), 1);
+        s.encounter.push('kz.gold-rat');
+      });
+      const opened = step(s, 1, { a: 'open' })!;
+      const asked = step(opened, 1, { a: 'offer', to: 0, terms: { t: 'loot', n: 1 } })!;
+      const { root, instance } = mount(asked);
+      expect(q(root, 'next')!.textContent).toContain('offers 1 loot card');
+      expect(q(root, 'pass')).toBeNull();
+      q(root, 'accept')!.click();
+      const after = instance.serialize();
+      expect(after.log.some((e) => e.e === 'accept' && e.seat === 0)).toBe(true);
+      expect(isValidState(after)).toBe(true);
+      instance.dispose();
+    });
   });
 
   it('keeps the keyboard focus inside the game after a main action', () => {

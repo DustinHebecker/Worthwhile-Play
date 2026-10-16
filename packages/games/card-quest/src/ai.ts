@@ -4,8 +4,10 @@ import {
   FLEE_TARGET,
   charityTarget,
   fightTotals,
+  monsterLoot,
   playerParts,
   stateFromObservation,
+  tableStrength,
   step,
   sum,
   surplus,
@@ -14,7 +16,8 @@ import {
   type Difficulty,
   type Observation,
   type Personality,
-  type Player
+  type Player,
+  type Terms
 } from './rules';
 import { defOf } from './worlds';
 
@@ -64,8 +67,15 @@ export function decide(obs: Observation, difficulty: Difficulty): Action {
       if (state.phase === 'after') return challengeOrRummage(state, seat, style, difficulty);
       return { a: 'end', give: giveAway(state, seat) };
     }
-    case 'fight':
-      return (seat === state.active ? fighterAction(state, seat) : interferenceAction(state, seat, style, difficulty, rng)) ?? { a: 'pass' };
+    case 'fight': {
+      const fight = state.fight!;
+      if (fight.offer) return answerOffer(state, seat, difficulty, rng);
+      if (seat === state.active) return fighterAction(state, seat) ?? offerAction(state, seat, difficulty) ?? fallbackAction(state, seat) ?? { a: 'pass' };
+      if (seat === fight.helper) return turncoatAction(state, seat, difficulty) ?? { a: 'pass' };
+      // Paid to stay out: only a sharp opportunist or grudge-holder breaks that, and only to stop a game-winning fight.
+      if (fight.stayOut.includes(seat) && !(difficulty === 'sharp' && (me.personality === 'opportunist' || me.personality === 'grudge') && winsGame(state))) return { a: 'pass' };
+      return interferenceAction(state, seat, style, difficulty, rng) ?? { a: 'pass' };
+    }
     case 'flee':
       return { a: 'roll' };
     default:
@@ -218,8 +228,13 @@ function planTo(state: CardQuestState, seat: number, side: 'hero' | 'monster', l
 function fighterAction(state: CardQuestState, seat: number): Action | null {
   if (margin(state) > 0) return null;
   const me = state.players[seat] as Player;
-  const plan = planTo(state, seat, 'hero', me.hand.length);
-  if (plan) return plan;
+  return planTo(state, seat, 'hero', me.hand.length);
+}
+
+/** When the fight is lost anyway: escape from a harsh monster, or improve the flee roll. */
+function fallbackAction(state: CardQuestState, seat: number): Action | null {
+  if (margin(state) > 0) return null;
+  const me = state.players[seat] as Player;
   const fight = state.fight!;
   const harsh = fight.monsters.some((m) => {
     const def = defOf(m.card) as MonsterCard;
@@ -240,6 +255,94 @@ function fighterAction(state: CardQuestState, seat: number): Action | null {
   return null;
 }
 
+/* ---------------------------------------------------------------- offers and deals (design § 5.6) */
+
+const levelsAt = (state: CardQuestState) => state.fight!.monsters.reduce((a, m) => a + (defOf(m.card) as MonsterCard).levels, 0);
+const lootAt = (state: CardQuestState) => state.fight!.monsters.reduce((a, m) => a + monsterLoot(m), 0);
+
+/** Whether winning the current fight would win the game for the fighter. */
+function winsGame(state: CardQuestState): boolean {
+  return (state.players[state.active] as Player).level + levelsAt(state) >= state.settings.target;
+}
+
+/** The fighter cannot win alone: ask the weakest player whose help would suffice (a favour owed first). */
+function offerAction(state: CardQuestState, seat: number, difficulty: Difficulty): Action | null {
+  const fight = state.fight!;
+  if (fight.helper !== null || margin(state) > 0) return null;
+  const me = state.players[seat] as Player;
+  const need = -margin(state) + 1;
+  const candidates = state.players
+    .map((p, i) => ({ p, i }))
+    .filter(({ i }) => i !== seat && !fight.asked.includes(i) && i !== fight.turncoat && tableStrength(state, i) >= need)
+    // Owed favours first, then the lowest level (never help the leader along), then the better reputation.
+    .sort((a, b) => Number(me.favours.includes(b.i)) - Number(me.favours.includes(a.i)) || a.p.level - b.p.level || b.p.rep - a.p.rep || a.i - b.i);
+  const pick = candidates[0];
+  if (!pick) return null;
+  const loot = lootAt(state);
+  let terms: Terms;
+  if (me.favours.includes(pick.i)) terms = { t: 'free' };
+  else if (winsGame(state) && difficulty !== 'easy') terms = { t: 'most' };
+  // Show-offs keep the loot and promise a favour; the cautious pay generously; others pay one card.
+  else if (loot === 0 || me.personality === 'showoff') terms = { t: 'favour' };
+  else terms = { t: 'loot', n: me.personality === 'cautious' && loot >= 2 ? 2 : loot >= 3 ? 2 : 1 };
+  const action: Action = { a: 'offer', to: pick.i, terms };
+  return step(state, seat, action) ? action : null;
+}
+
+/** Value of terms for the helper, in loot cards. */
+function termsValue(state: CardQuestState, terms: Terms): number {
+  switch (terms.t) {
+    case 'loot':
+      return Math.min(terms.n, lootAt(state));
+    case 'most':
+      return Math.max(0, lootAt(state) - 1);
+    case 'item':
+      return 2;
+    case 'favour':
+      return 1;
+    default:
+      return 0;
+  }
+}
+
+function answerOffer(state: CardQuestState, seat: number, difficulty: Difficulty, rng: Rng): Action {
+  const fight = state.fight!;
+  const offer = fight.offer!;
+  const me = state.players[seat] as Player;
+  const fighter = state.players[state.active] as Player;
+  const yes: Action = { a: 'accept' };
+  const no: Action = { a: 'decline' };
+  // A free card for staying out: always welcome.
+  if (offer.terms.t === 'stay') return yes;
+  const grudge = me.personality === 'grudge' && (me.harm[state.active] ?? 0) > 0;
+  // A favour owed: honoured — unless it would hand the fighter the game (cautious players keep their word anyway).
+  if (offer.terms.t === 'free') return winsGame(state) && me.personality !== 'cautious' && difficulty !== 'easy' ? no : yes;
+  const helps = margin(state) + tableStrength(state, seat) > 0;
+  if (!helps || winsGame(state)) return no;
+  const value = termsValue(state, offer.terms);
+  const backstab = me.personality === 'opportunist' && difficulty !== 'easy' && me.hand.some((c) => (defOf(c) as { turncoat?: boolean }).turncoat);
+  const leader = fighter.level >= me.level + 2;
+  if (backstab && leader) return yes; // … and change sides later.
+  if (grudge || (leader && me.personality !== 'cautious')) return no;
+  const wanted = (me.personality === 'opportunist' ? 2 : 1) + (fighter.rep <= 1 ? 1 : 0);
+  if (difficulty === 'easy') return value >= 1 && rng.next() < 0.7 ? yes : no;
+  return value >= wanted ? yes : no;
+}
+
+/** A helper holding Change Sides switches when the fighter is about to win the game or leads by a lot. */
+function turncoatAction(state: CardQuestState, seat: number, difficulty: Difficulty): Action | null {
+  if (difficulty === 'easy') return null;
+  const me = state.players[seat] as Player;
+  const card = me.hand.find((c) => (defOf(c) as { turncoat?: boolean }).turncoat);
+  if (!card) return null;
+  const fighter = state.players[state.active] as Player;
+  const tempted = winsGame(state) || ((me.personality === 'opportunist' || me.personality === 'grudge') && fighter.level >= me.level + 2);
+  if (!tempted) return null;
+  const action: Action = { a: 'oneshot', card, side: 'monster' };
+  const next = step(state, seat, action);
+  return next && margin(next) <= 0 ? action : null;
+}
+
 /** The other player with the highest level (lowest seat on ties), or -1. */
 function leaderOf(state: CardQuestState, seat: number): number {
   let leader = -1;
@@ -252,11 +355,14 @@ function leaderOf(state: CardQuestState, seat: number): number {
 function interferenceAction(state: CardQuestState, seat: number, style: Style, difficulty: Difficulty, rng: Rng): Action | null {
   if (margin(state) <= 0) return null;
   const hero = state.players[state.active] as Player;
-  const gain = state.fight!.monsters.reduce((a, m) => a + (defOf(m.card) as MonsterCard).levels, 0);
+  const gain = levelsAt(state);
   const winsGame = hero.level + gain >= state.settings.target;
   const top = Math.max(...state.players.map((p) => p.level));
   const leads = hero.level >= top && hero.level > (state.players[seat] as Player).level;
-  let want = winsGame || (style.stopsLeader && leads) || (style.meddles && rng.next() < 0.35);
+  const me = state.players[seat] as Player;
+  // Grudge-holders remember who harmed them (public harm counts).
+  const payback = me.personality === 'grudge' && (me.harm[state.active] ?? 0) > 0;
+  let want = winsGame || (style.stopsLeader && leads) || payback || (style.meddles && rng.next() < 0.35);
   if (difficulty === 'easy') want = winsGame && rng.next() < 0.6;
   if (!want) return null;
   const limit = winsGame ? MAX_INTERFERENCE[difficulty] + 1 : MAX_INTERFERENCE[difficulty];
