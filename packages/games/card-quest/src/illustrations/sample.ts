@@ -1,28 +1,44 @@
-/*
- * Card illustrations (design § 7.3, owner feedback B2): one original, code-drawn picture per card that shows what
- * the name says and carries its own gag. Static SVG markup (no text, no user data), 160 × 120 view box, colours
- * from `.il-*` classes (light, dark and forced colours in styles.css). Cards without an illustration yet fall back
- * to the pictogram kit (art.ts).
- */
-
-const ILLUSTRATIONS: Readonly<Record<string, string>> = {
-  // A lawnmower with a toothy grin, a cut pointy hat flying off in two halves, grass and one beard tuft in the air.
+/* First sample set (owner reviewed): Kampfzwerge. */
+export const SAMPLE: Readonly<Record<string, string>> = {
+  // The mower of doom chases a fleeing garden gnome; it has just sliced his red pointy hat: the stump stays on his
+  // head, the tip sails through the air. A mown-off beard tuft lies in the grass behind it.
   'kz.lawnmower': `
     <rect class="il-sky" x="0" y="0" width="160" height="120"/>
-    <path class="il-grass" d="M0 96h160v24H0z"/>
-    <path class="il-line" d="M98 62 132 22M132 22l10 4"/>
-    <rect class="il-red il-ink" x="34" y="56" width="70" height="30" rx="8"/>
-    <path class="il-white il-ink" d="M34 74l6 8 6-8 6 8 6-8 6 8 6-8 6 8 6-8 6 8 6-8 6 8 6-8"/>
-    <circle class="il-white il-ink" cx="56" cy="66" r="5"/><circle class="il-dark" cx="57" cy="67" r="2.2"/>
-    <circle class="il-white il-ink" cx="74" cy="66" r="5"/><circle class="il-dark" cx="75" cy="67" r="2.2"/>
-    <path class="il-line" d="M50 58l10 4M80 58l-10 4"/>
-    <circle class="il-dark il-ink" cx="44" cy="90" r="9"/><circle class="il-dark il-ink" cx="94" cy="90" r="9"/>
-    <circle class="il-metal" cx="44" cy="90" r="3"/><circle class="il-metal" cx="94" cy="90" r="3"/>
-    <path class="il-red il-ink" d="M18 44l8-26 6 22z"/>
-    <path class="il-red il-ink" d="M30 46l14-20 2 22z" transform="rotate(18 38 36)"/>
-    <path class="il-line il-thin" d="M24 50l4 4M36 52l2 5M14 56l5 2"/>
-    <path class="il-grass il-ink il-thin" d="M8 78l4-10 2 10M120 70l3-9 2 9M128 80l5-8 1 8M18 66l2-8 3 7"/>
-    <path class="il-beard il-ink il-thin" d="M112 46c4-6 10-4 9 2-3 4-8 3-9-2z"/>`,
+    <path class="il-grass" d="M0 92h160v28H0z"/>
+    <path class="il-green" d="M0 100h70v10H0z" opacity="0.7"/>
+    <path class="il-grass il-ink il-thin" d="M76 92l2-7 2 7M150 92l2-8 2 8M104 92l2-6 2 6"/>
+    <path class="il-beard il-ink il-thin" d="M10 106c3-5 9-5 11 0-3 3-8 3-11 0z"/>
+    <circle class="il-smoke il-ink il-thin" cx="30" cy="40" r="6"/><circle class="il-smoke il-ink il-thin" cx="22" cy="30" r="4"/>
+    <path class="il-line il-thick" d="M38 62 16 24M8 27l15-6"/>
+    <rect class="il-metal il-ink" x="36" y="48" width="28" height="16" rx="3"/>
+    <path class="il-line il-thin" d="M41 53h18M41 58h18"/>
+    <path class="il-red il-ink" d="M16 92c2-18 14-28 36-28h30c12 0 18 10 18 28z"/>
+    <path class="il-white il-ink il-thin" d="M62 92l3-6 3 6 3-6 3 6 3-6 3 6 3-6 3 6 3-6 3 6 3-6 3 6"/>
+    <circle class="il-white il-ink" cx="72" cy="76" r="6"/><circle class="il-dark" cx="75" cy="77" r="2.6"/>
+    <circle class="il-white il-ink" cx="88" cy="76" r="5"/><circle class="il-dark" cx="90" cy="77" r="2.3"/>
+    <path class="il-line" d="M64 67l12 5M95 68l-9 4"/>
+    <circle class="il-dark il-ink" cx="30" cy="94" r="8"/><circle class="il-metal" cx="30" cy="94" r="3"/>
+    <circle class="il-dark il-ink" cx="88" cy="94" r="8"/><circle class="il-metal" cx="88" cy="94" r="3"/>
+    <path class="il-green il-ink il-thin" d="M102 84l6-3M104 90l7 0M101 78l5-5"/>
+    <g transform="rotate(-28 92 22)">
+      <path class="il-red il-ink" d="M84 34 94 6l10 28z"/>
+      <path class="il-light il-dash" d="M85 34h18"/>
+    </g>
+    <path class="il-line il-thin" d="M104 30l8 4M100 40l9 2M108 22l7 6"/>
+    <path class="il-light il-thin" d="M124 30a14 14 0 0 1 14-6M118 24a22 22 0 0 1 24-8"/>
+    <path class="il-skin il-ink" d="M118 64h-8M148 66l6-10"/>
+    <path class="il-blue il-ink" d="M118 70h24l-2 24h-20z"/>
+    <path class="il-dark il-ink" d="M120 94l-8 6h8l4-6zM136 94l6 8h-6l-4-8z"/>
+    <path class="il-blue il-ink" d="M118 74l-10-10M142 74l8-14"/>
+    <circle class="il-skin il-ink" cx="107" cy="62" r="3.4"/><circle class="il-skin il-ink" cx="151" cy="58" r="3.4"/>
+    <ellipse class="il-skin il-ink" cx="130" cy="58" rx="11" ry="9"/>
+    <path class="il-beard il-ink" d="M119 60c2 18 20 18 22 0-6 4-16 4-22 0z"/>
+    <circle class="il-white il-ink il-thin" cx="125" cy="55" r="3.4"/><circle class="il-dark" cx="123.6" cy="55" r="1.5"/>
+    <circle class="il-white il-ink il-thin" cx="134" cy="55" r="3.4"/><circle class="il-dark" cx="132.6" cy="55" r="1.5"/>
+    <ellipse class="il-dark" cx="129" cy="63" rx="2.4" ry="3"/>
+    <path class="il-red il-ink" d="M119 50h22l-3-10h-16z"/>
+    <path class="il-light il-dash" d="M123 40h14"/>
+    <ellipse class="il-water il-ink il-thin" cx="144" cy="50" rx="2" ry="3"/>`,
 
   // A small pile of pebbles with big sad eyes, crying pebble-shaped tears into a tissue.
   'kz.pebble-golem': `
@@ -63,24 +79,48 @@ const ILLUSTRATIONS: Readonly<Record<string, string>> = {
     </g>
     <circle class="il-yellow il-ink il-thin" cx="80" cy="4" r="3"/></g>`,
 
-  // A coiled garden hose with a proud face, spraying a long jet that turns a little campfire monster into a puff.
+  // Twenty metres of persuasion: a smug garden gnome with a pistol-grip spray gun; the jet has soaked a dwarf who
+  // waves a white flag. The hose runs flat across the lawn in loose loops.
   'kz.garden-hose': `
     <rect class="il-sky" x="0" y="0" width="160" height="120"/>
-    <path class="il-grass" d="M0 100h160v20H0z"/>
-    <g class="il-green il-ink">
-      <ellipse cx="44" cy="86" rx="30" ry="14"/>
-      <ellipse cx="44" cy="78" rx="26" ry="12"/>
-      <ellipse cx="44" cy="70" rx="22" ry="10"/>
+    <g class="il-wood il-ink il-thin">
+      <rect x="4" y="70" width="8" height="30"/><rect x="22" y="70" width="8" height="30"/><rect x="40" y="70" width="8" height="30"/>
+      <rect x="96" y="70" width="8" height="30"/><rect x="108" y="70" width="8" height="30"/>
     </g>
-    <path class="il-hose" d="M58 66c10-10 22-16 34-18"/>
-    <rect class="il-metal il-ink" x="90" y="42" width="12" height="9" rx="2" transform="rotate(-12 96 46)"/>
-    <circle class="il-dark" cx="38" cy="68" r="2.2"/><circle class="il-dark" cx="50" cy="68" r="2.2"/>
-    <path class="il-line il-thin" d="M40 74q4 3 8 0"/>
-    <path class="il-water-line" d="M104 44c14-4 24 4 30 20M104 46c12 0 20 8 24 22M104 42c16-8 30 0 36 14"/>
-    <path class="il-wood il-ink" d="M118 98l28-6M120 92l26 8"/>
-    <path class="il-smoke il-ink il-thin" d="M126 82c-6-4-2-12 4-10 2-6 10-6 12 0 6 0 8 8 2 10z"/>
-    <circle class="il-dark" cx="132" cy="80" r="1.5"/><circle class="il-dark" cx="138" cy="80" r="1.5"/>
-    <path class="il-line il-thin" d="M132 85q3-2 6 0"/>`,
+    <path class="il-wood-dark" d="M0 78h160v4H0z" opacity="0.8"/>
+    <path class="il-grass" d="M0 98h160v22H0z"/>
+    <path class="il-hose" d="M87 86c2 10-6 16-18 18-14 2-20-6-34-2s-20 10-31 4"/>
+    <path class="il-red il-ink" d="M52 50 64 16l12 34z"/>
+    <path class="il-blue il-ink" d="M52 64h24l-1 26H53z"/>
+    <path class="il-dark" d="M52 72h24v4H52z"/>
+    <path class="il-dark il-ink" d="M54 90h8v6h-10zM66 90h8l2 6H66z"/>
+    <path class="il-blue il-ink" d="M72 68h12v6H72z"/>
+    <ellipse class="il-skin il-ink" cx="64" cy="55" rx="11" ry="8.5"/>
+    <path class="il-beard il-ink" d="M53 57c2 16 20 16 22 0-6 3-16 3-22 0z"/>
+    <circle class="il-dark" cx="62" cy="53" r="1.8"/><circle class="il-dark" cx="69" cy="53" r="1.8"/>
+    <path class="il-line il-thin" d="M58 49l5 1M72 49l-4 1M60 58q4 3 8 0"/>
+    <circle class="il-skin il-ink il-thin" cx="72" cy="56" r="2.6"/>
+    <path class="il-metal il-ink" d="M84 66h16v6H92l-1 12h-6z"/>
+    <path class="il-line il-thin" d="M88 72q2 4-1 6"/>
+    <circle class="il-skin il-ink il-thin" cx="86" cy="73" r="3.4"/>
+    <path class="il-water-line" d="M102 68c10-6 18-6 26-2M102 70c10-2 18 0 24 4M102 66c8-8 18-10 26-6"/>
+    <path class="il-line il-thin" d="M148 98V20"/>
+    <path class="il-paper il-ink il-thin" d="M148 22c-6-4-12 2-20-1v14c8 3 14-3 20 1z"/>
+    <path class="il-yellow il-ink" d="M120 56a14 12 0 0 1 28 0z"/>
+    <rect class="il-yellow il-ink il-thin" x="117" y="55" width="34" height="4" rx="2"/>
+    <circle class="il-glow il-ink il-thin" cx="134" cy="48" r="3"/>
+    <ellipse class="il-skin il-ink" cx="134" cy="65" rx="12" ry="8.5"/>
+    <path class="il-orange il-ink" d="M122 67c2 20 22 20 24 0-6 4-18 4-24 0z"/>
+    <path class="il-line il-thin" d="M127 61l4 2-4 2M141 61l-4 2 4 2M129 70q2-2 4 0t4 0 4 0"/>
+    <path class="il-green il-ink" d="M123 78h22l-1 18h-20z"/>
+    <path class="il-green il-ink" d="M142 82l6-16"/>
+    <circle class="il-skin il-ink il-thin" cx="148" cy="64" r="3.4"/>
+    <path class="il-dark il-ink" d="M124 96h8v5h-9zM136 96h8l1 5h-9z"/>
+    <ellipse class="il-water il-ink il-thin" cx="134" cy="106" rx="22" ry="3.6"/>
+    <g class="il-water il-ink il-thin">
+      <ellipse cx="118" cy="62" rx="1.8" ry="2.8"/><ellipse cx="121" cy="76" rx="1.8" ry="2.8"/><ellipse cx="151" cy="74" rx="1.8" ry="2.8"/>
+      <ellipse cx="128" cy="88" rx="1.6" ry="2.4"/>
+    </g>`,
 
   // A shabby garden shed; the door is ajar, two glowing eyes and a curious tentacle peek out of the dark.
   'kz.shed-thing': `
@@ -130,12 +170,3 @@ const ILLUSTRATIONS: Readonly<Record<string, string>> = {
       <rect class="il-metal il-ink il-thin" x="130" y="54" width="10" height="7" rx="2" transform="rotate(-20 135 57)"/>
     </g>`
 };
-
-/** SVG markup of a card's illustration, or `undefined` if the card has none yet. */
-export function illustration(base: string): string | undefined {
-  const inner = ILLUSTRATIONS[base];
-  return inner === undefined ? undefined : `<svg viewBox="0 0 160 120" aria-hidden="true" focusable="false" class="cq-il">${inner}</svg>`;
-}
-
-/** Base ids that have an illustration (for tests). */
-export const illustratedCards = (): string[] => Object.keys(ILLUSTRATIONS);
