@@ -22,5 +22,7 @@ export default defineGame<NBackState>({
   metadata,
   create: createNBack,
   isValidState: isValidNBackState,
-  settings: (env) => nBackSettings(env)
+  settings: (env) => nBackSettings(env),
+  // For saves from before the host kept the settings (ADR 0017).
+  settingsOf: (state) => ({ difficulty: state.difficulty, variant: state.variant, pace: state.pace })
 });

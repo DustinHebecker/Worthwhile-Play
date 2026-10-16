@@ -40,7 +40,11 @@ export function createWordGuess(context: GameContext): GameInstance<WordGuessSta
     const r = typeof raw === 'object' && raw !== null ? (raw as Record<string, unknown>) : {};
     return (LAYOUTS as readonly unknown[]).includes(r.layout) ? (r.layout as KeyboardLayout) : 'familiar';
   })();
-  const rememberOptions = () => context.preferences?.set('options', { layout: state.layout });
+  // Other entries (word language and strict mode of older versions) stay: they are the start screen's defaults.
+  const rememberOptions = () => {
+    const raw = context.preferences?.get('options');
+    context.preferences?.set('options', { ...(typeof raw === 'object' && raw !== null ? raw : {}), layout: state.layout });
+  };
   let state = createInitialState(0, undefined, optionsFrom(undefined, t.locale, rememberedLayout));
   let paused = false;
   let message = '';

@@ -5,6 +5,7 @@ import type { SupportedLocale } from '@wp/localization';
 import { createTestContext, type TestContext } from '@wp/testing';
 import game from '../src/index';
 import { COMPUTER_REVEAL_MS } from '../src/view';
+import { connectFourSettings } from '../src/settings';
 import { isValidState, type ConnectFourState } from '../src/rules';
 
 const STANDARD = { size: '7x6', connect: 4, pullOut: false };
@@ -339,7 +340,7 @@ describe('variants: board size, goal and the pull-out rule', () => {
   const human = (m: ReturnType<typeof mount>) => m.select('opponent', 'human');
 
   it('declares the variant as start-screen settings and rebuilds the board for a new size', () => {
-    expect(game.settings).toEqual(expect.arrayContaining([expect.objectContaining({ id: 'size', values: ['7x6', '8x7', '9x7'] })]));
+    expect(connectFourSettings()).toEqual(expect.arrayContaining([expect.objectContaining({ id: 'size', values: ['7x6', '8x7', '9x7'] })]));
     const m = mount();
     m.instance.newGame({ seed: 5 });
     m.select('size', '9x7');

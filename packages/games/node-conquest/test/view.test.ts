@@ -6,6 +6,7 @@ import game from '../src/index';
 import { createSave, interpretSave } from '@wp/persistence';
 import { BOARD, createGame, INTRO_MAP, mapOf, MAPS_PER_SET, MAX_LEVEL, type NcState } from '../src/rules';
 import { crossings, FACTION_COUNTS, getMap, LAYOUTS, LEGACY_MAPS, type GameMap } from '../src/maps';
+import { nodeConquestSettings } from '../src/settings';
 import { battlements, crossingMark, MAX_ZOOM, PICK_R, pickNode, shapePath } from '../src/view';
 
 let ctx: TestContext;
@@ -305,7 +306,7 @@ describe('Orbit Links view', () => {
   });
 
   it('declares a map choice with every map and the introduction, and the opponent count except for the introduction', () => {
-    const [map, opponents] = game.settings as readonly { id: string; values?: readonly unknown[]; when?: Record<string, readonly unknown[]> }[];
+    const [map, opponents] = nodeConquestSettings() as readonly { id: string; values?: readonly unknown[]; when?: Record<string, readonly unknown[]> }[];
     expect(map!.values).toEqual(['random', 'intro', ...Array.from({ length: MAPS_PER_SET }, (_, i) => String(i + 1))]);
     expect(opponents!.values).toEqual([1, 2, 3]);
     expect(opponents!.when!.map).not.toContain('intro');

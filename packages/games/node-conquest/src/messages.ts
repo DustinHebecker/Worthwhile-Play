@@ -6,7 +6,8 @@ import type { GameMessages } from '@wp/game-core';
  * or phrasing with a colon.
  */
 const en = {
-  'map.random': 'Any map (by game number)',
+  'map.random': 'Any map',
+  'map.hint': 'With “Any map”, the game number decides the map.',
   'map.1': 'Map 1',
   'map.2': 'Map 2',
   'map.3': 'Map 3',
@@ -36,7 +37,6 @@ const en = {
   'action.retry': 'Try again',
   'action.replay': 'Play this map again',
   'map.label': 'Map',
-  'map.option': 'Map {n} · {count} nodes',
   'status.ready': 'Ready. Look at the map, plan your first paths, then press Start.',
   'status.paused': 'Paused · {time}',
   'status.running': 'Running · {time}',
@@ -87,10 +87,6 @@ const en = {
   'help.crossings': "Where two lanes cross (small ring with ✕), hostile streams meet and fight just as on a shared lane; your own streams fly past each other. Units change lanes only at nodes.",
   'opponents.label': "Opponents",
   'map.intro': "Introduction",
-  'confirm.text': "Start a new match on map {n} with opponents: {opponents}? The current match ends.",
-  'confirm.intro': "Start the introduction? The current match ends.",
-  'confirm.yes': "Yes, start new match",
-  'confirm.no': "No, keep playing",
   'zoom.label': "Map view",
   'zoom.in': "Zoom in",
   'zoom.out': "Zoom out",
@@ -114,7 +110,8 @@ const en = {
 type Catalogue = Record<keyof typeof en, string>;
 
 const de: Catalogue = {
-  'map.random': 'Beliebige Karte (nach Spielnummer)',
+  'map.random': 'Beliebige Karte',
+  'map.hint': 'Bei „Beliebige Karte“ bestimmt die Spielnummer die Karte.',
   'map.1': 'Karte 1',
   'map.2': 'Karte 2',
   'map.3': 'Karte 3',
@@ -144,7 +141,6 @@ const de: Catalogue = {
   'action.retry': 'Noch einmal versuchen',
   'action.replay': 'Diese Karte noch einmal spielen',
   'map.label': 'Karte',
-  'map.option': 'Karte {n} · {count} Knoten',
   'status.ready': 'Bereit. Sieh dir die Karte an, plane deine ersten Pfade und drücke dann Start.',
   'status.paused': 'Pausiert · {time}',
   'status.running': 'Läuft · {time}',
@@ -195,10 +191,6 @@ const de: Catalogue = {
   'help.crossings': "Wo sich zwei Bahnen kreuzen (kleiner Ring mit ✕), treffen feindliche Ströme aufeinander und kämpfen wie auf einer gemeinsamen Bahn; deine eigenen Ströme fliegen aneinander vorbei. Einheiten wechseln die Bahn nur an Knoten.",
   'opponents.label': "Gegner",
   'map.intro': "Einführung",
-  'confirm.text': "Neue Partie auf Karte {n} mit Gegnern: {opponents} starten? Die laufende Partie endet.",
-  'confirm.intro': "Einführung starten? Die laufende Partie endet.",
-  'confirm.yes': "Ja, neue Partie starten",
-  'confirm.no': "Nein, weiterspielen",
   'zoom.label': "Kartenansicht",
   'zoom.in': "Vergrößern",
   'zoom.out': "Verkleinern",
@@ -220,7 +212,8 @@ const de: Catalogue = {
 };
 
 const nl: Catalogue = {
-  'map.random': 'Willekeurige kaart (volgens spelnummer)',
+  'map.random': 'Willekeurige kaart',
+  'map.hint': 'Bij „Willekeurige kaart” bepaalt het spelnummer de kaart.',
   'map.1': 'Kaart 1',
   'map.2': 'Kaart 2',
   'map.3': 'Kaart 3',
@@ -250,7 +243,6 @@ const nl: Catalogue = {
   'action.retry': 'Opnieuw proberen',
   'action.replay': 'Deze kaart opnieuw spelen',
   'map.label': 'Kaart',
-  'map.option': 'Kaart {n} · {count} knooppunten',
   'status.ready': 'Klaar. Bekijk de kaart, plan je eerste paden en druk dan op Start.',
   'status.paused': 'Gepauzeerd · {time}',
   'status.running': 'Bezig · {time}',
@@ -301,10 +293,6 @@ const nl: Catalogue = {
   'help.crossings': "Waar twee banen elkaar kruisen (kleine ring met ✕), ontmoeten vijandige stromen elkaar en vechten ze net als op een gedeelde baan; je eigen stromen vliegen langs elkaar heen. Eenheden wisselen alleen bij knooppunten van baan.",
   'opponents.label': "Tegenstanders",
   'map.intro': "Introductie",
-  'confirm.text': "Nieuwe partij starten op kaart {n} met tegenstanders: {opponents}? De huidige partij stopt.",
-  'confirm.intro': "Introductie starten? De huidige partij stopt.",
-  'confirm.yes': "Ja, nieuwe partij starten",
-  'confirm.no': "Nee, verder spelen",
   'zoom.label': "Kaartweergave",
   'zoom.in': "Inzoomen",
   'zoom.out': "Uitzoomen",
@@ -326,7 +314,8 @@ const nl: Catalogue = {
 };
 
 const es: Catalogue = {
-  'map.random': 'Cualquier mapa (según el número de partida)',
+  'map.random': 'Cualquier mapa',
+  'map.hint': 'Con «Cualquier mapa», el número de partida decide el mapa.',
   'map.1': 'Mapa 1',
   'map.2': 'Mapa 2',
   'map.3': 'Mapa 3',
@@ -356,7 +345,6 @@ const es: Catalogue = {
   'action.retry': 'Intentar de nuevo',
   'action.replay': 'Jugar este mapa otra vez',
   'map.label': 'Mapa',
-  'map.option': 'Mapa {n} · {count} nodos',
   'status.ready': 'Listo. Observa el mapa, planea tus primeras rutas y luego pulsa Empezar.',
   'status.paused': 'En pausa · {time}',
   'status.running': 'En curso · {time}',
@@ -407,10 +395,6 @@ const es: Catalogue = {
   'help.crossings': "Donde dos rutas se cruzan (pequeño anillo con ✕), las corrientes enemigas se encuentran y combaten igual que en una ruta compartida; tus propias corrientes se cruzan sin tocarse. Las unidades solo cambian de ruta en los nodos.",
   'opponents.label': "Rivales",
   'map.intro': "Introducción",
-  'confirm.text': "¿Empezar una partida nueva en el mapa {n} con rivales: {opponents}? La partida actual termina.",
-  'confirm.intro': "¿Empezar la introducción? La partida actual termina.",
-  'confirm.yes': "Sí, empezar partida nueva",
-  'confirm.no': "No, seguir jugando",
   'zoom.label': "Vista del mapa",
   'zoom.in': "Ampliar",
   'zoom.out': "Reducir",
@@ -432,7 +416,8 @@ const es: Catalogue = {
 };
 
 const fr: Catalogue = {
-  'map.random': 'N’importe quelle carte (selon le numéro de partie)',
+  'map.random': 'N’importe quelle carte',
+  'map.hint': 'Avec « N’importe quelle carte », le numéro de partie choisit la carte.',
   'map.1': 'Carte 1',
   'map.2': 'Carte 2',
   'map.3': 'Carte 3',
@@ -462,7 +447,6 @@ const fr: Catalogue = {
   'action.retry': 'Réessayer',
   'action.replay': 'Rejouer cette carte',
   'map.label': 'Carte',
-  'map.option': 'Carte {n} · {count} nœuds',
   'status.ready': 'Prêt. Observez la carte, prévoyez vos premiers chemins, puis appuyez sur Commencer.',
   'status.paused': 'En pause · {time}',
   'status.running': 'En cours · {time}',
@@ -513,10 +497,6 @@ const fr: Catalogue = {
   'help.crossings': "Là où deux couloirs se croisent (petit anneau avec ✕), les flux ennemis se rencontrent et se battent comme sur un couloir commun ; vos propres flux se croisent sans se gêner. Les unités ne changent de couloir qu’aux nœuds.",
   'opponents.label': "Adversaires",
   'map.intro': "Introduction",
-  'confirm.text': "Commencer une nouvelle partie sur la carte {n} avec adversaires : {opponents} ? La partie en cours se termine.",
-  'confirm.intro': "Commencer l’introduction ? La partie en cours se termine.",
-  'confirm.yes': "Oui, nouvelle partie",
-  'confirm.no': "Non, continuer",
   'zoom.label': "Vue de la carte",
   'zoom.in': "Zoom avant",
   'zoom.out': "Zoom arrière",
@@ -538,7 +518,8 @@ const fr: Catalogue = {
 };
 
 const ru: Catalogue = {
-  'map.random': 'Любая карта (по номеру игры)',
+  'map.random': 'Любая карта',
+  'map.hint': 'При выборе «Любая карта» карту определяет номер игры.',
   'map.1': 'Карта 1',
   'map.2': 'Карта 2',
   'map.3': 'Карта 3',
@@ -568,7 +549,6 @@ const ru: Catalogue = {
   'action.retry': 'Попробовать снова',
   'action.replay': 'Сыграть эту карту ещё раз',
   'map.label': 'Карта',
-  'map.option': 'Карта {n} · узлов: {count}',
   'status.ready': 'Всё готово. Рассмотрите карту, спланируйте первые пути и нажмите «Старт».',
   'status.paused': 'Пауза · {time}',
   'status.running': 'Идёт игра · {time}',
@@ -619,10 +599,6 @@ const ru: Catalogue = {
   'help.crossings': "Где две трассы пересекаются (маленькое кольцо с ✕), вражеские потоки встречаются и сражаются, как на общей трассе; ваши собственные потоки пролетают мимо друг друга. Единицы переходят на другую трассу только в узлах.",
   'opponents.label': "Соперники",
   'map.intro': "Введение",
-  'confirm.text': "Начать новую партию на карте {n}, соперников: {opponents}? Текущая партия завершится.",
-  'confirm.intro': "Начать введение? Текущая партия завершится.",
-  'confirm.yes': "Да, начать новую партию",
-  'confirm.no': "Нет, продолжить игру",
   'zoom.label': "Вид карты",
   'zoom.in': "Приблизить",
   'zoom.out': "Отдалить",
@@ -644,7 +620,8 @@ const ru: Catalogue = {
 };
 
 const zhHans: Catalogue = {
-  'map.random': '任意地图（按对局编号）',
+  'map.random': '任意地图',
+  'map.hint': '选择“任意地图”时，由对局编号决定地图。',
   'map.1': '地图 1',
   'map.2': '地图 2',
   'map.3': '地图 3',
@@ -674,7 +651,6 @@ const zhHans: Catalogue = {
   'action.retry': '再试一次',
   'action.replay': '再玩一次这张地图',
   'map.label': '地图',
-  'map.option': '地图 {n} · {count} 个节点',
   'status.ready': '准备就绪。看看地图，规划好最初的路径，然后点“开始”。',
   'status.paused': '已暂停 · {time}',
   'status.running': '进行中 · {time}',
@@ -725,10 +701,6 @@ const zhHans: Catalogue = {
   'help.crossings': "两条航线相交处（带 ✕ 的小圆环），敌对的单位流会相遇并交战，就像在同一条航线上一样；你自己的单位流则互相穿过。单位只在节点处换线。",
   'opponents.label': "对手数",
   'map.intro': "入门教程",
-  'confirm.text': "要在地图 {n} 上开始新的一局吗？对手数：{opponents}。当前对局将结束。",
-  'confirm.intro': "要开始入门教程吗？当前对局将结束。",
-  'confirm.yes': "是，开始新的一局",
-  'confirm.no': "否，继续游戏",
   'zoom.label': "地图视图",
   'zoom.in': "放大",
   'zoom.out': "缩小",
@@ -750,7 +722,8 @@ const zhHans: Catalogue = {
 };
 
 const ko: Catalogue = {
-  'map.random': '아무 지도 (게임 번호에 따라)',
+  'map.random': '아무 지도',
+  'map.hint': '“아무 지도”를 고르면 게임 번호에 따라 지도가 정해집니다.',
   'map.1': '지도 1',
   'map.2': '지도 2',
   'map.3': '지도 3',
@@ -780,7 +753,6 @@ const ko: Catalogue = {
   'action.retry': '다시 도전',
   'action.replay': '이 지도 다시 하기',
   'map.label': '지도',
-  'map.option': '지도 {n} · 노드 {count}개',
   'status.ready': '준비 완료. 지도를 살펴보고 첫 경로를 계획한 다음 시작을 누르세요.',
   'status.paused': '일시정지됨 · {time}',
   'status.running': '진행 중 · {time}',
@@ -831,10 +803,6 @@ const ko: Catalogue = {
   'help.crossings': "두 항로가 교차하는 곳(✕가 있는 작은 고리)에서는 적대적인 흐름이 만나 같은 항로에서처럼 싸웁니다. 내 흐름끼리는 서로 그냥 지나갑니다. 유닛은 노드에서만 항로를 바꿉니다.",
   'opponents.label': "상대 수",
   'map.intro': "튜토리얼",
-  'confirm.text': "지도 {n}에서 새 경기를 시작할까요? 상대 수: {opponents}. 진행 중인 경기는 끝납니다.",
-  'confirm.intro': "튜토리얼을 시작할까요? 진행 중인 경기는 끝납니다.",
-  'confirm.yes': "예, 새 경기 시작",
-  'confirm.no': "아니요, 계속하기",
   'zoom.label': "지도 보기",
   'zoom.in': "확대",
   'zoom.out': "축소",
@@ -856,7 +824,8 @@ const ko: Catalogue = {
 };
 
 const ja: Catalogue = {
-  'map.random': 'おまかせのマップ（ゲーム番号で決定）',
+  'map.random': 'おまかせのマップ',
+  'map.hint': '「おまかせのマップ」では、ゲーム番号でマップが決まります。',
   'map.1': 'マップ 1',
   'map.2': 'マップ 2',
   'map.3': 'マップ 3',
@@ -886,7 +855,6 @@ const ja: Catalogue = {
   'action.retry': 'もう一度',
   'action.replay': 'このマップをもう一度',
   'map.label': 'マップ',
-  'map.option': 'マップ {n} · ノード {count}',
   'status.ready': '準備完了。マップを見て最初の経路を考え、スタートを押してください。',
   'status.paused': '一時停止中 · {time}',
   'status.running': '進行中 · {time}',
@@ -937,10 +905,6 @@ const ja: Catalogue = {
   'help.crossings': "2 本の航路が交差する所（✕ の入った小さな輪）では、敵対する流れが出会い、同じ航路の上と同じように戦います。自分の流れどうしはそのまますれ違います。ユニットが航路を乗り換えるのはノードだけです。",
   'opponents.label': "相手の数",
   'map.intro': "チュートリアル",
-  'confirm.text': "マップ {n} で新しい対戦を始めますか？ 相手の数: {opponents}。今の対戦は終了します。",
-  'confirm.intro': "チュートリアルを始めますか？ 今の対戦は終了します。",
-  'confirm.yes': "はい、新しい対戦を始める",
-  'confirm.no': "いいえ、続ける",
   'zoom.label': "マップ表示",
   'zoom.in': "拡大",
   'zoom.out': "縮小",
@@ -962,7 +926,8 @@ const ja: Catalogue = {
 };
 
 const ar: Catalogue = {
-  'map.random': 'أي خريطة (حسب رقم اللعبة)',
+  'map.random': 'أي خريطة',
+  'map.hint': 'مع «أي خريطة» يحدد رقم اللعبة الخريطة.',
   'map.1': 'الخريطة 1',
   'map.2': 'الخريطة 2',
   'map.3': 'الخريطة 3',
@@ -992,7 +957,6 @@ const ar: Catalogue = {
   'action.retry': 'حاول مرة أخرى',
   'action.replay': 'العب هذه الخريطة مرة أخرى',
   'map.label': 'الخريطة',
-  'map.option': 'الخريطة {n} · عدد العُقد: {count}',
   'status.ready': 'جاهز. تأمّل الخريطة وخطّط لمساراتك الأولى، ثم اضغط «ابدأ».',
   'status.paused': 'متوقف مؤقتًا · {time}',
   'status.running': 'جارٍ · {time}',
@@ -1043,10 +1007,6 @@ const ar: Catalogue = {
   'help.crossings': "حيث يتقاطع ممرّان (حلقة صغيرة بداخلها ✕) تلتقي التدفقات المعادية وتتقاتل كما على ممر مشترك؛ أما تدفقاتك أنت فيمرّ بعضها بجانب بعض. لا تنتقل الوحدات من ممر إلى آخر إلا عند العُقد.",
   'opponents.label': "المنافسون",
   'map.intro': "مقدمة تعليمية",
-  'confirm.text': "هل تبدأ مباراة جديدة على الخريطة {n} وعدد المنافسين: {opponents}؟ ستنتهي المباراة الحالية.",
-  'confirm.intro': "هل تبدأ المقدمة التعليمية؟ ستنتهي المباراة الحالية.",
-  'confirm.yes': "نعم، ابدأ مباراة جديدة",
-  'confirm.no': "لا، تابع اللعب",
   'zoom.label': "عرض الخريطة",
   'zoom.in': "تكبير",
   'zoom.out': "تصغير",
@@ -1068,7 +1028,8 @@ const ar: Catalogue = {
 };
 
 const pt: Catalogue = {
-  'map.random': 'Qualquer mapa (pelo número do jogo)',
+  'map.random': 'Qualquer mapa',
+  'map.hint': 'Com “Qualquer mapa”, o número do jogo decide o mapa.',
   'map.1': 'Mapa 1',
   'map.2': 'Mapa 2',
   'map.3': 'Mapa 3',
@@ -1098,7 +1059,6 @@ const pt: Catalogue = {
   'action.retry': 'Tentar de novo',
   'action.replay': 'Jogar este mapa outra vez',
   'map.label': 'Mapa',
-  'map.option': 'Mapa {n} · {count} nós',
   'status.ready': 'Pronto. Observe o mapa, planeje os primeiros caminhos e depois toque em Começar.',
   'status.paused': 'Em pausa · {time}',
   'status.running': 'Em andamento · {time}',
@@ -1149,10 +1109,6 @@ const pt: Catalogue = {
   'help.crossings': "Onde duas rotas se cruzam (pequeno anel com ✕), fluxos inimigos se encontram e lutam como numa rota compartilhada; seus próprios fluxos passam um pelo outro. As unidades só mudam de rota nos nós.",
   'opponents.label': "Adversários",
   'map.intro': "Introdução",
-  'confirm.text': "Começar uma nova partida no mapa {n} com adversários: {opponents}? A partida atual termina.",
-  'confirm.intro': "Começar a introdução? A partida atual termina.",
-  'confirm.yes': "Sim, começar nova partida",
-  'confirm.no': 'Não, continuar jogando',
   'zoom.label': "Vista do mapa",
   'zoom.in': "Ampliar",
   'zoom.out': "Reduzir",
@@ -1174,7 +1130,8 @@ const pt: Catalogue = {
 };
 
 const it: Catalogue = {
-  'map.random': 'Mappa qualsiasi (in base al numero di partita)',
+  'map.random': 'Mappa qualsiasi',
+  'map.hint': 'Con «Mappa qualsiasi» la mappa dipende dal numero di partita.',
   'map.1': 'Mappa 1',
   'map.2': 'Mappa 2',
   'map.3': 'Mappa 3',
@@ -1204,7 +1161,6 @@ const it: Catalogue = {
   'action.retry': 'Riprova',
   'action.replay': 'Gioca di nuovo questa mappa',
   'map.label': 'Mappa',
-  'map.option': 'Mappa {n} · {count} nodi',
   'status.ready': 'Pronto. Osserva la mappa, pianifica i primi percorsi e poi premi Inizia.',
   'status.paused': 'In pausa · {time}',
   'status.running': 'In corso · {time}',
@@ -1255,10 +1211,6 @@ const it: Catalogue = {
   'help.crossings': "Dove due rotte si incrociano (piccolo anello con ✕), i flussi nemici si incontrano e combattono come su una rotta condivisa; i tuoi flussi si incrociano senza scontrarsi. Le unità cambiano rotta solo nei nodi.",
   'opponents.label': "Avversari",
   'map.intro': "Introduzione",
-  'confirm.text': "Iniziare una nuova partita sulla mappa {n} con avversari: {opponents}? La partita in corso termina.",
-  'confirm.intro': "Iniziare l’introduzione? La partita in corso termina.",
-  'confirm.yes': "Sì, nuova partita",
-  'confirm.no': "No, continua a giocare",
   'zoom.label': "Vista della mappa",
   'zoom.in': "Ingrandisci",
   'zoom.out': "Riduci",
@@ -1280,7 +1232,8 @@ const it: Catalogue = {
 };
 
 const pl: Catalogue = {
-  'map.random': 'Dowolna mapa (według numeru gry)',
+  'map.random': 'Dowolna mapa',
+  'map.hint': 'Przy „Dowolna mapa” mapę wybiera numer gry.',
   'map.1': 'Mapa 1',
   'map.2': 'Mapa 2',
   'map.3': 'Mapa 3',
@@ -1310,7 +1263,6 @@ const pl: Catalogue = {
   'action.retry': 'Spróbuj ponownie',
   'action.replay': 'Zagraj na tej mapie jeszcze raz',
   'map.label': 'Mapa',
-  'map.option': 'Mapa {n} · węzły: {count}',
   'status.ready': 'Gotowe. Obejrzyj mapę, zaplanuj pierwsze ścieżki, a potem naciśnij Start.',
   'status.paused': 'Pauza · {time}',
   'status.running': 'Gra trwa · {time}',
@@ -1361,10 +1313,6 @@ const pl: Catalogue = {
   'help.crossings': "Tam, gdzie dwie trasy się krzyżują (małe kółko z ✕), wrogie strumienie spotykają się i walczą jak na wspólnej trasie; twoje własne strumienie mijają się bez walki. Jednostki zmieniają trasę tylko w węzłach.",
   'opponents.label': "Przeciwnicy",
   'map.intro': "Wprowadzenie",
-  'confirm.text': "Zacząć nową partię na mapie {n}, liczba przeciwników: {opponents}? Bieżąca partia się zakończy.",
-  'confirm.intro': "Zacząć wprowadzenie? Bieżąca partia się zakończy.",
-  'confirm.yes': "Tak, nowa partia",
-  'confirm.no': "Nie, graj dalej",
   'zoom.label': "Widok mapy",
   'zoom.in': "Powiększ",
   'zoom.out': "Pomniejsz",
@@ -1386,7 +1334,8 @@ const pl: Catalogue = {
 };
 
 const tr: Catalogue = {
-  'map.random': 'Herhangi bir harita (oyun numarasına göre)',
+  'map.random': 'Herhangi bir harita',
+  'map.hint': '“Herhangi bir harita” seçildiğinde haritayı oyun numarası belirler.',
   'map.1': 'Harita 1',
   'map.2': 'Harita 2',
   'map.3': 'Harita 3',
@@ -1416,7 +1365,6 @@ const tr: Catalogue = {
   'action.retry': 'Yeniden dene',
   'action.replay': 'Bu haritayı yeniden oyna',
   'map.label': 'Harita',
-  'map.option': 'Harita {n} · {count} düğüm',
   'status.ready': 'Hazır. Haritaya bak, ilk yollarını planla, sonra Başlat’a bas.',
   'status.paused': 'Duraklatıldı · {time}',
   'status.running': 'Sürüyor · {time}',
@@ -1467,10 +1415,6 @@ const tr: Catalogue = {
   'help.crossings': "İki hattın kesiştiği yerde (içinde ✕ olan küçük halka) düşman akışlar karşılaşır ve ortak bir hattaki gibi savaşır; kendi akışların birbirinin yanından geçer. Birimler yalnızca düğümlerde hat değiştirir.",
   'opponents.label': "Rakipler",
   'map.intro': "Tanıtım",
-  'confirm.text': "{n}. haritada yeni bir maç başlatılsın mı? Rakip sayısı: {opponents}. Süren maç sona erer.",
-  'confirm.intro': "Tanıtım başlatılsın mı? Süren maç sona erer.",
-  'confirm.yes': "Evet, yeni maç başlat",
-  'confirm.no': "Hayır, oynamaya devam et",
   'zoom.label': "Harita görünümü",
   'zoom.in': "Yakınlaştır",
   'zoom.out': "Uzaklaştır",
@@ -1492,7 +1436,8 @@ const tr: Catalogue = {
 };
 
 const uk: Catalogue = {
-  'map.random': 'Будь-яка мапа (за номером гри)',
+  'map.random': 'Будь-яка мапа',
+  'map.hint': 'Якщо обрано «Будь-яка мапа», мапу визначає номер гри.',
   'map.1': 'Мапа 1',
   'map.2': 'Мапа 2',
   'map.3': 'Мапа 3',
@@ -1522,7 +1467,6 @@ const uk: Catalogue = {
   'action.retry': 'Спробувати знову',
   'action.replay': 'Зіграти цю мапу ще раз',
   'map.label': 'Мапа',
-  'map.option': 'Мапа {n} · вузлів: {count}',
   'status.ready': 'Усе готово. Роздивіться мапу, сплануйте перші шляхи й натисніть «Старт».',
   'status.paused': 'Пауза · {time}',
   'status.running': 'Гра триває · {time}',
@@ -1573,10 +1517,6 @@ const uk: Catalogue = {
   'help.crossings': "Де дві траси перетинаються (маленьке кільце з ✕), ворожі потоки зустрічаються й б’ються, як на спільній трасі; ваші власні потоки пролітають повз одне одного. Одиниці переходять на іншу трасу лише у вузлах.",
   'opponents.label': "Суперники",
   'map.intro': "Вступ",
-  'confirm.text': "Почати нову партію на мапі {n}, суперників: {opponents}? Поточна партія завершиться.",
-  'confirm.intro': "Почати вступ? Поточна партія завершиться.",
-  'confirm.yes': "Так, почати нову партію",
-  'confirm.no': "Ні, грати далі",
   'zoom.label': "Вигляд мапи",
   'zoom.in': "Збільшити",
   'zoom.out': "Зменшити",
@@ -1598,7 +1538,8 @@ const uk: Catalogue = {
 };
 
 const hi: Catalogue = {
-  'map.random': 'कोई भी नक्शा (खेल संख्या के अनुसार)',
+  'map.random': 'कोई भी नक्शा',
+  'map.hint': '“कोई भी नक्शा” चुनने पर खेल संख्या नक्शा तय करती है।',
   'map.1': 'नक्शा 1',
   'map.2': 'नक्शा 2',
   'map.3': 'नक्शा 3',
@@ -1628,7 +1569,6 @@ const hi: Catalogue = {
   'action.retry': 'फिर कोशिश करें',
   'action.replay': 'यही नक्शा फिर खेलें',
   'map.label': 'नक्शा',
-  'map.option': 'नक्शा {n} · {count} नोड',
   'status.ready': 'तैयार। नक्शा देखें, अपने पहले रास्ते तय करें, फिर “शुरू करें” दबाएँ।',
   'status.paused': 'रुका हुआ · {time}',
   'status.running': 'चल रहा है · {time}',
@@ -1679,10 +1619,6 @@ const hi: Catalogue = {
   'help.crossings': "जहाँ दो मार्ग एक-दूसरे को काटते हैं (✕ वाला छोटा छल्ला), वहाँ विरोधी धाराएँ मिलती हैं और एक ही मार्ग की तरह लड़ती हैं; आपकी अपनी धाराएँ एक-दूसरे के पास से निकल जाती हैं। इकाइयाँ मार्ग केवल नोड पर बदलती हैं।",
   'opponents.label': "विरोधी",
   'map.intro': "परिचय",
-  'confirm.text': "नक्शा {n} पर नया मैच शुरू करें? विरोधियों की संख्या: {opponents}। मौजूदा मैच ख़त्म हो जाएगा।",
-  'confirm.intro': "परिचय शुरू करें? मौजूदा मैच ख़त्म हो जाएगा।",
-  'confirm.yes': "हाँ, नया मैच शुरू करें",
-  'confirm.no': "नहीं, खेलते रहें",
   'zoom.label': "नक्शा दृश्य",
   'zoom.in': "ज़ूम इन",
   'zoom.out': "ज़ूम आउट",

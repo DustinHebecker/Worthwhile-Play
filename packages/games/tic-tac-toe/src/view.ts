@@ -12,21 +12,18 @@ import { playOcTurn, startOcRound } from './order-chaos-ai';
 import {
   DEFAULT_DIFFICULTY,
   DIFFICULTIES,
-  OPPONENTS,
-  STARTERS,
   boardFromMoves,
   canUndo,
   humanMark,
   isLegalMove,
   outcomeOf,
   undo,
-  type Difficulty,
-  type Opponent,
-  type Starter
+  type Difficulty
 } from './rules';
 import { canUndoNested, isNestedLegal, nestedFromMoves, nestedOutcome, undoNested } from './nested';
-import { ROLES, canUndoOc, isOcCellFree, ocBoardFromMoves, ocOutcome, undoOc, type Role } from './order-chaos';
-import { VARIANTS, type TicTacToeState, type Variant } from './state';
+import { canUndoOc, isOcCellFree, ocBoardFromMoves, ocOutcome, undoOc } from './order-chaos';
+import { type TicTacToeState, type Variant } from './state';
+import { readSetup, type Setup } from './settings';
 import type { Panel } from './view-common';
 import { createClassicPanel } from './view-classic';
 import { createNestedPanel } from './view-nested';
@@ -35,28 +32,6 @@ import './styles.css';
 
 /** Short pause before the computer's reply becomes visible (skipped with reduced motion). */
 export const COMPUTER_REVEAL_MS = 350;
-
-export interface Setup {
-  variant: Variant;
-  opponent: Opponent;
-  /** Who plays X in the classic and nested games against the computer. */
-  starter: Starter;
-  /** The person's role in Order & Chaos against the computer. */
-  role: Role;
-}
-
-export const DEFAULT_SETUP: Setup = { variant: 'classic', opponent: 'computer', starter: 'human', role: 'order' };
-
-/** Reads untrusted start-screen settings (ADR 0017), accepting each valid field and ignoring anything else. */
-export function readSetup(value: unknown): Setup {
-  const setup = { ...DEFAULT_SETUP };
-  if (!isRecord(value)) return setup;
-  if (isOneOf(value.variant, VARIANTS)) setup.variant = value.variant;
-  if (isOneOf(value.opponent, OPPONENTS)) setup.opponent = value.opponent;
-  if (isOneOf(value.starter, STARTERS)) setup.starter = value.starter;
-  if (isOneOf(value.role, ROLES)) setup.role = value.role;
-  return setup;
-}
 
 /** A fresh round of the chosen variant, including the computer's opening move if it starts. */
 export function startVariant(setup: Setup, seed: number, difficulty: Difficulty): TicTacToeState {

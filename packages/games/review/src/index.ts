@@ -43,5 +43,7 @@ export default defineGame<ReviewState>({
   metadata,
   create: (context) => createReview(context),
   isValidState: (value: unknown): value is ReviewState => isValidReviewState(value),
-  settings: reviewSettings
+  settings: reviewSettings,
+  // For saves from before the host kept the settings (ADR 0017); `mode` only counts where learning records exist.
+  settingsOf: (state) => ({ deck: state.deckId, direction: state.direction, mode: state.mode })
 });
