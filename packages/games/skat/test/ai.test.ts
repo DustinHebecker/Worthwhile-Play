@@ -282,6 +282,13 @@ describe('hand evaluation and declarations', () => {
     const contract = chooseContract(view(rest, { bids: ['pass', 'pass', 18], skatChoice: 'pickup', discards: discard }), 18);
     expect(contract).toEqual({ kind: 'C', hand: false, schneider: false, schwarz: false, ouvert: false });
   });
+
+  it('never declares a Null game below the bid (ISkO 3.4.4)', () => {
+    const v = (bid: number) => view(nullHand, { bids: [bid, 'yes', 'pass', 'pass'], skatChoice: 'pickup', discards: ['8D', '8S'] });
+    expect(chooseContract(v(23), 23).kind).toBe('null');
+    expect(chooseContract(v(24), 24).kind).not.toBe('null');
+    expect(chooseAction(v(24), 1)).not.toMatchObject({ type: 'declare', contract: { kind: 'null' } });
+  });
 });
 
 describe('rule-based card play', () => {

@@ -19,11 +19,36 @@
  *   either side (declarer ≤ 30 points / no trick as well). Null: 23 / Hand 35 / ouvert 46 / ouvert Hand 59.
  * - Matadors are counted over the declarer's twelve cards (incl. the Skat, also in Hand games).
  * - Overbid (game value below the bid): lost; its value is the smallest multiple of the base value that reaches
- *   the bid (applied to Null with its fixed value as the base, e.g. Null at a bid of 24 → 46).
- * - Lost games count double. Under the current ISkO this applies to all games, Hand games included (the old rule
- *   "lost Hand games count single" is no longer part of the ISkO).
+ *   the bid (ISkO 5.4.1/5.4.2), counted double like every lost game.
+ * - Null below the bid: a Null game whose fixed value does not reach the bid cannot be declared (ISkO 3.4.4; the
+ *   declaration panel does not offer it, the computers never choose it). Should a saved game still hold one, it
+ *   is valued as 3.4.4 says: lost as a suit/Grand game at the bid with the declarer's matadors (the cheapest).
+ * - Lost games count double, Hand games included (ISkO 5.3.4).
  * - Null ends as soon as the declarer takes a trick; all other games are played to the tenth trick.
  * - Scoring: `simple` (±value, lost ×2) by default, Seeger–Fabian as an option (see `entryScores`).
+ *
+ * Sources (Internationale Skatordnung, DSkV/ISPA, in force since 1 Jan 1999, text as printed by the
+ * Internationales Skatgericht, Altenburg, Nov 2002; Skatgericht "Entscheidungssammlung", DSkV, Stand 2010/2012):
+ * - ISkO 3.3.7: "Zeigt niemand Spielinteresse, wird eingepasst. Darauf gibt der Nächste zum neuen Spiel."
+ * - ISkO 3.4.4: "Die Ansage eines nicht mehr durchführbaren Nullspiels endet mit dem Verlust eines Farb- oder
+ *   Grandspiels unter Berücksichtigung der letzten Reizhöhe und der Anzahl der vorhandenen oder fehlenden Spitzen."
+ *   Skatgericht 3.3.2 Fall 5 / 3.3.8 Fall 7 (Null ouvert announced after 48 was held): "Der Alleinspieler hat ein
+ *   nicht mehr durchführbares Nullspiel angesagt und ein Farb- oder Grandspiel … verloren."
+ * - ISkO 5.1.2: "Jedem Nullspiel liegt ein beständiger Spielwert zugrunde: Null 23, Null Hand 35, Null ouvert 46,
+ *   Null ouvert Hand 59."
+ * - ISkO 5.3.4: "Jedes verlorene Spiel muss mit doppelter Punktzahl in die Spielliste eingetragen bzw. zum
+ *   doppelten Wert bezahlt werden." Skatgericht 5.3.4 Fall 1 (Herz-Hand ohne 2 lost: 80, not 40): "Seit dem
+ *   01.01.1999 werden alle verlorenen Spiele (also auch Handspiele) doppelt abgeschrieben."
+ * - ISkO 5.4.1: "Bei einem überreizten Spiel mit Skataufnahme muss das Vielfache des Grundwertes des angesagten
+ *   Spiels berechnet werden, damit der Reizwert mindestens erreicht wird." Examples: bid 50, ♣J in the Skat,
+ *   "Herz mit 1 ‚überreizt' = -100 Punkte"; bid 59, "Kreuz bzw. Herz ohne 1 ‚überreizt' = -120 Punkte".
+ * - ISkO 5.4.2 (Hand game overbid because a top trump lay in the Skat, lost even with more than 60 points):
+ *   "Herz-Handspiel ohne drei Spitzen nach einem Reizgebot von 36 - Kreuz-Bube im Skat … mit 4 mal 10 verloren
+ *   = 80 Minuspunkten". Skatgericht 5.4.2 Fall 1: Karo-Hand at 48, ♠J in the Skat: "54 x 2 … = 108 Minuspunkte".
+ * - Skatwettspielordnung (SkWO) 5.1 (Seeger–Fabian): "Für jedes gewonnene Spiel werden dem Alleinspieler 50
+ *   Wertungspunkte gutgeschrieben, für jedes verlorene Spiel 50 Wertungspunkte abgezogen. Die Gegenpartei …
+ *   erhält bei einem verlorenen Spiel des Alleinspielers eine Gutschrift, die am Dreiertisch je 40 Punkte für die
+ *   beiden Gegenspieler und am Vierertisch je 30 Punkte für die Gegenpartei beträgt."
  */
 import {
   SUITS,
@@ -215,6 +240,13 @@ export function isLegalContract(c: Contract): boolean {
 /** Smallest multiple of `base` that is at least `bid`. */
 export const roundUpTo = (base: number, bid: number): number => Math.ceil(bid / base) * base;
 
+/**
+ * ISkO 3.4.4: a Null game can only be declared if its fixed value reaches the bid ("nicht mehr durchführbares
+ * Nullspiel" otherwise). Suit and Grand games may always be declared (an overbid one is lost, ISkO 5.4).
+ */
+export const isDeclarableAt = (contract: Contract, bid: number): boolean =>
+  contract.kind !== 'null' || nullValue(contract.hand, contract.ouvert) >= bid;
+
 export interface GameFacts {
   contract: Contract;
   bid: number;
@@ -237,7 +269,7 @@ export interface Valuation {
   matadors: { with: boolean; count: number } | null;
   schneider: boolean;
   schwarz: boolean;
-  /** Points for the declarer: +value if won, −2 × value if lost (ISkO 2002+: every lost game counts double). */
+  /** Points for the declarer: +value if won, −2 × value if lost (ISkO 5.3.4: every lost game counts double, Hand games too). */
   score: number;
 }
 
@@ -246,10 +278,9 @@ export function valueGame(f: GameFacts): Valuation {
   const { contract: c, bid } = f;
   if (c.kind === 'null') {
     const base = nullValue(c.hand, c.ouvert);
-    const overbid = bid > base;
-    const won = f.declarerTricks === 0 && !overbid;
-    const value = overbid ? roundUpTo(base, bid) : base;
-    return { won, overbid, value, base, multiplier: 0, matadors: null, schneider: false, schwarz: false, score: won ? value : -2 * value };
+    if (bid > base) return undeclarableNull(f);
+    const won = f.declarerTricks === 0;
+    return { won, overbid: false, value: base, base, multiplier: 0, matadors: null, schneider: false, schwarz: false, score: won ? base : -2 * base };
   }
   const base = BASE_VALUES[c.kind];
   const m = matadors(f.declarerCards, c.kind);
@@ -270,6 +301,25 @@ export function valueGame(f: GameFacts): Valuation {
   const won = made && !overbid;
   const value = overbid ? roundUpTo(base, bid) : reached;
   return { won, overbid, value, base, multiplier, matadors: m, schneider, schwarz, score: won ? value : -2 * value };
+}
+
+/**
+ * ISkO 3.4.4: a Null game below the bid is lost as a suit or Grand game "unter Berücksichtigung der letzten
+ * Reizhöhe und der Anzahl der vorhandenen oder fehlenden Spitzen": base × (matadors + 1 game + Hand), raised to
+ * the smallest multiple of the base that reaches the bid (5.4), and doubled (5.3.4). The ISkO names no suit; we
+ * take the cheapest of the four suits and Grand. Not reachable in play (`isDeclarableAt`), only for old saves.
+ */
+function undeclarableNull(f: GameFacts): Valuation {
+  let best: Valuation | null = null;
+  for (const kind of ['D', 'H', 'S', 'C', 'grand'] as const) {
+    const base = BASE_VALUES[kind];
+    const m = matadors(f.declarerCards, kind);
+    const multiplier = m.count + 1 + (f.contract.hand ? 1 : 0);
+    const value = Math.max(base * multiplier, roundUpTo(base, f.bid));
+    if (!best || value < best.value)
+      best = { won: false, overbid: true, value, base, multiplier, matadors: m, schneider: false, schwarz: false, score: -2 * value };
+  }
+  return best as Valuation;
 }
 
 /**
@@ -570,7 +620,7 @@ export function applyDealAction(d: DealState, seat: Seat, action: Action, ramsch
       if (action.type !== 'declare') return null;
       const c = action.contract;
       const contract: Contract = { kind: c.kind, hand: d.skatChoice === 'hand', schneider: !!c.schneider, schwarz: !!c.schwarz, ouvert: !!c.ouvert };
-      if (c.hand !== contract.hand || !isLegalContract(contract)) return null;
+      if (c.hand !== contract.hand || !isLegalContract(contract) || !isDeclarableAt(contract, highBid(d))) return null;
       next.contract = contract;
       return next;
     }
