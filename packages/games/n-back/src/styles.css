@@ -23,21 +23,11 @@
 .wp-nb__muted { color: var(--wp-muted); font-size: 0.95rem; }
 .wp-nb__status { font-variant-numeric: tabular-nums; }
 .wp-nb__prompt { min-height: 1.5em; }
-.wp-nb__options {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-}
-.wp-nb__options-label { color: var(--wp-muted); inline-size: 100%; }
-/* Selected option and pressed toggles: thicker border, bold text and a check mark (not colour alone). */
-.wp-nb__option[aria-pressed='true'],
+/* Pressed toggles: thicker border, bold text and a check mark (not colour alone). */
 .wp-nb__toggle[aria-pressed='true'] {
   border: 2px solid var(--wp-accent);
   font-weight: 700;
 }
-.wp-nb__option[aria-pressed='true']::before,
 .wp-nb__toggle[aria-pressed='true']::before { content: '✓ '; }
 
 /* Fixed-size stage: swapping items never shifts the layout. */

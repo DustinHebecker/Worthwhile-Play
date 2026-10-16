@@ -188,7 +188,9 @@ test('Review: learn an imported deck, reload mid-session, resume at the same car
   const id = await importCsv(page, 'Animals to review');
   await page.getByTestId('review-deck').click();
   await expect(page).toHaveURL(/\/games\/review$/);
-  await expect(page.getByTestId('review-deck')).toHaveValue(id);
+  // The deck link chooses the start screen's deck (ADR 0017).
+  await expect(page.getByTestId('settings-summary')).toContainText('Animals to review');
+  await expect.poll(async () => ((await readSave(page, 'review')) as { settings?: { deck?: string } } | undefined)?.settings?.deck).toBe(id);
   // Nothing rated yet: nothing is due, new cards are offered.
   await expect(page.getByTestId('review-empty')).toContainText('Nothing to review right now');
   await page.getByTestId('review-learn-new').click();
@@ -226,7 +228,7 @@ test('Review: learn an imported deck, reload mid-session, resume at the same car
   await page.getByTestId(`review-${id}`).click();
   await expect(page).toHaveURL(/\/games\/review$/);
   await expect(page.getByTestId('review-progress')).toHaveText('Card 1 of 7');
-  await expect(page.getByTestId('review-mode')).toHaveValue('review');
+  await expect.poll(async () => ((await readSave(page, 'review')) as { state?: { mode?: string } } | undefined)?.state?.mode).toBe('review');
 
   await page.goto('/settings');
   await expect(page.getByTestId('learning-info')).toHaveText('Learning records on this device: 7');
