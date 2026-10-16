@@ -164,7 +164,7 @@ describe('view', () => {
   it('declares the word language with the UI language as its default, and strict mode', () => {
     const specs = (locale: SupportedLocale) => (typeof game.settings === 'function' ? game.settings(createTestContext(game as GameModule<unknown>, locale).settingsEnv) : game.settings);
     expect(specs('de')).toEqual([expect.objectContaining({ id: 'language', values: ['en', 'de'], default: 'de' }), expect.objectContaining({ id: 'strict', kind: 'toggle', default: false })]);
-    expect(specs('ja')[0]).toMatchObject({ default: 'en' });
+    expect(specs('ja')).toEqual([expect.objectContaining({ default: 'en' }), expect.anything()]);
   });
 
   it('switches to the large alphabetical keyboard in the game', () => {
