@@ -374,8 +374,9 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
       await store.remove(metadata.id).catch(() => undefined);
     }
     const save = loaded.status === 'ok' ? loaded.save : undefined;
-    // Remembered settings (else the save's), overridden by a `?difficulty=` link.
-    const initial = { ...saveChoices(save), ...remembered(), ...(route.difficulty ? { difficulty: route.difficulty } : {}) };
+    // Remembered settings (else the save's), overridden by a `?difficulty=` link and a `?deck=` link (a game's
+    // `deck` setting, e.g. "Review" on a deck page; dropped by resolveSettings where it is not a valid choice).
+    const initial = { ...saveChoices(save), ...remembered(), ...(route.difficulty ? { difficulty: route.difficulty } : {}), ...(route.deck ? { deck: route.deck } : {}) };
     if (route.seed !== undefined) {
       // Deep links start at once (bug reports, sharing).
       await startNew({ seed: route.seed, ...resolve(initial) });

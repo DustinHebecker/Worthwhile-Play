@@ -1,16 +1,17 @@
 import './styles.css';
-import { bcp47Tag, type GameContext, type GameInstance, type LearningRating, type NewGameOptions } from '@wp/game-core';
-import { browserSpeech, pickText, type CardSide, type Speech } from '@wp/learning-content';
+import { bcp47Tag, isRecord, type GameContext, type GameInstance, type LearningRating, type NewGameOptions } from '@wp/game-core';
+import { browserSpeech, type CardSide, type Speech } from '@wp/learning-content';
 import { announce, clear, h } from '@wp/ui';
 import { deckItemIds, faceResolver, hasAllItems, isBuiltinReviewDeck, knowledgeLanguage, sessionLanguages, userDeck, type CardFaces, type FaceResolver } from './decks';
 import {
   availableCounts,
-  BUILTIN_REVIEW_DECKS,
+  type BUILTIN_REVIEW_DECKS,
   currentCard,
   DEFAULT_DECK,
   DIRECTION_CHOICES,
   isFinished,
   matchesAnswer,
+  MODES,
   rate,
   RATINGS,
   recordDeckOf,
@@ -27,11 +28,14 @@ import {
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 let instanceCounter = 0;
 
-/** Per-device preferences: the deck and direction of the next session. */
+/**
+ * Per-device preferences of older versions (the deck and direction of the next session). The host's start screen
+ * remembers the settings now (ADR 0017); these only seed its defaults.
+ */
 export const DECK_PREFERENCE = 'deck';
 export const DIRECTION_PREFERENCE = 'direction';
 
-const DECK_LABEL: Readonly<Record<(typeof BUILTIN_REVIEW_DECKS)[number], string>> = {
+export const DECK_LABEL: Readonly<Record<(typeof BUILTIN_REVIEW_DECKS)[number], string>> = {
   'first-words': 'deck.firstWords',
   flags: 'deck.flags',
   capitals: 'deck.capitals',
@@ -61,9 +65,6 @@ export function createReview(context: GameContext, speech: Speech | undefined = 
   let faces: FaceResolver | undefined;
   let paused = false;
   let launch = context.launch?.deck;
-  let wantedDirection: DirectionChoice = (DIRECTION_CHOICES as readonly unknown[]).includes(context.preferences?.get(DIRECTION_PREFERENCE))
-    ? (context.preferences?.get(DIRECTION_PREFERENCE) as DirectionChoice)
-    : 'forward';
 
   const today = () => {
     try {
@@ -97,22 +98,10 @@ export function createReview(context: GameContext, speech: Speech | undefined = 
   };
 
   // --- Elements ---------------------------------------------------------------------------
-  const deckSelect = h('select', { id: `${uid}-deck`, 'data-testid': 'review-deck' });
-  const directionSelect = h('select', { id: `${uid}-direction`, 'data-testid': 'review-direction' },
-    ...DIRECTION_CHOICES.map((d) => h('option', { value: d }, t(`direction.${d}`)))
-  );
-  const modeSelect = h('select', { id: `${uid}-mode`, 'data-testid': 'review-mode' });
-  const modeField = h('div', { class: 'wp-review__field' }, h('label', { for: `${uid}-mode` }, t('options.mode')), modeSelect);
+  // Deck, direction and which cards are chosen on the host's start screen (ADR 0017); the game only says which
+  // languages the session uses.
   const languagesEl = h('p', { class: 'wp-review__muted', 'data-testid': 'review-languages' });
-  const options = h('div', { class: 'wp-review__options' },
-    h('div', { class: 'wp-review__fields' },
-      h('div', { class: 'wp-review__field' }, h('label', { for: `${uid}-deck` }, t('options.deck')), deckSelect),
-      h('div', { class: 'wp-review__field' }, h('label', { for: `${uid}-direction` }, t('options.direction')), directionSelect),
-      modeField
-    ),
-    languagesEl,
-    h('p', { class: 'wp-review__muted' }, t('options.hint'))
-  );
+  const options = h('div', { class: 'wp-review__options' }, languagesEl);
   const noticeEl = h('p', { class: 'wp-review__notice', role: 'status', 'data-testid': 'review-notice', hidden: true });
   const practiceNote = h('p', { class: 'wp-review__notice', 'data-testid': 'review-practice-only', hidden: true }, t('practiceOnly'));
 
@@ -167,29 +156,11 @@ export function createReview(context: GameContext, speech: Speech | undefined = 
     return card && faces ? faces(card) : undefined;
   };
 
-  const renderDeckOptions = (selected: string) => {
-    clear(deckSelect);
-    deckSelect.append(...BUILTIN_REVIEW_DECKS.map((id) => h('option', { value: id, selected: id === selected }, t(DECK_LABEL[id]))));
-    const own = context.userDecks?.list() ?? [];
-    if (own.length > 0) {
-      deckSelect.append(
-        h('optgroup', { label: t('deck.own') },
-          ...own.map((deck) => h('option', { value: deck.id, selected: deck.id === selected }, t('deck.ownItem', { title: pickText(deck.title, t.locale), count: deck.itemCount })))
-        )
-      );
-    }
-    // A saved session's deck that is gone stays selected (as a placeholder) until a new session starts.
-    if (!Array.from(deckSelect.options).some((o) => o.value === selected)) deckSelect.append(h('option', { value: selected, selected: true, disabled: true }, '—'));
-  };
-
-  const renderModeOptions = (s: ReviewState) => {
-    clear(modeSelect);
-    modeField.hidden = !learning;
+  /** "Learn new cards (n)" on the "nothing to review" panel. */
+  const renderLearnNew = (s: ReviewState) => {
     if (!learning) return;
     const ids = deckItemIds(s.deckId, context.userDecks) ?? [];
     const counts = availableCounts(ids, recordsOf(recordDeckOf(s)), s.direction, today());
-    const label: Record<Mode, string> = { review: t('mode.review', { count: counts.due }), new: t('mode.new', { count: counts.unseen }), practice: t('mode.practice') };
-    modeSelect.append(...(['review', 'new', 'practice'] as const).map((m) => h('option', { value: m, selected: m === s.mode }, label[m])));
     learnNew.textContent = t('empty.new', { count: counts.unseen });
     learnNew.hidden = counts.unseen === 0;
   };
@@ -230,9 +201,7 @@ export function createReview(context: GameContext, speech: Speech | undefined = 
   const render = () => {
     if (!state) return;
     const s = state;
-    renderDeckOptions(s.deckId);
-    directionSelect.value = s.direction;
-    renderModeOptions(s);
+    renderLearnNew(s);
     const text = faces ? languagesText(s) : '';
     languagesEl.textContent = text;
     languagesEl.hidden = text === '';
@@ -365,42 +334,22 @@ export function createReview(context: GameContext, speech: Speech | undefined = 
     }
   };
 
-  const restartWith = (changes: { deck?: string; direction?: DirectionChoice; mode?: Mode }) => {
+  /** The "nothing to review" panel's offers: the same deck and direction, other cards. */
+  const restartWith = (mode: Mode) => {
     if (!state || paused) return;
-    start(state.seed, changes.deck ?? state.deckId, changes.direction ?? state.direction, changes.mode ?? (learning ? 'review' : 'practice'));
+    start(state.seed, state.deckId, state.direction, mode);
   };
 
-  const onDeck = () => {
-    if (!state || deckSelect.value === state.deckId) return;
-    context.preferences?.set(DECK_PREFERENCE, deckSelect.value);
-    restartWith({ deck: deckSelect.value });
-    deckSelect.focus();
-  };
-  const onDirection = () => {
-    const value = directionSelect.value as DirectionChoice;
-    if (!state || !(DIRECTION_CHOICES as readonly string[]).includes(value) || value === state.direction) return;
-    wantedDirection = value;
-    context.preferences?.set(DIRECTION_PREFERENCE, value);
-    restartWith({ direction: value, mode: state.mode });
-    directionSelect.focus();
-  };
-  const onMode = () => {
-    const value = modeSelect.value as Mode;
-    if (!state || value === state.mode) return;
-    restartWith({ mode: value });
-    modeSelect.focus();
-  };
   const onLearnNew = () => {
-    restartWith({ mode: 'new' });
+    restartWith('new');
     focusCurrent();
   };
   const onPractise = () => {
-    restartWith({ mode: 'practice' });
+    restartWith('practice');
     focusCurrent();
   };
   const onMissingNew = () => {
     if (!state || paused) return;
-    context.preferences?.set(DECK_PREFERENCE, DEFAULT_DECK);
     start(state.seed, DEFAULT_DECK, state.direction, learning ? 'review' : 'practice');
     focusCurrent();
   };
@@ -412,30 +361,33 @@ export function createReview(context: GameContext, speech: Speech | undefined = 
   const disposeVoices = speech?.onVoicesChanged(updateSpeak);
   revealForm.addEventListener('submit', onReveal);
   rateEl.addEventListener('click', onRate);
-  deckSelect.addEventListener('change', onDeck);
-  directionSelect.addEventListener('change', onDirection);
-  modeSelect.addEventListener('change', onMode);
   learnNew.addEventListener('click', onLearnNew);
   practise.addEventListener('click', onPractise);
   missingNew.addEventListener('click', onMissingNew);
   speakButton.addEventListener('click', onSpeak);
 
-  /** Deck for a new session: the link that opened the game, else the remembered one, else First words. */
-  const chosenDeck = (): string => {
+  /**
+   * Deck for a new session: the link that opened the game (`?deck=`, once), else the start screen's choice, else
+   * (older hosts) the deck older versions remembered, else First words.
+   */
+  const chosenDeck = (chosen: unknown): string => {
     const fromLaunch = launch;
     launch = undefined;
-    for (const candidate of [fromLaunch, context.preferences?.get(DECK_PREFERENCE)]) {
-      if (typeof candidate === 'string' && (isBuiltinReviewDeck(candidate) || userDeck(context.userDecks, candidate))) {
-        if (candidate === fromLaunch) context.preferences?.set(DECK_PREFERENCE, candidate);
-        return candidate;
-      }
+    for (const candidate of [fromLaunch, chosen, context.preferences?.get(DECK_PREFERENCE)]) {
+      if (typeof candidate === 'string' && (isBuiltinReviewDeck(candidate) || userDeck(context.userDecks, candidate))) return candidate;
     }
     return DEFAULT_DECK;
   };
 
   return {
     newGame(opts: NewGameOptions) {
-      start(opts.seed, chosenDeck(), wantedDirection, learning ? 'review' : 'practice', true);
+      // Settings from the host's start screen (ADR 0017); untrusted, so each falls back on its own.
+      const settings = isRecord(opts.settings) ? opts.settings : {};
+      const direction = DIRECTION_CHOICES.find((d) => d === settings.direction);
+      const mode = MODES.find((m) => m === settings.mode) ?? 'review';
+      // Without a chosen direction (older hosts, deep links) a review session falls back to both directions when
+      // only the other direction has cards due; a direction chosen on the start screen is kept as it is.
+      start(opts.seed, chosenDeck(settings.deck), direction ?? 'forward', learning ? mode : 'practice', direction === undefined);
     },
     restore(saved: ReviewState) {
       state = clone(saved);
@@ -469,9 +421,6 @@ export function createReview(context: GameContext, speech: Speech | undefined = 
       disposeVoices?.();
       revealForm.removeEventListener('submit', onReveal);
       rateEl.removeEventListener('click', onRate);
-      deckSelect.removeEventListener('change', onDeck);
-      directionSelect.removeEventListener('change', onDirection);
-      modeSelect.removeEventListener('change', onMode);
       learnNew.removeEventListener('click', onLearnNew);
       practise.removeEventListener('click', onPractise);
       missingNew.removeEventListener('click', onMissingNew);
