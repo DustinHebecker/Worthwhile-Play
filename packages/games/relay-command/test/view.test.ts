@@ -527,6 +527,11 @@ describe('Relay Command view', () => {
     seed.value = String(first.seed);
     seed.dispatchEvent(new Event('change'));
     expect(state().map).toEqual(old);
+    // Any number is read as the generator reads it: fractions dropped, wrapped modulo 2^32.
+    seed.value = String(2 ** 32 + first.seed + 0.6);
+    seed.dispatchEvent(new Event('change'));
+    expect(state().random!.seed).toBe(first.seed);
+    expect(seed.value).toBe(String(first.seed));
     expect(scenario.value).toBe('random');
     // The map editor opens the map being played.
     click('rc-editor-open');

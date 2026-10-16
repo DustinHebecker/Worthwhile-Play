@@ -1988,8 +1988,9 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       const [w, hh] = randomSize.value.split('x').map(Number);
       const size = RANDOM_SIZES.find(([a, b]) => a === w && b === hh) ?? RANDOM_SIZES[1]!;
       // Coming from another map: the map number starts from the game's seed.
+      // Read the number as the generator does (an unsigned 32-bit integer: fractions dropped, wrapped).
       const typed = Number(randomSeed.value);
-      const seed = state.random && randomSeed.value !== '' && Number.isInteger(typed) && typed >= 0 && typed <= 0xffffffff ? typed : state.seed;
+      const seed = state.random && randomSeed.value.trim() !== '' && Number.isFinite(typed) ? Math.trunc(typed) >>> 0 : state.seed;
       const limit = limitSelect.value === 'open' || limitSelect.value === 'quick' ? null : Number(limitSelect.value);
       const map = generateMap(size[0], size[1], seed, t('setup.randomName', { w: size[0], h: size[1], n: seed }).slice(0, MAX_NAME));
       selected = null;
