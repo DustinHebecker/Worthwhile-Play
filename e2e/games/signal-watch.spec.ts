@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, readSave } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, readSave, startGame } from '../../packages/testing/src/e2e';
 
 interface SavedSignal {
   phase: string;
@@ -48,8 +48,7 @@ test('signal-watch: a paused session resumes at the same stimulus after a reload
 });
 
 test('signal-watch: Space responds and is saved for the current stimulus', async ({ page }) => {
-  await page.goto('/games/signal-watch');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'signal-watch');
   await page.getByTestId('sw-start').click();
   await expect(page.getByTestId('sw-respond')).toBeFocused();
   await page.keyboard.press('Space');

@@ -54,6 +54,8 @@ const nl: UiCatalogue = {
   'game.saveUnavailable': 'In deze browsermodus kan je voortgang niet worden opgeslagen. Die gaat verloren als je de pagina sluit.',
   'game.finished': 'Klaar.',
   'game.anotherRound': 'Nog een ronde',
+  'game.changeSettings': 'Instellingen wijzigen',
+  'game.started': 'Nieuw spel gestart.',
   'game.sessionNote': 'Je speelt al {minutes} minuten.',
   'game.dismiss': 'Sluiten',
   'game.seed': 'Spelnummer {seed}',

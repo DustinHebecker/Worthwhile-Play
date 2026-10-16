@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, startGame } from '../../packages/testing/src/e2e';
 
 const GAME = 'stack-duel';
 
@@ -10,8 +10,7 @@ const poses = (page: Page) =>
   page.locator('[data-testid^="piece-"]').evaluateAll((els) => els.map((el) => `${el.getAttribute('data-kind')}@${el.getAttribute('data-pose')}`));
 
 async function startNewGame(page: Page) {
-  await page.goto(`/games/${GAME}`);
-  await page.getByTestId('new-game').click();
+  await startGame(page, GAME);
   await expect(page.getByTestId('game-root')).toBeVisible();
   await expect(page.getByTestId('board')).toBeVisible();
   // The board, not the mode select, gets focus, so arrow keys move the stone right away.

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, startGame } from '../../packages/testing/src/e2e';
 
 const GAME = 'tic-tac-toe';
 
@@ -7,8 +7,7 @@ const marks = (page: Page, prefix: string, count: number) =>
   Promise.all(Array.from({ length: count }, (_, i) => page.getByTestId(`${prefix}-${i}`).getAttribute('data-mark')));
 
 async function startNewGame(page: Page) {
-  await page.goto(`/games/${GAME}`);
-  await page.getByTestId('new-game').click();
+  await startGame(page, GAME);
   await expect(page.getByTestId('game-root')).toBeVisible();
   await expect(page.getByTestId('option-variant')).toBeVisible();
 }

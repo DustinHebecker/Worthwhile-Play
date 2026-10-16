@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, readSave } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, readSave, startGame } from '../../packages/testing/src/e2e';
 
 interface SavedSkyscrapers {
   size: number;
@@ -74,8 +74,7 @@ test('skyscrapers: heights, notes and notes mode survive a reload exactly', asyn
 });
 
 test('skyscrapers: keyboard play and solving the puzzle ends the game calmly', async ({ page }) => {
-  await page.goto('/games/skyscrapers?seed=1234&difficulty=easy');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'skyscrapers', { difficulty: 'easy' });
   const first = openCells(page).nth(0);
   await first.click();
   await expect(first).toBeFocused();
@@ -104,8 +103,7 @@ test('skyscrapers: keyboard play and solving the puzzle ends the game calmly', a
 
 test('skyscrapers: the 6×6 board with clues on all sides fits a phone', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 740 });
-  await page.goto('/games/skyscrapers?difficulty=hard');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'skyscrapers', { difficulty: 'hard' });
   await expect(cell(page, 5, 5)).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(0);

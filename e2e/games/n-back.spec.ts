@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, readSave } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, readSave, startGame, submitStart } from '../../packages/testing/src/e2e';
 
 interface SavedNBack {
   variant: string;
@@ -53,8 +53,7 @@ test('n-back: a self-paced block resumes at the same item after a reload (keyboa
 });
 
 test('n-back: dual variant answers with A / L / Enter and the options survive a new game', async ({ page }) => {
-  await page.goto('/games/n-back');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'n-back');
   await page.getByTestId('nb-variant-dual').click();
   await expect(page.getByTestId('nb-variant-dual')).toHaveAttribute('aria-pressed', 'true');
   await page.getByTestId('nb-start').click();
@@ -69,7 +68,7 @@ test('n-back: dual variant answers with A / L / Enter and the options survive a 
   await expect.poll(async () => (await savedState(page))?.answers).toEqual([0, 2]);
 
   await page.reload();
-  await page.getByTestId('new-game').click();
+  await submitStart(page);
   await expect(page.getByTestId('nb-variant-dual')).toHaveAttribute('aria-pressed', 'true');
   await expect.poll(async () => (await savedState(page))?.variant).toBe('dual');
 });

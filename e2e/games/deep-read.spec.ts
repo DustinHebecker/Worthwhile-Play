@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, readSave } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, readSave, startGame, submitStart } from '../../packages/testing/src/e2e';
 import { de } from '../../packages/games/deep-read/src/content/de';
 import { ja } from '../../packages/games/deep-read/src/content/ja';
 import { uk } from '../../packages/games/deep-read/src/content/uk';
@@ -27,8 +27,7 @@ test('deep-read: an answered question and its explanation survive a reload', asy
 });
 
 test('deep-read: the text can be re-opened while answering and is noted as looked back', async ({ page }) => {
-  await page.goto('/games/deep-read');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'deep-read');
   await root(page).getByTestId('dr-done-reading').click();
   await expect(root(page).getByTestId('dr-text')).toHaveCount(0);
   await root(page).getByTestId('dr-toggle-text').click();
@@ -55,7 +54,7 @@ async function switchLanguage(page: Page, locale: string): Promise<void> {
 test('deep-read: texts load in the UI language and a running game continues in a newly chosen language', async ({ page }) => {
   await page.goto('/games/deep-read');
   await switchLanguage(page, 'de');
-  await page.getByTestId('new-game').click();
+  await submitStart(page);
   const textId = await savedTextId(page);
   await expect(root(page).getByTestId('dr-title')).toHaveText(de[textId]!.title);
   await expect(root(page).getByTestId('dr-text')).toContainText(de[textId]!.paragraphs[0]!);
@@ -83,7 +82,7 @@ test('deep-read: texts of a language never loaded before are available offline (
   });
   await page.reload();
   await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true);
-  await page.getByTestId('new-game').click();
+  await submitStart(page);
   const textId = await savedTextId(page);
   await context.setOffline(true);
   await switchLanguage(page, 'uk');

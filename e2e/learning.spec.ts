@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { readSave } from '../packages/testing/src/e2e';
+import { readSave, startGame } from '../packages/testing/src/e2e';
 
 const CSV = ['front_text,back_text,front_lang,back_lang', 'Hund,dog,de,en', 'Katze,cat,de,en', 'Maus,mouse,de,en', 'Vogel,bird,de,en', 'Fisch,fish,de,en', 'Pferd,horse,de,en', 'Kuh,cow,de,en'].join('\n');
 const WORDS = ['Hund', 'dog', 'Katze', 'cat', 'Maus', 'mouse', 'Vogel', 'bird', 'Fisch', 'fish', 'Pferd', 'horse', 'Kuh', 'cow'];
@@ -125,8 +125,7 @@ test('deleting an own deck: confirmed, gone from the library, a saved game expla
 
 test('"Delete all saved games" keeps decks; "Delete my imported decks" removes them after confirmation', async ({ page }) => {
   const id = await importCsv(page, 'Keep me');
-  await page.goto('/games/memory');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'memory');
   await expect.poll(() => readSave(page, 'memory')).toBeTruthy();
 
   await page.goto('/settings');
@@ -150,8 +149,7 @@ test('"Delete all saved games" keeps decks; "Delete my imported decks" removes t
 test('picture ↔ word uses the learning language from Settings', async ({ page }) => {
   await page.goto('/settings');
   await page.locator('#learning-language').selectOption('es');
-  await page.goto('/games/memory');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'memory');
   await page.getByTestId('memory-cards').selectOption('picture-word');
   await expect(page.getByTestId('memory-languages')).toHaveText('Words in Spanish');
   const save = await expect.poll(async () => ((await readSave(page, 'memory')) as { state?: { variant?: string } } | undefined)?.state?.variant).toBe('picture-word');

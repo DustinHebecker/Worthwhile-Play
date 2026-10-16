@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, readSave } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, readSave, newGame } from '../../packages/testing/src/e2e';
 
 interface SavedRelay {
   phase: string;
@@ -191,13 +191,15 @@ test('opening relay-command with no save shows the map setup directly, without a
 });
 
 test('relay-command: the opponent level chosen before a new game is kept in the save', async ({ page }) => {
-  // The game opens at once (ADR 0015); the level is chosen in the toolbar and New game starts afresh with it.
-  await page.goto('/games/relay-command');
+  // The game opens at once (ADR 0015) at the level of a `?difficulty=` link; New game → Start keeps that level
+  // (until the level moves into the game's own setup, ADR 0017: the host draws no difficulty for this game).
+  await page.goto('/games/relay-command?difficulty=hard');
   await expect(page.getByTestId('rc-map')).toBeVisible();
-  await page.getByTestId('difficulty').selectOption('hard');
-  await page.getByTestId('new-game').click();
-  await expect(page.getByTestId('rc-map')).toBeVisible();
+  await expect(page.getByTestId('difficulty')).toHaveCount(0);
   await expect.poll(async () => ((await readSave(page, 'relay-command')) as { state: { difficulty: string } } | undefined)?.state.difficulty).toBe('hard');
+  await newGame(page);
+  await expect(page.getByTestId('rc-map')).toBeVisible();
+  await expect.poll(async () => ((await readSave(page, 'relay-command')) as { state: { difficulty: string; seed: number } } | undefined)?.state.difficulty).toBe('hard');
   await page.getByTestId('rc-lock').click();
   await expect(page.getByTestId('rc-turn')).toHaveText('Turn 2');
 });

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, readSave } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, readSave, startGame } from '../../packages/testing/src/e2e';
 
 interface SavedQuestion {
   pair: number;
@@ -67,9 +67,7 @@ test('association: a round resumes at the same recall question after a reload (k
 });
 
 test('association: medium has an untimed counting break, then recall; the summary shows the note', async ({ page }) => {
-  await page.goto('/games/association');
-  await page.getByTestId('difficulty').selectOption('medium');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'association', { difficulty: 'medium' });
   await page.getByTestId('as-note').fill('my scene');
   for (let i = 0; i < 8; i++) await page.getByTestId('as-next').click();
   await expect(page.getByTestId('as-filler')).toBeVisible();

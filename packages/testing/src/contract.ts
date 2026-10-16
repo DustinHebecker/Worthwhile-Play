@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import fc from 'fast-check';
-import { validateMetadata, type GameInstance, type GameModule } from '@wp/game-core';
+import { hostSettings, resolveSettings, settingChoices, settingId, validateMetadata, validateSettings, type GameInstance, type GameModule, type NewGameOptions, type SettingSpec, type SettingValue } from '@wp/game-core';
 import { auditCatalogues, COMMON_MESSAGES, SUPPORTED_LOCALES } from '@wp/localization';
 import { createSave, createMemoryStore, interpretSave } from '@wp/persistence';
 import { createTestContext, createTestLibrary, type TestContextExtras } from './context';
@@ -18,6 +18,28 @@ export interface ContractOptions<S> {
 }
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
+
+/** An arbitrary allowed value of one setting. */
+function arbitraryValue(spec: SettingSpec, module: GameModule<unknown>): fc.Arbitrary<SettingValue> {
+  const choices = settingChoices(spec, module.metadata);
+  if (choices) return fc.constantFrom(...(choices.length ? choices : ['']));
+  if (spec.kind === 'toggle') return fc.boolean();
+  if (spec.kind === 'number') {
+    const step = spec.step ?? 1;
+    return fc.integer({ min: 0, max: Math.floor((spec.max - spec.min) / step + 1e-9) }).map((i) => spec.min + i * step);
+  }
+  return fc.constant('');
+}
+
+/** Arbitrary start-screen choices for a module's host settings, resolved as the host would (hidden ones left out). */
+function arbitraryOptions(module: GameModule<unknown>, specs: readonly SettingSpec[]): fc.Arbitrary<Omit<NewGameOptions, 'seed'>> {
+  const record: Record<string, fc.Arbitrary<SettingValue>> = {};
+  for (const spec of specs) record[settingId(spec)] = arbitraryValue(spec, module);
+  return fc.record(record).map((chosen) => {
+    const { difficulty, settings } = resolveSettings(specs, module.metadata, chosen);
+    return { ...(difficulty !== undefined ? { difficulty } : {}), settings, begin: true };
+  });
+}
 
 /**
  * Shared contract every game must satisfy. Games with `preload` (ADR 0011) get it awaited for English before
@@ -47,6 +69,55 @@ export function runGameContract<S>(module: GameModule<S>, options: ContractOptio
 
     it('has complete, placeholder-consistent translations in every locale', () => {
       expect(auditCatalogues(module.metadata.messages, SUPPORTED_LOCALES)).toEqual([]);
+    });
+
+    it('declares valid start-screen settings (ADR 0017) with all keys in all 16 locales', () => {
+      const ctx = createTestContext(module as GameModule<unknown>, 'en', undefined, options.extras?.());
+      expect(validateSettings(module as GameModule<unknown>, SUPPORTED_LOCALES, ctx.settingsEnv)).toEqual([]);
+      ctx.context.root.remove();
+    });
+
+    it('starts deterministically and validly with any start-screen settings and with begin (ADR 0017)', () => {
+      const env = createTestContext(module as GameModule<unknown>, 'en', undefined, options.extras?.());
+      const specs = hostSettings(module as GameModule<unknown>, env.settingsEnv);
+      env.context.root.remove();
+      const play = (seed: number, opts: Omit<NewGameOptions, 'seed'>) => {
+        const ctx = createTestContext(module as GameModule<unknown>, 'en', undefined, options.extras?.());
+        const instance = module.create(ctx.context);
+        instance.newGame({ seed, ...opts });
+        const state = clone(instance.serialize());
+        instance.dispose();
+        ctx.context.root.remove();
+        return state;
+      };
+      fc.assert(
+        fc.property(fc.integer({ min: 0, max: 0xffffffff }), arbitraryOptions(module as GameModule<unknown>, specs), (seed, opts) => {
+          const a = play(seed, opts);
+          expect(module.isValidState(a)).toBe(true);
+          expect(play(seed, opts)).toEqual(a);
+        }),
+        { numRuns: specs.length ? 12 : 3 }
+      );
+    });
+
+    it('never throws on junk settings (old saves, deep links, tests)', () => {
+      const junk = fc.record({
+        difficulty: fc.option(fc.oneof(fc.string(), fc.constantFrom(...(module.metadata.difficulties ?? ['x']))), { nil: undefined }),
+        settings: fc.dictionary(fc.string({ maxLength: 8 }), fc.oneof(fc.string(), fc.integer(), fc.double(), fc.boolean()) as fc.Arbitrary<SettingValue>, { maxKeys: 4 }),
+        begin: fc.boolean()
+      });
+      fc.assert(
+        fc.property(junk, (opts) => {
+          const ctx = createTestContext(module as GameModule<unknown>, 'en', undefined, options.extras?.());
+          const instance = module.create(ctx.context);
+          const { difficulty, ...rest } = opts;
+          instance.newGame({ seed: 9, ...rest, ...(difficulty !== undefined ? { difficulty } : {}) });
+          expect(module.isValidState(clone(instance.serialize()))).toBe(true);
+          instance.dispose();
+          ctx.context.root.remove();
+        }),
+        { numRuns: module.settings ? 15 : 3 }
+      );
     });
 
     it('is deterministic for a given seed', () => {

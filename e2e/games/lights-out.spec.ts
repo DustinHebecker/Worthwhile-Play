@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, startGame } from '../../packages/testing/src/e2e';
 
 const root = (page: Page) => page.getByTestId('game-root');
 const lights = (page: Page) => root(page).locator('[data-testid^="cell-"]').evaluateAll((cells) => cells.map((c) => c.getAttribute('data-on')));
@@ -27,9 +27,7 @@ test('lights-out: presses, an undo and a hint survive a reload', async ({ page }
 
 test('lights-out: the 7×7 board fits a 360 px phone with 44 px cells and works by keyboard', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 740 });
-  await page.goto('/games/lights-out');
-  await page.getByTestId('difficulty').selectOption('hard');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'lights-out', { difficulty: 'hard' });
   const cells = root(page).locator('[data-testid^="cell-"]');
   await expect(cells).toHaveCount(49);
 

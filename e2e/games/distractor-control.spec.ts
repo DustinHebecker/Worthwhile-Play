@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, readSave } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, readSave, startGame } from '../../packages/testing/src/e2e';
 
 interface SavedDistractor {
   phase: string;
@@ -38,9 +38,7 @@ test('distractor-control: a session resumes at the same number after a reload', 
 });
 
 test('distractor-control: tapping an extra is saved neutrally and the extra stays gone after reload', async ({ page }) => {
-  await page.goto('/games/distractor-control');
-  await page.getByTestId('difficulty').selectOption('busy');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'distractor-control', { difficulty: 'busy' });
   await page.getByTestId('dc-start').click();
   const extra = page.getByTestId('dc-distractor');
   // Answer until the first extra appears (busy: half of the 40 numbers carry one).

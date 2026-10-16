@@ -1,6 +1,6 @@
 # 0015 — Games whose first screen is their own setup
 
-Status: Accepted (2026-10-14; amends 0002).
+Status: Accepted (2026-10-14; amends 0002). Narrowed by 0017: only for setups that cannot be declared as start-screen settings; such a game's own setup must hold the difficulty, and the host shows only what it declares.
 
 ## Context
 The game page shows a host start panel (difficulty select, "New game", and "Continue" when there is a save) before a game is created. Relay Command has its own setup screen (map, length, opponents, seats) that appears only after the host started a game. Without a save the player therefore had to press the host's "New game" just to reach the screen where the actual choices are made — an extra step that reads as illogical.

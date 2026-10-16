@@ -54,6 +54,8 @@ const ko: UiCatalogue = {
   'game.saveUnavailable': '이 브라우저 모드에서는 진행 상황을 저장할 수 없어요. 페이지를 닫으면 사라져요.',
   'game.finished': '끝났어요.',
   'game.anotherRound': '한 판 더',
+  'game.changeSettings': '설정 변경',
+  'game.started': '새 게임이 시작되었습니다.',
   'game.sessionNote': '{minutes}분째 플레이하고 있어요.',
   'game.dismiss': '닫기',
   'game.seed': '게임 번호 {seed}',

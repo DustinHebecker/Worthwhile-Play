@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, readSave } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, readSave, startGame, submitStart } from '../../packages/testing/src/e2e';
 
 interface SavedConquest {
   map: number;
@@ -123,8 +123,7 @@ test('node-conquest: a match on a hand-built map with crossing lanes resumes aft
 });
 
 test('node-conquest: dragging from node to node activates a path; Space pauses', async ({ page }) => {
-  await page.goto('/games/node-conquest');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'node-conquest');
   const [from, to] = await startAndNeighbour(page);
   // The map is seeded randomly, so the start node may lie below the fold: centre the pair first.
   await page.evaluate(([f, t]) => {
@@ -149,8 +148,7 @@ test('node-conquest: dragging from node to node activates a path; Space pauses',
 });
 
 test('node-conquest: changing the opponent count or map asks first during a match', async ({ page }) => {
-  await page.goto('/games/node-conquest');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'node-conquest');
   await expect(page.getByTestId('nc-opponents')).toHaveValue('1');
   // Untouched: switches at once.
   await page.getByTestId('nc-opponents').selectOption('2');
@@ -182,15 +180,14 @@ test('node-conquest: changing the opponent count or map asks first during a matc
 
   // The opponent count is remembered on this device: after a reload a fresh new match keeps it.
   await page.reload();
-  await page.getByTestId('new-game').click();
+  await submitStart(page);
   await expect(page.getByTestId('nc-opponents')).toHaveValue('2');
   await expect(page.locator('.nc-legend li[data-faction]')).toHaveCount(3);
   await expect.poll(async () => (await savedState(page))?.opponents).toBe(2);
 });
 
 test('node-conquest: the introduction guides step by step; zoom buttons work', async ({ page }) => {
-  await page.goto('/games/node-conquest');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'node-conquest');
   await page.getByTestId('nc-map-select').selectOption('-1');
   await expect(page.getByTestId('nc-hint')).toContainText('1');
   await expect(page.getByTestId('nc-opponents')).toBeDisabled();
@@ -209,8 +206,7 @@ test('node-conquest: the introduction guides step by step; zoom buttons work', a
 });
 
 test('node-conquest: a save from the previous version continues as an equivalent match', async ({ page }) => {
-  await page.goto('/games/node-conquest');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'node-conquest');
   // Version-1 saves only ever had the generated maps 0–6 (the seed may pick a newer, hand-built one).
   await page.getByTestId('nc-map-select').selectOption('2');
   await expect.poll(async () => (await savedState(page))?.map).toBe(2);
@@ -228,8 +224,7 @@ test('node-conquest: a save from the previous version continues as an equivalent
 
 test('node-conquest: touch taps on nodes select and target (no page scroll from nodes)', async ({ page }, testInfo) => {
   test.skip(!testInfo.project.use.hasTouch, 'touch devices only');
-  await page.goto('/games/node-conquest');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'node-conquest');
   await page.getByTestId('nc-map-select').selectOption('-1');
   const tap = async (v: number) => {
     const body = page.getByTestId(`node-${v}`).locator('.nc-body');
@@ -260,8 +255,7 @@ test.describe('node-conquest at 360 px', () => {
 
   test('node-conquest: every node has a ≥ 44 × 44 px hit target on all maps and opponent counts', async ({ page }, testInfo) => {
     test.skip(!testInfo.project.use.hasTouch, 'phone viewport only');
-    await page.goto('/games/node-conquest');
-    await page.getByTestId('new-game').click();
+    await startGame(page, 'node-conquest');
     const rows: string[] = [];
     for (const opponents of ['1', '2', '3']) {
       await page.getByTestId('nc-opponents').selectOption(opponents);
@@ -281,8 +275,7 @@ test.describe('node-conquest at 360 px', () => {
 
   test('node-conquest: taps near the edge of a hit target pick that node, also on a dense map', async ({ page }, testInfo) => {
     test.skip(!testInfo.project.use.hasTouch, 'touch devices only');
-    await page.goto('/games/node-conquest');
-    await page.getByTestId('new-game').click();
+    await startGame(page, 'node-conquest');
     const centre = async (v: number) => {
       const box = (await page.getByTestId(`node-${v}`).locator('.nc-hit').boundingBox())!;
       return [box.x + box.width / 2, box.y + box.height / 2] as const;

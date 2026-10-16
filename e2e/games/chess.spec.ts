@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, startGame, submitStart } from '../../packages/testing/src/e2e';
 
 const GAME = 'chess';
 const SQUARES = Array.from({ length: 64 }, (_, i) => 'abcdefgh'[i % 8]! + String(Math.floor(i / 8) + 1));
@@ -11,8 +11,7 @@ const tap = async (page: Page, ...squares: string[]) => {
 };
 
 async function startNewGame(page: Page) {
-  await page.goto(`/games/${GAME}`);
-  await page.getByTestId('new-game').click();
+  await startGame(page, GAME);
   await expect(page.getByTestId('game-root')).toBeVisible();
   await expect(page.getByTestId('sq-e2')).toHaveAttribute('data-piece', 'wP');
 }
@@ -123,14 +122,14 @@ test('a strength chosen in the menu becomes the host difficulty and the menu cho
   await page.getByTestId('mode-human').check({ force: true }); // visually hidden native radio inside a styled label
   await page.getByTestId('mode-computer').check({ force: true }); // visually hidden native radio inside a styled label
   await page.getByTestId('start').click();
-  await expect(page.locator('#difficulty')).toHaveValue('strong');
+  await expect(page.getByTestId('settings-summary')).toContainText('Strong');
   await page.getByTestId('mode-human').check({ force: true }); // visually hidden native radio inside a styled label
   await page.getByTestId('start').click();
   if (await page.getByTestId('start-yes').isVisible()) await page.getByTestId('start-yes').click();
   await expect(page.getByTestId('current-human')).toBeVisible();
   // After a reload, a fresh "New game" starts the remembered kind of game (two players).
   await page.reload();
-  await page.getByTestId('new-game').click();
+  await submitStart(page);
   await expect(page.getByTestId('current-human')).toBeVisible();
 });
 
@@ -146,7 +145,7 @@ test('a random colour is drawn at the start and shown', async ({ page }) => {
   if (colour === 'b') await expect(page.getByTestId('ply-0')).toBeVisible();
   // The choice "random" is remembered for the next game.
   await page.reload();
-  await page.getByTestId('new-game').click();
+  await submitStart(page);
   await expect(page.getByTestId('color-random')).toBeChecked();
   await expect(page.getByTestId('mode')).toContainText(/drawn at random/);
 });

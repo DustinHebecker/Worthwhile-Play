@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, readSave } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, readSave, startGame } from '../../packages/testing/src/e2e';
 
 const GAME = 'skat';
 
@@ -72,8 +72,7 @@ async function settle(page: Page) {
 }
 
 async function startSeries(page: Page) {
-  await page.goto(`/games/${GAME}`);
-  await page.getByTestId('new-game').click();
+  await startGame(page, GAME);
   await expect(page.getByTestId('game-root')).toBeVisible();
   await page.getByTestId('start').click();
   await expect(page.getByTestId('my-hand')).toBeVisible();

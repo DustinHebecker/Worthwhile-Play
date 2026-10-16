@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { readSave } from '../packages/testing/src/e2e';
+import { readSave, startGame } from '../packages/testing/src/e2e';
 
 test.describe('app shell', () => {
   test('home lists games and explains the product', async ({ page }) => {
@@ -45,8 +45,7 @@ test.describe('app shell', () => {
     test(`saved-game badge stays one unbroken pill at 360 px (${locale})`, async ({ page }) => {
       await page.setViewportSize({ width: 360, height: 780 });
       await page.addInitScript((l) => localStorage.setItem('worthwhile-play:ui-locale', l), locale);
-      await page.goto('/games/memory');
-      await page.getByTestId('new-game').click();
+      await startGame(page, 'memory');
       await expect(page.getByTestId('game-root')).toBeVisible();
       await expect.poll(() => readSave(page, 'memory')).toBeTruthy();
       await page.goto('/');
@@ -70,8 +69,7 @@ test.describe('app shell', () => {
     await expect(page.getByTestId('game-card-tic-tac-toe')).toBeHidden();
     await page.getByTestId('filter-all').click();
     await expect(page.getByTestId('game-card-tic-tac-toe')).toBeVisible();
-    await page.goto('/games/memory');
-    await page.getByTestId('new-game').click();
+    await startGame(page, 'memory');
     await expect(page.getByTestId('game-root')).toBeVisible();
     // Leave only once the new game is stored (the write is asynchronous).
     await expect.poll(() => readSave(page, 'memory')).toBeTruthy();
@@ -83,7 +81,8 @@ test.describe('app shell', () => {
   test('every game is reachable by direct URL', async ({ page }) => {
     for (const id of ['tic-tac-toe', 'mastermind', 'memory', 'connect-four', 'lights-out', 'nonogram', 'sequence-memory', 'black-box', 'sokoban', 'skyscrapers', 'laser-circuit', 'minesweeper', 'sliding-blocks', 'constraint-grid', 'river-crossing', 'bridges', 'graph-detective', 'minimal-proof', 'logic-path', 'spatial-memory', 'signal-watch', 'circuit-puzzle', 'systems-puzzle', 'distractor-control', 'rule-discovery', 'debug-system', 'node-conquest', 'slitherlink', 'chess', 'word-guess', 'stack-duel', 'n-back', 'visual-search', 'relay-command', 'prospective-memory', 'association']) {
       await page.goto(`/games/${id}`);
-      await expect(page.getByTestId('new-game')).toBeVisible();
+      // The start screen, or a game whose own setup is its first screen (ADR 0015).
+      await expect(page.getByTestId('start-game').or(page.getByTestId('new-game')).first()).toBeVisible();
     }
   });
 
@@ -115,7 +114,8 @@ test.describe('app shell', () => {
     await page.getByTestId('header-language').selectOption('de');
     await expect(page.locator('html')).toHaveAttribute('lang', 'de');
     await expect(page.getByTestId('language-menu').locator('summary')).toContainText('Deutsch');
-    await expect(page.getByTestId('new-game')).toHaveText('Neues Spiel');
+    await expect(page.getByTestId('start-game')).toHaveText('Starten');
+    await expect(page.getByTestId('start-form').locator('h2')).toHaveText('Neues Spiel');
     // The menu stays open with focus on the select, so a keyboard user can keep choosing.
     await expect(page.getByTestId('language-menu')).toHaveAttribute('open', '');
     await expect(page.getByTestId('header-language')).toBeFocused();
@@ -125,6 +125,7 @@ test.describe('app shell', () => {
     await page.goto('/games/does-not-exist');
     await expect(page.locator('h1')).toBeVisible();
     await expect(page.getByTestId('new-game')).toHaveCount(0);
+    await expect(page.getByTestId('start-game')).toHaveCount(0);
   });
 
   test('a corrupt save never breaks the app', async ({ page }) => {
@@ -144,7 +145,8 @@ test.describe('app shell', () => {
     );
     await page.goto('/games/memory');
     await expect(page.getByTestId('save-corrupt')).toBeVisible();
-    await page.getByTestId('new-game').click();
+    await expect(page.getByTestId('continue')).toHaveCount(0);
+    await page.getByTestId('start-game').click();
     await expect(page.getByTestId('game-root')).toBeVisible();
   });
 });
@@ -159,8 +161,8 @@ test.describe('offline', () => {
     await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true);
     await context.setOffline(true);
     await page.goto('/games/mastermind');
-    await expect(page.getByTestId('new-game')).toBeVisible();
-    await page.getByTestId('new-game').click();
+    await expect(page.getByTestId('start-game')).toBeVisible();
+    await page.getByTestId('start-game').click();
     await expect(page.getByTestId('game-root')).toBeVisible();
     await context.setOffline(false);
   });

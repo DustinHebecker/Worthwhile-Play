@@ -82,6 +82,91 @@ export interface GameResult {
 export interface NewGameOptions {
   seed: number;
   difficulty?: string;
+  /**
+   * Values of the settings the module declares (`GameModule.settings`, ADR 0017), chosen on the host's start
+   * screen, keyed by setting id; difficulty is passed as `difficulty`, never here. The host passes only known,
+   * in-range values of settings whose `when` condition holds; games must still treat the record as untrusted
+   * (older saves, tests, deep links) and fall back to their defaults.
+   */
+  settings?: Readonly<Record<string, SettingValue>>;
+  /**
+   * The player has just pressed Start (or "Another round") on the host's start screen, so a game with its own
+   * "ready?" intro may skip it and begin play right away. Absent for direct starts (deep links, ADR 0015).
+   */
+  begin?: boolean;
+}
+
+/** A value of a host-drawn setting (ADR 0017). */
+export type SettingValue = string | number | boolean;
+
+/**
+ * Shows a setting only while every listed setting currently has one of the listed values, e.g.
+ * `{ opponent: ['computer'] }`. The difficulty is referred to as `difficulty`. A hidden setting is not passed
+ * to `newGame` (the game uses its own default).
+ */
+export type SettingCondition = Readonly<Record<string, readonly SettingValue[]>>;
+
+/**
+ * One setting the host draws on the start screen (ADR 0017). Labels are message keys of the game's own
+ * namespace, present in all 16 locales (checked by `validateSettings`).
+ */
+export type SettingSpec =
+  | {
+      /** The game's difficulty (values = `metadata.difficulties`, labels `difficulty.<id>`). */
+      readonly kind: 'difficulty';
+      /** Default: the host's "Difficulty". */
+      readonly labelKey?: string;
+      readonly hintKey?: string;
+      readonly when?: SettingCondition;
+    }
+  | {
+      /** One of a fixed list: ≤4 values as radio buttons, more as a select (`display` overrides). */
+      readonly kind: 'choice';
+      readonly id: string;
+      readonly labelKey: string;
+      readonly values: readonly (string | number)[];
+      /** Value labels are message keys `${valueKey}.${value}`. Either this or `valueLabels`. */
+      readonly valueKey?: string;
+      /**
+       * Ready-made labels per value, only for lists built from the device (`settings(env)`, e.g. imported deck
+       * titles) that have no message keys. Either this or `valueKey`.
+       */
+      readonly valueLabels?: Readonly<Record<string, string>>;
+      readonly hintKey?: string;
+      readonly default: string | number;
+      readonly display?: 'auto' | 'radio' | 'select';
+      readonly when?: SettingCondition;
+    }
+  | {
+      readonly kind: 'toggle';
+      readonly id: string;
+      readonly labelKey: string;
+      readonly default: boolean;
+      readonly hintKey?: string;
+      readonly when?: SettingCondition;
+    }
+  | {
+      /** A whole number (or a multiple of `step` from `min`) in [min, max]. */
+      readonly kind: 'number';
+      readonly id: string;
+      readonly labelKey: string;
+      readonly min: number;
+      readonly max: number;
+      readonly step?: number;
+      readonly default: number;
+      readonly hintKey?: string;
+      readonly when?: SettingCondition;
+    };
+
+/** What a module may read to declare its settings (device-dependent lists such as imported decks). */
+export interface SettingsEnv {
+  /** Translator of the game's own namespace in the UI locale. */
+  readonly t: Translator;
+  readonly userDecks?: UserDeckSource;
+  readonly learning?: GameLearningRecords;
+  readonly contentLanguages?: GameContentLanguages;
+  readonly preferences?: GamePreferences;
+  readonly launch?: GameLaunchOptions;
 }
 
 /** Services the host (app shell or a standalone page) provides to a running game. */
@@ -294,6 +379,14 @@ export interface GameModule<S = unknown> {
    * Never needed for the catalogue: `metadata` stays synchronous and complete.
    */
   preload?(locale: string): Promise<void>;
+  /**
+   * Optional (ADR 0017): the settings that change the game, drawn by the host on the start screen and passed to
+   * `newGame` as `NewGameOptions.settings`. A function when the list depends on the device (e.g. imported decks).
+   * Without it the host shows the difficulty (if `metadata.difficulties`) and nothing else. When `metadata.difficulties`
+   * exists and no `{ kind: 'difficulty' }` entry is listed, the host puts the difficulty first.
+   * Pure display preferences (zoom, card faces, speed…) stay inside the game.
+   */
+  readonly settings?: readonly SettingSpec[] | ((env: SettingsEnv) => readonly SettingSpec[]);
 }
 
 export type { Rng };

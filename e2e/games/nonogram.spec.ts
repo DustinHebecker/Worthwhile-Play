@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, readSave } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, readSave, startGame, newGame } from '../../packages/testing/src/e2e';
 
 interface SavedNonogram {
   size: number;
@@ -37,8 +37,7 @@ test('nonogram: filled and crossed cells survive a reload exactly', async ({ pag
 });
 
 test('nonogram: keyboard play and solving the puzzle ends the game calmly', async ({ page }) => {
-  await page.goto('/games/nonogram?seed=1234&difficulty=easy');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'nonogram', { difficulty: 'easy' });
   const first = cell(page, 0, 0);
   await first.focus();
   await page.keyboard.press('x');
@@ -64,8 +63,7 @@ test('nonogram: keyboard play and solving the puzzle ends the game calmly', asyn
 
 test('nonogram: the 10×10 board fits a phone without page-level horizontal scrolling', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 740 });
-  await page.goto('/games/nonogram?difficulty=hard');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'nonogram', { difficulty: 'hard' });
   await expect(cell(page, 9, 9)).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(0);
@@ -75,8 +73,7 @@ test('nonogram: the 10×10 board fits a phone without page-level horizontal scro
 
 test('nonogram: an expert 15×15 game survives a reload exactly', async ({ page }) => {
   await expectResumeAfterReload(page, 'nonogram', async (p) => {
-    await p.getByTestId('difficulty').selectOption('expert');
-    await p.getByTestId('new-game').click();
+    await newGame(p, { difficulty: 'expert' });
     await expect(cell(p, 14, 14)).toBeVisible();
     await cell(p, 14, 14).click();
     await expect(cell(p, 14, 14)).toHaveAttribute('data-state', 'filled');
@@ -100,8 +97,7 @@ test('nonogram: an expert 15×15 game survives a reload exactly', async ({ page 
 
 test('nonogram: the 15×15 board fits a phone and offers larger, scrollable cells', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 740 });
-  await page.goto('/games/nonogram?difficulty=expert');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'nonogram', { difficulty: 'expert' });
   const overflow = () => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   const scroller = root(page).getByTestId('ng-scroll');
 
@@ -129,6 +125,6 @@ test('nonogram: the 15×15 board fits a phone and offers larger, scrollable cell
   await expect(root(page).getByTestId('row-clue-3')).toBeInViewport();
 
   // The choice is remembered for the next game.
-  await page.getByTestId('new-game').click();
+  await newGame(page);
   await expect(root(page).getByTestId('ng-zoom')).toHaveAttribute('aria-pressed', 'true');
 });
