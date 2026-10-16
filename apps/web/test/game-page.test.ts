@@ -173,7 +173,7 @@ describe('game page: library for player creations (ADR 0012)', () => {
 
 describe('game page: games whose first screen is their own setup (ADR 0015)', () => {
   const diffMessages = { en: { title: 't', tagline: 't', rules: 'r', 'difficulty.easy': 'Easy', 'difficulty.hard': 'Hard' } };
-  /** A setup game with difficulties (card-quest, relay-command): the difficulty is chosen on the host's start screen. */
+  /** A setup game with difficulties that declares no settings: the difficulty is chosen on the host's start screen. */
   const setupGame = (id: string) => fakeGame(id, undefined, { setupInGame: true, difficulties: ['easy', 'hard'], messages: diffMessages });
   /** A setup game with nothing for the host's start screen. */
   const bareSetupGame = (id: string) => fakeGame(id, undefined, { setupInGame: true });

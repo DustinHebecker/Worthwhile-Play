@@ -24,7 +24,7 @@ Many games showed the host's difficulty select and "New game", and then a second
 
 ## Amendment (2026-10-16): setupInGame games may choose the difficulty themselves
 Owner decision (Relay Command): its start screen shows only Continue/Start; the difficulty is chosen in the game's own setup next to the map.
-- `hostSettings`: when `metadata.setupInGame` is true **and** the module declares `settings` (an array, `[]` included, or a function), the host shows exactly the declared settings and adds no difficulty. A `setupInGame` game that declares nothing (`settings` undefined, e.g. Card Quest) keeps the difficulty first. Games without `setupInGame` are unchanged (`[]` still gets the difficulty).
+- `hostSettings`: when `metadata.setupInGame` is true **and** the module declares `settings` (an array, `[]` included, or a function), the host shows exactly the declared settings and adds no difficulty. A `setupInGame` game that declares nothing (`settings` undefined) keeps the difficulty first. Relay Command uses the opt-out (`settings: []`, difficulty in its own setup, owner decision 2026-10-16). Games without `setupInGame` are unchanged (`[]` still gets the difficulty).
 - The difficulty still flows through the host: the game reports it with `context.setDifficulty` (and `settingsOf(state).difficulty` for saves); the host validates it against `metadata.difficulties`, writes it to the save envelope, passes it to `newGame` on "Another round" and "New game", and may show it in the toolbar summary. `?difficulty=` links still pass it to `newGame`.
 - With nothing for the start screen: no save → the game opens directly on its own setup (ADR 0015); with a save → "Continue" and a "New game" button (no empty settings form) that starts the game's own setup with `begin`.
 
@@ -32,7 +32,7 @@ Owner decision (Relay Command): its start screen shows only Continue/Start; the 
 Phase 1 (this ADR): core types, validation, host start screen, contract and e2e helpers (`startGame`, `submitStart`, `newGame`, `chooseSetting`), all e2e specs moved to the start screen. Then, one game per change, each removing its own duplicate options:
 1. **Difficulty doubled in the game** (chess strength menu, tic-tac-toe, laser-circuit, poker, skat, card-quest): move the game's options into `settings`, delete the in-game copy, drop `setDifficulty` where it only mirrored the host.
 2. **Own options panel before play** (n-back variant, node-conquest opponents/map, visual-search, review deck, word-guess language, memory deck…): declare them; keep only display preferences in the game.
-3. **Setups that cannot be declared** (relay-command map/seats, card-quest players): keep `setupInGame`; the difficulty is chosen on the host's start screen before the game's own setup.
+3. **Setups that cannot be declared** (relay-command map/seats): keep `setupInGame`; Relay Command chooses its difficulty in its own setup via the opt-out above. Card Quest moved its whole setup into `settings` (PR #51) and no longer uses `setupInGame`.
 4. **Intro screens** adopt `begin` to skip a redundant "ready?" step after Start; what the intro explained (rules of the round, keys) stays visible as a compact line during play (signal-watch, visual-search, distractor-control, n-back).
 
 ## Consequences
