@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, startGame } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, readSave, startGame } from '../../packages/testing/src/e2e';
 
 const GAME = 'card-quest';
 
@@ -146,4 +146,18 @@ test('card-quest: in an own fight the person can ask another player for help', a
   await page.getByTestId('log').locator('summary').click();
   await expect(page.getByTestId('log')).toContainText(/asks .* for help/);
   await expect(page.getByTestId('help-ask').or(page.getByTestId('pass')).or(page.getByTestId('roll')).first()).toBeVisible();
+});
+
+test('card-quest: coach tips switch with the keyboard, keep the focus and stay off after a reload', async ({ page }) => {
+  await start(page);
+  const box = page.getByTestId('coach');
+  await expect(box).toBeChecked();
+  await box.focus();
+  await page.keyboard.press('Space');
+  await expect(box).not.toBeChecked();
+  await expect(box).toBeFocused();
+  await expect(page.getByTestId('hint')).toHaveCount(0);
+  await expect.poll(async () => ((await readSave(page, GAME)) as { state?: { settings?: { coach?: boolean } } } | undefined)?.state?.settings?.coach).toBe(false);
+  await page.reload();
+  await expect(page.getByTestId('coach')).not.toBeChecked();
 });

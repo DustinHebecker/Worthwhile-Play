@@ -336,17 +336,39 @@ describe('view', () => {
       }
       expect(found).toBe(true);
       const before = instance.serialize();
+      const saves = ctx.saveRequests();
       const box = ctx.context.root.querySelector<HTMLInputElement>('[data-testid="coach"]')!;
       expect(box.checked).toBe(true);
       box.checked = false;
       box.dispatchEvent(new Event('change'));
       const after = instance.serialize();
+      expect(ctx.saveRequests()).toBeGreaterThan(saves);
+      expect(ctx.preferences.get('coach')).toBe(false);
       expect(q(ctx.context.root, 'hint')).toBeNull();
       expect(after.settings.coach).toBe(false);
       expect({ ...after, settings: before.settings }).toEqual(before);
       expect(isValidState(after)).toBe(true);
       instance.newGame({ seed: 3 });
       expect(instance.serialize().settings.coach).toBe(false);
+      instance.dispose();
+    });
+
+    it('new games take the coach choice from the old setup preference until the switch was used', () => {
+      for (const own of [undefined, 'yes', 1]) {
+        const ctx = createTestContext(game as GameModule<unknown>, 'en');
+        ctx.preferences.set('setup', { coach: false });
+        if (own !== undefined) ctx.preferences.set('coach', own);
+        const instance = game.create(ctx.context as never);
+        instance.newGame({ seed: 2 });
+        expect(instance.serialize().settings.coach, String(own)).toBe(false);
+        instance.dispose();
+      }
+      const ctx = createTestContext(game as GameModule<unknown>, 'en');
+      ctx.preferences.set('setup', { coach: false });
+      ctx.preferences.set('coach', true);
+      const instance = game.create(ctx.context as never);
+      instance.newGame({ seed: 2 });
+      expect(instance.serialize().settings.coach).toBe(true);
       instance.dispose();
     });
 

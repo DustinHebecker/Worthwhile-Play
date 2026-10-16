@@ -798,7 +798,6 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
   function renderCoachToggle(): HTMLElement {
     const box = h('input', {
       type: 'checkbox',
-      id: 'cq-coach',
       'data-testid': 'coach',
       'data-key': 'coach',
       checked: state.settings.coach,
@@ -809,7 +808,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
         render();
       }
     });
-    return h('label', { class: 'cq-check', for: 'cq-coach' }, box, h('span', {}, t('setup.coach')));
+    return h('label', { class: 'cq-check' }, box, h('span', {}, t('setup.coach')));
   }
 
   /* ---------------------------------------------------------------- instance */
