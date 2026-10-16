@@ -28,7 +28,7 @@ import {
   type Player,
   type Settings
 } from './rules';
-import { readSettings } from './settings';
+import { COACH_PREFERENCE, OLD_SETUP_PREFERENCE, readSettings } from './settings';
 import { defOf } from './worlds';
 import './styles.css';
 
@@ -45,6 +45,12 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
   const live = h('div', { class: 'sr-only', 'aria-live': 'polite', role: 'status', 'data-testid': 'announcer' });
   const main = h('div', { class: 'cq', 'data-testid': 'card-quest' });
   root.append(main, live);
+
+  /** Whether new games show coach tips: the in-game switch, else what the old setup remembered, else on. */
+  function coachPreference(): boolean {
+    const own = context.preferences?.get(COACH_PREFERENCE);
+    return typeof own === 'boolean' ? own : readSettings(context.preferences?.get(OLD_SETUP_PREFERENCE)).coach;
+  }
 
   /** Deals a new game with the start-screen settings (ADR 0017); computer players who start move at once. */
   function started(seed: number, settings: Settings): CardQuestState {
@@ -90,7 +96,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
 
   function nextText(): string {
     switch (state.phase) {
-      case 'setup':
+      case 'setup': // Unreachable: the view deals at once (ADR 0017); kept for the type.
       case 'prepare':
         return t('next.prepare');
       case 'after':
@@ -308,8 +314,6 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       label
     );
 
-  /* ---------------------------------------------------------------- setup screen */
-
   /* ---------------------------------------------------------------- play screen */
 
   function renderPlay(): HTMLElement[] {
@@ -336,6 +340,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     out.push(renderHand());
     out.push(renderMine());
     out.push(renderLog());
+    out.push(renderCoachToggle());
     return out;
   }
 
@@ -683,11 +688,29 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     return h('details', { class: 'cq-log', 'data-testid': 'log' }, h('summary', {}, t('log.title')), h('ul', {}, ...events.map((e) => h('li', {}, eventText(e)))));
   }
 
+  /** Coach tips are a display preference (ADR 0017): switchable during play, remembered for the next games. */
+  function renderCoachToggle(): HTMLElement {
+    const box = h('input', {
+      type: 'checkbox',
+      id: 'cq-coach',
+      'data-testid': 'coach',
+      'data-key': 'coach',
+      checked: state.settings.coach,
+      onchange: () => {
+        state = { ...state, settings: { ...state.settings, worlds: [...state.settings.worlds], coach: box.checked } };
+        context.preferences?.set(COACH_PREFERENCE, box.checked);
+        context.requestSave();
+        render();
+      }
+    });
+    return h('label', { class: 'cq-check', for: 'cq-coach' }, box, h('span', {}, t('setup.coach')));
+  }
+
   /* ---------------------------------------------------------------- instance */
 
   return {
     newGame(options: NewGameOptions) {
-      state = started(options.seed, readSettings(options.settings, options.difficulty));
+      state = started(options.seed, { ...readSettings(options.settings, options.difficulty), coach: coachPreference() });
       selected = null;
       mode = 'play';
       picked.clear();

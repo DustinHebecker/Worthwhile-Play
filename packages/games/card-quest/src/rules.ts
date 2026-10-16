@@ -170,7 +170,7 @@ const emptyPlayer = (personality: Personality | null): Player => ({
   personality
 });
 
-/** The setup screen (ADR 0015): nothing dealt yet; the settings are a proposal the person can change. */
+/** A game before the deal (phase `setup`); the `start` action deals it. The view deals at once (ADR 0017). */
 export function newGame(seed: number, settings: Settings = DEFAULT_SETTINGS): CardQuestState {
   const s = seed >>> 0;
   return {
