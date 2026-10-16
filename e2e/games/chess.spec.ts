@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, readSave, startGame, submitStart, type StartOptions } from '../../packages/testing/src/e2e';
 
 const GAME = 'chess';
 const SQUARES = Array.from({ length: 64 }, (_, i) => 'abcdefgh'[i % 8]! + String(Math.floor(i / 8) + 1));
@@ -10,11 +10,10 @@ const tap = async (page: Page, ...squares: string[]) => {
   for (const s of squares) await page.getByTestId(`sq-${s}`).click();
 };
 
-async function startNewGame(page: Page) {
-  await page.goto(`/games/${GAME}`);
-  await page.getByTestId('new-game').click();
+async function startNewGame(page: Page, options: StartOptions = {}) {
+  await startGame(page, GAME, options);
   await expect(page.getByTestId('game-root')).toBeVisible();
-  await expect(page.getByTestId('sq-e2')).toHaveAttribute('data-piece', 'wP');
+  await expect(page.getByTestId('sq-a1')).toBeVisible();
 }
 
 test('resumes after reload with the same position and move list', async ({ page }) => {
@@ -31,10 +30,8 @@ test('resumes after reload with the same position and move list', async ({ page 
 });
 
 test('two people can play a short game to checkmate', async ({ page }) => {
-  await startNewGame(page);
-  await page.getByTestId('menu').getByText('Two players').click();
-  await page.getByTestId('start').click();
-  await expect(page.getByTestId('current-human')).toBeVisible();
+  await startNewGame(page, { settings: { game: 'human' } });
+  await expect(page.getByTestId('mode')).toHaveText('Two players on this device.');
   await tap(page, 'f2', 'f3', 'e7', 'e5', 'g2', 'g4', 'd8', 'h4');
   await expect(page.locator('.wp-chess')).toHaveAttribute('data-outcome', 'checkmate');
   await expect(page.getByTestId('sq-e1')).toHaveAttribute('data-check', '');
@@ -54,10 +51,8 @@ test('is playable with the keyboard', async ({ page }) => {
 });
 
 test('solves a mate-in-one puzzle with the help of the hint', async ({ page }) => {
-  await startNewGame(page);
-  await page.getByTestId('menu').getByText('Mate in N').click();
-  await page.getByTestId('menu-mate').getByText('1', { exact: true }).click();
-  await page.getByTestId('start').click();
+  await startNewGame(page, { settings: { game: 'mate', mateN: 1 } });
+  await expect(page.getByTestId('mode')).toContainText('Mate in (moves): 1');
   await expect(page.getByTestId('next-puzzle')).toBeVisible();
   await page.getByTestId('hint').click();
   await expect(page.locator('[data-hint]')).toHaveCount(2);
@@ -75,32 +70,25 @@ test('solves a mate-in-one puzzle with the help of the hint', async ({ page }) =
   await expect(page.locator('.wp-chess')).toHaveAttribute('data-outcome', 'checkmate');
 });
 
-test('the menu above the board is keyboard operable and asks before replacing a running game', async ({ page }) => {
-  await startNewGame(page);
-  const menu = page.getByTestId('menu');
-  const board = page.getByTestId('board');
-  expect((await menu.boundingBox())!.y).toBeLessThan((await board.boundingBox())!.y);
-  await tap(page, 'e2', 'e4');
-  await expect(page.getByTestId('ply-1')).toBeVisible({ timeout: 10_000 });
-  // Arrow keys move the choice within the radio group; nothing starts until "Start".
-  await page.getByTestId('mode-computer').focus();
-  await page.keyboard.press('ArrowRight');
-  await expect(page.getByTestId('mode-human')).toBeChecked();
-  await expect(page.getByTestId('mode-human')).toBeFocused();
-  await expect(page.getByTestId('menu-strength')).toBeHidden();
-  await expect(page.getByTestId('current-computer')).toBeVisible();
-  await page.keyboard.press('Tab');
-  await expect(page.getByTestId('start')).toBeFocused();
-  await page.keyboard.press('Enter');
-  await expect(page.getByTestId('start-confirm')).toBeVisible();
-  await expect(page.getByTestId('start-yes')).toBeFocused();
-  await page.keyboard.press('Escape');
-  await expect(page.getByTestId('start-confirm')).toBeHidden();
-  await expect(page.getByTestId('ply-1')).toBeVisible();
-  await page.getByTestId('start').click();
-  await page.getByTestId('start-yes').click();
-  await expect(page.getByTestId('current-human')).toBeVisible();
-  await expect(page.getByTestId('ply-0')).toHaveCount(0);
+test('the start screen shows colour and strength only against the computer, the mate length only for mate in N', async ({ page }) => {
+  await page.goto(`/games/${GAME}`);
+  await expect(page.getByTestId('start-game')).toBeVisible();
+  const visible = async (color: boolean, strength: boolean, mate: boolean) => {
+    await expect(page.getByTestId('setting-color')).toBeVisible({ visible: color });
+    await expect(page.getByTestId('difficulty')).toBeVisible({ visible: strength });
+    await expect(page.getByTestId('setting-mateN')).toBeVisible({ visible: mate });
+  };
+  await visible(true, true, false);
+  await page.getByTestId('setting-game').locator('input[value="human"]').check();
+  await visible(false, false, false);
+  await page.getByTestId('setting-game').locator('input[value="mate"]').check();
+  await visible(false, false, true);
+  await page.getByTestId('setting-mateN').locator('input[value="2"]').check();
+  await page.getByTestId('start-game').click();
+  await expect(page.getByTestId('mode')).toContainText('Mate in (moves): 2');
+  // No menu inside the game any more (ADR 0017).
+  await expect(page.getByTestId('menu')).toHaveCount(0);
+  await expect(page.getByTestId('game-root').locator('input[type="radio"]')).toHaveCount(0);
 });
 
 test('fits a 360px-wide phone without horizontal scrolling', async ({ page }) => {
@@ -110,34 +98,22 @@ test('fits a 360px-wide phone without horizontal scrolling', async ({ page }) =>
   expect(overflow).toBeLessThanOrEqual(0);
   const box = await page.getByTestId('sq-a1').boundingBox();
   expect(box?.width ?? 0).toBeGreaterThanOrEqual(38);
-  // Menu entries keep 44px touch targets.
-  for (const id of ['mode-computer', 'mode-human', 'mode-best', 'mode-mate']) {
-    const option = await page.getByTestId(id).locator('xpath=..').boundingBox();
-    expect(option?.height ?? 0).toBeGreaterThanOrEqual(44);
-  }
 });
 
-test('a strength chosen in the menu becomes the host difficulty and the menu choice survives a reload', async ({ page }) => {
-  await startNewGame(page);
-  await page.getByTestId('strength-strong').check({ force: true }); // visually hidden native radio inside a styled label
-  await page.getByTestId('mode-human').check({ force: true }); // visually hidden native radio inside a styled label
-  await page.getByTestId('mode-computer').check({ force: true }); // visually hidden native radio inside a styled label
-  await page.getByTestId('start').click();
-  await expect(page.locator('#difficulty')).toHaveValue('strong');
-  await page.getByTestId('mode-human').check({ force: true }); // visually hidden native radio inside a styled label
-  await page.getByTestId('start').click();
-  if (await page.getByTestId('start-yes').isVisible()) await page.getByTestId('start-yes').click();
-  await expect(page.getByTestId('current-human')).toBeVisible();
-  // After a reload, a fresh "New game" starts the remembered kind of game (two players).
+test('the strength chosen on the start screen is the game\'s difficulty and is offered again after a reload', async ({ page }) => {
+  await startNewGame(page, { difficulty: 'strong', settings: { game: 'computer', color: 'b' } });
+  await expect(page.getByTestId('settings-summary')).toContainText('Strong');
+  await expect(page.getByTestId('mode')).toHaveText('You play Black against the computer (Strong).');
+  // As Black the computer has already opened.
+  await expect(page.getByTestId('ply-0')).toBeVisible();
+  await expect.poll(async () => ((await readSave(page, GAME)) as { state?: { difficulty: string; humanColor: string } } | undefined)?.state).toMatchObject({ difficulty: 'strong', humanColor: 'b' });
   await page.reload();
-  await page.getByTestId('new-game').click();
-  await expect(page.getByTestId('current-human')).toBeVisible();
+  await expect(page.getByTestId('difficulty').locator('input[value="strong"]')).toBeChecked();
+  await expect(page.getByTestId('setting-color').locator('input[value="b"]')).toBeChecked();
 });
 
 test('a random colour is drawn at the start and shown', async ({ page }) => {
-  await startNewGame(page);
-  await page.getByTestId('color-random').check({ force: true }); // visually hidden native radio inside a styled label
-  await page.getByTestId('start').click();
+  await startNewGame(page, { settings: { color: 'random' } });
   await expect(page.getByTestId('mode')).toContainText(/drawn at random/);
   const colour = (await page.getByTestId('mode').textContent())!.includes('White') ? 'w' : 'b';
   // The board is turned to the drawn colour; as Black the computer has already opened.
@@ -146,8 +122,8 @@ test('a random colour is drawn at the start and shown', async ({ page }) => {
   if (colour === 'b') await expect(page.getByTestId('ply-0')).toBeVisible();
   // The choice "random" is remembered for the next game.
   await page.reload();
-  await page.getByTestId('new-game').click();
-  await expect(page.getByTestId('color-random')).toBeChecked();
+  await expect(page.getByTestId('setting-color').locator('input[value="random"]')).toBeChecked();
+  await submitStart(page);
   await expect(page.getByTestId('mode')).toContainText(/drawn at random/);
 });
 
@@ -212,9 +188,7 @@ test('on a 360px phone the variation board replaces the game view without horizo
 });
 
 test('solves a multi-move "find the best move" puzzle with the help of the hint', async ({ page }) => {
-  await startNewGame(page);
-  await page.getByTestId('menu').getByText('Find the best move').click();
-  await page.getByTestId('start').click();
+  await startNewGame(page, { settings: { game: 'best' } });
   await expect(page.getByTestId('next-puzzle')).toBeVisible();
   // Go to the next puzzle whose line has two or more moves.
   for (let i = 0; i < 80 && !/Move 1 of [23]\./.test((await page.getByTestId('status').textContent()) ?? ''); i++) {

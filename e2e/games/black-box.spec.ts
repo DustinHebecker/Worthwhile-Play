@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, readSave } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, readSave, startGame } from '../../packages/testing/src/e2e';
 
 const root = (page: Page) => page.getByTestId('game-root');
 
@@ -24,8 +24,7 @@ test('black-box: experiments and an open hypothesis test survive a reload', asyn
 });
 
 test('black-box: keyboard entry runs an experiment and repeated inputs are not logged twice', async ({ page }) => {
-  await page.goto('/games/black-box');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'black-box');
   const field = root(page).getByTestId('bb-input-0');
   await field.fill('7');
   await field.press('Enter');
@@ -50,8 +49,7 @@ function easyFormula(family: string, p: number[]): string {
 }
 
 test('black-box: a wrong formula reveals a counterexample, the right one solves the rule', async ({ page }) => {
-  await page.goto('/games/black-box?seed=4242&difficulty=easy');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'black-box', { difficulty: 'easy' });
   await root(page).getByTestId('bb-test').click();
   await root(page).getByTestId('bb-proof-formula').check();
   const field = root(page).getByTestId('bb-formula');

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, readSave } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, readSave, startGame } from '../../packages/testing/src/e2e';
 
 interface SavedSignal {
   phase: string;
@@ -19,8 +19,9 @@ async function hideTab(page: Page) {
 
 test('signal-watch: a paused session resumes at the same stimulus after a reload', async ({ page }) => {
   await expectResumeAfterReload(page, 'signal-watch', async (p) => {
-    await expect(p.getByTestId('sw-length')).toContainText('2');
-    await p.getByTestId('sw-start').click();
+    // Start on the host's start screen begins the session at once; the target stays named.
+    await expect(p.getByTestId('sw-intro')).toBeHidden();
+    await expect(p.getByTestId('sw-target')).toBeVisible();
     await expect(p.getByTestId('sw-stimulus')).toHaveAttribute('data-index', '0');
     await expect(p.getByTestId('sw-stimulus')).toHaveAttribute('data-index', '1', { timeout: 5_000 });
     await p.getByTestId('sw-respond').click();
@@ -48,9 +49,7 @@ test('signal-watch: a paused session resumes at the same stimulus after a reload
 });
 
 test('signal-watch: Space responds and is saved for the current stimulus', async ({ page }) => {
-  await page.goto('/games/signal-watch');
-  await page.getByTestId('new-game').click();
-  await page.getByTestId('sw-start').click();
+  await startGame(page, 'signal-watch');
   await expect(page.getByTestId('sw-respond')).toBeFocused();
   await page.keyboard.press('Space');
   await expect(page.getByTestId('sw-ack')).not.toBeEmpty();

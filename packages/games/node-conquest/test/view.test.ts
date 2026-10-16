@@ -6,6 +6,7 @@ import game from '../src/index';
 import { createSave, interpretSave } from '@wp/persistence';
 import { BOARD, createGame, INTRO_MAP, mapOf, MAPS_PER_SET, MAX_LEVEL, type NcState } from '../src/rules';
 import { crossings, FACTION_COUNTS, getMap, LAYOUTS, LEGACY_MAPS, type GameMap } from '../src/maps';
+import { nodeConquestSettings } from '../src/settings';
 import { battlements, crossingMark, MAX_ZOOM, PICK_R, pickNode, shapePath } from '../src/view';
 
 let ctx: TestContext;
@@ -15,10 +16,10 @@ const $ = (id: string) => ctx.context.root.querySelector<HTMLElement>(`[data-tes
 const click = (id: string) => $(id).dispatchEvent(new MouseEvent('click', { bubbles: true }));
 const key = (target: EventTarget, k: string) => target.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
 
-function setup(seed = 1, difficulty = 'beginner', locale: 'en' | 'ar' = 'en') {
+function setup(seed = 1, difficulty = 'beginner', locale: 'en' | 'ar' = 'en', settings?: Record<string, string | number>) {
   ctx = createTestContext(game as GameModule<unknown>, locale);
   instance = game.create(ctx.context);
-  instance.newGame({ seed, difficulty });
+  instance.newGame({ seed, difficulty, ...(settings ? { settings } : {}) });
 }
 
 const start = () => instance.serialize().owner.indexOf(0);
@@ -43,7 +44,8 @@ describe('Orbit Links view', () => {
     expect($('nc-pause').textContent).toBe('Start');
     expect($('nc-status').textContent).toContain('Ready');
     expect($('nc-speed').textContent).toBe('Speed 1×');
-    expect(($('nc-map-select') as unknown as HTMLSelectElement).value).toBe(String(s.map));
+    // Map and opponents are chosen on the host's start screen (ADR 0017).
+    expect(ctx.context.root.querySelector('select')).toBeNull();
     expect($('nc-list').children).toHaveLength(map.nodes.length);
     expect(ctx.missingKeys).toEqual([]);
   });
@@ -287,31 +289,32 @@ describe('Orbit Links view', () => {
     expect($('nc-retry').textContent).toBe('Try again');
   });
 
-  it('switches maps with the picker at once while the match is untouched, keeping seed and difficulty', () => {
-    setup(9, 'advanced');
-    const select = $('nc-map-select') as unknown as HTMLSelectElement;
-    expect(select.options).toHaveLength(MAPS_PER_SET + 1);
-    expect(select.options[MAPS_PER_SET]!.textContent).toMatch(/^Map 13 · \d+ nodes$/);
-    expect(select.options[0]!.textContent).toBe('Introduction');
-    expect(select.options[1]!.textContent).toMatch(/^Map 1 · \d+ nodes$/);
-    const next = (instance.serialize().map + 1) % MAPS_PER_SET;
-    select.value = String(next);
-    select.dispatchEvent(new Event('change'));
-    const s = instance.serialize();
-    expect(s.map).toBe(next);
-    expect(s).toEqual(createGame(9, { difficulty: 'advanced', map: next }));
-    expect($('nc-confirm').hidden).toBe(true);
+  it('starts the map chosen on the start screen; "any map" follows the game number', () => {
+    setup(9, 'advanced', 'en', { map: '3', opponents: 2 });
+    expect(instance.serialize()).toEqual(createGame(9, { difficulty: 'advanced', map: 2, opponents: 2 }));
     instance.reset();
-    expect(instance.serialize()).toEqual(createGame(9, { difficulty: 'advanced', map: next }));
-    instance.newGame({ seed: 9, difficulty: 'advanced' });
+    expect(instance.serialize()).toEqual(createGame(9, { difficulty: 'advanced', map: 2, opponents: 2 }));
+    instance.newGame({ seed: 9, difficulty: 'advanced', settings: { map: 'random', opponents: 1 } });
     expect(instance.serialize().map).toBe(9 % MAPS_PER_SET);
+    // Without settings (old deep links), or with invalid ones: any map, one opponent.
+    instance.newGame({ seed: 10, difficulty: 'advanced' });
+    expect(instance.serialize()).toEqual(createGame(10, { difficulty: 'advanced', opponents: 1 }));
+    for (const map of ['0', String(MAPS_PER_SET + 1), 'x', 2.5]) {
+      instance.newGame({ seed: 10, settings: { map, opponents: 4 } });
+      expect(instance.serialize()).toMatchObject({ map: 10 % MAPS_PER_SET, opponents: 1 });
+    }
+  });
+
+  it('declares a map choice with every map and the introduction, and the opponent count except for the introduction', () => {
+    const [map, opponents] = nodeConquestSettings() as readonly { id: string; values?: readonly unknown[]; when?: Record<string, readonly unknown[]> }[];
+    expect(map!.values).toEqual(['random', 'intro', ...Array.from({ length: MAPS_PER_SET }, (_, i) => String(i + 1))]);
+    expect(opponents!.values).toEqual([1, 2, 3]);
+    expect(opponents!.when!.map).not.toContain('intro');
+    expect(opponents!.when!.map).toHaveLength(MAPS_PER_SET + 1);
   });
 
   it('renders in RTL locales without mirroring the board', () => {
-    setup(10, 'master', 'ar');
-    const opp = $('nc-opponents') as unknown as HTMLSelectElement;
-    opp.value = '3';
-    opp.dispatchEvent(new Event('change'));
+    setup(10, 'master', 'ar', { opponents: 3 });
     expect(ctx.context.root.querySelector('.wp-nc')?.getAttribute('dir')).toBe('rtl');
     expect(ctx.missingKeys).toEqual([]);
     expect(ctx.context.root.querySelectorAll('.nc-legend li[data-faction]')).toHaveLength(4);
@@ -323,115 +326,25 @@ describe('Orbit Links view', () => {
     expect(new Set(shapes).size).toBe(4);
   });
 
-  it('has an opponent-count setting that a new match keeps', () => {
-    setup(11);
-    const opp = $('nc-opponents') as unknown as HTMLSelectElement;
-    expect([...opp.options].map((o) => o.value)).toEqual(['1', '2', '3']);
-    expect(opp.value).toBe('1');
-    opp.value = '2';
-    opp.dispatchEvent(new Event('change'));
+  it('starts with the chosen opponent count; a restored save keeps its own', () => {
+    setup(11, 'beginner', 'en', { opponents: 2 });
     expect(instance.serialize()).toEqual(createGame(11, { opponents: 2 }));
     expect(ctx.context.root.querySelectorAll('.nc-legend li[data-faction]')).toHaveLength(3);
-    instance.newGame({ seed: 12, difficulty: 'strong' });
-    expect(instance.serialize()).toEqual(createGame(12, { opponents: 2, difficulty: 'strong' }));
-    expect(opp.value).toBe('2');
-  });
-
-  it('remembers the opponent count per device for a fresh instance after a reload', () => {
-    setup(11);
-    expect(ctx.preferences.size).toBe(0);
-    const opp = $('nc-opponents') as unknown as HTMLSelectElement;
-    opp.value = '3';
-    opp.dispatchEvent(new Event('change'));
-    expect(ctx.preferences.get('setup')).toEqual({ opponents: 3 });
-    // The introduction (always one opponent) does not overwrite the setting.
-    const select = $('nc-map-select') as unknown as HTMLSelectElement;
-    select.value = String(INTRO_MAP);
-    select.dispatchEvent(new Event('change'));
+    instance.newGame({ seed: 12, difficulty: 'strong', settings: { opponents: 3 } });
+    expect(instance.serialize()).toEqual(createGame(12, { opponents: 3, difficulty: 'strong' }));
+    // The introduction always has one opponent.
+    instance.newGame({ seed: 12, settings: { map: 'intro', opponents: 3 } });
     expect(instance.serialize()).toMatchObject({ map: INTRO_MAP, opponents: 1 });
-    expect(ctx.preferences.get('setup')).toEqual({ opponents: 3 });
-    // A new instance (as after a reload) with the same preferences starts its next match with 3 opponents.
-    instance.dispose();
-    instance = game.create(ctx.context);
-    instance.newGame({ seed: 12, difficulty: 'advanced' });
-    expect(instance.serialize()).toEqual(createGame(12, { opponents: 3, difficulty: 'advanced' }));
-    expect(($('nc-opponents') as unknown as HTMLSelectElement).value).toBe('3');
-    // Restoring a save keeps the saved match as it is.
     const saved = createGame(5, { opponents: 2 });
     instance.restore(saved);
     expect(instance.serialize()).toEqual(saved);
+    // The host is the source of the difficulty; nothing is written to the device preferences.
     expect(ctx.difficulties).toEqual([]);
-  });
-
-  it('ignores invalid or missing remembered settings', () => {
-    for (const bad of [{ opponents: 4 }, { opponents: '2' }, 2, null, [3], { other: 1 }]) {
-      ctx = createTestContext(game as GameModule<unknown>);
-      ctx.preferences.set('setup', bad);
-      instance = game.create(ctx.context);
-      instance.newGame({ seed: 20, difficulty: 'beginner' });
-      expect(instance.serialize().opponents).toBe(1);
-      instance.dispose();
-    }
-    // Hosts without preferences work as before.
-    ctx = createTestContext(game as GameModule<unknown>);
-    const { preferences: _p, ...bare } = ctx.context;
-    instance = game.create(bare);
-    instance.newGame({ seed: 21, difficulty: 'beginner' });
-    const opp = ctx.context.root.querySelector<HTMLSelectElement>('[data-testid="nc-opponents"]')!;
-    opp.value = '2';
-    opp.dispatchEvent(new Event('change'));
-    instance.newGame({ seed: 22, difficulty: 'beginner' });
-    expect(instance.serialize().opponents).toBe(2);
-  });
-
-  it('asks before replacing a match under way, and only switches on Yes', () => {
-    setup(13);
-    const v = start();
-    click(`node-${v}`);
-    click(`node-${neighbours(v)[0]}`);
-    $('nc-pause').click();
-    vi.advanceTimersByTime(500);
-    const before = instance.serialize();
-    const select = $('nc-map-select') as unknown as HTMLSelectElement;
-    const other = (before.map + 3) % MAPS_PER_SET;
-    select.value = String(other);
-    select.dispatchEvent(new Event('change'));
-    expect($('nc-confirm').hidden).toBe(false);
-    expect($('nc-confirm-text').textContent).toBe(`Start a new match on map ${other + 1} with opponents: 1? The current match ends.`);
-    expect($('nc-pause').textContent).toBe('Resume');
-    vi.advanceTimersByTime(1000);
-    expect(instance.serialize()).toEqual(before);
-    $('nc-confirm-no').click();
-    expect($('nc-confirm').hidden).toBe(true);
-    expect(select.value).toBe(String(before.map));
-    expect(instance.serialize()).toEqual(before);
-    // Changing the opponent count asks as well; Yes starts the new setup.
-    const opp = $('nc-opponents') as unknown as HTMLSelectElement;
-    opp.value = '3';
-    opp.dispatchEvent(new Event('change'));
-    expect($('nc-confirm').hidden).toBe(false);
-    const saves = ctx.saveRequests();
-    $('nc-confirm-yes').click();
-    expect(instance.serialize()).toEqual(createGame(13, { opponents: 3, map: before.map }));
-    expect(ctx.saveRequests()).toBe(saves + 1);
-    expect($('nc-confirm').hidden).toBe(true);
-    // A finished match is replaced without asking.
-    const done = instance.serialize();
-    done.owner = done.owner.map((o) => (o === 0 ? 1 : o));
-    done.result = 'lost';
-    instance.restore(done);
-    select.value = String(INTRO_MAP);
-    select.dispatchEvent(new Event('change'));
-    expect($('nc-confirm').hidden).toBe(true);
-    expect(instance.serialize()).toEqual(createGame(13, { map: INTRO_MAP }));
-    expect(opp.disabled).toBe(true);
+    expect(ctx.preferences.size).toBe(0);
   });
 
   it('guides through the introduction map step by step', () => {
-    setup(14);
-    const select = $('nc-map-select') as unknown as HTMLSelectElement;
-    select.value = String(INTRO_MAP);
-    select.dispatchEvent(new Event('change'));
+    setup(14, 'beginner', 'en', { map: 'intro' });
     expect($('nc-hint').hidden).toBe(false);
     expect($('nc-hint').textContent).toMatch(/^Step 1/);
     click('node-0');

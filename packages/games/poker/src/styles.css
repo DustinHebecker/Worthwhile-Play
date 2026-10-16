@@ -22,7 +22,6 @@
   border: 1px solid var(--wp-border);
   border-radius: var(--wp-radius, 10px);
 }
-.wp-poker .pk-field { display: grid; gap: 0.25rem; }
 .wp-poker .pk-setup .primary { justify-self: start; }
 
 .wp-poker .pk-info { margin: 0; font-size: 0.92rem; color: var(--wp-muted); text-align: center; }

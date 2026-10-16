@@ -54,6 +54,8 @@ const pt: UiCatalogue = {
   'game.saveUnavailable': 'Neste modo do navegador não é possível salvar o progresso; ele será perdido ao fechar a página.',
   'game.finished': 'Terminado.',
   'game.anotherRound': 'Mais uma partida',
+  'game.changeSettings': 'Alterar configurações',
+  'game.started': 'Novo jogo iniciado.',
   'game.sessionNote': 'Já são {minutes} minutos de jogo.',
   'game.dismiss': 'Fechar',
   'game.seed': 'Jogo nº {seed}',

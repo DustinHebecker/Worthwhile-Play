@@ -33,7 +33,6 @@
     --sd-platform: #8d877a;
   }
 }
-.wp-stack-duel .sd-toolbar,
 .wp-stack-duel .sd-actions {
   display: flex;
   flex-wrap: wrap;
@@ -41,14 +40,6 @@
   justify-content: center;
   width: 100%;
 }
-.wp-stack-duel .sd-field {
-  display: grid;
-  gap: 0.2rem;
-  font-size: 0.9rem;
-  min-width: 0;
-  max-width: 100%;
-}
-.wp-stack-duel .sd-field select { max-width: 100%; }
 .wp-stack-duel .sd-status,
 .wp-stack-duel .sd-progress {
   margin: 0;

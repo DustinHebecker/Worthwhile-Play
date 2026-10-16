@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { readSave } from '../packages/testing/src/e2e';
+import { readSave, startGame } from '../packages/testing/src/e2e';
 
 const CSV = ['front_text,back_text,front_lang,back_lang', 'Hund,dog,de,en', 'Katze,cat,de,en', 'Maus,mouse,de,en', 'Vogel,bird,de,en', 'Fisch,fish,de,en', 'Pferd,horse,de,en', 'Kuh,cow,de,en'].join('\n');
 const WORDS = ['Hund', 'dog', 'Katze', 'cat', 'Maus', 'mouse', 'Vogel', 'bird', 'Fisch', 'fish', 'Pferd', 'horse', 'Kuh', 'cow'];
@@ -30,7 +30,7 @@ test('import a CSV deck, find it in the library, play Memory with it and resume 
 
   await page.getByTestId(`play-own-${id}`).click();
   await expect(page).toHaveURL(/\/games\/memory$/);
-  await expect(page.getByTestId('memory-cards')).toHaveValue(`own:${id}`);
+  await expect.poll(async () => ((await readSave(page, 'memory')) as { state?: { deckId?: string } } | undefined)?.state?.deckId).toBe(id);
   await expect(page.getByTestId('card-11')).toBeVisible(); // small board: 6 of the 7 cards → 12 cards
   await page.getByTestId('card-0').click();
   await expect(page.getByTestId('card-0')).toHaveAttribute('data-state', 'revealed');
@@ -120,13 +120,12 @@ test('deleting an own deck: confirmed, gone from the library, a saved game expla
   await page.getByTestId('memory-missing-new').click();
   await expect(page.getByTestId('memory-missing')).toBeHidden();
   await expect(page.getByTestId('card-0')).toBeVisible();
-  await expect(page.getByTestId('memory-cards')).toHaveValue('symbols');
+  await expect.poll(async () => ((await readSave(page, 'memory')) as { state?: { variant?: string } } | undefined)?.state?.variant).toBe('symbols');
 });
 
 test('"Delete all saved games" keeps decks; "Delete my imported decks" removes them after confirmation', async ({ page }) => {
   const id = await importCsv(page, 'Keep me');
-  await page.goto('/games/memory');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'memory');
   await expect.poll(() => readSave(page, 'memory')).toBeTruthy();
 
   await page.goto('/settings');
@@ -150,9 +149,7 @@ test('"Delete all saved games" keeps decks; "Delete my imported decks" removes t
 test('picture ↔ word uses the learning language from Settings', async ({ page }) => {
   await page.goto('/settings');
   await page.locator('#learning-language').selectOption('es');
-  await page.goto('/games/memory');
-  await page.getByTestId('new-game').click();
-  await page.getByTestId('memory-cards').selectOption('picture-word');
+  await startGame(page, 'memory', { settings: { cards: 'picture-word' } });
   await expect(page.getByTestId('memory-languages')).toHaveText('Words in Spanish');
   const save = await expect.poll(async () => ((await readSave(page, 'memory')) as { state?: { variant?: string } } | undefined)?.state?.variant).toBe('picture-word');
   void save;
@@ -191,7 +188,9 @@ test('Review: learn an imported deck, reload mid-session, resume at the same car
   const id = await importCsv(page, 'Animals to review');
   await page.getByTestId('review-deck').click();
   await expect(page).toHaveURL(/\/games\/review$/);
-  await expect(page.getByTestId('review-deck')).toHaveValue(id);
+  // The deck link chooses the start screen's deck (ADR 0017).
+  await expect(page.getByTestId('settings-summary')).toContainText('Animals to review');
+  await expect.poll(async () => ((await readSave(page, 'review')) as { settings?: { deck?: string } } | undefined)?.settings?.deck).toBe(id);
   // Nothing rated yet: nothing is due, new cards are offered.
   await expect(page.getByTestId('review-empty')).toContainText('Nothing to review right now');
   await page.getByTestId('review-learn-new').click();
@@ -229,7 +228,7 @@ test('Review: learn an imported deck, reload mid-session, resume at the same car
   await page.getByTestId(`review-${id}`).click();
   await expect(page).toHaveURL(/\/games\/review$/);
   await expect(page.getByTestId('review-progress')).toHaveText('Card 1 of 7');
-  await expect(page.getByTestId('review-mode')).toHaveValue('review');
+  await expect.poll(async () => ((await readSave(page, 'review')) as { state?: { mode?: string } } | undefined)?.state?.mode).toBe('review');
 
   await page.goto('/settings');
   await expect(page.getByTestId('learning-info')).toHaveText('Learning records on this device: 7');

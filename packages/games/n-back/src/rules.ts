@@ -180,15 +180,6 @@ export function newBlock(seed: number, difficulty: Difficulty, variant: Variant 
   return { seed: seed >>> 0, difficulty, variant, pace, phase: 'ready', index: 0, answers: [], pending: 0 };
 }
 
-/** Options can be changed before the block starts. */
-export function setVariant(state: NBackState, variant: Variant): NBackState {
-  return state.phase === 'ready' ? { ...state, variant } : state;
-}
-
-export function setPace(state: NBackState, pace: Pace): NBackState {
-  return state.phase === 'ready' ? { ...state, pace } : state;
-}
-
 export function startBlock(state: NBackState): NBackState {
   return state.phase === 'ready' ? { ...state, phase: 'running', index: 0, answers: [], pending: 0 } : state;
 }

@@ -54,6 +54,8 @@ const zhHans: UiCatalogue = {
   'game.saveUnavailable': '当前浏览器模式无法保存进度，关闭页面后进度将丢失。',
   'game.finished': '已结束。',
   'game.anotherRound': '再来一局',
+  'game.changeSettings': '更改设置',
+  'game.started': '新游戏已开始。',
   'game.sessionNote': '你已经玩了 {minutes} 分钟。',
   'game.dismiss': '关闭',
   'game.seed': '游戏编号 {seed}',

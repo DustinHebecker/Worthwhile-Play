@@ -54,6 +54,8 @@ const fr: UiCatalogue = {
   'game.saveUnavailable': 'Dans ce mode de navigation, la progression ne peut pas être enregistrée et sera perdue à la fermeture de la page.',
   'game.finished': 'Terminé.',
   'game.anotherRound': 'Encore une partie',
+  'game.changeSettings': 'Modifier les réglages',
+  'game.started': 'Nouvelle partie lancée.',
   'game.sessionNote': 'Vous jouez depuis {minutes} minutes.',
   'game.dismiss': 'Fermer',
   'game.seed': 'Partie n° {seed}',

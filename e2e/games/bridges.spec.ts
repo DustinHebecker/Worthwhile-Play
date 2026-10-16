@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, readSave } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, readSave, startGame } from '../../packages/testing/src/e2e';
 
 type Island = [number, number, number];
 interface SavedBridges {
@@ -111,8 +111,7 @@ test('bridges: built bridges survive a reload exactly', async ({ page }) => {
 });
 
 test('bridges: keyboard play and completing the puzzle ends the game calmly', async ({ page }) => {
-  await page.goto('/games/bridges?seed=1234&difficulty=easy');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'bridges', { difficulty: 'easy' });
   const islands = await renderedIslands(page);
   const edges = edgesOf(7, islands);
 
@@ -145,8 +144,7 @@ test('bridges: keyboard play and completing the puzzle ends the game calmly', as
 
 test('bridges: the 11×11 board fits a phone with non-overlapping 44 px island targets', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 740 });
-  await page.goto('/games/bridges?seed=77&difficulty=hard');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'bridges', { difficulty: 'hard' });
   const islands = await renderedIslands(page);
   expect(islands.length).toBeGreaterThanOrEqual(22);
   const last = islands[islands.length - 1] as Island;

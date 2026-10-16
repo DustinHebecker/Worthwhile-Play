@@ -53,6 +53,8 @@ const en = {
   'game.saveUnavailable': 'Progress cannot be stored in this browser mode and will be lost when you close the page.',
   'game.finished': 'Finished.',
   'game.anotherRound': 'Another round',
+  'game.changeSettings': 'Change settings',
+  'game.started': 'New game started.',
   'game.sessionNote': 'You have been playing for {minutes} minutes.',
   'game.dismiss': 'Dismiss',
   'game.seed': 'Game number {seed}',

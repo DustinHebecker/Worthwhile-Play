@@ -325,8 +325,7 @@ describe('view', () => {
     const index = LEVELS.expert.findIndex((source: LevelSource) => (source.inventory.polariser ?? 0) > 0);
     expect(index).toBeGreaterThanOrEqual(0);
     const level = getLevel('expert', index);
-    const { root, q, ctx } = start({ state: { ...createInitialState(index, 'expert'), level: index } });
-    expect(ctx.difficulties).toEqual(['expert']);
+    const { root, q } = start({ state: { ...createInitialState(index, 'expert'), level: index } });
     const kinds = [...q('legend').querySelectorAll('li')].map((li) => li.dataset.kind);
     expect(kinds).toContain('polariser');
     expect(kinds.at(-1)).toBe('optics');
@@ -392,12 +391,12 @@ describe('view', () => {
     }
   });
 
-  it('tells the host the difficulty of a restored save, but not for the introductory set', () => {
+  it('never reports a difficulty to the host: it is chosen on the start screen only (ADR 0017)', () => {
     const old = start({ state: createInitialState(3, 'intro') });
     expect(old.ctx.difficulties).toEqual([]);
     expect(old.q('level-status').textContent).toBe('Introductory level 4 of 8');
     const medium = start({ state: createInitialState(3, 'medium') });
-    expect(medium.ctx.difficulties).toEqual(['medium']);
+    expect(medium.ctx.difficulties).toEqual([]);
   });
 
   it('renders right-to-left text with a left-to-right board, and animates beams only without reduced motion', () => {

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, readSave } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, readSave, newGame, startGame, submitStart } from '../../packages/testing/src/e2e';
 
 interface SavedRelay {
   phase: string;
@@ -13,8 +13,8 @@ const saved = async (page: Page) => ((await readSave(page, 'relay-command')) as 
 const firstRifle = (s: SavedRelay) => s.world.entities.find((e) => e.side === 0 && e.kind === 'rifles')!;
 
 async function start(page: Page) {
-  // No save: the game starts at once and its setup is the first screen (ADR 0015).
-  await page.goto('/games/relay-command');
+  // No save: the host's start screen (difficulty), then the game's own setup (ADR 0015, ADR 0017).
+  await startGame(page, 'relay-command');
   await expect(page.getByTestId('rc-map')).toBeVisible();
   // The host saves the fresh game; positions are read from that save.
   await expect.poll(async () => (await saved(page))?.world.entities.length ?? 0).toBeGreaterThan(0);
@@ -175,8 +175,11 @@ test('relay-command: a Static Jammer is set up in one turn and stays set up acro
   await expect(page.getByTestId(`rc-unit-${jammer.id}`)).toContainText('Jammer active');
 });
 
-test('opening relay-command with no save shows the map setup directly, without a start panel (ADR 0015)', async ({ page }) => {
+test('opening relay-command with no save: the start screen with the difficulty, then Start shows the map setup (ADR 0015, ADR 0017)', async ({ page }) => {
   await page.goto('/games/relay-command');
+  await expect(page.getByTestId('difficulty')).toBeVisible();
+  await expect(page.getByTestId('continue')).toHaveCount(0);
+  await submitStart(page);
   await expect(page.getByTestId('rc-setup')).toBeVisible();
   await expect(page.getByTestId('rc-scenario')).toBeEnabled();
   await expect(page.getByTestId('rc-map')).toBeVisible();
@@ -191,13 +194,16 @@ test('opening relay-command with no save shows the map setup directly, without a
 });
 
 test('relay-command: the opponent level chosen before a new game is kept in the save', async ({ page }) => {
-  // The game opens at once (ADR 0015); the level is chosen in the toolbar and New game starts afresh with it.
-  await page.goto('/games/relay-command');
-  await expect(page.getByTestId('rc-map')).toBeVisible();
-  await page.getByTestId('difficulty').selectOption('hard');
-  await page.getByTestId('new-game').click();
+  // The start screen preselects the level of a `?difficulty=` link (ADR 0017); Start passes it to the game's setup,
+  // and New game → Start keeps it (remembered).
+  await page.goto('/games/relay-command?difficulty=hard');
+  await expect(page.getByTestId('difficulty').locator('input[value="hard"]')).toBeChecked();
+  await submitStart(page);
   await expect(page.getByTestId('rc-map')).toBeVisible();
   await expect.poll(async () => ((await readSave(page, 'relay-command')) as { state: { difficulty: string } } | undefined)?.state.difficulty).toBe('hard');
+  await newGame(page);
+  await expect(page.getByTestId('rc-map')).toBeVisible();
+  await expect.poll(async () => ((await readSave(page, 'relay-command')) as { state: { difficulty: string; seed: number } } | undefined)?.state.difficulty).toBe('hard');
   await page.getByTestId('rc-lock').click();
   await expect(page.getByTestId('rc-turn')).toHaveText('Turn 2');
 });
@@ -520,7 +526,7 @@ test('relay-command: in Arabic on a 360 px phone the doctrine choices of a selec
   await page.goto('/settings');
   await page.getByTestId('ui-language').selectOption('ar');
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
-  await page.goto('/games/relay-command');
+  await startGame(page, 'relay-command');
   await page.locator('[data-testid^="rc-unit-"]').nth(2).click();
   await expect(page.getByTestId('rc-doctrine-lostcontact')).toBeVisible();
   await expect(page.getByTestId('rc-doctrine-lostcontact').locator('option')).toHaveCount(3);

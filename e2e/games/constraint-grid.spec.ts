@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, readSave } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, readSave, startGame } from '../../packages/testing/src/e2e';
 
 interface SavedGrid {
   size: number;
@@ -57,8 +57,7 @@ test('constraint-grid: marks, ticked clues and options survive a reload exactly'
 });
 
 test('constraint-grid: keyboard play and solving the puzzle ends the game calmly', async ({ page }) => {
-  await page.goto('/games/constraint-grid?seed=4242&difficulty=easy');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'constraint-grid', { difficulty: 'easy' });
   const first = cell(page, 0, 1, 0, 0);
   await first.click();
   await expect(first).toBeFocused();
@@ -93,8 +92,7 @@ test('constraint-grid: keyboard play and solving the puzzle ends the game calmly
 
 test('constraint-grid: the 4 × 5 puzzle fits a phone with 44 px cells', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 740 });
-  await page.goto('/games/constraint-grid?difficulty=hard');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'constraint-grid', { difficulty: 'hard' });
   const last = cell(page, 2, 3, 4, 4);
   await last.scrollIntoViewIfNeeded();
   await expect(last).toBeVisible();

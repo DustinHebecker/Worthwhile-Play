@@ -30,8 +30,6 @@ import {
   SCORED_ITEMS,
   scoreBlock,
   scoreStream,
-  setPace,
-  setVariant,
   SHAPES,
   startBlock,
   SYMBOL_BIT,
@@ -239,13 +237,8 @@ describe('block flow', () => {
     expect(newBlock(3, 'n1')).toMatchObject({ variant: 'position', pace: 'self' });
   });
 
-  it('changes options only before the start', () => {
-    const ready = newBlock(1, 'n1');
-    expect(setVariant(ready, 'symbol').variant).toBe('symbol');
-    expect(setPace(ready, 'timed').pace).toBe('timed');
-    const running = startBlock(ready);
-    expect(setVariant(running, 'symbol')).toBe(running);
-    expect(setPace(running, 'timed')).toBe(running);
+  it('starts a block only once', () => {
+    const running = startBlock(newBlock(1, 'n1'));
     expect(startBlock(running)).toBe(running);
   });
 

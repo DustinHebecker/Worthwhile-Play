@@ -54,6 +54,8 @@ const hi: UiCatalogue = {
   'game.saveUnavailable': 'इस ब्राउज़र मोड में प्रगति सहेजी नहीं जा सकती; पेज बंद करने पर वह मिट जाएगी।',
   'game.finished': 'समाप्त।',
   'game.anotherRound': 'एक और राउंड',
+  'game.changeSettings': 'सेटिंग बदलें',
+  'game.started': 'नया खेल शुरू हुआ।',
   'game.sessionNote': 'आप {minutes} मिनट से खेल रहे हैं।',
   'game.dismiss': 'बंद करें',
   'game.seed': 'खेल संख्या {seed}',

@@ -7,7 +7,6 @@
   max-width: 32rem;
   margin-inline: auto;
 }
-.wp-tic-tac-toe .ttt-toolbar,
 .wp-tic-tac-toe .ttt-actions {
   display: flex;
   flex-wrap: wrap;
@@ -16,15 +15,6 @@
   justify-content: center;
   width: 100%;
 }
-.wp-tic-tac-toe .ttt-field {
-  display: grid;
-  gap: 0.2rem;
-  font-size: 0.9rem;
-  min-width: 0;
-  max-width: 100%;
-}
-.wp-tic-tac-toe .ttt-field[hidden] { display: none; }
-.wp-tic-tac-toe .ttt-field select { max-width: 100%; }
 .wp-tic-tac-toe .ttt-status { margin: 0; text-align: center; white-space: pre-line; }
 
 .wp-tic-tac-toe .ttt-board {

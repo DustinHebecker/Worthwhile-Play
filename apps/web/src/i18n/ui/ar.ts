@@ -54,6 +54,8 @@ const ar: UiCatalogue = {
   'game.saveUnavailable': 'لا يمكن حفظ التقدّم في وضع المتصفح هذا، وسيضيع عند إغلاق الصفحة.',
   'game.finished': 'انتهت اللعبة.',
   'game.anotherRound': 'جولة أخرى',
+  'game.changeSettings': 'تغيير الإعدادات',
+  'game.started': 'بدأت لعبة جديدة.',
   'game.sessionNote': 'أنت تلعب منذ {minutes} دقيقة.',
   'game.dismiss': 'إخفاء',
   'game.seed': 'اللعبة رقم {seed}',

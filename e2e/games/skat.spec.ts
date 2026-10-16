@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, readSave } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, readSave, startGame, type StartOptions } from '../../packages/testing/src/e2e';
 
 const GAME = 'skat';
 
@@ -71,11 +71,10 @@ async function settle(page: Page) {
   await expect(page.getByTestId('reveal-skip')).toHaveCount(0);
 }
 
-async function startSeries(page: Page) {
-  await page.goto(`/games/${GAME}`);
-  await page.getByTestId('new-game').click();
+/** Start on the host's start screen deals the first game at once (ADR 0017). */
+async function startSeries(page: Page, options: StartOptions = {}) {
+  await startGame(page, GAME, options);
   await expect(page.getByTestId('game-root')).toBeVisible();
-  await page.getByTestId('start').click();
   await expect(page.getByTestId('my-hand')).toBeVisible();
   await settle(page);
 }
@@ -98,7 +97,7 @@ test('bid, play a card, reload and resume the identical table', async ({ page })
   let before: (string | null)[] = [];
   let trick = '';
   await expectResumeAfterReload(page, GAME, async (p) => {
-    await p.getByTestId('start').click();
+    await expect(p.getByTestId('my-hand')).toBeVisible();
     await settle(p);
     await passAndPlay(p);
     await passAndPlay(p);
@@ -194,4 +193,23 @@ test('computer moves are revealed one by one; Space or the skip control shows th
   await playable.first().click();
   await expect(page.getByTestId('reveal-skip')).toHaveCount(0);
   await synced(page);
+});
+
+test('strength, series length, scoring and Ramsch come from the start screen; a direct link shows the series first', async ({ page }) => {
+  await startSeries(page, { difficulty: 'hard', settings: { series: 3, scoring: 'seeger', ramsch: true } });
+  await expect(page.getByTestId('progress')).toHaveText('Game 1 of 3');
+  await expect
+    .poll(async () => ((await readSave(page, GAME)) as { state?: { difficulty: string; options: unknown } } | undefined)?.state)
+    .toMatchObject({ difficulty: 'hard', options: { series: 3, scoring: 'seeger', ramsch: true } });
+  // Only display preferences (speed, card faces) remain in the game.
+  await expect(page.getByTestId('game-root').locator('select')).toHaveCount(2);
+  await expect(page.getByTestId('option-series')).toHaveCount(0);
+
+  // A deep link starts with the remembered settings and waits for "Deal the first game".
+  await page.goto(`/games/${GAME}?seed=4242`);
+  await expect(page.getByTestId('setup')).toBeVisible();
+  await expect(page.getByTestId('setup-summary')).toContainText('3 games');
+  await expect(page.getByTestId('setup-summary')).toContainText('Seeger');
+  await page.getByTestId('start').click();
+  await expect(page.getByTestId('progress')).toHaveText('Game 1 of 3');
 });

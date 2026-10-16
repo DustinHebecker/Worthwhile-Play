@@ -1,23 +1,23 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { GameContext, GameInstance, GameModule } from '@wp/game-core';
+import type { GameContext, GameInstance, GameModule, SettingValue } from '@wp/game-core';
 import type { SupportedLocale } from '@wp/localization';
 import { createTestContext } from '@wp/testing';
-import game from '../src/index';
+import game, { nBackSettings } from '../src/index';
 import { blockLength, generateBlock, GLYPHS, matchMask, SHAPES, TIMED_ITEM_MS, type Difficulty, type NBackState } from '../src/rules';
 
 const instances: GameInstance<NBackState>[] = [];
 
-function setup(options: { locale?: SupportedLocale; seed?: number; difficulty?: Difficulty; prefs?: unknown } = {}) {
+function setup(options: { locale?: SupportedLocale; seed?: number; difficulty?: Difficulty; settings?: Record<string, SettingValue>; begin?: boolean } = {}) {
   const ctx = createTestContext(game as GameModule<unknown>, options.locale ?? 'en');
-  if (options.prefs !== undefined) ctx.preferences.set('options', options.prefs);
   const context: GameContext = ctx.context;
   const instance = game.create(context);
   instances.push(instance);
   const root = context.root;
   const el = (id: string) => root.querySelector<HTMLElement>(`[data-testid="${id}"]`) as HTMLElement;
   const click = (id: string) => el(id).click();
-  if (options.seed !== undefined) instance.newGame({ seed: options.seed, ...(options.difficulty ? { difficulty: options.difficulty } : {}) });
+  if (options.seed !== undefined)
+    instance.newGame({ seed: options.seed, ...(options.difficulty ? { difficulty: options.difficulty } : {}), ...(options.settings ? { settings: options.settings } : {}), ...(options.begin ? { begin: true } : {}) });
   const state = () => instance.serialize();
   const activeCells = () => [...root.querySelectorAll<HTMLElement>('[data-state="active"]')].map((c) => Number(c.dataset.testid?.slice('nb-cell-'.length)));
   return { ctx, context, instance, root, el, click, state, activeCells };
@@ -49,29 +49,44 @@ describe('N-back view: intro and options', () => {
     expect(setup({ seed: 1, difficulty: 'n3' }).el('nb-intro').textContent).toContain('look-alikes');
   });
 
-  it('switches variant and pace before the start, saves them in state and preferences', () => {
-    const g = setup({ seed: 1 });
-    expect(g.el('nb-variant-position').getAttribute('aria-pressed')).toBe('true');
-    expect(g.el('nb-pace-self').getAttribute('aria-pressed')).toBe('true');
-    expect(g.el('nb-pace-timed').textContent).toBe('Calm timed (3 s per item)');
-    const saves = g.ctx.saveRequests();
-    g.click('nb-variant-dual');
-    g.click('nb-pace-timed');
+  it('takes variant and pace from the start-screen settings; junk falls back to the defaults', () => {
+    const g = setup({ seed: 1, settings: { variant: 'dual', pace: 'timed' } });
     expect(g.state()).toMatchObject({ variant: 'dual', pace: 'timed', phase: 'ready' });
-    expect(g.el('nb-variant-dual').getAttribute('aria-pressed')).toBe('true');
-    expect(g.el('nb-variant-position').getAttribute('aria-pressed')).toBe('false');
     expect(g.el('nb-intro').textContent).toContain('Pausing stops the clock');
-    expect(g.ctx.saveRequests()).toBe(saves + 2);
-    expect(g.ctx.preferences.get('options')).toEqual({ variant: 'dual', pace: 'timed' });
-    // A fresh game on the same instance keeps the options (preferences) but resets the block.
-    g.instance.newGame({ seed: 2 });
-    expect(g.state()).toMatchObject({ seed: 2, variant: 'dual', pace: 'timed', phase: 'ready' });
+    // No option controls inside the game any more (ADR 0017).
+    expect(g.root.querySelector('[data-testid^="nb-variant-"], [data-testid^="nb-pace-"]')).toBeNull();
+    expect(setup({ seed: 1, settings: { variant: 'letters', pace: 7 } }).state()).toMatchObject({ variant: 'position', pace: 'self' });
+    expect(setup({ seed: 1 }).state()).toMatchObject({ variant: 'position', pace: 'self' });
   });
 
-  it('reads valid preferences and ignores invalid ones', () => {
-    expect(setup({ seed: 1, prefs: { variant: 'symbol', pace: 'timed' } }).state()).toMatchObject({ variant: 'symbol', pace: 'timed' });
-    expect(setup({ seed: 1, prefs: { variant: 'letters', pace: 7 } }).state()).toMatchObject({ variant: 'position', pace: 'self' });
-    expect(setup({ seed: 1, prefs: 'dual' }).state()).toMatchObject({ variant: 'position', pace: 'self' });
+  it('begins the block at once after the host\'s Start (begin), without the intro', () => {
+    const g = setup({ seed: 5, difficulty: 'n2', begin: true });
+    expect(g.state()).toMatchObject({ phase: 'running', index: 0 });
+    expect(g.el('nb-intro').hidden).toBe(true);
+    expect(g.el('nb-play').hidden).toBe(false);
+    expect(g.activeCells()).toEqual([generateBlock(5, 'n2')[0]?.position]);
+    // Nothing more to remind of at N = 2 and the player's own pace.
+    expect(g.el('nb-reminder').hidden).toBe(true);
+  });
+
+  it('keeps the intro\'s notes on look-alikes (N = 3) and the timed pace visible during the block', () => {
+    const g = setup({ seed: 5, difficulty: 'n3', settings: { pace: 'timed' }, begin: true });
+    expect(g.el('nb-reminder').hidden).toBe(false);
+    expect(g.el('nb-reminder').textContent).toContain('look-alikes');
+    expect(g.el('nb-reminder').textContent).toContain('Timed pace');
+  });
+
+  it('declares variant and pace; their defaults follow the options older versions remembered', () => {
+    const ctx = createTestContext(game as GameModule<unknown>, 'en');
+    expect(nBackSettings(ctx.settingsEnv).map((s) => [s.kind === 'choice' ? s.id : s.kind, s.kind === 'choice' ? s.default : undefined])).toEqual([
+      ['variant', 'position'],
+      ['pace', 'self']
+    ]);
+    ctx.preferences.set('options', { variant: 'symbol', pace: 'timed' });
+    expect(nBackSettings(ctx.settingsEnv).map((s) => (s.kind === 'choice' ? s.default : undefined))).toEqual(['symbol', 'timed']);
+    ctx.preferences.set('options', { variant: 'letters', pace: 7 });
+    expect(nBackSettings(ctx.settingsEnv).map((s) => (s.kind === 'choice' ? s.default : undefined))).toEqual(['position', 'self']);
+    expect(game.metadata.messages.en?.['pace.timed']).toBe('Calm timed (3 s per item)');
   });
 });
 
@@ -127,7 +142,7 @@ describe('N-back view: self-paced play', () => {
   });
 
   it('dual variant: toggles both claims and confirms with Next (A, L, Enter)', () => {
-    const g = setup({ seed: 4, difficulty: 'n1', prefs: { variant: 'dual', pace: 'self' } });
+    const g = setup({ seed: 4, difficulty: 'n1', settings: { variant: 'dual', pace: 'self' } });
     const block = generateBlock(4, 'n1');
     g.click('nb-start');
     const cell = g.el(`nb-cell-${block[0]?.position}`);
@@ -149,7 +164,7 @@ describe('N-back view: self-paced play', () => {
   });
 
   it('symbol variant shows a large shape instead of the grid', () => {
-    const g = setup({ seed: 6, prefs: { variant: 'symbol', pace: 'self' } });
+    const g = setup({ seed: 6, settings: { variant: 'symbol', pace: 'self' } });
     const block = generateBlock(6, 'n1');
     g.click('nb-start');
     const shape = SHAPES[block[0]?.symbol ?? 0] ?? 'circle';
@@ -195,7 +210,7 @@ describe('N-back view: self-paced play', () => {
   });
 
   it('reset returns to the seeded start with the same options', () => {
-    const g = setup({ seed: 9, prefs: { variant: 'symbol', pace: 'self' } });
+    const g = setup({ seed: 9, settings: { variant: 'symbol', pace: 'self' } });
     const initial = g.state();
     g.click('nb-start');
     g.click('nb-next');
@@ -213,7 +228,7 @@ describe('N-back view: self-paced play', () => {
 
 describe('N-back view: optional timed pace', () => {
   it('closes an unanswered item after the calm interval as "no match"', () => {
-    const g = setup({ seed: 2, difficulty: 'n1', prefs: { variant: 'position', pace: 'timed' } });
+    const g = setup({ seed: 2, difficulty: 'n1', settings: { variant: 'position', pace: 'timed' } });
     g.click('nb-start');
     vi.advanceTimersByTime(TIMED_ITEM_MS - 1);
     expect(g.state().index).toBe(0);
@@ -230,7 +245,7 @@ describe('N-back view: optional timed pace', () => {
   });
 
   it('records the toggled dual claims when the interval ends', () => {
-    const g = setup({ seed: 2, difficulty: 'n1', prefs: { variant: 'dual', pace: 'timed' } });
+    const g = setup({ seed: 2, difficulty: 'n1', settings: { variant: 'dual', pace: 'timed' } });
     g.click('nb-start');
     vi.advanceTimersByTime(TIMED_ITEM_MS);
     g.click('nb-same-shape');
@@ -239,7 +254,7 @@ describe('N-back view: optional timed pace', () => {
   });
 
   it('stops on pause and waits for Continue; a restore also waits', () => {
-    const g = setup({ seed: 2, difficulty: 'n1', prefs: { variant: 'position', pace: 'timed' } });
+    const g = setup({ seed: 2, difficulty: 'n1', settings: { variant: 'position', pace: 'timed' } });
     g.click('nb-start');
     vi.advanceTimersByTime(1000);
     g.instance.pause();

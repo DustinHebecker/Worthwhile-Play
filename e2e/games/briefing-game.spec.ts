@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, readSave } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, readSave, startGame } from '../../packages/testing/src/e2e';
 
 const root = (page: Page) => page.getByTestId('game-root');
 const selects = (page: Page) => root(page).locator('select[data-testid^="bg-select-"]');
@@ -36,8 +36,7 @@ test('briefing-game: a checked sorting survives a reload', async ({ page }) => {
 });
 
 test('briefing-game: decision, next action and own notes work with the keyboard and are kept', async ({ page }) => {
-  await page.goto('/games/briefing-game');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'briefing-game');
   await sortAll(page);
   await root(page).getByTestId('bg-check-sort').press('Enter');
   const decision = root(page).getByTestId('bg-decision-0');

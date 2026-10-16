@@ -74,7 +74,13 @@ export function createSignalWatch(context: GameContext): GameInstance<SignalStat
   }, t('action.respond'));
   const hintEl = h('p', { class: 'wp-sw__muted' }, t('action.respondHint'));
   const continueBtn = h('button', { type: 'button', class: 'primary', 'data-testid': 'sw-continue', onclick: () => proceed() }, t('action.continue'));
-  const play = h('div', { class: 'wp-sw__play' }, stimulusEl, respondBtn, hintEl, continueBtn);
+  // The target stays named during the session (the intro is skipped after the host's Start, ADR 0017).
+  const playTarget = h('p', { class: 'wp-sw__reminder', 'data-testid': 'sw-target' },
+    h('span', { class: 'wp-sw__reminder-glyph', 'aria-hidden': 'true' }, GLYPHS[TARGET]),
+    ' ',
+    h('span', {}, t('intro.target', { name: symbolName(TARGET) }))
+  );
+  const play = h('div', { class: 'wp-sw__play' }, playTarget, stimulusEl, respondBtn, hintEl, continueBtn);
   const summaryEl = h('div', { class: 'wp-sw__summary', 'data-testid': 'sw-summary', hidden: true });
   const live = h('div', { class: 'sr-only', 'aria-live': 'polite', role: 'status' });
   const container = h(
@@ -258,6 +264,8 @@ export function createSignalWatch(context: GameContext): GameInstance<SignalStat
   return {
     newGame(options: NewGameOptions) {
       begin(options.seed, toDifficulty(options.difficulty));
+      // The player has just pressed Start on the host's start screen: no second "ready?" step (ADR 0017).
+      if (options.begin) start();
     },
     restore(saved: SignalState) {
       // Closed mid-session? It waits for "Continue" and resumes at the same stimulus.

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, readSave } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, readSave, startGame } from '../../packages/testing/src/e2e';
 
 interface SavedLoop {
   size: number;
@@ -43,8 +43,7 @@ test('slitherlink: marks survive a reload exactly', async ({ page }) => {
 });
 
 test('slitherlink: keyboard play and closing the loop ends the game calmly', async ({ page }) => {
-  await page.goto('/games/slitherlink?seed=1234&difficulty=easy');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'slitherlink', { difficulty: 'easy' });
 
   // Keyboard: Shift+arrow cycles the line leaving the focused point; Ctrl+Z undoes.
   const dot = byId(page, 'dot-0-0');
@@ -69,8 +68,7 @@ test('slitherlink: keyboard play and closing the loop ends the game calmly', asy
 
 test('slitherlink: the 10×10 board fits a phone and taps near a line hit that line', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 740 });
-  await page.goto('/games/slitherlink?seed=77&difficulty=hard');
-  await page.getByTestId('new-game').click();
+  await startGame(page, 'slitherlink', { difficulty: 'hard' });
   await expect(byId(page, 'edge-h-10-9')).toBeAttached();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(0);
