@@ -49,11 +49,13 @@ export const MONSTERS2: Readonly<Record<string, string>> = {
     <rect class="il-dark il-ink" x="9" y="50" width="10" height="16" rx="4"/>
     <rect class="il-dark il-ink" x="73" y="50" width="10" height="16" rx="4"/>
     <path class="il-dark il-ink" d="M30 100h8v6h-10zM54 100h8v6h-10z"/>
-    <path class="il-line il-thick" d="M74 78 114 76"/>
+    <path class="il-line il-thick" d="M74 80 110 102"/>
     <path class="il-teal il-ink" d="M66 82c4-6 10-6 12-2-2 4-8 6-12 2z"/>
-    <rect class="il-dark il-ink il-thin" x="84" y="74" width="10" height="6" rx="1" transform="rotate(-3 89 77)"/>
-    <ellipse class="il-metal il-ink" cx="117" cy="76" rx="3.4" ry="11"/>
-    <path class="il-line il-thin" d="M108 60l3-5 2 4 3-6M104 94l4 3 1-4 4 4"/>
+    <rect class="il-dark il-ink il-thin" x="84" y="83" width="10" height="6" rx="1" transform="rotate(31 89 86)"/>
+    <ellipse class="il-metal il-ink" cx="112" cy="104" rx="11" ry="3.4"/>
+    <path class="il-light il-thin" d="M104 112h4M114 112h4"/>
+    <path class="il-line il-thin" d="M146 70l4-3 1 4 4-3M146 82l4 2-1 3 4 2M118 66l-4-3-1 4-4-3"/>
+    <path class="il-white il-ink il-thin" d="M142 66l1.5-4 1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5z"/>
     <path class="il-wood-dark il-ink" d="M124 66h24v34h-24z"/>
     <path class="il-dark il-ink" d="M124 73h24v6h-24z"/>
     <rect class="il-gold il-ink" x="131" y="71" width="10" height="10" rx="1"/>
