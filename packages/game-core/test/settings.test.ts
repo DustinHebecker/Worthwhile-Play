@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { hostSettings, resolveSettings, validateSettings, type GameMetadata, type GameModule, type SettingSpec } from '../src';
+import { hostSettings, ownsDifficulty, resolveSettings, validateSettings, type GameMetadata, type GameModule, type SettingSpec } from '../src';
 
 const messages = {
   title: 'Demo',
@@ -91,10 +91,25 @@ describe('hostSettings', () => {
     expect(hostSettings(mod(undefined, { difficulties: undefined }), env)).toEqual([]);
   });
 
-  it('puts the difficulty first for setupInGame games too (their own setup follows Start)', () => {
+  it('puts the difficulty first for setupInGame games that declare nothing (their own setup follows Start)', () => {
     expect(hostSettings(mod(undefined, { setupInGame: true }), env)).toEqual([{ kind: 'difficulty' }]);
-    expect(hostSettings(mod([specs[3]!], { setupInGame: true }), env)).toEqual([{ kind: 'difficulty' }, specs[3]]);
     expect(hostSettings(mod(undefined, { setupInGame: true, difficulties: undefined }), env)).toEqual([]);
+    expect(ownsDifficulty(mod(undefined, { setupInGame: true }))).toBe(false);
+  });
+
+  it('shows exactly what a setupInGame game declares, without a difficulty (chosen in its own setup)', () => {
+    expect(hostSettings(mod([], { setupInGame: true }), env)).toEqual([]);
+    expect(hostSettings(mod([specs[3]!], { setupInGame: true }), env)).toEqual([specs[3]]);
+    expect(hostSettings(mod(() => [], { setupInGame: true }), env)).toEqual([]);
+    expect(hostSettings(mod(() => [specs[3]!], { setupInGame: true }), env)).toEqual([specs[3]]);
+    expect(ownsDifficulty(mod([], { setupInGame: true }))).toBe(true);
+  });
+
+  it('non-setupInGame games always get the difficulty, also when they declare []', () => {
+    expect(hostSettings(mod([]), env)).toEqual([{ kind: 'difficulty' }]);
+    expect(hostSettings(mod(() => []), env)).toEqual([{ kind: 'difficulty' }]);
+    expect(hostSettings(mod([], { setupInGame: false }), env)).toEqual([{ kind: 'difficulty' }]);
+    expect(ownsDifficulty(mod([]))).toBe(false);
   });
 
   it('treats a throwing declaration as none', () => {
