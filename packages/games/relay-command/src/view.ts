@@ -347,6 +347,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   /** Opponent level (owner decision 2026-10-16): chosen here with the map, not on the host's start screen. */
   const difficultySelect = h('select', { 'data-testid': 'rc-difficulty', onchange: () => onDifficulty() }) as HTMLSelectElement;
   for (const d of DIFFICULTIES) difficultySelect.append(h('option', { value: d }, t(`difficulty.${d}`)));
+  /** Hidden while no seat is a computer (hot-seat only): there is no opponent level then. */
+  const difficultyLabel = h('label', { 'data-testid': 'rc-difficulty-label' }, h('span', {}, t('setup.difficulty')), difficultySelect);
   /** Opponents: only the counts the chosen map declares (two-side maps: one). */
   const opponentsSelect = h('select', { 'data-testid': 'rc-opponents', onchange: () => onSetup() });
   // Lengths: open end (default), quick match (strength decides once the side behind stops gaining
@@ -373,7 +375,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     h('label', {}, h('span', {}, t('setup.scenario')), scenarioSelect),
     h('label', {}, h('span', {}, t('setup.limit')), limitSelect),
     randomBox,
-    h('label', {}, h('span', {}, t('setup.difficulty')), difficultySelect),
+    difficultyLabel,
     h('label', { 'data-testid': 'rc-opponents-label' }, h('span', {}, t('setup.opponents')), opponentsSelect),
     h('label', { class: 'rc-check' }, endlessInput, h('span', {}, t('setup.endless'))),
     seatsBox,
@@ -627,6 +629,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     limitSelect.disabled = setupLocked;
     difficultySelect.disabled = setupLocked;
     difficultySelect.value = state.difficulty;
+    const computer = state.seats.includes('computer');
+    difficultyLabel.hidden = !computer;
     opponentsSelect.disabled = setupLocked;
     endlessInput.disabled = setupLocked;
     randomSize.disabled = setupLocked;
@@ -654,8 +658,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     const mapText = state.map ? mapLabel(state.map) : t(`scenario.${state.scenario}`);
     const length = limitSelect.selectedOptions[0]?.textContent ?? '';
     const summary = state.opponents > 1 ? t('setup.summaryOpponents', { map: mapText, length, n: state.opponents }) : t('setup.summary', { map: mapText, length });
-    const level = difficultySelect.selectedOptions[0]?.textContent ?? '';
-    setupSummary.textContent = [summary, ...(state.endless ? [t('setup.endlessShort')] : []), level].join(' · ');
+    const level = computer ? [difficultySelect.selectedOptions[0]?.textContent ?? ''] : [];
+    setupSummary.textContent = [summary, ...(state.endless ? [t('setup.endlessShort')] : []), ...level].join(' · ');
     statusEl.textContent = statusText();
     statusEl.setAttribute('data-phase', state.phase);
     slotsEl.hidden = finished;

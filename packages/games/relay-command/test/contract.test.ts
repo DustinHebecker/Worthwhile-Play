@@ -23,10 +23,10 @@ function playOneTurn(root: HTMLElement, instance: GameInstance<RcState>) {
 
 runGameContract(game, { interact: playOneTurn });
 
-
-describe('start screen (ADR 0017)', () => {
+describe('settingsOf (ADR 0017)', () => {
   it('reports the difficulty a save was started with, and nothing for an unknown one', () => {
     expect(game.settingsOf!(newGame(1, undefined, 'hard'))).toEqual({ difficulty: 'hard' });
     expect(game.settingsOf!({ ...newGame(1), difficulty: 'nonsense' as never })).toEqual({});
+    for (const junk of [null, undefined, 7, 'hard', []]) expect(game.settingsOf!(junk as never)).toEqual({}); // never throws
   });
 });

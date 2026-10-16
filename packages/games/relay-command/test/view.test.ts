@@ -523,11 +523,34 @@ describe('Relay Command view', () => {
     click('rc-lock');
     expect(level.disabled).toBe(true);
     expect($('rc-setup-summary').textContent).toContain(' · Hard (thinks ahead, uses jamming)');
-    // A save restores its level into the select.
+    // A save restores its level into the select and reports it to the host.
     const saved = state();
     setup();
     instance.restore(saved);
     expect(($('rc-difficulty') as HTMLSelectElement).value).toBe('hard');
+    expect(ctx.difficulties.at(-1)).toBe('hard');
+  });
+
+  it('with no computer seat (hot-seat only) there is no opponent level: the control is hidden and not in the summary (review of PR #49)', () => {
+    expect($('rc-difficulty-label').hidden).toBe(false);
+    const person = $('rc-seat-1-person') as HTMLInputElement;
+    person.checked = true;
+    person.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(state().seats).not.toContain('computer');
+    expect($('rc-difficulty-label').hidden).toBe(true);
+    const computer = $('rc-seat-1-computer') as HTMLInputElement;
+    computer.checked = true;
+    computer.dispatchEvent(new Event('change', { bubbles: true }));
+    expect($('rc-difficulty-label').hidden).toBe(false);
+    person.checked = true;
+    person.dispatchEvent(new Event('change', { bubbles: true }));
+    click('rc-lock'); // A locks; the device passes to B, who locks too; then the turn runs
+    click('rc-handover-confirm');
+    click('rc-lock');
+    click('rc-handover-confirm');
+    expect(state().log.length).toBeGreaterThan(0);
+    expect($('rc-setup-summary').textContent).not.toContain('Normal');
+    expect($('rc-setup-summary').textContent).not.toContain(' · ·');
   });
 
   it('offers a random map: size and map number pick it, "New map" draws another; the same number gives it back; locked after the first turn', () => {

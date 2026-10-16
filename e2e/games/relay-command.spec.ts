@@ -204,9 +204,8 @@ test('relay-command: the opponent level is chosen in the game setup and kept in 
   await expect.poll(level).toBe('easy');
   // New game keeps it (the host follows the game's choice).
   await page.getByTestId('new-game').click();
-  const start = page.getByTestId('start-game');
-  await expect(start.or(page.getByTestId('rc-setup')).first()).toBeVisible();
-  if (await start.isVisible()) await start.click();
+  // With a running game the host shows Continue and one "New game" button (testid start-game), which starts the setup.
+  await page.getByTestId('start-game').click();
   await expect(page.getByTestId('rc-difficulty')).toHaveValue('easy');
   await expect.poll(level).toBe('easy');
   await page.getByTestId('rc-lock').click();
