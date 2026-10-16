@@ -16,7 +16,7 @@ const ILLUSTRATIONS: Readonly<Record<string, string>> = { ...SAMPLE, ...MONSTERS
 
 /** SVG markup of a card's illustration, or `undefined` if the card has none yet. */
 export function illustration(base: string): string | undefined {
-  const inner = ILLUSTRATIONS[base];
+  const inner = Object.hasOwn(ILLUSTRATIONS, base) ? ILLUSTRATIONS[base] : undefined;
   return inner === undefined ? undefined : `<svg viewBox="0 0 160 120" aria-hidden="true" focusable="false" class="cq-il">${inner}</svg>`;
 }
 

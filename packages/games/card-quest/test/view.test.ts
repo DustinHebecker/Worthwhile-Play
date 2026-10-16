@@ -181,7 +181,7 @@ describe('view', () => {
     });
 
     it('moving on to the give-away step (after Rummage) closes a detail left open from playing', () => {
-      // The person's action clears the selection; the mode switch itself (syncMode) also does, as a second line.
+      // The person's action (act) clears the selection before the give-away mode starts.
       const s = arranged((s) => {
         s.phase = 'after';
         for (const c of ['kz.cave-slime', 'kz.firecracker', 'kz.pickaxe', 'kz.mine-collapse', 'kz.tool-shed', 'kz.shovel']) take(s, c, s.players[0]!.hand);

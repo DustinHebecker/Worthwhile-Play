@@ -32,6 +32,10 @@ describe('card illustrations (B2)', () => {
     }
   });
 
+  it('unknown or prototype ids have none', () => {
+    for (const id of ['constructor', '__proto__', 'toString', 'kz.nope']) expect(illustration(id), id).toBeUndefined();
+  });
+
   it('pictures carry no text (16 languages)', () => {
     for (const id of illustratedCards()) expect(illustration(id), id).not.toMatch(/<text|<tspan/);
   });

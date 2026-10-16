@@ -250,12 +250,12 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
 
   const keyOf = (el: Element | null): string | null => el?.closest('[data-key]')?.getAttribute('data-key') ?? null;
 
-  /** Enters the give-away mode when the person must give cards away (before drawing, so rendering stays pure). */
+  /** Enters the give-away mode when the person must give cards away (before drawing, so rendering stays pure). An open
+   * detail is already closed by the action that led here (act). */
   function syncMode(): void {
     if (state.phase === 'end' && actorOf(state) === HUMAN && surplus(state) > 0 && mode !== 'give') {
       mode = 'give';
       picked.clear();
-      selected = null;
     }
   }
 
@@ -626,11 +626,12 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       render();
       focusCard(card);
     }, { testid: 'detail-close' });
+    const big = bigPic(card);
     return h(
       'section',
       { class: 'cq-detail', id: 'cq-detail', 'data-type': defOf(card).type, tabindex: '-1', 'data-testid': 'detail', 'aria-labelledby': 'cq-detail-title' },
-      bigPic(card),
-      h('div', { class: 'cq-detail-head' }, illustration(baseId(card)) ? null : pic(card), h('div', {}, h('h3', { id: 'cq-detail-title' }, name(card)), h('p', { class: 'cq-tile-type' }, type))),
+      big,
+      h('div', { class: 'cq-detail-head' }, big ? null : pic(card), h('div', {}, h('h3', { id: 'cq-detail-title' }, name(card)), h('p', { class: 'cq-tile-type' }, type))),
       h('ul', { class: 'cq-rules' }, ...lines.map((l) => h('li', {}, l))),
       h('p', { class: 'cq-flavour' }, cardFlavour(t, card)),
       blunder ? h('p', { class: 'cq-blunder', 'data-testid': 'detail-blunder' }, t('detail.blunder', { text: blunder })) : null,
