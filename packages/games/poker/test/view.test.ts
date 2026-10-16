@@ -38,25 +38,25 @@ const act = (q: (id: string) => HTMLElement | null) => {
 };
 
 describe('setup screen', () => {
-  it('starts with the setup and remembers the opponent count', () => {
+  it('a direct start shows the chosen table first; Start on the start screen sits down at once', () => {
     const { ctx, instance, q } = setup();
     expect(q('pk-setup')).not.toBeNull();
     expect(q('pk-start')?.hasAttribute('data-autofocus')).toBe(true);
-    const select = q<HTMLSelectElement>('pk-opponents')!;
-    expect(select.options).toHaveLength(5);
-    select.value = '2';
-    select.dispatchEvent(new Event('change'));
-    expect(ctx.preferences.get('opponents')).toBe(2);
+    // The level and number of opponents are chosen on the host's start screen only (ADR 0017).
+    expect(q('pk-opponents')).toBeNull();
+    expect(q('pk-level')).toBeNull();
+    instance.newGame({ seed: 9, difficulty: 'hard', settings: { opponents: 2 } });
+    expect(instance.serialize()).toMatchObject({ phase: 'setup', difficulty: 'hard', opponents: 2 });
     expect(instance.serialize().seats).toHaveLength(3);
-    const level = q<HTMLSelectElement>('pk-level')!;
-    level.value = 'hard';
-    level.dispatchEvent(new Event('change'));
-    expect(ctx.difficulties).toEqual(['hard']);
-    expect(instance.serialize().difficulty).toBe('hard');
-    // A new game reads the preference again.
-    instance.newGame({ seed: 9 });
-    expect(instance.serialize().opponents).toBe(2);
-    expect(instance.serialize().difficulty).toBe('hard');
+    expect(q('pk-table')?.textContent).toBe('Number of opponents: 2 · Opponents’ level: Hard');
+    instance.newGame({ seed: 9, difficulty: 'hard', settings: { opponents: 2 }, begin: true });
+    expect(instance.serialize().phase).not.toBe('setup');
+    expect(instance.serialize().handNumber).toBe(1);
+    expect(q('pk-setup')).toBeNull();
+    // Invalid or missing settings fall back to the defaults; nothing is reported back to the host.
+    instance.newGame({ seed: 9, difficulty: 'nonsense', settings: { opponents: 9 } });
+    expect(instance.serialize()).toMatchObject({ difficulty: 'easy', opponents: 3 });
+    expect(ctx.difficulties).toEqual([]);
     instance.dispose();
   });
 });

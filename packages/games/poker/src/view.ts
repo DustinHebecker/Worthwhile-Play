@@ -10,7 +10,6 @@ import {
   BLIND_LEVELS,
   cloneState,
   computePots,
-  configureTable,
   createTable,
   DEFAULT_DIFFICULTY,
   DEFAULT_OPPONENTS,
@@ -32,8 +31,6 @@ import {
 } from './rules';
 import './styles.css';
 
-const PREF_OPPONENTS = 'opponents';
-const OPPONENT_CHOICES = Array.from({ length: MAX_OPPONENTS - MIN_OPPONENTS + 1 }, (_, i) => MIN_OPPONENTS + i);
 
 /** Name of a hand score, e.g. "Full house" (a straight flush to the ace is a royal flush). */
 export function handName(score: number, t: GameContext['t']): string {
@@ -55,11 +52,9 @@ export function presetAmount(state: PokerState, fraction: number): number {
 
 export function createPoker(context: GameContext): GameInstance<PokerState> {
   const { t, root } = context;
-  const readOpponents = (): number => {
-    const value = context.preferences?.get(PREF_OPPONENTS);
-    return isInt(value, MIN_OPPONENTS, MAX_OPPONENTS) ? value : DEFAULT_OPPONENTS;
-  };
-  let state: PokerState = createTable(0, DEFAULT_DIFFICULTY, readOpponents());
+  // The level and number of opponents are chosen on the host's start screen (ADR 0017, settings.ts).
+  const readOpponents = (value: unknown): number => (isInt(value, MIN_OPPONENTS, MAX_OPPONENTS) ? value : DEFAULT_OPPONENTS);
+  let state: PokerState = createTable(0, DEFAULT_DIFFICULTY, DEFAULT_OPPONENTS);
   let confirmingEnd = false;
   let amount = 0;
   let disposed = false;
@@ -147,15 +142,6 @@ export function createPoker(context: GameContext): GameInstance<PokerState> {
     commit(runComputers(nextHand(state), decide(state)));
     focusMain();
   };
-  const changeSetup = (options: { difficulty?: (typeof DIFFICULTIES)[number]; opponents?: number }) => {
-    if (state.phase !== 'setup') return;
-    state = configureTable(state, options);
-    if (options.opponents !== undefined) context.preferences?.set(PREF_OPPONENTS, state.opponents);
-    if (options.difficulty !== undefined) context.setDifficulty?.(state.difficulty);
-    context.requestSave();
-    render();
-  };
-
   const focusMain = () => {
     const target = body.querySelector<HTMLElement>('[data-autofocus]');
     target?.focus();
@@ -180,26 +166,13 @@ export function createPoker(context: GameContext): GameInstance<PokerState> {
     return lines;
   }
 
-  const select = (testid: string, values: readonly string[], label: (v: string) => string, value: string, onChange: (v: string) => void) => {
-    const el = h('select', { 'data-testid': testid });
-    for (const v of values) el.append(h('option', { value: v }, label(v)));
-    el.value = value;
-    el.addEventListener('change', () => onChange(el.value));
-    return el;
-  };
-
   const renderSetup = () => {
     const [sb, bb] = blindsForHand(1);
-    const opponents = select('pk-opponents', OPPONENT_CHOICES.map(String), (v) => v, String(state.opponents), (v) => changeSetup({ opponents: Number(v) }));
-    const level = select('pk-level', DIFFICULTIES, (v) => t(`difficulty.${v}`), state.difficulty, (v) => {
-      if (isOneOf(v, DIFFICULTIES)) changeSetup({ difficulty: v });
-    });
     return h(
       'section',
       { class: 'pk-setup', 'data-testid': 'pk-setup', 'aria-labelledby': 'pk-setup-title' },
       h('h2', { id: 'pk-setup-title', class: 'pk-heading' }, t('setup.title')),
-      h('label', { class: 'pk-field' }, h('span', {}, t('setup.opponents')), opponents),
-      h('label', { class: 'pk-field' }, h('span', {}, t('setup.level')), level),
+      h('p', { class: 'pk-note', 'data-testid': 'pk-table' }, `${t('setup.opponents')}: ${state.opponents} · ${t('setup.level')}: ${t(`difficulty.${state.difficulty}`)}`),
       h('p', { class: 'pk-note' }, t('setup.info', { stack: START_STACK, bbs: START_STACK / bb, sb, bb, hands: HANDS_PER_LEVEL })),
       h('p', { class: 'pk-note' }, t('setup.chips')),
       h('button', { type: 'button', class: 'primary', 'data-testid': 'pk-start', 'data-autofocus': true, onclick: start }, t('setup.start'))
@@ -472,8 +445,11 @@ export function createPoker(context: GameContext): GameInstance<PokerState> {
   /* ---------------------------------------------------------------- instance */
   return {
     newGame(options: NewGameOptions) {
-      const difficulty = isOneOf(options.difficulty, DIFFICULTIES) ? options.difficulty : state.difficulty;
-      state = createTable(normalizeSeed(options.seed), difficulty, readOpponents());
+      const difficulty = isOneOf(options.difficulty, DIFFICULTIES) ? options.difficulty : DEFAULT_DIFFICULTY;
+      const table = createTable(normalizeSeed(options.seed), difficulty, readOpponents(options.settings?.opponents));
+      // After Start on the host's start screen the person sits down at once; a direct start (deep link) shows the
+      // table first and waits for "Take a seat".
+      state = options.begin ? runComputers(startTable(table), decide(table)) : table;
       confirmingEnd = false;
       render();
     },

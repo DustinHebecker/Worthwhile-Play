@@ -10,6 +10,11 @@ import type { GameMessages } from '@wp/game-core';
  * the English loanwords for actions and hands).
  */
 const en = {
+  'opponents.1': '1',
+  'opponents.2': '2',
+  'opponents.3': '3',
+  'opponents.4': '4',
+  'opponents.5': '5',
   title: 'Texas Hold’em',
   tagline: 'No-limit poker at a calm table: practise odds, pot odds and reading opponents.',
   rules:
@@ -126,6 +131,11 @@ const en = {
 type Catalogue = Readonly<Record<keyof typeof en, string>>;
 
 const de: Catalogue = {
+  'opponents.1': '1',
+  'opponents.2': '2',
+  'opponents.3': '3',
+  'opponents.4': '4',
+  'opponents.5': '5',
   title: 'Texas Hold’em',
   tagline: 'No-Limit-Poker an einem ruhigen Tisch: Wahrscheinlichkeiten, Pot Odds und das Lesen von Gegnern üben.',
   rules:
@@ -240,6 +250,11 @@ const de: Catalogue = {
 };
 
 const nl: Catalogue = {
+  'opponents.1': '1',
+  'opponents.2': '2',
+  'opponents.3': '3',
+  'opponents.4': '4',
+  'opponents.5': '5',
   title: 'Texas Hold’em',
   tagline: 'No-limit poker aan een rustige tafel: oefen met kansen, potodds en het lezen van tegenstanders.',
   rules:
@@ -354,6 +369,11 @@ const nl: Catalogue = {
 };
 
 const es: Catalogue = {
+  'opponents.1': '1',
+  'opponents.2': '2',
+  'opponents.3': '3',
+  'opponents.4': '4',
+  'opponents.5': '5',
   title: 'Texas Hold’em',
   tagline: 'Póker sin límite en una mesa tranquila: practica probabilidades, pot odds y la lectura de rivales.',
   rules:
@@ -468,6 +488,11 @@ const es: Catalogue = {
 };
 
 const fr: Catalogue = {
+  'opponents.1': '1',
+  'opponents.2': '2',
+  'opponents.3': '3',
+  'opponents.4': '4',
+  'opponents.5': '5',
   title: 'Texas Hold’em',
   tagline: 'Poker no-limit à une table calme : entraînez-vous aux probabilités, aux cotes du pot et à la lecture des adversaires.',
   rules:
@@ -582,6 +607,11 @@ const fr: Catalogue = {
 };
 
 const ru: Catalogue = {
+  'opponents.1': '1',
+  'opponents.2': '2',
+  'opponents.3': '3',
+  'opponents.4': '4',
+  'opponents.5': '5',
   title: 'Техасский холдем',
   tagline: 'Безлимитный покер за спокойным столом: тренировка вероятностей, шансов банка и чтения соперников.',
   rules:
@@ -696,6 +726,11 @@ const ru: Catalogue = {
 };
 
 const zh: Catalogue = {
+  'opponents.1': '1',
+  'opponents.2': '2',
+  'opponents.3': '3',
+  'opponents.4': '4',
+  'opponents.5': '5',
   title: '德州扑克',
   tagline: '在安静的牌桌上玩无限注扑克：练习概率、底池赔率和解读对手。',
   rules:
@@ -810,6 +845,11 @@ const zh: Catalogue = {
 };
 
 const ko: Catalogue = {
+  'opponents.1': '1',
+  'opponents.2': '2',
+  'opponents.3': '3',
+  'opponents.4': '4',
+  'opponents.5': '5',
   title: '텍사스 홀덤',
   tagline: '차분한 테이블에서 즐기는 노리밋 포커: 확률, 팟 오즈, 상대 읽기를 연습해 보세요.',
   rules:
@@ -924,6 +964,11 @@ const ko: Catalogue = {
 };
 
 const ja: Catalogue = {
+  'opponents.1': '1',
+  'opponents.2': '2',
+  'opponents.3': '3',
+  'opponents.4': '4',
+  'opponents.5': '5',
   title: 'テキサスホールデム',
   tagline: '落ち着いたテーブルでノーリミットポーカー：確率、ポットオッズ、相手の読みを練習しよう。',
   rules:
@@ -1038,6 +1083,11 @@ const ja: Catalogue = {
 };
 
 const ar: Catalogue = {
+  'opponents.1': '1',
+  'opponents.2': '2',
+  'opponents.3': '3',
+  'opponents.4': '4',
+  'opponents.5': '5',
   title: 'تكساس هولدم',
   tagline: 'بوكر بلا حدود على طاولة هادئة: تدرّب على الاحتمالات ونسبة الرهان إلى الوعاء وقراءة الخصوم.',
   rules:
@@ -1152,6 +1202,11 @@ const ar: Catalogue = {
 };
 
 const pt: Catalogue = {
+  'opponents.1': '1',
+  'opponents.2': '2',
+  'opponents.3': '3',
+  'opponents.4': '4',
+  'opponents.5': '5',
   title: 'Texas Hold’em',
   tagline: 'Pôquer no-limit numa mesa tranquila: pratique probabilidades, pot odds e a leitura dos adversários.',
   rules:
@@ -1266,6 +1321,11 @@ const pt: Catalogue = {
 };
 
 const it: Catalogue = {
+  'opponents.1': '1',
+  'opponents.2': '2',
+  'opponents.3': '3',
+  'opponents.4': '4',
+  'opponents.5': '5',
   title: 'Texas Hold’em',
   tagline: 'Poker no-limit a un tavolo tranquillo: esercitati con le probabilità, le pot odds e la lettura degli avversari.',
   rules:
@@ -1380,6 +1440,11 @@ const it: Catalogue = {
 };
 
 const pl: Catalogue = {
+  'opponents.1': '1',
+  'opponents.2': '2',
+  'opponents.3': '3',
+  'opponents.4': '4',
+  'opponents.5': '5',
   title: 'Texas Hold’em',
   tagline: 'Poker no-limit przy spokojnym stole: ćwicz prawdopodobieństwo, pot odds i czytanie przeciwników.',
   rules:
@@ -1494,6 +1559,11 @@ const pl: Catalogue = {
 };
 
 const tr: Catalogue = {
+  'opponents.1': '1',
+  'opponents.2': '2',
+  'opponents.3': '3',
+  'opponents.4': '4',
+  'opponents.5': '5',
   title: 'Texas Hold’em',
   tagline: 'Sakin bir masada limitsiz poker: olasılık, pot oranları ve rakipleri okuma alıştırması.',
   rules:
@@ -1608,6 +1678,11 @@ const tr: Catalogue = {
 };
 
 const uk: Catalogue = {
+  'opponents.1': '1',
+  'opponents.2': '2',
+  'opponents.3': '3',
+  'opponents.4': '4',
+  'opponents.5': '5',
   title: 'Техаський холдем',
   tagline: 'Безлімітний покер за спокійним столом: тренування ймовірностей, шансів банку та читання суперників.',
   rules:
@@ -1722,6 +1797,11 @@ const uk: Catalogue = {
 };
 
 const hi: Catalogue = {
+  'opponents.1': '1',
+  'opponents.2': '2',
+  'opponents.3': '3',
+  'opponents.4': '4',
+  'opponents.5': '5',
   title: 'टेक्सास होल्डेम',
   tagline: 'शांत टेबल पर नो-लिमिट पोकर: संभावना, पॉट ऑड्स और विरोधियों को पढ़ने का अभ्यास।',
   rules:

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, readSave } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, readSave, startGame } from '../../packages/testing/src/e2e';
 
 const GAME = 'poker';
 
@@ -62,12 +62,9 @@ async function step(page: Page) {
   }
 }
 
-async function sitDown(page: Page, opponents = '3') {
-  // No save: the game opens on its own setup (ADR 0015).
-  await page.goto(`/games/${GAME}`);
-  await expect(page.getByTestId('pk-setup')).toBeVisible();
-  await page.getByTestId('pk-opponents').selectOption(opponents);
-  await page.getByTestId('pk-start').click();
+async function sitDown(page: Page, opponents = 3, difficulty?: string) {
+  // The host's start screen holds level and opponents (ADR 0017); Start sits down at once.
+  await startGame(page, GAME, { settings: { opponents }, ...(difficulty ? { difficulty } : {}) });
   await expect(page.getByTestId('pk-board')).toBeVisible();
 }
 
@@ -96,7 +93,7 @@ test('resumes mid-hand after a reload with the identical table', async ({ page }
   let board: (string | null)[] = [];
   let hole: (string | null)[] = [];
   await expectResumeAfterReload(page, GAME, async (p) => {
-    await p.getByTestId('pk-start').click();
+    await expect(p.getByTestId('pk-board')).toBeVisible();
     // Play until a flop is out and it is the player's turn (still mid-hand).
     for (let i = 0; i < 40; i++) {
       const s = await synced(p);
@@ -117,7 +114,7 @@ test('resumes mid-hand after a reload with the identical table', async ({ page }
 });
 
 test('opponents’ cards are never in the page before a showdown', async ({ page }) => {
-  await sitDown(page, '5');
+  await sitDown(page, 5);
   let showdown = false;
   for (let i = 0; i < 60 && !showdown; i++) {
     await expectNoHiddenCardsInDom(page);
@@ -131,7 +128,7 @@ test('opponents’ cards are never in the page before a showdown', async ({ page
 });
 
 test('a bet with an exact amount via the keyboard', async ({ page }) => {
-  await sitDown(page, '1');
+  await sitDown(page, 1);
   await expect(page.getByTestId('pk-amount')).toBeVisible();
   const min = Number(await page.getByTestId('pk-amount').getAttribute('min'));
   await page.getByTestId('pk-amount').fill(String(min + 1));
@@ -143,7 +140,7 @@ test('a bet with an exact amount via the keyboard', async ({ page }) => {
 
 test('fits a 360px-wide phone with six seats and the player can end the table', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 740 });
-  await sitDown(page, '5');
+  await sitDown(page, 5);
   await expect(page.locator('[data-testid^="pk-seat-"]:not([data-testid^="pk-seat-hand"])')).toHaveCount(6);
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(0);
@@ -155,4 +152,19 @@ test('fits a 360px-wide phone with six seats and the player can end the table', 
   await page.getByTestId('pk-end-yes').click();
   await expect(page.getByTestId('pk-summary')).toBeVisible();
   await expect.poll(async () => (await saved(page))?.phase).toBe('finished');
+});
+
+test('level and number of opponents come from the start screen; a direct link shows the table first', async ({ page }) => {
+  await sitDown(page, 2, 'hard');
+  await expect(page.locator('[data-testid^="pk-seat-"]:not([data-testid^="pk-seat-hand"])')).toHaveCount(3);
+  await expect.poll(async () => ((await readSave(page, GAME)) as { state?: { difficulty: string; opponents: number } } | undefined)?.state).toMatchObject({ difficulty: 'hard', opponents: 2 });
+  // No setup controls inside the game.
+  await expect(page.getByTestId('game-root').locator('select')).toHaveCount(0);
+
+  // A deep link starts with the remembered settings and waits for "Take a seat".
+  await page.goto(`/games/${GAME}?seed=4242`);
+  await expect(page.getByTestId('pk-setup')).toBeVisible();
+  await expect(page.getByTestId('pk-table')).toHaveText('Number of opponents: 2 · Opponents’ level: Hard');
+  await page.getByTestId('pk-start').click();
+  await expect(page.getByTestId('pk-board')).toBeVisible();
 });
