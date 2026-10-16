@@ -110,7 +110,7 @@ Decisions on the large games (strategy, Tower Defense, adventures) are made by t
 
 1. ✅ **Skat – lost Hand games:** checked against the ISkO text (5.3.4 and Skatgericht 5.3.4 Fall 1): all lost games, Hand included, count double — already implemented.
 2. ✅ **Skat – overbid Null games:** ISkO 3.4.4 makes a Null below the bid an invalid declaration; it can no longer be declared (old saves: lost as the cheapest suit/Grand at the bid).
-3. **Start flow (all games):** many games show the host's difficulty select and "New game", and then the game shows a second difficulty/options panel. Owner: either "New game" → settings → start, or settings + start directly — not two selections. Unify across all games (host start panel vs. each game's own options; extend ADR 0015 `setupInGame` or a shared options schema), then check every game.
+3. ✅ **Start flow (all games):** one host start screen (ADR 0017): Continue → settings incl. difficulty → Start; during play only "New game"; after a natural end "Another round" / "Change settings". All small games migrated (game-changing options moved out of the games, intros skip on Start, old saves keep their settings via `settingsOf`, old in-game preferences become start-screen defaults). Open: Relay Command and Lootlings move their own setup into the start screen in their contexts (they get the host difficulty meanwhile).
 
 ## Next steps (suggested agent assignments)
 
