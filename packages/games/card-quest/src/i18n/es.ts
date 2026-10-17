@@ -260,7 +260,7 @@ export const es: Catalogue = {
   'hint.curse': 'Consejo: las maldiciones se juegan sobre otros jugadores, en tu propio turno o en un combate.',
   // K2: offers, deals, Change Sides, reputation
   'r.turncoat': 'Solo mientras ayudas a alguien en un combate: cámbiate al bando de los monstruos; tu fuerza cuenta ahora para ellos. El trato se rompe, reputación −2.',
-  'table.rep': 'Reputación {n}/5',
+  'table.rep': 'Reputación {n}/{max}',
   'table.favours': 'Favores pendientes: {n}',
   'terms.loot.1': '1 carta de botín',
   'terms.loot.2': '2 cartas de botín',
@@ -273,7 +273,7 @@ export const es: Catalogue = {
   'fight.turncoat': 'Cambio de bando: {name} (+{n} para los monstruos)',
   'fight.help.title': 'Pedir ayuda o pagar a alguien para que no se meta',
   'fight.help.who': 'Jugador',
-  'fight.help.option': '{name}: fuerza {n}, reputación {rep}/5',
+  'fight.help.option': '{name}: fuerza {n}, reputación {rep}/{max}',
   'fight.help.offer': 'Oferta',
   'fight.help.ask': 'Hacer la oferta',
   'offer.you.help': '{name} te pide ayuda y ofrece {terms}. Ayudar no da nivel; cumplir el trato sube tu reputación.',
@@ -298,7 +298,7 @@ export const es: Catalogue = {
   'log.broken.stay': '{name}: intromisión pese al pago de {to} por no meterse. Reputación −2.',
   'log.broken.favour': '{name}: favor debido a {to} negado. Reputación −2.',
   'hint.help': 'Consejo: ¿no te llega la fuerza? Pide ayuda a otro jugador a cambio de botín, un objeto o un favor. Cumplir los tratos sube tu reputación.',
-  'hint.offer': 'Consejo: ayudar da botín, pero no nivel. Romper un trato cuesta 2 estrellas de reputación, y los jugadores de la máquina no lo olvidan.',
+  'hint.offer': 'Consejo: ayudar da botín, pero no nivel. Romper un trato cuesta 2 estrellas de reputación, y los rencorosos no lo olvidan.',
   // Owner feedback 2026-10-17: reveals, end of turn
   'next.end.surplus': 'Todavía puedes equipar, jugar y vender: eso también vacía tu mano. Después termina tu turno; cartas que hay que dar (límite de mano 5): {n}.',
   'reveal.open': 'Tras la esquina: {card}',
@@ -307,5 +307,7 @@ export const es: Catalogue = {
   'reveal.toHand': 'La carta va a tu mano.',
   'btn.continue': 'Continuar',
   // Owner feedback 2026-10-17: curse effect in the reveal
-  'reveal.effect': 'Te alcanza al instante: {effect}'
+  'reveal.effect': 'Te alcanza al instante: {effect}',
+  // K2 review: a deal whose item is gone
+  'log.void': '{name}: trato con {to} anulado, {card} ya no está. Reputación sin cambios.'
 };

@@ -260,7 +260,7 @@ export const ar: Catalogue = {
   'hint.curse': 'نصيحة: اللعنات تُلعب على اللاعبين الآخرين — في دورك أو أثناء معركة.',
   // K2: offers, deals, Change Sides, reputation
   'r.turncoat': 'فقط أثناء مساعدتك لأحد في معركة: بدِّل الجانب وانضم إلى الوحوش — قوتك تُحسب لهم الآن. تسقط الصفقة، والسمعة −2.',
-  'table.rep': 'السمعة {n}/5',
+  'table.rep': 'السمعة {n}/{max}',
   'table.favours': 'ديون المعروف: {n}',
   'terms.loot.1': 'بطاقة غنيمة واحدة',
   'terms.loot.2': 'بطاقتا غنيمة',
@@ -273,7 +273,7 @@ export const ar: Catalogue = {
   'fight.turncoat': 'تبديل الجانب: {name} (+{n} للوحوش)',
   'fight.help.title': 'اطلب المساعدة — أو ادفع لأحدهم كي يبقى بعيدًا',
   'fight.help.who': 'اللاعب',
-  'fight.help.option': '{name} — القوة {n}، السمعة {rep}/5',
+  'fight.help.option': '{name} — القوة {n}، السمعة {rep}/{max}',
   'fight.help.offer': 'العرض',
   'fight.help.ask': 'قدِّم العرض',
   'offer.you.help': '{name} يطلب مساعدتك. العرض: {terms}. المساعدة لا تمنح مستوى؛ والصفقة التي يُوفى بها ترفع سمعتك.',
@@ -298,7 +298,7 @@ export const ar: Catalogue = {
   'log.broken.stay': '{name} — التدخل رغم دفع {to} مقابل البقاء بعيدًا. السمعة −2.',
   'log.broken.favour': '{name} — رفض المعروف المستحق لـ{to}. السمعة −2.',
   'hint.help': 'نصيحة: قوتك لا تكفي؟ اطلب المساعدة من لاعب آخر — مقابل غنيمة أو غرض أو معروف. الوفاء بالصفقات يرفع سمعتك.',
-  'hint.offer': 'نصيحة: المساعدة تجلب الغنيمة لا المستوى. نقض الصفقة يكلّف نجمتَي سمعة — ولاعبو الحاسوب لا ينسون.',
+  'hint.offer': 'نصيحة: المساعدة تجلب الغنيمة لا المستوى. نقض الصفقة يكلّف نجمتَي سمعة — والحقودون لا ينسون.',
   // Owner feedback 2026-10-17: reveals, end of turn
   'next.end.surplus': 'ما زال بإمكانك الارتداء واللعب والبيع — وهذا يُفرغ يدك أيضًا. ثم أنهِ دورك؛ بطاقات يجب إعطاؤها (حد اليد 5): {n}.',
   'reveal.open': 'خلف الزاوية: {card}',
@@ -307,5 +307,7 @@ export const ar: Catalogue = {
   'reveal.toHand': 'تذهب البطاقة إلى يدك.',
   'btn.continue': 'متابعة',
   // Owner feedback 2026-10-17: curse effect in the reveal
-  'reveal.effect': 'يصيبك فورًا: {effect}'
+  'reveal.effect': 'يصيبك فورًا: {effect}',
+  // K2 review: a deal whose item is gone
+  'log.void': '{name} — سقوط الصفقة مع {to}: بطاقة {card} لم تعد موجودة. السمعة دون تغيير.'
 };

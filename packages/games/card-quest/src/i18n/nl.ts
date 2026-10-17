@@ -260,7 +260,7 @@ export const nl: Catalogue = {
   'hint.curse': 'Tip: vloeken speel je op andere spelers — in je eigen beurt of in een gevecht.',
   // K2: offers, deals, Change Sides, reputation
   'r.turncoat': 'Alleen terwijl je iemand in een gevecht helpt: wissel van kant naar de monsters — je kracht telt nu voor hen. De deal gaat niet door, reputatie −2.',
-  'table.rep': 'Reputatie {n}/5',
+  'table.rep': 'Reputatie {n}/{max}',
   'table.favours': 'Verschuldigde gunsten: {n}',
   'terms.loot.1': '1 buitkaart',
   'terms.loot.2': '2 buitkaarten',
@@ -273,7 +273,7 @@ export const nl: Catalogue = {
   'fight.turncoat': 'Van kant gewisseld: {name} (+{n} voor de monsters)',
   'fight.help.title': 'Om hulp vragen — of iemand betalen om erbuiten te blijven',
   'fight.help.who': 'Speler',
-  'fight.help.option': '{name} — kracht {n}, reputatie {rep}/5',
+  'fight.help.option': '{name} — kracht {n}, reputatie {rep}/{max}',
   'fight.help.offer': 'Aanbod',
   'fight.help.ask': 'Aanbod doen',
   'offer.you.help': '{name} vraagt je om hulp en biedt {terms}. Helpen levert geen niveau op; een nagekomen deal verhoogt je reputatie.',
@@ -298,7 +298,7 @@ export const nl: Catalogue = {
   'log.broken.stay': '{name} — toch tussenbeide gekomen, hoewel {to} betaald had om dat te voorkomen. Reputatie −2.',
   'log.broken.favour': '{name} — verschuldigde gunst aan {to} geweigerd. Reputatie −2.',
   'hint.help': 'Tip: niet sterk genoeg? Vraag een andere speler om hulp — voor buit, een voorwerp of een gunst. Nagekomen deals verhogen je reputatie.',
-  'hint.offer': 'Tip: helpen levert buit op, maar geen niveau. Een gebroken deal kost 2 reputatiesterren — en computerspelers onthouden dat.',
+  'hint.offer': 'Tip: helpen levert buit op, maar geen niveau. Een gebroken deal kost 2 reputatiesterren — en wrokkige spelers onthouden dat.',
   // Owner feedback 2026-10-17: reveals, end of turn
   'next.end.surplus': 'Je kunt nog aandoen, spelen en verkopen — ook zo wordt je hand leger. Beëindig daarna je beurt; weg te geven kaarten (handlimiet 5): {n}.',
   'reveal.open': 'Om de hoek: {card}',
@@ -307,5 +307,7 @@ export const nl: Catalogue = {
   'reveal.toHand': 'De kaart gaat naar je hand.',
   'btn.continue': 'Verder',
   // Owner feedback 2026-10-17: curse effect in the reveal
-  'reveal.effect': 'Treft je meteen: {effect}'
+  'reveal.effect': 'Treft je meteen: {effect}',
+  // K2 review: a deal whose item is gone
+  'log.void': '{name} — deal met {to} vervallen: {card} is weg. Reputatie ongewijzigd.'
 };

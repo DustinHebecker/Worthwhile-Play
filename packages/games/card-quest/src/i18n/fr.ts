@@ -260,7 +260,7 @@ export const fr: Catalogue = {
   'hint.curse': 'Conseil : les malédictions se jouent sur les autres joueurs — pendant ton tour ou en combat.',
   // K2: offers, deals, Change Sides, reputation
   'r.turncoat': 'Seulement pendant que tu aides quelqu’un en combat : change de camp et rejoins les monstres — ta force compte désormais pour eux. Le marché tombe à l’eau, réputation −2.',
-  'table.rep': 'Réputation {n}/5',
+  'table.rep': 'Réputation {n}/{max}',
   'table.favours': 'Services dus : {n}',
   'terms.loot.1': '1 carte butin',
   'terms.loot.2': '2 cartes butin',
@@ -273,7 +273,7 @@ export const fr: Catalogue = {
   'fight.turncoat': 'Changement de camp : {name} (+{n} pour les monstres)',
   'fight.help.title': 'Demander de l’aide — ou payer quelqu’un pour rester à l’écart',
   'fight.help.who': 'Joueur',
-  'fight.help.option': '{name} — force {n}, réputation {rep}/5',
+  'fight.help.option': '{name} — force {n}, réputation {rep}/{max}',
   'fight.help.offer': 'Offre',
   'fight.help.ask': 'Faire l’offre',
   'offer.you.help': '{name} te demande de l’aide et propose {terms}. Aider ne rapporte aucun niveau ; un marché tenu augmente ta réputation.',
@@ -298,7 +298,7 @@ export const fr: Catalogue = {
   'log.broken.stay': '{name} — intervention malgré le paiement de {to} pour rester à l’écart. Réputation −2.',
   'log.broken.favour': '{name} — refus du service dû à {to}. Réputation −2.',
   'hint.help': 'Conseil : force insuffisante ? Demande de l’aide à un autre joueur — contre du butin, un objet ou un service. Les marchés tenus augmentent ta réputation.',
-  'hint.offer': 'Conseil : aider rapporte du butin, mais aucun niveau. Rompre un marché coûte 2 étoiles de réputation — et les joueurs ordinateur s’en souviennent.',
+  'hint.offer': 'Conseil : aider rapporte du butin, mais aucun niveau. Rompre un marché coûte 2 étoiles de réputation — et les rancuniers s’en souviennent.',
   // Owner feedback 2026-10-17: reveals, end of turn
   'next.end.surplus': 'Tu peux encore équiper, jouer et vendre — cela vide aussi ta main. Ensuite, termine ton tour ; cartes à donner (limite de main 5) : {n}.',
   'reveal.open': 'Au tournant : {card}',
@@ -307,5 +307,7 @@ export const fr: Catalogue = {
   'reveal.toHand': 'La carte va dans ta main.',
   'btn.continue': 'Continuer',
   // Owner feedback 2026-10-17: curse effect in the reveal
-  'reveal.effect': 'Te frappe aussitôt : {effect}'
+  'reveal.effect': 'Te frappe aussitôt : {effect}',
+  // K2 review: a deal whose item is gone
+  'log.void': '{name} — marché avec {to} caduc : {card} a disparu. Réputation inchangée.'
 };

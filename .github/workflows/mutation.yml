@@ -2,8 +2,10 @@ name: Mutation tests
 
 # Targeted mutation testing (Stryker) on high-value logic: RNG, persistence, deck model,
 # localization core, each game's rules/AI and the strategy engine. Not run on presentation code.
-# Pull requests mutate only the changed files that stryker.config.json covers (the full run no
-# longer fits the job timeout); the weekly schedule and manual runs mutate everything.
+# Pull requests mutate only the changed files that stryker.config.json covers; the weekly schedule
+# and manual runs mutate everything in 12 round-robin groups. On pull requests each changed file runs
+# in its own job (matrix), so a large change to several files (e.g. a game's rules.ts and ai.ts)
+# runs in parallel and each file gets the full job timeout; the break threshold applies per job.
 on:
   pull_request:
     paths:
@@ -19,37 +21,57 @@ permissions:
   contents: read
 
 jobs:
-  stryker:
+  plan:
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    outputs:
+      targets: ${{ steps.targets.outputs.targets }}
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Files to mutate (changed files on pull requests, everything otherwise)
+        id: targets
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            targets=$(git diff --name-only --diff-filter=AMR "origin/$BASE_REF...HEAD" | node scripts/mutation-targets.mjs --json)
+          else
+            targets=$(git ls-files 'packages/**/src/**' | node scripts/mutation-targets.mjs --json --groups 12)
+          fi
+          echo "Mutating: $targets"
+          echo "targets=$targets" >> "$GITHUB_OUTPUT"
+
+  stryker:
+    needs: plan
+    if: needs.plan.outputs.targets != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      max-parallel: 12
+      matrix:
+        target: ${{ fromJSON(needs.plan.outputs.targets) }}
+    steps:
+      - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Mutation tests (changed files on pull requests, everything otherwise)
-        env:
-          BASE_REF: ${{ github.base_ref }}
-        run: |
-          if [ "${{ github.event_name }}" != "pull_request" ]; then
-            pnpm mutation
-            exit 0
-          fi
-          targets=$(git diff --name-only --diff-filter=AMR "origin/$BASE_REF...HEAD" | node scripts/mutation-targets.mjs)
-          if [ -z "$targets" ]; then
-            echo "No changed files are covered by stryker.config.json; nothing to mutate."
-            exit 0
-          fi
-          echo "Mutating: $targets"
-          pnpm mutation --mutate "$targets"
+      - name: Mutation tests (${{ strategy.job-index }})
+        run: pnpm mutation --mutate "${{ matrix.target }}"
+      - name: Report name
+        id: name
+        if: always()
+        run: echo "name=mutation-report-$(echo '${{ strategy.job-index }}-${{ matrix.target }}' | cut -c1-80 | tr '/.,' '---')" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: mutation-report
+          name: ${{ steps.name.outputs.name }}
           path: reports/mutation/
           retention-days: 14

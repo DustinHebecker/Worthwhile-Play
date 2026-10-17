@@ -279,6 +279,7 @@ describe('view', () => {
       step(
         arranged((s) => {
           s.players[1]!.level = 4;
+          s.players[1]!.personality = 'cautious';
           take(s, 'kz.hard-hat', s.players[1]!.equipped);
           s.encounter.splice(s.encounter.indexOf('kz.gold-rat'), 1);
           s.encounter.push('kz.gold-rat');
@@ -296,10 +297,11 @@ describe('view', () => {
       expect([...terms.options].map((o) => o.textContent)).toContain('2 loot cards');
       q(root, 'help-ask')!.click();
       const s = instance.serialize();
-      // The computer answered at once (accepted or declined); the offer is never left open for a computer.
+      // The computer answered at once (a cautious player takes one loot card); the offer never stays open for it.
       expect(s.fight?.offer ?? null).toBeNull();
       expect(s.log.some((e) => e.e === 'offer' && e.seat === 0)).toBe(true);
-      if (s.fight?.helper === 1) expect(q(root, 'helper')!.textContent).toContain('Brumbo');
+      expect(s.fight?.helper).toBe(1);
+      expect(q(root, 'helper')!.textContent).toContain('Brumbo');
       instance.dispose();
     });
 
@@ -315,6 +317,9 @@ describe('view', () => {
       const asked = step(opened, 1, { a: 'offer', to: 0, terms: { t: 'loot', n: 1 } })!;
       const { root, instance } = mount(asked);
       expect(q(root, 'next')!.textContent).toContain('offers 1 loot card');
+      // Repeated next to the answers (on a phone the "next" box is far above); both answers weigh the same.
+      expect(q(root, 'offer-text')!.textContent).toContain('offers 1 loot card');
+      expect(q(root, 'decline')!.classList.contains('primary')).toBe(true);
       expect(q(root, 'pass')).toBeNull();
       q(root, 'accept')!.click();
       const after = instance.serialize();

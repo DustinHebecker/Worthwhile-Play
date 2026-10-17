@@ -260,7 +260,7 @@ export const hi: Catalogue = {
   'hint.curse': 'सुझाव: श्राप दूसरे खिलाड़ियों पर खेले जाते हैं — अपनी बारी में या लड़ाई में।',
   // K2: offers, deals, Change Sides, reputation
   'r.turncoat': 'सिर्फ़ तब, जब तुम किसी की लड़ाई में मदद कर रहे हो: पाला बदलो और राक्षसों की ओर हो जाओ — तुम्हारी ताक़त अब उनके लिए गिनी जाएगी। सौदा रद्द, साख −2।',
-  'table.rep': 'साख {n}/5',
+  'table.rep': 'साख {n}/{max}',
   'table.favours': 'बकाया एहसान: {n}',
   'terms.loot.1': '1 लूट-कार्ड',
   'terms.loot.2': '2 लूट-कार्ड',
@@ -273,7 +273,7 @@ export const hi: Catalogue = {
   'fight.turncoat': 'पाला बदला: {name} (राक्षसों के लिए +{n})',
   'fight.help.title': 'मदद माँगो — या किसी को दूर रहने के पैसे दो',
   'fight.help.who': 'खिलाड़ी',
-  'fight.help.option': '{name} — ताक़त {n}, साख {rep}/5',
+  'fight.help.option': '{name} — ताक़त {n}, साख {rep}/{max}',
   'fight.help.offer': 'पेशकश',
   'fight.help.ask': 'पेशकश करो',
   'offer.you.help': '{name} तुमसे मदद माँग रहा है। पेशकश: {terms}। मदद से स्तर नहीं मिलता; निभाया गया सौदा तुम्हारी साख बढ़ाता है।',
@@ -298,7 +298,7 @@ export const hi: Catalogue = {
   'log.broken.stay': '{name} — {to} ने दूर रहने के पैसे दिए थे, फिर भी दख़ल। साख −2।',
   'log.broken.favour': '{name} — {to} का बकाया एहसान ठुकराया। साख −2।',
   'hint.help': 'सुझाव: ताक़त कम पड़ रही है? किसी दूसरे खिलाड़ी से मदद माँगो — लूट, किसी चीज़ या एहसान के बदले। निभाए गए सौदे तुम्हारी साख बढ़ाते हैं।',
-  'hint.offer': 'सुझाव: मदद से लूट मिलती है, स्तर नहीं। सौदा तोड़ने पर साख के 2 सितारे जाते हैं — और कंप्यूटर खिलाड़ी यह याद रखते हैं।',
+  'hint.offer': 'सुझाव: मदद से लूट मिलती है, स्तर नहीं। सौदा तोड़ने पर साख के 2 सितारे जाते हैं — और खुन्नसी खिलाड़ी यह याद रखते हैं।',
   // Owner feedback 2026-10-17: reveals, end of turn
   'next.end.surplus': 'तुम अब भी चीज़ें पहन, कार्ड खेल और बेच सकते हो — इससे भी हाथ ख़ाली होता है। फिर अपनी बारी ख़त्म करो; देने वाले कार्ड (हाथ की सीमा 5): {n}।',
   'reveal.open': 'कोने के पार: {card}',
@@ -307,5 +307,7 @@ export const hi: Catalogue = {
   'reveal.toHand': 'कार्ड तुम्हारे हाथ में जाता है।',
   'btn.continue': 'आगे बढ़ो',
   // Owner feedback 2026-10-17: curse effect in the reveal
-  'reveal.effect': 'तुम पर तुरंत असर: {effect}'
+  'reveal.effect': 'तुम पर तुरंत असर: {effect}',
+  // K2 review: a deal whose item is gone
+  'log.void': '{name} — {to} से सौदा रद्द: {card} अब मौजूद नहीं। साख में कोई बदलाव नहीं।'
 };

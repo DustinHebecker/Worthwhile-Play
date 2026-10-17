@@ -314,6 +314,8 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
         return t('log.kept.loot', { name: n(e.seat), to: n(e.to), n: e.n ?? 0 });
       case 'broken':
         return t(`log.broken.${e.why}`, { name: n(e.seat), to: n(e.to) });
+      case 'void':
+        return t('log.void', { name: n(e.seat), to: n(e.to), card: name(e.card) });
       case 'discard':
         return t('log.discard', { name: n(e.seat), n: e.count });
       case 'win':
@@ -469,7 +471,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     state.players.forEach((p, seat) => {
       const facts = [t('table.level', { n: p.level }), t('table.strength', { n: strengthOf(seat) }), t('table.cards', { n: p.hand.length })];
       if (p.malus > 0) facts.push(t('table.malus', { n: p.malus }));
-      facts.push(t('table.rep', { n: p.rep }));
+      facts.push(t('table.rep', { n: p.rep, max: REP_MAX }));
       if (p.favours.length > 0) facts.push(t('table.favours', { n: p.favours.length }));
       const gear = [...p.origins, ...p.professions, ...p.equipped].map(name).join(t('r.separator')) || t('table.nothing');
       list.append(
@@ -556,7 +558,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     const who = h('select', { id: 'cq-help-who', 'data-testid': 'help-who', 'data-key': 'help-who' }) as HTMLSelectElement;
     for (const seat of seats) {
       const p = state.players[seat] as Player;
-      who.append(h('option', { value: String(seat), selected: seat === offerSeat }, t('fight.help.option', { name: seatName(seat), n: tableStrength(state, seat), rep: p.rep })));
+      who.append(h('option', { value: String(seat), selected: seat === offerSeat }, t('fight.help.option', { name: seatName(seat), n: tableStrength(state, seat), rep: p.rep, max: REP_MAX })));
     }
     const terms = h('select', { id: 'cq-help-terms', 'data-testid': 'help-terms', 'data-key': 'help-terms' }) as HTMLSelectElement;
     const mine = offers.filter((o) => o.to === offerSeat);
@@ -607,9 +609,11 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
         break;
       case 'fight':
         if (state.fight?.offer) {
+          // The offer is repeated next to its answers (on a phone the "next" box is far above), both answers equal.
           bar.append(
+            h('p', { class: 'cq-offer-text', 'data-testid': 'offer-text' }, nextText()),
             button(t('btn.accept'), () => act({ a: 'accept' }), { primary: true, testid: 'accept' }),
-            button(t('btn.decline'), () => act({ a: 'decline' }), { testid: 'decline' })
+            button(t('btn.decline'), () => act({ a: 'decline' }), { primary: true, testid: 'decline' })
           );
           break;
         }

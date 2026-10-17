@@ -312,8 +312,13 @@ function answerOffer(state: CardQuestState, seat: number, difficulty: Difficulty
   const fighter = state.players[state.active] as Player;
   const yes: Action = { a: 'accept' };
   const no: Action = { a: 'decline' };
-  // A free card for staying out: always welcome.
-  if (offer.terms.t === 'stay') return yes;
+  // A card for staying out: not when this fight would win the game (except on easy), and only a card worth having.
+  if (offer.terms.t === 'stay') {
+    if (winsGame(state) && difficulty !== 'easy') return no;
+    const def = defOf(offer.terms.card);
+    const worth = def.type === 'item' ? def.bonus : keepValue(state, seat, offer.terms.card);
+    return difficulty === 'easy' || worth >= 2 ? yes : no;
+  }
   const grudge = me.personality === 'grudge' && (me.harm[state.active] ?? 0) > 0;
   // A favour owed: honoured — unless it would hand the fighter the game (cautious players keep their word anyway).
   if (offer.terms.t === 'free') return winsGame(state) && me.personality !== 'cautious' && difficulty !== 'easy' ? no : yes;

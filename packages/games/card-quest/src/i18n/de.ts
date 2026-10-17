@@ -260,7 +260,7 @@ export const de: Catalogue = {
   'hint.curse': 'Tipp: Flüche spielst du auf andere – in deinem Zug oder in einem Kampf.',
   // K2: offers, deals, Change Sides, reputation
   'r.turncoat': 'Nur während du jemandem im Kampf hilfst: wechsle zu den Monstern – deine Stärke zählt jetzt für sie. Der Deal platzt, Ruf −2.',
-  'table.rep': 'Ruf {n}/5',
+  'table.rep': 'Ruf {n}/{max}',
   'table.favours': 'Offene Gefallen: {n}',
   'terms.loot.1': '1 Beutekarte',
   'terms.loot.2': '2 Beutekarten',
@@ -273,7 +273,7 @@ export const de: Catalogue = {
   'fight.turncoat': 'Seite gewechselt: {name} (+{n} für die Monster)',
   'fight.help.title': 'Um Hilfe bitten – oder jemanden fürs Raushalten bezahlen',
   'fight.help.who': 'Mitspieler',
-  'fight.help.option': '{name} – Stärke {n}, Ruf {rep}/5',
+  'fight.help.option': '{name} – Stärke {n}, Ruf {rep}/{max}',
   'fight.help.offer': 'Angebot',
   'fight.help.ask': 'Angebot machen',
   'offer.you.help': '{name} bittet dich um Hilfe und bietet {terms}. Helfen bringt kein Level; ein eingehaltener Deal hebt deinen Ruf.',
@@ -298,7 +298,7 @@ export const de: Catalogue = {
   'log.broken.stay': '{name} – hat sich eingemischt, obwohl {to} fürs Raushalten bezahlt hat. Ruf −2.',
   'log.broken.favour': '{name} – hat den Gefallen für {to} verweigert. Ruf −2.',
   'hint.help': 'Tipp: Zu schwach? Bitte jemanden um Hilfe – gegen Beute, einen Gegenstand oder einen Gefallen. Eingehaltene Deals heben deinen Ruf.',
-  'hint.offer': 'Tipp: Helfen bringt Beute, aber kein Level. Ein gebrochener Deal kostet 2 Ruf-Sterne – und die Computerspieler merken sich das.',
+  'hint.offer': 'Tipp: Helfen bringt Beute, aber kein Level. Ein gebrochener Deal kostet 2 Ruf-Sterne – und Nachtragende merken sich das.',
   // Owner feedback 2026-10-17: reveals, end of turn
   'next.end.surplus': 'Du kannst noch anlegen, ausspielen und verkaufen – das leert auch die Hand. Dann beende deinen Zug; abzugebende Karten (Handlimit 5): {n}.',
   'reveal.open': 'Um die Ecke: {card}',
@@ -307,5 +307,7 @@ export const de: Catalogue = {
   'reveal.toHand': 'Die Karte kommt auf deine Hand.',
   'btn.continue': 'Weiter',
   // Owner feedback 2026-10-17: curse effect in the reveal
-  'reveal.effect': 'Trifft dich sofort: {effect}'
+  'reveal.effect': 'Trifft dich sofort: {effect}',
+  // K2 review: a deal whose item is gone
+  'log.void': '{name} – Deal mit {to} hinfällig: {card} ist weg. Ruf unverändert.'
 };
