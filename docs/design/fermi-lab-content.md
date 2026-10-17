@@ -1,4 +1,4 @@
-# Fermi Questions: content (46 tasks)
+# Estimation Lab (`fermi-lab`): content (46 tasks)
 
 Status: **researched draft, 2026-10-17**. This is the source for `packages/games/fermi-lab/src/tasks.ts` (language-neutral numbers) and `src/content/<locale>.ts` (wording). Design: [fermi-lab.md](fermi-lab.md).
 
@@ -33,22 +33,23 @@ id: rain-roof
 category: everyday
 level: 1
 kind: measured
-question: How many litres of rain fall on the roof of a detached house in Berlin in one year?
-answer: { central: 58000, low: 30000, high: 120000, unit: L/year }
+question: How many litres of rain fall on the roof of a detached house in London in one year?
+answer: { central: 63000, low: 35000, high: 140000, unit: L/year }
 model:
   - { name: "Roof area seen from above", value: 100, low: 60, high: 200, unit: m², exp: 1 }
-  - { name: "Yearly rainfall (height of water)", value: 0.58, low: 0.53, high: 0.62, unit: m/year, exp: 1 }
+  - { name: "Yearly rainfall (height of water)", value: 0.63, low: 0.60, high: 0.72, unit: m/year, exp: 1 }
   - { name: "Litres in a cubic metre", value: 1000, low: 1000, high: 1000, unit: L/m³, exp: 1, fixed: true }
 explain: >
-  Rainfall is measured as a height: 581 mm a year in Berlin means a layer 0.58 m deep if nothing ran
-  off. What counts is the roof's area seen from above (its footprint), not the larger sloping surface:
-  rain falls vertically. The roof area is the uncertain factor; Berlin's rainfall barely varies
-  across the city (about 540–620 mm).
+  Rainfall is measured as a height: London's long-term average of about 630 mm a year means a layer
+  0.63 m deep if nothing ran off. What counts is the roof's area seen from above, not the larger sloping
+  surface: rain falls vertically. Despite its rainy reputation, London gets only about half as much rain
+  as New York: it rains often there, but lightly. The roof area is the uncertain factor.
 sources:
-  - "Rainfall: Berlin Environmental Atlas, long-term mean precipitation 1991–2020 (DWD data), city mean 581 mm, https://www.berlin.de/umweltatlas/en/climate/precipitation-distribution/1991-2020/map-description/"
+  - "Rainfall: Met Office climate averages 1991–2020, Kew Gardens 627.5 mm a year (Northolt 663.3, Hampstead 722.1); note that London receives about half the rain of New York City; via Wikipedia \"Climate of London\", https://en.wikipedia.org/wiki/Climate_of_London (verified 2026-10-17)."
   - "Roof footprint: assumption (detached houses typically 80–150 m² footprint including overhang)."
   - "1 m³ = 1000 L: Std. (SI)."
 confidence: high
+# Owner decision 2026-10-17: Berlin replaced by London (world city, internationally meaningful).
 ```
 
 ```yaml
@@ -342,26 +343,29 @@ confidence: medium
 ```
 
 ```yaml
-id: rhine-day
+id: amazon-day
 category: nature
 level: 3
 kind: measured
-question: How many cubic metres of water does the Rhine carry into the Netherlands in an average day?
-answer: { central: 2.0e8, low: 1.0e8, high: 4.0e8, unit: m³/day }
+question: How many cubic metres of water does the Amazon River pour into the Atlantic Ocean on an average day?
+answer: { central: 1.8e10, low: 1.0e10, high: 2.6e10, unit: m³/day }
 model:
-  - { name: "River width", value: 350, low: 250, high: 450, unit: m, exp: 1 }
-  - { name: "Average depth", value: 5, low: 3, high: 8, unit: m, exp: 1 }
-  - { name: "Average flow speed", value: 1.3, low: 0.8, high: 2.0, unit: m/s, exp: 1 }
+  - { name: "Width of the river", value: 2300, low: 2000, high: 2600, unit: m, exp: 1 }
+  - { name: "Average depth of the river", value: 45, low: 30, high: 60, unit: m, exp: 1 }
+  - { name: "Average flow speed", value: 2.0, low: 0.75, high: 2.3, unit: m/s, exp: 1 }
   - { name: "Seconds in a day", value: 86400, low: 86400, high: 86400, unit: s/day, exp: 1, fixed: true }
 explain: >
-  Flow = width × depth × speed. At the Dutch border the Rhine carries on average about 2,300 m³ every
-  second, which is about 200 million m³ a day. The flow varies a lot: in droughts it falls
-  below 1,000 m³/s, and in floods it can exceed 10,000 m³/s. Width, depth and speed in the model are
-  rough illustrative values for the lower Rhine; the central answer is the measured mean.
+  Flow = width × depth × speed. Near the town of Óbidos the Amazon squeezes into a single channel only
+  about 2 km wide but tens of metres deep, flowing at up to 2 m/s. At its mouth it carries on average about
+  206,000 m³ every second: about 18 billion m³ a day, roughly a fifth of all the river water that reaches
+  the oceans. Width, depth and speed are rough illustrative values; the central answer is the measured mean.
 sources:
-  - "Mean discharge at the Dutch border 2,290 m³/s: Wikipedia \"Rhine\" (citing ICPR/BfG data), https://en.wikipedia.org/wiki/Rhine ; daily series GRDC station 6435060 (Lobith), https://data.4tu.nl/datasets/e1c4f271-460a-40f1-bbd6-e988f5d878e2"
-  - "Width, depth, speed: approximate (illustrative, not measured cross-section values)."
+  - "Mean discharge at the mouth about 206,000 m³/s (1972–2003, ±6 %): Callède et al. (2010), \"Les apports en eau de l'Amazone à l'Océan Atlantique\", Revue des sciences de l'eau 23(3), https://horizon.documentation.ird.fr/exl-doc/pleins_textes/divers17-08/010051056.pdf ; commonly cited values 205,000–224,000 m³/s, e.g. Wikipedia \"Amazon River\" (about 20 % of global river discharge), https://en.wikipedia.org/wiki/Amazon_River (verified 2026-10-17). 206,000 × 86,400 = 1.78 × 10¹⁰ m³/day."
+  - "Width at Óbidos about 2 km: Encyclopaedia Britannica, \"Óbidos\", https://www.britannica.com/place/Obidos"
+  - "Mean velocity at the Óbidos cross-section 0.735–2.27 m/s (low to high flow): Acta Scientiarum. Technology, https://periodicos.uem.br/actascitechnol/index.php/ActaSciTechnol/article/download/45703/751375149037/751375185441"
+  - "Depth: approximate (illustrative mean depth of the Óbidos channel; not separately verified)."
 confidence: medium
+# Owner decision 2026-10-17: the Rhine (regional) replaced by a world-famous river.
 ```
 
 ```yaml
@@ -522,20 +526,21 @@ id: airliner-fuel
 category: technology
 level: 3
 kind: model
-question: How many litres of jet fuel does a full wide-body airliner (about 300 passengers) burn flying from Frankfurt to New York?
-answer: { central: 56000, low: 35000, high: 90000, unit: L }
+question: How many litres of jet fuel does a full wide-body airliner (about 300 passengers) burn flying from London to New York?
+answer: { central: 50000, low: 30000, high: 80000, unit: L }
 model:
   - { name: "Passengers", value: 300, low: 250, high: 350, unit: passenger, exp: 1 }
   - { name: "Fuel per passenger per kilometre", value: 0.03, low: 0.025, high: 0.045, unit: L/(passenger·km), exp: 1 }
-  - { name: "Flight distance", value: 6200, low: 6200, high: 6500, unit: km, exp: 1 }
+  - { name: "Flight distance", value: 5540, low: 5540, high: 5800, unit: km, exp: 1 }
 explain: >
-  Modern long-haul jets burn about 3 litres per passenger per 100 km (the airline quotes 2.9 for its
-  newest type; older aircraft use more). Frankfurt–New York is about 6,200 km along the great circle.
-  300 × 0.03 × 6,200 ≈ 56,000 litres: about one road tanker and a half, roughly 45 tonnes of fuel.
+  Modern long-haul jets burn about 3 litres per passenger per 100 km (one airline quotes 2.9 for its newest
+  type; older aircraft use more). London–New York is about 5,500 km along the great circle.
+  300 × 0.03 × 5,540 ≈ 50,000 litres: well over one road tanker, roughly 40 tonnes of fuel.
 sources:
   - "Fuel per passenger: Lufthansa Group, \"A350 facts and figures\" (2.9 L per passenger per 100 km), https://www.lufthansagroup.com/media/newsroom/north-america/2019/q1/A350_Facts_and_figures_ENG_final.pdf"
-  - "Distance: Std. (great-circle distance FRA–JFK ≈ 6,200 km)."
+  - "Distance: Std. (great-circle distance LHR–JFK = 5,540 km by the haversine formula from the airport coordinates; route calculators give 5,539 km). Real routes are a little longer."
 confidence: medium
+# Owner decision 2026-10-17: Frankfurt–New York replaced by London–New York (the busiest transatlantic route).
 ```
 
 ```yaml
@@ -563,22 +568,27 @@ id: solar-panel
 category: technology
 level: 2
 kind: model
-question: How much electricity does one square metre of solar panel produce in a year in Germany?
-answer: { central: 200, low: 120, high: 280, unit: kWh/year }
+question: How much electricity does one square metre of solar panel produce in a year, on average for new solar farms around the world, in kilowatt-hours?
+answer: { central: 290, low: 150, high: 450, unit: kWh/year }
 model:
-  - { name: "Sunlight energy per square metre per year", value: 1100, low: 1000, high: 1250, unit: kWh/(m²·year), exp: 1 }
+  - { name: "Sunlight on which panel ratings are based", value: 1000, low: 1000, high: 1000, unit: W/m², exp: 1, fixed: true }
   - { name: "Panel area", value: 1, low: 1, high: 1, unit: m², exp: 1, fixed: true }
-  - { name: "Panel efficiency", value: 0.21, low: 0.15, high: 0.23, unit: 1, exp: 1 }
-  - { name: "System losses factor (heat, inverter, dirt)", value: 0.85, low: 0.75, high: 0.9, unit: 1, exp: 1 }
+  - { name: "Panel efficiency", value: 0.21, low: 0.18, high: 0.23, unit: 1, exp: 1 }
+  - { name: "Average output as a share of the rated power (capacity factor)", value: 0.16, low: 0.10, high: 0.25, unit: 1, exp: 1 }
+  - { name: "Hours in a year", value: 8760, low: 8760, high: 8760, unit: h/year, exp: 1, fixed: true }
 explain: >
-  Germany receives about 1,000–1,250 kWh of sunlight per square metre per year (more in the south).
-  A modern panel turns about a fifth of it into electricity, and wiring, heat and the inverter cost
-  another 10–20 %. So one square metre makes about 200 kWh a year — over a year, roughly the
-  electricity for running a fridge.
+  Panels are rated in full sunlight of 1,000 W per square metre; a modern panel turns about a fifth of it
+  into electricity, about 210 W per m². But there is night, cloud and low winter sun: worldwide, new solar
+  farms deliver on average only about 16 % of their rated power. Over the 8,760 hours of a year that gives
+  about 290 kWh per square metre, roughly what a fridge uses in a year. In sunny deserts it is more, in
+  cloudy regions less.
 sources:
-  - "Irradiation: DWD gridded annual global radiation, as reported by Solarserver (2024: 1,113 kWh/m², regional 1,007–1,246), https://www.solarserver.de/2024/11/12/solarstrahlung-oktober-2024-im-langjaehrigen-mittel-regional-aber-stark-unterschiedlich/ ; DWD dataset https://opendata.dwd.de/climate_environment/CDC/grids_germany/annual/radiation_global/"
-  - "Panel efficiency and losses: approximate (commercial modules 2020s ~20–23 %; performance ratio 0.75–0.9)."
+  - "Capacity factor: IRENA, Renewable Power Generation Costs in 2023 (global weighted-average capacity factor of new utility-scale PV 16.2 % in 2023, 13.8 % in 2010), reported by pv magazine, https://www.pv-magazine.com/2024/09/27/global-average-solar-lcoe-stood-at-0-044-kwh-in-2023-says-irena/ (verified 2026-10-17)."
+  - "Rated sunlight 1,000 W/m²: Std. (standard test conditions, IEC 61215)."
+  - "Panel efficiency: approximate (commercial modules of the 2020s about 20–23 %)."
 confidence: medium
+# Owner decision 2026-10-17: reframed from "in Germany" (DWD irradiation) to the world average of new solar farms.
+# Check: 1000 × 1 × 0.21 × 0.16 × 8760 Wh = 294 kWh (0.006 decades from 290).
 ```
 
 ```yaml
@@ -627,23 +637,24 @@ category: society
 level: 2
 kind: model
 question: How many full-time piano tuners can a city of one million people keep busy?
-answer: { central: 30, low: 10, high: 100, unit: tuner }
+answer: { central: 25, low: 8, high: 100, unit: tuner }
 model:
   - { name: "Inhabitants", value: 1000000, low: 1000000, high: 1000000, unit: person, exp: 1, fixed: true }
-  - { name: "People per household", value: 2, low: 1.8, high: 4, unit: person/household, exp: -1 }
-  - { name: "Share of households with a piano", value: 0.05, low: 0.02, high: 0.1, unit: piano/household, exp: 1 }
-  - { name: "Tunings per piano per year", value: 1, low: 0.5, high: 1.5, unit: 1/year, exp: 1 }
-  - { name: "Tunings one tuner does per year (4 a day × 220 working days)", value: 880, low: 600, high: 1000, unit: 1/year, exp: -1 }
+  - { name: "People per household", value: 2.5, low: 2, high: 5, unit: person/household, exp: -1 }
+  - { name: "Pianos per household", value: 0.05, low: 0.02, high: 0.1, unit: piano/household, exp: 1 }
+  - { name: "Tunings per piano per year", value: 1, low: 0.5, high: 1.5, unit: tuning/(piano·year), exp: 1 }
+  - { name: "Tunings one tuner does per year (4 a day, 200 working days)", value: 800, low: 600, high: 1000, unit: tuning/(tuner·year), exp: -1 }
 explain: >
-  Enrico Fermi's classic question. Half a million households, one in twenty with a piano, gives
-  25,000 pianos; tuned once a year that is 25,000 tunings. A tuner manages about four a day, some 900 a
-  year, so the city needs about 30. There is no official count to check against — the point is that
-  every factor is guessable and errors in different directions partly cancel. Schools, churches and
-  concert halls add a few more pianos.
+  Enrico Fermi's classic question. With 2.5 people per household, a million people live in 400,000
+  households; one in twenty with a piano gives 20,000 pianos and 20,000 tunings a year. A tuner manages
+  about four a day, some 800 a year, so the city needs about 25. There is no official count: the point is
+  that every factor can be guessed and errors in different directions partly cancel. Household size varies
+  a lot around the world, from about 2 to over 5.
 sources:
-  - "Household size: Std. (e.g. Germany ≈ 2.0 persons per household, Destatis; many countries 2.5–4)."
-  - "Piano share, tunings per year, tuner workload: assumptions (no reliable statistics found; marked as a model answer)."
+  - "Household size: UN DESA, Household Size and Composition Around the World 2017 (country averages 2 to 9 persons; most of Europe, North America and Japan below 3), https://www.un.org/en/development/desa/population/publications/pdf/popfacts/PopFacts_2017-2.pdf (verified 2026-10-17)."
+  - "Piano share, tunings per year, tuner workload: assumptions (no reliable statistics found; model answer)."
 confidence: low
+# Owner decision 2026-10-17: German household size (2.0, Destatis) replaced by a world-oriented 2.5 (range 2–5).
 ```
 
 ```yaml
@@ -771,24 +782,27 @@ confidence: medium
 ```
 
 ```yaml
-id: city-water
+id: teachers-city
 category: society
 level: 1
-kind: measured
-question: How many cubic metres of tap water do the households of a German city of one million people use per day?
-answer: { central: 126000, low: 100000, high: 160000, unit: m³/day }
+kind: model
+question: How many school teachers does a city of one million people need for its pupils aged 6 to 17?
+answer: { central: 10000, low: 4500, high: 30000, unit: teacher }
 model:
   - { name: "Inhabitants", value: 1000000, low: 1000000, high: 1000000, unit: person, exp: 1, fixed: true }
-  - { name: "Water per person per day", value: 126, low: 100, high: 160, unit: L/(person·day), exp: 1 }
-  - { name: "Litres in a cubic metre", value: 1000, low: 1000, high: 1000, unit: L/m³, exp: -1, fixed: true }
+  - { name: "Share of inhabitants aged 6 to 17", value: 0.14, low: 0.10, high: 0.22, unit: pupil/person, exp: 1 }
+  - { name: "Pupils per teacher", value: 14, low: 7, high: 23, unit: pupil/teacher, exp: -1 }
 explain: >
-  People in Germany use about 126 litres of tap water a day at home (and in small businesses): over a
-  third for showers and baths, about a quarter for flushing toilets, and only a few litres for drinking
-  and cooking. A million people use 126 million litres — about 50 Olympic swimming pools a day.
-  Elsewhere the figure differs a lot (in the USA it is more than twice as high).
+  Children under 15 make up about 17 % of the population in OECD countries and about 25 % worldwide, so the
+  twelve school years from 6 to 17 cover roughly 12–20 % of the inhabitants. Across OECD countries there are
+  on average about 14 pupils per teacher in primary school and 13 in lower secondary school, from about 7 to
+  over 20. A million people therefore need roughly 10,000 teachers.
 sources:
-  - "126 L per person per day (2022): Umweltbundesamt, \"Wassernutzung privater Haushalte\", https://www.umweltbundesamt.de/daten/private-haushalte-konsum/wassernutzung-privater-haushalte ; uses: BDEW via Statista."
-confidence: high
+  - "Pupils per teacher: OECD, Education at a Glance 2024, indicator D2 (average 14 in primary, 13 in lower secondary, 2022 data; later editions: from 7 in Greece to 23 in Mexico), https://www.oecd.org/en/publications/education-at-a-glance-2024_c00cad36-en/full-report/what-is-the-student-teacher-ratio-and-how-large-are-classes-and-schools_bb95b097 (verified 2026-10-17)."
+  - "Share aged 6–17: derived (OECD young population 0–14: 17.3 % in 2022, OECD Data; world 25 %, World Bank 2022 via Wikipedia \"European countries by percent of population aged 0-14\"; twelve of fifteen cohorts ≈ 14 % for the OECD, up to about 20 % worldwide)."
+confidence: medium
+# Owner decision 2026-10-17: replaces city-water (German household water use, Umweltbundesamt), which had no
+# comparable world or OECD figure.
 ```
 
 ```yaml
@@ -994,12 +1008,21 @@ confidence: high
 
 ## Verification notes
 
-Verified by web search on 2026-10-17 (sources above): Berlin rainfall, crowd density, rice grain weight, EFSA water intake, Mehl 2007, paper thickness, ant count, tree count, FAO forest area, cloud mass, Rhine mean flow at the Dutch border, bee colony biology, human cell count, nail growth, lift energy method, petrol energy, EV consumption, AA capacity, German irradiation, airline passengers and passenger-km, A350 fuel per passenger, world births and deaths, German water use, vehicles in use, steps per day, atmosphere mass, ocean depth and volume, ISS orbits.
+Verified by web search on 2026-10-17 (sources above): London rainfall (Met Office via Wikipedia), crowd density, rice grain weight, EFSA water intake, Mehl 2007, paper thickness, ant count, tree count, FAO forest area, cloud mass, Amazon mean discharge (IRD), width and velocity at Óbidos, bee colony biology, human cell count, nail growth, lift energy method, petrol energy, EV consumption, AA capacity, IRENA solar capacity factor, airline passengers and passenger-km, A350 fuel per passenger, world births and deaths, OECD pupil–teacher ratios, OECD and world young-population shares, UN household sizes, vehicles in use, steps per day, atmosphere mass, ocean depth and volume, ISS orbits.
 
-Standard values used without a search (textbook or SI/IAU constants): air density, specific heat of water, g, speed of light, astronomical unit, solar and Earth radii, Earth–Moon distance, equatorial circumference, Avogadro constant, molar mass of water, kcal, standard atmosphere, sand grain classes, packing fraction, respiratory and heart-rate reference ranges, blood values, FRA–JFK distance, IFAB pitch sizes.
+Standard values used without a search (textbook or SI/IAU constants): air density, specific heat of water, g, speed of light, astronomical unit, solar and Earth radii, Earth–Moon distance, equatorial circumference, Avogadro constant, molar mass of water, kcal, standard atmosphere, sand grain classes, packing fraction, respiratory and heart-rate reference ranges, blood values, LHR–JFK distance (computed), IFAB pitch sizes.
 
-**Not verified / approximate (marked in the task):** speaking rate (words-per-day), scalp area and hair density (scalp-hairs), river cross-section (rhine-day, illustrative only), phone battery and charging efficiency, panel efficiency and losses, car lifetime distance, piano ownership and tuner workload (no statistics found; model answer), smartphone share and replacement cycle, average airborne time per trip (derived from ICAO 2019 distance and an assumed speed).
+**Not verified / approximate (marked in the task):** speaking rate (words-per-day), scalp area and hair density (scalp-hairs), river depth (amazon-day, illustrative only), phone battery and charging efficiency, panel efficiency (solar-panel), car lifetime distance, piano ownership and tuner workload (no statistics found; model answer), smartphone share and replacement cycle, average airborne time per trip (derived from ICAO 2019 distance and an assumed speed).
+
+## Internationalisation (owner decision, 2026-10-17)
+
+Tasks that only made sense with German context were replaced or reframed, and every replaced number was
+re-verified by web search on 2026-10-17 (sources in the blocks above): `rain-roof` (Berlin → London),
+`rhine-day` → `amazon-day`, `solar-panel` (Germany → world average of new solar farms), `city-water` →
+`teachers-city`, `airliner-fuel` (Frankfurt → London), `piano-tuners` (household size). The code checks in
+`packages/games/fermi-lab/test/content.test.ts` pass for all 46 tasks (largest deviation of a reference
+product from its central value: 0.021 decades, `bee-colony`).
 
 ## Review schedule
 
-Values that drift: world population (births-day, birthdays-today, smartphones-year, world-cars), births per year, air passengers, smartphone shipments, vehicles in use, German water use, German irradiation (rising ~3 kWh/m² per year). Review these once a year; a change within the plausible range needs no update.
+Values that drift: world population (births-day, birthdays-today, smartphones-year, world-cars), births per year, air passengers, smartphone shipments, vehicles in use, the solar capacity factor (IRENA, yearly), OECD pupil–teacher ratios. Review these once a year; a change within the plausible range needs no update.

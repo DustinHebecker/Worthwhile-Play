@@ -1,6 +1,6 @@
-# Fermi Questions (`fermi-lab`) — design
+# Estimation Lab (`fermi-lab`) — design
 
-Status: **Plan, 2026-10-17** (planner). Nothing implemented yet. Content: [fermi-lab-content.md](fermi-lab-content.md) (46 researched tasks).
+Status: **Implemented, 2026-10-17** (plan by the planner; owner decisions and implementation notes in § 18). Content: [fermi-lab-content.md](fermi-lab-content.md) (46 researched tasks, internationalised).
 
 Scope for the implementer (feature agent, ADR 0006): `packages/games/fermi-lab/` and `e2e/games/fermi-lab.spec.ts`. The orchestrator creates `package.json`, the registry line, the dependency in `apps/web/package.json` and the preview in `apps/web/src/previews.ts` (§ 13 describes it). No new dependencies, no shared-package changes needed for the MVP (§ 1.3 lists optional ones).
 
@@ -16,7 +16,7 @@ No existing game asks for numbers. The nearest neighbours:
 
 | Game | Relation | Consequence |
 |---|---|---|
-| `review` / `@wp/learning-content` | Flash cards of facts, spaced repetition. | Fermi Questions is **not** a fact quiz: the answer is reasoned, not remembered, and scored by order of magnitude. Learning records are not written (like Memory: play stays play). A later "estimation facts" deck is possible but is not part of this game. |
+| `review` / `@wp/learning-content` | Flash cards of facts, spaced repetition. | Estimation Lab is **not** a fact quiz: the answer is reasoned, not remembered, and scored by order of magnitude. Learning records are not written (like Memory: play stays play). A later "estimation facts" deck is possible but is not part of this game. |
 | `compression-challenge`, `deep-read`, `briefing-game` | Self-paced text exercises with explanations after answering, per-locale content (ADR 0010/0011). | Same **content architecture**: language-neutral structure + `src/content/<locale>.ts` loaded via `preload`. Same calm "explanation after the answer" pattern. |
 | `black-box` | Own number formatting (`format.ts`: proper minus sign, `normalizeDigits`) and a formula parser without `eval`. | Copy the *pattern* (games never import other games): a pure `format.ts` with a parser and a formatter, unit-tested. |
 | `rule-discovery` | After solving, explains the information value of each test. | Same spirit for the sensitivity view: show *why*, not just *whether*. |
@@ -40,21 +40,21 @@ No existing game asks for numbers. The nearest neighbours:
 | | |
 |---|---|
 | Package id | `fermi-lab` (`@wp/game-fermi-lab`) — kept neutral so a rename touches no saves |
-| English title | **Fermi Questions** |
-| German title | **Fermi-Fragen** |
-| Other locales | "Fermi" + the language's word for "questions" or "estimation problems" (the term *Fermi problem* is established in physics teaching in most languages) |
+| English title | **Estimation Lab** (owner decision, § 18) |
+| German title | **Schätzlabor** |
+| Other locales | the language's own words for "estimation lab": Labo d’estimation, Laboratorio de estimación, Laboratorio di stima, Laboratório de estimativas, Schattingslab, Laboratorium szacowania, Лаборатория оценок, Лабораторія оцінок, Tahmin Laboratuvarı, 見積もりラボ, 估算实验室, 어림 실험실, مختبر التقدير, अनुमान प्रयोगशाला |
 | Skills | `systems` (building a model from parts), `hypothesis` (stating and checking assumptions) |
 | `typicalMinutes` | `[8, 15]` (one round of 5 questions) |
 | `difficulties` | `['easy', 'medium', 'hard']` |
 | Capabilities | offline, no audio, no AI, no network, pauseable |
 
-**Why not "Fermi Lab" as the shown title:** "Fermilab" is the common name of the Fermi National Accelerator Laboratory, a real institution. A game titled "Fermi Lab" could look like it belongs to it. "Fermi Questions" names the method (estimation problems in Enrico Fermi's style, a generic educational term) and impersonates nobody. The id stays `fermi-lab` because the pipeline already uses it; ids are never shown. (Owner may choose another title, § 16.)
+**Why not "Fermi Lab" as the shown title** (the owner chose "Estimation Lab", which avoids the issue as well): "Fermilab" is the common name of the Fermi National Accelerator Laboratory, a real institution. A game titled "Fermi Lab" could look like it belongs to it. "Fermi Questions" names the method (estimation problems in Enrico Fermi's style, a generic educational term) and impersonates nobody. The id stays `fermi-lab` because the pipeline already uses it; ids are never shown. (Owner may choose another title, § 16.)
 
 ---
 
 ## 3. Pitch and honest value
 
-**Pitch.** How many litres of rain fall on a roof in a year? How heavy is the air in your living room? Nobody knows these by heart, but almost anyone can get within a factor of three by breaking the question into pieces they *can* guess. Fermi Questions gives you one such question at a time. You make a quick gut estimate, then — if you like — build the answer as a product of a few factors with units. Afterwards the game shows a reference calculation, where your assumptions differed, and which assumption moved the result most.
+**Pitch.** How many litres of rain fall on a roof in a year? How heavy is the air in your living room? Nobody knows these by heart, but almost anyone can get within a factor of three by breaking the question into pieces they *can* guess. Estimation Lab gives you one such question at a time. You make a quick gut estimate, then — if you like — build the answer as a product of a few factors with units. Afterwards the game shows a reference calculation, where your assumptions differed, and which assumption moved the result most.
 
 **What it exercises (claims we may make):**
 - practice in breaking a quantity into estimable factors (modelling);
@@ -355,13 +355,13 @@ Heavy property tests stay well under 50 % of their timeout (≤ 200 runs; select
 | The slider gives the answer away | Seeded, offset 10-decade window (§ 5), tested. |
 | "Order of magnitude" feels arbitrary for tasks with big real variation | Show the plausible range and say when the answer falls inside it; explanations name the varying factor. |
 | Free-mode units frustrate | Palette instead of typing; guided is the default; the model is optional. |
-| Name confusion with Fermilab | Shown title "Fermi Questions" (§ 2). |
+| Name confusion with Fermilab | Shown title "Estimation Lab" / "Schätzlabor" (§ 2). |
 | Chunk size | Content per locale (ADR 0011); `tasks.ts` numbers are small (~15 kB). |
 | Feels like a test | No points, no timers, friendly wording, the first guess is explicitly "rough is fine"; explanations focus on method. |
 
 ---
 
-## 16. Open questions for the owner
+## 16. Open questions for the owner (answered, see § 18)
 
 1. **Title.** "Fermi Questions" / "Fermi-Fragen" (recommended; avoids looking like Fermilab, the US laboratory) — or another title such as "Estimation Lab" / "Schätzlabor"?
 2. **Places in the questions.** Five tasks name a place (Berlin rain, the Rhine, two about Germany, Frankfurt–New York). Keep them (recommended: real, sourced numbers, and the place is stated in every language), or replace them with world-wide questions for a less German-centred set?
@@ -376,4 +376,37 @@ Heavy property tests stay well under 50 % of their timeout (≤ 200 runs; select
 4. `content/en.ts`, then the other 15 locales; `messages.ts` (16 locales) including unit keys.
 5. `view.ts` + `styles.css` (§ 5–8, § 12); `index.ts` with `preload`, `settings`, `settingsOf`.
 6. `contract.test.ts`, view tests, `e2e/games/fermi-lab.spec.ts`.
-7. Report to the orchestrator: registry line, dependency, preview (§ 13), ROADMAP row ("Numeracy/Science — Fermi Questions", milestone M4-adjacent, systems & hypothesis), optional shared changes (§ 1.3).
+7. Report to the orchestrator: registry line, dependency, preview (§ 13), ROADMAP row ("Numeracy/Science — Estimation Lab", milestone M4-adjacent, systems & hypothesis), optional shared changes (§ 1.3).
+
+---
+
+## 18. Owner decisions and implementation notes (2026-10-17)
+
+### 18.1 Owner decisions
+
+1. **Title:** "Estimation Lab" (en) and "Schätzlabor" (de), with native equivalents in the other 14 locales (§ 2). The id stays `fermi-lab`.
+2. **Places:** keep a place only when it is known worldwide and the question makes sense in Japan or Brazil; replace German-specific tasks with internationally relevant ones or reframe them with world or OECD data. Result (sources in the content document):
+
+| Task | Before | After |
+|---|---|---|
+| `rain-roof` | Berlin (581 mm) | **London** (Kew 1991–2020: 627.5 mm; central 63,000 L, range 35,000–140,000). London is a world city and its "rainy" reputation makes a good surprise (about half of New York's rain). |
+| `rhine-day` → **`amazon-day`** | the Rhine at the Dutch border | the **Amazon** into the Atlantic: about 206,000 m³/s (Callède et al. 2010) → central 1.8 × 10¹⁰ m³/day; model at the Óbidos narrows (width 2,300 m, depth 45 m, speed 2.0 m/s, illustrative). |
+| `solar-panel` | 1 m² in Germany (DWD irradiation) | reframed to **the world average of new solar farms**: rated sunlight 1,000 W/m² × efficiency 0.21 × capacity factor 0.16 (IRENA 2023: 16.2 %) × 8,760 h → 290 kWh/year. |
+| `city-water` → **`teachers-city`** | tap water of a German city | **teachers for a city of one million**: share of 6–17-year-olds 0.14 (OECD 0–14 share 17 %, world 25 %) ÷ 14 pupils per teacher (OECD Education at a Glance 2024) → 10,000. |
+| `airliner-fuel` | Frankfurt–New York | **London–New York** (great circle LHR–JFK ≈ 5,540 km, computed from the airport coordinates) → 50,000 L. |
+| `piano-tuners` | household size from Germany (2.0) | household size 2.5 with a world range of 2–5 (UN DESA household size data), 800 tunings per tuner a year → 25 tuners. |
+
+All other tasks were already place-neutral or worldwide. § 11.2 is superseded by this table.
+
+### 18.2 Implementation decisions and deviations
+
+- **Parsed values in the state.** `FactorState` also stores `value` (the number as parsed in the UI locale), so the rules stay locale-free and a save opened in another UI language computes the same product. The estimate keeps only `draft`/`draftExp` as designed (it is parsed again on render).
+- **No hand-edited final answer.** The model step ends with "Use my model’s result" (only when complete and the units match) or "Keep my first guess"; a different answer is reached by editing the model. One honest number per path, fewer controls on a phone.
+- **Factor names are shared across tasks** (`content/<locale>.ts` has one `factors` dictionary keyed by factor id plus `tasks[id] = { title, question, explain }`). Ids such as `lifetime`, `worldPopulation`, `secondsPerDay` mean the same everywhere, which cut the translation volume by about a third.
+- **Citations are not translated.** A source line is "factor name: source type — citation (link)". The factor name and the source type (`cited`, `standard`, `assumption`, `approximate`, `derived`) are translated; the citation itself is bibliographic data (author, title, publisher, figure) and stays in its original language (`lang="en"`), like a reference list.
+- **Units:** count words have a per-unit form (`u.grain`, "g/grain") and a count form (`n.grain`, "40,000 grains"); `day` and `year` also have a count form ("160 days"). SI symbols are never translated. Free rows start with the dimensionless unit.
+- **Scale bar zoomed to the values.** The review's axis spans the values shown (answer, first guess, reference, range) with at least four decades, not the slider's ten-decade window, so markers stay readable at 360 px; marker names are an HTML legend below the SVG instead of SVG labels. The tornado chart uses its own relative axis (at least half a decade) so bar widths compare well.
+- **Comparison cards:** given factors show only their value; unfilled guided rows count as "no model" (the reference model is shown instead). Ranges with `low = high` are not printed.
+- **Selection fill-up** goes through all levels in order of distance (easy 1→2→3, medium 2→1→3, hard 3→2→1), because *space* has only two level-1 and two level-2 tasks.
+- **Tips** in the summary: `cube` (a task with a squared or cubed factor answered more than ×10 off), else `low`/`high` (bias beyond ×1.25), else `model` (fewer than two models), else `general`.
+- Not built from § 14: none; the view tests cover en, de, ar and ja as planned. The optional shared changes of § 1.3 were not needed.
