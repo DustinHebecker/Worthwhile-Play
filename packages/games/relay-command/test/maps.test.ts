@@ -103,6 +103,21 @@ describe('map editor: editing', () => {
     expect(isValidMap(small)).toBe(true);
   });
 
+  it('towers in the editor (owner decision 2026-10-16): placed like any structure, start finished, and the map code is append-only so older codes read the same', () => {
+    // The kinds before the towers keep their index in the map code (codes made before the towers decode unchanged).
+    expect(MAP_KINDS.slice(0, 14)).toEqual(['command-post', 'muster', 'motor-pool', 'extractor', 'relay-mast', 'rifles', 'lancer', 'outrider', 'warden', 'howitzer', 'mast-truck', 'field-post', 'jammer', 'tracer']);
+    expect(MAP_KINDS.slice(14)).toEqual(['tower-gun', 'tower-artillery', 'tower-laser', 'tower-emp']);
+    let m = blankMap(12, 8);
+    m = applyTool(m, { type: 'unit', kind: 'command-post', side: 0 }, 1, 1, true);
+    for (const [i, kind] of (['tower-gun', 'tower-artillery', 'tower-laser', 'tower-emp'] as const).entries()) m = applyTool(m, { type: 'unit', kind, side: 0 }, 3 + i, 2, true);
+    expect(m.units.filter((u) => u.kind.startsWith('tower-'))).toHaveLength(8); // mirrored
+    expect(decodeMap(encodeMap(m))).toEqual(m);
+    expect(mapIssues(m)).toEqual([]);
+    const towers = toScenario(m).entities.filter((e) => e.kind.startsWith('tower-'));
+    expect(towers).toHaveLength(8);
+    expect(towers.every((e) => !('build' in e) || !e.build)).toBe(true); // no construction: they stand from turn 1
+  });
+
   it('deposit sizes: plain, rich, endless; the tool sets the size of a deposit already there; fairness, codes and scenarios carry it', () => {
     let m = blankMap(12, 8);
     m = applyTool(m, { type: 'deposit' }, 2, 3, true);

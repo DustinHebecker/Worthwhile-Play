@@ -787,7 +787,8 @@ function economyOrders(obs: Observation, ruleset: Ruleset, own: readonly Entity[
       if (near.length < TOWER_THREATS[difficulty] || defenders >= near.length || towers().some((t) => dist2(t.x, t.y, asset.x, asset.y) <= TOWER_GUARD * TOWER_GUARD)) continue;
       const kind = 'tower-gun';
       if (supply < costOf(kind)) continue;
-      const spot = towerSpot(obs, ruleset, asset, near);
+      const planned = commands.flatMap((c) => (c.order.type === 'build' ? [{ x: c.order.x, y: c.order.y }] : []));
+      const spot = towerSpot(obs, ruleset, asset, near, planned);
       if (spot) tryOrder({ side, unit: source.id, order: { type: 'build', kind, x: spot.x, y: spot.y } });
     }
   }
@@ -862,12 +863,14 @@ function buildSpot(obs: Observation, ruleset: Ruleset, source: Entity, kind: str
  * and never where it would lengthen the ground route from the own post to an enemy post: a tower in a
  * pass walls in the side's own army (found on Ridge Valley: a tower in the valley's pass stalled every storm).
  */
-function towerSpot(obs: Observation, ruleset: Ruleset, asset: Entity, threats: readonly Entity[]): { x: number; y: number } | undefined {
+function towerSpot(obs: Observation, ruleset: Ruleset, asset: Entity, threats: readonly Entity[], planned: readonly { x: number; y: number }[] = []): { x: number; y: number } | undefined {
   const { world, side, network } = obs;
-  const taken = new Set(world.entities.map((e) => cellOf(world.map, e.x, e.y)));
+  // Sites ordered earlier in this plan stand there too (two towers in one turn must not close a pass between them).
+  const sites = planned.map((p) => cellOf(world.map, p.x, p.y));
+  const taken = new Set([...world.entities.map((e) => cellOf(world.map, e.x, e.y)), ...sites]);
   const home = world.entities.find((e) => e.side === side && e.kind === 'command-post');
   const goals = targetPosts(obs).map((p) => cellOf(world.map, p.x, p.y));
-  const structures = new Set(world.entities.filter((e) => archetypeOf(ruleset, e.kind)?.speed === 0).map((e) => cellOf(world.map, e.x, e.y)));
+  const structures = new Set([...world.entities.filter((e) => archetypeOf(ruleset, e.kind)?.speed === 0).map((e) => cellOf(world.map, e.x, e.y)), ...sites]);
   const route = (extra?: number): number => {
     if (!home || goals.length === 0) return 0;
     const blocked = new Set(structures);

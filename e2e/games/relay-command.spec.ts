@@ -294,8 +294,17 @@ test('relay-command: the Command Post places a Gun Tower on a phone; it is paid 
   await start(page);
   const s = (await saved(page))!;
   const post = s.world.entities.find((e) => e.side === 0 && e.kind === 'command-post')!;
-  await page.getByTestId(`rc-unit-${post.id}`).click();
-  for (const kind of ['tower-gun', 'tower-artillery', 'tower-laser', 'tower-emp']) await expect(page.getByTestId(`rc-job-${kind}`)).toBeVisible();
+  // Wait for the post to be selected and its build sheet to be drawn before looking for the tiles (review of PR #55:
+  // under load the tiles were looked for before the selection had rendered).
+  const unit = page.getByTestId(`rc-unit-${post.id}`);
+  await expect(unit).toBeVisible();
+  await unit.click();
+  await expect(page.getByTestId('rc-selection-text')).toContainText('Place structures below');
+  for (const kind of ['tower-gun', 'tower-artillery', 'tower-laser', 'tower-emp']) {
+    const tile = page.getByTestId(`rc-job-${kind}`);
+    await tile.scrollIntoViewIfNeeded();
+    await expect(tile).toBeVisible();
+  }
   await expect(page.getByTestId('rc-job-tower-gun')).toHaveAttribute('aria-label', 'Gun Tower · 90 Supply · build time (turns): 2');
   await page.getByTestId('rc-job-tower-gun').click();
   const map = page.getByTestId('rc-map');

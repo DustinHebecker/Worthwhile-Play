@@ -49,18 +49,21 @@ describe('opponent levels (I5)', () => {
     }
     return s;
   }
-  /** Wins of `a` and of `b` over `n` openings, each played from both sides of the map (24 turns). */
+  /**
+   * Wins of `a` and of `b` over `n` different openings (24 turns), `a` on the player's side for even
+   * seeds and on the opponent's for odd ones. One game per opening: the maps are point-symmetric and
+   * the AI deterministic, so the same opening played from the other side is its exact mirror image
+   * and adds no information (review of PR #55: the former "2 x 6" pairs were 6 samples).
+   */
   function margin(spec: ScenarioSpec, a: Difficulty, b: Difficulty, n: number, pairs: number, reach: number): { a: number; b: number; draws: number } {
     const out = { a: 0, b: 0, draws: 0 };
     for (let seed = 0; seed < n; seed++) {
-      for (const [r, win, loss] of [
-        [play(opening(spec, seed, pairs, reach, 24, b), a).result, 'won', 'lost'],
-        [play(opening(spec, seed, pairs, reach, 24, a), b).result, 'lost', 'won']
-      ] as const) {
-        if (r === win) out.a++;
-        else if (r === loss) out.b++;
-        else out.draws++;
-      }
+      const aIsPlayer = seed % 2 === 0;
+      const r = aIsPlayer ? play(opening(spec, seed, pairs, reach, 24, b), a).result : play(opening(spec, seed, pairs, reach, 24, a), b).result;
+      const [win, loss] = aIsPlayer ? ['won', 'lost'] : ['lost', 'won'];
+      if (r === win) out.a++;
+      else if (r === loss) out.b++;
+      else out.draws++;
     }
     return out;
   }
@@ -78,27 +81,30 @@ describe('opponent levels (I5)', () => {
 
   it('normal and hard beat easy by a clear margin over randomised openings on Field Exercise and Ridge Valley', () => {
     for (const spec of MARGIN_MAPS) {
-      const hard = margin(spec, 'hard', 'easy', 10, 2, 2);
-      const normal = margin(spec, 'normal', 'easy', 10, 2, 2);
-      expect(hard.a, `${spec.id} hard vs easy ${JSON.stringify(hard)}`).toBeGreaterThanOrEqual(hard.b + 8);
-      expect(normal.a, `${spec.id} normal vs easy ${JSON.stringify(normal)}`).toBeGreaterThanOrEqual(normal.b + 8);
+      const hard = margin(spec, 'hard', 'easy', 20, 2, 2);
+      const normal = margin(spec, 'normal', 'easy', 20, 2, 2);
+      // 20 openings each (measured 2026-10-17: 20-0 for both levels on both maps).
+      expect(hard.a, `${spec.id} hard vs easy ${JSON.stringify(hard)}`).toBeGreaterThanOrEqual(hard.b + 16);
+      expect(normal.a, `${spec.id} normal vs easy ${JSON.stringify(normal)}`).toBeGreaterThanOrEqual(normal.b + 16);
     }
   }, 600_000); // 2 maps x 2 levels x 20 AI-vs-AI games of 24 turns: 154 s under coverage on a loaded 4-core machine (2026-10-14), kept under half of this
 
-  it('hard beats normal on Field Exercise by at least 4 games; over Field Exercise and Ridge Valley it wins at least as often as it loses', () => {
+  it('hard beats normal on Field Exercise by at least 4 games and on Ridge Valley; over both by at least 4', () => {
     // The two share the plan of attack; hard adds breadth, focus fire, pulling back and jamming.
     // Measured since PR #13 (escorts yield in passes; storms find a way past held rings):
-    // Field Exercise 8-4, Ridge Valley 6-6 over 2x6 openings, so no ordering is claimed for Ridge Valley.
-    // With defence towers (2026-10-16): Field Exercise 8-4, Ridge Valley 4-8 (12-12 over both maps).
+    // Field Exercise 8-4, Ridge Valley 6-6 over 2x6 openings (mirror pairs: 6 samples each).
+    // With defence towers, over 12 different openings (2026-10-17): Field Exercise 8-4, Ridge Valley 7-5;
+    // over 30 openings Field Exercise 22-8 and Ridge Valley 20-10 (without towers 23-7 and 20-10).
     const total = { a: 0, b: 0, draws: 0 };
     for (const spec of MARGIN_MAPS) {
-      const r = margin(spec, 'hard', 'normal', 6, 2, 2);
+      const r = margin(spec, 'hard', 'normal', 12, 2, 2);
       total.a += r.a;
       total.b += r.b;
       total.draws += r.draws;
       if (spec === FIELD_EXERCISE) expect(r.a, `${spec.id} hard vs normal ${JSON.stringify(r)}`).toBeGreaterThanOrEqual(r.b + 4);
+      else expect(r.a, `${spec.id} hard vs normal ${JSON.stringify(r)}`).toBeGreaterThan(r.b);
     }
-    expect(total.a, `hard vs normal over both margin maps ${JSON.stringify(total)}`).toBeGreaterThanOrEqual(total.b);
+    expect(total.a, `hard vs normal over both margin maps ${JSON.stringify(total)}`).toBeGreaterThanOrEqual(total.b + 4);
   }, 300_000);
 
   /** Random player moves in a resolved first turn (the reviewer's "mild opening"), then nothing. */
