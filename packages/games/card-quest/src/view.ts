@@ -1,5 +1,4 @@
 import type { GameContext, GameInstance, GameResult, NewGameOptions } from '@wp/game-core';
-import { isOneOf } from '@wp/game-core';
 import { announce, clear, h } from '@wp/ui';
 import { pictogram } from './art';
 import { illustration } from './illustrations';
@@ -7,19 +6,13 @@ import { baseId, type MonsterCard } from './cards';
 import { cardBlunder, cardFlavour, cardName, cardRules, keyNumber } from './cardtext';
 import { HUMAN, advance, computerToAct } from './driver';
 import {
-  DEFAULT_SETTINGS,
-  DIFFICULTIES,
   FLEE_TARGET,
-  MAX_OPPONENTS,
-  ROUND_LIMITS,
   SELL_RATE,
-  TARGETS,
   actorOf,
   charityTarget,
   fightTotals,
   fleeBonus,
   heroParts,
-  isValidSettings,
   legalActions,
   monsterLoot,
   monsterStrength,
@@ -35,17 +28,15 @@ import {
   type Player,
   type Settings
 } from './rules';
+import { COACH_PREFERENCE, OLD_SETUP_PREFERENCE, readSettings } from './settings';
 import { defOf } from './worlds';
 import './styles.css';
-
-/** `context.preferences` key of the last setup (opponents, target, round limit, coach). */
-export const SETUP_PREFERENCE = 'setup';
 
 type Mode = 'play' | 'sell' | 'give';
 
 export function createCardQuest(context: GameContext): GameInstance<CardQuestState> {
   const { t, root } = context;
-  let state: CardQuestState = newGame(0, initialSettings(undefined));
+  let state: CardQuestState = started(0, readSettings(undefined));
   let selected: string | null = null;
   let mode: Mode = 'play';
   const picked = new Set<string>();
@@ -55,12 +46,15 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
   const main = h('div', { class: 'cq', 'data-testid': 'card-quest' });
   root.append(main, live);
 
-  function initialSettings(difficulty: string | undefined): Settings {
-    const saved = context.preferences?.get(SETUP_PREFERENCE);
-    const base: Settings = { ...DEFAULT_SETTINGS, worlds: [...DEFAULT_SETTINGS.worlds] };
-    const merged = { ...base, ...(typeof saved === 'object' && saved !== null ? saved : {}), worlds: base.worlds };
-    const settings = isValidSettings(merged) ? merged : base;
-    return { ...settings, difficulty: isOneOf(difficulty, DIFFICULTIES) ? difficulty : settings.difficulty };
+  /** Whether new games show coach tips: the in-game switch, else what the old setup remembered, else on. */
+  function coachPreference(): boolean {
+    const own = context.preferences?.get(COACH_PREFERENCE);
+    return typeof own === 'boolean' ? own : readSettings(context.preferences?.get(OLD_SETUP_PREFERENCE)).coach;
+  }
+
+  /** Deals a new game with the start-screen settings (ADR 0017); computer players who start move at once. */
+  function started(seed: number, settings: Settings): CardQuestState {
+    return advance(step(newGame(seed, settings), HUMAN, { a: 'start', settings })!);
   }
 
   /* ---------------------------------------------------------------- names */
@@ -102,8 +96,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
 
   function nextText(): string {
     switch (state.phase) {
-      case 'setup':
-        return t('setup.title');
+      case 'setup': // Unreachable: the view deals at once (ADR 0017); kept for the type.
       case 'prepare':
         return t('next.prepare');
       case 'after':
@@ -267,8 +260,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     // Phase and seat on turn, for tests and styling (public information only).
     main.dataset.phase = state.phase;
     main.dataset.active = String(state.active);
-    if (state.phase === 'setup') main.append(renderSetup());
-    else main.append(...renderPlay());
+    main.append(...renderPlay());
     if (!focusKey) return;
     // Keep focus on the same control; if it is gone (the step moved on), go to the next main action or its text.
     const same = main.querySelector<HTMLElement>(`[data-key="${CSS.escape(focusKey)}"]`);
@@ -322,49 +314,6 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       label
     );
 
-  /* ---------------------------------------------------------------- setup screen */
-
-  function renderSetup(): HTMLElement {
-    const s = state.settings;
-    const set = (patch: Partial<Settings>) => {
-      const settings = { ...state.settings, ...patch, worlds: [...state.settings.worlds] };
-      context.preferences?.set(SETUP_PREFERENCE, { opponents: settings.opponents, target: settings.target, roundLimit: settings.roundLimit, coach: settings.coach });
-      state = newGame(state.seed, settings);
-      context.requestSave();
-      render();
-    };
-    const select = (id: string, label: string, values: readonly number[], text: (v: number) => string, value: number, onChange: (v: number) => void) => {
-      const el = h('select', { id: `cq-${id}`, 'data-testid': `setup-${id}`, 'data-key': `setup-${id}`, onchange: () => onChange(Number(el.value)) });
-      for (const v of values) el.append(h('option', { value: String(v), selected: v === value }, text(v)));
-      return h('div', { class: 'cq-field' }, h('label', { for: `cq-${id}` }, label), el);
-    };
-    const coach = h('input', { type: 'checkbox', id: 'cq-coach', 'data-testid': 'setup-coach', 'data-key': 'setup-coach', checked: s.coach, onchange: () => set({ coach: coach.checked }) });
-    const opponents = Array.from({ length: MAX_OPPONENTS }, (_, i) => i + 1);
-    return h(
-      'section',
-      { class: 'cq-setup wp-stack', 'aria-labelledby': 'cq-setup-title' },
-      h('h2', { id: 'cq-setup-title' }, t('setup.title')),
-      h(
-        'fieldset',
-        { class: 'cq-worlds' },
-        h('legend', {}, t('setup.worlds')),
-        h('label', { class: 'cq-check' }, h('input', { type: 'checkbox', checked: true, disabled: true }), h('span', {}, t('world.kz'))),
-        h('p', { class: 'cq-muted' }, t('setup.moreWorlds'))
-      ),
-      select('opponents', t('setup.opponents'), opponents, String, s.opponents, (v) => set({ opponents: v })),
-      select('target', t('setup.target'), TARGETS, (v) => t('setup.targetLevel', { n: v }), s.target, (v) => {
-        if (isOneOf(v, TARGETS)) set({ target: v });
-      }),
-      select('roundLimit', t('setup.roundLimit'), ROUND_LIMITS, (v) => (v === 0 ? t('setup.roundLimit.off') : t('setup.roundLimit.n', { n: v })), s.roundLimit, (v) => {
-        if (isOneOf(v, ROUND_LIMITS)) set({ roundLimit: v });
-      }),
-      h('p', { class: 'cq-muted' }, t('setup.roundLimit.hint')),
-      h('label', { class: 'cq-check', for: 'cq-coach' }, coach, h('span', {}, t('setup.coach'))),
-      button(t('setup.start'), () => act({ a: 'start', settings: state.settings }), { primary: true, testid: 'start' }),
-      h('p', { class: 'cq-muted' }, t('setup.note'))
-    );
-  }
-
   /* ---------------------------------------------------------------- play screen */
 
   function renderPlay(): HTMLElement[] {
@@ -391,6 +340,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     out.push(renderHand());
     out.push(renderMine());
     out.push(renderLog());
+    out.push(renderCoachToggle());
     return out;
   }
 
@@ -738,11 +688,29 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     return h('details', { class: 'cq-log', 'data-testid': 'log' }, h('summary', {}, t('log.title')), h('ul', {}, ...events.map((e) => h('li', {}, eventText(e)))));
   }
 
+  /** Coach tips are a display preference (ADR 0017): switchable during play, remembered for the next games. */
+  function renderCoachToggle(): HTMLElement {
+    const box = h('input', {
+      type: 'checkbox',
+      id: 'cq-coach',
+      'data-testid': 'coach',
+      'data-key': 'coach',
+      checked: state.settings.coach,
+      onchange: () => {
+        state = { ...state, settings: { ...state.settings, worlds: [...state.settings.worlds], coach: box.checked } };
+        context.preferences?.set(COACH_PREFERENCE, box.checked);
+        context.requestSave();
+        render();
+      }
+    });
+    return h('label', { class: 'cq-check', for: 'cq-coach' }, box, h('span', {}, t('setup.coach')));
+  }
+
   /* ---------------------------------------------------------------- instance */
 
   return {
     newGame(options: NewGameOptions) {
-      state = newGame(options.seed, initialSettings(options.difficulty));
+      state = started(options.seed, { ...readSettings(options.settings, options.difficulty), coach: coachPreference() });
       selected = null;
       mode = 'play';
       picked.clear();
@@ -750,12 +718,14 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       render();
     },
     restore(saved) {
-      state = saved;
+      // Saves from before the start screen (ADR 0017) may still be in the game's own setup: deal with its settings.
+      state = saved.phase === 'setup' ? started(saved.seed, saved.settings) : saved;
       selected = null;
       mode = 'play';
       picked.clear();
       finishedSent = state.phase === 'over';
       render();
+      if (saved.phase === 'setup') context.requestSave();
       // Saves are written after the computer players moved; an older save may still owe their moves.
       if (computerToAct(state)) {
         state = advance(state);
@@ -768,7 +738,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     pause() {},
     resume() {},
     reset() {
-      state = newGame(state.seed, { ...state.settings, worlds: [...state.settings.worlds] });
+      state = started(state.seed, { ...state.settings, worlds: [...state.settings.worlds] });
       selected = null;
       mode = 'play';
       picked.clear();

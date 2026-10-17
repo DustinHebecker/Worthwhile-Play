@@ -4,7 +4,7 @@ import { createTestContext } from '@wp/testing';
 import type { GameModule } from '@wp/game-core';
 import game, { type CardQuestState } from '../src/index';
 import { createRngFromState } from '@wp/game-core';
-import { isValidState, step } from '../src/rules';
+import { DEFAULT_SETTINGS, isValidState, newGame, step } from '../src/rules';
 import { arranged, take } from './harness';
 import { en } from '../src/content/en';
 
@@ -26,7 +26,7 @@ function clickThrough(root: HTMLElement, instance: { serialize(): CardQuestState
       q(root, 'end')!.click();
       continue;
     }
-    const next = ['start', 'open', 'rummage', 'pass', 'roll', 'end'].map((id) => q(root, id)).find((b) => b && !b.disabled);
+    const next = ['open', 'rummage', 'pass', 'roll', 'end'].map((id) => q(root, id)).find((b) => b && !b.disabled);
     if (!next) throw new Error(`no action button in phase ${state.phase}`);
     next.click();
   }
@@ -212,14 +212,93 @@ describe('view', () => {
   it('keeps the keyboard focus inside the game after a main action', () => {
     const ctx = createTestContext(game as GameModule<unknown>, 'en');
     const instance = game.create(ctx.context as never);
-    instance.newGame({ seed: 5 });
-    const startButton = q(ctx.context.root, 'start')!;
-    startButton.focus();
-    startButton.click();
-    const focused = document.activeElement as HTMLElement;
-    expect(ctx.context.root.contains(focused)).toBe(true);
-    expect(focused.matches('button.primary, .cq-next-text')).toBe(true);
-    instance.dispose();
+    for (let seed = 1; seed < 50; seed++) {
+      instance.newGame({ seed });
+      const main = ['open', 'rummage', 'pass', 'roll', 'end'].map((id) => q(ctx.context.root, id)).find((b) => b && !b.disabled);
+      if (!main) continue;
+      main.focus();
+      main.click();
+      const focused = document.activeElement as HTMLElement;
+      expect(ctx.context.root.contains(focused)).toBe(true);
+      expect(focused.matches('button.primary, .cq-next-text')).toBe(true);
+      instance.dispose();
+      return;
+    }
+    throw new Error('no seed with a main action for the person');
+  });
+
+  describe('start screen (ADR 0017)', () => {
+    it('a new game starts at once with the chosen settings, no setup of its own', () => {
+      const ctx = createTestContext(game as GameModule<unknown>, 'en');
+      const instance = game.create(ctx.context as never);
+      instance.newGame({ seed: 4, difficulty: 'sharp', settings: { opponents: 5, target: 6, roundLimit: 20 } });
+      const s = instance.serialize();
+      expect(s.phase).not.toBe('setup');
+      expect(s.players).toHaveLength(6);
+      expect(s.settings).toMatchObject({ difficulty: 'sharp', opponents: 5, target: 6, roundLimit: 20, coach: true });
+      expect(game.settingsOf!(s)).toEqual({ difficulty: 'sharp', opponents: 5, target: 6, roundLimit: 20 });
+      expect(q(ctx.context.root, 'start')).toBeNull();
+      expect(q(ctx.context.root, 'setup-opponents')).toBeNull();
+      instance.dispose();
+    });
+
+    it('junk settings fall back to the defaults', () => {
+      const ctx = createTestContext(game as GameModule<unknown>, 'en');
+      const instance = game.create(ctx.context as never);
+      instance.newGame({ seed: 4, difficulty: 'godlike', settings: { opponents: 9, target: 7, roundLimit: 'x', coach: 'yes' } as never });
+      expect(instance.serialize().settings).toMatchObject({ difficulty: 'normal', opponents: 3, target: 10, roundLimit: 0, coach: true });
+      instance.dispose();
+    });
+
+    it('a save from before the start screen that is still in the setup is dealt with its settings', () => {
+      const ctx = createTestContext(game as GameModule<unknown>, 'en');
+      const instance = game.create(ctx.context as never);
+      const old = newGame(8, { ...DEFAULT_SETTINGS, opponents: 2, target: 8 });
+      instance.restore(old);
+      const s = instance.serialize();
+      expect(s.phase).not.toBe('setup');
+      expect(s.players).toHaveLength(3);
+      expect(s.settings.target).toBe(8);
+      expect(isValidState(s)).toBe(true);
+      expect(ctx.saveRequests()).toBeGreaterThan(0);
+      // Restoring the same old save again deals the very same game.
+      const again = game.create(createTestContext(game as GameModule<unknown>, 'en').context as never);
+      again.restore(old);
+      expect(again.serialize()).toEqual(s);
+      again.dispose();
+      instance.dispose();
+    });
+
+    it('coach tips are switched during play without ending the game, and new games remember it', () => {
+      const ctx = createTestContext(game as GameModule<unknown>, 'en');
+      const instance = game.create(ctx.context as never);
+      let found = false;
+      for (let seed = 1; seed < 60 && !found; seed++) {
+        instance.newGame({ seed });
+        found = q(ctx.context.root, 'hint') !== null;
+      }
+      expect(found).toBe(true);
+      const before = instance.serialize();
+      const box = ctx.context.root.querySelector<HTMLInputElement>('[data-testid="coach"]')!;
+      expect(box.checked).toBe(true);
+      box.checked = false;
+      box.dispatchEvent(new Event('change'));
+      const after = instance.serialize();
+      expect(q(ctx.context.root, 'hint')).toBeNull();
+      expect(after.settings.coach).toBe(false);
+      expect({ ...after, settings: before.settings }).toEqual(before);
+      expect(isValidState(after)).toBe(true);
+      instance.newGame({ seed: 3 });
+      expect(instance.serialize().settings.coach).toBe(false);
+      instance.dispose();
+    });
+
+    it('declares its settings with the setup older versions remembered as defaults', () => {
+      const specs = typeof game.settings === 'function' ? game.settings({ preferences: { get: () => ({ opponents: 5, target: 12, roundLimit: 30, coach: false }), set: () => undefined } } as never) : game.settings!;
+      const defaults = Object.fromEntries(specs.map((sp) => [sp.kind === 'difficulty' ? 'difficulty' : sp.id, sp.default]));
+      expect(defaults).toEqual({ difficulty: 'normal', opponents: 5, target: 12, roundLimit: 30 });
+      expect(game.metadata.setupInGame).toBeUndefined();
+    });
   });
 
   it('equips an item from the card detail', () => {
@@ -227,7 +306,6 @@ describe('view', () => {
     const instance = game.create(ctx.context as never);
     for (let seed = 1; seed < 50; seed++) {
       instance.newGame({ seed });
-      q(ctx.context.root, 'start')!.click();
       const s = instance.serialize();
       if (s.active !== 0 || s.phase !== 'prepare') continue;
       const item = ctx.context.root.querySelector<HTMLButtonElement>('[data-testid="hand"] .cq-tile[data-type="item"]');

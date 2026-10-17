@@ -8,7 +8,7 @@ Scope:
 - `e2e/games/card-quest.spec.ts`.
 - No shared package is needed for the MVP (§ 7.4 lists what might later be requested from the orchestrator).
 
-Binding inputs: implementation brief ("Core product principles", "Universal resumability", "Intellectual-property rule", "Determinism", "Localization", "Accessibility", "Testing philosophy", "Definition of Done"); ADR 0002 (contract), 0006 (roles), 0011 (per-locale content), 0015 (`setupInGame`), 0016 (`@wp/cards`, visual language only).
+Binding inputs: implementation brief ("Core product principles", "Universal resumability", "Intellectual-property rule", "Determinism", "Localization", "Accessibility", "Testing philosophy", "Definition of Done"); ADR 0002 (contract), 0006 (roles), 0011 (per-locale content), 0015 (`setupInGame`, superseded here by 0017), 0016 (`@wp/cards`, visual language only), 0017 (host start screen).
 
 **IP rule.** The genre reference is a well-known commercial humorous card game whose name is a trademark and whose card texts and art are copyrighted. We take **only general, unprotectable mechanics**: characters gain levels, revealing an encounter card, fighting monsters by comparing numbers, items in body slots, cards that modify monsters and items, curses, creature kinds that cards can target, other players helping for a share or interfering. The product never uses the reference's name, worlds, card names, card texts, rules wording, visual style or its characteristic terms (§ 9 lists the terms we avoid and our own vocabulary). Every card name, joke and picture is original.
 
@@ -157,7 +157,7 @@ Steam, schedules and the eternal delay — no real operator, line or brand.
 
 ### 4.7 Mixing rules
 
-1. A game uses **any number of worlds** (setup screen; one by default). Their encounter cards form one encounter pile and their loot cards one loot pile. Every world has the same composition (§ 6.1), so the ratios and the game length stay the same.
+1. A game uses **any number of worlds** (start screen from K3 on; one by default). Their encounter cards form one encounter pile and their loot cards one loot pile. Every world has the same composition (§ 6.1), so the ratios and the game length stay the same.
 2. Cross-world effects run only through the shared vocabulary (§ 3).
 3. **Patchwork Ancestry** (loot, one per world) allows two origins at once — the "Android Garden Gnome" is the mixing joke; **Second Job** allows two professions.
 4. **Mixing jokes** that only matter in mixed games are optional extras (e.g. "Worm Hole" pulls a card from another world's discard pile).
@@ -173,7 +173,7 @@ K1 Kampfzwerge → first play-tests → K3 Spaceloot (mixing) → then, one per 
 
 ### 5.1 Setup and goal
 
-- **2–6 players**: one person plus **1–5 computer players**. Setup screen inside the game (`setupInGame`, ADR 0015): worlds, number and personalities of opponents (random or chosen), target level, optional round limit. Every choice has a sensible default, so "Play" is one tap.
+- **2–6 players**: one person plus **1–5 computer players**. Since ADR 0017 the setup lives on the host's start screen (declared `settings`, no own setup phase any more): difficulty, number of computer players, target level, optional round limit. Coach tips are a display preference, switched in the game (remembered for new games). Every choice has a sensible default, so "Start" is one tap; the defaults follow what older versions remembered (`setup` preference). World choice joins the start screen with the second world (K3). Old saves still in the setup phase are dealt with their settings on restore.
 - Everyone starts at **level 1** with 4 encounter and 4 loot cards.
 - **Win: reach the target level** — default **10**, selectable 6 / 8 / 10 / 12. The **winning level must come from defeating a monster** (not from selling or one-shots).
 - **Round limit: optional**, off by default (choices: off / 20 / 30 / 40). When on, after the last round the highest level wins (ties shared).
