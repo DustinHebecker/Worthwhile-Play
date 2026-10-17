@@ -697,7 +697,11 @@ describe('information model (I3c, D7)', () => {
       s = lockTurn(s);
       const all = resolveTurn(before.world, RULESET, s.log.at(-1)!.plans).events;
       expect(all.length).toBeGreaterThanOrEqual(s.events.length);
-      for (const ev of s.events) expect(all).toContainEqual(ev);
+      // Every event happened, except muzzle flashes (reports only): those name a real unit of another side.
+      for (const ev of s.events) {
+        if (ev.t === 'flash') expect(s.world.entities.find((e) => e.id === ev.id)?.side).not.toBe(PLAYER);
+        else expect(all).toContainEqual(ev);
+      }
       // No movement of an enemy the player cannot see is reported.
       const seen = new Set((s.world.intel?.[PLAYER] ?? []).filter((r) => r.live).map((r) => r.id));
       const lastMoves = s.events.filter((e) => e.t === 'move' && e.tick === s.world.tick && unitById(s, e.id)?.side === OPPONENT);

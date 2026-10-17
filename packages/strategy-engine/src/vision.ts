@@ -71,15 +71,11 @@ function updatedReports(
   previous: readonly Report[],
   gone: readonly Entity[],
   knownLoss: (e: Entity) => boolean = () => false,
-  revealed: ReadonlySet<number> = new Set(),
-  flashed: ReadonlySet<number> = new Set()
+  revealed: ReadonlySet<number> = new Set()
 ): Report[] {
   const seen = (x: number, y: number): boolean => observed[cellOf(world.map, x, y)] === 1;
   const next = new Map<number, Report>();
   for (const e of world.entities) if (seen(e.x, e.y) || revealed.has(e.id)) next.set(e.id, reportOf(e, world.tick));
-  // Muzzle flash: an enemy that fired at one of the side's units this tick is placed where it fired
-  // from, but not observed (a last-known position, like a ghost; it is not followed afterwards).
-  for (const e of world.entities) if (flashed.has(e.id) && !next.has(e.id)) next.set(e.id, { ...reportOf(e, world.tick), live: false });
   const goneAt = new Map(gone.map((e) => [e.id, e]));
   const alive = new Set(world.entities.map((e) => e.id));
   for (const r of previous) {
@@ -163,7 +159,7 @@ export function updateIntel(world: World, ruleset: Ruleset, gone: readonly Entit
     const knownLoss = (e: Entity): boolean => e.side === side && (archetypeOf(ruleset, e.kind)?.comms?.role === 'source' || events?.some((ev, i) => i >= from && ev.t === 'sold' && ev.id === e.id) === true);
     const previous = world.intel?.[side] ?? [];
     const seenCell = (x: number, y: number): boolean => observed[cellOf(world.map, x, y)] === 1;
-    const reports = updatedReports(world, side, observed, previous, gone, knownLoss, revealedEmitters(world, ruleset, side, network), muzzleFlashes(world, ruleset, side, gone, events, from, network));
+    const reports = updatedReports(world, side, observed, previous, gone, knownLoss, revealedEmitters(world, ruleset, side, network));
     intel.push(reports);
     const list = reported?.[side];
     if (!events || !list) continue;
@@ -207,6 +203,11 @@ export function updateIntel(world: World, ruleset: Ruleset, gone: readonly Entit
       // A shot names its target (or the target's cell): with three or more sides an observer that
       // sees the shooter must not learn of a third side's unit it does not see (review of PR #21).
       if ((eventVisible(ev, live, seen, side, own) && shotKnown(ev)) || knownAnyway) list.push(ev.t === 'sold' && ev.side !== side ? { t: 'sold', tick: ev.tick, id: ev.id, side: ev.side, kind: ev.kind, x: ev.x, y: ev.y } : ev);
+    }
+    // Muzzle flash: shooters the side does not observe that fired at its units this tick (once each).
+    for (const id of muzzleFlashes(world, ruleset, side, gone, events, from, network)) {
+      const shooter = world.entities.find((e) => e.id === id);
+      if (shooter && !live.has(id)) list.push({ t: 'flash', tick: world.tick, id, side: shooter.side, kind: shooter.kind, x: shooter.x, y: shooter.y });
     }
   }
   world.intel = intel;

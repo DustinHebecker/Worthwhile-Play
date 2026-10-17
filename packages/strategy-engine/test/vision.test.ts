@@ -209,7 +209,14 @@ describe('vision properties', () => {
             // By content: another side's copy of a sale carries no refund (the seller's Supply is its own business).
             const truth = r.events.map((ev) => (ev.t === 'sold' && ev.side !== side ? JSON.stringify({ ...ev, refund: undefined }) : JSON.stringify(ev)));
             // `missing` exists in reports only (an own unit found lost long after it died unseen).
-            for (const ev of r.reported?.[side] ?? []) if (ev.t !== 'missing') expect(truth).toContain(JSON.stringify(ev));
+            for (const ev of r.reported?.[side] ?? []) if (ev.t !== 'missing' && ev.t !== 'flash') expect(truth).toContain(JSON.stringify(ev));
+            // A `flash` names a hostile unit that exists, stands where it says and the side does not observe.
+            for (const ev of r.reported?.[side] ?? []) {
+              if (ev.t !== 'flash') continue;
+              expect(r.world.entities.find((e) => e.id === ev.id)).toMatchObject({ side: ev.side, kind: ev.kind, x: ev.x, y: ev.y });
+              expect(ev.side).not.toBe(side);
+              expect(r.world.intel?.[side]?.some((rep) => rep.id === ev.id && rep.live) ?? false).toBe(false);
+            }
             // A `missing` names an own unit that no longer exists and that the side no longer reports.
             for (const ev of r.reported?.[side] ?? []) {
               if (ev.t !== 'missing') continue;
@@ -453,18 +460,22 @@ describe('muzzle flash (owner decision 2026-10-17)', () => {
       { side: 1, kind: 'command-post', x: 13, y: 0 }
     ]);
 
-  it('a gun out of sight that shells a unit in coverage is placed where it fired from, as a last-known position', () => {
+  it('a gun out of sight that shells a unit in coverage is told by its muzzle flash: kind and firing cell, no report', () => {
     const w = field();
     const gun = w.entities.find((e) => e.kind === 'howitzer')!;
     expect(observedCells(w, rs, 0)[cellOf(w.map, gun.x, gun.y)]).toBe(0);
-    expect(report(w, 0, gun.id)).toBeUndefined();
-    const { world, events } = play(w, 2);
+    const { world, events, reported } = play(w, 2);
     expect(events.some((e) => e.t === 'launch' && e.id === gun.id && e.x === 4)).toBe(true);
-    expect(report(world, 0, gun.id)).toMatchObject({ kind: 'howitzer', side: 1, x: 11, live: false });
-    // The gun's own side learns nothing new from it; the scout that spotted for it stays unknown to side 0.
+    const flashes = reported[0]!.filter((e) => e.t === 'flash');
+    expect(flashes.length).toBeGreaterThan(0);
+    expect(flashes.every((e) => e.t === 'flash' && e.id === gun.id && e.side === 1 && e.kind === 'howitzer' && e.x === 11 && e.y === 0)).toBe(true);
+    // One per shot: never twice in the same tick.
+    expect(new Set(flashes.map((e) => e.tick)).size).toBe(flashes.length);
+    // It is not a sighting: the side's reports and plans are as before (no report of the gun).
+    expect(report(world, 0, gun.id)).toBeUndefined();
+    // The gun's own side is not told of its own shots this way; the scout that spotted for it stays unknown to side 0.
+    expect(reported[1]!.some((e) => e.t === 'flash')).toBe(false);
     expect(report(world, 0, w.entities.find((e) => e.kind === 'outrider')!.id)).toBeUndefined();
-    // The report is a position, not a sighting: the gun is not observed.
-    expect(observedCells(world, rs, 0)[cellOf(world.map, 11, 0)]).toBe(0);
   });
 
   it('a unit out of contact tells nothing: no radio, no report of who fires at it (D7)', () => {
@@ -474,9 +485,9 @@ describe('muzzle flash (owner decision 2026-10-17)', () => {
     const gun = w.entities.find((e) => e.kind === 'howitzer')!;
     gun.x = 12;
     delete w.intel; // reports from the new positions
-    const { world, events } = play(w, 2);
+    const { events, reported } = play(w, 2);
     expect(events.some((e) => e.t === 'launch' && e.id === gun.id)).toBe(true);
-    expect(report(world, 0, gun.id)).toBeUndefined();
+    expect(reported[0]!.some((e) => e.t === 'flash')).toBe(false);
   });
 
   it('the shooter is named only to the side it fired at, and only for shots at its units', () => {

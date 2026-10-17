@@ -42,10 +42,10 @@ const RUNS = { numRuns: 60 };
 // '72b5b82d' from main at 30f9646; 'd1534738' since the generators also draw the doctrine
 // lostContact 'finish' (PR #29 review). With the old generator values ('regroup', 'keep') the
 // current engine still gives '72b5b82d': what is told for the existing doctrines is unchanged.
-// '8c1ae8db' since muzzle flash (owner decision 2026-10-17) deliberately adds reports: a shooter that
-// fires at a side's unit in coverage is placed for that side where it fired from; everything else
-// told is unchanged (checked: with the flash set emptied the engine gives 'd1534738' again).
-const TWO_SIDE_FINGERPRINT = '8c1ae8db';
+// 'da36ff2e' since muzzle flash (owner decision 2026-10-17) deliberately adds `flash` events to the
+// reported lists: a shooter the side does not observe that fires at its unit in coverage; reports and
+// every other event told are unchanged (checked: without the flash events the engine gives 'd1534738').
+const TWO_SIDE_FINGERPRINT = 'da36ff2e';
 const play = (world: World, plans: readonly Command[][], rs = BASE_RULESET): World => plans.reduce((w, plan) => resolveTurn(w, rs, [plan]).world, world);
 
 describe('teams and hostility', () => {
@@ -150,7 +150,10 @@ describe('no leaks between opponents in the events a side is told (review of PR 
     expect(shot).toMatchObject({ x: 6, y: 1 });
     expect(r.reported![0]!.some((e) => e.t === 'launch')).toBe(false);
     expect(observe(r.world, FOG3, 0).world.projectiles).toEqual([]);
-    expect(JSON.stringify(r.reported![0])).not.toContain('"x":6,"y":1');
+    // Nothing tells of the shell; the warden that killed the squad is told by its muzzle flash only
+    // (the squad was reporting when it was hit: owner decision 2026-10-17).
+    expect(JSON.stringify(r.reported![0]!.filter((e) => e.t !== 'flash'))).not.toContain('"x":6,"y":1');
+    expect(r.reported![0]!.filter((e) => e.t === 'flash')).toEqual([{ t: 'flash', tick: 1, id: 3, side: 1, kind: 'warden', x: 6, y: 1 }]);
     // The same shot while the squad survives (the cell observed): told, and the shell is known.
     const seen = structuredClone(w);
     seen.entities[1]!.hp = 40;
@@ -167,8 +170,7 @@ describe('no leaks between opponents in the events a side is told (review of PR 
     // the PR #28 review an own shell towards a cell the side does not observe is no longer told, and
     // since PR #34 no own shot at an enemy the side never had reported; none of these sampled worlds
     // has either, so the fingerprint stood ('d1534738'). Muzzle flash (owner decision 2026-10-17)
-    // deliberately adds reports: a shooter firing at a side's unit in coverage is placed for that side
-    // where it fired from ('8c1ae8db'); every other report is unchanged (see the muzzle flash tests).
+    // deliberately adds `flash` events ('da36ff2e'); everything else told is unchanged.
     let h = 0x811c9dc5;
     const feed = (text: string) => {
       for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193) >>> 0;
