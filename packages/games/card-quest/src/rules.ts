@@ -1464,7 +1464,8 @@ function fromV1(value: unknown): unknown {
       // One in each half of the pile, at seed-derived places.
       const half = Math.floor(s.loot.length / 2);
       s.loot.splice(half + (seed % (s.loot.length - half + 1)), 0, 'kz.change-sides#2');
-      s.loot.splice((seed >>> 8) % (half + 1), 0, 'kz.change-sides#1');
+      // Strictly in the first half, so the two never end up next to each other.
+      s.loot.splice((seed >>> 8) % Math.max(1, half), 0, 'kz.change-sides#1');
     }
     s.v = STATE_VERSION;
     return s;

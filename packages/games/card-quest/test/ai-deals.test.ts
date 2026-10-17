@@ -114,7 +114,8 @@ describe('answering an offer', () => {
       take(s, 'kz.change-sides#1', s.players[1]!.hand);
     };
     expect(ai(asked('opportunist', { t: 'loot', n: 1 }, plotting), 1)).toEqual({ a: 'accept' });
-    expect(ai(asked('opportunist', { t: 'loot', n: 1 }, plotting), 1, 'easy')).not.toEqual({ a: 'accept' });
+    // On easy nobody plots: an opportunist refuses a leader.
+    expect(ai(asked('opportunist', { t: 'loot', n: 1 }, plotting), 1, 'easy')).toEqual({ a: 'decline' });
   });
 
   it('a card for staying out: a worthwhile one is taken, junk is not, and never when the fight wins the game', () => {
@@ -122,6 +123,10 @@ describe('answering an offer', () => {
     expect(ai(asked('cautious', { t: 'stay', card: 'kz.cave-slime' }), 1)).toEqual({ a: 'decline' });
     expect(ai(asked('cautious', { t: 'stay', card: 'kz.cave-slime' }), 1, 'easy')).toEqual({ a: 'accept' });
     expect(ai(asked('cautious', { t: 'stay', card: 'kz.firecracker' }, (s) => (s.players[0]!.level = 9)), 1)).toEqual({ a: 'decline' });
+    // Items count by their bonus: a +1 item is not enough, a +2 item is (even one the computer could not wear).
+    const item = (card: string) => asked('cautious', { t: 'stay', card }, (s) => take(s, card, s.players[0]!.hand));
+    expect(ai(item('kz.pointy-hat'), 1)).toEqual({ a: 'decline' });
+    expect(ai(item('kz.lamp-helmet'), 1)).toEqual({ a: 'accept' });
   });
 
   it('a favour owed is honoured, unless it hands the fighter the game (the cautious keep their word anyway)', () => {
@@ -178,6 +183,7 @@ describe('changing sides and paying back', () => {
     const one = step(step(s, 0, { a: 'pass' })!, 1, { a: 'boost', card: 'kz.furious-fence#1', monster: 0 })!;
     expect(one.players[0]!.harm).toEqual([0, 1, 0, 0]);
     const two = step(step(one, 1, { a: 'pass' })!, 2, { a: 'boost', card: 'kz.lunch-break#1', monster: 0 });
-    expect(two?.players[0]!.harm ?? [0, 1, 0, 0]).toEqual([0, 1, 0, 0]);
+    expect(two).not.toBeNull();
+    expect(two!.players[0]!.harm).toEqual([0, 1, 0, 0]);
   });
 });
