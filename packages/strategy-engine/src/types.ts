@@ -369,6 +369,12 @@ export type SimEvent =
    * unseen, was found missing when its last reported cell was observed again.
    */
   | { t: 'missing'; tick: number; id: number; side: number; kind: string; x: number; y: number }
+  /**
+   * Reports only: muzzle flash (owner decision 2026-10-17). A hostile unit the side does not observe
+   * fired at one of its units in coverage, from (x, y). Where it fired from, not a sighting: the side
+   * gets no report of it (its plans and the opponent's stay as they were); the player sees a mark.
+   */
+  | { t: 'flash'; tick: number; id: number; side: number; kind: string; x: number; y: number }
   /** A Command Post changed sides (`from` may be NEUTRAL): told to whoever sees its cell or owns or owned it. */
   | { t: 'captured'; tick: number; id: number; kind: string; x: number; y: number; from: number; to: number }
   /** A side owned no Command Post at the end of a turn and is out (told to every side). */
