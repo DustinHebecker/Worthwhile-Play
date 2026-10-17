@@ -265,7 +265,7 @@ export const tr: Catalogue = {
   'hint.curse': 'İpucu: lanetler başka oyunculara oynanır — kendi sıranda ya da bir dövüşte.',
   // K2: offers, deals, Change Sides, reputation
   'r.turncoat': 'Yalnızca birine dövüşte yardım ederken: taraf değiştir ve canavarlara geç — gücün artık onlar için sayılır. Anlaşma bozulur, itibar −2.',
-  'table.rep': 'İtibar {n}/5',
+  'table.rep': 'İtibar {n}/{max}',
   'table.favours': 'İyilik borcu: {n}',
   'terms.loot.1': '1 ganimet kartı',
   'terms.loot.2': '2 ganimet kartı',
@@ -278,7 +278,7 @@ export const tr: Catalogue = {
   'fight.turncoat': 'Taraf değişikliği: {name} (canavarlar için +{n})',
   'fight.help.title': 'Yardım iste — ya da birine uzak durması için öde',
   'fight.help.who': 'Oyuncu',
-  'fight.help.option': '{name} — güç {n}, itibar {rep}/5',
+  'fight.help.option': '{name} — güç {n}, itibar {rep}/{max}',
   'fight.help.offer': 'Teklif',
   'fight.help.ask': 'Teklif et',
   'offer.you.help': '{name} senden yardım istiyor. Teklif: {terms}. Yardım etmek seviye kazandırmaz; tutulan anlaşma itibarını artırır.',
@@ -303,5 +303,7 @@ export const tr: Catalogue = {
   'log.broken.stay': '{name} — uzak durma bedeli ödendiği hâlde araya girildi (ödeyen: {to}). İtibar −2.',
   'log.broken.favour': '{name} — borçlu olunan iyilik reddedildi (alacaklı: {to}). İtibar −2.',
   'hint.help': 'İpucu: gücün yetmiyor mu? Başka bir oyuncudan yardım iste — ganimet, bir eşya ya da bir iyilik karşılığında. Tutulan anlaşmalar itibarını artırır.',
-  'hint.offer': 'İpucu: yardım etmek ganimet getirir ama seviye getirmez. Bir anlaşmayı bozmak 2 itibar yıldızına mal olur — ve bilgisayar oyuncuları bunu unutmaz.'
+  'hint.offer': 'İpucu: yardım etmek ganimet getirir ama seviye getirmez. Bir anlaşmayı bozmak 2 itibar yıldızına mal olur — ve kinciler bunu unutmaz.',
+  // K2 review: a deal whose item is gone
+  'log.void': '{name} — anlaşma geçersiz (ortak: {to}): {card} artık yok. İtibar değişmedi.'
 };

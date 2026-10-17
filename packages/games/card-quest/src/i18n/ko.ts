@@ -265,7 +265,7 @@ export const ko: Catalogue = {
   'hint.curse': '팁: 저주는 다른 플레이어에게 낸다 — 내 차례에도, 전투 중에도.',
   // K2: offers, deals, Change Sides, reputation
   'r.turncoat': '누군가의 전투를 돕는 동안에만: 편을 바꿔 몬스터 편에 선다 — 네 힘은 이제 몬스터에게 더해진다. 거래는 깨지고 평판 −2.',
-  'table.rep': '평판 {n}/5',
+  'table.rep': '평판 {n}/{max}',
   'table.favours': '갚을 신세: {n}',
   'terms.loot.1': '전리품 카드 1장',
   'terms.loot.2': '전리품 카드 2장',
@@ -278,7 +278,7 @@ export const ko: Catalogue = {
   'fight.turncoat': '편 바꿈: {name}(몬스터에게 +{n})',
   'fight.help.title': '도움 요청 — 또는 빠져 달라고 대가 지불',
   'fight.help.who': '플레이어',
-  'fight.help.option': '{name} — 힘 {n}, 평판 {rep}/5',
+  'fight.help.option': '{name} — 힘 {n}, 평판 {rep}/{max}',
   'fight.help.offer': '조건',
   'fight.help.ask': '제안하기',
   'offer.you.help': '{name}이(가) 도움을 청한다. 조건: {terms}. 도와도 레벨은 오르지 않지만, 거래를 지키면 평판이 오른다.',
@@ -303,5 +303,7 @@ export const ko: Catalogue = {
   'log.broken.stay': '{name} — {to}에게 대가를 받고도 끼어듦. 평판 −2.',
   'log.broken.favour': '{name} — {to}에게 진 신세를 갚지 않음. 평판 −2.',
   'hint.help': '팁: 힘이 모자라면? 다른 플레이어에게 도움을 청하자 — 전리품, 아이템, 신세를 대가로. 거래를 지키면 평판이 오른다.',
-  'hint.offer': '팁: 도우면 전리품은 받지만 레벨은 오르지 않는다. 거래를 깨면 평판 별이 2개 줄고 — 컴퓨터 플레이어는 그걸 기억한다.'
+  'hint.offer': '팁: 도우면 전리품은 받지만 레벨은 오르지 않는다. 거래를 깨면 평판 별이 2개 줄고 — 뒤끝 있는 타입은 그걸 기억한다.',
+  // K2 review: a deal whose item is gone
+  'log.void': '{name} — {to}와(과)의 거래 무효: {card}이(가) 사라짐. 평판 변동 없음.'
 };

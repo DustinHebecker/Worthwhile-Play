@@ -149,6 +149,7 @@ export type LogEvent =
   | { e: 'switch'; seat: number; to: number; card: string }
   | { e: 'kept'; seat: number; to: number; t: Terms['t']; n?: number; card?: string }
   | { e: 'broken'; seat: number; to: number; why: 'switch' | 'stay' | 'favour' }
+  | { e: 'void'; seat: number; to: number; card: string }
   | { e: 'win'; seats: number[] };
 
 export interface CardQuestState {
@@ -678,12 +679,15 @@ function payHelper(state: CardQuestState, drawn: string[]): string[] {
     mine = drawn.slice(n);
     kept.n = n;
   } else if (deal.t === 'item') {
-    if (remove(fighter.equipped, deal.item)) {
-      for (const u of fighter.upgrades.filter((x) => x.item === deal.item)) discard(state, u.card);
-      fighter.upgrades = fighter.upgrades.filter((x) => x.item !== deal.item);
-      helper.hand.push(deal.item);
-      kept.card = deal.item;
+    // The promised item may have been cursed away during the fight: then the deal is void (nobody's fault).
+    if (!remove(fighter.equipped, deal.item)) {
+      log(state, { e: 'void', seat: fight.helper, to: state.active, card: deal.item });
+      return mine;
     }
+    for (const u of fighter.upgrades.filter((x) => x.item === deal.item)) discard(state, u.card);
+    fighter.upgrades = fighter.upgrades.filter((x) => x.item !== deal.item);
+    helper.hand.push(deal.item);
+    kept.card = deal.item;
   } else if (deal.t === 'favour') {
     helper.favours.push(state.active);
     if (helper.favours.length > FAVOUR_LIMIT) helper.favours.shift();
@@ -943,7 +947,8 @@ function apply(s: CardQuestState, seat: number, action: Action): boolean {
       }
       if (def.turncoat) {
         // Change Sides: only the helper, onto the monsters' side; the deal is void.
-        if (seat !== fight.helper || action.side !== 'monster') return false;
+        // Only the helper, only for the monsters, and one change of sides per fight.
+        if (seat !== fight.helper || action.side !== 'monster' || fight.turncoat !== null) return false;
         remove(player.hand, action.card);
         fight.against.push(action.card);
         fight.turncoat = seat;
@@ -1281,7 +1286,10 @@ function fightSeatsConsistent(state: CardQuestState): boolean {
   if (f.helper === a || f.turncoat === a || f.asked.includes(a) || (f.helper !== null && f.helper === f.turncoat)) return false;
   if (f.helper !== null && !f.asked.includes(f.helper)) return false;
   if (f.offer && (!f.asked.includes(f.offer.to) || f.actor !== f.offer.to || state.phase !== 'fight')) return false;
-  if (f.deal?.t === 'item' && !(state.players[a] as Player).equipped.includes(f.deal.item) && state.phase === 'fight') return false;
+  // An open offer must still be payable: the offered card in the fighter's hand, the called-in favour owed.
+  const fighter = state.players[a] as Player;
+  if (f.offer?.terms.t === 'stay' && !fighter.hand.includes(f.offer.terms.card)) return false;
+  if (f.offer?.terms.t === 'free' && !fighter.favours.includes(f.offer.to)) return false;
   return true;
 }
 
@@ -1363,7 +1371,7 @@ function check(v: unknown): v is CardQuestState {
 
 const EVENT_TYPES: readonly LogEvent['e'][] = [
   'turn', 'open', 'rummage', 'challenge', 'boost', 'reinforce', 'oneshot', 'escape', 'curse', 'won', 'lost', 'flee',
-  'penalty', 'equip', 'sell', 'play', 'upgrade', 'give', 'discard', 'win', 'offer', 'accept', 'decline', 'switch', 'kept', 'broken'
+  'penalty', 'equip', 'sell', 'play', 'upgrade', 'give', 'discard', 'win', 'offer', 'accept', 'decline', 'switch', 'kept', 'broken', 'void'
 ];
 const TERMS: readonly Terms['t'][] = ['loot', 'most', 'item', 'favour', 'free', 'stay'];
 const PENALTIES: readonly Penalty['t'][] = ['level', 'slot', 'best', 'cards', 'malus', 'origin', 'profession'];
@@ -1415,6 +1423,7 @@ function isValidEvent(v: unknown, known: Set<string>, seats: number): v is LogEv
     case 'decline':
       return seat(v.seat) && seat(v.to);
     case 'switch':
+    case 'void':
       return seat(v.seat) && seat(v.to) && card(v.card);
     case 'broken':
       return seat(v.seat) && seat(v.to) && isOneOf(v.why, ['switch', 'stay', 'favour'] as const);
@@ -1452,7 +1461,10 @@ function fromV1(value: unknown): unknown {
     if (isRecord(s.fight)) Object.assign(s.fight, { helper: null, deal: null, offer: null, asked: [], stayOut: [], turncoat: null });
     if (s.phase !== 'setup' && isArrayOf((s.settings as { worlds?: unknown } | undefined)?.worlds, isStr) && (s.settings as { worlds: string[] }).worlds.includes('kz')) {
       const seed = isUint32(s.seed) ? s.seed : 0;
-      for (const id of ['kz.change-sides#1', 'kz.change-sides#2']) s.loot.splice((seed + id.length * 7919) % (s.loot.length + 1), 0, id);
+      // One in each half of the pile, at seed-derived places.
+      const half = Math.floor(s.loot.length / 2);
+      s.loot.splice(half + (seed % (s.loot.length - half + 1)), 0, 'kz.change-sides#2');
+      s.loot.splice((seed >>> 8) % (half + 1), 0, 'kz.change-sides#1');
     }
     s.v = STATE_VERSION;
     return s;

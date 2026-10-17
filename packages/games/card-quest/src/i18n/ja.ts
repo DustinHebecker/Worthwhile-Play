@@ -265,7 +265,7 @@ export const ja: Catalogue = {
   'hint.curse': 'ヒント：呪いはほかのプレイヤーに出す――自分の番でも、戦闘中でもOK。',
   // K2: offers, deals, Change Sides, reputation
   'r.turncoat': 'だれかの戦闘を手伝っている間だけ：寝返ってモンスター側につく――きみの強さは今度はモンスターに加算。取引は破棄、評判−2。',
-  'table.rep': '評判{n}/5',
+  'table.rep': '評判{n}/{max}',
   'table.favours': '借り：{n}',
   'terms.loot.1': 'お宝カード1枚',
   'terms.loot.2': 'お宝カード2枚',
@@ -278,7 +278,7 @@ export const ja: Catalogue = {
   'fight.turncoat': '寝返り：{name}（モンスターに+{n}）',
   'fight.help.title': '助けを頼む――または手出ししないようお礼を払う',
   'fight.help.who': 'プレイヤー',
-  'fight.help.option': '{name} ― 強さ{n}、評判{rep}/5',
+  'fight.help.option': '{name} ― 強さ{n}、評判{rep}/{max}',
   'fight.help.offer': '条件',
   'fight.help.ask': '持ちかける',
   'offer.you.help': '{name}が助けを求めている。条件：{terms}。手伝ってもレベルは上がらないが、取引を守れば評判が上がる。',
@@ -303,5 +303,7 @@ export const ja: Catalogue = {
   'log.broken.stay': '{name} ― {to}からお礼をもらったのに手を出した。評判−2。',
   'log.broken.favour': '{name} ― {to}への借りを返さなかった。評判−2。',
   'hint.help': 'ヒント：強さが足りない？ ほかのプレイヤーに助けを頼もう――お宝、アイテム、貸しと引き換えに。取引を守れば評判が上がる。',
-  'hint.offer': 'ヒント：手伝うとお宝はもらえるがレベルは上がらない。取引を破ると評判の星が2つ減る――コンピューターはそれを覚えている。'
+  'hint.offer': 'ヒント：手伝うとお宝はもらえるがレベルは上がらない。取引を破ると評判の星が2つ減る――根に持つタイプはそれを覚えている。',
+  // K2 review: a deal whose item is gone
+  'log.void': '{name} ― {to}との取引は無効に：{card}がなくなった。評判は変わらず。'
 };

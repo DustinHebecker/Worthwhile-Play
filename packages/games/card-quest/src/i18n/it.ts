@@ -265,7 +265,7 @@ export const it: Catalogue = {
   'hint.curse': 'Consiglio: le maledizioni si giocano sugli altri giocatori — nel tuo turno o in un combattimento.',
   // K2: offers, deals, Change Sides, reputation
   'r.turncoat': 'Solo mentre aiuti qualcuno in combattimento: cambia fronte e passa con i mostri — la tua forza ora conta per loro. L’accordo salta, reputazione −2.',
-  'table.rep': 'Reputazione {n}/5',
+  'table.rep': 'Reputazione {n}/{max}',
   'table.favours': 'Favori dovuti: {n}',
   'terms.loot.1': '1 carta bottino',
   'terms.loot.2': '2 carte bottino',
@@ -278,7 +278,7 @@ export const it: Catalogue = {
   'fight.turncoat': 'Cambio di fronte: {name} (+{n} per i mostri)',
   'fight.help.title': 'Chiedi aiuto — o paga qualcuno perché ne stia fuori',
   'fight.help.who': 'Giocatore',
-  'fight.help.option': '{name} — forza {n}, reputazione {rep}/5',
+  'fight.help.option': '{name} — forza {n}, reputazione {rep}/{max}',
   'fight.help.offer': 'Offerta',
   'fight.help.ask': 'Fai l’offerta',
   'offer.you.help': '{name} ti chiede aiuto e offre {terms}. Aiutare non dà livelli; un accordo rispettato alza la tua reputazione.',
@@ -303,5 +303,7 @@ export const it: Catalogue = {
   'log.broken.stay': '{name} — intromissione nonostante {to} avesse pagato per evitarla. Reputazione −2.',
   'log.broken.favour': '{name} — favore dovuto a {to} rifiutato. Reputazione −2.',
   'hint.help': 'Consiglio: non sei abbastanza forte? Chiedi aiuto a un altro giocatore — in cambio di bottino, un oggetto o un favore. Gli accordi rispettati alzano la tua reputazione.',
-  'hint.offer': 'Consiglio: aiutare porta bottino, ma nessun livello. Infrangere un accordo costa 2 stelle di reputazione — e i giocatori del computer se lo ricordano.'
+  'hint.offer': 'Consiglio: aiutare porta bottino, ma nessun livello. Infrangere un accordo costa 2 stelle di reputazione — e i rancorosi se lo ricordano.',
+  // K2 review: a deal whose item is gone
+  'log.void': '{name} — accordo con {to} decaduto: {card} non c’è più. Reputazione invariata.'
 };

@@ -265,7 +265,7 @@ export const pl: Catalogue = {
   'hint.curse': 'Wskazówka: klątwy zagrywa się na innych graczy — w swojej turze albo w walce.',
   // K2: offers, deals, Change Sides, reputation
   'r.turncoat': 'Tylko gdy pomagasz komuś w walce: zmień stronę i przejdź do potworów — twoja siła liczy się teraz dla nich. Umowa przepada, reputacja −2.',
-  'table.rep': 'Reputacja {n}/5',
+  'table.rep': 'Reputacja {n}/{max}',
   'table.favours': 'Należne przysługi: {n}',
   'terms.loot.1': '1 karta łupów',
   'terms.loot.2': '2 karty łupów',
@@ -278,7 +278,7 @@ export const pl: Catalogue = {
   'fight.turncoat': 'Zmiana strony: {name} (+{n} dla potworów)',
   'fight.help.title': 'Poproś o pomoc — albo zapłać komuś za trzymanie się z boku',
   'fight.help.who': 'Gracz',
-  'fight.help.option': '{name} — siła {n}, reputacja {rep}/5',
+  'fight.help.option': '{name} — siła {n}, reputacja {rep}/{max}',
   'fight.help.offer': 'Oferta',
   'fight.help.ask': 'Złóż ofertę',
   'offer.you.help': '{name} prosi cię o pomoc. Oferta: {terms}. Pomoc nie daje poziomu; dotrzymana umowa podnosi twoją reputację.',
@@ -303,5 +303,7 @@ export const pl: Catalogue = {
   'log.broken.stay': '{name} — wtrącenie się mimo zapłaty za trzymanie się z boku (płacący: {to}). Reputacja −2.',
   'log.broken.favour': '{name} — odmowa należnej przysługi, odbiorca: {to}. Reputacja −2.',
   'hint.help': 'Wskazówka: za mało siły? Poproś innego gracza o pomoc — za łupy, przedmiot albo przysługę. Dotrzymane umowy podnoszą reputację.',
-  'hint.offer': 'Wskazówka: pomaganie daje łupy, ale nie poziom. Zerwana umowa kosztuje 2 gwiazdki reputacji — a gracze komputerowi to zapamiętują.'
+  'hint.offer': 'Wskazówka: pomaganie daje łupy, ale nie poziom. Zerwana umowa kosztuje 2 gwiazdki reputacji — a pamiętliwi tego nie zapominają.',
+  // K2 review: a deal whose item is gone
+  'log.void': '{name} — umowa wygasła (partner: {to}): przedmiotu {card} już nie ma. Reputacja bez zmian.'
 };

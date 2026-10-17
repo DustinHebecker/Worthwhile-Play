@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { fightTotals, isValidState, legalActions, migrateState, observe, step, STATE_VERSION, type CardQuestState, type Terms } from '../src/rules';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { actorOf, FAVOUR_LIMIT, fightTotals, isValidState, legalActions, migrateState, observe, step, STATE_VERSION, type CardQuestState, type Terms } from '../src/rules';
 import { decide } from '../src/ai';
 import { arranged, take } from './harness';
 
@@ -184,7 +186,7 @@ describe('paying to stay out', () => {
 });
 
 describe('reputation and saves', () => {
-  it('reputation stays within 0–5', () => {
+  it('reputation stays within 0–REP_MAX', () => {
     let s = ratFight((s) => {
       s.players[0]!.rep = 5;
       s.players[1]!.rep = 0;
@@ -277,4 +279,82 @@ describe('computer players and deals', () => {
     expect(ai(turn, 1, 'normal')).toEqual({ a: 'oneshot', card: 'kz.change-sides#1', side: 'monster' });
     expect(ai(turn, 1, 'easy')).toEqual({ a: 'pass' });
   });
+});
+
+describe('K2 review fixes', () => {
+  it('an item deal whose item is cursed away during the fight stays a valid save and lapses without reputation change', () => {
+    const s = ratFight((s) => {
+      take(s, 'kz.pickaxe', s.players[0]!.equipped);
+      take(s, 'kz.broken-pickaxe', s.players[2]!.hand);
+    });
+    let n = step(offer(s, 1, { t: 'item', item: 'kz.pickaxe' })!, 1, { a: 'accept' })!;
+    n = step(step(n, 0, { a: 'pass' })!, 1, { a: 'pass' })!;
+    const cursed = step(n, 2, { a: 'curse', card: 'kz.broken-pickaxe', target: 0 })!;
+    expect(cursed.players[0]!.equipped).not.toContain('kz.pickaxe');
+    expect(isValidState(cursed)).toBe(true);
+    const done = passAll(cursed);
+    expect(done.players.slice(0, 2).map((p) => p.rep)).toEqual([3, 3]);
+    expect(done.log.some((e) => e.e === 'void' && e.seat === 1 && e.to === 0 && e.card === 'kz.pickaxe')).toBe(true);
+    expect(done.log.some((e) => e.e === 'kept')).toBe(false);
+    expect(isValidState(done)).toBe(true);
+  });
+
+  it('only one change of sides per fight', () => {
+    const s = ratFight((s) => {
+      take(s, 'kz.change-sides#1', s.players[1]!.hand);
+      take(s, 'kz.change-sides#2', s.players[2]!.hand);
+      s.players[2]!.level = 5;
+    });
+    let n = step(offer(s, 1, { t: 'loot', n: 1 })!, 1, { a: 'accept' })!;
+    n = step(step(n, 0, { a: 'pass' })!, 1, { a: 'oneshot', card: 'kz.change-sides#1', side: 'monster' })!;
+    n = step(step(n, 1, { a: 'pass' })!, 2, { a: 'pass' })!;
+    expect(n.fight!.actor).toBe(0);
+    n = step(offer(n, 2, { t: 'loot', n: 2 })!, 2, { a: 'accept' })!;
+    n = step(n, 0, { a: 'pass' })!;
+    n = step(n, 1, { a: 'pass' })!;
+    expect(n.fight!.actor).toBe(2);
+    expect(step(n, 2, { a: 'oneshot', card: 'kz.change-sides#2', side: 'monster' })).toBeNull();
+  });
+
+  it('rejects open offers a crafted save could not pay', () => {
+    const stay = offer(ratFight((s) => take(s, 'kz.firecracker', s.players[0]!.hand)), 1, { t: 'stay', card: 'kz.firecracker' })!;
+    expect(isValidState(stay)).toBe(true);
+    expect(isValidState({ ...stay, players: stay.players.map((p, i) => (i === 0 ? { ...p, hand: p.hand.filter((c) => c !== 'kz.firecracker') } : i === 1 ? { ...p, hand: [...p.hand, 'kz.firecracker'] } : p)) })).toBe(false);
+    const free = offer(ratFight((s) => (s.players[0]!.favours = [1])), 1, { t: 'free' })!;
+    expect(isValidState(free)).toBe(true);
+    expect(isValidState({ ...free, players: free.players.map((p, i) => (i === 0 ? { ...p, favours: [2] } : p)) })).toBe(false);
+  });
+
+  it('a player is owed at most FAVOUR_LIMIT favours; the oldest goes first', () => {
+    const s = ratFight((s) => (s.players[1]!.favours = [2, 2, 2, 2, 2]));
+    const done = passAll(step(offer(s, 1, { t: 'favour' })!, 1, { a: 'accept' })!);
+    expect(done.players[1]!.favours).toEqual([2, 2, 2, 2, 0]);
+    expect(FAVOUR_LIMIT).toBe(5);
+  });
+});
+
+describe('version-1 saves written by the K1 code', () => {
+  const saves = JSON.parse(readFileSync(join(__dirname, 'fixtures/v1-saves.json'), 'utf8')) as Record<string, unknown>;
+
+  for (const [phase, save] of Object.entries(saves)) {
+    it(`migrate and play on to the end (${phase})`, () => {
+      expect(isValidState(save)).toBe(false);
+      let s = migrateState(save, 1)!;
+      expect(s, phase).toBeDefined();
+      expect(isValidState(s)).toBe(true);
+      expect(s.players.every((p) => p.rep === 3 && p.favours.length === 0)).toBe(true);
+      if (s.phase !== 'setup') {
+        const at = s.loot.flatMap((c, i) => (c.startsWith('kz.change-sides') ? [i] : []));
+        expect(at).toHaveLength(2);
+        expect(at[1]! - at[0]!).toBeGreaterThan(1);
+      }
+      if (s.phase === 'setup') s = step(s, 0, { a: 'start', settings: s.settings })!;
+      for (let i = 0; i < 20_000 && s.phase !== 'over'; i++) {
+        const seat = actorOf(s);
+        s = step(s, seat, decide(observe(s, seat), s.settings.difficulty))!;
+      }
+      expect(s.phase).toBe('over');
+      expect(isValidState(s)).toBe(true);
+    });
+  }
 });

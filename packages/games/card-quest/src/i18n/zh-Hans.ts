@@ -265,7 +265,7 @@ export const zhHans: Catalogue = {
   'hint.curse': '提示：诅咒要对其他玩家打出——在你的回合或战斗中都行。',
   // K2: offers, deals, Change Sides, reputation
   'r.turncoat': '只能在你帮别人战斗时使用：倒戈到怪物一边——你的战力现在算给它们。交易作废，声望 −2。',
-  'table.rep': '声望 {n}/5',
+  'table.rep': '声望 {n}/{max}',
   'table.favours': '欠下的人情：{n}',
   'terms.loot.1': '1 张宝物牌',
   'terms.loot.2': '2 张宝物牌',
@@ -278,7 +278,7 @@ export const zhHans: Catalogue = {
   'fight.turncoat': '已倒戈：{name}（为怪物 +{n}）',
   'fight.help.title': '请人帮忙——或者花钱请人别插手',
   'fight.help.who': '玩家',
-  'fight.help.option': '{name}——战力 {n}，声望 {rep}/5',
+  'fight.help.option': '{name}——战力 {n}，声望 {rep}/{max}',
   'fight.help.offer': '报酬',
   'fight.help.ask': '提出交易',
   'offer.you.help': '{name} 请你帮忙，报酬是{terms}。帮忙不加等级；守约能提高你的声望。',
@@ -303,5 +303,7 @@ export const zhHans: Catalogue = {
   'log.broken.stay': '{name}——收了 {to} 的好处却还是插手了。声望 −2。',
   'log.broken.favour': '{name}——拒绝还 {to} 的人情。声望 −2。',
   'hint.help': '提示：战力不够？请其他玩家帮忙——报酬可以是宝物、物品或人情。守约能提高你的声望。',
-  'hint.offer': '提示：帮忙能拿宝物，但不加等级。毁约会扣 2 颗声望星——电脑玩家可都记着呢。'
+  'hint.offer': '提示：帮忙能拿宝物，但不加等级。毁约会扣 2 颗声望星——记仇型的可都记着呢。',
+  // K2 review: a deal whose item is gone
+  'log.void': '{name}——与 {to} 的交易作废：{card} 已经没了。声望不变。'
 };

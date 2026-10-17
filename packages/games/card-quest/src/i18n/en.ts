@@ -279,7 +279,7 @@ export const en = {
   'hint.curse': 'Tip: curses are played on other players — on your own turn or in a fight.',
   // K2: offers, deals, Change Sides, reputation
   'r.turncoat': 'Only while you help someone in a fight: change to the monsters’ side — your strength now counts for them. The deal is off, reputation −2.',
-  'table.rep': 'Reputation {n}/5',
+  'table.rep': 'Reputation {n}/{max}',
   'table.favours': 'Favours owed: {n}',
   'terms.loot.1': '1 loot card',
   'terms.loot.2': '2 loot cards',
@@ -292,7 +292,7 @@ export const en = {
   'fight.turncoat': 'Changed sides: {name} (+{n} for the monsters)',
   'fight.help.title': 'Ask for help — or pay someone to stay out',
   'fight.help.who': 'Player',
-  'fight.help.option': '{name} — strength {n}, reputation {rep}/5',
+  'fight.help.option': '{name} — strength {n}, reputation {rep}/{max}',
   'fight.help.offer': 'Offer',
   'fight.help.ask': 'Make the offer',
   'offer.you.help': '{name} asks you for help and offers {terms}. Helping gives no level; a kept deal raises your reputation.',
@@ -317,7 +317,9 @@ export const en = {
   'log.broken.stay': '{name} — interfered although {to} paid for staying out. Reputation −2.',
   'log.broken.favour': '{name} — refused the favour owed to {to}. Reputation −2.',
   'hint.help': 'Tip: not strong enough? Ask another player for help — for loot, an item or a favour. Kept deals raise your reputation.',
-  'hint.offer': 'Tip: helping brings loot but no level. Breaking a deal costs 2 reputation stars — and computer players remember.'
+  'hint.offer': 'Tip: helping brings loot but no level. Breaking a deal costs 2 reputation stars — and grudge-holders remember.',
+  // K2 review: a deal whose item is gone
+  'log.void': '{name} — deal with {to} void: {card} is gone. Reputation unchanged.'
 } as const;
 
 
