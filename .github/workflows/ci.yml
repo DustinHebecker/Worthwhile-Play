@@ -29,7 +29,8 @@ jobs:
       - run: pnpm check:licenses
       - run: pnpm lint
       - run: pnpm typecheck
-      - run: pnpm coverage
+      # The long AI-vs-AI suites (*.long.test.ts) run in their own job below, without coverage.
+      - run: pnpm coverage --exclude '**/*.long.test.ts'
       - name: Development build (no legal data; must still succeed)
         run: pnpm build
       - uses: actions/upload-artifact@v7
@@ -37,6 +38,20 @@ jobs:
           name: coverage
           path: coverage/
           retention-days: 7
+
+  long:
+    name: Long AI suites (relay-command levels and strategy tournament)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm vitest run $(git ls-files '*.long.test.ts')
 
   puzzles:
     name: Chess puzzles (full re-verification)
@@ -80,7 +95,7 @@ jobs:
 
   deploy:
     name: Deploy to Cloudflare
-    needs: [quality, puzzles, e2e]
+    needs: [quality, long, puzzles, e2e]
     if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
