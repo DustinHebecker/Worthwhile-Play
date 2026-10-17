@@ -54,24 +54,25 @@ describe('view', () => {
     });
   }
 
-  it('sentences with a verb are only filled with computer players, never with the person', () => {
-    // These templates agree the verb with {name} in some languages; the person has own keys instead.
-    const NPC_ONLY = ['next.fight.react', 'next.end.give', 'next.over.lost', 'act.curse', 'act.hero.other', 'fight.forecast.other.win', 'fight.forecast.other.lose'];
-    const ctx = createTestContext(game as GameModule<unknown>, 'en');
-    const real = ctx.context.t;
-    const misuse: string[] = [];
-    const spy = Object.assign((key: string, params?: Readonly<Record<string, string | number>>) => {
-      if (NPC_ONLY.includes(key) && params?.name === real('you')) misuse.push(key);
-      return real(key, params);
-    }, { locale: real.locale, direction: real.direction });
-    const instance = game.create({ ...ctx.context, t: spy } as never);
-    for (const seed of [2, 3, 4]) {
+  // One game per test (split for the time budget under load): these templates agree the verb with {name} in some
+  // languages; the person has own keys instead.
+  for (const seed of [2, 3, 4]) {
+    it(`sentences with a verb are only filled with computer players, never with the person (seed ${seed})`, () => {
+      const NPC_ONLY = ['next.fight.react', 'next.end.give', 'next.over.lost', 'act.curse', 'act.hero.other', 'fight.forecast.other.win', 'fight.forecast.other.lose'];
+      const ctx = createTestContext(game as GameModule<unknown>, 'en');
+      const real = ctx.context.t;
+      const misuse: string[] = [];
+      const spy = Object.assign((key: string, params?: Readonly<Record<string, string | number>>) => {
+        if (NPC_ONLY.includes(key) && params?.name === real('you')) misuse.push(key);
+        return real(key, params);
+      }, { locale: real.locale, direction: real.direction });
+      const instance = game.create({ ...ctx.context, t: spy } as never);
       instance.newGame({ seed });
       clickThrough(ctx.context.root, instance, 3000);
-    }
-    expect(misuse).toEqual([]);
-    instance.dispose();
-  });
+      expect(misuse).toEqual([]);
+      instance.dispose();
+    });
+  }
 
   describe('the Blunder sentence in the log', () => {
     /** The given seat lost against the Cave Slime and must roll; the die will show 1. */
