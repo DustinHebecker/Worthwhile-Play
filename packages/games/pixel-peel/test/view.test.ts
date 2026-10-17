@@ -163,6 +163,46 @@ describe('view', () => {
     expect(instance.serialize().reported).toBe(true);
   });
 
+  it('announces the move result and the stuck state together in one message', () => {
+    const { q, ctx } = start({ state: ringState() });
+    vi.useFakeTimers();
+    q('pp-lane-1').click();
+    vi.advanceTimersByTime(100);
+    const said = q('pp-live').textContent ?? '';
+    expect(said).toMatch(/waits in place 1/);
+    expect(said).toContain('No move left. Undo a move, or start this picture again.');
+    expect(q('pp-stuck').hidden).toBe(false);
+    expect(ctx.results).toEqual([]);
+  });
+
+  it('a solved save that was not yet reported is reported once on restore', () => {
+    let s = createInitial(5, 'easy', 'koala');
+    for (const m of s.witness) s = play(s, m);
+    expect(s.reported).toBe(false);
+    const first = start({ state: s });
+    expect(first.q('pp-reveal').hidden).toBe(false);
+    expect(first.ctx.results).toHaveLength(1);
+    expect(first.ctx.results[0]!.outcome).toBe('completed');
+    expect(first.ctx.saveRequests()).toBeGreaterThan(0);
+    const saved = first.instance.serialize();
+    expect(saved.reported).toBe(true);
+    first.instance.dispose();
+    const again = start({ state: saved });
+    expect(again.ctx.results).toEqual([]);
+  });
+
+  it('"Confirm before launch": a press anywhere outside the game cancels the selection', () => {
+    const { q, instance } = start({ prefs: { display: { animation: true, allSymbols: false, confirm: true } } });
+    q('pp-lane-0').click();
+    expect(q('pp-lane-0').classList.contains('is-selected')).toBe(true);
+    const outside = document.createElement('button');
+    document.body.appendChild(outside);
+    outside.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    expect(q('pp-lane-0').classList.contains('is-selected')).toBe(false);
+    q('pp-lane-0').click();
+    expect(instance.serialize().moves).toEqual([]);
+  });
+
   it('restoring a solved game shows the reveal again without a second finished()', () => {
     let s = createInitial(3, 'easy', 'elephant');
     for (const m of s.witness) s = play(s, m);

@@ -114,6 +114,8 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
   let laneFocus = 0;
   let slotFocus = 0;
   let wasStuck = false;
+  /** Set by `update` when the position has just become stuck; `commit` announces it with the move's result. */
+  let becameStuck = false;
   /**
    * The shooter button just launched: its next shooter is not previewed until the pointer leaves it or focus moves,
    * so the status line keeps the result (the browser re-enters the button when its content is replaced).
@@ -377,7 +379,7 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
       revealPlace.hidden = motifPlace() === '';
       revealStats.textContent = t('reveal.stats', { launches: pos.launches, parks: pos.parks });
     }
-    if (stuck && !wasStuck) announce(live, t('stuck.text'));
+    if (stuck && !wasStuck) becameStuck = true;
     wasStuck = stuck;
     renderStatus();
     draw();
@@ -625,13 +627,15 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
     const solvedNow = isSolved(pos) && !state.reported;
     if (solvedNow) state = { ...state, reported: true };
     statusText = message;
+    becameStuck = false;
     update();
     context.requestSave();
     if (solvedNow) {
       announce(live, `${motifTitle()}. ${t('reveal.stats', { launches: pos.launches, parks: pos.parks })}`);
       context.finished({ outcome: 'completed', stats: { launches: pos.launches, parks: pos.parks } });
       revealTitle.focus();
-    } else announce(live, message);
+    } else announce(live, becameStuck ? `${message} ${t('stuck.text')}` : message);
+    becameStuck = false;
   };
 
   const resultText = (p: Preview): string => {
@@ -772,7 +776,8 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
   };
   const onResize = () => draw();
   container.addEventListener('keydown', onKeyDown);
-  container.addEventListener('pointerdown', onPointerDown);
+  // Anywhere in the document: a press outside the game also cancels a selection.
+  document.addEventListener('pointerdown', onPointerDown);
   if (typeof window !== 'undefined') window.addEventListener('resize', onResize);
 
   // --- GameInstance --------------------------------------------------------------------------------------------
@@ -801,6 +806,12 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
     restore(saved: PeelState) {
       state = clone(saved);
       mount();
+      // A save written between the last move and finished() (or by an older version): report the end once.
+      if (isSolved(pos) && !state.reported) {
+        state = { ...state, reported: true };
+        context.requestSave();
+        context.finished({ outcome: 'completed', stats: { launches: pos.launches, parks: pos.parks } });
+      }
     },
     serialize: () => clone(state),
     pause() {
@@ -818,7 +829,7 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
     dispose() {
       finishAnimation();
       container.removeEventListener('keydown', onKeyDown);
-      container.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('pointerdown', onPointerDown);
       if (typeof window !== 'undefined') window.removeEventListener('resize', onResize);
       clear(context.root);
     }

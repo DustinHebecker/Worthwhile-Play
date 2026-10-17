@@ -137,7 +137,7 @@
 .wp-pixel-peel .pp-colour { display: grid; grid-template-columns: auto minmax(5rem, auto) 1fr; gap: 0.5rem; align-items: center; font-size: 0.9rem; }
 .wp-pixel-peel .pp-colour-count { color: var(--wp-muted); font-variant-numeric: tabular-nums; }
 .wp-pixel-peel .pp-option { display: flex; align-items: center; gap: 0.5rem; min-block-size: 44px; }
-.wp-pixel-peel .pp-option input { min-block-size: 24px; inline-size: 24px; margin: 0; }
+.wp-pixel-peel .pp-option input { flex: none; min-block-size: 24px; inline-size: 24px; margin: 0; }
 .wp-pixel-peel .pp-details > .pp-option:last-child { margin-block-end: 0.5rem; }
 
 /* The reveal: the whole picture, its title and one factual line. */

@@ -10,7 +10,6 @@
   },
   "devDependencies": {
     "@wp/localization": "workspace:*",
-    "@wp/persistence": "workspace:*",
     "@wp/testing": "workspace:*"
   }
 }
