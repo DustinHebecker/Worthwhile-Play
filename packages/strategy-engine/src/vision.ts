@@ -71,11 +71,15 @@ function updatedReports(
   previous: readonly Report[],
   gone: readonly Entity[],
   knownLoss: (e: Entity) => boolean = () => false,
-  revealed: ReadonlySet<number> = new Set()
+  revealed: ReadonlySet<number> = new Set(),
+  flashed: ReadonlySet<number> = new Set()
 ): Report[] {
   const seen = (x: number, y: number): boolean => observed[cellOf(world.map, x, y)] === 1;
   const next = new Map<number, Report>();
   for (const e of world.entities) if (seen(e.x, e.y) || revealed.has(e.id)) next.set(e.id, reportOf(e, world.tick));
+  // Muzzle flash: an enemy that fired at one of the side's units this tick is placed where it fired
+  // from, but not observed (a last-known position, like a ghost; it is not followed afterwards).
+  for (const e of world.entities) if (flashed.has(e.id) && !next.has(e.id)) next.set(e.id, { ...reportOf(e, world.tick), live: false });
   const goneAt = new Map(gone.map((e) => [e.id, e]));
   const alive = new Set(world.entities.map((e) => e.id));
   for (const r of previous) {
@@ -110,6 +114,33 @@ export function initialIntel(world: World, ruleset: Ruleset): Report[][] {
   });
 }
 
+/**
+ * Muzzle flash (owner decision 2026-10-17): the hostile units that fired at one of `side`'s units in
+ * the events from `from` on: a direct shot naming one of its units as the target, or a shell launched
+ * at a cell where one of its units stood. The side learns where the shooter fired from even when it
+ * does not observe that cell (a gun out of sight, a tower behind a ridge), so it can answer the fire.
+ * Like every report (D7) it travels by radio: only a unit inside the side's coverage tells of it.
+ */
+export function muzzleFlashes(world: World, ruleset: Ruleset, side: number, gone: readonly Entity[], events: readonly SimEvent[] | undefined, from = 0, network?: Network): Set<number> {
+  const out = new Set<number>();
+  if (!events) return out;
+  const coverage = ruleset.commandNetwork ? (network ?? computeNetwork(world, ruleset, side)).coverage : undefined;
+  const mine = [...world.entities, ...gone].filter((e) => e.side === side && (!coverage || coverage[cellOf(world.map, e.x, e.y)] === 1));
+  const mineIds = new Set(mine.map((e) => e.id));
+  const mineAt = new Set(mine.map((e) => cellOf(world.map, e.x, e.y)));
+  const shooterSide = new Map([...world.entities, ...gone].map((e) => [e.id, e.side]));
+  for (let i = from; i < events.length; i++) {
+    const ev = events[i] as SimEvent;
+    let shooter: number | undefined;
+    if (ev.t === 'fire' && mineIds.has(ev.target)) shooter = ev.id;
+    else if (ev.t === 'launch' && mineAt.has(cellOf(world.map, ev.x, ev.y))) shooter = ev.id;
+    if (shooter === undefined) continue;
+    const by = shooterSide.get(shooter);
+    if (by !== undefined && by !== side && hostile(world, by, side)) out.add(shooter);
+  }
+  return out;
+}
+
 /** Whether `side` observes entity `id` right now (fog rulesets; always true without fog). */
 export function isSpotted(world: World, ruleset: Ruleset, side: number, id: number): boolean {
   if (!ruleset.fog) return true;
@@ -132,7 +163,7 @@ export function updateIntel(world: World, ruleset: Ruleset, gone: readonly Entit
     const knownLoss = (e: Entity): boolean => e.side === side && (archetypeOf(ruleset, e.kind)?.comms?.role === 'source' || events?.some((ev, i) => i >= from && ev.t === 'sold' && ev.id === e.id) === true);
     const previous = world.intel?.[side] ?? [];
     const seenCell = (x: number, y: number): boolean => observed[cellOf(world.map, x, y)] === 1;
-    const reports = updatedReports(world, side, observed, previous, gone, knownLoss, revealedEmitters(world, ruleset, side, network));
+    const reports = updatedReports(world, side, observed, previous, gone, knownLoss, revealedEmitters(world, ruleset, side, network), muzzleFlashes(world, ruleset, side, gone, events, from, network));
     intel.push(reports);
     const list = reported?.[side];
     if (!events || !list) continue;

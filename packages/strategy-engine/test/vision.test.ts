@@ -6,6 +6,7 @@ import {
   createWorld,
   dist2,
   isValidWorld,
+  muzzleFlashes,
   observedCells,
   resolveTurn,
   revealedEmitters,
@@ -434,5 +435,62 @@ describe('own units lost out of contact (owner report after PR #14)', () => {
     ]);
     const r = play(w, 1);
     expect(report(r.world, 0, 3)).toBeDefined();
+  });
+});
+
+describe('muzzle flash (owner decision 2026-10-17)', () => {
+  /**
+   * Side 0 holds x ≤ 5 (post at 0, a Rifle Squad at 4 seeing x ≤ 8). Side 1's post at 13 covers its
+   * Scout Car at 9 (which sees the squad) and an Artillery Gun at 11: 7 cells from the squad, inside
+   * its range, outside everything side 0 sees.
+   */
+  const field = () =>
+    worldOf(open(20, 1), [
+      { side: 0, kind: 'command-post', x: 0, y: 0 },
+      { side: 0, kind: 'rifles', x: 4, y: 0 },
+      { side: 1, kind: 'outrider', x: 9, y: 0 },
+      { side: 1, kind: 'howitzer', x: 11, y: 0 },
+      { side: 1, kind: 'command-post', x: 13, y: 0 }
+    ]);
+
+  it('a gun out of sight that shells a unit in coverage is placed where it fired from, as a last-known position', () => {
+    const w = field();
+    const gun = w.entities.find((e) => e.kind === 'howitzer')!;
+    expect(observedCells(w, rs, 0)[cellOf(w.map, gun.x, gun.y)]).toBe(0);
+    expect(report(w, 0, gun.id)).toBeUndefined();
+    const { world, events } = play(w, 2);
+    expect(events.some((e) => e.t === 'launch' && e.id === gun.id && e.x === 4)).toBe(true);
+    expect(report(world, 0, gun.id)).toMatchObject({ kind: 'howitzer', side: 1, x: 11, live: false });
+    // The gun's own side learns nothing new from it; the scout that spotted for it stays unknown to side 0.
+    expect(report(world, 0, w.entities.find((e) => e.kind === 'outrider')!.id)).toBeUndefined();
+    // The report is a position, not a sighting: the gun is not observed.
+    expect(observedCells(world, rs, 0)[cellOf(world.map, 11, 0)]).toBe(0);
+  });
+
+  it('a unit out of contact tells nothing: no radio, no report of who fires at it (D7)', () => {
+    const w = field();
+    // The post covers x ≤ 5: the squad at 6 is out of contact; the gun at 12 still reaches it.
+    w.entities.find((e) => e.kind === 'rifles')!.x = 6;
+    const gun = w.entities.find((e) => e.kind === 'howitzer')!;
+    gun.x = 12;
+    const { world, events } = play({ ...w, intel: undefined }, 2);
+    expect(events.some((e) => e.t === 'launch' && e.id === gun.id)).toBe(true);
+    expect(report(world, 0, gun.id)).toBeUndefined();
+  });
+
+  it('the shooter is named only to the side it fired at, and only for shots at its units', () => {
+    const w = field();
+    const gun = w.entities.find((e) => e.kind === 'howitzer')!;
+    const at = (side: number, events: SimEvent[]) => muzzleFlashes(w, rs, side, [], events);
+    expect([...at(0, [{ t: 'launch', tick: 1, id: gun.id, x: 4, y: 0 }])]).toEqual([gun.id]);
+    expect([...at(0, [{ t: 'launch', tick: 1, id: gun.id, x: 3, y: 0 }])]).toEqual([]); // an empty cell
+    expect([...at(1, [{ t: 'launch', tick: 1, id: gun.id, x: 4, y: 0 }])]).toEqual([]); // its own side
+    const squad = w.entities.find((e) => e.kind === 'rifles')!;
+    const scout = w.entities.find((e) => e.kind === 'outrider')!;
+    expect([...at(0, [{ t: 'fire', tick: 1, id: scout.id, target: squad.id }])]).toEqual([scout.id]);
+    expect([...at(1, [{ t: 'fire', tick: 1, id: squad.id, target: scout.id }])]).toEqual([squad.id]);
+    expect([...at(0, [{ t: 'fire', tick: 1, id: squad.id, target: scout.id }])]).toEqual([]);
+    expect([...at(0, [{ t: 'hit', tick: 1, id: squad.id, side: 0, damage: 5 }])]).toEqual([]);
+    expect([...muzzleFlashes(w, rs, 0, [], undefined)]).toEqual([]);
   });
 });

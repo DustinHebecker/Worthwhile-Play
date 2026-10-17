@@ -42,7 +42,10 @@ const RUNS = { numRuns: 60 };
 // '72b5b82d' from main at 30f9646; 'd1534738' since the generators also draw the doctrine
 // lostContact 'finish' (PR #29 review). With the old generator values ('regroup', 'keep') the
 // current engine still gives '72b5b82d': what is told for the existing doctrines is unchanged.
-const TWO_SIDE_FINGERPRINT = 'd1534738';
+// '8c1ae8db' since muzzle flash (owner decision 2026-10-17) deliberately adds reports: a shooter that
+// fires at a side's unit in coverage is placed for that side where it fired from; everything else
+// told is unchanged (checked: with the flash set emptied the engine gives 'd1534738' again).
+const TWO_SIDE_FINGERPRINT = '8c1ae8db';
 const play = (world: World, plans: readonly Command[][], rs = BASE_RULESET): World => plans.reduce((w, plan) => resolveTurn(w, rs, [plan]).world, world);
 
 describe('teams and hostility', () => {
@@ -163,7 +166,9 @@ describe('no leaks between opponents in the events a side is told (review of PR 
     // the target slipping out of sight) and shots at own units must still be told as before. Since
     // the PR #28 review an own shell towards a cell the side does not observe is no longer told, and
     // since PR #34 no own shot at an enemy the side never had reported; none of these sampled worlds
-    // has either, so the fingerprint stands.
+    // has either, so the fingerprint stood ('d1534738'). Muzzle flash (owner decision 2026-10-17)
+    // deliberately adds reports: a shooter firing at a side's unit in coverage is placed for that side
+    // where it fired from ('8c1ae8db'); every other report is unchanged (see the muzzle flash tests).
     let h = 0x811c9dc5;
     const feed = (text: string) => {
       for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193) >>> 0;
