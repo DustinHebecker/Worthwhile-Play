@@ -282,21 +282,20 @@ describe('Faces & Names view', () => {
     expect(NAMES.ja).toContain(h.el('fn-name')?.textContent);
   });
 
-  it('plays through in every UI language without missing keys, right-to-left in Arabic', () => {
-    for (const locale of SUPPORTED_LOCALES) {
-      const g = setup({ seed: 13, locale, difficulty: 'hard' });
-      expect(g.root.querySelector('.wp-fn')?.getAttribute('dir')).toBe(locale === 'ar' ? 'rtl' : 'ltr');
-      typeNote(g.el('fn-note') as HTMLInputElement, 'x');
-      g.root.querySelector<HTMLElement>('[data-testid^="fn-standout-"]')?.click();
-      g.toTest();
-      while (g.state().phase === 'test') {
-        if (!g.el('fn-hint')?.hidden) g.click('fn-hint');
-        g.click('fn-option-1');
-        g.click('fn-continue');
-      }
-      expect(g.el('fn-summary')?.textContent?.length).toBeGreaterThan(100);
-      expect(g.ctx.missingKeys, locale).toEqual([]);
-      expect(g.root.textContent).not.toMatch(/\{[a-z]+\}/);
+  // One test per locale: a single loop over all 16 took ~10 s alone and hit the 20 s timeout under load.
+  it.each([...SUPPORTED_LOCALES])('plays through in %s without missing keys, right-to-left in Arabic', (locale) => {
+    const g = setup({ seed: 13, locale, difficulty: 'hard' });
+    expect(g.root.querySelector('.wp-fn')?.getAttribute('dir')).toBe(locale === 'ar' ? 'rtl' : 'ltr');
+    typeNote(g.el('fn-note') as HTMLInputElement, 'x');
+    g.root.querySelector<HTMLElement>('[data-testid^="fn-standout-"]')?.click();
+    g.toTest();
+    while (g.state().phase === 'test') {
+      if (!g.el('fn-hint')?.hidden) g.click('fn-hint');
+      g.click('fn-option-1');
+      g.click('fn-continue');
     }
+    expect(g.el('fn-summary')?.textContent?.length).toBeGreaterThan(100);
+    expect(g.ctx.missingKeys, locale).toEqual([]);
+    expect(g.root.textContent).not.toMatch(/\{[a-z]+\}/);
   });
 });
