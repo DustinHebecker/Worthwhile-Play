@@ -21,6 +21,22 @@
 @media (min-width: 48rem) {
   .wp-mini-optimizer .mo-layout { grid-template-columns: minmax(0, 1.35fr) minmax(16rem, 1fr); align-items: start; }
 }
+/* Production on phones: the value and the stock bars stay in view above the cards while quantities change. */
+@media (max-width: 47.99rem) {
+  .wp-mini-optimizer[data-kind='production'] .mo-side { display: contents; }
+  .wp-mini-optimizer[data-kind='production'] .mo-statusbox {
+    order: -1;
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 1;
+    padding-block: 0.35rem;
+    box-shadow: 0 2px 6px rgb(0 0 0 / 0.12);
+  }
+  .wp-mini-optimizer[data-kind='production'] .mo-score { font-size: 1.05rem; }
+  .wp-mini-optimizer[data-kind='production'] .mo-checks { gap: 0.15rem; margin-block-start: 0.15rem; font-size: 0.85rem; }
+  .wp-mini-optimizer[data-kind='production'] .mo-meter { grid-template-columns: minmax(0, 1fr) 4.5rem; align-items: center; column-gap: 0.5rem; }
+  .wp-mini-optimizer[data-kind='production'] .mo-bar { block-size: 0.7rem; }
+}
 
 /* View toggle (after "Show a best plan") */
 .wp-mini-optimizer .mo-toggle { display: flex; flex-wrap: wrap; gap: 0.4rem; }
@@ -145,6 +161,8 @@
   .wp-mini-optimizer .mo-link.is-best .mo-best, .wp-mini-optimizer .mo-route.is-best { stroke: LinkText; }
   .wp-mini-optimizer .mo-label, .wp-mini-optimizer .mo-cost, .wp-mini-optimizer .mo-parcels, .wp-mini-optimizer .mo-step, .wp-mini-optimizer .mo-open { fill: CanvasText; }
   .wp-mini-optimizer .mo-ring { stroke: LinkText; }
+  .wp-mini-optimizer .mo-link.is-built .mo-badge, .wp-mini-optimizer .mo-step-box { fill: Highlight; stroke: Highlight; }
+  .wp-mini-optimizer .mo-link.is-built .mo-cost, .wp-mini-optimizer .mo-step { fill: HighlightText; }
   .wp-mini-optimizer .mo-fill { background: Highlight; }
   .wp-mini-optimizer .mo-over { background: repeating-linear-gradient(45deg, CanvasText 0 4px, transparent 4px 8px); }
   .wp-mini-optimizer .mo-limit { background: CanvasText; }

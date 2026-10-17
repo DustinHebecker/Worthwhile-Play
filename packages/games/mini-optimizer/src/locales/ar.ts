@@ -55,6 +55,7 @@ export const ar: Catalogue = {
   'prod.max': 'حتى {n}',
   'prod.setup': 'تجهيز {n}',
   'prod.setupTotal': 'تكاليف التجهيز: {n} (مخصومة بالفعل)',
+  'prod.empty': 'لم تخطط لصنع شيء بعد: اختر قطعة واحدة على الأقل لفحص الخطة.',
   'qty.aria': '{name}: الكمية',
   'qty.less': '{name}: قطعة أقل',
   'qty.more': '{name}: قطعة أكثر',

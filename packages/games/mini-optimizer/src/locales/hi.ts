@@ -55,6 +55,7 @@ export const hi: Catalogue = {
   'prod.max': 'अधिकतम {n}',
   'prod.setup': 'तैयारी {n}',
   'prod.setupTotal': 'तैयारी लागत: {n} (पहले ही घटाई गई)',
+  'prod.empty': 'अभी कुछ तय नहीं किया: योजना जाँचने के लिए कम से कम एक नग चुनें।',
   'qty.aria': '{name}: मात्रा',
   'qty.less': '{name}: एक कम',
   'qty.more': '{name}: एक ज़्यादा',

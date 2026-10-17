@@ -55,6 +55,7 @@ export const ko: Catalogue = {
   'prod.max': '최대 {n}',
   'prod.setup': '준비 {n}',
   'prod.setupTotal': '준비 비용: {n} (이미 뺌)',
+  'prod.empty': '아직 만들 것이 없습니다. 계획을 확인하려면 적어도 한 개를 고르세요.',
   'qty.aria': '{name}: 수량',
   'qty.less': '{name}: 하나 줄이기',
   'qty.more': '{name}: 하나 늘리기',

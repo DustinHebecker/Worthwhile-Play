@@ -85,7 +85,9 @@ export type Violation =
   | { code: 'groups'; groups: number[][] }
   | { code: 'unvisited'; stops: number[] }
   | { code: 'overload'; trip: number; load: number; capacity: number }
-  | { code: 'overStock'; resource: number; use: number; stock: number };
+  | { code: 'overStock'; resource: number; use: number; stock: number }
+  /** Production: nothing is made yet (an empty plan is not a plan worth checking). */
+  | { code: 'nothing' };
 
 /** Every unmet constraint of a plan (empty exactly when the plan is feasible). */
 export function violations(problem: Problem, plan: Plan): Violation[] {
@@ -103,7 +105,9 @@ export function violations(problem: Problem, plan: Plan): Violation[] {
     }
     case 'production': {
       const use = prod.resourceUse(problem, (plan as ProductionPlan).qty);
-      return prod.overStock(problem, plan as ProductionPlan).map((r) => ({ code: 'overStock', resource: r, use: use[r]!, stock: problem.resources[r]!.stock }));
+      const out: Violation[] = prod.overStock(problem, plan as ProductionPlan).map((r) => ({ code: 'overStock', resource: r, use: use[r]!, stock: problem.resources[r]!.stock }));
+      if ((plan as ProductionPlan).qty.every((q) => q === 0)) out.unshift({ code: 'nothing' });
+      return out;
     }
   }
 }
@@ -278,6 +282,8 @@ export function isMoState(v: unknown): v is MoState {
       if (!isRecord(last) || !isPlanFor(last.plan, problem) || !isFeasible(problem, last.plan) || last.score !== score(problem, last.plan)) return false;
       if (!isInt(v.bestScore, -1000, 1000)) return false;
       if (isBetter(problem.kind, last.score, v.bestScore)) return false;
+      // No checked plan can beat the proven optimum (the instance is validated, so the solver stays within its bounds).
+      if (isBetter(problem.kind, v.bestScore, solve(problem).score)) return false;
       if (v.phase === 'checked' && !samePlan(v.plan, last.plan)) return false;
     }
     return true;

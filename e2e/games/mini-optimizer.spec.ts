@@ -144,7 +144,8 @@ for (const kind of ['network', 'delivery', 'production'] as const) {
     const r = root(page);
     await expect(r.getByTestId('mo-task')).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
-    const targets = r.locator('[data-link], [data-stop], [data-depot], .mo-stepper button, .mo-actions button:visible, .mo-qty');
+    // Roads, customers and the depot are hit through their invisible hit areas (.mo-hit); the visible marks are smaller.
+    const targets = r.locator('[data-link] .mo-hit, [data-stop] .mo-hit, [data-depot] .mo-hit, .mo-stepper button, .mo-actions button:visible, .mo-qty');
     const count = await targets.count();
     expect(count).toBeGreaterThan(3);
     for (let i = 0; i < count; i++) {

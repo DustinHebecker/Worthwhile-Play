@@ -55,6 +55,7 @@ export const tr: Catalogue = {
   'prod.max': 'en çok {n}',
   'prod.setup': 'hazırlık {n}',
   'prod.setupTotal': 'Hazırlık maliyetleri: {n} (zaten düşüldü)',
+  'prod.empty': 'Henüz bir şey planlanmadı: planı kontrol etmek için en az bir adet seç.',
   'qty.aria': '{name}: adet',
   'qty.less': '{name}: bir adet az',
   'qty.more': '{name}: bir adet fazla',

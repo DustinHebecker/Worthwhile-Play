@@ -42,8 +42,10 @@ describe('view', () => {
   it.each(['network', 'delivery', 'production'] as const)('%s: a best plan entered by taps checks as best and reports the end once', (kind) => {
     const state = createInitial(17, 'medium', kind);
     const m = mount(state);
-    // An empty production plan is feasible (value 0); the other kinds start incomplete.
-    expect(m.q('mo-check').getAttribute('aria-disabled')).toBe(String(kind !== 'production'));
+    // Every kind starts incomplete (production: nothing made yet).
+    expect(m.q('mo-check').getAttribute('aria-disabled')).toBe('true');
+    m.click(m.q('mo-check'));
+    expect(m.finished).toHaveLength(0);
     enterBest(m, state);
     expect(m.q('mo-score').dataset.value).toBe(String(solve(state.problem).score));
     expect(m.q('mo-check').getAttribute('aria-disabled')).toBe('false');
@@ -132,8 +134,24 @@ describe('view', () => {
     expect(m.q('stop-B').dataset.trip).toBe('1');
   });
 
-  it('renders right-to-left text around a left-to-right map', () => {
+  it('renders right-to-left text around a left-to-right map whose arrow keys follow its visual order', () => {
     const m = mount(createInitial(1, 'hard', 'network'), 'ar');
     expect(m.root.querySelector('.wp-mini-optimizer')!.getAttribute('dir')).toBe('rtl');
+    const items = [...m.root.querySelectorAll<SVGGElement>('.mo-link')];
+    const first = m.root.querySelector<SVGGElement>('.mo-link[tabindex="0"]')!;
+    m.key(first, 'ArrowRight');
+    const next = m.root.querySelector<SVGGElement>('.mo-link[tabindex="0"]')!;
+    m.key(next, 'ArrowLeft');
+    expect(m.root.querySelector('.mo-link[tabindex="0"]')).toBe(first);
+    expect(items).toContain(next);
+    expect(next).not.toBe(first);
+  });
+
+  it('production: an empty plan is not checked; the status says why', () => {
+    const m = mount(createInitial(4, 'easy', 'production'));
+    expect(m.q('mo-status').textContent).toContain('Nothing made yet');
+    m.click(m.q('plus-0'));
+    expect(m.q('mo-status').textContent).not.toContain('Nothing made yet');
+    expect(m.q('mo-check').getAttribute('aria-disabled')).toBe('false');
   });
 });

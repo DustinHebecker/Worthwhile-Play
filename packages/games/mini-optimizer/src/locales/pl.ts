@@ -55,6 +55,7 @@ export const pl: Catalogue = {
   'prod.max': 'maks. {n}',
   'prod.setup': 'uruchomienie {n}',
   'prod.setupTotal': 'Koszty uruchomienia: {n} (już odjęte)',
+  'prod.empty': 'Nic jeszcze nie zaplanowano: wybierz co najmniej jedną sztukę, aby sprawdzić plan.',
   'qty.aria': '{name}: liczba sztuk',
   'qty.less': '{name}: o jedną sztukę mniej',
   'qty.more': '{name}: o jedną sztukę więcej',

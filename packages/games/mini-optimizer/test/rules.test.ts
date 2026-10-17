@@ -132,10 +132,9 @@ describe('actions', () => {
   it('checks only feasible plans; the first check is reported exactly once; edits return to planning', () => {
     for (const kind of ['network', 'delivery', 'production'] as const) {
       const start = createInitial(11, 'hard', kind);
-      if (kind !== 'production') {
-        expect(check(start)).toEqual({ state: start, first: false });
-        expect(violations(start.problem, start.plan).length).toBeGreaterThan(0);
-      }
+      // Nothing built, visited or made yet: not checkable.
+      expect(check(start)).toEqual({ state: start, first: false });
+      expect(violations(start.problem, start.plan).length).toBeGreaterThan(0);
       const ready = withBestPlan(start);
       expect(isFeasible(ready.problem, ready.plan)).toBe(true);
       const first = check(ready);
@@ -226,6 +225,8 @@ describe('isMoState', () => {
     expect(mutate((s) => (s.reported = false))).toBe(false);
     expect(mutate((s) => (s.last = { score: 1, plan: s.plan }))).toBe(false);
     expect(mutate((s) => (s.bestScore = (s.last?.score ?? 0) + 1))).toBe(false);
+    // A best score better than the proven optimum (the base state checked an optimal plan).
+    expect(mutate((s) => (s.bestScore = (s.last?.score ?? 0) - 1))).toBe(false);
     expect(mutate((s) => (s.phase = 'unknown' as never))).toBe(false);
     expect(mutate((s) => (s.undo = [{ trips: [] }]))).toBe(false);
     expect(mutate((s) => (s.problem = { ...s.problem, links: [] } as never))).toBe(false);

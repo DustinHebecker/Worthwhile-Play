@@ -47,9 +47,9 @@ const PICK_LINK = 28;
 const PITCH = 46;
 const MARGIN = 44;
 const STOP_R = 17;
-const STOP_HIT = 31;
+const STOP_HIT = 34;
 /** Line patterns of trips 1, 2, 3 … (repeating); trips also differ by number, never by colour alone. */
-const TRIP_DASH = ['', '14 7', '3 7'];
+const TRIP_DASH = ['', '16 7', '16 5 2 5'];
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 const LIST_OPEN = 'listOpen';
@@ -149,6 +149,8 @@ export function createMiniOptimizer(context: GameContext): GameInstance<MoState>
         return t('trip.over', { n: v.trip + 1, load: v.load, capacity: v.capacity, extra: v.load - v.capacity });
       case 'overStock':
         return t('meter.over', { name: t(`res.${prodP().resources[v.resource]!.id}`), use: v.use, stock: v.stock, extra: v.use - v.stock });
+      case 'nothing':
+        return t('prod.empty');
     }
   };
 
@@ -191,6 +193,8 @@ export function createMiniOptimizer(context: GameContext): GameInstance<MoState>
       );
       return { g, mx, my, i };
     });
+    /** Opening-cost badges placed so far (they must not cover each other either). */
+    const openBadges: [number, number][] = [];
     const points = p.points.map((q, i) => {
       const [x, y] = at(q.x, q.y);
       const label = pointLabel(p, i);
@@ -200,12 +204,29 @@ export function createMiniOptimizer(context: GameContext): GameInstance<MoState>
       const g = svg('g', { class: 'mo-point', 'data-testid': `point-${label}`, 'aria-hidden': 'true' }, shape,
         svg('text', { class: 'mo-label', x, y: y + 1, 'text-anchor': 'middle', 'dominant-baseline': 'central' }, label));
       if (q.junction && q.open > 0) {
-        // The opening-cost badge goes beside the square where it is farthest from every road.
-        const spots: [number, number][] = [[x, y + JUNCTION_HALF + 13], [x, y - JUNCTION_HALF - 13], [x + JUNCTION_HALF + 19, y], [x - JUNCTION_HALF - 19, y]];
+        // The opening-cost badge goes beside the square where it is farthest from every road and every road's cost
+        // badge (a badge counts as about 26 units wide around its road's midpoint).
+        const h1 = JUNCTION_HALF + 14;
+        const w1 = JUNCTION_HALF + 20;
+        const spots: [number, number][] = [[x, y + h1], [x, y - h1], [x + w1, y], [x - w1, y], [x + w1, y + h1], [x - w1, y + h1], [x + w1, y - h1], [x - w1, y - h1]];
+        const ends = (l: { a: number; b: number }) => [at(p.points[l.a]!.x, p.points[l.a]!.y), at(p.points[l.b]!.x, p.points[l.b]!.y)] as const;
         const clearance = ([bx, by]: [number, number]) =>
-          Math.min(...p.links.map((l) => pointSegmentDistance([bx, by], at(p.points[l.a]!.x, p.points[l.a]!.y), at(p.points[l.b]!.x, p.points[l.b]!.y))));
+          Math.min(
+            ...p.links.map((l) => pointSegmentDistance([bx, by], ...ends(l))),
+            ...p.links.map((l) => {
+              const [[x1, y1], [x2, y2]] = ends(l);
+              return Math.hypot((x1 + x2) / 2 - bx, (y1 + y2) / 2 - by) - 26;
+            }),
+            ...p.points.map((o) => Math.hypot(o.x * UNIT - bx, o.y * UNIT - by) - TOWN_R - 8),
+            // Clearly nearer to its own square than to any other junction, so it reads as that junction's cost.
+            ...p.points.map((o, k) => (o.junction && k !== i ? Math.hypot(o.x * UNIT - bx, o.y * UNIT - by) - 75 : Infinity)),
+            ...openBadges.map(([ox, oy]) => Math.hypot(ox - bx, oy - by) - 34)
+          );
         const inside = spots.filter(([sx, sy]) => sx - 16 >= 0 && sx + 16 <= 10 * UNIT && sy - 11 >= 0 && sy + 11 <= 10 * UNIT);
-        const [bx, by] = inside.reduce((best, spot) => (clearance(spot) > clearance(best) + 0.5 ? spot : best));
+        // Straight below, above or beside the square reads best; a corner spot must be clearly clearer to win.
+        const score = (spot: [number, number]) => clearance(spot) - (spot[0] !== x && spot[1] !== y ? 8 : 0);
+        const [bx, by] = inside.reduce((best, spot) => (score(spot) > score(best) + 0.5 ? spot : best));
+        openBadges.push([bx, by]);
         g.append(
           svg('rect', { class: 'mo-open-box', x: bx - 15, y: by - 10, width: 30, height: 20, rx: 5 }),
           svg('text', { class: 'mo-open', x: bx, y: by + 0.5, 'text-anchor': 'middle', 'dominant-baseline': 'central' }, `+${q.open}`)
@@ -454,6 +475,7 @@ export function createMiniOptimizer(context: GameContext): GameInstance<MoState>
       const left = violations(p, plan).find((v) => v.code === 'unvisited');
       checksList.append(left ? item(false, violationText(left)) : item(true, t('del.allVisited')));
     } else {
+      if ((shownPlan() as ProductionPlan).qty.every((q) => q === 0)) checksList.append(item(false, t('prod.empty')));
       checksList.append(...meters(p));
       const setup = setupCost(p, (shownPlan() as ProductionPlan).qty);
       if (p.products.some((x) => x.setup > 0)) checksList.append(h('li', { class: 'is-info' }, t('prod.setupTotal', { n: setup })));
@@ -735,8 +757,8 @@ export function createMiniOptimizer(context: GameContext): GameInstance<MoState>
       activate(items[index]!);
       return;
     }
-    const rtl = t.direction === 'rtl';
-    const steps: Record<string, number> = { ArrowDown: 1, ArrowUp: -1, ArrowRight: rtl ? -1 : 1, ArrowLeft: rtl ? 1 : -1, Home: -index, End: items.length - 1 - index };
+    // The map is always drawn left to right (also in RTL pages), so the arrow keys follow its visual order.
+    const steps: Record<string, number> = { ArrowDown: 1, ArrowUp: -1, ArrowRight: 1, ArrowLeft: -1, Home: -index, End: items.length - 1 - index };
     const step = steps[event.key];
     if (step === undefined) return;
     event.preventDefault();

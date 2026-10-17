@@ -55,6 +55,7 @@ export const zhHans: Catalogue = {
   'prod.max': '最多 {n}',
   'prod.setup': '准备 {n}',
   'prod.setupTotal': '准备成本：{n}（已扣除）',
+  'prod.empty': '还没有安排生产：至少选择一件产品才能检查方案。',
   'qty.aria': '{name}：数量',
   'qty.less': '{name}：减一件',
   'qty.more': '{name}：加一件',
