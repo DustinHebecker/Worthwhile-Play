@@ -1,6 +1,6 @@
 # Best Plan (`mini-optimizer`) — design
 
-Status: **Plan (2026-10-17)**, nothing implemented yet. Written by the planner of the new-games pipeline; the implementer follows it, the reviewer checks against it. Numbers marked *(calibrate)* are first estimates the implementer may tune within the stated bounds (never beyond the solver bounds in § 9).
+Status: **Implemented (2026-10-17)**; deviations and calibrations are listed in § 17. Written by the planner of the new-games pipeline; the implementer follows it, the reviewer checks against it. Numbers marked *(calibrate)* are first estimates the implementer may tune within the stated bounds (never beyond the solver bounds in § 9).
 
 Binding inputs: `CLAUDE.md`, implementation brief ("Core product principles", "Determinism", "Localization", "Accessibility", "Testing philosophy", "Definition of Done"), ADR 0002 (contract), 0006 (roles), 0017 (host start screen, `settings`, `settingsOf`, `begin`).
 
@@ -360,5 +360,24 @@ German title "Bester Plan"; product and resource words need natural translations
 
 ## 16. Open questions for the owner
 
-1. **Title:** "Best Plan / Bester Plan" (descriptive, like "Flow Lab") or keep the concept name "Mini Optimizer / Mini-Optimierer"? The id stays `mini-optimizer` either way.
-2. **Default problem on the start screen:** `network` (gentlest) is chosen; would you prefer "Surprise me" as the default?
+1. **Title:** "Best Plan / Bester Plan" (descriptive, like "Flow Lab") or keep the concept name "Mini Optimizer / Mini-Optimierer"? The id stays `mini-optimizer` either way. → **Decided (orchestrator, 2026-10-17): "Best Plan" / "Bester Plan".**
+2. **Default problem on the start screen:** `network` (gentlest) is chosen; would you prefer "Surprise me" as the default? → **Decided: Network.**
+
+## 17. Implementation notes (2026-10-17)
+
+What changed against the plan above, and why. Everything else is as designed.
+
+- **Files.** As in § 12, plus `src/common.ts` (difficulties, union–find, labels) and the translations split into `src/locales/<locale>.ts` (each typed against the English keys; `messages.ts` assembles them). Tests: `test/{rules,network,delivery,production,view,contract}.test.ts` and `test/oracle.ts`.
+- **Network generator calibration.** With planar, point-clear links and readable badges, 6 towns rarely allow 9 candidate links (≈ 5 % of attempts), and the medium/hard junction placement fails often too, so the fallback rate went above 1 %. Calibrated: candidate links **easy 8–10, medium 11–15, hard 14–19** (was 9–11 / 12–15 / 15–19), longest link **5.7** units (was 5; costs stay ≤ 6 + rough surcharge), and a new readability rule: two cost badges (link midpoints) are at least **1.25** units apart. Measured: 0 fallbacks in 500 seeds per level, about 0.2 / 2.3 / 3.6 ms per instance.
+- **Reading order.** Towns (and customers) are sorted top-left first after placement, so labels A, B, C … read like a page.
+- **Junction opening cost.** The "+n" badge is drawn beside the square on the side farthest from every road (below, above, right or left), on a filled box, so roads never run through it. The legend says "next to", not "below".
+- **Fallback fixtures** are frozen generator output (seed 2026) instead of hand-drawn instances; tests check they pass the same validation and interest filters.
+- **Production values.** `f` is drawn from 1.6 … 3.2 (the design's 0.8 … 1.6 doubled): with small integer uses, the original range gave many products worth the same 2–3 points, which made the easy level trivial. Bounds unchanged (value ≤ 40).
+- **Delivery depot label.** Customers are A … G, which includes "D", so the depot is a house glyph and is named by the word "Depot" in texts ("Trip 1: Depot → A → C → Depot") instead of the letter D.
+- **Delivery hit areas** are 62 SVG units wide (not 56) so they stay ≥ 44 px on a 360 px phone with the 9 × 9 grid.
+- **Production layout.** No separate list view (the product cards already are the accessible controls); the cards form a responsive grid on desktop instead of a table. An empty production plan is feasible (value 0), so "Check plan" is available from the start there.
+- **Status box while a best plan is shown** describes the plan on screen (the best plan), so the map, the meters and the score never disagree; the note above says the player's own plan is unchanged. A tap on the map while a best plan is shown switches back to "Your plan" instead of editing.
+- **Difference line.** Cost and value differences are shown as plain numbers ("Difference: 6 (22.2 %)"); distances keep their unit ("24 km").
+- **Wording "a best plan".** Several optimal plans can exist. In German, Spanish, French, Italian and Portuguese "a best plan" reads as "a better plan", so those locales say "an optimal plan" ("ein optimaler Plan"); the title stays "Bester Plan".
+- **Generation time test** asserts the average over 500 instances (< 100 ms; measured ≈ 5 ms) rather than the slowest single one, which was flaky under parallel load.
+
