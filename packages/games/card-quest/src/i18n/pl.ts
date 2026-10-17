@@ -309,5 +309,36 @@ export const pl: Catalogue = {
   // Owner feedback 2026-10-17: curse effect in the reveal
   'reveal.effect': 'Trafia cię od razu: {effect}',
   // K2 review: a deal whose item is gone
-  'log.void': '{name} — umowa wygasła (partner: {to}): przedmiotu {card} już nie ma. Reputacja bez zmian.'
+  'log.void': '{name} — umowa wygasła (partner: {to}): przedmiotu {card} już nie ma. Reputacja bez zmian.',
+  // Log lines with the person as subject (.you) or addressee (.toYou)
+  'log.offer.help.you': 'Prosisz o pomoc, adresat: {to}; oferta: {terms}.',
+  'log.offer.help.toYou': '{name} prosi cię o pomoc; oferta: {terms}.',
+  'log.offer.free.you': 'Upominasz się o przysługę, dłużnik: {to}.',
+  'log.offer.free.toYou': '{name} upomina się u ciebie o należną przysługę.',
+  'log.offer.stay.you': 'Oferujesz za trzymanie się z boku: {card}; adresat: {to}.',
+  'log.offer.stay.toYou': '{name} oferuje ci za trzymanie się z boku: {card}.',
+  'log.accept.you': 'Przyjmujesz ofertę od: {to}.',
+  'log.accept.toYou': '{name} przyjmuje twoją ofertę.',
+  'log.decline.you': 'Odrzucasz ofertę od: {to}.',
+  'log.decline.toYou': '{name} odrzuca twoją ofertę.',
+  'log.switch.you': '{card}! Zmieniasz stronę: przechodzisz do potworów, przeciw: {to}.',
+  'log.switch.toYou': '{name} — {card}! Zmiana strony na potwory — przeciw tobie!',
+  'log.kept.loot.you': 'Umowa dotrzymana (partner: {to}), twoje karty łupów: {n}. Reputacja +1 dla obu stron.',
+  'log.kept.loot.toYou': '{name} — umowa z tobą dotrzymana, karty łupów: {n}. Reputacja +1 dla obu stron.',
+  'log.kept.item.you': 'Umowa dotrzymana (partner: {to}), otrzymujesz: {card}. Reputacja +1 dla obu stron.',
+  'log.kept.item.toYou': '{name} — umowa z tobą dotrzymana, otrzymuje twój przedmiot: {card}. Reputacja +1 dla obu stron.',
+  'log.kept.favour.you': 'Umowa dotrzymana (partner: {to}); teraz należy ci się przysługa, dłużnik: {to}. Reputacja +1 dla obu stron.',
+  'log.kept.favour.toYou': '{name} — umowa z tobą dotrzymana; teraz ciąży na tobie dług: jedna przysługa. Reputacja +1 dla obu stron.',
+  'log.kept.free.you': 'Oddajesz przysługę, odbiorca: {to}. Reputacja +1 dla obu stron.',
+  'log.kept.free.toYou': '{name} oddaje ci przysługę. Reputacja +1 dla obu stron.',
+  'log.broken.switch.you': 'Zrywasz umowę (partner: {to}). Reputacja −2.',
+  'log.broken.switch.toYou': '{name} zrywa umowę z tobą. Reputacja −2.',
+  'log.broken.stay.you': 'Wtrącasz się, choć zapłacono ci za trzymanie się z boku (płacący: {to}). Reputacja −2.',
+  'log.broken.stay.toYou': '{name} wtrąca się mimo twojej zapłaty za trzymanie się z boku. Reputacja −2.',
+  'log.broken.favour.you': 'Odmawiasz należnej przysługi, odbiorca: {to}. Reputacja −2.',
+  'log.broken.favour.toYou': '{name} odmawia ci należnej przysługi. Reputacja −2.',
+  'log.void.you': 'Umowa wygasła (partner: {to}): przedmiotu {card} już nie ma. Reputacja bez zmian.',
+  'log.void.toYou': '{name} — umowa z tobą wygasła: twojego przedmiotu {card} już nie ma. Reputacja bez zmian.',
+  'log.give.toYou': '{name} oddaje ci karty ({n}).',
+  'log.curse.toYou': '{name} — klątwa na ciebie: {card}.'
 };

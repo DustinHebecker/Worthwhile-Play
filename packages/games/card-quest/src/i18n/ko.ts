@@ -309,5 +309,36 @@ export const ko: Catalogue = {
   // Owner feedback 2026-10-17: curse effect in the reveal
   'reveal.effect': '즉시 나에게 적용: {effect}',
   // K2 review: a deal whose item is gone
-  'log.void': '{name} — {to}와(과)의 거래 무효: {card}이(가) 사라짐. 평판 변동 없음.'
+  'log.void': '{name} — {to}와(과)의 거래 무효: {card}이(가) 사라짐. 평판 변동 없음.',
+  // Log lines with the person as subject (.you) or addressee (.toYou)
+  'log.offer.help.you': '너는 {to}에게 도움을 청한다. 조건: {terms}.',
+  'log.offer.help.toYou': '{name} — 너에게 도움 요청, 조건: {terms}.',
+  'log.offer.free.you': '너는 {to}에게 신세를 갚으라고 요구한다.',
+  'log.offer.free.toYou': '{name} — 너에게 신세를 갚으라고 요구.',
+  'log.offer.stay.you': '너는 {to}에게 빠져 주는 대가로 {card}을(를) 제안한다.',
+  'log.offer.stay.toYou': '{name} — 너에게 빠져 주는 대가로 {card} 제안.',
+  'log.accept.you': '너는 {to}의 제안을 수락한다.',
+  'log.accept.toYou': '{name} — 네 제안 수락.',
+  'log.decline.you': '너는 {to}의 제안을 거절한다.',
+  'log.decline.toYou': '{name} — 네 제안 거절.',
+  'log.switch.you': '너는 {card}을(를) 내고 몬스터 편으로 편을 바꾼다. {to} 상대!',
+  'log.switch.toYou': '{name} — {card}! 몬스터 편으로 편 바꾸기 — 너를 상대로!',
+  'log.kept.loot.you': '{to}와(과)의 거래 지킴, 네 전리품 카드: {n}. 둘 다 평판 +1.',
+  'log.kept.loot.toYou': '{name} — 너와의 거래 지킴, 전리품 카드: {n}. 둘 다 평판 +1.',
+  'log.kept.item.you': '{to}와(과)의 거래 지킴, 너는 {card} 획득. 둘 다 평판 +1.',
+  'log.kept.item.toYou': '{name} — 너와의 거래 지킴, 네 {card} 획득. 둘 다 평판 +1.',
+  'log.kept.favour.you': '{to}와(과)의 거래 지킴: 이제 {to}이(가) 너에게 신세를 하나 졌다. 둘 다 평판 +1.',
+  'log.kept.favour.toYou': '{name} — 너와의 거래 지킴: 이제 네가 신세를 하나 졌다. 둘 다 평판 +1.',
+  'log.kept.free.you': '너는 {to}에게 진 신세를 갚았다. 둘 다 평판 +1.',
+  'log.kept.free.toYou': '{name} — 너에게 진 신세를 갚음. 둘 다 평판 +1.',
+  'log.broken.switch.you': '너는 {to}와(과)의 거래를 깼다. 평판 −2.',
+  'log.broken.switch.toYou': '{name} — 너와의 거래를 깸. 평판 −2.',
+  'log.broken.stay.you': '너는 {to}에게 대가를 받고도 끼어들었다. 평판 −2.',
+  'log.broken.stay.toYou': '{name} — 너에게 대가를 받고도 끼어듦. 평판 −2.',
+  'log.broken.favour.you': '너는 {to}에게 진 신세를 갚지 않았다. 평판 −2.',
+  'log.broken.favour.toYou': '{name} — 너에게 진 신세를 갚지 않음. 평판 −2.',
+  'log.void.you': '{to}와(과)의 거래 무효: {card}이(가) 사라짐. 평판 변동 없음.',
+  'log.void.toYou': '{name} — 너와의 거래 무효: 네 {card}이(가) 사라짐. 평판 변동 없음.',
+  'log.give.toYou': '{name} — 너에게 카드 {n}장.',
+  'log.curse.toYou': '{name} — 너에게 저주: {card}.'
 };

@@ -323,7 +323,38 @@ export const en = {
   // Owner feedback 2026-10-17: curse effect in the reveal
   'reveal.effect': 'Hits you at once: {effect}',
   // K2 review: a deal whose item is gone
-  'log.void': '{name} — deal with {to} void: {card} is gone. Reputation unchanged.'
+  'log.void': '{name} — deal with {to} void: {card} is gone. Reputation unchanged.',
+  // Log lines with the person as subject (.you) or addressee (.toYou)
+  'log.offer.help.you': 'You ask {to} for help and offer {terms}.',
+  'log.offer.help.toYou': '{name} asks you for help and offers {terms}.',
+  'log.offer.free.you': 'You call in the favour {to} owes you.',
+  'log.offer.free.toYou': '{name} calls in the favour you owe.',
+  'log.offer.stay.you': 'You offer {to} {card} for staying out.',
+  'log.offer.stay.toYou': '{name} offers you {card} for staying out.',
+  'log.accept.you': 'You accept the offer from {to}.',
+  'log.accept.toYou': '{name} accepts your offer.',
+  'log.decline.you': 'You decline the offer from {to}.',
+  'log.decline.toYou': '{name} declines your offer.',
+  'log.switch.you': 'You play {card} and change to the monsters’ side against {to}!',
+  'log.switch.toYou': '{name} plays {card} and changes to the monsters’ side — against you!',
+  'log.kept.loot.you': 'Deal with {to} kept, your loot cards: {n}. Reputation +1 for both.',
+  'log.kept.loot.toYou': '{name} — deal with you kept, loot cards: {n}. Reputation +1 for both.',
+  'log.kept.item.you': 'Deal with {to} kept, you get {card}. Reputation +1 for both.',
+  'log.kept.item.toYou': '{name} — deal with you kept, gets your {card}. Reputation +1 for both.',
+  'log.kept.favour.you': 'Deal with {to} kept: {to} owes you a favour now. Reputation +1 for both.',
+  'log.kept.favour.toYou': '{name} — deal with you kept: you owe a favour now. Reputation +1 for both.',
+  'log.kept.free.you': 'Favour for {to} done. Reputation +1 for both.',
+  'log.kept.free.toYou': '{name} — favour for you done. Reputation +1 for both.',
+  'log.broken.switch.you': 'You broke the deal with {to}. Reputation −2.',
+  'log.broken.switch.toYou': '{name} broke the deal with you. Reputation −2.',
+  'log.broken.stay.you': 'You interfered although {to} paid you to stay out. Reputation −2.',
+  'log.broken.stay.toYou': '{name} interfered although you paid for staying out. Reputation −2.',
+  'log.broken.favour.you': 'You refused the favour you owe {to}. Reputation −2.',
+  'log.broken.favour.toYou': '{name} refused the favour owed to you. Reputation −2.',
+  'log.void.you': 'Deal with {to} void: {card} is gone. Reputation unchanged.',
+  'log.void.toYou': '{name} — deal with you void: your {card} is gone. Reputation unchanged.',
+  'log.give.toYou': '{name} — {n} cards given to you.',
+  'log.curse.toYou': '{name} — curse on you: {card}.'
 } as const;
 
 

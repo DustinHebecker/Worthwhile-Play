@@ -309,5 +309,36 @@ export const nl: Catalogue = {
   // Owner feedback 2026-10-17: curse effect in the reveal
   'reveal.effect': 'Treft je meteen: {effect}',
   // K2 review: a deal whose item is gone
-  'log.void': '{name} — deal met {to} vervallen: {card} is weg. Reputatie ongewijzigd.'
+  'log.void': '{name} — deal met {to} vervallen: {card} is weg. Reputatie ongewijzigd.',
+  // Log lines with the person as subject (.you) or addressee (.toYou)
+  'log.offer.help.you': 'Je vraagt {to} om hulp en biedt {terms}.',
+  'log.offer.help.toYou': '{name} vraagt jou om hulp en biedt {terms}.',
+  'log.offer.free.you': 'Je eist de gunst op die {to} je verschuldigd is.',
+  'log.offer.free.toYou': '{name} eist de gunst op die je verschuldigd bent.',
+  'log.offer.stay.you': 'Je biedt {to} {card} om erbuiten te blijven.',
+  'log.offer.stay.toYou': '{name} biedt je {card} om erbuiten te blijven.',
+  'log.accept.you': 'Je neemt het aanbod van {to} aan.',
+  'log.accept.toYou': '{name} neemt je aanbod aan.',
+  'log.decline.you': 'Je weigert het aanbod van {to}.',
+  'log.decline.toYou': '{name} weigert je aanbod.',
+  'log.switch.you': 'Je speelt {card} en wisselt van kant naar de monsters, tegen {to}!',
+  'log.switch.toYou': '{name} speelt {card} en wisselt van kant naar de monsters — tegen jou!',
+  'log.kept.loot.you': 'Deal met {to} nagekomen, jouw buitkaarten: {n}. Reputatie +1 voor allebei.',
+  'log.kept.loot.toYou': '{name} — deal met jou nagekomen, buitkaarten: {n}. Reputatie +1 voor allebei.',
+  'log.kept.item.you': 'Deal met {to} nagekomen, je krijgt {card}. Reputatie +1 voor allebei.',
+  'log.kept.item.toYou': '{name} — deal met jou nagekomen, krijgt jouw {card}. Reputatie +1 voor allebei.',
+  'log.kept.favour.you': 'Deal met {to} nagekomen: {to} is je nu een gunst verschuldigd. Reputatie +1 voor allebei.',
+  'log.kept.favour.toYou': '{name} — deal met jou nagekomen: jij bent nu een gunst verschuldigd. Reputatie +1 voor allebei.',
+  'log.kept.free.you': 'Gunst voor {to} geleverd. Reputatie +1 voor allebei.',
+  'log.kept.free.toYou': '{name} — gunst voor jou geleverd. Reputatie +1 voor allebei.',
+  'log.broken.switch.you': 'Je hebt de deal met {to} gebroken. Reputatie −2.',
+  'log.broken.switch.toYou': '{name} heeft de deal met jou gebroken. Reputatie −2.',
+  'log.broken.stay.you': 'Je bent toch tussenbeide gekomen, hoewel {to} je betaald had om erbuiten te blijven. Reputatie −2.',
+  'log.broken.stay.toYou': '{name} is toch tussenbeide gekomen, hoewel jij betaald had om dat te voorkomen. Reputatie −2.',
+  'log.broken.favour.you': 'Je hebt de gunst geweigerd die je {to} verschuldigd was. Reputatie −2.',
+  'log.broken.favour.toYou': '{name} heeft jou de verschuldigde gunst geweigerd. Reputatie −2.',
+  'log.void.you': 'Deal met {to} vervallen: {card} is weg. Reputatie ongewijzigd.',
+  'log.void.toYou': '{name} — deal met jou vervallen: jouw {card} is weg. Reputatie ongewijzigd.',
+  'log.give.toYou': '{name} — {n} kaarten aan jou gegeven.',
+  'log.curse.toYou': '{name} — vloek op jou: {card}.'
 };

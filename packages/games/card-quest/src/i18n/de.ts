@@ -309,5 +309,36 @@ export const de: Catalogue = {
   // Owner feedback 2026-10-17: curse effect in the reveal
   'reveal.effect': 'Trifft dich sofort: {effect}',
   // K2 review: a deal whose item is gone
-  'log.void': '{name} – Deal mit {to} hinfällig: {card} ist weg. Ruf unverändert.'
+  'log.void': '{name} – Deal mit {to} hinfällig: {card} ist weg. Ruf unverändert.',
+  // Log lines with the person as subject (.you) or addressee (.toYou)
+  'log.offer.help.you': 'Du bittest {to} um Hilfe und bietest {terms}.',
+  'log.offer.help.toYou': '{name} bittet dich um Hilfe und bietet {terms}.',
+  'log.offer.free.you': 'Du forderst den Gefallen ein, den {to} dir schuldet.',
+  'log.offer.free.toYou': '{name} fordert den Gefallen ein, den du schuldest.',
+  'log.offer.stay.you': 'Du bietest {to} {card} fürs Raushalten.',
+  'log.offer.stay.toYou': '{name} bietet dir {card} fürs Raushalten.',
+  'log.accept.you': 'Du nimmst das Angebot von {to} an.',
+  'log.accept.toYou': '{name} nimmt dein Angebot an.',
+  'log.decline.you': 'Du lehnst das Angebot von {to} ab.',
+  'log.decline.toYou': '{name} lehnt dein Angebot ab.',
+  'log.switch.you': 'Du spielst {card} und wechselst zu den Monstern, gegen {to}!',
+  'log.switch.toYou': '{name} spielt {card} und wechselt zu den Monstern – gegen dich!',
+  'log.kept.loot.you': 'Deal mit {to} eingehalten, deine Beutekarten: {n}. Ruf +1 für beide.',
+  'log.kept.loot.toYou': '{name} – Deal mit dir eingehalten, Beutekarten: {n}. Ruf +1 für beide.',
+  'log.kept.item.you': 'Deal mit {to} eingehalten, du bekommst {card}. Ruf +1 für beide.',
+  'log.kept.item.toYou': '{name} – Deal mit dir eingehalten, bekommt deinen Gegenstand {card}. Ruf +1 für beide.',
+  'log.kept.favour.you': 'Deal mit {to} eingehalten: {to} schuldet dir jetzt einen Gefallen. Ruf +1 für beide.',
+  'log.kept.favour.toYou': '{name} – Deal mit dir eingehalten: Du schuldest jetzt einen Gefallen. Ruf +1 für beide.',
+  'log.kept.free.you': 'Gefallen für {to} erledigt. Ruf +1 für beide.',
+  'log.kept.free.toYou': '{name} – Gefallen für dich erledigt. Ruf +1 für beide.',
+  'log.broken.switch.you': 'Du hast den Deal mit {to} gebrochen. Ruf −2.',
+  'log.broken.switch.toYou': '{name} hat den Deal mit dir gebrochen. Ruf −2.',
+  'log.broken.stay.you': 'Du hast dich eingemischt, obwohl {to} fürs Raushalten bezahlt hat. Ruf −2.',
+  'log.broken.stay.toYou': '{name} hat sich eingemischt, obwohl du fürs Raushalten bezahlt hast. Ruf −2.',
+  'log.broken.favour.you': 'Du hast den Gefallen für {to} verweigert. Ruf −2.',
+  'log.broken.favour.toYou': '{name} hat dir den geschuldeten Gefallen verweigert. Ruf −2.',
+  'log.void.you': 'Deal mit {to} hinfällig: {card} ist weg. Ruf unverändert.',
+  'log.void.toYou': '{name} – Deal mit dir hinfällig: Dein Gegenstand {card} ist weg. Ruf unverändert.',
+  'log.give.toYou': '{name} – {n} Karten an dich abgegeben.',
+  'log.curse.toYou': '{name} – Fluch auf dich: {card}.'
 };

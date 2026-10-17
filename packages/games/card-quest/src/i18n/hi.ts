@@ -309,5 +309,36 @@ export const hi: Catalogue = {
   // Owner feedback 2026-10-17: curse effect in the reveal
   'reveal.effect': 'तुम पर तुरंत असर: {effect}',
   // K2 review: a deal whose item is gone
-  'log.void': '{name} — {to} से सौदा रद्द: {card} अब मौजूद नहीं। साख में कोई बदलाव नहीं।'
+  'log.void': '{name} — {to} से सौदा रद्द: {card} अब मौजूद नहीं। साख में कोई बदलाव नहीं।',
+  // Log lines with the person as subject (.you) or addressee (.toYou)
+  'log.offer.help.you': 'तुमने {to} से मदद माँगी, पेशकश: {terms}।',
+  'log.offer.help.toYou': '{name} ने तुमसे मदद माँगी, पेशकश: {terms}।',
+  'log.offer.free.you': 'तुमने {to} से बकाया एहसान माँगा।',
+  'log.offer.free.toYou': '{name} ने तुमसे बकाया एहसान माँगा।',
+  'log.offer.stay.you': 'तुमने {to} को दूर रहने के बदले {card} की पेशकश की।',
+  'log.offer.stay.toYou': '{name} ने तुम्हें दूर रहने के बदले {card} की पेशकश की।',
+  'log.accept.you': 'तुमने {to} की पेशकश मंज़ूर की।',
+  'log.accept.toYou': '{name} ने तुम्हारी पेशकश मंज़ूर की।',
+  'log.decline.you': 'तुमने {to} की पेशकश ठुकराई।',
+  'log.decline.toYou': '{name} ने तुम्हारी पेशकश ठुकराई।',
+  'log.switch.you': '{card}! तुमने पाला बदला: अब राक्षसों की ओर, {to} के ख़िलाफ़।',
+  'log.switch.toYou': '{name} — {card}! पाला बदलकर राक्षसों की ओर — तुम्हारे ख़िलाफ़!',
+  'log.kept.loot.you': 'तुमने {to} से सौदा निभाया, तुम्हारे लूट-कार्ड: {n}। दोनों की साख +1।',
+  'log.kept.loot.toYou': '{name} — तुमसे सौदा निभाया, लूट-कार्ड: {n}। दोनों की साख +1।',
+  'log.kept.item.you': 'तुमने {to} से सौदा निभाया, तुम्हें मिला: {card}। दोनों की साख +1।',
+  'log.kept.item.toYou': '{name} — तुमसे सौदा निभाया, तुम्हारी चीज़ मिली: {card}। दोनों की साख +1।',
+  'log.kept.favour.you': 'तुमने {to} से सौदा निभाया: अब {to} पर तुम्हारा एक एहसान बकाया। दोनों की साख +1।',
+  'log.kept.favour.toYou': '{name} — तुमसे सौदा निभाया: अब तुम पर एक एहसान बकाया। दोनों की साख +1।',
+  'log.kept.free.you': 'तुमने {to} का एहसान चुकाया। दोनों की साख +1।',
+  'log.kept.free.toYou': '{name} — तुम्हारा एहसान चुकाया। दोनों की साख +1।',
+  'log.broken.switch.you': 'तुमने {to} से सौदा तोड़ा। साख −2।',
+  'log.broken.switch.toYou': '{name} ने तुमसे सौदा तोड़ा। साख −2।',
+  'log.broken.stay.you': '{to} ने दूर रहने के पैसे दिए थे, फिर भी तुमने दख़ल दिया। साख −2।',
+  'log.broken.stay.toYou': '{name} ने दख़ल दिया, जबकि तुमने दूर रहने के पैसे दिए थे। साख −2।',
+  'log.broken.favour.you': 'तुमने {to} का बकाया एहसान ठुकराया। साख −2।',
+  'log.broken.favour.toYou': '{name} ने तुम्हारा बकाया एहसान ठुकराया। साख −2।',
+  'log.void.you': '{to} से सौदा रद्द: {card} अब मौजूद नहीं। साख में कोई बदलाव नहीं।',
+  'log.void.toYou': '{name} — तुमसे सौदा रद्द: तुम्हारी चीज़ {card} अब मौजूद नहीं। साख में कोई बदलाव नहीं।',
+  'log.give.toYou': '{name} — तुम्हें दिए गए कार्ड: {n}।',
+  'log.curse.toYou': '{name} — तुम पर श्राप: {card}।'
 };

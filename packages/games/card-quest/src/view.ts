@@ -239,6 +239,16 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
   const termsOf = (terms: Terms) =>
     termsText({ t: terms.t, n: terms.t === 'loot' ? terms.n : undefined, card: terms.t === 'item' ? terms.item : terms.t === 'stay' ? terms.card : undefined });
 
+  /**
+   * A deal sentence in the form that fits who takes part: the person as subject (`.you`, no {name}), as addressee
+   * (`.toYou`, no {to}), or two computer players (the plain key). The verbs agree in every language that way.
+   */
+  function dealLine(key: string, seat: number, to: number, params: Record<string, string | number> = {}): string {
+    if (seat === HUMAN) return t(`${key}.you`, { to: seatName(to), ...params });
+    if (to === HUMAN) return t(`${key}.toYou`, { name: seatName(seat), ...params });
+    return t(key, { name: seatName(seat), to: seatName(to), ...params });
+  }
+
   function eventText(e: LogEvent): string {
     const n = (seat: number) => seatName(seat);
     switch (e.e) {
@@ -259,6 +269,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       case 'escape':
         return t('log.escape', { name: n(e.seat), card: name(e.card) });
       case 'curse':
+        if (e.target === HUMAN) return t('log.curse.toYou', { name: n(e.seat), card: name(e.card) });
         return t('log.curse', { name: n(e.seat), card: name(e.card), target: n(e.target) });
       case 'won':
         return t('log.won', { name: n(e.seat), levels: e.levels, loot: e.loot });
@@ -296,26 +307,27 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       case 'upgrade':
         return t('log.upgrade', { name: n(e.seat), card: name(e.card), item: name(e.item) });
       case 'give':
+        if (e.to === HUMAN) return t('log.give.toYou', { name: n(e.seat), n: e.count });
         return t('log.give', { name: n(e.seat), n: e.count, to: n(e.to) });
       case 'offer':
-        if (e.t === 'stay') return t('log.offer.stay', { name: n(e.seat), to: n(e.to), card: e.card ? name(e.card) : '' });
-        if (e.t === 'free') return t('log.offer.free', { name: n(e.seat), to: n(e.to) });
-        return t('log.offer.help', { name: n(e.seat), to: n(e.to), terms: termsText({ t: e.t, n: e.n, card: e.card }) });
+        if (e.t === 'stay') return dealLine('log.offer.stay', e.seat, e.to, { card: e.card ? name(e.card) : '' });
+        if (e.t === 'free') return dealLine('log.offer.free', e.seat, e.to);
+        return dealLine('log.offer.help', e.seat, e.to, { terms: termsText({ t: e.t, n: e.n, card: e.card }) });
       case 'accept':
-        return t('log.accept', { name: n(e.seat), to: n(e.to) });
+        return dealLine('log.accept', e.seat, e.to);
       case 'decline':
-        return t('log.decline', { name: n(e.seat), to: n(e.to) });
+        return dealLine('log.decline', e.seat, e.to);
       case 'switch':
-        return t('log.switch', { name: n(e.seat), to: n(e.to), card: name(e.card) });
+        return dealLine('log.switch', e.seat, e.to, { card: name(e.card) });
       case 'kept':
-        if (e.t === 'item') return t('log.kept.item', { name: n(e.seat), to: n(e.to), card: e.card ? name(e.card) : '' });
-        if (e.t === 'favour') return t('log.kept.favour', { name: n(e.seat), to: n(e.to) });
-        if (e.t === 'free') return t('log.kept.free', { name: n(e.seat), to: n(e.to) });
-        return t('log.kept.loot', { name: n(e.seat), to: n(e.to), n: e.n ?? 0 });
+        if (e.t === 'item') return dealLine('log.kept.item', e.seat, e.to, { card: e.card ? name(e.card) : '' });
+        if (e.t === 'favour') return dealLine('log.kept.favour', e.seat, e.to);
+        if (e.t === 'free') return dealLine('log.kept.free', e.seat, e.to);
+        return dealLine('log.kept.loot', e.seat, e.to, { n: e.n ?? 0 });
       case 'broken':
-        return t(`log.broken.${e.why}`, { name: n(e.seat), to: n(e.to) });
+        return dealLine(`log.broken.${e.why}`, e.seat, e.to);
       case 'void':
-        return t('log.void', { name: n(e.seat), to: n(e.to), card: name(e.card) });
+        return dealLine('log.void', e.seat, e.to, { card: name(e.card) });
       case 'discard':
         return t('log.discard', { name: n(e.seat), n: e.count });
       case 'win':
