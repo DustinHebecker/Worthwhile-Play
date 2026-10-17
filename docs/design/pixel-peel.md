@@ -1,6 +1,6 @@
 # Pixel Peel (`pixel-peel`): design
 
-Status: **Planned (2026-10-17)**. The planner of the new-games pipeline wrote this; the implementer follows it and the reviewer checks against it. Numbers marked *(calibrate)* are first estimates. The implementer may tune them within the stated bounds, but never beyond the limits in § 9 and § 12. Deviations go into a final "Implementation notes" section, as in `mini-optimizer.md`.
+Status: **Implemented as a prototype (2026-10-17)**; see "Implementation notes" at the end. The planner of the new-games pipeline wrote this; the implementer follows it and the reviewer checks against it. Numbers marked *(calibrate)* are first estimates. The implementer may tune them within the stated bounds, but never beyond the limits in § 9 and § 12. Deviations go into a final "Implementation notes" section, as in `mini-optimizer.md`.
 
 Owner priority for this round: a **deployable prototype** that is complete, fully playable, correct, tested and accessible, with **12 motifs**. The owner refines the pictures afterwards, so everything about a motif is data, and adding or redrawing a motif is a data-only change (§ 6).
 
@@ -531,3 +531,40 @@ There are about **75 keys** in the game namespace, in all 16 locales. On top of 
 1. Is the name acceptable, or should it be more descriptive, for example "Colour Peel" or "Peel the Picture"?
 2. Should easy merge similar shades into one colour (fewer colours, but a play picture that differs from the reveal)? It was left out of the prototype.
 3. Should there be a short "how it moves" mini-demo (a 3 × 2 picture, like the worked example) as an optional first screen? The prototype uses the rules text and the preview instead.
+
+## Implementation notes (2026-10-17, prototype)
+
+Orchestrator decisions on § 16: the names stay ("Pixel Peel" / "Pixel für Pixel"); easy does not merge shades; no mini-demo.
+
+**Built as designed:** the rules (§ 4) with the worked examples as fixtures; the DFS solver with a failure memo and a fast byte-array/front-pointer representation, checked against the pure launch (property) and against an independent BFS oracle (600 random tiny puzzles, ring-nested ones included, plus the hand-made "only by parking" and "too few slots" cases); the generator with a stored witness; the obvious play; undo, restart with `restartUndo`, `undoTo`; the hint (witness-path shortcut, solver, latest solvable ancestor, witness-prefix fallback); the stuck panel; the reveal; settings and `settingsOf`; all 16 locales; 12 motifs as data.
+
+**Deviations from the design:**
+
+1. **Levels (§ 5, § 9.2).** With the designed numbers the obvious play still solved almost every perturbed hard position (it failed on 4 of 96 seeds). Two findings: with "keep lapping while hitting", *larger* packs make a position harder (more shots are left over and need a slot), not smaller ones; and three slots are generous. Final levels:
+
+   | | easy | medium | hard |
+   |---|---|---|---|
+   | lanes / slots | 2 / 5 | 3 / **3** (design 4) | 3 / **2** (design 3) |
+   | pack | 14–30 | **10–24** | **12–28** |
+   | shooters moved forward per attempt | 0 | **6–10** | **10–14** |
+   | attempts / solver budget | 0 / – | 8 / 4 000 | 12 / 4 000 |
+
+   Perturbations **accumulate**: each attempt builds on the last candidate the solver solved, so the disorder grows step by step while every accepted step stays proven solvable. Equal quality prefers the later (more disordered) candidate. The difficulty hint says "fewer waiting places and more shooters out of order" (no claim about pack size).
+2. **`createInitial` lives in `generate.ts`** (not `rules.ts`), so the pure rules import neither the generator nor the solver.
+3. **Places:** red fox "Europe, Asia, North Africa and North America" (the native range includes North Africa); tiger "South, South-East and East Asia"; cherry blossom "Spring in Japan".
+4. **Count phrases** are plural-neutral ("removed 9, waits in place 2 with 3 left"; Slavic and other locales use "label: n"), as in other games.
+5. **Preview after a launch:** the button just launched does not preview its next shooter until the pointer leaves or focus moves, so the status line keeps the result (browsers re-enter a button when its content is replaced). Hovering a shooter first finishes a running animation.
+6. **Render script** writes to `packages/games/pixel-peel/renders/` (package-local `.gitignore`) or to a directory given as its argument. Node runs it directly (type stripping), so it imports each motif file and reads the order from `motifs/index.ts` as text.
+
+**Measured (this container, Node 22, 12 motifs × 8 seeds per difficulty):**
+
+| | easy | medium | hard |
+|---|---|---|---|
+| generation, average / max | 0.8 / 6.3 ms | 4.7 / 10.9 ms | 3.7 / 16.6 ms |
+| obvious play fails (quality 2) | 0 % | 21 % (20/96) | 61 % (59/96) |
+| quality ≥ 1 (parking needed or obvious play fails) | 0 % | 53 % | 73 % |
+| shooters per game (average) | 14.9 | 18.3 | 16.1 |
+
+The hint off the witness path on hard takes 0.5 ms on average, 4 ms at most (budgets: 20 000 nodes, then 8 ancestors × 2 000). Tests assert each generation < 150 ms and the average < 60 ms, a hard quality-2 rate ≥ 50 % and a medium one ≥ 15 %, and at most 40 % shooters below 3 shots in each motif's easy plan (about 5 % measured). The whole package suite (182 tests) runs in about 4 s, far below the 20 s per-test timeout.
+
+**Known limits of the prototype:** the motifs are first drafts for the owner's review (`node packages/games/pixel-peel/scripts/render-motifs.ts <dir>`); medium is still often solvable by the obvious play; Stryker was not run.
