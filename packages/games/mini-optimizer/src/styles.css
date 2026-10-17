@@ -1,0 +1,151 @@
+/* Best Plan — all rules scoped under .wp-mini-optimizer. Uses shared --wp-* tokens; logical properties only. */
+.wp-mini-optimizer {
+  --mo-line: var(--wp-muted);
+  --mo-ink: var(--wp-text);
+  --mo-pick: var(--wp-accent);
+  --mo-best: var(--wp-ok);
+  display: grid;
+  gap: 0.6rem;
+  width: 100%;
+  max-width: 64rem;
+  margin-inline: auto;
+}
+.wp-mini-optimizer p { margin: 0; }
+.wp-mini-optimizer [hidden] { display: none !important; }
+.wp-mini-optimizer .mo-task { font-size: 1.1rem; font-weight: 600; }
+.wp-mini-optimizer .mo-help,
+.wp-mini-optimizer .mo-legend,
+.wp-mini-optimizer .mo-keys { font-size: 0.9rem; color: var(--wp-muted); }
+.wp-mini-optimizer .mo-layout { display: grid; gap: 0.75rem; min-width: 0; }
+.wp-mini-optimizer .mo-work, .wp-mini-optimizer .mo-side { display: grid; gap: 0.6rem; align-content: start; min-width: 0; }
+@media (min-width: 48rem) {
+  .wp-mini-optimizer .mo-layout { grid-template-columns: minmax(0, 1.35fr) minmax(16rem, 1fr); align-items: start; }
+}
+
+/* View toggle (after "Show a best plan") */
+.wp-mini-optimizer .mo-toggle { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.wp-mini-optimizer .mo-toggle button[aria-pressed='true'] { border: 2px solid var(--wp-accent); box-shadow: inset 0 0 0 2px var(--wp-accent); font-weight: 700; text-decoration: underline; }
+.wp-mini-optimizer .mo-best-note { border-inline-start: 4px double var(--mo-best); padding-inline-start: 0.5rem; font-weight: 600; }
+
+/* Diagrams (maps keep their own left-to-right geometry, like every map in the collection) */
+.wp-mini-optimizer .mo-diagram {
+  display: block;
+  width: 100%;
+  max-width: 34rem;
+  height: auto;
+  margin-inline: auto;
+  direction: ltr;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.wp-mini-optimizer .mo-bg { fill: var(--wp-surface-2); stroke: var(--wp-border); stroke-width: 1; }
+.wp-mini-optimizer [role='button'] { cursor: pointer; outline: none; }
+.wp-mini-optimizer[data-view='best'] .mo-diagram [role='button'] { cursor: default; }
+.wp-mini-optimizer .mo-hit { fill: transparent; stroke: none; }
+.wp-mini-optimizer .mo-hitline { stroke: transparent; stroke-width: 24; }
+.wp-mini-optimizer .mo-ring { fill: none; stroke: var(--wp-focus); visibility: hidden; }
+.wp-mini-optimizer [role='button']:focus-visible .mo-ring { visibility: visible; }
+
+/* Network: candidate roads dashed and thin, built roads thick and solid, a best plan as a double line */
+.wp-mini-optimizer .mo-link line { stroke-linecap: round; fill: none; }
+.wp-mini-optimizer .mo-link .mo-ring { stroke-width: 22; opacity: 0.5; }
+.wp-mini-optimizer .mo-road { stroke: var(--mo-line); stroke-width: 3; stroke-dasharray: 7 7; }
+.wp-mini-optimizer .mo-link.is-built .mo-road { stroke: var(--mo-pick); stroke-width: 9; stroke-dasharray: none; }
+.wp-mini-optimizer .mo-best, .wp-mini-optimizer .mo-best-inner { visibility: hidden; }
+.wp-mini-optimizer .mo-link.is-best .mo-best { visibility: visible; stroke: var(--mo-best); stroke-width: 12; }
+.wp-mini-optimizer .mo-link.is-best .mo-best-inner { visibility: visible; stroke: var(--wp-surface); stroke-width: 4; }
+.wp-mini-optimizer .mo-badge { fill: var(--wp-surface); stroke: var(--mo-line); stroke-width: 2; }
+.wp-mini-optimizer .mo-cost { font: 700 16px var(--wp-font); fill: var(--mo-ink); pointer-events: none; }
+.wp-mini-optimizer .mo-link.is-built .mo-badge { fill: var(--mo-pick); stroke: var(--mo-pick); }
+.wp-mini-optimizer .mo-link.is-built .mo-cost { fill: var(--wp-accent-contrast); }
+.wp-mini-optimizer .mo-link.is-best .mo-badge { stroke: var(--mo-best); stroke-width: 3; }
+.wp-mini-optimizer .mo-link:focus-visible .mo-badge { stroke: var(--wp-focus); stroke-width: 4; }
+.wp-mini-optimizer .mo-town { fill: var(--wp-surface); stroke: var(--mo-ink); stroke-width: 3; }
+.wp-mini-optimizer .mo-junction { fill: var(--wp-surface); stroke: var(--mo-ink); stroke-width: 2.5; stroke-dasharray: 5 3; }
+.wp-mini-optimizer .mo-junction.is-used { stroke-dasharray: none; stroke-width: 3.5; }
+.wp-mini-optimizer .mo-label { font: 700 18px var(--wp-font); fill: var(--mo-ink); pointer-events: none; }
+.wp-mini-optimizer .mo-open-box { fill: var(--wp-surface); stroke: var(--mo-ink); stroke-width: 1.5; }
+.wp-mini-optimizer .mo-open { font: 700 14px var(--wp-font); fill: var(--mo-ink); pointer-events: none; }
+.wp-mini-optimizer .mo-group circle { fill: var(--wp-text); }
+.wp-mini-optimizer .mo-group text { font: 700 12px var(--wp-font); fill: var(--wp-bg); }
+.wp-mini-optimizer .mo-point { pointer-events: none; }
+
+/* Delivery: streets, depot, customers, routes (trips differ by line pattern and number) */
+.wp-mini-optimizer .mo-street { stroke: var(--wp-border); stroke-width: 1.5; }
+.wp-mini-optimizer .mo-house { fill: var(--wp-surface); stroke: var(--mo-ink); stroke-width: 3; stroke-linejoin: round; }
+.wp-mini-optimizer .mo-door { fill: none; stroke: var(--mo-ink); stroke-width: 2.5; }
+.wp-mini-optimizer .mo-depot .mo-ring, .wp-mini-optimizer .mo-stop .mo-ring { stroke-width: 4; }
+.wp-mini-optimizer .mo-customer { fill: var(--wp-surface); stroke: var(--mo-ink); stroke-width: 3; }
+.wp-mini-optimizer .mo-stop.is-planned .mo-customer { stroke: var(--mo-pick); stroke-width: 5; }
+.wp-mini-optimizer .mo-stop.is-current .mo-customer { stroke-dasharray: none; fill: var(--wp-surface-2); }
+.wp-mini-optimizer .mo-parcel-box { fill: var(--wp-surface); stroke: var(--mo-line); stroke-width: 1.5; }
+.wp-mini-optimizer .mo-parcels { font: 700 13px var(--wp-font); fill: var(--mo-ink); pointer-events: none; }
+.wp-mini-optimizer .mo-step-box { fill: var(--mo-pick); visibility: hidden; }
+.wp-mini-optimizer .mo-stop.is-planned .mo-step-box { visibility: visible; }
+.wp-mini-optimizer[data-view='best'] .mo-stop.is-planned .mo-step-box { fill: var(--mo-best); }
+.wp-mini-optimizer .mo-step { font: 700 13px var(--wp-font); fill: var(--wp-accent-contrast); pointer-events: none; }
+.wp-mini-optimizer .mo-route { fill: none; stroke: var(--mo-pick); stroke-width: 5; stroke-linejoin: round; stroke-linecap: round; pointer-events: none; }
+.wp-mini-optimizer .mo-route.is-over { stroke: var(--wp-danger); }
+.wp-mini-optimizer .mo-route.is-best { stroke: var(--mo-best); stroke-width: 9; }
+.wp-mini-optimizer .mo-route-inner { fill: none; stroke: var(--wp-surface); stroke-width: 3; stroke-linejoin: round; pointer-events: none; }
+.wp-mini-optimizer .mo-return { fill: none; stroke: var(--mo-ink); stroke-width: 2; stroke-dasharray: 3 6; opacity: 0.7; pointer-events: none; }
+
+/* Production: product cards with steppers */
+.wp-mini-optimizer .mo-products { display: grid; gap: 0.6rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr)); }
+.wp-mini-optimizer .mo-product { border: 1px solid var(--wp-border); border-radius: var(--wp-radius, 8px); background: var(--wp-surface); padding: 0.6rem 0.75rem; display: grid; gap: 0.4rem; }
+.wp-mini-optimizer .mo-product h3 { margin: 0; font-size: 1.05rem; }
+.wp-mini-optimizer .mo-facts { font-size: 0.9rem; }
+.wp-mini-optimizer .mo-fact { white-space: nowrap; }
+.wp-mini-optimizer .mo-stepper { display: flex; align-items: center; gap: 0.5rem; }
+.wp-mini-optimizer .mo-stepper button { min-width: var(--wp-touch, 44px); min-height: var(--wp-touch, 44px); font-size: 1.3rem; font-weight: 700; justify-content: center; }
+.wp-mini-optimizer .mo-qty { min-width: 3rem; min-height: var(--wp-touch, 44px); display: inline-flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 700; font-variant-numeric: tabular-nums; border: 2px solid var(--wp-border); border-radius: 6px; }
+.wp-mini-optimizer .mo-qty:focus-visible { outline: 3px solid var(--wp-focus); outline-offset: 2px; }
+.wp-mini-optimizer .mo-bestqty { font-weight: 700; border-inline-start: 4px double var(--mo-best); padding-inline-start: 0.4rem; }
+
+/* Status */
+.wp-mini-optimizer .mo-statusbox { border: 1px solid var(--wp-border); border-radius: var(--wp-radius, 8px); padding: 0.5rem 0.75rem; background: var(--wp-surface); }
+.wp-mini-optimizer .mo-score { font-size: 1.2rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.wp-mini-optimizer .mo-checks { list-style: none; margin: 0.3rem 0 0; padding: 0; display: grid; gap: 0.3rem; }
+.wp-mini-optimizer .mo-checks .is-bad { font-weight: 600; }
+.wp-mini-optimizer .mo-checks .is-info { color: var(--wp-muted); }
+.wp-mini-optimizer .mo-meter { display: grid; gap: 0.2rem; }
+.wp-mini-optimizer .mo-bar { position: relative; block-size: 0.9rem; border: 1px solid var(--wp-border); border-radius: 4px; background: var(--wp-surface-2); overflow: hidden; }
+.wp-mini-optimizer .mo-fill { position: absolute; inset-block: 0; inset-inline-start: 0; background: var(--mo-pick); }
+.wp-mini-optimizer .mo-over { position: absolute; inset-block: 0; background: repeating-linear-gradient(45deg, var(--wp-danger) 0 4px, transparent 4px 8px); }
+.wp-mini-optimizer .mo-limit { position: absolute; inset-block: -2px; inline-size: 3px; margin-inline-start: -1.5px; background: var(--wp-text); }
+
+.wp-mini-optimizer .mo-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.wp-mini-optimizer .mo-actions button[aria-disabled='true'] { opacity: 0.6; }
+
+/* Result */
+.wp-mini-optimizer .mo-result { border: 1px solid var(--wp-border); border-inline-start: 4px solid var(--wp-ok); border-radius: var(--wp-radius, 8px); padding: 0.5rem 0.75rem; display: grid; gap: 0.35rem; background: var(--wp-surface); }
+.wp-mini-optimizer .mo-result h3, .wp-mini-optimizer .mo-result h4 { margin: 0; font-size: 1rem; }
+.wp-mini-optimizer .mo-result-lines { display: grid; gap: 0.2rem; }
+.wp-mini-optimizer .mo-optimal { font-weight: 700; }
+.wp-mini-optimizer .mo-result button { justify-self: start; }
+
+/* List view */
+.wp-mini-optimizer .mo-details summary { cursor: pointer; min-height: var(--wp-touch, 44px); display: flex; align-items: center; gap: 0.4rem; font-weight: 600; list-style: none; }
+.wp-mini-optimizer .mo-details summary::-webkit-details-marker { display: none; }
+.wp-mini-optimizer .mo-details summary::before { content: '▸'; display: inline-block; }
+.wp-mini-optimizer .mo-details[open] summary::before { transform: rotate(90deg); }
+.wp-mini-optimizer[dir='rtl'] .mo-details:not([open]) summary::before { transform: scaleX(-1); }
+.wp-mini-optimizer .mo-list-body { display: grid; gap: 0.4rem; }
+.wp-mini-optimizer .mo-linklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.1rem; }
+.wp-mini-optimizer .mo-linklist label { display: flex; align-items: center; gap: 0.4rem; min-height: var(--wp-touch, 44px); cursor: pointer; }
+.wp-mini-optimizer .mo-linklist input { inline-size: 1.4rem; block-size: 1.4rem; margin: 0; }
+.wp-mini-optimizer .mo-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
+.wp-mini-optimizer .mo-tripline { font-weight: 600; }
+
+@media (forced-colors: active) {
+  .wp-mini-optimizer .mo-road, .wp-mini-optimizer .mo-town, .wp-mini-optimizer .mo-junction, .wp-mini-optimizer .mo-customer, .wp-mini-optimizer .mo-house, .wp-mini-optimizer .mo-street { stroke: CanvasText; }
+  .wp-mini-optimizer .mo-link.is-built .mo-road, .wp-mini-optimizer .mo-route { stroke: Highlight; }
+  .wp-mini-optimizer .mo-link.is-best .mo-best, .wp-mini-optimizer .mo-route.is-best { stroke: LinkText; }
+  .wp-mini-optimizer .mo-label, .wp-mini-optimizer .mo-cost, .wp-mini-optimizer .mo-parcels, .wp-mini-optimizer .mo-step, .wp-mini-optimizer .mo-open { fill: CanvasText; }
+  .wp-mini-optimizer .mo-ring { stroke: LinkText; }
+  .wp-mini-optimizer .mo-fill { background: Highlight; }
+  .wp-mini-optimizer .mo-over { background: repeating-linear-gradient(45deg, CanvasText 0 4px, transparent 4px 8px); }
+  .wp-mini-optimizer .mo-limit { background: CanvasText; }
+}
