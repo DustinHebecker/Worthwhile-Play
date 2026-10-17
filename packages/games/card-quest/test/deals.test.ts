@@ -358,3 +358,13 @@ describe('version-1 saves written by the K1 code', () => {
     });
   }
 });
+
+describe('saved reveal position', () => {
+  it('accepts an absent or in-range revealed position and rejects anything else', () => {
+    const s = ratFight();
+    expect(isValidState({ ...s, revealed: undefined })).toBe(true);
+    expect(isValidState({ ...s, revealed: 0 })).toBe(true);
+    expect(isValidState({ ...s, revealed: s.logSeq })).toBe(true);
+    for (const bad of [s.logSeq + 1, -1, 1.5, '3', null]) expect(isValidState({ ...s, revealed: bad as never }), String(bad)).toBe(false);
+  });
+});
