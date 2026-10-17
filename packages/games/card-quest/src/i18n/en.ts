@@ -16,7 +16,6 @@ export const en = {
   // World names: shown again once the start screen offers a choice of worlds (K3, Spaceloot).
   'world.kz': 'Kampfzwerge — dwarves against garden gnomes',
   'setup.opponents': 'Computer players',
-  'setup.target': 'Target level',
   'setup.roundLimit': 'Round limit',
   'setup.roundLimit.hint': 'With a limit, the highest level wins after the last round.',
   'setup.coach': 'Show short tips while playing',
@@ -25,10 +24,6 @@ export const en = {
   'setup.opponentCount.3': '3',
   'setup.opponentCount.4': '4',
   'setup.opponentCount.5': '5',
-  'setup.targetLevels.6': 'Level 6',
-  'setup.targetLevels.8': 'Level 8',
-  'setup.targetLevels.10': 'Level 10',
-  'setup.targetLevels.12': 'Level 12',
   'setup.roundLimits.0': 'No limit',
   'setup.roundLimits.20': '20 rounds',
   'setup.roundLimits.30': '30 rounds',
@@ -318,6 +313,15 @@ export const en = {
   'log.broken.favour': '{name} — refused the favour owed to {to}. Reputation −2.',
   'hint.help': 'Tip: not strong enough? Ask another player for help — for loot, an item or a favour. Kept deals raise your reputation.',
   'hint.offer': 'Tip: helping brings loot but no level. Breaking a deal costs 2 reputation stars — and grudge-holders remember.',
+  // Owner feedback 2026-10-17: reveals, end of turn
+  'next.end.surplus': 'You can still equip, play and sell — that also empties your hand. Then end your turn; cards to give away (hand limit 5): {n}.',
+  'reveal.open': 'Around the corner: {card}',
+  'reveal.curse': '{name} curses you: {card}',
+  'reveal.result': 'Effect on you',
+  'reveal.toHand': 'The card goes into your hand.',
+  'btn.continue': 'Continue',
+  // Owner feedback 2026-10-17: curse effect in the reveal
+  'reveal.effect': 'Hits you at once: {effect}',
   // K2 review: a deal whose item is gone
   'log.void': '{name} — deal with {to} void: {card} is gone. Reputation unchanged.',
   // Log lines with the person as subject (.you) or addressee (.toYou)
@@ -350,7 +354,9 @@ export const en = {
   'log.void.you': 'Deal with {to} void: {card} is gone. Reputation unchanged.',
   'log.void.toYou': '{name} — deal with you void: your {card} is gone. Reputation unchanged.',
   'log.give.toYou': '{name} — {n} cards given to you.',
-  'log.curse.toYou': '{name} — curse on you: {card}.'
+  'log.curse.toYou': '{name} — curse on you: {card}.',
+  // Reveal pending
+  'next.reveal': 'A card hit you: read it, then Continue.'
 } as const;
 
 

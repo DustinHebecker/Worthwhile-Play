@@ -12,7 +12,6 @@ export const uk: Catalogue = {
 
   'world.kz': 'Бойові гноми — гноми проти садових гномів',
   'setup.opponents': 'Комп’ютерні гравці',
-  'setup.target': 'Цільовий рівень',
   'setup.roundLimit': 'Ліміт раундів',
   'setup.roundLimit.hint': 'З лімітом після останнього раунду перемагає найвищий рівень.',
   'setup.coach': 'Показувати короткі підказки під час гри',
@@ -21,10 +20,6 @@ export const uk: Catalogue = {
   'setup.opponentCount.3': '3',
   'setup.opponentCount.4': '4',
   'setup.opponentCount.5': '5',
-  'setup.targetLevels.6': 'Рівень 6',
-  'setup.targetLevels.8': 'Рівень 8',
-  'setup.targetLevels.10': 'Рівень 10',
-  'setup.targetLevels.12': 'Рівень 12',
   'setup.roundLimits.0': 'Без ліміту',
   'setup.roundLimits.20': 'Раундів: 20',
   'setup.roundLimits.30': 'Раундів: 30',
@@ -304,6 +299,15 @@ export const uk: Catalogue = {
   'log.broken.favour': '{name} — відмова в послузі в рахунок боргу, отримувач: {to}. Репутація −2.',
   'hint.help': 'Порада: бракує сили? Попроси іншого гравця про допомогу — за здобич, предмет або послугу. Дотримані угоди підвищують репутацію.',
   'hint.offer': 'Порада: допомога приносить здобич, але не рівень. Порушена угода коштує 2 зірки репутації — і злопам’ятні це запам’ятовують.',
+  // Owner feedback 2026-10-17: reveals, end of turn
+  'next.end.surplus': 'Ще можна вдягати, розігрувати й продавати — так рука теж порожніє. Потім заверши хід; віддати карт (ліміт руки 5): {n}.',
+  'reveal.open': 'За рогом: {card}',
+  'reveal.curse': '{name} проклинає тебе: {card}',
+  'reveal.result': 'Наслідки для тебе',
+  'reveal.toHand': 'Карта йде тобі в руку.',
+  'btn.continue': 'Далі',
+  // Owner feedback 2026-10-17: curse effect in the reveal
+  'reveal.effect': 'Одразу діє на тебе: {effect}',
   // K2 review: a deal whose item is gone
   'log.void': '{name} — угода втратила силу (партнер: {to}): {card} більше немає. Репутація без змін.',
   // Log lines with the person as subject (.you) or addressee (.toYou)
@@ -336,5 +340,7 @@ export const uk: Catalogue = {
   'log.void.you': 'Угода втратила силу (партнер: {to}): {card} більше немає. Репутація без змін.',
   'log.void.toYou': '{name} — угода з тобою втратила силу: твого предмета {card} більше немає. Репутація без змін.',
   'log.give.toYou': '{name} — віддано тобі карт: {n}.',
-  'log.curse.toYou': '{name} — прокляття на тебе: {card}.'
+  'log.curse.toYou': '{name} — прокляття на тебе: {card}.',
+  // Reveal pending
+  'next.reveal': 'Тебе зачепила карта: прочитай її, потім тисни «Далі».'
 };

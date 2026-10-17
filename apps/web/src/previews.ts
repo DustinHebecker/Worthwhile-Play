@@ -467,16 +467,28 @@ const PREVIEWS: Record<string, () => string> = {
   'distractor-control': () =>
     R(34, 12, 28, 25, 'c', 3) + T(48, 25, 55, 't tl') + R(60, 2, 32, 8, 'c ds', 4) + R(64, 4.3, 5, 3.6, 'fn', 0.5) + P('M64 4.3l2.5 2 2.5-2', 'fn') + L(72, 6, 88, 6, 'g') +
     R(12.5, 41.5, 36, 17, 'pr', 4) + R(14, 43, 33, 14, 'c', 3) + R(49, 43, 33, 14, 'c', 3),
-  // Lootlings: the player rows at the top, the fight (a monster card with its jagged red frame against your strength)
-  // and the hand of rounded card tiles below, as on the game screen.
+  // Lootlings: the fight as the game shows it now (owner request 2026-10-17: "das Bild … sollte besser werden"): a
+  // monster card with its illustration (the lawnmower slicing a pointy hat) against a garden gnome's card, a clash
+  // star between them, and a hand of small picture cards below. Colours from the game's own illustration palette.
   'card-quest': () => {
+    const lq = (d: string, c: string) => P(d, `${c} lqo`);
     let out = '';
-    for (let i = 0; i < 3; i++) out += R(6, 4 + i * 7, 84, 5.5, i === 0 ? 'e' : 'c', 1.5) + (i === 0 ? R(6, 4, 2.4, 5.5, 'w') : '') + L(12, 6.8 + i * 7, 30, 6.8 + i * 7, 'mu');
-    out += R(6, 26, 40, 20, 'o', 1) + P('M8 28h36v16H8z', 'dn ds');
-    out += P('M16 43V35c0-5 2-7 5-7s5 2 5 7v8l-2-2-1.5 2-1.5-2-1.5 2-1.5-2z', 'd') + C(19.5, 33.5, 0.9, 'sf') + C(22.5, 33.5, 0.9, 'sf');
-    out += L(30, 32, 42, 32, 'k') + L(30, 38, 39, 38, 'mu');
-    out += R(50, 26, 40, 20, 'e', 3) + T(70, 40, '11', 'tl');
-    for (let i = 0; i < 4; i++) out += R(6 + i * 21.5, 49, 19.5, 12, 'o', 3) + C(11 + i * 21.5, 55, 2.6, i === 1 ? 'a' : 'd') + L(15.5 + i * 21.5, 55, 22 + i * 21.5, 55, 'g');
+    // Monster card: dark frame, sky, lawn, the red mower with eyes and teeth, the sliced hat tip flying off.
+    out += R(3, 3, 44, 42, 'lqf', 3) + R(5.5, 5.5, 39, 37, 'lqs', 1.5) + R(5.5, 34, 39, 8.5, 'lqg');
+    out += lq('M9 37c1-7 6-11 14-11h9c5 0 7 4 7 11z', 'lqr') + C(14, 38, 3, 'lqd lqo') + C(33, 38, 3, 'lqd lqo');
+    out += C(26, 30, 2, 'lqb lqo') + C(31.5, 30, 1.8, 'lqb lqo') + C(26.6, 30.3, 0.8, 'lqd') + C(32, 30.3, 0.7, 'lqd');
+    out += P('M22 35.5l1.4-2 1.4 2 1.4-2 1.4 2 1.4-2 1.4 2 1.4-2 1.4 2 1.4-2 1.4 2', 'lqt');
+    out += G('rotate(-25 36 13)', lq('M32 18 36 7l4 11z', 'lqr')) + L(14, 26, 8, 14, 'lql');
+    // Gnome card: sky, lawn, red pointy hat, face, white beard, blue coat; a shovel raised.
+    out += R(49, 3, 44, 42, 'lqh', 3) + R(51.5, 5.5, 39, 37, 'lqs', 1.5) + R(51.5, 34, 39, 8.5, 'lqg');
+    out += lq('M64 31h14l-1 11H65z', 'lqu') + lq('M63 21 71 6l8 15z', 'lqr') + C(71, 24, 5, 'lqk lqo');
+    out += lq('M66 25.5c1 8 9 8 10 0-3 1.5-7 1.5-10 0z', 'lqb') + C(69.2, 23.5, 0.7, 'lqd') + C(72.8, 23.5, 0.7, 'lqd');
+    out += L(83, 40, 85, 17, 'lql') + lq('M83 12h5l-1 6h-3z', 'lqm');
+    // The clash between the two cards.
+    out += star(48, 24, 6, 'lqy lqo');
+    // Hand: four picture cards (pointy hat, hard hat, slime, Change Sides monster).
+    for (let i = 0; i < 4; i++) out += R(4 + i * 22.5, 49, 20.5, 12.5, 'lqh', 2.5) + R(5.5 + i * 22.5, 50.5, 8, 9.5, 'lqs', 1) + L(16 + i * 22.5, 53, 22 + i * 22.5, 53, 'g') + L(16 + i * 22.5, 57, 20 + i * 22.5, 57, 'g');
+    out += lq('M7 59 9.5 52l2.5 7z', 'lqr') + lq('M29.5 57.5a3 3 0 0 1 6 0z', 'lqy') + lq('M51.5 59c0-4 1.5-6 3.5-6s3.5 2 3.5 6z', 'lqe') + lq('M74 59c0-4 1.5-6 3.5-6s3.5 2 3.5 6z', 'lqp');
     return out;
   },
   // Four in a Row: the light board with round holes; filled blue discs and red ring discs, the last move dashed.

@@ -12,7 +12,6 @@ export const zhHans: Catalogue = {
 
   'world.kz': '战斗矮人——矮人对战花园地精',
   'setup.opponents': '电脑玩家',
-  'setup.target': '目标等级',
   'setup.roundLimit': '回合上限',
   'setup.roundLimit.hint': '设有上限时，最后一回合结束后等级最高者获胜。',
   'setup.coach': '游戏中显示简短提示',
@@ -21,10 +20,6 @@ export const zhHans: Catalogue = {
   'setup.opponentCount.3': '3',
   'setup.opponentCount.4': '4',
   'setup.opponentCount.5': '5',
-  'setup.targetLevels.6': '6 级',
-  'setup.targetLevels.8': '8 级',
-  'setup.targetLevels.10': '10 级',
-  'setup.targetLevels.12': '12 级',
   'setup.roundLimits.0': '不限回合',
   'setup.roundLimits.20': '20 回合',
   'setup.roundLimits.30': '30 回合',
@@ -304,6 +299,15 @@ export const zhHans: Catalogue = {
   'log.broken.favour': '{name}——拒绝还 {to} 的人情。声望 −2。',
   'hint.help': '提示：战力不够？请其他玩家帮忙——报酬可以是宝物、物品或人情。守约能提高你的声望。',
   'hint.offer': '提示：帮忙能拿宝物，但不加等级。毁约会扣 2 颗声望星——记仇型的可都记着呢。',
+  // Owner feedback 2026-10-17: reveals, end of turn
+  'next.end.surplus': '你还可以穿戴、打出和出售——这样也能减少手牌。然后结束回合；需送出的牌（手牌上限 5）：{n}。',
+  'reveal.open': '拐角处：{card}',
+  'reveal.curse': '{name} 诅咒了你：{card}',
+  'reveal.result': '对你的影响',
+  'reveal.toHand': '这张牌进入你的手牌。',
+  'btn.continue': '继续',
+  // Owner feedback 2026-10-17: curse effect in the reveal
+  'reveal.effect': '立即对你生效：{effect}',
   // K2 review: a deal whose item is gone
   'log.void': '{name}——与 {to} 的交易作废：{card} 已经没了。声望不变。',
   // Log lines with the person as subject (.you) or addressee (.toYou)
@@ -336,5 +340,7 @@ export const zhHans: Catalogue = {
   'log.void.you': '与 {to} 的交易作废：{card} 已经没了。声望不变。',
   'log.void.toYou': '{name}——与你的交易作废：你的 {card} 已经没了。声望不变。',
   'log.give.toYou': '{name}——送给你 {n} 张牌。',
-  'log.curse.toYou': '{name}——诅咒你：{card}。'
+  'log.curse.toYou': '{name}——诅咒你：{card}。',
+  // Reveal pending
+  'next.reveal': '一张牌击中了你：读完后按“继续”。'
 };

@@ -12,7 +12,6 @@ export const tr: Catalogue = {
 
   'world.kz': 'Kampfzwerge — cücelere karşı bahçe cüceleri',
   'setup.opponents': 'Bilgisayar oyuncuları',
-  'setup.target': 'Hedef seviye',
   'setup.roundLimit': 'Tur sınırı',
   'setup.roundLimit.hint': 'Sınır varsa son turdan sonra en yüksek seviye kazanır.',
   'setup.coach': 'Oynarken kısa ipuçları göster',
@@ -21,10 +20,6 @@ export const tr: Catalogue = {
   'setup.opponentCount.3': '3',
   'setup.opponentCount.4': '4',
   'setup.opponentCount.5': '5',
-  'setup.targetLevels.6': 'Seviye 6',
-  'setup.targetLevels.8': 'Seviye 8',
-  'setup.targetLevels.10': 'Seviye 10',
-  'setup.targetLevels.12': 'Seviye 12',
   'setup.roundLimits.0': 'Sınır yok',
   'setup.roundLimits.20': '20 tur',
   'setup.roundLimits.30': '30 tur',
@@ -304,6 +299,15 @@ export const tr: Catalogue = {
   'log.broken.favour': '{name} — borçlu olunan iyilik reddedildi (alacaklı: {to}). İtibar −2.',
   'hint.help': 'İpucu: gücün yetmiyor mu? Başka bir oyuncudan yardım iste — ganimet, bir eşya ya da bir iyilik karşılığında. Tutulan anlaşmalar itibarını artırır.',
   'hint.offer': 'İpucu: yardım etmek ganimet getirir ama seviye getirmez. Bir anlaşmayı bozmak 2 itibar yıldızına mal olur — ve kinciler bunu unutmaz.',
+  // Owner feedback 2026-10-17: reveals, end of turn
+  'next.end.surplus': 'Hâlâ eşya takabilir, kart oynayabilir ve satabilirsin — bu da elini boşaltır. Sonra sıranı bitir; verilecek kartlar (el sınırı 5): {n}.',
+  'reveal.open': 'Köşede: {card}',
+  'reveal.curse': '{name} sana lanet okuyor: {card}',
+  'reveal.result': 'Sana etkisi',
+  'reveal.toHand': 'Kart eline geçer.',
+  'btn.continue': 'Devam',
+  // Owner feedback 2026-10-17: curse effect in the reveal
+  'reveal.effect': 'Seni hemen vurur: {effect}',
   // K2 review: a deal whose item is gone
   'log.void': '{name} — anlaşma geçersiz (ortak: {to}): {card} artık yok. İtibar değişmedi.',
   // Log lines with the person as subject (.you) or addressee (.toYou)
@@ -336,5 +340,7 @@ export const tr: Catalogue = {
   'log.void.you': 'Anlaşma geçersiz (ortak: {to}): {card} artık yok. İtibar değişmedi.',
   'log.void.toYou': '{name} — seninle anlaşma geçersiz: eşyan artık yok: {card}. İtibar değişmedi.',
   'log.give.toYou': '{name} sana {n} kart verdi.',
-  'log.curse.toYou': '{name} sana lanet attı: {card}.'
+  'log.curse.toYou': '{name} sana lanet attı: {card}.',
+  // Reveal pending
+  'next.reveal': 'Bir kart sana isabet etti: oku, sonra “Devam” düğmesine bas.'
 };

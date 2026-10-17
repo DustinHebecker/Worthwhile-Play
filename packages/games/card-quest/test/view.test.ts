@@ -26,7 +26,7 @@ function clickThrough(root: HTMLElement, instance: { serialize(): CardQuestState
       q(root, 'end')!.click();
       continue;
     }
-    const next = ['open', 'rummage', 'pass', 'accept', 'roll', 'end'].map((id) => q(root, id)).find((b) => b && !b.disabled);
+    const next = ['reveal-continue', 'open', 'rummage', 'pass', 'accept', 'roll', 'end'].map((id) => q(root, id)).find((b) => b && !b.disabled);
     if (!next) throw new Error(`no action button in phase ${state.phase}`);
     next.click();
   }
@@ -178,6 +178,7 @@ describe('view', () => {
 
     it('give-away: the info button opens the card without choosing it; Select chooses it; tapping a tile only toggles', () => {
       const { root, instance } = mount(giveAway());
+      q(root, 'end')!.click();
       const info = q(root, 'info-kz.cave-slime')!;
       info.click();
       expect(q(root, 'detail')!.textContent).toContain(en['kz.cave-slime']!.name);
@@ -229,6 +230,9 @@ describe('view', () => {
       root.querySelector<HTMLButtonElement>('[data-testid="hand"] .cq-tile[data-card="kz.pickaxe"]')!.click();
       expect(q(root, 'detail')).not.toBeNull();
       q(root, 'rummage')!.click();
+      // Too many cards now: still the play mode until "End turn" asks which ones to give away.
+      expect(q(root, 'end')!.disabled).toBe(false);
+      q(root, 'end')!.click();
       expect(q(root, 'end')!.disabled).toBe(true);
       expect(q(root, 'detail')).toBeNull();
       instance.dispose();
@@ -246,6 +250,123 @@ describe('view', () => {
     tile.click();
     expect(q(ctx.context.root, 'detail-pic')!.querySelector('svg.cq-il[aria-hidden="true"]')).not.toBeNull();
     instance.dispose();
+  });
+
+  describe('owner feedback 2026-10-17', () => {
+    const mount = (state: CardQuestState) => {
+      const ctx = createTestContext(game as GameModule<unknown>, 'en');
+      const instance = game.create(ctx.context as never);
+      instance.restore(state);
+      return { root: ctx.context.root, instance };
+    };
+
+    it('with too many cards the person may still equip before giving away; Cancel returns to play', () => {
+      const s = arranged((s) => {
+        s.phase = 'end';
+        for (const c of ['kz.cave-slime', 'kz.firecracker', 'kz.pickaxe', 'kz.mine-collapse', 'kz.tool-shed', 'kz.shovel', 'kz.hard-hat']) take(s, c, s.players[0]!.hand);
+      });
+      const { root, instance } = mount(s);
+      expect(q(root, 'next')!.textContent).toContain('cards to give away (hand limit 5): 2');
+      root.querySelector<HTMLButtonElement>('[data-testid="hand"] .cq-tile[data-card="kz.hard-hat"]')!.click();
+      q(root, 'act-equip')!.click();
+      expect(instance.serialize().players[0]!.equipped).toContain('kz.hard-hat');
+      q(root, 'end')!.click();
+      expect(q(root, 'end')!.textContent).toContain('1');
+      expect(q(root, 'end')!.disabled).toBe(true);
+      q(root, 'give-cancel')!.click();
+      expect(q(root, 'end')!.disabled).toBe(false);
+      root.querySelector<HTMLButtonElement>('[data-testid="hand"] .cq-tile[data-card="kz.pickaxe"]')!.click();
+      q(root, 'act-equip')!.click();
+      // Exactly at the hand limit now: End turn ends the turn at once.
+      q(root, 'end')!.click();
+      expect(instance.serialize().log.some((e) => e.e === 'turn' && e.seat === 1)).toBe(true);
+      instance.dispose();
+    });
+
+    it('a trap found around the corner is shown with picture, rules and what it took, until Continue', () => {
+      const s = arranged((s) => {
+        take(s, 'kz.hard-hat', s.players[0]!.equipped);
+        s.encounter.splice(s.encounter.indexOf('kz.wrong-hat'), 1);
+        s.encounter.push('kz.wrong-hat');
+      });
+      const { root, instance } = mount(s);
+      q(root, 'open')!.focus();
+      q(root, 'open')!.click();
+      const reveal = q(root, 'reveal')!;
+      expect(reveal.textContent).toContain(en['kz.wrong-hat']!.name);
+      expect(reveal.querySelector('svg.cq-il')).not.toBeNull();
+      expect(reveal.querySelector('.cq-rules')!.textContent).toContain('Hits you at once');
+      expect(q(root, 'reveal-result')!.textContent).toContain(en['kz.hard-hat']!.name);
+      expect(q(root, 'rummage')).toBeNull();
+      expect(document.activeElement).toBe(q(root, 'reveal-continue'));
+      q(root, 'reveal-continue')!.click();
+      expect(q(root, 'reveal')).toBeNull();
+      expect(q(root, 'rummage')).not.toBeNull();
+      instance.dispose();
+    });
+  });
+
+  describe('reveals survive a reload and are not skipped (owner feedback 2026-10-17, review)', () => {
+    /** The person's turn after the computer seats cursed them twice: two reveals waiting. */
+    const cursedTwice = (): CardQuestState => {
+      const s = arranged((s) => take(s, 'kz.hard-hat', s.players[0]!.equipped));
+      const events: LogEvent[] = [
+        { e: 'curse', seat: 1, card: 'kz.wrong-hat', target: 0 },
+        { e: 'penalty', seat: 0, p: 'slot', card: 'kz.hard-hat' },
+        { e: 'curse', seat: 2, card: 'kz.beard-in-hedge', target: 0 },
+        { e: 'penalty', seat: 0, p: 'level', n: 0 }
+      ];
+      return { ...s, log: [...s.log, ...events], logSeq: s.logSeq + events.length, seen: s.logSeq };
+    };
+    const mount = (state: CardQuestState) => {
+      const ctx = createTestContext(game as GameModule<unknown>, 'en');
+      const instance = game.create(ctx.context as never);
+      instance.restore(state);
+      return { root: ctx.context.root, instance, ctx };
+    };
+
+    it('curses from others are shown one after the other, each until Continue', () => {
+      const { root, instance } = mount(cursedTwice());
+      expect(q(root, 'reveal')!.textContent).toContain(`Brumbo curses you: ${en['kz.wrong-hat']!.name}`);
+      expect(q(root, 'reveal-result')!.textContent).toContain(en['kz.hard-hat']!.name);
+      expect(q(root, 'next')!.textContent).toContain('A card hit you');
+      expect(q(root, 'hand')).toBeNull();
+      q(root, 'reveal-continue')!.click();
+      expect(q(root, 'reveal')!.textContent).toContain(`Pippa curses you: ${en['kz.beard-in-hedge']!.name}`);
+      q(root, 'reveal-continue')!.click();
+      expect(q(root, 'reveal')).toBeNull();
+      expect(q(root, 'open')).not.toBeNull();
+      instance.dispose();
+    });
+
+    it('a reload during a reveal shows it again; after Continue it stays gone', () => {
+      const first = mount(cursedTwice());
+      first.root.querySelector<HTMLButtonElement>('[data-testid="reveal-continue"]')!.click();
+      const saved = first.instance.serialize();
+      expect(isValidState(saved)).toBe(true);
+      expect(first.ctx.saveRequests()).toBeGreaterThan(0);
+      first.instance.dispose();
+      const second = mount(saved);
+      expect(q(second.root, 'reveal')!.textContent).toContain('Pippa curses you');
+      q(second.root, 'reveal-continue')!.click();
+      const done = second.instance.serialize();
+      second.instance.dispose();
+      const third = mount(done);
+      expect(q(third.root, 'reveal')).toBeNull();
+      third.instance.dispose();
+    });
+
+    it('a held-down Enter (key repeat) does not skip a reveal', () => {
+      const { root, instance } = mount(cursedTwice());
+      const press = (repeat: boolean) => {
+        const event = new KeyboardEvent('keydown', { key: 'Enter', repeat, bubbles: true, cancelable: true });
+        q(root, 'reveal-continue')!.dispatchEvent(event);
+        return event.defaultPrevented;
+      };
+      expect(press(true)).toBe(true);
+      expect(press(false)).toBe(false);
+      instance.dispose();
+    });
   });
 
   describe('offers and deals (K2)', () => {
@@ -336,8 +457,9 @@ describe('view', () => {
       const s = instance.serialize();
       expect(s.phase).not.toBe('setup');
       expect(s.players).toHaveLength(6);
-      expect(s.settings).toMatchObject({ difficulty: 'sharp', opponents: 5, target: 6, roundLimit: 20, coach: true });
-      expect(game.settingsOf!(s)).toEqual({ difficulty: 'sharp', opponents: 5, target: 6, roundLimit: 20 });
+      // The target is always level 10 now (owner decision); a passed target is ignored.
+      expect(s.settings).toMatchObject({ difficulty: 'sharp', opponents: 5, target: 10, roundLimit: 20, coach: true });
+      expect(game.settingsOf!(s)).toEqual({ difficulty: 'sharp', opponents: 5, roundLimit: 20 });
       expect(q(ctx.context.root, 'start')).toBeNull();
       expect(q(ctx.context.root, 'setup-opponents')).toBeNull();
       instance.dispose();
@@ -419,7 +541,7 @@ describe('view', () => {
     it('declares its settings with the setup older versions remembered as defaults', () => {
       const specs = typeof game.settings === 'function' ? game.settings({ preferences: { get: () => ({ opponents: 5, target: 12, roundLimit: 30, coach: false }), set: () => undefined } } as never) : game.settings!;
       const defaults = Object.fromEntries(specs.map((sp) => [sp.kind === 'difficulty' ? 'difficulty' : sp.id, sp.default]));
-      expect(defaults).toEqual({ difficulty: 'normal', opponents: 5, target: 12, roundLimit: 30 });
+      expect(defaults).toEqual({ difficulty: 'normal', opponents: 5, roundLimit: 30 });
       expect(game.metadata.setupInGame).toBeUndefined();
     });
   });

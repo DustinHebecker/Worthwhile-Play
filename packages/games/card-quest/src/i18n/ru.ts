@@ -12,7 +12,6 @@ export const ru: Catalogue = {
 
   'world.kz': 'Боевые гномы — гномы против садовых гномов',
   'setup.opponents': 'Компьютерные игроки',
-  'setup.target': 'Целевой уровень',
   'setup.roundLimit': 'Лимит раундов',
   'setup.roundLimit.hint': 'С лимитом после последнего раунда побеждает самый высокий уровень.',
   'setup.coach': 'Показывать короткие подсказки во время игры',
@@ -21,10 +20,6 @@ export const ru: Catalogue = {
   'setup.opponentCount.3': '3',
   'setup.opponentCount.4': '4',
   'setup.opponentCount.5': '5',
-  'setup.targetLevels.6': 'Уровень 6',
-  'setup.targetLevels.8': 'Уровень 8',
-  'setup.targetLevels.10': 'Уровень 10',
-  'setup.targetLevels.12': 'Уровень 12',
   'setup.roundLimits.0': 'Без лимита',
   'setup.roundLimits.20': 'Раундов: 20',
   'setup.roundLimits.30': 'Раундов: 30',
@@ -304,6 +299,15 @@ export const ru: Catalogue = {
   'log.broken.favour': '{name} — отказ в услуге в счёт долга, получатель: {to}. Репутация −2.',
   'hint.help': 'Совет: не хватает силы? Попроси другого игрока о помощи — за добычу, предмет или услугу. Соблюдённые сделки повышают репутацию.',
   'hint.offer': 'Совет: помощь приносит добычу, но не уровень. Нарушенная сделка стоит 2 звезды репутации — и злопамятные это запоминают.',
+  // Owner feedback 2026-10-17: reveals, end of turn
+  'next.end.surplus': 'Ещё можно надевать, разыгрывать и продавать — так рука тоже пустеет. Потом заверши ход; отдать карт (лимит руки 5): {n}.',
+  'reveal.open': 'За углом: {card}',
+  'reveal.curse': '{name} проклинает тебя: {card}',
+  'reveal.result': 'Последствия для тебя',
+  'reveal.toHand': 'Карта уходит тебе в руку.',
+  'btn.continue': 'Дальше',
+  // Owner feedback 2026-10-17: curse effect in the reveal
+  'reveal.effect': 'Сразу действует на тебя: {effect}',
   // K2 review: a deal whose item is gone
   'log.void': '{name} — сделка утратила силу (партнёр: {to}): {card} больше нет. Репутация без изменений.',
   // Log lines with the person as subject (.you) or addressee (.toYou)
@@ -336,5 +340,7 @@ export const ru: Catalogue = {
   'log.void.you': 'Сделка утратила силу (партнёр: {to}): {card} больше нет. Репутация без изменений.',
   'log.void.toYou': '{name} — сделка с тобой утратила силу: твоего предмета {card} больше нет. Репутация без изменений.',
   'log.give.toYou': '{name} — отдано тебе карт: {n}.',
-  'log.curse.toYou': '{name} — проклятие на тебя: {card}.'
+  'log.curse.toYou': '{name} — проклятие на тебя: {card}.',
+  // Reveal pending
+  'next.reveal': 'Тебя задела карта: прочитай её, затем жми «Дальше».'
 };

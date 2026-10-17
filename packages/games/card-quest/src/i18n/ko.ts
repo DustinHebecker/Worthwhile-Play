@@ -12,7 +12,6 @@ export const ko: Catalogue = {
 
   'world.kz': '전투 드워프 — 드워프 대 정원 노움',
   'setup.opponents': '컴퓨터 플레이어',
-  'setup.target': '목표 레벨',
   'setup.roundLimit': '라운드 제한',
   'setup.roundLimit.hint': '제한이 있으면 마지막 라운드 후 가장 높은 레벨이 승리한다.',
   'setup.coach': '플레이 중 짧은 팁 보기',
@@ -21,10 +20,6 @@ export const ko: Catalogue = {
   'setup.opponentCount.3': '3',
   'setup.opponentCount.4': '4',
   'setup.opponentCount.5': '5',
-  'setup.targetLevels.6': '레벨 6',
-  'setup.targetLevels.8': '레벨 8',
-  'setup.targetLevels.10': '레벨 10',
-  'setup.targetLevels.12': '레벨 12',
   'setup.roundLimits.0': '제한 없음',
   'setup.roundLimits.20': '20라운드',
   'setup.roundLimits.30': '30라운드',
@@ -304,6 +299,15 @@ export const ko: Catalogue = {
   'log.broken.favour': '{name} — {to}에게 진 신세를 갚지 않음. 평판 −2.',
   'hint.help': '팁: 힘이 모자라면? 다른 플레이어에게 도움을 청하자 — 전리품, 아이템, 신세를 대가로. 거래를 지키면 평판이 오른다.',
   'hint.offer': '팁: 도우면 전리품은 받지만 레벨은 오르지 않는다. 거래를 깨면 평판 별이 2개 줄고 — 뒤끝 있는 타입은 그걸 기억한다.',
+  // Owner feedback 2026-10-17: reveals, end of turn
+  'next.end.surplus': '아직 착용하고, 내고, 팔 수 있다 — 그러면 손패도 줄어든다. 그다음 차례를 끝내자. 넘겨줄 카드(손패 한도 5): {n}.',
+  'reveal.open': '모퉁이 너머: {card}',
+  'reveal.curse': '{name}의 저주: {card}',
+  'reveal.result': '너에게 미친 영향',
+  'reveal.toHand': '카드가 손패로 들어온다.',
+  'btn.continue': '계속',
+  // Owner feedback 2026-10-17: curse effect in the reveal
+  'reveal.effect': '즉시 나에게 적용: {effect}',
   // K2 review: a deal whose item is gone
   'log.void': '{name} — {to}와(과)의 거래 무효: {card}이(가) 사라짐. 평판 변동 없음.',
   // Log lines with the person as subject (.you) or addressee (.toYou)
@@ -336,5 +340,7 @@ export const ko: Catalogue = {
   'log.void.you': '{to}와(과)의 거래 무효: {card}이(가) 사라짐. 평판 변동 없음.',
   'log.void.toYou': '{name} — 너와의 거래 무효: 네 {card}이(가) 사라짐. 평판 변동 없음.',
   'log.give.toYou': '{name} — 너에게 카드 {n}장.',
-  'log.curse.toYou': '{name} — 너에게 저주: {card}.'
+  'log.curse.toYou': '{name} — 너에게 저주: {card}.',
+  // Reveal pending
+  'next.reveal': '카드에 당했다: 읽어 보고 “계속”을 누르자.'
 };

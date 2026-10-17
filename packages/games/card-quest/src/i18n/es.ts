@@ -12,7 +12,6 @@ export const es: Catalogue = {
 
   'world.kz': 'Kampfzwerge: enanos contra gnomos de jardín',
   'setup.opponents': 'Jugadores de la máquina',
-  'setup.target': 'Nivel objetivo',
   'setup.roundLimit': 'Límite de rondas',
   'setup.roundLimit.hint': 'Con límite, tras la última ronda gana el nivel más alto.',
   'setup.coach': 'Mostrar consejos breves durante la partida',
@@ -21,10 +20,6 @@ export const es: Catalogue = {
   'setup.opponentCount.3': '3',
   'setup.opponentCount.4': '4',
   'setup.opponentCount.5': '5',
-  'setup.targetLevels.6': 'Nivel 6',
-  'setup.targetLevels.8': 'Nivel 8',
-  'setup.targetLevels.10': 'Nivel 10',
-  'setup.targetLevels.12': 'Nivel 12',
   'setup.roundLimits.0': 'Sin límite',
   'setup.roundLimits.20': '20 rondas',
   'setup.roundLimits.30': '30 rondas',
@@ -304,6 +299,15 @@ export const es: Catalogue = {
   'log.broken.favour': '{name}: favor debido a {to} negado. Reputación −2.',
   'hint.help': 'Consejo: ¿no te llega la fuerza? Pide ayuda a otro jugador a cambio de botín, un objeto o un favor. Cumplir los tratos sube tu reputación.',
   'hint.offer': 'Consejo: ayudar da botín, pero no nivel. Romper un trato cuesta 2 estrellas de reputación, y los rencorosos no lo olvidan.',
+  // Owner feedback 2026-10-17: reveals, end of turn
+  'next.end.surplus': 'Todavía puedes equipar, jugar y vender: eso también vacía tu mano. Después termina tu turno; cartas que hay que dar (límite de mano 5): {n}.',
+  'reveal.open': 'Tras la esquina: {card}',
+  'reveal.curse': '{name} te maldice: {card}',
+  'reveal.result': 'Consecuencias para ti',
+  'reveal.toHand': 'La carta va a tu mano.',
+  'btn.continue': 'Continuar',
+  // Owner feedback 2026-10-17: curse effect in the reveal
+  'reveal.effect': 'Te alcanza al instante: {effect}',
   // K2 review: a deal whose item is gone
   'log.void': '{name}: trato con {to} anulado, {card} ya no está. Reputación sin cambios.',
   // Log lines with the person as subject (.you) or addressee (.toYou)
@@ -336,5 +340,7 @@ export const es: Catalogue = {
   'log.void.you': 'Trato con {to} anulado: {card} ya no está. Reputación sin cambios.',
   'log.void.toYou': '{name}: trato contigo anulado, tu {card} ya no está. Reputación sin cambios.',
   'log.give.toYou': '{name} te da {n} cartas.',
-  'log.curse.toYou': '{name}: maldición sobre ti: {card}.'
+  'log.curse.toYou': '{name}: maldición sobre ti: {card}.',
+  // Reveal pending
+  'next.reveal': 'Una carta te ha alcanzado: léela y luego pulsa «Continuar».'
 };

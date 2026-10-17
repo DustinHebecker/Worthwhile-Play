@@ -12,7 +12,6 @@ export const de: Catalogue = {
 
   'world.kz': 'Kampfzwerge – Zwerge gegen Gartenzwerge',
   'setup.opponents': 'Computergegner',
-  'setup.target': 'Ziel-Level',
   'setup.roundLimit': 'Rundenlimit',
   'setup.roundLimit.hint': 'Mit Limit gewinnt nach der letzten Runde das höchste Level.',
   'setup.coach': 'Beim Spielen kurze Tipps zeigen',
@@ -21,10 +20,6 @@ export const de: Catalogue = {
   'setup.opponentCount.3': '3',
   'setup.opponentCount.4': '4',
   'setup.opponentCount.5': '5',
-  'setup.targetLevels.6': 'Level 6',
-  'setup.targetLevels.8': 'Level 8',
-  'setup.targetLevels.10': 'Level 10',
-  'setup.targetLevels.12': 'Level 12',
   'setup.roundLimits.0': 'Kein Limit',
   'setup.roundLimits.20': '20 Runden',
   'setup.roundLimits.30': '30 Runden',
@@ -304,6 +299,15 @@ export const de: Catalogue = {
   'log.broken.favour': '{name} – hat den Gefallen für {to} verweigert. Ruf −2.',
   'hint.help': 'Tipp: Zu schwach? Bitte jemanden um Hilfe – gegen Beute, einen Gegenstand oder einen Gefallen. Eingehaltene Deals heben deinen Ruf.',
   'hint.offer': 'Tipp: Helfen bringt Beute, aber kein Level. Ein gebrochener Deal kostet 2 Ruf-Sterne – und Nachtragende merken sich das.',
+  // Owner feedback 2026-10-17: reveals, end of turn
+  'next.end.surplus': 'Du kannst noch anlegen, ausspielen und verkaufen – das leert auch die Hand. Dann beende deinen Zug; abzugebende Karten (Handlimit 5): {n}.',
+  'reveal.open': 'Um die Ecke: {card}',
+  'reveal.curse': '{name} verflucht dich: {card}',
+  'reveal.result': 'Folgen für dich',
+  'reveal.toHand': 'Die Karte kommt auf deine Hand.',
+  'btn.continue': 'Weiter',
+  // Owner feedback 2026-10-17: curse effect in the reveal
+  'reveal.effect': 'Trifft dich sofort: {effect}',
   // K2 review: a deal whose item is gone
   'log.void': '{name} – Deal mit {to} hinfällig: {card} ist weg. Ruf unverändert.',
   // Log lines with the person as subject (.you) or addressee (.toYou)
@@ -336,5 +340,7 @@ export const de: Catalogue = {
   'log.void.you': 'Deal mit {to} hinfällig: {card} ist weg. Ruf unverändert.',
   'log.void.toYou': '{name} – Deal mit dir hinfällig: Dein Gegenstand {card} ist weg. Ruf unverändert.',
   'log.give.toYou': '{name} – {n} Karten an dich abgegeben.',
-  'log.curse.toYou': '{name} – Fluch auf dich: {card}.'
+  'log.curse.toYou': '{name} – Fluch auf dich: {card}.',
+  // Reveal pending
+  'next.reveal': 'Eine Karte hat dich getroffen: lies sie, dann Weiter.'
 };

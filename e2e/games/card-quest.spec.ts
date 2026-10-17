@@ -24,6 +24,22 @@ async function start(page: Page, opponents = 3) {
   await expect(page.getByTestId('players')).toBeVisible();
 }
 
+/** Waits until the autosave is stable, then reopens the game page and continues the saved game. */
+async function reopen(page: Page) {
+  let previous = '';
+  await expect
+    .poll(async () => {
+      const current = JSON.stringify(((await readSave(page, GAME)) as { state?: unknown } | undefined)?.state ?? null);
+      const stable = current !== 'null' && current === previous;
+      previous = current;
+      return stable;
+    }, { intervals: [150] })
+    .toBe(true);
+  await page.goto(`/games/${GAME}`);
+  await page.getByTestId('continue').click();
+  await expect(page.getByTestId('players')).toBeVisible();
+}
+
 /** Clicks the main action button until the person is in the given phase (or the game is over). */
 async function playUntil(page: Page, done: (s: Shown) => boolean, limit = 200) {
   for (let i = 0; i < limit; i++) {
@@ -34,7 +50,7 @@ async function playUntil(page: Page, done: (s: Shown) => boolean, limit = 200) {
       const tiles = page.locator('[data-testid="hand"] .cq-tile[aria-pressed="false"]');
       while (await end.isDisabled()) await tiles.first().click();
     }
-    for (const id of ['open', 'rummage', 'pass', 'accept', 'roll', 'end']) {
+    for (const id of ['reveal-continue', 'open', 'rummage', 'pass', 'accept', 'roll', 'end']) {
       const b = page.getByTestId(id);
       if ((await b.count()) > 0 && (await b.isEnabled())) {
         await b.click();
@@ -112,7 +128,7 @@ test('card-quest: in the give-away step a card can be read and closed without gi
     if ((await end.count()) > 0 && (await end.isDisabled())) break;
     const s = await shown(page);
     if (s.phase === 'over') break;
-    for (const id of ['open', 'rummage', 'pass', 'accept', 'roll', 'end']) {
+    for (const id of ['reveal-continue', 'open', 'rummage', 'pass', 'accept', 'roll', 'end']) {
       const b = page.getByTestId(id);
       if ((await b.count()) > 0 && (await b.isEnabled())) {
         await b.click();
@@ -133,6 +149,12 @@ test('card-quest: in the give-away step a card can be read and closed without gi
   await page.keyboard.press('Enter');
   await expect(page.getByTestId('detail')).toBeVisible();
   await expect(hand).toHaveCount(before);
+  await expect(page.getByTestId('end')).toBeDisabled();
+  // Cancel returns to the normal mode (equip and sell are possible again); End turn asks again.
+  await page.getByTestId('detail-close').click();
+  await page.getByTestId('give-cancel').click();
+  await expect(page.getByTestId('end')).toBeEnabled();
+  await page.getByTestId('end').click();
   await expect(page.getByTestId('end')).toBeDisabled();
 });
 
@@ -160,4 +182,46 @@ test('card-quest: coach tips switch with the keyboard, keep the focus and stay o
   await expect.poll(async () => ((await readSave(page, GAME)) as { state?: { settings?: { coach?: boolean } } } | undefined)?.state?.settings?.coach).toBe(false);
   await page.reload();
   await expect(page.getByTestId('coach')).not.toBeChecked();
+});
+
+test('card-quest: a trap shown around the corner survives a reload and stays gone after Continue', async ({ page }) => {
+  let found = false;
+  for (let seed = 1; seed <= 25 && !found; seed++) {
+    await page.goto(`/games/${GAME}?seed=${seed}`);
+    await expect(page.getByTestId('players')).toBeVisible();
+    for (let i = 0; i < 40; i++) {
+      if ((await page.getByTestId('reveal').count()) > 0) {
+        found = true;
+        break;
+      }
+      const end = page.getByTestId('end');
+      if ((await end.count()) > 0 && (await end.isDisabled())) {
+        const tiles = page.locator('[data-testid="hand"] .cq-tile[aria-pressed="false"]');
+        while (await end.isDisabled()) await tiles.first().click();
+      }
+      let clicked = false;
+      for (const id of ['open', 'rummage', 'pass', 'accept', 'roll', 'end']) {
+        const b = page.getByTestId(id);
+        if ((await b.count()) > 0 && (await b.isEnabled())) {
+          await b.click();
+          clicked = true;
+          break;
+        }
+      }
+      if (!clicked) break;
+    }
+  }
+  expect(found, 'no trap within the first seeds').toBe(true);
+  const reveal = page.getByTestId('reveal');
+  const title = (await reveal.locator('h3').textContent()) ?? '';
+  expect(title.length).toBeGreaterThan(3);
+  await expect(reveal.locator('svg.cq-il, .cq-rules li').first()).toBeVisible();
+  // Reopen the saved game (a reload of the ?seed= link would start a new one): the same reveal is shown again.
+  await reopen(page);
+  await expect(page.getByTestId('reveal').locator('h3')).toHaveText(title);
+  // Acknowledge every waiting reveal (it is saved), then reload: none comes back.
+  while ((await page.getByTestId('reveal-continue').count()) > 0) await page.getByTestId('reveal-continue').click();
+  await expect.poll(async () => ((await readSave(page, GAME)) as { state?: { revealed?: number } } | undefined)?.state?.revealed).toBeGreaterThan(0);
+  await reopen(page);
+  await expect(page.getByTestId('reveal')).toHaveCount(0);
 });

@@ -12,7 +12,6 @@ export const pt: Catalogue = {
 
   'world.kz': 'Kampfzwerge — anões contra gnomos de jardim',
   'setup.opponents': 'Jogadores do computador',
-  'setup.target': 'Nível-alvo',
   'setup.roundLimit': 'Limite de rodadas',
   'setup.roundLimit.hint': 'Com limite, vence o nível mais alto depois da última rodada.',
   'setup.coach': 'Mostrar dicas curtas durante o jogo',
@@ -21,10 +20,6 @@ export const pt: Catalogue = {
   'setup.opponentCount.3': '3',
   'setup.opponentCount.4': '4',
   'setup.opponentCount.5': '5',
-  'setup.targetLevels.6': 'Nível 6',
-  'setup.targetLevels.8': 'Nível 8',
-  'setup.targetLevels.10': 'Nível 10',
-  'setup.targetLevels.12': 'Nível 12',
   'setup.roundLimits.0': 'Sem limite',
   'setup.roundLimits.20': '20 rodadas',
   'setup.roundLimits.30': '30 rodadas',
@@ -304,6 +299,15 @@ export const pt: Catalogue = {
   'log.broken.favour': '{name} — recusou o favor devido a {to}. Reputação −2.',
   'hint.help': 'Dica: falta força? Peça ajuda a outro jogador — em troca de tesouro, um item ou um favor. Acordos cumpridos aumentam sua reputação.',
   'hint.offer': 'Dica: ajudar traz tesouro, mas não nível. Quebrar um acordo custa 2 estrelas de reputação — e os rancorosos não esquecem.',
+  // Owner feedback 2026-10-17: reveals, end of turn
+  'next.end.surplus': 'Você ainda pode equipar, jogar e vender — isso também esvazia a sua mão. Depois, encerre a sua vez; cartas a dar (limite de mão 5): {n}.',
+  'reveal.open': 'Na esquina: {card}',
+  'reveal.curse': '{name} amaldiçoa você: {card}',
+  'reveal.result': 'Efeito em você',
+  'reveal.toHand': 'A carta vai para a sua mão.',
+  'btn.continue': 'Continuar',
+  // Owner feedback 2026-10-17: curse effect in the reveal
+  'reveal.effect': 'Atinge você na hora: {effect}',
   // K2 review: a deal whose item is gone
   'log.void': '{name} — acordo com {to} anulado: {card} não existe mais. Reputação inalterada.',
   // Log lines with the person as subject (.you) or addressee (.toYou)
@@ -336,5 +340,7 @@ export const pt: Catalogue = {
   'log.void.you': 'Acordo com {to} anulado: {card} não existe mais. Reputação inalterada.',
   'log.void.toYou': '{name} — acordo com você anulado: seu item {card} não existe mais. Reputação inalterada.',
   'log.give.toYou': '{name} — {n} cartas dadas a você.',
-  'log.curse.toYou': '{name} — maldição em você: {card}.'
+  'log.curse.toYou': '{name} — maldição em você: {card}.',
+  // Reveal pending
+  'next.reveal': 'Uma carta atingiu você: leia-a e depois toque em “Continuar”.'
 };

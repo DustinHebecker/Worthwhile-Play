@@ -3,7 +3,7 @@ import { announce, clear, h } from '@wp/ui';
 import { pictogram } from './art';
 import { illustration } from './illustrations';
 import { baseId, type MonsterCard } from './cards';
-import { cardBlunder, cardFlavour, cardName, cardRules, keyNumber } from './cardtext';
+import { cardBlunder, cardFlavour, cardName, cardRules, keyNumber, penaltyText } from './cardtext';
 import { HUMAN, advance, computerToAct } from './driver';
 import {
   FLEE_TARGET,
@@ -91,6 +91,71 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     finishIfOver();
   }
 
+  /**
+   * Cards that hit the person without a fight — a trap (curse) or other card found around the corner, a curse
+   * from another player — shown one by one with their picture, rules and what they took, until "Continue". Derived
+   * from the log and `state.revealed` (persisted), so a reload during a reveal shows it again and one after
+   * "Continue" does not.
+   */
+  function pendingReveals(): { card: string; by: number | null; lines: string[]; end: number }[] {
+    const firstSeq = state.logSeq - state.log.length;
+    const since = state.revealed ?? state.seen;
+    const out: { card: string; by: number | null; lines: string[]; end: number }[] = [];
+    state.log.forEach((e, i) => {
+      if (firstSeq + i < since) return;
+      const found = e.e === 'open' && e.seat === HUMAN && defOf(e.card).type !== 'monster';
+      const cursed = e.e === 'curse' && e.target === HUMAN;
+      if (!found && !cursed) return;
+      const lines: string[] = [];
+      let j = i + 1;
+      for (; j < state.log.length; j++) {
+        const f = state.log[j]!;
+        if (f.e !== 'penalty' || f.seat !== HUMAN) break;
+        lines.push(eventText(f));
+      }
+      if (found && defOf(e.card).type !== 'curse') lines.push(t('reveal.toHand'));
+      out.push({ card: e.card, by: cursed ? e.seat : null, lines, end: firstSeq + j });
+    });
+    return out;
+  }
+
+  function renderReveal(): HTMLElement {
+    const r = pendingReveals()[0]!;
+    const { type, lines: rules } = cardRules(t, r.card);
+    // A curse that hits the person: say so, instead of the card's "play on another player" line.
+    const def = defOf(r.card);
+    const lines = def.type === 'curse' ? [t('reveal.effect', { effect: penaltyText(t, def.effect) })] : rules;
+    const title = r.by === null ? t('reveal.open', { card: name(r.card) }) : t('reveal.curse', { name: seatName(r.by), card: name(r.card) });
+    return h(
+      'section',
+      { class: 'cq-reveal cq-detail', 'data-testid': 'reveal', 'data-type': defOf(r.card).type, 'aria-labelledby': 'cq-reveal-title' },
+      h('h3', { id: 'cq-reveal-title' }, title),
+      bigPic(r.card),
+      h('p', { class: 'cq-tile-type' }, type),
+      h('ul', { class: 'cq-rules' }, ...lines.map((l) => h('li', {}, l))),
+      h('p', { class: 'cq-flavour' }, cardFlavour(t, r.card)),
+      r.lines.length > 0 ? h('div', {}, h('h4', {}, t('reveal.result')), h('ul', { 'data-testid': 'reveal-result' }, ...r.lines.map((l) => h('li', {}, l)))) : null,
+      h(
+        'div',
+        { class: 'cq-detail-actions' },
+        continueButton(r.end)
+      )
+    );
+  }
+
+  /** "Continue" after a reveal: acknowledged in the save; a held-down Enter (key repeat) does not skip it. */
+  function continueButton(end: number): HTMLElement {
+    const b = button(t('btn.continue'), () => {
+      state = { ...state, revealed: end };
+      context.requestSave();
+      render();
+    }, { primary: true, testid: 'reveal-continue' });
+    b.addEventListener('keydown', (event) => {
+      if (event.repeat && (event.key === 'Enter' || event.key === ' ')) event.preventDefault();
+    });
+    return b;
+  }
+
   function finishIfOver(): void {
     if (state.phase !== 'over' || finishedSent) return;
     finishedSent = true;
@@ -102,6 +167,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
   /* ---------------------------------------------------------------- texts */
 
   function nextText(): string {
+    if (state.phase !== 'over' && pendingReveals().length > 0) return t('next.reveal');
     switch (state.phase) {
       case 'setup': // Unreachable: the view deals at once (ADR 0017); kept for the type.
       case 'prepare':
@@ -125,6 +191,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       case 'end': {
         const n = surplus(state);
         if (n === 0) return t('next.end');
+        if (mode !== 'give') return t('next.end.surplus', { n });
         const to = charityTarget(state);
         return to >= 0 ? t('next.end.give', { n, name: seatName(to) }) : t('next.end.discard', { n });
       }
@@ -308,11 +375,13 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
 
   const keyOf = (el: Element | null): string | null => el?.closest('[data-key]')?.getAttribute('data-key') ?? null;
 
-  /** Enters the give-away mode when the person must give cards away (before drawing, so rendering stays pure). An open
-   * detail is already closed by the action that led here (act). */
+  /**
+   * Leaves the give-away mode when there is nothing (left) to give away, e.g. after equipping enough cards. The mode
+   * itself is entered only by "End turn": until then the person may still equip, play and sell (like the classic rules).
+   */
   function syncMode(): void {
-    if (state.phase === 'end' && actorOf(state) === HUMAN && surplus(state) > 0 && mode !== 'give') {
-      mode = 'give';
+    if (mode === 'give' && !(state.phase === 'end' && actorOf(state) === HUMAN && surplus(state) > 0)) {
+      mode = 'play';
       picked.clear();
     }
   }
@@ -329,7 +398,10 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     if (!focusKey) return;
     // Keep focus on the same control; if it is gone (the step moved on), go to the next main action or its text.
     const same = main.querySelector<HTMLElement>(`[data-key="${CSS.escape(focusKey)}"]`);
-    const fallback = main.querySelector<HTMLElement>('.cq-actions button.primary:not([disabled])') ?? main.querySelector<HTMLElement>('.cq-next-text');
+    const fallback =
+      main.querySelector<HTMLElement>('[data-testid="reveal-continue"]') ??
+      main.querySelector<HTMLElement>('.cq-actions button.primary:not([disabled])') ??
+      main.querySelector<HTMLElement>('.cq-next-text');
     (same ?? fallback)?.focus();
   }
 
@@ -399,6 +471,12 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     const recent = newEvents().filter((e) => e.e !== 'turn' || e.seat !== HUMAN);
     if (recent.length > 0 && state.phase !== 'over') {
       out.push(h('section', { class: 'cq-recent', 'aria-labelledby': 'cq-recent-title' }, h('h3', { id: 'cq-recent-title' }, t('log.new')), h('ul', {}, ...recent.slice(-12).map((e) => h('li', {}, eventText(e))))));
+    }
+    // While a card is revealed, only the reveal and the log: the hand waits (no detail, no actions).
+    if (pendingReveals().length > 0) {
+      out.push(renderReveal());
+      out.push(renderLog());
+      return out;
     }
     if (state.fight) out.push(renderFight());
     out.push(renderActions());
@@ -572,9 +650,26 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       case 'end': {
         const n = surplus(state);
         if (n === 0) bar.append(button(t('btn.end'), () => act({ a: 'end', give: [] }), { primary: true, testid: 'end' }));
-        else {
+        else if (mode !== 'give') {
+          // Too many cards: "End turn" first asks which ones to give away.
+          bar.append(
+            button(t('btn.end'), () => {
+              mode = 'give';
+              picked.clear();
+              selected = null;
+              render();
+            }, { primary: true, testid: 'end' })
+          );
+        } else {
           const label = charityTarget(state) >= 0 ? t('btn.give', { n }) : t('btn.discard', { n });
-          bar.append(button(label, () => act({ a: 'end', give: [...picked] }), { primary: true, testid: 'end', disabled: picked.size !== n }));
+          bar.append(
+            button(label, () => act({ a: 'end', give: [...picked] }), { primary: true, testid: 'end', disabled: picked.size !== n }),
+            button(t('btn.cancel'), () => {
+              mode = 'play';
+              picked.clear();
+              render();
+            }, { testid: 'give-cancel' })
+          );
         }
         break;
       }
