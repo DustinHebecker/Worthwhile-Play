@@ -12,7 +12,6 @@ export const uk: Catalogue = {
 
   'world.kz': 'Бойові гноми — гноми проти садових гномів',
   'setup.opponents': 'Комп’ютерні гравці',
-  'setup.target': 'Цільовий рівень',
   'setup.roundLimit': 'Ліміт раундів',
   'setup.roundLimit.hint': 'З лімітом після останнього раунду перемагає найвищий рівень.',
   'setup.coach': 'Показувати короткі підказки під час гри',
@@ -21,10 +20,6 @@ export const uk: Catalogue = {
   'setup.opponentCount.3': '3',
   'setup.opponentCount.4': '4',
   'setup.opponentCount.5': '5',
-  'setup.targetLevels.6': 'Рівень 6',
-  'setup.targetLevels.8': 'Рівень 8',
-  'setup.targetLevels.10': 'Рівень 10',
-  'setup.targetLevels.12': 'Рівень 12',
   'setup.roundLimits.0': 'Без ліміту',
   'setup.roundLimits.20': 'Раундів: 20',
   'setup.roundLimits.30': 'Раундів: 30',
@@ -303,5 +298,12 @@ export const uk: Catalogue = {
   'log.broken.stay': '{name} — втручання попри оплату невтручання (платник: {to}). Репутація −2.',
   'log.broken.favour': '{name} — відмова в послузі в рахунок боргу, отримувач: {to}. Репутація −2.',
   'hint.help': 'Порада: бракує сили? Попроси іншого гравця про допомогу — за здобич, предмет або послугу. Дотримані угоди підвищують репутацію.',
-  'hint.offer': 'Порада: допомога приносить здобич, але не рівень. Порушена угода коштує 2 зірки репутації — і комп’ютерні гравці це запам’ятовують.'
+  'hint.offer': 'Порада: допомога приносить здобич, але не рівень. Порушена угода коштує 2 зірки репутації — і комп’ютерні гравці це запам’ятовують.',
+  // Owner feedback 2026-10-17: reveals, end of turn
+  'next.end.surplus': 'Ще можна вдягати, розігрувати й продавати — так рука теж порожніє. Потім заверши хід; віддати карт (ліміт руки 5): {n}.',
+  'reveal.open': 'За рогом: {card}',
+  'reveal.curse': '{name} проклинає тебе: {card}',
+  'reveal.result': 'Що сталося',
+  'reveal.toHand': 'Карта йде тобі в руку.',
+  'btn.continue': 'Далі'
 };

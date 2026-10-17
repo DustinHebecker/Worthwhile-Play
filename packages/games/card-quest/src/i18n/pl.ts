@@ -12,7 +12,6 @@ export const pl: Catalogue = {
 
   'world.kz': 'Kampfzwerge — krasnoludy kontra krasnale ogrodowe',
   'setup.opponents': 'Gracze komputerowi',
-  'setup.target': 'Poziom docelowy',
   'setup.roundLimit': 'Limit rund',
   'setup.roundLimit.hint': 'Z limitem po ostatniej rundzie wygrywa najwyższy poziom.',
   'setup.coach': 'Pokazuj krótkie wskazówki podczas gry',
@@ -21,10 +20,6 @@ export const pl: Catalogue = {
   'setup.opponentCount.3': '3',
   'setup.opponentCount.4': '4',
   'setup.opponentCount.5': '5',
-  'setup.targetLevels.6': 'Poziom 6',
-  'setup.targetLevels.8': 'Poziom 8',
-  'setup.targetLevels.10': 'Poziom 10',
-  'setup.targetLevels.12': 'Poziom 12',
   'setup.roundLimits.0': 'Bez limitu',
   'setup.roundLimits.20': '20 rund',
   'setup.roundLimits.30': '30 rund',
@@ -303,5 +298,12 @@ export const pl: Catalogue = {
   'log.broken.stay': '{name} — wtrącenie się mimo zapłaty za trzymanie się z boku (płacący: {to}). Reputacja −2.',
   'log.broken.favour': '{name} — odmowa należnej przysługi, odbiorca: {to}. Reputacja −2.',
   'hint.help': 'Wskazówka: za mało siły? Poproś innego gracza o pomoc — za łupy, przedmiot albo przysługę. Dotrzymane umowy podnoszą reputację.',
-  'hint.offer': 'Wskazówka: pomaganie daje łupy, ale nie poziom. Zerwana umowa kosztuje 2 gwiazdki reputacji — a gracze komputerowi to zapamiętują.'
+  'hint.offer': 'Wskazówka: pomaganie daje łupy, ale nie poziom. Zerwana umowa kosztuje 2 gwiazdki reputacji — a gracze komputerowi to zapamiętują.',
+  // Owner feedback 2026-10-17: reveals, end of turn
+  'next.end.surplus': 'Możesz jeszcze zakładać, zagrywać i sprzedawać — to też opróżnia rękę. Potem zakończ turę; karty do oddania (limit ręki 5): {n}.',
+  'reveal.open': 'Za rogiem: {card}',
+  'reveal.curse': '{name} rzuca na ciebie klątwę: {card}',
+  'reveal.result': 'Co się stało',
+  'reveal.toHand': 'Karta trafia na twoją rękę.',
+  'btn.continue': 'Dalej'
 };

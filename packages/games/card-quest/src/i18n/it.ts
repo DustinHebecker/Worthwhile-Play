@@ -12,7 +12,6 @@ export const it: Catalogue = {
 
   'world.kz': 'Kampfzwerge — nani contro nani da giardino',
   'setup.opponents': 'Giocatori del computer',
-  'setup.target': 'Livello obiettivo',
   'setup.roundLimit': 'Limite di round',
   'setup.roundLimit.hint': 'Con un limite, dopo l’ultimo round vince il livello più alto.',
   'setup.coach': 'Mostra brevi consigli durante il gioco',
@@ -21,10 +20,6 @@ export const it: Catalogue = {
   'setup.opponentCount.3': '3',
   'setup.opponentCount.4': '4',
   'setup.opponentCount.5': '5',
-  'setup.targetLevels.6': 'Livello 6',
-  'setup.targetLevels.8': 'Livello 8',
-  'setup.targetLevels.10': 'Livello 10',
-  'setup.targetLevels.12': 'Livello 12',
   'setup.roundLimits.0': 'Nessun limite',
   'setup.roundLimits.20': '20 round',
   'setup.roundLimits.30': '30 round',
@@ -303,5 +298,12 @@ export const it: Catalogue = {
   'log.broken.stay': '{name} — intromissione nonostante {to} avesse pagato per evitarla. Reputazione −2.',
   'log.broken.favour': '{name} — favore dovuto a {to} rifiutato. Reputazione −2.',
   'hint.help': 'Consiglio: non sei abbastanza forte? Chiedi aiuto a un altro giocatore — in cambio di bottino, un oggetto o un favore. Gli accordi rispettati alzano la tua reputazione.',
-  'hint.offer': 'Consiglio: aiutare porta bottino, ma nessun livello. Infrangere un accordo costa 2 stelle di reputazione — e i giocatori del computer se lo ricordano.'
+  'hint.offer': 'Consiglio: aiutare porta bottino, ma nessun livello. Infrangere un accordo costa 2 stelle di reputazione — e i giocatori del computer se lo ricordano.',
+  // Owner feedback 2026-10-17: reveals, end of turn
+  'next.end.surplus': 'Puoi ancora equipaggiare, giocare e vendere: anche così la mano si svuota. Poi termina il turno; carte da cedere (limite di mano 5): {n}.',
+  'reveal.open': 'Dietro l’angolo: {card}',
+  'reveal.curse': '{name} ti maledice: {card}',
+  'reveal.result': 'Cosa è successo',
+  'reveal.toHand': 'La carta va nella tua mano.',
+  'btn.continue': 'Continua'
 };

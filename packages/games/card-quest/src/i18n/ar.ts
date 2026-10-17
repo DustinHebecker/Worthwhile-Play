@@ -12,7 +12,6 @@ export const ar: Catalogue = {
 
   'world.kz': 'الأقزام المقاتلة — أقزام ضد أقزام الحدائق',
   'setup.opponents': 'لاعبو الحاسوب',
-  'setup.target': 'المستوى المستهدف',
   'setup.roundLimit': 'حد الجولات',
   'setup.roundLimit.hint': 'مع وجود حد، يفوز صاحب أعلى مستوى بعد الجولة الأخيرة.',
   'setup.coach': 'عرض نصائح قصيرة أثناء اللعب',
@@ -21,10 +20,6 @@ export const ar: Catalogue = {
   'setup.opponentCount.3': '3',
   'setup.opponentCount.4': '4',
   'setup.opponentCount.5': '5',
-  'setup.targetLevels.6': 'المستوى 6',
-  'setup.targetLevels.8': 'المستوى 8',
-  'setup.targetLevels.10': 'المستوى 10',
-  'setup.targetLevels.12': 'المستوى 12',
   'setup.roundLimits.0': 'بلا حد',
   'setup.roundLimits.20': '20 جولة',
   'setup.roundLimits.30': '30 جولة',
@@ -303,5 +298,12 @@ export const ar: Catalogue = {
   'log.broken.stay': '{name} — التدخل رغم دفع {to} مقابل البقاء بعيدًا. السمعة −2.',
   'log.broken.favour': '{name} — رفض المعروف المستحق لـ{to}. السمعة −2.',
   'hint.help': 'نصيحة: قوتك لا تكفي؟ اطلب المساعدة من لاعب آخر — مقابل غنيمة أو غرض أو معروف. الوفاء بالصفقات يرفع سمعتك.',
-  'hint.offer': 'نصيحة: المساعدة تجلب الغنيمة لا المستوى. نقض الصفقة يكلّف نجمتَي سمعة — ولاعبو الحاسوب لا ينسون.'
+  'hint.offer': 'نصيحة: المساعدة تجلب الغنيمة لا المستوى. نقض الصفقة يكلّف نجمتَي سمعة — ولاعبو الحاسوب لا ينسون.',
+  // Owner feedback 2026-10-17: reveals, end of turn
+  'next.end.surplus': 'ما زال بإمكانك الارتداء واللعب والبيع — وهذا يُفرغ يدك أيضًا. ثم أنهِ دورك؛ بطاقات يجب إعطاؤها (حد اليد 5): {n}.',
+  'reveal.open': 'خلف الزاوية: {card}',
+  'reveal.curse': 'لعنة من {name}: {card}',
+  'reveal.result': 'ما الذي حدث',
+  'reveal.toHand': 'تذهب البطاقة إلى يدك.',
+  'btn.continue': 'متابعة'
 };

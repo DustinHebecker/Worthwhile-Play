@@ -12,7 +12,6 @@ export const ja: Catalogue = {
 
   'world.kz': 'バトルドワーフ ― ドワーフ対庭ノーム',
   'setup.opponents': 'コンピューター',
-  'setup.target': '目標レベル',
   'setup.roundLimit': 'ラウンド制限',
   'setup.roundLimit.hint': '制限ありの場合、最終ラウンドのあとでレベルが一番高い人の勝ち。',
   'setup.coach': 'プレイ中に短いヒントを表示する',
@@ -21,10 +20,6 @@ export const ja: Catalogue = {
   'setup.opponentCount.3': '3',
   'setup.opponentCount.4': '4',
   'setup.opponentCount.5': '5',
-  'setup.targetLevels.6': 'レベル6',
-  'setup.targetLevels.8': 'レベル8',
-  'setup.targetLevels.10': 'レベル10',
-  'setup.targetLevels.12': 'レベル12',
   'setup.roundLimits.0': '制限なし',
   'setup.roundLimits.20': '20ラウンド',
   'setup.roundLimits.30': '30ラウンド',
@@ -303,5 +298,12 @@ export const ja: Catalogue = {
   'log.broken.stay': '{name} ― {to}からお礼をもらったのに手を出した。評判−2。',
   'log.broken.favour': '{name} ― {to}への借りを返さなかった。評判−2。',
   'hint.help': 'ヒント：強さが足りない？ ほかのプレイヤーに助けを頼もう――お宝、アイテム、貸しと引き換えに。取引を守れば評判が上がる。',
-  'hint.offer': 'ヒント：手伝うとお宝はもらえるがレベルは上がらない。取引を破ると評判の星が2つ減る――コンピューターはそれを覚えている。'
+  'hint.offer': 'ヒント：手伝うとお宝はもらえるがレベルは上がらない。取引を破ると評判の星が2つ減る――コンピューターはそれを覚えている。',
+  // Owner feedback 2026-10-17: reveals, end of turn
+  'next.end.surplus': 'まだ装備したり、カードを出したり、売ったりできる――それでも手札は減る。それから番を終えよう。手放すカード（手札上限5）：{n}。',
+  'reveal.open': '曲がり角の先：{card}',
+  'reveal.curse': '{name}の呪い：{card}',
+  'reveal.result': '起きたこと',
+  'reveal.toHand': 'カードは手札に入る。',
+  'btn.continue': '続ける'
 };

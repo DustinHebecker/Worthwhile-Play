@@ -42,6 +42,8 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
   let state: CardQuestState = started(0, readSettings(undefined));
   let selected: string | null = null;
   let mode: Mode = 'play';
+  /** Cards to show the person before play goes on (see queueReveals). */
+  const reveals: { card: string; by: number | null; lines: string[] }[] = [];
   /** The player chosen in the help form. */
   let offerSeat = -1;
   const picked = new Set<string>();
@@ -80,6 +82,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     next.seen = before;
     if (hint && !next.hints.includes(hint)) next.hints.push(hint);
     state = advance(next);
+    queueReveals(before);
     if (action.a !== 'equip' && action.a !== 'unequip' && action.a !== 'upgrade') selected = null;
     if (mode !== 'play' && action.a !== 'equip') {
       mode = 'play';
@@ -89,6 +92,52 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     render();
     announce(live, [...newEvents().slice(-6).map(eventText), nextText()].join(' '));
     finishIfOver();
+  }
+
+  /**
+   * Cards that hit the person without a fight — a trap (curse) or other card found around the corner, a curse
+   * from another player — are shown one by one with their picture, rules and what they took, until "Continue".
+   */
+  function queueReveals(sinceSeq: number): void {
+    const firstSeq = state.logSeq - state.log.length;
+    const fresh = state.log.filter((_, i) => firstSeq + i >= sinceSeq);
+    fresh.forEach((e, i) => {
+      const found = e.e === 'open' && e.seat === HUMAN && defOf(e.card).type !== 'monster';
+      const cursed = e.e === 'curse' && e.target === HUMAN;
+      if (!found && !cursed) return;
+      const lines: string[] = [];
+      for (let j = i + 1; j < fresh.length; j++) {
+        const f = fresh[j]!;
+        if (f.e !== 'penalty' || f.seat !== HUMAN) break;
+        lines.push(eventText(f));
+      }
+      if (found && defOf(e.card).type !== 'curse') lines.push(t('reveal.toHand'));
+      reveals.push({ card: e.card, by: cursed ? e.seat : null, lines });
+    });
+  }
+
+  function renderReveal(): HTMLElement {
+    const r = reveals[0]!;
+    const { type, lines } = cardRules(t, r.card);
+    const title = r.by === null ? t('reveal.open', { card: name(r.card) }) : t('reveal.curse', { name: seatName(r.by), card: name(r.card) });
+    return h(
+      'section',
+      { class: 'cq-reveal cq-detail', 'data-testid': 'reveal', 'data-type': defOf(r.card).type, 'aria-labelledby': 'cq-reveal-title' },
+      h('h3', { id: 'cq-reveal-title' }, title),
+      bigPic(r.card),
+      h('p', { class: 'cq-tile-type' }, type),
+      h('ul', { class: 'cq-rules' }, ...lines.map((l) => h('li', {}, l))),
+      h('p', { class: 'cq-flavour' }, cardFlavour(t, r.card)),
+      r.lines.length > 0 ? h('div', {}, h('h4', {}, t('reveal.result')), h('ul', { 'data-testid': 'reveal-result' }, ...r.lines.map((l) => h('li', {}, l)))) : null,
+      h(
+        'div',
+        { class: 'cq-detail-actions' },
+        button(t('btn.continue'), () => {
+          reveals.shift();
+          render();
+        }, { primary: true, testid: 'reveal-continue' })
+      )
+    );
   }
 
   function finishIfOver(): void {
@@ -125,6 +174,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       case 'end': {
         const n = surplus(state);
         if (n === 0) return t('next.end');
+        if (mode !== 'give') return t('next.end.surplus', { n });
         const to = charityTarget(state);
         return to >= 0 ? t('next.end.give', { n, name: seatName(to) }) : t('next.end.discard', { n });
       }
@@ -294,11 +344,13 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
 
   const keyOf = (el: Element | null): string | null => el?.closest('[data-key]')?.getAttribute('data-key') ?? null;
 
-  /** Enters the give-away mode when the person must give cards away (before drawing, so rendering stays pure). An open
-   * detail is already closed by the action that led here (act). */
+  /**
+   * Leaves the give-away mode when there is nothing (left) to give away, e.g. after equipping enough cards. The mode
+   * itself is entered only by "End turn": until then the person may still equip, play and sell (like the classic rules).
+   */
   function syncMode(): void {
-    if (state.phase === 'end' && actorOf(state) === HUMAN && surplus(state) > 0 && mode !== 'give') {
-      mode = 'give';
+    if (mode === 'give' && !(state.phase === 'end' && actorOf(state) === HUMAN && surplus(state) > 0)) {
+      mode = 'play';
       picked.clear();
     }
   }
@@ -315,7 +367,10 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     if (!focusKey) return;
     // Keep focus on the same control; if it is gone (the step moved on), go to the next main action or its text.
     const same = main.querySelector<HTMLElement>(`[data-key="${CSS.escape(focusKey)}"]`);
-    const fallback = main.querySelector<HTMLElement>('.cq-actions button.primary:not([disabled])') ?? main.querySelector<HTMLElement>('.cq-next-text');
+    const fallback =
+      main.querySelector<HTMLElement>('[data-testid="reveal-continue"]') ??
+      main.querySelector<HTMLElement>('.cq-actions button.primary:not([disabled])') ??
+      main.querySelector<HTMLElement>('.cq-next-text');
     (same ?? fallback)?.focus();
   }
 
@@ -385,6 +440,13 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     const recent = newEvents().filter((e) => e.e !== 'turn' || e.seat !== HUMAN);
     if (recent.length > 0 && state.phase !== 'over') {
       out.push(h('section', { class: 'cq-recent', 'aria-labelledby': 'cq-recent-title' }, h('h3', { id: 'cq-recent-title' }, t('log.new')), h('ul', {}, ...recent.slice(-12).map((e) => h('li', {}, eventText(e))))));
+    }
+    if (reveals.length > 0) {
+      out.push(renderReveal());
+      out.push(renderHand());
+      out.push(renderMine());
+      out.push(renderLog());
+      return out;
     }
     if (state.fight) out.push(renderFight());
     out.push(renderActions());
@@ -556,9 +618,26 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       case 'end': {
         const n = surplus(state);
         if (n === 0) bar.append(button(t('btn.end'), () => act({ a: 'end', give: [] }), { primary: true, testid: 'end' }));
-        else {
+        else if (mode !== 'give') {
+          // Too many cards: "End turn" first asks which ones to give away.
+          bar.append(
+            button(t('btn.end'), () => {
+              mode = 'give';
+              picked.clear();
+              selected = null;
+              render();
+            }, { primary: true, testid: 'end' })
+          );
+        } else {
           const label = charityTarget(state) >= 0 ? t('btn.give', { n }) : t('btn.discard', { n });
-          bar.append(button(label, () => act({ a: 'end', give: [...picked] }), { primary: true, testid: 'end', disabled: picked.size !== n }));
+          bar.append(
+            button(label, () => act({ a: 'end', give: [...picked] }), { primary: true, testid: 'end', disabled: picked.size !== n }),
+            button(t('btn.cancel'), () => {
+              mode = 'play';
+              picked.clear();
+              render();
+            }, { testid: 'give-cancel' })
+          );
         }
         break;
       }
@@ -819,6 +898,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       selected = null;
       mode = 'play';
       picked.clear();
+      reveals.length = 0;
       finishedSent = false;
       render();
     },
@@ -828,6 +908,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       selected = null;
       mode = 'play';
       picked.clear();
+      reveals.length = 0;
       finishedSent = state.phase === 'over';
       render();
       if (saved.phase === 'setup') context.requestSave();
@@ -847,6 +928,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       selected = null;
       mode = 'play';
       picked.clear();
+      reveals.length = 0;
       finishedSent = false;
       render();
     },

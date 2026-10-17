@@ -12,7 +12,6 @@ export const tr: Catalogue = {
 
   'world.kz': 'Kampfzwerge — cücelere karşı bahçe cüceleri',
   'setup.opponents': 'Bilgisayar oyuncuları',
-  'setup.target': 'Hedef seviye',
   'setup.roundLimit': 'Tur sınırı',
   'setup.roundLimit.hint': 'Sınır varsa son turdan sonra en yüksek seviye kazanır.',
   'setup.coach': 'Oynarken kısa ipuçları göster',
@@ -21,10 +20,6 @@ export const tr: Catalogue = {
   'setup.opponentCount.3': '3',
   'setup.opponentCount.4': '4',
   'setup.opponentCount.5': '5',
-  'setup.targetLevels.6': 'Seviye 6',
-  'setup.targetLevels.8': 'Seviye 8',
-  'setup.targetLevels.10': 'Seviye 10',
-  'setup.targetLevels.12': 'Seviye 12',
   'setup.roundLimits.0': 'Sınır yok',
   'setup.roundLimits.20': '20 tur',
   'setup.roundLimits.30': '30 tur',
@@ -303,5 +298,12 @@ export const tr: Catalogue = {
   'log.broken.stay': '{name} — uzak durma bedeli ödendiği hâlde araya girildi (ödeyen: {to}). İtibar −2.',
   'log.broken.favour': '{name} — borçlu olunan iyilik reddedildi (alacaklı: {to}). İtibar −2.',
   'hint.help': 'İpucu: gücün yetmiyor mu? Başka bir oyuncudan yardım iste — ganimet, bir eşya ya da bir iyilik karşılığında. Tutulan anlaşmalar itibarını artırır.',
-  'hint.offer': 'İpucu: yardım etmek ganimet getirir ama seviye getirmez. Bir anlaşmayı bozmak 2 itibar yıldızına mal olur — ve bilgisayar oyuncuları bunu unutmaz.'
+  'hint.offer': 'İpucu: yardım etmek ganimet getirir ama seviye getirmez. Bir anlaşmayı bozmak 2 itibar yıldızına mal olur — ve bilgisayar oyuncuları bunu unutmaz.',
+  // Owner feedback 2026-10-17: reveals, end of turn
+  'next.end.surplus': 'Hâlâ eşya takabilir, kart oynayabilir ve satabilirsin — bu da elini boşaltır. Sonra sıranı bitir; verilecek kartlar (el sınırı 5): {n}.',
+  'reveal.open': 'Köşede: {card}',
+  'reveal.curse': '{name} sana lanet okuyor: {card}',
+  'reveal.result': 'Ne oldu',
+  'reveal.toHand': 'Kart eline geçer.',
+  'btn.continue': 'Devam'
 };

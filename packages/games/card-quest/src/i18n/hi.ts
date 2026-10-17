@@ -12,7 +12,6 @@ export const hi: Catalogue = {
 
   'world.kz': 'लड़ाकू बौने — बौने बनाम बगीचे के बौने',
   'setup.opponents': 'कंप्यूटर खिलाड़ी',
-  'setup.target': 'लक्ष्य स्तर',
   'setup.roundLimit': 'राउंड की सीमा',
   'setup.roundLimit.hint': 'सीमा होने पर आख़िरी राउंड के बाद सबसे ऊँचा स्तर जीतता है।',
   'setup.coach': 'खेलते समय छोटे सुझाव दिखाओ',
@@ -21,10 +20,6 @@ export const hi: Catalogue = {
   'setup.opponentCount.3': '3',
   'setup.opponentCount.4': '4',
   'setup.opponentCount.5': '5',
-  'setup.targetLevels.6': 'स्तर 6',
-  'setup.targetLevels.8': 'स्तर 8',
-  'setup.targetLevels.10': 'स्तर 10',
-  'setup.targetLevels.12': 'स्तर 12',
   'setup.roundLimits.0': 'कोई सीमा नहीं',
   'setup.roundLimits.20': '20 राउंड',
   'setup.roundLimits.30': '30 राउंड',
@@ -303,5 +298,12 @@ export const hi: Catalogue = {
   'log.broken.stay': '{name} — {to} ने दूर रहने के पैसे दिए थे, फिर भी दख़ल। साख −2।',
   'log.broken.favour': '{name} — {to} का बकाया एहसान ठुकराया। साख −2।',
   'hint.help': 'सुझाव: ताक़त कम पड़ रही है? किसी दूसरे खिलाड़ी से मदद माँगो — लूट, किसी चीज़ या एहसान के बदले। निभाए गए सौदे तुम्हारी साख बढ़ाते हैं।',
-  'hint.offer': 'सुझाव: मदद से लूट मिलती है, स्तर नहीं। सौदा तोड़ने पर साख के 2 सितारे जाते हैं — और कंप्यूटर खिलाड़ी यह याद रखते हैं।'
+  'hint.offer': 'सुझाव: मदद से लूट मिलती है, स्तर नहीं। सौदा तोड़ने पर साख के 2 सितारे जाते हैं — और कंप्यूटर खिलाड़ी यह याद रखते हैं।',
+  // Owner feedback 2026-10-17: reveals, end of turn
+  'next.end.surplus': 'तुम अब भी चीज़ें पहन, कार्ड खेल और बेच सकते हो — इससे भी हाथ ख़ाली होता है। फिर अपनी बारी ख़त्म करो; देने वाले कार्ड (हाथ की सीमा 5): {n}।',
+  'reveal.open': 'कोने के पार: {card}',
+  'reveal.curse': '{name} का श्राप तुम पर: {card}',
+  'reveal.result': 'क्या हुआ',
+  'reveal.toHand': 'कार्ड तुम्हारे हाथ में जाता है।',
+  'btn.continue': 'आगे बढ़ो'
 };

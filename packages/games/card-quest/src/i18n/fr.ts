@@ -12,7 +12,6 @@ export const fr: Catalogue = {
 
   'world.kz': 'Kampfzwerge — nains contre nains de jardin',
   'setup.opponents': 'Joueurs ordinateur',
-  'setup.target': 'Niveau visé',
   'setup.roundLimit': 'Limite de manches',
   'setup.roundLimit.hint': 'Avec une limite, le plus haut niveau gagne après la dernière manche.',
   'setup.coach': 'Afficher de petits conseils pendant la partie',
@@ -21,10 +20,6 @@ export const fr: Catalogue = {
   'setup.opponentCount.3': '3',
   'setup.opponentCount.4': '4',
   'setup.opponentCount.5': '5',
-  'setup.targetLevels.6': 'Niveau 6',
-  'setup.targetLevels.8': 'Niveau 8',
-  'setup.targetLevels.10': 'Niveau 10',
-  'setup.targetLevels.12': 'Niveau 12',
   'setup.roundLimits.0': 'Sans limite',
   'setup.roundLimits.20': '20 manches',
   'setup.roundLimits.30': '30 manches',
@@ -303,5 +298,12 @@ export const fr: Catalogue = {
   'log.broken.stay': '{name} — intervention malgré le paiement de {to} pour rester à l’écart. Réputation −2.',
   'log.broken.favour': '{name} — refus du service dû à {to}. Réputation −2.',
   'hint.help': 'Conseil : force insuffisante ? Demande de l’aide à un autre joueur — contre du butin, un objet ou un service. Les marchés tenus augmentent ta réputation.',
-  'hint.offer': 'Conseil : aider rapporte du butin, mais aucun niveau. Rompre un marché coûte 2 étoiles de réputation — et les joueurs ordinateur s’en souviennent.'
+  'hint.offer': 'Conseil : aider rapporte du butin, mais aucun niveau. Rompre un marché coûte 2 étoiles de réputation — et les joueurs ordinateur s’en souviennent.',
+  // Owner feedback 2026-10-17: reveals, end of turn
+  'next.end.surplus': 'Tu peux encore équiper, jouer et vendre — cela vide aussi ta main. Ensuite, termine ton tour ; cartes à donner (limite de main 5) : {n}.',
+  'reveal.open': 'Au tournant : {card}',
+  'reveal.curse': '{name} te maudit : {card}',
+  'reveal.result': 'Ce qui s’est passé',
+  'reveal.toHand': 'La carte va dans ta main.',
+  'btn.continue': 'Continuer'
 };

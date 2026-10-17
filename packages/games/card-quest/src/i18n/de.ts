@@ -12,7 +12,6 @@ export const de: Catalogue = {
 
   'world.kz': 'Kampfzwerge – Zwerge gegen Gartenzwerge',
   'setup.opponents': 'Computergegner',
-  'setup.target': 'Ziel-Level',
   'setup.roundLimit': 'Rundenlimit',
   'setup.roundLimit.hint': 'Mit Limit gewinnt nach der letzten Runde das höchste Level.',
   'setup.coach': 'Beim Spielen kurze Tipps zeigen',
@@ -21,10 +20,6 @@ export const de: Catalogue = {
   'setup.opponentCount.3': '3',
   'setup.opponentCount.4': '4',
   'setup.opponentCount.5': '5',
-  'setup.targetLevels.6': 'Level 6',
-  'setup.targetLevels.8': 'Level 8',
-  'setup.targetLevels.10': 'Level 10',
-  'setup.targetLevels.12': 'Level 12',
   'setup.roundLimits.0': 'Kein Limit',
   'setup.roundLimits.20': '20 Runden',
   'setup.roundLimits.30': '30 Runden',
@@ -303,5 +298,12 @@ export const de: Catalogue = {
   'log.broken.stay': '{name} – hat sich eingemischt, obwohl {to} fürs Raushalten bezahlt hat. Ruf −2.',
   'log.broken.favour': '{name} – hat den Gefallen für {to} verweigert. Ruf −2.',
   'hint.help': 'Tipp: Zu schwach? Bitte jemanden um Hilfe – gegen Beute, einen Gegenstand oder einen Gefallen. Eingehaltene Deals heben deinen Ruf.',
-  'hint.offer': 'Tipp: Helfen bringt Beute, aber kein Level. Ein gebrochener Deal kostet 2 Ruf-Sterne – und die Computerspieler merken sich das.'
+  'hint.offer': 'Tipp: Helfen bringt Beute, aber kein Level. Ein gebrochener Deal kostet 2 Ruf-Sterne – und die Computerspieler merken sich das.',
+  // Owner feedback 2026-10-17: reveals, end of turn
+  'next.end.surplus': 'Du kannst noch anlegen, ausspielen und verkaufen – das leert auch die Hand. Dann beende deinen Zug; abzugebende Karten (Handlimit 5): {n}.',
+  'reveal.open': 'Um die Ecke: {card}',
+  'reveal.curse': '{name} verflucht dich: {card}',
+  'reveal.result': 'Was passiert ist',
+  'reveal.toHand': 'Die Karte kommt auf deine Hand.',
+  'btn.continue': 'Weiter'
 };

@@ -12,7 +12,6 @@ export const nl: Catalogue = {
 
   'world.kz': 'Kampfzwerge — dwergen tegen tuinkabouters',
   'setup.opponents': 'Computerspelers',
-  'setup.target': 'Doelniveau',
   'setup.roundLimit': 'Rondelimiet',
   'setup.roundLimit.hint': 'Met een limiet wint na de laatste ronde het hoogste niveau.',
   'setup.coach': 'Korte tips tonen tijdens het spelen',
@@ -21,10 +20,6 @@ export const nl: Catalogue = {
   'setup.opponentCount.3': '3',
   'setup.opponentCount.4': '4',
   'setup.opponentCount.5': '5',
-  'setup.targetLevels.6': 'Niveau 6',
-  'setup.targetLevels.8': 'Niveau 8',
-  'setup.targetLevels.10': 'Niveau 10',
-  'setup.targetLevels.12': 'Niveau 12',
   'setup.roundLimits.0': 'Geen limiet',
   'setup.roundLimits.20': '20 rondes',
   'setup.roundLimits.30': '30 rondes',
@@ -303,5 +298,12 @@ export const nl: Catalogue = {
   'log.broken.stay': '{name} — toch tussenbeide gekomen, hoewel {to} betaald had om dat te voorkomen. Reputatie −2.',
   'log.broken.favour': '{name} — verschuldigde gunst aan {to} geweigerd. Reputatie −2.',
   'hint.help': 'Tip: niet sterk genoeg? Vraag een andere speler om hulp — voor buit, een voorwerp of een gunst. Nagekomen deals verhogen je reputatie.',
-  'hint.offer': 'Tip: helpen levert buit op, maar geen niveau. Een gebroken deal kost 2 reputatiesterren — en computerspelers onthouden dat.'
+  'hint.offer': 'Tip: helpen levert buit op, maar geen niveau. Een gebroken deal kost 2 reputatiesterren — en computerspelers onthouden dat.',
+  // Owner feedback 2026-10-17: reveals, end of turn
+  'next.end.surplus': 'Je kunt nog aandoen, spelen en verkopen — ook zo wordt je hand leger. Beëindig daarna je beurt; weg te geven kaarten (handlimiet 5): {n}.',
+  'reveal.open': 'Om de hoek: {card}',
+  'reveal.curse': '{name} vervloekt je: {card}',
+  'reveal.result': 'Wat er gebeurd is',
+  'reveal.toHand': 'De kaart gaat naar je hand.',
+  'btn.continue': 'Verder'
 };

@@ -12,7 +12,6 @@ export const pt: Catalogue = {
 
   'world.kz': 'Kampfzwerge — anões contra gnomos de jardim',
   'setup.opponents': 'Jogadores do computador',
-  'setup.target': 'Nível-alvo',
   'setup.roundLimit': 'Limite de rodadas',
   'setup.roundLimit.hint': 'Com limite, vence o nível mais alto depois da última rodada.',
   'setup.coach': 'Mostrar dicas curtas durante o jogo',
@@ -21,10 +20,6 @@ export const pt: Catalogue = {
   'setup.opponentCount.3': '3',
   'setup.opponentCount.4': '4',
   'setup.opponentCount.5': '5',
-  'setup.targetLevels.6': 'Nível 6',
-  'setup.targetLevels.8': 'Nível 8',
-  'setup.targetLevels.10': 'Nível 10',
-  'setup.targetLevels.12': 'Nível 12',
   'setup.roundLimits.0': 'Sem limite',
   'setup.roundLimits.20': '20 rodadas',
   'setup.roundLimits.30': '30 rodadas',
@@ -303,5 +298,12 @@ export const pt: Catalogue = {
   'log.broken.stay': '{name} — se intrometeu, embora {to} tenha pagado para ficar de fora. Reputação −2.',
   'log.broken.favour': '{name} — recusou o favor devido a {to}. Reputação −2.',
   'hint.help': 'Dica: falta força? Peça ajuda a outro jogador — em troca de tesouro, um item ou um favor. Acordos cumpridos aumentam sua reputação.',
-  'hint.offer': 'Dica: ajudar traz tesouro, mas não nível. Quebrar um acordo custa 2 estrelas de reputação — e os jogadores do computador não esquecem.'
+  'hint.offer': 'Dica: ajudar traz tesouro, mas não nível. Quebrar um acordo custa 2 estrelas de reputação — e os jogadores do computador não esquecem.',
+  // Owner feedback 2026-10-17: reveals, end of turn
+  'next.end.surplus': 'Você ainda pode equipar, jogar e vender — isso também esvazia a sua mão. Depois, encerre a sua vez; cartas a dar (limite de mão 5): {n}.',
+  'reveal.open': 'Na esquina: {card}',
+  'reveal.curse': '{name} amaldiçoa você: {card}',
+  'reveal.result': 'O que aconteceu',
+  'reveal.toHand': 'A carta vai para a sua mão.',
+  'btn.continue': 'Continuar'
 };

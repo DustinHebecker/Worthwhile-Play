@@ -34,7 +34,7 @@ async function playUntil(page: Page, done: (s: Shown) => boolean, limit = 200) {
       const tiles = page.locator('[data-testid="hand"] .cq-tile[aria-pressed="false"]');
       while (await end.isDisabled()) await tiles.first().click();
     }
-    for (const id of ['open', 'rummage', 'pass', 'accept', 'roll', 'end']) {
+    for (const id of ['reveal-continue', 'open', 'rummage', 'pass', 'accept', 'roll', 'end']) {
       const b = page.getByTestId(id);
       if ((await b.count()) > 0 && (await b.isEnabled())) {
         await b.click();
@@ -112,7 +112,7 @@ test('card-quest: in the give-away step a card can be read and closed without gi
     if ((await end.count()) > 0 && (await end.isDisabled())) break;
     const s = await shown(page);
     if (s.phase === 'over') break;
-    for (const id of ['open', 'rummage', 'pass', 'accept', 'roll', 'end']) {
+    for (const id of ['reveal-continue', 'open', 'rummage', 'pass', 'accept', 'roll', 'end']) {
       const b = page.getByTestId(id);
       if ((await b.count()) > 0 && (await b.isEnabled())) {
         await b.click();
