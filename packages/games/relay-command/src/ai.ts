@@ -5,6 +5,7 @@ import {
   DEFAULT_DOCTRINE,
   depositAt,
   dist2,
+  flowField,
   incomeOfSide,
   MAX_QUEUE,
   frameIndexIn,
@@ -857,11 +858,36 @@ function buildSpot(obs: Observation, ruleset: Ruleset, source: Entity, kind: str
 
 /**
  * A free covered cell for a tower within 2 cells of `asset`, towards the threat (nearest to the
- * nearest threatening enemy), never on a deposit or next to the post or a yard (where produced units appear).
+ * nearest threatening enemy), never on a deposit or next to the post or a yard (where produced units appear),
+ * and never where it would lengthen the ground route from the own post to an enemy post: a tower in a
+ * pass walls in the side's own army (found on Ridge Valley: a tower in the valley's pass stalled every storm).
  */
 function towerSpot(obs: Observation, ruleset: Ruleset, asset: Entity, threats: readonly Entity[]): { x: number; y: number } | undefined {
   const { world, side, network } = obs;
   const taken = new Set(world.entities.map((e) => cellOf(world.map, e.x, e.y)));
+  const home = world.entities.find((e) => e.side === side && e.kind === 'command-post');
+  const goals = targetPosts(obs).map((p) => cellOf(world.map, p.x, p.y));
+  const structures = new Set(world.entities.filter((e) => archetypeOf(ruleset, e.kind)?.speed === 0).map((e) => cellOf(world.map, e.x, e.y)));
+  const route = (extra?: number): number => {
+    if (!home || goals.length === 0) return 0;
+    const blocked = new Set(structures);
+    for (const g of goals) blocked.delete(g);
+    blocked.delete(cellOf(world.map, home.x, home.y));
+    if (extra !== undefined) blocked.add(extra);
+    const field = flowField(world.map, ruleset, goals, 'ground', blocked);
+    // From the cells around the post (the post itself is a structure the army leaves from).
+    let best = Number.POSITIVE_INFINITY;
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        const x = home.x + dx, y = home.y + dy;
+        if (x < 0 || y < 0 || x >= world.map.w || y >= world.map.h) continue;
+        const d = field[cellOf(world.map, x, y)] ?? -1;
+        if (d >= 0 && d < best) best = d;
+      }
+    }
+    return best;
+  };
+  const before = route();
   let best: { x: number; y: number; d: number; f: number } | undefined;
   for (let y = Math.max(0, asset.y - 2); y <= Math.min(world.map.h - 1, asset.y + 2); y++) {
     for (let x = Math.max(0, asset.x - 2); x <= Math.min(world.map.w - 1, asset.x + 2); x++) {
@@ -870,7 +896,9 @@ function towerSpot(obs: Observation, ruleset: Ruleset, asset: Entity, threats: r
       if (world.entities.some((e) => e.side === side && (archetypeOf(ruleset, e.kind)?.production || archetypeOf(ruleset, e.kind)?.comms?.role === 'source') && Math.max(Math.abs(e.x - x), Math.abs(e.y - y)) <= 1)) continue;
       const d = threats.reduce((m, e) => Math.min(m, dist2(x, y, e.x, e.y)), Number.POSITIVE_INFINITY);
       const f = sideFrame(obs, c);
-      if (!best || d < best.d || (d === best.d && f < best.f)) best = { x, y, d, f };
+      if (best && (d > best.d || (d === best.d && f > best.f))) continue;
+      if (route(c) > before) continue; // it would stand in the way of the own army
+      best = { x, y, d, f };
     }
   }
   return best;

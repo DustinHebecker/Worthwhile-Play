@@ -60,10 +60,10 @@ import { generateMap } from '../src/generator';
 /** A side's plan from its own observation (default: the game's default level). */
 /**
  * Fingerprint of AI-vs-AI plans on the two-side maps (see the test): '965772b3' before increment 4;
- * '61865917' since the opponent builds defence towers (owner decision 2026-10-16, a measured gain,
+ * '31513435' since the opponent builds defence towers (owner decision 2026-10-16, a measured gain,
  * docs/design/strategy.md "Defence towers").
  */
-const TWO_SIDE_AI_FINGERPRINT = '61865917';
+const TWO_SIDE_AI_FINGERPRINT = '31513435';
 const ai = (world: World, side: number, difficulty: Difficulty = 'normal') => planAi(observe(world, RULESET, side), RULESET, difficulty);
 const own = (s: RcState) => s.world.entities.filter((e) => e.side === PLAYER);
 const enemy = (s: RcState) => s.world.entities.filter((e) => e.side === OPPONENT);
@@ -1248,7 +1248,7 @@ describe('hot-seat (docs/design/strategy.md § 9.4, D10)', () => {
   // being told of a shot by its own unit out of contact at an enemy it never had reported (gate
   // find, 2026-10-14: the summaries lose such `fire` events; world, log and result unchanged:
   // '83a1b8af'); then when the opponent started to build defence towers (owner decision 2026-10-16,
-  // a deliberate AI change with a measured gain, like the two-side fingerprint: '8bd3c67f').
+  // a deliberate AI change with a measured gain, like the two-side fingerprint: 'da7608a7').
   it('one person is the single-player game, byte for byte: every map and opponent count matches the fingerprint taken before hot-seat (main at f2ee871)', () => {
     let h = 0x811c9dc5;
     const feed = (text: string) => {
@@ -1266,7 +1266,7 @@ describe('hot-seat (docs/design/strategy.md § 9.4, D10)', () => {
         }
       }
     }
-    expect(h.toString(16)).toBe('8bd3c67f');
+    expect(h.toString(16)).toBe('da7608a7');
   }, 300_000);
 
   it('the seats: side 0 is always a person, the default is the computer; several persons have no quick match', () => {
@@ -1676,6 +1676,20 @@ describe('opponent economy and easy fighters (mutation run on ai.ts, 2026-10-15)
     const guarded = threatened(['rifles']);
     guarded.w.entities.push({ ...guarded.post, id: guarded.w.nextId++, kind: 'tower-gun', hp: 150, x: tower!.x, y: tower!.y });
     expect(towers(plan(guarded.w, 'hard'))).toEqual([]);
+  });
+
+  it('a tower never walls in the own army: not in the only pass towards the enemy post (Ridge Valley stall, 2026-10-17)', () => {
+    // A ridge at x = 8 with one gap at (8, 3), two cells from the opponent's post at (10, 3); a player squad beyond it.
+    const terrain = Array.from({ length: 7 }, (_, y) => Array.from({ length: 14 }, (_, x) => (x === 8 && y !== 3 ? '^' : '.')).join('')).join('');
+    const w = createWorld({ map: { w: 14, h: 7, terrain }, sides: 2, seed: 1, entities: [
+      { side: 0, kind: 'command-post', x: 1, y: 3 },
+      { side: 0, kind: 'rifles', x: 6, y: 2 },
+      { side: 1, kind: 'command-post', x: 10, y: 3 }
+    ] }, RULESET);
+    w.intel = initialIntel(w, RULESET);
+    const builds = planAi(observe(w, RULESET, 1), RULESET, 'hard').filter((c) => c.order.type === 'build').map((c) => c.order as { kind: string; x: number; y: number });
+    expect(builds.map((b) => b.kind)).toEqual(['tower-gun']); // the post is threatened and alone
+    expect(builds[0]).not.toMatchObject({ x: 8, y: 3 }); // the gap is the nearest cell to the threat, but it is the way out
   });
 
   it('normal places an Extractor on the nearest free deposit in cover first, never on one a known enemy fighter can reach', () => {
