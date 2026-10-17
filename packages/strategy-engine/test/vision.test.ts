@@ -473,7 +473,8 @@ describe('muzzle flash (owner decision 2026-10-17)', () => {
     w.entities.find((e) => e.kind === 'rifles')!.x = 6;
     const gun = w.entities.find((e) => e.kind === 'howitzer')!;
     gun.x = 12;
-    const { world, events } = play({ ...w, intel: undefined }, 2);
+    delete w.intel; // reports from the new positions
+    const { world, events } = play(w, 2);
     expect(events.some((e) => e.t === 'launch' && e.id === gun.id)).toBe(true);
     expect(report(world, 0, gun.id)).toBeUndefined();
   });
