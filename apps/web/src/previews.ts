@@ -590,7 +590,15 @@ const PREVIEWS: Record<string, () => string> = {
     };
     return R(4, 1.5, 88, 61, 'e', 5) + road('A', 'J', true, 3) + road('J', 'D', true, 2) + road('A', 'B', false, 4) + road('B', 'C', false, 3) + road('J', 'C', false, 4) +
       Object.entries(p).map(([k, [x, y]]) => (k === 'J' ? R(x - 5, y - 5, 10, 10, 'ob', 1) + T(x, y + 0.5, 1, 't tsm') : C(x, y, 6, 'ob') + T(x, y + 0.5, k, 't tsm'))).join('');
-  }
+  },
+  // Estimation Lab: the question card, the review's log scale (decade ticks, hatched plausible range, the answer ◆ close
+  // to the reference line) and the model as three factor boxes joined by ×. No text or digits (language-neutral).
+  'fermi-lab': () =>
+    R(6, 3, 84, 14, 'e', 3) + L(12, 8.5, 70, 8.5, 'mu') + L(12, 12.5, 50, 12.5, 'mu') +
+    R(42, 24, 22, 13, 'o', 1) + [44, 49, 54, 59].map((x) => L(x, 36.5, x + 4, 24.5, 'fn')).join('') +
+    L(8, 30.5, 88, 30.5, 'k') + [10, 29, 48, 67, 86].map((x) => L(x, 27, x, 34, 'k')).join('') +
+    L(55, 20, 55, 41, 'al') + diamond(49, 30.5, 4.5, 'a') +
+    [8, 37, 66].map((x) => R(x, 47, 22, 13, 'o', 2)).join('') + cross(33, 53.5, 'k', 1.8) + cross(62, 53.5, 'k', 1.8)
 };
 
 /** Pictures made only of text cards and lines: these follow the reading direction (flipped in RTL). */
