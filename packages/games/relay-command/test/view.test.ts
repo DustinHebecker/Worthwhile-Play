@@ -842,6 +842,29 @@ describe('Relay Command view', () => {
     expect(ctx.context.root.textContent).toContain('Defence towers are placed by the Command Post');
   });
 
+  it('muzzle flash (owner decision 2026-10-17): an unseen enemy that fired at the player is named in the summary and marked on its cell', () => {
+    const s = structuredClone(state());
+    const seen = new Set((s.world.intel?.[PLAYER] ?? []).filter((r) => r.live).map((r) => r.id));
+    const gun = s.world.entities.find((e) => e.side === OPPONENT && !seen.has(e.id) && e.kind !== 'command-post')!;
+    s.events = [...s.events, { t: 'flash', tick: s.world.tick, id: gun.id, side: OPPONENT, kind: gun.kind, x: gun.x, y: gun.y }, { t: 'flash', tick: s.world.tick, id: gun.id, side: OPPONENT, kind: gun.kind, x: gun.x, y: gun.y }];
+    instance.restore(s);
+    const lines = [...$('rc-summary').querySelectorAll('li')].map((li) => li.textContent ?? '');
+    const told = lines.filter((l) => l.startsWith('Fired on by an unseen'));
+    expect(told).toHaveLength(1); // once per shooter
+    expect(told[0]).toMatch(new RegExp(`^Fired on by an unseen [A-Z][\\w -]+ from ${gun.x + 1}, ${gun.y + 1} \\(marked on the map\\)\\.$`));
+    // The cell tells it in words (screen readers): click it on the map.
+    const map = $('rc-map');
+    map.getBoundingClientRect = () => ({ left: 0, top: 0, width: 12 * CELL, height: 12 * CELL, right: 12 * CELL, bottom: 12 * CELL, x: 0, y: 0, toJSON: () => ({}) });
+    map.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: gun.x * CELL + 5, clientY: gun.y * CELL + 5 }));
+    expect($('rc-cursor').textContent).toContain('Muzzle flash: an unseen');
+    expect(ctx.context.root.textContent).toContain('Muzzle flash (burst)');
+    expect(ctx.context.root.textContent).toContain('its muzzle flash gives it away');
+    // Once the game is over everything is revealed: no flash marks then.
+    instance.restore({ ...s, phase: 'finished', result: 'lost' });
+    map.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: gun.x * CELL + 5, clientY: gun.y * CELL + 5 }));
+    expect($('rc-cursor').textContent).not.toContain('Muzzle flash');
+  });
+
   it('lets the Command Post place an Extractor on a deposit inside coverage and explains a bad cell', () => {
     const post = own().find((e) => e.kind === 'command-post')!;
     click(`rc-unit-${post.id}`);

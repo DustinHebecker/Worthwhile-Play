@@ -110,6 +110,33 @@ export function initialIntel(world: World, ruleset: Ruleset): Report[][] {
   });
 }
 
+/**
+ * Muzzle flash (owner decision 2026-10-17): the hostile units that fired at one of `side`'s units in
+ * the events from `from` on: a direct shot naming one of its units as the target, or a shell launched
+ * at a cell where one of its units stood. The side learns where the shooter fired from even when it
+ * does not observe that cell (a gun out of sight, a tower behind a ridge), so it can answer the fire.
+ * Like every report (D7) it travels by radio: only a unit inside the side's coverage tells of it.
+ */
+export function muzzleFlashes(world: World, ruleset: Ruleset, side: number, gone: readonly Entity[], events: readonly SimEvent[] | undefined, from = 0, network?: Network): Set<number> {
+  const out = new Set<number>();
+  if (!events) return out;
+  const coverage = ruleset.commandNetwork ? (network ?? computeNetwork(world, ruleset, side)).coverage : undefined;
+  const mine = [...world.entities, ...gone].filter((e) => e.side === side && (!coverage || coverage[cellOf(world.map, e.x, e.y)] === 1));
+  const mineIds = new Set(mine.map((e) => e.id));
+  const mineAt = new Set(mine.map((e) => cellOf(world.map, e.x, e.y)));
+  const shooterSide = new Map([...world.entities, ...gone].map((e) => [e.id, e.side]));
+  for (let i = from; i < events.length; i++) {
+    const ev = events[i] as SimEvent;
+    let shooter: number | undefined;
+    if (ev.t === 'fire' && mineIds.has(ev.target)) shooter = ev.id;
+    else if (ev.t === 'launch' && mineAt.has(cellOf(world.map, ev.x, ev.y))) shooter = ev.id;
+    if (shooter === undefined) continue;
+    const by = shooterSide.get(shooter);
+    if (by !== undefined && by !== side && hostile(world, by, side)) out.add(shooter);
+  }
+  return out;
+}
+
 /** Whether `side` observes entity `id` right now (fog rulesets; always true without fog). */
 export function isSpotted(world: World, ruleset: Ruleset, side: number, id: number): boolean {
   if (!ruleset.fog) return true;
@@ -176,6 +203,11 @@ export function updateIntel(world: World, ruleset: Ruleset, gone: readonly Entit
       // A shot names its target (or the target's cell): with three or more sides an observer that
       // sees the shooter must not learn of a third side's unit it does not see (review of PR #21).
       if ((eventVisible(ev, live, seen, side, own) && shotKnown(ev)) || knownAnyway) list.push(ev.t === 'sold' && ev.side !== side ? { t: 'sold', tick: ev.tick, id: ev.id, side: ev.side, kind: ev.kind, x: ev.x, y: ev.y } : ev);
+    }
+    // Muzzle flash: shooters the side does not observe that fired at its units this tick (once each).
+    for (const id of muzzleFlashes(world, ruleset, side, gone, events, from, network)) {
+      const shooter = world.entities.find((e) => e.id === id);
+      if (shooter && !live.has(id)) list.push({ t: 'flash', tick: world.tick, id, side: shooter.side, kind: shooter.kind, x: shooter.x, y: shooter.y });
     }
   }
   world.intel = intel;
