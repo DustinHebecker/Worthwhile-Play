@@ -128,6 +128,7 @@ export const zhHans: LocaleContent = {
   'kz.shiny-distraction': { name: '快看，亮晶晶！', flavour: '对乌鸦、老鼠和大多数矮人都管用。' },
   'kz.side-tunnel': { name: '侧道金蝉脱壳', flavour: '你从没来过。可惜，战利品也没来过。' },
   'kz.watering-ambush': { name: '洒水壶埋伏', flavour: '从天而降。冰凉。难忘。' },
+  'kz.change-sides': { name: '倒戈', flavour: '团队合作很美好。独自获胜更美好。' },
   // Level-ups and doubles
   'kz.senior-gnome': { name: '晋升资深地精', flavour: '新帽子，老花园，工资更高（以卵石结算）。' },
   'kz.mine-birthday': { name: '矿井里的生日', flavour: '地下点蜡烛：坏主意。蛋糕：永远是好主意。' },

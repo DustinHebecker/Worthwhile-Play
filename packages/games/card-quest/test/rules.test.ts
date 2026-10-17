@@ -28,10 +28,10 @@ import { arranged, me, start, take } from './harness';
 
 
 describe('Kampfzwerge content', () => {
-  it('has 140 cards: 76 encounter and 64 loot in the designed composition', () => {
+  it('has 142 cards: 76 encounter and 66 loot in the designed composition (K2 added 2 Change Sides)', () => {
     const decks = worldDecks(['kz']);
     expect(decks.encounter).toHaveLength(76);
-    expect(decks.loot).toHaveLength(64);
+    expect(decks.loot).toHaveLength(66);
     const count = (type: string) => KAMPFZWERGE.cards.filter((c) => c.type === type).reduce((a, c) => a + (c.copies ?? 1), 0);
     expect(count('monster')).toBe(36);
     expect(count('booster')).toBe(10);
@@ -39,7 +39,7 @@ describe('Kampfzwerge content', () => {
     expect(count('origin') + count('profession')).toBe(10);
     expect(count('item')).toBe(34);
     expect(count('upgrade')).toBe(6);
-    expect(count('oneshot')).toBe(14);
+    expect(count('oneshot')).toBe(16);
     expect(count('levelup')).toBe(6);
     expect(count('double')).toBe(4);
   });
@@ -48,7 +48,7 @@ describe('Kampfzwerge content', () => {
     const ids = KAMPFZWERGE.cards.map((c) => c.id);
     expect(new Set(ids).size).toBe(ids.length);
     const instances = KAMPFZWERGE.cards.flatMap(instanceIds);
-    expect(new Set(instances).size).toBe(140);
+    expect(new Set(instances).size).toBe(142);
   });
 
   it('uses at least 5 base kinds and 8 traits among monsters and refers to every base kind (prepared for other worlds)', () => {
@@ -73,7 +73,7 @@ describe('Kampfzwerge content', () => {
 
   it('every set lists existing items that can be worn together', () => {
     for (const set of KAMPFZWERGE.sets) {
-      const p: Player = { level: 1, hand: [], equipped: [...set.items], pack: [], upgrades: [], origins: [], professions: [], doubles: [], malus: 0, personality: null };
+      const p: Player = { level: 1, hand: [], equipped: [...set.items], pack: [], upgrades: [], origins: [], professions: [], doubles: [], malus: 0, personality: null, rep: 3, favours: [], harm: [0] };
       expect(equipmentFits(p), set.id).toBe(true);
       expect(playerParts(p).some((x) => x.source === `set:${set.id}`)).toBe(true);
     }
@@ -581,8 +581,10 @@ describe('properties over random legal play', () => {
         const s = walk(seed, picks, 3).at(-1)!;
         for (let seat = 0; seat < s.players.length; seat++) {
           const text = JSON.stringify(observe(s, seat));
+          // A card offered to stay out is shown to everyone while the offer is open (design § 5.6).
+          const offered = s.fight?.offer?.terms.t === 'stay' ? s.fight.offer.terms.card : null;
           s.players.forEach((p, i) => {
-            if (i !== seat) for (const c of p.hand) expect(text.includes(`"${c}"`), `seat ${seat} sees ${c}`).toBe(false);
+            if (i !== seat) for (const c of p.hand) if (c !== offered) expect(text.includes(`"${c}"`), `seat ${seat} sees ${c}`).toBe(false);
           });
           for (const c of [...s.encounter, ...s.loot]) expect(text.includes(`"${c}"`)).toBe(false);
         }

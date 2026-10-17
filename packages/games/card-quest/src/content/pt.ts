@@ -128,6 +128,7 @@ export const pt: LocaleContent = {
   'kz.shiny-distraction': { name: 'Olha, uma Coisa Brilhante!', flavour: 'Funciona com gralhas, ratos e a maioria dos anões.' },
   'kz.side-tunnel': { name: 'Pelo Túnel Lateral', flavour: 'Você nunca esteve aqui. O tesouro, infelizmente, também não.' },
   'kz.watering-ambush': { name: 'Emboscada de Regador', flavour: 'Lá de cima. Gelada. Inesquecível.' },
+  'kz.change-sides': { name: 'Troca de Lado', flavour: 'Trabalho em equipe é lindo. Vitória solo é mais linda ainda.' },
   // Level-ups and doubles
   'kz.senior-gnome': { name: 'Promoção a Anão-Chefe', flavour: 'Gorro novo, mesmo jardim, salário maior (em pedrinhas).' },
   'kz.mine-birthday': { name: 'Aniversário na Mina', flavour: 'Velas debaixo da terra: má ideia. Bolo: nunca é má ideia.' },

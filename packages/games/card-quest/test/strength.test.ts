@@ -28,6 +28,9 @@ const player = (patch: Partial<Player> = {}): Player => ({
   doubles: [],
   malus: 0,
   personality: null,
+  rep: 3,
+  favours: [],
+  harm: [0],
   ...patch
 });
 

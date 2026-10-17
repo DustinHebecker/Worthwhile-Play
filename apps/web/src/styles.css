@@ -141,6 +141,12 @@ main:focus { outline: none; }
 .game-preview .s0, .game-preview .s1, .game-preview .s2, .game-preview .pf { stroke: var(--pv-stone-edge); stroke-width: 0.7; }
 .game-preview .s0 { fill: var(--pv-s0); } .game-preview .s1 { fill: var(--pv-s1); } .game-preview .s2 { fill: var(--pv-s2); } .game-preview .pf { fill: var(--pv-platform); }
 .game-preview .fw { fill: var(--pv-flow); } .game-preview .fh { stroke: var(--pv-hatch); stroke-width: 0.7; }
+/* Lootlings: a copy of the game's illustration palette (one dusky palette in both themes, as in the game). */
+.game-preview .lqo { stroke: #120f0c; stroke-width: 0.8; } .game-preview .lql { stroke: #120f0c; stroke-width: 1.4; }
+.game-preview .lqt { stroke: #e9e7df; stroke-width: 0.7; } .game-preview .lqf { fill: #8a3b2e; } .game-preview .lqh { fill: #3a4d5c; stroke: #e9e7df; stroke-width: 0.6; }
+.game-preview .lqs { fill: #2b3550; } .game-preview .lqg { fill: #4f7d3a; } .game-preview .lqr { fill: #d2402f; } .game-preview .lqy { fill: #f2c530; }
+.game-preview .lqp { fill: #7b4fa8; } .game-preview .lqe { fill: #8fd14f; } .game-preview .lqk { fill: #f1c7a1; } .game-preview .lqb { fill: #ecebe6; }
+.game-preview .lqu { fill: #3d6fb6; } .game-preview .lqm { fill: #b9c0c7; } .game-preview .lqd { fill: #241f1b; }
 .game-preview .pcf { fill: var(--pv-pc-face); stroke: var(--pv-pc-edge); stroke-width: 0.5; } .game-preview .pci { fill: var(--pv-pc-ink); }
 .game-preview .pcr { fill: var(--pv-pc-red); } .game-preview .pcb { fill: var(--pv-pc-back); stroke: var(--pv-pc-edge); stroke-width: 0.4; }
 .game-preview .pcl { stroke: var(--pv-pc-back-line); stroke-width: 0.4; }
@@ -158,7 +164,8 @@ main:focus { outline: none; }
 .game-preview .tl { font-size: 15px; }
 @media (forced-colors: active) {
   .game-preview { forced-color-adjust: none; background: Canvas; border-color: CanvasText; }
-  .game-preview :is(.c, .e, .o, .ob, .mc, .rl, .rw, .bi, .hb, .tp, .trd, .tf, .th, .tw, .chl, .pw, .wd, .fbg, .lf, .lsel, .sh, .pcf) { fill: Canvas; stroke: CanvasText; }
+  .game-preview :is(.c, .e, .o, .ob, .mc, .rl, .rw, .bi, .hb, .tp, .trd, .tf, .th, .tw, .chl, .pw, .wd, .fbg, .lf, .lsel, .sh, .pcf, .lqf, .lqh, .lqs, .lqg, .lqk, .lqb, .lqu, .lqm) { fill: Canvas; stroke: CanvasText; }
+  .game-preview :is(.lqr, .lqy, .lqp, .lqe) { fill: Highlight; } .game-preview .lqd { fill: CanvasText; } .game-preview :is(.lqo, .lql, .lqt) { stroke: CanvasText; }
   .game-preview :is(.d, .bd, .i, .t, .wl, .cr, .fr, .chd, .pb, .pf, .s1, .lbk, .fsk, .fsh, .fhr, .tmf, .pci, .pcb) { fill: CanvasText; }
   .game-preview :is(.a, .w, .ok, .p1, .p2, .sun, .cd, .wh, .wn, .st, .m0, .m1, .m2, .m3, .m4, .m5, .lgf, .bt, .s0, .s2, .fw, .pcr) { fill: Highlight; }
   .game-preview :is(.sf, .ts, .sui, .tz, .tli, .n1, .n2, .tm2) { fill: Canvas; }

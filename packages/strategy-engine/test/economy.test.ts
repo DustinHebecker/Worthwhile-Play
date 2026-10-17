@@ -10,6 +10,7 @@ import {
   observe,
   resolveTurn,
   STRATEGY_RULESET,
+  STRATEGY_TOWERS,
   UNKNOWN_LEFT,
   validateCommand,
   type Command,
@@ -178,6 +179,30 @@ describe('economy (I6a, D8)', () => {
     expect(after.entities).toHaveLength(boxed.entities.length);
   });
 
+  it('defence towers (owner decision 2026-10-16): strategy prices and builds them; Tower Defense keeps the base terms; a built tower fires', () => {
+    for (const [id, terms] of Object.entries(STRATEGY_TOWERS)) {
+      expect(net.archetypes[id]).toMatchObject({ ...terms, speed: 0, armor: 'structure' });
+      expect(terms.buildTurns).toBeGreaterThan(0);
+      expect(BASE_RULESET.archetypes[id]?.buildTurns).toBe(0); // not buildable outside the strategy game
+      // Everything but the terms is the shared archetype (D16).
+      expect({ ...net.archetypes[id], cost: 0, buildTurns: 0 }).toEqual({ ...BASE_RULESET.archetypes[id], cost: 0, buildTurns: 0 });
+    }
+    expect(Object.keys(STRATEGY_TOWERS).sort()).toEqual(Object.keys(BASE_RULESET.archetypes).filter((id) => id.startsWith('tower-')).sort());
+    // Every other archetype is unchanged.
+    for (const id of Object.keys(BASE_RULESET.archetypes)) if (!(id in STRATEGY_TOWERS)) expect(net.archetypes[id]).toBe(BASE_RULESET.archetypes[id]);
+    // Placed by the post, paid at once, a site for its build turns, then it shoots an enemy in range.
+    let w = field();
+    w = turn(w, [[{ side: 0, unit: 1, order: { type: 'build', kind: 'tower-gun', x: 2, y: 1 } }], []]).world;
+    const tower = w.entities.find((e) => e.kind === 'tower-gun')!;
+    expect(tower).toMatchObject({ side: 0, x: 2, y: 1, build: STRATEGY_TOWERS['tower-gun']!.buildTurns - 1 });
+    expect(w.supply?.[0]).toBe(300 - STRATEGY_TOWERS['tower-gun']!.cost + 20);
+    while ((unit(w, tower.id).build ?? 0) > 0) w = turn(w).world;
+    const enemy = createWorld({ map: w.map, sides: 2, entities: [{ side: 1, kind: 'rifles', x: 4, y: 1 }], seed: 1 }, net).entities[0]!;
+    w = { ...w, entities: [...w.entities, { ...enemy, id: 99 }] };
+    const after = turn(w).world;
+    expect(after.entities.find((e) => e.id === 99)?.hp ?? 0).toBeLessThan(enemy.hp);
+  });
+
   it('a command source places a structure site on a free covered cell; it works once built, Extractors only on live deposits', () => {
     const w = field();
     const v = (c: Command) => validateCommand(w, net, c);
@@ -188,7 +213,8 @@ describe('economy (I6a, D8)', () => {
     expect(v(build('extractor', 10, 1))).toEqual({ ok: false, reason: 'not-buildable' }); // outside coverage
     expect(v(build('muster', 0, 1))).toEqual({ ok: false, reason: 'not-buildable' }); // occupied
     expect(v(build('rifles', 2, 1))).toEqual({ ok: false, reason: 'cannot-build' });
-    expect(v(build('tower-gun', 2, 1))).toEqual({ ok: false, reason: 'cannot-build' }); // not buildable in strategy (buildTurns 0)
+    expect(v(build('tower-gun', 2, 1))).toEqual({ ok: true }); // towers: placed like any structure (owner decision 2026-10-16)
+    expect(v(build('tower-gun', 3, 1))).toEqual({ ok: false, reason: 'not-buildable' }); // deposits are for Extractors
     expect(v(build('muster', 20, 1))).toEqual({ ok: false, reason: 'out-of-bounds' });
     expect(v({ ...build('muster', 2, 1), side: 1, unit: 2 })).toEqual({ ok: false, reason: 'not-buildable' });
     expect(validateCommand({ ...w, supply: [10, 10] }, net, build('extractor', 3, 1))).toEqual({ ok: false, reason: 'no-supply' });

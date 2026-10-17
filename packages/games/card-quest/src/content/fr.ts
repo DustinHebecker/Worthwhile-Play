@@ -128,6 +128,7 @@ export const fr: LocaleContent = {
   'kz.shiny-distraction': { name: 'Regarde, un Truc qui Brille !', flavour: 'Marche sur les corneilles, les rats et la plupart des nains.' },
   'kz.side-tunnel': { name: 'Filer par la Galerie Latérale', flavour: 'Ni vu ni connu. Le butin non plus, hélas.' },
   'kz.watering-ambush': { name: 'Embuscade à l’Arrosoir', flavour: 'D’en haut. Froide. Inoubliable.' },
+  'kz.change-sides': { name: 'Changement de Camp', flavour: 'Le travail d’équipe, c’est beau. Gagner en solo, c’est plus beau.' },
   // Level-ups and doubles
   'kz.senior-gnome': { name: 'Promotion : Nain en Chef', flavour: 'Nouveau bonnet, même jardin, meilleur salaire (en cailloux).' },
   'kz.mine-birthday': { name: 'Anniversaire dans la Mine', flavour: 'Des bougies sous terre : mauvaise idée. Du gâteau : jamais une mauvaise idée.' },

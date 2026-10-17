@@ -13,5 +13,5 @@ export default defineGame<RcState>({
   // ADR 0017 opt-out (owner decision 2026-10-16): no host settings, not even the difficulty; the level is chosen
   // in the game's own setup next to the map, reported via `setDifficulty` and read back from a save here.
   settings: [],
-  settingsOf: (state) => (metadata.difficulties?.includes(state.difficulty) ? { difficulty: state.difficulty } : {})
+  settingsOf: (state) => (metadata.difficulties?.includes(state?.difficulty) ? { difficulty: state.difficulty } : {})
 });

@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { GameInstance, GameModule } from '@wp/game-core';
 import { createTestContext, createTestLibrary, type TestContext } from '@wp/testing';
 import game from '../src/index';
-import { initialIntel, NEUTRAL, passable, type Entity } from '@wp/strategy-engine';
+import { initialIntel, NEUTRAL, passable, validateCommand, type Entity } from '@wp/strategy-engine';
 import { concede, lockTurn, newGame, OPPONENT, PLAYER, RULESET, sideValue, STALL_TURNS, stalemateTurns, type RcState } from '../src/rules';
 import { SCENARIOS } from '../src/scenarios';
 import { CELL } from '../src/view';
@@ -523,11 +523,34 @@ describe('Relay Command view', () => {
     click('rc-lock');
     expect(level.disabled).toBe(true);
     expect($('rc-setup-summary').textContent).toContain(' · Hard (thinks ahead, uses jamming)');
-    // A save restores its level into the select.
+    // A save restores its level into the select and reports it to the host.
     const saved = state();
     setup();
     instance.restore(saved);
     expect(($('rc-difficulty') as HTMLSelectElement).value).toBe('hard');
+    expect(ctx.difficulties.at(-1)).toBe('hard');
+  });
+
+  it('with no computer seat (hot-seat only) there is no opponent level: the control is hidden and not in the summary (review of PR #49)', () => {
+    expect($('rc-difficulty-label').hidden).toBe(false);
+    const person = $('rc-seat-1-person') as HTMLInputElement;
+    person.checked = true;
+    person.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(state().seats).not.toContain('computer');
+    expect($('rc-difficulty-label').hidden).toBe(true);
+    const computer = $('rc-seat-1-computer') as HTMLInputElement;
+    computer.checked = true;
+    computer.dispatchEvent(new Event('change', { bubbles: true }));
+    expect($('rc-difficulty-label').hidden).toBe(false);
+    person.checked = true;
+    person.dispatchEvent(new Event('change', { bubbles: true }));
+    click('rc-lock'); // A locks; the device passes to B, who locks too; then the turn runs
+    click('rc-handover-confirm');
+    click('rc-lock');
+    click('rc-handover-confirm');
+    expect(state().log.length).toBeGreaterThan(0);
+    expect($('rc-setup-summary').textContent).not.toContain('Normal');
+    expect($('rc-setup-summary').textContent).not.toContain(' · ·');
   });
 
   it('offers a random map: size and map number pick it, "New map" draws another; the same number gives it back; locked after the first turn', () => {
@@ -793,6 +816,30 @@ describe('Relay Command view', () => {
     instance.restore(s);
     click(`rc-unit-${yard.id}`);
     expect(ctx.context.root.querySelector('[data-testid="rc-sell"]')).toBeNull();
+  });
+
+  it('defence towers (owner decision 2026-10-16): the post offers all four with price and time; a tower\'s card tells what it does; the legend and help name them', () => {
+    const post = own().find((e) => e.kind === 'command-post')!;
+    click(`rc-unit-${post.id}`);
+    expect($('rc-job-tower-gun').getAttribute('aria-label')).toBe('Gun Tower · 90 Supply · build time (turns): 2');
+    expect($('rc-job-tower-emp').getAttribute('aria-label')).toBe('EMP Tower · 130 Supply · build time (turns): 2');
+    expect($('rc-job-tower-artillery').getAttribute('aria-label')).toBe('Artillery Tower · 150 Supply · build time (turns): 3');
+    expect($('rc-job-tower-laser').getAttribute('aria-label')).toBe('Laser Tower · 160 Supply · build time (turns): 3');
+    // A built EMP Tower: its card says it stuns, for how long.
+    const s = structuredClone(state());
+    // A cell the post could build on (free, passable, covered): the tower stands there.
+    const cells = Array.from({ length: s.world.map.w * s.world.map.h }, (_, i) => ({ x: i % s.world.map.w, y: Math.floor(i / s.world.map.w) }));
+    const free = cells.find((c) => validateCommand(s.world, RULESET, { side: 0, unit: post.id, order: { type: 'build', kind: 'tower-emp', x: c.x, y: c.y } }).ok)!;
+    const id = s.world.nextId++;
+    s.world.entities.push({ ...s.world.entities.find((e) => e.id === post.id)!, id, kind: 'tower-emp', hp: 120, x: free.x, y: free.y });
+    s.world.intel = initialIntel(s.world, RULESET); // the side's own reports include it
+    instance.restore(s);
+    expect(state().world.entities.some((e) => e.id === id)).toBe(true); // a valid save
+    click(`rc-unit-${id}`);
+    expect($('rc-card-stun').textContent).toBe('Hits stun: the target can neither move nor fire for 6 ticks.');
+    expect($('rc-legend-kinds').textContent).toContain('Laser Tower');
+    expect(ctx.context.root.textContent).toContain('Defence tower (structure with battlements)');
+    expect(ctx.context.root.textContent).toContain('Defence towers are placed by the Command Post');
   });
 
   it('lets the Command Post place an Extractor on a deposit inside coverage and explains a bad cell', () => {

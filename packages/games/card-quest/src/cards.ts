@@ -175,6 +175,8 @@ export interface OneShotCard {
   readonly flee?: number;
   /** Ends the fighter's own fight at once: no loot, no Blunder. */
   readonly escape?: boolean;
+  /** Change Sides: the helper switches to the monsters' side (deal void, reputation −2). */
+  readonly turncoat?: boolean;
 }
 
 export interface LevelUpCard {

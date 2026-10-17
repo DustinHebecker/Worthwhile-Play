@@ -128,6 +128,7 @@ export const tr: LocaleContent = {
   'kz.shiny-distraction': { name: 'Bak, Parlak Bir Şey!', flavour: 'Kargalarda, farelerde ve çoğu cücede işe yarar.' },
   'kz.side-tunnel': { name: 'Yan Tünelden Tüyme', flavour: 'Sen hiç burada olmadın. Ganimet de maalesef.' },
   'kz.watering-ambush': { name: 'Sulama Kabı Pususu', flavour: 'Yukarıdan. Soğuk. Unutulmaz.' },
+  'kz.change-sides': { name: 'Taraf Değiştir', flavour: 'Takım çalışması güzeldir. Tek başına kazanmak daha güzel.' },
   // Level-ups and doubles
   'kz.senior-gnome': { name: 'Kıdemli Cüceliğe Terfi', flavour: 'Yeni külah, aynı bahçe, daha yüksek maaş (çakıl olarak).' },
   'kz.mine-birthday': { name: 'Madende Doğum Günü', flavour: 'Yerin altında mum: kötü fikir. Pasta: asla kötü fikir değil.' },

@@ -95,7 +95,7 @@ const CONFIRM_GAP = 400;
 const QUIET_NOTICE = 3;
 
 /** Kinds the game uses, in the legend's order: fighters, support, structures. */
-const LEGEND_KINDS = ['rifles', 'lancer', 'outrider', 'warden', 'howitzer', 'mast-truck', 'field-post', 'jammer', 'tracer', 'command-post', 'muster', 'motor-pool', 'extractor', 'relay-mast'] as const;
+const LEGEND_KINDS = ['rifles', 'lancer', 'outrider', 'warden', 'howitzer', 'mast-truck', 'field-post', 'jammer', 'tracer', 'command-post', 'muster', 'motor-pool', 'extractor', 'relay-mast', 'tower-gun', 'tower-artillery', 'tower-laser', 'tower-emp'] as const;
 
 /** Map cell size in CSS pixels (the 44 px minimum touch target). */
 export { CELL };
@@ -347,6 +347,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   /** Opponent level (owner decision 2026-10-16): chosen here with the map, not on the host's start screen. */
   const difficultySelect = h('select', { 'data-testid': 'rc-difficulty', onchange: () => onDifficulty() }) as HTMLSelectElement;
   for (const d of DIFFICULTIES) difficultySelect.append(h('option', { value: d }, t(`difficulty.${d}`)));
+  /** Hidden while no seat is a computer (hot-seat only): there is no opponent level then. */
+  const difficultyLabel = h('label', { 'data-testid': 'rc-difficulty-label' }, h('span', {}, t('setup.difficulty')), difficultySelect);
   /** Opponents: only the counts the chosen map declares (two-side maps: one). */
   const opponentsSelect = h('select', { 'data-testid': 'rc-opponents', onchange: () => onSetup() });
   // Lengths: open end (default), quick match (strength decides once the side behind stops gaining
@@ -373,7 +375,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     h('label', {}, h('span', {}, t('setup.scenario')), scenarioSelect),
     h('label', {}, h('span', {}, t('setup.limit')), limitSelect),
     randomBox,
-    h('label', {}, h('span', {}, t('setup.difficulty')), difficultySelect),
+    difficultyLabel,
     h('label', { 'data-testid': 'rc-opponents-label' }, h('span', {}, t('setup.opponents')), opponentsSelect),
     h('label', { class: 'rc-check' }, endlessInput, h('span', {}, t('setup.endless'))),
     seatsBox,
@@ -443,7 +445,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     'details',
     { class: 'rc-help' },
     h('summary', {}, t('help.title')),
-    ...['help.turns', 'help.bar', 'help.orders', 'help.network', 'help.fog', 'help.ew', 'help.doctrine', 'help.economy', 'help.repair', 'help.editor', 'help.random', 'help.sides', 'help.hotSeat', 'help.combat', 'help.goal', 'help.shapes', 'help.access'].map((k) => h('p', {}, t(k)))
+    ...['help.turns', 'help.bar', 'help.orders', 'help.network', 'help.fog', 'help.ew', 'help.doctrine', 'help.economy', 'help.towers', 'help.repair', 'help.editor', 'help.random', 'help.sides', 'help.hotSeat', 'help.combat', 'help.goal', 'help.shapes', 'help.access'].map((k) => h('p', {}, t(k)))
   );
 
   /* ---------- Map editor ---------- */
@@ -627,6 +629,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     limitSelect.disabled = setupLocked;
     difficultySelect.disabled = setupLocked;
     difficultySelect.value = state.difficulty;
+    const computer = state.seats.includes('computer');
+    difficultyLabel.hidden = !computer;
     opponentsSelect.disabled = setupLocked;
     endlessInput.disabled = setupLocked;
     randomSize.disabled = setupLocked;
@@ -654,8 +658,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     const mapText = state.map ? mapLabel(state.map) : t(`scenario.${state.scenario}`);
     const length = limitSelect.selectedOptions[0]?.textContent ?? '';
     const summary = state.opponents > 1 ? t('setup.summaryOpponents', { map: mapText, length, n: state.opponents }) : t('setup.summary', { map: mapText, length });
-    const level = difficultySelect.selectedOptions[0]?.textContent ?? '';
-    setupSummary.textContent = [summary, ...(state.endless ? [t('setup.endlessShort')] : []), level].join(' · ');
+    const level = computer ? [difficultySelect.selectedOptions[0]?.textContent ?? ''] : [];
+    setupSummary.textContent = [summary, ...(state.endless ? [t('setup.endlessShort')] : []), ...level].join(' · ');
     statusEl.textContent = statusText();
     statusEl.setAttribute('data-phase', state.phase);
     slotsEl.hidden = finished;
@@ -1124,6 +1128,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     if (w) {
       facts.append(...fact(t('card.rate'), `${w.cooldown <= 1 ? t('card.everyTick') : t('card.everyTicks', { n: w.cooldown })} · ${t(`card.delivery.${w.delivery}`)}`));
       if (w.stationary) facts.append(...fact(t('card.weapon'), t('card.stationary')));
+      if (w.effect?.kind === 'disabled') facts.append(...fact(t('card.weapon'), t('card.stun', { n: w.effect.ticks }), 'rc-card-stun'));
     }
     if (arch.comms) {
       const text = arch.comms.role === 'source' ? t('card.source', { r: arch.comms.radius, slots: arch.comms.orderSlots }) : t('card.relay', { r: arch.comms.radius });
@@ -1202,6 +1207,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     row(shape(true, 'rifles'), t('legend.own'));
     row(shape(false, 'rifles'), t('legend.enemy'));
     row(shape(true, 'command-post'), t('legend.structure'));
+    row(shape(true, 'tower-gun'), t('legend.tower'));
     // One row per kind in the game: its picture and its name (what the symbols on the map mean).
     const kinds = h('ul', { class: 'rc-legend-list rc-legend-kinds', 'data-testid': 'rc-legend-kinds' });
     for (const kind of LEGEND_KINDS) kinds.append(h('li', {}, unitIcon(kind, true), h('span', {}, t(`unit.${kind}`))));

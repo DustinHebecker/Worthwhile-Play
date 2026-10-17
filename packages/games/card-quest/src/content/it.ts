@@ -128,6 +128,7 @@ export const it: LocaleContent = {
   'kz.shiny-distraction': { name: 'Guarda, Qualcosa che Luccica!', flavour: 'Funziona con cornacchie, ratti e quasi tutti i nani.' },
   'kz.side-tunnel': { name: 'Via dalla Galleria Laterale', flavour: 'Non sei mai stato qui. Purtroppo nemmeno il bottino.' },
   'kz.watering-ambush': { name: 'Agguato con l’Annaffiatoio', flavour: 'Dall’alto. Fredda. Indimenticabile.' },
+  'kz.change-sides': { name: 'Cambio di Fronte', flavour: 'Il lavoro di squadra è bello. Vincere da soli è più bello.' },
   // Level-ups and doubles
   'kz.senior-gnome': { name: 'Promosso Capo Nano', flavour: 'Berretto nuovo, stesso giardino, stipendio più alto (in sassolini).' },
   'kz.mine-birthday': { name: 'Compleanno in Miniera', flavour: 'Candeline sottoterra: pessima idea. Torta: mai una pessima idea.' },
