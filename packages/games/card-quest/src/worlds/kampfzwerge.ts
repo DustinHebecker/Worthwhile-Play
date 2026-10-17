@@ -2,8 +2,8 @@ import type { CardEntry, World } from '../cards';
 
 /**
  * World 1 — Kampfzwerge (design § 4.1): fairy-tale dwarves (mine, forest) against garden gnomes.
- * 140 cards: 76 encounter (36 monsters, 10 boosters, 4 reinforcements, 2 windfalls, 14 curses, 4 origins,
- * 6 professions) and 64 loot (34 items, 6 upgrades, 14 one-shots, 6 level-ups, 4 doubles).
+ * 142 cards: 76 encounter (36 monsters, 10 boosters, 4 reinforcements, 2 windfalls, 14 curses, 4 origins,
+ * 6 professions) and 66 loot (34 items, 6 upgrades, 16 one-shots incl. 2 Change Sides, 6 level-ups, 4 doubles).
  * Language-free; texts per locale in `content/<locale>.ts` under the same ids.
  */
 const cards: readonly CardEntry[] = [
@@ -145,6 +145,8 @@ const cards: readonly CardEntry[] = [
   { id: 'kz.shiny-distraction', type: 'oneshot', bonus: 0, value: 1, flee: 3, copies: 2 },
   { id: 'kz.side-tunnel', type: 'oneshot', bonus: 0, value: 2, escape: true, copies: 2 },
   { id: 'kz.watering-ambush', type: 'oneshot', bonus: 3, value: 2 },
+  // K2: the helper's backstab (design § 5.6).
+  { id: 'kz.change-sides', type: 'oneshot', bonus: 0, value: 1, turncoat: true, copies: 2 },
 
   /* ---------- Level-ups (6) and doubles (4) ---------- */
   { id: 'kz.senior-gnome', type: 'levelup', copies: 2 },

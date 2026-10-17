@@ -3,7 +3,7 @@ import { announce, clear, h } from '@wp/ui';
 import { pictogram } from './art';
 import { illustration } from './illustrations';
 import { baseId, type MonsterCard } from './cards';
-import { cardBlunder, cardFlavour, cardName, cardRules, keyNumber } from './cardtext';
+import { cardBlunder, cardFlavour, cardName, cardRules, keyNumber, penaltyText } from './cardtext';
 import { HUMAN, advance, computerToAct } from './driver';
 import {
   FLEE_TARGET,
@@ -21,7 +21,10 @@ import {
   step,
   sum,
   surplus,
+  REP_MAX,
+  tableStrength,
   type Action,
+  type Terms,
   type CardQuestState,
   type LogEvent,
   type Part,
@@ -39,6 +42,8 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
   let state: CardQuestState = started(0, readSettings(undefined));
   let selected: string | null = null;
   let mode: Mode = 'play';
+  /** The player chosen in the help form. */
+  let offerSeat = -1;
   const picked = new Set<string>();
   let finishedSent = false;
 
@@ -70,6 +75,8 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     const before = state.logSeq;
     const next = step(state, HUMAN, action);
     if (!next) return;
+    // A new choice of helper starts from the strongest again after anything but choosing.
+    offerSeat = -1;
     next.seen = before;
     if (hint && !next.hints.includes(hint)) next.hints.push(hint);
     state = advance(next);
@@ -84,6 +91,71 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     finishIfOver();
   }
 
+  /**
+   * Cards that hit the person without a fight — a trap (curse) or other card found around the corner, a curse
+   * from another player — shown one by one with their picture, rules and what they took, until "Continue". Derived
+   * from the log and `state.revealed` (persisted), so a reload during a reveal shows it again and one after
+   * "Continue" does not.
+   */
+  function pendingReveals(): { card: string; by: number | null; lines: string[]; end: number }[] {
+    const firstSeq = state.logSeq - state.log.length;
+    const since = state.revealed ?? state.seen;
+    const out: { card: string; by: number | null; lines: string[]; end: number }[] = [];
+    state.log.forEach((e, i) => {
+      if (firstSeq + i < since) return;
+      const found = e.e === 'open' && e.seat === HUMAN && defOf(e.card).type !== 'monster';
+      const cursed = e.e === 'curse' && e.target === HUMAN;
+      if (!found && !cursed) return;
+      const lines: string[] = [];
+      let j = i + 1;
+      for (; j < state.log.length; j++) {
+        const f = state.log[j]!;
+        if (f.e !== 'penalty' || f.seat !== HUMAN) break;
+        lines.push(eventText(f));
+      }
+      if (found && defOf(e.card).type !== 'curse') lines.push(t('reveal.toHand'));
+      out.push({ card: e.card, by: cursed ? e.seat : null, lines, end: firstSeq + j });
+    });
+    return out;
+  }
+
+  function renderReveal(): HTMLElement {
+    const r = pendingReveals()[0]!;
+    const { type, lines: rules } = cardRules(t, r.card);
+    // A curse that hits the person: say so, instead of the card's "play on another player" line.
+    const def = defOf(r.card);
+    const lines = def.type === 'curse' ? [t('reveal.effect', { effect: penaltyText(t, def.effect) })] : rules;
+    const title = r.by === null ? t('reveal.open', { card: name(r.card) }) : t('reveal.curse', { name: seatName(r.by), card: name(r.card) });
+    return h(
+      'section',
+      { class: 'cq-reveal cq-detail', 'data-testid': 'reveal', 'data-type': defOf(r.card).type, 'aria-labelledby': 'cq-reveal-title' },
+      h('h3', { id: 'cq-reveal-title' }, title),
+      bigPic(r.card),
+      h('p', { class: 'cq-tile-type' }, type),
+      h('ul', { class: 'cq-rules' }, ...lines.map((l) => h('li', {}, l))),
+      h('p', { class: 'cq-flavour' }, cardFlavour(t, r.card)),
+      r.lines.length > 0 ? h('div', {}, h('h4', {}, t('reveal.result')), h('ul', { 'data-testid': 'reveal-result' }, ...r.lines.map((l) => h('li', {}, l)))) : null,
+      h(
+        'div',
+        { class: 'cq-detail-actions' },
+        continueButton(r.end)
+      )
+    );
+  }
+
+  /** "Continue" after a reveal: acknowledged in the save; a held-down Enter (key repeat) does not skip it. */
+  function continueButton(end: number): HTMLElement {
+    const b = button(t('btn.continue'), () => {
+      state = { ...state, revealed: end };
+      context.requestSave();
+      render();
+    }, { primary: true, testid: 'reveal-continue' });
+    b.addEventListener('keydown', (event) => {
+      if (event.repeat && (event.key === 'Enter' || event.key === ' ')) event.preventDefault();
+    });
+    return b;
+  }
+
   function finishIfOver(): void {
     if (state.phase !== 'over' || finishedSent) return;
     finishedSent = true;
@@ -95,21 +167,31 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
   /* ---------------------------------------------------------------- texts */
 
   function nextText(): string {
+    if (state.phase !== 'over' && pendingReveals().length > 0) return t('next.reveal');
     switch (state.phase) {
       case 'setup': // Unreachable: the view deals at once (ADR 0017); kept for the type.
       case 'prepare':
         return t('next.prepare');
       case 'after':
         return t('next.after');
-      case 'fight':
+      case 'fight': {
+        const offer = state.fight?.offer;
+        if (offer && offer.to === HUMAN) {
+          const from = seatName(state.active);
+          if (offer.terms.t === 'free') return t('offer.you.free', { name: from });
+          if (offer.terms.t === 'stay') return t('offer.you.stay', { name: from, card: name(offer.terms.card) });
+          return t('offer.you.help', { name: from, terms: termsOf(offer.terms) });
+        }
         if (state.active === HUMAN) return t(someoneInterfered() ? 'next.fight.youAgain' : 'next.fight.you');
         return t('next.fight.react', { name: seatName(state.active) });
+      }
       case 'flee':
         if (currentMonsterNoFlee()) return t('next.flee.none');
         return t('next.flee', { need: Math.max(1, FLEE_TARGET - fleeBonus(state) - fleeMod()) });
       case 'end': {
         const n = surplus(state);
         if (n === 0) return t('next.end');
+        if (mode !== 'give') return t('next.end.surplus', { n });
         const to = charityTarget(state);
         return to >= 0 ? t('next.end.give', { n, name: seatName(to) }) : t('next.end.discard', { n });
       }
@@ -154,6 +236,33 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     return lines.length > 0 && lines.every((e) => e.e === 'penalty' && (e.card !== undefined || (e.n ?? 0) > 0));
   }
 
+  /** An offer's terms as a phrase (inserted into offer and deal sentences). */
+  function termsText(terms: { t: Terms['t']; n?: number | undefined; card?: string | undefined }): string {
+    switch (terms.t) {
+      case 'loot':
+        return t(terms.n === 2 ? 'terms.loot.2' : 'terms.loot.1');
+      case 'item':
+        return t('terms.item', { card: terms.card ? name(terms.card) : '' });
+      case 'stay':
+        return t('terms.stay', { card: terms.card ? name(terms.card) : '' });
+      default:
+        return t(`terms.${terms.t}`);
+    }
+  }
+
+  const termsOf = (terms: Terms) =>
+    termsText({ t: terms.t, n: terms.t === 'loot' ? terms.n : undefined, card: terms.t === 'item' ? terms.item : terms.t === 'stay' ? terms.card : undefined });
+
+  /**
+   * A deal sentence in the form that fits who takes part: the person as subject (`.you`, no {name}), as addressee
+   * (`.toYou`, no {to}), or two computer players (the plain key). The verbs agree in every language that way.
+   */
+  function dealLine(key: string, seat: number, to: number, params: Record<string, string | number> = {}): string {
+    if (seat === HUMAN) return t(`${key}.you`, { to: seatName(to), ...params });
+    if (to === HUMAN) return t(`${key}.toYou`, { name: seatName(seat), ...params });
+    return t(key, { name: seatName(seat), to: seatName(to), ...params });
+  }
+
   function eventText(e: LogEvent): string {
     const n = (seat: number) => seatName(seat);
     switch (e.e) {
@@ -174,6 +283,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       case 'escape':
         return t('log.escape', { name: n(e.seat), card: name(e.card) });
       case 'curse':
+        if (e.target === HUMAN) return t('log.curse.toYou', { name: n(e.seat), card: name(e.card) });
         return t('log.curse', { name: n(e.seat), card: name(e.card), target: n(e.target) });
       case 'won':
         return t('log.won', { name: n(e.seat), levels: e.levels, loot: e.loot });
@@ -211,7 +321,27 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       case 'upgrade':
         return t('log.upgrade', { name: n(e.seat), card: name(e.card), item: name(e.item) });
       case 'give':
+        if (e.to === HUMAN) return t('log.give.toYou', { name: n(e.seat), n: e.count });
         return t('log.give', { name: n(e.seat), n: e.count, to: n(e.to) });
+      case 'offer':
+        if (e.t === 'stay') return dealLine('log.offer.stay', e.seat, e.to, { card: e.card ? name(e.card) : '' });
+        if (e.t === 'free') return dealLine('log.offer.free', e.seat, e.to);
+        return dealLine('log.offer.help', e.seat, e.to, { terms: termsText({ t: e.t, n: e.n, card: e.card }) });
+      case 'accept':
+        return dealLine('log.accept', e.seat, e.to);
+      case 'decline':
+        return dealLine('log.decline', e.seat, e.to);
+      case 'switch':
+        return dealLine('log.switch', e.seat, e.to, { card: name(e.card) });
+      case 'kept':
+        if (e.t === 'item') return dealLine('log.kept.item', e.seat, e.to, { card: e.card ? name(e.card) : '' });
+        if (e.t === 'favour') return dealLine('log.kept.favour', e.seat, e.to);
+        if (e.t === 'free') return dealLine('log.kept.free', e.seat, e.to);
+        return dealLine('log.kept.loot', e.seat, e.to, { n: e.n ?? 0 });
+      case 'broken':
+        return dealLine(`log.broken.${e.why}`, e.seat, e.to);
+      case 'void':
+        return dealLine('log.void', e.seat, e.to, { card: name(e.card) });
       case 'discard':
         return t('log.discard', { name: n(e.seat), n: e.count });
       case 'win':
@@ -226,7 +356,9 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     const fresh = (id: string) => !state.hints.includes(id);
     const has = (type: string) => me.hand.some((c) => defOf(c).type === type);
     const myTurn = state.active === HUMAN;
+    if (state.phase === 'fight' && state.fight?.offer?.to === HUMAN && fresh('offer')) return 'offer';
     if (myTurn && state.phase === 'fight' && fresh('fight')) return 'fight';
+    if (myTurn && state.phase === 'fight' && !state.fight?.offer && fightTotals(state).hero <= fightTotals(state).monsters && fresh('help')) return 'help';
     if (!myTurn && state.phase === 'fight' && fresh('react')) return 'react';
     if (state.phase === 'flee' && fresh('flee')) return 'flee';
     if (myTurn && state.phase === 'end' && surplus(state) > 0 && fresh('charity')) return 'charity';
@@ -243,11 +375,13 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
 
   const keyOf = (el: Element | null): string | null => el?.closest('[data-key]')?.getAttribute('data-key') ?? null;
 
-  /** Enters the give-away mode when the person must give cards away (before drawing, so rendering stays pure). An open
-   * detail is already closed by the action that led here (act). */
+  /**
+   * Leaves the give-away mode when there is nothing (left) to give away, e.g. after equipping enough cards. The mode
+   * itself is entered only by "End turn": until then the person may still equip, play and sell (like the classic rules).
+   */
   function syncMode(): void {
-    if (state.phase === 'end' && actorOf(state) === HUMAN && surplus(state) > 0 && mode !== 'give') {
-      mode = 'give';
+    if (mode === 'give' && !(state.phase === 'end' && actorOf(state) === HUMAN && surplus(state) > 0)) {
+      mode = 'play';
       picked.clear();
     }
   }
@@ -264,7 +398,10 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     if (!focusKey) return;
     // Keep focus on the same control; if it is gone (the step moved on), go to the next main action or its text.
     const same = main.querySelector<HTMLElement>(`[data-key="${CSS.escape(focusKey)}"]`);
-    const fallback = main.querySelector<HTMLElement>('.cq-actions button.primary:not([disabled])') ?? main.querySelector<HTMLElement>('.cq-next-text');
+    const fallback =
+      main.querySelector<HTMLElement>('[data-testid="reveal-continue"]') ??
+      main.querySelector<HTMLElement>('.cq-actions button.primary:not([disabled])') ??
+      main.querySelector<HTMLElement>('.cq-next-text');
     (same ?? fallback)?.focus();
   }
 
@@ -335,6 +472,12 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     if (recent.length > 0 && state.phase !== 'over') {
       out.push(h('section', { class: 'cq-recent', 'aria-labelledby': 'cq-recent-title' }, h('h3', { id: 'cq-recent-title' }, t('log.new')), h('ul', {}, ...recent.slice(-12).map((e) => h('li', {}, eventText(e))))));
     }
+    // While a card is revealed, only the reveal and the log: the hand waits (no detail, no actions).
+    if (pendingReveals().length > 0) {
+      out.push(renderReveal());
+      out.push(renderLog());
+      return out;
+    }
     if (state.fight) out.push(renderFight());
     out.push(renderActions());
     out.push(renderHand());
@@ -353,6 +496,8 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     state.players.forEach((p, seat) => {
       const facts = [t('table.level', { n: p.level }), t('table.strength', { n: strengthOf(seat) }), t('table.cards', { n: p.hand.length })];
       if (p.malus > 0) facts.push(t('table.malus', { n: p.malus }));
+      facts.push(t('table.rep', { n: p.rep, max: REP_MAX }));
+      if (p.favours.length > 0) facts.push(t('table.favours', { n: p.favours.length }));
       const gear = [...p.origins, ...p.professions, ...p.equipped].map(name).join(t('r.separator')) || t('table.nothing');
       list.append(
         h(
@@ -362,7 +507,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
             'summary',
             {},
             h('span', { class: 'cq-player-name' }, seatName(seat), p.personality ? h('span', { class: 'cq-muted' }, ` · ${t(`personality.${p.personality}`)}`) : null, seat === state.active ? h('span', { class: 'cq-turn' }, ` · ${t('table.active')}`) : null),
-            h('span', { class: 'cq-player-facts' }, facts.join(' · '))
+            h('span', { class: 'cq-player-facts' }, facts.join(' · '), h('span', { class: 'cq-stars', 'aria-hidden': 'true' }, ` ${'★'.repeat(p.rep)}${'☆'.repeat(REP_MAX - p.rep)}`))
           ), h('p', { class: 'cq-player-gear' }, p.personality ? `${t(`personality.${p.personality}.desc`)} ` : '', gear))
         )
       );
@@ -376,6 +521,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       if (p.source === 'malus') return t('part.malus');
       if (p.source.startsWith('set:')) return t('part.set', { name: t(`set.${p.source.slice(4)}`) });
       if (p.source.startsWith('vs:')) return t('part.vs', { name: seatName(seat) });
+      if (p.source.startsWith('help:')) return t('part.help', { name: seatName(Number(p.source.slice(5))) });
       return name(p.source);
     };
     return h('ul', { class: 'cq-parts' }, ...parts.map((p) => h('li', {}, `${label(p)} ${p.value >= 0 ? '+' : '−'}${Math.abs(p.value)}`)));
@@ -413,10 +559,51 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       h('p', { class: 'cq-forecast', 'data-testid': 'forecast', 'data-win': String(win) }, h('span', { class: 'cq-forecast-icon', 'aria-hidden': 'true' }, win ? '▲' : '▼'), forecast),
       h('div', { class: 'cq-fight-hero' }, h('p', { class: 'cq-strong' }, t('fight.hero', { name: hero, n: totals.hero })), partsList(heroParts(state), state.active)),
       monsters,
+      fight.helper !== null && fight.deal
+        ? h('p', { 'data-testid': 'helper' }, t('fight.helper', { name: seatName(fight.helper), n: tableStrength(state, fight.helper), terms: termsOf(fight.deal) }))
+        : null,
+      fight.turncoat !== null ? h('p', { 'data-testid': 'turncoat' }, t('fight.turncoat', { name: seatName(fight.turncoat), n: tableStrength(state, fight.turncoat) })) : null,
       played(fight.hero, t('fight.for', { name: hero })),
       played(fight.against, t('fight.against')),
       h('p', { class: 'cq-muted' }, t('fight.reward', { levels, loot })),
-      fight.rolls.length > 0 ? h('p', {}, t('fight.rolls', { rolls: fight.rolls.join(t('r.separator')) })) : null
+      fight.rolls.length > 0 ? h('p', {}, t('fight.rolls', { rolls: fight.rolls.join(t('r.separator')) })) : null,
+      renderHelpForm()
+    );
+  }
+
+  /** The fighter's offers (design § 5.6): one player and one of the fixed terms, then "Make the offer". */
+  function renderHelpForm(): HTMLElement | null {
+    const fight = state.fight;
+    if (!fight || state.phase !== 'fight' || state.active !== HUMAN || actorOf(state) !== HUMAN || fight.offer) return null;
+    const offers = legalActions(state, HUMAN).filter((a): a is Extract<Action, { a: 'offer' }> => a.a === 'offer');
+    if (offers.length === 0) return null;
+    // Strongest possible helper first (ties: seat order).
+    const seats = [...new Set(offers.map((o) => o.to))].sort((a, b) => tableStrength(state, b) - tableStrength(state, a) || a - b);
+    if (!seats.includes(offerSeat)) offerSeat = seats[0]!;
+    const who = h('select', { id: 'cq-help-who', 'data-testid': 'help-who', 'data-key': 'help-who' }) as HTMLSelectElement;
+    for (const seat of seats) {
+      const p = state.players[seat] as Player;
+      who.append(h('option', { value: String(seat), selected: seat === offerSeat }, t('fight.help.option', { name: seatName(seat), n: tableStrength(state, seat), rep: p.rep, max: REP_MAX })));
+    }
+    const terms = h('select', { id: 'cq-help-terms', 'data-testid': 'help-terms', 'data-key': 'help-terms' }) as HTMLSelectElement;
+    const mine = offers.filter((o) => o.to === offerSeat);
+    mine.forEach((o, i) => terms.append(h('option', { value: String(i) }, termsOf(o.terms))));
+    who.addEventListener('change', () => {
+      offerSeat = Number(who.value);
+      render();
+    });
+    return h(
+      'fieldset',
+      { class: 'cq-help', 'data-testid': 'help' },
+      h('legend', {}, t('fight.help.title')),
+      h('label', { for: 'cq-help-who' }, t('fight.help.who')),
+      who,
+      h('label', { for: 'cq-help-terms' }, t('fight.help.offer')),
+      terms,
+      button(t('fight.help.ask'), () => {
+        const offer = mine[Number(terms.value)];
+        if (offer) act(offer);
+      }, { testid: 'help-ask' })
     );
   }
 
@@ -446,6 +633,15 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
         bar.append(button(t('btn.rummage'), () => act({ a: 'rummage' }), { primary: true, testid: 'rummage' }));
         break;
       case 'fight':
+        if (state.fight?.offer) {
+          // The offer is repeated next to its answers (on a phone the "next" box is far above), both answers equal.
+          bar.append(
+            h('p', { class: 'cq-offer-text', 'data-testid': 'offer-text' }, nextText()),
+            button(t('btn.accept'), () => act({ a: 'accept' }), { primary: true, testid: 'accept' }),
+            button(t('btn.decline'), () => act({ a: 'decline' }), { primary: true, testid: 'decline' })
+          );
+          break;
+        }
         bar.append(button(t(state.active === HUMAN ? 'btn.fight' : 'btn.letBe'), () => act({ a: 'pass' }), { primary: true, testid: 'pass' }));
         break;
       case 'flee':
@@ -454,9 +650,26 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       case 'end': {
         const n = surplus(state);
         if (n === 0) bar.append(button(t('btn.end'), () => act({ a: 'end', give: [] }), { primary: true, testid: 'end' }));
-        else {
+        else if (mode !== 'give') {
+          // Too many cards: "End turn" first asks which ones to give away.
+          bar.append(
+            button(t('btn.end'), () => {
+              mode = 'give';
+              picked.clear();
+              selected = null;
+              render();
+            }, { primary: true, testid: 'end' })
+          );
+        } else {
           const label = charityTarget(state) >= 0 ? t('btn.give', { n }) : t('btn.discard', { n });
-          bar.append(button(label, () => act({ a: 'end', give: [...picked] }), { primary: true, testid: 'end', disabled: picked.size !== n }));
+          bar.append(
+            button(label, () => act({ a: 'end', give: [...picked] }), { primary: true, testid: 'end', disabled: picked.size !== n }),
+            button(t('btn.cancel'), () => {
+              mode = 'play';
+              picked.clear();
+              render();
+            }, { testid: 'give-cancel' })
+          );
         }
         break;
       }
@@ -516,7 +729,9 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
           if (a.card !== card) break;
           const def = defOf(card);
           const label =
-            def.type === 'oneshot' && def.escape
+            def.type === 'oneshot' && def.turncoat
+              ? t('act.switch')
+              : def.type === 'oneshot' && def.escape
               ? t('act.escape')
               : a.side === 'monster'
                 ? t('act.monster')
@@ -548,7 +763,9 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
   }
 
   function why(card: string): string {
-    const type = defOf(card).type;
+    const def = defOf(card);
+    const type = def.type;
+    if (def.type === 'oneshot' && def.turncoat) return t('card.why.switch');
     if (type === 'booster' || type === 'oneshot' || type === 'reinforcement') return t('card.why.fightOnly');
     if (['item', 'upgrade', 'levelup', 'windfall', 'origin', 'profession', 'double'].includes(type)) return t('card.why.ownTurn');
     return t('card.why.notNow');
@@ -692,7 +909,6 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
   function renderCoachToggle(): HTMLElement {
     const box = h('input', {
       type: 'checkbox',
-      id: 'cq-coach',
       'data-testid': 'coach',
       'data-key': 'coach',
       checked: state.settings.coach,
@@ -703,7 +919,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
         render();
       }
     });
-    return h('label', { class: 'cq-check', for: 'cq-coach' }, box, h('span', {}, t('setup.coach')));
+    return h('label', { class: 'cq-check' }, box, h('span', {}, t('setup.coach')));
   }
 
   /* ---------------------------------------------------------------- instance */

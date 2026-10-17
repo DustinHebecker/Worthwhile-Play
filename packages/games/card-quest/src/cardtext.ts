@@ -116,6 +116,7 @@ export function cardRules(t: Translator, card: string): { type: string; lines: s
     }
     case 'oneshot':
       if (def.escape) lines.push(t('r.escape'));
+      if (def.turncoat) lines.push(t('r.turncoat'));
       if (def.bonus > 0) lines.push(t('r.oneshot', { n: def.bonus }));
       if (def.flee) lines.push(t('r.oneshotFlee', { n: def.flee }));
       lines.push(t('r.value', { n: def.value }));

@@ -128,6 +128,7 @@ export const hi: LocaleContent = {
   'kz.shiny-distraction': { name: 'देखो, कुछ चमकीला!', flavour: 'कौवों, चूहों और ज़्यादातर बौनों पर काम करता है।' },
   'kz.side-tunnel': { name: 'बगल की सुरंग से फ़रार', flavour: 'तुम यहाँ कभी थे ही नहीं। अफ़सोस, लूट भी नहीं।' },
   'kz.watering-ambush': { name: 'हज़ारे से घात', flavour: 'ऊपर से। ठंडा। अविस्मरणीय।' },
+  'kz.change-sides': { name: 'पाला-बदल', flavour: 'टीमवर्क अच्छा है। अकेले जीतना और भी अच्छा।' },
   // Level-ups and doubles
   'kz.senior-gnome': { name: 'वरिष्ठ बौने पर तरक़्क़ी', flavour: 'नई टोपी, वही बगीचा, ज़्यादा तनख़्वाह (कंकड़ों में)।' },
   'kz.mine-birthday': { name: 'खदान में जन्मदिन', flavour: 'ज़मीन के नीचे मोमबत्तियाँ: बुरा विचार। केक: कभी बुरा विचार नहीं।' },
