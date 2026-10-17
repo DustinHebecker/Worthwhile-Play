@@ -48,6 +48,7 @@ Platform capabilities for games (host, ADRs 0002/0011/0012): preferences (small 
 | Hypothesis | Rule Discovery → shown as **Rule Hunt** | M4 | ✅ | 2-4-6-style task; confirmation-bias feedback and information value of each test after solving |
 | Hypothesis | Black Box | M4 | ✅ | 15 rule families; challenge inputs rule out all consistent alternatives of the family |
 | Algorithms | Logic Path → shown as **Robot Program** | M4 | ✅ | small command language (repeat, conditional); 24 original levels, limits proven by exhaustive program search |
+| Algorithms | Mini Optimizer → shown as **Best Plan** | M4 | ✅ | `mini-optimizer`: three planning problems (road network with optional Steiner junctions, capacitated delivery trips, workshop production mix); generated instances, exact optimum (junction subsets × Kruskal, Held–Karp + partition DP, full enumeration) checked against independent brute-force oracles; gap shown after a check, a best plan only on request (design `docs/design/mini-optimizer.md`) |
 | Systems | Systems Puzzle → shown as **Flow Lab** | M4 | ✅ | integer tank/valve simulation with float switches and delays; 24 original puzzles proven solvable by brute force |
 | Systems | Debug the System → shown as **Fix the Machine** | M4 | ✅ | generated register machines with one injected bug; unique single-rule fix verified by brute force |
 | Systems | Graph Detective → shown as **Network Detective** | M4 | ✅ | 5 task types (bridge, augment, shortest route, single point of failure, min cut); algorithms checked against brute-force oracle |

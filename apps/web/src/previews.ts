@@ -577,7 +577,20 @@ const PREVIEWS: Record<string, () => string> = {
   'compression-challenge': () =>
     R(4, 2, 88, 13, 'c', 3) + L(8, 6.5, 38, 6.5, 'k') + L(8, 11, 56, 11, 'g') +
     [0, 1, 2, 3, 4].map((i) => R(4 + i * 18, 18, 16, 7, i ? 'c' : 'c ab', 3.5)).join('') +
-    [29, 40, 51].map((y, i) => row(4, y, 88, 9, [72, 50, 64][i]!)).join('')
+    [29, 40, 51].map((y, i) => row(4, y, 88, 9, [72, 50, 64][i]!)).join(''),
+  // Best Plan: the road-network problem — lettered villages, one square junction, two built roads (thick, solid,
+  // filled cost badges) and three possible roads (dashed, outlined cost badges).
+  'mini-optimizer': () => {
+    const p: Record<string, [number, number]> = { A: [16, 14], B: [56, 11], C: [84, 34], D: [20, 52], J: [50, 38] };
+    const road = (a: string, b: string, built: boolean, cost: number) => {
+      const [x1, y1] = p[a]!;
+      const [x2, y2] = p[b]!;
+      const [mx, my] = [(x1 + x2) / 2, (y1 + y2) / 2];
+      return L(x1, y1, x2, y2, built ? 'al' : 'mu ds') + R(mx - 4.5, my - 4, 9, 8, built ? 'a' : 'c', 2) + T(mx, my + 0.3, cost, built ? 't tsm ts' : 't tsm');
+    };
+    return R(4, 1.5, 88, 61, 'e', 5) + road('A', 'J', true, 3) + road('J', 'D', true, 2) + road('A', 'B', false, 4) + road('B', 'C', false, 3) + road('J', 'C', false, 4) +
+      Object.entries(p).map(([k, [x, y]]) => (k === 'J' ? R(x - 5, y - 5, 10, 10, 'ob', 1) + T(x, y + 0.5, 1, 't tsm') : C(x, y, 6, 'ob') + T(x, y + 0.5, k, 't tsm'))).join('');
+  }
 };
 
 /** Pictures made only of text cards and lines: these follow the reading direction (flipped in RTL). */
