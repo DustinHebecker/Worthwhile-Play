@@ -13,6 +13,7 @@ export const en = {
   'difficulty.sharp': 'Sharp',
 
   // Setup
+  // World names: shown again once the start screen offers a choice of worlds (K3, Spaceloot).
   'world.kz': 'Kampfzwerge — dwarves against garden gnomes',
   'setup.opponents': 'Computer players',
   'setup.target': 'Target level',
