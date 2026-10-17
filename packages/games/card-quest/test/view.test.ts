@@ -356,6 +356,15 @@ describe('view', () => {
       third.instance.dispose();
     });
 
+    it('a finished game shows its end, not a reveal of the curse that came last', () => {
+      const s = cursedTwice();
+      const over = { ...s, phase: 'over' as const, winners: [1], log: [...s.log, { e: 'win' as const, seats: [1] }], logSeq: s.logSeq + 1 };
+      const { root, instance } = mount(over);
+      expect(q(root, 'reveal')).toBeNull();
+      expect(q(root, 'next')!.textContent).toContain('won');
+      instance.dispose();
+    });
+
     it('a held-down Enter (key repeat) does not skip a reveal', () => {
       const { root, instance } = mount(cursedTwice());
       const press = (repeat: boolean) => {

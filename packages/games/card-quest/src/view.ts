@@ -98,9 +98,11 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
    * "Continue" does not.
    */
   function pendingReveals(): { card: string; by: number | null; lines: string[]; end: number }[] {
+    const out: { card: string; by: number | null; lines: string[]; end: number }[] = [];
+    // A finished game shows its end (the log still tells what hit the person last).
+    if (state.phase === 'over') return out;
     const firstSeq = state.logSeq - state.log.length;
     const since = state.revealed ?? state.seen;
-    const out: { card: string; by: number | null; lines: string[]; end: number }[] = [];
     state.log.forEach((e, i) => {
       if (firstSeq + i < since) return;
       const found = e.e === 'open' && e.seat === HUMAN && defOf(e.card).type !== 'monster';
@@ -167,7 +169,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
   /* ---------------------------------------------------------------- texts */
 
   function nextText(): string {
-    if (state.phase !== 'over' && pendingReveals().length > 0) return t('next.reveal');
+    if (pendingReveals().length > 0) return t('next.reveal');
     switch (state.phase) {
       case 'setup': // Unreachable: the view deals at once (ADR 0017); kept for the type.
       case 'prepare':
@@ -472,7 +474,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     if (recent.length > 0 && state.phase !== 'over') {
       out.push(h('section', { class: 'cq-recent', 'aria-labelledby': 'cq-recent-title' }, h('h3', { id: 'cq-recent-title' }, t('log.new')), h('ul', {}, ...recent.slice(-12).map((e) => h('li', {}, eventText(e))))));
     }
-    // While a card is revealed, only the reveal and the log: the hand waits (no detail, no actions).
+    // While a card is revealed, only the reveal and the log: the hand, the actions and the coach switch wait.
     if (pendingReveals().length > 0) {
       out.push(renderReveal());
       out.push(renderLog());
