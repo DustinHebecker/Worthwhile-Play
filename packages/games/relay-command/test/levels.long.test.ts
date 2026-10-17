@@ -89,22 +89,22 @@ describe('opponent levels (I5)', () => {
     }
   }, 600_000); // 2 maps x 2 levels x 20 AI-vs-AI games of 24 turns: 154 s under coverage on a loaded 4-core machine (2026-10-14), kept under half of this
 
-  it('hard beats normal on Field Exercise by at least 4 games and on Ridge Valley; over both by at least 4', () => {
+  it('hard beats normal on Field Exercise and on Ridge Valley by at least 4 games each', () => {
     // The two share the plan of attack; hard adds breadth, focus fire, pulling back and jamming.
     // Measured since PR #13 (escorts yield in passes; storms find a way past held rings):
     // Field Exercise 8-4, Ridge Valley 6-6 over 2x6 openings (mirror pairs: 6 samples each).
     // With defence towers, over 12 different openings (2026-10-17): Field Exercise 8-4, Ridge Valley 7-5;
     // over 30 openings Field Exercise 22-8 and Ridge Valley 20-10 (without towers 23-7 and 20-10).
+    // Now 20 openings per map (review of PR #55: 7-5 was too tight): 14-6 on both.
     const total = { a: 0, b: 0, draws: 0 };
     for (const spec of MARGIN_MAPS) {
-      const r = margin(spec, 'hard', 'normal', 12, 2, 2);
+      const r = margin(spec, 'hard', 'normal', 20, 2, 2);
       total.a += r.a;
       total.b += r.b;
       total.draws += r.draws;
-      if (spec === FIELD_EXERCISE) expect(r.a, `${spec.id} hard vs normal ${JSON.stringify(r)}`).toBeGreaterThanOrEqual(r.b + 4);
-      else expect(r.a, `${spec.id} hard vs normal ${JSON.stringify(r)}`).toBeGreaterThan(r.b);
+      expect(r.a, `${spec.id} hard vs normal ${JSON.stringify(r)}`).toBeGreaterThanOrEqual(r.b + 4);
     }
-    expect(total.a, `hard vs normal over both margin maps ${JSON.stringify(total)}`).toBeGreaterThanOrEqual(total.b + 4);
+    expect(total.a, `hard vs normal over both margin maps ${JSON.stringify(total)}`).toBeGreaterThanOrEqual(total.b + 8);
   }, 300_000);
 
   /** Random player moves in a resolved first turn (the reviewer's "mild opening"), then nothing. */
