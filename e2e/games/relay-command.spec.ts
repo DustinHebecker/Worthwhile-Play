@@ -204,9 +204,8 @@ test('relay-command: the opponent level is chosen in the game setup and kept in 
   await expect.poll(level).toBe('easy');
   // New game keeps it (the host follows the game's choice).
   await page.getByTestId('new-game').click();
-  const start = page.getByTestId('start-game');
-  await expect(start.or(page.getByTestId('rc-setup')).first()).toBeVisible();
-  if (await start.isVisible()) await start.click();
+  // With a running game the host shows Continue and one "New game" button (testid start-game), which starts the setup.
+  await page.getByTestId('start-game').click();
   await expect(page.getByTestId('rc-difficulty')).toHaveValue('easy');
   await expect.poll(level).toBe('easy');
   await page.getByTestId('rc-lock').click();
@@ -288,6 +287,45 @@ test('relay-command: the Command Post places an Extractor on a deposit by tappin
   else await map.click({ position });
   await expect.poll(async () => (await saved(page))?.draft[0]?.order).toEqual({ type: 'build', kind: 'extractor', x: 4, y: 10 });
   await expect(page.getByTestId('rc-supply')).toHaveText('Supply 300 → 220 (+20)');
+});
+
+test('relay-command: the Command Post places a Gun Tower on a phone; it is paid at once and shown as a site (owner decision 2026-10-16)', async ({ page, isMobile }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await start(page);
+  const s = (await saved(page))!;
+  const post = s.world.entities.find((e) => e.side === 0 && e.kind === 'command-post')!;
+  // Wait for the post to be selected and its build sheet to be drawn before looking for the tiles (review of PR #55:
+  // under load the tiles were looked for before the selection had rendered).
+  const unit = page.getByTestId(`rc-unit-${post.id}`);
+  await expect(unit).toBeVisible();
+  await unit.click();
+  await expect(page.getByTestId('rc-selection-text')).toContainText('Place structures below');
+  for (const kind of ['tower-gun', 'tower-artillery', 'tower-laser', 'tower-emp']) {
+    const tile = page.getByTestId(`rc-job-${kind}`);
+    await tile.scrollIntoViewIfNeeded();
+    await expect(tile).toBeVisible();
+  }
+  await expect(page.getByTestId('rc-job-tower-gun')).toHaveAttribute('aria-label', 'Gun Tower · 90 Supply · build time (turns): 2');
+  await page.getByTestId('rc-job-tower-gun').click();
+  const map = page.getByTestId('rc-map');
+  await map.scrollIntoViewIfNeeded();
+  const box = (await map.boundingBox())!;
+  const cell = box.width / 12;
+  // A free covered cell two steps from the post (which one depends on the terrain): the first the game accepts.
+  const offsets = [[2, -2], [2, 0], [0, -2], [-2, -2], [2, 2], [-2, 0], [0, 2], [-2, 2], [3, -1], [1, -3]];
+  for (const [dx, dy] of offsets) {
+    const x = post.x + dx!, y = post.y + dy!;
+    if (x < 0 || y < 0 || x > 11 || y > 11) continue;
+    const position = { x: x * cell + cell / 2, y: y * cell + cell / 2 };
+    if (isMobile) await map.tap({ position });
+    else await map.click({ position });
+    if ((await page.getByTestId('rc-placing').count()) === 0) break; // accepted: placing ends
+  }
+  await expect.poll(async () => (await saved(page))?.draft[0]?.order).toMatchObject({ type: 'build', kind: 'tower-gun' });
+  await expect(page.getByTestId('rc-supply')).toHaveText('Supply 300 → 210 (+20)');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+  await page.getByTestId('rc-lock').click();
+  await expect.poll(async () => (await saved(page))?.world.entities.some((e) => e.side === 0 && e.kind === 'tower-gun')).toBe(true);
 });
 
 test('relay-command: queueing a unit at the Muster Yard works on a phone and survives a reload', async ({ page }) => {

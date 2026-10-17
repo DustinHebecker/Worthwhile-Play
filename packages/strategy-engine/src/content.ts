@@ -118,8 +118,30 @@ export const BASE_RULESET: Ruleset = {
 };
 
 /**
+ * Defence towers in the strategy game (owner decision 2026-10-16): the shared tower archetypes
+ * (D16) with the strategy game's price and construction time, so a Command Post can place them like
+ * any structure. Priced above the infantry they beat: a tower cannot move and needs coverage to be
+ * built. Tower Defense keeps the base terms (its own ruleset owns its balancing).
+ */
+export const STRATEGY_TOWERS: Readonly<Record<string, Pick<Archetype, 'cost' | 'buildTurns'>>> = {
+  'tower-gun': { cost: 90, buildTurns: 2 },
+  'tower-emp': { cost: 130, buildTurns: 2 },
+  'tower-artillery': { cost: 150, buildTurns: 3 },
+  'tower-laser': { cost: 160, buildTurns: 3 }
+};
+
+/**
  * Turn-based strategy: orders and reports travel through the command network
  * (docs/design/strategy.md § 5). `strategy-1` (I3a/I3b) had no fog; `strategy-2` added D7;
- * `strategy-3` (I6a) adds the economy (D8).
+ * `strategy-3` (I6a) adds the economy (D8). The towers became buildable without a new id: a save
+ * from before simply had none, and everything else plays as it did.
  */
-export const STRATEGY_RULESET: Ruleset = { ...BASE_RULESET, id: 'strategy-3', commandNetwork: true, fog: true, economy: true, startSupply: 300 };
+export const STRATEGY_RULESET: Ruleset = {
+  ...BASE_RULESET,
+  id: 'strategy-3',
+  archetypes: Object.fromEntries(Object.entries(BASE_ARCHETYPES).map(([id, a]) => [id, id in STRATEGY_TOWERS ? { ...a, ...STRATEGY_TOWERS[id] } : a])),
+  commandNetwork: true,
+  fog: true,
+  economy: true,
+  startSupply: 300
+};
