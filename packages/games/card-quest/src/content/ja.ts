@@ -128,6 +128,7 @@ export const ja: LocaleContent = {
   'kz.shiny-distraction': { name: 'ほら、キラキラ！', flavour: 'カラス、ネズミ、ほとんどのドワーフに効く。' },
   'kz.side-tunnel': { name: 'わき坑道へ退散', flavour: 'きみはここにいなかった。残念ながら、お宝も。' },
   'kz.watering-ambush': { name: 'じょうろの待ち伏せ', flavour: '寝耳に水。上から、冷たく、忘れられない。' },
+  'kz.change-sides': { name: '寝返り', flavour: 'チームワークはすてき。ひとり勝ちはもっとすてき。' },
   // Level-ups and doubles
   'kz.senior-gnome': { name: '上級ノームに昇進', flavour: '新しい帽子、同じ庭、給料アップ（小石払い）。' },
   'kz.mine-birthday': { name: '坑道で誕生日', flavour: '地下でろうそく：悪い考え。ケーキ：いつでもいい考え。' },

@@ -128,6 +128,7 @@ export const nl: LocaleContent = {
   'kz.shiny-distraction': { name: 'Kijk, Iets Glimmends!', flavour: 'Werkt bij kraaien, ratten en de meeste dwergen.' },
   'kz.side-tunnel': { name: 'Hup, de Zijgang In', flavour: 'Je bent hier nooit geweest. De buit helaas ook niet.' },
   'kz.watering-ambush': { name: 'Gieterhinderlaag', flavour: 'Van boven. Koud. Onvergetelijk.' },
+  'kz.change-sides': { name: 'Van Kant Wisselen', flavour: 'Teamwork is mooi. Alleen winnen is mooier.' },
   // Level-ups and doubles
   'kz.senior-gnome': { name: 'Promotie tot Hoofdkabouter', flavour: 'Nieuwe muts, zelfde tuin, meer salaris (in kiezels).' },
   'kz.mine-birthday': { name: 'Verjaardag in de Mijn', flavour: 'Kaarsjes onder de grond: slecht idee. Taart: nooit een slecht idee.' },

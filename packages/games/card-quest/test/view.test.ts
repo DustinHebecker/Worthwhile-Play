@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import { beforeAll, describe, expect, it } from 'vitest';
 import { createTestContext } from '@wp/testing';
-import type { GameModule } from '@wp/game-core';
+import type { GameModule, Translator } from '@wp/game-core';
 import game, { type CardQuestState } from '../src/index';
 import { createRngFromState } from '@wp/game-core';
-import { DEFAULT_SETTINGS, isValidState, newGame, step } from '../src/rules';
+import { DEFAULT_SETTINGS, isValidState, newGame, step, type LogEvent } from '../src/rules';
 import { arranged, take } from './harness';
 import { en } from '../src/content/en';
 
@@ -26,11 +26,27 @@ function clickThrough(root: HTMLElement, instance: { serialize(): CardQuestState
       q(root, 'end')!.click();
       continue;
     }
-    const next = ['open', 'rummage', 'pass', 'roll', 'end'].map((id) => q(root, id)).find((b) => b && !b.disabled);
+    const next = ['open', 'rummage', 'pass', 'accept', 'roll', 'end'].map((id) => q(root, id)).find((b) => b && !b.disabled);
     if (!next) throw new Error(`no action button in phase ${state.phase}`);
     next.click();
   }
   return clicks;
+}
+
+/** Deal log lines whose plain form agrees its verbs with {name} and {to}: the person gets `.you` / `.toYou` keys. */
+const DEAL_KEYS = [
+  'log.offer.help', 'log.offer.free', 'log.offer.stay', 'log.accept', 'log.decline', 'log.switch', 'log.kept.loot', 'log.kept.item',
+  'log.kept.favour', 'log.kept.free', 'log.broken.switch', 'log.broken.stay', 'log.broken.favour', 'log.void'
+];
+
+/** A translator that records keys filled with the person where only computer players fit (verb agreement, case). */
+function personSpy(real: Translator, npcOnly: readonly string[], misuse: string[]): Translator {
+  const you = real('you');
+  return Object.assign((key: string, params?: Readonly<Record<string, string | number>>) => {
+    if ((npcOnly.includes(key) || DEAL_KEYS.includes(key)) && params?.name === you) misuse.push(`${key} {name}`);
+    if (params?.to === you || params?.target === you) misuse.push(`${key} {to}`);
+    return real(key, params);
+  }, { locale: real.locale, direction: real.direction });
 }
 
 describe('view', () => {
@@ -54,23 +70,46 @@ describe('view', () => {
     });
   }
 
-  it('sentences with a verb are only filled with computer players, never with the person', () => {
-    // These templates agree the verb with {name} in some languages; the person has own keys instead.
-    const NPC_ONLY = ['next.fight.react', 'next.end.give', 'next.over.lost', 'act.curse', 'act.hero.other', 'fight.forecast.other.win', 'fight.forecast.other.lose'];
-    const ctx = createTestContext(game as GameModule<unknown>, 'en');
-    const real = ctx.context.t;
-    const misuse: string[] = [];
-    const spy = Object.assign((key: string, params?: Readonly<Record<string, string | number>>) => {
-      if (NPC_ONLY.includes(key) && params?.name === real('you')) misuse.push(key);
-      return real(key, params);
-    }, { locale: real.locale, direction: real.direction });
-    const instance = game.create({ ...ctx.context, t: spy } as never);
-    for (const seed of [2, 3, 4]) {
+  // One game per test (split for the time budget under load): these templates agree the verb with {name} in some
+  // languages; the person has own keys instead.
+  for (const seed of [2, 3, 4]) {
+    it(`sentences with a verb are only filled with computer players, never with the person (seed ${seed})`, () => {
+      const NPC_ONLY = ['next.fight.react', 'next.end.give', 'next.over.lost', 'act.curse', 'act.hero.other', 'fight.forecast.other.win', 'fight.forecast.other.lose'];
+      const ctx = createTestContext(game as GameModule<unknown>, 'en');
+      const real = ctx.context.t;
+      const misuse: string[] = [];
+      const spy = personSpy(real, NPC_ONLY, misuse);
+      const instance = game.create({ ...ctx.context, t: spy } as never);
       instance.newGame({ seed });
       clickThrough(ctx.context.root, instance, 3000);
+      expect(misuse).toEqual([]);
+      instance.dispose();
+    });
+  }
+
+  it('deal, give-away and curse lines use the forms for the person, in every combination', () => {
+    const combos: [number, number][] = [[0, 1], [1, 0], [1, 2]];
+    for (const [seat, to] of combos) {
+      const ctx = createTestContext(game as GameModule<unknown>, 'de');
+      const misuse: string[] = [];
+      const instance = game.create({ ...ctx.context, t: personSpy(ctx.context.t, [], misuse) } as never);
+      const s = arranged(() => undefined);
+      const card = 'kz.pickaxe';
+      const events: LogEvent[] = [
+        { e: 'offer', seat, to, t: 'loot', n: 1 }, { e: 'offer', seat, to, t: 'free' }, { e: 'offer', seat, to, t: 'stay', card },
+        { e: 'accept', seat, to }, { e: 'decline', seat, to }, { e: 'switch', seat, to, card: 'kz.change-sides#1' },
+        { e: 'kept', seat, to, t: 'loot', n: 2 }, { e: 'kept', seat, to, t: 'item', card }, { e: 'kept', seat, to, t: 'favour' },
+        { e: 'kept', seat, to, t: 'free' }, { e: 'broken', seat, to, why: 'switch' }, { e: 'broken', seat, to, why: 'stay' },
+        { e: 'broken', seat, to, why: 'favour' }, { e: 'void', seat, to, card }, { e: 'give', seat, to, count: 2 },
+        { e: 'curse', seat, card: 'kz.wrong-hat', target: to }
+      ];
+      instance.restore({ ...s, log: events, logSeq: events.length, seen: events.length });
+      const text = ctx.context.root.querySelector('[data-testid="log"]')!.textContent!;
+      expect(misuse, `${seat}→${to}`).toEqual([]);
+      expect(text).not.toMatch(/\{|Du schuldet|an Du|auf Du|mit Du|von Du|gegen Du/);
+      expect(ctx.missingKeys).toEqual([]);
+      instance.dispose();
     }
-    expect(misuse).toEqual([]);
-    instance.dispose();
   });
 
   describe('the Blunder sentence in the log', () => {
@@ -209,6 +248,68 @@ describe('view', () => {
     instance.dispose();
   });
 
+  describe('offers and deals (K2)', () => {
+    const mount = (state: CardQuestState) => {
+      const ctx = createTestContext(game as GameModule<unknown>, 'en');
+      const instance = game.create(ctx.context as never);
+      instance.restore(state);
+      return { root: ctx.context.root, instance, ctx };
+    };
+    /** The person fights the Gold Rat (level 5) at level 1; seat 1 (strength 6) could help. */
+    const ratFight = () =>
+      step(
+        arranged((s) => {
+          s.players[1]!.level = 4;
+          s.players[1]!.personality = 'cautious';
+          take(s, 'kz.hard-hat', s.players[1]!.equipped);
+          s.encounter.splice(s.encounter.indexOf('kz.gold-rat'), 1);
+          s.encounter.push('kz.gold-rat');
+        }),
+        0,
+        { a: 'open' }
+      )!;
+
+    it('the person asks for help through the form; the answer and the helper appear', () => {
+      const { root, instance } = mount(ratFight());
+      expect(root.textContent).toContain('Reputation 3/5');
+      const who = root.querySelector<HTMLSelectElement>('[data-testid="help-who"]')!;
+      expect(who.options.length).toBe(2);
+      const terms = root.querySelector<HTMLSelectElement>('[data-testid="help-terms"]')!;
+      expect([...terms.options].map((o) => o.textContent)).toContain('2 loot cards');
+      q(root, 'help-ask')!.click();
+      const s = instance.serialize();
+      // The computer answered at once (a cautious player takes one loot card); the offer never stays open for it.
+      expect(s.fight?.offer ?? null).toBeNull();
+      expect(s.log.some((e) => e.e === 'offer' && e.seat === 0)).toBe(true);
+      expect(s.fight?.helper).toBe(1);
+      expect(q(root, 'helper')!.textContent).toContain('Brumbo');
+      instance.dispose();
+    });
+
+    it('an offer to the person waits for Accept or Decline', () => {
+      const s = arranged((s) => {
+        s.active = 1;
+        s.players[0]!.level = 4;
+        take(s, 'kz.hard-hat', s.players[0]!.equipped);
+        s.encounter.splice(s.encounter.indexOf('kz.gold-rat'), 1);
+        s.encounter.push('kz.gold-rat');
+      });
+      const opened = step(s, 1, { a: 'open' })!;
+      const asked = step(opened, 1, { a: 'offer', to: 0, terms: { t: 'loot', n: 1 } })!;
+      const { root, instance } = mount(asked);
+      expect(q(root, 'next')!.textContent).toContain('offers 1 loot card');
+      // Repeated next to the answers (on a phone the "next" box is far above); both answers weigh the same.
+      expect(q(root, 'offer-text')!.textContent).toContain('offers 1 loot card');
+      expect(q(root, 'decline')!.classList.contains('primary')).toBe(true);
+      expect(q(root, 'pass')).toBeNull();
+      q(root, 'accept')!.click();
+      const after = instance.serialize();
+      expect(after.log.some((e) => e.e === 'accept' && e.seat === 0)).toBe(true);
+      expect(isValidState(after)).toBe(true);
+      instance.dispose();
+    });
+  });
+
   it('keeps the keyboard focus inside the game after a main action', () => {
     const ctx = createTestContext(game as GameModule<unknown>, 'en');
     const instance = game.create(ctx.context as never);
@@ -279,17 +380,39 @@ describe('view', () => {
       }
       expect(found).toBe(true);
       const before = instance.serialize();
+      const saves = ctx.saveRequests();
       const box = ctx.context.root.querySelector<HTMLInputElement>('[data-testid="coach"]')!;
       expect(box.checked).toBe(true);
       box.checked = false;
       box.dispatchEvent(new Event('change'));
       const after = instance.serialize();
+      expect(ctx.saveRequests()).toBeGreaterThan(saves);
+      expect(ctx.preferences.get('coach')).toBe(false);
       expect(q(ctx.context.root, 'hint')).toBeNull();
       expect(after.settings.coach).toBe(false);
       expect({ ...after, settings: before.settings }).toEqual(before);
       expect(isValidState(after)).toBe(true);
       instance.newGame({ seed: 3 });
       expect(instance.serialize().settings.coach).toBe(false);
+      instance.dispose();
+    });
+
+    it('new games take the coach choice from the old setup preference until the switch was used', () => {
+      for (const own of [undefined, 'yes', 1]) {
+        const ctx = createTestContext(game as GameModule<unknown>, 'en');
+        ctx.preferences.set('setup', { coach: false });
+        if (own !== undefined) ctx.preferences.set('coach', own);
+        const instance = game.create(ctx.context as never);
+        instance.newGame({ seed: 2 });
+        expect(instance.serialize().settings.coach, String(own)).toBe(false);
+        instance.dispose();
+      }
+      const ctx = createTestContext(game as GameModule<unknown>, 'en');
+      ctx.preferences.set('setup', { coach: false });
+      ctx.preferences.set('coach', true);
+      const instance = game.create(ctx.context as never);
+      instance.newGame({ seed: 2 });
+      expect(instance.serialize().settings.coach).toBe(true);
       instance.dispose();
     });
 

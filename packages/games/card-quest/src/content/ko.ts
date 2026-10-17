@@ -128,6 +128,7 @@ export const ko: LocaleContent = {
   'kz.shiny-distraction': { name: '봐, 반짝이는 거다!', flavour: '까마귀, 쥐, 대부분의 드워프에게 통해.' },
   'kz.side-tunnel': { name: '옆 갱도로 줄행랑', flavour: '넌 여기 없었어. 아쉽게도 전리품도.' },
   'kz.watering-ambush': { name: '물뿌리개 매복', flavour: '위에서. 차갑게. 찬물 끼얹기의 달인.' },
+  'kz.change-sides': { name: '편 바꾸기', flavour: '팀워크는 멋지다. 혼자 이기는 건 더 멋지다.' },
   // Level-ups and doubles
   'kz.senior-gnome': { name: '수석 노움 승진', flavour: '새 감투, 같은 정원, 월급 인상(조약돌로).' },
   'kz.mine-birthday': { name: '갱도 속 생일', flavour: '땅속 촛불: 나쁜 생각. 케이크: 언제나 좋은 생각.' },

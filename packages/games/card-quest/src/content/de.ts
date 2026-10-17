@@ -120,6 +120,7 @@ export const de: LocaleContent = {
   'kz.shiny-distraction': { name: 'Guck mal, was Glänzendes!', flavour: 'Klappt bei Krähen, Ratten und den meisten Zwergen.' },
   'kz.side-tunnel': { name: 'Ab durch den Seitenstollen', flavour: 'Du warst nie hier. Die Beute leider auch nicht.' },
   'kz.watering-ambush': { name: 'Gießkannen-Hinterhalt', flavour: 'Von oben. Kalt. Unvergesslich.' },
+  'kz.change-sides': { name: 'Seitenwechsel', flavour: 'Teamwork ist schön. Allein gewinnen ist schöner.' },
   'kz.senior-gnome': { name: 'Beförderung zum Oberzwerg', flavour: 'Neue Mütze, gleicher Garten, mehr Gehalt (in Kieseln).' },
   'kz.mine-birthday': { name: 'Geburtstag im Stollen', flavour: 'Kerzen unter Tage: schlechte Idee. Torte: nie eine schlechte Idee.' },
   'kz.overnight-beard': { name: 'Bart über Nacht', flavour: 'Ein ganzer Zentimeter. Die Familie ist stolz.' },

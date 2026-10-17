@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, startGame } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, readSave, startGame } from '../../packages/testing/src/e2e';
 
 const GAME = 'card-quest';
 
@@ -34,7 +34,7 @@ async function playUntil(page: Page, done: (s: Shown) => boolean, limit = 200) {
       const tiles = page.locator('[data-testid="hand"] .cq-tile[aria-pressed="false"]');
       while (await end.isDisabled()) await tiles.first().click();
     }
-    for (const id of ['open', 'rummage', 'pass', 'roll', 'end']) {
+    for (const id of ['open', 'rummage', 'pass', 'accept', 'roll', 'end']) {
       const b = page.getByTestId(id);
       if ((await b.count()) > 0 && (await b.isEnabled())) {
         await b.click();
@@ -112,7 +112,7 @@ test('card-quest: in the give-away step a card can be read and closed without gi
     if ((await end.count()) > 0 && (await end.isDisabled())) break;
     const s = await shown(page);
     if (s.phase === 'over') break;
-    for (const id of ['open', 'rummage', 'pass', 'roll', 'end']) {
+    for (const id of ['open', 'rummage', 'pass', 'accept', 'roll', 'end']) {
       const b = page.getByTestId(id);
       if ((await b.count()) > 0 && (await b.isEnabled())) {
         await b.click();
@@ -134,4 +134,30 @@ test('card-quest: in the give-away step a card can be read and closed without gi
   await expect(page.getByTestId('detail')).toBeVisible();
   await expect(hand).toHaveCount(before);
   await expect(page.getByTestId('end')).toBeDisabled();
+});
+
+test('card-quest: in an own fight the person can ask another player for help', async ({ page }) => {
+  await start(page);
+  await playUntil(page, (st) => st.phase === 'fight' && st.active === 0);
+  const ask = page.getByTestId('help-ask');
+  await expect(ask, 'no help form in this fight').toBeVisible();
+  await page.getByTestId('help-terms').selectOption({ index: 0 });
+  await ask.click();
+  await page.getByTestId('log').locator('summary').click();
+  await expect(page.getByTestId('log')).toContainText(/You ask .* for help/);
+  await expect(page.getByTestId('help-ask').or(page.getByTestId('pass')).or(page.getByTestId('roll')).first()).toBeVisible();
+});
+
+test('card-quest: coach tips switch with the keyboard, keep the focus and stay off after a reload', async ({ page }) => {
+  await start(page);
+  const box = page.getByTestId('coach');
+  await expect(box).toBeChecked();
+  await box.focus();
+  await page.keyboard.press('Space');
+  await expect(box).not.toBeChecked();
+  await expect(box).toBeFocused();
+  await expect(page.getByTestId('hint')).toHaveCount(0);
+  await expect.poll(async () => ((await readSave(page, GAME)) as { state?: { settings?: { coach?: boolean } } } | undefined)?.state?.settings?.coach).toBe(false);
+  await page.reload();
+  await expect(page.getByTestId('coach')).not.toBeChecked();
 });

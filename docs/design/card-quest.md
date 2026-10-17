@@ -173,7 +173,7 @@ K1 Kampfzwerge → first play-tests → K3 Spaceloot (mixing) → then, one per 
 
 ### 5.1 Setup and goal
 
-- **2–6 players**: one person plus **1–5 computer players**. Since ADR 0017 the setup lives on the host's start screen (declared `settings`, no own setup phase any more): difficulty, number of computer players, target level, optional round limit. Coach tips are a display preference, switched in the game (remembered for new games). Every choice has a sensible default, so "Start" is one tap; the defaults follow what older versions remembered (`setup` preference). World choice joins the start screen with the second world (K3). Old saves still in the setup phase are dealt with their settings on restore.
+- **2–6 players**: one person plus **1–5 computer players**. Since ADR 0017 the setup lives on the host's start screen (declared `settings`, no own setup phase any more): difficulty, number of computer players, target level, optional round limit. Coach tips are a display preference, switched in the game (remembered for new games). (Players who switched them off on the #51 start screen, live for a few hours, see them on again once.) Every choice has a sensible default, so "Start" is one tap; the defaults follow what older versions remembered (`setup` preference). World choice joins the start screen with the second world (K3). Old saves still in the setup phase are dealt with their settings on restore.
 - Everyone starts at **level 1** with 4 encounter and 4 loot cards.
 - **Win: reach the target level** — default **10**, selectable 6 / 8 / 10 / 12. The **winning level must come from defeating a monster** (not from selling or one-shots).
 - **Round limit: optional**, off by default (choices: off / 20 / 30 / 40). When on, after the last round the highest level wins (ties shared).
@@ -380,7 +380,32 @@ K1 is large (140 cards × 16 locales). If it becomes too big for one review, it 
 - Rules in `rules.ts` (`step` per action, `observe` per seat, `isValidState` with card conservation and log validation); computer players in `ai.ts` decide from `observe` only; `driver.ts` runs them until the person must decide. The person's turn in another player's fight window is passed automatically when no card of theirs could be played there, so only real decisions are asked.
 - No timers: computer turns are applied at once and shown as "Since your last move" plus the log.
 - Self-play (all seats AI, 40 games each): median 10–14 rounds at target 8–10 with 2–6 players, max ≤ 32; ≈ 10–90 ms per whole game.
-- Not yet in K1 (K2): help offers, deals, Change Sides, reputation, grudges.
+- Not yet in K1 (K2): help offers, deals, Change Sides, reputation, grudges — built in K2, see § 10.4a.
+
+### 10.4a K2 as built (2026-10-16)
+
+- **Offers** (§ 5.6, fixed shapes): the fighter, on their reaction turn, offers one other player *1 loot card*, *2 loot
+  cards*, *all loot but one*, *a named equipped item*, *a favour* or — if that player owes one — *the favour owed*;
+  or pays a hand card *to stay out*. While an offer is open only its addressee acts (Accept / Decline); each player
+  is asked at most once per fight; at most one helper.
+- **Helping**: the helper's table strength (level, equipment, origin, profession, sets; monster modifiers stay
+  against the fighter) counts for the fighter. A win pays the helper from the drawn loot (or the item / a favour);
+  the helper gains **no level**; a lost fight pays nothing and only the fighter flees.
+- **Reputation** 0–5, start 3: a kept deal +1 for both; breaking one −2 (Change Sides, interfering after being paid
+  to stay out, refusing a favour owed). **Favours** are listed per creditor (≤ 5). **Harm** per seat (curses,
+  interference, broken deals) is public and drives the grudge-holder.
+- **Change Sides** (2 new one-shots; Kampfzwerge now has **142 cards**, 66 loot): only the helper, only for the
+  monsters — its table strength now counts for them, the deal is void.
+- **Computer players**: a losing fighter asks the weakest player whose help suffices (owed favours first; show-offs
+  promise favours, the cautious pay two cards, "all but one" when the fight would win the game). They refuse help
+  that would hand someone the game, leaders (except the cautious) and, as grudge-holders, those who harmed them;
+  they always take a card for staying out (only a sharp opportunist/grudge-holder breaks that, to stop a
+  game-winning fight). An opportunist holding Change Sides helps a leader on purpose and switches; any helper with
+  it switches when the fighter would win the game (never on *easy*). Self-play, 40 games each, 4–6 players: ≈ 8–14
+  offers per game, ~half accepted, Change Sides in ~1 of 20 games; games ≈ 9–10 rounds.
+- **State version 2**; version-1 saves migrate (reputation 3, empty favours/harm, the two Change Sides cards inserted
+  into the loot pile at seed-derived places, generator untouched).
+- Not yet: offers made by computer players to pay someone to stay out; "fast table".
 
 ### 10.5 Owner feedback after the first play-test (2026-10-15) — backlog
 

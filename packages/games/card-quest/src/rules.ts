@@ -9,7 +9,7 @@ import { WORLD_IDS, allSets, defOf, instanceSet, isLootType, worldDecks, type Wo
  * Math.random — all chance (shuffles, die, random discards) comes from the persisted seeded generator.
  */
 
-export const STATE_VERSION = 1;
+export const STATE_VERSION = 2;
 export const TARGETS = [6, 8, 10, 12] as const;
 export const ROUND_LIMITS = [0, 20, 30, 40] as const;
 export const DIFFICULTIES = ['easy', 'normal', 'sharp'] as const;
@@ -22,6 +22,11 @@ export const SELL_RATE = 10;
 /** A flee roll (die + bonuses) of at least this escapes. */
 export const FLEE_TARGET = 5;
 export const LOG_LIMIT = 60;
+/** Reputation (design § 5.6): 0–5 stars, everyone starts with 3. */
+export const REP_MAX = 5;
+export const REP_START = 3;
+/** Most favours one player can be owed at a time. */
+export const FAVOUR_LIMIT = 5;
 
 export type Difficulty = (typeof DIFFICULTIES)[number];
 export type Personality = (typeof PERSONALITIES)[number];
@@ -61,6 +66,26 @@ export interface Player {
   malus: number;
   /** Computer personality; `null` for the person (seat 0). */
   personality: Personality | null;
+  /** Reputation, 0–REP_MAX (public). */
+  rep: number;
+  /** Seats that owe this player a favour (one entry per favour, oldest first). */
+  favours: number[];
+  /** Harm received from each seat (curses, interference, broken deals; public, read by grudge-holders). */
+  harm: number[];
+}
+
+/** The fixed shapes of an offer (design § 5.6): help for loot, an item or a favour; a called favour; pay to stay out. */
+export type Terms =
+  | { t: 'loot'; n: 1 | 2 }
+  | { t: 'most' }
+  | { t: 'item'; item: string }
+  | { t: 'favour' }
+  | { t: 'free' }
+  | { t: 'stay'; card: string };
+
+export interface Offer {
+  to: number;
+  terms: Terms;
 }
 
 export interface FightMonster {
@@ -82,6 +107,18 @@ export interface Fight {
   passes: number;
   /** Die results of the flee rolls so far (one per monster). */
   rolls: number[];
+  /** Seat helping the fighter (its table strength counts for the fighter), or null. */
+  helper: number | null;
+  /** What the helper was promised. */
+  deal: Terms | null;
+  /** The fighter's open offer; while it is open, its addressee must accept or decline. */
+  offer: Offer | null;
+  /** Seats the fighter has already made an offer to in this fight. */
+  asked: number[];
+  /** Seats paid to stay out of this fight. */
+  stayOut: number[];
+  /** A helper who changed sides (its table strength counts for the monsters), or null. */
+  turncoat: number | null;
 }
 
 export type Phase = 'setup' | 'prepare' | 'after' | 'fight' | 'flee' | 'end' | 'over';
@@ -106,6 +143,13 @@ export type LogEvent =
   | { e: 'upgrade'; seat: number; card: string; item: string }
   | { e: 'give'; seat: number; to: number; count: number }
   | { e: 'discard'; seat: number; count: number }
+  | { e: 'offer'; seat: number; to: number; t: Terms['t']; n?: number; card?: string }
+  | { e: 'accept'; seat: number; to: number }
+  | { e: 'decline'; seat: number; to: number }
+  | { e: 'switch'; seat: number; to: number; card: string }
+  | { e: 'kept'; seat: number; to: number; t: Terms['t']; n?: number; card?: string }
+  | { e: 'broken'; seat: number; to: number; why: 'switch' | 'stay' | 'favour' }
+  | { e: 'void'; seat: number; to: number; card: string }
   | { e: 'win'; seats: number[] };
 
 export interface CardQuestState {
@@ -149,6 +193,9 @@ export type Action =
   | { a: 'boost'; card: string; monster: number }
   | { a: 'reinforce'; card: string; monster: string }
   | { a: 'oneshot'; card: string; side: 'hero' | 'monster' }
+  | { a: 'offer'; to: number; terms: Terms }
+  | { a: 'accept' }
+  | { a: 'decline' }
   | { a: 'pass' }
   | { a: 'roll' }
   | { a: 'end'; give: string[] };
@@ -157,7 +204,7 @@ export const DEFAULT_SETTINGS: Settings = { worlds: ['kz'], opponents: 3, target
 
 /* ---------------------------------------------------------------- setup */
 
-const emptyPlayer = (personality: Personality | null): Player => ({
+const emptyPlayer = (personality: Personality | null, seats: number): Player => ({
   level: 1,
   hand: [],
   equipped: [],
@@ -167,7 +214,10 @@ const emptyPlayer = (personality: Personality | null): Player => ({
   professions: [],
   doubles: [],
   malus: 0,
-  personality
+  personality,
+  rep: REP_START,
+  favours: [],
+  harm: Array.from({ length: seats }, () => 0)
 });
 
 /** A game before the deal (phase `setup`); the `start` action deals it. The view deals at once (ADR 0017). */
@@ -221,7 +271,7 @@ function deal(state: CardQuestState, settings: Settings): void {
   const count = settings.opponents + 1;
   state.players = [];
   for (let seat = 0; seat < count; seat++) {
-    state.players.push(emptyPlayer(seat === 0 ? null : (PERSONALITIES[rng.int(0, PERSONALITIES.length - 1)] as Personality)));
+    state.players.push(emptyPlayer(seat === 0 ? null : (PERSONALITIES[rng.int(0, PERSONALITIES.length - 1)] as Personality), count));
   }
   for (let i = 0; i < START_CARDS; i++) {
     for (const p of state.players) {
@@ -390,9 +440,15 @@ export function heroParts(state: CardQuestState): Part[] {
   const fight = state.fight;
   const player = state.players[state.active] as Player;
   const parts = playerParts(player, fight?.monsters ?? []);
+  if (fight && fight.helper !== null) parts.push({ source: `help:${fight.helper}`, value: tableStrength(state, fight.helper) });
   for (const id of fight?.hero ?? []) parts.push({ source: id, value: (defOf(id) as { bonus: number }).bonus });
   if (player.malus > 0) parts.push({ source: 'malus', value: -player.malus });
   return parts;
+}
+
+/** Table strength of a helper or turncoat against the current monsters (level, equipment, origin, profession, sets). */
+export function tableStrength(state: CardQuestState, seat: number): number {
+  return sum(playerParts(state.players[seat] as Player, state.fight?.monsters ?? []));
 }
 
 /** Strength of one monster in the fight against the fighter (min 1). */
@@ -418,6 +474,7 @@ export function fightTotals(state: CardQuestState): { hero: number; monsters: nu
     monsters += Math.max(1, sum(monsterStrength(state, i)));
   });
   for (const id of fight.against) monsters += (defOf(id) as { bonus: number }).bonus;
+  if (fight.turncoat !== null) monsters += tableStrength(state, fight.turncoat);
   return { hero, monsters };
 }
 
@@ -556,7 +613,21 @@ function endFight(state: CardQuestState): void {
 }
 
 function startFight(state: CardQuestState, monster: string): void {
-  state.fight = { monsters: [{ card: monster, boosters: [] }], hero: [], against: [], flee: 0, actor: state.active, passes: 0, rolls: [] };
+  state.fight = {
+    monsters: [{ card: monster, boosters: [] }],
+    hero: [],
+    against: [],
+    flee: 0,
+    actor: state.active,
+    passes: 0,
+    rolls: [],
+    helper: null,
+    deal: null,
+    offer: null,
+    asked: [],
+    stayOut: [],
+    turncoat: null
+  };
   state.phase = 'fight';
 }
 
@@ -572,14 +643,14 @@ function resolveFight(state: CardQuestState): void {
       loot += monsterLoot(m);
     }
     player.level = Math.min(state.settings.target, player.level + levels);
-    let drawn = 0;
+    const drawn: string[] = [];
     for (let i = 0; i < loot; i++) {
       const card = draw(state, 'loot');
       if (card === undefined) break;
-      player.hand.push(card);
-      drawn++;
+      drawn.push(card);
     }
-    log(state, { e: 'won', seat: state.active, levels, loot: drawn });
+    log(state, { e: 'won', seat: state.active, levels, loot: drawn.length });
+    player.hand.push(...payHelper(state, drawn));
     if (player.level >= state.settings.target) {
       state.winners = [state.active];
       state.phase = 'over';
@@ -591,6 +662,69 @@ function resolveFight(state: CardQuestState): void {
   log(state, { e: 'lost', seat: state.active });
   fight.actor = state.active;
   state.phase = 'flee';
+}
+
+/** Pays the helper what the deal promised (from the drawn loot, an item or a favour); returns the fighter's share. */
+function payHelper(state: CardQuestState, drawn: string[]): string[] {
+  const fight = state.fight as Fight;
+  if (fight.helper === null || !fight.deal) return drawn;
+  const fighter = state.players[state.active] as Player;
+  const helper = state.players[fight.helper] as Player;
+  const deal = fight.deal;
+  let mine = drawn;
+  const kept: LogEvent = { e: 'kept', seat: fight.helper, to: state.active, t: deal.t };
+  if (deal.t === 'loot' || deal.t === 'most') {
+    const n = deal.t === 'loot' ? Math.min(deal.n, drawn.length) : Math.max(0, drawn.length - 1);
+    helper.hand.push(...drawn.slice(0, n));
+    mine = drawn.slice(n);
+    kept.n = n;
+  } else if (deal.t === 'item') {
+    // The promised item may have been cursed away during the fight: then the deal is void (nobody's fault).
+    if (!remove(fighter.equipped, deal.item)) {
+      log(state, { e: 'void', seat: fight.helper, to: state.active, card: deal.item });
+      return mine;
+    }
+    for (const u of fighter.upgrades.filter((x) => x.item === deal.item)) discard(state, u.card);
+    fighter.upgrades = fighter.upgrades.filter((x) => x.item !== deal.item);
+    helper.hand.push(deal.item);
+    kept.card = deal.item;
+  } else if (deal.t === 'favour') {
+    helper.favours.push(state.active);
+    if (helper.favours.length > FAVOUR_LIMIT) helper.favours.shift();
+  }
+  log(state, kept);
+  addRep(helper, 1);
+  addRep(fighter, 1);
+  return mine;
+}
+
+const addRep = (p: Player, delta: number) => {
+  p.rep = Math.max(0, Math.min(REP_MAX, p.rep + delta));
+};
+
+/** A broken deal: reputation −2 for the breaker, one more grudge for the one let down. */
+function breakDeal(state: CardQuestState, seat: number, to: number, why: 'switch' | 'stay' | 'favour'): void {
+  addRep(state.players[seat] as Player, -2);
+  hurt(state, to, seat);
+  log(state, { e: 'broken', seat, to, why });
+}
+
+/** Records harm done by `by` to `seat` (public; grudge-holders remember it). */
+function hurt(state: CardQuestState, seat: number, by: number): void {
+  const harm = state.players[seat]?.harm;
+  if (harm && by !== seat && by < harm.length) harm[by] = Math.min(999, (harm[by] ?? 0) + 1);
+}
+
+/** Interference against the fighter: counts as harm and breaks a deal to stay out. */
+function interfered(state: CardQuestState, seat: number): void {
+  const fight = state.fight;
+  if (!fight || seat === state.active) return;
+  hurt(state, state.active, seat);
+  const i = fight.stayOut.indexOf(seat);
+  if (i >= 0) {
+    fight.stayOut.splice(i, 1);
+    breakDeal(state, seat, state.active, 'stay');
+  }
 }
 
 function nextTurn(state: CardQuestState): void {
@@ -656,6 +790,8 @@ function apply(s: CardQuestState, seat: number, action: Action): boolean {
     return true;
   }
   if (!player || s.phase === 'setup' || s.phase === 'over') return false;
+  // An open offer waits for its addressee: only Accept or Decline.
+  if (s.fight?.offer && action.a !== 'accept' && action.a !== 'decline') return false;
   switch (action.a) {
     case 'equip': {
       if (!ownTurnCalm(s, seat)) return false;
@@ -733,6 +869,8 @@ function apply(s: CardQuestState, seat: number, action: Action): boolean {
       if (def.type !== 'curse' || !target || action.target === seat || !player.hand.includes(action.card)) return false;
       remove(player.hand, action.card);
       log(s, { e: 'curse', seat, card: action.card, target: action.target });
+      if (s.fight && action.target === s.active) interfered(s, seat);
+      else hurt(s, action.target, seat);
       applyPenalty(s, action.target, def.effect);
       discard(s, action.card);
       if (s.fight) s.fight.passes = 0;
@@ -778,6 +916,7 @@ function apply(s: CardQuestState, seat: number, action: Action): boolean {
       if (s.phase !== 'fight' || !fight || def.type !== 'booster' || !fight.monsters[action.monster] || !remove(player.hand, action.card)) return false;
       fight.monsters[action.monster]!.boosters.push(action.card);
       fight.passes = 0;
+      if (def.level > 0) interfered(s, seat);
       log(s, { e: 'boost', seat, card: action.card, monster: fight.monsters[action.monster]!.card });
       return true;
     }
@@ -790,6 +929,7 @@ function apply(s: CardQuestState, seat: number, action: Action): boolean {
       discard(s, action.card);
       fight.monsters.push({ card: action.monster, boosters: [] });
       fight.passes = 0;
+      interfered(s, seat);
       log(s, { e: 'reinforce', seat, card: action.card, monster: action.monster });
       return true;
     }
@@ -805,12 +945,67 @@ function apply(s: CardQuestState, seat: number, action: Action): boolean {
         endFight(s);
         return true;
       }
+      if (def.turncoat) {
+        // Change Sides: only the helper, onto the monsters' side; the deal is void.
+        // Only the helper, only for the monsters, and one change of sides per fight.
+        if (seat !== fight.helper || action.side !== 'monster' || fight.turncoat !== null) return false;
+        remove(player.hand, action.card);
+        fight.against.push(action.card);
+        fight.turncoat = seat;
+        fight.helper = null;
+        fight.deal = null;
+        fight.passes = 0;
+        log(s, { e: 'switch', seat, to: s.active, card: action.card });
+        breakDeal(s, seat, s.active, 'switch');
+        return true;
+      }
       if (def.flee && action.side !== 'hero') return false;
+      if (action.side === 'monster') interfered(s, seat);
       remove(player.hand, action.card);
       (action.side === 'hero' ? fight.hero : fight.against).push(action.card);
       if (def.flee) fight.flee += def.flee;
       fight.passes = 0;
       log(s, { e: 'oneshot', seat, card: action.card, side: action.side });
+      return true;
+    }
+    case 'offer': {
+      const fight = s.fight;
+      const { to, terms } = action;
+      if (!canOffer(s, seat, to, terms) || !fight) return false;
+      fight.offer = { to, terms: clone(terms) };
+      fight.asked.push(to);
+      fight.actor = to;
+      log(s, { e: 'offer', seat, to, t: terms.t, ...(terms.t === 'loot' ? { n: terms.n } : {}), ...(terms.t === 'item' ? { card: terms.item } : {}), ...(terms.t === 'stay' ? { card: terms.card } : {}) });
+      return true;
+    }
+    case 'accept':
+    case 'decline': {
+      const fight = s.fight;
+      const offer = fight?.offer;
+      if (s.phase !== 'fight' || !fight || !offer || seat !== offer.to) return false;
+      const fighter = s.players[s.active] as Player;
+      if (action.a === 'accept') {
+        if (offer.terms.t === 'stay') {
+          remove(fighter.hand, offer.terms.card);
+          player.hand.push(offer.terms.card);
+          fight.stayOut.push(seat);
+        } else {
+          fight.helper = seat;
+          fight.deal = offer.terms;
+          if (offer.terms.t === 'free') fighter.favours.splice(fighter.favours.indexOf(seat), 1);
+        }
+        log(s, { e: 'accept', seat, to: s.active });
+      } else {
+        log(s, { e: 'decline', seat, to: s.active });
+        // Refusing a favour one owes breaks the deal it came from; the debt is gone either way.
+        if (offer.terms.t === 'free') {
+          fighter.favours.splice(fighter.favours.indexOf(seat), 1);
+          breakDeal(s, seat, s.active, 'favour');
+        }
+      }
+      fight.offer = null;
+      fight.actor = s.active;
+      fight.passes = 0;
       return true;
     }
     case 'pass': {
@@ -909,6 +1104,13 @@ export function legalActions(state: CardQuestState, seat: number): Action[] {
         }
         if (def.type === 'reinforcement') for (const m of player.hand) if (defOf(m).type === 'monster') tryAdd({ a: 'reinforce', card: c, monster: m });
       }
+      if (fight.offer) {
+        out.length = 0;
+        out.push({ a: 'accept' }, { a: 'decline' });
+        break;
+      }
+      // Checked directly (no state copy per shape): offers change nothing until answered.
+      if (seat === state.active) for (const to of others) for (const terms of offerTerms(player, to)) if (canOffer(state, seat, to, terms)) out.push({ a: 'offer', to, terms });
       out.push({ a: 'pass' });
       break;
     }
@@ -918,6 +1120,46 @@ export function legalActions(state: CardQuestState, seat: number): Action[] {
   }
   return out;
 }
+
+/** Whether the fighter `seat` may make this offer now (the only check `step` applies to an offer). */
+export function canOffer(state: CardQuestState, seat: number, to: number, terms: unknown): terms is Terms {
+  const fight = state.fight;
+  const player = state.players[seat];
+  if (state.phase !== 'fight' || !fight || !player || fight.offer || seat !== state.active || actorOf(state) !== seat) return false;
+  if (!isInt(to, 0, seatCount(state) - 1) || to === seat || fight.asked.includes(to) || to === fight.turncoat || !isValidTerms(terms)) return false;
+  if (terms.t === 'stay') return player.hand.includes(terms.card) && !fight.stayOut.includes(to) && to !== fight.helper;
+  if (fight.helper !== null) return false;
+  if (terms.t === 'item') return player.equipped.includes(terms.item);
+  if (terms.t === 'free') return player.favours.includes(to);
+  return true;
+}
+
+/** Every offer shape the fighter could make to `to` (legality: `canOffer`). */
+export function offerTerms(player: Player, to: number): Terms[] {
+  const out: Terms[] = [{ t: 'loot', n: 1 }, { t: 'loot', n: 2 }, { t: 'most' }, { t: 'favour' }];
+  for (const item of player.equipped) out.push({ t: 'item', item });
+  if (player.favours.includes(to)) out.push({ t: 'free' });
+  for (const card of new Set(player.hand)) out.push({ t: 'stay', card });
+  return out;
+}
+
+const isValidTerms = (v: unknown): v is Terms => {
+  if (!isRecord(v)) return false;
+  switch (v.t) {
+    case 'loot':
+      return v.n === 1 || v.n === 2;
+    case 'most':
+    case 'favour':
+    case 'free':
+      return true;
+    case 'item':
+      return isStr(v.item);
+    case 'stay':
+      return isStr(v.card);
+    default:
+      return false;
+  }
+};
 
 /* ---------------------------------------------------------------- observation (what a seat may know) */
 
@@ -991,7 +1233,7 @@ export function stateFromObservation(obs: Observation): CardQuestState {
 const PHASES: readonly Phase[] = ['setup', 'prepare', 'after', 'fight', 'flee', 'end', 'over'];
 const isStr = (v: unknown): v is string => typeof v === 'string';
 
-function isValidPlayer(v: unknown, known: Set<string>): v is Player {
+function isValidPlayer(v: unknown, known: Set<string>, seats: number): v is Player {
   if (!isRecord(v)) return false;
   const cards = (x: unknown) => isArrayOf(x, isStr) && x.every((c) => known.has(c));
   return (
@@ -1004,7 +1246,12 @@ function isValidPlayer(v: unknown, known: Set<string>): v is Player {
     cards(v.doubles) &&
     isArrayOf(v.upgrades, (u): u is Upgrade => isRecord(u) && isStr(u.item) && isStr(u.card) && known.has(u.card)) &&
     isInt(v.malus, 0, 999) &&
-    (v.personality === null || isOneOf(v.personality, PERSONALITIES))
+    (v.personality === null || isOneOf(v.personality, PERSONALITIES)) &&
+    isInt(v.rep, 0, REP_MAX) &&
+    isArrayOf(v.favours, (x): x is number => isInt(x, 0, seats - 1)) &&
+    v.favours.length <= FAVOUR_LIMIT &&
+    isArrayOf(v.harm, (x): x is number => isInt(x, 0, 999)) &&
+    v.harm.length === seats
   );
 }
 
@@ -1020,8 +1267,30 @@ function isValidFight(v: unknown, known: Set<string>, seats: number): v is Fight
     isInt(v.actor, 0, seats - 1) &&
     isInt(v.passes, 0, seats) &&
     isArrayOf(v.rolls, (r): r is number => isInt(r, 1, 6)) &&
-    v.rolls.length <= v.monsters.length
+    v.rolls.length <= v.monsters.length &&
+    (v.helper === null || isInt(v.helper, 0, seats - 1)) &&
+    (v.turncoat === null || isInt(v.turncoat, 0, seats - 1)) &&
+    (v.helper === null ? v.deal === null : isValidTerms(v.deal) && v.deal.t !== 'stay') &&
+    (v.offer === null || (isRecord(v.offer) && isInt(v.offer.to, 0, seats - 1) && isValidTerms(v.offer.terms))) &&
+    isArrayOf(v.asked, (x): x is number => isInt(x, 0, seats - 1)) &&
+    new Set(v.asked).size === v.asked.length &&
+    isArrayOf(v.stayOut, (x): x is number => isInt(x, 0, seats - 1)) &&
+    v.stayOut.every((x) => (v.asked as number[]).includes(x))
   );
+}
+
+/** Who is who in a fight: the fighter never helps, switches or is asked; an open offer is to someone asked. */
+function fightSeatsConsistent(state: CardQuestState): boolean {
+  const f = state.fight as Fight;
+  const a = state.active;
+  if (f.helper === a || f.turncoat === a || f.asked.includes(a) || (f.helper !== null && f.helper === f.turncoat)) return false;
+  if (f.helper !== null && !f.asked.includes(f.helper)) return false;
+  if (f.offer && (!f.asked.includes(f.offer.to) || f.actor !== f.offer.to || state.phase !== 'fight')) return false;
+  // An open offer must still be payable: the offered card in the fighter's hand, the called-in favour owed.
+  const fighter = state.players[a] as Player;
+  if (f.offer?.terms.t === 'stay' && !fighter.hand.includes(f.offer.terms.card)) return false;
+  if (f.offer?.terms.t === 'free' && !fighter.favours.includes(f.offer.to)) return false;
+  return true;
 }
 
 /** Structural and semantic validation of an untrusted save. Never throws. */
@@ -1039,7 +1308,7 @@ function check(v: unknown): v is CardQuestState {
   const known = instanceSet(v.settings.worlds);
   const piles = ['encounter', 'loot', 'encounterDiscard', 'lootDiscard'] as const;
   for (const p of piles) if (!isArrayOf(v[p], isStr) || !(v[p] as string[]).every((c) => known.has(c))) return false;
-  if (!isArrayOf(v.players, (p): p is Player => isValidPlayer(p, known))) return false;
+  if (!isArrayOf(v.players, (p): p is Player => isValidPlayer(p, known, (v.players as unknown[]).length))) return false;
   if (!isInt(v.counter, 0) || !isArrayOf(v.log, isRecord) || !isArrayOf(v.hints, isStr) || !isArrayOf(v.winners, (w): w is number => isInt(w, 0, 5))) return false;
   if (!isInt(v.round, 0, 100000) || !isInt(v.logSeq, 0) || !isInt(v.seen, 0) || v.seen > v.logSeq || v.log.length > Math.min(LOG_LIMIT, v.logSeq)) return false;
   if (!v.log.every((e) => isValidEvent(e, instanceSet((v.settings as Settings).worlds), (v.players as unknown[]).length))) return false;
@@ -1051,7 +1320,7 @@ function check(v: unknown): v is CardQuestState {
   if (state.players.length !== seats || !isInt(state.active, 0, seats - 1) || !isInt(state.starter, 0, seats - 1) || state.round < 1) return false;
   if (state.players[0]!.personality !== null || state.players.slice(1).some((p) => p.personality === null)) return false;
   const inFight = state.phase === 'fight' || state.phase === 'flee';
-  if (inFight ? !isValidFight(state.fight, known, seats) : state.fight !== null) return false;
+  if (inFight ? !isValidFight(state.fight, known, seats) || !fightSeatsConsistent(state) : state.fight !== null) return false;
   // A fight window has no flee rolls yet; while fleeing, at least one monster is still to roll for.
   if (state.phase === 'fight' && state.fight!.rolls.length !== 0) return false;
   if (state.phase === 'flee' && state.fight!.rolls.length >= state.fight!.monsters.length) return false;
@@ -1102,8 +1371,9 @@ function check(v: unknown): v is CardQuestState {
 
 const EVENT_TYPES: readonly LogEvent['e'][] = [
   'turn', 'open', 'rummage', 'challenge', 'boost', 'reinforce', 'oneshot', 'escape', 'curse', 'won', 'lost', 'flee',
-  'penalty', 'equip', 'sell', 'play', 'upgrade', 'give', 'discard', 'win'
+  'penalty', 'equip', 'sell', 'play', 'upgrade', 'give', 'discard', 'win', 'offer', 'accept', 'decline', 'switch', 'kept', 'broken', 'void'
 ];
+const TERMS: readonly Terms['t'][] = ['loot', 'most', 'item', 'favour', 'free', 'stay'];
 const PENALTIES: readonly Penalty['t'][] = ['level', 'slot', 'best', 'cards', 'malus', 'origin', 'profession'];
 
 /** A log event read from a save: known type, seats in range, cards of the game, small numbers. */
@@ -1146,6 +1416,17 @@ function isValidEvent(v: unknown, known: Set<string>, seats: number): v is LogEv
       return seat(v.seat) && num(v.count);
     case 'win':
       return isArrayOf(v.seats, (x): x is number => seat(x));
+    case 'offer':
+    case 'kept':
+      return seat(v.seat) && seat(v.to) && isOneOf(v.t, TERMS) && (v.n === undefined || num(v.n)) && (v.card === undefined || card(v.card));
+    case 'accept':
+    case 'decline':
+      return seat(v.seat) && seat(v.to);
+    case 'switch':
+    case 'void':
+      return seat(v.seat) && seat(v.to) && card(v.card);
+    case 'broken':
+      return seat(v.seat) && seat(v.to) && isOneOf(v.why, ['switch', 'stay', 'favour'] as const);
   }
 }
 
@@ -1163,5 +1444,32 @@ export function equipmentFits(p: Player): boolean {
 }
 
 export function migrateState(state: unknown, fromVersion: number): CardQuestState | undefined {
-  return fromVersion === STATE_VERSION && isValidState(state) ? state : undefined;
+  const upgraded = fromVersion === 1 ? fromV1(state) : state;
+  return (fromVersion === 1 || fromVersion === STATE_VERSION) && isValidState(upgraded) ? upgraded : undefined;
+}
+
+/**
+ * Version 1 (K1) → 2 (K2): players get reputation, favours and harm; fights get the deal fields; the two Change
+ * Sides cards join the loot pile (at seed-derived places, the generator is untouched). Never throws.
+ */
+function fromV1(value: unknown): unknown {
+  try {
+    if (!isRecord(value) || !isArrayOf(value.players, isRecord) || !isArrayOf(value.loot, isStr)) return undefined;
+    const s = clone(value) as Record<string, unknown> & { players: Record<string, unknown>[]; loot: string[]; fight: Record<string, unknown> | null };
+    const seats = s.players.length;
+    for (const p of s.players) Object.assign(p, { rep: REP_START, favours: [], harm: Array.from({ length: seats }, () => 0) });
+    if (isRecord(s.fight)) Object.assign(s.fight, { helper: null, deal: null, offer: null, asked: [], stayOut: [], turncoat: null });
+    if (s.phase !== 'setup' && isArrayOf((s.settings as { worlds?: unknown } | undefined)?.worlds, isStr) && (s.settings as { worlds: string[] }).worlds.includes('kz')) {
+      const seed = isUint32(s.seed) ? s.seed : 0;
+      // One in each half of the pile, at seed-derived places.
+      const half = Math.floor(s.loot.length / 2);
+      s.loot.splice(half + (seed % (s.loot.length - half + 1)), 0, 'kz.change-sides#2');
+      // Strictly in the first half, so the two never end up next to each other.
+      s.loot.splice((seed >>> 8) % Math.max(1, half), 0, 'kz.change-sides#1');
+    }
+    s.v = STATE_VERSION;
+    return s;
+  } catch {
+    return undefined;
+  }
 }

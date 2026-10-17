@@ -21,7 +21,10 @@ import {
   step,
   sum,
   surplus,
+  REP_MAX,
+  tableStrength,
   type Action,
+  type Terms,
   type CardQuestState,
   type LogEvent,
   type Part,
@@ -39,6 +42,8 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
   let state: CardQuestState = started(0, readSettings(undefined));
   let selected: string | null = null;
   let mode: Mode = 'play';
+  /** The player chosen in the help form. */
+  let offerSeat = -1;
   const picked = new Set<string>();
   let finishedSent = false;
 
@@ -70,6 +75,8 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     const before = state.logSeq;
     const next = step(state, HUMAN, action);
     if (!next) return;
+    // A new choice of helper starts from the strongest again after anything but choosing.
+    offerSeat = -1;
     next.seen = before;
     if (hint && !next.hints.includes(hint)) next.hints.push(hint);
     state = advance(next);
@@ -101,9 +108,17 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
         return t('next.prepare');
       case 'after':
         return t('next.after');
-      case 'fight':
+      case 'fight': {
+        const offer = state.fight?.offer;
+        if (offer && offer.to === HUMAN) {
+          const from = seatName(state.active);
+          if (offer.terms.t === 'free') return t('offer.you.free', { name: from });
+          if (offer.terms.t === 'stay') return t('offer.you.stay', { name: from, card: name(offer.terms.card) });
+          return t('offer.you.help', { name: from, terms: termsOf(offer.terms) });
+        }
         if (state.active === HUMAN) return t(someoneInterfered() ? 'next.fight.youAgain' : 'next.fight.you');
         return t('next.fight.react', { name: seatName(state.active) });
+      }
       case 'flee':
         if (currentMonsterNoFlee()) return t('next.flee.none');
         return t('next.flee', { need: Math.max(1, FLEE_TARGET - fleeBonus(state) - fleeMod()) });
@@ -154,6 +169,33 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     return lines.length > 0 && lines.every((e) => e.e === 'penalty' && (e.card !== undefined || (e.n ?? 0) > 0));
   }
 
+  /** An offer's terms as a phrase (inserted into offer and deal sentences). */
+  function termsText(terms: { t: Terms['t']; n?: number | undefined; card?: string | undefined }): string {
+    switch (terms.t) {
+      case 'loot':
+        return t(terms.n === 2 ? 'terms.loot.2' : 'terms.loot.1');
+      case 'item':
+        return t('terms.item', { card: terms.card ? name(terms.card) : '' });
+      case 'stay':
+        return t('terms.stay', { card: terms.card ? name(terms.card) : '' });
+      default:
+        return t(`terms.${terms.t}`);
+    }
+  }
+
+  const termsOf = (terms: Terms) =>
+    termsText({ t: terms.t, n: terms.t === 'loot' ? terms.n : undefined, card: terms.t === 'item' ? terms.item : terms.t === 'stay' ? terms.card : undefined });
+
+  /**
+   * A deal sentence in the form that fits who takes part: the person as subject (`.you`, no {name}), as addressee
+   * (`.toYou`, no {to}), or two computer players (the plain key). The verbs agree in every language that way.
+   */
+  function dealLine(key: string, seat: number, to: number, params: Record<string, string | number> = {}): string {
+    if (seat === HUMAN) return t(`${key}.you`, { to: seatName(to), ...params });
+    if (to === HUMAN) return t(`${key}.toYou`, { name: seatName(seat), ...params });
+    return t(key, { name: seatName(seat), to: seatName(to), ...params });
+  }
+
   function eventText(e: LogEvent): string {
     const n = (seat: number) => seatName(seat);
     switch (e.e) {
@@ -174,6 +216,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       case 'escape':
         return t('log.escape', { name: n(e.seat), card: name(e.card) });
       case 'curse':
+        if (e.target === HUMAN) return t('log.curse.toYou', { name: n(e.seat), card: name(e.card) });
         return t('log.curse', { name: n(e.seat), card: name(e.card), target: n(e.target) });
       case 'won':
         return t('log.won', { name: n(e.seat), levels: e.levels, loot: e.loot });
@@ -211,7 +254,27 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       case 'upgrade':
         return t('log.upgrade', { name: n(e.seat), card: name(e.card), item: name(e.item) });
       case 'give':
+        if (e.to === HUMAN) return t('log.give.toYou', { name: n(e.seat), n: e.count });
         return t('log.give', { name: n(e.seat), n: e.count, to: n(e.to) });
+      case 'offer':
+        if (e.t === 'stay') return dealLine('log.offer.stay', e.seat, e.to, { card: e.card ? name(e.card) : '' });
+        if (e.t === 'free') return dealLine('log.offer.free', e.seat, e.to);
+        return dealLine('log.offer.help', e.seat, e.to, { terms: termsText({ t: e.t, n: e.n, card: e.card }) });
+      case 'accept':
+        return dealLine('log.accept', e.seat, e.to);
+      case 'decline':
+        return dealLine('log.decline', e.seat, e.to);
+      case 'switch':
+        return dealLine('log.switch', e.seat, e.to, { card: name(e.card) });
+      case 'kept':
+        if (e.t === 'item') return dealLine('log.kept.item', e.seat, e.to, { card: e.card ? name(e.card) : '' });
+        if (e.t === 'favour') return dealLine('log.kept.favour', e.seat, e.to);
+        if (e.t === 'free') return dealLine('log.kept.free', e.seat, e.to);
+        return dealLine('log.kept.loot', e.seat, e.to, { n: e.n ?? 0 });
+      case 'broken':
+        return dealLine(`log.broken.${e.why}`, e.seat, e.to);
+      case 'void':
+        return dealLine('log.void', e.seat, e.to, { card: name(e.card) });
       case 'discard':
         return t('log.discard', { name: n(e.seat), n: e.count });
       case 'win':
@@ -226,7 +289,9 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     const fresh = (id: string) => !state.hints.includes(id);
     const has = (type: string) => me.hand.some((c) => defOf(c).type === type);
     const myTurn = state.active === HUMAN;
+    if (state.phase === 'fight' && state.fight?.offer?.to === HUMAN && fresh('offer')) return 'offer';
     if (myTurn && state.phase === 'fight' && fresh('fight')) return 'fight';
+    if (myTurn && state.phase === 'fight' && !state.fight?.offer && fightTotals(state).hero <= fightTotals(state).monsters && fresh('help')) return 'help';
     if (!myTurn && state.phase === 'fight' && fresh('react')) return 'react';
     if (state.phase === 'flee' && fresh('flee')) return 'flee';
     if (myTurn && state.phase === 'end' && surplus(state) > 0 && fresh('charity')) return 'charity';
@@ -353,6 +418,8 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     state.players.forEach((p, seat) => {
       const facts = [t('table.level', { n: p.level }), t('table.strength', { n: strengthOf(seat) }), t('table.cards', { n: p.hand.length })];
       if (p.malus > 0) facts.push(t('table.malus', { n: p.malus }));
+      facts.push(t('table.rep', { n: p.rep, max: REP_MAX }));
+      if (p.favours.length > 0) facts.push(t('table.favours', { n: p.favours.length }));
       const gear = [...p.origins, ...p.professions, ...p.equipped].map(name).join(t('r.separator')) || t('table.nothing');
       list.append(
         h(
@@ -362,7 +429,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
             'summary',
             {},
             h('span', { class: 'cq-player-name' }, seatName(seat), p.personality ? h('span', { class: 'cq-muted' }, ` · ${t(`personality.${p.personality}`)}`) : null, seat === state.active ? h('span', { class: 'cq-turn' }, ` · ${t('table.active')}`) : null),
-            h('span', { class: 'cq-player-facts' }, facts.join(' · '))
+            h('span', { class: 'cq-player-facts' }, facts.join(' · '), h('span', { class: 'cq-stars', 'aria-hidden': 'true' }, ` ${'★'.repeat(p.rep)}${'☆'.repeat(REP_MAX - p.rep)}`))
           ), h('p', { class: 'cq-player-gear' }, p.personality ? `${t(`personality.${p.personality}.desc`)} ` : '', gear))
         )
       );
@@ -376,6 +443,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       if (p.source === 'malus') return t('part.malus');
       if (p.source.startsWith('set:')) return t('part.set', { name: t(`set.${p.source.slice(4)}`) });
       if (p.source.startsWith('vs:')) return t('part.vs', { name: seatName(seat) });
+      if (p.source.startsWith('help:')) return t('part.help', { name: seatName(Number(p.source.slice(5))) });
       return name(p.source);
     };
     return h('ul', { class: 'cq-parts' }, ...parts.map((p) => h('li', {}, `${label(p)} ${p.value >= 0 ? '+' : '−'}${Math.abs(p.value)}`)));
@@ -413,10 +481,51 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       h('p', { class: 'cq-forecast', 'data-testid': 'forecast', 'data-win': String(win) }, h('span', { class: 'cq-forecast-icon', 'aria-hidden': 'true' }, win ? '▲' : '▼'), forecast),
       h('div', { class: 'cq-fight-hero' }, h('p', { class: 'cq-strong' }, t('fight.hero', { name: hero, n: totals.hero })), partsList(heroParts(state), state.active)),
       monsters,
+      fight.helper !== null && fight.deal
+        ? h('p', { 'data-testid': 'helper' }, t('fight.helper', { name: seatName(fight.helper), n: tableStrength(state, fight.helper), terms: termsOf(fight.deal) }))
+        : null,
+      fight.turncoat !== null ? h('p', { 'data-testid': 'turncoat' }, t('fight.turncoat', { name: seatName(fight.turncoat), n: tableStrength(state, fight.turncoat) })) : null,
       played(fight.hero, t('fight.for', { name: hero })),
       played(fight.against, t('fight.against')),
       h('p', { class: 'cq-muted' }, t('fight.reward', { levels, loot })),
-      fight.rolls.length > 0 ? h('p', {}, t('fight.rolls', { rolls: fight.rolls.join(t('r.separator')) })) : null
+      fight.rolls.length > 0 ? h('p', {}, t('fight.rolls', { rolls: fight.rolls.join(t('r.separator')) })) : null,
+      renderHelpForm()
+    );
+  }
+
+  /** The fighter's offers (design § 5.6): one player and one of the fixed terms, then "Make the offer". */
+  function renderHelpForm(): HTMLElement | null {
+    const fight = state.fight;
+    if (!fight || state.phase !== 'fight' || state.active !== HUMAN || actorOf(state) !== HUMAN || fight.offer) return null;
+    const offers = legalActions(state, HUMAN).filter((a): a is Extract<Action, { a: 'offer' }> => a.a === 'offer');
+    if (offers.length === 0) return null;
+    // Strongest possible helper first (ties: seat order).
+    const seats = [...new Set(offers.map((o) => o.to))].sort((a, b) => tableStrength(state, b) - tableStrength(state, a) || a - b);
+    if (!seats.includes(offerSeat)) offerSeat = seats[0]!;
+    const who = h('select', { id: 'cq-help-who', 'data-testid': 'help-who', 'data-key': 'help-who' }) as HTMLSelectElement;
+    for (const seat of seats) {
+      const p = state.players[seat] as Player;
+      who.append(h('option', { value: String(seat), selected: seat === offerSeat }, t('fight.help.option', { name: seatName(seat), n: tableStrength(state, seat), rep: p.rep, max: REP_MAX })));
+    }
+    const terms = h('select', { id: 'cq-help-terms', 'data-testid': 'help-terms', 'data-key': 'help-terms' }) as HTMLSelectElement;
+    const mine = offers.filter((o) => o.to === offerSeat);
+    mine.forEach((o, i) => terms.append(h('option', { value: String(i) }, termsOf(o.terms))));
+    who.addEventListener('change', () => {
+      offerSeat = Number(who.value);
+      render();
+    });
+    return h(
+      'fieldset',
+      { class: 'cq-help', 'data-testid': 'help' },
+      h('legend', {}, t('fight.help.title')),
+      h('label', { for: 'cq-help-who' }, t('fight.help.who')),
+      who,
+      h('label', { for: 'cq-help-terms' }, t('fight.help.offer')),
+      terms,
+      button(t('fight.help.ask'), () => {
+        const offer = mine[Number(terms.value)];
+        if (offer) act(offer);
+      }, { testid: 'help-ask' })
     );
   }
 
@@ -446,6 +555,15 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
         bar.append(button(t('btn.rummage'), () => act({ a: 'rummage' }), { primary: true, testid: 'rummage' }));
         break;
       case 'fight':
+        if (state.fight?.offer) {
+          // The offer is repeated next to its answers (on a phone the "next" box is far above), both answers equal.
+          bar.append(
+            h('p', { class: 'cq-offer-text', 'data-testid': 'offer-text' }, nextText()),
+            button(t('btn.accept'), () => act({ a: 'accept' }), { primary: true, testid: 'accept' }),
+            button(t('btn.decline'), () => act({ a: 'decline' }), { primary: true, testid: 'decline' })
+          );
+          break;
+        }
         bar.append(button(t(state.active === HUMAN ? 'btn.fight' : 'btn.letBe'), () => act({ a: 'pass' }), { primary: true, testid: 'pass' }));
         break;
       case 'flee':
@@ -516,7 +634,9 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
           if (a.card !== card) break;
           const def = defOf(card);
           const label =
-            def.type === 'oneshot' && def.escape
+            def.type === 'oneshot' && def.turncoat
+              ? t('act.switch')
+              : def.type === 'oneshot' && def.escape
               ? t('act.escape')
               : a.side === 'monster'
                 ? t('act.monster')
@@ -548,7 +668,9 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
   }
 
   function why(card: string): string {
-    const type = defOf(card).type;
+    const def = defOf(card);
+    const type = def.type;
+    if (def.type === 'oneshot' && def.turncoat) return t('card.why.switch');
     if (type === 'booster' || type === 'oneshot' || type === 'reinforcement') return t('card.why.fightOnly');
     if (['item', 'upgrade', 'levelup', 'windfall', 'origin', 'profession', 'double'].includes(type)) return t('card.why.ownTurn');
     return t('card.why.notNow');
@@ -692,7 +814,6 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
   function renderCoachToggle(): HTMLElement {
     const box = h('input', {
       type: 'checkbox',
-      id: 'cq-coach',
       'data-testid': 'coach',
       'data-key': 'coach',
       checked: state.settings.coach,
@@ -703,7 +824,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
         render();
       }
     });
-    return h('label', { class: 'cq-check', for: 'cq-coach' }, box, h('span', {}, t('setup.coach')));
+    return h('label', { class: 'cq-check' }, box, h('span', {}, t('setup.coach')));
   }
 
   /* ---------------------------------------------------------------- instance */
