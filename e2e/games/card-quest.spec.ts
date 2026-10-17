@@ -144,7 +144,7 @@ test('card-quest: in an own fight the person can ask another player for help', a
   await page.getByTestId('help-terms').selectOption({ index: 0 });
   await ask.click();
   await page.getByTestId('log').locator('summary').click();
-  await expect(page.getByTestId('log')).toContainText(/asks .* for help/);
+  await expect(page.getByTestId('log')).toContainText(/You ask .* for help/);
   await expect(page.getByTestId('help-ask').or(page.getByTestId('pass')).or(page.getByTestId('roll')).first()).toBeVisible();
 });
 

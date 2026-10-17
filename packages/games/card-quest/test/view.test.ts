@@ -87,7 +87,7 @@ describe('view', () => {
     });
   }
 
-  it('deal, give-away and curse lines use the person's own forms, in every combination', () => {
+  it('deal, give-away and curse lines use the forms for the person, in every combination', () => {
     const combos: [number, number][] = [[0, 1], [1, 0], [1, 2]];
     for (const [seat, to] of combos) {
       const ctx = createTestContext(game as GameModule<unknown>, 'de');
