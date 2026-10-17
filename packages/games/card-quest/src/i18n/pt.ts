@@ -305,5 +305,7 @@ export const pt: Catalogue = {
   'reveal.curse': '{name} amaldiçoa você: {card}',
   'reveal.result': 'O que aconteceu',
   'reveal.toHand': 'A carta vai para a sua mão.',
-  'btn.continue': 'Continuar'
+  'btn.continue': 'Continuar',
+  // Owner feedback 2026-10-17: curse effect in the reveal
+  'reveal.effect': 'Atinge você na hora: {effect}'
 };

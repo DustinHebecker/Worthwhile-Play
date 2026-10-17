@@ -305,5 +305,7 @@ export const ko: Catalogue = {
   'reveal.curse': '{name}의 저주: {card}',
   'reveal.result': '일어난 일',
   'reveal.toHand': '카드가 손패로 들어온다.',
-  'btn.continue': '계속'
+  'btn.continue': '계속',
+  // Owner feedback 2026-10-17: curse effect in the reveal
+  'reveal.effect': '즉시 나에게 적용: {effect}'
 };

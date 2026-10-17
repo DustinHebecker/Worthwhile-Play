@@ -305,5 +305,7 @@ export const nl: Catalogue = {
   'reveal.curse': '{name} vervloekt je: {card}',
   'reveal.result': 'Wat er gebeurd is',
   'reveal.toHand': 'De kaart gaat naar je hand.',
-  'btn.continue': 'Verder'
+  'btn.continue': 'Verder',
+  // Owner feedback 2026-10-17: curse effect in the reveal
+  'reveal.effect': 'Treft je meteen: {effect}'
 };

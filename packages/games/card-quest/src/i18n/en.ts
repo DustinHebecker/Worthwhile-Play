@@ -319,7 +319,9 @@ export const en = {
   'reveal.curse': '{name} curses you: {card}',
   'reveal.result': 'What happened',
   'reveal.toHand': 'The card goes into your hand.',
-  'btn.continue': 'Continue'
+  'btn.continue': 'Continue',
+  // Owner feedback 2026-10-17: curse effect in the reveal
+  'reveal.effect': 'Hits you at once: {effect}'
 } as const;
 
 

@@ -256,7 +256,7 @@ describe('view', () => {
       const reveal = q(root, 'reveal')!;
       expect(reveal.textContent).toContain(en['kz.wrong-hat']!.name);
       expect(reveal.querySelector('svg.cq-il')).not.toBeNull();
-      expect(reveal.querySelector('.cq-rules')!.textContent!.length).toBeGreaterThan(0);
+      expect(reveal.querySelector('.cq-rules')!.textContent).toContain('Hits you at once');
       expect(q(root, 'reveal-result')!.textContent).toContain(en['kz.hard-hat']!.name);
       expect(q(root, 'rummage')).toBeNull();
       expect(document.activeElement).toBe(q(root, 'reveal-continue'));

@@ -305,5 +305,7 @@ export const uk: Catalogue = {
   'reveal.curse': '{name} проклинає тебе: {card}',
   'reveal.result': 'Що сталося',
   'reveal.toHand': 'Карта йде тобі в руку.',
-  'btn.continue': 'Далі'
+  'btn.continue': 'Далі',
+  // Owner feedback 2026-10-17: curse effect in the reveal
+  'reveal.effect': 'Одразу діє на тебе: {effect}'
 };

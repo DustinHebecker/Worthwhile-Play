@@ -305,5 +305,7 @@ export const de: Catalogue = {
   'reveal.curse': '{name} verflucht dich: {card}',
   'reveal.result': 'Was passiert ist',
   'reveal.toHand': 'Die Karte kommt auf deine Hand.',
-  'btn.continue': 'Weiter'
+  'btn.continue': 'Weiter',
+  // Owner feedback 2026-10-17: curse effect in the reveal
+  'reveal.effect': 'Trifft dich sofort: {effect}'
 };

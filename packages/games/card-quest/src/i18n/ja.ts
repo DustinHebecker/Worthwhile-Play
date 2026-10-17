@@ -305,5 +305,7 @@ export const ja: Catalogue = {
   'reveal.curse': '{name}の呪い：{card}',
   'reveal.result': '起きたこと',
   'reveal.toHand': 'カードは手札に入る。',
-  'btn.continue': '続ける'
+  'btn.continue': '続ける',
+  // Owner feedback 2026-10-17: curse effect in the reveal
+  'reveal.effect': 'すぐに自分に効く：{effect}'
 };

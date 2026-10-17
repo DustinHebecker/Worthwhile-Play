@@ -305,5 +305,7 @@ export const zhHans: Catalogue = {
   'reveal.curse': '{name} 诅咒了你：{card}',
   'reveal.result': '发生了什么',
   'reveal.toHand': '这张牌进入你的手牌。',
-  'btn.continue': '继续'
+  'btn.continue': '继续',
+  // Owner feedback 2026-10-17: curse effect in the reveal
+  'reveal.effect': '立即对你生效：{effect}'
 };

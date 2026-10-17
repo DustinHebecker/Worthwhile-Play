@@ -305,5 +305,7 @@ export const ar: Catalogue = {
   'reveal.curse': 'لعنة من {name}: {card}',
   'reveal.result': 'ما الذي حدث',
   'reveal.toHand': 'تذهب البطاقة إلى يدك.',
-  'btn.continue': 'متابعة'
+  'btn.continue': 'متابعة',
+  // Owner feedback 2026-10-17: curse effect in the reveal
+  'reveal.effect': 'يصيبك فورًا: {effect}'
 };

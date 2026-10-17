@@ -305,5 +305,7 @@ export const fr: Catalogue = {
   'reveal.curse': '{name} te maudit : {card}',
   'reveal.result': 'Ce qui s’est passé',
   'reveal.toHand': 'La carte va dans ta main.',
-  'btn.continue': 'Continuer'
+  'btn.continue': 'Continuer',
+  // Owner feedback 2026-10-17: curse effect in the reveal
+  'reveal.effect': 'Te frappe aussitôt : {effect}'
 };

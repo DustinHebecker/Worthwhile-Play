@@ -3,7 +3,7 @@ import { announce, clear, h } from '@wp/ui';
 import { pictogram } from './art';
 import { illustration } from './illustrations';
 import { baseId, type MonsterCard } from './cards';
-import { cardBlunder, cardFlavour, cardName, cardRules, keyNumber } from './cardtext';
+import { cardBlunder, cardFlavour, cardName, cardRules, keyNumber, penaltyText } from './cardtext';
 import { HUMAN, advance, computerToAct } from './driver';
 import {
   FLEE_TARGET,
@@ -118,7 +118,10 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
 
   function renderReveal(): HTMLElement {
     const r = reveals[0]!;
-    const { type, lines } = cardRules(t, r.card);
+    const { type, lines: rules } = cardRules(t, r.card);
+    // A curse that hits the person: say so, instead of the card's "play on another player" line.
+    const def = defOf(r.card);
+    const lines = def.type === 'curse' ? [t('reveal.effect', { effect: penaltyText(t, def.effect) })] : rules;
     const title = r.by === null ? t('reveal.open', { card: name(r.card) }) : t('reveal.curse', { name: seatName(r.by), card: name(r.card) });
     return h(
       'section',

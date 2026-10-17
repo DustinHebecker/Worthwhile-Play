@@ -305,5 +305,7 @@ export const hi: Catalogue = {
   'reveal.curse': '{name} का श्राप तुम पर: {card}',
   'reveal.result': 'क्या हुआ',
   'reveal.toHand': 'कार्ड तुम्हारे हाथ में जाता है।',
-  'btn.continue': 'आगे बढ़ो'
+  'btn.continue': 'आगे बढ़ो',
+  // Owner feedback 2026-10-17: curse effect in the reveal
+  'reveal.effect': 'तुम पर तुरंत असर: {effect}'
 };

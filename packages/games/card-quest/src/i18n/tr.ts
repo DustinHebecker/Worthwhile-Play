@@ -305,5 +305,7 @@ export const tr: Catalogue = {
   'reveal.curse': '{name} sana lanet okuyor: {card}',
   'reveal.result': 'Ne oldu',
   'reveal.toHand': 'Kart eline geçer.',
-  'btn.continue': 'Devam'
+  'btn.continue': 'Devam',
+  // Owner feedback 2026-10-17: curse effect in the reveal
+  'reveal.effect': 'Seni hemen vurur: {effect}'
 };
