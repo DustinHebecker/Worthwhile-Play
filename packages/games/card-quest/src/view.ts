@@ -42,8 +42,6 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
   let state: CardQuestState = started(0, readSettings(undefined));
   let selected: string | null = null;
   let mode: Mode = 'play';
-  /** Cards to show the person before play goes on (see queueReveals). */
-  const reveals: { card: string; by: number | null; lines: string[] }[] = [];
   /** The player chosen in the help form. */
   let offerSeat = -1;
   const picked = new Set<string>();
@@ -82,7 +80,6 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     next.seen = before;
     if (hint && !next.hints.includes(hint)) next.hints.push(hint);
     state = advance(next);
-    queueReveals(before);
     if (action.a !== 'equip' && action.a !== 'unequip' && action.a !== 'upgrade') selected = null;
     if (mode !== 'play' && action.a !== 'equip') {
       mode = 'play';
@@ -96,28 +93,34 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
 
   /**
    * Cards that hit the person without a fight — a trap (curse) or other card found around the corner, a curse
-   * from another player — are shown one by one with their picture, rules and what they took, until "Continue".
+   * from another player — shown one by one with their picture, rules and what they took, until "Continue". Derived
+   * from the log and `state.revealed` (persisted), so a reload during a reveal shows it again and one after
+   * "Continue" does not.
    */
-  function queueReveals(sinceSeq: number): void {
+  function pendingReveals(): { card: string; by: number | null; lines: string[]; end: number }[] {
     const firstSeq = state.logSeq - state.log.length;
-    const fresh = state.log.filter((_, i) => firstSeq + i >= sinceSeq);
-    fresh.forEach((e, i) => {
+    const since = state.revealed ?? state.seen;
+    const out: { card: string; by: number | null; lines: string[]; end: number }[] = [];
+    state.log.forEach((e, i) => {
+      if (firstSeq + i < since) return;
       const found = e.e === 'open' && e.seat === HUMAN && defOf(e.card).type !== 'monster';
       const cursed = e.e === 'curse' && e.target === HUMAN;
       if (!found && !cursed) return;
       const lines: string[] = [];
-      for (let j = i + 1; j < fresh.length; j++) {
-        const f = fresh[j]!;
+      let j = i + 1;
+      for (; j < state.log.length; j++) {
+        const f = state.log[j]!;
         if (f.e !== 'penalty' || f.seat !== HUMAN) break;
         lines.push(eventText(f));
       }
       if (found && defOf(e.card).type !== 'curse') lines.push(t('reveal.toHand'));
-      reveals.push({ card: e.card, by: cursed ? e.seat : null, lines });
+      out.push({ card: e.card, by: cursed ? e.seat : null, lines, end: firstSeq + j });
     });
+    return out;
   }
 
   function renderReveal(): HTMLElement {
-    const r = reveals[0]!;
+    const r = pendingReveals()[0]!;
     const { type, lines: rules } = cardRules(t, r.card);
     // A curse that hits the person: say so, instead of the card's "play on another player" line.
     const def = defOf(r.card);
@@ -135,12 +138,22 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       h(
         'div',
         { class: 'cq-detail-actions' },
-        button(t('btn.continue'), () => {
-          reveals.shift();
-          render();
-        }, { primary: true, testid: 'reveal-continue' })
+        continueButton(r.end)
       )
     );
+  }
+
+  /** "Continue" after a reveal: acknowledged in the save; a held-down Enter (key repeat) does not skip it. */
+  function continueButton(end: number): HTMLElement {
+    const b = button(t('btn.continue'), () => {
+      state = { ...state, revealed: end };
+      context.requestSave();
+      render();
+    }, { primary: true, testid: 'reveal-continue' });
+    b.addEventListener('keydown', (event) => {
+      if (event.repeat && (event.key === 'Enter' || event.key === ' ')) event.preventDefault();
+    });
+    return b;
   }
 
   function finishIfOver(): void {
@@ -154,6 +167,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
   /* ---------------------------------------------------------------- texts */
 
   function nextText(): string {
+    if (state.phase !== 'over' && pendingReveals().length > 0) return t('next.reveal');
     switch (state.phase) {
       case 'setup': // Unreachable: the view deals at once (ADR 0017); kept for the type.
       case 'prepare':
@@ -458,10 +472,9 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     if (recent.length > 0 && state.phase !== 'over') {
       out.push(h('section', { class: 'cq-recent', 'aria-labelledby': 'cq-recent-title' }, h('h3', { id: 'cq-recent-title' }, t('log.new')), h('ul', {}, ...recent.slice(-12).map((e) => h('li', {}, eventText(e))))));
     }
-    if (reveals.length > 0) {
+    // While a card is revealed, only the reveal and the log: the hand waits (no detail, no actions).
+    if (pendingReveals().length > 0) {
       out.push(renderReveal());
-      out.push(renderHand());
-      out.push(renderMine());
       out.push(renderLog());
       return out;
     }
@@ -917,7 +930,6 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       selected = null;
       mode = 'play';
       picked.clear();
-      reveals.length = 0;
       finishedSent = false;
       render();
     },
@@ -927,7 +939,6 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       selected = null;
       mode = 'play';
       picked.clear();
-      reveals.length = 0;
       finishedSent = state.phase === 'over';
       render();
       if (saved.phase === 'setup') context.requestSave();
@@ -947,7 +958,6 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       selected = null;
       mode = 'play';
       picked.clear();
-      reveals.length = 0;
       finishedSent = false;
       render();
     },

@@ -303,7 +303,7 @@ export const zhHans: Catalogue = {
   'next.end.surplus': '你还可以穿戴、打出和出售——这样也能减少手牌。然后结束回合；需送出的牌（手牌上限 5）：{n}。',
   'reveal.open': '拐角处：{card}',
   'reveal.curse': '{name} 诅咒了你：{card}',
-  'reveal.result': '发生了什么',
+  'reveal.result': '对你的影响',
   'reveal.toHand': '这张牌进入你的手牌。',
   'btn.continue': '继续',
   // Owner feedback 2026-10-17: curse effect in the reveal
@@ -340,5 +340,7 @@ export const zhHans: Catalogue = {
   'log.void.you': '与 {to} 的交易作废：{card} 已经没了。声望不变。',
   'log.void.toYou': '{name}——与你的交易作废：你的 {card} 已经没了。声望不变。',
   'log.give.toYou': '{name}——送给你 {n} 张牌。',
-  'log.curse.toYou': '{name}——诅咒你：{card}。'
+  'log.curse.toYou': '{name}——诅咒你：{card}。',
+  // Reveal pending
+  'next.reveal': '一张牌击中了你：读完后按“继续”。'
 };

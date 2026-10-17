@@ -306,6 +306,69 @@ describe('view', () => {
     });
   });
 
+  describe('reveals survive a reload and are not skipped (owner feedback 2026-10-17, review)', () => {
+    /** The person's turn after the computer seats cursed them twice: two reveals waiting. */
+    const cursedTwice = (): CardQuestState => {
+      const s = arranged((s) => take(s, 'kz.hard-hat', s.players[0]!.equipped));
+      const events: LogEvent[] = [
+        { e: 'curse', seat: 1, card: 'kz.wrong-hat', target: 0 },
+        { e: 'penalty', seat: 0, p: 'slot', card: 'kz.hard-hat' },
+        { e: 'curse', seat: 2, card: 'kz.beard-in-hedge', target: 0 },
+        { e: 'penalty', seat: 0, p: 'level', n: 0 }
+      ];
+      return { ...s, log: [...s.log, ...events], logSeq: s.logSeq + events.length, seen: s.logSeq };
+    };
+    const mount = (state: CardQuestState) => {
+      const ctx = createTestContext(game as GameModule<unknown>, 'en');
+      const instance = game.create(ctx.context as never);
+      instance.restore(state);
+      return { root: ctx.context.root, instance, ctx };
+    };
+
+    it('curses from others are shown one after the other, each until Continue', () => {
+      const { root, instance } = mount(cursedTwice());
+      expect(q(root, 'reveal')!.textContent).toContain(`Brumbo curses you: ${en['kz.wrong-hat']!.name}`);
+      expect(q(root, 'reveal-result')!.textContent).toContain(en['kz.hard-hat']!.name);
+      expect(q(root, 'next')!.textContent).toContain('A card hit you');
+      expect(q(root, 'hand')).toBeNull();
+      q(root, 'reveal-continue')!.click();
+      expect(q(root, 'reveal')!.textContent).toContain(`Pippa curses you: ${en['kz.beard-in-hedge']!.name}`);
+      q(root, 'reveal-continue')!.click();
+      expect(q(root, 'reveal')).toBeNull();
+      expect(q(root, 'open')).not.toBeNull();
+      instance.dispose();
+    });
+
+    it('a reload during a reveal shows it again; after Continue it stays gone', () => {
+      const first = mount(cursedTwice());
+      first.root.querySelector<HTMLButtonElement>('[data-testid="reveal-continue"]')!.click();
+      const saved = first.instance.serialize();
+      expect(isValidState(saved)).toBe(true);
+      expect(first.ctx.saveRequests()).toBeGreaterThan(0);
+      first.instance.dispose();
+      const second = mount(saved);
+      expect(q(second.root, 'reveal')!.textContent).toContain('Pippa curses you');
+      q(second.root, 'reveal-continue')!.click();
+      const done = second.instance.serialize();
+      second.instance.dispose();
+      const third = mount(done);
+      expect(q(third.root, 'reveal')).toBeNull();
+      third.instance.dispose();
+    });
+
+    it('a held-down Enter (key repeat) does not skip a reveal', () => {
+      const { root, instance } = mount(cursedTwice());
+      const press = (repeat: boolean) => {
+        const event = new KeyboardEvent('keydown', { key: 'Enter', repeat, bubbles: true, cancelable: true });
+        q(root, 'reveal-continue')!.dispatchEvent(event);
+        return event.defaultPrevented;
+      };
+      expect(press(true)).toBe(true);
+      expect(press(false)).toBe(false);
+      instance.dispose();
+    });
+  });
+
   describe('offers and deals (K2)', () => {
     const mount = (state: CardQuestState) => {
       const ctx = createTestContext(game as GameModule<unknown>, 'en');

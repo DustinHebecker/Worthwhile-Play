@@ -303,7 +303,7 @@ export const pl: Catalogue = {
   'next.end.surplus': 'Możesz jeszcze zakładać, zagrywać i sprzedawać — to też opróżnia rękę. Potem zakończ turę; karty do oddania (limit ręki 5): {n}.',
   'reveal.open': 'Za rogiem: {card}',
   'reveal.curse': '{name} rzuca na ciebie klątwę: {card}',
-  'reveal.result': 'Co się stało',
+  'reveal.result': 'Skutki dla ciebie',
   'reveal.toHand': 'Karta trafia na twoją rękę.',
   'btn.continue': 'Dalej',
   // Owner feedback 2026-10-17: curse effect in the reveal
@@ -340,5 +340,7 @@ export const pl: Catalogue = {
   'log.void.you': 'Umowa wygasła (partner: {to}): przedmiotu {card} już nie ma. Reputacja bez zmian.',
   'log.void.toYou': '{name} — umowa z tobą wygasła: twojego przedmiotu {card} już nie ma. Reputacja bez zmian.',
   'log.give.toYou': '{name} oddaje ci karty ({n}).',
-  'log.curse.toYou': '{name} — klątwa na ciebie: {card}.'
+  'log.curse.toYou': '{name} — klątwa na ciebie: {card}.',
+  // Reveal pending
+  'next.reveal': 'Trafiła cię karta: przeczytaj ją, potem naciśnij „Dalej”.'
 };

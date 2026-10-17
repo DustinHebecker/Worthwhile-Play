@@ -303,7 +303,7 @@ export const it: Catalogue = {
   'next.end.surplus': 'Puoi ancora equipaggiare, giocare e vendere: anche così la mano si svuota. Poi termina il turno; carte da cedere (limite di mano 5): {n}.',
   'reveal.open': 'Dietro l’angolo: {card}',
   'reveal.curse': '{name} ti maledice: {card}',
-  'reveal.result': 'Cosa è successo',
+  'reveal.result': 'Effetti su di te',
   'reveal.toHand': 'La carta va nella tua mano.',
   'btn.continue': 'Continua',
   // Owner feedback 2026-10-17: curse effect in the reveal
@@ -340,5 +340,7 @@ export const it: Catalogue = {
   'log.void.you': 'Accordo con {to} decaduto: {card} non c’è più. Reputazione invariata.',
   'log.void.toYou': '{name} — accordo con te decaduto: il tuo oggetto {card} non c’è più. Reputazione invariata.',
   'log.give.toYou': '{name} — {n} carte date a te.',
-  'log.curse.toYou': '{name} — maledizione su di te: {card}.'
+  'log.curse.toYou': '{name} — maledizione su di te: {card}.',
+  // Reveal pending
+  'next.reveal': 'Una carta ti colpisce: leggila, poi premi «Continua».'
 };

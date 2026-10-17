@@ -303,7 +303,7 @@ export const tr: Catalogue = {
   'next.end.surplus': 'Hâlâ eşya takabilir, kart oynayabilir ve satabilirsin — bu da elini boşaltır. Sonra sıranı bitir; verilecek kartlar (el sınırı 5): {n}.',
   'reveal.open': 'Köşede: {card}',
   'reveal.curse': '{name} sana lanet okuyor: {card}',
-  'reveal.result': 'Ne oldu',
+  'reveal.result': 'Sana etkisi',
   'reveal.toHand': 'Kart eline geçer.',
   'btn.continue': 'Devam',
   // Owner feedback 2026-10-17: curse effect in the reveal
@@ -340,5 +340,7 @@ export const tr: Catalogue = {
   'log.void.you': 'Anlaşma geçersiz (ortak: {to}): {card} artık yok. İtibar değişmedi.',
   'log.void.toYou': '{name} — seninle anlaşma geçersiz: eşyan artık yok: {card}. İtibar değişmedi.',
   'log.give.toYou': '{name} sana {n} kart verdi.',
-  'log.curse.toYou': '{name} sana lanet attı: {card}.'
+  'log.curse.toYou': '{name} sana lanet attı: {card}.',
+  // Reveal pending
+  'next.reveal': 'Bir kart sana isabet etti: oku, sonra “Devam” düğmesine bas.'
 };

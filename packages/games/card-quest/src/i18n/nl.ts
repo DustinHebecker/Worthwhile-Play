@@ -303,7 +303,7 @@ export const nl: Catalogue = {
   'next.end.surplus': 'Je kunt nog aandoen, spelen en verkopen — ook zo wordt je hand leger. Beëindig daarna je beurt; weg te geven kaarten (handlimiet 5): {n}.',
   'reveal.open': 'Om de hoek: {card}',
   'reveal.curse': '{name} vervloekt je: {card}',
-  'reveal.result': 'Wat er gebeurd is',
+  'reveal.result': 'Gevolgen voor jou',
   'reveal.toHand': 'De kaart gaat naar je hand.',
   'btn.continue': 'Verder',
   // Owner feedback 2026-10-17: curse effect in the reveal
@@ -340,5 +340,7 @@ export const nl: Catalogue = {
   'log.void.you': 'Deal met {to} vervallen: {card} is weg. Reputatie ongewijzigd.',
   'log.void.toYou': '{name} — deal met jou vervallen: jouw {card} is weg. Reputatie ongewijzigd.',
   'log.give.toYou': '{name} — {n} kaarten aan jou gegeven.',
-  'log.curse.toYou': '{name} — vloek op jou: {card}.'
+  'log.curse.toYou': '{name} — vloek op jou: {card}.',
+  // Reveal pending
+  'next.reveal': 'Een kaart heeft je geraakt: lees hem en druk dan op „Verder”.'
 };

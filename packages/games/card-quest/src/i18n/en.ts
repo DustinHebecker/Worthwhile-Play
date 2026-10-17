@@ -317,7 +317,7 @@ export const en = {
   'next.end.surplus': 'You can still equip, play and sell — that also empties your hand. Then end your turn; cards to give away (hand limit 5): {n}.',
   'reveal.open': 'Around the corner: {card}',
   'reveal.curse': '{name} curses you: {card}',
-  'reveal.result': 'What happened',
+  'reveal.result': 'Effect on you',
   'reveal.toHand': 'The card goes into your hand.',
   'btn.continue': 'Continue',
   // Owner feedback 2026-10-17: curse effect in the reveal
@@ -354,7 +354,9 @@ export const en = {
   'log.void.you': 'Deal with {to} void: {card} is gone. Reputation unchanged.',
   'log.void.toYou': '{name} — deal with you void: your {card} is gone. Reputation unchanged.',
   'log.give.toYou': '{name} — {n} cards given to you.',
-  'log.curse.toYou': '{name} — curse on you: {card}.'
+  'log.curse.toYou': '{name} — curse on you: {card}.',
+  // Reveal pending
+  'next.reveal': 'A card hit you: read it, then Continue.'
 } as const;
 
 

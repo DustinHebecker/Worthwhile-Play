@@ -303,7 +303,7 @@ export const ar: Catalogue = {
   'next.end.surplus': 'ما زال بإمكانك الارتداء واللعب والبيع — وهذا يُفرغ يدك أيضًا. ثم أنهِ دورك؛ بطاقات يجب إعطاؤها (حد اليد 5): {n}.',
   'reveal.open': 'خلف الزاوية: {card}',
   'reveal.curse': 'لعنة من {name}: {card}',
-  'reveal.result': 'ما الذي حدث',
+  'reveal.result': 'أثرها عليك',
   'reveal.toHand': 'تذهب البطاقة إلى يدك.',
   'btn.continue': 'متابعة',
   // Owner feedback 2026-10-17: curse effect in the reveal
@@ -340,5 +340,7 @@ export const ar: Catalogue = {
   'log.void.you': 'سقوط الصفقة مع {to}: بطاقة {card} لم تعد موجودة. السمعة دون تغيير.',
   'log.void.toYou': '{name} — سقوط الصفقة معك: غرضك {card} لم يعد موجودًا. السمعة دون تغيير.',
   'log.give.toYou': '{name} — إعطاؤك بطاقات: {n}.',
-  'log.curse.toYou': '{name} — لعنة عليك: {card}.'
+  'log.curse.toYou': '{name} — لعنة عليك: {card}.',
+  // Reveal pending
+  'next.reveal': 'أصابتك بطاقة: اقرأها، ثم اضغط «متابعة».'
 };

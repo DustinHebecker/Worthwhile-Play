@@ -303,7 +303,7 @@ export const hi: Catalogue = {
   'next.end.surplus': 'तुम अब भी चीज़ें पहन, कार्ड खेल और बेच सकते हो — इससे भी हाथ ख़ाली होता है। फिर अपनी बारी ख़त्म करो; देने वाले कार्ड (हाथ की सीमा 5): {n}।',
   'reveal.open': 'कोने के पार: {card}',
   'reveal.curse': '{name} का श्राप तुम पर: {card}',
-  'reveal.result': 'क्या हुआ',
+  'reveal.result': 'तुम पर असर',
   'reveal.toHand': 'कार्ड तुम्हारे हाथ में जाता है।',
   'btn.continue': 'आगे बढ़ो',
   // Owner feedback 2026-10-17: curse effect in the reveal
@@ -340,5 +340,7 @@ export const hi: Catalogue = {
   'log.void.you': '{to} से सौदा रद्द: {card} अब मौजूद नहीं। साख में कोई बदलाव नहीं।',
   'log.void.toYou': '{name} — तुमसे सौदा रद्द: तुम्हारी चीज़ {card} अब मौजूद नहीं। साख में कोई बदलाव नहीं।',
   'log.give.toYou': '{name} — तुम्हें दिए गए कार्ड: {n}।',
-  'log.curse.toYou': '{name} — तुम पर श्राप: {card}।'
+  'log.curse.toYou': '{name} — तुम पर श्राप: {card}।',
+  // Reveal pending
+  'next.reveal': 'एक कार्ड तुम पर पड़ा: उसे पढ़ो, फिर “आगे बढ़ो” दबाओ।'
 };

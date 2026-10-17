@@ -303,7 +303,7 @@ export const ja: Catalogue = {
   'next.end.surplus': 'まだ装備したり、カードを出したり、売ったりできる――それでも手札は減る。それから番を終えよう。手放すカード（手札上限5）：{n}。',
   'reveal.open': '曲がり角の先：{card}',
   'reveal.curse': '{name}の呪い：{card}',
-  'reveal.result': '起きたこと',
+  'reveal.result': 'きみへの影響',
   'reveal.toHand': 'カードは手札に入る。',
   'btn.continue': '続ける',
   // Owner feedback 2026-10-17: curse effect in the reveal
@@ -340,5 +340,7 @@ export const ja: Catalogue = {
   'log.void.you': '{to}との取引は無効に：{card}がなくなった。評判は変わらず。',
   'log.void.toYou': '{name} ― きみとの取引は無効に：きみの{card}がなくなった。評判は変わらず。',
   'log.give.toYou': '{name} ― カード{n}枚をきみへ。',
-  'log.curse.toYou': '{name} ― きみに呪い：{card}。'
+  'log.curse.toYou': '{name} ― きみに呪い：{card}。',
+  // Reveal pending
+  'next.reveal': 'カードにやられた：読んだら「続ける」を押そう。'
 };

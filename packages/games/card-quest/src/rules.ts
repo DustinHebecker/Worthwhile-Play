@@ -177,6 +177,11 @@ export interface CardQuestState {
   winners: number[];
   /** Coach hints already shown (ids). */
   hints: string[];
+  /**
+   * `logSeq` up to which the person has acknowledged the cards that hit them without a fight (traps found around the
+   * corner, curses from others; the view shows them until "Continue"). Absent in older saves.
+   */
+  revealed?: number;
 }
 
 export type Action =
@@ -1311,6 +1316,7 @@ function check(v: unknown): v is CardQuestState {
   if (!isArrayOf(v.players, (p): p is Player => isValidPlayer(p, known, (v.players as unknown[]).length))) return false;
   if (!isInt(v.counter, 0) || !isArrayOf(v.log, isRecord) || !isArrayOf(v.hints, isStr) || !isArrayOf(v.winners, (w): w is number => isInt(w, 0, 5))) return false;
   if (!isInt(v.round, 0, 100000) || !isInt(v.logSeq, 0) || !isInt(v.seen, 0) || v.seen > v.logSeq || v.log.length > Math.min(LOG_LIMIT, v.logSeq)) return false;
+  if (v.revealed !== undefined && !(isInt(v.revealed, 0) && v.revealed <= v.logSeq)) return false;
   if (!v.log.every((e) => isValidEvent(e, instanceSet((v.settings as Settings).worlds), (v.players as unknown[]).length))) return false;
   const state = v as unknown as CardQuestState;
   if (state.phase === 'setup') {

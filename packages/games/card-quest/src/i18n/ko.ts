@@ -303,7 +303,7 @@ export const ko: Catalogue = {
   'next.end.surplus': '아직 착용하고, 내고, 팔 수 있다 — 그러면 손패도 줄어든다. 그다음 차례를 끝내자. 넘겨줄 카드(손패 한도 5): {n}.',
   'reveal.open': '모퉁이 너머: {card}',
   'reveal.curse': '{name}의 저주: {card}',
-  'reveal.result': '일어난 일',
+  'reveal.result': '너에게 미친 영향',
   'reveal.toHand': '카드가 손패로 들어온다.',
   'btn.continue': '계속',
   // Owner feedback 2026-10-17: curse effect in the reveal
@@ -340,5 +340,7 @@ export const ko: Catalogue = {
   'log.void.you': '{to}와(과)의 거래 무효: {card}이(가) 사라짐. 평판 변동 없음.',
   'log.void.toYou': '{name} — 너와의 거래 무효: 네 {card}이(가) 사라짐. 평판 변동 없음.',
   'log.give.toYou': '{name} — 너에게 카드 {n}장.',
-  'log.curse.toYou': '{name} — 너에게 저주: {card}.'
+  'log.curse.toYou': '{name} — 너에게 저주: {card}.',
+  // Reveal pending
+  'next.reveal': '카드에 당했다: 읽어 보고 “계속”을 누르자.'
 };

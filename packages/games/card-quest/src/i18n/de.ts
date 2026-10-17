@@ -303,7 +303,7 @@ export const de: Catalogue = {
   'next.end.surplus': 'Du kannst noch anlegen, ausspielen und verkaufen – das leert auch die Hand. Dann beende deinen Zug; abzugebende Karten (Handlimit 5): {n}.',
   'reveal.open': 'Um die Ecke: {card}',
   'reveal.curse': '{name} verflucht dich: {card}',
-  'reveal.result': 'Was passiert ist',
+  'reveal.result': 'Folgen für dich',
   'reveal.toHand': 'Die Karte kommt auf deine Hand.',
   'btn.continue': 'Weiter',
   // Owner feedback 2026-10-17: curse effect in the reveal
@@ -340,5 +340,7 @@ export const de: Catalogue = {
   'log.void.you': 'Deal mit {to} hinfällig: {card} ist weg. Ruf unverändert.',
   'log.void.toYou': '{name} – Deal mit dir hinfällig: Dein Gegenstand {card} ist weg. Ruf unverändert.',
   'log.give.toYou': '{name} – {n} Karten an dich abgegeben.',
-  'log.curse.toYou': '{name} – Fluch auf dich: {card}.'
+  'log.curse.toYou': '{name} – Fluch auf dich: {card}.',
+  // Reveal pending
+  'next.reveal': 'Eine Karte hat dich getroffen: lies sie, dann Weiter.'
 };

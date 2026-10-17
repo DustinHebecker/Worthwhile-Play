@@ -303,7 +303,7 @@ export const uk: Catalogue = {
   'next.end.surplus': 'Ще можна вдягати, розігрувати й продавати — так рука теж порожніє. Потім заверши хід; віддати карт (ліміт руки 5): {n}.',
   'reveal.open': 'За рогом: {card}',
   'reveal.curse': '{name} проклинає тебе: {card}',
-  'reveal.result': 'Що сталося',
+  'reveal.result': 'Наслідки для тебе',
   'reveal.toHand': 'Карта йде тобі в руку.',
   'btn.continue': 'Далі',
   // Owner feedback 2026-10-17: curse effect in the reveal
@@ -340,5 +340,7 @@ export const uk: Catalogue = {
   'log.void.you': 'Угода втратила силу (партнер: {to}): {card} більше немає. Репутація без змін.',
   'log.void.toYou': '{name} — угода з тобою втратила силу: твого предмета {card} більше немає. Репутація без змін.',
   'log.give.toYou': '{name} — віддано тобі карт: {n}.',
-  'log.curse.toYou': '{name} — прокляття на тебе: {card}.'
+  'log.curse.toYou': '{name} — прокляття на тебе: {card}.',
+  // Reveal pending
+  'next.reveal': 'Тебе зачепила карта: прочитай її, потім тисни «Далі».'
 };

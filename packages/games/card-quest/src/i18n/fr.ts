@@ -303,7 +303,7 @@ export const fr: Catalogue = {
   'next.end.surplus': 'Tu peux encore équiper, jouer et vendre — cela vide aussi ta main. Ensuite, termine ton tour ; cartes à donner (limite de main 5) : {n}.',
   'reveal.open': 'Au tournant : {card}',
   'reveal.curse': '{name} te maudit : {card}',
-  'reveal.result': 'Ce qui s’est passé',
+  'reveal.result': 'Effets sur toi',
   'reveal.toHand': 'La carte va dans ta main.',
   'btn.continue': 'Continuer',
   // Owner feedback 2026-10-17: curse effect in the reveal
@@ -340,5 +340,7 @@ export const fr: Catalogue = {
   'log.void.you': 'Marché avec {to} caduc : {card} a disparu. Réputation inchangée.',
   'log.void.toYou': '{name} — marché avec toi caduc : ton objet {card} a disparu. Réputation inchangée.',
   'log.give.toYou': '{name} te donne {n} cartes.',
-  'log.curse.toYou': '{name} — malédiction sur toi : {card}.'
+  'log.curse.toYou': '{name} — malédiction sur toi : {card}.',
+  // Reveal pending
+  'next.reveal': 'Une carte te frappe : lis-la, puis appuie sur « Continuer ».'
 };

@@ -175,7 +175,7 @@ K1 Kampfzwerge → first play-tests → K3 Spaceloot (mixing) → then, one per 
 
 - **2–6 players**: one person plus **1–5 computer players**. Since ADR 0017 the setup lives on the host's start screen (declared `settings`, no own setup phase any more): difficulty, number of computer players, optional round limit (target fixed at level 10 since 2026-10-17). Coach tips are a display preference, switched in the game (remembered for new games). (Players who switched them off on the #51 start screen, live for a few hours, see them on again once.) Every choice has a sensible default, so "Start" is one tap; the defaults follow what older versions remembered (`setup` preference). World choice joins the start screen with the second world (K3). Old saves still in the setup phase are dealt with their settings on restore.
 - Everyone starts at **level 1** with 4 encounter and 4 loot cards.
-- **Win: reach the target level** — default **10**, selectable 6 / 8 / 10 / 12. The **winning level must come from defeating a monster** (not from selling or one-shots).
+- **Win: reach the target level** — always **10** (owner decision 2026-10-17; saves from before keep their 6 / 8 / 12). The **winning level must come from defeating a monster** (not from selling or one-shots).
 - **Round limit: optional**, off by default (choices: off / 20 / 30 / 40). When on, after the last round the highest level wins (ties shared).
 - Without a limit the game ends when someone wins. Simulations check that this always happens in practice (§ 8); if a stalemate pattern shows up, a catch-up rule is added instead of a hard limit.
 
@@ -414,6 +414,8 @@ K1 is large (140 cards × 16 locales). If it becomes too big for one review, it 
 - **Target level fixed at 10**: the start-screen choice is gone; older saves keep their target.
 - **Cards that hit without a fight are shown**: a curse (or other card) found around the corner and a curse from
   another player appear as a panel with picture, rules, flavour and what they took, until "Continue".
+  Acknowledged in the save (`revealed`, a log position): a reload during a reveal shows it again, one after
+  "Continue" does not; key repeat cannot skip it; the hand waits while it is shown.
 - **Home-page preview** redrawn in the new card look (monster card vs. gnome card, picture-card hand).
 
 ### 10.5 Owner feedback after the first play-test (2026-10-15) — backlog
@@ -434,6 +436,6 @@ K1 is large (140 cards × 16 locales). If it becomes too big for one review, it 
 
 ### 10.6 Open points (none blocks K1)
 
-- **O1** Default target level: **10** assumed (owner: length open). Selectable 6/8/10/12.
+- **O1** Default target level: **10** assumed (owner: length open). Since 2026-10-17 fixed at 10 (owner).
 - **O2** Title in the other 14 locales: "Lootlings" unless a locale has a natural form.
 - **O3** Order of worlds after Spaceloot: owner decides after the play-tests.

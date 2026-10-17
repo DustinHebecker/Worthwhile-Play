@@ -303,7 +303,7 @@ export const es: Catalogue = {
   'next.end.surplus': 'Todavía puedes equipar, jugar y vender: eso también vacía tu mano. Después termina tu turno; cartas que hay que dar (límite de mano 5): {n}.',
   'reveal.open': 'Tras la esquina: {card}',
   'reveal.curse': '{name} te maldice: {card}',
-  'reveal.result': 'Qué ha pasado',
+  'reveal.result': 'Consecuencias para ti',
   'reveal.toHand': 'La carta va a tu mano.',
   'btn.continue': 'Continuar',
   // Owner feedback 2026-10-17: curse effect in the reveal
@@ -340,5 +340,7 @@ export const es: Catalogue = {
   'log.void.you': 'Trato con {to} anulado: {card} ya no está. Reputación sin cambios.',
   'log.void.toYou': '{name}: trato contigo anulado, tu {card} ya no está. Reputación sin cambios.',
   'log.give.toYou': '{name} te da {n} cartas.',
-  'log.curse.toYou': '{name}: maldición sobre ti: {card}.'
+  'log.curse.toYou': '{name}: maldición sobre ti: {card}.',
+  // Reveal pending
+  'next.reveal': 'Una carta te ha alcanzado: léela y luego pulsa «Continuar».'
 };

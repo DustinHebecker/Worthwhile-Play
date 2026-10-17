@@ -303,7 +303,7 @@ export const ru: Catalogue = {
   'next.end.surplus': 'Ещё можно надевать, разыгрывать и продавать — так рука тоже пустеет. Потом заверши ход; отдать карт (лимит руки 5): {n}.',
   'reveal.open': 'За углом: {card}',
   'reveal.curse': '{name} проклинает тебя: {card}',
-  'reveal.result': 'Что произошло',
+  'reveal.result': 'Последствия для тебя',
   'reveal.toHand': 'Карта уходит тебе в руку.',
   'btn.continue': 'Дальше',
   // Owner feedback 2026-10-17: curse effect in the reveal
@@ -340,5 +340,7 @@ export const ru: Catalogue = {
   'log.void.you': 'Сделка утратила силу (партнёр: {to}): {card} больше нет. Репутация без изменений.',
   'log.void.toYou': '{name} — сделка с тобой утратила силу: твоего предмета {card} больше нет. Репутация без изменений.',
   'log.give.toYou': '{name} — отдано тебе карт: {n}.',
-  'log.curse.toYou': '{name} — проклятие на тебя: {card}.'
+  'log.curse.toYou': '{name} — проклятие на тебя: {card}.',
+  // Reveal pending
+  'next.reveal': 'Тебя задела карта: прочитай её, затем жми «Дальше».'
 };
