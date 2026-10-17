@@ -69,6 +69,8 @@ test('mini-optimizer: the plan and its undo history survive a reload', async ({ 
       await r.getByTestId('stop-C').click();
       await r.getByTestId('mo-undo').click();
       await expect(r.getByTestId('mo-undo')).toBeEnabled();
+      // The autosave lags the redraw: wait until the save holds A and B but no longer C (undone).
+      await expect.poll(async () => ((await savedState(p)).plan as DeliveryPlan).trips.flat()).toEqual([0, 1]);
       plan = (await savedState(p)).plan;
     },
     { difficulty: 'hard', settings: { problem: 'delivery' } }
