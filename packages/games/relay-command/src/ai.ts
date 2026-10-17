@@ -952,6 +952,19 @@ function candidateOrders(obs: Observation, ruleset: Ruleset, unit: Entity, fight
   const orders: Order[] = [{ type: 'hold' }];
   const byDistance = [...spotted].sort((a, b) => dist2(unit.x, unit.y, a.x, a.y) - dist2(unit.x, unit.y, b.x, b.y) || frame(obs, a) - frame(obs, b));
   for (const t of byDistance.slice(0, targets)) orders.push({ type: 'attack', target: t.id });
+  // A gun that has this unit in its range, also one known only by its muzzle flash, and that few
+  // known fighters cover: close in on it (inside its minimum range it cannot fire) instead of
+  // holding under its shells. A gun inside an army is left alone: chasing it only draws units out.
+  const known = enemiesOf(obs);
+  const gun = known
+    .filter((e) => {
+      const w = archetypeOf(ruleset, e.kind)?.weapon;
+      if (!w || w.minRange <= 0 || dist2(unit.x, unit.y, e.x, e.y) > (w.range + 1) ** 2 || orders.some((o) => o.type === 'attack' && o.target === e.id)) return false;
+      const cover = known.filter((d) => d.id !== e.id && archetypeOf(ruleset, d.kind)?.weapon && (archetypeOf(ruleset, d.kind)?.speed ?? 0) > 0 && Math.max(Math.abs(d.x - e.x), Math.abs(d.y - e.y)) <= Number(process.env.COVR ?? 3)).length;
+      return cover <= Number(process.env.COVN ?? 1);
+    })
+    .sort((a, b) => dist2(unit.x, unit.y, a.x, a.y) - dist2(unit.x, unit.y, b.x, b.y) || frame(obs, a) - frame(obs, b))[0];
+  if (gun) orders.push({ type: 'attack', target: gun.id });
   if (objective && hasCompany(unit, fighters, chosen)) {
     const goal = standOff(obs, ruleset, unit, objective);
     if (goal.x !== unit.x || goal.y !== unit.y) orders.push({ type: 'move', x: goal.x, y: goal.y });
