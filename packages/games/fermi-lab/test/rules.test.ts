@@ -1,0 +1,483 @@
+import { describe, expect, it } from 'vitest';
+import fc from 'fast-check';
+import { createRng } from '@wp/game-core';
+import {
+  CATEGORY_CHOICES,
+  DIFFICULTIES,
+  MAX_FACTORS,
+  MODEL_MODES,
+  ROUND_LENGTH,
+  addRow,
+  bandOf,
+  commitGuess,
+  compare,
+  createInitial,
+  currentQuestion,
+  finishModel,
+  guidedRows,
+  insertConstant,
+  isFermiState,
+  markFinished,
+  marksOf,
+  modelResult,
+  next,
+  poolOf,
+  referenceProduct,
+  removeRow,
+  resetState,
+  score,
+  selectTasks,
+  sensitivity,
+  setDraft,
+  setRowLabel,
+  setRowNumber,
+  setRowUnit,
+  settingsOf,
+  summarize,
+  taskOf,
+  unitPalette,
+  type FactorState,
+  type FermiState
+} from '../src/rules';
+import { TASKS, taskById, type Task } from '../src/tasks';
+import { convertTo, dimsText, isCountWord, leftover, multiply, parseUnit, unitText, type Dims } from '../src/units';
+import { decade } from '../src/format';
+
+const task = (id: string): Task => taskById(id)!;
+const clone = <T>(x: T): T => JSON.parse(JSON.stringify(x)) as T;
+
+/** Plays the current question: guess, fill every open guided row with its reference value, use the model. */
+function playQuestion(state: FermiState, guess: number, useModel: boolean): FermiState {
+  let s = commitGuess(state, guess);
+  const q = currentQuestion(s)!;
+  q.factors.forEach((row, i) => {
+    const ref = taskOf(q).factors.find((x) => x.id === row.ref);
+    if (ref && !ref.fixed) s = setRowNumber(s, i, String(ref.value), 0, ref.value);
+  });
+  return finishModel(s, useModel);
+}
+
+describe('units', () => {
+  it('parses every unit used by the tasks', () => {
+    for (const t of TASKS) {
+      expect(parseUnit(t.answer.unit), `${t.id} answer`).not.toBeNull();
+      for (const f of t.factors) expect(parseUnit(f.unit), `${t.id}/${f.id}`).not.toBeNull();
+    }
+  });
+
+  it('knows the conversions', () => {
+    expect(parseUnit('kWh')!.scale).toBe(3.6e6);
+    expect(parseUnit('year')!.scale / parseUnit('day')!.scale).toBe(365);
+    expect(parseUnit('km³')!.scale).toBeCloseTo(1e9);
+    expect(parseUnit('L/(person·day)')!.dims).toEqual([3, 0, -1, 0, 0]);
+    expect(parseUnit('J/(kg·K)')!.dims).toEqual([2, 0, -2, -1, 0]);
+    expect(parseUnit('kWh/(m²·year)')!.dims).toEqual([0, 1, -3, 0, 0]);
+  });
+
+  it('rejects malformed units without throwing', () => {
+    for (const bad of ['', 'furlong', 'm/s/s', '(m)/s', 'm/((s))', 'm·', '/s', 'x'.repeat(50), 'm/(s']) expect(parseUnit(bad), bad).toBeNull();
+    expect(parseUnit(42 as unknown as string)).toBeNull();
+  });
+
+  it('multiplies dimensions additively and scales multiplicatively (property)', () => {
+    const units = ['m', 'km', 'g', 'kg', 'h', 's', 'L', 'Wh', 'W', 'K', 'mol', 'ha', 'cm²', 'min'];
+    fc.assert(
+      fc.property(fc.constantFrom(...units), fc.constantFrom(...units), fc.double({ min: 1e-3, max: 1e3, noNaN: true }), fc.double({ min: 1e-3, max: 1e3, noNaN: true }), (u, v, a, b) => {
+        const p = multiply([
+          { value: a, unit: u, power: 1 },
+          { value: b, unit: v, power: 1 }
+        ])!;
+        const pu = parseUnit(u)!;
+        const pv = parseUnit(v)!;
+        expect(p.dims).toEqual(pu.dims.map((d, i) => d + pv.dims[i]!));
+        expect(p.si / (a * pu.scale * b * pv.scale)).toBeCloseTo(1, 9);
+      }),
+      { numRuns: 150 }
+    );
+  });
+
+  it('converts only between matching dimensions, and reports leftovers', () => {
+    const p = multiply([{ value: 2, unit: 'kWh', power: 1 }])!;
+    expect(convertTo(p, 'J')).toBeCloseTo(7.2e6);
+    expect(convertTo(p, 'W')).toBeNull();
+    expect(dimsText(leftover(p, 'W'))).toBe('s');
+    expect(dimsText([0, 1, -1, 0, 0] as Dims)).toBe('kg·s⁻¹');
+    expect(multiply([{ value: 0, unit: 'm', power: 1 }])).toBeNull();
+    expect(multiply([{ value: 1, unit: 'nope', power: 1 }])).toBeNull();
+  });
+
+  it('labels count words and parenthesises compound denominators', () => {
+    const label = (name: string, count: boolean) => (count && isCountWord(name) ? `${name}s` : name);
+    expect(unitText('g/grain', label)).toBe('g/grain');
+    expect(unitText('person/m²', label)).toBe('persons/m²');
+    expect(unitText('L/(person·day)', label)).toBe('L/(person·day)');
+    expect(unitText('1/year', label)).toBe('1/year');
+  });
+});
+
+describe('scoring', () => {
+  const t = task('rice-grains'); // central 40,000
+
+  it('has inclusive band limits at ×2, ×3, ×10 and ×100 in both directions', () => {
+    const c = t.answer.central;
+    for (const [k, band] of [
+      [2, 'x2'],
+      [3, 'x3'],
+      [10, 'x10'],
+      [100, 'x100']
+    ] as const) {
+      expect(score(c * k, t).band).toBe(band);
+      expect(score(c / k, t).band).toBe(band);
+      expect(score(c * k * 1.001, t).band).not.toBe(band);
+    }
+    expect(score(c * 101, t).band).toBe('far');
+    expect(bandOf(0)).toBe('x2');
+    expect([marksOf('x2'), marksOf('x3'), marksOf('x10'), marksOf('x100'), marksOf('far')]).toEqual([3, 2, 1, 0, 0]);
+  });
+
+  it('gives directions and the plausible-range flag', () => {
+    expect(score(80_000, t)).toMatchObject({ direction: 'high', inRange: false });
+    expect(score(20_000, t)).toMatchObject({ direction: 'low', inRange: false });
+    expect(score(41_000, t)).toMatchObject({ direction: 'none', inRange: true });
+    expect(score(80_000, t).factor).toBeCloseTo(2);
+  });
+
+  it('is symmetric and equals |log10(answer ÷ central)| (property)', () => {
+    fc.assert(
+      fc.property(fc.double({ min: 1e-6, max: 1e6, noNaN: true }), (k) => {
+        const up = score(t.answer.central * k, t);
+        const down = score(t.answer.central / k, t);
+        expect(up.d).toBeCloseTo(Math.abs(Math.log10(k)), 9);
+        expect(down.d).toBeCloseTo(up.d, 9);
+        expect(down.band).toBe(up.band);
+      }),
+      { numRuns: 200 }
+    );
+  });
+});
+
+describe('model, comparison and sensitivity', () => {
+  it('the guided model filled with reference values reproduces the reference product', () => {
+    for (const t of TASKS) {
+      const rows = guidedRows(t).map((r) => {
+        const f = t.factors.find((x) => x.id === r.ref)!;
+        return f.fixed ? r : { ...r, text: String(f.value), value: f.value };
+      });
+      const result = modelResult(t, rows);
+      expect(result.status, t.id).toBe('ok');
+      if (result.status === 'ok') expect(result.value / referenceProduct(t)!).toBeCloseTo(1, 9);
+    }
+  });
+
+  it('equals Π (value · scale)^power ÷ answer scale for random values (property)', () => {
+    const t = task('lifetime-walking');
+    fc.assert(
+      fc.property(fc.array(fc.double({ min: 1e-3, max: 1e6, noNaN: true }), { minLength: 4, maxLength: 4 }), (values) => {
+        const rows = guidedRows(t).map((r, i) => (t.factors[i]!.fixed ? r : { ...r, text: 'x', value: values[i]! }));
+        const result = modelResult(t, rows);
+        const expected = t.factors.reduce((acc, f, i) => acc * ((f.fixed ? f.value : values[i]!) * parseUnit(f.unit)!.scale) ** f.power, 1) / parseUnit('km')!.scale;
+        expect(result.status).toBe('ok');
+        if (result.status === 'ok') expect(result.value / expected).toBeCloseTo(1, 9);
+      }),
+      { numRuns: 100 }
+    );
+  });
+
+  it('reports empty, incomplete and mismatched models', () => {
+    const t = task('room-air');
+    expect(modelResult(t, []).status).toBe('empty');
+    expect(modelResult(t, guidedRows(t)).status).toBe('incomplete');
+    const area: FactorState = { ref: null, unit: 'm²', power: 1, text: '25', exp: 0, value: 25, label: '' };
+    const r = modelResult(t, [area]);
+    expect(r.status).toBe('units');
+    if (r.status === 'units') expect(dimsText(r.leftover)).toBe('m²·kg⁻¹');
+  });
+
+  it('applies the × 10ⁿ stepper', () => {
+    const t = task('rice-grains');
+    const rows = guidedRows(t).map((r) => (r.ref === 'grainMass' ? { ...r, text: '2.5', exp: -2, value: 2.5 } : r));
+    const result = modelResult(t, rows);
+    expect(result.status === 'ok' && result.value).toBeCloseTo(40_000);
+  });
+
+  it('compares row effects and names the biggest difference', () => {
+    const t = task('rain-roof');
+    const rows = guidedRows(t).map((r) => (r.ref === 'roofArea' ? { ...r, value: 150 } : r.ref === 'rainfall' ? { ...r, value: 0.315 } : r));
+    const cmp = compare(t, rows);
+    const byId = Object.fromEntries(cmp.rows.map((r) => [r.factor.id, r]));
+    expect(byId.roofArea!.effect).toBeCloseTo(1.5);
+    expect(byId.rainfall!.effect).toBeCloseTo(0.5);
+    expect(byId.rainfall!.biggest).toBe(true);
+    expect(byId.litresPerM3!.effect).toBeNull();
+    expect(cmp.othersEffect).toBeNull();
+  });
+
+  it('matches free rows only on a unique unit and power', () => {
+    const t = task('pitch-crowd'); // two factors in m, one in person/m²
+    const free = (unit: string, value: number): FactorState => ({ ref: null, unit, power: 1, text: String(value), exp: 0, value, label: '' });
+    const cmp = compare(t, [free('m', 100), free('m', 70), free('person/m²', 2)]);
+    expect(cmp.rows.find((r) => r.factor.id === 'crowdDensity')!.effect).toBeCloseTo(0.5);
+    expect(cmp.rows.find((r) => r.factor.id === 'pitchLength')!.yours).toBeNull();
+    expect(cmp.others).toHaveLength(2);
+    // The unmatched rows explain the rest of the result.
+    expect(cmp.othersEffect! * 0.5).toBeCloseTo((100 * 70 * 2) / t.answer.central);
+  });
+
+  it('builds tornado bars with hi/lo = (high/low)^|power|, widest first, given factors excluded', () => {
+    for (const t of TASKS) {
+      const bars = sensitivity(t);
+      expect(bars.map((b) => b.factorId).sort()).toEqual(t.factors.filter((x) => !x.fixed).map((x) => x.id).sort());
+      for (const b of bars) {
+        const f = t.factors.find((x) => x.id === b.factorId)!;
+        expect(b.hi / b.lo).toBeCloseTo((f.high / f.low) ** Math.abs(f.power), 6);
+        expect(b.lo).toBeLessThanOrEqual(t.answer.central * 1.0000001);
+        expect(b.hi).toBeGreaterThanOrEqual(t.answer.central * 0.9999999);
+      }
+      for (let i = 1; i < bars.length; i++) expect(bars[i - 1]!.spanDecades).toBeGreaterThanOrEqual(bars[i]!.spanDecades);
+    }
+    expect(sensitivity(task('sand-jar'))[0]!.factorId).toBe('grainDiameter');
+  });
+
+  it('offers a palette of at most 16 sorted units containing every open reference unit', () => {
+    for (const t of TASKS) {
+      const palette = unitPalette(t);
+      expect(palette.length).toBeLessThanOrEqual(16);
+      expect([...palette].sort((a, b) => a.localeCompare(b, 'en'))).toEqual(palette);
+      for (const f of t.factors.filter((x) => !x.fixed)) expect(palette).toContain(f.unit);
+    }
+  });
+});
+
+describe('round selection', () => {
+  it('picks five distinct tasks of the category for every setting, deterministically', () => {
+    for (const difficulty of DIFFICULTIES)
+      for (const category of CATEGORY_CHOICES)
+        for (let seed = 0; seed < 200; seed++) {
+          const s = createInitial(seed, { difficulty, category });
+          const ids = s.questions.map((q) => q.taskId);
+          expect(new Set(ids).size).toBe(ROUND_LENGTH);
+          if (category !== 'all') for (const id of ids) expect(task(id).category).toBe(category);
+          if (seed < 3) expect(createInitial(seed, { difficulty, category })).toEqual(s);
+        }
+  });
+
+  it('takes the round’s level first and fills up from the neighbouring levels', () => {
+    for (let seed = 0; seed < 50; seed++) {
+      const levels = selectTasks(createRng(seed), 'easy', 'space').map((t) => t.level);
+      const l1 = poolOf('space').filter((t) => t.level === 1).length;
+      const l2 = poolOf('space').filter((t) => t.level === 2).length;
+      expect(levels.filter((l) => l === 1)).toHaveLength(l1);
+      expect(levels.filter((l) => l === 2)).toHaveLength(Math.min(l2, 5 - l1));
+      expect(selectTasks(createRng(seed), 'hard', 'all').every((t) => t.level === 3)).toBe(true);
+    }
+  });
+
+  it('places the slider window so the central value is 2 to 7 decades above its start, covering all offsets', () => {
+    const offsets = new Set<number>();
+    for (let seed = 0; seed < 200; seed++) {
+      for (const q of createInitial(seed).questions) {
+        const off = decade(task(q.taskId).answer.central) - q.windowLo;
+        expect(off).toBeGreaterThanOrEqual(2);
+        expect(off).toBeLessThanOrEqual(7);
+        offsets.add(off);
+      }
+    }
+    expect([...offsets].sort()).toEqual([2, 3, 4, 5, 6, 7]);
+  });
+
+  it('falls back to defaults for untrusted choices and tells its settings', () => {
+    const s = createInitial(Number.NaN, { difficulty: 'nope', category: 42, model: '__proto__' });
+    expect(settingsOf(s)).toEqual({ difficulty: 'easy', category: 'all', model: 'guided' });
+    expect(isFermiState(s)).toBe(true);
+    const t = createInitial(5, { difficulty: 'hard', category: 'space', model: 'free' });
+    expect(settingsOf(t)).toEqual({ difficulty: 'hard', category: 'space', model: 'free' });
+    expect(resetState(playQuestion(t, 10, false))).toEqual(t);
+  });
+});
+
+describe('transitions', () => {
+  it('runs a whole round and summarises it', () => {
+    let s = createInitial(3, { difficulty: 'medium' });
+    for (let i = 0; i < ROUND_LENGTH; i++) {
+      const c = taskOf(currentQuestion(s)!).answer.central;
+      s = playQuestion(s, c / 30, i < 3);
+      expect(isFermiState(s)).toBe(true);
+      s = next(s);
+    }
+    expect(s.index).toBe(ROUND_LENGTH);
+    const sum = summarize(s);
+    expect(sum.rows).toHaveLength(5);
+    expect(sum.modelsUsed).toBe(3);
+    expect(sum.modelHelp).not.toBeNull();
+    expect(sum.modelHelp!.withModel).toBeLessThan(sum.modelHelp!.firstGuesses);
+    expect(sum.withinFactor3).toBe(3);
+    // Two first guesses kept at 1/30: the bias is (1/30)^(2/5).
+    expect(sum.bias).toBeCloseTo((1 / 30) ** (2 / 5));
+    expect(sum.tip).toBe('low');
+    expect(markFinished(markFinished(s)).finishedReported).toBe(true);
+    expect(isFermiState(markFinished(s))).toBe(true);
+    expect(next(s)).toBe(s);
+  });
+
+  it('chooses the tip by pattern', () => {
+    let s = createInitial(8, { difficulty: 'easy', category: 'society' });
+    for (let i = 0; i < ROUND_LENGTH; i++) s = next(playQuestion(s, taskOf(currentQuestion(s)!).answer.central * 1.1, false));
+    expect(summarize(s).tip).toBe('model');
+    expect(summarize(s).modelHelp).toBeNull();
+    // A cube factor far off gives the cube tip.
+    let c = createInitial(1, { difficulty: 'hard', category: 'space' });
+    for (let i = 0; i < ROUND_LENGTH; i++) {
+      const t = taskOf(currentQuestion(c)!);
+      c = next(playQuestion(c, t.id === 'earths-in-sun' ? t.answer.central / 1000 : t.answer.central, false));
+    }
+    if (c.questions.some((q) => q.taskId === 'earths-in-sun')) expect(summarize(c).tip).toBe('cube');
+  });
+
+  it('ignores actions in the wrong phase or with invalid input', () => {
+    const s = createInitial(4);
+    expect(commitGuess(s, 0)).toBe(s);
+    expect(commitGuess(s, Number.NaN)).toBe(s);
+    expect(commitGuess(s, -3)).toBe(s);
+    expect(finishModel(s, false)).toBe(s);
+    expect(next(s)).toBe(s);
+    expect(setRowNumber(s, 0, '1', 0, 1)).toBe(s);
+    const m = commitGuess(s, 5);
+    expect(setDraft(m, 'x', 1)).toBe(m);
+    expect(finishModel(m, true)).toBe(m); // the guided model is incomplete
+    expect(addRow(m)).toBe(m); // guided
+    const given = currentQuestion(m)!.factors.findIndex((r) => taskOf(currentQuestion(m)!).factors.find((x) => x.id === r.ref)!.fixed);
+    if (given >= 0) expect(setRowNumber(m, given, '3', 0, 3)).toBe(m);
+    expect(setDraft(s, 'a'.repeat(50), 99).questions[0]!.draft).toHaveLength(32);
+    expect(setDraft(s, '1', 99).questions[0]!.draftExp).toBe(30);
+  });
+
+  it('builds a free model with rows, constants and units', () => {
+    let s = createInitial(2, { model: 'free', category: 'everyday', difficulty: 'easy' });
+    while (taskOf(currentQuestion(s)!).id !== 'rain-roof' && s.index < 5) s = next(playQuestion(s, 1, false));
+    if (s.index >= 5) return;
+    s = commitGuess(s, 1000);
+    expect(currentQuestion(s)!.factors).toEqual([]);
+    for (let i = 0; i < 6; i++) s = addRow(s);
+    expect(currentQuestion(s)!.factors).toHaveLength(MAX_FACTORS);
+    s = removeRow(removeRow(removeRow(s, 4), 3), 2);
+    s = setRowUnit(s, 0, 'm²', 1);
+    s = setRowUnit(s, 1, 'm/year', 1);
+    expect(setRowUnit(s, 1, 'furlong', 1)).toBe(s);
+    s = setRowNumber(s, 0, '100', 0, 100);
+    s = setRowNumber(s, 1, '0.63', 0, 0.63);
+    s = setRowLabel(s, 0, 'roof'.repeat(20));
+    expect(currentQuestion(s)!.factors[0]!.label).toHaveLength(40);
+    // m² × m/year is already a volume per year: the algebra converts m³ to L without the constant.
+    expect(modelResult(taskOf(currentQuestion(s)!), currentQuestion(s)!.factors)).toMatchObject({ status: 'ok' });
+    s = insertConstant(s, 'litresPerM3');
+    expect(insertConstant(s, 'litresPerM3')).toBe(s);
+    expect(insertConstant(s, 'roofArea')).toBe(s); // not a constant
+    expect(isFermiState(s)).toBe(true);
+    s = finishModel(s, true);
+    expect(currentQuestion(s)!.answer).toBeCloseTo(63_000);
+    expect(currentQuestion(s)!.modelUsed).toBe(true);
+    expect(isFermiState(s)).toBe(true);
+  });
+});
+
+describe('isFermiState', () => {
+  const base = createInitial(11, { model: 'guided' });
+  const model = commitGuess(base, 7);
+
+  it('accepts every state reachable by random actions (property)', () => {
+    const action = fc.oneof(
+      fc.record({ k: fc.constant('draft'), text: fc.string({ maxLength: 40 }), exp: fc.integer({ min: -10, max: 40 }) }),
+      fc.record({ k: fc.constant('guess'), v: fc.double({ min: -1, max: 1e12, noNaN: true }) }),
+      fc.record({ k: fc.constant('row'), i: fc.nat(6), v: fc.option(fc.double({ min: -1, max: 1e9, noNaN: true }), { nil: null }), exp: fc.integer({ min: -8, max: 32 }) }),
+      fc.record({ k: fc.constant('unit'), i: fc.nat(6), u: fc.constantFrom('m', 'kg', 'L', 'day', 'm²', 'zz'), p: fc.constantFrom(1, -1, 2, -2, 3, -3, 4) }),
+      fc.record({ k: fc.constantFrom('add', 'next', 'use', 'keep', 'remove', 'const') })
+    );
+    fc.assert(
+      fc.property(fc.integer({ min: 0, max: 1000 }), fc.constantFrom(...MODEL_MODES), fc.array(action, { maxLength: 40 }), (seed, mode, actions) => {
+        let s = createInitial(seed, { model: mode });
+        for (const a of actions) {
+          const q = currentQuestion(s);
+          switch (a.k) {
+            case 'draft':
+              s = setDraft(s, (a as { text: string }).text, (a as { exp: number }).exp);
+              break;
+            case 'guess':
+              s = commitGuess(s, (a as { v: number }).v);
+              break;
+            case 'row':
+              s = setRowNumber(s, (a as { i: number }).i, 'x', (a as { exp: number }).exp, (a as { v: number | null }).v);
+              break;
+            case 'unit':
+              s = setRowUnit(s, (a as { i: number }).i, (a as { u: string }).u, (a as { p: 1 }).p);
+              break;
+            case 'add':
+              s = addRow(s);
+              break;
+            case 'remove':
+              s = removeRow(s, 0);
+              break;
+            case 'const':
+              if (q) s = insertConstant(s, taskOf(q).factors.find((x) => x.fixed)?.id ?? 'none');
+              break;
+            case 'use':
+              s = finishModel(s, true);
+              break;
+            case 'keep':
+              s = finishModel(s, false);
+              break;
+            default:
+              s = next(s);
+          }
+          expect(isFermiState(clone(s))).toBe(true);
+        }
+      }),
+      { numRuns: 120 }
+    );
+  });
+
+  it('never throws on junk (property)', () => {
+    fc.assert(
+      fc.property(fc.anything(), (x) => {
+        expect(() => isFermiState(x)).not.toThrow();
+        expect(isFermiState(x)).toBe(false);
+      }),
+      { numRuns: 200 }
+    );
+  });
+
+  /** A save as untrusted JSON, typed loosely enough to tamper with. */
+  interface Raw {
+    v: number;
+    index: number;
+    model: string;
+    finishedReported: boolean;
+    questions: { taskId: string; firstGuess: number; draft: string; phase: string; windowLo: number; factors: { unit: string; ref: string; exp: number }[] }[];
+  }
+  const tamper = (s: FermiState, edit: (x: Raw) => void): unknown => {
+    const x = clone(s) as unknown as Raw;
+    edit(x);
+    return x;
+  };
+
+  it.each([
+    ['unknown task id', (x: Raw) => (x.questions[0]!.taskId = 'future-task')],
+    ['duplicate task', (x: Raw) => (x.questions[1]!.taskId = x.questions[0]!.taskId)],
+    ['four questions', (x: Raw) => x.questions.pop()],
+    ['NaN guess', (x: Raw) => (x.questions[0]!.firstGuess = Number.NaN)],
+    ['negative guess', (x: Raw) => (x.questions[0]!.firstGuess = -1)],
+    ['long draft', (x: Raw) => (x.questions[0]!.draft = 'x'.repeat(33))],
+    ['review without answer', (x: Raw) => (x.questions[0]!.phase = 'review')],
+    ['wrong window', (x: Raw) => (x.questions[0]!.windowLo += 9)],
+    ['bad index', (x: Raw) => (x.index = 6)],
+    ['bad version', (x: Raw) => (x.v = 2)],
+    ['bad model', (x: Raw) => (x.model = 'auto')],
+    ['finished early', (x: Raw) => (x.finishedReported = true)],
+    ['row with bad unit', (x: Raw) => (x.questions[0]!.factors[0]!.unit = 'furlong')],
+    ['row with wrong ref', (x: Raw) => (x.questions[0]!.factors[0]!.ref = 'nope')],
+    ['row exponent out of range', (x: Raw) => (x.questions[0]!.factors[0]!.exp = 31)],
+    ['guided rows reordered', (x: Raw) => x.questions[0]!.factors.reverse()]
+  ])('rejects a tampered state: %s', (_, edit) => {
+    const s = _.startsWith('row') || _.startsWith('guided') ? model : base;
+    expect(isFermiState(tamper(s, edit))).toBe(false);
+  });
+});
