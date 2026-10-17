@@ -1,0 +1,156 @@
+/* Pixel Peel. All rules are scoped under .wp-pixel-peel; logical properties keep RTL correct. */
+.wp-pixel-peel {
+  display: grid;
+  gap: 0.75rem;
+  max-inline-size: 64rem;
+  margin-inline: auto;
+}
+.wp-pixel-peel p { margin: 0; }
+/* Shared button styles set display; keep the hidden attribute authoritative. */
+.wp-pixel-peel [hidden] { display: none !important; }
+
+.wp-pixel-peel .pp-play { display: grid; gap: 0.75rem; }
+.wp-pixel-peel .pp-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.25rem 1rem; }
+.wp-pixel-peel .pp-title { font-weight: 700; font-size: 1.1rem; }
+.wp-pixel-peel .pp-left { color: var(--wp-muted); font-variant-numeric: tabular-nums; }
+
+.wp-pixel-peel .pp-main { display: grid; gap: 0.75rem; align-items: start; }
+@media (min-width: 48rem) {
+  .wp-pixel-peel .pp-main { grid-template-columns: minmax(0, 1.15fr) minmax(18rem, 1fr); }
+}
+
+/* The picture is content: never mirrored, never wider than its column. */
+.wp-pixel-peel .pp-board { direction: ltr; min-inline-size: 0; display: flex; justify-content: center; }
+.wp-pixel-peel .pp-canvas,
+.wp-pixel-peel .pp-reveal-canvas {
+  display: block;
+  max-inline-size: 100%;
+  image-rendering: pixelated;
+  border-radius: 6px;
+  forced-color-adjust: none;
+}
+
+.wp-pixel-peel .pp-side { display: grid; gap: 0.75rem; min-inline-size: 0; }
+.wp-pixel-peel .pp-status { min-block-size: 3em; }
+.wp-pixel-peel .pp-section { display: grid; gap: 0.35rem; }
+.wp-pixel-peel .pp-heading { margin: 0; font-size: 0.95rem; font-weight: 600; }
+
+/* Shooters: swatch with its symbol, and the shots as a number. */
+.wp-pixel-peel .pp-shooter {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-inline-size: 48px;
+  min-block-size: 56px;
+  padding: 0.35rem 0.5rem;
+  font-weight: 700;
+  font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
+}
+.wp-pixel-peel .pp-slot { min-block-size: 48px; inline-size: 100%; }
+.wp-pixel-peel .pp-shooter[aria-disabled='true'] { opacity: 0.6; border-style: dashed; }
+.wp-pixel-peel .pp-shooter.is-selected { outline: 3px solid var(--wp-accent); outline-offset: 2px; }
+.wp-pixel-peel .pp-shooter[data-hint='true'] { outline: 3px dashed var(--wp-focus); outline-offset: 3px; }
+.wp-pixel-peel .pp-hint-badge {
+  position: absolute;
+  inset-block-start: -0.7rem;
+  inset-inline-end: -0.3rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: var(--wp-focus);
+  color: var(--wp-bg);
+  font-size: 0.7rem;
+  line-height: 1.3rem;
+}
+.wp-pixel-peel .pp-swatch,
+.wp-pixel-peel .pp-chip-swatch {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  inline-size: 30px;
+  block-size: 30px;
+  border-radius: 6px;
+  border: 1px solid rgb(0 0 0 / 0.45);
+  forced-color-adjust: none;
+}
+.wp-pixel-peel .pp-chip-swatch { inline-size: 22px; block-size: 22px; border-radius: 4px; }
+.wp-pixel-peel .pp-symbol { inline-size: 70%; block-size: 70%; }
+
+/* Waiting places. */
+.wp-pixel-peel .pp-slots { display: grid; grid-template-columns: repeat(auto-fit, minmax(56px, 1fr)); gap: 0.4rem; }
+.wp-pixel-peel .pp-slot-cell { display: grid; }
+.wp-pixel-peel .pp-slot-free {
+  display: grid;
+  place-items: center;
+  min-block-size: 48px;
+  border: 2px dashed var(--wp-border);
+  border-radius: var(--wp-radius);
+  color: var(--wp-muted);
+  font-size: 0.85rem;
+}
+
+/* Lanes: the front is a button, the shooters behind it are compact chips. */
+.wp-pixel-peel .pp-lanes { display: grid; grid-template-columns: repeat(auto-fit, minmax(88px, 1fr)); gap: 0.5rem; }
+.wp-pixel-peel .pp-lane { display: grid; gap: 0.3rem; align-content: start; min-inline-size: 0; }
+.wp-pixel-peel .pp-lane-name { font-size: 0.8rem; color: var(--wp-muted); }
+.wp-pixel-peel .pp-lane .pp-front { inline-size: 100%; }
+.wp-pixel-peel .pp-lane-empty {
+  display: grid;
+  place-items: center;
+  min-block-size: 56px;
+  border: 2px dashed var(--wp-border);
+  border-radius: var(--wp-radius);
+  color: var(--wp-muted);
+  font-size: 0.85rem;
+}
+.wp-pixel-peel .pp-chips { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.2rem; }
+.wp-pixel-peel .pp-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-block-size: 28px;
+  padding-inline: 0.3rem;
+  border-radius: 6px;
+  background: var(--wp-surface-2);
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+.wp-pixel-peel .pp-more summary { min-block-size: 44px; display: flex; align-items: center; cursor: pointer; color: var(--wp-accent); font-size: 0.85rem; }
+
+.wp-pixel-peel .pp-actions button { flex: 1 1 auto; }
+.wp-pixel-peel .pp-help { font-size: 0.85rem; }
+
+.wp-pixel-peel .pp-stuck {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: 2px solid var(--wp-focus);
+  border-radius: var(--wp-radius);
+  background: var(--wp-surface);
+}
+
+.wp-pixel-peel .pp-details { border: 1px solid var(--wp-border); border-radius: var(--wp-radius); padding-inline: 0.75rem; background: var(--wp-surface); }
+.wp-pixel-peel .pp-details > summary { min-block-size: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 600; }
+.wp-pixel-peel .pp-colour-list { list-style: none; margin: 0; padding: 0 0 0.6rem; display: grid; gap: 0.35rem; }
+.wp-pixel-peel .pp-colour { display: grid; grid-template-columns: auto minmax(5rem, auto) 1fr; gap: 0.5rem; align-items: center; font-size: 0.9rem; }
+.wp-pixel-peel .pp-colour-count { color: var(--wp-muted); font-variant-numeric: tabular-nums; }
+.wp-pixel-peel .pp-option { display: flex; align-items: center; gap: 0.5rem; min-block-size: 44px; }
+.wp-pixel-peel .pp-option input { min-block-size: 24px; inline-size: 24px; margin: 0; }
+.wp-pixel-peel .pp-details > .pp-option:last-child { margin-block-end: 0.5rem; }
+
+/* The reveal: the whole picture, its title and one factual line. */
+.wp-pixel-peel .pp-reveal { display: grid; gap: 0.5rem; justify-items: center; text-align: center; animation: pp-fade 600ms ease-out; }
+.wp-pixel-peel .pp-reveal-board { direction: ltr; display: flex; justify-content: center; inline-size: 100%; }
+.wp-pixel-peel .pp-reveal-title { margin: 0.25rem 0 0; font-size: 1.4rem; }
+.wp-pixel-peel .pp-reveal-title:focus { outline: none; }
+.wp-pixel-peel .pp-reveal-title:focus-visible { outline: 3px solid var(--wp-focus); outline-offset: 2px; }
+.wp-pixel-peel.is-reduced-motion .pp-reveal { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .wp-pixel-peel .pp-reveal { animation: none; }
+}
+@keyframes pp-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
