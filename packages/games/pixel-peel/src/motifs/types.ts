@@ -14,11 +14,8 @@ export type Localized = Readonly<Record<Locale, string>>;
  * The fixed colour vocabulary, translated once in the message catalogues (`colour.<name>`). Reusing a name is a
  * data-only change; a new name needs a translation in every locale.
  */
-export const COLOUR_NAMES = [
-  'white', 'cream', 'yellow', 'gold', 'orange', 'red', 'darkRed', 'pink', 'lightPink', 'purple', 'lightBlue', 'blue',
-  'navy', 'teal', 'lightGreen', 'green', 'darkGreen', 'olive', 'tan', 'brown', 'darkBrown', 'grey', 'darkGrey', 'black'
-] as const;
-export type ColourName = (typeof COLOUR_NAMES)[number];
+export { COLOUR_NAMES, type ColourName } from '../art/types';
+import type { ColourName } from '../art/types';
 
 export type MotifGroup = 'season' | 'landscape' | 'animal';
 

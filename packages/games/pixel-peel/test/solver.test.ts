@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { createInitial } from '../src/generate';
-import { EMPTY, apply, initialPosition, isSolved, launch, play, positionAt, replay, undoTo, type Position } from '../src/rules';
+import { EMPTY, apply, initialPosition, isSolved, play, positionAt, replay, undoTo, type Position } from '../src/rules';
+import { launch } from './reference';
 import { fastLaunchFrom, hint, obviousPlay, solve } from '../src/solver';
 import { gridArb, nestedArb, pictureOf, puzzleArb, stateOf } from './helpers';
 import { oracleSolvable } from './oracle';

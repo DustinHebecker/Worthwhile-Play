@@ -4,7 +4,7 @@ import { LEVELS, peelPlan, pictureOf } from '../src/generate';
 import { messages } from '../src/messages';
 import { MOTIFS } from '../src/motifs/index';
 import { COLOUR_NAMES, LOCALES } from '../src/motifs/types';
-import { exposedCells, launch } from '../src/rules';
+import { exposedCells, launch } from './reference';
 
 /** CIE76 ΔE between two #rrggbb colours (sRGB → XYZ (D65) → Lab). */
 export function deltaE(a: string, b: string): number {

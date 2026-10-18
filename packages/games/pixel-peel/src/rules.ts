@@ -1,10 +1,12 @@
 import { isRecord, isUint32 } from '@wp/game-core';
-import { COLOUR_NAMES } from './motifs/types';
+import { COLOUR_NAMES } from './art/types';
+import { cloneCursor, engineOf, exposedOf, parseMove as parseEngineMove, replayCursor, startCursor, step, tableOf, type Cursor, type Reason, type Table } from './engine';
 
 /**
- * Pixel Peel rules (design § 4), pure and DOM-free. A picture of coloured cells is peeled from the outside in by
- * shooters that run around its edge and remove only exposed cells of their own colour. The state stores the whole
- * instance (picture, lanes, witness) and the list of moves; the current position is a replay of the moves.
+ * Pixel Peel rules (design v1 § 4, unchanged in v2), pure and DOM-free. A picture of coloured cells is peeled from
+ * the outside in by shooters that run around its edge and remove only exposed cells of their own colour. The state
+ * stores the whole instance (picture, lanes, witness) and the list of moves; the current position is a replay of the
+ * moves through the fast engine (`engine.ts`).
  */
 
 export const DIFFICULTIES = ['easy', 'medium', 'hard'] as const;
@@ -53,7 +55,7 @@ export interface PeelState {
   reported: boolean;
 }
 
-/** A shooter waiting in a slot; `lane`/`index` say where it came from (the solver's position key uses them). */
+/** A shooter waiting in a slot; `lane`/`index` say where it came from. */
 export interface Parked extends Shooter {
   lane: number;
   index: number;
@@ -73,124 +75,90 @@ export interface Position {
 }
 
 export const EMPTY = '.';
-export const LIMITS = { minSide: 4, maxSide: 24, maxPalette: 8, maxLanes: 4, maxSlots: 5, maxShooters: 120, maxShots: 99, maxMoves: 700 } as const;
+/** Bounds of a valid state (design v2 § 7). */
+export const LIMITS = { minSide: 4, maxSide: 48, maxPalette: 20, maxLanes: 4, maxSlots: 6, maxShooters: 160, maxShots: 99, maxMoves: 2500 } as const;
 
-const MOVE = /^([LS])([0-4])$/;
+const MOVE = /^([LS])([0-5])$/;
 const HEX = /^#[0-9a-f]{6}$/i;
 const KEY = /^[a-z]$/;
 const ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 export const toDifficulty = (value: unknown): Difficulty => ((DIFFICULTIES as readonly unknown[]).includes(value) ? (value as Difficulty) : 'easy');
 
-// --- Track and fronts (design § 4.2) ---------------------------------------------------------------------------
+export { stationLines } from './engine';
+export type { Reason } from './engine';
 
-const lineCache = new Map<string, number[][]>();
+// --- Positions: plain views of an engine cursor ----------------------------------------------------------------
 
-/**
- * The cell indices each station looks into, in scan order. Stations run from the bottom-left corner: right along
- * the bottom (columns, scanning upwards), up the right side (rows, scanning leftwards), left along the top (columns,
- * scanning downwards) and down the left side (rows, scanning rightwards).
- */
-export function stationLines(w: number, h: number): number[][] {
-  const key = `${w}x${h}`;
-  const cached = lineCache.get(key);
-  if (cached) return cached;
-  const lines: number[][] = [];
-  for (let i = 0; i < 2 * w + 2 * h; i++) {
-    const line: number[] = [];
-    if (i < w) for (let y = h - 1; y >= 0; y--) line.push(y * w + i);
-    else if (i < w + h) {
-      const y = h - 1 - (i - w);
-      for (let x = w - 1; x >= 0; x--) line.push(y * w + x);
-    } else if (i < 2 * w + h) {
-      const x = w - 1 - (i - w - h);
-      for (let y = 0; y < h; y++) line.push(y * w + x);
-    } else {
-      const y = i - 2 * w - h;
-      for (let x = 0; x < w; x++) line.push(y * w + x);
-    }
-    lines.push(line);
+interface Backing {
+  table: Table;
+  cursor: Cursor;
+}
+
+/** The engine cursor behind each position (positions are plain data; the cursor is never exposed). */
+const backing = new WeakMap<Position, Backing>();
+
+const tableCache = new WeakMap<object, Map<number, Table>>();
+
+/** The engine table of a state's picture and lanes (memoised per lanes array and slot count). */
+export function tableOfState(state: Pick<PeelState, 'picture' | 'lanes' | 'slots'>): Table {
+  let bySlots = tableCache.get(state.lanes);
+  if (!bySlots) {
+    bySlots = new Map();
+    tableCache.set(state.lanes, bySlots);
   }
-  lineCache.set(key, lines);
-  return lines;
+  const cached = bySlots.get(state.slots);
+  if (cached && cached.engine === engineOf(state.picture)) return cached;
+  const table = tableOf(engineOf(state.picture), state.lanes, state.slots);
+  bySlots.set(state.slots, table);
+  return table;
 }
 
-/** The front of a station: the first present cell of its line, or -1. */
-export function front(cells: readonly string[], line: readonly number[]): number {
-  for (const index of line) if (cells[index] !== EMPTY) return index;
-  return -1;
+/** Builds the plain position of a cursor. */
+export function positionOf(table: Table, lanes: Shooter[][], cursor: Cursor): Position {
+  const { engine } = table;
+  const cells: string[] = new Array<string>(engine.colour.length);
+  for (let i = 0; i < cells.length; i++) cells[i] = cursor.cells.present[i] ? (engine.keys[(engine.colour[i] as number) - 1] as string) : EMPTY;
+  const pos: Position = {
+    w: engine.w,
+    h: engine.h,
+    cells,
+    lanes,
+    laneFront: Array.from(cursor.laneFront),
+    slots: cursor.slots.map((s) => (s ? { c: engine.keys[s.c - 1] as string, n: s.n, lane: s.lane, index: s.index } : null)),
+    launches: cursor.launches,
+    parks: cursor.parks
+  };
+  backing.set(pos, { table, cursor });
+  return pos;
 }
 
-/** Exposed cells: the front of at least one station, in ascending index order. */
-export function exposedCells(cells: readonly string[], w: number, h: number): number[] {
-  const set = new Set<number>();
-  for (const line of stationLines(w, h)) {
-    const f = front(cells, line);
-    if (f >= 0) set.add(f);
-  }
-  return [...set].sort((a, b) => a - b);
+/** The engine table and a private copy of the cursor behind a position. */
+export function cursorOf(pos: Position): Backing {
+  const b = backing.get(pos);
+  if (b) return { table: b.table, cursor: cloneCursor(b.cursor) };
+  // A hand-made position (tests): its current cells become the picture.
+  const keys = [...new Set([...pos.cells.filter((c) => c !== EMPTY), ...pos.lanes.flat().map((s) => s.c), ...pos.slots.flatMap((s) => (s ? [s.c] : []))])];
+  const rows: string[] = [];
+  for (let y = 0; y < pos.h; y++) rows.push(pos.cells.slice(y * pos.w, (y + 1) * pos.w).join(''));
+  const table = tableOf(engineOf({ w: pos.w, h: pos.h, rows, palette: keys.map((key) => ({ key })) }), pos.lanes, pos.slots.length);
+  const cursor = startCursor(table);
+  pos.laneFront.forEach((k, i) => (cursor.laneFront[i] = k));
+  cursor.slots = pos.slots.map((s) => (s ? { c: table.engine.codes.get(s.c) ?? 0, n: s.n, lane: s.lane, index: s.index } : null));
+  cursor.launches = pos.launches;
+  cursor.parks = pos.parks;
+  return { table, cursor };
 }
 
-export const exposed = (pos: Position): number[] => exposedCells(pos.cells, pos.w, pos.h);
-
-// --- One launch (design § 4.3) ---------------------------------------------------------------------------------
+export function initialPosition(state: Pick<PeelState, 'picture' | 'lanes' | 'slots'>): Position {
+  const table = tableOfState(state);
+  return positionOf(table, state.lanes, startCursor(table));
+}
 
 export interface Hit {
   cell: number;
   station: number;
 }
-
-export interface LaunchResult {
-  cells: string[];
-  hits: Hit[];
-  left: number;
-}
-
-/**
- * The reference launch: laps of the track while a lap hits something and shots are left. Each station fires at most
- * once per lap, at its front at the moment the shooter passes. Returns a new cells array.
- */
-export function launch(cells: readonly string[], w: number, h: number, shooter: Shooter): LaunchResult {
-  const out = cells.slice();
-  const hits: Hit[] = [];
-  let left = shooter.n;
-  if (left <= 0) return { cells: out, hits, left: Math.max(0, left) };
-  const lines = stationLines(w, h);
-  for (;;) {
-    let lapHits = 0;
-    for (let i = 0; i < lines.length; i++) {
-      const f = front(out, lines[i] as number[]);
-      if (f >= 0 && out[f] === shooter.c) {
-        out[f] = EMPTY;
-        hits.push({ cell: f, station: i });
-        left -= 1;
-        lapHits += 1;
-        if (left === 0) return { cells: out, hits, left };
-      }
-    }
-    if (lapHits === 0) return { cells: out, hits, left };
-  }
-}
-
-// --- Positions and moves (design § 4.4, § 4.5) -----------------------------------------------------------------
-
-export function initialPosition(state: Pick<PeelState, 'picture' | 'lanes' | 'slots'>): Position {
-  const { w, h, rows } = state.picture;
-  const cells: string[] = [];
-  for (const row of rows) for (const ch of row) cells.push(ch);
-  return {
-    w,
-    h,
-    cells,
-    lanes: state.lanes,
-    laneFront: state.lanes.map(() => 0),
-    slots: Array.from({ length: state.slots }, () => null),
-    launches: 0,
-    parks: 0
-  };
-}
-
-export type Reason = 'invalid' | 'empty' | 'noSlot' | 'nothing';
 
 export interface Preview {
   move: Move;
@@ -207,57 +175,30 @@ export interface Preview {
   slot: number;
   /** A lane launch that hits nothing (moving a shooter aside). */
   parks: boolean;
-  /** Cells after the launch. */
-  cells: string[];
 }
 
-export const parseMove = (move: unknown): { kind: 'L' | 'S'; index: number } | undefined => {
-  if (typeof move !== 'string') return undefined;
-  const m = MOVE.exec(move);
-  return m ? { kind: m[1] as 'L' | 'S', index: Number(m[2]) } : undefined;
-};
+export const parseMove = (move: unknown): { kind: 'L' | 'S'; index: number } | undefined => (typeof move === 'string' && MOVE.test(move) ? parseEngineMove(move) : undefined);
 
 export const freeSlot = (pos: Position): number => pos.slots.indexOf(null);
 
 /** What a move would do from `pos` (never throws; illegal moves say why). */
 export function preview(pos: Position, move: Move): Preview {
-  const none = (reason: Reason, shooter: Shooter | null = null, hits: Hit[] = [], left = 0): Preview => ({ move, legal: false, reason, shooter, hits, left, slot: -1, parks: false, cells: pos.cells });
   const parsed = parseMove(move);
-  if (!parsed) return none('invalid');
-  if (parsed.kind === 'L') {
-    const lane = pos.lanes[parsed.index];
-    if (!lane) return none('invalid');
-    const shooter = lane[pos.laneFront[parsed.index] ?? lane.length];
-    if (!shooter) return none('empty');
-    const result = launch(pos.cells, pos.w, pos.h, shooter);
-    const slot = result.left > 0 ? freeSlot(pos) : -1;
-    if (result.left > 0 && slot < 0) return none('noSlot', shooter, result.hits, result.left);
-    return { move, legal: true, reason: null, shooter, hits: result.hits, left: result.left, slot, parks: result.hits.length === 0, cells: result.cells };
-  }
-  if (parsed.index >= pos.slots.length) return none('invalid');
-  const parked = pos.slots[parsed.index];
-  if (!parked) return none('empty');
-  const result = launch(pos.cells, pos.w, pos.h, parked);
-  if (result.hits.length === 0) return none('nothing', parked, [], parked.n);
-  return { move, legal: true, reason: null, shooter: parked, hits: result.hits, left: result.left, slot: result.left > 0 ? parsed.index : -1, parks: false, cells: result.cells };
+  if (!parsed) return { move, legal: false, reason: 'invalid', shooter: null, hits: [], left: 0, slot: -1, parks: false };
+  const { table, cursor } = cursorOf(pos);
+  const hits: Hit[] = [];
+  const o = step(table, cursor, parsed.kind, parsed.index, false, (cell, station) => hits.push({ cell, station }));
+  const shooter = o.shooter ? { c: table.engine.keys[o.shooter.c - 1] as string, n: o.shooter.n } : null;
+  return { move, legal: o.legal, reason: o.reason, shooter, hits: o.reason === 'nothing' ? [] : hits, left: o.left, slot: o.slot, parks: o.parks };
 }
 
 /** Applies a move; returns `pos` itself when the move is illegal. */
 export function apply(pos: Position, move: Move): Position {
-  const p = preview(pos, move);
-  if (!p.legal || !p.shooter) return pos;
-  const parsed = parseMove(move)!;
-  const slots = pos.slots.slice();
-  const laneFront = pos.laneFront.slice();
-  if (parsed.kind === 'L') {
-    const index = laneFront[parsed.index] as number;
-    laneFront[parsed.index] = index + 1;
-    if (p.left > 0) slots[p.slot] = { c: p.shooter.c, n: p.left, lane: parsed.index, index };
-  } else {
-    const parked = slots[parsed.index] as Parked;
-    slots[parsed.index] = p.left > 0 ? { ...parked, n: p.left } : null;
-  }
-  return { ...pos, cells: p.cells, laneFront, slots, launches: pos.launches + 1, parks: pos.parks + (p.parks ? 1 : 0) };
+  const parsed = parseMove(move);
+  if (!parsed) return pos;
+  const { table, cursor } = cursorOf(pos);
+  if (!step(table, cursor, parsed.kind, parsed.index, true).legal) return pos;
+  return positionOf(table, pos.lanes, cursor);
 }
 
 /** All moves that can be listed for a position (lanes first, then slots). */
@@ -265,7 +206,10 @@ export const candidateMoves = (pos: Position): Move[] => [...pos.lanes.map((_, i
 
 export const legalMoves = (pos: Position): Move[] => candidateMoves(pos).filter((m) => preview(pos, m).legal);
 
-export const isSolved = (pos: Position): boolean => pos.cells.every((c) => c === EMPTY);
+export const isSolved = (pos: Position): boolean => {
+  const b = backing.get(pos);
+  return b ? b.cursor.cells.left === 0 : pos.cells.every((c) => c === EMPTY);
+};
 
 /** Not solved and no legal move (design § 4.5): a calm dead end, never a loss. */
 export const isStuck = (pos: Position): boolean => !isSolved(pos) && legalMoves(pos).length === 0;
@@ -273,13 +217,18 @@ export const isStuck = (pos: Position): boolean => !isSolved(pos) && legalMoves(
 /** Replays `moves` from `start`; undefined when one is illegal or there are too many. */
 export function replay(start: Position, moves: readonly Move[]): Position | undefined {
   if (moves.length > LIMITS.maxMoves) return undefined;
-  let pos = start;
-  for (const move of moves) {
-    const next = apply(pos, move);
-    if (next === pos) return undefined;
-    pos = next;
-  }
-  return pos;
+  if (moves.some((m) => !parseMove(m))) return undefined;
+  const { table, cursor } = cursorOf(start);
+  const end = replayCursor(table, moves, cursor);
+  return end ? positionOf(table, start.lanes, end) : undefined;
+}
+
+/** The engine cursor after `moves` from the start of `state` (undefined when one is illegal). */
+export function cursorAfter(state: Pick<PeelState, 'picture' | 'lanes' | 'slots'>, moves: readonly Move[]): { table: Table; cursor: Cursor } | undefined {
+  if (moves.length > LIMITS.maxMoves || moves.some((m) => !parseMove(m))) return undefined;
+  const table = tableOfState(state);
+  const cursor = replayCursor(table, moves);
+  return cursor ? { table, cursor } : undefined;
 }
 
 /** The current position of a (valid) state. */
@@ -290,16 +239,24 @@ export function position(state: PeelState): Position {
 /** The position after the first `k` moves. */
 export const positionAt = (state: PeelState, k: number): Position => replay(initialPosition(state), state.moves.slice(0, Math.max(0, k))) ?? initialPosition(state);
 
+export const exposed = (pos: Position): number[] => {
+  const { table, cursor } = cursorOf(pos);
+  return exposedOf(table.engine, cursor.cells);
+};
+
 // --- State changes (design § 4.6) ------------------------------------------------------------------------------
+
+const solvedAfter = (state: PeelState, moves: readonly Move[]): boolean => cursorAfter(state, moves)?.cursor.cells.left === 0;
 
 /** Plays a move; returns the same object when it is illegal. Any move discards `restartUndo`. */
 export function play(state: PeelState, move: Move): PeelState {
-  const pos = position(state);
-  if (!preview(pos, move).legal) return state;
+  const now = cursorAfter(state, state.moves);
+  const parsed = parseMove(move);
+  if (!now || !parsed || !step(now.table, now.cursor, parsed.kind, parsed.index, false).legal) return state;
   return { ...state, moves: [...state.moves, move], restartUndo: null };
 }
 
-export const canUndo = (state: PeelState): boolean => !isSolved(position(state)) && (state.moves.length > 0 || (state.restartUndo?.length ?? 0) > 0);
+export const canUndo = (state: PeelState): boolean => !solvedAfter(state, state.moves) && (state.moves.length > 0 || (state.restartUndo?.length ?? 0) > 0);
 
 /** One step back; right after a Restart, Undo brings the whole game back. Not offered once solved. */
 export function undo(state: PeelState): PeelState {
@@ -310,7 +267,7 @@ export function undo(state: PeelState): PeelState {
 
 /** "Start this picture again": no moves, the old ones kept for one Undo. */
 export function restart(state: PeelState): PeelState {
-  if (state.moves.length === 0 || isSolved(position(state))) return state;
+  if (state.moves.length === 0 || solvedAfter(state, state.moves)) return state;
   return { ...state, moves: [], restartUndo: state.moves };
 }
 
@@ -325,9 +282,9 @@ export const resetState = (state: PeelState): PeelState => ({ ...state, moves: [
 
 export const settingsOf = (state: PeelState): { difficulty: Difficulty; motif: string } => ({ difficulty: state.difficulty, motif: state.choice });
 
-// --- Counting helpers for the view -----------------------------------------------------------------------------
+// --- Counting helpers ------------------------------------------------------------------------------------------
 
-export const filledCount = (picture: Picture): number => picture.rows.join('').replace(/\./g, '').length;
+export const filledCount = (picture: Picture): number => engineOf(picture).filled;
 export const presentCount = (pos: Position): number => pos.cells.reduce((n, c) => n + (c === EMPTY ? 0 : 1), 0);
 
 /** Shooters still to play (lanes and slots) of one colour. */
@@ -403,19 +360,20 @@ function check(value: unknown): boolean {
   if (typeof s.reported !== 'boolean') return false;
   // Invariant: per colour, the shots of all shooters equal the filled cells of that colour.
   const need = new Map<string, number>();
-  for (const ch of picture.rows.join('')) if (ch !== EMPTY) need.set(ch, (need.get(ch) ?? 0) + 1);
+  for (const row of picture.rows) for (const ch of row) if (ch !== EMPTY) need.set(ch, (need.get(ch) ?? 0) + 1);
   const have = new Map<string, number>();
   for (const lane of s.lanes) for (const sh of lane) have.set(sh.c, (have.get(sh.c) ?? 0) + sh.n);
   for (const key of keys) if ((need.get(key) ?? 0) !== (have.get(key) ?? 0)) return false;
   if (!isMoveList(s.witness) || !isMoveList(s.moves)) return false;
   if (s.restartUndo !== null && !(isMoveList(s.restartUndo) && s.restartUndo.length > 0 && s.moves.length === 0)) return false;
-  const start = initialPosition({ picture, lanes: s.lanes, slots: s.slots as number });
-  const solvedBy = replay(start, s.witness);
-  if (!solvedBy || !isSolved(solvedBy)) return false;
-  const now = replay(start, s.moves);
+  // A fresh table: the validated object is not yet a trusted state, so nothing is memoised for it.
+  const table = tableOf(engineOf({ ...picture }), s.lanes, s.slots as number);
+  const solvedBy = replayCursor(table, s.witness);
+  if (!solvedBy || solvedBy.cells.left !== 0) return false;
+  const now = replayCursor(table, s.moves);
   if (!now) return false;
-  if (s.restartUndo !== null && !replay(start, s.restartUndo)) return false;
-  if (s.reported && !isSolved(now)) return false;
+  if (s.restartUndo !== null && !replayCursor(table, s.restartUndo)) return false;
+  if (s.reported && now.cells.left !== 0) return false;
   return true;
 }
 
@@ -425,4 +383,12 @@ export function isPeelState(value: unknown): value is PeelState {
   } catch {
     return false;
   }
+}
+
+/**
+ * v1 → v2 (design v2 § 8): identity. Every v1 state lies inside the v2 bounds, the rules are unchanged and the colour
+ * vocabulary is a superset, so a v1 save replays identically. Anything else is unknown.
+ */
+export function migrateState(state: unknown, from: number): PeelState | undefined {
+  return from === 1 ? (state as PeelState) : undefined;
 }

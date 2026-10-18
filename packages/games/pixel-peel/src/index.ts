@@ -1,7 +1,7 @@
 import { defineGame, type SettingSpec } from '@wp/game-core';
 import { metadata } from './metadata';
 import { MOTIFS } from './motifs/index';
-import { isPeelState, settingsOf, type PeelState } from './rules';
+import { isPeelState, migrateState, settingsOf, type PeelState } from './rules';
 import { createPixelPeel } from './view';
 
 export type { PeelState } from './rules';
@@ -17,5 +17,6 @@ export default defineGame<PeelState>({
   settings,
   settingsOf,
   create: createPixelPeel,
-  isValidState: isPeelState
+  isValidState: isPeelState,
+  migrateState
 });

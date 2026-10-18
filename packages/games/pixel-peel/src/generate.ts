@@ -1,7 +1,8 @@
 import { createRng, normalizeSeed, type Rng } from '@wp/game-core';
 import { MOTIFS, findMotif } from './motifs/index';
 import type { Motif } from './motifs/types';
-import { EMPTY, exposedCells, initialPosition, launch, replay, toDifficulty, type Difficulty, type Move, type PeelState, type Picture, type Shooter } from './rules';
+import { cloneCells, engineOf, exposedOf, fullCells, launch } from './engine';
+import { initialPosition, replay, toDifficulty, type Difficulty, type Move, type PeelState, type Picture, type Shooter } from './rules';
 import { obviousPlay, solve } from './solver';
 
 /**
@@ -40,31 +41,35 @@ export const pictureOf = (motif: Motif): Picture => ({
 
 /** Shooters in an order in which each launch is used up exactly (the "peel plan"). */
 export function peelPlan(picture: Picture, pack: readonly [number, number], rng: Rng): Shooter[] {
-  const { w, h } = picture;
-  let cells = picture.rows.join('').split('');
+  const engine = engineOf(picture);
+  let cells = fullCells(engine);
   const order: Shooter[] = [];
   const keys = picture.palette.map((p) => p.key);
-  while (cells.some((c) => c !== EMPTY)) {
+  while (cells.left > 0) {
     const a = rng.int(pack[0], pack[1]);
-    const onEdge = new Set(exposedCells(cells, w, h).map((i) => cells[i]));
+    const onEdge = new Set(exposedOf(engine, cells).map((i) => engine.colour[i] as number));
     const options = keys
-      .filter((c) => onEdge.has(c))
-      .map((c) => ({ c, result: launch(cells, w, h, { c, n: a }) }))
-      .filter((o) => o.result.hits.length > 0);
-    const good = options.filter((o) => o.result.hits.length >= pack[0]);
+      .map((key, i) => ({ c: key, code: i + 1 }))
+      .filter((o) => onEdge.has(o.code))
+      .map((o) => {
+        const next = cloneCells(cells);
+        return { c: o.c, next, hits: launch(engine, next, o.code, a) };
+      })
+      .filter((o) => o.hits > 0);
+    const good = options.filter((o) => o.hits >= pack[0]);
     let chosen = options[0]!;
     if (good.length > 0) {
-      let r = rng.int(1, good.reduce((sum, o) => sum + o.result.hits.length, 0));
+      let r = rng.int(1, good.reduce((sum, o) => sum + o.hits, 0));
       for (const o of good) {
-        r -= o.result.hits.length;
+        r -= o.hits;
         if (r <= 0) {
           chosen = o;
           break;
         }
       }
-    } else for (const o of options) if (o.result.hits.length > chosen.result.hits.length) chosen = o;
-    order.push({ c: chosen.c, n: chosen.result.hits.length });
-    cells = chosen.result.cells;
+    } else for (const o of options) if (o.hits > chosen.hits) chosen = o;
+    order.push({ c: chosen.c, n: chosen.hits });
+    cells = chosen.next;
   }
   return order;
 }

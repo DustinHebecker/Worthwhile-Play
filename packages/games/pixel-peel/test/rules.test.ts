@@ -6,13 +6,10 @@ import {
   EMPTY,
   apply,
   canUndo,
-  exposedCells,
-  front,
   initialPosition,
   isPeelState,
   isSolved,
   isStuck,
-  launch,
   legalMoves,
   parseMove,
   play,
@@ -29,6 +26,7 @@ import {
   type PeelState
 } from '../src/rules';
 import { gridArb, pictureOf, stateOf } from './helpers';
+import { exposedCells, front, launch } from './reference';
 
 const cellsOf = (rows: string[]) => rows.join('').split('');
 const xy = (i: number, w: number) => [i % w, Math.floor(i / w)];
@@ -323,7 +321,7 @@ describe('isPeelState (never throws)', () => {
     ['illegal move in moves', (s) => ({ ...s, moves: ['S4'] })],
     ['illegal move in restartUndo', (s) => ({ ...s, restartUndo: ['S4'] })],
     ['restartUndo with moves', (s) => ({ ...s, moves: [s.witness[0]], restartUndo: [s.witness[0]] })],
-    ['more than 5 slots', (s) => ({ ...s, slots: 6 })],
+    ['more than 6 slots', (s) => ({ ...s, slots: 7 })],
     ['zero slots', (s) => ({ ...s, slots: 0 })],
     ['more than 4 lanes', (s) => ({ ...s, lanes: [...s.lanes, [], [], []] })],
     ['bad hex', (s) => ({ ...s, picture: { ...s.picture, palette: s.picture.palette.map((p, i) => (i === 0 ? { ...p, hex: 'red' } : p)) } })],
@@ -336,7 +334,15 @@ describe('isPeelState (never throws)', () => {
     ['bad choice', (s) => ({ ...s, choice: 'Red Fox!' })],
     ['picture too small', (s) => ({ ...s, picture: { ...s.picture, w: 3 } })],
     ['zero shots', (s) => ({ ...s, lanes: [[{ c: s.lanes[0]![0]!.c, n: 0 }], ...s.lanes.slice(1)] })],
-    ['too many moves', (s) => ({ ...s, moves: Array.from({ length: 701 }, () => 'L0') })],
+    ['too many moves', (s) => ({ ...s, moves: Array.from({ length: 2501 }, () => 'L0') })],
+    ['a side of 49', (s) => ({ ...s, picture: { ...s.picture, w: 49, rows: s.picture.rows.map((r) => r.padEnd(49, '.')) } })],
+    ['21 palette entries', (s) => ({ ...s, picture: { ...s.picture, palette: [...s.picture.palette, ...'abcdefghijklmnopqrstuvwxyz'.split('').filter((k) => !s.picture.palette.some((p) => p.key === k)).map((key) => ({ key, hex: '#123456', name: 'black' }))].slice(0, 21) } })],
+    ['161 shooters', (s) => {
+      const c = s.lanes[0]![0]!.c;
+      const cells = s.picture.rows.join('').split(c).length - 1;
+      const extra = Array.from({ length: 161 }, () => ({ c, n: 1 }));
+      return { ...s, lanes: [extra, ...s.lanes.map((l) => l.filter((x) => x.c !== c))], _cells: cells };
+    }],
     ['missing field', (s) => {
       const { witness: _w, ...rest } = s;
       return rest;
