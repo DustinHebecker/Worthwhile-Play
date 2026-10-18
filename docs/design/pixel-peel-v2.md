@@ -689,87 +689,166 @@ Non-blocking; the plan proceeds with the stated default:
 
 ## 15. Implementation notes (2026-10-18)
 
-Implemented as planned in the order of § 12, on branch `game/pixel-peel-v2`. The numbers below were measured in the cloud container (Node 22) over **every motif × 6 seeds** (120 games per level), with all five policies run without early exit.
+Implemented as planned in the order of § 12, on branch `game/pixel-peel-v2`, then reworked after the independent review and the owner's feedback of the same day (§ 15.8). The numbers below come from the cloud container (Node 22), measured over **every motif × 6 seeds** (120 games per level), with all five policies run without early exit.
 
 ### 15.1 Final level values (deviations from § 2.1 in bold)
 
 | | easy | medium | hard |
 |---|---|---|---|
-| Width, tier, lanes, slots | 32, 1, 4, 5 | 40, 2, 4, 5 | 48, 3, 4, 4 |
+| Palette tier, lanes, slots | 1, 4, 5 | 2, 4, 5 | 3, 4, 4 |
+| Width: animals and scenes (square / wide) | 32 / **36** | 40 / **44** | 48 / **56** |
+| Width: landscapes and seasons (square / wide) | **36 / 40** | **44 / 48** | **56 / 64** |
 | Fitting pack | 10–40 | 10–60 | 12–90 |
 | Decoy chance, decoy pack | 0.06, 8–30 | **0.16**, 10–40 | 0.30, 24–90 |
-| Candidates, budget (launches) | 3, 6 000 | **5, 9 000** | 4, 10 000 |
+| Candidates, budget (launches) | 3, 6 000 | 4, **8 000** | 4, 10 000 |
+| Same-colour dealing penalty (§ 15.8) | 10 | 40 | 100 |
 
-Medium first measured 29 % "all five fail" (target ≤ 25 %) with the plan's values. A lower decoy chance plus one more candidate and a slightly larger budget brought it to 23 % without losing the "obvious play fails" rate.
+**Widths.** These are per motif (`src/art/sizes.ts`). The owner asked for more pixels where it helps: hard is at least 48 for every motif and 56–64 for landscapes. Animals stay at 48 on hard. A 56 baseline would add 36 % cells to every hard game and make generation slower on phones. The 48-wide animals already reach the colour targets of § 15.3. At 360 px a 64-wide picture still fits: 5 px cells, 328 px.
 
-**Added rule in `construct`:** a draw that would leave a shooter (or a colour's remainder) below 4 shots takes those shots too and goes to a waiting place instead. Without it, 9–14 % of shooters per game had 1–3 shots on real motifs (thin outlines, eyes, sparkles).
+**Medium.** With the plan's values, all five rules failed in 29 % of games (target ≤ 25 %). A lower decoy chance fixed this. After the phone-speed work, medium tries at most 4 candidates within 8 000 launches.
+
+**Tiny shooters (added rule in `construct`).** A draw that would leave a shooter, or a colour's remainder, below 4 shots takes those shots too and goes to a waiting place instead.
+
+**Dealing (§ 15.8).** The draws are dealt into lanes so that colours interleave.
 
 ### 15.2 Measured level definition (§ 2.2)
 
 | Measure | easy | medium | hard | target |
 |---|---|---|---|---|
-| Accepted by its rule | 100 % | 94 % | 100 % | ≥ 95 / 80 / 90 % |
-| Obvious play (P1) fails | 7 % | 99 % | 100 % | — / ≥ 75 / ≥ 95 % |
-| Tidy (P2) fails | 0 % | 47 % | 100 % | |
-| Slots first (P3) fails | 0 % | 45 % | 100 % | |
-| Cautious (P4) fails | 0 % | 50 % | 100 % | |
-| Noisy tidy (P5) fails | 3 % | 49 % | 94 % | |
-| All five fail | 0 % | 23 % | 94 % | ≤ 2 / ≤ 25 / ≥ 90 % |
-| Witness slot entries (median) | 4 | 8 | 9 | ≤ 6 / ≥ 4 / ≥ 6 |
-| All `K` slots occupied at least once | 3 % | 55 % | 100 % | — / — / ≥ 90 % |
-| At least one zero-hit park | 56 % | 94 % | 97 % | — / — / ≥ 60 % |
-| Shooters below 4 shots | 0.3 % | 0.8 % | 2.4 % | ≤ 8 % |
+| Accepted by its rule | 100 % | 83 % | 100 % | ≥ 95 / 80 / 90 % |
+| Obvious play (P1) fails | 15 % | 97 % | 100 % | — / ≥ 75 / ≥ 95 % |
+| Tidy (P2) fails | 2 % | 57 % | 100 % | |
+| Slots first (P3) fails | 4 % | 53 % | 100 % | |
+| Cautious (P4) fails | 3 % | 53 % | 100 % | |
+| Noisy tidy (P5) fails | 3 % | 54 % | 98 % | |
+| **All five fail** | 0 % | 19 % | **98 %** | ≤ 2 / ≤ 25 / ≥ 90 % |
+| Witness slot entries (median) | 4 | 9 | 9 | ≤ 6 / ≥ 4 / ≥ 6 |
+| All `K` slots occupied at least once | 3 % | 64 % | 100 % | — / — / ≥ 90 % |
+| At least one zero-hit park | 63 % | 98 % | 100 % | — / — / ≥ 60 % |
+| Shooters below 4 shots | 0.1 % | 1.0 % | 1.8 % | ≤ 8 % |
+| Longest same-colour run in a lane | 2 | 2 | 2 | ≤ 2 (medium, hard) |
+| Neighbouring shooters in a lane of one colour | 1.0 % | 0.1 % | 0.1 % | |
+| Same colour beside, at the same depth in the next lane | 9.1 % | 5.2 % | 4.4 % | rare |
 
-On hard, all five policies fail for every seed of 14 motifs; the weakest is the llama (4 of 6 seeds), whose large calm areas give the noisy policy a chance. The witness rows (slot entries, slots filled, parks) come from a run before the polar bear redraw (15.4); the other rows from a run after it. `test/generator.test.ts` asserts these rates with the margins of § 2.2.
+`test/generator.test.ts` asserts these rates with the margins of § 2.2. It also asserts, on medium and hard, the run length (≤ 2) and the share of same-colour neighbours (≤ 2 % medium, ≤ 1 % hard). It gathers the rates in chunks of 5 motifs, so each test stays short under load.
 
-### 15.3 Scale and time
+### 15.3 Colours that matter (owner feedback 2026-10-18)
+
+Effective number of colours = 1 / Σ p², where p is each colour's pixel share. On hard, 18 of 20 motifs fail all five rules for every seed.
+
+| | easy | medium | hard | target |
+|---|---|---|---|---|
+| Played colours (min–max) | 10–12 | 13–16 | 15–20 | |
+| Effective colours: min / median over 20 motifs | 4.0 / 6.0 | 7.1 / 8.6 | 8.2 / 9.5 | — / ≥ 6 / ≥ 8 |
+| Colours with ≥ 2 % of the picture (min) | 7 | 10 | **12** | — / — / ≥ 12 |
+| Largest single colour (max) | 37 % | 28 % | **25 %** | — / — / ≤ 25 % |
+
+The motif tests assert the effective number and the 2 % and 25 % rules for every motif. Large backgrounds are broken up with gradients, dither bands and detail: skies in 3–4 bands, garden blur, leaf masses, meadow tufts.
+
+### 15.4 Scale and time
 
 | | easy | medium | hard |
 |---|---|---|---|
-| Played colours (min–max, mean over 20 motifs) | 10–12, 10.3 | 13–16, 13.9 | 15–20, 16.2 |
-| Shooters per game | 44.8 | 55.3 | 58.4 |
-| Witness length (launches) | 52.7 | 78.6 | 103.5 |
-| Decoys | 2.0 | 5.7 | 6.9 |
-| Candidates tried | 1.04 | 2.31 | 1.23 |
-| Counted launches per generation | 1 174 | 3 158 | 1 927 |
-| Generation average / max, measured alone | 9.5 / 42 ms | 25 / 86 ms | 20 / 78 ms |
-| Generation average / max, inside the parallel test run | 12 / 73 ms | 32 / 152 ms | 25 / 98 ms |
+| Shooters per game | 54.2 | 64.3 | 72.7 |
+| Witness length (launches) | 62.7 | 92.2 | 122.5 |
+| Decoys | 2.2 | 6.6 | 7.9 |
+| Candidates tried | 1.06 | 2.15 | 1.06 |
+| Counted launches per generation | 1 569 | 3 613 | 2 028 |
+| Generation average / max (Node, one after the other) | 9.4 / 32 ms | 22 / 77 ms | 19 / 65 ms |
 
-The averages are within the plan's target (< 40 ms). The maximum stays under 120 ms when measured alone. Under the load of the full parallel test run, medium reached 152 ms once, which is a cold start (rasterising plus JIT). The generator test therefore asserts only the average (< 120 ms).
+**Baked pictures.** Pictures are rasterised at 4× and broken down (§ 15.5). That takes 50–400 ms per motif and size, so it happens only when baking (`scripts/render-motifs.ts --bake`) and in the motif tests. These check that `src/motifs/baked.ts` equals the rasteriser's output; the file is 56 KB of run-length rows. A game decodes its picture in well under a millisecond.
 
-- Rasterisation at 48 (once per motif and size, memoised): median 8 ms; 6 complex motifs take 13–63 ms on the first, cold call. This is above the plan's "< 10 ms", but it happens once per session.
-- Hint off the witness path on hard (40 positions, one step off the witness at a third or half of the game): median 4 ms, max 12 ms. A proven move was found in 38 of 40. The other 2 got "no way found in a quick check, going back to move k works". The budgets are 4 000 launches for the rollouts and 4 000 for the safe point; the endgame DFS is 300 cells, 12 shooters, 5 000 nodes; up to 6 ancestors.
+**Start on a phone.** Measured in Chromium with 4× CPU throttling, at 360 × 740, from pressing Start until the picture is drawn. Each figure is the median of 3 runs, in this container:
 
-### 15.4 Motifs
+| | easy | medium | hard |
+|---|---|---|---|
+| Start, 12 cases | 207–233 ms | 242–367 ms | 203–288 ms |
 
-All 20 planned motifs ship:
+The median over all cases is 246 ms; the worst case, medium autumn forest, is 367 ms. Runs vary by up to ±40 % in this shared container. Before the rework the same script measured 272–786 ms.
 
-- 9 landscapes: cherry blossom, summer meadow, autumn forest, winter village, desert dunes, fjord, rice terraces, coral reef, northern lights.
-- 8 animals: red fox, elephant, koala, llama, tiger, polar bear, hummingbird, emperor penguins.
-- 3 everyday scenes: reading nook, market stall, kitchen window.
+What changed:
 
-The v1 ids are kept. Every motif passes the motif tests:
+- Trial launches work in place and are undone, instead of copying the cells.
+- A child position is built only when it is read.
+- The station walk is inlined.
+- The view no longer generates an unused game when it is created.
+- Medium has fewer candidates.
 
-- played keys = tier keys at 32/40/48;
+The rest is the first layout of the page (about 30–45 ms at 4×) and building the lanes.
+
+**A launch on a phone.** Same setup, 16 witness moves each, measuring the handler plus style and layout:
+
+| | median | max |
+|---|---|---|
+| Hard summer meadow (64 wide) | 7.4 ms | 14 ms |
+| Hard market stall | 8.9 ms | 30 ms |
+| Medium koala | 11.9 ms | 25 ms |
+
+These include the move itself and the preview of every front. Click to next painted frame was 22–28 ms median in the same setup; that includes waiting for the frame.
+
+What changed in the view:
+
+- The fit size and theme colours are read once per mount and resize.
+- The spotlight image and the exposed-cell hook are rebuilt only when cells change.
+- Text is written only when it changes.
+- Undo availability comes from the cached cursor.
+- Lanes, rows, slots and the status use layout containment.
+
+**Hint.**
+
+- On the witness path the answer is immediate.
+- One move off the witness on hard: median 4 ms, max 12 ms; a proven move in 38 of 40 cases.
+- After the obvious play got stuck on hard (40 games): an undo target was found in 31 cases. Average 42 ms, max 111 ms.
+
+### 15.5 Art pipeline and motifs
+
+**Supersampling (the owner's method).** Every layer is drawn at 4× (128 to 256 samples wide) and broken down per cell:
+
+- A cell joins a layer when at least half of its samples do.
+- Its key is the most common key among them. Ties go to the sample at the cell centre.
+- Shading is computed on the fine grid, so rims and bands follow the true shape.
+- Outlines, dithering, scatter, keep-cells and 1-cell lines stay cell-exact, so pixel details do not blur.
+
+**Motifs.** All 20 planned motifs ship, and the v1 ids are kept. Every motif passes the motif tests at its own widths:
+
+- played keys = tier keys;
 - colour ranges;
-- minimum pixels (W/4);
-- ΔE ≥ 18 on easy, otherwise 12 (backdrop 15);
-- fill ≥ 50 %;
-- despeckle ≤ 2 %;
+- minimum pixels;
+- ΔE;
+- fill and despeckle;
+- the colour-share rules of § 15.3;
+- the baked picture equals the rasteriser;
 - titles and places in all 16 locales.
 
-`scripts/render-motifs.ts <dir>` writes per-motif sheets, 32/40/48 PNGs and a contact sheet; `--only <id>` and `--watch` support authoring. After the first contact sheet, the polar bear was redrawn because it read as a pig at 32 and 40.
+**Redrawn after the review and the owner's notes:**
 
-### 15.5 UI details beyond the plan
+- **Hummingbird:** a bigger bird, a slim striped wing, an open red trumpet flower facing the beak, a soft garden background with small bokeh.
+- **Emperor penguins:** a smooth teardrop body, a golden ear patch, a slender beak, a low polar sun.
+- **Polar bear:** one white silhouette with an ear bump and grey shading, kept cells for eye and nose, white legs.
+- **Llama:** a full body with a curved neck, the blanket over its back, coloured ear tassels, a textured meadow.
+- **Koala:** softer shapes, dark-grey edges instead of black lines, fluffy ears, a white chest.
+- **Tiger:** tapered stripes, amber eyes, cheek ruffs, no black outline.
+- **Rice terraces:** curved terrace steps down the hillside, flooded paddies reflecting the sky, two farmhouses, mountains with sharp summits.
+- **Cherry blossom:** a snow-capped volcano replaces the half-shaded mountain.
+- **Elephant:** without fold lines or a black top outline.
+- **Red fox:** an outlined tail tip, moss and leaf litter.
+- **Desert, market stall and kitchen window:** larger oasis, produce and colour details.
 
-- **Spotlight** wash: 70 % towards the motif's backdrop colour. Every motif has its own backdrop, chosen to contrast with its palette, e.g. a warm sand for the winter village.
-- **Large view:** pressing a shooter scrolls the first previewed pixel into view.
-- **From 48 rem** the picture is `position: sticky`, so it stays in view while the lanes and the colours list scroll past.
-- **Status line** keeps a fixed height of 4 lines. A hover preview of 3 lines otherwise moved the buttons under the pointer, and the preview flickered.
-- **Pointer leaving a button** clears only the preview that button started. Leaving a neighbour while another shooter is focused or previewed changes nothing.
-- **Off-witness hint:** answered after one 30 ms timer with "Checking…" (`aria-busy`). On the witness path it is answered at once.
+Kept unchanged apart from the supersampling: autumn forest, winter village, fjord, coral reef, reading nook, summer meadow and aurora.
 
-### 15.6 Shared change (approved)
+### 15.6 UI details beyond the plan
+
+- **Spotlight wash:** 70 % towards the motif's backdrop colour.
+- **Large view:** scrolls the first previewed pixel into view.
+- **Wide screens (48 rem and up):** the picture is sticky beside the side column.
+- **Phones:** the picture is sticky at the top while the player scrolls to the lanes. Focused controls scroll clear of it.
+- **Touch screens:** "Confirm before launch" is on by default, so the first tap shows the spotlight and the marked pixels. A remembered choice wins.
+- **Status line:** keeps a fixed height, so the buttons do not move under the pointer.
+- **Pointer leaving a button:** clears only the preview that button started.
+- **Off-witness hint:** answered after one 30 ms timer with "Checking…" (`aria-busy`).
+- **Colour count:** the start-screen label is the motif title. The game's title line shows the number of colours actually played, e.g. "Red fox · 15 colours".
+
+### 15.7 Shared change (approved)
 
 `remember?: boolean` on choice, toggle and number settings in `@wp/game-core`:
 
@@ -779,8 +858,31 @@ The v1 ids are kept. Every motif passes the motif tests:
 
 The motif setting uses it, so "Any picture" is always the default; "Another round" keeps the explicit pick.
 
-### 15.7 Known limits
+### 15.8 Review and owner feedback (2026-10-18), and what changed
 
-- The hard rate depends on the noisy policy: P1–P4 fail 100 %, P5 94 %.
-- On easy, the witness fills all 5 slots in only 3 % of games, which is intended (easy should rarely need every waiting place).
-- `docs/ROADMAP.md` and the registry are left to the orchestrator.
+1. **Hint undo depth.** The safe point used to look back only 6 moves and then fell back to the start. Now:
+   - "Follow the plan" is tried at every ancestor down to the witness prefix; a dead rollout from a late ancestor ends after a few moves.
+   - The tidy rule is tried 1, 2, 4, 8 … moves back.
+   - The safe-point search has its own budget of 10 000 launches.
+   - Effect, after the obvious play got stuck on hard: "back to the start" fell from 35 of 40 cases (review) to 9 of 40. After random play on medium: 0 of 38.
+   - A test checks that the target is usually far from the start, and true.
+2. **Phone start time:** see § 15.4.
+3. **Tests under load:**
+   - The contract tests take 1.2–1.5 s alone; baked pictures removed the rasterising.
+   - The generator rate tests are split into chunks of 5 motifs, about 1 s each.
+4. **Art:** see § 15.5; the owner's notes took priority.
+5. **Touch play:** see § 15.6.
+6. **Colours that matter:** § 15.3. **No same-colour runs:** § 15.2.
+   - Any lane assignment keeps the witness valid, because a lane is launched in draw order.
+   - Each draw goes to the lane with the lowest penalty: behind its own colour costs the level's penalty, a third in a row 20 times that, the same colour at the same depth in a neighbouring lane 3, and each shooter of lane-length difference 4.
+7. **Nits:**
+   - `createInitial` asserts that the witness solves.
+   - Bresenham skips non-finite points.
+   - `isLanes` stops past 160 shooters.
+
+### 15.9 Known limits
+
+- **Phone start time:** in this container the start stays above 250 ms in some cases (median over all cases 246 ms, worst case 367 ms). Generation must stay synchronous in `newGame`, so there is no "Preparing…" state.
+- **Hard difficulty:** it depends on the noisy policy: P1–P4 fail 100 %, P5 98 %.
+- **Easy pictures:** effective colours can be as low as 4.0, which the targets allow (they are set only for medium and hard).
+- **Not done here:** `docs/ROADMAP.md` and the registry are left to the orchestrator.
