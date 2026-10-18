@@ -17,7 +17,7 @@ export const ko: LocaleContent = {
   'sl.customs-officer': { name: '제3우주항 세관', flavour: '“신고할 물건 있습니까? 행성? 그 촉수?”', blunder: '네 최고의 물건 압수. “미신고 물품입니다.”' },
   'sl.moon-mole': { name: '채굴권 가진 달 두더지', flavour: '달은 자기 거래. 증명하는 쪽지도 있어.', blunder: '채굴료로 카드 두 장을 청구해. 소급 적용으로.' },
   'sl.jetpack-rat': { name: '제트팩 화물칸 쥐', flavour: '제트팩을 훔쳤어. 화물칸도. 이제 네 물건도.', blunder: '네 작은 물건을 들고 슝 날아가. 휘익.' },
-  'sl.form-jellyfish': { name: '서식 27b 해파리', flavour: '3부 작성 부탁드립니다. 촉수마다 서명하세요.', blunder: '처리 수수료: 손패 세 장. 쾅 도장, 철컥 펀치, 끝.' },
+  'sl.form-jellyfish': { name: '서식 19q 해파리', flavour: '3부 작성 부탁드립니다. 촉수마다 서명하세요.', blunder: '처리 수수료: 손패 세 장. 쾅 도장, 철컥 펀치, 끝.' },
   'sl.robo-vac': { name: '야망 있는 로봇 청소기', flavour: '먼저 복도. 그다음 우주선. 그다음 은하.', blunder: '네 헬멧을 후루룩 빨아들여. 흡.' },
   'sl.food-paste': { name: '살아 있는 우주식 페이스트', flavour: '튜브에서 기어 나왔어. 맛은 딸기, 냄새는 양말.', blunder: '냄새가 너무 심해서 네 옷이 먼저 하선 신청.' },
   'sl.junk-dealer': { name: '우주 고물상', flavour: '뭐든 사고 뭐든 팔아. 네 우주복? 중고지만 감성 있지.', blunder: '네 작은 물건을 공짜로 “교환”해 가. 수수료로 카드 한 장 더.' },

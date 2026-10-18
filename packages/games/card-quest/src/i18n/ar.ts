@@ -188,7 +188,7 @@ export const ar: Catalogue = {
   'r.vsTrait': '{sign}{n} ضد كل ما هو «{trait}»',
   'r.vsFamily': '{sign}{n} ضد {family}',
   'r.vsLacks': '{sign}{n} ضد كل من ليس «{trait}»',
-  'r.selfFamily': '+{n} إضافية لـ{family}',
+  'r.selfFamily': '+{n} إضافية لفئة {family}',
   'r.flee': 'الهرب {sign}{n}',
   'r.noFlee': 'لا هرب: الخسارة تعني دائمًا الفضيحة',
   'r.reward': 'عند هزيمته: مستوى +{levels}، بطاقات غنيمة: {loot}',
