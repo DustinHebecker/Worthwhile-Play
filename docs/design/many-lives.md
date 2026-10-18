@@ -1,6 +1,6 @@
 # Design: Many Lives — a life simulation about personal finances
 
-Status: **Draft v0.2 — owner decisions of 2026-10-18 recorded (section 0); open questions in section 16.** Nothing implemented yet. Numbers marked *(verify)* are first estimates from memory and must be replaced by researched values with sources ([many-lives-sources.md](many-lives-sources.md)) before they enter the engine. Engine decision record: [ADR 0018 (proposed, number to be confirmed by the orchestrator)](../adr/0018-life-engine.md).
+Status: **Draft v0.2 — owner decisions of 2026-10-18 recorded (section 0); open questions in section 16.** Nothing implemented yet. Numbers marked *(verify)* are first estimates from memory and must be replaced by researched values with sources ([many-lives-sources.md](many-lives-sources.md)) before they enter the engine. Engine decision record: [ADR 0018 (proposed; number confirmed by the orchestrator)](../adr/0018-life-engine.md).
 
 Scope:
 
@@ -451,4 +451,4 @@ See the chat of 2026-10-18; answers will be recorded in section 0.
 | Q9 | MVP scope | Two contrasting profiles first (Germany- and India-calibrated) with full market and core systems |
 | Q10 | Currency | Local currency per profile; comparisons in purchasing-power-adjusted units |
 | Q11 | Continue as one's child | Later: a new game may start from a descendant's start (never automatic) |
-| Q12 | Release before translation | Publish when the MVP is playable, in en/de with a visible note |
+| Q12 | Release before translation | Superseded by the orchestrator's rule (section 15.1): merge phases unregistered; release after all 16 locales |

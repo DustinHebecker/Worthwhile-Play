@@ -1,6 +1,6 @@
 # 0018 — Life engine (`@wp/life-engine`) for Many Lives
 
-Status: Proposed (2026-10-18; the number is provisional until the orchestrator assigns it). Design and owner decisions: [docs/design/many-lives.md](../design/many-lives.md).
+Status: Proposed (2026-10-18; number confirmed by the orchestrator; becomes Accepted with the first engine increment). Design and owner decisions: [docs/design/many-lives.md](../design/many-lives.md).
 
 ## Context
 The owner asked for a long life simulation about personal finances (Many Lives): many region profiles, a monthly economy with a stock market, real estate, careers, relationships, health and migration, calibrated on cited data, with simulation tournaments that measure upward mobility and balance. The simulation is large, must be deterministic and testable without a DOM, and is reused by three modes (live a life, understand other lives, plan your own life) and by tournament and calibration tests.
