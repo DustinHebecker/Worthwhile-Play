@@ -3,7 +3,7 @@ import fc from 'fast-check';
 import { readFileSync } from 'node:fs';
 import { childrenOf, replayCursor, startCursor } from '../src/engine';
 import { createInitial } from '../src/generate';
-import { commonPrefix, followPlan, hint, identitiesOf } from '../src/hint';
+import { commonPrefix, followPlan, hint, identitiesOf, safePointCandidates } from '../src/hint';
 import { picker, POLICIES, run, runPolicy } from '../src/policies';
 import { initialPosition, play, positionAt, tableOfState, type PeelState } from '../src/rules';
 import { refObviousPlay } from './reference';
@@ -108,6 +108,37 @@ describe('hint at scale (design v2 § 4)', () => {
     let s = state;
     for (const m of ['L1', 'L1']) s = play(s, m);
     expect(hint(s)).toEqual({ kind: 'undo', k: 1, proven: true });
+  });
+
+  it('safe points are tried 1, 2, 4, 8 … moves back, never at or below the witness prefix', () => {
+    expect(safePointCandidates(20, 0)).toEqual([19, 18, 16, 12, 4]);
+    expect(safePointCandidates(20, 15)).toEqual([19, 18, 16]);
+    expect(safePointCandidates(5, 5)).toEqual([]);
+  });
+
+  it('after the obvious play gets stuck on hard, the undo target is usually far from the start, and it is true', () => {
+    const ks: number[] = [];
+    for (const motif of ['cherry-blossom', 'summer-meadow', 'winter-village', 'desert-dunes', 'koala', 'llama', 'tiger', 'polar-bear', 'emperor-penguin', 'market-stall']) {
+      const state = createInitial(2, 'hard', motif);
+      const table = tableOfState(state);
+      const stuck = runPolicy(table, 'obvious', 0, { left: 1e9 });
+      expect(stuck.result, motif).toBe('stuck');
+      const s = { ...state, moves: stuck.moves };
+      const h = hint(s);
+      if (h.kind === 'move') continue;
+      ks.push(h.k);
+      // Never a lie: from move k, "follow the plan" or the tidy rule finishes the picture.
+      const from = replayCursor(table, stuck.moves.slice(0, h.k))!;
+      const ids = identitiesOf(table, state.witness);
+      const ok = h.k <= commonPrefix(stuck.moves, state.witness)
+        || run(table, followPlan(ids, identitiesOf(table, stuck.moves.slice(0, h.k))), { left: 1e9 }, from).result === 'solved'
+        || run(table, (c) => picker('tidy').pick(c), { left: 1e9 }, from).result === 'solved';
+      expect(ok, `${motif}: k=${h.k}`).toBe(true);
+    }
+    expect(ks.length).toBeGreaterThanOrEqual(8);
+    expect(ks.filter((k) => k > 0).length / ks.length).toBeGreaterThanOrEqual(0.7);
+    const sorted = [...ks].sort((a, b) => a - b);
+    expect(sorted[Math.floor(sorted.length / 2)]).toBeGreaterThanOrEqual(5);
   });
 
   it('never throws and always names a legal move or a move number within the game (property)', () => {

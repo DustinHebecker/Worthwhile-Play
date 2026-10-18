@@ -1,4 +1,4 @@
-import { parseMove, replayCursor, startCursor, step, type Child, type Cursor, type Table } from './engine';
+import { cloneCursor, parseMove, replayCursor, startCursor, step, type Child, type Cursor, type Table } from './engine';
 import { picker, run, type Budget, type PolicyId } from './policies';
 import { tableOfState, type Move, type PeelState } from './rules';
 import { solveCursor } from './solver';
@@ -10,7 +10,9 @@ import { solveCursor } from './solver';
  * 2. rollouts from the current position ("follow the plan", then the policies): the first that solves the picture
  *    gives a proven move;
  * 3. near the end, the exact search: a move, or a proven dead end;
- * 4. otherwise a safe move number to go back to, verified by a rollout or lying on the witness.
+ * 4. otherwise a safe move number to go back to, verified by a rollout or lying on the witness. Ancestors are tried
+ *    with a doubling step back (1, 2, 4, 8 … moves) down to the witness prefix, so a late safe point is found
+ *    even after a long detour.
  * Budgets count launches (and search nodes), never time.
  */
 
@@ -20,9 +22,15 @@ export type HintResult =
   | { kind: 'undo'; k: number; proven: boolean };
 
 export const ROLLOUT_BUDGET = 4000;
-export const SAFE_POINT_BUDGET = 4000;
+export const SAFE_POINT_BUDGET = 10000;
 export const ENDGAME = { cells: 300, shooters: 12, nodes: 5000 } as const;
-export const ANCESTORS = 6;
+
+/** Ancestor move numbers to try for a safe point: n − 1, n − 2, n − 4, n − 8 … while above the witness prefix `k0`. */
+export function safePointCandidates(n: number, k0: number): number[] {
+  const out: number[] = [];
+  for (let back = 1; n - back > k0; back *= 2) out.push(n - back);
+  return out;
+}
 
 export const commonPrefix = (a: readonly Move[], b: readonly Move[]): number => {
   let k = 0;
@@ -112,15 +120,25 @@ export function hint(state: PeelState): HintResult {
   const witnessIds = identitiesOf(table, state.witness);
   const found = search(table, cur, witnessIds, identitiesOf(table, state.moves), { left: ROLLOUT_BUDGET });
   if (found.move) return { kind: 'move', move: found.move };
-  // A safe point: the latest ancestor (at most 6 back, after the witness prefix) from which a rollout solves it.
+  // A safe point: the latest ancestor after the witness prefix from which a rollout solves it. "Follow the plan" is
+  // tried at every ancestor (a dead rollout from a late ancestor ends after a few moves), the tidy rule at 1, 2, 4,
+  // 8 … moves back. The cursors come from one replay; the rollouts have their own budget.
+  const n = state.moves.length;
+  const doubling = new Set(safePointCandidates(n, k0));
+  const at: Cursor[] = [];
+  const walk = startCursor(table);
+  for (let k = 0; k < n; k++) {
+    at.push(k > k0 ? cloneCursor(walk) : walk);
+    const p = parseMove(state.moves[k]);
+    if (!p || !step(table, walk, p.kind, p.index, true).legal) break;
+  }
+  const playedAll = identitiesOf(table, state.moves);
   const budget: Budget = { left: SAFE_POINT_BUDGET };
-  for (let k = state.moves.length - 1; k >= Math.max(k0 + 1, state.moves.length - ANCESTORS) && budget.left > 0; k--) {
-    const at = replayCursor(table, state.moves.slice(0, k));
-    if (!at) continue;
-    const played = identitiesOf(table, state.moves.slice(0, k));
-    for (const pick of [followPlan(witnessIds, played), (c: readonly Child[]) => picker('obvious').pick(c)]) {
-      if (run(table, pick, budget, at).result === 'solved') return { kind: 'undo', k, proven: found.deadEnd };
-    }
+  const tidy = picker('tidy');
+  for (let k = Math.min(n, at.length) - 1; k > k0 && budget.left > 0; k--) {
+    const from = at[k] as Cursor;
+    if (run(table, followPlan(witnessIds, playedAll.slice(0, k)), budget, from).result === 'solved') return { kind: 'undo', k, proven: found.deadEnd };
+    if (doubling.has(k) && budget.left > 0 && run(table, (c) => tidy.pick(c), budget, from).result === 'solved') return { kind: 'undo', k, proven: found.deadEnd };
   }
   return { kind: 'undo', k: k0, proven: found.deadEnd };
 }
