@@ -76,6 +76,7 @@ export function validateSettings(module: Pick<GameModule, 'metadata' | 'settings
       if (spec.valueLabels) for (const v of spec.values) if (!spec.valueLabels[String(v)]?.trim()) problems.push(`setting "${spec.id}" has no label for value ${JSON.stringify(v)}`);
       if (spec.display !== undefined && !['auto', 'radio', 'select'].includes(spec.display)) problems.push(`setting "${spec.id}": unknown display "${String(spec.display)}"`);
     }
+    if (spec.kind !== 'difficulty' && spec.remember !== undefined && typeof (spec.remember as unknown) !== 'boolean') problems.push(`setting "${spec.id}": remember must be a boolean`);
     if (spec.kind === 'toggle' && typeof (spec.default as unknown) !== 'boolean') problems.push(`setting "${spec.id}": default must be a boolean`);
     if (spec.kind === 'number') {
       const step = spec.step ?? 1;

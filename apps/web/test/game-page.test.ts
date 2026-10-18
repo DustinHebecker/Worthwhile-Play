@@ -460,6 +460,47 @@ describe('game page: one start screen with host-drawn settings (ADR 0017)', () =
     expect(q(main, 'difficulty')!.querySelector<HTMLInputElement>('input:checked')!.value).toBe('easy');
   });
 
+  it('a setting with remember: false is never stored and the start screen always opens on its default', async () => {
+    fakeGame('forget', undefined, { difficulties: ['easy', 'hard'], messages: { en } }, {
+      settings: [
+        { kind: 'difficulty' },
+        { kind: 'choice', id: 'size', labelKey: 'set.size', values: [4, 5, 6, 7, 8], valueKey: 'size', default: 6, remember: false },
+        { kind: 'toggle', id: 'hints', labelKey: 'set.hints', default: false }
+      ]
+    });
+    // Junk from an older version that still remembered it is ignored.
+    localStorage.setItem('wp:pref:forget:@settings', JSON.stringify({ size: 7 }));
+    const saves = createMemoryStore();
+    const main = openPlain('forget', saves);
+    await ready(main);
+    expect(q<HTMLSelectElement>(main, 'setting-size')!.value).toBe('6');
+    pick(main, 'difficulty', 'hard');
+    q<HTMLSelectElement>(main, 'setting-size')!.value = '8';
+    q<HTMLInputElement>(main, 'setting-hints')!.checked = true;
+    submit(main);
+    await vi.waitFor(() => expect(starts.get('forget')).toHaveLength(1));
+    expect(starts.get('forget')![0]).toMatchObject({ difficulty: 'hard', settings: { size: 8, hints: true } });
+    expect(JSON.parse(localStorage.getItem('wp:pref:forget:@settings')!)).toEqual({ hints: true, difficulty: 'hard' });
+    // "Another round" repeats the chosen value.
+    contexts.get('forget')!.finished({ outcome: 'won' });
+    await vi.waitFor(() => expect(q(main, 'another-round')).not.toBeNull());
+    q(main, 'another-round')!.click();
+    await vi.waitFor(() => expect(starts.get('forget')).toHaveLength(2));
+    expect(starts.get('forget')![1]).toMatchObject({ difficulty: 'hard', settings: { size: 8, hints: true } });
+    await vi.waitFor(async () => expect(await saves.read('forget')).toMatchObject({ settings: { size: 8 } }));
+    // "New game": the remembered settings, but the default for the forgotten one.
+    await vi.waitFor(() => expect(q(main, 'new-game')).not.toBeNull());
+    q(main, 'new-game')!.click();
+    await ready(main);
+    expect(q<HTMLSelectElement>(main, 'setting-size')!.value).toBe('6');
+    expect(q<HTMLInputElement>(main, 'setting-hints')!.checked).toBe(true);
+    expect(q(main, 'difficulty')!.querySelector<HTMLInputElement>('input:checked')!.value).toBe('hard');
+    // Opening the page again with the save: the start screen does not take the forgotten value from the save either.
+    const again = openPlain('forget', saves);
+    await vi.waitFor(() => expect(q(again, 'continue')).not.toBeNull());
+    expect(q<HTMLSelectElement>(again, 'setting-size')!.value).toBe('6');
+  });
+
   it('New game during play opens the start screen; Continue returns to the same running game', async () => {
     const log = declare('back');
     const main = openPlain('back');

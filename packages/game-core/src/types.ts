@@ -140,6 +140,11 @@ export type SettingSpec =
       readonly hintKey?: string;
       readonly default: string | number;
       readonly display?: 'auto' | 'radio' | 'select';
+      /**
+       * `false`: the host never remembers this setting (ADR 0017), so the start screen always opens on `default` (e.g. a
+       * picture choice whose default is "Any picture"). "Another round" still repeats the save's value. Default `true`.
+       */
+      readonly remember?: boolean;
       readonly when?: SettingCondition;
     }
   | {
@@ -148,6 +153,8 @@ export type SettingSpec =
       readonly labelKey: string;
       readonly default: boolean;
       readonly hintKey?: string;
+      /** `false`: never remembered by the host (as for a choice). */
+      readonly remember?: boolean;
       readonly when?: SettingCondition;
     }
   | {
@@ -160,6 +167,8 @@ export type SettingSpec =
       readonly step?: number;
       readonly default: number;
       readonly hintKey?: string;
+      /** `false`: never remembered by the host (as for a choice). */
+      readonly remember?: boolean;
       readonly when?: SettingCondition;
     };
 

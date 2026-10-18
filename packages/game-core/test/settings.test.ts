@@ -61,9 +61,19 @@ describe('validateSettings', () => {
     [[{ kind: 'toggle', id: 'hints', labelKey: 'setting.hints', default: true, when: { nope: [1] } }], 'unknown setting "nope"'],
     [[{ kind: 'toggle', id: 'hints', labelKey: 'setting.hints', default: true, when: { hints: [true] } }], 'refers to itself'],
     [[{ kind: 'difficulty' }, { kind: 'toggle', id: 'hints', labelKey: 'setting.hints', default: true, when: { difficulty: ['brutal'] } }], 'not a value of "difficulty"'],
-    [[{ kind: 'difficulty' }, { kind: 'toggle', id: 'hints', labelKey: 'setting.hints', default: true, when: { difficulty: [] } }], 'lists no values']
+    [[{ kind: 'difficulty' }, { kind: 'toggle', id: 'hints', labelKey: 'setting.hints', default: true, when: { difficulty: [] } }], 'lists no values'],
+    [[{ kind: 'toggle', id: 'hints', labelKey: 'setting.hints', default: true, remember: 'no' as unknown as boolean }], 'remember must be a boolean']
   ])('reports %j', (declared, fragment) => {
     expect(validateSettings(mod(declared), ['en']).join('\n')).toContain(fragment);
+  });
+
+  it('accepts remember: false and true on choices, toggles and numbers', () => {
+    const remembering: SettingSpec[] = [
+      { kind: 'choice', id: 'mode', labelKey: 'setting.mode', values: ['computer'], valueKey: 'mode', default: 'computer', remember: false },
+      { kind: 'toggle', id: 'hints', labelKey: 'setting.hints', default: true, remember: true },
+      { kind: 'number', id: 'rounds', labelKey: 'setting.rounds', min: 1, max: 9, default: 3, remember: false }
+    ];
+    expect(validateSettings(mod(remembering), ['en'])).toEqual([]);
   });
 
   it('needs metadata.difficulties for a difficulty entry and checks its labels', () => {
