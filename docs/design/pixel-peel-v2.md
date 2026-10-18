@@ -686,3 +686,101 @@ Non-blocking; the plan proceeds with the stated default:
 1. Hard uses **4** waiting places instead of the reference's 5, because 5 left the puzzle solvable by simple rules of thumb in about a third of games. Keep it? Default: yes.
 2. Should the three everyday scenes stay in the general list, or should there be more of them (food, workshop, garden)? Default: 3 scenes, more later as data-only additions.
 3. After the first renders: does the owner want the pilot motifs (step 5) shown before the remaining ones are drawn? Default: the implementer continues, and the contact sheet comes with the hand-over.
+
+## 15. Implementation notes (2026-10-18)
+
+Implemented as planned in the order of § 12, on branch `game/pixel-peel-v2`. The numbers below were measured in the cloud container (Node 22) over **every motif × 6 seeds** (120 games per level), with all five policies run without early exit.
+
+### 15.1 Final level values (deviations from § 2.1 in bold)
+
+| | easy | medium | hard |
+|---|---|---|---|
+| Width, tier, lanes, slots | 32, 1, 4, 5 | 40, 2, 4, 5 | 48, 3, 4, 4 |
+| Fitting pack | 10–40 | 10–60 | 12–90 |
+| Decoy chance, decoy pack | 0.06, 8–30 | **0.16**, 10–40 | 0.30, 24–90 |
+| Candidates, budget (launches) | 3, 6 000 | **5, 9 000** | 4, 10 000 |
+
+Medium first measured 29 % "all five fail" (target ≤ 25 %) with the plan's values. A lower decoy chance plus one more candidate and a slightly larger budget brought it to 23 % without losing the "obvious play fails" rate.
+
+**Added rule in `construct`:** a draw that would leave a shooter (or a colour's remainder) below 4 shots takes those shots too and goes to a waiting place instead. Without it, 9–14 % of shooters per game had 1–3 shots on real motifs (thin outlines, eyes, sparkles).
+
+### 15.2 Measured level definition (§ 2.2)
+
+| Measure | easy | medium | hard | target |
+|---|---|---|---|---|
+| Accepted by its rule | 100 % | 94 % | 100 % | ≥ 95 / 80 / 90 % |
+| Obvious play (P1) fails | 7 % | 99 % | 100 % | — / ≥ 75 / ≥ 95 % |
+| Tidy (P2) fails | 0 % | 47 % | 100 % | |
+| Slots first (P3) fails | 0 % | 45 % | 100 % | |
+| Cautious (P4) fails | 0 % | 50 % | 100 % | |
+| Noisy tidy (P5) fails | 3 % | 49 % | 94 % | |
+| All five fail | 0 % | 23 % | 94 % | ≤ 2 / ≤ 25 / ≥ 90 % |
+| Witness slot entries (median) | 4 | 8 | 9 | ≤ 6 / ≥ 4 / ≥ 6 |
+| All `K` slots occupied at least once | 3 % | 55 % | 100 % | — / — / ≥ 90 % |
+| At least one zero-hit park | 56 % | 94 % | 97 % | — / — / ≥ 60 % |
+| Shooters below 4 shots | 0.3 % | 0.8 % | 2.4 % | ≤ 8 % |
+
+On hard, all five policies fail for every seed of 14 motifs; the weakest is the llama (4 of 6 seeds), whose large calm areas give the noisy policy a chance. The witness rows (slot entries, slots filled, parks) come from a run before the polar bear redraw (15.4); the other rows from a run after it. `test/generator.test.ts` asserts these rates with the margins of § 2.2.
+
+### 15.3 Scale and time
+
+| | easy | medium | hard |
+|---|---|---|---|
+| Played colours (min–max, mean over 20 motifs) | 10–12, 10.3 | 13–16, 13.9 | 15–20, 16.2 |
+| Shooters per game | 44.8 | 55.3 | 58.4 |
+| Witness length (launches) | 52.7 | 78.6 | 103.5 |
+| Decoys | 2.0 | 5.7 | 6.9 |
+| Candidates tried | 1.04 | 2.31 | 1.23 |
+| Counted launches per generation | 1 174 | 3 158 | 1 927 |
+| Generation average / max, measured alone | 9.5 / 42 ms | 25 / 86 ms | 20 / 78 ms |
+| Generation average / max, inside the parallel test run | 12 / 73 ms | 32 / 152 ms | 25 / 98 ms |
+
+The averages are within the plan's target (< 40 ms). The maximum stays under 120 ms when measured alone. Under the load of the full parallel test run, medium reached 152 ms once, which is a cold start (rasterising plus JIT). The generator test therefore asserts only the average (< 120 ms).
+
+- Rasterisation at 48 (once per motif and size, memoised): median 8 ms; 6 complex motifs take 13–63 ms on the first, cold call. This is above the plan's "< 10 ms", but it happens once per session.
+- Hint off the witness path on hard (40 positions, one step off the witness at a third or half of the game): median 4 ms, max 12 ms. A proven move was found in 38 of 40. The other 2 got "no way found in a quick check, going back to move k works". The budgets are 4 000 launches for the rollouts and 4 000 for the safe point; the endgame DFS is 300 cells, 12 shooters, 5 000 nodes; up to 6 ancestors.
+
+### 15.4 Motifs
+
+All 20 planned motifs ship:
+
+- 9 landscapes: cherry blossom, summer meadow, autumn forest, winter village, desert dunes, fjord, rice terraces, coral reef, northern lights.
+- 8 animals: red fox, elephant, koala, llama, tiger, polar bear, hummingbird, emperor penguins.
+- 3 everyday scenes: reading nook, market stall, kitchen window.
+
+The v1 ids are kept. Every motif passes the motif tests:
+
+- played keys = tier keys at 32/40/48;
+- colour ranges;
+- minimum pixels (W/4);
+- ΔE ≥ 18 on easy, otherwise 12 (backdrop 15);
+- fill ≥ 50 %;
+- despeckle ≤ 2 %;
+- titles and places in all 16 locales.
+
+`scripts/render-motifs.ts <dir>` writes per-motif sheets, 32/40/48 PNGs and a contact sheet; `--only <id>` and `--watch` support authoring. After the first contact sheet, the polar bear was redrawn because it read as a pig at 32 and 40.
+
+### 15.5 UI details beyond the plan
+
+- **Spotlight** wash: 70 % towards the motif's backdrop colour. Every motif has its own backdrop, chosen to contrast with its palette, e.g. a warm sand for the winter village.
+- **Large view:** pressing a shooter scrolls the first previewed pixel into view.
+- **From 48 rem** the picture is `position: sticky`, so it stays in view while the lanes and the colours list scroll past.
+- **Status line** keeps a fixed height of 4 lines. A hover preview of 3 lines otherwise moved the buttons under the pointer, and the preview flickered.
+- **Pointer leaving a button** clears only the preview that button started. Leaving a neighbour while another shooter is focused or previewed changes nothing.
+- **Off-witness hint:** answered after one 30 ms timer with "Checking…" (`aria-busy`). On the witness path it is answered at once.
+
+### 15.6 Shared change (approved)
+
+`remember?: boolean` on choice, toggle and number settings in `@wp/game-core`:
+
+- validated by `defineGame`;
+- honoured by the host's start screen, which never stores or preselects such a setting;
+- documented in one sentence in ADR 0017.
+
+The motif setting uses it, so "Any picture" is always the default; "Another round" keeps the explicit pick.
+
+### 15.7 Known limits
+
+- The hard rate depends on the noisy policy: P1–P4 fail 100 %, P5 94 %.
+- On easy, the witness fills all 5 slots in only 3 % of games, which is intended (easy should rarely need every waiting place).
+- `docs/ROADMAP.md` and the registry are left to the orchestrator.
