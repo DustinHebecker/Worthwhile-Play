@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
-import { illustratedCards, illustration } from '../src/illustrations';
-import { WORLDS } from '../src/worlds';
+import { beforeAll, describe, expect, it } from 'vitest';
+import { illustratedCards, illustration, illustrationsLoaded, loadIllustrations } from '../src/illustrations';
+import { WORLD_IDS, WORLDS } from '../src/worlds';
 
 const css = readFileSync(join(__dirname, '../src/styles.css'), 'utf8');
 const known = new Set([...css.matchAll(/\.cq-il \.(il-[a-z-]+)/g)].map((m) => m[1]));
@@ -11,9 +11,13 @@ const ELEMENTS = new Set(['svg', 'g', 'rect', 'circle', 'ellipse', 'path', 'poly
 const ATTRIBUTES = new Set(['d', 'x', 'y', 'width', 'height', 'rx', 'ry', 'cx', 'cy', 'r', 'points', 'x1', 'y1', 'x2', 'y2', 'transform', 'opacity', 'class', 'viewBox', 'aria-hidden', 'focusable', 'xmlns']);
 
 describe('card illustrations (B2)', () => {
-  const cards = WORLDS.kz!.cards.map((c) => c.id);
+  beforeAll(async () => {
+    await loadIllustrations(WORLD_IDS);
+  });
 
-  it('every Kampfzwerge card has one, and every illustration belongs to a card', () => {
+  const cards = Object.values(WORLDS).flatMap((w) => w.cards.map((c) => c.id));
+
+  it('every card of every world has one, and every illustration belongs to a card', () => {
     expect(cards.filter((id) => illustration(id) === undefined)).toEqual([]);
     expect(illustratedCards().filter((id) => !cards.includes(id))).toEqual([]);
   });
@@ -30,6 +34,12 @@ describe('card illustrations (B2)', () => {
       }
       expect(doc.documentElement.getAttribute('aria-hidden'), id).toBe('true');
     }
+  });
+
+  it('load per world on demand, repeatably; unknown worlds are ignored', async () => {
+    expect(illustrationsLoaded([...WORLD_IDS])).toBe(true);
+    await expect(loadIllustrations(['kz', 'kz', 'xx', '__proto__'])).resolves.toBeUndefined();
+    expect(illustrationsLoaded(['xx'])).toBe(true);
   });
 
   it('unknown or prototype ids have none', () => {

@@ -342,5 +342,17 @@ export const pt: Catalogue = {
   'log.give.toYou': '{name} — {n} cartas dadas a você.',
   'log.curse.toYou': '{name} — maldição em você: {card}.',
   // Reveal pending
-  'next.reveal': 'Uma carta atingiu você: leia-a e depois toque em “Continuar”.'
+  'next.reveal': 'Uma carta atingiu você: leia-a e depois toque em “Continuar”.',
+  // K3: worlds Spaceloot and Office
+  'world.sl': 'Spaceloot — a tripulação contra os alienígenas',
+  'world.of': 'Caos no Escritório — o escritório contra o home office',
+  'setup.worlds.hint': 'Vários mundos são embaralhados juntos. Nenhum marcado: Kampfzwerge.',
+  'family.crew': 'a tripulação da nave',
+  'family.alien': 'alienígenas',
+  'family.office': 'o pessoal do escritório',
+  'family.remote': 'o pessoal do home office',
+  'set.away-team': 'Kit da equipe de desembarque',
+  'set.tourist-kit': 'Kit de turista espacial',
+  'set.video-call': 'Pronto para a videochamada',
+  'set.couch-kit': 'Kit escritório no sofá'
 };

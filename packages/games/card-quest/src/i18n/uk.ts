@@ -342,5 +342,17 @@ export const uk: Catalogue = {
   'log.give.toYou': '{name} — віддано тобі карт: {n}.',
   'log.curse.toYou': '{name} — прокляття на тебе: {card}.',
   // Reveal pending
-  'next.reveal': 'Тебе зачепила карта: прочитай її, потім тисни «Далі».'
+  'next.reveal': 'Тебе зачепила карта: прочитай її, потім тисни «Далі».',
+  // K3: worlds Spaceloot and Office
+  'world.sl': 'Космомотлох — екіпаж проти прибульців',
+  'world.of': 'Офісний хаос — офіс проти дистанційки',
+  'setup.worlds.hint': 'Кілька світів тасуються разом. Нічого не вибрано: Бойові гноми.',
+  'family.crew': 'екіпаж корабля',
+  'family.alien': 'прибульці',
+  'family.office': 'офісні працівники',
+  'family.remote': 'дистанційники',
+  'set.away-team': 'Спорядження десантної групи',
+  'set.tourist-kit': 'Набір космотуриста',
+  'set.video-call': 'Набір для відеодзвінка',
+  'set.couch-kit': 'Комплект «Офіс на дивані»'
 };

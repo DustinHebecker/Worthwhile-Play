@@ -342,5 +342,17 @@ export const pl: Catalogue = {
   'log.give.toYou': '{name} oddaje ci karty ({n}).',
   'log.curse.toYou': '{name} — klątwa na ciebie: {card}.',
   // Reveal pending
-  'next.reveal': 'Trafiła cię karta: przeczytaj ją, potem naciśnij „Dalej”.'
+  'next.reveal': 'Trafiła cię karta: przeczytaj ją, potem naciśnij „Dalej”.',
+  // K3: worlds Spaceloot and Office
+  'world.sl': 'Spaceloot — załoga kontra kosmici',
+  'world.of': 'Biurowy Chaos — biuro kontra praca zdalna',
+  'setup.worlds.hint': 'Kilka światów zostaje potasowanych razem. Nic nie zaznaczono: Kampfzwerge.',
+  'family.crew': 'załoga statku',
+  'family.alien': 'kosmici',
+  'family.office': 'ludzie z biura',
+  'family.remote': 'zdalniacy',
+  'set.away-team': 'Sprzęt grupy zwiadowczej',
+  'set.tourist-kit': 'Zestaw kosmicznego turysty',
+  'set.video-call': 'Zestaw do wideorozmowy',
+  'set.couch-kit': 'Wyposażenie biura na kanapie'
 };

@@ -342,5 +342,17 @@ export const tr: Catalogue = {
   'log.give.toYou': '{name} sana {n} kart verdi.',
   'log.curse.toYou': '{name} sana lanet attı: {card}.',
   // Reveal pending
-  'next.reveal': 'Bir kart sana isabet etti: oku, sonra “Devam” düğmesine bas.'
+  'next.reveal': 'Bir kart sana isabet etti: oku, sonra “Devam” düğmesine bas.',
+  // K3: worlds Spaceloot and Office
+  'world.sl': 'Spaceloot — uzaylılara karşı mürettebat',
+  'world.of': 'Ofis Kaosu — evden çalışanlara karşı ofis',
+  'setup.worlds.hint': 'Birden fazla dünya birbirine karıştırılır. Hiçbiri seçili değilse: Kampfzwerge.',
+  'family.crew': 'gemi mürettebatı',
+  'family.alien': 'uzaylılar',
+  'family.office': 'ofis çalışanları',
+  'family.remote': 'evden çalışanlar',
+  'set.away-team': 'Keşif ekibi teçhizatı',
+  'set.tourist-kit': 'Uzay turisti paketi',
+  'set.video-call': 'Görüntülü görüşmeye hazır',
+  'set.couch-kit': 'Kanepe ofisi takımı'
 };

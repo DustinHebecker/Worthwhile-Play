@@ -66,6 +66,20 @@ test('card-quest: the start screen sets up the table; the game has no setup of i
   await expect(page.getByTestId('next')).toBeVisible();
 });
 
+test('card-quest: worlds are chosen on the start screen and mixed; a reload keeps them', async ({ page }) => {
+  await startGame(page, GAME, { settings: { 'world-kz': false, 'world-sl': true, 'world-of': true, opponents: 2 } });
+  await expect(page.getByTestId('players')).toBeVisible();
+  const worldsOf = async () => ((await readSave(page, GAME)) as { state?: { settings?: { worlds?: string[] } } } | undefined)?.state?.settings?.worlds;
+  await expect.poll(worldsOf).toEqual(['sl', 'of']);
+  // Only cards of the chosen worlds are dealt, and they carry their pictures.
+  const hand = page.locator('[data-testid="hand"] .cq-tile');
+  await expect(hand.first()).toBeVisible();
+  for (const card of await hand.evaluateAll((tiles) => tiles.map((t) => t.getAttribute('data-card') ?? ''))) expect(card).toMatch(/^(sl|of)\./);
+  await expect(hand.first().locator('svg.cq-il')).toBeVisible();
+  await reopen(page);
+  expect(await worldsOf()).toEqual(['sl', 'of']);
+});
+
 test('card-quest: resumes in the middle of a fight after a reload', async ({ page }) => {
   await expectResumeAfterReload(page, GAME, async (p) => {
     await playUntil(p, (s) => s.phase === 'fight' && s.active === 0);
