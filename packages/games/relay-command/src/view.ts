@@ -1141,9 +1141,15 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     const facts = h('dl', { class: 'rc-facts' });
     facts.append(...fact(t('card.armor'), t(`armor.${arch.armor}`)));
     if (w) {
-      facts.append(...fact(t('card.rate'), `${w.cooldown <= 1 ? t('card.everyTick') : t('card.everyTicks', { n: w.cooldown })} · ${t(`card.delivery.${w.delivery}`)}`));
+      // Rates per turn, not per tick (owner, 2026-10-18): the tick is the simulation's clock, the turn the player's.
+      const shots = RULESET.ticksPerTurn / Math.max(1, w.cooldown);
+      const delivery = w.effect?.kind === 'disabled' ? 'pulse' : w.delivery;
+      facts.append(...fact(t('card.rate'), `${t('card.perTurnShots', { n: perTurn(shots) })} · ${t(`card.delivery.${delivery}`)}`, 'rc-card-rate'));
       if (w.stationary) facts.append(...fact(t('card.weapon'), t('card.stationary')));
-      if (w.effect?.kind === 'disabled') facts.append(...fact(t('card.weapon'), t('card.stun', { n: w.effect.ticks }), 'rc-card-stun'));
+      if (w.effect?.kind === 'disabled') {
+        const turns = w.effect.ticks / RULESET.ticksPerTurn;
+        facts.append(...fact(t('card.weapon'), turns === 1 ? t('card.stunOne') : t('card.stunTurns', { n: perTurn(turns) }), 'rc-card-stun'));
+      }
     }
     if (arch.comms) {
       const text = arch.comms.role === 'source' ? t('card.source', { r: arch.comms.radius, slots: arch.comms.orderSlots }) : t('card.relay', { r: arch.comms.radius });
@@ -1528,6 +1534,9 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     }
     g.restore();
   }
+
+  /** A per-turn figure in the UI locale: whole numbers as they are, others to one decimal (1.5 → "1,5" in German). */
+  const perTurn = (n: number): string => new Intl.NumberFormat(t.locale, { maximumFractionDigits: 1 }).format(n);
 
   /** A muzzle flash burst in a cell at (px, py): eight rays round an open centre. */
   function drawFlash(g: CanvasRenderingContext2D, px: number, py: number): void {
