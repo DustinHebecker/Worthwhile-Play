@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { isRecord } from '@wp/game-core';
 import { BASE_RULESET, NEUTRAL, archetypeOf, canonicalJson, cellOf, findPath, observe, passable, DEFAULT_DOCTRINE, computeNetwork, createWorld, initialIntel, observedCells, resolveTurn, validateCommand, worldHash, type Command, type Entity, type Order, type World } from '@wp/strategy-engine';
-import { objectiveOf, planAi, type Difficulty } from '../src/ai';
+import { assaultPlan, objectiveOf, planAi, type Difficulty } from '../src/ai';
 import {
   cancelJob,
   cancelOrder,
@@ -61,9 +61,11 @@ import { generateMap } from '../src/generator';
 /**
  * Fingerprint of AI-vs-AI plans on the two-side maps (see the test): '965772b3' before increment 4;
  * '31513435' since the opponent builds defence towers (owner decision 2026-10-16, a measured gain,
- * docs/design/strategy.md "Defence towers").
+ * docs/design/strategy.md "Defence towers"); 'fd8529d3' since it no longer feeds units into a known
+ * tower wall (rally point beyond the towers' reach, towers weigh double among a post's defenders;
+ * owner review 2026-10-18).
  */
-const TWO_SIDE_AI_FINGERPRINT = '31513435';
+const TWO_SIDE_AI_FINGERPRINT = 'fd8529d3';
 const ai = (world: World, side: number, difficulty: Difficulty = 'normal') => planAi(observe(world, RULESET, side), RULESET, difficulty);
 const own = (s: RcState) => s.world.entities.filter((e) => e.side === PLAYER);
 const enemy = (s: RcState) => s.world.entities.filter((e) => e.side === OPPONENT);
@@ -1254,7 +1256,8 @@ describe('hot-seat (docs/design/strategy.md § 9.4, D10)', () => {
   // '83a1b8af'); then when the opponent started to build defence towers (owner decision 2026-10-16,
   // a deliberate AI change with a measured gain, like the two-side fingerprint: 'da7608a7'); then
   // muzzle flash adds `flash` events to the player's summaries (owner decision 2026-10-17; world, log,
-  // plans and result unchanged: without the flash events it is 'da7608a7' again): '901bcbec'.
+  // plans and result unchanged: without the flash events it is 'da7608a7' again): '901bcbec'; then the
+  // opponent stopped feeding units into known tower walls (owner review 2026-10-18): 'a636ca8'.
   it('one person is the single-player game, byte for byte: every map and opponent count matches the fingerprint taken before hot-seat (main at f2ee871)', () => {
     let h = 0x811c9dc5;
     const feed = (text: string) => {
@@ -1272,7 +1275,7 @@ describe('hot-seat (docs/design/strategy.md § 9.4, D10)', () => {
         }
       }
     }
-    expect(h.toString(16)).toBe('901bcbec');
+    expect(h.toString(16)).toBe('a636ca8');
   }, 300_000);
 
   it('the seats: side 0 is always a person, the default is the computer; several persons have no quick match', () => {
@@ -1616,6 +1619,33 @@ describe('planning ledger, stalemate pressure, save bounds (mutation run on rule
       expect(() => isValidState(x), label).not.toThrow();
       expect(isValidState(x), label).toBe(false);
     }
+  });
+});
+
+describe('tower walls (owner review 2026-10-18: no more units fed into a known tower wall)', () => {
+  /** Field Exercise with Gun Towers around the player's post, known to the opponent (as at the start: structures are known). */
+  const walled = (cells: readonly (readonly [number, number])[]) => {
+    const w = structuredClone(newGame(1).world);
+    const post = w.entities.find((e) => e.side === PLAYER && e.kind === 'command-post')!;
+    for (const [dx, dy] of cells) {
+      const x = post.x + dx, y = post.y + dy;
+      if (x < 0 || y < 0 || x >= w.map.w || y >= w.map.h || !passable(w.map, RULESET, x, y, 'ground') || w.entities.some((e) => e.x === x && e.y === y)) continue;
+      w.entities.push({ ...post, id: w.nextId++, kind: 'tower-gun', hp: RULESET.archetypes['tower-gun']!.hp, x, y });
+    }
+    w.intel = initialIntel(w, RULESET);
+    return { w, post };
+  };
+  it('the rally point stands back beyond the reach of the known towers around the post', () => {
+    const open = walled([]);
+    const plain = assaultPlan(observe(open.w, RULESET, OPPONENT), RULESET, 'normal')!;
+    const { w, post } = walled([[2, -2], [3, -1], [3, 0], [2, -3], [1, -3], [3, -3]]);
+    const towers = w.entities.filter((e) => e.kind === 'tower-gun');
+    expect(towers.length).toBeGreaterThanOrEqual(3);
+    const plan = assaultPlan(observe(w, RULESET, OPPONENT), RULESET, 'normal')!;
+    const far = (p: { x: number; y: number }) => Math.hypot(p.x - post.x, p.y - post.y);
+    expect(far(plan.rally)).toBeGreaterThan(far(plain.rally));
+    const reach = RULESET.archetypes['tower-gun']!.weapon!.range + 1;
+    expect(towers.every((t) => Math.hypot(t.x - plan.rally.x, t.y - plan.rally.y) > reach)).toBe(true);
   });
 });
 
