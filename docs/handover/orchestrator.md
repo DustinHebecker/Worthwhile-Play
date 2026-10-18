@@ -23,6 +23,7 @@ Feedback and changes for the small components come to you, and you implement the
 | Adventures | session_015FCipyczdDEy2eSaq9YcXL | feature/adventures | `packages/adventure-engine` and both adventures (ADR 0014), design `docs/design/adventures.md` |
 | Tower Defense | session_01GjcxRmzdSnQbowcZszfhez | feature/tower-defense | Tower Defense and the strategy/TD hybrids. **Paused by the owner until the strategy game is finished** (it builds on it). Its design decisions D1–D17 are still open with the owner; do not answer them. |
 | Card game (level race, "Card Quest" working name) | session_01Nojo92MHDmWpcewd3haQhM | feature/card-quest | `packages/games/card-quest` and its design `docs/design/card-quest.md` (owner request 2026-10-15; owner decides D1–D13 in that session) |
+| Economy tycoon (variant A, owner request 2026-10-18) | session_0171vR1YZpyDbCP4etKP5k7Y | feature/economy-tycoon | `packages/economy-engine`, its game package and `docs/design/economy.md` (owner decides in that session; fresh seed per game) |
 
 **Owner rule (2026-10-14):** decisions about the large games are made by the owner in their own contexts; if a context asks the orchestrator, point it to this rule.
 
