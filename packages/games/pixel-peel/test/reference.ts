@@ -63,6 +63,31 @@ export interface RefPosition {
   slots: ({ c: string; n: number; lane: number; index: number } | null)[];
 }
 
+/** v1's obvious play (v1 § 9.3) on the reference rules: most hits, used up, slot before lane, lower index. */
+export function refObviousPlay(start: RefPosition): { solved: boolean; moves: string[] } {
+  let pos = start;
+  const moves: string[] = [];
+  while (pos.cells.some((c) => c !== EMPTY)) {
+    const children: { move: string; next: RefPosition; hits: number; usedUp: boolean; slot: boolean; index: number }[] = [];
+    for (const [kind, count] of [['S', pos.slots.length], ['L', pos.lanes.length]] as const) {
+      for (let i = 0; i < count; i++) {
+        const move = `${kind}${i}`;
+        const next = refApply(pos, move);
+        if (next === pos) continue;
+        const before = pos.cells.filter((c) => c !== EMPTY).length;
+        const hits = before - next.cells.filter((c) => c !== EMPTY).length;
+        const shooter = kind === 'S' ? pos.slots[i]! : pos.lanes[i]![pos.laneFront[i]!]!;
+        children.push({ move, next, hits, usedUp: hits === shooter.n, slot: kind === 'S', index: i });
+      }
+    }
+    if (children.length === 0) return { solved: false, moves };
+    children.sort((a, b) => b.hits - a.hits || Number(b.usedUp) - Number(a.usedUp) || Number(b.slot) - Number(a.slot) || a.index - b.index);
+    moves.push(children[0]!.move);
+    pos = children[0]!.next;
+  }
+  return { solved: true, moves };
+}
+
 /** The reference move (v1 § 4.4): returns the same object when illegal. */
 export function refApply(pos: RefPosition, move: string): RefPosition {
   const m = /^([LS])(\d)$/.exec(move);

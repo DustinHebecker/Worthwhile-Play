@@ -1,165 +1,265 @@
 import { createRng, normalizeSeed, type Rng } from '@wp/game-core';
+import { rasterise, type Tier } from './art/raster';
+import type { Motif } from './art/types';
+import { cloneCells, engineOf, exposedCounts, fullCells, launch, replayCursor, tableOf, type Cells, type Engine } from './engine';
 import { MOTIFS, findMotif } from './motifs/index';
-import type { Motif } from './motifs/types';
-import { cloneCells, engineOf, exposedOf, fullCells, launch } from './engine';
-import { initialPosition, replay, toDifficulty, type Difficulty, type Move, type PeelState, type Picture, type Shooter } from './rules';
-import { obviousPlay, solve } from './solver';
+import { POLICIES, runPolicy, type Budget, type PolicyId } from './policies';
+import { toDifficulty, type Difficulty, type Move, type PeelState, type Picture, type Shooter } from './rules';
 
 /**
- * The generator (design § 9.2). It peels the picture once in a fixed, seeded way so that every shooter is used up
- * exactly when launched (`peelPlan`), deals those shooters into lanes in that order (the base deal, solvable by
- * construction), and on medium and hard moves some late shooters forward. A perturbed candidate is kept only when the
- * solver finds a solution, which becomes the stored witness. All randomness comes from one `createRng(seed)` in a
- * fixed draw order; budgets count nodes, never time.
+ * The v2 generator (design v2 § 3): solvable by construction, hard by verification. `construct` plays a valid game
+ * forward and records the lane order it needs (with deliberate early "decoy" shooters that must wait); `verdict`
+ * runs the five reference policies; `generate` keeps the first candidate its level accepts, else the best one. All
+ * randomness comes from one `createRng(seed)` in a fixed draw order; budgets count launches, never time.
  */
 
 export interface Level {
+  width: 32 | 40 | 48;
+  tier: Tier;
   lanes: number;
   slots: number;
-  /** Shots aimed for per shooter. */
+  /** Shots aimed for by a fitting shooter. */
   pack: readonly [number, number];
-  /** Shooters moved forward in their lanes. */
-  moves: readonly [number, number];
-  attempts: number;
-  /** Solver budget per candidate (expanded nodes). */
+  /** Chance per construction step of a decoy (a shooter launched early that must wait). */
+  decoy: number;
+  decoyPack: readonly [number, number];
+  /** Minimum shots of a fitting shooter (except a colour's last cells). */
+  minShots: number;
+  candidates: number;
+  /** Counted launches for construction and verification together. */
   budget: number;
 }
 
 export const LEVELS: Readonly<Record<Difficulty, Level>> = {
-  easy: { lanes: 2, slots: 5, pack: [14, 30], moves: [0, 0], attempts: 0, budget: 0 },
-  medium: { lanes: 3, slots: 3, pack: [10, 24], moves: [6, 10], attempts: 8, budget: 4000 },
-  hard: { lanes: 3, slots: 2, pack: [12, 28], moves: [10, 14], attempts: 12, budget: 4000 }
+  easy: { width: 32, tier: 1, lanes: 4, slots: 5, pack: [10, 40], decoy: 0.06, decoyPack: [8, 30], minShots: 4, candidates: 3, budget: 6000 },
+  medium: { width: 40, tier: 2, lanes: 4, slots: 5, pack: [10, 60], decoy: 0.16, decoyPack: [10, 40], minShots: 4, candidates: 5, budget: 9000 },
+  hard: { width: 48, tier: 3, lanes: 4, slots: 4, pack: [12, 90], decoy: 0.3, decoyPack: [24, 90], minShots: 4, candidates: 4, budget: 10000 }
 };
 
-export const pictureOf = (motif: Motif): Picture => ({
-  w: (motif.rows[0] ?? '').length,
-  h: motif.rows.length,
-  rows: [...motif.rows],
-  palette: Object.entries(motif.palette).map(([key, [hex, name]]) => ({ key, hex, name })),
-  backdrop: motif.backdrop
-});
+/** The played picture of a motif at a level (a fresh copy; the rasteriser memoises its own). */
+export function pictureFor(motif: Motif, level: Pick<Level, 'width' | 'tier'>): Picture {
+  const p = rasterise(motif, level.width, level.tier);
+  return { w: p.w, h: p.h, rows: [...p.rows], palette: p.palette.map((e) => ({ ...e })), backdrop: p.backdrop };
+}
 
-/** Shooters in an order in which each launch is used up exactly (the "peel plan"). */
-export function peelPlan(picture: Picture, pack: readonly [number, number], rng: Rng): Shooter[] {
-  const engine = engineOf(picture);
-  let cells = fullCells(engine);
-  const order: Shooter[] = [];
-  const keys = picture.palette.map((p) => p.key);
-  while (cells.left > 0) {
-    const a = rng.int(pack[0], pack[1]);
-    const onEdge = new Set(exposedOf(engine, cells).map((i) => engine.colour[i] as number));
-    const options = keys
-      .map((key, i) => ({ c: key, code: i + 1 }))
-      .filter((o) => onEdge.has(o.code))
-      .map((o) => {
-        const next = cloneCells(cells);
-        return { c: o.c, next, hits: launch(engine, next, o.code, a) };
-      })
-      .filter((o) => o.hits > 0);
-    const good = options.filter((o) => o.hits >= pack[0]);
-    let chosen = options[0]!;
-    if (good.length > 0) {
-      let r = rng.int(1, good.reduce((sum, o) => sum + o.hits, 0));
-      for (const o of good) {
-        r -= o.hits;
-        if (r <= 0) {
-          chosen = o;
-          break;
+interface Draw {
+  c: number;
+  n: number;
+}
+type Event = { kind: 'L'; draw: number } | { kind: 'S'; slot: number };
+
+export interface Construction {
+  lanes: Shooter[][];
+  witness: Move[];
+  /** Decoys launched (shooters deliberately early). */
+  decoys: number;
+  /** Launches spent. */
+  launches: number;
+}
+
+/** Weighted pick by integer weights (one rng draw). */
+function weighted<T>(rng: Rng, items: readonly T[], weight: (t: T) => number): T {
+  let total = 0;
+  for (const it of items) total += weight(it);
+  let r = rng.int(1, Math.max(1, total));
+  for (const it of items) {
+    r -= weight(it);
+    if (r <= 0) return it;
+  }
+  return items[items.length - 1] as T;
+}
+
+/**
+ * Plays a game forward (design v2 § 3.2). It may choose which shooter comes next and how many shots it gets; that
+ * choice becomes the lane order. Never stuck: per colour `reserved ≤ remaining`, so an exposed colour always has
+ * either a parked shooter or room for a fitting one; slots never overflow.
+ */
+export function construct(engine: Engine, level: Level, rng: Rng): Construction {
+  const colours = engine.keys.length;
+  const cells: Cells = fullCells(engine);
+  const remaining = new Int32Array(colours + 1);
+  for (const c of engine.colour) remaining[c] = (remaining[c] as number) + 1;
+  remaining[0] = 0;
+  const reserved = new Int32Array(colours + 1);
+  const slots: ({ c: number; n: number } | null)[] = Array.from({ length: level.slots }, () => null);
+  const draws: Draw[] = [];
+  const events: Event[] = [];
+  let launches = 0;
+  let decoys = 0;
+  const hitsOn = (c: number, n: number) => {
+    launches++;
+    return launch(engine, cloneCells(cells), c, n);
+  };
+  const relaunch = (j: number) => {
+    const s = slots[j] as { c: number; n: number };
+    launches++;
+    const h = launch(engine, cells, s.c, s.n);
+    remaining[s.c] = (remaining[s.c] as number) - h;
+    reserved[s.c] = (reserved[s.c] as number) - h;
+    s.n -= h;
+    if (s.n === 0) slots[j] = null;
+    events.push({ kind: 'S', slot: j });
+  };
+  for (let guard = 0; cells.left > 0 && guard < 20000; guard++) {
+    const exposed = exposedCounts(engine, cells);
+    const free = slots.indexOf(null);
+    const ready: number[] = [];
+    slots.forEach((s, j) => s && (exposed[s.c] as number) > 0 && ready.push(j));
+    if (ready.length > 0 && (free < 0 || rng.next() < 0.6)) {
+      relaunch(rng.pick(ready));
+      continue;
+    }
+    if (free >= 0 && rng.next() < level.decoy) {
+      const candidates: number[] = [];
+      for (let c = 1; c <= colours; c++) if ((remaining[c] as number) - (reserved[c] as number) >= level.decoyPack[0]) candidates.push(c);
+      if (candidates.length > 0) {
+        // Weighted towards colours exposed least: those wait longest.
+        const c = weighted(rng, candidates, (x) => ((exposed[x] as number) === 0 ? 6 : (exposed[x] as number) < 4 ? 3 : 1));
+        const a = Math.min(rng.int(level.decoyPack[0], level.decoyPack[1]), (remaining[c] as number) - (reserved[c] as number));
+        const h = hitsOn(c, a);
+        if (h < a) {
+          launches++;
+          launch(engine, cells, c, a);
+          remaining[c] = (remaining[c] as number) - h;
+          reserved[c] = (reserved[c] as number) + a - h;
+          slots[free] = { c, n: a - h };
+          draws.push({ c, n: a });
+          events.push({ kind: 'L', draw: draws.length - 1 });
+          decoys++;
+          continue;
         }
       }
-    } else for (const o of options) if (o.hits > chosen.hits) chosen = o;
-    order.push({ c: chosen.c, n: chosen.hits });
-    cells = chosen.next;
-  }
-  return order;
-}
-
-interface Dealt extends Shooter {
-  /** Position in the peel plan (late = covered for long). */
-  w: number;
-}
-
-/** Order-preserving deal: each shooter to a lane drawn by `rng`, lane lengths within 2 of the shortest. */
-export function deal(order: readonly Shooter[], lanes: number, rng: Rng): { lanes: Dealt[][]; witness: Move[] } {
-  const out: Dealt[][] = Array.from({ length: lanes }, () => []);
-  const witness: Move[] = [];
-  order.forEach((s, w) => {
-    const shortest = Math.min(...out.map((l) => l.length));
-    const allowed = out.map((l, i) => (l.length + 1 <= shortest + 2 ? i : -1)).filter((i) => i >= 0);
-    const lane = rng.pick(allowed);
-    out[lane]!.push({ ...s, w });
-    witness.push(`L${lane}`);
-  });
-  return { lanes: out, witness };
-}
-
-/** Moves `count` shooters (lane position ≥ 1, weighted towards late plan positions) forward by 1–3 places. */
-export function perturb(lanes: readonly Dealt[][], count: number, rng: Rng): Dealt[][] {
-  const out = lanes.map((l) => l.slice());
-  for (let m = 0; m < count; m++) {
-    const options: { lane: number; at: number; weight: number }[] = [];
-    out.forEach((lane, i) => lane.forEach((s, at) => at >= 1 && options.push({ lane: i, at, weight: s.w + 1 })));
-    if (options.length === 0) break;
-    let r = rng.int(1, options.reduce((sum, o) => sum + o.weight, 0));
-    let pick = options[0]!;
-    for (const o of options) {
-      r -= o.weight;
-      if (r <= 0) {
-        pick = o;
-        break;
-      }
     }
-    const to = Math.max(0, pick.at - rng.int(1, 3));
-    const lane = out[pick.lane]!;
-    const [s] = lane.splice(pick.at, 1);
-    lane.splice(to, 0, s!);
+    // A fitting shooter, used up exactly.
+    const target = rng.int(level.pack[0], level.pack[1]);
+    const options: { c: number; h: number; cap: number }[] = [];
+    for (let c = 1; c <= colours; c++) {
+      const cap = (remaining[c] as number) - (reserved[c] as number);
+      if ((exposed[c] as number) === 0 || cap <= 0) continue;
+      const h = hitsOn(c, Math.min(target, cap));
+      if (h > 0) options.push({ c, h, cap });
+    }
+    if (options.length === 0) {
+      // Every exposed colour is reserved by a parked shooter, which can therefore hit.
+      if (ready.length === 0) throw new Error('construct: no move (unreachable)');
+      relaunch(rng.pick(ready));
+      continue;
+    }
+    const enough = Math.max(level.minShots, level.pack[0]);
+    const good = options.filter((o) => o.h >= enough || o.h === o.cap);
+    const chosen = good.length > 0 ? weighted(rng, good, (o) => o.h) : options.reduce((x, o) => (o.h > x.h ? o : x));
+    // Tiny shooters make dull play: a shooter that would hit fewer than `minShots`, or leave a remainder of fewer
+    // than `minShots` cells of its colour, takes more shots and waits in a free slot with the rest instead.
+    let n = chosen.h;
+    const rest = chosen.cap - chosen.h;
+    const freeNow = slots.indexOf(null);
+    if (freeNow >= 0 && chosen.h < level.minShots && chosen.cap >= level.minShots) n = Math.min(chosen.cap, Math.max(level.minShots, target));
+    else if (freeNow >= 0 && rest > 0 && rest < level.minShots) n = chosen.cap;
+    launches++;
+    const hit = launch(engine, cells, chosen.c, n);
+    remaining[chosen.c] = (remaining[chosen.c] as number) - hit;
+    if (n > hit) {
+      reserved[chosen.c] = (reserved[chosen.c] as number) + n - hit;
+      slots[freeNow] = { c: chosen.c, n: n - hit };
+    }
+    draws.push({ c: chosen.c, n });
+    events.push({ kind: 'L', draw: draws.length - 1 });
   }
-  return out;
+  // Deal the draws into lanes in draw order (a random lane at most 2 longer than the shortest).
+  const lanes: Shooter[][] = Array.from({ length: level.lanes }, () => []);
+  const laneOf: number[] = [];
+  for (const d of draws) {
+    const shortest = Math.min(...lanes.map((l) => l.length));
+    const allowed = lanes.map((l, i) => (l.length + 1 <= shortest + 2 ? i : -1)).filter((i) => i >= 0);
+    const lane = rng.pick(allowed);
+    (lanes[lane] as Shooter[]).push({ c: engine.keys[d.c - 1] as string, n: d.n });
+    laneOf.push(lane);
+  }
+  const witness = events.map((e) => (e.kind === 'L' ? `L${laneOf[e.draw]}` : `S${e.slot}`));
+  return { lanes, witness, decoys, launches };
 }
 
-const strip = (lanes: readonly Dealt[][]): Shooter[][] => lanes.map((l) => l.map(({ c, n }) => ({ c, n })));
+export type Verdict = Partial<Record<PolicyId, 'solved' | 'stuck' | 'unknown'>>;
 
-/** 2: the obvious play fails; 1: the solution parks at least once; 0: otherwise. */
-export function quality(picture: Picture, lanes: Shooter[][], slots: number, solution: readonly Move[]): number {
-  const start = initialPosition({ picture, lanes, slots });
-  if (!obviousPlay(start).solved) return 2;
-  return (replay(start, solution)?.parks ?? 0) > 0 ? 1 : 0;
+const solvedCount = (v: Verdict) => POLICIES.filter((p) => v[p] === 'solved').length;
+
+/** Whether a level accepts a verdict (design v2 § 2.1). Unknown counts as not accepted. */
+export function accepts(difficulty: Difficulty, v: Verdict): boolean {
+  if (POLICIES.some((p) => v[p] === undefined || v[p] === 'unknown')) {
+    // Early exit leaves policies unrun; decide from what ran.
+    if (difficulty === 'easy') return solvedCount(v) >= 3;
+    if (difficulty === 'medium') return v.obvious === 'stuck' && solvedCount(v) >= 1;
+    return false;
+  }
+  if (difficulty === 'easy') return solvedCount(v) >= 3;
+  if (difficulty === 'medium') return v.obvious === 'stuck' && solvedCount(v) >= 1;
+  return solvedCount(v) === 0;
+}
+
+/** Fallback ranking when no candidate is accepted (higher is better). */
+function score(difficulty: Difficulty, v: Verdict): number {
+  const solved = solvedCount(v);
+  const failed = POLICIES.filter((p) => v[p] === 'stuck').length;
+  if (difficulty === 'hard') return failed;
+  if (difficulty === 'medium') return (v.obvious === 'stuck' ? 10 : 0) - Math.abs(solved - 2);
+  return solved;
+}
+
+/** Runs the policies with early exit as soon as the level's rule is decided. */
+export function verdict(table: ReturnType<typeof tableOf>, difficulty: Difficulty, seed: number, budget: Budget): Verdict {
+  const v: Verdict = {};
+  for (const id of POLICIES) {
+    const r = runPolicy(table, id, seed, budget).result;
+    v[id] = r;
+    if (r === 'unknown') break;
+    if (difficulty === 'hard' && r === 'solved') break;
+    if (difficulty === 'medium' && ((id === 'obvious' && r === 'solved') || (id !== 'obvious' && r === 'solved'))) break;
+    if (difficulty === 'easy' && solvedCount(v) >= 3) break;
+  }
+  return v;
 }
 
 export interface Generated {
+  motif: Motif;
   picture: Picture;
   lanes: Shooter[][];
   slots: number;
   witness: Move[];
-  quality: number;
-  /** Candidates whose solution was found (for tests and the implementation notes). */
-  solvedCandidates: number;
-  perturbed: boolean;
+  verdict: Verdict;
+  accepted: boolean;
+  candidates: number;
+  decoys: number;
+  /** Counted launches spent (construction and verification). */
+  launches: number;
 }
 
-export function generate(motif: Motif, difficulty: Difficulty, rng: Rng): Generated {
+/** Generates one game for a motif and difficulty (design v2 § 3.4). */
+export function generate(motif: Motif, difficulty: Difficulty, rng: Rng, seed = 0): Generated {
   const level = LEVELS[difficulty];
-  const picture = pictureOf(motif);
-  const order = peelPlan(picture, level.pack, rng);
-  const base = deal(order, level.lanes, rng);
-  let best: Generated = { picture, lanes: strip(base.lanes), slots: level.slots, witness: base.witness, quality: -1, solvedCandidates: 0, perturbed: false };
-  let solvedCandidates = 0;
-  // Perturbations accumulate: each attempt builds on the last solvable candidate, so the disorder grows step by step
-  // while every accepted step stays proven solvable.
-  let current = base.lanes;
-  for (let attempt = 0; attempt < level.attempts; attempt++) {
-    const dealt = perturb(current, rng.int(level.moves[0], level.moves[1]), rng);
-    const lanes = strip(dealt);
-    const result = solve(initialPosition({ picture, lanes, slots: level.slots }), level.budget);
-    if (!('solution' in result)) continue;
-    current = dealt;
-    solvedCandidates++;
-    const q = quality(picture, lanes, level.slots, result.solution);
-    if (q >= best.quality) best = { picture, lanes, slots: level.slots, witness: result.solution, quality: q, solvedCandidates, perturbed: true };
-    if (q === 2) break;
+  const picture = pictureFor(motif, level);
+  const engine = engineOf(picture);
+  const budget: Budget = { left: level.budget };
+  let best: (Generated & { score: number }) | undefined;
+  for (let k = 1; k <= level.candidates; k++) {
+    if (k > 1 && budget.left <= 0) break;
+    const c = construct(engine, level, rng);
+    budget.left -= c.launches;
+    const table = tableOf(engine, c.lanes, level.slots);
+    const v = budget.left > 0 ? verdict(table, difficulty, seed + k, budget) : {};
+    const ok = budget.left >= 0 && accepts(difficulty, v);
+    const s = score(difficulty, v);
+    const g = { motif, picture, lanes: c.lanes, slots: level.slots, witness: c.witness, verdict: v, accepted: ok, candidates: k, decoys: c.decoys, launches: level.budget - budget.left, score: s };
+    if (ok) return g;
+    if (!best || s > best.score) best = g;
+    best = { ...best, candidates: k, launches: level.budget - budget.left };
   }
-  if (best.quality < 0) best = { ...best, quality: quality(picture, best.lanes, best.slots, best.witness) };
-  return { ...best, solvedCandidates };
+  return best as Generated;
+}
+
+/** Checks that a witness solves the lanes (the generator's own assertion). */
+export function witnessSolves(picture: Picture, lanes: Shooter[][], slots: number, witness: readonly Move[]): boolean {
+  const table = tableOf(engineOf(picture), lanes, slots);
+  return replayCursor(table, witness)?.cells.left === 0;
 }
 
 /** Resolves the start-screen choice: `any` or a known motif id; anything else counts as `any`. */
@@ -171,7 +271,7 @@ export function createInitial(seed: number, difficulty: unknown = 'easy', choice
   const c = toChoice(choice);
   const rng = createRng(s);
   const motif = c === 'any' ? (MOTIFS[rng.int(0, MOTIFS.length - 1)] as Motif) : (findMotif(c) as Motif);
-  const g = generate(motif, d, rng);
+  const g = generate(motif, d, rng, s);
   return {
     seed: s,
     difficulty: d,

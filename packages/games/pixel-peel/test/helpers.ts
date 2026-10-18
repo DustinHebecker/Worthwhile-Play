@@ -1,6 +1,12 @@
 import fc from 'fast-check';
-import { initialPosition, type PeelState, type Picture, type Shooter } from '../src/rules';
-import { solve } from '../src/solver';
+import { cursorOf, initialPosition, type PeelState, type Picture, type Position, type Shooter } from '../src/rules';
+import { solveCursor, type SolveResult } from '../src/solver';
+
+/** The exact solver on a position (tests only). */
+export function solve(pos: Position, budget = 4000): SolveResult {
+  const { table, cursor } = cursorOf(pos);
+  return solveCursor(table, cursor, budget);
+}
 
 const HEXES = ['#d9682b', '#f6ead2', '#241c18', '#2f6fb3', '#6fb352', '#c8322b', '#ffe45c', '#8e9499'];
 const NAMES = ['orange', 'cream', 'black', 'blue', 'green', 'red', 'yellow', 'grey'];
