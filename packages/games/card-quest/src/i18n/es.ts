@@ -354,5 +354,16 @@ export const es: Catalogue = {
   'set.away-team': 'Kit del equipo de exploración',
   'set.tourist-kit': 'Kit de turista espacial',
   'set.video-call': 'Look de videollamada',
-  'set.couch-kit': 'Kit de oficina en el sofá'
+  'set.couch-kit': 'Kit de oficina en el sofá',
+  // Worlds Fridge and Railway
+  'world.fd': 'Expedición Nevera: comida fresca contra sobras',
+  'world.rw': 'Todos a Bordo: viajeros contra personal ferroviario',
+  'family.fresh': 'la comida fresca',
+  'family.leftover': 'las sobras',
+  'family.passenger': 'los viajeros',
+  'family.railstaff': 'el personal ferroviario',
+  'set.fridge-raider': 'Asalto nocturno a la nevera',
+  'set.chef-kit': 'Equipo de chef como es debido',
+  'set.conductor-kit': 'Uniforme ferroviario como es debido',
+  'set.commuter-kit': 'Kit veterano de cercanías'
 };

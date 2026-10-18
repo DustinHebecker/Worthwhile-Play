@@ -132,7 +132,7 @@ Meetings as monsters, the printer as nemesis, the home office as a battlefield.
 - Items: **Stapler** (+3, one hand, `tool`), **Jogging Bottoms** (+1, body, `clothing`; +3 if no one is helping you — "nobody can see you"), **Headset With Mute Button** (+2, head, `gadget`).
 - Curses: **Reply-All** (every other player draws a card, you discard one), **You're Still on Mute** (you may not make or accept offers in your next fight).
 
-### 4.4 Fridge expedition
+### 4.4 World 4 — Fridge expedition *(built 2026-10-18, owner: "2 weitere Welten"; see § 10.4d)*
 
 Food monsters at the back of the fridge, very child-friendly.
 
@@ -140,7 +140,7 @@ Food monsters at the back of the fridge, very child-friendly.
 - Items: **Wooden Spoon** (+2, one hand, `tool`), **Oven Mitt** (+1, one hand; +3 against `fiery`), **Tupperware Shield** (+2, one hand, `junk`).
 - Curse **Is the Light Really Off?**: show your hand to the player on your left.
 
-### 4.5 Railway / trains
+### 4.5 World 5 — Railway / trains *(built 2026-10-18 with the Fridge; see § 10.4d)*
 
 Steam, schedules and the eternal delay — no real operator, line or brand.
 
@@ -173,7 +173,7 @@ K1 Kampfzwerge → first play-tests → K3 Spaceloot (mixing) → then, one per 
 
 ### 5.1 Setup and goal
 
-- **2–6 players**: one person plus **1–5 computer players**. Since ADR 0017 the setup lives on the host's start screen (declared `settings`, no own setup phase any more): difficulty, number of computer players, optional round limit (target fixed at level 10 since 2026-10-17). Coach tips are a display preference, switched in the game (remembered for new games). (Players who switched them off on the #51 start screen, live for a few hours, see them on again once.) Every choice has a sensible default, so "Start" is one tap; the defaults follow what older versions remembered (`setup` preference). Since K3 the start screen also has one toggle per world (Kampfzwerge, Spaceloot, Office); the ticked worlds are shuffled together, none ticked means Kampfzwerge; the host remembers the last choice. Old saves still in the setup phase are dealt with their settings on restore.
+- **2–6 players**: one person plus **1–5 computer players**. Since ADR 0017 the setup lives on the host's start screen (declared `settings`, no own setup phase any more): difficulty, number of computer players, optional round limit (target fixed at level 10 since 2026-10-17). Coach tips are a display preference, switched in the game (remembered for new games). (Players who switched them off on the #51 start screen, live for a few hours, see them on again once.) Every choice has a sensible default, so "Start" is one tap; the defaults follow what older versions remembered (`setup` preference). Since K3 the start screen also has one toggle per world (Kampfzwerge, Spaceloot, Office, Fridge, Railway); the ticked worlds are shuffled together, none ticked means Kampfzwerge; the host remembers the last choice. Old saves still in the setup phase are dealt with their settings on restore.
 - Everyone starts at **level 1** with 4 encounter and 4 loot cards.
 - **Win: reach the target level** — always **10** (owner decision 2026-10-17; saves from before keep their 6 / 8 / 12). The **winning level must come from defeating a monster** (not from selling or one-shots).
 - **Round limit: optional**, off by default (choices: off / 20 / 30 / 40). When on, after the last round the highest level wins (ties shared).
@@ -439,6 +439,21 @@ K1 is large (140 cards × 16 locales). If it becomes too big for one review, it 
   kz+sl 11, kz+of 11, sl+of 11, all three 10; 10–90 % ≈ 7–16; max 17–29; ≈ 40 ms per game. Wins spread over both
   families of every world (small samples).
 
+### 10.4d Worlds 4 and 5 (2026-10-18): Fridge and Railway
+
+- Owner after K3: "im Grunde zufrieden … als nächstes 2 weitere Welten". Built the next two from the proposed order:
+  **Fridge** (`fd`, *Kühlschrank-Expedition*: fresh food vs leftovers, very child-friendly) and **Railway** (`rw`,
+  *Einsteigen, bitte!*: passengers vs railway staff; no real operator, line or brand). New families `fresh`/`leftover`
+  and `passenger`/`railstaff`.
+- Same rules as K3: 142 cards each with Kampfzwerge's composition and budget (`test/worlds.test.ts`, now all 31
+  combinations of five worlds), shared vocabulary only, texts per world in 16 locales, one code-drawn picture per
+  card in a lazily loaded chunk per world, one start-screen toggle each.
+- Design ideas that need new mechanics stay flavour (Replacement Bus Service is a fight malus, not "skip Open";
+  Is the Light Really Off? is a standard curse).
+- One balance tweak in review: the Fridge's *Gourmet* gives +2 per `food` item (the world has only three).
+- Balance (self-play, 40 games each, 2–6 players): median rounds — fd 10, rw 10, fd+rw 11, all five worlds 10;
+  10–90 % ≈ 7–15; max 17–28. Wins spread over both families of each world.
+
 ### 10.5 Owner feedback after the first play-test (2026-10-15) — backlog
 
 - **B1 Card text while choosing cards to give away or sell.** In the give-away and sell modes a tap selects the card, so its description cannot be read before choosing. Fix: an info button on every tile (or a long press) that opens the card detail in every mode; selection stays on the tile itself.
@@ -459,4 +474,4 @@ K1 is large (140 cards × 16 locales). If it becomes too big for one review, it 
 
 - **O1** Default target level: **10** assumed (owner: length open). Since 2026-10-17 fixed at 10 (owner).
 - **O2** Title in the other 14 locales: "Lootlings" unless a locale has a natural form.
-- **O3** Order of worlds after Spaceloot: Office built with it in K3 (owner 2026-10-18); next proposal Fridge, Railway, Worms, Insects, Action hero — owner decides.
+- **O3** Order of worlds after Spaceloot: Office built with it in K3, then Fridge and Railway (owner 2026-10-18); next proposal Worms, Insects, Action hero — owner decides.

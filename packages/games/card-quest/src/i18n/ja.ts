@@ -354,5 +354,16 @@ export const ja: Catalogue = {
   'set.away-team': '本格・上陸班装備',
   'set.tourist-kit': '本格・宇宙観光セット',
   'set.video-call': 'ビデオ会議対応',
-  'set.couch-kit': '本格・ソファ仕事セット'
+  'set.couch-kit': '本格・ソファ仕事セット',
+  // Worlds Fridge and Railway
+  'world.fd': '冷蔵庫探検隊 ― 新鮮食品対残り物',
+  'world.rw': 'ご乗車ください ― 乗客対鉄道員',
+  'family.fresh': '新鮮食品',
+  'family.leftover': '残り物',
+  'family.passenger': '乗客',
+  'family.railstaff': '鉄道員',
+  'set.fridge-raider': '真夜中の冷蔵庫あさり',
+  'set.chef-kit': '本格・シェフ装備',
+  'set.conductor-kit': '本格・車掌装備',
+  'set.commuter-kit': 'ベテラン通勤者セット'
 };

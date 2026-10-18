@@ -354,5 +354,16 @@ export const uk: Catalogue = {
   'set.away-team': 'Спорядження десантної групи',
   'set.tourist-kit': 'Набір космотуриста',
   'set.video-call': 'Набір для відеодзвінка',
-  'set.couch-kit': 'Комплект «Офіс на дивані»'
+  'set.couch-kit': 'Комплект «Офіс на дивані»',
+  // Worlds Fridge and Railway
+  'world.fd': 'Експедиція в холодильник — свіже проти залишків',
+  'world.rw': 'Потяг відправляється — пасажири проти залізничників',
+  'family.fresh': 'свіжі продукти',
+  'family.leftover': 'залишки',
+  'family.passenger': 'пасажири',
+  'family.railstaff': 'залізничники',
+  'set.fridge-raider': 'Набір для нічного набігу на холодильник',
+  'set.chef-kit': 'Справжнє кухарське спорядження',
+  'set.conductor-kit': 'Справжнє кондукторське спорядження',
+  'set.commuter-kit': 'Набір для поїздок зі стажем'
 };

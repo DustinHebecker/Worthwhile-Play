@@ -37,9 +37,10 @@ export type ItemClass = (typeof ITEM_CLASSES)[number];
 
 /**
  * Origin families: the two feuding groups of origins inside each world (Kampfzwerge: fairy-tale dwarves vs garden
- * gnomes; Spaceloot: ship's crew vs aliens; Office: office vs home office).
+ * gnomes; Spaceloot: ship's crew vs aliens; Office: office vs home office; Fridge: fresh food vs leftovers; Railway:
+ * passengers vs railway staff).
  */
-export const FAMILIES = ['fairytale', 'garden', 'crew', 'alien', 'office', 'remote'] as const;
+export const FAMILIES = ['fairytale', 'garden', 'crew', 'alien', 'office', 'remote', 'fresh', 'leftover', 'passenger', 'railstaff'] as const;
 export type Family = (typeof FAMILIES)[number];
 
 export const SLOTS = ['head', 'body', 'feet', 'hand', 'small'] as const;

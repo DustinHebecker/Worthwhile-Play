@@ -354,5 +354,16 @@ export const fr: Catalogue = {
   'set.away-team': 'Kit d’équipe d’exploration',
   'set.tourist-kit': 'Panoplie du touriste spatial',
   'set.video-call': 'Tenue de visio impeccable',
-  'set.couch-kit': 'Kit bureau-canapé'
+  'set.couch-kit': 'Kit bureau-canapé',
+  // Worlds Fridge and Railway
+  'world.fd': 'Expédition Frigo — produits frais contre restes',
+  'world.rw': 'En Voiture ! — voyageurs contre cheminots',
+  'family.fresh': 'produits frais',
+  'family.leftover': 'restes',
+  'family.passenger': 'voyageurs',
+  'family.railstaff': 'cheminots',
+  'set.fridge-raider': 'Raid nocturne au frigo',
+  'set.chef-kit': 'Vraie tenue de chef',
+  'set.conductor-kit': 'Vrai uniforme de contrôle',
+  'set.commuter-kit': 'Kit pro du trajet quotidien'
 };

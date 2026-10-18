@@ -478,7 +478,7 @@ describe('view', () => {
       expect(s.players).toHaveLength(6);
       // The target is always level 10 now (owner decision); a passed target is ignored.
       expect(s.settings).toMatchObject({ difficulty: 'sharp', opponents: 5, target: 10, roundLimit: 20, coach: true });
-      expect(game.settingsOf!(s)).toEqual({ 'world-kz': true, 'world-sl': false, 'world-of': false, difficulty: 'sharp', opponents: 5, roundLimit: 20 });
+      expect(game.settingsOf!(s)).toEqual({ 'world-kz': true, 'world-sl': false, 'world-of': false, 'world-fd': false, 'world-rw': false, difficulty: 'sharp', opponents: 5, roundLimit: 20 });
       expect(q(ctx.context.root, 'start')).toBeNull();
       expect(q(ctx.context.root, 'setup-opponents')).toBeNull();
       instance.dispose();
@@ -560,7 +560,7 @@ describe('view', () => {
     it('declares its settings with the setup older versions remembered as defaults', () => {
       const specs = typeof game.settings === 'function' ? game.settings({ preferences: { get: () => ({ opponents: 5, target: 12, roundLimit: 30, coach: false }), set: () => undefined } } as never) : game.settings!;
       const defaults = Object.fromEntries(specs.map((sp) => [sp.kind === 'difficulty' ? 'difficulty' : sp.id, sp.default]));
-      expect(defaults).toEqual({ 'world-kz': true, 'world-sl': false, 'world-of': false, difficulty: 'normal', opponents: 5, roundLimit: 30 });
+      expect(defaults).toEqual({ 'world-kz': true, 'world-sl': false, 'world-of': false, 'world-fd': false, 'world-rw': false, difficulty: 'normal', opponents: 5, roundLimit: 30 });
       expect(game.metadata.setupInGame).toBeUndefined();
     });
 

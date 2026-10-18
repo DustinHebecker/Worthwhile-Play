@@ -354,5 +354,16 @@ export const pl: Catalogue = {
   'set.away-team': 'Sprzęt grupy zwiadowczej',
   'set.tourist-kit': 'Zestaw kosmicznego turysty',
   'set.video-call': 'Zestaw do wideorozmowy',
-  'set.couch-kit': 'Wyposażenie biura na kanapie'
+  'set.couch-kit': 'Wyposażenie biura na kanapie',
+  // Worlds Fridge and Railway
+  'world.fd': 'Wyprawa do Lodówki — świeże kontra resztki',
+  'world.rw': 'Proszę Wsiadać — pasażerowie kontra obsługa pociągu',
+  'family.fresh': 'świeże jedzenie',
+  'family.leftover': 'resztki',
+  'family.passenger': 'pasażerowie',
+  'family.railstaff': 'obsługa pociągu',
+  'set.fridge-raider': 'Zestaw do nocnego podjadania',
+  'set.chef-kit': 'Porządny zestaw kucharski',
+  'set.conductor-kit': 'Porządny zestaw konduktorski',
+  'set.commuter-kit': 'Pakiet codziennych dojazdów z wprawą'
 };

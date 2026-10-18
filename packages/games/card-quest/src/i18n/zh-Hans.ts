@@ -354,5 +354,16 @@ export const zhHans: Catalogue = {
   'set.away-team': '正宗登陆小队装备',
   'set.tourist-kit': '正宗太空游客套装',
   'set.video-call': '视频会议就绪',
-  'set.couch-kit': '正宗沙发办公套装'
+  'set.couch-kit': '正宗沙发办公套装',
+  // Worlds Fridge and Railway
+  'world.fd': '冰箱大探险——新鲜食物对战剩菜剩饭',
+  'world.rw': '请上车——乘客对战铁路员工',
+  'family.fresh': '新鲜食物',
+  'family.leftover': '剩菜剩饭',
+  'family.passenger': '乘客',
+  'family.railstaff': '铁路员工',
+  'set.fridge-raider': '午夜冰箱大盗',
+  'set.chef-kit': '正宗大厨装备',
+  'set.conductor-kit': '正宗列车员装备',
+  'set.commuter-kit': '资深通勤族套装'
 };

@@ -354,5 +354,16 @@ export const hi: Catalogue = {
   'set.away-team': 'अभियान-दल का सामान',
   'set.tourist-kit': 'अंतरिक्ष-पर्यटक किट',
   'set.video-call': 'वीडियो कॉल के लायक',
-  'set.couch-kit': 'सोफ़ा-दफ़्तर का सामान'
+  'set.couch-kit': 'सोफ़ा-दफ़्तर का सामान',
+  // Worlds Fridge and Railway
+  'world.fd': 'फ़्रिज अभियान — ताज़ा खाना बनाम बचा-खुचा',
+  'world.rw': 'रेल का रेला — यात्री बनाम रेल कर्मचारी',
+  'family.fresh': 'ताज़े खाने',
+  'family.leftover': 'बचे-खुचे खाने',
+  'family.passenger': 'यात्रियों',
+  'family.railstaff': 'रेल कर्मचारियों',
+  'set.fridge-raider': 'आधी रात का फ़्रिज-धावा',
+  'set.chef-kit': 'असली शेफ़ का सामान',
+  'set.conductor-kit': 'असली टीटी का सामान',
+  'set.commuter-kit': 'रोज़ के सफ़र की पक्की किट'
 };

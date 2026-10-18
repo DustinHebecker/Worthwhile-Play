@@ -354,5 +354,16 @@ export const nl: Catalogue = {
   'set.away-team': 'Uitrusting voor het landingsteam',
   'set.tourist-kit': 'Ruimtetoeristenpakket',
   'set.video-call': 'Klaar voor de videocall',
-  'set.couch-kit': 'Kantoor-op-de-bank-pakket'
+  'set.couch-kit': 'Kantoor-op-de-bank-pakket',
+  // Worlds Fridge and Railway
+  'world.fd': 'Koelkastexpeditie — vers tegen restjes',
+  'world.rw': 'Instappen, graag! — reizigers tegen spoorpersoneel',
+  'family.fresh': 'vers eten',
+  'family.leftover': 'restjes',
+  'family.passenger': 'reizigers',
+  'family.railstaff': 'het spoorpersoneel',
+  'set.fridge-raider': 'Middernachtelijke koelkastraid',
+  'set.chef-kit': 'Echte chef-kokuitrusting',
+  'set.conductor-kit': 'Echte conducteursuitrusting',
+  'set.commuter-kit': 'Pakket voor doorgewinterde forenzen'
 };

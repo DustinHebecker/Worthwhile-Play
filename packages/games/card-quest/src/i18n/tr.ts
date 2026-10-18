@@ -354,5 +354,16 @@ export const tr: Catalogue = {
   'set.away-team': 'Keşif ekibi teçhizatı',
   'set.tourist-kit': 'Uzay turisti paketi',
   'set.video-call': 'Görüntülü görüşmeye hazır',
-  'set.couch-kit': 'Kanepe ofisi takımı'
+  'set.couch-kit': 'Kanepe ofisi takımı',
+  // Worlds Fridge and Railway
+  'world.fd': 'Buzdolabı Seferi — artık yemeklere karşı taze yiyecekler',
+  'world.rw': 'Tren Kalkıyor! — demiryolu personeline karşı yolcular',
+  'family.fresh': 'taze yiyecekler',
+  'family.leftover': 'artık yemekler',
+  'family.passenger': 'yolcular',
+  'family.railstaff': 'demiryolu personeli',
+  'set.fridge-raider': 'Gece yarısı buzdolabı baskını',
+  'set.chef-kit': 'Hakiki şef takımı',
+  'set.conductor-kit': 'Hakiki kondüktör teçhizatı',
+  'set.commuter-kit': 'Emektar yolcu paketi'
 };

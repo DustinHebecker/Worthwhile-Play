@@ -354,5 +354,16 @@ export const ko: Catalogue = {
   'set.away-team': '정통 상륙조 장비',
   'set.tourist-kit': '정통 우주 관광객 세트',
   'set.video-call': '화상 회의 준비 완료',
-  'set.couch-kit': '정통 소파 오피스 세트'
+  'set.couch-kit': '정통 소파 오피스 세트',
+  // Worlds Fridge and Railway
+  'world.fd': '냉장고 탐험 — 신선 식품 대 남은 음식',
+  'world.rw': '승차해 주세요 — 승객 대 철도 직원',
+  'family.fresh': '신선 식품',
+  'family.leftover': '남은 음식',
+  'family.passenger': '승객',
+  'family.railstaff': '철도 직원',
+  'set.fridge-raider': '한밤의 냉장고 털이범',
+  'set.chef-kit': '정통 요리사 장비',
+  'set.conductor-kit': '정통 차장 장비',
+  'set.commuter-kit': '베테랑 통근러 세트'
 };

@@ -354,5 +354,16 @@ export const it: Catalogue = {
   'set.away-team': 'Kit della squadra di sbarco',
   'set.tourist-kit': 'Kit del turista spaziale',
   'set.video-call': 'Look da videochiamata',
-  'set.couch-kit': 'Kit ufficio sul divano'
+  'set.couch-kit': 'Kit ufficio sul divano',
+  // Worlds Fridge and Railway
+  'world.fd': 'Spedizione Frigo — cibi freschi contro avanzi',
+  'world.rw': 'In Carrozza! — passeggeri contro personale ferroviario',
+  'family.fresh': 'i cibi freschi',
+  'family.leftover': 'gli avanzi',
+  'family.passenger': 'i passeggeri',
+  'family.railstaff': 'il personale ferroviario',
+  'set.fridge-raider': 'Razzia notturna in frigo',
+  'set.chef-kit': 'Vera tenuta da chef',
+  'set.conductor-kit': 'Vera divisa da capotreno',
+  'set.commuter-kit': 'Kit esperto da pendolare'
 };
