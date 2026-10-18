@@ -33,7 +33,8 @@ export function loadIllustrations(worlds: readonly string[]): Promise<void> {
             loaded.add(world);
           },
           () => {
-            // Offline without the chunk: keep the pictograms; a later call tries again.
+            // Offline without the chunk: the pictograms stay. A later call tries again, but browsers may keep a failed
+            // chunk import until the page is reloaded, so the pictures can stay missing until then.
             pending.delete(world);
           }
         );

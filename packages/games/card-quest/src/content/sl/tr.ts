@@ -17,7 +17,7 @@ export const tr: LocaleContent = {
   'sl.customs-officer': { name: 'Uzay Limanı 3 Gümrüğü', flavour: '“Beyan edeceğiniz bir şey? Bir gezegen? Dokunaçlarınız?”', blunder: 'En iyi eşyana el konuyor. “Beyan edilmemiş.”' },
   'sl.moon-mole': { name: 'Maden Ruhsatlı Ay Köstebeği', flavour: 'Ay onun. Kanıtlayan bir kâğıdı da var.', blunder: 'İki kart maden harcı istiyor. Geriye dönük.' },
   'sl.jetpack-rat': { name: 'Jet Motorlu Ambar Faresi', flavour: 'Jet motorunu çaldı. Ambarı da. Şimdi de senin eşyalarını.', blunder: 'Küçük eşyanla vınnn diye uçup gidiyor.' },
-  'sl.form-jellyfish': { name: '27b Formlu Denizanası', flavour: 'Üç nüsha lütfen. Her dokunaçla ayrı imza.', blunder: 'İşlem harcı: elinden üç kart. Mühürlendi, delindi, gitti.' },
+  'sl.form-jellyfish': { name: '19q Formlu Denizanası', flavour: 'Üç nüsha lütfen. Her dokunaçla ayrı imza.', blunder: 'İşlem harcı: elinden üç kart. Mühürlendi, delindi, gitti.' },
   'sl.robo-vac': { name: 'Galaksi Fatihi Robot Süpürge', flavour: 'Önce koridor. Sonra gemi. Sonra galaksi.', blunder: 'Kaskını kafandan çekip alıyor. Şlürp.' },
   'sl.food-paste': { name: 'Canlanmış Astronot Ezmesi', flavour: 'Tüpten sürünerek çıktı. Tadı çilek, kokusu çorap.', blunder: 'Öyle kokuyor ki giysilerin gemiden inmeyi tercih ediyor.' },
   'sl.junk-dealer': { name: 'Uzay Eskicisi', flavour: '“Eskiler alırııım!” Uzay giysin mi? Az kullanılmış, hatıralı.', blunder: 'Küçük eşyanı hiçbir şeyle takas ediyor. Üstüne bir kart komisyon.' },

@@ -17,7 +17,7 @@ export const fr: LocaleContent = {
   'sl.customs-officer': { name: 'Douane du Spatioport 3', flavour: '« Quelque chose à déclarer ? Une planète ? Vos tentacules ? »', blunder: 'Ton plus bel objet est confisqué. « Non déclaré. »' },
   'sl.moon-mole': { name: 'Taupe Lunaire à Permis Minier', flavour: 'La Lune lui appartient. Elle a un bout de papier qui le prouve.', blunder: 'Elle exige deux cartes de redevance minière. Avec effet rétroactif.' },
   'sl.jetpack-rat': { name: 'Rat de Soute à Jetpack', flavour: 'A volé le jetpack. Et la soute. Et maintenant tes affaires.', blunder: 'Il file avec ton petit objet. Fffft.' },
-  'sl.form-jellyfish': { name: 'Méduse au Formulaire 27b', flavour: 'En triple exemplaire, merci. Signez avec chaque tentacule.', blunder: 'Frais de dossier : trois cartes de ta main. Tamponnées, perforées, parties.' },
+  'sl.form-jellyfish': { name: 'Méduse au Formulaire 19q', flavour: 'En triple exemplaire, merci. Signez avec chaque tentacule.', blunder: 'Frais de dossier : trois cartes de ta main. Tamponnées, perforées, parties.' },
   'sl.robo-vac': { name: 'Robot Aspirateur Mégalomane', flavour: 'D’abord le couloir. Puis le vaisseau. Puis la galaxie.', blunder: 'Il t’aspire le casque. Slurp.' },
   'sl.food-paste': { name: 'Purée d’Astronaute, Vivante', flavour: 'Sortie du tube toute seule. Goût fraise, odeur chaussette.', blunder: 'Elle sent si fort que tes vêtements préfèrent débarquer.' },
   'sl.junk-dealer': { name: 'Ferrailleur de l’Espace', flavour: 'Achète tout, vend tout. Ta combinaison ? D’occasion, mais pleine de charme.', blunder: 'Il échange ton petit objet contre rien. Plus une carte de commission.' },

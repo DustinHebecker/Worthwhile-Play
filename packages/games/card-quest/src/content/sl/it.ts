@@ -17,7 +17,7 @@ export const it: LocaleContent = {
   'sl.customs-officer': { name: 'Dogana dello Spazioporto 3', flavour: '«Niente da dichiarare? Un pianeta? I suoi tentacoli?»', blunder: 'La tua cosa migliore viene sequestrata. «Non dichiarata».' },
   'sl.moon-mole': { name: 'Talpa Lunare con Concessione', flavour: 'La Luna è sua. Ha un foglietto che lo dimostra.', blunder: 'Pretende due carte di canone minerario. Con effetto retroattivo.' },
   'sl.jetpack-rat': { name: 'Ratto della Stiva col Jetpack', flavour: 'Ha rubato il jetpack. E la stiva. E adesso la tua roba.', blunder: 'Sfreccia via col tuo oggetto piccolo. Fffft.' },
-  'sl.form-jellyfish': { name: 'Medusa col Modulo 27b', flavour: 'In triplice copia, prego. Firmare con tutti i tentacoli.', blunder: 'Diritti di segreteria: tre carte dalla mano. Timbrate, bucate, sparite.' },
+  'sl.form-jellyfish': { name: 'Medusa col Modulo 19q', flavour: 'In triplice copia, prego. Firmare con tutti i tentacoli.', blunder: 'Diritti di segreteria: tre carte dalla mano. Timbrate, bucate, sparite.' },
   'sl.robo-vac': { name: 'Robot Aspirapolvere Megalomane', flavour: 'Prima il corridoio. Poi l’astronave. Poi la galassia.', blunder: 'Ti aspira il casco dalla testa. Sluuurp.' },
   'sl.food-paste': { name: 'Pappa da Astronauta, Viva', flavour: 'È strisciata fuori dal tubetto. Sa di fragola, puzza di calzino.', blunder: 'Puzza così tanto che i tuoi vestiti preferiscono scendere dall’astronave.' },
   'sl.junk-dealer': { name: 'Rottamaio Spaziale', flavour: 'Compra tutto, vende tutto. La tua tuta? Usata, ma con fascino.', blunder: 'Scambia il tuo oggetto piccolo con niente. Più una carta di commissione.' },

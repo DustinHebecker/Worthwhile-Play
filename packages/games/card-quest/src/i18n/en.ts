@@ -198,7 +198,7 @@ export const en = {
   'slot.big': 'big',
   'set.mining-gear': 'Proper mining gear',
   'set.gnome-outfit': 'Proper gnome outfit',
-  'set.away-team': 'Away-team kit',
+  'set.away-team': 'Landing-party kit',
   'set.tourist-kit': 'Space-tourist kit',
   'set.video-call': 'Ready for the video call',
   'set.couch-kit': 'Couch-office kit',

@@ -17,7 +17,7 @@ export const pt: LocaleContent = {
   'sl.customs-officer': { name: 'Alfândega do Espaçoporto 3', flavour: '“Algo a declarar? Um planeta? Seus tentáculos?”', blunder: 'Seu melhor item é apreendido. “Não declarado.”' },
   'sl.moon-mole': { name: 'Toupeira Lunar com Alvará', flavour: 'A Lua é dela. Tem até um papelzinho que prova.', blunder: 'Ela cobra duas cartas de taxa de mineração. Retroativa.' },
   'sl.jetpack-rat': { name: 'Rato do Porão com Jetpack', flavour: 'Roubou o jetpack. E o porão. E agora as suas coisas.', blunder: 'Ele dispara com seu item pequeno. Fiuuu.' },
-  'sl.form-jellyfish': { name: 'Água-Viva com Formulário 27b', flavour: 'Em três vias, por favor. Assine com todos os tentáculos.', blunder: 'Taxa de expediente: três cartas da mão. Carimbadas, furadas, sumidas.' },
+  'sl.form-jellyfish': { name: 'Água-Viva com Formulário 19q', flavour: 'Em três vias, por favor. Assine com todos os tentáculos.', blunder: 'Taxa de expediente: três cartas da mão. Carimbadas, furadas, sumidas.' },
   'sl.robo-vac': { name: 'Robô Aspirador com Ambições', flavour: 'Primeiro o corredor. Depois a nave. Depois a galáxia.', blunder: 'Ele aspira o capacete da sua cabeça. Slurp.' },
   'sl.food-paste': { name: 'Papinha de Astronauta, Viva', flavour: 'Saiu rastejando do tubo. Gosto de morango, cheiro de meia.', blunder: 'O cheiro é tão forte que sua roupa prefere desembarcar.' },
   'sl.junk-dealer': { name: 'Sucateiro Espacial', flavour: 'Compra tudo, vende tudo. Seu traje espacial? Seminovo, com charme.', blunder: 'Ele troca seu item pequeno por nada. Mais uma carta de comissão.' },
