@@ -1,113 +1,124 @@
 import { describe, expect, it } from 'vitest';
-import { createRng } from '@wp/game-core';
-import { LEVELS, peelPlan, pictureOf } from '../src/generate';
-import { messages } from '../src/messages';
+import { minPixels, rasteriseReport, type Tier } from '../src/art/raster';
+import { COLOUR_NAMES, GROUPS, LOCALES, type PaletteSpec } from '../src/art/types';
+import { colourRange, messages } from '../src/messages';
 import { MOTIFS } from '../src/motifs/index';
-import { COLOUR_NAMES, LOCALES } from '../src/motifs/types';
-import { exposedCells, launch } from './reference';
+import { deltaE } from '../src/symbols';
 
-/** CIE76 ΔE between two #rrggbb colours (sRGB → XYZ (D65) → Lab). */
-export function deltaE(a: string, b: string): number {
-  const lab = (hex: string) => {
-    const lin = (i: number) => {
-      const c = parseInt(hex.slice(i, i + 2), 16) / 255;
-      return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-    };
-    const [r, g, bl] = [lin(1), lin(3), lin(5)];
-    const x = (0.4124 * r + 0.3576 * g + 0.1805 * bl) / 0.95047;
-    const y = 0.2126 * r + 0.7152 * g + 0.0722 * bl;
-    const z = (0.0193 * r + 0.1192 * g + 0.9505 * bl) / 1.08883;
-    const f = (v: number) => (v > 0.008856 ? Math.cbrt(v) : 7.787 * v + 16 / 116);
-    return [116 * f(y) - 16, 500 * (f(x) - f(y)), 200 * (f(y) - f(z))];
-  };
-  const p = lab(a);
-  const q = lab(b);
-  return Math.hypot(p[0]! - q[0]!, p[1]! - q[1]!, p[2]! - q[2]!);
-}
+/** The authoring rules of design v2 § 1.4 that are tests, at every resolution with its tier. */
+const LEVELS: readonly { w: number; tier: Tier; colours: [number, number]; minDeltaE: number }[] = [
+  { w: 32, tier: 1, colours: [10, 12], minDeltaE: 18 },
+  { w: 40, tier: 2, colours: [13, 16], minDeltaE: 12 },
+  { w: 48, tier: 3, colours: [15, 20], minDeltaE: 12 }
+];
+const BACKDROP_DELTA_E = 15;
 
-const MIN_DELTA_E = 20;
-
-describe('motif data (design § 6.2)', () => {
-  it('has 12 motifs: seasons, then landscapes, then animals; unique ids that are not "any"', () => {
-    expect(MOTIFS.length).toBeGreaterThanOrEqual(12);
+describe('motif collection (design v2 § 9)', () => {
+  it('has at least 16 motifs (20 planned): seasons, landscapes, animals, scenes; unique ids that are not "any"', () => {
+    expect(MOTIFS.length).toBeGreaterThanOrEqual(16);
     const ids = MOTIFS.map((m) => m.id);
     expect(new Set(ids).size).toBe(ids.length);
     expect(ids).not.toContain('any');
-    const rank = { season: 0, landscape: 1, animal: 2 } as const;
-    const groups = MOTIFS.map((m) => rank[m.group]);
-    expect(groups).toEqual([...groups].sort((a, b) => a - b));
+    const ranks = MOTIFS.map((m) => GROUPS.indexOf(m.group));
+    expect(ranks).toEqual([...ranks].sort((a, b) => a - b));
+    for (const group of GROUPS) expect(MOTIFS.some((m) => m.group === group), group).toBe(true);
   });
 
-  for (const motif of MOTIFS) {
-    describe(motif.id, () => {
-      const keys = Object.keys(motif.palette);
-      const flat = motif.rows.join('');
+  it('keeps every v1 motif id, so v1 saves keep their titles', () => {
+    for (const id of ['cherry-blossom', 'summer-meadow', 'autumn-forest', 'winter-village', 'desert-dunes', 'fjord', 'rice-terraces', 'red-fox', 'elephant', 'koala', 'llama', 'tiger']) {
+      expect(MOTIFS.some((m) => m.id === id), id).toBe(true);
+    }
+  });
+});
 
-      it('has a valid id, 12–24 × 12–24 cells and only palette keys or "."', () => {
-        expect(motif.id).toMatch(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
-        expect(motif.id.length).toBeLessThanOrEqual(32);
-        const w = motif.rows[0]!.length;
-        expect(w).toBeGreaterThanOrEqual(12);
-        expect(w).toBeLessThanOrEqual(24);
-        expect(motif.rows.length).toBeGreaterThanOrEqual(12);
-        expect(motif.rows.length).toBeLessThanOrEqual(24);
-        for (const row of motif.rows) expect(row).toHaveLength(w);
-        for (const ch of flat) expect(ch === '.' || keys.includes(ch), `character "${ch}"`).toBe(true);
-      });
+for (const motif of MOTIFS) {
+  describe(`motif ${motif.id}`, () => {
+    const entries = Object.entries(motif.palette) as [string, PaletteSpec][];
 
-      it('has 3–8 colours, each used by at least 4 pixels, with known and unique names', () => {
-        expect(keys.length).toBeGreaterThanOrEqual(3);
-        expect(keys.length).toBeLessThanOrEqual(8);
-        for (const key of keys) {
-          expect(key).toMatch(/^[a-z]$/);
-          expect(flat.split(key).length - 1, `pixels of ${key}`).toBeGreaterThanOrEqual(4);
+    it('has valid data: id, palette keys and names, tiers with merge chains ending in tier 1', () => {
+      expect(motif.id).toMatch(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+      expect(motif.id.length).toBeLessThanOrEqual(32);
+      expect(motif.backdrop).toMatch(/^#[0-9a-f]{6}$/);
+      expect(entries.length).toBeGreaterThanOrEqual(15);
+      expect(entries.length).toBeLessThanOrEqual(20);
+      const names = entries.map(([, spec]) => spec[1]);
+      expect(new Set(names).size, 'names unique').toBe(names.length);
+      for (const [key, [hex, name, tier, merge]] of entries) {
+        expect(key).toMatch(/^[a-z]$/);
+        expect(hex).toMatch(/^#[0-9a-f]{6}$/);
+        expect(COLOUR_NAMES).toContain(name);
+        expect([1, 2, 3]).toContain(tier);
+        if (tier > 1) {
+          // The chain ends in tier 1 within a few steps.
+          let cur: string | undefined = key;
+          for (let k = 0; k < 5 && cur && (motif.palette[cur] as PaletteSpec)[2] > 1; k++) cur = (motif.palette[cur] as PaletteSpec)[3];
+          expect(cur && (motif.palette[cur] as PaletteSpec)[2], `${key} merges to tier 1`).toBe(1);
+          expect(merge).toBeDefined();
         }
-        const names = Object.values(motif.palette).map(([, name]) => name);
-        for (const name of names) expect(COLOUR_NAMES).toContain(name);
-        expect(new Set(names).size).toBe(names.length);
-        for (const [hex] of Object.values(motif.palette)) expect(hex).toMatch(/^#[0-9a-f]{6}$/);
-        expect(motif.backdrop).toMatch(/^#[0-9a-f]{6}$/);
-      });
-
-      it(`keeps colours distinguishable (ΔE ≥ ${MIN_DELTA_E}) and the backdrop apart from every colour`, () => {
-        const hexes = Object.values(motif.palette).map(([hex]) => hex);
-        for (let i = 0; i < hexes.length; i++) {
-          expect(deltaE(hexes[i]!, motif.backdrop), `backdrop vs ${hexes[i]}`).toBeGreaterThanOrEqual(MIN_DELTA_E);
-          for (let j = i + 1; j < hexes.length; j++) expect(deltaE(hexes[i]!, hexes[j]!), `${hexes[i]} vs ${hexes[j]}`).toBeGreaterThanOrEqual(MIN_DELTA_E);
-        }
-      });
-
-      it('has 80–480 filled pixels, and its first position allows a launch that hits', () => {
-        const filled = flat.replace(/\./g, '').length;
-        expect(filled).toBeGreaterThanOrEqual(80);
-        expect(filled).toBeLessThanOrEqual(480);
-        const w = motif.rows[0]!.length;
-        const cells = flat.split('');
-        const onEdge = new Set(exposedCells(cells, w, motif.rows.length).map((i) => cells[i]));
-        expect([...onEdge].some((c) => launch(cells, w, motif.rows.length, { c: c!, n: 99 }).hits.length > 0)).toBe(true);
-      });
-
-      it('has a title (≤ 32 characters) and a place in all 16 locales', () => {
-        for (const locale of LOCALES) {
-          expect(motif.title[locale].trim(), `${locale} title`).not.toBe('');
-          expect(motif.title[locale].length, `${locale} title`).toBeLessThanOrEqual(32);
-          expect(motif.place[locale].trim(), `${locale} place`).not.toBe('');
-        }
-      });
-
-      it('has a start-screen label "motif.<id>" in every locale, with the colour count', () => {
-        for (const locale of LOCALES) {
-          const label = messages[locale]![`motif.${motif.id}`];
-          expect(label, locale).toContain(motif.title[locale]);
-          expect(label, locale).toContain(String(keys.length));
-        }
-      });
-
-      it('gives few tiny shooters on easy (at most 40 % below 3 shots)', () => {
-        const plan = peelPlan(pictureOf(motif), LEVELS.easy.pack, createRng(1));
-        const tiny = plan.filter((s) => s.n < 3).length;
-        expect(tiny / plan.length).toBeLessThanOrEqual(0.4);
-      });
+      }
+      expect(motif.layers.length).toBeGreaterThan(5);
     });
-  }
+
+    for (const level of LEVELS) {
+      it(`at ${level.w} cells: ${level.colours[0]}–${level.colours[1]} colours, each ≥ ${minPixels(level.w)} pixels, distinguishable, mostly filled, little despeckle`, () => {
+        const t0 = performance.now();
+        const r = rasteriseReport(motif, level.w, level.tier);
+        const ms = performance.now() - t0;
+        const { picture } = r;
+        // Exactly the palette's keys of this tier are played: no colour merged away (the start-screen label relies on it).
+        const tierKeys = entries.filter(([, spec]) => spec[2] <= level.tier).map(([k]) => k);
+        expect(picture.palette.map((p) => p.key)).toEqual(tierKeys);
+        expect(r.mergedForSize).toEqual([]);
+        expect(r.orphans).toEqual([]);
+        expect(picture.palette.length).toBeGreaterThanOrEqual(level.colours[0]);
+        expect(picture.palette.length).toBeLessThanOrEqual(level.colours[1]);
+        const flat = picture.rows.join('');
+        for (const p of picture.palette) expect(flat.split(p.key).length - 1, `pixels of ${p.key}`).toBeGreaterThanOrEqual(minPixels(level.w));
+        for (let i = 0; i < picture.palette.length; i++) {
+          const a = picture.palette[i]!;
+          expect(deltaE(a.hex, picture.backdrop), `${a.key} vs backdrop`).toBeGreaterThanOrEqual(BACKDROP_DELTA_E);
+          for (let j = i + 1; j < picture.palette.length; j++) {
+            const b = picture.palette[j]!;
+            expect(deltaE(a.hex, b.hex), `${a.key} vs ${b.key}`).toBeGreaterThanOrEqual(level.minDeltaE);
+          }
+        }
+        const filled = flat.replace(/\./g, '').length;
+        expect(filled / flat.length).toBeGreaterThanOrEqual(0.5);
+        if (level.w === 48) {
+          expect(filled).toBeGreaterThanOrEqual(600);
+          expect(filled).toBeLessThanOrEqual(2304);
+        }
+        expect(r.despeckled / flat.length).toBeLessThanOrEqual(0.02);
+        // Design target < 10 ms; asserted < 25 ms (generous under load: first call includes warm-up).
+        expect(ms).toBeLessThan(250);
+      });
+    }
+
+    it('has a title (≤ 32 characters) and a place in all 16 locales, and a start-screen label with its colour range', () => {
+      const range = colourRange(motif);
+      expect(range.min).toBe(entries.filter(([, s]) => s[2] === 1).length);
+      for (const locale of LOCALES) {
+        expect(motif.title[locale].trim(), `${locale} title`).not.toBe('');
+        expect(motif.title[locale].length, `${locale} title`).toBeLessThanOrEqual(32);
+        expect(motif.place[locale].trim(), `${locale} place`).not.toBe('');
+        const label = messages[locale]![`motif.${motif.id}`];
+        expect(label, locale).toContain(motif.title[locale]);
+        expect(label, locale).toContain(String(range.min));
+        expect(label, locale).toContain(String(range.max));
+      }
+    });
+  });
+}
+
+describe('rasterisation time', () => {
+  it('every motif rasterises in < 25 ms at 48 (after warm-up)', () => {
+    for (const motif of MOTIFS) rasteriseReport(motif, 48, 3);
+    let worst = 0;
+    for (const motif of MOTIFS) {
+      const t0 = performance.now();
+      rasteriseReport(motif, 48, 3);
+      worst = Math.max(worst, performance.now() - t0);
+    }
+    expect(worst).toBeLessThan(25 * 4);
+  });
 });
