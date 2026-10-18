@@ -1,6 +1,6 @@
 # Design: Many Lives — a life simulation about personal finances
 
-Status: **Draft v0.2 — owner decisions of 2026-10-18 recorded (section 0); open questions in section 16.** Nothing implemented yet. Numbers marked *(verify)* are first estimates from memory and must be replaced by researched values with sources ([many-lives-sources.md](many-lives-sources.md)) before they enter the engine. Engine decision record: [ADR 0018 (proposed; number confirmed by the orchestrator)](../adr/0018-life-engine.md).
+Status: **Draft v0.3 — owner decisions of 2026-10-18 recorded (section 0, O1–O28).** Nothing implemented yet. Numbers marked *(verify)* are first estimates from memory and must be replaced by researched values with sources ([many-lives-sources.md](many-lives-sources.md)) before they enter the engine. Engine decision record: [ADR 0018 (proposed; number confirmed by the orchestrator)](../adr/0018-life-engine.md).
 
 Scope:
 
@@ -32,6 +32,18 @@ Owned by the life-sim workstream (ADR 0006 pattern, like ADR 0009/0014). Shared 
 | O14 | Visual style: warm paper/illustration look, self-drawn SVG. **The character is central; what matters to them (family and/or material things) is shown in the background**, comparable in layout to casual life-sim games, but without any payment, ads or grind mechanics and much more mature (section 11). |
 | O15 | **Languages: develop in German and English first; translate into the other 14 locales at the end. Until then other locales fall back to English.** (Needs a shared-rule decision by the orchestrator, section 15.) |
 | O16 | All other recommendations of the first proposal accepted: tone serious-warm with light everyday humour; severe content handled with care and a content setting; death drawn from life tables; dimension weights optional at start and comparable at the end; pensions and social security modelled in simplified form; sandbox with personal data local only. |
+| O17 (Q1) | Engine tick: **one month**. |
+| O18 (Q2) | Sex of the character: **random, woman or man** (for now). |
+| O19 (Q3) | No ethnicity attribute; documented discrimination effects via origin, language and migration history; profiles describe wealth, not ethnicity. |
+| O20 (Q4) | **Appearance as in real life:** face, skin tone, build etc. are given at birth (inherited from the parents, drawn from the profile's diverse population, never a single stereotype per profile); **hairstyle, clothing and accessories are chosen by the player within what the income allows**. Attractiveness stays an abstract value. |
+| O21 (Q5) | Descriptive profile labels ("A large country in South Asia") with an open calibration note. |
+| O22 (Q6) | Additional profiles: Latin America (Brazil: favela and middle class), Eastern Europe (Poland or Romania), Gulf (labour migrant family), Southeast Asia (Indonesia or Philippines, with remittances). |
+| O23 (Q7) | Early death of the character possible from 16 with real hazard; childhood mortality not played; the "gentle" setting has neither child deaths nor early own death. |
+| O24 (Q8) | Ecological footprint shown as information, not scored. |
+| O25 (Q9) | MVP: two contrasting profiles (calibrated on Germany and India) with the full market and all core systems; further profiles step by step. |
+| O26 (Q10) | Local currency per profile; comparisons in purchasing-power-adjusted units; **the relative change of purchasing power between profiles over the years (inflation differentials, exchange rates) is modelled and shown — important for migration planning** (section 5.13). |
+| O27 (Q11) | Later: a new game may start from a descendant's start (never automatic). |
+| O28 (Q12) | Publish when the MVP is playable, with a visible **"Work in progress"** note (owner answer; how this fits the orchestrator's rule of releasing only after all 16 locales — section 15.1 — is being clarified). |
 
 ---
 
@@ -97,7 +109,10 @@ Starts the owner asked for (calibration country → household situations), delib
 | Southern Africa (South Africa) | Family in an informal settlement; wealthy family *(see Q3 on how to handle ethnicity)* |
 | West Africa (Mali) | Average household (largely informal and agricultural economy) |
 | East Asia (Japan) | Average middle-class family |
-| Proposed additions | Latin America (Brazil: favela and middle class); Eastern Europe (Poland or Romania); Middle East/Gulf (labour migrant family); Southeast Asia (Indonesia or Philippines, with remittances). *(Open: Q6)* |
+| Latin America (Brazil) | Family in an informal urban settlement; middle-class family (O22) |
+| Eastern Europe (Poland or Romania) | Average household, with labour migration of relatives (O22) |
+| Gulf (labour migration) | Family of a labour migrant (O22) |
+| Southeast Asia (Indonesia or Philippines) | Household relying on remittances (O22) |
 
 **Honest limit:** personal-finance tools (index funds, mortgages, pensions) work very differently in low-income and largely informal economies (access, trust, inflation, savings groups, remittances, land rights). Those profiles need extra mechanics, not just other numbers (section 5.13).
 
@@ -106,7 +121,7 @@ Starts the owner asked for (calibration country → household situations), delib
 Sampled **jointly** (Gaussian copula over the profile's marginal distributions) so that combinations are realistic without being packages:
 
 - parents: education, occupation, income percentile, wealth, health, relationship stability, number of siblings, household language(s), migration history (none / internal / international, generation), urban/rural, region within the profile;
-- the person: sex (*Open: Q2*), birth order, health at birth, temperament (a few traits that shift probabilities a little: conscientiousness, openness, extraversion, emotional stability — Big Five *(verify effect sizes)*), talents (cognitive, social, practical, creative — broad and probabilistic), appearance/attractiveness (section 5.11).
+- the person: sex (random woman or man, O18), birth order, health at birth, temperament (a few traits that shift probabilities a little: conscientiousness, openness, extraversion, emotional stability — Big Five *(verify effect sizes)*), talents (cognitive, social, practical, creative — broad and probabilistic), appearance (given at birth, inherited, O20) and attractiveness (section 5.11).
 
 **Variance options** on the start screen (O10): random start · start from a band (e.g. "bottom 20 % of the profile") · choose profile and household.
 
@@ -191,6 +206,7 @@ All parameters live in a typed data file with source, year, region and uncertain
 - Interest rates: policy-rate proxy following inflation with lag; drives savings rates, mortgage rates, bond prices.
 - Housing cycle: regional price index with momentum and occasional busts.
 - Correlations: recessions raise unemployment, lower equity returns, slow wage growth, sometimes lower house prices.
+- **Currencies and purchasing power between profiles (O26):** each profile has its own currency; nominal exchange rates follow inflation differentials in the long run (relative PPP) with persistent real-exchange-rate deviations and occasional devaluations *(verify: Penn World Table, World Bank PPP / ICP)*. The game shows, per profile pair, how purchasing power changed over the years — for comparisons between lives and for migration planning (savings and remittances lose or gain value).
 
 ### 5.2 Prices and cost of living (O6)
 
@@ -378,7 +394,7 @@ Portrait-first layout (works at 360 px), landscape adds side panels:
 
 - Panels (sheets) per area with lists of offers and actions; each action shows its costs in money / time / energy and its uncertain effects.
 - Charts (portfolio, net worth, satisfaction over life) as self-drawn SVG with table alternatives; the life timeline as a band.
-- Warm paper and illustration look; the character is drawn as an illustrated figure (*Open: Q4 — appearance*), ageing visibly over life; background layers change with life (student room → flat → house; partner and children appear; objects of value).
+- Warm paper and illustration look; the character is drawn as an illustrated figure — face, skin tone and build given at birth, hairstyle, clothing and accessories chosen within the budget (O20) — ageing visibly over life; background layers change with life (student room → flat → house; partner and children appear; objects of value).
 - Difference from casual life sims: no tier grind, no ads or purchases, no real-time clock, numbers sourced, trade-offs explicit, a mature tone.
 
 ---
@@ -436,7 +452,7 @@ Integer cents for money; own deterministic `exp`/`log` approximations because `M
 
 ## 16. Open questions (to the owner, with recommendations)
 
-See the chat of 2026-10-18; answers will be recorded in section 0.
+Answered by the owner on 2026-10-18 (O17–O28 in section 0). Kept for reference.
 
 | # | Question | Recommendation |
 |---|---|---|

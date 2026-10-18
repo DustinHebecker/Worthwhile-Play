@@ -50,6 +50,7 @@ interface Param {
 | Parenthood and wellbeing | Glass, Simon & Andersson (2016, AJS) | paper citation | candidate |
 | Child costs | Destatis (Germany), USDA (historical), national estimates | to check | candidate |
 | Migration and visas | OECD International Migration Outlook; national visa statistics (processing times, refusal rates); credential recognition and de-skilling studies | to check | candidate |
+| Exchange rates and PPP | Penn World Table; World Bank ICP / PPP conversion factors; IMF IFS exchange rates | PWT CC BY 4.0; World Bank CC BY 4.0; IMF terms to check | candidate |
 | Remittances | World Bank Migration and Development Briefs | CC BY 4.0 | candidate |
 | Discrimination in hiring | field-experiment meta-analyses (Quillian et al. 2019; Lancee 2021 cross-national GEMM) | paper citation | candidate |
 | Informal economies | ILO *Women and Men in the Informal Economy*; World Bank Global Findex (account ownership, savings groups) | Findex CC BY 4.0 | candidate |
