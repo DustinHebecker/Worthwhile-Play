@@ -79,25 +79,23 @@ export const polarBear: Motif = {
     { shape: { poly: [[4, 57], [20, 53], [56, 52], [84, 54], [98, 58], [98, 63], [86, 68], [10, 68], [2, 62]], smooth: 1 }, fill: 's', shade: { dark: 'b', dir: 'n', mode: 'band', amount: 0.3 } },
     { shape: { poly: [[4, 57], [20, 53], [56, 52], [84, 54], [98, 58], [82, 61], [50, 62], [16, 61]], smooth: 1 }, fill: 'w', shade: { dark: 'l', dir: 'n', mode: 'band', amount: 0.3 } },
     { shape: { ellipse: [46, 59, 26, 2] }, fill: 'l' },
-    // The bear: far legs, body, near legs, head.
-    { shape: { poly: [[30, 42], [37, 42], [37, 58], [30, 58]] }, fill: 'i', shade: { dark: 'g', dir: 'w', mode: 'band', amount: 0.3 }, outline: 'k' },
-    { shape: { poly: [[58, 42], [65, 42], [66, 58], [59, 58]] }, fill: 'i', shade: { dark: 'g', dir: 'w', mode: 'band', amount: 0.3 }, outline: 'k' },
-    { name: 'bear', shape: { poly: [[20, 40], [26, 30], [40, 26], [56, 28], [66, 32], [70, 40], [64, 50], [44, 52], [26, 50]], smooth: 2 }, fill: 'v', shade: { light: 'w', dark: 'i', dir: 'n' }, outline: 'k' },
-    { shape: { ellipse: [44, 50, 18, 3] }, fill: 'a', clip: 'bear', min: 40 },
-    { shape: { poly: [[22, 42], [31, 42], [32, 59], [22, 59]] }, fill: 'v', shade: { dark: 'i', dir: 'w', mode: 'band', amount: 0.25 }, outline: 'k' },
-    { shape: { poly: [[50, 44], [58, 44], [59, 59], [50, 59]] }, fill: 'v', shade: { dark: 'i', dir: 'w', mode: 'band', amount: 0.25 }, outline: 'k' },
-    { shape: { line: [[22, 59], [32, 59]], width: 1.2 }, fill: 'g' },
-    { shape: { line: [[50, 59], [59, 59]], width: 1.2 }, fill: 'g' },
-    { shape: { line: [[22, 60], [32, 60]], width: 1 }, fill: 'd', min: 48 },
-    { shape: { line: [[50, 60], [59, 60]], width: 1 }, fill: 'd', min: 48 },
-    { shape: { line: [[30, 58.5], [37, 58.5]], width: 1 }, fill: 'd', min: 48 },
-    { shape: { line: [[62, 36], [72, 38]], width: 9 }, fill: 'v', shade: { dark: 'i', dir: 'n' } },
-    { shape: { ellipse: [76, 38, 8, 6.6] }, fill: 'v', shade: { light: 'w', dark: 'i', dir: 'nw' }, outline: 'k' },
-    { shape: { ellipse: [84, 41, 5, 3.6] }, fill: 'v', shade: { dark: 'i', dir: 'n', mode: 'band', amount: 0.35 }, outline: 'k' },
-    { shape: { ellipse: [72, 32, 2.6, 2.4] }, fill: 'v', shade: { dark: 'g', dir: 'se' } },
-    { shape: { ellipse: [88, 40, 1.8, 1.5] }, fill: 'k', keep: true },
-    { shape: { ellipse: [79, 36, 1, 1] }, fill: 'k', keep: true },
-    { shape: { line: [[84, 43.5], [87, 43.5]], width: 1 }, fill: 'd', min: 40 },
-    { shape: { line: [[21, 34], [17, 36]], width: 2 }, fill: 'k' }
+    // The bear, walking to the right: far legs, body (the rump higher than the shoulders), near legs, a long neck
+    // and a long, low head with a small ear and a black nose.
+    { shape: { poly: [[31, 42], [38, 42], [38, 57], [39, 59], [31, 59]] }, fill: 'i', shade: { dark: 'g', dir: 'w', mode: 'band', amount: 0.3 }, outline: 'k' },
+    { shape: { poly: [[60, 42], [67, 42], [67, 57], [68, 59], [60, 59]] }, fill: 'i', shade: { dark: 'g', dir: 'w', mode: 'band', amount: 0.3 }, outline: 'k' },
+    { name: 'bear', shape: { poly: [[14, 42], [16, 32], [24, 26], [36, 26], [48, 28], [60, 30], [68, 33], [80, 38], [84, 44], [76, 48], [66, 49], [52, 51], [36, 51], [22, 50], [16, 47]], smooth: 2 }, fill: 'v', shade: { light: 'w', dark: 'i', dir: 'n' }, outline: 'k' },
+    { shape: { ellipse: [44, 50, 22, 3.6] }, fill: 'a', clip: 'bear', min: 40 },
+    { shape: { poly: [[19, 43], [30, 43], [31, 57], [33, 59.5], [19, 59.5]] }, fill: 'v', shade: { dark: 'i', dir: 'w', mode: 'band', amount: 0.25 }, outline: 'k' },
+    { shape: { poly: [[51, 44], [60, 44], [60, 57], [62, 59.5], [51, 59.5]] }, fill: 'v', shade: { dark: 'i', dir: 'w', mode: 'band', amount: 0.25 }, outline: 'k' },
+    { shape: { line: [[19, 59.5], [33, 59.5]], width: 1.2 }, fill: 'g' },
+    { shape: { line: [[51, 59.5], [62, 59.5]], width: 1.2 }, fill: 'g' },
+    { shape: { line: [[31, 58.5], [39, 58.5]], width: 1 }, fill: 'd', min: 48 },
+    { shape: { line: [[60, 58.5], [68, 58.5]], width: 1 }, fill: 'd', min: 48 },
+    { name: 'head', shape: { poly: [[72, 37], [78, 33], [86, 34.5], [92, 38.5], [96.5, 42.5], [93.5, 46.5], [85, 48.5], [76, 48]], smooth: 1 }, fill: 'v', shade: { light: 'w', dark: 'i', dir: 'n' }, outline: 'k' },
+    { shape: { ellipse: [79, 33.5, 2.4, 2.2] }, fill: 'v', shade: { dark: 'g', dir: 'se' }, outline: 'k' },
+    { shape: { ellipse: [85, 39, 1, 1] }, fill: 'k', keep: true },
+    { shape: { ellipse: [95, 42.5, 1.5, 1.3] }, fill: 'k', keep: true },
+    { shape: { line: [[87, 46], [93, 45]], width: 1 }, fill: 'd', min: 40 },
+    { shape: { line: [[15, 34], [12, 36]], width: 2 }, fill: 'k' }
   ]
 };
