@@ -150,3 +150,11 @@ App size: precache about 7.7 MB (213 entries, all games and locales, offline).
 - `gh` works through the proxy for REST and runs, but not for GraphQL, so `gh pr list` fails. Use `gh api repos/DustinHebecker/Worthwhile-Play/pulls?state=open` or the GitHub MCP tools.
 - A weekly model rate limit can stop subagents mid-review. Resume them with SendMessage once it resets.
 - Ports in use by convention: publish e2e 4793, PR gate 4795, ad-hoc checks 4796–4799, feature agents 5100–5999.
+
+## Paused state (2026-10-18, owner pause)
+
+- Pixel Peel v2: branch `game/pixel-peel-v2` (82f278e, pushed) answers the owner's art and difficulty feedback. A second independent review was stopped for the pause: rerun it, fix the findings, publish, and show the owner the contact sheet (`scripts/render-motifs.ts`). Phone start time at 4× throttle is 203–367 ms (target 250).
+- Estimation Lab (`fermi-lab`): branch `game/fermi-lab` (1e7d1fb, pushed) is implemented but not reviewed. Next: independent review, then publish.
+- Lootlings PRs #59 and #63 (worlds): reviewed with no blockers. The fixes are pending in session_01Nojo92MHDmWpcewd3haQhM. Owner rule: short verbal allusions are welcome; no copied art or characters (no Thomas-style loco faces). Gate, then merge #59 first, then #63.
+- New-games pipeline (one agent at a time: plan → implement → review): Probability Detective, Atlas Explorer, Timeline, Tiny Ecosystem, Harmony and Balance Lab remain. The brief was in the scratchpad; see the "New games pipeline" rules in this file's history and CLAUDE.md.
+- Large contexts: strategy (AI storm-stall fix next), economy tycoon (session_0171vR1YZpyDbCP4etKP5k7Y, planning; drafts `@wp/finance-math`, ADR 0020), life sim (session_01Lc8aPXfhzu8miLPTZ59Rem, ADR 0018; en+de first, registered only with all 16 locales).
