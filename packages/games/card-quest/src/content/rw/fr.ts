@@ -56,7 +56,7 @@ export const fr: LocaleContent = {
   'rw.wrong-platform': { name: 'Mauvais Quai', flavour: 'C’était la voie 7. Tu es sur la voie 7z. Elle n’existe pas.' },
   'rw.hat-out-of-window': { name: 'Chapeau par la Fenêtre', flavour: 'Juste un coup d’œil dehors. Le chapeau, lui, y est resté.' },
   'rw.coffee-in-the-curve': { name: 'Café dans le Virage', flavour: 'Le train penche. Le café aussi. Sur toi.' },
-  'rw.shoe-in-the-gap': { name: 'Chaussure entre Train et Quai', flavour: 'Entre le train et le quai, il restait une seule place libre. Ta chaussure l’a prise.' },
+  'rw.shoe-in-the-gap': { name: 'Chaussure entre Train et Quai', flavour: 'Attention à l’espace entre le train et le quai. Trop tard.' },
   'rw.suitcase-swap': { name: 'Valises Échangées', flavour: 'La tienne était noire, à roulettes. Celle-ci aussi. Elle est à un magicien.' },
   'rw.seat-crack': { name: 'Tombé dans la Fente du Siège', flavour: 'Il gît là. Avec trois stylos et un biscuit de 1998.' },
   'rw.luggage-elsewhere': { name: 'Bagages Partis Ailleurs', flavour: 'Ton plus bel objet voyage vers le nord. Tout seul.' },

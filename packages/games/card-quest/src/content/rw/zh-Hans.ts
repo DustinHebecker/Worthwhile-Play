@@ -56,7 +56,7 @@ export const zhHans: LocaleContent = {
   'rw.wrong-platform': { name: '走错站台', flavour: '7号站台是对的。你站在7a号站台。根本没有这个站台。' },
   'rw.hat-out-of-window': { name: '帽子飞出窗外', flavour: '就探头看了一眼。现在帽子在别处探头了。' },
   'rw.coffee-in-the-curve': { name: '弯道咖啡', flavour: '车一歪，咖啡也一歪。歪到你身上。' },
-  'rw.shoe-in-the-gap': { name: '鞋卡缝里', flavour: '列车和站台之间只剩一个空位。你的鞋抢到了。' },
+  'rw.shoe-in-the-gap': { name: '鞋卡缝里', flavour: '“上下车请注意列车与站台之间的空隙。”晚了。' },
   'rw.suitcase-swap': { name: '拿错箱子', flavour: '你的是黑色带轮子的。这个也是。主人是个魔术师。' },
   'rw.seat-crack': { name: '掉进座椅缝', flavour: '它就躺在那儿。旁边是三支笔和一块1998年的饼干。' },
   'rw.luggage-elsewhere': { name: '行李去了别处', flavour: '你最好的装备独自北上了。' },

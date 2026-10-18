@@ -56,7 +56,7 @@ export const it: LocaleContent = {
   'rw.wrong-platform': { name: 'Binario Sbagliato', flavour: 'Era il binario 7. Tu sei al binario 7z. Non esiste.' },
   'rw.hat-out-of-window': { name: 'Cappello dal Finestrino', flavour: 'Un’occhiata fuori, un attimo. Ora il cappello si affaccia altrove.' },
   'rw.coffee-in-the-curve': { name: 'Caffè in Curva', flavour: 'Il treno si inclina. Il caffè pure. Su di te.' },
-  'rw.shoe-in-the-gap': { name: 'Scarpa tra Treno e Banchina', flavour: 'Tra il treno e la banchina c’era un solo posto libero. L’ha preso la tua scarpa.' },
+  'rw.shoe-in-the-gap': { name: 'Scarpa tra Treno e Banchina', flavour: 'Attenzione allo spazio tra il treno e la banchina. Troppo tardi.' },
   'rw.suitcase-swap': { name: 'Valigie Scambiate', flavour: 'La tua era nera con le rotelle. Anche questa. È di un mago.' },
   'rw.seat-crack': { name: 'Caduto nella Fessura del Sedile', flavour: 'Eccolo lì. Con tre penne e un biscotto del 1998.' },
   'rw.luggage-elsewhere': { name: 'Bagagli in Altra Direzione', flavour: 'La tua cosa migliore ora viaggia verso nord. Da sola.' },

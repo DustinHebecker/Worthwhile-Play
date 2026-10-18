@@ -56,7 +56,7 @@ export const pt: LocaleContent = {
   'rw.wrong-platform': { name: 'Plataforma Errada', flavour: 'Era a plataforma 7. Você está na 7A. Ela não existe.' },
   'rw.hat-out-of-window': { name: 'Chapéu pela Janela', flavour: 'Pôs a cabeça para fora um segundo. Agora o chapéu passeia em outro lugar.' },
   'rw.coffee-in-the-curve': { name: 'Cafezinho na Curva', flavour: 'O trem inclina. O café também. Em você.' },
-  'rw.shoe-in-the-gap': { name: 'Sapato no Vão', flavour: 'Entre o trem e a plataforma sobrava um único lugar livre. Seu sapato pegou.' },
+  'rw.shoe-in-the-gap': { name: 'Sapato no Vão', flavour: 'Atenção ao espaço entre o trem e a plataforma. Tarde demais.' },
   'rw.suitcase-swap': { name: 'Malas Trocadas', flavour: 'A sua era preta com rodinhas. Essa também. É de um mágico.' },
   'rw.seat-crack': { name: 'Caiu no Vão do Banco', flavour: 'Lá está ele. Ao lado de três canetas e um biscoito de 1998.' },
   'rw.luggage-elsewhere': { name: 'Bagagem Foi Para Outro Lado', flavour: 'Seu melhor item agora viaja para o norte. Sozinho.' },

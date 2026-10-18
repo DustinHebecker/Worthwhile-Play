@@ -55,7 +55,7 @@ export const de: LocaleContent = {
   'rw.wrong-platform': { name: 'Falscher Bahnsteig', flavour: 'Gleis 7 war richtig. Du stehst auf Gleis 7a. Das gibt es nicht.' },
   'rw.hat-out-of-window': { name: 'Hut aus dem Fenster', flavour: 'Kurz rausgeschaut. Der Hut schaut jetzt woanders raus.' },
   'rw.coffee-in-the-curve': { name: 'Kaffee in der Kurve', flavour: 'Der Zug neigt sich. Der Kaffee auch. Auf dich.' },
-  'rw.shoe-in-the-gap': { name: 'Schuh im Spalt', flavour: 'Zwischen Zug und Bahnsteig war genau ein Platz frei. Dein Schuh hat ihn genommen.' },
+  'rw.shoe-in-the-gap': { name: 'Bahnsteiglücke', flavour: 'Bitte beachten Sie den Abstand zwischen Zug und Bahnsteig. Zu spät.' },
   'rw.suitcase-swap': { name: 'Koffer vertauscht', flavour: 'Deiner war schwarz mit Rollen. Dieser auch. Er gehört einem Zauberer.' },
   'rw.seat-crack': { name: 'In die Sitzritze gefallen', flavour: 'Da liegt es nun. Neben drei Kugelschreibern und einem Keks von 1998.' },
   'rw.luggage-elsewhere': { name: 'Gepäck fährt woanders hin', flavour: 'Deine beste Sache reist jetzt nach Norden. Allein.' },

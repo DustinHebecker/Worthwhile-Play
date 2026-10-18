@@ -56,7 +56,7 @@ export const es: LocaleContent = {
   'rw.wrong-platform': { name: 'Andén Equivocado', flavour: 'Era la vía 7. Estás en la vía 7z. No existe.' },
   'rw.hat-out-of-window': { name: 'Sombrero por la Ventanilla', flavour: 'Te asomaste un segundo. El sombrero ahora se asoma en otra parte.' },
   'rw.coffee-in-the-curve': { name: 'Café en la Curva', flavour: 'El tren se inclina. El café también. Sobre ti.' },
-  'rw.shoe-in-the-gap': { name: 'Zapato en el Hueco', flavour: 'Entre el tren y el andén quedaba justo un hueco libre. Tu zapato lo ocupó.' },
+  'rw.shoe-in-the-gap': { name: 'Zapato en el Hueco', flavour: 'Cuidado con el hueco entre el tren y el andén. Demasiado tarde.' },
   'rw.suitcase-swap': { name: 'Maletas Cambiadas', flavour: 'La tuya era negra y con ruedas. Esta también. Es de un mago.' },
   'rw.seat-crack': { name: 'Perdido en la Ranura del Asiento', flavour: 'Ahí está. Junto a tres bolis y una galleta de 1998.' },
   'rw.luggage-elsewhere': { name: 'Equipaje en Otra Dirección', flavour: 'Lo mejor que tienes viaja ahora hacia el norte. Solito.' },

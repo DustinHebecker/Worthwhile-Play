@@ -56,7 +56,7 @@ export const ja: LocaleContent = {
   'rw.wrong-platform': { name: 'ホームまちがい', flavour: '7番線で正解。きみがいるのは7a番線。そんなホームはない。' },
   'rw.hat-out-of-window': { name: '窓から帽子', flavour: 'ちょっと顔を出しただけ。帽子は今、よその景色を見ている。' },
   'rw.coffee-in-the-curve': { name: 'カーブでコーヒー', flavour: '列車が傾く。コーヒーも傾く。きみの上に。' },
-  'rw.shoe-in-the-gap': { name: 'すき間に靴', flavour: '電車とホームのあいだに、空席がひとつだけあった。きみの靴が座った。' },
+  'rw.shoe-in-the-gap': { name: 'すき間に靴', flavour: '「電車とホームの間が広く空いております」…手遅れ。' },
   'rw.suitcase-swap': { name: 'スーツケースちがい', flavour: 'きみのは黒でキャスターつき。これもそう。持ち主は手品師。' },
   'rw.seat-crack': { name: '座席のすき間に落ちた', flavour: 'そこにある。ボールペン三本と、1998年のビスケットの隣に。' },
   'rw.luggage-elsewhere': { name: '荷物だけ別の旅へ', flavour: 'きみのいちばんいい物は北へ向かった。ひとりで。' },

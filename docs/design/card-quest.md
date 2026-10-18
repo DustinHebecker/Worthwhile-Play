@@ -451,6 +451,8 @@ K1 is large (140 cards × 16 locales). If it becomes too big for one review, it 
 - Design ideas that need new mechanics stay flavour (Replacement Bus Service is a fight malus, not "skip Open";
   Is the Light Really Off? is a standard curse).
 - One balance tweak in review: the Fridge's *Gourmet* gives +2 per `food` item (the world has only three).
+- Owner idea "Bahnsteiglücke": the existing platform-gap curse carries that name (de) / *Mind the Gap* (en); it keeps
+  its effect (feet item), so the composition and budget stay equal to the other worlds.
 - Balance (self-play, 40 games each, 2–6 players): median rounds — fd 10, rw 10, fd+rw 11, all five worlds 10;
   10–90 % ≈ 7–15; max 17–28. Wins spread over both families of each world.
 
