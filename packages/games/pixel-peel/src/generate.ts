@@ -1,7 +1,7 @@
 import { createRng, normalizeSeed, type Rng } from '@wp/game-core';
 import { rasterise, type Tier } from './art/raster';
 import type { Motif } from './art/types';
-import { cloneCells, engineOf, exposedCounts, fullCells, launch, replayCursor, tableOf, type Cells, type Engine } from './engine';
+import { engineOf, exposedCounts, fullCells, hitsOf, launch, replayCursor, tableOf, type Cells, type Engine } from './engine';
 import { MOTIFS, findMotif } from './motifs/index';
 import { POLICIES, runPolicy, type Budget, type PolicyId } from './policies';
 import { toDifficulty, type Difficulty, type Move, type PeelState, type Picture, type Shooter } from './rules';
@@ -88,7 +88,7 @@ export function construct(engine: Engine, level: Level, rng: Rng): Construction 
   let decoys = 0;
   const hitsOn = (c: number, n: number) => {
     launches++;
-    return launch(engine, cloneCells(cells), c, n);
+    return hitsOf(engine, cells, c, n);
   };
   const relaunch = (j: number) => {
     const s = slots[j] as { c: number; n: number };

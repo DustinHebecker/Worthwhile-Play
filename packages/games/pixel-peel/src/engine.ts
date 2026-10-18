@@ -154,9 +154,30 @@ export function launch(engine: Engine, cells: Cells, c: number, n: number, onHit
   }
 }
 
-/** Hits a launch would make, without changing `cells`. */
+const trialHits: number[] = [];
+const recordTrial = (f: number) => {
+  trialHits.push(f);
+};
+const savedPtrs = new Map<number, Int16Array>();
+
+/**
+ * Hits a launch would make, without changing `cells`: it launches in place and undoes it (hit cells restored,
+ * station pointers reset), so nothing is copied but the station pointers.
+ */
 export function hitsOf(engine: Engine, cells: Cells, c: number, n: number): number {
-  return launch(engine, cloneCells(cells), c, n);
+  let saved = savedPtrs.get(cells.ptr.length);
+  if (!saved) {
+    saved = new Int16Array(cells.ptr.length);
+    savedPtrs.set(cells.ptr.length, saved);
+  }
+  saved.set(cells.ptr);
+  trialHits.length = 0;
+  const hits = launch(engine, cells, c, n, recordTrial);
+  for (const f of trialHits) cells.present[f] = 1;
+  cells.left += trialHits.length;
+  trialHits.length = 0;
+  cells.ptr.set(saved);
+  return hits;
 }
 
 /** The exposed cells (the front of at least one station), ascending. */
@@ -312,7 +333,11 @@ export function replayCursor(table: Table, moves: readonly string[], from: Curso
 /** A legal move with its result (for policies, hint and solver). */
 export interface Child {
   move: string;
-  cursor: Cursor;
+  /**
+   * The position after the move. Computed on first access from the parent cursor, so it must be read before the
+   * parent changes (policies and the solver read it right after choosing).
+   */
+  readonly cursor: Cursor;
   hits: number;
   usedUp: boolean;
   slotMove: boolean;
@@ -325,19 +350,49 @@ export interface Child {
   shooterIndex: number;
 }
 
-/** All legal moves of a position: slots first, then lanes (each in index order). */
+/**
+ * All legal moves of a position: slots first, then lanes (each in index order). Each candidate is launched on the
+ * parent's cells in place and undone (hit cells restored, station pointers reset), so no cells are copied; only the
+ * child cursor that is actually read is built (design v2 § 6.5, start time on phones).
+ */
 export function childrenOf(table: Table, cur: Cursor): Child[] {
+  const { engine } = table;
+  const cells = cur.cells;
+  let free = 0;
+  for (const s of cur.slots) if (!s) free++;
   const out: Child[] = [];
-  const add = (kind: 'L' | 'S', i: number) => {
-    const next = cloneCursor(cur);
-    const o = step(table, next, kind, i, true);
-    if (!o.legal || !o.shooter) return;
-    let free = 0;
-    for (const s of next.slots) if (!s) free++;
-    out.push({ move: `${kind}${i}`, cursor: next, hits: o.hits, usedUp: o.left === 0, slotMove: kind === 'S', index: i, freeAfter: free, lane: o.shooter.lane, shooterIndex: o.shooter.index });
+  const add = (kind: 'L' | 'S', i: number, c: number, n: number, lane: number, shooterIndex: number) => {
+    const hits = hitsOf(engine, cells, c, n);
+    const left = n - hits;
+    if (kind === 'S' ? hits === 0 : left > 0 && free === 0) return;
+    let built: Cursor | null = null;
+    out.push({
+      move: `${kind}${i}`,
+      get cursor(): Cursor {
+        if (!built) {
+          built = cloneCursor(cur);
+          step(table, built, kind, i, true);
+        }
+        return built;
+      },
+      hits,
+      usedUp: left === 0,
+      slotMove: kind === 'S',
+      index: i,
+      freeAfter: kind === 'S' ? free + (left === 0 ? 1 : 0) : free - (left > 0 ? 1 : 0),
+      lane,
+      shooterIndex
+    });
   };
-  for (let j = 0; j < cur.slots.length; j++) if (cur.slots[j]) add('S', j);
-  for (let i = 0; i < table.lanes.length; i++) add('L', i);
+  for (let j = 0; j < cur.slots.length; j++) {
+    const s = cur.slots[j];
+    if (s) add('S', j, s.c, s.n, s.lane, s.index);
+  }
+  for (let i = 0; i < table.lanes.length; i++) {
+    const k = cur.laneFront[i] as number;
+    const s = table.lanes[i]?.[k];
+    if (s) add('L', i, s.c, s.n, i, k);
+  }
   return out;
 }
 

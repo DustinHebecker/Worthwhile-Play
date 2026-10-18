@@ -65,10 +65,26 @@ function symbolSvg(index: number, ink: string): SVGSVGElement {
   return svg;
 }
 
+/** One 4 × 4 picture of one colour, cleared by one shooter: never shown, it only gives the view a valid state. */
+const PLACEHOLDER: PeelState = {
+  seed: 1,
+  difficulty: 'easy',
+  choice: 'any',
+  motif: '',
+  picture: { w: 4, h: 4, rows: ['aaaa', 'aaaa', 'aaaa', 'aaaa'], palette: [{ key: 'a', hex: '#888888', name: 'grey' }], backdrop: '#ffffff' },
+  lanes: [[{ c: 'a', n: 16 }]],
+  slots: 1,
+  witness: ['L0'],
+  moves: [],
+  restartUndo: null,
+  reported: false
+};
+
 export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
   const { t } = context;
   const locale: Locale = (LOCALES as readonly string[]).includes(t.locale) ? (t.locale as Locale) : 'en';
-  let state: PeelState = createInitial(0);
+  // A tiny placeholder until newGame() or restore(): generating a real game here would only cost start time.
+  let state: PeelState = PLACEHOLDER;
   let table: Table = tableOfState(state);
   let cursor: Cursor = replayCursor(table, []) as Cursor;
   let exposure: Exposure = exposureOf(table.engine, cursor.cells);
