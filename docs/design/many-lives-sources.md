@@ -1,6 +1,6 @@
 # Many Lives — sources and research plan
 
-Status: **Research plan (2026-10-18).** Nothing here is verified yet. Each entry lists a *candidate* source; before a value enters `packages/life-engine/src/params`, it must be checked against the primary source (title, year, table, region, value, uncertainty) and its license reviewed (`docs/third-party.md`). Only aggregated figures are used; no datasets are shipped.
+Status: **First research pass done (2026-10-18).** Detailed notes with values, URLs, bands, licenses and status per item: [many-lives-research/](many-lives-research/) — [markets](many-lives-research/markets.md), [Germany](many-lives-research/germany.md), [India](many-lives-research/india.md), [wellbeing and health](many-lives-research/wellbeing.md). Items marked UNVERIFIED there (the search budget ran out) need a second pass before they become parameters. The table below is the overview of source families. Each entry lists a *candidate* source; before a value enters `packages/life-engine/src/params`, it must be checked against the primary source (title, year, table, region, value, uncertainty) and its license reviewed (`docs/third-party.md`). Only aggregated figures are used; no datasets are shipped.
 
 Status values: `candidate` (from memory, unverified) · `checked` (primary source read, value and citation recorded) · `licensed` (terms reviewed).
 
@@ -55,10 +55,10 @@ interface Param {
 | Discrimination in hiring | field-experiment meta-analyses (Quillian et al. 2019; Lancee 2021 cross-national GEMM) | paper citation | candidate |
 | Informal economies | ILO *Women and Men in the Informal Economy*; World Bank Global Findex (account ownership, savings groups) | Findex CC BY 4.0 | candidate |
 
-## Owner assumptions to test
+## Owner assumptions — results of the first pass
 
-| Assumption | Current impression (unverified) | Plan |
+| Assumption | Finding | Model consequence |
 |---|---|---|
-| Young people cope better with high workloads and are more motivated; older people are more disillusioned. | Mixed: recovery from sleep loss declines with age, but job satisfaction tends to rise with age and several surveys report more burnout among younger workers. | Literature review; model energy recovery and preferences by evidence. |
-| Fixed income mostly returns slightly below inflation. | True for savings deposits in many recent periods (e.g. euro area 2010–2022); long-run government bonds returned positive real returns in many countries; profiles with high inflation had deeply negative real rates. | Calibrate per profile and regime. |
-| A 10-stock market ETF has lower volatility than single stocks and performs like a world index. | Correct by construction in the model (section 5.6 of the design). | Calibration test. |
+| Young people cope better with high workloads and are more motivated; older people are more disillusioned. | Mostly not supported: job satisfaction is U-shaped with its low around 31–36 (Clark, Oswald & Warr 1996), older workers show better job attitudes and more intrinsic motivation; burnout surveys report more burnout among the young (low-quality surveys); only physical capacity and recovery clearly decline with age (VO2peak −3–6 %/decade early, >20 %/decade from the 70s). See wellbeing notes § 3. | Physical capacity and recovery decline with age; motivation and job satisfaction do not decline by default; disillusion arises from events (repetitive work, setbacks), not from age. |
+| Fixed income mostly returns slightly below inflation. | Holds for German deposits since 2000 (money-market real −0.5 %/yr 2000–25, −1.5 %/yr 2010–25) but not for German bonds before 2000 (+3.9 % real) nor India (10-year bonds ≈ +1.6 % real 2012–25, deposits ≈ 0 % real); clearly positive real rates in Brazil, South Africa, Indonesia; deeply negative in Egypt and Romania in high-inflation years. See markets notes. | Real rates per profile and regime; the German calibration reproduces "slightly below inflation" in the low-rate regime only. |
+| A 10-stock market ETF has lower volatility than single stocks and performs like a world index. | Calibration target from Ken French developed-markets data (1990–2026): 15 % annual volatility, monthly kurtosis 4.4, maximum drawdown −54 %. | Correct by construction (design § 5.6); calibration test against these targets. |
