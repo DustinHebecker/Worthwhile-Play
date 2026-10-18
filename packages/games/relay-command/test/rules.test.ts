@@ -1647,6 +1647,28 @@ describe('tower walls (owner review 2026-10-18: no more units fed into a known t
     const reach = RULESET.archetypes['tower-gun']!.weapon!.range + 1;
     expect(towers.every((t) => Math.hypot(t.x - plan.rally.x, t.y - plan.rally.y) > reach)).toBe(true);
   });
+
+  it('the storm waits for a known tower wall: a tower weighs twice its price among the post\'s defenders (review of PR #60)', () => {
+    // Only towers defend the post (the player's fighters are taken off); the opponent's force has gathered.
+    const setup = (cells: readonly (readonly [number, number])[], towers = cells.length) => {
+      const { w } = walled(cells);
+      const keep = new Set(w.entities.filter((e) => e.kind === 'tower-gun').slice(0, towers).map((e) => e.id));
+      w.entities = w.entities.filter((e) => e.side !== PLAYER || (e.kind === 'tower-gun' ? keep.has(e.id) : (RULESET.archetypes[e.kind]?.speed ?? 0) === 0));
+      w.turn = 10;
+      w.intel = initialIntel(w, RULESET);
+      return { ...assaultPlan(observe(w, RULESET, OPPONENT), RULESET, 'normal')!, towers: w.entities.filter((e) => e.kind === 'tower-gun').length };
+    };
+    const bare = setup([]);
+    expect(bare.storming).toBe(true); // nothing defends the post: the gathered force goes
+    const two = setup([[3, 0], [3, -1], [3, 1], [2, -2], [3, -2], [2, 2]], 2);
+    expect(two.towers).toBe(2);
+    const towerValue = 2 * RULESET.archetypes['tower-gun']!.cost;
+    const ours = two.all.reduce((sum, f) => sum + (RULESET.archetypes[f.kind]!.cost * f.hp) / RULESET.archetypes[f.kind]!.hp, 0);
+    // At their price the two towers would not hold the storm back; weighed double they do.
+    expect(ours).toBeGreaterThanOrEqual(towerValue * 1.3);
+    expect(ours).toBeLessThan(2 * towerValue * 1.3);
+    expect(two.storming).toBe(false);
+  });
 });
 
 describe('opponent economy and easy fighters (mutation run on ai.ts, 2026-10-15)', () => {
