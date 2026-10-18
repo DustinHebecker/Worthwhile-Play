@@ -17,7 +17,7 @@ export const pl: LocaleContent = {
   'sl.customs-officer': { name: 'Cło w Kosmoporcie 3', flavour: '„Coś do oclenia? Planeta? Macki?”', blunder: 'Twój najlepszy przedmiot zostaje skonfiskowany. „Nieoclony”.' },
   'sl.moon-mole': { name: 'Księżycowy Kret z Koncesją', flavour: 'Księżyc należy do niego. Ma na to świstek.', blunder: 'Żąda dwóch kart opłaty górniczej. Z wyrównaniem wstecz.' },
   'sl.jetpack-rat': { name: 'Szczur Ładowniowy z Jetpackiem', flavour: 'Ukradł jetpack. I ładownię. A teraz twoje graty.', blunder: 'Odlatuje z twoim drobiazgiem. Fiuuu.' },
-  'sl.form-jellyfish': { name: 'Meduza z Formularzem 19q', flavour: 'W trzech egzemplarzach, proszę. Podpis każdą macką.', blunder: 'Opłata skarbowa: trzy karty z ręki. Pieczątka, dziurkacz, przepadły.' },
+  'sl.form-jellyfish': { name: 'Meduza z Formularzem 27b', flavour: 'W trzech egzemplarzach, proszę. Podpis każdą macką.', blunder: 'Opłata skarbowa: trzy karty z ręki. Pieczątka, dziurkacz, przepadły.' },
   'sl.robo-vac': { name: 'Robot Sprzątający z Ambicjami', flavour: 'Najpierw korytarz. Potem statek. Potem galaktyka.', blunder: 'Wsysa ci hełm z głowy. Siorb.' },
   'sl.food-paste': { name: 'Żywa Papka Astronauty', flavour: 'Wypełzła z tubki. Smakuje truskawką, pachnie skarpetą.', blunder: 'Śmierdzi tak, że twoje ubranie woli wysiąść ze statku.' },
   'sl.junk-dealer': { name: 'Kosmiczny Złomiarz', flavour: 'Kupi wszystko, sprzeda wszystko. Twój skafander? Używany, ale z duszą.', blunder: 'Wymienia twój drobiazg na nic. Plus jedna karta prowizji.' },

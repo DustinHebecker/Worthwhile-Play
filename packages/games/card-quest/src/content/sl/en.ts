@@ -16,7 +16,7 @@ export const en: LocaleContent = {
   'sl.customs-officer': { name: 'Customs at Spaceport 3', flavour: '“Anything to declare? A planet? Your tentacles?”', blunder: 'Your best item is confiscated. “Undeclared.”' },
   'sl.moon-mole': { name: 'Moon Mole With Mining Rights', flavour: 'The moon is its own. It has a slip of paper to prove it.', blunder: 'It demands two cards in mining fees. Backdated.' },
   'sl.jetpack-rat': { name: 'Cargo Rat With Jetpack', flavour: 'Stole the jetpack. And the cargo bay. And now your stuff.', blunder: 'It zooms off with your small item. Whoosh.' },
-  'sl.form-jellyfish': { name: 'Jellyfish With Form 19q', flavour: 'In triplicate, please. Sign with every tentacle.', blunder: 'Processing fee: three hand cards. Stamped, punched, gone.' },
+  'sl.form-jellyfish': { name: 'Jellyfish With Form 27b', flavour: 'In triplicate, please. Sign with every tentacle.', blunder: 'Processing fee: three hand cards. Stamped, punched, gone.' },
   'sl.robo-vac': { name: 'Robo-Vac With Big Plans', flavour: 'First the hallway. Then the ship. Then the galaxy.', blunder: 'It sucks the helmet off your head. Slurp.' },
   'sl.food-paste': { name: 'Space Food Paste, Alive', flavour: 'Crawled out of the tube. Tastes of strawberry, smells of sock.', blunder: 'It smells so bad your clothes would rather get off the ship.' },
   'sl.junk-dealer': { name: 'Space Junk Dealer', flavour: 'Buys anything, sells anything. Your spacesuit? Pre-loved, with charm.', blunder: 'It swaps your small item for nothing. Plus a card in commission.' },

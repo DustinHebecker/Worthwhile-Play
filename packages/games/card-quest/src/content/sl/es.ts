@@ -17,7 +17,7 @@ export const es: LocaleContent = {
   'sl.customs-officer': { name: 'Aduana del Puerto Espacial 3', flavour: '«¿Algo que declarar? ¿Un planeta? ¿Sus tentáculos?»', blunder: 'Te confiscan lo mejor que tienes. «No declarado».' },
   'sl.moon-mole': { name: 'Topo Lunar con Licencia Minera', flavour: 'La Luna es suya. Tiene un papelito que lo demuestra.', blunder: 'Te exige dos cartas de canon minero. Con carácter retroactivo.' },
   'sl.jetpack-rat': { name: 'Rata de Bodega con Jetpack', flavour: 'Robó el jetpack. Y la bodega. Y ahora tus cosas.', blunder: 'Sale zumbando con tu objeto pequeño. Fffft.' },
-  'sl.form-jellyfish': { name: 'Medusa con Formulario 19q', flavour: 'Por triplicado, por favor. Firme con todos los tentáculos.', blunder: 'Tasa de tramitación: tres cartas de la mano. Sellado, grapado, adiós.' },
+  'sl.form-jellyfish': { name: 'Medusa con Formulario 27b', flavour: 'Por triplicado, por favor. Firme con todos los tentáculos.', blunder: 'Tasa de tramitación: tres cartas de la mano. Sellado, grapado, adiós.' },
   'sl.robo-vac': { name: 'Robot Aspirador Megalómano', flavour: 'Primero el pasillo. Luego la nave. Luego la galaxia.', blunder: 'Te aspira el casco de la cabeza. Sluuurp.' },
   'sl.food-paste': { name: 'Papilla de Astronauta, Viva', flavour: 'Salió del tubo reptando. Sabe a fresa, huele a calcetín.', blunder: 'Huele tan fuerte que tu ropa prefiere bajarse de la nave.' },
   'sl.junk-dealer': { name: 'Chatarrero Espacial', flavour: 'Compra de todo, vende de todo. ¿Tu traje? De segunda mano, pero con encanto.', blunder: 'Te cambia tu objeto pequeño por nada. Más una carta de comisión.' },

@@ -17,7 +17,7 @@ export const nl: LocaleContent = {
   'sl.customs-officer': { name: 'Douane van Ruimtehaven 3', flavour: '„Iets aan te geven? Een planeet? Uw tentakels?”', blunder: 'Je beste spul wordt in beslag genomen. „Niet aangegeven.”' },
   'sl.moon-mole': { name: 'Maanmol met Mijnrecht', flavour: 'De maan is van hem. Hij heeft een briefje dat het bewijst.', blunder: 'Hij eist twee kaarten mijnbouwheffing. Met terugwerkende kracht.' },
   'sl.jetpack-rat': { name: 'Laadruimrat met Jetpack', flavour: 'Jatte de jetpack. En het laadruim. En nu ook jouw spullen.', blunder: 'Ze zoeft ervandoor met je kleine ding. Fffft.' },
-  'sl.form-jellyfish': { name: 'Kwal met Formulier 19q', flavour: 'Graag in drievoud. Ondertekenen met alle tentakels.', blunder: 'Behandelkosten: drie handkaarten. Gestempeld, geperforeerd, weg.' },
+  'sl.form-jellyfish': { name: 'Kwal met Formulier 27b', flavour: 'Graag in drievoud. Ondertekenen met alle tentakels.', blunder: 'Behandelkosten: drie handkaarten. Gestempeld, geperforeerd, weg.' },
   'sl.robo-vac': { name: 'Robotzuiger met Wereldplannen', flavour: 'Eerst de gang. Dan het schip. Dan de melkweg.', blunder: 'Hij zuigt de helm van je hoofd. Slurp.' },
   'sl.food-paste': { name: 'Astronautenpap, Levend', flavour: 'Uit de tube gekropen. Smaakt naar aardbei, ruikt naar sok.', blunder: 'Het stinkt zo erg dat je kleren liever uitstappen.' },
   'sl.junk-dealer': { name: 'Ruimteschroothandelaar', flavour: 'Koopt alles, verkoopt alles. Je ruimtepak? Tweedehands, maar met charme.', blunder: 'Hij ruilt je kleine ding voor niks. Plus een kaart provisie.' },

@@ -193,7 +193,7 @@ export const de: Catalogue = {
   'slot.big': 'groß',
   'set.mining-gear': 'Echte Bergmannsausrüstung',
   'set.gnome-outfit': 'Echte Gartenzwerg-Tracht',
-  'set.away-team': 'Landetrupp-Ausrüstung',
+  'set.away-team': 'Außenteam-Ausrüstung',
   'set.tourist-kit': 'Weltraumtouristen-Paket',
   'set.video-call': 'Videocall-tauglich',
   'set.couch-kit': 'Sofa-Büro-Ausstattung',
