@@ -427,9 +427,9 @@ Integer cents for money; own deterministic `exp`/`log` approximations because `M
 
 ## 15. Shared needs (for the orchestrator)
 
-1. **Languages (O15):** the shared rule "all user text in all 16 locales" and the contract suite's completeness check conflict with "en/de first, English fallback until the end". Proposal: a per-game flag (e.g. `metadata.localesPending: true`) under which the contract checks en/de completeness and accepts English fallback for the other 14, plus a visible "translation pending" note; removed before the final translation.
-2. **ADR number** for the life engine (0018 proposed here).
-3. **Shared finance maths** (compound interest, return distributions, deterministic exp/log) possibly with the business tycoon's economy engine — a proposal for a shared package later, no dependency now.
+1. **Languages (O15)** — orchestrator answer (2026-10-18): development in en/de uses `runGameContract(module, { locales: ['en', 'de'] })`, which requires completeness only for the listed locales. It is allowed only while the game is **unregistered**; phases can still be merged into `main` unregistered (like Poker and Skat earlier). The orchestrator registers and releases the game only once all 16 locales are complete, and the option then leaves the contract test. Consequence: no player sees English fallback; the final translation is its own phase before the release PR. (Owner to confirm, since this replaces "release in en/de with fallback", Q12.)
+2. **ADR number**: 0018 confirmed for the life engine (the tycoon gets 0019).
+3. **Shared finance maths**: no dependency on the economy engine. Orchestrator decision (2026-10-18): the economy workstream drafts `@wp/finance-math` (ADR 0020: cents and basis points, fixed-point pow/exp/log, annuity/NPV/compound growth, stateless keyed seeded draws with normal and fat-tailed distributions); this workstream reviews the API and has sent its needs (Student-t, lognormal, monthly hazards, jumps, regime switching, AR(1), volatility clustering, small correlated draws, mortgage maths, documented accuracy). The life engine uses it once merged instead of its own deterministic maths.
 4. Library size limits (64 KiB per item) are sufficient for life summaries; no change needed for now.
 
 ---
