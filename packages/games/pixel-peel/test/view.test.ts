@@ -251,6 +251,25 @@ describe('view', () => {
     expect(instance.serialize().moves).toEqual([]);
   });
 
+  it('on a touch screen "Confirm before launch" is on by default; a remembered choice wins', () => {
+    const original = window.matchMedia;
+    window.matchMedia = ((query: string) => ({ matches: query.includes('coarse'), media: query, addEventListener() {}, removeEventListener() {} })) as unknown as typeof window.matchMedia;
+    try {
+      const touch = start();
+      expect((touch.q('pp-option-confirm') as HTMLInputElement).checked).toBe(true);
+      touch.q('pp-lane-0').click();
+      expect(touch.instance.serialize().moves).toEqual([]);
+      expect(touch.q('pp-canvas').dataset.spotlight).not.toBe('');
+      touch.instance.dispose();
+      const chosen = start({ prefs: { display: { confirm: false } } });
+      expect((chosen.q('pp-option-confirm') as HTMLInputElement).checked).toBe(false);
+      chosen.q('pp-lane-0').click();
+      expect(chosen.instance.serialize().moves).toEqual(['L0']);
+    } finally {
+      window.matchMedia = original;
+    }
+  });
+
   it('"Confirm before launch": the first press previews, the second launches', () => {
     const { q, instance, status } = start({ prefs: { display: { animation: true, allSymbols: false, confirm: true } } });
     q('pp-lane-0').click();

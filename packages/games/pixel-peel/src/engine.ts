@@ -132,22 +132,32 @@ export function frontOf(engine: Engine, cells: Cells, i: number): number {
  * Mutates `cells`; returns the number of hits. `onHit(cell, station)` reports each hit in order.
  */
 export function launch(engine: Engine, cells: Cells, c: number, n: number, onHit?: (cell: number, station: number) => void): number {
+  if (n <= 0 || c <= 0) return 0;
+  // frontOf inlined: this loop is most of the generator's and the hint's time.
+  const { stations, colour, lineStart, lineCells } = engine;
+  const { present, ptr } = cells;
   let left = n;
   let hits = 0;
-  if (left <= 0 || c <= 0) return 0;
-  const { stations, colour } = engine;
   for (;;) {
     let lap = 0;
+    let base = lineStart[0] as number;
     for (let i = 0; i < stations; i++) {
-      const f = frontOf(engine, cells, i);
-      if (f >= 0 && colour[f] === c) {
-        cells.present[f] = 0;
-        cells.left -= 1;
-        onHit?.(f, i);
-        left -= 1;
-        lap += 1;
-        if (left === 0) return hits + lap;
+      const next = lineStart[i + 1] as number;
+      let at = base + (ptr[i] as number);
+      while (at < next && present[lineCells[at] as number] === 0) at++;
+      ptr[i] = at - base;
+      if (at < next) {
+        const f = lineCells[at] as number;
+        if (colour[f] === c) {
+          present[f] = 0;
+          cells.left -= 1;
+          if (onHit) onHit(f, i);
+          left -= 1;
+          lap += 1;
+          if (left === 0) return hits + lap;
+        }
       }
+      base = next;
     }
     hits += lap;
     if (lap === 0) return hits;
@@ -194,17 +204,33 @@ export function exposedOf(engine: Engine, cells: Cells): number[] {
   return out.sort((a, b) => a - b);
 }
 
+let seenScratch = new Uint8Array(0);
+
 /** Per colour code: exposed cells now (index 0 unused). */
 export function exposedCounts(engine: Engine, cells: Cells): Int32Array {
   const counts = new Int32Array(engine.keys.length + 1);
-  const seen = new Uint8Array(engine.colour.length);
-  for (let i = 0; i < engine.stations; i++) {
-    const f = frontOf(engine, cells, i);
-    if (f >= 0 && !seen[f]) {
-      seen[f] = 1;
-      counts[engine.colour[f] as number]! += 1;
+  if (seenScratch.length < engine.colour.length) seenScratch = new Uint8Array(engine.colour.length);
+  const seen = seenScratch;
+  const { stations, colour, lineStart, lineCells } = engine;
+  const { present, ptr } = cells;
+  const fronts: number[] = [];
+  let base = lineStart[0] as number;
+  for (let i = 0; i < stations; i++) {
+    const next = lineStart[i + 1] as number;
+    let at = base + (ptr[i] as number);
+    while (at < next && present[lineCells[at] as number] === 0) at++;
+    ptr[i] = at - base;
+    if (at < next) {
+      const f = lineCells[at] as number;
+      if (!seen[f]) {
+        seen[f] = 1;
+        fronts.push(f);
+        counts[colour[f] as number]! += 1;
+      }
     }
+    base = next;
   }
+  for (const f of fronts) seen[f] = 0;
   return counts;
 }
 

@@ -40,7 +40,7 @@ export interface Level {
 
 export const LEVELS: Readonly<Record<Difficulty, Level>> = {
   easy: { tier: 1, lanes: 4, slots: 5, pack: [10, 40], decoy: 0.06, decoyPack: [8, 30], minShots: 4, candidates: 3, budget: 6000, sameColour: 10 },
-  medium: { tier: 2, lanes: 4, slots: 5, pack: [10, 60], decoy: 0.16, decoyPack: [10, 40], minShots: 4, candidates: 5, budget: 9000, sameColour: 40 },
+  medium: { tier: 2, lanes: 4, slots: 5, pack: [10, 60], decoy: 0.16, decoyPack: [10, 40], minShots: 4, candidates: 4, budget: 8000, sameColour: 40 },
   hard: { tier: 3, lanes: 4, slots: 4, pack: [12, 90], decoy: 0.3, decoyPack: [24, 90], minShots: 4, candidates: 4, budget: 10000, sameColour: 100 }
 };
 

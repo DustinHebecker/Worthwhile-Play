@@ -12,6 +12,11 @@ async function savedState(page: Page): Promise<PeelState> {
   return saved(page);
 }
 
+// Most tests launch with one press: "Confirm before launch" (on by default for touch screens) is switched off here.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('wp:pref:pixel-peel:display', JSON.stringify({ confirm: false })));
+});
+
 const buttonFor = (page: Page, move: string) => root(page).getByTestId(move.startsWith('L') ? `pp-lane-${move.slice(1)}` : `pp-slot-${move.slice(1)}`);
 
 /** Plays the witness from move `from` to `to` (exclusive) through the buttons and waits for the save. */
@@ -35,7 +40,7 @@ test('pixel-peel: playing the stored solution through the buttons reveals the pi
   const state = await savedState(page);
   expect(state.motif).toBe('red-fox');
   expect(state.picture.w).toBe(32);
-  await expect(root(page).getByTestId('pp-title')).toHaveText('Red fox');
+  await expect(root(page).getByTestId('pp-title')).toHaveText(`Red fox · ${state.picture.palette.length} colours`);
   for (const move of state.witness) await buttonFor(page, move).click();
   await expect(root(page).getByRole('heading', { name: 'Red fox' })).toBeVisible();
   await expect(root(page).getByTestId('pp-reveal-stats')).toContainText(`Peeled in ${state.witness.length} launches`);
@@ -43,12 +48,12 @@ test('pixel-peel: playing the stored solution through the buttons reveals the pi
   await expect.poll(async () => (await saved(page)).reported).toBe(true);
 });
 
-test('pixel-peel: a hard game (48 wide, 4 waiting places) is solved by its stored witness through the UI', async ({ page }) => {
+test('pixel-peel: a hard game (64 wide, 4 waiting places) is solved by its stored witness through the UI', async ({ page }) => {
   test.setTimeout(120_000);
   await startGame(page, ID, { difficulty: 'hard', settings: { motif: 'winter-village' } });
   const state = await savedState(page);
   expect(state.slots).toBe(4);
-  expect(state.picture.w).toBe(48);
+  expect(state.picture.w).toBe(64);
   expect(prefixWithPark(state, 1), 'the hard witness parks a shooter').toBeGreaterThan(0);
   for (const move of state.witness) await buttonFor(page, move).click();
   await expect(root(page).getByTestId('pp-reveal')).toBeVisible();
@@ -141,11 +146,11 @@ test('pixel-peel: the hint marks a shooter', async ({ page }) => {
   await expect(root(page).getByTestId('pp-status')).toContainText('Hint: ');
 });
 
-test('pixel-peel: at 360 × 740 a 48-wide picture fits, nothing scrolls sideways and targets are large enough', async ({ page }) => {
+test('pixel-peel: at 360 × 740 a 64-wide picture fits, nothing scrolls sideways and targets are large enough', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 740 });
   await startGame(page, ID, { difficulty: 'hard', settings: { motif: 'summer-meadow' } });
   const state = await savedState(page);
-  expect(state.picture.w).toBe(48);
+  expect(state.picture.w).toBe(64);
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(0);
   const canvas = await root(page).getByTestId('pp-canvas').boundingBox();
@@ -196,6 +201,28 @@ test('pixel-peel: Large view scrolls inside its region, pans with the arrow keys
   await board.focus();
   await page.keyboard.press('ArrowRight');
   await expect.poll(() => board.evaluate((el) => el.scrollLeft)).toBeGreaterThan(0);
+});
+
+test('pixel-peel: on a touch screen the first tap previews with the spotlight and the picture stays in view; the second tap launches', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'touch default');
+  await page.addInitScript(() => localStorage.removeItem('wp:pref:pixel-peel:display'));
+  await startGame(page, ID, { difficulty: 'hard', settings: { motif: 'llama' } });
+  const state = await savedState(page);
+  const move = state.witness[0]!;
+  const button = buttonFor(page, move);
+  await button.scrollIntoViewIfNeeded();
+  await button.tap();
+  await expect(button).toHaveClass(/is-selected/);
+  await expect(root(page).getByTestId('pp-canvas')).not.toHaveAttribute('data-spotlight', '');
+  // The picture is sticky: still on screen while the lanes are in view.
+  const canvas = await root(page).getByTestId('pp-canvas').boundingBox();
+  const viewport = page.viewportSize()!;
+  expect(canvas!.y).toBeGreaterThanOrEqual(-1);
+  expect(canvas!.y + canvas!.height).toBeLessThanOrEqual(viewport.height + 1);
+  expect((await saved(page)).moves).toEqual([]);
+  await button.tap();
+  await expect.poll(async () => (await saved(page)).moves).toEqual([move]);
+  await expect(root(page).getByTestId('pp-options').locator('summary')).toBeVisible();
 });
 
 test('pixel-peel: a chosen picture is not remembered — the next start screen offers any picture again', async ({ page }) => {

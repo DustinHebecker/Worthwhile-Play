@@ -114,12 +114,21 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
       return false;
     }
   };
+  const coarsePointer = () => {
+    try {
+      return typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches;
+    } catch {
+      return false;
+    }
+  };
   const stored = context.preferences?.get(PREFS);
   const pref = (key: keyof Display): unknown => (typeof stored === 'object' && stored !== null ? (stored as Record<string, unknown>)[key] : undefined);
   const display: Display = {
     animation: pref('animation') !== false,
     allSymbols: pref('allSymbols') === true,
-    confirm: pref('confirm') === true,
+    // On touch screens a tap would launch at once and the spotlight would never be seen: there the first tap
+    // previews by default (remembered once the player changes it).
+    confirm: typeof pref('confirm') === 'boolean' ? (pref('confirm') as boolean) : coarsePointer(),
     large: pref('large') === true,
     wholeLanes: typeof pref('wholeLanes') === 'boolean' ? (pref('wholeLanes') as boolean) : null
   };
@@ -249,6 +258,7 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
     table = tableOfState(state);
     cursor = replayCursor(table, state.moves) ?? (replayCursor(table, []) as Cursor);
     exposure = exposureOf(table.engine, cursor.cells);
+    stamp++;
     leftOf = new Int32Array(table.engine.keys.length + 1);
     const { colour } = table.engine;
     for (let i = 0; i < colour.length; i++) if (cursor.cells.present[i]) leftOf[colour[i] as number] = (leftOf[colour[i] as number] as number) + 1;
@@ -273,11 +283,19 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
 
   const moveOf = (el: Element | null): Move | null => (el instanceof HTMLElement && el.dataset.move ? el.dataset.move : null);
 
+  /** One symbol per colour, cloned for every swatch (a game has up to ~80 chips). */
+  const symbolCache = new Map<string, SVGSVGElement>();
   const fillSwatch = (sw: HTMLElement, key: string) => {
     const { e, i } = entry(key);
     clear(sw);
     sw.style.background = e.hex;
-    sw.appendChild(symbolSvg(i, inkFor(e.hex)));
+    const cacheKey = `${i}|${e.hex}`;
+    let svg = symbolCache.get(cacheKey);
+    if (!svg) {
+      svg = symbolSvg(i, inkFor(e.hex));
+      symbolCache.set(cacheKey, svg);
+    }
+    sw.appendChild(svg.cloneNode(true));
   };
 
   const build = () => {
@@ -362,17 +380,24 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
 
   // --- Rendering -----------------------------------------------------------------------------------------------
 
+  const setText = (el: HTMLElement, text: string) => {
+    if (el.textContent !== text) el.textContent = text;
+  };
+  const setAttr = (el: Element, name: string, value: string) => {
+    if (el.getAttribute(name) !== value) el.setAttribute(name, value);
+  };
+
   const update = () => {
     const isSolved = solved();
     const total = table.engine.filled;
     const left = cursor.cells.left;
-    titleEl.textContent = t('title.colours', { title: motifTitle(), n: state.picture.palette.length });
-    leftEl.textContent = t('picture.left', { left, total });
+    setText(titleEl, t('title.colours', { title: motifTitle(), n: state.picture.palette.length }));
+    setText(leftEl, t('picture.left', { left, total }));
     leftEl.dataset.left = String(left);
 
     // Slots
     const free = cursor.slots.filter((s) => s === null).length;
-    slotsHeading.textContent = t('slots.heading', { free, total: cursor.slots.length });
+    setText(slotsHeading, t('slots.heading', { free, total: cursor.slots.length }));
     cursor.slots.forEach((s, j) => {
       const b = slotButtons[j] as HTMLButtonElement;
       (slotFree[j] as HTMLElement).hidden = s !== null;
@@ -403,7 +428,7 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
     const longest = Math.max(0, ...state.lanes.map((lane, i) => lane.length - (cursor.laneFront[i] as number) - 1 - CHIPS_SHOWN));
     lanesToggle.hidden = longest <= 0;
     lanesToggle.setAttribute('aria-expanded', String(whole));
-    lanesToggle.textContent = whole ? t('lanes.collapse') : t('lanes.expand', { n: hiddenChips });
+    setText(lanesToggle, whole ? t('lanes.collapse') : t('lanes.expand', { n: hiddenChips }));
 
     // Legality, hint marks, roving tab stops
     for (const b of [...slotButtons, ...laneButtons]) {
@@ -421,16 +446,18 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
     // Actions, stuck, hint undo target
     const stuck = !isSolved && isStuckNow();
     stuckPanel.hidden = !stuck;
-    undoButton.disabled = !canUndo(state);
+    // As rules.canUndo, from the cached cursor (canUndo replays every move).
+    const undoable = !isSolved && (state.moves.length > 0 || (state.restartUndo?.length ?? 0) > 0);
+    undoButton.disabled = !undoable;
     restartButton.disabled = state.moves.length === 0 || isSolved;
     hintButton.disabled = isSolved;
     for (const b of stuckPanel.querySelectorAll('button')) {
-      if (b.dataset.testid === 'pp-stuck-undo') b.disabled = !canUndo(state);
+      if (b.dataset.testid === 'pp-stuck-undo') b.disabled = !undoable;
       if (b.dataset.testid === 'pp-stuck-restart') b.disabled = state.moves.length === 0;
     }
     const undoTarget = hintResult?.kind === 'undo' && hintResult.k < state.moves.length ? hintResult.k : -1;
     hintRow.hidden = undoTarget < 0;
-    undoToButton.textContent = undoTarget === 0 ? t('hint.undoToStart') : t('hint.undoTo', { k: undoTarget });
+    setText(undoToButton, undoTarget === 0 ? t('hint.undoToStart') : t('hint.undoTo', { k: undoTarget }));
 
     // Colours overview
     const edge = new Int32Array(table.engine.keys.length + 1);
@@ -438,12 +465,12 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
     const shots = shotsLeft(table, cursor);
     for (const row of colourRows) {
       const code = table.engine.codes.get(row.key) ?? 0;
-      row.count.textContent = t('colours.row', { left: leftOf[code] ?? 0, edge: edge[code] ?? 0, shots: shots[code] ?? 0 });
+      setText(row.count, t('colours.row', { left: leftOf[code] ?? 0, edge: edge[code] ?? 0, shots: shots[code] ?? 0 }));
       row.toggle.setAttribute('aria-pressed', String(shownColour === row.key));
       row.li.classList.toggle('is-done', (leftOf[code] ?? 0) === 0);
     }
     const reachable = state.picture.palette.filter((p) => (edge[table.engine.codes.get(p.key) ?? 0] ?? 0) > 0).map((p) => t('picture.reachItem', { colour: t(`colour.${p.name}`), n: edge[table.engine.codes.get(p.key) ?? 0] ?? 0 }));
-    canvas.setAttribute('aria-label', t('picture.label', { title: motifTitle(), w: table.engine.w, h: table.engine.h, left, total, reachable: reachable.length ? reachable.join(t('list.separator')) : t('picture.reachNone') }));
+    setAttr(canvas, 'aria-label', t('picture.label', { title: motifTitle(), w: table.engine.w, h: table.engine.h, left, total, reachable: reachable.length ? reachable.join(t('list.separator')) : t('picture.reachNone') }));
 
     for (const key of ['animation', 'allSymbols', 'confirm'] as const) options[key].input.checked = display[key];
     options.wholeLanes.input.checked = whole;
@@ -526,6 +553,7 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
     base = new Uint8ClampedArray(w * h * 4);
     dim = new Uint8ClampedArray(w * h * 4);
     shown = cursor.cells.present.slice();
+    stamp++;
     const back = rgbOf(state.picture.backdrop);
     const rgb = state.picture.palette.map((p) => rgbOf(p.hex));
     for (let c = 0; c < w * h; c++) {
@@ -544,14 +572,21 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
     const back = rgbOf(state.picture.backdrop);
     for (const c of cells) {
       shown[c] = 0;
+      stamp++;
       base.set([back[0], back[1], back[2], 255], c * 4);
       dim.set([back[0], back[1], back[2], 255], c * 4);
     }
   };
 
+  /** Theme colours for the canvas, read once (getComputedStyle per frame is slow on phones); reset on resize. */
+  let cssCache = new Map<string, string>();
   const cssVar = (name: string, fallback: string) => {
-    const v = typeof getComputedStyle === 'function' ? getComputedStyle(container).getPropertyValue(name).trim() : '';
-    return v || fallback;
+    let v = cssCache.get(name);
+    if (v === undefined) {
+      v = (typeof getComputedStyle === 'function' ? getComputedStyle(container).getPropertyValue(name).trim() : '') || fallback;
+      cssCache.set(name, v);
+    }
+    return v;
   };
 
   const dpr = () => (typeof window !== 'undefined' && window.devicePixelRatio > 0 ? Math.min(3, window.devicePixelRatio) : 1);
@@ -594,13 +629,23 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
     return w > 0 ? w : 0;
   };
 
-  /** Cell size in CSS px: Fit fills the available width (at least 5 px), Large is 14 px. */
+  /**
+   * Cell size in CSS px: Fit fills the available width (at least 5 px), Large is 14 px. Measured once per mount and
+   * resize: reading layout on every launch would force a layout each time.
+   */
+  let fitCell = 0;
   const cellSize = () => {
     const { w } = table.engine;
     if (display.large) return LARGE_CELL;
-    const avail = available();
-    return avail > 0 ? Math.max(5, Math.min(24, Math.floor((avail - 2 * TRACK) / w))) : 8;
+    if (!fitCell) {
+      const avail = available();
+      fitCell = avail > 0 ? Math.max(5, Math.min(24, Math.floor((avail - 2 * TRACK) / w))) : 0;
+      if (!fitCell) return 8;
+    }
+    return fitCell;
   };
+  /** Bumped whenever the drawn cells or the exposed set change (keys the cached test hooks and spotlight image). */
+  let stamp = 0;
 
   /** Station centre on the track (for the moving token). */
   const stationPoint = (i: number, cell: number, w: number, h: number): [number, number] => {
@@ -612,22 +657,32 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
   };
 
   let scratch: HTMLCanvasElement | null = null;
-  const blit = (g: CanvasRenderingContext2D, data: Uint8ClampedArray, x: number, y: number, cell: number, mask?: (c: number) => boolean) => {
+  const blit = (g: CanvasRenderingContext2D, pixels: Uint8ClampedArray, x: number, y: number, cell: number) => {
     const { w, h } = table.engine;
     if (typeof ImageData !== 'function' || typeof document === 'undefined') return;
     if (!scratch) scratch = document.createElement('canvas');
-    scratch.width = w;
-    scratch.height = h;
+    if (scratch.width !== w) scratch.width = w;
+    if (scratch.height !== h) scratch.height = h;
     const sg = scratch.getContext('2d');
     if (!sg) return;
-    let pixels = data;
-    if (mask) {
-      pixels = new Uint8ClampedArray(data);
-      for (let c = 0; c < w * h; c++) if (!mask(c)) pixels[c * 4 + 3] = 0;
-    }
     sg.putImageData(new ImageData(pixels as Uint8ClampedArray<ArrayBuffer>, w, h), 0, 0);
     g.drawImage(scratch, x, y, w * cell, h * cell);
   };
+  /** The spotlight colour's cells at full strength, the rest transparent; rebuilt only when they change. */
+  let spotBuffer: Uint8ClampedArray = new Uint8ClampedArray(0);
+  let spotFor = '';
+  const spotPixels = (code: number): Uint8ClampedArray => {
+    const key = `${code}|${stamp}`;
+    if (key === spotFor && spotBuffer.length === base.length) return spotBuffer;
+    const { colour } = table.engine;
+    if (spotBuffer.length !== base.length) spotBuffer = new Uint8ClampedArray(base.length);
+    spotBuffer.set(base);
+    for (let c = 0; c < colour.length; c++) if (!(shown[c] === 1 && colour[c] === code)) spotBuffer[c * 4 + 3] = 0;
+    spotFor = key;
+    return spotBuffer;
+  };
+  let exposedFor = -1;
+  let exposedCells: number[] = [];
 
   /** The colour key in the spotlight: the previewed shooter's, else the one shown from the colours list. */
   const spotlightKey = (): string | null => {
@@ -653,9 +708,13 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
       board.removeAttribute('tabindex');
       board.removeAttribute('aria-label');
     }
-    const ex: number[] = [];
-    for (let c = 0; c < exposure.seenBy.length; c++) if (exposure.seenBy[c]) ex.push(c);
-    canvas.dataset.exposed = ex.map((c) => `${c % w},${Math.floor(c / w)}`).join(' ');
+    if (exposedFor !== stamp) {
+      exposedCells = [];
+      for (let c = 0; c < exposure.seenBy.length; c++) if (exposure.seenBy[c]) exposedCells.push(c);
+      canvas.dataset.exposed = exposedCells.map((c) => `${c % w},${Math.floor(c / w)}`).join(' ');
+      exposedFor = stamp;
+    }
+    const ex = exposedCells;
     canvas.dataset.cell = String(cell);
     const symbols = cell >= SYMBOL_MIN ? (display.allSymbols ? 'all' : 'edge') : 'none';
     canvas.dataset.symbols = symbols;
@@ -689,7 +748,7 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
     const code = spot ? (table.engine.codes.get(spot) ?? 0) : 0;
     if (code) {
       blit(g, dim, TRACK, TRACK, cell);
-      blit(g, base, TRACK, TRACK, cell, (c) => shown[c] === 1 && colour[c] === code);
+      blit(g, spotPixels(code), TRACK, TRACK, cell);
     } else blit(g, base, TRACK, TRACK, cell);
     // Symbols from 10 px: on exposed cells, or on all with the option.
     if (symbols !== 'none') {
@@ -848,6 +907,7 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
       if (parsed) step(table, cursor, parsed.kind, parsed.index, true);
       for (const hit of played.hits) leftOf[table.engine.colour[hit.cell] as number] = (leftOf[table.engine.colour[hit.cell] as number] as number) - 1;
       updateExposure(table.engine, cursor.cells, exposure, played.hits.map((x) => x.cell));
+      stamp++;
       previews = new Map();
     } else {
       finishAnimation();
@@ -1031,7 +1091,11 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
       update();
     }
   };
-  const onResize = () => draw();
+  const onResize = () => {
+    fitCell = 0;
+    cssCache = new Map();
+    draw();
+  };
   container.addEventListener('keydown', onKeyDown);
   document.addEventListener('pointerdown', onPointerDown);
   if (typeof window !== 'undefined') window.addEventListener('resize', onResize);
@@ -1039,6 +1103,8 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
   // --- GameInstance --------------------------------------------------------------------------------------------
 
   const mount = () => {
+    fitCell = 0;
+    cssCache = new Map();
     finishAnimation();
     cancelHint();
     hintResult = null;
