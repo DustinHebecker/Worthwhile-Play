@@ -179,3 +179,14 @@ Business cycles (economy), market regimes for returns (life sim), and possibly h
   - `cholesky(m: number[][]): number[][] | undefined`. Doubles, n ≤ 16, undefined when the matrix is not positive definite.
   - `correlated(seed, L, ...key): number[]` (L · z with keyed z_i).
   - `oneFactor(beta, m, eps)` = β·m + sqrt(1 − β²)·ε.
+
+## Review outcome (life-sim agent, 2026-10-18): OK with these binding points
+1. No rounding defaults anywhere, `annuityPayment` included.
+2. Inflation helpers live in this package: `fisherReal`, `cumulativeIndex`, `deflate(value, indexFrom, indexTo, mode)`.
+3. Rng-based variants: `normalFrom`, `studentTFrom(rng, df, {unitVariance})`, `logNormalFrom`, `poissonFrom`. The keyed versions are built on `keyedRng`. The ADR states the measured throughput.
+4. `progressiveTax(income, brackets: {from, rateBp}[], mode)`, validated: brackets ascending, the first from 0.
+5. `npv` and annuity functions take a timing of 'end' or 'start'; the PV of a growing annuity is added.
+6. `uniform` returns values in the open interval (0,1).
+7. `keyHash` string encoding: length-prefixed UTF-16 code units, documented.
+8. The key layout [period, stream, ...entityIds, subIndex?] is binding.
+Process steps (AR, GARCH, jumps) stay in the engines. The orchestrator approved doubles, the lint rule (it also bans `**`), Stryker at least 80 %, measuring `mulDiv` and the keyed-draw scheme in ADR 0020.
