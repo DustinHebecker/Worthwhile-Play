@@ -195,7 +195,7 @@ export const RW_ITEMS2: Readonly<Record<string, string>> = {
     <path class="il-light il-thin" d="M86 52h-10M84 64h-12M86 76h-10"/>`,
 
   // Somebody tips a bucket of water down the chimney of a little steam engine: the angry sparks fizzle into grey
-  // puffs and the engine sighs with closed eyes and a dripping smile.
+  // puffs and the engine sighs with closed eyes and a dripping smile (face on the boiler side, plain dark smokebox door).
   'rw.engine-bucket': `
     <rect class="il-sky" x="0" y="0" width="160" height="120"/>
     <path class="il-grey" d="M0 100h160v20H0z"/>
@@ -206,15 +206,23 @@ export const RW_ITEMS2: Readonly<Record<string, string>> = {
     <rect class="il-water il-ink il-thin" x="128" y="46" width="20" height="16" rx="2"/>
     <rect class="il-green il-ink" x="62" y="56" width="62" height="34" rx="5"/>
     <path class="il-light il-thin" d="M70 62h48"/>
-    <path class="il-gold il-ink il-thin" d="M88 56v34M108 56v34"/>
+    <path class="il-gold il-ink il-thin" d="M110 56v34"/>
     <path class="il-dark il-ink" d="M80 56l-3-18h18l-3 18z"/>
     <path class="il-dark il-ink" d="M74 38h24v-5H74z"/>
-    <circle class="il-grey il-ink" cx="62" cy="73" r="20"/>
-    <path class="il-line il-thin" d="M48 66q4-4 8 0M64 66q4-4 8 0"/>
-    <path class="il-line" d="M53 80q8 6 16 0"/>
-    <ellipse class="il-pink" cx="50" cy="76" rx="3" ry="2" opacity="0.7"/><ellipse class="il-pink" cx="72" cy="76" rx="3" ry="2" opacity="0.7"/>
-    <ellipse class="il-water il-ink il-thin" cx="48" cy="86" rx="1.6" ry="2.4"/><ellipse class="il-water il-ink il-thin" cx="76" cy="88" rx="1.6" ry="2.4"/>
-    <path class="il-red il-ink il-thin" d="M42 94h40l-4-6H46z"/>
+    <rect class="il-dark il-ink" x="46" y="54" width="20" height="38" rx="2"/>
+    <path class="il-metal il-ink il-thin" d="M64 54h4v38h-4z"/>
+    <circle class="il-metal" cx="57" cy="59" r="1"/><circle class="il-metal" cx="57" cy="73" r="1"/><circle class="il-metal" cx="57" cy="87" r="1"/>
+    <ellipse class="il-dark il-ink" cx="46" cy="73" rx="5" ry="18"/>
+    <circle class="il-metal" cx="46" cy="59" r="1"/><circle class="il-metal" cx="46" cy="87" r="1"/>
+    <path class="il-light il-thin" d="M43 73h7"/><circle class="il-metal il-ink il-thin" cx="46" cy="73" r="1.8"/>
+    <rect class="il-dark il-ink il-thin" x="51" y="46" width="8" height="8" rx="1.5"/><path class="il-yellow il-ink il-thin" d="M48.5 47.5h2.5v5h-2.5z"/>
+    <path class="il-line" d="M78 69q5-5 10 0M94 69q5-5 10 0"/>
+    <path class="il-line il-thin" d="M78 63l8 1M104 63l-8 1"/>
+    <path class="il-line" d="M83 79q8 6 16 0"/>
+    <ellipse class="il-pink" cx="78" cy="76" rx="3.4" ry="2.2" opacity="0.7"/><ellipse class="il-pink" cx="104" cy="76" rx="3.4" ry="2.2" opacity="0.7"/>
+    <ellipse class="il-water il-ink il-thin" cx="82" cy="85" rx="1.6" ry="2.4"/><ellipse class="il-water il-ink il-thin" cx="101" cy="86" rx="1.6" ry="2.4"/>
+    <path class="il-red il-ink il-thin" d="M36 94h46l-4-6H40z"/>
+    <rect class="il-dark il-ink il-thin" x="34" y="82" width="7" height="7" rx="1.5"/>
     <circle class="il-dark il-ink" cx="84" cy="94" r="9"/><circle class="il-metal" cx="84" cy="94" r="3"/>
     <circle class="il-dark il-ink" cx="108" cy="94" r="9"/><circle class="il-metal" cx="108" cy="94" r="3"/>
     <circle class="il-dark il-ink" cx="138" cy="94" r="7"/><circle class="il-metal" cx="138" cy="94" r="2.4"/>
@@ -429,23 +437,33 @@ export const RW_ITEMS2: Readonly<Record<string, string>> = {
     <path class="il-light" d="M34 50a28 28 0 0 1 10-12"/>`,
 
   // A young conductor proudly wears enormous stick-on sideburns (the tape strips still show, one corner peels);
-  // a steam engine beside him nods with approval and puffs a little heart. The empty sticker sheet lies on the ground.
+  // a steam engine beside him (side view: dark smokebox door with lamp, face on the green boiler) nods with approval
+  // and puffs a little heart. The empty sticker sheet lies on the ground.
   'rw.stick-on-sideburns': `
     <rect class="il-sky" x="0" y="0" width="160" height="120"/>
     <path class="il-grey" d="M0 100h160v20H0z"/>
     <path class="il-white il-ink il-thin" d="M0 100h160v3H0z"/>
-    <rect class="il-dark il-ink" x="94" y="30" width="66" height="70" rx="6"/>
-    <path class="il-dark il-ink" d="M116 30l-2-16h16l-2 16z"/>
-    <path class="il-dark il-ink" d="M110 14h24v-4h-24z"/>
-    <path class="il-smoke il-ink il-thin" d="M118 6c-3-4 1-8 4-5 3-3 7 1 4 5l-4 4z"/>
-    <circle class="il-grey il-ink" cx="126" cy="62" r="26"/>
-    <path class="il-line il-thin" d="M108 50q6 4 12 0"/>
-    <path class="il-line il-thin" d="M132 50l12-4"/>
-    <path class="il-line" d="M110 56q5-4 10 0M132 56q5-4 10 0"/>
-    <path class="il-line" d="M114 72q12 8 24 0"/>
-    <ellipse class="il-pink" cx="108" cy="66" rx="3.4" ry="2.2" opacity="0.7"/><ellipse class="il-pink" cx="144" cy="66" rx="3.4" ry="2.2" opacity="0.7"/>
-    <rect class="il-red il-ink" x="92" y="88" width="68" height="8"/>
-    <circle class="il-metal il-ink il-thin" cx="100" cy="92" r="3"/><circle class="il-metal il-ink il-thin" cx="152" cy="92" r="3"/>
+    <path class="il-green il-ink" d="M108 40h52v50h-52z"/>
+    <path class="il-light il-thin" d="M114 45h42" opacity="0.6"/>
+    <path class="il-gold il-ink il-thin" d="M154 40h4v50h-4z"/>
+    <path class="il-dark il-ink" d="M124 40l-2-18h16l-2 18z"/>
+    <path class="il-dark il-ink" d="M118 22h24v-4h-24z"/>
+    <path class="il-smoke il-ink il-thin" d="M126 14c-3-4 1-8 4-5 3-3 7 1 4 5l-4 4z"/>
+    <rect class="il-dark il-ink" x="94" y="36" width="18" height="56" rx="3"/>
+    <path class="il-metal il-ink il-thin" d="M108 36h4v56h-4z"/>
+    <circle class="il-metal" cx="103" cy="41" r="1"/><circle class="il-metal" cx="103" cy="64" r="1"/><circle class="il-metal" cx="103" cy="87" r="1"/>
+    <ellipse class="il-dark il-ink" cx="95" cy="64" rx="6" ry="26"/>
+    <circle class="il-metal" cx="95" cy="43" r="1.1"/><circle class="il-metal" cx="95" cy="85" r="1.1"/>
+    <path class="il-light il-thin" d="M91 64h8"/><circle class="il-metal il-ink il-thin" cx="95" cy="64" r="2"/>
+    <rect class="il-dark il-ink il-thin" x="99" y="28" width="9" height="8" rx="1.5"/><path class="il-yellow il-ink il-thin" d="M96 29.5h3v5h-3z"/>
+    <path class="il-line il-thin" d="M120 50q6 4 12 0"/>
+    <path class="il-line il-thin" d="M140 50l12-4"/>
+    <path class="il-line" d="M122 57q5-4 10 0M142 57q5-4 10 0"/>
+    <path class="il-line" d="M126 72q12 8 24 0"/>
+    <ellipse class="il-pink" cx="121" cy="66" rx="3.4" ry="2.2" opacity="0.7"/><ellipse class="il-pink" cx="153" cy="66" rx="3.4" ry="2.2" opacity="0.7"/>
+    <path class="il-line il-thin" d="M146 30l3-3M150 34l4-1"/>
+    <rect class="il-red il-ink" x="92" y="90" width="68" height="7"/>
+    <rect class="il-dark il-ink il-thin" x="86" y="84" width="7" height="8" rx="1.5"/>
     <path class="il-blue il-ink" d="M6 120c0-20 14-30 36-30s36 10 36 30z"/>
     <path class="il-gold il-ink il-thin" d="M40 98h4v22h-4z"/>
     <circle class="il-gold" cx="32" cy="108" r="1.6"/><circle class="il-gold" cx="52" cy="108" r="1.6"/>
@@ -464,7 +482,7 @@ export const RW_ITEMS2: Readonly<Record<string, string>> = {
     <path class="il-blue il-ink" d="M20 36c0-14 44-14 44 0z"/>
     <path class="il-dark il-ink" d="M18 36h48l-4 6H22z"/>
     <circle class="il-gold il-ink il-thin" cx="42" cy="30" r="3"/>
-    <path class="il-pink il-ink il-thin" d="M140 16c-2-4 2-6 4-3 2-3 6-1 4 3l-4 4z"/>
+    <path class="il-pink il-ink il-thin" d="M146 12c-2-4 2-6 4-3 2-3 6-1 4 3l-4 4z"/>
     <rect class="il-white il-ink il-thin" x="70" y="104" width="22" height="12" rx="1" transform="rotate(-8 81 110)"/>
     <path class="il-line il-thin il-dash" d="M74 106c-1 3-1 6 1 8M88 104c1 3 1 6-1 8"/>`,
 
