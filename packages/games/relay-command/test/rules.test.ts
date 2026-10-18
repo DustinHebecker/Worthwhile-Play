@@ -805,30 +805,42 @@ describe('review of PR #8', () => {
     // A pool of mid-games (each costs up to five resolved turns), drawn afresh on every run like
     // the rest of the property, probed 120 times: the same number of checks as one game per run at
     // about half the cost (timing review, 2026-10-14). Stale reports are pinned down by a fixed
-    // engine test as well (observe.test.ts, review of PR #36).
-    const games = fc.sample(arbMidGame, 30);
+    // engine test as well (observe.test.ts, review of PR #36). Every probe is a relevant one: a
+    // unit the opponent has no live report of, moved to a free cell it does not observe (games
+    // without such a move are not drawn), so the number of checks never depends on the draw
+    // (it once fell to 29 of a required 31; orchestrator, 2026-10-18).
+    const probesOf = (s: RcState) => {
+      const intel = s.world.intel?.[OPPONENT] ?? [];
+      const hidden = own(s).filter((e) => e.kind !== 'command-post' && !intel.some((r) => r.id === e.id && r.live));
+      const observed = observedCells(s.world, RULESET, OPPONENT);
+      const { w, h } = s.world.map;
+      const probes: { unit: number; x: number; y: number }[] = [];
+      for (const unit of hidden) {
+        for (let y = 0; y < h; y++) {
+          for (let x = 0; x < w; x++) {
+            if (observed[y * w + x] === 1 || s.world.entities.some((e) => e.x === x && e.y === y)) continue;
+            if (validate(s.world, { side: PLAYER, unit: unit.id, order: { type: 'move', x, y } })) probes.push({ unit: unit.id, x, y });
+          }
+        }
+      }
+      return probes;
+    };
+    const games = fc.sample(arbMidGame.map((s) => ({ s, probes: probesOf(s) })).filter((g) => g.probes.length > 0), 30);
     let checked = 0;
     fc.assert(
-      fc.property(fc.nat(games.length - 1), fc.nat(1000), fc.nat(143), fc.constantFrom('hold', 'regroup', 'move'), (g, pick, cell, kind) => {
-        const s = games[g]!;
-        const intel = s.world.intel?.[OPPONENT] ?? [];
-        const hidden = own(s).filter((e) => e.kind !== 'command-post' && !intel.some((r) => r.id === e.id && r.live));
-        if (hidden.length === 0) return;
+      fc.property(fc.nat(games.length - 1), fc.nat(100_000), fc.constantFrom('hold', 'regroup', 'move'), (g, pick, kind) => {
+        const { s, probes } = games[g]!;
+        const probe = probes[pick % probes.length]!;
         const before = canonicalJson(ai(s.world, OPPONENT));
         const moved = structuredClone(s.world);
-        const unit = moved.entities.find((e) => e.id === hidden[pick % hidden.length]!.id)!;
-        const x = cell % 12;
-        const y = Math.floor(cell / 12);
-        const observed = observedCells(s.world, RULESET, OPPONENT);
-        const free = !moved.entities.some((e) => e.x === x && e.y === y) && validate(moved, { side: PLAYER, unit: unit.id, order: { type: 'move', x, y } });
-        if (!free || observed[y * 12 + x] === 1) return;
-        Object.assign(unit, { x, y, order: kind === 'move' ? { type: 'move', x: 0, y: 0 } : { type: kind } });
+        const unit = moved.entities.find((e) => e.id === probe.unit)!;
+        Object.assign(unit, { x: probe.x, y: probe.y, order: kind === 'move' ? { type: 'move', x: 0, y: 0 } : { type: kind } });
         checked++;
         expect(canonicalJson(ai(moved, OPPONENT))).toBe(before);
       }),
       { numRuns: 120 }
     );
-    expect(checked).toBeGreaterThan(30);
+    expect(checked).toBe(120);
   });
 
   it('rejects saves with more reports or ids than the scenario has entities (hostile saves)', () => {
