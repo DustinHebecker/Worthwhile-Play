@@ -836,7 +836,9 @@ describe('Relay Command view', () => {
     instance.restore(s);
     expect(state().world.entities.some((e) => e.id === id)).toBe(true); // a valid save
     click(`rc-unit-${id}`);
-    expect($('rc-card-stun').textContent).toBe('Hits stun: the target can neither move nor fire for 6 ticks.');
+    expect($('rc-card-stun').textContent).toBe('Hits stun: the target can neither move nor fire for one turn.');
+    // Rates per turn, not per tick (owner, 2026-10-18): 6 ticks a turn, the EMP Tower every 4: 1.5 shots.
+    expect($('rc-card-rate').textContent).toBe('1.5× per turn · pulse (lands a moment later on the target’s cell and its neighbours)');
     expect($('rc-legend-kinds').textContent).toContain('Laser Tower');
     expect(ctx.context.root.textContent).toContain('Defence tower (structure with battlements)');
     expect(ctx.context.root.textContent).toContain('Defence towers are placed by the Command Post');
