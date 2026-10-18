@@ -645,7 +645,7 @@ export function sideValue(world: World, side: number): number {
     if (e.side !== side) continue;
     const arch = archetypeOf(RULESET, e.kind);
     if (!arch) continue;
-    const weight = e.kind === COMMAND_POST ? COMMAND_POST_VALUE : arch.cost;
+    const weight = e.kind === COMMAND_POST ? COMMAND_POST_VALUE : process.env.HALFTOWER && e.kind.startsWith('tower-') ? arch.cost * Number(process.env.HALFTOWER) : arch.cost;
     total += Math.floor((weight * e.hp) / arch.hp);
     for (const q of e.queue ?? []) total += archetypeOf(RULESET, q.kind)?.cost ?? 0;
   }

@@ -395,6 +395,7 @@ function assaultPlan(obs: Observation, ruleset: Ruleset, difficulty: Difficulty)
     .reduce((sum, e) => sum + value(e), 0);
   // A neutral post is taken over, not stormed: the infantry goes as soon as the known guards allow.
   const besieging = all.some((f) => (archetypeOf(ruleset, f.kind)?.weapon?.minRange ?? 0) > 0 && (archetypeOf(ruleset, f.kind)?.weapon?.range ?? 0) > 3);
+  if (process.env.DBG && side === 1) console.log('PLAN', world.turn, 'all', all.length, 'orderable', orderable.length, 'rallied', rallied, 'past', past, 'gathered', gathered, 'ours', Math.round(ours), 'theirs', Math.round(theirs), 'knownTowers', enemiesOf(obs).filter((e) => e.kind.startsWith('tower')).length, 'obj', objective.x, objective.y, 'rally', rally.x, rally.y);
   // A tower wall around the post: with a gun in the force the siege goes ahead without the odds
   // (the guns outrange the towers and take them down first; the storm follows once the odds are there).
   const walled = !process.env.NOWALL && enemiesOf(obs).some((e) => archetypeOf(ruleset, e.kind)?.speed === 0 && archetypeOf(ruleset, e.kind)?.weapon && e.id !== objective.id && dist2(e.x, e.y, objective.x, objective.y) <= DEFENCE_RADIUS * DEFENCE_RADIUS);
@@ -618,7 +619,8 @@ function siege(obs: Observation, ruleset: Ruleset, plan: AssaultPlan, fighters: 
   if (guns.length === 0) return undefined;
   const live = !obs.ghosts.has(objective.id);
   const commands: Command[] = [];
-  const defenders = enemiesOf(obs).filter((e) => arch(e)?.weapon && arch(e)?.speed !== 0);
+  // Everything armed that defends, towers included: the spotter keeps out of a tower's reach too.
+  const defenders = enemiesOf(obs).filter((e) => arch(e)?.weapon && (arch(e)?.speed !== 0 || !process.env.OLDSPOT));
   // The spotter: the fighter that sees farthest (an Outrider sees the post from beyond its sight), then the cheapest.
   const spotters = fighters.filter((f) => !guns.includes(f)).sort((a, b) => (arch(b)?.vision ?? 0) - (arch(a)?.vision ?? 0) || (arch(a)?.cost ?? 0) - (arch(b)?.cost ?? 0) || frame(obs, a) - frame(obs, b));
   const spotter = spotters[0];
