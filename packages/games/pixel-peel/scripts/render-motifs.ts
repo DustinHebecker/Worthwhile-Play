@@ -13,6 +13,7 @@
  * to `.ts`, so the game's own `src/art/raster.ts`, `src/symbols.ts` and `src/motifs/` are used unchanged. The PNG
  * encoder uses only node:zlib.
  */
+import { spawnSync } from 'node:child_process';
 import { mkdirSync, watch, writeFileSync } from 'node:fs';
 import { register } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
@@ -262,7 +263,6 @@ if (watching) {
       clearTimeout(timer);
       timer = setTimeout(() => {
         // Node caches modules; a fresh process gives fresh motif data.
-        const { spawnSync } = process.getBuiltinModule('node:child_process') as typeof import('node:child_process');
         spawnSync(process.execPath, [fileURLToPath(import.meta.url), out, ...(only ? ['--only', only] : [])], { stdio: 'inherit' });
       }, 150);
     });
