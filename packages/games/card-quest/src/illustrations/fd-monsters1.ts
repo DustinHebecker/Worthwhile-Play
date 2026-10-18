@@ -725,7 +725,7 @@ export const FD_MONSTERS1: Readonly<Record<string, string>> = {
 
   // A beaming uncle with a comb-over, a moustache and stuffed cheeks carries a towering, leaning stack of filled food
   // boxes (one more balanced on his head) away from the party; the buffet table behind him is empty.
-  'fd.tupperware-uncle': `
+  'fd.food-box-uncle': `
     <rect class="il-paper" x="0" y="0" width="160" height="120"/>
     <path class="il-wood il-ink" d="M0 106h160v14H0z"/>
     <path class="il-line il-thin" d="M0 8q40 14 80 4t80 6"/>

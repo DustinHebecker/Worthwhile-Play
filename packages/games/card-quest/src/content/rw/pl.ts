@@ -56,7 +56,7 @@ export const pl: LocaleContent = {
   'rw.wrong-platform': { name: 'Nie Ten Peron', flavour: 'Peron 7 był dobry. Ty stoisz na peronie 7a. Takiego nie ma.' },
   'rw.hat-out-of-window': { name: 'Czapka za Oknem', flavour: 'Na chwilę wyglądasz przez okno. Czapka wygląda teraz gdzie indziej.' },
   'rw.coffee-in-the-curve': { name: 'Kawa na Zakręcie', flavour: 'Pociąg się przechyla. Kawa też. Na ciebie.' },
-  'rw.shoe-in-the-gap': { name: 'But w Szczelinie', flavour: 'Uwaga na odstęp między pociągiem a peronem. Za późno.' },
+  'rw.shoe-in-the-gap': { name: 'But w Szczelinie', flavour: 'Między pociągiem a peronem było jedno wolne miejsce. Zajął je twój but.' },
   'rw.suitcase-swap': { name: 'Zamienione Walizki', flavour: 'Twoja była czarna, na kółkach. Ta też. Należy do iluzjonisty.' },
   'rw.seat-crack': { name: 'Wpadło za Siedzenie', flavour: 'Leży tam teraz. Obok trzech długopisów i herbatnika z 1998 roku.' },
   'rw.luggage-elsewhere': { name: 'Bagaż Pojechał Gdzie Indziej', flavour: 'Twój najlepszy przedmiot jedzie teraz na północ. Sam.' },

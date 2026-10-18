@@ -56,7 +56,7 @@ export const ko: LocaleContent = {
   'rw.wrong-platform': { name: '승강장 착각', flavour: '7번 승강장이 맞았어. 넌 7a번에 서 있어. 그런 건 없어.' },
   'rw.hat-out-of-window': { name: '창밖으로 모자', flavour: '잠깐 고개를 내밀었을 뿐. 이제 모자는 다른 데서 경치 구경 중.' },
   'rw.coffee-in-the-curve': { name: '커브에서 커피', flavour: '기차가 기울어. 커피도 기울어. 너한테로.' },
-  'rw.shoe-in-the-gap': { name: '틈새에 신발', flavour: '“열차와 승강장 사이가 넓으니 발밑을 조심하세요.” 이미 늦었어.' },
+  'rw.shoe-in-the-gap': { name: '틈새에 신발', flavour: '열차와 승강장 사이에 빈자리가 딱 하나 있었어. 네 신발이 차지했지.' },
   'rw.suitcase-swap': { name: '바뀐 여행 가방', flavour: '네 건 검은색에 바퀴 달린 거였지. 이것도 그래. 주인은 마술사.' },
   'rw.seat-crack': { name: '좌석 틈새로 쏙', flavour: '거기 있어. 볼펜 세 자루랑 1998년 비스킷 옆에.' },
   'rw.luggage-elsewhere': { name: '짐만 딴 데로', flavour: '네 최고의 물건은 이제 북쪽으로 여행 중. 혼자서.' },

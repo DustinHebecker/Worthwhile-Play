@@ -13,7 +13,7 @@ export const de: Catalogue = {
   'world.kz': 'Kampfzwerge – Zwerge gegen Gartenzwerge',
   'world.sl': 'Spaceloot – Crew gegen Aliens',
   'world.of': 'Bürochaos – Büro gegen Homeoffice',
-  'world.fd': 'Kühlschrank-Expedition – Frisch gegen Abgelaufen',
+  'world.fd': 'Kühlschrank-Expedition – Frisch gegen Reste',
   'world.rw': 'Einsteigen, bitte! – Fahrgäste gegen Bahnpersonal',
   'setup.worlds.hint': 'Mehrere Welten werden zusammengemischt. Keine gewählt: Kampfzwerge.',
   'setup.opponents': 'Computergegner',

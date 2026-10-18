@@ -56,7 +56,7 @@ export const nl: LocaleContent = {
   'rw.wrong-platform': { name: 'Verkeerd Perron', flavour: 'Spoor 7 was goed. Jij staat op spoor 7z. Dat bestaat niet.' },
   'rw.hat-out-of-window': { name: 'Hoed uit het Raam', flavour: 'Even naar buiten gekeken. De hoed kijkt nu ergens anders rond.' },
   'rw.coffee-in-the-curve': { name: 'Koffie in de Bocht', flavour: 'De trein helt over. De koffie ook. Over jou.' },
-  'rw.shoe-in-the-gap': { name: 'Schoen in de Spleet', flavour: 'Let op de ruimte tussen trein en perron. Te laat.' },
+  'rw.shoe-in-the-gap': { name: 'Schoen in de Spleet', flavour: 'Tussen trein en perron was precies één plekje vrij. Je schoen nam het.' },
   'rw.suitcase-swap': { name: 'Koffer Verwisseld', flavour: 'De jouwe was zwart met wieltjes. Deze ook. Hij is van een goochelaar.' },
   'rw.seat-crack': { name: 'In de Stoelnaad Gevallen', flavour: 'Daar ligt het. Naast drie pennen en een koekje uit 1998.' },
   'rw.luggage-elsewhere': { name: 'Bagage Gaat Zijn Eigen Weg', flavour: 'Je beste spul reist nu naar het noorden. In z’n eentje.' },

@@ -55,7 +55,7 @@ export const en: LocaleContent = {
   'rw.wrong-platform': { name: 'Wrong Platform', flavour: 'Platform 7 was right. You’re on platform 7a. It doesn’t exist.' },
   'rw.hat-out-of-window': { name: 'Hat Out of the Window', flavour: 'Leaned out for a second. The hat now leans out somewhere else.' },
   'rw.coffee-in-the-curve': { name: 'Coffee on the Bend', flavour: 'The train tilts. So does the coffee. Onto you.' },
-  'rw.shoe-in-the-gap': { name: 'Shoe in the Gap', flavour: 'Please mind the gap between the train and the platform. Too late.' },
+  'rw.shoe-in-the-gap': { name: 'Shoe in the Gap', flavour: 'There was exactly one free spot between train and platform. Your shoe took it.' },
   'rw.suitcase-swap': { name: 'Swapped Suitcases', flavour: 'Yours was black with wheels. So is this one. It belongs to a magician.' },
   'rw.seat-crack': { name: 'Down the Back of the Seat', flavour: 'There it lies. Next to three pens and a biscuit from 1998.' },
   'rw.luggage-elsewhere': { name: 'Luggage Gone the Other Way', flavour: 'Your best item now travels north. Alone.' },

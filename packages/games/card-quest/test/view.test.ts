@@ -571,6 +571,8 @@ describe('view', () => {
         [{ 'world-sl': true }, ['sl']],
         [{ 'world-kz': true, 'world-of': true }, ['kz', 'of']],
         [{ 'world-kz': true, 'world-sl': true, 'world-of': true }, ['kz', 'sl', 'of']],
+        [{ 'world-fd': true, 'world-rw': true }, ['fd', 'rw']],
+        [{ 'world-kz': true, 'world-sl': true, 'world-of': true, 'world-fd': true, 'world-rw': true }, ['kz', 'sl', 'of', 'fd', 'rw']],
         [{ 'world-kz': false, 'world-sl': false, 'world-of': false }, ['kz']],
         [{ 'world-sl': 'yes', 'world-xx': true }, ['kz']]
       ] as const) {
@@ -580,7 +582,7 @@ describe('view', () => {
         expect(isValidState(s)).toBe(true);
         for (const card of s.players.flatMap((p) => p.hand)) expect(worlds.some((w) => card.startsWith(`${w}.`)), card).toBe(true);
         // The settings of the game read back as the same toggles.
-        expect(game.settingsOf!(s)).toMatchObject({ 'world-kz': worlds.includes('kz' as never), 'world-sl': worlds.includes('sl' as never), 'world-of': worlds.includes('of' as never) });
+        expect(game.settingsOf!(s)).toMatchObject(Object.fromEntries(['kz', 'sl', 'of', 'fd', 'rw'].map((w) => [`world-${w}`, (worlds as readonly string[]).includes(w)])));
       }
       instance.dispose();
     });

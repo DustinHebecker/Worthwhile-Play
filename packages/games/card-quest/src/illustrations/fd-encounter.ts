@@ -665,7 +665,7 @@ export const FD_ENCOUNTER: Readonly<Record<string, string>> = {
     <path class="il-line il-thin" d="M64 30l-4 4M80 24l-2 4M120 22l2 4M140 30l-4 2M142 56l-4 2"/>`,
 
   // Fridge jigsaw: tubs, boxes, a carton and a squashed lettuce are packed edge to edge without a gap; your small stuff (keys, a die, a toy duck) has been squeezed out and tumbles onto the drawer.
-  'fd.fridge-tetris': `
+  'fd.fridge-jigsaw': `
     <rect class="il-white" x="0" y="0" width="160" height="120"/>
     <rect class="il-water" x="0" y="0" width="160" height="120" opacity="0.3"/>
     <path class="il-metal" opacity="0.7" d="M0 0h10l4 120H0z"/><path class="il-metal" opacity="0.7" d="M160 0h-10l-4 120h14z"/>

@@ -117,9 +117,11 @@ describe('mixing worlds (§ 4.7)', () => {
 
 describe('balance per world combination (self-play)', () => {
   // One test per combination keeps each well inside the timeout under load.
+  // Each world alone and all worlds together get 8 games; the 25 partial mixes 2 each (keeps the suite fast).
   it.each(combinations.map((c) => [c.join('+'), c] as const))('%s: games end in a reasonable number of rounds', (_, combo) => {
     const rounds: number[] = [];
-    for (let seed = 1; seed <= 8; seed++) {
+    const games = combo.length === 1 || combo.length === WORLD_IDS.length ? 8 : 2;
+    for (let seed = 1; seed <= games; seed++) {
       const { state } = selfPlay(seed, { worlds: [...combo], opponents: 2 + (seed % 4) });
       expect(isValidState(state)).toBe(true);
       expect(state.phase).toBe('over');

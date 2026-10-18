@@ -56,7 +56,7 @@ export const tr: LocaleContent = {
   'rw.wrong-platform': { name: 'Yanlış Peron', flavour: '7. peron doğruydu. Sen 7a’dasın. Öyle bir peron yok.' },
   'rw.hat-out-of-window': { name: 'Camdan Uçan Şapka', flavour: 'Bir anlığına dışarı baktın. Şapka şimdi başka bir yerden dışarı bakıyor.' },
   'rw.coffee-in-the-curve': { name: 'Virajda Çay', flavour: 'Tren yana yatıyor. Çay da. Senin üstüne.' },
-  'rw.shoe-in-the-gap': { name: 'Boşluğa Düşen Ayakkabı', flavour: 'Lütfen tren ile peron arasındaki boşluğa dikkat edin. Geç kaldın.' },
+  'rw.shoe-in-the-gap': { name: 'Boşluğa Düşen Ayakkabı', flavour: 'Trenle peron arasında tek bir boş yer vardı. Ayakkabın kaptı.' },
   'rw.suitcase-swap': { name: 'Bavullar Karıştı', flavour: 'Seninki siyah ve tekerlekliydi. Bu da öyle. Ama bir sihirbazın.' },
   'rw.seat-crack': { name: 'Koltuk Aralığına Düştü', flavour: 'İşte orada. Üç tükenmez kalemle 1998’den kalma bir bisküvinin yanında.' },
   'rw.luggage-elsewhere': { name: 'Bagaj Başka Yöne Gitti', flavour: 'En iyi eşyan artık kuzeye gidiyor. Yapayalnız.' },
