@@ -409,6 +409,8 @@ describe('Relay Command view', () => {
     // The full effect table sits behind "More".
     expect($('rc-card-vs').closest('details')).toBe($('rc-card-more'));
     expect($('rc-card-vs').querySelectorAll('th[scope="row"]')).toHaveLength(5);
+    // The rate of fire per turn, not per tick (owner, 2026-10-18): a Rifle Squad fires every tick, 6 ticks a turn.
+    expect($('rc-card-rate').textContent).toBe('6× per turn · direct fire');
     expect([...$('rc-card-vs').querySelectorAll('tr')].map((tr) => tr.textContent)).toEqual(['infantry100 %', 'light vehicle60 %', 'heavy armour20 %', 'structure30 %', 'air40 %']);
     // Segments on the roster scale: damage 6 of the roster's 25 fills 2 of 5; full health fills all 5.
     expect($('rc-card-damage').querySelectorAll('.rc-seg i.on')).toHaveLength(2);
