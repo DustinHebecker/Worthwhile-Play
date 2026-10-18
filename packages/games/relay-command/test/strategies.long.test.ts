@@ -169,9 +169,10 @@ describe('strategy tournament (owner decision 2026-10-17)', () => {
    * before muzzle flash and sieges): economist 82 %, sieger 59 %, turtler 41 %, stormer 18 %.
    * Head to head over both lengths: the economist beats everything but the sieger (19-13), the sieger
    * beats the stormer and, at 24 turns, the turtler; the turtler beats the stormer; the stormer, with no
-   * income but the post's, beats nobody.
+   * income but the post's, beats nobody. Since the opponent keeps out of known tower walls (2026-10-18):
+   * economist 81 %, sieger 66 %, turtler 33 %, stormer 20 %.
    */
-  const BOUND: Record<Strategy, number> = { economist: 0.85, sieger: 0.65, turtler: 0.5, stormer: 0.25 };
+  const BOUND: Record<Strategy, number> = { economist: 0.85, sieger: 0.7, turtler: 0.4, stormer: 0.25 };
 
   it('every strategy wins some and loses some; none above its recorded bound (the aim: two thirds at most)', () => {
     const table = tournament(MAPS, [24, 48], 4);

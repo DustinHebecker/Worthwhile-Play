@@ -71,15 +71,11 @@ function updatedReports(
   previous: readonly Report[],
   gone: readonly Entity[],
   knownLoss: (e: Entity) => boolean = () => false,
-  revealed: ReadonlySet<number> = new Set(),
-  exposed: ReadonlySet<number> = new Set()
+  revealed: ReadonlySet<number> = new Set()
 ): Report[] {
   const seen = (x: number, y: number): boolean => observed[cellOf(world.map, x, y)] === 1;
   const next = new Map<number, Report>();
   for (const e of world.entities) if (seen(e.x, e.y) || revealed.has(e.id)) next.set(e.id, reportOf(e, world.tick));
-  // A structure that fired at the side's units gives its place away for good (it cannot move):
-  // known like the enemy's fixed installations at the start, not observed.
-  for (const e of world.entities) if (exposed.has(e.id) && !next.has(e.id)) next.set(e.id, { ...reportOf(e, world.tick), live: false });
   const goneAt = new Map(gone.map((e) => [e.id, e]));
   const alive = new Set(world.entities.map((e) => e.id));
   for (const r of previous) {
@@ -163,9 +159,7 @@ export function updateIntel(world: World, ruleset: Ruleset, gone: readonly Entit
     const knownLoss = (e: Entity): boolean => e.side === side && (archetypeOf(ruleset, e.kind)?.comms?.role === 'source' || events?.some((ev, i) => i >= from && ev.t === 'sold' && ev.id === e.id) === true);
     const previous = world.intel?.[side] ?? [];
     const seenCell = (x: number, y: number): boolean => observed[cellOf(world.map, x, y)] === 1;
-    const flashes = muzzleFlashes(world, ruleset, side, gone, events, from, network);
-    const exposed = new Set([...flashes].filter((id) => archetypeOf(ruleset, world.entities.find((e) => e.id === id)?.kind ?? '')?.speed === 0));
-    const reports = updatedReports(world, side, observed, previous, gone, knownLoss, revealedEmitters(world, ruleset, side, network), process.env.NOEXP ? new Set() : exposed);
+    const reports = updatedReports(world, side, observed, previous, gone, knownLoss, revealedEmitters(world, ruleset, side, network));
     intel.push(reports);
     const list = reported?.[side];
     if (!events || !list) continue;
@@ -211,7 +205,7 @@ export function updateIntel(world: World, ruleset: Ruleset, gone: readonly Entit
       if ((eventVisible(ev, live, seen, side, own) && shotKnown(ev)) || knownAnyway) list.push(ev.t === 'sold' && ev.side !== side ? { t: 'sold', tick: ev.tick, id: ev.id, side: ev.side, kind: ev.kind, x: ev.x, y: ev.y } : ev);
     }
     // Muzzle flash: shooters the side does not observe that fired at its units this tick (once each).
-    for (const id of flashes) {
+    for (const id of muzzleFlashes(world, ruleset, side, gone, events, from, network)) {
       const shooter = world.entities.find((e) => e.id === id);
       if (shooter && !live.has(id)) list.push({ t: 'flash', tick: world.tick, id, side: shooter.side, kind: shooter.kind, x: shooter.x, y: shooter.y });
     }
