@@ -8,7 +8,7 @@ export const uk: Catalogue = {
   'setting.motif': 'Картинка',
   'setting.motifHint': 'Пори року, краєвиди, тварини й побутові сцени. «Будь-яка картинка» щоразу вибирає випадкову.',
   'motif.any': 'Будь-яка картинка (випадкова)',
-  'motif.label': '{title} · кольорів: {min}–{max}',
+  'title.colours': '{title} · кольорів: {n}',
   'difficulty.easy': 'Легко (маленька картинка)',
   'difficulty.medium': 'Середньо',
   'difficulty.hard': 'Складно (велика картинка, 4 місця очікування)',

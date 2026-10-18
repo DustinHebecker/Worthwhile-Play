@@ -115,7 +115,7 @@ export const kitchenWindow: Motif = {
     { shape: { rect: [44, 63, 7, 1.6] }, fill: 'q', min: 40 },
     { shape: { rect: [55, 64, 7, 7], round: 1.5 }, fill: 'w', shade: { dark: 'g', dir: 'w', mode: 'band', amount: 0.3 } },
     { shape: { line: [[62, 66], [64, 67], [62, 69]], width: 1 }, fill: 'w' },
-    { shape: { ellipse: [84, 69, 15, 3] }, fill: 'o', shade: { dark: 'n', dir: 'n', mode: 'band', amount: 0.3 } },
+    { shape: { ellipse: [84, 69, 15, 3.8] }, fill: 'o', shade: { dark: 'n', dir: 'n', mode: 'band', amount: 0.2 } },
     { shape: { ellipse: [83, 62.6, 13, 6.4] }, fill: 'h', shade: { dark: 'b', dir: 'nw' } },
     { shape: { line: [[76, 61], [79, 59]], width: 1 }, fill: 'n' },
     { shape: { line: [[82, 61], [85, 59]], width: 1 }, fill: 'n' },

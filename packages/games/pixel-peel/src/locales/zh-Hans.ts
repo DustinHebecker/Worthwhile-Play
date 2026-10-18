@@ -8,7 +8,7 @@ export const zhHans: Catalogue = {
   'setting.motif': '图画',
   'setting.motifHint': '四季、风景、动物和日常场景。“任意图画”每次随机抽取一幅。',
   'motif.any': '任意图画（随机）',
-  'motif.label': '{title} · {min}–{max} 种颜色',
+  'title.colours': '{title} · {n} 种颜色',
   'difficulty.easy': '简单（小图）',
   'difficulty.medium': '中等',
   'difficulty.hard': '困难（大图，4 个等待位）',

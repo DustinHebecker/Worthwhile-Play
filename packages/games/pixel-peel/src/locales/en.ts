@@ -7,7 +7,7 @@ export const en = {
   'setting.motif': 'Picture',
   'setting.motifHint': 'Seasons, landscapes, animals and everyday scenes. “Any picture” draws one at random each time.',
   'motif.any': 'Any picture (random)',
-  'motif.label': '{title} · {min}–{max} colours',
+  'title.colours': '{title} · {n} colours',
   'difficulty.easy': 'Easy (small picture)',
   'difficulty.medium': 'Medium',
   'difficulty.hard': 'Hard (big picture, 4 waiting places)',

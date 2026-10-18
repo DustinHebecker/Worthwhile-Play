@@ -1,7 +1,10 @@
 import { createRng, normalizeSeed, type Rng } from '@wp/game-core';
-import { rasterise, type Tier } from './art/raster';
+import { decodeRows } from './art/bake';
+import { heightOf, rasterise, type Tier } from './art/raster';
+import { ART_DIFFICULTIES, widthFor } from './art/sizes';
 import type { Motif } from './art/types';
 import { engineOf, exposedCounts, fullCells, hitsOf, launch, replayCursor, tableOf, type Cells, type Engine } from './engine';
+import { BAKED } from './motifs/baked';
 import { MOTIFS, findMotif } from './motifs/index';
 import { POLICIES, runPolicy, type Budget, type PolicyId } from './policies';
 import { toDifficulty, type Difficulty, type Move, type PeelState, type Picture, type Shooter } from './rules';
@@ -14,7 +17,7 @@ import { toDifficulty, type Difficulty, type Move, type PeelState, type Picture,
  */
 
 export interface Level {
-  width: 32 | 40 | 48;
+  /** Palette tier (the width comes from the motif, `widthFor`). */
   tier: Tier;
   lanes: number;
   slots: number;
@@ -28,18 +31,41 @@ export interface Level {
   candidates: number;
   /** Counted launches for construction and verification together. */
   budget: number;
+  /**
+   * Dealing penalty for a shooter behind one of the same colour in its lane (owner feedback 2026-10-18: colour runs
+   * in a lane make the game easy). Three in a row and a lane far longer than the shortest cost far more.
+   */
+  sameColour: number;
 }
 
 export const LEVELS: Readonly<Record<Difficulty, Level>> = {
-  easy: { width: 32, tier: 1, lanes: 4, slots: 5, pack: [10, 40], decoy: 0.06, decoyPack: [8, 30], minShots: 4, candidates: 3, budget: 6000 },
-  medium: { width: 40, tier: 2, lanes: 4, slots: 5, pack: [10, 60], decoy: 0.16, decoyPack: [10, 40], minShots: 4, candidates: 5, budget: 9000 },
-  hard: { width: 48, tier: 3, lanes: 4, slots: 4, pack: [12, 90], decoy: 0.3, decoyPack: [24, 90], minShots: 4, candidates: 4, budget: 10000 }
+  easy: { tier: 1, lanes: 4, slots: 5, pack: [10, 40], decoy: 0.06, decoyPack: [8, 30], minShots: 4, candidates: 3, budget: 6000, sameColour: 10 },
+  medium: { tier: 2, lanes: 4, slots: 5, pack: [10, 60], decoy: 0.16, decoyPack: [10, 40], minShots: 4, candidates: 5, budget: 9000, sameColour: 40 },
+  hard: { tier: 3, lanes: 4, slots: 4, pack: [12, 90], decoy: 0.3, decoyPack: [24, 90], minShots: 4, candidates: 4, budget: 10000, sameColour: 100 }
 };
 
-/** The played picture of a motif at a level (a fresh copy; the rasteriser memoises its own). */
-export function pictureFor(motif: Motif, level: Pick<Level, 'width' | 'tier'>): Picture {
-  const p = rasterise(motif, level.width, level.tier);
-  return { w: p.w, h: p.h, rows: [...p.rows], palette: p.palette.map((e) => ({ ...e })), backdrop: p.backdrop };
+const decoded = new Map<string, string[]>();
+
+/**
+ * The played picture of a motif at a difficulty (a fresh copy): the baked picture when it is there and fits, else
+ * the rasteriser (memoised).
+ */
+export function pictureFor(motif: Motif, difficulty: Difficulty): Picture {
+  const w = widthFor(motif, difficulty);
+  const h = heightOf(motif, w);
+  const key = `${motif.id}|${difficulty}`;
+  let rows = decoded.get(key);
+  if (!rows) {
+    const data = BAKED[motif.id]?.[ART_DIFFICULTIES.indexOf(difficulty)];
+    const baked = data ? decodeRows(data) : undefined;
+    rows = baked && baked.length === h && baked.every((r) => r.length === w) ? baked : rasterise(motif, w, LEVELS[difficulty].tier).rows;
+    decoded.set(key, rows);
+  }
+  const used = new Set(rows.join(''));
+  const palette = Object.entries(motif.palette)
+    .filter(([k]) => used.has(k))
+    .map(([k, spec]) => ({ key: k, hex: spec[0], name: spec[1] as string }));
+  return { w, h, rows: [...rows], palette, backdrop: motif.backdrop };
 }
 
 interface Draw {
@@ -165,18 +191,35 @@ export function construct(engine: Engine, level: Level, rng: Rng): Construction 
     draws.push({ c: chosen.c, n });
     events.push({ kind: 'L', draw: draws.length - 1 });
   }
-  // Deal the draws into lanes in draw order (a random lane at most 2 longer than the shortest).
-  const lanes: Shooter[][] = Array.from({ length: level.lanes }, () => []);
+  // Deal the draws into lanes in draw order. Any lane keeps the witness valid (a lane is launched in draw order), so
+  // the lane is chosen to interleave colours: not behind the same colour (never three in a row), not beside the
+  // same colour at the same depth in a neighbouring lane, and keeping the lanes about equally long.
+  const lanes: number[][] = Array.from({ length: level.lanes }, () => []);
   const laneOf: number[] = [];
   for (const d of draws) {
     const shortest = Math.min(...lanes.map((l) => l.length));
-    const allowed = lanes.map((l, i) => (l.length + 1 <= shortest + 2 ? i : -1)).filter((i) => i >= 0);
-    const lane = rng.pick(allowed);
-    (lanes[lane] as Shooter[]).push({ c: engine.keys[d.c - 1] as string, n: d.n });
+    let best = Infinity;
+    let pool: number[] = [];
+    lanes.forEach((lane, i) => {
+      if (lane.length > shortest + 3) return;
+      const depth = lane.length;
+      let score = (lane.length - shortest) * 4;
+      if (lane[depth - 1] === d.c) score += level.sameColour * (lane[depth - 2] === d.c ? 20 : 1);
+      if (lanes[i - 1]?.[depth] === d.c) score += 3;
+      if (lanes[i + 1]?.[depth] === d.c) score += 3;
+      if (score < best) {
+        best = score;
+        pool = [i];
+      } else if (score === best) pool.push(i);
+    });
+    const lane = rng.pick(pool);
+    (lanes[lane] as number[]).push(d.c);
     laneOf.push(lane);
   }
+  const shooters: Shooter[][] = lanes.map(() => []);
+  draws.forEach((d, k) => (shooters[laneOf[k] as number] as Shooter[]).push({ c: engine.keys[d.c - 1] as string, n: d.n }));
   const witness = events.map((e) => (e.kind === 'L' ? `L${laneOf[e.draw]}` : `S${e.slot}`));
-  return { lanes, witness, decoys, launches };
+  return { lanes: shooters, witness, decoys, launches };
 }
 
 export type Verdict = Partial<Record<PolicyId, 'solved' | 'stuck' | 'unknown'>>;
@@ -236,7 +279,7 @@ export interface Generated {
 /** Generates one game for a motif and difficulty (design v2 § 3.4). */
 export function generate(motif: Motif, difficulty: Difficulty, rng: Rng, seed = 0): Generated {
   const level = LEVELS[difficulty];
-  const picture = pictureFor(motif, level);
+  const picture = pictureFor(motif, difficulty);
   const engine = engineOf(picture);
   const budget: Budget = { left: level.budget };
   let best: (Generated & { score: number }) | undefined;
@@ -272,6 +315,8 @@ export function createInitial(seed: number, difficulty: unknown = 'easy', choice
   const rng = createRng(s);
   const motif = c === 'any' ? (MOTIFS[rng.int(0, MOTIFS.length - 1)] as Motif) : (findMotif(c) as Motif);
   const g = generate(motif, d, rng, s);
+  // Solvable by construction; checked once more, so a generator bug can never ship an unsolvable game.
+  if (!witnessSolves(g.picture, g.lanes, g.slots, g.witness)) throw new Error(`pixel-peel: the witness of ${motif.id}/${d}/${s} does not solve`);
   return {
     seed: s,
     difficulty: d,

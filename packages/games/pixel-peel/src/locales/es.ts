@@ -8,7 +8,7 @@ export const es: Catalogue = {
   'setting.motif': 'Imagen',
   'setting.motifHint': 'Estaciones, paisajes, animales y escenas cotidianas. «Cualquier imagen» elige una al azar cada vez.',
   'motif.any': 'Cualquier imagen (al azar)',
-  'motif.label': '{title} · {min}–{max} colores',
+  'title.colours': '{title} · {n} colores',
   'difficulty.easy': 'Fácil (imagen pequeña)',
   'difficulty.medium': 'Medio',
   'difficulty.hard': 'Difícil (imagen grande, 4 lugares de espera)',

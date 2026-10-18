@@ -8,7 +8,7 @@ export const ru: Catalogue = {
   'setting.motif': 'Картинка',
   'setting.motifHint': 'Времена года, пейзажи, животные и бытовые сцены. «Любая картинка» каждый раз выбирает случайную.',
   'motif.any': 'Любая картинка (случайная)',
-  'motif.label': '{title} · цветов: {min}–{max}',
+  'title.colours': '{title} · цветов: {n}',
   'difficulty.easy': 'Легко (маленькая картинка)',
   'difficulty.medium': 'Средне',
   'difficulty.hard': 'Сложно (большая картинка, 4 места ожидания)',

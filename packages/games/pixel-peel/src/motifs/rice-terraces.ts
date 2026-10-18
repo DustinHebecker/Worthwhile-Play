@@ -1,6 +1,6 @@
 import type { Motif } from '../art/types';
 
-/** Rice terraces curving down a hillside, flooded fields mirroring the sky, misty mountains, a thatched hut and a white egret. Original vector art drawn for Worthwhile Play. */
+/** Rice terraces stepping down a hillside in curved bands, rice in three greens and flooded paddies reflecting the sky, a thatched farmhouse and misty mountains behind. Original vector art drawn for Worthwhile Play. */
 export const riceTerraces: Motif = {
   id: 'rice-terraces',
   group: 'landscape',
@@ -60,50 +60,49 @@ export const riceTerraces: Motif = {
     y: ['#f0c419', 'gold', 3, 'h']
   },
   layers: [
-    // Pale sky and layered misty mountains.
-    { shape: { all: true }, fill: { gradient: ['l', 'w'], from: [0, 0], to: [0, 30], soft: 0.85 } },
-    { shape: { poly: [[0, 22], [10, 12], [18, 16], [30, 6], [42, 15], [52, 10], [64, 18], [76, 8], [88, 14], [100, 10], [100, 34], [0, 34]], smooth: 1 }, fill: 'v', shade: { light: 'w', dir: 'nw' } },
-    { shape: { ellipse: [30, 24, 26, 2.6] }, fill: 'w' },
-    { shape: { ellipse: [78, 22, 22, 2.2] }, fill: 'w' },
-    { shape: { poly: [[0, 30], [14, 22], [26, 27], [40, 19], [54, 26], [70, 20], [86, 27], [100, 22], [100, 40], [0, 40]], smooth: 1 }, fill: 'g', shade: { light: 'v', dir: 'nw' } },
-    { shape: { ellipse: [50, 31, 40, 2.4] }, fill: 'w' },
-    { shape: { poly: [[-4, 31], [10, 27], [24, 31], [36, 38], [36, 44], [-4, 44]], smooth: 1 }, fill: 'd', shade: { light: 'k', dir: 'n', mode: 'band', amount: 0.25 } },
-    { shape: { poly: [[104, 30], [90, 27], [76, 31], [62, 38], [62, 44], [104, 44]], smooth: 1 }, fill: 'd', shade: { light: 'k', dir: 'n', mode: 'band', amount: 0.25 } },
-    { shape: { rect: [0, 40, 100, 35] }, fill: 'e' },
-    // Terraces: curved bands wrapping round the hill, some flooded and mirroring the sky.
-    { name: 'f0', shape: { poly: [[-6.0, 39.9], [3.3, 38.5], [12.7, 37.3], [22.0, 36.4], [31.3, 35.9], [40.7, 35.5], [50.0, 35.5], [59.3, 35.8], [68.7, 36.3], [78.0, 37.2], [87.3, 38.3], [96.7, 39.7], [106.0, 41.4], [106.0, 48.5], [96.7, 46.6], [87.3, 45.0], [78.0, 43.7], [68.7, 42.7], [59.3, 42.0], [50.0, 41.5], [40.7, 41.4], [31.3, 41.5], [22.0, 41.9], [12.7, 42.6], [3.3, 43.5], [-6.0, 44.8]] }, fill: 'm' },
-    { shape: { all: true }, fill: { stripes: ['m', 'm', 'e'], width: 2.2, angle: 0 }, clip: 'f0', min: 40 },
-    { shape: { line: [[-6.0, 44.8], [3.3, 43.5], [12.7, 42.6], [22.0, 41.9], [31.3, 41.5], [40.7, 41.4], [50.0, 41.5], [59.3, 42.0], [68.7, 42.7], [78.0, 43.7], [87.3, 45.0], [96.7, 46.6], [106.0, 48.5]], width: 1.8 }, fill: 'k' },
-    { name: 'w1', shape: { poly: [[-6.0, 44.8], [3.3, 43.5], [12.7, 42.6], [22.0, 41.9], [31.3, 41.5], [40.7, 41.4], [50.0, 41.5], [59.3, 42.0], [68.7, 42.7], [78.0, 43.7], [87.3, 45.0], [96.7, 46.6], [106.0, 48.5], [106.0, 53.4], [96.7, 51.7], [87.3, 50.3], [78.0, 49.2], [68.7, 48.3], [59.3, 47.8], [50.0, 47.5], [40.7, 47.5], [31.3, 47.9], [22.0, 48.4], [12.7, 49.3], [3.3, 50.5], [-6.0, 51.9]] }, fill: { gradient: ['s', 't'], from: [0, 42], to: [0, 53], soft: 0.7 } },
-    { shape: { line: [[3.3, 46.1], [12.7, 45.2], [22.0, 44.5], [31.3, 44.1]], width: 1 }, fill: 'w', clip: 'w1', min: 40 },
-    { shape: { line: [[68.7, 45.3], [78.0, 46.3], [87.3, 47.6]], width: 1 }, fill: 'l', clip: 'w1', min: 48 },
-    { shape: { line: [[-6.0, 51.9], [3.3, 50.5], [12.7, 49.3], [22.0, 48.4], [31.3, 47.9], [40.7, 47.5], [50.0, 47.5], [59.3, 47.8], [68.7, 48.3], [78.0, 49.2], [87.3, 50.3], [96.7, 51.7], [106.0, 53.4]], width: 1.8 }, fill: 'k' },
-    { name: 'f2', shape: { poly: [[-6.0, 51.9], [3.3, 50.5], [12.7, 49.3], [22.0, 48.4], [31.3, 47.9], [40.7, 47.5], [50.0, 47.5], [59.3, 47.8], [68.7, 48.3], [78.0, 49.2], [87.3, 50.3], [96.7, 51.7], [106.0, 53.4], [106.0, 60.5], [96.7, 58.6], [87.3, 57.0], [78.0, 55.7], [68.7, 54.7], [59.3, 54.0], [50.0, 53.5], [40.7, 53.4], [31.3, 53.5], [22.0, 53.9], [12.7, 54.6], [3.3, 55.5], [-6.0, 56.8]] }, fill: 'a' },
-    { shape: { all: true }, fill: { stripes: ['a', 'a', 'm'], width: 2.2, angle: 0 }, clip: 'f2', min: 40 },
-    { shape: { line: [[-6.0, 56.8], [3.3, 55.5], [12.7, 54.6], [22.0, 53.9], [31.3, 53.5], [40.7, 53.4], [50.0, 53.5], [59.3, 54.0], [68.7, 54.7], [78.0, 55.7], [87.3, 57.0], [96.7, 58.6], [106.0, 60.5]], width: 1.8 }, fill: 'k' },
-    { name: 'f3', shape: { poly: [[-6.0, 56.8], [3.3, 55.5], [12.7, 54.6], [22.0, 53.9], [31.3, 53.5], [40.7, 53.4], [50.0, 53.5], [59.3, 54.0], [68.7, 54.7], [78.0, 55.7], [87.3, 57.0], [96.7, 58.6], [106.0, 60.5], [106.0, 65.4], [96.7, 63.7], [87.3, 62.3], [78.0, 61.2], [68.7, 60.3], [59.3, 59.8], [50.0, 59.5], [40.7, 59.5], [31.3, 59.9], [22.0, 60.4], [12.7, 61.3], [3.3, 62.5], [-6.0, 63.9]] }, fill: 'e' },
-    { shape: { all: true }, fill: { stripes: ['e', 'e', 'k'], width: 2.2, angle: 0 }, clip: 'f3', min: 40 },
-    { shape: { line: [[-6.0, 63.9], [3.3, 62.5], [12.7, 61.3], [22.0, 60.4], [31.3, 59.9], [40.7, 59.5], [50.0, 59.5], [59.3, 59.8], [68.7, 60.3], [78.0, 61.2], [87.3, 62.3], [96.7, 63.7], [106.0, 65.4]], width: 1.8 }, fill: 'k' },
-    { name: 'w4', shape: { poly: [[-6.0, 63.9], [3.3, 62.5], [12.7, 61.3], [22.0, 60.4], [31.3, 59.9], [40.7, 59.5], [50.0, 59.5], [59.3, 59.8], [68.7, 60.3], [78.0, 61.2], [87.3, 62.3], [96.7, 63.7], [106.0, 65.4], [106.0, 72.5], [96.7, 70.6], [87.3, 69.0], [78.0, 67.7], [68.7, 66.7], [59.3, 66.0], [50.0, 65.5], [40.7, 65.4], [31.3, 65.5], [22.0, 65.9], [12.7, 66.6], [3.3, 67.5], [-6.0, 68.8]] }, fill: { gradient: ['s', 't'], from: [0, 60], to: [0, 71], soft: 0.7 } },
-    { shape: { line: [[3.3, 65.1], [12.7, 63.9], [22.0, 63.0], [31.3, 62.5]], width: 1 }, fill: 'w', clip: 'w4', min: 40 },
-    { shape: { line: [[68.7, 62.9], [78.0, 63.8], [87.3, 64.9]], width: 1 }, fill: 'l', clip: 'w4', min: 48 },
-    { shape: { line: [[-6.0, 68.8], [3.3, 67.5], [12.7, 66.6], [22.0, 65.9], [31.3, 65.5], [40.7, 65.4], [50.0, 65.5], [59.3, 66.0], [68.7, 66.7], [78.0, 67.7], [87.3, 69.0], [96.7, 70.6], [106.0, 72.5]], width: 1.8 }, fill: 'k' },
-    { name: 'f5', shape: { poly: [[-6.0, 68.8], [3.3, 67.5], [12.7, 66.6], [22.0, 65.9], [31.3, 65.5], [40.7, 65.4], [50.0, 65.5], [59.3, 66.0], [68.7, 66.7], [78.0, 67.7], [87.3, 69.0], [96.7, 70.6], [106.0, 72.5], [106.0, 78.4], [96.7, 76.7], [87.3, 75.3], [78.0, 74.2], [68.7, 73.3], [59.3, 72.8], [50.0, 72.5], [40.7, 72.5], [31.3, 72.9], [22.0, 73.4], [12.7, 74.3], [3.3, 75.5], [-6.0, 76.9]] }, fill: 'm' },
-    { shape: { all: true }, fill: { stripes: ['m', 'm', 'e'], width: 2.2, angle: 0 }, clip: 'f5', min: 40 },
-    { shape: { line: [[-6.0, 76.9], [3.3, 75.5], [12.7, 74.3], [22.0, 73.4], [31.3, 72.9], [40.7, 72.5], [50.0, 72.5], [59.3, 72.8], [68.7, 73.3], [78.0, 74.2], [87.3, 75.3], [96.7, 76.7], [106.0, 78.4]], width: 1.8 }, fill: 'k' },
-    { shape: { all: true }, fill: { scatter: 'y', density: 0.1, salt: 91 }, clip: 'f2', min: 48 },
-    // The thatched hut on the right.
-    { shape: { rect: [75, 31, 15, 12] }, fill: 'b', shade: { dark: 'n', dir: 'w', mode: 'band', amount: 0.2 } },
-    { shape: { rect: [80.5, 36, 4, 7] }, fill: 'n' },
-    { shape: { poly: [[70, 33.5], [82.5, 22], [95, 33.5]] }, fill: 'h', shade: { light: 'y', dir: 'w', mode: 'band', amount: 0.35 } },
-    { shape: { line: [[76, 30], [88, 30]], width: 1 }, fill: 'b', min: 48 },
-    // A white egret wading in a flooded terrace.
-    { shape: { ellipse: [28, 59, 6, 3], rot: -15 }, fill: 'w', shade: { dark: 'v', dir: 'nw' } },
-    { shape: { poly: [[22, 60], [17, 63], [23, 61.5]] }, fill: 'w' },
-    { shape: { line: [[32, 57.5], [34.5, 53], [33.4, 49.5]], width: 1.8 }, fill: 'w' },
-    { shape: { ellipse: [34.2, 49, 1.8, 1.4] }, fill: 'w' },
-    { shape: { line: [[35.6, 49], [40, 50.2]], width: 1 }, fill: 'y' },
-    { shape: { line: [[27, 61.5], [27, 66]], width: 1 }, fill: 'n' },
-    { shape: { line: [[30, 61], [30.5, 66]], width: 1 }, fill: 'n' }
+    // A pale sky, two ranges of mountains with sharp summits, mist between them.
+    { shape: { all: true }, fill: { gradient: ['s', 'l', 'w'], from: [0, 0], to: [0, 26], soft: 0.7 } },
+    { shape: { poly: [[-4, 28], [8, 16], [14, 19], [26, 5], [36, 15], [44, 11], [56, 20], [70, 6], [80, 14], [88, 10], [104, 22], [104, 34], [-4, 34]] }, fill: 'v', shade: { light: 'w', dir: 'nw' } },
+    { shape: { poly: [[22, 9], [26, 5], [30, 9.5], [27.5, 9], [26, 11], [24, 9.5]] }, fill: 'w' },
+    { shape: { poly: [[66, 10], [70, 6], [74, 10.5], [71.5, 10], [70, 12], [68, 10.5]] }, fill: 'w' },
+    { shape: { ellipse: [36, 24, 30, 2.4] }, fill: 'w' },
+    { shape: { poly: [[-4, 34], [10, 22], [20, 26], [34, 16], [48, 27], [60, 21], [76, 28], [90, 20], [104, 28], [104, 40], [-4, 40]] }, fill: 'g', shade: { light: 'v', dir: 'nw' } },
+    { shape: { ellipse: [60, 31, 44, 2.2] }, fill: 'w' },
+    // A forested ridge on the left.
+    { shape: { poly: [[-4, 34], [8, 30], [20, 33], [30, 40], [34, 50], [-4, 52]], smooth: 1 }, fill: 'd', shade: { light: 'k', dir: 'n', mode: 'band', amount: 0.3 } },
+    { shape: { rect: [0, 30, 30, 22] }, fill: { scatter: 'k', density: 0.2, salt: 61 }, min: 40 },
+    // Terraces following the hillside: curved steps, rice in three greens, flooded paddies reflecting the sky.
+    { shape: { ellipse: [84, 116, 118, 86] }, fill: 'a', shade: { dark: 'e', dir: 's', mode: 'band', amount: 0.2 }, outline: 'k' },
+    { shape: { ellipse: [84, 116, 108.5, 78.6] }, fill: 's', shade: { light: 'w', dir: 'n', mode: 'band', amount: 0.15 }, outline: 'k' },
+    { shape: { ellipse: [84, 116, 99, 71.2] }, fill: 'm', shade: { dark: 'e', dir: 's', mode: 'band', amount: 0.2 }, outline: 'k' },
+    { shape: { ellipse: [84, 116, 89.5, 63.8] }, fill: 't', shade: { light: 'w', dir: 'n', mode: 'band', amount: 0.15 }, outline: 'k' },
+    { shape: { ellipse: [84, 116, 80, 56.4] }, fill: 'e', shade: { light: 'm', dir: 'n', mode: 'band', amount: 0.2 }, outline: 'k' },
+    { shape: { ellipse: [84, 116, 70.5, 49] }, fill: 'a', shade: { dark: 'e', dir: 's', mode: 'band', amount: 0.2 }, outline: 'k' },
+    { shape: { ellipse: [84, 116, 61, 41.6] }, fill: 's', shade: { light: 'w', dir: 'n', mode: 'band', amount: 0.15 }, outline: 'k' },
+    { shape: { ellipse: [84, 116, 51.5, 34.2] }, fill: 'm', shade: { dark: 'e', dir: 's', mode: 'band', amount: 0.2 }, outline: 'k' },
+    { shape: { ellipse: [84, 116, 42, 26.8] }, fill: 'l', shade: { light: 'w', dir: 'n', mode: 'band', amount: 0.15 }, outline: 'k' },
+    { shape: { ellipse: [84, 116, 32.5, 19.4] }, fill: 'e', shade: { light: 'm', dir: 'n', mode: 'band', amount: 0.2 }, outline: 'k' },
+    { shape: { ellipse: [84, 116, 23, 12] }, fill: 'a', shade: { dark: 'e', dir: 's', mode: 'band', amount: 0.2 }, outline: 'k' },
+    { shape: { line: [[16, 52], [30, 49]], width: 1 }, fill: 'w', min: 40 },
+    { shape: { line: [[40, 60], [58, 56]], width: 1 }, fill: 'w', min: 48 },
+    { shape: { line: [[60, 44], [76, 41]], width: 1 }, fill: 'w', min: 48 },
+    // A farmhouse with a thatched roof on a terrace, a path and two palms.
+    { shape: { poly: [[27, 40], [47, 40], [47, 49], [27, 49]] }, fill: 'b', shade: { light: 'h', dir: 'n', mode: 'band', amount: 0.2 } },
+    { shape: { poly: [[22, 42], [37, 29], [52, 42]], smooth: 1 }, fill: 'h', shade: { light: 'y', dir: 'nw', width: 2 } },
+    { shape: { rect: [36, 43, 4, 6] }, fill: 'n' },
+    { shape: { rect: [29.5, 43, 3.6, 2.6] }, fill: 'n' },
+    { shape: { rect: [42, 43, 3.4, 2.6] }, fill: 'n', min: 48 },
+    { shape: { line: [[38, 49], [44, 56], [42, 66], [48, 75]], width: 1.8 }, fill: 'h' },
+    { shape: { line: [[90, 30], [91, 40]], width: 1.4 }, fill: 'n' },
+    { shape: { ellipse: [90, 29, 6, 2.6] }, fill: 'k', shade: { light: 'e', dir: 'n', mode: 'band', amount: 0.4 } },
+    { shape: { line: [[8, 56], [9, 66]], width: 1.4 }, fill: 'n' },
+    { shape: { ellipse: [8, 55, 6, 2.6] }, fill: 'k', shade: { light: 'e', dir: 'n', mode: 'band', amount: 0.4 } },
+    { shape: { poly: [[74, 36], [84, 36], [84, 41], [74, 41]] }, fill: 'b', min: 48 },
+    { shape: { poly: [[71, 37], [79, 30], [87, 37]], smooth: 1 }, fill: 'h', shade: { light: 'y', dir: 'nw' }, min: 48 },
+    { shape: { rect: [78, 38, 2.4, 3] }, fill: 'n', min: 48 },
+    // Farmers' hats in the rice.
+    { shape: { ellipse: [62, 54, 1.8, 1] }, fill: 'y', keep: true },
+    { shape: { ellipse: [74, 64, 1.8, 1] }, fill: 'y', keep: true },
+    { shape: { ellipse: [52, 70, 1.8, 1] }, fill: 'y', keep: true, min: 48 }
   ]
 };

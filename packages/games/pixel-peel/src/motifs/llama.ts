@@ -1,6 +1,6 @@
 import type { Motif } from '../art/types';
 
-/** A llama portrait in front of snowy Andean peaks and a deep blue sky, wearing a woven blanket in red, orange, turquoise and magenta stripes. Original vector art drawn for Worthwhile Play. */
+/** A llama standing on an Andean meadow under a deep blue sky, its neck curved, a woven blanket over its back and coloured tassels on its ears, snowy peaks behind. Original vector art drawn for Worthwhile Play. */
 export const llama: Motif = {
   id: 'llama',
   group: 'animal',
@@ -48,54 +48,65 @@ export const llama: Motif = {
     w: ['#f8f8f4', 'white', 1],
     v: ['#9a9bcc', 'lavender', 1],
     g: ['#686b8c', 'grey', 2, 'v'],
-    c: ['#eedab2', 'cream', 1],
-    a: ['#c3a274', 'beige', 1],
+    c: ['#efdcb6', 'cream', 1],
+    a: ['#c9a678', 'beige', 1],
     t: ['#977552', 'tan', 2, 'a'],
-    k: ['#2a2420', 'charcoal', 1],
-    n: ['#6a4430', 'brown', 2, 'k'],
+    n: ['#5a3a2a', 'darkBrown', 1],
     r: ['#d13a33', 'red', 1],
     o: ['#f08a2a', 'orange', 1],
     q: ['#27b0a6', 'turquoise', 1],
     m: ['#c23b84', 'magenta', 3, 'r'],
     y: ['#f3c63e', 'gold', 3, 'o'],
-    e: ['#5f9e46', 'green', 1]
+    e: ['#5f9e46', 'green', 1],
+    d: ['#3d7340', 'darkGreen', 2, 'e'],
+    l: ['#9cc95e', 'lightGreen', 3, 'e']
   },
   layers: [
-    // Deep blue sky and snowy peaks.
-    { shape: { all: true }, fill: { gradient: ['b', 's'], from: [0, 0], to: [0, 70], soft: 0.8 } },
-    { name: 'peaks', shape: { poly: [[-4, 66], [10, 46], [20, 52], [34, 34], [46, 48], [58, 40], [72, 52], [86, 38], [104, 54], [104, 80], [-4, 80]] }, fill: 'v', shade: { dark: 'g', dir: 'w', mode: 'band', amount: 0.3 } },
-    { shape: { poly: [[28, 42], [34, 34], [40, 42], [37, 41], [34, 44], [31, 41]] }, fill: 'w', clip: 'peaks' },
-    { shape: { poly: [[80, 46], [86, 38], [92, 46], [89, 45], [86, 48], [83, 45]] }, fill: 'w', clip: 'peaks' },
-    { shape: { poly: [[6, 52], [10, 46], [14, 50], [11, 50], [9, 53]] }, fill: 'w', clip: 'peaks' },
-    { shape: { poly: [[54, 44], [58, 40], [62, 44], [59, 44], [57, 46]] }, fill: 'w', clip: 'peaks', min: 40 },
-    { shape: { poly: [[-4, 80], [20, 70], [50, 74], [104, 68], [104, 104], [-4, 104]], smooth: 1 }, fill: 'e', shade: { dark: 'g', dir: 's', mode: 'band', amount: 0.2 } },
-    // The body behind, under the blanket.
-    { shape: { ellipse: [80, 100, 26, 16] }, fill: 'c', shade: { dark: 'a', dir: 'nw' } },
-    // The neck.
-    { name: 'neck', shape: { poly: [[44, 34], [62, 30], [70, 60], [74, 100], [42, 100], [46, 62]], smooth: 1 }, fill: 'c', shade: { light: 'w', dark: 'a', dir: 'w', mode: 'band', amount: 0.22 } },
-    { shape: { poly: [[66, 44], [70, 60], [74, 100], [68, 100], [66, 64]], smooth: 1 }, fill: 't', clip: 'neck' },
-    { shape: { all: true }, fill: { scatter: 'a', density: 0.07, salt: 121 }, clip: 'neck', min: 40 },
-    // Ears.
-    { shape: { ellipse: [47, 12, 3.4, 9], rot: -18 }, fill: 'c', shade: { dark: 'a', dir: 'nw' } },
-    { shape: { ellipse: [61, 11, 3.4, 9], rot: 14 }, fill: 'c', shade: { dark: 'a', dir: 'nw' } },
-    { shape: { ellipse: [47.6, 13, 1.9, 7], rot: -18 }, fill: 'n' },
-    { shape: { ellipse: [60.6, 12, 1.9, 7], rot: 14 }, fill: 'n' },
-    // Head with a woolly top knot, the snout and face.
-    { shape: { ellipse: [53, 28, 13, 10] }, fill: 'c', shade: { light: 'w', dark: 'a', dir: 'nw', width: 2 } },
-    { shape: { ellipse: [54, 19, 8, 4.5] }, fill: 'c', shade: { dark: 'a', dir: 'n', mode: 'band', amount: 0.3 } },
-    { shape: { ellipse: [52, 18, 1.6, 1.2] }, fill: 'a', keep: true, min: 40 },
-    { shape: { ellipse: [57, 19, 1.6, 1.2] }, fill: 'a', keep: true, min: 40 },
-    { shape: { ellipse: [38, 34, 9, 7] }, fill: 'c', shade: { light: 'w', dark: 'a', dir: 'nw' } },
-    { shape: { ellipse: [33, 36, 4, 4.4] }, fill: 'a', shade: { dark: 't', dir: 'nw' } },
-    { shape: { line: [[31, 33], [33, 34]], width: 1 }, fill: 'k' },
-    { shape: { line: [[30, 38], [35, 39]], width: 1 }, fill: 'k' },
-    { shape: { ellipse: [48, 26, 1.8, 1.6] }, fill: 'k', keep: true },
-    { shape: { ellipse: [48.6, 25.4, 0.5, 0.5] }, fill: 'w', keep: true, min: 48 },
-    { shape: { line: [[45, 23.5], [49, 23]], width: 1 }, fill: 't', min: 48 },
-    // The woven blanket.
-    { name: 'blanket', shape: { poly: [[40, 78], [74, 74], [100, 80], [100, 104], [36, 104]] }, fill: 'r' },
-    { shape: { all: true }, fill: { stripes: ['r', 'r', 'o', 'y', 'q', 'q', 'm', 'o'], width: 2.4, angle: 90 }, clip: 'blanket' },
-    { shape: { line: [[40, 78], [74, 74], [100, 80]], width: 1.6 }, fill: 'k' },
-    { shape: { line: [[36, 100], [100, 100]], width: 1 }, fill: 'w', min: 40 }
+    // Deep blue sky with two clouds, snowy peaks of the Andes.
+    { shape: { all: true }, fill: { gradient: ['b', 's'], from: [0, 0], to: [0, 52], soft: 0.6 } },
+    { shape: { ellipse: [74, 14, 12, 4] }, fill: 'w', shade: { dark: 's', dir: 's', mode: 'band', amount: 0.35 } },
+    { shape: { ellipse: [88, 24, 9, 3] }, fill: 'w', shade: { dark: 's', dir: 's', mode: 'band', amount: 0.35 }, min: 40 },
+    { name: 'peaks', shape: { poly: [[-4, 58], [8, 40], [18, 46], [30, 30], [44, 46], [56, 36], [70, 48], [84, 30], [104, 48], [104, 70], [-4, 70]] }, fill: 'v', shade: { dark: 'g', dir: 'w', mode: 'band', amount: 0.4 } },
+    { shape: { poly: [[24, 38], [30, 30], [36, 37], [33, 36], [30, 40], [27, 37]] }, fill: 'w', clip: 'peaks' },
+    { shape: { poly: [[78, 38], [84, 30], [91, 38], [88, 37], [85, 41], [81, 38]] }, fill: 'w', clip: 'peaks' },
+    { shape: { poly: [[52, 41], [56, 36], [60, 41], [57, 40.5], [55, 43]] }, fill: 'w', clip: 'peaks', min: 40 },
+    // The meadow: three greens with tufts and a few flowers.
+    { shape: { poly: [[-4, 66], [24, 60], [60, 63], [104, 58], [104, 104], [-4, 104]], smooth: 1 }, fill: { gradient: ['d', 'e', 'l'], from: [0, 60], to: [0, 104], soft: 0.6 } },
+    { shape: { rect: [0, 62, 100, 40] }, fill: { scatter: 'd', density: 0.08, salt: 41 } },
+    { shape: { rect: [0, 80, 100, 20] }, fill: { scatter: 'y', density: 0.02, salt: 43 }, min: 48 },
+    { shape: { rect: [0, 80, 100, 20] }, fill: { scatter: 'm', density: 0.015, salt: 47 }, min: 48 },
+    { shape: { ellipse: [86, 92, 7, 3] }, fill: 'g', shade: { light: 'v', dir: 'n', mode: 'band', amount: 0.4 } },
+    // Far legs, then the woolly body with a short tail.
+    { shape: { line: [[47, 68], [49, 80], [48, 91]], width: 3.8 }, fill: 't' },
+    { shape: { line: [[75, 68], [78, 80], [77, 91]], width: 3.8 }, fill: 't' },
+    { shape: { ellipse: [48, 92, 3, 1.8] }, fill: 'n' },
+    { shape: { ellipse: [77.6, 92, 3, 1.8] }, fill: 'n' },
+    { shape: { ellipse: [85, 54, 3.6, 4.8], rot: 20 }, fill: 'c', shade: { dark: 'a', dir: 'nw' } },
+    { name: 'body', shape: { ellipse: [61, 60, 25, 13] }, fill: 'c', shade: { light: 'w', dark: 'a', dir: 'n', mode: 'band', amount: 0.3 } },
+    { shape: { all: true }, fill: { scatter: 'a', density: 0.1, salt: 121 }, clip: 'body', min: 40 },
+    // Near legs.
+    { shape: { line: [[42, 66], [43, 80], [42, 92]], width: 4.2 }, fill: 'c', shade: { dark: 'a', dir: 'w' } },
+    { shape: { line: [[70, 68], [71, 80], [70, 92]], width: 4.2 }, fill: 'c', shade: { dark: 'a', dir: 'w' } },
+    { shape: { ellipse: [42, 93, 3.2, 1.8] }, fill: 'n' },
+    { shape: { ellipse: [70, 93, 3.2, 1.8] }, fill: 'n' },
+    // The woven blanket draped over the back, with a fringe.
+    { name: 'blanket', shape: { poly: [[40, 49], [54, 45.5], [72, 45.5], [82, 50], [81, 68], [60, 70], [41, 68]], smooth: 1 }, fill: 'r' },
+    { shape: { all: true }, fill: { stripes: ['r', 'r', 'o', 'y', 'q', 'q', 'm', 'o'], width: 2.6, angle: 0 }, clip: 'blanket' },
+    { shape: { line: [[41, 69], [60, 71], [81, 69]], width: 1.6 }, fill: 'w' },
+    // The neck in a gentle curve, the head with banana ears and coloured ear tassels.
+    { name: 'neck', shape: { poly: [[36, 60], [32, 50], [29, 40], [27, 30], [25, 22], [33, 20], [37, 28], [41, 38], [46, 48], [50, 56]], smooth: 2 }, fill: 'c', shade: { light: 'w', dark: 'a', dir: 'w', mode: 'band', amount: 0.25 } },
+    { shape: { all: true }, fill: { scatter: 'a', density: 0.08, salt: 131 }, clip: 'neck', min: 40 },
+    { shape: { ellipse: [25, 8, 2.6, 7], rot: -12 }, fill: 'c', shade: { dark: 'a', dir: 'w' } },
+    { shape: { ellipse: [32, 8, 2.6, 7], rot: 14 }, fill: 'c', shade: { dark: 'a', dir: 'w' } },
+    { shape: { ellipse: [25.6, 9, 1.3, 5], rot: -12 }, fill: 'n' },
+    { shape: { ellipse: [31.4, 9, 1.3, 5], rot: 14 }, fill: 'n' },
+    { shape: { ellipse: [23.4, 14.4, 2.6, 2.2] }, fill: 'm' },
+    { shape: { ellipse: [34.2, 14.2, 2.6, 2.2] }, fill: 'q' },
+    { shape: { ellipse: [28, 19, 8, 6.4], rot: -8 }, fill: 'c', shade: { light: 'w', dark: 'a', dir: 'nw', width: 2 } },
+    { shape: { ellipse: [18.6, 23, 5.6, 4.4], rot: 15 }, fill: 'c', shade: { dark: 'a', dir: 'se' } },
+    { shape: { line: [[14, 25.6], [19, 26.6]], width: 1 }, fill: 'a' },
+    { shape: { ellipse: [14.6, 22.4, 0.8, 0.8] }, fill: 'n', keep: true },
+    { shape: { ellipse: [25.6, 17.6, 1.6, 1.5] }, fill: 'n', keep: true },
+    { shape: { ellipse: [26.2, 17, 0.5, 0.5] }, fill: 'w', keep: true, min: 48 }
   ]
 };

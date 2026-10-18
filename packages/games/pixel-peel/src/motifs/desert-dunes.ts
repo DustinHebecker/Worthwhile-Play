@@ -63,7 +63,7 @@ export const desertDunes: Motif = {
     // Sunset sky in soft bands, a large sun low over the dunes.
     { shape: { all: true }, fill: { gradient: ['v', 'm', 'p', 'c'], from: [0, -2], to: [0, 42], soft: 0.9 } },
     { shape: { rect: [0, 0, 100, 8] }, fill: { scatter: 'y', density: 0.04, salt: 71 }, min: 40 },
-    { shape: { ellipse: [62, 34, 14, 14] }, fill: 'y', shade: { dark: 'g', dir: 'nw', width: 2 } },
+    { shape: { ellipse: [62, 34, 14, 14] }, fill: 'y', shade: { dark: 'g', dir: 'nw', width: 3 } },
     { shape: { line: [[40, 24], [52, 24]], width: 1.4 }, fill: 'c', min: 40 },
     { shape: { line: [[78, 20], [94, 20]], width: 1.4 }, fill: 'c', min: 40 },
     { shape: { line: [[8, 30], [24, 30]], width: 1.4 }, fill: 'p', min: 48 },
@@ -98,8 +98,8 @@ export const desertDunes: Motif = {
     { shape: { line: [[4, 73], [20, 71]], width: 1 }, fill: 'h', min: 48 },
     { shape: { line: [[54, 72], [70, 70]], width: 1 }, fill: 'a', min: 40 },
     // The oasis: a pool and two palms on the right.
-    { shape: { ellipse: [86, 67, 17, 5.5] }, fill: 'e', shade: { dark: 'd', dir: 'n', mode: 'band', amount: 0.3 } },
-    { shape: { ellipse: [86, 67.5, 13, 4.2] }, fill: 'q' },
+    { shape: { ellipse: [84, 67, 21, 6.6] }, fill: 'e', shade: { dark: 'd', dir: 'n', mode: 'band', amount: 0.3 } },
+    { shape: { ellipse: [84, 67.6, 16, 5] }, fill: 'q', shade: { light: 'y', dir: 'n', mode: 'band', amount: 0.15 } },
     { shape: { line: [[80, 66.5], [90, 66.5]], width: 1 }, fill: 'y', min: 40 },
     { shape: { line: [[84, 65], [83, 58], [80, 50]], width: 2.4 }, fill: 'b', shade: { dark: 'k', dir: 'w' } },
     { shape: { line: [[95, 66], [96, 60], [98, 53]], width: 2.2 }, fill: 'b', shade: { dark: 'k', dir: 'w' } },

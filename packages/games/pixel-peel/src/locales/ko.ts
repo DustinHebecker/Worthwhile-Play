@@ -8,7 +8,7 @@ export const ko: Catalogue = {
   'setting.motif': '그림',
   'setting.motifHint': '계절, 풍경, 동물, 일상 장면. ‘아무 그림’은 매번 무작위로 하나를 고릅니다.',
   'motif.any': '아무 그림 (무작위)',
-  'motif.label': '{title} · 색깔 {min}–{max}개',
+  'title.colours': '{title} · 색깔 {n}개',
   'difficulty.easy': '쉬움 (작은 그림)',
   'difficulty.medium': '보통',
   'difficulty.hard': '어려움 (큰 그림, 대기 자리 4개)',

@@ -8,7 +8,7 @@ export const tr: Catalogue = {
   'setting.motif': 'Resim',
   'setting.motifHint': 'Mevsimler, manzaralar, hayvanlar ve gündelik sahneler. “Herhangi bir resim” her seferinde rastgele birini seçer.',
   'motif.any': 'Herhangi bir resim (rastgele)',
-  'motif.label': '{title} · {min}–{max} renk',
+  'title.colours': '{title} · {n} renk',
   'difficulty.easy': 'Kolay (küçük resim)',
   'difficulty.medium': 'Orta',
   'difficulty.hard': 'Zor (büyük resim, 4 bekleme yeri)',

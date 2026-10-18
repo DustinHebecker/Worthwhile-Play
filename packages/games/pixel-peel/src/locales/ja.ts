@@ -8,7 +8,7 @@ export const ja: Catalogue = {
   'setting.motif': '絵',
   'setting.motifHint': '季節、風景、動物、日常の情景。「おまかせ」は毎回ランダムに1枚選びます。',
   'motif.any': 'おまかせ（ランダム）',
-  'motif.label': '{title} · {min}～{max} 色',
+  'title.colours': '{title} · {n} 色',
   'difficulty.easy': 'やさしい（小さな絵）',
   'difficulty.medium': 'ふつう',
   'difficulty.hard': 'むずかしい（大きな絵、待機場所 4 つ）',

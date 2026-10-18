@@ -8,7 +8,7 @@ export const de: Catalogue = {
   'setting.motif': 'Bild',
   'setting.motifHint': 'Jahreszeiten, Landschaften, Tiere und Alltagsszenen. „Beliebiges Bild“ wählt jedes Mal zufällig eines aus.',
   'motif.any': 'Beliebiges Bild (zufällig)',
-  'motif.label': '{title} · {min}–{max} Farben',
+  'title.colours': '{title} · {n} Farben',
   'difficulty.easy': 'Leicht (kleines Bild)',
   'difficulty.medium': 'Mittel',
   'difficulty.hard': 'Schwer (großes Bild, 4 Warteplätze)',

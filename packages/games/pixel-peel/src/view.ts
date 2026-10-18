@@ -366,7 +366,7 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
     const isSolved = solved();
     const total = table.engine.filled;
     const left = cursor.cells.left;
-    titleEl.textContent = motifTitle();
+    titleEl.textContent = t('title.colours', { title: motifTitle(), n: state.picture.palette.length });
     leftEl.textContent = t('picture.left', { left, total });
     leftEl.dataset.left = String(left);
 

@@ -8,7 +8,7 @@ export const nl: Catalogue = {
   'setting.motif': 'Afbeelding',
   'setting.motifHint': 'Seizoenen, landschappen, dieren en alledaagse taferelen. ‘Willekeurige afbeelding’ kiest er elke keer een bij toeval.',
   'motif.any': 'Willekeurige afbeelding',
-  'motif.label': '{title} · {min}–{max} kleuren',
+  'title.colours': '{title} · {n} kleuren',
   'difficulty.easy': 'Makkelijk (kleine afbeelding)',
   'difficulty.medium': 'Gemiddeld',
   'difficulty.hard': 'Moeilijk (grote afbeelding, 4 wachtplaatsen)',

@@ -76,7 +76,7 @@ export interface Position {
 
 export const EMPTY = '.';
 /** Bounds of a valid state (design v2 § 7). */
-export const LIMITS = { minSide: 4, maxSide: 48, maxPalette: 20, maxLanes: 4, maxSlots: 6, maxShooters: 160, maxShots: 99, maxMoves: 2500 } as const;
+export const LIMITS = { minSide: 4, maxSide: 64, maxPalette: 20, maxLanes: 4, maxSlots: 6, maxShooters: 160, maxShots: 99, maxMoves: 2500 } as const;
 
 const MOVE = /^([LS])([0-5])$/;
 const HEX = /^#[0-9a-f]{6}$/i;
@@ -337,10 +337,10 @@ function isLanes(v: unknown, keys: Set<string>): v is Shooter[][] {
     for (const s of lane) {
       if (!isRecord(s) || typeof s.c !== 'string' || !keys.has(s.c)) return false;
       if (!Number.isInteger(s.n) || (s.n as number) < 1 || (s.n as number) > LIMITS.maxShots) return false;
-      total++;
+      if (++total > LIMITS.maxShooters) return false;
     }
   }
-  return total >= 1 && total <= LIMITS.maxShooters;
+  return total >= 1;
 }
 
 const isMoveList = (v: unknown): v is Move[] => Array.isArray(v) && v.length <= LIMITS.maxMoves && v.every((m) => parseMove(m) !== undefined);

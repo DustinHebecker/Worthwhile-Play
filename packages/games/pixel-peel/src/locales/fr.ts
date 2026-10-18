@@ -8,7 +8,7 @@ export const fr: Catalogue = {
   'setting.motif': 'Image',
   'setting.motifHint': 'Saisons, paysages, animaux et scènes du quotidien. « N’importe quelle image » en tire une au hasard à chaque fois.',
   'motif.any': 'N’importe quelle image (au hasard)',
-  'motif.label': '{title} · {min} à {max} couleurs',
+  'title.colours': '{title} · {n} couleurs',
   'difficulty.easy': 'Facile (petite image)',
   'difficulty.medium': 'Moyen',
   'difficulty.hard': 'Difficile (grande image, 4 places d’attente)',

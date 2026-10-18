@@ -3,10 +3,16 @@ import type { Direction, Fill, Layer, Motif, PaletteSpec, Point, Shade, Shape } 
 
 /**
  * The deterministic rasteriser (design v2 § 1.3). It turns a vector motif into a grid of palette keys at width
- * W ∈ {32, 40, 48} with the difficulty's palette tier. Pure and synchronous; only + − × ÷, comparisons,
+ * W (32 to 64) with the difficulty's palette tier. Pure and synchronous; only + − × ÷, comparisons,
  * `Math.floor`/`Math.round`, `Math.sqrt` and integer hashing; trigonometry from a table. The same motif, width and
  * tier give bit-identical grids on every device. There is no colour quantisation: every cell gets a palette key
  * chosen by a rule.
+ *
+ * Supersampling (the owner's method, 2026-10-18): every layer is drawn at `SUPERSAMPLE`× the resolution first, then
+ * broken down per cell. A cell belongs to a layer when at least half of its samples do; its key is the most common
+ * key among those samples (ties: the sample nearest the cell centre). Shading is computed on the fine grid, so rims
+ * and bands follow the true shape. Outlines, dithering, scatter, keep-cells and thin lines stay cell-exact, so pixel
+ * art details do not blur.
  */
 
 export interface RasterPicture {
@@ -32,6 +38,8 @@ export interface RasterReport {
 export type Tier = 1 | 2 | 3;
 
 export const minPixels = (w: number): number => Math.floor(w / 4);
+/** Samples per cell side when drawing a layer (design v2 § 1.3, supersampling). */
+export const SUPERSAMPLE = 4;
 export const heightOf = (motif: Pick<Motif, 'aspect'>, w: number): number => (motif.aspect === 'wide' ? (w * 3) / 4 : w);
 
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
@@ -189,6 +197,10 @@ export function shapeMask(shape: Shape, g: Grid): { mask: Uint8Array; anchor: nu
     for (let k = 0; k + 1 < pts.length || (k === 0 && pts.length === 1); k++) {
       const a = pts[k] as Point;
       const b = (pts[k + 1] ?? a) as Point;
+      if (!Number.isFinite(a[0]) || !Number.isFinite(a[1]) || !Number.isFinite(b[0]) || !Number.isFinite(b[1])) {
+        if (pts.length === 1) break;
+        continue;
+      }
       let x0 = clampCell(Math.floor(a[0] / u), w);
       let y0 = clampCell(Math.floor(a[1] / u), h);
       const x1 = clampCell(Math.floor(b[0] / u), w);
@@ -225,12 +237,14 @@ export function shapeMask(shape: Shape, g: Grid): { mask: Uint8Array; anchor: nu
   return { mask, anchor: cellOf(first[0], first[1]) };
 }
 
-/** Per-cell fill: a code (0 = erase), or -1 to leave the cell untouched. `protect` marks scatter cells. */
-function fillCode(fill: Fill, code: (key: string) => number, x: number, y: number, g: Grid, out: { protect: boolean }): number {
+/**
+ * The fill at sample position (px, py) of cell (x, y) of grid `g`: a code (0 = erase), or -1 to leave the cell
+ * untouched. Dither and scatter decide per cell (never per sample), so their patterns stay crisp. `protect` marks
+ * dithered and scatter cells.
+ */
+function fillCode(fill: Fill, code: (key: string) => number, x: number, y: number, g: Grid, out: { protect: boolean }, px = (x + 0.5) * g.u, py = (y + 0.5) * g.u): number {
   out.protect = false;
   if (typeof fill === 'string') return fill === '.' ? 0 : code(fill);
-  const px = (x + 0.5) * g.u;
-  const py = (y + 0.5) * g.u;
   if ('gradient' in fill) {
     const keys = fill.gradient;
     const n = keys.length;
@@ -267,7 +281,7 @@ function fillCode(fill: Fill, code: (key: string) => number, x: number, y: numbe
   return -1;
 }
 
-function applyShade(shade: Shade, mask: Uint8Array, values: Int16Array, code: (key: string) => number, g: Grid): void {
+function applyShade(shade: Shade, mask: Uint8Array, values: Int16Array, code: (key: string) => number, g: Grid, rimWidth?: number): void {
   const [dx, dy] = STEP[shade.dir];
   const { w, h } = g;
   const light = shade.light ? code(shade.light) : -1;
@@ -291,7 +305,7 @@ function applyShade(shade: Shade, mask: Uint8Array, values: Int16Array, code: (k
     }
     return;
   }
-  const width = Math.max(1, Math.round(((shade.width ?? 1) * w) / 48));
+  const width = rimWidth ?? Math.max(1, Math.round(((shade.width ?? 1) * w) / 48));
   const outside = (x: number, y: number) => x >= 0 && y >= 0 && x < w && y < h && !mask[y * w + x];
   for (let c = 0; c < mask.length; c++) {
     if (!mask[c] || values[c]! <= 0 || values[c]! >= 1000) continue;
@@ -327,34 +341,66 @@ export function rasteriseReport(motif: Motif, w: number, tier: Tier): RasterRepo
   const values = new Int16Array(w * h);
   const scratch = { protect: false };
 
+  const F = SUPERSAMPLE;
+  const fine: Grid = { w: w * F, h: h * F, u: 100 / (w * F) };
+  const half = (F * F) / 2;
+  const centre = (F >> 1) * (fine.w + 1);
+  const namedFine = new Map<string, Uint8Array>();
+  const counts = new Int32Array(keys.length + 1002);
+
   for (const layer of motif.layers as readonly Layer[]) {
     if (layer.min !== undefined && w < layer.min) {
       masks.push(null);
-      if (layer.name) named.set(layer.name, new Uint8Array(w * h));
+      if (layer.name) {
+        named.set(layer.name, new Uint8Array(w * h));
+        namedFine.set(layer.name, new Uint8Array(fine.w * fine.h));
+      }
       continue;
     }
-    const { mask, anchor } = shapeMask(layer.shape, g);
-    if (layer.clip) {
-      const parent = named.get(layer.clip);
-      for (let c = 0; c < mask.length; c++) if (!parent || !parent[c]) mask[c] = 0;
+    const thin = 'line' in layer.shape && layer.shape.width <= g.u;
+    let mask: Uint8Array;
+    let anchor: number;
+    let fineMask: Uint8Array | null = null;
+    if (thin) {
+      // A 1-cell line is drawn cell-exact on the final grid.
+      ({ mask, anchor } = shapeMask(layer.shape, g));
+      if (layer.clip) {
+        const parent = named.get(layer.clip);
+        for (let c = 0; c < mask.length; c++) if (!parent || !parent[c]) mask[c] = 0;
+      }
+    } else {
+      const fm = shapeMask(layer.shape, fine);
+      fineMask = fm.mask;
+      anchor = Math.floor(Math.floor(fm.anchor / fine.w) / F) * w + Math.floor((fm.anchor % fine.w) / F);
+      if (layer.clip) {
+        const parent = namedFine.get(layer.clip);
+        for (let c = 0; c < fineMask.length; c++) if (!parent || !parent[c]) fineMask[c] = 0;
+      }
+      // A cell belongs to the layer when at least half of its samples do.
+      const cover = new Uint8Array(w * h);
+      for (let Y = 0; Y < fine.h; Y++) {
+        const row = Math.floor(Y / F) * w;
+        for (let X = 0; X < fine.w; X++) if (fineMask[Y * fine.w + X]) cover[row + Math.floor(X / F)]! += 1;
+      }
+      mask = new Uint8Array(w * h);
+      for (let c = 0; c < mask.length; c++) mask[c] = cover[c]! >= half ? 1 : 0;
     }
     let any = false;
     for (let c = 0; c < mask.length && !any; c++) if (mask[c]) any = true;
     const kept = !any && layer.keep === true;
     if (kept) mask[anchor] = 1;
-    if (layer.name) named.set(layer.name, mask);
-    masks.push(mask);
-    for (let c = 0; c < mask.length; c++) {
-      if (!mask[c]) {
-        values[c] = -1;
-        continue;
+    if (layer.name) {
+      named.set(layer.name, mask);
+      if (fineMask) namedFine.set(layer.name, fineMask);
+      else {
+        const up = new Uint8Array(fine.w * fine.h);
+        for (let Y = 0; Y < fine.h; Y++) for (let X = 0; X < fine.w; X++) up[Y * fine.w + X] = mask[Math.floor(Y / F) * w + Math.floor(X / F)]!;
+        namedFine.set(layer.name, up);
       }
-      values[c] = fillCode(layer.fill, code, c % w, Math.floor(c / w), g, scratch);
-      if (scratch.protect) values[c] = values[c]! + 1000;
     }
-    // Shade and outline work on the written values (scatter cells keep their offset of 1000 and are skipped).
+    masks.push(mask);
     // The outline ring: mask cells with a 4-neighbour outside the mask (grid edges excluded). With an outline, the
-    // shade works on the mask inside the ring, so a rim shows just inside the outline.
+    // shade works inside the ring, so a rim shows just inside the outline.
     let ring: Uint8Array | null = null;
     if (layer.outline) {
       ring = new Uint8Array(mask.length);
@@ -365,13 +411,84 @@ export function rasteriseReport(motif: Motif, w: number, tier: Tier): RasterRepo
         if ((x > 0 && !mask[c - 1]) || (x < w - 1 && !mask[c + 1]) || (y > 0 && !mask[c - w]) || (y < h - 1 && !mask[c + w])) ring[c] = 1;
       }
     }
-    if (layer.shade) {
-      let inner = mask;
-      if (ring) {
-        inner = mask.slice();
-        for (let c = 0; c < mask.length; c++) if (ring[c]) inner[c] = 0;
+    if (!fineMask) {
+      for (let c = 0; c < mask.length; c++) {
+        if (!mask[c]) {
+          values[c] = -1;
+          continue;
+        }
+        values[c] = fillCode(layer.fill, code, c % w, Math.floor(c / w), g, scratch);
+        if (scratch.protect) values[c] = values[c]! + 1000;
       }
-      applyShade(layer.shade, inner, values, code, g);
+      if (layer.shade) {
+        let inner = mask;
+        if (ring) {
+          inner = mask.slice();
+          for (let c = 0; c < mask.length; c++) if (ring[c]) inner[c] = 0;
+        }
+        applyShade(layer.shade, inner, values, code, g);
+      }
+    } else {
+      // Fill and shade on the fine grid (dither and scatter decided per cell), then the most common key per cell.
+      const fineValues = new Int16Array(fineMask.length);
+      for (let Y = 0; Y < fine.h; Y++) {
+        const y = Math.floor(Y / F);
+        const py = (Y + 0.5) * fine.u;
+        for (let X = 0; X < fine.w; X++) {
+          const i = Y * fine.w + X;
+          if (!fineMask[i]) {
+            fineValues[i] = -1;
+            continue;
+          }
+          let v = fillCode(layer.fill, code, Math.floor(X / F), y, g, scratch, (X + 0.5) * fine.u, py);
+          if (scratch.protect) v += 1000;
+          fineValues[i] = v;
+        }
+      }
+      if (layer.shade) {
+        let inner = fineMask;
+        if (ring) {
+          inner = fineMask.slice();
+          for (let i = 0; i < inner.length; i++) if (ring[Math.floor(Math.floor(i / fine.w) / F) * w + Math.floor((i % fine.w) / F)]) inner[i] = 0;
+        }
+        const rim = layer.shade.mode === 'band' ? undefined : Math.max(1, Math.round(((layer.shade.width ?? 1) * w) / 48)) * F;
+        applyShade(layer.shade, inner, fineValues, code, fine, rim);
+      }
+      const touched: number[] = [];
+      for (let c = 0; c < mask.length; c++) {
+        if (!mask[c]) {
+          values[c] = -1;
+          continue;
+        }
+        const base = Math.floor(c / w) * F * fine.w + (c % w) * F;
+        touched.length = 0;
+        for (let dy = 0; dy < F; dy++) {
+          for (let dx = 0; dx < F; dx++) {
+            const v = fineValues[base + dy * fine.w + dx]!;
+            if (v < 0) continue;
+            const slot = v + 1;
+            if (counts[slot] === 0) touched.push(slot);
+            counts[slot] = counts[slot]! + 1;
+          }
+        }
+        const mid = fineValues[base + centre]!;
+        let best = -1;
+        let bestCount = 0;
+        for (const slot of touched) {
+          const n = counts[slot]!;
+          if (n > bestCount || (n === bestCount && slot - 1 === mid)) {
+            best = slot - 1;
+            bestCount = n;
+          }
+          counts[slot] = 0;
+        }
+        if (best < 0) {
+          // A kept cell outside the drawn shape: the fill at the cell centre.
+          best = fillCode(layer.fill, code, c % w, Math.floor(c / w), g, scratch);
+          if (scratch.protect) best += 1000;
+        }
+        values[c] = best;
+      }
     }
     if (ring) {
       const o = code(layer.outline ?? '');

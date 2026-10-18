@@ -8,7 +8,7 @@ export const hi: Catalogue = {
   'setting.motif': 'चित्र',
   'setting.motifHint': 'ऋतुएँ, परिदृश्य, जानवर और रोज़मर्रा के दृश्य। “कोई भी चित्र” हर बार कोई एक बेतरतीब ढंग से चुनता है।',
   'motif.any': 'कोई भी चित्र (बेतरतीब)',
-  'motif.label': '{title} · रंग: {min}–{max}',
+  'title.colours': '{title} · रंग: {n}',
   'difficulty.easy': 'आसान (छोटा चित्र)',
   'difficulty.medium': 'मध्यम',
   'difficulty.hard': 'कठिन (बड़ा चित्र, 4 प्रतीक्षा-स्थान)',

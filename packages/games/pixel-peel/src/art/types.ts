@@ -77,7 +77,7 @@ export interface Layer {
   /** Never vanishes: an empty mask gets the cell under the shape's anchor. */
   readonly keep?: boolean;
   /** Level of detail: drawn only at W ≥ min. */
-  readonly min?: 40 | 48;
+  readonly min?: number;
 }
 
 export interface Motif {

@@ -335,7 +335,7 @@ describe('isPeelState (never throws)', () => {
     ['picture too small', (s) => ({ ...s, picture: { ...s.picture, w: 3 } })],
     ['zero shots', (s) => ({ ...s, lanes: [[{ c: s.lanes[0]![0]!.c, n: 0 }], ...s.lanes.slice(1)] })],
     ['too many moves', (s) => ({ ...s, moves: Array.from({ length: 2501 }, () => 'L0') })],
-    ['a side of 49', (s) => ({ ...s, picture: { ...s.picture, w: 49, rows: s.picture.rows.map((r) => r.padEnd(49, '.')) } })],
+    ['a side of 65', (s) => ({ ...s, picture: { ...s.picture, w: 65, rows: s.picture.rows.map((r) => r.padEnd(65, '.')) } })],
     ['21 palette entries', (s) => ({ ...s, picture: { ...s.picture, palette: [...s.picture.palette, ...'abcdefghijklmnopqrstuvwxyz'.split('').filter((k) => !s.picture.palette.some((p) => p.key === k)).map((key) => ({ key, hex: '#123456', name: 'black' }))].slice(0, 21) } })],
     ['161 shooters', (s) => {
       const c = s.lanes[0]![0]!.c;

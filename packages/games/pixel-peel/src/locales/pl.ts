@@ -8,7 +8,7 @@ export const pl: Catalogue = {
   'setting.motif': 'Obrazek',
   'setting.motifHint': 'Pory roku, krajobrazy, zwierzęta i codzienne sceny. „Dowolny obrazek” za każdym razem losuje jeden.',
   'motif.any': 'Dowolny obrazek (losowy)',
-  'motif.label': '{title} · kolory: {min}–{max}',
+  'title.colours': '{title} · kolory: {n}',
   'difficulty.easy': 'Łatwy (mały obrazek)',
   'difficulty.medium': 'Średni',
   'difficulty.hard': 'Trudny (duży obrazek, 4 miejsca oczekiwania)',

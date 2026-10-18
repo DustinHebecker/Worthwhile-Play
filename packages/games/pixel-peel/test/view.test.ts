@@ -39,7 +39,7 @@ describe('view', () => {
   it('renders the title, pixels left, the lanes, the free slots and the canvas summary', () => {
     const { q, root, instance } = start();
     const s = instance.serialize();
-    expect(q('pp-title').textContent).toBe('Red fox');
+    expect(q('pp-title').textContent).toBe(`Red fox · ${s.picture.palette.length} colours`);
     const total = s.picture.rows.join('').replace(/\./g, '').length;
     expect(q('pp-left').textContent).toBe(`Pixels left: ${total} of ${total}`);
     expect(root.querySelectorAll('[data-testid^="pp-lane-box-"]')).toHaveLength(4);
@@ -404,7 +404,7 @@ describe('view', () => {
   it('a save of an unknown motif keeps working with a generic title', () => {
     const s = { ...initialPositionState(), motif: 'gone-motif' };
     const { q } = start({ state: s });
-    expect(q('pp-title').textContent).toBe('Your picture');
+    expect(q('pp-title').textContent).toMatch(/^Your picture · \d+ colours$/);
   });
 });
 

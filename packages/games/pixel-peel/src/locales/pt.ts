@@ -8,7 +8,7 @@ export const pt: Catalogue = {
   'setting.motif': 'Imagem',
   'setting.motifHint': 'Estações, paisagens, animais e cenas do dia a dia. “Qualquer imagem” sorteia uma a cada vez.',
   'motif.any': 'Qualquer imagem (sorteada)',
-  'motif.label': '{title} · {min}–{max} cores',
+  'title.colours': '{title} · {n} cores',
   'difficulty.easy': 'Fácil (imagem pequena)',
   'difficulty.medium': 'Médio',
   'difficulty.hard': 'Difícil (imagem grande, 4 lugares de espera)',

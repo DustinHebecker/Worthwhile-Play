@@ -8,7 +8,7 @@ export const ar: Catalogue = {
   'setting.motif': 'الصورة',
   'setting.motifHint': 'الفصول والمناظر الطبيعية والحيوانات ومشاهد من الحياة اليومية. «أي صورة» تختار واحدة عشوائيًا في كل مرة.',
   'motif.any': 'أي صورة (عشوائية)',
-  'motif.label': '{title} · عدد الألوان: {min}–{max}',
+  'title.colours': '{title} · عدد الألوان: {n}',
   'difficulty.easy': 'سهل (صورة صغيرة)',
   'difficulty.medium': 'متوسط',
   'difficulty.hard': 'صعب (صورة كبيرة، 4 أماكن انتظار)',
