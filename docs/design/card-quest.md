@@ -472,6 +472,13 @@ K1 is large (140 cards × 16 locales). If it becomes too big for one review, it 
 - **B4 Funny Blunder text per monster.** Today the Blunder is only the generated rule line ("level −1"). Each monster gets its own short, funny Blunder sentence (≤ 90 characters, per locale, original — no texts from the reference), shown on the card and in the log when it hits, next to the generated rule line that stays the binding effect (content field `blunder`, see § 6.2/6.3; content test for presence and length).
 - Confirmed: playing without reading the rules works (owner knows the genre; a test with someone new to it is still open).
 
+### 10.5a Open after the review of #59/#63 (paused 2026-10-18, owner: token budget)
+
+- Railway locomotives: remove every face on a round smokebox front (signature look of a famous toy train);
+  give the locos their own look (eyes in the cab windows or on the boiler side). Partly done.
+- Owner: use MORE short verbal allusions and wordplay in all worlds where they were avoided so far (same limits:
+  no copied art, characters, logos or long verbatim texts).
+
 ### 10.6 Open points (none blocks K1)
 
 - **O1** Default target level: **10** assumed (owner: length open). Since 2026-10-17 fixed at 10 (owner).
