@@ -17,7 +17,7 @@ export const zhHans: LocaleContent = {
   'sl.customs-officer': { name: '3号太空港海关', flavour: '“有东西要申报吗？一颗星球？你的触手？”', blunder: '你最好的装备被没收了：“未申报。”' },
   'sl.moon-mole': { name: '有采矿权的月球鼹鼠', flavour: '月亮归它。它有张纸条为证。', blunder: '它要收两张牌的采矿费。还是追溯的。' },
   'sl.jetpack-rat': { name: '喷气背包货舱鼠', flavour: '偷了喷气背包。还偷了货舱。现在轮到你的东西。', blunder: '它带着你的小物品呼地飞走。嗖。' },
-  'sl.form-jellyfish': { name: '拿着19q表的水母', flavour: '请一式三份。每只触手都要签字。', blunder: '手续费：三张手牌。盖章，打孔，没了。' },
+  'sl.form-jellyfish': { name: '拿着27b表的水母', flavour: '请一式三份。每只触手都要签字。', blunder: '手续费：三张手牌。盖章，打孔，没了。' },
   'sl.robo-vac': { name: '胸怀大志的扫地机器人', flavour: '先扫走廊。再扫飞船。然后扫平银河。', blunder: '它把你的头盔吸走了。吸溜。' },
   'sl.food-paste': { name: '活过来的太空糊糊', flavour: '自己从管子里爬了出来。草莓味，臭袜子香。', blunder: '臭得你的衣服宁可中途下船。' },
   'sl.junk-dealer': { name: '太空废品商', flavour: '什么都收，什么都卖。你的宇航服？二手，但有情怀。', blunder: '他拿你的小物品换了个寂寞。外加一张牌佣金。' },

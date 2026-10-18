@@ -17,7 +17,7 @@ export const ja: LocaleContent = {
   'sl.customs-officer': { name: '第3宇宙港の税関', flavour: '「申告するものは？惑星ですか？その触手ですか？」', blunder: 'いちばんいい物を差し押さえ。「未申告です」' },
   'sl.moon-mole': { name: '採掘権持ちの月モグラ', flavour: '月は彼のもの。証明する紙切れもある。', blunder: '採掘料としてカード2枚を請求。さかのぼって。' },
   'sl.jetpack-rat': { name: 'ジェットパックの貨物ネズミ', flavour: 'ジェットパックを盗んだ。貨物室も。ついでにきみの荷物も。', blunder: 'きみの小物を持ってビューン。シュバッ。' },
-  'sl.form-jellyfish': { name: '様式19qのクラゲ', flavour: '書類は三部ご提出ください。触手すべてで署名を。', blunder: '処理手数料は手札3枚。ハンコ押して、穴あけて、はいサヨナラ。' },
+  'sl.form-jellyfish': { name: '様式27bのクラゲ', flavour: '書類は三部ご提出ください。触手すべてで署名を。', blunder: '処理手数料は手札3枚。ハンコ押して、穴あけて、はいサヨナラ。' },
   'sl.robo-vac': { name: '野望あるお掃除ロボ', flavour: 'まずは廊下。次に船。そして銀河を。', blunder: 'きみのヘルメットをズゴゴッと吸い込む。' },
   'sl.food-paste': { name: '生きている宇宙食ペースト', flavour: 'チューブから這い出した。味はイチゴ、においは靴下。', blunder: '臭すぎて、きみの服が途中下船を希望。' },
   'sl.junk-dealer': { name: '宇宙ガラクタ商', flavour: '何でも買って、何でも売る。きみの宇宙服？中古だけど味がある。', blunder: '小物をタダで「交換」。手数料にカード1枚もいただき。' },

@@ -16,7 +16,7 @@ export const de: LocaleContent = {
   'sl.customs-officer': { name: 'Zoll vom Raumhafen 3', flavour: '»Etwas zu verzollen? Einen Planeten? Ihre Tentakel?«', blunder: 'Dein bestes Stück wird beschlagnahmt. »Nicht verzollt.«' },
   'sl.moon-mole': { name: 'Mondmaulwurf mit Schürfrecht', flavour: 'Der Mond gehört ihm. Er hat einen Zettel, der das beweist.', blunder: 'Er verlangt zwei Karten Schürfgebühr. Rückwirkend.' },
   'sl.jetpack-rat': { name: 'Laderaumratte mit Jetpack', flavour: 'Hat das Jetpack geklaut. Und den Laderaum. Und gleich deinen Kram.', blunder: 'Sie düst mit deinem Kleinkram davon. Fffft.' },
-  'sl.form-jellyfish': { name: 'Qualle mit Formular 19q', flavour: 'Bitte in dreifacher Ausfertigung. Mit allen Tentakeln unterschreiben.', blunder: 'Bearbeitungsgebühr: drei Handkarten. Gestempelt, gelocht, weg.' },
+  'sl.form-jellyfish': { name: 'Qualle mit Formular 27b', flavour: 'Bitte in dreifacher Ausfertigung. Mit allen Tentakeln unterschreiben.', blunder: 'Bearbeitungsgebühr: drei Handkarten. Gestempelt, gelocht, weg.' },
   'sl.robo-vac': { name: 'Saugroboter mit Großmachtplan', flavour: 'Erst den Flur. Dann das Schiff. Dann die Galaxis.', blunder: 'Er saugt dir den Helm vom Kopf. Schlürf.' },
   'sl.food-paste': { name: 'Astronautenbrei, lebendig', flavour: 'Aus der Tube gekrochen. Schmeckt nach Erdbeere, riecht nach Socke.', blunder: 'Er riecht so streng, dass deine Kleidung lieber aussteigt.' },
   'sl.junk-dealer': { name: 'Weltraumschrotthändler', flavour: 'Kauft alles, verkauft alles. Dein Raumanzug? Gebraucht, aber mit Charme.', blunder: 'Er tauscht deinen Kleinkram gegen nichts. Plus eine Karte Provision.' },

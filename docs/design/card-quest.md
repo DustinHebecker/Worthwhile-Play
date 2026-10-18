@@ -99,7 +99,7 @@ Every **monster** and every **origin** (the player's character kind) has one bas
 
 ## 4. Worlds
 
-Tone everywhere: **family-friendly** (age ~10+, no gore, no adult jokes), slapstick and absurd bureaucracy rather than wordplay, so most jokes survive transcreation (§ 7.2). No parodies of real brands, films, people, companies (e.g. no real railway operator) or quotes.
+Tone everywhere: **family-friendly** (age ~10+, no gore, no adult jokes), slapstick and absurd bureaucracy rather than wordplay, so most jokes survive transcreation (§ 7.2). No parodies of real brands, films, people, companies (e.g. no real railway operator) or quotes. **Allusions (owner 2026-10-18):** short, recognisable verbal allusions to things everyone knows are welcome on purpose (e.g. an "away team", "Form 27b", "mind the gap"); never copied art, characters, logos, signature looks (e.g. a famous toy train's face) or long verbatim texts, and no brand names in card ids or names.
 
 Card examples are English working texts (transcreated per locale later); "Lv" = monster level, "Blunder" = what happens when you lose (our term, § 9).
 
