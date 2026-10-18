@@ -1,70 +1,55 @@
 import { bcp47Tag, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
 import { announce, clear, h } from '@wp/ui';
+import { LOCALES, type Locale } from './art/types';
+import { exposureOf, parseMove, replayCursor, shotsLeft, step, updateExposure, type Cursor, type Exposure, type Outcome, type Table } from './engine';
 import { createInitial } from './generate';
+import { hint as computeHint, type HintResult } from './hint';
 import { findMotif } from './motifs/index';
-import { LOCALES, type Locale } from './motifs/types';
-import {
-  EMPTY,
-  canUndo,
-  exposed,
-  isSolved,
-  isStuck,
-  play,
-  position,
-  presentCount,
-  preview,
-  resetState,
-  restart,
-  shootersOf,
-  undo,
-  undoTo,
-  type Hit,
-  type Move,
-  type PaletteEntry,
-  type PeelState,
-  type Position,
-  type Preview,
-  type Shooter
-} from './rules';
-import { hint as computeHint, type HintResult } from './solver';
+import { canUndo, resetState, restart, tableOfState, undo, undoTo, type Hit, type Move, type PaletteEntry, type PeelState, type Shooter } from './rules';
+import { inkFor, SYMBOLS, symbolPath } from './symbols';
 import './styles.css';
 
-/** Symbols by palette position (design § 6.1); drawn as paths, never as font glyphs. */
-export const SYMBOLS = ['dot', 'triangle', 'square', 'diamond', 'plus', 'ring', 'bar', 'star'] as const;
-/** The same symbols as text, only inside sentences (status lines), next to the colour name. */
-const GLYPHS = ['●', '▲', '■', '◆', '✚', '○', '▬', '★'];
+export { inkFor, SYMBOLS } from './symbols';
 
-const star = (() => {
-  const pts: string[] = [];
-  for (let k = 0; k < 10; k++) {
-    const r = k % 2 === 0 ? 9.5 : 4;
-    const a = -Math.PI / 2 + (k * Math.PI) / 5;
-    pts.push(`${(12 + r * Math.cos(a)).toFixed(2)} ${(12.6 + r * Math.sin(a)).toFixed(2)}`);
-  }
-  return `M${pts.join('L')}Z`;
-})();
+const ANIMATION_MAX_MS = 900;
+const PREFS = 'display';
+/** Track frame around the picture (CSS px). */
+const TRACK = 6;
+/** Cell size (CSS px) in Large view. */
+const LARGE_CELL = 14;
+/** Symbols and the hatch are drawn from this cell size (CSS px). */
+const SYMBOL_MIN = 10;
+/** Chips shown per lane before "Show whole lanes". */
+const CHIPS_SHOWN = 7;
 
-/** Symbol outlines in a 24 × 24 box (filled with the even-odd rule, so the ring has a hole). */
-export const SYMBOL_PATHS = [
-  'M6 12a6 6 0 1 0 12 0a6 6 0 1 0 -12 0Z',
-  'M12 3.5L21 19.5H3Z',
-  'M5.5 5.5H18.5V18.5H5.5Z',
-  'M12 2.5L21.5 12L12 21.5L2.5 12Z',
-  'M9.5 3.5H14.5V9.5H20.5V14.5H14.5V20.5H9.5V14.5H3.5V9.5H9.5Z',
-  'M3.5 12a8.5 8.5 0 1 0 17 0a8.5 8.5 0 1 0 -17 0ZM7.5 12a4.5 4.5 0 1 0 9 0a4.5 4.5 0 1 0 -9 0Z',
-  'M3 8.5H21V15.5H3Z',
-  star
-];
-
-/** Black or white, whichever contrasts with the fill (WCAG relative luminance > 0.4 → black). */
-export function inkFor(hex: string): string {
-  const lin = (i: number) => {
-    const c = parseInt(hex.slice(i, i + 2), 16) / 255;
-    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-  };
-  const lum = 0.2126 * lin(1) + 0.7152 * lin(3) + 0.0722 * lin(5);
-  return lum > 0.4 ? '#000000' : '#ffffff';
+interface Display {
+  animation: boolean;
+  allSymbols: boolean;
+  confirm: boolean;
+  large: boolean;
+  /** null: the default for the screen width. */
+  wholeLanes: boolean | null;
 }
+
+interface Animation {
+  hits: Hit[];
+  done: number;
+  start: number;
+  duration: number;
+  frame: number;
+  /** Colour key of the launched shooter (token colour). */
+  c: string;
+}
+
+/** What a move would do (cached per position). */
+interface Preview extends Outcome {
+  move: Move;
+  hits: number;
+  cells: Hit[];
+}
+
+const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
+const rgbOf = (hex: string): [number, number, number] => [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)];
 
 const SVG = 'http://www.w3.org/2000/svg';
 function symbolSvg(index: number, ink: string): SVGSVGElement {
@@ -73,53 +58,38 @@ function symbolSvg(index: number, ink: string): SVGSVGElement {
   svg.setAttribute('aria-hidden', 'true');
   svg.setAttribute('class', 'pp-symbol');
   const path = document.createElementNS(SVG, 'path');
-  path.setAttribute('d', SYMBOL_PATHS[index] ?? SYMBOL_PATHS[0]!);
+  path.setAttribute('d', symbolPath(index));
   path.setAttribute('fill', ink);
   path.setAttribute('fill-rule', 'evenodd');
   svg.appendChild(path);
   return svg;
 }
 
-const ANIMATION_MAX_MS = 900;
-const PREFS = 'display';
-const TRACK = 10;
-
-interface Display {
-  animation: boolean;
-  allSymbols: boolean;
-  confirm: boolean;
-}
-
-interface Animation {
-  hits: Hit[];
-  start: number;
-  duration: number;
-  frame: number;
-}
-
-const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
-
 export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
   const { t } = context;
   const locale: Locale = (LOCALES as readonly string[]).includes(t.locale) ? (t.locale as Locale) : 'en';
   let state: PeelState = createInitial(0);
-  let pos: Position = position(state);
+  let table: Table = tableOfState(state);
+  let cursor: Cursor = replayCursor(table, []) as Cursor;
+  let exposure: Exposure = exposureOf(table.engine, cursor.cells);
+  /** Present cells per colour code. */
+  let leftOf = new Int32Array(1);
+  let previews = new Map<Move, Preview>();
   let paused = false;
   let previewMove: Move | null = null;
+  /** Colour key highlighted from the colours list (null: none). */
+  let shownColour: string | null = null;
   /** With "Confirm before launch": the move chosen by the first press. */
   let selected: Move | null = null;
   let hintResult: HintResult | null = null;
+  let hintTimer: ReturnType<typeof setTimeout> | null = null;
   let statusText = '';
   let anim: Animation | null = null;
   let laneFocus = 0;
   let slotFocus = 0;
   let wasStuck = false;
-  /** Set by `update` when the position has just become stuck; `commit` announces it with the move's result. */
   let becameStuck = false;
-  /**
-   * The shooter button just launched: its next shooter is not previewed until the pointer leaves it or focus moves,
-   * so the status line keeps the result (the browser re-enters the button when its content is replaced).
-   */
+  /** The shooter button just launched: not previewed again until the pointer leaves it or focus moves. */
   let quiet: HTMLElement | null = null;
   const keyboardFocused = (el: HTMLElement) => {
     try {
@@ -129,11 +99,16 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
     }
   };
   const stored = context.preferences?.get(PREFS);
+  const pref = (key: keyof Display): unknown => (typeof stored === 'object' && stored !== null ? (stored as Record<string, unknown>)[key] : undefined);
   const display: Display = {
-    animation: !(typeof stored === 'object' && stored !== null && (stored as Display).animation === false),
-    allSymbols: typeof stored === 'object' && stored !== null && (stored as Display).allSymbols === true,
-    confirm: typeof stored === 'object' && stored !== null && (stored as Display).confirm === true
+    animation: pref('animation') !== false,
+    allSymbols: pref('allSymbols') === true,
+    confirm: pref('confirm') === true,
+    large: pref('large') === true,
+    wholeLanes: typeof pref('wholeLanes') === 'boolean' ? (pref('wholeLanes') as boolean) : null
   };
+  const wide = () => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(min-width: 48rem)').matches;
+  const wholeLanes = () => display.wholeLanes ?? wide();
 
   // --- Text helpers ------------------------------------------------------------------------------------------
 
@@ -141,12 +116,14 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
     const i = Math.max(0, state.picture.palette.findIndex((p) => p.key === key));
     return { e: state.picture.palette[i] as PaletteEntry, i };
   };
+  const keyOfCode = (code: number) => table.engine.keys[code - 1] as string;
   const colourName = (key: string) => t(`colour.${entry(key).e.name}`);
-  const symbolName = (key: string) => t(`symbol.${SYMBOLS[entry(key).i] ?? 'dot'}`);
-  const shooterText = (s: Shooter) => `${colourName(s.c)} ${GLYPHS[entry(s.c).i] ?? ''} ${s.n}`;
+  const symbolName = (key: string) => t(`symbol.${SYMBOLS[entry(key).i % SYMBOLS.length] ?? 'dot'}`);
+  const shooterText = (s: Shooter) => t('shooter.text', { colour: colourName(s.c), n: s.n });
   const sentence = (text: string) => text.charAt(0).toLocaleUpperCase(bcp47Tag(t.locale)) + text.slice(1);
   const motifTitle = () => findMotif(state.motif)?.title[locale] ?? t('picture.generic');
   const motifPlace = () => findMotif(state.motif)?.place[locale] ?? '';
+  const shooterOf = (o: Outcome): Shooter | null => (o.shooter ? { c: keyOfCode(o.shooter.c), n: o.shooter.n } : null);
 
   // --- DOM ---------------------------------------------------------------------------------------------------
 
@@ -154,8 +131,8 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
   const titleEl = h('p', { class: 'pp-title', 'data-testid': 'pp-title' });
   const leftEl = h('p', { class: 'pp-left', 'data-testid': 'pp-left' });
   const canvas = h('canvas', { class: 'pp-canvas', role: 'img', 'data-testid': 'pp-canvas' });
-  const board = h('div', { class: 'pp-board', dir: 'ltr' }, canvas);
-  const status = h('p', { class: 'wp-status pp-status', 'data-testid': 'pp-status' });
+  const board = h('div', { class: 'pp-board', dir: 'ltr', 'data-testid': 'pp-board' }, canvas);
+  const status = h('p', { class: 'wp-status pp-status', 'data-testid': 'pp-status', 'aria-live': 'off' });
 
   const button = (testId: string, label: string, onclick: () => void) => h('button', { type: 'button', 'data-testid': testId, onclick: () => onclick() }, label);
   const undoButton = button('pp-undo', t('common.undo'), () => doUndo());
@@ -175,34 +152,61 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
   const slotsHeading = h('h3', { class: 'pp-heading', id: 'pp-slots-heading', 'data-testid': 'pp-slots-heading' });
   const slotsRow = h('div', { class: 'pp-slots', role: 'group', 'aria-labelledby': 'pp-slots-heading' });
   const lanesRow = h('div', { class: 'pp-lanes', role: 'group', 'aria-labelledby': 'pp-lanes-heading' });
+  const lanesToggle = h('button', { type: 'button', class: 'pp-lanes-toggle', 'data-testid': 'pp-lanes-toggle', 'aria-expanded': 'false' });
   let slotButtons: HTMLButtonElement[] = [];
   let slotFree: HTMLElement[] = [];
   let laneButtons: HTMLButtonElement[] = [];
   let laneEmpty: HTMLElement[] = [];
-  let laneQueues: HTMLElement[] = [];
+  let laneChips: HTMLElement[][] = [];
 
   const coloursList = h('ul', { class: 'pp-colour-list' });
   const colours = h('details', { class: 'pp-details', 'data-testid': 'pp-colours' }, h('summary', {}, t('colours.heading')), coloursList);
-  const option = (key: keyof Display, label: string) => {
+  let colourRows: { li: HTMLElement; count: HTMLElement; toggle: HTMLButtonElement; key: string }[] = [];
+
+  const checkbox = (key: 'animation' | 'allSymbols' | 'confirm' | 'wholeLanes', label: string) => {
     const input = h('input', { type: 'checkbox', 'data-testid': `pp-option-${key}` });
     input.addEventListener('change', () => {
       display[key] = input.checked;
-      context.preferences?.set(PREFS, { ...display });
+      savePrefs();
       if (key === 'animation' && !input.checked) finishAnimation();
       selected = null;
-      draw();
+      update();
     });
     return { input, label: h('label', { class: 'pp-option' }, input, h('span', {}, label)) };
   };
-  const options = { animation: option('animation', t('options.animation')), allSymbols: option('allSymbols', t('options.allSymbols')), confirm: option('confirm', t('options.confirm')) };
-  const optionsBox = h('details', { class: 'pp-details', 'data-testid': 'pp-options' }, h('summary', {}, t('options.heading')), options.animation.label, options.allSymbols.label, options.confirm.label);
+  const sizeRadio = (large: boolean) => {
+    const input = h('input', { type: 'radio', name: 'pp-size', value: large ? 'large' : 'fit', 'data-testid': `pp-option-${large ? 'large' : 'fit'}` });
+    input.addEventListener('change', () => {
+      if (!input.checked) return;
+      display.large = large;
+      savePrefs();
+      update();
+    });
+    return { input, label: h('label', { class: 'pp-option' }, input, h('span', {}, t(large ? 'options.large' : 'options.fit'))) };
+  };
+  const options = {
+    animation: checkbox('animation', t('options.animation')),
+    allSymbols: checkbox('allSymbols', t('options.allSymbols')),
+    confirm: checkbox('confirm', t('options.confirm')),
+    wholeLanes: checkbox('wholeLanes', t('options.wholeLanes'))
+  };
+  const sizes = { fit: sizeRadio(false), large: sizeRadio(true) };
+  const optionsBox = h('details', { class: 'pp-details', 'data-testid': 'pp-options' },
+    h('summary', {}, t('options.heading')),
+    h('fieldset', { class: 'pp-sizes' }, h('legend', {}, t('options.size')), sizes.fit.label, sizes.large.label),
+    options.wholeLanes.label,
+    options.allSymbols.label,
+    options.animation.label,
+    options.confirm.label
+  );
+  const savePrefs = () => context.preferences?.set(PREFS, { ...display });
 
   const side = h('div', { class: 'pp-side' },
     status,
     hintRow,
     stuckPanel,
     h('section', { class: 'pp-section' }, slotsHeading, slotsRow),
-    h('section', { class: 'pp-section' }, h('h3', { class: 'pp-heading', id: 'pp-lanes-heading' }, t('lanes.heading')), lanesRow),
+    h('section', { class: 'pp-section' }, h('h3', { class: 'pp-heading', id: 'pp-lanes-heading' }, t('lanes.heading')), lanesRow, lanesToggle),
     h('div', { class: 'wp-row pp-actions' }, undoButton, restartButton, hintButton),
     h('p', { class: 'wp-muted pp-help' }, t('help.symbols')),
     h('p', { class: 'wp-muted pp-help' }, t('help.keys')),
@@ -220,18 +224,56 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
   const container = h('div', { class: 'wp-pixel-peel', dir: t.direction, lang: bcp47Tag(t.locale) }, playArea, reveal, live);
   if (context.reducedMotion) container.classList.add('is-reduced-motion');
 
+  // --- Session: engine, cursor, exposure, cached previews (design v2 § 6.5) -----------------------------------
+
+  const solved = () => cursor.cells.left === 0;
+
+  /** Rebuilds the session from the state (new game, restore, undo): one replay, < 2 ms at 48. */
+  const rebuild = () => {
+    table = tableOfState(state);
+    cursor = replayCursor(table, state.moves) ?? (replayCursor(table, []) as Cursor);
+    exposure = exposureOf(table.engine, cursor.cells);
+    leftOf = new Int32Array(table.engine.keys.length + 1);
+    const { colour } = table.engine;
+    for (let i = 0; i < colour.length; i++) if (cursor.cells.present[i]) leftOf[colour[i] as number] = (leftOf[colour[i] as number] as number) + 1;
+    previews = new Map();
+    resetImages();
+  };
+
+  const previewOf = (move: Move): Preview => {
+    const cached = previews.get(move);
+    if (cached) return cached;
+    const parsed = parseMove(move);
+    const cells: Hit[] = [];
+    const o: Outcome = parsed ? step(table, cursor, parsed.kind, parsed.index, false, (cell, station) => cells.push({ cell, station })) : { legal: false, reason: 'invalid', shooter: null, hits: 0, left: 0, slot: -1, parks: false };
+    const p: Preview = { ...o, move, cells: o.reason === 'nothing' ? [] : cells };
+    previews.set(move, p);
+    return p;
+  };
+
+  const isStuckNow = () => !solved() && [...laneButtons, ...slotButtons].every((b) => !previewOf(moveOf(b) as Move).legal);
+
   // --- Building (once per game) --------------------------------------------------------------------------------
 
   const moveOf = (el: Element | null): Move | null => (el instanceof HTMLElement && el.dataset.move ? el.dataset.move : null);
 
+  const fillSwatch = (sw: HTMLElement, key: string) => {
+    const { e, i } = entry(key);
+    clear(sw);
+    sw.style.background = e.hex;
+    sw.appendChild(symbolSvg(i, inkFor(e.hex)));
+  };
+
   const build = () => {
     clear(slotsRow);
     clear(lanesRow);
+    clear(coloursList);
     slotButtons = [];
     slotFree = [];
     laneButtons = [];
     laneEmpty = [];
-    laneQueues = [];
+    laneChips = [];
+    colourRows = [];
     for (let j = 0; j < state.slots; j++) {
       const b = h('button', { type: 'button', class: 'pp-shooter pp-slot', 'data-testid': `pp-slot-${j}`, 'data-move': `S${j}` });
       const free = h('div', { class: 'pp-slot-free', 'data-testid': `pp-slot-free-${j}` }, h('span', { 'aria-hidden': 'true' }, t('slot.free')), h('span', { class: 'sr-only' }, t('slot.freeLabel', { slot: j + 1 })));
@@ -239,14 +281,19 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
       slotFree.push(free);
       slotsRow.append(h('div', { class: 'pp-slot-cell' }, b, free));
     }
-    state.lanes.forEach((_, i) => {
+    state.lanes.forEach((lane, i) => {
       const b = h('button', { type: 'button', class: 'pp-shooter pp-front', 'data-testid': `pp-lane-${i}`, 'data-move': `L${i}` });
       const empty = h('div', { class: 'pp-lane-empty' }, t('lane.empty'));
-      const queue = h('div', { class: 'pp-queue' });
+      const chips = lane.map((s, k) => {
+        const sw = h('span', { class: 'pp-chip-swatch' });
+        fillSwatch(sw, s.c);
+        return h('li', { class: 'pp-chip', 'data-index': k }, sw, h('span', { 'aria-hidden': 'true', dir: 'ltr' }, s.n), h('span', { class: 'sr-only' }, t('chip.label', { colour: colourName(s.c), symbol: symbolName(s.c), shots: s.n })));
+      });
       laneButtons.push(b);
       laneEmpty.push(empty);
-      laneQueues.push(queue);
-      lanesRow.append(h('div', { class: 'pp-lane', 'data-testid': `pp-lane-box-${i}` }, h('span', { class: 'pp-lane-name', 'aria-hidden': 'true' }, t('lane.name', { lane: i + 1 })), b, empty, queue));
+      laneChips.push(chips);
+      const list = h('ol', { class: 'pp-chips', 'aria-label': t('lane.queue', { lane: i + 1 }) }, ...chips);
+      lanesRow.append(h('div', { class: 'pp-lane', 'data-testid': `pp-lane-box-${i}` }, h('span', { class: 'pp-lane-name', 'aria-hidden': 'true' }, t('lane.name', { lane: i + 1 })), b, empty, list));
     });
     for (const b of [...slotButtons, ...laneButtons]) {
       b.addEventListener('click', () => activate(b));
@@ -263,74 +310,89 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
       b.addEventListener('pointerleave', (e) => {
         if ((e as PointerEvent).pointerType !== 'mouse' || selected !== null) return;
         if (quiet === b) quiet = null;
-        showPreview(keyboardFocused(b) ? moveOf(b) : null);
+        // Only the button being previewed hands the preview back (to a keyboard-focused shooter, if any).
+        if (previewMove !== moveOf(b)) return;
+        const focused = [...slotButtons, ...laneButtons].find((x) => keyboardFocused(x));
+        showPreview(focused ? moveOf(focused) : null);
       });
     }
+    state.picture.palette.forEach((p) => {
+      const sw = h('span', { class: 'pp-chip-swatch' });
+      fillSwatch(sw, p.key);
+      const count = h('span', { class: 'pp-colour-count' });
+      const toggle = h('button', { type: 'button', class: 'pp-show', 'aria-pressed': 'false', 'aria-label': t('colours.showLabel', { colour: t(`colour.${p.name}`) }), 'data-testid': `pp-show-${p.key}` }, t('colours.show'));
+      toggle.addEventListener('click', () => {
+        finishAnimation();
+        shownColour = shownColour === p.key ? null : p.key;
+        update();
+      });
+      const li = h('li', { class: 'pp-colour', 'data-testid': `pp-colour-${p.key}` }, sw, h('span', { class: 'pp-colour-name' }, sentence(t(`colour.${p.name}`))), count, toggle);
+      coloursList.appendChild(li);
+      colourRows.push({ li, count, toggle, key: p.key });
+    });
   };
 
   const fillShooter = (b: HTMLElement, s: Shooter, label: string) => {
-    const { e, i } = entry(s.c);
-    clear(b);
-    const swatch = h('span', { class: 'pp-swatch', style: `background:${e.hex}` });
-    swatch.appendChild(symbolSvg(i, inkFor(e.hex)));
-    b.append(swatch, h('span', { class: 'pp-shots', dir: 'ltr' }, s.n));
+    if (b.dataset.colour !== s.c || b.dataset.shots !== String(s.n)) {
+      clear(b);
+      const swatch = h('span', { class: 'pp-swatch' });
+      fillSwatch(swatch, s.c);
+      b.append(swatch, h('span', { class: 'pp-shots', dir: 'ltr' }, s.n));
+      b.dataset.colour = s.c;
+      b.dataset.shots = String(s.n);
+    }
     b.setAttribute('aria-label', label);
-    b.dataset.colour = s.c;
-    b.dataset.shots = String(s.n);
-  };
-
-  const chip = (s: Shooter) => {
-    const { e, i } = entry(s.c);
-    const sw = h('span', { class: 'pp-chip-swatch', style: `background:${e.hex}` });
-    sw.appendChild(symbolSvg(i, inkFor(e.hex)));
-    return h('li', { class: 'pp-chip' }, sw, h('span', { 'aria-hidden': 'true', dir: 'ltr' }, s.n), h('span', { class: 'sr-only' }, t('chip.label', { colour: colourName(s.c), symbol: symbolName(s.c), shots: s.n })));
   };
 
   // --- Rendering -----------------------------------------------------------------------------------------------
 
   const update = () => {
-    pos = position(state);
-    const solved = isSolved(pos);
-    const total = state.picture.rows.join('').replace(/\./g, '').length;
-    const left = presentCount(pos);
+    const isSolved = solved();
+    const total = table.engine.filled;
+    const left = cursor.cells.left;
     titleEl.textContent = motifTitle();
     leftEl.textContent = t('picture.left', { left, total });
     leftEl.dataset.left = String(left);
 
     // Slots
-    const free = pos.slots.filter((s) => s === null).length;
-    slotsHeading.textContent = t('slots.heading', { free, total: pos.slots.length });
-    pos.slots.forEach((s, j) => {
+    const free = cursor.slots.filter((s) => s === null).length;
+    slotsHeading.textContent = t('slots.heading', { free, total: cursor.slots.length });
+    cursor.slots.forEach((s, j) => {
       const b = slotButtons[j] as HTMLButtonElement;
       (slotFree[j] as HTMLElement).hidden = s !== null;
       b.hidden = s === null;
-      if (s) fillShooter(b, s, t('slot.label', { slot: j + 1, colour: colourName(s.c), symbol: symbolName(s.c), shots: s.n }));
+      if (s) {
+        const key = keyOfCode(s.c);
+        fillShooter(b, { c: key, n: s.n }, t('slot.label', { slot: j + 1, colour: colourName(key), symbol: symbolName(key), shots: s.n }));
+      }
     });
 
-    // Lanes
-    pos.lanes.forEach((lane, i) => {
-      const k = pos.laneFront[i] as number;
+    // Lanes: the front is a button; behind it the chips (the first 7 unless "Show whole lanes").
+    const whole = wholeLanes();
+    let hiddenChips = 0;
+    state.lanes.forEach((lane, i) => {
+      const k = cursor.laneFront[i] as number;
       const front = lane[k];
       const b = laneButtons[i] as HTMLButtonElement;
       b.hidden = !front;
       (laneEmpty[i] as HTMLElement).hidden = Boolean(front);
       if (front) fillShooter(b, front, t('lane.label', { lane: i + 1, colour: colourName(front.c), symbol: symbolName(front.c), shots: front.n }));
-      const queue = laneQueues[i] as HTMLElement;
-      clear(queue);
-      const rest = lane.slice(k + 1);
-      if (rest.length > 0) {
-        const list = h('ol', { class: 'pp-chips', 'aria-label': t('lane.queue', { lane: i + 1 }) }, ...rest.slice(0, 6).map(chip));
-        queue.appendChild(list);
-        if (rest.length > 6) {
-          queue.appendChild(h('details', { class: 'pp-more' }, h('summary', {}, t('lane.more', { n: rest.length - 6 })), h('ol', { class: 'pp-chips', start: 7 }, ...rest.slice(6).map(chip))));
-        }
-      }
+      (laneChips[i] as HTMLElement[]).forEach((chip, index) => {
+        const behind = index - k - 1;
+        const hide = behind < 0 || (!whole && behind >= CHIPS_SHOWN);
+        if (behind >= CHIPS_SHOWN && !whole) hiddenChips++;
+        if (chip.hidden !== hide) chip.hidden = hide;
+      });
     });
+    const longest = Math.max(0, ...state.lanes.map((lane, i) => lane.length - (cursor.laneFront[i] as number) - 1 - CHIPS_SHOWN));
+    lanesToggle.hidden = longest <= 0;
+    lanesToggle.setAttribute('aria-expanded', String(whole));
+    lanesToggle.textContent = whole ? t('lanes.collapse') : t('lanes.expand', { n: hiddenChips });
 
     // Legality, hint marks, roving tab stops
     for (const b of [...slotButtons, ...laneButtons]) {
       const move = moveOf(b) as Move;
-      const p = preview(pos, move);
+      const p = previewOf(move);
       b.setAttribute('aria-disabled', String(!p.legal));
       const hinted = hintResult?.kind === 'move' && hintResult.move === move;
       b.dataset.hint = String(hinted);
@@ -341,10 +403,11 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
     syncTabStops();
 
     // Actions, stuck, hint undo target
-    const stuck = !solved && isStuck(pos);
+    const stuck = !isSolved && isStuckNow();
     stuckPanel.hidden = !stuck;
     undoButton.disabled = !canUndo(state);
-    restartButton.disabled = state.moves.length === 0 || solved;
+    restartButton.disabled = state.moves.length === 0 || isSolved;
+    hintButton.disabled = isSolved;
     for (const b of stuckPanel.querySelectorAll('button')) {
       if (b.dataset.testid === 'pp-stuck-undo') b.disabled = !canUndo(state);
       if (b.dataset.testid === 'pp-stuck-restart') b.disabled = state.moves.length === 0;
@@ -354,30 +417,33 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
     undoToButton.textContent = undoTarget === 0 ? t('hint.undoToStart') : t('hint.undoTo', { k: undoTarget });
 
     // Colours overview
-    clear(coloursList);
-    const reach = new Map<string, number>();
-    for (const c of exposed(pos)) reach.set(pos.cells[c] as string, (reach.get(pos.cells[c] as string) ?? 0) + 1);
-    state.picture.palette.forEach((p, i) => {
-      const count = pos.cells.filter((c) => c === p.key).length;
-      const sw = h('span', { class: 'pp-chip-swatch', style: `background:${p.hex}` });
-      sw.appendChild(symbolSvg(i, inkFor(p.hex)));
-      coloursList.appendChild(h('li', { class: 'pp-colour', 'data-testid': `pp-colour-${p.key}` }, sw, h('span', { class: 'pp-colour-name' }, sentence(t(`colour.${p.name}`))), h('span', { class: 'pp-colour-count' }, t('colours.row', { left: count, reachable: reach.get(p.key) ?? 0, shooters: shootersOf(pos, p.key) }))));
-    });
-    const reachable = state.picture.palette.filter((p) => reach.has(p.key)).map((p) => t('picture.reachItem', { colour: t(`colour.${p.name}`), n: reach.get(p.key) ?? 0 }));
-    canvas.setAttribute('aria-label', t('picture.label', { title: motifTitle(), w: pos.w, h: pos.h, left, total, reachable: reachable.length ? reachable.join(t('list.separator')) : t('picture.reachNone') }));
+    const edge = new Int32Array(table.engine.keys.length + 1);
+    for (let c = 0; c < exposure.seenBy.length; c++) if (exposure.seenBy[c]) edge[table.engine.colour[c] as number] = (edge[table.engine.colour[c] as number] as number) + 1;
+    const shots = shotsLeft(table, cursor);
+    for (const row of colourRows) {
+      const code = table.engine.codes.get(row.key) ?? 0;
+      row.count.textContent = t('colours.row', { left: leftOf[code] ?? 0, edge: edge[code] ?? 0, shots: shots[code] ?? 0 });
+      row.toggle.setAttribute('aria-pressed', String(shownColour === row.key));
+      row.li.classList.toggle('is-done', (leftOf[code] ?? 0) === 0);
+    }
+    const reachable = state.picture.palette.filter((p) => (edge[table.engine.codes.get(p.key) ?? 0] ?? 0) > 0).map((p) => t('picture.reachItem', { colour: t(`colour.${p.name}`), n: edge[table.engine.codes.get(p.key) ?? 0] ?? 0 }));
+    canvas.setAttribute('aria-label', t('picture.label', { title: motifTitle(), w: table.engine.w, h: table.engine.h, left, total, reachable: reachable.length ? reachable.join(t('list.separator')) : t('picture.reachNone') }));
 
     for (const key of ['animation', 'allSymbols', 'confirm'] as const) options[key].input.checked = display[key];
+    options.wholeLanes.input.checked = whole;
+    sizes.fit.input.checked = !display.large;
+    sizes.large.input.checked = display.large;
     options.animation.input.disabled = context.reducedMotion;
     if (context.reducedMotion) options.animation.input.checked = false;
 
     // Reveal
-    playArea.hidden = solved;
-    reveal.hidden = !solved;
-    if (solved) {
+    playArea.hidden = isSolved;
+    reveal.hidden = !isSolved;
+    if (isSolved) {
       revealTitle.textContent = motifTitle();
       revealPlace.textContent = motifPlace();
       revealPlace.hidden = motifPlace() === '';
-      revealStats.textContent = t('reveal.stats', { launches: pos.launches, parks: pos.parks });
+      revealStats.textContent = t('reveal.stats', { launches: cursor.launches, parks: cursor.parks });
     }
     if (stuck && !wasStuck) becameStuck = true;
     wasStuck = stuck;
@@ -396,18 +462,23 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
   };
 
   const previewText = (p: Preview): string => {
-    if (!p.shooter) return t('reason.empty');
-    const shooter = shooterText(p.shooter);
+    const s = shooterOf(p);
+    if (!s) return t('reason.empty');
+    const shooter = shooterText(s);
     if (!p.legal) return sentence(t('preview.blocked', { shooter, reason: t(p.reason === 'noSlot' ? 'reason.noSlot' : 'reason.nothing', { left: p.left }) }));
-    const slotMove = p.move.startsWith('S');
     if (p.parks) return sentence(t('preview.parks', { shooter }));
-    if (p.left === 0) return sentence(t('preview.usedUp', { shooter, n: p.hits.length }));
-    return sentence(t(slotMove ? 'preview.backToSlot' : 'preview.removes', { shooter, n: p.hits.length, left: p.left }));
+    if (p.left === 0) return sentence(t('preview.usedUp', { shooter, n: p.hits }));
+    return sentence(t(p.move.startsWith('S') ? 'preview.backToSlot' : 'preview.removes', { shooter, n: p.hits, left: p.left }));
   };
 
   const renderStatus = () => {
-    if (previewMove && !isSolved(pos)) {
-      status.textContent = previewText(preview(pos, previewMove)) + (selected === previewMove ? ` ${t('confirm.again')}` : '');
+    status.removeAttribute('aria-busy');
+    if (hintTimer !== null) {
+      status.textContent = t('hint.checking');
+      status.dataset.kind = 'busy';
+      status.setAttribute('aria-busy', 'true');
+    } else if (previewMove && !solved()) {
+      status.textContent = previewText(previewOf(previewMove)) + (selected === previewMove ? ` ${t('confirm.again')}` : '');
       status.dataset.kind = 'preview';
     } else {
       status.textContent = statusText || t('status.start');
@@ -423,34 +494,76 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
     if (move === null) selected = null;
     renderStatus();
     draw();
+    if (move) revealPreviewInLarge();
   };
 
-  // --- Canvas --------------------------------------------------------------------------------------------------
+  // --- Canvas: 1-pixel-per-cell images, scaled (design v2 § 6.1) -------------------------------------------------
+
+  /** Picture as RGBA, one pixel per cell: `base` (removed cells show the backdrop), `dim` (every cell washed out). */
+  let base: Uint8ClampedArray = new Uint8ClampedArray(0);
+  let dim: Uint8ClampedArray = new Uint8ClampedArray(0);
+  /** Cells drawn as still present (pending animation pops are drawn until popped). */
+  let shown: Uint8Array = new Uint8Array(0);
+
+  const resetImages = () => {
+    const { w, h, colour } = table.engine;
+    base = new Uint8ClampedArray(w * h * 4);
+    dim = new Uint8ClampedArray(w * h * 4);
+    shown = cursor.cells.present.slice();
+    const back = rgbOf(state.picture.backdrop);
+    const rgb = state.picture.palette.map((p) => rgbOf(p.hex));
+    for (let c = 0; c < w * h; c++) {
+      const code = colour[c] as number;
+      const col = shown[c] && code ? (rgb[code - 1] as [number, number, number]) : back;
+      base.set([col[0], col[1], col[2], 255], c * 4);
+      // Dimmed: 70 % towards the backdrop, so shape and brightness, not hue, carry the spotlight.
+      const d = code ? (rgb[code - 1] as [number, number, number]) : back;
+      const mix = (k: number) => Math.round((d[k] as number) * 0.3 + (back[k] as number) * 0.7);
+      dim.set(shown[c] ? [mix(0), mix(1), mix(2), 255] : [back[0], back[1], back[2], 255], c * 4);
+    }
+  };
+
+  /** Pops cells from the drawn picture (they show the backdrop from now on). */
+  const popCells = (cells: readonly number[]) => {
+    const back = rgbOf(state.picture.backdrop);
+    for (const c of cells) {
+      shown[c] = 0;
+      base.set([back[0], back[1], back[2], 255], c * 4);
+      dim.set([back[0], back[1], back[2], 255], c * 4);
+    }
+  };
 
   const cssVar = (name: string, fallback: string) => {
     const v = typeof getComputedStyle === 'function' ? getComputedStyle(container).getPropertyValue(name).trim() : '';
     return v || fallback;
   };
 
+  const dpr = () => (typeof window !== 'undefined' && window.devicePixelRatio > 0 ? Math.min(3, window.devicePixelRatio) : 1);
+
   const context2d = (el: HTMLCanvasElement, cssW: number, cssH: number): CanvasRenderingContext2D | null => {
-    const dpr = typeof window !== 'undefined' && window.devicePixelRatio > 0 ? Math.min(3, window.devicePixelRatio) : 1;
+    const ratio = dpr();
     el.style.width = `${cssW}px`;
     el.style.height = `${cssH}px`;
-    el.width = Math.round(cssW * dpr);
-    el.height = Math.round(cssH * dpr);
+    const bw = Math.round(cssW * ratio);
+    const bh = Math.round(cssH * ratio);
+    if (el.width !== bw) el.width = bw;
+    if (el.height !== bh) el.height = bh;
     let g: CanvasRenderingContext2D | null = null;
     try {
       g = el.getContext('2d');
     } catch {
       g = null;
     }
-    if (g) g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (g) {
+      g.setTransform(ratio, 0, 0, ratio, 0, 0);
+      g.imageSmoothingEnabled = false;
+    }
     return g;
   };
 
-  const symbolPaths: (Path2D | null)[] = SYMBOL_PATHS.map((d) => (typeof Path2D === 'function' ? new Path2D(d) : null));
+  const symbolPaths: (Path2D | null)[] = SYMBOLS.map((_, i) => (typeof Path2D === 'function' ? new Path2D(symbolPath(i)) : null));
   const drawSymbol = (g: CanvasRenderingContext2D, index: number, x: number, y: number, size: number, ink: string) => {
-    const path = symbolPaths[index];
+    const path = symbolPaths[index % symbolPaths.length];
     if (!path) return;
     g.save();
     g.translate(x, y);
@@ -460,9 +573,17 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
     g.restore();
   };
 
-  const available = (el: HTMLElement) => {
-    const w = el.clientWidth || container.clientWidth || 0;
+  const available = () => {
+    const w = board.clientWidth || container.clientWidth || 0;
     return w > 0 ? w : 0;
+  };
+
+  /** Cell size in CSS px: Fit fills the available width (at least 5 px), Large is 14 px. */
+  const cellSize = () => {
+    const { w } = table.engine;
+    if (display.large) return LARGE_CELL;
+    const avail = available();
+    return avail > 0 ? Math.max(5, Math.min(24, Math.floor((avail - 2 * TRACK) / w))) : 8;
   };
 
   /** Station centre on the track (for the moving token). */
@@ -474,70 +595,108 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
     return [half, TRACK + (i - 2 * w - h + 0.5) * cell];
   };
 
+  let scratch: HTMLCanvasElement | null = null;
+  const blit = (g: CanvasRenderingContext2D, data: Uint8ClampedArray, x: number, y: number, cell: number, mask?: (c: number) => boolean) => {
+    const { w, h } = table.engine;
+    if (typeof ImageData !== 'function' || typeof document === 'undefined') return;
+    if (!scratch) scratch = document.createElement('canvas');
+    scratch.width = w;
+    scratch.height = h;
+    const sg = scratch.getContext('2d');
+    if (!sg) return;
+    let pixels = data;
+    if (mask) {
+      pixels = new Uint8ClampedArray(data);
+      for (let c = 0; c < w * h; c++) if (!mask(c)) pixels[c * 4 + 3] = 0;
+    }
+    sg.putImageData(new ImageData(pixels as Uint8ClampedArray<ArrayBuffer>, w, h), 0, 0);
+    g.drawImage(scratch, x, y, w * cell, h * cell);
+  };
+
+  /** The colour key in the spotlight: the previewed shooter's, else the one shown from the colours list. */
+  const spotlightKey = (): string | null => {
+    if (previewMove && !anim) {
+      const s = shooterOf(previewOf(previewMove));
+      if (s) return s.c;
+    }
+    return shownColour;
+  };
+
   const draw = () => {
-    const { w, h } = state.picture;
-    const avail = available(board);
-    const cell = avail > 0 ? Math.max(8, Math.min(28, Math.floor((avail - 2 * TRACK) / w))) : 16;
+    const { w, h, colour } = table.engine;
+    const cell = cellSize();
     const cssW = w * cell + 2 * TRACK;
     const cssH = h * cell + 2 * TRACK;
-    const solved = isSolved(pos);
-    const ex = exposed(pos);
+    board.classList.toggle('is-large', display.large);
+    if (display.large) {
+      board.setAttribute('role', 'region');
+      board.setAttribute('tabindex', '0');
+      board.setAttribute('aria-label', t('picture.region'));
+    } else {
+      board.removeAttribute('role');
+      board.removeAttribute('tabindex');
+      board.removeAttribute('aria-label');
+    }
+    const ex: number[] = [];
+    for (let c = 0; c < exposure.seenBy.length; c++) if (exposure.seenBy[c]) ex.push(c);
     canvas.dataset.exposed = ex.map((c) => `${c % w},${Math.floor(c / w)}`).join(' ');
     canvas.dataset.cell = String(cell);
-    const p = previewMove && !anim ? preview(pos, previewMove) : null;
-    canvas.dataset.preview = p ? p.hits.map((x) => `${x.cell % w},${Math.floor(x.cell / w)}`).join(' ') : '';
-    if (solved) drawReveal();
+    const symbols = cell >= SYMBOL_MIN ? (display.allSymbols ? 'all' : 'edge') : 'none';
+    canvas.dataset.symbols = symbols;
+    const p = previewMove && !anim ? previewOf(previewMove) : null;
+    canvas.dataset.preview = p ? p.cells.map((x) => `${x.cell % w},${Math.floor(x.cell / w)}`).join(' ') : '';
+    const spot = spotlightKey();
+    canvas.dataset.spotlight = spot ?? '';
+    if (solved() && !anim) drawReveal();
     const g = context2d(canvas, cssW, cssH);
     if (!g) return;
-    // Track: a frame with one tick per station.
+    // Track: a plain frame, with one tick per station when the cells are large enough.
     g.fillStyle = cssVar('--wp-surface-2', '#ecebe5');
     g.fillRect(0, 0, cssW, cssH);
-    g.strokeStyle = cssVar('--wp-muted', '#5c5b55');
-    g.lineWidth = 1;
-    g.beginPath();
-    for (let i = 0; i < 2 * w + 2 * h; i++) {
-      const [x, y] = stationPoint(i, cell, w, h);
-      if (i < w || (i >= w + h && i < 2 * w + h)) {
-        g.moveTo(x + 0.5, y - 2);
-        g.lineTo(x + 0.5, y + 2);
-      } else {
-        g.moveTo(x - 2, y + 0.5);
-        g.lineTo(x + 2, y + 0.5);
+    if (cell >= 8) {
+      g.strokeStyle = cssVar('--wp-muted', '#5c5b55');
+      g.lineWidth = 1;
+      g.beginPath();
+      for (let i = 0; i < 2 * w + 2 * h; i++) {
+        const [x, y] = stationPoint(i, cell, w, h);
+        if (i < w || (i >= w + h && i < 2 * w + h)) {
+          g.moveTo(x + 0.5, y - 1.5);
+          g.lineTo(x + 0.5, y + 1.5);
+        } else {
+          g.moveTo(x - 1.5, y + 0.5);
+          g.lineTo(x + 1.5, y + 0.5);
+        }
+      }
+      g.stroke();
+    }
+    // Cells: one blit; with a spotlight, the dimmed picture plus the spotlight colour at full strength.
+    const code = spot ? (table.engine.codes.get(spot) ?? 0) : 0;
+    if (code) {
+      blit(g, dim, TRACK, TRACK, cell);
+      blit(g, base, TRACK, TRACK, cell, (c) => shown[c] === 1 && colour[c] === code);
+    } else blit(g, base, TRACK, TRACK, cell);
+    // Symbols from 10 px: on exposed cells, or on all with the option.
+    if (symbols !== 'none') {
+      const size = Math.max(6, Math.round(cell * 0.62));
+      const list = symbols === 'all' ? [...shown.keys()].filter((c) => shown[c]) : ex;
+      for (const c of list) {
+        if (!shown[c] || (code && colour[c] !== code)) continue;
+        const { e, i } = entry(keyOfCode(colour[c] as number));
+        drawSymbol(g, i, TRACK + (c % w) * cell + (cell - size) / 2, TRACK + Math.floor(c / w) * cell + (cell - size) / 2, size, inkFor(e.hex));
       }
     }
-    g.stroke();
-    // Cells: removed and transparent show the backdrop. Cells still to pop in an animation stay drawn.
-    const pending = new Set<number>();
-    let token: Hit | undefined;
-    if (anim) {
-      const f = Math.min(1, (performance.now() - anim.start) / anim.duration);
-      const done = Math.floor(f * anim.hits.length);
-      anim.hits.slice(done).forEach((x) => pending.add(x.cell));
-      token = anim.hits[Math.min(done, anim.hits.length - 1)];
-    }
-    const original = state.picture.rows.join('');
-    const exSet = new Set(ex);
-    const symbolSize = Math.max(6, Math.round(cell * 0.62));
-    for (let c = 0; c < w * h; c++) {
-      const x = TRACK + (c % w) * cell;
-      const y = TRACK + Math.floor(c / w) * cell;
-      const key = pos.cells[c] !== EMPTY ? (pos.cells[c] as string) : pending.has(c) ? (original[c] as string) : EMPTY;
-      if (key === EMPTY) {
-        g.fillStyle = state.picture.backdrop;
-        g.fillRect(x, y, cell, cell);
-        continue;
-      }
-      const { e, i } = entry(key);
-      g.fillStyle = e.hex;
-      g.fillRect(x, y, cell, cell);
-      if (!pending.has(c) && (exSet.has(c) || display.allSymbols)) drawSymbol(g, i, x + (cell - symbolSize) / 2, y + (cell - symbolSize) / 2, symbolSize, inkFor(e.hex));
-    }
-    // Preview: hatching plus a double outline (never colour alone).
+    // Preview marks: a contrasting square below 10 px; hatching plus a double outline from 10 px (never hue alone).
     if (p) {
-      for (const hit of p.hits) {
+      for (const hit of p.cells) {
         const x = TRACK + (hit.cell % w) * cell;
         const y = TRACK + Math.floor(hit.cell / w) * cell;
-        const ink = inkFor(entry(original[hit.cell] as string).e.hex);
+        const ink = inkFor(entry(keyOfCode(colour[hit.cell] as number)).e.hex);
+        if (cell < SYMBOL_MIN) {
+          const s = Math.max(2, Math.floor(cell / 2));
+          g.fillStyle = ink;
+          g.fillRect(x + Math.floor((cell - s) / 2), y + Math.floor((cell - s) / 2), s, s);
+          continue;
+        }
         g.save();
         g.beginPath();
         g.rect(x, y, cell, cell);
@@ -560,98 +719,152 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
         g.strokeRect(x + 2.5, y + 2.5, cell - 5, cell - 5);
       }
     }
-    if (token) {
-      const [tx, ty] = stationPoint(token.station, cell, w, h);
-      const shooter = entry(original[token.cell] as string).e;
-      g.beginPath();
-      g.arc(tx, ty, TRACK / 2 + 1, 0, Math.PI * 2);
-      g.fillStyle = shooter.hex;
-      g.fill();
-      g.lineWidth = 1.5;
-      g.strokeStyle = cssVar('--wp-text', '#1d1d1b');
-      g.stroke();
+    if (anim) {
+      const hit = anim.hits[Math.min(anim.done, anim.hits.length - 1)];
+      if (hit) {
+        const [tx, ty] = stationPoint(hit.station, cell, w, h);
+        g.beginPath();
+        g.arc(tx, ty, TRACK / 2 + 2, 0, Math.PI * 2);
+        g.fillStyle = entry(anim.c).e.hex;
+        g.fill();
+        g.lineWidth = 1.5;
+        g.strokeStyle = cssVar('--wp-text', '#1d1d1b');
+        g.stroke();
+      }
     }
+  };
+
+  /** In Large view, scrolls the picture so that the first previewed cell is visible (if none is). */
+  const revealPreviewInLarge = () => {
+    if (!display.large || !previewMove) return;
+    const p = previewOf(previewMove);
+    if (p.cells.length === 0) return;
+    const cell = LARGE_CELL;
+    const { w } = table.engine;
+    const inView = (c: number) => {
+      const x = TRACK + (c % w) * cell;
+      const y = TRACK + Math.floor(c / w) * cell;
+      return x >= board.scrollLeft && x + cell <= board.scrollLeft + board.clientWidth && y >= board.scrollTop && y + cell <= board.scrollTop + board.clientHeight;
+    };
+    if (p.cells.some((hit) => inView(hit.cell))) return;
+    const first = (p.cells[0] as Hit).cell;
+    board.scrollLeft = Math.max(0, TRACK + (first % w) * cell - board.clientWidth / 2);
+    board.scrollTop = Math.max(0, TRACK + Math.floor(first / w) * cell - board.clientHeight / 2);
   };
 
   const drawReveal = () => {
     const { w, h } = state.picture;
-    const avail = available(reveal);
-    const cell = avail > 0 ? Math.max(6, Math.min(24, Math.floor(avail / w))) : 16;
-    const g = context2d(revealCanvas, w * cell, h * cell);
+    const avail = reveal.clientWidth || container.clientWidth || 0;
+    const cell = avail > 0 ? Math.max(4, Math.min(16, Math.floor(avail / w))) : 8;
     revealCanvas.setAttribute('aria-label', motifTitle());
-    if (!g) return;
+    const g = context2d(revealCanvas, w * cell, h * cell);
+    if (!g || typeof ImageData !== 'function') return;
+    // The played grid, as it was before the first move.
+    const back = rgbOf(state.picture.backdrop);
+    const rgb = new Map(state.picture.palette.map((p) => [p.key, rgbOf(p.hex)] as const));
+    const data = new Uint8ClampedArray(w * h * 4);
     state.picture.rows.forEach((row, y) => {
       for (let x = 0; x < w; x++) {
-        const key = row[x] as string;
-        g.fillStyle = key === EMPTY ? state.picture.backdrop : entry(key).e.hex;
-        g.fillRect(x * cell, y * cell, cell, cell);
+        const col = rgb.get(row[x] as string) ?? back;
+        data.set([col[0], col[1], col[2], 255], (y * w + x) * 4);
       }
     });
+    const off = document.createElement('canvas');
+    off.width = w;
+    off.height = h;
+    off.getContext('2d')?.putImageData(new ImageData(data, w, h), 0, 0);
+    g.drawImage(off, 0, 0, w * cell, h * cell);
   };
 
   // --- Animation (cosmetic only: the state has already changed) ------------------------------------------------
 
   const tick = () => {
     if (!anim) return;
-    draw();
-    if (performance.now() - anim.start >= anim.duration) {
+    const f = Math.min(1, (performance.now() - anim.start) / anim.duration);
+    const done = Math.floor(f * anim.hits.length);
+    if (done > anim.done) {
+      popCells(anim.hits.slice(anim.done, done).map((x) => x.cell));
+      anim.done = done;
+    }
+    if (f >= 1) {
       anim = null;
       draw();
       return;
     }
+    draw();
     anim.frame = requestAnimationFrame(tick);
   };
 
-  const startAnimation = (hits: Hit[]) => {
+  const startAnimation = (hits: Hit[], c: string) => {
     finishAnimation();
-    if (context.reducedMotion || !display.animation || hits.length === 0 || typeof requestAnimationFrame !== 'function') return;
-    anim = { hits, start: performance.now(), duration: Math.min(ANIMATION_MAX_MS, 120 + hits.length * 45), frame: 0 };
+    if (context.reducedMotion || !display.animation || hits.length === 0 || typeof requestAnimationFrame !== 'function') {
+      popCells(hits.map((x) => x.cell));
+      return;
+    }
+    anim = { hits, done: 0, start: performance.now(), duration: Math.min(ANIMATION_MAX_MS, 120 + hits.length * 30), frame: 0, c };
     anim.frame = requestAnimationFrame(tick);
   };
 
   function finishAnimation() {
     if (!anim) return;
     if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(anim.frame);
+    popCells(anim.hits.slice(anim.done).map((x) => x.cell));
     anim = null;
     draw();
   }
 
   // --- Actions -------------------------------------------------------------------------------------------------
 
-  const commit = (next: PeelState, message: string) => {
+  const cancelHint = () => {
+    if (hintTimer !== null) clearTimeout(hintTimer);
+    hintTimer = null;
+  };
+
+  /** Applies a new state after a move (incrementally) or any other change (by replay). */
+  const commit = (next: PeelState, message: string, played?: { move: Move; hits: Hit[] }) => {
+    cancelHint();
     hintResult = null;
     selected = null;
     previewMove = null;
     state = next;
-    pos = position(state);
-    const solvedNow = isSolved(pos) && !state.reported;
+    if (played) {
+      const parsed = parseMove(played.move);
+      if (parsed) step(table, cursor, parsed.kind, parsed.index, true);
+      for (const hit of played.hits) leftOf[table.engine.colour[hit.cell] as number] = (leftOf[table.engine.colour[hit.cell] as number] as number) - 1;
+      updateExposure(table.engine, cursor.cells, exposure, played.hits.map((x) => x.cell));
+      previews = new Map();
+    } else {
+      finishAnimation();
+      rebuild();
+    }
+    const solvedNow = solved() && !state.reported;
     if (solvedNow) state = { ...state, reported: true };
     statusText = message;
     becameStuck = false;
+    if (played) startAnimation(played.hits, keyOfCode(table.engine.colour[(played.hits[0] ?? { cell: 0 }).cell] as number));
     update();
     context.requestSave();
     if (solvedNow) {
-      announce(live, `${motifTitle()}. ${t('reveal.stats', { launches: pos.launches, parks: pos.parks })}`);
-      context.finished({ outcome: 'completed', stats: { launches: pos.launches, parks: pos.parks } });
+      announce(live, `${motifTitle()}. ${t('reveal.stats', { launches: cursor.launches, parks: cursor.parks })}`);
+      context.finished({ outcome: 'completed', stats: { launches: cursor.launches, parks: cursor.parks } });
       revealTitle.focus();
     } else announce(live, becameStuck ? `${message} ${t('stuck.text')}` : message);
     becameStuck = false;
   };
 
   const resultText = (p: Preview): string => {
-    const shooter = shooterText(p.shooter as Shooter);
-    const n = p.hits.length;
-    if (p.left === 0) return sentence(t('result.usedUp', { shooter, n }));
+    const shooter = shooterText(shooterOf(p) as Shooter);
+    if (p.left === 0) return sentence(t('result.usedUp', { shooter, n: p.hits }));
     if (p.parks) return sentence(t('result.parked', { shooter, slot: p.slot + 1 }));
-    return sentence(t(p.move.startsWith('S') ? 'result.back' : 'result.waits', { shooter, n, slot: p.slot + 1, left: p.left }));
+    return sentence(t(p.move.startsWith('S') ? 'result.back' : 'result.waits', { shooter, n: p.hits, slot: p.slot + 1, left: p.left }));
   };
 
   function activate(b: HTMLButtonElement) {
     finishAnimation();
-    if (paused || isSolved(pos)) return;
+    if (paused || solved()) return;
     const move = moveOf(b);
     if (!move) return;
-    const p = preview(pos, move);
+    const p = previewOf(move);
     if (!p.legal) {
       previewMove = move;
       selected = null;
@@ -670,10 +883,9 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
     const isLane = move.startsWith('L');
     const index = Number(move.slice(1));
     const wasFocused = document.activeElement === b;
-    commit(play(state, move), resultText(p));
+    commit({ ...state, moves: [...state.moves, move], restartUndo: null }, resultText(p), { move, hits: p.cells });
     quiet = b;
-    startAnimation(p.hits);
-    if (isSolved(pos)) return;
+    if (solved()) return;
     // Focus stays on the same lane; an emptied lane or slot hands focus on (next lane, then the first slot).
     if (wasFocused && b.hidden) {
       const lanes = visible(laneButtons);
@@ -706,25 +918,35 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
     if (next !== state) commit(next, k === 0 ? t('status.undoneToStart') : t('status.undoneTo', { k }));
   }
 
-  function doHint() {
-    finishAnimation();
-    if (paused || isSolved(pos)) return;
-    hintResult = computeHint(state);
+  const showHint = (result: HintResult) => {
+    hintResult = result;
     let text: string;
-    if (hintResult.kind === 'move') {
-      const p = preview(pos, hintResult.move);
-      const shooter = shooterText(p.shooter as Shooter);
-      const index = Number(hintResult.move.slice(1)) + 1;
-      text = hintResult.move.startsWith('L') ? t('hint.lane', { lane: index, shooter }) : t('hint.slot', { slot: index, shooter });
+    if (result.kind === 'move') {
+      const p = previewOf(result.move);
+      const shooter = shooterText(shooterOf(p) as Shooter);
+      const index = Number(result.move.slice(1)) + 1;
+      text = result.move.startsWith('L') ? t('hint.lane', { lane: index, shooter }) : t('hint.slot', { slot: index, shooter });
     } else {
-      const k = hintResult.k;
-      const kind = hintResult.proven ? 'hint.unsolvable' : 'hint.unknown';
-      text = k === 0 ? t(`${kind}Start`) : t(kind, { k });
+      const kind = result.proven ? 'hint.unsolvable' : 'hint.unknown';
+      text = result.k === 0 ? t(`${kind}Start`) : t(kind, { k: result.k });
     }
     statusText = text;
     previewMove = null;
     update();
     announce(live, text);
+  };
+
+  function doHint() {
+    finishAnimation();
+    if (paused || solved() || hintTimer !== null) return;
+    // The quick answer (on the witness path) at once; anything else after one frame with a busy state.
+    const onPath = state.moves.every((m, i) => state.witness[i] === m) && state.moves.length < state.witness.length;
+    if (onPath) return showHint(computeHint(state));
+    hintTimer = setTimeout(() => {
+      hintTimer = null;
+      showHint(computeHint(state));
+    }, 30);
+    renderStatus();
   }
 
   // --- Keyboard ------------------------------------------------------------------------------------------------
@@ -735,9 +957,9 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
       const index = shown.indexOf(document.activeElement as HTMLButtonElement);
       if (index < 0) return;
       const rtl = getComputedStyle(row).direction === 'rtl';
-      const step: Record<string, number> = { ArrowRight: rtl ? -1 : 1, ArrowLeft: rtl ? 1 : -1, ArrowDown: 1, ArrowUp: -1 };
+      const stepBy: Record<string, number> = { ArrowRight: rtl ? -1 : 1, ArrowLeft: rtl ? 1 : -1, ArrowDown: 1, ArrowUp: -1 };
       let target = -1;
-      if (event.key in step) target = Math.max(0, Math.min(shown.length - 1, index + (step[event.key] as number)));
+      if (event.key in stepBy) target = Math.max(0, Math.min(shown.length - 1, index + (stepBy[event.key] as number)));
       else if (event.key === 'Home') target = 0;
       else if (event.key === 'End') target = shown.length - 1;
       if (target < 0) return;
@@ -757,13 +979,32 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
   roving(lanesRow, () => laneButtons, (i) => (laneFocus = i));
   roving(slotsRow, () => slotButtons, (i) => (slotFocus = i));
 
+  lanesToggle.addEventListener('click', () => {
+    display.wholeLanes = !wholeLanes();
+    savePrefs();
+    update();
+  });
+
+  // Large view: the arrow keys pan the picture when it has focus.
+  board.addEventListener('keydown', (event) => {
+    if (!display.large || event.target !== board) return;
+    const d: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+    const v = d[event.key];
+    if (!v) return;
+    event.preventDefault();
+    board.scrollLeft += v[0] * LARGE_CELL * 4;
+    board.scrollTop += v[1] * LARGE_CELL * 4;
+  });
+
   const onKeyDown = (event: KeyboardEvent) => {
     if ((event.ctrlKey || event.metaKey) && !event.shiftKey && !event.altKey && event.key.toLowerCase() === 'z') {
       event.preventDefault();
       doUndo();
-    } else if (event.key === 'Escape' && (previewMove || selected)) {
+    } else if (event.key === 'Escape' && (previewMove || selected || shownColour)) {
       selected = null;
+      shownColour = null;
       showPreview(null);
+      update();
     }
   };
   const onPointerDown = (event: PointerEvent) => {
@@ -776,7 +1017,6 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
   };
   const onResize = () => draw();
   container.addEventListener('keydown', onKeyDown);
-  // Anywhere in the document: a press outside the game also cancels a selection.
   document.addEventListener('pointerdown', onPointerDown);
   if (typeof window !== 'undefined') window.addEventListener('resize', onResize);
 
@@ -784,17 +1024,19 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
 
   const mount = () => {
     finishAnimation();
+    cancelHint();
     hintResult = null;
     selected = null;
     previewMove = null;
+    shownColour = null;
     statusText = '';
     laneFocus = 0;
     slotFocus = 0;
-    pos = position(state);
-    wasStuck = isStuck(pos);
+    rebuild();
     build();
+    wasStuck = isStuckNow();
     if (!container.isConnected) context.root.appendChild(container);
-    colours.open = typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(min-width: 48rem)').matches;
+    colours.open = wide();
     update();
   };
 
@@ -807,16 +1049,18 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
       state = clone(saved);
       mount();
       // A save written between the last move and finished() (or by an older version): report the end once.
-      if (isSolved(pos) && !state.reported) {
+      if (solved() && !state.reported) {
         state = { ...state, reported: true };
         context.requestSave();
-        context.finished({ outcome: 'completed', stats: { launches: pos.launches, parks: pos.parks } });
+        context.finished({ outcome: 'completed', stats: { launches: cursor.launches, parks: cursor.parks } });
       }
     },
     serialize: () => clone(state),
     pause() {
       paused = true;
       finishAnimation();
+      cancelHint();
+      renderStatus();
     },
     resume() {
       paused = false;
@@ -828,6 +1072,7 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
     },
     dispose() {
       finishAnimation();
+      cancelHint();
       container.removeEventListener('keydown', onKeyDown);
       document.removeEventListener('pointerdown', onPointerDown);
       if (typeof window !== 'undefined') window.removeEventListener('resize', onResize);
