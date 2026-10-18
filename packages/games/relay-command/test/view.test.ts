@@ -616,6 +616,39 @@ describe('Relay Command view', () => {
     expect($('rc-setup-summary').textContent).toContain(`Random map 24×16 · No. ${first.seed}`);
   });
 
+  it('a random map for two or three opponents has four bases, one per corner; one opponent goes back to two sides; the editor starts blank on it', () => {
+    const scenario = $('rc-scenario') as HTMLSelectElement;
+    scenario.value = 'random';
+    scenario.dispatchEvent(new Event('change'));
+    const opponents = $('rc-opponents') as HTMLSelectElement;
+    expect($('rc-opponents-label').hidden).toBe(false);
+    expect([...opponents.options].map((o) => o.value)).toEqual(['1', '2', '3']);
+    expect(state().map!.seats).toBeUndefined();
+    const { seed } = state().random!;
+    opponents.value = '3';
+    opponents.dispatchEvent(new Event('change'));
+    expect(state().opponents).toBe(3);
+    expect(state().map!.seats).toBe(4);
+    expect(state().random).toEqual({ w: 16, h: 12, seed });
+    expect(state().world.sides).toBe(4);
+    expect(scenario.value).toBe('random');
+    // Two opponents: the same map, the fourth base a neutral post.
+    const four = state().map;
+    opponents.value = '2';
+    opponents.dispatchEvent(new Event('change'));
+    expect(state().map).toEqual(four);
+    expect(state().world.entities.some((e) => e.side === NEUTRAL && e.kind === 'command-post')).toBe(true);
+    // The map editor has no four-base maps yet: it starts from an empty map.
+    click('rc-editor-open');
+    expect(state().edit!.map.seats).toBeUndefined();
+    expect(state().edit!.map.units).toEqual([]);
+    click('ed-close');
+    opponents.value = '1';
+    opponents.dispatchEvent(new Event('change'));
+    expect(state().map!.seats).toBeUndefined();
+    expect(state().world.sides).toBe(2);
+  });
+
   it('maps pointer clicks on the canvas to cells', () => {
     const unit = firstMobile();
     const map = $('rc-map');

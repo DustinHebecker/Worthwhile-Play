@@ -63,6 +63,7 @@ import {
   sideValue,
   TURN_LIMITS,
   unitById,
+  RANDOM_OPPONENTS,
   RANDOM_SIZES,
   type RcState
 } from './rules';
@@ -491,8 +492,9 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
 
   function openEditor(): void {
     editor.forget();
-    // Start from the map being played (a player-made one), else an empty map; mirrored edits by default.
-    if (!state.edit) commit({ ...state, edit: { map: state.map ?? blankMap(16, 12), slot: null, mirror: true } });
+    // Start from the map being played (a player-made or random one with two sides; the editor has no
+    // four-base maps yet), else an empty map; mirrored edits by default.
+    if (!state.edit) commit({ ...state, edit: { map: state.map && !state.map.seats ? state.map : blankMap(16, 12), slot: null, mirror: true } });
     render();
     editor.el.querySelector<HTMLElement>('[data-testid="ed-map"]')?.focus();
   }
@@ -2033,11 +2035,11 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     });
   }
 
-  /** The opponent counts the map in the select offers (player-made maps: one). */
+  /** The opponent counts the map in the select offers (player-made maps: one; random maps: one to three). */
   function syncOpponentOptions(): void {
     const value = scenarioSelect.value;
     const spec = scenarioById(value);
-    const counts = spec ? opponentCounts(spec) : [1];
+    const counts = value === 'random' ? RANDOM_OPPONENTS : spec ? opponentCounts(spec) : [1];
     const current = [...opponentsSelect.querySelectorAll('option')].map((o) => o.value).join(',');
     if (current !== counts.join(',')) {
       clear(opponentsSelect);
@@ -2076,16 +2078,18 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       const seed = state.random && randomSeed.value.trim() !== '' && Number.isFinite(typed) ? Math.trunc(typed) >>> 0 : (state.random?.seed ?? state.seed);
       randomSeed.value = String(seed);
       const limit = limitSelect.value === 'open' || limitSelect.value === 'quick' ? null : Number(limitSelect.value);
+      syncOpponentOptions();
+      // One opponent: a two-side map; two or three: four bases, one in each corner.
+      const opponents = Number(opponentsSelect.value) || 1;
       let map: EditMap;
       try {
-        map = generateMap(size[0], size[1], seed, t('setup.randomName', { w: size[0], h: size[1], n: seed }).slice(0, MAX_NAME));
+        map = generateMap(size[0], size[1], seed, t('setup.randomName', { w: size[0], h: size[1], n: seed }).slice(0, MAX_NAME), opponents > 1 ? 4 : 2);
       } catch {
         render(); // cannot happen for the offered sizes; the game stays as it is
         return;
       }
       selected = null;
-      syncOpponentOptions();
-      commit(newGame(state.seed, FIELD_EXERCISE, state.difficulty, limit, limitSelect.value === 'quick', map, 1, chosenSeats(), endlessInput.checked, { w: size[0], h: size[1], seed }), t('announce.setup', { scenario: mapLabel(map) }));
+      commit(newGame(state.seed, FIELD_EXERCISE, state.difficulty, limit, limitSelect.value === 'quick', map, opponents, chosenSeats(), endlessInput.checked, { w: size[0], h: size[1], seed }), t('announce.setup', { scenario: mapLabel(map) }));
       homeCursor();
       render();
       return;

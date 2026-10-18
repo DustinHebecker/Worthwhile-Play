@@ -1,6 +1,6 @@
 import { isRecord } from '@wp/game-core';
 import { cellOf, findPath, STRATEGY_RULESET as RULESET, type Scenario } from '@wp/strategy-engine';
-import { DEPOSIT_SUPPLY, RICH_DEPOSIT_SUPPLY, type ScenarioSpec } from './scenarios';
+import { DEPOSIT_SUPPLY, RICH_DEPOSIT_SUPPLY, type ScenarioSpec, type Seats } from './scenarios';
 
 /**
  * Player-made maps (map editor, owner request after PR #14). A map is plain JSON: size, terrain
@@ -16,7 +16,23 @@ export interface EditMap {
   readonly terrain: string;
   readonly deposits: readonly MapDeposit[];
   readonly units: readonly MapUnit[];
+  /**
+   * Maps with four bases (generated only, 2026-10-18; the editor keeps to two): a unit's side is
+   * its seat, 0 bottom left, 1 top left, 2 top right, 3 bottom right. Absent: a two-side map.
+   */
+  readonly seats?: 4;
 }
+
+/** The number of bases (seats) of a map. */
+export const seatsOf = (map: Pick<EditMap, 'seats'>): number => map.seats ?? 2;
+
+/**
+ * How each of the four seats sees the map: seat 0 as it is, the others as its mirror images
+ * (top left mirrored top to bottom, bottom right left to right, top right both), so a map that is
+ * the same under both mirrors stays fair (ADR 0009). One opponent sits across; with two, the
+ * fourth base is a neutral post (as on Four Corners).
+ */
+export const FOUR_SEATS: Seats = { frames: ['id', 'fy', 'r180', 'fx'], layouts: { 1: [0, 2], 2: [0, 1, 2], 3: [0, 1, 2, 3] } };
 
 /**
  * A deposit of a map: plain (DEPOSIT_SUPPLY), rich (RICH_DEPOSIT_SUPPLY) or endless (never runs
@@ -71,14 +87,14 @@ export function fromScenario(spec: ScenarioSpec, name = ''): EditMap {
 export function toScenario(map: EditMap): Scenario {
   return {
     map: { w: map.w, h: map.h, terrain: map.terrain, deposits: map.deposits.map((d) => ({ x: d.x, y: d.y, left: d.size === 'rich' ? RICH_DEPOSIT_SUPPLY : DEPOSIT_SUPPLY, ...(d.size === 'endless' && { endless: true as const }) })) },
-    sides: 2,
+    sides: seatsOf(map),
     entities: map.units.map((u) => ({ side: u.side, kind: u.kind, x: u.x, y: u.y })),
     seed: 0
   };
 }
 
 /** The scenario spec a game on `map` runs on (id 'custom'; the turn limit is chosen in the setup). */
-export const customSpec = (map: EditMap): ScenarioSpec => ({ id: 'custom', turnLimit: 12, scenario: toScenario(map) });
+export const customSpec = (map: EditMap): ScenarioSpec => ({ id: 'custom', turnLimit: 12, scenario: toScenario(map), ...(map.seats === 4 && { seats: FOUR_SEATS }) });
 
 /** What an edit does at one cell. */
 export type Tool = { readonly type: 'terrain'; readonly code: string } | { readonly type: 'deposit'; readonly size?: DepositSize } | { readonly type: 'unit'; readonly kind: string; readonly side: number } | { readonly type: 'erase' };
@@ -146,47 +162,66 @@ export type MapIssue = { readonly key: 'map.posts' | 'map.path' | 'map.units'; r
 
 export function mapIssues(map: EditMap): MapIssue[] {
   const issues: MapIssue[] = [];
-  const posts = [0, 1].map((side) => map.units.filter((u) => u.side === side && u.kind === 'command-post'));
-  for (const side of [0, 1]) if (posts[side]!.length !== 1) issues.push({ key: 'map.posts', side });
-  for (const side of [0, 1]) if (map.units.filter((u) => u.side === side && u.kind !== 'command-post').length === 0) issues.push({ key: 'map.units', side });
-  const a = posts[0]![0];
-  const b = posts[1]![0];
-  if (a && b && posts[0]!.length === 1 && posts[1]!.length === 1) {
-    // The posts must be connected over ground (units do not count: they move).
+  const sides = Array.from({ length: seatsOf(map) }, (_, side) => side);
+  const posts = sides.map((side) => map.units.filter((u) => u.side === side && u.kind === 'command-post'));
+  for (const side of sides) if (posts[side]!.length !== 1) issues.push({ key: 'map.posts', side });
+  for (const side of sides) if (map.units.filter((u) => u.side === side && u.kind !== 'command-post').length === 0) issues.push({ key: 'map.units', side });
+  if (posts.every((p) => p.length === 1)) {
+    // Every post must be connected to the first over ground (units do not count: they move).
     const scenario = toScenario(map);
-    const path = findPath(scenario.map, RULESET, cellOf(scenario.map, a.x, a.y), cellOf(scenario.map, b.x, b.y), { layer: 'ground', side: 0 });
-    if (!path) issues.push({ key: 'map.path' });
+    const [a, ...others] = posts.map((p) => p[0]!);
+    const connected = others.every((b) => findPath(scenario.map, RULESET, cellOf(scenario.map, a!.x, a!.y), cellOf(scenario.map, b.x, b.y), { layer: 'ground', side: 0 }) !== undefined);
+    if (!connected) issues.push({ key: 'map.path' });
   }
   return issues;
 }
 
-/** Whether the map is point-symmetric (terrain, deposits, units with sides swapped): told, not required. */
+/**
+ * Whether the map is the same for every side (told, not required): a two-side map point-symmetric
+ * with the sides swapped; a four-base map the same mirrored left to right (seats 0 and 3, 1 and 2
+ * swapped) and top to bottom (seats 0 and 1, 2 and 3 swapped). Terrain, deposits and units.
+ */
 export function isFair(map: EditMap): boolean {
-  const n = map.w * map.h;
-  for (let c = 0; c < n; c++) if (map.terrain[c] !== map.terrain[n - 1 - c]) return false;
-  const mirror = (p: { x: number; y: number }) => ({ x: map.w - 1 - p.x, y: map.h - 1 - p.y });
-  if (!map.deposits.every((d) => map.deposits.some((o) => o.x === mirror(d).x && o.y === mirror(d).y && depositSize(o) === depositSize(d)))) return false;
-  return map.units.every((u) => map.units.some((o) => o.kind === u.kind && o.side === 1 - u.side && o.x === mirror(u).x && o.y === mirror(u).y));
+  type Image = { readonly at: (p: { x: number; y: number }) => { x: number; y: number }; readonly side: readonly number[] };
+  const images: Image[] =
+    map.seats === 4
+      ? [
+          { at: (p) => ({ x: map.w - 1 - p.x, y: p.y }), side: [3, 2, 1, 0] },
+          { at: (p) => ({ x: p.x, y: map.h - 1 - p.y }), side: [1, 0, 3, 2] }
+        ]
+      : [{ at: (p) => ({ x: map.w - 1 - p.x, y: map.h - 1 - p.y }), side: [1, 0] }];
+  const cellAt = (x: number, y: number) => map.terrain[y * map.w + x];
+  return images.every(({ at, side }) => {
+    for (let y = 0; y < map.h; y++) {
+      for (let x = 0; x < map.w; x++) {
+        const m = at({ x, y });
+        if (cellAt(x, y) !== cellAt(m.x, m.y)) return false;
+      }
+    }
+    if (!map.deposits.every((d) => map.deposits.some((o) => o.x === at(d).x && o.y === at(d).y && depositSize(o) === depositSize(d)))) return false;
+    return map.units.every((u) => map.units.some((o) => o.kind === u.kind && o.side === side[u.side] && o.x === at(u).x && o.y === at(u).y));
+  });
 }
 
 /** Whether `value` is a well-formed map (bounds, codes, kinds, cells). Never throws. */
 export function isValidMap(value: unknown): value is EditMap {
   if (!isRecord(value)) return false;
-  const { name, w, h, terrain, deposits, units } = value;
-  if (typeof name !== 'string' || name.length > MAX_NAME) return false;
+  const { name, w, h, terrain, deposits, units, seats } = value;
+  if (typeof name !== 'string' || name.length > MAX_NAME || (seats !== undefined && seats !== 4)) return false;
+  const sides = seats === 4 ? 4 : 2;
   if (!(MAP_WIDTHS as readonly unknown[]).includes(w) || !(MAP_HEIGHTS as readonly unknown[]).includes(h)) return false;
   const width = w as number;
   const height = h as number;
   if (typeof terrain !== 'string' || terrain.length !== width * height || [...terrain].some((c) => !(TERRAIN_CODES as readonly string[]).includes(c))) return false;
-  if (!Array.isArray(deposits) || deposits.length > width * height || !Array.isArray(units) || units.length > 2 * MAX_UNITS_PER_SIDE) return false;
+  if (!Array.isArray(deposits) || deposits.length > width * height || !Array.isArray(units) || units.length > sides * MAX_UNITS_PER_SIDE) return false;
   const cellOk = (p: unknown): p is { x: number; y: number } => isRecord(p) && Number.isInteger(p.x) && Number.isInteger(p.y) && (p.x as number) >= 0 && (p.y as number) >= 0 && (p.x as number) < width && (p.y as number) < height && !blocks(terrain[(p.y as number) * width + (p.x as number)] ?? '.');
   const sizeOk = (d: unknown): boolean => isRecord(d) && (d.size === undefined || d.size === 'rich' || d.size === 'endless');
   if (!deposits.every((d) => cellOk(d) && sizeOk(d)) || new Set(deposits.map((d) => `${d.x},${d.y}`)).size !== deposits.length) return false;
-  const unitOk = (u: unknown): boolean => isRecord(u) && (u.side === 0 || u.side === 1) && (MAP_KINDS as readonly unknown[]).includes(u.kind) && cellOk(u);
+  const unitOk = (u: unknown): boolean => isRecord(u) && Number.isInteger(u.side) && (u.side as number) >= 0 && (u.side as number) < sides && (MAP_KINDS as readonly unknown[]).includes(u.kind) && cellOk(u);
   if (!units.every(unitOk)) return false;
   const typed = units as MapUnit[];
   if (new Set(typed.map((u) => `${u.x},${u.y}`)).size !== typed.length) return false;
-  if ([0, 1].some((side) => typed.filter((u) => u.side === side).length > MAX_UNITS_PER_SIDE)) return false;
+  if (Array.from({ length: sides }, (_, side) => side).some((side) => typed.filter((u) => u.side === side).length > MAX_UNITS_PER_SIDE)) return false;
   // Extractors stand on deposits, and nothing else does.
   return typed.every((u) => deposits.some((d) => d.x === u.x && d.y === u.y) === (u.kind === 'extractor'));
 }
