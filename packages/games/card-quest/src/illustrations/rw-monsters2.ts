@@ -304,7 +304,8 @@ export const RW_MONSTERS2: Readonly<Record<string, string>> = {
     <g class="il-yellow il-ink il-thin"><polygon points="148 78 149.5 81 152.5 82 149.5 83 148 86 146.5 83 143.5 82 146.5 81"/><polygon points="120 80 121 82 123 83 121 84 120 86 119 84 117 83 119 82"/></g>`,
 
   // An ancient steam loco rusts on the overgrown sidings: a tree grows from its chimney, a bird nests on the cab roof,
-  // vines wrap its boiler and it dozes with mossy moustache; a snail crawls along the buffer stop.
+  // vines wrap its boiler and it dozes with a mossy moustache on the boiler side (mossy dark smokebox door, broken
+  // lamp); a snail crawls along the buffer stop.
   'rw.overgrown-sidings': `
     <rect class="il-sky" x="0" y="0" width="160" height="120"/>
     <path class="il-green" opacity="0.6" d="M0 74q10-20 26-14 10-14 26-4 14-10 30 0 14-8 30 0 16-10 28 2 12-6 20 4v18H0z"/>
@@ -328,8 +329,8 @@ export const RW_MONSTERS2: Readonly<Record<string, string>> = {
     <polygon class="il-orange il-ink il-thin" points="35 20 39 21 35 23"/>
     <circle class="il-dark" cx="32" cy="20" r="0.9"/>
     <rect class="il-grey il-ink" x="42" y="48" width="66" height="34" rx="4"/>
-    <path class="il-line il-thin" d="M62 48v34M86 48v34"/>
-    <ellipse class="il-earth" opacity="0.7" cx="54" cy="70" rx="6" ry="4"/><ellipse class="il-earth" opacity="0.7" cx="96" cy="58" rx="5" ry="3"/><ellipse class="il-earth" opacity="0.7" cx="22" cy="76" rx="4" ry="5"/>
+    <path class="il-line il-thin" d="M62 48v34"/>
+    <ellipse class="il-earth" opacity="0.7" cx="54" cy="70" rx="6" ry="4"/><ellipse class="il-earth" opacity="0.7" cx="49" cy="56" rx="5" ry="3"/><ellipse class="il-earth" opacity="0.7" cx="22" cy="76" rx="4" ry="5"/>
     <path class="il-grey il-ink" d="M88 48q0-10 7-10t7 10z"/>
     <rect class="il-dark il-ink" x="66" y="34" width="12" height="14"/>
     <rect class="il-dark il-ink" x="63" y="30" width="18" height="5" rx="1"/>
@@ -338,14 +339,22 @@ export const RW_MONSTERS2: Readonly<Record<string, string>> = {
     <circle class="il-green il-ink" cx="62" cy="13" r="9"/><circle class="il-green il-ink" cx="86" cy="13" r="10"/><circle class="il-green il-ink" cx="74" cy="9" r="8.5"/>
     <path class="il-grass" opacity="0.6" d="M64 8q4-4 8-2M82 8q4-3 8 0"/>
     <g class="il-red il-ink il-thin"><circle cx="66" cy="16" r="1.6"/><circle cx="84" cy="9" r="1.6"/><circle cx="92" cy="16" r="1.6"/></g>
-    <circle class="il-dark il-ink" cx="112" cy="64" r="18"/>
-    <circle class="il-stone il-ink" cx="112" cy="64" r="15"/>
+    <rect class="il-dark il-ink" x="104" y="46" width="18" height="38" rx="2"/>
+    <path class="il-earth il-ink il-thin" d="M103 46h4v38h-4z"/>
+    <circle class="il-metal" cx="113" cy="51" r="1"/><circle class="il-metal" cx="113" cy="65" r="1"/><circle class="il-metal" cx="113" cy="79" r="1"/>
+    <ellipse class="il-dark il-ink" cx="122" cy="65" rx="5" ry="18"/>
+    <circle class="il-metal" cx="122" cy="52" r="1"/><circle class="il-metal" cx="122" cy="78" r="1"/>
+    <path class="il-light il-thin" d="M119 65h6"/><circle class="il-metal il-ink il-thin" cx="122" cy="65" r="1.8"/>
+    <rect class="il-dark il-ink il-thin" x="110" y="39" width="8" height="7" rx="1.5"/><path class="il-stone il-ink il-thin" d="M118 40.5h2.4v4H118z"/><path class="il-line il-thin" d="M118.4 41l1.6 2"/>
+    <path class="il-green il-ink il-thin" d="M103 47q4-5 8-1 4-4 8 0 3-2 5 1z"/>
+    <g transform="translate(93 64) scale(0.9) translate(-112 -64)">
     <circle class="il-white il-ink" cx="105" cy="60" r="4.5"/><circle class="il-white il-ink" cx="119" cy="60" r="4.5"/>
     <circle class="il-dark" cx="105" cy="62" r="2"/><circle class="il-dark" cx="119" cy="62" r="2"/>
     <path class="il-grey il-ink il-thin" d="M100.5 60.6a4.5 4.5 0 0 1 9 0zM114.5 60.6a4.5 4.5 0 0 1 9 0z"/>
     <path class="il-green il-ink il-thin" d="M101 69q5-5 11-1 6-4 11 1-5 4-11 1-6 3-11-1z"/>
     <ellipse class="il-dark" cx="112" cy="74" rx="2.6" ry="1.8"/>
-    <path class="il-light il-thin" d="M126 46h4l-3 4h4M132 38h3l-3 3h3"/>
+    </g>
+    <path class="il-light il-thin" d="M128 40h4l-3 4h4M134 32h3l-3 3h3"/>
     <path class="il-line il-thin" d="M40 92q4-22 18-28t22-16M80 48q8 4 12 0"/>
     <g class="il-green il-ink il-thin"><ellipse cx="46" cy="76" rx="4" ry="2" transform="rotate(-40 46 76)"/><ellipse cx="56" cy="65" rx="4" ry="2" transform="rotate(20 56 65)"/><ellipse cx="68" cy="58" rx="4" ry="2" transform="rotate(-30 68 58)"/><ellipse cx="78" cy="50" rx="4" ry="2" transform="rotate(30 78 50)"/><ellipse cx="90" cy="49" rx="3.4" ry="1.8"/></g>
     <circle class="il-dark il-ink" cx="54" cy="86" r="9"/><circle class="il-dark il-ink" cx="76" cy="86" r="9"/><circle class="il-dark il-ink" cx="98" cy="86" r="9"/>
@@ -439,7 +448,8 @@ export const RW_MONSTERS2: Readonly<Record<string, string>> = {
     <g class="il-dark"><ellipse cx="30" cy="30" rx="2.6" ry="2"/><ellipse cx="96" cy="20" rx="2.6" ry="2"/><ellipse cx="104" cy="18" rx="2.6" ry="2"/><ellipse cx="136" cy="24" rx="2.6" ry="2"/></g>
     <path class="il-line il-thin" d="M32.4 30V20l3 3M98.4 20v-9l8-2v9M138.4 24V14l3 3"/>`,
 
-  // At midnight the ghost train rolls out under a full moon: a purple loco with glowing eyes and a cowcatcher grin, a
+  // At midnight the ghost train rolls out under a full moon: a purple loco with glowing eyes and a jagged grin on its
+  // boiler side (dark smokebox door with an eerie glowing lamp, spiky cowcatcher), a
   // ghost driver in the cab, smoke puffs shaped like little ghosts and passengers waving forever from the carriage.
   'rw.ghost-train': `
     <rect class="il-night" x="0" y="0" width="160" height="120"/>
@@ -469,7 +479,7 @@ export const RW_MONSTERS2: Readonly<Record<string, string>> = {
     <path class="il-white il-ink il-thin" d="M107 58v-8q0-5 4-5t4 5v8l-2-2-2 2-2-2z"/>
     <circle class="il-dark" cx="110" cy="50" r="0.9"/><circle class="il-dark" cx="112.6" cy="50" r="0.9"/>
     <rect class="il-purple-dark il-ink" x="50" y="52" width="52" height="32" rx="3"/>
-    <path class="il-line il-thin" d="M70 52v32M86 52v32"/>
+    <path class="il-line il-thin" d="M96 52v32"/>
     <path class="il-purple-dark il-ink" d="M78 52q0-8 6-8t6 8z"/>
     <rect class="il-dark il-ink" x="60" y="36" width="10" height="16"/>
     <rect class="il-dark il-ink" x="57" y="32" width="16" height="5" rx="1"/>
@@ -478,10 +488,16 @@ export const RW_MONSTERS2: Readonly<Record<string, string>> = {
     <path class="il-smoke il-ink" opacity="0.8" d="M94 14q-2-6 4-7 2-6 8-3 6 0 4 6 2 4-4 5-6 4-12-1z"/>
     <circle class="il-dark" cx="100" cy="9" r="1"/><circle class="il-dark" cx="105" cy="9" r="1"/>
     <circle class="il-smoke il-ink il-thin" opacity="0.7" cx="118" cy="6" r="3.4"/>
-    <circle class="il-purple-dark il-ink" cx="50" cy="68" r="18"/>
-    <circle class="il-purple il-ink il-thin" cx="50" cy="68" r="14"/>
-    <polygon class="il-glow" points="40 60 48 63 47 68 40 66"/><polygon class="il-glow" points="60 60 52 63 53 68 60 66"/>
-    <path class="il-glow il-ink il-thin" d="M40 72q10 8 20 0l-3 4-3-2-4 3-4-3-3 2z"/>
+    <rect class="il-dark il-ink" x="32" y="49" width="20" height="38" rx="2"/>
+    <path class="il-purple il-ink il-thin" d="M50 49h4v38h-4z"/>
+    <circle class="il-metal" cx="42" cy="54" r="1"/><circle class="il-metal" cx="42" cy="68" r="1"/><circle class="il-metal" cx="42" cy="82" r="1"/>
+    <ellipse class="il-dark il-ink" cx="32" cy="68" rx="5.5" ry="18.5"/>
+    <circle class="il-metal" cx="32" cy="54" r="1"/><circle class="il-metal" cx="32" cy="82" r="1"/>
+    <path class="il-light il-thin" d="M29 68h6"/><circle class="il-metal il-ink il-thin" cx="32" cy="68" r="1.8"/>
+    <rect class="il-dark il-ink il-thin" x="36" y="41" width="8" height="8" rx="1.5"/><path class="il-glow il-ink il-thin" d="M33.5 42.5h2.5v5h-2.5z"/>
+    <path class="il-glow" opacity="0.35" d="M33 43l-16-6v16z"/>
+    <polygon class="il-glow il-ink il-thin" points="64 59 73 62 72 68 64 66"/><polygon class="il-glow il-ink il-thin" points="88 59 79 62 80 68 88 66"/>
+    <path class="il-glow il-ink il-thin" d="M64 73q12 9 24 0l-3 4.5-3.5-2.5-5.5 3.5-5.5-3.5-3.5 2.5z"/>
     <polygon class="il-metal il-ink" points="26 96 34 84 38 96 42 84 46 96 50 84 54 96 58 84 62 96"/>
     <circle class="il-dark il-ink" cx="72" cy="90" r="8"/><circle class="il-dark il-ink" cx="92" cy="90" r="8"/><circle class="il-dark il-ink" cx="114" cy="90" r="8"/>
     <g class="il-glow"><circle cx="72" cy="90" r="2.4"/><circle cx="92" cy="90" r="2.4"/><circle cx="114" cy="90" r="2.4"/></g>
