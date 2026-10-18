@@ -394,8 +394,11 @@ function assaultPlan(obs: Observation, ruleset: Ruleset, difficulty: Difficulty)
     .filter((e) => archetypeOf(ruleset, e.kind)?.weapon && dist2(e.x, e.y, objective.x, objective.y) <= DEFENCE_RADIUS * DEFENCE_RADIUS)
     .reduce((sum, e) => sum + value(e), 0);
   // A neutral post is taken over, not stormed: the infantry goes as soon as the known guards allow.
-  const storming = objective.side === NEUTRAL ? ours >= theirs * STORM_ODDS : gathered && (!reinforcing || ours >= theirs * STORM_ODDS || world.turn >= ESCALATE_TURN);
   const besieging = all.some((f) => (archetypeOf(ruleset, f.kind)?.weapon?.minRange ?? 0) > 0 && (archetypeOf(ruleset, f.kind)?.weapon?.range ?? 0) > 3);
+  // A tower wall around the post: with a gun in the force the siege goes ahead without the odds
+  // (the guns outrange the towers and take them down first; the storm follows once the odds are there).
+  const walled = !process.env.NOWALL && enemiesOf(obs).some((e) => archetypeOf(ruleset, e.kind)?.speed === 0 && archetypeOf(ruleset, e.kind)?.weapon && e.id !== objective.id && dist2(e.x, e.y, objective.x, objective.y) <= DEFENCE_RADIUS * DEFENCE_RADIUS);
+  const storming = objective.side === NEUTRAL ? ours >= theirs * STORM_ODDS : gathered && (!reinforcing || ours >= theirs * STORM_ODDS || (besieging && walled) || world.turn >= ESCALATE_TURN);
   return { objective, rally, all, storming, besieging };
 }
 
@@ -633,10 +636,18 @@ function siege(obs: Observation, ruleset: Ruleset, plan: AssaultPlan, fighters: 
       commands.push({ side, unit: spotter.id, order: { type: 'hold' }, doctrine: AI_DOCTRINE });
     }
   }
+  // Defence towers that guard the post and are in sight: the guns take them down first (they
+  // outrange every tower but the Artillery Tower), so the storm that follows meets no tower wall.
+  const towers = enemiesOf(obs).filter((e) => !obs.ghosts.has(e.id) && arch(e)?.speed === 0 && arch(e)?.weapon && e.id !== objective.id && dist2(e.x, e.y, objective.x, objective.y) <= DEFENCE_RADIUS * DEFENCE_RADIUS);
   for (const gun of guns) {
     if (!fighters.includes(gun)) continue;
     const weapon = arch(gun)?.weapon;
     if (!weapon) continue;
+    const tower = process.env.NOTW ? undefined : towers.slice().sort((a, b) => dist2(a.x, a.y, gun.x, gun.y) - dist2(b.x, b.y, gun.x, gun.y) || frame(obs, a) - frame(obs, b))[0];
+    if (tower) {
+      if (!(gun.order.type === 'attack' && gun.order.target === tower.id)) commands.push({ side, unit: gun.id, order: { type: 'attack', target: tower.id }, doctrine: AI_DOCTRINE });
+      continue;
+    }
     if (live) {
       if (!(gun.order.type === 'attack' && gun.order.target === objective.id)) commands.push({ side, unit: gun.id, order: { type: 'attack', target: objective.id }, doctrine: AI_DOCTRINE });
       continue;
@@ -813,6 +824,9 @@ function economyOrders(obs: Observation, ruleset: Ruleset, own: readonly Entity[
   for (const yard of ownAll) for (const q of yard.queue ?? []) counts.set(q.kind, (counts.get(q.kind) ?? 0) + 1);
   const template = ARMY_TEMPLATE[difficulty];
   const wanted = template.filter((kind) => (counts.get(kind) ?? 0) < template.filter((k) => k === kind).length + (difficulty === 'hard' ? 1 : 0));
+  // A known tower wall: Artillery Guns outrange it (one per two known towers), wanted first.
+  const knownTowers = enemiesOf(obs).filter((e) => arch(e)?.speed === 0 && arch(e)?.weapon && e.kind !== 'command-post').length;
+  if (!process.env.NOGUNPROD && knownTowers >= 2 && (counts.get('howitzer') ?? 0) < Math.ceil(knownTowers / 2)) wanted.unshift('howitzer');
   // Keep a cushion for the next Extractor while a free deposit out of enemy reach remains.
   const reserve = (world.map.deposits ?? []).some((d) => (d.left > 0 || d.left === UNKNOWN_LEFT || d.endless) && !world.entities.some((e) => e.x === d.x && e.y === d.y) && dangerAt(obs, ruleset, d.x, d.y) === 0) ? costOf('extractor') : 0;
   const income = incomeOfSide(world, ruleset, side, network);
