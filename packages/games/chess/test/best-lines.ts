@@ -5,8 +5,8 @@ import { parseFen, replay, uciToMove } from '../src/rules';
 
 /**
  * Re-verification of every move of the shipped "find the best move" lines. `full`: every line
- * (CHESS_VERIFY_PUZZLES=1, run from puzzle-data.test.ts, which the CI job executes); otherwise
- * every 24th line (always including multi-move lines), run from puzzle-lines.test.ts in parallel
+ * (CHESS_VERIFY_PUZZLES=1, run from puzzle-data.slow.test.ts, which the CI job executes); otherwise
+ * every 24th line (always including multi-move lines), run from puzzle-lines.slow.test.ts in parallel
  * with the other files so local runs stay fast.
  */
 export function defineBestLineChecks(full: boolean): void {

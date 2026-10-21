@@ -1,7 +1,7 @@
 /**
  * The expert levels: each has exactly one solution (proven by the independent exact solver in
  * `oracle.ts`), needs at least two kinds of optical pieces and a bigger search than any hard level.
- * These are the slowest checks of the package: `expert-levels-*.test.ts` run them for half of the
+ * These are the slowest checks of the package: `expert-levels-*.slow.test.ts` run them for half of the
  * levels each, so that the two halves run in parallel.
  */
 import { describe, expect, it } from 'vitest';
