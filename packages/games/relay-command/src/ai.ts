@@ -601,14 +601,26 @@ function approachCells(obs: Observation, ruleset: Ruleset, objective: Entity): (
   rings.sort((a, b) => a.r - b.r || a.f - b.f);
   const claimed = new Set<number>();
   const target = cellOf(world.map, objective.x, objective.y);
+  // A post may be ringed by units the side has not seen (even with a free cell next to it in
+  // sight, ringed in turn): a move onto it then finds no way and ends at once, turn after turn
+  // (measured: a storm of 54 fighters that never set off). So from ESCALATE_TURN (a storm that has
+  // not got through by then) a fighter beyond APPROACH_RADIUS heads for a free cell of the outer
+  // rings instead: one the side sees (nearest first), else the farthest out (a ring may be two
+  // deep); from there it sees what holds the post and fires on it. Earlier the storm heads for the
+  // post as before (measured: doing so from the start cost hard its lead over normal on Ridge Valley).
+  const late = world.turn >= ESCALATE_TURN;
+  const seen = late ? observedCells(world, ruleset, side, obs.network) : undefined;
+  const watched = (cell: { x: number; y: number }) => seen?.[cellOf(world.map, cell.x, cell.y)] === 1;
+  const outer = late ? [...rings.filter((c) => c.r >= 2 && watched(c)), ...rings.filter((c) => c.r >= 2 && !watched(c)).sort((a, b) => b.r - a.r || a.f - b.f)] : [];
   return (unit) => {
     const start = cellOf(world.map, unit.x, unit.y);
-    // The post can be reached (next to it): head for it, as always.
-    if (canReach(world.map, ruleset, 'ground', region, start, target)) return { x: objective.x, y: objective.y };
-    // Already as close as the ring allows: stay (it fires on its own).
     const here = Math.max(Math.abs(unit.x - objective.x), Math.abs(unit.y - objective.y));
-    for (const cell of rings) {
-      if (cell.r >= here) break;
+    const far = late && here > APPROACH_RADIUS;
+    // The post can be reached (next to it): head for it, as always (late and far: the outer rings, above).
+    if (!far && canReach(world.map, ruleset, 'ground', region, start, target)) return { x: objective.x, y: objective.y };
+    // Already as close as the ring allows: stay (it fires on its own).
+    for (const cell of far ? outer : rings) {
+      if (cell.r >= here) continue;
       const c = cellOf(world.map, cell.x, cell.y);
       if (claimed.has(c) || !canReach(world.map, ruleset, 'ground', region, start, c)) continue;
       claimed.add(c);
