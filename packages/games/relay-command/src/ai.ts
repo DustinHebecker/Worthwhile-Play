@@ -567,7 +567,7 @@ function guardPosts(obs: Observation, ruleset: Ruleset, own: readonly Entity[]):
 }
 
 /** How far around the objective a storming fighter looks for a free cell it can reach. */
-const APPROACH_RADIUS = 4;
+export const APPROACH_RADIUS = 4;
 
 /**
  * Where a storming fighter heads: the post itself while it can be reached. But every unit that
@@ -577,7 +577,7 @@ const APPROACH_RADIUS = 4;
  * (structures, own holding units, all known enemies); there it fires on what it sees, and the
  * ring opens as defenders fall. Without such a cell: the post itself, as before.
  */
-function approachCells(obs: Observation, ruleset: Ruleset, objective: Entity): (unit: Entity) => { x: number; y: number } {
+export function approachCells(obs: Observation, ruleset: Ruleset, objective: Entity): (unit: Entity) => { x: number; y: number } {
   const { world, side } = obs;
   const { w, h } = world.map;
   const walls = new Set<number>();
