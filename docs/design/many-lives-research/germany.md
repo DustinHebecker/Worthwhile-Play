@@ -1,5 +1,7 @@
 # Calibration sheet: "Central Europe (calibrated on Germany)"
 
+**Second pass (2026-10-21).** Changed: net equivalised income percentiles now V-P (Eurostat EU-SILC ilc_di01: P10 14,556 / median 28,891 / P90 54,971 EUR/yr, 2025 survey); age–earnings profile now V-P from Eurostat SES 2022 (hourly pay 50+ ≈ 1.6× under-30s); real-wage path filled for 2009–2025 (V-S; 2000–2008 still UNVERIFIED); Kappungsgrenze V-P (§ 558 (3) BGB text; the "11 %" proposal not found); Selbstbehalt 1,450 / 1,200 EUR now V-S; Chancenkarte work rules (20 h/week, 2-week trials) and English C1 V-P from § 20a/§ 20b text (the points table in the annex is still UNVERIFIED); purchase prices per m² by metro now V-S (ImmoScout24 Q4 2025); consumption basket: added Eurostat HICP 2025 weights (V-P, but a different concept from LWR). Still UNVERIFIED: job-finding rates, unemployment rate for vocational qualification, LWR 2024 shares, rural price levels, price-to-rent ratios.
+
 For the "Many Lives" life-simulation. Research date: 2026-10-18. All money values are EUR (nominal unless noted).
 
 **How to read the verification status**
@@ -46,7 +48,7 @@ The average total benefit entitlement per household receiving support was **1,34
 | Poverty-risk rate, total population | 16.1 % | share of persons | 2025 | ±0.5 pp | same | V-P |
 | Poverty-risk rate, single parents / people living alone | 28.7 % / 30.9 % | share | 2025 | ±2 pp | same | V-P |
 | Median full-time gross earnings (individual, annual incl. bonuses) | 54,066 | EUR/year | 2025 | ±2 % | [Destatis PM 113/2026](https://www.destatis.de/DE/Presse/Pressemitteilungen/2026/04/PD26_113_621.html) | V-P |
-| Net household income percentiles P10 / P25 / P75 / P90 | not obtained | | | | Destatis EU-SILC / Mikrozensus tables | **UNVERIFIED**. Suggested modelling: P10 ≈ 0.5×, P90 ≈ 2.0× the equivalised median |
+| Equivalised net income percentiles P10 / P25 / P50 / P75 / P90 (per person, annual) | **14,556 / 20,553 / 28,891 / 40,176 / 54,971** (P95 67,391; P99 111,693). Previous survey: 14,325 / 19,914 / 27,619 / 38,216 / 51,787. Ratios: P10 ≈ 0.50×, P90 ≈ 1.90× the median | EUR/year | EU-SILC 2025 (2024 incomes) | ±3 % | Eurostat ilc_di01 (top cut-off points, EUR), queried via the Eurostat API: https://ec.europa.eu/eurostat/databrowser/view/ilc_di01/default/table (Eurostat data: CC BY 4.0). The median matches the Destatis poverty threshold (1,446 × 12 / 0.6 ≈ 28,920) | V-P |
 
 ### 1b. Wealth (Bundesbank PHF 2023, published April 2025)
 
@@ -148,10 +150,10 @@ Sources: [finanz.de](https://www.finanz.de/news/artikel-10497/), [Stuttgarter Ze
 | Mini-job earnings limit | 603 EUR/month | 2026 | | [krankenkassen.de](https://www.krankenkassen.de/gesetzliche-krankenkassen/system-gesetzliche-krankenversicherung/sozialversicherung-rechengroessen-beitragsbemessungsgrenze-versicherungspflichtgrenze/rechengroessen-2026/) | V-S |
 | Real wage growth | +1.9 % (nominal +4.2 %, CPI +2.2 %) | 2025 | ±0.3 pp | [Destatis PM 068/2026](https://www.destatis.de/DE/Presse/Pressemitteilungen/2026/02/PD26_068_62321.html) | V-P |
 | Real wage index level | 2025 ≈ 2019 level (100 vs 100.5) | 2019–2025 | | same | V-P |
-| Real wage path over the decades | ≈ flat 2000–2009; ≈ +1 %/yr 2010–2019; falls in 2020–2022 (2022 about −4 %); recovery 2023–2025 | 2000–2025 | ±1 pp/yr | Destatis real wage index | **UNVERIFIED** (only 2019 and 2025 confirmed) |
+| Real wage index, annual change | 2009 −0.2; 2010 +1.5; 2011 +1.2; 2012 +0.5; 2013 −0.1; 2014 +1.7; 2015 +2.4; 2016 +1.8; 2017 +1.0; 2018 +1.4; 2019 +1.1; 2020 −1.2; 2021 0.0; 2022 −4.0; 2023 +0.1; 2024 +3.1; 2025 +1.9 (%). Series starts 2008; 2000–2008 ≈ flat is still UNVERIFIED | 2009–2025 | ±0.3 pp (revisions) | Destatis real wage index as reported by: Amt für Statistik Berlin-Brandenburg (Kleine Anfrage 6/2694, https://kleineanfragen.de/brandenburg/6/2694-einkommensentwicklung-versus-inflation.pdf) for 2009–2014; [der-betrieb](https://der-betrieb.de/meldungen/realloehne-im-jahr-2015-mit-25-prozent-stark-gestiegen) for 2015; [Statista/Destatis](https://de.statista.com/statistik/daten/studie/384228/umfrage/entwicklung-der-realloehne-nominalloehne-und-verbraucherpreise-in-deutschland) for 2016–2024; Destatis PM 068/2026 for 2025 | V-S (2025 V-P) |
 | Collective bargaining coverage (sector-level agreements) | 41 % of employees (67 % in 1996) | 2024 | ±2 pp | IAB Betriebspanel via [WSI-Mitteilungen 4/2025](https://www.boeckler.de/data/wsimit_2025_04_hohendanner-1.pdf) | V-S |
 | No agreement at all (West / East) | ≈ 50 % / 58 % | 2024 | | same | V-S |
-| Age–earnings profile | Steep rise ages 20–35, plateau 45–55 (peak ≈ 1.6–1.8× entry wage for skilled trades, ≈ 2–2.5× for graduates), slight decline after 58 | | wide | VSE by age group (not retrieved) | **UNVERIFIED** |
+| Age–earnings profile (mean gross hourly pay, firms ≥ 10 employees) | Under 30: **14.97**; 30–49: **23.51**; 50+: **24.35** EUR/hour (men 15.19 / 25.31 / 27.64; women 14.69 / 21.36 / 20.84). So 50+ ≈ **1.63×** under-30 (men 1.82×, women 1.42×). Annual pay, under-30 vs all ages: 34,307 vs 51,042 EUR (professionals 47,575 vs 73,798) | 2022 | ±3 % | Eurostat SES 2022, earn_ses22_13 and earn_ses22_28 (Germany publishes only these coarse age groups): https://ec.europa.eu/eurostat/databrowser/view/earn_ses22_13/default/table | V-P (computed). The finer shape (steep rise to ≈ 35, plateau 45–55, dip after 58) and the 2–2.5× graduate peak remain **UNVERIFIED** |
 
 ---
 
@@ -281,7 +283,7 @@ Game simplification: use a piecewise-linear marginal rate, 0 → 14 → 24 → 4
 | Childcare rate, ages 3–5 | ≈ 91 % | 2025 | | | **UNVERIFIED** |
 | Unmet childcare demand, under 3s | parents want ≈ 49 % vs 38 % placed (gap ≈ 10 pp) | | | BMFSFJ Kita-Bericht | **UNVERIFIED** |
 | Child support minimum (Düsseldorfer Tabelle, income group 1 up to 2,100 EUR net) | 0–5: **486**; 6–11: **558**; 12–17: **653** EUR/month (half of Kindergeld is deducted). The table has 15 income groups; each higher group adds ≈ 5–8 %, up to 160 % at the top | 2026 | fixed | [OLG Düsseldorf / Justiz NRW](https://www.justiz.nrw/node/6822) | V-P |
-| Minimum the paying parent keeps (Selbstbehalt), employed | 1,450 EUR/month (unchanged from 2025) | 2026 | | | **UNVERIFIED** (the OLG says only that it is "unchanged") |
+| Minimum the paying parent keeps (Selbstbehalt) towards minor children | **1,450 EUR/month employed, 1,200 EUR not employed** (includes 520 EUR warm rent); towards other adult children 1,750 EUR (rent 650); towards parents ≥ 2,650 EUR. Unchanged from 2025 because the social-assistance standard rate was not raised | 2026 | fixed | Copies of DT 2026: [Stadt Memmingen PDF](https://www.memmingen.de/fileadmin/civserv/9764000/forms/Amt41/2026-01-01_Duesseldorfer_Tabelle.pdf), [beck-aktuell](https://www.beck-aktuell.de/heute-im-recht/rechtsgeschehen/duesseldorfer-tabelle-2026-unterhalt-selbstbehalt-kinder-eltern-grosseltern-2025-12-02) (parents 2,650) | V-S (OLG page returned 503) |
 | Custody after separation | Joint custody is the default. Residence model (child lives mainly with one parent, > 90 % with the mother) is dominant. Equal shared care (Wechselmodell) ≈ **5 %** of separated families (5–15 % depending on definition) | 2021 | ±3 pp | [Univ. Duisburg-Essen / Marburg FAMOD](https://www.uni-due.de/2021-05-17-studie-trennungskinder) | V-S |
 
 ---
@@ -297,13 +299,14 @@ Game simplification: use a piecewise-linear marginal rate, 0 → 14 → 24 → 4
 | Asking rent range, 14 largest cities | 8.7 (Dresden) – 21.9 (Munich) EUR/m² | 2024 | | BBSR via [caren-lay.de](https://www.caren-lay.de/kontext/controllers/document.php/161.d/b/905d4c.pdf) | V-S |
 | Asking rent, rural districts | ≈ 7–8 EUR/m² | | | BBSR | **UNVERIFIED** |
 | Asking rent growth, 14 largest cities | ≈ +50 % since 2015 (Berlin > +100 %) | 2015–2024 | | BMWSB / BBSR | V-S |
-| Price level (purchase): cities vs rural | ≈ 5,000–9,000 EUR/m² (big-7 cities) vs ≈ 2,000–2,800 EUR/m² (rural) | 2025 | wide | | **UNVERIFIED** |
+| Asking purchase price, existing flats (EUR/m²) | Germany **2,574** (houses 2,844; new-build flats 4,133); Munich **8,266**; Frankfurt 5,343; Hamburg 5,283; Stuttgart 5,008; Berlin 4,884; Düsseldorf 4,534; Cologne 4,340; Leipzig 2,992 | Q4 2025 | ±10 % (asking prices) | [ImmoScout24 WohnBarometer Q4 2025](https://www.immobilienscout24.de/unternehmen/news-medien/news/default-title/kaufpreise-steigen-so-stark-wie-seit-jahren-nicht-mehr/) (commercial data; cite only). vdp gives Munich 9,610 (transaction-based) | V-S |
+| Price level, rural districts | below the national 2,574 average; ≈ 1,500–2,500 EUR/m² is a plausible game band | 2025 | wide | no per-district-type figure found | **UNVERIFIED** |
 | Price-to-rent ratio | ≈ 25–30 annual rents (big cities), ≈ 20 (rural) | | | | **UNVERIFIED** |
 | Rent cap on new leases (Mietpreisbremse) | new-lease rent ≤ local comparative rent + 10 % in designated tight markets; extended to 31 Dec 2029 | 2025–2029 | | [beck-aktuell](https://www.beck-aktuell.de/heute-im-recht/rechtspolitik-gesetzgebung/mietpreisbremse-2029-verlaengerung-gesetzentwurf-2025-05-28) | V-S (extension status: bill; Bremen ordinance runs to 2029) |
-| Rent increase cap in existing leases (Kappungsgrenze, § 558 BGB) | ≤ 20 % in 3 years (15 % in tight markets), and never above the local comparative rent | statute | | | **UNVERIFIED** (statute not re-checked; a cut to 11 % was proposed) |
+| Rent increase cap in existing leases (Kappungsgrenze, § 558 (3) BGB) | ≤ **20 % within 3 years**; **15 %** in areas designated by state ordinance (for up to 5 years each); never above the local comparative rent; modernisation (§ 559) and operating-cost (§ 560) increases are outside the cap | statute (2026) | fixed | [§ 558 BGB text](https://lxgesetze.de/bgb/558) | V-P. No enacted 11 % cap found (treat as a scenario only) |
 | Property transfer tax (Grunderwerbsteuer) | 3.5 % (Bavaria) – 6.5 % (NRW, Brandenburg, Saarland, Schleswig-Holstein); Saxony 5.5 % | 2026 | | [finanz.de](https://www.finanz.de/finanzierung/kaufnebenkosten/) | V-S |
-| Notary + land registry | ≈ 1.5–2 % | | | same | V-S |
-| Estate agent fee (Makler) | ≈ 3.57 % for the buyer (split 50/50 by law for homes) | | | same | V-S |
+| Notary + land registry | ≈ 1.5 % typical (notary ≈ 1 %, land registry ≈ 0.5 %), range 0.8–2 % (GNotKG fee scale) | | | same; [immowelt](https://www.immowelt.de/ratgeber/kaufen/notarkosten-grundbuchkosten) | V-S |
+| Estate agent fee (Makler) | ≈ 3.57 % for the buyer (customary). Equal split is mandatory if the agent works for both sides; otherwise at most half may be passed on (§§ 656c–656d BGB, since 23 Dec 2020; flats and single-family homes bought by consumers) | | | same; [§ 656c text](https://www.buzer.de/656c_BGB.htm) | V-S (rate); V-P (rule) |
 | **Total transaction costs** | ≈ **7–12 %** of the purchase price (game default 10 %) | | | derived | V-S |
 
 ---
@@ -317,7 +320,7 @@ The Destatis LWR/EVS table could not be fetched (404) and the search budget was 
 | Housing, energy, maintenance | ≈ 36 % | 1,025 | V-S ([Statista/Destatis](https://de.statista.com/statistik/daten/studie/164774/umfrage/konsumausgaben-private-haushalt)) |
 | Food, drinks, tobacco | ≈ 14–15 % | ≈ 420 | V-S (14.2 % national accounts 2024) |
 | Transport | ≈ 12 % | 347 | V-S |
-| Leisure, entertainment, culture | ≈ 10 % | ≈ 280 | **UNVERIFIED** |
+| Leisure, entertainment, culture | 9.5 % (2024); 8.6 % (2022) | 309 (2024); 245 (2022) | V-S (second pass, see below) |
 | Restaurants, accommodation | ≈ 5–6 % | | **UNVERIFIED** |
 | Furnishings, household goods | ≈ 5 % | | **UNVERIFIED** |
 | Clothing, shoes | ≈ 4 % | | **UNVERIFIED** |
@@ -328,7 +331,26 @@ The Destatis LWR/EVS table could not be fetched (404) and the search budget was 
 | **Total consumption, average household** | 100 % | **2,846** | V-S (2022) |
 | Single-person household, total | | 1,918 (housing 817, food 254, transport 195) | V-S (2023, via [Sparkasse](https://www.sparkasse.de/pk/ratgeber/finanzplanung/finanzen-und-haushalt/lebenshaltungskosten.html)) |
 
-To do: fetch the GENESIS LWR table 63121-0001 (2024) for the exact shares, licence DL-DE-BY 2.0. Low-income households spend a higher share on housing and food (≈ 45–50 % housing; UNVERIFIED).
+Second pass: leisure, sport and culture was **9.5 % (309 EUR/month) in 2024** (8.6 % in 2022), per Destatis LWR as reported by [Lebensmittelpraxis](https://lebensmittelpraxis.de/handel-aktuell/49585-konsumausgaben-2024-deutsche-haushalte-geben-mehr-geld-fuer-freizeit-aus.html) (V-S). destatis.de timed out, so the LWR 2024 table is still not fetched.
+
+**Alternative, verified basket: HICP item weights, Germany 2025** (per mille of household monetary consumption; excludes owner-occupiers' imputed rent, so housing is much lower than in the LWR). Source: Eurostat prc_hicp_inw, https://ec.europa.eu/eurostat/databrowser/view/prc_hicp_inw/default/table (CC BY 4.0). V-P.
+
+| COICOP group | Weight 2025 (%) |
+|---|---|
+| Food, non-alcoholic drinks | 13.1 |
+| Alcohol, tobacco | 3.5 |
+| Clothing, shoes | 3.8 |
+| Housing, water, energy (actual rents 7.6; energy 5.2) | 16.4 |
+| Furnishings, household goods | 6.4 |
+| Health | 5.8 |
+| Transport | 17.1 |
+| Communication | 2.3 |
+| Recreation, culture | 11.4 |
+| Education | 0.8 |
+| Restaurants, hotels | 7.4 |
+| Other goods and services | 12.0 |
+
+Game guidance: for a renter household use the LWR-style housing share (≈ 36 %) and scale the other HICP shares down proportionally. To do: GENESIS LWR table 63121-0001 (2024), licence DL-DE-BY 2.0. Low-income households spend a higher share on housing and food (≈ 45–50 % housing; UNVERIFIED).
 
 ---
 
@@ -339,9 +361,9 @@ To do: fetch the GENESIS LWR table 63121-0001 (2024) for the exact shares, licen
 | EU Blue Card, standard minimum salary | **50,700 EUR** gross/year | 2026 | [German missions fact sheet](https://www.germany.info/resource/blob/2435484/ffe411670fb3aa496edfb1a77e7136f2/eu-blue-card-data.pdf) | V-P |
 | EU Blue Card, reduced minimum (shortage occupations, graduates within 3 years, IT specialists without a degree with 3 years' experience) | **45,934.20 EUR** | 2026 | same | V-P |
 | Opportunity Card (Chancenkarte) | Entry for up to 1 year to look for work. Requires either a qualification recognised in Germany or **≥ 6 points** plus a vocational or university qualification recognised in the home country, plus A1 German or B2 English | 2026 | [Make it in Germany](https://www.make-it-in-germany.com/de/visum-aufenthalt/chancenkarte/jobsuche) | V-P (headline rules) |
-| Points (§ 20b AufenthG) | Partial recognition 4; shortage occupation 1; experience ≥5 years in last 7: 3, ≥2 years in last 5: 2; German B2 3 / B1 2 / A2 1; English C2 (or C1, sources differ) 1; age < 35: 2, 35–39: 1; previous stay in Germany ≥ 6 months: 1; partner also eligible: 1 | 2026 | [§ 20b text](https://visaright.eu/gesetze/aufenthg-20b) | **UNVERIFIED** (sources disagree; check the official § 20b text) |
+| Points (§ 20b AufenthG) | Criteria V-P from the statute text ([lxgesetze § 20b](https://lxgesetze.de/aufenthg/20b)): partial recognition; German at three levels; **English C1** (not C2); experience ≥ 5 of last 7 years or ≥ 2 of last 5; shortage occupation (§ 18g list); age ≤ 35 or 35–40; ≥ 6 months' prior lawful stay in the last 5 years; partner also applying. The point values sit in the law's annex table (the government may change them by ordinance) and are still **UNVERIFIED**: partial recognition 4; experience 3 / 2; German B2 3 / B1 2 / A2 1; English C1 1; age 2 / 1; prior stay 1; shortage occupation 1; partner 1; minimum 6 | 2026 | | criteria V-P; values **UNVERIFIED** |
 | Proof of funds, Opportunity Card | ≈ 1,091 EUR/month (≈ 13,092 EUR/yr in a blocked account) | 2026 | [fintiba](https://www.fintiba.com/de/opportunity-card-germany) | V-S |
-| Opportunity Card: work allowed | ≤ 20 h/week plus 2-week trial jobs | | | **UNVERIFIED** |
+| Opportunity Card: work allowed and duration | Work averaging ≤ **20 h/week**, plus trial employment of up to **2 weeks** at a time. Search card up to 1 year; one follow-up card of up to 2 years only with a qualified job offer and BA approval. Language for the points route: basic German (A1) or English B2 | 2026 | [§ 20a AufenthG text](https://lxgesetze.de/aufenthg/20a) | V-P |
 | Visa processing time | No official statistics are kept. The Foreign Office says Blue Card and highly qualified applicants get appointments "immediately or within weeks". Elsewhere, 6–12 month appointment waits are reported at high-demand missions. Accelerated procedure: appointment within 3 weeks, decision usually within 3 weeks | 2025 | [BT-Drs. 21/1914](https://dserver.bundestag.de/btd/21/019/2101914.pdf); [AA briefing](https://cdn.table.media/assets/berlin/aa_visabeschleunigung.pdf) | V-S. Accelerated-procedure deadlines **UNVERIFIED**. Game band: 1–9 months |
 | Credential recognition outcomes | ≈ 66,900 decided cases: 43 % full equivalence, 45 % equivalence with conditions (adaptation course or exam), 10 % partial, ≈ 1 % rejected | 2024 | [BMBFSFJ press release](https://www.bmbfsfj.bund.de/bmbfsfj/aktuelles/pressemitteilungen/anerkennung-auslaendischer-berufsqualifikationen-2024-neue-hoechstwerte-erneut-deutlicher-zuwachs-bei-gesundheitsberufen--269962) (Destatis data) | V-S |
 | Positive recognition decisions | 79,100 (2024) → 86,600 (2025, +10 %) | 2025 | [Destatis PM 295/2026](https://www.destatis.de/DE/Presse/Pressemitteilungen/2026/08/PD26_295_212.html) | V-P |
@@ -352,12 +374,12 @@ To do: fetch the GENESIS LWR table 63121-0001 (2024) for the exact shares, licen
 ## Open items (priority for a follow-up research pass)
 
 1. Exact LWR 2024 consumption shares (Destatis 63121).
-2. Net household income percentiles (EU-SILC / Mikrozensus).
-3. Age–earnings profile (VSE by age).
-4. Real-wage index time series 1991–2025.
+2. ~~Net household income percentiles~~ (done: Eurostat ilc_di01).
+3. Age–earnings profile: coarse groups done (SES 2022); finer 5-year groups still open.
+4. Real-wage index: 2009–2025 done; 2000–2008 still open.
 5. Job-finding (exit) rates from BA statistics.
 6. Unemployment rate for people with a vocational qualification.
-7. Selbstbehalt amount; Kappungsgrenze statute text; the § 20b point table from the official text.
+7. ~~Selbstbehalt amount; Kappungsgrenze statute text~~ (done in the second pass); the § 20b point values from the annex.
 8. Destatis life table 2023/25 values and the single-year mortality curve (qx by age and sex) for the simulation.
 9. Average disability pension amount; KdU average from BA tables.
 10. Purchase price levels per m², city vs rural (Destatis house price index or BBSR).
