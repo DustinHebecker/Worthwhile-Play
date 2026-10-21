@@ -342,5 +342,32 @@ export const it: Catalogue = {
   'log.give.toYou': '{name} — {n} carte date a te.',
   'log.curse.toYou': '{name} — maledizione su di te: {card}.',
   // Reveal pending
-  'next.reveal': 'Una carta ti colpisce: leggila, poi premi «Continua».'
+  'next.reveal': 'Una carta ti colpisce: leggila, poi premi «Continua».',
+  // K3: worlds Spaceloot and Office
+  'world.sl': 'Spaceloot — equipaggio contro alieni',
+  'world.of': 'Caos in Ufficio — ufficio contro telelavoro',
+  'setup.worlds': 'Mondi',
+  'setup.worldModes.random': 'Casuale',
+  'setup.worldModes.pick': 'Scegli',
+  'setup.worlds.random': 'Casuale: un mondo o un mix di due, estratti a ogni nuova partita.',
+  'setup.worlds.hint': 'Più mondi vengono mescolati insieme. Nessuno spuntato: casuale.',
+  'family.crew': 'l’equipaggio della nave',
+  'family.alien': 'alieni',
+  'family.office': 'gente d’ufficio',
+  'family.remote': 'gente in telelavoro',
+  'set.away-team': 'Kit della squadra di sbarco',
+  'set.tourist-kit': 'Kit del turista spaziale',
+  'set.video-call': 'Look da videochiamata',
+  'set.couch-kit': 'Kit ufficio sul divano',
+  // Worlds Fridge and Railway
+  'world.fd': 'Spedizione Frigo — cibi freschi contro avanzi',
+  'world.rw': 'In Carrozza! — passeggeri contro personale ferroviario',
+  'family.fresh': 'i cibi freschi',
+  'family.leftover': 'gli avanzi',
+  'family.passenger': 'i passeggeri',
+  'family.railstaff': 'il personale ferroviario',
+  'set.fridge-raider': 'Razzia notturna in frigo',
+  'set.chef-kit': 'Vera tenuta da chef',
+  'set.conductor-kit': 'Vera divisa da capotreno',
+  'set.commuter-kit': 'Kit esperto da pendolare'
 };

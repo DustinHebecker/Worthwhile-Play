@@ -3,7 +3,7 @@
   "packageManager": "pnpm",
   "testRunner": "vitest",
   "vitest": {
-    "configFile": "vitest.config.ts"
+    "configFile": "vitest.mutation.config.ts"
   },
   "coverageAnalysis": "perTest",
   "dryRunTimeoutMinutes": 25,
@@ -24,7 +24,8 @@
   "reporters": [
     "clear-text",
     "progress",
-    "html"
+    "html",
+    "json"
   ],
   "htmlReporter": {
     "fileName": "reports/mutation/index.html"

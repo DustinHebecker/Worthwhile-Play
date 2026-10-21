@@ -99,7 +99,7 @@ Every **monster** and every **origin** (the player's character kind) has one bas
 
 ## 4. Worlds
 
-Tone everywhere: **family-friendly** (age ~10+, no gore, no adult jokes), slapstick and absurd bureaucracy rather than wordplay, so most jokes survive transcreation (§ 7.2). No parodies of real brands, films, people, companies (e.g. no real railway operator) or quotes.
+Tone everywhere: **family-friendly** (age ~10+, no gore, no adult jokes), slapstick and absurd bureaucracy rather than wordplay, so most jokes survive transcreation (§ 7.2). No parodies of real brands, films, people, companies (e.g. no real railway operator) or quotes. **Allusions (owner 2026-10-18):** short, recognisable verbal allusions to things everyone knows are welcome on purpose (e.g. an "away team", "Form 27b", "mind the gap"); never copied art, characters, logos, signature looks (e.g. a famous toy train's face) or long verbatim texts, and no brand names in card ids or names.
 
 Card examples are English working texts (transcreated per locale later); "Lv" = monster level, "Blunder" = what happens when you lose (our term, § 9).
 
@@ -114,7 +114,7 @@ Tone: a feud between **fairy-tale dwarves** (mine, forest, enormous beards, gold
 - Items: **Beard Comb of Authority** (+2, small, `tool`; dwarves +1 more), **Garden Hose** (+3, two hands, `tool`; +3 more against `fiery`), **Pointy Red Hat** (+1, head, `clothing`; gnomes +2), **Mine Lamp** (+2, head, `gadget`; +2 against `spook`).
 - Set (§ 5.4): *Proper Mining Gear* — Pickaxe, Mine Lamp, Leather Apron: +3 when all three are worn.
 
-### 4.2 World 2 — Spaceloot
+### 4.2 World 2 — Spaceloot *(built in K3, see § 10.4c)*
 
 Tone: shabby sci-fi — a spaceship with broken vending machines, bureaucratic aliens, robots with feelings.
 
@@ -124,7 +124,7 @@ Tone: shabby sci-fi — a spaceship with broken vending machines, bureaucratic a
 - Curse **Zero Gravity**: your heaviest item floats into the middle; the next player to win a fight takes it.
 - Profession: *Space Janitor* (once per turn: discard an item from the table to draw a loot card).
 
-### 4.3 Office and home office (after the first tests)
+### 4.3 World 3 — Office and home office *(built in K3 together with Spaceloot, owner 2026-10-18: "setze 2 neue Welten um"; see § 10.4c)*
 
 Meetings as monsters, the printer as nemesis, the home office as a battlefield.
 
@@ -132,7 +132,7 @@ Meetings as monsters, the printer as nemesis, the home office as a battlefield.
 - Items: **Stapler** (+3, one hand, `tool`), **Jogging Bottoms** (+1, body, `clothing`; +3 if no one is helping you — "nobody can see you"), **Headset With Mute Button** (+2, head, `gadget`).
 - Curses: **Reply-All** (every other player draws a card, you discard one), **You're Still on Mute** (you may not make or accept offers in your next fight).
 
-### 4.4 Fridge expedition
+### 4.4 World 4 — Fridge expedition *(built 2026-10-18, owner: "2 weitere Welten"; see § 10.4d)*
 
 Food monsters at the back of the fridge, very child-friendly.
 
@@ -140,7 +140,7 @@ Food monsters at the back of the fridge, very child-friendly.
 - Items: **Wooden Spoon** (+2, one hand, `tool`), **Oven Mitt** (+1, one hand; +3 against `fiery`), **Tupperware Shield** (+2, one hand, `junk`).
 - Curse **Is the Light Really Off?**: show your hand to the player on your left.
 
-### 4.5 Railway / trains
+### 4.5 World 5 — Railway / trains *(built 2026-10-18 with the Fridge; see § 10.4d)*
 
 Steam, schedules and the eternal delay — no real operator, line or brand.
 
@@ -157,7 +157,7 @@ Steam, schedules and the eternal delay — no real operator, line or brand.
 
 ### 4.7 Mixing rules
 
-1. A game uses **any number of worlds** (start screen from K3 on; one by default). Their encounter cards form one encounter pile and their loot cards one loot pile. Every world has the same composition (§ 6.1), so the ratios and the game length stay the same.
+1. A game uses **any number of worlds** (start-screen toggles since K3; random one or two worlds by default since 2026-10-21, § 5.1). Their encounter cards form one encounter pile and their loot cards one loot pile. Every world has the same composition (§ 6.1), so the ratios and the game length stay the same.
 2. Cross-world effects run only through the shared vocabulary (§ 3).
 3. **Patchwork Ancestry** (loot, one per world) allows two origins at once — the "Android Garden Gnome" is the mixing joke; **Second Job** allows two professions.
 4. **Mixing jokes** that only matter in mixed games are optional extras (e.g. "Worm Hole" pulls a card from another world's discard pile).
@@ -173,7 +173,7 @@ K1 Kampfzwerge → first play-tests → K3 Spaceloot (mixing) → then, one per 
 
 ### 5.1 Setup and goal
 
-- **2–6 players**: one person plus **1–5 computer players**. Since ADR 0017 the setup lives on the host's start screen (declared `settings`, no own setup phase any more): difficulty, number of computer players, optional round limit (target fixed at level 10 since 2026-10-17). Coach tips are a display preference, switched in the game (remembered for new games). (Players who switched them off on the #51 start screen, live for a few hours, see them on again once.) Every choice has a sensible default, so "Start" is one tap; the defaults follow what older versions remembered (`setup` preference). World choice joins the start screen with the second world (K3). Old saves still in the setup phase are dealt with their settings on restore.
+- **2–6 players**: one person plus **1–5 computer players**. Since ADR 0017 the setup lives on the host's start screen (declared `settings`, no own setup phase any more): difficulty, number of computer players, optional round limit (target fixed at level 10 since 2026-10-17). Coach tips are a display preference, switched in the game (remembered for new games). (Players who switched them off on the #51 start screen, live for a few hours, see them on again once.) Every choice has a sensible default, so "Start" is one tap; the defaults follow what older versions remembered (`setup` preference). Worlds (owner 2026-10-21: "eine oder mehrere, mit default zufällig"): a choice **Random** (default) / **Choose**; "Choose" shows one toggle per world (Kampfzwerge, Spaceloot, Office, Fridge, Railway) and the ticked worlds are shuffled together. **Random** draws the worlds from the seed with a generator of its own (`randomWorlds`): one world or a mix of two, each half of the time, every world and pair equally likely — so a seed or deep link always deals the same game, and "Another round" draws again. Nothing ticked under "Choose" also means random. The save keeps the drawn worlds plus `randomWorlds: true` (optional field; older saves stay valid). The host remembers the last choice. Old saves still in the setup phase are dealt with their settings on restore.
 - Everyone starts at **level 1** with 4 encounter and 4 loot cards.
 - **Win: reach the target level** — always **10** (owner decision 2026-10-17; saves from before keep their 6 / 8 / 12). The **winning level must come from defeating a monster** (not from selling or one-shots).
 - **Round limit: optional**, off by default (choices: off / 20 / 30 / 40). When on, after the last round the highest level wins (ties shared).
@@ -354,7 +354,7 @@ Ours: **encounter pile / loot pile**, **Peek around the corner** (reveal the top
 | K0 | Design document (#39) + owner decisions (this update) | docs only |
 | K1 | Rules core (`step`, phases, fights, reaction window, boosters/reinforcements/upgrades/sets), vocabulary, Kampfzwerge structure + texts, simple AI, setup screen, view with onboarding, 16 locales | first playable version → **owner play-test** |
 | K2 | Offers, deals, Change Sides, reputation, personalities, difficulties, coach hints polish | the funny part |
-| K3 | Spaceloot + mixing (setup, balance tests) | |
+| K3 | Spaceloot + Office + mixing (start-screen world toggles, balance tests) | done, § 10.4c |
 | K4 | Pictogram kit polish, animations, "fast table" | |
 | K5+ | Office, Fridge, Railway, Worms, Insects, Action hero — one per PR | order after the tests |
 
@@ -418,6 +418,44 @@ K1 is large (140 cards × 16 locales). If it becomes too big for one review, it 
   "Continue" does not; key repeat cannot skip it; the hand waits while it is shown.
 - **Home-page preview** redrawn in the new card look (monster card vs. gnome card, picture-card hand).
 
+### 10.4c K3 as built (2026-10-18): Spaceloot, Office, mixing
+
+- **Two new worlds** (owner: "setze 2 neue Welten um"; Office was the next in the owner's list): **Spaceloot** (`sl`,
+  crew vs aliens on a shabby spaceship) and **Office** (`of`, *Bürochaos*: office people vs home-office people).
+  Each 142 cards with exactly Kampfzwerge's composition **and budget** (sum of monster levels 259, item bonus 62, item
+  value, monster loot, slot split, set bonuses — checked by `test/worlds.test.ts`), all 9 base kinds among the
+  monsters, ≥ 8 traits, two feuding **families** per world (new: `crew`/`alien`, `office`/`remote`), family
+  references only to the own world, ≥ 70 % of kind/trait references hit the own world (§ 3.4).
+- **No new mechanics**: like Kampfzwerge, both worlds use only the shared vocabulary; the special effects sketched in
+  § 4.2/4.3 (Form 27b discards, Colleague With Camera Off's hidden level, Zero Gravity's floating item, Reply-All,
+  You're Still on Mute …) became flavour on standard effects. Candidates for a later mechanics round.
+- **Texts**: German original and English transcreation per world, the other 14 locales transcreated by agents; card
+  texts now live per world (`content/<world>/<locale>.ts`, merged into one chunk per locale). Names are unique per
+  locale across all worlds (content test). **Pictures**: one code-drawn SVG per card (248 new), same palette and rules.
+- **Mixing**: one start-screen toggle per world (`world-kz`, `world-sl`, `world-of`; none = Kampfzwerge); every
+  non-empty combination deals a valid game; card conservation and `isValidState` work per chosen set of worlds.
+  `settingsOf` reports the toggles, so "Another round" repeats the mix.
+- **Balance** (self-play, all seats AI, 40 games per combination, 2–6 players): median rounds — kz 10, sl 11, of 10,
+  kz+sl 11, kz+of 11, sl+of 11, all three 10; 10–90 % ≈ 7–16; max 17–29; ≈ 40 ms per game. Wins spread over both
+  families of every world (small samples).
+
+### 10.4d Worlds 4 and 5 (2026-10-18): Fridge and Railway
+
+- Owner after K3: "im Grunde zufrieden … als nächstes 2 weitere Welten". Built the next two from the proposed order:
+  **Fridge** (`fd`, *Kühlschrank-Expedition*: fresh food vs leftovers, very child-friendly) and **Railway** (`rw`,
+  *Einsteigen, bitte!*: passengers vs railway staff; no real operator, line or brand). New families `fresh`/`leftover`
+  and `passenger`/`railstaff`.
+- Same rules as K3: 142 cards each with Kampfzwerge's composition and budget (`test/worlds.test.ts`, now all 31
+  combinations of five worlds), shared vocabulary only, texts per world in 16 locales, one code-drawn picture per
+  card in a lazily loaded chunk per world, one start-screen toggle each.
+- Design ideas that need new mechanics stay flavour (Replacement Bus Service is a fight malus, not "skip Open";
+  Is the Light Really Off? is a standard curse).
+- One balance tweak in review: the Fridge's *Gourmet* gives +2 per `food` item (the world has only three).
+- Owner idea "Bahnsteiglücke": the existing platform-gap curse carries that name (de) / *Mind the Gap* (en); it keeps
+  its effect (feet item), so the composition and budget stay equal to the other worlds.
+- Balance (self-play, 40 games each, 2–6 players): median rounds — fd 10, rw 10, fd+rw 11, all five worlds 10;
+  10–90 % ≈ 7–15; max 17–28. Wins spread over both families of each world.
+
 ### 10.5 Owner feedback after the first play-test (2026-10-15) — backlog
 
 - **B1 Card text while choosing cards to give away or sell.** In the give-away and sell modes a tap selects the card, so its description cannot be read before choosing. Fix: an info button on every tile (or a long press) that opens the card detail in every mode; selection stays on the tile itself.
@@ -434,8 +472,16 @@ K1 is large (140 cards × 16 locales). If it becomes too big for one review, it 
 - **B4 Funny Blunder text per monster.** Today the Blunder is only the generated rule line ("level −1"). Each monster gets its own short, funny Blunder sentence (≤ 90 characters, per locale, original — no texts from the reference), shown on the card and in the log when it hits, next to the generated rule line that stays the binding effect (content field `blunder`, see § 6.2/6.3; content test for presence and length).
 - Confirmed: playing without reading the rules works (owner knows the genre; a test with someone new to it is still open).
 
+### 10.5a After the review of #59/#63 (2026-10-18/21)
+
+- Railway locomotives: no face on a round smokebox front any more (signature look of a famous toy train); our
+  locos wear their face on the boiler side, the smokebox is a plain dark door with a lamp. Done (18 locos).
+- Idea: show which worlds a "Random" game drew (e.g. next to the round line).
+- Owner: use MORE short verbal allusions and wordplay in all worlds where they were avoided so far (same limits:
+  no copied art, characters, logos or long verbatim texts).
+
 ### 10.6 Open points (none blocks K1)
 
 - **O1** Default target level: **10** assumed (owner: length open). Since 2026-10-17 fixed at 10 (owner).
 - **O2** Title in the other 14 locales: "Lootlings" unless a locale has a natural form.
-- **O3** Order of worlds after Spaceloot: owner decides after the play-tests.
+- **O3** Order of worlds after Spaceloot: Office built with it in K3, then Fridge and Railway (owner 2026-10-18); next proposal Worms, Insects, Action hero — owner decides.

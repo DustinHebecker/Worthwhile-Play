@@ -342,5 +342,32 @@ export const pt: Catalogue = {
   'log.give.toYou': '{name} — {n} cartas dadas a você.',
   'log.curse.toYou': '{name} — maldição em você: {card}.',
   // Reveal pending
-  'next.reveal': 'Uma carta atingiu você: leia-a e depois toque em “Continuar”.'
+  'next.reveal': 'Uma carta atingiu você: leia-a e depois toque em “Continuar”.',
+  // K3: worlds Spaceloot and Office
+  'world.sl': 'Spaceloot — a tripulação contra os alienígenas',
+  'world.of': 'Caos no Escritório — o escritório contra o home office',
+  'setup.worlds': 'Mundos',
+  'setup.worldModes.random': 'Aleatório',
+  'setup.worldModes.pick': 'Escolher',
+  'setup.worlds.random': 'Aleatório: um mundo ou uma mistura de dois, sorteados a cada novo jogo.',
+  'setup.worlds.hint': 'Vários mundos são embaralhados juntos. Nenhum marcado: aleatório.',
+  'family.crew': 'a tripulação da nave',
+  'family.alien': 'alienígenas',
+  'family.office': 'o pessoal do escritório',
+  'family.remote': 'o pessoal do home office',
+  'set.away-team': 'Kit da equipe de desembarque',
+  'set.tourist-kit': 'Kit de turista espacial',
+  'set.video-call': 'Pronto para a videochamada',
+  'set.couch-kit': 'Kit escritório no sofá',
+  // Worlds Fridge and Railway
+  'world.fd': 'Expedição Geladeira — a comida fresca contra as sobras',
+  'world.rw': 'Todos a Bordo — os passageiros contra os ferroviários',
+  'family.fresh': 'a comida fresca',
+  'family.leftover': 'as sobras',
+  'family.passenger': 'os passageiros',
+  'family.railstaff': 'os ferroviários',
+  'set.fridge-raider': 'Kit de assalto noturno à geladeira',
+  'set.chef-kit': 'Kit de chef de verdade',
+  'set.conductor-kit': 'Kit de fiscal de trem de verdade',
+  'set.commuter-kit': 'Kit de quem pega trem todo dia'
 };
