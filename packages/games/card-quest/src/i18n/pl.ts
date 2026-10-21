@@ -346,7 +346,11 @@ export const pl: Catalogue = {
   // K3: worlds Spaceloot and Office
   'world.sl': 'Spaceloot — załoga kontra kosmici',
   'world.of': 'Biurowy Chaos — biuro kontra praca zdalna',
-  'setup.worlds.hint': 'Kilka światów zostaje potasowanych razem. Nic nie zaznaczono: Kampfzwerge.',
+  'setup.worlds': 'Światy',
+  'setup.worldModes.random': 'Losowo',
+  'setup.worldModes.pick': 'Wybierz',
+  'setup.worlds.random': 'Losowo: jeden świat albo mieszanka dwóch, losowane przy każdej nowej grze.',
+  'setup.worlds.hint': 'Kilka światów zostaje potasowanych razem. Nic nie zaznaczono: losowo.',
   'family.crew': 'załoga statku',
   'family.alien': 'kosmici',
   'family.office': 'ludzie z biura',

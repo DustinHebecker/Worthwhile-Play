@@ -346,7 +346,11 @@ export const hi: Catalogue = {
   // K3: worlds Spaceloot and Office
   'world.sl': 'अंतरिक्ष की लूट — दल बनाम एलियन',
   'world.of': 'दफ़्तर का हंगामा — दफ़्तर बनाम वर्क फ़्रॉम होम',
-  'setup.worlds.hint': 'कई दुनियाएँ आपस में मिला दी जाती हैं। कोई न चुनी हो तो: लड़ाकू बौने।',
+  'setup.worlds': 'दुनियाएँ',
+  'setup.worldModes.random': 'बेतरतीब',
+  'setup.worldModes.pick': 'ख़ुद चुनें',
+  'setup.worlds.random': 'बेतरतीब: हर नए खेल में एक दुनिया या दो दुनियाओं का मेल चुना जाता है।',
+  'setup.worlds.hint': 'कई दुनियाएँ एक साथ फेंटी जाती हैं। कुछ न चुना हो: बेतरतीब।',
   'family.crew': 'जहाज़ी दल',
   'family.alien': 'एलियनों',
   'family.office': 'दफ़्तर वालों',

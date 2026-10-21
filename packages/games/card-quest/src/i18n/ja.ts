@@ -346,7 +346,11 @@ export const ja: Catalogue = {
   // K3: worlds Spaceloot and Office
   'world.sl': 'スペースお宝 ― クルー対宇宙人',
   'world.of': 'オフィス大混乱 ― 出社対在宅',
-  'setup.worlds.hint': '選んだワールドはまとめてシャッフルされます。何も選ばなければバトルドワーフ。',
+  'setup.worlds': 'ワールド',
+  'setup.worldModes.random': 'ランダム',
+  'setup.worldModes.pick': '自分で選ぶ',
+  'setup.worlds.random': 'ランダム：新しいゲームごとに、ワールド1つか2つの組み合わせを抽選。',
+  'setup.worlds.hint': '複数のワールドをまとめて混ぜる。何も選ばなければランダム。',
   'family.crew': '船のクルー',
   'family.alien': '宇宙人',
   'family.office': '出社派',

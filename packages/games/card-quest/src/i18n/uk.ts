@@ -346,7 +346,11 @@ export const uk: Catalogue = {
   // K3: worlds Spaceloot and Office
   'world.sl': 'Космомотлох — екіпаж проти прибульців',
   'world.of': 'Офісний хаос — офіс проти дистанційки',
-  'setup.worlds.hint': 'Кілька світів тасуються разом. Нічого не вибрано: Бойові гноми.',
+  'setup.worlds': 'Світи',
+  'setup.worldModes.random': 'Випадково',
+  'setup.worldModes.pick': 'Вибрати',
+  'setup.worlds.random': 'Випадково: один світ або суміш двох, наново для кожної нової гри.',
+  'setup.worlds.hint': 'Кілька світів тасуються разом. Нічого не позначено: випадково.',
   'family.crew': 'екіпаж корабля',
   'family.alien': 'прибульці',
   'family.office': 'офісні працівники',

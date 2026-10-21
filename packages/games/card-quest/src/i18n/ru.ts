@@ -346,7 +346,11 @@ export const ru: Catalogue = {
   // K3: worlds Spaceloot and Office
   'world.sl': 'Космобарахло — экипаж против пришельцев',
   'world.of': 'Офисный хаос — офис против удалёнки',
-  'setup.worlds.hint': 'Несколько миров тасуются вместе. Ничего не выбрано: Боевые гномы.',
+  'setup.worlds': 'Миры',
+  'setup.worldModes.random': 'Случайно',
+  'setup.worldModes.pick': 'Выбрать',
+  'setup.worlds.random': 'Случайно: один мир или смесь двух, заново для каждой новой игры.',
+  'setup.worlds.hint': 'Несколько миров тасуются вместе. Ничего не отмечено: случайно.',
   'family.crew': 'экипаж корабля',
   'family.alien': 'пришельцы',
   'family.office': 'офисные работники',

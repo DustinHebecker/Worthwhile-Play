@@ -157,7 +157,7 @@ Steam, schedules and the eternal delay — no real operator, line or brand.
 
 ### 4.7 Mixing rules
 
-1. A game uses **any number of worlds** (start-screen toggles since K3; Kampfzwerge by default). Their encounter cards form one encounter pile and their loot cards one loot pile. Every world has the same composition (§ 6.1), so the ratios and the game length stay the same.
+1. A game uses **any number of worlds** (start-screen toggles since K3; random one or two worlds by default since 2026-10-21, § 5.1). Their encounter cards form one encounter pile and their loot cards one loot pile. Every world has the same composition (§ 6.1), so the ratios and the game length stay the same.
 2. Cross-world effects run only through the shared vocabulary (§ 3).
 3. **Patchwork Ancestry** (loot, one per world) allows two origins at once — the "Android Garden Gnome" is the mixing joke; **Second Job** allows two professions.
 4. **Mixing jokes** that only matter in mixed games are optional extras (e.g. "Worm Hole" pulls a card from another world's discard pile).
@@ -173,7 +173,7 @@ K1 Kampfzwerge → first play-tests → K3 Spaceloot (mixing) → then, one per 
 
 ### 5.1 Setup and goal
 
-- **2–6 players**: one person plus **1–5 computer players**. Since ADR 0017 the setup lives on the host's start screen (declared `settings`, no own setup phase any more): difficulty, number of computer players, optional round limit (target fixed at level 10 since 2026-10-17). Coach tips are a display preference, switched in the game (remembered for new games). (Players who switched them off on the #51 start screen, live for a few hours, see them on again once.) Every choice has a sensible default, so "Start" is one tap; the defaults follow what older versions remembered (`setup` preference). Since K3 the start screen also has one toggle per world (Kampfzwerge, Spaceloot, Office, Fridge, Railway); the ticked worlds are shuffled together, none ticked means Kampfzwerge; the host remembers the last choice. Old saves still in the setup phase are dealt with their settings on restore.
+- **2–6 players**: one person plus **1–5 computer players**. Since ADR 0017 the setup lives on the host's start screen (declared `settings`, no own setup phase any more): difficulty, number of computer players, optional round limit (target fixed at level 10 since 2026-10-17). Coach tips are a display preference, switched in the game (remembered for new games). (Players who switched them off on the #51 start screen, live for a few hours, see them on again once.) Every choice has a sensible default, so "Start" is one tap; the defaults follow what older versions remembered (`setup` preference). Worlds (owner 2026-10-21: "eine oder mehrere, mit default zufällig"): a choice **Random** (default) / **Choose**; "Choose" shows one toggle per world (Kampfzwerge, Spaceloot, Office, Fridge, Railway) and the ticked worlds are shuffled together. **Random** draws the worlds from the seed with a generator of its own (`randomWorlds`): one world or a mix of two, each half of the time, every world and pair equally likely — so a seed or deep link always deals the same game, and "Another round" draws again. Nothing ticked under "Choose" also means random. The save keeps the drawn worlds plus `randomWorlds: true` (optional field; older saves stay valid). The host remembers the last choice. Old saves still in the setup phase are dealt with their settings on restore.
 - Everyone starts at **level 1** with 4 encounter and 4 loot cards.
 - **Win: reach the target level** — always **10** (owner decision 2026-10-17; saves from before keep their 6 / 8 / 12). The **winning level must come from defeating a monster** (not from selling or one-shots).
 - **Round limit: optional**, off by default (choices: off / 20 / 30 / 40). When on, after the last round the highest level wins (ties shared).
@@ -472,10 +472,11 @@ K1 is large (140 cards × 16 locales). If it becomes too big for one review, it 
 - **B4 Funny Blunder text per monster.** Today the Blunder is only the generated rule line ("level −1"). Each monster gets its own short, funny Blunder sentence (≤ 90 characters, per locale, original — no texts from the reference), shown on the card and in the log when it hits, next to the generated rule line that stays the binding effect (content field `blunder`, see § 6.2/6.3; content test for presence and length).
 - Confirmed: playing without reading the rules works (owner knows the genre; a test with someone new to it is still open).
 
-### 10.5a Open after the review of #59/#63 (paused 2026-10-18, owner: token budget)
+### 10.5a After the review of #59/#63 (2026-10-18/21)
 
-- Railway locomotives: remove every face on a round smokebox front (signature look of a famous toy train);
-  give the locos their own look (eyes in the cab windows or on the boiler side). Partly done.
+- Railway locomotives: no face on a round smokebox front any more (signature look of a famous toy train); our
+  locos wear their face on the boiler side, the smokebox is a plain dark door with a lamp. Done (18 locos).
+- Idea: show which worlds a "Random" game drew (e.g. next to the round line).
 - Owner: use MORE short verbal allusions and wordplay in all worlds where they were avoided so far (same limits:
   no copied art, characters, logos or long verbatim texts).
 

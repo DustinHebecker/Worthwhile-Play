@@ -346,7 +346,11 @@ export const tr: Catalogue = {
   // K3: worlds Spaceloot and Office
   'world.sl': 'Spaceloot — uzaylılara karşı mürettebat',
   'world.of': 'Ofis Kaosu — evden çalışanlara karşı ofis',
-  'setup.worlds.hint': 'Birden fazla dünya birbirine karıştırılır. Hiçbiri seçili değilse: Kampfzwerge.',
+  'setup.worlds': 'Dünyalar',
+  'setup.worldModes.random': 'Rastgele',
+  'setup.worldModes.pick': 'Seç',
+  'setup.worlds.random': 'Rastgele: her yeni oyunda bir dünya ya da iki dünyanın karışımı çekilir.',
+  'setup.worlds.hint': 'Birden çok dünya birlikte karıştırılır. Hiçbiri seçili değilse: rastgele.',
   'family.crew': 'gemi mürettebatı',
   'family.alien': 'uzaylılar',
   'family.office': 'ofis çalışanları',

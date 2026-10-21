@@ -346,7 +346,11 @@ export const ko: Catalogue = {
   // K3: worlds Spaceloot and Office
   'world.sl': '우주 전리품 — 승무원 대 외계인',
   'world.of': '사무실 대혼란 — 출근파 대 재택파',
-  'setup.worlds.hint': '고른 세계는 한데 섞인다. 아무것도 고르지 않으면 전투 드워프.',
+  'setup.worlds': '월드',
+  'setup.worldModes.random': '무작위',
+  'setup.worldModes.pick': '직접 선택',
+  'setup.worlds.random': '무작위: 새 게임마다 월드 하나 또는 두 월드의 조합을 뽑는다.',
+  'setup.worlds.hint': '여러 월드를 함께 섞는다. 아무것도 고르지 않으면 무작위.',
   'family.crew': '우주선 승무원',
   'family.alien': '외계인',
   'family.office': '출근파',

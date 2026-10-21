@@ -346,7 +346,11 @@ export const nl: Catalogue = {
   // K3: worlds Spaceloot and Office
   'world.sl': 'Spaceloot — crew tegen aliens',
   'world.of': 'Kantoorchaos — kantoor tegen thuiswerk',
-  'setup.worlds.hint': 'Meerdere werelden worden door elkaar geschud. Niets aangevinkt: Kampfzwerge.',
+  'setup.worlds': 'Werelden',
+  'setup.worldModes.random': 'Willekeurig',
+  'setup.worldModes.pick': 'Zelf kiezen',
+  'setup.worlds.random': 'Willekeurig: één wereld of een mix van twee, voor elk nieuw spel opnieuw getrokken.',
+  'setup.worlds.hint': 'Meerdere werelden worden door elkaar geschud. Niets aangevinkt: willekeurig.',
   'family.crew': 'de scheepsbemanning',
   'family.alien': 'aliens',
   'family.office': 'kantoormensen',

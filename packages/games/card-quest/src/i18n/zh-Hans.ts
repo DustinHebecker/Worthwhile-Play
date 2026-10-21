@@ -346,7 +346,11 @@ export const zhHans: Catalogue = {
   // K3: worlds Spaceloot and Office
   'world.sl': '太空战利品——船员对战外星人',
   'world.of': '办公室大乱斗——坐班族对战居家办公族',
-  'setup.worlds.hint': '选中的多个世界会混在一起洗牌。都不选：战斗矮人。',
+  'setup.worlds': '世界',
+  'setup.worldModes.random': '随机',
+  'setup.worldModes.pick': '自选',
+  'setup.worlds.random': '随机：每局新游戏抽取一个世界或两个世界的组合。',
+  'setup.worlds.hint': '多个世界会混在一起洗牌。都不勾选：随机。',
   'family.crew': '飞船船员',
   'family.alien': '外星人',
   'family.office': '坐班族',

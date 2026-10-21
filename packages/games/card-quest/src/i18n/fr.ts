@@ -346,7 +346,11 @@ export const fr: Catalogue = {
   // K3: worlds Spaceloot and Office
   'world.sl': 'Spaceloot — équipage contre aliens',
   'world.of': 'Chaos au Bureau — bureau contre télétravail',
-  'setup.worlds.hint': 'Plusieurs mondes sont mélangés ensemble. Aucun coché : Kampfzwerge.',
+  'setup.worlds': 'Mondes',
+  'setup.worldModes.random': 'Au hasard',
+  'setup.worldModes.pick': 'Choisir',
+  'setup.worlds.random': 'Au hasard : un monde ou un mélange de deux, tirés à chaque nouvelle partie.',
+  'setup.worlds.hint': 'Plusieurs mondes sont mélangés. Aucun coché : au hasard.',
   'family.crew': 'membres d’équipage',
   'family.alien': 'aliens',
   'family.office': 'gens de bureau',
