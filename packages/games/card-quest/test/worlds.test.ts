@@ -3,6 +3,7 @@ import { BASE_KINDS, instanceIds, type CardEntry, type Cond, type Mod } from '..
 import { isValidState, newGame, step, DEFAULT_SETTINGS } from '../src/rules';
 import { WORLD_IDS, WORLDS, instanceSet, worldDecks, type WorldId } from '../src/worlds';
 import { selfPlay } from './harness';
+import { randomWorlds } from '../src/settings';
 
 /*
  * Worlds and mixing (design § 3.4, § 4.7, § 6.1): every world has the same composition and level budget, uses the
@@ -115,11 +116,41 @@ describe('mixing worlds (§ 4.7)', () => {
   });
 });
 
+describe('random worlds (start screen default, owner 2026-10-21)', () => {
+  it('are drawn from the seed: half single worlds, half pairs, every world and every pair possible', () => {
+    const seen = new Map<string, number>();
+    let singles = 0;
+    for (let seed = 0; seed < 4000; seed++) {
+      const worlds = randomWorlds(seed);
+      expect(randomWorlds(seed), String(seed)).toEqual(worlds);
+      expect(worlds.length === 1 || worlds.length === 2).toBe(true);
+      expect(new Set(worlds).size).toBe(worlds.length);
+      // Always in start-screen order, so equal mixes compare equal.
+      expect(worlds).toEqual(WORLD_IDS.filter((w) => worlds.includes(w)));
+      if (worlds.length === 1) singles++;
+      seen.set(worlds.join('+'), (seen.get(worlds.join('+')) ?? 0) + 1);
+    }
+    expect(singles / 4000).toBeGreaterThan(0.45);
+    expect(singles / 4000).toBeLessThan(0.55);
+    expect(seen.size).toBe(WORLD_IDS.length + (WORLD_IDS.length * (WORLD_IDS.length - 1)) / 2);
+  });
+
+  it('a random game is a valid state; the flag must be true when present', () => {
+    const s = step(newGame(3), 0, { a: 'start', settings: { ...DEFAULT_SETTINGS, worlds: randomWorlds(3), randomWorlds: true } })!;
+    expect(isValidState(s)).toBe(true);
+    for (const bad of [false, 'yes', 1]) expect(isValidState({ ...s, settings: { ...s.settings, randomWorlds: bad } }), String(bad)).toBe(false);
+    const { randomWorlds: _, ...older } = s.settings;
+    expect(isValidState({ ...s, settings: older })).toBe(true);
+  });
+});
+
 describe('balance per world combination (self-play)', () => {
   // One test per combination keeps each well inside the timeout under load.
+  // Each world alone and all worlds together get 8 games; the 25 partial mixes 2 each (keeps the suite fast).
   it.each(combinations.map((c) => [c.join('+'), c] as const))('%s: games end in a reasonable number of rounds', (_, combo) => {
     const rounds: number[] = [];
-    for (let seed = 1; seed <= 8; seed++) {
+    const games = combo.length === 1 || combo.length === WORLD_IDS.length ? 8 : 2;
+    for (let seed = 1; seed <= games; seed++) {
       const { state } = selfPlay(seed, { worlds: [...combo], opponents: 2 + (seed % 4) });
       expect(isValidState(state)).toBe(true);
       expect(state.phase).toBe('over');

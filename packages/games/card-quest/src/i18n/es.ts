@@ -346,7 +346,11 @@ export const es: Catalogue = {
   // K3: worlds Spaceloot and Office
   'world.sl': 'Spaceloot: tripulación contra alienígenas',
   'world.of': 'Caos en la Oficina: oficina contra teletrabajo',
-  'setup.worlds.hint': 'Se mezclan varios mundos. Si no marcas ninguno: Kampfzwerge.',
+  'setup.worlds': 'Mundos',
+  'setup.worldModes.random': 'Al azar',
+  'setup.worldModes.pick': 'Elegir',
+  'setup.worlds.random': 'Al azar: un mundo o una mezcla de dos, sorteados en cada partida nueva.',
+  'setup.worlds.hint': 'Varios mundos se barajan juntos. Ninguno marcado: al azar.',
   'family.crew': 'la tripulación de la nave',
   'family.alien': 'alienígenas',
   'family.office': 'gente de oficina',
@@ -354,5 +358,16 @@ export const es: Catalogue = {
   'set.away-team': 'Kit del equipo de exploración',
   'set.tourist-kit': 'Kit de turista espacial',
   'set.video-call': 'Look de videollamada',
-  'set.couch-kit': 'Kit de oficina en el sofá'
+  'set.couch-kit': 'Kit de oficina en el sofá',
+  // Worlds Fridge and Railway
+  'world.fd': 'Expedición Nevera: comida fresca contra sobras',
+  'world.rw': 'Todos a Bordo: viajeros contra personal ferroviario',
+  'family.fresh': 'la comida fresca',
+  'family.leftover': 'las sobras',
+  'family.passenger': 'los viajeros',
+  'family.railstaff': 'el personal ferroviario',
+  'set.fridge-raider': 'Asalto nocturno a la nevera',
+  'set.chef-kit': 'Equipo de chef como es debido',
+  'set.conductor-kit': 'Uniforme ferroviario como es debido',
+  'set.commuter-kit': 'Kit veterano de cercanías'
 };

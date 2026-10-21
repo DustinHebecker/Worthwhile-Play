@@ -346,7 +346,11 @@ export const tr: Catalogue = {
   // K3: worlds Spaceloot and Office
   'world.sl': 'Spaceloot — uzaylılara karşı mürettebat',
   'world.of': 'Ofis Kaosu — evden çalışanlara karşı ofis',
-  'setup.worlds.hint': 'Birden fazla dünya birbirine karıştırılır. Hiçbiri seçili değilse: Kampfzwerge.',
+  'setup.worlds': 'Dünyalar',
+  'setup.worldModes.random': 'Rastgele',
+  'setup.worldModes.pick': 'Seç',
+  'setup.worlds.random': 'Rastgele: her yeni oyunda bir dünya ya da iki dünyanın karışımı çekilir.',
+  'setup.worlds.hint': 'Birden çok dünya birlikte karıştırılır. Hiçbiri seçili değilse: rastgele.',
   'family.crew': 'gemi mürettebatı',
   'family.alien': 'uzaylılar',
   'family.office': 'ofis çalışanları',
@@ -354,5 +358,16 @@ export const tr: Catalogue = {
   'set.away-team': 'Keşif ekibi teçhizatı',
   'set.tourist-kit': 'Uzay turisti paketi',
   'set.video-call': 'Görüntülü görüşmeye hazır',
-  'set.couch-kit': 'Kanepe ofisi takımı'
+  'set.couch-kit': 'Kanepe ofisi takımı',
+  // Worlds Fridge and Railway
+  'world.fd': 'Buzdolabı Seferi — artık yemeklere karşı taze yiyecekler',
+  'world.rw': 'Tren Kalkıyor! — demiryolu personeline karşı yolcular',
+  'family.fresh': 'taze yiyecekler',
+  'family.leftover': 'artık yemekler',
+  'family.passenger': 'yolcular',
+  'family.railstaff': 'demiryolu personeli',
+  'set.fridge-raider': 'Gece yarısı buzdolabı baskını',
+  'set.chef-kit': 'Hakiki şef takımı',
+  'set.conductor-kit': 'Hakiki kondüktör teçhizatı',
+  'set.commuter-kit': 'Emektar yolcu paketi'
 };

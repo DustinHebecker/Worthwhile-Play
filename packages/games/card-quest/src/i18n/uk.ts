@@ -346,7 +346,11 @@ export const uk: Catalogue = {
   // K3: worlds Spaceloot and Office
   'world.sl': 'Космомотлох — екіпаж проти прибульців',
   'world.of': 'Офісний хаос — офіс проти дистанційки',
-  'setup.worlds.hint': 'Кілька світів тасуються разом. Нічого не вибрано: Бойові гноми.',
+  'setup.worlds': 'Світи',
+  'setup.worldModes.random': 'Випадково',
+  'setup.worldModes.pick': 'Вибрати',
+  'setup.worlds.random': 'Випадково: один світ або суміш двох, наново для кожної нової гри.',
+  'setup.worlds.hint': 'Кілька світів тасуються разом. Нічого не позначено: випадково.',
   'family.crew': 'екіпаж корабля',
   'family.alien': 'прибульці',
   'family.office': 'офісні працівники',
@@ -354,5 +358,16 @@ export const uk: Catalogue = {
   'set.away-team': 'Спорядження десантної групи',
   'set.tourist-kit': 'Набір космотуриста',
   'set.video-call': 'Набір для відеодзвінка',
-  'set.couch-kit': 'Комплект «Офіс на дивані»'
+  'set.couch-kit': 'Комплект «Офіс на дивані»',
+  // Worlds Fridge and Railway
+  'world.fd': 'Експедиція в холодильник — свіже проти залишків',
+  'world.rw': 'Потяг відправляється — пасажири проти залізничників',
+  'family.fresh': 'свіжі продукти',
+  'family.leftover': 'залишки',
+  'family.passenger': 'пасажири',
+  'family.railstaff': 'залізничники',
+  'set.fridge-raider': 'Набір для нічного набігу на холодильник',
+  'set.chef-kit': 'Справжнє кухарське спорядження',
+  'set.conductor-kit': 'Справжнє кондукторське спорядження',
+  'set.commuter-kit': 'Набір для поїздок зі стажем'
 };

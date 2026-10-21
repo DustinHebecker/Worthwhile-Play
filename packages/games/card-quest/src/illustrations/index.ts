@@ -12,7 +12,9 @@ import type { WorldId } from '../worlds';
 const LOADERS: Readonly<Record<WorldId, () => Promise<Readonly<Record<string, string>>>>> = {
   kz: () => import('./kz').then((m) => m.KZ),
   sl: () => import('./sl').then((m) => m.SL),
-  of: () => import('./of').then((m) => m.OF)
+  of: () => import('./of').then((m) => m.OF),
+  fd: () => import('./fd').then((m) => m.FD),
+  rw: () => import('./rw').then((m) => m.RW)
 };
 
 const ILLUSTRATIONS = new Map<string, string>();

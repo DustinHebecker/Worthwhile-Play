@@ -6,6 +6,7 @@ import game, { type CardQuestState } from '../src/index';
 import { createRngFromState } from '@wp/game-core';
 import { DEFAULT_SETTINGS, isValidState, newGame, step, type LogEvent } from '../src/rules';
 import { arranged, take } from './harness';
+import { randomWorlds } from '../src/settings';
 import { en } from '../src/content/en';
 
 const q = (root: HTMLElement, id: string) => root.querySelector<HTMLButtonElement>(`[data-testid="${id}"]`);
@@ -252,6 +253,26 @@ describe('view', () => {
     instance.dispose();
   });
 
+  it('random worlds (the default): drawn from the seed, one world or a pair, and "Another round" draws again', () => {
+    const ctx = createTestContext(game as GameModule<unknown>, 'en');
+    const instance = game.create(ctx.context as never);
+    // A deep link without settings deals random worlds too, the same for the same seed.
+    instance.newGame({ seed: 9 });
+    const first = instance.serialize();
+    expect(first.settings).toMatchObject({ worlds: randomWorlds(9), randomWorlds: true });
+    expect(isValidState(first)).toBe(true);
+    instance.newGame({ seed: 9, settings: game.settingsOf!(first) });
+    expect(instance.serialize().settings.worlds).toEqual(first.settings.worlds);
+    // "Another round" passes { worlds: 'random' } with a new seed: new worlds may be drawn.
+    const drawn = new Set<string>();
+    for (let seed = 1; seed <= 12; seed++) {
+      instance.newGame({ seed, settings: game.settingsOf!(first) });
+      drawn.add(instance.serialize().settings.worlds.join('+'));
+    }
+    expect(drawn.size).toBeGreaterThan(3);
+    instance.dispose();
+  });
+
   it('loads the pictures of other worlds with the game that uses them and then redraws (K3)', async () => {
     const ctx = createTestContext(game as GameModule<unknown>, 'en');
     const instance = game.create(ctx.context as never);
@@ -478,7 +499,9 @@ describe('view', () => {
       expect(s.players).toHaveLength(6);
       // The target is always level 10 now (owner decision); a passed target is ignored.
       expect(s.settings).toMatchObject({ difficulty: 'sharp', opponents: 5, target: 10, roundLimit: 20, coach: true });
-      expect(game.settingsOf!(s)).toEqual({ 'world-kz': true, 'world-sl': false, 'world-of': false, difficulty: 'sharp', opponents: 5, roundLimit: 20 });
+      // No worlds chosen: random worlds (owner 2026-10-21), drawn from the seed.
+      expect(s.settings.worlds).toEqual(randomWorlds(4));
+      expect(game.settingsOf!(s)).toEqual({ worlds: 'random', difficulty: 'sharp', opponents: 5, roundLimit: 20 });
       expect(q(ctx.context.root, 'start')).toBeNull();
       expect(q(ctx.context.root, 'setup-opponents')).toBeNull();
       instance.dispose();
@@ -517,7 +540,8 @@ describe('view', () => {
       let found = false;
       for (let seed = 1; seed < 60 && !found; seed++) {
         instance.newGame({ seed });
-        found = q(ctx.context.root, 'hint') !== null;
+        // A curse shown at the start hides the coach switch until Continue; take a seed without one.
+        found = q(ctx.context.root, 'hint') !== null && q(ctx.context.root, 'coach') !== null;
       }
       expect(found).toBe(true);
       const before = instance.serialize();
@@ -560,19 +584,24 @@ describe('view', () => {
     it('declares its settings with the setup older versions remembered as defaults', () => {
       const specs = typeof game.settings === 'function' ? game.settings({ preferences: { get: () => ({ opponents: 5, target: 12, roundLimit: 30, coach: false }), set: () => undefined } } as never) : game.settings!;
       const defaults = Object.fromEntries(specs.map((sp) => [sp.kind === 'difficulty' ? 'difficulty' : sp.id, sp.default]));
-      expect(defaults).toEqual({ 'world-kz': true, 'world-sl': false, 'world-of': false, difficulty: 'normal', opponents: 5, roundLimit: 30 });
+      expect(defaults).toEqual({ worlds: 'random', 'world-kz': true, 'world-sl': false, 'world-of': false, 'world-fd': false, 'world-rw': false, difficulty: 'normal', opponents: 5, roundLimit: 30 });
+      // The world toggles are only shown for "Choose".
+      for (const sp of specs) if (sp.kind === 'toggle') expect(sp.when, sp.id).toEqual({ worlds: ['pick'] });
       expect(game.metadata.setupInGame).toBeUndefined();
     });
 
-    it('offers one toggle per world; the ticked worlds are shuffled together, none ticked means Kampfzwerge', () => {
+    it('offers one toggle per world for "Choose"; the ticked worlds are shuffled together, none ticked means random', () => {
       const ctx = createTestContext(game as GameModule<unknown>, 'en');
       const instance = game.create(ctx.context as never);
       for (const [ticked, worlds] of [
         [{ 'world-sl': true }, ['sl']],
         [{ 'world-kz': true, 'world-of': true }, ['kz', 'of']],
         [{ 'world-kz': true, 'world-sl': true, 'world-of': true }, ['kz', 'sl', 'of']],
-        [{ 'world-kz': false, 'world-sl': false, 'world-of': false }, ['kz']],
-        [{ 'world-sl': 'yes', 'world-xx': true }, ['kz']]
+        [{ 'world-fd': true, 'world-rw': true }, ['fd', 'rw']],
+        [{ 'world-kz': true, 'world-sl': true, 'world-of': true, 'world-fd': true, 'world-rw': true }, ['kz', 'sl', 'of', 'fd', 'rw']],
+        [{ worlds: 'pick', 'world-kz': false, 'world-sl': false, 'world-of': false }, randomWorlds(5)],
+        [{ worlds: 'pick', 'world-sl': 'yes', 'world-xx': true }, randomWorlds(5)],
+        [{ worlds: 'random', 'world-sl': true }, randomWorlds(5)]
       ] as const) {
         instance.newGame({ seed: 5, settings: { ...ticked, opponents: 2 } as never });
         const s = instance.serialize();
@@ -580,7 +609,8 @@ describe('view', () => {
         expect(isValidState(s)).toBe(true);
         for (const card of s.players.flatMap((p) => p.hand)) expect(worlds.some((w) => card.startsWith(`${w}.`)), card).toBe(true);
         // The settings of the game read back as the same toggles.
-        expect(game.settingsOf!(s)).toMatchObject({ 'world-kz': worlds.includes('kz' as never), 'world-sl': worlds.includes('sl' as never), 'world-of': worlds.includes('of' as never) });
+        if (s.settings.randomWorlds) expect(game.settingsOf!(s)).toMatchObject({ worlds: 'random' });
+        else expect(game.settingsOf!(s)).toMatchObject({ worlds: 'pick', ...Object.fromEntries(['kz', 'sl', 'of', 'fd', 'rw'].map((w) => [`world-${w}`, (worlds as readonly string[]).includes(w)])) });
       }
       instance.dispose();
     });

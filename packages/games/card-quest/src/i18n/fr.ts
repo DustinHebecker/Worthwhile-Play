@@ -346,7 +346,11 @@ export const fr: Catalogue = {
   // K3: worlds Spaceloot and Office
   'world.sl': 'Spaceloot — équipage contre aliens',
   'world.of': 'Chaos au Bureau — bureau contre télétravail',
-  'setup.worlds.hint': 'Plusieurs mondes sont mélangés ensemble. Aucun coché : Kampfzwerge.',
+  'setup.worlds': 'Mondes',
+  'setup.worldModes.random': 'Au hasard',
+  'setup.worldModes.pick': 'Choisir',
+  'setup.worlds.random': 'Au hasard : un monde ou un mélange de deux, tirés à chaque nouvelle partie.',
+  'setup.worlds.hint': 'Plusieurs mondes sont mélangés. Aucun coché : au hasard.',
   'family.crew': 'membres d’équipage',
   'family.alien': 'aliens',
   'family.office': 'gens de bureau',
@@ -354,5 +358,16 @@ export const fr: Catalogue = {
   'set.away-team': 'Kit d’équipe d’exploration',
   'set.tourist-kit': 'Panoplie du touriste spatial',
   'set.video-call': 'Tenue de visio impeccable',
-  'set.couch-kit': 'Kit bureau-canapé'
+  'set.couch-kit': 'Kit bureau-canapé',
+  // Worlds Fridge and Railway
+  'world.fd': 'Expédition Frigo — produits frais contre restes',
+  'world.rw': 'En Voiture ! — voyageurs contre cheminots',
+  'family.fresh': 'produits frais',
+  'family.leftover': 'restes',
+  'family.passenger': 'voyageurs',
+  'family.railstaff': 'cheminots',
+  'set.fridge-raider': 'Raid nocturne au frigo',
+  'set.chef-kit': 'Vraie tenue de chef',
+  'set.conductor-kit': 'Vrai uniforme de contrôle',
+  'set.commuter-kit': 'Kit pro du trajet quotidien'
 };

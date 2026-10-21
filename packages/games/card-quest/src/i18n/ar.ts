@@ -346,7 +346,11 @@ export const ar: Catalogue = {
   // K3: worlds Spaceloot and Office
   'world.sl': 'غنائم الفضاء — الطاقم ضد الفضائيين',
   'world.of': 'فوضى المكتب — المكتب ضد العمل من المنزل',
-  'setup.worlds.hint': 'تُخلط عدة عوالم معًا. إن لم يُختر أيٌّ منها: الأقزام المقاتلة.',
+  'setup.worlds': 'العوالم',
+  'setup.worldModes.random': 'عشوائي',
+  'setup.worldModes.pick': 'اختيار',
+  'setup.worlds.random': 'عشوائي: عالم واحد أو مزيج من عالمين، يُسحب من جديد لكل لعبة.',
+  'setup.worlds.hint': 'تُخلط عدة عوالم معًا. إن لم يُحدَّد شيء: عشوائي.',
   'family.crew': 'طاقم السفينة',
   'family.alien': 'الفضائيين',
   'family.office': 'موظفي المكتب',
@@ -354,5 +358,16 @@ export const ar: Catalogue = {
   'set.away-team': 'عتاد فريق الاستكشاف',
   'set.tourist-kit': 'عُدّة سائح الفضاء',
   'set.video-call': 'جاهز لمكالمة الفيديو',
-  'set.couch-kit': 'عُدّة مكتب الأريكة'
+  'set.couch-kit': 'عُدّة مكتب الأريكة',
+  // Worlds Fridge and Railway
+  'world.fd': 'بعثة الثلاجة — الطعام الطازج ضد البقايا',
+  'world.rw': 'تفضّلوا بالصعود — الركّاب ضد موظفي القطار',
+  'family.fresh': 'الطعام الطازج',
+  'family.leftover': 'بقايا الطعام',
+  'family.passenger': 'الركّاب',
+  'family.railstaff': 'موظفي القطار',
+  'set.fridge-raider': 'غارة منتصف الليل على الثلاجة',
+  'set.chef-kit': 'عُدّة طهي حقيقية',
+  'set.conductor-kit': 'عُدّة تفتيش تذاكر حقيقية',
+  'set.commuter-kit': 'عُدّة خبراء التنقّل اليومي'
 };

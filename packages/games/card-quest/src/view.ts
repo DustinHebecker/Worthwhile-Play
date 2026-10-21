@@ -938,7 +938,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
 
   return {
     newGame(options: NewGameOptions) {
-      state = started(options.seed, { ...readSettings(options.settings, options.difficulty), coach: coachPreference() });
+      state = started(options.seed, { ...readSettings(options.settings, options.difficulty, options.seed), coach: coachPreference() });
       selected = null;
       mode = 'play';
       picked.clear();
