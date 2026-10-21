@@ -150,6 +150,16 @@ describe('map generator (I6c, P9)', () => {
       expect(s.world.entities.some((e) => e.side === OPPONENT)).toBe(true);
     }
   }, 120_000);
+
+  it('the opponent gets through a ring of holding units around the post it cannot see (random maps where its storm used to stall)', () => {
+    // A passive player whose starting pieces ring the post: every move onto the post found no way
+    // and ended at once, turn after turn; these games ran past turn 120 before the fix (now lost at 83–94).
+    for (const [w, h, seed, level] of [[20, 14, 1, 'normal'], [20, 14, 1, 'hard'], [24, 16, 0, 'hard']] as const) {
+      let s = newGame(seed, FIELD_EXERCISE, level, null, false, generateMap(w, h, seed));
+      while (s.phase === 'plan' && s.world.turn < 120) s = lockTurn(s);
+      expect(`${s.result}@${s.world.turn}`, `${w}×${h} seed ${seed} ${level}`).toMatch(/^lost@\d+$/);
+    }
+  }, 120_000);
 });
 
 describe('map generator, four bases (Generator C, owner decisions 2026-10-18)', () => {
