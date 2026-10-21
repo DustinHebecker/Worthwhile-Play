@@ -1,7 +1,7 @@
 import type { GameContext, GameInstance, GameResult, NewGameOptions } from '@wp/game-core';
 import { announce, clear, h } from '@wp/ui';
 import { pictogram } from './art';
-import { illustration } from './illustrations';
+import { illustration, illustrationsLoaded, loadIllustrations } from './illustrations';
 import { baseId, type MonsterCard } from './cards';
 import { cardBlunder, cardFlavour, cardName, cardRules, keyNumber, penaltyText } from './cardtext';
 import { HUMAN, advance, computerToAct } from './driver';
@@ -40,6 +40,7 @@ type Mode = 'play' | 'sell' | 'give';
 export function createCardQuest(context: GameContext): GameInstance<CardQuestState> {
   const { t, root } = context;
   let state: CardQuestState = started(0, readSettings(undefined));
+  let disposed = false;
   let selected: string | null = null;
   let mode: Mode = 'play';
   /** The player chosen in the help form. */
@@ -388,7 +389,16 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     }
   }
 
+  /** Loads the pictures of the game's worlds and redraws once they are there (pictograms meanwhile). */
+  function ensurePictures(): void {
+    if (illustrationsLoaded(state.settings.worlds)) return;
+    void loadIllustrations(state.settings.worlds).then(() => {
+      if (!disposed && illustrationsLoaded(state.settings.worlds)) render();
+    });
+  }
+
   function render(): void {
+    ensurePictures();
     syncMode();
     const focusKey = keyOf(document.activeElement && root.contains(document.activeElement) ? document.activeElement : null);
     clear(main);
@@ -928,7 +938,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
 
   return {
     newGame(options: NewGameOptions) {
-      state = started(options.seed, { ...readSettings(options.settings, options.difficulty), coach: coachPreference() });
+      state = started(options.seed, { ...readSettings(options.settings, options.difficulty, options.seed), coach: coachPreference() });
       selected = null;
       mode = 'play';
       picked.clear();
@@ -964,6 +974,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       render();
     },
     dispose() {
+      disposed = true;
       clear(root);
     }
   };
