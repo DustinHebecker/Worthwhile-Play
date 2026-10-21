@@ -66,6 +66,28 @@ test('card-quest: the start screen sets up the table; the game has no setup of i
   await expect(page.getByTestId('next')).toBeVisible();
 });
 
+test('card-quest: worlds are chosen on the start screen and mixed; a reload keeps them', async ({ page }) => {
+  await startGame(page, GAME, { settings: { 'world-kz': false, 'world-sl': true, 'world-of': true, opponents: 2 } });
+  await expect(page.getByTestId('players')).toBeVisible();
+  const worldsOf = async () => ((await readSave(page, GAME)) as { state?: { settings?: { worlds?: string[] } } } | undefined)?.state?.settings?.worlds;
+  await expect.poll(worldsOf).toEqual(['sl', 'of']);
+  // The seed is random: a computer player's curse may be shown first (the hand waits behind it), so continue it.
+  const hand = page.locator('[data-testid="hand"] .cq-tile');
+  await expect
+    .poll(async () => {
+      const next = page.getByTestId('reveal-continue');
+      if (await next.isVisible()) await next.click();
+      return hand.count();
+    })
+    .toBeGreaterThan(0);
+  // Only cards of the chosen worlds are on the table, and their pictures arrive with the lazily loaded world chunks.
+  const cards = await page.getByTestId('card-quest').locator('[data-card]').evaluateAll((els) => els.map((e) => e.getAttribute('data-card') ?? ''));
+  for (const card of cards) expect(card).toMatch(/^(sl|of)\./);
+  await expect(hand.first().locator('svg.cq-il')).toBeVisible();
+  await reopen(page);
+  expect(await worldsOf()).toEqual(['sl', 'of']);
+});
+
 test('card-quest: resumes in the middle of a fight after a reload', async ({ page }) => {
   await expectResumeAfterReload(page, GAME, async (p) => {
     await playUntil(p, (s) => s.phase === 'fight' && s.active === 0);

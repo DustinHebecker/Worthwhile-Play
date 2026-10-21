@@ -342,5 +342,17 @@ export const ja: Catalogue = {
   'log.give.toYou': '{name} ― カード{n}枚をきみへ。',
   'log.curse.toYou': '{name} ― きみに呪い：{card}。',
   // Reveal pending
-  'next.reveal': 'カードにやられた：読んだら「続ける」を押そう。'
+  'next.reveal': 'カードにやられた：読んだら「続ける」を押そう。',
+  // K3: worlds Spaceloot and Office
+  'world.sl': 'スペースお宝 ― クルー対宇宙人',
+  'world.of': 'オフィス大混乱 ― 出社対在宅',
+  'setup.worlds.hint': '選んだワールドはまとめてシャッフルされます。何も選ばなければバトルドワーフ。',
+  'family.crew': '船のクルー',
+  'family.alien': '宇宙人',
+  'family.office': '出社派',
+  'family.remote': '在宅派',
+  'set.away-team': '本格・上陸班装備',
+  'set.tourist-kit': '本格・宇宙観光セット',
+  'set.video-call': 'ビデオ会議対応',
+  'set.couch-kit': '本格・ソファ仕事セット'
 };

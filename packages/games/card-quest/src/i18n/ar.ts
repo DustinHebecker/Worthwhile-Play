@@ -188,7 +188,7 @@ export const ar: Catalogue = {
   'r.vsTrait': '{sign}{n} ضد كل ما هو «{trait}»',
   'r.vsFamily': '{sign}{n} ضد {family}',
   'r.vsLacks': '{sign}{n} ضد كل من ليس «{trait}»',
-  'r.selfFamily': '+{n} إضافية لـ{family}',
+  'r.selfFamily': '+{n} إضافية لفئة {family}',
   'r.flee': 'الهرب {sign}{n}',
   'r.noFlee': 'لا هرب: الخسارة تعني دائمًا الفضيحة',
   'r.reward': 'عند هزيمته: مستوى +{levels}، بطاقات غنيمة: {loot}',
@@ -342,5 +342,17 @@ export const ar: Catalogue = {
   'log.give.toYou': '{name} — إعطاؤك بطاقات: {n}.',
   'log.curse.toYou': '{name} — لعنة عليك: {card}.',
   // Reveal pending
-  'next.reveal': 'أصابتك بطاقة: اقرأها، ثم اضغط «متابعة».'
+  'next.reveal': 'أصابتك بطاقة: اقرأها، ثم اضغط «متابعة».',
+  // K3: worlds Spaceloot and Office
+  'world.sl': 'غنائم الفضاء — الطاقم ضد الفضائيين',
+  'world.of': 'فوضى المكتب — المكتب ضد العمل من المنزل',
+  'setup.worlds.hint': 'تُخلط عدة عوالم معًا. إن لم يُختر أيٌّ منها: الأقزام المقاتلة.',
+  'family.crew': 'طاقم السفينة',
+  'family.alien': 'الفضائيين',
+  'family.office': 'موظفي المكتب',
+  'family.remote': 'العاملين من المنزل',
+  'set.away-team': 'عتاد فريق الاستكشاف',
+  'set.tourist-kit': 'عُدّة سائح الفضاء',
+  'set.video-call': 'جاهز لمكالمة الفيديو',
+  'set.couch-kit': 'عُدّة مكتب الأريكة'
 };

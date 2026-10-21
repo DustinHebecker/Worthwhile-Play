@@ -342,5 +342,17 @@ export const zhHans: Catalogue = {
   'log.give.toYou': '{name}——送给你 {n} 张牌。',
   'log.curse.toYou': '{name}——诅咒你：{card}。',
   // Reveal pending
-  'next.reveal': '一张牌击中了你：读完后按“继续”。'
+  'next.reveal': '一张牌击中了你：读完后按“继续”。',
+  // K3: worlds Spaceloot and Office
+  'world.sl': '太空战利品——船员对战外星人',
+  'world.of': '办公室大乱斗——坐班族对战居家办公族',
+  'setup.worlds.hint': '选中的多个世界会混在一起洗牌。都不选：战斗矮人。',
+  'family.crew': '飞船船员',
+  'family.alien': '外星人',
+  'family.office': '坐班族',
+  'family.remote': '居家办公族',
+  'set.away-team': '正宗登陆小队装备',
+  'set.tourist-kit': '正宗太空游客套装',
+  'set.video-call': '视频会议就绪',
+  'set.couch-kit': '正宗沙发办公套装'
 };

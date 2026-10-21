@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { createTestContext } from '@wp/testing';
 import type { GameModule, Translator } from '@wp/game-core';
 import game, { type CardQuestState } from '../src/index';
@@ -252,6 +252,16 @@ describe('view', () => {
     instance.dispose();
   });
 
+  it('loads the pictures of other worlds with the game that uses them and then redraws (K3)', async () => {
+    const ctx = createTestContext(game as GameModule<unknown>, 'en');
+    const instance = game.create(ctx.context as never);
+    instance.newGame({ seed: 3, settings: { 'world-sl': true, 'world-of': true } });
+    const pictured = () => [...ctx.context.root.querySelectorAll('[data-testid="hand"] .cq-tile')].filter((t) => t.querySelector('svg.cq-il')).length;
+    await vi.waitFor(() => expect(pictured()).toBe(ctx.context.root.querySelectorAll('[data-testid="hand"] .cq-tile').length));
+    expect(pictured()).toBeGreaterThan(0);
+    instance.dispose();
+  });
+
   describe('owner feedback 2026-10-17', () => {
     const mount = (state: CardQuestState) => {
       const ctx = createTestContext(game as GameModule<unknown>, 'en');
@@ -468,7 +478,7 @@ describe('view', () => {
       expect(s.players).toHaveLength(6);
       // The target is always level 10 now (owner decision); a passed target is ignored.
       expect(s.settings).toMatchObject({ difficulty: 'sharp', opponents: 5, target: 10, roundLimit: 20, coach: true });
-      expect(game.settingsOf!(s)).toEqual({ difficulty: 'sharp', opponents: 5, roundLimit: 20 });
+      expect(game.settingsOf!(s)).toEqual({ 'world-kz': true, 'world-sl': false, 'world-of': false, difficulty: 'sharp', opponents: 5, roundLimit: 20 });
       expect(q(ctx.context.root, 'start')).toBeNull();
       expect(q(ctx.context.root, 'setup-opponents')).toBeNull();
       instance.dispose();
@@ -550,8 +560,29 @@ describe('view', () => {
     it('declares its settings with the setup older versions remembered as defaults', () => {
       const specs = typeof game.settings === 'function' ? game.settings({ preferences: { get: () => ({ opponents: 5, target: 12, roundLimit: 30, coach: false }), set: () => undefined } } as never) : game.settings!;
       const defaults = Object.fromEntries(specs.map((sp) => [sp.kind === 'difficulty' ? 'difficulty' : sp.id, sp.default]));
-      expect(defaults).toEqual({ difficulty: 'normal', opponents: 5, roundLimit: 30 });
+      expect(defaults).toEqual({ 'world-kz': true, 'world-sl': false, 'world-of': false, difficulty: 'normal', opponents: 5, roundLimit: 30 });
       expect(game.metadata.setupInGame).toBeUndefined();
+    });
+
+    it('offers one toggle per world; the ticked worlds are shuffled together, none ticked means Kampfzwerge', () => {
+      const ctx = createTestContext(game as GameModule<unknown>, 'en');
+      const instance = game.create(ctx.context as never);
+      for (const [ticked, worlds] of [
+        [{ 'world-sl': true }, ['sl']],
+        [{ 'world-kz': true, 'world-of': true }, ['kz', 'of']],
+        [{ 'world-kz': true, 'world-sl': true, 'world-of': true }, ['kz', 'sl', 'of']],
+        [{ 'world-kz': false, 'world-sl': false, 'world-of': false }, ['kz']],
+        [{ 'world-sl': 'yes', 'world-xx': true }, ['kz']]
+      ] as const) {
+        instance.newGame({ seed: 5, settings: { ...ticked, opponents: 2 } as never });
+        const s = instance.serialize();
+        expect(s.settings.worlds, JSON.stringify(ticked)).toEqual(worlds);
+        expect(isValidState(s)).toBe(true);
+        for (const card of s.players.flatMap((p) => p.hand)) expect(worlds.some((w) => card.startsWith(`${w}.`)), card).toBe(true);
+        // The settings of the game read back as the same toggles.
+        expect(game.settingsOf!(s)).toMatchObject({ 'world-kz': worlds.includes('kz' as never), 'world-sl': worlds.includes('sl' as never), 'world-of': worlds.includes('of' as never) });
+      }
+      instance.dispose();
     });
   });
 

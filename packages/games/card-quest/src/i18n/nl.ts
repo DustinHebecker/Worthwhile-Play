@@ -342,5 +342,17 @@ export const nl: Catalogue = {
   'log.give.toYou': '{name} — {n} kaarten aan jou gegeven.',
   'log.curse.toYou': '{name} — vloek op jou: {card}.',
   // Reveal pending
-  'next.reveal': 'Een kaart heeft je geraakt: lees hem en druk dan op „Verder”.'
+  'next.reveal': 'Een kaart heeft je geraakt: lees hem en druk dan op „Verder”.',
+  // K3: worlds Spaceloot and Office
+  'world.sl': 'Spaceloot — crew tegen aliens',
+  'world.of': 'Kantoorchaos — kantoor tegen thuiswerk',
+  'setup.worlds.hint': 'Meerdere werelden worden door elkaar geschud. Niets aangevinkt: Kampfzwerge.',
+  'family.crew': 'de scheepsbemanning',
+  'family.alien': 'aliens',
+  'family.office': 'kantoormensen',
+  'family.remote': 'thuiswerkers',
+  'set.away-team': 'Uitrusting voor het landingsteam',
+  'set.tourist-kit': 'Ruimtetoeristenpakket',
+  'set.video-call': 'Klaar voor de videocall',
+  'set.couch-kit': 'Kantoor-op-de-bank-pakket'
 };

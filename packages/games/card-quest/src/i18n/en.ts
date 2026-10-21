@@ -13,8 +13,11 @@ export const en = {
   'difficulty.sharp': 'Sharp',
 
   // Setup
-  // World names: shown again once the start screen offers a choice of worlds (K3, Spaceloot).
+  // Worlds: one start-screen toggle each; the chosen ones are shuffled into one pile.
   'world.kz': 'Kampfzwerge — dwarves against garden gnomes',
+  'world.sl': 'Spaceloot — the crew against aliens',
+  'world.of': 'Office Chaos — the office against the home office',
+  'setup.worlds.hint': 'Several worlds are shuffled together. None ticked: Kampfzwerge.',
   'setup.opponents': 'Computer players',
   'setup.roundLimit': 'Round limit',
   'setup.roundLimit.hint': 'With a limit, the highest level wins after the last round.',
@@ -182,6 +185,10 @@ export const en = {
   'class.junk': 'junk',
   'family.fairytale': 'fairy-tale dwarves',
   'family.garden': 'garden gnomes',
+  'family.crew': 'the ship’s crew',
+  'family.alien': 'aliens',
+  'family.office': 'office people',
+  'family.remote': 'home-office people',
   'slot.head': 'Head',
   'slot.body': 'Body',
   'slot.feet': 'Feet',
@@ -191,6 +198,10 @@ export const en = {
   'slot.big': 'big',
   'set.mining-gear': 'Proper mining gear',
   'set.gnome-outfit': 'Proper gnome outfit',
+  'set.away-team': 'Away-team kit',
+  'set.tourist-kit': 'Space-tourist kit',
+  'set.video-call': 'Ready for the video call',
+  'set.couch-kit': 'Couch-office kit',
 
   // Rules text fragments
   'r.level': 'Level {n}',

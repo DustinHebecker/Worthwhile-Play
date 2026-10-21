@@ -342,5 +342,17 @@ export const hi: Catalogue = {
   'log.give.toYou': '{name} — तुम्हें दिए गए कार्ड: {n}।',
   'log.curse.toYou': '{name} — तुम पर श्राप: {card}।',
   // Reveal pending
-  'next.reveal': 'एक कार्ड तुम पर पड़ा: उसे पढ़ो, फिर “आगे बढ़ो” दबाओ।'
+  'next.reveal': 'एक कार्ड तुम पर पड़ा: उसे पढ़ो, फिर “आगे बढ़ो” दबाओ।',
+  // K3: worlds Spaceloot and Office
+  'world.sl': 'अंतरिक्ष की लूट — दल बनाम एलियन',
+  'world.of': 'दफ़्तर का हंगामा — दफ़्तर बनाम वर्क फ़्रॉम होम',
+  'setup.worlds.hint': 'कई दुनियाएँ आपस में मिला दी जाती हैं। कोई न चुनी हो तो: लड़ाकू बौने।',
+  'family.crew': 'जहाज़ी दल',
+  'family.alien': 'एलियनों',
+  'family.office': 'दफ़्तर वालों',
+  'family.remote': 'वर्क-फ़्रॉम-होम वालों',
+  'set.away-team': 'अभियान-दल का सामान',
+  'set.tourist-kit': 'अंतरिक्ष-पर्यटक किट',
+  'set.video-call': 'वीडियो कॉल के लायक',
+  'set.couch-kit': 'सोफ़ा-दफ़्तर का सामान'
 };
