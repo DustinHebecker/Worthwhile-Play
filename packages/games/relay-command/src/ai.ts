@@ -274,6 +274,13 @@ const RALLY_SHARE: Record<Difficulty, number> = { easy: 0, normal: 0.8, hard: 0.
 const RALLY_DEADLINE = 6;
 /** Known enemy fighters within this many cells of their post count as its defenders. */
 const DEFENCE_RADIUS = 7;
+/**
+ * A known tower counts this many times its price among a post's defenders (it holds far more than
+ * units of the same price: structure armour, and it is rebuilt where it stands). Measured against a
+ * side that walls its post in with Gun Towers (owner review 2026-10-18): with the rally point kept
+ * out of the towers' reach, units lost inside a tower wall on Field Exercise fell from 164 to 81.
+ */
+const TOWER_DEFENCE_WEIGHT = 2;
 /** With yards to reinforce, the storm needs this much more value than the known defenders. */
 const STORM_ODDS = 1.3;
 /** Fewest fighters the deadline storm goes ahead with while yards keep producing. */
@@ -304,7 +311,7 @@ function coveredNear(obs: Observation, ruleset: Ruleset, at: { x: number; y: num
   return best ? { x: best.x, y: best.y } : at;
 }
 
-interface AssaultPlan {
+export interface AssaultPlan {
   readonly objective: Entity;
   readonly rally: { x: number; y: number };
   /** All own mobile fighters (in contact or not). */
@@ -363,7 +370,7 @@ const targetPosts = (obs: Observation): Entity[] =>
   obs.world.entities.filter((e) => e.kind === 'command-post' && e.side !== obs.side && hostile(obs.world, obs.side, e.side));
 
 /** The side's plan of attack from what it knows: rally point in front of the enemy post and whether to storm. */
-function assaultPlan(obs: Observation, ruleset: Ruleset, difficulty: Difficulty): AssaultPlan | undefined {
+export function assaultPlan(obs: Observation, ruleset: Ruleset, difficulty: Difficulty): AssaultPlan | undefined {
   const { world, side } = obs;
   const home = world.entities.find((e) => e.side === side && e.kind === 'command-post');
   const objective = objectiveOf(obs, ruleset);
@@ -371,7 +378,17 @@ function assaultPlan(obs: Observation, ruleset: Ruleset, difficulty: Difficulty)
   const dx = home.x - objective.x;
   const dy = home.y - objective.y;
   const len = Math.hypot(dx, dy) || 1;
-  const ideal = { x: Math.round(objective.x + (dx / len) * RALLY_DIST), y: Math.round(objective.y + (dy / len) * RALLY_DIST) };
+  // Known towers around the post: the rally point stands back beyond their reach (fighters waiting
+  // there for the others were shot to pieces by a tower wall they could see).
+  const towerReach = enemiesOf(obs).flatMap((e) => {
+    const a = archetypeOf(ruleset, e.kind);
+    return a?.speed === 0 && a.weapon && e.id !== objective.id ? [{ x: e.x, y: e.y, r: a.weapon.range + 1 }] : [];
+  });
+  const reached = (x: number, y: number, margin: number) => towerReach.some((t) => dist2(x, y, t.x, t.y) <= (t.r + margin) ** 2);
+  let back = RALLY_DIST;
+  const at = (d: number) => ({ x: Math.max(0, Math.min(world.map.w - 1, Math.round(objective.x + (dx / len) * d))), y: Math.max(0, Math.min(world.map.h - 1, Math.round(objective.y + (dy / len) * d))) });
+  while (back < len && reached(at(back).x, at(back).y, RALLY_RADIUS)) back++;
+  const ideal = at(Math.min(back, Math.max(RALLY_DIST, Math.floor(len))));
   // The rally point lies inside the own coverage (the nearest covered cell to the ideal one):
   // fighters gather under radio cover and move up as the relay truck extends it, instead of
   // waiting out of contact where no order and no recall can reach them.
@@ -392,7 +409,7 @@ function assaultPlan(obs: Observation, ruleset: Ruleset, difficulty: Difficulty)
   const ours = orderable.reduce((sum, f) => sum + value(f), 0);
   const theirs = enemiesOf(obs)
     .filter((e) => archetypeOf(ruleset, e.kind)?.weapon && dist2(e.x, e.y, objective.x, objective.y) <= DEFENCE_RADIUS * DEFENCE_RADIUS)
-    .reduce((sum, e) => sum + value(e), 0);
+    .reduce((sum, e) => sum + value(e) * (archetypeOf(ruleset, e.kind)?.speed === 0 ? TOWER_DEFENCE_WEIGHT : 1), 0);
   // A neutral post is taken over, not stormed: the infantry goes as soon as the known guards allow.
   const storming = objective.side === NEUTRAL ? ours >= theirs * STORM_ODDS : gathered && (!reinforcing || ours >= theirs * STORM_ODDS || world.turn >= ESCALATE_TURN);
   const besieging = all.some((f) => (archetypeOf(ruleset, f.kind)?.weapon?.minRange ?? 0) > 0 && (archetypeOf(ruleset, f.kind)?.weapon?.range ?? 0) > 3);

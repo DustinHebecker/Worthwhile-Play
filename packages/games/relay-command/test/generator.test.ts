@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { observe } from '@wp/strategy-engine';
+import { NEUTRAL, observe, type Order, type World } from '@wp/strategy-engine';
 import { planAi } from '../src/ai';
-import { depositsPerSide, generatedMapProblems, generateMap, POST_DISTANCE_SHARE, RICH_BALANCE, RICH_MIDDLE_FROM } from '../src/generator';
-import { applyTool, blankMap, isFair, MAP_HEIGHTS, MAP_WIDTHS, type EditMap } from '../src/maps';
-import { isValidState, lockTurn, newGame, planOrder, PLAYER, OPPONENT, rulesOf } from '../src/rules';
+import { depositsPerSeat, depositsPerSide, generatedMapProblems, generateMap, POST_DISTANCE_SHARE, RICH_BALANCE, RICH_MIDDLE_FROM } from '../src/generator';
+import { applyTool, blankMap, customSpec, FOUR_SEATS, isFair, isValidMap, MAP_HEIGHTS, MAP_WIDTHS, mapIssues, toScenario, type EditMap } from '../src/maps';
+import { isValidState, lockTurn, newGame, planOrder, PLAYER, OPPONENT, RANDOM_OPPONENTS, rulesOf } from '../src/rules';
+import { opponentCounts } from '../src/scenarios';
 import { FIELD_EXERCISE } from '../src/scenarios';
 
 const SIZES = MAP_WIDTHS.flatMap((w) => MAP_HEIGHTS.map((h) => [w, h] as const));
@@ -149,4 +150,169 @@ describe('map generator (I6c, P9)', () => {
       expect(s.world.entities.some((e) => e.side === OPPONENT)).toBe(true);
     }
   }, 120_000);
+});
+
+describe('map generator, four bases (Generator C, owner decisions 2026-10-18)', () => {
+  /** The seat whose quarter holds (x, y): 0 bottom left, 1 top left, 2 top right, 3 bottom right. */
+  const quarterOf = (map: EditMap, x: number, y: number) => (y >= map.h / 2 ? (x < map.w / 2 ? 0 : 3) : x < map.w / 2 ? 1 : 2);
+
+  it('every size and seed gives a four-base map the validator accepts; the same seed the same map, unrelated to the two-side one', () => {
+    for (const [w, h] of SIZES) {
+      for (let seed = 0; seed < 4; seed++) {
+        const map = generateMap(w, h, seed, 'Random', 4);
+        expect(generatedMapProblems(map), `${w}×${h} seed ${seed}`).toEqual([]);
+        expect(map).toMatchObject({ w, h, name: 'Random', seats: 4 });
+        expect(generateMap(w, h, seed, 'Random', 4)).toEqual(map);
+        expect(generateMap(w, h, seed, 'Random')).not.toHaveProperty('seats');
+        // Each seat's units stand in its own quarter, its post near its corner.
+        for (const u of map.units) expect(quarterOf(map, u.x, u.y), `${w}×${h} seed ${seed} ${u.kind} of ${u.side}`).toBe(u.side);
+      }
+      expect(new Set([0, 1, 2, 3].map((seed) => generateMap(w, h, seed, '', 4).terrain)).size, `${w}×${h}`).toBeGreaterThan(1);
+    }
+    expect(() => generateMap(12, 10, 1, '', 3 as 4)).toThrow(RangeError);
+  });
+
+  it('property: any seed on any size passes the validator (P9)', () => {
+    fc.assert(
+      fc.property(fc.constantFrom(...SIZES), fc.integer({ min: 0, max: 0xffffffff }), ([w, h], seed) => {
+        expect(generatedMapProblems(generateMap(w, h, seed, '', 4))).toEqual([]);
+      }),
+      { numRuns: 80 }
+    );
+  });
+
+  it('the map rule: two or three deposits per base, a rich one per quarter by the middle from 200 cells; mirrored both ways; only the yard next to a post', () => {
+    expect(depositsPerSeat(12, 10)).toBe(2);
+    expect(depositsPerSeat(24, 16)).toBe(3);
+    for (const [w, h] of SIZES) {
+      const map = generateMap(w, h, 3, '', 4);
+      const rich = map.deposits.filter((d) => d.size === 'rich');
+      expect(map.deposits.length - rich.length, `${w}×${h}`).toBe(4 * depositsPerSeat(w, h));
+      expect(rich.length, `${w}×${h}`).toBe(w * h >= RICH_MIDDLE_FROM ? 4 : 0);
+      for (const d of rich) expect(Math.max(Math.abs(d.x - (w - 1) / 2), Math.abs(d.y - (h - 1) / 2)), `${w}×${h} rich at ${d.x},${d.y}`).toBeLessThanOrEqual(2.5);
+      for (let seat = 0; seat < 4; seat++) expect(map.deposits.filter((d) => d.size !== 'rich' && quarterOf(map, d.x, d.y) === seat)).toHaveLength(depositsPerSeat(w, h));
+      expect(isFair(map)).toBe(true);
+      // Left to right and top to bottom, cell by cell.
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        expect(map.terrain[y * w + w - 1 - x]).toBe(map.terrain[y * w + x]);
+        expect(map.terrain[(h - 1 - y) * w + x]).toBe(map.terrain[y * w + x]);
+      }
+      const posts = [0, 1, 2, 3].map((side) => map.units.find((u) => u.side === side && u.kind === 'command-post')!);
+      for (const p of posts) for (const q of posts) if (p !== q) expect(Math.hypot(p.x - q.x, p.y - q.y)).toBeGreaterThanOrEqual(POST_DISTANCE_SHARE * Math.min(w, h));
+      // Next to each post only its yard: a ring of own pieces would keep a storm from ever reaching it.
+      for (const p of posts) expect(map.units.filter((u) => u !== p && Math.max(Math.abs(u.x - p.x), Math.abs(u.y - p.y)) <= 1).map((u) => u.kind), `${w}×${h}`).toEqual(['muster']);
+    }
+  });
+
+  it('fairness both ways: a map the same turned half round but not mirrored is unfair; so is a seat moved into another quarter', () => {
+    const good = generateMap(16, 12, 5, '', 4);
+    expect(generatedMapProblems(good)).toEqual([]);
+    // A cell and its half-turn image changed: still point-symmetric, no longer mirrored.
+    const c = 2 * good.w + 6;
+    const code = good.terrain[c] === 'f' ? 'h' : 'f';
+    const terrain = [...good.terrain];
+    terrain[c] = code;
+    terrain[good.w * good.h - 1 - c] = code;
+    expect(isFair({ ...good, terrain: terrain.join('') })).toBe(false);
+    expect(generatedMapProblems({ ...good, terrain: terrain.join('') })).toContain('not symmetric');
+    // Seats swapped between two mirror images (seat 1's units given to seat 2 and back): the sides no longer match.
+    const swapped = { ...good, units: good.units.map((u) => ({ ...u, side: u.side === 1 ? 2 : u.side === 2 ? 1 : u.side })) };
+    expect(isFair(swapped)).toBe(false);
+    // A seat without a post is not playable.
+    const noPost = { ...good, units: good.units.filter((u) => !(u.side === 3 && u.kind === 'command-post')) };
+    expect(mapIssues(noPost)).toContainEqual({ key: 'map.posts', side: 3 });
+    expect(generatedMapProblems(noPost)).toContain('no posts');
+  });
+
+  it('a four-base map is well-formed only with sides 0 to 3 (two-side maps 0 and 1); its scenario has the four seats', () => {
+    const map = generateMap(12, 10, 1, '', 4);
+    expect(isValidMap(map)).toBe(true);
+    expect(isValidMap({ ...map, seats: 3 })).toBe(false);
+    expect(isValidMap({ ...map, units: map.units.map((u, i) => (i === 0 ? { ...u, side: 4 } : u)) })).toBe(false);
+    const { seats: _, ...two } = map;
+    expect(isValidMap(two)).toBe(false); // sides 2 and 3 on a two-side map
+    expect(toScenario(map).sides).toBe(4);
+    expect(customSpec(map).seats).toEqual(FOUR_SEATS);
+    expect(opponentCounts(customSpec(map))).toEqual([...RANDOM_OPPONENTS]);
+    expect(customSpec(generateMap(12, 10, 1)).seats).toBeUndefined();
+  });
+
+  it('a game on a four-base map: 1 to 3 opponents, empty seats neutral, each seat its mirror frame; a valid save every turn; the editor refuses it', () => {
+    const map = generateMap(16, 12, 2, 'Random', 4);
+    for (const opponents of RANDOM_OPPONENTS) {
+      let s = newGame(2, FIELD_EXERCISE, 'normal', 6, false, map, opponents, [], false, { w: 16, h: 12, seed: 2 });
+      expect(s.opponents).toBe(opponents);
+      expect(s.world.sides).toBe(opponents + 1);
+      expect(s.world.frames).toEqual(FOUR_SEATS.layouts[opponents]!.map((seat) => FOUR_SEATS.frames[seat]));
+      expect(s.world.entities.filter((e) => e.side === NEUTRAL && e.kind === 'command-post')).toHaveLength(3 - opponents);
+      while (s.phase === 'plan') {
+        for (const c of planAi(observe(s.world, rulesOf(s), PLAYER), rulesOf(s), 'normal')) s = planOrder(s, c.unit, c.order, c.doctrine) ?? s;
+        s = lockTurn(s);
+        expect(isValidState(JSON.parse(JSON.stringify(s))), `${opponents} opponents, turn ${s.world.turn}`).toBe(true);
+      }
+    }
+    const s = newGame(2, FIELD_EXERCISE, 'normal', 6, false, map, 3);
+    // The editor keeps to two sides for now: a draft holding a four-base map is no valid save.
+    expect(isValidState({ ...s, edit: { map, slot: null, mirror: true } })).toBe(false);
+    expect(isValidState({ ...s, edit: { map: generateMap(16, 12, 2), slot: null, mirror: true } })).toBe(true);
+  }, 120_000);
+
+  it('every seat plans alike: mirrored left to right or top to bottom, a seat\'s plan is the mirrored seat\'s plan (each seat\'s frame)', () => {
+    const map = generateMap(20, 14, 7, '', 4);
+    const { w: W, h: H } = map;
+    const mirrors = [
+      { at: (x: number, y: number): [number, number] => [W - 1 - x, y], seat: [3, 2, 1, 0] },
+      { at: (x: number, y: number): [number, number] => [x, H - 1 - y], seat: [1, 0, 3, 2] }
+    ];
+    for (const { at, seat } of mirrors) {
+      const next = (side: number) => (side === NEUTRAL ? NEUTRAL : seat[side]!);
+      const cell = (c: number) => {
+        const [x, y] = at(c % W, Math.floor(c / W));
+        return y * W + x;
+      };
+      const order = (o: Order): Order => {
+        if (o.type === 'move' || o.type === 'build') return { ...o, x: at(o.x, o.y)[0], y: at(o.x, o.y)[1] };
+        if (o.type === 'patrol') return { ...o, x: at(o.x, o.y)[0], y: at(o.x, o.y)[1], rx: at(o.rx, o.ry)[0], ry: at(o.rx, o.ry)[1] };
+        return o;
+      };
+      const mirrored = (world: World): World => {
+        const perm = <T,>(list: readonly T[]): T[] => {
+          const out = [...list];
+          list.forEach((v, s) => (out[next(s)] = v));
+          return out;
+        };
+        return {
+          ...structuredClone(world),
+          map: { ...world.map, deposits: (world.map.deposits ?? []).map((d) => ({ ...d, x: at(d.x, d.y)[0], y: at(d.x, d.y)[1] })).sort((a, b) => a.y * W + a.x - (b.y * W + b.x)) },
+          ...(world.supply && { supply: perm(world.supply) }),
+          ...(world.out && { out: world.out.map(next).sort((a, b) => a - b) }),
+          entities: world.entities.map((e) => ({
+            ...structuredClone(e),
+            side: next(e.side),
+            x: at(e.x, e.y)[0],
+            y: at(e.x, e.y)[1],
+            order: order(e.order),
+            ...(e.stall && { stall: { ...e.stall, goal: e.stall.goal < W * H ? cell(e.stall.goal) : e.stall.goal } }),
+            ...(e.prev !== undefined && { prev: cell(e.prev) })
+          })),
+          projectiles: world.projectiles.map((p) => ({ ...p, side: next(p.side), x: at(p.x, p.y)[0], y: at(p.x, p.y)[1] })),
+          ...(world.intel && { intel: perm(world.intel.map((list) => list.map((r) => ({ ...r, side: next(r.side), x: at(r.x, r.y)[0], y: at(r.x, r.y)[1] })))) })
+        };
+      };
+      for (const level of ['normal', 'hard'] as const) {
+        let s = newGame(1, FIELD_EXERCISE, level, 30, false, map, 3);
+        const rules = rulesOf(s);
+        for (let t = 0; t < 10 && s.phase === 'plan'; t++) {
+          const r = mirrored(s.world);
+          for (let side = 0; side < 4; side++) {
+            if (s.world.out?.includes(side)) continue;
+            const plan = planAi(observe(s.world, rules, side), rules, level).map((c) => ({ ...c, side: next(c.side), order: order(c.order) }));
+            expect(planAi(observe(r, rules, next(side)), rules, level), `${level} turn ${t} seat ${side}`).toEqual(plan);
+          }
+          for (const c of planAi(observe(s.world, rules, PLAYER), rules, level)) s = planOrder(s, c.unit, c.order, c.doctrine) ?? s;
+          s = lockTurn(s);
+        }
+      }
+    }
+  }, 300_000);
 });

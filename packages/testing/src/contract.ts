@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import fc from 'fast-check';
 import { coerceSetting, hostSettings, resolveSettings, settingChoices, settingId, validateMetadata, validateSettings, type GameInstance, type GameModule, type NewGameOptions, type SettingSpec, type SettingValue } from '@wp/game-core';
-import { auditCatalogues, COMMON_MESSAGES, SUPPORTED_LOCALES } from '@wp/localization';
+import { auditCatalogues, COMMON_MESSAGES, SUPPORTED_LOCALES, type SupportedLocale } from '@wp/localization';
 import { createSave, createMemoryStore, interpretSave } from '@wp/persistence';
 import { createTestContext, createTestLibrary, type TestContextExtras } from './context';
 
@@ -15,6 +15,11 @@ export interface ContractOptions<S> {
   interact?: (root: HTMLElement, instance: GameInstance<S>) => void | Promise<void>;
   /** Optional host services for every context the suite creates (fresh per context, e.g. learning records). */
   extras?: () => TestContextExtras;
+  /**
+   * Locales whose translations must be complete. Defaults to every supported locale. A smaller set is
+   * only for games still in development and NOT registered in the app (released games ship all 16).
+   */
+  locales?: readonly SupportedLocale[];
 }
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
@@ -50,6 +55,7 @@ function arbitraryOptions(module: GameModule<unknown>, specs: readonly SettingSp
  */
 export function runGameContract<S>(module: GameModule<S>, options: ContractOptions<S> = {}): void {
   const seeds = options.seeds ?? [1, 42, 0xdeadbeef];
+  const locales = options.locales ?? SUPPORTED_LOCALES;
   const start = (seed: number, extras: TestContextExtras | undefined = options.extras?.()) => {
     const ctx = createTestContext(module as GameModule<unknown>, 'en', undefined, extras);
     const instance = module.create(ctx.context) as GameInstance<S>;
@@ -64,16 +70,16 @@ export function runGameContract<S>(module: GameModule<S>, options: ContractOptio
     });
 
     it('has valid metadata with required messages for all 16 UI locales', () => {
-      expect(validateMetadata(module.metadata, SUPPORTED_LOCALES)).toEqual([]);
+      expect(validateMetadata(module.metadata, locales)).toEqual([]);
     });
 
     it('has complete, placeholder-consistent translations in every locale', () => {
-      expect(auditCatalogues(module.metadata.messages, SUPPORTED_LOCALES)).toEqual([]);
+      expect(auditCatalogues(module.metadata.messages, locales)).toEqual([]);
     });
 
     it('declares valid start-screen settings (ADR 0017) with all keys in all 16 locales', () => {
       const ctx = createTestContext(module as GameModule<unknown>, 'en', undefined, options.extras?.());
-      expect(validateSettings(module as GameModule<unknown>, SUPPORTED_LOCALES, ctx.settingsEnv)).toEqual([]);
+      expect(validateSettings(module as GameModule<unknown>, locales, ctx.settingsEnv)).toEqual([]);
       ctx.context.root.remove();
     });
 
@@ -239,7 +245,7 @@ export function runGameContract<S>(module: GameModule<S>, options: ContractOptio
         // A locale that fails to load falls back to English and is reported via console.error.
         const reported = vi.spyOn(console, 'error').mockImplementation(() => undefined);
         try {
-          for (const locale of SUPPORTED_LOCALES) {
+          for (const locale of locales) {
             await expect(preload(locale), `preload ${locale}`).resolves.toBeUndefined();
             await expect(preload(locale), `preload ${locale} again`).resolves.toBeUndefined();
           }
@@ -251,7 +257,7 @@ export function runGameContract<S>(module: GameModule<S>, options: ContractOptio
     }
 
     it('renders without missing translation keys in every locale', async () => {
-      for (const locale of SUPPORTED_LOCALES) {
+      for (const locale of locales) {
         // The host awaits `preload(locale)` for the locale the game is shown in.
         await module.preload?.(locale);
         const ctx = createTestContext(module as GameModule<unknown>, locale, undefined, options.extras?.());
