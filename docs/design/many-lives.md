@@ -43,7 +43,7 @@ Owned by the life-sim workstream (ADR 0006 pattern, like ADR 0009/0014). Shared 
 | O25 (Q9) | MVP: two contrasting profiles (calibrated on Germany and India) with the full market and all core systems; further profiles step by step. |
 | O26 (Q10) | Local currency per profile; comparisons in purchasing-power-adjusted units; **the relative change of purchasing power between profiles over the years (inflation differentials, exchange rates) is modelled and shown — important for migration planning** (section 5.13). |
 | O27 (Q11) | Later: a new game may start from a descendant's start (never automatic). |
-| O28 (Q12) | Publish when the MVP is playable, with a visible **"Work in progress"** note (owner answer; how this fits the orchestrator's rule of releasing only after all 16 locales — section 15.1 — is being clarified). |
+| O28 (Q12) | **Early release in English and German**, marked **"Work in progress"**; the other 14 locales follow afterwards (owner, confirmed 2026-10-21: "Früh auf englisch und deutsch und dann die anderen sprachen"). The technical route (registration for en/de, language fallback, WIP marker) is proposed in the MVP PR (section 15.1). |
 
 ---
 
@@ -443,7 +443,7 @@ Integer cents for money; own deterministic `exp`/`log` approximations because `M
 
 ## 15. Shared needs (for the orchestrator)
 
-1. **Languages (O15)** — orchestrator answer (2026-10-18): development in en/de uses `runGameContract(module, { locales: ['en', 'de'] })`, which requires completeness only for the listed locales. It is allowed only while the game is **unregistered**; phases can still be merged into `main` unregistered (like Poker and Skat earlier). The orchestrator registers and releases the game only once all 16 locales are complete, and the option then leaves the contract test. Consequence: no player sees English fallback; the final translation is its own phase before the release PR. (Owner to confirm, since this replaces "release in en/de with fallback", Q12.)
+1. **Languages (O15)** — orchestrator answer (2026-10-18): development in en/de uses `runGameContract(module, { locales: ['en', 'de'] })`, which requires completeness only for the listed locales. It is allowed only while the game is **unregistered**; phases can still be merged into `main` unregistered (like Poker and Skat earlier). The orchestrator registers and releases the game only once all 16 locales are complete, and the option then leaves the contract test. Consequence: no player sees English fallback; the final translation is its own phase before the release PR. **Superseded for the release by O28 (2026-10-21):** the MVP is released early in en/de with a "Work in progress" marker; the technical route for the other locales (fallback, catalogue, marker) is proposed in the MVP PR and coordinated with the orchestrator.
 2. **ADR number**: 0018 confirmed for the life engine (the tycoon gets 0019).
 3. **Shared finance maths**: no dependency on the economy engine. Orchestrator decision (2026-10-18): the economy workstream drafts `@wp/finance-math` (ADR 0020: cents and basis points, fixed-point pow/exp/log, annuity/NPV/compound growth, stateless keyed seeded draws with normal and fat-tailed distributions); this workstream reviews the API and has sent its needs (Student-t, lognormal, monthly hazards, jumps, regime switching, AR(1), volatility clustering, small correlated draws, mortgage maths, documented accuracy). The life engine uses it once merged instead of its own deterministic maths.
 4. Library size limits (64 KiB per item) are sufficient for life summaries; no change needed for now.
@@ -467,4 +467,4 @@ Answered by the owner on 2026-10-18 (O17–O28 in section 0). Kept for reference
 | Q9 | MVP scope | Two contrasting profiles first (Germany- and India-calibrated) with full market and core systems |
 | Q10 | Currency | Local currency per profile; comparisons in purchasing-power-adjusted units |
 | Q11 | Continue as one's child | Later: a new game may start from a descendant's start (never automatic) |
-| Q12 | Release before translation | Superseded by the orchestrator's rule (section 15.1): merge phases unregistered; release after all 16 locales |
+| Q12 | Release before translation | Decided: early en/de release with "Work in progress" (O28) |
