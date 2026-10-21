@@ -143,5 +143,5 @@ Cloudflare Pages (SPA fallback for deep links, ADR 0008). Security headers via `
 | Unit / TDD | Vitest | rules, core packages, router, catalogues |
 | Property / fuzz | fast-check | invariants (legal moves, permutations, parsers never throw, determinism) |
 | Contract | `@wp/testing` | every game, every locale |
-| Mutation | Stryker | core packages, `games/*/src/rules.ts`, `ai.ts` (break threshold 65 %). Vitest is pinned to 4.1.x: with Vitest 5, `@stryker-mutator/vitest-runner` 10 does not activate mutants (every mutant "survives"). Re-check before upgrading. |
+| Mutation | Stryker | core packages, `games/*/src/rules.ts`, `ai.ts`. Budget (ADR 0021): pull requests mutate only the changed lines (break threshold 65 %); the weekly schedule mutates a rotating eighth of the files, report-only; full runs (65 %) only by manual dispatch. Stryker uses `vitest.mutation.config.ts`, which leaves out `*.slow.test.ts` and `*.long.test.ts` (AI strength, statistics, oracle searches); CI runs them. Vitest is pinned to 4.1.x: with Vitest 5, `@stryker-mutator/vitest-runner` 10 does not activate mutants (every mutant "survives"). Re-check before upgrading. |
 | E2E | Playwright | shell, direct URLs, RTL, corrupt saves, offline, per-game resume; desktop + mobile viewports |
