@@ -165,7 +165,8 @@ Done on 2026-10-21:
   - Lootlings #66 (wordplay pass; slow tests moved).
 
 Open, in this order:
-- Strategy #64 (AI storm stall): gated locally (only load timeouts) and green on CI. Its old whole-file mutation run was cancelled, and the strategy agent was asked to merge main into `feature/strategy-engine` so that the changed-lines run starts. Merge when that run is green. Then comes the agent's slow-test PR (bea246d on `backup/strategy-engine`), which also removes the `regression-generators` name exclusion from `vitest.mutation.config.ts`.
+- Strategy #64 (AI storm stall) is merged and deployed. Its changed-lines mutation run took 5 minutes.
+- Strategy #67 (slow tests moved; removes the regression-generators exclusion; updates ADR 0021), head 53fecbd: review and gate, then merge.
 - Life sim #65 (E1: design, ADR 0018, life-engine foundations): review and gate. It asks to add life-engine to the Stryker `mutate` list. The owner decided on 2026-10-21: an early en/de release marked "Work in progress", with the other 14 locales after.
 - Economy (session_0171vR1YZpyDbCP4etKP5k7Y): waits for the owner's "weitermachen" in that session, then opens the finance-math PR (ADR 0020). The owner still has to answer the nine questions in `docs/design/economy-draft.md` on `feature/economy-tycoon`.
 - Adventures (session_015FCipyczdDEy2eSaq9YcXL): three owner questions are open: start E1? time model? location of Adventure B?
