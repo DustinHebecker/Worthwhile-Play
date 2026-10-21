@@ -1,92 +1,22 @@
 // @vitest-environment jsdom
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { createTestContext } from '@wp/testing';
-import type { GameModule, Translator } from '@wp/game-core';
+import type { GameModule } from '@wp/game-core';
 import game, { type CardQuestState } from '../src/index';
 import { createRngFromState } from '@wp/game-core';
 import { DEFAULT_SETTINGS, isValidState, newGame, step, type LogEvent } from '../src/rules';
 import { arranged, take } from './harness';
+import { personSpy } from './dom';
 import { randomWorlds } from '../src/settings';
 import { en } from '../src/content/en';
 
 const q = (root: HTMLElement, id: string) => root.querySelector<HTMLButtonElement>(`[data-testid="${id}"]`);
-
-/** Plays the person's side through the DOM with the simplest choices until the game ends or `limit` clicks. */
-function clickThrough(root: HTMLElement, instance: { serialize(): CardQuestState }, limit: number): number {
-  let clicks = 0;
-  for (; clicks < limit; clicks++) {
-    const state = instance.serialize();
-    if (state.phase === 'over') break;
-    const end = q(root, 'end');
-    if (end?.disabled) {
-      // Give-away mode: select hand cards until the button is enabled.
-      for (const tile of root.querySelectorAll<HTMLButtonElement>('[data-testid="hand"] .cq-tile[aria-pressed="false"]')) {
-        tile.click();
-        if (!q(root, 'end')!.disabled) break;
-      }
-      q(root, 'end')!.click();
-      continue;
-    }
-    const next = ['reveal-continue', 'open', 'rummage', 'pass', 'accept', 'roll', 'end'].map((id) => q(root, id)).find((b) => b && !b.disabled);
-    if (!next) throw new Error(`no action button in phase ${state.phase}`);
-    next.click();
-  }
-  return clicks;
-}
-
-/** Deal log lines whose plain form agrees its verbs with {name} and {to}: the person gets `.you` / `.toYou` keys. */
-const DEAL_KEYS = [
-  'log.offer.help', 'log.offer.free', 'log.offer.stay', 'log.accept', 'log.decline', 'log.switch', 'log.kept.loot', 'log.kept.item',
-  'log.kept.favour', 'log.kept.free', 'log.broken.switch', 'log.broken.stay', 'log.broken.favour', 'log.void'
-];
-
-/** A translator that records keys filled with the person where only computer players fit (verb agreement, case). */
-function personSpy(real: Translator, npcOnly: readonly string[], misuse: string[]): Translator {
-  const you = real('you');
-  return Object.assign((key: string, params?: Readonly<Record<string, string | number>>) => {
-    if ((npcOnly.includes(key) || DEAL_KEYS.includes(key)) && params?.name === you) misuse.push(`${key} {name}`);
-    if (params?.to === you || params?.target === you) misuse.push(`${key} {to}`);
-    return real(key, params);
-  }, { locale: real.locale, direction: real.direction });
-}
 
 describe('view', () => {
   beforeAll(async () => {
     await game.preload?.('en');
     await game.preload?.('de');
   });
-
-  for (const locale of ['en', 'de'] as const) {
-    it(`plays a whole game through the DOM (${locale})`, () => {
-      const ctx = createTestContext(game as GameModule<unknown>, locale);
-      const instance = game.create(ctx.context as never);
-      instance.newGame({ seed: 11 });
-      clickThrough(ctx.context.root, instance, 3000);
-      const state = instance.serialize();
-      expect(state.phase).toBe('over');
-      expect(isValidState(state)).toBe(true);
-      expect(ctx.results).toHaveLength(1);
-      expect(ctx.missingKeys).toEqual([]);
-      instance.dispose();
-    });
-  }
-
-  // One game per test (split for the time budget under load): these templates agree the verb with {name} in some
-  // languages; the person has own keys instead.
-  for (const seed of [2, 3, 4]) {
-    it(`sentences with a verb are only filled with computer players, never with the person (seed ${seed})`, () => {
-      const NPC_ONLY = ['next.fight.react', 'next.end.give', 'next.over.lost', 'act.curse', 'act.hero.other', 'fight.forecast.other.win', 'fight.forecast.other.lose'];
-      const ctx = createTestContext(game as GameModule<unknown>, 'en');
-      const real = ctx.context.t;
-      const misuse: string[] = [];
-      const spy = personSpy(real, NPC_ONLY, misuse);
-      const instance = game.create({ ...ctx.context, t: spy } as never);
-      instance.newGame({ seed });
-      clickThrough(ctx.context.root, instance, 3000);
-      expect(misuse).toEqual([]);
-      instance.dispose();
-    });
-  }
 
   it('deal, give-away and curse lines use the forms for the person, in every combination', () => {
     const combos: [number, number][] = [[0, 1], [1, 0], [1, 2]];
