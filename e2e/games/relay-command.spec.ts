@@ -270,6 +270,29 @@ test('relay-command: a random map chosen in the setup (size, map number) survive
   await expect(page.getByTestId('rc-setup-summary')).toContainText('Random map 20×14 · No. 4711');
 });
 
+test('relay-command: a random map with four bases (three opponents) survives a reload; it fits a 360 px phone', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await start(page);
+  await page.getByTestId('rc-scenario').selectOption('random');
+  await page.getByTestId('rc-random-size').selectOption('20x14');
+  await page.getByTestId('rc-opponents').selectOption('3');
+  const four = async () => (await saved(page)) as unknown as { opponents: number; map: { seats?: number; terrain: string } } | undefined;
+  await expect.poll(async () => (await four())?.map.seats).toBe(4);
+  expect((await four())!.opponents).toBe(3);
+  await expect(page.getByTestId('rc-map')).toHaveAttribute('data-cols', '20');
+  const widths = await page.evaluate(() => ({ page: document.documentElement.scrollWidth, viewport: document.documentElement.clientWidth }));
+  expect(widths.page).toBeLessThanOrEqual(widths.viewport);
+  const terrain = (await four())!.map.terrain;
+  await page.reload();
+  await page.getByTestId('continue').click();
+  await expect(page.getByTestId('rc-scenario')).toHaveValue('random');
+  await expect(page.getByTestId('rc-opponents')).toHaveValue('3');
+  expect((await four())!.map.terrain).toBe(terrain);
+  await page.getByTestId('rc-lock').click();
+  await expect.poll(async () => (await saved(page))?.world.turn).toBe(1);
+  await expect(page.getByTestId('rc-opponents')).toBeDisabled();
+});
+
 test('relay-command: the Command Post places an Extractor on a deposit by tapping the map', async ({ page, isMobile }) => {
   await start(page);
   const s = (await saved(page))!;

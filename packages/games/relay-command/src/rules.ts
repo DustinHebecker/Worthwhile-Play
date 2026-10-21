@@ -131,6 +131,9 @@ export const RANDOM_SIZES: readonly (readonly [number, number])[] = [
   [24, 16]
 ];
 
+/** Opponent counts offered for a random map: one plays a two-side map, two or three a map with four bases. */
+export const RANDOM_OPPONENTS: readonly number[] = [1, 2, 3];
+
 export interface RcState {
   v: 12;
   seed: number;
@@ -823,7 +826,7 @@ function isValidSeating(value: Record<string, unknown>, n: number, isCommand: (v
 }
 
 const isValidDraft = (v: unknown): v is MapDraft | null =>
-  v === null || (isRecord(v) && isValidMap(v.map) && (v.slot === null || isInt(v.slot, 0, MAP_SLOTS - 1)) && typeof v.mirror === 'boolean');
+  v === null || (isRecord(v) && isValidMap(v.map) && v.map.seats === undefined && (v.slot === null || isInt(v.slot, 0, MAP_SLOTS - 1)) && typeof v.mirror === 'boolean');
 
 /**
  * A random map's recipe: a size offered in the setup and a 32-bit seed, on a game with a map of
