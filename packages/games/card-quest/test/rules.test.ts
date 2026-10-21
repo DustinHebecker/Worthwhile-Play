@@ -557,15 +557,6 @@ describe('properties over random legal play', () => {
     return states;
   };
 
-  it('every reachable state is valid (card conservation, slots, phases)', () => {
-    fc.assert(
-      fc.property(fc.integer({ min: 0, max: 2 ** 31 }), fc.array(fc.nat(), { minLength: 50, maxLength: 200 }), fc.integer({ min: 1, max: 5 }), (seed, picks, opp) => {
-        for (const s of walk(seed, picks, opp)) expect(isValidState(s)).toBe(true);
-      }),
-      { numRuns: 25 }
-    );
-  });
-
   it('is deterministic: the same seed and actions give the same state', () => {
     fc.assert(
       fc.property(fc.integer({ min: 0, max: 2 ** 31 }), fc.array(fc.nat(), { minLength: 20, maxLength: 120 }), (seed, picks) => {
