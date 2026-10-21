@@ -30,6 +30,8 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       # The long AI-vs-AI suites (*.long.test.ts) run in their own job below, without coverage.
+      # The *.slow.test.ts files (AI strength, statistics, oracle searches: seconds each) run here;
+      # only mutation testing leaves them out (vitest.mutation.config.ts, ADR 0021).
       - run: pnpm coverage --exclude '**/*.long.test.ts'
       - name: Development build (no legal data; must still succeed)
         run: pnpm build
@@ -65,7 +67,7 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm vitest run packages/games/chess/test/puzzle-data.test.ts
+      - run: pnpm vitest run packages/games/chess/test/puzzle-data.slow.test.ts
         env:
           CHESS_VERIFY_PUZZLES: '1'
 

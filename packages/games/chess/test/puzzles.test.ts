@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { BudgetExceeded, MateSolver, puzzleHint, puzzleTurn, verifyMatePuzzle } from '../src/ai';
 import { createGame, isValidState, legalMoves, moveToUci, outcomeOf, parseFen, puzzlesFor, replay, uciToMove, type ChessState } from '../src/rules';
-import { oracleForcesMate, oracleSolutions } from './oracle';
+import { oracleSolutions } from './oracle';
 
 const pos = (fen: string) => parseFen(fen)!;
 const puzzleState = (mode: 'best' | 'mate', mateN: number, puzzle: number): ChessState =>
@@ -108,20 +108,6 @@ describe('puzzle play', { timeout: 120_000 }, () => {
       }
       expect(replay(state.start, state.moves)!.status.kind).toBe('checkmate');
       expect(state.moves).toEqual(ref.line);
-    }
-  });
-
-  it('accepts any second move that still forces mate in time (mate in two, checked against the oracle)', () => {
-    const list = puzzlesFor('mate', 2);
-    for (let index = 0; index < Math.min(4, list.length); index++) {
-      const ref = list[index]!;
-      const afterFirst = puzzleTurn(puzzleState('mate', 2, index), ref.line[0]!).state;
-      const here = replay(afterFirst.start, afterFirst.moves)!.pos;
-      for (const m of legalMoves(here)) {
-        const uci = moveToUci(m);
-        const expected = oracleForcesMate(replay(afterFirst.start, afterFirst.moves)!.pos, m, 1);
-        expect(puzzleTurn(afterFirst, uci).correct, `${ref.fen} ${uci}`).toBe(expected);
-      }
     }
   });
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { createRng, type Rng } from '@wp/game-core';
+import { createRng } from '@wp/game-core';
 import {
   DOUBLE_THREAT,
   OC_EASY_SLIP,
@@ -19,7 +19,7 @@ import {
   startOcRound,
   toCodes
 } from '../src/order-chaos-ai';
-import { OC_CELLS, emptyOcBoard, findFive, isValidOcState, ocBoardFromMoves, ocOutcome, roleOfMove, type OcMove, type Role } from '../src/order-chaos';
+import { OC_CELLS, emptyOcBoard, findFive, isValidOcState, ocBoardFromMoves, ocOutcome, type Role } from '../src/order-chaos';
 import { DIFFICULTIES, type Cell, type Difficulty, type Mark } from '../src/rules';
 
 const B = (picture: string): Cell[] => [...picture.replace(/\s/g, '')].map((c) => (c === '.' ? '' : (c as Mark)));
@@ -35,37 +35,6 @@ function randomBoard(seed: number, n: number): Cell[] {
   return board;
 }
 const arbBoard = fc.tuple(fc.integer({ min: 0, max: 0xffffffff }), fc.integer({ min: 0, max: 35 })).map(([s, n]) => randomBoard(s, n));
-
-type Player = (board: Cell[], role: Role, rng: Rng) => OcMove;
-const ai = (d: Difficulty): Player => (b, role, rng) => chooseOcMove(b, role, d, rng);
-/** Scripted player: one-ply greedy on the evaluation (ties by PRNG). */
-const greedy: Player = (b, role, rng) => {
-  const scores = scoreOcMoves(b, role, 1);
-  const values = [...scores.values()];
-  const best = role === 'order' ? Math.max(...values) : Math.min(...values);
-  const m = rng.pick([...scores].filter(([, v]) => v === best).map(([k]) => k));
-  return { cell: m >> 1, mark: m & 1 ? 'O' : 'X' };
-};
-
-/** Random opening moves per game, so that games between deterministic players differ. */
-const OPENING = 4;
-
-/** Number of games won by Order. */
-function orderWins(order: Player, chaos: Player, games: number, seed: number): number {
-  let wins = 0;
-  for (let g = 0; g < games; g++) {
-    const rng = createRng(seed + g);
-    const board = emptyOcBoard();
-    for (let ply = 0; ocOutcome(board).kind === 'playing'; ply++) {
-      const role = roleOfMove(ply);
-      const m = ply < OPENING ? rng.pick(ocLegalMoves(board)) : (role === 'order' ? order : chaos)(board, role, rng);
-      expect(board[m.cell]).toBe('');
-      board[m.cell] = m.mark;
-    }
-    if (ocOutcome(board).kind === 'order') wins++;
-  }
-  return wins;
-}
 
 describe('evaluation', () => {
   it('is symmetric in X and O', () => {
@@ -207,34 +176,6 @@ describe('chooseOcMove', () => {
     // Order is favoured, so the computer's Chaos gets the deeper search at the same level.
     expect(OC_LEVELS.medium.chaos.depth).toBeGreaterThan(OC_LEVELS.medium.order.depth);
   });
-});
-
-describe('levels: measured margins with fixed seeds (four random opening moves per game)', () => {
-  it('a one-ply scripted player beats easy in both roles', () => {
-    expect(orderWins(greedy, ai('easy'), 8, 5000)).toBeGreaterThanOrEqual(6);
-    expect(orderWins(ai('easy'), greedy, 8, 5000)).toBeLessThanOrEqual(2);
-  }, 60_000);
-
-  it('equal levels are roughly balanced at easy and medium', () => {
-    // Measured over 60 games: easy vs easy 50 %, medium vs medium 53 % Order wins.
-    const easy = orderWins(ai('easy'), ai('easy'), 10, 5000);
-    expect(easy).toBeGreaterThanOrEqual(2);
-    expect(easy).toBeLessThanOrEqual(8);
-    const medium = orderWins(ai('medium'), ai('medium'), 10, 5000);
-    expect(medium).toBeGreaterThanOrEqual(2);
-    expect(medium).toBeLessThanOrEqual(8);
-  }, 90_000);
-
-  it('medium beats easy in both roles', () => {
-    expect(orderWins(ai('medium'), ai('easy'), 8, 5000)).toBeGreaterThanOrEqual(6);
-    expect(orderWins(ai('easy'), ai('medium'), 8, 5000)).toBeLessThanOrEqual(2);
-  }, 60_000);
-
-  it('hard is at least as strong as medium in both roles', () => {
-    // Measured over 60 games: hard Order vs medium Chaos 97 %; medium Order vs hard Chaos 45 % (medium vs medium 53 %).
-    expect(orderWins(ai('perfect'), ai('medium'), 6, 5000)).toBeGreaterThanOrEqual(5);
-    expect(orderWins(ai('medium'), ai('perfect'), 6, 5000)).toBeLessThanOrEqual(4);
-  }, 120_000);
 });
 
 describe('computer turns in the state', () => {
