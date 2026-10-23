@@ -1177,6 +1177,12 @@ importers:
         specifier: workspace:*
         version: link:../game-core
 
+  packages/life-engine:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../game-core
+
   packages/localization:
     dependencies:
       '@wp/game-core':
