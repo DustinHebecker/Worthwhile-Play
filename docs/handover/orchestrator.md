@@ -165,9 +165,9 @@ Done on 2026-10-21:
   - Lootlings #66 (wordplay pass; slow tests moved).
 
 Open, in this order:
-- Strategy #64 (AI storm stall) is merged and deployed. Its changed-lines mutation run took 5 minutes.
-- Strategy #67 (slow tests moved; removes the regression-generators exclusion; updates ADR 0021), head 53fecbd: review and gate, then merge.
-- Life sim #65 (E1: design, ADR 0018, life-engine foundations): review and gate. It asks to add life-engine to the Stryker `mutate` list. The owner decided on 2026-10-21: an early en/de release marked "Work in progress", with the other 14 locales after.
+- Merged and deployed on 2026-10-23: strategy #67 (slow tests moved; no name exclusion is left in `vitest.mutation.config.ts`) and life sim #65 (E1: design, ADR 0018, life-engine foundations; full local gate green).
+- To publish: on `claude/orchestrator-2`, `stryker.config.json` covers `packages/life-engine/src/*.ts` (without `index.ts`) and `src/params/check.ts` (commit 3438e12). Ship it with the next publish.
+- Life sim: ADR 0018 still mentions its own exp/log functions. Asked the life-sim agent to point to `@wp/finance-math` (ADR 0020) in its next PR. The owner decided on 2026-10-21: an early en/de release marked "Work in progress", with the other 14 locales after.
 - Economy (session_0171vR1YZpyDbCP4etKP5k7Y): waits for the owner's "weitermachen" in that session, then opens the finance-math PR (ADR 0020). The owner still has to answer the nine questions in `docs/design/economy-draft.md` on `feature/economy-tycoon`.
 - Adventures (session_015FCipyczdDEy2eSaq9YcXL): three owner questions are open: start E1? time model? location of Adventure B?
 - Pixel Peel v2 (`game/pixel-peel-v2`, 82f278e): rerun the second review, fix, publish, show the contact sheet. Also fix the flaky wall-clock assertion in `test/generator.test.ts` (`slowest generation < 150 ms`), which failed under gate load: move it to a `.slow` test or make it a budget that ignores load.
