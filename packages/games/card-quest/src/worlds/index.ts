@@ -1,9 +1,13 @@
 import { instanceIds, type CardDef, type CardEntry, type SetDef, type World } from '../cards';
+import { FRIDGE } from './fridge';
 import { KAMPFZWERGE } from './kampfzwerge';
+import { OFFICE } from './office';
+import { RAILWAY } from './railway';
+import { SPACELOOT } from './spaceloot';
 
-/** All worlds (design § 4). Only Kampfzwerge in K1; Spaceloot follows in K3. */
-export const WORLDS: Readonly<Record<string, World>> = { kz: KAMPFZWERGE };
-export const WORLD_IDS = ['kz'] as const;
+/** All worlds (design § 4), in start-screen order. Any non-empty combination can be mixed (§ 4.7). */
+export const WORLDS: Readonly<Record<string, World>> = { kz: KAMPFZWERGE, sl: SPACELOOT, of: OFFICE, fd: FRIDGE, rw: RAILWAY };
+export const WORLD_IDS = ['kz', 'sl', 'of', 'fd', 'rw'] as const;
 export type WorldId = (typeof WORLD_IDS)[number];
 
 const BY_ID = new Map<string, CardEntry>();

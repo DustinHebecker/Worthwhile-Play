@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { isRecord } from '@wp/game-core';
-import { BASE_RULESET, NEUTRAL, archetypeOf, canonicalJson, cellOf, findPath, observe, passable, DEFAULT_DOCTRINE, computeNetwork, createWorld, initialIntel, observedCells, resolveTurn, validateCommand, worldHash, type Command, type Entity, type Order, type World } from '@wp/strategy-engine';
-import { assaultPlan, objectiveOf, planAi, type Difficulty } from '../src/ai';
+import { BASE_RULESET, NEUTRAL, archetypeOf, canonicalJson, cellOf, findPath, observe, passable, DEFAULT_DOCTRINE, computeNetwork, createWorld, frameIndexIn, frameOf, initialIntel, observedCells, resolveTurn, validateCommand, worldHash, type Command, type Entity, type Order, type World } from '@wp/strategy-engine';
+import { APPROACH_RADIUS, approachCells, assaultPlan, objectiveOf, planAi, type Difficulty } from '../src/ai';
 import {
   cancelJob,
   cancelOrder,
@@ -1884,5 +1884,75 @@ describe('random maps (I6c, state v12)', () => {
     delete v11.random;
     expect(migrateState(v11, 11)).toMatchObject({ v: 12, random: null });
     expect(migrateState({ ...v11, v: 12 }, 11)).toBeUndefined();
+  });
+});
+
+describe('storms against a ringed post (2026-10-21)', () => {
+  /**
+   * A plain 20×9 map: the player's post (by default at (1, 4)) with pieces on its neighbours
+   * (`ring`, but for the `open` cells), the opponent's post (by default at (18, 4)) and its fighters. Only structures are known at the start,
+   * so a ring of squads is not (a ring of towers is).
+   */
+  const world = (turn: number, ring: string, opponent: readonly { kind: string; x: number; y: number }[], open: readonly (readonly [number, number])[] = [], [px, py, ox, oy] = [1, 4, 18, 4]) => {
+    const entities = [
+      { side: PLAYER, kind: 'command-post', x: px, y: py },
+      { side: OPPONENT, kind: 'command-post', x: ox, y: oy },
+      ...opponent.map((u) => ({ side: OPPONENT, ...u }))
+    ];
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        const x = px + dx, y = py + dy;
+        if ((dx || dy) && x >= 0 && y >= 0 && x < 20 && y < 9 && !open.some(([ax, ay]) => ax === x && ay === y)) entities.push({ side: PLAYER, kind: ring, x, y });
+      }
+    }
+    const w = createWorld({ map: { w: 20, h: 9, terrain: '.'.repeat(180) }, sides: 2, entities, seed: 1 }, RULESET);
+    w.turn = turn;
+    w.intel = initialIntel(w, RULESET);
+    const obs = observe(w, RULESET, OPPONENT);
+    const post = obs.world.entities.find((e) => e.side === PLAYER && e.kind === 'command-post')!;
+    const at = (x: number, y: number) => obs.world.entities.find((e) => e.x === x && e.y === y)!;
+    return { approach: approachCells(obs, RULESET, post), at, w };
+  };
+  const ESCALATE = 60;
+  const r = (p: { x: number; y: number }) => Math.max(Math.abs(p.x - 1), Math.abs(p.y - 4));
+
+  it('before the opponent stops waiting a fighter heads for the post, whatever it cannot see around it', () => {
+    const { approach, at } = world(ESCALATE - 1, 'rifles', [{ kind: 'rifles', x: 10, y: 4 }]);
+    expect(approach(at(10, 4))).toEqual({ x: 1, y: 4 });
+  });
+
+  it('later, a fighter far off heads for the farthest free cell of the outer rings it cannot see (a ring may be two deep), in its frame', () => {
+    // The player's post in the bottom right corner region: the first cell in the opponent's frame (a
+    // half turn) lies next to the post, so a tie-break that ignores the distance would pick a near one.
+    const { approach, at, w } = world(ESCALATE, 'rifles', [{ kind: 'rifles', x: 9, y: 4 }, { kind: 'rifles', x: 10, y: 4 }], [], [18, 7, 1, 1]);
+    const dist = (p: { x: number; y: number }) => Math.max(Math.abs(p.x - 18), Math.abs(p.y - 7));
+    const first = approach(at(9, 4));
+    expect(dist(first)).toBe(APPROACH_RADIUS);
+    // Ties by the side's frame: the first free cell of the outermost ring as the opponent sees the map.
+    const order = (p: { x: number; y: number }) => frameIndexIn(w.map, frameOf(w, OPPONENT), cellOf(w.map, p.x, p.y));
+    const outermost: { x: number; y: number }[] = [];
+    for (let y = 0; y < 9; y++) for (let x = 0; x < 20; x++) if (dist({ x, y }) === APPROACH_RADIUS) outermost.push({ x, y });
+    expect(first).toEqual(outermost.sort((a, b) => order(a) - order(b))[0]);
+    // Each fighter claims a cell of its own.
+    const second = approach(at(10, 4));
+    expect(dist(second)).toBe(APPROACH_RADIUS);
+    expect(second).not.toEqual(first);
+  });
+
+  it('later, a cell the side sees goes first, nearest first, never one next to the post', () => {
+    // A relay mast carries the cover to x 7, where an Outrider sees the post's surroundings; one cell next to the post is free.
+    const { approach, at } = world(ESCALATE, 'rifles', [{ kind: 'relay-mast', x: 13, y: 4 }, { kind: 'outrider', x: 7, y: 4 }], [[2, 3]]);
+    const goal = approach(at(7, 4));
+    expect(r(goal)).toBe(2);
+  });
+
+  it('later, a fighter within APPROACH_RADIUS still heads for the post', () => {
+    const { approach, at } = world(ESCALATE, 'rifles', [{ kind: 'rifles', x: 1 + APPROACH_RADIUS, y: 4 }]);
+    expect(approach(at(1 + APPROACH_RADIUS, 4))).toEqual({ x: 1, y: 4 });
+  });
+
+  it('a fighter close to a post walled in by known towers stays where it is rather than step to a cell no nearer', () => {
+    const { approach, at } = world(ESCALATE, 'tower-gun', [{ kind: 'rifles', x: 3, y: 4 }]);
+    expect(approach(at(3, 4))).toEqual({ x: 3, y: 4 });
   });
 });

@@ -342,5 +342,32 @@ export const nl: Catalogue = {
   'log.give.toYou': '{name} — {n} kaarten aan jou gegeven.',
   'log.curse.toYou': '{name} — vloek op jou: {card}.',
   // Reveal pending
-  'next.reveal': 'Een kaart heeft je geraakt: lees hem en druk dan op „Verder”.'
+  'next.reveal': 'Een kaart heeft je geraakt: lees hem en druk dan op „Verder”.',
+  // K3: worlds Spaceloot and Office
+  'world.sl': 'Spaceloot — crew tegen aliens',
+  'world.of': 'Kantoorchaos — kantoor tegen thuiswerk',
+  'setup.worlds': 'Werelden',
+  'setup.worldModes.random': 'Willekeurig',
+  'setup.worldModes.pick': 'Zelf kiezen',
+  'setup.worlds.random': 'Willekeurig: één wereld of een mix van twee, voor elk nieuw spel opnieuw getrokken.',
+  'setup.worlds.hint': 'Meerdere werelden worden door elkaar geschud. Niets aangevinkt: willekeurig.',
+  'family.crew': 'de scheepsbemanning',
+  'family.alien': 'aliens',
+  'family.office': 'kantoormensen',
+  'family.remote': 'thuiswerkers',
+  'set.away-team': 'Uitrusting voor het landingsteam',
+  'set.tourist-kit': 'Ruimtetoeristenpakket',
+  'set.video-call': 'Klaar voor de videocall',
+  'set.couch-kit': 'Kantoor-op-de-bank-pakket',
+  // Worlds Fridge and Railway
+  'world.fd': 'Koelkastexpeditie — vers tegen restjes',
+  'world.rw': 'Instappen, graag! — reizigers tegen spoorpersoneel',
+  'family.fresh': 'vers eten',
+  'family.leftover': 'restjes',
+  'family.passenger': 'reizigers',
+  'family.railstaff': 'het spoorpersoneel',
+  'set.fridge-raider': 'Middernachtelijke koelkastraid',
+  'set.chef-kit': 'Echte chef-kokuitrusting',
+  'set.conductor-kit': 'Echte conducteursuitrusting',
+  'set.commuter-kit': 'Pakket voor doorgewinterde forenzen'
 };
