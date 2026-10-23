@@ -12,10 +12,7 @@ export default mergeConfig(
       exclude: [
         ...configDefaults.exclude,
         '**/*.long.test.ts',
-        '**/*.slow.test.ts',
-        // Owned by the strategy workstream (ADR 0009), so not renamed here: 300-world simulation
-        // regressions only (about 25 s of its 25 s outside instrumentation).
-        'packages/strategy-engine/test/regression-generators.test.ts'
+        '**/*.slow.test.ts'
       ]
     }
   })
