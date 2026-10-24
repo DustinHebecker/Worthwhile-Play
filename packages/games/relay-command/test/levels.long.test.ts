@@ -13,6 +13,9 @@ const ai = (world: World, side: number, difficulty: Difficulty = 'normal') => pl
 // mutation sandbox (a git-ignored `vitest.mut-*.config.ts`) can exclude it by name, so that each
 // mutant of rules.ts or ai.ts does not cost minutes (mutation scores are then a lower bound).
 
+/** The maps these suites measure: two-side and free-for-all maps (Bastion, made for teams, has tests of its own). */
+const TWO_OR_FFA = SCENARIOS.filter((x) => !x.seats?.teams);
+
 describe('opponent levels (I5)', () => {
   /** A game length: a turn limit, open end (`null`) or a quick match. */
   type Length = number | null | 'quick';
@@ -122,7 +125,7 @@ describe('opponent levels (I5)', () => {
   const GAME_BOUND = 60;
 
   it('a passive player loses at normal and hard on every map, with a turn limit and open end: from the unperturbed start, nudged openings and first-turn moves; every game ends within the bound', () => {
-    for (const spec of SCENARIOS) {
+    for (const spec of TWO_OR_FFA) {
       for (const limit of [...MODES, null]) {
         // Plain open end (no stalemate rule; measured longest 39 turns): not a bound for every strategy —
         // a player who only produces, or two mirrored AIs, can stall; the player can then end on strength.
@@ -144,7 +147,7 @@ describe('opponent levels (I5)', () => {
   }, 600_000);
 
   it('every game stays a valid, resumable save after every turn: every map, every length, passive and playing', () => {
-    for (const spec of SCENARIOS) {
+    for (const spec of TWO_OR_FFA) {
       for (const limit of [...TURN_LIMITS, 'quick'] as const) {
         for (const player of ['passive', 'normal'] as const) {
           let s = start(3, spec, 'hard', limit);
@@ -164,7 +167,7 @@ describe('opponent levels (I5)', () => {
     // Narrow on purpose: a stronger turtle (Extractors on every deposit, then a Motor Pool and
     // heavier units) can out-produce the opponent and win on strength (design notes, I6d).
 
-    for (const spec of SCENARIOS) {
+    for (const spec of TWO_OR_FFA) {
       for (const level of ['normal', 'hard'] as const) {
         let s = opening(spec, 1, 2, 2, 'quick', level);
         for (let i = 0; i < GAME_BOUND && s.phase === 'plan'; i++) {
