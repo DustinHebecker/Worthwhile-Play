@@ -163,7 +163,11 @@ Done on 2026-10-24 (all on main and deployed):
 Open, in this order:
 - Lootlings #73 (worlds Creepy Crawlies, Break Time, Big Top; random games show the drawn worlds): gate, then merge. The owner says Lootlings is complete after this; only change requests from now on.
 - Strategy: the map editor for four-base maps comes as the next PR (held on `backup/strategy-engine`).
-- Probability Detective (new-games pipeline, game 3): plan on `plan/probability-detective`. Owner decisions on 2026-10-24: title kept, the calibration notebook (last 400 forecasts on the device only, shown from 20), and all 16 locales. The implementation is on `game/probability-detective`, partly done; see the implementer's wrap-up in the session. Next: finish it, run the gate, then an independent review, then add `src/generate.ts` and `src/traps.ts` to `stryker.config.json`, then publish.
+- Probability Detective (new-games pipeline, game 3): the plan is on `plan/probability-detective`. Owner decisions on 2026-10-24: title kept, the calibration notebook, all 16 locales. The implementation is on `game/probability-detective`; its worktree is `scratchpad/pd-wt`, which may be gone after a container restart (work from the branch).
+  - Last green commit: e63189d (clue mode only).
+  - 5da43d1 and 986c609 (WIP) add the checks and traps modes. They are not green: 9 locales (ru, uk, pl, tr, ar, hi, ja, ko, zh-Hans) still lack the new texts.
+  - Remaining: those translations (the fragment format and `apply.py` are in `scratchpad/pdloc/`, which may also be gone; `de` is the complete example), new screenshots, e2e for checks/traps/mixed, the full gate, an independent review.
+  - Orchestrator side: add `src/{frac,generate,traps}.ts` to Stryker `mutate`; a ROADMAP row; a `docs/third-party.md` entry (original content, invented numbers).
 - Estimation Lab follow-ups (owner said yes): a "recently seen" memory for tasks; a yearly review of time-dependent figures; three source links that return 404 from the container (UN PopFacts 2017/2, OICA 2013, University of Arizona bees) — check them in a browser and switch to Wayback if dead; true plurals for count words ("1 days").
 - Pixel Peel open items: the phone start time (about 300 ms against a 250 ms target) needs a measurement on a quiet machine; a side-by-side landscape layout.
 - `scripts/orchestrator/gate-pr.sh` still runs the slow suites under coverage. The relay generator slow tests time out there under load; align it with CI (exclude `*.slow.test.ts` from coverage and run them separately).
