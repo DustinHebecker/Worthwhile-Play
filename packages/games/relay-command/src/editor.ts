@@ -21,6 +21,8 @@ import {
   TERRAIN_CODES,
   type EditMap,
   type MapLibrary,
+  seatsOf,
+  withBases,
   type Tool
 } from './maps';
 import type { MapDraft } from './rules';
@@ -109,9 +111,13 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
   const heightSelect = h('select', { 'data-testid': 'ed-height', onchange: () => set(resize(map(), map().w, Number(heightSelect.value))) }) as HTMLSelectElement;
   for (const v of MAP_HEIGHTS) heightSelect.append(h('option', { value: String(v) }, String(v)));
   const mirrorBox = h('input', { type: 'checkbox', 'data-testid': 'ed-mirror', onchange: () => o.change({ ...o.draft(), mirror: mirrorBox.checked }) }) as HTMLInputElement;
+  /** Bases (owner decision 2026-10-24): two sides, or four bases in the corners (seats A–D, A is you). */
+  const basesSelect = h('select', { 'data-testid': 'ed-bases', onchange: () => onBases() }) as HTMLSelectElement;
+  for (const n of [2, 4]) basesSelect.append(h('option', { value: String(n) }, t(n === 2 ? 'editor.bases2' : 'editor.bases4')));
   const startSelect = h('select', { 'data-testid': 'ed-start' }) as HTMLSelectElement;
   startSelect.append(h('option', { value: 'blank' }, t('editor.blank')));
-  for (const spec of SCENARIOS) startSelect.append(h('option', { value: spec.id }, t(`scenario.${spec.id}`)));
+  // A map made for teams (Bastion) seats its sides by team shape, which a map here cannot say: not offered.
+  for (const spec of SCENARIOS.filter((x) => !x.seats?.teams)) startSelect.append(h('option', { value: spec.id }, t(`scenario.${spec.id}`)));
   const loadBtn = h('button', { type: 'button', 'data-testid': 'ed-load', onclick: () => onLoad() });
   const settings = h(
     'div',
@@ -119,6 +125,7 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
     h('label', {}, h('span', {}, t('editor.name')), nameInput),
     h('label', {}, h('span', {}, t('editor.width')), widthSelect),
     h('label', {}, h('span', {}, t('editor.height')), heightSelect),
+    h('label', {}, h('span', {}, t('editor.bases')), basesSelect),
     h('label', { class: 'rc-ed-check' }, mirrorBox, h('span', {}, t('editor.mirror'))),
     h('div', { class: 'rc-ed-start' }, h('label', {}, h('span', {}, t('editor.start')), startSelect), loadBtn)
   );
@@ -147,8 +154,10 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
   const same = (a: Tool, b: Tool) => JSON.stringify(a) === JSON.stringify(b);
   const toolButton = (next: Tool, label: string, pic: HTMLElement, id: string) =>
     h('button', { type: 'button', class: 'rc-ed-tool', 'data-testid': `ed-tool-${id}`, 'aria-pressed': same(tool, next) ? 'true' : 'false', onclick: () => pick(next, label) }, pic, h('span', {}, label));
+  /** Whose a piece is, in words: on a four-base map its base (A is you), else you or the opponent. */
+  const seatLabel = (s: number): string => (map().seats === 4 ? t(s === 0 ? 'editor.seatOwn' : 'editor.seat', { mark: 'ABCD'[s] ?? '?' }) : t(s === 0 ? 'editor.sideOwn' : 'editor.sideEnemy'));
   const sideButton = (s: number) =>
-    h('button', { type: 'button', class: 'rc-ed-side', 'data-testid': `ed-side-${s}`, 'aria-pressed': side === s ? 'true' : 'false', onclick: () => pickSide(s) }, t(s === 0 ? 'editor.sideOwn' : 'editor.sideEnemy'));
+    h('button', { type: 'button', class: 'rc-ed-side', 'data-testid': `ed-side-${s}`, 'aria-pressed': side === s ? 'true' : 'false', onclick: () => pickSide(s) }, seatLabel(s));
 
   function renderPalette(): void {
     clear(palette);
@@ -179,7 +188,7 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
       h('h4', {}, t('editor.objects')),
       objects,
       h('h4', {}, t('editor.units')),
-      h('div', { class: 'rc-ed-group', role: 'group', 'aria-label': t('editor.side') }, h('span', { class: 'rc-muted' }, t('editor.side')), sideButton(0), sideButton(1)),
+      h('div', { class: 'rc-ed-group', role: 'group', 'aria-label': t('editor.side') }, h('span', { class: 'rc-muted' }, t('editor.side')), ...Array.from({ length: seatsOf(map()) }, (_, s) => sideButton(s))),
       units
     );
   }
@@ -188,6 +197,12 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
     tool = next;
     render();
     o.announce(t('editor.toolChosen', { tool: label }));
+  }
+  function onBases(): void {
+    const bases = basesSelect.value === '4' ? 4 : 2;
+    if (bases === seatsOf(map())) return;
+    if (side >= bases) pickSide(0);
+    set(withBases(map(), bases));
   }
   function pickSide(s: number): void {
     side = s;
@@ -310,7 +325,7 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
     const parts = [t('editor.cell', { x: cursor.x + 1, y: cursor.y + 1, terrain })];
     const deposit = m.deposits.find((d) => d.x === cursor.x && d.y === cursor.y);
     if (deposit) parts.push(t(deposit.size === 'rich' ? 'editor.cellDepositRich' : deposit.size === 'endless' ? 'editor.cellDepositEndless' : 'editor.cellDeposit'));
-    if (unit) parts.push(t('editor.cellUnit', { side: t(unit.side === 0 ? 'editor.sideOwn' : 'editor.sideEnemy'), name: t(`unit.${unit.kind}`) }));
+    if (unit) parts.push(t('editor.cellUnit', { side: seatLabel(unit.side), name: t(`unit.${unit.kind}`) }));
     return parts.join(' · ');
   }
 
@@ -336,10 +351,10 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
   function renderIssues(): void {
     clear(issuesEl);
     const issues = mapIssues(map());
-    const sideName = (s?: number) => t(s === 1 ? 'editor.forEnemy' : 'editor.forOwn');
+    const sideName = (s?: number) => (map().seats === 4 && s !== undefined ? t('editor.forSeat', { mark: 'ABCD'[s] ?? '?' }) : t(s === 1 ? 'editor.forEnemy' : 'editor.forOwn'));
     if (issues.length === 0) issuesEl.append(h('p', { 'data-testid': 'ed-ok' }, t('editor.ok')));
     else issuesEl.append(h('p', {}, t('editor.issues')), h('ul', {}, ...issues.map((i) => h('li', {}, t(i.key, { side: sideName(i.side) })))));
-    issuesEl.append(h('p', { class: 'rc-muted', 'data-testid': 'ed-fair' }, t(isFair(map()) ? 'editor.fair' : 'editor.unfair')));
+    issuesEl.append(h('p', { class: 'rc-muted', 'data-testid': 'ed-fair' }, t(isFair(map()) ? (map().seats === 4 ? 'editor.fairFour' : 'editor.fair') : 'editor.unfair')));
     playBtn.toggleAttribute('disabled', issues.length > 0);
   }
 
@@ -475,6 +490,8 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
     if (document.activeElement !== nameInput) nameInput.value = draft.map.name;
     widthSelect.value = String(draft.map.w);
     heightSelect.value = String(draft.map.h);
+    basesSelect.value = String(seatsOf(draft.map));
+    if (side >= seatsOf(draft.map)) side = 0;
     mirrorBox.checked = draft.mirror;
     cursor = { x: Math.min(cursor.x, draft.map.w - 1), y: Math.min(cursor.y, draft.map.h - 1) };
     loadBtn.textContent = armed === 'load' ? t('editor.loadConfirm') : t('editor.load');

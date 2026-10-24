@@ -76,7 +76,7 @@ import {
 import { DIFFICULTIES, type Difficulty } from './ai';
 import { drawIcon } from './icons';
 import { createEditor } from './editor';
-import { blankMap, hostMapLibrary, mapIssues, MAX_NAME, memoryStore, migratePreferenceMaps, preferenceMapLibrary, type EditMap, type MapLibrary, type MapStore } from './maps';
+import { blankMap, customSpec, hostMapLibrary, mapIssues, MAX_NAME, memoryStore, migratePreferenceMaps, preferenceMapLibrary, type EditMap, type MapLibrary, type MapStore } from './maps';
 import { generateMap } from './generator';
 import { CELL, drawDeposit, drawTerrainMark, TERRAIN_NAMES } from './draw';
 import { FIELD_EXERCISE, opponentCounts, SCENARIOS, scenarioFor } from './scenarios';
@@ -504,9 +504,9 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
 
   function openEditor(): void {
     editor.forget();
-    // Start from the map being played (a player-made or random one with two sides; the editor has no
-    // four-base maps yet), else an empty map; mirrored edits by default.
-    if (!state.edit) commit({ ...state, edit: { map: state.map && !state.map.seats ? state.map : blankMap(16, 12), slot: null, mirror: true } });
+    // Start from the map being played (a player-made or random one, two sides or four bases), else an
+    // empty map; mirrored edits by default.
+    if (!state.edit) commit({ ...state, edit: { map: state.map ?? blankMap(16, 12), slot: null, mirror: true } });
     render();
     editor.el.querySelector<HTMLElement>('[data-testid="ed-map"]')?.focus();
   }
@@ -521,7 +521,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     editor.forget();
     selected = null;
     const limit = state.turnLimit;
-    commit(newGame(normalizeSeed(state.seed + 1), FIELD_EXERCISE, state.difficulty, limit, state.quick, m, 1, [], state.endless), t('announce.setup', { scenario: mapLabel(m) }));
+    // A map with four bases starts with three opponents (the setup offers one to three and teams).
+    commit(newGame(normalizeSeed(state.seed + 1), FIELD_EXERCISE, state.difficulty, limit, state.quick, m, m.seats === 4 ? 3 : 1, [], state.endless), t('announce.setup', { scenario: mapLabel(m) }));
     homeCursor();
     render();
     canvas.focus();
@@ -2068,10 +2069,11 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     });
   }
 
-  /** The opponent counts the map in the select offers (player-made maps: one; random maps: one to three). */
+  /** The opponent counts the map in the select offers (random maps: one to three; player-made maps: as the map has bases). */
   function syncOpponentOptions(): void {
     const value = scenarioSelect.value;
-    const spec = scenarioById(value);
+    const own = ownMap(value);
+    const spec = own ? customSpec(own) : scenarioById(value);
     const counts = value === 'random' ? RANDOM_OPPONENTS : spec ? opponentCounts(spec) : [1];
     const current = [...opponentsSelect.querySelectorAll('option')].map((o) => o.value).join(',');
     if (current !== counts.join(',')) {
@@ -2099,6 +2101,11 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
 
   /** The team shape chosen in the setup (null: free-for-all). */
   const chosenTeams = (): TeamShape | null => (teamsSelect.value === 'ffa' || teamsSelect.value === '' ? null : (teamsSelect.value as TeamShape));
+
+  /** The player-made map a value of the map select names (the one being played, or a device slot), if any. */
+  function ownMap(value: string): EditMap | null {
+    return (value.startsWith('slot:') ? library()[Number(value.slice(5))] : value === 'custom' ? state.map : null) ?? null;
+  }
 
   /** Another random map: the next map number (a fixed step from the current one, no Math.random). */
   function newRandomMap(): void {
@@ -2144,13 +2151,14 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       render();
       return;
     }
-    const own = value.startsWith('slot:') ? library()[Number(value.slice(5))] : value === 'custom' ? state.map : null;
+    const own = ownMap(value);
     const spec = scenarioById(value) ?? FIELD_EXERCISE;
     const limit = limitSelect.value === 'open' || limitSelect.value === 'quick' ? null : Number(limitSelect.value);
     selected = null;
     const map = own && mapIssues(own).length === 0 ? own : null;
     syncOpponentOptions();
-    const opponents = map ? 1 : Number(opponentsSelect.value) || 1;
+    // A player-made map with four bases takes the count chosen (two-side maps: one).
+    const opponents = map && !map.seats ? 1 : Number(opponentsSelect.value) || 1;
     commit(newGame(state.seed, spec, state.difficulty, limit, limitSelect.value === 'quick', map, opponents, chosenSeats(), endlessInput.checked, null, chosenTeams()), t('announce.setup', { scenario: map ? mapLabel(map) : t(`scenario.${spec.id}`) }));
     homeCursor();
     render();

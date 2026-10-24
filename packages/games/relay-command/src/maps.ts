@@ -17,8 +17,8 @@ export interface EditMap {
   readonly deposits: readonly MapDeposit[];
   readonly units: readonly MapUnit[];
   /**
-   * Maps with four bases (generated only, 2026-10-18; the editor keeps to two): a unit's side is
-   * its seat, 0 bottom left, 1 top left, 2 top right, 3 bottom right. Absent: a two-side map.
+   * Maps with four bases (generated since 2026-10-18, made in the editor since 2026-10-24): a unit's
+   * side is its seat, 0 bottom left, 1 top left, 2 top right, 3 bottom right. Absent: a two-side map.
    */
   readonly seats?: 4;
 }
@@ -79,7 +79,9 @@ export function fromScenario(spec: ScenarioSpec, name = ''): EditMap {
     h: map.h,
     terrain: map.terrain,
     deposits: (map.deposits ?? []).map((d) => withSize(d.x, d.y, d.endless ? 'endless' : d.left > DEPOSIT_SUPPLY ? 'rich' : 'plain')),
-    units: entities.map((e) => ({ side: e.side, kind: e.kind, x: e.x, y: e.y }))
+    units: entities.map((e) => ({ side: e.side, kind: e.kind, x: e.x, y: e.y })),
+    // A built-in map with four bases starts a four-base map (its seats in the same corners).
+    ...(spec.seats && { seats: 4 as const })
   };
 }
 
@@ -102,14 +104,42 @@ export type Tool = { readonly type: 'terrain'; readonly code: string } | { reado
 const inside = (map: EditMap, x: number, y: number) => Number.isInteger(x) && Number.isInteger(y) && x >= 0 && y >= 0 && x < map.w && y < map.h;
 const blocks = (code: string) => code === '~' || code === '^';
 
-/** The map after applying `tool` at (x, y) (and at the point-mirrored cell, side swapped, when `mirror`). Never throws. */
+/**
+ * The cells a mirrored edit at (x, y) also changes, with the seat each image belongs to: on a
+ * two-side map the point-mirrored cell (sides swapped); on a four-base map the three mirror images
+ * (left to right: seats 0 and 3, 1 and 2 swapped; top to bottom: 0 and 1, 2 and 3; both: 0 and 2, 1 and 3).
+ */
+export function mirrorImages(map: Pick<EditMap, 'w' | 'h' | 'seats'>, x: number, y: number): { x: number; y: number; seat: readonly number[] }[] {
+  const { w, h } = map;
+  if (map.seats === 4) {
+    return [
+      { x: w - 1 - x, y, seat: [3, 2, 1, 0] },
+      { x, y: h - 1 - y, seat: [1, 0, 3, 2] },
+      { x: w - 1 - x, y: h - 1 - y, seat: [2, 3, 0, 1] }
+    ];
+  }
+  return [{ x: w - 1 - x, y: h - 1 - y, seat: [1, 0] }];
+}
+
+/** The map after applying `tool` at (x, y) (and at its mirror images, seats swapped, when `mirror`). Never throws. */
 export function applyTool(map: EditMap, tool: Tool, x: number, y: number, mirror: boolean): EditMap {
   if (!inside(map, x, y)) return map;
   let next = applyAt(map, tool, x, y);
-  const mx = map.w - 1 - x;
-  const my = map.h - 1 - y;
-  if (mirror && (mx !== x || my !== y)) next = applyAt(next, tool.type === 'unit' ? { ...tool, side: 1 - tool.side } : tool, mx, my);
+  if (!mirror) return next;
+  const done = new Set([`${x},${y}`]);
+  for (const image of mirrorImages(map, x, y)) {
+    if (done.has(`${image.x},${image.y}`)) continue; // a cell on a mirror line is its own image
+    done.add(`${image.x},${image.y}`);
+    next = applyAt(next, tool.type === 'unit' ? { ...tool, side: image.seat[tool.side] ?? tool.side } : tool, image.x, image.y);
+  }
   return next;
+}
+
+/** The same map with `bases` bases: four-base pieces of seats 2 and 3 go when it becomes a two-side map. */
+export function withBases(map: EditMap, bases: 2 | 4): EditMap {
+  const { seats: _seats, ...rest } = map;
+  void _seats;
+  return bases === 4 ? { ...rest, seats: 4 } : { ...rest, units: map.units.filter((u) => u.side < 2) };
 }
 
 function applyAt(map: EditMap, tool: Tool, x: number, y: number): EditMap {
@@ -132,7 +162,7 @@ function applyAt(map: EditMap, tool: Tool, x: number, y: number): EditMap {
       return { ...map, deposits: [...map.deposits, withSize(x, y, size)], units: map.units.filter((u) => u.x !== x || u.y !== y || u.kind === 'extractor') };
     }
     case 'unit': {
-      if (!(MAP_KINDS as readonly string[]).includes(tool.kind) || (tool.side !== 0 && tool.side !== 1) || blocks(map.terrain[cell] ?? '.')) return map;
+      if (!(MAP_KINDS as readonly string[]).includes(tool.kind) || !Number.isInteger(tool.side) || tool.side < 0 || tool.side >= seatsOf(map) || blocks(map.terrain[cell] ?? '.')) return map;
       const onDeposit = map.deposits.some((d) => d.x === x && d.y === y);
       if (onDeposit !== (tool.kind === 'extractor')) return map;
       const units = without(map.units);
@@ -234,7 +264,8 @@ const MAX_CODE = 16_000;
 
 /** A short text that carries the whole map (copy, paste, keep). */
 export function encodeMap(map: EditMap): string {
-  const json = JSON.stringify([map.name, map.w, map.h, map.terrain, map.deposits.map((d) => (d.size ? [d.x, d.y, DEPOSIT_SIZES.indexOf(d.size)] : [d.x, d.y])), map.units.map((u) => [u.side, MAP_KINDS.indexOf(u.kind as (typeof MAP_KINDS)[number]), u.x, u.y])]);
+  // A four-base map adds its seat count as a seventh field (two-side codes stay as they were).
+  const json = JSON.stringify([map.name, map.w, map.h, map.terrain, map.deposits.map((d) => (d.size ? [d.x, d.y, DEPOSIT_SIZES.indexOf(d.size)] : [d.x, d.y])), map.units.map((u) => [u.side, MAP_KINDS.indexOf(u.kind as (typeof MAP_KINDS)[number]), u.x, u.y]), ...(map.seats ? [map.seats] : [])]);
   const bytes = new TextEncoder().encode(json);
   let binary = '';
   for (const b of bytes) binary += String.fromCharCode(b);
@@ -249,8 +280,9 @@ export function decodeMap(code: unknown): EditMap | undefined {
     const binary = atob(b64 + '='.repeat((4 - (b64.length % 4)) % 4));
     const json = new TextDecoder('utf-8', { fatal: true }).decode(Uint8Array.from(binary, (c) => c.charCodeAt(0)));
     const data = JSON.parse(json) as unknown;
-    if (!Array.isArray(data) || data.length !== 6) return undefined;
-    const [name, w, h, terrain, deposits, units] = data as unknown[];
+    if (!Array.isArray(data) || (data.length !== 6 && data.length !== 7)) return undefined;
+    const [name, w, h, terrain, deposits, units, seats] = data as unknown[];
+    if (data.length === 7 && seats !== 4) return undefined;
     if (!Array.isArray(deposits) || !Array.isArray(units)) return undefined;
     const map = {
       name,
@@ -258,7 +290,8 @@ export function decodeMap(code: unknown): EditMap | undefined {
       h,
       terrain,
       deposits: deposits.map((d: unknown) => (!Array.isArray(d) || d.length > 3 ? null : d.length === 3 ? (d[2] === 1 || d[2] === 2 ? { x: d[0], y: d[1], size: DEPOSIT_SIZES[d[2]] } : null) : { x: d[0], y: d[1] })),
-      units: units.map((u: unknown) => (Array.isArray(u) ? { side: u[0], kind: MAP_KINDS[u[1] as number] ?? '', x: u[2], y: u[3] } : null))
+      units: units.map((u: unknown) => (Array.isArray(u) ? { side: u[0], kind: MAP_KINDS[u[1] as number] ?? '', x: u[2], y: u[3] } : null)),
+      ...(seats === 4 && { seats: 4 as const })
     };
     return isValidMap(map) ? { ...map, units: sortUnits(map.units) } : undefined;
   } catch {

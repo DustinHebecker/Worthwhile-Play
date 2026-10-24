@@ -903,7 +903,7 @@ function isValidSeating(value: Record<string, unknown>, n: number, isCommand: (v
 }
 
 const isValidDraft = (v: unknown): v is MapDraft | null =>
-  v === null || (isRecord(v) && isValidMap(v.map) && v.map.seats === undefined && (v.slot === null || isInt(v.slot, 0, MAP_SLOTS - 1)) && typeof v.mirror === 'boolean');
+  v === null || (isRecord(v) && isValidMap(v.map) && (v.slot === null || isInt(v.slot, 0, MAP_SLOTS - 1)) && typeof v.mirror === 'boolean');
 
 /**
  * A random map's recipe: a size offered in the setup and a 32-bit seed, on a game with a map of

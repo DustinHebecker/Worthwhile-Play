@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import {
   applyTool,
+  mirrorImages,
+  withBases,
   blankMap,
   customSpec,
   DEPOSIT_SIZES,
@@ -31,7 +33,7 @@ import {
 } from '../src/maps';
 import { createTestLibrary } from '@wp/testing';
 import { isValidState, lockTurn, newGame, specOf } from '../src/rules';
-import { FIELD_EXERCISE, RIDGE_VALLEY } from '../src/scenarios';
+import { FIELD_EXERCISE, RIDGE_VALLEY, SCENARIOS } from '../src/scenarios';
 
 /** A small playable map built with the editor's own tool, mirrored. */
 function playable(): EditMap {
@@ -377,5 +379,68 @@ describe('map library: the host library (ADR 0012), preferences as fallback, and
     expect((await hostMapLibrary(lib, named).list()).filter((m) => m !== undefined).map((m) => m!.name).sort()).toEqual(['Old A', 'Old B']);
     expect(loadLibrary(store).every((m) => m === undefined)).toBe(true);
     expect(await migratePreferenceMaps(store, hostMapLibrary(lib, named))).toBe(0);
+  });
+});
+
+describe('map editor: four bases (owner decision 2026-10-24)', () => {
+  const four = () => withBases(blankMap(16, 12, 'Four'), 4);
+
+  it('a mirrored edit on a four-base map lands on all four images, each piece with its mirror seat', () => {
+    let m = applyTool(four(), { type: 'unit', kind: 'command-post', side: 0 }, 2, 9, true);
+    m = applyTool(m, { type: 'unit', kind: 'rifles', side: 0 }, 3, 9, true);
+    m = applyTool(m, { type: 'terrain', code: 'f' }, 5, 6, true);
+    m = applyTool(m, { type: 'deposit', size: 'rich' }, 4, 10, true);
+    const posts = m.units.filter((u) => u.kind === 'command-post').map((u) => `${u.side}@${u.x},${u.y}`);
+    expect(posts.sort()).toEqual(['0@2,9', '1@2,2', '2@13,2', '3@13,9']);
+    for (const [x, y] of [[5, 6], [10, 6], [5, 5], [10, 5]]) expect(m.terrain[y! * 16 + x!]).toBe('f');
+    expect(m.deposits.filter((d) => d.size === 'rich')).toHaveLength(4);
+    expect(isFair(m)).toBe(true);
+    expect(mapIssues(m)).toEqual([]);
+    expect(customSpec(m).seats).toBeDefined();
+    // A piece placed for base B is mirrored with the seats swapped as the corners are.
+    const b = applyTool(four(), { type: 'unit', kind: 'lancer', side: 1 }, 2, 2, true);
+    expect(b.units.map((u) => `${u.side}@${u.x},${u.y}`).sort()).toEqual(['0@2,9', '1@2,2', '2@13,2', '3@13,9']);
+    // Not mirrored: one cell only; a two-side map keeps the point mirror.
+    expect(applyTool(four(), { type: 'unit', kind: 'rifles', side: 2 }, 12, 2, false).units).toHaveLength(1);
+    expect(mirrorImages(blankMap(16, 12), 2, 9)).toEqual([{ x: 13, y: 2, seat: [1, 0] }]);
+    // Seats beyond the map's are refused.
+    expect(applyTool(blankMap(16, 12), { type: 'unit', kind: 'rifles', side: 2 }, 3, 3, false).units).toHaveLength(0);
+  });
+
+  it('switching to two bases drops the pieces of bases C and D; four bases back keeps the map', () => {
+    let m = applyTool(four(), { type: 'unit', kind: 'command-post', side: 0 }, 2, 9, true);
+    const two = withBases(m, 2);
+    expect(two.seats).toBeUndefined();
+    expect(two.units.every((u) => u.side < 2)).toBe(true);
+    expect(isValidMap(two)).toBe(true);
+    m = withBases(two, 4);
+    expect(m.seats).toBe(4);
+    expect(isValidMap(m)).toBe(true);
+  });
+
+  it('a share code carries the four bases; a two-side code stays as it was; a code with another seat count is refused', () => {
+    const m = applyTool(applyTool(four(), { type: 'unit', kind: 'command-post', side: 0 }, 2, 9, true), { type: 'unit', kind: 'rifles', side: 0 }, 3, 9, true);
+    expect(decodeMap(encodeMap(m))).toEqual(m);
+    const two = blankMap(12, 10, 'Two');
+    expect(decodeMap(encodeMap(two))).toEqual(two);
+    const json = JSON.stringify(['x', 12, 10, '.'.repeat(120), [], [], 3]);
+    expect(decodeMap('RC1.' + btoa(json).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''))).toBeUndefined();
+  });
+
+  it('starting from Four Corners gives a four-base map; a game on a player-made four-base map offers 1 to 3 opponents', () => {
+    const corners = fromScenario(SCENARIOS.find((x) => x.id === 'four-corners')!, 'Corners');
+    expect(corners.seats).toBe(4);
+    expect(isValidMap(corners)).toBe(true);
+    expect(mapIssues(corners)).toEqual([]);
+    expect(isFair(corners)).toBe(false); // a quarter turn, not a mirror: told, not required
+    for (const n of [1, 2, 3]) {
+      const s = newGame(1, FIELD_EXERCISE, 'normal', 12, false, corners, n);
+      expect(s.opponents).toBe(n);
+      expect(isValidState(JSON.parse(JSON.stringify(s)))).toBe(true);
+    }
+    const team = newGame(1, FIELD_EXERCISE, 'normal', 12, false, corners, 3, [], false, null, '2v2-next');
+    expect(team.world.teams).toEqual([0, 0, 1, 1]);
+    // The editor keeps a four-base draft.
+    expect(isValidState({ ...team, edit: { map: corners, slot: null, mirror: true } })).toBe(true);
   });
 });
