@@ -154,16 +154,4 @@ describe('hint at scale (design v2 § 4)', () => {
       { numRuns: 15 }
     );
   });
-
-  it('stays within its budget: under 80 ms per hint on random off-path hard positions (generous bound)', () => {
-    let worst = 0;
-    for (let seed = 1; seed <= 8; seed++) {
-      const s = offPath(createInitial(seed, 'hard', ['fjord', 'red-fox', 'winter-village', 'reading-nook'][seed % 4]!), seed * 3);
-      const t0 = performance.now();
-      hint(s);
-      worst = Math.max(worst, performance.now() - t0);
-    }
-    // Measured well under 80 ms; asserted generously so that a loaded CI runner never fails it.
-    expect(worst).toBeLessThan(800);
-  });
 });

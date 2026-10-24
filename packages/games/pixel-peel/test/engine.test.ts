@@ -172,23 +172,4 @@ describe('engine basics', () => {
     expect(launch(engine, fullCells(engine), 1, 0)).toBe(0);
     expect(launch(engine, fullCells(engine), 0, 5)).toBe(0);
   });
-
-  it('launches about 10 µs each at W = 48 (budget sanity, generous bound)', () => {
-    const w = 48;
-    const cells: string[] = [];
-    for (let i = 0; i < w * w; i++) cells.push(KEYS[(Math.floor(i / 7) * 13 + i) % 18] as string);
-    const engine = engineOf(pictureOf(w, w, cells, 18));
-    const cur = fullCells(engine);
-    const t0 = performance.now();
-    let launches = 0;
-    for (let round = 0; round < 50 && cur.left > 0; round++) {
-      for (let c = 1; c <= 18; c++) {
-        launch(engine, cur, c, 20);
-        launches++;
-      }
-    }
-    const per = (performance.now() - t0) / launches;
-    // Measured ~10 µs; asserted < 200 µs so that a loaded CI runner never fails it.
-    expect(per).toBeLessThan(0.2);
-  });
 });

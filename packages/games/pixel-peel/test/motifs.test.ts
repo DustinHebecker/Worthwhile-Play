@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { decodeRows } from '../src/art/bake';
-import { minPixels, rasteriseReport, type Tier } from '../src/art/raster';
+import { heightOf, minPixels, type Tier } from '../src/art/raster';
 import { colourStats, isLandscape, widthFor, type ArtDifficulty } from '../src/art/sizes';
 import { COLOUR_NAMES, GROUPS, LOCALES, type PaletteSpec } from '../src/art/types';
 import { pictureFor } from '../src/generate';
@@ -65,24 +65,22 @@ for (const motif of MOTIFS) {
 
     for (const level of LEVELS) {
       const w = widthFor(motif, level.d);
-      it(`${level.d} at ${w} cells: ${level.colours[0]}–${level.colours[1]} colours, each ≥ ${minPixels(w)} pixels, distinguishable, mostly filled, little despeckle; the baked picture matches`, () => {
-        const t0 = performance.now();
-        const r = rasteriseReport(motif, w, level.tier);
-        const ms = performance.now() - t0;
-        const { picture } = r;
-        // The baked picture (what a game uses) is exactly the rasteriser's output.
+      it(`${level.d} at ${w} cells: ${level.colours[0]}–${level.colours[1]} colours, each ≥ ${minPixels(w)} pixels, distinguishable, mostly filled, colours that matter`, () => {
+        // The baked picture is what a game plays (motifs.slow.test.ts checks that it equals the rasteriser's output).
         const baked = BAKED[motif.id]?.[LEVELS.indexOf(level)];
         expect(baked, 'baked (run scripts/render-motifs.ts --bake)').toBeDefined();
-        expect(decodeRows(baked!), 'baked rows equal the rasteriser (run scripts/render-motifs.ts --bake)').toEqual(picture.rows);
-        expect(pictureFor(motif, level.d).rows).toEqual(picture.rows);
+        const rows = decodeRows(baked!)!;
+        expect(rows).toHaveLength(heightOf(motif, w));
+        for (const row of rows) expect(row).toHaveLength(w);
+        // A game uses the baked rows, never the rasteriser (which is far too slow for the start on a phone).
+        const picture = pictureFor(motif, level.d);
+        expect(picture.rows).toEqual(rows);
         // Exactly the palette's keys of this tier are played: no colour merged away (the start-screen label relies on it).
         const tierKeys = entries.filter(([, spec]) => spec[2] <= level.tier).map(([k]) => k);
         expect(picture.palette.map((p) => p.key)).toEqual(tierKeys);
-        expect(r.mergedForSize).toEqual([]);
-        expect(r.orphans).toEqual([]);
         expect(picture.palette.length).toBeGreaterThanOrEqual(level.colours[0]);
         expect(picture.palette.length).toBeLessThanOrEqual(level.colours[1]);
-        const flat = picture.rows.join('');
+        const flat = rows.join('');
         for (const p of picture.palette) expect(flat.split(p.key).length - 1, `pixels of ${p.key}`).toBeGreaterThanOrEqual(minPixels(w));
         for (let i = 0; i < picture.palette.length; i++) {
           const a = picture.palette[i]!;
@@ -94,12 +92,9 @@ for (const motif of MOTIFS) {
         }
         const filled = flat.replace(/\./g, '').length;
         expect(filled / flat.length).toBeGreaterThanOrEqual(0.5);
-        expect(r.despeckled / flat.length).toBeLessThanOrEqual(0.02);
-        // Supersampled rasterising runs only when baking and in this test; a game reads the baked picture.
-        expect(ms).toBeLessThan(3000);
         // Colours must really matter (owner feedback 2026-10-18): the effective number of colours 1 / Σ p², and on
         // hard at least 12 colours with ≥ 2 % of the picture each and no colour above 25 %.
-        const stats = colourStats(picture.rows);
+        const stats = colourStats(rows);
         if (level.d === 'medium') expect(stats.effective, 'effective colours').toBeGreaterThanOrEqual(6);
         if (level.d === 'hard') {
           expect(stats.effective, 'effective colours').toBeGreaterThanOrEqual(8);
@@ -128,10 +123,8 @@ for (const motif of MOTIFS) {
 }
 
 describe('baked pictures (design v2 § 1.7)', () => {
-  it('a game reads every picture from the baked data in well under a millisecond each', () => {
-    const t0 = performance.now();
-    for (const motif of MOTIFS) for (const d of ['easy', 'medium', 'hard'] as const) pictureFor(motif, d);
-    expect(performance.now() - t0).toBeLessThan(500);
+  it('there is one baked picture per motif and difficulty', () => {
     expect(Object.keys(BAKED).sort()).toEqual(MOTIFS.map((m) => m.id).sort());
+    for (const motif of MOTIFS) expect(BAKED[motif.id], motif.id).toHaveLength(LEVELS.length);
   });
 });

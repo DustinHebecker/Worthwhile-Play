@@ -363,7 +363,8 @@ describe('isPeelState (never throws)', () => {
 
 describe('settings', () => {
   it('settingsOf tells the difficulty and the start-screen choice', () => {
-    for (const choice of ['any', ...MOTIFS.map((m) => m.id)]) {
+    // Three choices here; generator.slow.test.ts starts every motif at every difficulty.
+    for (const choice of ['any', MOTIFS[0]!.id, MOTIFS[MOTIFS.length - 1]!.id]) {
       for (const d of ['easy', 'medium', 'hard'] as const) {
         const s = createInitial(7, d, choice);
         expect(settingsOf(s)).toEqual({ difficulty: d, motif: choice });
