@@ -1,90 +1,85 @@
 import type { ContentText } from './types';
 
-/**
- * English (source) wording; the reference for every translation.
- * Writing rules: no digits in sentences (numbers are shown in structured rows); no person names; hypotheses are
- * things, places, animals or causes. Neutral and echo clues always show, so `notSeen` repeats `seen`.
- */
 export const content: ContentText = {
   templates: {
     'c-parcel': {
-      title: 'The blue parcel',
-      story: 'A parcel without a sender has arrived at the corner shop. It must come from one of the warehouses that deliver to this street.',
-      lead: 'Parcels on this street come from:',
-      hyps: { north: 'Warehouse North', south: 'Warehouse South', east: 'Warehouse East' },
+      title: '青い小包',
+      story: '角の店に、差出人のない小包が届きました。この通りに配達している倉庫のどれかから来たはずです。',
+      lead: 'この通りの小包の出どころ：',
+      hyps: { north: '北倉庫', south: '南倉庫', east: '東倉庫' },
       clues: {
-        blue: { label: 'Wrapped in blue paper', seen: 'The parcel is wrapped in blue paper.', notSeen: 'The parcel is not wrapped in blue paper.' },
-        'brown-tape': { label: 'Sealed with brown tape', seen: 'It is sealed with brown tape.', notSeen: 'It is not sealed with brown tape.' },
-        smudge: { label: 'Smudged label', seen: 'The address label is smudged.', notSeen: 'The address label is clean.' },
-        string: { label: 'Tied with string', seen: 'It is tied with string.', notSeen: 'It is not tied with string.' },
-        tuesday: { label: 'Arrived on a Tuesday', seen: 'It arrived on a Tuesday. All the warehouses deliver on every weekday.', notSeen: 'It arrived on a Tuesday. All the warehouses deliver on every weekday.' },
-        'echo-blue': { label: 'The neighbour saw it too', seen: 'The neighbour also says the parcel was blue — she saw the same parcel.', notSeen: 'The neighbour also says the parcel was blue — she saw the same parcel.' }
+        blue: { label: '青い紙で包装', seen: '小包は青い紙で包まれています。', notSeen: '小包は青い紙で包まれていません。' },
+        'brown-tape': { label: '茶色のテープで封', seen: '茶色のテープで封をしてあります。', notSeen: '茶色のテープでは封をしていません。' },
+        smudge: { label: 'にじんだラベル', seen: '宛名ラベルがにじんでいます。', notSeen: '宛名ラベルはきれいです。' },
+        string: { label: 'ひもで結んである', seen: 'ひもで結んであります。', notSeen: 'ひもでは結んでありません。' },
+        tuesday: { label: '火曜日に届いた', seen: '火曜日に届きました。どの倉庫も平日は毎日配達します。', notSeen: '火曜日に届きました。どの倉庫も平日は毎日配達します。' },
+        'echo-blue': { label: '隣の人も見た', seen: '隣の人も小包は青かったと言っています ― 同じ小包を見たのです。', notSeen: '隣の人も小包は青かったと言っています ― 同じ小包を見たのです。' }
       }
     },
     'c-garden': {
-      title: 'The nibbled strawberries',
-      story: 'Someone has been at the strawberries overnight. In this garden, a few kinds of visitors are known to snack on them.',
-      lead: 'On nights when strawberries get nibbled, the visitor is:',
-      hyps: { birds: 'Birds', snails: 'Snails', hedgehog: 'A hedgehog' },
+      title: 'かじられたイチゴ',
+      story: '夜のうちに誰かがイチゴを食べました。この庭では、イチゴをつまみ食いする訪問者が何種類か知られています。',
+      lead: 'イチゴがかじられた夜の訪問者は：',
+      hyps: { birds: '鳥', snails: 'カタツムリ', hedgehog: 'ハリネズミ' },
       clues: {
-        slime: { label: 'Shiny trail', seen: 'There is a shiny trail on the path.', notSeen: 'There is no shiny trail.' },
-        pecks: { label: 'Small peck marks', seen: 'The fruit has small peck marks.', notSeen: 'There are no peck marks.' },
-        droppings: { label: 'Droppings under the hedge', seen: 'There are droppings under the hedge.', notSeen: 'There is nothing under the hedge.' },
-        'net-moved': { label: 'Net pushed aside', seen: 'The net over the bed is pushed aside.', notSeen: 'The net is still in place.' },
-        rain: { label: 'It rained last night', seen: 'It rained last night — all of them come out in the rain.', notSeen: 'It rained last night — all of them come out in the rain.' },
-        'echo-slime': { label: 'Seen again in the morning', seen: 'Your neighbour points out the same shiny trail.', notSeen: 'Your neighbour points out the same shiny trail.' }
+        slime: { label: '光る跡', seen: '小道に光る跡があります。', notSeen: '光る跡はありません。' },
+        pecks: { label: '小さなついばみ跡', seen: '実に小さなついばみ跡があります。', notSeen: 'ついばみ跡はありません。' },
+        droppings: { label: '生け垣の下のふん', seen: '生け垣の下にふんがあります。', notSeen: '生け垣の下には何もありません。' },
+        'net-moved': { label: 'ずらされたネット', seen: '畝にかけたネットがずらされています。', notSeen: 'ネットは元の位置のままです。' },
+        rain: { label: '昨夜は雨', seen: '昨夜は雨でした ― 雨の夜はどれも出てきます。', notSeen: '昨夜は雨でした ― 雨の夜はどれも出てきます。' },
+        'echo-slime': { label: '朝にもう一度見た', seen: '隣の人が同じ光る跡を指さします。', notSeen: '隣の人が同じ光る跡を指さします。' }
       }
     },
     'c-rain': {
-      title: 'Did it rain overnight?',
-      story: 'You were away overnight and want to know whether the seedlings got rain or need watering now.',
-      lead: 'Nights at this time of year:',
-      hyps: { rained: 'It rained', dry: 'It stayed dry' },
+      title: '夜のうちに雨が降った？',
+      story: '一晩留守にしていました。苗が雨を受けたのか、いま水やりが必要なのかを知りたいところです。',
+      lead: 'この時期の夜は：',
+      hyps: { rained: '雨が降った', dry: '降らなかった' },
       clues: {
-        'wet-grass': { label: 'Wet grass', seen: 'The grass is wet (dew can wet it too).', notSeen: 'The grass is dry.' },
-        gauge: { label: 'Water in the rain gauge', seen: 'There is water in the rain gauge.', notSeen: 'The rain gauge is empty.' },
-        puddle: { label: 'Puddle by the gate', seen: 'There is a puddle by the gate.', notSeen: 'There is no puddle by the gate.' },
-        'snails-out': { label: 'Snails on the path', seen: 'Snails are out on the path.', notSeen: 'There are no snails on the path.' },
-        wind: { label: 'Leaves on the table', seen: 'Leaves have blown onto the table — it was windy either way.', notSeen: 'Leaves have blown onto the table — it was windy either way.' }
+        'wet-grass': { label: 'ぬれた草', seen: '草がぬれています（露でもぬれます）。', notSeen: '草は乾いています。' },
+        gauge: { label: '雨量計に水', seen: '雨量計に水がたまっています。', notSeen: '雨量計は空です。' },
+        puddle: { label: '門のそばの水たまり', seen: '門のそばに水たまりがあります。', notSeen: '門のそばに水たまりはありません。' },
+        'snails-out': { label: '小道のカタツムリ', seen: '小道にカタツムリが出ています。', notSeen: '小道にカタツムリはいません。' },
+        wind: { label: 'テーブルの葉', seen: 'テーブルに葉が吹き寄せられています ― どちらにしても風はありました。', notSeen: 'テーブルに葉が吹き寄せられています ― どちらにしても風はありました。' }
       }
     },
     'c-bird': {
-      title: 'Which bird was at the feeder?',
-      story: 'You only caught a glimpse of a small brown bird at the feeder before it flew off. The shares here are invented for this feeder; real ones vary by place.',
-      lead: 'Small brown visitors at this feeder are:',
-      hyps: { finch: 'A finch', sparrow: 'A sparrow' },
+      title: 'えさ台に来た鳥は？',
+      story: 'えさ台の小さな茶色い鳥は、飛び去る前に一瞬見えただけでした。ここでの割合はこのえさ台のために作ったもので、実際の割合は場所によって違います。',
+      lead: 'このえさ台に来る小さな茶色い鳥は：',
+      hyps: { finch: 'アトリの仲間', sparrow: 'スズメ' },
       clues: {
-        'red-patch': { label: 'A flash of red', seen: 'You saw a flash of red on its head.', notSeen: 'You saw no red at all.' },
-        ground: { label: 'Fed on the ground', seen: 'It fed on the ground below the feeder.', notSeen: 'It fed on the feeder itself.' },
-        song: { label: 'A twittering song', seen: 'It gave a twittering song.', notSeen: 'It only chirped.' },
-        group: { label: 'Came with a group', seen: 'It came with a small group.', notSeen: 'It came alone.' },
-        morning: { label: 'In the morning', seen: 'It was early morning — both come at that time.', notSeen: 'It was early morning — both come at that time.' }
+        'red-patch': { label: '赤い色がちらり', seen: '頭に赤い色がちらりと見えました。', notSeen: '赤い色はまったく見えませんでした。' },
+        ground: { label: '地面で食べた', seen: 'えさ台の下の地面で食べていました。', notSeen: 'えさ台の上で食べていました。' },
+        song: { label: 'さえずる声', seen: 'さえずるように鳴きました。', notSeen: 'チュンと鳴くだけでした。' },
+        group: { label: '群れで来た', seen: '小さな群れで来ました。', notSeen: '一羽で来ました。' },
+        morning: { label: '朝', seen: '早朝でした ― どちらもその時間に来ます。', notSeen: '早朝でした ― どちらもその時間に来ます。' }
       }
     },
     'c-plant': {
-      title: 'The drooping houseplant',
-      story: 'The office plant is drooping and has yellow leaves. In this office, it is usually one of two things.',
-      lead: 'When plants here droop, the cause is:',
-      hyps: { water: 'Too much water', light: 'Too little light' },
+      title: 'しおれた観葉植物',
+      story: 'オフィスの植物がしおれて、葉が黄色くなっています。このオフィスでは、たいてい原因は2つのどちらかです。',
+      lead: 'ここで植物がしおれるときの原因：',
+      hyps: { water: '水のやりすぎ', light: '光が足りない' },
       clues: {
-        'wet-soil': { label: 'Wet soil', seen: 'The soil is still wet two days after watering.', notSeen: 'The soil is dry.' },
-        leaning: { label: 'Leaning to the window', seen: 'It leans towards the window.', notSeen: 'It stands straight.' },
-        'soft-stem': { label: 'Soft stem base', seen: 'The base of the stem is soft.', notSeen: 'The stem is firm.' },
-        'pale-new': { label: 'Pale new leaves', seen: 'The new leaves are pale and small.', notSeen: 'The new leaves look healthy.' },
-        'pot-colour': { label: 'A blue pot', seen: 'It is in a blue pot — that changes nothing.', notSeen: 'It is in a blue pot — that changes nothing.' }
+        'wet-soil': { label: '湿った土', seen: '水やりから二日たっても土が湿っています。', notSeen: '土は乾いています。' },
+        leaning: { label: '窓のほうに傾く', seen: '窓のほうに傾いています。', notSeen: 'まっすぐ立っています。' },
+        'soft-stem': { label: '茎の根元がやわらかい', seen: '茎の根元がやわらかくなっています。', notSeen: '茎はしっかりしています。' },
+        'pale-new': { label: '色の薄い新しい葉', seen: '新しい葉は色が薄く小さめです。', notSeen: '新しい葉は元気そうです。' },
+        'pot-colour': { label: '青い鉢', seen: '青い鉢に入っています ― それは何も変えません。', notSeen: '青い鉢に入っています ― それは何も変えません。' }
       }
     },
     'c-bus': {
-      title: 'Why was the bus late?',
-      story: 'Your bus came forty minutes late this morning.',
-      lead: 'When this bus is very late, the reason is:',
-      hyps: { jam: 'A traffic jam', breakdown: 'A breakdown' },
+      title: 'バスはなぜ遅れた？',
+      story: '今朝、あなたの乗るバスが四十分遅れて来ました。',
+      lead: 'このバスが大きく遅れるときの理由：',
+      hyps: { jam: '渋滞', breakdown: '故障' },
       clues: {
-        'others-late': { label: 'Other buses late too', seen: 'Other buses on the same road were late too.', notSeen: 'Other buses on the road were on time.' },
-        replacement: { label: 'A different bus came', seen: 'A different bus than usual came.', notSeen: 'The usual bus came.' },
-        announcement: { label: 'An announcement', seen: 'The display said: delay due to a technical fault.', notSeen: 'The display gave no reason.' },
-        'rush-hour': { label: 'During rush hour', seen: 'It was rush hour.', notSeen: 'It was a quiet time of day.' },
-        rain: { label: 'It was raining', seen: 'It was raining — at this stop that makes no difference.', notSeen: 'It was raining — at this stop that makes no difference.' }
+        'others-late': { label: 'ほかのバスも遅れた', seen: '同じ道のほかのバスも遅れていました。', notSeen: '同じ道のほかのバスは時間どおりでした。' },
+        replacement: { label: '別のバスが来た', seen: 'いつもとは別のバスが来ました。', notSeen: 'いつものバスが来ました。' },
+        announcement: { label: '案内表示', seen: '表示には「技術的な不具合による遅れ」とありました。', notSeen: '表示に理由は出ていませんでした。' },
+        'rush-hour': { label: 'ラッシュの時間', seen: 'ラッシュの時間でした。', notSeen: '一日のうちの静かな時間帯でした。' },
+        rain: { label: '雨だった', seen: '雨でした ― この停留所ではそれは関係ありません。', notSeen: '雨でした ― この停留所ではそれは関係ありません。' }
       }
     }
   }

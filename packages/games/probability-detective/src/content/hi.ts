@@ -1,90 +1,85 @@
 import type { ContentText } from './types';
 
-/**
- * English (source) wording; the reference for every translation.
- * Writing rules: no digits in sentences (numbers are shown in structured rows); no person names; hypotheses are
- * things, places, animals or causes. Neutral and echo clues always show, so `notSeen` repeats `seen`.
- */
 export const content: ContentText = {
   templates: {
     'c-parcel': {
-      title: 'The blue parcel',
-      story: 'A parcel without a sender has arrived at the corner shop. It must come from one of the warehouses that deliver to this street.',
-      lead: 'Parcels on this street come from:',
-      hyps: { north: 'Warehouse North', south: 'Warehouse South', east: 'Warehouse East' },
+      title: 'नीला पार्सल',
+      story: 'नुक्कड़ की दुकान पर बिना भेजने वाले का एक पार्सल आया है। यह ज़रूर उन गोदामों में से किसी एक से आया है जो इस गली में डिलीवरी करते हैं।',
+      lead: 'इस गली के पार्सल यहाँ से आते हैं:',
+      hyps: { north: 'उत्तरी गोदाम', south: 'दक्षिणी गोदाम', east: 'पूर्वी गोदाम' },
       clues: {
-        blue: { label: 'Wrapped in blue paper', seen: 'The parcel is wrapped in blue paper.', notSeen: 'The parcel is not wrapped in blue paper.' },
-        'brown-tape': { label: 'Sealed with brown tape', seen: 'It is sealed with brown tape.', notSeen: 'It is not sealed with brown tape.' },
-        smudge: { label: 'Smudged label', seen: 'The address label is smudged.', notSeen: 'The address label is clean.' },
-        string: { label: 'Tied with string', seen: 'It is tied with string.', notSeen: 'It is not tied with string.' },
-        tuesday: { label: 'Arrived on a Tuesday', seen: 'It arrived on a Tuesday. All the warehouses deliver on every weekday.', notSeen: 'It arrived on a Tuesday. All the warehouses deliver on every weekday.' },
-        'echo-blue': { label: 'The neighbour saw it too', seen: 'The neighbour also says the parcel was blue — she saw the same parcel.', notSeen: 'The neighbour also says the parcel was blue — she saw the same parcel.' }
+        blue: { label: 'नीले काग़ज़ में लिपटा', seen: 'पार्सल नीले काग़ज़ में लिपटा है।', notSeen: 'पार्सल नीले काग़ज़ में लिपटा नहीं है।' },
+        'brown-tape': { label: 'भूरे टेप से बंद', seen: 'यह भूरे टेप से बंद है।', notSeen: 'यह भूरे टेप से बंद नहीं है।' },
+        smudge: { label: 'धुँधला लेबल', seen: 'पते का लेबल धुँधला है।', notSeen: 'पते का लेबल साफ़ है।' },
+        string: { label: 'डोरी से बँधा', seen: 'यह डोरी से बँधा है।', notSeen: 'यह डोरी से बँधा नहीं है।' },
+        tuesday: { label: 'मंगलवार को आया', seen: 'यह मंगलवार को आया। सभी गोदाम हर कामकाजी दिन डिलीवरी करते हैं।', notSeen: 'यह मंगलवार को आया। सभी गोदाम हर कामकाजी दिन डिलीवरी करते हैं।' },
+        'echo-blue': { label: 'पड़ोसन ने भी देखा', seen: 'पड़ोसन भी कहती है कि पार्सल नीला था – उसने वही पार्सल देखा था।', notSeen: 'पड़ोसन भी कहती है कि पार्सल नीला था – उसने वही पार्सल देखा था।' }
       }
     },
     'c-garden': {
-      title: 'The nibbled strawberries',
-      story: 'Someone has been at the strawberries overnight. In this garden, a few kinds of visitors are known to snack on them.',
-      lead: 'On nights when strawberries get nibbled, the visitor is:',
-      hyps: { birds: 'Birds', snails: 'Snails', hedgehog: 'A hedgehog' },
+      title: 'कुतरी हुई स्ट्रॉबेरी',
+      story: 'रात में किसी ने स्ट्रॉबेरी खाई है। इस बग़ीचे में कुछ तरह के मेहमान इन्हें खाने के लिए जाने जाते हैं।',
+      lead: 'जिन रातों में स्ट्रॉबेरी कुतरी जाती है, मेहमान होता है:',
+      hyps: { birds: 'पक्षी', snails: 'घोंघे', hedgehog: 'एक साही' },
       clues: {
-        slime: { label: 'Shiny trail', seen: 'There is a shiny trail on the path.', notSeen: 'There is no shiny trail.' },
-        pecks: { label: 'Small peck marks', seen: 'The fruit has small peck marks.', notSeen: 'There are no peck marks.' },
-        droppings: { label: 'Droppings under the hedge', seen: 'There are droppings under the hedge.', notSeen: 'There is nothing under the hedge.' },
-        'net-moved': { label: 'Net pushed aside', seen: 'The net over the bed is pushed aside.', notSeen: 'The net is still in place.' },
-        rain: { label: 'It rained last night', seen: 'It rained last night — all of them come out in the rain.', notSeen: 'It rained last night — all of them come out in the rain.' },
-        'echo-slime': { label: 'Seen again in the morning', seen: 'Your neighbour points out the same shiny trail.', notSeen: 'Your neighbour points out the same shiny trail.' }
+        slime: { label: 'चमकीली लकीर', seen: 'रास्ते पर एक चमकीली लकीर है।', notSeen: 'कोई चमकीली लकीर नहीं है।' },
+        pecks: { label: 'छोटे चोंच के निशान', seen: 'फलों पर छोटे चोंच के निशान हैं।', notSeen: 'चोंच के कोई निशान नहीं हैं।' },
+        droppings: { label: 'झाड़ी के नीचे बीट', seen: 'झाड़ी के नीचे बीट है।', notSeen: 'झाड़ी के नीचे कुछ नहीं है।' },
+        'net-moved': { label: 'जाली हटी हुई', seen: 'क्यारी के ऊपर की जाली एक तरफ़ हटी है।', notSeen: 'जाली अपनी जगह पर है।' },
+        rain: { label: 'कल रात बारिश हुई', seen: 'कल रात बारिश हुई – बारिश में सभी बाहर निकलते हैं।', notSeen: 'कल रात बारिश हुई – बारिश में सभी बाहर निकलते हैं।' },
+        'echo-slime': { label: 'सुबह फिर देखा गया', seen: 'आपका पड़ोसी वही चमकीली लकीर दिखाता है।', notSeen: 'आपका पड़ोसी वही चमकीली लकीर दिखाता है।' }
       }
     },
     'c-rain': {
-      title: 'Did it rain overnight?',
-      story: 'You were away overnight and want to know whether the seedlings got rain or need watering now.',
-      lead: 'Nights at this time of year:',
-      hyps: { rained: 'It rained', dry: 'It stayed dry' },
+      title: 'क्या रात में बारिश हुई?',
+      story: 'आप रात भर बाहर थे और जानना चाहते हैं कि पौधों को बारिश मिली या अब पानी देना होगा।',
+      lead: 'साल के इस समय की रातें:',
+      hyps: { rained: 'बारिश हुई', dry: 'सूखा रहा' },
       clues: {
-        'wet-grass': { label: 'Wet grass', seen: 'The grass is wet (dew can wet it too).', notSeen: 'The grass is dry.' },
-        gauge: { label: 'Water in the rain gauge', seen: 'There is water in the rain gauge.', notSeen: 'The rain gauge is empty.' },
-        puddle: { label: 'Puddle by the gate', seen: 'There is a puddle by the gate.', notSeen: 'There is no puddle by the gate.' },
-        'snails-out': { label: 'Snails on the path', seen: 'Snails are out on the path.', notSeen: 'There are no snails on the path.' },
-        wind: { label: 'Leaves on the table', seen: 'Leaves have blown onto the table — it was windy either way.', notSeen: 'Leaves have blown onto the table — it was windy either way.' }
+        'wet-grass': { label: 'गीली घास', seen: 'घास गीली है (ओस से भी गीली होती है)।', notSeen: 'घास सूखी है।' },
+        gauge: { label: 'वर्षामापी में पानी', seen: 'वर्षामापी में पानी है।', notSeen: 'वर्षामापी ख़ाली है।' },
+        puddle: { label: 'फाटक के पास गड्ढे में पानी', seen: 'फाटक के पास पानी भरा है।', notSeen: 'फाटक के पास पानी नहीं भरा है।' },
+        'snails-out': { label: 'रास्ते पर घोंघे', seen: 'रास्ते पर घोंघे निकले हैं।', notSeen: 'रास्ते पर कोई घोंघा नहीं है।' },
+        wind: { label: 'मेज़ पर पत्ते', seen: 'हवा से मेज़ पर पत्ते आ गए हैं – हवा तो हर हाल में चली थी।', notSeen: 'हवा से मेज़ पर पत्ते आ गए हैं – हवा तो हर हाल में चली थी।' }
       }
     },
     'c-bird': {
-      title: 'Which bird was at the feeder?',
-      story: 'You only caught a glimpse of a small brown bird at the feeder before it flew off. The shares here are invented for this feeder; real ones vary by place.',
-      lead: 'Small brown visitors at this feeder are:',
-      hyps: { finch: 'A finch', sparrow: 'A sparrow' },
+      title: 'दाने के डिब्बे पर कौन-सा पक्षी था?',
+      story: 'आपने दाने के डिब्बे पर एक छोटे भूरे पक्षी की बस एक झलक देखी, फिर वह उड़ गया। यहाँ के हिस्से इसी डिब्बे के लिए गढ़े गए हैं; असली हिस्से जगह के हिसाब से बदलते हैं।',
+      lead: 'इस डिब्बे पर आने वाले छोटे भूरे मेहमान हैं:',
+      hyps: { finch: 'एक फ़िंच', sparrow: 'एक गौरैया' },
       clues: {
-        'red-patch': { label: 'A flash of red', seen: 'You saw a flash of red on its head.', notSeen: 'You saw no red at all.' },
-        ground: { label: 'Fed on the ground', seen: 'It fed on the ground below the feeder.', notSeen: 'It fed on the feeder itself.' },
-        song: { label: 'A twittering song', seen: 'It gave a twittering song.', notSeen: 'It only chirped.' },
-        group: { label: 'Came with a group', seen: 'It came with a small group.', notSeen: 'It came alone.' },
-        morning: { label: 'In the morning', seen: 'It was early morning — both come at that time.', notSeen: 'It was early morning — both come at that time.' }
+        'red-patch': { label: 'लाल रंग की झलक', seen: 'आपने उसके सिर पर लाल रंग की झलक देखी।', notSeen: 'आपने कोई लाल रंग नहीं देखा।' },
+        ground: { label: 'ज़मीन पर दाना चुगा', seen: 'उसने डिब्बे के नीचे ज़मीन पर दाना चुगा।', notSeen: 'उसने डिब्बे से ही दाना चुगा।' },
+        song: { label: 'चहचहाता गीत', seen: 'उसने चहचहाता गीत गाया।', notSeen: 'वह बस चीं-चीं करता रहा।' },
+        group: { label: 'झुंड के साथ आया', seen: 'वह एक छोटे झुंड के साथ आया।', notSeen: 'वह अकेला आया।' },
+        morning: { label: 'सुबह', seen: 'सुबह-सुबह का समय था – उस समय दोनों आते हैं।', notSeen: 'सुबह-सुबह का समय था – उस समय दोनों आते हैं।' }
       }
     },
     'c-plant': {
-      title: 'The drooping houseplant',
-      story: 'The office plant is drooping and has yellow leaves. In this office, it is usually one of two things.',
-      lead: 'When plants here droop, the cause is:',
-      hyps: { water: 'Too much water', light: 'Too little light' },
+      title: 'मुरझाया गमले का पौधा',
+      story: 'दफ़्तर का पौधा मुरझा गया है और उसकी पत्तियाँ पीली हैं। इस दफ़्तर में आम तौर पर दो में से एक बात होती है।',
+      lead: 'जब यहाँ पौधे मुरझाते हैं, तो कारण होता है:',
+      hyps: { water: 'बहुत ज़्यादा पानी', light: 'बहुत कम रोशनी' },
       clues: {
-        'wet-soil': { label: 'Wet soil', seen: 'The soil is still wet two days after watering.', notSeen: 'The soil is dry.' },
-        leaning: { label: 'Leaning to the window', seen: 'It leans towards the window.', notSeen: 'It stands straight.' },
-        'soft-stem': { label: 'Soft stem base', seen: 'The base of the stem is soft.', notSeen: 'The stem is firm.' },
-        'pale-new': { label: 'Pale new leaves', seen: 'The new leaves are pale and small.', notSeen: 'The new leaves look healthy.' },
-        'pot-colour': { label: 'A blue pot', seen: 'It is in a blue pot — that changes nothing.', notSeen: 'It is in a blue pot — that changes nothing.' }
+        'wet-soil': { label: 'गीली मिट्टी', seen: 'पानी देने के दो दिन बाद भी मिट्टी गीली है।', notSeen: 'मिट्टी सूखी है।' },
+        leaning: { label: 'खिड़की की ओर झुका', seen: 'यह खिड़की की ओर झुका है।', notSeen: 'यह सीधा खड़ा है।' },
+        'soft-stem': { label: 'तने का निचला हिस्सा नरम', seen: 'तने का निचला हिस्सा नरम है।', notSeen: 'तना मज़बूत है।' },
+        'pale-new': { label: 'फीकी नई पत्तियाँ', seen: 'नई पत्तियाँ फीकी और छोटी हैं।', notSeen: 'नई पत्तियाँ स्वस्थ दिखती हैं।' },
+        'pot-colour': { label: 'नीला गमला', seen: 'यह नीले गमले में है – इससे कुछ नहीं बदलता।', notSeen: 'यह नीले गमले में है – इससे कुछ नहीं बदलता।' }
       }
     },
     'c-bus': {
-      title: 'Why was the bus late?',
-      story: 'Your bus came forty minutes late this morning.',
-      lead: 'When this bus is very late, the reason is:',
-      hyps: { jam: 'A traffic jam', breakdown: 'A breakdown' },
+      title: 'बस देर से क्यों आई?',
+      story: 'आज सुबह आपकी बस चालीस मिनट देर से आई।',
+      lead: 'जब यह बस बहुत देर से आती है, तो कारण होता है:',
+      hyps: { jam: 'ट्रैफ़िक जाम', breakdown: 'ख़राबी' },
       clues: {
-        'others-late': { label: 'Other buses late too', seen: 'Other buses on the same road were late too.', notSeen: 'Other buses on the road were on time.' },
-        replacement: { label: 'A different bus came', seen: 'A different bus than usual came.', notSeen: 'The usual bus came.' },
-        announcement: { label: 'An announcement', seen: 'The display said: delay due to a technical fault.', notSeen: 'The display gave no reason.' },
-        'rush-hour': { label: 'During rush hour', seen: 'It was rush hour.', notSeen: 'It was a quiet time of day.' },
-        rain: { label: 'It was raining', seen: 'It was raining — at this stop that makes no difference.', notSeen: 'It was raining — at this stop that makes no difference.' }
+        'others-late': { label: 'दूसरी बसें भी देर से', seen: 'उसी सड़क की दूसरी बसें भी देर से थीं।', notSeen: 'सड़क की दूसरी बसें समय पर थीं।' },
+        replacement: { label: 'दूसरी बस आई', seen: 'हमेशा वाली के बजाय दूसरी बस आई।', notSeen: 'हमेशा वाली बस आई।' },
+        announcement: { label: 'एक सूचना', seen: 'स्क्रीन पर लिखा था: तकनीकी ख़राबी के कारण देरी।', notSeen: 'स्क्रीन पर कोई कारण नहीं था।' },
+        'rush-hour': { label: 'भीड़ के समय', seen: 'भीड़ का समय था।', notSeen: 'दिन का शांत समय था।' },
+        rain: { label: 'बारिश हो रही थी', seen: 'बारिश हो रही थी – इस स्टॉप पर इससे कोई फ़र्क नहीं पड़ता।', notSeen: 'बारिश हो रही थी – इस स्टॉप पर इससे कोई फ़र्क नहीं पड़ता।' }
       }
     }
   }

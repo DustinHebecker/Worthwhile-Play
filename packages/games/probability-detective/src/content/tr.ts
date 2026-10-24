@@ -1,90 +1,85 @@
 import type { ContentText } from './types';
 
-/**
- * English (source) wording; the reference for every translation.
- * Writing rules: no digits in sentences (numbers are shown in structured rows); no person names; hypotheses are
- * things, places, animals or causes. Neutral and echo clues always show, so `notSeen` repeats `seen`.
- */
 export const content: ContentText = {
   templates: {
     'c-parcel': {
-      title: 'The blue parcel',
-      story: 'A parcel without a sender has arrived at the corner shop. It must come from one of the warehouses that deliver to this street.',
-      lead: 'Parcels on this street come from:',
-      hyps: { north: 'Warehouse North', south: 'Warehouse South', east: 'Warehouse East' },
+      title: 'Mavi paket',
+      story: 'Köşedeki dükkâna gönderici bilgisi olmayan bir paket geldi. Bu sokağa teslimat yapan depolardan birinden gelmiş olmalı.',
+      lead: 'Bu sokaktaki paketlerin geldiği yer:',
+      hyps: { north: 'Kuzey Deposu', south: 'Güney Deposu', east: 'Doğu Deposu' },
       clues: {
-        blue: { label: 'Wrapped in blue paper', seen: 'The parcel is wrapped in blue paper.', notSeen: 'The parcel is not wrapped in blue paper.' },
-        'brown-tape': { label: 'Sealed with brown tape', seen: 'It is sealed with brown tape.', notSeen: 'It is not sealed with brown tape.' },
-        smudge: { label: 'Smudged label', seen: 'The address label is smudged.', notSeen: 'The address label is clean.' },
-        string: { label: 'Tied with string', seen: 'It is tied with string.', notSeen: 'It is not tied with string.' },
-        tuesday: { label: 'Arrived on a Tuesday', seen: 'It arrived on a Tuesday. All the warehouses deliver on every weekday.', notSeen: 'It arrived on a Tuesday. All the warehouses deliver on every weekday.' },
-        'echo-blue': { label: 'The neighbour saw it too', seen: 'The neighbour also says the parcel was blue — she saw the same parcel.', notSeen: 'The neighbour also says the parcel was blue — she saw the same parcel.' }
+        blue: { label: 'Mavi kâğıda sarılı', seen: 'Paket mavi kâğıda sarılı.', notSeen: 'Paket mavi kâğıda sarılı değil.' },
+        'brown-tape': { label: 'Kahverengi bantla kapalı', seen: 'Kahverengi bantla kapatılmış.', notSeen: 'Kahverengi bantla kapatılmamış.' },
+        smudge: { label: 'Bulaşmış etiket', seen: 'Adres etiketi bulaşmış.', notSeen: 'Adres etiketi temiz.' },
+        string: { label: 'İple bağlı', seen: 'İple bağlanmış.', notSeen: 'İple bağlanmamış.' },
+        tuesday: { label: 'Salı günü geldi', seen: 'Salı günü geldi. Tüm depolar her iş günü teslimat yapıyor.', notSeen: 'Salı günü geldi. Tüm depolar her iş günü teslimat yapıyor.' },
+        'echo-blue': { label: 'Komşu da gördü', seen: 'Komşu da paketin mavi olduğunu söylüyor – aynı paketi görmüş.', notSeen: 'Komşu da paketin mavi olduğunu söylüyor – aynı paketi görmüş.' }
       }
     },
     'c-garden': {
-      title: 'The nibbled strawberries',
-      story: 'Someone has been at the strawberries overnight. In this garden, a few kinds of visitors are known to snack on them.',
-      lead: 'On nights when strawberries get nibbled, the visitor is:',
-      hyps: { birds: 'Birds', snails: 'Snails', hedgehog: 'A hedgehog' },
+      title: 'Kemirilmiş çilekler',
+      story: 'Gece biri çileklere dadanmış. Bu bahçede çilekleri atıştıran birkaç tür ziyaretçi olduğu biliniyor.',
+      lead: 'Çileklerin kemirildiği gecelerde ziyaretçi:',
+      hyps: { birds: 'Kuşlar', snails: 'Salyangozlar', hedgehog: 'Bir kirpi' },
       clues: {
-        slime: { label: 'Shiny trail', seen: 'There is a shiny trail on the path.', notSeen: 'There is no shiny trail.' },
-        pecks: { label: 'Small peck marks', seen: 'The fruit has small peck marks.', notSeen: 'There are no peck marks.' },
-        droppings: { label: 'Droppings under the hedge', seen: 'There are droppings under the hedge.', notSeen: 'There is nothing under the hedge.' },
-        'net-moved': { label: 'Net pushed aside', seen: 'The net over the bed is pushed aside.', notSeen: 'The net is still in place.' },
-        rain: { label: 'It rained last night', seen: 'It rained last night — all of them come out in the rain.', notSeen: 'It rained last night — all of them come out in the rain.' },
-        'echo-slime': { label: 'Seen again in the morning', seen: 'Your neighbour points out the same shiny trail.', notSeen: 'Your neighbour points out the same shiny trail.' }
+        slime: { label: 'Parlak iz', seen: 'Yolda parlak bir iz var.', notSeen: 'Parlak bir iz yok.' },
+        pecks: { label: 'Küçük gaga izleri', seen: 'Meyvelerde küçük gaga izleri var.', notSeen: 'Gaga izi yok.' },
+        droppings: { label: 'Çitin altında dışkı', seen: 'Çitin altında dışkı var.', notSeen: 'Çitin altında hiçbir şey yok.' },
+        'net-moved': { label: 'Kenara itilmiş file', seen: 'Tarhın üstündeki file kenara itilmiş.', notSeen: 'File hâlâ yerinde.' },
+        rain: { label: 'Dün gece yağmur yağdı', seen: 'Dün gece yağmur yağdı – yağmurda hepsi dışarı çıkar.', notSeen: 'Dün gece yağmur yağdı – yağmurda hepsi dışarı çıkar.' },
+        'echo-slime': { label: 'Sabah yine görüldü', seen: 'Komşun sana aynı parlak izi gösteriyor.', notSeen: 'Komşun sana aynı parlak izi gösteriyor.' }
       }
     },
     'c-rain': {
-      title: 'Did it rain overnight?',
-      story: 'You were away overnight and want to know whether the seedlings got rain or need watering now.',
-      lead: 'Nights at this time of year:',
-      hyps: { rained: 'It rained', dry: 'It stayed dry' },
+      title: 'Gece yağmur yağdı mı?',
+      story: 'Gece evde değildin ve fidelerin yağmur alıp almadığını ya da şimdi sulanmaları gerekip gerekmediğini bilmek istiyorsun.',
+      lead: 'Yılın bu zamanında geceler:',
+      hyps: { rained: 'Yağmur yağdı', dry: 'Kuru kaldı' },
       clues: {
-        'wet-grass': { label: 'Wet grass', seen: 'The grass is wet (dew can wet it too).', notSeen: 'The grass is dry.' },
-        gauge: { label: 'Water in the rain gauge', seen: 'There is water in the rain gauge.', notSeen: 'The rain gauge is empty.' },
-        puddle: { label: 'Puddle by the gate', seen: 'There is a puddle by the gate.', notSeen: 'There is no puddle by the gate.' },
-        'snails-out': { label: 'Snails on the path', seen: 'Snails are out on the path.', notSeen: 'There are no snails on the path.' },
-        wind: { label: 'Leaves on the table', seen: 'Leaves have blown onto the table — it was windy either way.', notSeen: 'Leaves have blown onto the table — it was windy either way.' }
+        'wet-grass': { label: 'Islak çimen', seen: 'Çimen ıslak (çiy de ıslatır).', notSeen: 'Çimen kuru.' },
+        gauge: { label: 'Yağmur ölçerde su', seen: 'Yağmur ölçerde su var.', notSeen: 'Yağmur ölçer boş.' },
+        puddle: { label: 'Kapının yanında su birikintisi', seen: 'Kapının yanında bir su birikintisi var.', notSeen: 'Kapının yanında su birikintisi yok.' },
+        'snails-out': { label: 'Yolda salyangozlar', seen: 'Yola salyangozlar çıkmış.', notSeen: 'Yolda salyangoz yok.' },
+        wind: { label: 'Masada yapraklar', seen: 'Rüzgâr masaya yaprak getirmiş – her durumda rüzgâr vardı.', notSeen: 'Rüzgâr masaya yaprak getirmiş – her durumda rüzgâr vardı.' }
       }
     },
     'c-bird': {
-      title: 'Which bird was at the feeder?',
-      story: 'You only caught a glimpse of a small brown bird at the feeder before it flew off. The shares here are invented for this feeder; real ones vary by place.',
-      lead: 'Small brown visitors at this feeder are:',
-      hyps: { finch: 'A finch', sparrow: 'A sparrow' },
+      title: 'Yemlikte hangi kuş vardı?',
+      story: 'Yemlikteki küçük kahverengi kuşu uçup gitmeden önce yalnızca bir an gördün. Buradaki paylar bu yemlik için uydurulmuştur; gerçekleri yere göre değişir.',
+      lead: 'Bu yemliğin küçük kahverengi ziyaretçileri:',
+      hyps: { finch: 'Bir ispinoz', sparrow: 'Bir serçe' },
       clues: {
-        'red-patch': { label: 'A flash of red', seen: 'You saw a flash of red on its head.', notSeen: 'You saw no red at all.' },
-        ground: { label: 'Fed on the ground', seen: 'It fed on the ground below the feeder.', notSeen: 'It fed on the feeder itself.' },
-        song: { label: 'A twittering song', seen: 'It gave a twittering song.', notSeen: 'It only chirped.' },
-        group: { label: 'Came with a group', seen: 'It came with a small group.', notSeen: 'It came alone.' },
-        morning: { label: 'In the morning', seen: 'It was early morning — both come at that time.', notSeen: 'It was early morning — both come at that time.' }
+        'red-patch': { label: 'Bir kırmızı parıltı', seen: 'Başında bir kırmızı parıltı gördün.', notSeen: 'Hiç kırmızı görmedin.' },
+        ground: { label: 'Yerde yem yedi', seen: 'Yemliğin altında yerde yem yedi.', notSeen: 'Yemliğin kendisinde yem yedi.' },
+        song: { label: 'Cıvıl cıvıl bir ötüş', seen: 'Cıvıl cıvıl öttü.', notSeen: 'Yalnızca cikledi.' },
+        group: { label: 'Bir grupla geldi', seen: 'Küçük bir grupla geldi.', notSeen: 'Yalnız geldi.' },
+        morning: { label: 'Sabah', seen: 'Sabahın erken saatiydi – ikisi de o saatte gelir.', notSeen: 'Sabahın erken saatiydi – ikisi de o saatte gelir.' }
       }
     },
     'c-plant': {
-      title: 'The drooping houseplant',
-      story: 'The office plant is drooping and has yellow leaves. In this office, it is usually one of two things.',
-      lead: 'When plants here droop, the cause is:',
-      hyps: { water: 'Too much water', light: 'Too little light' },
+      title: 'Boynu bükük saksı bitkisi',
+      story: 'Ofisteki bitki boynunu bükmüş ve yaprakları sararmış. Bu ofiste genellikle iki şeyden biridir.',
+      lead: 'Buradaki bitkiler boyun büktüğünde neden:',
+      hyps: { water: 'Fazla su', light: 'Az ışık' },
       clues: {
-        'wet-soil': { label: 'Wet soil', seen: 'The soil is still wet two days after watering.', notSeen: 'The soil is dry.' },
-        leaning: { label: 'Leaning to the window', seen: 'It leans towards the window.', notSeen: 'It stands straight.' },
-        'soft-stem': { label: 'Soft stem base', seen: 'The base of the stem is soft.', notSeen: 'The stem is firm.' },
-        'pale-new': { label: 'Pale new leaves', seen: 'The new leaves are pale and small.', notSeen: 'The new leaves look healthy.' },
-        'pot-colour': { label: 'A blue pot', seen: 'It is in a blue pot — that changes nothing.', notSeen: 'It is in a blue pot — that changes nothing.' }
+        'wet-soil': { label: 'Islak toprak', seen: 'Toprak, sulamadan iki gün sonra hâlâ ıslak.', notSeen: 'Toprak kuru.' },
+        leaning: { label: 'Pencereye eğilmiş', seen: 'Pencereye doğru eğiliyor.', notSeen: 'Dimdik duruyor.' },
+        'soft-stem': { label: 'Yumuşak gövde dibi', seen: 'Gövdenin dibi yumuşak.', notSeen: 'Gövde sağlam.' },
+        'pale-new': { label: 'Soluk yeni yapraklar', seen: 'Yeni yapraklar soluk ve küçük.', notSeen: 'Yeni yapraklar sağlıklı görünüyor.' },
+        'pot-colour': { label: 'Mavi bir saksı', seen: 'Mavi bir saksıda – bu hiçbir şeyi değiştirmez.', notSeen: 'Mavi bir saksıda – bu hiçbir şeyi değiştirmez.' }
       }
     },
     'c-bus': {
-      title: 'Why was the bus late?',
-      story: 'Your bus came forty minutes late this morning.',
-      lead: 'When this bus is very late, the reason is:',
-      hyps: { jam: 'A traffic jam', breakdown: 'A breakdown' },
+      title: 'Otobüs neden geç kaldı?',
+      story: 'Otobüsün bu sabah kırk dakika geç geldi.',
+      lead: 'Bu otobüs çok geç kaldığında neden:',
+      hyps: { jam: 'Bir trafik sıkışıklığı', breakdown: 'Bir arıza' },
       clues: {
-        'others-late': { label: 'Other buses late too', seen: 'Other buses on the same road were late too.', notSeen: 'Other buses on the road were on time.' },
-        replacement: { label: 'A different bus came', seen: 'A different bus than usual came.', notSeen: 'The usual bus came.' },
-        announcement: { label: 'An announcement', seen: 'The display said: delay due to a technical fault.', notSeen: 'The display gave no reason.' },
-        'rush-hour': { label: 'During rush hour', seen: 'It was rush hour.', notSeen: 'It was a quiet time of day.' },
-        rain: { label: 'It was raining', seen: 'It was raining — at this stop that makes no difference.', notSeen: 'It was raining — at this stop that makes no difference.' }
+        'others-late': { label: 'Başka otobüsler de geç', seen: 'Aynı yoldaki başka otobüsler de geç kalmıştı.', notSeen: 'Yoldaki diğer otobüsler zamanındaydı.' },
+        replacement: { label: 'Başka bir otobüs geldi', seen: 'Her zamankinden farklı bir otobüs geldi.', notSeen: 'Her zamanki otobüs geldi.' },
+        announcement: { label: 'Bir duyuru', seen: 'Ekranda şu yazıyordu: teknik arıza nedeniyle gecikme.', notSeen: 'Ekran bir neden göstermedi.' },
+        'rush-hour': { label: 'Yoğun saatte', seen: 'Trafiğin yoğun olduğu saatti.', notSeen: 'Günün sakin bir saatiydi.' },
+        rain: { label: 'Yağmur yağıyordu', seen: 'Yağmur yağıyordu – bu durakta bu fark yaratmaz.', notSeen: 'Yağmur yağıyordu – bu durakta bu fark yaratmaz.' }
       }
     }
   }
