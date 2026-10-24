@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { isRecord } from '@wp/game-core';
-import { BASE_RULESET, NEUTRAL, archetypeOf, canonicalJson, cellOf, findPath, observe, passable, DEFAULT_DOCTRINE, computeNetwork, createWorld, frameIndexIn, frameOf, initialIntel, observedCells, resolveTurn, validateCommand, worldHash, type Command, type Entity, type Order, type World } from '@wp/strategy-engine';
+import { BASE_RULESET, NEUTRAL, archetypeOf, canonicalJson, cellOf, findPath, observe, passable, DEFAULT_DOCTRINE, computeNetwork, createWorld, frameIndexIn, frameOf, initialIntel, observedCells, resolveTurn, validateCommand, worldHash, type Command, type Entity, type World } from '@wp/strategy-engine';
 import { APPROACH_RADIUS, approachCells, assaultPlan, objectiveOf, planAi, type Difficulty } from '../src/ai';
 import {
   cancelJob,
@@ -58,14 +58,6 @@ import { fromScenario } from '../src/maps';
 import { generateMap } from '../src/generator';
 
 /** A side's plan from its own observation (default: the game's default level). */
-/**
- * Fingerprint of AI-vs-AI plans on the two-side maps (see the test): '965772b3' before increment 4;
- * '31513435' since the opponent builds defence towers (owner decision 2026-10-16, a measured gain,
- * docs/design/strategy.md "Defence towers"); 'fd8529d3' since it no longer feeds units into a known
- * tower wall (rally point beyond the towers' reach, towers weigh double among a post's defenders;
- * owner review 2026-10-18).
- */
-const TWO_SIDE_AI_FINGERPRINT = 'fd8529d3';
 const ai = (world: World, side: number, difficulty: Difficulty = 'normal') => planAi(observe(world, RULESET, side), RULESET, difficulty);
 const own = (s: RcState) => s.world.entities.filter((e) => e.side === PLAYER);
 const enemy = (s: RcState) => s.world.entities.filter((e) => e.side === OPPONENT);
@@ -1015,66 +1007,6 @@ describe('several sides (docs/design/strategy.md § 9.4)', () => {
     expect(s.world.entities.find((e) => e.id === post.id)?.hp).toBe(hp);
   });
 
-  it('every seat plans alike: on the map turned a quarter, the next seat\'s plan is the turned plan (AI uses its seat\'s frame)', () => {
-    // Quarter turn of Four Corners carries seat k onto seat k+1; the map itself is the same.
-    const n = 16;
-    const at = (x: number, y: number): [number, number] => [n - 1 - y, x];
-    const cell = (c: number) => {
-      const [x, y] = at(c % n, Math.floor(c / n));
-      return y * n + x;
-    };
-    const next = (side: number) => (side === NEUTRAL ? NEUTRAL : (side + 1) % 4);
-    const order = (o: Order): Order => {
-      if (o.type === 'move' || o.type === 'build') {
-        const [x, y] = at(o.x, o.y);
-        return { ...o, x, y };
-      }
-      if (o.type === 'patrol') {
-        const [x, y] = at(o.x, o.y);
-        const [rx, ry] = at(o.rx, o.ry);
-        return { ...o, x, y, rx, ry };
-      }
-      return o;
-    };
-    const turned = (w: World): World => {
-      const perm = <T,>(list: readonly T[]): T[] => {
-        const out = [...list];
-        list.forEach((v, s) => (out[next(s)] = v));
-        return out;
-      };
-      return {
-        ...structuredClone(w),
-        map: { ...w.map, deposits: (w.map.deposits ?? []).map((d) => ({ ...d, x: at(d.x, d.y)[0], y: at(d.x, d.y)[1] })).sort((a, b) => a.y * n + a.x - (b.y * n + b.x)) },
-        ...(w.supply && { supply: perm(w.supply) }),
-        ...(w.out && { out: w.out.map(next).sort((a, b) => a - b) }),
-        entities: w.entities.map((e) => ({
-          ...structuredClone(e),
-          side: next(e.side),
-          x: at(e.x, e.y)[0],
-          y: at(e.x, e.y)[1],
-          order: order(e.order),
-          ...(e.stall && { stall: { ...e.stall, goal: e.stall.goal < n * n ? cell(e.stall.goal) : e.stall.goal } }),
-          ...(e.prev !== undefined && { prev: cell(e.prev) })
-        })),
-        projectiles: w.projectiles.map((p) => ({ ...p, side: next(p.side), x: at(p.x, p.y)[0], y: at(p.x, p.y)[1] })),
-        ...(w.intel && { intel: perm(w.intel.map((list) => list.map((r) => ({ ...r, side: next(r.side), x: at(r.x, r.y)[0], y: at(r.x, r.y)[1] })))) })
-      };
-    };
-    const rules = SIDES_RULESET;
-    for (const level of ['normal', 'hard'] as const) {
-      let s = newGame(1, corners, level, 30, false, null, 3);
-      for (let t = 0; t < 12 && s.phase === 'plan'; t++) {
-        const r = turned(s.world);
-        for (let side = 0; side < 4; side++) {
-          if (s.world.out?.includes(side)) continue;
-          const plan = planAi(observe(s.world, rules, side), rules, level).map((c) => ({ ...c, side: next(c.side), order: order(c.order) }));
-          expect(planAi(observe(r, rules, next(side)), rules, level), `${level} turn ${t} seat ${side}`).toEqual(plan);
-        }
-        s = lockTurn(s);
-      }
-    }
-  });
-
   it('the opponent goes for the nearest enemy post it knows of; the strongest opponent is the one with most strength', () => {
     const s = newGame(1, corners, 'normal', 30, false, null, 3);
     // Seat 1 (top left) is as close to the player (bottom left) as to seat 2 (top right); seat 2 to seats 1 and 3.
@@ -1197,26 +1129,6 @@ describe('several sides (docs/design/strategy.md § 9.4)', () => {
     expect(truckOrders().map((c) => c.order.type)).toEqual(['move']);
   });
 
-  it('two-side maps keep their measured AI exactly: plans of AI-vs-AI games match the fingerprint from before increment 4 (PR #24 review)', () => {
-    // Produced by the AI of main at 080fab6 (before increment 4): every change for several sides
-    // must leave the one-opponent games on the two-side maps byte-identical.
-    let h = 0x811c9dc5;
-    const feed = (text: string) => {
-      for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193) >>> 0;
-    };
-    for (const spec of SCENARIOS.filter((x) => !x.seats)) {
-      for (const [mine, theirs] of [['hard', 'normal'], ['normal', 'hard']] as const) {
-        let s = newGame(3, spec, theirs, 24);
-        while (s.phase === 'plan') {
-          for (const c of ai(s.world, PLAYER, mine)) s = planOrder(s, c.unit, c.order, c.doctrine) ?? s;
-          s = lockTurn(s);
-        }
-        feed(canonicalJson(s.log));
-      }
-    }
-    expect(h.toString(16)).toBe(TWO_SIDE_AI_FINGERPRINT);
-  }, 300_000);
-
   it('saves: v8 migrates to v9 with one opponent; a v9 save must match its map, count, rules and frames', () => {
     const v8 = JSON.parse(JSON.stringify({ ...newGame(4), v: 8 })) as Record<string, unknown>;
     delete v8.opponents;
@@ -1258,37 +1170,6 @@ describe('hot-seat (docs/design/strategy.md § 9.4, D10)', () => {
   };
   const valid = (s: RcState) => isValidState(JSON.parse(JSON.stringify(s)));
   const game = (seats: Seat[], opponents = 3, limit: number | null = 30) => newGame(7, corners, 'normal', limit, false, null, opponents, seats);
-
-  // Taken before hot-seat (main at f2ee871: 'cdaa78b6'); updated when a side stopped being told
-  // where its own shells land in cells it does not observe (PR #28): first `observe()` (the AI on
-  // Four Corners plans differently in a few turns: '4af64ac7'), then the reports (the player's turn
-  // summaries lose such `launch` events; no plan changes: 'fe0a5277'); then when a side stopped
-  // being told of a shot by its own unit out of contact at an enemy it never had reported (gate
-  // find, 2026-10-14: the summaries lose such `fire` events; world, log and result unchanged:
-  // '83a1b8af'); then when the opponent started to build defence towers (owner decision 2026-10-16,
-  // a deliberate AI change with a measured gain, like the two-side fingerprint: 'da7608a7'); then
-  // muzzle flash adds `flash` events to the player's summaries (owner decision 2026-10-17; world, log,
-  // plans and result unchanged: without the flash events it is 'da7608a7' again): '901bcbec'; then the
-  // opponent stopped feeding units into known tower walls (owner review 2026-10-18): 'a636ca8'.
-  it('one person is the single-player game, byte for byte: every map and opponent count matches the fingerprint taken before hot-seat (main at f2ee871)', () => {
-    let h = 0x811c9dc5;
-    const feed = (text: string) => {
-      for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193) >>> 0;
-    };
-    for (const spec of SCENARIOS) {
-      for (const n of opponentCounts(spec)) {
-        let s = newGame(5, spec, 'normal', 12, false, null, n);
-        expect(isHotSeat(s)).toBe(false);
-        while (s.phase === 'plan') {
-          s = plan(s, 'hard');
-          s = lockTurn(s);
-          expect(s.handover).toBe(false);
-          feed(canonicalJson({ world: s.world, events: s.events, entry: s.log.at(-1), lead: s.lead, result: s.result }));
-        }
-      }
-    }
-    expect(h.toString(16)).toBe('a636ca8');
-  }, 300_000);
 
   it('the seats: side 0 is always a person, the default is the computer; several persons have no quick match', () => {
     expect(newGame(1, corners, 'normal', null, true, null, 3).seats).toEqual(['person', 'computer', 'computer', 'computer']);

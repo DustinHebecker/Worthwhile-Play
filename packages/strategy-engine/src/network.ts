@@ -1,6 +1,6 @@
 import { cellOf, dist2, terrainAt } from './grid';
 import type { Entity, Ruleset, World } from './types';
-import { archetypeOf, hostile } from './world';
+import { archetypeOf, hostile, teamOf } from './world';
 
 /** A side's command network at one moment (derived data, never serialized). */
 export interface Network {
@@ -57,7 +57,8 @@ export function jammedCells(world: World, ruleset: Ruleset, side: number): Uint8
   if (!any) return jam;
   for (const e of world.entities) {
     const ew = archetypeOf(ruleset, e.kind)?.ew;
-    if (e.side === side && ew?.role === 'tracer' && ew.burnThrough > 0 && isActiveEw(ruleset, e)) disc(e, ew.burnThrough, 0, jam);
+    // A Tracer burns through for its whole team (allies share their radio network).
+    if (teamOf(world, e.side) === teamOf(world, side) && ew?.role === 'tracer' && ew.burnThrough > 0 && isActiveEw(ruleset, e)) disc(e, ew.burnThrough, 0, jam);
   }
   return jam;
 }
@@ -76,13 +77,16 @@ export function nodeRadius(world: World, ruleset: Ruleset, e: Entity): number {
  * Connected set by breadth-first search from all sources over links (distance ≤ the smaller
  * radius of both ends), then the union of the connected nodes' coverage discs. Nodes on jammed
  * cells take no part and jammed cells are never covered (§ 6). Iteration is in id order, so the
- * result does not depend on entity order.
+ * result does not depend on entity order. Allies share one radio network (owner decision
+ * 2026-10-24): the nodes of every side of the team count, so an order reaches a unit through an
+ * ally's relay; the order slots are the side's own sources' only.
  */
 export function computeNetwork(world: World, ruleset: Ruleset, side: number): Network {
   // Electronic warfare: jammed nodes cannot relay, and jammed cells are not covered.
   const jam = jammedCells(world, ruleset, side);
+  const team = teamOf(world, side);
   const nodes = world.entities
-    .filter((e) => e.side === side && isActiveNode(ruleset, e) && jam[cellOf(world.map, e.x, e.y)] !== 1)
+    .filter((e) => teamOf(world, e.side) === team && isActiveNode(ruleset, e) && jam[cellOf(world.map, e.x, e.y)] !== 1)
     .sort((a, b) => a.id - b.id);
   const radius = new Map(nodes.map((e) => [e.id, nodeRadius(world, ruleset, e)]));
   const connected = new Set<number>();
@@ -104,7 +108,7 @@ export function computeNetwork(world: World, ruleset: Ruleset, side: number): Ne
   let slots = 0;
   for (const e of nodes) {
     if (!connected.has(e.id)) continue;
-    slots += archetypeOf(ruleset, e.kind)?.comms?.orderSlots ?? 0;
+    if (e.side === side) slots += archetypeOf(ruleset, e.kind)?.comms?.orderSlots ?? 0;
     const r = radius.get(e.id) ?? 0;
     for (let y = Math.max(0, e.y - r); y <= Math.min(h - 1, e.y + r); y++) {
       for (let x = Math.max(0, e.x - r); x <= Math.min(w - 1, e.x + r); x++) {
