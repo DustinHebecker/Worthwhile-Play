@@ -197,9 +197,11 @@ describe('posterior chain', () => {
     expect(p[1]).toEqual([F(3, 5), F(2, 5)]);
     expect(p[2]).toEqual([F(21, 29), F(8, 29)]);
     const board = countingBoard(c)!;
-    expect(board.population).toBe(100);
-    expect(board.levels.map((l) => l.map(Number))).toEqual([[30, 70], [21, 14]]);
-    expect(countingBoard(c, 1000)!.population).toBe(100);
+    expect(board.population).toBe(1000);
+    expect(board.levels.map((l) => l.map(Number))).toEqual([[300, 700], [210, 140], [147, 56]]);
+    // Below 1,000 only the first clue gives whole counts.
+    expect(countingBoard(c, 100)!.levels.map((l) => l.map(Number))).toEqual([[30, 70], [21, 14]]);
+    expect(countingBoard({ ...c, prior: [1, 2], priorDen: 3 }, 100)).toBeNull();
   });
   it('reproduces the worked example c-garden hard (three hypotheses)', () => {
     const c: ClueEvidence = {

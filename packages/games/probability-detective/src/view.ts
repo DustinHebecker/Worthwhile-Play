@@ -333,7 +333,8 @@ export function createProbabilityDetective(context: GameContext): GameInstance<P
       h('h3', {}, t('board.heading')),
       h('p', {}, t('board.intro', { n: formatInt(b.population, locale) })),
       h('div', { class: 'pd-scroll' }, h('table', { class: 'pd-table' }, h('thead', {}, head), h('tbody', {}, ...rows))),
-      fit > 0n
+      // The closing sentence speaks of "every clue", so it appears only when the board covers all of them.
+      fit > 0n && b.levels.length === c.clues.length + 1
         ? h('p', {}, t('board.end', { fit: formatInt(fit, locale), k: formatInt(lastLv[lead]!, locale), name: hypName(c, lead), p: pct({ n: lastLv[lead]!, d: fit }) }))
         : ''
     );

@@ -293,26 +293,37 @@ export interface Board {
   levels: bigint[][];
 }
 
+/**
+ * The smallest population M = 10^k ≤ max at which every step's counts are whole numbers; if there is none, the
+ * smallest M at which at least the first clue's counts are (the board then stops at the last whole step).
+ */
 export function countingBoard(c: ClueEvidence, maxPopulation = 100_000): Board | null {
+  let partial: Board | null = null;
   for (let m = 10; m <= maxPopulation; m *= 10) {
-    const levels: bigint[][] = [];
-    let den = BigInt(c.priorDen);
-    let w = c.prior.map((x) => BigInt(x));
-    const at = (): bigint[] | null => (w.every((x) => (x * BigInt(m)) % den === 0n) ? w.map((x) => (x * BigInt(m)) / den) : null);
-    const base = at();
-    if (!base) continue;
-    levels.push(base);
-    for (const clue of c.clues) {
-      const l = likelihood(clue);
-      w = w.map((x, h) => x * BigInt(l[h]!));
-      den *= BigInt(clue.den);
-      const next = at();
-      if (!next) break;
-      levels.push(next);
-    }
-    if (levels.length >= 2) return { population: m, levels };
+    const b = boardAt(c, m);
+    if (b && b.levels.length === c.clues.length + 1) return b;
+    partial ??= b;
   }
-  return null;
+  return partial;
+}
+
+function boardAt(c: ClueEvidence, m: number): Board | null {
+  const levels: bigint[][] = [];
+  let den = BigInt(c.priorDen);
+  let w = c.prior.map((x) => BigInt(x));
+  const at = (): bigint[] | null => (w.every((x) => (x * BigInt(m)) % den === 0n) ? w.map((x) => (x * BigInt(m)) / den) : null);
+  const base = at();
+  if (!base) return null;
+  levels.push(base);
+  for (const clue of c.clues) {
+    const l = likelihood(clue);
+    w = w.map((x, h) => x * BigInt(l[h]!));
+    den *= BigInt(clue.den);
+    const next = at();
+    if (!next) break;
+    levels.push(next);
+  }
+  return levels.length >= 2 ? { population: m, levels } : null;
 }
 
 /* ---------- Round state (design § 14) ---------- */

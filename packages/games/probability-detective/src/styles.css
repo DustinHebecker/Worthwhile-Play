@@ -19,9 +19,7 @@
   .wp-probability-detective .pd-layout--review { grid-template-columns: minmax(0, 1fr); }
   .wp-probability-detective .pd-panel { position: sticky; inset-block-start: 0.5rem; }
 }
-@media (max-width: 47.99rem) {
-  .wp-probability-detective .pd-panel { position: sticky; inset-block-end: 0; z-index: 1; max-block-size: 60vh; overflow-y: auto; }
-}
+/* On phones the panel follows the case file (a sticky panel this tall would cover the newest clue). */
 
 /* The case file: paper-card look. */
 .wp-probability-detective .pd-file, .wp-probability-detective .pd-panel, .wp-probability-detective .pd-review,
@@ -61,7 +59,7 @@
   display: inline-grid; place-items: center; min-inline-size: 4.5ch; min-block-size: var(--wp-touch); font-weight: 700;
   border: 1px solid var(--wp-border); border-radius: 4px; font-variant-numeric: tabular-nums;
 }
-.wp-probability-detective .pd-hint summary, .wp-probability-detective .pd-formulas summary { min-block-size: var(--wp-touch); display: flex; align-items: center; cursor: pointer; }
+.wp-probability-detective .pd-hint summary, .wp-probability-detective .pd-formulas summary { min-block-size: var(--wp-touch); box-sizing: border-box; padding-block: 0.7rem; cursor: pointer; }
 
 /* Review. */
 .wp-probability-detective .pd-truth { font-size: 1.1rem; font-weight: 700; }
