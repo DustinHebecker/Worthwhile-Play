@@ -1,7 +1,7 @@
 import { cellOf, dist2 } from './grid';
 import { computeNetwork, isActiveEw, isEmitter, type Network } from './network';
 import type { Entity, Report, Ruleset, SimEvent, World } from './types';
-import { archetypeOf, hostile } from './world';
+import { archetypeOf, hostile, teamOf } from './world';
 
 /**
  * Information model D7 (docs/design/strategy.md § 5.3). Units still see when out of contact,
@@ -14,9 +14,10 @@ import { archetypeOf, hostile } from './world';
  *   again or their destruction is observed.
  */
 
-/** Units of `side` whose sightings reach the side. */
+/** Units of `side` (and of its allies: a team shares sight and reports) whose sightings reach the side. */
 export function reportingUnits(world: World, ruleset: Ruleset, side: number, network?: Network): Entity[] {
-  const own = world.entities.filter((e) => e.side === side);
+  const team = teamOf(world, side);
+  const own = world.entities.filter((e) => teamOf(world, e.side) === team);
   if (!ruleset.commandNetwork) return own;
   const coverage = (network ?? computeNetwork(world, ruleset, side)).coverage;
   return own.filter((e) => coverage[cellOf(world.map, e.x, e.y)] === 1);
@@ -104,7 +105,8 @@ export function initialIntel(world: World, ruleset: Ruleset): Report[][] {
     const known = new Set(reports.map((r) => r.id));
     for (const e of world.entities) {
       const structure = archetypeOf(ruleset, e.kind)?.speed === 0;
-      if ((e.side === side || structure) && !known.has(e.id)) reports.push({ ...reportOf(e, world.tick), live: false });
+      // Allies know each other's starting positions as they know their own.
+      if ((teamOf(world, e.side) === teamOf(world, side) || structure) && !known.has(e.id)) reports.push({ ...reportOf(e, world.tick), live: false });
     }
     return reports.sort((a, b) => a.id - b.id);
   });
@@ -121,7 +123,9 @@ export function muzzleFlashes(world: World, ruleset: Ruleset, side: number, gone
   const out = new Set<number>();
   if (!events) return out;
   const coverage = ruleset.commandNetwork ? (network ?? computeNetwork(world, ruleset, side)).coverage : undefined;
-  const mine = [...world.entities, ...gone].filter((e) => e.side === side && (!coverage || coverage[cellOf(world.map, e.x, e.y)] === 1));
+  // Shots at an ally's unit count too: the ally's report reaches the side (a team shares reports).
+  const team = teamOf(world, side);
+  const mine = [...world.entities, ...gone].filter((e) => teamOf(world, e.side) === team && (!coverage || coverage[cellOf(world.map, e.x, e.y)] === 1));
   const mineIds = new Set(mine.map((e) => e.id));
   const mineAt = new Set(mine.map((e) => cellOf(world.map, e.x, e.y)));
   const shooterSide = new Map([...world.entities, ...gone].map((e) => [e.id, e.side]));
@@ -132,7 +136,7 @@ export function muzzleFlashes(world: World, ruleset: Ruleset, side: number, gone
     else if (ev.t === 'launch' && mineAt.has(cellOf(world.map, ev.x, ev.y))) shooter = ev.id;
     if (shooter === undefined) continue;
     const by = shooterSide.get(shooter);
-    if (by !== undefined && by !== side && hostile(world, by, side)) out.add(shooter);
+    if (by !== undefined && hostile(world, by, side)) out.add(shooter);
   }
   return out;
 }
