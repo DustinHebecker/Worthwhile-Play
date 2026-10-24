@@ -122,12 +122,13 @@ export function createProbabilityDetective(context: GameContext): GameInstance<P
 
   /* ---------- Belief panel (design § 12) ---------- */
 
-  const splitBar = (b: number[], ghost?: number) =>
+  /** A split bar; `ghost` marks a share of the first hypothesis (◇ the belief before this clue, ◆ your estimate). */
+  const splitBar = (b: number[], ghost?: number, glyph = '◇') =>
     h(
       'div',
       { class: 'pd-split', 'aria-hidden': 'true' },
       ...b.map((x, i) => h('span', { class: `pd-seg pd-seg${i}`, style: `inline-size: ${x}%` })),
-      ghost === undefined ? '' : h('span', { class: 'pd-ghost', style: `inset-inline-start: ${ghost}%` }, '◇')
+      ghost === undefined ? '' : h('span', { class: 'pd-ghost', style: `inset-inline-start: ${ghost}%` }, glyph)
     );
 
   const beliefPanel = (c: ClueCase) => {
@@ -295,7 +296,7 @@ export function createProbabilityDetective(context: GameContext): GameInstance<P
           { class: 'pd-row', 'data-testid': `pd-step-${k}` },
           h('strong', {}, `${t('clue', { n: k + 1 })}: ${text(c).clues[clue.id]!.label}${clue.result === 1 ? '' : ` (${t('notSeen')})`}`),
           h('span', { class: 'pd-weights' }, bdi(neutral ? t('ledger.nothing') : `${lr.map((x) => `× ${formatInt(x, locale)}`).join(' : ')} → ${w.map((x) => formatInt(x, locale)).join(' : ')}`)),
-          splitBar(p.map((x) => toNumber(x) * 100), st.answer === 'skip' ? undefined : st.answer[0]),
+          splitBar(p.map((x) => toNumber(x) * 100), st.answer === 'skip' ? undefined : st.answer[0], '◆'),
           h('span', {}, t('ledger.exact', { p: p.map((x, i) => `${MARKS[i]} ${pct(x)}`).join(' · ') }), ' · ', t('you', { p: answerText(c, st.answer) })),
           feedback.length ? h('p', { class: 'pd-feedback' }, ...feedback) : ''
         )
@@ -379,8 +380,10 @@ export function createProbabilityDetective(context: GameContext): GameInstance<P
     if (r.score !== null) {
       const ref = c.hyps === 2 ? 75 : 67;
       forecast.push(h('p', { 'data-testid': 'pd-forecast' }, t('forecast.line', { s: formatInt(r.score, locale), e: formatInt(Math.round(toNumber(r.exactScore)), locale), r: formatInt(ref, locale) })));
-      const otherWay = Math.round((1 - toNumber(pn[c.truth]!)) * 100);
-      if (r.finalBand === 'spot' && r.score < toNumber(r.exactScore) + 0.5 && otherWay >= 10) forecast.push(h('p', {}, t('forecast.luck', { k: formatInt(otherWay, locale) })));
+      // A good estimate on a case that went the less likely way: say how often that happens.
+      const pTruth = toNumber(pn[c.truth]!);
+      if ((r.finalBand === 'spot' || r.finalBand === 'close') && pTruth < 0.5 && pTruth > 0)
+        forecast.push(h('p', { 'data-testid': 'pd-luck' }, t('forecast.luck', { k: formatInt(Math.max(1, Math.round(pTruth * 100)), locale) })));
     }
     return h(
       'section',

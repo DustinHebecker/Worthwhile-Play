@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
 import type { GameContext } from '@wp/game-core';
-import { commonMessages, createTranslator, type SupportedLocale } from '@wp/localization';
+import { COMMON_MESSAGES, createTranslator, type SupportedLocale } from '@wp/localization';
 import { preloadContent } from '../src/content';
 import { createRound } from '../src/generate';
 import { metadata } from '../src/metadata';
@@ -15,7 +15,7 @@ async function mount(locale: SupportedLocale = 'en', prefs = new Map<string, unk
   const finished: unknown[] = [];
   const context = {
     root,
-    t: createTranslator({ locale, sources: [metadata.messages, commonMessages], onMissing: (key) => { throw new Error(`missing ${key}`); } }),
+    t: createTranslator({ locale, sources: [metadata.messages, COMMON_MESSAGES], onMissing: (key) => { throw new Error(`missing ${key}`); } }),
     reducedMotion: true,
     requestSave: () => saves.push(1),
     finished: (r: unknown) => finished.push(r),
