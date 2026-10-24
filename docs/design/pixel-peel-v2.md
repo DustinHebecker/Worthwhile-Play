@@ -730,7 +730,7 @@ Implemented as planned in the order of § 12, on branch `game/pixel-peel-v2`, th
 | Neighbouring shooters in a lane of one colour | 1.0 % | 0.1 % | 0.1 % | |
 | Same colour beside, at the same depth in the next lane | 9.1 % | 5.2 % | 4.4 % | rare |
 
-`test/generator.test.ts` asserts these rates with the margins of § 2.2. It also asserts, on medium and hard, the run length (≤ 2) and the share of same-colour neighbours (≤ 2 % medium, ≤ 1 % hard). It gathers the rates in chunks of 5 motifs, so each test stays short under load.
+`test/generator.slow.test.ts` asserts these rates with the margins of § 2.2. It also asserts, on medium and hard, the run length (≤ 2) and the share of same-colour neighbours (≤ 2 % medium, ≤ 1 % hard). It gathers the rates in chunks of 5 motifs, so each test stays short under load.
 
 ### 15.3 Colours that matter (owner feedback 2026-10-18)
 
@@ -822,7 +822,7 @@ What changed in the view:
 
 **Redrawn after the review and the owner's notes:**
 
-- **Hummingbird:** a bigger bird, a slim striped wing, an open red trumpet flower facing the beak, a soft garden background with small bokeh.
+- **Hummingbird:** a bigger bird, a slim striped wing, an open red trumpet flower facing the beak, a soft garden background with small bokeh. Redrawn again in the independent review (§ 15.10).
 - **Emperor penguins:** a smooth teardrop body, a golden ear patch, a slender beak, a low polar sun.
 - **Polar bear:** one white silhouette with an ear bump and grey shading, kept cells for eye and nose, white legs.
 - **Llama:** a full body with a curved neck, the blanket over its back, coloured ear tassels, a textured meadow.
@@ -882,7 +882,19 @@ The motif setting uses it, so "Any picture" is always the default; "Another roun
 
 ### 15.9 Known limits
 
-- **Phone start time:** in this container the start stays above 250 ms in some cases (median over all cases 246 ms, worst case 367 ms). Generation must stay synchronous in `newGame`, so there is no "Preparing…" state.
+- **Phone start time:** in this container the start stays above 250 ms in some cases (median over all cases 246 ms, worst case 367 ms; after the review's speed-ups see § 15.10). Generation must stay synchronous in `newGame`, so there is no "Preparing…" state.
 - **Hard difficulty:** it depends on the noisy policy: P1–P4 fail 100 %, P5 98 %.
-- **Easy pictures:** effective colours can be as low as 4.0, which the targets allow (they are set only for medium and hard).
+- **Easy pictures:** effective colours can be as low as 4.3 (4.0 before the review redrew the hummingbird), which the targets allow (they are set only for medium and hard).
 - **Not done here:** `docs/ROADMAP.md` and the registry are left to the orchestrator.
+
+### 15.10 Independent review (2026-10-24)
+
+What the reviewer changed (each a separate commit on this branch):
+
+- **Generation and hint about twice as fast, games unchanged.** A launch now visits only the stations whose front has its colour (the first lap from one walk or from an index of the fronts, later laps from the at most 4 stations that see each removed cell), one index of the fronts serves every trial launch of a position, and policy runs play in place instead of building a child cursor per move. `createInitial` over every motif, level and 3 seeds gives byte-identical states before and after. Node, average ms: easy 9.4 → 7.6, medium 23.9 → 11.8, hard 19.8 → 9.4.
+- **Lane chips are built when first shown** (a phone shows 7 per lane; a hard game has about 70 behind the fronts).
+- **Start on a phone** (same script as § 15.4, 4× CPU throttling, 360 × 740, each case 5 runs interleaved with the pre-review build): the shared container was under heavy load from other jobs (load average 7–11 on 4 cores) for the whole review, so the wall-clock figures mostly show the load: median of the 12 case medians 311 ms before and 304 ms after, worst case median 366 → 346 ms, median of the per-case minima 217 → 218 ms. A CPU profile of the slowest case (medium autumn forest) separates the parts: generation fell from 222 ms to 78 ms of throttled main-thread time; most of the rest is the first layout of the page (forced by measuring the picture's width; it would otherwise happen in the next frame), building the view and the host's toolbar. The 250 ms target should be re-measured on a quiet machine or a real phone.
+- **Sticky picture on short screens.** On a phone held sideways (740 × 360) the sticky picture was taller than the screen and covered the lanes for good. It now sticks only on narrow screens at least 32rem tall, and Fit keeps the picture within half the screen height where it sticks, 90 % elsewhere. New e2e test.
+- **Tests under load (ADR 0021).** Every wall-clock bound moved to `test/timing.slow.test.ts`, timed as the fastest of a few repeats with bounds several times the measured values; the sweeps over every motif (generator, level rates, re-rasterising against the baked pictures) moved to `generator.slow.test.ts` and `motifs.slow.test.ts`. The fast motif test checks the authoring rules on the baked pictures a game plays.
+- **Art.** The hummingbird is redrawn: the bird against a bright sky in soft focus, wings raised in a V, a long beak reaching into the open trumpet flower; effective colours easy / medium / hard 6.5 / 8.7 / 9.1 (was 4.0 / 7.8 / 8.2). The tiger's muzzle pads no longer read as a second pair of eyes on hard. The lowest effective number of colours on easy is now 4.3 (llama).
+

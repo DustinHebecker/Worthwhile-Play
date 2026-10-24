@@ -1,6 +1,6 @@
 # 0017 — One start screen with host-drawn settings
 
-Status: Accepted (2026-10-16; amends 0002, narrows 0015). Amended 2026-10-16: `setupInGame` games may opt out of the host difficulty (see "Amendment" below).
+Status: Accepted (2026-10-16; amends 0002, narrows 0015). Amended 2026-10-16: `setupInGame` games may opt out of the host difficulty (see "Amendment" below). Amended 2026-10-18: a setting declared `remember: false` is never remembered or preselected (see "Host behaviour").
 
 ## Context
 Many games showed the host's difficulty select and "New game", and then a second options panel of their own (opponents, board size, variant, sometimes the difficulty again). The owner decided (2026-10-16): **one start screen for every game, drawn by the host** — "Continue" at the top when a save exists; below it "New game" with *all* settings that change the game, difficulty included; then "Start". No double difficulty selection anywhere.
