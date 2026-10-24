@@ -149,11 +149,21 @@ Steam, schedules and the eternal delay — no real operator, line or brand.
 - Items: **Coal Shovel** (+3, two hands, `tool`; +1 against `cold`), **Conductor's Cap** (+2, head, `clothing`; others must give you 1 card to help you).
 - Curse **Replacement Bus Service**: skip *Open* in your next turn and *Rummage* instead.
 
-### 4.6 Worms, insects, action hero (later; from the design round)
+### 4.6 Worlds 6–8: Creepy Crawlies, Break Time, Big Top *(built 2026-10-24, see § 10.4e)*
 
-- **Worms** ("Worm Hole" links worms and space when mixed): Mole With a Monday Mood, Early Bird (every `digger` player −2), Clod Helmet, Compost Cape, curse *Rain!*.
-- **Insects** ("Bug Brawl"): Wasp Collection Agency, Mosquito "Just a Little Sip" (cannot be defeated, only escaped), Aphid Shield, Six Little Boots.
-- **Action hero** ("Explosions in the Background"): Henchman No. 7, Sunglasses of Coolness, One-Liner (+3; +5 as the last card of a reaction window), curse *Your Car Explodes*.
+Owner 2026-10-24: "die nächsten 3 Welten"; the action hero was dropped (it lives on film quotes and look-alikes, too
+close to other people's rights) and Worms and Insects merged into one world, plus School and Circus/Funfair.
+
+- **Creepy Crawlies** (`bg`, *Krabbelkeller*): under the garden and in the cellar — worms (slow, wise diggers) against
+  insects (busy, buzzing, organised). Early Bird, Mole With a Monday Mood, Wasp Collection Agency, Mosquito "Just a
+  Little Sip", Clod Helmet, Compost Cape, Six Little Boots, curse *Rain!*. Nobody gets squashed: creatures flee, sulk,
+  get stuck or play dead.
+- **Break Time** (`sc`, *Große Pause*): pupils against the staff room, affectionate on both sides — surprise test,
+  homework monster, staff-room photocopier, caretaker, endless detention, school trip; no country-specific school
+  terms, no grades shaming.
+- **Big Top** (`fa`, *Manege frei!*): circus folk against funfair folk — haunted carousel, Ferris wheel, ghost-train
+  ride, driverless bumper car, stilt walker, the mole who whacks back. No captive or whipped animals; animals only as
+  free characters (pigeons, a poodle who joined the act, the flea circus).
 
 ### 4.7 Mixing rules
 
@@ -356,7 +366,7 @@ Ours: **encounter pile / loot pile**, **Peek around the corner** (reveal the top
 | K2 | Offers, deals, Change Sides, reputation, personalities, difficulties, coach hints polish | the funny part |
 | K3 | Spaceloot + Office + mixing (start-screen world toggles, balance tests) | done, § 10.4c |
 | K4 | Pictogram kit polish, animations, "fast table" | |
-| K5+ | Office, Fridge, Railway, Worms, Insects, Action hero — one per PR | order after the tests |
+| K5+ | Office, Fridge, Railway (2026-10-18); Creepy Crawlies, Break Time, Big Top (2026-10-24) | done |
 
 K1 is large (140 cards × 16 locales). If it becomes too big for one review, it is split into K1a (rules + vocabulary + 40-card test subset, 16 locales) and K1b (full Kampfzwerge content).
 
@@ -456,6 +466,22 @@ K1 is large (140 cards × 16 locales). If it becomes too big for one review, it 
 - Balance (self-play, 40 games each, 2–6 players): median rounds — fd 10, rw 10, fd+rw 11, all five worlds 10;
   10–90 % ≈ 7–15; max 17–28. Wins spread over both families of each world.
 
+### 10.4e Worlds 6–8 (2026-10-24): Creepy Crawlies, Break Time, Big Top
+
+- Built as § 4.6: 142 cards each with Kampfzwerge's composition and level budget (each a line-for-line numeric clone of
+  Railway with its own ids, kinds, traits, conditions and sets), new families `worm`/`insect`, `pupil`/`teacher`,
+  `circus`/`funfair`, sets `burrow-kit`/`swarm-kit`, `class-trip`/`staff-room`, `clown-kit`/`showman-kit`.
+- Texts in 16 locales (German original, English and 14 transcreations with native puns and allusions; each idiom at
+  most once per locale across all eight worlds), one code-drawn picture per card (372 new) in a lazily loaded chunk per
+  world, one start-screen toggle each.
+- With eight worlds there are 255 combinations: the mixing tests cover all of them; the self-play balance test covers
+  each world alone, every pair (the "Random" default deals one world or a pair), all eight together and a fixed
+  sample of larger mixes.
+- **Random games name their worlds** (idea from § 10.5a): below the round line, "Drawn at random: Break Time, Big
+  Top" — the start-screen label up to its dash or colon. Games with picked worlds show nothing extra.
+- Note: `randomWorlds(seed)` shuffles `WORLD_IDS`, so with more worlds the same seed draws other worlds than before;
+  saves are unaffected (they store their worlds).
+
 ### 10.5 Owner feedback after the first play-test (2026-10-15) — backlog
 
 - **B1 Card text while choosing cards to give away or sell.** In the give-away and sell modes a tap selects the card, so its description cannot be read before choosing. Fix: an info button on every tile (or a long press) that opens the card detail in every mode; selection stays on the tile itself.
@@ -476,7 +502,7 @@ K1 is large (140 cards × 16 locales). If it becomes too big for one review, it 
 
 - Railway locomotives: no face on a round smokebox front any more (signature look of a famous toy train); our
   locos wear their face on the boiler side, the smokebox is a plain dark door with a lamp. Done (18 locos).
-- Idea: show which worlds a "Random" game drew (e.g. next to the round line).
+- Idea: show which worlds a "Random" game drew (e.g. next to the round line). Done 2026-10-24 (§ 10.4e).
 - Owner: use MORE short verbal allusions and wordplay in all worlds where they were avoided so far (same limits:
   no copied art, characters, logos or long verbatim texts). Done in #66: about 250 texts per locale in all five worlds,
   native idioms per locale, each idiom at most once per locale across the worlds; no religion, politics or war.
@@ -494,4 +520,4 @@ K1 is large (140 cards × 16 locales). If it becomes too big for one review, it 
 
 - **O1** Default target level: **10** assumed (owner: length open). Since 2026-10-17 fixed at 10 (owner).
 - **O2** Title in the other 14 locales: "Lootlings" unless a locale has a natural form.
-- **O3** Order of worlds after Spaceloot: Office built with it in K3, then Fridge and Railway (owner 2026-10-18); next proposal Worms, Insects, Action hero — owner decides.
+- **O3** Order of worlds after Spaceloot: Office built with it in K3, then Fridge and Railway (owner 2026-10-18), then Creepy Crawlies, Break Time and Big Top (owner 2026-10-24; action hero dropped). Owner: after these, only change or feature requests.

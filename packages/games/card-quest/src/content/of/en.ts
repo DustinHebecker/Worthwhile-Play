@@ -50,7 +50,7 @@ export const en: LocaleContent = {
   'of.brings-a-colleague': { name: 'Brought Someone Along', flavour: '“Just looping in a colleague.” Add a monster.' },
   'of.invite-everyone': { name: 'Invite to the Whole List', flavour: 'Someone invited “Everyone”. Really everyone. Add a monster.' },
   'of.supply-cupboard': { name: 'The Stationery Cupboard', flavour: 'Endless pens, none of them work. But at the back …' },
-  'of.kitchen-cake': { name: 'Cake in the Kitchen', flavour: '“Help yourselves!” The early bird gets the cake. Accounting overslept.' },
+  'of.kitchen-cake': { name: 'Cake in the Kitchen', flavour: '“Help yourselves!” First come, first served. Accounting overslept.' },
   'of.still-on-mute': { name: 'You’re Still on Mute', flavour: 'Ten minutes of talking. Nobody heard a word. A true silent movie.' },
   'of.wrong-meeting': { name: 'Wrong Meeting', flavour: 'You nodded along for an hour. Now you lead the project.' },
   'of.headset-tangle': { name: 'Headset Cable Tangle', flavour: 'The Gordian knot of cables. The headset is a lost cause.' },

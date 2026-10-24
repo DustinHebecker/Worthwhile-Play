@@ -40,7 +40,7 @@ export type ItemClass = (typeof ITEM_CLASSES)[number];
  * gnomes; Spaceloot: ship's crew vs aliens; Office: office vs home office; Fridge: fresh food vs leftovers; Railway:
  * passengers vs railway staff).
  */
-export const FAMILIES = ['fairytale', 'garden', 'crew', 'alien', 'office', 'remote', 'fresh', 'leftover', 'passenger', 'railstaff'] as const;
+export const FAMILIES = ['fairytale', 'garden', 'crew', 'alien', 'office', 'remote', 'fresh', 'leftover', 'passenger', 'railstaff', 'worm', 'insect', 'pupil', 'teacher', 'circus', 'funfair'] as const;
 export type Family = (typeof FAMILIES)[number];
 
 export const SLOTS = ['head', 'body', 'feet', 'hand', 'small'] as const;
