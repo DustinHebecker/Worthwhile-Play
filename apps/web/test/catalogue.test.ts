@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { validateMetadata } from '@wp/game-core';
+import { gameLocales, validateMetadata } from '@wp/game-core';
 import { auditCatalogues, SUPPORTED_LOCALES } from '@wp/localization';
 import CATALOGUE from 'virtual:wp-catalogue';
 import { isCatalogueKey } from '../catalogue-plugin';
@@ -24,7 +24,8 @@ describe('game registry', () => {
   it('has unique ids and valid metadata', () => {
     const ids = GAMES.map((g) => g.metadata.id);
     expect(new Set(ids).size).toBe(ids.length);
-    for (const { metadata } of GAMES) expect(validateMetadata(metadata, SUPPORTED_LOCALES), metadata.id).toEqual([]);
+    // Each game in the locales it ships (all 16, or `metadata.locales` for a preview game, ADR 0003 amendment).
+    for (const { metadata } of GAMES) expect(validateMetadata(metadata, gameLocales(metadata)), metadata.id).toEqual([]);
   });
 
   it("lists the games in the owner's order: the large games first, then the favourite small games", () => {
@@ -47,10 +48,10 @@ describe('game registry', () => {
     ]);
   });
 
-  it('translates every declared difficulty in every locale', () => {
+  it('translates every declared difficulty in every locale the game ships', () => {
     for (const { metadata } of GAMES) {
       for (const difficulty of metadata.difficulties ?? []) {
-        for (const locale of SUPPORTED_LOCALES) expect(metadata.messages[locale]?.[`difficulty.${difficulty}`], `${metadata.id}/${locale}/${difficulty}`).toBeTruthy();
+        for (const locale of gameLocales(metadata)) expect(metadata.messages[locale]?.[`difficulty.${difficulty}`], `${metadata.id}/${locale}/${difficulty}`).toBeTruthy();
       }
     }
   });
@@ -72,12 +73,12 @@ describe('game registry', () => {
     }
   });
 
-  it('per-locale catalogue modules hold exactly that locale for every registered game', async () => {
-    const ids = GAMES.map((g) => g.metadata.id).sort();
+  it('per-locale catalogue modules hold exactly that locale for every registered game that ships it', async () => {
     for (const locale of SUPPORTED_LOCALES) {
+      const shipping = GAMES.filter((g) => gameLocales(g.metadata).includes(locale));
       const { games } = await LOCALE_LOADERS[locale]();
-      expect(Object.keys(games).sort(), locale).toEqual(ids);
-      for (const entry of GAMES) expect(games[entry.metadata.id], `${entry.metadata.id}/${locale}`).toBe(entry.metadata.messages[locale]);
+      expect(Object.keys(games).sort(), locale).toEqual(shipping.map((g) => g.metadata.id).sort());
+      for (const entry of shipping) expect(games[entry.metadata.id], `${entry.metadata.id}/${locale}`).toBe(entry.metadata.messages[locale]);
     }
   });
 });
