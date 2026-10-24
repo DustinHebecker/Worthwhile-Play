@@ -123,6 +123,9 @@ export const hi: Catalogue = {
   'act.escape': 'अभी भागो',
   'act.curse': '{name} को श्राप दो',
   'act.upgrade': '{name} पर लगाओ',
+  'eq.attached': '{name} पर लगा है',
+  'gear.upgraded': '{item} (+ {upgrades})',
+  'detail.total': '{upgrades} के साथ: कुल {n}',
   'sell.title': 'बेचने के लिए चीज़ें और एक-बार वाले कार्ड चुनो। मूल्य {sum} → स्तर +{levels}।',
   'sell.need': 'हर {rate} मूल्य-अंक = 1 स्तर (जीत वाला स्तर नहीं)।',
 

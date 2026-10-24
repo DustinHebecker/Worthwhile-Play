@@ -123,6 +123,9 @@ export const nl: Catalogue = {
   'act.escape': 'Nu ontsnappen',
   'act.curse': '{name} vervloeken',
   'act.upgrade': 'Aan {name} bevestigen',
+  'eq.attached': 'Bevestigd aan {name}',
+  'gear.upgraded': '{item} (+ {upgrades})',
+  'detail.total': 'Met {upgrades}: samen {n}',
   'sell.title': 'Kies voorwerpen en wegwerpkaarten om te verkopen. Waarde {sum} → niveau +{levels}.',
   'sell.need': 'Elke {rate} waardepunten = 1 niveau (nooit het winnende niveau).',
 
