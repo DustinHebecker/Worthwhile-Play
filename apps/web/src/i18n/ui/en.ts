@@ -38,6 +38,8 @@ const en = {
   'game.offline': 'Works offline',
   'game.network': 'Needs internet',
   'game.aiOptional': 'Optional AI',
+  'game.preview': 'Work in progress',
+  'game.shownInEnglish': 'This game is still being translated and is shown in English for now.',
   'game.skills': 'Exercises',
   'game.howToPlay': 'How to play',
   'game.back': 'All games',

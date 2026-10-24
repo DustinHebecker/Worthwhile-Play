@@ -39,6 +39,8 @@ const it: UiCatalogue = {
   'game.offline': 'Funziona offline',
   'game.network': 'Richiede internet',
   'game.aiOptional': 'IA facoltativa',
+  'game.preview': 'In lavorazione',
+  'game.shownInEnglish': 'Questo gioco è ancora in fase di traduzione e per ora viene mostrato in inglese.',
   'game.skills': 'Allena',
   'game.howToPlay': 'Come si gioca',
   'game.back': 'Tutti i giochi',

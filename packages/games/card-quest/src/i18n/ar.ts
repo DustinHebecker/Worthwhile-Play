@@ -123,6 +123,9 @@ export const ar: Catalogue = {
   'act.escape': 'اهرب الآن',
   'act.curse': 'العن {name}',
   'act.upgrade': 'ثبّت على {name}',
+  'eq.attached': 'مثبّت على {name}',
+  'gear.upgraded': '{item} (+ {upgrades})',
+  'detail.total': 'مع {upgrades}: المجموع {n}',
   'sell.title': 'اختر أغراضًا وبطاقات استخدام واحد لبيعها. القيمة {sum} ← مستوى +{levels}.',
   'sell.need': 'كل {rate} نقاط قيمة = مستوى واحد (ليس مستوى الفوز).',
 

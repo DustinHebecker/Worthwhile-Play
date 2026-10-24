@@ -123,6 +123,9 @@ export const ja: Catalogue = {
   'act.escape': '今すぐ逃げる',
   'act.curse': '{name}を呪う',
   'act.upgrade': '{name}に取りつける',
+  'eq.attached': '{name}に取りつけ済み',
+  'gear.upgraded': '{item}（＋{upgrades}）',
+  'detail.total': '{upgrades}込みで合計{n}',
   'sell.title': '売るアイテムと使い切りカードを選ぼう。価値{sum} → レベル+{levels}。',
   'sell.need': '価値{rate}ポイントごとに1レベル（勝利のレベルにはならない）。',
 

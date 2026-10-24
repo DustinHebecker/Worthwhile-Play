@@ -120,8 +120,10 @@ describe('after a capture (review of PR #22)', () => {
     expect(at(r2.world, 5, 6)!.hp).toBe(at(r.world, 5, 6)!.hp);
   });
 
-  it('a distant ally under fog is not told: its attack order stays, no event, its report keeps the old owner until it sees the post', () => {
-    // Sides 0 and 1 are allies; side 0's lancer, far away, has a standing attack order on side 2's post.
+  it('a distant ally learns of the capture through its ally (a team shares reports, owner decision 2026-10-24): told at once, its report names the new owner, its attack order ends', () => {
+    // Sides 0 and 1 are allies; side 0's lancer, far away and out of its own sight of the post, has a
+    // standing attack order on side 2's post. The post side 1 takes joins the team's radio network at
+    // once, so side 1's squad next to it reports, and its reports are side 0's too.
     const w = createWorld(
       {
         map: open(24, 7),
@@ -145,27 +147,13 @@ describe('after a capture (review of PR #22)', () => {
     const lancer = at(w, 21, 1)!;
     const r = turn(w);
     expect(at(r.world, 5, 6)!.side).toBe(1);
-    expect(r.world.entities.find((e) => e.id === lancer.id)!.order).toEqual({ type: 'attack', target: 3 });
-    expect(r.reported![0]!.some((e) => e.t === 'captured' || (e.t === 'order-ended' && e.id === lancer.id))).toBe(false);
-    expect(r.world.intel![0]!.find((rep) => rep.id === 3)?.side).toBe(2);
-    // Walking on, the order ends only when the lancer itself sees the post (in its own sight); until
-    // then side 0's report keeps the old owner (the lancer, out of radio cover, reports nothing).
-    let world = r.world;
-    let endedAt: number | undefined;
-    for (let i = 0; i < 12 && endedAt === undefined; i++) {
-      const next = turn(world);
-      const unit = next.world.entities.find((e) => e.id === lancer.id)!;
-      if (unit.order.type !== 'attack') {
-        endedAt = i;
-        expect((unit.x - 5) ** 2 + (unit.y - 6) ** 2).toBeLessThanOrEqual(4 * 4);
-      } else {
-        expect(next.world.intel![0]!.find((rep) => rep.id === 3)?.side).toBe(2);
-        expect(next.reported![0]!.some((e) => e.t === 'captured')).toBe(false);
-      }
-      world = next.world;
-    }
-    expect(endedAt).toBeDefined();
-    expect(at(world, 5, 6)!.hp).toBe(at(r.world, 5, 6)!.hp);
+    expect(r.reported![0]!.some((e) => e.t === 'captured' && e.id === 3 && e.to === 1)).toBe(true);
+    expect(r.world.intel![0]!.find((rep) => rep.id === 3)?.side).toBe(1);
+    // The lancer's order ends at the latest on the next turn (it knows the post as its ally's), and it never fires on it.
+    const r2 = turn(r.world);
+    expect(r2.world.entities.find((e) => e.id === lancer.id)!.order.type).not.toBe('attack');
+    expect([...r.events, ...r2.events].some((e) => e.t === 'fire' && e.id === lancer.id)).toBe(false);
+    expect(at(r2.world, 5, 6)!.hp).toBe(at(r.world, 5, 6)!.hp);
   });
 
   it('a capture clears the post\'s doctrine and order', () => {

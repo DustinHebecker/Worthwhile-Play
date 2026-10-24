@@ -39,6 +39,8 @@ const nl: UiCatalogue = {
   'game.offline': 'Werkt offline',
   'game.network': 'Internet nodig',
   'game.aiOptional': 'Optionele AI',
+  'game.preview': 'Nog in ontwikkeling',
+  'game.shownInEnglish': 'Dit spel wordt nog vertaald en wordt voorlopig in het Engels getoond.',
   'game.skills': 'Oefent',
   'game.howToPlay': 'Speluitleg',
   'game.back': 'Alle spellen',
