@@ -610,7 +610,15 @@ const PREVIEWS: Record<string, () => string> = {
     out += token(50, 'm5', 4, C(56, 52.5, 2.1, 'sf'));
     out += token(71, 'm1', 8, poly([[77, 49.6], [79.6, 52.5], [77, 55.4], [74.4, 52.5]], 'sf'));
     return out;
-  }
+  },
+  // Estimation Lab: the question card, the review's log scale (decade ticks, hatched plausible range, the answer ◆ close
+  // to the reference line) and the model as three factor boxes joined by ×. No text or digits (language-neutral).
+  'fermi-lab': () =>
+    R(6, 3, 84, 14, 'e', 3) + L(12, 8.5, 70, 8.5, 'mu') + L(12, 12.5, 50, 12.5, 'mu') +
+    R(42, 24, 22, 13, 'o', 1) + [44, 49, 54, 59].map((x) => L(x, 36.5, x + 4, 24.5, 'fn')).join('') +
+    L(8, 30.5, 88, 30.5, 'k') + [10, 29, 48, 67, 86].map((x) => L(x, 27, x, 34, 'k')).join('') +
+    L(55, 20, 55, 41, 'al') + diamond(49, 30.5, 4.5, 'a') +
+    [8, 37, 66].map((x) => R(x, 47, 22, 13, 'o', 2)).join('') + cross(33, 53.5, 'k', 1.8) + cross(62, 53.5, 'k', 1.8)
 };
 
 /** Pictures made only of text cards and lines: these follow the reading direction (flipped in RTL). */
