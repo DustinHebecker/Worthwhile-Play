@@ -39,6 +39,8 @@ const ar: UiCatalogue = {
   'game.offline': 'يعمل دون اتصال',
   'game.network': 'يتطلب الإنترنت',
   'game.aiOptional': 'ذكاء اصطناعي اختياري',
+  'game.preview': 'قيد التطوير',
+  'game.shownInEnglish': 'لا تزال ترجمة هذه اللعبة جارية، لذا تُعرض بالإنجليزية حاليًا.',
   'game.skills': 'تمرّن على',
   'game.howToPlay': 'طريقة اللعب',
   'game.back': 'كل الألعاب',

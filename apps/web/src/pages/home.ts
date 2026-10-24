@@ -4,7 +4,7 @@ import type { Page } from '../app';
 import { ROADMAP_URL } from '../config';
 import { gamePreview } from '../previews';
 import { GAMES } from '../registry';
-import { gameBadges, gameTranslator } from './shared';
+import { gameBadges, gameTextAttrs, gameTranslator } from './shared';
 
 export const renderHome: Page = (main, app) => {
   const { t } = app;
@@ -16,13 +16,15 @@ export const renderHome: Page = (main, app) => {
 
   const cards = GAMES.map(({ metadata }) => {
     const gt = gameTranslator(metadata, app.locale);
+    // A game that does not ship the UI locale shows its title and tagline in English, marked as such.
+    const own = gameTextAttrs(gt, app.locale);
     const saved = h('span', { class: 'badge saved', hidden: true, 'data-testid': `saved-${metadata.id}` }, `● ${t('home.inProgress')}`);
     const item = h('li', { 'data-skills': metadata.skills.join(' ') },
       h('a', { class: 'game-card', href: `/games/${metadata.id}`, 'data-testid': `game-card-${metadata.id}` },
         // Decorative (aria-hidden): the title and tagline stay the link's accessible name.
         gamePreview(metadata.id),
-        h('span', { class: 'game-card-title' }, gt('title'), ' ', saved),
-        h('span', { class: 'game-card-tagline' }, gt('tagline')),
+        h('span', { class: 'game-card-title' }, own.lang ? h('span', own, gt('title')) : gt('title'), ' ', saved),
+        h('span', { class: 'game-card-tagline', ...own }, gt('tagline')),
         gameBadges(metadata, t)
       )
     );

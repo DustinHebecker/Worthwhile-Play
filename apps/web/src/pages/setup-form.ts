@@ -15,8 +15,11 @@ export function valueLabel(spec: SettingSpec, value: SettingValue, gt: Translato
   return String(value);
 }
 
+/** Whether a setting's label comes from the game's namespace (else it is the host's "Difficulty"). */
+const ownLabel = (spec: SettingSpec): boolean => spec.kind !== 'difficulty' || Boolean(spec.labelKey);
+
 const labelOf = (spec: SettingSpec, gt: Translator, t: UiTranslator): string =>
-  spec.kind === 'difficulty' ? (spec.labelKey ? gt(spec.labelKey) : t('game.difficulty')) : gt(spec.labelKey);
+  ownLabel(spec) ? gt((spec as { labelKey: string }).labelKey) : t('game.difficulty');
 
 /**
  * Short text of the settings a game runs with, for the host toolbar (e.g. "Hard · 6×6 · Hints"): choice labels,
@@ -46,9 +49,17 @@ export interface SetupForm {
  * The host-drawn settings of the start screen (ADR 0017): one fieldset with a legend per choice (radio buttons
  * that wrap, or a labelled select for long lists), checkboxes for toggles, number inputs; hints via
  * aria-describedby. Settings whose `when` condition does not hold are hidden and disabled (so neither read nor
- * focusable) and reappear as soon as it holds again.
+ * focusable) and reappear as soon as it holds again. `own` (`lang`/`dir`) marks the texts from the game's namespace
+ * when they are in another language than the page (a game shown in English, ADR 0003 amendment 2026-10-24).
  */
-export function renderSetupForm(specs: readonly SettingSpec[], metadata: GameMetadata, initial: Readonly<Record<string, unknown>>, gt: Translator, t: UiTranslator): SetupForm {
+export function renderSetupForm(
+  specs: readonly SettingSpec[],
+  metadata: GameMetadata,
+  initial: Readonly<Record<string, unknown>>,
+  gt: Translator,
+  t: UiTranslator,
+  own: { lang?: string; dir?: 'ltr' | 'rtl' } = {}
+): SetupForm {
   // Every setting, hidden ones included, starts with the given value if it is valid, else its default.
   const all = resolveSettings(specs.map(({ when: _when, ...spec }) => spec as SettingSpec), metadata, initial);
   const startValue = (id: string): SettingValue | undefined => (id === 'difficulty' ? all.difficulty : all.settings[id]);
@@ -62,8 +73,11 @@ export function renderSetupForm(specs: readonly SettingSpec[], metadata: GameMet
     if (containers.has(id)) continue;
     const domId = `setting-${id}`;
     const hintId = spec.hintKey ? `${domId}-hint` : undefined;
-    const hint = spec.hintKey ? h('p', { class: 'setting-hint wp-muted', id: hintId }, gt(spec.hintKey)) : null;
+    const hint = spec.hintKey ? h('p', { class: 'setting-hint wp-muted', id: hintId, ...own }, gt(spec.hintKey)) : null;
     const label = labelOf(spec, gt, t);
+    const labelLang = ownLabel(spec) ? own : {};
+    // Ready-made value labels (device lists such as deck titles) are not the game's messages.
+    const valueLang = spec.kind === 'choice' && spec.valueLabels ? {} : own;
     const value = startValue(id);
     const choices = settingChoices(spec, metadata);
     let container: HTMLElement;
@@ -75,21 +89,21 @@ export function renderSetupForm(specs: readonly SettingSpec[], metadata: GameMet
           h('input', { type: 'radio', name: domId, id: `${domId}-${index}`, value: String(choice), checked: choice === value })
         );
         container = h('fieldset', { class: 'setting setting-choice', 'data-testid': settingTestId(spec), 'aria-describedby': hintId },
-          h('legend', {}, label),
-          h('div', { class: 'setting-options' }, ...choices.map((choice, index) => h('label', { class: 'setting-option', for: `${domId}-${index}` }, inputs[index]!, h('span', {}, valueLabel(spec, choice, gt))))),
+          h('legend', labelLang, label),
+          h('div', { class: 'setting-options' }, ...choices.map((choice, index) => h('label', { class: 'setting-option', for: `${domId}-${index}` }, inputs[index]!, h('span', valueLang, valueLabel(spec, choice, gt))))),
           hint
         );
         readers.set(id, () => inputs.find((input) => input.checked)?.value);
       } else {
         const select = h('select', { id: domId, name: domId, 'data-testid': settingTestId(spec), 'aria-describedby': hintId },
-          ...choices.map((choice) => h('option', { value: String(choice), selected: choice === value }, valueLabel(spec, choice, gt)))
+          ...choices.map((choice) => h('option', { value: String(choice), selected: choice === value, ...valueLang }, valueLabel(spec, choice, gt)))
         );
-        container = h('div', { class: 'setting field' }, h('label', { for: domId }, label), select, hint);
+        container = h('div', { class: 'setting field' }, h('label', { for: domId, ...labelLang }, label), select, hint);
         readers.set(id, () => select.value);
       }
     } else if (spec.kind === 'toggle') {
       const input = h('input', { type: 'checkbox', id: domId, name: domId, 'data-testid': settingTestId(spec), checked: value === true, 'aria-describedby': hintId });
-      container = h('div', { class: 'setting setting-toggle' }, h('div', { class: 'field checkbox' }, input, h('label', { for: domId }, label)), hint);
+      container = h('div', { class: 'setting setting-toggle' }, h('div', { class: 'field checkbox' }, input, h('label', { for: domId, ...labelLang }, label)), hint);
       readers.set(id, () => input.checked);
     } else {
       const number = spec as Extract<SettingSpec, { kind: 'number' }>;
@@ -97,7 +111,7 @@ export function renderSetupForm(specs: readonly SettingSpec[], metadata: GameMet
         type: 'number', id: domId, name: domId, inputmode: 'numeric', 'data-testid': settingTestId(spec),
         min: number.min, max: number.max, step: number.step ?? 1, value: String(value ?? number.default), required: true, 'aria-describedby': hintId
       });
-      container = h('div', { class: 'setting field' }, h('label', { for: domId }, label), input, hint);
+      container = h('div', { class: 'setting field' }, h('label', { for: domId, ...labelLang }, label), input, hint);
       readers.set(id, () => input.value);
     }
     containers.set(id, container);

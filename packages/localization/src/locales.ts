@@ -1,7 +1,7 @@
-/** The 16 UI locales, matching the Home Workout project. BCP-47 identifiers. */
-export const SUPPORTED_LOCALES = ['de', 'en', 'nl', 'es', 'fr', 'ru', 'zh-Hans', 'ko', 'ja', 'ar', 'pt', 'it', 'pl', 'tr', 'uk', 'hi'] as const;
+import { SUPPORTED_LOCALES, type SupportedLocale } from '@wp/game-core';
 
-export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
+/** The 16 UI locales (BCP-47), defined in @wp/game-core so that `GameMetadata.locales` can name them. */
+export { SUPPORTED_LOCALES, type SupportedLocale };
 export type TextDirection = 'ltr' | 'rtl';
 
 export const DEFAULT_LOCALE: SupportedLocale = 'en';
