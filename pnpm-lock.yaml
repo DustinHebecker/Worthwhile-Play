@@ -794,6 +794,9 @@ importers:
       '@wp/localization':
         specifier: workspace:*
         version: link:../../localization
+      '@wp/persistence':
+        specifier: workspace:*
+        version: link:../../persistence
       '@wp/testing':
         specifier: workspace:*
         version: link:../../testing
