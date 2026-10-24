@@ -1,6 +1,6 @@
-import type { Motif } from './types';
+import type { Motif } from '../art/types';
 
-/** A dromedary on a dune at sunset. Original pixel art drawn for Worthwhile Play. */
+/** Sunset over the desert: layered dunes lit from the left, a large sun with a camel caravan crossing in front of it, and a small palm oasis. Original vector art drawn for Worthwhile Play. */
 export const desertDunes: Motif = {
   id: 'desert-dunes',
   group: 'landscape',
@@ -40,30 +40,70 @@ export const desertDunes: Motif = {
     uk: 'Сахара, Північна Африка',
     hi: 'सहारा, उत्तरी अफ़्रीका'
   },
-  backdrop: '#2b2f3a',
+  aspect: 'wide',
+  backdrop: '#bfe3c9',
   palette: {
-    o: ['#ee8a45', 'orange'],
-    y: ['#ffe45c', 'yellow'],
-    a: ['#d9a03c', 'gold'],
-    t: ['#e6c08e', 'tan'],
-    k: ['#3a2418', 'darkBrown']
+    v: ['#5b3f8c', 'violet', 1],
+    m: ['#b2477f', 'magenta', 3, 'v'],
+    p: ['#ef7d5e', 'coral', 1],
+    c: ['#fbb0a8', 'peach', 2, 'p'],
+    y: ['#fff0a6', 'lightYellow', 1],
+    g: ['#f2c443', 'gold', 1],
+    t: ['#e2b36f', 'tan', 1],
+    a: ['#f3d6a2', 'beige', 2, 't'],
+    h: ['#c2843a', 'ochre', 1],
+    u: ['#8f4628', 'rust', 1],
+    k: ['#3a2218', 'darkBrown', 1],
+    b: ['#6e4a2e', 'brown', 3, 'k'],
+    e: ['#4f9a43', 'green', 1],
+    d: ['#2b5d35', 'darkGreen', 2, 'e'],
+    q: ['#3fb5b0', 'turquoise', 1]
   },
-  rows: [
-    'oooooooooooooooooooo',
-    'oooooooooooooooooooo',
-    'oooooooooooooooooooo',
-    'oooooooookkooyyyoooo',
-    'oooookkookooyyyyyooo',
-    'ooookkkkokooyyyyyooo',
-    'oookkkkkkkooyyyyyooo',
-    'ookkkkkkkkttttyyoooo',
-    'tttkokoktkttttttttoo',
-    'tttktktktktttttttttt',
-    'ttaaaaaaaaattttttttt',
-    'aaaaaaaaaaaaatttaaat',
-    'aaaaaaaaaaaaaaaaaaaa',
-    'aaattaaaaaaaaaattaaa',
-    'aaaaattaaaaaattaaaaa',
-    'aaaaaaaaaaaaaaaaaaaa'
+  layers: [
+    // Sunset sky in soft bands, a large sun low over the dunes.
+    { shape: { all: true }, fill: { gradient: ['v', 'm', 'p', 'c'], from: [0, -2], to: [0, 42], soft: 0.9 } },
+    { shape: { rect: [0, 0, 100, 8] }, fill: { scatter: 'y', density: 0.04, salt: 71 }, min: 40 },
+    { shape: { ellipse: [62, 34, 14, 14] }, fill: 'y', shade: { dark: 'g', dir: 'nw', width: 3 } },
+    { shape: { line: [[40, 24], [52, 24]], width: 1.4 }, fill: 'c', min: 40 },
+    { shape: { line: [[78, 20], [94, 20]], width: 1.4 }, fill: 'c', min: 40 },
+    { shape: { line: [[8, 30], [24, 30]], width: 1.4 }, fill: 'p', min: 48 },
+    // Far dune in shadow with the caravan on its crest.
+    { shape: { poly: [[-10, 80], [-10, 48], [14, 43], [36, 46], [58, 41], [78, 42], [110, 47], [110, 80]], smooth: 1 }, fill: 'u', shade: { light: 'h', dir: 'nw' } },
+    { shape: { ellipse: [49, 38.8, 4.2, 2.2] }, fill: 'k' },
+    { shape: { ellipse: [48.5, 37.0, 2.4, 1.8] }, fill: 'k' },
+    { shape: { line: [[52.5, 38.8], [54.6, 35.4], [56.2, 35.8]], width: 1.6 }, fill: 'k' },
+    { shape: { line: [[46.4, 39.8], [46.4, 43]], width: 1 }, fill: 'k' },
+    { shape: { line: [[51.4, 39.8], [51.4, 43]], width: 1 }, fill: 'k' },
+    { shape: { ellipse: [48.2, 34.4, 1.1, 1.8] }, fill: 'k' },
+    { shape: { ellipse: [60, 37.3, 4.2, 2.2] }, fill: 'k' },
+    { shape: { ellipse: [59.5, 35.5, 2.4, 1.8] }, fill: 'k' },
+    { shape: { line: [[63.5, 37.3], [65.6, 33.9], [67.2, 34.3]], width: 1.6 }, fill: 'k' },
+    { shape: { line: [[57.4, 38.3], [57.4, 41.5]], width: 1 }, fill: 'k' },
+    { shape: { line: [[62.4, 38.3], [62.4, 41.5]], width: 1 }, fill: 'k' },
+    { shape: { ellipse: [59.2, 32.9, 1.1, 1.8] }, fill: 'k' },
+    { shape: { ellipse: [71, 37.599999999999994, 4.2, 2.2] }, fill: 'k', min: 40 },
+    { shape: { ellipse: [70.5, 35.8, 2.4, 1.8] }, fill: 'k', min: 40 },
+    { shape: { line: [[74.5, 37.599999999999994], [76.6, 34.2], [78.2, 34.6]], width: 1.6 }, fill: 'k', min: 40 },
+    { shape: { line: [[68.4, 38.599999999999994], [68.4, 41.8]], width: 1 }, fill: 'k', min: 40 },
+    { shape: { line: [[73.4, 38.599999999999994], [73.4, 41.8]], width: 1 }, fill: 'k', min: 40 },
+    { shape: { ellipse: [70.2, 33.2, 1.1, 1.8] }, fill: 'k', min: 40 },
+    // Middle dunes, lit from the left.
+    { shape: { poly: [[-10, 80], [-10, 54], [14, 49], [36, 56], [58, 50], [80, 57], [110, 52], [110, 80]], smooth: 1 }, fill: 'h', shade: { light: 't', dir: 'nw', width: 2 } },
+    { shape: { poly: [[14, 49], [36, 56], [40, 80], [26, 80]], smooth: 1 }, fill: 'u', min: 40 },
+    { shape: { poly: [[58, 50], [80, 57], [84, 80], [68, 80]], smooth: 1 }, fill: 'u', min: 40 },
+    // The near dune with ripples.
+    { name: 'near', shape: { poly: [[-10, 80], [-10, 62], [22, 58], [50, 66], [78, 60], [110, 64], [110, 80]], smooth: 1 }, fill: 't', shade: { light: 'a', dir: 'nw', width: 2 } },
+    { shape: { poly: [[22, 58], [50, 66], [44, 80], [32, 80]], smooth: 1 }, fill: 'h', clip: 'near' },
+    { shape: { line: [[2, 69], [16, 67], [24, 68]], width: 1 }, fill: 'h', min: 40 },
+    { shape: { line: [[4, 73], [20, 71]], width: 1 }, fill: 'h', min: 48 },
+    { shape: { line: [[54, 72], [70, 70]], width: 1 }, fill: 'a', min: 40 },
+    // The oasis: a pool and two palms on the right.
+    { shape: { ellipse: [84, 67, 21, 6.6] }, fill: 'e', shade: { dark: 'd', dir: 'n', mode: 'band', amount: 0.3 } },
+    { shape: { ellipse: [84, 67.6, 16, 5] }, fill: 'q', shade: { light: 'y', dir: 'n', mode: 'band', amount: 0.15 } },
+    { shape: { line: [[80, 66.5], [90, 66.5]], width: 1 }, fill: 'y', min: 40 },
+    { shape: { line: [[84, 65], [83, 58], [80, 50]], width: 2.4 }, fill: 'b', shade: { dark: 'k', dir: 'w' } },
+    { shape: { line: [[95, 66], [96, 60], [98, 53]], width: 2.2 }, fill: 'b', shade: { dark: 'k', dir: 'w' } },
+    { shape: { poly: [[80, 50], [66, 54], [71, 49], [64, 45], [74, 45], [72, 39], [80, 46], [84, 38], [85, 46], [94, 43], [88, 49], [96, 53]] }, fill: 'e', shade: { light: 'g', dark: 'd', dir: 'nw' } },
+    { shape: { poly: [[98, 53], [88, 56], [91, 52], [86, 49], [96, 50], [97, 45], [100, 51], [106, 53]] }, fill: 'e', shade: { light: 'g', dark: 'd', dir: 'nw' } }
   ]
 };

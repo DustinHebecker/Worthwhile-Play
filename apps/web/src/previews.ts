@@ -592,24 +592,33 @@ const PREVIEWS: Record<string, () => string> = {
       Object.entries(p).map(([k, [x, y]]) => (k === 'J' ? R(x - 5, y - 5, 10, 10, 'ob', 1) + T(x, y + 0.5, 1, 't tsm') : C(x, y, 6, 'ob') + T(x, y + 0.5, k, 't tsm'))).join('');
   },
   'pixel-peel': () => {
-    // A small pixel picture partly peeled from the edge, its track with station ticks, and three shooters below.
-    const pic = ['.aa.a.', 'abbbba', 'abccb.', '..aaa.'];
-    const fill: Record<string, string> = { a: 'm3', b: 'm1', c: 'm2' };
-    const s = 7, x0 = 27, y0 = 6;
-    let out = R(x0 - 5, y0 - 5, 6 * s + 10, 4 * s + 10, 'e', 3);
+    // A dense pixel landscape partly peeled from the edge, its track with station ticks, and four lane fronts below.
+    const pic = ['..00000003300.', '.000000003300.', '00011000000000', '00111100004400', '01111155044440', '22222255222222', '22442222224422', '.222222222222.'];
+    const fill: Record<string, string> = { '0': 'm1', '1': 'm4', '2': 'm2', '3': 'm3', '4': 'm5', '5': 'm0' };
+    const s = 4, x0 = 20, y0 = 5, w = 14, h = 8;
+    let out = R(x0 - 4, y0 - 4, w * s + 8, h * s + 8, 'e', 3);
     let ticks = '';
-    for (let q = 0; q < 6; q++) ticks += `M${n(x0 + q * s + s / 2)} ${n(y0 - 3.5)}v2M${n(x0 + q * s + s / 2)} ${n(y0 + 4 * s + 1.5)}v2`;
-    for (let r = 0; r < 4; r++) ticks += `M${n(x0 - 3.5)} ${n(y0 + r * s + s / 2)}h2M${n(x0 + 6 * s + 1.5)} ${n(y0 + r * s + s / 2)}h2`;
+    for (let q = 0; q < w; q++) ticks += `M${n(x0 + q * s + s / 2)} ${n(y0 - 3)}v1.6M${n(x0 + q * s + s / 2)} ${n(y0 + h * s + 1.4)}v1.6`;
+    for (let r = 0; r < h; r++) ticks += `M${n(x0 - 3)} ${n(y0 + r * s + s / 2)}h1.6M${n(x0 + w * s + 1.4)} ${n(y0 + r * s + s / 2)}h1.6`;
     out += P(ticks, 'g');
     pic.forEach((row, r) => [...row].forEach((ch, q) => {
-      out += R(x0 + q * s, y0 + r * s, s - 0.6, s - 0.6, ch === '.' ? 'hb' : (fill[ch] as string), 0.8);
+      out += R(x0 + q * s, y0 + r * s, s - 0.4, s - 0.4, ch === '.' ? 'hb' : (fill[ch] as string), 0.5);
     }));
-    const token = (x: number, c: string, num: number, symbol: string) => R(x, 44, 20, 16, 'o', 3) + R(x + 2, 46, 9, 12, c, 1.5) + symbol + T(x + 15.2, 52.4, num, 't tsm');
-    out += token(19, 'm3', 7, poly([[25.5, 48.2], [28.7, 55.6], [22.3, 55.6]], 'sf'));
-    out += token(38, 'm1', 5, C(44.5, 52, 2.6, 'sf'));
-    out += token(57, 'm2', 9, R(61.4, 49.4, 4.2, 5.2, 'sf'));
+    const token = (x: number, c: string, num: number, symbol: string) => R(x, 45, 19, 15, 'o', 3) + R(x + 2, 47, 8, 11, c, 1.5) + symbol + T(x + 14.3, 52.9, num, 't tsm');
+    out += token(8, 'm2', 9, R(12.3, 50.6, 3.4, 3.8, 'sf'));
+    out += token(29, 'm4', 6, poly([[35, 49.4], [37.6, 55.2], [32.4, 55.2]], 'sf'));
+    out += token(50, 'm5', 4, C(56, 52.5, 2.1, 'sf'));
+    out += token(71, 'm1', 8, poly([[77, 49.6], [79.6, 52.5], [77, 55.4], [74.4, 52.5]], 'sf'));
     return out;
   },
+  // Estimation Lab: the question card, the review's log scale (decade ticks, hatched plausible range, the answer ◆ close
+  // to the reference line) and the model as three factor boxes joined by ×. No text or digits (language-neutral).
+  'fermi-lab': () =>
+    R(6, 3, 84, 14, 'e', 3) + L(12, 8.5, 70, 8.5, 'mu') + L(12, 12.5, 50, 12.5, 'mu') +
+    R(42, 24, 22, 13, 'o', 1) + [44, 49, 54, 59].map((x) => L(x, 36.5, x + 4, 24.5, 'fn')).join('') +
+    L(8, 30.5, 88, 30.5, 'k') + [10, 29, 48, 67, 86].map((x) => L(x, 27, x, 34, 'k')).join('') +
+    L(55, 20, 55, 41, 'al') + diamond(49, 30.5, 4.5, 'a') +
+    [8, 37, 66].map((x) => R(x, 47, 22, 13, 'o', 2)).join('') + cross(33, 53.5, 'k', 1.8) + cross(62, 53.5, 'k', 1.8),
   'many-lives': () => {
     // The game's scene: a house behind on the left, the person in the centre, a desk on the right; stat meters on top.
     let out = R(4, 4, 88, 10, 'e', 2);

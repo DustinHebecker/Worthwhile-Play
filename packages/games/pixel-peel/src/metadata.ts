@@ -3,9 +3,9 @@ import { messages } from './messages';
 
 export const metadata: GameMetadata = {
   id: 'pixel-peel',
-  stateVersion: 1,
+  stateVersion: 2,
   skills: ['planning', 'spatial'],
-  typicalMinutes: [4, 15],
+  typicalMinutes: [8, 30],
   inputMethods: ['pointer', 'touch', 'keyboard'],
   capabilities: {
     offline: true,
