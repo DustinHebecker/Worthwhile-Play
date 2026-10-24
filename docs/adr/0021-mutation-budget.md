@@ -18,3 +18,6 @@ Mutation testing (Stryker, `.github/workflows/mutation.yml`) mutated every chang
 − Mutants that only a slow test would kill now survive in mutation reports; write a fast test for such logic rather than relying on the slow suite.
 − Line ranges miss mutants of an expression that starts more than 2 lines above a changed line.
 - New slow tests (seconds each, AI strength, statistics, oracle or solver searches over shipped data) go into `*.slow.test.ts` files from the start.
+
+## Amendment (2026-10-24)
+The `*.slow.test.ts` suites no longer run in the CI coverage job: under coverage instrumentation the job reached about 14 of its 20 minutes and a slow relay-command generator test hit its 20-second timeout (main at 424239f). They now run with the `*.long.test.ts` suites in the `long` job, without coverage (the chess puzzle data file keeps its own job). `pnpm test`/`pnpm check` still run every test locally, and the deploy still needs the `long` job, so the gate is unchanged; only the coverage report no longer counts lines that only slow suites reach.
