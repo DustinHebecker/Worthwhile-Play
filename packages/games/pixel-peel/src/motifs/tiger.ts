@@ -149,17 +149,17 @@ export const tiger: Motif = {
     { shape: { ellipse: [61.6, 45.4, 1.4, 1.6] }, fill: 'k', keep: true },
     { shape: { line: [[31, 49], [35, 53]], width: 1 }, fill: 'k', min: 40 },
     { shape: { line: [[69, 49], [65, 53]], width: 1 }, fill: 'k', min: 40 },
-    // Muzzle, chin, nose and mouth.
-    { shape: { ellipse: [43, 69, 10.5, 8.4] }, fill: 'w', shade: { light: 'a', dark: 'c', dir: 'nw', width: 2 } },
-    { shape: { ellipse: [57, 69, 10.5, 8.4] }, fill: 'w', shade: { light: 'a', dark: 'c', dir: 'ne', width: 2 } },
+    // Muzzle, chin, nose and mouth; faint whisker spots (dark ones would read as a second pair of eyes).
+    { shape: { ellipse: [43, 69, 10.5, 8.4] }, fill: 'w', shade: { light: 'a', dark: 'c', dir: 'n', mode: 'band', amount: 0.25 } },
+    { shape: { ellipse: [57, 69, 10.5, 8.4] }, fill: 'w', shade: { light: 'a', dark: 'c', dir: 'n', mode: 'band', amount: 0.25 } },
     { shape: { ellipse: [50, 82, 8.4, 6.4] }, fill: 'w', shade: { dark: 'c', dir: 'n', mode: 'band', amount: 0.3 } },
     { shape: { poly: [[41, 56], [59, 56], [53, 64], [50, 66], [47, 64]], smooth: 1 }, fill: 'p', shade: { dark: 'u', dir: 'n', mode: 'band', amount: 0.25 } },
     { shape: { line: [[50, 65], [50, 70]], width: 1.2 }, fill: 'k' },
     { shape: { line: [[50, 70], [45, 74], [41, 73]], width: 1.2 }, fill: 'u' },
     { shape: { line: [[50, 70], [55, 74], [59, 73]], width: 1.2 }, fill: 'u' },
-    { shape: { ellipse: [38, 67, 0.6, 0.6] }, fill: 'k', keep: true, min: 48 },
-    { shape: { ellipse: [41, 70, 0.6, 0.6] }, fill: 'k', keep: true, min: 48 },
-    { shape: { ellipse: [62, 67, 0.6, 0.6] }, fill: 'k', keep: true, min: 48 },
-    { shape: { ellipse: [59, 70, 0.6, 0.6] }, fill: 'k', keep: true, min: 48 }
+    { shape: { ellipse: [38, 67, 0.6, 0.6] }, fill: 'c', keep: true, min: 48 },
+    { shape: { ellipse: [41, 70, 0.6, 0.6] }, fill: 'c', keep: true, min: 48 },
+    { shape: { ellipse: [62, 67, 0.6, 0.6] }, fill: 'c', keep: true, min: 48 },
+    { shape: { ellipse: [59, 70, 0.6, 0.6] }, fill: 'c', keep: true, min: 48 }
   ]
 };
