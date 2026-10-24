@@ -100,6 +100,17 @@ describe('view', () => {
     expect(m.state().questions[0]!.phase).toBe('model');
   });
 
+  it('moves the power of ten to the stepper when doubling would overflow the field (the saved draft is cut at 32 characters)', () => {
+    const m = mount(createInitial(9));
+    m.type('fl-est-input', '5e31');
+    for (let i = 0; i < 6; i++) m.click('fl-est-exp-minus');
+    m.click('fl-est-mul2');
+    expect(Number(m.q('fl-est-value')!.dataset.value) / 1e26).toBeCloseTo(1, 9);
+    expect(m.state().questions[0]!).toMatchObject({ draft: '1', draftExp: 26 });
+    const r = mount(m.state());
+    expect(Number(r.q('fl-est-value')!.dataset.value) / 1e26).toBeCloseTo(1, 9);
+  });
+
   it('restores a half-typed estimate and a half-built model', () => {
     const m = mount(createInitial(13));
     m.type('fl-est-input', '4,5');

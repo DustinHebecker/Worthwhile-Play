@@ -7,6 +7,7 @@ import {
   EXP_MIN,
   MAX_FACTORS,
   ROUND_LENGTH,
+  TEXT_MAX,
   addRow,
   commitGuess,
   compare,
@@ -208,7 +209,16 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
       const scaleBy = (k: number) => {
         const r = parse();
         if (!r.ok) return announce(live, t('need.guess'));
-        current = fieldText(r.value * k, locale, 3);
+        const v = r.value * k;
+        const plain = fieldText(v, locale, 3);
+        if ([...plain].length <= TEXT_MAX) current = plain;
+        else {
+          // Too long for the field (and its saved draft): move the power of ten to the stepper.
+          const parts = fieldParts(v, locale, 3);
+          if (exp + parts.exp < EXP_MIN || exp + parts.exp > EXP_MAX) return;
+          current = parts.text;
+          exp += parts.exp;
+        }
         field.value = current;
         changed();
       };
