@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { GameInstance, GameModule } from '@wp/game-core';
 import { createTestContext, createTestLibrary, type TestContext } from '@wp/testing';
 import game from '../src/index';
-import { initialIntel, NEUTRAL, passable, validateCommand, type Entity } from '@wp/strategy-engine';
+import { initialIntel, NEUTRAL, passable, retire, validateCommand, type Entity } from '@wp/strategy-engine';
 import { concede, lockTurn, newGame, OPPONENT, PLAYER, RULESET, sideValue, STALL_TURNS, stalemateTurns, type RcState } from '../src/rules';
 import { SCENARIOS } from '../src/scenarios';
 import { CELL } from '../src/view';
@@ -1320,6 +1320,28 @@ describe('hot-seat (D10)', () => {
     live: [...ctx.context.root.querySelectorAll('[aria-live]')].map((el) => el.textContent ?? '').join('|')
   });
   const hot = () => newGame(3, corners, 'normal', 12, false, null, 2, ['person', 'person', 'computer']);
+  it('teams with several persons: the setup offers the shapes; a team that wins together is named, survivors only', () => {
+    const team = newGame(3, corners, 'normal', 12, false, null, 3, ['person', 'person', 'computer', 'computer'], false, null, '2v2-next');
+    open(team);
+    expect($('rc-teams-label').hidden).toBe(false);
+    expect(($('rc-teams') as HTMLSelectElement).value).toBe('2v2-next');
+    // Both opponents out: the next locks end the game (one team is left).
+    let w = state().world;
+    for (const side of [2, 3]) w = retire(w, side).world;
+    const ended = structuredClone(state());
+    ended.world = w;
+    instance.restore(ended);
+    click('rc-handover-confirm');
+    click('rc-lock');
+    if (state().handover) {
+      click('rc-handover-confirm');
+      click('rc-lock');
+    }
+    expect(state().phase).toBe('finished');
+    expect($('rc-result-winner').textContent).toBe('Players A, B won together.');
+  });
+
+
   /** Opens a hot-seat game: like any resumed one, it starts at the hand-over to the person planning. */
   function open(s: RcState): void {
     instance.restore(s);
