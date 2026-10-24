@@ -86,10 +86,15 @@ describe('hint at scale (design v2 § 4)', () => {
         const solvedBy = ['obvious', 'tidy', 'slotsFirst', 'cautious'].some((id) => run(table, (c) => picker(id as 'tidy').pick(c), { left: 1e9 }, cur).result === 'solved') || run(table, followPlan(identitiesOf(table, s.witness), identitiesOf(table, after.moves)), { left: 1e9 }, cur).result === 'solved';
         expect(solvedBy || 'solution' in solve(positionAt(after, after.moves.length), 50_000), `${motif} ${seed}`).toBe(true);
       } else {
-        // An undo target is verified: a rollout from it solves, or it lies on the witness.
+        // An undo target is verified: it lies on the witness, or "follow the plan" or the tidy rule solves from it.
         const k0 = commonPrefix(s.moves, s.witness);
         expect(h.k).toBeGreaterThanOrEqual(k0);
         expect(h.k).toBeLessThan(s.moves.length);
+        const from = replayCursor(table, s.moves.slice(0, h.k))!;
+        const ok = h.k === k0
+          || run(table, followPlan(identitiesOf(table, s.witness), identitiesOf(table, s.moves.slice(0, h.k))), { left: 1e9 }, from).result === 'solved'
+          || run(table, (c) => picker('tidy').pick(c), { left: 1e9 }, from).result === 'solved';
+        expect(ok, `${motif} ${seed}: k=${h.k}`).toBe(true);
       }
     }
   });
