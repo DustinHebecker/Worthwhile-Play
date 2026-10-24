@@ -1,6 +1,6 @@
 # Pixel Peel (`pixel-peel`): design
 
-Status: **Implemented as a prototype (2026-10-17)**; see "Implementation notes" at the end. The planner of the new-games pipeline wrote this; the implementer follows it and the reviewer checks against it. Numbers marked *(calibrate)* are first estimates. The implementer may tune them within the stated bounds, but never beyond the limits in § 9 and § 12. Deviations go into a final "Implementation notes" section, as in `mini-optimizer.md`.
+Status: **Implemented as a prototype (2026-10-17)**; see "Implementation notes" at the end. **Rework planned in `docs/design/pixel-peel-v2.md` (2026-10-18)**, which amends resolution, colours, difficulty, generator, hint, UI scale and settings; the mechanics of § 4 stay. The planner of the new-games pipeline wrote this; the implementer follows it and the reviewer checks against it. Numbers marked *(calibrate)* are first estimates. The implementer may tune them within the stated bounds, but never beyond the limits in § 9 and § 12. Deviations go into a final "Implementation notes" section, as in `mini-optimizer.md`.
 
 Owner priority for this round: a **deployable prototype** that is complete, fully playable, correct, tested and accessible, with **12 motifs**. The owner refines the pictures afterwards, so everything about a motif is data, and adding or redrawing a motif is a data-only change (§ 6).
 

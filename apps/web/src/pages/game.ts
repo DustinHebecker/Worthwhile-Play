@@ -104,10 +104,18 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
   });
   /** The settings drawn on the start screen (re-read each time: device lists such as decks can change). */
   const specs = (): readonly SettingSpec[] => (module ? hostSettings(module, settingsEnv()) : []);
+  /**
+   * Choices without the settings declared `remember: false` (ADR 0017): those are never stored and never preselected
+   * from an earlier game, so the start screen opens on their declared default.
+   */
+  const rememberable = (values: Record<string, unknown>): Record<string, unknown> => {
+    const forget = new Set(specs().filter((spec) => spec.kind !== 'difficulty' && spec.remember === false).map(settingId));
+    return forget.size ? Object.fromEntries(Object.entries(values).filter(([id]) => !forget.has(id))) : values;
+  };
   /** Last start-screen choices on this device: untrusted, so always passed through `resolveSettings`. */
   const remembered = (): Record<string, unknown> => {
     const value = preferences.get(REMEMBERED_SETTINGS);
-    return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+    return value && typeof value === 'object' && !Array.isArray(value) ? rememberable(value as Record<string, unknown>) : {};
   };
   /** A setup as untrusted choices (difficulty under `difficulty`). */
   const choices = (setup: Partial<Setup> | undefined): Record<string, unknown> => ({ ...setup?.settings, ...(setup?.difficulty !== undefined ? { difficulty: setup.difficulty } : {}) });
@@ -115,7 +123,7 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
    * Merged into what is remembered, so settings that are hidden now (e.g. the strength while two people play) keep
    * their last value for the next time they are shown.
    */
-  const remember = (setup: Partial<Setup>) => preferences.set(REMEMBERED_SETTINGS, { ...remembered(), ...choices(setup) });
+  const remember = (setup: Partial<Setup>) => preferences.set(REMEMBERED_SETTINGS, rememberable({ ...remembered(), ...choices(setup) }));
   const validDifficulty = (value: unknown): string | undefined => (typeof value === 'string' && metadata.difficulties?.includes(value) ? value : undefined);
   /**
    * A setupInGame game that declares its settings chooses the difficulty in its own setup (ADR 0017 amendment): the
@@ -362,7 +370,7 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
     await autosave?.flush(true);
     gameRoot.hidden = true;
     finishedSlot.hidden = true;
-    showStart('running', { ...remembered(), ...choices(current) });
+    showStart('running', { ...remembered(), ...rememberable(choices(current)) });
   };
 
   // Pause when hidden; informational (never blocking) note after long continuous play.
@@ -431,7 +439,7 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
     const save = loaded.status === 'ok' ? loaded.save : undefined;
     // Remembered settings (else the save's), overridden by a `?difficulty=` link and a `?deck=` link (a game's
     // `deck` setting, e.g. "Review" on a deck page; dropped by resolveSettings where it is not a valid choice).
-    const initial = { ...(save ? fromSave(save).chosen : {}), ...remembered(), ...(route.difficulty ? { difficulty: route.difficulty } : {}), ...(route.deck ? { deck: route.deck } : {}) };
+    const initial = { ...(save ? rememberable(fromSave(save).chosen) : {}), ...remembered(), ...(route.difficulty ? { difficulty: route.difficulty } : {}), ...(route.deck ? { deck: route.deck } : {}) };
     if (route.seed !== undefined) {
       // Deep links start at once (bug reports, sharing).
       await startNew({ seed: route.seed, ...resolve(initial) });
