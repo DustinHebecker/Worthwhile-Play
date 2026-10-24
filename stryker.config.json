@@ -18,6 +18,9 @@
     "packages/games/relay-command/src/generator.ts",
     "packages/strategy-engine/src/*.ts",
     "!packages/strategy-engine/src/{content,index,types}.ts",
+    "packages/life-engine/src/*.ts",
+    "packages/life-engine/src/params/check.ts",
+    "!packages/life-engine/src/index.ts",
     "!**/*.d.ts",
     "!packages/learning-content/src/builtin/**"
   ],

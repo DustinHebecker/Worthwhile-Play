@@ -1,11 +1,39 @@
 import type { GameMetadata, GameModule, SettingSpec, SettingsEnv, Translator } from './types';
 import { SKILLS } from './types';
 import { DIFFICULTY_SETTING, coerceSetting, settingId } from './settings';
+import { SUPPORTED_LOCALES, gameLocales } from './lang';
 
 const ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const REQUIRED_MESSAGE_KEYS = ['title', 'tagline', 'rules'] as const;
 
-/** Returns human-readable problems with a metadata object (empty array when valid). */
+/** Problems with the optional `locales` (ADR 0003 amendment 2026-10-24) and `status` fields. */
+function localeProblems(metadata: GameMetadata): string[] {
+  const problems: string[] = [];
+  const { locales, status } = metadata as { locales?: unknown; status?: unknown };
+  if (status !== undefined && status !== 'preview') problems.push(`status must be "preview" when set, not ${JSON.stringify(status)}`);
+  if (locales === undefined) return problems;
+  if (!Array.isArray(locales) || locales.length === 0) return [...problems, 'locales must be a non-empty array of supported locales'];
+  for (const locale of locales as unknown[]) if (!(SUPPORTED_LOCALES as readonly unknown[]).includes(locale)) problems.push(`locales lists unknown locale ${JSON.stringify(locale)}`);
+  if (new Set(locales).size !== locales.length) problems.push('locales lists a locale twice');
+  if (!locales.includes('en')) problems.push('locales must include "en" (the fallback)');
+  // Owner decision 2026-10-21: shipping only some locales is for games released early as work in progress.
+  if (new Set(locales).size < SUPPORTED_LOCALES.length && status !== 'preview') problems.push('a game shipping only some locales must be released as status "preview"');
+  return problems;
+}
+
+/**
+ * The locales of `requiredLocales` the game ships (all of them for a game without `metadata.locales`): messages are
+ * checked only there; in the other locales the host shows the game in English.
+ */
+const shipped = (metadata: GameMetadata, requiredLocales: readonly string[]): readonly string[] => {
+  const locales: readonly string[] = gameLocales(metadata);
+  return requiredLocales.filter((locale) => locales.includes(locale));
+};
+
+/**
+ * Returns human-readable problems with a metadata object (empty array when valid). Messages are required for each
+ * of `requiredLocales` that the game ships (`metadata.locales`, default all 16).
+ */
 export function validateMetadata(metadata: GameMetadata, requiredLocales: readonly string[] = []): string[] {
   const problems: string[] = [];
   if (!ID_PATTERN.test(metadata.id)) problems.push(`id "${metadata.id}" must be kebab-case`);
@@ -16,7 +44,8 @@ export function validateMetadata(metadata: GameMetadata, requiredLocales: readon
   if (!(min > 0 && max >= min)) problems.push('typicalMinutes must satisfy 0 < min <= max');
   if (metadata.inputMethods.length === 0) problems.push('at least one input method is required');
   if (metadata.setupInGame !== undefined && typeof metadata.setupInGame !== 'boolean') problems.push('setupInGame must be a boolean');
-  for (const locale of requiredLocales) {
+  problems.push(...localeProblems(metadata));
+  for (const locale of shipped(metadata, requiredLocales)) {
     const catalogue = metadata.messages[locale];
     if (!catalogue) {
       problems.push(`missing messages for locale "${locale}"`);
@@ -36,7 +65,7 @@ const keyTranslator = (locale: string): Translator => Object.assign((key: string
  * Returns human-readable problems with a module's declared settings (ADR 0017), empty when valid or when there
  * are none: unique, well-formed ids; non-empty, unique values; defaults that are allowed values; `when` conditions
  * that refer to known settings and their values; at most one difficulty entry (which needs `metadata.difficulties`);
- * every label, hint and value key present in each of `requiredLocales`. A `settings(env)` function is called
+ * every label, hint and value key present in each of `requiredLocales` the game ships. A `settings(env)` function is called
  * with `env` (default: a key-returning translator and no device data).
  */
 export function validateSettings(module: Pick<GameModule, 'metadata' | 'settings'>, requiredLocales: readonly string[] = [], env?: SettingsEnv): string[] {
@@ -76,6 +105,7 @@ export function validateSettings(module: Pick<GameModule, 'metadata' | 'settings
       if (spec.valueLabels) for (const v of spec.values) if (!spec.valueLabels[String(v)]?.trim()) problems.push(`setting "${spec.id}" has no label for value ${JSON.stringify(v)}`);
       if (spec.display !== undefined && !['auto', 'radio', 'select'].includes(spec.display)) problems.push(`setting "${spec.id}": unknown display "${String(spec.display)}"`);
     }
+    if (spec.kind !== 'difficulty' && spec.remember !== undefined && typeof (spec.remember as unknown) !== 'boolean') problems.push(`setting "${spec.id}": remember must be a boolean`);
     if (spec.kind === 'toggle' && typeof (spec.default as unknown) !== 'boolean') problems.push(`setting "${spec.id}": default must be a boolean`);
     if (spec.kind === 'number') {
       const step = spec.step ?? 1;
@@ -97,7 +127,7 @@ export function validateSettings(module: Pick<GameModule, 'metadata' | 'settings
       else for (const value of allowed) if (coerceSetting(target, metadata, value) !== value) problems.push(`setting "${settingId(spec)}": when.${ref} lists ${JSON.stringify(value)}, not a value of "${ref}"`);
     }
   }
-  for (const locale of requiredLocales) {
+  for (const locale of shipped(metadata, requiredLocales)) {
     const catalogue = metadata.messages[locale];
     if (!catalogue) continue; // reported by validateMetadata
     for (const key of new Set(keys)) if (!catalogue[key]?.trim()) problems.push(`locale "${locale}" lacks setting key "${key}"`);

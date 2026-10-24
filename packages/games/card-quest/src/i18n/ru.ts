@@ -123,6 +123,9 @@ export const ru: Catalogue = {
   'act.escape': 'Сбежать сейчас',
   'act.curse': 'Проклясть: {name}',
   'act.upgrade': 'Прикрепить к: {name}',
+  'eq.attached': 'Прикреплено к: {name}',
+  'gear.upgraded': '{item} (+ {upgrades})',
+  'detail.total': 'С улучшениями ({upgrades}): всего {n}',
   'sell.title': 'Выбери предметы и разовые карты для продажи. Ценность {sum} → уровень +{levels}.',
   'sell.need': 'Каждые {rate} очков ценности = 1 уровень (не победный).',
 

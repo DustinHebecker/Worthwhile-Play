@@ -39,6 +39,8 @@ const ja: UiCatalogue = {
   'game.offline': 'オフラインで動作',
   'game.network': 'インターネットが必要',
   'game.aiOptional': 'AI（任意）',
+  'game.preview': '開発中',
+  'game.shownInEnglish': 'このゲームはまだ翻訳中のため、当面は英語で表示されます。',
   'game.skills': '鍛えられる力',
   'game.howToPlay': '遊び方',
   'game.back': 'すべてのゲーム',

@@ -1,4 +1,4 @@
-import { coerceSetting, hostSettings, ownsDifficulty, randomSeed, resolveSettings, settingId, type GameInstance, type GameModule, type GameResult, type SettingSpec, type SettingValue, type SettingsEnv } from '@wp/game-core';
+import { coerceSetting, gameLocale, hostSettings, ownsDifficulty, randomSeed, resolveSettings, settingId, type GameInstance, type GameModule, type GameResult, type SettingSpec, type SettingValue, type SettingsEnv } from '@wp/game-core';
 import type { GameContentLanguages, GamePreferences, UserDeckSource } from '@wp/game-core';
 import { readContentLanguages } from '@wp/localization';
 import { createAutosave, createGameLibrary, createSave, interpretSave, type GameSave, type SaveStore } from '@wp/persistence';
@@ -11,7 +11,7 @@ import { hostLearning, loadLearningRecords, type HostLearning } from '../lib/lea
 import { createPreferences } from '../lib/preferences';
 import { safeStorage, sessionNoteEnabled } from './settings';
 import { renderSetupForm, settingsSummary } from './setup-form';
-import { gameBadges, gameTranslator } from './shared';
+import { gameBadges, gameTextAttrs, gameTranslator } from './shared';
 
 type GameRoute = Extract<Route, { name: 'game' }>;
 
@@ -47,18 +47,22 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
   // Until the game's chunk is loaded, only its catalogue messages are available (title, tagline, rules,
   // difficulty labels); the game itself always gets a translator over its complete messages.
   let gt = gameTranslator(metadata, app.locale);
+  // A game that does not ship the UI locale (metadata.locales) is shown in English: the elements with its texts —
+  // the game root included — say so with `lang`/`dir` (empty for every other game, which inherits the page's).
+  const own = gameTextAttrs(gt, app.locale);
 
   const status = h('div', { class: 'host-status' });
   const panel = h('div', { class: 'host-panel' });
-  const gameRoot = h('div', { class: 'game-root', 'data-testid': 'game-root', hidden: true });
+  const gameRoot = h('div', { class: 'game-root', 'data-testid': 'game-root', hidden: true, ...own });
   const finishedSlot = h('div', { class: 'finished-slot' });
   main.append(
     h('nav', { class: 'breadcrumb' }, h('a', { href: '/' }, `${t.direction === 'rtl' ? '→' : '←'} ${t('game.back')}`)),
     h('header', { class: 'game-header' },
-      h('h1', {}, gt('title')),
-      h('p', { class: 'lead' }, gt('tagline')),
+      h('h1', own, gt('title')),
+      h('p', { class: 'lead', ...own }, gt('tagline')),
       gameBadges(metadata, t),
-      h('details', { class: 'rules' }, h('summary', {}, t('game.howToPlay')), h('p', {}, gt('rules')))
+      own.lang ? h('p', { class: 'wp-muted', 'data-testid': 'shown-in-english' }, t('game.shownInEnglish')) : null,
+      h('details', { class: 'rules' }, h('summary', {}, t('game.howToPlay')), h('p', own, gt('rules')))
     ),
     status,
     panel,
@@ -100,10 +104,18 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
   });
   /** The settings drawn on the start screen (re-read each time: device lists such as decks can change). */
   const specs = (): readonly SettingSpec[] => (module ? hostSettings(module, settingsEnv()) : []);
+  /**
+   * Choices without the settings declared `remember: false` (ADR 0017): those are never stored and never preselected
+   * from an earlier game, so the start screen opens on their declared default.
+   */
+  const rememberable = (values: Record<string, unknown>): Record<string, unknown> => {
+    const forget = new Set(specs().filter((spec) => spec.kind !== 'difficulty' && spec.remember === false).map(settingId));
+    return forget.size ? Object.fromEntries(Object.entries(values).filter(([id]) => !forget.has(id))) : values;
+  };
   /** Last start-screen choices on this device: untrusted, so always passed through `resolveSettings`. */
   const remembered = (): Record<string, unknown> => {
     const value = preferences.get(REMEMBERED_SETTINGS);
-    return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+    return value && typeof value === 'object' && !Array.isArray(value) ? rememberable(value as Record<string, unknown>) : {};
   };
   /** A setup as untrusted choices (difficulty under `difficulty`). */
   const choices = (setup: Partial<Setup> | undefined): Record<string, unknown> => ({ ...setup?.settings, ...(setup?.difficulty !== undefined ? { difficulty: setup.difficulty } : {}) });
@@ -111,7 +123,7 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
    * Merged into what is remembered, so settings that are hidden now (e.g. the strength while two people play) keep
    * their last value for the next time they are shown.
    */
-  const remember = (setup: Partial<Setup>) => preferences.set(REMEMBERED_SETTINGS, { ...remembered(), ...choices(setup) });
+  const remember = (setup: Partial<Setup>) => preferences.set(REMEMBERED_SETTINGS, rememberable({ ...remembered(), ...choices(setup) }));
   const validDifficulty = (value: unknown): string | undefined => (typeof value === 'string' && metadata.difficulties?.includes(value) ? value : undefined);
   /**
    * A setupInGame game that declares its settings chooses the difficulty in its own setup (ADR 0017 amendment): the
@@ -178,8 +190,8 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
     clear(finishedSlot);
     interactedAfterFinish = false;
     // A game may phrase its own outcome (`result.<outcome>`), e.g. "Player X wins"; otherwise use the shared wording.
-    const own = `result.${result.outcome}`;
-    const outcome = (module?.metadata ?? metadata).messages.en?.[own] ? own : { won: 'common.won', lost: 'common.lost', draw: 'common.draw', completed: 'common.solved' }[result.outcome];
+    const ownKey = `result.${result.outcome}`;
+    const outcome = (module?.metadata ?? metadata).messages.en?.[ownKey] ? ownKey : { won: 'common.won', lost: 'common.lost', draw: 'common.draw', completed: 'common.solved' }[result.outcome];
     // "Another round" repeats the current settings with one deliberate press; "Change settings" opens the start screen.
     // Without known settings (an older save) only "Change settings": repeating guessed settings would mislead.
     const another = current?.known ? h('button', { type: 'button', class: 'primary', 'data-testid': 'another-round' }, t('game.anotherRound')) : null;
@@ -189,7 +201,7 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
     finishedSlot.append(
       h('section', { class: 'finished wp-card', role: 'status', 'data-testid': 'finished' },
         h('h2', {}, t('game.finished')),
-        h('p', {}, gt(outcome)),
+        h('p', own, gt(outcome)),
         // Deliberately no automatic next game: the user decides whether to continue.
         h('div', { class: 'wp-row' }, another, change, h('a', { class: 'wp-button', href: '/' }, t('game.back')))
       )
@@ -241,7 +253,7 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
     button.addEventListener('click', () => void openStart());
     const summary = current?.known ? settingsSummary(summarySpecs(), current, gt, t) : '';
     panel.append(h('div', { class: 'wp-row toolbar' }, button,
-      summary ? h('span', { class: 'settings-summary', 'data-testid': 'settings-summary' }, summary) : null,
+      summary ? h('span', { class: 'settings-summary', 'data-testid': 'settings-summary', ...own }, summary) : null,
       current ? h('span', { class: 'wp-muted seed', 'data-testid': 'seed' }, t('game.seed', { seed: current.seed })) : null));
   };
 
@@ -328,7 +340,7 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
       panel.append(h('section', { class: 'start wp-card wp-stack', 'data-testid': 'start-screen' }, ...items, h('div', { class: 'wp-row' }, fresh)));
       return focusFirst(fresh);
     }
-    const setup = renderSetupForm(list, metadata, initial, gt, t);
+    const setup = renderSetupForm(list, metadata, initial, gt, t, own);
     const startButton = h('button', { type: 'submit', class: continueWith ? '' : 'primary', 'data-testid': 'start-game' }, t('game.start'));
     const headingId = `start-heading-${metadata.id}`;
     const form = h('form', { class: 'start-form wp-stack', 'aria-labelledby': headingId, 'data-testid': 'start-form', novalidate: true },
@@ -358,7 +370,7 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
     await autosave?.flush(true);
     gameRoot.hidden = true;
     finishedSlot.hidden = true;
-    showStart('running', { ...remembered(), ...choices(current) });
+    showStart('running', { ...remembered(), ...rememberable(choices(current)) });
   };
 
   // Pause when hidden; informational (never blocking) note after long continuous play.
@@ -399,7 +411,7 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
         // Games with per-locale content (ADR 0011) load the UI locale's content and the English fallback before
         // they are created. A language switch re-renders this page, so it runs again for the new locale.
         entry.load().then(async (game) => {
-          await game.preload?.(app.locale);
+          await game.preload?.(gameLocale(game.metadata, app.locale));
           return game;
         }),
         app.store,
@@ -427,7 +439,7 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
     const save = loaded.status === 'ok' ? loaded.save : undefined;
     // Remembered settings (else the save's), overridden by a `?difficulty=` link and a `?deck=` link (a game's
     // `deck` setting, e.g. "Review" on a deck page; dropped by resolveSettings where it is not a valid choice).
-    const initial = { ...(save ? fromSave(save).chosen : {}), ...remembered(), ...(route.difficulty ? { difficulty: route.difficulty } : {}), ...(route.deck ? { deck: route.deck } : {}) };
+    const initial = { ...(save ? rememberable(fromSave(save).chosen) : {}), ...remembered(), ...(route.difficulty ? { difficulty: route.difficulty } : {}), ...(route.deck ? { deck: route.deck } : {}) };
     if (route.seed !== undefined) {
       // Deep links start at once (bug reports, sharing).
       await startNew({ seed: route.seed, ...resolve(initial) });

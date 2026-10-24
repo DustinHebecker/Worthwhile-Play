@@ -1,3 +1,4 @@
+import type { SupportedLocale } from './lang';
 import type { Rng } from './rng';
 
 /** Primary abilities a game exercises. Used for catalogue grouping, never for scoring users. */
@@ -49,8 +50,21 @@ export interface GameMetadata {
   readonly typicalMinutes: readonly [number, number];
   readonly inputMethods: readonly InputMethod[];
   readonly capabilities: GameCapabilities;
-  /** Must contain at least the keys `title`, `tagline` and `rules` for every supported locale. */
+  /** Must contain at least the keys `title`, `tagline` and `rules` for every locale the game ships (`locales`). */
   readonly messages: GameMessages;
+  /**
+   * Optional (ADR 0003 amendment 2026-10-24): the UI locales the game ships, `'en'` included; absent = all 16.
+   * Only for games released early as `status: 'preview'` by owner decision. Messages are required (and checked)
+   * only for these locales; in any other UI locale the host shows the game's texts in English — its catalogue
+   * card texts, its page header, its settings and the game itself (`context.t.locale` is then `'en'`), marked
+   * `lang="en"` — without reporting missing keys.
+   */
+  readonly locales?: readonly SupportedLocale[];
+  /**
+   * Optional: `'preview'` marks a game released early as work in progress (owner decision): the catalogue card and
+   * the game page show a "Work in progress" badge. Absent for finished games.
+   */
+  readonly status?: 'preview';
   /** Optional difficulty identifiers; translated via `difficulty.<id>` message keys. */
   readonly difficulties?: readonly string[];
   /** Optional: the game can play with the user's imported decks; the host then provides `GameContext.userDecks`. */
@@ -140,6 +154,11 @@ export type SettingSpec =
       readonly hintKey?: string;
       readonly default: string | number;
       readonly display?: 'auto' | 'radio' | 'select';
+      /**
+       * `false`: the host never remembers this setting (ADR 0017), so the start screen always opens on `default` (e.g. a
+       * picture choice whose default is "Any picture"). "Another round" still repeats the save's value. Default `true`.
+       */
+      readonly remember?: boolean;
       readonly when?: SettingCondition;
     }
   | {
@@ -148,6 +167,8 @@ export type SettingSpec =
       readonly labelKey: string;
       readonly default: boolean;
       readonly hintKey?: string;
+      /** `false`: never remembered by the host (as for a choice). */
+      readonly remember?: boolean;
       readonly when?: SettingCondition;
     }
   | {
@@ -160,6 +181,8 @@ export type SettingSpec =
       readonly step?: number;
       readonly default: number;
       readonly hintKey?: string;
+      /** `false`: never remembered by the host (as for a choice). */
+      readonly remember?: boolean;
       readonly when?: SettingCondition;
     };
 

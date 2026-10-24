@@ -1,6 +1,6 @@
-import type { Motif } from './types';
+import type { Motif } from '../art/types';
 
-/** Two snowy houses with lit windows, firs, a mountain and the moon. Original pixel art drawn for Worthwhile Play. */
+/** A mountain village at dusk in winter: long snowy houses with lit windows, a church tower, firs, and two skaters on a frozen pond. Original vector art drawn for Worthwhile Play. */
 export const winterVillage: Motif = {
   id: 'winter-village',
   group: 'season',
@@ -40,31 +40,90 @@ export const winterVillage: Motif = {
     uk: 'Гірське село взимку',
     hi: 'सर्दियों में एक पहाड़ी गाँव'
   },
-  backdrop: '#c9b28a',
+  aspect: 'wide',
+  backdrop: '#c4a484',
   palette: {
-    n: ['#1d2b55', 'navy'],
-    w: ['#f4f6f8', 'white'],
-    b: ['#7a4b2a', 'brown'],
-    y: ['#f5cf47', 'yellow'],
-    d: ['#2b5d3a', 'darkGreen'],
-    g: ['#8a909a', 'grey']
+    n: ['#1d2a55', 'navy', 1],
+    v: ['#7a5aa6', 'violet', 1],
+    c: ['#f4ad8a', 'peach', 1],
+    y: ['#ffe27a', 'lightYellow', 1],
+    w: ['#f5f7fc', 'white', 1],
+    l: ['#b3c6e6', 'lightBlue', 1],
+    s: ['#8f8fc4', 'lavender', 2, 'l'],
+    b: ['#3a6fc2', 'blue', 1],
+    r: ['#cc3d3d', 'red', 1],
+    x: ['#7c2433', 'maroon', 2, 'r'],
+    o: ['#8a5a3a', 'brown', 1],
+    d: ['#4e3125', 'darkBrown', 2, 'o'],
+    g: ['#8b8e9c', 'grey', 1],
+    k: ['#24242f', 'charcoal', 1],
+    e: ['#2c5244', 'darkGreen', 2, 'k'],
+    t: ['#8ad6d6', 'turquoise', 3, 'l']
   },
-  rows: [
-    'nnnnnnnnnnnnnnnnnnnn',
-    'nnnnnnnnnnnnnnnyynnn',
-    'nnnnnnnnnnnnnnnyynnn',
-    'nnnnnnggnnnnnnnnnnnn',
-    'nnnnnggggnnnnnnnnnnn',
-    'nnnnggggggnnnwngnnnn',
-    'nnnggwgggggnwwwgnnwn',
-    'nwggwwwggggwwwwwnndn',
-    'ndgwwwwwggwwwwwwwddd',
-    'dddbbbbbgggbbbbbggdg',
-    'gdgbybybgggbybybgddd',
-    'dddbybybgggbybybgddd',
-    'gbgbbbbbgggbbbbbggbg',
-    'wwwwwwwwwwwwwwwwwwww',
-    'wwwwwwwwwwwwwwwwwwww',
-    'wwwwwwwwwwwwwwwwwwww'
+  layers: [
+    // Dusk sky with the moon and distant peaks.
+    { shape: { rect: [0, 0, 100, 75] }, fill: { gradient: ['n', 'v'], from: [0, 2], to: [0, 30], soft: 0.9 } },
+    { shape: { ellipse: [50, 34, 70, 14] }, fill: { gradient: ['v', 'c'], from: [0, 22], to: [0, 34], soft: 0.9 } },
+    { shape: { rect: [0, 0, 100, 16] }, fill: { scatter: 'w', density: 0.035, salt: 31 }, min: 40 },
+    { shape: { ellipse: [14, 9, 5.5, 5.5] }, fill: 'y', shade: { dark: 'c', dir: 'nw' } },
+    { name: 'peaks', shape: { poly: [[0, 32], [12, 22], [20, 27], [34, 15], [46, 26], [56, 21], [68, 30], [78, 24], [92, 30], [100, 27], [100, 75], [0, 75]] }, fill: 's', shade: { light: 'l', dir: 'nw' } },
+    { shape: { poly: [[29, 19], [34, 15], [39, 20], [36, 19.5], [33, 21], [31, 19.5]] }, fill: 'w', clip: 'peaks' },
+    { shape: { poly: [[52, 24], [56, 21], [60, 24], [57, 23.5], [55, 25]] }, fill: 'w', clip: 'peaks' },
+    { shape: { poly: [[9, 25], [12, 22], [15, 24], [12, 24.5]] }, fill: 'w', clip: 'peaks', min: 40 },
+    // Snowy ground.
+    { shape: { poly: [[0, 42], [30, 39], [60, 41], [100, 37], [100, 75], [0, 75]] }, fill: 'w', shade: { dark: 'l', dir: 'n', mode: 'band', amount: 0.12 } },
+    // Firs on the right, with snow on their branches.
+    { name: 'fir', shape: { poly: [[92, 6], [99, 20], [96, 20], [103, 34], [99, 34], [106, 48], [78, 48], [85, 34], [81, 34], [88, 20], [85, 20]] }, fill: 'e', shade: { light: 's', dir: 'nw' } },
+    { shape: { poly: [[85, 20], [92, 15], [99, 20], [92, 18]] }, fill: 'w', clip: 'fir' },
+    { shape: { poly: [[81, 34], [92, 28], [103, 34], [92, 31]] }, fill: 'w', clip: 'fir' },
+    { shape: { poly: [[78, 48], [92, 42], [106, 48], [92, 45]] }, fill: 'w', clip: 'fir' },
+    { shape: { rect: [90.5, 47, 3, 4] }, fill: 'd' },
+    // The church: a grey tower with a red spire.
+    { shape: { rect: [58, 26, 16, 12] }, fill: 'g', shade: { light: 'l', dark: 'k', dir: 'w', mode: 'band', amount: 0.2 } },
+    { shape: { poly: [[56, 27], [62, 20], [76, 20], [76, 27]] }, fill: 'w', shade: { dark: 'l', dir: 'n', mode: 'band', amount: 0.3 } },
+    { shape: { rect: [70, 10, 10, 28] }, fill: 'g', shade: { light: 'l', dark: 'k', dir: 'w', mode: 'band', amount: 0.22 } },
+    { shape: { poly: [[68.5, 11], [75, 0], [81.5, 11]] }, fill: 'x', shade: { light: 'r', dir: 'w', mode: 'band', amount: 0.5 } },
+    { shape: { rect: [72.5, 15, 4, 6], round: 2 }, fill: 'y', keep: true },
+    { shape: { rect: [61, 30, 3, 4], round: 1.5 }, fill: 'y', keep: true },
+    { shape: { rect: [66, 30, 3, 4], round: 1.5 }, fill: 'y', keep: true },
+    // The long red house on the left: dark wood walls, a roof under thick snow, a row of lit windows.
+    { shape: { rect: [29, 20, 4, 8] }, fill: 'k' },
+    { shape: { ellipse: [32, 15, 3.6, 2.2] }, fill: 's' },
+    { shape: { ellipse: [35, 10, 2.8, 1.8] }, fill: 's', min: 40 },
+    { shape: { rect: [4, 34, 36, 17] }, fill: 'r', shade: { dark: 'x', dir: 'w', mode: 'band', amount: 0.15 } },
+    { shape: { rect: [5, 35, 34, 15] }, fill: { stripes: ['r', 'r', 'x'], width: 1.4, angle: 90 }, min: 48 },
+    { shape: { poly: [[0, 35.5], [9, 24], [35, 24], [44, 35.5]] }, fill: 'd' },
+    { shape: { poly: [[0, 34], [9, 23], [35, 23], [44, 34], [41, 34], [34, 27], [10, 27], [3, 34]] }, fill: 'w', shade: { dark: 'l', dir: 'n', mode: 'band', amount: 0.2 } },
+    { shape: { rect: [7.5, 38.5, 5.5, 6] }, fill: 'y', shade: { dark: 'c', dir: 'nw' } },
+    { shape: { rect: [16.5, 38.5, 5.5, 6] }, fill: 'y', shade: { dark: 'c', dir: 'nw' } },
+    { shape: { rect: [25.5, 38.5, 5.5, 6] }, fill: 'y', shade: { dark: 'c', dir: 'nw' } },
+    { shape: { line: [[7.5, 41.5], [31, 41.5]], width: 1 }, fill: 'x', min: 48 },
+    { shape: { rect: [33.5, 39, 5, 12] }, fill: 'k' },
+    // The blue house further back.
+    { shape: { rect: [46, 39, 22, 12] }, fill: 'b', shade: { dark: 'n', dir: 'w', mode: 'band', amount: 0.18 } },
+    { shape: { poly: [[43, 40.5], [49, 33], [65, 33], [71, 40.5]] }, fill: 'o' },
+    { shape: { poly: [[43, 39.5], [49, 32], [65, 32], [71, 39.5], [68, 39.5], [64, 35], [50, 35], [46, 39.5]] }, fill: 'w', shade: { dark: 'l', dir: 'n', mode: 'band', amount: 0.2 } },
+    { shape: { rect: [49.5, 42.5, 5, 5] }, fill: 'y', shade: { dark: 'c', dir: 'nw' } },
+    { shape: { rect: [58, 42.5, 5, 5] }, fill: 'y', shade: { dark: 'c', dir: 'nw' } },
+    // Snow drifts and warm window light on the snow.
+    { shape: { poly: [[0, 52], [18, 50], [40, 52], [60, 51], [80, 50], [100, 51], [100, 57], [0, 57]] }, fill: 'w' },
+    { shape: { ellipse: [20, 54, 13, 1.6] }, fill: 'c' },
+    { shape: { ellipse: [56, 54, 8, 1.3] }, fill: 'c', min: 40 },
+    { shape: { poly: [[70, 56], [100, 53], [100, 75], [90, 75], [80, 60]] }, fill: 'l' },
+    { shape: { poly: [[0, 62], [10, 60], [14, 75], [0, 75]] }, fill: 'l' },
+    // The frozen pond with two skaters.
+    { name: 'pond', shape: { ellipse: [48, 66, 36, 6.5] }, fill: 't', shade: { light: 'w', dark: 'l', dir: 'n', mode: 'band', amount: 0.25 } },
+    { shape: { line: [[22, 67], [36, 66]], width: 1 }, fill: 'w', clip: 'pond' },
+    { shape: { line: [[62, 68], [76, 67]], width: 1 }, fill: 'w', clip: 'pond', min: 40 },
+    { shape: { poly: [[36, 56], [41, 56], [42, 64], [35, 64]] }, fill: 'r', shade: { dark: 'x', dir: 'nw' } },
+    { shape: { ellipse: [38.5, 54, 2.2, 2.2] }, fill: 'c', keep: true },
+    { shape: { line: [[37, 64], [35, 68]], width: 1 }, fill: 'k' },
+    { shape: { line: [[40, 64], [42, 68]], width: 1 }, fill: 'k' },
+    { shape: { poly: [[56, 57], [61, 57], [62, 65], [55, 65]] }, fill: 'b', shade: { dark: 'n', dir: 'nw' } },
+    { shape: { ellipse: [58.5, 55, 2.2, 2.2] }, fill: 'c', keep: true },
+    { shape: { line: [[57, 65], [55, 69]], width: 1 }, fill: 'k' },
+    { shape: { line: [[60, 65], [62.5, 68.5]], width: 1 }, fill: 'k' },
+    // Falling snow.
+    { shape: { rect: [0, 0, 100, 30] }, fill: { scatter: 'w', density: 0.03, salt: 32 }, min: 48 }
   ]
 };

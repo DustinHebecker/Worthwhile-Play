@@ -123,6 +123,9 @@ export const zhHans: Catalogue = {
   'act.escape': '立刻逃跑',
   'act.curse': '诅咒 {name}',
   'act.upgrade': '装到 {name} 上',
+  'eq.attached': '已装到 {name} 上',
+  'gear.upgraded': '{item}（＋{upgrades}）',
+  'detail.total': '加上 {upgrades}：共 {n}',
   'sell.title': '选择要出售的物品和一次性牌。价值 {sum} → 等级 +{levels}。',
   'sell.need': '每 {rate} 点价值 = 1 级（不能是获胜的那一级）。',
 

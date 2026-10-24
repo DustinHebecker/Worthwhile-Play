@@ -435,9 +435,13 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
   }
 
   /** A compact card tile (button). */
-  function tile(card: string, opts: { key: string; onClick: () => void; pressed?: boolean | undefined; hint?: string | undefined; testid?: string }): HTMLButtonElement {
+  function tile(card: string, opts: { key: string; onClick: () => void; pressed?: boolean | undefined; hint?: string | undefined; testid?: string; parts?: readonly number[] | undefined }): HTMLButtonElement {
     const def = defOf(card);
     const num = keyNumber(card);
+    // An item with upgrades shows its total bonus and, below it, what it is made of (own bonus, then each upgrade).
+    const total = opts.parts
+      ? h('span', { class: 'cq-tile-num cq-tile-total', 'data-testid': `total-${card}` }, signed(opts.parts.reduce((a, b) => a + b, 0)), h('span', { class: 'cq-tile-sum' }, opts.parts.map(signed).join(' ')))
+      : null;
     return h(
       'button',
       {
@@ -452,9 +456,11 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       },
       pic(card),
       h('span', { class: 'cq-tile-text' }, h('span', { class: 'cq-tile-name' }, name(card)), h('span', { class: 'cq-tile-type' }, t(`type.${def.type}`), opts.hint ? ` · ${opts.hint}` : '')),
-      num ? h('span', { class: 'cq-tile-num' }, num) : null
+      total ?? (num ? h('span', { class: 'cq-tile-num' }, num) : null)
     );
   }
+
+  const signed = (n: number) => (n >= 0 ? `+${n}` : `−${-n}`);
 
   const button = (label: string, onclick: () => void, opts: { primary?: boolean; testid?: string; key?: string; disabled?: boolean } = {}) =>
     h(
@@ -510,7 +516,11 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       if (p.malus > 0) facts.push(t('table.malus', { n: p.malus }));
       facts.push(t('table.rep', { n: p.rep, max: REP_MAX }));
       if (p.favours.length > 0) facts.push(t('table.favours', { n: p.favours.length }));
-      const gear = [...p.origins, ...p.professions, ...p.equipped].map(name).join(t('r.separator')) || t('table.nothing');
+      const withUpgrades = (item: string) => {
+        const ups = upgradesOf(p, item);
+        return ups.length > 0 ? t('gear.upgraded', { item: name(item), upgrades: ups.map(name).join(t('r.separator')) }) : name(item);
+      };
+      const gear = [...[...p.origins, ...p.professions].map(name), ...p.equipped.map(withUpgrades)].join(t('r.separator')) || t('table.nothing');
       list.append(
         h(
           'li',
@@ -806,12 +816,19 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       focusCard(card);
     }, { testid: 'detail-close' });
     const big = bigPic(card);
+    const me = state.players[HUMAN] as Player;
+    const onItem = me.upgrades.find((u) => u.card === card)?.item;
+    const ups = upgradesOf(me, card);
     return h(
       'section',
       { class: 'cq-detail', id: 'cq-detail', 'data-type': defOf(card).type, tabindex: '-1', 'data-testid': 'detail', 'aria-labelledby': 'cq-detail-title' },
       big,
       h('div', { class: 'cq-detail-head' }, big ? null : pic(card), h('div', {}, h('h3', { id: 'cq-detail-title' }, name(card)), h('p', { class: 'cq-tile-type' }, type))),
       h('ul', { class: 'cq-rules' }, ...lines.map((l) => h('li', {}, l))),
+      onItem ? h('p', { class: 'cq-detail-attached', 'data-testid': 'detail-attached' }, t('eq.attached', { name: name(onItem) })) : null,
+      ups.length > 0
+        ? h('p', { class: 'cq-detail-attached', 'data-testid': 'detail-total' }, t('detail.total', { upgrades: ups.map(name).join(t('r.separator')), n: signed([card, ...ups].map(bonusOf).reduce((a, b) => a + b, 0)) }))
+        : null,
       h('p', { class: 'cq-flavour' }, cardFlavour(t, card)),
       blunder ? h('p', { class: 'cq-blunder', 'data-testid': 'detail-blunder' }, t('detail.blunder', { text: blunder })) : null,
       h(
@@ -843,7 +860,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       h('h3', { id: 'cq-hand-title' }, t('hand.title', { n: me.hand.length })),
       me.hand.length === 0 ? h('p', { class: 'cq-muted' }, t('hand.empty')) : grid
     );
-    if (selected && (me.hand.includes(selected) || me.equipped.includes(selected) || me.pack.includes(selected) || isInFight(selected) || me.origins.includes(selected) || me.professions.includes(selected) || me.doubles.includes(selected))) {
+    if (selected && (isVisible(selected) || me.origins.includes(selected) || me.professions.includes(selected) || me.doubles.includes(selected))) {
       section.append(renderDetail(selected));
     } else if (selected && !isVisible(selected)) selected = null;
     return section;
@@ -852,7 +869,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
   const isInFight = (card: string) => state.fight?.monsters.some((m) => m.card === card) ?? false;
   const isVisible = (card: string) => {
     const me = state.players[HUMAN] as Player;
-    return me.hand.includes(card) || me.equipped.includes(card) || me.pack.includes(card) || isInFight(card);
+    return me.hand.includes(card) || me.equipped.includes(card) || me.pack.includes(card) || me.upgrades.some((u) => u.card === card) || isInFight(card);
   };
 
   function toggle(card: string): void {
@@ -866,12 +883,12 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
    * to it opens the card detail, so the card can be read before it is chosen (owner feedback B1). Elsewhere the
    * tile opens the detail.
    */
-  function pickOrTile(c: string, prefix: string, extra: { pressed?: boolean | undefined; hint?: string | undefined } = {}): HTMLElement {
-    if (!pickable(c)) return tile(c, { key: `${prefix}-${c}`, pressed: extra.pressed, hint: extra.hint, onClick: () => select(c) });
+  function pickOrTile(c: string, prefix: string, extra: { pressed?: boolean | undefined; hint?: string | undefined; parts?: readonly number[] | undefined } = {}): HTMLElement {
+    if (!pickable(c)) return tile(c, { key: `${prefix}-${c}`, pressed: extra.pressed, hint: extra.hint, parts: extra.parts, onClick: () => select(c) });
     return h(
       'div',
       { class: 'cq-pick' },
-      tile(c, { key: `${prefix}-${c}`, pressed: picked.has(c), hint: extra.hint, onClick: () => toggle(c) }),
+      tile(c, { key: `${prefix}-${c}`, pressed: picked.has(c), hint: extra.hint, parts: extra.parts, onClick: () => toggle(c) }),
       h(
         'button',
         {
@@ -891,8 +908,7 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
 
   function renderMine(): HTMLElement {
     const me = state.players[HUMAN] as Player;
-    const tiles = (cards: string[], prefix: string) =>
-      h('div', { class: 'cq-grid' }, ...cards.map((c) => pickOrTile(c, prefix, { hint: prefix === 'eq' ? upgradesOf(c) : undefined })));
+    const tiles = (cards: string[], prefix: string) => h('div', { class: 'cq-grid' }, ...cards.map((c) => stack(c, prefix)));
     const character = [...me.origins, ...me.professions, ...me.doubles];
     return h(
       'section',
@@ -906,10 +922,30 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
     );
   }
 
-  function upgradesOf(item: string): string | undefined {
-    const me = state.players[HUMAN] as Player;
-    const ups = me.upgrades.filter((u) => u.item === item).map((u) => name(u.card));
-    return ups.length > 0 ? ups.join(t('r.separator')) : undefined;
+  /** The upgrades attached to an item of the person, in the order they were attached. */
+  const upgradesOf = (player: Player, item: string) => player.upgrades.filter((u) => u.item === item).map((u) => u.card);
+  const bonusOf = (card: string) => {
+    const def = defOf(card);
+    return def.type === 'item' || def.type === 'upgrade' ? def.bonus : 0;
+  };
+
+  /**
+   * A card of the person's own table. An item with upgrades (owner feedback 2026-10-24) is a stack: the item tile
+   * shows the total bonus and its parts, the upgrades hang below it as their own small tiles that open their detail.
+   */
+  function stack(card: string, prefix: string): HTMLElement {
+    const ups = upgradesOf(state.players[HUMAN] as Player, card);
+    if (ups.length === 0) return pickOrTile(card, prefix);
+    return h(
+      'div',
+      { class: 'cq-stack', 'data-testid': `stack-${card}` },
+      pickOrTile(card, prefix, { parts: [bonusOf(card), ...ups.map(bonusOf)] }),
+      h(
+        'ul',
+        { class: 'cq-attached', 'aria-label': t('eq.attached', { name: name(card) }) },
+        ...ups.map((u) => h('li', {}, tile(u, { key: `up-${u}`, pressed: mode === 'play' ? selected === u : undefined, onClick: () => select(u) })))
+      )
+    );
   }
 
   function renderLog(): HTMLElement {

@@ -1,6 +1,6 @@
-import type { Motif } from './types';
+import type { Motif } from '../art/types';
 
-/** Steep walls with snow caps and a waterfall, a distant peak, and a red boathouse. Original pixel art drawn for Worthwhile Play. */
+/** A Norwegian fjord: steep walls with snow caps and forest, a waterfall, a red boathouse and a small boat on still water. Original vector art drawn for Worthwhile Play. */
 export const fjord: Motif = {
   id: 'fjord',
   group: 'landscape',
@@ -40,31 +40,83 @@ export const fjord: Motif = {
     uk: 'Західна Норвегія',
     hi: 'पश्चिमी नॉर्वे'
   },
-  backdrop: '#c9b28a',
+  aspect: 'wide',
+  backdrop: '#f2d9c4',
   palette: {
-    s: ['#9fd0f0', 'lightBlue'],
-    w: ['#ffffff', 'white'],
-    d: ['#24543a', 'darkGreen'],
-    g: ['#6fb352', 'green'],
-    b: ['#2f6fb3', 'blue'],
-    r: ['#c8322b', 'red']
+    s: ['#5d9bd5', 'skyBlue', 1],
+    l: ['#b4d8ee', 'lightBlue', 2, 's'],
+    w: ['#f7f9fa', 'white', 1],
+    i: ['#b0b6bf', 'lightGrey', 2, 'g'],
+    g: ['#7a7f89', 'grey', 1],
+    k: ['#4b4e58', 'darkGrey', 1],
+    v: ['#8f8fbd', 'lavender', 3, 'g'],
+    m: ['#8cc152', 'lightGreen', 2, 'e'],
+    e: ['#3f8c3d', 'green', 1],
+    d: ['#1f5a2f', 'darkGreen', 1],
+    t: ['#2e8287', 'teal', 3, 'b'],
+    b: ['#2c64a3', 'blue', 1],
+    n: ['#163864', 'navy', 1],
+    r: ['#c0392b', 'red', 1],
+    x: ['#7a2228', 'darkRed', 2, 'r'],
+    c: ['#22232a', 'charcoal', 1]
   },
-  rows: [
-    'ssssssssssssssswssss',
-    'sssswssssssssswwwsss',
-    'ssswwwssssssswwwwwss',
-    'ssdwdwdssswsddddddds',
-    'sdddddwdswwwdddddddd',
-    'ddddddwdwwwwdddddddd',
-    'ddddddwdwwwwdddddddd',
-    'ddddddwdbbbbdddddddd',
-    'ddddddwdbbbbdddddddd',
-    'dddddddbbbbbbddddddd',
-    'gggdddbbbbbbbbdrdggg',
-    'gggddbbbbbbbbbrrrggg',
-    'ggggbbbbbbbbbbrrrggg',
-    'gggbbbbbbbbbbbbbbggg',
-    'ggbbbbbbbbbbbbbbbbgg',
-    'gbbbbbbbbbbbbbbbbbbg'
+  layers: [
+    // Sky and clouds.
+    { shape: { rect: [0, 0, 100, 47] }, fill: { gradient: ['s', 'l'], from: [0, 0], to: [0, 40], soft: 0.8 } },
+    { shape: { ellipse: [40, 8, 9, 3] }, fill: 'w', shade: { dark: 'i', dir: 'n', mode: 'band', amount: 0.35 } },
+    { shape: { ellipse: [46, 6, 5, 3] }, fill: 'w', shade: { dark: 'i', dir: 'n', mode: 'band', amount: 0.3 } },
+    { shape: { ellipse: [62, 13, 7, 2.2] }, fill: 'w', shade: { dark: 'i', dir: 'n', mode: 'band', amount: 0.4 } },
+    // Distant peaks at the end of the fjord.
+    { name: 'far', shape: { poly: [[22, 47], [30, 34], [37, 27], [42, 30], [49, 20], [56, 28], [62, 25], [70, 34], [78, 47]] }, fill: 'v', shade: { light: 'i', dir: 'nw' } },
+    { shape: { poly: [[35, 29], [37, 27], [42, 30], [49, 20], [56, 28], [62, 25], [66, 29], [62, 28], [58, 31], [53, 26], [49, 30], [45, 28], [41, 32]] }, fill: 'w', clip: 'far' },
+    // Left wall: rock in shade with lit gullies, snow cap, forest.
+    { name: 'left', shape: { poly: [[0, 0], [9, 1], [16, 6], [22, 12], [28, 20], [34, 28], [40, 36], [46, 44], [49, 47], [0, 47]] }, fill: 'g', shade: { light: 'i', dir: 'nw', width: 2 } },
+    { shape: { line: [[12, 6], [17, 16], [21, 27], [23, 34]], width: 2.6 }, fill: 'k', clip: 'left' },
+    { shape: { line: [[21, 14], [26, 24], [29, 32]], width: 2.2 }, fill: 'k', clip: 'left' },
+    { shape: { line: [[4, 6], [7, 15], [8, 24]], width: 2.2 }, fill: 'k', clip: 'left' },
+    { shape: { line: [[14, 7], [19, 17], [23, 28]], width: 1 }, fill: 'i', clip: 'left', min: 40 },
+    { shape: { line: [[6, 7], [9, 17]], width: 1 }, fill: 'i', clip: 'left', min: 48 },
+    { shape: { poly: [[0, 0], [10, 0], [18, 7], [14, 9], [11, 6], [7, 10], [3, 7], [0, 9]] }, fill: 'w', clip: 'left', shade: { dark: 'i', dir: 'nw', mode: 'band', amount: 0.3 } },
+    { name: 'leftGreen', shape: { poly: [[0, 26], [9, 24], [17, 29], [25, 31], [33, 35], [40, 40], [49, 47], [0, 47]], smooth: 1 }, fill: 'e', clip: 'left', shade: { light: 'm', dark: 'd', dir: 'nw', width: 2 } },
+    { shape: { all: true }, fill: { scatter: 'd', density: 0.22, salt: 11 }, clip: 'leftGreen', min: 40 },
+    // Right wall: rock facing the light, snow cap, forest, waterfall.
+    { name: 'right', shape: { poly: [[100, 1], [92, 1], [84, 6], [76, 14], [70, 22], [64, 30], [58, 38], [53, 45], [51, 47], [100, 47]] }, fill: 'i', shade: { dark: 'g', dir: 'nw', width: 2 } },
+    { shape: { line: [[88, 6], [86, 16], [86, 26]], width: 2.6 }, fill: 'g', clip: 'right' },
+    { shape: { line: [[94, 4], [95, 14], [97, 24]], width: 2.2 }, fill: 'g', clip: 'right' },
+    { shape: { line: [[79, 14], [76, 24], [73, 32]], width: 2 }, fill: 'g', clip: 'right' },
+    { shape: { line: [[89, 8], [87.5, 18], [87.5, 26]], width: 1 }, fill: 'k', clip: 'right', min: 40 },
+    { shape: { poly: [[82, 7], [90, 0], [100, 0], [100, 8], [96, 6], [92, 9], [88, 6], [85, 10]] }, fill: 'w', clip: 'right', shade: { dark: 'i', dir: 'nw', mode: 'band', amount: 0.3 } },
+    { name: 'rightGreen', shape: { poly: [[100, 27], [90, 28], [81, 31], [72, 33], [64, 37], [57, 42], [51, 47], [100, 47]], smooth: 1 }, fill: 'e', clip: 'right', shade: { light: 'm', dark: 'd', dir: 'nw', width: 2 } },
+    { shape: { all: true }, fill: { scatter: 'm', density: 0.16, salt: 12 }, clip: 'rightGreen', min: 40 },
+    { shape: { all: true }, fill: { scatter: 'd', density: 0.14, salt: 13 }, clip: 'rightGreen', min: 40 },
+    { shape: { line: [[80, 12], [79, 22], [77, 31], [76, 39], [75, 46]], width: 1.2 }, fill: 'w' },
+    { shape: { ellipse: [75, 46.5, 3.6, 1.5] }, fill: 'l' },
+    // Water: the sky far away, deep blue close by, the walls mirrored in it.
+    { name: 'water', shape: { rect: [0, 47, 100, 28] }, fill: { gradient: ['l', 's', 'b', 'n'], from: [0, 47], to: [0, 75], soft: 0.6 } },
+    { shape: { poly: [[0, 47], [49, 47], [44, 52], [36, 57], [25, 61], [12, 63], [0, 64]], smooth: 1 }, fill: { gradient: ['k', 'd', 't'], from: [0, 47], to: [0, 64], soft: 0.6 }, clip: 'water' },
+    { shape: { poly: [[100, 47], [51, 47], [56, 52], [65, 57], [77, 61], [89, 63], [100, 64]], smooth: 1 }, fill: { gradient: ['g', 'e', 't'], from: [0, 47], to: [0, 64], soft: 0.6 }, clip: 'water' },
+    { shape: { line: [[75, 48], [75.5, 55]], width: 1 }, fill: 'l' },
+    { shape: { line: [[40, 68], [52, 68]], width: 1 }, fill: 'l', min: 40 },
+    { shape: { line: [[78, 71], [90, 71]], width: 1 }, fill: 's', min: 40 },
+    { shape: { line: [[24, 71], [32, 71]], width: 1 }, fill: 's', min: 48 },
+    // Shore with the red boathouse.
+    { shape: { poly: [[0, 52], [8, 50], [24, 50], [33, 52], [37, 57], [30, 61], [14, 62], [0, 63]], smooth: 1 }, fill: 'e', shade: { light: 'm', dark: 'd', dir: 'nw' } },
+    { shape: { ellipse: [34, 57, 3.6, 2.4] }, fill: 'g', shade: { light: 'i', dark: 'k', dir: 'nw' } },
+    { shape: { ellipse: [3, 61, 3.4, 2] }, fill: 'g', shade: { light: 'i', dark: 'k', dir: 'nw' } },
+    { shape: { rect: [6, 42, 24, 13] }, fill: 'r', shade: { dark: 'x', dir: 'nw' }, outline: 'c' },
+    { shape: { rect: [7, 43, 22, 11] }, fill: { stripes: ['r', 'r', 'x'], width: 1.2, angle: 0 }, min: 48 },
+    { shape: { line: [[7, 43], [7, 54]], width: 1 }, fill: 'w' },
+    { shape: { line: [[29, 43], [29, 54]], width: 1 }, fill: 'w' },
+    { shape: { poly: [[3, 43.5], [18, 31], [33, 43.5]] }, fill: 'k', shade: { light: 'g', dir: 'nw', mode: 'band', amount: 0.35 }, outline: 'c' },
+    { shape: { line: [[5, 43], [18, 32.5], [31, 43]], width: 1 }, fill: 'w' },
+    { shape: { rect: [14.5, 47.5, 7, 7.5] }, fill: 'x' },
+    { shape: { line: [[14, 47], [22, 47]], width: 1 }, fill: 'w', min: 40 },
+    { shape: { rect: [16.5, 36.5, 3, 3] }, fill: 'w', keep: true },
+    // A small boat with a red hull.
+    { shape: { rect: [59, 56, 8, 5] }, fill: 'w', shade: { dark: 'i', dir: 'nw' } },
+    { shape: { rect: [61, 57, 4, 2] }, fill: 'c', keep: true },
+    { shape: { poly: [[53, 61], [75, 61], [71, 68], [57, 68]] }, fill: 'r', shade: { dark: 'x', dir: 'n', mode: 'band', amount: 0.35 } },
+    { shape: { line: [[54, 61], [74, 61]], width: 1 }, fill: 'w' },
+    { shape: { line: [[56, 69], [72, 69]], width: 1 }, fill: 'n', min: 40 }
   ]
 };

@@ -123,6 +123,9 @@ export const ko: Catalogue = {
   'act.escape': '지금 도망',
   'act.curse': '{name}에게 저주',
   'act.upgrade': '{name}에 부착',
+  'eq.attached': '{name}에 부착됨',
+  'gear.upgraded': '{item} (+ {upgrades})',
+  'detail.total': '{upgrades} 포함: 합계 {n}',
   'sell.title': '팔 아이템과 일회용 카드를 고르자. 가치 {sum} → 레벨 +{levels}.',
   'sell.need': '가치 {rate}점마다 1레벨(승리 레벨은 안 됨).',
 

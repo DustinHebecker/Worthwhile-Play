@@ -123,6 +123,9 @@ export const pt: Catalogue = {
   'act.escape': 'Escapar agora',
   'act.curse': 'Amaldiçoar {name}',
   'act.upgrade': 'Acoplar em {name}',
+  'eq.attached': 'Acoplado em {name}',
+  'gear.upgraded': '{item} (+ {upgrades})',
+  'detail.total': 'Com {upgrades}: {n} no total',
   'sell.title': 'Escolha itens e cartas de uso único para vender. Valor {sum} → nível +{levels}.',
   'sell.need': 'Cada {rate} pontos de valor = 1 nível (nunca o nível da vitória).',
 
