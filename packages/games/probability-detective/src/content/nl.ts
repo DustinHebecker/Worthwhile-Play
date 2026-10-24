@@ -1,90 +1,85 @@
 import type { ContentText } from './types';
 
-/**
- * English (source) wording; the reference for every translation.
- * Writing rules: no digits in sentences (numbers are shown in structured rows); no person names; hypotheses are
- * things, places, animals or causes. Neutral and echo clues always show, so `notSeen` repeats `seen`.
- */
 export const content: ContentText = {
   templates: {
     'c-parcel': {
-      title: 'The blue parcel',
-      story: 'A parcel without a sender has arrived at the corner shop. It must come from one of the warehouses that deliver to this street.',
-      lead: 'Parcels on this street come from:',
-      hyps: { north: 'Warehouse North', south: 'Warehouse South', east: 'Warehouse East' },
+      title: 'Het blauwe pakket',
+      story: 'Bij de winkel op de hoek is een pakket zonder afzender aangekomen. Het moet komen uit een van de magazijnen die deze straat beleveren.',
+      lead: 'Pakketten in deze straat komen uit:',
+      hyps: { north: 'Magazijn Noord', south: 'Magazijn Zuid', east: 'Magazijn Oost' },
       clues: {
-        blue: { label: 'Wrapped in blue paper', seen: 'The parcel is wrapped in blue paper.', notSeen: 'The parcel is not wrapped in blue paper.' },
-        'brown-tape': { label: 'Sealed with brown tape', seen: 'It is sealed with brown tape.', notSeen: 'It is not sealed with brown tape.' },
-        smudge: { label: 'Smudged label', seen: 'The address label is smudged.', notSeen: 'The address label is clean.' },
-        string: { label: 'Tied with string', seen: 'It is tied with string.', notSeen: 'It is not tied with string.' },
-        tuesday: { label: 'Arrived on a Tuesday', seen: 'It arrived on a Tuesday. All the warehouses deliver on every weekday.', notSeen: 'It arrived on a Tuesday. All the warehouses deliver on every weekday.' },
-        'echo-blue': { label: 'The neighbour saw it too', seen: 'The neighbour also says the parcel was blue — she saw the same parcel.', notSeen: 'The neighbour also says the parcel was blue — she saw the same parcel.' }
+        blue: { label: 'In blauw papier verpakt', seen: 'Het pakket is in blauw papier verpakt.', notSeen: 'Het pakket is niet in blauw papier verpakt.' },
+        'brown-tape': { label: 'Met bruine tape dichtgeplakt', seen: 'Het is met bruine tape dichtgeplakt.', notSeen: 'Het is niet met bruine tape dichtgeplakt.' },
+        smudge: { label: 'Uitgelopen etiket', seen: 'Het adresetiket is uitgelopen.', notSeen: 'Het adresetiket is schoon.' },
+        string: { label: 'Met touw dichtgebonden', seen: 'Het is met touw dichtgebonden.', notSeen: 'Het is niet met touw dichtgebonden.' },
+        tuesday: { label: 'Op een dinsdag aangekomen', seen: 'Het kwam op een dinsdag. Alle magazijnen leveren op elke werkdag.', notSeen: 'Het kwam op een dinsdag. Alle magazijnen leveren op elke werkdag.' },
+        'echo-blue': { label: 'De buurvrouw zag het ook', seen: 'De buurvrouw zegt ook dat het pakket blauw was – ze zag hetzelfde pakket.', notSeen: 'De buurvrouw zegt ook dat het pakket blauw was – ze zag hetzelfde pakket.' }
       }
     },
     'c-garden': {
-      title: 'The nibbled strawberries',
-      story: 'Someone has been at the strawberries overnight. In this garden, a few kinds of visitors are known to snack on them.',
-      lead: 'On nights when strawberries get nibbled, the visitor is:',
-      hyps: { birds: 'Birds', snails: 'Snails', hedgehog: 'A hedgehog' },
+      title: 'De aangevreten aardbeien',
+      story: 'Vannacht is er iemand aan de aardbeien geweest. In deze tuin snoepen een paar soorten bezoekers ervan.',
+      lead: 'In nachten waarin aardbeien worden aangevreten, is de bezoeker:',
+      hyps: { birds: 'Vogels', snails: 'Slakken', hedgehog: 'Een egel' },
       clues: {
-        slime: { label: 'Shiny trail', seen: 'There is a shiny trail on the path.', notSeen: 'There is no shiny trail.' },
-        pecks: { label: 'Small peck marks', seen: 'The fruit has small peck marks.', notSeen: 'There are no peck marks.' },
-        droppings: { label: 'Droppings under the hedge', seen: 'There are droppings under the hedge.', notSeen: 'There is nothing under the hedge.' },
-        'net-moved': { label: 'Net pushed aside', seen: 'The net over the bed is pushed aside.', notSeen: 'The net is still in place.' },
-        rain: { label: 'It rained last night', seen: 'It rained last night — all of them come out in the rain.', notSeen: 'It rained last night — all of them come out in the rain.' },
-        'echo-slime': { label: 'Seen again in the morning', seen: 'Your neighbour points out the same shiny trail.', notSeen: 'Your neighbour points out the same shiny trail.' }
+        slime: { label: 'Glanzend spoor', seen: 'Er ligt een glanzend spoor op het pad.', notSeen: 'Er is geen glanzend spoor.' },
+        pecks: { label: 'Kleine pikgaatjes', seen: 'De vruchten hebben kleine pikgaatjes.', notSeen: 'Er zijn geen pikgaatjes.' },
+        droppings: { label: 'Keutels onder de heg', seen: 'Er liggen keutels onder de heg.', notSeen: 'Onder de heg ligt niets.' },
+        'net-moved': { label: 'Net opzij geschoven', seen: 'Het net over het bed is opzij geschoven.', notSeen: 'Het net ligt nog op zijn plaats.' },
+        rain: { label: 'Het regende vannacht', seen: 'Het regende vannacht – bij regen komen ze allemaal naar buiten.', notSeen: 'Het regende vannacht – bij regen komen ze allemaal naar buiten.' },
+        'echo-slime': { label: 'Ook ’s ochtends gezien', seen: 'Je buurman wijst je op hetzelfde glanzende spoor.', notSeen: 'Je buurman wijst je op hetzelfde glanzende spoor.' }
       }
     },
     'c-rain': {
-      title: 'Did it rain overnight?',
-      story: 'You were away overnight and want to know whether the seedlings got rain or need watering now.',
-      lead: 'Nights at this time of year:',
-      hyps: { rained: 'It rained', dry: 'It stayed dry' },
+      title: 'Heeft het vannacht geregend?',
+      story: 'Je was een nacht weg en wilt weten of de zaailingen regen hebben gehad of nu water nodig hebben.',
+      lead: 'Nachten in deze tijd van het jaar:',
+      hyps: { rained: 'Het heeft geregend', dry: 'Het bleef droog' },
       clues: {
-        'wet-grass': { label: 'Wet grass', seen: 'The grass is wet (dew can wet it too).', notSeen: 'The grass is dry.' },
-        gauge: { label: 'Water in the rain gauge', seen: 'There is water in the rain gauge.', notSeen: 'The rain gauge is empty.' },
-        puddle: { label: 'Puddle by the gate', seen: 'There is a puddle by the gate.', notSeen: 'There is no puddle by the gate.' },
-        'snails-out': { label: 'Snails on the path', seen: 'Snails are out on the path.', notSeen: 'There are no snails on the path.' },
-        wind: { label: 'Leaves on the table', seen: 'Leaves have blown onto the table — it was windy either way.', notSeen: 'Leaves have blown onto the table — it was windy either way.' }
+        'wet-grass': { label: 'Nat gras', seen: 'Het gras is nat (ook dauw maakt het nat).', notSeen: 'Het gras is droog.' },
+        gauge: { label: 'Water in de regenmeter', seen: 'Er staat water in de regenmeter.', notSeen: 'De regenmeter is leeg.' },
+        puddle: { label: 'Plas bij het hek', seen: 'Er ligt een plas bij het hek.', notSeen: 'Er ligt geen plas bij het hek.' },
+        'snails-out': { label: 'Slakken op het pad', seen: 'Er zitten slakken op het pad.', notSeen: 'Er zitten geen slakken op het pad.' },
+        wind: { label: 'Bladeren op de tafel', seen: 'Er zijn bladeren op de tafel gewaaid – het waaide hoe dan ook.', notSeen: 'Er zijn bladeren op de tafel gewaaid – het waaide hoe dan ook.' }
       }
     },
     'c-bird': {
-      title: 'Which bird was at the feeder?',
-      story: 'You only caught a glimpse of a small brown bird at the feeder before it flew off. The shares here are invented for this feeder; real ones vary by place.',
-      lead: 'Small brown visitors at this feeder are:',
-      hyps: { finch: 'A finch', sparrow: 'A sparrow' },
+      title: 'Welke vogel zat bij het voederhuisje?',
+      story: 'Je zag maar heel even een kleine bruine vogel bij het voederhuisje voordat hij wegvloog. De aandelen hier zijn voor dit voederhuisje verzonnen; echte verschillen per plek.',
+      lead: 'Kleine bruine bezoekers bij dit voederhuisje zijn:',
+      hyps: { finch: 'Een vink', sparrow: 'Een mus' },
       clues: {
-        'red-patch': { label: 'A flash of red', seen: 'You saw a flash of red on its head.', notSeen: 'You saw no red at all.' },
-        ground: { label: 'Fed on the ground', seen: 'It fed on the ground below the feeder.', notSeen: 'It fed on the feeder itself.' },
-        song: { label: 'A twittering song', seen: 'It gave a twittering song.', notSeen: 'It only chirped.' },
-        group: { label: 'Came with a group', seen: 'It came with a small group.', notSeen: 'It came alone.' },
-        morning: { label: 'In the morning', seen: 'It was early morning — both come at that time.', notSeen: 'It was early morning — both come at that time.' }
+        'red-patch': { label: 'Een flits rood', seen: 'Je zag een flits rood op zijn kop.', notSeen: 'Je zag helemaal geen rood.' },
+        ground: { label: 'Op de grond gegeten', seen: 'Hij at op de grond onder het voederhuisje.', notSeen: 'Hij at op het voederhuisje zelf.' },
+        song: { label: 'Een kwetterend lied', seen: 'Hij liet een kwetterend lied horen.', notSeen: 'Hij tjilpte alleen.' },
+        group: { label: 'Kwam met een groepje', seen: 'Hij kwam met een klein groepje.', notSeen: 'Hij kwam alleen.' },
+        morning: { label: '’s Ochtends', seen: 'Het was vroeg in de ochtend – dan komen ze allebei.', notSeen: 'Het was vroeg in de ochtend – dan komen ze allebei.' }
       }
     },
     'c-plant': {
-      title: 'The drooping houseplant',
-      story: 'The office plant is drooping and has yellow leaves. In this office, it is usually one of two things.',
-      lead: 'When plants here droop, the cause is:',
-      hyps: { water: 'Too much water', light: 'Too little light' },
+      title: 'De hangende kamerplant',
+      story: 'De kantoorplant hangt slap en heeft gele bladeren. In dit kantoor is het meestal een van twee dingen.',
+      lead: 'Als planten hier slap hangen, is de oorzaak:',
+      hyps: { water: 'Te veel water', light: 'Te weinig licht' },
       clues: {
-        'wet-soil': { label: 'Wet soil', seen: 'The soil is still wet two days after watering.', notSeen: 'The soil is dry.' },
-        leaning: { label: 'Leaning to the window', seen: 'It leans towards the window.', notSeen: 'It stands straight.' },
-        'soft-stem': { label: 'Soft stem base', seen: 'The base of the stem is soft.', notSeen: 'The stem is firm.' },
-        'pale-new': { label: 'Pale new leaves', seen: 'The new leaves are pale and small.', notSeen: 'The new leaves look healthy.' },
-        'pot-colour': { label: 'A blue pot', seen: 'It is in a blue pot — that changes nothing.', notSeen: 'It is in a blue pot — that changes nothing.' }
+        'wet-soil': { label: 'Natte grond', seen: 'De grond is twee dagen na het water geven nog nat.', notSeen: 'De grond is droog.' },
+        leaning: { label: 'Leunt naar het raam', seen: 'Hij leunt naar het raam.', notSeen: 'Hij staat recht.' },
+        'soft-stem': { label: 'Zachte stengelvoet', seen: 'De onderkant van de stengel is zacht.', notSeen: 'De stengel is stevig.' },
+        'pale-new': { label: 'Bleke nieuwe bladeren', seen: 'De nieuwe bladeren zijn bleek en klein.', notSeen: 'De nieuwe bladeren zien er gezond uit.' },
+        'pot-colour': { label: 'Een blauwe pot', seen: 'Hij staat in een blauwe pot – dat verandert niets.', notSeen: 'Hij staat in een blauwe pot – dat verandert niets.' }
       }
     },
     'c-bus': {
-      title: 'Why was the bus late?',
-      story: 'Your bus came forty minutes late this morning.',
-      lead: 'When this bus is very late, the reason is:',
-      hyps: { jam: 'A traffic jam', breakdown: 'A breakdown' },
+      title: 'Waarom was de bus te laat?',
+      story: 'Je bus kwam vanochtend veertig minuten te laat.',
+      lead: 'Als deze bus erg laat is, is de reden:',
+      hyps: { jam: 'Een file', breakdown: 'Pech' },
       clues: {
-        'others-late': { label: 'Other buses late too', seen: 'Other buses on the same road were late too.', notSeen: 'Other buses on the road were on time.' },
-        replacement: { label: 'A different bus came', seen: 'A different bus than usual came.', notSeen: 'The usual bus came.' },
-        announcement: { label: 'An announcement', seen: 'The display said: delay due to a technical fault.', notSeen: 'The display gave no reason.' },
-        'rush-hour': { label: 'During rush hour', seen: 'It was rush hour.', notSeen: 'It was a quiet time of day.' },
-        rain: { label: 'It was raining', seen: 'It was raining — at this stop that makes no difference.', notSeen: 'It was raining — at this stop that makes no difference.' }
+        'others-late': { label: 'Andere bussen ook te laat', seen: 'Andere bussen op dezelfde weg waren ook te laat.', notSeen: 'Andere bussen op de weg waren op tijd.' },
+        replacement: { label: 'Er kwam een andere bus', seen: 'Er kwam een andere bus dan normaal.', notSeen: 'De gewone bus kwam.' },
+        announcement: { label: 'Een melding', seen: 'Het scherm meldde: vertraging door een technische storing.', notSeen: 'Het scherm gaf geen reden.' },
+        'rush-hour': { label: 'In de spits', seen: 'Het was spitsuur.', notSeen: 'Het was een rustig moment van de dag.' },
+        rain: { label: 'Het regende', seen: 'Het regende – bij deze halte maakt dat geen verschil.', notSeen: 'Het regende – bij deze halte maakt dat geen verschil.' }
       }
     }
   }

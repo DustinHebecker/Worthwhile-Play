@@ -136,8 +136,9 @@ export function createProbabilityDetective(context: GameContext): GameInstance<P
     const prev = c.answers[k - 1];
     const before = prev && prev !== 'skip' ? prev[0]! : Math.round(toNumber((prevExact ?? posteriorAfter(c, k))[0]!) * 100);
     const draft = c.draft;
-    const set = (b: number[]) => {
-      if (!paused) commit(setDraft(state, b));
+    /** Re-rendering replaces the controls, so focus returns to the control that changed the draft. */
+    const set = (b: number[], focus: string | null = null) => {
+      if (!paused) commit(setDraft(state, b), focus);
     };
     const controls: HTMLElement[] = [];
     if (c.hyps === 2) {
@@ -147,6 +148,7 @@ export function createProbabilityDetective(context: GameContext): GameInstance<P
         max: 100,
         step: 1,
         class: 'pd-range',
+        id: 'pd-range',
         'aria-label': t('belief.slider', { name: hypName(c, 0) }),
         'aria-valuetext': t('belief.valuetext', { a: hypName(c, 0), pa: whole(draft[0]!), b: hypName(c, 1), pb: whole(draft[1]!) }),
         'data-testid': 'pd-range'
@@ -158,11 +160,11 @@ export function createProbabilityDetective(context: GameContext): GameInstance<P
         range.setAttribute('aria-valuetext', t('belief.valuetext', { a: hypName(c, 0), pa: whole(v), b: hypName(c, 1), pb: whole(100 - v) }));
       };
       range.addEventListener('input', () => preview(Number(range.value)));
-      range.addEventListener('change', () => set([Number(range.value), 100 - Number(range.value)]));
-      const minus = h('button', { type: 'button', class: 'pd-step', 'data-act': 'minus', 'data-testid': 'pd-minus', 'aria-label': t('belief.minus', { name: hypName(c, 0) }) }, '−');
-      const plus = h('button', { type: 'button', class: 'pd-step', 'data-act': 'plus', 'data-testid': 'pd-plus', 'aria-label': t('belief.plus', { name: hypName(c, 0) }) }, '+');
-      minus.addEventListener('click', () => set([Math.max(0, draft[0]! - 1), Math.min(100, draft[1]! + 1)]));
-      plus.addEventListener('click', () => set([Math.min(100, draft[0]! + 1), Math.max(0, draft[1]! - 1)]));
+      range.addEventListener('change', () => set([Number(range.value), 100 - Number(range.value)], 'pd-range'));
+      const minus = h('button', { type: 'button', class: 'pd-step', id: 'pd-minus', 'data-act': 'minus', 'data-testid': 'pd-minus', 'aria-label': t('belief.minus', { name: hypName(c, 0) }) }, '−');
+      const plus = h('button', { type: 'button', class: 'pd-step', id: 'pd-plus', 'data-act': 'plus', 'data-testid': 'pd-plus', 'aria-label': t('belief.plus', { name: hypName(c, 0) }) }, '+');
+      minus.addEventListener('click', () => set([Math.max(0, draft[0]! - 1), Math.min(100, draft[1]! + 1)], 'pd-minus'));
+      plus.addEventListener('click', () => set([Math.min(100, draft[0]! + 1), Math.max(0, draft[1]! - 1)], 'pd-plus'));
       let bar = splitBar(draft, before);
       const values = h('p', { class: 'pd-values', 'data-testid': 'pd-values' }, `${MARKS[0]} ${whole(draft[0]!)} · ${MARKS[1]} ${whole(draft[1]!)}`);
       controls.push(
@@ -185,14 +187,13 @@ export function createProbabilityDetective(context: GameContext): GameInstance<P
             'aria-valuemin': 0,
             'aria-valuemax': 100,
             'aria-valuetext': whole(x),
+            id: `pd-spin-${i}`,
             'data-testid': `pd-spin-${i}`
           },
           whole(x)
         );
-        const to = (v: number) => {
-          if (!paused) {
-            commit(shareDraft(state, i, v), `pd-spin-${i}`);
-          }
+        const to = (v: number, focus = `pd-spin-${i}`) => {
+          if (!paused) commit(shareDraft(state, i, v), focus);
         };
         spin.addEventListener('keydown', (e) => {
           const step = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1, PageUp: 10, PageDown: -10 }[e.key];
@@ -202,20 +203,20 @@ export function createProbabilityDetective(context: GameContext): GameInstance<P
           else return;
           e.preventDefault();
         });
-        const minus = h('button', { type: 'button', class: 'pd-step', 'data-act': i === 0 ? 'minus' : undefined, 'aria-label': t('belief.minus', { name: hypName(c, i) }) }, '−');
-        const plus = h('button', { type: 'button', class: 'pd-step', 'data-act': i === 0 ? 'plus' : undefined, 'data-testid': `pd-plus-${i}`, 'aria-label': t('belief.plus', { name: hypName(c, i) }) }, '+');
-        minus.addEventListener('click', () => to(x - 1));
-        plus.addEventListener('click', () => to(x + 1));
+        const minus = h('button', { type: 'button', class: 'pd-step', id: `pd-minus-${i}`, 'data-act': i === 0 ? 'minus' : undefined, 'aria-label': t('belief.minus', { name: hypName(c, i) }) }, '−');
+        const plus = h('button', { type: 'button', class: 'pd-step', id: `pd-plus-${i}`, 'data-act': i === 0 ? 'plus' : undefined, 'data-testid': `pd-plus-${i}`, 'aria-label': t('belief.plus', { name: hypName(c, i) }) }, '+');
+        minus.addEventListener('click', () => to(x - 1, `pd-minus-${i}`));
+        plus.addEventListener('click', () => to(x + 1, `pd-plus-${i}`));
         controls.push(h('div', { class: 'pd-three' }, named(c, i), h('span', { class: 'pd-stepper' }, minus, spin, plus)));
       });
-      const even = h('button', { type: 'button', class: 'pd-secondary', 'data-testid': 'pd-even' }, t('belief.even'));
-      even.addEventListener('click', () => set(evenly(3)));
+      const even = h('button', { type: 'button', class: 'pd-secondary', id: 'pd-even', 'data-testid': 'pd-even' }, t('belief.even'));
+      even.addEventListener('click', () => set(evenly(3), 'pd-even'));
       controls.push(even);
     }
     const last = k === c.clues.length - 1;
     const next = h('button', { type: 'button', class: 'pd-primary', 'data-testid': 'pd-commit' }, t(last ? 'action.close' : 'action.next'));
     const skip = h('button', { type: 'button', class: 'pd-secondary', 'data-testid': 'pd-skip' }, t('action.skip'));
-    const back = h('button', { type: 'button', class: 'pd-secondary', 'data-testid': 'pd-reset' }, t('belief.reset'));
+    const back = h('button', { type: 'button', class: 'pd-secondary', id: 'pd-reset', 'data-testid': 'pd-reset' }, t('belief.reset'));
     const go = (asSkip: boolean) => {
       if (paused) return;
       const s = commitStep(state, asSkip);
@@ -232,7 +233,7 @@ export function createProbabilityDetective(context: GameContext): GameInstance<P
     };
     next.addEventListener('click', () => go(false));
     skip.addEventListener('click', () => go(true));
-    back.addEventListener('click', () => !paused && commit(resetDraft(state)));
+    back.addEventListener('click', () => !paused && commit(resetDraft(state), 'pd-reset'));
     return h(
       'section',
       { class: 'pd-panel', 'aria-labelledby': 'pd-belief-h', 'data-testid': 'pd-belief' },
