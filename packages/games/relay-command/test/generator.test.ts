@@ -1,36 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import fc from 'fast-check';
-import { observe } from '@wp/strategy-engine';
+import { NEUTRAL, observe } from '@wp/strategy-engine';
 import { planAi } from '../src/ai';
-import { depositsPerSide, generatedMapProblems, generateMap, POST_DISTANCE_SHARE, RICH_BALANCE, RICH_MIDDLE_FROM } from '../src/generator';
-import { applyTool, blankMap, isFair, MAP_HEIGHTS, MAP_WIDTHS, type EditMap } from '../src/maps';
-import { isValidState, lockTurn, newGame, planOrder, PLAYER, OPPONENT, rulesOf } from '../src/rules';
+import { depositsPerSeat, depositsPerSide, generatedMapProblems, generateMap, POST_DISTANCE_SHARE, RICH_BALANCE, RICH_MIDDLE_FROM } from '../src/generator';
+import { applyTool, blankMap, customSpec, FOUR_SEATS, isFair, isValidMap, MAP_HEIGHTS, MAP_WIDTHS, mapIssues, toScenario, type EditMap } from '../src/maps';
+import { isValidState, lockTurn, newGame, planOrder, PLAYER, RANDOM_OPPONENTS, rulesOf } from '../src/rules';
+import { opponentCounts } from '../src/scenarios';
 import { FIELD_EXERCISE } from '../src/scenarios';
 
 const SIZES = MAP_WIDTHS.flatMap((w) => MAP_HEIGHTS.map((h) => [w, h] as const));
 
 describe('map generator (I6c, P9)', () => {
-  it('every size and seed gives a map the independent validator accepts; the same seed gives the same map', () => {
-    for (const [w, h] of SIZES) {
-      for (let seed = 0; seed < 6; seed++) {
-        const map = generateMap(w, h, seed, 'Random');
-        expect(generatedMapProblems(map), `${w}×${h} seed ${seed}`).toEqual([]);
-        expect(map).toMatchObject({ w, h, name: 'Random' });
-        expect(generateMap(w, h, seed, 'Random')).toEqual(map);
-      }
-      // Different seeds give different maps.
-      expect(new Set([0, 1, 2, 3].map((seed) => generateMap(w, h, seed).terrain)).size).toBeGreaterThan(1);
-    }
-  });
-
-  it('property: any seed on any size passes the validator (P9)', () => {
-    fc.assert(
-      fc.property(fc.constantFrom(...SIZES), fc.integer({ min: 0, max: 0xffffffff }), ([w, h], seed) => {
-        expect(generatedMapProblems(generateMap(w, h, seed))).toEqual([]);
-      }),
-      { numRuns: 150 }
-    );
-  });
 
   it('the map rule: deposits per side grow with the area; from 200 cells a rich pair sits near the middle', () => {
     expect(depositsPerSide(12, 10)).toBe(2);
@@ -136,17 +115,86 @@ describe('map generator (I6c, P9)', () => {
     expect(generateMap(12, 10, 5.7)).toEqual(generateMap(12, 10, 5));
   });
 
-  it('the opponent plays generated maps of every size class: every turn a valid save', () => {
-    for (const [w, h, seed] of [[10, 8, 1], [16, 12, 2], [24, 16, 3]] as const) {
-      let s = newGame(seed, FIELD_EXERCISE, 'normal', 12, false, generateMap(w, h, seed, `Random ${w}×${h}`));
-      expect(s.scenario).toBe('custom');
+});
+
+describe('map generator, four bases (Generator C, owner decisions 2026-10-18)', () => {
+  /** The seat whose quarter holds (x, y): 0 bottom left, 1 top left, 2 top right, 3 bottom right. */
+  const quarterOf = (map: EditMap, x: number, y: number) => (y >= map.h / 2 ? (x < map.w / 2 ? 0 : 3) : x < map.w / 2 ? 1 : 2);
+
+  it('the map rule: two or three deposits per base, a rich one per quarter by the middle from 200 cells; mirrored both ways; only the yard next to a post', () => {
+    expect(depositsPerSeat(12, 10)).toBe(2);
+    expect(depositsPerSeat(24, 16)).toBe(3);
+    for (const [w, h] of SIZES) {
+      const map = generateMap(w, h, 3, '', 4);
+      const rich = map.deposits.filter((d) => d.size === 'rich');
+      expect(map.deposits.length - rich.length, `${w}×${h}`).toBe(4 * depositsPerSeat(w, h));
+      expect(rich.length, `${w}×${h}`).toBe(w * h >= RICH_MIDDLE_FROM ? 4 : 0);
+      for (const d of rich) expect(Math.max(Math.abs(d.x - (w - 1) / 2), Math.abs(d.y - (h - 1) / 2)), `${w}×${h} rich at ${d.x},${d.y}`).toBeLessThanOrEqual(2.5);
+      for (let seat = 0; seat < 4; seat++) expect(map.deposits.filter((d) => d.size !== 'rich' && quarterOf(map, d.x, d.y) === seat)).toHaveLength(depositsPerSeat(w, h));
+      expect(isFair(map)).toBe(true);
+      // Left to right and top to bottom, cell by cell.
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        expect(map.terrain[y * w + w - 1 - x]).toBe(map.terrain[y * w + x]);
+        expect(map.terrain[(h - 1 - y) * w + x]).toBe(map.terrain[y * w + x]);
+      }
+      const posts = [0, 1, 2, 3].map((side) => map.units.find((u) => u.side === side && u.kind === 'command-post')!);
+      for (const p of posts) for (const q of posts) if (p !== q) expect(Math.hypot(p.x - q.x, p.y - q.y)).toBeGreaterThanOrEqual(POST_DISTANCE_SHARE * Math.min(w, h));
+      // Next to each post only its yard: a ring of own pieces would keep a storm from ever reaching it.
+      for (const p of posts) expect(map.units.filter((u) => u !== p && Math.max(Math.abs(u.x - p.x), Math.abs(u.y - p.y)) <= 1).map((u) => u.kind), `${w}×${h}`).toEqual(['muster']);
+    }
+  });
+
+  it('fairness both ways: a map the same turned half round but not mirrored is unfair; so is a seat moved into another quarter', () => {
+    const good = generateMap(16, 12, 5, '', 4);
+    expect(generatedMapProblems(good)).toEqual([]);
+    // A cell and its half-turn image changed: still point-symmetric, no longer mirrored.
+    const c = 2 * good.w + 6;
+    const code = good.terrain[c] === 'f' ? 'h' : 'f';
+    const terrain = [...good.terrain];
+    terrain[c] = code;
+    terrain[good.w * good.h - 1 - c] = code;
+    expect(isFair({ ...good, terrain: terrain.join('') })).toBe(false);
+    expect(generatedMapProblems({ ...good, terrain: terrain.join('') })).toContain('not symmetric');
+    // Seats swapped between two mirror images (seat 1's units given to seat 2 and back): the sides no longer match.
+    const swapped = { ...good, units: good.units.map((u) => ({ ...u, side: u.side === 1 ? 2 : u.side === 2 ? 1 : u.side })) };
+    expect(isFair(swapped)).toBe(false);
+    // A seat without a post is not playable.
+    const noPost = { ...good, units: good.units.filter((u) => !(u.side === 3 && u.kind === 'command-post')) };
+    expect(mapIssues(noPost)).toContainEqual({ key: 'map.posts', side: 3 });
+    expect(generatedMapProblems(noPost)).toContain('no posts');
+  });
+
+  it('a four-base map is well-formed only with sides 0 to 3 (two-side maps 0 and 1); its scenario has the four seats', () => {
+    const map = generateMap(12, 10, 1, '', 4);
+    expect(isValidMap(map)).toBe(true);
+    expect(isValidMap({ ...map, seats: 3 })).toBe(false);
+    expect(isValidMap({ ...map, units: map.units.map((u, i) => (i === 0 ? { ...u, side: 4 } : u)) })).toBe(false);
+    const { seats: _, ...two } = map;
+    expect(isValidMap(two)).toBe(false); // sides 2 and 3 on a two-side map
+    expect(toScenario(map).sides).toBe(4);
+    expect(customSpec(map).seats).toEqual(FOUR_SEATS);
+    expect(opponentCounts(customSpec(map))).toEqual([...RANDOM_OPPONENTS]);
+    expect(customSpec(generateMap(12, 10, 1)).seats).toBeUndefined();
+  });
+
+  it('a game on a four-base map: 1 to 3 opponents, empty seats neutral, each seat its mirror frame; a valid save every turn; the editor refuses it', () => {
+    const map = generateMap(16, 12, 2, 'Random', 4);
+    for (const opponents of RANDOM_OPPONENTS) {
+      let s = newGame(2, FIELD_EXERCISE, 'normal', 6, false, map, opponents, [], false, { w: 16, h: 12, seed: 2 });
+      expect(s.opponents).toBe(opponents);
+      expect(s.world.sides).toBe(opponents + 1);
+      expect(s.world.frames).toEqual(FOUR_SEATS.layouts[opponents]!.map((seat) => FOUR_SEATS.frames[seat]));
+      expect(s.world.entities.filter((e) => e.side === NEUTRAL && e.kind === 'command-post')).toHaveLength(3 - opponents);
       while (s.phase === 'plan') {
         for (const c of planAi(observe(s.world, rulesOf(s), PLAYER), rulesOf(s), 'normal')) s = planOrder(s, c.unit, c.order, c.doctrine) ?? s;
         s = lockTurn(s);
-        expect(isValidState(JSON.parse(JSON.stringify(s))), `${w}×${h} turn ${s.world.turn}`).toBe(true);
+        expect(isValidState(JSON.parse(JSON.stringify(s))), `${opponents} opponents, turn ${s.world.turn}`).toBe(true);
       }
-      expect(s.world.turn).toBe(12);
-      expect(s.world.entities.some((e) => e.side === OPPONENT)).toBe(true);
     }
+    const s = newGame(2, FIELD_EXERCISE, 'normal', 6, false, map, 3);
+    // The editor keeps to two sides for now: a draft holding a four-base map is no valid save.
+    expect(isValidState({ ...s, edit: { map, slot: null, mirror: true } })).toBe(false);
+    expect(isValidState({ ...s, edit: { map: generateMap(16, 12, 2), slot: null, mirror: true } })).toBe(true);
   }, 120_000);
+
 });

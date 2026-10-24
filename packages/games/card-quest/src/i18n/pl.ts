@@ -342,5 +342,32 @@ export const pl: Catalogue = {
   'log.give.toYou': '{name} oddaje ci karty ({n}).',
   'log.curse.toYou': '{name} — klątwa na ciebie: {card}.',
   // Reveal pending
-  'next.reveal': 'Trafiła cię karta: przeczytaj ją, potem naciśnij „Dalej”.'
+  'next.reveal': 'Trafiła cię karta: przeczytaj ją, potem naciśnij „Dalej”.',
+  // K3: worlds Spaceloot and Office
+  'world.sl': 'Spaceloot — załoga kontra kosmici',
+  'world.of': 'Biurowy Chaos — biuro kontra praca zdalna',
+  'setup.worlds': 'Światy',
+  'setup.worldModes.random': 'Losowo',
+  'setup.worldModes.pick': 'Wybierz',
+  'setup.worlds.random': 'Losowo: jeden świat albo mieszanka dwóch, losowane przy każdej nowej grze.',
+  'setup.worlds.hint': 'Kilka światów zostaje potasowanych razem. Nic nie zaznaczono: losowo.',
+  'family.crew': 'załoga statku',
+  'family.alien': 'kosmici',
+  'family.office': 'ludzie z biura',
+  'family.remote': 'zdalniacy',
+  'set.away-team': 'Sprzęt grupy zwiadowczej',
+  'set.tourist-kit': 'Zestaw kosmicznego turysty',
+  'set.video-call': 'Zestaw do wideorozmowy',
+  'set.couch-kit': 'Wyposażenie biura na kanapie',
+  // Worlds Fridge and Railway
+  'world.fd': 'Wyprawa do Lodówki — świeże kontra resztki',
+  'world.rw': 'Proszę Wsiadać — pasażerowie kontra obsługa pociągu',
+  'family.fresh': 'świeże jedzenie',
+  'family.leftover': 'resztki',
+  'family.passenger': 'pasażerowie',
+  'family.railstaff': 'obsługa pociągu',
+  'set.fridge-raider': 'Zestaw do nocnego podjadania',
+  'set.chef-kit': 'Porządny zestaw kucharski',
+  'set.conductor-kit': 'Porządny zestaw konduktorski',
+  'set.commuter-kit': 'Pakiet codziennych dojazdów z wprawą'
 };

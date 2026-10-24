@@ -449,21 +449,6 @@ describe('generation', () => {
     SLOW
   );
 
-  it(
-    'generates puzzles with exactly one solution according to the oracle',
-    () => {
-      const runs: [Difficulty, number][] = [['easy', 40], ['medium', 20], ['hard', 10]];
-      for (const [difficulty, count] of runs) {
-        for (let seed = 1; seed <= count; seed++) {
-          const g = generatePuzzle(seed * 7919, difficulty);
-          expect(countSolutions(g.size, g.clues), `${difficulty} seed ${seed * 7919}`).toBe(1);
-          expect(oracleIsSolution(g.size, g.clues, lineKeys(g.size, g.solution))).toBe(true);
-        }
-      }
-    },
-    SLOW
-  );
-
   it('has a valid, unique fallback', () => {
     for (const difficulty of DIFFICULTIES) {
       const fb = fallbackPuzzle(difficulty);

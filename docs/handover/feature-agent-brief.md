@@ -31,7 +31,7 @@ Additional host behaviour (learn from the existing games in packages/games/* (e.
 
 Mutation-friendly tests: do not call game code at test-collection time (e.g. building `it.each` tables from rules functions at module scope) — Stryker cannot attribute coverage there and mutants falsely survive; compute such data inside tests or `beforeAll`.
 
-Long-running tests: the default test timeout is 20 s; give generation/solver-heavy describe blocks an explicit larger timeout so mutation runs and busy CI runners stay green.
+Long-running tests: the default test timeout is 20 s; give generation/solver-heavy describe blocks an explicit larger timeout so mutation runs and busy CI runners stay green. Tests that take seconds each and kill few mutants (AI strength in whole matches, statistics over many seeds, oracle or solver searches over shipped data) go into a sibling `*.slow.test.ts` file: mutation testing leaves those out, `pnpm test` and CI run them (ADR 0021).
 
 Isolation from parallel agents (several feature agents work in the same checkout at the same time):
 - Put any scratch files (harness pages, screenshots, scripts) ONLY under `$SCRATCH (the orchestrator's scratch directory)/<id>/`.

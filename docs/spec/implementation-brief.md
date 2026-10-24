@@ -1358,6 +1358,8 @@ Apply selectively to important logic:
 
 Do not optimize mutation scores on presentation code merely for a metric.
 
+> Amendment (2026-10-21, ADR 0021): to bound compute, pull requests mutate only their changed lines, the weekly run mutates a rotating sample (every file once in 8 weeks, report-only), and full runs are started manually. Slow AI-strength, statistical and oracle-search tests live in `*.slow.test.ts` files, which mutation runs leave out and every other test run includes.
+
 ## E2E
 
 Playwright scenarios should verify:
