@@ -49,6 +49,7 @@ import {
   teamShapes,
   teamShapeOf,
   teamsOnly,
+  winnersOf,
   type TeamShape,
   orderRefusal,
   rulesOf,
@@ -801,7 +802,12 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   /** The status line of `s`: empty while planning (the counter in the top bar says it all), the result at the end. */
   function statusOf(s: RcState): string {
     if (s.phase === 'plan') return '';
-    if (isHotSeat(s)) return s.winner === null ? t('result.drawSides') : t('result.winner', { mark: sideMark(s.winner) });
+    if (isHotSeat(s)) {
+      if (s.winner === null) return t('result.drawSides');
+      // With teams the winning team's sides still in win together (only survivors win).
+      const winners = winnersOf(s);
+      return winners.length > 1 ? t('result.winners', { marks: winners.map(sideMark).join(', ') }) : t('result.winner', { mark: sideMark(s.winner) });
+    }
     if (s.conceded) return t('status.conceded');
     // The result is decided on the true world, so it is told from it (not from the picture).
     const args = { own: teamValue(s.world, me()), enemy: opponentValue(s.world), limit: STALL_TURNS };
@@ -2079,10 +2085,10 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     if (label) label.hidden = counts.length < 2;
   }
 
-  /** The team shapes of the game's map and opponent count (free-for-all first); the row only when there are any and no second person. */
+  /** The team shapes of the game's map and opponent count (free-for-all first); the row only when there are any. */
   function syncTeamOptions(): void {
     const spec = specOf(state);
-    const shapes = spec && !isHotSeat(state) ? teamShapes(spec, state.opponents) : [];
+    const shapes = spec ? teamShapes(spec, state.opponents) : [];
     // A map made for teams has no free-for-all.
     const values = spec && teamsOnly(spec) ? shapes : ['ffa', ...shapes];
     if ([...teamsSelect.options].map((o) => o.value).join(',') !== values.join(',')) {

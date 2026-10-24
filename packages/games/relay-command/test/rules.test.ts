@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { isRecord } from '@wp/game-core';
-import { BASE_RULESET, NEUTRAL, archetypeOf, canonicalJson, cellOf, findPath, observe, passable, DEFAULT_DOCTRINE, computeNetwork, createWorld, frameIndexIn, frameOf, teamOf, initialIntel, observedCells, resolveTurn, validateCommand, worldHash, type Command, type Entity, type World } from '@wp/strategy-engine';
+import { BASE_RULESET, NEUTRAL, archetypeOf, canonicalJson, cellOf, findPath, observe, passable, DEFAULT_DOCTRINE, computeNetwork, createWorld, frameIndexIn, frameOf, teamOf, initialIntel, observedCells, resolveTurn, retire, validateCommand, worldHash, type Command, type Entity, type World } from '@wp/strategy-engine';
 import { APPROACH_RADIUS, approachCells, assaultPlan, objectiveOf, planAi, type Difficulty } from '../src/ai';
 import {
   cancelJob,
@@ -55,6 +55,7 @@ import {
   teamShapes,
   teamShapeOf,
   teamsOnly,
+  winnersOf,
   teamValue,
   TEAM_LAYOUTS,
   opponentValue,
@@ -1873,7 +1874,7 @@ describe('teams (owner decisions 2026-10-24)', () => {
     expect(d(0, 1)).toBeLessThan(d(0, 2));
   });
 
-  it('a team game sets the world\'s teams; a shape the map does not offer for the count, or several persons, give free-for-all', () => {
+  it('a team game sets the world\'s teams (also with several persons); a shape the map does not offer for the count gives free-for-all', () => {
     for (const shape of ['2v2-next', '2v2-across', '3v1', '1v3'] as const) {
       const s = newGame(1, corners, 'normal', 12, false, null, 3, [], false, null, shape);
       expect(s.world.teams).toEqual([...TEAM_LAYOUTS[shape]]);
@@ -1882,16 +1883,15 @@ describe('teams (owner decisions 2026-10-24)', () => {
     }
     expect(newGame(1, corners, 'normal', 12, false, null, 2, [], false, null, '2v2-next').world.teams).toBeUndefined();
     expect(newGame(1, FIELD_EXERCISE, 'normal', 12, false, null, 1, [], false, null, '2v1-next').world.teams).toBeUndefined();
-    expect(newGame(1, corners, 'normal', 12, false, null, 3, ['person', 'person'], false, null, '2v2-next').world.teams).toBeUndefined();
+    expect(newGame(1, corners, 'normal', 12, false, null, 3, ['person', 'person'], false, null, '2v2-next').world.teams).toEqual([0, 0, 1, 1]);
     expect(() => initialWorld(corners, 1, 2, false, '3v1')).toThrow(RangeError);
   });
 
-  it('a crafted save is refused: teams that are no offered shape, teams on a two-side map, teams in a hot-seat game', () => {
+  it('a crafted save is refused: teams that are no offered shape, teams on a two-side map', () => {
     const s = newGame(1, corners, 'normal', 12, false, null, 3, [], false, null, '2v2-next');
     const bad: [string, (x: RcState) => void][] = [
       ['teams that are no shape', (x) => { x.world.teams = [0, 1, 1, 0]; }],
-      ['a shape for another count', (x) => { x.world.teams = [0, 0, 1]; }],
-      ['teams with several persons', (x) => { x.seats = ['person', 'person', 'computer', 'computer']; }]
+      ['a shape for another count', (x) => { x.world.teams = [0, 0, 1]; }]
     ];
     for (const [label, corrupt] of bad) {
       const x = structuredClone(s);
@@ -2010,4 +2010,61 @@ describe('Bastion: a map made for teams (owner decision 2026-10-24)', () => {
       expect(canonicalJson(replay(s.seed, s.log, BASTION, 3, false, shape))).toBe(canonicalJson(s.world));
     }
   }, 120_000);
+});
+
+describe('teams in hot-seat (owner decision 2026-10-24)', () => {
+  const corners = SCENARIOS.find((x) => x.id === 'four-corners')!;
+  const out = (s0: RcState, sides: number[]): RcState => {
+    let w = s0.world;
+    for (const side of sides) w = retire(w, side).world;
+    return { ...s0, world: w };
+  };
+  /** Locks the turn of every person in turn (each confirms the hand-over first). */
+  const lockAll = (s0: RcState): RcState => {
+    let s = s0;
+    for (let k = 0; k < 4 && s.world.turn === s0.world.turn && s.phase === 'plan'; k++) {
+      if (s.handover) s = confirmHandover(s);
+      s = lockTurn(s);
+    }
+    return s;
+  };
+
+  it('two persons together against two computers: allied persons share sight; the game ends when one team is left and names its survivors', () => {
+    const s = newGame(1, corners, 'normal', 30, false, null, 3, ['person', 'person', 'computer', 'computer'], false, null, '2v2-next');
+    expect(isHotSeat(s)).toBe(true);
+    expect(s.world.teams).toEqual([0, 0, 1, 1]);
+    expect(isValidState(JSON.parse(JSON.stringify(s)))).toBe(true);
+    // The opponents are out: both persons win.
+    const won = lockAll(out(s, [2, 3]));
+    expect(won.phase).toBe('finished');
+    expect(winnersOf(won)).toEqual([0, 1]);
+    expect(won.result).toBe('won');
+    // Player A out, its ally B still in when the opponents fall: only B wins, A has lost.
+    const lone = lockAll(out(s, [0, 2, 3]));
+    expect(lone.phase).toBe('finished');
+    expect(winnersOf(lone)).toEqual([1]);
+    expect(lone.result).toBe('lost');
+    // The team of the computers is left: they win, both persons have lost.
+    const lost = lockAll(out(s, [0, 1]));
+    expect(lost.phase).toBe('finished');
+    expect(winnersOf(lost)).toEqual([2, 3]);
+    expect(lost.result).toBe('lost');
+  });
+
+  it('giving up: a person whose team is all that is left is out of the win; at the limit the stronger team wins', () => {
+    const s = newGame(1, corners, 'normal', 30, false, null, 3, ['person', 'person', 'computer', 'computer'], false, null, '2v2-next');
+    // Both opponents gone; A gives up: B wins alone.
+    const after = concede(out(s, [2, 3]));
+    expect(after.phase).toBe('finished');
+    expect(winnersOf(after)).toEqual([1]);
+    expect(after.result).toBe('lost');
+    // At the turn limit: the team with more strength (its sides summed) wins.
+    const late = structuredClone(s);
+    late.world.turn = 29;
+    late.world.supply![1] = (late.world.supply![1] ?? 0) + 100;
+    const end = lockAll(late);
+    expect(end.phase).toBe('finished');
+    expect(winnersOf(end)).toEqual([0, 1]);
+    expect(end.result).toBe('won');
+  });
 });
