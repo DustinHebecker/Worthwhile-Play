@@ -39,13 +39,14 @@ describe('view', () => {
   it('renders the title, pixels left, the lanes, the free slots and the canvas summary', () => {
     const { q, root, instance } = start();
     const s = instance.serialize();
-    expect(q('pp-title').textContent).toBe('Red fox');
+    expect(q('pp-title').textContent).toBe(`Red fox · ${s.picture.palette.length} colours`);
     const total = s.picture.rows.join('').replace(/\./g, '').length;
     expect(q('pp-left').textContent).toBe(`Pixels left: ${total} of ${total}`);
-    expect(root.querySelectorAll('[data-testid^="pp-lane-box-"]')).toHaveLength(2);
+    expect(root.querySelectorAll('[data-testid^="pp-lane-box-"]')).toHaveLength(4);
     expect(root.querySelectorAll('[data-testid^="pp-slot-free-"]:not([hidden])')).toHaveLength(5);
     expect(q('pp-canvas').getAttribute('role')).toBe('img');
-    expect(q('pp-canvas').getAttribute('aria-label')).toContain('Picture “Red fox”, 16 × 16 pixels');
+    expect(s.picture.w).toBe(32);
+    expect(q('pp-canvas').getAttribute('aria-label')).toContain(`Picture “Red fox”, 32 × ${s.picture.h} pixels`);
     expect(q('pp-lane-0').getAttribute('aria-label')).toMatch(/^Lane 1, front: \w[\w ]*, \w+, shots: \d+$/);
   });
 
@@ -65,6 +66,18 @@ describe('view', () => {
     expect(hits.length).toBeGreaterThan(0);
     expect(instance.serialize()).toEqual(s);
     q('pp-lane-0').blur();
+    expect(q('pp-canvas').dataset.preview).toBe('');
+  });
+
+  it('pointing previews; leaving another shooter does not clear the preview, leaving this one does', () => {
+    const { q } = start({ difficulty: 'medium' });
+    const mouse = (type: string) => Object.assign(new Event(type), { pointerType: 'mouse' });
+    q('pp-lane-0').dispatchEvent(mouse('pointerenter'));
+    const preview = q('pp-canvas').dataset.preview;
+    expect(preview).not.toBe('');
+    q('pp-lane-1').dispatchEvent(mouse('pointerleave'));
+    expect(q('pp-canvas').dataset.preview).toBe(preview);
+    q('pp-lane-0').dispatchEvent(mouse('pointerleave'));
     expect(q('pp-canvas').dataset.preview).toBe('');
   });
 
@@ -141,7 +154,13 @@ describe('view', () => {
     fresh.instance.dispose();
 
     const doomed = start({ state: play(ringState(), 'L1') });
+    vi.useFakeTimers();
     doomed.q('pp-stuck-hint').click();
+    // Off the witness path the hint needs a search: a busy state first, the answer one frame later.
+    expect(doomed.status()).toBe('Checking…');
+    expect(doomed.q('pp-status').getAttribute('aria-busy')).toBe('true');
+    vi.advanceTimersByTime(50);
+    expect(doomed.q('pp-status').hasAttribute('aria-busy')).toBe(false);
     expect(doomed.status()).toBe('From here the picture cannot be finished. Going back to the start works.');
     const back = doomed.q('pp-undo-to');
     expect(back.parentElement!.hidden).toBe(false);
@@ -214,21 +233,41 @@ describe('view', () => {
 
   it('keyboard: arrows move between lane fronts (one tab stop), Ctrl+Z undoes, Esc clears the preview', () => {
     const { q, instance, root } = start({ difficulty: 'medium' });
-    const fronts = [0, 1, 2].map((i) => q(`pp-lane-${i}`));
-    expect(fronts.map((b) => b.tabIndex)).toEqual([0, -1, -1]);
+    const fronts = [0, 1, 2, 3].map((i) => q(`pp-lane-${i}`));
+    expect(fronts.map((b) => b.tabIndex)).toEqual([0, -1, -1, -1]);
     fronts[0]!.focus();
     fronts[0]!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
     expect(document.activeElement).toBe(fronts[1]);
-    expect(fronts.map((b) => b.tabIndex)).toEqual([-1, 0, -1]);
+    expect(fronts.map((b) => b.tabIndex)).toEqual([-1, 0, -1, -1]);
     fronts[1]!.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
-    expect(document.activeElement).toBe(fronts[2]);
+    expect(document.activeElement).toBe(fronts[3]);
     expect(q('pp-canvas').dataset.preview).not.toBe('');
-    fronts[2]!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    fronts[3]!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     expect(q('pp-canvas').dataset.preview).toBe('');
-    fronts[2]!.click();
-    expect(instance.serialize().moves).toEqual(['L2']);
+    const legal = fronts.findIndex((b) => b.getAttribute('aria-disabled') === 'false');
+    fronts[legal]!.click();
+    expect(instance.serialize().moves).toEqual([`L${legal}`]);
     root.firstElementChild!.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true }));
     expect(instance.serialize().moves).toEqual([]);
+  });
+
+  it('on a touch screen "Confirm before launch" is on by default; a remembered choice wins', () => {
+    const original = window.matchMedia;
+    window.matchMedia = ((query: string) => ({ matches: query.includes('coarse'), media: query, addEventListener() {}, removeEventListener() {} })) as unknown as typeof window.matchMedia;
+    try {
+      const touch = start();
+      expect((touch.q('pp-option-confirm') as HTMLInputElement).checked).toBe(true);
+      touch.q('pp-lane-0').click();
+      expect(touch.instance.serialize().moves).toEqual([]);
+      expect(touch.q('pp-canvas').dataset.spotlight).not.toBe('');
+      touch.instance.dispose();
+      const chosen = start({ prefs: { display: { confirm: false } } });
+      expect((chosen.q('pp-option-confirm') as HTMLInputElement).checked).toBe(false);
+      chosen.q('pp-lane-0').click();
+      expect(chosen.instance.serialize().moves).toEqual(['L0']);
+    } finally {
+      window.matchMedia = original;
+    }
   });
 
   it('"Confirm before launch": the first press previews, the second launches', () => {
@@ -248,7 +287,7 @@ describe('view', () => {
     const box = q('pp-option-allSymbols') as HTMLInputElement;
     box.checked = true;
     box.dispatchEvent(new Event('change'));
-    expect(ctx.preferences.get('display')).toEqual({ animation: true, allSymbols: true, confirm: false });
+    expect(ctx.preferences.get('display')).toEqual({ animation: true, allSymbols: true, confirm: false, large: false, wholeLanes: null });
     expect(instance.serialize()).toEqual(before);
     expect(ctx.saveRequests()).toBe(saves);
     // Reduced motion: animation is off and cannot be switched on.
@@ -260,7 +299,121 @@ describe('view', () => {
     const s = instance.serialize();
     const rows = root.querySelectorAll('[data-testid^="pp-colour-"]');
     expect(rows).toHaveLength(s.picture.palette.length);
-    expect(rows[0]!.textContent).toMatch(/Cream.*left: \d+ · reachable now: \d+ · shooters: \d+/);
+    const counts = [...rows].map((r) => r.querySelector('.pp-colour-count')!.textContent);
+    for (const c of counts) expect(c).toMatch(/^left \d+ · at the edge now \d+ · shots waiting \d+$/);
+    // At the start every pixel is left and every shot waits: the numbers add up to the picture.
+    const total = s.picture.rows.join('').replace(/\./g, '').length;
+    expect(counts.reduce((a, c) => a + Number(/^left (\d+)/.exec(c!)![1]), 0)).toBe(total);
+    expect(counts.reduce((a, c) => a + Number(/shots waiting (\d+)$/.exec(c!)![1]), 0)).toBe(total);
+  });
+
+  it('a previewed shooter puts its colour in the spotlight; "Show" lights up one colour from the list', () => {
+    const { q, instance } = start({ difficulty: 'medium', motif: 'koala' });
+    const s = instance.serialize();
+    expect(q('pp-canvas').dataset.spotlight).toBe('');
+    const front = q('pp-lane-0');
+    front.focus();
+    expect(q('pp-canvas').dataset.spotlight).toBe(front.dataset.colour);
+    front.blur();
+    expect(q('pp-canvas').dataset.spotlight).toBe('');
+    const key = s.picture.palette[2]!.key;
+    const show = q(`pp-show-${key}`);
+    expect(show.getAttribute('aria-pressed')).toBe('false');
+    expect(show.getAttribute('aria-label')).toMatch(/^Show .+ in the picture$/);
+    show.click();
+    expect(show.getAttribute('aria-pressed')).toBe('true');
+    expect(q('pp-canvas').dataset.spotlight).toBe(key);
+    // A preview takes the spotlight while it lasts; the shown colour comes back afterwards.
+    front.focus();
+    expect(q('pp-canvas').dataset.spotlight).toBe(front.dataset.colour);
+    front.blur();
+    expect(q('pp-canvas').dataset.spotlight).toBe(key);
+    show.click();
+    expect(show.getAttribute('aria-pressed')).toBe('false');
+    expect(q('pp-canvas').dataset.spotlight).toBe('');
+    expect(instance.serialize()).toEqual(s);
+  });
+
+  it('long lanes show 7 shooters behind the front until "Show whole lanes"', () => {
+    const { q, root, ctx, instance } = start({ difficulty: 'hard', motif: 'winter-village' });
+    const s = instance.serialize();
+    const visibleChips = (i: number) => q(`pp-lane-box-${i}`).querySelectorAll('.pp-chip:not([hidden])').length;
+    const toggle = q('pp-lanes-toggle');
+    expect(toggle.hidden).toBe(false);
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    const hiddenCount = s.lanes.reduce((a, lane) => a + Math.max(0, lane.length - 1 - 7), 0);
+    expect(toggle.textContent).toBe(`Show whole lanes (+${hiddenCount})`);
+    s.lanes.forEach((lane, i) => expect(visibleChips(i)).toBe(Math.min(7, lane.length - 1)));
+    toggle.click();
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(toggle.textContent).toBe('Show fewer shooters');
+    s.lanes.forEach((lane, i) => expect(visibleChips(i)).toBe(lane.length - 1));
+    expect(ctx.preferences.get('display')).toMatchObject({ wholeLanes: true });
+    // Chips are built when first shown, in lane order.
+    expect(root.querySelectorAll('.pp-chip')).toHaveLength(s.lanes.reduce((a, lane) => a + lane.length - 1, 0));
+    s.lanes.forEach((_, i) => {
+      const order = [...q(`pp-lane-box-${i}`).querySelectorAll<HTMLElement>('.pp-chip')].map((c) => Number(c.dataset.index));
+      expect(order).toEqual([...order].sort((a, b) => a - b));
+    });
+  });
+
+  it('chips built on demand: after restoring a game in progress, undoing back to the start shows each lane in order', () => {
+    let s = createInitial(5, 'hard', 'market-stall');
+    for (const m of s.witness.slice(0, 30)) s = play(s, m);
+    const { q, instance } = start({ state: s });
+    const check = () => {
+      const now = instance.serialize();
+      const pos = position(now);
+      now.lanes.forEach((lane, i) => {
+        const k = pos.laneFront[i]!;
+        const shown = [...q(`pp-lane-box-${i}`).querySelectorAll<HTMLElement>('.pp-chip:not([hidden])')].map((c) => Number(c.dataset.index));
+        const expected: number[] = [];
+        for (let j = k + 1; j < Math.min(lane.length, k + 8); j++) expected.push(j);
+        expect(shown, `lane ${i} after ${now.moves.length} moves`).toEqual(expected);
+      });
+    };
+    check();
+    for (let k = 0; k < 30; k++) {
+      q('pp-undo').click();
+      check();
+    }
+    expect(instance.serialize().moves).toEqual([]);
+  });
+
+  it('Large view: a scrollable, focusable picture region with symbols on the edge pixels', () => {
+    const { q, ctx, instance } = start({ difficulty: 'hard', motif: 'red-fox' });
+    const before = instance.serialize();
+    const board = q('pp-board');
+    expect(board.hasAttribute('role')).toBe(false);
+    // Small cells (8 px in a layout-less test DOM): no symbols on the picture.
+    expect(Number(q('pp-canvas').dataset.cell)).toBeLessThan(10);
+    expect(q('pp-canvas').dataset.symbols).toBe('none');
+    const large = q('pp-option-large') as HTMLInputElement;
+    large.checked = true;
+    large.dispatchEvent(new Event('change'));
+    expect(board.classList.contains('is-large')).toBe(true);
+    expect(board.getAttribute('role')).toBe('region');
+    expect(board.getAttribute('tabindex')).toBe('0');
+    expect(board.getAttribute('aria-label')).toBe('Picture, large view: scroll or use the arrow keys');
+    expect(q('pp-canvas').dataset.cell).toBe('14');
+    expect(q('pp-canvas').dataset.symbols).toBe('edge');
+    const all = q('pp-option-allSymbols') as HTMLInputElement;
+    all.checked = true;
+    all.dispatchEvent(new Event('change'));
+    expect(q('pp-canvas').dataset.symbols).toBe('all');
+    expect(ctx.preferences.get('display')).toMatchObject({ large: true, allSymbols: true });
+    expect(instance.serialize()).toEqual(before);
+    const fit = q('pp-option-fit') as HTMLInputElement;
+    fit.checked = true;
+    fit.dispatchEvent(new Event('change'));
+    expect(board.hasAttribute('role')).toBe(false);
+  });
+
+  it('the display preferences are read back on the next start', () => {
+    const { q } = start({ prefs: { display: { animation: true, allSymbols: false, confirm: false, large: true, wholeLanes: true } } });
+    expect((q('pp-option-large') as HTMLInputElement).checked).toBe(true);
+    expect((q('pp-option-wholeLanes') as HTMLInputElement).checked).toBe(true);
+    expect(q('pp-board').classList.contains('is-large')).toBe(true);
   });
 
   it('pause blocks input; reset returns to the seeded start', () => {
@@ -298,7 +451,7 @@ describe('view', () => {
   it('a save of an unknown motif keeps working with a generic title', () => {
     const s = { ...initialPositionState(), motif: 'gone-motif' };
     const { q } = start({ state: s });
-    expect(q('pp-title').textContent).toBe('Your picture');
+    expect(q('pp-title').textContent).toMatch(/^Your picture · \d+ colours$/);
   });
 });
 
