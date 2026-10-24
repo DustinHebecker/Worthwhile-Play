@@ -44,6 +44,7 @@ import {
   lockTurn,
   newGame,
   opponentValue,
+  teamValue,
   orderRefusal,
   rulesOf,
   orderSlots,
@@ -60,7 +61,6 @@ import {
   RULESET,
   scenarioById,
   specOf,
-  sideValue,
   TURN_LIMITS,
   unitById,
   RANDOM_OPPONENTS,
@@ -637,7 +637,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       ? ''
       : settleArmed
         ? t('action.settleConfirm')
-        : t(`action.settle.${settleResult(state)}`, { own: sideValue(state.world, me()), enemy: opponentValue(state.world) });
+        : t(`action.settle.${settleResult(state)}`, { own: teamValue(state.world, me()), enemy: opponentValue(state.world) });
     stalemateEl.toggleAttribute('data-empty', !stalemate && !settleable);
     // Scenario and turn limit can be changed until the first turn is locked.
     // Kept in place after the first turn (disabled), so the map does not jump up.
@@ -788,7 +788,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     if (isHotSeat(s)) return s.winner === null ? t('result.drawSides') : t('result.winner', { mark: sideMark(s.winner) });
     if (s.conceded) return t('status.conceded');
     // The result is decided on the true world, so it is told from it (not from the picture).
-    const args = { own: sideValue(s.world, me()), enemy: opponentValue(s.world), limit: STALL_TURNS };
+    const args = { own: teamValue(s.world, me()), enemy: opponentValue(s.world), limit: STALL_TURNS };
     const result = s.result ?? 'draw';
     const decidedByPost = outcome({ ...s.world, turn: 0 }, s.turnLimit) !== null;
     if (decidedByPost) return result === 'won' ? t('status.won') : result === 'lost' ? t('status.lost') : t('status.draw', args);
