@@ -1,5 +1,5 @@
 import { createRng, type Rng } from '@wp/game-core';
-import { childrenOf, cloneCursor, startCursor, type Child, type Cursor, type Table } from './engine';
+import { childrenOf, cloneCursor, createFrontIndex, indexFronts, startCursor, step, type Child, type Cursor, type Table } from './engine';
 
 /**
  * The reference policies (design v2 § 3.3): the rules of thumb a player tries first. Each picks one child from the
@@ -59,21 +59,27 @@ export interface Budget {
 
 export type RunResult = { result: 'solved' | 'stuck' | 'unknown'; moves: string[]; cursor: Cursor };
 
-/** Runs `pick` from `from` until solved, stuck or out of budget (every child computed costs one launch). */
+/**
+ * Runs `pick` from `from` until solved, stuck or out of budget (every child computed costs one launch). The run plays
+ * on its own copy of `from` in place, so no child cursor is ever built (`pick` must not read `Child.cursor`).
+ */
 export function run(table: Table, pick: (children: readonly Child[]) => Child, budget: Budget, from: Cursor = startCursor(table), maxMoves = 2500): RunResult {
-  let cur = cloneCursor(from);
+  const cur = cloneCursor(from);
   const moves: string[] = [];
+  // One index of the fronts per position serves every trial launch and the move itself.
+  const fronts = createFrontIndex();
   while (cur.cells.left > 0) {
     let options = 0;
     for (const s of cur.slots) if (s) options++;
     table.lanes.forEach((lane, i) => (options += (cur.laneFront[i] as number) < lane.length ? 1 : 0));
     if (budget.left < options || moves.length >= maxMoves) return { result: 'unknown', moves, cursor: cur };
     budget.left -= options;
-    const children = childrenOf(table, cur);
+    indexFronts(table.engine, cur.cells, fronts);
+    const children = childrenOf(table, cur, fronts);
     if (children.length === 0) return { result: 'stuck', moves, cursor: cur };
     const child = pick(children);
     moves.push(child.move);
-    cur = child.cursor;
+    step(table, cur, child.slotMove ? 'S' : 'L', child.index, true, undefined, fronts);
   }
   return { result: 'solved', moves, cursor: cur };
 }

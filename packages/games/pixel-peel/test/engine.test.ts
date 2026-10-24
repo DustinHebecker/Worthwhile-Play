@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { cloneCells, engineOf, exposedOf, exposureOf, frontOf, fullCells, launch, replayCursor, startCursor, stationLines, tableOf, updateExposure } from '../src/engine';
+import { childrenOf, cloneCells, createFrontIndex, engineOf, exposedOf, exposureOf, frontOf, fullCells, hitsOf, indexFronts, launch, replayCursor, startCursor, stationLines, step, tableOf, updateExposure } from '../src/engine';
 import { EMPTY, exposedCells, launch as refLaunch, refApply, type RefPosition } from './reference';
 
 const KEYS = 'abcdefghijklmnopqrst';
@@ -75,6 +75,64 @@ describe('engine equals the v1 reference (design v2 § 3.1)', () => {
         }
       ),
       { numRuns: 300 }
+    );
+  });
+});
+
+describe('index of the fronts (start time on phones)', () => {
+  it('trials and launches from an index give the same hits in the same order as walking the track (property)', () => {
+    fc.assert(
+      fc.property(gridArb, fc.array(fc.record({ k: fc.integer({ min: 0, max: 19 }), n: fc.integer({ min: 1, max: 40 }) }), { minLength: 1, maxLength: 12 }), ({ w, h, cells, colours }, shots) => {
+        const engine = engineOf(pictureOf(w, h, cells, colours));
+        const cur = fullCells(engine);
+        const index = createFrontIndex();
+        for (const { k, n } of shots) {
+          const c = (k % colours) + 1;
+          indexFronts(engine, cur, index);
+          const walked: [number, number][] = [];
+          const plain = cloneCells(cur);
+          launch(engine, plain, c, n, (cell, station) => walked.push([cell, station]));
+          // A trial leaves the cells (and so the index) as they were.
+          const before = Array.from(cur.present);
+          expect(hitsOf(engine, cur, c, n, index)).toBe(walked.length);
+          expect(Array.from(cur.present)).toEqual(before);
+          const indexed: [number, number][] = [];
+          launch(engine, cur, c, n, (cell, station) => indexed.push([cell, station]), index);
+          expect(indexed).toEqual(walked);
+          expect(Array.from(cur.present)).toEqual(Array.from(plain.present));
+          expect(cur.left).toBe(plain.left);
+        }
+      }),
+      { numRuns: 300 }
+    );
+  });
+
+  it('childrenOf lists exactly the legal moves with the hits a step makes (property)', () => {
+    fc.assert(
+      fc.property(
+        gridArb,
+        fc.array(fc.array(fc.record({ k: fc.integer({ min: 0, max: 19 }), n: fc.integer({ min: 1, max: 12 }) }), { maxLength: 6 }), { minLength: 1, maxLength: 4 }),
+        fc.integer({ min: 1, max: 3 }),
+        fc.array(fc.integer({ min: 0, max: 20 }), { maxLength: 15 }),
+        ({ w, h, cells, colours }, rawLanes, slots, picks) => {
+          const lanes = rawLanes.map((lane) => lane.map(({ k, n }) => ({ c: KEYS[k % colours] as string, n })));
+          const table = tableOf(engineOf(pictureOf(w, h, cells, colours)), lanes, slots);
+          const cur = startCursor(table);
+          for (const p of picks) {
+            const children = childrenOf(table, cur);
+            const legal = ['S0', 'S1', 'S2', 'L0', 'L1', 'L2', 'L3']
+              .map((m) => ({ m, o: step(table, cur, m[0] as 'L' | 'S', Number(m[1]), false) }))
+              .filter((x) => x.o.legal);
+            expect(children.map((c) => [c.move, c.hits])).toEqual(legal.map((x) => [x.m, x.o.hits]));
+            if (children.length === 0) break;
+            const child = children[p % children.length]!;
+            const after = child.cursor;
+            step(table, cur, child.slotMove ? 'S' : 'L', child.index, true);
+            expect(Array.from(cur.cells.present)).toEqual(Array.from(after.cells.present));
+          }
+        }
+      ),
+      { numRuns: 200 }
     );
   });
 });

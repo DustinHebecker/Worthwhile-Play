@@ -3,7 +3,7 @@ import { decodeRows } from './art/bake';
 import { heightOf, rasterise, type Tier } from './art/raster';
 import { ART_DIFFICULTIES, widthFor } from './art/sizes';
 import type { Motif } from './art/types';
-import { engineOf, exposedCounts, fullCells, hitsOf, launch, replayCursor, tableOf, type Cells, type Engine } from './engine';
+import { createFrontIndex, engineOf, exposedCounts, fullCells, hitsOf, indexFronts, launch, replayCursor, tableOf, type Cells, type Engine } from './engine';
 import { BAKED } from './motifs/baked';
 import { MOTIFS, findMotif } from './motifs/index';
 import { POLICIES, runPolicy, type Budget, type PolicyId } from './policies';
@@ -112,9 +112,14 @@ export function construct(engine: Engine, level: Level, rng: Rng): Construction 
   const events: Event[] = [];
   let launches = 0;
   let decoys = 0;
+  // The fronts of `cells`, indexed once per step when a trial needs them: trials leave the cells as they were.
+  const fronts = createFrontIndex();
+  let indexed = false;
   const hitsOn = (c: number, n: number) => {
     launches++;
-    return hitsOf(engine, cells, c, n);
+    if (!indexed) indexFronts(engine, cells, fronts);
+    indexed = true;
+    return hitsOf(engine, cells, c, n, fronts);
   };
   const relaunch = (j: number) => {
     const s = slots[j] as { c: number; n: number };
@@ -128,6 +133,7 @@ export function construct(engine: Engine, level: Level, rng: Rng): Construction 
   };
   for (let guard = 0; cells.left > 0 && guard < 20000; guard++) {
     const exposed = exposedCounts(engine, cells);
+    indexed = false;
     const free = slots.indexOf(null);
     const ready: number[] = [];
     slots.forEach((s, j) => s && (exposed[s.c] as number) > 0 && ready.push(j));
