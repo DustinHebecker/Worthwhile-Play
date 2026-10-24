@@ -618,7 +618,20 @@ const PREVIEWS: Record<string, () => string> = {
     R(42, 24, 22, 13, 'o', 1) + [44, 49, 54, 59].map((x) => L(x, 36.5, x + 4, 24.5, 'fn')).join('') +
     L(8, 30.5, 88, 30.5, 'k') + [10, 29, 48, 67, 86].map((x) => L(x, 27, x, 34, 'k')).join('') +
     L(55, 20, 55, 41, 'al') + diamond(49, 30.5, 4.5, 'a') +
-    [8, 37, 66].map((x) => R(x, 47, 22, 13, 'o', 2)).join('') + cross(33, 53.5, 'k', 1.8) + cross(62, 53.5, 'k', 1.8)
+    [8, 37, 66].map((x) => R(x, 47, 22, 13, 'o', 2)).join('') + cross(33, 53.5, 'k', 1.8) + cross(62, 53.5, 'k', 1.8),
+  'many-lives': () => {
+    // The game's scene: a house behind on the left, the person in the centre, a desk on the right; stat meters on top.
+    let out = R(4, 4, 88, 10, 'e', 2);
+    [[8, 0.7], [30, 0.5], [52, 0.6], [74, 0.4]].forEach(([x, f]) => {
+      out += L(x as number, 9, (x as number) + 14, 9, 'g') + L(x as number, 9, (x as number) + 14 * (f as number), 9, 'al');
+    });
+    out += L(4, 58, 92, 58, 'k');
+    out += R(10, 36, 22, 22, 'wd', 1) + poly([[7, 37], [21, 25], [35, 37]], 'i') + R(14, 40, 6, 6, 'e') + R(23, 46, 5, 12, 'd');
+    out += R(42, 40, 12, 14, 'a', 4) + C(48, 33, 6, 'fsk') + P('M42 32c0-7 12-7 12 0c-3-3-9-3-12 0z', 'fhr');
+    out += R(42, 54, 4, 4, 'd') + R(50, 54, 4, 4, 'd');
+    out += R(64, 48, 24, 3, 'wd') + R(70, 36, 12, 10, 'o', 1) + L(76, 46, 76, 48, 'k');
+    return out;
+  }
 };
 
 /** Pictures made only of text cards and lines: these follow the reading direction (flipped in RTL). */
