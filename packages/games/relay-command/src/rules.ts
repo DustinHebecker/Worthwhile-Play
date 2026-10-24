@@ -112,8 +112,14 @@ export const TEAM_LAYOUTS: Readonly<Record<TeamShape, readonly number[]>> = {
   '1v3': [0, 1, 1, 1]
 };
 /** The team shapes a map offers for `opponents` (maps with seats only; two-side maps: none). */
-export const teamShapes = (spec: ScenarioSpec, opponents: number): TeamShape[] =>
-  spec.seats && opponentCounts(spec).includes(opponents) ? (Object.keys(TEAM_LAYOUTS) as TeamShape[]).filter((k) => TEAM_LAYOUTS[k].length === opponents + 1) : [];
+export const teamShapes = (spec: ScenarioSpec, opponents: number): TeamShape[] => {
+  if (!spec.seats || !opponentCounts(spec).includes(opponents)) return [];
+  // A map made for teams offers its own shapes, in its own order (the first is its default).
+  const offered = (spec.seats.teams ? Object.keys(spec.seats.teams) : Object.keys(TEAM_LAYOUTS)) as TeamShape[];
+  return offered.filter((k) => Object.hasOwn(TEAM_LAYOUTS, k) && TEAM_LAYOUTS[k].length === opponents + 1);
+};
+/** Whether a map is made for teams only (asymmetric maps): it has no free-for-all. */
+export const teamsOnly = (spec: ScenarioSpec): boolean => !!spec.seats?.teams;
 /** The shape of a world's teams, or null for free-for-all (and for a layout that is no shape). */
 export const teamShapeOf = (world: Pick<World, 'teams'>): TeamShape | null =>
   world.teams ? ((Object.keys(TEAM_LAYOUTS) as TeamShape[]).find((k) => JSON.stringify(TEAM_LAYOUTS[k]) === JSON.stringify(world.teams)) ?? null) : null;
@@ -126,9 +132,9 @@ export const rulesOf = (state: Pick<RcState, 'scenario' | 'map' | 'opponents'>):
 
 /** The scenario's world at the start of a game (every side alike, so the start is fair); `endless`: no deposit runs dry. */
 export function initialWorld(spec: ScenarioSpec, seed: number, opponents = 1, endless = false, teams: TeamShape | null = null): World {
-  const scenario = scenarioFor(spec, opponents);
-  if (!scenario) throw new RangeError(`${spec.id} has no layout for ${opponents} opponents.`);
   if (teams && !teamShapes(spec, opponents).includes(teams)) throw new RangeError(`${spec.id} has no teams ${teams} for ${opponents} opponents.`);
+  const scenario = scenarioFor(spec, opponents, teams);
+  if (!scenario) throw new RangeError(`${spec.id} has no layout for ${opponents} opponents${teams ? ` and teams ${teams}` : ''}.`);
   const rules = rulesetFor(spec, opponents);
   const map = endless && scenario.map.deposits ? { ...scenario.map, deposits: scenario.map.deposits.map((d) => ({ ...d, endless: true as const })) } : scenario.map;
   const world = createWorld({ ...scenario, map, seed, ...(teams && { teams: [...TEAM_LAYOUTS[teams]] }) }, rules);
@@ -227,13 +233,14 @@ export const specOf = (state: Pick<RcState, 'scenario' | 'map'>): ScenarioSpec |
 export function newGame(seed: number, base: ScenarioSpec = FIELD_EXERCISE, difficulty: Difficulty = 'normal', turnLimit: number | null = base.turnLimit, quick = false, map: EditMap | null = null, opponents = 1, seats: readonly Seat[] = [], endless = false, random: RandomMap | null = null, teams: TeamShape | null = null): RcState {
   const spec = map ? customSpec(map) : base;
   // Only the counts the map declares (two-side maps and player-made ones: one).
-  const count = opponentCounts(spec).includes(opponents) ? opponents : 1;
+  const count = opponentCounts(spec).includes(opponents) ? opponents : (opponentCounts(spec)[0] ?? 1);
   // Side 0 is always a person; seats not given are the computer's.
   const seating: Seat[] = Array.from({ length: count + 1 }, (_, side) => (side === PLAYER ? 'person' : seats[side] === 'person' ? 'person' : 'computer'));
   const several = seating.filter((x) => x === 'person').length > 1;
-  // Teams only with a shape the map offers for this count, and not with several persons yet (a
-  // hot-seat game names one winner).
-  const team = teams && !several && teamShapes(spec, count).includes(teams) ? teams : null;
+  // Teams only with a shape the map offers for this count (also with several persons: allied persons
+  // share sight; the end names the team's survivors). A map made for teams has no free-for-all: it
+  // starts with its first shape unless another is chosen.
+  const team = teams && teamShapes(spec, count).includes(teams) ? teams : teamsOnly(spec) ? (teamShapes(spec, count)[0] ?? null) : null;
   const world = initialWorld(spec, seed, count, endless, team);
   return {
     v: 12,
@@ -490,28 +497,52 @@ function resolveAll(state: RcState): RcState {
 const sidesLeft = (world: World): number[] =>
   Array.from({ length: world.sides }, (_, side) => side).filter((side) => !world.out?.includes(side) && commandPost(world, side) !== undefined);
 
-/** The strongest of `sides`, or null when two share the top (or none is given). */
+/**
+ * The strongest of `sides`, or null when two share the top (or none is given). With teams a team
+ * counts as one: its sides among `sides` together, named by its lowest side.
+ */
 function strongest(world: World, sides: readonly number[]): number | null {
   let best: number | null = null;
   let top = -Infinity;
   let tie = false;
+  const teams = new Map<number, { side: number; value: number }>();
   for (const side of sides) {
-    const v = sideValue(world, side);
-    if (v > top) [best, top, tie] = [side, v, false];
-    else if (v === top) tie = true;
+    const team = teamOf(world, side);
+    const entry = teams.get(team) ?? { side, value: 0 };
+    entry.value += sideValue(world, side);
+    teams.set(team, entry);
+  }
+  for (const { side, value } of teams.values()) {
+    if (value > top) [best, top, tie] = [side, value, false];
+    else if (value === top) tie = true;
   }
   return tie ? null : best;
 }
 
+/** Whether all of `sides` are of one team (always, for at most one side). */
+const oneTeam = (world: World, sides: readonly number[]): boolean => sides.every((side) => teamOf(world, side) === teamOf(world, sides[0] ?? side));
+
 /**
- * Hot-seat end of the game (docs/design/strategy.md § 9.4): when at most one side is left, or no
- * person is (computers do not play on alone), or at the turn limit (open end: MAX_TURNS) — then
- * the strongest side left wins, a tie is a draw (null). `undefined`: the game goes on.
+ * The sides that won a finished hot-seat game: the winner and, with teams, its allies still in
+ * (owner decision 2026-10-24: a team wins together while its sides hold a post; only survivors win).
+ */
+export function winnersOf(state: Pick<RcState, 'winner' | 'world'>): number[] {
+  if (state.winner === null) return [];
+  const winner = state.winner;
+  return sidesLeft(state.world).filter((side) => side === winner || (state.world.teams !== undefined && teamOf(state.world, side) === teamOf(state.world, winner)));
+}
+
+/**
+ * Hot-seat end of the game (docs/design/strategy.md § 9.4): when at most one side (with teams: one
+ * team) is left, or no person is (computers do not play on alone), or at the turn limit (open end:
+ * MAX_TURNS) — then the strongest side (team) left wins, a tie is a draw (null). The winner is a
+ * side; with teams the lowest side of the winning team left (`winnersOf` names them all).
+ * `undefined`: the game goes on.
  */
 function hotSeatEnd(state: Pick<RcState, 'seats' | 'world' | 'turnLimit'>): number | null | undefined {
   const { world } = state;
   const left = sidesLeft(world);
-  if (left.length <= 1) return left[0] ?? null;
+  if (left.length <= 1 || oneTeam(world, left)) return left[0] ?? null;
   const decided = personsLeft(state).length === 0 || world.turn >= (state.turnLimit ?? MAX_TURNS);
   return decided ? strongest(world, left) : undefined;
 }
@@ -526,7 +557,8 @@ function finishHotSeat(state: RcState, winner: number | null): RcState {
     ...state,
     phase: 'finished',
     winner,
-    result: winner === null ? 'draw' : winner === PLAYER ? 'won' : 'lost',
+    // Side 0 has won when it is among the winners (with teams: its team won and it is still in).
+    result: winner === null ? 'draw' : winnersOf({ winner, world: state.world }).includes(PLAYER) ? 'won' : 'lost',
     events: [],
     draft: [],
     handover: false,
@@ -566,9 +598,10 @@ export function concede(state: RcState): RcState {
   const side = state.planning;
   const rest = sidesLeft(state.world).filter((x) => x !== side);
   const people = personsLeft(state).filter((x) => x !== side);
-  if (rest.length <= 1 || people.length === 0 || !rulesOf(state).capture) {
-    const winner = rest.length <= 1 ? (rest[0] ?? null) : strongest(state.world, rest);
-    return finishHotSeat({ ...state, conceded: true }, winner);
+  if (rest.length <= 1 || oneTeam(state.world, rest) || people.length === 0 || !rulesOf(state).capture) {
+    const winner = rest.length <= 1 || oneTeam(state.world, rest) ? (rest[0] ?? null) : strongest(state.world, rest);
+    // With capture rules the side giving up is out, so it is never among the winners (its team may win without it).
+    return finishHotSeat({ ...state, conceded: true, ...(rulesOf(state).capture && { world: retire(state.world, side).world }) }, winner);
   }
   const gone: RcState = {
     ...state,
@@ -804,7 +837,7 @@ const isTurnLog = (isCommand: (v: unknown) => v is Command, sides: number) => (v
  * maps, hundreds of units) from freezing the tab.
  */
 function matchesScenario(world: World, spec: ScenarioSpec, opponents: number, endless: boolean): boolean {
-  const scenario = scenarioFor(spec, opponents);
+  const scenario = scenarioFor(spec, opponents, teamShapeOf(world));
   if (!scenario) return false;
   const { map, entities } = scenario;
   if (world.ruleset !== rulesetFor(spec, opponents).id || world.map.w !== map.w || world.map.h !== map.h || world.map.terrain !== map.terrain) return false;
@@ -895,15 +928,16 @@ export function isValidState(value: unknown): value is RcState {
   // The opponent count must be one the map offers, and the world must be set up for it: its sides,
   // frames and rules (capture only with several sides or a neutral post), teams only as offered.
   const opponents = value.opponents;
-  const scenario = opponentCounts(spec).includes(opponents) ? scenarioFor(spec, opponents) : undefined;
+  // A map made for teams plays only with one of its shapes (which also picks its seats).
+  const shape = isRecord(value.world) && Array.isArray(value.world.teams) ? teamShapeOf({ teams: value.world.teams as number[] }) : null;
+  const scenario = opponentCounts(spec).includes(opponents) ? scenarioFor(spec, opponents, teamsOnly(spec) ? shape : null) : undefined;
   if (!scenario) return false;
   const rules = rulesetFor(spec, opponents);
   if (!isValidWorld(value.world, rules) || value.world.sides !== opponents + 1 || !matchesScenario(value.world, spec, opponents, value.endless)) return false;
-  // A crafted save must not turn a side's post neutral, add teams the map does not offer (or with
-  // several persons) or change how a side sees the map.
+  // A crafted save must not turn a side's post neutral, add teams the map does not offer or change
+  // how a side sees the map.
   const w = value.world;
-  const shape = teamShapeOf(w);
-  if (w.teams !== undefined && (!shape || !teamShapes(spec, opponents).includes(shape) || (Array.isArray(value.seats) && value.seats.filter((x) => x === 'person').length > 1))) return false;
+  if (w.teams !== undefined && (!shape || !teamShapes(spec, opponents).includes(shape))) return false;
   if (JSON.stringify(w.frames ?? null) !== JSON.stringify(scenario.frames ?? null)) return false;
   if (rules.capture ? false : w.out !== undefined) return false;
   const neutralIds = new Set(scenario.entities.flatMap((e, i) => (e.side === NEUTRAL ? [i + 1] : [])));
