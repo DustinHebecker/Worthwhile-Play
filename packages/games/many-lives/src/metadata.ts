@@ -16,5 +16,8 @@ export const metadata: GameMetadata = {
     network: 'none',
     pauseable: true
   },
+  // Early release in English and German (owner decision O28); the other locales show English.
+  locales: ['en', 'de'],
+  status: 'preview',
   messages
 };

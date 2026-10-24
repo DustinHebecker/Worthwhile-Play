@@ -22,3 +22,11 @@ test('many lives: the work-in-progress note and the household setting', async ({
   const saved = (await readSave(page, 'many-lives')) as { state: { household: string; life: { householdId: string } } };
   expect(saved.state.life.householdId).toBe('basic-support');
 });
+
+test('many lives: other UI languages show the preview badge and the game in English', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('worthwhile-play:ui-locale', 'fr'));
+  await startGame(page, 'many-lives');
+  await expect(page.locator('[data-testid="preview-badge"]').first()).toBeVisible();
+  await expect(page.getByTestId('shown-in-english')).toBeVisible();
+  await expect(root(page)).toHaveAttribute('lang', 'en');
+});
