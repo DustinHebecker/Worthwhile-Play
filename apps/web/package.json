@@ -32,6 +32,7 @@
     "@wp/game-logic-path": "workspace:*",
     "@wp/game-mastermind": "workspace:*",
     "@wp/game-memory": "workspace:*",
+    "@wp/game-many-lives": "workspace:*",
     "@wp/game-minesweeper": "workspace:*",
     "@wp/game-mini-optimizer": "workspace:*",
     "@wp/game-minimal-proof": "workspace:*",

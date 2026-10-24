@@ -125,6 +125,9 @@ importers:
       '@wp/game-logic-path':
         specifier: workspace:*
         version: link:../../packages/games/logic-path
+      '@wp/game-many-lives':
+        specifier: workspace:*
+        version: link:../../packages/games/many-lives
       '@wp/game-mastermind':
         specifier: workspace:*
         version: link:../../packages/games/mastermind
