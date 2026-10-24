@@ -6,3 +6,7 @@ export * from './params/types';
 export * from './params/check';
 export * from './params/index';
 export * from './sim';
+export * from './economy';
+export * from './profile';
+export * from './profiles/de';
+export * from './life';

@@ -90,7 +90,7 @@ export function eligible(defs: readonly EventDef[], state: LifeCore): EventDef[]
  * Draws this month's events: due scheduled events first, then each eligible event once with its
  * chance. Exactly one uniform per eligible event in definition order, so a run is reproducible.
  */
-export function drawEvents(defs: readonly EventDef[], state: LifeCore, rng: Rng): LifeCore {
+export function drawEvents<S extends LifeCore>(defs: readonly EventDef[], state: S, rng: Rng): S {
   const due = state.scheduled.filter((s) => s.month <= state.month);
   const later = state.scheduled.filter((s) => s.month > state.month);
   const byId = new Map(defs.map((d) => [d.id, d]));
@@ -120,7 +120,7 @@ export function availableChoices(defs: readonly EventDef[], state: LifeCore, eve
   return def.choices.filter((c) => holds(state, c.when));
 }
 
-function applyEffect(state: LifeCore, e: Effect): LifeCore {
+function applyEffect<S extends LifeCore>(state: S, e: Effect): S {
   if ('stat' in e) return { ...state, stats: { ...state.stats, [e.stat]: clampStat(state.stats[e.stat] + e.add) } };
   if ('set' in e) return state.flags.includes(e.set) ? state : { ...state, flags: [...state.flags, e.set].sort() };
   if ('clear' in e) return { ...state, flags: state.flags.filter((f) => f !== e.clear) };
@@ -139,8 +139,8 @@ function applyEffect(state: LifeCore, e: Effect): LifeCore {
 }
 
 /** Resolves the oldest pending event with a choice. Never throws; refusals leave the state unchanged. */
-export function choose(defs: readonly EventDef[], state: LifeCore, eventId: string, choiceId: string):
-  { ok: true; state: LifeCore } | { ok: false; reason: ChoiceRefusal } {
+export function choose<S extends LifeCore>(defs: readonly EventDef[], state: S, eventId: string, choiceId: string):
+  { ok: true; state: S } | { ok: false; reason: ChoiceRefusal } {
   const head = state.pending[0];
   if (head === undefined || head.eventId !== eventId) return { ok: false, reason: 'not-pending' };
   const def = defs.find((d) => d.id === eventId);
@@ -148,7 +148,7 @@ export function choose(defs: readonly EventDef[], state: LifeCore, eventId: stri
   const choice = def.choices.find((c) => c.id === choiceId);
   if (choice === undefined) return { ok: false, reason: 'unknown-choice' };
   if (!holds(state, choice.when)) return { ok: false, reason: 'not-available' };
-  let next: LifeCore = { ...state, pending: state.pending.slice(1) };
+  let next: S = { ...state, pending: state.pending.slice(1) };
   for (const e of choice.effects) next = applyEffect(next, e);
   return { ok: true, state: next };
 }
