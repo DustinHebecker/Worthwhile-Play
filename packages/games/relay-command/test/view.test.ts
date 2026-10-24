@@ -92,6 +92,49 @@ describe('Relay Command view', () => {
     expect($('rc-neutral-panel').hidden).toBe(true);
   });
 
+  it('teams (owner decisions 2026-10-24): the setup offers the shapes of the map and count; allies have their own list and name, never the enemy list', () => {
+    const corners = SCENARIOS.find((spec) => spec.id === 'four-corners')!;
+    // Field Exercise (two sides): no teams row.
+    expect($('rc-teams-label').hidden).toBe(true);
+    const scenario = $('rc-scenario') as HTMLSelectElement;
+    scenario.value = 'four-corners';
+    scenario.dispatchEvent(new Event('change'));
+    const opponents = $('rc-opponents') as HTMLSelectElement;
+    opponents.value = '3';
+    opponents.dispatchEvent(new Event('change'));
+    const teams = $('rc-teams') as HTMLSelectElement;
+    expect($('rc-teams-label').hidden).toBe(false);
+    expect([...teams.options].map((o) => o.value)).toEqual(['ffa', '2v2-next', '2v2-across', '3v1', '1v3']);
+    expect([...teams.options].map((o) => o.textContent)).toContain('2 against 2, your ally beside you');
+    expect(state().world.teams).toBeUndefined();
+    teams.value = '2v2-across';
+    teams.dispatchEvent(new Event('change'));
+    expect(state().world.teams).toEqual([0, 1, 0, 1]);
+    expect(teams.value).toBe('2v2-across');
+    // The ally (side C, across) has a list of its own; its pieces are not in the enemy list.
+    expect($('rc-allies-panel').hidden).toBe(false);
+    const allyPost = state().world.entities.find((e) => e.side === 2 && e.kind === 'command-post')!;
+    expect($(`rc-ally-${allyPost.id}`)).not.toBeNull();
+    expect(ctx.context.root.querySelector(`[data-testid="rc-enemy-${allyPost.id}"]`)).toBeNull();
+    expect(ctx.context.root.textContent).toContain('Ally C');
+    // Two opponents: 2 against 1 only; free-for-all hides the allies list.
+    opponents.value = '2';
+    opponents.dispatchEvent(new Event('change'));
+    expect([...teams.options].map((o) => o.value)).toEqual(['ffa', '2v1-next', '2v1-across']);
+    teams.value = 'ffa';
+    teams.dispatchEvent(new Event('change'));
+    expect(state().world.teams).toBeUndefined();
+    expect($('rc-allies-panel').hidden).toBe(true);
+    // A team game stays one after a reload and "New game" keeps its teams; the setup is locked after the first turn.
+    instance.restore(newGame(2, corners, 'normal', 12, false, null, 3, [], false, null, '3v1'));
+    expect(($('rc-teams') as HTMLSelectElement).value).toBe('3v1');
+    instance.reset();
+    expect(state().world.teams).toEqual([0, 0, 1, 0]);
+    click('rc-lock');
+    expect(($('rc-teams') as HTMLSelectElement).disabled).toBe(true);
+    expect($('rc-setup-summary').textContent).toContain('3 against 1 (you and two allies)');
+  });
+
   it('renders the turn, the status, both unit lists and the map', () => {
     expect($('rc-turn').textContent).toBe('Turn 1');
     expect($('rc-status').getAttribute('data-phase')).toBe('plan');
