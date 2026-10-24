@@ -1,7 +1,7 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { expectResumeAfterReload, readSave, startGame } from '../../packages/testing/src/e2e';
 
-const root = (page: import('@playwright/test').Page) => page.getByTestId('game-root');
+const root = (page: Page) => page.getByTestId('game-root');
 
 test('many lives: decisions and passed time survive a reload exactly', async ({ page }) => {
   await expectResumeAfterReload(page, 'many-lives', async (p) => {
