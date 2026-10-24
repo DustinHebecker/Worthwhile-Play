@@ -170,7 +170,7 @@ explain: >
   People differ enormously (from a few hundred to over 40,000), so the range is wide. Conversation runs
   at roughly 110–170 words a minute, so 16,000 words is about two hours of actual talking.
 sources:
-  - "Words per day: Mehl, Vazire, Ramírez-Esparza, Slatcher, Pennebaker (2007), \"Are women really more talkative than men?\", Science 317:82; press release https://news.utexas.edu/2007/07/05/do-women-really-talk-more-than-men-research-refutes-popular-beliefs"
+  - "Words per day: Mehl, Vazire, Ramírez-Esparza, Slatcher, Pennebaker (2007), \"Are women really more talkative than men?\", Science 317:82 (women 16,215, men 15,669 words a day); reported by ScienceDaily, https://www.sciencedaily.com/releases/2007/07/070705152953.htm (verified 2026-10-24; the earlier University of Texas press-release link returns 404)"
   - "Speaking rate: approximate (conversational speech is commonly given as 110–170 words per minute; not separately verified, marked approximate)."
 confidence: medium
 ```

@@ -152,7 +152,7 @@ export const TASKS: readonly Task[] = [
     answer: { central: 16_000, low: 8_000, high: 30_000, unit: 'word/day' },
     factors: [f('talkTime', 2, 1, 3.5, 'h/day'), fixed('minutesPerHour', 60, 'min/h'), f('speakingRate', 135, 110, 170, 'word/min')],
     sources: [
-      { about: 'answer', type: 'cited', cite: 'Mehl, Vazire, Ramírez-Esparza, Slatcher, Pennebaker (2007), "Are women really more talkative than men?", Science 317:82', url: 'https://news.utexas.edu/2007/07/05/do-women-really-talk-more-than-men-research-refutes-popular-beliefs' },
+      { about: 'answer', type: 'cited', cite: 'Mehl, Vazire, Ramírez-Esparza, Slatcher, Pennebaker (2007), "Are women really more talkative than men?", Science 317:82 (women 16,215, men 15,669 words a day), as reported by ScienceDaily', url: 'https://www.sciencedaily.com/releases/2007/07/070705152953.htm' },
       { about: 'speakingRate', type: 'approximate' }
     ]
   },
