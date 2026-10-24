@@ -163,6 +163,10 @@ describe('view', () => {
     expect(m.q('fl-explain')!.textContent!.length).toBeGreaterThan(30);
     // Numeric axes stay left to right.
     expect(m.q('fl-scale')!.querySelector('svg')!.getAttribute('direction')).toBe('ltr');
+    // So do quantities in scientific notation ("8.2 × 10⁹", owner decision 2026-10-24).
+    const nums = [...m.root.querySelectorAll('.fl-num')];
+    expect(nums.length).toBeGreaterThan(0);
+    for (const n of nums) expect(n.getAttribute('dir')).toBe('ltr');
     expect(m.ctx.missingKeys).toEqual([]);
   });
 });
