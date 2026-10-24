@@ -99,6 +99,8 @@ export function budget(s: LifeState, profile: Profile): BudgetItem[] {
   } else if (age >= 18 && !has(s, 'work.retired')) {
     items.push({ category: 'basic-support', cents: Math.round(profile.basicSupport(atParents) * prices) });
   }
+  // Living with the parents without own income: the parents carry the costs.
+  if (atParents && items.length === 0) return items;
   const living: Living = atParents ? 'parents' : (LIFESTYLES[Math.max(0, Math.min(2, counter(s, 'lifestyle')))] as Living);
   items.push({ category: 'living', cents: -Math.round(profile.livingCost(living) * prices) });
   return items;

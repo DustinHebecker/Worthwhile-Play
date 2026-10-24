@@ -10,3 +10,4 @@ export * from './economy';
 export * from './profile';
 export * from './profiles/de';
 export * from './life';
+export * from './content/de';
