@@ -184,7 +184,9 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
   let slotFree: HTMLElement[] = [];
   let laneButtons: HTMLButtonElement[] = [];
   let laneEmpty: HTMLElement[] = [];
-  let laneChips: HTMLElement[][] = [];
+  /** Per lane, the chip of each shooter, created when it is first shown (sparse: building ~80 chips costs start time). */
+  let laneChips: (HTMLElement | undefined)[][] = [];
+  let laneLists: HTMLElement[] = [];
 
   const coloursList = h('ul', { class: 'pp-colour-list' });
   const colours = h('details', { class: 'pp-details', 'data-testid': 'pp-colours' }, h('summary', {}, t('colours.heading')), coloursList);
@@ -309,6 +311,7 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
     laneButtons = [];
     laneEmpty = [];
     laneChips = [];
+    laneLists = [];
     colourRows = [];
     for (let j = 0; j < state.slots; j++) {
       const b = h('button', { type: 'button', class: 'pp-shooter pp-slot', 'data-testid': `pp-slot-${j}`, 'data-move': `S${j}` });
@@ -317,18 +320,14 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
       slotFree.push(free);
       slotsRow.append(h('div', { class: 'pp-slot-cell' }, b, free));
     }
-    state.lanes.forEach((lane, i) => {
+    state.lanes.forEach((_, i) => {
       const b = h('button', { type: 'button', class: 'pp-shooter pp-front', 'data-testid': `pp-lane-${i}`, 'data-move': `L${i}` });
       const empty = h('div', { class: 'pp-lane-empty' }, t('lane.empty'));
-      const chips = lane.map((s, k) => {
-        const sw = h('span', { class: 'pp-chip-swatch' });
-        fillSwatch(sw, s.c);
-        return h('li', { class: 'pp-chip', 'data-index': k }, sw, h('span', { 'aria-hidden': 'true', dir: 'ltr' }, s.n), h('span', { class: 'sr-only' }, t('chip.label', { colour: colourName(s.c), symbol: symbolName(s.c), shots: s.n })));
-      });
       laneButtons.push(b);
       laneEmpty.push(empty);
-      laneChips.push(chips);
-      const list = h('ol', { class: 'pp-chips', 'aria-label': t('lane.queue', { lane: i + 1 }) }, ...chips);
+      laneChips.push([]);
+      const list = h('ol', { class: 'pp-chips', 'aria-label': t('lane.queue', { lane: i + 1 }) });
+      laneLists.push(list);
       lanesRow.append(h('div', { class: 'pp-lane', 'data-testid': `pp-lane-box-${i}` }, h('span', { class: 'pp-lane-name', 'aria-hidden': 'true' }, t('lane.name', { lane: i + 1 })), b, empty, list));
     });
     for (const b of [...slotButtons, ...laneButtons]) {
@@ -366,6 +365,19 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
       coloursList.appendChild(li);
       colourRows.push({ li, count, toggle, key: p.key });
     });
+  };
+
+  /** Creates the chip of shooter `index` in lane `i`, in its place in the lane's list. */
+  const chipOf = (i: number, index: number): HTMLElement => {
+    const s = (state.lanes[i] as Shooter[])[index] as Shooter;
+    const sw = h('span', { class: 'pp-chip-swatch' });
+    fillSwatch(sw, s.c);
+    const chip = h('li', { class: 'pp-chip', 'data-index': index }, sw, h('span', { 'aria-hidden': 'true', dir: 'ltr' }, s.n), h('span', { class: 'sr-only' }, t('chip.label', { colour: colourName(s.c), symbol: symbolName(s.c), shots: s.n })));
+    const chips = laneChips[i] as (HTMLElement | undefined)[];
+    const next = chips.find((c, j) => c !== undefined && j > index) ?? null;
+    (laneLists[i] as HTMLElement).insertBefore(chip, next);
+    chips[index] = chip;
+    return chip;
   };
 
   const fillShooter = (b: HTMLElement, s: Shooter, label: string) => {
@@ -420,12 +432,14 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
       b.hidden = !front;
       (laneEmpty[i] as HTMLElement).hidden = Boolean(front);
       if (front) fillShooter(b, front, t('lane.label', { lane: i + 1, colour: colourName(front.c), symbol: symbolName(front.c), shots: front.n }));
-      (laneChips[i] as HTMLElement[]).forEach((chip, index) => {
-        const behind = index - k - 1;
-        const hide = behind < 0 || (!whole && behind >= CHIPS_SHOWN);
-        if (behind >= CHIPS_SHOWN && !whole) hiddenChips++;
-        if (chip.hidden !== hide) chip.hidden = hide;
+      const end = whole ? lane.length : Math.min(lane.length, k + 1 + CHIPS_SHOWN);
+      hiddenChips += lane.length - end;
+      const chips = laneChips[i] as (HTMLElement | undefined)[];
+      chips.forEach((chip, index) => {
+        const hide = index <= k || index >= end;
+        if (chip && chip.hidden !== hide) chip.hidden = hide;
       });
+      for (let index = k + 1; index < end; index++) if (!chips[index]) chipOf(i, index);
     });
     const longest = Math.max(0, ...state.lanes.map((lane, i) => lane.length - (cursor.laneFront[i] as number) - 1 - CHIPS_SHOWN));
     lanesToggle.hidden = longest <= 0;

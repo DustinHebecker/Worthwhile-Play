@@ -349,7 +349,35 @@ describe('view', () => {
     expect(toggle.textContent).toBe('Show fewer shooters');
     s.lanes.forEach((lane, i) => expect(visibleChips(i)).toBe(lane.length - 1));
     expect(ctx.preferences.get('display')).toMatchObject({ wholeLanes: true });
-    expect(root.querySelectorAll('.pp-chip')).toHaveLength(s.lanes.reduce((a, lane) => a + lane.length, 0));
+    // Chips are built when first shown, in lane order.
+    expect(root.querySelectorAll('.pp-chip')).toHaveLength(s.lanes.reduce((a, lane) => a + lane.length - 1, 0));
+    s.lanes.forEach((_, i) => {
+      const order = [...q(`pp-lane-box-${i}`).querySelectorAll<HTMLElement>('.pp-chip')].map((c) => Number(c.dataset.index));
+      expect(order).toEqual([...order].sort((a, b) => a - b));
+    });
+  });
+
+  it('chips built on demand: after restoring a game in progress, undoing back to the start shows each lane in order', () => {
+    let s = createInitial(5, 'hard', 'market-stall');
+    for (const m of s.witness.slice(0, 30)) s = play(s, m);
+    const { q, instance } = start({ state: s });
+    const check = () => {
+      const now = instance.serialize();
+      const pos = position(now);
+      now.lanes.forEach((lane, i) => {
+        const k = pos.laneFront[i]!;
+        const shown = [...q(`pp-lane-box-${i}`).querySelectorAll<HTMLElement>('.pp-chip:not([hidden])')].map((c) => Number(c.dataset.index));
+        const expected: number[] = [];
+        for (let j = k + 1; j < Math.min(lane.length, k + 8); j++) expected.push(j);
+        expect(shown, `lane ${i} after ${now.moves.length} moves`).toEqual(expected);
+      });
+    };
+    check();
+    for (let k = 0; k < 30; k++) {
+      q('pp-undo').click();
+      check();
+    }
+    expect(instance.serialize().moves).toEqual([]);
   });
 
   it('Large view: a scrollable, focusable picture region with symbols on the edge pixels', () => {
