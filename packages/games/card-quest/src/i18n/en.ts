@@ -142,6 +142,9 @@ export const en = {
   'act.escape': 'Escape now',
   'act.curse': 'Curse {name}',
   'act.upgrade': 'Attach to {name}',
+  'eq.attached': 'Attached to {name}',
+  'gear.upgraded': '{item} (+ {upgrades})',
+  'detail.total': 'With {upgrades}: {n} in total',
   'sell.title': 'Select items and one-shots to sell. Value {sum} → level +{levels}.',
   'sell.need': 'Every {rate} value points = 1 level (not the winning level).',
 

@@ -18,6 +18,46 @@ describe('view', () => {
     await game.preload?.('de');
   });
 
+  it('an item with upgrades shows them below it, with the total bonus and its parts (owner feedback 2026-10-24)', () => {
+    const ctx = createTestContext(game as GameModule<unknown>, 'en');
+    const instance = game.create(ctx.context as never);
+    const helmet = 'kz.flowerpot-helmet';
+    const ups = ['kz.freshly-polished#1', 'kz.taped-up#1'];
+    instance.restore(
+      arranged((s) => {
+        const [me, other] = s.players;
+        take(s, helmet, me!.equipped);
+        for (const u of ups) {
+          take(s, u, []);
+          me!.upgrades.push({ item: helmet, card: u });
+        }
+        take(s, 'kz.rubber-boots', me!.equipped);
+        take(s, 'kz.mine-tea', other!.equipped);
+        take(s, 'kz.turbo-attachment', []);
+        other!.upgrades.push({ item: 'kz.mine-tea', card: 'kz.turbo-attachment' });
+      })
+    );
+    const root = ctx.context.root;
+    const stack = root.querySelector<HTMLElement>(`[data-testid="stack-${helmet}"]`)!;
+    // The helmet (+1) with +1 and +2 attached: +4 in total, the parts below it; each upgrade is its own tile.
+    expect(stack.querySelector(`[data-testid="total-${helmet}"]`)!.textContent).toBe('+4+1 +1 +2');
+    const attached = stack.querySelector('.cq-attached')!;
+    expect(attached.getAttribute('aria-label')).toBe('Attached to Flowerpot Helmet');
+    expect([...attached.querySelectorAll<HTMLElement>('.cq-tile')].map((b) => b.dataset.card)).toEqual(ups);
+    // An item without upgrades stays a plain tile with its own bonus.
+    expect(root.querySelector('[data-testid="stack-kz.rubber-boots"]')).toBeNull();
+    expect(root.querySelector('[data-testid="card-kz.rubber-boots"] .cq-tile-num')!.textContent).toBe('+1');
+    // An upgrade's detail names its item; the item's detail names its upgrades and the total.
+    attached.querySelector<HTMLButtonElement>('.cq-tile')!.click();
+    expect(root.querySelector('[data-testid="detail-attached"]')!.textContent).toBe('Attached to Flowerpot Helmet');
+    root.querySelector<HTMLButtonElement>(`[data-testid="card-${helmet}"]`)!.click();
+    expect(root.querySelector('[data-testid="detail-total"]')!.textContent).toBe('With Freshly Polished, Fixed With Tape: +4 in total');
+    // Other players' upgrades are listed with their item.
+    expect(root.querySelector('[data-testid="player-1"]')!.textContent).toContain('(+ Turbo Attachment)');
+    expect(ctx.missingKeys).toEqual([]);
+    instance.dispose();
+  });
+
   it('deal, give-away and curse lines use the forms for the person, in every combination', () => {
     const combos: [number, number][] = [[0, 1], [1, 0], [1, 2]];
     for (const [seat, to] of combos) {

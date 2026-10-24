@@ -123,6 +123,9 @@ export const tr: Catalogue = {
   'act.escape': 'Hemen kaç',
   'act.curse': 'Lanetle: {name}',
   'act.upgrade': '{name} eşyasına tak',
+  'eq.attached': '{name} eşyasına takılı',
+  'gear.upgraded': '{item} (+ {upgrades})',
+  'detail.total': '{upgrades} ile birlikte: toplam {n}',
   'sell.title': 'Satmak için eşya ve tek kullanımlık kart seç. Değer {sum} → seviye +{levels}.',
   'sell.need': 'Her {rate} değer puanı = 1 seviye (kazandıran seviye asla).',
 

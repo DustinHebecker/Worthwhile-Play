@@ -478,7 +478,17 @@ K1 is large (140 cards × 16 locales). If it becomes too big for one review, it 
   locos wear their face on the boiler side, the smokebox is a plain dark door with a lamp. Done (18 locos).
 - Idea: show which worlds a "Random" game drew (e.g. next to the round line).
 - Owner: use MORE short verbal allusions and wordplay in all worlds where they were avoided so far (same limits:
-  no copied art, characters, logos or long verbatim texts).
+  no copied art, characters, logos or long verbatim texts). Done in #66: about 250 texts per locale in all five worlds,
+  native idioms per locale, each idiom at most once per locale across the worlds; no religion, politics or war.
+  Open: a native-speaker look at ar (regional proverbs), hi (verb gender with तुम) and pt (some European forms).
+
+### 10.5b Owner feedback 2026-10-24
+
+- **Upgrades on items were not visible** (only a small grey name after "Item", no bonus). Now an item with upgrades
+  is a stack: the item tile shows the total bonus large and its parts small below it (own bonus, then each upgrade,
+  e.g. "+4 / +1 +1 +2"); the upgrades hang below the item on a rail, indented, as their own dashed tiles with
+  picture, name and bonus, each opening its detail ("Attached to …"). The item's detail names its upgrades and the
+  total. Other players' gear lists an upgraded item as "Item (+ Upgrade, …)". Same in the pack.
 
 ### 10.6 Open points (none blocks K1)
 
