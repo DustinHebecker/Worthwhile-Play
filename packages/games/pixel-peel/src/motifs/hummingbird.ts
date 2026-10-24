@@ -1,6 +1,6 @@
 import type { Motif } from '../art/types';
 
-/** A hummingbird hovering at a red trumpet flower, its green back shimmering, a magenta throat, a white belly and a slim raised wing, in a sunlit garden in soft focus. Original vector art drawn for Worthwhile Play. */
+/** A hummingbird hovering at a red trumpet flower, facing it: wings raised in a V, a green back, a magenta throat, a white belly and a long beak reaching into the flower, against a bright sky in soft focus with foliage and blossoms. Original vector art drawn for Worthwhile Play. */
 export const hummingbird: Motif = {
   id: 'hummingbird',
   group: 'animal',
@@ -44,6 +44,9 @@ export const hummingbird: Motif = {
   backdrop: '#f5d6b0',
   palette: {
     q: ['#1b4a54', 'darkTeal', 1],
+    s: ['#7fc0ea', 'skyBlue', 1],
+    b: ['#c2e2f4', 'lightBlue', 2, 's'],
+    v: ['#bdb3e4', 'lavender', 1],
     d: ['#245a3c', 'darkGreen', 2, 'q'],
     a: ['#5f7d3a', 'olive', 2, 'e'],
     e: ['#3f9a52', 'green', 1],
@@ -54,53 +57,55 @@ export const hummingbird: Motif = {
     p: ['#c8337f', 'magenta', 1],
     r: ['#d63a2e', 'red', 1],
     x: ['#7d1f2a', 'maroon', 2, 'r'],
-    o: ['#f08a2a', 'orange', 2, 'r'],
+    o: ['#f08a2a', 'orange', 3, 'r'],
     y: ['#f6d24a', 'gold', 1],
     w: ['#f6f8f2', 'white', 1],
     i: ['#c4c9d2', 'lightGrey', 1],
-    g: ['#7f8794', 'grey', 2, 'i'],
+    g: ['#7f8794', 'grey', 3, 'i'],
     k: ['#1d1d22', 'charcoal', 1]
   },
   layers: [
-    // A garden in soft focus: shade at the top, leaves and soft spots of light below.
-    { shape: { all: true }, fill: { gradient: ['q', 'd', 'a'], from: [0, 0], to: [20, 100], soft: 0.5 } },
-    { shape: { ellipse: [6, 62, 5, 5] }, fill: { scatter: 'z', density: 0.5, salt: 3 } },
-    { shape: { ellipse: [60, 66, 5, 5] }, fill: { scatter: 'z', density: 0.5, salt: 5 } },
-    { shape: { ellipse: [12, 8, 5, 5] }, fill: { scatter: 't', density: 0.6, salt: 9 } },
-    { shape: { ellipse: [44, 6, 4, 4] }, fill: { scatter: 't', density: 0.6, salt: 13 } },
-    // Leaves at the bottom, in four greens.
-    { shape: { ellipse: [74, 88, 26, 8], rot: -15 }, fill: 'e', shade: { light: 'l', dark: 'd', dir: 'n', mode: 'band', amount: 0.35 } },
-    { shape: { ellipse: [96, 72, 16, 6], rot: -55 }, fill: 'l', shade: { light: 'z', dark: 'e', dir: 'n', mode: 'band', amount: 0.35 } },
-    { shape: { ellipse: [34, 96, 24, 7], rot: 8 }, fill: 'l', shade: { light: 'z', dark: 'e', dir: 'n', mode: 'band', amount: 0.4 } },
-    { shape: { ellipse: [50, 80, 12, 4.5], rot: -35 }, fill: 'z', shade: { dark: 'l', dir: 'n', mode: 'band', amount: 0.4 } },
-    { shape: { line: [[44, 100], [72, 88], [100, 70]], width: 1.6 }, fill: 'd' },
-    // An orange bud below the flower.
-    { shape: { line: [[100, 30], [90, 48], [88, 56]], width: 1.8 }, fill: 'e' },
-    { shape: { ellipse: [86, 62, 5.6, 9], rot: 15 }, fill: 'o', shade: { light: 'y', dark: 'r', dir: 'nw', mode: 'band', amount: 0.35 }, outline: 'x' },
-    // The flower hanging from the top right: stem, leaves, a big red trumpet whose open mouth faces the beak.
-    { shape: { line: [[100, 0], [96, 4]], width: 3 }, fill: 'e' },
-    { shape: { ellipse: [84, 5, 12, 4], rot: -15 }, fill: 'l', shade: { light: 'z', dark: 'e', dir: 'n', mode: 'band', amount: 0.4 } },
-    { shape: { ellipse: [98, 22, 10, 3.6], rot: 75 }, fill: 'e', shade: { light: 'l', dark: 'd', dir: 'w', mode: 'band', amount: 0.4 } },
-    { shape: { poly: [[90, 4], [100, 8], [98, 18], [92, 28], [86, 36], [78, 46], [68, 40], [74, 30], [82, 18]], smooth: 1 }, fill: 'r', shade: { light: 'o', dark: 'x', dir: 'nw', mode: 'band', amount: 0.3 } },
-    { shape: { ellipse: [95, 7, 4.6, 3.4], rot: 20 }, fill: 'e', shade: { dark: 'd', dir: 'se' } },
-    // The open mouth: three petal lobes around a gold throat, stamens reaching out.
-    { shape: { ellipse: [70, 30, 8, 5], rot: -50 }, fill: 'r', shade: { light: 'o', dir: 'nw', width: 2 }, outline: 'x' },
-    { shape: { ellipse: [64, 42, 8, 5], rot: 5 }, fill: 'r', shade: { light: 'o', dir: 'nw', width: 2 }, outline: 'x' },
-    { shape: { ellipse: [74, 52, 7, 5], rot: 60 }, fill: 'r', shade: { dark: 'x', dir: 'nw', width: 2 }, outline: 'x' },
-    { shape: { ellipse: [72, 41, 5.4, 7.4], rot: 30 }, fill: 'y', shade: { dark: 'o', dir: 'se', mode: 'band', amount: 0.45 } },
-    { shape: { line: [[70, 40], [63, 36]], width: 1 }, fill: 'y', min: 40 },
-    { shape: { ellipse: [62.6, 35.6, 1, 1] }, fill: 'y', keep: true, min: 40 },
-    // The hummingbird hovering at the flower: fanned tail, a slim raised wing, green back, white belly, magenta throat.
-    { shape: { poly: [[22, 62], [4, 82], [10, 86], [6, 96], [20, 88], [22, 96], [32, 72]], smooth: 1 }, fill: 't', shade: { light: 'e', dark: 'q', dir: 'nw' }, outline: 'k' },
-    { shape: { ellipse: [24, 27, 20, 6], rot: 62 }, fill: { stripes: ['w', 'i', 'i'], width: 2.4, angle: -28 }, shade: { dark: 'g', dir: 'e', width: 2 }, outline: 'g' },
-    { name: 'body', shape: { ellipse: [32, 57, 21, 13.5], rot: -38 }, fill: 'e', shade: { light: 'm', dark: 't', dir: 'nw', width: 2 }, outline: 'k' },
-    { shape: { ellipse: [38, 65, 15, 7], rot: -38 }, fill: 'w', clip: 'body', shade: { dark: 'i', dir: 'n', mode: 'band', amount: 0.35 } },
-    { shape: { ellipse: [15, 49, 10, 4.4], rot: 55 }, fill: { stripes: ['i', 'w'], width: 2, angle: -30 }, shade: { dark: 'g', dir: 'se' }, outline: 'g', min: 40 },
-    { name: 'head', shape: { ellipse: [49, 35, 11, 10.5] }, fill: 'e', shade: { light: 'm', dark: 't', dir: 'nw', width: 2 }, outline: 'k' },
-    { shape: { ellipse: [46, 45.5, 10, 7.5], rot: -20 }, fill: 'p', shade: { light: 'r', dark: 'x', dir: 'nw' } },
-    { shape: { line: [[58, 32.5], [64, 34]], width: 1.6 }, fill: 'k' },
-    { shape: { ellipse: [52, 31.5, 2.2, 2.2] }, fill: 'k', keep: true },
-    { shape: { ellipse: [52.7, 30.8, 0.7, 0.7] }, fill: 'w', keep: true, min: 44 },
-    { shape: { line: [[43, 27], [48, 26]], width: 1 }, fill: 'm', min: 48 }
+    // A bright sky in soft focus behind the bird, so its green back stands out; dark foliage frames the top corners.
+    { shape: { all: true }, fill: { gradient: ['s', 'b', 'v'], from: [0, 0], to: [12, 92], soft: 0.6 } },
+    { shape: { ellipse: [62, 16, 6, 6] }, fill: { scatter: 'w', density: 0.45, salt: 3 } },
+    { shape: { ellipse: [16, 58, 6, 5] }, fill: { scatter: 'w', density: 0.4, salt: 5 } },
+    { shape: { ellipse: [44, 8, 5, 4] }, fill: { scatter: 'v', density: 0.5, salt: 9 }, min: 40 },
+    { shape: { ellipse: [-2, -2, 24, 18], rot: 25 }, fill: 'q', shade: { light: 'd', dir: 'se', mode: 'band', amount: 0.35 } },
+    { shape: { ellipse: [4, 18, 9, 3.4], rot: 30 }, fill: 'e', shade: { light: 'l', dark: 'd', dir: 'n', mode: 'band', amount: 0.4 } },
+    { shape: { ellipse: [104, 2, 22, 14], rot: -20 }, fill: 'q', shade: { light: 'd', dir: 'sw', mode: 'band', amount: 0.35 } },
+    // A flowering shrub out of focus at the lower left: magenta blossoms with gold hearts.
+    { shape: { ellipse: [10, 66, 7, 6] }, fill: 'p', shade: { light: 'w', dark: 'x', dir: 'nw', mode: 'band', amount: 0.3 } },
+    { shape: { ellipse: [10, 66, 2.6, 2.6] }, fill: 'y', keep: true },
+    { shape: { ellipse: [90, 50, 5, 4.6] }, fill: 'p', shade: { dark: 'x', dir: 'nw', mode: 'band', amount: 0.3 }, min: 40 },
+    // Foliage along the bottom, and leaves in four greens.
+    { shape: { ellipse: [50, 106, 74, 22] }, fill: 'd', shade: { light: 'e', dir: 'n', mode: 'band', amount: 0.3 } },
+    { shape: { ellipse: [74, 90, 30, 10], rot: -15 }, fill: 'e', shade: { light: 'l', dark: 'd', dir: 'n', mode: 'band', amount: 0.35 } },
+    { shape: { ellipse: [98, 74, 16, 6], rot: -55 }, fill: 'l', shade: { light: 'z', dark: 'e', dir: 'n', mode: 'band', amount: 0.35 } },
+    { shape: { ellipse: [26, 98, 30, 9], rot: 8 }, fill: 'l', shade: { light: 'z', dark: 'e', dir: 'n', mode: 'band', amount: 0.4 } },
+        { shape: { ellipse: [52, 82, 12, 4.5], rot: -35 }, fill: 'z', shade: { dark: 'l', dir: 'n', mode: 'band', amount: 0.4 } },
+    { shape: { ellipse: [62, 95, 16, 5.5], rot: -12 }, fill: 'a', shade: { light: 'l', dir: 'n', mode: 'band', amount: 0.25 } },
+    { shape: { line: [[40, 100], [70, 90], [100, 74]], width: 1.6 }, fill: 'd' },
+    // An orange bud on its own stem, low on the right.
+    { shape: { line: [[96, 100], [92, 82], [88, 70]], width: 2 }, fill: 'd' },
+    { shape: { ellipse: [87, 64, 5, 8], rot: 12 }, fill: 'o', shade: { light: 'y', dark: 'r', dir: 'nw', mode: 'band', amount: 0.35 }, outline: 'x' },
+    // The flower hanging from the top right: stem, a leaf, a long red trumpet whose open mouth faces the beak.
+    { shape: { line: [[100, 8], [93, 14], [89, 20]], width: 2.6 }, fill: 'd' },
+    { shape: { ellipse: [96, 27, 10, 3.6], rot: 70 }, fill: 'e', shade: { light: 'l', dark: 'd', dir: 'w', mode: 'band', amount: 0.4 } },
+    { shape: { poly: [[86, 18], [93, 22], [90, 32], [85, 42], [80, 50], [72, 50], [74, 40], [80, 28]], smooth: 1 }, fill: 'r', shade: { light: 'o', dark: 'x', dir: 'nw', mode: 'band', amount: 0.3 } },
+    { shape: { ellipse: [72, 39, 6, 3.6], rot: -35 }, fill: 'r', shade: { light: 'o', dir: 'nw', width: 2 }, outline: 'x' },
+    { shape: { ellipse: [70, 50, 6, 3.6], rot: 35 }, fill: 'r', shade: { dark: 'x', dir: 'nw', width: 2 }, outline: 'x' },
+    { shape: { ellipse: [75, 44.5, 4.6, 6.2] }, fill: 'y', shade: { dark: 'o', dir: 'se', mode: 'band', amount: 0.4 } },
+    // The hummingbird hovering at the flower, facing right: wings raised in a V behind it, a fanned tail, green back,
+    // white belly, magenta throat and a long straight beak reaching into the flower.
+    { shape: { ellipse: [34.5, 25.5, 21, 5.4], rot: 80 }, fill: { stripes: ['i', 'w'], width: 2.2, angle: -10 }, shade: { dark: 'g', dir: 'e', width: 1 }, outline: 'g' },
+    { shape: { poly: [[27, 62], [12, 78], [17, 81], [12, 88], [22, 84], [24, 91], [34, 68]], smooth: 1 }, fill: 't', shade: { light: 'e', dark: 'q', dir: 'nw' }, outline: 'k' },
+    { name: 'body', shape: { ellipse: [38, 56, 17, 9.6], rot: -38 }, fill: 'e', shade: { light: 'm', dark: 't', dir: 'nw', width: 1 }, outline: 'k' },
+    { shape: { ellipse: [41, 62, 12, 5], rot: -38 }, fill: 'w', clip: 'body', shade: { dark: 'i', dir: 'n', mode: 'band', amount: 0.35 } },
+    { shape: { ellipse: [25, 30, 22, 6], rot: 55 }, fill: { stripes: ['w', 'i', 'i'], width: 2.4, angle: -30 }, shade: { dark: 'g', dir: 'se', width: 1 }, outline: 'g' },
+    { name: 'head', shape: { ellipse: [52, 40, 8.6, 8.2] }, fill: 'e', shade: { light: 'm', dark: 't', dir: 'nw', width: 1 }, outline: 'k' },
+    { shape: { ellipse: [51.5, 48, 8.4, 5.2], rot: -12 }, fill: 'p', shade: { dark: 'x', dir: 'nw' } },
+    { shape: { line: [[60, 41], [70, 43.4]], width: 1.8 }, fill: 'k' },
+    { shape: { ellipse: [55, 38, 2, 2] }, fill: 'k', keep: true },
+    { shape: { ellipse: [55.6, 37.3, 0.7, 0.7] }, fill: 'w', keep: true, min: 44 }
   ]
 };
