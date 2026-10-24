@@ -132,6 +132,9 @@ export const de: Catalogue = {
   'act.escape': 'Jetzt fliehen',
   'act.curse': '{name} verfluchen',
   'act.upgrade': 'An {name} anbringen',
+  'eq.attached': 'Angebracht an {name}',
+  'gear.upgraded': '{item} (+ {upgrades})',
+  'detail.total': 'Mit {upgrades}: zusammen {n}',
   'sell.title': 'Wähle Gegenstände und Einwegkarten zum Verkaufen. Wert {sum} → Level +{levels}.',
   'sell.need': 'Je {rate} Wertpunkte = 1 Level (nie das Siegeslevel).',
 

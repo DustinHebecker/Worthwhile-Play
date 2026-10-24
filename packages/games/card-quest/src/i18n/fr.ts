@@ -123,6 +123,9 @@ export const fr: Catalogue = {
   'act.escape': 'S’échapper',
   'act.curse': 'Maudire {name}',
   'act.upgrade': 'Fixer sur {name}',
+  'eq.attached': 'Fixé sur {name}',
+  'gear.upgraded': '{item} (+ {upgrades})',
+  'detail.total': 'Avec {upgrades} : {n} au total',
   'sell.title': 'Choisis des objets et des cartes à usage unique à vendre. Valeur {sum} → niveau +{levels}.',
   'sell.need': 'Chaque tranche de {rate} points de valeur = 1 niveau (jamais celui de la victoire).',
 

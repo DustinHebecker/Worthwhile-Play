@@ -66,7 +66,7 @@
 .cq-parts { margin: 0; padding-inline-start: 1.1rem; font-size: 0.85rem; }
 
 /* Cards */
-.cq-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); gap: 0.4rem; }
+.cq-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); gap: 0.4rem; align-items: start; }
 .cq-tile {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
@@ -94,6 +94,15 @@
 .cq-tile-name { font-weight: 600; font-size: 0.95rem; line-height: 1.2; overflow-wrap: break-word; hyphens: auto; }
 .cq-tile-type { font-size: 0.78rem; color: var(--wp-muted); }
 .cq-tile-num { font-weight: 800; font-size: 1.1rem; }
+/* An item with its upgrades (owner feedback 2026-10-24): the upgrades hang below the item, joined by a rail. */
+.cq-stack { display: grid; align-content: start; }
+.cq-attached { list-style: none; margin: 0; padding: 0.2rem 0 0; padding-inline-start: 0.4rem; margin-inline-start: 1rem; display: grid; gap: 0.2rem; border-inline-start: 3px solid var(--cq-item); }
+.cq-attached .cq-tile { inline-size: 100%; min-block-size: var(--wp-touch); padding-block: 0.15rem; border-style: dashed; border-radius: 10px; }
+.cq-attached .cq-art { inline-size: 2rem; block-size: 2rem; }
+.cq-attached .cq-art-il { inline-size: 2.6rem; block-size: auto; }
+.cq-tile-total { display: grid; justify-items: end; line-height: 1.1; }
+.cq-tile-sum { font-size: 0.72rem; font-weight: 600; color: var(--wp-muted); white-space: nowrap; }
+.cq-detail-attached { margin: 0; font-weight: 600; }
 .cq-art { display: block; inline-size: 2.6rem; block-size: 2.6rem; }
 .cq-art-il { inline-size: 3.6rem; block-size: auto; align-self: center; }
 .cq-detail-pic { max-inline-size: 26rem; inline-size: 100%; justify-self: center; }

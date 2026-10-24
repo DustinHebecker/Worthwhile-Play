@@ -123,6 +123,9 @@ export const uk: Catalogue = {
   'act.escape': 'Утекти зараз',
   'act.curse': 'Прокляти: {name}',
   'act.upgrade': 'Прикріпити до: {name}',
+  'eq.attached': 'Прикріплено до: {name}',
+  'gear.upgraded': '{item} (+ {upgrades})',
+  'detail.total': 'З покращеннями ({upgrades}): разом {n}',
   'sell.title': 'Обери предмети й одноразові карти для продажу. Цінність {sum} → рівень +{levels}.',
   'sell.need': 'Кожні {rate} очок цінності = 1 рівень (не переможний).',
 
