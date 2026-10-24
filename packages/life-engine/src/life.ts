@@ -90,7 +90,9 @@ export function budget(s: LifeState, profile: Profile): BudgetItem[] {
   const prices = s.economy.priceIndex;
   if (has(s, 'work.employed')) {
     const gross = Math.round(profile.grossPay(qualificationOf(s), age, s.sex, has(s, 'work.part-time')) * s.economy.wageIndex * (1 + counter(s, 'work.raise-permille') / 1000));
-    items.push({ category: 'salary', cents: profile.netPay(gross) });
+    // Tax schedules and benefit levels move with prices (no bracket creep in the model): taxes are
+    // computed at start prices and scaled back.
+    items.push({ category: 'salary', cents: Math.round(profile.netPay(Math.round(gross / prices)) * prices) });
   } else if (has(s, 'work.unemployed') && counter(s, 'ui.left') > 0) {
     items.push({ category: 'unemployment-insurance', cents: Math.round(counter(s, 'work.last-net') * profile.unemploymentInsurance.replacement) });
   } else if (has(s, 'work.training') || has(s, 'work.study')) {

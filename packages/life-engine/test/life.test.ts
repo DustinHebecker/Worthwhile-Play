@@ -157,3 +157,14 @@ describe('a life', () => {
     }
   });
 });
+
+describe('keyed randomness (provisional)', () => {
+  it('is stable per key and differs between keys', async () => {
+    const { keyedRngFor } = await import('../src');
+    const a = keyedRngFor(7);
+    expect(a(12, 'events').next()).toBe(keyedRngFor(7)(12, 'events').next());
+    expect(a(12, 'events').next()).not.toBe(a(13, 'events').next());
+    expect(a(12, 'events').next()).not.toBe(a(12, 'economy').next());
+    expect(a(12, 'events').next()).not.toBe(keyedRngFor(8)(12, 'events').next());
+  });
+});
