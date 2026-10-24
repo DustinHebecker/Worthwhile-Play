@@ -54,11 +54,12 @@ import {
   type Seat,
   teamShapes,
   teamShapeOf,
+  teamsOnly,
   teamValue,
   TEAM_LAYOUTS,
   opponentValue,
 } from '../src/rules';
-import { FIELD_EXERCISE, opponentCounts, RIDGE_VALLEY, SCENARIOS } from '../src/scenarios';
+import { BASTION, FIELD_EXERCISE, opponentCounts, RIDGE_VALLEY, SCENARIOS } from '../src/scenarios';
 import { customSpec, fromScenario } from '../src/maps';
 import { generateMap } from '../src/generator';
 
@@ -80,7 +81,8 @@ function selfPlay(seed: number): RcState {
 }
 
 describe('Field Exercise scenario', () => {
-  for (const spec of SCENARIOS) {
+  // Maps made for teams (Bastion) are asymmetric on purpose: they have tests of their own.
+  for (const spec of SCENARIOS.filter((x) => !x.seats?.teams)) {
     it(`${spec.id} is symmetric in terrain and units, the Command Posts can reach each other, and every unit starts in radio cover (every opponent count)`, () => {
       const { map, entities } = spec.scenario;
       const key = (e: (typeof entities)[number]) => `${e.side}:${e.kind}:${e.x},${e.y}`;
@@ -1949,4 +1951,63 @@ describe('teams (owner decisions 2026-10-24)', () => {
     const ffa = newGame(1, corners, 'normal', 12, false, null, 3).world;
     expect(teamValue(ffa, PLAYER)).toBe(sideValue(ffa, PLAYER));
   });
+});
+
+describe('Bastion: a map made for teams (owner decision 2026-10-24)', () => {
+  const post = (w: World, side: number) => w.entities.find((e) => e.side === side && e.kind === 'command-post')!;
+  const lone = (shape: '1v3' | '3v1') => [0, 1, 2, 3].find((side) => TEAM_LAYOUTS[shape].filter((t) => t === TEAM_LAYOUTS[shape][side]).length === 1)!;
+
+  it('offers only 1 against 3 and 3 against 1, with three opponents; no free-for-all', () => {
+    expect(teamsOnly(BASTION)).toBe(true);
+    expect(opponentCounts(BASTION)).toEqual([3]);
+    expect(teamShapes(BASTION, 3)).toEqual(['1v3', '3v1']);
+    expect(() => initialWorld(BASTION, 1, 3)).toThrow(RangeError);
+    // A new game without a shape (or with free-for-all, another count or one it does not offer) starts with its first shape.
+    expect(teamShapeOf(newGame(1, BASTION).world)).toBe('1v3');
+    expect(teamShapeOf(newGame(1, BASTION, 'normal', 12, false, null, 3, [], false, null, '2v2-next').world)).toBe('1v3');
+    const s = newGame(1, BASTION, 'normal', 12, false, null, 3, [], false, null, '1v3');
+    expect(isValidState(JSON.parse(JSON.stringify(s)))).toBe(true);
+    // A save without teams, or with a shape the map does not offer, is refused.
+    const ffa = structuredClone(s);
+    delete ffa.world.teams;
+    expect(isValidState(ffa)).toBe(false);
+    const other = structuredClone(s);
+    other.world.teams = [0, 0, 1, 1];
+    expect(isValidState(other)).toBe(false);
+  });
+
+  it('the lone side holds the plateau: the player in 1 against 3, an opponent in 3 against 1; it starts richer; every base can reach every other', () => {
+    for (const shape of ['1v3', '3v1'] as const) {
+      const s = newGame(1, BASTION, 'normal', 12, false, null, 3, [], false, null, shape);
+      const w = s.world;
+      const alone = lone(shape);
+      expect(alone, shape).toBe(shape === '1v3' ? 0 : 2);
+      expect(post(w, alone)).toMatchObject({ x: 9, y: 1 });
+      expect(w.supply![alone]).toBe(1500);
+      for (let side = 0; side < 4; side++) if (side !== alone) expect(w.supply![side]).toBe(300);
+      // The plateau's deposits never run dry; the ridges leave two passes.
+      expect(w.map.deposits!.filter((d) => d.y < 5).every((d) => d.endless === true)).toBe(true);
+      const rules = rulesOf(s);
+      for (let a = 0; a < 4; a++) for (let b = a + 1; b < 4; b++) {
+        expect(findPath(w.map, rules, cellOf(w.map, post(w, a).x, post(w, a).y), cellOf(w.map, post(w, b).x, post(w, b).y), { layer: 'ground', side: a }), `${shape} ${a}-${b}`).toBeDefined();
+      }
+      // Every unit starts inside its side's radio cover.
+      for (let side = 0; side < 4; side++) {
+        const cover = computeNetwork(w, rules, side).coverage;
+        expect(w.entities.filter((e) => e.side === side && cover[cellOf(w.map, e.x, e.y)] !== 1).map((e) => `${e.kind}@${e.x},${e.y}`), `${shape} side ${side}`).toEqual([]);
+      }
+    }
+  });
+
+  it('plays: every turn a valid save, allies never fire on each other, the log replays to the same world', () => {
+    for (const shape of ['1v3', '3v1'] as const) {
+      let s = newGame(2, BASTION, 'normal', 12, false, null, 3, [], false, null, shape);
+      while (s.phase === 'plan') {
+        for (const c of planAi(observe(s.world, rulesOf(s), PLAYER), rulesOf(s), 'normal')) s = planOrder(s, c.unit, c.order, c.doctrine) ?? s;
+        s = lockTurn(s);
+        expect(isValidState(JSON.parse(JSON.stringify(s))), `${shape} turn ${s.world.turn}`).toBe(true);
+      }
+      expect(canonicalJson(replay(s.seed, s.log, BASTION, 3, false, shape))).toBe(canonicalJson(s.world));
+    }
+  }, 120_000);
 });

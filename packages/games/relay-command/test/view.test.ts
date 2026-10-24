@@ -135,6 +135,25 @@ describe('Relay Command view', () => {
     expect($('rc-setup-summary').textContent).toContain('3 against 1 (you and two allies)');
   });
 
+  it('Bastion, a map made for teams: the setup offers only its shapes (1 against 3 first), no free-for-all and no choice of count', () => {
+    const scenario = $('rc-scenario') as HTMLSelectElement;
+    scenario.value = 'bastion';
+    scenario.dispatchEvent(new Event('change'));
+    expect(state().scenario).toBe('bastion');
+    expect(state().opponents).toBe(3);
+    expect($('rc-opponents-label').hidden).toBe(true);
+    const teams = $('rc-teams') as HTMLSelectElement;
+    expect($('rc-teams-label').hidden).toBe(false);
+    expect([...teams.options].map((o) => o.value)).toEqual(['1v3', '3v1']);
+    expect(state().world.teams).toEqual([0, 1, 1, 1]);
+    teams.value = '3v1';
+    teams.dispatchEvent(new Event('change'));
+    expect(state().world.teams).toEqual([0, 0, 1, 0]);
+    // The player is a base below; the plateau is the lone opponent's.
+    const own = state().world.entities.find((e) => e.side === 0 && e.kind === 'command-post')!;
+    expect(own.y).toBe(12);
+  });
+
   it('renders the turn, the status, both unit lists and the map', () => {
     expect($('rc-turn').textContent).toBe('Turn 1');
     expect($('rc-status').getAttribute('data-phase')).toBe('plan');

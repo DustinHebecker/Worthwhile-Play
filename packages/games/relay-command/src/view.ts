@@ -48,6 +48,7 @@ import {
   teamValue,
   teamShapes,
   teamShapeOf,
+  teamsOnly,
   type TeamShape,
   orderRefusal,
   rulesOf,
@@ -2080,7 +2081,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   function syncTeamOptions(): void {
     const spec = specOf(state);
     const shapes = spec && !isHotSeat(state) ? teamShapes(spec, state.opponents) : [];
-    const values = ['ffa', ...shapes];
+    // A map made for teams has no free-for-all.
+    const values = spec && teamsOnly(spec) ? shapes : ['ffa', ...shapes];
     if ([...teamsSelect.options].map((o) => o.value).join(',') !== values.join(',')) {
       clear(teamsSelect);
       for (const v of values) teamsSelect.append(h('option', { value: v }, t(`setup.teams.${v}`)));
