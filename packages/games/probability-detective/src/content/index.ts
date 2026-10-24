@@ -3,7 +3,7 @@ import { createLocaleContent } from '@wp/game-core';
 import type { SupportedLocale } from '@wp/localization';
 import type { ContentText } from './types';
 
-export type { ClueText, ContentText, TemplateText } from './types';
+export type { CheckTemplateText, CheckText, ClueText, ContentText, TemplateText, TrapText } from './types';
 
 /**
  * Case wording per UI locale (ADR 0010). Ids are checked for parity by the content tests.

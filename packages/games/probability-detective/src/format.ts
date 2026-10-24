@@ -35,5 +35,19 @@ export const formatInt = (n: number | bigint, locale: string): string => nf(loca
 /** Fraction "210/350" with locale digits (used inside LTR formulas). */
 export const formatRatio = (a: bigint | number, b: bigint | number, locale: string): string => `${formatInt(a, locale)}/${formatInt(b, locale)}`;
 
-/** A decimal with up to two digits (formulas). */
-export const formatDecimal = (v: number, locale: string): string => nf(locale, 'd2', { maximumFractionDigits: 3 }).format(v).replace('-', '−');
+/**
+ * Points and expected values: at most two decimals, a sign on non-zero values, and the proper minus sign U+2212
+ * (black-box pattern) whatever the locale's own minus is.
+ */
+export const formatPoints = (v: number, locale: string): string =>
+  nf(locale, 'pts', { maximumFractionDigits: 2, signDisplay: 'exceptZero' })
+    .format(Math.abs(v) < 0.005 ? 0 : v)
+    .replace(/[-\u2212\u002d]/u, '\u2212');
+
+/** A stated share num/den: "k in 10" for tenths, "1 in N" for one in N (or rare thousandths), else a percent. */
+export function sharePhrase(num: number, den: number, locale: string, freq: (k: string, n: string) => string): string {
+  if (den === 10) return freq(formatInt(num, locale), formatInt(den, locale));
+  if (num === 1 && den > 1) return freq(formatInt(1, locale), formatInt(den, locale));
+  if (den === 1000 && num > 0 && num < 100 && 1000 % num === 0) return freq(formatInt(1, locale), formatInt(1000 / num, locale));
+  return nf(locale, 'p1', { style: 'percent', maximumFractionDigits: 1 }).format(num / den);
+}

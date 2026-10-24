@@ -3,92 +3,14 @@
  *
  * The state holds integers only; exact probabilities are recomputed on demand as BigInt fractions.
  */
-import { isArrayOf, isInt, isOneOf, isRecord, isUint32, type Rng } from '@wp/game-core';
-import { DIFFICULTIES, clueSpec, hypsFor, templateById, type Difficulty } from './templates';
+import { isArrayOf, isInt, isOneOf, isRecord, isUint32 } from '@wp/game-core';
+import { ONE, ZERO, add, cmp, div, frac, gcd, mul, normalise, sub, toNumber, type Frac } from './frac';
+import { DIFFICULTIES, checkTemplateById, clueSpec, hypsFor, optionsFor, templateById, type Difficulty } from './templates';
+import { trapById, trapValid, type TrapQuestion } from './traps';
 
 export type { Difficulty } from './templates';
 
-/* ---------- Exact fractions (BigInt, always reduced, d > 0) ---------- */
-
-export interface Frac {
-  readonly n: bigint;
-  readonly d: bigint;
-}
-
-const babs = (x: bigint): bigint => (x < 0n ? -x : x);
-export const gcd = (a: bigint, b: bigint): bigint => {
-  let x = babs(a);
-  let y = babs(b);
-  while (y) [x, y] = [y, x % y];
-  return x;
-};
-
-export function frac(n: bigint | number, d: bigint | number = 1n): Frac {
-  let nn = BigInt(n);
-  let dd = BigInt(d);
-  if (dd === 0n) throw new RangeError('zero denominator');
-  if (dd < 0n) {
-    nn = -nn;
-    dd = -dd;
-  }
-  const g = gcd(nn, dd) || 1n;
-  return { n: nn / g, d: dd / g };
-}
-
-export const add = (a: Frac, b: Frac): Frac => frac(a.n * b.d + b.n * a.d, a.d * b.d);
-export const sub = (a: Frac, b: Frac): Frac => frac(a.n * b.d - b.n * a.d, a.d * b.d);
-export const mul = (a: Frac, b: Frac): Frac => frac(a.n * b.n, a.d * b.d);
-export const div = (a: Frac, b: Frac): Frac => frac(a.n * b.d, a.d * b.n);
-export const cmp = (a: Frac, b: Frac): number => {
-  const x = a.n * b.d - b.n * a.d;
-  return x < 0n ? -1 : x > 0n ? 1 : 0;
-};
-export const toNumber = (a: Frac): number => Number(a.n) / Number(a.d);
-export const ZERO = frac(0);
-export const ONE = frac(1);
-
-/** Weights → exact probabilities summing to exactly 1 (all-zero weights give an even split). */
-export function normalise(weights: readonly (bigint | number)[]): Frac[] {
-  const w = weights.map((x) => BigInt(x));
-  const total = w.reduce((s, x) => s + x, 0n);
-  if (total === 0n) return w.map(() => frac(1, w.length));
-  return w.map((x) => frac(x, total));
-}
-
-/* ---------- Exact draws (design § 9.2) ---------- */
-
-const TWO32 = 0x1_0000_0000;
-const word = (rng: Rng): number => Math.floor(rng.next() * TWO32) >>> 0;
-
-/** A uniform integer in [0, total) by rejection sampling on 32-bit words (53 bits above 2³²). */
-export function uniformBelow(total: number, rng: Rng): number {
-  if (!Number.isSafeInteger(total) || total < 1) throw new RangeError('total must be a positive safe integer');
-  if (total <= TWO32) {
-    const limit = Math.floor(TWO32 / total) * total;
-    for (;;) {
-      const x = word(rng);
-      if (x < limit) return x % total;
-    }
-  }
-  const span = 2 ** 53;
-  const limit = Math.floor(span / total) * total;
-  for (;;) {
-    const x = (word(rng) & 0x1f_ffff) * TWO32 + word(rng);
-    if (x < limit) return x % total;
-  }
-}
-
-/** Index i with probability weights[i] / Σ weights, exactly. Weights are non-negative integers, not all 0. */
-export function drawIndex(weights: readonly number[], rng: Rng): number {
-  const total = weights.reduce((s, x) => s + x, 0);
-  const u = uniformBelow(total, rng);
-  let acc = 0;
-  for (let i = 0; i < weights.length; i++) {
-    acc += weights[i]!;
-    if (u < acc) return i;
-  }
-  return weights.length - 1;
-}
+export * from './frac';
 
 /* ---------- Cases and the posterior chain (design § 6.2) ---------- */
 
@@ -326,30 +248,213 @@ function boardAt(c: ClueEvidence, m: number): Board | null {
   return levels.length >= 2 ? { population: m, levels } : null;
 }
 
+/* ---------- "Choose the checks": exact analysis (design § 7.3) ---------- */
+
+/** The parameters of a checks case: everything the filters may read (no results, no truth). */
+export interface CheckParams {
+  priorDen: number;
+  prior: number[];
+  checks: { den: number; num: number[]; cost: number }[];
+  options: { pay: number[] }[];
+}
+
+/** Observed (check, result) pairs. */
+export type Obs = readonly (readonly [number, 0 | 1])[];
+export type Action = { kind: 'run'; check: number } | { kind: 'decide'; option: number };
+
+const checkLikelihood = (c: CheckParams['checks'][number], r: 0 | 1): number[] => c.num.map((x) => (r === 1 ? x : c.den - x));
+
+/** Unnormalised weights after the observations: prior[h] · Π L. */
+export function checkWeights(p: CheckParams, s: Obs): bigint[] {
+  const w = p.prior.map((x) => BigInt(x));
+  for (const [c, r] of s) {
+    const l = checkLikelihood(p.checks[c]!, r);
+    for (let h = 0; h < w.length; h++) w[h] = w[h]! * BigInt(l[h]!);
+  }
+  return w;
+}
+
+export const checkPosterior = (p: CheckParams, s: Obs): Frac[] => normalise(checkWeights(p, s));
+
+/** Expected points of option d under a posterior. */
+export const expectedValue = (p: CheckParams, post: readonly Frac[], d: number): Frac =>
+  post.reduce((acc, x, h) => add(acc, mul(x, frac(p.options[d]!.pay[h]!))), ZERO);
+
+const maxFrac = (xs: readonly Frac[]): Frac => xs.reduce((m, x) => (cmp(x, m) > 0 ? x : m));
+
+/** The value of deciding now: the best expected points. */
+export const decideNow = (p: CheckParams, s: Obs): Frac => {
+  const post = checkPosterior(p, s);
+  return maxFrac(p.options.map((_, d) => expectedValue(p, post, d)));
+};
+
+/** P(result r | observations, check c). */
+export function resultProbability(p: CheckParams, s: Obs, c: number, r: 0 | 1): Frac {
+  const w = checkWeights(p, s);
+  const total = w.reduce((a, x) => a + x, 0n);
+  if (total === 0n) return ZERO;
+  const l = checkLikelihood(p.checks[c]!, r);
+  const hit = w.reduce((a, x, h) => a + x * BigInt(l[h]!), 0n);
+  return frac(hit, total * BigInt(p.checks[c]!.den));
+}
+
+const obsKey = (s: Obs): string =>
+  s
+    .map(([c, r]) => `${c}${r}`)
+    .sort()
+    .join(',');
+
+export interface CheckAnalysis {
+  /** Best plan value V(s) (expectimax over checks, then the best decision). */
+  value(s: Obs): Frac;
+  /** Value of an action at s: deciding d, or running check c and then playing best. */
+  q(s: Obs, a: Action): Frac;
+  /** All best actions at s (ties included). */
+  best(s: Obs): Action[];
+}
+
+/**
+ * Exact expectimax on integer weights. With wt_s[h] = prior[h] · Π_{(c,r)∈s} L_{c,r}[h] · Π_{c∉s} den_c, every state
+ * shares one denominator, a check's two outcomes split wt_s exactly (Σ_r wt_{s+(c,r)} = wt_s), and the scaled value
+ * U(s) = V(s) · Σ_h wt_s[h] satisfies U(s) = max(max_d Σ_h wt_s[h]·pay[d][h], max_c [−cost_c·Σwt_s + U(s,c,0) + U(s,c,1)])
+ * — integers only. V(s) = U(s) / Σ wt_s.
+ */
+export function analyseChecks(p: CheckParams): CheckAnalysis {
+  const n = p.checks.length;
+  const pay = p.options.map((o) => o.pay.map((x) => BigInt(x)));
+  const cost = p.checks.map((c) => BigInt(c.cost));
+  const lik = p.checks.map((c) => [c.num.map((x) => BigInt(c.den - x)), c.num.map((x) => BigInt(x))] as const);
+  const dens = p.checks.map((c) => BigInt(c.den));
+  const wtOf = (s: Obs): bigint[] => {
+    const w = p.prior.map((x) => BigInt(x));
+    const used = new Set(s.map(([c]) => c));
+    for (let h = 0; h < w.length; h++) {
+      for (const [c, r] of s) w[h] = w[h]! * lik[c]![r]![h]!;
+      for (let c = 0; c < n; c++) if (!used.has(c)) w[h] = w[h]! * dens[c]!;
+    }
+    return w;
+  };
+  const sum = (w: readonly bigint[]) => w.reduce((a, x) => a + x, 0n);
+  const decideU = (w: readonly bigint[], d: number) => w.reduce((a, x, h) => a + x * pay[d]![h]!, 0n);
+  const memo = new Map<string, bigint>();
+  const runU = (s: Obs, w: readonly bigint[], c: number): bigint => {
+    let u = -cost[c]! * sum(w);
+    for (const r of [0, 1] as const) {
+      const s2: Obs = [...s, [c, r]];
+      const w2 = wtOf(s2);
+      if (sum(w2) > 0n) u += U(s2, w2);
+    }
+    return u;
+  };
+  const actions = (s: Obs): Action[] => [
+    ...p.options.map((_, option): Action => ({ kind: 'decide', option })),
+    ...p.checks.flatMap((_, check): Action[] => (s.some(([c]) => c === check) ? [] : [{ kind: 'run', check }]))
+  ];
+  const qU = (s: Obs, w: readonly bigint[], a: Action): bigint => (a.kind === 'decide' ? decideU(w, a.option) : runU(s, w, a.check));
+  function U(s: Obs, w: readonly bigint[]): bigint {
+    const key = obsKey(s);
+    const hit = memo.get(key);
+    if (hit !== undefined) return hit;
+    let best: bigint | null = null;
+    for (const a of actions(s)) {
+      const u = qU(s, w, a);
+      if (best === null || u > best) best = u;
+    }
+    memo.set(key, best!);
+    return best!;
+  }
+  const scaled = (s: Obs, u: bigint): Frac => {
+    const total = sum(wtOf(s));
+    return total === 0n ? ZERO : frac(u, total);
+  };
+  return {
+    value: (s) => scaled(s, U(s, wtOf(s))),
+    q: (s, a) => scaled(s, qU(s, wtOf(s), a)),
+    best(s) {
+      const w = wtOf(s);
+      const v = U(s, w);
+      return actions(s).filter((a) => qU(s, w, a) === v);
+    }
+  };
+}
+
+/** Myopic net value of a check at the start: Σ_r P(r)·Decide({(c,r)}) − Decide(∅) − cost. */
+export function myopicValue(p: CheckParams, c: number): Frac {
+  let v = frac(-p.checks[c]!.cost);
+  for (const r of [0, 1] as const) {
+    const pr = resultProbability(p, [], c, r);
+    if (pr.n !== 0n) v = add(v, mul(pr, decideNow(p, [[c, r]])));
+  }
+  return sub(v, decideNow(p, []));
+}
+
 /* ---------- Round state (design § 14) ---------- */
 
-export type Mode = 'clues';
-export const MODES: readonly Mode[] = ['clues'];
-export const ROUND_LENGTH = 5;
+export type Mode = 'clues' | 'checks' | 'traps' | 'mixed';
+export const MODES: readonly Mode[] = ['clues', 'checks', 'traps', 'mixed'];
+export type CaseKind = 'clues' | 'checks' | 'trap';
 export const MAX_CLUES = 4;
+
+/** The kinds of the cases of a round, per mode (design § 5). */
+export const roundKinds = (mode: Mode): readonly CaseKind[] =>
+  mode === 'clues' ? Array(5).fill('clues') : mode === 'checks' ? Array(3).fill('checks') : mode === 'traps' ? Array(5).fill('trap') : ['clues', 'trap', 'checks', 'trap', 'clues'];
+
+export interface CheckCase {
+  kind: 'checks';
+  template: string;
+  priorDen: number;
+  prior: number[];
+  checks: { id: string; den: number; num: number[]; cost: number; result: 0 | 1 }[];
+  options: { id: string; pay: number[] }[];
+  truth: number;
+  /** Indices of the checks run, in order. */
+  done: number[];
+  /** On the decision screen. */
+  deciding: boolean;
+  draft: Belief;
+  /** The option selected on the decision screen (not yet committed). */
+  choice: number | null;
+  answer: Answer | null;
+  /** The committed option; non-null ⇔ review. */
+  decision: number | null;
+}
+
+export interface TrapCase {
+  kind: 'trap';
+  template: string;
+  params: number[];
+  /** Per question: option index, or a percent for a probability question; null = not answered yet. */
+  drafts: (number | null)[];
+  /** Committed ⇔ review. */
+  answers: (number | 'skip')[] | null;
+}
+
+export type CaseState = ClueCase | CheckCase | TrapCase;
 
 export interface PdState {
   v: 1;
   seed: number;
   difficulty: Difficulty;
   mode: Mode;
-  cases: ClueCase[];
+  cases: CaseState[];
   /** Current case 0..len−1; len = summary. */
   index: number;
   /** finished() was called (never twice, also after restore). */
   reported: boolean;
 }
 
-export const isReview = (c: ClueCase): boolean => c.answers.length >= c.clues.length;
+export const checkParams = (c: CheckCase): CheckParams => ({ priorDen: c.priorDen, prior: c.prior, checks: c.checks, options: c.options });
+export const observed = (c: CheckCase): Obs => c.done.map((i) => [i, c.checks[i]!.result] as const);
+
+export function isReview(c: CaseState): boolean {
+  if (c.kind === 'clues') return c.answers.length >= c.clues.length;
+  if (c.kind === 'checks') return c.decision !== null;
+  return c.answers !== null;
+}
 /** Clues visible to the player: one more than answered, at most all. */
 export const revealed = (c: ClueCase): number => Math.min(c.answers.length + 1, c.clues.length);
 export const isSummary = (s: PdState): boolean => s.index >= s.cases.length;
-export const currentCase = (s: PdState): ClueCase | null => s.cases[s.index] ?? null;
+export const currentCase = (s: PdState): CaseState | null => s.cases[s.index] ?? null;
 
 /** The belief the player held before step k (0-based): the committed one, or the exact one after a skip / at the start. */
 export function previousBelief(c: ClueCase, k: number): Frac[] {
@@ -364,33 +469,82 @@ export function startDraft(c: ClueCase, k: number): Belief {
   return a && a !== 'skip' ? [...a] : roundPercents(posteriorAfter(c, k));
 }
 
-const replaceCase = (s: PdState, c: ClueCase): PdState => ({ ...s, cases: s.cases.map((x, i) => (i === s.index ? c : x)) });
+const replaceCase = (s: PdState, c: CaseState): PdState => ({ ...s, cases: s.cases.map((x, i) => (i === s.index ? c : x)) });
+
+const hypsOf = (c: ClueCase | CheckCase): number => (c.kind === 'clues' ? c.hyps : 2);
+/** Whether the belief panel of the current case is open for editing. */
+const editable = (c: CaseState | null): c is ClueCase | CheckCase =>
+  !!c && !isReview(c) && (c.kind === 'clues' || (c.kind === 'checks' && c.deciding));
 
 export function setDraft(s: PdState, b: Belief): PdState {
   const c = currentCase(s);
-  if (!c || isReview(c) || !isBelief(b, c.hyps) || b.every((x, i) => x === c.draft[i])) return s;
+  if (!editable(c) || !isBelief(b, hypsOf(c)) || b.every((x, i) => x === c.draft[i])) return s;
   return replaceCase(s, { ...c, draft: [...b] });
 }
 
 export const shareDraft = (s: PdState, i: number, v: number): PdState => {
   const c = currentCase(s);
-  return c && !isReview(c) && i >= 0 && i < c.hyps ? setDraft(s, setShare(c.draft, i, v)) : s;
+  return editable(c) && i >= 0 && i < hypsOf(c) ? setDraft(s, setShare(c.draft, i, v)) : s;
 };
 
-/** "Back to my last estimate". */
+/** "Back to my last estimate" (clue cases). */
 export const resetDraft = (s: PdState): PdState => {
   const c = currentCase(s);
-  return c && !isReview(c) ? setDraft(s, startDraft(c, c.answers.length)) : s;
+  return c?.kind === 'clues' && !isReview(c) ? setDraft(s, startDraft(c, c.answers.length)) : s;
 };
 
-/** Commit the draft (or a skip) for the current step. */
+/** Commit the draft (or a skip) for the current step of a clue case. */
 export function commitStep(s: PdState, skip = false): PdState {
   const c = currentCase(s);
-  if (!c || isReview(c)) return s;
+  if (!c || c.kind !== 'clues' || isReview(c)) return s;
   const answers: Answer[] = [...c.answers, skip ? 'skip' : [...c.draft]];
   const next: ClueCase = { ...c, answers };
   if (answers.length < c.clues.length) next.draft = startDraft(next, answers.length);
   return replaceCase(s, next);
+}
+
+/** Run check i of a checks case (once; not on the decision screen; not after deciding). */
+export function runCheck(s: PdState, i: number): PdState {
+  const c = currentCase(s);
+  if (!c || c.kind !== 'checks' || isReview(c) || c.deciding || !Number.isInteger(i) || i < 0 || i >= c.checks.length || c.done.includes(i)) return s;
+  return replaceCase(s, { ...c, done: [...c.done, i] });
+}
+
+/** Open ("Ready to decide") or leave ("Back to the checks") the decision screen. */
+export function toDeciding(s: PdState, on: boolean): PdState {
+  const c = currentCase(s);
+  if (!c || c.kind !== 'checks' || isReview(c) || c.deciding === on) return s;
+  return replaceCase(s, { ...c, deciding: on });
+}
+
+/** Select an option on the decision screen. */
+export function setChoice(s: PdState, d: number): PdState {
+  const c = currentCase(s);
+  if (!c || c.kind !== 'checks' || isReview(c) || !c.deciding || !Number.isInteger(d) || d < 0 || d >= c.options.length || c.choice === d) return s;
+  return replaceCase(s, { ...c, choice: d });
+}
+
+/** Commit the decision (needs a selected option) with the belief or a skip. */
+export function decide(s: PdState, skip = false): PdState {
+  const c = currentCase(s);
+  if (!c || c.kind !== 'checks' || isReview(c) || !c.deciding || c.choice === null) return s;
+  return replaceCase(s, { ...c, deciding: false, decision: c.choice, answer: skip ? 'skip' : [...c.draft] });
+}
+
+/** Set the draft answer of question q of a trap case (null clears it). */
+export function setTrapDraft(s: PdState, q: number, v: number | null): PdState {
+  const c = currentCase(s);
+  if (!c || c.kind !== 'trap' || isReview(c)) return s;
+  const question = trapQuestions(c)[q];
+  if (!question || (v !== null && !draftFits(question, v)) || c.drafts[q] === v) return s;
+  return replaceCase(s, { ...c, drafts: c.drafts.map((x, i) => (i === q ? v : x)) });
+}
+
+/** "Check my answers" (unanswered questions count as skipped), or skip them all. */
+export function checkTrap(s: PdState, skipAll = false): PdState {
+  const c = currentCase(s);
+  if (!c || c.kind !== 'trap' || isReview(c)) return s;
+  return replaceCase(s, { ...c, answers: c.drafts.map((x) => (skipAll || x === null ? 'skip' : x)) });
 }
 
 export function nextCase(s: PdState): PdState {
@@ -401,24 +555,57 @@ export function nextCase(s: PdState): PdState {
 
 export const markReported = (s: PdState): PdState => (isSummary(s) && !s.reported ? { ...s, reported: true } : s);
 
-/** The same round from its start (`reset`). */
-export const restartRound = (s: PdState): PdState => ({
-  ...s,
-  index: 0,
-  reported: false,
-  cases: s.cases.map((c) => {
+/** A case as it was before the player touched it. */
+export function freshCase(c: CaseState): CaseState {
+  if (c.kind === 'clues') {
     const fresh: ClueCase = { ...c, answers: [] };
     fresh.draft = startDraft(fresh, 0);
     return fresh;
-  })
-});
+  }
+  if (c.kind === 'checks') return { ...c, done: [], deciding: false, draft: roundPercents(normalise(c.prior)), choice: null, answer: null, decision: null };
+  return { ...c, drafts: c.drafts.map(() => null), answers: null };
+}
+
+/** The same round from its start (`reset`). */
+export const restartRound = (s: PdState): PdState => ({ ...s, index: 0, reported: false, cases: s.cases.map(freshCase) });
+
+/* ---------- Traps ---------- */
+
+export const trapQuestions = (c: TrapCase): readonly TrapQuestion[] => trapById(c.template)?.questions(c.params) ?? [];
+
+function draftFits(q: TrapQuestion, v: number): boolean {
+  if (!Number.isInteger(v)) return false;
+  if (q.kind === 'prob') return v >= 0 && v <= 100;
+  return v >= 0 && v < (q.kind === 'choice' ? q.options.length : q.values.length);
+}
+
+export interface TrapAnswerReview {
+  question: TrapQuestion;
+  answer: number | 'skip';
+  /** Choice/count: the right option was chosen; prob: within the "very close" band. */
+  matches: boolean | null;
+  band: Band | null;
+}
+
+export function reviewTrap(c: TrapCase): TrapAnswerReview[] {
+  return trapQuestions(c).map((question, i) => {
+    const answer = c.answers?.[i] ?? 'skip';
+    if (answer === 'skip') return { question, answer, matches: null, band: null };
+    if (question.kind === 'prob') {
+      const gap = gapPp([frac(answer, 100), frac(100 - answer, 100)], [question.exact, sub(ONE, question.exact)]);
+      const band = bandOf(gap);
+      return { question, answer, matches: band === 'spot', band };
+    }
+    return { question, answer, matches: answer === question.correct, band: null };
+  });
+}
 
 /* ---------- Validation (never throws) ---------- */
 
 const isResult = (x: unknown): x is 0 | 1 => x === 0 || x === 1;
 
-function isClueCase(x: unknown, difficulty: Difficulty): x is ClueCase {
-  if (!isRecord(x) || x.kind !== 'clues' || typeof x.template !== 'string') return false;
+function isClueCase(x: Record<string, unknown>, difficulty: Difficulty): boolean {
+  if (x.kind !== 'clues' || typeof x.template !== 'string') return false;
   const template = templateById(x.template);
   if (!template || !template.levels.includes(difficulty)) return false;
   const hyps = x.hyps;
@@ -442,25 +629,81 @@ function isClueCase(x: unknown, difficulty: Difficulty): x is ClueCase {
   return isBelief(x.draft, hyps);
 }
 
+function isCheckCase(x: Record<string, unknown>, difficulty: Difficulty): boolean {
+  if (x.kind !== 'checks' || typeof x.template !== 'string') return false;
+  const t = checkTemplateById(x.template);
+  if (!t || !t.levels.includes(difficulty)) return false;
+  if (!isOneOf(x.priorDen, [10, 100]) || !isArrayOf(x.prior, (v): v is number => isInt(v, 1, 99), 2)) return false;
+  if ((x.prior as number[])[0]! + (x.prior as number[])[1]! !== x.priorDen) return false;
+  if (!Array.isArray(x.checks) || x.checks.length < 3 || x.checks.length > 4) return false;
+  const ids = new Set<string>();
+  for (const c of x.checks as unknown[]) {
+    if (!isRecord(c) || typeof c.id !== 'string' || ids.has(c.id) || !t.checks.some((k) => k.id === c.id)) return false;
+    ids.add(c.id);
+    if (!isOneOf(c.den, [10, 100]) || !isResult(c.result) || !isInt(c.cost, 1, 4)) return false;
+    const den = c.den;
+    if (!isArrayOf(c.num, (v): v is number => isInt(v, 0, den), 2)) return false;
+  }
+  const allowed = optionsFor(t, difficulty).map((o) => o.id);
+  if (!Array.isArray(x.options) || x.options.length !== allowed.length) return false;
+  if (!(x.options as unknown[]).every((o, i) => isRecord(o) && o.id === allowed[i] && isArrayOf(o.pay, (v): v is number => isInt(v, -30, 30), 2))) return false;
+  const cc = x as unknown as CheckCase;
+  if (!isInt(x.truth, 0, 1)) return false;
+  const truth = x.truth;
+  if (cc.prior[truth]! <= 0 || cc.checks.some((c) => (c.result === 1 ? c.num[truth]! : c.den - c.num[truth]!) <= 0)) return false;
+  if (!isArrayOf(x.done, (v): v is number => isInt(v, 0, cc.checks.length - 1)) || new Set(cc.done).size !== cc.done.length) return false;
+  if (typeof x.deciding !== 'boolean' || !isBelief(x.draft, 2)) return false;
+  if (!(x.choice === null || isInt(x.choice, 0, cc.options.length - 1))) return false;
+  if (!(x.decision === null || isInt(x.decision, 0, cc.options.length - 1))) return false;
+  if (!(x.answer === null || x.answer === 'skip' || isBelief(x.answer, 2))) return false;
+  if (x.decision !== null && (x.answer === null || x.deciding)) return false;
+  return x.decision !== null || x.answer === null;
+}
+
+function isTrapCase(x: Record<string, unknown>, difficulty: Difficulty): boolean {
+  if (x.kind !== 'trap' || typeof x.template !== 'string') return false;
+  const t = trapById(x.template);
+  if (!t || !trapValid(t, x.params, difficulty)) return false;
+  const qs = t.questions(x.params as number[]);
+  if (!Array.isArray(x.drafts) || x.drafts.length !== qs.length) return false;
+  if (!x.drafts.every((v, i) => v === null || (typeof v === 'number' && draftFits(qs[i]!, v)))) return false;
+  if (x.answers === null) return true;
+  return Array.isArray(x.answers) && x.answers.length === qs.length && x.answers.every((v, i) => v === 'skip' || (typeof v === 'number' && draftFits(qs[i]!, v)));
+}
+
+function isCase(x: unknown, kind: CaseKind, difficulty: Difficulty): x is CaseState {
+  if (!isRecord(x)) return false;
+  if (kind === 'clues') return isClueCase(x, difficulty);
+  if (kind === 'checks') return isCheckCase(x, difficulty);
+  return isTrapCase(x, difficulty);
+}
+
+const untouched = (c: CaseState): boolean =>
+  c.kind === 'clues' ? c.answers.length === 0 : c.kind === 'checks' ? c.done.length === 0 && !c.deciding && c.choice === null && c.decision === null : c.answers === null;
+
 export function isPdState(x: unknown): x is PdState {
   try {
     if (!isRecord(x) || x.v !== 1 || !isUint32(x.seed) || !isOneOf(x.difficulty, DIFFICULTIES) || !isOneOf(x.mode, MODES)) return false;
     const difficulty = x.difficulty;
-    if (!Array.isArray(x.cases) || x.cases.length !== ROUND_LENGTH || !x.cases.every((c) => isClueCase(c, difficulty))) return false;
-    if (new Set((x.cases as ClueCase[]).map((c) => c.template)).size !== x.cases.length) return false;
-    if (!isInt(x.index, 0, x.cases.length) || typeof x.reported !== 'boolean') return false;
+    const kinds = roundKinds(x.mode);
+    if (!Array.isArray(x.cases) || x.cases.length !== kinds.length || !x.cases.every((c, i) => isCase(c, kinds[i]!, difficulty))) return false;
+    const cases = x.cases as CaseState[];
+    // A round never repeats a template.
+    if (new Set(cases.map((c) => c.template)).size !== cases.length) return false;
+    if (!isInt(x.index, 0, cases.length) || typeof x.reported !== 'boolean') return false;
     const index = x.index;
-    if (x.reported && index !== x.cases.length) return false;
+    if (x.reported && index !== cases.length) return false;
     // Cases before the current one are reviewed; cases after it are untouched.
-    return (x.cases as ClueCase[]).every((c, i) => (i < index ? isReview(c) : i > index ? c.answers.length === 0 : true));
+    return cases.every((c, i) => (i < index ? isReview(c) : i > index ? untouched(c) : true));
   } catch {
     return false;
   }
 }
 
-export const settingsOf = (s: PdState): Record<string, string> => ({ difficulty: s.difficulty });
+/** Unknown settings fall back to the defaults (design § 13). */
+export const settingsOf = (s: PdState): Record<string, string> => ({ mode: s.mode, difficulty: s.difficulty });
 
-/* ---------- Review and summary (design § 10.5) ---------- */
+/* ---------- Review and summary (design § 7.4, § 10.5) ---------- */
 
 export interface StepReview {
   step: number;
@@ -500,10 +743,88 @@ export function reviewCase(c: ClueCase): CaseReview {
   };
 }
 
-export type Tip = 'baseRate' | 'conservative' | 'overreach' | 'general';
+export interface InvestigationRow {
+  /** What the player did at this point. */
+  action: Action;
+  /** Its value, and the best possible value here. */
+  value: Frac;
+  bestValue: Frac;
+  best: Action[];
+}
+
+export interface ChecksReview {
+  /** Points: the option's payoff under the truth minus the checks' costs. */
+  points: number;
+  spent: number;
+  /** The decision was a best one given the final observations. */
+  bestDecision: boolean;
+  /** Expected points of every option at the final state. */
+  evs: Frac[];
+  decisionLoss: Frac;
+  rows: InvestigationRow[];
+  /** Myopic net value of every check at the start. */
+  myopic: Frac[];
+  startValue: Frac;
+  decideValue: Frac;
+  exact: Frac[];
+  final: Belief | null;
+  finalBand: Band | null;
+  score: number | null;
+  exactScore: Frac;
+}
+
+export function reviewChecks(c: CheckCase): ChecksReview {
+  const p = checkParams(c);
+  const a = analyseChecks(p);
+  const rows: InvestigationRow[] = [];
+  const obs: [number, 0 | 1][] = [];
+  for (const i of c.done) {
+    const action: Action = { kind: 'run', check: i };
+    rows.push({ action, value: a.q(obs, action), bestValue: a.value(obs), best: a.best(obs) });
+    obs.push([i, c.checks[i]!.result]);
+  }
+  const decision = c.decision ?? 0;
+  const final: Action = { kind: 'decide', option: decision };
+  rows.push({ action: final, value: a.q(obs, final), bestValue: a.value(obs), best: a.best(obs) });
+  const post = checkPosterior(p, obs);
+  const evs = p.options.map((_, d) => expectedValue(p, post, d));
+  const best = maxFrac(evs);
+  const spent = c.done.reduce((acc, i) => acc + c.checks[i]!.cost, 0);
+  const belief = c.answer && c.answer !== 'skip' ? c.answer : null;
+  return {
+    points: c.options[decision]!.pay[c.truth]! - spent,
+    spent,
+    bestDecision: cmp(evs[decision]!, best) === 0,
+    evs,
+    decisionLoss: sub(best, evs[decision]!),
+    rows,
+    myopic: p.checks.map((_, i) => myopicValue(p, i)),
+    startValue: a.value([]),
+    decideValue: decideNow(p, []),
+    exact: post,
+    final: belief,
+    finalBand: belief ? bandOf(gapPp(beliefFrac(belief), post)) : null,
+    score: belief ? forecastScore(belief, c.truth) : null,
+    exactScore: forecastExact(post, c.truth)
+  };
+}
+
+export type Tip = 'baseRate' | 'conservative' | 'overreach' | 'traps' | 'general';
+
+export interface SummaryRow {
+  template: string;
+  kind: CaseKind;
+  /** Clue and checks cases: the band of the final estimate (null when skipped). */
+  band: Band | null;
+  /** Checks: the decision was a best one. */
+  bestDecision: boolean | null;
+  /** Traps: answers matching the exact answer, of the questions. */
+  matches: number | null;
+  questions: number | null;
+}
 
 export interface Summary {
-  rows: { template: string; band: Band | null; truth: number }[];
+  rows: SummaryRow[];
   scored: number;
   veryClose: number;
   close: number;
@@ -512,29 +833,73 @@ export interface Summary {
   baseRateCases: number;
   forecastAvg: number | null;
   exactAvg: number | null;
+  checkCases: number;
+  bestDecisions: number;
+  trapQuestions: number;
+  trapMatches: number;
   tip: Tip;
 }
 
 export function summarize(s: PdState): Summary {
-  const reviews = s.cases.map(reviewCase);
-  const rows = s.cases.map((c, i) => ({ template: c.template, band: reviews[i]!.finalBand, truth: c.truth }));
-  const ratios = reviews.flatMap((r) => r.steps.flatMap((st) => (st.move?.kind === 'ratio' ? [st.move.r] : []))).sort((a, b) => a - b);
+  const rows: SummaryRow[] = [];
+  const ratios: number[] = [];
+  const forecasts: { score: number; exact: number }[] = [];
+  let baseRateCases = 0;
+  let bestDecisions = 0;
+  let checkCases = 0;
+  let trapQuestionsCount = 0;
+  let trapMatches = 0;
+  for (const c of s.cases) {
+    if (c.kind === 'clues') {
+      const r = reviewCase(c);
+      for (const st of r.steps) if (st.move?.kind === 'ratio') ratios.push(st.move.r);
+      if (r.score !== null) forecasts.push({ score: r.score, exact: toNumber(r.exactScore) });
+      if (r.baseRate) baseRateCases++;
+      rows.push({ template: c.template, kind: 'clues', band: r.finalBand, bestDecision: null, matches: null, questions: null });
+    } else if (c.kind === 'checks') {
+      checkCases++;
+      const r = isReview(c) ? reviewChecks(c) : null;
+      if (r?.bestDecision) bestDecisions++;
+      if (r && r.score !== null) forecasts.push({ score: r.score, exact: toNumber(r.exactScore) });
+      rows.push({ template: c.template, kind: 'checks', band: r?.finalBand ?? null, bestDecision: r ? r.bestDecision : null, matches: null, questions: null });
+    } else {
+      const r = reviewTrap(c);
+      const answered = r.filter((x) => x.answer !== 'skip');
+      trapQuestionsCount += answered.length;
+      const m = answered.filter((x) => x.matches).length;
+      trapMatches += m;
+      rows.push({ template: c.template, kind: 'trap', band: null, bestDecision: null, matches: m, questions: answered.length });
+    }
+  }
+  ratios.sort((a, b) => a - b);
   const median = ratios.length ? (ratios[(ratios.length - 1) >> 1]! + ratios[ratios.length >> 1]!) / 2 : 0;
   const habit = ratios.length < 3 ? null : median < 0.8 ? 'less' : median > 1.25 ? 'more' : 'right';
-  const scoredCases = reviews.filter((r) => r.score !== null);
-  const forecastAvg = scoredCases.length >= 2 ? Math.round(scoredCases.reduce((a, r) => a + r.score!, 0) / scoredCases.length) : null;
-  const exactAvg = scoredCases.length >= 2 ? Math.round(scoredCases.reduce((a, r) => a + toNumber(r.exactScore), 0) / scoredCases.length) : null;
-  const baseRateCases = reviews.filter((r) => r.baseRate).length;
-  const tip: Tip = baseRateCases > 0 ? 'baseRate' : habit === 'less' ? 'conservative' : habit === 'more' ? 'overreach' : 'general';
+  const avg = (xs: number[]) => Math.round(xs.reduce((a, x) => a + x, 0) / xs.length);
+  const enough = forecasts.length >= 2;
+  const bands = rows.filter((r) => r.kind !== 'trap');
+  const tip: Tip =
+    baseRateCases > 0
+      ? 'baseRate'
+      : habit === 'less'
+        ? 'conservative'
+        : habit === 'more'
+          ? 'overreach'
+          : trapQuestionsCount > 0 && trapMatches * 2 < trapQuestionsCount
+            ? 'traps'
+            : 'general';
   return {
     rows,
-    scored: scoredCases.length,
-    veryClose: rows.filter((r) => r.band === 'spot').length,
-    close: rows.filter((r) => r.band === 'close').length,
+    scored: bands.filter((r) => r.band !== null).length,
+    veryClose: bands.filter((r) => r.band === 'spot').length,
+    close: bands.filter((r) => r.band === 'close').length,
     habit,
     baseRateCases,
-    forecastAvg,
-    exactAvg,
+    forecastAvg: enough ? avg(forecasts.map((f) => f.score)) : null,
+    exactAvg: enough ? avg(forecasts.map((f) => f.exact)) : null,
+    checkCases,
+    bestDecisions,
+    trapQuestions: trapQuestionsCount,
+    trapMatches,
     tip
   };
 }
@@ -553,9 +918,10 @@ export function readNotebook(x: unknown): NoteEntry[] {
 }
 
 /** The forecasts of a reviewed case with a final belief (one entry per hypothesis). */
-export function caseNotes(c: ClueCase): NoteEntry[] {
-  const last = c.answers[c.clues.length - 1];
-  if (!isReview(c) || !last || last === 'skip') return [];
+export function caseNotes(c: CaseState): NoteEntry[] {
+  if (!isReview(c) || c.kind === 'trap') return [];
+  const last = c.kind === 'clues' ? c.answers[c.clues.length - 1] : c.answer;
+  if (!last || last === 'skip') return [];
   return last.map((b, h) => [b, h === c.truth ? 1 : 0]);
 }
 

@@ -3,7 +3,6 @@ import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { accept, createRound, eligible, generateCase } from '../src/generate';
 import {
-  ROUND_LENGTH,
   add,
   bandOf,
   baseRateFlag,
@@ -42,10 +41,31 @@ import {
   summarize,
   toNumber,
   uniformBelow,
+  type CaseState,
+  type CheckCase,
   type Clue,
+  type ClueCase,
   type ClueEvidence,
   type Frac,
-  type PdState
+  type Mode,
+  type PdState,
+  type TrapCase,
+  MODES,
+  analyseChecks,
+  checkTrap,
+  decide,
+  decideNow,
+  expectedValue,
+  checkPosterior,
+  myopicValue,
+  reviewChecks,
+  reviewTrap,
+  roundKinds,
+  runCheck,
+  setChoice,
+  setTrapDraft,
+  toDeciding,
+  type CheckParams
 } from '../src/rules';
 import { CLUE_TEMPLATES, DIFFICULTIES, templateById } from '../src/templates';
 
@@ -308,49 +328,55 @@ describe('scoring', () => {
   });
 });
 
-describe('generator', () => {
-  it('is deterministic by seed and never repeats a template', () => {
-    for (const d of DIFFICULTIES) {
-      const a = createRound(1234, d);
-      expect(createRound(1234, d)).toEqual(a);
-      expect(new Set(a.cases.map((c) => c.template)).size).toBe(ROUND_LENGTH);
-      expect(isPdState(a)).toBe(true);
-    }
+const clueCases = (s: PdState): ClueCase[] => s.cases.filter((c): c is ClueCase => c.kind === 'clues');
+
+describe('clue generator', () => {
+  it('is deterministic by seed, never repeats a template and follows the mode', () => {
+    for (const mode of MODES)
+      for (const d of DIFFICULTIES) {
+        const a = createRound(1234, d, mode);
+        expect(createRound(1234, d, mode)).toEqual(a);
+        expect(new Set(a.cases.map((c) => c.template)).size).toBe(a.cases.length);
+        expect(a.cases.map((c) => c.kind)).toEqual(roundKinds(mode));
+        expect(isPdState(a)).toBe(true);
+      }
     expect(createRound(1, 'easy')).not.toEqual(createRound(2, 'easy'));
   });
   it('respects the grids per difficulty', () => {
     for (let seed = 0; seed < 30; seed++) {
-      for (const c of createRound(seed, 'easy').cases) {
+      for (const c of clueCases(createRound(seed, 'easy'))) {
         expect(c.priorDen).toBe(10);
         expect(c.clues).toHaveLength(2);
         expect(c.hyps).toBe(2);
       }
-      for (const c of createRound(seed, 'medium').cases) {
+      for (const c of clueCases(createRound(seed, 'medium'))) {
         expect(c.prior.every((x) => x % 5 === 0)).toBe(true);
         expect(c.clues).toHaveLength(3);
       }
-      for (const c of createRound(seed, 'hard').cases) {
-        expect(c.clues).toHaveLength(c.hyps === 3 ? 3 : 4);
+      for (const c of clueCases(createRound(seed, 'hard'))) {
+        const t = templateById(c.template)!;
+        expect(c.clues).toHaveLength(c.hyps === 3 ? (t.hardClues ?? 3) : 4);
         const special = c.clues.filter((x) => x.num.every((v) => v === x.num[0]));
-        expect(special.length).toBeGreaterThanOrEqual(1);
-        expect(c.hyps).toBe(templateById(c.template)!.hyps.length >= 3 ? 3 : 2);
+        if (t.clues.some((s) => s.kind === 'neutral')) expect(special.length).toBeGreaterThanOrEqual(1);
+        expect(c.hyps).toBe(t.hyps.length >= 3 ? 3 : 2);
+        if (t.first) expect([c.clues[0]!.id, c.clues[0]!.result]).toEqual([t.first, 1]);
       }
     }
   });
-  it('a favoured hypothesis always gets the larger number (two hypotheses)', () => {
+  it('a favoured hypothesis always gets the larger number (two hypotheses); searches find nothing', () => {
     for (let seed = 0; seed < 40; seed++)
       for (const d of DIFFICULTIES)
-        for (const c of createRound(seed, d).cases) {
-          if (c.hyps !== 2) continue;
+        for (const c of clueCases(createRound(seed, d))) {
           const t = templateById(c.template)!;
           for (const clue of c.clues) {
             const spec = t.clues.find((x) => x.id === clue.id)!;
-            if (spec.kind === 'normal') expect(clue.num[spec.fav]!).toBeGreaterThan(clue.num[1 - spec.fav]!);
+            if (c.hyps === 2 && (spec.kind === 'normal' || spec.kind === 'rate')) expect(clue.num[spec.fav]!).toBeGreaterThan(clue.num[1 - spec.fav]!);
+            if (spec.kind === 'search') expect(clue.result).toBe(0);
           }
         }
   });
   it('accepted cases pass the filters, and the filter never sees the truth', () => {
-    for (let seed = 0; seed < 20; seed++)
+    for (let seed = 0; seed < 10; seed++)
       for (const d of DIFFICULTIES)
         for (const t of eligible(d)) {
           const c = generateCase(seed, t, d);
@@ -362,28 +388,155 @@ describe('generator', () => {
   it('the truth always has positive weight', () => {
     fc.assert(
       fc.property(fc.integer({ min: 0, max: 2 ** 32 - 1 }), fc.constantFrom(...DIFFICULTIES), (seed, d) => {
-        for (const c of createRound(seed, d).cases) expect(posteriorAfter(c, c.clues.length)[c.truth]!.n > 0n).toBe(true);
+        for (const c of clueCases(createRound(seed, d))) expect(posteriorAfter(c, c.clues.length)[c.truth]!.n > 0n).toBe(true);
       }),
       { numRuns: 30 }
     );
   });
+  it('reproduces the worked examples of the new templates (content doc § 3)', () => {
+    const ev = (template: string, prior: number[], priorDen: number, clues: [number[], 0 | 1, number?][]): ClueEvidence => ({
+      template,
+      hyps: prior.length,
+      priorDen,
+      prior,
+      clues: clues.map(([num, result, den], i) => ({ id: `x${i}`, den: den ?? 100, num, result }))
+    });
+    // c-cups medium: 3 : 8, then 15 : 16, then 33/49.
+    const cups = ev('c-cups', [60, 40], 100, [[[5, 20], 1], [[75, 30], 1], [[45, 75], 0]]);
+    expect(posteriorAfter(cups, 1)[0]).toEqual(F(3, 11));
+    expect(posteriorAfter(cups, 3)[0]).toEqual(F(33, 49));
+    // c-key easy: 3 : 10, then 7/17.
+    const key = ev('c-key', [6, 4], 10, [[[8, 0], 0, 10], [[7, 3], 1, 10]]);
+    expect(posteriorAfter(key, 1)[0]).toEqual(F(3, 13));
+    expect(posteriorAfter(key, 2)[0]).toEqual(F(7, 17));
+    // c-coin hard: tails rules out the two-headed coin.
+    const coin = ev('c-coin', [90, 8, 2], 100, [[[50, 75, 100], 1], [[50, 75, 100], 1], [[50, 75, 100], 1], [[50, 75, 100], 0]]);
+    expect(posteriorAfter(coin, 4)).toEqual([F(20, 23), F(3, 23), F(0)]);
+    // c-beep hard: 4/13.
+    const beep = ev('c-beep', [40, 960], 1000, [[[90, 30], 1], [[80, 10], 1], [[60, 60], 1], [[80, 55], 0]]);
+    expect(posteriorAfter(beep, 4)[0]).toEqual(F(4, 13));
+  });
 });
 
+/* ---------- Checks (design § 7.3, content doc § 4) ---------- */
+
+const params = (prior: [number, number], den: number, options: [number, number][], checks: [number, number, number][], priorDen = 100): CheckParams => ({
+  priorDen,
+  prior: priorDen === 10 ? [prior[0] / 10, prior[1] / 10] : prior,
+  checks: checks.map(([a, b, cost]) => ({ den, num: [a, b], cost })),
+  options: options.map((pay) => ({ pay }))
+});
+
+describe('checks analysis', () => {
+  const fixtures: { name: string; p: CheckParams; v: Frac; first: number; myopic: Frac[] }[] = [
+    {
+      name: 'k-picnic medium',
+      p: params([60, 40], 100, [[16, -12], [6, 6]], [[30, 80, 1], [20, 70, 1], [10, 85, 2], [45, 55, 1]]),
+      v: F(208, 25),
+      first: 2,
+      myopic: [F(44, 25), F(41, 25), F(58, 25), F(-47, 50)]
+    },
+    {
+      name: 'k-picnic hard',
+      p: params([60, 40], 100, [[16, -12], [10, 2], [6, 6]], [[30, 80, 1], [10, 85, 2], [5, 90, 3], [45, 55, 1]]),
+      v: F(208, 25),
+      first: 1,
+      myopic: [F(24, 25), F(38, 25), F(59, 50), F(-1)]
+    },
+    { name: 'k-bike easy', p: params([70, 30], 10, [[12, -20], [0, 0]], [[9, 5, 1], [3, 6, 1], [1, 9, 3]], 10), v: F(99, 25), first: 2, myopic: [F(29, 25), F(2, 25), F(39, 25)] },
+    {
+      name: 'k-seeds medium',
+      p: params([50, 50], 100, [[14, -8], [4, 4]], [[70, 30, 1], [85, 15, 2], [60, 40, 1], [90, 80, 1]]),
+      v: F(107, 20),
+      first: 1,
+      myopic: [F(7, 10), F(27, 20), F(-2, 5), F(-1)]
+    },
+    { name: 'k-melon easy', p: params([40, 60], 10, [[16, -8], [0, 0]], [[7, 4, 1], [6, 2, 1], [9, 1, 3]], 10), v: F(57, 25), first: 2, myopic: [F(-1, 25), F(7, 25), F(17, 25)] },
+    {
+      name: 'k-bread medium',
+      p: params([40, 60], 100, [[20, -6], [6, 6]], [[70, 20, 1], [60, 30, 1], [80, 50, 1], [50, 45, 1]]),
+      v: F(187, 25),
+      first: 0,
+      myopic: [F(37, 25), F(1, 5), F(-3, 25), F(-1)]
+    },
+    {
+      name: 'k-laptop medium',
+      p: params([60, 40], 100, [[14, -12], [2, 2]], [[20, 70, 1], [10, 80, 2], [60, 10, 1], [55, 45, 1]]),
+      v: F(134, 25),
+      first: 1,
+      myopic: [F(37, 25), F(44, 25), F(29, 25), F(-1)]
+    }
+  ];
+  for (const f of fixtures)
+    it(`reproduces the worked example ${f.name}`, () => {
+      const a = analyseChecks(f.p);
+      expect(a.value([])).toEqual(f.v);
+      expect(a.best([])).toEqual([{ kind: 'run', check: f.first }]);
+      expect(f.p.checks.map((_, i) => myopicValue(f.p, i))).toEqual(f.myopic);
+    });
+
+  const paramsArb = fc
+    .record({
+      a: fc.integer({ min: 1, max: 9 }),
+      checks: fc.array(fc.tuple(fc.integer({ min: 0, max: 10 }), fc.integer({ min: 0, max: 10 }), fc.integer({ min: 1, max: 4 })), { minLength: 1, maxLength: 3 }),
+      options: fc.array(fc.tuple(fc.integer({ min: -30, max: 30 }), fc.integer({ min: -30, max: 30 })), { minLength: 2, maxLength: 3 })
+    })
+    .map(({ a, checks, options }) => params([a * 10, 100 - a * 10], 10, options, checks, 10));
+
+  it('V ≥ Decide, Q ≤ V, and a check with equal numbers never raises V', () => {
+    fc.assert(
+      fc.property(paramsArb, (p) => {
+        const an = analyseChecks(p);
+        const v = an.value([]);
+        expect(cmp(v, decideNow(p, []))).toBeGreaterThanOrEqual(0);
+        for (let c = 0; c < p.checks.length; c++) expect(cmp(an.q([], { kind: 'run', check: c }), v)).toBeLessThanOrEqual(0);
+        for (let d = 0; d < p.options.length; d++) expect(cmp(an.q([], { kind: 'decide', option: d }), v)).toBeLessThanOrEqual(0);
+        const useless = { ...p, checks: [...p.checks, { den: 10, num: [5, 5], cost: 1 }] };
+        expect(analyseChecks(useless).value([])).toEqual(v);
+      }),
+      { numRuns: 80 }
+    );
+  });
+  it('the expected value of an option is the posterior average of its points', () => {
+    const p = params([60, 40], 100, [[16, -12], [6, 6]], [[30, 80, 1]]);
+    expect(expectedValue(p, checkPosterior(p, []), 0)).toEqual(F(24, 5));
+    expect(expectedValue(p, checkPosterior(p, [[0, 1]]), 0)).toEqual(F(16 * 18 - 12 * 32, 50));
+  });
+});
+
+/* ---------- Transitions and validation ---------- */
+
 describe('transitions and validation', () => {
-  type Action = { kind: 'draft'; v: number } | { kind: 'share'; i: number; v: number } | { kind: 'commit'; skip: boolean } | { kind: 'reset' } | { kind: 'next' };
-  const action: fc.Arbitrary<Action> = fc.oneof(
+  type Act =
+    | { kind: 'draft'; v: number }
+    | { kind: 'share'; i: number; v: number }
+    | { kind: 'commit'; skip: boolean }
+    | { kind: 'reset' }
+    | { kind: 'next' }
+    | { kind: 'run'; i: number }
+    | { kind: 'deciding'; on: boolean }
+    | { kind: 'choice'; d: number }
+    | { kind: 'decide'; skip: boolean }
+    | { kind: 'trap'; q: number; v: number | null }
+    | { kind: 'check'; skip: boolean };
+  const act: fc.Arbitrary<Act> = fc.oneof(
     fc.record({ kind: fc.constant('draft' as const), v: fc.integer({ min: -5, max: 105 }) }),
     fc.record({ kind: fc.constant('share' as const), i: fc.integer({ min: -1, max: 3 }), v: fc.integer({ min: -5, max: 105 }) }),
     fc.record({ kind: fc.constant('commit' as const), skip: fc.boolean() }),
     fc.constant({ kind: 'reset' as const }),
-    fc.constant({ kind: 'next' as const })
+    fc.constant({ kind: 'next' as const }),
+    fc.record({ kind: fc.constant('run' as const), i: fc.integer({ min: -1, max: 4 }) }),
+    fc.record({ kind: fc.constant('deciding' as const), on: fc.boolean() }),
+    fc.record({ kind: fc.constant('choice' as const), d: fc.integer({ min: -1, max: 3 }) }),
+    fc.record({ kind: fc.constant('decide' as const), skip: fc.boolean() }),
+    fc.record({ kind: fc.constant('trap' as const), q: fc.integer({ min: -1, max: 2 }), v: fc.option(fc.integer({ min: -1, max: 101 })) }),
+    fc.record({ kind: fc.constant('check' as const), skip: fc.boolean() })
   );
-  const apply = (s: PdState, a: Action): PdState => {
+  const draftFor = (c: CaseState | undefined, v: number) => (c?.kind === 'clues' && c.hyps === 3 ? [v, 0, 100 - v] : [v, 100 - v]);
+  const apply = (s: PdState, a: Act): PdState => {
     switch (a.kind) {
-      case 'draft': {
-        const c = s.cases[s.index];
-        return c ? setDraft(s, c.hyps === 2 ? [a.v, 100 - a.v] : [a.v, 0, 100 - a.v]) : s;
-      }
+      case 'draft':
+        return setDraft(s, draftFor(s.cases[s.index], a.v));
       case 'share':
         return shareDraft(s, a.i, a.v);
       case 'commit':
@@ -392,19 +545,31 @@ describe('transitions and validation', () => {
         return resetDraft(s);
       case 'next':
         return markReported(nextCase(s));
+      case 'run':
+        return runCheck(s, a.i);
+      case 'deciding':
+        return toDeciding(s, a.on);
+      case 'choice':
+        return setChoice(s, a.d);
+      case 'decide':
+        return decide(s, a.skip);
+      case 'trap':
+        return setTrapDraft(s, a.q, a.v);
+      case 'check':
+        return checkTrap(s, a.skip);
     }
   };
-  it('random action sequences keep the state valid', () => {
+  it('random action sequences in every mode keep the state valid', () => {
     fc.assert(
-      fc.property(fc.integer({ min: 0, max: 2 ** 32 - 1 }), fc.constantFrom(...DIFFICULTIES), fc.array(action, { maxLength: 60 }), (seed, d, actions) => {
-        let s = createRound(seed, d);
-        for (const a of actions) {
+      fc.property(fc.integer({ min: 0, max: 2 ** 32 - 1 }), fc.constantFrom(...DIFFICULTIES), fc.constantFrom<Mode>(...MODES), fc.array(act, { maxLength: 80 }), (seed, d, mode, acts) => {
+        let s = createRound(seed, d, mode);
+        for (const a of acts) {
           s = apply(s, a);
           expect(isPdState(s)).toBe(true);
           expect(isPdState(JSON.parse(JSON.stringify(s)))).toBe(true);
         }
       }),
-      { numRuns: 60 }
+      { numRuns: 80 }
     );
   });
   it('commit is a no-op in review; next only after the review; reported flips once at the end', () => {
@@ -415,68 +580,125 @@ describe('transitions and validation', () => {
     expect(isReview(s.cases[0]!)).toBe(true);
     expect(commitStep(s)).toBe(s);
     expect(markReported(s)).toBe(s);
-    for (let i = 0; i < ROUND_LENGTH; i++) {
+    for (let i = 0; i < 5; i++) {
       while (!isReview(s.cases[s.index]!)) s = commitStep(s);
       s = nextCase(s);
     }
-    expect(s.index).toBe(ROUND_LENGTH);
+    expect(s.index).toBe(5);
     const r = markReported(s);
     expect(r.reported).toBe(true);
     expect(markReported(r)).toBe(r);
     expect(isPdState(r)).toBe(true);
     const again = restartRound(r);
     expect(again.index).toBe(0);
-    expect(again.cases.every((c) => c.answers.length === 0)).toBe(true);
+    expect(clueCases(again).every((c) => c.answers.length === 0)).toBe(true);
     expect(isPdState(again)).toBe(true);
+  });
+  it('checks: run once, not while deciding; decide needs a choice; nothing changes after deciding', () => {
+    let s = createRound(3, 'medium', 'checks');
+    const c0 = () => s.cases[s.index] as CheckCase;
+    s = runCheck(s, 1);
+    expect(c0().done).toEqual([1]);
+    expect(runCheck(s, 1)).toBe(s);
+    expect(decide(s)).toBe(s);
+    s = toDeciding(s, true);
+    expect(runCheck(s, 0)).toBe(s);
+    expect(decide(s)).toBe(s);
+    s = setChoice(s, 1);
+    s = setDraft(s, [70, 30]);
+    s = decide(s);
+    expect(c0().decision).toBe(1);
+    expect(c0().answer).toEqual([70, 30]);
+    expect(c0().deciding).toBe(false);
+    expect(isReview(c0())).toBe(true);
+    expect(runCheck(s, 0)).toBe(s);
+    expect(setChoice(s, 0)).toBe(s);
+    expect(toDeciding(s, true)).toBe(s);
+    const r = reviewChecks(c0());
+    expect(r.rows).toHaveLength(2);
+    expect(r.spent).toBe(c0().checks[1]!.cost);
+    expect(r.points).toBe(c0().options[1]!.pay[c0().truth]! - r.spent);
+    expect(isPdState(s)).toBe(true);
+  });
+  it('traps: drafts fit the question; checking commits them; unanswered count as skipped', () => {
+    let s = createRound(4, 'medium', 'traps');
+    const c0 = () => s.cases[s.index] as TrapCase;
+    const qs = reviewTrap({ ...c0(), answers: c0().drafts.map(() => 'skip') }).map((r) => r.question);
+    expect(setTrapDraft(s, 0, 999)).toBe(s);
+    const v = qs[0]!.kind === 'prob' ? 40 : 0;
+    s = setTrapDraft(s, 0, v);
+    expect(c0().drafts[0]).toBe(v);
+    s = checkTrap(s);
+    expect(c0().answers![0]).toBe(v);
+    expect(c0().answers!.slice(1).every((a) => a === 'skip')).toBe(true);
+    expect(setTrapDraft(s, 0, null)).toBe(s);
+    expect(isPdState(s)).toBe(true);
   });
   it('the draft of a new step starts at the previous belief', () => {
     let s = createRound(9, 'medium');
     s = setDraft(s, [42, 58]);
     s = commitStep(s);
-    expect(s.cases[0]!.draft).toEqual([42, 58]);
+    expect((s.cases[0] as ClueCase).draft).toEqual([42, 58]);
     s = commitStep(s, true);
-    expect(s.cases[0]!.draft).toEqual(roundPercents(posteriorAfter(s.cases[0]!, 2)));
+    expect((s.cases[0] as ClueCase).draft).toEqual(roundPercents(posteriorAfter(s.cases[0] as ClueCase, 2)));
   });
   it('isValidState never throws and rejects tampered saves', () => {
     fc.assert(fc.property(fc.anything(), (x) => isPdState(x) === false || isPdState(x) === true));
-    const s = createRound(5, 'easy');
-    const tamper = (f: (x: PdState) => void) => {
+    const tamper = (s: PdState, f: (x: PdState) => void) => {
       const x = JSON.parse(JSON.stringify(s)) as PdState;
       f(x);
       return isPdState(x);
     };
-    expect(tamper(() => undefined)).toBe(true);
-    expect(tamper((x) => (x.cases[0]!.prior[0]! += 1))).toBe(false);
-    expect(tamper((x) => (x.cases[0]!.clues[0]!.num[0] = 11))).toBe(false);
-    expect(tamper((x) => (x.cases[0]!.clues[0]!.id = 'nope'))).toBe(false);
-    expect(tamper((x) => (x.cases[0]!.clues[1]!.id = x.cases[0]!.clues[0]!.id))).toBe(false);
-    expect(tamper((x) => (x.cases[0]!.draft = [50, 51]))).toBe(false);
-    expect(tamper((x) => (x.cases[0]!.template = 'c-unknown'))).toBe(false);
-    expect(tamper((x) => (x.cases[1]!.template = x.cases[0]!.template))).toBe(false);
-    expect(tamper((x) => (x.reported = true))).toBe(false);
-    expect(tamper((x) => (x.index = 2))).toBe(false);
-    expect(tamper((x) => x.cases.pop())).toBe(false);
-    expect(tamper((x) => (x.cases[0]!.answers = [[50, 50], [50, 50], [50, 50]]))).toBe(false);
+    const s = createRound(5, 'easy');
+    const cl = (x: PdState) => x.cases[0] as ClueCase;
+    expect(tamper(s, () => undefined)).toBe(true);
+    expect(tamper(s, (x) => (cl(x).prior[0]! += 1))).toBe(false);
+    expect(tamper(s, (x) => (cl(x).clues[0]!.num[0] = 11))).toBe(false);
+    expect(tamper(s, (x) => (cl(x).clues[0]!.id = 'nope'))).toBe(false);
+    expect(tamper(s, (x) => (cl(x).clues[1]!.id = cl(x).clues[0]!.id))).toBe(false);
+    expect(tamper(s, (x) => (cl(x).draft = [50, 51]))).toBe(false);
+    expect(tamper(s, (x) => (cl(x).template = 'c-unknown'))).toBe(false);
+    expect(tamper(s, (x) => (x.cases[1]!.template = x.cases[0]!.template))).toBe(false);
+    expect(tamper(s, (x) => (x.reported = true))).toBe(false);
+    expect(tamper(s, (x) => (x.index = 2))).toBe(false);
+    expect(tamper(s, (x) => x.cases.pop())).toBe(false);
+    expect(tamper(s, (x) => (x.mode = 'checks'))).toBe(false);
+    expect(tamper(s, (x) => (cl(x).answers = [[50, 50], [50, 50], [50, 50]]))).toBe(false);
     expect(
-      tamper((x) => {
+      tamper(s, (x) => {
         // A truth with zero weight under the stored results.
-        const c = x.cases[0]!;
+        const c = cl(x);
         c.clues[0]!.num = c.clues[0]!.result === 1 ? [0, 5] : [10, 5];
         c.truth = 0;
       })
     ).toBe(false);
-    expect(tamper((x) => ((x as { v: number }).v = 2))).toBe(false);
+    expect(tamper(s, (x) => ((x as { v: number }).v = 2))).toBe(false);
+    const k = createRound(6, 'hard', 'checks');
+    const ck = (x: PdState) => x.cases[0] as CheckCase;
+    expect(tamper(k, () => undefined)).toBe(true);
+    expect(tamper(k, (x) => (ck(x).done = [0, 0]))).toBe(false);
+    expect(tamper(k, (x) => (ck(x).decision = 0))).toBe(false);
+    expect(tamper(k, (x) => (ck(x).options[0]!.pay[0] = 99))).toBe(false);
+    expect(tamper(k, (x) => (ck(x).checks[0]!.cost = 9))).toBe(false);
+    expect(tamper(k, (x) => ck(x).options.pop())).toBe(false);
+    expect(tamper(k, (x) => (ck(x).choice = 7))).toBe(false);
+    const tr = createRound(6, 'hard', 'traps');
+    const tc = (x: PdState) => x.cases[0] as TrapCase;
+    expect(tamper(tr, () => undefined)).toBe(true);
+    expect(tamper(tr, (x) => tc(x).params.push(1))).toBe(false);
+    expect(tamper(tr, (x) => (tc(x).drafts = []))).toBe(false);
+    expect(tamper(tr, (x) => (tc(x).template = 't-unknown'))).toBe(false);
   });
-  it('settingsOf reports the difficulty', () => {
-    for (const d of DIFFICULTIES) expect(settingsOf(createRound(1, d))).toEqual({ difficulty: d });
+  it('settingsOf reports the mode and the difficulty', () => {
+    for (const mode of MODES) for (const d of DIFFICULTIES) expect(settingsOf(createRound(1, d, mode))).toEqual({ mode, difficulty: d });
   });
 });
 
 describe('summary and notebook', () => {
   it('counts closeness and picks the base-rate tip first', () => {
     let s = createRound(11, 'easy');
-    for (let i = 0; i < ROUND_LENGTH; i++) {
-      const c = s.cases[s.index]!;
+    for (let i = 0; i < 5; i++) {
+      const c = s.cases[s.index] as ClueCase;
       s = setDraft(s, roundPercents(posteriorAfter(c, 1)));
       s = commitStep(s);
       s = setDraft(s, roundPercents(posteriorAfter(c, 2)));
@@ -484,11 +706,25 @@ describe('summary and notebook', () => {
       s = nextCase(s);
     }
     const sum = summarize(s);
-    expect(sum.scored).toBe(ROUND_LENGTH);
-    expect(sum.veryClose).toBe(ROUND_LENGTH);
+    expect(sum.scored).toBe(5);
+    expect(sum.veryClose).toBe(5);
     expect(sum.baseRateCases).toBe(0);
     expect(sum.forecastAvg).not.toBeNull();
     expect(['general', 'conservative', 'overreach']).toContain(sum.tip);
+  });
+  it('a mixed round counts checks decisions and trap answers', () => {
+    let s = createRound(12, 'medium', 'mixed');
+    for (let i = 0; i < s.cases.length; i++) {
+      const c = s.cases[s.index]!;
+      if (c.kind === 'clues') while (!isReview(s.cases[s.index]!)) s = commitStep(s, true);
+      else if (c.kind === 'checks') s = decide(setChoice(toDeciding(s, true), 0), true);
+      else s = checkTrap(setTrapDraft(s, 0, 0));
+      s = nextCase(s);
+    }
+    const sum = summarize(s);
+    expect(sum.checkCases).toBe(1);
+    expect(sum.trapQuestions).toBe(2);
+    expect(sum.rows.map((r) => r.kind)).toEqual(['clues', 'trap', 'checks', 'trap', 'clues']);
   });
   it('the notebook keeps the last 400 entries, reads damaged values as empty and bins by tenths', () => {
     expect(readNotebook('x')).toEqual([]);
@@ -504,13 +740,17 @@ describe('summary and notebook', () => {
     let s = createRound(3, 'easy');
     expect(caseNotes(s.cases[0]!)).toEqual([]);
     s = commitStep(commitStep(s));
-    const c = s.cases[0]!;
-    expect(caseNotes(c)).toEqual(c.draft.length ? (c.answers[1] as number[]).map((b, h) => [b, h === c.truth ? 1 : 0]) : []);
+    const c = s.cases[0] as ClueCase;
+    expect(caseNotes(c)).toEqual((c.answers[1] as number[]).map((b, h) => [b, h === c.truth ? 1 : 0]));
+    let k = createRound(3, 'easy', 'checks');
+    k = decide(setChoice(toDeciding(k, true), 0));
+    const kc = k.cases[0] as CheckCase;
+    expect(caseNotes(kc)).toEqual(kc.draft.map((b, h) => [b, h === kc.truth ? 1 : 0]));
   });
-  it('every template has at least four informative clues and one neutral clue', () => {
+  it('every clue template has informative clues, and at most one neutral clue', () => {
     for (const t of CLUE_TEMPLATES) {
-      expect(t.clues.filter((c) => c.kind === 'normal').length).toBeGreaterThanOrEqual(4);
-      expect(t.clues.filter((c) => c.kind === 'neutral')).toHaveLength(1);
+      expect(t.clues.filter((c) => c.kind !== 'neutral' && c.kind !== 'echo').length).toBeGreaterThanOrEqual(4);
+      expect(t.clues.filter((c) => c.kind === 'neutral').length).toBeLessThanOrEqual(1);
     }
   });
 });

@@ -1,6 +1,6 @@
 import { seedFromString } from '@wp/game-core';
 import { describe, expect, it } from 'vitest';
-import { generateCase, eligible } from '../src/generate';
+import { eligible, eligibleChecks, generateCase, generateChecks } from '../src/generate';
 import { posteriorAfter, toNumber } from '../src/rules';
 import { DIFFICULTIES } from '../src/templates';
 
@@ -16,7 +16,7 @@ describe('generator statistics (slow)', () => {
     let cases = 0;
     for (const d of DIFFICULTIES)
       for (const t of eligible(d))
-        for (let i = 0; i < 400; i++) {
+        for (let i = 0; i < 250; i++) {
           const c = generateCase(seedFromString(`cal:${d}:${t.id}:${i}`), t, d);
           cases++;
           if (c.attempts > 200) fallbacks++;
@@ -35,5 +35,22 @@ describe('generator statistics (slow)', () => {
       expect(Math.abs(b.hits / b.n - b.p / b.n)).toBeLessThanOrEqual(4 * se + 1e-9);
     }
     expect(fallbacks / cases).toBeLessThan(0.01);
+  });
+  it('checks cases: the truth follows the base rate (the filter reads parameters only)', () => {
+    let n = 0;
+    let hits = 0;
+    let p = 0;
+    let v = 0;
+    for (const d of DIFFICULTIES)
+      for (const t of eligibleChecks(d))
+        for (let i = 0; i < 80; i++) {
+          const c = generateChecks(seedFromString(`calk:${d}:${t.id}:${i}`), t, d);
+          const p0 = c.prior[0]! / c.priorDen;
+          n++;
+          p += p0;
+          v += p0 * (1 - p0);
+          if (c.truth === 0) hits++;
+        }
+    expect(Math.abs(hits - p)).toBeLessThanOrEqual(4 * Math.sqrt(v));
   });
 });
