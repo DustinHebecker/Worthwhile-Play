@@ -29,10 +29,10 @@ jobs:
       - run: pnpm check:licenses
       - run: pnpm lint
       - run: pnpm typecheck
-      # The long AI-vs-AI suites (*.long.test.ts) run in their own job below, without coverage.
-      # The *.slow.test.ts files (AI strength, statistics, oracle searches: seconds each) run here;
-      # only mutation testing leaves them out (vitest.mutation.config.ts, ADR 0021).
-      - run: pnpm coverage --exclude '**/*.long.test.ts'
+      # The long AI-vs-AI suites (*.long.test.ts) and the slow suites (*.slow.test.ts: AI strength,
+      # statistics, oracle searches, seconds each) run in the `long` job below, without coverage
+      # instrumentation, which made them time out here (ADR 0021 amendment 2026-10-24).
+      - run: pnpm coverage --exclude '**/*.long.test.ts' --exclude '**/*.slow.test.ts'
       - name: Development build (no legal data; must still succeed)
         run: pnpm build
       - uses: actions/upload-artifact@v7
@@ -42,7 +42,7 @@ jobs:
           retention-days: 7
 
   long:
-    name: Long AI suites (relay-command levels and strategy tournament)
+    name: Long and slow suites (AI tournaments, strength, statistics, oracle searches)
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -53,7 +53,8 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm vitest run $(git ls-files '*.long.test.ts')
+      # The chess puzzle data file has its own job (full re-verification).
+      - run: pnpm vitest run $(git ls-files '*.long.test.ts' '*.slow.test.ts' ':!packages/games/chess/test/puzzle-data.slow.test.ts')
 
   puzzles:
     name: Chess puzzles (full re-verification)

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { isRecord } from '@wp/game-core';
-import { BASE_RULESET, NEUTRAL, archetypeOf, canonicalJson, cellOf, findPath, observe, passable, DEFAULT_DOCTRINE, computeNetwork, createWorld, frameIndexIn, frameOf, initialIntel, observedCells, resolveTurn, validateCommand, worldHash, type Command, type Entity, type World } from '@wp/strategy-engine';
+import { BASE_RULESET, NEUTRAL, archetypeOf, canonicalJson, cellOf, findPath, observe, passable, DEFAULT_DOCTRINE, computeNetwork, createWorld, frameIndexIn, frameOf, teamOf, initialIntel, observedCells, resolveTurn, validateCommand, worldHash, type Command, type Entity, type World } from '@wp/strategy-engine';
 import { APPROACH_RADIUS, approachCells, assaultPlan, objectiveOf, planAi, type Difficulty } from '../src/ai';
 import {
   cancelJob,
@@ -52,9 +52,14 @@ import {
   personsLeft,
   rulesOf,
   type Seat,
+  teamShapes,
+  teamShapeOf,
+  teamValue,
+  TEAM_LAYOUTS,
+  opponentValue,
 } from '../src/rules';
 import { FIELD_EXERCISE, opponentCounts, RIDGE_VALLEY, SCENARIOS } from '../src/scenarios';
-import { fromScenario } from '../src/maps';
+import { customSpec, fromScenario } from '../src/maps';
 import { generateMap } from '../src/generator';
 
 /** A side's plan from its own observation (default: the game's default level). */
@@ -1835,5 +1840,113 @@ describe('storms against a ringed post (2026-10-21)', () => {
   it('a fighter close to a post walled in by known towers stays where it is rather than step to a cell no nearer', () => {
     const { approach, at } = world(ESCALATE, 'tower-gun', [{ kind: 'rifles', x: 3, y: 4 }]);
     expect(approach(at(3, 4))).toEqual({ x: 3, y: 4 });
+  });
+});
+
+describe('teams (owner decisions 2026-10-24)', () => {
+  const corners = SCENARIOS.find((x) => x.id === 'four-corners')!;
+  const post = (w: World, side: number) => w.entities.find((e) => e.side === side && e.kind === 'command-post')!;
+  /** Plays `turns` turns with every side planned by the AI; returns the states and every engine event. */
+  const play = (s0: RcState, turns: number) => {
+    let s = s0;
+    const states: RcState[] = [];
+    for (let t = 0; t < turns && s.phase === 'plan'; t++) {
+      for (const c of planAi(observe(s.world, rulesOf(s), PLAYER), rulesOf(s), 'normal')) s = planOrder(s, c.unit, c.order, c.doctrine) ?? s;
+      s = lockTurn(s);
+      states.push(s);
+    }
+    return { s, states };
+  };
+
+  it('maps with four bases offer 2 against 1 with two opponents and 2 against 2, 3 against 1 and 1 against 3 with three; two-side maps none', () => {
+    expect(teamShapes(corners, 1)).toEqual([]);
+    expect(teamShapes(corners, 2)).toEqual(['2v1-next', '2v1-across']);
+    expect(teamShapes(corners, 3)).toEqual(['2v2-next', '2v2-across', '3v1', '1v3']);
+    expect(teamShapes(FIELD_EXERCISE, 1)).toEqual([]);
+    const four = customSpec(generateMap(16, 12, 3, '', 4));
+    expect(teamShapes(four, 3)).toEqual(teamShapes(corners, 3));
+    // "Next" is a corner beside the player, "across" the opposite one.
+    const s = newGame(1, corners, 'normal', 12, false, null, 2, [], false, null, '2v1-next');
+    const d = (a: number, b: number) => Math.hypot(post(s.world, a).x - post(s.world, b).x, post(s.world, a).y - post(s.world, b).y);
+    expect(d(0, 1)).toBeLessThan(d(0, 2));
+  });
+
+  it('a team game sets the world\'s teams; a shape the map does not offer for the count, or several persons, give free-for-all', () => {
+    for (const shape of ['2v2-next', '2v2-across', '3v1', '1v3'] as const) {
+      const s = newGame(1, corners, 'normal', 12, false, null, 3, [], false, null, shape);
+      expect(s.world.teams).toEqual([...TEAM_LAYOUTS[shape]]);
+      expect(teamShapeOf(s.world)).toBe(shape);
+      expect(isValidState(JSON.parse(JSON.stringify(s)))).toBe(true);
+    }
+    expect(newGame(1, corners, 'normal', 12, false, null, 2, [], false, null, '2v2-next').world.teams).toBeUndefined();
+    expect(newGame(1, FIELD_EXERCISE, 'normal', 12, false, null, 1, [], false, null, '2v1-next').world.teams).toBeUndefined();
+    expect(newGame(1, corners, 'normal', 12, false, null, 3, ['person', 'person'], false, null, '2v2-next').world.teams).toBeUndefined();
+    expect(() => initialWorld(corners, 1, 2, false, '3v1')).toThrow(RangeError);
+  });
+
+  it('a crafted save is refused: teams that are no offered shape, teams on a two-side map, teams in a hot-seat game', () => {
+    const s = newGame(1, corners, 'normal', 12, false, null, 3, [], false, null, '2v2-next');
+    const bad: [string, (x: RcState) => void][] = [
+      ['teams that are no shape', (x) => { x.world.teams = [0, 1, 1, 0]; }],
+      ['a shape for another count', (x) => { x.world.teams = [0, 0, 1]; }],
+      ['teams with several persons', (x) => { x.seats = ['person', 'person', 'computer', 'computer']; }]
+    ];
+    for (const [label, corrupt] of bad) {
+      const x = structuredClone(s);
+      corrupt(x);
+      expect(isValidState(x), label).toBe(false);
+    }
+    const two = structuredClone(newGame(1));
+    two.world.teams = [0, 1];
+    expect(isValidState(two)).toBe(false);
+  });
+
+  it('allies never fire on each other, every turn is a valid save, and the log replays to the same world', () => {
+    for (const shape of ['2v2-next', '3v1'] as const) {
+      const s0 = newGame(4, corners, 'normal', 20, false, null, 3, [], false, null, shape);
+      const team = (id: number, w: World) => teamOf(w, w.entities.find((e) => e.id === id)?.side ?? -1);
+      let world = s0.world;
+      for (let t = 0; t < 14; t++) {
+        const rules = rulesOf(s0);
+        const plans = Array.from({ length: world.sides }, (_, side) => (world.out?.includes(side) ? [] : planAi(observe(world, rules, side), rules, 'normal')));
+        const r = resolveTurn(world, rules, plans);
+        for (const e of r.events) if (e.t === 'fire') expect(team(e.id, world) === team(e.target, world) && team(e.id, world) >= 0, `${shape} turn ${t}`).toBe(false);
+        world = r.world;
+      }
+      const { s, states } = play(s0, 14);
+      for (const x of states) expect(isValidState(JSON.parse(JSON.stringify(x))), `${shape} turn ${x.world.turn}`).toBe(true);
+      expect(canonicalJson(replay(s.seed, s.log, corners, 3, false, shape))).toBe(canonicalJson(s.world));
+    }
+  }, 120_000);
+
+  it('the result: won when every hostile side is out (also with the ally out), lost when the player is out (also when its team wins); strength counts the allies still in', () => {
+    const s = newGame(1, corners, 'normal', 12, false, null, 3, [], false, null, '2v2-next');
+    const without = (sides: number[]) => {
+      const w = structuredClone(s.world);
+      w.entities = w.entities.filter((e) => !sides.includes(e.side));
+      w.out = [...sides].sort();
+      return w;
+    };
+    expect(outcome(without([2, 3]), null)).toBe('won');
+    expect(outcome(without([1, 2, 3]), null)).toBe('won');
+    expect(outcome(without([0, 2, 3]), null)).toBe('draw');
+    expect(outcome(without([0]), null)).toBe('lost');
+    expect(outcome(without([1]), null)).toBeNull();
+    // At the turn limit the player's team (the player and its ally) is weighed against the strongest hostile team.
+    const w = structuredClone(s.world);
+    w.turn = 12;
+    expect(teamValue(w, PLAYER)).toBe(sideValue(w, 0) + sideValue(w, 1));
+    expect(opponentValue(w)).toBe(sideValue(w, 2) + sideValue(w, 3));
+    expect(outcome(w, 12)).toBe('draw');
+    w.supply![1] = (w.supply![1] ?? 0) + 10;
+    expect(outcome(w, 12)).toBe('won');
+    // An ally that is out counts nothing.
+    const lone = without([1]);
+    lone.turn = 12;
+    expect(teamValue(lone, PLAYER)).toBe(sideValue(lone, 0));
+    expect(outcome(lone, 12)).toBe('lost');
+    // Without teams nothing changes: the player's own strength against the strongest opponent.
+    const ffa = newGame(1, corners, 'normal', 12, false, null, 3).world;
+    expect(teamValue(ffa, PLAYER)).toBe(sideValue(ffa, PLAYER));
   });
 });
