@@ -39,6 +39,8 @@ const hi: UiCatalogue = {
   'game.offline': 'ऑफ़लाइन चलता है',
   'game.network': 'इंटरनेट ज़रूरी',
   'game.aiOptional': 'वैकल्पिक AI',
+  'game.preview': 'अभी तैयार हो रहा है',
+  'game.shownInEnglish': 'इस खेल का अनुवाद अभी चल रहा है, इसलिए फ़िलहाल यह अंग्रेज़ी में दिखाया जाता है।',
   'game.skills': 'अभ्यास',
   'game.howToPlay': 'कैसे खेलें',
   'game.back': 'सभी खेल',

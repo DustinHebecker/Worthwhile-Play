@@ -177,6 +177,7 @@ main:focus { outline: none; }
 .badges { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-block-start: 0.25rem; }
 .badge { font-size: 0.8rem; padding: 0.1rem 0.5rem; border-radius: 999px; background: var(--wp-surface-2); border: 1px solid var(--wp-border); }
 .badge.warn { border-style: dashed; }
+.badge.preview { font-weight: 600; border-color: var(--wp-accent); }
 .principles { margin-block: 2rem; }
 .principles ul { padding-inline-start: 1.2rem; }
 .prose { max-width: 44rem; }

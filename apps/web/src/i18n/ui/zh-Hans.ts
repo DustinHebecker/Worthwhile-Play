@@ -39,6 +39,8 @@ const zhHans: UiCatalogue = {
   'game.offline': '可离线使用',
   'game.network': '需要联网',
   'game.aiOptional': '可选 AI',
+  'game.preview': '开发中',
+  'game.shownInEnglish': '此游戏仍在翻译中，目前以英语显示。',
   'game.skills': '锻炼',
   'game.howToPlay': '玩法说明',
   'game.back': '全部游戏',

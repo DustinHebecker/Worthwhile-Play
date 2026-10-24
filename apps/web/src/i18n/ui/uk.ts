@@ -39,6 +39,8 @@ const uk: UiCatalogue = {
   'game.offline': 'Працює офлайн',
   'game.network': 'Потрібен інтернет',
   'game.aiOptional': 'ШІ за бажанням',
+  'game.preview': 'У розробці',
+  'game.shownInEnglish': 'Цю гру ще перекладають, тож поки що вона показується англійською.',
   'game.skills': 'Тренує',
   'game.howToPlay': 'Як грати',
   'game.back': 'Усі ігри',

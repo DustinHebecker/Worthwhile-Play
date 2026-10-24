@@ -39,6 +39,8 @@ const ko: UiCatalogue = {
   'game.offline': '오프라인 작동',
   'game.network': '인터넷 필요',
   'game.aiOptional': 'AI 선택 사항',
+  'game.preview': '개발 중',
+  'game.shownInEnglish': '이 게임은 아직 번역 중이라 당분간 영어로 표시됩니다.',
   'game.skills': '연습하는 능력',
   'game.howToPlay': '게임 방법',
   'game.back': '모든 게임',

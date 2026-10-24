@@ -39,6 +39,8 @@ const tr: UiCatalogue = {
   'game.offline': 'Çevrimdışı çalışır',
   'game.network': 'İnternet gerekir',
   'game.aiOptional': 'İsteğe bağlı yapay zekâ',
+  'game.preview': 'Geliştiriliyor',
+  'game.shownInEnglish': 'Bu oyunun çevirisi henüz sürüyor; şimdilik İngilizce gösteriliyor.',
   'game.skills': 'Çalıştırdığı beceriler',
   'game.howToPlay': 'Nasıl oynanır',
   'game.back': 'Tüm oyunlar',

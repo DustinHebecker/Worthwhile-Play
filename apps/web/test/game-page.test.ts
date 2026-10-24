@@ -656,3 +656,82 @@ describe('game page: one start screen with host-drawn settings (ADR 0017)', () =
     expect(q(main, 'difficulty')!.querySelector('legend')!.textContent).toBe('game.difficulty');
   });
 });
+
+describe('game page: a preview game shipping only some locales (ADR 0003 amendment 2026-10-24)', () => {
+  const messages = {
+    en: { title: 'Many Days', tagline: 'Plan a week', rules: 'Choose what to do.', 'difficulty.calm': 'Calm', 'set.pace': 'Pace', 'pace.slow': 'Slow', 'pace.fast': 'Fast' },
+    de: { title: 'Viele Tage', tagline: 'Plane eine Woche', rules: 'Wähle, was du tust.', 'difficulty.calm': 'Ruhig', 'set.pace': 'Tempo', 'pace.slow': 'Langsam', 'pace.fast': 'Schnell' }
+  };
+  const preview = (id: string, preload?: (locale: string) => Promise<void>) =>
+    fakeGame(id, preload, { status: 'preview', locales: ['en', 'de'], difficulties: ['calm'], messages }, {
+      settings: [{ kind: 'choice', id: 'pace', labelKey: 'set.pace', values: ['slow', 'fast'], valueKey: 'pace', default: 'slow' }]
+    });
+  const openIn = (id: string, locale: AppContext['locale'], seed?: number) => {
+    const main = document.createElement('main');
+    document.body.append(main);
+    cleanups.push(renderGamePage(main, app(locale), { name: 'game', id, ...(seed !== undefined ? { seed } : {}) }));
+    return main;
+  };
+
+  it.each(['fr', 'ar'] as const)('in %s: shows the game in English, marked lang="en" dir="ltr", with no missing-key warnings', async (locale) => {
+    const warn = vi.spyOn(console, 'warn');
+    try {
+      const log = preview(`preview-${locale}`, async () => undefined);
+      const main = openIn(`preview-${locale}`, locale);
+      await vi.waitFor(() => expect(main.querySelector('[data-testid="start-game"]')).not.toBeNull());
+      // The game is preloaded and created in English: its translator is an English one.
+      await vi.waitFor(() => expect(log).toContain('preload:en'));
+      const h1 = main.querySelector('h1')!;
+      expect(h1.textContent).toBe('Many Days');
+      expect([h1.getAttribute('lang'), h1.getAttribute('dir')]).toEqual(['en', 'ltr']);
+      expect(main.querySelector('.game-header .lead')?.getAttribute('lang')).toBe('en');
+      expect(main.querySelector('.rules p')?.textContent).toBe('Choose what to do.');
+      expect(main.querySelector('[data-testid="shown-in-english"]')?.textContent).toBe('game.shownInEnglish');
+      expect(main.querySelector('[data-testid="preview-badge"]')?.textContent).toBe('game.preview');
+      // Start screen: the game's labels in English (marked), the host's own words not.
+      const pace = main.querySelector('[data-testid="setting-pace"]')!;
+      expect(pace.querySelector('legend')?.textContent).toBe('Pace');
+      expect(pace.querySelector('legend')?.getAttribute('lang')).toBe('en');
+      expect([...pace.querySelectorAll('.setting-option span')].map((el) => [el.textContent, el.getAttribute('lang')])).toEqual([['Slow', 'en'], ['Fast', 'en']]);
+      const difficulty = main.querySelector('[data-testid="difficulty"]')!;
+      expect(difficulty.querySelector('legend')?.getAttribute('lang')).toBeNull();
+      expect(difficulty.querySelector('.setting-option span')?.textContent).toBe('Calm');
+      main.querySelector<HTMLFormElement>('[data-testid="start-form"]')!.requestSubmit();
+      await vi.waitFor(() => expect(log).toContain('create:en'));
+      const root = main.querySelector('[data-testid="game-root"]')!;
+      expect([root.getAttribute('lang'), root.getAttribute('dir')]).toEqual(['en', 'ltr']);
+      expect(contexts.get(`preview-${locale}`)!.t('rules')).toBe('Choose what to do.');
+      expect(log).not.toContain(`preload:${locale}`);
+      expect(warn.mock.calls.filter(([message]) => String(message).includes('[i18n]'))).toEqual([]);
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it('in a shipped locale (de): the game in German, nothing marked, no note', async () => {
+    const log = preview('preview-de', async () => undefined);
+    const main = openIn('preview-de', 'de', 3);
+    await vi.waitFor(() => expect(log).toContain('create:de'));
+    expect(log).toContain('preload:de');
+    expect(main.querySelector('h1')?.textContent).toBe('Viele Tage');
+    expect(main.querySelector('h1')?.hasAttribute('lang')).toBe(false);
+    expect(main.querySelector('[data-testid="game-root"]')?.hasAttribute('lang')).toBe(false);
+    expect(main.querySelector('[data-testid="shown-in-english"]')).toBeNull();
+    expect(main.querySelector('[data-testid="preview-badge"]')?.textContent).toBe('game.preview');
+  });
+
+  it('a game without `locales` keeps the strict behaviour: same locale, missing keys still reported, no badge', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    try {
+      const log = fakeGame('strict');
+      const main = openIn('strict', 'fr', 3);
+      await vi.waitFor(() => expect(log).toContain('create:fr'));
+      expect(main.querySelector('h1')?.textContent).toBe('Title strict');
+      expect(main.querySelector('h1')?.hasAttribute('lang')).toBe(false);
+      expect(main.querySelector('[data-testid="preview-badge"]')).toBeNull();
+      if (import.meta.env.DEV) expect(warn).toHaveBeenCalledWith('[i18n] strict: missing "title" in fr');
+    } finally {
+      warn.mockRestore();
+    }
+  });
+});

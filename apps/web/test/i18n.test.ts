@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { gameLocales } from '@wp/game-core';
 import { SUPPORTED_LOCALES } from '@wp/localization';
 import { gameCatalogueMessages, isLocaleLoaded, LEARNING_UI_MESSAGES, LOCALE_LOADERS, loadLocale, UI_MESSAGES } from '../src/i18n';
 import { GAMES } from '../src/registry';
@@ -16,8 +17,10 @@ describe('per-locale message loading', () => {
     expect(Object.keys(UI_MESSAGES).sort()).toEqual(['de', 'en']);
     expect(Object.keys(LEARNING_UI_MESSAGES).sort()).toEqual(['de', 'en']);
     for (const { metadata } of GAMES) {
-      expect(Object.keys(metadata.messages).sort(), metadata.id).toEqual(['de', 'en']);
-      expect(metadata.messages.de?.title, metadata.id).toBeTruthy();
+      // A preview game has only the locales it ships (ADR 0003 amendment); every game ships English.
+      const shipped = ['de', 'en'].filter((locale) => (gameLocales(metadata) as readonly string[]).includes(locale));
+      expect(Object.keys(metadata.messages).sort(), metadata.id).toEqual(shipped);
+      if (shipped.includes('de')) expect(metadata.messages.de?.title, metadata.id).toBeTruthy();
       expect(gameCatalogueMessages(metadata.id)).toBe(metadata.messages);
     }
     expect(isLocaleLoaded('de')).toBe(true);
@@ -42,8 +45,10 @@ describe('per-locale message loading', () => {
       const messages = await LOCALE_LOADERS[locale]();
       expect(Object.keys(messages.ui).sort(), locale).toEqual(Object.keys(en.ui).sort());
       expect(Object.keys(messages.learning).sort(), locale).toEqual(Object.keys(en.learning).sort());
-      expect(Object.keys(messages.games).sort(), locale).toEqual(Object.keys(en.games).sort());
-      for (const [id, table] of Object.entries(en.games)) expect(Object.keys(messages.games[id] ?? {}).sort(), `${locale}/${id}`).toEqual(Object.keys(table).sort());
+      // Every game that ships the locale (all of them but preview games with `metadata.locales`).
+      const shipping = Object.keys(en.games).filter((id) => gameLocales(GAMES.find((g) => g.metadata.id === id)!.metadata).includes(locale));
+      expect(Object.keys(messages.games).sort(), locale).toEqual(shipping.sort());
+      for (const [id, table] of Object.entries(en.games).filter(([id]) => shipping.includes(id))) expect(Object.keys(messages.games[id] ?? {}).sort(), `${locale}/${id}`).toEqual(Object.keys(table).sort());
     }
     expect(Object.keys(UI_MESSAGES).sort()).toEqual([...SUPPORTED_LOCALES].sort());
   });
