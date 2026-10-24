@@ -1,90 +1,85 @@
 import type { ContentText } from './types';
 
-/**
- * English (source) wording; the reference for every translation.
- * Writing rules: no digits in sentences (numbers are shown in structured rows); no person names; hypotheses are
- * things, places, animals or causes. Neutral and echo clues always show, so `notSeen` repeats `seen`.
- */
 export const content: ContentText = {
   templates: {
     'c-parcel': {
-      title: 'The blue parcel',
-      story: 'A parcel without a sender has arrived at the corner shop. It must come from one of the warehouses that deliver to this street.',
-      lead: 'Parcels on this street come from:',
-      hyps: { north: 'Warehouse North', south: 'Warehouse South', east: 'Warehouse East' },
+      title: 'Niebieska paczka',
+      story: 'Do sklepu na rogu przyszła paczka bez nadawcy. Musi pochodzić z jednego z magazynów, które dowożą na tę ulicę.',
+      lead: 'Paczki na tej ulicy przychodzą z:',
+      hyps: { north: 'Magazyn Północ', south: 'Magazyn Południe', east: 'Magazyn Wschód' },
       clues: {
-        blue: { label: 'Wrapped in blue paper', seen: 'The parcel is wrapped in blue paper.', notSeen: 'The parcel is not wrapped in blue paper.' },
-        'brown-tape': { label: 'Sealed with brown tape', seen: 'It is sealed with brown tape.', notSeen: 'It is not sealed with brown tape.' },
-        smudge: { label: 'Smudged label', seen: 'The address label is smudged.', notSeen: 'The address label is clean.' },
-        string: { label: 'Tied with string', seen: 'It is tied with string.', notSeen: 'It is not tied with string.' },
-        tuesday: { label: 'Arrived on a Tuesday', seen: 'It arrived on a Tuesday. All the warehouses deliver on every weekday.', notSeen: 'It arrived on a Tuesday. All the warehouses deliver on every weekday.' },
-        'echo-blue': { label: 'The neighbour saw it too', seen: 'The neighbour also says the parcel was blue — she saw the same parcel.', notSeen: 'The neighbour also says the parcel was blue — she saw the same parcel.' }
+        blue: { label: 'W niebieskim papierze', seen: 'Paczka jest owinięta niebieskim papierem.', notSeen: 'Paczka nie jest owinięta niebieskim papierem.' },
+        'brown-tape': { label: 'Zaklejona brązową taśmą', seen: 'Jest zaklejona brązową taśmą.', notSeen: 'Nie jest zaklejona brązową taśmą.' },
+        smudge: { label: 'Rozmazana etykieta', seen: 'Etykieta z adresem jest rozmazana.', notSeen: 'Etykieta z adresem jest czysta.' },
+        string: { label: 'Przewiązana sznurkiem', seen: 'Jest przewiązana sznurkiem.', notSeen: 'Nie jest przewiązana sznurkiem.' },
+        tuesday: { label: 'Przyszła we wtorek', seen: 'Przyszła we wtorek. Wszystkie magazyny dowożą w każdy dzień roboczy.', notSeen: 'Przyszła we wtorek. Wszystkie magazyny dowożą w każdy dzień roboczy.' },
+        'echo-blue': { label: 'Sąsiadka też ją widziała', seen: 'Sąsiadka też mówi, że paczka była niebieska – widziała tę samą paczkę.', notSeen: 'Sąsiadka też mówi, że paczka była niebieska – widziała tę samą paczkę.' }
       }
     },
     'c-garden': {
-      title: 'The nibbled strawberries',
-      story: 'Someone has been at the strawberries overnight. In this garden, a few kinds of visitors are known to snack on them.',
-      lead: 'On nights when strawberries get nibbled, the visitor is:',
-      hyps: { birds: 'Birds', snails: 'Snails', hedgehog: 'A hedgehog' },
+      title: 'Nadgryzione truskawki',
+      story: 'W nocy ktoś dobrał się do truskawek. W tym ogrodzie podjada je kilka rodzajów gości.',
+      lead: 'W noce, gdy truskawki są nadgryzione, gościem jest:',
+      hyps: { birds: 'Ptaki', snails: 'Ślimaki', hedgehog: 'Jeż' },
       clues: {
-        slime: { label: 'Shiny trail', seen: 'There is a shiny trail on the path.', notSeen: 'There is no shiny trail.' },
-        pecks: { label: 'Small peck marks', seen: 'The fruit has small peck marks.', notSeen: 'There are no peck marks.' },
-        droppings: { label: 'Droppings under the hedge', seen: 'There are droppings under the hedge.', notSeen: 'There is nothing under the hedge.' },
-        'net-moved': { label: 'Net pushed aside', seen: 'The net over the bed is pushed aside.', notSeen: 'The net is still in place.' },
-        rain: { label: 'It rained last night', seen: 'It rained last night — all of them come out in the rain.', notSeen: 'It rained last night — all of them come out in the rain.' },
-        'echo-slime': { label: 'Seen again in the morning', seen: 'Your neighbour points out the same shiny trail.', notSeen: 'Your neighbour points out the same shiny trail.' }
+        slime: { label: 'Błyszczący ślad', seen: 'Na ścieżce jest błyszczący ślad.', notSeen: 'Nie ma błyszczącego śladu.' },
+        pecks: { label: 'Małe dziobnięcia', seen: 'Owoce mają małe ślady dziobania.', notSeen: 'Nie ma śladów dziobania.' },
+        droppings: { label: 'Odchody pod żywopłotem', seen: 'Pod żywopłotem są odchody.', notSeen: 'Pod żywopłotem nic nie ma.' },
+        'net-moved': { label: 'Odsunięta siatka', seen: 'Siatka nad grządką jest odsunięta.', notSeen: 'Siatka wciąż jest na miejscu.' },
+        rain: { label: 'W nocy padało', seen: 'W nocy padało – w deszczu wychodzą wszyscy.', notSeen: 'W nocy padało – w deszczu wychodzą wszyscy.' },
+        'echo-slime': { label: 'Widziany znów rano', seen: 'Sąsiad pokazuje ci ten sam błyszczący ślad.', notSeen: 'Sąsiad pokazuje ci ten sam błyszczący ślad.' }
       }
     },
     'c-rain': {
-      title: 'Did it rain overnight?',
-      story: 'You were away overnight and want to know whether the seedlings got rain or need watering now.',
-      lead: 'Nights at this time of year:',
-      hyps: { rained: 'It rained', dry: 'It stayed dry' },
+      title: 'Czy w nocy padało?',
+      story: 'Nie było cię w nocy w domu i chcesz wiedzieć, czy sadzonki dostały deszcz, czy trzeba je teraz podlać.',
+      lead: 'Noce o tej porze roku:',
+      hyps: { rained: 'Padało', dry: 'Było sucho' },
       clues: {
-        'wet-grass': { label: 'Wet grass', seen: 'The grass is wet (dew can wet it too).', notSeen: 'The grass is dry.' },
-        gauge: { label: 'Water in the rain gauge', seen: 'There is water in the rain gauge.', notSeen: 'The rain gauge is empty.' },
-        puddle: { label: 'Puddle by the gate', seen: 'There is a puddle by the gate.', notSeen: 'There is no puddle by the gate.' },
-        'snails-out': { label: 'Snails on the path', seen: 'Snails are out on the path.', notSeen: 'There are no snails on the path.' },
-        wind: { label: 'Leaves on the table', seen: 'Leaves have blown onto the table — it was windy either way.', notSeen: 'Leaves have blown onto the table — it was windy either way.' }
+        'wet-grass': { label: 'Mokra trawa', seen: 'Trawa jest mokra (rosa też ją moczy).', notSeen: 'Trawa jest sucha.' },
+        gauge: { label: 'Woda w deszczomierzu', seen: 'W deszczomierzu jest woda.', notSeen: 'Deszczomierz jest pusty.' },
+        puddle: { label: 'Kałuża przy furtce', seen: 'Przy furtce jest kałuża.', notSeen: 'Przy furtce nie ma kałuży.' },
+        'snails-out': { label: 'Ślimaki na ścieżce', seen: 'Na ścieżkę wyszły ślimaki.', notSeen: 'Na ścieżce nie ma ślimaków.' },
+        wind: { label: 'Liście na stole', seen: 'Na stół nawiało liści – wiało tak czy inaczej.', notSeen: 'Na stół nawiało liści – wiało tak czy inaczej.' }
       }
     },
     'c-bird': {
-      title: 'Which bird was at the feeder?',
-      story: 'You only caught a glimpse of a small brown bird at the feeder before it flew off. The shares here are invented for this feeder; real ones vary by place.',
-      lead: 'Small brown visitors at this feeder are:',
-      hyps: { finch: 'A finch', sparrow: 'A sparrow' },
+      title: 'Jaki ptak był przy karmniku?',
+      story: 'Tylko przez chwilę widziałeś małego brązowego ptaka przy karmniku, zanim odleciał. Udziały są tu wymyślone dla tego karmnika; prawdziwe zależą od miejsca.',
+      lead: 'Mali brązowi goście tego karmnika to:',
+      hyps: { finch: 'Zięba', sparrow: 'Wróbel' },
       clues: {
-        'red-patch': { label: 'A flash of red', seen: 'You saw a flash of red on its head.', notSeen: 'You saw no red at all.' },
-        ground: { label: 'Fed on the ground', seen: 'It fed on the ground below the feeder.', notSeen: 'It fed on the feeder itself.' },
-        song: { label: 'A twittering song', seen: 'It gave a twittering song.', notSeen: 'It only chirped.' },
-        group: { label: 'Came with a group', seen: 'It came with a small group.', notSeen: 'It came alone.' },
-        morning: { label: 'In the morning', seen: 'It was early morning — both come at that time.', notSeen: 'It was early morning — both come at that time.' }
+        'red-patch': { label: 'Błysk czerwieni', seen: 'Widziałeś błysk czerwieni na jego głowie.', notSeen: 'Nie widziałeś nic czerwonego.' },
+        ground: { label: 'Jadł na ziemi', seen: 'Jadł na ziemi pod karmnikiem.', notSeen: 'Jadł w samym karmniku.' },
+        song: { label: 'Świergotliwy śpiew', seen: 'Zaśpiewał świergotliwie.', notSeen: 'Tylko ćwierkał.' },
+        group: { label: 'Przyleciał w grupie', seen: 'Przyleciał z małą grupką.', notSeen: 'Przyleciał sam.' },
+        morning: { label: 'Rano', seen: 'Był wczesny ranek – o tej porze przylatują oba.', notSeen: 'Był wczesny ranek – o tej porze przylatują oba.' }
       }
     },
     'c-plant': {
-      title: 'The drooping houseplant',
-      story: 'The office plant is drooping and has yellow leaves. In this office, it is usually one of two things.',
-      lead: 'When plants here droop, the cause is:',
-      hyps: { water: 'Too much water', light: 'Too little light' },
+      title: 'Oklapnięta roślina doniczkowa',
+      story: 'Roślina w biurze oklapła i ma żółte liście. W tym biurze zwykle chodzi o jedną z dwóch rzeczy.',
+      lead: 'Gdy rośliny tutaj oklapną, przyczyną jest:',
+      hyps: { water: 'Za dużo wody', light: 'Za mało światła' },
       clues: {
-        'wet-soil': { label: 'Wet soil', seen: 'The soil is still wet two days after watering.', notSeen: 'The soil is dry.' },
-        leaning: { label: 'Leaning to the window', seen: 'It leans towards the window.', notSeen: 'It stands straight.' },
-        'soft-stem': { label: 'Soft stem base', seen: 'The base of the stem is soft.', notSeen: 'The stem is firm.' },
-        'pale-new': { label: 'Pale new leaves', seen: 'The new leaves are pale and small.', notSeen: 'The new leaves look healthy.' },
-        'pot-colour': { label: 'A blue pot', seen: 'It is in a blue pot — that changes nothing.', notSeen: 'It is in a blue pot — that changes nothing.' }
+        'wet-soil': { label: 'Mokra ziemia', seen: 'Ziemia jest wciąż mokra dwa dni po podlaniu.', notSeen: 'Ziemia jest sucha.' },
+        leaning: { label: 'Pochyla się do okna', seen: 'Pochyla się w stronę okna.', notSeen: 'Stoi prosto.' },
+        'soft-stem': { label: 'Miękka nasada łodygi', seen: 'Nasada łodygi jest miękka.', notSeen: 'Łodyga jest twarda.' },
+        'pale-new': { label: 'Blade nowe liście', seen: 'Nowe liście są blade i małe.', notSeen: 'Nowe liście wyglądają zdrowo.' },
+        'pot-colour': { label: 'Niebieska doniczka', seen: 'Stoi w niebieskiej doniczce – to niczego nie zmienia.', notSeen: 'Stoi w niebieskiej doniczce – to niczego nie zmienia.' }
       }
     },
     'c-bus': {
-      title: 'Why was the bus late?',
-      story: 'Your bus came forty minutes late this morning.',
-      lead: 'When this bus is very late, the reason is:',
-      hyps: { jam: 'A traffic jam', breakdown: 'A breakdown' },
+      title: 'Dlaczego autobus się spóźnił?',
+      story: 'Twój autobus spóźnił się dziś rano czterdzieści minut.',
+      lead: 'Gdy ten autobus bardzo się spóźnia, przyczyną jest:',
+      hyps: { jam: 'Korek', breakdown: 'Awaria' },
       clues: {
-        'others-late': { label: 'Other buses late too', seen: 'Other buses on the same road were late too.', notSeen: 'Other buses on the road were on time.' },
-        replacement: { label: 'A different bus came', seen: 'A different bus than usual came.', notSeen: 'The usual bus came.' },
-        announcement: { label: 'An announcement', seen: 'The display said: delay due to a technical fault.', notSeen: 'The display gave no reason.' },
-        'rush-hour': { label: 'During rush hour', seen: 'It was rush hour.', notSeen: 'It was a quiet time of day.' },
-        rain: { label: 'It was raining', seen: 'It was raining — at this stop that makes no difference.', notSeen: 'It was raining — at this stop that makes no difference.' }
+        'others-late': { label: 'Inne autobusy też spóźnione', seen: 'Inne autobusy na tej samej drodze też się spóźniły.', notSeen: 'Inne autobusy na drodze były punktualne.' },
+        replacement: { label: 'Przyjechał inny autobus', seen: 'Przyjechał inny autobus niż zwykle.', notSeen: 'Przyjechał zwykły autobus.' },
+        announcement: { label: 'Komunikat', seen: 'Tablica podawała: opóźnienie z powodu usterki technicznej.', notSeen: 'Tablica nie podała powodu.' },
+        'rush-hour': { label: 'W godzinach szczytu', seen: 'Były godziny szczytu.', notSeen: 'Była spokojna pora dnia.' },
+        rain: { label: 'Padał deszcz', seen: 'Padał deszcz – na tym przystanku nie ma to znaczenia.', notSeen: 'Padał deszcz – na tym przystanku nie ma to znaczenia.' }
       }
     }
   }
