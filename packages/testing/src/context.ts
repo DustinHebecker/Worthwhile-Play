@@ -1,4 +1,4 @@
-import type { GameContext, GameLibrary, GameModule, GameResult, SettingsEnv } from '@wp/game-core';
+import { gameLocale, type GameContext, type GameLibrary, type GameModule, type GameResult, type SettingsEnv } from '@wp/game-core';
 import { COMMON_MESSAGES, createTranslator, type SupportedLocale } from '@wp/localization';
 import { createGameLibrary, createMemoryLibraryStore, type LibraryStore } from '@wp/persistence';
 
@@ -33,7 +33,10 @@ export function createTestLibrary(gameId: string, store: LibraryStore = createMe
   return { library: createGameLibrary(store, gameId), store };
 }
 
-/** Builds a `GameContext` for unit tests (requires a DOM, e.g. `// @vitest-environment jsdom`). */
+/**
+ * Builds a `GameContext` for unit tests (requires a DOM, e.g. `// @vitest-environment jsdom`). Like the app, a game
+ * that declares `metadata.locales` gets an English translator in a UI `locale` it does not ship (ADR 0003 amendment).
+ */
 export function createTestContext(
   module: GameModule<unknown>,
   locale: SupportedLocale = 'en',
@@ -45,7 +48,7 @@ export function createTestContext(
   const missingKeys: string[] = [];
   document.body.appendChild(root);
   const t = createTranslator({
-    locale,
+    locale: gameLocale(module.metadata, locale),
     sources: [module.metadata.messages, COMMON_MESSAGES],
     onMissing: (key) => missingKeys.push(key)
   });
