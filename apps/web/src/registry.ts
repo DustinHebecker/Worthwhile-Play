@@ -22,13 +22,14 @@ const entry = <S>(id: string, load: () => Promise<{ default: GameModule<S> }>): 
 
 /**
  * Catalogue order = order of this list (owner, 2026-10-14). Adding a game: one line here + a package under packages/games.
- * 1. The large games first: strategy (Relay Command), strategy/tower hybrid, Tower Defense, the point-and-click adventures
+ * 1. The large games first: strategy (Relay Command), the Lootlings card game (owner, 2026-10-17), strategy/tower hybrid, Tower Defense, the point-and-click adventures
  *    (each joins this group when it ships).
  * 2. Then the small games in the owner's order: Nonogram, Orbit Links, Chess, Mine Logic, Letter Logic, Stack Duel,
  *    Skyscrapers, Lights Out, Crate Pusher, Laser Paths, Circuit, Memory; then the rest.
  */
 export const GAMES: readonly GameEntry[] = [
   entry('relay-command', () => import('@wp/game-relay-command')),
+  entry('card-quest', () => import('@wp/game-card-quest')),
   entry('nonogram', () => import('@wp/game-nonogram')),
   entry('node-conquest', () => import('@wp/game-node-conquest')),
   entry('chess', () => import('@wp/game-chess')),
@@ -43,7 +44,6 @@ export const GAMES: readonly GameEntry[] = [
   entry('memory', () => import('@wp/game-memory')),
   entry('poker', () => import('@wp/game-poker')),
   entry('skat', () => import('@wp/game-skat')),
-  entry('card-quest', () => import('@wp/game-card-quest')),
   entry('mastermind', () => import('@wp/game-mastermind')),
   entry('black-box', () => import('@wp/game-black-box')),
   entry('rule-discovery', () => import('@wp/game-rule-discovery')),
@@ -75,6 +75,7 @@ export const GAMES: readonly GameEntry[] = [
   entry('briefing-game', () => import('@wp/game-briefing-game')),
   entry('compression-challenge', () => import('@wp/game-compression-challenge')),
   entry('mini-optimizer', () => import('@wp/game-mini-optimizer')),
+  entry('pixel-peel', () => import('@wp/game-pixel-peel')),
   entry('fermi-lab', () => import('@wp/game-fermi-lab'))
 ];
 

@@ -123,6 +123,9 @@ export const ja: Catalogue = {
   'act.escape': '今すぐ逃げる',
   'act.curse': '{name}を呪う',
   'act.upgrade': '{name}に取りつける',
+  'eq.attached': '{name}に取りつけ済み',
+  'gear.upgraded': '{item}（＋{upgrades}）',
+  'detail.total': '{upgrades}込みで合計{n}',
   'sell.title': '売るアイテムと使い切りカードを選ぼう。価値{sum} → レベル+{levels}。',
   'sell.need': '価値{rate}ポイントごとに1レベル（勝利のレベルにはならない）。',
 
@@ -342,5 +345,32 @@ export const ja: Catalogue = {
   'log.give.toYou': '{name} ― カード{n}枚をきみへ。',
   'log.curse.toYou': '{name} ― きみに呪い：{card}。',
   // Reveal pending
-  'next.reveal': 'カードにやられた：読んだら「続ける」を押そう。'
+  'next.reveal': 'カードにやられた：読んだら「続ける」を押そう。',
+  // K3: worlds Spaceloot and Office
+  'world.sl': 'スペースお宝 ― クルー対宇宙人',
+  'world.of': 'オフィス大混乱 ― 出社対在宅',
+  'setup.worlds': 'ワールド',
+  'setup.worldModes.random': 'ランダム',
+  'setup.worldModes.pick': '自分で選ぶ',
+  'setup.worlds.random': 'ランダム：新しいゲームごとに、ワールド1つか2つの組み合わせを抽選。',
+  'setup.worlds.hint': '複数のワールドをまとめて混ぜる。何も選ばなければランダム。',
+  'family.crew': '船のクルー',
+  'family.alien': '宇宙人',
+  'family.office': '出社派',
+  'family.remote': '在宅派',
+  'set.away-team': '本格・上陸班装備',
+  'set.tourist-kit': '本格・宇宙観光セット',
+  'set.video-call': 'ビデオ会議対応',
+  'set.couch-kit': '本格・ソファ仕事セット',
+  // Worlds Fridge and Railway
+  'world.fd': '冷蔵庫探検隊 ― 新鮮食品対残り物',
+  'world.rw': 'ご乗車ください ― 乗客対鉄道員',
+  'family.fresh': '新鮮食品',
+  'family.leftover': '残り物',
+  'family.passenger': '乗客',
+  'family.railstaff': '鉄道員',
+  'set.fridge-raider': '真夜中の冷蔵庫あさり',
+  'set.chef-kit': '本格・シェフ装備',
+  'set.conductor-kit': '本格・車掌装備',
+  'set.commuter-kit': 'ベテラン通勤者セット'
 };

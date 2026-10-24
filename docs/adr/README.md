@@ -21,3 +21,4 @@ Short, durable records of decisions that are not obvious from the code. New ADR:
 | [0015](0015-setup-in-game.md) | Games whose first screen is their own setup (`setupInGame`) |
 | [0016](0016-shared-playing-cards.md) | Shared playing-card package (`@wp/cards`) |
 | [0017](0017-start-screen-settings.md) | One start screen with host-drawn settings (amends 0002, narrows 0015) |
+| [0021](0021-mutation-budget.md) | Mutation-testing budget: changed lines on PRs, a rotating weekly sample, full runs on demand |

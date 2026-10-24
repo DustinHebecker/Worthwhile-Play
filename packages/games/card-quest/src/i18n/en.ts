@@ -13,8 +13,17 @@ export const en = {
   'difficulty.sharp': 'Sharp',
 
   // Setup
-  // World names: shown again once the start screen offers a choice of worlds (K3, Spaceloot).
+  // Worlds: one start-screen toggle each; the chosen ones are shuffled into one pile.
   'world.kz': 'Kampfzwerge — dwarves against garden gnomes',
+  'world.sl': 'Spaceloot — the crew against aliens',
+  'world.of': 'Office Chaos — the office against the home office',
+  'world.fd': 'Fridge Expedition — fresh food against leftovers',
+  'world.rw': 'All Aboard — passengers against the railway staff',
+  'setup.worlds': 'Worlds',
+  'setup.worldModes.random': 'Random',
+  'setup.worldModes.pick': 'Choose',
+  'setup.worlds.random': 'Random: one world or a mix of two, drawn for each new game.',
+  'setup.worlds.hint': 'Several worlds are shuffled together. None ticked: random.',
   'setup.opponents': 'Computer players',
   'setup.roundLimit': 'Round limit',
   'setup.roundLimit.hint': 'With a limit, the highest level wins after the last round.',
@@ -133,6 +142,9 @@ export const en = {
   'act.escape': 'Escape now',
   'act.curse': 'Curse {name}',
   'act.upgrade': 'Attach to {name}',
+  'eq.attached': 'Attached to {name}',
+  'gear.upgraded': '{item} (+ {upgrades})',
+  'detail.total': 'With {upgrades}: {n} in total',
   'sell.title': 'Select items and one-shots to sell. Value {sum} → level +{levels}.',
   'sell.need': 'Every {rate} value points = 1 level (not the winning level).',
 
@@ -182,6 +194,14 @@ export const en = {
   'class.junk': 'junk',
   'family.fairytale': 'fairy-tale dwarves',
   'family.garden': 'garden gnomes',
+  'family.crew': 'the ship’s crew',
+  'family.alien': 'aliens',
+  'family.office': 'office people',
+  'family.remote': 'home-office people',
+  'family.fresh': 'fresh food',
+  'family.leftover': 'leftovers',
+  'family.passenger': 'passengers',
+  'family.railstaff': 'railway staff',
   'slot.head': 'Head',
   'slot.body': 'Body',
   'slot.feet': 'Feet',
@@ -191,6 +211,14 @@ export const en = {
   'slot.big': 'big',
   'set.mining-gear': 'Proper mining gear',
   'set.gnome-outfit': 'Proper gnome outfit',
+  'set.away-team': 'Away-team kit',
+  'set.tourist-kit': 'Space-tourist kit',
+  'set.video-call': 'Ready for the video call',
+  'set.couch-kit': 'Couch-office kit',
+  'set.fridge-raider': 'Midnight fridge raider',
+  'set.chef-kit': 'Proper chef’s kit',
+  'set.conductor-kit': 'Proper conductor’s kit',
+  'set.commuter-kit': 'Seasoned commuter kit',
 
   // Rules text fragments
   'r.level': 'Level {n}',

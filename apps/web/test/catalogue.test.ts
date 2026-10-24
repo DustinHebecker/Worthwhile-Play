@@ -29,8 +29,9 @@ describe('game registry', () => {
 
   it("lists the games in the owner's order: the large games first, then the favourite small games", () => {
     const ids = GAMES.map((g) => g.metadata.id);
-    expect(ids.slice(0, 13)).toEqual([
+    expect(ids.slice(0, 14)).toEqual([
       'relay-command',
+      'card-quest',
       'nonogram',
       'node-conquest',
       'chess',

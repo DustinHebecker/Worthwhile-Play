@@ -409,6 +409,8 @@ describe('Relay Command view', () => {
     // The full effect table sits behind "More".
     expect($('rc-card-vs').closest('details')).toBe($('rc-card-more'));
     expect($('rc-card-vs').querySelectorAll('th[scope="row"]')).toHaveLength(5);
+    // The rate of fire per turn, not per tick (owner, 2026-10-18): a Rifle Squad fires every tick, 6 ticks a turn.
+    expect($('rc-card-rate').textContent).toBe('6× per turn · direct fire');
     expect([...$('rc-card-vs').querySelectorAll('tr')].map((tr) => tr.textContent)).toEqual(['infantry100 %', 'light vehicle60 %', 'heavy armour20 %', 'structure30 %', 'air40 %']);
     // Segments on the roster scale: damage 6 of the roster's 25 fills 2 of 5; full health fills all 5.
     expect($('rc-card-damage').querySelectorAll('.rc-seg i.on')).toHaveLength(2);
@@ -612,6 +614,39 @@ describe('Relay Command view', () => {
     click('rc-lock');
     expect(size.disabled && seed.disabled && ($('rc-random-new') as HTMLButtonElement).disabled).toBe(true);
     expect($('rc-setup-summary').textContent).toContain(`Random map 24×16 · No. ${first.seed}`);
+  });
+
+  it('a random map for two or three opponents has four bases, one per corner; one opponent goes back to two sides; the editor starts blank on it', () => {
+    const scenario = $('rc-scenario') as HTMLSelectElement;
+    scenario.value = 'random';
+    scenario.dispatchEvent(new Event('change'));
+    const opponents = $('rc-opponents') as HTMLSelectElement;
+    expect($('rc-opponents-label').hidden).toBe(false);
+    expect([...opponents.options].map((o) => o.value)).toEqual(['1', '2', '3']);
+    expect(state().map!.seats).toBeUndefined();
+    const { seed } = state().random!;
+    opponents.value = '3';
+    opponents.dispatchEvent(new Event('change'));
+    expect(state().opponents).toBe(3);
+    expect(state().map!.seats).toBe(4);
+    expect(state().random).toEqual({ w: 16, h: 12, seed });
+    expect(state().world.sides).toBe(4);
+    expect(scenario.value).toBe('random');
+    // Two opponents: the same map, the fourth base a neutral post.
+    const four = state().map;
+    opponents.value = '2';
+    opponents.dispatchEvent(new Event('change'));
+    expect(state().map).toEqual(four);
+    expect(state().world.entities.some((e) => e.side === NEUTRAL && e.kind === 'command-post')).toBe(true);
+    // The map editor has no four-base maps yet: it starts from an empty map.
+    click('rc-editor-open');
+    expect(state().edit!.map.seats).toBeUndefined();
+    expect(state().edit!.map.units).toEqual([]);
+    click('ed-close');
+    opponents.value = '1';
+    opponents.dispatchEvent(new Event('change'));
+    expect(state().map!.seats).toBeUndefined();
+    expect(state().world.sides).toBe(2);
   });
 
   it('maps pointer clicks on the canvas to cells', () => {
@@ -836,10 +871,35 @@ describe('Relay Command view', () => {
     instance.restore(s);
     expect(state().world.entities.some((e) => e.id === id)).toBe(true); // a valid save
     click(`rc-unit-${id}`);
-    expect($('rc-card-stun').textContent).toBe('Hits stun: the target can neither move nor fire for 6 ticks.');
+    expect($('rc-card-stun').textContent).toBe('Hits stun: the target can neither move nor fire for one turn.');
+    // Rates per turn, not per tick (owner, 2026-10-18): 6 ticks a turn, the EMP Tower every 4: 1.5 shots.
+    expect($('rc-card-rate').textContent).toBe('1.5× per turn · pulse (lands a moment later on the target’s cell and its neighbours)');
     expect($('rc-legend-kinds').textContent).toContain('Laser Tower');
     expect(ctx.context.root.textContent).toContain('Defence tower (structure with battlements)');
     expect(ctx.context.root.textContent).toContain('Defence towers are placed by the Command Post');
+  });
+
+  it('muzzle flash (owner decision 2026-10-17): an unseen enemy that fired at the player is named in the summary and marked on its cell', () => {
+    const s = structuredClone(state());
+    const seen = new Set((s.world.intel?.[PLAYER] ?? []).filter((r) => r.live).map((r) => r.id));
+    const gun = s.world.entities.find((e) => e.side === OPPONENT && !seen.has(e.id) && e.kind !== 'command-post')!;
+    s.events = [...s.events, { t: 'flash', tick: s.world.tick, id: gun.id, side: OPPONENT, kind: gun.kind, x: gun.x, y: gun.y }, { t: 'flash', tick: s.world.tick, id: gun.id, side: OPPONENT, kind: gun.kind, x: gun.x, y: gun.y }];
+    instance.restore(s);
+    const lines = [...$('rc-summary').querySelectorAll('li')].map((li) => li.textContent ?? '');
+    const told = lines.filter((l) => l.startsWith('Fired on by an unseen'));
+    expect(told).toHaveLength(1); // once per shooter
+    expect(told[0]).toMatch(new RegExp(`^Fired on by an unseen [A-Z][\\w -]+ from ${gun.x + 1}, ${gun.y + 1} \\(marked on the map\\)\\.$`));
+    // The cell tells it in words (screen readers): click it on the map.
+    const map = $('rc-map');
+    map.getBoundingClientRect = () => ({ left: 0, top: 0, width: 12 * CELL, height: 12 * CELL, right: 12 * CELL, bottom: 12 * CELL, x: 0, y: 0, toJSON: () => ({}) });
+    map.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: gun.x * CELL + 5, clientY: gun.y * CELL + 5 }));
+    expect($('rc-cursor').textContent).toContain('Muzzle flash: an unseen');
+    expect(ctx.context.root.textContent).toContain('Muzzle flash (burst)');
+    expect(ctx.context.root.textContent).toContain('its muzzle flash gives it away');
+    // Once the game is over everything is revealed: no flash marks then.
+    instance.restore({ ...s, phase: 'finished', result: 'lost' });
+    map.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: gun.x * CELL + 5, clientY: gun.y * CELL + 5 }));
+    expect($('rc-cursor').textContent).not.toContain('Muzzle flash');
   });
 
   it('lets the Command Post place an Extractor on a deposit inside coverage and explains a bad cell', () => {

@@ -591,6 +591,25 @@ const PREVIEWS: Record<string, () => string> = {
     return R(4, 1.5, 88, 61, 'e', 5) + road('A', 'J', true, 3) + road('J', 'D', true, 2) + road('A', 'B', false, 4) + road('B', 'C', false, 3) + road('J', 'C', false, 4) +
       Object.entries(p).map(([k, [x, y]]) => (k === 'J' ? R(x - 5, y - 5, 10, 10, 'ob', 1) + T(x, y + 0.5, 1, 't tsm') : C(x, y, 6, 'ob') + T(x, y + 0.5, k, 't tsm'))).join('');
   },
+  'pixel-peel': () => {
+    // A small pixel picture partly peeled from the edge, its track with station ticks, and three shooters below.
+    const pic = ['.aa.a.', 'abbbba', 'abccb.', '..aaa.'];
+    const fill: Record<string, string> = { a: 'm3', b: 'm1', c: 'm2' };
+    const s = 7, x0 = 27, y0 = 6;
+    let out = R(x0 - 5, y0 - 5, 6 * s + 10, 4 * s + 10, 'e', 3);
+    let ticks = '';
+    for (let q = 0; q < 6; q++) ticks += `M${n(x0 + q * s + s / 2)} ${n(y0 - 3.5)}v2M${n(x0 + q * s + s / 2)} ${n(y0 + 4 * s + 1.5)}v2`;
+    for (let r = 0; r < 4; r++) ticks += `M${n(x0 - 3.5)} ${n(y0 + r * s + s / 2)}h2M${n(x0 + 6 * s + 1.5)} ${n(y0 + r * s + s / 2)}h2`;
+    out += P(ticks, 'g');
+    pic.forEach((row, r) => [...row].forEach((ch, q) => {
+      out += R(x0 + q * s, y0 + r * s, s - 0.6, s - 0.6, ch === '.' ? 'hb' : (fill[ch] as string), 0.8);
+    }));
+    const token = (x: number, c: string, num: number, symbol: string) => R(x, 44, 20, 16, 'o', 3) + R(x + 2, 46, 9, 12, c, 1.5) + symbol + T(x + 15.2, 52.4, num, 't tsm');
+    out += token(19, 'm3', 7, poly([[25.5, 48.2], [28.7, 55.6], [22.3, 55.6]], 'sf'));
+    out += token(38, 'm1', 5, C(44.5, 52, 2.6, 'sf'));
+    out += token(57, 'm2', 9, R(61.4, 49.4, 4.2, 5.2, 'sf'));
+    return out;
+  },
   // Estimation Lab: the question card, the review's log scale (decade ticks, hatched plausible range, the answer ◆ close
   // to the reference line) and the model as three factor boxes joined by ×. No text or digits (language-neutral).
   'fermi-lab': () =>

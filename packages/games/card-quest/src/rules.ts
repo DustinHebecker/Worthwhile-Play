@@ -35,6 +35,8 @@ export type RoundLimit = (typeof ROUND_LIMITS)[number];
 
 export interface Settings {
   worlds: WorldId[];
+  /** The worlds were drawn at random from the seed (start screen "Random"); absent in older saves. */
+  randomWorlds?: true;
   /** Computer players, 1–5. */
   opponents: number;
   target: Target;
@@ -264,7 +266,8 @@ export function isValidSettings(value: unknown): value is Settings {
     isOneOf(value.target, TARGETS) &&
     isOneOf(value.roundLimit, ROUND_LIMITS) &&
     isOneOf(value.difficulty, DIFFICULTIES) &&
-    typeof value.coach === 'boolean'
+    typeof value.coach === 'boolean' &&
+    (value.randomWorlds === undefined || value.randomWorlds === true)
   );
 }
 

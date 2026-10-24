@@ -39,6 +39,7 @@
     "@wp/game-n-back": "workspace:*",
     "@wp/game-node-conquest": "workspace:*",
     "@wp/game-nonogram": "workspace:*",
+    "@wp/game-pixel-peel": "workspace:*",
     "@wp/game-prospective-memory": "workspace:*",
     "@wp/game-relay-command": "workspace:*",
     "@wp/game-review": "workspace:*",

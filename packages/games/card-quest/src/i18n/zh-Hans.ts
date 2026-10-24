@@ -123,6 +123,9 @@ export const zhHans: Catalogue = {
   'act.escape': '立刻逃跑',
   'act.curse': '诅咒 {name}',
   'act.upgrade': '装到 {name} 上',
+  'eq.attached': '已装到 {name} 上',
+  'gear.upgraded': '{item}（＋{upgrades}）',
+  'detail.total': '加上 {upgrades}：共 {n}',
   'sell.title': '选择要出售的物品和一次性牌。价值 {sum} → 等级 +{levels}。',
   'sell.need': '每 {rate} 点价值 = 1 级（不能是获胜的那一级）。',
 
@@ -342,5 +345,32 @@ export const zhHans: Catalogue = {
   'log.give.toYou': '{name}——送给你 {n} 张牌。',
   'log.curse.toYou': '{name}——诅咒你：{card}。',
   // Reveal pending
-  'next.reveal': '一张牌击中了你：读完后按“继续”。'
+  'next.reveal': '一张牌击中了你：读完后按“继续”。',
+  // K3: worlds Spaceloot and Office
+  'world.sl': '太空战利品——船员对战外星人',
+  'world.of': '办公室大乱斗——坐班族对战居家办公族',
+  'setup.worlds': '世界',
+  'setup.worldModes.random': '随机',
+  'setup.worldModes.pick': '自选',
+  'setup.worlds.random': '随机：每局新游戏抽取一个世界或两个世界的组合。',
+  'setup.worlds.hint': '多个世界会混在一起洗牌。都不勾选：随机。',
+  'family.crew': '飞船船员',
+  'family.alien': '外星人',
+  'family.office': '坐班族',
+  'family.remote': '居家办公族',
+  'set.away-team': '正宗登陆小队装备',
+  'set.tourist-kit': '正宗太空游客套装',
+  'set.video-call': '视频会议就绪',
+  'set.couch-kit': '正宗沙发办公套装',
+  // Worlds Fridge and Railway
+  'world.fd': '冰箱大探险——新鲜食物对战剩菜剩饭',
+  'world.rw': '请上车——乘客对战铁路员工',
+  'family.fresh': '新鲜食物',
+  'family.leftover': '剩菜剩饭',
+  'family.passenger': '乘客',
+  'family.railstaff': '铁路员工',
+  'set.fridge-raider': '午夜冰箱大盗',
+  'set.chef-kit': '正宗大厨装备',
+  'set.conductor-kit': '正宗列车员装备',
+  'set.commuter-kit': '资深通勤族套装'
 };

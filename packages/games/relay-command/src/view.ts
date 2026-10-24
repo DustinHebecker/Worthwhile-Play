@@ -63,6 +63,7 @@ import {
   sideValue,
   TURN_LIMITS,
   unitById,
+  RANDOM_OPPONENTS,
   RANDOM_SIZES,
   type RcState
 } from './rules';
@@ -183,6 +184,20 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     if (cachedNet?.state !== state) cachedNet = { state, net: computeNetwork(state.world, RULESET, me()) };
     return cachedNet.net;
   };
+  /**
+   * Muzzle flashes of the last turn (owner decision 2026-10-17): unseen enemies that fired at the
+   * player's units in contact, by cell (the last position each fired from). Not shown once the
+   * shooter is in sight (it is drawn as a unit then) or after the game ended (everything is revealed).
+   */
+  const flashes = (): Map<number, { kind: string; x: number; y: number }> => {
+    const out = new Map<number, { kind: string; x: number; y: number }>();
+    if (revealed()) return out;
+    const seenNow = new Set((state.world.intel?.[me()] ?? []).filter((r) => r.live).map((r) => r.id));
+    for (const e of state.events) if (e.t === 'flash' && !seenNow.has(e.id)) out.set(e.id, { kind: e.kind, x: e.x, y: e.y });
+    return out;
+  };
+  const flashAt = (x: number, y: number) => [...flashes().values()].filter((f) => f.x === x && f.y === y);
+
   /** Cells where the player's radio is jammed (the player notices the interference). */
   // Only cells the own net would cover without jamming: the player notices radio silence where
   // there should be contact, not the jammer's whole disc (that would give its position away).
@@ -279,6 +294,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     // Deposits are told in words as well; how much is left only while the cell is observed.
     const deposit = depositAt(world().map, x, y);
     if (deposit) terrain = `${terrain} ${deposit.endless ? t('cell.depositEndless') : observedAt(x, y) ? t('cell.deposit', { n: deposit.left }) : t('cell.depositUnknown')}`;
+    for (const f of flashAt(x, y)) terrain = `${terrain} ${t('cell.flash', { name: t(`unit.${f.kind}`) })}`;
     if (units.length === 0) return t('cell.describe', { x: x + 1, y: y + 1, terrain });
     return t('cell.describeUnit', { x: x + 1, y: y + 1, terrain, unit: units.map(describeUnit).join(' ') });
   };
@@ -445,7 +461,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     'details',
     { class: 'rc-help' },
     h('summary', {}, t('help.title')),
-    ...['help.turns', 'help.bar', 'help.orders', 'help.network', 'help.fog', 'help.ew', 'help.doctrine', 'help.economy', 'help.towers', 'help.repair', 'help.editor', 'help.random', 'help.sides', 'help.hotSeat', 'help.combat', 'help.goal', 'help.shapes', 'help.access'].map((k) => h('p', {}, t(k)))
+    ...['help.turns', 'help.bar', 'help.orders', 'help.network', 'help.fog', 'help.flash', 'help.ew', 'help.doctrine', 'help.economy', 'help.towers', 'help.repair', 'help.editor', 'help.random', 'help.sides', 'help.hotSeat', 'help.combat', 'help.goal', 'help.shapes', 'help.access'].map((k) => h('p', {}, t(k)))
   );
 
   /* ---------- Map editor ---------- */
@@ -476,8 +492,9 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
 
   function openEditor(): void {
     editor.forget();
-    // Start from the map being played (a player-made one), else an empty map; mirrored edits by default.
-    if (!state.edit) commit({ ...state, edit: { map: state.map ?? blankMap(16, 12), slot: null, mirror: true } });
+    // Start from the map being played (a player-made or random one with two sides; the editor has no
+    // four-base maps yet), else an empty map; mirrored edits by default.
+    if (!state.edit) commit({ ...state, edit: { map: state.map && !state.map.seats ? state.map : blankMap(16, 12), slot: null, mirror: true } });
     render();
     editor.el.querySelector<HTMLElement>('[data-testid="ed-map"]')?.focus();
   }
@@ -1126,9 +1143,15 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     const facts = h('dl', { class: 'rc-facts' });
     facts.append(...fact(t('card.armor'), t(`armor.${arch.armor}`)));
     if (w) {
-      facts.append(...fact(t('card.rate'), `${w.cooldown <= 1 ? t('card.everyTick') : t('card.everyTicks', { n: w.cooldown })} · ${t(`card.delivery.${w.delivery}`)}`));
+      // Rates per turn, not per tick (owner, 2026-10-18): the tick is the simulation's clock, the turn the player's.
+      const shots = RULESET.ticksPerTurn / Math.max(1, w.cooldown);
+      const delivery = w.effect?.kind === 'disabled' ? 'pulse' : w.delivery;
+      facts.append(...fact(t('card.rate'), `${t('card.perTurnShots', { n: perTurn(shots) })} · ${t(`card.delivery.${delivery}`)}`, 'rc-card-rate'));
       if (w.stationary) facts.append(...fact(t('card.weapon'), t('card.stationary')));
-      if (w.effect?.kind === 'disabled') facts.append(...fact(t('card.weapon'), t('card.stun', { n: w.effect.ticks }), 'rc-card-stun'));
+      if (w.effect?.kind === 'disabled') {
+        const turns = w.effect.ticks / RULESET.ticksPerTurn;
+        facts.append(...fact(t('card.weapon'), turns === 1 ? t('card.stunOne') : t('card.stunTurns', { n: perTurn(turns) }), 'rc-card-stun'));
+      }
     }
     if (arch.comms) {
       const text = arch.comms.role === 'source' ? t('card.source', { r: arch.comms.radius, slots: arch.comms.orderSlots }) : t('card.relay', { r: arch.comms.radius });
@@ -1270,6 +1293,14 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       swatch((g) => {
         g.fillStyle = css('--rc-plain', '#e7e3d4');
         g.fillRect(0, 0, CELL, CELL);
+        drawFlash(g, 0, 0);
+      }),
+      t('legend.flash')
+    );
+    row(
+      swatch((g) => {
+        g.fillStyle = css('--rc-plain', '#e7e3d4');
+        g.fillRect(0, 0, CELL, CELL);
         g.fillStyle = css('--rc-fog', 'rgba(29, 29, 27, 0.18)');
         g.fillRect(0, 0, CELL, CELL);
         g.beginPath();
@@ -1396,6 +1427,13 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
         lines.push(t(e.side === me() ? 'summary.youOut' : 'summary.sideOut', { side: sideName(e.side) }));
       } else if (e.t === 'missing') {
         lines.push(t('summary.missing', { name: unitName(e) }));
+      } else if (e.t === 'flash') {
+        // Once per shooter, where it last fired from (the map marks the same cell).
+        const last = flashes().get(e.id);
+        if (last && !told.has(`flash:${e.id}`) && last.x === e.x && last.y === e.y) {
+          told.add(`flash:${e.id}`);
+          lines.push(t('summary.flash', { name: t(`unit.${e.kind}`), x: e.x + 1, y: e.y + 1 }));
+        }
       } else if (e.t === 'repaired') {
         const unit = unitById(state, e.id);
         if (unit?.side === me()) lines.push(t('summary.repaired', { name: unitName(unit), hp: e.hp }));
@@ -1482,6 +1520,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       }
     }
     g.stroke();
+    // Muzzle flashes: a burst on the cell an unseen enemy fired from (shape, not colour alone).
+    for (const f of flashes().values()) drawFlash(g, f.x * CELL, f.y * CELL);
     g.lineWidth = 1;
     g.strokeStyle = css('--wp-p1', '#24508f');
     g.setLineDash([3, 6]);
@@ -1494,6 +1534,29 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       g.arc(cx, cy, r * CELL + CELL / 2, 0, Math.PI * 2);
       g.stroke();
     }
+    g.restore();
+  }
+
+  /** A per-turn figure in the UI locale: whole numbers as they are, others to one decimal (1.5 → "1,5" in German). */
+  const perTurn = (n: number): string => new Intl.NumberFormat(t.locale, { maximumFractionDigits: 1 }).format(n);
+
+  /** A muzzle flash burst in a cell at (px, py): eight rays round an open centre. */
+  function drawFlash(g: CanvasRenderingContext2D, px: number, py: number): void {
+    const cx = px + CELL / 2;
+    const cy = py + CELL / 2;
+    g.save();
+    g.strokeStyle = css('--wp-danger', '#a1271b');
+    g.lineWidth = 2;
+    g.setLineDash([]);
+    g.beginPath();
+    for (let k = 0; k < 8; k++) {
+      const a = (k * Math.PI) / 4;
+      const inner = k % 2 === 0 ? CELL * 0.14 : CELL * 0.18;
+      const outer = k % 2 === 0 ? CELL * 0.42 : CELL * 0.3;
+      g.moveTo(cx + Math.cos(a) * inner, cy + Math.sin(a) * inner);
+      g.lineTo(cx + Math.cos(a) * outer, cy + Math.sin(a) * outer);
+    }
+    g.stroke();
     g.restore();
   }
 
@@ -1972,11 +2035,11 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     });
   }
 
-  /** The opponent counts the map in the select offers (player-made maps: one). */
+  /** The opponent counts the map in the select offers (player-made maps: one; random maps: one to three). */
   function syncOpponentOptions(): void {
     const value = scenarioSelect.value;
     const spec = scenarioById(value);
-    const counts = spec ? opponentCounts(spec) : [1];
+    const counts = value === 'random' ? RANDOM_OPPONENTS : spec ? opponentCounts(spec) : [1];
     const current = [...opponentsSelect.querySelectorAll('option')].map((o) => o.value).join(',');
     if (current !== counts.join(',')) {
       clear(opponentsSelect);
@@ -2015,16 +2078,18 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       const seed = state.random && randomSeed.value.trim() !== '' && Number.isFinite(typed) ? Math.trunc(typed) >>> 0 : (state.random?.seed ?? state.seed);
       randomSeed.value = String(seed);
       const limit = limitSelect.value === 'open' || limitSelect.value === 'quick' ? null : Number(limitSelect.value);
+      syncOpponentOptions();
+      // One opponent: a two-side map; two or three: four bases, one in each corner.
+      const opponents = Number(opponentsSelect.value) || 1;
       let map: EditMap;
       try {
-        map = generateMap(size[0], size[1], seed, t('setup.randomName', { w: size[0], h: size[1], n: seed }).slice(0, MAX_NAME));
+        map = generateMap(size[0], size[1], seed, t('setup.randomName', { w: size[0], h: size[1], n: seed }).slice(0, MAX_NAME), opponents > 1 ? 4 : 2);
       } catch {
         render(); // cannot happen for the offered sizes; the game stays as it is
         return;
       }
       selected = null;
-      syncOpponentOptions();
-      commit(newGame(state.seed, FIELD_EXERCISE, state.difficulty, limit, limitSelect.value === 'quick', map, 1, chosenSeats(), endlessInput.checked, { w: size[0], h: size[1], seed }), t('announce.setup', { scenario: mapLabel(map) }));
+      commit(newGame(state.seed, FIELD_EXERCISE, state.difficulty, limit, limitSelect.value === 'quick', map, opponents, chosenSeats(), endlessInput.checked, { w: size[0], h: size[1], seed }), t('announce.setup', { scenario: mapLabel(map) }));
       homeCursor();
       render();
       return;

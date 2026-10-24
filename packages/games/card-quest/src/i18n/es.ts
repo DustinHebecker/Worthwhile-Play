@@ -123,6 +123,9 @@ export const es: Catalogue = {
   'act.escape': 'Escapar ya',
   'act.curse': 'Maldecir a {name}',
   'act.upgrade': 'Acoplar a {name}',
+  'eq.attached': 'Acoplado a {name}',
+  'gear.upgraded': '{item} (+ {upgrades})',
+  'detail.total': 'Con {upgrades}: {n} en total',
   'sell.title': 'Elige objetos y cartas de un solo uso para vender. Valor {sum} → nivel +{levels}.',
   'sell.need': 'Cada {rate} puntos de valor = 1 nivel (nunca el nivel ganador).',
 
@@ -342,5 +345,32 @@ export const es: Catalogue = {
   'log.give.toYou': '{name} te da {n} cartas.',
   'log.curse.toYou': '{name}: maldición sobre ti: {card}.',
   // Reveal pending
-  'next.reveal': 'Una carta te ha alcanzado: léela y luego pulsa «Continuar».'
+  'next.reveal': 'Una carta te ha alcanzado: léela y luego pulsa «Continuar».',
+  // K3: worlds Spaceloot and Office
+  'world.sl': 'Spaceloot: tripulación contra alienígenas',
+  'world.of': 'Caos en la Oficina: oficina contra teletrabajo',
+  'setup.worlds': 'Mundos',
+  'setup.worldModes.random': 'Al azar',
+  'setup.worldModes.pick': 'Elegir',
+  'setup.worlds.random': 'Al azar: un mundo o una mezcla de dos, sorteados en cada partida nueva.',
+  'setup.worlds.hint': 'Varios mundos se barajan juntos. Ninguno marcado: al azar.',
+  'family.crew': 'la tripulación de la nave',
+  'family.alien': 'alienígenas',
+  'family.office': 'gente de oficina',
+  'family.remote': 'gente del teletrabajo',
+  'set.away-team': 'Kit del equipo de exploración',
+  'set.tourist-kit': 'Kit de turista espacial',
+  'set.video-call': 'Look de videollamada',
+  'set.couch-kit': 'Kit de oficina en el sofá',
+  // Worlds Fridge and Railway
+  'world.fd': 'Expedición Nevera: comida fresca contra sobras',
+  'world.rw': 'Todos a Bordo: viajeros contra personal ferroviario',
+  'family.fresh': 'la comida fresca',
+  'family.leftover': 'las sobras',
+  'family.passenger': 'los viajeros',
+  'family.railstaff': 'el personal ferroviario',
+  'set.fridge-raider': 'Asalto nocturno a la nevera',
+  'set.chef-kit': 'Equipo de chef como es debido',
+  'set.conductor-kit': 'Uniforme ferroviario como es debido',
+  'set.commuter-kit': 'Kit veterano de cercanías'
 };

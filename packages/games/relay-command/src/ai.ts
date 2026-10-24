@@ -274,6 +274,13 @@ const RALLY_SHARE: Record<Difficulty, number> = { easy: 0, normal: 0.8, hard: 0.
 const RALLY_DEADLINE = 6;
 /** Known enemy fighters within this many cells of their post count as its defenders. */
 const DEFENCE_RADIUS = 7;
+/**
+ * A known tower counts this many times its price among a post's defenders (it holds far more than
+ * units of the same price: structure armour, and it is rebuilt where it stands). Measured against a
+ * side that walls its post in with Gun Towers (owner review 2026-10-18): with the rally point kept
+ * out of the towers' reach, units lost inside a tower wall on Field Exercise fell from 164 to 81.
+ */
+const TOWER_DEFENCE_WEIGHT = 2;
 /** With yards to reinforce, the storm needs this much more value than the known defenders. */
 const STORM_ODDS = 1.3;
 /** Fewest fighters the deadline storm goes ahead with while yards keep producing. */
@@ -304,7 +311,7 @@ function coveredNear(obs: Observation, ruleset: Ruleset, at: { x: number; y: num
   return best ? { x: best.x, y: best.y } : at;
 }
 
-interface AssaultPlan {
+export interface AssaultPlan {
   readonly objective: Entity;
   readonly rally: { x: number; y: number };
   /** All own mobile fighters (in contact or not). */
@@ -363,7 +370,7 @@ const targetPosts = (obs: Observation): Entity[] =>
   obs.world.entities.filter((e) => e.kind === 'command-post' && e.side !== obs.side && hostile(obs.world, obs.side, e.side));
 
 /** The side's plan of attack from what it knows: rally point in front of the enemy post and whether to storm. */
-function assaultPlan(obs: Observation, ruleset: Ruleset, difficulty: Difficulty): AssaultPlan | undefined {
+export function assaultPlan(obs: Observation, ruleset: Ruleset, difficulty: Difficulty): AssaultPlan | undefined {
   const { world, side } = obs;
   const home = world.entities.find((e) => e.side === side && e.kind === 'command-post');
   const objective = objectiveOf(obs, ruleset);
@@ -371,7 +378,17 @@ function assaultPlan(obs: Observation, ruleset: Ruleset, difficulty: Difficulty)
   const dx = home.x - objective.x;
   const dy = home.y - objective.y;
   const len = Math.hypot(dx, dy) || 1;
-  const ideal = { x: Math.round(objective.x + (dx / len) * RALLY_DIST), y: Math.round(objective.y + (dy / len) * RALLY_DIST) };
+  // Known towers around the post: the rally point stands back beyond their reach (fighters waiting
+  // there for the others were shot to pieces by a tower wall they could see).
+  const towerReach = enemiesOf(obs).flatMap((e) => {
+    const a = archetypeOf(ruleset, e.kind);
+    return a?.speed === 0 && a.weapon && e.id !== objective.id ? [{ x: e.x, y: e.y, r: a.weapon.range + 1 }] : [];
+  });
+  const reached = (x: number, y: number, margin: number) => towerReach.some((t) => dist2(x, y, t.x, t.y) <= (t.r + margin) ** 2);
+  let back = RALLY_DIST;
+  const at = (d: number) => ({ x: Math.max(0, Math.min(world.map.w - 1, Math.round(objective.x + (dx / len) * d))), y: Math.max(0, Math.min(world.map.h - 1, Math.round(objective.y + (dy / len) * d))) });
+  while (back < len && reached(at(back).x, at(back).y, RALLY_RADIUS)) back++;
+  const ideal = at(Math.min(back, Math.max(RALLY_DIST, Math.floor(len))));
   // The rally point lies inside the own coverage (the nearest covered cell to the ideal one):
   // fighters gather under radio cover and move up as the relay truck extends it, instead of
   // waiting out of contact where no order and no recall can reach them.
@@ -392,7 +409,7 @@ function assaultPlan(obs: Observation, ruleset: Ruleset, difficulty: Difficulty)
   const ours = orderable.reduce((sum, f) => sum + value(f), 0);
   const theirs = enemiesOf(obs)
     .filter((e) => archetypeOf(ruleset, e.kind)?.weapon && dist2(e.x, e.y, objective.x, objective.y) <= DEFENCE_RADIUS * DEFENCE_RADIUS)
-    .reduce((sum, e) => sum + value(e), 0);
+    .reduce((sum, e) => sum + value(e) * (archetypeOf(ruleset, e.kind)?.speed === 0 ? TOWER_DEFENCE_WEIGHT : 1), 0);
   // A neutral post is taken over, not stormed: the infantry goes as soon as the known guards allow.
   const storming = objective.side === NEUTRAL ? ours >= theirs * STORM_ODDS : gathered && (!reinforcing || ours >= theirs * STORM_ODDS || world.turn >= ESCALATE_TURN);
   const besieging = all.some((f) => (archetypeOf(ruleset, f.kind)?.weapon?.minRange ?? 0) > 0 && (archetypeOf(ruleset, f.kind)?.weapon?.range ?? 0) > 3);
@@ -550,7 +567,7 @@ function guardPosts(obs: Observation, ruleset: Ruleset, own: readonly Entity[]):
 }
 
 /** How far around the objective a storming fighter looks for a free cell it can reach. */
-const APPROACH_RADIUS = 4;
+export const APPROACH_RADIUS = 4;
 
 /**
  * Where a storming fighter heads: the post itself while it can be reached. But every unit that
@@ -560,7 +577,7 @@ const APPROACH_RADIUS = 4;
  * (structures, own holding units, all known enemies); there it fires on what it sees, and the
  * ring opens as defenders fall. Without such a cell: the post itself, as before.
  */
-function approachCells(obs: Observation, ruleset: Ruleset, objective: Entity): (unit: Entity) => { x: number; y: number } {
+export function approachCells(obs: Observation, ruleset: Ruleset, objective: Entity): (unit: Entity) => { x: number; y: number } {
   const { world, side } = obs;
   const { w, h } = world.map;
   const walls = new Set<number>();
@@ -584,14 +601,26 @@ function approachCells(obs: Observation, ruleset: Ruleset, objective: Entity): (
   rings.sort((a, b) => a.r - b.r || a.f - b.f);
   const claimed = new Set<number>();
   const target = cellOf(world.map, objective.x, objective.y);
+  // A post may be ringed by units the side has not seen (even with a free cell next to it in
+  // sight, ringed in turn): a move onto it then finds no way and ends at once, turn after turn
+  // (measured: a storm of 54 fighters that never set off). So from ESCALATE_TURN (a storm that has
+  // not got through by then) a fighter beyond APPROACH_RADIUS heads for a free cell of the outer
+  // rings instead: one the side sees (nearest first), else the farthest out (a ring may be two
+  // deep); from there it sees what holds the post and fires on it. Earlier the storm heads for the
+  // post as before (measured: doing so from the start cost hard its lead over normal on Ridge Valley).
+  const late = world.turn >= ESCALATE_TURN;
+  const seen = late ? observedCells(world, ruleset, side, obs.network) : undefined;
+  const watched = (cell: { x: number; y: number }) => seen?.[cellOf(world.map, cell.x, cell.y)] === 1;
+  const outer = late ? [...rings.filter((c) => c.r >= 2 && watched(c)), ...rings.filter((c) => c.r >= 2 && !watched(c)).sort((a, b) => b.r - a.r || a.f - b.f)] : [];
   return (unit) => {
     const start = cellOf(world.map, unit.x, unit.y);
-    // The post can be reached (next to it): head for it, as always.
-    if (canReach(world.map, ruleset, 'ground', region, start, target)) return { x: objective.x, y: objective.y };
-    // Already as close as the ring allows: stay (it fires on its own).
     const here = Math.max(Math.abs(unit.x - objective.x), Math.abs(unit.y - objective.y));
-    for (const cell of rings) {
-      if (cell.r >= here) break;
+    const far = late && here > APPROACH_RADIUS;
+    // The post can be reached (next to it): head for it, as always (late and far: the outer rings, above).
+    if (!far && canReach(world.map, ruleset, 'ground', region, start, target)) return { x: objective.x, y: objective.y };
+    // Already as close as the ring allows: stay (it fires on its own).
+    for (const cell of far ? outer : rings) {
+      if (cell.r >= here) continue;
       const c = cellOf(world.map, cell.x, cell.y);
       if (claimed.has(c) || !canReach(world.map, ruleset, 'ground', region, start, c)) continue;
       claimed.add(c);

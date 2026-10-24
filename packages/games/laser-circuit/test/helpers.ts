@@ -11,6 +11,13 @@ export const stateOf = (set: LevelSet, level: number): LaserState => ({ seed: le
 
 export const pieceCount = (source: LevelSource) => PIECE_KINDS.reduce((sum, kind) => sum + ((source.inventory as Readonly<Record<string, number | undefined>>)[kind] ?? 0), 0);
 
+/**
+ * The original 24 levels (and their ids) from before the optical diodes, portals and optics:
+ * "easy", "medium" and the first eight "hard" levels of state version 1.
+ */
+export const ORIGINAL: Readonly<Record<LevelSet, number>> = { intro: 8, easy: 8, medium: 8, hard: 0, expert: 0 };
+export const isOriginal = (set: LevelSet, index: number) => index < ORIGINAL[set];
+
 /** Pieces other than mirrors, splitters and blockers. */
 export const OPTICAL_KINDS = PIECE_KINDS.filter((kind) => kind !== 'mirror' && kind !== 'splitter' && kind !== 'blocker');
 
@@ -21,7 +28,7 @@ export const usesOptics = (level: Level): boolean =>
 
 /**
  * The largest exact-search tree among the hard levels (the old expert set): every expert level
- * must need a bigger search. `rules.test.ts` checks the value against the hard levels.
+ * must need a bigger search. `levels.slow.test.ts` checks the value against the hard levels.
  */
 export const HARD_MAX_NODES = 1_727_855;
 

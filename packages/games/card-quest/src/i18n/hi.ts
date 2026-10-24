@@ -123,6 +123,9 @@ export const hi: Catalogue = {
   'act.escape': 'अभी भागो',
   'act.curse': '{name} को श्राप दो',
   'act.upgrade': '{name} पर लगाओ',
+  'eq.attached': '{name} पर लगा है',
+  'gear.upgraded': '{item} (+ {upgrades})',
+  'detail.total': '{upgrades} के साथ: कुल {n}',
   'sell.title': 'बेचने के लिए चीज़ें और एक-बार वाले कार्ड चुनो। मूल्य {sum} → स्तर +{levels}।',
   'sell.need': 'हर {rate} मूल्य-अंक = 1 स्तर (जीत वाला स्तर नहीं)।',
 
@@ -342,5 +345,32 @@ export const hi: Catalogue = {
   'log.give.toYou': '{name} — तुम्हें दिए गए कार्ड: {n}।',
   'log.curse.toYou': '{name} — तुम पर श्राप: {card}।',
   // Reveal pending
-  'next.reveal': 'एक कार्ड तुम पर पड़ा: उसे पढ़ो, फिर “आगे बढ़ो” दबाओ।'
+  'next.reveal': 'एक कार्ड तुम पर पड़ा: उसे पढ़ो, फिर “आगे बढ़ो” दबाओ।',
+  // K3: worlds Spaceloot and Office
+  'world.sl': 'अंतरिक्ष की लूट — दल बनाम एलियन',
+  'world.of': 'दफ़्तर का हंगामा — दफ़्तर बनाम वर्क फ़्रॉम होम',
+  'setup.worlds': 'दुनियाएँ',
+  'setup.worldModes.random': 'बेतरतीब',
+  'setup.worldModes.pick': 'ख़ुद चुनें',
+  'setup.worlds.random': 'बेतरतीब: हर नए खेल में एक दुनिया या दो दुनियाओं का मेल चुना जाता है।',
+  'setup.worlds.hint': 'कई दुनियाएँ एक साथ फेंटी जाती हैं। कुछ न चुना हो: बेतरतीब।',
+  'family.crew': 'जहाज़ी दल',
+  'family.alien': 'एलियनों',
+  'family.office': 'दफ़्तर वालों',
+  'family.remote': 'वर्क-फ़्रॉम-होम वालों',
+  'set.away-team': 'अभियान-दल का सामान',
+  'set.tourist-kit': 'अंतरिक्ष-पर्यटक किट',
+  'set.video-call': 'वीडियो कॉल के लायक',
+  'set.couch-kit': 'सोफ़ा-दफ़्तर का सामान',
+  // Worlds Fridge and Railway
+  'world.fd': 'फ़्रिज अभियान — ताज़ा खाना बनाम बचा-खुचा',
+  'world.rw': 'रेल का रेला — यात्री बनाम रेल कर्मचारी',
+  'family.fresh': 'ताज़े खाने',
+  'family.leftover': 'बचे-खुचे खाने',
+  'family.passenger': 'यात्रियों',
+  'family.railstaff': 'रेल कर्मचारियों',
+  'set.fridge-raider': 'आधी रात का फ़्रिज-धावा',
+  'set.chef-kit': 'असली शेफ़ का सामान',
+  'set.conductor-kit': 'असली टीटी का सामान',
+  'set.commuter-kit': 'रोज़ के सफ़र की पक्की किट'
 };

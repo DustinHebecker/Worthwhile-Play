@@ -152,6 +152,9 @@ importers:
       '@wp/game-nonogram':
         specifier: workspace:*
         version: link:../../packages/games/nonogram
+      '@wp/game-pixel-peel':
+        specifier: workspace:*
+        version: link:../../packages/games/pixel-peel
       '@wp/game-poker':
         specifier: workspace:*
         version: link:../../packages/games/poker
@@ -801,6 +804,22 @@ importers:
         specifier: workspace:*
         version: link:../../testing
 
+  packages/games/pixel-peel:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../../game-core
+      '@wp/ui':
+        specifier: workspace:*
+        version: link:../../ui
+    devDependencies:
+      '@wp/localization':
+        specifier: workspace:*
+        version: link:../../localization
+      '@wp/testing':
+        specifier: workspace:*
+        version: link:../../testing
+
   packages/games/poker:
     dependencies:
       '@wp/cards':
@@ -1175,6 +1194,12 @@ importers:
         version: link:../../testing
 
   packages/learning-content:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../game-core
+
+  packages/life-engine:
     dependencies:
       '@wp/game-core':
         specifier: workspace:*

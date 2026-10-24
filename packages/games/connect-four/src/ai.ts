@@ -71,7 +71,7 @@ const HARD_DEPTH: Readonly<Record<'drop' | 'pull', Readonly<Record<string, numbe
  * listed in HARD_DEPTH elsewhere: wider boards and pull-outs have more moves per position
  * (and a pull-out shifts a whole column), so hard searches less there to keep a move fast
  * on a phone. The node counts are pinned in test/ai.test.ts ("stays fast") and the level
- * margins per variant in test/strength.test.ts.
+ * margins per variant in test/strength.slow.test.ts.
  */
 export function searchDepth(variant: Variant, difficulty: Difficulty): number {
   if (difficulty === 'easy') return SEARCH_DEPTH.easy;

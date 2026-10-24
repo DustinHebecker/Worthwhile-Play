@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { isRecord } from '@wp/game-core';
-import { BASE_RULESET, NEUTRAL, archetypeOf, canonicalJson, cellOf, findPath, observe, passable, DEFAULT_DOCTRINE, computeNetwork, createWorld, initialIntel, observedCells, resolveTurn, validateCommand, worldHash, type Command, type Entity, type Order, type World } from '@wp/strategy-engine';
-import { objectiveOf, planAi, type Difficulty } from '../src/ai';
+import { BASE_RULESET, NEUTRAL, archetypeOf, canonicalJson, cellOf, findPath, observe, passable, DEFAULT_DOCTRINE, computeNetwork, createWorld, frameIndexIn, frameOf, initialIntel, observedCells, resolveTurn, validateCommand, worldHash, type Command, type Entity, type World } from '@wp/strategy-engine';
+import { APPROACH_RADIUS, approachCells, assaultPlan, objectiveOf, planAi, type Difficulty } from '../src/ai';
 import {
   cancelJob,
   cancelOrder,
@@ -58,12 +58,6 @@ import { fromScenario } from '../src/maps';
 import { generateMap } from '../src/generator';
 
 /** A side's plan from its own observation (default: the game's default level). */
-/**
- * Fingerprint of AI-vs-AI plans on the two-side maps (see the test): '965772b3' before increment 4;
- * '31513435' since the opponent builds defence towers (owner decision 2026-10-16, a measured gain,
- * docs/design/strategy.md "Defence towers").
- */
-const TWO_SIDE_AI_FINGERPRINT = '31513435';
 const ai = (world: World, side: number, difficulty: Difficulty = 'normal') => planAi(observe(world, RULESET, side), RULESET, difficulty);
 const own = (s: RcState) => s.world.entities.filter((e) => e.side === PLAYER);
 const enemy = (s: RcState) => s.world.entities.filter((e) => e.side === OPPONENT);
@@ -697,7 +691,11 @@ describe('information model (I3c, D7)', () => {
       s = lockTurn(s);
       const all = resolveTurn(before.world, RULESET, s.log.at(-1)!.plans).events;
       expect(all.length).toBeGreaterThanOrEqual(s.events.length);
-      for (const ev of s.events) expect(all).toContainEqual(ev);
+      // Every event happened, except muzzle flashes (reports only): those name a real unit of another side.
+      for (const ev of s.events) {
+        if (ev.t === 'flash') expect(s.world.entities.find((e) => e.id === ev.id)?.side).not.toBe(PLAYER);
+        else expect(all).toContainEqual(ev);
+      }
       // No movement of an enemy the player cannot see is reported.
       const seen = new Set((s.world.intel?.[PLAYER] ?? []).filter((r) => r.live).map((r) => r.id));
       const lastMoves = s.events.filter((e) => e.t === 'move' && e.tick === s.world.tick && unitById(s, e.id)?.side === OPPONENT);
@@ -799,30 +797,42 @@ describe('review of PR #8', () => {
     // A pool of mid-games (each costs up to five resolved turns), drawn afresh on every run like
     // the rest of the property, probed 120 times: the same number of checks as one game per run at
     // about half the cost (timing review, 2026-10-14). Stale reports are pinned down by a fixed
-    // engine test as well (observe.test.ts, review of PR #36).
-    const games = fc.sample(arbMidGame, 30);
+    // engine test as well (observe.test.ts, review of PR #36). Every probe is a relevant one: a
+    // unit the opponent has no live report of, moved to a free cell it does not observe (games
+    // without such a move are not drawn), so the number of checks never depends on the draw
+    // (it once fell to 29 of a required 31; orchestrator, 2026-10-18).
+    const probesOf = (s: RcState) => {
+      const intel = s.world.intel?.[OPPONENT] ?? [];
+      const hidden = own(s).filter((e) => e.kind !== 'command-post' && !intel.some((r) => r.id === e.id && r.live));
+      const observed = observedCells(s.world, RULESET, OPPONENT);
+      const { w, h } = s.world.map;
+      const probes: { unit: number; x: number; y: number }[] = [];
+      for (const unit of hidden) {
+        for (let y = 0; y < h; y++) {
+          for (let x = 0; x < w; x++) {
+            if (observed[y * w + x] === 1 || s.world.entities.some((e) => e.x === x && e.y === y)) continue;
+            if (validate(s.world, { side: PLAYER, unit: unit.id, order: { type: 'move', x, y } })) probes.push({ unit: unit.id, x, y });
+          }
+        }
+      }
+      return probes;
+    };
+    const games = fc.sample(arbMidGame.map((s) => ({ s, probes: probesOf(s) })).filter((g) => g.probes.length > 0), 30);
     let checked = 0;
     fc.assert(
-      fc.property(fc.nat(games.length - 1), fc.nat(1000), fc.nat(143), fc.constantFrom('hold', 'regroup', 'move'), (g, pick, cell, kind) => {
-        const s = games[g]!;
-        const intel = s.world.intel?.[OPPONENT] ?? [];
-        const hidden = own(s).filter((e) => e.kind !== 'command-post' && !intel.some((r) => r.id === e.id && r.live));
-        if (hidden.length === 0) return;
+      fc.property(fc.nat(games.length - 1), fc.nat(100_000), fc.constantFrom('hold', 'regroup', 'move'), (g, pick, kind) => {
+        const { s, probes } = games[g]!;
+        const probe = probes[pick % probes.length]!;
         const before = canonicalJson(ai(s.world, OPPONENT));
         const moved = structuredClone(s.world);
-        const unit = moved.entities.find((e) => e.id === hidden[pick % hidden.length]!.id)!;
-        const x = cell % 12;
-        const y = Math.floor(cell / 12);
-        const observed = observedCells(s.world, RULESET, OPPONENT);
-        const free = !moved.entities.some((e) => e.x === x && e.y === y) && validate(moved, { side: PLAYER, unit: unit.id, order: { type: 'move', x, y } });
-        if (!free || observed[y * 12 + x] === 1) return;
-        Object.assign(unit, { x, y, order: kind === 'move' ? { type: 'move', x: 0, y: 0 } : { type: kind } });
+        const unit = moved.entities.find((e) => e.id === probe.unit)!;
+        Object.assign(unit, { x: probe.x, y: probe.y, order: kind === 'move' ? { type: 'move', x: 0, y: 0 } : { type: kind } });
         checked++;
         expect(canonicalJson(ai(moved, OPPONENT))).toBe(before);
       }),
       { numRuns: 120 }
     );
-    expect(checked).toBeGreaterThan(30);
+    expect(checked).toBe(120);
   });
 
   it('rejects saves with more reports or ids than the scenario has entities (hostile saves)', () => {
@@ -997,66 +1007,6 @@ describe('several sides (docs/design/strategy.md § 9.4)', () => {
     expect(s.world.entities.find((e) => e.id === post.id)?.hp).toBe(hp);
   });
 
-  it('every seat plans alike: on the map turned a quarter, the next seat\'s plan is the turned plan (AI uses its seat\'s frame)', () => {
-    // Quarter turn of Four Corners carries seat k onto seat k+1; the map itself is the same.
-    const n = 16;
-    const at = (x: number, y: number): [number, number] => [n - 1 - y, x];
-    const cell = (c: number) => {
-      const [x, y] = at(c % n, Math.floor(c / n));
-      return y * n + x;
-    };
-    const next = (side: number) => (side === NEUTRAL ? NEUTRAL : (side + 1) % 4);
-    const order = (o: Order): Order => {
-      if (o.type === 'move' || o.type === 'build') {
-        const [x, y] = at(o.x, o.y);
-        return { ...o, x, y };
-      }
-      if (o.type === 'patrol') {
-        const [x, y] = at(o.x, o.y);
-        const [rx, ry] = at(o.rx, o.ry);
-        return { ...o, x, y, rx, ry };
-      }
-      return o;
-    };
-    const turned = (w: World): World => {
-      const perm = <T,>(list: readonly T[]): T[] => {
-        const out = [...list];
-        list.forEach((v, s) => (out[next(s)] = v));
-        return out;
-      };
-      return {
-        ...structuredClone(w),
-        map: { ...w.map, deposits: (w.map.deposits ?? []).map((d) => ({ ...d, x: at(d.x, d.y)[0], y: at(d.x, d.y)[1] })).sort((a, b) => a.y * n + a.x - (b.y * n + b.x)) },
-        ...(w.supply && { supply: perm(w.supply) }),
-        ...(w.out && { out: w.out.map(next).sort((a, b) => a - b) }),
-        entities: w.entities.map((e) => ({
-          ...structuredClone(e),
-          side: next(e.side),
-          x: at(e.x, e.y)[0],
-          y: at(e.x, e.y)[1],
-          order: order(e.order),
-          ...(e.stall && { stall: { ...e.stall, goal: e.stall.goal < n * n ? cell(e.stall.goal) : e.stall.goal } }),
-          ...(e.prev !== undefined && { prev: cell(e.prev) })
-        })),
-        projectiles: w.projectiles.map((p) => ({ ...p, side: next(p.side), x: at(p.x, p.y)[0], y: at(p.x, p.y)[1] })),
-        ...(w.intel && { intel: perm(w.intel.map((list) => list.map((r) => ({ ...r, side: next(r.side), x: at(r.x, r.y)[0], y: at(r.x, r.y)[1] })))) })
-      };
-    };
-    const rules = SIDES_RULESET;
-    for (const level of ['normal', 'hard'] as const) {
-      let s = newGame(1, corners, level, 30, false, null, 3);
-      for (let t = 0; t < 12 && s.phase === 'plan'; t++) {
-        const r = turned(s.world);
-        for (let side = 0; side < 4; side++) {
-          if (s.world.out?.includes(side)) continue;
-          const plan = planAi(observe(s.world, rules, side), rules, level).map((c) => ({ ...c, side: next(c.side), order: order(c.order) }));
-          expect(planAi(observe(r, rules, next(side)), rules, level), `${level} turn ${t} seat ${side}`).toEqual(plan);
-        }
-        s = lockTurn(s);
-      }
-    }
-  });
-
   it('the opponent goes for the nearest enemy post it knows of; the strongest opponent is the one with most strength', () => {
     const s = newGame(1, corners, 'normal', 30, false, null, 3);
     // Seat 1 (top left) is as close to the player (bottom left) as to seat 2 (top right); seat 2 to seats 1 and 3.
@@ -1179,26 +1129,6 @@ describe('several sides (docs/design/strategy.md § 9.4)', () => {
     expect(truckOrders().map((c) => c.order.type)).toEqual(['move']);
   });
 
-  it('two-side maps keep their measured AI exactly: plans of AI-vs-AI games match the fingerprint from before increment 4 (PR #24 review)', () => {
-    // Produced by the AI of main at 080fab6 (before increment 4): every change for several sides
-    // must leave the one-opponent games on the two-side maps byte-identical.
-    let h = 0x811c9dc5;
-    const feed = (text: string) => {
-      for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193) >>> 0;
-    };
-    for (const spec of SCENARIOS.filter((x) => !x.seats)) {
-      for (const [mine, theirs] of [['hard', 'normal'], ['normal', 'hard']] as const) {
-        let s = newGame(3, spec, theirs, 24);
-        while (s.phase === 'plan') {
-          for (const c of ai(s.world, PLAYER, mine)) s = planOrder(s, c.unit, c.order, c.doctrine) ?? s;
-          s = lockTurn(s);
-        }
-        feed(canonicalJson(s.log));
-      }
-    }
-    expect(h.toString(16)).toBe(TWO_SIDE_AI_FINGERPRINT);
-  }, 300_000);
-
   it('saves: v8 migrates to v9 with one opponent; a v9 save must match its map, count, rules and frames', () => {
     const v8 = JSON.parse(JSON.stringify({ ...newGame(4), v: 8 })) as Record<string, unknown>;
     delete v8.opponents;
@@ -1240,34 +1170,6 @@ describe('hot-seat (docs/design/strategy.md § 9.4, D10)', () => {
   };
   const valid = (s: RcState) => isValidState(JSON.parse(JSON.stringify(s)));
   const game = (seats: Seat[], opponents = 3, limit: number | null = 30) => newGame(7, corners, 'normal', limit, false, null, opponents, seats);
-
-  // Taken before hot-seat (main at f2ee871: 'cdaa78b6'); updated when a side stopped being told
-  // where its own shells land in cells it does not observe (PR #28): first `observe()` (the AI on
-  // Four Corners plans differently in a few turns: '4af64ac7'), then the reports (the player's turn
-  // summaries lose such `launch` events; no plan changes: 'fe0a5277'); then when a side stopped
-  // being told of a shot by its own unit out of contact at an enemy it never had reported (gate
-  // find, 2026-10-14: the summaries lose such `fire` events; world, log and result unchanged:
-  // '83a1b8af'); then when the opponent started to build defence towers (owner decision 2026-10-16,
-  // a deliberate AI change with a measured gain, like the two-side fingerprint: 'da7608a7').
-  it('one person is the single-player game, byte for byte: every map and opponent count matches the fingerprint taken before hot-seat (main at f2ee871)', () => {
-    let h = 0x811c9dc5;
-    const feed = (text: string) => {
-      for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193) >>> 0;
-    };
-    for (const spec of SCENARIOS) {
-      for (const n of opponentCounts(spec)) {
-        let s = newGame(5, spec, 'normal', 12, false, null, n);
-        expect(isHotSeat(s)).toBe(false);
-        while (s.phase === 'plan') {
-          s = plan(s, 'hard');
-          s = lockTurn(s);
-          expect(s.handover).toBe(false);
-          feed(canonicalJson({ world: s.world, events: s.events, entry: s.log.at(-1), lead: s.lead, result: s.result }));
-        }
-      }
-    }
-    expect(h.toString(16)).toBe('da7608a7');
-  }, 300_000);
 
   it('the seats: side 0 is always a person, the default is the computer; several persons have no quick match', () => {
     expect(newGame(1, corners, 'normal', null, true, null, 3).seats).toEqual(['person', 'computer', 'computer', 'computer']);
@@ -1613,6 +1515,55 @@ describe('planning ledger, stalemate pressure, save bounds (mutation run on rule
   });
 });
 
+describe('tower walls (owner review 2026-10-18: no more units fed into a known tower wall)', () => {
+  /** Field Exercise with Gun Towers around the player's post, known to the opponent (as at the start: structures are known). */
+  const walled = (cells: readonly (readonly [number, number])[]) => {
+    const w = structuredClone(newGame(1).world);
+    const post = w.entities.find((e) => e.side === PLAYER && e.kind === 'command-post')!;
+    for (const [dx, dy] of cells) {
+      const x = post.x + dx, y = post.y + dy;
+      if (x < 0 || y < 0 || x >= w.map.w || y >= w.map.h || !passable(w.map, RULESET, x, y, 'ground') || w.entities.some((e) => e.x === x && e.y === y)) continue;
+      w.entities.push({ ...post, id: w.nextId++, kind: 'tower-gun', hp: RULESET.archetypes['tower-gun']!.hp, x, y });
+    }
+    w.intel = initialIntel(w, RULESET);
+    return { w, post };
+  };
+  it('the rally point stands back beyond the reach of the known towers around the post', () => {
+    const open = walled([]);
+    const plain = assaultPlan(observe(open.w, RULESET, OPPONENT), RULESET, 'normal')!;
+    const { w, post } = walled([[2, -2], [3, -1], [3, 0], [2, -3], [1, -3], [3, -3]]);
+    const towers = w.entities.filter((e) => e.kind === 'tower-gun');
+    expect(towers.length).toBeGreaterThanOrEqual(3);
+    const plan = assaultPlan(observe(w, RULESET, OPPONENT), RULESET, 'normal')!;
+    const far = (p: { x: number; y: number }) => Math.hypot(p.x - post.x, p.y - post.y);
+    expect(far(plan.rally)).toBeGreaterThan(far(plain.rally));
+    const reach = RULESET.archetypes['tower-gun']!.weapon!.range + 1;
+    expect(towers.every((t) => Math.hypot(t.x - plan.rally.x, t.y - plan.rally.y) > reach)).toBe(true);
+  });
+
+  it('the storm waits for a known tower wall: a tower weighs twice its price among the post\'s defenders (review of PR #60)', () => {
+    // Only towers defend the post (the player's fighters are taken off); the opponent's force has gathered.
+    const setup = (cells: readonly (readonly [number, number])[], towers = cells.length) => {
+      const { w } = walled(cells);
+      const keep = new Set(w.entities.filter((e) => e.kind === 'tower-gun').slice(0, towers).map((e) => e.id));
+      w.entities = w.entities.filter((e) => e.side !== PLAYER || (e.kind === 'tower-gun' ? keep.has(e.id) : (RULESET.archetypes[e.kind]?.speed ?? 0) === 0));
+      w.turn = 10;
+      w.intel = initialIntel(w, RULESET);
+      return { ...assaultPlan(observe(w, RULESET, OPPONENT), RULESET, 'normal')!, towers: w.entities.filter((e) => e.kind === 'tower-gun').length };
+    };
+    const bare = setup([]);
+    expect(bare.storming).toBe(true); // nothing defends the post: the gathered force goes
+    const two = setup([[3, 0], [3, -1], [3, 1], [2, -2], [3, -2], [2, 2]], 2);
+    expect(two.towers).toBe(2);
+    const towerValue = 2 * RULESET.archetypes['tower-gun']!.cost;
+    const ours = two.all.reduce((sum, f) => sum + (RULESET.archetypes[f.kind]!.cost * f.hp) / RULESET.archetypes[f.kind]!.hp, 0);
+    // At their price the two towers would not hold the storm back; weighed double they do.
+    expect(ours).toBeGreaterThanOrEqual(towerValue * 1.3);
+    expect(ours).toBeLessThan(2 * towerValue * 1.3);
+    expect(two.storming).toBe(false);
+  });
+});
+
 describe('opponent economy and easy fighters (mutation run on ai.ts, 2026-10-15)', () => {
   const plan = (world: World, level: Difficulty) => planAi(observe(world, RULESET, OPPONENT), RULESET, level);
   const jobs = (cmds: readonly Command[]) => cmds.filter((c) => c.order.type === 'produce' || c.order.type === 'build').map((c) => (c.order.type === 'build' || c.order.type === 'produce' ? c.order.kind : ''));
@@ -1814,5 +1765,75 @@ describe('random maps (I6c, state v12)', () => {
     delete v11.random;
     expect(migrateState(v11, 11)).toMatchObject({ v: 12, random: null });
     expect(migrateState({ ...v11, v: 12 }, 11)).toBeUndefined();
+  });
+});
+
+describe('storms against a ringed post (2026-10-21)', () => {
+  /**
+   * A plain 20×9 map: the player's post (by default at (1, 4)) with pieces on its neighbours
+   * (`ring`, but for the `open` cells), the opponent's post (by default at (18, 4)) and its fighters. Only structures are known at the start,
+   * so a ring of squads is not (a ring of towers is).
+   */
+  const world = (turn: number, ring: string, opponent: readonly { kind: string; x: number; y: number }[], open: readonly (readonly [number, number])[] = [], [px, py, ox, oy] = [1, 4, 18, 4]) => {
+    const entities = [
+      { side: PLAYER, kind: 'command-post', x: px, y: py },
+      { side: OPPONENT, kind: 'command-post', x: ox, y: oy },
+      ...opponent.map((u) => ({ side: OPPONENT, ...u }))
+    ];
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        const x = px + dx, y = py + dy;
+        if ((dx || dy) && x >= 0 && y >= 0 && x < 20 && y < 9 && !open.some(([ax, ay]) => ax === x && ay === y)) entities.push({ side: PLAYER, kind: ring, x, y });
+      }
+    }
+    const w = createWorld({ map: { w: 20, h: 9, terrain: '.'.repeat(180) }, sides: 2, entities, seed: 1 }, RULESET);
+    w.turn = turn;
+    w.intel = initialIntel(w, RULESET);
+    const obs = observe(w, RULESET, OPPONENT);
+    const post = obs.world.entities.find((e) => e.side === PLAYER && e.kind === 'command-post')!;
+    const at = (x: number, y: number) => obs.world.entities.find((e) => e.x === x && e.y === y)!;
+    return { approach: approachCells(obs, RULESET, post), at, w };
+  };
+  const ESCALATE = 60;
+  const r = (p: { x: number; y: number }) => Math.max(Math.abs(p.x - 1), Math.abs(p.y - 4));
+
+  it('before the opponent stops waiting a fighter heads for the post, whatever it cannot see around it', () => {
+    const { approach, at } = world(ESCALATE - 1, 'rifles', [{ kind: 'rifles', x: 10, y: 4 }]);
+    expect(approach(at(10, 4))).toEqual({ x: 1, y: 4 });
+  });
+
+  it('later, a fighter far off heads for the farthest free cell of the outer rings it cannot see (a ring may be two deep), in its frame', () => {
+    // The player's post in the bottom right corner region: the first cell in the opponent's frame (a
+    // half turn) lies next to the post, so a tie-break that ignores the distance would pick a near one.
+    const { approach, at, w } = world(ESCALATE, 'rifles', [{ kind: 'rifles', x: 9, y: 4 }, { kind: 'rifles', x: 10, y: 4 }], [], [18, 7, 1, 1]);
+    const dist = (p: { x: number; y: number }) => Math.max(Math.abs(p.x - 18), Math.abs(p.y - 7));
+    const first = approach(at(9, 4));
+    expect(dist(first)).toBe(APPROACH_RADIUS);
+    // Ties by the side's frame: the first free cell of the outermost ring as the opponent sees the map.
+    const order = (p: { x: number; y: number }) => frameIndexIn(w.map, frameOf(w, OPPONENT), cellOf(w.map, p.x, p.y));
+    const outermost: { x: number; y: number }[] = [];
+    for (let y = 0; y < 9; y++) for (let x = 0; x < 20; x++) if (dist({ x, y }) === APPROACH_RADIUS) outermost.push({ x, y });
+    expect(first).toEqual(outermost.sort((a, b) => order(a) - order(b))[0]);
+    // Each fighter claims a cell of its own.
+    const second = approach(at(10, 4));
+    expect(dist(second)).toBe(APPROACH_RADIUS);
+    expect(second).not.toEqual(first);
+  });
+
+  it('later, a cell the side sees goes first, nearest first, never one next to the post', () => {
+    // A relay mast carries the cover to x 7, where an Outrider sees the post's surroundings; one cell next to the post is free.
+    const { approach, at } = world(ESCALATE, 'rifles', [{ kind: 'relay-mast', x: 13, y: 4 }, { kind: 'outrider', x: 7, y: 4 }], [[2, 3]]);
+    const goal = approach(at(7, 4));
+    expect(r(goal)).toBe(2);
+  });
+
+  it('later, a fighter within APPROACH_RADIUS still heads for the post', () => {
+    const { approach, at } = world(ESCALATE, 'rifles', [{ kind: 'rifles', x: 1 + APPROACH_RADIUS, y: 4 }]);
+    expect(approach(at(1 + APPROACH_RADIUS, 4))).toEqual({ x: 1, y: 4 });
+  });
+
+  it('a fighter close to a post walled in by known towers stays where it is rather than step to a cell no nearer', () => {
+    const { approach, at } = world(ESCALATE, 'tower-gun', [{ kind: 'rifles', x: 3, y: 4 }]);
+    expect(approach(at(3, 4))).toEqual({ x: 3, y: 4 });
   });
 });

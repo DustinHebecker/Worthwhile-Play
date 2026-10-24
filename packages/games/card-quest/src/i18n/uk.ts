@@ -123,6 +123,9 @@ export const uk: Catalogue = {
   'act.escape': 'Утекти зараз',
   'act.curse': 'Прокляти: {name}',
   'act.upgrade': 'Прикріпити до: {name}',
+  'eq.attached': 'Прикріплено до: {name}',
+  'gear.upgraded': '{item} (+ {upgrades})',
+  'detail.total': 'З покращеннями ({upgrades}): разом {n}',
   'sell.title': 'Обери предмети й одноразові карти для продажу. Цінність {sum} → рівень +{levels}.',
   'sell.need': 'Кожні {rate} очок цінності = 1 рівень (не переможний).',
 
@@ -342,5 +345,32 @@ export const uk: Catalogue = {
   'log.give.toYou': '{name} — віддано тобі карт: {n}.',
   'log.curse.toYou': '{name} — прокляття на тебе: {card}.',
   // Reveal pending
-  'next.reveal': 'Тебе зачепила карта: прочитай її, потім тисни «Далі».'
+  'next.reveal': 'Тебе зачепила карта: прочитай її, потім тисни «Далі».',
+  // K3: worlds Spaceloot and Office
+  'world.sl': 'Космомотлох — екіпаж проти прибульців',
+  'world.of': 'Офісний хаос — офіс проти дистанційки',
+  'setup.worlds': 'Світи',
+  'setup.worldModes.random': 'Випадково',
+  'setup.worldModes.pick': 'Вибрати',
+  'setup.worlds.random': 'Випадково: один світ або суміш двох, наново для кожної нової гри.',
+  'setup.worlds.hint': 'Кілька світів тасуються разом. Нічого не позначено: випадково.',
+  'family.crew': 'екіпаж корабля',
+  'family.alien': 'прибульці',
+  'family.office': 'офісні працівники',
+  'family.remote': 'дистанційники',
+  'set.away-team': 'Спорядження десантної групи',
+  'set.tourist-kit': 'Набір космотуриста',
+  'set.video-call': 'Набір для відеодзвінка',
+  'set.couch-kit': 'Комплект «Офіс на дивані»',
+  // Worlds Fridge and Railway
+  'world.fd': 'Експедиція в холодильник — свіже проти залишків',
+  'world.rw': 'Потяг відправляється — пасажири проти залізничників',
+  'family.fresh': 'свіжі продукти',
+  'family.leftover': 'залишки',
+  'family.passenger': 'пасажири',
+  'family.railstaff': 'залізничники',
+  'set.fridge-raider': 'Набір для нічного набігу на холодильник',
+  'set.chef-kit': 'Справжнє кухарське спорядження',
+  'set.conductor-kit': 'Справжнє кондукторське спорядження',
+  'set.commuter-kit': 'Набір для поїздок зі стажем'
 };
