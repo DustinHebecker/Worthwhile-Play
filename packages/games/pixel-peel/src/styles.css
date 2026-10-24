@@ -31,8 +31,12 @@
   border-radius: var(--wp-radius);
   overscroll-behavior: contain;
 }
-/* On phones the picture stays at the top while the player scrolls to the lanes, so the spotlight is always seen. */
-@media (max-width: 47.99rem) {
+/*
+ * On phones held upright the picture stays at the top while the player scrolls to the lanes, so the spotlight is
+ * always seen; the view keeps it within half the screen height. Not on short screens (a phone held sideways), where a
+ * sticky picture would cover the lanes.
+ */
+@media (max-width: 47.99rem) and (min-height: 32rem) {
   .wp-pixel-peel .pp-board:not(.is-large) {
     position: sticky;
     inset-block-start: 0;
@@ -43,7 +47,7 @@
   /* A control reached by keyboard is never left under the sticky picture. */
   .wp-pixel-peel button,
   .wp-pixel-peel summary,
-  .wp-pixel-peel input { scroll-margin-block-start: calc(100vw - 0.5rem); }
+  .wp-pixel-peel input { scroll-margin-block-start: min(calc(100vw - 0.5rem), calc(50vh + 0.5rem)); }
 }
 .wp-pixel-peel .pp-board.is-large:focus-visible { outline: 3px solid var(--wp-focus); outline-offset: 2px; }
 .wp-pixel-peel .pp-board.is-large .pp-canvas { max-inline-size: none; }

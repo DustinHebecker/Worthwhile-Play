@@ -134,6 +134,8 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
   };
   const wide = () => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(min-width: 48rem)').matches;
   const wholeLanes = () => display.wholeLanes ?? wide();
+  /** The picture sticks to the top of the screen (the media query of styles.css). */
+  const stickyTop = () => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 47.99rem) and (min-height: 32rem)').matches;
 
   // --- Text helpers ------------------------------------------------------------------------------------------
 
@@ -632,14 +634,18 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
   /**
    * Cell size in CSS px: Fit fills the available width (at least 5 px), Large is 14 px. Measured once per mount and
    * resize: reading layout on every launch would force a layout each time.
+   * Fit also keeps the picture within the screen height, so the lanes are never pushed out of reach: where the picture
+   * sticks to the top (narrow and tall screens, see styles.css) it takes at most half the height, elsewhere 90 %.
    */
   let fitCell = 0;
   const cellSize = () => {
-    const { w } = table.engine;
+    const { w, h } = table.engine;
     if (display.large) return LARGE_CELL;
     if (!fitCell) {
       const avail = available();
-      fitCell = avail > 0 ? Math.max(5, Math.min(24, Math.floor((avail - 2 * TRACK) / w))) : 0;
+      const tall = typeof window !== 'undefined' && window.innerHeight > 0 ? window.innerHeight : 0;
+      const byHeight = tall > 0 ? Math.floor((tall * (stickyTop() ? 0.5 : 0.9) - 2 * TRACK) / h) : 24;
+      fitCell = avail > 0 ? Math.max(5, Math.min(24, Math.floor((avail - 2 * TRACK) / w), byHeight)) : 0;
       if (!fitCell) return 8;
     }
     return fitCell;

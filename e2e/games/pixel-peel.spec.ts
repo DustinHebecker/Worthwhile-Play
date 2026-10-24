@@ -186,6 +186,25 @@ test('pixel-peel: at 360 × 740 a 64-wide picture fits, nothing scrolls sideways
   }
 });
 
+test('pixel-peel: the picture fits the screen height; held sideways it does not stick over the lanes', async ({ page }) => {
+  // Upright phone: the picture sticks to the top and takes at most half the height.
+  await page.setViewportSize({ width: 360, height: 640 });
+  await startGame(page, ID, { difficulty: 'hard', settings: { motif: 'tiger' } });
+  await savedState(page);
+  const board = root(page).getByTestId('pp-board');
+  expect(await board.evaluate((el) => getComputedStyle(el).position)).toBe('sticky');
+  expect((await root(page).getByTestId('pp-canvas').boundingBox())?.height ?? 999).toBeLessThanOrEqual(320);
+  // Sideways (740 × 360): not sticky, the whole picture fits the height, and the lanes can be scrolled into view.
+  await page.setViewportSize({ width: 740, height: 360 });
+  await expect.poll(async () => (await root(page).getByTestId('pp-canvas').boundingBox())?.height ?? 999).toBeLessThanOrEqual(0.9 * 360);
+  expect(await board.evaluate((el) => getComputedStyle(el).position)).not.toBe('sticky');
+  const lane = root(page).getByTestId('pp-lane-0');
+  await lane.scrollIntoViewIfNeeded();
+  const box = await lane.boundingBox();
+  const hit = await page.evaluate(([x, y]) => (document.elementFromPoint(x!, y!) as HTMLElement | null)?.closest('[data-testid]')?.getAttribute('data-testid'), [(box?.x ?? 0) + (box?.width ?? 0) / 2, (box?.y ?? 0) + (box?.height ?? 0) / 2]);
+  expect(hit).toBe('pp-lane-0');
+});
+
 test('pixel-peel: Large view scrolls inside its region, pans with the arrow keys and shows symbols', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 740 });
   await startGame(page, ID, { difficulty: 'hard', settings: { motif: 'koala' } });
