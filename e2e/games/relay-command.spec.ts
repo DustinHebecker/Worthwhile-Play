@@ -293,6 +293,27 @@ test('relay-command: a random map with four bases (three opponents) survives a r
   await expect(page.getByTestId('rc-opponents')).toBeDisabled();
 });
 
+test('relay-command: a team game (2 against 2) on Four Corners survives a reload; allies have their own list; it fits a 360 px phone', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await start(page);
+  await page.getByTestId('rc-scenario').selectOption('four-corners');
+  await page.getByTestId('rc-opponents').selectOption('3');
+  await page.getByTestId('rc-teams').selectOption('2v2-next');
+  const teams = async () => ((await saved(page)) as unknown as { world: { teams?: number[] } } | undefined)?.world.teams;
+  await expect.poll(teams).toEqual([0, 0, 1, 1]);
+  await expect(page.getByTestId('rc-allies-panel')).toBeVisible();
+  const widths = await page.evaluate(() => ({ page: document.documentElement.scrollWidth, viewport: document.documentElement.clientWidth }));
+  expect(widths.page).toBeLessThanOrEqual(widths.viewport);
+  await page.reload();
+  await page.getByTestId('continue').click();
+  await expect(page.getByTestId('rc-teams')).toHaveValue('2v2-next');
+  await expect(page.getByTestId('rc-allies-panel')).toBeVisible();
+  expect(await teams()).toEqual([0, 0, 1, 1]);
+  await page.getByTestId('rc-lock').click();
+  await expect.poll(async () => (await saved(page))?.world.turn).toBe(1);
+  await expect(page.getByTestId('rc-teams')).toBeDisabled();
+});
+
 test('relay-command: the Command Post places an Extractor on a deposit by tapping the map', async ({ page, isMobile }) => {
   await start(page);
   const s = (await saved(page))!;

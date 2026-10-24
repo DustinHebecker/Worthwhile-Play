@@ -1,5 +1,5 @@
 import { isArrayOf, isInt, isOneOf, isRecord, isUint32, normalizeSeed } from '@wp/game-core';
-import {
+import { hostile, teamOf,
   archetypeOf,
   computeNetwork,
   createWorld,
@@ -95,6 +95,29 @@ export const PLAYER_DOCTRINE: Doctrine = { ...DEFAULT_DOCTRINE, lostContact: 're
 /** The rules of a game: capture and elimination once there are several opponents or a neutral post. */
 export const rulesetFor = (spec: ScenarioSpec, opponents: number): Ruleset =>
   opponents > 1 || (scenarioFor(spec, opponents)?.entities.some((e) => e.side === NEUTRAL) ?? false) ? SIDES_RULESET : RULESET;
+/**
+ * Teams (owner decisions 2026-10-24) on maps with four bases. A layout gives each side its team
+ * (side 0 is the player; sides are the map's seats in its layout for that many opponents, so on a
+ * four-base map side 1 is the corner next to the player and side 2 the one across): two opponents
+ * play 2 against 1 with the ally next to the player or across; three play 2 against 2 (ally next
+ * or across), 3 against 1 (the lone opponent across) or 1 against 3. Absent: free-for-all.
+ */
+export type TeamShape = '2v1-next' | '2v1-across' | '2v2-next' | '2v2-across' | '3v1' | '1v3';
+export const TEAM_LAYOUTS: Readonly<Record<TeamShape, readonly number[]>> = {
+  '2v1-next': [0, 0, 1],
+  '2v1-across': [0, 1, 0],
+  '2v2-next': [0, 0, 1, 1],
+  '2v2-across': [0, 1, 0, 1],
+  '3v1': [0, 0, 1, 0],
+  '1v3': [0, 1, 1, 1]
+};
+/** The team shapes a map offers for `opponents` (maps with seats only; two-side maps: none). */
+export const teamShapes = (spec: ScenarioSpec, opponents: number): TeamShape[] =>
+  spec.seats && opponentCounts(spec).includes(opponents) ? (Object.keys(TEAM_LAYOUTS) as TeamShape[]).filter((k) => TEAM_LAYOUTS[k].length === opponents + 1) : [];
+/** The shape of a world's teams, or null for free-for-all (and for a layout that is no shape). */
+export const teamShapeOf = (world: Pick<World, 'teams'>): TeamShape | null =>
+  world.teams ? ((Object.keys(TEAM_LAYOUTS) as TeamShape[]).find((k) => JSON.stringify(TEAM_LAYOUTS[k]) === JSON.stringify(world.teams)) ?? null) : null;
+
 /** The rules of a running game. */
 export const rulesOf = (state: Pick<RcState, 'scenario' | 'map' | 'opponents'>): Ruleset => {
   const spec = specOf(state);
@@ -102,12 +125,13 @@ export const rulesOf = (state: Pick<RcState, 'scenario' | 'map' | 'opponents'>):
 };
 
 /** The scenario's world at the start of a game (every side alike, so the start is fair); `endless`: no deposit runs dry. */
-export function initialWorld(spec: ScenarioSpec, seed: number, opponents = 1, endless = false): World {
+export function initialWorld(spec: ScenarioSpec, seed: number, opponents = 1, endless = false, teams: TeamShape | null = null): World {
   const scenario = scenarioFor(spec, opponents);
   if (!scenario) throw new RangeError(`${spec.id} has no layout for ${opponents} opponents.`);
+  if (teams && !teamShapes(spec, opponents).includes(teams)) throw new RangeError(`${spec.id} has no teams ${teams} for ${opponents} opponents.`);
   const rules = rulesetFor(spec, opponents);
   const map = endless && scenario.map.deposits ? { ...scenario.map, deposits: scenario.map.deposits.map((d) => ({ ...d, endless: true as const })) } : scenario.map;
-  const world = createWorld({ ...scenario, map, seed }, rules);
+  const world = createWorld({ ...scenario, map, seed, ...(teams && { teams: [...TEAM_LAYOUTS[teams]] }) }, rules);
   // Mobile units follow it; yards carry it so the units they produce follow it too.
   for (const e of world.entities) {
     const arch = archetypeOf(RULESET, e.kind);
@@ -200,14 +224,17 @@ export const scenarioById = (id: string): ScenarioSpec | undefined => SCENARIOS.
 /** The scenario a game runs on: its player-made map, else the built-in one. */
 export const specOf = (state: Pick<RcState, 'scenario' | 'map'>): ScenarioSpec | undefined => (state.map ? customSpec(state.map) : scenarioById(state.scenario));
 
-export function newGame(seed: number, base: ScenarioSpec = FIELD_EXERCISE, difficulty: Difficulty = 'normal', turnLimit: number | null = base.turnLimit, quick = false, map: EditMap | null = null, opponents = 1, seats: readonly Seat[] = [], endless = false, random: RandomMap | null = null): RcState {
+export function newGame(seed: number, base: ScenarioSpec = FIELD_EXERCISE, difficulty: Difficulty = 'normal', turnLimit: number | null = base.turnLimit, quick = false, map: EditMap | null = null, opponents = 1, seats: readonly Seat[] = [], endless = false, random: RandomMap | null = null, teams: TeamShape | null = null): RcState {
   const spec = map ? customSpec(map) : base;
   // Only the counts the map declares (two-side maps and player-made ones: one).
   const count = opponentCounts(spec).includes(opponents) ? opponents : 1;
-  const world = initialWorld(spec, seed, count, endless);
   // Side 0 is always a person; seats not given are the computer's.
   const seating: Seat[] = Array.from({ length: count + 1 }, (_, side) => (side === PLAYER ? 'person' : seats[side] === 'person' ? 'person' : 'computer'));
   const several = seating.filter((x) => x === 'person').length > 1;
+  // Teams only with a shape the map offers for this count, and not with several persons yet (a
+  // hot-seat game names one winner).
+  const team = teams && !several && teamShapes(spec, count).includes(teams) ? teams : null;
+  const world = initialWorld(spec, seed, count, endless, team);
   return {
     v: 12,
     seed: normalizeSeed(seed),
@@ -518,7 +545,7 @@ export const canSettle = (state: RcState): boolean =>
 
 /** The result `settle` would give now (strength as in every decision on strength). */
 export function settleResult(state: RcState): Outcome {
-  const diff = sideValue(state.world, PLAYER) - opponentValue(state.world);
+  const diff = teamValue(state.world, PLAYER) - opponentValue(state.world);
   return diff > 0 ? 'won' : diff < 0 ? 'lost' : 'draw';
 }
 
@@ -616,9 +643,9 @@ export const reportTurn = (tick: number): number => Math.ceil(tick / RULESET.tic
 export const commandPost = (world: World, side: number): Entity | undefined =>
   world.entities.find((e) => e.side === side && e.kind === COMMAND_POST);
 
-/** The opponents still in the game (they hold a Command Post). */
+/** The opponents still in the game (they hold a Command Post); with teams, the sides hostile to the player. */
 export const opponentsLeft = (world: World): number[] =>
-  Array.from({ length: world.sides - 1 }, (_, i) => i + 1).filter((side) => !world.out?.includes(side) && commandPost(world, side) !== undefined);
+  Array.from({ length: world.sides - 1 }, (_, i) => i + 1).filter((side) => hostile(world, PLAYER, side) && !world.out?.includes(side) && commandPost(world, side) !== undefined);
 
 /** The strongest opponent still in the game (ties: the lowest side), or OPPONENT when none is left. */
 export function strongestOpponent(world: World): number {
@@ -633,8 +660,25 @@ export function strongestOpponent(world: World): number {
  */
 export const opponentValue = (world: World): number => {
   const left = opponentsLeft(world);
-  return left.length === 0 ? 0 : Math.max(...left.map((side) => sideValue(world, side)));
+  if (left.length === 0) return 0;
+  // With teams a hostile team counts as one: the strength of its sides still in the game.
+  return Math.max(...left.map((side) => teamValue(world, side)));
 };
+
+/**
+ * The strength of `side` and its allies still in the game (without teams: the side's own). The
+ * player is measured by its team's: allies who still hold a post win together (owner decision
+ * 2026-10-24); an ally that is out counts nothing.
+ */
+export function teamValue(world: World, side: number): number {
+  if (!world.teams) return sideValue(world, side);
+  let total = 0;
+  for (let s = 0; s < world.sides; s++) {
+    if (teamOf(world, s) !== teamOf(world, side) || world.out?.includes(s) || commandPost(world, s) === undefined) continue;
+    total += sideValue(world, s);
+  }
+  return total;
+}
 
 /** Remaining strength of a side: build value scaled by remaining health. */
 /**
@@ -662,7 +706,7 @@ export const stalled = (from: number, to: number): boolean =>
 /** The stalemate record after a turn: restarts whenever the trailing side gained ground. */
 function nextLead(lead: readonly number[], world: World, counting: boolean): number[] {
   if (!counting) return [];
-  const now = sideValue(world, PLAYER) - opponentValue(world);
+  const now = teamValue(world, PLAYER) - opponentValue(world);
   const start = lead[0];
   return start !== undefined && stalled(start, now) ? [...lead, now].slice(0, STALL_TURNS + 1) : [now];
 }
@@ -684,13 +728,13 @@ export function outcome(world: World, turnLimit: number | null, lead: readonly n
   if (!own) return 'lost';
   const decided = turnLimit === null ? (quick && stalemateTurns({ lead: [...lead] }) >= STALL_TURNS) || world.turn >= MAX_TURNS : world.turn >= turnLimit;
   if (!decided) return null;
-  const diff = sideValue(world, PLAYER) - opponentValue(world);
+  const diff = teamValue(world, PLAYER) - opponentValue(world);
   return diff > 0 ? 'won' : diff < 0 ? 'lost' : 'draw';
 }
 
 /** Re-runs the logged plans from the scenario start (bug reports, tests). */
-export function replay(seed: number, log: readonly TurnLog[], spec: ScenarioSpec = FIELD_EXERCISE, opponents = 1, endless = false): World {
-  let world = initialWorld(spec, seed, opponents, endless);
+export function replay(seed: number, log: readonly TurnLog[], spec: ScenarioSpec = FIELD_EXERCISE, opponents = 1, endless = false, teams: TeamShape | null = null): World {
+  let world = initialWorld(spec, seed, opponents, endless, teams);
   const rules = rulesetFor(spec, opponents);
   for (const entry of log) {
     for (const side of entry.retired ?? []) world = retire(world, side).world;
@@ -849,15 +893,18 @@ export function isValidState(value: unknown): value is RcState {
   const spec = value.map ? customSpec(value.map) : scenarioById(value.scenario);
   if (!spec || !(value.turnLimit === null || isInt(value.turnLimit, 1, MAX_TURNS)) || !isOneOf(value.phase, ['plan', 'finished'])) return false;
   // The opponent count must be one the map offers, and the world must be set up for it: its sides,
-  // frames and rules (capture only with several sides or a neutral post), no teams (free-for-all).
+  // frames and rules (capture only with several sides or a neutral post), teams only as offered.
   const opponents = value.opponents;
   const scenario = opponentCounts(spec).includes(opponents) ? scenarioFor(spec, opponents) : undefined;
   if (!scenario) return false;
   const rules = rulesetFor(spec, opponents);
   if (!isValidWorld(value.world, rules) || value.world.sides !== opponents + 1 || !matchesScenario(value.world, spec, opponents, value.endless)) return false;
-  // A crafted save must not turn a side's post neutral, add teams or change how a side sees the map.
+  // A crafted save must not turn a side's post neutral, add teams the map does not offer (or with
+  // several persons) or change how a side sees the map.
   const w = value.world;
-  if (w.teams !== undefined || JSON.stringify(w.frames ?? null) !== JSON.stringify(scenario.frames ?? null)) return false;
+  const shape = teamShapeOf(w);
+  if (w.teams !== undefined && (!shape || !teamShapes(spec, opponents).includes(shape) || (Array.isArray(value.seats) && value.seats.filter((x) => x === 'person').length > 1))) return false;
+  if (JSON.stringify(w.frames ?? null) !== JSON.stringify(scenario.frames ?? null)) return false;
   if (rules.capture ? false : w.out !== undefined) return false;
   const neutralIds = new Set(scenario.entities.flatMap((e, i) => (e.side === NEUTRAL ? [i + 1] : [])));
   if (w.entities.some((e) => e.side === NEUTRAL && !neutralIds.has(e.id))) return false;
