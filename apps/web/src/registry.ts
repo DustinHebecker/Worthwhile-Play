@@ -76,7 +76,8 @@ export const GAMES: readonly GameEntry[] = [
   entry('compression-challenge', () => import('@wp/game-compression-challenge')),
   entry('mini-optimizer', () => import('@wp/game-mini-optimizer')),
   entry('pixel-peel', () => import('@wp/game-pixel-peel')),
-  entry('fermi-lab', () => import('@wp/game-fermi-lab'))
+  entry('fermi-lab', () => import('@wp/game-fermi-lab')),
+  entry('probability-detective', () => import('@wp/game-probability-detective'))
 ];
 
 export const findGame = (id: string): GameEntry | undefined => GAMES.find((g) => g.metadata.id === id);

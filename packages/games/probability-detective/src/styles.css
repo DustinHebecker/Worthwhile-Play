@@ -1,0 +1,84 @@
+/* Probability Detective. All rules are scoped under .wp-probability-detective and use logical properties (RTL-safe).
+   Hypotheses are told apart by mark (● ■ ▲), name and pattern (solid, hatched, dotted); colour only reinforces.
+   Split bars and the slider follow the reading direction (they show a split, not a numeric axis); formulas are LTR. */
+.wp-probability-detective { display: grid; gap: 0.75rem; max-width: 64rem; margin-inline: auto; min-width: 0; overflow-wrap: anywhere; }
+.wp-probability-detective .pd-main { display: grid; gap: 0.8rem; min-width: 0; }
+.wp-probability-detective p { margin: 0; }
+.wp-probability-detective h2 { margin: 0; font-size: 1.25rem; line-height: 1.35; }
+.wp-probability-detective h3 { margin: 0; font-size: 1.05rem; }
+.wp-probability-detective .pd-heading:focus { outline-offset: 4px; }
+.wp-probability-detective .pd-head { display: grid; gap: 0.25rem; }
+.wp-probability-detective .pd-progress, .wp-probability-detective .pd-small { color: var(--wp-muted); font-size: 0.93rem; }
+.wp-probability-detective button { min-height: var(--wp-touch); min-width: var(--wp-touch); }
+.wp-probability-detective .pd-primary { font-weight: 700; }
+.wp-probability-detective .pd-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+.wp-probability-detective .pd-layout { display: grid; gap: 0.8rem; min-width: 0; }
+@media (min-width: 48rem) {
+  .wp-probability-detective .pd-layout { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); align-items: start; }
+  .wp-probability-detective .pd-layout--review { grid-template-columns: minmax(0, 1fr); }
+  .wp-probability-detective .pd-panel { position: sticky; inset-block-start: 0.5rem; }
+}
+@media (max-width: 47.99rem) {
+  .wp-probability-detective .pd-panel { position: sticky; inset-block-end: 0; z-index: 1; max-block-size: 60vh; overflow-y: auto; }
+}
+
+/* The case file: paper-card look. */
+.wp-probability-detective .pd-file, .wp-probability-detective .pd-panel, .wp-probability-detective .pd-review,
+.wp-probability-detective .pd-calibration {
+  display: grid; gap: 0.6rem; padding: 0.8rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius);
+  background: var(--wp-surface); min-width: 0;
+}
+.wp-probability-detective .pd-known, .wp-probability-detective .pd-clue { display: grid; gap: 0.35rem; }
+.wp-probability-detective .pd-clue { padding: 0.6rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius); background: var(--wp-surface-2); }
+.wp-probability-detective .pd-observation { font-weight: 600; }
+.wp-probability-detective .pd-freq { display: flex; flex-wrap: wrap; gap: 0.2rem 1rem; margin: 0; padding: 0; list-style: none; }
+.wp-probability-detective .pd-you { font-weight: 600; }
+.wp-probability-detective .pd-mark { display: inline-block; min-inline-size: 1.1em; text-align: center; }
+.wp-probability-detective .pd-m0 { color: var(--wp-accent); }
+
+/* Split bar: ● solid, ■ hatched, ▲ dotted. */
+.wp-probability-detective .pd-barwrap { min-width: 0; }
+.wp-probability-detective .pd-split {
+  position: relative; display: flex; block-size: 1.4rem; border: 1px solid var(--wp-text); border-radius: 4px; overflow: hidden;
+  background: var(--wp-surface);
+}
+.wp-probability-detective .pd-seg { display: block; block-size: 100%; }
+.wp-probability-detective .pd-seg0 { background: var(--wp-accent); }
+.wp-probability-detective .pd-seg1 { background: repeating-linear-gradient(45deg, var(--wp-text) 0 2px, transparent 2px 7px); }
+.wp-probability-detective .pd-seg2 { background: radial-gradient(circle, var(--wp-text) 1.5px, transparent 2px) 0 0 / 6px 6px; }
+.wp-probability-detective .pd-seg + .pd-seg { border-inline-start: 2px solid var(--wp-text); }
+.wp-probability-detective .pd-ghost { position: absolute; inset-block-start: 50%; transform: translate(-50%, -50%); line-height: 1; font-weight: 700; color: var(--wp-text); text-shadow: 0 0 2px var(--wp-surface); }
+.wp-probability-detective[dir='rtl'] .pd-ghost { transform: translate(50%, -50%); }
+.wp-probability-detective .pd-ends { display: flex; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
+.wp-probability-detective .pd-values { font-weight: 700; font-variant-numeric: tabular-nums; }
+.wp-probability-detective .pd-slider-row { display: flex; align-items: center; gap: 0.4rem; }
+.wp-probability-detective .pd-range { flex: 1 1 auto; min-width: 0; min-height: var(--wp-touch); margin: 0; accent-color: var(--wp-accent); }
+.wp-probability-detective .pd-step { padding: 0; font-size: 1.2rem; }
+.wp-probability-detective .pd-three { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.4rem; }
+.wp-probability-detective .pd-stepper { display: inline-flex; align-items: center; gap: 0.25rem; }
+.wp-probability-detective .pd-spin {
+  display: inline-grid; place-items: center; min-inline-size: 4.5ch; min-block-size: var(--wp-touch); font-weight: 700;
+  border: 1px solid var(--wp-border); border-radius: 4px; font-variant-numeric: tabular-nums;
+}
+.wp-probability-detective .pd-hint summary, .wp-probability-detective .pd-formulas summary { min-block-size: var(--wp-touch); display: flex; align-items: center; cursor: pointer; }
+
+/* Review. */
+.wp-probability-detective .pd-truth { font-size: 1.1rem; font-weight: 700; }
+.wp-probability-detective .pd-verdict, .wp-probability-detective .pd-band { font-weight: 600; }
+.wp-probability-detective .pd-rows { display: grid; gap: 0.6rem; margin: 0; padding: 0; list-style: none; }
+.wp-probability-detective .pd-row { display: grid; gap: 0.3rem; padding-block-end: 0.5rem; border-block-end: 1px dashed var(--wp-border); }
+.wp-probability-detective .pd-weights { font-variant-numeric: tabular-nums; }
+.wp-probability-detective .pd-flag { padding: 0.5rem; border-inline-start: 4px solid var(--wp-accent); background: var(--wp-surface-2); }
+.wp-probability-detective .pd-scroll { overflow-x: auto; max-inline-size: 100%; }
+.wp-probability-detective .pd-table { border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.wp-probability-detective .pd-table :is(th, td) { padding: 0.3rem 0.5rem; border: 1px solid var(--wp-border); text-align: start; }
+.wp-probability-detective .pd-formula { direction: ltr; text-align: left; font-family: ui-monospace, monospace; font-size: 0.92rem; }
+.wp-probability-detective .pd-summary-list, .wp-probability-detective .pd-calib-list { display: grid; gap: 0.3rem; margin: 0; padding-inline-start: 1.2rem; }
+.wp-probability-detective .pd-tip { padding: 0.6rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius); }
+
+@media (forced-colors: active) {
+  .wp-probability-detective .pd-seg0 { background: CanvasText; }
+  .wp-probability-detective .pd-seg1 { background: repeating-linear-gradient(45deg, CanvasText 0 2px, Canvas 2px 7px); }
+  .wp-probability-detective .pd-seg2 { background: radial-gradient(circle, CanvasText 1.5px, Canvas 2px) 0 0 / 6px 6px; }
+}
