@@ -151,23 +151,14 @@ App size: precache about 7.7 MB (213 entries, all games and locales, offline).
 - A weekly model rate limit can stop subagents mid-review. Resume them with SendMessage once it resets.
 - Ports in use by convention: publish e2e 4793, PR gate 4795, ad-hoc checks 4796–4799, feature agents 5100–5999.
 
-## Paused state (2026-10-24, owner pause at midnight)
+## Paused state (2026-10-25)
 
-Done on 2026-10-24 (all on main and deployed):
-- Host: games may ship a subset of locales as a preview (`metadata.locales`, `status: 'preview'`, English fallback marked `lang="en"`, a "Work in progress" badge; ADR 0003 amendment).
-- CI: `*.slow.test.ts` run in the `long` job without coverage (ADR 0021 amendment). The quality job dropped from about 14 to about 5 minutes.
-- Pixel Peel v2 (reviewed: landscape blocker fixed, art fixes, faster generator), now fifth on the home page by owner request.
-- Estimation Lab (reviewed and fact-checked; RTL numbers read left to right by owner decision).
-- Merged: #68, #70 and #72 (strategy teams, Bastion); #69 (Lootlings upgrades visible); #71 (Many Lives E2 preview, en/de).
+Done on 2026-10-25 (on main and deployed): Lootlings #73 (8 worlds; random games show the drawn worlds). Estimation Lab: the start screen picks "Free estimate" or "Guided, with help"; the extra model step is gone (owner request), and saves migrate v1 to v2.
 
 Open, in this order:
-- Lootlings #73 (worlds Creepy Crawlies, Break Time, Big Top; random games show the drawn worlds): gate, then merge. The owner says Lootlings is complete after this; only change requests from now on.
-- Strategy: the map editor for four-base maps comes as the next PR (held on `backup/strategy-engine`).
-- Probability Detective (new-games pipeline, game 3): the plan is on `plan/probability-detective`. Owner decisions on 2026-10-24: title kept, the calibration notebook, all 16 locales. The implementation is on `game/probability-detective`; its worktree is `scratchpad/pd-wt`, which may be gone after a container restart (work from the branch).
-  - Last green commit: e63189d (clue mode only).
-  - 5da43d1 and 986c609 (WIP) add the checks and traps modes. They are not green: 9 locales (ru, uk, pl, tr, ar, hi, ja, ko, zh-Hans) still lack the new texts.
-  - Remaining: those translations (the fragment format and `apply.py` are in `scratchpad/pdloc/`, which may also be gone; `de` is the complete example), new screenshots, e2e for checks/traps/mixed, the full gate, an independent review.
-  - Orchestrator side: add `src/{frac,generate,traps}.ts` to Stryker `mutate`; a ROADMAP row; a `docs/third-party.md` entry (original content, invented numbers).
+- Strategy #74 (map editor for four-base maps, head 7223dac): gate, then merge. Next comes the balance PR (a team counts as its strongest side, owner option A; 006665c on `backup/strategy-engine`).
+- Probability Detective: `game/probability-detective` at c6dedb9 is green; e2e 14/14 covers all modes, and the screenshots are checked. Next: the independent review (step 3), then on the orchestrator side Stryker `mutate` (`src/{frac,generate,traps}.ts`), a ROADMAP row and a `docs/third-party.md` entry (original content, invented numbers). Open design question: in RTL the trap-explanation bars fill from the left while the belief bar starts on the right.
+- Estimation Lab, question for the owner: guided mode has no "give up and show the answer" exit. Ask whether one is wanted.
 - Estimation Lab follow-ups (owner said yes): a "recently seen" memory for tasks; a yearly review of time-dependent figures; three source links that return 404 from the container (UN PopFacts 2017/2, OICA 2013, University of Arizona bees) — check them in a browser and switch to Wayback if dead; true plurals for count words ("1 days").
 - Pixel Peel open items: the phone start time (about 300 ms against a 250 ms target) needs a measurement on a quiet machine; a side-by-side landscape layout.
 - `scripts/orchestrator/gate-pr.sh` still runs the slow suites under coverage. The relay generator slow tests time out there under load; align it with CI (exclude `*.slow.test.ts` from coverage and run them separately).
