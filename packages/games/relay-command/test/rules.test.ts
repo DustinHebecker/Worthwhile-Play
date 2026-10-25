@@ -2053,6 +2053,13 @@ describe('Bastion: a map made for teams (owner decision 2026-10-24)', () => {
     expect(d2(theirs.rally, home)).toBeLessThan(d2(post(w, 0), home));
     const ours = assaultPlan(observe(w, rules, 2), rules, 'hard')!;
     expect(d2(ours.rally, ours.objective)).toBeGreaterThan(d2(ours.rally, home));
+    // Three cells from its post (9,1) towards the post it would go for (10,12), on the plateau.
+    expect(ours.objective).toMatchObject({ x: 10, y: 12 });
+    expect(ours.rally).toEqual({ x: 9, y: 4 });
+    // Its Howitzer makes the plan a siege; the three start without guns.
+    expect(ours.besieging).toBe(true);
+    expect(theirs.besieging).toBe(false);
+    expect(theirs.storming).toBe(false);
   });
 
   it('outnumbered: only with teams, alone (no ally still in) against two or more', () => {
