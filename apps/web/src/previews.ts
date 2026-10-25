@@ -631,7 +631,17 @@ const PREVIEWS: Record<string, () => string> = {
     out += R(42, 54, 4, 4, 'd') + R(50, 54, 4, 4, 'd');
     out += R(64, 48, 24, 3, 'wd') + R(70, 36, 12, 10, 'o', 1) + L(76, 46, 76, 48, 'k');
     return out;
-  }
+  },
+  // Probability Detective: the case file (folded corner, story lines), the belief split bar (solid ● share, hatched ■
+  // share, the estimate ◆ on the split) and a small counting board: one root box, two hypothesis boxes, each split
+  // into a bold box that fits the clue and a dashed one that does not. No text or digits (language-neutral).
+  'probability-detective': () =>
+    P('M6 3h76l8 6v10H6Z', 'e') + P('M82 3v6h8', 'fn') + L(12, 8.5, 66, 8.5, 'mu') + L(12, 13, 52, 13, 'mu') +
+    R(8, 23, 46, 7, 'a', 1) + R(54, 23, 34, 7, 'o', 1) + hatch(54, 23, 34, 7, 3, 'fn') + diamond(54, 26.5, 4.5, 'o') +
+    R(38, 35, 20, 7, 'o', 1.5) + L(48, 42, 25, 46, 'fn') + L(48, 42, 71, 46, 'fn') +
+    R(15, 46, 20, 6, 'o', 1.5) + R(61, 46, 20, 6, 'o', 1.5) +
+    L(25, 52, 15, 55, 'fn') + L(25, 52, 35, 55, 'fn') + L(71, 52, 61, 55, 'fn') + L(71, 52, 81, 55, 'fn') +
+    R(6, 55, 18, 6, 'ob', 1.5) + R(27, 55, 17, 6, 'o ds', 1.5) + R(52, 55, 17, 6, 'ob', 1.5) + R(72, 55, 18, 6, 'o ds', 1.5)
 };
 
 /** Pictures made only of text cards and lines: these follow the reading direction (flipped in RTL). */

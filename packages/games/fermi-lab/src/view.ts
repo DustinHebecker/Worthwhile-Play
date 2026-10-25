@@ -118,10 +118,13 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
     readonly label: string;
     readonly text: string;
     readonly exp: number;
+    /** The value saved with the text (rows): when the text reads differently in this language, the saved value wins. */
+    readonly saved?: number | null;
     readonly unit: string;
     readonly slider?: { readonly lo: number };
     readonly steps?: boolean;
     readonly live?: boolean;
+    /** Called with the new text, stepper and the parsed field value (without the stepper), only when something changed. */
     readonly onChange: (text: string, exp: number, value: number | null) => void;
     readonly onEnter?: () => void;
   }
@@ -133,11 +136,28 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
     value(): number | null;
   }
 
+  /** Slider resolution in decades (one arrow key ≈ × 1.12). */
+  const SLIDER_STEP = 0.05;
+  /** Significant digits kept by ÷2 / ×2: exact for anything a person types, no rounding drift. */
+  const EXACT = 12;
+
+  /** A field text for `m` that keeps every digit: plain from 0.01 to below 10⁶, else mantissa and a power of ten. */
+  const exactParts = (m: number): { text: string; exp: number } => {
+    const r = roundSig(m, EXACT);
+    if (r >= 0.01 && r < 1e6) return { text: fieldText(r, locale, EXACT), exp: 0 };
+    return fieldParts(r, locale, EXACT);
+  };
+
   let uid = 0;
+  /**
+   * One value per input (design § 5, change 2026-10-25b): `field × 10^stepper`. Every control writes through `write`,
+   * and `show` derives every view (field, stepper, interpretation, slider position and text) from that value alone,
+   * so after any sequence of actions, and after a reload, all of them agree.
+   */
   const numberWidget = (o: NumberOptions): NumberWidget => {
     const id = `fl-n${++uid}`;
-    let current = o.text;
-    let exp = o.exp;
+    let current = [...o.text].slice(0, TEXT_MAX).join('');
+    let exp = Math.max(EXP_MIN, Math.min(EXP_MAX, o.exp));
     const parse = (): ParseResult => parseLocaleNumber(current, locale);
     const value = (): number | null => {
       const r = parse();
@@ -145,25 +165,35 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
       const v = r.value * 10 ** exp;
       return Number.isFinite(v) && v > 0 ? v : null;
     };
+    // A text saved in another language can read differently here ("1,500"): show the saved value instead.
+    let corrected = false;
+    if (typeof o.saved === 'number' && Number.isFinite(o.saved) && o.saved > 0) {
+      const r = parse();
+      if (!r.ok || Math.abs(r.value / o.saved - 1) > 1e-9) {
+        current = exactParts(o.saved).text;
+        exp = Math.max(EXP_MIN, Math.min(EXP_MAX, exp + exactParts(o.saved).exp));
+        corrected = true;
+      }
+    }
     const field = h('input', {
       id,
       type: 'text',
       inputmode: 'decimal',
+      enterkeyhint: o.onEnter ? 'done' : 'next',
       autocomplete: 'off',
       spellcheck: 'false',
+      dir: 'ltr',
       class: 'fl-field',
-      maxlength: 32,
-      value: o.text,
+      maxlength: TEXT_MAX,
       'aria-describedby': `${id}-interp`,
       'data-testid': `${o.testid}-input`
     });
-    field.value = o.text;
     const expOut = h('output', { class: 'fl-exp-value', 'data-testid': `${o.testid}-exp`, 'aria-live': 'off' });
     const expMinus = h('button', { type: 'button', class: 'fl-exp-btn', 'aria-label': t('exp.minus'), 'data-testid': `${o.testid}-exp-minus` }, '−');
     const expPlus = h('button', { type: 'button', class: 'fl-exp-btn', 'aria-label': t('exp.plus'), 'data-testid': `${o.testid}-exp-plus` }, '+');
     const stepper = h(
       'span',
-      { class: 'fl-stepper', role: 'group', 'aria-label': t('input.exp') },
+      { class: 'fl-stepper', role: 'group', 'aria-label': t('input.exp'), dir: 'ltr' },
       h('span', { class: 'fl-times', 'aria-hidden': 'true' }, '× 10'),
       expMinus,
       expOut,
@@ -178,87 +208,131 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
       h('div', { class: 'fl-entry' }, field, h('span', { class: 'fl-entry-rest' }, stepper, unitEl)),
       interp
     );
+    const intText = (n: number) => new Intl.NumberFormat(bcp47Tag(locale), { useGrouping: false }).format(n);
+
     let slider: HTMLInputElement | null = null;
-    if (o.slider) {
-      const lo = o.slider.lo;
-      slider = h('input', { type: 'range', class: 'fl-slider', min: lo, max: lo + 10, step: 0.05, 'aria-label': t('input.slider'), 'data-testid': `${o.testid}-slider` });
-      slider.value = String(lo + 5);
-      slider.addEventListener('input', () => {
-        if (paused || !slider) return;
-        const v = 10 ** Number(slider.value);
-        const parts = fieldParts(v, locale);
-        current = parts.text;
-        exp = parts.exp;
-        field.value = current;
-        update(false);
-        o.onChange(current, exp, parse().ok ? (parse() as { value: number }).value : null);
-      });
-      el.append(h('div', { class: 'fl-slider-row', dir: 'ltr' }, slider));
-    }
-    if (o.steps) {
-      const stepButton = (label: string, aria: string, testid: string, apply: () => void) =>
-        h('button', { type: 'button', class: 'fl-step', 'aria-label': aria, 'data-testid': `${o.testid}-${testid}`, onclick: () => !paused && apply() }, label);
-      const scaleBy = (k: number) => {
-        const r = parse();
-        if (!r.ok) return announce(live, t('need.guess'));
-        const v = r.value * k;
-        const plain = fieldText(v, locale, 3);
-        if ([...plain].length <= TEXT_MAX) current = plain;
-        else {
-          // Too long for the field (and its saved draft): move the power of ten to the stepper.
-          const parts = fieldParts(v, locale, 3);
-          if (exp + parts.exp < EXP_MIN || exp + parts.exp > EXP_MAX) return;
-          current = parts.text;
-          exp += parts.exp;
-        }
-        field.value = current;
-        changed();
-      };
-      const shift = (d: number) => {
-        if (!parse().ok) return announce(live, t('need.guess'));
-        exp = Math.max(EXP_MIN, Math.min(EXP_MAX, exp + d));
-        changed();
-      };
-      el.append(
-        h(
-          'div',
-          { class: 'fl-steps', dir: 'ltr' },
-          stepButton('÷10', t('step.div10'), 'div10', () => shift(-1)),
-          stepButton('÷2', t('step.div2'), 'div2', () => scaleBy(0.5)),
-          stepButton('×2', t('step.mul2'), 'mul2', () => scaleBy(2)),
-          stepButton('×10', t('step.mul10'), 'mul10', () => shift(1))
-        )
-      );
-    }
-    const update = (syncSlider: boolean) => {
-      expOut.textContent = new Intl.NumberFormat(bcp47Tag(locale), { useGrouping: false }).format(exp);
+    const stepButtons: { readonly el: HTMLButtonElement; readonly can: () => boolean }[] = [];
+
+    /** Derives every view from (current, exp). `fromField`: the player is typing, the field keeps their text. */
+    const show = (fromField: boolean) => {
+      if (!fromField) field.value = current;
+      expOut.textContent = intText(exp);
       expMinus.disabled = exp <= EXP_MIN;
       expPlus.disabled = exp >= EXP_MAX;
       clear(interp);
       const r = parse();
       const v = value();
       if (!r.ok && r.reason === 'empty') interp.append(o.slider ? t('interp.empty') : '');
-      else if (!r.ok) {
-        interp.append(h('span', { class: 'fl-warn' }, `⚠ ${t(r.reason === 'notPositive' ? 'interp.notPositive' : 'interp.invalid')}`));
-      } else if (v !== null) {
+      else if (!r.ok || v === null) {
+        interp.append(h('span', { class: 'fl-warn' }, `⚠ ${t(!r.ok && r.reason === 'notPositive' ? 'interp.notPositive' : 'interp.invalid')}`));
+      } else {
         interp.append(h('span', { class: 'fl-interp-label' }, `${t('interp.understood')}: `), quantity(v, o.unit, { testid: `${o.testid}-value` }));
       }
-      if (slider) {
-        if (v !== null && syncSlider) slider.value = String(Math.log10(v));
-        slider.setAttribute('aria-valuetext', v !== null ? spoken(v, o.unit) : t('interp.empty'));
+      // Only an impossible step is disabled (an empty field keeps the buttons, which then say what is missing).
+      for (const b of stepButtons) b.el.disabled = v !== null && !b.can();
+      if (slider && o.slider) {
+        const lo = o.slider.lo;
+        const hi = lo + 10;
+        if (v === null) {
+          slider.value = String(lo + 5);
+          slider.dataset.empty = 'true';
+          delete slider.dataset.out;
+          slider.setAttribute('aria-valuetext', t('interp.empty'));
+        } else {
+          const x = Math.log10(v);
+          const pos = lo + Math.round((Math.min(hi, Math.max(lo, x)) - lo) / SLIDER_STEP) * SLIDER_STEP;
+          slider.value = String(Math.round(pos * 100) / 100);
+          delete slider.dataset.empty;
+          if (x < lo) slider.dataset.out = 'low';
+          else if (x > hi) slider.dataset.out = 'high';
+          else delete slider.dataset.out;
+          slider.setAttribute('aria-valuetext', spoken(v, o.unit));
+        }
       }
     };
-    const changed = () => {
-      update(true);
-      o.onChange(current, exp, parse().ok ? (parse() as { value: number }).value : null);
+
+    /** The one write path: every control ends here. */
+    const write = (text: string, e: number, fromField = false) => {
+      const nextText = [...text].slice(0, TEXT_MAX).join('');
+      const nextExp = Math.max(EXP_MIN, Math.min(EXP_MAX, e));
+      const changedNow = nextText !== current || nextExp !== exp;
+      current = nextText;
+      exp = nextExp;
+      show(fromField);
+      if (changedNow) {
+        const r = parse();
+        o.onChange(current, exp, r.ok ? r.value : null);
+      }
     };
+
+    /**
+     * ÷2 / ×2 on the exact value, written in the same canonical form as the slider (plain from 0.01 to below 10⁶,
+     * otherwise mantissa and stepper), so the power of ten lives in one place.
+     */
+    const scaled = (k: number): { text: string; exp: number } | null => {
+      const v = value();
+      if (v === null) return null;
+      const parts = exactParts(v * k);
+      const e = parts.exp;
+      if (e < EXP_MIN || e > EXP_MAX || [...parts.text].length > TEXT_MAX) return null;
+      const back = parseLocaleNumber(parts.text, locale);
+      return back.ok && Number.isFinite(back.value * 10 ** e) ? { text: parts.text, exp: e } : null;
+    };
+
+    if (o.slider) {
+      const lo = o.slider.lo;
+      const s = h('input', {
+        type: 'range',
+        class: 'fl-slider',
+        min: lo,
+        max: lo + 10,
+        step: SLIDER_STEP,
+        'aria-label': t('input.slider'),
+        'aria-describedby': `${id}-interp`,
+        'data-testid': `${o.testid}-slider`
+      });
+      slider = s;
+      s.addEventListener('input', () => {
+        if (paused) return show(false);
+        const parts = fieldParts(10 ** Number(s.value), locale);
+        write(parts.text, parts.exp);
+      });
+      const end = (n: number) => {
+        const label = h('span', { class: 'fl-slider-end', 'aria-hidden': 'true' }, '10');
+        label.append(h('sup', {}, intText(n)));
+        return label;
+      };
+      el.append(h('div', { class: 'fl-slider-row', dir: 'ltr' }, end(lo), s, end(lo + 10)));
+    }
+    if (o.steps) {
+      const stepButton = (label: string, aria: string, testid: string, can: () => boolean, apply: () => void) => {
+        const b = h('button', { type: 'button', class: 'fl-step', 'aria-label': aria, 'data-testid': `${o.testid}-${testid}`, onclick: () => !paused && apply() }, label);
+        stepButtons.push({ el: b, can });
+        return b;
+      };
+      const scaleBy = (k: number) => {
+        const next = scaled(k);
+        if (!next) return announce(live, t('need.guess'));
+        write(next.text, next.exp);
+      };
+      const shift = (d: number) => {
+        if (!parse().ok) return announce(live, t('need.guess'));
+        write(current, exp + d);
+      };
+      el.append(
+        h(
+          'div',
+          { class: 'fl-steps', dir: 'ltr' },
+          stepButton('÷10', t('step.div10'), 'div10', () => exp > EXP_MIN, () => shift(-1)),
+          stepButton('÷2', t('step.div2'), 'div2', () => scaled(0.5) !== null, () => scaleBy(0.5)),
+          stepButton('×2', t('step.mul2'), 'mul2', () => scaled(2) !== null, () => scaleBy(2)),
+          stepButton('×10', t('step.mul10'), 'mul10', () => exp < EXP_MAX, () => shift(1))
+        )
+      );
+    }
     field.addEventListener('input', () => {
-      if (paused) {
-        field.value = current;
-        return;
-      }
-      current = field.value;
-      changed();
+      if (paused) return show(false);
+      write(field.value, exp, true);
     });
     field.addEventListener('keydown', (event) => {
       if (event.key === 'Enter' && o.onEnter) {
@@ -266,17 +340,13 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
         o.onEnter();
       }
     });
-    expMinus.addEventListener('click', () => {
-      if (paused) return;
-      exp = Math.max(EXP_MIN, exp - 1);
-      changed();
-    });
-    expPlus.addEventListener('click', () => {
-      if (paused) return;
-      exp = Math.min(EXP_MAX, exp + 1);
-      changed();
-    });
-    update(true);
+    expMinus.addEventListener('click', () => !paused && write(current, exp - 1));
+    expPlus.addEventListener('click', () => !paused && write(current, exp + 1));
+    show(false);
+    if (corrected) {
+      const r = parse();
+      o.onChange(current, exp, r.ok ? r.value : null);
+    }
     return { el, field, value };
   };
 
@@ -390,6 +460,7 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
         label: t('row.value', { name }),
         text: row.text,
         exp: row.exp,
+        saved: row.value,
         unit: row.unit,
         onChange: (txt, exp, value) => {
           edit(setRowNumber(state, i, txt, exp, value));

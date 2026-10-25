@@ -422,3 +422,27 @@ Owner feedback: the second step (the optional model after a first guess) was sup
 - **Review:** the scale shows the answer, the reference and the range (no first-guess marker). Guided: "Your model and the reference" with your value and effect per factor. Free: the reference model ("This is how the reference answer is put together from factors"). Sensitivity, explanation and sources as before for both paths.
 - **Summary:** no "with a model vs. first guess" comparison and no model count. Tips: `cube`, `low`, `high`, then `guided` (free path: "Try the guided path next time …") or `general`.
 - **State v2** (`stateVersion` 2, `v: 2`). Untouched guided questions are in phase `model` with empty rows; free ones in `estimate`. `migrateState` from v1: guided question in `estimate` → guided `model` (the unsent draft is dropped); guided `model` → stays, typed values kept, the first guess is dropped; free `model` (old builder) → finished with its first guess (`review`, rows dropped); `review` and the summary unchanged (old reviewed questions keep their first guess and rows). Remembered choices keep their ids: old `free` (builder) becomes the free estimate. Fixtures written by the v1 code are in `test/fixtures/`.
+
+## 20. Change 2026-10-25b: number input
+
+Owner feedback: using the slider, the number field and the multipliers (÷2/×2, × 10ⁿ) together could produce inconsistencies; look into it and optimise the input methods.
+
+**Design: one value per input.** The value is `field × 10^stepper` (unchanged save format: `draft`/`draftExp`, rows `text`/`exp`/`value`, so no state version bump). Every control writes through one function (`write` in `view.ts`), and every view (field, stepper, "Understood as", slider position and `aria-valuetext`, disabled states) is derived from that value alone (`show`). Generated values (slider, ÷2/×2) use one canonical form: plain from 0.01 to below 10⁶, otherwise mantissa and stepper. A reload therefore restores exactly the same display.
+
+Inconsistencies found (each has a test in `test/input.test.ts`, written failing first):
+
+1. ÷2/×2 rounded to 3 significant digits and drifted (999 → ÷2 → ×2 gave 1000). Now exact (12 significant digits): any typed value comes back unchanged.
+2. Clearing the field left the slider at the old position. Now an empty or unreadable value puts the thumb in the middle, dimmed (`data-empty`).
+3. Moving the slider while the game was paused moved the thumb but not the value. Now it springs back.
+4. A readable field whose product with the stepper overflows (`1e300` × 10¹⁰) left the interpretation blank; it now shows the "cannot read" message.
+5. Values outside the 10-decade window (the field and stepper allow 10⁻⁶…10³⁰) pinned the thumb silently. The thumb is still pinned to the end, but dimmed and marked (`data-out`), and the window's ends are labelled (10ⁿ, numbers only, `aria-hidden`; the interpretation line remains the value label).
+6. A guided row typed in one language ("1,500" in English) was re-read differently after switching to another ("1,5" in German): the row showed 1.5 while the model multiplied 1500. The saved value now wins: the field is rewritten to the saved value in the current language's form.
+7. The slider position after a drag was the raw position while a reload put it at `log10` of the rounded value; the position is now always derived (`log10(value)` snapped to 0.05 decades, clamped to the window).
+
+A fast-check property drives random sequences of typing, stepper, ÷10/÷2/×2/×10 and slider moves in en/de/ar and checks after every action that field = saved draft, stepper = `draftExp`, interpretation = parsed draft × 10ⁿ, slider = its derived position, and that a restore shows the same field, stepper, slider and interpretation. The e2e test drives the slider with arrow keys and reloads.
+
+**Input-method decisions.**
+- The parser already accepts `3e9`, `3×10^9`, `3·10⁹`, `10^9` in the field; the stepper stays as the visible place for the power of ten (it is the only "large number" aid in guided rows). Words such as "3 Mrd" are not parsed: 16 locales' abbreviations would make the field ambiguous; the interpretation line shows the words instead.
+- ÷10/×10 stay (shortcuts for the stepper, next to the halving and doubling nudges); all four are disabled only when the step is impossible (stepper limits), never because the field is empty — then they say what is missing.
+- Field: `inputmode="decimal"`, `enterkeyhint` (done in the estimate), `dir="ltr"` for the number (RTL layouts keep their order; numbers read left to right like the slider axis). Enter commits the estimate; arrow keys on the slider move by × 1.12 (0.05 decades).
+- No new texts: the end labels are numbers.

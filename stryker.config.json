@@ -21,6 +21,9 @@
     "packages/life-engine/src/*.ts",
     "packages/life-engine/src/params/check.ts",
     "!packages/life-engine/src/index.ts",
+    "packages/games/probability-detective/src/frac.ts",
+    "packages/games/probability-detective/src/generate.ts",
+    "packages/games/probability-detective/src/traps.ts",
     "!**/*.d.ts",
     "!packages/learning-content/src/builtin/**"
   ],
