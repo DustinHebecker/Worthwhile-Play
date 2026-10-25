@@ -65,6 +65,46 @@ test('fermi-lab: a free round goes from each estimate straight to the review', a
   expect(state.questions.every((q) => !q.modelUsed && q.answer === q.firstGuess)).toBe(true);
 });
 
+test('fermi-lab: field, stepper, slider keys and ×2/÷2 stay in step and the same display comes back after a reload', async ({ page }) => {
+  let before: string[] = [];
+  const snapshot = async (p: Page) => {
+    const r = root(p);
+    return [
+      await r.getByTestId('fl-est-input').inputValue(),
+      (await r.getByTestId('fl-est-exp').textContent()) ?? '',
+      await r.getByTestId('fl-est-slider').inputValue(),
+      (await r.getByTestId('fl-est-value').getAttribute('data-value')) ?? ''
+    ];
+  };
+  await expectResumeAfterReload(
+    page,
+    ID,
+    async (p) => {
+      const r = root(p);
+      await r.getByTestId('fl-est-input').fill('3');
+      for (let i = 0; i < 3; i++) await r.getByTestId('fl-est-exp-plus').click();
+      await expect(r.getByTestId('fl-est-value')).toHaveAttribute('data-value', '3000');
+      // Arrow keys on the slider move in 0.05-decade steps; the field and the stepper follow.
+      const slider = r.getByTestId('fl-est-slider');
+      const pos = Number(await slider.inputValue());
+      expect(Math.abs(pos - Math.log10(3000))).toBeLessThanOrEqual(0.025);
+      await slider.focus();
+      await p.keyboard.press('ArrowRight');
+      await p.keyboard.press('ArrowRight');
+      const v = Number(await r.getByTestId('fl-est-value').getAttribute('data-value'));
+      expect(Math.abs(Math.log10(v) - Number(await slider.inputValue()))).toBeLessThanOrEqual(0.025);
+      await r.getByTestId('fl-est-mul2').click();
+      await r.getByTestId('fl-est-div2').click();
+      await expect(r.getByTestId('fl-est-value')).toHaveAttribute('data-value', String(v));
+      const field = await r.getByTestId('fl-est-input').inputValue();
+      await expect.poll(async () => (await savedState(p)).questions[0]?.draft).toBe(field);
+      before = await snapshot(p);
+    },
+    { difficulty: 'medium', settings: { category: 'all', model: 'free' } }
+  );
+  expect(await snapshot(page)).toEqual(before);
+});
+
 test('fermi-lab: a half-built guided model survives a reload', async ({ page }) => {
   await expectResumeAfterReload(
     page,
