@@ -53,9 +53,9 @@ describe('drawing and choosing', () => {
   it('draws certain events and resolves choices in order', () => {
     const s = drawEvents(defs, life(), createRng(1));
     expect(s.pending).toEqual([{ eventId: 'first-job', month: 216 }]);
-    expect(choose(defs, s, 'raise', 'accept')).toEqual({ ok: false, reason: 'not-pending' });
-    expect(choose(defs, s, 'first-job', 'nope')).toEqual({ ok: false, reason: 'unknown-choice' });
-    const r = choose(defs, s, 'first-job', 'take');
+    expect(choose(defs, s, 'raise', 'accept', createRng(0))).toEqual({ ok: false, reason: 'not-pending' });
+    expect(choose(defs, s, 'first-job', 'nope', createRng(0))).toEqual({ ok: false, reason: 'unknown-choice' });
+    const r = choose(defs, s, 'first-job', 'take', createRng(0));
     expect(r.ok && r.state.flags).toEqual(['employed']);
     expect(r.ok && r.state.pending).toEqual([]);
   });
@@ -63,12 +63,12 @@ describe('drawing and choosing', () => {
   it('hides choices whose condition fails and refuses them', () => {
     const tired = life({ flags: ['employed'], stats: { ...life().stats, energy: 100 }, pending: [{ eventId: 'raise', month: 216 }] });
     expect(availableChoices(defs, tired, 'raise').map((c) => c.id)).toEqual(['accept']);
-    expect(choose(defs, tired, 'raise', 'negotiate')).toEqual({ ok: false, reason: 'not-available' });
+    expect(choose(defs, tired, 'raise', 'negotiate', createRng(0))).toEqual({ ok: false, reason: 'not-available' });
   });
 
   it('runs scheduled follow-ups in their month', () => {
     const s = life({ flags: ['employed'], lastSeen: { 'first-job': 0 }, pending: [{ eventId: 'raise', month: 216 }] });
-    const r = choose(defs, s, 'raise', 'negotiate');
+    const r = choose(defs, s, 'raise', 'negotiate', createRng(0));
     if (!r.ok) throw new Error('refused');
     expect(r.state.scheduled).toEqual([{ eventId: 'raise-answer', month: 217 }]);
     const after = advanceMonth(r.state, defs, testRngFor(3));
@@ -96,7 +96,7 @@ describe('drawing and choosing', () => {
           const head = s.pending[0];
           if (head !== undefined) {
             const options = availableChoices(defs, s, head.eventId);
-            const c = choose(defs, s, head.eventId, options[p % options.length]!.id);
+            const c = choose(defs, s, head.eventId, options[p % options.length]!.id, createRng(0));
             if (c.ok) s = c.state;
           }
         }
@@ -122,18 +122,39 @@ describe('drawing and choosing', () => {
   });
 });
 
+describe('chance outcomes', () => {
+  it('rolls with the first matching probability and is deterministic per rng', () => {
+    const gate: EventDef[] = [{ id: 'gate', chancePpm: 0, params: ['de.labour.raise'], choices: [{ id: 'go', effects: [{ roll: [{ when: { flag: 'lucky' }, ppm: PPM }, { ppm: 0 }], win: [{ set: 'won' }], lose: [{ set: 'lost' }, { setCount: 'tries', value: 2 }] }] }] }];
+    const pending = { pending: [{ eventId: 'gate', month: 216 }] };
+    const lucky = choose(gate, life({ ...pending, flags: ['lucky'] }), 'gate', 'go', createRng(1));
+    const unlucky = choose(gate, life(pending), 'gate', 'go', createRng(1));
+    expect(lucky.ok && lucky.state.flags).toEqual(['lucky', 'won']);
+    expect(unlucky.ok && unlucky.state.flags).toEqual(['lost']);
+    expect(unlucky.ok && unlucky.state.counters).toEqual({ tries: 2 });
+    let wins = 0;
+    const half: EventDef[] = [{ ...gate[0]!, choices: [{ id: 'go', effects: [{ roll: [{ ppm: PPM / 4 }], win: [{ set: 'won' }], lose: [] }] }] }];
+    const rng = createRng(5);
+    for (let i = 0; i < 4000; i++) { const r = choose(half, life(pending), 'gate', 'go', rng); if (r.ok && r.state.flags.includes('won')) wins++; }
+    expect(wins / 4000).toBeGreaterThan(0.22);
+    expect(wins / 4000).toBeLessThan(0.28);
+  });
+});
+
 describe('content checker', () => {
   it('accepts the fixture and reports problems', () => {
     expect(checkEvents(defs, params)).toEqual([]);
     const bad: EventDef[] = [
       { id: 'a', chancePpm: 2 * PPM, choices: [{ id: 'c', when: { flag: 'x' }, effects: [{ schedule: 'missing', inMonths: 0 }] }] },
-      { id: 'a', chancePpm: 10, params: ['nope'], choices: [] }
+      { id: 'a', chancePpm: 10, params: ['nope'], choices: [] },
+      { id: 'b', chancePpm: 500, choices: [{ id: 'ok', effects: [] }] },
+      { id: 'c', chancePpm: PPM, choices: [{ id: 'ok', effects: [{ roll: [{ ppm: 2 * PPM }], win: [{ setCount: 'Bad', value: 1 }], lose: [] }] }] }
     ];
     const problems = checkEvents(bad, params).map((i) => i.problem);
     expect(problems).toEqual(expect.arrayContaining([
       'duplicate id', 'chance outside 0…1e6 ppm', 'random event without a source parameter', 'bad schedule missing',
-      'no unconditional choice (could block the life)', 'unknown parameter nope', 'no choices'
+      'no unconditional choice (could block the life)', 'unknown parameter nope', 'no choices', 'bad roll', 'bad counter effect'
     ]));
+    expect(checkEvents(bad, params).filter((i) => i.problem === 'random event without a source parameter').map((i) => i.id)).toEqual(['b', 'c']);
   });
 
   it('never throws on junk', () => {

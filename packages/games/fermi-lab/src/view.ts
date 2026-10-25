@@ -101,7 +101,7 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
     const q = formatQuantity(v, locale);
     const u = unitLabel(unit);
     const el = h('span', { class: 'fl-qty', 'data-value': String(v), 'data-testid': options.testid, 'aria-label': spoken(v, unit) });
-    const num = h('bdi', { class: 'fl-num', 'aria-hidden': 'true' }, q.mantissa);
+    const num = h('bdi', { class: 'fl-num', dir: 'ltr', 'aria-hidden': 'true' }, q.mantissa);
     if (q.exponent !== null) num.append(' × 10', h('sup', {}, q.exponentText));
     el.append(num);
     if (u) el.append(h('span', { class: 'fl-unit', 'aria-hidden': 'true' }, ` ${u}`));

@@ -32,6 +32,7 @@ export const GAMES: readonly GameEntry[] = [
   entry('card-quest', () => import('@wp/game-card-quest')),
   entry('nonogram', () => import('@wp/game-nonogram')),
   entry('node-conquest', () => import('@wp/game-node-conquest')),
+  entry('pixel-peel', () => import('@wp/game-pixel-peel')),
   entry('chess', () => import('@wp/game-chess')),
   entry('minesweeper', () => import('@wp/game-minesweeper')),
   entry('word-guess', () => import('@wp/game-word-guess')),
@@ -75,8 +76,8 @@ export const GAMES: readonly GameEntry[] = [
   entry('briefing-game', () => import('@wp/game-briefing-game')),
   entry('compression-challenge', () => import('@wp/game-compression-challenge')),
   entry('mini-optimizer', () => import('@wp/game-mini-optimizer')),
-  entry('pixel-peel', () => import('@wp/game-pixel-peel')),
-  entry('fermi-lab', () => import('@wp/game-fermi-lab'))
+  entry('fermi-lab', () => import('@wp/game-fermi-lab')),
+  entry('many-lives', () => import('@wp/game-many-lives'))
 ];
 
 export const findGame = (id: string): GameEntry | undefined => GAMES.find((g) => g.metadata.id === id);
