@@ -3,7 +3,7 @@ import { messages } from './messages';
 
 export const metadata: GameMetadata = {
   id: 'fermi-lab',
-  stateVersion: 1,
+  stateVersion: 2,
   skills: ['systems', 'hypothesis'],
   typicalMinutes: [8, 15],
   inputMethods: ['pointer', 'touch', 'keyboard'],

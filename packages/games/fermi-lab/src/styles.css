@@ -57,7 +57,6 @@
 .wp-fermi-lab .fl-words { color: var(--wp-muted); }
 
 /* Model builder. */
-.wp-fermi-lab .fl-first { padding: 0.5rem 0.7rem; border-inline-start: 4px solid var(--wp-accent); background: var(--wp-surface-2); border-radius: 6px; }
 .wp-fermi-lab .fl-rows { display: grid; gap: 0.55rem; margin: 0; padding: 0; list-style: none; }
 .wp-fermi-lab .fl-row {
   display: grid; gap: 0.45rem; padding: 0.65rem 0.75rem; border: 1px solid var(--wp-border);
@@ -70,15 +69,9 @@
   display: inline-flex; align-items: center; justify-content: center; min-inline-size: 2rem; padding-inline: 0.35rem;
   border: 1px solid var(--wp-border); border-radius: 6px; font-weight: 700; direction: ltr; white-space: nowrap;
 }
-.wp-fermi-lab .fl-select { min-height: var(--wp-touch); max-inline-size: 100%; }
-.wp-fermi-lab .fl-name { flex: 1 1 8rem; min-width: 0; min-height: var(--wp-touch); box-sizing: border-box; padding-inline: 0.5rem; }
 .wp-fermi-lab .fl-given { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
 .wp-fermi-lab .fl-badge { display: inline-block; white-space: nowrap; margin-inline-start: 0.4rem; padding: 0 0.5rem; border: 1px solid var(--wp-border); border-radius: 999px; font-size: 0.85rem; font-weight: 600; }
 .wp-fermi-lab .fl-badge-strong { border-color: var(--wp-accent); border-width: 2px; }
-.wp-fermi-lab .fl-remove { justify-self: start; }
-.wp-fermi-lab .fl-constants { display: grid; gap: 0.4rem; }
-.wp-fermi-lab .fl-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
-.wp-fermi-lab .fl-chip { text-align: start; }
 .wp-fermi-lab .fl-product {
   padding: 0.65rem 0.8rem; border: 2px solid var(--wp-border); border-radius: var(--wp-radius); background: var(--wp-surface);
 }
@@ -106,7 +99,6 @@
 .wp-fermi-lab .fl-hatch-line { stroke: var(--wp-muted); stroke-width: 2; }
 .wp-fermi-lab .fl-ref { stroke: var(--wp-text); stroke-width: 3; }
 .wp-fermi-lab .fl-answer { fill: var(--wp-accent); stroke: var(--wp-text); stroke-width: 1.5; }
-.wp-fermi-lab .fl-guess { fill: var(--wp-surface); stroke: var(--wp-text); stroke-width: 2; }
 
 .wp-fermi-lab .fl-section { display: grid; gap: 0.5rem; min-width: 0; }
 .wp-fermi-lab .fl-cards { display: grid; gap: 0.5rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); margin: 0; padding: 0; list-style: none; }
@@ -117,7 +109,6 @@
 .wp-fermi-lab .fl-dl { display: grid; grid-template-columns: auto 1fr; gap: 0.2rem 0.6rem; margin: 0; font-size: 0.93rem; }
 .wp-fermi-lab .fl-dl dt { color: var(--wp-muted); }
 .wp-fermi-lab .fl-dl dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
-.wp-fermi-lab .fl-others { margin: 0; padding-inline-start: 1.2rem; }
 .wp-fermi-lab .fl-tornado { display: grid; gap: 0.6rem; margin: 0; padding: 0; list-style: none; }
 .wp-fermi-lab .fl-tornado-row { display: grid; gap: 0.15rem; }
 .wp-fermi-lab .fl-tornado-name { font-weight: 600; }
