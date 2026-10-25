@@ -3,6 +3,7 @@ import { h } from '@wp/ui';
 import { contentFor, type TemplateText } from './content';
 import { formatRatio } from './format';
 import {
+  cmp,
   commitStep,
   countingBoard,
   isReview,
@@ -248,9 +249,11 @@ export function clueScreen(host: Host, c: ClueCase): HTMLElement[] {
     if (r.score !== null) {
       const ref = c.hyps === 2 ? 75 : 67;
       forecast.push(h('p', { 'data-testid': 'pd-forecast' }, t('forecast.line', { s: ui.int(r.score), e: ui.int(Math.round(toNumber(r.exactScore))), r: ui.int(ref) })));
-      // A good estimate on a case that went the less likely way: say how often that happens.
+      // A good estimate on a case that went a less likely way: say how often that happens. With three explanations the
+      // truth can be below one half and still the most likely one; that case did not go "another way".
       const pTruth = toNumber(pn[c.truth]!);
-      if ((r.finalBand === 'spot' || r.finalBand === 'close') && pTruth < 0.5 && pTruth > 0)
+      const notLeading = pn.some((x, i) => i !== c.truth && cmp(x, pn[c.truth]!) > 0);
+      if ((r.finalBand === 'spot' || r.finalBand === 'close') && pTruth < 0.5 && pTruth > 0 && notLeading)
         forecast.push(h('p', { 'data-testid': 'pd-luck' }, t('forecast.luck', { k: ui.int(Math.max(1, Math.round(pTruth * 100))) })));
     }
     return h(
