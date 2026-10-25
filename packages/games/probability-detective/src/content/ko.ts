@@ -335,7 +335,7 @@ checks: {
       labels: { step: '처음 {n}명 중 모두 다름' }
     },
     't-tyres': {
-      title: '펑크가 절반',
+      title: '줄어든 펑크',
       story: '새 타이어는 주행 백 번당 펑크를 {b}번에서 {a}번으로 줄입니다. 제조사는 이것을 “펑크 {rel} 감소”라고 부릅니다.',
       questions: { q1: '주행 {rides}번에서 펑크는 몇 번 줄어들까요?' },
       options: {},

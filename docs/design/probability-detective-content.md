@@ -449,7 +449,7 @@ Each lists: the story (en, with `{placeholders}`), parameters and grids per leve
 - **Example:** g = 12, R = 100 → **49.7 %** (exact: 194,080,717,127,425,363 / 390,625,000,000,000,000). g = 20 → 87.0 %.
 - **Oracle:** brute force over all R^g assignments for g ≤ 3 (and R ≤ 20), plus an independent recursion `P_noMatch(g) = P_noMatch(g−1) · (R−g+1)/R` versus the closed product. **Visual:** `product` with the running "all different so far" share and the sentence "with 12 people there are 66 pairs that could match".
 
-### T11 `t-tyres` — Half the punctures (relative versus absolute)
+### T11 `t-tyres` — Fewer punctures (relative versus absolute; the title stays neutral because hard levels cut by a quarter, not a half)
 
 - **Story:** "A new kind of tyre halves the punctures: from {b} rides in 100 to {a} in 100." (or "cuts them by a quarter", per the parameters)
 - **Params:** `[b, a]` with b ∈ {2, 4, 6, 8, 10}, a = b/2 (easy, medium) or a = 3b/4 (hard, b ∈ {4, 8}).

@@ -340,7 +340,7 @@ export const content: ContentText = {
       labels: { step: 'All different among the first {n}' }
     },
     't-tyres': {
-      title: 'Half the punctures',
+      title: 'Fewer punctures',
       story: 'A new kind of tyre cuts punctures from {b} in every hundred rides to {a} in every hundred rides. The maker calls it {rel} fewer punctures.',
       questions: { q1: 'Out of {rides} rides, how many fewer punctures?' },
       options: {},

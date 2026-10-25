@@ -335,7 +335,7 @@ checks: {
       labels: { step: 'Tutti diversi tra i primi {n}' }
     },
     't-tyres': {
-      title: 'Metà delle forature',
+      title: 'Meno forature',
       story: 'Un nuovo tipo di pneumatico riduce le forature da {b} a {a} ogni cento corse. Il produttore la chiama una riduzione del {rel}.',
       questions: { q1: 'Su {rides} corse, quante forature in meno?' },
       options: {},

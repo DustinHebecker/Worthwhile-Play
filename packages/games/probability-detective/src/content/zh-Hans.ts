@@ -335,7 +335,7 @@ checks: {
       labels: { step: '前 {n} 个人各不相同' }
     },
     't-tyres': {
-      title: '扎胎减半',
+      title: '扎胎变少',
       story: '一种新轮胎把每一百次骑行中的扎胎从 {b} 次降到 {a} 次。厂家称之为“扎胎减少 {rel}”。',
       questions: { q1: '骑行 {rides} 次，扎胎会少几次？' },
       options: {},

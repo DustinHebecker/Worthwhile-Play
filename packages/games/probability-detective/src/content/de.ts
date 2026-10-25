@@ -335,7 +335,7 @@ checks: {
       labels: { step: 'Alle verschieden unter den ersten {n}' }
     },
     't-tyres': {
-      title: 'Halb so viele Platten',
+      title: 'Weniger Platten',
       story: 'Eine neue Reifenart senkt die Platten von {b} auf {a} je hundert Fahrten. Der Hersteller nennt das {rel} weniger Platten.',
       questions: { q1: 'Wie viele Platten weniger gibt es auf {rides} Fahrten?' },
       options: {},

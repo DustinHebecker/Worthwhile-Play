@@ -335,7 +335,7 @@ checks: {
       labels: { step: 'Wszystkie różne wśród pierwszych {n}' }
     },
     't-tyres': {
-      title: 'O połowę mniej przebitych opon',
+      title: 'Mniej przebitych opon',
       story: 'Nowy rodzaj opon zmniejsza liczbę przebić z {b} do {a} na każde sto przejazdów. Producent nazywa to „o {rel} mniej przebić”.',
       questions: { q1: 'O ile mniej przebić na {rides} przejazdów?' },
       options: {},

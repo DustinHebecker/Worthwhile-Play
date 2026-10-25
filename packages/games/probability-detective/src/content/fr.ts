@@ -335,7 +335,7 @@ checks: {
       labels: { step: 'Tous différents parmi les {n} premiers' }
     },
     't-tyres': {
-      title: 'Deux fois moins de crevaisons',
+      title: 'Moins de crevaisons',
       story: 'Un nouveau type de pneu fait passer les crevaisons de {b} à {a} pour cent trajets. Le fabricant parle de {rel} de crevaisons en moins.',
       questions: { q1: 'Sur {rides} trajets, combien de crevaisons en moins ?' },
       options: {},

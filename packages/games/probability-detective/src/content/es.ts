@@ -335,7 +335,7 @@ checks: {
       labels: { step: 'Todos distintos entre los primeros {n}' }
     },
     't-tyres': {
-      title: 'La mitad de pinchazos',
+      title: 'Menos pinchazos',
       story: 'Un nuevo tipo de neumático reduce los pinchazos de {b} a {a} por cada cien trayectos. El fabricante lo llama {rel} menos pinchazos.',
       questions: { q1: 'En {rides} trayectos, ¿cuántos pinchazos menos hay?' },
       options: {},

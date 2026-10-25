@@ -335,7 +335,7 @@ checks: {
       labels: { step: 'İlk {n} kişi arasında hepsi farklı' }
     },
     't-tyres': {
-      title: 'Yarı yarıya daha az patlak',
+      title: 'Daha az patlak',
       story: 'Yeni bir lastik türü her yüz yolculuktaki patlakları {b} sayısından {a} sayısına indiriyor. Üretici buna “{rel} daha az patlak” diyor.',
       questions: { q1: '{rides} yolculukta kaç patlak daha az olur?' },
       options: {},

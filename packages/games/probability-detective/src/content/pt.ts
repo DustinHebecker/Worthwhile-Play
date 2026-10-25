@@ -335,7 +335,7 @@ checks: {
       labels: { step: 'Todos diferentes entre os primeiros {n}' }
     },
     't-tyres': {
-      title: 'Metade dos furos',
+      title: 'Menos furos',
       story: 'Um novo tipo de pneu reduz os furos de {b} para {a} a cada cem viagens. O fabricante chama isso de {rel} menos furos.',
       questions: { q1: 'Em {rides} viagens, quantos furos a menos?' },
       options: {},

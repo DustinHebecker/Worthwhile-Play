@@ -335,7 +335,7 @@ checks: {
       labels: { step: 'Allemaal verschillend onder de eerste {n}' }
     },
     't-tyres': {
-      title: 'Half zo veel lekke banden',
+      title: 'Minder lekke banden',
       story: 'Een nieuw soort band verlaagt het aantal lekke banden van {b} naar {a} per honderd ritten. De maker noemt dat {rel} minder lekke banden.',
       questions: { q1: 'Hoeveel lekke banden minder zijn er op {rides} ritten?' },
       options: {},

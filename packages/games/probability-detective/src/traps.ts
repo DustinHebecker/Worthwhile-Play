@@ -382,7 +382,7 @@ const tNumbers: TrapTemplate = {
   explainTokens: (p) => ({ pairs: int((p[0]! * (p[0]! - 1)) / 2), g: int(p[0]!), p: pct(match(p)) })
 };
 
-/* ---------- T11 Half the punctures (relative versus absolute) ---------- */
+/* ---------- T11 Fewer punctures (relative versus absolute) ---------- */
 
 const tyreValues = (b: number, a: number): number[] => {
   const rel = ((b - a) * 100) / b;
