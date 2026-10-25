@@ -35,6 +35,7 @@ describe('game registry', () => {
       'card-quest',
       'nonogram',
       'node-conquest',
+      'pixel-peel',
       'chess',
       'minesweeper',
       'word-guess',
@@ -43,8 +44,7 @@ describe('game registry', () => {
       'lights-out',
       'sokoban',
       'laser-circuit',
-      'circuit-puzzle',
-      'memory'
+      'circuit-puzzle'
     ]);
   });
 

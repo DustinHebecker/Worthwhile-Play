@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { GameInstance, GameModule } from '@wp/game-core';
 import { createTestContext, createTestLibrary, type TestContext } from '@wp/testing';
 import game from '../src/index';
-import { initialIntel, NEUTRAL, passable, validateCommand, type Entity } from '@wp/strategy-engine';
+import { initialIntel, NEUTRAL, passable, retire, validateCommand, type Entity } from '@wp/strategy-engine';
 import { concede, lockTurn, newGame, OPPONENT, PLAYER, RULESET, sideValue, STALL_TURNS, stalemateTurns, type RcState } from '../src/rules';
 import { SCENARIOS } from '../src/scenarios';
 import { CELL } from '../src/view';
@@ -90,6 +90,68 @@ describe('Relay Command view', () => {
     expect($('rc-neutral-panel').hidden).toBe(true);
     instance.newGame({ seed: 2 });
     expect($('rc-neutral-panel').hidden).toBe(true);
+  });
+
+  it('teams (owner decisions 2026-10-24): the setup offers the shapes of the map and count; allies have their own list and name, never the enemy list', () => {
+    const corners = SCENARIOS.find((spec) => spec.id === 'four-corners')!;
+    // Field Exercise (two sides): no teams row.
+    expect($('rc-teams-label').hidden).toBe(true);
+    const scenario = $('rc-scenario') as HTMLSelectElement;
+    scenario.value = 'four-corners';
+    scenario.dispatchEvent(new Event('change'));
+    const opponents = $('rc-opponents') as HTMLSelectElement;
+    opponents.value = '3';
+    opponents.dispatchEvent(new Event('change'));
+    const teams = $('rc-teams') as HTMLSelectElement;
+    expect($('rc-teams-label').hidden).toBe(false);
+    expect([...teams.options].map((o) => o.value)).toEqual(['ffa', '2v2-next', '2v2-across', '3v1', '1v3']);
+    expect([...teams.options].map((o) => o.textContent)).toContain('2 against 2, your ally beside you');
+    expect(state().world.teams).toBeUndefined();
+    teams.value = '2v2-across';
+    teams.dispatchEvent(new Event('change'));
+    expect(state().world.teams).toEqual([0, 1, 0, 1]);
+    expect(teams.value).toBe('2v2-across');
+    // The ally (side C, across) has a list of its own; its pieces are not in the enemy list.
+    expect($('rc-allies-panel').hidden).toBe(false);
+    const allyPost = state().world.entities.find((e) => e.side === 2 && e.kind === 'command-post')!;
+    expect($(`rc-ally-${allyPost.id}`)).not.toBeNull();
+    expect(ctx.context.root.querySelector(`[data-testid="rc-enemy-${allyPost.id}"]`)).toBeNull();
+    expect(ctx.context.root.textContent).toContain('Ally C');
+    // Two opponents: 2 against 1 only; free-for-all hides the allies list.
+    opponents.value = '2';
+    opponents.dispatchEvent(new Event('change'));
+    expect([...teams.options].map((o) => o.value)).toEqual(['ffa', '2v1-next', '2v1-across']);
+    teams.value = 'ffa';
+    teams.dispatchEvent(new Event('change'));
+    expect(state().world.teams).toBeUndefined();
+    expect($('rc-allies-panel').hidden).toBe(true);
+    // A team game stays one after a reload and "New game" keeps its teams; the setup is locked after the first turn.
+    instance.restore(newGame(2, corners, 'normal', 12, false, null, 3, [], false, null, '3v1'));
+    expect(($('rc-teams') as HTMLSelectElement).value).toBe('3v1');
+    instance.reset();
+    expect(state().world.teams).toEqual([0, 0, 1, 0]);
+    click('rc-lock');
+    expect(($('rc-teams') as HTMLSelectElement).disabled).toBe(true);
+    expect($('rc-setup-summary').textContent).toContain('3 against 1 (you and two allies)');
+  });
+
+  it('Bastion, a map made for teams: the setup offers only its shapes (1 against 3 first), no free-for-all and no choice of count', () => {
+    const scenario = $('rc-scenario') as HTMLSelectElement;
+    scenario.value = 'bastion';
+    scenario.dispatchEvent(new Event('change'));
+    expect(state().scenario).toBe('bastion');
+    expect(state().opponents).toBe(3);
+    expect($('rc-opponents-label').hidden).toBe(true);
+    const teams = $('rc-teams') as HTMLSelectElement;
+    expect($('rc-teams-label').hidden).toBe(false);
+    expect([...teams.options].map((o) => o.value)).toEqual(['1v3', '3v1']);
+    expect(state().world.teams).toEqual([0, 1, 1, 1]);
+    teams.value = '3v1';
+    teams.dispatchEvent(new Event('change'));
+    expect(state().world.teams).toEqual([0, 0, 1, 0]);
+    // The player is a base below; the plateau is the lone opponent's.
+    const own = state().world.entities.find((e) => e.side === 0 && e.kind === 'command-post')!;
+    expect(own.y).toBe(12);
   });
 
   it('renders the turn, the status, both unit lists and the map', () => {
@@ -1258,6 +1320,28 @@ describe('hot-seat (D10)', () => {
     live: [...ctx.context.root.querySelectorAll('[aria-live]')].map((el) => el.textContent ?? '').join('|')
   });
   const hot = () => newGame(3, corners, 'normal', 12, false, null, 2, ['person', 'person', 'computer']);
+  it('teams with several persons: the setup offers the shapes; a team that wins together is named, survivors only', () => {
+    const team = newGame(3, corners, 'normal', 12, false, null, 3, ['person', 'person', 'computer', 'computer'], false, null, '2v2-next');
+    open(team);
+    expect($('rc-teams-label').hidden).toBe(false);
+    expect(($('rc-teams') as HTMLSelectElement).value).toBe('2v2-next');
+    // Both opponents out: the next locks end the game (one team is left).
+    let w = state().world;
+    for (const side of [2, 3]) w = retire(w, side).world;
+    const ended = structuredClone(state());
+    ended.world = w;
+    instance.restore(ended);
+    click('rc-handover-confirm');
+    click('rc-lock');
+    if (state().handover) {
+      click('rc-handover-confirm');
+      click('rc-lock');
+    }
+    expect(state().phase).toBe('finished');
+    expect($('rc-result-winner').textContent).toBe('Players A, B won together.');
+  });
+
+
   /** Opens a hot-seat game: like any resumed one, it starts at the hand-over to the person planning. */
   function open(s: RcState): void {
     instance.restore(s);

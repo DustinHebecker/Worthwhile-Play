@@ -27,7 +27,10 @@ export type Effect =
   | { count: string; add: number }
   | { book: { account: string; cents: number; category: string } }
   | { transfer: { from: string; to: string; cents: number } }
+  | { setCount: string; value: number }
   | { schedule: string; inMonths: number }
+  /** A chance outcome: the first entry whose condition holds gives the probability (ppm). */
+  | { roll: { when?: Cond; ppm: number }[]; win: Effect[]; lose: Effect[] }
   | { die: true };
 
 export interface Choice {
@@ -90,7 +93,7 @@ export function eligible(defs: readonly EventDef[], state: LifeCore): EventDef[]
  * Draws this month's events: due scheduled events first, then each eligible event once with its
  * chance. Exactly one uniform per eligible event in definition order, so a run is reproducible.
  */
-export function drawEvents(defs: readonly EventDef[], state: LifeCore, rng: Rng): LifeCore {
+export function drawEvents<S extends LifeCore>(defs: readonly EventDef[], state: S, rng: Rng): S {
   const due = state.scheduled.filter((s) => s.month <= state.month);
   const later = state.scheduled.filter((s) => s.month > state.month);
   const byId = new Map(defs.map((d) => [d.id, d]));
@@ -120,7 +123,15 @@ export function availableChoices(defs: readonly EventDef[], state: LifeCore, eve
   return def.choices.filter((c) => holds(state, c.when));
 }
 
-function applyEffect(state: LifeCore, e: Effect): LifeCore {
+function applyEffect<S extends LifeCore>(state: S, e: Effect, rng: Rng): S {
+  if ('roll' in e) {
+    const ppm = e.roll.find((r) => holds(state, r.when))?.ppm ?? 0;
+    const branch = rng.next() * PPM < ppm ? e.win : e.lose;
+    let next = state;
+    for (const inner of branch) next = applyEffect(next, inner, rng);
+    return next;
+  }
+  if ('setCount' in e) return { ...state, counters: { ...state.counters, [e.setCount]: e.value } };
   if ('stat' in e) return { ...state, stats: { ...state.stats, [e.stat]: clampStat(state.stats[e.stat] + e.add) } };
   if ('set' in e) return state.flags.includes(e.set) ? state : { ...state, flags: [...state.flags, e.set].sort() };
   if ('clear' in e) return { ...state, flags: state.flags.filter((f) => f !== e.clear) };
@@ -138,9 +149,12 @@ function applyEffect(state: LifeCore, e: Effect): LifeCore {
   return { ...state, alive: false };
 }
 
-/** Resolves the oldest pending event with a choice. Never throws; refusals leave the state unchanged. */
-export function choose(defs: readonly EventDef[], state: LifeCore, eventId: string, choiceId: string):
-  { ok: true; state: LifeCore } | { ok: false; reason: ChoiceRefusal } {
+/**
+ * Resolves the oldest pending event with a choice. Never throws; refusals leave the state unchanged.
+ * `rng` decides chance outcomes (`roll`); callers pass the stream of this month and event.
+ */
+export function choose<S extends LifeCore>(defs: readonly EventDef[], state: S, eventId: string, choiceId: string, rng: Rng):
+  { ok: true; state: S } | { ok: false; reason: ChoiceRefusal } {
   const head = state.pending[0];
   if (head === undefined || head.eventId !== eventId) return { ok: false, reason: 'not-pending' };
   const def = defs.find((d) => d.id === eventId);
@@ -148,12 +162,20 @@ export function choose(defs: readonly EventDef[], state: LifeCore, eventId: stri
   const choice = def.choices.find((c) => c.id === choiceId);
   if (choice === undefined) return { ok: false, reason: 'unknown-choice' };
   if (!holds(state, choice.when)) return { ok: false, reason: 'not-available' };
-  let next: LifeCore = { ...state, pending: state.pending.slice(1) };
-  for (const e of choice.effects) next = applyEffect(next, e);
+  let next: S = { ...state, pending: state.pending.slice(1) };
+  for (const e of choice.effects) next = applyEffect(next, e, rng);
   return { ok: true, state: next };
 }
 
 export type EventIssue = { id: string; problem: string };
+
+function flatEffects(effects: readonly Effect[]): Effect[] {
+  return effects.flatMap((e) => ('roll' in e ? [e, ...flatEffects(e.win), ...flatEffects(e.lose)] : [e]));
+}
+
+function hasRoll(effects: readonly Effect[]): boolean {
+  return flatEffects(effects).some((e) => 'roll' in e);
+}
 
 function checkCond(c: unknown, path: string, issues: EventIssue[], id: string): void {
   if (typeof c !== 'object' || c === null) { issues.push({ id, problem: `${path}: not a condition` }); return; }
@@ -185,7 +207,8 @@ export function checkEvents(defs: readonly EventDef[], knownParams: ReadonlySet<
       if (d.cooldownMonths !== undefined && (!Number.isInteger(d.cooldownMonths) || d.cooldownMonths < 0)) issues.push({ id: d.id, problem: 'bad cooldown' });
       if (d.when !== undefined) checkCond(d.when, 'when', issues, d.id);
       for (const p of d.params ?? []) if (!knownParams.has(p)) issues.push({ id: d.id, problem: `unknown parameter ${p}` });
-      if (d.chancePpm > 0 && (d.params ?? []).length === 0) issues.push({ id: d.id, problem: 'random event without a source parameter' });
+      const random = (d.chancePpm > 0 && d.chancePpm < PPM) || d.choices.some((c) => hasRoll(c.effects));
+      if (random && (d.params ?? []).length === 0) issues.push({ id: d.id, problem: 'random event without a source parameter' });
       if (!Array.isArray(d.choices) || d.choices.length === 0) { issues.push({ id: d.id, problem: 'no choices' }); continue; }
       const choiceIds = new Set<string>();
       let unconditional = false;
@@ -194,7 +217,12 @@ export function checkEvents(defs: readonly EventDef[], knownParams: ReadonlySet<
         choiceIds.add(c.id);
         if (c.when === undefined) unconditional = true;
         else checkCond(c.when, `choice ${c.id}`, issues, d.id);
-        for (const e of c.effects) {
+        for (const e of flatEffects(c.effects)) {
+          if ('roll' in e) {
+            if (e.roll.length === 0 || e.roll.some((r) => !Number.isInteger(r.ppm) || r.ppm < 0 || r.ppm > PPM)) issues.push({ id: d.id, problem: 'bad roll' });
+            for (const r of e.roll) if (r.when !== undefined) checkCond(r.when, `roll in ${c.id}`, issues, d.id);
+          }
+          if ('setCount' in e && (!isFlagId(e.setCount) || !Number.isSafeInteger(e.value))) issues.push({ id: d.id, problem: 'bad counter effect' });
           if ('schedule' in e && (!ids.has(e.schedule) || !Number.isInteger(e.inMonths) || e.inMonths < 1)) issues.push({ id: d.id, problem: `bad schedule ${e.schedule}` });
           if ('stat' in e && (!(STATS as readonly string[]).includes(e.stat) || !Number.isInteger(e.add))) issues.push({ id: d.id, problem: 'bad stat effect' });
           if (('set' in e && !isFlagId(e.set)) || ('clear' in e && !isFlagId(e.clear))) issues.push({ id: d.id, problem: 'bad flag' });

@@ -4,10 +4,9 @@ import { createRng } from '@wp/game-core';
 import {
   CATEGORY_CHOICES,
   DIFFICULTIES,
-  MAX_FACTORS,
   MODEL_MODES,
   ROUND_LENGTH,
-  addRow,
+  STATE_VERSION,
   bandOf,
   commitGuess,
   compare,
@@ -15,27 +14,23 @@ import {
   currentQuestion,
   finishModel,
   guidedRows,
-  insertConstant,
   isFermiState,
   markFinished,
+  migrateState,
   marksOf,
   modelResult,
   next,
   poolOf,
   referenceProduct,
-  removeRow,
   resetState,
   score,
   selectTasks,
   sensitivity,
   setDraft,
-  setRowLabel,
   setRowNumber,
-  setRowUnit,
   settingsOf,
   summarize,
   taskOf,
-  unitPalette,
   type FactorState,
   type FermiState
 } from '../src/rules';
@@ -46,15 +41,24 @@ import { decade } from '../src/format';
 const task = (id: string): Task => taskById(id)!;
 const clone = <T>(x: T): T => JSON.parse(JSON.stringify(x)) as T;
 
-/** Plays the current question: guess, fill every open guided row with its reference value, use the model. */
-function playQuestion(state: FermiState, guess: number, useModel: boolean): FermiState {
-  let s = commitGuess(state, guess);
+/**
+ * Plays the current question. Free: commits `answer` as the estimate. Guided: fills every open row with its reference
+ * value, the first open row of power 1 scaled so that the model's result is `answer`, and commits the model.
+ */
+function playQuestion(state: FermiState, answer: number): FermiState {
+  if (state.model === 'free') return commitGuess(state, answer);
+  let s = state;
   const q = currentQuestion(s)!;
+  const t = taskOf(q);
+  let scaled = false;
   q.factors.forEach((row, i) => {
-    const ref = taskOf(q).factors.find((x) => x.id === row.ref);
-    if (ref && !ref.fixed) s = setRowNumber(s, i, String(ref.value), 0, ref.value);
+    const ref = t.factors.find((x) => x.id === row.ref);
+    if (!ref || ref.fixed) return;
+    const k = !scaled && ref.power === 1 ? answer / referenceProduct(t)! : 1;
+    scaled ||= ref.power === 1;
+    s = setRowNumber(s, i, String(ref.value * k), 0, ref.value * k);
   });
-  return finishModel(s, useModel);
+  return finishModel(s);
 }
 
 describe('units', () => {
@@ -237,15 +241,6 @@ describe('model, comparison and sensitivity', () => {
     }
     expect(sensitivity(task('sand-jar'))[0]!.factorId).toBe('grainDiameter');
   });
-
-  it('offers a palette of at most 16 sorted units containing every open reference unit', () => {
-    for (const t of TASKS) {
-      const palette = unitPalette(t);
-      expect(palette.length).toBeLessThanOrEqual(16);
-      expect([...palette].sort((a, b) => a.localeCompare(b, 'en'))).toEqual(palette);
-      for (const f of t.factors.filter((x) => !x.fixed)) expect(palette).toContain(f.unit);
-    }
-  });
 });
 
 describe('round selection', () => {
@@ -291,27 +286,32 @@ describe('round selection', () => {
     expect(isFermiState(s)).toBe(true);
     const t = createInitial(5, { difficulty: 'hard', category: 'space', model: 'free' });
     expect(settingsOf(t)).toEqual({ difficulty: 'hard', category: 'space', model: 'free' });
-    expect(resetState(playQuestion(t, 10, false))).toEqual(t);
+    expect(resetState(playQuestion(t, 10))).toEqual(t);
   });
 });
 
 describe('transitions', () => {
-  it('runs a whole round and summarises it', () => {
+  it('runs a whole guided round and summarises it', () => {
     let s = createInitial(3, { difficulty: 'medium' });
+    expect(s.model).toBe('guided');
     for (let i = 0; i < ROUND_LENGTH; i++) {
-      const c = taskOf(currentQuestion(s)!).answer.central;
-      s = playQuestion(s, c / 30, i < 3);
+      const q = currentQuestion(s)!;
+      // A guided question opens in the model with the reference rows, given values included.
+      expect(q.phase).toBe('model');
+      expect(q.factors.map((r) => r.ref)).toEqual(taskOf(q).factors.map((x) => x.id));
+      const c = taskOf(q).answer.central;
+      s = playQuestion(s, i < 3 ? c : c / 30);
+      expect(currentQuestion(s)!.phase).toBe('review');
+      expect(currentQuestion(s)!.modelUsed).toBe(true);
+      expect(currentQuestion(s)!.firstGuess).toBeNull();
       expect(isFermiState(s)).toBe(true);
       s = next(s);
     }
     expect(s.index).toBe(ROUND_LENGTH);
     const sum = summarize(s);
     expect(sum.rows).toHaveLength(5);
-    expect(sum.modelsUsed).toBe(3);
-    expect(sum.modelHelp).not.toBeNull();
-    expect(sum.modelHelp!.withModel).toBeLessThan(sum.modelHelp!.firstGuesses);
+    expect(sum.modelsUsed).toBe(5);
     expect(sum.withinFactor3).toBe(3);
-    // Two first guesses kept at 1/30: the bias is (1/30)^(2/5).
     expect(sum.bias).toBeCloseTo((1 / 30) ** (2 / 5));
     expect(sum.tip).toBe('low');
     expect(markFinished(markFinished(s)).finishedReported).toBe(true);
@@ -319,84 +319,79 @@ describe('transitions', () => {
     expect(next(s)).toBe(s);
   });
 
-  it('chooses the tip by pattern', () => {
-    let s = createInitial(8, { difficulty: 'easy', category: 'society' });
-    for (let i = 0; i < ROUND_LENGTH; i++) s = next(playQuestion(s, taskOf(currentQuestion(s)!).answer.central * 1.1, false));
-    expect(summarize(s).tip).toBe('model');
-    expect(summarize(s).modelHelp).toBeNull();
+  it('runs a free round: estimate → review, no model step', () => {
+    let s = createInitial(3, { difficulty: 'medium', model: 'free' });
+    for (let i = 0; i < ROUND_LENGTH; i++) {
+      const q = currentQuestion(s)!;
+      expect(q.phase).toBe('estimate');
+      expect(q.factors).toEqual([]);
+      s = commitGuess(setDraft(s, '12', 3), taskOf(q).answer.central * 2);
+      const r = currentQuestion(s)!;
+      expect(r.phase).toBe('review');
+      expect(r.answer).toBe(r.firstGuess);
+      expect(r.modelUsed).toBe(false);
+      expect(isFermiState(s)).toBe(true);
+      s = next(s);
+    }
+    const sum = summarize(s);
+    expect(sum.modelsUsed).toBe(0);
+    expect(sum.withinFactor3).toBe(5);
+  });
+
+  it('chooses the tip by pattern; a calm free round suggests the guided path', () => {
+    const calm = (model: 'guided' | 'free') => {
+      let s = createInitial(8, { difficulty: 'easy', category: 'society', model });
+      for (let i = 0; i < ROUND_LENGTH; i++) s = next(playQuestion(s, taskOf(currentQuestion(s)!).answer.central * 1.1));
+      return summarize(s).tip;
+    };
+    expect(calm('free')).toBe('guided');
+    expect(calm('guided')).toBe('general');
     // A cube factor far off gives the cube tip.
-    let c = createInitial(1, { difficulty: 'hard', category: 'space' });
+    let c = createInitial(1, { difficulty: 'hard', category: 'space', model: 'free' });
     for (let i = 0; i < ROUND_LENGTH; i++) {
       const t = taskOf(currentQuestion(c)!);
-      c = next(playQuestion(c, t.id === 'earths-in-sun' ? t.answer.central / 1000 : t.answer.central, false));
+      c = next(playQuestion(c, t.id === 'earths-in-sun' ? t.answer.central / 1000 : t.answer.central));
     }
     if (c.questions.some((q) => q.taskId === 'earths-in-sun')) expect(summarize(c).tip).toBe('cube');
   });
 
   it('ignores actions in the wrong phase or with invalid input', () => {
-    const s = createInitial(4);
-    expect(commitGuess(s, 0)).toBe(s);
-    expect(commitGuess(s, Number.NaN)).toBe(s);
-    expect(commitGuess(s, -3)).toBe(s);
-    expect(finishModel(s, false)).toBe(s);
-    expect(next(s)).toBe(s);
-    expect(setRowNumber(s, 0, '1', 0, 1)).toBe(s);
-    const m = commitGuess(s, 5);
-    expect(setDraft(m, 'x', 1)).toBe(m);
-    expect(finishModel(m, true)).toBe(m); // the guided model is incomplete
-    expect(addRow(m)).toBe(m); // guided
-    const given = currentQuestion(m)!.factors.findIndex((r) => taskOf(currentQuestion(m)!).factors.find((x) => x.id === r.ref)!.fixed);
-    if (given >= 0) expect(setRowNumber(m, given, '3', 0, 3)).toBe(m);
-    expect(setDraft(s, 'a'.repeat(50), 99).questions[0]!.draft).toHaveLength(32);
-    expect(setDraft(s, '1', 99).questions[0]!.draftExp).toBe(30);
-  });
-
-  it('builds a free model with rows, constants and units', () => {
-    let s = createInitial(2, { model: 'free', category: 'everyday', difficulty: 'easy' });
-    while (taskOf(currentQuestion(s)!).id !== 'rain-roof' && s.index < 5) s = next(playQuestion(s, 1, false));
-    if (s.index >= 5) return;
-    s = commitGuess(s, 1000);
-    expect(currentQuestion(s)!.factors).toEqual([]);
-    for (let i = 0; i < 6; i++) s = addRow(s);
-    expect(currentQuestion(s)!.factors).toHaveLength(MAX_FACTORS);
-    s = removeRow(removeRow(removeRow(s, 4), 3), 2);
-    s = setRowUnit(s, 0, 'm²', 1);
-    s = setRowUnit(s, 1, 'm/year', 1);
-    expect(setRowUnit(s, 1, 'furlong', 1)).toBe(s);
-    s = setRowNumber(s, 0, '100', 0, 100);
-    s = setRowNumber(s, 1, '0.63', 0, 0.63);
-    s = setRowLabel(s, 0, 'roof'.repeat(20));
-    expect(currentQuestion(s)!.factors[0]!.label).toHaveLength(40);
-    // m² × m/year is already a volume per year: the algebra converts m³ to L without the constant.
-    expect(modelResult(taskOf(currentQuestion(s)!), currentQuestion(s)!.factors)).toMatchObject({ status: 'ok' });
-    s = insertConstant(s, 'litresPerM3');
-    expect(insertConstant(s, 'litresPerM3')).toBe(s);
-    expect(insertConstant(s, 'roofArea')).toBe(s); // not a constant
-    expect(isFermiState(s)).toBe(true);
-    s = finishModel(s, true);
-    expect(currentQuestion(s)!.answer).toBeCloseTo(63_000);
-    expect(currentQuestion(s)!.modelUsed).toBe(true);
-    expect(isFermiState(s)).toBe(true);
+    const g = createInitial(4);
+    expect(commitGuess(g, 5)).toBe(g); // guided: no estimate step
+    expect(setDraft(g, '1', 0)).toBe(g);
+    expect(finishModel(g)).toBe(g); // the guided model is incomplete
+    expect(next(g)).toBe(g);
+    const given = currentQuestion(g)!.factors.findIndex((r) => taskOf(currentQuestion(g)!).factors.find((x) => x.id === r.ref)!.fixed);
+    if (given >= 0) expect(setRowNumber(g, given, '3', 0, 3)).toBe(g);
+    const f = createInitial(4, { model: 'free' });
+    expect(commitGuess(f, 0)).toBe(f);
+    expect(commitGuess(f, Number.NaN)).toBe(f);
+    expect(commitGuess(f, -3)).toBe(f);
+    expect(finishModel(f)).toBe(f);
+    expect(setRowNumber(f, 0, '1', 0, 1)).toBe(f);
+    const r = commitGuess(f, 5);
+    expect(setDraft(r, 'x', 1)).toBe(r);
+    expect(commitGuess(r, 6)).toBe(r);
+    expect(setDraft(f, 'a'.repeat(50), 99).questions[0]!.draft).toHaveLength(32);
+    expect(setDraft(f, '1', 99).questions[0]!.draftExp).toBe(30);
   });
 });
 
 describe('isFermiState', () => {
   const base = createInitial(11, { model: 'guided' });
-  const model = commitGuess(base, 7);
+  const free = createInitial(11, { model: 'free' });
 
   it('accepts every state reachable by random actions (property)', () => {
     const action = fc.oneof(
       fc.record({ k: fc.constant('draft'), text: fc.string({ maxLength: 40 }), exp: fc.integer({ min: -10, max: 40 }) }),
       fc.record({ k: fc.constant('guess'), v: fc.double({ min: -1, max: 1e12, noNaN: true }) }),
       fc.record({ k: fc.constant('row'), i: fc.nat(6), v: fc.option(fc.double({ min: -1, max: 1e9, noNaN: true }), { nil: null }), exp: fc.integer({ min: -8, max: 32 }) }),
-      fc.record({ k: fc.constant('unit'), i: fc.nat(6), u: fc.constantFrom('m', 'kg', 'L', 'day', 'm²', 'zz'), p: fc.constantFrom(1, -1, 2, -2, 3, -3, 4) }),
-      fc.record({ k: fc.constantFrom('add', 'next', 'use', 'keep', 'remove', 'const') })
+      fc.record({ k: fc.constantFrom('next', 'use') })
     );
     fc.assert(
       fc.property(fc.integer({ min: 0, max: 1000 }), fc.constantFrom(...MODEL_MODES), fc.array(action, { maxLength: 40 }), (seed, mode, actions) => {
         let s = createInitial(seed, { model: mode });
         for (const a of actions) {
-          const q = currentQuestion(s);
           switch (a.k) {
             case 'draft':
               s = setDraft(s, (a as { text: string }).text, (a as { exp: number }).exp);
@@ -407,23 +402,8 @@ describe('isFermiState', () => {
             case 'row':
               s = setRowNumber(s, (a as { i: number }).i, 'x', (a as { exp: number }).exp, (a as { v: number | null }).v);
               break;
-            case 'unit':
-              s = setRowUnit(s, (a as { i: number }).i, (a as { u: string }).u, (a as { p: 1 }).p);
-              break;
-            case 'add':
-              s = addRow(s);
-              break;
-            case 'remove':
-              s = removeRow(s, 0);
-              break;
-            case 'const':
-              if (q) s = insertConstant(s, taskOf(q).factors.find((x) => x.fixed)?.id ?? 'none');
-              break;
             case 'use':
-              s = finishModel(s, true);
-              break;
-            case 'keep':
-              s = finishModel(s, false);
+              s = finishModel(s);
               break;
             default:
               s = next(s);
@@ -469,15 +449,37 @@ describe('isFermiState', () => {
     ['review without answer', (x: Raw) => (x.questions[0]!.phase = 'review')],
     ['wrong window', (x: Raw) => (x.questions[0]!.windowLo += 9)],
     ['bad index', (x: Raw) => (x.index = 6)],
-    ['bad version', (x: Raw) => (x.v = 2)],
+    ['old version', (x: Raw) => (x.v = 1)],
     ['bad model', (x: Raw) => (x.model = 'auto')],
     ['finished early', (x: Raw) => (x.finishedReported = true)],
     ['row with bad unit', (x: Raw) => (x.questions[0]!.factors[0]!.unit = 'furlong')],
     ['row with wrong ref', (x: Raw) => (x.questions[0]!.factors[0]!.ref = 'nope')],
     ['row exponent out of range', (x: Raw) => (x.questions[0]!.factors[0]!.exp = 31)],
-    ['guided rows reordered', (x: Raw) => x.questions[0]!.factors.reverse()]
+    ['guided rows reordered', (x: Raw) => x.questions[0]!.factors.reverse()],
+    ['guided question in the estimate', (x: Raw) => (x.questions[0]!.phase = 'estimate')],
+    ['guided model with a first guess', (x: Raw) => (x.questions[0]!.firstGuess = 5)],
+    ['later guided question touched', (x: Raw) => (x.questions[3]!.factors[0]!.exp = 2)]
   ])('rejects a tampered state: %s', (_, edit) => {
-    const s = _.startsWith('row') || _.startsWith('guided') ? model : base;
-    expect(isFermiState(tamper(s, edit))).toBe(false);
+    expect(isFermiState(tamper(base, edit))).toBe(false);
+  });
+
+  it.each([
+    ['free question in the model', (x: Raw) => (x.questions[0]!.phase = 'model')],
+    ['free estimate with rows', (x: Raw) => (x.questions[0]!.factors = [{ unit: 'm', ref: 'nope', exp: 0 }])]
+  ])('rejects a tampered free state: %s', (_, edit) => {
+    expect(isFermiState(tamper(free, edit))).toBe(false);
+  });
+
+  it('migrateState refuses anything but a v1 state, without throwing (property)', () => {
+    expect(STATE_VERSION).toBe(2);
+    expect(migrateState(base, 2)).toBeUndefined();
+    expect(migrateState({ ...clone(base), v: 1 }, 3)).toBeUndefined();
+    fc.assert(
+      fc.property(fc.anything(), fc.integer({ min: 0, max: 3 }), (x, v) => {
+        expect(() => migrateState(x, v)).not.toThrow();
+        expect(migrateState(x, v)).toBeUndefined();
+      }),
+      { numRuns: 200 }
+    );
   });
 });

@@ -29,16 +29,26 @@ export interface ScenarioSpec {
 export interface Seats {
   readonly frames: readonly Frame[];
   readonly layouts: Readonly<Record<number, readonly number[]>>;
+  /**
+   * Maps made for teams (asymmetric, owner decision 2026-10-24): the team shapes they offer and,
+   * per shape, the seats that play (in side order, the player's first). Such a map has no
+   * free-for-all; `layouts` then only declares the opponent count.
+   */
+  readonly teams?: Readonly<Record<string, readonly number[]>>;
 }
 
 /** The opponent counts a map offers (two-side maps: one). */
 export const opponentCounts = (spec: ScenarioSpec): number[] =>
   spec.seats ? Object.keys(spec.seats.layouts).map(Number).sort((a, b) => a - b) : [1];
 
-/** The scenario for `opponents` opponents: seats become sides 0…n (the player is side 0), empty seats neutral posts. */
-export function scenarioFor(spec: ScenarioSpec, opponents: number): Scenario | undefined {
+/**
+ * The scenario for `opponents` opponents (and, on a map made for teams, the team `shape`): seats
+ * become sides 0…n (the player is side 0), empty seats neutral posts.
+ */
+export function scenarioFor(spec: ScenarioSpec, opponents: number, shape: string | null = null): Scenario | undefined {
   if (!spec.seats) return opponents === 1 ? spec.scenario : undefined;
-  const layout = spec.seats.layouts[opponents];
+  const byShape = spec.seats.teams;
+  const layout = byShape ? (shape !== null && Object.hasOwn(byShape, shape) && byShape[shape]!.length === opponents + 1 ? byShape[shape] : undefined) : spec.seats.layouts[opponents];
   if (!layout) return undefined;
   const sideOf = new Map(layout.map((seat, side) => [seat, side]));
   const entities = spec.scenario.entities.flatMap((e) => {
@@ -46,7 +56,8 @@ export function scenarioFor(spec: ScenarioSpec, opponents: number): Scenario | u
     if (side !== undefined) return [{ ...e, side }];
     return e.kind === 'command-post' ? [{ ...e, side: NEUTRAL }] : [];
   });
-  return { ...spec.scenario, sides: layout.length, entities, frames: layout.map((seat) => spec.seats!.frames[seat] ?? 'id') };
+  const supply = spec.scenario.supply;
+  return { ...spec.scenario, sides: layout.length, entities, frames: layout.map((seat) => spec.seats!.frames[seat] ?? 'id'), ...(supply && { supply: layout.map((seat) => supply[seat] ?? 0) }) };
 }
 
 const mirrorRows = (top: readonly string[]): string[] => [...top, ...[...top].reverse().map((row) => [...row].reverse().join(''))];
@@ -290,4 +301,74 @@ export const FOUR_CORNERS: ScenarioSpec = fourBases(
   ]
 );
 
-export const SCENARIOS: readonly ScenarioSpec[] = [FIELD_EXERCISE, CROSSROADS, RIDGE_VALLEY, MARSH_DELTA, FOUR_CORNERS];
+/**
+ * Bastion (owner decision 2026-10-24: 1 against 3 is played mainly on asymmetric maps, the lone side
+ * with better resources and a base that is easier to hold): 20×14, made for teams of three against
+ * one. The lone base (seat 0) holds a plateau walled by ridges with two passes and two rich deposits;
+ * three bases below (seats 1–3) have one plain deposit each, and two more lie in the open middle.
+ * 1 against 3: the player holds the plateau; 3 against 1: the player is the left base below, its
+ * allies the others, and the lone opponent holds the plateau.
+ */
+export const BASTION: ScenarioSpec = {
+  id: 'bastion',
+  turnLimit: 24,
+  scenario: {
+    map: {
+      w: 20,
+      h: 14,
+      terrain: [
+        '....^..........^....',
+        '....^..........^....',
+        '....^..........^....',
+        '....^..........^....',
+        '....^..........^....',
+        '....^^^.^^^^.^^^....',
+        '...ff..=....=..ff...',
+        '..f....=....=....f..',
+        '....h..======..h....',
+        '........=..=........',
+        '..ff....=..=....ff..',
+        '....................',
+        '....................',
+        '....................'
+      ].join(''),
+      deposits: [
+        { x: 6, y: 2, left: DEPOSIT_SUPPLY, endless: true },
+        { x: 13, y: 2, left: DEPOSIT_SUPPLY, endless: true },
+        { x: 9, y: 4, left: DEPOSIT_SUPPLY, endless: true },
+        { x: 4, y: 13, left: DEPOSIT_SUPPLY },
+        { x: 12, y: 13, left: DEPOSIT_SUPPLY },
+        { x: 15, y: 13, left: DEPOSIT_SUPPLY },
+        { x: 5, y: 8, left: DEPOSIT_SUPPLY },
+        { x: 14, y: 8, left: DEPOSIT_SUPPLY }
+      ]
+    },
+    sides: 4,
+    // The lone base starts with five times the Supply of each base below.
+    supply: [1500, 300, 300, 300],
+    entities: [
+      // Seat 0: the plateau.
+      { side: 0, kind: 'command-post', x: 9, y: 1 },
+      { side: 0, kind: 'muster', x: 10, y: 1 },
+      { side: 0, kind: 'mast-truck', x: 12, y: 1 },
+      { side: 0, kind: 'rifles', x: 8, y: 3 },
+      { side: 0, kind: 'rifles', x: 11, y: 3 },
+      { side: 0, kind: 'lancer', x: 9, y: 3 },
+      { side: 0, kind: 'warden', x: 10, y: 3 },
+      { side: 0, kind: 'howitzer', x: 9, y: 2 },
+      // Seats 1–3: the bases below (left, middle, right).
+      ...[2, 10, 17].flatMap((px, i) => [
+        { side: i + 1, kind: 'command-post', x: px, y: 12 },
+        { side: i + 1, kind: 'muster', x: px === 17 ? 16 : px + 1, y: 12 },
+        { side: i + 1, kind: 'mast-truck', x: px, y: 13 },
+        { side: i + 1, kind: 'rifles', x: px - 1, y: 11 },
+        { side: i + 1, kind: 'rifles', x: px + 1, y: 11 },
+        { side: i + 1, kind: 'lancer', x: px, y: 11 }
+      ])
+    ],
+    seed: 0
+  },
+  seats: { frames: ['id', 'id', 'id', 'id'], layouts: { 3: [0, 1, 2, 3] }, teams: { '1v3': [0, 1, 2, 3], '3v1': [1, 2, 0, 3] } }
+};
+
+export const SCENARIOS: readonly ScenarioSpec[] = [FIELD_EXERCISE, CROSSROADS, RIDGE_VALLEY, MARSH_DELTA, FOUR_CORNERS, BASTION];

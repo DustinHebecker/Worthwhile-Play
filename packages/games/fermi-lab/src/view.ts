@@ -5,42 +5,34 @@ import { fieldParts, fieldText, formatQuantity, parseLocaleNumber, roundSig, typ
 import {
   EXP_MAX,
   EXP_MIN,
-  MAX_FACTORS,
   ROUND_LENGTH,
   TEXT_MAX,
-  addRow,
   commitGuess,
   compare,
   createInitial,
   currentQuestion,
   factorOf,
   finishModel,
-  insertConstant,
   isGivenRow,
   isSummary,
   marksOf,
   markFinished,
   modelResult,
   next,
-  removeRow,
   resetState,
-  rowValue,
   score,
   sensitivity,
   setDraft,
-  setRowLabel,
   setRowNumber,
-  setRowUnit,
   summarize,
   taskOf,
-  unitPalette,
   type Band,
   type FactorState,
   type FermiState,
   type QuestionState,
   type Score
 } from './rules';
-import { POWERS, type Power, type Task } from './tasks';
+import type { Power, Task } from './tasks';
 import { WORD_UNITS, dimsText, isCountWord, unitText } from './units';
 import './styles.css';
 
@@ -101,7 +93,7 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
     const q = formatQuantity(v, locale);
     const u = unitLabel(unit);
     const el = h('span', { class: 'fl-qty', 'data-value': String(v), 'data-testid': options.testid, 'aria-label': spoken(v, unit) });
-    const num = h('bdi', { class: 'fl-num', 'aria-hidden': 'true' }, q.mantissa);
+    const num = h('bdi', { class: 'fl-num', dir: 'ltr', 'aria-hidden': 'true' }, q.mantissa);
     if (q.exponent !== null) num.append(' × 10', h('sup', {}, q.exponentText));
     el.append(num);
     if (u) el.append(h('span', { class: 'fl-unit', 'aria-hidden': 'true' }, ` ${u}`));
@@ -338,8 +330,8 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
         widget.field.focus();
         return;
       }
-      commit(commitGuess(state, v), 'fl-model-heading');
-      announce(live, t('announce.guess', { value: spoken(v, task.answer.unit) }));
+      commit(commitGuess(state, v), 'fl-review-heading');
+      announce(live, `${t('announce.guess', { value: spoken(v, task.answer.unit) })} ${t(`verdict.${score(v, task).band}`)}`);
     };
     estimateField = widget.field;
     return [
@@ -349,7 +341,6 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
     ];
   };
   const renderModel = (q: QuestionState, task: Task): HTMLElement[] => {
-    const free = state.model === 'free';
     const productBox = h('div', { class: 'fl-product', 'aria-live': 'polite', 'data-testid': 'fl-product' });
     const useButton = h('button', { type: 'button', class: 'primary', 'data-testid': 'fl-use-model' }, t('action.useModel'));
     const refreshProduct = () => {
@@ -362,109 +353,35 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
       else if (result.status === 'units') {
         const left = dimsText(result.leftover);
         productBox.append(h('span', { class: 'fl-warn' }, left ? t('product.units', { units: left }) : t('product.unitsNone')));
-      } else productBox.append(h('span', { class: 'fl-muted' }, t(result.status === 'empty' ? 'product.empty' : 'product.incomplete')));
+      } else productBox.append(h('span', { class: 'fl-muted' }, t('product.incomplete')));
       useButton.setAttribute('aria-disabled', String(result.status !== 'ok'));
     };
     useButton.addEventListener('click', () => {
       if (paused) return;
       const result = modelResult(task, currentQuestion(state)!.factors);
       if (result.status !== 'ok') return announce(live, t('need.model'));
-      finish(true);
+      commit(finishModel(state), 'fl-review-heading');
+      announce(live, t(`verdict.${score(result.value, task).band}`));
     });
-    const finish = (useModel: boolean) => {
-      commit(finishModel(state, useModel), 'fl-review-heading');
-      const cur = state.questions[state.index]!;
-      if (cur.answer !== null) announce(live, `${t(`verdict.${score(cur.answer, task).band}`)}`);
-    };
 
     const rowsList = h('ol', { class: 'fl-rows', 'data-testid': 'fl-rows' });
-    q.factors.forEach((row, i) => rowsList.append(renderRow(row, i, task, free, refreshProduct)));
-
-    const extras: HTMLElement[] = [];
-    if (free) {
-      const add = h(
-        'button',
-        { type: 'button', 'data-testid': 'fl-add-row', onclick: () => !paused && (commit(addRow(state)), focusRow(currentQuestion(state)!.factors.length - 1), announce(live, t('announce.added'))) },
-        `+ ${t('action.addRow')}`
-      );
-      if (q.factors.length >= MAX_FACTORS) add.disabled = true;
-      extras.push(h('div', { class: 'fl-actions' }, add));
-      const constants = task.factors.filter((x) => x.fixed && !q.factors.some((r) => r.ref === x.id));
-      if (constants.length && q.factors.length < MAX_FACTORS) {
-        extras.push(
-          h(
-            'div',
-            { class: 'fl-constants' },
-            h('p', { class: 'fl-small' }, t('constants.heading')),
-            h(
-              'div',
-              { class: 'fl-chips' },
-              ...constants.map((x) =>
-                h(
-                  'button',
-                  {
-                    type: 'button',
-                    class: 'fl-chip',
-                    'data-testid': `fl-const-${x.id}`,
-                    onclick: () => {
-                      if (paused) return;
-                      commit(insertConstant(state, x.id));
-                      focusRow(currentQuestion(state)!.factors.length - 1);
-                    }
-                  },
-                  `${factorName(x.id)} = `,
-                  quantity(x.value, x.unit, { words: false })
-                )
-              )
-            )
-          )
-        );
-      }
-    }
+    q.factors.forEach((row, i) => rowsList.append(renderRow(row, i, task, refreshProduct)));
     refreshProduct();
     return [
-      h('p', { class: 'fl-first' }, `${t('model.firstGuess')}: `, quantity(q.firstGuess!, task.answer.unit, { testid: 'fl-first-guess' })),
       heading('h3', 'fl-model-heading', t('model.heading')),
-      h('p', { class: 'fl-hint' }, t(free ? 'model.intro.free' : 'model.intro.guided')),
+      h('p', { class: 'fl-hint' }, t('model.intro.guided')),
       rowsList,
-      ...extras,
       productBox,
-      h('div', { class: 'fl-actions' }, useButton, h('button', { type: 'button', 'data-testid': 'fl-keep-guess', onclick: () => !paused && finish(false) }, t('action.keepGuess')))
+      h('div', { class: 'fl-actions' }, useButton)
     ];
   };
 
-  const focusRow = (i: number) => {
-    const field = main.querySelector<HTMLElement>(`[data-testid="fl-row-${i}-input"]`) ?? main.querySelector<HTMLElement>(`[data-testid="fl-row-${i}"] button`);
-    field?.focus();
-  };
-
-  const renderRow = (row: FactorState, i: number, task: Task, free: boolean, refresh: () => void): HTMLElement => {
+  const renderRow = (row: FactorState, i: number, task: Task, refresh: () => void): HTMLElement => {
     const ref = factorOf(task, row.ref);
     const given = isGivenRow(task, row);
-    const name = ref ? factorName(ref.id) : row.label || t('row.free', { n: i + 1 });
+    const name = ref ? factorName(ref.id) : row.label || row.ref || '';
     const li = h('li', { class: `fl-row${given ? ' is-given' : ''}`, 'data-testid': `fl-row-${i}`, 'data-ref': row.ref ?? '' });
-    const op = h('span', { class: 'fl-op', 'aria-label': t('row.op') }, powerSymbol(row.power));
-    if (!free || ref) {
-      li.append(h('div', { class: 'fl-row-head' }, op, h('span', { class: 'fl-row-name' }, name)));
-    } else {
-      const nameField = h('input', { type: 'text', class: 'fl-name', maxlength: 40, placeholder: t('row.free', { n: i + 1 }), 'aria-label': t('row.name'), 'data-testid': `fl-row-${i}-name` });
-      nameField.value = row.label;
-      nameField.addEventListener('input', () => !paused && edit(setRowLabel(state, i, nameField.value)));
-      const opSelect = h('select', { class: 'fl-select', 'aria-label': t('row.op'), 'data-testid': `fl-row-${i}-op` });
-      for (const p of POWERS) opSelect.append(h('option', { value: p, ...(p === row.power ? { selected: true } : {}) }, powerSymbol(p)));
-      const unitSelect = h('select', { class: 'fl-select', 'aria-label': t('row.unit'), 'data-testid': `fl-row-${i}-unit` });
-      for (const u of unitPalette(task)) unitSelect.append(h('option', { value: u, ...(u === row.unit ? { selected: true } : {}) }, unitLabel(u) || t('unit.none')));
-      const onUnit = () => {
-        if (paused) return;
-        edit(setRowUnit(state, i, unitSelect.value, Number(opSelect.value) as Power));
-        const unitEl = li.querySelector('.fl-field-unit');
-        if (unitEl) unitEl.textContent = unitLabel(unitSelect.value);
-        refresh();
-      };
-      opSelect.addEventListener('change', onUnit);
-      unitSelect.addEventListener('change', onUnit);
-      li.append(h('div', { class: 'fl-row-head' }, opSelect, nameField, unitSelect));
-    }
+    li.append(h('div', { class: 'fl-row-head' }, h('span', { class: 'fl-op', 'aria-label': t('row.op') }, powerSymbol(row.power)), h('span', { class: 'fl-row-name' }, name)));
     if (given && ref) {
       li.append(h('p', { class: 'fl-given' }, '= ', quantity(ref.value, ref.unit, { words: false }), h('span', { class: 'fl-badge' }, t('row.given'))));
     } else {
@@ -481,26 +398,6 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
       });
       widget.el.querySelector('label')?.classList.add('sr-only');
       li.append(widget.el);
-    }
-    if (free) {
-      li.append(
-        h(
-          'button',
-          {
-            type: 'button',
-            class: 'fl-remove',
-            'aria-label': t('row.removeLabel', { name }),
-            'data-testid': `fl-row-${i}-remove`,
-            onclick: () => {
-              if (paused) return;
-              commit(removeRow(state, i));
-              announce(live, t('announce.removed'));
-              main.querySelector<HTMLElement>('[data-testid="fl-add-row"]')?.focus();
-            }
-          },
-          `✕ ${t('row.remove')}`
-        )
-      );
     }
     return li;
   };
@@ -526,7 +423,7 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
    * the reference line and the answer markers. Marker names are an HTML legend below (readable at 360 px).
    */
   const scaleBar = (q: QuestionState, task: Task): HTMLElement => {
-    const shown = [task.answer.central, task.answer.low, task.answer.high, q.answer!, ...(q.modelUsed ? [q.firstGuess!] : [])];
+    const shown = [task.answer.central, task.answer.low, task.answer.high, q.answer!];
     const logs = shown.map((v) => Math.log10(v));
     let lo = Math.floor(Math.min(...logs) - 0.3);
     let hi = Math.ceil(Math.max(...logs) + 0.3);
@@ -552,7 +449,6 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
     const xr = x(task.answer.central);
     chart.append(svg('line', { class: 'fl-ref', x1: xr, y1: y - 22, x2: xr, y2: y + 22 }));
     const diamond = (xv: number, cls: string) => svg('path', { class: cls, d: `M${xv} ${y - 11}L${xv + 11} ${y}L${xv} ${y + 11}L${xv - 11} ${y}Z` });
-    if (q.modelUsed) chart.append(diamond(x(q.firstGuess!), 'fl-guess'));
     chart.append(diamond(x(q.answer!), 'fl-answer'));
     const item = (symbol: string, label: string, value: HTMLElement | string) =>
       h('li', {}, h('span', { class: 'fl-legend-sym', 'aria-hidden': 'true' }, symbol), ` ${label}: `, value);
@@ -560,7 +456,6 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
       'ul',
       { class: 'fl-legend' },
       item('◆', t('scale.answer'), quantity(q.answer!, task.answer.unit, { words: false })),
-      ...(q.modelUsed ? [item('◇', t('scale.guess'), quantity(q.firstGuess!, task.answer.unit, { words: false }))] : []),
       item('┃', t('scale.reference'), quantity(task.answer.central, task.answer.unit, { words: false })),
       item('▨', t('review.range'), t('review.rangeValue', { low: formatQuantity(task.answer.low, locale).text, high: `${formatQuantity(task.answer.high, locale).text} ${unitLabel(task.answer.unit)}`.trim() }))
     );
@@ -570,7 +465,7 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
         class: 'fl-chart',
         role: 'img',
         'data-testid': 'fl-scale',
-        'aria-label': t('scale.label', { reference: spoken(task.answer.central, task.answer.unit), low: spoken(task.answer.low), high: spoken(task.answer.high), answer: spoken(q.answer!), guess: spoken(q.firstGuess!) })
+        'aria-label': t('scale.label', { reference: spoken(task.answer.central, task.answer.unit), low: spoken(task.answer.low), high: spoken(task.answer.high), answer: spoken(q.answer!) })
       },
       chart,
       legend
@@ -587,7 +482,7 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
 
   const renderComparison = (q: QuestionState, task: Task): HTMLElement => {
     // A model counts once the player filled in at least one open factor (guided rows start empty).
-    const hasModel = q.factors.some((r) => !isGivenRow(task, r) && rowValue(task, r) !== null);
+    const hasModel = q.modelUsed;
     const cmp = compare(task, q.factors);
     const section = h('section', { class: 'fl-section', 'aria-labelledby': 'fl-compare-heading', 'data-testid': 'fl-compare' }, heading('h3', 'fl-compare-heading', t(hasModel ? 'compare.heading' : 'compare.headingRef')));
     if (!hasModel) section.append(h('p', {}, t('compare.noModel')));
@@ -610,20 +505,6 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
       list.append(card);
     }
     section.append(list);
-    if (cmp.others.length) {
-      section.append(
-        h('p', { class: 'fl-card-name' }, t('compare.others')),
-        h(
-          'ul',
-          { class: 'fl-others' },
-          ...cmp.others.map((r) => {
-            const v = rowValue(task, r);
-            return h('li', {}, `${powerSymbol(r.power)} ${r.label || (r.ref ? factorName(r.ref) : t('row.free', { n: q.factors.indexOf(r) + 1 }))}: `, v === null ? '—' : quantity(v, r.unit, { words: false }));
-          })
-        )
-      );
-    }
-    if (cmp.othersEffect !== null && hasModel) section.append(h('p', { class: 'fl-small' }, t('compare.othersEffect', { effect: effectText(cmp.othersEffect, false) })));
     return section;
   };
 
@@ -694,7 +575,6 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
 
   const renderReview = (q: QuestionState, task: Task): HTMLElement[] => {
     const s = score(q.answer!, task);
-    const g = q.firstGuess !== null ? score(q.firstGuess, task) : null;
     const verdict = h(
       'div',
       { class: `fl-verdict fl-band-${s.band}`, 'data-testid': 'fl-verdict', 'data-band': s.band, 'data-direction': s.direction },
@@ -706,7 +586,7 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
         h('p', {}, `${t('review.answer')}: `, quantity(q.answer!, task.answer.unit, { testid: 'fl-answer' })),
         h('p', { class: 'fl-direction', 'data-testid': 'fl-direction' }, directionText(s), ' ', t(s.inRange ? 'review.inRange' : 'review.outRange')),
         h('p', {}, `${t('review.reference')}: `, quantity(task.answer.central, task.answer.unit, { testid: 'fl-reference' })),
-        h('p', { class: 'fl-small' }, t(q.modelUsed ? 'review.fromModel' : 'review.kept'), q.modelUsed && g ? ` ${t('review.guessLine', { band: t(`band.${g.band}`) })}` : '')
+        h('p', { class: 'fl-small' }, t(q.modelUsed ? 'review.fromModel' : 'review.fromEstimate'))
       )
     );
     const last = state.index === ROUND_LENGTH - 1;
@@ -750,8 +630,7 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
             t('summary.row', {
               band: t(`band.${r.score.band}`),
               direction: r.score.direction === 'none' ? t('summary.dirNone') : t(r.score.direction === 'high' ? 'summary.dirHigh' : 'summary.dirLow', { f: ratio(r.score.factor) })
-            }),
-            r.modelUsed ? ` (${t('summary.withModel')})` : ''
+            })
           )
         )
       )
@@ -759,11 +638,7 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
     const logBias = Math.log10(sum.bias);
     const biasText = Math.abs(logBias) <= Math.log10(1.25) ? t('summary.biasSame') : logBias < 0 ? t('summary.biasLow', { f: ratio(1 / sum.bias) }) : t('summary.biasHigh', { f: ratio(sum.bias) });
     const lines: HTMLElement[] = [h('p', { 'data-testid': 'fl-bias' }, biasText)];
-    if (sum.modelHelp) {
-      const { withModel, firstGuesses } = sum.modelHelp;
-      lines.push(h('p', { 'data-testid': 'fl-model-help' }, t(withModel < firstGuesses ? 'summary.modelBetter' : 'summary.modelNotBetter', { with: ratio(withModel), without: ratio(firstGuesses) })));
-    }
-    lines.push(h('p', { class: 'fl-small' }, t('summary.counts', { a: sum.withinFactor3, b: sum.withinFactor10, n: sum.rows.length, m: sum.modelsUsed })));
+    lines.push(h('p', { class: 'fl-small' }, t('summary.counts', { a: sum.withinFactor3, b: sum.withinFactor10, n: sum.rows.length })));
     return [
       heading('h2', 'fl-summary-heading', t('summary.heading')),
       rows,
@@ -794,7 +669,8 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
       else main.append(...renderReview(q, task));
     }
     if (focusNext) {
-      const target = focusNext === 'fl-question-anchor' ? estimateField : main.querySelector<HTMLElement>(`#${focusNext}`);
+      // A new question focuses its first field: the estimate, or the first open factor of the guided model.
+      const target = focusNext === 'fl-question-anchor' ? (estimateField ?? main.querySelector<HTMLElement>('.fl-rows .fl-field')) : main.querySelector<HTMLElement>(`#${focusNext}`);
       target?.focus({ preventScroll: false });
       if (focusNext === 'fl-question-anchor') main.querySelector('.fl-question')?.scrollIntoView?.({ block: 'start' });
       focusNext = null;

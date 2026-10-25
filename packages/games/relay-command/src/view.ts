@@ -1,6 +1,7 @@
 import type { GameContext, GameInstance, GameResult, NewGameOptions } from '@wp/game-core';
 import { normalizeSeed } from '@wp/game-core';
 import {
+  hostile,
   archetypeOf,
   depositAt,
   isReady,
@@ -44,6 +45,12 @@ import {
   lockTurn,
   newGame,
   opponentValue,
+  teamValue,
+  teamShapes,
+  teamShapeOf,
+  teamsOnly,
+  winnersOf,
+  type TeamShape,
   orderRefusal,
   rulesOf,
   orderSlots,
@@ -60,7 +67,6 @@ import {
   RULESET,
   scenarioById,
   specOf,
-  sideValue,
   TURN_LIMITS,
   unitById,
   RANDOM_OPPONENTS,
@@ -162,7 +168,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   const several = (): boolean => state.opponents > 1 || rulesOf(state).capture === true;
   const sideMark = (side: number): string => (side === NEUTRAL ? 'N' : (SIDE_MARKS[side] ?? '?'));
   const sideName = (side: number): string =>
-    side === me() ? t('side.own') : side === NEUTRAL ? t('side.neutral') : several() ? t('side.opponent', { mark: sideMark(side) }) : t('side.enemy');
+    side === me() ? t('side.own') : side === NEUTRAL ? t('side.neutral') : !hostile(world(), me(), side) ? t('side.ally', { mark: sideMark(side) }) : several() ? t('side.opponent', { mark: sideMark(side) }) : t('side.enemy');
   const sideColour = (side: number): string => {
     if (side === NEUTRAL) return css('--rc-neutral', '#4b5563');
     const token = SIDE_COLOURS[side] ?? SIDE_COLOURS[1]!;
@@ -367,6 +373,9 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   const difficultyLabel = h('label', { 'data-testid': 'rc-difficulty-label' }, h('span', {}, t('setup.difficulty')), difficultySelect);
   /** Opponents: only the counts the chosen map declares (two-side maps: one). */
   const opponentsSelect = h('select', { 'data-testid': 'rc-opponents', onchange: () => onSetup() });
+  /** Teams (owner decisions 2026-10-24): the shapes the map offers for the opponent count; shown only then. */
+  const teamsSelect = h('select', { 'data-testid': 'rc-teams', onchange: () => onSetup() }) as HTMLSelectElement;
+  const teamsLabel = h('label', { 'data-testid': 'rc-teams-label', hidden: true }, h('span', {}, t('setup.teams')), teamsSelect);
   // Lengths: open end (default), quick match (strength decides once the side behind stops gaining
   // ground), or a fixed number of turns.
   for (const limit of TURN_LIMITS) {
@@ -393,6 +402,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     randomBox,
     difficultyLabel,
     h('label', { 'data-testid': 'rc-opponents-label' }, h('span', {}, t('setup.opponents')), opponentsSelect),
+    teamsLabel,
     h('label', { class: 'rc-check' }, endlessInput, h('span', {}, t('setup.endless'))),
     seatsBox,
     hotSeatHint,
@@ -455,13 +465,15 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   /** Maps with empty seats: the neutral posts in a list of their own (not among the enemies). */
   const neutralList = h('ul', { class: 'rc-units', 'data-testid': 'rc-neutral' });
   const neutralPanel = h('section', { class: 'rc-panel', 'data-testid': 'rc-neutral-panel', hidden: true }, h('h3', {}, t('list.neutral')), neutralList);
+  const allyList = h('ul', { class: 'rc-units', 'data-testid': 'rc-allies' });
+  const allyPanel = h('section', { class: 'rc-panel', 'data-testid': 'rc-allies-panel', hidden: true }, h('h3', {}, t('list.allies')), allyList);
   const summaryList = h('ul', { class: 'rc-summary', 'data-testid': 'rc-summary' });
 
   const help = h(
     'details',
     { class: 'rc-help' },
     h('summary', {}, t('help.title')),
-    ...['help.turns', 'help.bar', 'help.orders', 'help.network', 'help.fog', 'help.flash', 'help.ew', 'help.doctrine', 'help.economy', 'help.towers', 'help.repair', 'help.editor', 'help.random', 'help.sides', 'help.hotSeat', 'help.combat', 'help.goal', 'help.shapes', 'help.access'].map((k) => h('p', {}, t(k)))
+    ...['help.turns', 'help.bar', 'help.orders', 'help.network', 'help.fog', 'help.flash', 'help.ew', 'help.doctrine', 'help.economy', 'help.towers', 'help.repair', 'help.editor', 'help.random', 'help.sides', 'help.teams', 'help.hotSeat', 'help.combat', 'help.goal', 'help.shapes', 'help.access'].map((k) => h('p', {}, t(k)))
   );
 
   /* ---------- Map editor ---------- */
@@ -526,6 +538,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       h('section', { class: 'rc-panel' }, h('h3', {}, t('list.own')), ownList),
       h('section', { class: 'rc-panel' }, h('h3', {}, t('list.enemy')), enemyList),
       neutralPanel,
+      allyPanel,
       h('section', { class: 'rc-panel' }, h('h3', {}, t('summary.title')), summaryList)
     )
   );
@@ -637,7 +650,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       ? ''
       : settleArmed
         ? t('action.settleConfirm')
-        : t(`action.settle.${settleResult(state)}`, { own: sideValue(state.world, me()), enemy: opponentValue(state.world) });
+        : t(`action.settle.${settleResult(state)}`, { own: teamValue(state.world, me()), enemy: opponentValue(state.world) });
     stalemateEl.toggleAttribute('data-empty', !stalemate && !settleable);
     // Scenario and turn limit can be changed until the first turn is locked.
     // Kept in place after the first turn (disabled), so the map does not jump up.
@@ -672,11 +685,14 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     limitSelect.value = state.turnLimit !== null ? String(state.turnLimit) : state.quick ? 'quick' : 'open';
     syncOpponentOptions();
     opponentsSelect.value = String(state.opponents);
+    syncTeamOptions();
+    teamsSelect.disabled = setupLocked;
     const mapText = state.map ? mapLabel(state.map) : t(`scenario.${state.scenario}`);
     const length = limitSelect.selectedOptions[0]?.textContent ?? '';
     const summary = state.opponents > 1 ? t('setup.summaryOpponents', { map: mapText, length, n: state.opponents }) : t('setup.summary', { map: mapText, length });
     const level = computer ? [difficultySelect.selectedOptions[0]?.textContent ?? ''] : [];
-    setupSummary.textContent = [summary, ...(state.endless ? [t('setup.endlessShort')] : []), ...level].join(' · ');
+    const shape = teamShapeOf(state.world);
+    setupSummary.textContent = [summary, ...(shape ? [t(`setup.teams.${shape}`)] : []), ...(state.endless ? [t('setup.endlessShort')] : []), ...level].join(' · ');
     statusEl.textContent = statusText();
     statusEl.setAttribute('data-phase', state.phase);
     slotsEl.hidden = finished;
@@ -785,10 +801,15 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   /** The status line of `s`: empty while planning (the counter in the top bar says it all), the result at the end. */
   function statusOf(s: RcState): string {
     if (s.phase === 'plan') return '';
-    if (isHotSeat(s)) return s.winner === null ? t('result.drawSides') : t('result.winner', { mark: sideMark(s.winner) });
+    if (isHotSeat(s)) {
+      if (s.winner === null) return t('result.drawSides');
+      // With teams the winning team's sides still in win together (only survivors win).
+      const winners = winnersOf(s);
+      return winners.length > 1 ? t('result.winners', { marks: winners.map(sideMark).join(', ') }) : t('result.winner', { mark: sideMark(s.winner) });
+    }
     if (s.conceded) return t('status.conceded');
     // The result is decided on the true world, so it is told from it (not from the picture).
-    const args = { own: sideValue(s.world, me()), enemy: opponentValue(s.world), limit: STALL_TURNS };
+    const args = { own: teamValue(s.world, me()), enemy: opponentValue(s.world), limit: STALL_TURNS };
     const result = s.result ?? 'draw';
     const decidedByPost = outcome({ ...s.world, turn: 0 }, s.turnLimit) !== null;
     if (decidedByPost) return result === 'won' ? t('status.won') : result === 'lost' ? t('status.lost') : t('status.draw', args);
@@ -1349,7 +1370,13 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     // post is still known or was taken must not show by a heading appearing or vanishing).
     const neutralSeats = hasNeutralSeats();
     neutralPanel.hidden = !neutralSeats;
-    const enemies = world().entities.filter((e) => e.side !== me() && !(neutralSeats && e.side === NEUTRAL));
+    const enemies = world().entities.filter((e) => e.side !== me() && hostile(world(), me(), e.side) && !(neutralSeats && e.side === NEUTRAL));
+    // Allies have a list of their own whenever the game has teams with an ally (a fixed property).
+    const allies = world().entities.filter((e) => e.side !== me() && e.side !== NEUTRAL && !hostile(world(), me(), e.side));
+    clear(allyList);
+    allyPanel.hidden = !hasAllies();
+    for (const e of allies) allyList.append(h('li', { 'data-testid': `rc-ally-${e.id}`, class: 'rc-enemy-row' }, ...unitRow(e, shortState(e))));
+    if (allies.length === 0) allyList.append(h('li', {}, t('list.empty')));
     for (const e of own) {
       const btn = h(
         'button',
@@ -1381,6 +1408,12 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       neutralList.append(item);
     }
     if (neutral.length === 0) neutralList.append(h('li', {}, t('list.empty')));
+  }
+
+  /** Whether the player has an ally: from the game's teams (a fixed property), never from the board. */
+  function hasAllies(): boolean {
+    const w = state.world;
+    return !!w.teams && Array.from({ length: w.sides }, (_, side) => side).some((side) => side !== me() && !hostile(w, me(), side));
   }
 
   /** Whether the game's map leaves seats empty (their posts start neutral): from the setup, never from the board. */
@@ -2050,6 +2083,23 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     if (label) label.hidden = counts.length < 2;
   }
 
+  /** The team shapes of the game's map and opponent count (free-for-all first); the row only when there are any. */
+  function syncTeamOptions(): void {
+    const spec = specOf(state);
+    const shapes = spec ? teamShapes(spec, state.opponents) : [];
+    // A map made for teams has no free-for-all.
+    const values = spec && teamsOnly(spec) ? shapes : ['ffa', ...shapes];
+    if ([...teamsSelect.options].map((o) => o.value).join(',') !== values.join(',')) {
+      clear(teamsSelect);
+      for (const v of values) teamsSelect.append(h('option', { value: v }, t(`setup.teams.${v}`)));
+    }
+    teamsSelect.value = teamShapeOf(state.world) ?? 'ffa';
+    teamsLabel.hidden = shapes.length === 0;
+  }
+
+  /** The team shape chosen in the setup (null: free-for-all). */
+  const chosenTeams = (): TeamShape | null => (teamsSelect.value === 'ffa' || teamsSelect.value === '' ? null : (teamsSelect.value as TeamShape));
+
   /** Another random map: the next map number (a fixed step from the current one, no Math.random). */
   function newRandomMap(): void {
     if (state.phase !== 'plan' || state.log.length > 0 || !state.random) return;
@@ -2089,7 +2139,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
         return;
       }
       selected = null;
-      commit(newGame(state.seed, FIELD_EXERCISE, state.difficulty, limit, limitSelect.value === 'quick', map, opponents, chosenSeats(), endlessInput.checked, { w: size[0], h: size[1], seed }), t('announce.setup', { scenario: mapLabel(map) }));
+      commit(newGame(state.seed, FIELD_EXERCISE, state.difficulty, limit, limitSelect.value === 'quick', map, opponents, chosenSeats(), endlessInput.checked, { w: size[0], h: size[1], seed }, chosenTeams()), t('announce.setup', { scenario: mapLabel(map) }));
       homeCursor();
       render();
       return;
@@ -2101,7 +2151,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     const map = own && mapIssues(own).length === 0 ? own : null;
     syncOpponentOptions();
     const opponents = map ? 1 : Number(opponentsSelect.value) || 1;
-    commit(newGame(state.seed, spec, state.difficulty, limit, limitSelect.value === 'quick', map, opponents, chosenSeats(), endlessInput.checked), t('announce.setup', { scenario: map ? mapLabel(map) : t(`scenario.${spec.id}`) }));
+    commit(newGame(state.seed, spec, state.difficulty, limit, limitSelect.value === 'quick', map, opponents, chosenSeats(), endlessInput.checked, null, chosenTeams()), t('announce.setup', { scenario: map ? mapLabel(map) : t(`scenario.${spec.id}`) }));
     homeCursor();
     render();
   }
@@ -2123,7 +2173,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     const here = unitsAt(x, y);
     const ownHere = here.find((e) => e.side === me());
     // A ghost marks where an enemy was, not where it is: its cell takes a move order.
-    const enemyHere = here.find((e) => e.side !== me() && !isGhost(e));
+    const enemyHere = here.find((e) => e.side !== me() && hostile(world(), me(), e.side) && !isGhost(e));
     const current = selected === null ? undefined : known(selected);
     const canOrder = !!current && current.side === me() && isMobile(current) && state.phase === 'plan';
     // Placing a structure: the clicked cell is where it goes (the source stays selected).
@@ -2295,7 +2345,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     pause() {},
     resume() {},
     reset() {
-      state = { ...newGame(state.seed, scenarioById(state.scenario) ?? FIELD_EXERCISE, state.difficulty, state.turnLimit, state.quick, state.map, state.opponents, state.seats, state.endless, state.random), edit: state.edit };
+      state = { ...newGame(state.seed, scenarioById(state.scenario) ?? FIELD_EXERCISE, state.difficulty, state.turnLimit, state.quick, state.map, state.opponents, state.seats, state.endless, state.random, teamShapeOf(state.world)), edit: state.edit };
       selected = null;
       confirming = false;
       reported = false;

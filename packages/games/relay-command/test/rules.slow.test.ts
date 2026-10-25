@@ -127,7 +127,8 @@ describe('hot-seat (docs/design/strategy.md § 9.4, D10)', () => {
     const feed = (text: string) => {
       for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193) >>> 0;
     };
-    for (const spec of SCENARIOS) {
+    // The maps of that time (a map made for teams, Bastion, came later and has tests of its own).
+    for (const spec of SCENARIOS.filter((x) => !x.seats?.teams)) {
       for (const n of opponentCounts(spec)) {
         let s = newGame(5, spec, 'normal', 12, false, null, n);
         expect(isHotSeat(s)).toBe(false);

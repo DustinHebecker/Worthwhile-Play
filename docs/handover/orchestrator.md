@@ -151,26 +151,25 @@ App size: precache about 7.7 MB (213 entries, all games and locales, offline).
 - A weekly model rate limit can stop subagents mid-review. Resume them with SendMessage once it resets.
 - Ports in use by convention: publish e2e 4793, PR gate 4795, ad-hoc checks 4796–4799, feature agents 5100–5999.
 
-## Paused state (2026-10-21, owner pause)
+## Paused state (2026-10-24, owner pause at midnight)
 
-Done on 2026-10-21:
-- Mutation budget (ADR 0021) is on main:
-  - PRs mutate only changed lines.
-  - The weekly run is a rotating 1/8 sample and report-only.
-  - A full run is manual only (`mode: full`).
-  - Stryker uses `vitest.mutation.config.ts`, which excludes `*.slow.test.ts` and `*.long.test.ts`.
-- Merged:
-  - Lootlings #59 (worlds Spaceloot and Office);
-  - Lootlings #63 (Fridge and Railway; the worlds default to random, per the owner on 2026-10-21);
-  - Lootlings #66 (wordplay pass; slow tests moved).
+Done on 2026-10-24 (all on main and deployed):
+- Host: games may ship a subset of locales as a preview (`metadata.locales`, `status: 'preview'`, English fallback marked `lang="en"`, a "Work in progress" badge; ADR 0003 amendment).
+- CI: `*.slow.test.ts` run in the `long` job without coverage (ADR 0021 amendment). The quality job dropped from about 14 to about 5 minutes.
+- Pixel Peel v2 (reviewed: landscape blocker fixed, art fixes, faster generator), now fifth on the home page by owner request.
+- Estimation Lab (reviewed and fact-checked; RTL numbers read left to right by owner decision).
+- Merged: #68, #70 and #72 (strategy teams, Bastion); #69 (Lootlings upgrades visible); #71 (Many Lives E2 preview, en/de).
 
 Open, in this order:
-- Merged and deployed on 2026-10-23: strategy #67 (slow tests moved; no name exclusion is left in `vitest.mutation.config.ts`) and life sim #65 (E1: design, ADR 0018, life-engine foundations; full local gate green).
-- To publish: on `claude/orchestrator-2`, `stryker.config.json` covers `packages/life-engine/src/*.ts` (without `index.ts`) and `src/params/check.ts` (commit 3438e12). Ship it with the next publish.
-- Life sim: ADR 0018 still mentions its own exp/log functions. Asked the life-sim agent to point to `@wp/finance-math` (ADR 0020) in its next PR. The owner decided on 2026-10-21: an early en/de release marked "Work in progress", with the other 14 locales after.
-- Economy (session_0171vR1YZpyDbCP4etKP5k7Y): waits for the owner's "weitermachen" in that session, then opens the finance-math PR (ADR 0020). The owner still has to answer the nine questions in `docs/design/economy-draft.md` on `feature/economy-tycoon`.
-- Adventures (session_015FCipyczdDEy2eSaq9YcXL): three owner questions are open: start E1? time model? location of Adventure B?
-- Pixel Peel v2 (`game/pixel-peel-v2`, 82f278e): rerun the second review, fix, publish, show the contact sheet. Also fix the flaky wall-clock assertion in `test/generator.test.ts` (`slowest generation < 150 ms`), which failed under gate load: move it to a `.slow` test or make it a budget that ignores load.
-- Estimation Lab (`game/fermi-lab`, 1e7d1fb): review, then publish.
-- New-games pipeline: Probability Detective, Atlas Explorer, Timeline, Tiny Ecosystem, Harmony, Balance Lab.
-- To check: Stryker may resolve `@wp/game-core` imports through workspace links to the unmutated originals. A dry run for `rng.ts` found only 63 related tests, so shared-package scores may be understated.
+- Lootlings #73 (worlds Creepy Crawlies, Break Time, Big Top; random games show the drawn worlds): gate, then merge. The owner says Lootlings is complete after this; only change requests from now on.
+- Strategy: the map editor for four-base maps comes as the next PR (held on `backup/strategy-engine`).
+- Probability Detective (new-games pipeline, game 3): the plan is on `plan/probability-detective`. Owner decisions on 2026-10-24: title kept, the calibration notebook, all 16 locales. The implementation is on `game/probability-detective`; its worktree is `scratchpad/pd-wt`, which may be gone after a container restart (work from the branch).
+  - Last green commit: e63189d (clue mode only).
+  - 5da43d1 and 986c609 (WIP) add the checks and traps modes. They are not green: 9 locales (ru, uk, pl, tr, ar, hi, ja, ko, zh-Hans) still lack the new texts.
+  - Remaining: those translations (the fragment format and `apply.py` are in `scratchpad/pdloc/`, which may also be gone; `de` is the complete example), new screenshots, e2e for checks/traps/mixed, the full gate, an independent review.
+  - Orchestrator side: add `src/{frac,generate,traps}.ts` to Stryker `mutate`; a ROADMAP row; a `docs/third-party.md` entry (original content, invented numbers).
+- Estimation Lab follow-ups (owner said yes): a "recently seen" memory for tasks; a yearly review of time-dependent figures; three source links that return 404 from the container (UN PopFacts 2017/2, OICA 2013, University of Arizona bees) — check them in a browser and switch to Wayback if dead; true plurals for count words ("1 days").
+- Pixel Peel open items: the phone start time (about 300 ms against a 250 ms target) needs a measurement on a quiet machine; a side-by-side landscape layout.
+- `scripts/orchestrator/gate-pr.sh` still runs the slow suites under coverage. The relay generator slow tests time out there under load; align it with CI (exclude `*.slow.test.ts` from coverage and run them separately).
+- Economy (waits for the owner's "weitermachen" in its own session; nine questions in `docs/design/economy-draft.md`) and adventures (three owner questions) are unchanged.
+- Remaining pipeline games: Atlas Explorer, Timeline, Tiny Ecosystem, Harmony, Balance Lab.
