@@ -93,8 +93,10 @@
 }
 .wp-probability-detective .pd-worth-bar { position: absolute; top: 15%; height: 70%; background: var(--wp-accent); }
 .wp-probability-detective .pd-worth-bar--neg { background: repeating-linear-gradient(45deg, var(--wp-text) 0 2px, transparent 2px 6px); border: 1px solid var(--wp-text); box-sizing: border-box; }
-.wp-probability-detective .pd-axis--fill { background: var(--wp-surface-2); border: 1px solid var(--wp-border); border-radius: 3px; }
-.wp-probability-detective .pd-fill { position: absolute; inset-block: 0; left: 0; background: var(--wp-accent); }
+/* A single share (0–100 %) is a split like the belief bar, not a numeric axis: it fills from inline-start, as the
+   belief bar's first segment does, so both read the same way in RTL. */
+.wp-probability-detective .pd-axis--fill { direction: inherit; background: var(--wp-surface-2); border: 1px solid var(--wp-border); border-radius: 3px; }
+.wp-probability-detective .pd-fill { position: absolute; inset-block: 0; inset-inline-start: 0; background: var(--wp-accent); }
 
 /* Traps. */
 .wp-probability-detective .pd-trap {
