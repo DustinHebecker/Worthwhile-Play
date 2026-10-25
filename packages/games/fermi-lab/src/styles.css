@@ -133,3 +133,8 @@
   .wp-fermi-lab .fl-dl { grid-template-columns: 1fr; gap: 0; }
   .wp-fermi-lab .fl-dl dd { margin-block-end: 0.35rem; }
 }
+/* Change 2026-10-25b: the slider's window ends are labelled; an empty value or one outside the window dims the thumb. */
+.wp-fermi-lab .fl-slider-row { align-items: center; gap: 0.5rem; }
+.wp-fermi-lab .fl-slider-end { flex: none; font-size: 0.85em; color: var(--wp-muted, inherit); font-variant-numeric: tabular-nums; }
+.wp-fermi-lab .fl-slider[data-empty='true'], .wp-fermi-lab .fl-slider[data-out] { opacity: 0.55; }
+.wp-fermi-lab .fl-field { direction: ltr; text-align: start; }
