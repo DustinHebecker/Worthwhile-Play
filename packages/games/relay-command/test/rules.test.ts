@@ -1934,16 +1934,25 @@ describe('teams (owner decisions 2026-10-24)', () => {
     expect(outcome(without([0, 2, 3]), null)).toBe('draw');
     expect(outcome(without([0]), null)).toBe('lost');
     expect(outcome(without([1]), null)).toBeNull();
-    // At the turn limit the player's team (the player and its ally) is weighed against the strongest hostile team.
+    // At the turn limit a team counts as its strongest side (owner decision 2026-10-25: not the sum,
+    // so a team does not win on numbers alone): the player's team against the strongest hostile team.
     const w = structuredClone(s.world);
     w.turn = 12;
-    expect(teamValue(w, PLAYER)).toBe(sideValue(w, 0) + sideValue(w, 1));
-    expect(opponentValue(w)).toBe(sideValue(w, 2) + sideValue(w, 3));
     expect(outcome(w, 12)).toBe('draw');
     w.supply![1] = (w.supply![1] ?? 0) + 10;
+    expect(teamValue(w, PLAYER)).toBe(sideValue(w, 1));
+    expect(teamValue(w, PLAYER)).toBeGreaterThan(sideValue(w, 0));
     expect(outcome(w, 12)).toBe('won');
-    // An ally that is out counts nothing.
+    w.supply![3] = (w.supply![3] ?? 0) + 20;
+    expect(opponentValue(w)).toBe(sideValue(w, 3));
+    expect(outcome(w, 12)).toBe('lost');
+    // A weaker side does not add to its team's strength: more Supply for side 2 changes nothing.
+    w.supply![2] = (w.supply![2] ?? 0) + 15;
+    expect(opponentValue(w)).toBe(sideValue(w, 3));
+    // An ally that is out counts nothing, even when it was the strongest.
     const lone = without([1]);
+    lone.supply![1] = (lone.supply![1] ?? 0) + 1000;
+    lone.supply![3] = (lone.supply![3] ?? 0) + 10;
     lone.turn = 12;
     expect(teamValue(lone, PLAYER)).toBe(sideValue(lone, 0));
     expect(outcome(lone, 12)).toBe('lost');
@@ -2010,6 +2019,20 @@ describe('Bastion: a map made for teams (owner decision 2026-10-24)', () => {
       expect(canonicalJson(replay(s.seed, s.log, BASTION, 3, false, shape))).toBe(canonicalJson(s.world));
     }
   }, 120_000);
+
+  it('on strength the lone side is weighed against the strongest single opponent, not the three together (owner decision 2026-10-25)', () => {
+    const s = newGame(1, BASTION, 'normal', 12, false, null, 3, [], false, null, '1v3');
+    const w = structuredClone(s.world);
+    w.turn = 12;
+    const three = sideValue(w, 1) + sideValue(w, 2) + sideValue(w, 3);
+    expect(sideValue(w, 0)).toBeLessThan(three);
+    expect(opponentValue(w)).toBe(Math.max(sideValue(w, 1), sideValue(w, 2), sideValue(w, 3)));
+    expect(outcome(w, 12)).toBe('won');
+    // The same game the other way round: the player is one of the three and its team loses on strength.
+    const other = structuredClone(newGame(1, BASTION, 'normal', 12, false, null, 3, [], false, null, '3v1').world);
+    other.turn = 12;
+    expect(outcome(other, 12)).toBe('lost');
+  });
 });
 
 describe('teams in hot-seat (owner decision 2026-10-24)', () => {
@@ -2058,7 +2081,7 @@ describe('teams in hot-seat (owner decision 2026-10-24)', () => {
     expect(after.phase).toBe('finished');
     expect(winnersOf(after)).toEqual([1]);
     expect(after.result).toBe('lost');
-    // At the turn limit: the team with more strength (its sides summed) wins.
+    // At the turn limit: the team whose strongest side is stronger wins.
     const late = structuredClone(s);
     late.world.turn = 29;
     late.world.supply![1] = (late.world.supply![1] ?? 0) + 100;
