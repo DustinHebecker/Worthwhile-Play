@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { expectResumeAfterReload, readSave, startGame } from '../../packages/testing/src/e2e';
-import { posteriorAfter, roundPercents, type PdState } from '../../packages/games/probability-detective/src/rules';
+import { posteriorAfter, roundPercents, type ClueCase, type PdState } from '../../packages/games/probability-detective/src/rules';
 
 const ID = 'probability-detective';
 const root = (page: Page) => page.getByTestId('game-root');
@@ -24,10 +24,10 @@ test('probability-detective: exact estimates by keyboard are judged very close',
   await startGame(page, ID, { difficulty: 'easy' });
   const r = root(page);
   for (let k = 0; k < 2; k++) {
-    const c = (await savedState(page)).cases[0]!;
+    const c = ((await savedState(page)).cases[0] as ClueCase);
     const target = roundPercents(posteriorAfter(c, k + 1))[0]!;
     await setRange(page, target);
-    await expect.poll(async () => (await savedState(page)).cases[0]!.draft[0]).toBe(target);
+    await expect.poll(async () => ((await savedState(page)).cases[0] as ClueCase).draft[0]).toBe(target);
     await r.getByTestId('pd-commit').click();
   }
   await expect(r.locator('#pd-review-heading')).toBeFocused();
@@ -46,21 +46,22 @@ test('probability-detective: a changed draft and the revealed clues survive a re
       await expect(r.getByTestId('pd-clue-1')).toBeVisible();
       await r.getByTestId('pd-plus').click();
       await r.getByTestId('pd-plus').click();
-      await expect.poll(async () => (await savedState(p)).cases[0]!.answers.length).toBe(1);
+      await expect.poll(async () => ((await savedState(p)).cases[0] as ClueCase).answers.length).toBe(1);
     },
     { difficulty: 'medium' }
   );
   const s = await savedState(page);
+  const c0 = s.cases[0] as ClueCase;
   await expect(root(page).getByTestId('pd-clue-1')).toBeVisible();
-  await expect(root(page).getByTestId('pd-range')).toHaveValue(String(s.cases[0]!.draft[0]));
-  expect(s.cases[0]!.draft[0]).toBe((s.cases[0]!.answers[0] as number[])[0]! + 2);
+  await expect(root(page).getByTestId('pd-range')).toHaveValue(String(c0.draft[0]));
+  expect(c0.draft[0]).toBe((c0.answers[0] as number[])[0]! + 2);
 });
 
 test('probability-detective: a whole round with the keyboard only, skipping, ends with a calm summary', async ({ page }) => {
   await startGame(page, ID, { difficulty: 'hard' });
   const r = root(page);
   for (let i = 0; i < 5; i++) {
-    const c = (await savedState(page)).cases[i]!;
+    const c = ((await savedState(page)).cases[i] as ClueCase);
     for (let k = 0; k < c.clues.length; k++) {
       await r.getByTestId('pd-skip').focus();
       await page.keyboard.press('Enter');

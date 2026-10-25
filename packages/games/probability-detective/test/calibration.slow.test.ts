@@ -37,7 +37,6 @@ describe('generator statistics (slow)', () => {
     expect(fallbacks / cases).toBeLessThan(0.01);
   });
   it('checks cases: the truth follows the base rate (the filter reads parameters only)', () => {
-    let n = 0;
     let hits = 0;
     let p = 0;
     let v = 0;
@@ -46,7 +45,6 @@ describe('generator statistics (slow)', () => {
         for (let i = 0; i < 80; i++) {
           const c = generateChecks(seedFromString(`calk:${d}:${t.id}:${i}`), t, d);
           const p0 = c.prior[0]! / c.priorDen;
-          n++;
           p += p0;
           v += p0 * (1 - p0);
           if (c.truth === 0) hits++;
