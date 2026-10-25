@@ -14,7 +14,10 @@ const LOADERS: Readonly<Record<WorldId, () => Promise<Readonly<Record<string, st
   sl: () => import('./sl').then((m) => m.SL),
   of: () => import('./of').then((m) => m.OF),
   fd: () => import('./fd').then((m) => m.FD),
-  rw: () => import('./rw').then((m) => m.RW)
+  rw: () => import('./rw').then((m) => m.RW),
+  bg: () => import('./bg').then((m) => m.BG),
+  sc: () => import('./sc').then((m) => m.SC),
+  fa: () => import('./fa').then((m) => m.FA)
 };
 
 const ILLUSTRATIONS = new Map<string, string>();

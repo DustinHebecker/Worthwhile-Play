@@ -462,6 +462,9 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
 
   const signed = (n: number) => (n >= 0 ? `+${n}` : `−${-n}`);
 
+  /** A world's short name: its start-screen label up to the dash or colon before the families. */
+  const worldName = (world: string) => t(`world.${world}`).split(/\s*[—–―:]\s*/)[0]!;
+
   const button = (label: string, onclick: () => void, opts: { primary?: boolean; testid?: string; key?: string; disabled?: boolean } = {}) =>
     h(
       'button',
@@ -481,6 +484,8 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
         s.roundLimit > 0 ? t('status.roundLimit', { round: state.round, limit: s.roundLimit, target: s.target }) : t('status.round', { round: state.round, target: s.target })
       )
     );
+    // A "Random" game names the worlds it drew (the start screen only said "Random").
+    if (s.randomWorlds) out.push(h('p', { class: 'cq-worlds', 'data-testid': 'worlds' }, t('status.worlds', { worlds: s.worlds.map(worldName).join(t('r.separator')) })));
     out.push(renderPlayers());
     const next = h('div', { class: 'cq-next', 'data-testid': 'next' }, h('p', { class: 'cq-next-text', tabindex: '-1' }, nextText()));
     const hint = currentHint();
