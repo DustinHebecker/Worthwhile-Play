@@ -4,7 +4,7 @@ import type { GameContext } from '@wp/game-core';
 import { COMMON_MESSAGES, createTranslator, type SupportedLocale } from '@wp/localization';
 import { preloadContent } from '../src/content';
 import { createRound } from '../src/generate';
-import type { CheckCase, ClueCase, TrapCase } from '../src/rules';
+import { cmp, posteriorAfter, roundPercents, type CheckCase, type ClueCase, type TrapCase } from '../src/rules';
 import { metadata } from '../src/metadata';
 import { createProbabilityDetective } from '../src/view';
 
@@ -180,5 +180,30 @@ describe('view', () => {
     expect(finished).toHaveLength(1);
     expect(root.querySelectorAll('[data-testid="pd-summary-list"] li')).toHaveLength(5);
     expect(root.querySelector('[data-testid="pd-sum-checks"]')).not.toBeNull();
+  });
+});
+
+describe('view: the "another way" note', () => {
+  it('appears only when the truth was not the most likely explanation', async () => {
+    const seen = { leading: 0, behind: 0 };
+    for (let seed = 1; seed <= 400 && (seen.leading < 2 || seen.behind < 2); seed++) {
+      const s = createRound(seed, 'hard', 'clues');
+      for (let i = 0; i < s.cases.length; i++) {
+        const c = s.cases[i] as ClueCase;
+        const pn = posteriorAfter(c, c.clues.length);
+        const p = pn[c.truth]!;
+        if (!(p.n * 2n < p.d) || p.n === 0n) continue;
+        const leading = !pn.some((x, h) => h !== c.truth && cmp(x, p) > 0);
+        const answers = c.clues.map((_, k) => roundPercents(posteriorAfter(c, k + 1)));
+        const { root, game } = await mount();
+        game.restore({ ...s, index: i, cases: s.cases.map((x, j) => (j < i ? { ...(x as ClueCase), answers: (x as ClueCase).clues.map(() => 'skip' as const) } : j === i ? { ...c, answers } : x)) });
+        expect(root.querySelector('[data-testid="pd-review"]')).not.toBeNull();
+        expect(root.querySelector('[data-testid="pd-luck"]') !== null).toBe(!leading);
+        seen[leading ? 'leading' : 'behind']++;
+        root.remove();
+      }
+    }
+    expect(seen.leading).toBeGreaterThan(0);
+    expect(seen.behind).toBeGreaterThan(0);
   });
 });
