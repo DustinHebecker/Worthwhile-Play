@@ -13,8 +13,14 @@ export const DIFFICULTIES = ['easy', 'medium', 'hard'] as const;
 export type Difficulty = (typeof DIFFICULTIES)[number];
 export const CATEGORY_CHOICES = ['all', ...CATEGORIES] as const;
 export type CategoryChoice = (typeof CATEGORY_CHOICES)[number];
+/**
+ * The two paths (start screen, change 2026-10-25): `guided` opens each question in the guided factor model, `free`
+ * asks for one estimate and goes straight to the review. (Before stateVersion 2, `free` meant an empty model builder
+ * after a first guess; its saves and remembered choices map to the free estimate.)
+ */
 export const MODEL_MODES = ['guided', 'free'] as const;
 export type ModelMode = (typeof MODEL_MODES)[number];
+export const STATE_VERSION = 2;
 
 export const ROUND_LENGTH = 5;
 export const EXP_MIN = -6;
@@ -28,7 +34,7 @@ export const WINDOW_DECADES = 10;
 export type Phase = 'estimate' | 'model' | 'review';
 
 export interface FactorState {
-  /** Reference factor id (guided rows and inserted constants) or null (a free row). */
+  /** Reference factor id, or null (a free row: only in questions reviewed before stateVersion 2). */
   readonly ref: string | null;
   readonly unit: string;
   readonly power: Power;
@@ -38,7 +44,7 @@ export interface FactorState {
   readonly exp: number;
   /** `text` as parsed by the view in the UI locale (null while empty or unreadable). */
   readonly value: number | null;
-  /** Free-mode name (≤ 40 characters), '' otherwise. */
+  /** Name of a free row (≤ 40 characters, before stateVersion 2), '' otherwise. */
   readonly label: string;
 }
 
@@ -57,7 +63,7 @@ export interface QuestionState {
 }
 
 export interface FermiState {
-  readonly v: 1;
+  readonly v: 2;
   readonly seed: number;
   readonly difficulty: Difficulty;
   readonly category: CategoryChoice;
@@ -112,14 +118,15 @@ export function selectTasks(rng: Rng, difficulty: Difficulty, category: Category
 /** The slider window's lower decade: the central value lies 2 to 7 decades above it, at a seeded offset. */
 export const windowLoFor = (task: Task, rng: Rng): number => decade(task.answer.central) - 2 - rng.int(0, 5);
 
-const freshQuestion = (task: Task, rng: Rng): QuestionState => ({
+/** An untouched question: guided ones open in the model with the given values pre-filled, free ones in the estimate. */
+const freshQuestion = (task: Task, rng: Rng, model: ModelMode): QuestionState => ({
   taskId: task.id,
   windowLo: windowLoFor(task, rng),
-  phase: 'estimate',
+  phase: model === 'guided' ? 'model' : 'estimate',
   draft: '',
   draftExp: 0,
   firstGuess: null,
-  factors: [],
+  factors: model === 'guided' ? guidedRows(task) : [],
   modelUsed: false,
   answer: null
 });
@@ -132,7 +139,7 @@ export function createInitial(seed: number, choices: StartChoices = {}): FermiSt
   const model = pick(MODEL_MODES, choices.model, 'guided');
   const rng = createRng(safeSeed);
   const tasks = selectTasks(rng, difficulty, category);
-  return { v: 1, seed: safeSeed, difficulty, category, model, questions: tasks.map((t) => freshQuestion(t, rng)), index: 0, finishedReported: false };
+  return { v: 2, seed: safeSeed, difficulty, category, model, questions: tasks.map((t) => freshQuestion(t, rng, model)), index: 0, finishedReported: false };
 }
 
 export const resetState = (state: FermiState): FermiState => createInitial(state.seed, state);
@@ -236,16 +243,6 @@ export function referenceProduct(task: Task): number | null {
   return product ? convertTo(product, task.answer.unit) : null;
 }
 
-const GENERIC_UNITS = ['1', '%', 'm', 'm²', 'm³', 'L', 'kg', 'g', 's', 'min', 'h', 'day', 'year', 'W', 'Wh', 'kWh', 'J'];
-const PALETTE_SIZE = 16;
-
-/** Units offered in the free builder: the reference units plus generic ones, sorted so none stands out. */
-export function unitPalette(task: Task): string[] {
-  const units = new Set(task.factors.filter((x) => !x.fixed).map((x) => x.unit));
-  for (const u of GENERIC_UNITS) if (units.size < PALETTE_SIZE) units.add(u);
-  return [...units].sort((a, b) => a.localeCompare(b, 'en'));
-}
-
 /** Rows of the guided builder: one per reference factor, given ones pre-filled. */
 export const guidedRows = (task: Task): FactorState[] =>
   task.factors.map((x) => ({ ref: x.id, unit: x.unit, power: x.power, text: '', exp: 0, value: null, label: '' }));
@@ -332,7 +329,8 @@ export function sensitivity(task: Task): SensitivityBar[] {
 
 /* ---------------- Summary ---------------- */
 
-export type TipId = 'cube' | 'low' | 'high' | 'model' | 'general';
+/** `guided`: a free-estimate round suggests the guided path, which breaks questions into factors. */
+export type TipId = 'cube' | 'low' | 'high' | 'guided' | 'general';
 
 export interface SummaryRow {
   readonly taskId: string;
@@ -345,8 +343,6 @@ export interface Summary {
   readonly rows: readonly SummaryRow[];
   /** Geometric mean of answer ÷ central. */
   readonly bias: number;
-  /** Only when the model was used at least twice: geometric-mean distance factors with the model and of the first guesses. */
-  readonly modelHelp: { readonly withModel: number; readonly firstGuesses: number } | null;
   readonly tip: TipId;
   readonly withinFactor3: number;
   readonly withinFactor10: number;
@@ -366,16 +362,12 @@ export function summarize(state: FermiState): Summary {
   });
   const logs = answered.map((q) => Math.log10(q.answer! / taskOf(q).answer.central));
   const bias = geoMean(logs);
-  const modelled = rows.filter((r) => r.modelUsed && r.guess);
-  const modelHelp =
-    modelled.length >= 2 ? { withModel: geoMean(modelled.map((r) => r.score.d)), firstGuesses: geoMean(modelled.map((r) => r.guess!.d)) } : null;
   const cubeMiss = answered.some((q) => taskOf(q).factors.some((x) => !x.fixed && Math.abs(x.power) >= 2) && score(q.answer!, taskOf(q)).d > 1);
   const logBias = Math.log10(bias);
-  const tip: TipId = cubeMiss ? 'cube' : logBias < -BIAS_SAME ? 'low' : logBias > BIAS_SAME ? 'high' : modelled.length < 2 ? 'model' : 'general';
+  const tip: TipId = cubeMiss ? 'cube' : logBias < -BIAS_SAME ? 'low' : logBias > BIAS_SAME ? 'high' : state.model === 'free' ? 'guided' : 'general';
   return {
     rows,
     bias,
-    modelHelp,
     tip,
     withinFactor3: rows.filter((r) => r.score.d <= Math.log10(3) + 1e-12).length,
     withinFactor10: rows.filter((r) => r.score.d <= 1 + 1e-12).length,
@@ -397,13 +389,10 @@ export function setDraft(state: FermiState, text: string, exp: number): FermiSta
   });
 }
 
-/** Commits the first guess and opens the (optional) model step. */
+/** Free estimate: commits the estimate and opens the review. */
 export function commitGuess(state: FermiState, value: number): FermiState {
   if (!validNumber(value)) return state;
-  return replaceQuestion(state, (q) => {
-    if (q.phase !== 'estimate') return q;
-    return { ...q, phase: 'model', firstGuess: value, factors: state.model === 'guided' ? guidedRows(taskOf(q)) : [] };
-  });
+  return replaceQuestion(state, (q) => (q.phase !== 'estimate' ? q : { ...q, phase: 'review', firstGuess: value, answer: value }));
 }
 
 const replaceRow = (state: FermiState, i: number, update: (row: FactorState, task: Task) => FactorState): FermiState =>
@@ -423,61 +412,12 @@ export function setRowNumber(state: FermiState, i: number, text: string, exp: nu
   });
 }
 
-/** Free mode: changes a row's unit (from the palette) and power. */
-export function setRowUnit(state: FermiState, i: number, unit: string, power: Power): FermiState {
-  if (state.model !== 'free') return state;
-  return replaceRow(state, i, (row, task) => {
-    if (row.ref !== null || !unitPalette(task).includes(unit) || !POWERS.includes(power)) return row;
-    return row.unit === unit && row.power === power ? row : { ...row, unit, power };
-  });
-}
-
-/** Free mode: names a row. */
-export function setRowLabel(state: FermiState, i: number, label: string): FermiState {
-  if (state.model !== 'free') return state;
-  return replaceRow(state, i, (row) => {
-    const next = cut(label, LABEL_MAX);
-    return next === row.label ? row : { ...row, label: next };
-  });
-}
-
-/** Free mode: adds an empty row (up to five). */
-export function addRow(state: FermiState): FermiState {
-  if (state.model !== 'free') return state;
+/** Guided: commits the model (when it is complete and its units match) and opens the review. */
+export function finishModel(state: FermiState): FermiState {
   return replaceQuestion(state, (q) => {
-    if (q.phase !== 'model' || q.factors.length >= MAX_FACTORS) return q;
-    const palette = unitPalette(taskOf(q));
-    const unit = palette.includes('1') ? '1' : palette[0]!;
-    return { ...q, factors: [...q.factors, { ref: null, unit, power: 1, text: '', exp: 0, value: null, label: '' }] };
-  });
-}
-
-/** Free mode: inserts a given factor of the reference ("a known constant"). */
-export function insertConstant(state: FermiState, factorId: string): FermiState {
-  if (state.model !== 'free') return state;
-  return replaceQuestion(state, (q) => {
-    const factor = factorOf(taskOf(q), factorId);
-    if (q.phase !== 'model' || q.factors.length >= MAX_FACTORS || !factor?.fixed || q.factors.some((r) => r.ref === factorId)) return q;
-    return { ...q, factors: [...q.factors, { ref: factor.id, unit: factor.unit, power: factor.power, text: '', exp: 0, value: null, label: '' }] };
-  });
-}
-
-/** Free mode: removes a row. */
-export function removeRow(state: FermiState, i: number): FermiState {
-  if (state.model !== 'free') return state;
-  return replaceQuestion(state, (q) => (q.phase !== 'model' || !q.factors[i] ? q : { ...q, factors: q.factors.filter((_, k) => k !== i) }));
-}
-
-/** Ends the model step: the model's result (when it is complete and its units match) or the first guess. */
-export function finishModel(state: FermiState, useModel: boolean): FermiState {
-  return replaceQuestion(state, (q) => {
-    if (q.phase !== 'model' || q.firstGuess === null) return q;
-    if (useModel) {
-      const result = modelResult(taskOf(q), q.factors);
-      if (result.status !== 'ok') return q;
-      return { ...q, phase: 'review', modelUsed: true, answer: result.value };
-    }
-    return { ...q, phase: 'review', modelUsed: false, answer: q.firstGuess };
+    if (q.phase !== 'model') return q;
+    const result = modelResult(taskOf(q), q.factors);
+    return result.status !== 'ok' ? q : { ...q, phase: 'review', modelUsed: true, answer: result.value };
   });
 }
 
@@ -497,6 +437,7 @@ const isInt = (x: unknown): x is number => typeof x === 'number' && Number.isInt
 const isString = (x: unknown, max: number): x is string => typeof x === 'string' && [...x].length <= max;
 const nullOrPositive = (x: unknown): boolean => x === null || validNumber(x);
 
+/** A factor row. Free rows (ref null) and inserted constants only appear in free questions reviewed before v2. */
 function isFactorState(x: unknown, task: Task, model: ModelMode): boolean {
   if (!isObject(x)) return false;
   if (!(x.ref === null || typeof x.ref === 'string') || typeof x.unit !== 'string' || !POWERS.includes(x.power as Power)) return false;
@@ -506,9 +447,11 @@ function isFactorState(x: unknown, task: Task, model: ModelMode): boolean {
     const factor = factorOf(task, x.ref);
     if (!factor || factor.unit !== x.unit || factor.power !== x.power) return false;
     if (model === 'free' && !factor.fixed) return false;
-  } else if (model === 'guided' || !unitPalette(task).includes(x.unit)) return false;
+  } else if (model === 'guided') return false;
   return model === 'free' || x.label === '';
 }
+
+const isUntouchedRow = (r: FactorState): boolean => r.text === '' && r.exp === 0 && r.value === null;
 
 function isQuestionState(x: unknown, model: ModelMode): boolean {
   if (!isObject(x) || typeof x.taskId !== 'string') return false;
@@ -516,13 +459,14 @@ function isQuestionState(x: unknown, model: ModelMode): boolean {
   if (!task || !isInt(x.windowLo)) return false;
   const lo = decade(task.answer.central) - 7;
   if (x.windowLo < lo || x.windowLo > lo + 5) return false;
-  if (!['estimate', 'model', 'review'].includes(x.phase as string)) return false;
+  // Guided questions are in the model or reviewed; free ones in the estimate or reviewed.
+  if (![model === 'guided' ? 'model' : 'estimate', 'review'].includes(x.phase as string)) return false;
   if (!isString(x.draft, TEXT_MAX) || !isInt(x.draftExp) || x.draftExp < EXP_MIN || x.draftExp > EXP_MAX) return false;
   if (!nullOrPositive(x.firstGuess) || !nullOrPositive(x.answer) || typeof x.modelUsed !== 'boolean') return false;
   if (!Array.isArray(x.factors) || x.factors.length > MAX_FACTORS || !x.factors.every((r) => isFactorState(r, task, model))) return false;
   const refs = (x.factors as FactorState[]).flatMap((r) => (r.ref === null ? [] : [r.ref]));
   if (new Set(refs).size !== refs.length) return false;
-  if (model === 'guided' && x.phase !== 'estimate') {
+  if (model === 'guided') {
     // Guided rows are exactly the reference factors, in order.
     const rows = x.factors as FactorState[];
     if (rows.length !== task.factors.length || rows.some((r, i) => r.ref !== task.factors[i]!.id)) return false;
@@ -531,16 +475,17 @@ function isQuestionState(x: unknown, model: ModelMode): boolean {
     case 'estimate':
       return x.firstGuess === null && x.answer === null && x.factors.length === 0 && x.modelUsed === false;
     case 'model':
-      return x.firstGuess !== null && x.answer === null && x.modelUsed === false;
+      return x.firstGuess === null && x.answer === null && x.modelUsed === false && x.draft === '';
     default:
-      return x.firstGuess !== null && x.answer !== null;
+      // A free review has its estimate; a guided one its model (or, from v1, a kept first guess).
+      return x.answer !== null && (model === 'guided' ? x.modelUsed || x.firstGuess !== null : x.firstGuess !== null);
   }
 }
 
 /** Structural validation of untrusted saved data. Never throws. */
 export function isFermiState(value: unknown): value is FermiState {
   try {
-    if (!isObject(value) || value.v !== 1) return false;
+    if (!isObject(value) || value.v !== STATE_VERSION) return false;
     if (!isInt(value.seed) || value.seed < 0 || value.seed > 0xffffffff) return false;
     if (!DIFFICULTIES.includes(value.difficulty as Difficulty) || !CATEGORY_CHOICES.includes(value.category as CategoryChoice) || !MODEL_MODES.includes(value.model as ModelMode)) return false;
     if (!isInt(value.index) || value.index < 0 || value.index > ROUND_LENGTH || typeof value.finishedReported !== 'boolean') return false;
@@ -551,11 +496,45 @@ export function isFermiState(value: unknown): value is FermiState {
     if (new Set(ids).size !== ids.length) return false;
     if (value.category !== 'all' && (questions as QuestionState[]).some((q) => taskOf(q).category !== value.category)) return false;
     // Earlier questions are reviewed, later ones untouched.
-    const ok = (questions as QuestionState[]).every((q, i) => (i < (value.index as number) ? q.phase === 'review' : i > (value.index as number) ? q.phase === 'estimate' && q.draft === '' : true));
+    const untouched = (q: QuestionState): boolean => q.phase !== 'review' && q.draft === '' && q.factors.every(isUntouchedRow);
+    const ok = (questions as QuestionState[]).every((q, i) => (i < (value.index as number) ? q.phase === 'review' : i > (value.index as number) ? untouched(q) : true));
     if (!ok) return false;
     return value.finishedReported === false || value.index === ROUND_LENGTH;
   } catch {
     return false;
   }
 }
+
+/* ---------------- Migration ---------------- */
+
+/** v1 → v2 for one question (design "Change 2026-10-25"). Reviews are kept as they were. */
+function migrateQuestion(q: Record<string, unknown>, model: ModelMode): Record<string, unknown> {
+  const task = typeof q.taskId === 'string' ? taskById(q.taskId) : undefined;
+  if (!task) return q;
+  if (model === 'guided' && q.phase === 'estimate') {
+    // The first-guess step is gone: the question opens in the guided model (an unsent draft is dropped).
+    return { ...q, phase: 'model', draft: '', draftExp: 0, firstGuess: null, factors: guidedRows(task), modelUsed: false, answer: null };
+  }
+  if (model === 'guided' && q.phase === 'model') return { ...q, draft: '', draftExp: 0, firstGuess: null };
+  if (model === 'free' && q.phase === 'model') {
+    // The free model builder is gone: the question is finished with its first guess.
+    return { ...q, phase: 'review', factors: [], modelUsed: false, answer: q.firstGuess };
+  }
+  return q;
+}
+
+/** Upgrades a save of an older stateVersion; undefined when that is impossible (the host then validates the result). */
+export function migrateState(state: unknown, fromVersion: number): FermiState | undefined {
+  try {
+    if (fromVersion !== 1 || !isObject(state) || state.v !== 1 || !Array.isArray(state.questions)) return undefined;
+    const model = state.model as ModelMode;
+    if (!MODEL_MODES.includes(model)) return undefined;
+    const questions = state.questions.map((q) => (isObject(q) ? migrateQuestion(q, model) : q));
+    const next = { ...state, v: STATE_VERSION, questions };
+    return isFermiState(next) ? next : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export type { Category, Power, Task };

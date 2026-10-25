@@ -1,6 +1,6 @@
 # Estimation Lab (`fermi-lab`) — design
 
-Status: **Implemented, 2026-10-17** (plan by the planner; owner decisions and implementation notes in § 18). Content: [fermi-lab-content.md](fermi-lab-content.md) (46 researched tasks, internationalised).
+Status: **Implemented, 2026-10-17; two paths since 2026-10-25** (plan by the planner; owner decisions and implementation notes in § 18; the change of 2026-10-25 in § 19 supersedes §§ 4.1, 6.2, 7.2–7.3 and 10 where they differ). Content: [fermi-lab-content.md](fermi-lab-content.md) (46 researched tasks, internationalised).
 
 Scope for the implementer (feature agent, ADR 0006): `packages/games/fermi-lab/` and `e2e/games/fermi-lab.spec.ts`. The orchestrator creates `package.json`, the registry line, the dependency in `apps/web/package.json` and the preview in `apps/web/src/previews.ts` (§ 13 describes it). No new dependencies, no shared-package changes needed for the MVP (§ 1.3 lists optional ones).
 
@@ -410,3 +410,15 @@ All other tasks were already place-neutral or worldwide. § 11.2 is superseded b
 - **Selection fill-up** goes through all levels in order of distance (easy 1→2→3, medium 2→1→3, hard 3→2→1), because *space* has only two level-1 and two level-2 tasks.
 - **Tips** in the summary: `cube` (a task with a squared or cubed factor answered more than ×10 off), else `low`/`high` (bias beyond ×1.25), else `model` (fewer than two models), else `general`.
 - Not built from § 14: none; the view tests cover en, de, ar and ja as planned. The optional shared changes of § 1.3 were not needed.
+
+## 19. Change 2026-10-25: two paths chosen on the start screen
+
+Owner feedback: the second step (the optional model after a first guess) was superfluous and annoying; at the start one should choose either free estimating or a guided path with help.
+
+- **Setting `model`** (start screen, still `guided` | `free`, relabelled "How to estimate": "Guided, with help" / "Free estimate"; de "Geführt mit Hilfen" / "Frei schätzen"). Default `guided`: the guided factor model is the game's learning value (§ 3) and works at every difficulty; one default keeps the start screen simple.
+- **Free estimate:** estimate → review. No model step. The estimate is the answer (`firstGuess = answer`, `modelUsed = false`).
+- **Guided:** each question opens directly in the guided model (rows = the reference factors, given values pre-filled, hints as before); "Use my model’s result" (complete, units match) commits it and opens the review. No first-guess step, no "keep my first guess".
+- **The free model builder is removed** (empty model, unit palette, add/remove rows, constants) with its texts. `compare` still matches free rows by unit and power, only so that questions reviewed in old saves render.
+- **Review:** the scale shows the answer, the reference and the range (no first-guess marker). Guided: "Your model and the reference" with your value and effect per factor. Free: the reference model ("This is how the reference answer is put together from factors"). Sensitivity, explanation and sources as before for both paths.
+- **Summary:** no "with a model vs. first guess" comparison and no model count. Tips: `cube`, `low`, `high`, then `guided` (free path: "Try the guided path next time …") or `general`.
+- **State v2** (`stateVersion` 2, `v: 2`). Untouched guided questions are in phase `model` with empty rows; free ones in `estimate`. `migrateState` from v1: guided question in `estimate` → guided `model` (the unsent draft is dropped); guided `model` → stays, typed values kept, the first guess is dropped; free `model` (old builder) → finished with its first guess (`review`, rows dropped); `review` and the summary unchanged (old reviewed questions keep their first guess and rows). Remembered choices keep their ids: old `free` (builder) becomes the free estimate. Fixtures written by the v1 code are in `test/fixtures/`.

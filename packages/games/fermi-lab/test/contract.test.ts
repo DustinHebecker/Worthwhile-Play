@@ -14,12 +14,14 @@ const type = (field: HTMLInputElement, value: string) => {
 };
 
 runGameContract(game, {
-  // Type a first guess, commit it, then half-fill the model (save/restore in the middle of a question).
+  // Guided (the default): half-fill the model; free: type an unsent estimate (save/restore in the middle of a question).
   interact: (root) => {
-    type(el<HTMLInputElement>(root, '[data-testid="fl-est-input"]'), '3.5');
-    el(root, '[data-testid="fl-est-exp-plus"]').click();
-    el(root, '[data-testid="fl-guess"]').click();
-    const field = root.querySelector<HTMLInputElement>('.fl-row [data-testid$="-input"]');
-    if (field) type(field, '12');
+    const estimate = root.querySelector<HTMLInputElement>('[data-testid="fl-est-input"]');
+    if (estimate) {
+      type(estimate, '3.5');
+      el(root, '[data-testid="fl-est-exp-plus"]').click();
+      return;
+    }
+    type(el<HTMLInputElement>(root, '.fl-row [data-testid$="-input"]'), '12');
   }
 });
