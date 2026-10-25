@@ -144,10 +144,16 @@ describe('random worlds (start screen default, owner 2026-10-21)', () => {
   });
 });
 
+/**
+ * Combinations for the self-play balance check: every world alone, every pair (the "Random" default deals one world
+ * or a pair), all worlds together, and every 7th larger mix (a fixed sample; all 255 would make the suite slow).
+ */
+const balanced = combinations.filter((c, i) => c.length <= 2 || c.length === WORLD_IDS.length || i % 7 === 0);
+
 describe('balance per world combination (self-play)', () => {
   // One test per combination keeps each well inside the timeout under load.
-  // Each world alone and all worlds together get 8 games; the 25 partial mixes 2 each (keeps the suite fast).
-  it.each(combinations.map((c) => [c.join('+'), c] as const))('%s: games end in a reasonable number of rounds', (_, combo) => {
+  // Each world alone and all worlds together get 8 games; the mixes 2 each (keeps the suite fast).
+  it.each(balanced.map((c) => [c.join('+'), c] as const))('%s: games end in a reasonable number of rounds', (_, combo) => {
     const rounds: number[] = [];
     const games = combo.length === 1 || combo.length === WORLD_IDS.length ? 8 : 2;
     for (let seed = 1; seed <= games; seed++) {

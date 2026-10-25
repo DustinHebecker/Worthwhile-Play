@@ -243,6 +243,21 @@ describe('view', () => {
     instance.dispose();
   });
 
+  it('a random game names the worlds it drew; a game with picked worlds does not', () => {
+    const ctx = createTestContext(game as GameModule<unknown>, 'en');
+    const instance = game.create(ctx.context as never);
+    const line = () => ctx.context.root.querySelector('[data-testid="worlds"]')?.textContent;
+    const short: Record<string, string> = { kz: 'Kampfzwerge', sl: 'Spaceloot', of: 'Office Chaos', fd: 'Fridge Expedition', rw: 'All Aboard', bg: 'Creepy Crawlies', sc: 'Break Time', fa: 'Big Top' };
+    for (const seed of [1, 2, 3, 9]) {
+      instance.newGame({ seed });
+      expect(line(), String(seed)).toBe(`Drawn at random: ${instance.serialize().settings.worlds.map((w) => short[w]).join(', ')}`);
+    }
+    instance.newGame({ seed: 9, settings: { worlds: 'pick', 'world-sl': true } });
+    expect(line()).toBeUndefined();
+    expect(ctx.missingKeys).toEqual([]);
+    instance.dispose();
+  });
+
   it('loads the pictures of other worlds with the game that uses them and then redraws (K3)', async () => {
     const ctx = createTestContext(game as GameModule<unknown>, 'en');
     const instance = game.create(ctx.context as never);
@@ -554,7 +569,7 @@ describe('view', () => {
     it('declares its settings with the setup older versions remembered as defaults', () => {
       const specs = typeof game.settings === 'function' ? game.settings({ preferences: { get: () => ({ opponents: 5, target: 12, roundLimit: 30, coach: false }), set: () => undefined } } as never) : game.settings!;
       const defaults = Object.fromEntries(specs.map((sp) => [sp.kind === 'difficulty' ? 'difficulty' : sp.id, sp.default]));
-      expect(defaults).toEqual({ worlds: 'random', 'world-kz': true, 'world-sl': false, 'world-of': false, 'world-fd': false, 'world-rw': false, difficulty: 'normal', opponents: 5, roundLimit: 30 });
+      expect(defaults).toEqual({ worlds: 'random', 'world-kz': true, 'world-sl': false, 'world-of': false, 'world-fd': false, 'world-rw': false, 'world-bg': false, 'world-sc': false, 'world-fa': false, difficulty: 'normal', opponents: 5, roundLimit: 30 });
       // The world toggles are only shown for "Choose".
       for (const sp of specs) if (sp.kind === 'toggle') expect(sp.when, sp.id).toEqual({ worlds: ['pick'] });
       expect(game.metadata.setupInGame).toBeUndefined();
@@ -580,7 +595,7 @@ describe('view', () => {
         for (const card of s.players.flatMap((p) => p.hand)) expect(worlds.some((w) => card.startsWith(`${w}.`)), card).toBe(true);
         // The settings of the game read back as the same toggles.
         if (s.settings.randomWorlds) expect(game.settingsOf!(s)).toMatchObject({ worlds: 'random' });
-        else expect(game.settingsOf!(s)).toMatchObject({ worlds: 'pick', ...Object.fromEntries(['kz', 'sl', 'of', 'fd', 'rw'].map((w) => [`world-${w}`, (worlds as readonly string[]).includes(w)])) });
+        else expect(game.settingsOf!(s)).toMatchObject({ worlds: 'pick', ...Object.fromEntries(['kz', 'sl', 'of', 'fd', 'rw', 'bg', 'sc', 'fa'].map((w) => [`world-${w}`, (worlds as readonly string[]).includes(w)])) });
       }
       instance.dispose();
     });
