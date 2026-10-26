@@ -37,6 +37,7 @@
     "maxStepDeg": 1,
     "maxSpanDeg": 3,
     "maxDeviationCells": 6,
+    "hatchMaxDeviationCells": 2,
     "minIslandKm2": 100,
     "featureThreshold": 400,
     "lakeThreshold": 64,

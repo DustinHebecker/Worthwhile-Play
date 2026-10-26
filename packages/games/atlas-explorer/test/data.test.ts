@@ -73,6 +73,32 @@ describe('generated atlas', () => {
     expect(manifest.worldviews!.reported.filter((r) => r.status === 'unexplained')).toEqual([]);
   });
 
+  it('keeps places inside narrow hatched areas hatched after simplification (policy A)', () => {
+    // Before the hatched edges got their own deviation limit, the Gaza Strip was simplified to a triangle and Gaza City
+    // read "Israel" when tapped. Each point lies well inside its area in the source data.
+    const places: [string, number, number][] = [
+      ['Gaza City', 34.46, 31.51],
+      ['Beit Hanoun', 34.53, 31.54],
+      ['Khan Yunis', 34.3, 31.34],
+      ['Ramallah', 35.2, 31.9],
+      ['Hebron', 35.1, 31.53],
+      ['Simferopol', 34.1, 44.95],
+      ['Srinagar', 74.8, 34.08],
+      ['Muzaffarabad', 73.47, 34.37],
+      ['Laayoune', -13.2, 27.15],
+      ['Taipei', 121.5, 25.03],
+      ['Pristina', 21.17, 42.67],
+      ['Sukhumi', 41.0, 43.0],
+      ['Tskhinvali', 43.96, 42.23],
+      ['Tiraspol', 29.63, 46.84],
+      ['Stepanakert', 46.75, 39.82],
+      ['Hargeisa', 44.07, 9.56],
+      ['Golan Heights', 35.69, 32.99],
+      ['North Nicosia', 33.36, 35.2]
+    ];
+    for (const [name, lon, lat] of places) expect(placeAt(atlas, lon, lat)?.kind, name).toBe('disputed');
+  });
+
   it('places every curated city in its country (or within the 25 km tolerance)', () => {
     for (const city of atlas.cities) {
       const c = atlas.country(city.country)!;

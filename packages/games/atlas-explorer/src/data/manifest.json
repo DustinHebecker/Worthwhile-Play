@@ -60,6 +60,7 @@
     "maxStepDeg": 1,
     "maxSpanDeg": 3,
     "maxDeviationCells": 6,
+    "hatchMaxDeviationCells": 2,
     "minIslandKm2": 100,
     "featureThreshold": 400,
     "lakeThreshold": 64,
@@ -85,7 +86,7 @@
     "others": 61,
     "disputed": 78,
     "arcs": 3269,
-    "points": 27568,
+    "points": 28161,
     "lakes": 12,
     "rivers": 27,
     "regions": 31,
@@ -3765,7 +3766,7 @@
   },
   "output": {
     "file": "src/data/atlas.gen.ts",
-    "bytes": 150935,
-    "sha256": "a5e69ca5c59acc486cc2a7a391e5085881f1906a038007a177d2d73679012984"
+    "bytes": 152004,
+    "sha256": "2b67786214e9daf58bd1dfca9c2907e6dab2570fafaaffa98cf135e3ace4a296"
   }
 }

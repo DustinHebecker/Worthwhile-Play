@@ -451,9 +451,13 @@ async function main() {
   const drawn: Topology = { arcs: topo.arcs, rings: measured.filter((m) => !dropped.includes(m)).map((m) => m.r) };
   const usedArcs = [...new Set(drawn.rings.flatMap((r) => r.arcs.map((ref) => (ref < 0 ? ~ref : ref))))].sort((a, b) => a - b);
   const protect = new Set<number>();
+  // Edges of hatched areas follow the data more closely (policy A, § 12.2): with the general deviation limit a narrow
+  // area such as the Gaza Strip lost a third of its width to a neighbouring country.
+  const hatchArcs = new Set(drawn.rings.filter((r) => r.owner >= unitShapes.length).flatMap((r) => r.arcs.map((ref) => (ref < 0 ? ~ref : ref))));
+  const arcOpts = (ai: number) => (hatchArcs.has(ai) ? { ...simplifyOpts(P.threshold), maxDeviation: P.hatchMaxDeviationCells! } : simplifyOpts(P.threshold));
   let simple = new Map<number, number[]>();
   for (let round = 0; round < 5; round++) {
-    simple = new Map(usedArcs.map((ai) => [ai, protect.has(ai) ? topo.arcs[ai]! : simplify(topo.arcs[ai]!, simplifyOpts(P.threshold))]));
+    simple = new Map(usedArcs.map((ai) => [ai, protect.has(ai) ? topo.arcs[ai]! : simplify(topo.arcs[ai]!, arcOpts(ai))]));
     let added = 0;
     for (const ring of drawn.rings) {
       const pts = ringPoints(
@@ -474,7 +478,7 @@ async function main() {
   const arcIndex = new Map(usedArcs.map((ai, i) => [ai, i]));
   const arcsOut = usedArcs.map((ai) => simple.get(ai)!);
   const totalPoints = arcsOut.reduce((s, a) => s + a.length / 2, 0);
-  log(`drawing: ${arcsOut.length} arcs, ${totalPoints} points after simplification (${protect.size} arcs kept unsimplified)`);
+  log(`drawing: ${arcsOut.length} arcs, ${totalPoints} points after simplification (${protect.size} arcs kept unsimplified, ${hatchArcs.size} edges of hatched areas)`);
 
   // Arcs: count, then per arc its point count and delta-encoded points (the first point relative to the previous arc's first).
   const arcInts: number[] = [arcsOut.length];
