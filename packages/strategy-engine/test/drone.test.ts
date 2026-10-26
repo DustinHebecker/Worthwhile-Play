@@ -119,12 +119,13 @@ describe('drones', () => {
   });
 
   it('a lost drone is replaced for free two turn ends later; a drone falls with its carrier', () => {
-    // An enemy Gun Tower out of the car's reach shoots the drone down.
-    const start = base([{ side: 1, kind: 'tower-gun', x: 5, y: 2 }]);
+    // The drone flies within reach of an enemy Gun Tower that cannot reach the car, and is shot down.
+    const start = base([{ side: 1, kind: 'tower-gun', x: 7, y: 2 }]);
     const car = kind(start, 'outrider');
     let { world: w, events } = play(start, 1, [launch(start)]);
     const drone = { id: (events.find((e) => e.t === 'drone-launched') as { id: number }).id };
-    for (let turn = 1; byId(w, drone.id) && turn < 10; turn++) ({ world: w, events } = play(w, 1));
+    ({ world: w, events } = play(w, 1, [{ side: 0, unit: drone.id, order: { type: 'move', x: 5, y: 2 } }]));
+    for (let turn = 2; byId(w, drone.id) && turn < 10; turn++) ({ world: w, events } = play(w, 1));
     expect(byId(w, drone.id)).toBeUndefined();
     expect(events).toContainEqual(expect.objectContaining({ t: 'destroyed', id: drone.id }));
     const supply = w.supply?.[0];
@@ -146,6 +147,25 @@ describe('drones', () => {
     expect(byId(v, car2.id)).toBeUndefined();
     expect(byId(v, drone2.id)).toBeUndefined();
     expect(isValidWorld(v, rs)).toBe(true);
+  });
+
+  it('is fired on only when nothing else is in reach (no free decoy), unless ordered', () => {
+    // A Gun Tower with both the car and its drone in reach shoots the car.
+    let w = launched([{ side: 1, kind: 'tower-gun', x: 4, y: 2 }]);
+    const drone = kind(w, 'kite');
+    const car = kind(w, 'outrider');
+    const tower = kind(w, 'tower-gun', 1);
+    const fire = play(w, 1).events.filter((e) => e.t === 'fire' && e.id === tower.id);
+    expect(fire.length).toBeGreaterThan(0);
+    // It shoots the car (and after it the post), never the drone above it.
+    expect(fire[0]).toMatchObject({ target: car.id });
+    expect(fire.some((e) => e.t === 'fire' && e.target === drone.id)).toBe(false);
+    // Ordered at the drone, a unit fires at it.
+    w = launched([{ side: 1, kind: 'rifles', x: 4, y: 3 }, { side: 1, kind: 'command-post', x: 8, y: 2 }]);
+    const rifles = kind(w, 'rifles', 1);
+    const ordered = play(w, 1, [{ side: 1, unit: rifles.id, order: { type: 'attack', target: kind(w, 'kite').id } }]).events;
+    expect(ordered.some((e) => e.t === 'fire' && e.id === rifles.id && e.target === kind(w, 'kite').id)).toBe(true);
+    expect(drone.id).toBeGreaterThan(0);
   });
 
   it('everything but artillery and tanks can hit it', () => {

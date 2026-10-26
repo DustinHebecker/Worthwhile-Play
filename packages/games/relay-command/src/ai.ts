@@ -60,6 +60,9 @@ const BREADTH: Record<Difficulty, { fighters: number; targets: number; turns: nu
   hard: { fighters: 4, targets: 3, turns: 1 }
 };
 
+/** What a drone counts in the lookahead (its cost is 60, but it is free and replaced in two turns). */
+const DRONE_VALUE = 10;
+
 /** A new order must beat keeping the current one by this much to be worth an order slot. */
 const SLOT_MARGIN = 2;
 
@@ -238,16 +241,18 @@ function lookaheadFighters(obs: Observation, ruleset: Ruleset, fighters: readonl
   const spotted = known.filter((e) => !obs.ghosts.has(e.id));
   const objective = plan.objective;
   const seen = observedCells(world, ruleset, side, obs.network);
+  // A drone is free and replaced in two turns: shooting it down is worth little.
+  const weight = (e: Entity, cost: number): number => (e.kind === 'command-post' ? POST_VALUE : e.carrier !== undefined ? DRONE_VALUE : cost);
   const value = (w: World, s: number): number =>
     w.entities.reduce((sum, e) => {
       if (e.side !== s) return sum;
       const arch = archetypeOf(ruleset, e.kind);
       if (!arch) return sum;
-      return sum + ((e.kind === 'command-post' ? POST_VALUE : arch.cost) * e.hp) / arch.hp;
+      return sum + (weight(e, arch.cost) * e.hp) / arch.hp;
     }, 0);
   const unitValue = (e: Entity): number => {
     const arch = archetypeOf(ruleset, e.kind);
-    return arch ? ((e.kind === 'command-post' ? POST_VALUE : arch.cost) * e.hp) / arch.hp : 0;
+    return arch ? (weight(e, arch.cost) * e.hp) / arch.hp : 0;
   };
   const ownBefore = value(base, side);
   const enemyBefore = sumEnemies(base, side, value);
@@ -524,7 +529,7 @@ function assault(obs: Observation, ruleset: Ruleset, plan: AssaultPlan, fighters
     return commands;
   }
   // Rally cells: free passable cells nearest to the rally point, one per fighter, farthest fighters first.
-  const taken = new Set(world.entities.map((e) => cellOf(world.map, e.x, e.y)));
+  const taken = new Set(world.entities.filter((e) => onGround(ruleset, e)).map((e) => cellOf(world.map, e.x, e.y)));
   const spots: { x: number; y: number }[] = [];
   for (let r = 0; r <= RALLY_RADIUS + 1 && spots.length < all.length; r++) {
     // Ring by ring, in the side's own frame (mirrored sides pick mirrored cells).
@@ -601,7 +606,7 @@ function guardPosts(obs: Observation, ruleset: Ruleset, own: readonly Entity[]):
   const guards = new Set<number>();
   const mobile = (e: Entity) => (archetypeOf(ruleset, e.kind)?.speed ?? 0) > 0 && e.build === undefined;
   const raiders = enemiesOf(obs).filter((e) => isInfantry(ruleset, e));
-  const taken = new Set(world.entities.map((e) => cellOf(world.map, e.x, e.y)));
+  const taken = new Set(world.entities.filter((e) => onGround(ruleset, e)).map((e) => cellOf(world.map, e.x, e.y)));
   for (const post of world.entities) {
     if (post.side !== side || post.kind !== 'command-post') continue;
     if (post.hp >= (archetypeOf(ruleset, post.kind)?.hp ?? 0) * GUARD_BELOW) continue;
@@ -651,6 +656,7 @@ export function approachCells(obs: Observation, ruleset: Ruleset, objective: Ent
   const walls = new Set<number>();
   const taken = new Set<number>();
   for (const e of world.entities) {
+    if (!onGround(ruleset, e)) continue;
     const c = cellOf(world.map, e.x, e.y);
     taken.add(c);
     const arch = archetypeOf(ruleset, e.kind);
@@ -861,7 +867,7 @@ function economyOrders(obs: Observation, ruleset: Ruleset, own: readonly Entity[
   // 1. Extractors on free deposits inside coverage (nearest to the post first).
   if (source) {
     const free = (world.map.deposits ?? [])
-      .filter((d) => (d.left > 0 || d.left === UNKNOWN_LEFT || d.endless) && !world.entities.some((e) => e.x === d.x && e.y === d.y))
+      .filter((d) => (d.left > 0 || d.left === UNKNOWN_LEFT || d.endless) && !world.entities.some((e) => e.x === d.x && e.y === d.y && onGround(ruleset, e)))
       .sort((a, b) => dist2(a.x, a.y, source.x, source.y) - dist2(b.x, b.y, source.x, source.y) || sideFrame(obs, cellOf(world.map, a.x, a.y)) - sideFrame(obs, cellOf(world.map, b.x, b.y)));
     for (const d of free) {
       if (supply < costOf('extractor')) break;
@@ -911,7 +917,7 @@ function economyOrders(obs: Observation, ruleset: Ruleset, own: readonly Entity[
   const template = ARMY_TEMPLATE[difficulty];
   const wanted = template.filter((kind) => (counts.get(kind) ?? 0) < template.filter((k) => k === kind).length + (difficulty === 'hard' ? 1 : 0));
   // Keep a cushion for the next Extractor while a free deposit out of enemy reach remains.
-  const reserve = (world.map.deposits ?? []).some((d) => (d.left > 0 || d.left === UNKNOWN_LEFT || d.endless) && !world.entities.some((e) => e.x === d.x && e.y === d.y) && dangerAt(obs, ruleset, d.x, d.y) === 0) ? costOf('extractor') : 0;
+  const reserve = (world.map.deposits ?? []).some((d) => (d.left > 0 || d.left === UNKNOWN_LEFT || d.endless) && !world.entities.some((e) => e.x === d.x && e.y === d.y && onGround(ruleset, e)) && dangerAt(obs, ruleset, d.x, d.y) === 0) ? costOf('extractor') : 0;
   const income = incomeOfSide(world, ruleset, side, network);
   const fighters = ownAll.filter((e) => arch(e)?.weapon && (arch(e)?.speed ?? 0) > 0).length;
   // Queue lengths including what this plan already put in (a yard never gets more than it holds).
@@ -938,7 +944,7 @@ function economyOrders(obs: Observation, ruleset: Ruleset, own: readonly Entity[
 function buildSpot(obs: Observation, ruleset: Ruleset, source: Entity, kind: string): { x: number; y: number } | undefined {
   const { world, side, network } = obs;
   const layer = archetypeOf(ruleset, kind)?.layer ?? 'ground';
-  const taken = new Set(world.entities.map((e) => cellOf(world.map, e.x, e.y)));
+  const taken = new Set(world.entities.filter((e) => onGround(ruleset, e)).map((e) => cellOf(world.map, e.x, e.y)));
   let best: { x: number; y: number; d: number; f: number } | undefined;
   for (let y = Math.max(0, source.y - 3); y <= Math.min(world.map.h - 1, source.y + 3); y++) {
     for (let x = Math.max(0, source.x - 3); x <= Math.min(world.map.w - 1, source.x + 3); x++) {
@@ -964,7 +970,7 @@ function towerSpot(obs: Observation, ruleset: Ruleset, asset: Entity, threats: r
   const { world, side, network } = obs;
   // Sites ordered earlier in this plan stand there too (two towers in one turn must not close a pass between them).
   const sites = planned.map((p) => cellOf(world.map, p.x, p.y));
-  const taken = new Set([...world.entities.map((e) => cellOf(world.map, e.x, e.y)), ...sites]);
+  const taken = new Set([...world.entities.filter((e) => onGround(ruleset, e)).map((e) => cellOf(world.map, e.x, e.y)), ...sites]);
   const home = world.entities.find((e) => e.side === side && e.kind === 'command-post');
   const goals = targetPosts(obs).map((p) => cellOf(world.map, p.x, p.y));
   const structures = new Set([...world.entities.filter((e) => archetypeOf(ruleset, e.kind)?.speed === 0).map((e) => cellOf(world.map, e.x, e.y)), ...sites]);
@@ -1127,7 +1133,7 @@ function relaySpot(obs: Observation, ruleset: Ruleset, truck: Entity, toward?: r
   // units, reported structures). Enemy orders are unknown, so spotted enemies always count.
   const taken = (x: number, y: number): boolean =>
     world.entities.some((e) => e.side === side && e.id !== truck.id && e.x === x && e.y === y && staysPut(ruleset, e)) ||
-    known.some((r) => r.x === x && r.y === y && (!obs.ghosts.has(r.id) || archetypeOf(ruleset, r.kind)?.speed === 0));
+    known.some((r) => r.x === x && r.y === y && onGround(ruleset, r) && (!obs.ghosts.has(r.id) || archetypeOf(ruleset, r.kind)?.speed === 0));
   let best: { x: number; y: number; d: number; f: number } | undefined;
   let here: number | undefined;
   for (let y = 0; y < world.map.h; y++) {
@@ -1169,7 +1175,7 @@ function jamSpot(obs: Observation, ruleset: Ruleset, jammer: Entity, radius: num
       if (!targets.some((r) => dist2(x, y, r.x, r.y) <= radius * radius)) continue;
       const taken =
         world.entities.some((e) => e.side === side && e.id !== jammer.id && e.x === x && e.y === y && staysPut(ruleset, e)) ||
-        known.some((r) => r.x === x && r.y === y);
+        known.some((r) => r.x === x && r.y === y && onGround(ruleset, r));
       if (taken) continue;
       // Prefer cells out of reach of known enemy fighters, then the nearest to the jammer.
       const d = dangerAt(obs, ruleset, x, y) * 1000 + dist2(x, y, jammer.x, jammer.y);
@@ -1190,6 +1196,9 @@ function dangerAt(obs: Observation, ruleset: Ruleset, x: number, y: number): num
     return count + (dist2(x, y, r.x, r.y) <= reach * reach ? 1 : 0);
   }, 0);
 }
+
+/** Ground units and structures: a drone in the air takes no ground cell (no wall, no taken cell, no blocked deposit). */
+const onGround = (ruleset: Ruleset, e: Pick<Entity, 'kind'>): boolean => archetypeOf(ruleset, e.kind)?.layer !== 'air';
 
 const staysPut = (ruleset: Ruleset, e: Entity): boolean => {
   const arch = archetypeOf(ruleset, e.kind);

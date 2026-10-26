@@ -951,9 +951,9 @@ function matchesPriority(rs: Ruleset, target: Entity, priority: TargetPriority):
 }
 
 /**
- * Target selection: an ordered target in range first. Otherwise, by doctrine priority: preferred
- * class first, then lowest health and nearest ('nearest': distance before health), then lowest
- * id. With return-fire doctrine the unit only shoots at an ordered target or after being hit
+ * Target selection: an ordered target in range first. Otherwise anything but a drone first, then
+ * by doctrine priority: preferred class first, then lowest health and nearest ('nearest': distance
+ * before health), then lowest id. With return-fire doctrine the unit only shoots at an ordered target or after being hit
  * within the last turn. Only `visible` targets are engaged (fog).
  */
 function pickTarget(w: World, rs: Ruleset, e: Entity, a: Archetype, tick: number, visible: (target: Entity) => boolean): Entity | undefined {
@@ -970,6 +970,13 @@ function pickTarget(w: World, rs: Ruleset, e: Entity, a: Archetype, tick: number
     if (!hostile(w, e.side, target.side) || !visible(target) || !inWeaponRange(w, rs, e, a, target)) continue;
     if (!best) {
       best = target;
+      continue;
+    }
+    // A drone is fired on only when nothing else is in reach (unless ordered): it is free and
+    // replaced for free, so it must not draw the fire away as a decoy (owner decision 2026-10-27).
+    const decoy = Number(target.carrier !== undefined) - Number(best.carrier !== undefined);
+    if (decoy !== 0) {
+      if (decoy < 0) best = target;
       continue;
     }
     const cls = classed ? Number(matchesPriority(rs, best, doctrine.priority)) - Number(matchesPriority(rs, target, doctrine.priority)) : 0;

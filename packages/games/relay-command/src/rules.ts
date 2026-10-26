@@ -856,8 +856,8 @@ function matchesScenario(world: World, spec: ScenarioSpec, opponents: number, en
   // An endless deposit (the map's, or every one with the game option) stays as it started.
   const fits = (d: Deposit, o: Deposit): boolean => o.x === d.x && o.y === d.y && (o.endless || endless ? d.endless === true && d.left === o.left : d.endless === undefined && d.left <= o.left);
   if (deposits.length > 0 && (deposits.length !== start.length || deposits.some((d) => !start.some((o) => fits(d, o))))) return false;
-  // Kinds: the scenario's, plus anything a yard produces or a source builds.
-  const kinds = new Set([...entities.map((e) => e.kind), ...Object.values(RULESET.archetypes).filter((a) => a.buildTurns > 0).map((a) => a.id)]);
+  // Kinds: the scenario's, plus anything a yard produces or a source builds, and the drones its carriers launch.
+  const kinds = new Set([...entities.map((e) => e.kind), ...Object.values(RULESET.archetypes).flatMap((a) => [...(a.buildTurns > 0 ? [a.id] : []), ...(a.carrier ? [a.carrier.kind] : [])])]);
   // Entities: the scenario's plus what the economy can add — at most the order slots per side
   // and turn (each unit or site costs one order), so a hostile save cannot carry a horde.
   const n = entities.length + world.turn * world.sides * PRODUCTION_PER_TURN;
