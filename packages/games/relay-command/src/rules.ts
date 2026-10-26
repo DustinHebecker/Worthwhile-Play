@@ -499,7 +499,8 @@ const sidesLeft = (world: World): number[] =>
 
 /**
  * The strongest of `sides`, or null when two share the top (or none is given). With teams a team
- * counts as one: its sides among `sides` together, named by its lowest side.
+ * counts as one: as strong as its strongest side among `sides` (as `teamValue`), named by its
+ * lowest side.
  */
 function strongest(world: World, sides: readonly number[]): number | null {
   let best: number | null = null;
@@ -509,7 +510,7 @@ function strongest(world: World, sides: readonly number[]): number | null {
   for (const side of sides) {
     const team = teamOf(world, side);
     const entry = teams.get(team) ?? { side, value: 0 };
-    entry.value += sideValue(world, side);
+    entry.value = Math.max(entry.value, sideValue(world, side));
     teams.set(team, entry);
   }
   for (const { side, value } of teams.values()) {
@@ -694,23 +695,24 @@ export function strongestOpponent(world: World): number {
 export const opponentValue = (world: World): number => {
   const left = opponentsLeft(world);
   if (left.length === 0) return 0;
-  // With teams a hostile team counts as one: the strength of its sides still in the game.
+  // With teams a hostile team counts as one: the strength of its strongest side still in the game.
   return Math.max(...left.map((side) => teamValue(world, side)));
 };
 
 /**
- * The strength of `side` and its allies still in the game (without teams: the side's own). The
- * player is measured by its team's: allies who still hold a post win together (owner decision
- * 2026-10-24); an ally that is out counts nothing.
+ * The strength of `side`'s team (without teams: the side's own): its strongest side still in the
+ * game, not the sum, so a lone side is weighed against the strongest single opponent and a team
+ * does not win on numbers alone (owner decision 2026-10-25, Bastion). An ally that is out counts
+ * nothing.
  */
 export function teamValue(world: World, side: number): number {
   if (!world.teams) return sideValue(world, side);
-  let total = 0;
+  let best = 0;
   for (let s = 0; s < world.sides; s++) {
     if (teamOf(world, s) !== teamOf(world, side) || world.out?.includes(s) || commandPost(world, s) === undefined) continue;
-    total += sideValue(world, s);
+    best = Math.max(best, sideValue(world, s));
   }
-  return total;
+  return best;
 }
 
 /** Remaining strength of a side: build value scaled by remaining health. */
