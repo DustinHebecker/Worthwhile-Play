@@ -24,6 +24,13 @@
     "packages/games/probability-detective/src/frac.ts",
     "packages/games/probability-detective/src/generate.ts",
     "packages/games/probability-detective/src/traps.ts",
+    "packages/games/atlas-explorer/src/geo.ts",
+    "packages/games/atlas-explorer/src/atlas.ts",
+    "packages/games/atlas-explorer/src/compare.ts",
+    "packages/games/atlas-explorer/src/clues.ts",
+    "packages/games/atlas-explorer/src/route.ts",
+    "packages/games/atlas-explorer/src/generate.ts",
+    "packages/games/atlas-explorer/src/build/*.ts",
     "!**/*.d.ts",
     "!packages/learning-content/src/builtin/**"
   ],

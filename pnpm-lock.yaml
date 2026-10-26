@@ -68,6 +68,9 @@ importers:
       '@wp/game-association':
         specifier: workspace:*
         version: link:../../packages/games/association
+      '@wp/game-atlas-explorer':
+        specifier: workspace:*
+        version: link:../../packages/games/atlas-explorer
       '@wp/game-audience-switch':
         specifier: workspace:*
         version: link:../../packages/games/audience-switch
@@ -273,6 +276,28 @@ importers:
         version: link:../../testing
 
   packages/games/association:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../../game-core
+      '@wp/learning-content':
+        specifier: workspace:*
+        version: link:../../learning-content
+      '@wp/ui':
+        specifier: workspace:*
+        version: link:../../ui
+    devDependencies:
+      '@wp/localization':
+        specifier: workspace:*
+        version: link:../../localization
+      '@wp/persistence':
+        specifier: workspace:*
+        version: link:../../persistence
+      '@wp/testing':
+        specifier: workspace:*
+        version: link:../../testing
+
+  packages/games/atlas-explorer:
     dependencies:
       '@wp/game-core':
         specifier: workspace:*
