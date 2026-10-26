@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { isRecord } from '@wp/game-core';
 import { BASE_RULESET, NEUTRAL, archetypeOf, canonicalJson, cellOf, findPath, observe, passable, DEFAULT_DOCTRINE, computeNetwork, createWorld, frameIndexIn, frameOf, teamOf, initialIntel, observedCells, resolveTurn, retire, validateCommand, worldHash, type Command, type Entity, type World } from '@wp/strategy-engine';
-import { APPROACH_RADIUS, approachCells, assaultPlan, objectiveOf, planAi, type Difficulty } from '../src/ai';
+import { APPROACH_RADIUS, approachCells, assaultPlan, objectiveOf, outnumbered, planAi, type Difficulty } from '../src/ai';
 import {
   cancelJob,
   cancelOrder,
@@ -2032,6 +2032,47 @@ describe('Bastion: a map made for teams (owner decision 2026-10-24)', () => {
     const other = structuredClone(newGame(1, BASTION, 'normal', 12, false, null, 3, [], false, null, '3v1').world);
     other.turn = 12;
     expect(outcome(other, 12)).toBe('lost');
+  });
+
+  it('a computer alone against several holds in front of its own post and never storms out (measured on Bastion)', () => {
+    const s = newGame(1, BASTION, 'normal', null, false, null, 3, [], false, null, '3v1');
+    const w = s.world;
+    const rules = rulesOf(s);
+    // In 3 against 1 side 2 stands alone; the three are not outnumbered.
+    expect([0, 1, 2, 3].map((side) => outnumbered(w, side))).toEqual([false, false, true, false]);
+    const home = post(w, 2);
+    for (const turn of [0, 30, 90]) {
+      const late = { ...structuredClone(w), turn };
+      const plan = assaultPlan(observe(late, rules, 2), rules, 'hard')!;
+      expect(plan.storming, `turn ${turn}`).toBe(false);
+      expect(Math.max(Math.abs(plan.rally.x - home.x), Math.abs(plan.rally.y - home.y)), `turn ${turn}`).toBeLessThanOrEqual(4);
+    }
+    // A side of the three rallies towards the plateau, the lone side's rally point lies towards its own post.
+    const d2 = (a: { x: number; y: number }, b: { x: number; y: number }) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
+    const theirs = assaultPlan(observe(w, rules, 0), rules, 'hard')!;
+    expect(d2(theirs.rally, home)).toBeLessThan(d2(post(w, 0), home));
+    const ours = assaultPlan(observe(w, rules, 2), rules, 'hard')!;
+    expect(d2(ours.rally, ours.objective)).toBeGreaterThan(d2(ours.rally, home));
+    // Three cells from its post (9,1) towards the post it would go for (10,12), on the plateau.
+    expect(ours.objective).toMatchObject({ x: 10, y: 12 });
+    expect(ours.rally).toEqual({ x: 9, y: 4 });
+    // Its Howitzer makes the plan a siege; the three start without guns.
+    expect(ours.besieging).toBe(true);
+    expect(theirs.besieging).toBe(false);
+    expect(theirs.storming).toBe(false);
+  });
+
+  it('outnumbered: only with teams, alone (no ally still in) against two or more', () => {
+    const corners = SCENARIOS.find((x) => x.id === 'four-corners')!;
+    expect([0, 1, 2, 3].some((side) => outnumbered(newGame(1, corners, 'normal', 12, false, null, 3).world, side))).toBe(false);
+    const two = newGame(1, corners, 'normal', 12, false, null, 3, [], false, null, '2v2-next').world;
+    expect([0, 1, 2, 3].some((side) => outnumbered(two, side))).toBe(false);
+    // Its ally out, side 0 stands alone against two; against one it is not outnumbered.
+    expect(outnumbered({ ...two, out: [1] }, 0)).toBe(true);
+    expect(outnumbered({ ...two, out: [1, 3] }, 0)).toBe(false);
+    expect(outnumbered({ ...two, out: [1] }, 2)).toBe(false);
+    const lone = newGame(1, corners, 'normal', 12, false, null, 3, [], false, null, '1v3').world;
+    expect([0, 1, 2, 3].map((side) => outnumbered(lone, side))).toEqual([true, false, false, false]);
   });
 });
 
