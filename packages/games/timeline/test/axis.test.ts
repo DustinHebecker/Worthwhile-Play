@@ -1,6 +1,6 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { FULL, MIN_WIDTH, TICK_CATALOGUE, minWidthAt, chooseTicks, clampWindow, fitYears, generatedTicks, layoutLabels, pan, windowYears, xOf, yearAt, zoomAt, type AxisView, type Tick, type Window } from '../src/axis';
+import { FULL, TICK_CATALOGUE, minWidthAt, chooseTicks, clampWindow, fitYears, generatedTicks, layoutLabels, pan, windowYears, xOf, yearAt, zoomAt, type AxisView, type Tick, type Window } from '../src/axis';
 import { U_MAX, U_MIN, u } from '../src/time';
 
 const views: AxisView[] = ['log', 'linear'];

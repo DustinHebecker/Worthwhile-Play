@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   BAND_LIMITS, bandOf, fairRung, gapOptions, isGapLadder, isNice, kendallPairs, ladder, nice, orderMark, pairsTotal, rungOf, rungValue, scoreYear, tauFor
 } from '../src/score';
-import { AXIS_YEAR, Y_MAX, Y_MIN } from '../src/time';
+import { AXIS_YEAR, Y_MIN } from '../src/time';
 
 /** The year whose distance from `y*` (on the older side) is exactly `m` milli-decades. */
 const olderBy = (yStar: number, m: number) => AXIS_YEAR - (AXIS_YEAR - yStar) * 10 ** (m / 1000);
