@@ -85,6 +85,21 @@ export function bearing(lon1: number, lat1: number, lon2: number, lat2: number):
   return r >= 360 ? 0 : r;
 }
 
+/**
+ * Rhumb-line bearing (degrees clockwise from north, 0 ≤ b < 360): the constant compass direction from point 1 to
+ * point 2, i.e. the direction one reads off a map ("Papua New Guinea lies south-east of France"). The initial
+ * great-circle bearing can differ a lot over long distances (from France, the great circle to Papua New Guinea starts
+ * towards the north-east), so direction words use this bearing.
+ */
+export function rhumbBearing(lon1: number, lat1: number, lon2: number, lat2: number): number {
+  const clamp = (v: number) => Math.max(-89.9, Math.min(89.9, v)) * RAD;
+  const dpsi = Math.log(Math.tan(Math.PI / 4 + clamp(lat2) / 2) / Math.tan(Math.PI / 4 + clamp(lat1) / 2));
+  const dl = ((((lon2 - lon1 + 540) % 360) + 360) % 360 - 180) * RAD;
+  const b = Math.atan2(dl, dpsi) / RAD;
+  const r = ((b % 360) + 360) % 360;
+  return r >= 360 ? 0 : r;
+}
+
 /** The 16 compass words (message keys `dir.<id>`), clockwise from north. */
 export const COMPASS = ['n', 'nne', 'ne', 'ene', 'e', 'ese', 'se', 'sse', 's', 'ssw', 'sw', 'wsw', 'w', 'wnw', 'nw', 'nnw'] as const;
 export type CompassWord = (typeof COMPASS)[number];

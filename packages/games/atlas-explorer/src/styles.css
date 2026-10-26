@@ -1,0 +1,157 @@
+/* Atlas Explorer. All rules are scoped under .wp-atlas-explorer and use logical properties (RTL-safe). The map is
+   never mirrored (geography has its own direction); the card follows the reading direction. Styles on the map differ by
+   pattern (stripes, dots, cross-hatch), line style (solid, dashed, dotted) and text, never by colour alone. */
+.wp-atlas-explorer {
+  --ae-sea: #dbe9f2; --ae-land: #f3efe4; --ae-border: #8a8170; --ae-coast: #5c6f7c; --ae-lake: #dbe9f2;
+  --ae-grat: #9fb6c6; --ae-target: #b0473a; --ae-guess: #2d5d9b; --ae-place: #3e3a33; --ae-neighbour: #6d7a37;
+  --ae-hatch: #77736b; --ae-hatchbg: #e7e3da; --ae-route: #2d5d9b; --ae-best: #3e3a33;
+  display: grid; gap: 0.75rem; max-width: 80rem; margin-inline: auto; min-width: 0; overflow-wrap: anywhere;
+}
+@media (prefers-color-scheme: dark) {
+  .wp-atlas-explorer {
+    --ae-sea: #1c2a33; --ae-land: #3a3832; --ae-border: #8d8676; --ae-coast: #a7bccb; --ae-lake: #1c2a33;
+    --ae-grat: #46606f; --ae-target: #f08a7c; --ae-guess: #8db7f0; --ae-place: #f1ece0; --ae-neighbour: #c6d38a;
+    --ae-hatch: #b3ada1; --ae-hatchbg: #4a4740; --ae-route: #8db7f0; --ae-best: #f1ece0;
+  }
+}
+.wp-atlas-explorer p { margin: 0; }
+.wp-atlas-explorer h2 { margin: 0; font-size: 1.2rem; line-height: 1.35; }
+.wp-atlas-explorer h3 { margin: 0; font-size: 1.02rem; }
+.wp-atlas-explorer .ae-heading:focus { outline-offset: 4px; }
+.wp-atlas-explorer button { min-height: var(--wp-touch); min-width: var(--wp-touch); }
+.wp-atlas-explorer .ae-primary { font-weight: 700; }
+.wp-atlas-explorer [aria-disabled='true'] { opacity: 0.7; }
+.wp-atlas-explorer .ae-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.wp-atlas-explorer .ae-muted, .wp-atlas-explorer .ae-progress { color: var(--wp-muted); font-size: 0.93rem; }
+.wp-atlas-explorer .ae-head { display: grid; gap: 0.25rem; }
+.wp-atlas-explorer bdi { unicode-bidi: isolate; }
+
+/* Layout: map and card side by side from 48rem, stacked on phones (map first, card below, actions sticky). */
+.wp-atlas-explorer .ae-layout { display: grid; gap: 0.8rem; min-width: 0; }
+@media (min-width: 48rem) {
+  .wp-atlas-explorer .ae-layout { grid-template-columns: minmax(0, 2fr) minmax(16rem, 1fr); align-items: start; }
+  .wp-atlas-explorer .ae-card { position: sticky; inset-block-start: 0.5rem; max-block-size: calc(100vh - 1rem); overflow-y: auto; }
+}
+.wp-atlas-explorer[data-phase='summary'] .ae-layout { grid-template-columns: minmax(0, 1fr); }
+.wp-atlas-explorer[data-phase='summary'] .ae-mapcol { display: none; }
+.wp-atlas-explorer .ae-card {
+  display: grid; gap: 0.6rem; align-content: start; padding: 0.8rem; border: 1px solid var(--wp-border);
+  border-radius: var(--wp-radius); background: var(--wp-surface); min-width: 0;
+}
+@media (max-width: 47.99rem) {
+  .wp-atlas-explorer .ae-sticky {
+    position: sticky; inset-block-end: 0; z-index: 2; padding-block: 0.5rem; margin-inline: -0.8rem; padding-inline: 0.8rem;
+    background: var(--wp-surface); border-block-start: 1px solid var(--wp-border);
+  }
+}
+
+/* The map. */
+.wp-atlas-explorer .ae-mapwrap { position: relative; min-width: 0; }
+.wp-atlas-explorer .ae-map {
+  position: relative; display: block; inline-size: 100%; aspect-ratio: 2 / 1; min-block-size: 12rem; overflow: hidden;
+  border: 1px solid var(--wp-border); border-radius: var(--wp-radius); background: var(--wp-bg); touch-action: none; cursor: crosshair;
+}
+@media (max-width: 47.99rem) {
+  .wp-atlas-explorer .ae-map { aspect-ratio: 4 / 3; max-block-size: 55vh; }
+}
+.wp-atlas-explorer .ae-map:focus-visible { outline: 3px solid var(--wp-focus); outline-offset: 2px; }
+.wp-atlas-explorer .ae-svg { display: block; inline-size: 100%; block-size: 100%; }
+.wp-atlas-explorer .ae-sea { fill: var(--ae-sea); }
+.wp-atlas-explorer .ae-country { fill: var(--ae-land); stroke: var(--ae-border); stroke-width: 0.6px; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.wp-atlas-explorer .ae-coastline { fill: none; stroke: var(--ae-coast); stroke-width: 1.6px; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+/* Coastlines only: the land is drawn over a thick outline, so shared borders vanish and the coast remains. */
+.wp-atlas-explorer .ae-noborders .ae-country { stroke: none; }
+.wp-atlas-explorer .ae-lake { fill: var(--ae-lake); stroke: var(--ae-coast); stroke-width: 0.5px; vector-effect: non-scaling-stroke; }
+.wp-atlas-explorer .ae-disputed { stroke: var(--ae-hatch); stroke-width: 1px; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
+.wp-atlas-explorer .ae-pt-hatchbg { fill: var(--ae-hatchbg); }
+.wp-atlas-explorer .ae-pt-hatch { stroke: var(--ae-hatch); stroke-width: 1; }
+.wp-atlas-explorer .ae-pt-bg { fill: var(--ae-land); }
+.wp-atlas-explorer .ae-pt-stripe { stroke: var(--ae-target); stroke-width: 2; }
+.wp-atlas-explorer .ae-pt-bg2 { fill: transparent; }
+.wp-atlas-explorer .ae-pt-dot { fill: var(--ae-neighbour); }
+.wp-atlas-explorer .ae-dot { fill: var(--ae-land); stroke: var(--ae-border); stroke-width: 1px; vector-effect: non-scaling-stroke; }
+.wp-atlas-explorer .ae-gl { fill: none; stroke: var(--ae-grat); stroke-width: 0.6px; vector-effect: non-scaling-stroke; }
+.wp-atlas-explorer .ae-line { fill: none; stroke: var(--ae-place); stroke-width: 1.2px; vector-effect: non-scaling-stroke; }
+.wp-atlas-explorer .ae-line-equator { stroke-width: 1.6px; }
+.wp-atlas-explorer .ae-line-cancer, .wp-atlas-explorer .ae-line-capricorn { stroke-dasharray: 8 5; }
+.wp-atlas-explorer .ae-line-arctic, .wp-atlas-explorer .ae-line-antarctic { stroke-dasharray: 2 4; }
+.wp-atlas-explorer .ae-line-meridian { stroke-dasharray: 12 4 2 4; }
+.wp-atlas-explorer .ae-explain { stroke: var(--ae-guess); stroke-width: 1.4px; stroke-dasharray: 6 3; }
+.wp-atlas-explorer .ae-shape { stroke-width: 2px; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.wp-atlas-explorer .ae-target { stroke: var(--ae-target); stroke-width: 2.6px; }
+.wp-atlas-explorer .ae-guess { stroke: var(--ae-guess); stroke-dasharray: 2 3; stroke-width: 2.2px; }
+.wp-atlas-explorer .ae-current { stroke: var(--ae-place); stroke-width: 3.2px; }
+.wp-atlas-explorer .ae-neighbour { stroke: var(--ae-neighbour); stroke-dasharray: 1 3; stroke-width: 2px; }
+.wp-atlas-explorer .ae-outline, .wp-atlas-explorer .ae-place { stroke: var(--ae-place); stroke-dasharray: 6 3; }
+.wp-atlas-explorer .ae-feature { stroke: var(--ae-guess); stroke-width: 2px; }
+.wp-atlas-explorer .ae-f-river { fill: none; stroke-width: 3px; }
+.wp-atlas-explorer .ae-arc { fill: none; stroke: var(--ae-place); stroke-width: 2px; vector-effect: non-scaling-stroke; }
+.wp-atlas-explorer .ae-arc-dashed { stroke-dasharray: 6 4; }
+.wp-atlas-explorer .ae-arc-arrow { stroke: var(--ae-guess); stroke-width: 2px; }
+.wp-atlas-explorer .ae-route { fill: none; stroke-width: 3px; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
+.wp-atlas-explorer .ae-route-route { stroke: var(--ae-route); }
+.wp-atlas-explorer .ae-route-best { stroke: var(--ae-best); stroke-dasharray: 7 5; }
+.wp-atlas-explorer .ae-cursor-ring { fill: none; stroke: var(--wp-focus); stroke-width: 2.5; }
+.wp-atlas-explorer .ae-cursor-line { stroke: var(--wp-focus); stroke-width: 2.5; }
+.wp-atlas-explorer .ae-fixed text { paint-order: stroke; stroke: var(--wp-bg); stroke-width: 3px; stroke-linejoin: round; fill: var(--wp-text); font-family: var(--wp-font); }
+.wp-atlas-explorer .ae-msym { font-size: 20px; font-weight: 700; }
+.wp-atlas-explorer .ae-m-marker .ae-msym, .wp-atlas-explorer .ae-m-marker .ae-mtext { fill: var(--ae-guess); }
+.wp-atlas-explorer .ae-m-target .ae-msym, .wp-atlas-explorer .ae-m-target .ae-mtext { fill: var(--ae-target); }
+.wp-atlas-explorer .ae-m-pick .ae-msym { fill: var(--wp-focus); }
+.wp-atlas-explorer .ae-mtext, .wp-atlas-explorer .ae-ltext, .wp-atlas-explorer .ae-atext { font-size: 13px; font-weight: 600; }
+.wp-atlas-explorer .ae-gtext { font-size: 11px; }
+.wp-atlas-explorer[data-labels='large'] .ae-mtext, .wp-atlas-explorer[data-labels='large'] .ae-ltext, .wp-atlas-explorer[data-labels='large'] .ae-atext { font-size: 17px; }
+.wp-atlas-explorer[data-labels='large'] .ae-gtext { font-size: 14px; }
+.wp-atlas-explorer .ae-step circle { fill: var(--ae-route); }
+.wp-atlas-explorer .ae-fixed .ae-step .ae-stext { fill: #fff; stroke: none; font-size: 11px; font-weight: 700; }
+.wp-atlas-explorer .ae-dotring circle { fill: none; stroke-width: 2.5; }
+.wp-atlas-explorer .ae-dotring.ae-target circle { stroke: var(--ae-target); }
+.wp-atlas-explorer .ae-dotring.ae-guess circle { stroke: var(--ae-guess); stroke-dasharray: 2 3; }
+.wp-atlas-explorer .ae-dotring.ae-current circle, .wp-atlas-explorer .ae-dotring.ae-place circle, .wp-atlas-explorer .ae-dotring.ae-outline circle { stroke: var(--ae-place); }
+.wp-atlas-explorer .ae-dotring.ae-neighbour circle { stroke: var(--ae-neighbour); stroke-dasharray: 1 3; }
+.wp-atlas-explorer .ae-arrowhead circle { fill: var(--ae-guess); }
+.wp-atlas-explorer .ae-mapbtns { position: absolute; inset-block-start: 0.4rem; inset-inline-end: 0.4rem; display: grid; gap: 0.3rem; }
+.wp-atlas-explorer .ae-mapbtn { min-inline-size: var(--wp-touch); min-block-size: var(--wp-touch); padding-inline: 0.5rem; font-weight: 700; background: var(--wp-surface); }
+.wp-atlas-explorer .ae-pick {
+  position: absolute; inset-block-start: 0.5rem; inset-inline-start: 0.5rem; z-index: 3; display: grid; gap: 0.3rem; padding: 0.6rem;
+  border: 1px solid var(--wp-border); border-radius: var(--wp-radius); background: var(--wp-surface); max-inline-size: 16rem;
+}
+
+/* Card content. */
+.wp-atlas-explorer .ae-hint { font-size: 0.95rem; }
+.wp-atlas-explorer .ae-status { font-weight: 600; }
+.wp-atlas-explorer .ae-verdict { font-size: 1.08rem; font-weight: 700; }
+.wp-atlas-explorer .ae-insight { padding: 0.5rem; border-inline-start: 4px solid var(--wp-accent); background: var(--wp-surface-2); }
+.wp-atlas-explorer .ae-explore { display: grid; gap: 0.3rem; padding: 0.5rem; border: 1px dashed var(--wp-border); border-radius: var(--wp-radius); }
+.wp-atlas-explorer .ae-options { display: grid; gap: 0.3rem; margin: 0; padding: 0.4rem 0.6rem 0.6rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius); }
+.wp-atlas-explorer .ae-option { display: flex; align-items: center; gap: 0.5rem; min-block-size: var(--wp-touch); cursor: pointer; }
+.wp-atlas-explorer .ae-option input { inline-size: 1.25rem; block-size: 1.25rem; margin: 0; flex: none; }
+.wp-atlas-explorer .ae-sym { font-weight: 700; min-inline-size: 1.2em; text-align: center; }
+.wp-atlas-explorer .ae-clues, .wp-atlas-explorer .ae-path, .wp-atlas-explorer .ae-summary-list { display: grid; gap: 0.3rem; margin: 0; padding-inline-start: 1.3rem; }
+.wp-atlas-explorer .ae-guesses { display: grid; gap: 0.4rem; margin: 0; padding: 0; list-style: none; }
+.wp-atlas-explorer .ae-guess-card { padding: 0.5rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius); background: var(--wp-surface-2); }
+.wp-atlas-explorer .ae-combo { position: relative; }
+.wp-atlas-explorer .ae-search { box-sizing: border-box; inline-size: 100%; min-block-size: var(--wp-touch); font: inherit; padding-inline: 0.5rem; }
+.wp-atlas-explorer .ae-listbox {
+  position: absolute; z-index: 4; inset-inline: 0; margin: 0; padding: 0; list-style: none; max-block-size: 18rem; overflow-y: auto;
+  border: 1px solid var(--wp-border); border-radius: var(--wp-radius); background: var(--wp-surface);
+}
+.wp-atlas-explorer .ae-listbox[hidden] { display: none; }
+.wp-atlas-explorer .ae-listopt { display: flex; align-items: center; min-block-size: var(--wp-touch); padding-inline: 0.6rem; cursor: pointer; }
+.wp-atlas-explorer .ae-listopt[aria-selected='true'] { outline: 2px solid var(--wp-focus); outline-offset: -2px; font-weight: 700; }
+.wp-atlas-explorer .ae-label { font-weight: 600; }
+.wp-atlas-explorer .ae-neighbours { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.wp-atlas-explorer .ae-nb[aria-disabled='true'] { text-decoration: line-through; }
+.wp-atlas-explorer .ae-prefs summary { min-block-size: var(--wp-touch); box-sizing: border-box; padding-block: 0.7rem; cursor: pointer; }
+.wp-atlas-explorer .ae-pref { display: flex; flex-wrap: wrap; gap: 0.2rem 1rem; margin-block: 0.3rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius); }
+.wp-atlas-explorer .ae-note { color: var(--wp-muted); font-size: 0.85rem; }
+
+@media (forced-colors: active) {
+  .wp-atlas-explorer .ae-country, .wp-atlas-explorer .ae-dot { fill: Canvas; stroke: CanvasText; }
+  .wp-atlas-explorer .ae-sea, .wp-atlas-explorer .ae-lake { fill: Canvas; }
+  .wp-atlas-explorer .ae-target, .wp-atlas-explorer .ae-guess, .wp-atlas-explorer .ae-current, .wp-atlas-explorer .ae-line,
+  .wp-atlas-explorer .ae-arc, .wp-atlas-explorer .ae-route, .wp-atlas-explorer .ae-disputed { stroke: CanvasText; }
+  .wp-atlas-explorer .ae-pt-stripe, .wp-atlas-explorer .ae-pt-hatch { stroke: CanvasText; }
+  .wp-atlas-explorer .ae-pt-dot { fill: CanvasText; }
+  .wp-atlas-explorer .ae-fixed text { fill: CanvasText; stroke: Canvas; }
+}

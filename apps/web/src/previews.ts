@@ -641,7 +641,17 @@ const PREVIEWS: Record<string, () => string> = {
     R(38, 35, 20, 7, 'o', 1.5) + L(48, 42, 25, 46, 'fn') + L(48, 42, 71, 46, 'fn') +
     R(15, 46, 20, 6, 'o', 1.5) + R(61, 46, 20, 6, 'o', 1.5) +
     L(25, 52, 15, 55, 'fn') + L(25, 52, 35, 55, 'fn') + L(71, 52, 61, 55, 'fn') + L(71, 52, 81, 55, 'fn') +
-    R(6, 55, 18, 6, 'ob', 1.5) + R(27, 55, 17, 6, 'o ds', 1.5) + R(52, 55, 17, 6, 'ob', 1.5) + R(72, 55, 18, 6, 'o ds', 1.5)
+    R(6, 55, 18, 6, 'ob', 1.5) + R(27, 55, 17, 6, 'o ds', 1.5) + R(52, 55, 17, 6, 'ob', 1.5) + R(72, 55, 18, 6, 'o ds', 1.5),
+  // The atlas page: sea, three abstract land masses (no real shapes), the Equator (solid) and a tropic (dashed),
+  // the target striped, the player's ◆ marker and the dashed great-circle line between them.
+  'atlas-explorer': () =>
+    R(4, 3, 88, 58, 'tw', 6) +
+    L(4, 32, 92, 32, 'fn') + L(4, 22.5, 92, 22.5, 'fn ds') +
+    P('M12 10c6-4 14-2 16 3c1 4-3 6-6 7c3 4 4 9 1 14c-2 4-5 7-7 9c-2-4 0-9-2-13c-4-3-5-8-4-12c0-3 1-6 2-8z', 'rl') +
+    P('M38 12c10-5 26-6 38-1c6 3 6 9 1 12c-5 2-10 1-14 3c-2 5-6 9-9 14c-2 3-5 4-7 1c-2-4-1-9-4-12c-4-2-6-6-4-10c-3-2-3-5-1-7z', 'rl') +
+    P('M70 41c5-3 12-2 15 1c2 3 1 7-3 8c-4 1-8 1-11-1c-3-2-3-6-1-8z', 'rl') +
+    L(72.5, 48, 75.5, 42.5, 'ab') + L(75.5, 49, 79, 42, 'ab') + L(79, 49, 82.5, 42, 'ab') + L(82.5, 48.5, 85, 44, 'ab') +
+    P('M50 52Q60 44 72 45', 'fn ds') + diamond(50, 52, 3.8, 'a')
 };
 
 /** Pictures made only of text cards and lines: these follow the reading direction (flipped in RTL). */

@@ -68,6 +68,9 @@ importers:
       '@wp/game-association':
         specifier: workspace:*
         version: link:../../packages/games/association
+      '@wp/game-atlas-explorer':
+        specifier: workspace:*
+        version: link:../../packages/games/atlas-explorer
       '@wp/game-audience-switch':
         specifier: workspace:*
         version: link:../../packages/games/audience-switch

@@ -15,6 +15,7 @@ import {
   mercatorFactor,
   pointInRings,
   polygonDistanceKm,
+  rhumbBearing,
   project,
   segmentDistanceKm,
   sunTimeHours,
@@ -171,6 +172,25 @@ describe('bearings and compass words', () => {
     fc.assert(
       fc.property(fc.double({ min: -720, max: 720, noNaN: true }), (b) => {
         expect(eight).toContain(compassWord(b, 8));
+      })
+    );
+  });
+
+  it('reads map directions along rhumb lines', () => {
+    expect(rhumbBearing(0, 0, 0, 10)).toBeCloseTo(0, 9);
+    expect(rhumbBearing(0, 0, 10, 0)).toBeCloseTo(90, 9);
+    expect(rhumbBearing(0, 10, 0, 0)).toBeCloseTo(180, 9);
+    // France → Papua New Guinea: east-south-east on the map, although the great circle starts north-east.
+    expect(compassWord(rhumbBearing(2.5, 46.7, 145, -6))).toBe('ese');
+    expect(compassWord(bearing(2.5, 46.7, 145, -6), 8)).toBe('ne');
+    // Across the antimeridian the short way is taken.
+    expect(rhumbBearing(170, 0, -170, 0)).toBeCloseTo(90, 9);
+    expect(rhumbBearing(-170, 0, 170, 0)).toBeCloseTo(270, 9);
+    fc.assert(
+      fc.property(lon, lat, lon, lat, (a, b, c, d) => {
+        const v = rhumbBearing(a, b, c, d);
+        expect(v).toBeGreaterThanOrEqual(0);
+        expect(v).toBeLessThan(360);
       })
     );
   });
