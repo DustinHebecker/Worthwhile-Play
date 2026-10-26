@@ -22,22 +22,22 @@ export const EVENTS: readonly EventData[] = [
   },
   {
     id: 'moon-forms', cat: 'earth', region: 'world', tier: 2, kind: 'point', unit: 'ago', at: 4.51e9, lo: 4.53e9, hi: 4.35e9,
-    sources: ['Barboni, M. et al. (2017), "Early formation of the Moon 4.51 billion years ago", Science Advances 3: e1602365', 'Canup, R. & Asphaug, E. (2001), Nature 412: 708–712'],
+    sources: ['Barboni, M. et al. (2017), "Early formation of the Moon 4.51 billion years ago", Science Advances 3: e1602365', 'Canup, R. & Asphaug, E. (2001), Nature 412: 708–712', 'Wikipedia, "Origin of the Moon"'],
     checked: '2026-10-26'
   },
   {
     id: 'oldest-zircon', cat: 'earth', region: 'oceania', tier: 3, kind: 'point', unit: 'ago', at: 4.4e9, lo: 4.41e9, hi: 4.37e9,
-    sources: ['Wilde, S. A. et al. (2001), Nature 409: 175–178', 'Valley, J. W. et al. (2014), "Hadean age for a post-magma-ocean zircon confirmed by atom-probe tomography", Nature Geoscience 7: 219–223'],
+    sources: ['Wilde, S. A. et al. (2001), Nature 409: 175–178', 'Valley, J. W. et al. (2014), "Hadean age for a post-magma-ocean zircon confirmed by atom-probe tomography", Nature Geoscience 7: 219–223', 'Wikipedia, "Jack Hills"'],
     checked: '2026-10-26'
   },
   {
     id: 'first-life', cat: 'earth', region: 'oceania', tier: 2, kind: 'point', unit: 'ago', at: 3.48e9, lo: 3.5e9, hi: 3.43e9,
-    sources: ['Djokic, T. et al. (2017), "Earliest signs of life on land preserved in ca. 3.5 Ga hot spring deposits", Nature Communications 8: 15263', 'Allwood, A. C. et al. (2006), Nature 441: 714–718'],
+    sources: ['Djokic, T. et al. (2017), "Earliest signs of life on land preserved in ca. 3.5 Ga hot spring deposits", Nature Communications 8: 15263', 'Allwood, A. C. et al. (2006), Nature 441: 714–718', 'Wikipedia, "Dresser Formation"'],
     checked: '2026-10-26'
   },
   {
     id: 'oxygen', cat: 'earth', region: 'world', tier: 2, kind: 'point', unit: 'ago', at: 2.4e9, lo: 2.46e9, hi: 2.22e9,
-    sources: ['Poulton, S. W. et al. (2021), "A 200-million-year delay in permanent atmospheric oxygenation", Nature 592: 232–236', 'Gumsley, A. P. et al. (2017), PNAS 114: 1811–1816'],
+    sources: ['Poulton, S. W. et al. (2021), "A 200-million-year delay in permanent atmospheric oxygenation", Nature 592: 232–236', 'Gumsley, A. P. et al. (2017), PNAS 114: 1811–1816', 'Wikipedia, "Great Oxidation Event"'],
     checked: '2026-10-26'
   },
   {
@@ -57,7 +57,7 @@ export const EVENTS: readonly EventData[] = [
   },
   {
     id: 'land-plants', cat: 'earth', region: 'americas', tier: 2, kind: 'point', unit: 'ago', at: 4.71e8, lo: 4.73e8, hi: 4.65e8,
-    sources: ['Rubinstein, C. V. et al. (2010), "Early Middle Ordovician evidence for land plants in Argentina (eastern Gondwana)", New Phytologist 188: 365–369'],
+    sources: ['Rubinstein, C. V. et al. (2010), "Early Middle Ordovician evidence for land plants in Argentina (eastern Gondwana)", New Phytologist 188: 365–369', 'Wikipedia, "Embryophyte"'],
     checked: '2026-10-26'
   },
   {
@@ -72,12 +72,12 @@ export const EVENTS: readonly EventData[] = [
   },
   {
     id: 'tiktaalik', cat: 'earth', region: 'americas', tier: 2, kind: 'point', unit: 'ago', at: 3.75e8, lo: 3.76e8, hi: 3.74e8,
-    sources: ['Daeschler, E. B., Shubin, N. H. & Jenkins, F. A. (2006), "A Devonian tetrapod-like fish and the evolution of the tetrapod body plan", Nature 440: 757–763'],
+    sources: ['Daeschler, E. B., Shubin, N. H. & Jenkins, F. A. (2006), "A Devonian tetrapod-like fish and the evolution of the tetrapod body plan", Nature 440: 757–763', 'Wikipedia, "Tiktaalik"'],
     checked: '2026-10-26'
   },
   {
     id: 'great-dying', cat: 'earth', region: 'world', tier: 2, kind: 'point', unit: 'ago', at: 2.519e8, lo: 2.52e8, hi: 2.518e8,
-    sources: ['International Commission on Stratigraphy, Chart v2024/12 (base of the Triassic 251.902 ± 0.024 Ma)', 'Burgess, S. D. et al. (2014), PNAS 111: 3316–3321'],
+    sources: ['International Commission on Stratigraphy, Chart v2024/12 (base of the Triassic 251.902 ± 0.024 Ma)', 'Burgess, S. D. et al. (2014), PNAS 111: 3316–3321', 'Wikipedia, "Permian–Triassic extinction event"'],
     checked: '2026-10-26'
   },
   {
@@ -87,7 +87,7 @@ export const EVENTS: readonly EventData[] = [
   },
   {
     id: 'first-mammals', cat: 'earth', region: 'world', tier: 2, kind: 'point', unit: 'ago', at: 2.05e8, lo: 2.1e8, hi: 2e8,
-    sources: ['Kemp, T. S. (2005), The Origin and Evolution of Mammals, Oxford University Press', 'Kielan-Jaworowska, Z., Cifelli, R. & Luo, Z.-X. (2004), Mammals from the Age of Dinosaurs, Columbia University Press'],
+    sources: ['Kemp, T. S. (2005), The Origin and Evolution of Mammals, Oxford University Press', 'Kielan-Jaworowska, Z., Cifelli, R. & Luo, Z.-X. (2004), Mammals from the Age of Dinosaurs, Columbia University Press', 'Wikipedia, "Morganucodon"'],
     checked: '2026-10-26'
   },
   {
@@ -107,7 +107,7 @@ export const EVENTS: readonly EventData[] = [
   },
   {
     id: 'flowers', cat: 'earth', region: 'asia', tier: 2, kind: 'point', unit: 'ago', at: 1.25e8, lo: 1.26e8, hi: 1.24e8,
-    sources: ['Sun, G. et al. (2002), "Archaefructaceae, a new basal angiosperm family", Science 296: 899–904'],
+    sources: ['Sun, G. et al. (2002), "Archaefructaceae, a new basal angiosperm family", Science 296: 899–904', 'Wikipedia, "Archaefructus"'],
     checked: '2026-10-26'
   },
   {
@@ -127,7 +127,7 @@ export const EVENTS: readonly EventData[] = [
   },
   {
     id: 'antarctic-ice', cat: 'earth', region: 'world', tier: 3, kind: 'point', unit: 'ago', at: 3.39e7, lo: 3.41e7, hi: 3.36e7,
-    sources: ['Zachos, J. et al. (2001), "Trends, rhythms, and aberrations in global climate 65 Ma to present", Science 292: 686–693', 'ICS Chart v2024/12 (Eocene/Oligocene boundary 33.9 Ma)'],
+    sources: ['Zachos, J. et al. (2001), "Trends, rhythms, and aberrations in global climate 65 Ma to present", Science 292: 686–693', 'ICS Chart v2024/12 (Eocene/Oligocene boundary 33.9 Ma)', 'Wikipedia, "Antarctic ice sheet"'],
     checked: '2026-10-26'
   },
   {
@@ -182,7 +182,7 @@ export const EVENTS: readonly EventData[] = [
   },
   {
     id: 'chauvet', cat: 'culture', region: 'europe', tier: 2, kind: 'point', unit: 'ago', at: 35000, lo: 37000, hi: 33500,
-    sources: ['Quiles, A. et al. (2016), "A high-precision chronological model for the decorated Upper Paleolithic cave of Chauvet-Pont d\'Arc", PNAS 113: 4670–4675'],
+    sources: ['Quiles, A. et al. (2016), "A high-precision chronological model for the decorated Upper Paleolithic cave of Chauvet-Pont d\'Arc", PNAS 113: 4670–4675', 'Wikipedia, "Chauvet Cave"'],
     checked: '2026-10-26'
   },
   {
@@ -217,17 +217,17 @@ export const EVENTS: readonly EventData[] = [
   },
   {
     id: 'farming', cat: 'everyday', region: 'asia', tier: 1, kind: 'point', unit: 'year', at: -9499, lo: -9999, hi: -8999,
-    sources: ['Zeder, M. A. (2011), "The origins of agriculture in the Near East", Current Anthropology 52 (S4): S221–S235'],
+    sources: ['Zeder, M. A. (2011), "The origins of agriculture in the Near East", Current Anthropology 52 (S4): S221–S235', 'Wikipedia, "Neolithic Revolution"'],
     checked: '2026-10-26'
   },
   {
     id: 'cat', cat: 'everyday', region: 'asia', tier: 3, kind: 'point', unit: 'year', at: -7499, lo: -7599, hi: -7199,
-    sources: ['Vigne, J.-D. et al. (2004), "Early taming of the cat in Cyprus", Science 304: 259'],
+    sources: ['Vigne, J.-D. et al. (2004), "Early taming of the cat in Cyprus", Science 304: 259', 'Wikipedia, "Cat"'],
     checked: '2026-10-26'
   },
   {
     id: 'maize', cat: 'everyday', region: 'americas', tier: 2, kind: 'point', unit: 'year', at: -6749, lo: -7099, hi: -6499,
-    sources: ['Matsuoka, Y. et al. (2002), PNAS 99: 6080–6084', 'Piperno, D. R. et al. (2009), "Starch grain and phytolith evidence for early ninth millennium B.P. maize from the Central Balsas River Valley, Mexico", PNAS 106: 5019–5024'],
+    sources: ['Matsuoka, Y. et al. (2002), PNAS 99: 6080–6084', 'Piperno, D. R. et al. (2009), "Starch grain and phytolith evidence for early ninth millennium B.P. maize from the Central Balsas River Valley, Mexico", PNAS 106: 5019–5024', 'Wikipedia, "Maize"'],
     checked: '2026-10-26'
   },
   {
@@ -247,12 +247,12 @@ export const EVENTS: readonly EventData[] = [
   },
   {
     id: 'egypt-writing', cat: 'culture', region: 'africa', tier: 2, kind: 'point', unit: 'year', at: -3249, lo: -3399, hi: -3149,
-    sources: ['Dreyer, G. (1998), Umm el-Qaab I, Mainz: von Zabern', 'Baines, J. (2004), "The earliest Egyptian writing", in Houston, S. (ed.), The First Writing, Cambridge University Press'],
+    sources: ['Dreyer, G. (1998), Umm el-Qaab I, Mainz: von Zabern', 'Baines, J. (2004), "The earliest Egyptian writing", in Houston, S. (ed.), The First Writing, Cambridge University Press', 'Wikipedia, "Egyptian hieroglyphs"'],
     checked: '2026-10-26'
   },
   {
     id: 'cuneiform', cat: 'culture', region: 'asia', tier: 1, kind: 'point', unit: 'year', at: -3199, lo: -3399, hi: -3099,
-    sources: ['Woods, C. (ed.) (2010), Visible Language: Inventions of Writing in the Ancient Middle East and Beyond, Oriental Institute, University of Chicago'],
+    sources: ['Woods, C. (ed.) (2010), Visible Language: Inventions of Writing in the Ancient Middle East and Beyond, Oriental Institute, University of Chicago', 'Wikipedia, "Cuneiform"'],
     checked: '2026-10-26'
   },
   {
@@ -272,7 +272,7 @@ export const EVENTS: readonly EventData[] = [
   },
   {
     id: 'indus', cat: 'culture', region: 'asia', tier: 2, kind: 'span', unit: 'year', lo: -2599, hi: -1899,
-    sources: ['Possehl, G. L. (2002), The Indus Civilization: A Contemporary Perspective, AltaMira Press'],
+    sources: ['Possehl, G. L. (2002), The Indus Civilization: A Contemporary Perspective, AltaMira Press', 'Wikipedia, "Indus Valley Civilisation"'],
     checked: '2026-10-26'
   },
   {
@@ -292,7 +292,7 @@ export const EVENTS: readonly EventData[] = [
   },
   {
     id: 'olmec', cat: 'culture', region: 'americas', tier: 3, kind: 'span', unit: 'year', lo: -1199, hi: -899,
-    sources: ['Diehl, R. A. (2004), The Olmecs: America\'s First Civilization, Thames & Hudson'],
+    sources: ['Diehl, R. A. (2004), The Olmecs: America\'s First Civilization, Thames & Hudson', 'Wikipedia, "San Lorenzo Tenochtitlán"'],
     checked: '2026-10-26'
   },
   {
@@ -327,7 +327,7 @@ export const EVENTS: readonly EventData[] = [
   },
   {
     id: 'nazca', cat: 'culture', region: 'americas', tier: 2, kind: 'span', unit: 'year', lo: -499, hi: 500,
-    sources: ['UNESCO World Heritage List no. 700, "Lines and Geoglyphs of Nasca and Palpa"'],
+    sources: ['UNESCO World Heritage List no. 700, "Lines and Geoglyphs of Nasca and Palpa"', 'Wikipedia, "Nazca lines"'],
     checked: '2026-10-26'
   },
   {
@@ -372,7 +372,7 @@ export const EVENTS: readonly EventData[] = [
   },
   {
     id: 'aryabhata', cat: 'science', region: 'asia', tier: 2, kind: 'point', unit: 'year', at: 499, lo: 499, hi: 499,
-    sources: ['Wikipedia, "Aryabhata"', 'Plofker, K. (2009), Mathematics in India, Princeton University Press'],
+    sources: ['Wikipedia, "Aryabhata"', 'Plofker, K. (2009), Mathematics in India, Princeton University Press', 'Wikipedia, "Aryabhatiya"'],
     checked: '2026-10-26'
   },
   {
@@ -382,12 +382,12 @@ export const EVENTS: readonly EventData[] = [
   },
   {
     id: 'brahmagupta', cat: 'science', region: 'asia', tier: 2, kind: 'point', unit: 'year', at: 628, lo: 628, hi: 628,
-    sources: ['Plofker, K. (2009), Mathematics in India, Princeton University Press', 'Wikipedia, "Brahmagupta"'],
+    sources: ['Plofker, K. (2009), Mathematics in India, Princeton University Press', 'Wikipedia, "Brahmagupta"', 'Wikipedia, "Brahmasphutasiddhanta"'],
     checked: '2026-10-26'
   },
   {
     id: 'al-khwarizmi', cat: 'science', region: 'asia', tier: 2, kind: 'point', unit: 'year', at: 820, lo: 813, hi: 833,
-    sources: ['Wikipedia, "Al-Khwarizmi"', 'Rashed, R. (2009), Al-Khwarizmi: The Beginnings of Algebra, Saqi'],
+    sources: ['Wikipedia, "Al-Khwarizmi"', 'Rashed, R. (2009), Al-Khwarizmi: The Beginnings of Algebra, Saqi', 'Wikipedia, "The Compendious Book on Calculation by Completion and Balancing"'],
     checked: '2026-10-26'
   },
   {
@@ -547,12 +547,12 @@ export const EVENTS: readonly EventData[] = [
   },
   {
     id: 'dodo', cat: 'earth', region: 'africa', tier: 2, kind: 'point', unit: 'year', at: 1662, lo: 1662, hi: 1662,
-    sources: ['Cheke, A. S. (1987), in Diamond, A. W. (ed.), Studies of Mascarene Island Birds, Cambridge University Press', 'Roberts, D. L. & Solow, A. R. (2003), "When did the dodo become extinct?", Nature 426: 245'],
+    sources: ['Cheke, A. S. (1987), in Diamond, A. W. (ed.), Studies of Mascarene Island Birds, Cambridge University Press', 'Roberts, D. L. & Solow, A. R. (2003), "When did the dodo become extinct?", Nature 426: 245', 'Wikipedia, "Dodo"'],
     checked: '2026-10-26'
   },
   {
     id: 'leeuwenhoek', cat: 'science', region: 'europe', tier: 2, kind: 'point', unit: 'year', at: 1676, lo: 1676, hi: 1676,
-    sources: ['Lane, N. (2015), "The unseen world: reflections on Leeuwenhoek (1677)", Philosophical Transactions of the Royal Society B 370: 20140344'],
+    sources: ['Lane, N. (2015), "The unseen world: reflections on Leeuwenhoek (1677)", Philosophical Transactions of the Royal Society B 370: 20140344', 'Wikipedia, "Antonie van Leeuwenhoek"'],
     checked: '2026-10-26'
   },
   {
@@ -607,7 +607,7 @@ export const EVENTS: readonly EventData[] = [
   },
   {
     id: 'tambora', cat: 'earth', region: 'asia', tier: 2, kind: 'point', unit: 'year', at: 1815, lo: 1815, hi: 1815,
-    sources: ['Oppenheimer, C. (2003), "Climatic, environmental and human consequences of the largest known historic eruption: Tambora volcano (Indonesia) 1815", Progress in Physical Geography 27: 230–259'],
+    sources: ['Oppenheimer, C. (2003), "Climatic, environmental and human consequences of the largest known historic eruption: Tambora volcano (Indonesia) 1815", Progress in Physical Geography 27: 230–259', 'Wikipedia, "1815 eruption of Mount Tambora"'],
     checked: '2026-10-26'
   },
   {
@@ -697,7 +697,7 @@ export const EVENTS: readonly EventData[] = [
   },
   {
     id: 'relativity', cat: 'science', region: 'europe', tier: 2, kind: 'point', unit: 'year', at: 1905, lo: 1905, hi: 1905,
-    sources: ['Wikipedia, "Annus mirabilis papers"'],
+    sources: ['Wikipedia, "Annus mirabilis papers"', 'Wikipedia, "Special relativity"'],
     checked: '2026-10-26'
   },
   {
@@ -722,7 +722,7 @@ export const EVENTS: readonly EventData[] = [
   },
   {
     id: 'tagore', cat: 'culture', region: 'asia', tier: 2, kind: 'point', unit: 'year', at: 1913, lo: 1913, hi: 1913,
-    sources: ['Nobel Prize Outreach, "The Nobel Prize in Literature 1913" (nobelprize.org)'],
+    sources: ['Nobel Prize Outreach, "The Nobel Prize in Literature 1913" (nobelprize.org)', 'Wikipedia, "Rabindranath Tagore"'],
     checked: '2026-10-26'
   },
   {
@@ -737,7 +737,7 @@ export const EVENTS: readonly EventData[] = [
   },
   {
     id: 'insulin', cat: 'science', region: 'americas', tier: 2, kind: 'point', unit: 'year', at: 1922, lo: 1922, hi: 1922,
-    sources: ['Nobel Prize in Physiology or Medicine 1923 (nobelprize.org)', 'Bliss, M. (1982), The Discovery of Insulin, University of Toronto Press'],
+    sources: ['Nobel Prize in Physiology or Medicine 1923 (nobelprize.org)', 'Bliss, M. (1982), The Discovery of Insulin, University of Toronto Press', 'Wikipedia, "Insulin (medication)"'],
     checked: '2026-10-26'
   },
   {
@@ -747,7 +747,7 @@ export const EVENTS: readonly EventData[] = [
   },
   {
     id: 'expanding-universe', cat: 'science', region: 'americas', tier: 2, kind: 'point', unit: 'year', at: 1929, lo: 1929, hi: 1929,
-    sources: ['Hubble, E. (1929), PNAS 15: 168–173', 'IAU Resolution B4 (2018), "Hubble–Lemaître law"'],
+    sources: ['Hubble, E. (1929), PNAS 15: 168–173', 'IAU Resolution B4 (2018), "Hubble–Lemaître law"', 'Wikipedia, "Hubble\'s law"'],
     checked: '2026-10-26'
   },
   {
@@ -772,12 +772,12 @@ export const EVENTS: readonly EventData[] = [
   },
   {
     id: 'dna', cat: 'science', region: 'europe', tier: 1, kind: 'point', unit: 'year', at: 1953, lo: 1953, hi: 1953,
-    sources: ['Watson, J. D. & Crick, F. H. C. (1953), Nature 171: 737–738', 'Franklin, R. E. & Gosling, R. G. (1953), Nature 171: 740–741'],
+    sources: ['Watson, J. D. & Crick, F. H. C. (1953), Nature 171: 737–738', 'Franklin, R. E. & Gosling, R. G. (1953), Nature 171: 740–741', 'Wikipedia, "Molecular Structure of Nucleic Acids"'],
     checked: '2026-10-26'
   },
   {
     id: 'sputnik', cat: 'explore', region: 'asia', tier: 2, kind: 'point', unit: 'year', at: 1957, lo: 1957, hi: 1957,
-    sources: ['NASA History Office, "Sputnik and the origins of the Space Age"'],
+    sources: ['NASA History Office, "Sputnik and the origins of the Space Age"', 'Wikipedia, "Sputnik 1"'],
     checked: '2026-10-26'
   },
   {
@@ -822,7 +822,7 @@ export const EVENTS: readonly EventData[] = [
   },
   {
     id: 'voyager', cat: 'explore', region: 'world', tier: 2, kind: 'point', unit: 'year', at: 1977, lo: 1977, hi: 1977,
-    sources: ['NASA Jet Propulsion Laboratory, "Voyager mission overview"'],
+    sources: ['NASA Jet Propulsion Laboratory, "Voyager mission overview"', 'Wikipedia, "Voyager program"'],
     checked: '2026-10-26'
   },
   {
@@ -832,12 +832,12 @@ export const EVENTS: readonly EventData[] = [
   },
   {
     id: 'ozone', cat: 'earth', region: 'world', tier: 3, kind: 'point', unit: 'year', at: 1985, lo: 1985, hi: 1985,
-    sources: ['Farman, J. C., Gardiner, B. G. & Shanklin, J. D. (1985), Nature 315: 207–210'],
+    sources: ['Farman, J. C., Gardiner, B. G. & Shanklin, J. D. (1985), Nature 315: 207–210', 'Wikipedia, "Ozone depletion"'],
     checked: '2026-10-26'
   },
   {
     id: 'www', cat: 'tech', region: 'europe', tier: 1, kind: 'point', unit: 'year', at: 1991, lo: 1991, hi: 1991,
-    sources: ['CERN, "A short history of the Web" (home.cern)'],
+    sources: ['CERN, "A short history of the Web" (home.cern)', 'Wikipedia, "World Wide Web"'],
     checked: '2026-10-26'
   },
   {
@@ -857,7 +857,7 @@ export const EVENTS: readonly EventData[] = [
   },
   {
     id: 'gravitational-waves', cat: 'science', region: 'americas', tier: 2, kind: 'point', unit: 'year', at: 2015, lo: 2015, hi: 2015,
-    sources: ['Abbott, B. P. et al. (LIGO and Virgo) (2016), Physical Review Letters 116: 061102'],
+    sources: ['Abbott, B. P. et al. (LIGO and Virgo) (2016), Physical Review Letters 116: 061102', 'Wikipedia, "First observation of gravitational waves"'],
     checked: '2026-10-26'
   },
   {

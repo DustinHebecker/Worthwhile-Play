@@ -1,6 +1,6 @@
-# Timeline (`timeline`) — design
+# Sense of Time (`timeline`) — design
 
-Status: **Plan (2026-10-26)**, written by the planner of the new-games pipeline (game 5 of the owner's list; done before it: Best Plan, Estimation Lab, Probability Detective, Atlas Explorer). The implementer follows it, and the reviewer checks the work against it. Numbers marked *(calibrate)* are first estimates; the implementer may tune them within the stated bounds. Content: [timeline-content.md](timeline-content.md) (170 sourced events, 12 curated pairs). The generator thresholds in § 11 were simulated on that content (Appendix B).
+Status: **Implemented (2026-10-26)** on branch `game/timeline` (implementation notes and deviations: § 25; owner decisions of 2026-10-26: § 23). Plan written by the planner of the new-games pipeline (game 5 of the owner's list; done before it: Best Plan, Estimation Lab, Probability Detective, Atlas Explorer). The implementer follows it, and the reviewer checks the work against it. Numbers marked *(calibrate)* are first estimates; the implementer may tune them within the stated bounds. Content: [timeline-content.md](timeline-content.md) (178 sourced events after the owner's decisions, 12 curated pairs). The generator thresholds in § 11 were simulated on that content (Appendix B).
 
 Scope for the implementer (feature agent, ADR 0006): `packages/games/timeline/` and `e2e/games/timeline.spec.ts`. The orchestrator creates `package.json` (dependencies `@wp/game-core`, `@wp/ui`), the registry line (appended after the existing games), the dependency in `apps/web/package.json` and the preview in `apps/web/src/previews.ts` (§ 19), and pastes Appendix A into `docs/third-party.md`. **No new npm dependency, no shared change needed for the MVP** (§ 1.3 lists optional ones).
 
@@ -41,10 +41,10 @@ No game deals with time, chronology or historical scale yet. The catalogue has n
 | | |
 |---|---|
 | Package id | `timeline` (`@wp/game-timeline`). Neutral, never shown except in the URL; a title change touches no saves. |
-| English title | **Sense of Time** (recommended, owner question 1) |
+| English title | **Sense of Time** (owner decision 2026-10-26; "Timeline" is never shown) |
 | German title | **Zeitgefühl** |
-| Other locales (draft; translators may adjust) | nl Tijdsbesef · es Sentido del tiempo · fr Le sens du temps · ru Чувство времени · zh-Hans 时间感 · ko 시간 감각 · ja 時間の感覚 · ar حسّ الزمن · pt Noção do tempo · it Senso del tempo · pl Wyczucie czasu · tr Zaman Algısı · uk Відчуття часу · hi समय की समझ |
-| Why not "Timeline" as the shown title | "Timeline" is the name of a well-known commercial card game series (designer Frédéric Henry; Asmodee/Zygomatic, since about 2010) whose core is placing events in chronological order. Our game shares the topic, not its rules, but a shared title would look like a copy or an official version. Like Estimation Lab (not "Fermi Lab"), the shown title stays distinct. German "Zeitstrahl" would not have this problem (alternative in question 1). |
+| Other locales (as implemented) | nl Tijdsbesef · es Sentido del tiempo · fr Le sens du temps · ru Чувство времени · zh-Hans 时间感 · ko 시간 감각 · ja 時間の感覚 · ar حسّ الزمن · pt Noção do tempo · it Senso del tempo · pl Wyczucie czasu · tr Zaman Algısı · uk Відчуття часу · hi समय की समझ |
+| Why not "Timeline" as the shown title | "Timeline" is the name of a well-known commercial card game series (designer Frédéric Henry; Asmodee/Zygomatic, since about 2010) whose core is placing events in chronological order. Our game shares the topic, not its rules, but a shared title would look like a copy or an official version. Like Estimation Lab (not "Fermi Lab"), the shown title stays distinct. The owner chose "Sense of Time" / "Zeitgefühl" (§ 23). |
 | Skills | `learning`, `deduction` |
 | `typicalMinutes` | `[6, 14]` (one round) |
 | `difficulties` | `['easy', 'medium', 'hard']` |
@@ -78,7 +78,7 @@ No game deals with time, chronology or historical scale yet. The catalogue has n
 
 1. **Sourced and hedged** (content § 1, § 5): every date has a source; approximate dates have a range; records say "oldest known"; debated dates carry a deliberately wide range.
 2. **International and balanced**: events from every continent and six fields (Earth and life, science and medicine, technology, culture, journeys, everyday life). Of the 142 human-history events, Europe has 23 %, Asia 34 %, the Americas 18 %, Africa 13 %, Oceania 5 %, global 8 % (content § 2).
-3. **Neutral**: no wars, conquests, political or religious claims as subjects; rulers only where a monument or a famous comparison needs them; no living person's controversies (owner question 3 covers named people).
+3. **Neutral and factual** (owner decision 2026-10-26, § 23): any person who demonstrably existed may appear, warlords and dictators included; dark history is stated factually and soberly, with no glorifying and no judging adjectives; religion gets no large focus unless historically very relevant and real; **living people are excluded** as subjects. Rulers, wars and politics (category `history`) stay at most 10 % of the events (test); they come from several continents.
 4. **Fair questions**: two events are compared only when their ranges do not overlap and the gap is clear for the difficulty (§ 11). A date inside the event's range is never "wrong".
 5. **No time pressure, no lives, no streaks**: "Skip — just show me" everywhere; nothing is counted against the player.
 6. **Own wording** in all 16 languages; titles never give away their date (test).
@@ -99,7 +99,7 @@ No game deals with time, chronology or historical scale yet. The catalogue has n
 - Years only — never days or months — so the Julian/Gregorian difference (at most 13 days) never changes an answer. Years before 1582 are given as the sources give them (Julian years). One note says so explicitly: Isaac Newton was born on 25 December 1642 in the Julian calendar then used in England, 4 January 1643 in today's calendar (content: `newton`).
 - **There is no year 0**: 1 BCE is followed by 1 CE. The rules say so, and gaps are computed correctly (tests).
 - Dates from other calendars (Chinese reign years, the Hijri calendar, the Maya Long Count) are converted to Common Era years by the cited sources; the game names the calendar only where the event is about it (`long-count`).
-- Era labels: English **BCE / CE** (recommended, owner question 2); every locale has its own template (§ 17.3).
+- Era labels: English **BCE / CE**, German **v. u. Z. / u. Z.** (owner decision 2026-10-26); every locale has its own template, with the neutral form where it is in common use and the school form otherwise (§ 17.3).
 
 ### 5.3 Display regimes (`formatDate`, § 17.3)
 
@@ -502,7 +502,26 @@ People are written in the conventional form of each language (transliterated whe
 - `date.about` "about {date}", `date.range` "{from}–{to}" (en dash), `date.atLeast` "at least {date}" (for minimum ages such as `sulawesi-art`, flag `minimum` in the data).
 - **Durations** ("about 300 years", gaps, distances): below 1 million `Intl.NumberFormat` with `style: 'unit', unit: 'year', unitDisplay: 'long'` (correct plurals in every locale) inside sentences where the duration is in the nominative ("Between them lie about {duration}."; de "Dazwischen liegen etwa {duration}."); from 1 million the template `duration.millions` "{n} years" with compact `n` (es "{n} de años").
 - Every number and date in `<bdi>`; formulas and the axis `dir="ltr"`.
-- **Era words per locale** (recommended, owner question 2): en BCE/CE; de v. Chr./n. Chr.; nl v.Chr./n.Chr.; es a. C./d. C.; fr av. J.-C./apr. J.-C.; it a.C./d.C.; pt a.C./d.C.; pl p.n.e./n.e.; ru до н. э./н. э.; uk до н. е./н. е.; tr MÖ/MS; ar ق.م/م; hi ई.पू./ई.; zh-Hans 公元前/公元; ja 紀元前/西暦; ko 기원전/서기. CE markers appear only below 1000 CE.
+- **Era words per locale** (owner decision 2026-10-26: the neutral form where it is in common use, else the usual school form). CE markers appear only below 1000 CE.
+
+  | Locale | BCE / CE | Form | Why |
+  |---|---|---|---|
+  | en | BCE / CE | neutral | owner decision |
+  | de | v. u. Z. / u. Z. | neutral | owner decision |
+  | nl | v.Chr. / n.Chr. | school | "v.g.j. / g.j." exists but is rare outside some textbooks |
+  | es | a. C. / d. C. | school | "a. e. c. / e. c." is rare; RAE and schools use a. C. |
+  | fr | av. J.-C. / apr. J.-C. | school | "AEC / EC" is used mainly in Quebec, rare in France |
+  | it | a.C. / d.C. | school | "a.e.v. / e.v." is rare |
+  | pt | a.C. / d.C. | school | "AEC / EC" is rare in Brazil and Portugal |
+  | pl | p.n.e. / n.e. | neutral | the standard form ("przed naszą erą") |
+  | ru | до н. э. / н. э. | neutral | the standard form ("до нашей эры") |
+  | uk | до н. е. / н. е. | neutral | the standard form ("до нашої ери") |
+  | tr | MÖ / MS (before the number) | school | "Milattan Önce / Sonra" is the standard; no neutral form in common use |
+  | ar | ق.م / م | school | "قبل الميلاد / ميلادي" is the standard; no neutral form in common use |
+  | hi | ई.पू. / ई. | school | "ईसा पूर्व / ईसवी" is the standard; "सामान्य युग" is rare outside academic texts |
+  | zh-Hans | 公元前 / 公元 (+ 年) | neutral | "公元" (common era) is the standard |
+  | ja | 紀元前 / 西暦 (+ 年) | neutral | the standard forms |
+  | ko | 기원전 / 서기 (+ 년) | neutral | the standard forms |
 - **Tests** render every event's date, range, every gap bucket label and every τ in all 16 locales and check: placeholders filled, no "NaN"/"undefined", digits only from `Intl`, en dash in ranges, `formatToParts` types (not glyphs).
 
 ### 17.4 RTL
@@ -513,8 +532,8 @@ Text and layout use logical properties; Arabic pages mirror the card column and 
 
 ## 18. Content and licence
 
-- 170 events (content § 2): deep 28, early 44, middle 44, modern 54; regions and categories balanced as in § 4; tiers 38 / 97 / 35; 136 points and 34 spans; 12 curated pairs.
-- **Verification:** 44 dates were checked on the web by the planner on 2026-10-26 (marked ✓ with the source used); 126 are standard reference dates from the cited works (○) and are re-checked by the implementer before release (content § 6). Records ("oldest known …") are on a yearly re-check list.
+- 178 events (content § 2; 170 planned plus 8 `history` events after the owner's decision on people): deep 28, early 47, middle 47, modern 56; tiers 42 / 101 / 35; 12 curated pairs; Europe 23 % of the human-history events; `history` 4.5 %.
+- **Verification:** 44 dates were checked on the web by the planner on 2026-10-26; the other 126 (○ in the plan) were re-checked by the implementer on 2026-10-26 against the cited reference articles (all now ✓ with the source used, content § 6); the 8 new events were checked when added. Records ("oldest known …") are on a yearly re-check list.
 - Rejected during research: Monte Verde (a 2026 study challenges its age), the Ishango bone (age disputed), White Sands footprints (still debated).
 - **Licence:** dates are facts; citations are bibliographic data; all wording is our own (project licence; non-en/de AI-assisted). Row for `docs/third-party.md`: Appendix A.
 
@@ -594,16 +613,16 @@ Each slow file stays under 50 % of its timeout under parallel load (the reviewer
 | Deep time feels arbitrary | Log scoring with the same proportion everywhere, shown in the rules; the Earth-day clock and the even view explain the scale |
 | The axis is too small on phones | Zoom, typed input, legend fallback for labels; whole modes work without the axis |
 | Translation volume (≈ 510 strings × 15) | Short sentences, dates via templates and `Intl`; owner may still choose an en+de preview (ADR 0003 amendment) if translations lag |
-| Name confusion with the card game "Timeline" | Distinct shown title (question 1) |
+| Name confusion with the card game "Timeline" | Distinct shown title (owner decision, § 23) |
 | Ordering by drag is fiddly on touch | Move buttons on every card; drag only by the handle |
 
 ---
 
-## 23. Open questions for the owner (max 3, each with a recommendation)
+## 23. Owner decisions (2026-10-26)
 
-1. **Title.** Recommended: **"Sense of Time" / "Zeitgefühl"** — it names the skill and avoids "Timeline", the title of a well-known commercial card game about ordering events (§ 2). Alternatives: "Time Scales" / "Zeitskalen", or "Timeline" / "Zeitstrahl" if you accept the resemblance in English. The id stays `timeline` either way.
-2. **Era labels.** Recommended: English **BCE / CE** (neutral, standard in science and international education) and in German **v. Chr. / n. Chr.** (the form German schools and media use); the other languages use their usual school forms (§ 17.3; Russian, Ukrainian, Polish, Chinese, Japanese and Korean are already neutral). Alternatives: English BC / AD; German "v. u. Z. / u. Z." (neutral, but less familiar).
-3. **Named people.** Recommended: keep **named people** where they make the event concrete (about 60 titles name a scientist, artist, writer, inventor or traveller such as Ibn Battuta, Hanaoka Seishū, Marie Curie, Frida Kahlo or Ramanujan; 9 events are lifetimes, which make good "same time?" questions) and only **four rulers**, each tied to a monument or a famous comparison (Cleopatra, the first Qin emperor, King Sejong, Ulugh Beg) — no religious founders, no war leaders, no living people as subjects. Alternative: no named individuals (the 9 lifetimes dropped and about 50 titles reworded anonymously, e.g. "Movable type made of baked clay is invented in China"), which is more neutral but less vivid and loses the lifetime comparisons.
+1. **Title:** English **"Sense of Time"**, German **"Zeitgefühl"**, the other locales as in § 2; "Timeline" is never shown; the id stays `timeline`.
+2. **Era labels:** German **"v. u. Z. / u. Z."**, English **"BCE / CE"**; the other locales use the neutral form where it is in common use, otherwise the school form (table in § 17.3).
+3. **People** (owner's words): "alle Personen, die es nachweislich gegeben hat, können genutzt werden, auch Kriegsherren (Alexander, Nero, Hitler etc.), Religion sollte keinen großen Fokus bekommen, sofern es nicht historisch sehr relevant und real ist. Lebende Personen ausschließen." — every person who demonstrably existed may be used, warlords included; religion gets no large focus unless historically very relevant and real; living people are excluded. Implemented with 8 sourced `history` events from several continents (content § 3a), worded factually; war and politics stay ≤ 10 % (4.5 %).
 
 ---
 
@@ -620,13 +639,31 @@ Each slow file stays under 50 % of its timeout under parallel load (the reviewer
 
 ---
 
+## 25. Implementation notes and deviations (2026-10-26)
+
+The implementation follows this plan; where it differs, the change and the reason:
+
+| Topic | Plan | Implemented | Why |
+|---|---|---|---|
+| Separated draw (§ 11.3) | random sample, test, retry | greedy seeded draw: shuffle the pool with a per-item sub-seed (`seed:index`), add events that keep the separation, retry up to 300 times | far fewer fallbacks with the same rule; still deterministic per seed. Simulation (1,000 seeds × 5 modes × 5 spans × 3 difficulties = 75,000 rounds, `generator.slow.test.ts`): fallback (1) in 0.01 % of rounds (only deep/medium and deep/hard order sets), fallbacks (2) and (3) never; gap question in 89 % of medium/hard "first" items; 0.11 ms per round |
+| Era bands on the axis (§ 12.3) | optional | not drawn; no era band names in the content | the axis already carries ticks, marks, ranges and labels; keeps phones readable |
+| "At least" dates (§ 17.3) | flag `minimum`, template `date.atLeast` | no flag; minimum ages are a range plus the wording of the note (`sulawesi-art`, `australia`) | one fewer data field and template; the range already scores fairly |
+| Typed "years ago" (§ 7.2) | not specified | counted back from the current calendar year (read by the view, clamped to 2026–2100, never by the rules); deep-past dates are still shown from 1950 | a person typing "500 years ago" means from today; the difference is far below every deep-past range |
+| Zoom limit (§ 12.1) | down to 0.01 decades | 0.01 decades, but always at least 20 years across (`minWidthAt`) | 0.01 decades is only a few months near today |
+| Tick labels (§ 12.2) | measured text | width estimated per character (`textWidth`) | no layout reads in the draw loop; generous spacing hides the error |
+| Generated ticks (§ 12.2) | multiples of 1, 2, 5 × 10ᵏ | the same, roundest first, none less than a tenth as round as the third-roundest candidate, never two ticks with one label, years ago only before 10,000 BCE | reviews showed "1876" between round years and repeated "12K ago" labels |
+| Category | six fields | plus `history` (rulers, wars, politics) | owner decision on people (§ 23) |
+| Bundle (§ 21) | game chunk ≤ 80 KB minified | 266 KB minified / 80 KB gzip; content chunks 31–80 KB minified, 14–20 KB gzip (non-Latin scripts are larger in UTF-8: hi 80 KB, ru/uk 58 KB) | all 16 UI catalogues travel in the game chunk, as in every other game of the catalogue (205–339 KB); `events.ts` with sources is 53 KB of source |
+
+Bugs found by the tests and fixed before release: marks were never added to the SVG (view test); generated ticks near 10,000 BCE repeated one label (view test, now a property test with the real formatter); typing a year left the check button marked unavailable until the card was drawn again (e2e).
+
 ## Appendix A — row for `docs/third-party.md` (ready to paste)
 
 ```markdown
-| *Sense of Time* events (170 dated events with ranges, categories and sources × 16 languages, `packages/games/timeline/src/events.ts` and `src/content/`) | Project license (written for Worthwhile Play; the dates are facts from the published sources cited per event — journal articles, museum and UNESCO pages, standard references; citations are bibliographic data; no third-party text, table or dataset file copied; non-en/de AI-assisted) | Events, notes, comparisons and source lists of *Sense of Time* |
+| *Sense of Time* events (178 dated events with ranges, categories and sources × 16 languages, `packages/games/timeline/src/events.ts` and `src/content/`) | Project license (written for Worthwhile Play; the dates are facts from the published sources cited per event — journal articles, museum and UNESCO pages, standard references, Wikipedia articles (dates re-checked 2026-10-26); citations are bibliographic data; no third-party text, table or dataset file copied; non-en/de AI-assisted) | Events, notes, comparisons and source lists of *Sense of Time* |
 ```
 
-(The title in the row follows the owner's decision on question 1.)
+(Pasted into `docs/third-party.md` with the owner's title.)
 
 ---
 

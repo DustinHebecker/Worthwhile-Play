@@ -83,6 +83,11 @@
 .wp-timeline .tl-handle { cursor: grab; touch-action: none; font-size: 1.2rem; }
 .wp-timeline .tl-pos { font-weight: 700; min-inline-size: 1.4em; text-align: center; }
 .wp-timeline .tl-moves { display: flex; gap: 0.25rem; }
+/* Phones: the move buttons go under the title, so the title keeps most of the width. */
+@media (max-width: 30rem) {
+  .wp-timeline .tl-order-card { grid-template-columns: auto auto minmax(0, 1fr); }
+  .wp-timeline .tl-moves { grid-column: 3; justify-content: flex-end; }
+}
 .wp-timeline .tl-sub { margin-block-start: 0.3rem; }
 
 /* The timeline (always left to right). */

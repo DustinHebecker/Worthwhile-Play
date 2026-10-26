@@ -103,6 +103,9 @@ describe('ticks (design § 12.2)', () => {
     // Roundest values first: on a century at 600 px, every tick is a multiple of ten years.
     expect(ticks.every((t) => t.y % 10 === 0 && !t.ago)).toBe(true);
     expect(ticks.some((t) => t.y === 1500 || t.y === 1400)).toBe(true);
+    // Never an odd value next to round ones (a review window 1560–1940 showed "1876").
+    const review = generatedTicks(clampWindow({ lo: u(1940), hi: u(1560) }), 'log', 625, label, width);
+    expect(review.every((t) => t.y % 10 === 0)).toBe(true);
     const deep = generatedTicks(clampWindow({ lo: u(1950 - 70e6), hi: u(1950 - 60e6) }), 'log', 600, label, width);
     expect(deep.every((t) => t.ago)).toBe(true);
   });

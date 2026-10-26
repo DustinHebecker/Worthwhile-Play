@@ -131,7 +131,8 @@ export function chooseTicks(w: Window, view: AxisView, px: number, label: (t: Ti
 
 /**
  * Ticks at multiples of 1, 2, 5 × 10^k years (calendar years from 10,000 BCE on, else years ago): candidates on the
- * finest step that gives at most 200 of them, taken roundest first while their labels stay apart.
+ * finest step that gives at most 200 of them, taken roundest first while their labels stay apart, and none less than a
+ * tenth as round as the third-roundest candidate.
  */
 export function generatedTicks(w: Window, view: AxisView, px: number, label: (t: Tick) => string, widthOf: (s: string) => number, minGap = 56): Tick[] {
   const [l, r] = windowYears(w);
@@ -152,8 +153,11 @@ export function generatedTicks(w: Window, view: AxisView, px: number, label: (t:
     }
   }
   cands.sort((p, q) => q.round - p.round || p.t.y - q.t.y);
+  // Only values at most ten times less round than the third-roundest ("1880" next to "1900", never "1876").
+  const minRound = (cands[Math.min(2, cands.length - 1)]?.round ?? 1) / 10;
   const chosen: Tick[] = [];
-  for (const { t } of cands) {
+  for (const { t, round } of cands) {
+    if (round < minRound) break;
     const x = xOf(t.y, w, view) * px;
     const text = label(t);
     const half = widthOf(text) / 2;
