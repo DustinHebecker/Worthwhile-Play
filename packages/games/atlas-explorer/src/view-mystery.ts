@@ -13,14 +13,14 @@ import type { MysteryItem } from './state';
 import { boxAround, describePoint, exploreBox, exploreMarker } from './view-common';
 import type { Host, Screen } from './view-host';
 
-/** The sentence of one clue. */
-export function clueText(host: Host, clue: Clue): string {
+/** The sentence of one clue; `mostly`: the target lies mostly in its region (transcontinental, design § 8.2). */
+export function clueText(host: Host, clue: Clue, mostly = false): string {
   const { ui } = host;
   const t = ui.t;
   const { id, arg } = clue;
   switch (id) {
     case 'region':
-      return t(`clue.region.${arg}`);
+      return t(mostly ? `clue.regionMostly.${arg}` : `clue.region.${arg}`);
     case 'sub':
       return t('clue.sub', { sub: ui.sub(arg) });
     case 'ns':
@@ -90,14 +90,14 @@ export function mysteryScreen(host: Host, item: MysteryItem): Screen {
 
   // Clues.
   const clues = h('ol', { class: 'ae-clues', 'data-testid': 'ae-clues' });
-  item.clues.slice(0, review ? item.clues.length : item.shown).forEach((k, i) => clues.append(h('li', { 'data-testid': `ae-clue-${i}` }, clueText(host, k), review ? h('span', { class: 'ae-check-mark' }, ' ✓') : '')));
+  item.clues.slice(0, review ? item.clues.length : item.shown).forEach((k, i) => clues.append(h('li', { 'data-testid': `ae-clue-${i}` }, clueText(host, k, target.mostly), review ? h('span', { class: 'ae-check-mark' }, ' ✓') : '')));
   card.push(h('h3', { class: 'ae-sub' }, t('mystery.clues')), clues);
 
   if (!review) {
     card.push(h('p', { class: 'ae-muted', 'data-testid': 'ae-clue-count' }, t('mystery.shown', { n: ui.int(item.shown), total: ui.int(item.clues.length) })));
     if (item.shown < item.clues.length) {
       const more = h('button', { type: 'button', class: 'ae-secondary', 'data-testid': 'ae-next-clue' }, t('mystery.nextClue'));
-      more.addEventListener('click', () => !host.paused() && host.commit(nextClue(host.state()), 'ae-next-clue', clueText(host, item.clues[item.shown]!)));
+      more.addEventListener('click', () => !host.paused() && host.commit(nextClue(host.state()), 'ae-next-clue', clueText(host, item.clues[item.shown]!, target.mostly)));
       card.push(more);
     }
     card.push(...guessControls(host, item));

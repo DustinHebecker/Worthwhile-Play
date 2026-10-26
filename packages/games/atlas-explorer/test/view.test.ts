@@ -221,4 +221,15 @@ describe('Atlas Explorer view', () => {
     g.click('ae-skip');
     expect(g.phase()).toBe('compare-review');
   });
+
+  it('says "mostly" in the region clue of a transcontinental country', () => {
+    const g = setup('mystery');
+    const s = g.state();
+    const turkey: MysteryItem = { kind: 'mystery', target: 'TR', clues: [{ id: 'region', arg: 'asia' }, { id: 'nb', arg: 'GR' }, { id: 'nb', arg: 'GE' }], shown: 1, guesses: [], draft: null, end: null };
+    g.instance.restore({ ...s, items: [turkey, ...s.items.slice(1)] });
+    expect(g.el('ae-clue-0')?.textContent).toBe('It lies mostly in Asia.');
+    const peru: MysteryItem = { ...turkey, target: 'PE', clues: [{ id: 'region', arg: 'americas' }, { id: 'nb', arg: 'BO' }, { id: 'nb', arg: 'EC' }] };
+    g.instance.restore({ ...s, items: [peru, ...s.items.slice(1)] });
+    expect(g.el('ae-clue-0')?.textContent).toBe('It lies in the Americas.');
+  });
 });

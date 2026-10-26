@@ -3770,6 +3770,6 @@
   "output": {
     "file": "src/data/atlas.gen.ts",
     "bytes": 152225,
-    "sha256": "e741714016baa3d0e2c23d7061903f9adebe8fff855682cc729d5bd1fc584cca"
+    "sha256": "7e7cb2bd09db22b4d39c8958f7b66cace37894d614b0cfa28a20c006637e353c"
   }
 }

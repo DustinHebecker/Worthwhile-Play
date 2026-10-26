@@ -55,7 +55,7 @@
   "notCountryTypes": ["Dependency", "Lease", "Indeterminate"],
   "homeUnits": ["SOP", "TZZ", "PNB", "HKG", "MAC", "ALD", "KAB"],
   "noRegionClue": ["RU", "GE", "AZ", "AM", "CY"],
-  "mostlyIn": ["TR", "KZ", "EG", "ID", "PA"],
+  "mostlyIn": ["TR", "KZ", "EG", "ID"],
   "countryTiers": {
     "1": ["AR", "AU", "BR", "CA", "CL", "CN", "CO", "DE", "EG", "ES", "FR", "GB", "GR", "IN", "IT", "JP", "KE", "MA", "MX", "NG", "NO", "NZ", "PE", "PL", "PT", "RU", "SA", "SE", "TR", "UA", "US", "ZA", "ID", "IE", "IS", "FI", "CH", "NL", "AT", "TH", "VN", "KR", "IR", "PK", "DZ", "LY", "ET", "CU", "VE", "MN", "KZ", "PH", "MG", "BO"]
   },
