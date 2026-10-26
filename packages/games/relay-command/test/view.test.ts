@@ -678,7 +678,7 @@ describe('Relay Command view', () => {
     expect($('rc-setup-summary').textContent).toContain(`Random map 24×16 · No. ${first.seed}`);
   });
 
-  it('a random map for two or three opponents has four bases, one per corner; one opponent goes back to two sides; the editor starts blank on it', () => {
+  it('a random map for two or three opponents has four bases, one per corner; one opponent goes back to two sides; the editor opens on it', () => {
     const scenario = $('rc-scenario') as HTMLSelectElement;
     scenario.value = 'random';
     scenario.dispatchEvent(new Event('change'));
@@ -700,10 +700,9 @@ describe('Relay Command view', () => {
     opponents.dispatchEvent(new Event('change'));
     expect(state().map).toEqual(four);
     expect(state().world.entities.some((e) => e.side === NEUTRAL && e.kind === 'command-post')).toBe(true);
-    // The map editor has no four-base maps yet: it starts from an empty map.
+    // The map editor opens on the four-base map being played (four-base maps in the editor, 2026-10-24).
     click('rc-editor-open');
-    expect(state().edit!.map.seats).toBeUndefined();
-    expect(state().edit!.map.units).toEqual([]);
+    expect(state().edit!.map).toEqual(four);
     click('ed-close');
     opponents.value = '1';
     opponents.dispatchEvent(new Event('change'));
@@ -1103,6 +1102,41 @@ describe('Relay Command map editor', () => {
     expect([...($('rc-scenario') as HTMLSelectElement).options].map((o) => o.textContent)).toContain('Duel');
     click('rc-lock');
     expect($('rc-setup-summary').textContent).toContain('Duel');
+  });
+
+  it('four bases: the editor makes a map with a base in each corner (mirrored four ways), names the bases A to D and plays it with three opponents', async () => {
+    click('rc-editor-open');
+    await settle();
+    const bases = $('ed-bases') as HTMLSelectElement;
+    expect(bases.value).toBe('2');
+    bases.value = '4';
+    bases.dispatchEvent(new Event('change'));
+    expect(state().edit!.map.seats).toBe(4);
+    expect(['ed-side-0', 'ed-side-1', 'ed-side-2', 'ed-side-3'].map((id) => $(id).textContent)).toEqual(['Base A (you, blue)', 'Base B', 'Base C', 'Base D']);
+    click('ed-tool-command-post');
+    moveTo(2, 9);
+    edKey('Enter');
+    click('ed-tool-rifles');
+    moveTo(3, 9);
+    edKey('Enter');
+    expect(state().edit!.map.units.filter((u) => u.kind === 'command-post').map((u) => u.side).sort()).toEqual([0, 1, 2, 3]);
+    expect($('ed-ok').textContent).toBe('Ready to play.');
+    expect($('ed-fair').textContent).toBe('Mirrored both ways: every base starts equal.');
+    moveTo(13, 2);
+    expect($('ed-cursor').textContent).toBe('Cell 14, 3: open ground · Base C: Command Post');
+    click('ed-play');
+    expect(state().map!.seats).toBe(4);
+    expect(state().opponents).toBe(3);
+    expect(state().world.sides).toBe(4);
+    expect([...($('rc-opponents') as HTMLSelectElement).options].map((o) => o.value)).toEqual(['1', '2', '3']);
+    expect($('rc-teams-label').hidden).toBe(false);
+    // The editor opens on the four-base map being played; back to two bases drops bases C and D.
+    click('rc-editor-open');
+    expect(state().edit!.map.seats).toBe(4);
+    ($('ed-bases') as HTMLSelectElement).value = '2';
+    $('ed-bases').dispatchEvent(new Event('change'));
+    expect(state().edit!.map.seats).toBeUndefined();
+    expect(state().edit!.map.units.every((u) => u.side < 2)).toBe(true);
   });
 
   it('places plain, rich and endless deposits; on a deposit the tool sets its size; the cell tells which', async () => {
