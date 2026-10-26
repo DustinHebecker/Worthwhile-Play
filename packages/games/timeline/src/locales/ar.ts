@@ -67,7 +67,6 @@ export const ar: TimelineMessages = {
   'when.tooRecentBy': 'أحدث مما ينبغي بنحو {duration}.',
   'when.tooOldBy': 'أقدم مما ينبغي بنحو {duration}.',
   'when.range': 'النطاق المقبول هو {range}.',
-  'when.span': 'أي سنة ضمن {range} تُحسب صحيحة.',
   'when.exact': 'التاريخ: {date}.',
   'when.skipped': 'تم التخطي — هذا موضعه.',
   'review.heading': 'موضعه',

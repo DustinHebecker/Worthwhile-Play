@@ -67,7 +67,6 @@ export const tr: TimelineMessages = {
   'when.tooRecentBy': 'Yaklaşık {duration} fazla yakın.',
   'when.tooOldBy': 'Yaklaşık {duration} fazla geride.',
   'when.range': 'Kabul edilen aralık: {range}.',
-  'when.span': '{range} içindeki her yıl doğru sayılır.',
   'when.exact': 'Tarih: {date}.',
   'when.skipped': 'Atlandı – yeri burası.',
   'review.heading': 'Yeri',

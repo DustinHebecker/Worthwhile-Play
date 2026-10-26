@@ -67,7 +67,6 @@ export const ja: TimelineMessages = {
   'when.tooRecentBy': '約{duration}新しすぎます。',
   'when.tooOldBy': '約{duration}古すぎます。',
   'when.range': '認められた範囲は{range}です。',
-  'when.span': '{range}のどの年でも正解です。',
   'when.exact': '日付：{date}。',
   'when.skipped': 'スキップしました — ここが本当の位置です。',
   'review.heading': '本当の位置',

@@ -127,7 +127,8 @@ export function whenScreen(host: Host, item: WhenItem): Screen {
   card.push(ui.heading('h3', 'tl-review-heading', t('review.heading')), verdict);
   if (typeof item.answer === 'number') card.push(h('p', { 'data-testid': 'tl-your-answer' }, ui.rich('when.answerIs', { date: ui.year(item.answer) })));
   card.push(h('p', { 'data-testid': 'tl-date' }, ui.rich('when.exact', { date: ui.when(item.event) })));
-  if (e.lo !== e.hi) card.push(h('p', { 'data-testid': 'tl-range-line' }, ui.rich(e.data.kind === 'span' ? 'when.span' : 'when.range', { range: ui.range(e.lo, e.hi) })));
+  // A span's date already is its range; an approximate point also shows the range that counts.
+  if (e.lo !== e.hi && e.data.kind !== 'span') card.push(h('p', { 'data-testid': 'tl-range-line' }, ui.rich('when.range', { range: ui.range(e.lo, e.hi) })));
   card.push(ui.about([item.event], 'review.about'), h('div', { class: 'tl-actions tl-sticky' }, host.nextButton()));
   const marks: AxisMark[] = [...anchors, { y: e.y, symbol: '●', label: `${title}, ${ui.when(item.event)}`, style: 'target' }];
   if (typeof item.answer === 'number') marks.push({ y: item.answer, symbol: '◆', label: t('when.yourAnswer'), style: 'guess' });

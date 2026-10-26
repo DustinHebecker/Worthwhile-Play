@@ -67,7 +67,6 @@ export const ko: TimelineMessages = {
   'when.tooRecentBy': '약 {duration} 늦게 놓았습니다.',
   'when.tooOldBy': '약 {duration} 이르게 놓았습니다.',
   'when.range': '인정 범위는 {range}입니다.',
-  'when.span': '{range} 사이의 어느 해든 정답입니다.',
   'when.exact': '날짜: {date}.',
   'when.skipped': '건너뜀 — 여기가 제자리입니다.',
   'review.heading': '제자리',

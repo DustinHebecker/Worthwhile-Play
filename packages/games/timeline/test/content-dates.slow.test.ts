@@ -31,7 +31,7 @@ describe('review texts of every event in all 16 locales', () => {
           range,
           ui.clock(e.y),
           ui.rich('when.exact', { date: when }).textContent!,
-          ui.rich(e.data.kind === 'span' ? 'when.span' : 'when.range', { range }).textContent!,
+          ui.rich('when.range', { range }).textContent!,
           ui.about([e.id], 'review.about').textContent!
         ];
         for (const s of texts) {

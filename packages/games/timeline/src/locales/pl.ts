@@ -67,7 +67,6 @@ export const pl: TimelineMessages = {
   'when.tooRecentBy': 'Mniej więcej {duration} za późno.',
   'when.tooOldBy': 'Mniej więcej {duration} za wcześnie.',
   'when.range': 'Przyjęty przedział to {range}.',
-  'when.span': 'Liczy się każdy rok z okresu {range}.',
   'when.exact': 'Data: {date}.',
   'when.skipped': 'Pominięte – tu jest jego miejsce.',
   'review.heading': 'Gdzie to leży',

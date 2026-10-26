@@ -66,7 +66,6 @@ export const en = {
   'when.tooRecentBy': 'About {duration} too recent.',
   'when.tooOldBy': 'About {duration} too far back.',
   'when.range': 'The accepted range is {range}.',
-  'when.span': 'It lasted from {range}.',
   'when.exact': 'The date: {date}.',
   'when.skipped': 'Skipped — here is where it belongs.',
   'review.heading': 'Where it fits',

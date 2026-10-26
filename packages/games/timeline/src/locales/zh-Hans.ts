@@ -67,7 +67,6 @@ export const zhHans: TimelineMessages = {
   'when.tooRecentBy': '晚了约{duration}。',
   'when.tooOldBy': '早了约{duration}。',
   'when.range': '公认范围是{range}。',
-  'when.span': '{range}之间的任何一年都算对。',
   'when.exact': '日期：{date}。',
   'when.skipped': '已跳过——它在这里。',
   'review.heading': '它的位置',

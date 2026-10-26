@@ -67,7 +67,6 @@ export const hi: TimelineMessages = {
   'when.tooRecentBy': 'लगभग {duration} ज़्यादा नया।',
   'when.tooOldBy': 'लगभग {duration} ज़्यादा पुराना।',
   'when.range': 'मान्य सीमा {range} है।',
-  'when.span': '{range} का कोई भी वर्ष सही गिना जाएगा।',
   'when.exact': 'तारीख: {date}।',
   'when.skipped': 'छोड़ा गया — इसकी जगह यह है।',
   'review.heading': 'इसकी जगह',

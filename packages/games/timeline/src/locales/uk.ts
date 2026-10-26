@@ -67,7 +67,6 @@ export const uk: TimelineMessages = {
   'when.tooRecentBy': 'Приблизно на {duration} пізніше, ніж було.',
   'when.tooOldBy': 'Приблизно на {duration} раніше, ніж було.',
   'when.range': 'Прийнятий інтервал: {range}.',
-  'when.span': 'Зараховується будь-який рік у межах {range}.',
   'when.exact': 'Дата: {date}.',
   'when.skipped': 'Пропущено — ось де це місце.',
   'review.heading': 'Де це на шкалі',

@@ -67,7 +67,6 @@ export const nl: TimelineMessages = {
   'when.tooRecentBy': 'Ongeveer {duration} te recent.',
   'when.tooOldBy': 'Ongeveer {duration} te ver terug.',
   'when.range': 'Het geaccepteerde bereik is {range}.',
-  'when.span': 'Elk jaar van {range} telt.',
   'when.exact': 'De datum: {date}.',
   'when.skipped': 'Overgeslagen – hier hoort het.',
   'review.heading': 'Waar het hoort',
