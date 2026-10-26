@@ -81,13 +81,17 @@ test('fermi-lab: field, stepper, slider keys and ×2/÷2 stay in step and the sa
     ID,
     async (p) => {
       const r = root(p);
-      await r.getByTestId('fl-est-input').fill('3');
-      for (let i = 0; i < 3; i++) await r.getByTestId('fl-est-exp-plus').click();
-      await expect(r.getByTestId('fl-est-value')).toHaveAttribute('data-value', '3000');
-      // Arrow keys on the slider move in 0.05-decade steps; the field and the stepper follow.
+      // A value in the middle of this question's slider window (the window depends on the drawn task).
       const slider = r.getByTestId('fl-est-slider');
+      const k = Math.round(Number(await slider.getAttribute('min'))) + 5;
+      const target = 3 * 10 ** k;
+      await r.getByTestId('fl-est-input').fill('3');
+      const step = r.getByTestId(k >= 0 ? 'fl-est-exp-plus' : 'fl-est-exp-minus');
+      for (let i = 0; i < Math.abs(k); i++) await step.click();
+      await expect.poll(async () => Math.abs(Number(await r.getByTestId('fl-est-value').getAttribute('data-value')) / target - 1)).toBeLessThan(1e-9);
+      // Arrow keys on the slider move in 0.05-decade steps; the field and the stepper follow.
       const pos = Number(await slider.inputValue());
-      expect(Math.abs(pos - Math.log10(3000))).toBeLessThanOrEqual(0.025);
+      expect(Math.abs(pos - Math.log10(target))).toBeLessThanOrEqual(0.025);
       await slider.focus();
       await p.keyboard.press('ArrowRight');
       await p.keyboard.press('ArrowRight');
