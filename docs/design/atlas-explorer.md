@@ -33,7 +33,7 @@ No game shows a map yet. Nothing in the catalogue covers latitude, scale, great-
 
 ### 1.3 Optional shared changes (report to the orchestrator; not needed for the MVP)
 
-1. **Mutation targets.** `stryker.config.json` mutates only `games/*/src/rules.ts` and `ai.ts`. The important logic here lives in `src/geo.ts`, `src/atlas.ts`, `src/compare.ts`, `src/clues.ts`, `src/route.ts`, `src/generate.ts` and `src/build/*.ts` (four to seven `mutate` lines, orchestrator-owned). Never `src/data/atlas.gen.ts`.
+1. **Mutation targets.** `stryker.config.json` mutates only `games/*/src/rules.ts` and `ai.ts`. The important logic here lives in `src/geo.ts`, `src/atlas.ts`, `src/compare.ts`, `src/clues.ts`, `src/route.ts`, `src/generate.ts` and `src/build/*.ts` (four to seven `mutate` lines, orchestrator-owned). Never `src/data/atlas.gen.ts`. *Done:* these seven `mutate` lines are in `stryker.config.json`.
 2. **A shared atlas package later.** The spec says geographic content "should be data-driven and reusable by multiple games". The MVP keeps the data in the game package, but `src/data/`, `src/geo.ts`, `src/atlas.ts` and `src/build/` import nothing game-specific, so they can move verbatim to an orchestrator-owned `@wp/atlas` when a second consumer appears (e.g. Memory "country → map position", spec § Geography).
 3. **Skills.** The game uses `spatial`, `learning` and `deduction` (§ 2). No new skill is needed.
 
