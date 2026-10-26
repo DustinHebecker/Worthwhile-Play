@@ -1,6 +1,9 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { FULL, TICK_CATALOGUE, minWidthAt, chooseTicks, clampWindow, fitYears, generatedTicks, layoutLabels, pan, windowYears, xOf, yearAt, zoomAt, type AxisView, type Tick, type Window } from '../src/axis';
+import { COMMON_MESSAGES, createTranslator } from '@wp/localization';
+import { formatTick } from '../src/format';
+import { messages } from '../src/messages';
 import { U_MAX, U_MIN, u } from '../src/time';
 
 const views: AxisView[] = ['log', 'linear'];
@@ -102,6 +105,21 @@ describe('ticks (design § 12.2)', () => {
     expect(ticks.some((t) => t.y === 1500 || t.y === 1400)).toBe(true);
     const deep = generatedTicks(clampWindow({ lo: u(1950 - 70e6), hi: u(1950 - 60e6) }), 'log', 600, label, width);
     expect(deep.every((t) => t.ago)).toBe(true);
+  });
+
+  it('counts years ago only before 10,000 BCE and never repeats a label (real formatter, regime boundary)', () => {
+    const t = createTranslator({ locale: 'en', sources: [messages, COMMON_MESSAGES] });
+    const real = (tk: Tick) => formatTick(tk.y, tk.ago, t, 'en');
+    const across = clampWindow({ lo: u(1950 - 13_000), hi: u(-8000) });
+    const ticks = chooseTicks(across, 'log', 640, real, width);
+    expect(ticks.every((tk) => tk.ago === tk.y < -9999)).toBe(true);
+    fc.assert(
+      fc.property(windowArb, fc.constantFrom(...views), fc.integer({ min: 300, max: 1200 }), (w, v, px) => {
+        const labels = chooseTicks(w, v, px, real, width).map(real);
+        return new Set(labels).size === labels.length;
+      }),
+      { numRuns: 300 }
+    );
   });
 });
 

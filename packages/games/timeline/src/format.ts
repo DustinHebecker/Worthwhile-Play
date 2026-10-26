@@ -32,8 +32,8 @@ export const int = (n: number, locale: string): string => nf(locale, { maximumFr
 export const sig = (n: number, locale: string, digits = 3): string => nf(locale, { maximumSignificantDigits: digits }).format(n);
 /** Compact long form of a large number ("66 million", "66 Millionen", "6600万"), ≤ 4 significant digits. */
 export const compactLong = (n: number, locale: string): string => nf(locale, { notation: 'compact', compactDisplay: 'long', maximumSignificantDigits: 4 }).format(n);
-/** Compact short form for tick labels ("100K", "1 Mio.", "10万"). */
-export const compactShort = (n: number, locale: string): string => nf(locale, { notation: 'compact', compactDisplay: 'short', maximumSignificantDigits: 2 }).format(n);
+/** Compact short form for tick labels ("100K", "12.5K", "1 Mio.", "10万"), ≤ 3 significant digits. */
+export const compactShort = (n: number, locale: string): string => nf(locale, { notation: 'compact', compactDisplay: 'short', maximumSignificantDigits: 3 }).format(n);
 
 /** Years before 1950 of a deep-past year, rounded for display: 4 significant digits, at least to tens. */
 const agoOf = (y: number): number => roundSig(BP_YEAR - y, 4);

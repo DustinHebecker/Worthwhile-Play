@@ -219,6 +219,7 @@ export function createAxisView(o: AxisOptions, initialView: AxisView = 'log'): A
         g.appendChild(el('line', { x1: x, y1: ty + 3, x2: x, y2: AXIS_Y - 8, class: 'tl-leader' }));
         g.appendChild(el('text', { x: left, y: ty, class: 'tl-mark-label' }, `${m.symbol} ${m.label}`));
       } else legend.appendChild(h('li', {}, `${m.symbol} ${m.label}`));
+      svg.appendChild(g);
     });
     // Marks outside the window are listed too, so nothing is lost when zoomed in.
     for (const m of scene.marks ?? []) if (!marks.includes(m)) legend.appendChild(h('li', { class: 'tl-off' }, `${m.symbol} ${m.label} (${X(m.y) < 0 ? '◀' : '▶'})`));

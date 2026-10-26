@@ -116,9 +116,10 @@ export function chooseTicks(w: Window, view: AxisView, px: number, label: (t: Ti
   };
   const fits = (chosen: readonly Tick[], t: Tick) => {
     const x = xOf(t.y, w, view) * px;
-    const half = widthOf(label(t)) / 2;
-    // Labels at the ends are shifted inside when drawn, so only the spacing counts.
-    return chosen.every((c) => Math.abs(xOf(c.y, w, view) * px - x) >= Math.max(minGap, half + widthOf(label(c)) / 2 + 8));
+    const text = label(t);
+    const half = widthOf(text) / 2;
+    // Labels at the ends are shifted inside when drawn, so only the spacing counts; two ticks never share a label.
+    return chosen.every((c) => label(c) !== text && Math.abs(xOf(c.y, w, view) * px - x) >= Math.max(minGap, half + widthOf(label(c)) / 2 + 8));
   };
   const chosen: Tick[] = [];
   for (const level of [0, 1, 2]) for (const t of TICK_CATALOGUE) if (t.level === level && visible(t) && fits(chosen, t)) chosen.push(t);
@@ -134,25 +135,29 @@ export function chooseTicks(w: Window, view: AxisView, px: number, label: (t: Ti
  */
 export function generatedTicks(w: Window, view: AxisView, px: number, label: (t: Tick) => string, widthOf: (s: string) => number, minGap = 56): Tick[] {
   const [l, r] = windowYears(w);
-  const ago = l < -9999;
-  // Values counted in years ago (from 1950) or calendar years.
-  const [a, b] = ago ? [1950 - r, 1950 - l] : [l, r];
   const steps: number[] = [];
   for (let k = 0; k <= 10; k++) for (const m of [1, 2, 5]) steps.push(m * 10 ** k);
-  const step = steps.find((s) => (b - a) / s <= 200) ?? steps[steps.length - 1]!;
   const cands: { t: Tick; round: number }[] = [];
-  for (let v = Math.ceil(a / step) * step; v <= b; v += step) {
-    if (v === 0 || (ago && v <= 0)) continue;
-    let round = step;
-    for (const s of steps) if (s > step && v % s === 0) round = s;
-    cands.push({ t: { y: ago ? 1950 - v : v, level: 3, ago }, round });
+  // The part before 10,000 BCE is counted in years ago (from 1950), the rest in calendar years.
+  const parts: [number, number, boolean][] = [];
+  if (l < -9999) parts.push([1950 - Math.min(r, -10_000), 1950 - l, true]);
+  if (r >= -9999) parts.push([Math.max(l, -9999), r, false]);
+  for (const [a, b, ago] of parts) {
+    const step = steps.find((s) => (b - a) / s <= 200) ?? steps[steps.length - 1]!;
+    for (let v = Math.ceil(a / step) * step; v <= b; v += step) {
+      if (v === 0 || (ago && v <= 0)) continue;
+      let round = step;
+      for (const s of steps) if (s > step && v % s === 0) round = s;
+      cands.push({ t: { y: ago ? 1950 - v : v, level: 3, ago }, round });
+    }
   }
   cands.sort((p, q) => q.round - p.round || p.t.y - q.t.y);
   const chosen: Tick[] = [];
   for (const { t } of cands) {
     const x = xOf(t.y, w, view) * px;
-    const half = widthOf(label(t)) / 2;
-    if (chosen.every((c) => Math.abs(xOf(c.y, w, view) * px - x) >= Math.max(minGap, half + widthOf(label(c)) / 2 + 8))) chosen.push(t);
+    const text = label(t);
+    const half = widthOf(text) / 2;
+    if (chosen.every((c) => label(c) !== text && Math.abs(xOf(c.y, w, view) * px - x) >= Math.max(minGap, half + widthOf(label(c)) / 2 + 8))) chosen.push(t);
     if (chosen.length >= 40) break;
   }
   return chosen.sort((p, q) => p.y - q.y);
