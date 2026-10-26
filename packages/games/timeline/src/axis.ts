@@ -17,14 +17,22 @@ export interface Window {
 export const MIN_WIDTH = 0.01;
 export const FULL: Window = { lo: U_MIN, hi: U_MAX };
 
+/** The narrowest window starting at `lo`: 0.01 decades, and at least 20 years across (near today). */
+export const minWidthAt = (lo: number): number => Math.max(MIN_WIDTH, Math.log10(1 + 20 / 10 ** lo));
+
 /** Clamps a window into the scale and to the minimum width, keeping its width where possible. */
 export function clampWindow(w: Window): Window {
-  let width = Math.min(FULL.hi - FULL.lo, Math.max(MIN_WIDTH, w.hi - w.lo));
-  if (!Number.isFinite(width)) width = FULL.hi - FULL.lo;
+  const full = FULL.hi - FULL.lo;
+  let width = Number.isFinite(w.hi - w.lo) ? Math.min(full, w.hi - w.lo) : full;
   let lo = Number.isFinite(w.lo) ? w.lo : FULL.lo;
-  if (w.hi - w.lo < MIN_WIDTH) lo = (w.lo + w.hi) / 2 - width / 2;
+  const min = minWidthAt(Math.max(FULL.lo, lo));
+  if (width < min) {
+    lo = (Number.isFinite(w.hi) ? (w.lo + w.hi) / 2 : lo) - min / 2;
+    width = min;
+  }
   lo = Math.max(FULL.lo, Math.min(FULL.hi - width, lo));
-  return { lo, hi: lo + width };
+  width = Math.max(width, minWidthAt(lo));
+  return { lo, hi: Math.min(FULL.hi, lo + width) };
 }
 
 /** The window's ends as years: [left (oldest), right (newest)]. */
@@ -49,7 +57,7 @@ export function zoomAt(w: Window, x: number, factor: number, view: AxisView): Wi
   if (!(factor > 0) || !Number.isFinite(factor)) return w;
   if (view === 'log') {
     const at = w.hi - x * (w.hi - w.lo);
-    const width = Math.min(FULL.hi - FULL.lo, Math.max(MIN_WIDTH, (w.hi - w.lo) / factor));
+    const width = Math.min(FULL.hi - FULL.lo, (w.hi - w.lo) / factor);
     return clampWindow({ lo: at - (1 - x) * width, hi: at + x * width });
   }
   const [l, r] = windowYears(w);
@@ -57,9 +65,7 @@ export function zoomAt(w: Window, x: number, factor: number, view: AxisView): Wi
   const span = (r - l) / factor;
   const nl = at - x * span;
   const nr = Math.min(AXIS_YEAR - 10, nl + span);
-  const hi = Math.log10(age(nl));
-  const lo = Math.log10(age(nr));
-  return clampWindow(hi - lo < MIN_WIDTH ? { lo: (lo + hi) / 2 - MIN_WIDTH / 2, hi: (lo + hi) / 2 + MIN_WIDTH / 2 } : { lo, hi });
+  return clampWindow({ lo: Math.log10(age(nr)), hi: Math.log10(age(nl)) });
 }
 
 /** Pans by `dx` of the axis width (positive = towards the present). */
@@ -111,7 +117,7 @@ export function chooseTicks(w: Window, view: AxisView, px: number, label: (t: Ti
   const fits = (chosen: readonly Tick[], t: Tick) => {
     const x = xOf(t.y, w, view) * px;
     const half = widthOf(label(t)) / 2;
-    if (x - half < -px * 0.02 || x + half > px * 1.02) return false;
+    // Labels at the ends are shifted inside when drawn, so only the spacing counts.
     return chosen.every((c) => Math.abs(xOf(c.y, w, view) * px - x) >= Math.max(minGap, half + widthOf(label(c)) / 2 + 8));
   };
   const chosen: Tick[] = [];
@@ -122,27 +128,34 @@ export function chooseTicks(w: Window, view: AxisView, px: number, label: (t: Ti
   return chosen.sort((p, q) => p.y - q.y);
 }
 
-/** Ticks at multiples of 1, 2, 5 × 10^k years (calendar years from 10,000 BCE on, else years ago). */
+/**
+ * Ticks at multiples of 1, 2, 5 × 10^k years (calendar years from 10,000 BCE on, else years ago): candidates on the
+ * finest step that gives at most 200 of them, taken roundest first while their labels stay apart.
+ */
 export function generatedTicks(w: Window, view: AxisView, px: number, label: (t: Tick) => string, widthOf: (s: string) => number, minGap = 56): Tick[] {
   const [l, r] = windowYears(w);
   const ago = l < -9999;
+  // Values counted in years ago (from 1950) or calendar years.
+  const [a, b] = ago ? [1950 - r, 1950 - l] : [l, r];
   const steps: number[] = [];
   for (let k = 0; k <= 10; k++) for (const m of [1, 2, 5]) steps.push(m * 10 ** k);
-  for (const step of steps) {
-    const ticks: Tick[] = [];
-    if (ago) {
-      const a0 = Math.ceil((1950 - r) / step) * step;
-      for (let a = a0; 1950 - a >= l && ticks.length < 60; a += step) if (a > 0) ticks.push({ y: 1950 - a, level: 3, ago: true });
-    } else {
-      const y0 = Math.ceil(l / step) * step;
-      for (let y = y0; y <= r && ticks.length < 60; y += step) if (y !== 0) ticks.push({ y, level: 3, ago: false });
-    }
-    if (ticks.length > 40) continue;
-    const xs = ticks.map((t) => xOf(t.y, w, view) * px);
-    const ok = xs.every((x, i) => i === 0 || Math.abs(x - xs[i - 1]!) >= Math.max(minGap, (widthOf(label(ticks[i]!)) + widthOf(label(ticks[i - 1]!))) / 2 + 8));
-    if (ok && ticks.length) return ticks;
+  const step = steps.find((s) => (b - a) / s <= 200) ?? steps[steps.length - 1]!;
+  const cands: { t: Tick; round: number }[] = [];
+  for (let v = Math.ceil(a / step) * step; v <= b; v += step) {
+    if (v === 0 || (ago && v <= 0)) continue;
+    let round = step;
+    for (const s of steps) if (s > step && v % s === 0) round = s;
+    cands.push({ t: { y: ago ? 1950 - v : v, level: 3, ago }, round });
   }
-  return [];
+  cands.sort((p, q) => q.round - p.round || p.t.y - q.t.y);
+  const chosen: Tick[] = [];
+  for (const { t } of cands) {
+    const x = xOf(t.y, w, view) * px;
+    const half = widthOf(label(t)) / 2;
+    if (chosen.every((c) => Math.abs(xOf(c.y, w, view) * px - x) >= Math.max(minGap, half + widthOf(label(c)) / 2 + 8))) chosen.push(t);
+    if (chosen.length >= 40) break;
+  }
+  return chosen.sort((p, q) => p.y - q.y);
 }
 
 /* ---------- Label layout (§ 12.3) ---------- */
