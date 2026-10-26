@@ -27,7 +27,7 @@ export const content: ContentText = {
     'first-dinosaurs': ['Some of the earliest known dinosaurs live in Ischigualasto, Argentina', 'Early dinosaurs such as Eoraptor and Herrerasaurus were small to medium-sized and shared their world with many other reptiles.'],
     'first-mammals': ['Small, shrew-like early mammals such as Morganucodon appear', 'Early mammals were mostly small, probably active at night, and lived alongside the dinosaurs for about 140 million years.'],
     'atlantic-opens': ['The supercontinent Pangaea splits and the Atlantic Ocean begins to open', 'The Atlantic still widens by a few centimetres a year, about as fast as fingernails grow.'],
-    'stegosaurus': ['Stegosaurus, with its plates and spiked tail, lives in western North America', 'Stegosaurus fossils come from the Morrison Formation of the western United States.'],
+    'stegosaurus': ['Stegosaurus, with its plates and spiked tail, lives in western North America', 'Stegosaurus fossils come mainly from the Morrison Formation of the western United States; related finds come from Portugal.'],
     'archaeopteryx': ['Archaeopteryx, a feathered dinosaur close to the first birds, lives in what is now Bavaria', 'Its fossils from the fine limestone of Solnhofen show feathers, teeth and a long bony tail.'],
     'flowers': ['Some of the oldest known flowering plants (Archaefructus) grow in Liaoning, China', 'Flowering plants spread late in the age of dinosaurs; today they make up most plant species.'],
     't-rex': ['Tyrannosaurus rex lives in western North America', 'T. rex lived only in the last few million years before the asteroid impact; it lived closer in time to us than to Stegosaurus.'],
