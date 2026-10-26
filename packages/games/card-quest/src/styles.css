@@ -103,6 +103,7 @@
 .cq-tile-total { display: grid; justify-items: end; line-height: 1.1; }
 .cq-tile-sum { font-size: 0.72rem; font-weight: 600; color: var(--wp-muted); white-space: nowrap; }
 .cq-detail-attached { margin: 0; font-weight: 600; }
+.cq-worlds { margin: 0; font-size: 0.85rem; color: var(--wp-muted); }
 .cq-art { display: block; inline-size: 2.6rem; block-size: 2.6rem; }
 .cq-art-il { inline-size: 3.6rem; block-size: auto; align-self: center; }
 .cq-detail-pic { max-inline-size: 26rem; inline-size: 100%; justify-self: center; }

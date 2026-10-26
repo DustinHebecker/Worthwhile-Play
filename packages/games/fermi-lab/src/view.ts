@@ -5,42 +5,34 @@ import { fieldParts, fieldText, formatQuantity, parseLocaleNumber, roundSig, typ
 import {
   EXP_MAX,
   EXP_MIN,
-  MAX_FACTORS,
   ROUND_LENGTH,
   TEXT_MAX,
-  addRow,
   commitGuess,
   compare,
   createInitial,
   currentQuestion,
   factorOf,
   finishModel,
-  insertConstant,
   isGivenRow,
   isSummary,
   marksOf,
   markFinished,
   modelResult,
   next,
-  removeRow,
   resetState,
-  rowValue,
   score,
   sensitivity,
   setDraft,
-  setRowLabel,
   setRowNumber,
-  setRowUnit,
   summarize,
   taskOf,
-  unitPalette,
   type Band,
   type FactorState,
   type FermiState,
   type QuestionState,
   type Score
 } from './rules';
-import { POWERS, type Power, type Task } from './tasks';
+import type { Power, Task } from './tasks';
 import { WORD_UNITS, dimsText, isCountWord, unitText } from './units';
 import './styles.css';
 
@@ -126,10 +118,13 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
     readonly label: string;
     readonly text: string;
     readonly exp: number;
+    /** The value saved with the text (rows): when the text reads differently in this language, the saved value wins. */
+    readonly saved?: number | null;
     readonly unit: string;
     readonly slider?: { readonly lo: number };
     readonly steps?: boolean;
     readonly live?: boolean;
+    /** Called with the new text, stepper and the parsed field value (without the stepper), only when something changed. */
     readonly onChange: (text: string, exp: number, value: number | null) => void;
     readonly onEnter?: () => void;
   }
@@ -141,11 +136,28 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
     value(): number | null;
   }
 
+  /** Slider resolution in decades (one arrow key ≈ × 1.12). */
+  const SLIDER_STEP = 0.05;
+  /** Significant digits kept by ÷2 / ×2: exact for anything a person types, no rounding drift. */
+  const EXACT = 12;
+
+  /** A field text for `m` that keeps every digit: plain from 0.01 to below 10⁶, else mantissa and a power of ten. */
+  const exactParts = (m: number): { text: string; exp: number } => {
+    const r = roundSig(m, EXACT);
+    if (r >= 0.01 && r < 1e6) return { text: fieldText(r, locale, EXACT), exp: 0 };
+    return fieldParts(r, locale, EXACT);
+  };
+
   let uid = 0;
+  /**
+   * One value per input (design § 5, change 2026-10-25b): `field × 10^stepper`. Every control writes through `write`,
+   * and `show` derives every view (field, stepper, interpretation, slider position and text) from that value alone,
+   * so after any sequence of actions, and after a reload, all of them agree.
+   */
   const numberWidget = (o: NumberOptions): NumberWidget => {
     const id = `fl-n${++uid}`;
-    let current = o.text;
-    let exp = o.exp;
+    let current = [...o.text].slice(0, TEXT_MAX).join('');
+    let exp = Math.max(EXP_MIN, Math.min(EXP_MAX, o.exp));
     const parse = (): ParseResult => parseLocaleNumber(current, locale);
     const value = (): number | null => {
       const r = parse();
@@ -153,25 +165,35 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
       const v = r.value * 10 ** exp;
       return Number.isFinite(v) && v > 0 ? v : null;
     };
+    // A text saved in another language can read differently here ("1,500"): show the saved value instead.
+    let corrected = false;
+    if (typeof o.saved === 'number' && Number.isFinite(o.saved) && o.saved > 0) {
+      const r = parse();
+      if (!r.ok || Math.abs(r.value / o.saved - 1) > 1e-9) {
+        current = exactParts(o.saved).text;
+        exp = Math.max(EXP_MIN, Math.min(EXP_MAX, exp + exactParts(o.saved).exp));
+        corrected = true;
+      }
+    }
     const field = h('input', {
       id,
       type: 'text',
       inputmode: 'decimal',
+      enterkeyhint: o.onEnter ? 'done' : 'next',
       autocomplete: 'off',
       spellcheck: 'false',
+      dir: 'ltr',
       class: 'fl-field',
-      maxlength: 32,
-      value: o.text,
+      maxlength: TEXT_MAX,
       'aria-describedby': `${id}-interp`,
       'data-testid': `${o.testid}-input`
     });
-    field.value = o.text;
     const expOut = h('output', { class: 'fl-exp-value', 'data-testid': `${o.testid}-exp`, 'aria-live': 'off' });
     const expMinus = h('button', { type: 'button', class: 'fl-exp-btn', 'aria-label': t('exp.minus'), 'data-testid': `${o.testid}-exp-minus` }, '−');
     const expPlus = h('button', { type: 'button', class: 'fl-exp-btn', 'aria-label': t('exp.plus'), 'data-testid': `${o.testid}-exp-plus` }, '+');
     const stepper = h(
       'span',
-      { class: 'fl-stepper', role: 'group', 'aria-label': t('input.exp') },
+      { class: 'fl-stepper', role: 'group', 'aria-label': t('input.exp'), dir: 'ltr' },
       h('span', { class: 'fl-times', 'aria-hidden': 'true' }, '× 10'),
       expMinus,
       expOut,
@@ -186,87 +208,131 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
       h('div', { class: 'fl-entry' }, field, h('span', { class: 'fl-entry-rest' }, stepper, unitEl)),
       interp
     );
+    const intText = (n: number) => new Intl.NumberFormat(bcp47Tag(locale), { useGrouping: false }).format(n);
+
     let slider: HTMLInputElement | null = null;
-    if (o.slider) {
-      const lo = o.slider.lo;
-      slider = h('input', { type: 'range', class: 'fl-slider', min: lo, max: lo + 10, step: 0.05, 'aria-label': t('input.slider'), 'data-testid': `${o.testid}-slider` });
-      slider.value = String(lo + 5);
-      slider.addEventListener('input', () => {
-        if (paused || !slider) return;
-        const v = 10 ** Number(slider.value);
-        const parts = fieldParts(v, locale);
-        current = parts.text;
-        exp = parts.exp;
-        field.value = current;
-        update(false);
-        o.onChange(current, exp, parse().ok ? (parse() as { value: number }).value : null);
-      });
-      el.append(h('div', { class: 'fl-slider-row', dir: 'ltr' }, slider));
-    }
-    if (o.steps) {
-      const stepButton = (label: string, aria: string, testid: string, apply: () => void) =>
-        h('button', { type: 'button', class: 'fl-step', 'aria-label': aria, 'data-testid': `${o.testid}-${testid}`, onclick: () => !paused && apply() }, label);
-      const scaleBy = (k: number) => {
-        const r = parse();
-        if (!r.ok) return announce(live, t('need.guess'));
-        const v = r.value * k;
-        const plain = fieldText(v, locale, 3);
-        if ([...plain].length <= TEXT_MAX) current = plain;
-        else {
-          // Too long for the field (and its saved draft): move the power of ten to the stepper.
-          const parts = fieldParts(v, locale, 3);
-          if (exp + parts.exp < EXP_MIN || exp + parts.exp > EXP_MAX) return;
-          current = parts.text;
-          exp += parts.exp;
-        }
-        field.value = current;
-        changed();
-      };
-      const shift = (d: number) => {
-        if (!parse().ok) return announce(live, t('need.guess'));
-        exp = Math.max(EXP_MIN, Math.min(EXP_MAX, exp + d));
-        changed();
-      };
-      el.append(
-        h(
-          'div',
-          { class: 'fl-steps', dir: 'ltr' },
-          stepButton('÷10', t('step.div10'), 'div10', () => shift(-1)),
-          stepButton('÷2', t('step.div2'), 'div2', () => scaleBy(0.5)),
-          stepButton('×2', t('step.mul2'), 'mul2', () => scaleBy(2)),
-          stepButton('×10', t('step.mul10'), 'mul10', () => shift(1))
-        )
-      );
-    }
-    const update = (syncSlider: boolean) => {
-      expOut.textContent = new Intl.NumberFormat(bcp47Tag(locale), { useGrouping: false }).format(exp);
+    const stepButtons: { readonly el: HTMLButtonElement; readonly can: () => boolean }[] = [];
+
+    /** Derives every view from (current, exp). `fromField`: the player is typing, the field keeps their text. */
+    const show = (fromField: boolean) => {
+      if (!fromField) field.value = current;
+      expOut.textContent = intText(exp);
       expMinus.disabled = exp <= EXP_MIN;
       expPlus.disabled = exp >= EXP_MAX;
       clear(interp);
       const r = parse();
       const v = value();
       if (!r.ok && r.reason === 'empty') interp.append(o.slider ? t('interp.empty') : '');
-      else if (!r.ok) {
-        interp.append(h('span', { class: 'fl-warn' }, `⚠ ${t(r.reason === 'notPositive' ? 'interp.notPositive' : 'interp.invalid')}`));
-      } else if (v !== null) {
+      else if (!r.ok || v === null) {
+        interp.append(h('span', { class: 'fl-warn' }, `⚠ ${t(!r.ok && r.reason === 'notPositive' ? 'interp.notPositive' : 'interp.invalid')}`));
+      } else {
         interp.append(h('span', { class: 'fl-interp-label' }, `${t('interp.understood')}: `), quantity(v, o.unit, { testid: `${o.testid}-value` }));
       }
-      if (slider) {
-        if (v !== null && syncSlider) slider.value = String(Math.log10(v));
-        slider.setAttribute('aria-valuetext', v !== null ? spoken(v, o.unit) : t('interp.empty'));
+      // Only an impossible step is disabled (an empty field keeps the buttons, which then say what is missing).
+      for (const b of stepButtons) b.el.disabled = v !== null && !b.can();
+      if (slider && o.slider) {
+        const lo = o.slider.lo;
+        const hi = lo + 10;
+        if (v === null) {
+          slider.value = String(lo + 5);
+          slider.dataset.empty = 'true';
+          delete slider.dataset.out;
+          slider.setAttribute('aria-valuetext', t('interp.empty'));
+        } else {
+          const x = Math.log10(v);
+          const pos = lo + Math.round((Math.min(hi, Math.max(lo, x)) - lo) / SLIDER_STEP) * SLIDER_STEP;
+          slider.value = String(Math.round(pos * 100) / 100);
+          delete slider.dataset.empty;
+          if (x < lo) slider.dataset.out = 'low';
+          else if (x > hi) slider.dataset.out = 'high';
+          else delete slider.dataset.out;
+          slider.setAttribute('aria-valuetext', spoken(v, o.unit));
+        }
       }
     };
-    const changed = () => {
-      update(true);
-      o.onChange(current, exp, parse().ok ? (parse() as { value: number }).value : null);
+
+    /** The one write path: every control ends here. */
+    const write = (text: string, e: number, fromField = false) => {
+      const nextText = [...text].slice(0, TEXT_MAX).join('');
+      const nextExp = Math.max(EXP_MIN, Math.min(EXP_MAX, e));
+      const changedNow = nextText !== current || nextExp !== exp;
+      current = nextText;
+      exp = nextExp;
+      show(fromField);
+      if (changedNow) {
+        const r = parse();
+        o.onChange(current, exp, r.ok ? r.value : null);
+      }
     };
+
+    /**
+     * ÷2 / ×2 on the exact value, written in the same canonical form as the slider (plain from 0.01 to below 10⁶,
+     * otherwise mantissa and stepper), so the power of ten lives in one place.
+     */
+    const scaled = (k: number): { text: string; exp: number } | null => {
+      const v = value();
+      if (v === null) return null;
+      const parts = exactParts(v * k);
+      const e = parts.exp;
+      if (e < EXP_MIN || e > EXP_MAX || [...parts.text].length > TEXT_MAX) return null;
+      const back = parseLocaleNumber(parts.text, locale);
+      return back.ok && Number.isFinite(back.value * 10 ** e) ? { text: parts.text, exp: e } : null;
+    };
+
+    if (o.slider) {
+      const lo = o.slider.lo;
+      const s = h('input', {
+        type: 'range',
+        class: 'fl-slider',
+        min: lo,
+        max: lo + 10,
+        step: SLIDER_STEP,
+        'aria-label': t('input.slider'),
+        'aria-describedby': `${id}-interp`,
+        'data-testid': `${o.testid}-slider`
+      });
+      slider = s;
+      s.addEventListener('input', () => {
+        if (paused) return show(false);
+        const parts = fieldParts(10 ** Number(s.value), locale);
+        write(parts.text, parts.exp);
+      });
+      const end = (n: number) => {
+        const label = h('span', { class: 'fl-slider-end', 'aria-hidden': 'true' }, '10');
+        label.append(h('sup', {}, intText(n)));
+        return label;
+      };
+      el.append(h('div', { class: 'fl-slider-row', dir: 'ltr' }, end(lo), s, end(lo + 10)));
+    }
+    if (o.steps) {
+      const stepButton = (label: string, aria: string, testid: string, can: () => boolean, apply: () => void) => {
+        const b = h('button', { type: 'button', class: 'fl-step', 'aria-label': aria, 'data-testid': `${o.testid}-${testid}`, onclick: () => !paused && apply() }, label);
+        stepButtons.push({ el: b, can });
+        return b;
+      };
+      const scaleBy = (k: number) => {
+        const next = scaled(k);
+        if (!next) return announce(live, t('need.guess'));
+        write(next.text, next.exp);
+      };
+      const shift = (d: number) => {
+        if (!parse().ok) return announce(live, t('need.guess'));
+        write(current, exp + d);
+      };
+      el.append(
+        h(
+          'div',
+          { class: 'fl-steps', dir: 'ltr' },
+          stepButton('÷10', t('step.div10'), 'div10', () => exp > EXP_MIN, () => shift(-1)),
+          stepButton('÷2', t('step.div2'), 'div2', () => scaled(0.5) !== null, () => scaleBy(0.5)),
+          stepButton('×2', t('step.mul2'), 'mul2', () => scaled(2) !== null, () => scaleBy(2)),
+          stepButton('×10', t('step.mul10'), 'mul10', () => exp < EXP_MAX, () => shift(1))
+        )
+      );
+    }
     field.addEventListener('input', () => {
-      if (paused) {
-        field.value = current;
-        return;
-      }
-      current = field.value;
-      changed();
+      if (paused) return show(false);
+      write(field.value, exp, true);
     });
     field.addEventListener('keydown', (event) => {
       if (event.key === 'Enter' && o.onEnter) {
@@ -274,17 +340,13 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
         o.onEnter();
       }
     });
-    expMinus.addEventListener('click', () => {
-      if (paused) return;
-      exp = Math.max(EXP_MIN, exp - 1);
-      changed();
-    });
-    expPlus.addEventListener('click', () => {
-      if (paused) return;
-      exp = Math.min(EXP_MAX, exp + 1);
-      changed();
-    });
-    update(true);
+    expMinus.addEventListener('click', () => !paused && write(current, exp - 1));
+    expPlus.addEventListener('click', () => !paused && write(current, exp + 1));
+    show(false);
+    if (corrected) {
+      const r = parse();
+      o.onChange(current, exp, r.ok ? r.value : null);
+    }
     return { el, field, value };
   };
 
@@ -338,8 +400,8 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
         widget.field.focus();
         return;
       }
-      commit(commitGuess(state, v), 'fl-model-heading');
-      announce(live, t('announce.guess', { value: spoken(v, task.answer.unit) }));
+      commit(commitGuess(state, v), 'fl-review-heading');
+      announce(live, `${t('announce.guess', { value: spoken(v, task.answer.unit) })} ${t(`verdict.${score(v, task).band}`)}`);
     };
     estimateField = widget.field;
     return [
@@ -349,7 +411,6 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
     ];
   };
   const renderModel = (q: QuestionState, task: Task): HTMLElement[] => {
-    const free = state.model === 'free';
     const productBox = h('div', { class: 'fl-product', 'aria-live': 'polite', 'data-testid': 'fl-product' });
     const useButton = h('button', { type: 'button', class: 'primary', 'data-testid': 'fl-use-model' }, t('action.useModel'));
     const refreshProduct = () => {
@@ -362,109 +423,35 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
       else if (result.status === 'units') {
         const left = dimsText(result.leftover);
         productBox.append(h('span', { class: 'fl-warn' }, left ? t('product.units', { units: left }) : t('product.unitsNone')));
-      } else productBox.append(h('span', { class: 'fl-muted' }, t(result.status === 'empty' ? 'product.empty' : 'product.incomplete')));
+      } else productBox.append(h('span', { class: 'fl-muted' }, t('product.incomplete')));
       useButton.setAttribute('aria-disabled', String(result.status !== 'ok'));
     };
     useButton.addEventListener('click', () => {
       if (paused) return;
       const result = modelResult(task, currentQuestion(state)!.factors);
       if (result.status !== 'ok') return announce(live, t('need.model'));
-      finish(true);
+      commit(finishModel(state), 'fl-review-heading');
+      announce(live, t(`verdict.${score(result.value, task).band}`));
     });
-    const finish = (useModel: boolean) => {
-      commit(finishModel(state, useModel), 'fl-review-heading');
-      const cur = state.questions[state.index]!;
-      if (cur.answer !== null) announce(live, `${t(`verdict.${score(cur.answer, task).band}`)}`);
-    };
 
     const rowsList = h('ol', { class: 'fl-rows', 'data-testid': 'fl-rows' });
-    q.factors.forEach((row, i) => rowsList.append(renderRow(row, i, task, free, refreshProduct)));
-
-    const extras: HTMLElement[] = [];
-    if (free) {
-      const add = h(
-        'button',
-        { type: 'button', 'data-testid': 'fl-add-row', onclick: () => !paused && (commit(addRow(state)), focusRow(currentQuestion(state)!.factors.length - 1), announce(live, t('announce.added'))) },
-        `+ ${t('action.addRow')}`
-      );
-      if (q.factors.length >= MAX_FACTORS) add.disabled = true;
-      extras.push(h('div', { class: 'fl-actions' }, add));
-      const constants = task.factors.filter((x) => x.fixed && !q.factors.some((r) => r.ref === x.id));
-      if (constants.length && q.factors.length < MAX_FACTORS) {
-        extras.push(
-          h(
-            'div',
-            { class: 'fl-constants' },
-            h('p', { class: 'fl-small' }, t('constants.heading')),
-            h(
-              'div',
-              { class: 'fl-chips' },
-              ...constants.map((x) =>
-                h(
-                  'button',
-                  {
-                    type: 'button',
-                    class: 'fl-chip',
-                    'data-testid': `fl-const-${x.id}`,
-                    onclick: () => {
-                      if (paused) return;
-                      commit(insertConstant(state, x.id));
-                      focusRow(currentQuestion(state)!.factors.length - 1);
-                    }
-                  },
-                  `${factorName(x.id)} = `,
-                  quantity(x.value, x.unit, { words: false })
-                )
-              )
-            )
-          )
-        );
-      }
-    }
+    q.factors.forEach((row, i) => rowsList.append(renderRow(row, i, task, refreshProduct)));
     refreshProduct();
     return [
-      h('p', { class: 'fl-first' }, `${t('model.firstGuess')}: `, quantity(q.firstGuess!, task.answer.unit, { testid: 'fl-first-guess' })),
       heading('h3', 'fl-model-heading', t('model.heading')),
-      h('p', { class: 'fl-hint' }, t(free ? 'model.intro.free' : 'model.intro.guided')),
+      h('p', { class: 'fl-hint' }, t('model.intro.guided')),
       rowsList,
-      ...extras,
       productBox,
-      h('div', { class: 'fl-actions' }, useButton, h('button', { type: 'button', 'data-testid': 'fl-keep-guess', onclick: () => !paused && finish(false) }, t('action.keepGuess')))
+      h('div', { class: 'fl-actions' }, useButton)
     ];
   };
 
-  const focusRow = (i: number) => {
-    const field = main.querySelector<HTMLElement>(`[data-testid="fl-row-${i}-input"]`) ?? main.querySelector<HTMLElement>(`[data-testid="fl-row-${i}"] button`);
-    field?.focus();
-  };
-
-  const renderRow = (row: FactorState, i: number, task: Task, free: boolean, refresh: () => void): HTMLElement => {
+  const renderRow = (row: FactorState, i: number, task: Task, refresh: () => void): HTMLElement => {
     const ref = factorOf(task, row.ref);
     const given = isGivenRow(task, row);
-    const name = ref ? factorName(ref.id) : row.label || t('row.free', { n: i + 1 });
+    const name = ref ? factorName(ref.id) : row.label || row.ref || '';
     const li = h('li', { class: `fl-row${given ? ' is-given' : ''}`, 'data-testid': `fl-row-${i}`, 'data-ref': row.ref ?? '' });
-    const op = h('span', { class: 'fl-op', 'aria-label': t('row.op') }, powerSymbol(row.power));
-    if (!free || ref) {
-      li.append(h('div', { class: 'fl-row-head' }, op, h('span', { class: 'fl-row-name' }, name)));
-    } else {
-      const nameField = h('input', { type: 'text', class: 'fl-name', maxlength: 40, placeholder: t('row.free', { n: i + 1 }), 'aria-label': t('row.name'), 'data-testid': `fl-row-${i}-name` });
-      nameField.value = row.label;
-      nameField.addEventListener('input', () => !paused && edit(setRowLabel(state, i, nameField.value)));
-      const opSelect = h('select', { class: 'fl-select', 'aria-label': t('row.op'), 'data-testid': `fl-row-${i}-op` });
-      for (const p of POWERS) opSelect.append(h('option', { value: p, ...(p === row.power ? { selected: true } : {}) }, powerSymbol(p)));
-      const unitSelect = h('select', { class: 'fl-select', 'aria-label': t('row.unit'), 'data-testid': `fl-row-${i}-unit` });
-      for (const u of unitPalette(task)) unitSelect.append(h('option', { value: u, ...(u === row.unit ? { selected: true } : {}) }, unitLabel(u) || t('unit.none')));
-      const onUnit = () => {
-        if (paused) return;
-        edit(setRowUnit(state, i, unitSelect.value, Number(opSelect.value) as Power));
-        const unitEl = li.querySelector('.fl-field-unit');
-        if (unitEl) unitEl.textContent = unitLabel(unitSelect.value);
-        refresh();
-      };
-      opSelect.addEventListener('change', onUnit);
-      unitSelect.addEventListener('change', onUnit);
-      li.append(h('div', { class: 'fl-row-head' }, opSelect, nameField, unitSelect));
-    }
+    li.append(h('div', { class: 'fl-row-head' }, h('span', { class: 'fl-op', 'aria-label': t('row.op') }, powerSymbol(row.power)), h('span', { class: 'fl-row-name' }, name)));
     if (given && ref) {
       li.append(h('p', { class: 'fl-given' }, '= ', quantity(ref.value, ref.unit, { words: false }), h('span', { class: 'fl-badge' }, t('row.given'))));
     } else {
@@ -473,6 +460,7 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
         label: t('row.value', { name }),
         text: row.text,
         exp: row.exp,
+        saved: row.value,
         unit: row.unit,
         onChange: (txt, exp, value) => {
           edit(setRowNumber(state, i, txt, exp, value));
@@ -481,26 +469,6 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
       });
       widget.el.querySelector('label')?.classList.add('sr-only');
       li.append(widget.el);
-    }
-    if (free) {
-      li.append(
-        h(
-          'button',
-          {
-            type: 'button',
-            class: 'fl-remove',
-            'aria-label': t('row.removeLabel', { name }),
-            'data-testid': `fl-row-${i}-remove`,
-            onclick: () => {
-              if (paused) return;
-              commit(removeRow(state, i));
-              announce(live, t('announce.removed'));
-              main.querySelector<HTMLElement>('[data-testid="fl-add-row"]')?.focus();
-            }
-          },
-          `✕ ${t('row.remove')}`
-        )
-      );
     }
     return li;
   };
@@ -526,7 +494,7 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
    * the reference line and the answer markers. Marker names are an HTML legend below (readable at 360 px).
    */
   const scaleBar = (q: QuestionState, task: Task): HTMLElement => {
-    const shown = [task.answer.central, task.answer.low, task.answer.high, q.answer!, ...(q.modelUsed ? [q.firstGuess!] : [])];
+    const shown = [task.answer.central, task.answer.low, task.answer.high, q.answer!];
     const logs = shown.map((v) => Math.log10(v));
     let lo = Math.floor(Math.min(...logs) - 0.3);
     let hi = Math.ceil(Math.max(...logs) + 0.3);
@@ -552,7 +520,6 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
     const xr = x(task.answer.central);
     chart.append(svg('line', { class: 'fl-ref', x1: xr, y1: y - 22, x2: xr, y2: y + 22 }));
     const diamond = (xv: number, cls: string) => svg('path', { class: cls, d: `M${xv} ${y - 11}L${xv + 11} ${y}L${xv} ${y + 11}L${xv - 11} ${y}Z` });
-    if (q.modelUsed) chart.append(diamond(x(q.firstGuess!), 'fl-guess'));
     chart.append(diamond(x(q.answer!), 'fl-answer'));
     const item = (symbol: string, label: string, value: HTMLElement | string) =>
       h('li', {}, h('span', { class: 'fl-legend-sym', 'aria-hidden': 'true' }, symbol), ` ${label}: `, value);
@@ -560,7 +527,6 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
       'ul',
       { class: 'fl-legend' },
       item('◆', t('scale.answer'), quantity(q.answer!, task.answer.unit, { words: false })),
-      ...(q.modelUsed ? [item('◇', t('scale.guess'), quantity(q.firstGuess!, task.answer.unit, { words: false }))] : []),
       item('┃', t('scale.reference'), quantity(task.answer.central, task.answer.unit, { words: false })),
       item('▨', t('review.range'), t('review.rangeValue', { low: formatQuantity(task.answer.low, locale).text, high: `${formatQuantity(task.answer.high, locale).text} ${unitLabel(task.answer.unit)}`.trim() }))
     );
@@ -570,7 +536,7 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
         class: 'fl-chart',
         role: 'img',
         'data-testid': 'fl-scale',
-        'aria-label': t('scale.label', { reference: spoken(task.answer.central, task.answer.unit), low: spoken(task.answer.low), high: spoken(task.answer.high), answer: spoken(q.answer!), guess: spoken(q.firstGuess!) })
+        'aria-label': t('scale.label', { reference: spoken(task.answer.central, task.answer.unit), low: spoken(task.answer.low), high: spoken(task.answer.high), answer: spoken(q.answer!) })
       },
       chart,
       legend
@@ -587,7 +553,7 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
 
   const renderComparison = (q: QuestionState, task: Task): HTMLElement => {
     // A model counts once the player filled in at least one open factor (guided rows start empty).
-    const hasModel = q.factors.some((r) => !isGivenRow(task, r) && rowValue(task, r) !== null);
+    const hasModel = q.modelUsed;
     const cmp = compare(task, q.factors);
     const section = h('section', { class: 'fl-section', 'aria-labelledby': 'fl-compare-heading', 'data-testid': 'fl-compare' }, heading('h3', 'fl-compare-heading', t(hasModel ? 'compare.heading' : 'compare.headingRef')));
     if (!hasModel) section.append(h('p', {}, t('compare.noModel')));
@@ -610,20 +576,6 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
       list.append(card);
     }
     section.append(list);
-    if (cmp.others.length) {
-      section.append(
-        h('p', { class: 'fl-card-name' }, t('compare.others')),
-        h(
-          'ul',
-          { class: 'fl-others' },
-          ...cmp.others.map((r) => {
-            const v = rowValue(task, r);
-            return h('li', {}, `${powerSymbol(r.power)} ${r.label || (r.ref ? factorName(r.ref) : t('row.free', { n: q.factors.indexOf(r) + 1 }))}: `, v === null ? '—' : quantity(v, r.unit, { words: false }));
-          })
-        )
-      );
-    }
-    if (cmp.othersEffect !== null && hasModel) section.append(h('p', { class: 'fl-small' }, t('compare.othersEffect', { effect: effectText(cmp.othersEffect, false) })));
     return section;
   };
 
@@ -694,7 +646,6 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
 
   const renderReview = (q: QuestionState, task: Task): HTMLElement[] => {
     const s = score(q.answer!, task);
-    const g = q.firstGuess !== null ? score(q.firstGuess, task) : null;
     const verdict = h(
       'div',
       { class: `fl-verdict fl-band-${s.band}`, 'data-testid': 'fl-verdict', 'data-band': s.band, 'data-direction': s.direction },
@@ -706,7 +657,7 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
         h('p', {}, `${t('review.answer')}: `, quantity(q.answer!, task.answer.unit, { testid: 'fl-answer' })),
         h('p', { class: 'fl-direction', 'data-testid': 'fl-direction' }, directionText(s), ' ', t(s.inRange ? 'review.inRange' : 'review.outRange')),
         h('p', {}, `${t('review.reference')}: `, quantity(task.answer.central, task.answer.unit, { testid: 'fl-reference' })),
-        h('p', { class: 'fl-small' }, t(q.modelUsed ? 'review.fromModel' : 'review.kept'), q.modelUsed && g ? ` ${t('review.guessLine', { band: t(`band.${g.band}`) })}` : '')
+        h('p', { class: 'fl-small' }, t(q.modelUsed ? 'review.fromModel' : 'review.fromEstimate'))
       )
     );
     const last = state.index === ROUND_LENGTH - 1;
@@ -750,8 +701,7 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
             t('summary.row', {
               band: t(`band.${r.score.band}`),
               direction: r.score.direction === 'none' ? t('summary.dirNone') : t(r.score.direction === 'high' ? 'summary.dirHigh' : 'summary.dirLow', { f: ratio(r.score.factor) })
-            }),
-            r.modelUsed ? ` (${t('summary.withModel')})` : ''
+            })
           )
         )
       )
@@ -759,11 +709,7 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
     const logBias = Math.log10(sum.bias);
     const biasText = Math.abs(logBias) <= Math.log10(1.25) ? t('summary.biasSame') : logBias < 0 ? t('summary.biasLow', { f: ratio(1 / sum.bias) }) : t('summary.biasHigh', { f: ratio(sum.bias) });
     const lines: HTMLElement[] = [h('p', { 'data-testid': 'fl-bias' }, biasText)];
-    if (sum.modelHelp) {
-      const { withModel, firstGuesses } = sum.modelHelp;
-      lines.push(h('p', { 'data-testid': 'fl-model-help' }, t(withModel < firstGuesses ? 'summary.modelBetter' : 'summary.modelNotBetter', { with: ratio(withModel), without: ratio(firstGuesses) })));
-    }
-    lines.push(h('p', { class: 'fl-small' }, t('summary.counts', { a: sum.withinFactor3, b: sum.withinFactor10, n: sum.rows.length, m: sum.modelsUsed })));
+    lines.push(h('p', { class: 'fl-small' }, t('summary.counts', { a: sum.withinFactor3, b: sum.withinFactor10, n: sum.rows.length })));
     return [
       heading('h2', 'fl-summary-heading', t('summary.heading')),
       rows,
@@ -794,7 +740,8 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
       else main.append(...renderReview(q, task));
     }
     if (focusNext) {
-      const target = focusNext === 'fl-question-anchor' ? estimateField : main.querySelector<HTMLElement>(`#${focusNext}`);
+      // A new question focuses its first field: the estimate, or the first open factor of the guided model.
+      const target = focusNext === 'fl-question-anchor' ? (estimateField ?? main.querySelector<HTMLElement>('.fl-rows .fl-field')) : main.querySelector<HTMLElement>(`#${focusNext}`);
       target?.focus({ preventScroll: false });
       if (focusNext === 'fl-question-anchor') main.querySelector('.fl-question')?.scrollIntoView?.({ block: 'start' });
       focusNext = null;

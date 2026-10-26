@@ -1,6 +1,6 @@
 # Estimation Lab (`fermi-lab`) — design
 
-Status: **Implemented, 2026-10-17** (plan by the planner; owner decisions and implementation notes in § 18). Content: [fermi-lab-content.md](fermi-lab-content.md) (46 researched tasks, internationalised).
+Status: **Implemented, 2026-10-17; two paths since 2026-10-25** (plan by the planner; owner decisions and implementation notes in § 18; the change of 2026-10-25 in § 19 supersedes §§ 4.1, 6.2, 7.2–7.3 and 10 where they differ). Content: [fermi-lab-content.md](fermi-lab-content.md) (46 researched tasks, internationalised).
 
 Scope for the implementer (feature agent, ADR 0006): `packages/games/fermi-lab/` and `e2e/games/fermi-lab.spec.ts`. The orchestrator creates `package.json`, the registry line, the dependency in `apps/web/package.json` and the preview in `apps/web/src/previews.ts` (§ 13 describes it). No new dependencies, no shared-package changes needed for the MVP (§ 1.3 lists optional ones).
 
@@ -410,3 +410,39 @@ All other tasks were already place-neutral or worldwide. § 11.2 is superseded b
 - **Selection fill-up** goes through all levels in order of distance (easy 1→2→3, medium 2→1→3, hard 3→2→1), because *space* has only two level-1 and two level-2 tasks.
 - **Tips** in the summary: `cube` (a task with a squared or cubed factor answered more than ×10 off), else `low`/`high` (bias beyond ×1.25), else `model` (fewer than two models), else `general`.
 - Not built from § 14: none; the view tests cover en, de, ar and ja as planned. The optional shared changes of § 1.3 were not needed.
+
+## 19. Change 2026-10-25: two paths chosen on the start screen
+
+Owner feedback: the second step (the optional model after a first guess) was superfluous and annoying; at the start one should choose either free estimating or a guided path with help.
+
+- **Setting `model`** (start screen, still `guided` | `free`, relabelled "How to estimate": "Guided, with help" / "Free estimate"; de "Geführt mit Hilfen" / "Frei schätzen"). Default `guided`: the guided factor model is the game's learning value (§ 3) and works at every difficulty; one default keeps the start screen simple.
+- **Free estimate:** estimate → review. No model step. The estimate is the answer (`firstGuess = answer`, `modelUsed = false`).
+- **Guided:** each question opens directly in the guided model (rows = the reference factors, given values pre-filled, hints as before); "Use my model’s result" (complete, units match) commits it and opens the review. No first-guess step, no "keep my first guess".
+- **The free model builder is removed** (empty model, unit palette, add/remove rows, constants) with its texts. `compare` still matches free rows by unit and power, only so that questions reviewed in old saves render.
+- **Review:** the scale shows the answer, the reference and the range (no first-guess marker). Guided: "Your model and the reference" with your value and effect per factor. Free: the reference model ("This is how the reference answer is put together from factors"). Sensitivity, explanation and sources as before for both paths.
+- **Summary:** no "with a model vs. first guess" comparison and no model count. Tips: `cube`, `low`, `high`, then `guided` (free path: "Try the guided path next time …") or `general`.
+- **State v2** (`stateVersion` 2, `v: 2`). Untouched guided questions are in phase `model` with empty rows; free ones in `estimate`. `migrateState` from v1: guided question in `estimate` → guided `model` (the unsent draft is dropped); guided `model` → stays, typed values kept, the first guess is dropped; free `model` (old builder) → finished with its first guess (`review`, rows dropped); `review` and the summary unchanged (old reviewed questions keep their first guess and rows). Remembered choices keep their ids: old `free` (builder) becomes the free estimate. Fixtures written by the v1 code are in `test/fixtures/`.
+
+## 20. Change 2026-10-25b: number input
+
+Owner feedback: using the slider, the number field and the multipliers (÷2/×2, × 10ⁿ) together could produce inconsistencies; look into it and optimise the input methods.
+
+**Design: one value per input.** The value is `field × 10^stepper` (unchanged save format: `draft`/`draftExp`, rows `text`/`exp`/`value`, so no state version bump). Every control writes through one function (`write` in `view.ts`), and every view (field, stepper, "Understood as", slider position and `aria-valuetext`, disabled states) is derived from that value alone (`show`). Generated values (slider, ÷2/×2) use one canonical form: plain from 0.01 to below 10⁶, otherwise mantissa and stepper. A reload therefore restores exactly the same display.
+
+Inconsistencies found (each has a test in `test/input.test.ts`, written failing first):
+
+1. ÷2/×2 rounded to 3 significant digits and drifted (999 → ÷2 → ×2 gave 1000). Now exact (12 significant digits): any typed value comes back unchanged.
+2. Clearing the field left the slider at the old position. Now an empty or unreadable value puts the thumb in the middle, dimmed (`data-empty`).
+3. Moving the slider while the game was paused moved the thumb but not the value. Now it springs back.
+4. A readable field whose product with the stepper overflows (`1e300` × 10¹⁰) left the interpretation blank; it now shows the "cannot read" message.
+5. Values outside the 10-decade window (the field and stepper allow 10⁻⁶…10³⁰) pinned the thumb silently. The thumb is still pinned to the end, but dimmed and marked (`data-out`), and the window's ends are labelled (10ⁿ, numbers only, `aria-hidden`; the interpretation line remains the value label).
+6. A guided row typed in one language ("1,500" in English) was re-read differently after switching to another ("1,5" in German): the row showed 1.5 while the model multiplied 1500. The saved value now wins: the field is rewritten to the saved value in the current language's form.
+7. The slider position after a drag was the raw position while a reload put it at `log10` of the rounded value; the position is now always derived (`log10(value)` snapped to 0.05 decades, clamped to the window).
+
+A fast-check property drives random sequences of typing, stepper, ÷10/÷2/×2/×10 and slider moves in en/de/ar and checks after every action that field = saved draft, stepper = `draftExp`, interpretation = parsed draft × 10ⁿ, slider = its derived position, and that a restore shows the same field, stepper, slider and interpretation. The e2e test drives the slider with arrow keys and reloads.
+
+**Input-method decisions.**
+- The parser already accepts `3e9`, `3×10^9`, `3·10⁹`, `10^9` in the field; the stepper stays as the visible place for the power of ten (it is the only "large number" aid in guided rows). Words such as "3 Mrd" are not parsed: 16 locales' abbreviations would make the field ambiguous; the interpretation line shows the words instead.
+- ÷10/×10 stay (shortcuts for the stepper, next to the halving and doubling nudges); all four are disabled only when the step is impossible (stepper limits), never because the field is empty — then they say what is missing.
+- Field: `inputmode="decimal"`, `enterkeyhint` (done in the estimate), `dir="ltr"` for the number (RTL layouts keep their order; numbers read left to right like the slider axis). Enter commits the estimate; arrow keys on the slider move by × 1.12 (0.05 decades).
+- No new texts: the end labels are numbers.

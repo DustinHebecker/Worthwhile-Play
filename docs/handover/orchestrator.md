@@ -151,26 +151,16 @@ App size: precache about 7.7 MB (213 entries, all games and locales, offline).
 - A weekly model rate limit can stop subagents mid-review. Resume them with SendMessage once it resets.
 - Ports in use by convention: publish e2e 4793, PR gate 4795, ad-hoc checks 4796–4799, feature agents 5100–5999.
 
-## Paused state (2026-10-21, owner pause)
+## Paused state (2026-10-25)
 
-Done on 2026-10-21:
-- Mutation budget (ADR 0021) is on main:
-  - PRs mutate only changed lines.
-  - The weekly run is a rotating 1/8 sample and report-only.
-  - A full run is manual only (`mode: full`).
-  - Stryker uses `vitest.mutation.config.ts`, which excludes `*.slow.test.ts` and `*.long.test.ts`.
-- Merged:
-  - Lootlings #59 (worlds Spaceloot and Office);
-  - Lootlings #63 (Fridge and Railway; the worlds default to random, per the owner on 2026-10-21);
-  - Lootlings #66 (wordplay pass; slow tests moved).
+Done on 2026-10-25 (on main and deployed): Lootlings #73 (8 worlds; random games show the drawn worlds). Estimation Lab: the start screen picks "Free estimate" or "Guided, with help"; the extra model step is gone (owner request), and saves migrate v1 to v2.
 
 Open, in this order:
-- Merged and deployed on 2026-10-23: strategy #67 (slow tests moved; no name exclusion is left in `vitest.mutation.config.ts`) and life sim #65 (E1: design, ADR 0018, life-engine foundations; full local gate green).
-- To publish: on `claude/orchestrator-2`, `stryker.config.json` covers `packages/life-engine/src/*.ts` (without `index.ts`) and `src/params/check.ts` (commit 3438e12). Ship it with the next publish.
-- Life sim: ADR 0018 still mentions its own exp/log functions. Asked the life-sim agent to point to `@wp/finance-math` (ADR 0020) in its next PR. The owner decided on 2026-10-21: an early en/de release marked "Work in progress", with the other 14 locales after.
-- Economy (session_0171vR1YZpyDbCP4etKP5k7Y): waits for the owner's "weitermachen" in that session, then opens the finance-math PR (ADR 0020). The owner still has to answer the nine questions in `docs/design/economy-draft.md` on `feature/economy-tycoon`.
-- Adventures (session_015FCipyczdDEy2eSaq9YcXL): three owner questions are open: start E1? time model? location of Adventure B?
-- Pixel Peel v2 (`game/pixel-peel-v2`, 82f278e): rerun the second review, fix, publish, show the contact sheet. Also fix the flaky wall-clock assertion in `test/generator.test.ts` (`slowest generation < 150 ms`), which failed under gate load: move it to a `.slow` test or make it a budget that ignores load.
-- Estimation Lab (`game/fermi-lab`, 1e7d1fb): review, then publish.
-- New-games pipeline: Probability Detective, Atlas Explorer, Timeline, Tiny Ecosystem, Harmony, Balance Lab.
-- To check: Stryker may resolve `@wp/game-core` imports through workspace links to the unmutated originals. A dry run for `rng.ts` found only 63 related tests, so shared-package scores may be understated.
+- Strategy #74 (map editor for four-base maps, head 7223dac): gate, then merge. Next comes the balance PR (a team counts as its strongest side, owner option A; 006665c on `backup/strategy-engine`).
+- Probability Detective: `game/probability-detective` at c6dedb9 is green; e2e 14/14 covers all modes, and the screenshots are checked. Next: the independent review (step 3), then on the orchestrator side Stryker `mutate` (`src/{frac,generate,traps}.ts`), a ROADMAP row and a `docs/third-party.md` entry (original content, invented numbers). Open design question: in RTL the trap-explanation bars fill from the left while the belief bar starts on the right.
+- Estimation Lab, question for the owner: guided mode has no "give up and show the answer" exit. Ask whether one is wanted.
+- Estimation Lab follow-ups (owner said yes): a "recently seen" memory for tasks; a yearly review of time-dependent figures; three source links that return 404 from the container (UN PopFacts 2017/2, OICA 2013, University of Arizona bees) — check them in a browser and switch to Wayback if dead; true plurals for count words ("1 days").
+- Pixel Peel open items: the phone start time (about 300 ms against a 250 ms target) needs a measurement on a quiet machine; a side-by-side landscape layout.
+- `scripts/orchestrator/gate-pr.sh` still runs the slow suites under coverage. The relay generator slow tests time out there under load; align it with CI (exclude `*.slow.test.ts` from coverage and run them separately).
+- Economy (waits for the owner's "weitermachen" in its own session; nine questions in `docs/design/economy-draft.md`) and adventures (three owner questions) are unchanged.
+- Remaining pipeline games: Atlas Explorer, Timeline, Tiny Ecosystem, Harmony, Balance Lab.
