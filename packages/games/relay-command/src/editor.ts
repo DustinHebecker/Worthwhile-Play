@@ -1,7 +1,7 @@
 import type { Translator } from '@wp/game-core';
 import { clear, h } from '@wp/ui';
-import { CELL, drawDeposit, drawTerrainMark, TERRAIN_NAMES } from './draw';
-import { drawIcon } from './icons';
+import { CELL, createTerrainLayer, drawDeposit, drawTerrainSwatch, TERRAIN_NAMES } from './draw';
+import { drawIcon, type View } from './icons';
 import {
   applyTool,
   blankMap,
@@ -43,6 +43,8 @@ export interface EditorOptions {
   readonly t: Translator;
   readonly css: (name: string, fallback: string) => string;
   readonly icon: (kind: string, own: boolean) => HTMLElement;
+  /** The player's map view (side or top), as in the game. */
+  readonly view?: () => View;
   /** The device's maps (the host's library, else preferences); asynchronous. */
   readonly library: MapLibrary;
   /** The library changed (the game's setup lists the maps too). */
@@ -61,6 +63,8 @@ export interface EditorOptions {
 const CONFIRM_GAP = 400;
 
 export function createEditor(o: EditorOptions): { readonly el: HTMLElement; render(): void; forget(): void; refresh(): void; maps(): readonly (EditMap | undefined)[] } {
+  const view = (): View => o.view?.() ?? 'profile';
+  const terrainLayer = createTerrainLayer('coarse');
   const { t } = o;
   let tool: Tool = { type: 'terrain', code: '=' };
   let side = 0;
@@ -151,15 +155,7 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
     } catch {
       g = null;
     }
-    if (g) {
-      const name = TERRAIN_NAMES[code] ?? 'plain';
-      g.fillStyle = o.css(`--rc-${name}`, '#ddd');
-      g.fillRect(0, 0, CELL, CELL);
-      g.strokeStyle = o.css('--rc-mark', '#00000055');
-      g.fillStyle = o.css('--rc-mark', '#00000055');
-      g.lineWidth = 1.5;
-      drawTerrainMark(g, name, 0, 0);
-    }
+    if (g) drawTerrainSwatch(g, code, view(), o.css);
     return el;
   };
   const same = (a: Tool, b: Tool) => JSON.stringify(a) === JSON.stringify(b);
@@ -311,27 +307,27 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
       g = null;
     }
     if (!g) return;
-    const grid = o.css('--rc-grid', '#00000022');
-    for (let y = 0; y < m.h; y++) {
-      for (let x = 0; x < m.w; x++) {
-        const name = TERRAIN_NAMES[m.terrain[y * m.w + x] ?? '.'] ?? 'plain';
-        g.fillStyle = o.css(`--rc-${name}`, '#ddd');
-        g.fillRect(x * CELL, y * CELL, CELL, CELL);
-        g.strokeStyle = o.css('--rc-mark', '#00000055');
-        g.fillStyle = o.css('--rc-mark', '#00000055');
-        g.lineWidth = 1.5;
-        drawTerrainMark(g, name, x * CELL, y * CELL);
-        const deposit = m.deposits.find((d) => d.x === x && d.y === y);
-        if (deposit) drawDeposit(g, x * CELL, y * CELL, depositSize(deposit));
-        g.strokeStyle = grid;
-        g.lineWidth = 1;
-        g.strokeRect(x * CELL + 0.5, y * CELL + 0.5, CELL - 1, CELL - 1);
-      }
-    }
+    // Coarser than in the game: the editor redraws the terrain after every stroke.
+    terrainLayer.draw(g, m, view(), o.css, 1);
     const surface = o.css('--wp-surface', '#ffffff');
+    g.strokeStyle = o.css('--rc-mark', '#00000055');
+    g.fillStyle = o.css('--rc-mark', '#00000055');
+    for (const d of m.deposits) drawDeposit(g, d.x * CELL, d.y * CELL, depositSize(d), surface);
+    g.strokeStyle = o.css('--rc-grid', '#00000022');
+    g.lineWidth = 1;
+    g.beginPath();
+    for (let x = 1; x < m.w; x++) {
+      g.moveTo(x * CELL + 0.5, 0);
+      g.lineTo(x * CELL + 0.5, m.h * CELL);
+    }
+    for (let y = 1; y < m.h; y++) {
+      g.moveTo(0, y * CELL + 0.5);
+      g.lineTo(m.w * CELL, y * CELL + 0.5);
+    }
+    g.stroke();
     for (const u of m.units) {
       const own = u.side === 0;
-      drawIcon(g, u.kind, u.x * CELL, u.y * CELL, CELL / 44, { own, colour: o.css(own ? '--wp-p1' : '--wp-p2', own ? '#24508f' : '#9a3412'), surface });
+      drawIcon(g, u.kind, u.x * CELL, u.y * CELL, CELL / 44, { own, colour: o.css(own ? '--wp-p1' : '--wp-p2', own ? '#24508f' : '#9a3412'), surface, view: view() });
     }
     // Mirror line: the centre of the map, where the halves meet.
     if (o.draft().mirror) {
