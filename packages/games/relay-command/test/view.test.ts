@@ -678,7 +678,7 @@ describe('Relay Command view', () => {
     expect($('rc-setup-summary').textContent).toContain(`Random map 24×16 · No. ${first.seed}`);
   });
 
-  it('a random map for two or three opponents has four bases, one per corner; one opponent goes back to two sides; the editor starts blank on it', () => {
+  it('a random map for two or three opponents has four bases, one per corner; one opponent goes back to two sides; the editor opens on it', () => {
     const scenario = $('rc-scenario') as HTMLSelectElement;
     scenario.value = 'random';
     scenario.dispatchEvent(new Event('change'));
@@ -700,10 +700,9 @@ describe('Relay Command view', () => {
     opponents.dispatchEvent(new Event('change'));
     expect(state().map).toEqual(four);
     expect(state().world.entities.some((e) => e.side === NEUTRAL && e.kind === 'command-post')).toBe(true);
-    // The map editor has no four-base maps yet: it starts from an empty map.
+    // The map editor opens on the four-base map being played (four-base maps in the editor, 2026-10-24).
     click('rc-editor-open');
-    expect(state().edit!.map.seats).toBeUndefined();
-    expect(state().edit!.map.units).toEqual([]);
+    expect(state().edit!.map).toEqual(four);
     click('ed-close');
     opponents.value = '1';
     opponents.dispatchEvent(new Event('change'));
@@ -1103,6 +1102,83 @@ describe('Relay Command map editor', () => {
     expect([...($('rc-scenario') as HTMLSelectElement).options].map((o) => o.textContent)).toContain('Duel');
     click('rc-lock');
     expect($('rc-setup-summary').textContent).toContain('Duel');
+  });
+
+  it('four bases: the editor makes a map with a base in each corner (mirrored four ways), names the bases A to D and plays it with three opponents', async () => {
+    click('rc-editor-open');
+    await settle();
+    const bases = $('ed-bases') as HTMLSelectElement;
+    expect(bases.value).toBe('2');
+    bases.value = '4';
+    bases.dispatchEvent(new Event('change'));
+    expect(state().edit!.map.seats).toBe(4);
+    expect(['ed-side-0', 'ed-side-1', 'ed-side-2', 'ed-side-3'].map((id) => $(id).textContent)).toEqual(['Base A (you, blue)', 'Base B', 'Base C', 'Base D']);
+    click('ed-tool-command-post');
+    moveTo(2, 9);
+    edKey('Enter');
+    click('ed-tool-rifles');
+    moveTo(3, 9);
+    edKey('Enter');
+    expect(state().edit!.map.units.filter((u) => u.kind === 'command-post').map((u) => u.side).sort()).toEqual([0, 1, 2, 3]);
+    expect($('ed-ok').textContent).toBe('Ready to play.');
+    expect($('ed-fair').textContent).toBe('Mirrored both ways: every base starts equal.');
+    moveTo(13, 2);
+    expect($('ed-cursor').textContent).toBe('Cell 14, 3: open ground · Base C: Command Post');
+    click('ed-play');
+    expect(state().map!.seats).toBe(4);
+    expect(state().opponents).toBe(3);
+    expect(state().world.sides).toBe(4);
+    expect([...($('rc-opponents') as HTMLSelectElement).options].map((o) => o.value)).toEqual(['1', '2', '3']);
+    expect($('rc-teams-label').hidden).toBe(false);
+    // The editor opens on the four-base map being played; back to two bases drops bases C and D.
+    click('rc-editor-open');
+    expect(state().edit!.map.seats).toBe(4);
+    ($('ed-bases') as HTMLSelectElement).value = '2';
+    $('ed-bases').dispatchEvent(new Event('change'));
+    expect(state().edit!.map.seats).toBeUndefined();
+    expect(state().edit!.map.units.every((u) => u.side < 2)).toBe(true);
+  });
+
+  it('asymmetric maps: each base its own Supply at the start; with four bases a map for teams (base A alone against three); Bastion opens as it is', async () => {
+    click('rc-editor-open');
+    await settle();
+    const supply = (seat: number) => $(`ed-supply-${seat}`) as HTMLSelectElement;
+    const choose = (select: HTMLSelectElement, value: string) => {
+      select.value = value;
+      select.dispatchEvent(new Event('change'));
+    };
+    // Two sides: one choice each, named as the sides are; the usual 300 to start with; no teams.
+    expect($('ed-supply').querySelector('legend')!.textContent).toBe('Supply at the start');
+    expect([...$('ed-supply').querySelectorAll('label > span')].map((x) => x.textContent)).toEqual(['You (blue)', 'Opponent (red)']);
+    expect([supply(0).value, supply(1).value]).toEqual(['300', '300']);
+    expect([...supply(0).options].map((o) => o.value)).toEqual(['0', '150', '300', '600', '1000', '1500', '3000']);
+    expect($('ed-teams').closest('label')!.hidden).toBe(true);
+    choose(supply(1), '1500');
+    expect(state().edit!.map.supply).toEqual([300, 1500]);
+    expect($('ed-fair').textContent).toBe('Not symmetric: one side may start better off.');
+    // Four bases: a choice per base; base A alone against three.
+    choose($('ed-bases') as HTMLSelectElement, '4');
+    expect([...$('ed-supply').querySelectorAll('label > span')].map((x) => x.textContent)).toEqual(['Base A (you, blue)', 'Base B', 'Base C', 'Base D']);
+    expect([0, 1, 2, 3].map((seat) => supply(seat).value)).toEqual(['300', '1500', '300', '300']);
+    expect($('ed-teams').closest('label')!.hidden).toBe(false);
+    ($('ed-teams') as HTMLInputElement).checked = true;
+    $('ed-teams').dispatchEvent(new Event('change'));
+    expect(state().edit!.map.teams).toBe(true);
+    expect($('ed-fair').textContent).toBe('Made for teams: base A stands alone against three; it is played only as 1 against 3 or 3 against 1.');
+    // Bastion is among the maps to start from, and opens made for teams with its Supply.
+    ($('ed-start') as HTMLSelectElement).value = 'bastion';
+    click('ed-load');
+    later();
+    click('ed-load');
+    expect(state().edit!.map).toMatchObject({ seats: 4, teams: true, supply: [1500, 300, 300, 300] });
+    expect(supply(0).value).toBe('1500');
+    expect(($('ed-teams') as HTMLInputElement).checked).toBe(true);
+    // Played: three opponents, only the two team shapes, 1 against 3 first; base A's Supply is the player's.
+    click('ed-play');
+    expect(state().opponents).toBe(3);
+    expect([...($('rc-teams') as HTMLSelectElement).options].map((o) => o.value)).toEqual(['1v3', '3v1']);
+    expect(state().world.teams).toEqual([0, 1, 1, 1]);
+    expect(state().world.supply).toEqual([1500, 300, 300, 300]);
   });
 
   it('places plain, rich and endless deposits; on a deposit the tool sets its size; the cell tells which', async () => {

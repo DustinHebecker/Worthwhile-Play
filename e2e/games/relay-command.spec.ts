@@ -453,6 +453,63 @@ test('relay-command: selling a building takes two taps, survives a reload and pa
   await expect.poll(async () => (await saved(page))?.world.entities.some((e) => e.id === yard.id)).toBe(false);
 });
 
+test('relay-command: a four-base map made in the editor on a phone survives a reload and plays with three opponents', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await start(page);
+  await page.getByTestId('rc-editor-open').click();
+  await page.getByTestId('ed-bases').selectOption('4');
+  await expect(page.getByTestId('ed-side-3')).toHaveText('Base D');
+  const map = page.getByTestId('ed-map');
+  const tap = async (x: number, y: number) => {
+    const box = (await map.boundingBox())!;
+    await map.click({ position: { x: ((x + 0.5) * box.width) / 16, y: ((y + 0.5) * box.height) / 12 } });
+  };
+  await page.getByTestId('ed-tool-command-post').click();
+  await tap(2, 9);
+  await page.getByTestId('ed-tool-rifles').click();
+  await tap(3, 9);
+  await expect(page.getByTestId('ed-ok')).toHaveText('Ready to play.');
+  await expect(page.getByTestId('ed-fair')).toHaveText('Mirrored both ways: every base starts equal.');
+  const widths = await page.evaluate(() => ({ page: document.documentElement.scrollWidth, viewport: document.documentElement.clientWidth }));
+  expect(widths.page).toBeLessThanOrEqual(widths.viewport);
+  await page.reload();
+  await page.getByTestId('continue').click();
+  await expect(page.getByTestId('ed-bases')).toHaveValue('4');
+  await page.getByTestId('ed-play').click();
+  const four = async () => ((await saved(page)) as unknown as { opponents: number; map: { seats?: number } | null } | undefined);
+  await expect.poll(async () => (await four())?.map?.seats).toBe(4);
+  expect((await four())!.opponents).toBe(3);
+  await expect(page.getByTestId('rc-teams-label')).toBeVisible();
+});
+
+test('relay-command: an asymmetric map for teams in the editor on a phone (Bastion, Supply per base) survives a reload and plays 1 against 3', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await start(page);
+  await page.getByTestId('rc-editor-open').click();
+  await page.getByTestId('ed-start').selectOption('bastion');
+  // Loading replaces the draft: a first press arms, a deliberate second one confirms.
+  await page.getByTestId('ed-load').click();
+  await expect(page.getByTestId('ed-load')).toHaveText('Press again to replace the map');
+  await page.waitForTimeout(450);
+  await page.getByTestId('ed-load').click();
+  await expect(page.getByTestId('ed-teams')).toBeChecked();
+  await expect(page.getByTestId('ed-supply-0')).toHaveValue('1500');
+  await page.getByTestId('ed-supply-1').selectOption('600');
+  await expect(page.getByTestId('ed-fair')).toHaveText('Made for teams: base A stands alone against three; it is played only as 1 against 3 or 3 against 1.');
+  const widths = await page.evaluate(() => ({ page: document.documentElement.scrollWidth, viewport: document.documentElement.clientWidth }));
+  expect(widths.page).toBeLessThanOrEqual(widths.viewport);
+  await page.reload();
+  await page.getByTestId('continue').click();
+  await expect(page.getByTestId('ed-supply-1')).toHaveValue('600');
+  await expect(page.getByTestId('ed-teams')).toBeChecked();
+  await page.getByTestId('ed-play').click();
+  const game = async () => (await saved(page)) as unknown as { opponents: number; map: { teams?: boolean } | null; world: { teams?: number[]; supply?: number[] } } | undefined;
+  await expect.poll(async () => (await game())?.map?.teams).toBe(true);
+  expect((await game())!.world.teams).toEqual([0, 1, 1, 1]);
+  expect((await game())!.world.supply).toEqual([1500, 600, 300, 300]);
+  await expect(page.getByTestId('rc-teams')).toHaveValue('1v3');
+});
+
 test('relay-command: the map editor on a phone — paint with taps, save, resume after a reload, play the map', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 740 });
   await start(page);

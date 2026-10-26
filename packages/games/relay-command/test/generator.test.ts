@@ -177,7 +177,7 @@ describe('map generator, four bases (Generator C, owner decisions 2026-10-18)', 
     expect(customSpec(generateMap(12, 10, 1)).seats).toBeUndefined();
   });
 
-  it('a game on a four-base map: 1 to 3 opponents, empty seats neutral, each seat its mirror frame; a valid save every turn; the editor refuses it', () => {
+  it('a game on a four-base map: 1 to 3 opponents, empty seats neutral, each seat its mirror frame; a valid save every turn; the editor takes it as a draft', () => {
     const map = generateMap(16, 12, 2, 'Random', 4);
     for (const opponents of RANDOM_OPPONENTS) {
       let s = newGame(2, FIELD_EXERCISE, 'normal', 6, false, map, opponents, [], false, { w: 16, h: 12, seed: 2 });
@@ -192,8 +192,8 @@ describe('map generator, four bases (Generator C, owner decisions 2026-10-18)', 
       }
     }
     const s = newGame(2, FIELD_EXERCISE, 'normal', 6, false, map, 3);
-    // The editor keeps to two sides for now: a draft holding a four-base map is no valid save.
-    expect(isValidState({ ...s, edit: { map, slot: null, mirror: true } })).toBe(false);
+    // The editor makes four-base maps too (2026-10-24): a draft holding one is a valid save.
+    expect(isValidState({ ...s, edit: { map, slot: null, mirror: true } })).toBe(true);
     expect(isValidState({ ...s, edit: { map: generateMap(16, 12, 2), slot: null, mirror: true } })).toBe(true);
   }, 120_000);
 
