@@ -413,7 +413,33 @@ export function assaultPlan(obs: Observation, ruleset: Ruleset, difficulty: Diff
   // A neutral post is taken over, not stormed: the infantry goes as soon as the known guards allow.
   const storming = objective.side === NEUTRAL ? ours >= theirs * STORM_ODDS : gathered && (!reinforcing || ours >= theirs * STORM_ODDS || world.turn >= ESCALATE_TURN);
   const besieging = all.some((f) => (archetypeOf(ruleset, f.kind)?.weapon?.minRange ?? 0) > 0 && (archetypeOf(ruleset, f.kind)?.weapon?.range ?? 0) > 3);
+  // Alone against several: hold in front of the own post, never storm (see `outnumbered`).
+  if (outnumbered(world, side)) {
+    const guard = coveredNear(obs, ruleset, { x: Math.round(home.x - (dx / len) * HOLD_DIST), y: Math.round(home.y - (dy / len) * HOLD_DIST) });
+    return { objective, rally: guard, all, storming: false, besieging };
+  }
   return { objective, rally, all, storming, besieging };
+}
+
+/** How far in front of its own post an outnumbered side gathers its fighters. */
+const HOLD_DIST = 3;
+
+/**
+ * Teams: the side stands alone (no ally still in) against two or more hostile sides. On strength a
+ * team counts as its strongest side (owner decision 2026-10-25), so a lone side wins by holding
+ * what it has; storming out against several, it was out at turn 48 on Bastion (measured). It
+ * gathers in front of its own post and fights what comes into reach instead.
+ */
+export function outnumbered(world: World, side: number): boolean {
+  if (!world.teams) return false;
+  let allies = 0;
+  let foes = 0;
+  for (let s = 0; s < world.sides; s++) {
+    if (s === side || world.out?.includes(s)) continue;
+    if (hostile(world, side, s)) foes++;
+    else allies++;
+  }
+  return allies === 0 && foes >= 2;
 }
 
 /**
