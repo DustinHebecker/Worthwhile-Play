@@ -353,6 +353,38 @@ describe('planning', () => {
   });
 });
 
+describe('drones (owner decision 2026-10-27)', () => {
+  /** A game where the player's first Rifle Squad is a Scout Car (its drone aboard). */
+  const withCar = (): { s: RcState; car: Entity } => {
+    const s = newGame(1);
+    const car = own(s).find((e) => e.kind === 'rifles')!;
+    Object.assign(car, { kind: 'outrider', hp: 45 });
+    s.world.intel = initialIntel(s.world, RULESET);
+    return { s, car };
+  };
+
+  it('a launch is a one-shot order: planned once per turn, the car keeps its standing order', () => {
+    const { s, car } = withCar();
+    const s1 = planOrder(s, car.id, { type: 'launch' })!;
+    expect(plannedJobs(s1, car.id)).toEqual([{ side: PLAYER, unit: car.id, order: { type: 'launch' } }]);
+    expect(orderRefusal(s1, car.id, { type: 'launch' })).toBe('cannot-launch');
+    const s2 = planOrder(s1, car.id, { type: 'move', x: car.x, y: car.y - 1 })!;
+    expect(s2.draft).toHaveLength(2);
+    expect(isValidState(s2)).toBe(true);
+  });
+
+  it('a drone is free: launching it changes no side\'s strength', () => {
+    const { s, car } = withCar();
+    const before = sideValue(s.world, PLAYER);
+    const after = lockTurn(planOrder(s, car.id, { type: 'launch' })!);
+    expect(after.world.entities.some((e) => e.kind === 'kite' && e.carrier === car.id)).toBe(true);
+    // Only income and fighting change it (both sides hold their positions in this turn).
+    const drone = after.world.entities.find((e) => e.kind === 'kite')!;
+    expect(sideValue(after.world, PLAYER)).toBe(sideValue({ ...after.world, entities: after.world.entities.filter((e) => e !== drone) }, PLAYER));
+    expect(before).toBeGreaterThan(0);
+  });
+});
+
 describe('command network (I3a)', () => {
   it('the Command Post gives 4 order slots; a fifth new order is refused, replacing one is free', () => {
     let s = newGame(1);

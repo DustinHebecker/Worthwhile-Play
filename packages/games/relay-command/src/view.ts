@@ -3,6 +3,8 @@ import { normalizeSeed } from '@wp/game-core';
 import {
   hostile,
   archetypeOf,
+  carrierOf,
+  droneState,
   depositAt,
   isReady,
   repairPrice,
@@ -102,13 +104,13 @@ const CONFIRM_GAP = 400;
 const QUIET_NOTICE = 3;
 
 /** Kinds the game uses, in the legend's order: fighters, support, structures. */
-const LEGEND_KINDS = ['rifles', 'lancer', 'outrider', 'warden', 'howitzer', 'mast-truck', 'field-post', 'jammer', 'tracer', 'command-post', 'muster', 'motor-pool', 'extractor', 'relay-mast', 'tower-gun', 'tower-artillery', 'tower-laser', 'tower-emp'] as const;
+const LEGEND_KINDS = ['rifles', 'lancer', 'outrider', 'kite', 'warden', 'howitzer', 'mast-truck', 'field-post', 'jammer', 'tracer', 'command-post', 'muster', 'motor-pool', 'extractor', 'relay-mast', 'tower-gun', 'tower-artillery', 'tower-laser', 'tower-emp'] as const;
 
 /** Map cell size in CSS pixels (the 44 px minimum touch target). */
 export { CELL };
 
 /** Automatic order ends worth telling the player (arrivals and regroups are expected outcomes). */
-const REPORTED_ENDS: ReadonlySet<string> = new Set(['occupied', 'unreachable', 'blocked', 'lost-target', 'retreat', 'outpaced', 'lost-contact', 'turned-back']);
+const REPORTED_ENDS: ReadonlySet<string> = new Set(['occupied', 'unreachable', 'blocked', 'lost-target', 'retreat', 'outpaced', 'lost-contact', 'turned-back', 'leash']);
 
 let instanceCounter = 0;
 
@@ -263,6 +265,12 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
         return t('order.patrol', { x: order.x + 1, y: order.y + 1, rx: order.rx + 1, ry: order.ry + 1 });
       case 'regroup':
         return t('order.regroup');
+      case 'launch':
+        return t('order.launch');
+      case 'recall': {
+        const carrier = carrierOf(world(), e);
+        return t('order.recall', { target: carrier ? unitName(carrier) : t('unit.outrider') });
+      }
       default:
         return t('order.hold');
     }
@@ -436,6 +444,9 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   const deployBtn = h('button', { type: 'button', 'data-testid': 'rc-deploy', onclick: () => orderSelected({ type: 'deploy' }) }, t('action.deploy'));
   const regroupBtn = h('button', { type: 'button', 'data-testid': 'rc-regroup', onclick: () => orderSelected({ type: 'regroup' }) }, t('action.regroup'));
   const cancelBtn = h('button', { type: 'button', 'data-testid': 'rc-cancel', onclick: () => onCancel() }, t('action.cancel'));
+  /** Drones (owner decision 2026-10-27): a Scout Car launches its drone; a drone lands on its car. */
+  const launchBtn = h('button', { type: 'button', 'data-testid': 'rc-launch', onclick: () => orderSelected({ type: 'launch' }) }, t('action.launch')) as HTMLButtonElement;
+  const recallBtn = h('button', { type: 'button', 'data-testid': 'rc-recall', onclick: () => orderSelected({ type: 'recall' }) }, t('action.recall'));
 
   /** What the next map click means for the selected unit. */
   type ClickMode = 'move' | 'patrol' | 'escort';
@@ -466,7 +477,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     h('label', { class: 'rc-check' }, holdFireBox, h('span', {}, t('doctrine.holdFire'))),
     h('label', {}, h('span', {}, t('doctrine.lostContact')), lostContactSelect)
   );
-  const selectionActions = h('div', { class: 'rc-orders' }, h('div', { class: 'rc-actions' }, holdBtn, regroupBtn, deployBtn, cancelBtn), modeGroup, modeHint, doctrineBox);
+  const selectionActions = h('div', { class: 'rc-orders' }, h('div', { class: 'rc-actions' }, holdBtn, regroupBtn, deployBtn, launchBtn, recallBtn, cancelBtn), modeGroup, modeHint, doctrineBox);
   /** Production (yards) and placement (command sources) of the selected structure (I6a). */
   const jobsEl = h('div', { class: 'rc-jobs', 'data-testid': 'rc-jobs', hidden: true });
   /** Structure kind the next map click places, or null. */
@@ -487,7 +498,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     'details',
     { class: 'rc-help' },
     h('summary', {}, t('help.title')),
-    ...['help.turns', 'help.bar', 'help.orders', 'help.network', 'help.fog', 'help.flash', 'help.ew', 'help.doctrine', 'help.economy', 'help.towers', 'help.repair', 'help.editor', 'help.random', 'help.sides', 'help.teams', 'help.hotSeat', 'help.combat', 'help.goal', 'help.shapes', 'help.access'].map((k) => h('p', {}, t(k)))
+    ...['help.turns', 'help.bar', 'help.orders', 'help.network', 'help.fog', 'help.flash', 'help.ew', 'help.doctrine', 'help.economy', 'help.towers', 'help.repair', 'help.drone', 'help.editor', 'help.random', 'help.sides', 'help.teams', 'help.hotSeat', 'help.combat', 'help.goal', 'help.shapes', 'help.access'].map((k) => h('p', {}, t(k)))
   );
 
   /* ---------- Map editor ---------- */
@@ -878,6 +889,13 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     selectionActions.hidden = !canOrder;
     deployBtn.hidden = !unit || !needsDeploy(unit) || isSetUpOrPending(unit);
     deployBtn.textContent = unit && deployKind(unit) === 'deployJammer' ? t('action.deployJammer') : t('action.deploy');
+    // The drone button tells where the drone is: aboard (launch), taking off this turn, or being replaced.
+    const drone = unit ? droneState(RULESET, unit) : undefined;
+    const launching = !!unit && state.draft.some((c) => c.unit === unit.id && c.order.type === 'launch');
+    launchBtn.hidden = !unit || drone === undefined || drone === 'flying';
+    launchBtn.disabled = drone !== 'aboard' || launching;
+    launchBtn.textContent = launching ? t('action.launchPlanned') : drone === 'rebuilding' ? t('action.launchRebuild', { n: unit?.rebuild ?? 0 }) : t('action.launch');
+    recallBtn.hidden = !unit || !carrierOf(world(), unit);
     for (const b of modeButtons) b.setAttribute('aria-pressed', String(b.getAttribute('data-testid') === `rc-mode-${mode}`));
     modeHint.textContent = mode === 'patrol' ? t('mode.hintPatrol') : mode === 'escort' ? t('mode.hintEscort') : '';
     modeHint.hidden = mode === 'move';
@@ -889,7 +907,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       holdFireBox.checked = d.holdFire;
       lostContactSelect.value = d.lostContact;
     }
-    cancelBtn.disabled = !unit || !draftFor(state, unit.id);
+    cancelBtn.disabled = !unit || !state.draft.some((c) => c.unit === unit.id);
   }
 
   /** What a selected structure is for (economy): yard, command source, site or Extractor. */
@@ -1214,6 +1232,16 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       const text = arch.ew.role === 'jammer' ? t('card.jammer', { r: arch.ew.radius }) : t('card.tracer', { r: arch.ew.radius, b: arch.ew.burnThrough });
       facts.append(...fact(t('card.ew'), arch.ew.needsDeploy ? `${text} ${t('card.needsSetUp')}` : text));
     }
+    // Drones: where a carrier's drone is (own units only), and a drone's leash.
+    const drone = unit.side === me() ? droneState(RULESET, unit) : undefined;
+    if (drone) {
+      const flying = unit.drone === undefined ? undefined : known(unit.drone);
+      const text = drone === 'aboard' ? t('card.droneAboard') : drone === 'flying' ? t('card.droneFlying', { name: flying ? unitName(flying) : t('unit.kite') }) : t('card.droneRebuild', { n: unit.rebuild ?? 0 });
+      facts.append(...fact(t('card.drone'), text, 'rc-card-drone'));
+    }
+    const carrier = carrierOf(world(), unit);
+    const leash = carrier && archetypeOf(RULESET, carrier.kind)?.carrier?.leash;
+    if (carrier && leash !== undefined) facts.append(...fact(t('card.leash'), t('card.leashValue', { n: leash, name: unitName(carrier) }), 'rc-card-leash'));
     // Economy: what it costs and takes, what it yields or produces.
     if (RULESET.economy) {
       if (arch.buildTurns > 0) facts.append(...fact(t('card.cost'), t('card.supply', { n: arch.cost }), 'rc-card-cost'), ...fact(t('card.buildTime'), t('card.turns', { n: arch.buildTurns })));
@@ -1326,6 +1354,14 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
         g.stroke();
       }),
       t('legend.jammed')
+    );
+    row(
+      swatch((g) => {
+        g.fillStyle = css('--rc-plain', '#e7e3d4');
+        g.fillRect(0, 0, CELL, CELL);
+        leashRing(g, CELL / 2, CELL / 2, CELL * 0.38);
+      }),
+      t('legend.leash')
     );
     row(
       swatch((g) => {
@@ -1467,6 +1503,15 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
         if (e.side === me()) lines.push(t('summary.income', { n: e.amount }));
       } else if (e.t === 'produced') {
         if (e.side === me()) lines.push(t('summary.produced', { name: unitName(e), yard: unitName(unitById(state, e.by) ?? { kind: 'muster', id: e.by }) }));
+      } else if (e.t === 'drone-launched') {
+        const carrier = unitById(state, e.by);
+        if (e.side === me() && carrier) lines.push(t('summary.droneLaunched', { name: unitName(carrier) }));
+      } else if (e.t === 'drone-docked') {
+        const carrier = unitById(state, e.by);
+        if (e.side === me() && carrier) lines.push(t('summary.droneDocked', { name: unitName({ kind: 'kite', id: e.id }), carrier: unitName(carrier) }));
+      } else if (e.t === 'drone-ready') {
+        const carrier = unitById(state, e.id);
+        if (e.side === me() && carrier) lines.push(t('summary.droneReady', { name: unitName(carrier) }));
       } else if (e.t === 'built') {
         const site = unitById(state, e.id);
         if (site?.side === me()) lines.push(t('summary.built', { name: unitName(site) }));
@@ -1533,6 +1578,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     drawFog(g, w);
     drawCoverage(g, w);
     drawOrders(g, w);
+    drawLeash(g, w);
     drawEvents(g);
     for (const e of w.entities) drawUnit(g, e);
     drawCursor(g);
@@ -1723,6 +1769,27 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
 
   const centre = (x: number, y: number) => [x * CELL + CELL / 2, y * CELL + CELL / 2] as const;
 
+  /** The leash of a drone: a dash-dot circle around its carrier, while either of them is selected. */
+  function drawLeash(g: CanvasRenderingContext2D, w: World): void {
+    const unit = selected === null ? undefined : w.entities.find((e) => e.id === selected && e.side === me());
+    if (!unit) return;
+    const carrier = unit.drone !== undefined ? unit : carrierOf(w, unit);
+    const leash = carrier && archetypeOf(RULESET, carrier.kind)?.carrier?.leash;
+    if (!carrier || leash === undefined || carrier.drone === undefined) return;
+    leashRing(g, ...centre(carrier.x, carrier.y), leash * CELL + CELL / 2);
+  }
+
+  function leashRing(g: CanvasRenderingContext2D, cx: number, cy: number, r: number): void {
+    g.save();
+    g.strokeStyle = css('--wp-p1', '#24508f');
+    g.lineWidth = 2;
+    g.setLineDash([10, 4, 2, 4]);
+    g.beginPath();
+    g.arc(cx, cy, r, 0, Math.PI * 2);
+    g.stroke();
+    g.restore();
+  }
+
   function drawOrders(g: CanvasRenderingContext2D, w: World): void {
     for (const e of w.entities) {
       if (e.side !== me()) continue;
@@ -1801,7 +1868,10 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     g.save();
     // Icon set A: frame for category and side, mark for function (icons.ts); the old token is the
     // fallback where Path2D is missing.
-    const drawn = drawIcon(g, e.kind, e.x * CELL, e.y * CELL, CELL / 44, { own, colour, surface, ghost, view: mapView, deployed: isSetUp(e) && !ghost, ...(e.build !== undefined && { site: e.build }) });
+    // A drone above another unit is drawn smaller in the cell's upper corner, so both show.
+    const aloft = archetypeOf(RULESET, e.kind)?.layer === 'air' && world().entities.some((o) => o !== e && o.x === e.x && o.y === e.y);
+    const k = aloft ? 0.62 : 1;
+    const drawn = drawIcon(g, e.kind, e.x * CELL + (aloft ? CELL * 0.4 : 0), e.y * CELL - (aloft ? CELL * 0.06 : 0), (CELL / 44) * k, { own, colour, surface, ghost, view: mapView, deployed: isSetUp(e) && !ghost, ...(e.build !== undefined && { site: e.build }) });
     if (!drawn) {
       g.lineWidth = 3;
       g.strokeStyle = colour;
@@ -2090,7 +2160,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
 
   /** Shows why an order was refused, visibly and for screen readers. */
   function showRefusal(refusal: string | null): void {
-    const specific = ['out-of-contact', 'no-slots', 'impassable', 'not-visible', 'no-weapon', 'no-supply', 'cannot-produce', 'queue-full', 'cannot-build', 'not-buildable', 'cannot-repair', 'cannot-sell'].includes(refusal ?? '');
+    const specific = ['out-of-contact', 'no-slots', 'impassable', 'not-visible', 'no-weapon', 'no-supply', 'cannot-produce', 'queue-full', 'cannot-build', 'not-buildable', 'cannot-repair', 'cannot-sell', 'cannot-launch', 'leash'].includes(refusal ?? '');
     const message = specific ? t(`refuse.${refusal}`, { slots: orderSlots(state) }) : t('announce.refused');
     noticeEl.textContent = message;
     noticeEl.hidden = false;
@@ -2270,6 +2340,13 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     // unit selected, its cell takes a move order (the ghost stays selectable in the list).
     if (canOrder && mode === 'move' && ownHere && isGhost(ownHere) && !here.some((e) => e.side === me() && !isGhost(e))) {
       orderSelected({ type: 'move', x, y });
+      return;
+    }
+    // A drone above a unit shares its cell: a second click selects the other one.
+    const ownLive = here.filter((e) => e.side === me() && !isGhost(e));
+    const at = ownLive.findIndex((e) => e.id === selected);
+    if (ownLive.length > 1 && at >= 0) {
+      select((ownLive[(at + 1) % ownLive.length] as Entity).id);
       return;
     }
     if (ownHere && ownHere.id !== selected) {

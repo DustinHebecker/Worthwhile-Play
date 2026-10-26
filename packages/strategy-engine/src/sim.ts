@@ -4,7 +4,7 @@ import { canReach, costGrid, findPath, NumberHeap, regions } from './path';
 import { DEFAULT_DOCTRINE, MAX_SUPPLY, NEUTRAL, type Archetype, type Command, type Doctrine, type Entity, type Order, type OrderEndReason, type Report, type Ruleset, type SimEvent, type Status, type TargetPriority, type WeaponSpec, type World } from './types';
 import { computeNetwork, isEmitter, type Network } from './network';
 import { initialIntel, updateIntel } from './vision';
-import { archetypeOf, findEntity, hostile, needsDeploy, normalizeDoctrine, normalizeOrder, spawn, validateCommand } from './world';
+import { archetypeOf, carrierOf, findEntity, hostile, needsDeploy, normalizeDoctrine, normalizeOrder, spawn, validateCommand } from './world';
 import { depositAt, incomeOf, isReady, repairPrice, sellRefund, spawnCell } from './economy';
 
 export interface SimResult {
@@ -96,6 +96,8 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
   // Sites placed in this batch: paid in the loop, set down after it with ids by each site's cell in
   // its side's own frame, so the order in which the plans were handed in never decides the ids.
   const placing: { unit: Entity; kind: string; x: number; y: number }[] = [];
+  // Carriers launching their drone in this batch: set down after the loop, like sites (ids by cell).
+  const launching: Entity[] = [];
   for (const c of commands) {
     if (!validateCommand(w, rs, c, networks).ok) continue;
     // A placement the side's knowledge allowed may still find the cell taken: refused unpaid.
@@ -142,6 +144,10 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
       if (!selling.includes(unit)) selling.push(unit);
       continue;
     }
+    if (order.type === 'launch') {
+      if (!launching.includes(unit)) launching.push(unit);
+      continue;
+    }
     if (order.type === 'build') {
       const structure = arch({ kind: order.kind } as Entity);
       const supply = (w.supply ??= Array.from({ length: w.sides }, () => 0));
@@ -180,6 +186,24 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     w.entities.push(site);
     if (w.intel) w.intel[p.unit.side]?.push({ id: site.id, side: site.side, kind: site.kind, x: site.x, y: site.y, hp: site.hp, tick: t, live: false });
     events.push({ t: 'site', tick: t, id: site.id, side: site.side, kind: site.kind, x: site.x, y: site.y });
+  }
+  // Drones take off above their carrier (or the first free neighbouring cell in the air) and
+  // escort it; ids by the carrier's cell in its side's frame, as for sites.
+  launching.sort((a, b) => frameIndexIn(w.map, frameOf(w, a.side), cellOf(w.map, a.x, a.y)) - frameIndexIn(w.map, frameOf(w, b.side), cellOf(w.map, b.x, b.y)) || a.side - b.side);
+  for (const carrier of launching) {
+    const droneArch = archetypeOf(rs, arch(carrier).carrier?.kind ?? '');
+    if (!droneArch) continue;
+    const air = new Set(w.entities.filter((e) => arch(e).layer === droneArch.layer).map((e) => cellOf(w.map, e.x, e.y)));
+    const cells = [[0, 0] as const, ...frameDirs(frameOf(w, carrier.side))].map(([dx, dy]) => [carrier.x + dx, carrier.y + dy] as const);
+    const at = cells.find(([x, y]) => passable(w.map, rs, x, y, droneArch.layer) && !air.has(cellOf(w.map, x, y)));
+    if (!at) continue;
+    const drone = spawn(w.nextId++, carrier.side, droneArch, at[0], at[1], { type: 'escort', target: carrier.id });
+    drone.carrier = carrier.id;
+    if (carrier.doctrine) drone.doctrine = normalizeDoctrine(carrier.doctrine);
+    carrier.drone = drone.id;
+    w.entities.push(drone);
+    if (w.intel) w.intel[carrier.side]?.push({ id: drone.id, side: drone.side, kind: drone.kind, x: drone.x, y: drone.y, hp: drone.hp, tick: t, live: false });
+    events.push({ t: 'drone-launched', tick: t, id: drone.id, side: drone.side, kind: drone.kind, x: drone.x, y: drone.y, by: carrier.id });
   }
   for (const unit of selling) {
     const supply = (w.supply ??= Array.from({ length: w.sides }, () => 0));
@@ -254,9 +278,23 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     }
   }
   const goals = new Map<number, number>();
+  // Drones on a leash: where their carrier stands at the start of the tick, and how far they may go.
+  const leashes = new Map<number, { x: number; y: number; leash: number }>();
+  for (const e of w.entities) {
+    const carrier = carrierOf(w, e);
+    const leash = carrier && arch(carrier).carrier?.leash;
+    if (carrier && leash !== undefined) leashes.set(e.id, { x: carrier.x, y: carrier.y, leash });
+  }
+  const beyond = (id: number, x: number, y: number): boolean => {
+    const l = leashes.get(id);
+    return !!l && dist2(x, y, l.x, l.y) > l.leash * l.leash;
+  };
   for (const e of w.entities) {
     const a = arch(e);
-    const goal = a.speed === 0 || has(e, 'disabled') ? undefined : goalOf(intent, e, a);
+    let goal = a.speed === 0 || has(e, 'disabled') ? undefined : goalOf(intent, e, a);
+    // A drone beyond its leash (its carrier drove off) flies back towards the carrier first.
+    const l = leashes.get(e.id);
+    if (l && !has(e, 'disabled') && beyond(e.id, e.x, e.y)) goal = cellOf(w.map, l.x, l.y);
     if (goal !== undefined) goals.set(e.id, goal);
   }
   const claims = new Map<number, { e: Entity; cost: number }[]>();
@@ -296,6 +334,11 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
       continue;
     }
     const next = step.next;
+    // A drone does not leave its leash: a move that would ends ('leash'); anything else waits at its edge.
+    if (!beyond(e.id, e.x, e.y) && beyond(e.id, next % w.map.w, Math.floor(next / w.map.w))) {
+      if (e.order.type === 'move') end(e, 'leash');
+      continue;
+    }
     const cost = stepCost(w.map, rs, e.x, e.y, next % w.map.w, Math.floor(next / w.map.w), a.layer) as number;
     if (e.mp < cost) continue;
     const key = a.layer === 'air' ? next + cells : next;
@@ -355,6 +398,21 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
       moved.add(e.id);
       events.push({ t: 'move', tick: t, id: e.id, x: e.x, y: e.y });
     }
+  }
+
+  // A recalled drone above its carrier lands: it is aboard again (no longer on the map).
+  const docked = new Set<number>();
+  for (const e of w.entities) {
+    const carrier = e.order.type === 'recall' ? carrierOf(w, e) : undefined;
+    if (!carrier || carrier.x !== e.x || carrier.y !== e.y) continue;
+    docked.add(e.id);
+    delete carrier.drone;
+    events.push({ t: 'drone-docked', tick: t, id: e.id, side: e.side, by: carrier.id });
+  }
+  if (docked.size > 0) {
+    w.entities = w.entities.filter((e) => !docked.has(e.id));
+    // Its own side knows it landed (no ghost of it stays behind).
+    if (w.intel) w.intel = w.intel.map((list, side) => list.filter((r) => !(docked.has(r.id) && r.side === side)));
   }
 
   // 4 + 5. Targeting, fire and projectiles
@@ -443,7 +501,19 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     e.status.sort((a, b) => (a.kind < b.kind ? -1 : a.kind > b.kind ? 1 : 0));
   }
 
-  // 8. Removal
+  // 8. Removal. A drone falls with its carrier; a carrier that lost its drone gets a new one aboard
+  // after `rebuildTurns` turn ends (free).
+  for (const e of w.entities) {
+    const carrier = e.carrier !== undefined && e.hp > 0 ? carrierOf(w, e) : undefined;
+    if (carrier && carrier.hp <= 0) e.hp = 0;
+  }
+  for (const e of w.entities) {
+    const drone = e.drone !== undefined && e.hp > 0 ? findEntity(w, e.drone) : undefined;
+    const spec = arch(e).carrier;
+    if (!drone || drone.hp > 0 || !spec) continue;
+    delete e.drone;
+    e.rebuild = spec.rebuildTurns;
+  }
   const alive: Entity[] = [];
   const gone: Entity[] = [...sold];
   for (const e of w.entities) {
@@ -511,6 +581,16 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     }
     w.entities.sort((a, b) => a.id - b.id);
     for (const list of w.intel ?? []) list.sort((a, b) => a.id - b.id);
+  }
+  // 9c. Drones: one turn end less until a lost drone is replaced.
+  if (t % rs.ticksPerTurn === 0) {
+    for (const e of w.entities) {
+      if (e.rebuild === undefined) continue;
+      e.rebuild -= 1;
+      if (e.rebuild > 0) continue;
+      delete e.rebuild;
+      events.push({ t: 'drone-ready', tick: t, id: e.id, side: e.side });
+    }
   }
   // 10b. Capture and elimination (several sides): at the end of a turn, after everything else.
   if (rs.capture && t % rs.ticksPerTurn === 0) captureAndEliminate(w, rs, t, events);
@@ -704,6 +784,12 @@ function goalOf(ctx: Intent, e: Entity, a: Archetype): number | undefined {
       if (leg.type === 'patrol' && (leg.x !== e.x || leg.y !== e.y) && !(adjacent(e, leg.x, leg.y) && takenBy(ctx, e, a, leg.x, leg.y))) {
         goal = cellOf(w.map, leg.x, leg.y);
       }
+      break;
+    }
+    case 'recall': {
+      const carrier = carrierOf(w, e);
+      if (!carrier) ctx.end(e, 'lost-target');
+      else if (carrier.x !== e.x || carrier.y !== e.y) goal = cellOf(w.map, carrier.x, carrier.y);
       break;
     }
     case 'regroup': {
