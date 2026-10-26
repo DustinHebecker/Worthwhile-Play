@@ -12,8 +12,11 @@
   --rc-ridge: #c4bfb3;
   --rc-mark: rgba(29, 29, 27, 0.45);
   --rc-grid: rgba(29, 29, 27, 0.12);
-  --rc-nocover: rgba(29, 29, 27, 0.3);
-  --rc-fog: rgba(29, 29, 27, 0.12);
+  /* The edge of the own command coverage (a line with ticks on the outside). */
+  --rc-nocover: rgba(29, 29, 27, 0.6);
+  /* Not observed now: a milky veil with soft edges, and a dot in each such cell. */
+  --rc-fog: rgba(250, 250, 247, 0.5);
+  --rc-fog-dot: rgba(29, 29, 27, 0.45);
   /* Sides beyond the first two (several opponents) and neutral posts; each also carries a letter. */
   --rc-p3: #6b21a8;
   --rc-p4: #0f5f57;
@@ -40,8 +43,9 @@
     --rc-ridge: #5a5650;
     --rc-mark: rgba(236, 235, 228, 0.45);
     --rc-grid: rgba(236, 235, 228, 0.12);
-    --rc-nocover: rgba(236, 235, 228, 0.3);
-    --rc-fog: rgba(0, 0, 0, 0.32);
+    --rc-nocover: rgba(236, 235, 228, 0.6);
+    --rc-fog: rgba(95, 100, 105, 0.32);
+    --rc-fog-dot: rgba(236, 235, 228, 0.5);
     --rc-p3: #d8b4fe;
     --rc-p4: #5eead4;
     --rc-p5: #fcd34d;
@@ -169,6 +173,7 @@
 .wp-relay-command .rc-fold > summary { cursor: pointer; min-block-size: var(--wp-touch, 44px); display: flex; align-items: center; font-weight: 600; }
 .wp-relay-command .rc-slots[data-full] { color: var(--wp-accent, var(--wp-p1)); font-weight: 800; text-decoration: underline; text-underline-offset: 0.2em; }
 .wp-relay-command .rc-bar .rc-status:empty { display: none; }
+.wp-relay-command .rc-view { align-items: center; }
 .wp-relay-command .rc-legend { margin: 0; }
 .wp-relay-command .rc-legend summary { cursor: pointer; min-height: var(--wp-touch, 44px); display: flex; align-items: center; }
 .wp-relay-command .rc-legend-list { list-style: none; margin: 0.25rem 0 0; padding: 0; display: grid; gap: 0.35rem; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); }
