@@ -84,8 +84,8 @@
     "countries": 193,
     "others": 61,
     "disputed": 78,
-    "arcs": 2724,
-    "points": 26466,
+    "arcs": 3269,
+    "points": 27568,
     "lakes": 12,
     "rivers": 27,
     "regions": 31,
@@ -100,7 +100,8 @@
   ],
   "notNeighboursUnderTheRule": [
     "CN–PK (372 km, 0.0 km outside hatched areas)",
-    "GY–VE (659 km, 2.2 km outside hatched areas)"
+    "GY–VE (659 km, 0.0 km outside hatched areas)",
+    "IL–SY (91 km, 0.0 km outside hatched areas)"
   ],
   "neighbours": {
     "AD": [
@@ -189,6 +190,7 @@
     "BG": [
       "GR",
       "MK",
+      "RO",
       "RS",
       "TR"
     ],
@@ -244,7 +246,8 @@
       "UA"
     ],
     "BZ": [
-      "GT"
+      "GT",
+      "MX"
     ],
     "CA": [
       "US"
@@ -377,6 +380,7 @@
     ],
     "EG": [
       "IL",
+      "LY",
       "SD"
     ],
     "ER": [
@@ -506,8 +510,7 @@
     "IL": [
       "EG",
       "JO",
-      "LB",
-      "SY"
+      "LB"
     ],
     "IN": [
       "BD",
@@ -554,6 +557,7 @@
       "ET",
       "SO",
       "SS",
+      "TZ",
       "UG"
     ],
     "KG": [
@@ -633,6 +637,7 @@
     ],
     "LY": [
       "DZ",
+      "EG",
       "NE",
       "SD",
       "TD",
@@ -696,6 +701,7 @@
       "ZM"
     ],
     "MX": [
+      "BZ",
       "GT",
       "US"
     ],
@@ -799,6 +805,7 @@
       "SA"
     ],
     "RO": [
+      "BG",
       "HU",
       "MD",
       "RS",
@@ -910,7 +917,6 @@
       "HN"
     ],
     "SY": [
-      "IL",
       "IQ",
       "JO",
       "LB",
@@ -974,6 +980,7 @@
     "TZ": [
       "BI",
       "CD",
+      "KE",
       "MW",
       "MZ",
       "RW",
@@ -1733,12 +1740,13 @@
       "island": false,
       "lines": 32,
       "areaCore": 505733,
-      "areaMax": 506326,
+      "areaMax": 506329,
       "features": [
         "pyrenees"
       ],
       "hatchedTouching": [
-        "B67"
+        "B67",
+        "B55"
       ]
     },
     "ET": {
@@ -1904,9 +1912,11 @@
       "island": false,
       "lines": 0,
       "areaCore": 109192,
-      "areaMax": 109192,
+      "areaMax": 117176,
       "features": [],
-      "hatchedTouching": []
+      "hatchedTouching": [
+        "B51"
+      ]
     },
     "GW": {
       "tier": 3,
@@ -2766,9 +2776,11 @@
       "island": false,
       "lines": 0,
       "areaCore": 91303,
-      "areaMax": 91303,
+      "areaMax": 91896,
       "features": [],
-      "hatchedTouching": []
+      "hatchedTouching": [
+        "B67"
+      ]
     },
     "PW": {
       "tier": 3,
@@ -3753,7 +3765,7 @@
   },
   "output": {
     "file": "src/data/atlas.gen.ts",
-    "bytes": 146636,
-    "sha256": "d147c26d66494fe5890fcf52a245264aa99e1b42067d3ecef1ac2bccc6298c6e"
+    "bytes": 150935,
+    "sha256": "a5e69ca5c59acc486cc2a7a391e5085881f1906a038007a177d2d73679012984"
   }
 }

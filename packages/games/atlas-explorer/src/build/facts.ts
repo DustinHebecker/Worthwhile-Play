@@ -62,15 +62,21 @@ export function segmentHatched(ax: number, ay: number, bx: number, by: number, i
   return inHatch(mx + ox / Math.max(k, 1e-6), my + oy) || inHatch(mx - ox / Math.max(k, 1e-6), my - oy);
 }
 
-/** Length (km) of a flat border line outside hatched areas (segment by segment). */
-export function unhatchedLengthKm(flat: Flat, inHatch: (lon: number, lat: number) => boolean): number {
+/**
+ * Length (km) of a flat border line outside hatched areas (segment by segment). Each segment is probed on both sides
+ * at each of `offsetsKm` (by default 1.5 and 4 km); with `nearHatch`, a segment whose middle lies on or next to a
+ * hatched area's edge also counts as hatched (the layers are drawn independently, so their edges may run a little
+ * apart, and the probes of a border's last segment at a coast fall into the sea).
+ */
+export function unhatchedLengthKm(flat: Flat, inHatch: (lon: number, lat: number) => boolean, offsetsKm: readonly number[] = [1.5, 4], nearHatch?: (lon: number, lat: number) => boolean): number {
   let km = 0;
   for (let i = 2; i < flat.length; i += 2) {
     const ax = flat[i - 2]!;
     const ay = flat[i - 1]!;
     const bx = flat[i]!;
     const by = flat[i + 1]!;
-    if (!segmentHatched(ax, ay, bx, by, inHatch)) km += distanceKm(ax, ay, bx, by);
+    if (nearHatch?.((ax + bx) / 2, (ay + by) / 2)) continue;
+    if (!offsetsKm.some((o) => segmentHatched(ax, ay, bx, by, inHatch, o))) km += distanceKm(ax, ay, bx, by);
   }
   return km;
 }

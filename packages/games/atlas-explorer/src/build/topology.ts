@@ -71,20 +71,78 @@ export function quantizeRing(ring: Path, unit: number, maxStep: number): number[
   return pts;
 }
 
-/** Builds the topology of all rings of all shapes. */
+/**
+ * Inserts into every segment the points of *other* rings that lie on it (within `tol` units), so two rings that
+ * trace the same border with different vertices (e.g. Egypt and Libya along 25° E) get identical point sequences
+ * there and share one arc. Points are never moved; a ring only gains points.
+ */
+export function nodeRings(rings: readonly number[][], tol = 0.5): number[][] {
+  const CELL = 64;
+  const cellKey = (cx: number, cy: number) => cx * 100_000 + cy;
+  const grid = new Map<number, { x: number; y: number; ring: number }[]>();
+  const seen = new Set<string>();
+  rings.forEach((p, ri) => {
+    for (let i = 0; i + 1 < p.length; i += 2) {
+      const x = p[i]!;
+      const y = p[i + 1]!;
+      const id = `${x},${y},${ri}`;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      const k = cellKey(Math.floor(x / CELL), Math.floor(y / CELL));
+      const list = grid.get(k) ?? [];
+      list.push({ x, y, ring: ri });
+      grid.set(k, list);
+    }
+  });
+  return rings.map((p, ri) => {
+    const out: number[] = [p[0]!, p[1]!];
+    for (let i = 2; i < p.length; i += 2) {
+      const ax = p[i - 2]!;
+      const ay = p[i - 1]!;
+      const bx = p[i]!;
+      const by = p[i + 1]!;
+      const dx = bx - ax;
+      const dy = by - ay;
+      const len2 = dx * dx + dy * dy;
+      const found = new Map<string, { t: number; x: number; y: number }>();
+      if (len2 > 0) {
+        for (let cx = Math.floor((Math.min(ax, bx) - tol) / CELL); cx <= Math.floor((Math.max(ax, bx) + tol) / CELL); cx++)
+          for (let cy = Math.floor((Math.min(ay, by) - tol) / CELL); cy <= Math.floor((Math.max(ay, by) + tol) / CELL); cy++)
+            for (const q of grid.get(cellKey(cx, cy)) ?? []) {
+              if (q.ring === ri || (q.x === ax && q.y === ay) || (q.x === bx && q.y === by)) continue;
+              const t = ((q.x - ax) * dx + (q.y - ay) * dy) / len2;
+              if (t <= 0 || t >= 1) continue;
+              const cross = Math.abs((q.x - ax) * dy - (q.y - ay) * dx) / Math.sqrt(len2);
+              if (cross <= tol) found.set(`${q.x},${q.y}`, { t, x: q.x, y: q.y });
+            }
+      }
+      for (const q of [...found.values()].sort((a, b) => a.t - b.t)) {
+        if (out[out.length - 2] === q.x && out[out.length - 1] === q.y) continue;
+        out.push(q.x, q.y);
+      }
+      if (!(out[out.length - 2] === bx && out[out.length - 1] === by)) out.push(bx, by);
+    }
+    return out;
+  });
+}
+
+/** Builds the topology of all rings of all shapes (quantised, densified and noded). */
 export function buildTopology(shapes: readonly Shape[], unit: number, maxStep: number): Topology {
-  const rings: { owner: number; pts: number[] }[] = [];
+  const quantised: { owner: number; pts: number[] }[] = [];
   for (const s of shapes)
     for (const r of s.rings) {
       const pts = quantizeRing(r, unit, maxStep);
-      if (pts) rings.push({ owner: s.owner, pts });
+      if (pts) quantised.push({ owner: s.owner, pts });
     }
+  const noded = nodeRings(quantised.map((r) => r.pts));
+  const rings = quantised.map((r, i) => ({ owner: r.owner, pts: noded[i]! }));
 
   // Occurrences of each point: ring, previous and next point (rings are closed: the last point repeats the first).
   const firstRing = new Map<number, number>();
-  const neighbours = new Map<number, number>(); // key → canonical neighbour-pair hash of the first occurrence
+  const neighbours = new Map<number, string>(); // key → canonical neighbour pair of the first occurrence ('' = ambiguous)
   const junctions = new Set<number>();
-  const pairHash = (a: number, b: number) => (a < b ? a * 4294967296 + b : b * 4294967296 + a);
+  // A string, not a number: two 32-bit point keys do not fit into one exact double.
+  const pairHash = (a: number, b: number) => (a < b ? `${a},${b}` : `${b},${a}`);
   rings.forEach((ring, ri) => {
     const p = ring.pts;
     const n = p.length / 2 - 1; // distinct points
@@ -102,17 +160,17 @@ export function buildTopology(shapes: readonly Shape[], unit: number, maxStep: n
         // A point seen in two rings with the same neighbours stays a candidate; a third ring may still differ.
       } else if (neighbours.get(k) !== pair) {
         // Repeated within the same ring (a pinch): ignore, but remember that the point is ambiguous for later rings.
-        neighbours.set(k, -1);
+        neighbours.set(k, '');
       }
     }
   });
-  // A point shared by rings that all agree is not a junction; a point marked ambiguous (-1) by a pinch becomes one
+  // A point shared by rings that all agree is not a junction; a point marked ambiguous ('') by a pinch becomes one
   // only if another ring also uses it.
   rings.forEach((ring, ri) => {
     const p = ring.pts;
     for (let i = 0; i < p.length / 2 - 1; i++) {
       const k = pointKey(p[2 * i]!, p[2 * i + 1]!);
-      if (neighbours.get(k) === -1 && firstRing.get(k) !== ri) junctions.add(k);
+      if (neighbours.get(k) === '' && firstRing.get(k) !== ri) junctions.add(k);
     }
   });
 

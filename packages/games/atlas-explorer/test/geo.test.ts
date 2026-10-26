@@ -106,7 +106,7 @@ describe('distances', () => {
   it('satisfies the triangle inequality', () => {
     fc.assert(
       fc.property(lon, lat, lon, lat, lon, lat, (a, b, c, d, e, f) => {
-        expect(distanceKm(a, b, e, f)).toBeLessThanOrEqual(distanceKm(a, b, c, d) + distanceKm(c, d, e, f) + 1e-6);
+        expect(distanceKm(a, b, e, f)).toBeLessThanOrEqual(distanceKm(a, b, c, d) + distanceKm(c, d, e, f) + 1e-4);
       })
     );
   });

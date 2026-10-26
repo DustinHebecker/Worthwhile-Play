@@ -96,6 +96,27 @@ describe('topology', () => {
     }
   });
 
+  it('shares a border traced with different vertices on each side (noding)', () => {
+    // Both squares share x = 1, but the left one has an extra vertex on it and the right one another.
+    const left: Path = [[0, 0], [1, 0], [1, 0.3], [1, 1], [0, 1], [0, 0]];
+    const right: Path = [[1, 0], [2, 0], [2, 1], [1, 1], [1, 0.7], [1, 0]];
+    const topo = buildTopology([{ owner: 0, rings: [left] }, { owner: 1, rings: [right] }], 50, 1000);
+    const users = arcUsers(topo);
+    const shared = users.filter((u) => u.length === 2);
+    expect(shared).toHaveLength(1);
+    const arc = topo.arcs[users.indexOf(shared[0]!)]!;
+    // The shared arc holds both extra vertices.
+    expect(arc.length / 2).toBe(4);
+  });
+
+  it('finds junctions at large coordinates (point keys do not overflow)', () => {
+    // Two countries far from (0, 0) sharing one edge, as Kenya and Tanzania do.
+    const a: Path = [[36, -3], [37, -3], [37, -2], [36, -2], [36, -3]];
+    const b: Path = [[37, -3], [38, -3], [38, -2], [37, -2], [37, -3]];
+    const topo = buildTopology([{ owner: 0, rings: [a] }, { owner: 1, rings: [b] }], 50, 1000);
+    expect(arcUsers(topo).filter((u) => u.length === 2)).toHaveLength(1);
+  });
+
   it('stores identical rings (e.g. an overlay equal to a country) once', () => {
     const topo = buildTopology(
       [
@@ -211,6 +232,8 @@ describe('facts', () => {
     // A hatch on the east side counts too.
     const east = makeLocator([[sq(1, 0, 2, 1).flat()]]);
     expect(segmentHatched(1, 0.1, 1, 0.2, (x, y) => east(x, y) >= 0)).toBe(true);
+    // A segment whose middle lies next to a hatched area counts too (e.g. a border's last segment at a coast).
+    expect(unhatchedLengthKm([1, 0, 1, 0.25], () => false, [1.5], () => true)).toBe(0);
     expect(areNeighbours(5)).toBe(true);
     expect(areNeighbours(4.99)).toBe(false);
   });

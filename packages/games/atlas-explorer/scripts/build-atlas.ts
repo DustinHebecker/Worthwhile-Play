@@ -233,6 +233,13 @@ async function main() {
   log(`overlay: ${overlays.length} hatched features; not drawn (whole UN member): ${wholeState.map((w) => `${w.brk} ${w.country} ${(w.share * 100).toFixed(0)} %`).join(', ')}`);
   const hatchLocator = makeLocator(overlays.flatMap((o) => o.polys.map(flatRings)));
   const inHatch = (x: number, y: number) => hatchLocator(x, y) >= 0;
+  const hatchRings = overlays.map((o) => {
+    const rings = o.polys.flatMap(flatRings);
+    return { rings, box: boxOf(o.polys) };
+  });
+  /** On or within 4 km of a hatched area's edge (for border segments, design § 12.3). */
+  const nearHatch = (x: number, y: number) =>
+    hatchRings.some((h) => x >= h.box[0] - 0.1 && x <= h.box[2] + 0.1 && y >= h.box[1] - 0.1 && y <= h.box[3] + 0.1 && boundaryDistanceKm(x, y, h.rings) <= 4);
 
   /* --- Topology at unit level (facts), then dissolved (drawing) --- */
   const shapes = [
@@ -272,7 +279,7 @@ async function main() {
       const key = `${a}:${b}`;
       const r = pairKm.get(key) ?? { raw: 0, free: 0 };
       r.raw += lineLengthKm(deg);
-      r.free += unhatchedLengthKm(deg, inHatch);
+      r.free += unhatchedLengthKm(deg, inHatch, [1.5, 4], nearHatch);
       pairKm.set(key, r);
     } else if (distinct.length === 1 && ents.length === 1) {
       const ring = us.find(([ri]) => topo.rings[ri]!.owner < unitShapes.length)!;
@@ -304,6 +311,8 @@ async function main() {
       neighbours.get(b)!.add(a);
     } else lostPairs.push(`${idOf(ordered[a]!)}–${idOf(ordered[b]!)} (${r.raw.toFixed(0)} km, ${r.free.toFixed(1)} km outside hatched areas)`);
   }
+  const close = [...pairKm].filter(([k, r]) => ordered[Number(k.split(':')[0])]!.un && ordered[Number(k.split(':')[1])]!.un && r.free < r.raw - 1 && r.free < 80);
+  log(`borders partly in hatched areas: ${close.map(([k, r]) => `${k.split(':').map((i) => idOf(ordered[Number(i)]!)).join('–')} ${r.free.toFixed(1)}/${r.raw.toFixed(0)} km`).join(', ')}`);
   log(`neighbours: ${[...neighbours.values()].reduce((s, n) => s + n.size, 0) / 2} pairs of UN members; not neighbours under the 5 km rule: ${lostPairs.join('; ')}`);
 
   /* --- Continents for the island fact --- */
