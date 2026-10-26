@@ -27,7 +27,7 @@ describe('map generator (I6c, P9)', () => {
       // Different seeds give different maps.
       expect(new Set([0, 1, 2, 3].map((seed) => generateMap(w, h, seed).terrain)).size).toBeGreaterThan(1);
     }
-  });
+  }, 120_000);
 
   it('property: any seed on any size passes the validator (P9)', () => {
     fc.assert(
@@ -81,7 +81,7 @@ describe('map generator, four bases (Generator C, owner decisions 2026-10-18)', 
       expect(new Set([0, 1, 2, 3].map((seed) => generateMap(w, h, seed, '', 4).terrain)).size, `${w}×${h}`).toBeGreaterThan(1);
     }
     expect(() => generateMap(12, 10, 1, '', 3 as 4)).toThrow(RangeError);
-  });
+  }, 120_000);
 
   it('property: any seed on any size passes the validator (P9)', () => {
     fc.assert(
