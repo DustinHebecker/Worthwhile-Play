@@ -134,7 +134,7 @@ describe('wording in all 16 locales (design § 17)', () => {
           const local = new Intl.NumberFormat(l === 'zh-Hans' ? 'zh' : l, { useGrouping: false }).format(y);
           for (const form of new Set([String(y), local])) expect(new RegExp(`(^|\\D)${form}(\\D|$)`).test(title), `${l}/${e.id}: ${title}`).toBe(false);
         }
-        for (const m of markers) expect(new RegExp(`(^|[^\\p{L}])${escape(m)}($|[^\\p{L}])`, 'u').test(title), `${l}/${e.id}: ${title}`).toBe(false);
+        for (const m of markers) expect(new RegExp(`(^|[^\\p{L}\\p{M}])${escape(m)}($|[^\\p{L}\\p{M}])`, 'u').test(title), `${l}/${e.id}: ${title}`).toBe(false);
       }
     }
   });
