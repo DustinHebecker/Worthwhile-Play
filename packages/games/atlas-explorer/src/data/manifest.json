@@ -1,0 +1,4021 @@
+{
+  "generated": "scripts/build-atlas.ts",
+  "dataId": "ne-5.1.2/1",
+  "source": {
+    "name": "Natural Earth vector data",
+    "version": "5.1.2",
+    "released": "2022-05-13",
+    "repository": "https://github.com/nvkelso/natural-earth-vector",
+    "tag": "v5.1.2",
+    "base": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.1.2/geojson/",
+    "terms": "https://www.naturalearthdata.com/about/terms-of-use/ (public domain)"
+  },
+  "files": {
+    "ne_10m_admin_0_countries.geojson": "239eec57ac17f100a11e2536cffc56752c318b50ae765b0918ff7aab4ce8f255",
+    "ne_10m_admin_0_countries_arg.geojson": "5de5c83114945be5c328295abf31d29641ffe7f0280c0f8f746777648fae5803",
+    "ne_10m_admin_0_countries_bdg.geojson": "201b2e38710402b6c7221094d49d5f87c4cb7e3cfa69274a571e2e13d73d8840",
+    "ne_10m_admin_0_countries_bra.geojson": "de70a3924150e0a6f866fcb507270dc8040afbf9a4addab009783f241e7e2687",
+    "ne_10m_admin_0_countries_chn.geojson": "a13bf5f310fde87bc0a5f994f8ce9bd706cc198d8ee37d221e61c2546b945372",
+    "ne_10m_admin_0_countries_deu.geojson": "fc4d56c6bc256f779e0ba21579f81d64885f5296dba3c23c3e78a9b89a7aa0fb",
+    "ne_10m_admin_0_countries_egy.geojson": "4ed6984fca9bc368619be9b9b7026beef007251b8ccab27ebaeeea0d4af74eaa",
+    "ne_10m_admin_0_countries_esp.geojson": "e61193d14bc4b41c1652ff94a939d6b4123102329a41524e0accd3463e3079c8",
+    "ne_10m_admin_0_countries_fra.geojson": "273def0394f5e344ff4938b1cbe9c48f36aea2e8e1635a8814768bc50f5dd44c",
+    "ne_10m_admin_0_countries_gbr.geojson": "7acfd0ccade031cd165630e4d5e9b51650079976d94008100407d03e0e83a492",
+    "ne_10m_admin_0_countries_grc.geojson": "ca4ad82c571e7b507b4382ede1377596e869f680ebcae258bed887c58e94d060",
+    "ne_10m_admin_0_countries_idn.geojson": "cc5292e1082cdeaa8b92d3314faf89cb0f0b7d5ac4808c72fd7b6efdd3886249",
+    "ne_10m_admin_0_countries_ind.geojson": "3e67a5a6ddeff3247ca8400cd2514fd4a5ac6e5432823b25d610a7028597d45f",
+    "ne_10m_admin_0_countries_iso.geojson": "60eb10aa951f5872507c9436937508b09be4b43dc9fa7aad7644f23ef12e1cad",
+    "ne_10m_admin_0_countries_isr.geojson": "45e43bd18bb0d97290ec1751c8b669c7e99a69ca0413b7a0d3196505fc42d4aa",
+    "ne_10m_admin_0_countries_ita.geojson": "36e4d8f5f00b5a9ed9a086ef38e330110d7e9cd8fc3b93f54c739123b80531ec",
+    "ne_10m_admin_0_countries_jpn.geojson": "11bc047064a5cf2db03efc2aece341e657df2dd59ad715a8221cc1575697df1b",
+    "ne_10m_admin_0_countries_kor.geojson": "0dd7351fd445628d190d40a3f7b756fea21fd058e63e400ad498e4108ea0130c",
+    "ne_10m_admin_0_countries_mar.geojson": "71cfbfcb408cf9277dbd5700da168f4634e8e80a9a8b114eb595d739bebd6598",
+    "ne_10m_admin_0_countries_nep.geojson": "b56e5675c080fca9f520a37cebae32d549cf60cbe2aa0b46453eb74cfb27c297",
+    "ne_10m_admin_0_countries_nld.geojson": "9a8327cdff482625ffdb17b982203e23f90ef97a4265becc3c98dc66c145539f",
+    "ne_10m_admin_0_countries_pak.geojson": "9c070579b14cdef62bc5f7ecf9dfc8320195b3c211c4032f8d46087a70a0599c",
+    "ne_10m_admin_0_countries_pol.geojson": "4d8ef44ed174a06d678dc751bd0a29a4f36da310c3719a54dad88ad68855ed8f",
+    "ne_10m_admin_0_countries_prt.geojson": "7c9d4d5a72a13ef7d242f9a3c4211ddaf009becddfbfae1311aafbd1c65982c3",
+    "ne_10m_admin_0_countries_pse.geojson": "ec53197338ffdda19bd238d32e309bee2fefbc8cedda368365a62f92d63d8f18",
+    "ne_10m_admin_0_countries_rus.geojson": "c8dc3acedf6e1b4e42a21a7eade7fa9664a6f4ff0ed0b3d60aeeeb45dc31b771",
+    "ne_10m_admin_0_countries_sau.geojson": "43b6675bb0fe9f4e0feb68c5a1e9b0b71f4a41c6d5fd4134b41db6f843134cf8",
+    "ne_10m_admin_0_countries_swe.geojson": "7f50094bd832c91839666d02dab070d0b6220c58852ef430a1df1e3544fd3259",
+    "ne_10m_admin_0_countries_tur.geojson": "225a283ee34da427fd77bdf046017cf9bdaae576da6ed66ea23a8e6757b1018f",
+    "ne_10m_admin_0_countries_twn.geojson": "a8719781480a862c9243ceab07d47e3be3569b5cd550662918d4bc0886a4b9be",
+    "ne_10m_admin_0_countries_ukr.geojson": "28a1a17d7327cad576083d5122b867843f957468b1bb11168ded23fd5aea342e",
+    "ne_10m_admin_0_countries_usa.geojson": "d3166691d3d86f113c0d8db52506f4b72936513691d1593f47010fed01fc0b93",
+    "ne_10m_admin_0_countries_vnm.geojson": "90067c7f246a7e85a5d501b8f3d7367ad2287816c85ebd8d44634600caf26b64",
+    "ne_10m_admin_0_disputed_areas.geojson": "9cafef8b7dfb6b164dc58f218f981f4ace9f716f6c03795d4c62d1ac9f3d50f5",
+    "ne_10m_admin_0_map_units.geojson": "57da82be755f4afccd8f3b14251bb2752f5df1395f47d2d86f817470c4a48862",
+    "ne_10m_land.geojson": "1ac90796408bc6ad6911d69448485d3c4dbf2190370080368a09976e1c9f7416",
+    "ne_50m_geography_marine_polys.geojson": "6fe58083e0cc5c7fad9e396970e28a8580bbd8770cfa4d1d7b5a34423e912f97",
+    "ne_50m_geography_regions_polys.geojson": "33396643d8f0eed408e80bf5ca43dcdb7993f790fdc4eadae311660f8b91fe76",
+    "ne_50m_lakes.geojson": "d350b75978b26fe839b797c2c529b2fb8f47fb3983c03f4964e36d5df9378a52",
+    "ne_50m_populated_places.geojson": "da4662b7bbfeb897d02f228c5839131dce27acff5717630f91ccff4f67828ee7",
+    "ne_50m_rivers_lake_centerlines.geojson": "f286e0ce978fde999ca2d7a78c764be08542e19b63cded52b05c12d5173ccc51"
+  },
+  "params": {
+    "unit": 50,
+    "grid": 16384,
+    "threshold": 50,
+    "maxStepDeg": 1,
+    "maxSpanDeg": 3,
+    "maxDeviationCells": 6,
+    "hatchMaxDeviationCells": 2,
+    "minIslandKm2": 100,
+    "featureThreshold": 400,
+    "lakeThreshold": 64,
+    "riverThreshold": 64,
+    "hatchTypes": [
+      "Disputed",
+      "Indeterminate",
+      "Breakaway"
+    ],
+    "wholeStateShare": 0.9,
+    "neighbourMinKm": 5,
+    "riverMinKm": 50,
+    "regionMinShareCountry": 0.1,
+    "regionMinShareFeature": 0.05,
+    "continentMinKm2": 5000000,
+    "coastMinKm": 2
+  },
+  "node": "22.22.0",
+  "tz": "2025b",
+  "unicodeCldr": "47.0",
+  "counts": {
+    "countries": 193,
+    "others": 61,
+    "disputed": 78,
+    "arcs": 3269,
+    "points": 28161,
+    "lakes": 12,
+    "rivers": 27,
+    "regions": 31,
+    "cities": 120
+  },
+  "notDrawnWholeState": [
+    {
+      "brk": "B91",
+      "country": "IL",
+      "share": 0.9401620607368485
+    }
+  ],
+  "notNeighboursUnderTheRule": [
+    "CN–PK (372 km, 0.0 km outside hatched areas)",
+    "GY–VE (659 km, 0.0 km outside hatched areas)",
+    "IL–SY (91 km, 0.0 km outside hatched areas)"
+  ],
+  "neighbours": {
+    "AD": [
+      "ES",
+      "FR"
+    ],
+    "AE": [
+      "OM",
+      "SA"
+    ],
+    "AF": [
+      "CN",
+      "IR",
+      "PK",
+      "TJ",
+      "TM",
+      "UZ"
+    ],
+    "AG": [],
+    "AL": [
+      "GR",
+      "ME",
+      "MK"
+    ],
+    "AM": [
+      "AZ",
+      "GE",
+      "IR",
+      "TR"
+    ],
+    "AO": [
+      "CD",
+      "CG",
+      "NA",
+      "ZM"
+    ],
+    "AR": [
+      "BO",
+      "BR",
+      "CL",
+      "PY",
+      "UY"
+    ],
+    "AT": [
+      "CH",
+      "CZ",
+      "DE",
+      "HU",
+      "IT",
+      "LI",
+      "SI",
+      "SK"
+    ],
+    "AU": [],
+    "AZ": [
+      "AM",
+      "GE",
+      "IR",
+      "RU",
+      "TR"
+    ],
+    "BA": [
+      "HR",
+      "ME",
+      "RS"
+    ],
+    "BB": [],
+    "BD": [
+      "IN",
+      "MM"
+    ],
+    "BE": [
+      "DE",
+      "FR",
+      "LU",
+      "NL"
+    ],
+    "BF": [
+      "BJ",
+      "CI",
+      "GH",
+      "ML",
+      "NE",
+      "TG"
+    ],
+    "BG": [
+      "GR",
+      "MK",
+      "RO",
+      "RS",
+      "TR"
+    ],
+    "BH": [],
+    "BI": [
+      "CD",
+      "RW",
+      "TZ"
+    ],
+    "BJ": [
+      "BF",
+      "NE",
+      "NG",
+      "TG"
+    ],
+    "BN": [
+      "MY"
+    ],
+    "BO": [
+      "AR",
+      "BR",
+      "CL",
+      "PE",
+      "PY"
+    ],
+    "BR": [
+      "AR",
+      "BO",
+      "CO",
+      "FR",
+      "GY",
+      "PE",
+      "PY",
+      "SR",
+      "UY",
+      "VE"
+    ],
+    "BS": [],
+    "BT": [
+      "CN",
+      "IN"
+    ],
+    "BW": [
+      "NA",
+      "ZA",
+      "ZW"
+    ],
+    "BY": [
+      "LT",
+      "LV",
+      "PL",
+      "RU",
+      "UA"
+    ],
+    "BZ": [
+      "GT",
+      "MX"
+    ],
+    "CA": [
+      "US"
+    ],
+    "CD": [
+      "AO",
+      "BI",
+      "CF",
+      "CG",
+      "RW",
+      "SS",
+      "TZ",
+      "UG",
+      "ZM"
+    ],
+    "CF": [
+      "CD",
+      "CG",
+      "CM",
+      "SD",
+      "SS",
+      "TD"
+    ],
+    "CG": [
+      "AO",
+      "CD",
+      "CF",
+      "CM",
+      "GA"
+    ],
+    "CH": [
+      "AT",
+      "DE",
+      "FR",
+      "IT",
+      "LI"
+    ],
+    "CI": [
+      "BF",
+      "GH",
+      "GN",
+      "LR",
+      "ML"
+    ],
+    "CL": [
+      "AR",
+      "BO",
+      "PE"
+    ],
+    "CM": [
+      "CF",
+      "CG",
+      "GA",
+      "GQ",
+      "NG",
+      "TD"
+    ],
+    "CN": [
+      "AF",
+      "BT",
+      "IN",
+      "KG",
+      "KP",
+      "KZ",
+      "LA",
+      "MM",
+      "MN",
+      "NP",
+      "RU",
+      "TJ",
+      "VN"
+    ],
+    "CO": [
+      "BR",
+      "EC",
+      "PA",
+      "PE",
+      "VE"
+    ],
+    "CR": [
+      "NI",
+      "PA"
+    ],
+    "CU": [],
+    "CV": [],
+    "CY": [],
+    "CZ": [
+      "AT",
+      "DE",
+      "PL",
+      "SK"
+    ],
+    "DE": [
+      "AT",
+      "BE",
+      "CH",
+      "CZ",
+      "DK",
+      "FR",
+      "LU",
+      "NL",
+      "PL"
+    ],
+    "DJ": [
+      "ER",
+      "ET"
+    ],
+    "DK": [
+      "DE"
+    ],
+    "DM": [],
+    "DO": [
+      "HT"
+    ],
+    "DZ": [
+      "LY",
+      "MA",
+      "ML",
+      "MR",
+      "NE",
+      "TN"
+    ],
+    "EC": [
+      "CO",
+      "PE"
+    ],
+    "EE": [
+      "LV",
+      "RU"
+    ],
+    "EG": [
+      "IL",
+      "LY",
+      "SD"
+    ],
+    "ER": [
+      "DJ",
+      "ET",
+      "SD"
+    ],
+    "ES": [
+      "AD",
+      "FR",
+      "PT"
+    ],
+    "ET": [
+      "DJ",
+      "ER",
+      "KE",
+      "SD",
+      "SO",
+      "SS"
+    ],
+    "FI": [
+      "NO",
+      "RU",
+      "SE"
+    ],
+    "FJ": [],
+    "FM": [],
+    "FR": [
+      "AD",
+      "BE",
+      "BR",
+      "CH",
+      "DE",
+      "ES",
+      "IT",
+      "LU",
+      "MC",
+      "SR"
+    ],
+    "GA": [
+      "CG",
+      "CM",
+      "GQ"
+    ],
+    "GB": [
+      "IE"
+    ],
+    "GD": [],
+    "GE": [
+      "AM",
+      "AZ",
+      "RU",
+      "TR"
+    ],
+    "GH": [
+      "BF",
+      "CI",
+      "TG"
+    ],
+    "GM": [
+      "SN"
+    ],
+    "GN": [
+      "CI",
+      "GW",
+      "LR",
+      "ML",
+      "SL",
+      "SN"
+    ],
+    "GQ": [
+      "CM",
+      "GA"
+    ],
+    "GR": [
+      "AL",
+      "BG",
+      "MK",
+      "TR"
+    ],
+    "GT": [
+      "BZ",
+      "HN",
+      "MX",
+      "SV"
+    ],
+    "GW": [
+      "GN",
+      "SN"
+    ],
+    "GY": [
+      "BR",
+      "SR"
+    ],
+    "HN": [
+      "GT",
+      "NI",
+      "SV"
+    ],
+    "HR": [
+      "BA",
+      "HU",
+      "ME",
+      "RS",
+      "SI"
+    ],
+    "HT": [
+      "DO"
+    ],
+    "HU": [
+      "AT",
+      "HR",
+      "RO",
+      "RS",
+      "SI",
+      "SK",
+      "UA"
+    ],
+    "ID": [
+      "MY",
+      "PG",
+      "TL"
+    ],
+    "IE": [
+      "GB"
+    ],
+    "IL": [
+      "EG",
+      "JO",
+      "LB"
+    ],
+    "IN": [
+      "BD",
+      "BT",
+      "CN",
+      "MM",
+      "NP",
+      "PK"
+    ],
+    "IQ": [
+      "IR",
+      "JO",
+      "KW",
+      "SA",
+      "SY",
+      "TR"
+    ],
+    "IR": [
+      "AF",
+      "AM",
+      "AZ",
+      "IQ",
+      "PK",
+      "TM",
+      "TR"
+    ],
+    "IS": [],
+    "IT": [
+      "AT",
+      "CH",
+      "FR",
+      "SI",
+      "SM"
+    ],
+    "JM": [],
+    "JO": [
+      "IL",
+      "IQ",
+      "SA",
+      "SY"
+    ],
+    "JP": [],
+    "KE": [
+      "ET",
+      "SO",
+      "SS",
+      "TZ",
+      "UG"
+    ],
+    "KG": [
+      "CN",
+      "KZ",
+      "TJ",
+      "UZ"
+    ],
+    "KH": [
+      "LA",
+      "TH",
+      "VN"
+    ],
+    "KI": [],
+    "KM": [],
+    "KN": [],
+    "KP": [
+      "CN",
+      "KR",
+      "RU"
+    ],
+    "KR": [
+      "KP"
+    ],
+    "KW": [
+      "IQ",
+      "SA"
+    ],
+    "KZ": [
+      "CN",
+      "KG",
+      "RU",
+      "TM",
+      "UZ"
+    ],
+    "LA": [
+      "CN",
+      "KH",
+      "MM",
+      "TH",
+      "VN"
+    ],
+    "LB": [
+      "IL",
+      "SY"
+    ],
+    "LC": [],
+    "LI": [
+      "AT",
+      "CH"
+    ],
+    "LK": [],
+    "LR": [
+      "CI",
+      "GN",
+      "SL"
+    ],
+    "LS": [
+      "ZA"
+    ],
+    "LT": [
+      "BY",
+      "LV",
+      "PL",
+      "RU"
+    ],
+    "LU": [
+      "BE",
+      "DE",
+      "FR"
+    ],
+    "LV": [
+      "BY",
+      "EE",
+      "LT",
+      "RU"
+    ],
+    "LY": [
+      "DZ",
+      "EG",
+      "NE",
+      "SD",
+      "TD",
+      "TN"
+    ],
+    "MA": [
+      "DZ"
+    ],
+    "MC": [
+      "FR"
+    ],
+    "MD": [
+      "RO",
+      "UA"
+    ],
+    "ME": [
+      "AL",
+      "BA",
+      "HR",
+      "RS"
+    ],
+    "MG": [],
+    "MH": [],
+    "MK": [
+      "AL",
+      "BG",
+      "GR",
+      "RS"
+    ],
+    "ML": [
+      "BF",
+      "CI",
+      "DZ",
+      "GN",
+      "MR",
+      "NE",
+      "SN"
+    ],
+    "MM": [
+      "BD",
+      "CN",
+      "IN",
+      "LA",
+      "TH"
+    ],
+    "MN": [
+      "CN",
+      "RU"
+    ],
+    "MR": [
+      "DZ",
+      "ML",
+      "SN"
+    ],
+    "MT": [],
+    "MU": [],
+    "MV": [],
+    "MW": [
+      "MZ",
+      "TZ",
+      "ZM"
+    ],
+    "MX": [
+      "BZ",
+      "GT",
+      "US"
+    ],
+    "MY": [
+      "BN",
+      "ID",
+      "TH"
+    ],
+    "MZ": [
+      "MW",
+      "SZ",
+      "TZ",
+      "ZA",
+      "ZM",
+      "ZW"
+    ],
+    "NA": [
+      "AO",
+      "BW",
+      "ZA",
+      "ZM"
+    ],
+    "NE": [
+      "BF",
+      "BJ",
+      "DZ",
+      "LY",
+      "ML",
+      "NG",
+      "TD"
+    ],
+    "NG": [
+      "BJ",
+      "CM",
+      "NE",
+      "TD"
+    ],
+    "NI": [
+      "CR",
+      "HN"
+    ],
+    "NL": [
+      "BE",
+      "DE"
+    ],
+    "NO": [
+      "FI",
+      "RU",
+      "SE"
+    ],
+    "NP": [
+      "CN",
+      "IN"
+    ],
+    "NR": [],
+    "NZ": [],
+    "OM": [
+      "AE",
+      "SA",
+      "YE"
+    ],
+    "PA": [
+      "CO",
+      "CR"
+    ],
+    "PE": [
+      "BO",
+      "BR",
+      "CL",
+      "CO",
+      "EC"
+    ],
+    "PG": [
+      "ID"
+    ],
+    "PH": [],
+    "PK": [
+      "AF",
+      "IN",
+      "IR"
+    ],
+    "PL": [
+      "BY",
+      "CZ",
+      "DE",
+      "LT",
+      "RU",
+      "SK",
+      "UA"
+    ],
+    "PT": [
+      "ES"
+    ],
+    "PW": [],
+    "PY": [
+      "AR",
+      "BO",
+      "BR"
+    ],
+    "QA": [
+      "SA"
+    ],
+    "RO": [
+      "BG",
+      "HU",
+      "MD",
+      "RS",
+      "UA"
+    ],
+    "RS": [
+      "BA",
+      "BG",
+      "HR",
+      "HU",
+      "ME",
+      "MK",
+      "RO"
+    ],
+    "RU": [
+      "AZ",
+      "BY",
+      "CN",
+      "EE",
+      "FI",
+      "GE",
+      "KP",
+      "KZ",
+      "LT",
+      "LV",
+      "MN",
+      "NO",
+      "PL",
+      "UA"
+    ],
+    "RW": [
+      "BI",
+      "CD",
+      "TZ",
+      "UG"
+    ],
+    "SA": [
+      "AE",
+      "IQ",
+      "JO",
+      "KW",
+      "OM",
+      "QA",
+      "YE"
+    ],
+    "SB": [],
+    "SC": [],
+    "SD": [
+      "CF",
+      "EG",
+      "ER",
+      "ET",
+      "LY",
+      "SS",
+      "TD"
+    ],
+    "SE": [
+      "FI",
+      "NO"
+    ],
+    "SG": [],
+    "SI": [
+      "AT",
+      "HR",
+      "HU",
+      "IT"
+    ],
+    "SK": [
+      "AT",
+      "CZ",
+      "HU",
+      "PL",
+      "UA"
+    ],
+    "SL": [
+      "GN",
+      "LR"
+    ],
+    "SM": [
+      "IT"
+    ],
+    "SN": [
+      "GM",
+      "GN",
+      "GW",
+      "ML",
+      "MR"
+    ],
+    "SO": [
+      "ET",
+      "KE"
+    ],
+    "SR": [
+      "BR",
+      "FR",
+      "GY"
+    ],
+    "SS": [
+      "CD",
+      "CF",
+      "ET",
+      "KE",
+      "SD",
+      "UG"
+    ],
+    "ST": [],
+    "SV": [
+      "GT",
+      "HN"
+    ],
+    "SY": [
+      "IQ",
+      "JO",
+      "LB",
+      "TR"
+    ],
+    "SZ": [
+      "MZ",
+      "ZA"
+    ],
+    "TD": [
+      "CF",
+      "CM",
+      "LY",
+      "NE",
+      "NG",
+      "SD"
+    ],
+    "TG": [
+      "BF",
+      "BJ",
+      "GH"
+    ],
+    "TH": [
+      "KH",
+      "LA",
+      "MM",
+      "MY"
+    ],
+    "TJ": [
+      "AF",
+      "CN",
+      "KG",
+      "UZ"
+    ],
+    "TL": [
+      "ID"
+    ],
+    "TM": [
+      "AF",
+      "IR",
+      "KZ",
+      "UZ"
+    ],
+    "TN": [
+      "DZ",
+      "LY"
+    ],
+    "TO": [],
+    "TR": [
+      "AM",
+      "AZ",
+      "BG",
+      "GE",
+      "GR",
+      "IQ",
+      "IR",
+      "SY"
+    ],
+    "TT": [],
+    "TV": [],
+    "TZ": [
+      "BI",
+      "CD",
+      "KE",
+      "MW",
+      "MZ",
+      "RW",
+      "UG",
+      "ZM"
+    ],
+    "UA": [
+      "BY",
+      "HU",
+      "MD",
+      "PL",
+      "RO",
+      "RU",
+      "SK"
+    ],
+    "UG": [
+      "CD",
+      "KE",
+      "RW",
+      "SS",
+      "TZ"
+    ],
+    "US": [
+      "CA",
+      "MX"
+    ],
+    "UY": [
+      "AR",
+      "BR"
+    ],
+    "UZ": [
+      "AF",
+      "KG",
+      "KZ",
+      "TJ",
+      "TM"
+    ],
+    "VC": [],
+    "VE": [
+      "BR",
+      "CO"
+    ],
+    "VN": [
+      "CN",
+      "KH",
+      "LA"
+    ],
+    "VU": [],
+    "WS": [],
+    "YE": [
+      "OM",
+      "SA"
+    ],
+    "ZA": [
+      "BW",
+      "LS",
+      "MZ",
+      "NA",
+      "SZ",
+      "ZW"
+    ],
+    "ZM": [
+      "AO",
+      "CD",
+      "MW",
+      "MZ",
+      "NA",
+      "TZ",
+      "ZW"
+    ],
+    "ZW": [
+      "BW",
+      "MZ",
+      "ZA",
+      "ZM"
+    ]
+  },
+  "facts": {
+    "AD": {
+      "tier": 3,
+      "coast": false,
+      "island": false,
+      "lines": 0,
+      "areaCore": 451,
+      "areaMax": 451,
+      "features": [
+        "pyrenees"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "AE": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 2,
+      "areaCore": 71247,
+      "areaMax": 71247,
+      "features": [
+        "rub-al-khali"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "AF": {
+      "tier": 2,
+      "coast": false,
+      "island": false,
+      "lines": 0,
+      "areaCore": 642392,
+      "areaMax": 707629,
+      "features": [
+        "hindu-kush"
+      ],
+      "featuresNear": [
+        "tibetan-plateau"
+      ],
+      "hatchedTouching": [
+        "B08"
+      ]
+    },
+    "AG": {
+      "tier": 3,
+      "coast": true,
+      "island": true,
+      "lines": 0,
+      "areaCore": 453,
+      "areaMax": 453,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "AL": {
+      "tier": 3,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 28298,
+      "areaMax": 39193,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": [
+        "B57"
+      ]
+    },
+    "AM": {
+      "tier": 3,
+      "coast": false,
+      "island": false,
+      "lines": 0,
+      "areaCore": 29555,
+      "areaMax": 32688,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": [
+        "B38"
+      ]
+    },
+    "AO": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 1249439,
+      "areaMax": 1249439,
+      "features": [
+        "zambezi",
+        "kalahari",
+        "namib",
+        "congo-basin"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "AR": {
+      "tier": 1,
+      "coast": true,
+      "island": false,
+      "lines": 4,
+      "areaCore": 2783122,
+      "areaMax": 2784529,
+      "features": [
+        "parana",
+        "andes"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": [
+        "B85",
+        "B97"
+      ]
+    },
+    "AT": {
+      "tier": 1,
+      "coast": false,
+      "island": false,
+      "lines": 0,
+      "areaCore": 83756,
+      "areaMax": 83756,
+      "features": [
+        "danube",
+        "alps"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "AU": {
+      "tier": 1,
+      "coast": true,
+      "island": false,
+      "lines": 4,
+      "areaCore": 7705924,
+      "areaMax": 7705924,
+      "features": [
+        "murray",
+        "great-dividing-range",
+        "great-victoria-desert",
+        "great-sandy-desert"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "AZ": {
+      "tier": 3,
+      "coast": false,
+      "island": false,
+      "lines": 0,
+      "areaCore": 83023,
+      "areaMax": 86156,
+      "features": [
+        "caucasus"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": [
+        "B38"
+      ]
+    },
+    "BA": {
+      "tier": 3,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 51722,
+      "areaMax": 51722,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "BB": {
+      "tier": 3,
+      "coast": true,
+      "island": true,
+      "lines": 0,
+      "areaCore": 446,
+      "areaMax": 446,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "BD": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 2,
+      "areaCore": 137217,
+      "areaMax": 137217,
+      "features": [
+        "ganges",
+        "brahmaputra"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "BE": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 30561,
+      "areaMax": 30561,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "BF": {
+      "tier": 2,
+      "coast": false,
+      "island": false,
+      "lines": 32,
+      "areaCore": 273827,
+      "areaMax": 273827,
+      "features": [],
+      "featuresNear": [
+        "sahara"
+      ],
+      "hatchedTouching": []
+    },
+    "BG": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 112568,
+      "areaMax": 112568,
+      "features": [
+        "danube"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "BH": {
+      "tier": 2,
+      "coast": true,
+      "island": true,
+      "lines": 0,
+      "areaCore": 689,
+      "areaMax": 689,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "BI": {
+      "tier": 3,
+      "coast": false,
+      "island": false,
+      "lines": 0,
+      "areaCore": 27161,
+      "areaMax": 27161,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "BJ": {
+      "tier": 3,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 116590,
+      "areaMax": 116590,
+      "features": [
+        "niger"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "BN": {
+      "tier": 3,
+      "coast": true,
+      "island": true,
+      "lines": 0,
+      "areaCore": 5742,
+      "areaMax": 5742,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "BO": {
+      "tier": 1,
+      "coast": false,
+      "island": false,
+      "lines": 0,
+      "areaCore": 1090454,
+      "areaMax": 1090454,
+      "features": [
+        "andes",
+        "amazon-basin"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "BR": {
+      "tier": 1,
+      "coast": true,
+      "island": false,
+      "lines": 5,
+      "areaCore": 8504682,
+      "areaMax": 8665865,
+      "features": [
+        "amazon",
+        "parana",
+        "amazon-basin"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": [
+        "B14",
+        "B15",
+        "B56",
+        "B85",
+        "B92"
+      ]
+    },
+    "BS": {
+      "tier": 2,
+      "coast": true,
+      "island": true,
+      "lines": 128,
+      "areaCore": 12632,
+      "areaMax": 12632,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "BT": {
+      "tier": 3,
+      "coast": false,
+      "island": false,
+      "lines": 0,
+      "areaCore": 39109,
+      "areaMax": 108564,
+      "features": [
+        "himalayas",
+        "tibetan-plateau"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": [
+        "B00",
+        "B75",
+        "B76"
+      ]
+    },
+    "BW": {
+      "tier": 2,
+      "coast": false,
+      "island": false,
+      "lines": 4,
+      "areaCore": 580515,
+      "areaMax": 580515,
+      "features": [
+        "kalahari"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "BY": {
+      "tier": 2,
+      "coast": false,
+      "island": false,
+      "lines": 0,
+      "areaCore": 206632,
+      "areaMax": 206632,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "BZ": {
+      "tier": 3,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 14382,
+      "areaMax": 22366,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": [
+        "B51"
+      ]
+    },
+    "CA": {
+      "tier": 1,
+      "coast": true,
+      "island": false,
+      "lines": 8,
+      "areaCore": 9894499,
+      "areaMax": 9894499,
+      "features": [
+        "mackenzie",
+        "rockies",
+        "appalachians"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "CD": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 1,
+      "areaCore": 2335422,
+      "areaMax": 2335422,
+      "features": [
+        "congo",
+        "congo-basin"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "CF": {
+      "tier": 2,
+      "coast": false,
+      "island": false,
+      "lines": 0,
+      "areaCore": 620644,
+      "areaMax": 620644,
+      "features": [
+        "congo-basin"
+      ],
+      "featuresNear": [
+        "sahara"
+      ],
+      "hatchedTouching": []
+    },
+    "CG": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 1,
+      "areaCore": 346429,
+      "areaMax": 346429,
+      "features": [
+        "congo",
+        "congo-basin"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "CH": {
+      "tier": 1,
+      "coast": false,
+      "island": false,
+      "lines": 0,
+      "areaCore": 41326,
+      "areaMax": 41326,
+      "features": [
+        "rhine",
+        "alps"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "CI": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 322039,
+      "areaMax": 322039,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "CL": {
+      "tier": 1,
+      "coast": true,
+      "island": false,
+      "lines": 4,
+      "areaCore": 736364,
+      "areaMax": 737769,
+      "features": [
+        "andes",
+        "atacama"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": [
+        "B97"
+      ]
+    },
+    "CM": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 466331,
+      "areaMax": 466331,
+      "features": [
+        "congo-basin"
+      ],
+      "featuresNear": [
+        "sahara"
+      ],
+      "hatchedTouching": []
+    },
+    "CN": {
+      "tier": 1,
+      "coast": true,
+      "island": false,
+      "lines": 2,
+      "areaCore": 9338192,
+      "areaMax": 9619986,
+      "features": [
+        "yangtze",
+        "huang-he",
+        "amur",
+        "himalayas",
+        "tian-shan",
+        "gobi",
+        "taklamakan",
+        "tibetan-plateau"
+      ],
+      "featuresNear": [
+        "hindu-kush"
+      ],
+      "hatchedTouching": [
+        "B05",
+        "B07",
+        "B00",
+        "B06",
+        "B08",
+        "B88",
+        "B03",
+        "B04",
+        "B01",
+        "B02",
+        "B45",
+        "B75",
+        "B76"
+      ]
+    },
+    "CO": {
+      "tier": 1,
+      "coast": true,
+      "island": false,
+      "lines": 1,
+      "areaCore": 1140095,
+      "areaMax": 1140095,
+      "features": [
+        "orinoco",
+        "andes",
+        "amazon-basin"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "CR": {
+      "tier": 3,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 51360,
+      "areaMax": 51360,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "CU": {
+      "tier": 1,
+      "coast": true,
+      "island": true,
+      "lines": 128,
+      "areaCore": 110222,
+      "areaMax": 110222,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "CV": {
+      "tier": 2,
+      "coast": true,
+      "island": true,
+      "lines": 0,
+      "areaCore": 3940,
+      "areaMax": 3940,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "CY": {
+      "tier": 3,
+      "coast": true,
+      "island": true,
+      "lines": 0,
+      "areaCore": 5396,
+      "areaMax": 9056,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": [
+        "B20",
+        "B43"
+      ]
+    },
+    "CZ": {
+      "tier": 3,
+      "coast": false,
+      "island": false,
+      "lines": 0,
+      "areaCore": 78497,
+      "areaMax": 78497,
+      "features": [],
+      "featuresNear": [
+        "carpathians"
+      ],
+      "hatchedTouching": []
+    },
+    "DE": {
+      "tier": 1,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 356379,
+      "areaMax": 356379,
+      "features": [
+        "danube",
+        "rhine",
+        "alps"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "DJ": {
+      "tier": 3,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 21934,
+      "areaMax": 190039,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": [
+        "B30"
+      ]
+    },
+    "DK": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 42494,
+      "areaMax": 42494,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "DM": {
+      "tier": 3,
+      "coast": true,
+      "island": true,
+      "lines": 0,
+      "areaCore": 733,
+      "areaMax": 733,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "DO": {
+      "tier": 3,
+      "coast": true,
+      "island": true,
+      "lines": 0,
+      "areaCore": 48589,
+      "areaMax": 48589,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "DZ": {
+      "tier": 1,
+      "coast": true,
+      "island": false,
+      "lines": 34,
+      "areaCore": 2312302,
+      "areaMax": 2402998,
+      "features": [
+        "atlas",
+        "sahara"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": [
+        "B28"
+      ]
+    },
+    "EC": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 1,
+      "areaCore": 256155,
+      "areaMax": 256155,
+      "features": [
+        "andes",
+        "amazon-basin"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "EE": {
+      "tier": 3,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 45576,
+      "areaMax": 45576,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "EG": {
+      "tier": 1,
+      "coast": true,
+      "island": false,
+      "lines": 2,
+      "areaCore": 984393,
+      "areaMax": 1005057,
+      "features": [
+        "nile",
+        "sahara"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": [
+        "B53",
+        "B94",
+        "B93",
+        "B68"
+      ]
+    },
+    "ER": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 122972,
+      "areaMax": 122972,
+      "features": [
+        "ethiopian-highlands",
+        "sahara"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "ES": {
+      "tier": 1,
+      "coast": true,
+      "island": false,
+      "lines": 32,
+      "areaCore": 505733,
+      "areaMax": 506329,
+      "features": [
+        "pyrenees"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": [
+        "B67",
+        "B55"
+      ]
+    },
+    "ET": {
+      "tier": 1,
+      "coast": false,
+      "island": false,
+      "lines": 0,
+      "areaCore": 1132066,
+      "areaMax": 1300172,
+      "features": [
+        "ethiopian-highlands"
+      ],
+      "featuresNear": [
+        "sahara"
+      ],
+      "hatchedTouching": [
+        "B30"
+      ]
+    },
+    "FI": {
+      "tier": 1,
+      "coast": true,
+      "island": false,
+      "lines": 8,
+      "areaCore": 331875,
+      "areaMax": 331875,
+      "features": [],
+      "featuresNear": [
+        "scandinavian-mountains"
+      ],
+      "hatchedTouching": []
+    },
+    "FJ": {
+      "tier": 3,
+      "coast": true,
+      "island": true,
+      "lines": 0,
+      "areaCore": 18992,
+      "areaMax": 18992,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "FM": {
+      "tier": 3,
+      "coast": true,
+      "island": true,
+      "lines": 0,
+      "areaCore": 637,
+      "areaMax": 637,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "FR": {
+      "tier": 1,
+      "coast": true,
+      "island": false,
+      "lines": 32,
+      "areaCore": 631840,
+      "areaMax": 635747,
+      "features": [
+        "alps",
+        "pyrenees"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": [
+        "B14",
+        "B22"
+      ]
+    },
+    "GA": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 1,
+      "areaCore": 261133,
+      "areaMax": 261133,
+      "features": [],
+      "featuresNear": [
+        "congo-basin"
+      ],
+      "hatchedTouching": []
+    },
+    "GB": {
+      "tier": 1,
+      "coast": true,
+      "island": true,
+      "lines": 32,
+      "areaCore": 242737,
+      "areaMax": 242737,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "GD": {
+      "tier": 3,
+      "coast": true,
+      "island": true,
+      "lines": 0,
+      "areaCore": 349,
+      "areaMax": 349,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "GE": {
+      "tier": 3,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 56381,
+      "areaMax": 69461,
+      "features": [
+        "caucasus"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": [
+        "B35",
+        "B37"
+      ]
+    },
+    "GH": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 32,
+      "areaCore": 239676,
+      "areaMax": 239676,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "GM": {
+      "tier": 3,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 10541,
+      "areaMax": 10541,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "GN": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 245290,
+      "areaMax": 245290,
+      "features": [
+        "niger"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "GQ": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 26791,
+      "areaMax": 26791,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "GR": {
+      "tier": 1,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 131244,
+      "areaMax": 131244,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "GT": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 109192,
+      "areaMax": 117176,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": [
+        "B51"
+      ]
+    },
+    "GW": {
+      "tier": 3,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 32957,
+      "areaMax": 32957,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "GY": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 54439,
+      "areaMax": 211841,
+      "features": [],
+      "featuresNear": [
+        "amazon-basin"
+      ],
+      "hatchedTouching": [
+        "B15",
+        "B56"
+      ]
+    },
+    "HN": {
+      "tier": 3,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 112642,
+      "areaMax": 112642,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "HR": {
+      "tier": 3,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 54899,
+      "areaMax": 54913,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": [
+        "B82",
+        "B96",
+        "B95"
+      ]
+    },
+    "HT": {
+      "tier": 3,
+      "coast": true,
+      "island": true,
+      "lines": 0,
+      "areaCore": 26974,
+      "areaMax": 26974,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "HU": {
+      "tier": 3,
+      "coast": false,
+      "island": false,
+      "lines": 0,
+      "areaCore": 92947,
+      "areaMax": 92947,
+      "features": [
+        "danube"
+      ],
+      "featuresNear": [
+        "carpathians"
+      ],
+      "hatchedTouching": []
+    },
+    "ID": {
+      "tier": 1,
+      "coast": true,
+      "island": true,
+      "lines": 1,
+      "areaCore": 1888146,
+      "areaMax": 1888146,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "IE": {
+      "tier": 1,
+      "coast": true,
+      "island": true,
+      "lines": 0,
+      "areaCore": 69160,
+      "areaMax": 69160,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "IL": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 20789,
+      "areaMax": 28202,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": [
+        "B53",
+        "B54",
+        "B16",
+        "B58",
+        "B98",
+        "B78",
+        "B79",
+        "B99"
+      ]
+    },
+    "IN": {
+      "tier": 1,
+      "coast": true,
+      "island": false,
+      "lines": 2,
+      "areaCore": 2972800,
+      "areaMax": 3268534,
+      "features": [
+        "ganges",
+        "brahmaputra",
+        "himalayas",
+        "thar",
+        "deccan"
+      ],
+      "featuresNear": [
+        "tibetan-plateau"
+      ],
+      "hatchedTouching": [
+        "B05",
+        "B07",
+        "B00",
+        "B08",
+        "B88",
+        "B03",
+        "B04",
+        "B01",
+        "B02",
+        "B45",
+        "B09",
+        "C01"
+      ]
+    },
+    "IQ": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 437585,
+      "areaMax": 437585,
+      "features": [
+        "euphrates",
+        "tigris"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "IR": {
+      "tier": 1,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 1623477,
+      "areaMax": 1623488,
+      "features": [],
+      "featuresNear": [
+        "karakum"
+      ],
+      "hatchedTouching": [
+        "B73"
+      ]
+    },
+    "IS": {
+      "tier": 1,
+      "coast": true,
+      "island": true,
+      "lines": 512,
+      "areaCore": 101723,
+      "areaMax": 101723,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "IT": {
+      "tier": 1,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 300678,
+      "areaMax": 300678,
+      "features": [
+        "alps"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "JM": {
+      "tier": 2,
+      "coast": true,
+      "island": true,
+      "lines": 0,
+      "areaCore": 11068,
+      "areaMax": 11068,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "JO": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 88940,
+      "areaMax": 95874,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": [
+        "B54",
+        "B16"
+      ]
+    },
+    "JP": {
+      "tier": 1,
+      "coast": true,
+      "island": true,
+      "lines": 0,
+      "areaCore": 373328,
+      "areaMax": 373334,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": [
+        "B18"
+      ]
+    },
+    "KE": {
+      "tier": 1,
+      "coast": true,
+      "island": false,
+      "lines": 1,
+      "areaCore": 584957,
+      "areaMax": 588390,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": [
+        "B17",
+        "B74"
+      ]
+    },
+    "KG": {
+      "tier": 2,
+      "coast": false,
+      "island": false,
+      "lines": 0,
+      "areaCore": 198713,
+      "areaMax": 198713,
+      "features": [
+        "tian-shan"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "KH": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 181754,
+      "areaMax": 181754,
+      "features": [
+        "mekong"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "KI": {
+      "tier": 3,
+      "coast": true,
+      "island": true,
+      "lines": 64,
+      "areaCore": 954,
+      "areaMax": 954,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "KM": {
+      "tier": 3,
+      "coast": true,
+      "island": true,
+      "lines": 0,
+      "areaCore": 1679,
+      "areaMax": 1679,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "KN": {
+      "tier": 3,
+      "coast": true,
+      "island": true,
+      "lines": 0,
+      "areaCore": 265,
+      "areaMax": 265,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "KP": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 122246,
+      "areaMax": 122246,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "KR": {
+      "tier": 1,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 98521,
+      "areaMax": 98521,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "KW": {
+      "tier": 3,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 17496,
+      "areaMax": 17496,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "KZ": {
+      "tier": 1,
+      "coast": false,
+      "island": false,
+      "lines": 0,
+      "areaCore": 2712842,
+      "areaMax": 2712842,
+      "features": [
+        "tian-shan"
+      ],
+      "featuresNear": [
+        "karakum"
+      ],
+      "hatchedTouching": []
+    },
+    "LA": {
+      "tier": 2,
+      "coast": false,
+      "island": false,
+      "lines": 0,
+      "areaCore": 228827,
+      "areaMax": 228827,
+      "features": [
+        "mekong"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "LB": {
+      "tier": 3,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 10007,
+      "areaMax": 11220,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": [
+        "B16",
+        "B58"
+      ]
+    },
+    "LC": {
+      "tier": 3,
+      "coast": true,
+      "island": true,
+      "lines": 0,
+      "areaCore": 607,
+      "areaMax": 607,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "LI": {
+      "tier": 3,
+      "coast": false,
+      "island": false,
+      "lines": 0,
+      "areaCore": 137,
+      "areaMax": 137,
+      "features": [
+        "alps"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "LK": {
+      "tier": 2,
+      "coast": true,
+      "island": true,
+      "lines": 0,
+      "areaCore": 66573,
+      "areaMax": 66573,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "LR": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 95710,
+      "areaMax": 95710,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "LS": {
+      "tier": 3,
+      "coast": false,
+      "island": false,
+      "lines": 0,
+      "areaCore": 30143,
+      "areaMax": 30143,
+      "features": [
+        "drakensberg"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "LT": {
+      "tier": 3,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 64641,
+      "areaMax": 64641,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "LU": {
+      "tier": 3,
+      "coast": false,
+      "island": false,
+      "lines": 0,
+      "areaCore": 2600,
+      "areaMax": 2600,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "LV": {
+      "tier": 3,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 64259,
+      "areaMax": 64259,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "LY": {
+      "tier": 1,
+      "coast": true,
+      "island": false,
+      "lines": 2,
+      "areaCore": 1626531,
+      "areaMax": 1626531,
+      "features": [
+        "sahara"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "MA": {
+      "tier": 1,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 413738,
+      "areaMax": 682659,
+      "features": [
+        "atlas"
+      ],
+      "featuresNear": [
+        "sahara"
+      ],
+      "hatchedTouching": [
+        "B19",
+        "B28"
+      ]
+    },
+    "MC": {
+      "tier": 3,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 19,
+      "areaMax": 19,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "MD": {
+      "tier": 3,
+      "coast": false,
+      "island": false,
+      "lines": 0,
+      "areaCore": 30068,
+      "areaMax": 33112,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": [
+        "B36"
+      ]
+    },
+    "ME": {
+      "tier": 3,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 13704,
+      "areaMax": 24599,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": [
+        "B57"
+      ]
+    },
+    "MG": {
+      "tier": 1,
+      "coast": true,
+      "island": true,
+      "lines": 4,
+      "areaCore": 594753,
+      "areaMax": 594753,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "MH": {
+      "tier": 3,
+      "coast": true,
+      "island": true,
+      "lines": 0,
+      "areaCore": 166,
+      "areaMax": 166,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "MK": {
+      "tier": 3,
+      "coast": false,
+      "island": false,
+      "lines": 0,
+      "areaCore": 25349,
+      "areaMax": 36244,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": [
+        "B57"
+      ]
+    },
+    "ML": {
+      "tier": 2,
+      "coast": false,
+      "island": false,
+      "lines": 34,
+      "areaCore": 1256813,
+      "areaMax": 1256813,
+      "features": [
+        "niger",
+        "sahara"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "MM": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 2,
+      "areaCore": 664957,
+      "areaMax": 733027,
+      "features": [],
+      "featuresNear": [
+        "tibetan-plateau"
+      ],
+      "hatchedTouching": [
+        "B00"
+      ]
+    },
+    "MN": {
+      "tier": 1,
+      "coast": false,
+      "island": false,
+      "lines": 0,
+      "areaCore": 1560553,
+      "areaMax": 1560553,
+      "features": [
+        "gobi"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "MR": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 2,
+      "areaCore": 1039354,
+      "areaMax": 1130050,
+      "features": [
+        "sahara"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": [
+        "B28"
+      ]
+    },
+    "MT": {
+      "tier": 3,
+      "coast": true,
+      "island": true,
+      "lines": 0,
+      "areaCore": 326,
+      "areaMax": 326,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "MU": {
+      "tier": 3,
+      "coast": true,
+      "island": true,
+      "lines": 0,
+      "areaCore": 2020,
+      "areaMax": 2020,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "MV": {
+      "tier": 3,
+      "coast": true,
+      "island": true,
+      "lines": 64,
+      "areaCore": 109,
+      "areaMax": 109,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "MW": {
+      "tier": 3,
+      "coast": false,
+      "island": false,
+      "lines": 0,
+      "areaCore": 119849,
+      "areaMax": 119849,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "MX": {
+      "tier": 1,
+      "coast": true,
+      "island": false,
+      "lines": 2,
+      "areaCore": 1962243,
+      "areaMax": 1962243,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "MY": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 290748,
+      "areaMax": 329487,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": [
+        "C04"
+      ]
+    },
+    "MZ": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 4,
+      "areaCore": 791021,
+      "areaMax": 791021,
+      "features": [
+        "zambezi"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "NA": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 4,
+      "areaCore": 824824,
+      "areaMax": 824824,
+      "features": [
+        "zambezi",
+        "kalahari",
+        "namib"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "NE": {
+      "tier": 2,
+      "coast": false,
+      "island": false,
+      "lines": 2176,
+      "areaCore": 1185161,
+      "areaMax": 1185161,
+      "features": [
+        "niger",
+        "sahara"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "NG": {
+      "tier": 1,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 911217,
+      "areaMax": 911217,
+      "features": [
+        "niger"
+      ],
+      "featuresNear": [
+        "sahara"
+      ],
+      "hatchedTouching": []
+    },
+    "NI": {
+      "tier": 3,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 129177,
+      "areaMax": 129177,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "NL": {
+      "tier": 1,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 37253,
+      "areaMax": 37253,
+      "features": [
+        "rhine"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "NO": {
+      "tier": 1,
+      "coast": true,
+      "island": false,
+      "lines": 8,
+      "areaCore": 379542,
+      "areaMax": 379542,
+      "features": [
+        "scandinavian-mountains"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "NP": {
+      "tier": 2,
+      "coast": false,
+      "island": false,
+      "lines": 0,
+      "areaCore": 147324,
+      "areaMax": 147384,
+      "features": [
+        "himalayas",
+        "tibetan-plateau"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": [
+        "B88"
+      ]
+    },
+    "NR": {
+      "tier": 3,
+      "coast": true,
+      "island": true,
+      "lines": 64,
+      "areaCore": 29,
+      "areaMax": 29,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "NZ": {
+      "tier": 1,
+      "coast": true,
+      "island": true,
+      "lines": 0,
+      "areaCore": 268109,
+      "areaMax": 268109,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "OM": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 2,
+      "areaCore": 312090,
+      "areaMax": 312090,
+      "features": [
+        "rub-al-khali"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "PA": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 74843,
+      "areaMax": 74843,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "PE": {
+      "tier": 1,
+      "coast": true,
+      "island": false,
+      "lines": 64,
+      "areaCore": 1295127,
+      "areaMax": 1295127,
+      "features": [
+        "amazon",
+        "andes",
+        "amazon-basin"
+      ],
+      "featuresNear": [
+        "atacama"
+      ],
+      "hatchedTouching": []
+    },
+    "PG": {
+      "tier": 2,
+      "coast": true,
+      "island": true,
+      "lines": 0,
+      "areaCore": 467150,
+      "areaMax": 467150,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "PH": {
+      "tier": 1,
+      "coast": true,
+      "island": true,
+      "lines": 0,
+      "areaCore": 294430,
+      "areaMax": 294430,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "PK": {
+      "tier": 1,
+      "coast": true,
+      "island": false,
+      "lines": 128,
+      "areaCore": 796677,
+      "areaMax": 985859,
+      "features": [
+        "indus",
+        "hindu-kush",
+        "thar"
+      ],
+      "featuresNear": [
+        "tibetan-plateau"
+      ],
+      "hatchedTouching": [
+        "B05",
+        "B06",
+        "B08",
+        "B45",
+        "B09"
+      ]
+    },
+    "PL": {
+      "tier": 1,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 312218,
+      "areaMax": 312218,
+      "features": [
+        "carpathians"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "PT": {
+      "tier": 1,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 91303,
+      "areaMax": 91896,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": [
+        "B67"
+      ]
+    },
+    "PW": {
+      "tier": 3,
+      "coast": true,
+      "island": true,
+      "lines": 0,
+      "areaCore": 494,
+      "areaMax": 494,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "PY": {
+      "tier": 2,
+      "coast": false,
+      "island": false,
+      "lines": 4,
+      "areaCore": 400858,
+      "areaMax": 400858,
+      "features": [
+        "parana"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "QA": {
+      "tier": 3,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 11173,
+      "areaMax": 11173,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "RO": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 235806,
+      "areaMax": 235806,
+      "features": [
+        "danube",
+        "carpathians"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "RS": {
+      "tier": 3,
+      "coast": false,
+      "island": false,
+      "lines": 0,
+      "areaCore": 77460,
+      "areaMax": 88367,
+      "features": [
+        "danube"
+      ],
+      "featuresNear": [
+        "carpathians"
+      ],
+      "hatchedTouching": [
+        "B57",
+        "B96",
+        "B95"
+      ]
+    },
+    "RU": {
+      "tier": 1,
+      "coast": true,
+      "island": false,
+      "lines": 8,
+      "areaCore": 16854454,
+      "areaMax": 16917231,
+      "features": [
+        "volga",
+        "ob",
+        "yenisey",
+        "lena",
+        "amur",
+        "urals",
+        "caucasus"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": [
+        "B35",
+        "B37",
+        "C03",
+        "C02",
+        "B89",
+        "B29"
+      ]
+    },
+    "RW": {
+      "tier": 2,
+      "coast": false,
+      "island": false,
+      "lines": 0,
+      "areaCore": 25418,
+      "areaMax": 25418,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "SA": {
+      "tier": 1,
+      "coast": true,
+      "island": false,
+      "lines": 2,
+      "areaCore": 1926006,
+      "areaMax": 1926006,
+      "features": [
+        "rub-al-khali"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "SB": {
+      "tier": 2,
+      "coast": true,
+      "island": true,
+      "lines": 0,
+      "areaCore": 27312,
+      "areaMax": 27312,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "SC": {
+      "tier": 3,
+      "coast": true,
+      "island": true,
+      "lines": 0,
+      "areaCore": 438,
+      "areaMax": 438,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "SD": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 1851145,
+      "areaMax": 1882299,
+      "features": [
+        "nile",
+        "sahara"
+      ],
+      "featuresNear": [
+        "ethiopian-highlands",
+        "congo-basin"
+      ],
+      "hatchedTouching": [
+        "B13",
+        "B94",
+        "B93"
+      ]
+    },
+    "SE": {
+      "tier": 1,
+      "coast": true,
+      "island": false,
+      "lines": 8,
+      "areaCore": 443493,
+      "areaMax": 443493,
+      "features": [
+        "scandinavian-mountains"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "SG": {
+      "tier": 3,
+      "coast": true,
+      "island": true,
+      "lines": 0,
+      "areaCore": 513,
+      "areaMax": 513,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "SI": {
+      "tier": 3,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 20277,
+      "areaMax": 20278,
+      "features": [],
+      "featuresNear": [
+        "alps"
+      ],
+      "hatchedTouching": [
+        "B82"
+      ]
+    },
+    "SK": {
+      "tier": 3,
+      "coast": false,
+      "island": false,
+      "lines": 0,
+      "areaCore": 48308,
+      "areaMax": 48308,
+      "features": [
+        "danube",
+        "carpathians"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "SL": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 71912,
+      "areaMax": 71912,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "SM": {
+      "tier": 3,
+      "coast": false,
+      "island": false,
+      "lines": 0,
+      "areaCore": 60,
+      "areaMax": 60,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "SN": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 196942,
+      "areaMax": 196942,
+      "features": [
+        "sahara"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "SO": {
+      "tier": 3,
+      "coast": true,
+      "island": false,
+      "lines": 1,
+      "areaCore": 473872,
+      "areaMax": 641977,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": [
+        "B30"
+      ]
+    },
+    "SR": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 145764,
+      "areaMax": 163658,
+      "features": [],
+      "featuresNear": [
+        "amazon-basin"
+      ],
+      "hatchedTouching": [
+        "B14",
+        "B15"
+      ]
+    },
+    "SS": {
+      "tier": 2,
+      "coast": false,
+      "island": false,
+      "lines": 0,
+      "areaCore": 629512,
+      "areaMax": 643866,
+      "features": [
+        "nile",
+        "congo-basin"
+      ],
+      "featuresNear": [
+        "ethiopian-highlands",
+        "sahara"
+      ],
+      "hatchedTouching": [
+        "B17",
+        "B13",
+        "B74"
+      ]
+    },
+    "ST": {
+      "tier": 3,
+      "coast": true,
+      "island": true,
+      "lines": 64,
+      "areaCore": 1042,
+      "areaMax": 1042,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "SV": {
+      "tier": 3,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 20616,
+      "areaMax": 20616,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "SY": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 185952,
+      "areaMax": 187147,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": [
+        "B16"
+      ]
+    },
+    "SZ": {
+      "tier": 2,
+      "coast": false,
+      "island": false,
+      "lines": 0,
+      "areaCore": 17143,
+      "areaMax": 17143,
+      "features": [
+        "drakensberg"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "TD": {
+      "tier": 2,
+      "coast": false,
+      "island": false,
+      "lines": 128,
+      "areaCore": 1270723,
+      "areaMax": 1270723,
+      "features": [
+        "sahara"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "TG": {
+      "tier": 3,
+      "coast": true,
+      "island": false,
+      "lines": 2048,
+      "areaCore": 57102,
+      "areaMax": 57102,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "TH": {
+      "tier": 1,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 516275,
+      "areaMax": 516275,
+      "features": [
+        "mekong"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "TJ": {
+      "tier": 2,
+      "coast": false,
+      "island": false,
+      "lines": 0,
+      "areaCore": 142136,
+      "areaMax": 142136,
+      "features": [],
+      "featuresNear": [
+        "hindu-kush",
+        "tibetan-plateau"
+      ],
+      "hatchedTouching": []
+    },
+    "TL": {
+      "tier": 3,
+      "coast": true,
+      "island": true,
+      "lines": 0,
+      "areaCore": 15145,
+      "areaMax": 15145,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "TM": {
+      "tier": 2,
+      "coast": false,
+      "island": false,
+      "lines": 0,
+      "areaCore": 470449,
+      "areaMax": 470449,
+      "features": [
+        "karakum"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "TN": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 156655,
+      "areaMax": 156655,
+      "features": [
+        "atlas",
+        "sahara"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "TO": {
+      "tier": 2,
+      "coast": true,
+      "island": true,
+      "lines": 0,
+      "areaCore": 605,
+      "areaMax": 605,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "TR": {
+      "tier": 1,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 779426,
+      "areaMax": 779426,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "TT": {
+      "tier": 3,
+      "coast": true,
+      "island": true,
+      "lines": 0,
+      "areaCore": 5144,
+      "areaMax": 5144,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "TV": {
+      "tier": 3,
+      "coast": true,
+      "island": true,
+      "lines": 0,
+      "areaCore": 23,
+      "areaMax": 23,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "TZ": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 945556,
+      "areaMax": 945556,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "UA": {
+      "tier": 1,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 552482,
+      "areaMax": 600264,
+      "features": [
+        "carpathians"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": [
+        "B36",
+        "C03",
+        "C02",
+        "B89"
+      ]
+    },
+    "UG": {
+      "tier": 2,
+      "coast": false,
+      "island": false,
+      "lines": 1,
+      "areaCore": 242936,
+      "areaMax": 242936,
+      "features": [
+        "nile"
+      ],
+      "featuresNear": [
+        "congo-basin"
+      ],
+      "hatchedTouching": []
+    },
+    "US": {
+      "tier": 1,
+      "coast": true,
+      "island": false,
+      "lines": 136,
+      "areaCore": 9447839,
+      "areaMax": 9447839,
+      "features": [
+        "mississippi",
+        "missouri",
+        "st-lawrence",
+        "rockies",
+        "appalachians"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "UY": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 177440,
+      "areaMax": 177710,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": [
+        "B85",
+        "B92"
+      ]
+    },
+    "UZ": {
+      "tier": 2,
+      "coast": false,
+      "island": false,
+      "lines": 0,
+      "areaCore": 447180,
+      "areaMax": 447180,
+      "features": [
+        "karakum"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "VC": {
+      "tier": 3,
+      "coast": true,
+      "island": true,
+      "lines": 0,
+      "areaCore": 369,
+      "areaMax": 369,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "VE": {
+      "tier": 1,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 916570,
+      "areaMax": 1059589,
+      "features": [
+        "orinoco",
+        "andes"
+      ],
+      "featuresNear": [
+        "amazon-basin"
+      ],
+      "hatchedTouching": [
+        "B56",
+        "B48"
+      ]
+    },
+    "VN": {
+      "tier": 1,
+      "coast": true,
+      "island": false,
+      "lines": 128,
+      "areaCore": 329987,
+      "areaMax": 329987,
+      "features": [
+        "mekong"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "VU": {
+      "tier": 2,
+      "coast": true,
+      "island": true,
+      "lines": 0,
+      "areaCore": 12339,
+      "areaMax": 12339,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "WS": {
+      "tier": 2,
+      "coast": true,
+      "island": true,
+      "lines": 0,
+      "areaCore": 2791,
+      "areaMax": 2791,
+      "features": [],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "YE": {
+      "tier": 2,
+      "coast": true,
+      "island": false,
+      "lines": 0,
+      "areaCore": 454649,
+      "areaMax": 454649,
+      "features": [
+        "rub-al-khali"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "ZA": {
+      "tier": 1,
+      "coast": true,
+      "island": false,
+      "lines": 4,
+      "areaCore": 1221446,
+      "areaMax": 1221446,
+      "features": [
+        "drakensberg",
+        "kalahari"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "ZM": {
+      "tier": 2,
+      "coast": false,
+      "island": false,
+      "lines": 0,
+      "areaCore": 754730,
+      "areaMax": 754730,
+      "features": [
+        "zambezi"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    },
+    "ZW": {
+      "tier": 2,
+      "coast": false,
+      "island": false,
+      "lines": 0,
+      "areaCore": 390529,
+      "areaMax": 390529,
+      "features": [
+        "zambezi"
+      ],
+      "featuresNear": [],
+      "hatchedTouching": []
+    }
+  },
+  "worldviews": {
+    "checked": [
+      "arg",
+      "bdg",
+      "bra",
+      "chn",
+      "deu",
+      "egy",
+      "esp",
+      "fra",
+      "gbr",
+      "grc",
+      "idn",
+      "ind",
+      "iso",
+      "isr",
+      "ita",
+      "jpn",
+      "kor",
+      "mar",
+      "nep",
+      "nld",
+      "pak",
+      "pol",
+      "prt",
+      "pse",
+      "rus",
+      "sau",
+      "swe",
+      "tur",
+      "twn",
+      "ukr",
+      "usa",
+      "vnm"
+    ],
+    "reported": [
+      {
+        "pov": "arg",
+        "from": "KAB",
+        "to": "KAZ",
+        "km2": 6871,
+        "cells": 20,
+        "status": "inside excused areas (lease, overlay, sub-unit or the whole-state feature)"
+      },
+      {
+        "pov": "arg",
+        "from": "SGS",
+        "to": "ARG",
+        "km2": 4019,
+        "cells": 14,
+        "status": "inside excused areas (lease, overlay, sub-unit or the whole-state feature)"
+      },
+      {
+        "pov": "bdg",
+        "from": "ISR",
+        "to": "PSX",
+        "km2": 21130,
+        "cells": 50,
+        "status": "inside excused areas (lease, overlay, sub-unit or the whole-state feature)"
+      },
+      {
+        "pov": "bdg",
+        "from": "KAB",
+        "to": "KAZ",
+        "km2": 6871,
+        "cells": 20,
+        "status": "inside excused areas (lease, overlay, sub-unit or the whole-state feature)"
+      },
+      {
+        "pov": "bra",
+        "from": "KAB",
+        "to": "KAZ",
+        "km2": 6871,
+        "cells": 20,
+        "status": "inside excused areas (lease, overlay, sub-unit or the whole-state feature)"
+      },
+      {
+        "pov": "chn",
+        "from": "KAB",
+        "to": "KAZ",
+        "km2": 6871,
+        "cells": 20,
+        "status": "inside excused areas (lease, overlay, sub-unit or the whole-state feature)"
+      },
+      {
+        "pov": "deu",
+        "from": "KAB",
+        "to": "KAZ",
+        "km2": 6871,
+        "cells": 20,
+        "status": "inside excused areas (lease, overlay, sub-unit or the whole-state feature)"
+      },
+      {
+        "pov": "egy",
+        "from": "KAB",
+        "to": "KAZ",
+        "km2": 6871,
+        "cells": 20,
+        "status": "inside excused areas (lease, overlay, sub-unit or the whole-state feature)"
+      },
+      {
+        "pov": "esp",
+        "from": "KAB",
+        "to": "KAZ",
+        "km2": 6871,
+        "cells": 20,
+        "status": "inside excused areas (lease, overlay, sub-unit or the whole-state feature)"
+      },
+      {
+        "pov": "fra",
+        "from": "KAB",
+        "to": "KAZ",
+        "km2": 6871,
+        "cells": 20,
+        "status": "inside excused areas (lease, overlay, sub-unit or the whole-state feature)"
+      },
+      {
+        "pov": "gbr",
+        "from": "GEO",
+        "to": "",
+        "km2": 3329,
+        "cells": 9,
+        "status": "artefact (< 5,000 km²)"
+      },
+      {
+        "pov": "gbr",
+        "from": "KAB",
+        "to": "KAZ",
+        "km2": 6871,
+        "cells": 20,
+        "status": "inside excused areas (lease, overlay, sub-unit or the whole-state feature)"
+      },
+      {
+        "pov": "grc",
+        "from": "KAB",
+        "to": "KAZ",
+        "km2": 6871,
+        "cells": 20,
+        "status": "inside excused areas (lease, overlay, sub-unit or the whole-state feature)"
+      },
+      {
+        "pov": "idn",
+        "from": "ISR",
+        "to": "PSX",
+        "km2": 21130,
+        "cells": 50,
+        "status": "inside excused areas (lease, overlay, sub-unit or the whole-state feature)"
+      },
+      {
+        "pov": "idn",
+        "from": "KAB",
+        "to": "KAZ",
+        "km2": 6871,
+        "cells": 20,
+        "status": "inside excused areas (lease, overlay, sub-unit or the whole-state feature)"
+      },
+      {
+        "pov": "ind",
+        "from": "KAB",
+        "to": "KAZ",
+        "km2": 6871,
+        "cells": 20,
+        "status": "inside excused areas (lease, overlay, sub-unit or the whole-state feature)"
+      },
+      {
+        "pov": "iso",
+        "from": "KAB",
+        "to": "KAZ",
+        "km2": 6871,
+        "cells": 20,
+        "status": "inside excused areas (lease, overlay, sub-unit or the whole-state feature)"
+      },
+      {
+        "pov": "iso",
+        "from": "KOR",
+        "to": "",
+        "km2": 2719,
+        "cells": 7,
+        "status": "inside excused areas (lease, overlay, sub-unit or the whole-state feature)"
+      },
+      {
+        "pov": "isr",
+        "from": "KAB",
+        "to": "KAZ",
+        "km2": 6871,
+        "cells": 20,
+        "status": "inside excused areas (lease, overlay, sub-unit or the whole-state feature)"
+      },
+      {
+        "pov": "ita",
+        "from": "KAB",
+        "to": "KAZ",
+        "km2": 6871,
+        "cells": 20,
+        "status": "inside excused areas (lease, overlay, sub-unit or the whole-state feature)"
+      },
+      {
+        "pov": "jpn",
+        "from": "KAB",
+        "to": "KAZ",
+        "km2": 6871,
+        "cells": 20,
+        "status": "inside excused areas (lease, overlay, sub-unit or the whole-state feature)"
+      },
+      {
+        "pov": "kor",
+        "from": "KAB",
+        "to": "KAZ",
+        "km2": 6871,
+        "cells": 20,
+        "status": "inside excused areas (lease, overlay, sub-unit or the whole-state feature)"
+      },
+      {
+        "pov": "mar",
+        "from": "KAB",
+        "to": "KAZ",
+        "km2": 6871,
+        "cells": 20,
+        "status": "inside excused areas (lease, overlay, sub-unit or the whole-state feature)"
+      },
+      {
+        "pov": "nep",
+        "from": "KAB",
+        "to": "KAZ",
+        "km2": 6871,
+        "cells": 20,
+        "status": "inside excused areas (lease, overlay, sub-unit or the whole-state feature)"
+      },
+      {
+        "pov": "nld",
+        "from": "KAB",
+        "to": "KAZ",
+        "km2": 6871,
+        "cells": 20,
+        "status": "inside excused areas (lease, overlay, sub-unit or the whole-state feature)"
+      },
+      {
+        "pov": "pak",
+        "from": "ISR",
+        "to": "PSX",
+        "km2": 21130,
+        "cells": 50,
+        "status": "inside excused areas (lease, overlay, sub-unit or the whole-state feature)"
+      },
+      {
+        "pov": "pak",
+        "from": "KAB",
+        "to": "KAZ",
+        "km2": 6871,
+        "cells": 20,
+        "status": "inside excused areas (lease, overlay, sub-unit or the whole-state feature)"
+      },
+      {
+        "pov": "pol",
+        "from": "KAB",
+        "to": "KAZ",
+        "km2": 6871,
+        "cells": 20,
+        "status": "inside excused areas (lease, overlay, sub-unit or the whole-state feature)"
+      },
+      {
+        "pov": "prt",
+        "from": "KAB",
+        "to": "KAZ",
+        "km2": 6871,
+        "cells": 20,
+        "status": "inside excused areas (lease, overlay, sub-unit or the whole-state feature)"
+      },
+      {
+        "pov": "pse",
+        "from": "KAB",
+        "to": "KAZ",
+        "km2": 6871,
+        "cells": 20,
+        "status": "inside excused areas (lease, overlay, sub-unit or the whole-state feature)"
+      },
+      {
+        "pov": "rus",
+        "from": "KAB",
+        "to": "KAZ",
+        "km2": 6871,
+        "cells": 20,
+        "status": "inside excused areas (lease, overlay, sub-unit or the whole-state feature)"
+      },
+      {
+        "pov": "sau",
+        "from": "ISR",
+        "to": "PSX",
+        "km2": 21130,
+        "cells": 50,
+        "status": "inside excused areas (lease, overlay, sub-unit or the whole-state feature)"
+      },
+      {
+        "pov": "sau",
+        "from": "KAB",
+        "to": "KAZ",
+        "km2": 6871,
+        "cells": 20,
+        "status": "inside excused areas (lease, overlay, sub-unit or the whole-state feature)"
+      },
+      {
+        "pov": "swe",
+        "from": "KAB",
+        "to": "KAZ",
+        "km2": 6871,
+        "cells": 20,
+        "status": "inside excused areas (lease, overlay, sub-unit or the whole-state feature)"
+      },
+      {
+        "pov": "tur",
+        "from": "KAB",
+        "to": "KAZ",
+        "km2": 6871,
+        "cells": 20,
+        "status": "inside excused areas (lease, overlay, sub-unit or the whole-state feature)"
+      },
+      {
+        "pov": "twn",
+        "from": "CHN",
+        "to": "TWN",
+        "km2": 9336936,
+        "cells": 23688,
+        "status": "exception: the Republic of China view assigns mainland China to Taiwan"
+      },
+      {
+        "pov": "twn",
+        "from": "KAB",
+        "to": "KAZ",
+        "km2": 6871,
+        "cells": 20,
+        "status": "inside excused areas (lease, overlay, sub-unit or the whole-state feature)"
+      },
+      {
+        "pov": "ukr",
+        "from": "KAB",
+        "to": "KAZ",
+        "km2": 6871,
+        "cells": 20,
+        "status": "inside excused areas (lease, overlay, sub-unit or the whole-state feature)"
+      },
+      {
+        "pov": "usa",
+        "from": "GEO",
+        "to": "",
+        "km2": 3329,
+        "cells": 9,
+        "status": "artefact (< 5,000 km²)"
+      },
+      {
+        "pov": "usa",
+        "from": "KAB",
+        "to": "KAZ",
+        "km2": 6871,
+        "cells": 20,
+        "status": "inside excused areas (lease, overlay, sub-unit or the whole-state feature)"
+      },
+      {
+        "pov": "vnm",
+        "from": "KAB",
+        "to": "KAZ",
+        "km2": 6871,
+        "cells": 20,
+        "status": "inside excused areas (lease, overlay, sub-unit or the whole-state feature)"
+      }
+    ]
+  },
+  "output": {
+    "file": "src/data/atlas.gen.ts",
+    "bytes": 152739,
+    "sha256": "648d656ef09d562c451810b18beee9d9c7c0e1e1d10818aadfcce5c1834b0606"
+  }
+}
