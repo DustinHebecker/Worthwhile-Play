@@ -182,7 +182,7 @@
     { "id": "suva", "ne": 1159150917, "country": "FJ", "tz": "Pacific/Fiji", "capital": true, "tier": 3 }
   ],
   "rivers": [
-    { "id": "nile", "names": ["Nile"], "tier": 1 },
+    { "id": "nile", "names": ["Nile", "El Bahr el Abyad", "Bahr el Jebel", "Albert Nile", "Victoria Nile"], "tier": 1 },
     { "id": "amazon", "names": ["Amazonas"], "tier": 1 },
     { "id": "yangtze", "names": ["Yangtze", "Chang Jiang"], "tier": 1 },
     { "id": "mississippi", "names": ["Mississippi"], "tier": 1 },
@@ -279,5 +279,5 @@
     "east": [["lagos", "london"], ["lima", "miami"], ["cape-town", "cairo"], ["santiago", "new-york"]],
     "closer": [["tokyo", "sydney", "paris"], ["new-york", "london", "los-angeles"], ["madrid", "new-york", "moscow"]]
   },
-  "retired": []
+  "retired": ["st-lawrence"]
 }

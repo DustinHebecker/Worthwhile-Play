@@ -3040,6 +3040,7 @@
       "areaCore": 629512,
       "areaMax": 643866,
       "features": [
+        "nile",
         "sahara",
         "congo-basin"
       ],
@@ -3246,7 +3247,9 @@
       "lines": 1,
       "areaCore": 242936,
       "areaMax": 242936,
-      "features": [],
+      "features": [
+        "nile"
+      ],
       "hatchedTouching": []
     },
     "US": {
@@ -3766,7 +3769,7 @@
   },
   "output": {
     "file": "src/data/atlas.gen.ts",
-    "bytes": 152004,
-    "sha256": "2b67786214e9daf58bd1dfca9c2907e6dab2570fafaaffa98cf135e3ace4a296"
+    "bytes": 152225,
+    "sha256": "e741714016baa3d0e2c23d7061903f9adebe8fff855682cc729d5bd1fc584cca"
   }
 }

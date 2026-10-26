@@ -97,6 +97,20 @@ describe('mystery clues', () => {
     expect(candidatesAfter(atlas, [{ id: 'nb', arg: 'AD' }]).map((c) => c.id).sort()).toEqual(['ES', 'FR']);
   });
 
+  it('never rule out a country a river also flows through (incomplete lines, border reaches)', () => {
+    const river = (arg: string, id: string) => clueExcludes(atlas, atlas.country(id)!, { id: 'river', arg });
+    // Facts list Egypt, Sudan, South Sudan and Uganda for the Nile; Ethiopia (Blue Nile) is never ruled out either.
+    for (const id of ['EG', 'SD', 'SS', 'UG', 'ET']) expect(river('nile', id), id).toBe(false);
+    expect(river('nile', 'FR')).toBe(true);
+    expect(river('euphrates', 'SY')).toBe(false);
+    expect(river('euphrates', 'TR')).toBe(false);
+    expect(river('mekong', 'CN')).toBe(false);
+    expect(river('danube', 'HR')).toBe(false);
+    // The St. Lawrence is retired (the data has only 106 km of it): never a clue.
+    expect(atlas.retired.has('st-lawrence')).toBe(true);
+    expect(trueClues(createRng(1), atlas, atlas.country('US')!).some((k) => k.arg === 'st-lawrence')).toBe(false);
+  });
+
   it('order clues broad first and end at the target', () => {
     const t = atlas.country('KE')!;
     const all = trueClues(createRng(5), atlas, t);

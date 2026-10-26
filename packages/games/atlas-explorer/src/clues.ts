@@ -41,6 +41,25 @@ export const capitalOf = (atlas: Atlas, id: string): City | undefined => atlas.c
 
 const RANGE_KINDS = ['range', 'plateau', 'basin'];
 
+/**
+ * Countries a river also flows through or along that its facts do not list: the map's river lines (Natural Earth
+ * 1:50m) miss part of some courses (the Blue Nile, the Mekong and Brahmaputra in China, the upper Euphrates and
+ * Tigris), border reaches count for neither side, and the Indus in Ladakh lies in a hatched area. A river clue never
+ * rules these countries out, so the mystery never relies on a fact a player can rightly dispute.
+ */
+export const RIVER_ALSO: Readonly<Record<string, readonly string[]>> = {
+  nile: ['ET', 'RW', 'BI', 'TZ', 'KE', 'CD'],
+  amazon: ['CO'],
+  danube: ['HR', 'UA', 'MD'],
+  rhine: ['FR', 'AT', 'LI'],
+  indus: ['CN', 'IN'],
+  brahmaputra: ['CN'],
+  mekong: ['CN', 'MM'],
+  congo: ['AO'],
+  euphrates: ['TR', 'SY'],
+  tigris: ['TR', 'SY']
+};
+
 /** Whether a clue is clearly true for a country (the target must satisfy this). */
 export function clueTrue(atlas: Atlas, c: Country, clue: Clue): boolean {
   const { id, arg } = clue;
@@ -112,6 +131,7 @@ export function clueExcludes(atlas: Atlas, c: Country, clue: Clue): boolean {
     if (!cap) return false;
     return dir === 'n' ? cap.lat <= r.lat : cap.lat >= r.lat;
   }
+  if (id === 'river' && RIVER_ALSO[arg]?.includes(c.id)) return false;
   return !clueTrue(atlas, c, clue);
 }
 
@@ -150,6 +170,8 @@ export function trueClues(rng: Rng, atlas: Atlas, t: Country): Clue[] {
       }
   }
   for (const f of t.features) {
+    // A retired feature (e.g. the St. Lawrence, of which the data has only 106 km) is never a clue.
+    if (atlas.retired.has(f)) continue;
     const kind = atlas.feature(f)?.kind;
     add(kind === 'river' ? 'river' : kind === 'desert' ? 'desert' : 'range', f);
   }

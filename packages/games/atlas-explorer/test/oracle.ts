@@ -113,6 +113,24 @@ export function compareOracle(template: string, places: readonly string[], param
 }
 
 /**
+ * Countries a river also flows through or along, beyond the countries its facts list (incomplete 1:50m lines, border
+ * reaches, the hatched Indus in Ladakh), written down for the test from general geography: a river clue must never
+ * rule them out.
+ */
+export const RIVER_ALSO_ORACLE: Readonly<Record<string, string>> = {
+  nile: 'ET RW BI TZ KE CD',
+  amazon: 'CO',
+  danube: 'HR UA MD',
+  rhine: 'FR AT LI',
+  indus: 'CN IN',
+  brahmaputra: 'CN',
+  mekong: 'CN MM',
+  congo: 'AO',
+  euphrates: 'TR SY',
+  tigris: 'TR SY'
+};
+
+/**
  * Whether a clue is consistent with a country (i.e. does not rule it out), re-implemented on raw facts. Comparisons
  * rule out only countries on the wrong side of the reference; a capital clue never rules out a country whose capital
  * is not listed.
@@ -143,7 +161,7 @@ export function clueAllows(c: RawCountry, id: string, arg: string): boolean {
     if (r.id === c.id) return false;
     return dir === 'gt' ? c.pop > r.pop : c.pop < r.pop;
   }
-  if (id === 'river' || id === 'range' || id === 'desert') return c.ft.includes(arg);
+  if (id === 'river' || id === 'range' || id === 'desert') return c.ft.includes(arg) || (id === 'river' && (RIVER_ALSO_ORACLE[arg] ?? '').split(' ').includes(c.id));
   if (id === 'capital') {
     const r = RAW_CITIES.get(ref)!;
     if (r.country === c.id) return false;
