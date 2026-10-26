@@ -74,6 +74,7 @@ describe('"When was it?"', () => {
     expect(m.q('tl-announcer')!.textContent).toBe('Place the marker or type a year first.');
     m.type('tl-year', String(e.y));
     expect(m.q('tl-means')!.textContent).toBe(`= ${e.y}`);
+    expect(m.q('tl-check')!.getAttribute('aria-disabled')).toBe('false');
     expect((m.state().items[m.state().index] as WhenItem).draft).toMatchObject({ y: e.y, unit: 'ce', text: String(e.y) });
     const saves = m.ctx.saveRequests();
     m.click('tl-check');

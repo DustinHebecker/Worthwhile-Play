@@ -193,7 +193,7 @@ export type ParseResult = { readonly ok: true; readonly value: number } | { read
  */
 export function parseNumber(text: string, locale: string): ParseResult {
   if (typeof text !== 'string') return { ok: false, reason: 'invalid' };
-  let s = normalizeDigits(text).replace(/[\s   '’]/g, '');
+  let s = normalizeDigits(text).replace(/[\s\u00a0\u202f\u2009'\u2019]/g, '');
   if (s === '') return { ok: false, reason: 'empty' };
   if (s.length > 24) return { ok: false, reason: 'invalid' };
   if (s.startsWith('-')) return /\d/.test(s) ? { ok: false, reason: 'zero' } : { ok: false, reason: 'invalid' };

@@ -20,7 +20,7 @@ describe('review texts of every event in all 16 locales', () => {
       const content = await CONTENT_LOADERS[locale]();
       const ui = createUi(t, () => content);
       // (A source may contain the word "Infinity": a book title.)
-      const bad = /\{\w+\}|undefined|\bNaN\b|\u0001/;
+      const bad = /\{\w+\}|undefined|\bNaN\b/;
       for (const e of ALL) {
         const when = ui.when(e.id);
         const range = ui.range(e.lo, e.hi);
@@ -37,6 +37,7 @@ describe('review texts of every event in all 16 locales', () => {
         for (const s of texts) {
           expect(s.trim().length, `${locale}/${e.id}`).toBeGreaterThan(0);
           expect(bad.test(s), `${locale}/${e.id}: ${s}`).toBe(false);
+          expect(s.includes(String.fromCharCode(1)), `${locale}/${e.id}`).toBe(false);
         }
         expect(ui.title(e.id), `${locale}/${e.id}`).not.toBe(e.id);
         for (const s of [when, range, ui.clock(e.y)]) expect(s, `${locale}/${e.id}`).not.toMatch(/Infinity|∞/);

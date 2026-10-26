@@ -263,8 +263,10 @@ describe('isTimelineState', () => {
 
   it('rejects tampered states', () => {
     const base = createRound(11, 'medium', 'mixed', 'all');
-    const bad = (f: (s: Record<string, any>) => void) => {
-      const s = clone(base) as unknown as Record<string, any>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- tampering reaches into arbitrary fields
+    type Loose = Record<string, any>;
+    const bad = (f: (s: Loose) => void) => {
+      const s = clone(base) as unknown as Loose;
       f(s);
       return isTimelineState(s);
     };

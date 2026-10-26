@@ -67,6 +67,8 @@ export function whenScreen(host: Host, item: WhenItem): Screen {
       }
     };
     showMeans(item.draft.text, item.draft.unit, item.draft.y);
+    // Created below; typing updates its state without drawing the card again.
+    let check: HTMLElement | null = null;
     input.addEventListener('input', () => {
       if (host.paused()) return;
       const unit = select.value as EntryUnit;
@@ -76,6 +78,7 @@ export function whenScreen(host: Host, item: WhenItem): Screen {
       host.update(setWhenDraft(host.state(), { y, unit, text: input.value }));
       host.axis.show({ mode: 'place', value: y, marks: anchors, ariaLabel: t('axis.label') });
       showMeans(input.value, unit, y);
+      check?.setAttribute('aria-disabled', y === null ? 'true' : 'false');
     });
     select.addEventListener('change', () => {
       if (host.paused()) return;
@@ -93,7 +96,7 @@ export function whenScreen(host: Host, item: WhenItem): Screen {
         means
       )
     );
-    const check = h('button', { type: 'button', class: 'tl-primary', 'data-testid': 'tl-check', 'aria-disabled': item.draft.y === null ? 'true' : 'false' }, t('action.check'));
+    check = h('button', { type: 'button', class: 'tl-primary', 'data-testid': 'tl-check', 'aria-disabled': item.draft.y === null ? 'true' : 'false' }, t('action.check'));
     check.addEventListener('click', () => {
       if (host.paused()) return;
       const s = host.state();
