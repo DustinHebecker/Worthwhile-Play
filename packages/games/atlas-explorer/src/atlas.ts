@@ -45,6 +45,8 @@ export interface Country extends Shape {
   readonly nb: readonly string[];
   /** Rivers and physical regions in its home territory. */
   readonly features: readonly string[];
+  /** Physical regions that reach into its home territory only a little: their clue never rules it out. */
+  readonly featuresNear: readonly string[];
   /** Hatched areas touching it. */
   readonly touching: readonly string[];
 }
@@ -207,6 +209,7 @@ export function decodeAtlas(data: AtlasData): Atlas {
       mostly: (flags & 8) !== 0,
       nb: words(c.nb),
       features: words(c.ft),
+      featuresNear: words(c.fm ?? ''),
       touching: words(c.dz),
       rings,
       box: boxOf(rings)

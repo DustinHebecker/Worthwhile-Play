@@ -110,7 +110,8 @@ export function clueTrue(atlas: Atlas, c: Country, clue: Clue): boolean {
 /**
  * Whether a clue rules a candidate out: clearly false for it. Comparisons with a margin only rule out candidates on
  * the wrong side of the reference itself (a country "a little larger than France" stays a candidate for "larger than
- * France"), and a capital clue cannot rule out a country whose capital is not in the atlas.
+ * France"), a capital clue cannot rule out a country whose capital is not in the atlas, and a desert or range clue
+ * cannot rule out a country the feature reaches into only a little.
  */
 export function clueExcludes(atlas: Atlas, c: Country, clue: Clue): boolean {
   const { id, arg } = clue;
@@ -132,6 +133,8 @@ export function clueExcludes(atlas: Atlas, c: Country, clue: Clue): boolean {
     return dir === 'n' ? cap.lat <= r.lat : cap.lat >= r.lat;
   }
   if (id === 'river' && RIVER_ALSO[arg]?.includes(c.id)) return false;
+  // A desert or range that reaches in only a little (below the share threshold) is neither a clue nor ruled out.
+  if ((id === 'desert' || id === 'range') && c.featuresNear.includes(arg)) return false;
   return !clueTrue(atlas, c, clue);
 }
 

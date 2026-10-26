@@ -233,7 +233,7 @@ clue 1 ─▶ [guess (tap or list) ▸ feedback card] × n  ─▶ … ─▶ "N
 | `area` | "It is larger than France." / "smaller than …" | ratio ≥ 1.3 against a reference country |
 | `people` | "More people live there than in Canada." / "fewer …" | ratio ≥ 1.5 |
 | `river` | "The Danube flows through it." | river line inside the home territory ≥ 50 km |
-| `range` / `desert` | "Part of the Andes lies in it." / "… the Sahara …" | ≥ 10,000 km² or ≥ 5 % of the feature inside the country |
+| `range` / `desert` | "Part of the Andes lies in it." / "… the Sahara …" | the feature covers ≥ 10 % of the home territory, or ≥ 5 % of the feature lies in it (a big feature's fuzzy edge — the Sahara reaches 2–9 % into countries of the Sahel — is no fact to rely on); a country it reaches only a little is never ruled out by the clue |
 | `capital` | "Its capital lies further north than Madrid." | only for countries whose capital is among the curated cities, Δlat ≥ 1° |
 
 ### 8.3 Clue order and fairness

@@ -98,6 +98,16 @@ export function lengthInsideKm(lines: readonly Flat[], inside: (lon: number, lat
   return km;
 }
 
+/**
+ * Whether a physical region (desert, range, plateau, basin) reaches into a country clearly enough for a clue (design
+ * § 8.2): it covers at least `minShareCountry` (10 %) of the country, or the country holds at least `minShareFeature`
+ * (5 %) of the feature. A big feature's edge is fuzzy (the Sahara polygon reaches 2–9 % into countries of the Sahel,
+ * each under 1 % of the desert), so a small overlap on both counts is not a fact a player can rely on; such countries
+ * are only "near" (the clue never rules them out).
+ */
+export const featureReaches = (insideKm2: number, countryKm2: number, featureKm2: number, minShareCountry = 0.1, minShareFeature = 0.05): boolean =>
+  insideKm2 > 0 && (insideKm2 >= minShareCountry * countryKm2 || insideKm2 >= minShareFeature * featureKm2);
+
 /** Area (km²) of the sample cells (`step` degrees) within a box whose centres satisfy `inside`. */
 export function sampledAreaKm2(box: readonly [number, number, number, number], step: number, inside: (lon: number, lat: number) => boolean): number {
   let km2 = 0;

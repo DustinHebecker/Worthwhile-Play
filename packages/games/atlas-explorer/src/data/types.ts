@@ -20,6 +20,9 @@ export interface AtlasData {
     readonly nb: string;
     /** Rivers and physical regions in the home territory (space-separated ids). */
     readonly ft: string;
+    /** Physical regions that reach in only a little (below the share threshold, design § 8.2; space-separated ids;
+     *  omitted when none). */
+    readonly fm?: string;
     /** Hatched areas touching the country (space-separated ids). */
     readonly dz: string;
     /** Rings as arc references. */

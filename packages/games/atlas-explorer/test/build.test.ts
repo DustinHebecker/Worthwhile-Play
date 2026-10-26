@@ -3,7 +3,7 @@ import fc from 'fast-check';
 import { decodeInts, encodeInts } from '../src/codec';
 import { EE_X_MAX } from '../src/geo';
 import { readCollection, str, num, type Path } from '../src/build/geojson';
-import { areNeighbours, dropSmallParts, interiorPoint, lengthInsideKm, lineLengthKm, linesCrossed, LINE_BITS, makeLocator, polygonAreaKm2, ringAreaKm2, sampledAreaKm2, segmentHatched, unhatchedLengthKm } from '../src/build/facts';
+import { areNeighbours, dropSmallParts, featureReaches, interiorPoint, lengthInsideKm, lineLengthKm, linesCrossed, LINE_BITS, makeLocator, polygonAreaKm2, ringAreaKm2, sampledAreaKm2, segmentHatched, unhatchedLengthKm } from '../src/build/facts';
 import { compareViews, makeGrid, rasterize } from '../src/build/raster';
 import { simplify } from '../src/build/simplify';
 import { arcUsers, buildTopology, dissolve, quantizeRing, ringPoints } from '../src/build/topology';
@@ -245,6 +245,19 @@ describe('facts', () => {
     // One degree of the line lies inside: about 111 km.
     expect(lengthInsideKm([line], (x, y) => inside(x, y) >= 0)).toBeCloseTo(lineLengthKm(line) / 3, 0);
     expect(lengthInsideKm([[5, 5, 6, 6]], (x, y) => inside(x, y) >= 0)).toBe(0);
+  });
+
+  it('counts a physical region as reaching into a country only with a meaningful share', () => {
+    // ≥ 10 % of the country or ≥ 5 % of the feature (values from the 10m data).
+    expect(featureReaches(11_914, 622_984, 9_100_000)).toBe(false); // the Sahara's edge in the Central African Republic
+    expect(featureReaches(54_726, 629_000, 9_100_000)).toBe(false); // … in South Sudan (8.7 % of it)
+    expect(featureReaches(209_811, 16_900_000, 209_000)).toBe(true); // the Urals: 1 % of Russia, all of the range
+    expect(featureReaches(364, 451, 39_000)).toBe(true); // the Pyrenees cover most of Andorra
+    expect(featureReaches(100, 1000, 1e6)).toBe(true);
+    expect(featureReaches(99.9, 1000, 1e6)).toBe(false);
+    expect(featureReaches(50, 1e6, 1000)).toBe(true);
+    expect(featureReaches(49.9, 1e6, 1000)).toBe(false);
+    expect(featureReaches(0, 0, 0)).toBe(false);
   });
 
   it('knows which lines cross a territory', () => {

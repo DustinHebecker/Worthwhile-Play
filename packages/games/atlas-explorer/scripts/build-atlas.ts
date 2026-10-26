@@ -21,6 +21,7 @@ import { readCollection, num, str, type Feature, type Path, type Polygon } from 
 import {
   areNeighbours,
   dropSmallParts,
+  featureReaches,
   flatRings,
   interiorPoint,
   lengthInsideKm,
@@ -396,15 +397,16 @@ async function main() {
       for (const [v, isLat, bit] of special) if ((isLat ? v > rawBox[1] && v < rawBox[3] : v > rawBox[0] && v < rawBox[2]) && along(v, isLat)) lines |= bit;
       if (lines !== linesCrossed(homeAll) || hbox.some((v, i) => Math.abs(v - rawBox[i]!) > 0.5)) log(`  ${e.iso}: facts without hatched areas: lines ${linesCrossed(homeAll)} → ${lines}, extent ${rawBox.map((v) => v.toFixed(1)).join(' ')} → ${hbox.map((v) => v.toFixed(1)).join(' ')}`);
     }
-    const regions = regionPolys
-      .filter((r) => {
-        const ov = overlapBox(boxOf(r.polys), rawBox);
-        if (!ov) return false;
-        const rloc = makeLocator(r.polys.map(flatRings));
-        const km2 = sampledAreaKm2(ov, 0.1, (x, y) => rloc(x, y) >= 0 && inHome(x, y));
-        return km2 >= P.regionMinKm2 || km2 >= P.regionMinShare * r.area;
-      })
-      .map((r) => r.id);
+    // Physical regions: those that clearly reach in (a clue), and those that reach in only a little (never ruled out).
+    const homeKm2 = areaOf(homeAll);
+    const regionOverlaps = regionPolys.map((r) => {
+      const ov = overlapBox(boxOf(r.polys), rawBox);
+      if (!ov) return { id: r.id, km2: 0, area: r.area };
+      const rloc = makeLocator(r.polys.map(flatRings));
+      return { id: r.id, km2: sampledAreaKm2(ov, 0.1, (x, y) => rloc(x, y) >= 0 && inHome(x, y)), area: r.area };
+    });
+    const regions = regionOverlaps.filter((r) => featureReaches(r.km2, homeKm2, r.area, P.regionMinShareCountry, P.regionMinShareFeature)).map((r) => r.id);
+    const regionsNear = regionOverlaps.filter((r) => r.km2 > 0 && !featureReaches(r.km2, homeKm2, r.area, P.regionMinShareCountry, P.regionMinShareFeature)).map((r) => r.id);
     const labelRank = num(e.attrs.props, 'LABELRANK');
     const tier = tierOne.has(e.iso) ? 1 : labelRank <= 4 ? 2 : 3;
     return {
@@ -424,6 +426,7 @@ async function main() {
       lines,
       rivers,
       regions,
+      regionsNear,
       ...(config.noRegionClue.includes(e.iso) ? { noRegion: true } : {}),
       ...(config.mostlyIn.includes(e.iso) ? { mostly: true } : {}),
       touch: touchList
@@ -627,6 +630,8 @@ async function main() {
       f: encodeInts([c.tier, ...c.label, ...c.hb, c.pop, c.popYear, c.areaCore, c.areaMax, c.lines, (c.coast ? 1 : 0) | (c.island ? 2 : 0) | ('noRegion' in c ? 4 : 0) | ('mostly' in c ? 8 : 0)]),
       nb: c.nb.join(' '),
       ft: [...c.rivers, ...c.regions].join(' '),
+      // Physical regions that reach in only a little (omitted when none, to keep the module small).
+      ...(c.regionsNear.length ? { fm: c.regionsNear.join(' ') } : {}),
       // Hatched areas touching the country: a tap inside one counts as on target (design § 12.3).
       dz: c.touch.map((b) => `d-${b.toLowerCase()}`).join(' '),
       rings: entityRings(i)
@@ -658,7 +663,7 @@ async function main() {
   const prevPath = join(pkg, 'src', 'data', 'manifest.json');
   const previous = existsSync(prevPath) ? (JSON.parse(readFileSync(prevPath, 'utf8')) as { neighbours?: Record<string, string[]> }) : {};
   const nbNow = Object.fromEntries(countryFacts.map((c) => [c.id, c.nb]));
-  const factsNow = Object.fromEntries(countryFacts.map((c) => [c.id, { tier: c.tier, coast: c.coast, island: c.island, lines: c.lines, areaCore: c.areaCore, areaMax: c.areaMax, features: [...c.rivers, ...c.regions], hatchedTouching: c.touch }]));
+  const factsNow = Object.fromEntries(countryFacts.map((c) => [c.id, { tier: c.tier, coast: c.coast, island: c.island, lines: c.lines, areaCore: c.areaCore, areaMax: c.areaMax, features: [...c.rivers, ...c.regions], featuresNear: c.regionsNear, hatchedTouching: c.touch }]));
   const changes: string[] = [];
   for (const [id, nb] of Object.entries(nbNow)) {
     const before = previous.neighbours?.[id];

@@ -111,6 +111,19 @@ describe('mystery clues', () => {
     expect(trueClues(createRng(1), atlas, atlas.country('US')!).some((k) => k.arg === 'st-lawrence')).toBe(false);
   });
 
+  it('use a desert or range only where it reaches in clearly, and never rule out where it reaches in a little', () => {
+    const desert = (id: string) => ({ excludes: clueExcludes(atlas, atlas.country(id)!, { id: 'desert', arg: 'sahara' }), true: clueTrue(atlas, atlas.country(id)!, { id: 'desert', arg: 'sahara' }) });
+    for (const id of ['CF', 'CM', 'NG', 'SS', 'BF']) {
+      expect(desert(id), id).toEqual({ excludes: false, true: false });
+      expect(trueClues(createRng(3), atlas, atlas.country(id)!).some((k) => k.arg === 'sahara'), id).toBe(false);
+    }
+    expect(desert('DZ')).toEqual({ excludes: false, true: true });
+    expect(desert('FR')).toEqual({ excludes: true, true: false });
+    // The independent filter agrees.
+    expect(clueAllows(RAW_COUNTRIES.get('NG')!, 'desert', 'sahara')).toBe(true);
+    expect(clueAllows(RAW_COUNTRIES.get('FR')!, 'desert', 'sahara')).toBe(false);
+  });
+
   it('order clues broad first and end at the target', () => {
     const t = atlas.country('KE')!;
     const all = trueClues(createRng(5), atlas, t);

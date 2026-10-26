@@ -24,6 +24,8 @@ export interface RawCountry {
   noRegion: boolean;
   nb: string[];
   ft: string[];
+  /** Physical regions that reach in only a little (below the share threshold): never ruled out by their clue. */
+  fm: string[];
 }
 
 export const RAW_COUNTRIES: Map<string, RawCountry> = new Map(
@@ -45,7 +47,8 @@ export const RAW_COUNTRIES: Map<string, RawCountry> = new Map(
         island: (f[12]! & 2) === 2,
         noRegion: (f[12]! & 4) === 4,
         nb: c.nb ? c.nb.split(' ') : [],
-        ft: c.ft ? c.ft.split(' ') : []
+        ft: c.ft ? c.ft.split(' ') : [],
+        fm: c.fm ? c.fm.split(' ') : []
       }
     ];
   })
@@ -161,7 +164,8 @@ export function clueAllows(c: RawCountry, id: string, arg: string): boolean {
     if (r.id === c.id) return false;
     return dir === 'gt' ? c.pop > r.pop : c.pop < r.pop;
   }
-  if (id === 'river' || id === 'range' || id === 'desert') return c.ft.includes(arg) || (id === 'river' && (RIVER_ALSO_ORACLE[arg] ?? '').split(' ').includes(c.id));
+  if (id === 'river') return c.ft.includes(arg) || (RIVER_ALSO_ORACLE[arg] ?? '').split(' ').includes(c.id);
+  if (id === 'range' || id === 'desert') return c.ft.includes(arg) || c.fm.includes(arg);
   if (id === 'capital') {
     const r = RAW_CITIES.get(ref)!;
     if (r.country === c.id) return false;

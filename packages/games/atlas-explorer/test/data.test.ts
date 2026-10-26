@@ -132,6 +132,17 @@ describe('generated atlas', () => {
     expect(c('DE').features).toContain('rhine');
     expect(c('EG').features).toContain('nile');
     expect(c('CL').features).toContain('atacama');
+    // A physical region counts only with a meaningful share (≥ 10 % of the country or ≥ 5 % of the feature): the
+    // Sahara polygon's fuzzy southern edge reaches 2–9 % into these countries, which keeps them only as "near".
+    for (const id of ['CF', 'CM', 'NG', 'SS', 'BF']) {
+      expect(c(id).features, id).not.toContain('sahara');
+      expect(c(id).featuresNear, id).toContain('sahara');
+    }
+    for (const id of ['DZ', 'LY', 'EG', 'NE', 'TD', 'ML']) expect(c(id).features, id).toContain('sahara');
+    expect(c('AD').features).toContain('pyrenees');
+    expect(c('RU').features).toContain('urals');
+    expect(c('FR').featuresNear).not.toContain('sahara');
+    for (const x of atlas.countries) for (const f of x.featuresNear) expect(x.features, `${x.id}: ${f}`).not.toContain(f);
     expect(c('RU').areaCore).toBeGreaterThan(16_000_000);
     expect(c('RU').areaMax).toBeGreaterThan(c('RU').areaCore);
     for (const x of atlas.countries) {

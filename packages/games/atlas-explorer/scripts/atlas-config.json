@@ -46,8 +46,8 @@
     "wholeStateShare": 0.9,
     "neighbourMinKm": 5,
     "riverMinKm": 50,
-    "regionMinKm2": 10000,
-    "regionMinShare": 0.05,
+    "regionMinShareCountry": 0.1,
+    "regionMinShareFeature": 0.05,
     "continentMinKm2": 5000000,
     "coastMinKm": 2
   },
