@@ -221,6 +221,9 @@
 .wp-relay-command .rc-ed-settings select { min-block-size: var(--wp-touch, 44px); max-inline-size: 100%; }
 .wp-relay-command .rc-ed-check { display: flex !important; align-items: center; gap: 0.5rem; min-block-size: var(--wp-touch, 44px); }
 .wp-relay-command .rc-ed-check input { inline-size: 1.4rem; block-size: 1.4rem; }
+.wp-relay-command .rc-ed-supply { display: flex; flex-wrap: wrap; gap: 0.6rem 1.2rem; align-items: end; min-inline-size: 0; margin: 0; padding: 0.4rem 0.6rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius, 10px); }
+.wp-relay-command .rc-ed-supply label { display: grid; gap: 0.2rem; min-inline-size: 0; }
+.wp-relay-command .rc-ed-supply select { min-block-size: var(--wp-touch, 44px); max-inline-size: 100%; }
 .wp-relay-command .rc-ed-start { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: end; min-inline-size: 0; max-inline-size: 100%; }
 .wp-relay-command .rc-ed-start label { flex: 1 1 12rem; min-inline-size: 0; max-inline-size: 100%; }
 .wp-relay-command .rc-ed-start select { inline-size: 100%; }

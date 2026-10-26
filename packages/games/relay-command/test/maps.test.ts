@@ -4,6 +4,11 @@ import {
   applyTool,
   mirrorImages,
   withBases,
+  withSupply,
+  withTeams,
+  START_SUPPLY,
+  SUPPLY_CHOICES,
+  supplyOf,
   blankMap,
   customSpec,
   DEPOSIT_SIZES,
@@ -32,8 +37,8 @@ import {
   type Tool
 } from '../src/maps';
 import { createTestLibrary } from '@wp/testing';
-import { isValidState, lockTurn, newGame, specOf } from '../src/rules';
-import { FIELD_EXERCISE, RIDGE_VALLEY, SCENARIOS } from '../src/scenarios';
+import { initialWorld, isValidState, lockTurn, newGame, specOf, teamShapeOf, teamShapes } from '../src/rules';
+import { BASTION, FIELD_EXERCISE, RIDGE_VALLEY, SCENARIOS } from '../src/scenarios';
 
 /** A small playable map built with the editor's own tool, mirrored. */
 function playable(): EditMap {
@@ -442,5 +447,120 @@ describe('map editor: four bases (owner decision 2026-10-24)', () => {
     expect(team.world.teams).toEqual([0, 0, 1, 1]);
     // The editor keeps a four-base draft.
     expect(isValidState({ ...team, edit: { map: corners, slot: null, mirror: true } })).toBe(true);
+  });
+});
+
+describe('map editor: asymmetric maps (owner decision 2026-10-26)', () => {
+  const code = (data: unknown[]) => 'RC1.' + btoa(JSON.stringify(data)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  /** A playable four-base map: a post and a squad per corner, mirrored. */
+  const four = () => {
+    let m = withBases(blankMap(16, 12, 'Four'), 4);
+    m = applyTool(m, { type: 'unit', kind: 'command-post', side: 0 }, 2, 9, true);
+    return applyTool(m, { type: 'unit', kind: 'rifles', side: 0 }, 3, 9, true);
+  };
+
+  it('each base starts with the Supply chosen for it; the usual start everywhere leaves no Supply on the map', () => {
+    const m = withSupply(playable(), 1, 1500);
+    expect(m.supply).toEqual([START_SUPPLY, 1500]);
+    expect(supplyOf(m)).toEqual([300, 1500]);
+    expect(isValidMap(m)).toBe(true);
+    expect(isFair(m)).toBe(false); // the bases start unequal
+    expect(toScenario(m).supply).toEqual([300, 1500]);
+    expect(newGame(1, FIELD_EXERCISE, 'normal', 12, false, m).world.supply).toEqual([300, 1500]);
+    // Back to the usual amount: no Supply of its own; fair again.
+    const back = withSupply(m, 1, START_SUPPLY);
+    expect(back).not.toHaveProperty('supply');
+    expect(isFair(back)).toBe(true);
+    expect(toScenario(back)).not.toHaveProperty('supply');
+    // Only the offered amounts, only the map's bases.
+    for (const [seat, amount] of [[1, 301], [2, 600], [-1, 600], [0.5, 600], [0, -150]] as const) expect(withSupply(m, seat, amount)).toBe(m);
+    expect(SUPPLY_CHOICES).toContain(START_SUPPLY);
+  });
+
+  it('with four bases, every base its own Supply, laid out by seat for any number of opponents', () => {
+    const m = withSupply(withSupply(four(), 0, 0), 2, 3000);
+    expect(supplyOf(m)).toEqual([0, 300, 3000, 300]);
+    expect(newGame(1, FIELD_EXERCISE, 'normal', 12, false, m, 3).world.supply).toEqual([0, 300, 3000, 300]);
+    // One opponent sits across (seat 2), two take seats 1 and 2.
+    expect(newGame(1, FIELD_EXERCISE, 'normal', 12, false, m, 1).world.supply).toEqual([0, 3000]);
+    expect(newGame(1, FIELD_EXERCISE, 'normal', 12, false, m, 2).world.supply).toEqual([0, 300, 3000]);
+    // Two bases: C and D (and their Supply) go; four again: they start with the usual amount.
+    const two = withBases(m, 2);
+    expect(two.supply).toEqual([0, 300]);
+    expect(withBases(two, 4).supply).toEqual([0, 300, 300, 300]);
+    expect(withBases(withSupply(four(), 3, 600), 2)).not.toHaveProperty('supply');
+  });
+
+  it('a four-base map made for teams offers only 1 against 3 (you are base A) and 3 against 1 (base A the lone opponent)', () => {
+    const m = withTeams(withSupply(four(), 0, 1500), true);
+    expect(m.teams).toBe(true);
+    expect(isValidMap(m)).toBe(true);
+    expect(isFair(m)).toBe(false);
+    expect(mapIssues(m)).toEqual([]);
+    const spec = customSpec(m);
+    expect(teamShapes(spec, 3)).toEqual(['1v3', '3v1']);
+    expect(teamShapes(spec, 2)).toEqual([]);
+    const alone = newGame(1, FIELD_EXERCISE, 'normal', 12, false, m, 3);
+    expect(teamShapeOf(alone.world)).toBe('1v3');
+    expect(alone.world.supply).toEqual([1500, 300, 300, 300]);
+    expect(isValidState(JSON.parse(JSON.stringify(alone)))).toBe(true);
+    const three = newGame(1, FIELD_EXERCISE, 'normal', 12, false, m, 3, [], false, null, '3v1');
+    expect(teamShapeOf(three.world)).toBe('3v1');
+    // Base A is side 2 (the lone opponent): its post and its Supply.
+    const postA = m.units.find((u) => u.side === 0 && u.kind === 'command-post')!;
+    expect(three.world.entities.find((e) => e.kind === 'command-post' && e.side === 2)).toMatchObject({ x: postA.x, y: postA.y });
+    expect(three.world.supply).toEqual([300, 300, 1500, 300]);
+    expect(isValidState(JSON.parse(JSON.stringify(three)))).toBe(true);
+    // Not for teams any more; a two-side map is never made for teams.
+    expect(withTeams(m, false)).not.toHaveProperty('teams');
+    expect(withTeams(playable(), true)).toEqual(playable());
+    expect(withBases(m, 2)).not.toHaveProperty('teams');
+    expect(withBases(m, 4)).toHaveProperty('teams', true);
+  });
+
+  it('Bastion opens in the editor as it is: made for teams, its Supply per base; played from there it starts as Bastion', () => {
+    const m = fromScenario(BASTION, 'Bastion');
+    expect(m).toMatchObject({ seats: 4, teams: true, supply: [1500, 300, 300, 300] });
+    expect(isValidMap(m)).toBe(true);
+    expect(mapIssues(m)).toEqual([]);
+    for (const shape of ['1v3', '3v1'] as const) {
+      const own = initialWorld(customSpec(m), 1, 3, false, shape);
+      const built = initialWorld(BASTION, 1, 3, false, shape);
+      expect(own.supply, shape).toEqual(built.supply);
+      expect(own.entities.map((e) => `${e.side}:${e.kind}@${e.x},${e.y}`), shape).toEqual(built.entities.map((e) => `${e.side}:${e.kind}@${e.x},${e.y}`));
+    }
+    // A built-in map at the usual start carries no Supply.
+    expect(fromScenario(SCENARIOS.find((x) => x.id === 'four-corners')!)).not.toHaveProperty('supply');
+  });
+
+  it('share codes carry Supply and teams; codes from before still read; malformed extras are refused', () => {
+    const teams = withTeams(withSupply(four(), 0, 1500), true);
+    expect(decodeMap(encodeMap(teams))).toEqual(teams);
+    const two = withSupply(playable(), 0, 600);
+    expect(decodeMap(encodeMap(two))).toEqual(two);
+    // Without anything asymmetric the codes are what they were (six fields, seven with four bases).
+    expect(encodeMap(playable())).toBe(encodeMap(withSupply(withSupply(playable(), 0, 600), 0, START_SUPPLY)));
+    const base = ['x', 12, 10, '.'.repeat(120), [], []];
+    expect(decodeMap(code([...base, 2, { s: [600, 300] }]))).toMatchObject({ supply: [600, 300] });
+    for (const bad of [
+      [...base, 2, { s: [600, 301] }], // not an offered amount
+      [...base, 2, { s: [600] }], // one per base
+      [...base, 2, { t: 1 }], // teams need four bases
+      [...base, 4, { t: 2 }],
+      [...base, 4, { x: 1 }],
+      [...base, 3, {}],
+      [...base, 4, 'teams'],
+      [...base, 4, {}, 9]
+    ]) expect(decodeMap(code(bad)), JSON.stringify(bad.slice(6))).toBeUndefined();
+  });
+
+  it('refuses maps with Supply or teams that do not fit', () => {
+    const m = four();
+    expect(isValidMap({ ...m, supply: [300, 300] })).toBe(false);
+    expect(isValidMap({ ...m, supply: [300, 300, 300, 'x'] })).toBe(false);
+    expect(isValidMap({ ...m, supply: 300 })).toBe(false);
+    expect(isValidMap({ ...m, teams: false })).toBe(false);
+    expect(isValidMap({ ...playable(), teams: true })).toBe(false);
+    expect(isValidMap({ ...m, supply: [0, 150, 1000, 3000], teams: true })).toBe(true);
   });
 });

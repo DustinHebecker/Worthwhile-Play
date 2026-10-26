@@ -482,6 +482,34 @@ test('relay-command: a four-base map made in the editor on a phone survives a re
   await expect(page.getByTestId('rc-teams-label')).toBeVisible();
 });
 
+test('relay-command: an asymmetric map for teams in the editor on a phone (Bastion, Supply per base) survives a reload and plays 1 against 3', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await start(page);
+  await page.getByTestId('rc-editor-open').click();
+  await page.getByTestId('ed-start').selectOption('bastion');
+  // Loading replaces the draft: a first press arms, a deliberate second one confirms.
+  await page.getByTestId('ed-load').click();
+  await expect(page.getByTestId('ed-load')).toHaveText('Press again to replace the map');
+  await page.waitForTimeout(450);
+  await page.getByTestId('ed-load').click();
+  await expect(page.getByTestId('ed-teams')).toBeChecked();
+  await expect(page.getByTestId('ed-supply-0')).toHaveValue('1500');
+  await page.getByTestId('ed-supply-1').selectOption('600');
+  await expect(page.getByTestId('ed-fair')).toHaveText('Made for teams: base A stands alone against three; it is played only as 1 against 3 or 3 against 1.');
+  const widths = await page.evaluate(() => ({ page: document.documentElement.scrollWidth, viewport: document.documentElement.clientWidth }));
+  expect(widths.page).toBeLessThanOrEqual(widths.viewport);
+  await page.reload();
+  await page.getByTestId('continue').click();
+  await expect(page.getByTestId('ed-supply-1')).toHaveValue('600');
+  await expect(page.getByTestId('ed-teams')).toBeChecked();
+  await page.getByTestId('ed-play').click();
+  const game = async () => (await saved(page)) as unknown as { opponents: number; map: { teams?: boolean } | null; world: { teams?: number[]; supply?: number[] } } | undefined;
+  await expect.poll(async () => (await game())?.map?.teams).toBe(true);
+  expect((await game())!.world.teams).toEqual([0, 1, 1, 1]);
+  expect((await game())!.world.supply).toEqual([1500, 600, 300, 300]);
+  await expect(page.getByTestId('rc-teams')).toHaveValue('1v3');
+});
+
 test('relay-command: the map editor on a phone — paint with taps, save, resume after a reload, play the map', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 740 });
   await start(page);
