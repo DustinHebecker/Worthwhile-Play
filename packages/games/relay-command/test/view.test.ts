@@ -1139,6 +1139,48 @@ describe('Relay Command map editor', () => {
     expect(state().edit!.map.units.every((u) => u.side < 2)).toBe(true);
   });
 
+  it('asymmetric maps: each base its own Supply at the start; with four bases a map for teams (base A alone against three); Bastion opens as it is', async () => {
+    click('rc-editor-open');
+    await settle();
+    const supply = (seat: number) => $(`ed-supply-${seat}`) as HTMLSelectElement;
+    const choose = (select: HTMLSelectElement, value: string) => {
+      select.value = value;
+      select.dispatchEvent(new Event('change'));
+    };
+    // Two sides: one choice each, named as the sides are; the usual 300 to start with; no teams.
+    expect($('ed-supply').querySelector('legend')!.textContent).toBe('Supply at the start');
+    expect([...$('ed-supply').querySelectorAll('label > span')].map((x) => x.textContent)).toEqual(['You (blue)', 'Opponent (red)']);
+    expect([supply(0).value, supply(1).value]).toEqual(['300', '300']);
+    expect([...supply(0).options].map((o) => o.value)).toEqual(['0', '150', '300', '600', '1000', '1500', '3000']);
+    expect($('ed-teams').closest('label')!.hidden).toBe(true);
+    choose(supply(1), '1500');
+    expect(state().edit!.map.supply).toEqual([300, 1500]);
+    expect($('ed-fair').textContent).toBe('Not symmetric: one side may start better off.');
+    // Four bases: a choice per base; base A alone against three.
+    choose($('ed-bases') as HTMLSelectElement, '4');
+    expect([...$('ed-supply').querySelectorAll('label > span')].map((x) => x.textContent)).toEqual(['Base A (you, blue)', 'Base B', 'Base C', 'Base D']);
+    expect([0, 1, 2, 3].map((seat) => supply(seat).value)).toEqual(['300', '1500', '300', '300']);
+    expect($('ed-teams').closest('label')!.hidden).toBe(false);
+    ($('ed-teams') as HTMLInputElement).checked = true;
+    $('ed-teams').dispatchEvent(new Event('change'));
+    expect(state().edit!.map.teams).toBe(true);
+    expect($('ed-fair').textContent).toBe('Made for teams: base A stands alone against three; it is played only as 1 against 3 or 3 against 1.');
+    // Bastion is among the maps to start from, and opens made for teams with its Supply.
+    ($('ed-start') as HTMLSelectElement).value = 'bastion';
+    click('ed-load');
+    later();
+    click('ed-load');
+    expect(state().edit!.map).toMatchObject({ seats: 4, teams: true, supply: [1500, 300, 300, 300] });
+    expect(supply(0).value).toBe('1500');
+    expect(($('ed-teams') as HTMLInputElement).checked).toBe(true);
+    // Played: three opponents, only the two team shapes, 1 against 3 first; base A's Supply is the player's.
+    click('ed-play');
+    expect(state().opponents).toBe(3);
+    expect([...($('rc-teams') as HTMLSelectElement).options].map((o) => o.value)).toEqual(['1v3', '3v1']);
+    expect(state().world.teams).toEqual([0, 1, 1, 1]);
+    expect(state().world.supply).toEqual([1500, 300, 300, 300]);
+  });
+
   it('places plain, rich and endless deposits; on a deposit the tool sets its size; the cell tells which', async () => {
     click('rc-editor-open');
     await settle();
