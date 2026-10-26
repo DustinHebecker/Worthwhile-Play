@@ -80,10 +80,11 @@ export function compareOracle(template: string, places: readonly string[], param
       return city(a).lat > city(b).lat ? a : b;
     case 'south':
       return city(a).lat < city(b).lat ? a : b;
+    // East and west as read off the map (centred on 0°): the larger longitude is further east.
     case 'east':
-      return eastOf(city(a).lon, city(b).lon) > 0 ? b : a;
+      return city(b).lon > city(a).lon ? b : a;
     case 'west':
-      return eastOf(city(a).lon, city(b).lon) > 0 ? a : b;
+      return city(b).lon > city(a).lon ? a : b;
     case 'closer':
       return cosineKm(city(a), city(b)) < cosineKm(city(a), city(c)) ? b : c;
     case 'larger':

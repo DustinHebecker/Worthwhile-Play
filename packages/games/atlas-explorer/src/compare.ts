@@ -151,7 +151,10 @@ export function drawTemplate(rng: Rng, template: TemplateId, ctx: DrawContext): 
         const p = curated ?? two(rng, cities);
         if (!p) return null;
         const [a, b] = p as [City, City];
-        const dl = lonDelta(a.lon, b.lon); // > 0: b is east of a
+        // The plain longitude difference, as read off the map (centred on 0°): pairs more than 150° apart are left out,
+        // so the shorter way round never crosses the date line (New Delhi and Honolulu would otherwise make Honolulu
+        // "further east", the opposite of the map).
+        const dl = b.lon - a.lon; // > 0: b is east of a
         if (Math.abs(dl) > 150 || Math.abs(dl) < threshold('lon', d)) continue;
         const eastern = dl > 0 ? b : a;
         const western = eastern === a ? b : a;

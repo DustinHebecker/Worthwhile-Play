@@ -21,7 +21,8 @@ function margin(template: TemplateId, places: readonly string[], param: number, 
       return Math.abs(city(a).lat - city(b).lat) >= threshold('lat', d);
     case 'east':
     case 'west':
-      return Math.abs(eastOf(city(a).lon, city(b).lon)) >= threshold('lon', d) && Math.abs(eastOf(city(a).lon, city(b).lon)) <= 150;
+      // As read off the map: the plain difference, at most 150°, so the shorter way round never crosses the date line.
+      return Math.abs(city(b).lon - city(a).lon) >= threshold('lon', d) && Math.abs(city(b).lon - city(a).lon) <= 150;
     case 'closer': {
       const x = cosineKm(city(a), city(b));
       const y = cosineKm(city(a), city(c));
@@ -105,6 +106,18 @@ describe('compare templates', () => {
     // Outside the area: ignored.
     const s = drawTemplate(createRng(1), 'north', { atlas, area: 'asia', difficulty: 'hard', insight: ['paris', 'montreal'] });
     expect(s!.places).not.toContain('paris');
+  });
+
+  it('never asks east or west across the date line (the answer must match the map)', () => {
+    // Every New Delhi/Honolulu-like pair (more than 150° apart on the map) is left out, whatever the seed.
+    for (let seed = 0; seed < 300; seed++)
+      for (const t of ['east', 'west'] as const) {
+        const q = drawTemplate(createRng(seed), t, { atlas, area: 'world', difficulty: 'hard' })!;
+        const [a, b] = q.places.map((id) => RAW_CITIES.get(id)!);
+        expect(Math.abs(b!.lon - a!.lon), q.places.join(',')).toBeLessThanOrEqual(150);
+      }
+    const q = drawTemplate(createRng(1), 'east', { atlas, area: 'world', difficulty: 'hard', insight: ['new-delhi', 'honolulu'] });
+    expect(q!.places).not.toEqual(['new-delhi', 'honolulu']);
   });
 
   it('normalises longitude differences', () => {
