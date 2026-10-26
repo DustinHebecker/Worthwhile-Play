@@ -7,6 +7,7 @@
 import type { Rng } from '@wp/game-core';
 import { LINES, type Atlas, type City, type Country } from './atlas';
 import { countryPool, type Area, type Difficulty } from './compare';
+import { LINE_MARGIN } from './geo';
 
 export const CLUE_IDS = ['region', 'sub', 'ns', 'ew', 'line', 'coast', 'island', 'nbCount', 'nb', 'area', 'people', 'river', 'range', 'desert', 'capital'] as const;
 export type ClueId = (typeof CLUE_IDS)[number];
@@ -68,10 +69,11 @@ export function clueTrue(atlas: Atlas, c: Country, clue: Clue): boolean {
       return !c.noRegion && c.region === arg;
     case 'sub':
       return !c.noRegion && c.sub === arg;
+    // Lines need the margin (`LINE_MARGIN`): "entirely north" means at least 0.5° north, "crosses" 0.5° beyond.
     case 'ns':
-      return arg === 'n' ? c.home[1] > 0 : arg === 's' ? c.home[3] < 0 : arg === 'eq' && (c.lines & LINES.equator) !== 0;
+      return arg === 'n' ? c.home[1] >= LINE_MARGIN : arg === 's' ? c.home[3] <= -LINE_MARGIN : arg === 'eq' && (c.lines & LINES.equator) !== 0;
     case 'ew':
-      return arg === 'pm' ? (c.lines & LINES.meridian) !== 0 : !acrossDateLine(c) && (arg === 'e' ? c.home[0] > 0 : arg === 'w' && c.home[2] < 0);
+      return arg === 'pm' ? (c.lines & LINES.meridian) !== 0 : !acrossDateLine(c) && (arg === 'e' ? c.home[0] >= LINE_MARGIN : arg === 'w' && c.home[2] <= -LINE_MARGIN);
     case 'line':
       return Object.hasOwn(LINE_ARGS, arg) && (c.lines & LINE_ARGS[arg as LineArg]) !== 0;
     case 'coast':
@@ -110,8 +112,9 @@ export function clueTrue(atlas: Atlas, c: Country, clue: Clue): boolean {
 /**
  * Whether a clue rules a candidate out: clearly false for it. Comparisons with a margin only rule out candidates on
  * the wrong side of the reference itself (a country "a little larger than France" stays a candidate for "larger than
- * France"), a capital clue cannot rule out a country whose capital is not in the atlas, and a desert or range clue
- * cannot rule out a country the feature reaches into only a little.
+ * France"), a capital clue cannot rule out a country whose capital is not in the atlas, a desert or range clue
+ * cannot rule out a country the feature reaches into only a little, and a line clue cannot rule out a country within
+ * the 0.5° margin of the line.
  */
 export function clueExcludes(atlas: Atlas, c: Country, clue: Clue): boolean {
   const { id, arg } = clue;
@@ -131,6 +134,17 @@ export function clueExcludes(atlas: Atlas, c: Country, clue: Clue): boolean {
     if (r.country === c.id) return true;
     if (!cap) return false;
     return dir === 'n' ? cap.lat <= r.lat : cap.lat >= r.lat;
+  }
+  // A territory within the margin of a line is ruled out by neither side of a line clue.
+  if (id === 'ns' || id === 'ew' || id === 'line') {
+    const bit = arg === 'eq' ? LINES.equator : arg === 'pm' ? LINES.meridian : Object.hasOwn(LINE_ARGS, arg) ? LINE_ARGS[arg as LineArg] : 0;
+    if (bit) return ((c.lines | c.linesNear) & bit) === 0;
+    if (id === 'ew' && acrossDateLine(c)) return true;
+    const [w, s, e, n] = c.home;
+    if (arg === 'n') return s <= -LINE_MARGIN;
+    if (arg === 's') return n >= LINE_MARGIN;
+    if (arg === 'e') return w <= -LINE_MARGIN;
+    if (arg === 'w') return e >= LINE_MARGIN;
   }
   if (id === 'river' && RIVER_ALSO[arg]?.includes(c.id)) return false;
   // A desert or range that reaches in only a little (below the share threshold) is neither a clue nor ruled out.

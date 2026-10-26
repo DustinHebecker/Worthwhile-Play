@@ -15,7 +15,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { encodeInts } from '../src/codec';
-import { EE_X_MAX, POLAR_CIRCLE, TROPIC, boundaryDistanceKm, distanceKm, pointInRings } from '../src/geo';
+import { EE_X_MAX, LINE_MARGIN, boundaryDistanceKm, distanceKm, pointInRings } from '../src/geo';
 import { UN_MEMBERS } from '../src/data/un-members';
 import { readCollection, num, str, type Feature, type Path, type Polygon } from '../src/build/geojson';
 import {
@@ -26,9 +26,9 @@ import {
   interiorPoint,
   lengthInsideKm,
   lineLengthKm,
-  LINE_BITS,
   linesCrossed,
   makeLocator,
+  packLines,
   polygonAreaKm2,
   sampledAreaKm2,
   unhatchedLengthKm
@@ -388,13 +388,19 @@ async function main() {
           }
       hbox = [a, b, c, d];
       const along = (fixed: number, lat: boolean) => {
+        if (lat ? fixed <= rawBox[1] || fixed >= rawBox[3] : fixed <= rawBox[0] || fixed >= rawBox[2]) return false;
         const [from, to] = lat ? [rawBox[0], rawBox[2]] : [rawBox[1], rawBox[3]];
         for (let v = from; v <= to; v += 0.02) if (lat ? inHome(v, fixed) : inHome(fixed, v)) return true;
         return false;
       };
-      lines = 0;
-      const special: [number, boolean, number][] = [[0, true, LINE_BITS.equator], [TROPIC, true, LINE_BITS.cancer], [-TROPIC, true, LINE_BITS.capricorn], [POLAR_CIRCLE, true, LINE_BITS.arctic], [-POLAR_CIRCLE, true, LINE_BITS.antarctic], [0, false, LINE_BITS.meridian]];
-      for (const [v, isLat, bit] of special) if ((isLat ? v > rawBox[1] && v < rawBox[3] : v > rawBox[0] && v < rawBox[2]) && along(v, isLat)) lines |= bit;
+      // Clearly across: home territory on the line and the margin beyond it on both sides; near: home territory
+      // anywhere within the margin (sampled every 0.05°).
+      const m = LINE_MARGIN;
+      const band = Array.from({ length: Math.round((2 * m) / 0.05) + 1 }, (_, k) => -m + k * 0.05);
+      lines = packLines(
+        (v, lat) => along(v - m, lat) && along(v, lat) && along(v + m, lat),
+        (v, lat) => band.some((o) => along(v + o, lat))
+      );
       if (lines !== linesCrossed(homeAll) || hbox.some((v, i) => Math.abs(v - rawBox[i]!) > 0.5)) log(`  ${e.iso}: facts without hatched areas: lines ${linesCrossed(homeAll)} → ${lines}, extent ${rawBox.map((v) => v.toFixed(1)).join(' ')} → ${hbox.map((v) => v.toFixed(1)).join(' ')}`);
     }
     // Physical regions: those that clearly reach in (a clue), and those that reach in only a little (never ruled out).

@@ -223,9 +223,9 @@ clue 1 ─▶ [guess (tap or list) ▸ feedback card] × n  ─▶ … ─▶ "N
 | Clue id | Text (en) | Fact |
 |---|---|---|
 | `region` / `subregion` | "It lies in Africa." / "… in Western Africa." | UN M49 region and sub-region (Natural Earth `REGION_UN`, `SUBREGION`); transcontinental countries say "lies mostly in" (flag in the config) |
-| `ns` | "Its main territory lies entirely north of the Equator." / "… south …" / "The Equator crosses it." | home territory (§ 11.3) latitude extent |
-| `ew` | "… east of the Prime Meridian." / "… west …" / "The Prime Meridian crosses it." | longitude extent |
-| `line` | "The Tropic of Cancer crosses it." (Capricorn, Arctic Circle) | extent vs 23.44°, 66.56° |
+| `ns` | "Its main territory lies entirely north of the Equator." / "… south …" / "The Equator crosses it." | home territory (§ 11.3) latitude extent, with a 0.5° margin (below) |
+| `ew` | "… east of the Prime Meridian." / "… west …" / "The Prime Meridian crosses it." | longitude extent, with a 0.5° margin |
+| `line` | "The Tropic of Cancer crosses it." (Capricorn, Arctic Circle) | extent vs 23.44°, 66.56°, with a 0.5° margin |
 | `coast` | "It has no sea coast." / "It has a sea coast." | landlocked flag |
 | `island` | "It lies only on islands." | no home part on a continental landmass |
 | `nbCount` | "On this map it shares a land border with 4 countries." | neighbour count (UN members, § 12.3) |
@@ -235,6 +235,8 @@ clue 1 ─▶ [guess (tap or list) ▸ feedback card] × n  ─▶ … ─▶ "N
 | `river` | "The Danube flows through it." | river line inside the home territory ≥ 50 km |
 | `range` / `desert` | "Part of the Andes lies in it." / "… the Sahara …" | the feature covers ≥ 10 % of the home territory, or ≥ 5 % of the feature lies in it (a big feature's fuzzy edge — the Sahara reaches 2–9 % into countries of the Sahel — is no fact to rely on); a country it reaches only a little is never ruled out by the clue |
 | `capital` | "Its capital lies further north than Madrid." | only for countries whose capital is among the curated cities, Δlat ≥ 1° |
+
+**Line margin.** A territory that comes within 0.5° of the Equator, a tropic, a polar circle or the Prime Meridian neither clearly crosses it nor clearly stays on one side — simplification could flip it (Niger reaches 23.52° N, Chad 23.45° N against the Tropic of Cancer at 23.44°; Peru 0.03° S). Such a country never gets that line's clue (nor "entirely north/south/east/west") and is never ruled out by it; the data stores these lines as "near" bits next to the crossed ones. The compare templates keep their own margins (`tropics` 21.4°/25.4°, `midnight` 64°/68°).
 
 ### 8.3 Clue order and fairness
 

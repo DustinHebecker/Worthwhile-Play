@@ -3,7 +3,7 @@ import fc from 'fast-check';
 import { decodeInts, encodeInts } from '../src/codec';
 import { EE_X_MAX } from '../src/geo';
 import { readCollection, str, num, type Path } from '../src/build/geojson';
-import { areNeighbours, dropSmallParts, featureReaches, interiorPoint, lengthInsideKm, lineLengthKm, linesCrossed, LINE_BITS, makeLocator, polygonAreaKm2, ringAreaKm2, sampledAreaKm2, segmentHatched, unhatchedLengthKm } from '../src/build/facts';
+import { areNeighbours, dropSmallParts, featureReaches, interiorPoint, lengthInsideKm, lineLengthKm, linesCrossed, LINE_BITS, LINE_NEAR_SHIFT, makeLocator, polygonAreaKm2, ringAreaKm2, sampledAreaKm2, segmentHatched, unhatchedLengthKm } from '../src/build/facts';
 import { compareViews, makeGrid, rasterize } from '../src/build/raster';
 import { simplify } from '../src/build/simplify';
 import { arcUsers, buildTopology, dissolve, quantizeRing, ringPoints } from '../src/build/topology';
@@ -265,6 +265,19 @@ describe('facts', () => {
     expect(linesCrossed([[sq(10, -30, 20, -20)]])).toBe(LINE_BITS.capricorn);
     expect(linesCrossed([[sq(10, 60, 20, 70)]])).toBe(LINE_BITS.arctic);
     expect(linesCrossed([[sq(10, 1, 20, 2)], [sq(10, -2, 20, -1)]])).toBe(0);
+    // Within 0.5° of a line a territory is only "near" it (simplification could flip it): Niger reaches 23.52° N and
+    // Chad 23.45° N (the Tropic of Cancer is 23.44°), Peru 0.03° S, Grímsey 66.57° N, Togo 0.17° W.
+    const near = (bits: number) => bits << LINE_NEAR_SHIFT;
+    expect(linesCrossed([[sq(2, 11.7, 16, 23.52)]])).toBe(near(LINE_BITS.cancer));
+    expect(linesCrossed([[sq(13, 7.5, 24, 23.45)]])).toBe(near(LINE_BITS.cancer));
+    expect(linesCrossed([[sq(10, 1, 20, 23.94)]])).toBe(near(LINE_BITS.cancer));
+    expect(linesCrossed([[sq(10, 1, 20, 23.95)]])).toBe(LINE_BITS.cancer);
+    expect(linesCrossed([[sq(10, 1, 20, 22.94)]])).toBe(0);
+    expect(linesCrossed([[sq(-81, -18, -69, -0.03)]])).toBe(near(LINE_BITS.equator));
+    expect(linesCrossed([[sq(-24, 63.4, -13.5, 66.4)], [sq(-18, 66.53, -17.9, 66.57)]])).toBe(near(LINE_BITS.arctic));
+    expect(linesCrossed([[sq(-0.17, 6, 1.8, 11)]])).toBe(near(LINE_BITS.meridian));
+    // One part clearly across wins over another only near.
+    expect(linesCrossed([[sq(10, 20, 20, 30)], [sq(30, 10, 31, 23.5)]])).toBe(LINE_BITS.cancer);
     expect(interiorPoint([sq(0, 0, 2, 2)])).toEqual([1, 1]);
   });
 });

@@ -26,6 +26,13 @@ function strictlyTrue(t: RawCountry, id: string, arg: string): boolean {
     const cap = [...RAW_CITIES.values()].find((x) => x.capital && x.country === t.id);
     return cap !== undefined && (arg.startsWith('n') ? cap.lat - r.lat >= CAPITAL_DLAT : r.lat - cap.lat >= CAPITAL_DLAT);
   }
+  // Lines with the 0.5° margin: only a clear crossing, or a territory clear of the line.
+  if (id === 'ns') return arg === 'n' ? t.home[1] >= 0.5 : arg === 's' ? t.home[3] <= -0.5 : (t.lines & 1) === 1;
+  if (id === 'ew') {
+    if (arg === 'pm') return (t.lines & 32) === 32;
+    return !(t.home[0] < -170 && t.home[2] > 170) && (arg === 'e' ? t.home[0] >= 0.5 : t.home[2] <= -0.5);
+  }
+  if (id === 'line') return (t.lines & ({ cancer: 2, capricorn: 4, arctic: 8, antarctic: 16 } as Record<string, number>)[arg]!) !== 0;
   if (id === 'river') return t.ft.includes(arg) && FEATURE_KIND.get(arg) === 'river';
   if (id === 'desert') return t.ft.includes(arg) && FEATURE_KIND.get(arg) === 'desert';
   if (id === 'range') return t.ft.includes(arg) && ['range', 'plateau', 'basin'].includes(FEATURE_KIND.get(arg)!);
@@ -122,6 +129,30 @@ describe('mystery clues', () => {
     // The independent filter agrees.
     expect(clueAllows(RAW_COUNTRIES.get('NG')!, 'desert', 'sahara')).toBe(true);
     expect(clueAllows(RAW_COUNTRIES.get('FR')!, 'desert', 'sahara')).toBe(false);
+  });
+
+  it('use the Equator, tropics, polar circles and Prime Meridian only with a 0.5° margin', () => {
+    const state = (c: string, id: 'ns' | 'ew' | 'line', arg: string) => {
+      const country = atlas.country(c)!;
+      return { excludes: clueExcludes(atlas, country, { id, arg }), true: clueTrue(atlas, country, { id, arg }), oracle: clueAllows(RAW_COUNTRIES.get(c)!, id, arg) };
+    };
+    const near = { excludes: false, true: false, oracle: true };
+    // Niger reaches 23.52° N, Chad 23.45° N: neither a Tropic of Cancer clue nor ruled out by one.
+    expect(state('NE', 'line', 'cancer')).toEqual(near);
+    expect(state('TD', 'line', 'cancer')).toEqual(near);
+    for (const id of ['NE', 'TD']) expect(trueClues(createRng(2), atlas, atlas.country(id)!).some((k) => k.arg === 'cancer'), id).toBe(false);
+    expect(state('DZ', 'line', 'cancer')).toEqual({ excludes: false, true: true, oracle: true });
+    expect(state('FR', 'line', 'cancer')).toEqual({ excludes: true, true: false, oracle: false });
+    // Peru reaches 0.03° S: not "entirely south of the Equator", not "crossed by the Equator", ruled out by neither.
+    expect(state('PE', 'ns', 's')).toEqual(near);
+    expect(state('PE', 'ns', 'eq')).toEqual(near);
+    expect(state('PE', 'ns', 'n')).toEqual({ excludes: true, true: false, oracle: false });
+    expect(state('IS', 'line', 'arctic')).toEqual(near);
+    // Niger reaches 0.15° E, Togo 0.17° W: the Prime Meridian too.
+    expect(state('NE', 'ew', 'e')).toEqual(near);
+    expect(state('TG', 'ew', 'pm')).toEqual(near);
+    expect(state('KE', 'ns', 'eq')).toEqual({ excludes: false, true: true, oracle: true });
+    expect(state('FR', 'ns', 'n')).toEqual({ excludes: false, true: true, oracle: true });
   });
 
   it('order clues broad first and end at the target', () => {

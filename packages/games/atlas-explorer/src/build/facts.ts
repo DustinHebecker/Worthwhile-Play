@@ -2,7 +2,7 @@
  * Data script only: facts computed from the full-resolution (quantised, unsimplified) data (design § 11.3, § 12.3):
  * spherical areas, border and line lengths, the hatched-border test and the land-border rule, sampled areas.
  */
-import { EARTH_RADIUS_KM, POLAR_CIRCLE, TROPIC, distanceKm, pointInRings, type Flat } from '../geo';
+import { EARTH_RADIUS_KM, LINE_MARGIN, POLAR_CIRCLE, TROPIC, distanceKm, pointInRings, type Flat } from '../geo';
 import type { Path, Polygon } from './geojson';
 
 const RAD = Math.PI / 180;
@@ -122,33 +122,56 @@ export function sampledAreaKm2(box: readonly [number, number, number, number], s
 /** Bits of the `lines` fact: which special lines cross a territory. */
 export const LINE_BITS = { equator: 1, cancer: 2, capricorn: 4, arctic: 8, antarctic: 16, meridian: 32 } as const;
 
+/** The `lines` fact holds the lines a territory only comes near (within the margin) in the bits above this shift. */
+export const LINE_NEAR_SHIFT = 6;
+
+/** The special lines: value, whether it is a latitude (else a longitude), bit. */
+export const SPECIAL_LINES: readonly (readonly [number, boolean, number])[] = [
+  [0, true, LINE_BITS.equator],
+  [TROPIC, true, LINE_BITS.cancer],
+  [-TROPIC, true, LINE_BITS.capricorn],
+  [POLAR_CIRCLE, true, LINE_BITS.arctic],
+  [-POLAR_CIRCLE, true, LINE_BITS.antarctic],
+  [0, false, LINE_BITS.meridian]
+];
+
 /**
- * Which special lines cross at least one of the polygons (each polygon is connected, so a line crosses it exactly
- * when the polygon's latitude or longitude range strictly contains the line).
+ * Packs the `lines` fact from per-line tests: `across(v)` when the territory clearly crosses the line at `v`,
+ * `touches(v)` when it comes within the margin of it. Near bits are set only for lines not clearly crossed.
  */
-export function linesCrossed(polys: readonly Polygon[]): number {
-  let bits = 0;
-  for (const poly of polys) {
-    const outer = poly[0]!;
+export function packLines(across: (v: number, lat: boolean) => boolean, touches: (v: number, lat: boolean) => boolean): number {
+  let clear = 0;
+  let near = 0;
+  for (const [v, lat, bit] of SPECIAL_LINES) {
+    if (across(v, lat)) clear |= bit;
+    else if (touches(v, lat)) near |= bit;
+  }
+  return clear | (near << LINE_NEAR_SHIFT);
+}
+
+/**
+ * Which special lines cross at least one of the polygons, with a safety margin (`LINE_MARGIN`, 0.5°): each polygon is
+ * connected, so it clearly crosses a line when its latitude or longitude range extends beyond the line by the margin
+ * on both sides; a polygon whose range comes within the margin of a line only makes it "near" (shifted bits).
+ */
+export function linesCrossed(polys: readonly Polygon[], margin = LINE_MARGIN): number {
+  const ranges = polys.map((poly) => {
     let minLat = Infinity;
     let maxLat = -Infinity;
     let minLon = Infinity;
     let maxLon = -Infinity;
-    for (const [lon, lat] of outer) {
+    for (const [lon, lat] of poly[0]!) {
       minLat = Math.min(minLat, lat);
       maxLat = Math.max(maxLat, lat);
       minLon = Math.min(minLon, lon);
       maxLon = Math.max(maxLon, lon);
     }
-    const crosses = (v: number, a: number, b: number) => a < v && v < b;
-    if (crosses(0, minLat, maxLat)) bits |= LINE_BITS.equator;
-    if (crosses(TROPIC, minLat, maxLat)) bits |= LINE_BITS.cancer;
-    if (crosses(-TROPIC, minLat, maxLat)) bits |= LINE_BITS.capricorn;
-    if (crosses(POLAR_CIRCLE, minLat, maxLat)) bits |= LINE_BITS.arctic;
-    if (crosses(-POLAR_CIRCLE, minLat, maxLat)) bits |= LINE_BITS.antarctic;
-    if (crosses(0, minLon, maxLon)) bits |= LINE_BITS.meridian;
-  }
-  return bits;
+    return { lat: [minLat, maxLat] as const, lon: [minLon, maxLon] as const };
+  });
+  return packLines(
+    (v, lat) => ranges.some((r) => (lat ? r.lat : r.lon)[0] < v - margin && (lat ? r.lat : r.lon)[1] > v + margin),
+    (v, lat) => ranges.some((r) => (lat ? r.lat : r.lon)[0] < v + margin && (lat ? r.lat : r.lon)[1] > v - margin)
+  );
 }
 
 /** A point-in-polygon tester with a bounding-box prefilter over many polygons (flat rings per polygon). */

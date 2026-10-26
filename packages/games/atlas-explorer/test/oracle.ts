@@ -18,7 +18,9 @@ export interface RawCountry {
   pop: number;
   areaCore: number;
   areaMax: number;
+  /** Special lines clearly crossed (bits), and those within the 0.5° margin (never a clue, never ruled out). */
   lines: number;
+  near: number;
   coast: boolean;
   island: boolean;
   noRegion: boolean;
@@ -42,7 +44,8 @@ export const RAW_COUNTRIES: Map<string, RawCountry> = new Map(
         pop: f[7]!,
         areaCore: f[9]!,
         areaMax: f[10]!,
-        lines: f[11]!,
+        lines: f[11]! % 64,
+        near: Math.floor(f[11]! / 64),
         coast: (f[12]! & 1) === 1,
         island: (f[12]! & 2) === 2,
         noRegion: (f[12]! & 4) === 4,
@@ -143,13 +146,15 @@ export function clueAllows(c: RawCountry, id: string, arg: string): boolean {
   const dir = arg.includes(':') ? arg.slice(0, arg.indexOf(':')) : '';
   if (id === 'region') return !c.noRegion && c.region === arg;
   if (id === 'sub') return !c.noRegion && c.sub === arg;
-  if (id === 'ns') return arg === 'n' ? c.home[1] > 0 : arg === 's' ? c.home[3] < 0 : (c.lines & 1) === 1;
+  // Lines: a territory within 0.5° of a line is never ruled out by its clue (either side).
+  const any = c.lines | c.near;
+  if (id === 'ns') return arg === 'n' ? c.home[1] > -0.5 : arg === 's' ? c.home[3] < 0.5 : (any & 1) === 1;
   if (id === 'ew') {
-    if (arg === 'pm') return (c.lines & 32) === 32;
+    if (arg === 'pm') return (any & 32) === 32;
     const dateLine = c.home[0] < -170 && c.home[2] > 170;
-    return !dateLine && (arg === 'e' ? c.home[0] > 0 : c.home[2] < 0);
+    return !dateLine && (arg === 'e' ? c.home[0] > -0.5 : c.home[2] < 0.5);
   }
-  if (id === 'line') return (c.lines & ({ cancer: 2, capricorn: 4, arctic: 8, antarctic: 16 } as Record<string, number>)[arg]!) !== 0;
+  if (id === 'line') return (any & ({ cancer: 2, capricorn: 4, arctic: 8, antarctic: 16 } as Record<string, number>)[arg]!) !== 0;
   if (id === 'coast') return c.coast === (arg === 'yes');
   if (id === 'island') return c.island;
   if (id === 'nbCount') return c.nb.length === Number(arg);

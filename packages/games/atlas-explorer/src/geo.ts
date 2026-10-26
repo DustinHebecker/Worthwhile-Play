@@ -269,3 +269,10 @@ export const mercatorFactor = (lat: number): number => 1 / Math.cos(lat * RAD) *
 /** Latitudes of the special parallels (degrees north; the southern ones are their negatives). */
 export const TROPIC = 23.44;
 export const POLAR_CIRCLE = 66.56;
+
+/**
+ * Safety margin (degrees) around the Equator, the tropics, the polar circles and the Prime Meridian: a territory that
+ * comes within it of a line neither clearly crosses the line nor clearly stays on one side (simplification could flip
+ * it, e.g. Niger reaches 23.52° N against the Tropic of Cancer at 23.44°), so it is neither a clue nor ruled out by one.
+ */
+export const LINE_MARGIN = 0.5;

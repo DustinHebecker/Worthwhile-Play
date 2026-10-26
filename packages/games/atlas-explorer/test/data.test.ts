@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 import { describe, expect, it } from 'vitest';
-import { countryAt, countryDistanceKm, decodeAtlas, inside, placeAt, REGIONS } from '../src/atlas';
+import { countryAt, countryDistanceKm, decodeAtlas, inside, LINES, placeAt, REGIONS } from '../src/atlas';
 import { ATLAS_DATA } from '../src/data/atlas.gen';
 import { UN_MEMBERS } from '../src/data/un-members';
 import manifest from '../src/data/manifest.json';
@@ -142,6 +142,15 @@ describe('generated atlas', () => {
     expect(c('AD').features).toContain('pyrenees');
     expect(c('RU').features).toContain('urals');
     expect(c('FR').featuresNear).not.toContain('sahara');
+    // Special lines need a 0.5° margin (simplification must not flip them): Niger (23.52° N) and Chad (23.45° N) are
+    // only near the Tropic of Cancer, Peru (0.03° S) the Equator, Iceland (Grímsey) the Arctic Circle.
+    for (const [id, bit] of [['NE', LINES.cancer], ['TD', LINES.cancer], ['PE', LINES.equator], ['IS', LINES.arctic], ['TG', LINES.meridian]] as const) {
+      expect(c(id).lines & bit, id).toBe(0);
+      expect(c(id).linesNear & bit, id).toBe(bit);
+    }
+    expect(c('DZ').lines & LINES.cancer).toBe(LINES.cancer);
+    expect(c('KE').lines & LINES.equator).toBe(LINES.equator);
+    for (const x of atlas.countries) expect(x.lines & x.linesNear, x.id).toBe(0);
     for (const x of atlas.countries) for (const f of x.featuresNear) expect(x.features, `${x.id}: ${f}`).not.toContain(f);
     expect(c('RU').areaCore).toBeGreaterThan(16_000_000);
     expect(c('RU').areaMax).toBeGreaterThan(c('RU').areaCore);

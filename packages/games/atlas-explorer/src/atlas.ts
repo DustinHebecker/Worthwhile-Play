@@ -12,8 +12,10 @@ export type Region = (typeof REGIONS)[number];
 export type Tier = 1 | 2 | 3;
 export type Box = readonly [minLon: number, minLat: number, maxLon: number, maxLat: number];
 
-/** Bits of `Country.lines`. */
+/** Bits of `Country.lines` and `Country.linesNear`. */
 export const LINES = { equator: 1, cancer: 2, capricorn: 4, arctic: 8, antarctic: 16, meridian: 32 } as const;
+/** The packed `lines` fact holds the "near" bits above this shift (src/build/facts.ts). */
+const LINES_NEAR_SHIFT = 6;
 
 export interface Shape {
   /** Closed rings, flat `[lon, lat, …]` in degrees. */
@@ -35,7 +37,11 @@ export interface Country extends Shape {
   /** Areas (km²) without / with the hatched areas touching the country (design § 12.3). */
   readonly areaCore: number;
   readonly areaMax: number;
+  /** Special lines that clearly cross the home territory (beyond the 0.5° margin on both sides, `LINE_MARGIN`). */
   readonly lines: number;
+  /** Special lines the home territory comes within the margin of without clearly crossing: never a clue, never ruled
+   *  out by one. */
+  readonly linesNear: number;
   readonly coast: boolean;
   readonly island: boolean;
   /** No region clue (transcontinental, design § 8.2). */
@@ -202,7 +208,8 @@ export function decodeAtlas(data: AtlasData): Atlas {
       popYear: f[8]!,
       areaCore: f[9]!,
       areaMax: f[10]!,
-      lines: f[11]!,
+      lines: f[11]! & ((1 << LINES_NEAR_SHIFT) - 1),
+      linesNear: f[11]! >> LINES_NEAR_SHIFT,
       coast: (flags & 1) !== 0,
       island: (flags & 2) !== 0,
       noRegion: (flags & 4) !== 0,
