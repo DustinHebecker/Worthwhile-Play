@@ -12,11 +12,28 @@ export type Graph = ReadonlyMap<string, readonly string[]>;
 
 const graphs = new WeakMap<Atlas, Graph>();
 
-/** The atlas's land-border graph (neighbour lists sorted, cached per atlas). */
+/** Largest gap (degrees) between two countries' home territories for their border to be an overland step. */
+export const OVERLAND_GAP_DEG = 2;
+
+/**
+ * Whether a land border between two neighbours can be walked from their home territories. A border that exists only
+ * through an overseas part (France–Brazil and France–Suriname, via French Guiana) is no overland route: it would make
+ * "Portugal → Spain → France → Brazil" a route "by land".
+ */
+export function overland(a: Country, b: Country): boolean {
+  const gap = Math.max(a.home[0] - b.home[2], b.home[0] - a.home[2], a.home[1] - b.home[3], b.home[1] - a.home[3]);
+  return gap <= OVERLAND_GAP_DEG;
+}
+
+/** The atlas's overland border graph (neighbour lists sorted, cached per atlas). */
 export function graphOf(atlas: Atlas): Graph {
   let g = graphs.get(atlas);
   if (!g) {
-    g = new Map(atlas.countries.map((c) => [c.id, [...c.nb].sort()]));
+    const steps = (c: Country) => c.nb.filter((n) => {
+      const o = atlas.country(n);
+      return o !== undefined && overland(c, o);
+    });
+    g = new Map(atlas.countries.map((c) => [c.id, steps(c).sort()]));
     graphs.set(atlas, g);
   }
   return g;
@@ -80,7 +97,7 @@ export function drawRoute(rng: Rng, atlas: Atlas, area: Area, d: Difficulty, use
   const worldwide = area === 'oceania';
   const scope: Area = worldwide ? 'world' : area;
   const [lo, hi] = ROUTE_BANDS[d];
-  const starts = countryPool(atlas, scope, d).filter((c) => c.nb.length > 0 && !used.has(`country:${c.id}`));
+  const starts = countryPool(atlas, scope, d).filter((c) => (g.get(c.id) ?? []).length > 0 && !used.has(`country:${c.id}`));
   const preferredTier = d === 'easy' ? 2 : 3;
   for (let attempt = 0; attempt < 60 && starts.length; attempt++) {
     const a = rng.pick(starts);

@@ -113,4 +113,19 @@ describe('route graph', () => {
     expect(shortestRoute(g, 'PT', 'PL')).toEqual(['PT', 'ES', 'FR', 'DE', 'PL']);
     expect(shortestRoute(g, 'PT', 'JP')).toBeNull();
   });
+
+  it('walks only overland: borders via overseas parts (French Guiana) are not route steps', () => {
+    const g = graphOf(atlas);
+    // France borders Brazil and Suriname on the map (the facts and clues keep them) …
+    expect(atlas.country('FR')!.nb).toEqual(expect.arrayContaining(['BR', 'SR']));
+    // … but no route crosses the Atlantic: Portugal → Brazil is no three-step "overland" route.
+    expect(g.get('FR')).not.toContain('BR');
+    expect(g.get('BR')).not.toContain('FR');
+    expect(g.get('SR')).toEqual(['BR', 'GY']);
+    expect(shortestRoute(g, 'PT', 'BR')).toBeNull();
+    // Only those two borders are left out; every other neighbour pair is a step.
+    const dropped = atlas.countries.flatMap((c) => c.nb.filter((n) => c.id < n && !g.get(c.id)!.includes(n)).map((n) => `${c.id}-${n}`));
+    expect(dropped).toEqual(['BR-FR', 'FR-SR']);
+    for (const [id, nbs] of g) for (const n of nbs) expect(g.get(n), `${id}-${n}`).toContain(id);
+  });
 });

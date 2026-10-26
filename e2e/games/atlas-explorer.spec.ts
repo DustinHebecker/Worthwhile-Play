@@ -46,7 +46,13 @@ async function clientPoint(page: Page, lon: number, lat: number): Promise<{ x: n
   );
 }
 
-/** Breadth-first shortest route over the land-border graph of the atlas (independent of the game's route module). */
+/** Whether two countries' home territories touch (within 2°): borders via overseas parts are no overland steps. */
+function homesTouch(a: string, b: string): boolean {
+  const [p, q] = [atlas.country(a)!.home, atlas.country(b)!.home];
+  return p[0] - q[2] <= 2 && q[0] - p[2] <= 2 && p[1] - q[3] <= 2 && q[1] - p[3] <= 2;
+}
+
+/** Breadth-first shortest route over the overland border graph of the atlas (independent of the game's route module). */
 function shortest(from: string, to: string): string[] {
   const prev = new Map<string, string | null>([[from, null]]);
   const queue = [from];
@@ -54,7 +60,7 @@ function shortest(from: string, to: string): string[] {
     const id = queue.shift()!;
     if (id === to) break;
     for (const n of atlas.country(id)?.nb ?? [])
-      if (!prev.has(n)) {
+      if (!prev.has(n) && homesTouch(id, n)) {
         prev.set(n, id);
         queue.push(n);
       }
