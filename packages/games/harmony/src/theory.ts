@@ -201,8 +201,8 @@ export const lcm = (a: number, b: number): number => (a / gcd(a, b)) * b;
 export function pureRatio(semitones: number): [number, number] {
   const octaves = Math.floor(semitones / 12);
   const rest = semitones % 12;
-  let [p, q] = rest === 0 ? [1, 1] : (RATIOS[intervalOfSemitones(rest)!] as [number, number]);
-  p *= 2 ** octaves;
+  const [base, q] = rest === 0 ? [1, 1] : (RATIOS[intervalOfSemitones(rest)!] as [number, number]);
+  const p = base * 2 ** octaves;
   const g = gcd(p, q);
   return [p / g, q / g];
 }

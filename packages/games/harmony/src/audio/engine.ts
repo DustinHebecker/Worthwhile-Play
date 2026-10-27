@@ -168,18 +168,17 @@ export function createEngine(options: EngineOptions): Engine {
       }
     }
     const ctx = graph.ctx;
-    if (ctx.state !== 'running') {
-      // Synchronously inside the gesture; if the browser still refuses, the next gesture asks again.
-      ctx.resume().then(
-        () => {
-          if (ctx.state === 'suspended' && graph?.ctx === ctx) {
-            stopAll();
-            onState('blocked');
-          }
-        },
-        () => onState('blocked')
-      );
-    }
+    // Always, synchronously inside the gesture (iOS needs it; harmless when already running). If the browser still
+    // refuses, the next gesture asks again.
+    ctx.resume().then(
+      () => {
+        if (ctx.state === 'suspended' && graph?.ctx === ctx) {
+          stopAll();
+          onState('blocked');
+        }
+      },
+      () => onState('blocked')
+    );
     return true;
   }
 

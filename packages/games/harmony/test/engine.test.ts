@@ -2,7 +2,7 @@ import fc from 'fast-check';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { audioConstructor, audioSupport, createEngine, type AudioContextCtor, type EngineState } from '../src/audio/engine';
 import { BUS_FADE, LEAD, MASTER_MAX, TAIL, master, type NoteEvent } from '../src/audio/schedule';
-import { FakeContext, FakeGain, FakeOscillator } from './fake-audio';
+import { FakeContext, type FakeGain, type FakeOscillator } from './fake-audio';
 
 const ctor = FakeContext as unknown as AudioContextCtor;
 const chord: NoteEvent[] = [60, 64, 67].map((m, i) => ({ freq: 261.6 * 2 ** ((m - 60) / 12), start: 0, dur: 1 + i * 0 }));

@@ -1,1 +1,0 @@
-{ "extends": "./tsconfig.json", "include": ["packages/games/harmony/src", "packages/games/harmony/test", "packages/testing/src", "e2e/games/harmony.spec.ts"] }

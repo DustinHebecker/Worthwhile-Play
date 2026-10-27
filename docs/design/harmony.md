@@ -834,3 +834,20 @@ The minor seventh's reference is 16 : 9 (the "small" pure minor seventh). 9 : 5 
 - J. H. McDermott, A. J. Lehr & A. J. Oxenham, "Individual differences reveal the basis of consonance", *Current Biology* 20 (2010) 1035–1041. Harmonicity and the role of musical experience.
 - J. H. McDermott, A. F. Schultz, E. A. Undurraga & R. A. Godoy, "Indifference to dissonance in native Amazonians reveals cultural variation in music perception", *Nature* 535 (2016) 547–550. The preference is partly learned (the review line of § 7.3).
 - W3C *Web Audio API* (Recommendation, 2021) and MDN for `AudioContext` states, `PeriodicWave` normalisation, `setTargetAtTime`, autoplay policy.
+
+---
+
+## Implementation notes (implementer, 2026-10-27)
+
+Everything of §§ 5–20 is implemented in the order of § 23. Where the code differs from this plan:
+
+- **Limiter threshold 0 dB instead of −10 dB (§ 9.4; safety, not tuning upwards).** The Web Audio `DynamicsCompressorNode` applies an automatic makeup gain (spec: `(1 / full-range gain)^0.6`). With the planned threshold −10 dB, knee 6, ratio 12 it *raised* a single note at volume 100 from −6 dBFS to −3.3 dBFS (measured in Chromium). With threshold 0 dB the full-range gain is 0 dB, so there is no makeup gain; the node stays a pure safety net above full scale while the arithmetic bound (master ≤ 0.5, voices ≤ 1) does the work. Measured sample peaks through the real graph in Chromium's `OfflineAudioContext` (dev-only script, not shipped), volume 100 / 50: single key A5 −6.2 / −18.2 dBFS; single key C4 −7.6 / −19.6; melodic interval −10.9 / −22.9; chord (block, broken, block) −9.0 / −21.1; cadence −12.5 / −24.5; rhythm with count-in −11.8 / −23.9; 12 held keys −14.3 / −26.3.
+- **Cadence tonics C4–G4** (§ 7.3 said C4–A4): with A♭4/A4 the IV chord's bass (T − 7) would lie above C4, outside the bass register of § 7. The upper voices then stay ≤ G5.
+- **"Show on the keyboard"** (by eye, intervals medium/hard) is recorded as `peeked: 'hint'` like "Show the picture" by ear; the summary says "With the keyboard: n" by eye. `no-sound` exists by ear only.
+- **Options heard from a high root** ("hear this option", "Listen: yours") are moved by whole octaves into C3–C6 when the chosen option would leave the range; the answer itself always sounds as notated.
+- **"Listen: yours"** for melody contours plays the same step sizes with the chosen directions; for "which note changed?" it plays A and then A with the chosen note moved by the same amount.
+- **Playback highlight** (the cosmetic "now playing" marker of § 9.3) is not implemented; the Play button shows "Stop" while it plays. Nothing depends on it.
+- **Spoken note names** (§ 18.3) live in `notes.ts` (one table per locale, tested) rather than in the per-locale content.
+- **Physical letter keys** for the piano are named per keyboard layout in the help text (QWERTZ: A W S E D F T G Z H U J K; AZERTY: Q Z S E D F T G Y H U J K).
+- **Generation budget:** 0.04–1.8 ms per round (Node, after warm-up); `generate.slow.test.ts` (2,000 seeds × 18 topic/level pairs) never needed a relaxed or fixed draw.
+- **Chunks** (`pnpm build`, raw / gzip): game chunk 212 / 69 kB including the 16 UI catalogues; content per locale 2.8–6.3 / 1.4–2.0 kB; styles 9.9 / 2.4 kB.

@@ -34,6 +34,9 @@ import { SEMITONES } from '../src/theory';
 const quiz = (seed: number, topic: (typeof QUIZ_TOPICS)[number], difficulty: (typeof LEVELS)[number] = 'easy', senses: 'ear' | 'eye' = 'ear') =>
   newRound(seed, readSettings({ topic, senses }, difficulty)) as QuizState;
 const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
+/** A state opened up for tampering. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Loose = Record<string, any>;
 
 describe('settings (ADR 0017)', () => {
   it('reads untrusted settings with defaults', () => {
@@ -188,8 +191,8 @@ describe('isHarmonyState (design § 13)', () => {
 
   it('rejects tampered states', () => {
     const s = quiz(5, 'intervals', 'medium');
-    const t = (f: (x: Record<string, any>) => void) => {
-      const x = clone(s) as unknown as Record<string, any>;
+    const t = (f: (x: Loose) => void) => {
+      const x = clone(s) as unknown as Loose;
       f(x);
       return isHarmonyState(x);
     };
@@ -206,13 +209,13 @@ describe('isHarmonyState (design § 13)', () => {
     expect(t((x) => (x.items[1].draft = { choice: 1 }))).toBe(false);
     expect(t((x) => (x.extra = 1))).toBe(false);
     expect(t((x) => (x.senses = 'nose'))).toBe(false);
-    const r = clone(quiz(5, 'rhythm', 'easy')) as unknown as Record<string, any>;
+    const r = clone(quiz(5, 'rhythm', 'easy')) as unknown as Loose;
     r.items[0].spec.options[0] = [2, 2, 2];
     expect(isHarmonyState(r)).toBe(false);
-    const b = clone(quiz(5, 'build', 'easy')) as unknown as Record<string, any>;
+    const b = clone(quiz(5, 'build', 'easy')) as unknown as Loose;
     b.senses = 'eye';
     expect(isHarmonyState(b)).toBe(false);
-    const k = clone(newKeyboard(1)) as unknown as Record<string, any>;
+    const k = clone(newKeyboard(1)) as unknown as Loose;
     k.held = Array.from({ length: 13 }, (_, i) => 48 + i);
     expect(isHarmonyState(k)).toBe(false);
     k.held = [64, 60];
