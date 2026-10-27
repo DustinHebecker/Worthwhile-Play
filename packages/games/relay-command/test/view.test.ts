@@ -4,7 +4,7 @@ import type { GameInstance, GameModule } from '@wp/game-core';
 import { createTestContext, createTestLibrary, type TestContext } from '@wp/testing';
 import game from '../src/index';
 import { initialIntel, NEUTRAL, passable, retire, validateCommand, type Entity } from '@wp/strategy-engine';
-import { concede, lockTurn, newGame, OPPONENT, PLAYER, RULESET, sideValue, STALL_TURNS, stalemateTurns, type RcState } from '../src/rules';
+import { concede, lockTurn, newGame, OPPONENT, orderRefusal, planOrder, PLAYER, RULESET, sideValue, STALL_TURNS, stalemateTurns, type RcState } from '../src/rules';
 import { SCENARIOS } from '../src/scenarios';
 import { CELL } from '../src/view';
 
@@ -280,6 +280,49 @@ describe('Relay Command view', () => {
     click('rc-hold');
     expect($('rc-notice').hidden).toBe(true);
     expect(state().draft).toHaveLength(4);
+  });
+
+  it('a Scout Car launches its drone; the drone is told on the card, lands on the car, and a far destination is refused (owner decision 2026-10-27)', () => {
+    // The player's first Rifle Squad becomes a Scout Car (with its drone aboard).
+    const s = structuredClone(state());
+    const car = s.world.entities.find((e) => e.side === PLAYER && e.kind === 'rifles')!;
+    Object.assign(car, { kind: 'outrider', hp: 45 });
+    s.world.intel = initialIntel(s.world, RULESET);
+    instance.restore(s);
+    click(`rc-unit-${car.id}`);
+    expect($('rc-launch').hidden).toBe(false);
+    expect($('rc-launch').textContent).toBe('Launch drone');
+    expect($('rc-recall').hidden).toBe(true);
+    expect($('rc-card-drone').textContent).toBe('aboard, ready to launch');
+    click('rc-launch');
+    expect(state().draft).toEqual([{ side: PLAYER, unit: car.id, order: { type: 'launch' } }]);
+    expect(($('rc-launch') as HTMLButtonElement).disabled).toBe(true);
+    expect($('rc-launch').textContent).toBe('Drone takes off this turn');
+    // The launch can be taken back like any order.
+    expect(($('rc-cancel') as HTMLButtonElement).disabled).toBe(false);
+    click('rc-lock');
+    later();
+    const drone = state().world.entities.find((e) => e.kind === 'kite' && e.side === PLAYER)!;
+    expect(drone.carrier).toBe(car.id);
+    expect($('rc-summary').textContent).toContain(`Scout Car ${car.id} launched its drone.`);
+    expect($(`rc-unit-${drone.id}`).textContent).toContain(`Drone ${drone.id}`);
+    click(`rc-unit-${car.id}`);
+    expect($('rc-launch').hidden).toBe(true);
+    expect($('rc-card-drone').textContent).toBe(`in the air (Drone ${drone.id})`);
+    click(`rc-unit-${drone.id}`);
+    expect($('rc-recall').hidden).toBe(false);
+    expect($('rc-card-leash').textContent).toBe(`at most 5 cells from Scout Car ${car.id}`);
+    // Beyond the leash: refused with the reason.
+    const far = state().world.map.w - 1 - car.x >= 6 ? { x: car.x + 6, y: car.y } : { x: car.x - 6, y: car.y };
+    $('rc-map').focus();
+    expect(orderRefusal(state(), drone.id, { type: 'move', ...far })).toBe('leash');
+    expect(planOrder(state(), drone.id, { type: 'move', ...far })).toBeUndefined();
+    click('rc-recall');
+    expect(state().draft).toEqual([{ side: PLAYER, unit: drone.id, order: { type: 'recall' } }]);
+    click('rc-lock');
+    later();
+    expect(state().world.entities.some((e) => e.id === drone.id)).toBe(false);
+    expect($('rc-summary').textContent).toContain(`Drone ${drone.id} landed on Scout Car ${car.id}.`);
   });
 
   it('a unit outside coverage shows why it cannot be ordered', () => {
