@@ -293,7 +293,7 @@ function optionsGroup(host: Host, state: QuizState, item: Item, spec: ChoiceSpec
     }
     const label = h('label', { class: `hm-option${i === chosen ? ' hm-option--chosen' : ''}${committed && i === right ? ' hm-option--right' : ''}` }, input, body);
     const row = h('div', { class: 'hm-option-row' }, label);
-    if (!committed && hearOptions(state, spec) && host.soundAvailable()) {
+    if (!committed && hearOptions(state, spec) && host.soundAvailable() && !host.prefs().muted) {
       const hear = host.playButton('▶', `hm-hear-${i}`, () => itemEvents(spec, { kind: 'option', i }, { countIn: host.prefs().countIn }));
       hear.setAttribute('aria-label', t('sound.hearOption', { name }));
       hear.classList.add('hm-hear');
@@ -393,7 +393,7 @@ function review(host: Host, state: QuizState, item: Item): HTMLElement[] {
     if (chosen >= 0) listen.push(host.playButton(t('sound.yours'), 'hm-yours', () => itemEvents(spec, { kind: 'option', i: chosen }, { countIn })));
     listen.push(host.playButton(t('sound.answer'), 'hm-answer', () => itemEvents(spec, { kind: 'question' }, { countIn })));
   }
-  if (host.soundAvailable()) out.push(h('div', { class: 'hm-listen' }, ...listen));
+  if (host.soundAvailable() && !host.prefs().muted) out.push(h('div', { class: 'hm-listen' }, ...listen));
   /* Next */
   const last = state.index === state.items.length - 1;
   const nextBtn = h('button', { type: 'button', class: 'hm-primary', 'data-testid': last ? 'hm-summary-btn' : 'hm-next' }, t(last ? 'action.summary' : 'action.next'));

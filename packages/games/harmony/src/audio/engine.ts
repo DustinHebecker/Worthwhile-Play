@@ -4,7 +4,7 @@
  * `resume()` synchronously, as iOS requires), and never while muted. No `AudioWorklet`, no media element, no network.
  *
  * Graph: oscillator (PeriodicWave) → envelope gain → bus gain (one per playback) → low-pass 5 kHz → master gain
- * (≤ 0.5) → compressor (safety limiter only) → destination.
+ * (≤ 0.5) → compressor (safety limiter only, threshold 0 dB, so no makeup gain) → destination.
  */
 import { BUS_FADE, LEAD, LOWPASS_HZ, VOLUME_RAMP, envelope, master, schedule, type NoteEvent, type Voice } from './schedule';
 import { waveTables } from './voices';
@@ -73,6 +73,9 @@ export const audioSupport = (win: unknown): 'available' | 'unavailable' => (audi
 
 export type EngineState = 'idle' | 'playing' | 'blocked' | 'unavailable';
 
+/** The safety limiter's threshold in dBFS (design § 9.4 and its implementation note). */
+export const LIMITER_THRESHOLD = 0;
+
 export interface EngineOptions {
   readonly ctor: AudioContextCtor | undefined;
   readonly onState?: (state: EngineState) => void;
@@ -129,7 +132,9 @@ export function createEngine(options: EngineOptions): Engine {
     const masterGain = ctx.createGain();
     masterGain.gain.value = master(volume);
     const limiter = ctx.createDynamicsCompressor();
-    limiter.threshold.value = -10;
+    // Threshold 0 dB: no automatic makeup gain (Web Audio applies (1 / full-range gain)^0.6, which at −10 dB raised a
+    // single note from −6 to −3.3 dBFS); the node only catches anything that would reach full scale.
+    limiter.threshold.value = LIMITER_THRESHOLD;
     limiter.knee.value = 6;
     limiter.ratio.value = 12;
     limiter.attack.value = 0.003;

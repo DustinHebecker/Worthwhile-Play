@@ -5,6 +5,7 @@
  *
  * Safety bounds (binding, property-tested in test/schedule.test.ts):
  * - `master(volume) = 0.5 · (volume/100)²`, clamped to [0, 0.5] (≤ −6 dBFS); default volume 50 → 0.125 (≈ −18 dBFS).
+ * - The safety limiter after the master gain has its threshold at 0 dB, so it adds no makeup gain (engine.ts).
  * - Each note peaks at `1/M`, M = the most notes sounding at once **including release tails**, so the sum of all
  *   voices stays ≤ 1 before the master gain. The timbre's waveform is normalised to a peak of 1.
  * - Attack 20 ms (≥ 15 ms); every envelope starts and ends at 0.

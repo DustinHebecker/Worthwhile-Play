@@ -102,10 +102,12 @@ test('harmony: mute persists across a reload and then nothing plays', async ({ p
   await page.getByTestId('continue').click();
   await expect(root(page).getByTestId('hm-mute')).toHaveAttribute('aria-pressed', 'false');
   await expect(root(page).getByTestId('hm-play')).toHaveCount(0);
-  // Show the picture and check: the review's listen buttons are there but play nothing while muted.
+  // Check: while muted the review offers no listen buttons, and the keys stay silent.
   await root(page).getByTestId('hm-opt-0').check();
   await root(page).getByTestId('hm-check').click();
-  await root(page).getByTestId('hm-answer').click();
+  await expect(root(page).getByTestId('hm-verdict')).toBeVisible();
+  await expect(root(page).getByTestId('hm-answer')).toHaveCount(0);
+  await root(page).locator('.hm-white').first().click();
   expect((await audioCount(page)).made).toBe(0);
 });
 

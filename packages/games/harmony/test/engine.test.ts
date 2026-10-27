@@ -104,7 +104,8 @@ describe('graph and levels (design § 9.2, § 9.4)', () => {
     expect(lowpass.frequency.value).toBe(5000);
     expect(masterGain.connections[0]).toBe(comp);
     expect(comp.connections[0]).toBe(ctx.destination);
-    expect(comp.threshold.value).toBe(-10);
+    // 0 dB: no automatic makeup gain, so the limiter can never raise the level above the arithmetic cap.
+    expect(comp.threshold.value).toBe(0);
     expect(comp.ratio.value).toBe(12);
     const oscs = ctx.oscillators();
     expect(oscs).toHaveLength(3);
