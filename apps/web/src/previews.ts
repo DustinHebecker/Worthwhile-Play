@@ -667,7 +667,18 @@ const PREVIEWS: Record<string, () => string> = {
       R(14, y, 68, 9, 'e', 2) + L(20, y + 4.5, 20 + [40, 32, 36][i]!, y + 4.5, 'mu') +
       tri(73, y + 3, 1.8, 'i') + poly([[71.2, y + 5.6], [74.8, y + 5.6], [73, y + 7.6]], 'i')).join('') +
     L(4, 48, 92, 48, 'k') + [8, 36, 58, 74, 86].map((x) => L(x, 44.5, x, 51.5, 'k')).join('') +
-    R(44, 43, 11, 10, 'ob', 1) + hatch(44, 43, 11, 10, 3, 'fn') + diamond(39, 48, 4.2, 'a')
+    R(44, 43, 11, 10, 'ob', 1) + hatch(44, 43, 11, 10, 3, 'fn') + diamond(39, 48, 4.2, 'a'),
+  // Pond & Meadow: on the left a pond cross-section (waterline, muddy bottom, three wavy pondweed stems, two duckweed
+  // ovals on the surface, a small fish outline); on the right a tiny chart with a solid and a dashed line that cross
+  // once, and a circular loop arrow with the letter R in the corner. Not mirrored (the chart runs left to right).
+  ecosystem: () =>
+    R(3, 14, 56, 46, 'tw', 3) + P('M3 14q7-3 14 0t14 0t14 0t14 0', 'fn') + P('M3 54q14-5 28-1t28-2V60H3Z', 'th') +
+    [12, 24, 47].map((x, i) => P(`M${x} 55q-4-${8 + i * 2} 0-${16 + i * 3}t0-${18 + i * 4}`, 'okl')).join('') +
+    `<ellipse cx="20" cy="14" rx="4.5" ry="1.8" class="cd"/><ellipse cx="40" cy="14" rx="4" ry="1.6" class="cd"/>` +
+    P('M30 33q6-5 12 0q-6 5-12 0zM30 33l-4-3v6z', 'o') +
+    R(63, 4, 30, 26, 'e', 2) + L(66, 26, 90, 26, 'fn') + L(66, 8, 66, 26, 'fn') +
+    P('M66 22c6-1 9-12 14-12s6 9 10 10', 'al') + P('M66 12c7 0 10 12 14 11s5-4 10-5', 'k ds') +
+    P('M70 47a10 10 0 1 1 7 9.5', 'k') + tri(76, 56, 2.6, 'i') + T(78, 46.5, 'R')
 };
 
 /** Pictures made only of text cards and lines: these follow the reading direction (flipped in RTL). */
