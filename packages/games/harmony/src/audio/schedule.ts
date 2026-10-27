@@ -88,11 +88,15 @@ const inRange = (e: NoteEvent) => Number.isFinite(e.freq) && e.freq >= FREQ_MIN 
 
 /** Absolute times and the bounded peak per note; events outside the range are dropped, at most 40 notes are kept. */
 export function schedule(events: readonly NoteEvent[], t0: number): ScheduledNote[] {
-  const kept = events.filter(inRange).slice(0, MAX_NOTES);
+  // Very short notes are lengthened to fit the attack; the overlap is counted with the lengths actually played.
+  const kept = events
+    .filter(inRange)
+    .slice(0, MAX_NOTES)
+    .map((e) => ({ ...e, dur: Math.max(e.dur, ATTACK + 0.01) }));
   const peak = 1 / Math.max(1, maxOverlap(kept));
   return kept
     .map((e) => {
-      const dur = Math.max(e.dur, ATTACK + 0.01);
+      const dur = e.dur;
       const level = Math.min(1, Math.max(0, e.level ?? 1));
       return { freq: e.freq, voice: e.voice ?? 'soft', start: t0 + e.start, end: t0 + e.start + dur, stop: t0 + e.start + dur + TAIL, peak: peak * level };
     })

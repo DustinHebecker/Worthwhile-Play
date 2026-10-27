@@ -68,6 +68,13 @@ describe('level cap (design § 9.4, binding)', () => {
     );
   });
 
+  it('counts very short notes with the length they are played for (lengthened to fit the attack)', () => {
+    // Note 1 is lengthened from 1 ms to 30 ms, so its oscillator runs until 0.38 s and overlaps note 2.
+    const notes = schedule([{ freq: 440, start: 0, dur: 0.001 }, { freq: 440, start: 0.36, dur: 0.5 }], 0);
+    expect(notes.map((n) => n.peak)).toEqual([0.5, 0.5]);
+    expect(notes[0]!.stop).toBeGreaterThan(notes[1]!.start);
+  });
+
   it('every generated item, every variant and pace stays within the bounds', () => {
     for (const topic of QUIZ_TOPICS)
       for (const level of LEVELS)
