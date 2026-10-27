@@ -13,6 +13,7 @@
     "@wp/game-association": "workspace:*",
     "@wp/game-atlas-explorer": "workspace:*",
     "@wp/game-audience-switch": "workspace:*",
+    "@wp/game-balance-lab": "workspace:*",
     "@wp/game-black-box": "workspace:*",
     "@wp/game-bridges": "workspace:*",
     "@wp/game-briefing-game": "workspace:*",

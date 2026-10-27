@@ -45,6 +45,12 @@
     "packages/games/harmony/src/generate.ts",
     "packages/games/harmony/src/rhythm.ts",
     "packages/games/harmony/src/audio/schedule.ts",
+    "packages/games/balance-lab/src/statics.ts",
+    "packages/games/balance-lab/src/solve.ts",
+    "packages/games/balance-lab/src/naive.ts",
+    "packages/games/balance-lab/src/generate.ts",
+    "packages/games/balance-lab/src/explain.ts",
+    "packages/games/balance-lab/src/layout.ts",
     "!**/*.d.ts",
     "!packages/learning-content/src/builtin/**"
   ],
