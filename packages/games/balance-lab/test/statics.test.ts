@@ -104,7 +104,7 @@ describe('mobile statics', () => {
     // Bottom: 1·(−2) + 2·1 = 0; top: 4·(−1) + 3·2 = 2 → right down.
     expect(mobileVerdicts(two)).toEqual(['right-down', 'level']);
     expect(mobileMass(two)).toBe(7);
-    const three = bar(2, [[0, bar(1, [[0, w(2)], [2, w(2)]])], [3, bar(1, [[0, bar(1, [[0, w(2)], [3, w(1)]]), null], [2, null]])]]);
+    const three = bar(2, [[0, bar(1, [[0, w(2)], [2, w(2)]])], [3, bar(1, [[0, bar(1, [[0, w(2)], [3, w(1)]])], [2, null]])]]);
     expect(mobileBars(three)).toHaveLength(4);
     expect(mobileLevel(bar(1, [[0, w(6)], [3, bar(2, [[0, w(1)], [3, w(2)]])]]))).toBe(true);
   });

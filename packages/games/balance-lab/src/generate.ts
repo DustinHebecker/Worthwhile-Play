@@ -132,8 +132,8 @@ export function beamHook(rng: Rng, d: Difficulty): TaskSpec {
     if (sols.length !== 1) continue;
     return buildTask('beam-hook', { bench: 'beam', s: scene }, [kg], { bench: 'beam', s: { ...scene, weights: [...scene.weights, { kg, hook: sols[0]!, free: true }] } });
   }
-  const scene: BeamScene = { half: p.half, axle: 0, barKg: 0, weights: [{ kg: 4, hook: -3 }] };
-  return buildTask('beam-hook', { bench: 'beam', s: scene }, [2], { bench: 'beam', s: { ...scene, weights: [...scene.weights, { kg: 2, hook: 6 > p.half ? 4 : 6, free: true }] } });
+  const scene: BeamScene = { half: p.half, axle: 0, barKg: 0, weights: [{ kg: 2, hook: -4 }] };
+  return buildTask('beam-hook', { bench: 'beam', s: scene }, [2], { bench: 'beam', s: { ...scene, weights: [...scene.weights, { kg: 2, hook: 4, free: true }] } });
 }
 
 const buildTask = (id: TaskId, scene: Scene, tray: number[], witness: Scene, goal: Goal = { kind: 'level' }): TaskSpec => ({ id, scene, tray, goal, witness, answer: null, marked: null });
