@@ -400,7 +400,7 @@ K1 is large (140 cards × 16 locales). If it becomes too big for one review, it 
   is asked at most once per fight; at most one helper.
 - **Helping**: the helper's table strength (level, equipment, origin, profession, sets; monster modifiers stay
   against the fighter) counts for the fighter. A win pays the helper from the drawn loot (or the item / a favour);
-  the helper gains **no level**; a lost fight pays nothing and only the fighter flees.
+  the helper gains **no level**; a lost fight pays nothing. Since 2026-10-27 the helper flees too (§ 10.5c).
 - **Reputation** 0–5, start 3: a kept deal +1 for both; breaking one −2 (Change Sides, interfering after being paid
   to stay out, refusing a favour owed). **Favours** are listed per creditor (≤ 5). **Harm** per seat (curses,
   interference, broken deals) is public and drives the grudge-holder.
@@ -481,6 +481,18 @@ K1 is large (140 cards × 16 locales). If it becomes too big for one review, it 
   Top" — the start-screen label up to its dash or colon. Games with picked worlds show nothing extra.
 - Note: `randomWorlds(seed)` shuffles `WORLD_IDS`, so with more worlds the same seed draws other worlds than before;
   saves are unaffected (they store their worlds).
+
+### 10.5c Owner feedback 2026-10-27: helpers flee too
+
+- Owner: "Wenn jemand im Kampf hilft, muss er normalerweise separat entkommen, wenn der Kampf verloren wird, und
+  schlimme Dinge passieren auch." Until now only the fighter fled (a K2 simplification).
+- Now a lost fight with a helper has two rounds of flee rolls: the fighter rolls for every monster, then the helper
+  rolls for every monster on their own. A failed roll applies that monster's Blunder to whoever rolled. The helper
+  uses their own flee bonus (items, origin, profession); flee one-shots played in the fight count for the fighter
+  only. A helper who changed sides is on the monsters' side and does not flee.
+- Shown in the log ("Since your last turn"): "X — fight lost. Y has to flee too.", then each flee roll and Blunder
+  line with its player; a person who helped gets their own roll button and text.
+- Saves stay valid: a save in the middle of fleeing continues with the helper's rolls.
 
 ### 10.5 Owner feedback after the first play-test (2026-10-15) — backlog
 

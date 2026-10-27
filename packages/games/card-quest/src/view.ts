@@ -12,6 +12,7 @@ import {
   charityTarget,
   fightTotals,
   fleeBonus,
+  fleeTurn,
   heroParts,
   legalActions,
   monsterLoot,
@@ -188,9 +189,12 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
         if (state.active === HUMAN) return t(someoneInterfered() ? 'next.fight.youAgain' : 'next.fight.you');
         return t('next.fight.react', { name: seatName(state.active) });
       }
-      case 'flee':
-        if (currentMonsterNoFlee()) return t('next.flee.none');
-        return t('next.flee', { need: Math.max(1, FLEE_TARGET - fleeBonus(state) - fleeMod()) });
+      case 'flee': {
+        // The helper flees after the fighter (owner 2026-10-27); the texts say whose roll it is.
+        const helping = fleeTurn(state).seat === HUMAN && state.active !== HUMAN;
+        if (currentMonsterNoFlee()) return t(helping ? 'next.flee.helper.none' : 'next.flee.none');
+        return t(helping ? 'next.flee.helper' : 'next.flee', { need: Math.max(1, FLEE_TARGET - fleeBonus(state, HUMAN) - fleeMod()) });
+      }
       case 'end': {
         const n = surplus(state);
         if (n === 0) return t('next.end');
@@ -210,14 +214,14 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
 
   /** Whether the monster the person flees from next cannot be fled from at all. */
   function currentMonsterNoFlee(): boolean {
-    const m = state.fight?.monsters[state.fight.rolls.length];
+    const m = state.fight ? state.fight.monsters[fleeTurn(state).monster] : undefined;
     return m ? ((defOf(m.card) as MonsterCard).noFlee ?? false) : false;
   }
 
   function fleeMod(): number {
     const fight = state.fight;
     if (!fight) return 0;
-    const m = fight.monsters[fight.rolls.length];
+    const m = fight.monsters[fleeTurn(state).monster];
     return m ? ((defOf(m.card) as MonsterCard).flee ?? 0) : 0;
   }
 
@@ -291,7 +295,8 @@ export function createCardQuest(context: GameContext): GameInstance<CardQuestSta
       case 'won':
         return t('log.won', { name: n(e.seat), levels: e.levels, loot: e.loot });
       case 'lost':
-        return t('log.lost', { name: n(e.seat) });
+        if (e.helper === undefined) return t('log.lost', { name: n(e.seat) });
+        return e.helper === HUMAN ? t('log.lost.helper.you', { name: n(e.seat) }) : t('log.lost.helper', { name: n(e.seat), helper: n(e.helper) });
       case 'flee': {
         const line = t(e.ok ? 'log.flee.ok' : 'log.flee.fail', { name: n(e.seat), roll: e.roll, total: e.total, monster: name(e.monster) });
         // The sentence speaks to the person ("you …"): only for their own loss, and only when the Blunder fully hit.

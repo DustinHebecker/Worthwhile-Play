@@ -58,6 +58,32 @@ describe('view', () => {
     instance.dispose();
   });
 
+  it('a lost fight the person helped in: the person flees too, and the log says so (owner 2026-10-27)', () => {
+    const s0 = arranged((s) => {
+      s.active = 1;
+      s.players[0]!.level = 3;
+      s.encounter.splice(s.encounter.indexOf('kz.gold-rat'), 1);
+      s.encounter.push('kz.gold-rat');
+    });
+    let s = step(s0, 1, { a: 'open' })!;
+    s = step(s, 1, { a: 'offer', to: 0, terms: { t: 'loot', n: 1 } })!;
+    s = step(s, 0, { a: 'accept' })!;
+    while (s.phase === 'fight') s = step(s, s.fight!.actor, { a: 'pass' })!;
+    s = step(s, 1, { a: 'roll' })!;
+    expect(s.phase).toBe('flee');
+    const ctx = createTestContext(game as GameModule<unknown>, 'en');
+    const instance = game.create(ctx.context as never);
+    instance.restore(s);
+    const root = ctx.context.root;
+    expect(root.querySelector('.cq-next-text')!.textContent).toMatch(/^The fight is lost — as the helper you have to flee too\. Roll: \d or more escapes\.$/);
+    expect(q(root, 'roll')).not.toBeNull();
+    expect(root.querySelector('[data-testid="log"]')!.textContent).toContain('fight lost. You have to flee too.');
+    q(root, 'roll')!.click();
+    expect(instance.serialize().log.filter((e) => e.e === 'flee').map((e) => e.seat)).toEqual([1, 0]);
+    expect(ctx.missingKeys).toEqual([]);
+    instance.dispose();
+  });
+
   it('deal, give-away and curse lines use the forms for the person, in every combination', () => {
     const combos: [number, number][] = [[0, 1], [1, 0], [1, 2]];
     for (const [seat, to] of combos) {
