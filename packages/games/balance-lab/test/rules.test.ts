@@ -175,7 +175,7 @@ describe('round transitions', () => {
 describe('free bench', () => {
   it('edits, lets go, holds again and undoes', () => {
     let s = newState(1, readSettings({ mode: 'free', freeBench: 'beam' }, undefined)) as FreeState;
-    s = freeEdit(s, { bench: 'beam', s: placeBeam((s.scene as { s: never }).s, 3, -2)! })!;
+    s = freeEdit(s, { bench: 'beam', s: placeBeam((s.scene as unknown as { s: never }).s, 3, -2)! })!;
     s = freeLetGo(s)!;
     expect(s.outcome).toEqual({ bench: 'beam', sides: ['left-down'] });
     expect(isBalanceState(clone(s))).toBe(true);
