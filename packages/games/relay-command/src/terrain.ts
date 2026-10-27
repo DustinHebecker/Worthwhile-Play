@@ -498,8 +498,8 @@ export function drawTerrainMap(g: CanvasRenderingContext2D, map: TerrainMap, cel
         const curve = () => {
           g.beginPath();
           g.moveTo(cx - W, cy);
-          g.bezierCurveTo(cx - W * 0.78, cy - Hh * 0.2, top - W * 0.58, cy - Hh, top, cy - Hh);
-          g.bezierCurveTo(top + W * 0.58, cy - Hh, cx + W * 0.78, cy - Hh * 0.2, cx + W, cy);
+          g.bezierCurveTo(cx - W * 0.86, cy - Hh * 0.42, top - W * 0.72, cy - Hh, top, cy - Hh);
+          g.bezierCurveTo(top + W * 0.72, cy - Hh, cx + W * 0.86, cy - Hh * 0.42, cx + W, cy);
         };
         g.fillStyle = 'rgba(0,0,0,0.16)';
         g.beginPath();
