@@ -40,6 +40,11 @@
     "packages/games/ecosystem/src/score.ts",
     "packages/games/ecosystem/src/goals.ts",
     "packages/games/ecosystem/src/cld.ts",
+    "packages/games/harmony/src/theory.ts",
+    "packages/games/harmony/src/spelling.ts",
+    "packages/games/harmony/src/generate.ts",
+    "packages/games/harmony/src/rhythm.ts",
+    "packages/games/harmony/src/audio/schedule.ts",
     "!**/*.d.ts",
     "!packages/learning-content/src/builtin/**"
   ],
