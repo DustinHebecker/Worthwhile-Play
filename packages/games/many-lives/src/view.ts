@@ -10,7 +10,7 @@ import './styles.css';
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
 /** Events after which the neutral note that real help exists is shown. */
-const SUPPORT_NOTE_EVENTS = ['health.mental-strain', 'health.work-accident', 'family.parent-dies', 'care.parent', 'rel.divorce', 'rel.divorce-kids', 'rel.cohab', 'rel.cohab-kids', 'child.not-yet'];
+const SUPPORT_NOTE_EVENTS = ['health.mental-strain', 'health.work-accident', 'family.parent-dies', 'care.parent', 'rel.divorce', 'rel.divorce-kids', 'rel.cohab', 'rel.cohab-kids', 'child.not-yet', 'rel.separation-in', 'rel.separation-in-kids'];
 
 export function createManyLives(context: GameContext): GameInstance<ManyLivesState> {
   const { t } = context;
