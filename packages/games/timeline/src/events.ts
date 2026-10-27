@@ -277,7 +277,7 @@ export const EVENTS: readonly EventData[] = [
   },
   {
     id: 'mammoths', cat: 'earth', region: 'asia', tier: 2, kind: 'point', unit: 'year', at: -2049, lo: -2199, hi: -1899,
-    sources: ['Arppe, L. et al. (2019), "Thriving or surviving? The isotopic record of the Wrangel Island woolly mammoth population", Quaternary Science Reviews 222: 105884', 'University of Tübingen press release, 7 Oct 2019 (checked 2026-10-26)'],
+    sources: ['Arppe, L. et al. (2019), "Thriving or surviving? The isotopic record of the Wrangel Island woolly mammoth population", Quaternary Science Reviews 222: 105884', 'University of Tübingen press release, 7 Oct 2019 (checked 2026-10-26)', 'Dehasque, M. et al. (2024), "Temporal dynamics of woolly mammoth genome erosion prior to extinction", Cell 187: 3531–3540'],
     checked: '2026-10-26'
   },
   {

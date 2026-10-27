@@ -328,8 +328,8 @@ about 2500 BCE (range 2600–2400 BCE) · `year -2499 [-2599…-2399]` · cultur
 
 **`mammoths`** — The last woolly mammoths die out on Wrangel Island in the Arctic Ocean  
 about 2050 BCE (range 2200–1900 BCE) · `year -2049 [-2199…-1899]` · earth · asia · tier 2 · ✓  
-*Note:* Mammoths survived on this island for about 7,000 years after rising seas cut it off — still alive when the Great Pyramid was built.  
-*Source:* Arppe, L. et al. (2019), "Thriving or surviving? The isotopic record of the Wrangel Island woolly mammoth population", Quaternary Science Reviews 222: 105884; University of Tübingen press release, 7 Oct 2019 (checked 2026-10-26).
+*Note:* Mammoths survived on this island for about 6,000 years after rising seas cut it off (about 10,000 years ago) — still alive when the Great Pyramid was built.  
+*Source:* Arppe, L. et al. (2019), "Thriving or surviving? The isotopic record of the Wrangel Island woolly mammoth population", Quaternary Science Reviews 222: 105884; University of Tübingen press release, 7 Oct 2019 (checked 2026-10-26); Dehasque, M. et al. (2024), "Temporal dynamics of woolly mammoth genome erosion prior to extinction", Cell 187: 3531–3540 (isolation about 10,000 years ago, survival for about 6,000 years; reviewer check 2026-10-27).
 
 **`plimpton`** — A Babylonian scribe writes a clay tablet listing right-angled triangles in whole numbers (Plimpton 322)  
 about 1790 BCE (range 1822–1762 BCE) · `year -1789 [-1821…-1761]` · science · asia · tier 3 · ✓ re-checked against Wikipedia, "Plimpton 322"  
@@ -383,7 +383,7 @@ about 300 BCE (range 310–280 BCE) · `year -299 [-309…-279]` · science · a
 
 **`eratosthenes`** — Eratosthenes estimates the size of the Earth from shadows in Egypt  
 about 240 BCE (range 250–230 BCE) · `year -239 [-249…-229]` · science · africa · tier 2 · ✓ re-checked against Wikipedia, "Eratosthenes"  
-*Note:* He compared the Sun's angle in Syene and Alexandria; his result was within roughly 10–20 % of the true value, depending on the length of his unit.  
+*Note:* He compared the Sun's angle in Syene and Alexandria; his result was within roughly 2–15 % of the true value, depending on the length of his unit (reviewer check 2026-10-27 against Wikipedia, "Earth's circumference": −2.4 % to +0.8 % with a stadion of 155–160 m, 10–15 % with the Olympic or Italian stadion).  
 *Source:* Wikipedia, "Eratosthenes"; Dutka, J. (1993), "Eratosthenes' measurement of the Earth reconsidered", Archive for History of Exact Sciences 46: 55–66.
 
 **`terracotta`** — The Terracotta Army is made for the tomb of China's first emperor  
