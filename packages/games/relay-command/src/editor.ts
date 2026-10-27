@@ -11,6 +11,7 @@ import {
   encodeMap,
   fromScenario,
   isFair,
+  isValidMap,
   MAP_HEIGHTS,
   MAP_KINDS,
   MAP_SLOTS,
@@ -131,7 +132,8 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
   const teamsLabel = h('label', { class: 'rc-ed-check' }, teamsBox, h('span', {}, t('editor.teams')));
   const startSelect = h('select', { 'data-testid': 'ed-start' }) as HTMLSelectElement;
   startSelect.append(h('option', { value: 'blank' }, t('editor.blank')));
-  for (const spec of SCENARIOS) startSelect.append(h('option', { value: spec.id }, t(`scenario.${spec.id}`)));
+  // Built-in maps the editor can hold (two or four bases; Lake Country has three).
+  for (const spec of SCENARIOS) if (isValidMap(fromScenario(spec))) startSelect.append(h('option', { value: spec.id }, t(`scenario.${spec.id}`)));
   const loadBtn = h('button', { type: 'button', 'data-testid': 'ed-load', onclick: () => onLoad() });
   const settings = h(
     'div',

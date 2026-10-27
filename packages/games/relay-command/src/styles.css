@@ -306,3 +306,5 @@
 .wp-relay-command .rc-vs-table th > * { vertical-align: middle; }
 .wp-relay-command .rc-vs-table th span { margin-inline-start: 0.4rem; }
 .wp-relay-command .rc-vs-table td { text-align: end; font-variant-numeric: tabular-nums; padding: 0.15rem; white-space: nowrap; }
+/* Large maps (more than 24×16 cells) scroll in a frame of their own instead of stretching the page. */
+.wp-relay-command .rc-mapwrap.rc-large { max-height: min(75vh, 56rem); overscroll-behavior: contain; }

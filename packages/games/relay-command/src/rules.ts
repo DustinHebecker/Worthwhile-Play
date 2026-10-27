@@ -179,7 +179,11 @@ export const RANDOM_SIZES: readonly (readonly [number, number])[] = [
   [12, 10],
   [16, 12],
   [20, 14],
-  [24, 16]
+  [24, 16],
+  // Large maps (owner request 2026-10-27; measured: the opponent beats a passive player on every
+  // generated 32×20 and 48×32 map tried, two and four bases).
+  [32, 20],
+  [48, 32]
 ];
 
 /** Opponent counts offered for a random map: one plays a two-side map, two or three a map with four bases. */

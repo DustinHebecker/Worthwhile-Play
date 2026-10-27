@@ -222,6 +222,37 @@ describe('Relay Command view', () => {
     expect($('rc-view-top').getAttribute('aria-pressed')).toBe('true');
   });
 
+  it('large maps scroll in a frame of their own and can be shown smaller (owner request 2026-10-27); the size is kept on this device', () => {
+    const map = $('rc-map') as HTMLCanvasElement;
+    // Field Exercise (12×12): no frame, no size choice, 44 px a cell.
+    expect($('rc-zoom').hidden).toBe(true);
+    expect(map.parentElement!.classList.contains('rc-large')).toBe(false);
+    expect(map.style.width).toBe('528px');
+    const scenario = $('rc-scenario') as HTMLSelectElement;
+    scenario.value = 'highland-line';
+    scenario.dispatchEvent(new Event('change'));
+    expect($('rc-zoom').hidden).toBe(false);
+    expect(map.parentElement!.classList.contains('rc-large')).toBe(true);
+    expect(map.style.width).toBe(`${48 * 44}px`);
+    expect($('rc-zoom-100').getAttribute('aria-pressed')).toBe('true');
+    click('rc-zoom-50');
+    expect(map.style.width).toBe(`${48 * 22}px`);
+    expect(map.style.height).toBe(`${32 * 22}px`);
+    expect($('rc-zoom-50').getAttribute('aria-pressed')).toBe('true');
+    expect($('rc-zoom-100').getAttribute('aria-pressed')).toBe('false');
+    expect(ctx.preferences.get('mapZoom')).toBe('0.5');
+    later();
+    expect($('rc-live').textContent).toBe('Map size: 50 %.');
+    // Not part of the saved game; a new start on this device keeps it.
+    expect(JSON.stringify(state())).not.toContain('mapZoom');
+    instance.dispose();
+    instance = game.create(ctx.context) as GameInstance<RcState>;
+    instance.newGame({ seed: 4 });
+    expect($('rc-zoom-50').getAttribute('aria-pressed')).toBe('true');
+    // A small map is always drawn at full size.
+    expect(($('rc-map') as HTMLCanvasElement).style.width).toBe('528px');
+  });
+
   it('plays the last turn back on demand, or after every turn when chosen; skip, Escape or a click on the map end it (owner request 2026-10-27)', () => {
     // Nothing to play before the first turn.
     expect(($('rc-replay') as HTMLButtonElement).disabled).toBe(true);
@@ -827,7 +858,7 @@ describe('Relay Command view', () => {
     seed.value = String(first.seed);
     seed.dispatchEvent(new Event('change'));
     // The sizes are announced in words.
-    expect([...size.options].map((o) => o.getAttribute('aria-label'))).toEqual(['12 by 10', '16 by 12', '20 by 14', '24 by 16']);
+    expect([...size.options].map((o) => o.getAttribute('aria-label'))).toEqual(['12 by 10', '16 by 12', '20 by 14', '24 by 16', '32 by 20', '48 by 32']);
     // The map editor opens the map being played.
     click('rc-editor-open');
     expect(state().edit!.map).toEqual(old);
@@ -1410,6 +1441,15 @@ describe('Relay Command map editor', () => {
     await settle();
     expect($('ed-notice').textContent).toBe('The map is too large to keep. Copy the map code to keep it.');
     expect(state().edit!.slot).toBeNull();
+  });
+
+  it('the editor starts from the built-in maps it can hold: two or four bases (not Lake Country, three)', async () => {
+    click('rc-editor-open');
+    await settle();
+    const values = [...($('ed-start') as HTMLSelectElement).options].map((o) => o.value);
+    expect(values).toContain('highland-line');
+    expect(values).toContain('bastion');
+    expect(values).not.toContain('lake-country');
   });
 
   it('undo restores the whole draft (map and its saved place), and is forgotten when the editor closes', async () => {

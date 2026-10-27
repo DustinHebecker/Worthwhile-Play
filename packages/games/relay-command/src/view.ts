@@ -88,6 +88,10 @@ import { FIELD_EXERCISE, opponentCounts, SCENARIOS, scenarioFor } from './scenar
 
 /** Most pixels a map canvas has (phone browsers refuse larger canvases; a margin below 16.7 MP). */
 const MAX_CANVAS_PIXELS = 12_000_000;
+/** Maps larger than this (cells; 24×16) are large: they scroll in a frame of their own and can be zoomed out. */
+const LARGE_MAP_CELLS = 24 * 16;
+/** Map sizes on large maps (owner request 2026-10-27, 48×32 maps): a share of the full 44 px a cell. */
+export const ZOOMS = [1, 0.75, 0.5] as const;
 
 /** Where a cell lies on a map, by thirds (the name of a base in the setup). */
 export function placeOf(x: number, y: number, w: number, h: number): string {
@@ -408,6 +412,23 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     h('button', { type: 'button', 'data-testid': `rc-view-${v}`, 'aria-pressed': String(v === mapView), onclick: () => setView(v) }, t(`view.${v}`))
   );
   const viewGroup = h('div', { class: 'rc-actions rc-view', role: 'group', 'aria-label': t('view.label'), 'data-testid': 'rc-view' }, h('span', { class: 'rc-label' }, t('view.label')), ...viewButtons);
+  /** Map size on large maps, a choice of this device (smaller cells than the 44 px targets: an overview to choose from). */
+  const readZoom = (): number => {
+    try {
+      const z = Number(context.preferences?.get('mapZoom'));
+      return (ZOOMS as readonly number[]).includes(z) ? z : 1;
+    } catch {
+      return 1;
+    }
+  };
+  let zoom = readZoom();
+  const percent = (z: number) => t('zoom.percent', { n: Math.round(z * 100) });
+  const zoomButtons = ZOOMS.map((z) =>
+    h('button', { type: 'button', 'data-testid': `rc-zoom-${Math.round(z * 100)}`, 'aria-pressed': String(z === zoom), onclick: () => setZoom(z) }, percent(z))
+  );
+  const zoomGroup = h('div', { class: 'rc-actions rc-view', role: 'group', 'aria-label': t('zoom.label'), 'data-testid': 'rc-zoom', hidden: true }, h('span', { class: 'rc-label' }, t('zoom.label')), ...zoomButtons);
+  /** Whether the next draw brings the cursor into the map's frame: centred (a new map, a handover) or only just ('near'). */
+  let reveal: 'centre' | 'near' | null = 'centre';
   /**
    * Turn replay (owner request 2026-10-27): the last turn played back on the map, moves and shots,
    * from what the side was told. On demand, or after every turn when the player chose so (off by
@@ -620,7 +641,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   const mainEl = h(
     'div',
     { class: 'rc-main', 'data-testid': 'rc-main' },
-    h('div', { class: 'rc-board' }, mapWrap, cursorDesc, viewGroup, replayRow, legendEl),
+    h('div', { class: 'rc-board' }, mapWrap, cursorDesc, viewGroup, zoomGroup, replayRow, legendEl),
     h(
       'div',
       { class: 'rc-side' },
@@ -1637,12 +1658,52 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   // Colours come from CSS custom properties on the game container (light/dark aware).
   const css = (name: string, fallback: string) => getComputedStyle(shell).getPropertyValue(name).trim() || fallback;
 
+  function setZoom(z: number): void {
+    if (z === zoom) return;
+    zoom = z;
+    try {
+      context.preferences?.set('mapZoom', String(z));
+    } catch {
+      /* not kept: this session only */
+    }
+    for (const [i, b] of zoomButtons.entries()) b.setAttribute('aria-pressed', String(ZOOMS[i] === z));
+    reveal = 'centre';
+    render();
+    announce(live, t('zoom.changed', { size: percent(z) }));
+  }
+
+  /** Scrolls the large map's frame so the cursor cell is in view (centred, or only just). */
+  function revealCursor(how: 'centre' | 'near', scale: number): void {
+    const cell = CELL * scale;
+    const left = cursor.x * cell;
+    const top = cursor.y * cell;
+    const { clientWidth: fw, clientHeight: fh } = mapWrap;
+    if (fw === 0 || fh === 0) return;
+    if (how === 'centre') {
+      mapWrap.scrollLeft = left + cell / 2 - fw / 2;
+      mapWrap.scrollTop = top + cell / 2 - fh / 2;
+      return;
+    }
+    if (left < mapWrap.scrollLeft) mapWrap.scrollLeft = left;
+    else if (left + cell > mapWrap.scrollLeft + fw) mapWrap.scrollLeft = left + cell - fw;
+    if (top < mapWrap.scrollTop) mapWrap.scrollTop = top;
+    else if (top + cell > mapWrap.scrollTop + fh) mapWrap.scrollTop = top + cell - fh;
+  }
+
   function draw(): void {
     const w = world();
     const width = w.map.w * CELL;
     const height = w.map.h * CELL;
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
+    const large = w.map.w * w.map.h > LARGE_MAP_CELLS;
+    const scale = large ? zoom : 1;
+    canvas.style.width = `${width * scale}px`;
+    canvas.style.height = `${height * scale}px`;
+    mapWrap.classList.toggle('rc-large', large);
+    zoomGroup.hidden = !large;
+    if (reveal) {
+      if (large) revealCursor(reveal, scale);
+      reveal = null;
+    }
     canvas.setAttribute('data-cols', String(w.map.w));
     canvas.setAttribute('data-rows', String(w.map.h));
     let g: CanvasRenderingContext2D | null = null;
@@ -2380,7 +2441,10 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     placing = null;
     noticeEl.hidden = true;
     const unit = id === null ? undefined : known(id);
-    if (unit) cursor = { x: unit.x, y: unit.y };
+    if (unit) {
+      cursor = { x: unit.x, y: unit.y };
+      reveal = 'near';
+    }
     render();
     if (unit) announce(live, t('announce.selected', { name: unitName(unit) }));
   }
@@ -2717,6 +2781,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     if (delta) {
       event.preventDefault();
       cursor = { x: Math.max(0, Math.min(w - 1, cursor.x + delta[0])), y: Math.max(0, Math.min(rows - 1, cursor.y + delta[1])) };
+      reveal = 'near';
       render();
       return;
     }
@@ -2740,6 +2805,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   const homeCursor = () => {
     const post = world().entities.find((e) => e.side === me() && e.kind === 'command-post');
     cursor = post ? { x: post.x, y: post.y } : { x: 0, y: 0 };
+    reveal = 'centre';
   };
 
   /* ---------- Instance ---------- */

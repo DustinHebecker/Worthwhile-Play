@@ -871,3 +871,20 @@ test('relay-command: the player picks the own base in the setup on a phone; the 
   await expect(page.getByTestId('rc-start')).toBeDisabled();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
 });
+
+test('relay-command: a large map (48×32) scrolls in its own frame, opens at the own base and can be shown at half size', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await start(page);
+  await page.getByTestId('rc-scenario').selectOption('highland-line');
+  await expect(page.getByTestId('rc-map')).toHaveAttribute('data-cols', '48');
+  // The lowland base lies bottom left: the frame is scrolled down to it, the page does not overflow sideways.
+  const frame = page.locator('.rc-mapwrap');
+  await expect.poll(() => frame.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
+  await page.getByTestId('rc-zoom-50').click();
+  await expect(page.getByTestId('rc-map')).toHaveCSS('width', `${48 * 22}px`);
+  await page.reload();
+  await page.getByTestId('continue').click();
+  await expect(page.getByTestId('rc-map')).toHaveAttribute('data-cols', '48');
+  await expect(page.getByTestId('rc-zoom-50')).toHaveAttribute('aria-pressed', 'true');
+});
