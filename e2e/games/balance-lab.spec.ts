@@ -76,8 +76,8 @@ test('balance-lab: the best overhang with the step buttons on a phone, no page s
   const item = s.items[i]!;
   expect(item.id).toBe('stack-overhang');
   const target = item.witness!.s as { bodies: { left: number }[] };
-  // Move the top block first, then the lower ones, with the ±1 / ±4 cm buttons.
-  for (let k = target.bodies.length - 1; k >= 0; k--) {
+  // Move the bottom block first, then the ones above, with the ±1 / ±4 cm buttons.
+  for (let k = 0; k < target.bodies.length; k++) {
     await r.getByTestId(`bl-body-${k}`).click();
     let current = ((await savedState(page)).items[i]!.draft.s as { bodies: { left: number }[] }).bodies[k]!.left;
     const goal = target.bodies[k]!.left;
