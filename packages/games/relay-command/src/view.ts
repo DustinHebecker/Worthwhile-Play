@@ -215,6 +215,24 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     return out;
   };
   const flashAt = (x: number, y: number) => [...flashes().values()].filter((f) => f.x === x && f.y === y);
+  /**
+   * Fixes of the last turn (owner choice 2026-10-27): enemy units the player's Direction Finders
+   * tracked by their orders, where they were last reported (the end of that turn). Not shown once
+   * they are in sight again or after the game ended.
+   */
+  const fixes = (): Map<number, { kind: string; x: number; y: number }> => {
+    const out = new Map<number, { kind: string; x: number; y: number }>();
+    if (revealed()) return out;
+    const reports = new Map((state.world.intel?.[me()] ?? []).map((r) => [r.id, r]));
+    for (const e of state.events) {
+      if (e.t !== 'intercept') continue;
+      const r = reports.get(e.id);
+      if (r?.live) continue;
+      out.set(e.id, { kind: e.kind, x: r?.x ?? e.x, y: r?.y ?? e.y });
+    }
+    return out;
+  };
+  const fixAt = (x: number, y: number) => [...fixes().values()].filter((f) => f.x === x && f.y === y);
 
   /** Cells where the player's radio is jammed (the player notices the interference). */
   // Only cells the own net would cover without jamming: the player notices radio silence where
@@ -319,6 +337,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     const deposit = depositAt(world().map, x, y);
     if (deposit) terrain = `${terrain} ${deposit.endless ? t('cell.depositEndless') : observedAt(x, y) ? t('cell.deposit', { n: deposit.left }) : t('cell.depositUnknown')}`;
     for (const f of flashAt(x, y)) terrain = `${terrain} ${t('cell.flash', { name: t(`unit.${f.kind}`) })}`;
+    for (const f of fixAt(x, y)) terrain = `${terrain} ${t('cell.intercept', { name: t(`unit.${f.kind}`) })}`;
     if (units.length === 0) return t('cell.describe', { x: x + 1, y: y + 1, terrain });
     return t('cell.describeUnit', { x: x + 1, y: y + 1, terrain, unit: units.map(describeUnit).join(' ') });
   };
@@ -536,7 +555,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     'details',
     { class: 'rc-help' },
     h('summary', {}, t('help.title')),
-    ...['help.turns', 'help.replay', 'help.bar', 'help.orders', 'help.network', 'help.fog', 'help.flash', 'help.ew', 'help.doctrine', 'help.economy', 'help.towers', 'help.repair', 'help.drone', 'help.editor', 'help.random', 'help.sides', 'help.teams', 'help.start', 'help.hotSeat', 'help.combat', 'help.goal', 'help.shapes', 'help.access'].map((k) => h('p', {}, t(k)))
+    ...['help.turns', 'help.replay', 'help.bar', 'help.orders', 'help.network', 'help.fog', 'help.flash', 'help.ew', 'help.intercept', 'help.doctrine', 'help.economy', 'help.towers', 'help.repair', 'help.drone', 'help.editor', 'help.random', 'help.sides', 'help.teams', 'help.start', 'help.hotSeat', 'help.combat', 'help.goal', 'help.shapes', 'help.access'].map((k) => h('p', {}, t(k)))
   );
 
   /* ---------- Map editor ---------- */
@@ -1418,6 +1437,14 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       swatch((g) => {
         g.fillStyle = css('--rc-plain', '#e7e3d4');
         g.fillRect(0, 0, CELL, CELL);
+        drawFix(g, 0, 0);
+      }),
+      t('legend.intercept')
+    );
+    row(
+      swatch((g) => {
+        g.fillStyle = css('--rc-plain', '#e7e3d4');
+        g.fillRect(0, 0, CELL, CELL);
         drawTerrainSwatch(g, '.', mapView, css);
         g.fillStyle = css('--rc-fog', 'rgba(250, 250, 247, 0.5)');
         g.fillRect(0, 0, CELL, CELL);
@@ -1573,6 +1600,12 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
         if (last && !told.has(`flash:${e.id}`) && last.x === e.x && last.y === e.y) {
           told.add(`flash:${e.id}`);
           lines.push(t('summary.flash', { name: t(`unit.${e.kind}`), x: e.x + 1, y: e.y + 1 }));
+        }
+      } else if (e.t === 'intercept') {
+        // Once per unit fixed (the map marks where it was last tracked).
+        if (!told.has(`fix:${e.id}`)) {
+          told.add(`fix:${e.id}`);
+          lines.push(t('summary.intercept', { name: t(`unit.${e.kind}`), x: e.x + 1, y: e.y + 1 }));
         }
       } else if (e.t === 'repaired') {
         const unit = unitById(state, e.id);
@@ -1783,6 +1816,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     g.stroke();
     // Muzzle flashes: a burst on the cell an unseen enemy fired from (shape, not colour alone).
     for (const f of flashes().values()) drawFlash(g, f.x * CELL, f.y * CELL);
+    // Fixes: a crosshair where a tracked enemy was last reported (shape, not colour alone).
+    for (const f of fixes().values()) drawFix(g, f.x * CELL, f.y * CELL);
     g.lineWidth = 1;
     g.strokeStyle = css('--wp-p1', '#24508f');
     g.setLineDash([3, 6]);
@@ -1832,6 +1867,28 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
 
   /** A per-turn figure in the UI locale: whole numbers as they are, others to one decimal (1.5 → "1,5" in German). */
   const perTurn = (n: number): string => new Intl.NumberFormat(t.locale, { maximumFractionDigits: 1 }).format(n);
+
+  /** A fix in a cell at (px, py): a dashed ring with four ticks pointing in (a crosshair). */
+  function drawFix(g: CanvasRenderingContext2D, px: number, py: number): void {
+    const cx = px + CELL / 2;
+    const cy = py + CELL / 2;
+    const r = CELL * 0.36;
+    g.save();
+    g.strokeStyle = css('--wp-danger', '#a1271b');
+    g.lineWidth = 2;
+    g.setLineDash([4, 3]);
+    g.beginPath();
+    g.arc(cx, cy, r, 0, Math.PI * 2);
+    g.stroke();
+    g.setLineDash([]);
+    g.beginPath();
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+      g.moveTo(cx + dx * (r + 4), cy + dy * (r + 4));
+      g.lineTo(cx + dx * (r - 6), cy + dy * (r - 6));
+    }
+    g.stroke();
+    g.restore();
+  }
 
   /** A muzzle flash burst in a cell at (px, py): eight rays round an open centre. */
   function drawFlash(g: CanvasRenderingContext2D, px: number, py: number): void {

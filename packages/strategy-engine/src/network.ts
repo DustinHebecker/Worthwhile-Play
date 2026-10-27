@@ -1,6 +1,6 @@
 import { cellOf, dist2, terrainAt } from './grid';
 import type { Entity, Ruleset, World } from './types';
-import { archetypeOf, hostile, teamOf } from './world';
+import { archetypeOf, carrierOf, hostile, teamOf } from './world';
 
 /** A side's command network at one moment (derived data, never serialized). */
 export interface Network {
@@ -92,15 +92,36 @@ export function computeNetwork(world: World, ruleset: Ruleset, side: number): Ne
   const connected = new Set<number>();
   const queue = nodes.filter((e) => archetypeOf(ruleset, e.kind)?.comms?.role === 'source');
   for (const e of queue) connected.add(e.id);
-  for (let i = 0; i < queue.length; i++) {
-    const a = queue[i] as Entity;
-    for (const b of nodes) {
-      if (connected.has(b.id)) continue;
-      const r = Math.min(radius.get(a.id) ?? 0, radius.get(b.id) ?? 0);
-      if (dist2(a.x, a.y, b.x, b.y) <= r * r) {
-        connected.add(b.id);
-        queue.push(b);
+  const spread = (from: number) => {
+    for (let i = from; i < queue.length; i++) {
+      const a = queue[i] as Entity;
+      for (const b of nodes) {
+        if (connected.has(b.id)) continue;
+        const r = Math.min(radius.get(a.id) ?? 0, radius.get(b.id) ?? 0);
+        if (dist2(a.x, a.y, b.x, b.y) <= r * r) {
+          connected.add(b.id);
+          queue.push(b);
+        }
       }
+    }
+  };
+  spread(0);
+  // A drone talks to its carrier (a datalink, owner review 2026-10-27): it is connected while its
+  // carrier stands in the coverage of a connected node, however far it flew from the net, and
+  // relays from where it is. A drone connected so may bring another carrier into the net.
+  const covered = (e: Entity) =>
+    jam[cellOf(world.map, e.x, e.y)] !== 1 && queue.some((n) => n.id !== e.id && dist2(n.x, n.y, e.x, e.y) <= (radius.get(n.id) ?? 0) ** 2);
+  for (let linked = true; linked; ) {
+    linked = false;
+    for (const d of nodes) {
+      if (connected.has(d.id)) continue;
+      const carrier = carrierOf(world, d);
+      if (!carrier || !covered(carrier)) continue;
+      connected.add(d.id);
+      const from = queue.length;
+      queue.push(d);
+      spread(from);
+      linked = true;
     }
   }
   const { w, h } = world.map;

@@ -1122,6 +1122,34 @@ describe('Relay Command view', () => {
     expect($('rc-cursor').textContent).not.toContain('Muzzle flash');
   });
 
+  it('direction finding (owner choice 2026-10-27): an enemy whose order was intercepted is named once and its last tracked cell marked while unseen', () => {
+    const s = structuredClone(state());
+    const seen = new Set((s.world.intel?.[PLAYER] ?? []).filter((r) => r.live).map((r) => r.id));
+    const enemy = s.world.entities.find((e) => e.side === OPPONENT && !seen.has(e.id) && e.kind !== 'command-post')!;
+    const finder = s.world.entities.find((e) => e.side === PLAYER && e.kind === 'tracer')!;
+    // The last report, a ghost now, stands where the fix is marked.
+    const ghost = { id: enemy.id, side: OPPONENT, kind: enemy.kind, x: enemy.x, y: enemy.y, hp: enemy.hp, tick: s.world.tick, live: false };
+    s.world.intel![PLAYER] = [...s.world.intel![PLAYER]!.filter((r) => r.id !== enemy.id), ghost].sort((a, b) => a.id - b.id);
+    const ev = { t: 'intercept' as const, tick: s.world.tick, id: enemy.id, side: OPPONENT, kind: enemy.kind, x: enemy.x, y: enemy.y, by: finder.id, to: PLAYER };
+    s.events = [...s.events, ev, { ...ev }];
+    instance.restore(s);
+    const lines = [...$('rc-summary').querySelectorAll('li')].map((li) => li.textContent ?? '');
+    const told = lines.filter((l) => l.startsWith('Direction Finder: an order'));
+    expect(told).toHaveLength(1);
+    expect(told[0]).toContain(`at ${enemy.x + 1}, ${enemy.y + 1} was intercepted`);
+    const map = $('rc-map');
+    map.getBoundingClientRect = () => ({ left: 0, top: 0, width: 12 * CELL, height: 12 * CELL, right: 12 * CELL, bottom: 12 * CELL, x: 0, y: 0, toJSON: () => ({}) });
+    map.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: enemy.x * CELL + 5, clientY: enemy.y * CELL + 5 }));
+    expect($('rc-cursor').textContent).toContain('Fix: an enemy');
+    expect(ctx.context.root.textContent).toContain('Fix (crosshair)');
+    expect(ctx.context.root.textContent).toContain('every order is a radio message');
+    // Seen again (live): drawn as a unit, no fix mark.
+    s.world.intel![PLAYER] = s.world.intel![PLAYER]!.map((r) => (r.id === enemy.id ? { ...r, live: true } : r));
+    instance.restore(s);
+    map.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: enemy.x * CELL + 5, clientY: enemy.y * CELL + 5 }));
+    expect($('rc-cursor').textContent).not.toContain('Fix: an enemy');
+  });
+
   it('lets the Command Post place an Extractor on a deposit inside coverage and explains a bad cell', () => {
     const post = own().find((e) => e.kind === 'command-post')!;
     click(`rc-unit-${post.id}`);
