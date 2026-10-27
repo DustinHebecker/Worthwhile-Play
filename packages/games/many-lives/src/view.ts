@@ -2,7 +2,7 @@ import { bcp47Tag, type GameContext, type GameInstance, type NewGameOptions } fr
 import { announce, clear, h } from '@wp/ui';
 import { STATS, ageInYears, balanceOf, dateOf } from '@wp/life-engine';
 import {
-  ageOf, budgetOf, createState, currentEvent, decide, isOver, qualification, settingsOf, step, type ManyLivesState, type StepKind
+  ageOf, budgetOf, createState, currentEvent, decide, isOver, qualification, settingsOf, step, textIdOf, type ManyLivesState, type StepKind
 } from './rules';
 import { drawScene, placeOf } from './scene';
 import './styles.css';
@@ -10,7 +10,7 @@ import './styles.css';
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
 /** Events after which the neutral note that real help exists is shown. */
-const SUPPORT_NOTE_EVENTS = ['health.mental-strain', 'health.work-accident'];
+const SUPPORT_NOTE_EVENTS = ['health.mental-strain', 'health.work-accident', 'family.parent-dies', 'care.parent', 'rel.divorce', 'rel.divorce-kids', 'rel.cohab', 'rel.cohab-kids', 'child.not-yet'];
 
 export function createManyLives(context: GameContext): GameInstance<ManyLivesState> {
   const { t } = context;
@@ -46,12 +46,19 @@ export function createManyLives(context: GameContext): GameInstance<ManyLivesSta
     const next = step(state, kind);
     const ev = currentEvent(next);
     const parts = [t('time.passed', { months: next.lastStep })];
-    if (ev !== undefined) parts.push(t(`event.${ev.def.id}.title`));
+    if (ev !== undefined) parts.push(t(`event.${textIdOf(ev.def)}.title`));
     commit(next, parts.join(' '));
     if (ev !== undefined) focusCard();
   };
 
   const focusCard = () => card.querySelector<HTMLElement>('[data-autofocus]')?.focus();
+
+  function familyLine(): string {
+    const f = state.life.flags;
+    const partner = f.includes('rel.married') ? t('family.married') : f.includes('rel.cohabiting') ? t('family.cohabiting') : f.includes('rel.partner') ? t('family.partner') : t('family.single');
+    const kids = state.life.counters.children ?? 0;
+    return kids > 0 ? `${partner} · ${t('family.children', { n: kids })}` : partner;
+  }
 
   function renderStatus() {
     clear(status);
@@ -64,13 +71,14 @@ export function createManyLives(context: GameContext): GameInstance<ManyLivesSta
         h('span', {}, t('status.date', { month: d.month, year: d.year })),
         h('span', { 'data-testid': 'ml-cash' }, t('status.cash', { amount: money(balanceOf(state.life.ledger, 'cash')) })),
         // Money is nominal; inflation is part of the lesson, so today's purchasing power is shown beside it.
-        state.life.economy.priceIndex > 1.05
+        state.life.economy.priceIndex > 1.05 && balanceOf(state.life.ledger, 'cash') !== 0
           ? h('span', { class: 'ml-muted', 'data-testid': 'ml-cash-real' }, t('status.real', {
             amount: money(Math.round(balanceOf(state.life.ledger, 'cash') / state.life.economy.priceIndex)),
             year: state.life.calendar.birthYear
           }))
           : null,
-        items.length > 0 ? h('span', {}, t('status.net', { amount: money(net) })) : null),
+        items.length > 0 ? h('span', {}, t('status.net', { amount: money(net) })) : null,
+        h('span', { 'data-testid': 'ml-family' }, familyLine())),
       h('ul', { class: 'ml-stats' }, ...STATS.map((id) => {
         const value = Math.round(state.life.stats[id] / 10);
         const label = t(`stat.${id}`);
@@ -104,7 +112,7 @@ export function createManyLives(context: GameContext): GameInstance<ManyLivesSta
     }
     const ev = currentEvent(state);
     if (ev !== undefined) {
-      const id = ev.def.id;
+      const id = textIdOf(ev.def);
       card.append(
         h('p', { class: 'ml-muted' }, `${t('event.label')} · ${t('event.when', { age: ageOf(state) })}`),
         h('h2', { 'data-testid': 'ml-event-title' }, t(`event.${id}.title`)),

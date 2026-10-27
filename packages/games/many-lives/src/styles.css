@@ -89,6 +89,7 @@
 .ml-s-ball { fill: #d1a23f; stroke: var(--ml-ink); stroke-width: 1.5; }
 .ml-s-clothes { fill: var(--ml-accent); stroke: var(--ml-ink); stroke-width: 1.5; }
 .ml-s-legs { fill: #4b5563; }
+.ml-s-clothes-2 { fill: #5b7fa8; stroke: var(--ml-ink); stroke-width: 1.5; }
 .ml-s-eye { fill: #2b211c; }
 .ml-s-mouth { fill: none; stroke: #2b211c; stroke-width: 1.8; stroke-linecap: round; }
 .ml-choices, .ml-time { display: flex; flex-wrap: wrap; gap: 0.5rem; }
