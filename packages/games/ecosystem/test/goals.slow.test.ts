@@ -79,6 +79,10 @@ describe('goals against the model (Appendix B.2)', () => {
     const r50 = at(0, { kind: 'remove', species: 'rabbits', share: 50 });
     const r90 = at(0, { kind: 'remove', species: 'rabbits', share: 90 });
     for (const plan of [[], [r50], [r90], [r90, at(0, { kind: 'add', species: 'clover' })]]) expect(planOutcome(goal, plan).kind).toBe('failed');
+    // Relocating most rabbits twice, without foxes, does reach it, but "Does it hold?" sees the rabbits come back.
+    const twice = [r90, at(10, { kind: 'remove', species: 'rabbits', share: 90 })];
+    expect(planOutcome(goal, twice)).toEqual({ kind: 'reached', week: 95 });
+    expect(holdsAfter(goal, twice, 95) - 95).toBe(114);
   });
 
   it('every reference plan fits the hard budget', () => {

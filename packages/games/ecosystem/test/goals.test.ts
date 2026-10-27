@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { BUDGET, GOALS, GOAL_IDS, goalActions, goalOf, goalStatus, meets, toolAction, toolOf, type Goal } from '../src/goals';
+import { BUDGET, GOALS, GOAL_IDS, HOLD_WEEKS, goalActions, goalOf, goalStatus, meets, toolAction, toolOf, type Goal } from '../src/goals';
 import { MEADOW, POND } from '../src/habitats';
 import { HABITAT_ACTIONS } from '../src/model';
+import { messages } from '../src/messages';
 import { PRESETS } from '../src/presets';
 
 const g = (id: string) => goalOf(id)!;
@@ -74,5 +75,9 @@ describe('meets and goalStatus', () => {
     // A streak completed after the deadline does not count.
     const late = [...new Array(205).fill(low), ...new Array(10).fill(ok)] as number[][];
     expect(goalStatus(goal, late)).toEqual({ kind: 'failed', week: 208 });
+  });
+
+  it('"It held" names the length of the check in every locale', () => {
+    for (const [locale, m] of Object.entries(messages)) expect((m as Record<string, string>)['goalui.held'], locale).toContain(String(HOLD_WEEKS));
   });
 });

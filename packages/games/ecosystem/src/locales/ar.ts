@@ -144,7 +144,7 @@ export const ar: Catalogue = {
   'goalui.log': 'تدخلاتك',
   'goalui.noChanges': 'لا تدخلات بعد.',
   'goalui.holds': 'هل يصمد؟',
-  'goalui.held': 'صمد: بعد 104 أسابيع أخرى من دون تدخل، ما زال الهدف متحققًا.',
+  'goalui.held': 'صمد: بعد 156 أسبوعًا إضافيًا من دون تدخل، ما زال الهدف متحققًا.',
   'goalui.slipped': 'تراجع بعد {weeks} – فالسبب ما زال قائمًا.',
   'goalui.review': 'كيف جرى الأمر',
   'goalui.shown': 'طريقة ناجحة',

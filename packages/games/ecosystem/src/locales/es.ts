@@ -144,7 +144,7 @@ export const es: Catalogue = {
   'goalui.log': 'Tus cambios',
   'goalui.noChanges': 'Aún no hay cambios.',
   'goalui.holds': '¿Se mantiene?',
-  'goalui.held': 'Se mantuvo: tras 104 semanas más sin cambios, el objetivo sigue cumpliéndose.',
+  'goalui.held': 'Se mantuvo: tras 156 semanas más sin cambios, el objetivo sigue cumpliéndose.',
   'goalui.slipped': 'Retrocedió {weeks} después: la causa seguía ahí.',
   'goalui.review': 'Cómo fue',
   'goalui.shown': 'Una forma que funciona',

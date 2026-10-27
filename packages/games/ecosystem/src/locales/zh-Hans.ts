@@ -144,7 +144,7 @@ export const zhHans: Catalogue = {
   'goalui.log': '你的干预',
   'goalui.noChanges': '还没有干预。',
   'goalui.holds': '能保持吗？',
-  'goalui.held': '保持住了：再过104周不加干预，目标仍然达成。',
+  'goalui.held': '保持住了：再过156周不加干预，目标仍然达成。',
   'goalui.slipped': '{weeks}后又退回去了——原因仍然存在。',
   'goalui.review': '结果如何',
   'goalui.shown': '一种可行的办法',

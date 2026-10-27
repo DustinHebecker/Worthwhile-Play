@@ -144,7 +144,7 @@ export const fr: Catalogue = {
   'goalui.log': 'Vos interventions',
   'goalui.noChanges': 'Pas encore d’intervention.',
   'goalui.holds': 'Est-ce que ça tient ?',
-  'goalui.held': 'Ça tient : après 104 semaines de plus sans intervention, l’objectif est toujours atteint.',
+  'goalui.held': 'Ça tient : après 156 semaines de plus sans intervention, l’objectif est toujours atteint.',
   'goalui.slipped': 'Rechute {weeks} plus tard – la cause était toujours là.',
   'goalui.review': 'Comment ça s’est passé',
   'goalui.shown': 'Une façon qui marche',

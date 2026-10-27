@@ -144,7 +144,7 @@ export const pl: Catalogue = {
   'goalui.log': 'Twoje ingerencje',
   'goalui.noChanges': 'Jeszcze bez ingerencji.',
   'goalui.holds': 'Czy to się utrzyma?',
-  'goalui.held': 'Utrzymało się: po kolejnych 104 tygodniach bez ingerencji cel nadal jest spełniony.',
+  'goalui.held': 'Utrzymało się: po kolejnych 156 tygodniach bez ingerencji cel nadal jest spełniony.',
   'goalui.slipped': 'Wróciło do dawnego stanu po: {weeks} – przyczyna wciąż istniała.',
   'goalui.review': 'Jak poszło',
   'goalui.shown': 'Sposób, który działa',

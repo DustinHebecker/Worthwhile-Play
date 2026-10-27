@@ -144,7 +144,7 @@ export const nl: Catalogue = {
   'goalui.log': 'Je ingrepen',
   'goalui.noChanges': 'Nog geen ingrepen.',
   'goalui.holds': 'Houdt het stand?',
-  'goalui.held': 'Het houdt stand: na nog 104 weken zonder ingrepen is het doel nog steeds gehaald.',
+  'goalui.held': 'Het houdt stand: na nog 156 weken zonder ingrepen is het doel nog steeds gehaald.',
   'goalui.slipped': 'Het viel {weeks} later terug – de oorzaak was er nog.',
   'goalui.review': 'Hoe het ging',
   'goalui.shown': 'Een manier die werkt',

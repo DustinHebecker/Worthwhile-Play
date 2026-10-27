@@ -144,7 +144,7 @@ export const tr: Catalogue = {
   'goalui.log': 'Müdahalelerin',
   'goalui.noChanges': 'Henüz müdahale yok.',
   'goalui.holds': 'Kalıcı mı?',
-  'goalui.held': 'Kalıcı oldu: müdahalesiz 104 hafta daha geçtikten sonra hedef hâlâ sağlanıyor.',
+  'goalui.held': 'Kalıcı oldu: müdahalesiz 156 hafta daha geçtikten sonra hedef hâlâ sağlanıyor.',
   'goalui.slipped': '{weeks} sonra geri kaydı – neden hâlâ oradaydı.',
   'goalui.review': 'Nasıl geçti',
   'goalui.shown': 'İşe yarayan bir yol',

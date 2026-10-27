@@ -144,7 +144,7 @@ export const it: Catalogue = {
   'goalui.log': 'I tuoi interventi',
   'goalui.noChanges': 'Ancora nessun intervento.',
   'goalui.holds': 'Regge?',
-  'goalui.held': 'Regge: dopo altre 104 settimane senza interventi, l’obiettivo è ancora raggiunto.',
+  'goalui.held': 'Regge: dopo altre 156 settimane senza interventi, l’obiettivo è ancora raggiunto.',
   'goalui.slipped': 'È tornato indietro {weeks} dopo – la causa c’era ancora.',
   'goalui.review': 'Com’è andata',
   'goalui.shown': 'Un modo che funziona',

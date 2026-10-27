@@ -145,7 +145,7 @@ export const de: Catalogue = {
   'goalui.log': 'Deine Eingriffe',
   'goalui.noChanges': 'Noch keine Eingriffe.',
   'goalui.holds': 'Hält es?',
-  'goalui.held': 'Es hält: Nach 104 weiteren Wochen ohne Eingriffe ist das Ziel noch erfüllt.',
+  'goalui.held': 'Es hält: Nach 156 weiteren Wochen ohne Eingriffe ist das Ziel noch erfüllt.',
   'goalui.slipped': 'Es ist {weeks} später zurückgerutscht – die Ursache war noch da.',
   'goalui.review': 'Wie es gelaufen ist',
   'goalui.shown': 'Ein Weg, der funktioniert',

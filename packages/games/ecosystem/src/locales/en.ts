@@ -143,7 +143,7 @@ export const en = {
   'goalui.log': 'Your changes',
   'goalui.noChanges': 'No changes yet.',
   'goalui.holds': 'Does it hold?',
-  'goalui.held': 'It held: after 104 more weeks without changes, the goal still holds.',
+  'goalui.held': 'It held: after 156 more weeks without changes, the goal still holds.',
   'goalui.slipped': 'It slipped back {weeks} later — the cause was still there.',
   'goalui.review': 'How it went',
   'goalui.shown': 'One way that works',

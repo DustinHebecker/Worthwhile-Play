@@ -144,7 +144,7 @@ export const ja: Catalogue = {
   'goalui.log': 'あなたの介入',
   'goalui.noChanges': 'まだ介入はありません。',
   'goalui.holds': '続くかな？',
-  'goalui.held': '続きました：介入なしでさらに104週たっても、目標は保たれています。',
+  'goalui.held': '続きました：介入なしでさらに156週たっても、目標は保たれています。',
   'goalui.slipped': '{weeks}後に元に戻りました――原因が残っていたのです。',
   'goalui.review': '結果',
   'goalui.shown': 'うまくいく方法',

@@ -144,7 +144,7 @@ export const ko: Catalogue = {
   'goalui.log': '내 개입',
   'goalui.noChanges': '아직 개입이 없습니다.',
   'goalui.holds': '유지될까?',
-  'goalui.held': '유지되었습니다: 개입 없이 104주가 더 지나도 목표가 그대로입니다.',
+  'goalui.held': '유지되었습니다: 개입 없이 156주가 더 지나도 목표가 그대로입니다.',
   'goalui.slipped': '{weeks} 뒤에 되돌아갔습니다 – 원인이 그대로 남아 있었습니다.',
   'goalui.review': '결과',
   'goalui.shown': '효과가 있는 방법',

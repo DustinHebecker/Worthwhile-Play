@@ -44,13 +44,17 @@ export interface Goal {
   /** The species shown in the focus chart (the first term's first species). */
   readonly focus: string;
   readonly plans: readonly GoalPlan[];
-  /** Whether the review checks if the result holds for 104 more weeks. */
+  /** Whether the review checks if the result holds for `HOLD_WEEKS` more weeks. */
   readonly holdCheck: boolean;
 }
 
 /** Interventions allowed per difficulty (∞ on easy). */
 export const BUDGET: Readonly<Record<Difficulty, number>> = { easy: Number.POSITIVE_INFINITY, medium: 6, hard: 4 };
-export const HOLD_WEEKS = 104;
+/**
+ * "Does it hold?" looks three years ahead: relocating rabbits twice without foxes clears the clover goal and slips back
+ * only 111–118 weeks later (a two-year check called it held); the pond's flush-only fixes slip back after 72–79 weeks.
+ */
+export const HOLD_WEEKS = 156;
 
 const at = (week: number, a: Omit<Action, 'week'>): Action => ({ week, ...a });
 // Pond conditions: 0 light, 1 runoff (0 none … 3 high), 2 water flow (0 still, 1 trickle, 2 stream). Meadow: 0 rain, 1 fertiliser.
