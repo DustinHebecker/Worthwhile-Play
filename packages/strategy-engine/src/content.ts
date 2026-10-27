@@ -1,4 +1,4 @@
-import type { Archetype, ArmorClass, CommsSpec, EwSpec, Ruleset, StatusEffectSpec, TerrainSpec, WeaponSpec } from './types';
+import type { Archetype, ArmorClass, CarrierSpec, CommsSpec, EwSpec, Ruleset, StatusEffectSpec, TerrainSpec, WeaponSpec } from './types';
 
 /**
  * Shared base content (ADR 0009, decision D16): terrain and archetypes used by the strategy
@@ -131,15 +131,30 @@ export const STRATEGY_TOWERS: Readonly<Record<string, Pick<Archetype, 'cost' | '
 };
 
 /**
+ * Drones in the strategy game (owner decision 2026-10-27): the Scout Car carries a Kite. It launches
+ * it with one order; the drone scouts and relays orders within 5 cells of the car, lands on it when
+ * recalled, and a lost one is replaced for free two turn ends later. It has no weapon: artillery
+ * fires at what it spots with its own range. Everything but artillery and tanks can hit it.
+ */
+export const STRATEGY_CARRIERS: Readonly<Record<string, CarrierSpec>> = {
+  outrider: { kind: 'kite', leash: 5, rebuildTurns: 2 }
+};
+
+/**
  * Turn-based strategy: orders and reports travel through the command network
  * (docs/design/strategy.md § 5). `strategy-1` (I3a/I3b) had no fog; `strategy-2` added D7;
- * `strategy-3` (I6a) adds the economy (D8). The towers became buildable without a new id: a save
- * from before simply had none, and everything else plays as it did.
+ * `strategy-3` (I6a) adds the economy (D8). The towers and the drones came without a new id: a save
+ * from before simply had none built or launched (its Scout Cars have their drone aboard).
  */
 export const STRATEGY_RULESET: Ruleset = {
   ...BASE_RULESET,
   id: 'strategy-3',
-  archetypes: Object.fromEntries(Object.entries(BASE_ARCHETYPES).map(([id, a]) => [id, id in STRATEGY_TOWERS ? { ...a, ...STRATEGY_TOWERS[id] } : a])),
+  archetypes: Object.fromEntries(
+    Object.entries(BASE_ARCHETYPES).map(([id, a]) => [
+      id,
+      id in STRATEGY_TOWERS ? { ...a, ...STRATEGY_TOWERS[id] } : STRATEGY_CARRIERS[id] ? { ...a, carrier: STRATEGY_CARRIERS[id] } : a
+    ])
+  ),
   commandNetwork: true,
   fog: true,
   economy: true,

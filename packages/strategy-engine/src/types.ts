@@ -66,6 +66,18 @@ export interface EwSpec {
   readonly needsDeploy: boolean;
 }
 
+/**
+ * A unit that carries a drone (owner decision 2026-10-27): it launches it with one order, the drone
+ * stays within `leash` cells of it (and follows when it drives off), lands on it when recalled, and
+ * a new one is aboard `rebuildTurns` turn ends after the last was lost, at no cost.
+ */
+export interface CarrierSpec {
+  /** Archetype id of the drone (an air unit that is never produced). */
+  readonly kind: string;
+  readonly leash: number;
+  readonly rebuildTurns: number;
+}
+
 export interface Archetype {
   readonly id: string;
   readonly hp: number;
@@ -87,6 +99,8 @@ export interface Archetype {
   readonly weapon: WeaponSpec | null;
   readonly comms: CommsSpec | null;
   readonly ew: EwSpec | null;
+  /** Carries a drone (absent: carries none). */
+  readonly carrier?: CarrierSpec;
 }
 
 export interface TerrainSpec {
@@ -172,7 +186,11 @@ export type Order =
    */
   | { readonly type: 'repair'; readonly target: number }
   /** Economy: a finished own structure (not a command source) is torn down for half its remaining value. */
-  | { readonly type: 'sell' };
+  | { readonly type: 'sell' }
+  /** A carrier launches its drone (one-shot: the carrier's standing order stays). */
+  | { readonly type: 'launch' }
+  /** A drone flies back to its carrier and lands on it. */
+  | { readonly type: 'recall' };
 
 export const TARGET_PRIORITIES = ['weakest', 'nearest', 'armor', 'infantry', 'structures', 'emitters'] as const;
 export type TargetPriority = (typeof TARGET_PRIORITIES)[number];
@@ -251,6 +269,12 @@ export interface Entity {
   queue?: QueueItem[];
   /** Turns of construction left on a structure site (inactive until 0, then absent). */
   build?: number;
+  /** Carrier: id of its drone in the air. Absent, and no `rebuild`: the drone is aboard. */
+  drone?: number;
+  /** Carrier: turn ends until a new drone is aboard (the last was lost). */
+  rebuild?: number;
+  /** Drone: id of the carrier it belongs to (leash, landing). */
+  carrier?: number;
 }
 
 export interface QueueItem {
@@ -362,6 +386,12 @@ export type SimEvent =
   /** A structure site was placed (`id`), or finished (`built`). */
   | { t: 'site'; tick: number; id: number; side: number; kind: string; x: number; y: number }
   | { t: 'built'; tick: number; id: number }
+  /** A carrier (`by`) launched its drone (`id`) on (x, y). */
+  | { t: 'drone-launched'; tick: number; id: number; side: number; kind: string; x: number; y: number; by: number }
+  /** A drone (`id`) landed on its carrier (`by`). */
+  | { t: 'drone-docked'; tick: number; id: number; side: number; by: number }
+  /** A new drone is aboard the carrier `id` (reported to its side only). */
+  | { t: 'drone-ready'; tick: number; id: number; side: number }
   /** A yard (`by`) repaired unit `id` by `hp` health. */
   | { t: 'repaired'; tick: number; id: number; by: number; hp: number }
   /**
@@ -394,7 +424,8 @@ export type SimEvent =
  * `unreachable` (no way there for a whole turn), `blocked` (blocked by moving units for three
  * turns), `lost-target` (target or charge gone), `retreat` (doctrine), `regrouped` (back in coverage),
  * `outpaced` (an attacker could not close in on its target for three turns), `lost-contact` (a
- * whole turn without radio contact; the unit returns into coverage, doctrine).
+ * whole turn without radio contact; the unit returns into coverage, doctrine), `leash` (a drone's
+ * move would take it beyond its leash, e.g. after its carrier drove off).
  */
 /**
  * Why an order ended. `lost-contact`: doctrine 'regroup' after a whole turn without contact (its
@@ -402,7 +433,7 @@ export type SimEvent =
  * enemy in the unit's own sight — told only like any event of an unobserved unit (normal
  * visibility), since its timing depends on what the unit sees out of contact (review of PR #29).
  */
-export type OrderEndReason = 'arrived' | 'occupied' | 'unreachable' | 'blocked' | 'lost-target' | 'retreat' | 'regrouped' | 'outpaced' | 'lost-contact' | 'turned-back';
+export type OrderEndReason = 'arrived' | 'occupied' | 'unreachable' | 'blocked' | 'lost-target' | 'retreat' | 'regrouped' | 'outpaced' | 'lost-contact' | 'turned-back' | 'leash';
 
 export interface Scenario {
   readonly map: GameMap;
