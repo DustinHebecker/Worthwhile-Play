@@ -18,7 +18,9 @@ export type Cond =
   | { sex: Sex }
   | { profile: string }
   | { balance: string; min?: number; max?: number }
-  | { counter: string; min?: number; max?: number };
+  | { counter: string; min?: number; max?: number }
+  /** Months since the month stored in a counter (false while the counter is unset). */
+  | { since: string; min?: number; max?: number };
 
 export type Effect =
   | { stat: StatId; add: number }
@@ -28,6 +30,10 @@ export type Effect =
   | { book: { account: string; cents: number; category: string } }
   | { transfer: { from: string; to: string; cents: number } }
   | { setCount: string; value: number }
+  /** Stores the current month in a counter (for `since` conditions). */
+  | { mark: string }
+  /** A child is born: `children` + 1 and `child.<n>.born` = this month (n = 1, 2, …). */
+  | { birth: true }
   | { schedule: string; inMonths: number }
   /** A chance outcome: the first entry whose condition holds gives the probability (ppm). */
   | { roll: { when?: Cond; ppm: number }[]; win: Effect[]; lose: Effect[] }
@@ -41,6 +47,8 @@ export interface Choice {
 
 export interface EventDef {
   id: string;
+  /** Message id for texts shared by variants of one event (default: `id`). */
+  textId?: string;
   /** Chance per month in parts per million, an integer (annual values are converted when authored). */
   chancePpm: number;
   when?: Cond;
@@ -73,6 +81,7 @@ export function holds(state: LifeCore, cond: Cond | undefined): boolean {
     if ('profile' in cond) return state.profileId === cond.profile;
     if ('balance' in cond) return inRange(balanceOf(state.ledger, cond.balance), cond.min, cond.max);
     if ('counter' in cond) return inRange(Object.hasOwn(state.counters, cond.counter) ? (state.counters[cond.counter] as number) : 0, cond.min, cond.max);
+    if ('since' in cond) return Object.hasOwn(state.counters, cond.since) && inRange(state.month - (state.counters[cond.since] as number), cond.min, cond.max);
   } catch {
     return false;
   }
@@ -132,6 +141,11 @@ function applyEffect<S extends LifeCore>(state: S, e: Effect, rng: Rng): S {
     return next;
   }
   if ('setCount' in e) return { ...state, counters: { ...state.counters, [e.setCount]: e.value } };
+  if ('mark' in e) return { ...state, counters: { ...state.counters, [e.mark]: state.month } };
+  if ('birth' in e) {
+    const n = (Object.hasOwn(state.counters, 'children') ? (state.counters.children as number) : 0) + 1;
+    return { ...state, counters: { ...state.counters, children: n, [`child.${n}.born`]: state.month } };
+  }
   if ('stat' in e) return { ...state, stats: { ...state.stats, [e.stat]: clampStat(state.stats[e.stat] + e.add) } };
   if ('set' in e) return state.flags.includes(e.set) ? state : { ...state, flags: [...state.flags, e.set].sort() };
   if ('clear' in e) return { ...state, flags: state.flags.filter((f) => f !== e.clear) };
@@ -181,14 +195,14 @@ function checkCond(c: unknown, path: string, issues: EventIssue[], id: string): 
   if (typeof c !== 'object' || c === null) { issues.push({ id, problem: `${path}: not a condition` }); return; }
   const o = c as Record<string, unknown>;
   const keys = Object.keys(o);
-  const kind = ['all', 'any', 'not', 'age', 'flag', 'stat', 'sex', 'profile', 'balance', 'counter'].find((k) => keys.includes(k));
+  const kind = ['all', 'any', 'not', 'age', 'flag', 'stat', 'sex', 'profile', 'balance', 'counter', 'since'].find((k) => keys.includes(k));
   if (kind === undefined) { issues.push({ id, problem: `${path}: unknown condition` }); return; }
   if (kind === 'all' || kind === 'any') {
     if (!Array.isArray(o[kind]) || (o[kind] as unknown[]).length === 0) issues.push({ id, problem: `${path}.${kind}: empty` });
     else (o[kind] as unknown[]).forEach((x, i) => checkCond(x, `${path}.${kind}[${i}]`, issues, id));
   } else if (kind === 'not') checkCond(o.not, `${path}.not`, issues, id);
   else if (kind === 'stat' && !(STATS as readonly unknown[]).includes(o.stat)) issues.push({ id, problem: `${path}: unknown stat` });
-  else if ((kind === 'flag' || kind === 'counter') && !isFlagId(o[kind])) issues.push({ id, problem: `${path}: bad id` });
+  else if ((kind === 'flag' || kind === 'counter' || kind === 'since') && !isFlagId(o[kind])) issues.push({ id, problem: `${path}: bad id` });
   else if (kind === 'balance' && !isAccountId(o.balance)) issues.push({ id, problem: `${path}: bad account` });
 }
 
@@ -199,6 +213,7 @@ export function checkEvents(defs: readonly EventDef[], knownParams: ReadonlySet<
   try {
     for (const d of defs) {
       if (!isFlagId(d.id)) issues.push({ id: String(d.id), problem: 'bad id' });
+      if (d.textId !== undefined && !isFlagId(d.textId)) issues.push({ id: String(d.id), problem: 'bad text id' });
       if (ids.has(d.id)) issues.push({ id: d.id, problem: 'duplicate id' });
       ids.add(d.id);
     }
@@ -223,6 +238,7 @@ export function checkEvents(defs: readonly EventDef[], knownParams: ReadonlySet<
             for (const r of e.roll) if (r.when !== undefined) checkCond(r.when, `roll in ${c.id}`, issues, d.id);
           }
           if ('setCount' in e && (!isFlagId(e.setCount) || !Number.isSafeInteger(e.value))) issues.push({ id: d.id, problem: 'bad counter effect' });
+          if ('mark' in e && !isFlagId(e.mark)) issues.push({ id: d.id, problem: 'bad counter effect' });
           if ('schedule' in e && (!ids.has(e.schedule) || !Number.isInteger(e.inMonths) || e.inMonths < 1)) issues.push({ id: d.id, problem: `bad schedule ${e.schedule}` });
           if ('stat' in e && (!(STATS as readonly string[]).includes(e.stat) || !Number.isInteger(e.add))) issues.push({ id: d.id, problem: 'bad stat effect' });
           if (('set' in e && !isFlagId(e.set)) || ('clear' in e && !isFlagId(e.clear))) issues.push({ id: d.id, problem: 'bad flag' });

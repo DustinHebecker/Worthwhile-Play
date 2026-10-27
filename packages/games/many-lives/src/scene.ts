@@ -1,5 +1,8 @@
 import type { ManyLivesState } from './rules';
 import { ageOf } from './rules';
+import { childAges } from '@wp/life-engine';
+
+const childAgesOf = (state: ManyLivesState): number[] => childAges(state.life);
 
 const SVG = 'http://www.w3.org/2000/svg';
 /** Skin tones and hair colours (independent of the region, owner decision O20). */
@@ -106,6 +109,29 @@ function person(state: ManyLivesState): SVGElement {
   return g;
 }
 
+/** A smaller adult (the partner) or child figure beside the person, in neutral colours. */
+function companion(x: number, scale: number, skin: number, cls: string): SVGElement {
+  const g = el('g', { class: `ml-scene-companion ${cls}`, transform: `translate(${x} ${142 - 112 * scale}) scale(${scale})` });
+  g.append(
+    el('rect', { x: -20, y: 46, width: 40, height: 48, rx: 14, class: 'ml-s-clothes-2' }),
+    el('rect', { x: -16, y: 92, width: 12, height: 22, rx: 4, class: 'ml-s-legs' }),
+    el('rect', { x: 4, y: 92, width: 12, height: 22, rx: 4, class: 'ml-s-legs' }),
+    el('circle', { cx: 0, cy: 26, r: 20, fill: (SKIN[skin % SKIN.length] ?? SKIN[0]) as string }),
+    el('circle', { cx: -6, cy: 28, r: 2, class: 'ml-s-eye' }),
+    el('circle', { cx: 6, cy: 28, r: 2, class: 'ml-s-eye' })
+  );
+  return g;
+}
+
+function family(state: ManyLivesState): SVGElement[] {
+  const out: SVGElement[] = [];
+  const f = state.life.flags;
+  if (f.includes('rel.partner')) out.push(companion(196, 0.95, state.appearance.skin + 2, 'ml-scene-partner'));
+  const kids = childAgesOf(state).slice(0, 3);
+  kids.forEach((age, i) => out.push(companion(122 - i * 24, age < 6 ? 0.45 : age < 12 ? 0.55 : 0.7, state.appearance.skin + i, 'ml-scene-child')));
+  return out;
+}
+
 export function drawScene(state: ManyLivesState): SVGElement {
   const svg = el('svg', { viewBox: '0 0 320 160', class: 'ml-scene-art', 'aria-hidden': 'true', focusable: 'false' });
   svg.append(
@@ -113,6 +139,7 @@ export function drawScene(state: ManyLivesState): SVGElement {
     el('rect', { x: 0, y: 142, width: 320, height: 18, class: 'ml-s-ground' }),
     home(state),
     activity(placeOf(state)),
+    ...family(state),
     person(state)
   );
   return svg;
