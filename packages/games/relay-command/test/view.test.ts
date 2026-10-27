@@ -154,6 +154,46 @@ describe('Relay Command view', () => {
     expect(own.y).toBe(12);
   });
 
+  it('the player picks the own base in the setup (owner request 2026-10-27), named by where it lies; locked after the first turn', () => {
+    const start = $('rc-start') as HTMLSelectElement;
+    const change = (el: HTMLSelectElement, value: string) => {
+      el.value = value;
+      el.dispatchEvent(new Event('change'));
+    };
+    const own = () => state().world.entities.find((e) => e.side === 0 && e.kind === 'command-post')!;
+    // Field Exercise: the two bases, the default (bottom left) first.
+    expect($('rc-start-label').hidden).toBe(false);
+    expect([...start.options].map((o) => [o.value, o.textContent])).toEqual([['0', 'Bottom left'], ['1', 'Top right']]);
+    expect(start.value).toBe('0');
+    change(start, '1');
+    expect(state().start).toBe(1);
+    expect(own()).toMatchObject({ x: 10, y: 1 });
+    expect(start.value).toBe('1');
+    // Another map keeps the corner where it can.
+    change($('rc-scenario') as HTMLSelectElement, 'ridge-valley');
+    expect(state().start).toBe(1);
+    expect(start.value).toBe('1');
+    // Four bases: each corner.
+    change($('rc-scenario') as HTMLSelectElement, 'four-corners');
+    change($('rc-opponents') as HTMLSelectElement, '3');
+    expect([...start.options].map((o) => o.textContent)).toEqual(['Bottom left', 'Top left', 'Top right', 'Bottom right']);
+    change(start, '3');
+    expect(own()).toMatchObject({ x: 13, y: 13 });
+    // Bastion, alone against three: the plateau is the only base of that role, so there is no choice.
+    change($('rc-scenario') as HTMLSelectElement, 'bastion');
+    expect($('rc-start-label').hidden).toBe(true);
+    change($('rc-teams') as HTMLSelectElement, '3v1');
+    expect($('rc-start-label').hidden).toBe(false);
+    expect([...start.options].map((o) => o.textContent)).toEqual(['Bottom left', 'Bottom', 'Bottom right']);
+    change(start, '2');
+    expect(own()).toMatchObject({ x: 10, y: 12 });
+    // "New game" keeps the base; after the first turn the choice is locked.
+    instance.reset();
+    expect(state().start).toBe(2);
+    click('rc-lock');
+    expect(start.disabled).toBe(true);
+  });
+
   it('switches the map between the side view (default) and the top view, and keeps the choice on this device', () => {
     expect($('rc-view-profile').getAttribute('aria-pressed')).toBe('true');
     expect($('rc-view-top').getAttribute('aria-pressed')).toBe('false');
