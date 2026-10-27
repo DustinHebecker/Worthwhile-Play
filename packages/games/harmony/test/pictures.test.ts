@@ -82,6 +82,7 @@ describe('staff layout (design § 11.1)', () => {
     expect(rhythm.querySelectorAll('.hm-beam')).toHaveLength(1);
     expect(rhythm.querySelectorAll('.hm-rest')).toHaveLength(1);
     expect(rhythm.textContent).toBe('44');
+    expect(renderRhythm([-2, -2, 2, 2], 'Rhythm').querySelectorAll('[data-rest="half"]')).toHaveLength(1);
     const flagged = renderRhythm([3, 1, 4], 'Rhythm');
     expect(flagged.querySelectorAll('.hm-flag')).toHaveLength(1);
     expect(renderContour('ud').querySelectorAll('circle')).toHaveLength(3);

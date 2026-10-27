@@ -87,7 +87,7 @@ export const isPattern = (value: unknown, level: Level): value is number[] =>
   Array.isArray(value) && value.length <= SLOTS && value.every((d) => Number.isInteger(d)) && PATTERN_KEYS[level].has(key(value as number[]));
 
 /** Notation symbols for durations (design § 14.3). */
-export type RhythmGlyph = 'eighth' | 'quarter' | 'dotted-quarter' | 'half' | 'rest-eighth' | 'rest-quarter';
+export type RhythmGlyph = 'eighth' | 'quarter' | 'dotted-quarter' | 'half' | 'rest-eighth' | 'rest-quarter' | 'rest-half';
 
 export interface NotationEvent {
   readonly slot: number;
@@ -98,12 +98,18 @@ export interface NotationEvent {
 
 const GLYPH: Readonly<Record<number, RhythmGlyph>> = { 1: 'eighth', 2: 'quarter', 3: 'dotted-quarter', 4: 'half', [-1]: 'rest-eighth', [-2]: 'rest-quarter' };
 
-/** Notation layout: one event per duration; two eighth notes on the same beat (slots 2k and 2k+1) share a beam. */
+/**
+ * Notation layout: one event per duration (two quarter rests on beats 1–2 or 3–4 become a half rest); two eighth
+ * notes on the same beat (slots 2k and 2k+1) share a beam.
+ */
 export function notation(pattern: readonly number[]): NotationEvent[] {
   const events: { slot: number; glyph: RhythmGlyph; beam: number }[] = [];
   let slot = 0;
   for (const d of pattern) {
-    events.push({ slot, glyph: GLYPH[d] ?? 'quarter', beam: -1 });
+    const last = events[events.length - 1];
+    // Two quarter rests filling beats 1–2 or 3–4 are written as one half rest (common practice in 4/4).
+    if (d === -2 && last?.glyph === 'rest-quarter' && last.slot % 4 === 0 && slot === last.slot + 2) last.glyph = 'rest-half';
+    else events.push({ slot, glyph: GLYPH[d] ?? 'quarter', beam: -1 });
     slot += Math.abs(d);
   }
   let group = 0;

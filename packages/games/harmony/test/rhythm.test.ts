@@ -53,5 +53,16 @@ describe('rhythm model (design § 7.5)', () => {
     expect(notation([1, 2, 1, -1, 1, -2]).map((e) => `${e.glyph}:${e.beam}`)).toEqual(['eighth:-1', 'quarter:-1', 'eighth:-1', 'rest-eighth:-1', 'eighth:-1', 'rest-quarter:-1']);
     expect(notation([1, 1, 1, 1, 4]).map((e) => e.beam)).toEqual([0, 0, 1, 1, -1]);
     expect(notation([4, 4]).map((e) => e.glyph)).toEqual(['half', 'half']);
+    // A half rest fills beats 1–2 or 3–4; quarter rests on beats 2–3 stay two quarter rests.
+    expect(notation([-2, -2, 2, 1, 1]).map((e) => `${e.slot}:${e.glyph}`)).toEqual(['0:rest-half', '4:quarter', '6:eighth', '7:eighth']);
+    expect(notation([1, 1, 2, -2, -2]).map((e) => e.glyph)).toEqual(['eighth', 'eighth', 'quarter', 'rest-half']);
+    expect(notation([2, -2, -2, 2]).map((e) => e.glyph)).toEqual(['quarter', 'rest-quarter', 'rest-quarter', 'quarter']);
+    // Every pattern of every level is notated without a gap or overlap: the glyph lengths fill the bar.
+    const LEN: Record<string, number> = { eighth: 1, quarter: 2, 'dotted-quarter': 3, half: 4, 'rest-eighth': 1, 'rest-quarter': 2, 'rest-half': 4 };
+    for (const level of LEVELS)
+      for (const p of allPatterns(level)) {
+        const ev = notation(p);
+        ev.forEach((e, i) => expect(e.slot + LEN[e.glyph]!, p.join()).toBe(ev[i + 1]?.slot ?? SLOTS));
+      }
   });
 });

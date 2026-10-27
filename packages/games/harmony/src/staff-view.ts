@@ -177,7 +177,8 @@ export function renderRhythm(pattern: readonly number[], name: string, testid?: 
   for (const e of events) {
     const x = left + e.slot * slotW + slotW / 2;
     const g = svg('g', { class: 'hm-event', 'data-ev': `s${e.slot}` });
-    if (e.glyph === 'rest-quarter') g.appendChild(quarterRest(x, RLINE));
+    if (e.glyph === 'rest-half') g.appendChild(svg('rect', { x: r1(x - 6), y: RLINE - 5, width: 12, height: 5, class: 'hm-ink', 'data-rest': 'half' }));
+    else if (e.glyph === 'rest-quarter') g.appendChild(quarterRest(x, RLINE));
     else if (e.glyph === 'rest-eighth') g.appendChild(eighthRest(x, RLINE));
     else {
       g.appendChild(head(x, RLINE, e.glyph === 'half'));
