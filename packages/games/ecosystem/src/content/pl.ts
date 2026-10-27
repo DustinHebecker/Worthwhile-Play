@@ -1,201 +1,194 @@
-/**
-// UNTRANSLATED
- *
- * Note for translators: plain words; common names only ("water fleas", not "Daphnia" — an "about" line may add the
- * scientific name in brackets); no digits in the texts (numbers come from the model); spraying, fishing and
- * relocating are management actions, described neutrally. Keep sentences short.
- */
 import type { ContentText } from './types';
 
 export const content: ContentText = {
-  weeks: { one: '{n} week', other: '{n} weeks' },
+  weeks: { one: '{n} tydzień', few: '{n} tygodnie', many: '{n} tygodni', other: '{n} tygodnia' },
   species: {
-    algae: { name: 'Green algae', about: 'Tiny plants floating in the water. They grow fast on nutrients and light; water fleas and snails eat them. Many algae turn the water green and shade the plants below.' },
-    bluegreen: { name: 'Blue-green algae', about: 'Strictly speaking bacteria (cyanobacteria). They grow slowly, need rich water and are hardly eaten, so they bloom when nutrients pile up.' },
-    duckweed: { name: 'Duckweed', about: 'Small floating leaves. In rich water they cover the surface and shade everything below.' },
-    pondweed: { name: 'Pondweed', about: 'Underwater plants rooted in the mud. They need clear water to get light, take nutrients away from the algae and give water fleas a place to hide from fish.' },
-    fleas: { name: 'Water fleas', about: 'Tiny crustaceans (Daphnia) that graze the algae. Small fish eat them, but in pondweed and in the mud many stay out of reach.' },
-    snails: { name: 'Pond snails', about: 'They eat dead plant matter and a few algae. Small fish eat some of them.' },
-    minnows: { name: 'Small fish', about: 'They hunt water fleas and some snails. Their young take about six weeks to grow up. Pike eat them.' },
-    pike: { name: 'Pike', about: 'A large hunter that eats small fish. Young pike take about twenty weeks to grow up.' },
-    grass: { name: 'Grasses', about: 'Tall and fast-growing on rich soil. They shade the low plants and use a lot of water.' },
-    flowers: { name: 'Wildflowers', about: 'Low plants that do well on poor soil. They need light, so tall grass pushes them out. Aphids and rabbits eat them.' },
-    clover: { name: 'Clover', about: 'A low plant that makes its own nitrogen from the air, less so on rich soil. Its dead leaves feed the soil for its neighbours. Rabbits like it most.' },
-    aphids: { name: 'Aphids', about: 'Tiny insects that suck plant sap, mostly from wildflowers. They multiply very fast. Ladybirds eat them.' },
-    ladybirds: { name: 'Ladybirds', about: 'Beetles that eat aphids. Their larvae take about three weeks to grow up, so they react to more aphids with a delay.' },
-    rabbits: { name: 'Rabbits', about: 'They graze clover first, then wildflowers and grass. Their young take about five weeks to grow up. Foxes hunt them; some are always safe in burrows.' },
-    foxes: { name: 'Foxes', about: 'They hunt rabbits. Young foxes take about half a year to grow up.' },
-    worms: { name: 'Earthworms', about: 'They eat dead leaves and turn them back into nutrients that plants can use.' }
+    algae: { name: 'Zielenice', about: 'Drobne rośliny unoszące się w wodzie. Szybko rosną dzięki składnikom odżywczym i światłu; jedzą je rozwielitki i ślimaki. Dużo glonów barwi wodę na zielono i zacienia rośliny pod spodem.' },
+    bluegreen: { name: 'Sinice', about: 'Właściwie bakterie (cyjanobakterie). Rosną powoli, potrzebują żyznej wody i prawie nikt ich nie je, więc zakwitają, gdy gromadzą się składniki odżywcze.' },
+    duckweed: { name: 'Rzęsa wodna', about: 'Małe pływające listki. W żyznej wodzie pokrywają powierzchnię i zacieniają wszystko pod spodem.' },
+    pondweed: { name: 'Rdestnica', about: 'Rośliny podwodne zakorzenione w mule. Potrzebują czystej wody, by dostać światło, zabierają glonom składniki odżywcze i dają rozwielitkom kryjówkę przed rybami.' },
+    fleas: { name: 'Rozwielitki', about: 'Drobne skorupiaki (dafnie), które wyjadają glony. Jedzą je małe ryby, ale w rdestnicy i w mule wiele z nich jest poza zasięgiem.' },
+    snails: { name: 'Błotniarki', about: 'Te ślimaki jedzą szczątki martwych roślin i trochę glonów. Małe ryby zjadają część z nich.' },
+    minnows: { name: 'Małe ryby', about: 'Polują na rozwielitki i trochę ślimaków. Ich młode rosną około sześciu tygodni. Zjadają je szczupaki.' },
+    pike: { name: 'Szczupaki', about: 'Duży drapieżnik, który zjada małe ryby. Młode szczupaki rosną około dwudziestu tygodni.' },
+    grass: { name: 'Trawy', about: 'Wysokie i szybko rosnące na żyznej glebie. Zacieniają niskie rośliny i zużywają dużo wody.' },
+    flowers: { name: 'Dzikie kwiaty', about: 'Niskie rośliny, którym dobrze na ubogiej glebie. Potrzebują światła, więc wysoka trawa je wypiera. Jedzą je mszyce i króliki.' },
+    clover: { name: 'Koniczyna', about: 'Niska roślina, która sama pobiera azot z powietrza, mniej na żyznej glebie. Jej obumarłe liście użyźniają glebę dla sąsiadów. Króliki lubią ją najbardziej.' },
+    aphids: { name: 'Mszyce', about: 'Drobne owady wysysające sok roślin, głównie dzikich kwiatów. Mnożą się bardzo szybko. Jedzą je biedronki.' },
+    ladybirds: { name: 'Biedronki', about: 'Chrząszcze, które jedzą mszyce. Ich larwy rosną około trzech tygodni, więc reagują na przybytek mszyc z opóźnieniem.' },
+    rabbits: { name: 'Króliki', about: 'Najpierw jedzą koniczynę, potem dzikie kwiaty i trawę. Młode rosną około pięciu tygodni. Polują na nie lisy; niektóre zawsze są bezpieczne w norach.' },
+    foxes: { name: 'Lisy', about: 'Polują na króliki. Młode lisy rosną około pół roku.' },
+    worms: { name: 'Dżdżownice', about: 'Jedzą opadłe liście i zamieniają je z powrotem w składniki odżywcze dla roślin.' }
   },
   challenges: {
     'fleas-arrive': {
-      title: 'Water fleas arrive',
-      situation: 'A young pond has only green algae. Water fleas reach it, carried in by a bird.',
-      think: 'Who eats the algae? What happens to the water fleas when the algae get fewer?',
-      explain: 'Water fleas multiply on the algae until they eat as fast as the algae grow. From then on the water fleas, not the nutrients, set how much algae there is: a balancing loop (B1). The water turns clear and stays clear.',
-      real: 'In real ponds, fish and the seasons usually keep this from being so neat.'
+      title: 'Przybywają rozwielitki',
+      situation: 'Młody staw ma tylko zielenice. Ptak przynosi do niego rozwielitki.',
+      think: 'Kto je glony? Co się dzieje z rozwielitkami, gdy glonów ubywa?',
+      explain: 'Rozwielitki mnożą się na glonach, aż jedzą tak szybko, jak glony rosną. Od tej chwili o ilości glonów decydują rozwielitki, a nie składniki odżywcze: pętla równoważąca (B1). Woda staje się czysta i taka zostaje.',
+      real: 'W prawdziwych stawach ryby i pory roku zwykle nie pozwalają, by było tak równo.'
     },
     'enrich-swings': {
-      title: 'More food for everyone',
-      situation: 'Heavy runoff from a field starts to feed a pond of algae and water fleas.',
-      think: 'More nutrients feed more algae. What do the water fleas do with more algae, and what do the algae do then?',
-      explain: 'More nutrients let the algae race ahead; the water fleas follow, eat the algae down, then starve; the algae recover, and it starts again. Richer water made the system swing instead of settle. Ecologists call this the paradox of enrichment (B1).',
-      real: 'In real ponds, many more species and the seasons damp or change these swings.'
+      title: 'Więcej jedzenia dla wszystkich',
+      situation: 'Silny spływ z pola zaczyna nawozić staw z glonami i rozwielitkami.',
+      think: 'Więcej składników odżywczych to więcej glonów. Co robią rozwielitki z większą ilością glonów, a co potem robią glony?',
+      explain: 'Więcej składników odżywczych pozwala glonom wyrwać się do przodu; rozwielitki idą za nimi, zjadają glony, a potem głodują; glony się odbudowują i wszystko zaczyna się od nowa. Żyźniejsza woda sprawiła, że układ zaczął się wahać, zamiast się ustabilizować. Ekolodzy nazywają to paradoksem wzbogacenia (B1).',
+      real: 'W prawdziwych stawach dużo więcej gatunków i pory roku tłumią lub zmieniają te wahania.'
     },
     'fish-stocked': {
-      title: 'Fish in the pond',
-      situation: 'Someone releases small fish into a pond that had none.',
-      think: 'Fish eat water fleas. Who eats the algae, and what happens to them?',
-      explain: 'The fish eat water fleas, so fewer water fleas graze the algae, and the algae grow. A change at the top reaches the bottom of the food chain: a trophic cascade. It builds up slowly, because young fish need weeks to grow up.',
-      real: 'In real ponds, fish also stir up the mud, which clouds the water even more.'
+      title: 'Ryby w stawie',
+      situation: 'Ktoś wpuszcza małe ryby do stawu, w którym ich nie było.',
+      think: 'Ryby jedzą rozwielitki. Kto je glony i co się z nimi stanie?',
+      explain: 'Ryby zjadają rozwielitki, więc mniej rozwielitek wyjada glony, a glony rosną. Zmiana na górze sięga dna łańcucha pokarmowego: kaskada troficzna. Narasta powoli, bo młode ryby rosną tygodniami.',
+      real: 'W prawdziwych stawach ryby wzburzają też muł, przez co woda mętnieje jeszcze bardziej.'
     },
     'pike-return': {
-      title: 'Pike come back',
-      situation: 'A few young pike are released into a pond full of small fish.',
-      think: 'Follow the chain: pike, small fish, water fleas, algae.',
-      explain: 'Pike eat small fish; fewer small fish leave more water fleas; more water fleas eat more algae. Each step flips the direction, so the algae fall. It takes long because young pike need about twenty weeks to grow up.',
-      real: 'In real lakes, removing small fish or adding pike is used to clear the water, with mixed and often short-lived success.'
+      title: 'Szczupaki wracają',
+      situation: 'Kilka młodych szczupaków zostaje wpuszczonych do stawu pełnego małych ryb.',
+      think: 'Podążaj za łańcuchem: szczupaki, małe ryby, rozwielitki, glony.',
+      explain: 'Szczupaki zjadają małe ryby; mniej małych ryb zostawia więcej rozwielitek; więcej rozwielitek zjada więcej glonów. Każdy krok odwraca kierunek, więc glonów ubywa. Trwa to długo, bo młode szczupaki rosną około dwudziestu tygodni.',
+      real: 'W prawdziwych jeziorach odławia się małe ryby lub wpuszcza szczupaki, by oczyścić wodę, ze zmiennym i często krótkotrwałym skutkiem.'
     },
     'algae-treatment': {
-      title: 'A quick fix for green water',
-      situation: 'The pond is treated: nine in ten of the algae die and sink, but stay in the water.',
-      think: 'Where do the nutrients in the dead algae go? And what happened to the water fleas while the algae were gone?',
-      explain: 'The dead algae rot within days and give their nutrients back to the water. The water fleas went hungry while the algae were gone, so for a while nobody holds the algae in check, and they overshoot. A fix that removes the symptom but not the nutrients does not last.',
-      real: 'In real ponds, rotting algae also use up oxygen, which can harm fish.'
+      title: 'Szybki sposób na zieloną wodę',
+      situation: 'Staw zostaje potraktowany środkiem: dziewięć na dziesięć glonów ginie i opada, ale zostaje w wodzie.',
+      think: 'Dokąd trafiają składniki odżywcze z martwych glonów? I co się stało z rozwielitkami, gdy glonów brakowało?',
+      explain: 'Martwe glony gniją w kilka dni i oddają składniki odżywcze wodzie. Rozwielitki głodowały, gdy glonów brakowało, więc przez jakiś czas nikt nie trzyma glonów w ryzach i przerastają dawny poziom. Sposób, który usuwa objaw, ale nie składniki odżywcze, nie działa długo.',
+      real: 'W prawdziwych stawach gnijące glony zużywają też tlen, co może szkodzić rybom.'
     },
     'slow-runoff': {
-      title: 'A field upstream',
-      situation: 'A new field upstream starts to drain into the clear pond.',
-      think: 'What do more nutrients do to the algae, and what do more algae do to the pondweed below them?',
-      explain: 'For months nothing seems to happen: the pondweed even looks fine after half a year. Meanwhile nutrients pile up in the water and the mud. When the algae finally win, a reinforcing loop takes over: more algae, more shade, less pondweed, fewer hiding places for water fleas, even more algae (R1, R2). The flip is fast; the cause was slow.',
-      real: 'In real lakes, such shifts from clear to green water are well documented, often after years of slow change.'
+      title: 'Pole w górze rzeki',
+      situation: 'Nowe pole w górze rzeki zaczyna odprowadzać wodę do czystego stawu.',
+      think: 'Co więcej składników odżywczych robi z glonami, a co więcej glonów robi z rdestnicą pod nimi?',
+      explain: 'Przez miesiące wydaje się, że nic się nie dzieje: rdestnica nawet po pół roku wygląda dobrze. Tymczasem składniki odżywcze gromadzą się w wodzie i w mule. Gdy glony wreszcie wygrywają, władzę przejmuje pętla wzmacniająca: więcej glonów, więcej cienia, mniej rdestnicy, mniej kryjówek dla rozwielitek, jeszcze więcej glonów (R1, R2). Przełom jest szybki; przyczyna była powolna.',
+      real: 'W prawdziwych jeziorach takie przejścia od czystej do zielonej wody są dobrze opisane, często po latach powolnych zmian.'
     },
     'no-way-back': {
-      title: 'The runoff stops',
-      situation: 'Two years later the runoff is stopped completely. Will the pondweed come back?',
-      think: 'Is there any pondweed left to grow back? What keeps the water green now?',
-      explain: 'Stopping the runoff removes the cause, but the pond stays green: the algae shade the bottom, and no pondweed is left to grow back. The reinforcing loop (R1) now holds the pond in its green state. Going back needs more than undoing the change, for example planting pondweed again.',
-      real: 'In real lakes, recovery after the nutrients are cut often takes many years, and plants are sometimes replanted.'
+      title: 'Spływ ustaje',
+      situation: 'Dwa lata później spływ zostaje całkiem zatrzymany. Czy rdestnica wróci?',
+      think: 'Czy została jakaś rdestnica, która mogłaby odrosnąć? Co teraz utrzymuje wodę zieloną?',
+      explain: 'Zatrzymanie spływu usuwa przyczynę, ale staw pozostaje zielony: glony zacieniają dno, a nie została żadna rdestnica, która mogłaby odrosnąć. Pętla wzmacniająca (R1) trzyma teraz staw w zielonym stanie. Powrót wymaga więcej niż cofnięcia zmiany, na przykład ponownego posadzenia rdestnicy.',
+      real: 'W prawdziwych jeziorach odbudowa po odcięciu składników odżywczych często trwa wiele lat, a rośliny czasem sadzi się na nowo.'
     },
     shade: {
-      title: 'A tree over the pond',
-      situation: 'A tree grows over the pond and shades it.',
-      think: 'Pondweed needs light at the bottom. What else takes light away from it?',
-      explain: 'Less light slows the pondweed, so it holds the algae back less. The algae and the water fleas start to swing, and each burst of algae shades the pondweed further (R1): it falls step by step.',
-      real: 'In real ponds, falling leaves from the tree would also add nutrients.'
+      title: 'Drzewo nad stawem',
+      situation: 'Nad stawem wyrasta drzewo i go zacienia.',
+      think: 'Rdestnica potrzebuje światła przy dnie. Co jeszcze odbiera jej światło?',
+      explain: 'Mniej światła spowalnia rdestnicę, więc słabiej powstrzymuje glony. Glony i rozwielitki zaczynają się wahać, a każdy wybuch glonów jeszcze bardziej zacienia rdestnicę (R1): spada krok po kroku.',
+      real: 'W prawdziwych stawach opadające liście drzewa także dostarczałyby składników odżywczych.'
     },
     spray: {
-      title: 'Spraying against aphids',
-      situation: 'The meadow is sprayed against aphids: nine in ten aphids and also nine in ten ladybirds die.',
-      think: 'Who grows back faster: the aphids or the ladybirds that eat them?',
-      explain: 'Spraying killed the aphids and the ladybirds that eat them. Aphids multiply much faster than ladybirds, so they came back first, with no one to stop them, and the wildflowers paid for it. Ecologists call this pest resurgence (B2 with a delay).',
-      real: 'In real fields, spraying also harms bees and other insects, and pests can become resistant.'
+      title: 'Oprysk przeciw mszycom',
+      situation: 'Łąka zostaje opryskana przeciw mszycom: ginie dziewięć na dziesięć mszyc i także dziewięć na dziesięć biedronek.',
+      think: 'Kto szybciej się odbuduje: mszyce czy biedronki, które je jedzą?',
+      explain: 'Oprysk zabił mszyce i biedronki, które je jedzą. Mszyce mnożą się dużo szybciej niż biedronki, więc wróciły pierwsze i nikt ich nie zatrzymał, a zapłaciły za to dzikie kwiaty. Ekolodzy nazywają to nawrotem szkodników (B2 z opóźnieniem).',
+      real: 'Na prawdziwych polach opryski szkodzą też pszczołom i innym owadom, a szkodniki mogą się uodpornić.'
     },
     'no-foxes': {
-      title: 'The foxes leave',
-      situation: 'The foxes leave the meadow.',
-      think: 'Who kept the rabbits in check? What do more rabbits eat first?',
-      explain: 'Without foxes the balancing loop that held the rabbits in check is gone (B2). The rabbits multiply and graze the clover, their favourite food, until little is left.',
-      real: 'In real landscapes, rabbits also move away, and diseases can cut their numbers.'
+      title: 'Lisy odchodzą',
+      situation: 'Lisy opuszczają łąkę.',
+      think: 'Kto trzymał króliki w ryzach? Co najpierw zjadają króliki, gdy jest ich więcej?',
+      explain: 'Bez lisów znika pętla równoważąca, która trzymała króliki w ryzach (B2). Króliki się mnożą i zjadają koniczynę, swój ulubiony pokarm, aż niewiele z niej zostaje.',
+      real: 'W prawdziwym krajobrazie króliki też się przenoszą, a choroby mogą zmniejszyć ich liczbę.'
     },
     fertilise: {
-      title: 'A little fertiliser',
-      situation: 'The farmer spreads some fertiliser every week.',
-      think: 'Which plant profits most from rich soil, and what does it do to the low plants?',
-      explain: 'Fertiliser feeds the grasses most. Taller grass shades the clover and the wildflowers, and clover loses its edge: on rich soil, making its own nitrogen no longer helps. More food for the meadow means fewer kinds of plants.',
-      real: 'In real meadows, nitrogen from fertiliser and from the air is a main reason for lost wildflowers.'
+      title: 'Trochę nawozu',
+      situation: 'Rolnik co tydzień rozsypuje trochę nawozu.',
+      think: 'Która roślina najwięcej zyskuje na żyznej glebie i co robi z niskimi roślinami?',
+      explain: 'Nawóz karmi przede wszystkim trawy. Wyższa trawa zacienia koniczynę i dzikie kwiaty, a koniczyna traci swoją przewagę: na żyznej glebie samodzielne wytwarzanie azotu już nie pomaga. Więcej jedzenia dla łąki oznacza mniej rodzajów roślin.',
+      real: 'Na prawdziwych łąkach azot z nawozów i z powietrza jest jedną z głównych przyczyn znikania dzikich kwiatów.'
     },
     drought: {
-      title: 'A dry summer',
-      situation: 'Twelve dry weeks, then normal rain again.',
-      think: 'What do the grasses need besides nutrients? What happens when the rain comes back?',
-      explain: 'Without rain the soil dries out and the grasses slow down and shrink. When the rain returns, the soil fills up and the grasses grow back, even past their old level, because nutrients piled up in the soil while they could not use them.',
-      real: 'In real meadows, a long drought can also kill plants and let others take their place.'
+      title: 'Suche lato',
+      situation: 'Dwanaście suchych tygodni, potem znów zwykły deszcz.',
+      think: 'Czego trawy potrzebują oprócz składników odżywczych? Co się dzieje, gdy wraca deszcz?',
+      explain: 'Bez deszczu gleba wysycha, a trawy rosną wolniej i się kurczą. Gdy deszcz wraca, gleba się napełnia i trawy odrastają, nawet ponad dawny poziom, bo w glebie nagromadziły się składniki odżywcze, których nie mogły wykorzystać.',
+      real: 'Na prawdziwych łąkach długa susza może też zabić rośliny i zrobić miejsce innym.'
     },
     'clover-poor': {
-      title: 'Clover for a poor meadow',
-      situation: 'Clover is sown into a poor meadow of wildflowers.',
-      think: 'Clover makes nitrogen from the air. Where does that nitrogen go when its leaves die?',
-      explain: 'Clover brings new nitrogen into the meadow. When its leaves die, earthworms turn them into nutrients that the wildflowers use. The neighbours profit, slowly, through the soil: a chain with a delay.',
-      real: 'In real farming, clover is sown for exactly this reason.'
+      title: 'Koniczyna dla ubogiej łąki',
+      situation: 'Na ubogiej łące z dzikimi kwiatami wysiewa się koniczynę.',
+      think: 'Koniczyna pobiera azot z powietrza. Dokąd trafia ten azot, gdy jej liście obumierają?',
+      explain: 'Koniczyna wnosi na łąkę nowy azot. Gdy jej liście obumierają, dżdżownice zamieniają je w składniki odżywcze, z których korzystają dzikie kwiaty. Sąsiedzi zyskują, powoli, przez glebę: łańcuch z opóźnieniem.',
+      real: 'W prawdziwym rolnictwie koniczynę wysiewa się właśnie z tego powodu.'
     },
     'worms-gone': {
-      title: 'Where are the earthworms?',
-      situation: 'The earthworms disappear from the meadow.',
-      think: 'Who turns dead leaves back into food for plants? Which plant does not depend on that?',
-      explain: 'Without earthworms, dead leaves pile up and their nutrients stay locked in. The grasses go hungry. Clover makes its own nitrogen, so it gains: a side effect few people expect.',
-      real: 'In real soils, many more animals, fungi and bacteria break down dead leaves.'
+      title: 'Gdzie są dżdżownice?',
+      situation: 'Dżdżownice znikają z łąki.',
+      think: 'Kto zamienia opadłe liście z powrotem w pokarm dla roślin? Która roślina od tego nie zależy?',
+      explain: 'Bez dżdżownic opadłe liście się gromadzą, a ich składniki odżywcze zostają w nich zamknięte. Trawy głodują. Koniczyna sama wytwarza azot, więc zyskuje: skutek uboczny, którego mało kto się spodziewa.',
+      real: 'W prawdziwej glebie opadłe liście rozkłada o wiele więcej zwierząt, grzybów i bakterii.'
     },
     'foxes-return': {
-      title: 'The foxes come back',
-      situation: 'Foxes return to a meadow overrun by rabbits.',
-      think: 'How long do young foxes need to grow up? What do fewer rabbits mean for the clover?',
-      explain: 'At first little happens: young foxes need about half a year to grow up. Then the foxes bring the rabbits down (B2), and the clover, freed from grazing, slowly comes back. The effect arrives years after the cause.',
-      real: 'In real landscapes, foxes also hunt other animals, and rabbits find new places to live.'
+      title: 'Lisy wracają',
+      situation: 'Lisy wracają na łąkę opanowaną przez króliki.',
+      think: 'Jak długo młode lisy rosną? Co mniej królików oznacza dla koniczyny?',
+      explain: 'Na początku niewiele się dzieje: młode lisy rosną około pół roku. Potem lisy zmniejszają liczbę królików (B2), a koniczyna, uwolniona od zgryzania, powoli wraca. Skutek przychodzi lata po przyczynie.',
+      real: 'W prawdziwym krajobrazie lisy polują też na inne zwierzęta, a króliki znajdują nowe miejsca do życia.'
     },
     'ladybirds-gone': {
-      title: 'Ladybirds collected',
-      situation: 'Most ladybirds are collected for a garden elsewhere.',
-      think: 'Who eats the aphids? How fast can the remaining ladybirds come back?',
-      explain: 'Without ladybirds the aphids multiply. The few remaining ladybirds now find plenty of food, and their numbers grow back after a delay. Then they bring the aphids down again (B2).',
-      real: 'In real gardens, other aphid hunters such as hoverflies and birds help as well.'
+      title: 'Zebrane biedronki',
+      situation: 'Większość biedronek zostaje zebrana do ogrodu gdzie indziej.',
+      think: 'Kto je mszyce? Jak szybko mogą wrócić pozostałe biedronki?',
+      explain: 'Bez biedronek mszyce się mnożą. Kilka pozostałych biedronek znajduje teraz mnóstwo pokarmu i ich liczba z opóźnieniem się odbudowuje. Potem znów zmniejszają liczbę mszyc (B2).',
+      real: 'W prawdziwych ogrodach pomagają też inni łowcy mszyc, na przykład bzygi i ptaki.'
     }
   },
   goals: {
     'save-pondweed': {
-      story: 'A new field upstream starts to drain into the clear pond. Keep the pondweed alive for two years while the runoff continues.',
-      target: 'Pondweed at least {v} every week until week {w}.',
-      hint: 'Algae are a symptom. What feeds them, and how soon must it change?',
-      explain: 'The pondweed falls only when the algae shade it, and the algae grow from the nutrients the field brings. Act on the cause, and act early: by the time the pondweed looks weak, the reinforcing loop has already taken over.',
+      story: 'Nowe pole w górze rzeki zaczyna odprowadzać wodę do czystego stawu. Utrzymaj rdestnicę przy życiu przez dwa lata, gdy spływ trwa.',
+      target: 'Rdestnica co najmniej {v} w każdym tygodniu do tygodnia {w}.',
+      hint: 'Glony to objaw. Co je karmi i jak szybko trzeba to zmienić?',
+      explain: 'Rdestnicy ubywa dopiero wtedy, gdy zacieniają ją glony, a glony rosną dzięki składnikom odżywczym z pola. Działaj na przyczynę, i to wcześnie: gdy rdestnica wygląda słabo, pętla wzmacniająca już przejęła władzę.',
       plans: {
-        buffer: 'A buffer strip of plants along the field catches most of the runoff before it reaches the pond. Early enough, the algae never get ahead.',
-        ditch: 'Closing the ditch stops the runoff completely, so the algae never get ahead.'
+        buffer: 'Pas roślin wzdłuż pola zatrzymuje większość spływu, zanim dotrze do stawu. Posadzony w porę sprawia, że glony nigdy nie wychodzą na prowadzenie.',
+        ditch: 'Zamknięcie rowu całkiem zatrzymuje spływ, więc glony nigdy nie wychodzą na prowadzenie.'
       }
     },
     'clear-pond': {
-      story: 'The pond turned green after two years of runoff. Make the water clear again, with pondweed growing, for twelve weeks in a row.',
-      target: 'Algae (green and blue-green) at most {v} and pondweed at least {p}, for twelve weeks in a row, by week {w}.',
-      hint: 'Algae are a symptom. What feeds them? And what keeps them down once the water is clear?',
-      explain: 'The green state holds itself: algae shade out the plants that would hold them back. Clearing the water needs the cause removed (the runoff), the stored nutrients taken out or flushed away, and the pondweed back, so that the reinforcing loop turns towards clear water.',
+      story: 'Po dwóch latach spływu staw zrobił się zielony. Przywróć czystą wodę z rosnącą rdestnicą na dwanaście tygodni z rzędu.',
+      target: 'Glony (zielenice i sinice) najwyżej {v} i rdestnica co najmniej {p}, dwanaście tygodni z rzędu, do tygodnia {w}.',
+      hint: 'Glony to objaw. Co je karmi? I co utrzyma je nisko, gdy woda już będzie czysta?',
+      explain: 'Zielony stan sam się podtrzymuje: glony zacieniają rośliny, które by je powstrzymały. Aby oczyścić wodę, trzeba usunąć przyczynę (spływ), wyjąć lub wypłukać zgromadzone składniki odżywcze i przywrócić rdestnicę, by pętla wzmacniająca obróciła się w stronę czystej wody.',
       plans: {
-        restore: 'Stop the runoff, dredge the nutrient-rich mud, plant pondweed and take out most small fish (so more water fleas graze the algae). Together they turn the loop towards clear water.',
-        flush: 'Stop the runoff and let a stream flush the nutrients and algae out for a while, then plant pondweed into the clear water.'
+        restore: 'Zatrzymaj spływ, wybierz żyzny muł, posadź rdestnicę i wyłów większość małych ryb (by więcej rozwielitek wyjadało glony). Razem obracają pętlę w stronę czystej wody.',
+        flush: 'Zatrzymaj spływ i na jakiś czas puść strumień, by wypłukał składniki odżywcze i glony, a potem posadź rdestnicę w czystej wodzie.'
       }
     },
     'protect-flowers': {
-      story: 'A neighbour has just sprayed the meadow: most aphids and most ladybirds died. Keep the wildflowers for a year.',
-      target: 'Wildflowers at least {v} every week until week {w}.',
-      hint: 'The aphids come back faster than the ladybirds. When would new ladybirds find something to eat?',
-      explain: 'The aphids rebound before their hunters do. Ladybirds released too early starve, because there are no aphids yet; released too late, the wildflowers are already eaten. Timing decides.',
+      story: 'Sąsiad właśnie opryskał łąkę: zginęła większość mszyc i większość biedronek. Zachowaj dzikie kwiaty przez rok.',
+      target: 'Dzikie kwiaty co najmniej {v} w każdym tygodniu do tygodnia {w}.',
+      hint: 'Mszyce wracają szybciej niż biedronki. Kiedy nowe biedronki znalazłyby coś do jedzenia?',
+      explain: 'Mszyce odbudowują się przed swoimi łowcami. Biedronki wypuszczone za wcześnie głodują, bo mszyc jeszcze nie ma; wypuszczone za późno trafiają na zjedzone już kwiaty. Rozstrzyga moment.',
       plans: {
-        ladybirds: 'Released after about ten weeks, when the aphids are back but before they peak, the ladybirds find food at once and stop the aphids in time.'
+        ladybirds: 'Wypuszczone po około dziesięciu tygodniach, gdy mszyce już wróciły, ale przed szczytem, biedronki od razu znajdują pokarm i w porę zatrzymują mszyce.'
       }
     },
     'bring-back-clover': {
-      story: 'Without foxes, rabbits have grazed the clover almost away. Bring the clover back for eight weeks in a row within four years.',
-      target: 'Clover at least {v} for eight weeks in a row, by week {w}.',
-      hint: 'Removing rabbits helps only for a while. What kept them in check before?',
-      explain: 'Rabbits multiply fast, so removing some only buys time. Lasting change needs the balancing loop back: foxes. Young foxes need half a year to grow up, so the clover comes back years later.',
+      story: 'Bez lisów króliki prawie wyjadły koniczynę. Przywróć koniczynę na osiem tygodni z rzędu w ciągu czterech lat.',
+      target: 'Koniczyna co najmniej {v}, osiem tygodni z rzędu, do tygodnia {w}.',
+      hint: 'Usuwanie królików pomaga tylko na chwilę. Co trzymało je w ryzach wcześniej?',
+      explain: 'Króliki mnożą się szybko, więc usunięcie części daje tylko czas. Trwała zmiana wymaga powrotu pętli równoważącej: lisów. Młode lisy rosną pół roku, więc koniczyna wraca dopiero po latach.',
       plans: {
-        foxes: 'Foxes alone are enough, but patience is needed: they bring the rabbits down slowly.',
-        foxesRabbits: 'Foxes plus relocating half the rabbits: the foxes start with fewer rabbits to catch up with.',
-        foxesRabbitsClover: 'Foxes, relocating most rabbits and sowing clover: the fastest way, because the clover gets a head start while the foxes grow up.'
+        foxes: 'Same lisy wystarczą, ale trzeba cierpliwości: zmniejszają liczbę królików powoli.',
+        foxesRabbits: 'Lisy plus przesiedlenie połowy królików: lisy mają mniej królików do dogonienia.',
+        foxesRabbitsClover: 'Lisy, przesiedlenie większości królików i wysiew koniczyny: najszybsza droga, bo koniczyna zyskuje przewagę, gdy lisy dorastają.'
       }
     }
   },
   loops: {
-    graze: 'Water fleas graze the algae down; fewer algae, fewer water fleas.',
-    fishFleas: 'Small fish eat water fleas; fewer water fleas, fewer young fish.',
-    pikeFish: 'Pike eat small fish; fewer small fish, fewer young pike.',
-    clearWater: 'Algae shade the pondweed; pondweed holds the algae back. Whoever is ahead pulls further ahead.',
-    shelter: 'Pondweed hides water fleas from fish, and water fleas eat algae.',
-    recycle: 'Dead algae rot and feed new algae.',
-    aphidsFlowers: 'Aphids feed on the wildflowers; fewer wildflowers, fewer aphids.',
-    ladybirdsAphids: 'Ladybirds eat aphids; fewer aphids, fewer young ladybirds.',
-    rabbitsClover: 'Rabbits graze the clover; less clover, fewer young rabbits.',
-    foxesRabbits: 'Foxes hunt rabbits; fewer rabbits, fewer young foxes.',
-    thirst: 'Grasses use the soil water; dry soil slows the grasses.',
-    wormsDead: 'Earthworms eat dead leaves; fewer dead leaves, fewer earthworms.',
-    flowerUptake: 'Wildflowers take up the nutrients they grow from.'
+    graze: 'Rozwielitki wyjadają glony; mniej glonów, mniej rozwielitek.',
+    fishFleas: 'Małe ryby jedzą rozwielitki; mniej rozwielitek, mniej młodych ryb.',
+    pikeFish: 'Szczupaki jedzą małe ryby; mniej małych ryb, mniej młodych szczupaków.',
+    clearWater: 'Glony zacieniają rdestnicę; rdestnica powstrzymuje glony. Kto prowadzi, ten odskakuje jeszcze bardziej.',
+    shelter: 'Rdestnica ukrywa rozwielitki przed rybami, a rozwielitki jedzą glony.',
+    recycle: 'Martwe glony gniją i karmią nowe glony.',
+    aphidsFlowers: 'Mszyce żyją z dzikich kwiatów; mniej kwiatów, mniej mszyc.',
+    ladybirdsAphids: 'Biedronki jedzą mszyce; mniej mszyc, mniej młodych biedronek.',
+    rabbitsClover: 'Króliki zjadają koniczynę; mniej koniczyny, mniej młodych królików.',
+    foxesRabbits: 'Lisy polują na króliki; mniej królików, mniej młodych lisów.',
+    thirst: 'Trawy zużywają wodę z gleby; sucha gleba spowalnia trawy.',
+    wormsDead: 'Dżdżownice jedzą opadłe liście; mniej liści, mniej dżdżownic.',
+    flowerUptake: 'Dzikie kwiaty pobierają składniki odżywcze, z których rosną.'
   }
 };
