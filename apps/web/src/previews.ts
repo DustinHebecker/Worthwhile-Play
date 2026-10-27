@@ -10,6 +10,15 @@
  * carry no information: decorative, `aria-hidden`, and the card's title and tagline stay its accessible name.
  * Skyscrapers is the one deliberate exception: it shows 3D towers (owner decision; the game will show towers too).
  *
+ * Photos (PHOTOS below) are the other exception (owner decisions 2026-10-27: Relay Command "ein echtes Bild, das
+ * entsprechend arrangiert ist", Lootlings "könnte ein thumbnail update gebrauchen"): a real screen of the game, rendered
+ * by the game itself and saved as `public/previews/<id>-light.webp` and `<id>-dark.webp` (288×192, 3× the 96×64 card;
+ * own work, no third-party art). Both files always exist; they may be identical when the game uses one palette in
+ * both themes (Lootlings' card art). The card shows them as a decorative `<picture>` (`alt=""`, `aria-hidden`) whose
+ * dark source follows `prefers-color-scheme`, which is the app's only theme switch. They are same-origin files under
+ * the app's base URL and precached by the service worker (`webp` in the workbox glob patterns), so they work offline
+ * like the drawings.
+ *
  * RTL: previews are not mirrored. They show game content with its own direction (boards, letters, digits, arrows,
  * laser paths) and the games do not mirror their boards either. Only the few pictures made of nothing but text
  * cards and lines (MIRRORED below) are flipped in RTL, as their text would be.
@@ -22,8 +31,6 @@
  *   cell · m0–m5 code symbols · chl/chd/pw/pb chess · lf/lgd/lgr/lgf/lmr/lbk/ltg/lsel laser · tp/trd/tf/th/tw/tm/tmf
  *   terrain · rl/rw/rwv/bt/bi river · s0–s2/pf stones · fw/fh water · st star · win tower windows · fbg/fsk/fsh/fhr face · hb hole
  *   pcf/pci/pcr/pcb/pcl playing cards (face, black and red suits, back, back line)
- *   rcw/rcr/rcrd/rct/rcts/rch/rcf/rcwh relay command map (waves, road, its centre line, crowns, their shadow, humps,
- *   the veil, wheel hubs) · rcg/rcd/rcp/rcl/rcm player-1 lines (gun, drone frame, rotors, leash, legs)
  *   text: t  ts contrast  tm2 muted  n1/n2 counts  tz/tli laser labels  tsm small  txs tiny  tl large
  */
 
@@ -104,25 +111,6 @@ const card = (x: number, y: number, w: number, h: number, rank: string, k: strin
 const back = (x: number, y: number, w: number, h: number) => R(x, y, w, h, 'pcb', 0.8) + R(x + 1, y + 1, w - 2, h - 2, 'pcl', 0.5);
 
 const PREVIEWS: Record<string, () => string> = {
-  // Relay Command (redrawn for the game's map of 2026-10-27): soft ground with a wood of round crowns, two humps, a
-  // lake and a road band; own units from the side, filled and facing right (a tank on its track, Rifles, a Scout Car
-  // with its drone above on its leash); the far side under the milky veil of the unobserved, with dots, and an enemy
-  // truck in it, pale and outlined in the second side's colour, facing left; a planned move as a dashed arrow.
-  'relay-command': () => {
-    let s = R(4, 4.5, 88, 55, 'tp', 2);
-    s += P('M60 44c3-6 13-7 19-4s12 2 12 9-2 10-10 10H62c-5 0-6-9-2-15z', 'tw') + P('M66 50q2-1.6 4 0t4 0M74 55q2-1.6 4 0t4 0M80 47q2-1.6 4 0t4 0', 'rcw');
-    const road = 'M7 41c10-2 19-1 27-5s18-10 26-10h28';
-    s += P(road, 'rcr') + P(road, 'rcrd');
-    for (const [x, y, r] of [[10, 10, 3.6], [17, 9, 4], [24, 11, 3.4], [13, 16, 3.8], [20, 16, 3.6], [8, 21, 3]] as const) s += C(x, y + 1, r, 'rcts') + C(x, y, r, 'rct');
-    s += P('M40 20c2-8 14-8 16 0z', 'rch') + P('M33 24c2-9 15-9 17 0z', 'rch');
-    s += P('M62 4.5h28a2 2 0 0 1 2 2V36H70c-5 0-8-4-8-9z', 'rcf') + [70, 78, 86].map((x) => [10, 18, 26].map((y) => C(x, y, 0.7, 'tmf')).join('')).join('');
-    s += P('M68 15h10v5h-12v-3z', 'c y2') + P('M78 16h4l2 2.5V20h-6z', 'c y2') + C(70, 21.3, 1.6, 'c y2') + C(81, 21.3, 1.6, 'c y2');
-    s += R(14, 46, 17, 4.2, 'i', 2) + P('M15 46l2-4h12l2 4z', 'p1') + P('M19 42l1.5-3h6l1.5 3z', 'p1') + P('M27.5 40.3h6', 'rcg') + [16, 19.5, 23, 26.5, 29.5].map((x) => C(x, 48.1, 1, 'rcwh')).join('');
-    s += P('M38 37v-3.5l3-1.5h5l2-3h4.5l2 3 2.5 1v4z', 'p1') + [41.5, 52.5].map((x) => C(x, 37.5, 1.9, 'i') + C(x, 37.5, 0.8, 'rcwh')).join('');
-    s += P('M44 21h8M44.5 21v1.5h7V21', 'rcd') + C(44, 20.2, 1.4, 'rcp') + C(52, 20.2, 1.4, 'rcp') + R(46.5, 21.5, 3, 2, 'p1', 0.6) + P('M48 24v4', 'rcl');
-    s += [6, 9.5, 13].map((x, i) => P(`M${x} ${36 - (i === 1 ? 1 : 0)}v-3`, 'rcm') + C(x, 31.2 - (i === 1 ? 1 : 0), 1.1, 'p1')).join('');
-    return s + P('M56 30q6-6 9-10', 'ab ds') + head(56, 30, 65, 20, 'a');
-  },
   // Orbit Links: nodes on dark-grey space joined by straight lanes; own (blue) and opposing (red) home nodes with
   // their strength, neutral outposts with dashed rims, a shipyard hexagon and a defence platform; a dashed stream.
   'node-conquest': () => {
@@ -462,30 +450,6 @@ const PREVIEWS: Record<string, () => string> = {
   'distractor-control': () =>
     R(34, 12, 28, 25, 'c', 3) + T(48, 25, 55, 't tl') + R(60, 2, 32, 8, 'c ds', 4) + R(64, 4.3, 5, 3.6, 'fn', 0.5) + P('M64 4.3l2.5 2 2.5-2', 'fn') + L(72, 6, 88, 6, 'g') +
     R(12.5, 41.5, 36, 17, 'pr', 4) + R(14, 43, 33, 14, 'c', 3) + R(49, 43, 33, 14, 'c', 3),
-  // Lootlings: the fight as the game shows it now (owner request 2026-10-17: "das Bild … sollte besser werden"): a
-  // monster card with its illustration (the lawnmower slicing a pointy hat) against a garden gnome's card, a clash
-  // star between them, and a hand of small picture cards below. Colours from the game's own illustration palette.
-  'card-quest': () => {
-    const lq = (d: string, c: string) => P(d, `${c} lqo`);
-    let out = '';
-    // Monster card: dark frame, sky, lawn, the red mower with eyes and teeth, the sliced hat tip flying off.
-    out += R(3, 3, 44, 42, 'lqf', 3) + R(5.5, 5.5, 39, 37, 'lqs', 1.5) + R(5.5, 34, 39, 8.5, 'lqg');
-    out += lq('M9 37c1-7 6-11 14-11h9c5 0 7 4 7 11z', 'lqr') + C(14, 38, 3, 'lqd lqo') + C(33, 38, 3, 'lqd lqo');
-    out += C(26, 30, 2, 'lqb lqo') + C(31.5, 30, 1.8, 'lqb lqo') + C(26.6, 30.3, 0.8, 'lqd') + C(32, 30.3, 0.7, 'lqd');
-    out += P('M22 35.5l1.4-2 1.4 2 1.4-2 1.4 2 1.4-2 1.4 2 1.4-2 1.4 2 1.4-2 1.4 2', 'lqt');
-    out += G('rotate(-25 36 13)', lq('M32 18 36 7l4 11z', 'lqr')) + L(14, 26, 8, 14, 'lql');
-    // Gnome card: sky, lawn, red pointy hat, face, white beard, blue coat; a shovel raised.
-    out += R(49, 3, 44, 42, 'lqh', 3) + R(51.5, 5.5, 39, 37, 'lqs', 1.5) + R(51.5, 34, 39, 8.5, 'lqg');
-    out += lq('M64 31h14l-1 11H65z', 'lqu') + lq('M63 21 71 6l8 15z', 'lqr') + C(71, 24, 5, 'lqk lqo');
-    out += lq('M66 25.5c1 8 9 8 10 0-3 1.5-7 1.5-10 0z', 'lqb') + C(69.2, 23.5, 0.7, 'lqd') + C(72.8, 23.5, 0.7, 'lqd');
-    out += L(83, 40, 85, 17, 'lql') + lq('M83 12h5l-1 6h-3z', 'lqm');
-    // The clash between the two cards.
-    out += star(48, 24, 6, 'lqy lqo');
-    // Hand: four picture cards (pointy hat, hard hat, slime, Change Sides monster).
-    for (let i = 0; i < 4; i++) out += R(4 + i * 22.5, 49, 20.5, 12.5, 'lqh', 2.5) + R(5.5 + i * 22.5, 50.5, 8, 9.5, 'lqs', 1) + L(16 + i * 22.5, 53, 22 + i * 22.5, 53, 'g') + L(16 + i * 22.5, 57, 20 + i * 22.5, 57, 'g');
-    out += lq('M7 59 9.5 52l2.5 7z', 'lqr') + lq('M29.5 57.5a3 3 0 0 1 6 0z', 'lqy') + lq('M51.5 59c0-4 1.5-6 3.5-6s3.5 2 3.5 6z', 'lqe') + lq('M74 59c0-4 1.5-6 3.5-6s3.5 2 3.5 6z', 'lqp');
-    return out;
-  },
   // Four in a Row: the light board with round holes; filled blue discs and red ring discs, the last move dashed.
   'connect-four': () => {
     const discs: Record<string, string> = { '2,2': 'p2', '2,3': 'p1', '2,4': 'p1', '2,5': 'p2', '3,3': 'p2', '3,4': 'p1', '3,5': 'p1', '4,4': 'p2', '4,5': 'p1', '6,5': 'p2' };
@@ -655,7 +619,18 @@ const PREVIEWS: Record<string, () => string> = {
       R(14, y, 68, 9, 'e', 2) + L(20, y + 4.5, 20 + [40, 32, 36][i]!, y + 4.5, 'mu') +
       tri(73, y + 3, 1.8, 'i') + poly([[71.2, y + 5.6], [74.8, y + 5.6], [73, y + 7.6]], 'i')).join('') +
     L(4, 48, 92, 48, 'k') + [8, 36, 58, 74, 86].map((x) => L(x, 44.5, x, 51.5, 'k')).join('') +
-    R(44, 43, 11, 10, 'ob', 1) + hatch(44, 43, 11, 10, 3, 'fn') + diamond(39, 48, 4.2, 'a')
+    R(44, 43, 11, 10, 'ob', 1) + hatch(44, 43, 11, 10, 3, 'fn') + diamond(39, 48, 4.2, 'a'),
+  // Pond & Meadow: on the left a pond cross-section (waterline, muddy bottom, three wavy pondweed stems, two duckweed
+  // ovals on the surface, a small fish outline); on the right a tiny chart with a solid and a dashed line that cross
+  // once, and a circular loop arrow with the letter R in the corner. Not mirrored (the chart runs left to right).
+  ecosystem: () =>
+    R(3, 14, 56, 46, 'tw', 3) + P('M3 14q7-3 14 0t14 0t14 0t14 0', 'fn') + P('M3 54q14-5 28-1t28-2V60H3Z', 'th') +
+    [12, 24, 47].map((x, i) => P(`M${x} 55q-4-${8 + i * 2} 0-${16 + i * 3}t0-${18 + i * 4}`, 'okl')).join('') +
+    `<ellipse cx="20" cy="14" rx="4.5" ry="1.8" class="cd"/><ellipse cx="40" cy="14" rx="4" ry="1.6" class="cd"/>` +
+    P('M30 33q6-5 12 0q-6 5-12 0zM30 33l-4-3v6z', 'o') +
+    R(63, 4, 30, 26, 'e', 2) + L(66, 26, 90, 26, 'fn') + L(66, 8, 66, 26, 'fn') +
+    P('M66 22c6-1 9-12 14-12s6 9 10 10', 'al') + P('M66 12c7 0 10 12 14 11s5-4 10-5', 'k ds') +
+    P('M70 47a10 10 0 1 1 7 9.5', 'k') + tri(76, 56, 2.6, 'i') + T(78, 46.5, 'R')
 };
 
 /** Pictures made only of text cards and lines: these follow the reading direction (flipped in RTL). */
@@ -664,21 +639,45 @@ export const MIRRORED: ReadonlySet<string> = new Set(['ambiguity-detector', 'aud
 /** Neutral glyph for a game without its own preview yet (circle, square, triangle). */
 const FALLBACK = () => C(28, 34, 11, 'a') + R(40, 22, 22, 22, 'o', 3) + tri(74, 36, 11, 'i');
 
-export const hasPreview = (id: string): boolean => Object.hasOwn(PREVIEWS, id);
-export const previewIds = (): string[] => Object.keys(PREVIEWS);
+/** Games whose card shows a picture rendered by the game itself instead of a drawing (see the header comment). */
+export const PHOTOS: ReadonlySet<string> = new Set(['relay-command', 'card-quest']);
 
-/** The complete SVG markup of a game's preview (the neutral glyph for unknown ids). */
+/** Same-origin URL of a game's preview photo, under the app's base URL (works at any deploy path and offline). */
+export const photoUrl = (id: string, scheme: 'light' | 'dark'): string => `${import.meta.env.BASE_URL}previews/${id}-${scheme}.webp`;
+
+export const hasPreview = (id: string): boolean => Object.hasOwn(PREVIEWS, id) || PHOTOS.has(id);
+export const previewIds = (): string[] => [...Object.keys(PREVIEWS), ...PHOTOS];
+
+const PHOTO_IMG = { alt: '', 'aria-hidden': 'true', width: '96', height: '64', decoding: 'async', loading: 'lazy', class: 'game-preview game-preview--photo' };
+
+/** The markup of a game's preview: a `<picture>` for photo games, SVG for all others (the neutral glyph for unknown ids). */
 export const previewMarkup = (id: string): string => {
+  if (PHOTOS.has(id)) {
+    const img = Object.entries({ src: photoUrl(id, 'light'), ...PHOTO_IMG }).map(([k, v]) => ` ${k}="${v}"`).join('');
+    return `<picture class="game-preview-picture"><source media="(prefers-color-scheme: dark)" srcset="${photoUrl(id, 'dark')}"><img${img}></picture>`;
+  }
   const body = (PREVIEWS[id] ?? FALLBACK)();
   const cls = `game-preview${MIRRORED.has(id) ? ' game-preview--flow' : ''}${hasPreview(id) ? '' : ' game-preview--generic'}`;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 64" class="${cls}" aria-hidden="true" focusable="false">${body}</svg>`;
 };
 
 /**
- * The preview as a DOM element. The markup is parsed as SVG XML (a constant from this module, never user text);
+ * The preview as a DOM element: a photo game's `<picture>` built element by element; otherwise the drawing, parsed
+ * as SVG XML (a constant from this module, never user text);
  * if it ever failed to parse, the neutral glyph is used instead.
  */
 export const gamePreview = (id: string): Element => {
+  if (PHOTOS.has(id)) {
+    const picture = document.createElement('picture');
+    picture.className = 'game-preview-picture';
+    const source = document.createElement('source');
+    source.media = '(prefers-color-scheme: dark)';
+    source.srcset = photoUrl(id, 'dark');
+    const img = document.createElement('img');
+    for (const [k, v] of Object.entries({ src: photoUrl(id, 'light'), ...PHOTO_IMG })) img.setAttribute(k, v);
+    picture.append(source, img);
+    return picture;
+  }
   const parse = (markup: string) => {
     const doc = new DOMParser().parseFromString(markup, 'image/svg+xml');
     const root = doc.documentElement;

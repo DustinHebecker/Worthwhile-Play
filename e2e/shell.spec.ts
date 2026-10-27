@@ -19,12 +19,13 @@ test.describe('app shell', () => {
       // The catalogue renders after the locale has loaded: wait for the cards before counting them.
       await expect.poll(() => cards.count()).toBeGreaterThan(40);
       const count = await cards.count();
-      await expect(page.locator('.game-card > svg.game-preview[aria-hidden="true"]')).toHaveCount(count);
+      // A drawing (inline SVG) or a photo (<picture> without a box of its own) per card, always decorative.
+      await expect(page.locator('.game-card > svg.game-preview[aria-hidden="true"], .game-card > picture > img.game-preview[aria-hidden="true"][alt=""]')).toHaveCount(count);
       await expect(page.locator('.game-preview--generic')).toHaveCount(0);
-      for (const id of ['relay-command', 'black-box', 'compression-challenge']) {
+      for (const id of ['relay-command', 'card-quest', 'black-box', 'compression-challenge']) {
         const card = page.getByTestId(`game-card-${id}`);
         await card.scrollIntoViewIfNeeded();
-        const preview = card.locator('svg.game-preview');
+        const preview = card.locator('.game-preview');
         await expect(preview).toBeVisible();
         const [cardBox, previewBox] = [await card.boundingBox(), await preview.boundingBox()];
         expect(previewBox!.width).toBeGreaterThan(80);
@@ -39,6 +40,26 @@ test.describe('app shell', () => {
         await expect(card).toHaveAccessibleName(new RegExp(`^${title.slice(0, 4).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`));
       }
       expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
+    });
+  }
+
+  for (const [id, scheme] of ['relay-command', 'card-quest'].flatMap((g) => (['light', 'dark'] as const).map((s) => [g, s] as const))) {
+    test(`${id}: the card shows the game's own picture (${scheme})`, async ({ page }) => {
+      await page.emulateMedia({ colorScheme: scheme });
+      await page.goto('/');
+      const card = page.getByTestId(`game-card-${id}`);
+      await card.scrollIntoViewIfNeeded();
+      const img = card.locator('picture > img.game-preview--photo');
+      await expect(img).toBeVisible();
+      // Loaded (lazy images load once near the viewport), the matching file for the colour scheme, at full resolution.
+      await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth)).toBe(288);
+      expect(await img.evaluate((el: HTMLImageElement) => new URL(el.currentSrc).pathname)).toBe(`/previews/${id}-${scheme}.webp`);
+      expect(await img.evaluate((el: HTMLImageElement) => el.naturalHeight)).toBe(192);
+      // Fills the band above the title like the drawings do.
+      const [box, titleBox] = [await img.boundingBox(), await card.locator('.game-card-title').boundingBox()];
+      expect(box!.width).toBeGreaterThan(80);
+      expect(box!.y + box!.height).toBeLessThanOrEqual(titleBox!.y + 1);
+      expect(await img.evaluate((el) => getComputedStyle(el).objectFit)).toBe('cover');
     });
   }
 
@@ -165,6 +186,32 @@ test.describe('offline', () => {
     await expect(page.getByTestId('start-game')).toBeVisible();
     await page.getByTestId('start-game').click();
     await expect(page.getByTestId('game-root')).toBeVisible();
+    await context.setOffline(false);
+  });
+
+  test('the preview photos are precached and show offline in both colour schemes', async ({ page, context }) => {
+    await page.goto('/');
+    await page.evaluate(async () => {
+      await navigator.serviceWorker.ready;
+    });
+    await page.reload();
+    await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true);
+    // In the precache, not only in the HTTP cache: never shown before going offline.
+    const ids = ['relay-command', 'card-quest'];
+    for (const url of ids.flatMap((id) => [`/previews/${id}-light.webp`, `/previews/${id}-dark.webp`])) {
+      expect(await page.evaluate(async (u) => Boolean(await caches.match(u, { ignoreSearch: true })), url), url).toBe(true);
+    }
+    await context.setOffline(true);
+    for (const scheme of ['light', 'dark'] as const) {
+      await page.emulateMedia({ colorScheme: scheme });
+      await page.reload();
+      for (const id of ids) {
+        const img = page.getByTestId(`game-card-${id}`).locator('img.game-preview--photo');
+        await img.scrollIntoViewIfNeeded();
+        await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth)).toBe(288);
+        expect(await img.evaluate((el: HTMLImageElement) => new URL(el.currentSrc).pathname)).toBe(`/previews/${id}-${scheme}.webp`);
+      }
+    }
     await context.setOffline(false);
   });
 
