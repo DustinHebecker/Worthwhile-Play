@@ -2,7 +2,7 @@ import { bcp47Tag, type GameContext, type GameInstance, type NewGameOptions } fr
 import { announce, clear, h } from '@wp/ui';
 import { STATS, ageInYears, balanceOf, dateOf, reviewLife, type YearRecord } from '@wp/life-engine';
 import {
-  PROFILE, ageOf, budgetOf, createState, currentEvent, decide, isOver, qualification, settingsOf, step, textIdOf, type ManyLivesState, type StepKind
+  ageOf, profileOf, budgetOf, createState, currentEvent, decide, isOver, qualification, settingsOf, step, textIdOf, type ManyLivesState, type StepKind
 } from './rules';
 import { drawScene, placeOf } from './scene';
 import './styles.css';
@@ -17,7 +17,7 @@ export function createManyLives(context: GameContext): GameInstance<ManyLivesSta
   let state: ManyLivesState = createState({ seed: 1 });
 
   const money = (cents: number): string =>
-    new Intl.NumberFormat(bcp47Tag(t.locale), { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(cents / 100);
+    new Intl.NumberFormat(bcp47Tag(t.locale), { style: 'currency', currency: profileOf(state).currency, maximumFractionDigits: 0 }).format(cents / 100);
 
   const live = h('div', { class: 'sr-only', 'aria-live': 'polite', 'data-testid': 'ml-live' });
   const wip = h('p', { class: 'ml-wip', 'data-testid': 'ml-wip' }, h('strong', {}, t('wip.label')), ' ', t('wip.text'));
@@ -67,6 +67,7 @@ export function createManyLives(context: GameContext): GameInstance<ManyLivesSta
     const net = items.reduce((a, i) => a + i.cents, 0);
     status.append(
       h('p', { class: 'ml-status-line' },
+        h('span', { 'data-testid': 'ml-region' }, t(`region.${state.life.profileId}`)),
         h('span', { 'data-testid': 'ml-age' }, t('status.age', { age: ageOf(state) })),
         h('span', {}, t('status.date', { month: d.month, year: d.year })),
         h('span', { 'data-testid': 'ml-cash' }, t('status.cash', { amount: money(balanceOf(state.life.ledger, 'cash')) })),
@@ -130,7 +131,7 @@ export function createManyLives(context: GameContext): GameInstance<ManyLivesSta
   }
 
   function renderReview() {
-    const r = reviewLife(state.life, PROFILE);
+    const r = reviewLife(state.life, profileOf(state));
     const year = state.life.calendar.birthYear;
     const years = state.life.years ?? [];
     card.append(
@@ -159,7 +160,7 @@ export function createManyLives(context: GameContext): GameInstance<ManyLivesSta
           h('tbody', {}, ...years.filter((y, i) => y.age % 5 === 0 || i === years.length - 1).map((y) => h('tr', {},
             h('td', {}, String(y.age)), h('td', {}, String(Math.round((y.stats[STATS.indexOf('satisfaction')] ?? 0) / 10))), h('td', {}, money(Math.round(y.cash / y.prices))))))))
       ] : []),
-      h('p', { class: 'ml-muted' }, t('review.simplified')),
+      h('p', { class: 'ml-muted' }, t(`review.simplified.${state.life.profileId}`)),
       h('p', { class: 'ml-muted' }, t('review.note'))
     );
   }

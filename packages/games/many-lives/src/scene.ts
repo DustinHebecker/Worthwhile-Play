@@ -34,7 +34,16 @@ export function placeOf(state: ManyLivesState): Place {
 
 function home(state: ManyLivesState): SVGElement {
   const g = el('g', { class: 'ml-scene-home' });
-  if (state.life.flags.includes('home.parents')) {
+  if (state.life.flags.includes('home.street')) {
+    // Without a home: a tarpaulin shelter by a street lamp, a rolled mat beneath it.
+    g.append(
+      el('path', { d: 'M12 142 L30 96 L104 104 L112 142 Z', class: 'ml-s-tarp' }),
+      el('path', { d: 'M30 96 L30 142 M104 104 L104 142', class: 'ml-s-lamp' }),
+      el('rect', { x: 44, y: 130, width: 40, height: 10, rx: 5, class: 'ml-s-door' }),
+      el('path', { d: 'M126 142 V44 h16', class: 'ml-s-lamp' }),
+      el('circle', { cx: 144, cy: 50, r: 6, class: 'ml-s-window' })
+    );
+  } else if (state.life.flags.includes('home.parents')) {
     // The parents' house: a gabled house on the left.
     g.append(
       el('rect', { x: 14, y: 70, width: 96, height: 72, rx: 3, class: 'ml-s-wall' }),

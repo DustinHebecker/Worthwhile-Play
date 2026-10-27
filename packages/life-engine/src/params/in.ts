@@ -56,6 +56,7 @@ export const IN_PARAMS: readonly Param[] = [
   p('in.labour.male-lfpr', 0.788, 'share', 'plfs-press-2024', 2024, [0.77, 0.81], 'secondary', 'band assumed'),
   // --- Earnings ------------------------------------------------------------------------------------
   p('in.earnings.regular-urban', 24434, 'local-currency-per-month', 'plfs-2024', 2024, [21991, 26877], 'secondary', 'Apr–Jun 2024 (men 26,105, women 19,879); band ±10 %'),
+  p('in.earnings.regular-urban-men', 26105, 'local-currency-per-month', 'plfs-2024', 2024, [23495, 28716], 'secondary', 'band ±10 %'),
   p('in.earnings.regular-urban-women', 19879, 'local-currency-per-month', 'plfs-2024', 2024, [17891, 21867], 'secondary', 'band ±10 %'),
   p('in.earnings.regular-rural', 17033, 'local-currency-per-month', 'plfs-2024', 2024, [15330, 18736], 'secondary', '(men 18,200, women 12,396); band ±10 %'),
   p('in.earnings.casual-urban-daily', 516, 'local-currency', 'plfs-2024', 2024, [464, 568], 'secondary', 'per day worked; days irregular (12–20/month); band ±10 %'),
@@ -69,6 +70,18 @@ export const IN_PARAMS: readonly Param[] = [
   p('in.labour.unemployment.postgraduate', 0.124, 'share', 'rs-plfs-graduates', 2024, [0.114, 0.134], 'secondary'),
   p('in.labour.unemployment.graduate-youth', 0.291, 'share', 'ier-2024-youth', 2022, [0.25, 0.32], 'secondary', 'women 34.5 %, men 26.4 %'),
   p('in.labour.unemployment.youth', 0.124, 'share', 'ier-2024-youth', 2022, [0.11, 0.14], 'secondary', 'band assumed'),
+  p('in.labour.unemployment.secondary', 0.044, 'share', 'morung-plfs-education-2025', 2024, [0.039, 0.049], 'secondary', 'secondary education, usual status 15+; band ±0.5 pp assumed'),
+  p('in.labour.unemployment.higher-secondary', 0.086, 'share', 'morung-plfs-education-2025', 2024, [0.076, 0.096], 'secondary', 'higher secondary, usual status 15+; band ±1 pp assumed'),
+  // --- Model assumptions (no source yet; flagged as unverified until replaced) ----------------------
+  p('in.model.job-finding-monthly-graduate', 0.05, 'share', 'model-assumption', 2026, [0.03, 0.08], 'unverified', 'monthly chance that an unemployed graduate finds work (mean search ≈ 20 months)'),
+  p('in.model.job-finding-monthly-other', 0.1, 'share', 'model-assumption', 2026, [0.06, 0.15], 'unverified', 'monthly chance without a degree (mostly casual or informal work)'),
+  p('in.model.graduate-share-regular-urban', 0.4, 'share', 'model-assumption', 2026, [0.3, 0.5], 'unverified', 'graduates among urban regular-salaried workers; splits the average pay with the graduate premium'),
+  p('in.model.postgraduate-premium', 1.3, 'ratio', 'model-assumption', 2026, [1.1, 1.5], 'unverified', 'postgraduate vs graduate pay'),
+  p('in.model.age-earnings-peak-ratio', 1.5, 'ratio', 'model-assumption', 2026, [1.3, 1.8], 'unverified', 'pay at 45–50 vs at 22–25 (IER 2024: earnings rise to 45–50, then flatten)'),
+  p('in.model.casual-days-per-month', 16, 'count', 'model-assumption', 2026, [12, 20], 'unverified', 'days of casual work per month; midpoint of the 12–20 noted with the PLFS daily wage'),
+  p('in.model.household-size', 4, 'count', 'model-assumption', 2026, [3.5, 4.5], 'unverified', 'persons per household, to turn per-person spending into a single-adult budget'),
+  p('in.model.coaching-odds-ratio', 3, 'ratio', 'model-assumption', 2026, [1.5, 5], 'unverified', 'chance of an elite seat with vs without coaching'),
+  p('in.model.hospital-bill-months', 2, 'months', 'model-assumption', 2026, [1.2, 6], 'unverified', 'catastrophic bill in months of average living costs (the 10 %-of-consumption threshold is 1.2 months)'),
   // --- Education -----------------------------------------------------------------------------------
   p('in.education.government-school-share', 0.559, 'share', 'cmse-2025', 2025, [0.539, 0.579], 'secondary', 'rural ≈ 66 %, urban 30.1 %'),
   p('in.education.private-unaided-share', 0.319, 'share', 'cmse-2025', 2025, [0.3, 0.36], 'secondary', 'UDISE+ 2023-24: 34.4 %'),
