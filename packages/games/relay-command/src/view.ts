@@ -48,6 +48,8 @@ import {
   newGame,
   opponentValue,
   teamValue,
+  PLAYER,
+  startSeats,
   teamShapes,
   teamShapeOf,
   teamsOnly,
@@ -83,6 +85,13 @@ import { blankMap, customSpec, hostMapLibrary, mapIssues, MAX_NAME, memoryStore,
 import { generateMap } from './generator';
 import { CELL, createTerrainLayer, drawDeposit, drawTerrainSwatch, TERRAIN_NAMES } from './draw';
 import { FIELD_EXERCISE, opponentCounts, SCENARIOS, scenarioFor } from './scenarios';
+
+/** Where a cell lies on a map, by thirds (the name of a base in the setup). */
+export function placeOf(x: number, y: number, w: number, h: number): string {
+  const col = x * 3 < w ? 'left' : x * 3 >= 2 * w ? 'right' : '';
+  const row = y * 3 < h ? 'top' : y * 3 >= 2 * h ? 'bottom' : '';
+  return row && col ? `${row}-${col}` : row || col || 'centre';
+}
 import './styles.css';
 
 /** Letters of the sides (A = the player), shown on every unit and row when there are several sides. */
@@ -426,6 +435,9 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   /** Teams (owner decisions 2026-10-24): the shapes the map offers for the opponent count; shown only then. */
   const teamsSelect = h('select', { 'data-testid': 'rc-teams', onchange: () => onSetup() }) as HTMLSelectElement;
   const teamsLabel = h('label', { 'data-testid': 'rc-teams-label', hidden: true }, h('span', {}, t('setup.teams')), teamsSelect);
+  /** The player's base (owner request 2026-10-27): each base the map offers, named by where it lies. */
+  const startSelect = h('select', { 'data-testid': 'rc-start', onchange: () => onSetup() }) as HTMLSelectElement;
+  const startLabel = h('label', { 'data-testid': 'rc-start-label', hidden: true }, h('span', {}, t('setup.start')), startSelect);
   // Lengths: open end (default), quick match (strength decides once the side behind stops gaining
   // ground), or a fixed number of turns.
   for (const limit of TURN_LIMITS) {
@@ -453,6 +465,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     difficultyLabel,
     h('label', { 'data-testid': 'rc-opponents-label' }, h('span', {}, t('setup.opponents')), opponentsSelect),
     teamsLabel,
+    startLabel,
     h('label', { class: 'rc-check' }, endlessInput, h('span', {}, t('setup.endless'))),
     seatsBox,
     hotSeatHint,
@@ -526,7 +539,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     'details',
     { class: 'rc-help' },
     h('summary', {}, t('help.title')),
-    ...['help.turns', 'help.replay', 'help.bar', 'help.orders', 'help.network', 'help.fog', 'help.flash', 'help.ew', 'help.doctrine', 'help.economy', 'help.towers', 'help.repair', 'help.drone', 'help.editor', 'help.random', 'help.sides', 'help.teams', 'help.hotSeat', 'help.combat', 'help.goal', 'help.shapes', 'help.access'].map((k) => h('p', {}, t(k)))
+    ...['help.turns', 'help.replay', 'help.bar', 'help.orders', 'help.network', 'help.fog', 'help.flash', 'help.ew', 'help.doctrine', 'help.economy', 'help.towers', 'help.repair', 'help.drone', 'help.editor', 'help.random', 'help.sides', 'help.teams', 'help.start', 'help.hotSeat', 'help.combat', 'help.goal', 'help.shapes', 'help.access'].map((k) => h('p', {}, t(k)))
   );
 
   /* ---------- Map editor ---------- */
@@ -758,6 +771,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     opponentsSelect.value = String(state.opponents);
     syncTeamOptions();
     teamsSelect.disabled = setupLocked;
+    syncStartOptions();
+    startSelect.disabled = setupLocked;
     const mapText = state.map ? mapLabel(state.map) : t(`scenario.${state.scenario}`);
     const length = limitSelect.selectedOptions[0]?.textContent ?? '';
     const summary = state.opponents > 1 ? t('setup.summaryOpponents', { map: mapText, length, n: state.opponents }) : t('setup.summary', { map: mapText, length });
@@ -2399,6 +2414,31 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     teamsLabel.hidden = shapes.length === 0;
   }
 
+  /**
+   * The bases the player may start from on the game's map, count and teams, named by where their
+   * Command Post lies (thirds of the map); the row only when there is a choice.
+   */
+  function syncStartOptions(): void {
+    const spec = specOf(state);
+    const shape = teamShapeOf(state.world);
+    const seats = spec ? startSeats(spec, state.opponents, shape) : [];
+    const options = seats.map((seat) => {
+      const post = spec && scenarioFor(spec, state.opponents, shape, seat)?.entities.find((e) => e.side === PLAYER && e.kind === 'command-post');
+      return { seat, place: post ? placeOf(post.x, post.y, state.world.map.w, state.world.map.h) : 'centre' };
+    });
+    const key = options.map((o) => `${o.seat}:${o.place}`).join(',');
+    if (startSelect.dataset.options !== key) {
+      clear(startSelect);
+      for (const o of options) startSelect.append(h('option', { value: String(o.seat) }, t(`setup.start.${o.place}`)));
+      startSelect.dataset.options = key;
+    }
+    startSelect.value = String(state.start ?? seats[0] ?? 0);
+    startLabel.hidden = seats.length < 2;
+  }
+
+  /** The base chosen in the setup (null: the map's default). */
+  const chosenStart = (): number | null => (startSelect.value === '' ? null : Number(startSelect.value));
+
   /** The team shape chosen in the setup (null: free-for-all). */
   const chosenTeams = (): TeamShape | null => (teamsSelect.value === 'ffa' || teamsSelect.value === '' ? null : (teamsSelect.value as TeamShape));
 
@@ -2446,7 +2486,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
         return;
       }
       selected = null;
-      commit(newGame(state.seed, FIELD_EXERCISE, state.difficulty, limit, limitSelect.value === 'quick', map, opponents, chosenSeats(), endlessInput.checked, { w: size[0], h: size[1], seed }, chosenTeams()), t('announce.setup', { scenario: mapLabel(map) }));
+      commit(newGame(state.seed, FIELD_EXERCISE, state.difficulty, limit, limitSelect.value === 'quick', map, opponents, chosenSeats(), endlessInput.checked, { w: size[0], h: size[1], seed }, chosenTeams(), chosenStart()), t('announce.setup', { scenario: mapLabel(map) }));
       homeCursor();
       render();
       return;
@@ -2459,7 +2499,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     syncOpponentOptions();
     // A player-made map with four bases takes the count chosen (two-side maps: one).
     const opponents = map && !map.seats ? 1 : Number(opponentsSelect.value) || 1;
-    commit(newGame(state.seed, spec, state.difficulty, limit, limitSelect.value === 'quick', map, opponents, chosenSeats(), endlessInput.checked, null, chosenTeams()), t('announce.setup', { scenario: map ? mapLabel(map) : t(`scenario.${spec.id}`) }));
+    commit(newGame(state.seed, spec, state.difficulty, limit, limitSelect.value === 'quick', map, opponents, chosenSeats(), endlessInput.checked, null, chosenTeams(), chosenStart()), t('announce.setup', { scenario: map ? mapLabel(map) : t(`scenario.${spec.id}`) }));
     homeCursor();
     render();
   }
@@ -2672,7 +2712,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     pause() {},
     resume() {},
     reset() {
-      state = { ...newGame(state.seed, scenarioById(state.scenario) ?? FIELD_EXERCISE, state.difficulty, state.turnLimit, state.quick, state.map, state.opponents, state.seats, state.endless, state.random, teamShapeOf(state.world)), edit: state.edit };
+      state = { ...newGame(state.seed, scenarioById(state.scenario) ?? FIELD_EXERCISE, state.difficulty, state.turnLimit, state.quick, state.map, state.opponents, state.seats, state.endless, state.random, teamShapeOf(state.world), state.start ?? null), edit: state.edit };
       selected = null;
       confirming = false;
       reported = false;

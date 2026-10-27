@@ -44,12 +44,43 @@ export const opponentCounts = (spec: ScenarioSpec): number[] =>
 /**
  * The scenario for `opponents` opponents (and, on a map made for teams, the team `shape`): seats
  * become sides 0…n (the player is side 0), empty seats neutral posts.
+ *
+ * `start` (owner request 2026-10-27: pick the own starting place on every map) is the seat the
+ * player takes; `null` is the map's default. Two-side maps: seat 1 swaps the sides (and their
+ * frames). Maps with seats: on a map made for teams the player swaps places with that seat (a
+ * seat of the player's own team, see `startSeats` in rules); otherwise the seats are turned round
+ * the map so the player sits there and every other side keeps its place relative to the player
+ * (next to, across). A start the map cannot give is `undefined`.
  */
-export function scenarioFor(spec: ScenarioSpec, opponents: number, shape: string | null = null): Scenario | undefined {
-  if (!spec.seats) return opponents === 1 ? spec.scenario : undefined;
+export function scenarioFor(spec: ScenarioSpec, opponents: number, shape: string | null = null, start: number | null = null): Scenario | undefined {
+  if (!spec.seats) {
+    if (opponents !== 1 || (start !== null && start !== 0 && start !== 1)) return undefined;
+    if (start !== 1) return spec.scenario;
+    const swap = (side: number) => (side === 0 ? 1 : side === 1 ? 0 : side);
+    const supply = spec.scenario.supply;
+    return {
+      ...spec.scenario,
+      entities: spec.scenario.entities.map((e) => ({ ...e, side: swap(e.side) })),
+      frames: ['r180', 'id'],
+      ...(supply && { supply: [supply[1] ?? 0, supply[0] ?? 0] })
+    };
+  }
   const byShape = spec.seats.teams;
-  const layout = byShape ? (shape !== null && Object.hasOwn(byShape, shape) && byShape[shape]!.length === opponents + 1 ? byShape[shape] : undefined) : spec.seats.layouts[opponents];
-  if (!layout) return undefined;
+  const base = byShape ? (shape !== null && Object.hasOwn(byShape, shape) && byShape[shape]!.length === opponents + 1 ? byShape[shape] : undefined) : spec.seats.layouts[opponents];
+  if (!base) return undefined;
+  const count = spec.seats.frames.length;
+  let layout: readonly number[] = base;
+  if (start !== null && start !== base[0]) {
+    if (!Number.isInteger(start) || start < 0 || start >= count) return undefined;
+    if (byShape) {
+      const at = base.indexOf(start);
+      if (at < 0) return undefined;
+      layout = base.map((seat, i) => (i === 0 ? start : i === at ? base[0]! : seat));
+    } else {
+      const turn = (((start - base[0]!) % count) + count) % count;
+      layout = base.map((seat) => (seat + turn) % count);
+    }
+  }
   const sideOf = new Map(layout.map((seat, side) => [seat, side]));
   const entities = spec.scenario.entities.flatMap((e) => {
     const side = sideOf.get(e.side);

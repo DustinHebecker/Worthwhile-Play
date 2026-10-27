@@ -855,3 +855,19 @@ test('relay-command: map editor tools on a 360 px phone in en, de, ru and ar: no
     expect(split, lang).toEqual([]);
   }
 });
+
+test('relay-command: the player picks the own base in the setup on a phone; the choice survives a reload (owner request 2026-10-27)', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await start(page);
+  await expect(page.getByTestId('rc-start-label')).toBeVisible();
+  await page.getByTestId('rc-start').selectOption({ label: 'Top right' });
+  await expect.poll(async () => ((await readSave(page, 'relay-command')) as { state: { start?: number } } | undefined)?.state.start).toBe(1);
+  const own = (await saved(page))!.world.entities.find((e) => e.side === 0 && e.kind === 'command-post')!;
+  expect([own.x, own.y]).toEqual([10, 1]);
+  await page.reload();
+  await page.getByTestId('continue').click();
+  await expect(page.getByTestId('rc-start')).toHaveValue('1');
+  await page.getByTestId('rc-lock').click();
+  await expect(page.getByTestId('rc-start')).toBeDisabled();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+});
