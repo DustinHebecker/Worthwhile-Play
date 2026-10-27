@@ -45,7 +45,9 @@ const RUNS = { numRuns: 60 };
 // 'da36ff2e' since muzzle flash (owner decision 2026-10-17) deliberately adds `flash` events to the
 // reported lists: a shooter the side does not observe that fires at its unit in coverage; reports and
 // every other event told are unchanged (checked: without the flash events the engine gives 'd1534738').
-const TWO_SIDE_FINGERPRINT = 'da36ff2e';
+// '8d8bd4d0' since every step names the cell it left (`fx`, `fy` on `move`, for the turn replay,
+// owner request 2026-10-27); nothing else changes (checked: without those two fields it is 'da36ff2e').
+const TWO_SIDE_FINGERPRINT = '8d8bd4d0';
 const play = (world: World, plans: readonly Command[][], rs = BASE_RULESET): World => plans.reduce((w, plan) => resolveTurn(w, rs, [plan]).world, world);
 
 describe('teams and hostility', () => {

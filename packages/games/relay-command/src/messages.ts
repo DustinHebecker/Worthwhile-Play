@@ -471,6 +471,11 @@ const en = {
   'summary.ended.leash': '{name}: that would take it beyond its leash; now holding position.',
   'legend.leash': 'Leash of a drone (dash-dot circle, 5 cells around its Scout Car)',
   'help.drone': 'Each Scout Car carries a drone. "Launch drone" (one order) sends it up above the car; it follows the car and can be sent anywhere within 5 cells of it, also over water and ridges. It sees 6 cells and passes on orders within 3 cells while it is connected. It has no weapon, but your units fire at what it spots with their own range: an Artillery Gun can shell an enemy only the drone sees. Every enemy except artillery and tanks can shoot it down. "Land on the Scout Car" brings it back aboard. A lost drone is replaced for free: a new one is aboard two turns later. If the Scout Car is destroyed, its drone falls with it. A drone does not count towards strength.',
+  'replay.play': 'Replay turn',
+  'replay.skip': 'Skip',
+  'replay.playing': 'Turn {turn} is played back …',
+  'replay.auto': 'Play each turn when it is carried out',
+  'help.replay': '"Replay turn" plays the last turn back on the map: how your units and the enemies you saw moved, who fired at whom and where shells landed, from what your side was told. Tick "Play each turn when it is carried out" to see every turn this way. "Skip", Escape or a click on the map ends it at once; with reduced motion it plays step by step.',
 };
 
 type Catalogue = Record<keyof typeof en, string>;
@@ -942,6 +947,11 @@ const de: Catalogue = {
   'summary.ended.leash': '{name}: Das ginge über ihre Leine hinaus; hält jetzt die Stellung.',
   'legend.leash': 'Leine einer Drohne (Strich-Punkt-Kreis, 5 Felder um ihren Spähwagen)',
   'help.drone': 'Jeder Spähwagen trägt eine Drohne. „Drohne starten“ (ein Befehl) lässt sie über dem Wagen aufsteigen; sie folgt dem Wagen und kann überall hin geschickt werden, solange sie höchstens 5 Felder von ihm entfernt bleibt, auch über Wasser und Grate. Sie sieht 6 Felder weit und leitet Befehle im Umkreis von 3 Feldern weiter, solange sie Verbindung hat. Sie hat keine Waffe, aber deine Einheiten feuern mit ihrer eigenen Reichweite auf das, was sie entdeckt: Ein Artilleriegeschütz kann so einen Gegner beschießen, den nur die Drohne sieht. Jeder Gegner außer Artillerie und Panzern kann sie abschießen. „Auf dem Spähwagen landen“ holt sie zurück an Bord. Eine verlorene Drohne wird kostenlos ersetzt: Zwei Runden später ist eine neue an Bord. Wird der Spähwagen zerstört, stürzt seine Drohne mit ab. Eine Drohne zählt nicht zur Stärke.',
+  'replay.play': 'Runde abspielen',
+  'replay.skip': 'Überspringen',
+  'replay.playing': 'Runde {turn} wird abgespielt …',
+  'replay.auto': 'Jede Runde abspielen, wenn sie ausgeführt wird',
+  'help.replay': '„Runde abspielen“ spielt die letzte Runde auf der Karte ab: wie sich deine Einheiten und die gesehenen Gegner bewegt haben, wer auf wen geschossen hat und wo Granaten eingeschlagen sind, so wie es deiner Seite gemeldet wurde. Mit „Jede Runde abspielen, wenn sie ausgeführt wird“ siehst du jede Runde so. „Überspringen“, Escape oder ein Klick auf die Karte beendet es sofort; bei reduzierter Bewegung läuft es Schritt für Schritt.',
 };
 
 // Translations other than en/de are AI-assisted and await native-speaker review.
@@ -1412,6 +1422,11 @@ const nl: Catalogue = {
   'summary.ended.leash': '{name}: dat zou buiten de lijn gaan; houdt nu positie.',
   'legend.leash': 'Lijn van een drone (streep-stippelcirkel, 5 vakken rond zijn verkenningswagen)',
   'help.drone': 'Elke verkenningswagen draagt een drone. “Drone lanceren” (één bevel) laat hem boven de wagen opstijgen; hij volgt de wagen en kan overal heen worden gestuurd binnen 5 vakken ervan, ook boven water en bergkammen. Hij ziet 6 vakken ver en geeft bevelen door binnen 3 vakken zolang hij verbinding heeft. Hij heeft geen wapen, maar je eenheden vuren met hun eigen bereik op wat hij ontdekt: een artilleriestuk kan zo een vijand beschieten die alleen de drone ziet. Elke vijand behalve artillerie en tanks kan hem neerschieten. “Landen op de verkenningswagen” haalt hem terug aan boord. Een verloren drone wordt gratis vervangen: twee beurten later is er een nieuwe aan boord. Wordt de verkenningswagen vernietigd, dan stort zijn drone mee neer. Een drone telt niet mee voor de sterkte.',
+  'replay.play': 'Beurt afspelen',
+  'replay.skip': 'Overslaan',
+  'replay.playing': 'Beurt {turn} wordt afgespeeld …',
+  'replay.auto': 'Elke beurt afspelen wanneer hij wordt uitgevoerd',
+  'help.replay': '“Beurt afspelen” speelt de laatste beurt af op de kaart: hoe je eenheden en de vijanden die je zag hebben bewogen, wie op wie heeft gevuurd en waar granaten zijn ingeslagen, zoals het aan jouw kant is gemeld. Vink “Elke beurt afspelen wanneer hij wordt uitgevoerd” aan om elke beurt zo te zien. “Overslaan”, Escape of een klik op de kaart beëindigt het meteen; met ‘Verminder beweging’ ingeschakeld speelt het stap voor stap.',
 };
 
 const es: Catalogue = {
@@ -1881,6 +1896,11 @@ const es: Catalogue = {
   'summary.ended.leash': '{name}: eso lo llevaría más allá de su correa; ahora mantiene la posición.',
   'legend.leash': 'Correa de un dron (círculo de trazo y punto, 5 casillas alrededor de su vehículo de reconocimiento)',
   'help.drone': 'Cada vehículo de reconocimiento lleva un dron. «Lanzar dron» (una orden) lo hace subir sobre el vehículo; sigue al vehículo y se le puede enviar a cualquier lugar como máximo a 5 casillas de él, también sobre agua y crestas. Ve a 6 casillas y retransmite órdenes en un radio de 3 casillas mientras tiene conexión. No tiene arma, pero tus unidades disparan con su propio alcance a lo que detecta: una pieza de artillería puede bombardear a un enemigo que solo ve el dron. Cualquier enemigo salvo la artillería y los carros de combate puede derribarlo. «Aterrizar en el vehículo de reconocimiento» lo devuelve a bordo. Un dron perdido se repone gratis: dos turnos después hay uno nuevo a bordo. Si el vehículo de reconocimiento es destruido, su dron cae con él. Un dron no cuenta para la fuerza.',
+  'replay.play': 'Reproducir turno',
+  'replay.skip': 'Saltar',
+  'replay.playing': 'Reproduciendo el turno {turn} …',
+  'replay.auto': 'Reproducir cada turno cuando se ejecute',
+  'help.replay': '«Reproducir turno» reproduce el último turno en el mapa: cómo se movieron tus unidades y los enemigos que viste, quién disparó a quién y dónde cayeron los proyectiles, según lo que se informó a tu bando. Marca «Reproducir cada turno cuando se ejecute» para ver así cada turno. «Saltar», Escape o un clic en el mapa lo terminan al instante; con «Reducir movimiento» activado se reproduce paso a paso.',
 };
 
 const fr: Catalogue = {
@@ -2350,6 +2370,11 @@ const fr: Catalogue = {
   'summary.ended.leash': '{name} : cela l’emmènerait au-delà de sa laisse ; tient désormais la position.',
   'legend.leash': 'Laisse d’un drone (cercle en trait mixte, 5 cases autour de son véhicule de reconnaissance)',
   'help.drone': 'Chaque véhicule de reconnaissance transporte un drone. « Lancer le drone » (un ordre) le fait monter au-dessus du véhicule ; il suit le véhicule et peut être envoyé partout à 5 cases au plus de lui, y compris au-dessus de l’eau et des crêtes. Il voit à 6 cases et relaie les ordres dans un rayon de 3 cases tant qu’il est en liaison. Il n’a pas d’arme, mais tes unités tirent avec leur propre portée sur ce qu’il repère : une pièce d’artillerie peut ainsi bombarder un ennemi que seul le drone voit. Tout ennemi sauf l’artillerie et les chars peut l’abattre. « Atterrir sur le véhicule de reconnaissance » le ramène à bord. Un drone perdu est remplacé gratuitement : un nouveau est à bord deux tours plus tard. Si le véhicule de reconnaissance est détruit, son drone tombe avec lui. Un drone ne compte pas dans la force.',
+  'replay.play': 'Rejouer le tour',
+  'replay.skip': 'Passer',
+  'replay.playing': 'Le tour {turn} est rejoué …',
+  'replay.auto': 'Rejouer chaque tour quand il est exécuté',
+  'help.replay': '« Rejouer le tour » rejoue le dernier tour sur la carte : comment tes unités et les ennemis que tu as vus se sont déplacés, qui a tiré sur qui et où les obus sont tombés, d’après ce qui a été signalé à ton camp. Coche « Rejouer chaque tour quand il est exécuté » pour voir chaque tour ainsi. « Passer », Échap ou un clic sur la carte l’arrête aussitôt ; avec « Réduire les animations » activé, il se déroule pas à pas.',
 };
 const ru: Catalogue = {
   title: 'Relay Command',
@@ -2818,6 +2843,11 @@ const ru: Catalogue = {
   'summary.ended.leash': '{name}: это вывело бы за пределы привязи; теперь удерживает позицию.',
   'legend.leash': 'Привязь дрона (штрихпунктирный круг, 5 клеток вокруг его разведывательной машины)',
   'help.drone': 'Каждая разведывательная машина несёт дрон. «Запустить дрон» (один приказ) поднимает его над машиной; он следует за машиной, и его можно отправить в любое место не дальше 5 клеток от неё, в том числе над водой и хребтами. Он видит на 6 клеток и передаёт приказы в радиусе 3 клеток, пока у него есть связь. Оружия у него нет, но твои подразделения стреляют по тому, что он обнаружит, со своей дальностью: артиллерийское орудие может обстрелять противника, которого видит только дрон. Сбить его может любой противник, кроме артиллерии и танков. «Сесть на разведывательную машину» возвращает его на борт. Потерянный дрон заменяется бесплатно: через два хода на борту новый. Если разведывательную машину уничтожат, её дрон упадёт вместе с ней. Дрон не учитывается в силах.',
+  'replay.play': 'Воспроизвести ход',
+  'replay.skip': 'Пропустить',
+  'replay.playing': 'Воспроизводится ход {turn} …',
+  'replay.auto': 'Воспроизводить каждый ход при выполнении',
+  'help.replay': '«Воспроизвести ход» проигрывает последний ход на карте: как двигались твои подразделения и замеченные противники, кто по кому стрелял и куда упали снаряды — по тому, что было доложено твоей стороне. Отметь «Воспроизводить каждый ход при выполнении», чтобы видеть так каждый ход. «Пропустить», Escape или щелчок по карте сразу завершают воспроизведение; при включённом уменьшении движения оно идёт пошагово.',
 };
 
 const zhHans: Catalogue = {
@@ -3287,6 +3317,11 @@ const zhHans: Catalogue = {
   'summary.ended.leash': '{name}：这会超出牵绳范围；现在原地坚守。',
   'legend.leash': '无人机的牵绳范围（点划线圆，侦察车周围 5 格）',
   'help.drone': '每辆侦察车携带一架无人机。“放飞无人机”（一条命令）让它升到车辆上方；它跟随车辆，可以派往车辆 5 格范围内的任何地方，也能飞越水域和山脊。它能看到 6 格远，保持联络时可在 3 格范围内转发命令。它没有武器，但你的部队会以各自的射程向它发现的目标开火：火炮可以炮击只有无人机看到的敌人。除火炮和坦克外，任何敌人都能把它击落。“降落到侦察车上”让它回到车上。损失的无人机会免费补充：两回合后车上会有一架新的。侦察车被摧毁时，它的无人机也随之坠毁。无人机不计入实力。',
+  'replay.play': '回放回合',
+  'replay.skip': '跳过',
+  'replay.playing': '正在回放第 {turn} 回合 …',
+  'replay.auto': '每回合执行时自动回放',
+  'help.replay': '“回放回合”会在地图上重放上一回合：你的部队和你看到的敌人如何移动、谁向谁开火、炮弹落在哪里，依据的是你方收到的报告。勾选“每回合执行时自动回放”即可这样观看每一回合。“跳过”、Escape 或点击地图会立即结束回放；开启“减弱动态效果”时会逐步播放。',
 };
 const ko: Catalogue = {
   title: 'Relay Command',
@@ -3755,6 +3790,11 @@ const ko: Catalogue = {
   'summary.ended.leash': '{name}: 목줄 범위를 벗어나게 됩니다. 이제 위치를 고수합니다.',
   'legend.leash': '드론의 목줄 (일점쇄선 원, 정찰 차량 주위 5칸)',
   'help.drone': '모든 정찰 차량은 드론을 한 대씩 싣고 있습니다. "드론 띄우기"(명령 1회)로 드론을 차량 위로 띄웁니다. 드론은 차량을 따라다니며, 차량에서 5칸 이내라면 물과 능선 위를 포함해 어디로든 보낼 수 있습니다. 드론은 6칸까지 보고, 통신이 연결되어 있는 동안 3칸 이내로 명령을 전달합니다. 무기는 없지만, 아군 유닛은 드론이 발견한 대상을 각자의 사거리로 사격합니다. 드론만 보고 있는 적도 곡사포로 포격할 수 있습니다. 포병과 전차를 제외한 모든 적이 드론을 격추할 수 있습니다. "정찰 차량에 착륙"으로 드론을 다시 싣습니다. 잃은 드론은 무료로 보충되며, 두 턴 뒤에 새 드론이 탑재됩니다. 정찰 차량이 파괴되면 드론도 함께 추락합니다. 드론은 전력에 포함되지 않습니다.',
+  'replay.play': '턴 다시 보기',
+  'replay.skip': '건너뛰기',
+  'replay.playing': '{turn}턴 재생 중 …',
+  'replay.auto': '각 턴이 실행될 때 재생',
+  'help.replay': '"턴 다시 보기"는 지난 턴을 지도 위에서 다시 보여 줍니다. 아군 유닛과 목격한 적이 어떻게 움직였는지, 누가 누구에게 사격했는지, 포탄이 어디에 떨어졌는지를 아군이 보고받은 내용대로 보여 줍니다. 모든 턴을 이렇게 보려면 "각 턴이 실행될 때 재생"을 선택하세요. "건너뛰기", Escape 또는 지도 클릭으로 바로 끝낼 수 있습니다. 동작 줄이기가 켜져 있으면 한 단계씩 재생됩니다.',
 };
 
 const ja: Catalogue = {
@@ -4224,6 +4264,11 @@ const ja: Catalogue = {
   'summary.ended.leash': '{name}：リードの範囲を超えてしまいます。現在地を保持します。',
   'legend.leash': 'ドローンのリード（一点鎖線の円、偵察車の周囲5マス）',
   'help.drone': '偵察車はそれぞれドローンを1機搭載しています。「ドローン発進」（命令1つ）で車両の上空に上げます。ドローンは車両について行き、車両から5マス以内なら、水域や尾根の上も含めてどこへでも送れます。視界は6マスで、通信がつながっている間は3マス以内に命令を中継します。武器はありませんが、味方の部隊はドローンが見つけた相手をそれぞれの射程で攻撃します。ドローンにしか見えていない敵も榴弾砲で砲撃できます。砲兵と戦車以外のすべての敵がドローンを撃墜できます。「偵察車に着陸」で車両に戻します。失ったドローンは無料で補充され、2ターン後に新しいドローンが搭載されます。偵察車が破壊されると、そのドローンも一緒に墜落します。ドローンは戦力に数えません。',
+  'replay.play': 'ターンを再生',
+  'replay.skip': 'スキップ',
+  'replay.playing': 'ターン{turn}を再生中…',
+  'replay.auto': '各ターンの実行時に再生',
+  'help.replay': '「ターンを再生」は、直前のターンをマップ上で再生します。味方の部隊と見えていた敵がどう動いたか、誰が誰を撃ったか、砲弾がどこに落ちたかを、味方に報告された内容に基づいて示します。「各ターンの実行時に再生」にチェックを入れると、毎ターンこのように見られます。「スキップ」、Escape、またはマップのクリックですぐに終わります。OSで「視差効果を減らす」（動きを減らす設定）をオンにしていると、1ステップずつ再生されます。',
 };
 const ar: Catalogue = {
   title: 'Relay Command',
@@ -4692,6 +4737,11 @@ const ar: Catalogue = {
   'summary.ended.leash': '{name}: هذا سيتجاوز حدود الرسن؛ تثبت الآن في الموقع.',
   'legend.leash': 'رسن المسيّرة (دائرة من شرطة ونقطة، 5 خانات حول عربة الاستطلاع التابعة لها)',
   'help.drone': 'تحمل كل عربة استطلاع طائرة مسيّرة. «إطلاق المسيّرة» (أمر واحد) يرفعها فوق العربة؛ فتتبع العربة ويمكن إرسالها إلى أي مكان على بُعد 5 خانات منها على الأكثر، حتى فوق الماء والحواف الجبلية. ترى المسيّرة 6 خانات وتنقل الأوامر ضمن 3 خانات ما دامت على اتصال. ليس لها سلاح، لكن وحداتك تطلق النار بمداها الخاص على ما تكتشفه: يستطيع مدفع المدفعية قصف عدو لا تراه إلا المسيّرة. يمكن لأي عدو ما عدا المدفعية والدبابات إسقاطها. «الهبوط على عربة الاستطلاع» يعيدها إلى متن العربة. تُستبدل المسيّرة المفقودة مجانًا: بعد دورين تكون على المتن مسيّرة جديدة. وإذا دُمّرت عربة الاستطلاع سقطت مسيّرتها معها. لا تُحتسب المسيّرة في القوة.',
+  'replay.play': 'إعادة عرض الدور',
+  'replay.skip': 'تخطي',
+  'replay.playing': 'يُعاد عرض الدور {turn} …',
+  'replay.auto': 'عرض كل دور عند تنفيذه',
+  'help.replay': '«إعادة عرض الدور» يعيد عرض الدور الأخير على الخريطة: كيف تحركت وحداتك والأعداء الذين رأيتهم، ومن أطلق النار على من، وأين سقطت القذائف، بحسب ما أُبلغ به جانبك. فعّل «عرض كل دور عند تنفيذه» لترى كل دور بهذه الطريقة. «تخطي» أو Escape أو نقرة على الخريطة تُنهيه فورًا؛ ومع تفعيل «تقليل الحركة» يُعرض خطوة بخطوة.',
 };
 
 const pt: Catalogue = {
@@ -5161,6 +5211,11 @@ const pt: Catalogue = {
   'summary.ended.leash': '{name}: isso o levaria além da amarra; agora mantém a posição.',
   'legend.leash': 'Amarra de um drone (círculo de traço e ponto, 5 casas ao redor do seu veículo de reconhecimento)',
   'help.drone': 'Cada veículo de reconhecimento leva um drone. “Lançar drone” (uma ordem) o faz subir acima do veículo; ele segue o veículo e pode ser enviado a qualquer lugar a no máximo 5 casas dele, inclusive sobre água e cumes. Ele vê a 6 casas e repassa ordens num raio de 3 casas enquanto está conectado. Não tem arma, mas suas unidades atiram com o próprio alcance no que ele avista: uma peça de artilharia pode bombardear um inimigo que só o drone vê. Qualquer inimigo, exceto artilharia e carros de combate, pode derrubá-lo. “Pousar no veículo de reconhecimento” o traz de volta a bordo. Um drone perdido é reposto de graça: dois turnos depois há um novo a bordo. Se o veículo de reconhecimento for destruído, seu drone cai junto. Um drone não conta para a força.',
+  'replay.play': 'Repetir turno',
+  'replay.skip': 'Pular',
+  'replay.playing': 'Repetindo o turno {turn} …',
+  'replay.auto': 'Repetir cada turno quando for executado',
+  'help.replay': '“Repetir turno” reproduz o último turno no mapa: como suas unidades e os inimigos que você viu se moveram, quem atirou em quem e onde caíram os projéteis, conforme o que foi relatado ao seu lado. Marque “Repetir cada turno quando for executado” para ver cada turno assim. “Pular”, Escape ou um clique no mapa encerra na hora; com “Reduzir movimento” ativado, a repetição avança passo a passo.',
 };
 const it: Catalogue = {
   title: 'Relay Command',
@@ -5629,6 +5684,11 @@ const it: Catalogue = {
   'summary.ended.leash': '{name}: così andrebbe oltre il suo guinzaglio; ora mantiene la posizione.',
   'legend.leash': 'Guinzaglio di un drone (cerchio a tratto e punto, 5 caselle intorno al suo veicolo da ricognizione)',
   'help.drone': 'Ogni veicolo da ricognizione porta un drone. «Lancia drone» (un ordine) lo fa salire sopra il veicolo; segue il veicolo e può essere mandato ovunque entro 5 caselle da esso, anche sopra acqua e creste. Vede a 6 caselle e ritrasmette gli ordini entro 3 caselle finché è collegato. Non ha armi, ma le tue unità sparano con la propria gittata a ciò che individua: un pezzo d’artiglieria può bombardare un nemico che vede solo il drone. Qualsiasi nemico tranne artiglieria e carri armati può abbatterlo. «Atterra sul veicolo da ricognizione» lo riporta a bordo. Un drone perso viene sostituito gratuitamente: due turni dopo ce n’è uno nuovo a bordo. Se il veicolo da ricognizione viene distrutto, il suo drone cade con lui. Un drone non conta per la forza.',
+  'replay.play': 'Rivedi turno',
+  'replay.skip': 'Salta',
+  'replay.playing': 'Riproduzione del turno {turn} …',
+  'replay.auto': 'Riproduci ogni turno quando viene eseguito',
+  'help.replay': '«Rivedi turno» riproduce l’ultimo turno sulla mappa: come si sono mosse le tue unità e i nemici che hai visto, chi ha sparato a chi e dove sono caduti i proiettili, secondo quanto è stato segnalato alla tua parte. Spunta «Riproduci ogni turno quando viene eseguito» per vedere così ogni turno. «Salta», Escape o un clic sulla mappa la interrompono subito; con «Riduci movimento» attivo procede passo per passo.',
 };
 
 const pl: Catalogue = {
@@ -6098,6 +6158,11 @@ const pl: Catalogue = {
   'summary.ended.leash': '{name}: to wykraczałoby poza smycz; teraz utrzymuje pozycję.',
   'legend.leash': 'Smycz drona (okrąg kreska-kropka, 5 pól wokół jego samochodu rozpoznawczego)',
   'help.drone': 'Każdy samochód rozpoznawczy przewozi drona. „Wypuść drona” (jeden rozkaz) podnosi go nad pojazd; dron podąża za pojazdem i można go wysłać wszędzie w promieniu 5 pól od niego, także nad wodę i granie. Widzi na 6 pól i przekazuje rozkazy w promieniu 3 pól, dopóki ma łączność. Nie ma broni, ale twoje oddziały strzelają z własnym zasięgiem do tego, co wykryje: działo artyleryjskie może ostrzelać wroga, którego widzi tylko dron. Zestrzelić go może każdy wróg z wyjątkiem artylerii i czołgów. „Wyląduj na samochodzie rozpoznawczym” sprowadza go z powrotem na pokład. Utracony dron jest zastępowany za darmo: dwie tury później na pokładzie jest nowy. Jeśli samochód rozpoznawczy zostanie zniszczony, jego dron spada razem z nim. Dron nie wlicza się do siły.',
+  'replay.play': 'Odtwórz turę',
+  'replay.skip': 'Pomiń',
+  'replay.playing': 'Odtwarzanie tury {turn} …',
+  'replay.auto': 'Odtwarzaj każdą turę po jej wykonaniu',
+  'help.replay': '„Odtwórz turę” odtwarza ostatnią turę na mapie: jak poruszały się twoje oddziały i widziani wrogowie, kto do kogo strzelał i gdzie spadły pociski — według tego, co zameldowano twojej stronie. Zaznacz „Odtwarzaj każdą turę po jej wykonaniu”, aby oglądać tak każdą turę. „Pomiń”, Escape lub kliknięcie mapy od razu kończy odtwarzanie; przy włączonym ograniczaniu ruchu przebiega ono krok po kroku.',
 };
 const tr: Catalogue = {
   title: 'Relay Command',
@@ -6566,6 +6631,11 @@ const tr: Catalogue = {
   'summary.ended.leash': '{name}: bu, tasmanın dışına çıkarırdı; artık mevziyi koruyor.',
   'legend.leash': 'Bir dronun tasması (çizgi-nokta çember, keşif aracının çevresinde 5 kare)',
   'help.drone': 'Her keşif aracı bir dron taşır. “Dronu kaldır” (bir emir) onu aracın üzerine yükseltir; dron aracı izler ve araçtan en fazla 5 kare uzaklıktaki her yere, su ve sırtların üzerine de gönderilebilir. 6 kare görür ve bağlantısı olduğu sürece 3 kare içinde emirleri iletir. Silahı yoktur, ama birliklerin onun gördüğü hedeflere kendi menzilleriyle ateş eder: bir topçu topu, yalnızca dronun gördüğü bir düşmanı bombalayabilir. Topçu ve tanklar dışında her düşman onu düşürebilir. “Keşif aracına indir” onu araca geri getirir. Kaybedilen dron ücretsiz yenilenir: iki tur sonra araçta yeni bir dron olur. Keşif aracı yok edilirse dronu da onunla birlikte düşer. Dron güce sayılmaz.',
+  'replay.play': 'Turu oynat',
+  'replay.skip': 'Atla',
+  'replay.playing': '{turn}. tur oynatılıyor …',
+  'replay.auto': 'Her turu yürütüldüğünde oynat',
+  'help.replay': '“Turu oynat” son turu haritada yeniden oynatır: birliklerinin ve gördüğün düşmanların nasıl hareket ettiğini, kimin kime ateş ettiğini ve top mermilerinin nereye düştüğünü, tarafına bildirildiği şekliyle gösterir. Her turu böyle görmek için “Her turu yürütüldüğünde oynat” kutusunu işaretle. “Atla”, Escape ya da haritaya bir tıklama bunu hemen bitirir; “Hareketi azalt” ayarı açıkken adım adım oynar.',
 };
 
 const uk: Catalogue = {
@@ -7035,6 +7105,11 @@ const uk: Catalogue = {
   'summary.ended.leash': '{name}: це вивело б за межі прив’язі; тепер утримує позицію.',
   'legend.leash': 'Прив’язь дрона (штрихпунктирне коло, 5 клітинок навколо його розвідувальної машини)',
   'help.drone': 'Кожна розвідувальна машина несе дрон. «Запустити дрон» (один наказ) піднімає його над машиною; він слідує за машиною, і його можна відправити будь-куди не далі 5 клітинок від неї, зокрема над водою та хребтами. Він бачить на 6 клітинок і передає накази в радіусі 3 клітинок, поки має зв’язок. Зброї він не має, але твої підрозділи стріляють по тому, що він виявить, зі своєю дальністю: артилерійська гармата може обстріляти ворога, якого бачить лише дрон. Збити його може будь-який ворог, крім артилерії та танків. «Сісти на розвідувальну машину» повертає його на борт. Втрачений дрон замінюється безкоштовно: через два ходи на борту новий. Якщо розвідувальну машину знищено, її дрон падає разом із нею. Дрон не враховується в силах.',
+  'replay.play': 'Відтворити хід',
+  'replay.skip': 'Пропустити',
+  'replay.playing': 'Відтворюється хід {turn} …',
+  'replay.auto': 'Відтворювати кожен хід під час виконання',
+  'help.replay': '«Відтворити хід» програє останній хід на карті: як рухалися твої підрозділи та помічені вороги, хто в кого стріляв і куди впали снаряди — за тим, що було повідомлено твоїй стороні. Познач «Відтворювати кожен хід під час виконання», щоб бачити так кожен хід. «Пропустити», Escape або клік по карті одразу завершують відтворення; з увімкненим зменшенням руху воно йде покроково.',
 };
 
 const hi: Catalogue = {
@@ -7504,6 +7579,11 @@ const hi: Catalogue = {
   'summary.ended.leash': '{name}: इससे वह अपनी डोर से बाहर चला जाता; अब जगह पर डटा है।',
   'legend.leash': 'ड्रोन की डोर (डैश-बिंदु वाला घेरा, उसकी टोही गाड़ी के चारों ओर 5 खाने)',
   'help.drone': 'हर टोही गाड़ी एक ड्रोन ले जाती है। “ड्रोन उड़ाओ” (एक आदेश) उसे गाड़ी के ऊपर उठा देता है; वह गाड़ी के पीछे चलता है और उससे 5 खानों के भीतर कहीं भी भेजा जा सकता है, पानी और पहाड़ी धारों के ऊपर भी। वह 6 खाने दूर तक देखता है और जब तक संपर्क में है, 3 खानों के भीतर आदेश आगे पहुँचाता है। उसके पास कोई हथियार नहीं है, पर तुम्हारी टुकड़ियाँ उसकी देखी चीज़ों पर अपनी मारक दूरी से गोली चलाती हैं: आर्टिलरी तोप ऐसे दुश्मन पर गोले दाग सकती है जिसे सिर्फ़ ड्रोन देखता है। आर्टिलरी और टैंकों को छोड़कर हर दुश्मन उसे मार गिरा सकता है। “टोही गाड़ी पर उतारो” उसे वापस गाड़ी पर ले आता है। खोया हुआ ड्रोन मुफ़्त में बदल दिया जाता है: दो बारी बाद गाड़ी पर नया ड्रोन होता है। अगर टोही गाड़ी नष्ट हो जाए, तो उसका ड्रोन भी साथ गिर जाता है। ड्रोन ताक़त में नहीं गिना जाता।',
+  'replay.play': 'बारी दोबारा चलाओ',
+  'replay.skip': 'छोड़ो',
+  'replay.playing': 'बारी {turn} दोबारा चल रही है …',
+  'replay.auto': 'हर बारी पूरी होने पर उसे चलाओ',
+  'help.replay': '“बारी दोबारा चलाओ” पिछली बारी को नक्शे पर दोबारा चलाता है: तुम्हारी टुकड़ियाँ और तुम्हें दिखे दुश्मन कैसे चले, किसने किस पर गोली चलाई और गोले कहाँ गिरे, जैसा तुम्हारी ओर को बताया गया था। हर बारी इसी तरह देखने के लिए “हर बारी पूरी होने पर उसे चलाओ” पर निशान लगाओ। “छोड़ो”, Escape या नक्शे पर एक क्लिक इसे तुरंत रोक देता है; मोशन कम करने की सेटिंग चालू हो तो यह क़दम-दर-क़दम चलता है।',
 };
 
 export const messages: GameMessages = {

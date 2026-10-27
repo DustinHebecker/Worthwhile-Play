@@ -77,6 +77,7 @@ import {
 } from './rules';
 import { DIFFICULTIES, type Difficulty } from './ai';
 import { drawIcon, VIEWS, type View } from './icons';
+import { buildReplay, positionAt, type Replay } from './replay';
 import { createEditor } from './editor';
 import { blankMap, customSpec, hostMapLibrary, mapIssues, MAX_NAME, memoryStore, migratePreferenceMaps, preferenceMapLibrary, type EditMap, type MapLibrary, type MapStore } from './maps';
 import { generateMap } from './generator';
@@ -365,10 +366,34 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   };
   let mapView: View = readView();
   const terrainLayer = createTerrainLayer('fine');
+  /** Time per tick of the replay (a turn of 6 ticks takes 2.7 s; stepwise with reduced motion). */
+  const REPLAY_TICK_MS = 450;
+  const REPLAY_STEP_MS = 700;
+  let playing: { replay: Replay; f: number; start: number; frame: number } | null = null;
   const viewButtons = VIEWS.map((v) =>
     h('button', { type: 'button', 'data-testid': `rc-view-${v}`, 'aria-pressed': String(v === mapView), onclick: () => setView(v) }, t(`view.${v}`))
   );
   const viewGroup = h('div', { class: 'rc-actions rc-view', role: 'group', 'aria-label': t('view.label'), 'data-testid': 'rc-view' }, h('span', { class: 'rc-label' }, t('view.label')), ...viewButtons);
+  /**
+   * Turn replay (owner request 2026-10-27): the last turn played back on the map, moves and shots,
+   * from what the side was told. On demand, or after every turn when the player chose so (off by
+   * default: no waiting unless asked for); always cut short by "Skip", Escape or a click on the map.
+   */
+  const readAutoReplay = (): boolean => {
+    try {
+      return context.preferences?.get('replayTurns') === true;
+    } catch {
+      return false;
+    }
+  };
+  const autoReplayBox = h('input', { type: 'checkbox', 'data-testid': 'rc-replay-auto', onchange: () => onAutoReplay() }) as HTMLInputElement;
+  autoReplayBox.checked = readAutoReplay();
+  const replayBtn = h('button', { type: 'button', 'data-testid': 'rc-replay', onclick: () => startReplay() }, t('replay.play')) as HTMLButtonElement;
+  const replayStatus = h('span', { 'data-testid': 'rc-replay-status' });
+  const replaySkip = h('button', { type: 'button', 'data-testid': 'rc-replay-skip', onclick: () => stopReplay(true) }, t('replay.skip'));
+  const replayBar = h('div', { class: 'rc-actions rc-replay-bar', role: 'status', 'data-testid': 'rc-replay-bar', hidden: true }, replayStatus, replaySkip);
+  // Below the map, in one row that keeps its height while a replay plays (the map never moves).
+  const replayRow = h('div', { class: 'rc-actions rc-replay' }, replayBtn, replayBar, h('label', { class: 'rc-check' }, autoReplayBox, h('span', {}, t('replay.auto'))));
 
   /** Game setup, until the first turn is locked: scenario and turn limit (open end by default). */
   const scenarioSelect = h('select', { 'data-testid': 'rc-scenario', onchange: () => onSetup() });
@@ -498,7 +523,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     'details',
     { class: 'rc-help' },
     h('summary', {}, t('help.title')),
-    ...['help.turns', 'help.bar', 'help.orders', 'help.network', 'help.fog', 'help.flash', 'help.ew', 'help.doctrine', 'help.economy', 'help.towers', 'help.repair', 'help.drone', 'help.editor', 'help.random', 'help.sides', 'help.teams', 'help.hotSeat', 'help.combat', 'help.goal', 'help.shapes', 'help.access'].map((k) => h('p', {}, t(k)))
+    ...['help.turns', 'help.replay', 'help.bar', 'help.orders', 'help.network', 'help.fog', 'help.flash', 'help.ew', 'help.doctrine', 'help.economy', 'help.towers', 'help.repair', 'help.drone', 'help.editor', 'help.random', 'help.sides', 'help.teams', 'help.hotSeat', 'help.combat', 'help.goal', 'help.shapes', 'help.access'].map((k) => h('p', {}, t(k)))
   );
 
   /* ---------- Map editor ---------- */
@@ -557,7 +582,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   const mainEl = h(
     'div',
     { class: 'rc-main', 'data-testid': 'rc-main' },
-    h('div', { class: 'rc-board' }, mapWrap, cursorDesc, viewGroup, legendEl),
+    h('div', { class: 'rc-board' }, mapWrap, cursorDesc, viewGroup, replayRow, legendEl),
     h(
       'div',
       { class: 'rc-side' },
@@ -766,6 +791,8 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     renderSelection();
     renderLists();
     renderSummary();
+    // A replay is offered while the last turn's events can be played back.
+    replayBtn.disabled = playing !== null || lastReplay() === null;
     draw();
   }
 
@@ -830,6 +857,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     render();
     canvas.focus();
     announce(live, `${t('hot.planning', { mark: sideMark(me()) })} ${[...summaryList.querySelectorAll('li')].map((li) => li.textContent).join(' ')}`);
+    if (autoReplayBox.checked) startReplay();
   }
 
   /** The own Command Post is jammed: no orders this turn (the post knows its own radio; reveals nothing else). */
@@ -1577,11 +1605,136 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     drawTerrain(g, w, ratio);
     drawFog(g, w);
     drawCoverage(g, w);
+    if (playing) {
+      drawReplay(g, w, playing.replay, playing.f);
+      return;
+    }
     drawOrders(g, w);
     drawLeash(g, w);
     drawEvents(g);
     for (const e of w.entities) drawUnit(g, e);
     drawCursor(g);
+  }
+
+  /* ---------- Turn replay ---------- */
+  const reducedMotion = (): boolean => {
+    try {
+      return globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+    } catch {
+      return false;
+    }
+  };
+  /** The replay of the last turn as the planning side was told it, or null (nothing to show). */
+  const lastReplay = (): Replay | null => (state.world.turn > 0 && !state.handover && state.edit === null ? buildReplay(world().entities, state.events, state.world.tick, RULESET.ticksPerTurn) : null);
+
+  function startReplay(): void {
+    stopReplay(false);
+    const replay = lastReplay();
+    if (!replay) return;
+    const step = reducedMotion();
+    const ms = step ? REPLAY_STEP_MS : REPLAY_TICK_MS;
+    const now = performance.now();
+    playing = { replay, f: 0, start: now, frame: 0 };
+    replayStatus.textContent = t('replay.playing', { turn: state.world.turn });
+    replayBar.hidden = false;
+    replayBtn.hidden = true;
+    replayBtn.disabled = true;
+    const tick = (time: number) => {
+      if (!playing) return;
+      const raw = (time - playing.start) / ms;
+      if (raw >= replay.ticks) {
+        stopReplay(false);
+        return;
+      }
+      playing.f = step ? Math.floor(raw) : raw;
+      draw();
+      playing.frame = requestAnimationFrame(tick);
+    };
+    draw();
+    playing.frame = requestAnimationFrame(tick);
+  }
+
+  /** Ends the replay (`skipped`: cut short by the player) and shows the map as it is now. */
+  function stopReplay(skipped: boolean): void {
+    if (!playing) return;
+    cancelAnimationFrame(playing.frame);
+    playing = null;
+    replayBar.hidden = true;
+    replayBtn.hidden = false;
+    replayBtn.disabled = lastReplay() === null;
+    draw();
+    if (skipped) canvas.focus();
+  }
+
+  function onAutoReplay(): void {
+    try {
+      context.preferences?.set('replayTurns', autoReplayBox.checked);
+    } catch {
+      /* not kept: this session only */
+    }
+  }
+
+  /** One frame of the replay: the units where they stood at time `f`, and the shots of the tick under way. */
+  function drawReplay(g: CanvasRenderingContext2D, w: World, replay: Replay, f: number): void {
+    const now = new Map<number, { x: number; y: number }>();
+    for (const u of replay.units) {
+      const at = positionAt(u, f);
+      if (at) now.set(u.id, at);
+    }
+    for (const u of replay.units) {
+      const at = now.get(u.id);
+      if (!at) continue;
+      const known = w.entities.find((e) => e.id === u.id);
+      const arch = archetypeOf(RULESET, u.kind);
+      const base: Entity = known ?? { id: u.id, side: u.side, kind: u.kind, x: at.x, y: at.y, hp: arch?.hp ?? 1, mp: 0, cooldown: 0, order: { type: 'hold' }, status: [], beam: null };
+      drawUnit(g, { ...base, x: at.x, y: at.y });
+    }
+    // The shots of the tick under way show in the second part of its step.
+    const tick = Math.floor(f) + 1;
+    const p = f - Math.floor(f);
+    if (p < 0.25 && !reducedMotion()) return;
+    const mid = (x: number, y: number) => [x * CELL + CELL / 2, y * CELL + CELL / 2] as const;
+    g.save();
+    g.lineCap = 'round';
+    for (const shot of replay.shots) {
+      if (shot.tick !== tick) continue;
+      if (shot.t === 'fire') {
+        const a = now.get(shot.from);
+        const b = now.get(shot.to);
+        if (!a || !b) continue;
+        g.strokeStyle = css('--wp-danger', '#a1271b');
+        g.lineWidth = 2.5;
+        g.setLineDash([]);
+        g.beginPath();
+        g.moveTo(...mid(a.x, a.y));
+        g.lineTo(...mid(b.x, b.y));
+        g.stroke();
+      } else if (shot.t === 'shell') {
+        const a = now.get(shot.from);
+        if (!a) continue;
+        const [ax, ay] = mid(a.x, a.y);
+        const [bx, by] = mid(shot.x, shot.y);
+        g.strokeStyle = css('--wp-danger', '#a1271b');
+        g.lineWidth = 2;
+        g.setLineDash([4, 4]);
+        g.beginPath();
+        g.moveTo(ax, ay);
+        g.quadraticCurveTo((ax + bx) / 2, Math.min(ay, by) - CELL * 1.5, bx, by);
+        g.stroke();
+      } else if (shot.t === 'burst') {
+        drawFlash(g, shot.x * CELL, shot.y * CELL);
+      } else {
+        const at = now.get(shot.id);
+        if (!at) continue;
+        g.strokeStyle = css('--wp-danger', '#a1271b');
+        g.lineWidth = 2;
+        g.setLineDash([]);
+        g.beginPath();
+        g.arc(...mid(at.x, at.y), CELL * 0.42, 0, Math.PI * 2);
+        g.stroke();
+      }
+    }
+    g.restore();
   }
 
   /** Hatches cells outside the own command coverage and rings the connected network nodes. */
@@ -2118,6 +2271,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
 
   /* ---------- Interaction ---------- */
   function commit(next: RcState, message?: string): void {
+    stopReplay(false);
     state = next;
     settleSell = null; // an armed sale never survives a change (a planned order, a locked turn)
     context.requestSave();
@@ -2384,6 +2538,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     }
     // render() has rebuilt the summary list; announce its fresh text.
     announce(live, `${t('announce.resolved', { turn: next.world.turn })} ${[...summaryList.querySelectorAll('li')].map((li) => li.textContent).join(' ')}`);
+    if (autoReplayBox.checked) startReplay();
   }
 
   /** Shows or hides the give-up confirmation and keeps keyboard focus on a visible control. */
@@ -2424,6 +2579,11 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   }
 
   const onCanvasClick = (event: MouseEvent) => {
+    // A click on the map during a replay only ends it.
+    if (playing) {
+      stopReplay(true);
+      return;
+    }
     const rect = canvas.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) return;
     const x = Math.floor(((event.clientX - rect.left) / rect.width) * world().map.w);
@@ -2433,6 +2593,12 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   };
 
   const onCanvasKey = (event: KeyboardEvent) => {
+    // Any key on the map during a replay ends it (and does nothing else).
+    if (playing) {
+      event.preventDefault();
+      stopReplay(true);
+      return;
+    }
     const { w, h: rows } = world().map;
     const moves: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
     const delta = moves[event.key];
@@ -2505,6 +2671,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       render();
     },
     dispose() {
+      stopReplay(false);
       canvas.removeEventListener('click', onCanvasClick);
       canvas.removeEventListener('keydown', onCanvasKey);
       clear(root);

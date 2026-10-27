@@ -368,7 +368,8 @@ export interface Command {
 
 export type SimEvent =
   | { t: 'order'; tick: number; id: number }
-  | { t: 'move'; tick: number; id: number; x: number; y: number }
+  /** A step to (x, y) from (fx, fy) (the cell it left; absent in events saved before 2026-10-27). */
+  | { t: 'move'; tick: number; id: number; x: number; y: number; fx?: number; fy?: number }
   | { t: 'bump'; tick: number; id: number }
   | { t: 'fire'; tick: number; id: number; target: number }
   | { t: 'launch'; tick: number; id: number; x: number; y: number }

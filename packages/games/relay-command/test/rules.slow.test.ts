@@ -121,7 +121,9 @@ describe('hot-seat (docs/design/strategy.md § 9.4, D10)', () => {
   // a deliberate AI change with a measured gain, like the two-side fingerprint: 'da7608a7'); then
   // muzzle flash adds `flash` events to the player's summaries (owner decision 2026-10-17; world, log,
   // plans and result unchanged: without the flash events it is 'da7608a7' again): '901bcbec'; then the
-  // opponent stopped feeding units into known tower walls (owner review 2026-10-18): 'a636ca8'.
+  // opponent stopped feeding units into known tower walls (owner review 2026-10-18): 'a636ca8'; then every
+  // step in the summaries names the cell it left (`fx`, `fy` on `move`, for the turn replay, owner request
+  // 2026-10-27; world, log, plans and result unchanged: without those two fields it is 'a636ca8' again): '3a126a32'.
   it('one person is the single-player game, byte for byte: every map and opponent count matches the fingerprint taken before hot-seat (main at f2ee871)', () => {
     let h = 0x811c9dc5;
     const feed = (text: string) => {
@@ -140,6 +142,6 @@ describe('hot-seat (docs/design/strategy.md § 9.4, D10)', () => {
         }
       }
     }
-    expect(h.toString(16)).toBe('a636ca8');
+    expect(h.toString(16)).toBe('3a126a32');
   }, 300_000);
 });
