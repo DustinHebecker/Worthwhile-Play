@@ -173,8 +173,8 @@ function drawMobile(node: MobileNode, o: SceneOptions): SVGElement {
 function drawStack(scene: StackScene, o: SceneOptions): SVGElement {
   const L = layoutStack(scene);
   const root = s('g');
-  root.append(s('rect', { x: 0, y: L.tableY, width: L.px(0), height: 200 - L.tableY, class: 'bl-table' }));
-  root.append(s('line', { x1: L.px(0), y1: L.tableY - 6, x2: L.px(0), y2: 200, class: 'bl-edge' }));
+  root.append(s('rect', { x: 0, y: L.tableY, width: L.px(0), height: STACK_VIEW.height - L.tableY, class: 'bl-table' }));
+  root.append(s('line', { x1: L.px(0), y1: L.tableY - 6, x2: L.px(0), y2: STACK_VIEW.height, class: 'bl-edge' }));
   if (o.flag !== null) {
     root.append(s('line', { x1: L.px(o.flag), y1: 18, x2: L.px(o.flag), y2: L.tableY, class: 'bl-flag-line' }));
     root.append(s('path', { d: `M${L.px(o.flag)} 18h14l-4 5 4 5h-14z`, class: 'bl-flag' }));
