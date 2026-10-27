@@ -267,6 +267,8 @@ const tiny = (species: SpeciesDef[], over: Partial<HabitatDef> = {}): HabitatDef
   wMax: 0,
   space: [1_000_000],
   meadow: false,
+  cap: MAX_AMOUNT,
+  capLoss: 0,
   ...over
 });
 
@@ -388,6 +390,24 @@ describe('mechanisms (hand-computed)', () => {
     expect(s.n).toBe(1_000 - idiv(wa * 1_000, sum) - idiv(wb * 1_000, sum) - idiv(wo * 1_000, sum));
     expect(s.n).toBeGreaterThanOrEqual(0);
     expect(balanced(s)).toBe(true);
+  });
+
+  it('holding capacity: above `cap` a share of the excess leaves the pools by their sizes, booked as export', () => {
+    // A resting species (no growth, no losses) keeps the total at 4,000 + 2,000: 1,000 above the cap.
+    const hab = tiny([sp({ id: 'a', producer: false })], { cap: 5_000, capLoss: 100_000 });
+    const s = simOf([2_000], [[]], 3_000, 1_000);
+    stepDay(s, hab, ENV);
+    const loss = pm(100_000, 1_000); // 100 u
+    const fromN = idiv(loss * 3_000, 4_000); // 75 u
+    expect(s.n).toBe(3_000 - fromN);
+    expect(s.d).toBe(1_000 - (loss - fromN));
+    expect(s.b[0]).toBe(2_000);
+    expect(s.exp).toBe(loss);
+    expect(balanced(s)).toBe(true);
+    // At or below the cap nothing is lost.
+    const t = simOf([2_000], [[]], 2_000, 1_000);
+    stepDay(t, hab, ENV);
+    expect([t.n, t.d, t.exp]).toEqual([2_000, 1_000, 0]);
   });
 
   it('weather factors lie in 700–1300, depend only on seed, week and stream, and never on the log', () => {

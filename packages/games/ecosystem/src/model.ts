@@ -17,6 +17,11 @@ import { DEAD, habitatDef, type Habitat, type HabitatDef } from './habitats';
 export const MODEL_ID = 'eco-1';
 export const MODEL_IDS: readonly string[] = [MODEL_ID];
 export const MAX_AMOUNT = 20_000_000;
+/**
+ * Explore refuses an "add" that would take the habitat's total above this (design § 7.8). With the holding capacity
+ * (§ 7.4) every explore state, and so every snapshot "continue from here" stores, stays at or below it: half the cap.
+ */
+export const ADD_LIMIT = 10_000_000;
 export const MAX_WEEK = 520;
 export const MAX_ACTIONS = 300;
 /** Bookkeeping totals (imports, exports) stay far below 2^53; validation bound. */
@@ -277,6 +282,14 @@ export function stepDay(s: Sim, hab: HabitatDef, env: Env, wLight = 1000, wRain 
   if (env.flow) flow(N, OUT, pm(env.flow, s.n));
   if (hab.leach) flow(N, OUT, pm(hab.leach, s.n));
   if (hab.meadow) flow(W, WOUT, pm(hab.evap, s.w));
+  // Holding capacity: of the amount above `cap`, `capLoss` ppm a day leave the pools, shared by their sizes.
+  const T = total(s);
+  if (T > hab.cap && s.n + s.d > 0) {
+    const loss = pm(hab.capLoss, T - hab.cap);
+    const fromN = idiv(loss * s.n, s.n + s.d);
+    flow(N, OUT, fromN);
+    flow(D, OUT, loss - fromN);
+  }
   // 5. Limit every source and route.
   const nStock = 3 + nS;
   const sum = SUM;

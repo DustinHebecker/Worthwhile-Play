@@ -3,7 +3,7 @@ import fc from 'fast-check';
 import { CHALLENGES, DIFFICULTIES, challengeOf, drawRound, type Difficulty } from '../src/challenges';
 import { GOAL_IDS, goalOf } from '../src/goals';
 import { HABITATS } from '../src/habitats';
-import { MAX_ACTIONS, MAX_WEEK, balanced, simulate, total, type Action } from '../src/model';
+import { ADD_LIMIT, MAX_ACTIONS, MAX_WEEK, balanced, cloneSim, simulate, total, type Action } from '../src/model';
 import { PRESETS } from '../src/presets';
 import {
   MODES,
@@ -308,6 +308,21 @@ describe('explore', () => {
     for (let k = 0; k < MAX_ACTIONS + 5; k++) t = exploreApply(t, { week: 0, kind: 'set', cond: 0, level: k % 3 });
     expect(t.notebook.log.length).toBe(MAX_ACTIONS);
     valid(t);
+  });
+
+  it('an "add" that would take the total above ADD_LIMIT is refused; smaller ones still fit', () => {
+    const sim = cloneSim(PRESETS['pond.lively'].sim);
+    const extra = ADD_LIMIT - 10_000 - total(sim);
+    sim.d += extra;
+    sim.imp += extra;
+    const s: ExploreState = { ...explore(), notebook: { ...explore().notebook, start: { sim } } };
+    valid(s);
+    expect(exploreApply(s, { week: 0, kind: 'add', species: 'minnows' })).toBe(s); // + 20,000 u
+    const t = exploreApply(s, { week: 0, kind: 'add', species: 'algae' }); // + 5,000 u
+    expect(t.notebook.log).toHaveLength(1);
+    expect(exploreApply(t, { week: 0, kind: 'add', species: 'algae' }).notebook.log).toHaveLength(2); // exactly 10,000,000
+    expect(exploreApply(exploreApply(t, { week: 0, kind: 'add', species: 'algae' }), { week: 0, kind: 'add', species: 'algae' }).notebook.log).toHaveLength(2);
+    expect(exploreApply(t, { week: 0, kind: 'remove', species: 'algae', share: 50 }).notebook.log).toHaveLength(2); // other changes are not limited
   });
 
   it('undo and back-to work in explore too', () => {

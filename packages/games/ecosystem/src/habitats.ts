@@ -79,6 +79,13 @@ export interface HabitatDef {
   readonly burial: number;
   readonly leach: number;
   readonly evap: number;
+  /**
+   * Holding capacity (u, design § 7.4): above this total amount a habitat loses `capLoss` ppm of the excess per day
+   * from its pools (pond: the thick mud silts up and buries nutrients for good; meadow: the saturated soil washes them
+   * into the groundwater). Far above every calibrated run; it only bounds very long explore sessions.
+   */
+  readonly cap: number;
+  readonly capLoss: number;
   /** Soil water capacity (w); 0 in the pond (no water stock). */
   readonly wMax: number;
   /** Capacity of each space group (u). */
@@ -144,6 +151,8 @@ export const POND: HabitatDef = {
   burial: 300,
   leach: 0,
   evap: 0,
+  cap: 6_000_000,
+  capLoss: 2_000,
   wMax: 0,
   space: [300_000, 450_000],
   meadow: false
@@ -164,6 +173,8 @@ export const MEADOW: HabitatDef = {
   burial: 0,
   leach: 4_000,
   evap: 20_000,
+  cap: 6_000_000,
+  capLoss: 2_000,
   wMax: 200_000,
   space: [600_000],
   meadow: true

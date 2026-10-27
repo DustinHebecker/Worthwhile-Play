@@ -11,6 +11,7 @@ import { HABITATS, habitatDef, speciesIndex, type Habitat } from './habitats';
 import {
   ACTION_KINDS,
   HABITAT_ACTIONS,
+  ADD_LIMIT,
   MAX_ACTIONS,
   MAX_AMOUNT,
   MAX_TOTAL,
@@ -25,6 +26,7 @@ import {
   runUntilSettled,
   sortActions,
   startRun,
+  total,
   type Action,
   type Run,
   type Sim
@@ -390,9 +392,13 @@ export function actionFits(habitat: Habitat, a: unknown, week?: number): a is Ac
   }
 }
 
-/** Applies a change at the current week of an explore notebook. */
+/** Applies a change at the current week of an explore notebook (an "add" only while the total stays ≤ `ADD_LIMIT`). */
 export function exploreApply(s: ExploreState, a: Action): ExploreState {
   if (s.notebook.log.length >= MAX_ACTIONS || s.notebook.week >= MAX_WEEK || !actionFits(s.habitat, a, s.notebook.week)) return s;
+  if (a.kind === 'add') {
+    const hab = habitatDef(s.habitat);
+    if (total(notebookRun(s).sim) + hab.species[speciesIndex(hab, a.species!)]!.intro > ADD_LIMIT) return s;
+  }
   return { ...s, notebook: { ...s.notebook, log: [...s.notebook.log, a] } };
 }
 
