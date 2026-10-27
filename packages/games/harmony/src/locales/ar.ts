@@ -115,7 +115,6 @@ export const ar: HarmonyMessages = {
   'staff.notes': 'النغمات: {notes}',
   'staff.rhythm': 'الإيقاع مدوّنًا: {text}',
   'staff.cadence': 'أربعة تآلفات: {list}',
-  'wave.repeat': 'مجموع النغمات الأساسية: يتكرر تقريبًا كل {n} موجات من النغمة الأخفض.',
   'wave.none': 'مجموع النغمات الأساسية: لا تكرار قصير.',
   'keys.name': 'لوحة مفاتيح البيانو',
   'keys.lower': 'أوكتاف أخفض',

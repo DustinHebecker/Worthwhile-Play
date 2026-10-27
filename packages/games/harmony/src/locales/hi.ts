@@ -115,7 +115,6 @@ export const hi: HarmonyMessages = {
   'staff.notes': 'स्वर: {notes}',
   'staff.rhythm': 'स्वरलिपि में लय: {text}',
   'staff.cadence': 'चार कॉर्ड: {list}',
-  'wave.repeat': 'मूल स्वरों का योग: नीचे वाले स्वर की लगभग हर {n} तरंगों पर दोहराता है।',
   'wave.none': 'मूल स्वरों का योग: कोई छोटी पुनरावृत्ति नहीं।',
   'keys.name': 'पियानो कीबोर्ड',
   'keys.lower': 'नीचे का ऑक्टेव',

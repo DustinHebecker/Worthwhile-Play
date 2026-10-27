@@ -5,7 +5,7 @@
  */
 import { h } from '@wp/ui';
 import type { Env } from './env';
-import { fill } from './format';
+import { fill, formatPlural } from './format';
 import { slots } from './rhythm';
 import { CHANGED_POSITIONS, answerIndex, buildAnswerNotes, changedIndex, contourOf, intervalNotes, type Spec } from './spec';
 import { renderRhythm, renderStaff, svg, type StaffEvent } from './staff-view';
@@ -27,7 +27,7 @@ export function wavePicture(env: Env, freqs: readonly number[], semitonesAboveLo
   const w = 320;
   const pts = ys.map((y, i) => `${Math.round((i / (ys.length - 1)) * w * 10) / 10},${Math.round((32 - y * 26) * 10) / 10}`).join(' ');
   const k = shortRepeat(semitonesAboveLowest);
-  const caption = k === null ? env.t('wave.none') : env.t('wave.repeat', { n: env.int(k) });
+  const caption = k === null ? env.t('wave.none') : formatPlural(env.c.waveRepeat, k, env.locale);
   const pic = svg('svg', { viewBox: `0 0 ${w} 64`, class: 'hm-wave', 'aria-hidden': 'true', focusable: 'false' }, svg('line', { x1: 0, x2: w, y1: 32, y2: 32, class: 'hm-axis' }), svg('polyline', { points: pts, class: 'hm-wave-line' }));
   return h('figure', { class: 'hm-wave-fig', dir: 'ltr', role: 'img', 'aria-label': caption, 'data-testid': testid }, pic, h('figcaption', { 'aria-hidden': 'true', dir: env.t.direction, 'data-testid': `${testid}-caption` }, caption));
 }

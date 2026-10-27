@@ -115,7 +115,6 @@ export const ja: HarmonyMessages = {
   'staff.notes': '音：{notes}',
   'staff.rhythm': '楽譜のリズム：{text}',
   'staff.cadence': '4つの和音：{list}',
-  'wave.repeat': '基音の合計：低い音の波およそ{n}回ごとに繰り返します。',
   'wave.none': '基音の合計：短い繰り返しはありません。',
   'keys.name': 'ピアノの鍵盤',
   'keys.lower': '1オクターブ下',

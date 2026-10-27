@@ -33,6 +33,7 @@ export const content: ContentText = {
   classes: { perfect: '完全協和音程', imperfect: '不完全協和音程', mild: '穏やかな不協和音程', sharp: '鋭い不協和音程' },
   semitones: { other: '{n}半音' },
   cents: { other: '{n}セント' },
+  waveRepeat: { other: '基音の合計：低い音の波およそ{n}回ごとに繰り返します。' },
   steps: { whole: '全', half: '半', three: '全+半' },
   up: '上がる',
   down: '下がる',

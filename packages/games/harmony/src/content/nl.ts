@@ -33,6 +33,7 @@ export const content: ContentText = {
   classes: { perfect: 'volkomen consonant', imperfect: 'onvolkomen consonant', mild: 'milde dissonant', sharp: 'scherpe dissonant' },
   semitones: { one: '{n} halve toon', other: '{n} halve tonen' },
   cents: { one: '{n} cent', other: '{n} cent' },
+  waveRepeat: { one: 'Som van de grondtonen: herhaalt zich bij elke golf van de lagere toon.', other: 'Som van de grondtonen: herhaalt zich ongeveer elke {n} golven van de lagere toon.' },
   steps: { whole: 'H', half: '½', three: 'H+½' },
   up: 'omhoog',
   down: 'omlaag',

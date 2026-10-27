@@ -115,7 +115,6 @@ export const tr: HarmonyMessages = {
   'staff.notes': 'Notalar: {notes}',
   'staff.rhythm': 'Notada ritim: {text}',
   'staff.cadence': 'Dört akor: {list}',
-  'wave.repeat': 'Temel seslerin toplamı: pes notanın yaklaşık her {n} dalgasında bir yinelenir.',
   'wave.none': 'Temel seslerin toplamı: kısa bir yineleme yok.',
   'keys.name': 'Piyano klavyesi',
   'keys.lower': 'Daha pes oktav',

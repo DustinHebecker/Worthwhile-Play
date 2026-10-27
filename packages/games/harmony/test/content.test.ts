@@ -19,7 +19,7 @@ function leaves(value: unknown, path = ''): [string, string][] {
   if (value && typeof value === 'object') return Object.entries(value).flatMap(([k, v]) => leaves(v, path ? `${path}.${k}` : k));
   return [];
 }
-const isPlural = (path: string) => /^(semitones|cents)\./.test(path);
+const isPlural = (path: string) => /^(semitones|cents|waveRepeat)\./.test(path);
 
 describe('content (design § 18.1)', () => {
   it('every locale has the same terms, tips and lines as English, with the same placeholders', () => {
@@ -35,7 +35,7 @@ describe('content (design § 18.1)', () => {
     }
   });
 
-  it('has every plural category each locale uses, for whole semitones and cents with one decimal', () => {
+  it('has every plural category each locale uses, for whole semitones, waves and cents with one decimal', () => {
     for (const locale of SUPPORTED_LOCALES) {
       const c = CONTENT[locale]!;
       const whole = new Intl.PluralRules(bcp47Tag(locale));
@@ -43,7 +43,7 @@ describe('content (design § 18.1)', () => {
       const need = new Set<string>();
       for (let n = 0; n <= 200; n++) need.add(whole.select(n));
       for (let n = 0; n <= 200; n += 0.1) need.add(decimal.select(Math.round(n * 10) / 10));
-      for (const forms of [c.semitones, c.cents] as PluralForms[]) {
+      for (const forms of [c.semitones, c.cents, c.waveRepeat] as PluralForms[]) {
         for (const category of need) expect(forms[category as Intl.LDMLPluralRule] ?? (category === 'other' ? undefined : forms.other), `${locale} ${category}`).toBeDefined();
         for (const [category, form] of Object.entries(forms)) {
           // "one"/"two" may spell the number out (Arabic); every other form shows it.
@@ -52,6 +52,12 @@ describe('content (design § 18.1)', () => {
       }
       expect(formatPlural(c.semitones, 4, locale)).toMatch(/\p{Nd}|\S/u);
     }
+    // The wave caption counts 1…5 waves: "with every wave", "every 2 waves" (ru: 2 волны, 5 волн).
+    expect(formatPlural(CONTENT.en!.waveRepeat, 1, 'en')).toBe('Sum of the fundamentals: repeats with every wave of the lower note.');
+    expect(formatPlural(CONTENT.en!.waveRepeat, 4, 'en')).toContain('every 4 waves');
+    expect(formatPlural(CONTENT.ru!.waveRepeat, 2, 'ru')).toContain('2 волны');
+    expect(formatPlural(CONTENT.ru!.waveRepeat, 5, 'ru')).toContain('5 волн ');
+    expect(formatPlural(CONTENT.pl!.waveRepeat, 3, 'pl')).toContain('3 fale');
   });
 
   it('never refers to songs (no song titles or "the first notes of …" tips; a heuristic)', () => {

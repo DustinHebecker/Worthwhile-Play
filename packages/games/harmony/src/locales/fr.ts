@@ -115,7 +115,6 @@ export const fr: HarmonyMessages = {
   'staff.notes': 'Notes : {notes}',
   'staff.rhythm': 'Rythme en notation : {text}',
   'staff.cadence': 'Quatre accords : {list}',
-  'wave.repeat': 'Somme des fondamentales : se répète environ toutes les {n} ondes de la note grave.',
   'wave.none': 'Somme des fondamentales : pas de répétition courte.',
   'keys.name': 'Clavier de piano',
   'keys.lower': 'Octave plus grave',

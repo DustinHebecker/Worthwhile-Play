@@ -115,7 +115,6 @@ export const nl: HarmonyMessages = {
   'staff.notes': 'Tonen: {notes}',
   'staff.rhythm': 'Ritme in notenschrift: {text}',
   'staff.cadence': 'Vier akkoorden: {list}',
-  'wave.repeat': 'Som van de grondtonen: herhaalt zich ongeveer elke {n} golven van de lagere toon.',
   'wave.none': 'Som van de grondtonen: geen korte herhaling.',
   'keys.name': 'Klavier',
   'keys.lower': 'Lager octaaf',

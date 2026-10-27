@@ -114,7 +114,6 @@ export const en = {
   'staff.notes': 'Notes: {notes}',
   'staff.rhythm': 'Rhythm in notation: {text}',
   'staff.cadence': 'Four chords: {list}',
-  'wave.repeat': 'Sum of the fundamentals: repeats about every {n} waves of the lower note.',
   'wave.none': 'Sum of the fundamentals: no short repeat.',
   'keys.name': 'Piano keyboard',
   'keys.lower': 'Lower octave',

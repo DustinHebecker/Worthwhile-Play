@@ -22,6 +22,8 @@ export interface ContentText {
   readonly semitones: PluralForms;
   /** "{n} cents" ({n} may have one decimal). */
   readonly cents: PluralForms;
+  /** Wave caption: the sum of the fundamentals repeats after {n} waves of the lower note (n = 1…5). */
+  readonly waveRepeat: PluralForms;
   /** Step words of scale patterns: whole tone, semitone, the augmented second (3 semitones). */
   readonly steps: { readonly whole: string; readonly half: string; readonly three: string };
   /** Contour directions in words. */

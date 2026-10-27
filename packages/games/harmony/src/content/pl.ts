@@ -33,6 +33,7 @@ export const content: ContentText = {
   classes: { perfect: 'konsonans doskonały', imperfect: 'konsonans niedoskonały', mild: 'dysonans łagodny', sharp: 'dysonans ostry' },
   semitones: { one: '{n} półton', few: '{n} półtony', many: '{n} półtonów', other: '{n} półtonu' },
   cents: { one: '{n} cent', few: '{n} centy', many: '{n} centów', other: '{n} centa' },
+  waveRepeat: { one: 'Suma tonów podstawowych: powtarza się z każdą falą niższego dźwięku.', few: 'Suma tonów podstawowych: powtarza się mniej więcej co {n} fale niższego dźwięku.', many: 'Suma tonów podstawowych: powtarza się mniej więcej co {n} fal niższego dźwięku.', other: 'Suma tonów podstawowych: powtarza się mniej więcej co {n} fali niższego dźwięku.' },
   steps: { whole: '1', half: '½', three: '1½' },
   up: 'w górę',
   down: 'w dół',

@@ -33,6 +33,7 @@ export const content: ContentText = {
   classes: { perfect: '완전 협화음정', imperfect: '불완전 협화음정', mild: '약한 불협화음정', sharp: '강한 불협화음정' },
   semitones: { other: '반음 {n}개' },
   cents: { other: '{n}센트' },
+  waveRepeat: { other: '기본음의 합: 낮은 음의 파동 약 {n}번마다 되풀이됩니다.' },
   steps: { whole: '온', half: '반', three: '온+반' },
   up: '위로',
   down: '아래로',

@@ -115,7 +115,6 @@ export const ru: HarmonyMessages = {
   'staff.notes': 'Звуки: {notes}',
   'staff.rhythm': 'Ритм нотами: {text}',
   'staff.cadence': 'Четыре аккорда: {list}',
-  'wave.repeat': 'Сумма основных тонов: повторяется примерно каждые {n} волн нижнего звука.',
   'wave.none': 'Сумма основных тонов: короткого повтора нет.',
   'keys.name': 'Фортепианная клавиатура',
   'keys.lower': 'Октава ниже',

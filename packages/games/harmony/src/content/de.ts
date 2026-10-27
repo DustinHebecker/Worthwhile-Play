@@ -33,6 +33,7 @@ export const content: ContentText = {
   classes: { perfect: 'vollkommene Konsonanz', imperfect: 'unvollkommene Konsonanz', mild: 'milde Dissonanz', sharp: 'scharfe Dissonanz' },
   semitones: { one: '{n} Halbton', other: '{n} Halbtöne' },
   cents: { one: '{n} Cent', other: '{n} Cent' },
+  waveRepeat: { one: 'Summe der Grundtöne: wiederholt sich mit jeder Welle des tieferen Tons.', other: 'Summe der Grundtöne: wiederholt sich etwa alle {n} Wellen des tieferen Tons.' },
   steps: { whole: 'GT', half: 'HT', three: 'GT+HT' },
   up: 'aufwärts',
   down: 'abwärts',

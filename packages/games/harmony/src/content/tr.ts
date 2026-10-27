@@ -33,6 +33,7 @@ export const content: ContentText = {
   classes: { perfect: 'tam konsonans', imperfect: 'eksik konsonans', mild: 'hafif disonans', sharp: 'sert disonans' },
   semitones: { one: '{n} yarım ses', other: '{n} yarım ses' },
   cents: { one: '{n} sent', other: '{n} sent' },
+  waveRepeat: { one: 'Temel seslerin toplamı: pes notanın her dalgasında yinelenir.', other: 'Temel seslerin toplamı: pes notanın yaklaşık her {n} dalgasında bir yinelenir.' },
   steps: { whole: 'T', half: 'Y', three: 'T+Y' },
   up: 'yukarı',
   down: 'aşağı',

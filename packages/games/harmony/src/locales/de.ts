@@ -115,7 +115,6 @@ export const de: HarmonyMessages = {
   'staff.notes': 'Töne: {notes}',
   'staff.rhythm': 'Rhythmus in Noten: {text}',
   'staff.cadence': 'Vier Akkorde: {list}',
-  'wave.repeat': 'Summe der Grundtöne: wiederholt sich etwa alle {n} Wellen des tieferen Tons.',
   'wave.none': 'Summe der Grundtöne: keine kurze Wiederholung.',
   'keys.name': 'Klaviatur',
   'keys.lower': 'Tiefere Oktave',
