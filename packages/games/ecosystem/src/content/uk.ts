@@ -1,201 +1,194 @@
-/**
-// UNTRANSLATED
- *
- * Note for translators: plain words; common names only ("water fleas", not "Daphnia" — an "about" line may add the
- * scientific name in brackets); no digits in the texts (numbers come from the model); spraying, fishing and
- * relocating are management actions, described neutrally. Keep sentences short.
- */
 import type { ContentText } from './types';
 
 export const content: ContentText = {
-  weeks: { one: '{n} week', other: '{n} weeks' },
+  weeks: { one: '{n} тиждень', few: '{n} тижні', many: '{n} тижнів', other: '{n} тижня' },
   species: {
-    algae: { name: 'Green algae', about: 'Tiny plants floating in the water. They grow fast on nutrients and light; water fleas and snails eat them. Many algae turn the water green and shade the plants below.' },
-    bluegreen: { name: 'Blue-green algae', about: 'Strictly speaking bacteria (cyanobacteria). They grow slowly, need rich water and are hardly eaten, so they bloom when nutrients pile up.' },
-    duckweed: { name: 'Duckweed', about: 'Small floating leaves. In rich water they cover the surface and shade everything below.' },
-    pondweed: { name: 'Pondweed', about: 'Underwater plants rooted in the mud. They need clear water to get light, take nutrients away from the algae and give water fleas a place to hide from fish.' },
-    fleas: { name: 'Water fleas', about: 'Tiny crustaceans (Daphnia) that graze the algae. Small fish eat them, but in pondweed and in the mud many stay out of reach.' },
-    snails: { name: 'Pond snails', about: 'They eat dead plant matter and a few algae. Small fish eat some of them.' },
-    minnows: { name: 'Small fish', about: 'They hunt water fleas and some snails. Their young take about six weeks to grow up. Pike eat them.' },
-    pike: { name: 'Pike', about: 'A large hunter that eats small fish. Young pike take about twenty weeks to grow up.' },
-    grass: { name: 'Grasses', about: 'Tall and fast-growing on rich soil. They shade the low plants and use a lot of water.' },
-    flowers: { name: 'Wildflowers', about: 'Low plants that do well on poor soil. They need light, so tall grass pushes them out. Aphids and rabbits eat them.' },
-    clover: { name: 'Clover', about: 'A low plant that makes its own nitrogen from the air, less so on rich soil. Its dead leaves feed the soil for its neighbours. Rabbits like it most.' },
-    aphids: { name: 'Aphids', about: 'Tiny insects that suck plant sap, mostly from wildflowers. They multiply very fast. Ladybirds eat them.' },
-    ladybirds: { name: 'Ladybirds', about: 'Beetles that eat aphids. Their larvae take about three weeks to grow up, so they react to more aphids with a delay.' },
-    rabbits: { name: 'Rabbits', about: 'They graze clover first, then wildflowers and grass. Their young take about five weeks to grow up. Foxes hunt them; some are always safe in burrows.' },
-    foxes: { name: 'Foxes', about: 'They hunt rabbits. Young foxes take about half a year to grow up.' },
-    worms: { name: 'Earthworms', about: 'They eat dead leaves and turn them back into nutrients that plants can use.' }
+    algae: { name: 'Зелені водорості', about: 'Крихітні рослини, що ширяють у воді. Швидко ростуть завдяки поживним речовинам і світлу; їх їдять дафнії та равлики. Багато водоростей забарвлює воду в зелений колір і затінює рослини внизу.' },
+    bluegreen: { name: 'Синьо-зелені водорості', about: 'Насправді це бактерії (ціанобактерії). Ростуть повільно, потребують багатої води, і їх майже ніхто не їсть, тож вони «цвітуть», коли накопичуються поживні речовини.' },
+    duckweed: { name: 'Ряска', about: 'Дрібні плавучі листочки. У багатій воді вкривають поверхню й затінюють усе, що нижче.' },
+    pondweed: { name: 'Рдесник', about: 'Підводні рослини, що вкорінюються в мулі. Їм потрібна прозора вода для світла; вони забирають у водоростей поживні речовини й дають дафніям сховок від риби.' },
+    fleas: { name: 'Дафнії', about: 'Крихітні рачки (водяні блохи), що виїдають водорості. Дрібна риба їх їсть, але в рдеснику та в мулі багато з них недосяжні.' },
+    snails: { name: 'Ставковики', about: 'Ці равлики їдять рештки мертвих рослин і трохи водоростей. Частину з них з’їдає дрібна риба.' },
+    minnows: { name: 'Дрібна риба', about: 'Полює на дафній і трохи на равликів. Мальки ростуть близько шести тижнів. Її їдять щуки.' },
+    pike: { name: 'Щуки', about: 'Великий хижак, що їсть дрібну рибу. Молоді щуки ростуть близько двадцяти тижнів.' },
+    grass: { name: 'Злаки', about: 'Високі й швидкорослі на багатому ґрунті. Затінюють низькі рослини й витрачають багато води.' },
+    flowers: { name: 'Польові квіти', about: 'Низькі рослини, яким добре на бідному ґрунті. Їм потрібне світло, тож висока трава їх витісняє. Їх їдять попелиця та кролі.' },
+    clover: { name: 'Конюшина', about: 'Низька рослина, що сама бере азот із повітря, менше на багатому ґрунті. Її відмерле листя удобрює ґрунт для сусідів. Кролі люблять її найбільше.' },
+    aphids: { name: 'Попелиця', about: 'Крихітні комахи, що смокчуть сік рослин, переважно польових квітів. Розмножуються дуже швидко. Їх їдять сонечка.' },
+    ladybirds: { name: 'Сонечка', about: 'Жуки, що їдять попелицю. Їхні личинки ростуть близько трьох тижнів, тож на більшу кількість попелиці вони відповідають із затримкою.' },
+    rabbits: { name: 'Кролі', about: 'Спершу їдять конюшину, потім польові квіти й траву. Кроленята ростуть близько п’яти тижнів. На них полюють лисиці; деякі завжди в безпеці в норах.' },
+    foxes: { name: 'Лисиці', about: 'Полюють на кролів. Молоді лисиці ростуть близько пів року.' },
+    worms: { name: 'Дощові черв’яки', about: 'Їдять опале листя й знову перетворюють його на поживні речовини для рослин.' }
   },
   challenges: {
     'fleas-arrive': {
-      title: 'Water fleas arrive',
-      situation: 'A young pond has only green algae. Water fleas reach it, carried in by a bird.',
-      think: 'Who eats the algae? What happens to the water fleas when the algae get fewer?',
-      explain: 'Water fleas multiply on the algae until they eat as fast as the algae grow. From then on the water fleas, not the nutrients, set how much algae there is: a balancing loop (B1). The water turns clear and stays clear.',
-      real: 'In real ponds, fish and the seasons usually keep this from being so neat.'
+      title: 'З’являються дафнії',
+      situation: 'У молодому ставку є лише зелені водорості. Туди потрапляють дафнії, занесені птахом.',
+      think: 'Хто їсть водорості? Що стається з дафніями, коли водоростей меншає?',
+      explain: 'Дафнії розмножуються на водоростях, доки не починають їсти їх так само швидко, як ті ростуть. Відтоді кількість водоростей визначають дафнії, а не поживні речовини: балансувальна петля (B1). Вода стає прозорою й такою лишається.',
+      real: 'У справжніх ставках риба та зміна пір року зазвичай не дають усьому йти так рівно.'
     },
     'enrich-swings': {
-      title: 'More food for everyone',
-      situation: 'Heavy runoff from a field starts to feed a pond of algae and water fleas.',
-      think: 'More nutrients feed more algae. What do the water fleas do with more algae, and what do the algae do then?',
-      explain: 'More nutrients let the algae race ahead; the water fleas follow, eat the algae down, then starve; the algae recover, and it starts again. Richer water made the system swing instead of settle. Ecologists call this the paradox of enrichment (B1).',
-      real: 'In real ponds, many more species and the seasons damp or change these swings.'
+      title: 'Більше їжі для всіх',
+      situation: 'Сильний стік із поля починає удобрювати ставок із водоростями й дафніями.',
+      think: 'Більше поживних речовин — більше водоростей. Що роблять дафнії з більшою кількістю водоростей, а що потім роблять водорості?',
+      explain: 'Більше поживних речовин дає водоростям вирватися вперед; дафнії йдуть слідом, з’їдають водорості, а потім голодують; водорості відновлюються, і все починається знову. Багатша вода змусила систему коливатися замість того, щоб усталитися. Екологи називають це парадоксом збагачення (B1).',
+      real: 'У справжніх ставках значно більше видів і зміна пір року гасять або змінюють ці коливання.'
     },
     'fish-stocked': {
-      title: 'Fish in the pond',
-      situation: 'Someone releases small fish into a pond that had none.',
-      think: 'Fish eat water fleas. Who eats the algae, and what happens to them?',
-      explain: 'The fish eat water fleas, so fewer water fleas graze the algae, and the algae grow. A change at the top reaches the bottom of the food chain: a trophic cascade. It builds up slowly, because young fish need weeks to grow up.',
-      real: 'In real ponds, fish also stir up the mud, which clouds the water even more.'
+      title: 'Риба у ставку',
+      situation: 'Хтось випускає дрібну рибу у ставок, де її не було.',
+      think: 'Риба їсть дафній. Хто їсть водорості, і що з ними буде?',
+      explain: 'Риба їсть дафній, тож водорості виїдає менше дафній, і водорості ростуть. Зміна нагорі доходить до низу харчового ланцюга: трофічний каскад. Він наростає повільно, бо молодій рибі потрібні тижні, щоб вирости.',
+      real: 'У справжніх ставках риба ще й каламутить мул, через що вода стає ще мутнішою.'
     },
     'pike-return': {
-      title: 'Pike come back',
-      situation: 'A few young pike are released into a pond full of small fish.',
-      think: 'Follow the chain: pike, small fish, water fleas, algae.',
-      explain: 'Pike eat small fish; fewer small fish leave more water fleas; more water fleas eat more algae. Each step flips the direction, so the algae fall. It takes long because young pike need about twenty weeks to grow up.',
-      real: 'In real lakes, removing small fish or adding pike is used to clear the water, with mixed and often short-lived success.'
+      title: 'Щуки повертаються',
+      situation: 'Кількох молодих щук випускають у ставок, повний дрібної риби.',
+      think: 'Простежте ланцюжок: щуки, дрібна риба, дафнії, водорості.',
+      explain: 'Щуки їдять дрібну рибу; менше дрібної риби — більше лишається дафній; більше дафній з’їдає більше водоростей. Кожен крок змінює напрямок, тож водоростей меншає. Це довго, бо молодим щукам потрібно близько двадцяти тижнів, щоб вирости.',
+      real: 'У справжніх озерах виловлюють дрібну рибу або випускають щук, щоб очистити воду, зі змінним і часто нетривалим успіхом.'
     },
     'algae-treatment': {
-      title: 'A quick fix for green water',
-      situation: 'The pond is treated: nine in ten of the algae die and sink, but stay in the water.',
-      think: 'Where do the nutrients in the dead algae go? And what happened to the water fleas while the algae were gone?',
-      explain: 'The dead algae rot within days and give their nutrients back to the water. The water fleas went hungry while the algae were gone, so for a while nobody holds the algae in check, and they overshoot. A fix that removes the symptom but not the nutrients does not last.',
-      real: 'In real ponds, rotting algae also use up oxygen, which can harm fish.'
+      title: 'Швидкий засіб від зеленої води',
+      situation: 'Ставок обробляють: дев’ять із десяти водоростей гинуть і осідають, але лишаються у воді.',
+      think: 'Куди йдуть поживні речовини з мертвих водоростей? І що сталося з дафніями, поки водоростей не було?',
+      explain: 'Мертві водорості за кілька днів перегнивають і повертають поживні речовини у воду. Дафнії голодували, поки водоростей не було, тож якийсь час їх ніхто не стримує, і вони переростають колишній рівень. Засіб, що прибирає симптом, але не поживні речовини, не тримається.',
+      real: 'У справжніх ставках гниючі водорості ще й витрачають кисень, що може зашкодити рибі.'
     },
     'slow-runoff': {
-      title: 'A field upstream',
-      situation: 'A new field upstream starts to drain into the clear pond.',
-      think: 'What do more nutrients do to the algae, and what do more algae do to the pondweed below them?',
-      explain: 'For months nothing seems to happen: the pondweed even looks fine after half a year. Meanwhile nutrients pile up in the water and the mud. When the algae finally win, a reinforcing loop takes over: more algae, more shade, less pondweed, fewer hiding places for water fleas, even more algae (R1, R2). The flip is fast; the cause was slow.',
-      real: 'In real lakes, such shifts from clear to green water are well documented, often after years of slow change.'
+      title: 'Поле вище за течією',
+      situation: 'Нове поле вище за течією починає скидати воду в прозорий ставок.',
+      think: 'Що більше поживних речовин робить із водоростями, а що більше водоростей робить із рдесником під ними?',
+      explain: 'Місяцями здається, що нічого не відбувається: рдесник навіть через пів року має гарний вигляд. Тим часом поживні речовини накопичуються у воді та в мулі. Коли водорості нарешті перемагають, у дію вступає підсилювальна петля: більше водоростей, більше тіні, менше рдесника, менше сховків для дафній, ще більше водоростей (R1, R2). Перелом швидкий; причина була повільною.',
+      real: 'У справжніх озерах такі переходи від прозорої води до зеленої добре описані, часто після багатьох років повільних змін.'
     },
     'no-way-back': {
-      title: 'The runoff stops',
-      situation: 'Two years later the runoff is stopped completely. Will the pondweed come back?',
-      think: 'Is there any pondweed left to grow back? What keeps the water green now?',
-      explain: 'Stopping the runoff removes the cause, but the pond stays green: the algae shade the bottom, and no pondweed is left to grow back. The reinforcing loop (R1) now holds the pond in its green state. Going back needs more than undoing the change, for example planting pondweed again.',
-      real: 'In real lakes, recovery after the nutrients are cut often takes many years, and plants are sometimes replanted.'
+      title: 'Стік припиняється',
+      situation: 'Через два роки стік повністю перекривають. Чи повернеться рдесник?',
+      think: 'Чи лишився хоч трохи рдесника, що міг би відрости? Що тепер тримає воду зеленою?',
+      explain: 'Перекрити стік — означає прибрати причину, але ставок лишається зеленим: водорості затінюють дно, а рдесника, що міг би відрости, не лишилося. Підсилювальна петля (R1) тепер тримає ставок у зеленому стані. Щоб повернутися, мало скасувати зміну — треба, наприклад, знову посадити рдесник.',
+      real: 'У справжніх озерах відновлення після припинення надходження поживних речовин часто триває багато років, і інколи рослини висаджують заново.'
     },
     shade: {
-      title: 'A tree over the pond',
-      situation: 'A tree grows over the pond and shades it.',
-      think: 'Pondweed needs light at the bottom. What else takes light away from it?',
-      explain: 'Less light slows the pondweed, so it holds the algae back less. The algae and the water fleas start to swing, and each burst of algae shades the pondweed further (R1): it falls step by step.',
-      real: 'In real ponds, falling leaves from the tree would also add nutrients.'
+      title: 'Дерево над ставком',
+      situation: 'Над ставком виростає дерево й затінює його.',
+      think: 'Рдеснику потрібне світло біля дна. Що ще забирає в нього світло?',
+      explain: 'Менше світла гальмує рдесник, і він гірше стримує водорості. Водорості й дафнії починають коливатися, і кожен спалах водоростей ще більше затінює рдесник (R1): він скорочується крок за кроком.',
+      real: 'У справжніх ставках опале листя дерева теж додавало б поживних речовин.'
     },
     spray: {
-      title: 'Spraying against aphids',
-      situation: 'The meadow is sprayed against aphids: nine in ten aphids and also nine in ten ladybirds die.',
-      think: 'Who grows back faster: the aphids or the ladybirds that eat them?',
-      explain: 'Spraying killed the aphids and the ladybirds that eat them. Aphids multiply much faster than ladybirds, so they came back first, with no one to stop them, and the wildflowers paid for it. Ecologists call this pest resurgence (B2 with a delay).',
-      real: 'In real fields, spraying also harms bees and other insects, and pests can become resistant.'
+      title: 'Обприскування від попелиці',
+      situation: 'Луг обприскують від попелиці: гинуть дев’ять із десяти попелиць і дев’ять із десяти сонечок.',
+      think: 'Хто відновиться швидше: попелиця чи сонечка, які її їдять?',
+      explain: 'Обприскування вбило і попелицю, і сонечок, які її їдять. Попелиця розмножується значно швидше за сонечок, тож повернулася першою, і ніхто її не зупинив, а розплатилися польові квіти. Екологи називають це спалахом шкідників після обробки (B2 із затримкою).',
+      real: 'На справжніх полях обприскування шкодить і бджолам, і іншим комахам, а шкідники можуть стати стійкими.'
     },
     'no-foxes': {
-      title: 'The foxes leave',
-      situation: 'The foxes leave the meadow.',
-      think: 'Who kept the rabbits in check? What do more rabbits eat first?',
-      explain: 'Without foxes the balancing loop that held the rabbits in check is gone (B2). The rabbits multiply and graze the clover, their favourite food, until little is left.',
-      real: 'In real landscapes, rabbits also move away, and diseases can cut their numbers.'
+      title: 'Лисиці йдуть',
+      situation: 'Лисиці залишають луг.',
+      think: 'Хто стримував кролів? Що насамперед їдять кролі, коли їх більшає?',
+      explain: 'Без лисиць зникає балансувальна петля, яка стримувала кролів (B2). Кролі розмножуються й об’їдають конюшину, свою улюблену їжу, доки від неї майже нічого не лишається.',
+      real: 'У справжніх ландшафтах кролі ще й переходять в інші місця, а хвороби можуть скоротити їхню кількість.'
     },
     fertilise: {
-      title: 'A little fertiliser',
-      situation: 'The farmer spreads some fertiliser every week.',
-      think: 'Which plant profits most from rich soil, and what does it do to the low plants?',
-      explain: 'Fertiliser feeds the grasses most. Taller grass shades the clover and the wildflowers, and clover loses its edge: on rich soil, making its own nitrogen no longer helps. More food for the meadow means fewer kinds of plants.',
-      real: 'In real meadows, nitrogen from fertiliser and from the air is a main reason for lost wildflowers.'
+      title: 'Трохи добрива',
+      situation: 'Фермер щотижня вносить трохи добрива.',
+      think: 'Яка рослина найбільше виграє від багатого ґрунту, і що вона робить із низькими рослинами?',
+      explain: 'Добриво живить насамперед злаки. Вища трава затінює конюшину й польові квіти, а конюшина втрачає свою перевагу: на багатому ґрунті добувати азот самій уже не допомагає. Більше їжі для лугу — менше видів рослин.',
+      real: 'На справжніх луках азот із добрив і з повітря — одна з головних причин зникнення польових квітів.'
     },
     drought: {
-      title: 'A dry summer',
-      situation: 'Twelve dry weeks, then normal rain again.',
-      think: 'What do the grasses need besides nutrients? What happens when the rain comes back?',
-      explain: 'Without rain the soil dries out and the grasses slow down and shrink. When the rain returns, the soil fills up and the grasses grow back, even past their old level, because nutrients piled up in the soil while they could not use them.',
-      real: 'In real meadows, a long drought can also kill plants and let others take their place.'
+      title: 'Сухе літо',
+      situation: 'Дванадцять сухих тижнів, потім знову звичайні дощі.',
+      think: 'Що потрібно злакам, крім поживних речовин? Що станеться, коли повернеться дощ?',
+      explain: 'Без дощу ґрунт пересихає, злаки ростуть повільніше й скорочуються. Коли дощ повертається, ґрунт наповнюється водою, і злаки відростають, навіть вище колишнього рівня, бо в ґрунті накопичилися поживні речовини, яких вони не могли використати.',
+      real: 'На справжніх луках довга посуха може ще й знищити рослини й звільнити місце для інших.'
     },
     'clover-poor': {
-      title: 'Clover for a poor meadow',
-      situation: 'Clover is sown into a poor meadow of wildflowers.',
-      think: 'Clover makes nitrogen from the air. Where does that nitrogen go when its leaves die?',
-      explain: 'Clover brings new nitrogen into the meadow. When its leaves die, earthworms turn them into nutrients that the wildflowers use. The neighbours profit, slowly, through the soil: a chain with a delay.',
-      real: 'In real farming, clover is sown for exactly this reason.'
+      title: 'Конюшина для бідного лугу',
+      situation: 'На бідний луг із польовими квітами підсівають конюшину.',
+      think: 'Конюшина бере азот із повітря. Куди йде цей азот, коли її листя відмирає?',
+      explain: 'Конюшина приносить на луг новий азот. Коли її листя відмирає, дощові черв’яки перетворюють його на поживні речовини, якими користуються польові квіти. Сусіди виграють — повільно, через ґрунт: ланцюжок із затримкою.',
+      real: 'У справжньому землеробстві конюшину сіють саме з цієї причини.'
     },
     'worms-gone': {
-      title: 'Where are the earthworms?',
-      situation: 'The earthworms disappear from the meadow.',
-      think: 'Who turns dead leaves back into food for plants? Which plant does not depend on that?',
-      explain: 'Without earthworms, dead leaves pile up and their nutrients stay locked in. The grasses go hungry. Clover makes its own nitrogen, so it gains: a side effect few people expect.',
-      real: 'In real soils, many more animals, fungi and bacteria break down dead leaves.'
+      title: 'Де дощові черв’яки?',
+      situation: 'Дощові черв’яки зникають із лугу.',
+      think: 'Хто знову перетворює опале листя на їжу для рослин? Яка рослина від цього не залежить?',
+      explain: 'Без дощових черв’яків опале листя накопичується, і його поживні речовини лишаються замкненими. Злаки голодують. Конюшина сама добуває азот, тож виграє: побічний ефект, якого мало хто чекає.',
+      real: 'У справжньому ґрунті опале листя розкладає значно більше тварин, грибів і бактерій.'
     },
     'foxes-return': {
-      title: 'The foxes come back',
-      situation: 'Foxes return to a meadow overrun by rabbits.',
-      think: 'How long do young foxes need to grow up? What do fewer rabbits mean for the clover?',
-      explain: 'At first little happens: young foxes need about half a year to grow up. Then the foxes bring the rabbits down (B2), and the clover, freed from grazing, slowly comes back. The effect arrives years after the cause.',
-      real: 'In real landscapes, foxes also hunt other animals, and rabbits find new places to live.'
+      title: 'Лисиці повертаються',
+      situation: 'Лисиці повертаються на луг, заполонений кролями.',
+      think: 'Скільки часу молодим лисицям треба, щоб вирости? Що менша кількість кролів означає для конюшини?',
+      explain: 'Спершу майже нічого не відбувається: молодим лисицям треба близько пів року, щоб вирости. Потім лисиці скорочують кількість кролів (B2), і конюшина, звільнена від об’їдання, повільно повертається. Наслідок настає через роки після причини.',
+      real: 'У справжніх ландшафтах лисиці полюють і на інших тварин, а кролі знаходять нові місця для життя.'
     },
     'ladybirds-gone': {
-      title: 'Ladybirds collected',
-      situation: 'Most ladybirds are collected for a garden elsewhere.',
-      think: 'Who eats the aphids? How fast can the remaining ladybirds come back?',
-      explain: 'Without ladybirds the aphids multiply. The few remaining ladybirds now find plenty of food, and their numbers grow back after a delay. Then they bring the aphids down again (B2).',
-      real: 'In real gardens, other aphid hunters such as hoverflies and birds help as well.'
+      title: 'Сонечок зібрали',
+      situation: 'Більшість сонечок збирають для саду деінде.',
+      think: 'Хто їсть попелицю? Як швидко можуть повернутися сонечка, що лишилися?',
+      explain: 'Без сонечок попелиця розмножується. Нечисленні сонечка, що лишилися, тепер знаходять багато їжі, і їхня кількість із затримкою відновлюється. Потім вони знову скорочують попелицю (B2).',
+      real: 'У справжніх садах допомагають і інші мисливці на попелицю, наприклад мухи-дзюрчалки й птахи.'
     }
   },
   goals: {
     'save-pondweed': {
-      story: 'A new field upstream starts to drain into the clear pond. Keep the pondweed alive for two years while the runoff continues.',
-      target: 'Pondweed at least {v} every week until week {w}.',
-      hint: 'Algae are a symptom. What feeds them, and how soon must it change?',
-      explain: 'The pondweed falls only when the algae shade it, and the algae grow from the nutrients the field brings. Act on the cause, and act early: by the time the pondweed looks weak, the reinforcing loop has already taken over.',
+      story: 'Нове поле вище за течією починає скидати воду в прозорий ставок. Збережіть рдесник живим два роки, поки триває стік.',
+      target: 'Рдесник щонайменше {v} щотижня до тижня {w}.',
+      hint: 'Водорості — це симптом. Що їх живить, і як скоро це треба змінити?',
+      explain: 'Рдесник скорочується, лише коли його затінюють водорості, а водорості ростуть на поживних речовинах, які приносить поле. Дійте на причину, і рано: коли рдесник має слабкий вигляд, підсилювальна петля вже взяла гору.',
       plans: {
-        buffer: 'A buffer strip of plants along the field catches most of the runoff before it reaches the pond. Early enough, the algae never get ahead.',
-        ditch: 'Closing the ditch stops the runoff completely, so the algae never get ahead.'
+        buffer: 'Захисна смуга рослин уздовж поля затримує більшу частину стоку, перш ніж він досягне ставка. Якщо посадити її вчасно, водорості ніколи не вирвуться вперед.',
+        ditch: 'Якщо закрити канаву, стік припиняється повністю, і водорості ніколи не вирвуться вперед.'
       }
     },
     'clear-pond': {
-      story: 'The pond turned green after two years of runoff. Make the water clear again, with pondweed growing, for twelve weeks in a row.',
-      target: 'Algae (green and blue-green) at most {v} and pondweed at least {p}, for twelve weeks in a row, by week {w}.',
-      hint: 'Algae are a symptom. What feeds them? And what keeps them down once the water is clear?',
-      explain: 'The green state holds itself: algae shade out the plants that would hold them back. Clearing the water needs the cause removed (the runoff), the stored nutrients taken out or flushed away, and the pondweed back, so that the reinforcing loop turns towards clear water.',
+      story: 'Після двох років стоку ставок позеленів. Зробіть воду знову прозорою, з рдесником, що росте, дванадцять тижнів поспіль.',
+      target: 'Водорості (зелені й синьо-зелені) щонайбільше {v} і рдесник щонайменше {p}, дванадцять тижнів поспіль, до тижня {w}.',
+      hint: 'Водорості — це симптом. Що їх живить? І що втримає їх, коли вода стане прозорою?',
+      explain: 'Зелений стан підтримує сам себе: водорості затінюють рослини, які могли б їх стримати. Щоб очистити воду, треба прибрати причину (стік), вилучити або вимити накопичені поживні речовини й повернути рдесник, щоб підсилювальна петля повернула до прозорої води.',
       plans: {
-        restore: 'Stop the runoff, dredge the nutrient-rich mud, plant pondweed and take out most small fish (so more water fleas graze the algae). Together they turn the loop towards clear water.',
-        flush: 'Stop the runoff and let a stream flush the nutrients and algae out for a while, then plant pondweed into the clear water.'
+        restore: 'Перекрити стік, вичистити багатий на поживні речовини мул, посадити рдесник і виловити більшість дрібної риби (щоб більше дафній виїдало водорості). Разом це повертає петлю до прозорої води.',
+        flush: 'Перекрити стік і на якийсь час пустити струмок, щоб він вимив поживні речовини й водорості, а потім посадити рдесник у прозору воду.'
       }
     },
     'protect-flowers': {
-      story: 'A neighbour has just sprayed the meadow: most aphids and most ladybirds died. Keep the wildflowers for a year.',
-      target: 'Wildflowers at least {v} every week until week {w}.',
-      hint: 'The aphids come back faster than the ladybirds. When would new ladybirds find something to eat?',
-      explain: 'The aphids rebound before their hunters do. Ladybirds released too early starve, because there are no aphids yet; released too late, the wildflowers are already eaten. Timing decides.',
+      story: 'Сусід щойно обприскав луг: загинула більшість попелиці й більшість сонечок. Збережіть польові квіти протягом року.',
+      target: 'Польові квіти щонайменше {v} щотижня до тижня {w}.',
+      hint: 'Попелиця повертається швидше за сонечок. Коли нові сонечка знайшли б що їсти?',
+      explain: 'Попелиця відновлюється раніше за своїх мисливців. Сонечка, випущені зарано, голодують, бо попелиці ще немає; випущені запізно — квіти вже з’їдено. Вирішує час.',
       plans: {
-        ladybirds: 'Released after about ten weeks, when the aphids are back but before they peak, the ladybirds find food at once and stop the aphids in time.'
+        ladybirds: 'Випущені приблизно через десять тижнів, коли попелиця вже повернулася, але ще не досягла піку, сонечка одразу знаходять їжу й вчасно зупиняють попелицю.'
       }
     },
     'bring-back-clover': {
-      story: 'Without foxes, rabbits have grazed the clover almost away. Bring the clover back for eight weeks in a row within four years.',
-      target: 'Clover at least {v} for eight weeks in a row, by week {w}.',
-      hint: 'Removing rabbits helps only for a while. What kept them in check before?',
-      explain: 'Rabbits multiply fast, so removing some only buys time. Lasting change needs the balancing loop back: foxes. Young foxes need half a year to grow up, so the clover comes back years later.',
+      story: 'Без лисиць кролі майже повністю з’їли конюшину. Поверніть конюшину на вісім тижнів поспіль протягом чотирьох років.',
+      target: 'Конюшина щонайменше {v}, вісім тижнів поспіль, до тижня {w}.',
+      hint: 'Прибирати кролів допомагає лише на час. Що стримувало їх раніше?',
+      explain: 'Кролі швидко розмножуються, тож, прибравши частину, ви лише виграєте час. Тривала зміна потребує повернення балансувальної петлі — лисиць. Молодим лисицям треба пів року, щоб вирости, тож конюшина повертається лише через роки.',
       plans: {
-        foxes: 'Foxes alone are enough, but patience is needed: they bring the rabbits down slowly.',
-        foxesRabbits: 'Foxes plus relocating half the rabbits: the foxes start with fewer rabbits to catch up with.',
-        foxesRabbitsClover: 'Foxes, relocating most rabbits and sowing clover: the fastest way, because the clover gets a head start while the foxes grow up.'
+        foxes: 'Самих лисиць досить, але потрібне терпіння: вони скорочують кролів повільно.',
+        foxesRabbits: 'Лисиці плюс переселення половини кролів: лисицям треба наздоганяти менше кролів.',
+        foxesRabbitsClover: 'Лисиці, переселення більшості кролів і посів конюшини: найшвидший шлях, бо конюшина отримує фору, поки лисиці ростуть.'
       }
     }
   },
   loops: {
-    graze: 'Water fleas graze the algae down; fewer algae, fewer water fleas.',
-    fishFleas: 'Small fish eat water fleas; fewer water fleas, fewer young fish.',
-    pikeFish: 'Pike eat small fish; fewer small fish, fewer young pike.',
-    clearWater: 'Algae shade the pondweed; pondweed holds the algae back. Whoever is ahead pulls further ahead.',
-    shelter: 'Pondweed hides water fleas from fish, and water fleas eat algae.',
-    recycle: 'Dead algae rot and feed new algae.',
-    aphidsFlowers: 'Aphids feed on the wildflowers; fewer wildflowers, fewer aphids.',
-    ladybirdsAphids: 'Ladybirds eat aphids; fewer aphids, fewer young ladybirds.',
-    rabbitsClover: 'Rabbits graze the clover; less clover, fewer young rabbits.',
-    foxesRabbits: 'Foxes hunt rabbits; fewer rabbits, fewer young foxes.',
-    thirst: 'Grasses use the soil water; dry soil slows the grasses.',
-    wormsDead: 'Earthworms eat dead leaves; fewer dead leaves, fewer earthworms.',
-    flowerUptake: 'Wildflowers take up the nutrients they grow from.'
+    graze: 'Дафнії виїдають водорості; менше водоростей — менше дафній.',
+    fishFleas: 'Дрібна риба їсть дафній; менше дафній — менше молодої риби.',
+    pikeFish: 'Щуки їдять дрібну рибу; менше дрібної риби — менше молодих щук.',
+    clearWater: 'Водорості затінюють рдесник; рдесник стримує водорості. Хто попереду, той відривається ще далі.',
+    shelter: 'Рдесник ховає дафній від риби, а дафнії їдять водорості.',
+    recycle: 'Мертві водорості гниють і живлять нові водорості.',
+    aphidsFlowers: 'Попелиця живе за рахунок польових квітів; менше квітів — менше попелиці.',
+    ladybirdsAphids: 'Сонечка їдять попелицю; менше попелиці — менше молодих сонечок.',
+    rabbitsClover: 'Кролі об’їдають конюшину; менше конюшини — менше кроленят.',
+    foxesRabbits: 'Лисиці полюють на кролів; менше кролів — менше лисенят.',
+    thirst: 'Злаки витрачають воду в ґрунті; сухий ґрунт гальмує злаки.',
+    wormsDead: 'Дощові черв’яки їдять опале листя; менше опалого листя — менше черв’яків.',
+    flowerUptake: 'Польові квіти вбирають поживні речовини, з яких ростуть.'
   }
 };

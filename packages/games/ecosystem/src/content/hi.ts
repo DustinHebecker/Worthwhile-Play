@@ -1,201 +1,194 @@
-/**
-// UNTRANSLATED
- *
- * Note for translators: plain words; common names only ("water fleas", not "Daphnia" — an "about" line may add the
- * scientific name in brackets); no digits in the texts (numbers come from the model); spraying, fishing and
- * relocating are management actions, described neutrally. Keep sentences short.
- */
 import type { ContentText } from './types';
 
 export const content: ContentText = {
-  weeks: { one: '{n} week', other: '{n} weeks' },
+  weeks: { one: '{n} हफ़्ता', other: '{n} हफ़्ते' },
   species: {
-    algae: { name: 'Green algae', about: 'Tiny plants floating in the water. They grow fast on nutrients and light; water fleas and snails eat them. Many algae turn the water green and shade the plants below.' },
-    bluegreen: { name: 'Blue-green algae', about: 'Strictly speaking bacteria (cyanobacteria). They grow slowly, need rich water and are hardly eaten, so they bloom when nutrients pile up.' },
-    duckweed: { name: 'Duckweed', about: 'Small floating leaves. In rich water they cover the surface and shade everything below.' },
-    pondweed: { name: 'Pondweed', about: 'Underwater plants rooted in the mud. They need clear water to get light, take nutrients away from the algae and give water fleas a place to hide from fish.' },
-    fleas: { name: 'Water fleas', about: 'Tiny crustaceans (Daphnia) that graze the algae. Small fish eat them, but in pondweed and in the mud many stay out of reach.' },
-    snails: { name: 'Pond snails', about: 'They eat dead plant matter and a few algae. Small fish eat some of them.' },
-    minnows: { name: 'Small fish', about: 'They hunt water fleas and some snails. Their young take about six weeks to grow up. Pike eat them.' },
-    pike: { name: 'Pike', about: 'A large hunter that eats small fish. Young pike take about twenty weeks to grow up.' },
-    grass: { name: 'Grasses', about: 'Tall and fast-growing on rich soil. They shade the low plants and use a lot of water.' },
-    flowers: { name: 'Wildflowers', about: 'Low plants that do well on poor soil. They need light, so tall grass pushes them out. Aphids and rabbits eat them.' },
-    clover: { name: 'Clover', about: 'A low plant that makes its own nitrogen from the air, less so on rich soil. Its dead leaves feed the soil for its neighbours. Rabbits like it most.' },
-    aphids: { name: 'Aphids', about: 'Tiny insects that suck plant sap, mostly from wildflowers. They multiply very fast. Ladybirds eat them.' },
-    ladybirds: { name: 'Ladybirds', about: 'Beetles that eat aphids. Their larvae take about three weeks to grow up, so they react to more aphids with a delay.' },
-    rabbits: { name: 'Rabbits', about: 'They graze clover first, then wildflowers and grass. Their young take about five weeks to grow up. Foxes hunt them; some are always safe in burrows.' },
-    foxes: { name: 'Foxes', about: 'They hunt rabbits. Young foxes take about half a year to grow up.' },
-    worms: { name: 'Earthworms', about: 'They eat dead leaves and turn them back into nutrients that plants can use.' }
+    algae: { name: 'हरे शैवाल', about: 'पानी में तैरते बहुत छोटे पौधे। पोषक तत्वों और रोशनी से तेज़ी से बढ़ते हैं; जल पिस्सू और घोंघे इन्हें खाते हैं। बहुत सारे शैवाल पानी को हरा कर देते हैं और नीचे के पौधों पर छाया डालते हैं।' },
+    bluegreen: { name: 'नीले-हरे शैवाल', about: 'असल में ये जीवाणु (सायनोबैक्टीरिया) हैं। धीरे बढ़ते हैं, इन्हें पोषक पानी चाहिए और इन्हें लगभग कोई नहीं खाता, इसलिए पोषक तत्व जमा होने पर ये ख़ूब फैलते हैं।' },
+    duckweed: { name: 'जलकुंभी पत्ती', about: 'छोटी तैरती पत्तियाँ। पोषक पानी में ये सतह ढक लेती हैं और नीचे की हर चीज़ पर छाया डालती हैं।' },
+    pondweed: { name: 'जलीय पौधा', about: 'कीचड़ में जड़ जमाए पानी के भीतर उगने वाले पौधे। रोशनी पाने के लिए इन्हें साफ़ पानी चाहिए; ये शैवाल से पोषक तत्व छीनते हैं और जल पिस्सुओं को मछलियों से छिपने की जगह देते हैं।' },
+    fleas: { name: 'जल पिस्सू', about: 'शैवाल चरने वाले बहुत छोटे क्रस्टेशियन (डैफ़्निया)। छोटी मछलियाँ इन्हें खाती हैं, पर जलीय पौधों और कीचड़ में कई पहुँच से बाहर रहते हैं।' },
+    snails: { name: 'तालाब के घोंघे', about: 'मरे पौधों के टुकड़े और थोड़े शैवाल खाते हैं। छोटी मछलियाँ इनमें से कुछ को खाती हैं।' },
+    minnows: { name: 'छोटी मछलियाँ', about: 'जल पिस्सुओं और कुछ घोंघों का शिकार करती हैं। इनके बच्चे लगभग छह हफ़्तों में बड़े होते हैं। पाइक इन्हें खाती है।' },
+    pike: { name: 'पाइक मछलियाँ', about: 'छोटी मछलियाँ खाने वाला बड़ा शिकारी। युवा पाइक लगभग बीस हफ़्तों में बड़ी होती है।' },
+    grass: { name: 'घासें', about: 'उपजाऊ मिट्टी में ऊँची और तेज़ी से बढ़ने वाली। ये नीचे के पौधों पर छाया डालती हैं और बहुत पानी लेती हैं।' },
+    flowers: { name: 'जंगली फूल', about: 'कम उपजाऊ मिट्टी में अच्छे से उगने वाले छोटे पौधे। इन्हें रोशनी चाहिए, इसलिए ऊँची घास इन्हें हटा देती है। माहू और खरगोश इन्हें खाते हैं।' },
+    clover: { name: 'तिपतिया', about: 'एक छोटा पौधा जो हवा से ख़ुद नाइट्रोजन लेता है, उपजाऊ मिट्टी में कम। इसकी मरी पत्तियाँ पड़ोसियों के लिए मिट्टी को उपजाऊ बनाती हैं। खरगोशों को यह सबसे ज़्यादा पसंद है।' },
+    aphids: { name: 'माहू', about: 'पौधों का रस चूसने वाले बहुत छोटे कीड़े, ज़्यादातर जंगली फूलों का। ये बहुत तेज़ी से बढ़ते हैं। लेडीबर्ड इन्हें खाती है।' },
+    ladybirds: { name: 'लेडीबर्ड', about: 'माहू खाने वाले भृंग। इनके लार्वा लगभग तीन हफ़्तों में बड़े होते हैं, इसलिए माहू बढ़ने पर ये देर से प्रतिक्रिया करते हैं।' },
+    rabbits: { name: 'खरगोश', about: 'पहले तिपतिया, फिर जंगली फूल और घास खाते हैं। इनके बच्चे लगभग पाँच हफ़्तों में बड़े होते हैं। लोमड़ियाँ इनका शिकार करती हैं; कुछ अपने बिलों में हमेशा सुरक्षित रहते हैं।' },
+    foxes: { name: 'लोमड़ियाँ', about: 'खरगोशों का शिकार करती हैं। युवा लोमड़ियाँ लगभग आधे साल में बड़ी होती हैं।' },
+    worms: { name: 'केंचुए', about: 'गिरी हुई पत्तियाँ खाते हैं और उन्हें फिर से ऐसे पोषक तत्वों में बदलते हैं जिन्हें पौधे इस्तेमाल कर सकें।' }
   },
   challenges: {
     'fleas-arrive': {
-      title: 'Water fleas arrive',
-      situation: 'A young pond has only green algae. Water fleas reach it, carried in by a bird.',
-      think: 'Who eats the algae? What happens to the water fleas when the algae get fewer?',
-      explain: 'Water fleas multiply on the algae until they eat as fast as the algae grow. From then on the water fleas, not the nutrients, set how much algae there is: a balancing loop (B1). The water turns clear and stays clear.',
-      real: 'In real ponds, fish and the seasons usually keep this from being so neat.'
+      title: 'जल पिस्सू आते हैं',
+      situation: 'एक नए तालाब में सिर्फ़ हरे शैवाल हैं। एक पक्षी जल पिस्सुओं को वहाँ ले आता है।',
+      think: 'शैवाल कौन खाता है? शैवाल घटने पर जल पिस्सुओं का क्या होता है?',
+      explain: 'जल पिस्सू शैवाल खाकर तब तक बढ़ते हैं जब तक वे उतनी तेज़ी से न खाने लगें जितनी तेज़ी से शैवाल बढ़ते हैं। उसके बाद शैवाल की मात्रा पोषक तत्व नहीं, जल पिस्सू तय करते हैं: एक संतुलन चक्र (B1)। पानी साफ़ हो जाता है और साफ़ रहता है।',
+      real: 'असली तालाबों में मछलियाँ और मौसम आमतौर पर चीज़ों को इतना साफ़-सुथरा नहीं रहने देते।'
     },
     'enrich-swings': {
-      title: 'More food for everyone',
-      situation: 'Heavy runoff from a field starts to feed a pond of algae and water fleas.',
-      think: 'More nutrients feed more algae. What do the water fleas do with more algae, and what do the algae do then?',
-      explain: 'More nutrients let the algae race ahead; the water fleas follow, eat the algae down, then starve; the algae recover, and it starts again. Richer water made the system swing instead of settle. Ecologists call this the paradox of enrichment (B1).',
-      real: 'In real ponds, many more species and the seasons damp or change these swings.'
+      title: 'सबके लिए ज़्यादा भोजन',
+      situation: 'एक खेत से तेज़ बहाव शैवाल और जल पिस्सुओं वाले तालाब को पोषण देने लगता है।',
+      think: 'ज़्यादा पोषक तत्व, ज़्यादा शैवाल। ज़्यादा शैवाल मिलने पर जल पिस्सू क्या करते हैं, और फिर शैवाल क्या करते हैं?',
+      explain: 'ज़्यादा पोषक तत्वों से शैवाल आगे निकल जाते हैं; जल पिस्सू पीछे-पीछे बढ़ते हैं, शैवाल खा जाते हैं और फिर भूखे रहते हैं; शैवाल फिर उबरते हैं और सब फिर से शुरू होता है। ज़्यादा उपजाऊ पानी ने तंत्र को स्थिर होने के बजाय झूलने पर मजबूर कर दिया। पारिस्थितिकीविद इसे समृद्धि का विरोधाभास कहते हैं (B1)।',
+      real: 'असली तालाबों में कहीं ज़्यादा प्रजातियाँ और मौसम इन झूलों को कम करते या बदलते हैं।'
     },
     'fish-stocked': {
-      title: 'Fish in the pond',
-      situation: 'Someone releases small fish into a pond that had none.',
-      think: 'Fish eat water fleas. Who eats the algae, and what happens to them?',
-      explain: 'The fish eat water fleas, so fewer water fleas graze the algae, and the algae grow. A change at the top reaches the bottom of the food chain: a trophic cascade. It builds up slowly, because young fish need weeks to grow up.',
-      real: 'In real ponds, fish also stir up the mud, which clouds the water even more.'
+      title: 'तालाब में मछलियाँ',
+      situation: 'कोई ऐसे तालाब में छोटी मछलियाँ छोड़ देता है जिसमें पहले मछलियाँ नहीं थीं।',
+      think: 'मछलियाँ जल पिस्सू खाती हैं। शैवाल कौन खाता है, और शैवाल का क्या होता है?',
+      explain: 'मछलियाँ जल पिस्सू खाती हैं, इसलिए शैवाल चरने वाले जल पिस्सू घटते हैं और शैवाल बढ़ते हैं। ऊपर का बदलाव खाद्य शृंखला के नीचे तक पहुँचता है: एक पोषण-स्तर शृंखला प्रभाव। यह धीरे-धीरे बनता है, क्योंकि युवा मछलियों को बड़े होने में हफ़्ते लगते हैं।',
+      real: 'असली तालाबों में मछलियाँ कीचड़ भी हिलाती हैं, जिससे पानी और गंदला हो जाता है।'
     },
     'pike-return': {
-      title: 'Pike come back',
-      situation: 'A few young pike are released into a pond full of small fish.',
-      think: 'Follow the chain: pike, small fish, water fleas, algae.',
-      explain: 'Pike eat small fish; fewer small fish leave more water fleas; more water fleas eat more algae. Each step flips the direction, so the algae fall. It takes long because young pike need about twenty weeks to grow up.',
-      real: 'In real lakes, removing small fish or adding pike is used to clear the water, with mixed and often short-lived success.'
+      title: 'पाइक लौटती है',
+      situation: 'छोटी मछलियों से भरे तालाब में कुछ युवा पाइक मछलियाँ छोड़ी जाती हैं।',
+      think: 'कड़ी को देखिए: पाइक, छोटी मछलियाँ, जल पिस्सू, शैवाल।',
+      explain: 'पाइक छोटी मछलियाँ खाती है; कम छोटी मछलियों से ज़्यादा जल पिस्सू बचते हैं; ज़्यादा जल पिस्सू ज़्यादा शैवाल खाते हैं। हर कदम दिशा उलट देता है, इसलिए शैवाल घटते हैं। इसमें समय लगता है, क्योंकि युवा पाइक को बड़ा होने में लगभग बीस हफ़्ते लगते हैं।',
+      real: 'असली झीलों में पानी साफ़ करने के लिए छोटी मछलियाँ निकाली जाती हैं या पाइक डाली जाती है, जिसकी सफलता मिली-जुली और अक्सर थोड़े समय की होती है।'
     },
     'algae-treatment': {
-      title: 'A quick fix for green water',
-      situation: 'The pond is treated: nine in ten of the algae die and sink, but stay in the water.',
-      think: 'Where do the nutrients in the dead algae go? And what happened to the water fleas while the algae were gone?',
-      explain: 'The dead algae rot within days and give their nutrients back to the water. The water fleas went hungry while the algae were gone, so for a while nobody holds the algae in check, and they overshoot. A fix that removes the symptom but not the nutrients does not last.',
-      real: 'In real ponds, rotting algae also use up oxygen, which can harm fish.'
+      title: 'हरे पानी का झटपट इलाज',
+      situation: 'तालाब का उपचार होता है: दस में से नौ शैवाल मरकर नीचे बैठ जाते हैं, पर पानी में ही रहते हैं।',
+      think: 'मरे शैवाल के पोषक तत्व कहाँ जाते हैं? और शैवाल न रहने पर जल पिस्सुओं का क्या हुआ?',
+      explain: 'मरे शैवाल कुछ ही दिनों में सड़कर अपने पोषक तत्व पानी को लौटा देते हैं। शैवाल न रहने पर जल पिस्सू भूखे रहे, इसलिए कुछ समय तक शैवाल को कोई नहीं रोकता और वे पहले से भी ज़्यादा हो जाते हैं। जो इलाज लक्षण हटाए पर पोषक तत्व नहीं, वह टिकता नहीं।',
+      real: 'असली तालाबों में सड़ते शैवाल ऑक्सीजन भी ख़र्च करते हैं, जो मछलियों के लिए नुकसानदेह हो सकता है।'
     },
     'slow-runoff': {
-      title: 'A field upstream',
-      situation: 'A new field upstream starts to drain into the clear pond.',
-      think: 'What do more nutrients do to the algae, and what do more algae do to the pondweed below them?',
-      explain: 'For months nothing seems to happen: the pondweed even looks fine after half a year. Meanwhile nutrients pile up in the water and the mud. When the algae finally win, a reinforcing loop takes over: more algae, more shade, less pondweed, fewer hiding places for water fleas, even more algae (R1, R2). The flip is fast; the cause was slow.',
-      real: 'In real lakes, such shifts from clear to green water are well documented, often after years of slow change.'
+      title: 'ऊपर की ओर एक खेत',
+      situation: 'ऊपर की ओर एक नया खेत साफ़ तालाब में पानी बहाने लगता है।',
+      think: 'ज़्यादा पोषक तत्व शैवाल के साथ क्या करते हैं, और ज़्यादा शैवाल नीचे के जलीय पौधे के साथ क्या करते हैं?',
+      explain: 'महीनों तक लगता है कि कुछ नहीं हो रहा: आधे साल बाद भी जलीय पौधा ठीक दिखता है। इस बीच पोषक तत्व पानी और कीचड़ में जमा होते रहते हैं। जब आख़िरकार शैवाल जीतते हैं, तो एक सुदृढ़ करने वाला चक्र हावी हो जाता है: ज़्यादा शैवाल, ज़्यादा छाया, कम जलीय पौधा, जल पिस्सुओं के लिए कम छिपने की जगह, और भी ज़्यादा शैवाल (R1, R2)। पलटाव तेज़ है; कारण धीमा था।',
+      real: 'असली झीलों में साफ़ से हरे पानी की ओर ऐसे पलटाव अच्छी तरह दर्ज हैं, अक्सर बरसों के धीमे बदलाव के बाद।'
     },
     'no-way-back': {
-      title: 'The runoff stops',
-      situation: 'Two years later the runoff is stopped completely. Will the pondweed come back?',
-      think: 'Is there any pondweed left to grow back? What keeps the water green now?',
-      explain: 'Stopping the runoff removes the cause, but the pond stays green: the algae shade the bottom, and no pondweed is left to grow back. The reinforcing loop (R1) now holds the pond in its green state. Going back needs more than undoing the change, for example planting pondweed again.',
-      real: 'In real lakes, recovery after the nutrients are cut often takes many years, and plants are sometimes replanted.'
+      title: 'बहाव रुकता है',
+      situation: 'दो साल बाद बहाव पूरी तरह रोक दिया जाता है। क्या जलीय पौधा लौटेगा?',
+      think: 'क्या कोई जलीय पौधा बचा है जो फिर उग सके? अब पानी को हरा कौन रखे हुए है?',
+      explain: 'बहाव रोकने से कारण हट जाता है, पर तालाब हरा ही रहता है: शैवाल तल पर छाया डालते हैं और फिर से उगने के लिए कोई जलीय पौधा बचा नहीं। सुदृढ़ करने वाला चक्र (R1) अब तालाब को हरी अवस्था में थामे हुए है। लौटने के लिए बदलाव पलटना काफ़ी नहीं, जैसे जलीय पौधा फिर से लगाना पड़ता है।',
+      real: 'असली झीलों में पोषक तत्व रोकने के बाद भी उबरने में अक्सर कई साल लगते हैं, और कभी-कभी पौधे फिर से लगाए जाते हैं।'
     },
     shade: {
-      title: 'A tree over the pond',
-      situation: 'A tree grows over the pond and shades it.',
-      think: 'Pondweed needs light at the bottom. What else takes light away from it?',
-      explain: 'Less light slows the pondweed, so it holds the algae back less. The algae and the water fleas start to swing, and each burst of algae shades the pondweed further (R1): it falls step by step.',
-      real: 'In real ponds, falling leaves from the tree would also add nutrients.'
+      title: 'तालाब पर एक पेड़',
+      situation: 'तालाब के ऊपर एक पेड़ उगता है और उस पर छाया डालता है।',
+      think: 'जलीय पौधे को तल पर रोशनी चाहिए। और क्या उससे रोशनी छीनता है?',
+      explain: 'कम रोशनी जलीय पौधे को धीमा कर देती है, इसलिए वह शैवाल को कम रोक पाता है। शैवाल और जल पिस्सू झूलने लगते हैं, और शैवाल की हर बढ़त जलीय पौधे पर और छाया डालती है (R1): वह क़दम-दर-क़दम घटता है।',
+      real: 'असली तालाबों में पेड़ से गिरती पत्तियाँ भी पोषक तत्व जोड़तीं।'
     },
     spray: {
-      title: 'Spraying against aphids',
-      situation: 'The meadow is sprayed against aphids: nine in ten aphids and also nine in ten ladybirds die.',
-      think: 'Who grows back faster: the aphids or the ladybirds that eat them?',
-      explain: 'Spraying killed the aphids and the ladybirds that eat them. Aphids multiply much faster than ladybirds, so they came back first, with no one to stop them, and the wildflowers paid for it. Ecologists call this pest resurgence (B2 with a delay).',
-      real: 'In real fields, spraying also harms bees and other insects, and pests can become resistant.'
+      title: 'माहू के विरुद्ध छिड़काव',
+      situation: 'मैदान पर माहू के विरुद्ध छिड़काव होता है: दस में से नौ माहू और दस में से नौ लेडीबर्ड भी मर जाती हैं।',
+      think: 'कौन जल्दी उबरता है: माहू या उन्हें खाने वाली लेडीबर्ड?',
+      explain: 'छिड़काव ने माहू और उन्हें खाने वाली लेडीबर्ड, दोनों को मार दिया। माहू लेडीबर्ड से कहीं तेज़ बढ़ते हैं, इसलिए वे पहले लौटे, उन्हें रोकने वाला कोई नहीं था, और क़ीमत जंगली फूलों ने चुकाई। पारिस्थितिकीविद इसे कीटों का पुनरुत्थान कहते हैं (देरी वाला B2)।',
+      real: 'असली खेतों में छिड़काव मधुमक्खियों और दूसरे कीड़ों को भी नुकसान पहुँचाता है, और कीट प्रतिरोधी बन सकते हैं।'
     },
     'no-foxes': {
-      title: 'The foxes leave',
-      situation: 'The foxes leave the meadow.',
-      think: 'Who kept the rabbits in check? What do more rabbits eat first?',
-      explain: 'Without foxes the balancing loop that held the rabbits in check is gone (B2). The rabbits multiply and graze the clover, their favourite food, until little is left.',
-      real: 'In real landscapes, rabbits also move away, and diseases can cut their numbers.'
+      title: 'लोमड़ियाँ चली जाती हैं',
+      situation: 'लोमड़ियाँ मैदान छोड़ देती हैं।',
+      think: 'खरगोशों को कौन काबू में रखता था? खरगोश बढ़ने पर वे पहले क्या खाते हैं?',
+      explain: 'लोमड़ियों के बिना वह संतुलन चक्र गायब हो जाता है जो खरगोशों को काबू में रखता था (B2)। खरगोश बढ़ते हैं और अपना पसंदीदा भोजन तिपतिया तब तक चरते हैं जब तक थोड़ा ही बचे।',
+      real: 'असली परिदृश्य में खरगोश दूसरी जगह भी चले जाते हैं, और बीमारियाँ उनकी संख्या घटा सकती हैं।'
     },
     fertilise: {
-      title: 'A little fertiliser',
-      situation: 'The farmer spreads some fertiliser every week.',
-      think: 'Which plant profits most from rich soil, and what does it do to the low plants?',
-      explain: 'Fertiliser feeds the grasses most. Taller grass shades the clover and the wildflowers, and clover loses its edge: on rich soil, making its own nitrogen no longer helps. More food for the meadow means fewer kinds of plants.',
-      real: 'In real meadows, nitrogen from fertiliser and from the air is a main reason for lost wildflowers.'
+      title: 'थोड़ी खाद',
+      situation: 'किसान हर हफ़्ते थोड़ी खाद डालता है।',
+      think: 'उपजाऊ मिट्टी से किस पौधे को सबसे ज़्यादा फ़ायदा होता है, और वह छोटे पौधों के साथ क्या करता है?',
+      explain: 'खाद सबसे ज़्यादा घासों को पोषण देती है। ऊँची घास तिपतिया और जंगली फूलों पर छाया डालती है, और तिपतिया अपना फ़ायदा खो देता है: उपजाऊ मिट्टी में ख़ुद नाइट्रोजन बनाना अब मदद नहीं करता। मैदान के लिए ज़्यादा भोजन का मतलब है कम तरह के पौधे।',
+      real: 'असली मैदानों में खाद और हवा से आने वाली नाइट्रोजन जंगली फूलों के खोने का एक बड़ा कारण है।'
     },
     drought: {
-      title: 'A dry summer',
-      situation: 'Twelve dry weeks, then normal rain again.',
-      think: 'What do the grasses need besides nutrients? What happens when the rain comes back?',
-      explain: 'Without rain the soil dries out and the grasses slow down and shrink. When the rain returns, the soil fills up and the grasses grow back, even past their old level, because nutrients piled up in the soil while they could not use them.',
-      real: 'In real meadows, a long drought can also kill plants and let others take their place.'
+      title: 'सूखी गर्मी',
+      situation: 'बारह सूखे हफ़्ते, फिर से सामान्य बारिश।',
+      think: 'पोषक तत्वों के अलावा घासों को क्या चाहिए? बारिश लौटने पर क्या होता है?',
+      explain: 'बारिश के बिना मिट्टी सूख जाती है और घासें धीमी पड़कर सिकुड़ जाती हैं। बारिश लौटने पर मिट्टी भर जाती है और घासें फिर बढ़ती हैं, यहाँ तक कि पहले के स्तर से भी ऊपर, क्योंकि जब वे उनका उपयोग नहीं कर पा रही थीं तब मिट्टी में पोषक तत्व जमा हो गए थे।',
+      real: 'असली मैदानों में लंबा सूखा पौधों को मार भी सकता है और दूसरों के लिए जगह बना सकता है।'
     },
     'clover-poor': {
-      title: 'Clover for a poor meadow',
-      situation: 'Clover is sown into a poor meadow of wildflowers.',
-      think: 'Clover makes nitrogen from the air. Where does that nitrogen go when its leaves die?',
-      explain: 'Clover brings new nitrogen into the meadow. When its leaves die, earthworms turn them into nutrients that the wildflowers use. The neighbours profit, slowly, through the soil: a chain with a delay.',
-      real: 'In real farming, clover is sown for exactly this reason.'
+      title: 'कमज़ोर मैदान के लिए तिपतिया',
+      situation: 'जंगली फूलों वाले कम उपजाऊ मैदान में तिपतिया बोया जाता है।',
+      think: 'तिपतिया हवा से नाइट्रोजन लेता है। उसकी पत्तियाँ मरने पर वह नाइट्रोजन कहाँ जाती है?',
+      explain: 'तिपतिया मैदान में नई नाइट्रोजन लाता है। उसकी पत्तियाँ मरने पर केंचुए उन्हें ऐसे पोषक तत्वों में बदलते हैं जिनका उपयोग जंगली फूल करते हैं। पड़ोसियों को मिट्टी के रास्ते धीरे-धीरे फ़ायदा होता है: देरी वाली एक कड़ी।',
+      real: 'असली खेती में तिपतिया ठीक इसी कारण बोया जाता है।'
     },
     'worms-gone': {
-      title: 'Where are the earthworms?',
-      situation: 'The earthworms disappear from the meadow.',
-      think: 'Who turns dead leaves back into food for plants? Which plant does not depend on that?',
-      explain: 'Without earthworms, dead leaves pile up and their nutrients stay locked in. The grasses go hungry. Clover makes its own nitrogen, so it gains: a side effect few people expect.',
-      real: 'In real soils, many more animals, fungi and bacteria break down dead leaves.'
+      title: 'केंचुए कहाँ गए?',
+      situation: 'केंचुए मैदान से गायब हो जाते हैं।',
+      think: 'मरी पत्तियों को फिर से पौधों का भोजन कौन बनाता है? कौन-सा पौधा इस पर निर्भर नहीं है?',
+      explain: 'केंचुओं के बिना मरी पत्तियाँ जमा होती जाती हैं और उनके पोषक तत्व उनमें बंद रह जाते हैं। घासें भूखी रहती हैं। तिपतिया अपनी नाइट्रोजन ख़ुद बनाता है, इसलिए उसे फ़ायदा होता है: एक ऐसा दुष्प्रभाव जिसकी कम ही लोग उम्मीद करते हैं।',
+      real: 'असली मिट्टी में कहीं ज़्यादा जीव, कवक और जीवाणु मरी पत्तियों को तोड़ते हैं।'
     },
     'foxes-return': {
-      title: 'The foxes come back',
-      situation: 'Foxes return to a meadow overrun by rabbits.',
-      think: 'How long do young foxes need to grow up? What do fewer rabbits mean for the clover?',
-      explain: 'At first little happens: young foxes need about half a year to grow up. Then the foxes bring the rabbits down (B2), and the clover, freed from grazing, slowly comes back. The effect arrives years after the cause.',
-      real: 'In real landscapes, foxes also hunt other animals, and rabbits find new places to live.'
+      title: 'लोमड़ियाँ लौटती हैं',
+      situation: 'लोमड़ियाँ खरगोशों से भरे मैदान में लौटती हैं।',
+      think: 'युवा लोमड़ियों को बड़ा होने में कितना समय लगता है? कम खरगोशों का तिपतिया के लिए क्या मतलब है?',
+      explain: 'शुरू में कुछ ख़ास नहीं होता: युवा लोमड़ियों को बड़ा होने में लगभग आधा साल लगता है। फिर लोमड़ियाँ खरगोश घटाती हैं (B2), और चराई से छूटा तिपतिया धीरे-धीरे लौटता है। असर कारण के बरसों बाद आता है।',
+      real: 'असली परिदृश्य में लोमड़ियाँ दूसरे जानवरों का भी शिकार करती हैं, और खरगोश रहने की नई जगहें ढूँढ लेते हैं।'
     },
     'ladybirds-gone': {
-      title: 'Ladybirds collected',
-      situation: 'Most ladybirds are collected for a garden elsewhere.',
-      think: 'Who eats the aphids? How fast can the remaining ladybirds come back?',
-      explain: 'Without ladybirds the aphids multiply. The few remaining ladybirds now find plenty of food, and their numbers grow back after a delay. Then they bring the aphids down again (B2).',
-      real: 'In real gardens, other aphid hunters such as hoverflies and birds help as well.'
+      title: 'लेडीबर्ड इकट्ठी की गईं',
+      situation: 'ज़्यादातर लेडीबर्ड किसी और जगह के बगीचे के लिए इकट्ठी कर ली जाती हैं।',
+      think: 'माहू कौन खाता है? बची हुई लेडीबर्ड कितनी जल्दी लौट सकती हैं?',
+      explain: 'लेडीबर्ड के बिना माहू बढ़ते हैं। बची हुई कुछ लेडीबर्ड को अब भरपूर भोजन मिलता है, और उनकी संख्या देरी से लौटती है। फिर वे माहू को फिर से घटा देती हैं (B2)।',
+      real: 'असली बगीचों में होवरफ़्लाई और पक्षी जैसे माहू के दूसरे शिकारी भी मदद करते हैं।'
     }
   },
   goals: {
     'save-pondweed': {
-      story: 'A new field upstream starts to drain into the clear pond. Keep the pondweed alive for two years while the runoff continues.',
-      target: 'Pondweed at least {v} every week until week {w}.',
-      hint: 'Algae are a symptom. What feeds them, and how soon must it change?',
-      explain: 'The pondweed falls only when the algae shade it, and the algae grow from the nutrients the field brings. Act on the cause, and act early: by the time the pondweed looks weak, the reinforcing loop has already taken over.',
+      story: 'ऊपर की ओर एक नया खेत साफ़ तालाब में पानी बहाने लगता है। बहाव जारी रहते हुए जलीय पौधे को दो साल तक ज़िंदा रखिए।',
+      target: 'हफ़्ता {w} तक हर हफ़्ते जलीय पौधा कम से कम {v}।',
+      hint: 'शैवाल एक लक्षण हैं। उन्हें क्या पोषण देता है, और यह कितनी जल्दी बदलना चाहिए?',
+      explain: 'जलीय पौधा तभी घटता है जब शैवाल उस पर छाया डालते हैं, और शैवाल खेत से आने वाले पोषक तत्वों से बढ़ते हैं। कारण पर काम कीजिए, और जल्दी: जब तक जलीय पौधा कमज़ोर दिखे, सुदृढ़ करने वाला चक्र हावी हो चुका होता है।',
       plans: {
-        buffer: 'A buffer strip of plants along the field catches most of the runoff before it reaches the pond. Early enough, the algae never get ahead.',
-        ditch: 'Closing the ditch stops the runoff completely, so the algae never get ahead.'
+        buffer: 'खेत के किनारे पौधों की एक पट्टी ज़्यादातर बहाव को तालाब तक पहुँचने से पहले रोक लेती है। समय पर लगाई जाए तो शैवाल कभी आगे नहीं निकलते।',
+        ditch: 'नाली बंद करने से बहाव पूरी तरह रुक जाता है, इसलिए शैवाल कभी आगे नहीं निकलते।'
       }
     },
     'clear-pond': {
-      story: 'The pond turned green after two years of runoff. Make the water clear again, with pondweed growing, for twelve weeks in a row.',
-      target: 'Algae (green and blue-green) at most {v} and pondweed at least {p}, for twelve weeks in a row, by week {w}.',
-      hint: 'Algae are a symptom. What feeds them? And what keeps them down once the water is clear?',
-      explain: 'The green state holds itself: algae shade out the plants that would hold them back. Clearing the water needs the cause removed (the runoff), the stored nutrients taken out or flushed away, and the pondweed back, so that the reinforcing loop turns towards clear water.',
+      story: 'दो साल के बहाव के बाद तालाब हरा हो गया। लगातार बारह हफ़्तों तक, उगते जलीय पौधे के साथ, पानी फिर से साफ़ कीजिए।',
+      target: 'हफ़्ता {w} तक, लगातार बारह हफ़्ते शैवाल (हरे और नीले-हरे) अधिकतम {v} और जलीय पौधा कम से कम {p}।',
+      hint: 'शैवाल एक लक्षण हैं। उन्हें क्या पोषण देता है? और पानी साफ़ होने के बाद उन्हें कम कौन रखेगा?',
+      explain: 'हरी अवस्था ख़ुद को बनाए रखती है: शैवाल उन पौधों पर छाया डालते हैं जो उन्हें रोक सकते थे। पानी साफ़ करने के लिए कारण (बहाव) हटाना, जमा पोषक तत्व निकालना या बहा देना, और जलीय पौधे को लौटाना ज़रूरी है, ताकि सुदृढ़ करने वाला चक्र साफ़ पानी की ओर घूमे।',
       plans: {
-        restore: 'Stop the runoff, dredge the nutrient-rich mud, plant pondweed and take out most small fish (so more water fleas graze the algae). Together they turn the loop towards clear water.',
-        flush: 'Stop the runoff and let a stream flush the nutrients and algae out for a while, then plant pondweed into the clear water.'
+        restore: 'बहाव रोकिए, पोषक तत्वों से भरा कीचड़ निकालिए, जलीय पौधा लगाइए और ज़्यादातर छोटी मछलियाँ निकालिए (ताकि ज़्यादा जल पिस्सू शैवाल चरें)। मिलकर ये चक्र को साफ़ पानी की ओर घुमाते हैं।',
+        flush: 'बहाव रोकिए और कुछ समय तक एक धारा को पोषक तत्व और शैवाल बहा ले जाने दीजिए, फिर साफ़ पानी में जलीय पौधा लगाइए।'
       }
     },
     'protect-flowers': {
-      story: 'A neighbour has just sprayed the meadow: most aphids and most ladybirds died. Keep the wildflowers for a year.',
-      target: 'Wildflowers at least {v} every week until week {w}.',
-      hint: 'The aphids come back faster than the ladybirds. When would new ladybirds find something to eat?',
-      explain: 'The aphids rebound before their hunters do. Ladybirds released too early starve, because there are no aphids yet; released too late, the wildflowers are already eaten. Timing decides.',
+      story: 'एक पड़ोसी ने अभी-अभी मैदान पर छिड़काव किया है: ज़्यादातर माहू और ज़्यादातर लेडीबर्ड मर गईं। जंगली फूलों को एक साल तक बचाए रखिए।',
+      target: 'हफ़्ता {w} तक हर हफ़्ते जंगली फूल कम से कम {v}।',
+      hint: 'माहू लेडीबर्ड से जल्दी लौटते हैं। नई लेडीबर्ड को खाने को कब मिलेगा?',
+      explain: 'माहू अपने शिकारियों से पहले उबरते हैं। बहुत जल्दी छोड़ी गई लेडीबर्ड भूखी रहती हैं, क्योंकि अभी माहू नहीं हैं; बहुत देर से छोड़ी जाएँ तो जंगली फूल पहले ही खाए जा चुके होते हैं। समय ही निर्णायक है।',
       plans: {
-        ladybirds: 'Released after about ten weeks, when the aphids are back but before they peak, the ladybirds find food at once and stop the aphids in time.'
+        ladybirds: 'लगभग दस हफ़्ते बाद, जब माहू लौट आए हों पर चरम पर न पहुँचे हों, छोड़ी गई लेडीबर्ड को तुरंत भोजन मिलता है और वे समय पर माहू को रोक देती हैं।'
       }
     },
     'bring-back-clover': {
-      story: 'Without foxes, rabbits have grazed the clover almost away. Bring the clover back for eight weeks in a row within four years.',
-      target: 'Clover at least {v} for eight weeks in a row, by week {w}.',
-      hint: 'Removing rabbits helps only for a while. What kept them in check before?',
-      explain: 'Rabbits multiply fast, so removing some only buys time. Lasting change needs the balancing loop back: foxes. Young foxes need half a year to grow up, so the clover comes back years later.',
+      story: 'लोमड़ियों के बिना खरगोशों ने तिपतिया लगभग ख़त्म कर दिया है। चार साल के भीतर तिपतिया को लगातार आठ हफ़्ते तक वापस लाइए।',
+      target: 'हफ़्ता {w} तक, लगातार आठ हफ़्ते तिपतिया कम से कम {v}।',
+      hint: 'खरगोश हटाने से कुछ ही समय मदद मिलती है। पहले उन्हें किसने काबू में रखा था?',
+      explain: 'खरगोश तेज़ी से बढ़ते हैं, इसलिए कुछ हटाने से सिर्फ़ समय मिलता है। स्थायी बदलाव के लिए संतुलन चक्र, यानी लोमड़ियों का लौटना ज़रूरी है। युवा लोमड़ियों को बड़ा होने में आधा साल लगता है, इसलिए तिपतिया बरसों बाद लौटता है।',
       plans: {
-        foxes: 'Foxes alone are enough, but patience is needed: they bring the rabbits down slowly.',
-        foxesRabbits: 'Foxes plus relocating half the rabbits: the foxes start with fewer rabbits to catch up with.',
-        foxesRabbitsClover: 'Foxes, relocating most rabbits and sowing clover: the fastest way, because the clover gets a head start while the foxes grow up.'
+        foxes: 'सिर्फ़ लोमड़ियाँ काफ़ी हैं, पर धैर्य चाहिए: वे खरगोशों को धीरे-धीरे घटाती हैं।',
+        foxesRabbits: 'लोमड़ियाँ और आधे खरगोश दूसरी जगह: लोमड़ियों को कम खरगोशों तक पहुँचना होता है।',
+        foxesRabbitsClover: 'लोमड़ियाँ, ज़्यादातर खरगोश दूसरी जगह और तिपतिया की बुवाई: सबसे तेज़ रास्ता, क्योंकि लोमड़ियों के बड़े होने तक तिपतिया आगे निकल जाता है।'
       }
     }
   },
   loops: {
-    graze: 'Water fleas graze the algae down; fewer algae, fewer water fleas.',
-    fishFleas: 'Small fish eat water fleas; fewer water fleas, fewer young fish.',
-    pikeFish: 'Pike eat small fish; fewer small fish, fewer young pike.',
-    clearWater: 'Algae shade the pondweed; pondweed holds the algae back. Whoever is ahead pulls further ahead.',
-    shelter: 'Pondweed hides water fleas from fish, and water fleas eat algae.',
-    recycle: 'Dead algae rot and feed new algae.',
-    aphidsFlowers: 'Aphids feed on the wildflowers; fewer wildflowers, fewer aphids.',
-    ladybirdsAphids: 'Ladybirds eat aphids; fewer aphids, fewer young ladybirds.',
-    rabbitsClover: 'Rabbits graze the clover; less clover, fewer young rabbits.',
-    foxesRabbits: 'Foxes hunt rabbits; fewer rabbits, fewer young foxes.',
-    thirst: 'Grasses use the soil water; dry soil slows the grasses.',
-    wormsDead: 'Earthworms eat dead leaves; fewer dead leaves, fewer earthworms.',
-    flowerUptake: 'Wildflowers take up the nutrients they grow from.'
+    graze: 'जल पिस्सू शैवाल चरते हैं; कम शैवाल, कम जल पिस्सू।',
+    fishFleas: 'छोटी मछलियाँ जल पिस्सू खाती हैं; कम जल पिस्सू, कम युवा मछलियाँ।',
+    pikeFish: 'पाइक छोटी मछलियाँ खाती है; कम छोटी मछलियाँ, कम युवा पाइक।',
+    clearWater: 'शैवाल जलीय पौधे पर छाया डालते हैं; जलीय पौधा शैवाल को रोकता है। जो आगे है, वह और आगे निकलता है।',
+    shelter: 'जलीय पौधा जल पिस्सुओं को मछलियों से छिपाता है, और जल पिस्सू शैवाल खाते हैं।',
+    recycle: 'मरे शैवाल सड़ते हैं और नए शैवाल को पोषण देते हैं।',
+    aphidsFlowers: 'माहू जंगली फूलों पर जीते हैं; कम फूल, कम माहू।',
+    ladybirdsAphids: 'लेडीबर्ड माहू खाती हैं; कम माहू, कम युवा लेडीबर्ड।',
+    rabbitsClover: 'खरगोश तिपतिया चरते हैं; कम तिपतिया, कम खरगोश के बच्चे।',
+    foxesRabbits: 'लोमड़ियाँ खरगोशों का शिकार करती हैं; कम खरगोश, कम युवा लोमड़ियाँ।',
+    thirst: 'घासें मिट्टी का पानी इस्तेमाल करती हैं; सूखी मिट्टी घासों को धीमा करती है।',
+    wormsDead: 'केंचुए मरी पत्तियाँ खाते हैं; कम मरी पत्तियाँ, कम केंचुए।',
+    flowerUptake: 'जंगली फूल वे पोषक तत्व सोखते हैं जिनसे वे बढ़ते हैं।'
   }
 };
