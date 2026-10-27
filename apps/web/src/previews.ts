@@ -104,24 +104,36 @@ const card = (x: number, y: number, w: number, h: number, rank: string, k: strin
 const back = (x: number, y: number, w: number, h: number) => R(x, y, w, h, 'pcb', 0.8) + R(x + 1, y + 1, w - 2, h - 2, 'pcl', 0.5);
 
 const PREVIEWS: Record<string, () => string> = {
-  // Relay Command (redrawn for the game's map of 2026-10-27): soft ground with a wood of round crowns, two humps, a
-  // lake and a road band; own units from the side, filled and facing right (a tank on its track, Rifles, a Scout Car
-  // with its drone above on its leash); the far side under the milky veil of the unobserved, with dots, and an enemy
-  // truck in it, pale and outlined in the second side's colour, facing left; a planned move as a dashed arrow.
+  // Relay Command: a corner of the game's map at the game's own scale (owner review 2026-10-27: "nah am echten Spiel").
+  // Cells of 8 with the dots at their corners; pale wood crowns, two ponds, rolling hills and a road piece; own units as
+  // small dark silhouettes inside the radio cover (its edge a stepped line with ticks on the outside); the far side
+  // under the milky veil, an unknown enemy post as a dashed outline with a question mark, one spotted enemy tank.
   'relay-command': () => {
-    let s = R(4, 4.5, 88, 55, 'tp', 2);
-    s += P('M60 44c3-6 13-7 19-4s12 2 12 9-2 10-10 10H62c-5 0-6-9-2-15z', 'tw') + P('M66 50q2-1.6 4 0t4 0M74 55q2-1.6 4 0t4 0M80 47q2-1.6 4 0t4 0', 'rcw');
-    const road = 'M7 41c10-2 19-1 27-5s18-10 26-10h28';
-    s += P(road, 'rcr') + P(road, 'rcrd');
-    for (const [x, y, r] of [[10, 10, 3.6], [17, 9, 4], [24, 11, 3.4], [13, 16, 3.8], [20, 16, 3.6], [8, 21, 3]] as const) s += C(x, y + 1, r, 'rcts') + C(x, y, r, 'rct');
-    s += P('M40 20c2-8 14-8 16 0z', 'rch') + P('M33 24c2-9 15-9 17 0z', 'rch');
-    s += P('M62 4.5h28a2 2 0 0 1 2 2V36H70c-5 0-8-4-8-9z', 'rcf') + [70, 78, 86].map((x) => [10, 18, 26].map((y) => C(x, y, 0.7, 'tmf')).join('')).join('');
-    s += P('M68 15h10v5h-12v-3z', 'c y2') + P('M78 16h4l2 2.5V20h-6z', 'c y2') + C(70, 21.3, 1.6, 'c y2') + C(81, 21.3, 1.6, 'c y2');
-    s += R(14, 46, 17, 4.2, 'i', 2) + P('M15 46l2-4h12l2 4z', 'p1') + P('M19 42l1.5-3h6l1.5 3z', 'p1') + P('M27.5 40.3h6', 'rcg') + [16, 19.5, 23, 26.5, 29.5].map((x) => C(x, 48.1, 1, 'rcwh')).join('');
-    s += P('M38 37v-3.5l3-1.5h5l2-3h4.5l2 3 2.5 1v4z', 'p1') + [41.5, 52.5].map((x) => C(x, 37.5, 1.9, 'i') + C(x, 37.5, 0.8, 'rcwh')).join('');
-    s += P('M44 21h8M44.5 21v1.5h7V21', 'rcd') + C(44, 20.2, 1.4, 'rcp') + C(52, 20.2, 1.4, 'rcp') + R(46.5, 21.5, 3, 2, 'p1', 0.6) + P('M48 24v4', 'rcl');
-    s += [6, 9.5, 13].map((x, i) => P(`M${x} ${36 - (i === 1 ? 1 : 0)}v-3`, 'rcm') + C(x, 31.2 - (i === 1 ? 1 : 0), 1.1, 'p1')).join('');
-    return s + P('M56 30q6-6 9-10', 'ab ds') + head(56, 30, 65, 20, 'a');
+    let s = R(2, 2, 92, 60, 'tp', 2);
+    // Ponds and wood crowns.
+    s += P('M8 5h14c3 0 4 2 4 5v4c0 3-2 4-5 4H9c-3 0-4-2-4-5V9c0-3 1-4 3-4z', 'tw') + P('M9 10q1.5-1.2 3 0t3 0M14 14q1.5-1.2 3 0t3 0', 'rcw');
+    s += P('M66 47h12c3 0 4 2 4 4v5c0 3-2 4-4 4H67c-3 0-4-2-4-5v-4c0-3 1-4 3-4z', 'tw') + P('M67 52q1.5-1.2 3 0t3 0M71 56q1.5-1.2 3 0t3 0', 'rcw');
+    for (const [x, y] of [[36, 5], [40.5, 4.5], [45, 6], [38, 9], [42.5, 9.5], [47, 10], [40, 13.5], [44.5, 14], [84, 22], [88.5, 23], [86, 27], [90, 28], [87.5, 32.5]] as const) s += C(x, y + 0.5, 2.4, 'rcts') + C(x, y, 2.4, 'rct');
+    // Grid dots at the cell corners.
+    for (let x = 10; x < 94; x += 8) for (let y = 10; y < 62; y += 8) s += C(x, y, 0.45, 'rcts');
+    // A road piece and three rolling hills.
+    s += P('M26 26h12', 'rcr') + P('M26 26h12', 'rcrd');
+    const hill = (x: number, y: number, w: number, h: number) =>
+      P(`M${x - w} ${y}C${n(x - w * 0.78)} ${n(y - h * 0.2)} ${n(x - w * 0.58)} ${y - h} ${x} ${y - h}C${n(x + w * 0.58)} ${y - h} ${n(x + w * 0.78)} ${n(y - h * 0.2)} ${x + w} ${y}Z`, 'rch');
+    s += hill(48, 30, 6, 4.5) + hill(55, 31, 5.5, 4) + hill(51, 36, 6, 4.5);
+    // The far side under the veil: an unknown post (dashed outline, "?"), and a spotted tank before it.
+    s += P('M60 2h32a2 2 0 0 1 2 2v20H76c-5 0-8-3-8-7v-5c0-6-3-10-8-10z', 'rcf');
+    s += P('M80 14v-4l4-3 4 3v4z', 'y2 ds') + T(78, 7.5, '?', 't txs');
+    s += P('M64 22.5h7v2.2h-7z', 'p2') + P('M65.5 22.5l1-1.8h3.2l0.8 1.8z', 'p2') + R(62.2, 21, 3.4, 0.7, 'p2');
+    // The edge of the own radio cover: a stepped line with ticks on its outer side.
+    const edge = 'M2 22H22V30H34V40H44V62';
+    s += P(edge, 'rcw') + [[6, 22], [12, 22], [18, 22], [22, 26], [26, 30], [31, 30], [34, 35], [38, 40], [44, 45], [44, 51], [44, 57]].map(([x, y]) => (y === 22 || y === 30 || y === 40 ? P(`M${x} ${y}v-1.4`, 'rcw') : P(`M${x} ${y}h1.4`, 'rcw'))).join('');
+    // Own units: the Command Post with its flag, a tank, Rifles, a truck.
+    s += P('M7 56v-4l4-3 4 3v4z', 'p1') + P('M11 49v-4.5', 'rcd') + P('M11 44.5h3l-1 1 1 1h-3', 'p1');
+    s += P('M20 43h8v2.4h-8z', 'p1') + P('M21.5 43l1-2h4l0.8 2z', 'p1') + P('M26.8 41.6h3', 'rcd');
+    s += [27, 29.5, 32].map((x) => C(x, 49.3, 0.9, 'p1') + P(`M${x} 50.5v3`, 'rcd')).join('');
+    s += P('M16 33h5v-1.6h2.2l1.4 1.6v2h-8.6z', 'p1') + C(17.8, 35.3, 0.9, 'i') + C(22.6, 35.3, 0.9, 'i');
+    return s;
   },
   // Orbit Links: nodes on dark-grey space joined by straight lanes; own (blue) and opposing (red) home nodes with
   // their strength, neutral outposts with dashed rims, a shipyard hexagon and a defence platform; a dashed stream.
