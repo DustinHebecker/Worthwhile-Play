@@ -785,6 +785,12 @@ const SAVE_TURNS = 3;
 const SURPLUS = 800;
 /** Most yards a side builds for itself (the starting Muster Yard included). */
 const MAX_YARDS = 4;
+/**
+ * Maps larger than this (cells; 24×16, the largest size before large maps) are large: there the own
+ * cover is carried towards the objective by Radio Masts. Smaller maps keep their measured AI (a mast
+ * chain there cost a storm through a ring of holding units on a 24×16 random map).
+ */
+const LARGE_MAP_CELLS = 24 * 16;
 /** The own cover ending this many cells short of the objective starts a chain of Radio Masts towards it. */
 const MAST_GAP = 8;
 /** Supply kept back when a Radio Mast of the chain is built. */
@@ -884,10 +890,10 @@ function economyOrders(obs: Observation, ruleset: Ruleset, own: readonly Entity[
       if (spot) tryOrder({ side, unit: source.id, order: { type: 'build', kind, x: spot.x, y: spot.y } });
     }
   }
-  // 1c. Large maps (2026-10-27): an objective far beyond the own radio cover is out of reach of any
+  // 1c. Large maps (2026-10-27, larger than LARGE_MAP_CELLS): an objective far beyond the own radio cover is out of reach of any
   // order, so the cover is carried towards it by a chain of Radio Masts: one at a time, on the covered
   // cell nearest the objective out of known enemy reach, once the cover ends MAST_GAP cells short.
-  const objective = source ? objectiveOf(obs, ruleset) : undefined;
+  const objective = source && world.map.w * world.map.h > LARGE_MAP_CELLS ? objectiveOf(obs, ruleset) : undefined;
   if (source && objective && supply >= costOf('relay-mast') + MAST_RESERVE && !ownAll.some((e) => e.kind === 'relay-mast' && (e.build ?? 0) > 0)) {
     const spot = mastSpot(obs, ruleset, objective);
     if (spot) tryOrder({ side, unit: source.id, order: { type: 'build', kind: 'relay-mast', x: spot.x, y: spot.y } });

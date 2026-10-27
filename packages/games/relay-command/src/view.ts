@@ -86,6 +86,9 @@ import { generateMap } from './generator';
 import { CELL, createTerrainLayer, drawDeposit, drawTerrainSwatch, TERRAIN_NAMES } from './draw';
 import { FIELD_EXERCISE, opponentCounts, SCENARIOS, scenarioFor } from './scenarios';
 
+/** Most pixels a map canvas has (phone browsers refuse larger canvases; a margin below 16.7 MP). */
+const MAX_CANVAS_PIXELS = 12_000_000;
+
 /** Where a cell lies on a map, by thirds (the name of a base in the setup). */
 export function placeOf(x: number, y: number, w: number, h: number): string {
   const col = x * 3 < w ? 'left' : x * 3 >= 2 * w ? 'right' : '';
@@ -1649,7 +1652,9 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       g = null;
     }
     if (!g) return; // No canvas support (e.g. jsdom): the DOM lists remain fully usable.
-    const ratio = Math.max(1, Math.min(3, globalThis.devicePixelRatio || 1));
+    // The device's pixel ratio, capped so a large map's canvas stays within what phone browsers draw
+    // (about 16.7 megapixels; a 48×32 map at 44 px a cell is 3 megapixels before scaling).
+    const ratio = Math.max(1, Math.min(3, globalThis.devicePixelRatio || 1, Math.sqrt(MAX_CANVAS_PIXELS / (width * height))));
     canvas.width = Math.round(width * ratio);
     canvas.height = Math.round(height * ratio);
     g.setTransform(ratio, 0, 0, ratio, 0, 0);
