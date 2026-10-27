@@ -20,8 +20,12 @@ pnpm install --frozen-lockfile --prefer-offline >/dev/null 2>&1 && echo "install
 pnpm check:licenses | tail -1
 pnpm lint >/dev/null && echo "lint ok"
 pnpm typecheck >/dev/null && echo "types ok"
-pnpm coverage > "$SCRATCH/pr$PR-test.log" 2>&1
+# Same split as CI (ADR 0021 amendment): coverage without the slow and long suites, then those suites
+# on their own without coverage instrumentation (which made their timing-sensitive tests time out).
+pnpm coverage --exclude '**/*.long.test.ts' --exclude '**/*.slow.test.ts' > "$SCRATCH/pr$PR-test.log" 2>&1
 grep -E "Tests |FAIL|Test timed out" "$SCRATCH/pr$PR-test.log" | head
+pnpm vitest run $(git ls-files '*.long.test.ts' '*.slow.test.ts') > "$SCRATCH/pr$PR-slow.log" 2>&1
+grep -E "Tests |FAIL|Test timed out" "$SCRATCH/pr$PR-slow.log" | sed 's/^/slow: /' | head
 pnpm build 2>&1 | grep -E "error|precache" | head -3
 E2E_PORT=${E2E_PORT:-4795} pnpm exec playwright test --reporter=line 2>&1 | sed 's/\x1b\[[0-9;]*[A-Za-z]//g' | grep -E "^\s+[0-9]+\) \[|Error:|passed|failed|flaky" | head -12
 cd /tmp && git -C "$REPO" worktree remove --force "$W"
