@@ -50,7 +50,8 @@ describe('content of every locale', () => {
       const forms = content[l]!.weeks;
       for (const cat of new Intl.PluralRules(bcp47Tag(l)).resolvedOptions().pluralCategories) {
         expect(forms[cat], `${l} ${cat}`).toBeDefined();
-        expect(forms[cat], `${l} ${cat}`).toContain('{n}');
+        // "one" and "two" may spell the number out ("أسبوعان"); every other form shows it.
+        if (cat !== 'one' && cat !== 'two') expect(forms[cat], `${l} ${cat}`).toContain('{n}');
       }
     }
   });

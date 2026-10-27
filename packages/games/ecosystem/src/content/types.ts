@@ -4,7 +4,7 @@
  * texts; an "about" line may add one); no digits in stories (numbers come from the model); neutral management words.
  */
 
-/** Plural forms containing `{n}`, by `Intl.PluralRules` category (`other` is required). */
+/** Plural forms by `Intl.PluralRules` category (`other` is required); `{n}` is the number ("one"/"two" may spell it out). */
 export type PluralForms = Readonly<Partial<Record<Intl.LDMLPluralRule, string>>> & { readonly other: string };
 
 export interface SpeciesText {

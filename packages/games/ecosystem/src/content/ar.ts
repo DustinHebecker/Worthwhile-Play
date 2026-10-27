@@ -1,201 +1,194 @@
-/**
-// UNTRANSLATED
- *
- * Note for translators: plain words; common names only ("water fleas", not "Daphnia" — an "about" line may add the
- * scientific name in brackets); no digits in the texts (numbers come from the model); spraying, fishing and
- * relocating are management actions, described neutrally. Keep sentences short.
- */
 import type { ContentText } from './types';
 
 export const content: ContentText = {
-  weeks: { one: '{n} week', other: '{n} weeks' },
+  weeks: { zero: '{n} أسبوع', one: 'أسبوع واحد', two: 'أسبوعان', few: '{n} أسابيع', many: '{n} أسبوعًا', other: '{n} أسبوع' },
   species: {
-    algae: { name: 'Green algae', about: 'Tiny plants floating in the water. They grow fast on nutrients and light; water fleas and snails eat them. Many algae turn the water green and shade the plants below.' },
-    bluegreen: { name: 'Blue-green algae', about: 'Strictly speaking bacteria (cyanobacteria). They grow slowly, need rich water and are hardly eaten, so they bloom when nutrients pile up.' },
-    duckweed: { name: 'Duckweed', about: 'Small floating leaves. In rich water they cover the surface and shade everything below.' },
-    pondweed: { name: 'Pondweed', about: 'Underwater plants rooted in the mud. They need clear water to get light, take nutrients away from the algae and give water fleas a place to hide from fish.' },
-    fleas: { name: 'Water fleas', about: 'Tiny crustaceans (Daphnia) that graze the algae. Small fish eat them, but in pondweed and in the mud many stay out of reach.' },
-    snails: { name: 'Pond snails', about: 'They eat dead plant matter and a few algae. Small fish eat some of them.' },
-    minnows: { name: 'Small fish', about: 'They hunt water fleas and some snails. Their young take about six weeks to grow up. Pike eat them.' },
-    pike: { name: 'Pike', about: 'A large hunter that eats small fish. Young pike take about twenty weeks to grow up.' },
-    grass: { name: 'Grasses', about: 'Tall and fast-growing on rich soil. They shade the low plants and use a lot of water.' },
-    flowers: { name: 'Wildflowers', about: 'Low plants that do well on poor soil. They need light, so tall grass pushes them out. Aphids and rabbits eat them.' },
-    clover: { name: 'Clover', about: 'A low plant that makes its own nitrogen from the air, less so on rich soil. Its dead leaves feed the soil for its neighbours. Rabbits like it most.' },
-    aphids: { name: 'Aphids', about: 'Tiny insects that suck plant sap, mostly from wildflowers. They multiply very fast. Ladybirds eat them.' },
-    ladybirds: { name: 'Ladybirds', about: 'Beetles that eat aphids. Their larvae take about three weeks to grow up, so they react to more aphids with a delay.' },
-    rabbits: { name: 'Rabbits', about: 'They graze clover first, then wildflowers and grass. Their young take about five weeks to grow up. Foxes hunt them; some are always safe in burrows.' },
-    foxes: { name: 'Foxes', about: 'They hunt rabbits. Young foxes take about half a year to grow up.' },
-    worms: { name: 'Earthworms', about: 'They eat dead leaves and turn them back into nutrients that plants can use.' }
+    algae: { name: 'الطحالب الخضراء', about: 'نباتات دقيقة تطفو في الماء. تنمو بسرعة بالمغذيات والضوء، وتأكلها براغيث الماء والقواقع. كثرة الطحالب تجعل الماء أخضر وتظلل النباتات تحتها.' },
+    bluegreen: { name: 'الطحالب الخضراء المزرقة', about: 'هي في الحقيقة بكتيريا (بكتيريا زرقاء). تنمو ببطء، وتحتاج إلى ماء غني، ولا يكاد أحد يأكلها، لذا تتكاثر بشدة حين تتراكم المغذيات.' },
+    duckweed: { name: 'عدس الماء', about: 'أوراق صغيرة طافية. في الماء الغني تغطي السطح وتظلل كل ما تحتها.' },
+    pondweed: { name: 'عشب البرك', about: 'نباتات مغمورة متجذرة في الطين. تحتاج إلى ماء صافٍ لتصلها الإضاءة، وتنتزع المغذيات من الطحالب، وتمنح براغيث الماء مخبأً من الأسماك.' },
+    fleas: { name: 'براغيث الماء', about: 'قشريات دقيقة ترعى الطحالب. تأكلها الأسماك الصغيرة، لكن كثيرًا منها يبقى بعيدًا عن متناولها بين عشب البرك وفي الطين.' },
+    snails: { name: 'قواقع البرك', about: 'تأكل بقايا النباتات الميتة وقليلًا من الطحالب. تأكل الأسماك الصغيرة بعضها.' },
+    minnows: { name: 'الأسماك الصغيرة', about: 'تصطاد براغيث الماء وبعض القواقع. تحتاج صغارها نحو ستة أسابيع لتكبر. تأكلها أسماك الكراكي.' },
+    pike: { name: 'أسماك الكراكي', about: 'صياد كبير يأكل الأسماك الصغيرة. تحتاج صغاره نحو عشرين أسبوعًا لتكبر.' },
+    grass: { name: 'الأعشاب النجيلية', about: 'طويلة وسريعة النمو في التربة الغنية. تظلل النباتات القصيرة وتستهلك كثيرًا من الماء.' },
+    flowers: { name: 'الأزهار البرية', about: 'نباتات قصيرة تزدهر في التربة الفقيرة. تحتاج إلى الضوء، لذا يزيحها العشب الطويل. يأكلها المن والأرانب.' },
+    clover: { name: 'البرسيم', about: 'نبات قصير يأخذ النيتروجين من الهواء بنفسه، وأقل في التربة الغنية. أوراقه الميتة تسمّد التربة لجيرانه. هو الطعام المفضل للأرانب.' },
+    aphids: { name: 'المن', about: 'حشرات دقيقة تمتص عصارة النبات، خاصة من الأزهار البرية. تتكاثر بسرعة كبيرة. تأكلها الدعسوقات.' },
+    ladybirds: { name: 'الدعسوقات', about: 'خنافس تأكل المن. تحتاج يرقاتها نحو ثلاثة أسابيع لتكبر، لذا تستجيب لزيادة المن متأخرة.' },
+    rabbits: { name: 'الأرانب', about: 'ترعى البرسيم أولًا، ثم الأزهار البرية والعشب. تحتاج صغارها نحو خمسة أسابيع لتكبر. تصطادها الثعالب، لكن بعضها يبقى آمنًا دائمًا في الجحور.' },
+    foxes: { name: 'الثعالب', about: 'تصطاد الأرانب. تحتاج الثعالب الصغيرة نحو نصف عام لتكبر.' },
+    worms: { name: 'ديدان الأرض', about: 'تأكل الأوراق الميتة وتعيدها مغذيات تستطيع النباتات استخدامها.' }
   },
   challenges: {
     'fleas-arrive': {
-      title: 'Water fleas arrive',
-      situation: 'A young pond has only green algae. Water fleas reach it, carried in by a bird.',
-      think: 'Who eats the algae? What happens to the water fleas when the algae get fewer?',
-      explain: 'Water fleas multiply on the algae until they eat as fast as the algae grow. From then on the water fleas, not the nutrients, set how much algae there is: a balancing loop (B1). The water turns clear and stays clear.',
-      real: 'In real ponds, fish and the seasons usually keep this from being so neat.'
+      title: 'وصول براغيث الماء',
+      situation: 'بركة حديثة ليس فيها إلا طحالب خضراء. يحمل طائر براغيث الماء إليها.',
+      think: 'من يأكل الطحالب؟ ماذا يحدث لبراغيث الماء حين تقل الطحالب؟',
+      explain: 'تتكاثر براغيث الماء على الطحالب حتى تأكل بسرعة نمو الطحالب نفسها. ومنذ ذلك الحين تحدد البراغيث، لا المغذيات، كمية الطحالب: حلقة توازن (B1). يصفو الماء ويبقى صافيًا.',
+      real: 'في البرك الحقيقية، عادة ما تمنع الأسماك والفصول أن يكون الأمر بهذا الانتظام.'
     },
     'enrich-swings': {
-      title: 'More food for everyone',
-      situation: 'Heavy runoff from a field starts to feed a pond of algae and water fleas.',
-      think: 'More nutrients feed more algae. What do the water fleas do with more algae, and what do the algae do then?',
-      explain: 'More nutrients let the algae race ahead; the water fleas follow, eat the algae down, then starve; the algae recover, and it starts again. Richer water made the system swing instead of settle. Ecologists call this the paradox of enrichment (B1).',
-      real: 'In real ponds, many more species and the seasons damp or change these swings.'
+      title: 'غذاء أكثر للجميع',
+      situation: 'جريان قوي من حقل يبدأ بتسميد بركة فيها طحالب وبراغيث ماء.',
+      think: 'المزيد من المغذيات يغذي المزيد من الطحالب. ماذا تفعل البراغيث بالمزيد من الطحالب، وماذا تفعل الطحالب بعد ذلك؟',
+      explain: 'المزيد من المغذيات يجعل الطحالب تسبق؛ فتتبعها البراغيث وتأكلها ثم تجوع؛ ثم تتعافى الطحالب ويبدأ كل شيء من جديد. الماء الأغنى جعل النظام يتأرجح بدل أن يستقر. يسمي علماء البيئة ذلك مفارقة الإثراء (B1).',
+      real: 'في البرك الحقيقية، تخفف أنواع أكثر بكثير والفصول هذه التأرجحات أو تغيّرها.'
     },
     'fish-stocked': {
-      title: 'Fish in the pond',
-      situation: 'Someone releases small fish into a pond that had none.',
-      think: 'Fish eat water fleas. Who eats the algae, and what happens to them?',
-      explain: 'The fish eat water fleas, so fewer water fleas graze the algae, and the algae grow. A change at the top reaches the bottom of the food chain: a trophic cascade. It builds up slowly, because young fish need weeks to grow up.',
-      real: 'In real ponds, fish also stir up the mud, which clouds the water even more.'
+      title: 'أسماك في البركة',
+      situation: 'يطلق أحدهم أسماكًا صغيرة في بركة لم يكن فيها سمك.',
+      think: 'الأسماك تأكل براغيث الماء. من يأكل الطحالب، وماذا يحدث لها؟',
+      explain: 'تأكل الأسماك براغيث الماء، فيقل من يرعى الطحالب، وتزداد الطحالب. تغيير في أعلى السلسلة الغذائية يصل إلى أسفلها: سلسلة تأثير غذائية. يتراكم ببطء لأن الأسماك الصغيرة تحتاج أسابيع لتكبر.',
+      real: 'في البرك الحقيقية، تثير الأسماك الطين أيضًا، فيزداد الماء عكرًا.'
     },
     'pike-return': {
-      title: 'Pike come back',
-      situation: 'A few young pike are released into a pond full of small fish.',
-      think: 'Follow the chain: pike, small fish, water fleas, algae.',
-      explain: 'Pike eat small fish; fewer small fish leave more water fleas; more water fleas eat more algae. Each step flips the direction, so the algae fall. It takes long because young pike need about twenty weeks to grow up.',
-      real: 'In real lakes, removing small fish or adding pike is used to clear the water, with mixed and often short-lived success.'
+      title: 'عودة أسماك الكراكي',
+      situation: 'تُطلق بضع أسماك كراكي صغيرة في بركة مليئة بالأسماك الصغيرة.',
+      think: 'تتبّع السلسلة: الكراكي، الأسماك الصغيرة، براغيث الماء، الطحالب.',
+      explain: 'تأكل الكراكي الأسماك الصغيرة؛ وقلة الأسماك الصغيرة تُبقي براغيث ماء أكثر؛ والبراغيث الأكثر تأكل طحالب أكثر. كل خطوة تقلب الاتجاه، لذا تقل الطحالب. يستغرق ذلك وقتًا طويلًا لأن صغار الكراكي تحتاج نحو عشرين أسبوعًا لتكبر.',
+      real: 'في البحيرات الحقيقية، تُزال الأسماك الصغيرة أو تُضاف الكراكي لتصفية الماء، بنجاح متفاوت وقصير الأمد غالبًا.'
     },
     'algae-treatment': {
-      title: 'A quick fix for green water',
-      situation: 'The pond is treated: nine in ten of the algae die and sink, but stay in the water.',
-      think: 'Where do the nutrients in the dead algae go? And what happened to the water fleas while the algae were gone?',
-      explain: 'The dead algae rot within days and give their nutrients back to the water. The water fleas went hungry while the algae were gone, so for a while nobody holds the algae in check, and they overshoot. A fix that removes the symptom but not the nutrients does not last.',
-      real: 'In real ponds, rotting algae also use up oxygen, which can harm fish.'
+      title: 'حل سريع للماء الأخضر',
+      situation: 'تُعالج البركة: تموت تسعة من كل عشرة طحالب وتغوص، لكنها تبقى في الماء.',
+      think: 'أين تذهب المغذيات التي في الطحالب الميتة؟ وماذا حدث للبراغيث بينما غابت الطحالب؟',
+      explain: 'تتحلل الطحالب الميتة خلال أيام وتعيد مغذياتها إلى الماء. جاعت البراغيث بينما غابت الطحالب، فلا يكبح أحد الطحالب لفترة، فتتجاوز مستواها السابق. الحل الذي يزيل العرض ولا يزيل المغذيات لا يدوم.',
+      real: 'في البرك الحقيقية، تستهلك الطحالب المتحللة الأكسجين أيضًا، مما قد يضر بالأسماك.'
     },
     'slow-runoff': {
-      title: 'A field upstream',
-      situation: 'A new field upstream starts to drain into the clear pond.',
-      think: 'What do more nutrients do to the algae, and what do more algae do to the pondweed below them?',
-      explain: 'For months nothing seems to happen: the pondweed even looks fine after half a year. Meanwhile nutrients pile up in the water and the mud. When the algae finally win, a reinforcing loop takes over: more algae, more shade, less pondweed, fewer hiding places for water fleas, even more algae (R1, R2). The flip is fast; the cause was slow.',
-      real: 'In real lakes, such shifts from clear to green water are well documented, often after years of slow change.'
+      title: 'حقل عند المنبع',
+      situation: 'يبدأ حقل جديد عند المنبع بتصريف مائه في البركة الصافية.',
+      think: 'ماذا تفعل المغذيات الإضافية بالطحالب، وماذا تفعل الطحالب الإضافية بعشب البرك تحتها؟',
+      explain: 'لأشهر يبدو أن شيئًا لا يحدث: بل يبدو عشب البرك بخير بعد نصف عام. وفي الأثناء تتراكم المغذيات في الماء والطين. وحين تنتصر الطحالب أخيرًا، تتولى حلقة تعزيز الأمر: طحالب أكثر، ظل أكثر، عشب برك أقل، مخابئ أقل لبراغيث الماء، طحالب أكثر بعد (R1، R2). التحول سريع؛ والسبب كان بطيئًا.',
+      real: 'في البحيرات الحقيقية، هذه التحولات من الماء الصافي إلى الأخضر موثقة جيدًا، وكثيرًا ما تأتي بعد سنوات من التغير البطيء.'
     },
     'no-way-back': {
-      title: 'The runoff stops',
-      situation: 'Two years later the runoff is stopped completely. Will the pondweed come back?',
-      think: 'Is there any pondweed left to grow back? What keeps the water green now?',
-      explain: 'Stopping the runoff removes the cause, but the pond stays green: the algae shade the bottom, and no pondweed is left to grow back. The reinforcing loop (R1) now holds the pond in its green state. Going back needs more than undoing the change, for example planting pondweed again.',
-      real: 'In real lakes, recovery after the nutrients are cut often takes many years, and plants are sometimes replanted.'
+      title: 'توقف الجريان',
+      situation: 'بعد عامين يُوقف الجريان تمامًا. هل سيعود عشب البرك؟',
+      think: 'هل بقي من عشب البرك ما يمكنه أن ينمو من جديد؟ ما الذي يُبقي الماء أخضر الآن؟',
+      explain: 'إيقاف الجريان يزيل السبب، لكن البركة تبقى خضراء: تظلل الطحالب القاع، ولم يبقَ عشب برك لينمو من جديد. حلقة التعزيز (R1) تثبّت البركة الآن في حالتها الخضراء. العودة تحتاج أكثر من التراجع عن التغيير، كأن يُزرع عشب البرك من جديد.',
+      real: 'في البحيرات الحقيقية، كثيرًا ما يستغرق التعافي بعد قطع المغذيات سنوات عديدة، وأحيانًا تُعاد زراعة النباتات.'
     },
     shade: {
-      title: 'A tree over the pond',
-      situation: 'A tree grows over the pond and shades it.',
-      think: 'Pondweed needs light at the bottom. What else takes light away from it?',
-      explain: 'Less light slows the pondweed, so it holds the algae back less. The algae and the water fleas start to swing, and each burst of algae shades the pondweed further (R1): it falls step by step.',
-      real: 'In real ponds, falling leaves from the tree would also add nutrients.'
+      title: 'شجرة فوق البركة',
+      situation: 'تنمو شجرة فوق البركة وتظللها.',
+      think: 'يحتاج عشب البرك إلى الضوء عند القاع. ما الذي يحجب عنه الضوء أيضًا؟',
+      explain: 'الضوء الأقل يبطئ عشب البرك، فيكبح الطحالب أقل. تبدأ الطحالب والبراغيث بالتأرجح، وكل موجة طحالب تزيد عشب البرك ظلًا (R1): فيتراجع خطوة بعد خطوة.',
+      real: 'في البرك الحقيقية، تضيف أوراق الشجرة المتساقطة مغذيات أيضًا.'
     },
     spray: {
-      title: 'Spraying against aphids',
-      situation: 'The meadow is sprayed against aphids: nine in ten aphids and also nine in ten ladybirds die.',
-      think: 'Who grows back faster: the aphids or the ladybirds that eat them?',
-      explain: 'Spraying killed the aphids and the ladybirds that eat them. Aphids multiply much faster than ladybirds, so they came back first, with no one to stop them, and the wildflowers paid for it. Ecologists call this pest resurgence (B2 with a delay).',
-      real: 'In real fields, spraying also harms bees and other insects, and pests can become resistant.'
+      title: 'الرش ضد المن',
+      situation: 'يُرش المرج ضد المن: يموت تسعة من كل عشرة من المن، وتسعة من كل عشر دعسوقات أيضًا.',
+      think: 'من يعود أسرع: المن أم الدعسوقات التي تأكله؟',
+      explain: 'قتل الرش المن والدعسوقات التي تأكله. يتكاثر المن أسرع بكثير من الدعسوقات، فعاد أولًا من دون أحد يوقفه، ودفعت الأزهار البرية الثمن. يسمي علماء البيئة ذلك عودة الآفات (B2 مع تأخير).',
+      real: 'في الحقول الحقيقية، يضر الرش النحل والحشرات الأخرى أيضًا، وقد تكتسب الآفات مقاومة.'
     },
     'no-foxes': {
-      title: 'The foxes leave',
-      situation: 'The foxes leave the meadow.',
-      think: 'Who kept the rabbits in check? What do more rabbits eat first?',
-      explain: 'Without foxes the balancing loop that held the rabbits in check is gone (B2). The rabbits multiply and graze the clover, their favourite food, until little is left.',
-      real: 'In real landscapes, rabbits also move away, and diseases can cut their numbers.'
+      title: 'الثعالب ترحل',
+      situation: 'تغادر الثعالب المرج.',
+      think: 'من كان يكبح الأرانب؟ ماذا تأكل الأرانب الأكثر عددًا أولًا؟',
+      explain: 'من دون الثعالب تختفي حلقة التوازن التي كانت تكبح الأرانب (B2). تتكاثر الأرانب وترعى البرسيم، طعامها المفضل، حتى لا يبقى منه إلا القليل.',
+      real: 'في الطبيعة الحقيقية، ترحل الأرانب أيضًا، وقد تقلل الأمراض أعدادها.'
     },
     fertilise: {
-      title: 'A little fertiliser',
-      situation: 'The farmer spreads some fertiliser every week.',
-      think: 'Which plant profits most from rich soil, and what does it do to the low plants?',
-      explain: 'Fertiliser feeds the grasses most. Taller grass shades the clover and the wildflowers, and clover loses its edge: on rich soil, making its own nitrogen no longer helps. More food for the meadow means fewer kinds of plants.',
-      real: 'In real meadows, nitrogen from fertiliser and from the air is a main reason for lost wildflowers.'
+      title: 'قليل من السماد',
+      situation: 'ينثر المزارع قليلًا من السماد كل أسبوع.',
+      think: 'أي نبات يستفيد أكثر من التربة الغنية، وماذا يفعل بالنباتات القصيرة؟',
+      explain: 'يغذي السماد الأعشاب النجيلية أكثر من غيرها. العشب الأطول يظلل البرسيم والأزهار البرية، ويفقد البرسيم ميزته: في التربة الغنية لم يعد صنع نيتروجينه بنفسه يفيده. غذاء أكثر للمرج يعني أنواعًا أقل من النباتات.',
+      real: 'في المروج الحقيقية، النيتروجين من السماد ومن الهواء سبب رئيسي لاختفاء الأزهار البرية.'
     },
     drought: {
-      title: 'A dry summer',
-      situation: 'Twelve dry weeks, then normal rain again.',
-      think: 'What do the grasses need besides nutrients? What happens when the rain comes back?',
-      explain: 'Without rain the soil dries out and the grasses slow down and shrink. When the rain returns, the soil fills up and the grasses grow back, even past their old level, because nutrients piled up in the soil while they could not use them.',
-      real: 'In real meadows, a long drought can also kill plants and let others take their place.'
+      title: 'صيف جاف',
+      situation: 'اثنا عشر أسبوعًا من الجفاف، ثم يعود المطر العادي.',
+      think: 'ماذا تحتاج الأعشاب غير المغذيات؟ ماذا يحدث حين يعود المطر؟',
+      explain: 'من دون مطر تجف التربة، فيبطؤ نمو الأعشاب وتتقلص. وحين يعود المطر تمتلئ التربة وتعود الأعشاب للنمو، بل تتجاوز مستواها السابق، لأن المغذيات تراكمت في التربة بينما لم تستطع استخدامها.',
+      real: 'في المروج الحقيقية، قد يقتل جفاف طويل النباتات ويفسح المجال لغيرها.'
     },
     'clover-poor': {
-      title: 'Clover for a poor meadow',
-      situation: 'Clover is sown into a poor meadow of wildflowers.',
-      think: 'Clover makes nitrogen from the air. Where does that nitrogen go when its leaves die?',
-      explain: 'Clover brings new nitrogen into the meadow. When its leaves die, earthworms turn them into nutrients that the wildflowers use. The neighbours profit, slowly, through the soil: a chain with a delay.',
-      real: 'In real farming, clover is sown for exactly this reason.'
+      title: 'برسيم لمرج فقير',
+      situation: 'يُبذر البرسيم في مرج فقير من الأزهار البرية.',
+      think: 'يأخذ البرسيم النيتروجين من الهواء. أين يذهب هذا النيتروجين حين تموت أوراقه؟',
+      explain: 'يجلب البرسيم نيتروجينًا جديدًا إلى المرج. وحين تموت أوراقه، تحولها ديدان الأرض إلى مغذيات تستخدمها الأزهار البرية. يستفيد الجيران ببطء عبر التربة: سلسلة مع تأخير.',
+      real: 'في الزراعة الحقيقية، يُزرع البرسيم لهذا السبب تحديدًا.'
     },
     'worms-gone': {
-      title: 'Where are the earthworms?',
-      situation: 'The earthworms disappear from the meadow.',
-      think: 'Who turns dead leaves back into food for plants? Which plant does not depend on that?',
-      explain: 'Without earthworms, dead leaves pile up and their nutrients stay locked in. The grasses go hungry. Clover makes its own nitrogen, so it gains: a side effect few people expect.',
-      real: 'In real soils, many more animals, fungi and bacteria break down dead leaves.'
+      title: 'أين ديدان الأرض؟',
+      situation: 'تختفي ديدان الأرض من المرج.',
+      think: 'من يعيد الأوراق الميتة غذاءً للنباتات؟ أي نبات لا يعتمد على ذلك؟',
+      explain: 'من دون ديدان الأرض تتراكم الأوراق الميتة وتبقى مغذياتها محبوسة فيها. تجوع الأعشاب النجيلية. أما البرسيم فيصنع نيتروجينه بنفسه، فيكسب: أثر جانبي لا يتوقعه إلا القليل.',
+      real: 'في التربة الحقيقية، تحلل الأوراق الميتة حيوانات وفطريات وبكتيريا أكثر بكثير.'
     },
     'foxes-return': {
-      title: 'The foxes come back',
-      situation: 'Foxes return to a meadow overrun by rabbits.',
-      think: 'How long do young foxes need to grow up? What do fewer rabbits mean for the clover?',
-      explain: 'At first little happens: young foxes need about half a year to grow up. Then the foxes bring the rabbits down (B2), and the clover, freed from grazing, slowly comes back. The effect arrives years after the cause.',
-      real: 'In real landscapes, foxes also hunt other animals, and rabbits find new places to live.'
+      title: 'عودة الثعالب',
+      situation: 'تعود الثعالب إلى مرج تكتسحه الأرانب.',
+      think: 'كم تحتاج الثعالب الصغيرة لتكبر؟ ماذا يعني قلة الأرانب للبرسيم؟',
+      explain: 'في البداية لا يحدث الكثير: تحتاج الثعالب الصغيرة نحو نصف عام لتكبر. ثم تقلل الثعالب الأرانب (B2)، ويعود البرسيم ببطء بعد أن تحرر من الرعي. تأتي النتيجة بعد سنوات من السبب.',
+      real: 'في الطبيعة الحقيقية، تصطاد الثعالب حيوانات أخرى أيضًا، وتجد الأرانب أماكن جديدة للعيش.'
     },
     'ladybirds-gone': {
-      title: 'Ladybirds collected',
-      situation: 'Most ladybirds are collected for a garden elsewhere.',
-      think: 'Who eats the aphids? How fast can the remaining ladybirds come back?',
-      explain: 'Without ladybirds the aphids multiply. The few remaining ladybirds now find plenty of food, and their numbers grow back after a delay. Then they bring the aphids down again (B2).',
-      real: 'In real gardens, other aphid hunters such as hoverflies and birds help as well.'
+      title: 'جمع الدعسوقات',
+      situation: 'تُجمع معظم الدعسوقات لحديقة في مكان آخر.',
+      think: 'من يأكل المن؟ ما مدى سرعة عودة الدعسوقات الباقية؟',
+      explain: 'من دون الدعسوقات يتكاثر المن. تجد الدعسوقات القليلة الباقية الآن غذاءً وفيرًا، فيعود عددها مع تأخير. ثم تقلل المن من جديد (B2).',
+      real: 'في الحدائق الحقيقية، يساعد أيضًا صيادو المن الآخرون مثل ذباب الأزهار والطيور.'
     }
   },
   goals: {
     'save-pondweed': {
-      story: 'A new field upstream starts to drain into the clear pond. Keep the pondweed alive for two years while the runoff continues.',
-      target: 'Pondweed at least {v} every week until week {w}.',
-      hint: 'Algae are a symptom. What feeds them, and how soon must it change?',
-      explain: 'The pondweed falls only when the algae shade it, and the algae grow from the nutrients the field brings. Act on the cause, and act early: by the time the pondweed looks weak, the reinforcing loop has already taken over.',
+      story: 'يبدأ حقل جديد عند المنبع بتصريف مائه في البركة الصافية. حافظ على عشب البرك حيًا لعامين بينما يستمر الجريان.',
+      target: 'عشب البرك {v} على الأقل كل أسبوع حتى الأسبوع {w}.',
+      hint: 'الطحالب عرض. ما الذي يغذيها، ومتى يجب أن يتغير ذلك؟',
+      explain: 'لا يتراجع عشب البرك إلا حين تظلله الطحالب، والطحالب تنمو من المغذيات التي يجلبها الحقل. عالج السبب، وبادر مبكرًا: حين يبدو عشب البرك ضعيفًا، تكون حلقة التعزيز قد تولت الأمر بالفعل.',
       plans: {
-        buffer: 'A buffer strip of plants along the field catches most of the runoff before it reaches the pond. Early enough, the algae never get ahead.',
-        ditch: 'Closing the ditch stops the runoff completely, so the algae never get ahead.'
+        buffer: 'شريط عازل من النباتات على طرف الحقل يحتجز معظم الجريان قبل أن يصل إلى البركة. إذا زُرع مبكرًا، لا تسبق الطحالب أبدًا.',
+        ditch: 'إغلاق القناة يوقف الجريان تمامًا، فلا تسبق الطحالب أبدًا.'
       }
     },
     'clear-pond': {
-      story: 'The pond turned green after two years of runoff. Make the water clear again, with pondweed growing, for twelve weeks in a row.',
-      target: 'Algae (green and blue-green) at most {v} and pondweed at least {p}, for twelve weeks in a row, by week {w}.',
-      hint: 'Algae are a symptom. What feeds them? And what keeps them down once the water is clear?',
-      explain: 'The green state holds itself: algae shade out the plants that would hold them back. Clearing the water needs the cause removed (the runoff), the stored nutrients taken out or flushed away, and the pondweed back, so that the reinforcing loop turns towards clear water.',
+      story: 'صارت البركة خضراء بعد عامين من الجريان. أعد الماء صافيًا مع عشب برك ينمو، اثني عشر أسبوعًا متتالية.',
+      target: 'الطحالب (الخضراء والمزرقة) {v} على الأكثر وعشب البرك {p} على الأقل، اثني عشر أسبوعًا متتالية، قبل الأسبوع {w}.',
+      hint: 'الطحالب عرض. ما الذي يغذيها؟ وما الذي يُبقيها قليلة بعد أن يصفو الماء؟',
+      explain: 'الحالة الخضراء تحافظ على نفسها: تظلل الطحالب النباتات التي كانت ستكبحها. صفاء الماء يتطلب إزالة السبب (الجريان)، وإخراج المغذيات المخزنة أو غسلها، وإعادة عشب البرك، كي تدور حلقة التعزيز نحو الماء الصافي.',
       plans: {
-        restore: 'Stop the runoff, dredge the nutrient-rich mud, plant pondweed and take out most small fish (so more water fleas graze the algae). Together they turn the loop towards clear water.',
-        flush: 'Stop the runoff and let a stream flush the nutrients and algae out for a while, then plant pondweed into the clear water.'
+        restore: 'أوقف الجريان، وجرّف الطين الغني بالمغذيات، وازرع عشب البرك، وأخرج معظم الأسماك الصغيرة (كي ترعى براغيث أكثر الطحالب). معًا تدير الحلقة نحو الماء الصافي.',
+        flush: 'أوقف الجريان ودع جدولًا يغسل المغذيات والطحالب لفترة، ثم ازرع عشب البرك في الماء الصافي.'
       }
     },
     'protect-flowers': {
-      story: 'A neighbour has just sprayed the meadow: most aphids and most ladybirds died. Keep the wildflowers for a year.',
-      target: 'Wildflowers at least {v} every week until week {w}.',
-      hint: 'The aphids come back faster than the ladybirds. When would new ladybirds find something to eat?',
-      explain: 'The aphids rebound before their hunters do. Ladybirds released too early starve, because there are no aphids yet; released too late, the wildflowers are already eaten. Timing decides.',
+      story: 'رشّ أحد الجيران المرج للتو: مات معظم المن ومعظم الدعسوقات. حافظ على الأزهار البرية لعام كامل.',
+      target: 'الأزهار البرية {v} على الأقل كل أسبوع حتى الأسبوع {w}.',
+      hint: 'يعود المن أسرع من الدعسوقات. متى تجد الدعسوقات الجديدة ما تأكله؟',
+      explain: 'يتعافى المن قبل صياديه. الدعسوقات المطلقة مبكرًا جدًا تجوع لعدم وجود المن بعد؛ والمطلقة متأخرة جدًا تجد الأزهار البرية قد أُكلت. التوقيت هو الحاسم.',
       plans: {
-        ladybirds: 'Released after about ten weeks, when the aphids are back but before they peak, the ladybirds find food at once and stop the aphids in time.'
+        ladybirds: 'إذا أُطلقت بعد نحو عشرة أسابيع، حين يكون المن قد عاد قبل ذروته، تجد الدعسوقات غذاءً فورًا وتوقف المن في الوقت المناسب.'
       }
     },
     'bring-back-clover': {
-      story: 'Without foxes, rabbits have grazed the clover almost away. Bring the clover back for eight weeks in a row within four years.',
-      target: 'Clover at least {v} for eight weeks in a row, by week {w}.',
-      hint: 'Removing rabbits helps only for a while. What kept them in check before?',
-      explain: 'Rabbits multiply fast, so removing some only buys time. Lasting change needs the balancing loop back: foxes. Young foxes need half a year to grow up, so the clover comes back years later.',
+      story: 'من دون الثعالب، كادت الأرانب تقضي على البرسيم. أعد البرسيم ثمانية أسابيع متتالية خلال أربعة أعوام.',
+      target: 'البرسيم {v} على الأقل، ثمانية أسابيع متتالية، قبل الأسبوع {w}.',
+      hint: 'إزالة الأرانب لا تفيد إلا لفترة. ما الذي كان يكبحها من قبل؟',
+      explain: 'تتكاثر الأرانب بسرعة، فإزالة بعضها لا تكسب إلا وقتًا. التغيير الدائم يحتاج عودة حلقة التوازن: الثعالب. تحتاج الثعالب الصغيرة نصف عام لتكبر، لذا لا يعود البرسيم إلا بعد سنوات.',
       plans: {
-        foxes: 'Foxes alone are enough, but patience is needed: they bring the rabbits down slowly.',
-        foxesRabbits: 'Foxes plus relocating half the rabbits: the foxes start with fewer rabbits to catch up with.',
-        foxesRabbitsClover: 'Foxes, relocating most rabbits and sowing clover: the fastest way, because the clover gets a head start while the foxes grow up.'
+        foxes: 'الثعالب وحدها تكفي، لكن الأمر يحتاج صبرًا: فهي تقلل الأرانب ببطء.',
+        foxesRabbits: 'الثعالب مع نقل نصف الأرانب: يصبح على الثعالب أن تلحق بأرانب أقل.',
+        foxesRabbitsClover: 'الثعالب، ونقل معظم الأرانب، وبذر البرسيم: أسرع طريق، لأن البرسيم يسبق بينما تكبر الثعالب.'
       }
     }
   },
   loops: {
-    graze: 'Water fleas graze the algae down; fewer algae, fewer water fleas.',
-    fishFleas: 'Small fish eat water fleas; fewer water fleas, fewer young fish.',
-    pikeFish: 'Pike eat small fish; fewer small fish, fewer young pike.',
-    clearWater: 'Algae shade the pondweed; pondweed holds the algae back. Whoever is ahead pulls further ahead.',
-    shelter: 'Pondweed hides water fleas from fish, and water fleas eat algae.',
-    recycle: 'Dead algae rot and feed new algae.',
-    aphidsFlowers: 'Aphids feed on the wildflowers; fewer wildflowers, fewer aphids.',
-    ladybirdsAphids: 'Ladybirds eat aphids; fewer aphids, fewer young ladybirds.',
-    rabbitsClover: 'Rabbits graze the clover; less clover, fewer young rabbits.',
-    foxesRabbits: 'Foxes hunt rabbits; fewer rabbits, fewer young foxes.',
-    thirst: 'Grasses use the soil water; dry soil slows the grasses.',
-    wormsDead: 'Earthworms eat dead leaves; fewer dead leaves, fewer earthworms.',
-    flowerUptake: 'Wildflowers take up the nutrients they grow from.'
+    graze: 'ترعى براغيث الماء الطحالب؛ طحالب أقل، براغيث أقل.',
+    fishFleas: 'تأكل الأسماك الصغيرة براغيث الماء؛ براغيث أقل، صغار أسماك أقل.',
+    pikeFish: 'تأكل الكراكي الأسماك الصغيرة؛ أسماك صغيرة أقل، صغار كراكي أقل.',
+    clearWater: 'تظلل الطحالب عشب البرك؛ ويكبح عشب البرك الطحالب. من يتقدم يزداد تقدمًا.',
+    shelter: 'يخفي عشب البرك براغيث الماء عن الأسماك، والبراغيث تأكل الطحالب.',
+    recycle: 'تتحلل الطحالب الميتة وتغذي طحالب جديدة.',
+    aphidsFlowers: 'يعيش المن على الأزهار البرية؛ أزهار أقل، من أقل.',
+    ladybirdsAphids: 'تأكل الدعسوقات المن؛ من أقل، صغار دعسوقات أقل.',
+    rabbitsClover: 'ترعى الأرانب البرسيم؛ برسيم أقل، صغار أرانب أقل.',
+    foxesRabbits: 'تصطاد الثعالب الأرانب؛ أرانب أقل، صغار ثعالب أقل.',
+    thirst: 'تستهلك الأعشاب ماء التربة؛ والتربة الجافة تبطئ الأعشاب.',
+    wormsDead: 'تأكل ديدان الأرض الأوراق الميتة؛ أوراق ميتة أقل، ديدان أقل.',
+    flowerUptake: 'تمتص الأزهار البرية المغذيات التي تنمو منها.'
   }
 };
