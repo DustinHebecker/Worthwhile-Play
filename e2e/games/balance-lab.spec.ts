@@ -51,7 +51,7 @@ test('balance-lab: a placed weight survives a reload (resumable)', async ({ page
       await r.getByTestId('bl-next').click();
       await r.getByTestId('bl-tray-0').click();
       await r.getByTestId('bl-place').click();
-      await expect(r.getByTestId('bl-placed-0').or(r.getByTestId('bl-tray-0')).first()).toBeVisible();
+      await expect(r.locator('[data-testid^="bl-placed-"]').first()).toBeVisible();
     },
     { difficulty: 'easy', settings: { mode: 'round', bench: 'beam', tasks: 'mixed' } }
   );
