@@ -3,6 +3,7 @@ import { SUPPORTED_LOCALES, bcp47Tag } from '@wp/game-core';
 import { CONTENT_LOADERS, type ContentText, type PluralForms } from '../src/content';
 import { formatPlural } from '../src/format';
 import { messages } from '../src/messages';
+import { defaultSystem, noteLabel } from '../src/notes';
 import { INTERVALS } from '../src/theory';
 
 const CONTENT: Record<string, ContentText> = {};
@@ -68,6 +69,14 @@ describe('content (design § 18.1)', () => {
     expect(CONTENT.de!.chords.dom7).toBe('Dominantseptakkord');
     expect(CONTENT.fr!.intervals.P5).toBe('quinte juste');
     expect(CONTENT.ru!.intervals.M3).toBe('большая терция');
+  });
+
+  it('step words of scale patterns never look like a note name of the locale (German and Polish G/H/C are notes)', () => {
+    for (const locale of SUPPORTED_LOCALES) {
+      const own = new Set<string>();
+      for (let l = 0; l < 7; l++) for (const a of [-1, 0, 1] as const) own.add(noteLabel({ l, a }, defaultSystem(locale), locale));
+      for (const word of Object.values(CONTENT[locale]!.steps)) expect(own.has(word), `${locale}: ${word}`).toBe(false);
+    }
   });
 
   it('Simplified Chinese has no traditional-only characters', () => {
