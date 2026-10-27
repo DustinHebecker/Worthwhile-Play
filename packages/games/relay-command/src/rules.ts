@@ -287,7 +287,7 @@ export function confirmHandover(state: RcState): RcState {
 }
 
 export const unitById = (state: RcState, id: number): Entity | undefined => state.world.entities.find((e) => e.id === id);
-/** Production, placement, repair and sale are one-shot commands: a structure may give several per turn, each costs a slot. */
+/** Production, placement, repair, sale and a drone launch are one-shot commands: a unit may give several per turn, each costs a slot. */
 export const isOneShot = (order: Order): boolean => isOneShotOrder(order);
 /** The standing order planned for a unit this turn (one-shot commands are listed by `plannedJobs`). */
 export const draftFor = (state: RcState, id: number): Order | undefined => state.draft.find((c) => c.unit === id && !isOneShot(c.order))?.order;
@@ -346,6 +346,12 @@ function afterJobs(state: RcState): World {
       continue;
     }
     if (c.order.type === 'sell') continue;
+    if (c.order.type === 'launch') {
+      // The drone is in the air once launched: a second launch is refused while planning.
+      const carrier = world.entities.find((e) => e.id === c.unit);
+      if (carrier) carrier.drone = world.nextId++;
+      continue;
+    }
     const arch = archetypeOf(RULESET, (c.order as { kind: string }).kind);
     if (world.supply) world.supply[me] = (world.supply[me] ?? 0) - (arch?.cost ?? 0);
     if (c.order.type === 'produce') {
@@ -724,7 +730,8 @@ export function teamValue(world: World, side: number): number {
 export function sideValue(world: World, side: number): number {
   let total = world.supply?.[side] ?? 0;
   for (const e of world.entities) {
-    if (e.side !== side) continue;
+    // A drone is free and replaced for free: launching or losing it changes no side's strength.
+    if (e.side !== side || e.carrier !== undefined) continue;
     const arch = archetypeOf(RULESET, e.kind);
     if (!arch) continue;
     const weight = e.kind === COMMAND_POST ? COMMAND_POST_VALUE : arch.cost;
@@ -849,8 +856,8 @@ function matchesScenario(world: World, spec: ScenarioSpec, opponents: number, en
   // An endless deposit (the map's, or every one with the game option) stays as it started.
   const fits = (d: Deposit, o: Deposit): boolean => o.x === d.x && o.y === d.y && (o.endless || endless ? d.endless === true && d.left === o.left : d.endless === undefined && d.left <= o.left);
   if (deposits.length > 0 && (deposits.length !== start.length || deposits.some((d) => !start.some((o) => fits(d, o))))) return false;
-  // Kinds: the scenario's, plus anything a yard produces or a source builds.
-  const kinds = new Set([...entities.map((e) => e.kind), ...Object.values(RULESET.archetypes).filter((a) => a.buildTurns > 0).map((a) => a.id)]);
+  // Kinds: the scenario's, plus anything a yard produces or a source builds, and the drones its carriers launch.
+  const kinds = new Set([...entities.map((e) => e.kind), ...Object.values(RULESET.archetypes).flatMap((a) => [...(a.buildTurns > 0 ? [a.id] : []), ...(a.carrier ? [a.carrier.kind] : [])])]);
   // Entities: the scenario's plus what the economy can add — at most the order slots per side
   // and turn (each unit or site costs one order), so a hostile save cannot carry a horde.
   const n = entities.length + world.turn * world.sides * PRODUCTION_PER_TURN;

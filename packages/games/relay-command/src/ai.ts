@@ -77,7 +77,8 @@ const SLOT_MARGIN = 2;
  * - hard: as normal, plus electronic warfare (jammer set up near known enemy relays and posts,
  *   tracer with the relay truck) and a bolder weighting of damage dealt against damage taken.
  */
-export function planAi(obs: Observation, ruleset: Ruleset, difficulty: Difficulty = 'normal'): Command[] {
+export function planAi(observation: Observation, ruleset: Ruleset, difficulty: Difficulty = 'normal'): Command[] {
+  const obs = withoutDrones(observation, ruleset);
   const { world, side, network } = obs;
   const inContact = (e: Entity) => !ruleset.commandNetwork || network.coverage[cellOf(world.map, e.x, e.y)] === 1;
   const budget = ruleset.commandNetwork ? network.slots : Number.POSITIVE_INFINITY;
@@ -143,6 +144,17 @@ export function planAi(obs: Observation, ruleset: Ruleset, difficulty: Difficult
   }
   // Spend order slots only on orders the engine will accept.
   return [...fixed, ...fighting.filter(valid)].slice(0, budget);
+}
+
+/**
+ * The observation without drones (owner decision 2026-10-27). The opponent does not fly them: no
+ * way of flying them measured a gain without letting a player who only digs in win (docs). In the
+ * air they take no ground cell (no wall, no taken building cell or deposit), the engine fires at
+ * them only when nothing else is in reach, and one is replaced for free: nothing to plan around.
+ */
+function withoutDrones(obs: Observation, ruleset: Ruleset): Observation {
+  const entities = obs.world.entities.filter((e) => archetypeOf(ruleset, e.kind)?.layer !== 'air');
+  return entities.length === obs.world.entities.length ? obs : { ...obs, world: { ...obs.world, entities } };
 }
 
 /** Fighters within this many cells count as company; a unit never advances on its own. */
