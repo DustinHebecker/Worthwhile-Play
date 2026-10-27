@@ -10,6 +10,13 @@
  * carry no information: decorative, `aria-hidden`, and the card's title and tagline stay its accessible name.
  * Skyscrapers is the one deliberate exception: it shows 3D towers (owner decision; the game will show towers too).
  *
+ * Photos (PHOTOS below) are the other exception (owner decision 2026-10-27 for Relay Command: "ein echtes Bild, das
+ * entsprechend arrangiert ist"): a real picture of the game, rendered by the game itself from a real match and saved
+ * as `public/previews/<id>-light.webp` and `<id>-dark.webp` (288×192, 3× the 96×64 card; own work, no third-party
+ * art). The card shows them as a decorative `<picture>` (`alt=""`, `aria-hidden`) whose dark source follows
+ * `prefers-color-scheme`, which is the app's only theme switch. They are same-origin files under the app's base URL
+ * and precached by the service worker (`webp` in the workbox glob patterns), so they work offline like the drawings.
+ *
  * RTL: previews are not mirrored. They show game content with its own direction (boards, letters, digits, arrows,
  * laser paths) and the games do not mirror their boards either. Only the few pictures made of nothing but text
  * cards and lines (MIRRORED below) are flipped in RTL, as their text would be.
@@ -22,8 +29,6 @@
  *   cell · m0–m5 code symbols · chl/chd/pw/pb chess · lf/lgd/lgr/lgf/lmr/lbk/ltg/lsel laser · tp/trd/tf/th/tw/tm/tmf
  *   terrain · rl/rw/rwv/bt/bi river · s0–s2/pf stones · fw/fh water · st star · win tower windows · fbg/fsk/fsh/fhr face · hb hole
  *   pcf/pci/pcr/pcb/pcl playing cards (face, black and red suits, back, back line)
- *   rcw/rcr/rcrd/rct/rcts/rch/rcf/rcwh relay command map (waves, road, its centre line, crowns, their shadow, humps,
- *   the veil, wheel hubs) · rcg/rcd/rcp/rcl/rcm player-1 lines (gun, drone frame, rotors, leash, legs)
  *   text: t  ts contrast  tm2 muted  n1/n2 counts  tz/tli laser labels  tsm small  txs tiny  tl large
  */
 
@@ -104,37 +109,6 @@ const card = (x: number, y: number, w: number, h: number, rank: string, k: strin
 const back = (x: number, y: number, w: number, h: number) => R(x, y, w, h, 'pcb', 0.8) + R(x + 1, y + 1, w - 2, h - 2, 'pcl', 0.5);
 
 const PREVIEWS: Record<string, () => string> = {
-  // Relay Command: a corner of the game's map at the game's own scale (owner review 2026-10-27: "nah am echten Spiel").
-  // Cells of 8 with the dots at their corners; pale wood crowns, two ponds, rolling hills and a road piece; own units as
-  // small dark silhouettes inside the radio cover (its edge a stepped line with ticks on the outside); the far side
-  // under the milky veil, an unknown enemy post as a dashed outline with a question mark, one spotted enemy tank.
-  'relay-command': () => {
-    let s = R(2, 2, 92, 60, 'tp', 2);
-    // Ponds and wood crowns.
-    s += P('M8 5h14c3 0 4 2 4 5v4c0 3-2 4-5 4H9c-3 0-4-2-4-5V9c0-3 1-4 3-4z', 'tw') + P('M9 10q1.5-1.2 3 0t3 0M14 14q1.5-1.2 3 0t3 0', 'rcw');
-    s += P('M66 47h12c3 0 4 2 4 4v5c0 3-2 4-4 4H67c-3 0-4-2-4-5v-4c0-3 1-4 3-4z', 'tw') + P('M67 52q1.5-1.2 3 0t3 0M71 56q1.5-1.2 3 0t3 0', 'rcw');
-    for (const [x, y] of [[36, 5], [40.5, 4.5], [45, 6], [38, 9], [42.5, 9.5], [47, 10], [40, 13.5], [44.5, 14], [84, 22], [88.5, 23], [86, 27], [90, 28], [87.5, 32.5]] as const) s += C(x, y + 0.5, 2.4, 'rcts') + C(x, y, 2.4, 'rct');
-    // Grid dots at the cell corners.
-    for (let x = 10; x < 94; x += 8) for (let y = 10; y < 62; y += 8) s += C(x, y, 0.45, 'rcts');
-    // A road piece and three rolling hills.
-    s += P('M26 26h12', 'rcr') + P('M26 26h12', 'rcrd');
-    const hill = (x: number, y: number, w: number, h: number) =>
-      P(`M${x - w} ${y}C${n(x - w * 0.78)} ${n(y - h * 0.2)} ${n(x - w * 0.58)} ${y - h} ${x} ${y - h}C${n(x + w * 0.58)} ${y - h} ${n(x + w * 0.78)} ${n(y - h * 0.2)} ${x + w} ${y}Z`, 'rch');
-    s += hill(48, 30, 6, 4.5) + hill(55, 31, 5.5, 4) + hill(51, 36, 6, 4.5);
-    // The far side under the veil: an unknown post (dashed outline, "?"), and a spotted tank before it.
-    s += P('M60 2h32a2 2 0 0 1 2 2v20H76c-5 0-8-3-8-7v-5c0-6-3-10-8-10z', 'rcf');
-    s += P('M80 14v-4l4-3 4 3v4z', 'y2 ds') + T(78, 7.5, '?', 't txs');
-    s += P('M64 22.5h7v2.2h-7z', 'p2') + P('M65.5 22.5l1-1.8h3.2l0.8 1.8z', 'p2') + R(62.2, 21, 3.4, 0.7, 'p2');
-    // The edge of the own radio cover: a stepped line with ticks on its outer side.
-    const edge = 'M2 22H22V30H34V40H44V62';
-    s += P(edge, 'rcw') + [[6, 22], [12, 22], [18, 22], [22, 26], [26, 30], [31, 30], [34, 35], [38, 40], [44, 45], [44, 51], [44, 57]].map(([x, y]) => (y === 22 || y === 30 || y === 40 ? P(`M${x} ${y}v-1.4`, 'rcw') : P(`M${x} ${y}h1.4`, 'rcw'))).join('');
-    // Own units: the Command Post with its flag, a tank, Rifles, a truck.
-    s += P('M7 56v-4l4-3 4 3v4z', 'p1') + P('M11 49v-4.5', 'rcd') + P('M11 44.5h3l-1 1 1 1h-3', 'p1');
-    s += P('M20 43h8v2.4h-8z', 'p1') + P('M21.5 43l1-2h4l0.8 2z', 'p1') + P('M26.8 41.6h3', 'rcd');
-    s += [27, 29.5, 32].map((x) => C(x, 49.3, 0.9, 'p1') + P(`M${x} 50.5v3`, 'rcd')).join('');
-    s += P('M16 33h5v-1.6h2.2l1.4 1.6v2h-8.6z', 'p1') + C(17.8, 35.3, 0.9, 'i') + C(22.6, 35.3, 0.9, 'i');
-    return s;
-  },
   // Orbit Links: nodes on dark-grey space joined by straight lanes; own (blue) and opposing (red) home nodes with
   // their strength, neutral outposts with dashed rims, a shipyard hexagon and a defence platform; a dashed stream.
   'node-conquest': () => {
@@ -676,21 +650,45 @@ export const MIRRORED: ReadonlySet<string> = new Set(['ambiguity-detector', 'aud
 /** Neutral glyph for a game without its own preview yet (circle, square, triangle). */
 const FALLBACK = () => C(28, 34, 11, 'a') + R(40, 22, 22, 22, 'o', 3) + tri(74, 36, 11, 'i');
 
-export const hasPreview = (id: string): boolean => Object.hasOwn(PREVIEWS, id);
-export const previewIds = (): string[] => Object.keys(PREVIEWS);
+/** Games whose card shows a picture rendered by the game itself instead of a drawing (see the header comment). */
+export const PHOTOS: ReadonlySet<string> = new Set(['relay-command']);
 
-/** The complete SVG markup of a game's preview (the neutral glyph for unknown ids). */
+/** Same-origin URL of a game's preview photo, under the app's base URL (works at any deploy path and offline). */
+export const photoUrl = (id: string, scheme: 'light' | 'dark'): string => `${import.meta.env.BASE_URL}previews/${id}-${scheme}.webp`;
+
+export const hasPreview = (id: string): boolean => Object.hasOwn(PREVIEWS, id) || PHOTOS.has(id);
+export const previewIds = (): string[] => [...Object.keys(PREVIEWS), ...PHOTOS];
+
+const PHOTO_IMG = { alt: '', 'aria-hidden': 'true', width: '96', height: '64', decoding: 'async', loading: 'lazy', class: 'game-preview game-preview--photo' };
+
+/** The markup of a game's preview: a `<picture>` for photo games, SVG for all others (the neutral glyph for unknown ids). */
 export const previewMarkup = (id: string): string => {
+  if (PHOTOS.has(id)) {
+    const img = Object.entries({ src: photoUrl(id, 'light'), ...PHOTO_IMG }).map(([k, v]) => ` ${k}="${v}"`).join('');
+    return `<picture class="game-preview-picture"><source media="(prefers-color-scheme: dark)" srcset="${photoUrl(id, 'dark')}"><img${img}></picture>`;
+  }
   const body = (PREVIEWS[id] ?? FALLBACK)();
   const cls = `game-preview${MIRRORED.has(id) ? ' game-preview--flow' : ''}${hasPreview(id) ? '' : ' game-preview--generic'}`;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 64" class="${cls}" aria-hidden="true" focusable="false">${body}</svg>`;
 };
 
 /**
- * The preview as a DOM element. The markup is parsed as SVG XML (a constant from this module, never user text);
+ * The preview as a DOM element: a photo game's `<picture>` built element by element; otherwise the drawing, parsed
+ * as SVG XML (a constant from this module, never user text);
  * if it ever failed to parse, the neutral glyph is used instead.
  */
 export const gamePreview = (id: string): Element => {
+  if (PHOTOS.has(id)) {
+    const picture = document.createElement('picture');
+    picture.className = 'game-preview-picture';
+    const source = document.createElement('source');
+    source.media = '(prefers-color-scheme: dark)';
+    source.srcset = photoUrl(id, 'dark');
+    const img = document.createElement('img');
+    for (const [k, v] of Object.entries({ src: photoUrl(id, 'light'), ...PHOTO_IMG })) img.setAttribute(k, v);
+    picture.append(source, img);
+    return picture;
+  }
   const parse = (markup: string) => {
     const doc = new DOMParser().parseFromString(markup, 'image/svg+xml');
     const root = doc.documentElement;
