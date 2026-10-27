@@ -16,7 +16,8 @@ const firstRifle = (s: SavedRelay) => s.world.entities.find((e) => e.side === 0 
 async function start(page: Page) {
   // No save: the game's own setup is the first screen (ADR 0015; ADR 0017 opt-out, `settings: []`).
   await startGame(page, 'relay-command');
-  await expect(page.getByTestId('rc-map')).toBeVisible();
+  // Generous under load (the orchestrator's full local gate runs every suite at once).
+  await expect(page.getByTestId('rc-map')).toBeVisible({ timeout: 15_000 });
   // The host saves the fresh game; positions are read from that save.
   await expect.poll(async () => (await saved(page))?.world.entities.length ?? 0).toBeGreaterThan(0);
 }
@@ -301,6 +302,9 @@ test('relay-command: a Scout Car launches its drone on a phone; the drone stays 
 });
 
 test('relay-command: the last turn plays back on the map on a phone; it ends by itself or when skipped (owner request 2026-10-27)', async ({ page }) => {
+  // A turn plays for 6 s; under load frames and clicks come late, so this test gets triple time
+  // and waits for states, never for a fixed duration.
+  test.slow();
   await page.setViewportSize({ width: 360, height: 740 });
   await start(page);
   await expect(page.getByTestId('rc-replay')).toBeDisabled();
@@ -320,14 +324,19 @@ test('relay-command: the last turn plays back on the map on a phone; it ends by 
   await expect(page.getByTestId('rc-replay')).toBeEnabled();
   const picture = () => page.getByTestId('rc-map').evaluate((c) => (c as HTMLCanvasElement).toDataURL());
   const end = await picture();
+  const bar = page.getByTestId('rc-replay-bar');
   await page.getByTestId('rc-replay').click();
-  await expect(page.getByTestId('rc-replay-bar')).toBeVisible();
+  // Playing: the bar shows and the replay button is disabled until the end.
+  await expect(bar).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId('rc-replay')).toBeDisabled();
   // While it plays the map shows the turn as it went (not the end of it).
-  await expect.poll(picture).not.toBe(end);
-  await expect(page.getByTestId('rc-replay-bar')).toBeHidden({ timeout: 15_000 });
+  await expect.poll(picture, { timeout: 15_000 }).not.toBe(end);
+  await expect(bar).toBeHidden({ timeout: 45_000 });
+  await expect(page.getByTestId('rc-replay')).toBeEnabled();
   await page.getByTestId('rc-replay').click();
+  await expect(bar).toBeVisible({ timeout: 15_000 });
   await page.getByTestId('rc-replay-skip').click();
-  await expect(page.getByTestId('rc-replay-bar')).toBeHidden();
+  await expect(bar).toBeHidden({ timeout: 15_000 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
 });
 
