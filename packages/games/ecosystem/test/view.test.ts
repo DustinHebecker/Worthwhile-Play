@@ -3,7 +3,7 @@ import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { createTestContext } from '@wp/testing';
 import type { GameModule, GameResult } from '@wp/game-core';
 import game from '../src/index';
-import { applyTool, choiceOf, commit, newGameState, runGoalWeeks, setDraft, type EcoState, type GoalState, type PredictState } from '../src/rules';
+import { applyTool, choiceOf, commit, newGameState, questionOf, runGoalWeeks, setDraft, type Answer, type EcoState, type GoalState, type PredictState } from '../src/rules';
 
 const module = game as GameModule<unknown>;
 type Locale = 'en' | 'de' | 'ar' | 'ja';
@@ -127,7 +127,45 @@ describe('predict screens', () => {
     await new Promise((r) => setTimeout(r, 60));
     expect(m.q('eco-cursor-live')!.textContent).toMatch(/^Week -7: /);
   });
+
+  const VERDICTS: Readonly<Record<'en' | 'de', readonly string[]>> = {
+    en: ['The model went another way', 'Partly', 'Close', 'Just like the model'],
+    de: ['Das Modell ging einen anderen Weg', 'Teilweise', 'Nah dran', 'Genau wie das Modell']
+  };
+  for (const locale of ['en', 'de'] as const) {
+    it(`summary marks are symbols for the eye and verdict words for screen readers (${locale})`, () => {
+      const base = newGameState(1, { ...choiceOf('medium', {}), mode: 'predict' }) as PredictState;
+      const marks = [3, 2, 1, 0] as const;
+      const items = base.items.slice(0, 4).map((it, k) => {
+        const q = questionOf(base, it);
+        const answer: Answer = q.kind === 'level' ? { kind: 'level', band: 1 } : q.kind === 'shape' ? { kind: 'shape', option: 0 } : { kind: 'sketch', points: [0, 0, 0, 0, 0, 0] };
+        return { ...it, answer, marks: marks[k]!, ran: true };
+      });
+      const m = mount({ ...base, items, index: items.length, reported: true }, locale);
+      expect(m.q('eco-root')!.dataset.phase).toBe('summary');
+      const lis = [...m.q('eco-summary-list')!.querySelectorAll('li')];
+      expect(lis).toHaveLength(4);
+      lis.forEach((li, k) => {
+        const name = accessibleText(li);
+        expect(name).toContain(VERDICTS[locale][marks[k]!]);
+        expect(name).not.toMatch(/[●○]/);
+        expect(li.textContent).toMatch(/^[●○]{3}/); // the symbols stay visible
+      });
+      const counts = accessibleText(m.q('eco-summary-counts')!);
+      for (const v of VERDICTS[locale]) expect(counts).toContain(v);
+      expect(counts).not.toMatch(/[●○]/);
+      expect(m.q('eco-summary-counts')!.querySelectorAll('[aria-hidden="true"]')).toHaveLength(4);
+      expect(m.ctx.missingKeys).toEqual([]);
+    });
+  }
 });
+
+/** The text a screen reader reads: the text content without `aria-hidden` subtrees. */
+function accessibleText(el: Element): string {
+  const c = el.cloneNode(true) as Element;
+  for (const x of c.querySelectorAll('[aria-hidden="true"]')) x.remove();
+  return (c.textContent ?? '').replace(/\s+/g, ' ').trim();
+}
 
 describe('goal screens', () => {
   const goal = (id: string, d: 'easy' | 'medium' | 'hard' = 'easy') => newGameState(2, choiceOf(d, { mode: 'goal', goal: id })) as GoalState;

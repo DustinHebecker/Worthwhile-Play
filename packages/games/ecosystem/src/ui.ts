@@ -25,6 +25,11 @@ export interface Ui {
   weeks(n: number): string;
   shapeName(s: Shape, fromZero: boolean): string;
   marks(m: Marks): string;
+  /**
+   * A translated text holding mark symbols (●●○): each symbol stays visible but is hidden from screen readers, which
+   * read the verdict word instead ("Close").
+   */
+  marked(text: string): HTMLElement;
   /** A logged change in words ("Runoff: high"). */
   action(habitat: Habitat, a: Action): string;
   /** "Algae: down from 250 to 68 by week 6; week 26: 68." from the zigzag legs of a series. */
@@ -33,6 +38,10 @@ export interface Ui {
   /** A translated sentence whose parameters are each isolated in `<bdi>` (numbers and names stay intact in RTL). */
   rich(key: string, params: Record<string, string>): HTMLElement;
 }
+
+const MARK_OF: Readonly<Record<string, Marks>> = Object.fromEntries(Object.entries(MARK_SYMBOLS).map(([m, sym]) => [sym, Number(m) as Marks]));
+/** Splits a text at the mark symbols, keeping them (odd indexes). */
+const MARK_PATTERN = new RegExp(`(${Object.values(MARK_SYMBOLS).join('|')})`, 'u');
 
 export function createUi(t: Translator): Ui {
   const locale = t.locale;
@@ -50,6 +59,17 @@ export function createUi(t: Translator): Ui {
     weeks: (n) => formatPlural(content().weeks, n, locale),
     shapeName: (s, fromZero) => (fromZero && (s === 'steady' || s === 'rises' || s === 'rise-fall') ? t(`shape0.${s}`) : t(`shape.${s}`)),
     marks: (m) => `${MARK_SYMBOLS[m]} ${t(`verdict.${m}`)}`,
+    marked(text) {
+      const parts = text.split(MARK_PATTERN);
+      return h(
+        'span',
+        {},
+        ...parts.map((part, i) => {
+          const m = i % 2 === 1 ? MARK_OF[part] : undefined;
+          return m === undefined ? part : h('span', { class: 'eco-marks' }, h('span', { 'aria-hidden': 'true' }, part), h('span', { class: 'sr-only' }, t(`verdict.${m}`)));
+        })
+      );
+    },
     action(habitat, a) {
       switch (a.kind) {
         case 'add':

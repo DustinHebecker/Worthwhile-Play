@@ -269,12 +269,12 @@ function summaryScreen(host: Host, s: PredictState): Screen {
     { class: 'eco-summary-list', 'data-testid': 'eco-summary-list' },
     ...s.items.map((it) => {
       const title = ui.challenge(it.challenge).title;
-      return h('li', {}, it.marks === null ? ui.t('summary.skipped', { title }) : ui.t('summary.line', { mark: MARK_SYMBOLS[it.marks], title }));
+      return h('li', {}, it.marks === null ? ui.t('summary.skipped', { title }) : ui.marked(ui.t('summary.line', { mark: MARK_SYMBOLS[it.marks], title })));
     })
   );
   const panel = [
     ui.heading('h2', 'eco-summary-heading', ui.t('summary.heading')),
-    h('p', { 'data-testid': 'eco-summary-counts' }, ui.t('summary.counts', { a: ui.int(sum.matched), b: ui.int(sum.close), c: ui.int(sum.partly), d: ui.int(sum.other), s: ui.int(sum.skipped) })),
+    h('p', { 'data-testid': 'eco-summary-counts' }, ui.marked(ui.t('summary.counts', { a: ui.int(sum.matched), b: ui.int(sum.close), c: ui.int(sum.partly), d: ui.int(sum.other), s: ui.int(sum.skipped) }))),
     h('p', { class: 'eco-tip', 'data-testid': 'eco-remark' }, ui.t(`summary.remark.${sum.remark}`)),
     list
   ];

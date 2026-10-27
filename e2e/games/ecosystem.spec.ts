@@ -39,7 +39,12 @@ test('ecosystem: a medium round — the model answer scores ●●●, skips, th
   }
   await r.getByTestId('eco-summary-btn').click();
   await expect(r.getByTestId('eco-summary-list').locator('li')).toHaveCount(4);
-  await expect(r.getByTestId('eco-summary-counts')).toHaveText('●●● 1 · ●●○ 0 · ●○○ 0 · ○○○ 0 · skipped 3');
+  // The marks stay visible as symbols; screen readers get the verdict words instead.
+  const counts = r.getByTestId('eco-summary-counts');
+  await expect(counts.locator('[aria-hidden="true"]')).toHaveText(['●●●', '●●○', '●○○', '○○○']);
+  await expect(counts.locator('.sr-only')).toHaveText(['Just like the model', 'Close', 'Partly', 'The model went another way']);
+  await expect(counts).toContainText('skipped 3');
+  await expect(r.getByTestId('eco-summary-list').locator('li .sr-only')).toHaveText(['Just like the model']);
   await expect(page.getByTestId('finished')).toBeVisible();
   expect((await saved<PredictState>(page)).reported).toBe(true);
 });
