@@ -792,7 +792,7 @@ const MAX_YARDS = 4;
  */
 const LARGE_MAP_CELLS = 24 * 16;
 /** The own cover ending this many cells short of the objective starts a chain of Radio Masts towards it. */
-const MAST_GAP = 8;
+const MAST_GAP = 4;
 /** Supply kept back when a Radio Mast of the chain is built. */
 const MAST_RESERVE = 40;
 /** Easy keeps a cushion before it produces or builds anything. */
@@ -965,19 +965,27 @@ function mastSpot(obs: Observation, ruleset: Ruleset, objective: Positioned): { 
   const taken = new Set(world.entities.map((e) => cellOf(world.map, e.x, e.y)));
   const deposits = new Set((world.map.deposits ?? []).map((d) => cellOf(world.map, d.x, d.y)));
   let nearest = Number.POSITIVE_INFINITY;
-  let best: { x: number; y: number; d: number; f: number } | undefined;
+  // The best cell out of known enemy reach, and the best one at all (the last masts may have to stand in reach).
+  let safe: { x: number; y: number; d: number; f: number } | undefined;
+  let any: { x: number; y: number; d: number; f: number } | undefined;
+  const better = (a: { d: number; f: number } | undefined, d: number, f: number) => !a || d < a.d || (d === a.d && f < a.f);
   for (let y = 0; y < world.map.h; y++) {
     for (let x = 0; x < world.map.w; x++) {
       const c = cellOf(world.map, x, y);
       if (network.coverage[c] !== 1) continue;
       const d = dist2(x, y, objective.x, objective.y);
       nearest = Math.min(nearest, d);
-      if (taken.has(c) || deposits.has(c) || !passable(world.map, ruleset, x, y, 'ground') || dangerAt(obs, ruleset, x, y) > 0) continue;
+      if (taken.has(c) || deposits.has(c) || !passable(world.map, ruleset, x, y, 'ground')) continue;
       const f = sideFrame(obs, c);
-      if (!best || d < best.d || (d === best.d && f < best.f)) best = { x, y, d, f };
+      if (better(any, d, f)) any = { x, y, d, f };
+      if (dangerAt(obs, ruleset, x, y) === 0 && better(safe, d, f)) safe = { x, y, d, f };
     }
   }
-  return nearest > MAST_GAP * MAST_GAP && best ? { x: best.x, y: best.y } : undefined;
+  if (nearest <= MAST_GAP * MAST_GAP) return undefined;
+  // A safe cell that still brings the cover closer; else the closest cell (a mast in reach is shot at,
+  // but the cover must reach the objective for the storm to be ordered at all).
+  const pick = safe && (!any || safe.d < nearest) ? safe : any;
+  return pick && { x: pick.x, y: pick.y };
 }
 
 /** A free covered cell for a structure near `source`, away from deposits, nearest first (ties in the side's frame). */
