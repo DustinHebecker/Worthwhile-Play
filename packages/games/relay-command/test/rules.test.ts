@@ -2068,6 +2068,45 @@ describe('the opponent on large maps (more than 24×16 cells, owner request 2026
     expect(masts(near)).toEqual([]);
   });
 
+  it('skips cells within MAST_GAP of an own mast that gives no cover (disabled), and of no other entity', () => {
+    const w = world(40, 10, [{ kind: 'relay-mast', x: 34, y: 5 }]);
+    w.entities.find((e) => e.kind === 'relay-mast')!.status = [{ kind: 'disabled', ticks: 6 }];
+    w.intel = initialIntel(w, RULESET);
+    const [spot] = masts(w);
+    // Without the gap rule the post's nearest covered cell, (33, 5), right next to the dead mast.
+    expect(spot).toBeDefined();
+    expect((spot!.x - 34) ** 2 + (spot!.y - 5) ** 2).toBeGreaterThan(16);
+    // The covered cell nearest the objective among those: still within the post's cover.
+    expect((spot!.x - 38) ** 2 + (spot!.y - 5) ** 2).toBeLessThanOrEqual(25);
+  });
+
+  it('never on a deposit or a taken cell; equally near cells are taken in the frame of the side', () => {
+    // The two cells nearest the objective inside the post's cover: (33, 5) holds a deposit, (34, 5) a unit.
+    const w = world(40, 10, [{ kind: 'rifles', x: 34, y: 5 }]);
+    w.map = { ...w.map, deposits: [{ x: 33, y: 5, left: 300 }] };
+    w.intel = initialIntel(w, RULESET);
+    // Next come (34, 4) and (34, 6), equally near: the opponent (a half turn) takes the one first in its frame.
+    const order = (p: { x: number; y: number }) => frameIndexIn(w.map, frameOf(w, OPPONENT), cellOf(w.map, p.x, p.y));
+    const [first, second] = [{ x: 34, y: 4 }, { x: 34, y: 6 }].sort((a, b) => order(a) - order(b));
+    expect(order(first!)).toBeLessThan(order(second!));
+    expect(masts(w)).toEqual([first]);
+  });
+
+  it('only with the price of a mast plus a reserve of 40 in hand, and not while one is still being built', () => {
+    const poor = (supply: number) => {
+      const w = world(40, 10);
+      w.supply = w.supply!.map((v, side) => (side === OPPONENT ? supply : v));
+      return masts(w);
+    };
+    const price = archetypeOf(RULESET, 'relay-mast')!.cost!;
+    expect(poor(price + 40)).toHaveLength(1);
+    expect(poor(price + 39)).toEqual([]);
+    const building = world(40, 10, [{ kind: 'relay-mast', x: 37, y: 2 }]);
+    building.entities.find((e) => e.kind === 'relay-mast')!.build = 1;
+    building.intel = initialIntel(building, RULESET);
+    expect(masts(building)).toEqual([]);
+  });
+
   it('keeps the measured AI on maps up to 24×16: no Radio Mast chain there', () => {
     expect(masts(world(24, 16))).toEqual([]);
   });
