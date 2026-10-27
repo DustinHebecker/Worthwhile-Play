@@ -54,7 +54,7 @@ const RABBITS = [e('clover', 'rabbits', 1, true), e('rabbits', 'clover', -1), e(
 // have piled up (the slow chain); then the clear-water loop R1 flips towards algae.
 const runoffCld: Cld = {
   habitat: 'pond',
-  nodes: ['runoff', 'nutrients', 'duckweed', 'pondweed', 'fleas', 'algae'],
+  nodes: ['runoff', 'nutrients', 'duckweed', 'pondweed', 'algae', 'fleas'],
   edges: [e('runoff', 'nutrients', 1), e('nutrients', 'duckweed', 1), e('duckweed', 'pondweed', -1), e('nutrients', 'algae', 1), ...SHADE, e('pondweed', 'fleas', 1), ...GRAZE],
   loops: [R_SHADE, { id: 'R2', path: ['algae', 'pondweed', 'fleas'], key: 'shelter' }, B_GRAZE],
   highlight: 'R1',
