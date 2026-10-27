@@ -375,12 +375,9 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   };
   let mapView: View = readView();
   const terrainLayer = createTerrainLayer('fine');
-  /**
-   * Time per tick of the replay (a turn of 6 ticks takes 6 s; stepwise with reduced motion 6.6 s).
-   * Slowed down after the owner's review 2026-10-27: at 450 ms a tick the shooter could not be told.
-   */
-  const REPLAY_TICK_MS = 1000;
-  const REPLAY_STEP_MS = 1100;
+  /** Time per tick of the replay (a turn of 6 ticks takes 2.7 s; stepwise with reduced motion). */
+  const REPLAY_TICK_MS = 450;
+  const REPLAY_STEP_MS = 700;
   let playing: { replay: Replay; f: number; start: number; frame: number } | null = null;
   const viewButtons = VIEWS.map((v) =>
     h('button', { type: 'button', 'data-testid': `rc-view-${v}`, 'aria-pressed': String(v === mapView), onclick: () => setView(v) }, t(`view.${v}`))
@@ -1707,56 +1704,49 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       const base: Entity = known ?? { id: u.id, side: u.side, kind: u.kind, x: at.x, y: at.y, hp: arch?.hp ?? 1, mp: 0, cooldown: 0, order: { type: 'hold' }, status: [], beam: null };
       drawUnit(g, { ...base, x: at.x, y: at.y });
     }
-    // The shots of the tick under way show in the second part of its step: first the shooter is
-    // ringed and flashes, then the shot travels to its target (a line, or an arc for a shell), and
-    // the target is ringed where it lands. With reduced motion everything stands at once.
+    // The shots of the tick under way show in the second part of its step.
     const tick = Math.floor(f) + 1;
-    const still = reducedMotion();
-    const p = still ? 1 : f - Math.floor(f);
-    if (p < 0.15) return;
-    const travel = Math.min(1, Math.max(0, (p - 0.3) / 0.4));
+    const p = f - Math.floor(f);
+    if (p < 0.25 && !reducedMotion()) return;
     const mid = (x: number, y: number) => [x * CELL + CELL / 2, y * CELL + CELL / 2] as const;
-    const danger = css('--wp-danger', '#a1271b');
-    const ring = (x: number, y: number, r: number, width: number) => {
-      g.lineWidth = width;
-      g.setLineDash([]);
-      g.beginPath();
-      g.arc(...mid(x, y), r, 0, Math.PI * 2);
-      g.stroke();
-    };
     g.save();
     g.lineCap = 'round';
-    g.strokeStyle = danger;
     for (const shot of replay.shots) {
       if (shot.tick !== tick) continue;
-      if (shot.t === 'fire' || shot.t === 'shell') {
+      if (shot.t === 'fire') {
         const a = now.get(shot.from);
-        const b = shot.t === 'fire' ? now.get(shot.to) : { x: shot.x, y: shot.y };
+        const b = now.get(shot.to);
+        if (!a || !b) continue;
+        g.strokeStyle = css('--wp-danger', '#a1271b');
+        g.lineWidth = 2.5;
+        g.setLineDash([]);
+        g.beginPath();
+        g.moveTo(...mid(a.x, a.y));
+        g.lineTo(...mid(b.x, b.y));
+        g.stroke();
+      } else if (shot.t === 'shell') {
+        const a = now.get(shot.from);
         if (!a) continue;
-        // The shooter: a bold ring and its muzzle flash.
-        ring(a.x, a.y, CELL * 0.5, 3);
-        if (p < 0.45) drawFlash(g, a.x * CELL, a.y * CELL);
-        if (!b || travel === 0) continue;
         const [ax, ay] = mid(a.x, a.y);
-        const [bx, by] = mid(b.x, b.y);
-        g.setLineDash(shot.t === 'shell' ? [4, 4] : []);
-        g.lineWidth = shot.t === 'shell' ? 2 : 2.5;
+        const [bx, by] = mid(shot.x, shot.y);
+        g.strokeStyle = css('--wp-danger', '#a1271b');
+        g.lineWidth = 2;
+        g.setLineDash([4, 4]);
         g.beginPath();
         g.moveTo(ax, ay);
-        if (shot.t === 'fire') g.lineTo(ax + (bx - ax) * travel, ay + (by - ay) * travel);
-        else {
-          // The part of the arc flown so far (a quadratic Bézier split at `travel`).
-          const [qx, qy] = [(ax + bx) / 2, Math.min(ay, by) - CELL * 1.5];
-          const [c1x, c1y] = [ax + (qx - ax) * travel, ay + (qy - ay) * travel];
-          const [c2x, c2y] = [qx + (bx - qx) * travel, qy + (by - qy) * travel];
-          g.quadraticCurveTo(c1x, c1y, c1x + (c2x - c1x) * travel, c1y + (c2y - c1y) * travel);
-        }
+        g.quadraticCurveTo((ax + bx) / 2, Math.min(ay, by) - CELL * 1.5, bx, by);
         g.stroke();
       } else if (shot.t === 'burst') {
-        if (travel === 1) drawFlash(g, shot.x * CELL, shot.y * CELL);
+        drawFlash(g, shot.x * CELL, shot.y * CELL);
       } else {
         const at = now.get(shot.id);
-        if (at && travel === 1) ring(at.x, at.y, CELL * 0.42, 2);
+        if (!at) continue;
+        g.strokeStyle = css('--wp-danger', '#a1271b');
+        g.lineWidth = 2;
+        g.setLineDash([]);
+        g.beginPath();
+        g.arc(...mid(at.x, at.y), CELL * 0.42, 0, Math.PI * 2);
+        g.stroke();
       }
     }
     g.restore();

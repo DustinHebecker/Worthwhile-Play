@@ -59,7 +59,7 @@ test.describe('app shell', () => {
       const [box, titleBox] = [await img.boundingBox(), await card.locator('.game-card-title').boundingBox()];
       expect(box!.width).toBeGreaterThan(80);
       expect(box!.y + box!.height).toBeLessThanOrEqual(titleBox!.y + 1);
-      expect(await img.evaluate((el) => getComputedStyle(el).objectFit)).toBe('cover');
+      expect(await img.evaluate((el) => getComputedStyle(el).objectFit)).toBe('contain');
     });
   }
 
