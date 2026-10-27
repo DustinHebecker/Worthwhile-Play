@@ -436,7 +436,7 @@ export function isScene(x: unknown): x is Scene {
 function fixedPart(scene: Scene, id: TaskId): unknown {
   if (scene.bench === 'beam') return { ...scene.s, axle: id === 'beam-axle' ? 0 : scene.s.axle, weights: scene.s.weights.filter((w) => !w.free) };
   if (scene.bench === 'stack') return { ...scene.s, bodies: id === 'stack-overhang' ? scene.s.bodies.map((b) => b.kind) : scene.s.bodies, cubes: scene.s.cubes.filter((c) => !c.free) };
-  const strip = (n: MobileNode): MobileNode => (isBar(n) ? { bar: { ...n.bar, hooks: n.bar.hooks.map((h) => ({ pos: h.pos, child: h.child && !isBar(h.child) && h.child.free ? null : h.child ? strip(h.child) : null })) } } : n);
+  const strip = (n: MobileNode): MobileNode => (isBar(n) ? { bar: { ...n.bar, string: id === 'mobile-string' ? 0 : n.bar.string, hooks: n.bar.hooks.map((h) => ({ pos: h.pos, child: h.child && !isBar(h.child) && h.child.free ? null : h.child ? strip(h.child) : null })) } } : n);
   return strip(scene.s);
 }
 

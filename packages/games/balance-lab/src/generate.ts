@@ -35,7 +35,7 @@ export type Bench = 'beam' | 'mobile' | 'stack';
 export const BENCHES: readonly Bench[] = ['beam', 'mobile', 'stack'];
 export const DIFFICULTIES: readonly Difficulty[] = ['easy', 'medium', 'hard'];
 
-export const TASK_IDS = ['beam-predict', 'beam-hook', 'beam-weights', 'beam-choose', 'beam-axle', 'mobile-predict', 'mobile-hang', 'stack-predict', 'stack-overhang', 'stack-counter'] as const;
+export const TASK_IDS = ['beam-predict', 'beam-hook', 'beam-weights', 'beam-choose', 'beam-axle', 'mobile-predict', 'mobile-hang', 'mobile-string', 'stack-predict', 'stack-overhang', 'stack-counter'] as const;
 export type TaskId = (typeof TASK_IDS)[number];
 
 export type Scene = { bench: 'beam'; s: BeamScene } | { bench: 'mobile'; s: MobileNode } | { bench: 'stack'; s: StackScene };
@@ -62,10 +62,10 @@ export const isPredict = (id: TaskId): boolean => id.endsWith('-predict');
 export const SIDES: readonly Side[] = ['left-down', 'level', 'right-down'];
 export const STACK_ANSWERS: readonly StackAnswer[] = ['stands', 'left', 'right'];
 
-/** Build pools per bench and difficulty (design § 10.3; `mobile-string` not built yet). */
+/** Build pools per bench and difficulty (design § 10.3). */
 export function buildPool(bench: Bench, difficulty: Difficulty): TaskId[] {
   if (bench === 'beam') return difficulty === 'hard' ? ['beam-hook', 'beam-weights', 'beam-choose', 'beam-axle'] : difficulty === 'medium' ? ['beam-hook', 'beam-weights', 'beam-choose'] : ['beam-hook', 'beam-weights'];
-  if (bench === 'mobile') return ['mobile-hang'];
+  if (bench === 'mobile') return difficulty === 'easy' ? ['mobile-hang'] : ['mobile-hang', 'mobile-string'];
   return ['stack-overhang', 'stack-counter'];
 }
 
@@ -270,6 +270,41 @@ export function mobileHang(rng: Rng, d: Difficulty): TaskSpec {
   return buildTask('mobile-hang', { bench: 'mobile', s: empty }, [2, 4], { bench: 'mobile', s: fillSlots(empty, [4, 2]) });
 }
 
+/** Moves the string of the i-th bar (depth-first) to hole `at`; null when that is not a free hole. */
+export function setString(node: MobileNode, index: number, at: number): MobileNode | null {
+  let i = 0;
+  let ok = false;
+  const walk = (n: MobileNode): MobileNode => {
+    if (!isBar(n)) return n;
+    const mine = i++ === index;
+    const bar = n.bar;
+    if (mine) ok = at >= 0 && at <= bar.width && at !== bar.string && bar.hooks.every((h) => h.pos !== at);
+    return { bar: { ...bar, string: mine && ok ? at : bar.string, hooks: bar.hooks.map((h) => ({ pos: h.pos, child: h.child ? walk(h.child) : null })) } };
+  };
+  const out = walk(node);
+  return ok ? out : null;
+}
+
+/** Each bar's string has been moved off its balancing hole; tie each one so its bar hangs level (unique per bar). */
+export function mobileString(rng: Rng, d: Difficulty): TaskSpec {
+  const p = P[d];
+  for (let i = 0; i < TRIES; i++) {
+    const mobile = balancedMobile(rng, rng.pick(SHAPES[d]), rng.int(4, p.mobileKg * 3), p.mobileKg, true);
+    if (!mobile) continue;
+    const bars = mobileBars(mobile);
+    if (bars.some((b) => b.width < 3)) continue;
+    let start: MobileNode | null = mobile;
+    bars.forEach((b, k) => {
+      const holes = Array.from({ length: b.width - 1 }, (_, j) => j + 1).filter((x) => x !== b.string);
+      start = start && setString(start, k, rng.pick(holes));
+    });
+    if (!start) continue;
+    return buildTask('mobile-string', { bench: 'mobile', s: start }, [], { bench: 'mobile', s: mobile });
+  }
+  const witness: MobileNode = { bar: { width: 3, string: 1, hooks: [{ pos: 0, child: { kg: 4 } }, { pos: 3, child: { kg: 2 } }] } };
+  return buildTask('mobile-string', { bench: 'mobile', s: setString(witness, 0, 2)! }, [], { bench: 'mobile', s: witness });
+}
+
 export function mobilePredict(rng: Rng, d: Difficulty, needs: PredictNeeds): TaskSpec {
   const p = P[d];
   for (let i = 0; i < TRIES * 2; i++) {
@@ -423,6 +458,8 @@ export function generateTask(rng: Rng, id: TaskId, d: Difficulty, needs: Predict
       return mobilePredict(rng, d, needs);
     case 'mobile-hang':
       return mobileHang(rng, d);
+    case 'mobile-string':
+      return mobileString(rng, d);
     case 'stack-predict':
       return stackPredict(rng, d, needs);
     case 'stack-overhang':

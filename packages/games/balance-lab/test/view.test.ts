@@ -4,6 +4,7 @@ import type { GameModule } from '@wp/game-core';
 import { afterEach, describe, expect, it } from 'vitest';
 import game from '../src/index';
 import type { BalanceState, FreeState, RoundState } from '../src/rules';
+import { mobileBars, type MobileNode } from '../src/statics';
 
 afterEach(() => {
   document.body.innerHTML = '';
@@ -103,6 +104,30 @@ describe('view', () => {
       return;
     }
     throw new Error('no beam-choose task found');
+  });
+
+  it('mobile-string: move each string with the step buttons until every bar hangs level', () => {
+    for (let seed = 1; seed < 60; seed++) {
+      const m = mount({ bench: 'mobile', tasks: 'build' }, 'medium', 'en', seed);
+      const it = (m.state() as RoundState).items[0]!;
+      if (it.id !== 'mobile-string') {
+        m.instance.dispose();
+        continue;
+      }
+      const target = mobileBars(it.witness!.s as MobileNode).map((b) => b.string);
+      target.forEach((goal, k) => {
+        m.q(`bl-bar-${k}`)!.click();
+        for (let n = 0; n < 10; n++) {
+          const now = mobileBars((m.state() as RoundState).items[0]!.draft.s as MobileNode)[k]!.string;
+          if (now === goal) break;
+          m.q(now < goal ? 'bl-step-right' : 'bl-step-left')!.click();
+        }
+      });
+      m.q('bl-letgo')!.click();
+      expect(m.q('bl-outcome')!.dataset.status).toBe('solved');
+      return;
+    }
+    throw new Error('no mobile-string task found');
   });
 
   it('refuses "Let go" with parts in the tray and says so', () => {

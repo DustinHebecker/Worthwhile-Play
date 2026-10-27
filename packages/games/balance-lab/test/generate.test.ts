@@ -71,7 +71,12 @@ describe('generation', () => {
           expect(fits).toHaveLength(1);
           expect(new Set(t.tray).size).toBe(t.tray.length);
         }
-        if (t.scene.bench === 'mobile') expect(countHangSolutions(t.scene.s, t.tray)).toBe(1);
+        if (t.scene.bench === 'mobile' && id === 'mobile-hang') expect(countHangSolutions(t.scene.s, t.tray)).toBe(1);
+        if (t.witness!.bench === 'mobile' && id === 'mobile-string')
+          for (const bar of mobileBars(t.witness!.s)) {
+            const holes = Array.from({ length: bar.width + 1 }, (_, at) => at).filter((at) => bar.hooks.every((h) => h.pos !== at) && barNet({ ...bar, string: at }) === 0);
+            expect(holes).toEqual([bar.string]);
+          }
         if (t.scene.bench === 'stack') expect(stackContactsOk(t.witness!.s as never)).toBe(true);
         for (const kg of t.tray) expect(kg >= 1 && kg <= 9).toBe(true);
       }),

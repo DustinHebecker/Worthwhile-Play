@@ -51,8 +51,8 @@ import {
   type RoundState
 } from './rules';
 import { drawScene, type SceneOptions } from './scene-view';
-import { cubeSpots } from './generate';
-import { isBar } from './statics';
+import { cubeSpots, setString } from './generate';
+import { isBar, mobileBars } from './statics';
 import './styles.css';
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
@@ -140,6 +140,7 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
       return render();
     }
     if (sc.bench === 'mobile') {
+      if (taskId() === 'mobile-string') return;
       cursor = target;
       if (selTray !== null) {
         const kg = trayNow()[selTray];
@@ -180,6 +181,16 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
       }
       cursor = Math.max(-sc.s.half, Math.min(sc.s.half, cursor + Math.sign(dx)));
       return render();
+    }
+    if (sc.bench === 'mobile' && taskId() === 'mobile-string') {
+      const bar = mobileBars(sc.s)[cursor];
+      if (!bar) return;
+      // The next free hole in that direction (holes with a hook are skipped).
+      for (let at = bar.string + Math.sign(dx); at >= 0 && at <= bar.width; at += Math.sign(dx)) {
+        const moved = setString(sc.s, cursor, at);
+        if (moved) return void edit({ bench: 'mobile', s: moved });
+      }
+      return;
     }
     if (sc.bench === 'mobile') {
       const n = mobileHooks(sc.s).length;
@@ -305,7 +316,7 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
     let cur: SceneOptions['cursor'] = null;
     if (editable()) {
       if (scene.bench === 'beam' && taskId() !== 'beam-axle') cur = selPlaced === null || taskId() === 'beam-choose' ? { kind: 'hook', at: cursor } : null;
-      else if (scene.bench === 'mobile') cur = { kind: 'hook', at: cursor };
+      else if (scene.bench === 'mobile' && taskId() !== 'mobile-string') cur = { kind: 'hook', at: cursor };
       else if (scene.bench === 'stack') cur = taskId() === 'stack-counter' ? (selPlaced === null ? { kind: 'cube', at: cursor } : null) : { kind: 'body', at: cursor };
     }
     const title = item ? taskText(item) : t(`free.${state.bench}`);
@@ -314,7 +325,7 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
       explain,
       animate,
       cursor: cur,
-      marked: item?.marked ?? null,
+      marked: item?.id === 'mobile-string' && editable() ? cursor : (item?.marked ?? null),
       flag: item?.goal?.kind === 'overhang' ? item.goal.cm : null,
       title,
       desc: describe(t, scene)
@@ -344,7 +355,7 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
     const id = taskId();
     const tray = trayNow();
     // Tray.
-    if (scene.bench !== 'stack' || id === 'stack-counter') {
+    if ((scene.bench !== 'stack' || id === 'stack-counter') && id !== 'mobile-string') {
       if (state.mode === 'free') {
         const select = h('select', { 'data-testid': 'bl-free-kg', 'aria-label': t('free.kg'), onchange: (e: Event) => ((freeKg = Number((e.target as HTMLSelectElement).value)), (selTray = 0)) });
         for (let kg = 1; kg <= 9; kg++) select.append(h('option', { value: String(kg), selected: kg === freeKg }, t('tray.weight', { kg: num(kg) })));
@@ -398,7 +409,16 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
           }, { 'aria-pressed': cursor === k ? 'true' : 'false', class: 'bl-chip' })
         )
       );
-    if (scene.bench === 'mobile') {
+    if (scene.bench === 'mobile' && id === 'mobile-string')
+      mobileBars(scene.s).forEach((b, k) =>
+        placed.append(
+          button(t('cursor.string', { bar: num(k + 1), at: num(b.string) }), `bl-bar-${k}`, () => {
+            cursor = k;
+            render();
+          }, { 'aria-pressed': cursor === k ? 'true' : 'false', class: 'bl-chip' })
+        )
+      );
+    if (scene.bench === 'mobile' && id !== 'mobile-string') {
       const hooks = mobileHooks(scene.s);
       hooks.forEach((hk, j) => {
         if (hk.child && (isBar(hk.child) || !hk.child.free)) return;
@@ -408,11 +428,14 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
         );
       });
     }
-    if (placed.childElementCount) box.append(h('div', { class: 'bl-tray' }, h('span', { class: 'bl-label-text' }, t(scene.bench === 'mobile' ? 'hooks.label' : 'placed.label')), placed));
+    if (placed.childElementCount) box.append(h('div', { class: 'bl-tray' }, h('span', { class: 'bl-label-text' }, t(scene.bench === 'mobile' ? (id === 'mobile-string' ? 'bars.label' : 'hooks.label') : 'placed.label')), placed));
     // Cursor line and steps (inside the LTR scene controls).
     let where = '';
     if (scene.bench === 'beam') where = id === 'beam-axle' ? t('cursor.axle', { d: num(Math.abs(scene.s.axle)), side: t(scene.s.axle < 0 ? 'dir.left' : scene.s.axle > 0 ? 'dir.right' : 'dir.middle') }) : selPlaced === null ? t('cursor.beam', { d: num(Math.abs(cursor - scene.s.axle)), side: t(cursor < scene.s.axle ? 'dir.left' : cursor > scene.s.axle ? 'dir.right' : 'dir.axle') }) : '';
-    if (scene.bench === 'mobile') where = mobileHookLabel(t, scene.s, cursor);
+    if (scene.bench === 'mobile') {
+      const bar = mobileBars(scene.s)[cursor];
+      where = id === 'mobile-string' ? (bar ? t('cursor.string', { bar: num(cursor + 1), at: num(bar.string) }) : '') : mobileHookLabel(t, scene.s, cursor);
+    }
     if (scene.bench === 'stack' && id !== 'stack-counter') {
       const b = scene.s.bodies[cursor];
       if (b) where = t('cursor.body', { n: num(cursor + 1), from: num(b.left) });
@@ -425,7 +448,7 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
     if (fine) stepRow.append(button('▶▶', 'bl-step-right4', () => step(4), { 'aria-label': t('step.right4') }));
     box.append(h('p', { class: 'bl-where', 'data-testid': 'bl-where' }, where), stepRow);
     const act = h('div', { class: 'bl-actions' });
-    const placing = (scene.bench !== 'stack' || id === 'stack-counter') && id !== 'beam-axle';
+    const placing = (scene.bench !== 'stack' || id === 'stack-counter') && id !== 'beam-axle' && id !== 'mobile-string';
     if (placing) act.append(button(t('btn.place'), 'bl-place', place), button(t('btn.back'), 'bl-back', backToTray));
     if (state.mode === 'free' && scene.bench === 'stack')
       act.append(
