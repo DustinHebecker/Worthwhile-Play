@@ -167,6 +167,6 @@ Open:
 - Atlas follow-ups (debatable, not done): the game chunk is 93 KB gzip; hatched slivers along Kashmir; Melilla and Gibraltar; direction words; a native-speaker review of the AI-assisted locales.
 - Estimation Lab follow-ups: a "recently seen" memory; a yearly figure review; three 404 source links (UN PopFacts 2017/2, OICA 2013, University of Arizona bees); true plurals for count words.
 - Pixel Peel: the phone start time (about 300 ms against a 250 ms target); a side-by-side landscape layout.
-- Strategy: next PR (drone datalink, the Direction Finder intercepts orders, easy builds).
+- Strategy: #88 (drone datalink, Direction Finder intercepts, easy builds) merged and deployed. PR #89 (large 48×32 maps, head dc4e43d): local gate green on 2026-10-27 (7274 unit, 300 slow, 639 e2e); merge it next session after checking its head and CI are unchanged.
 - Waiting on the owner: Economy ("weitermachen" plus nine questions in `docs/design/economy-draft.md`; Many Lives needs `@wp/finance-math` from it) and adventures (three questions: start E1? time model? location of Adventure B?).
 - Recurring load flakes on this machine: the relay replay e2e, node-conquest 44 px e2e, card-quest K3 picture, skat pacing. Rerun them alone before calling a failure real.
