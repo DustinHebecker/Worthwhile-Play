@@ -630,7 +630,19 @@ const PREVIEWS: Record<string, () => string> = {
     P('M30 33q6-5 12 0q-6 5-12 0zM30 33l-4-3v6z', 'o') +
     R(63, 4, 30, 26, 'e', 2) + L(66, 26, 90, 26, 'fn') + L(66, 8, 66, 26, 'fn') +
     P('M66 22c6-1 9-12 14-12s6 9 10 10', 'al') + P('M66 12c7 0 10 12 14 11s5-4 10-5', 'k ds') +
-    P('M70 47a10 10 0 1 1 7 9.5', 'k') + tri(76, 56, 2.6, 'i') + T(78, 46.5, 'R')
+    P('M70 47a10 10 0 1 1 7 9.5', 'k') + tri(76, 56, 2.6, 'i') + T(78, 46.5, 'R'),
+  // Tones & Chords: a five-line staff fragment with two stacked noteheads a third apart on one stem and three sound-wave
+  // arcs to their right; below, one octave of piano keys (7 white, 5 black) with two keys marked by dots. No text and no
+  // clef glyph; not mirrored (pitch rises left to right in every locale).
+  harmony: () =>
+    [5, 10, 15, 20, 25].map((y) => L(6, y, 62, y, 'fn')).join('') +
+    `<ellipse cx="30" cy="20" rx="3.1" ry="2.2" transform="rotate(-20 30 20)" class="i"/>` +
+    `<ellipse cx="30" cy="15" rx="3.1" ry="2.2" transform="rotate(-20 30 15)" class="i"/>` +
+    L(32.9, 19.4, 32.9, 2.5, 'fn') +
+    [0, 1, 2].map((i) => P(`M${44 + i * 5} ${11 - i * 2}q${4 + i * 1.5} ${7 + i * 2} 0 ${14 + i * 4}`, 'ab')).join('') +
+    [0, 1, 2, 3, 4, 5, 6].map((i) => R(6 + i * 12, 36, 12, 25, 'c', 1)).join('') +
+    [0, 1, 3, 4, 5].map((i) => R(6 + (i + 1) * 12 - 3.6, 36, 7.2, 15, 'i', 0.8)).join('') +
+    C(12, 55, 2.6, 'a') + C(36, 55, 2.6, 'a')
 };
 
 /** Pictures made only of text cards and lines: these follow the reading direction (flipped in RTL). */
