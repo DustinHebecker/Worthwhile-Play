@@ -10,12 +10,14 @@
  * carry no information: decorative, `aria-hidden`, and the card's title and tagline stay its accessible name.
  * Skyscrapers is the one deliberate exception: it shows 3D towers (owner decision; the game will show towers too).
  *
- * Photos (PHOTOS below) are the other exception (owner decision 2026-10-27 for Relay Command: "ein echtes Bild, das
- * entsprechend arrangiert ist"): a real picture of the game, rendered by the game itself from a real match and saved
- * as `public/previews/<id>-light.webp` and `<id>-dark.webp` (288×192, 3× the 96×64 card; own work, no third-party
- * art). The card shows them as a decorative `<picture>` (`alt=""`, `aria-hidden`) whose dark source follows
- * `prefers-color-scheme`, which is the app's only theme switch. They are same-origin files under the app's base URL
- * and precached by the service worker (`webp` in the workbox glob patterns), so they work offline like the drawings.
+ * Photos (PHOTOS below) are the other exception (owner decisions 2026-10-27: Relay Command "ein echtes Bild, das
+ * entsprechend arrangiert ist", Lootlings "könnte ein thumbnail update gebrauchen"): a real screen of the game, rendered
+ * by the game itself and saved as `public/previews/<id>-light.webp` and `<id>-dark.webp` (288×192, 3× the 96×64 card;
+ * own work, no third-party art). Both files always exist; they may be identical when the game uses one palette in
+ * both themes (Lootlings' card art). The card shows them as a decorative `<picture>` (`alt=""`, `aria-hidden`) whose
+ * dark source follows `prefers-color-scheme`, which is the app's only theme switch. They are same-origin files under
+ * the app's base URL and precached by the service worker (`webp` in the workbox glob patterns), so they work offline
+ * like the drawings.
  *
  * RTL: previews are not mirrored. They show game content with its own direction (boards, letters, digits, arrows,
  * laser paths) and the games do not mirror their boards either. Only the few pictures made of nothing but text
@@ -448,30 +450,6 @@ const PREVIEWS: Record<string, () => string> = {
   'distractor-control': () =>
     R(34, 12, 28, 25, 'c', 3) + T(48, 25, 55, 't tl') + R(60, 2, 32, 8, 'c ds', 4) + R(64, 4.3, 5, 3.6, 'fn', 0.5) + P('M64 4.3l2.5 2 2.5-2', 'fn') + L(72, 6, 88, 6, 'g') +
     R(12.5, 41.5, 36, 17, 'pr', 4) + R(14, 43, 33, 14, 'c', 3) + R(49, 43, 33, 14, 'c', 3),
-  // Lootlings: the fight as the game shows it now (owner request 2026-10-17: "das Bild … sollte besser werden"): a
-  // monster card with its illustration (the lawnmower slicing a pointy hat) against a garden gnome's card, a clash
-  // star between them, and a hand of small picture cards below. Colours from the game's own illustration palette.
-  'card-quest': () => {
-    const lq = (d: string, c: string) => P(d, `${c} lqo`);
-    let out = '';
-    // Monster card: dark frame, sky, lawn, the red mower with eyes and teeth, the sliced hat tip flying off.
-    out += R(3, 3, 44, 42, 'lqf', 3) + R(5.5, 5.5, 39, 37, 'lqs', 1.5) + R(5.5, 34, 39, 8.5, 'lqg');
-    out += lq('M9 37c1-7 6-11 14-11h9c5 0 7 4 7 11z', 'lqr') + C(14, 38, 3, 'lqd lqo') + C(33, 38, 3, 'lqd lqo');
-    out += C(26, 30, 2, 'lqb lqo') + C(31.5, 30, 1.8, 'lqb lqo') + C(26.6, 30.3, 0.8, 'lqd') + C(32, 30.3, 0.7, 'lqd');
-    out += P('M22 35.5l1.4-2 1.4 2 1.4-2 1.4 2 1.4-2 1.4 2 1.4-2 1.4 2 1.4-2 1.4 2', 'lqt');
-    out += G('rotate(-25 36 13)', lq('M32 18 36 7l4 11z', 'lqr')) + L(14, 26, 8, 14, 'lql');
-    // Gnome card: sky, lawn, red pointy hat, face, white beard, blue coat; a shovel raised.
-    out += R(49, 3, 44, 42, 'lqh', 3) + R(51.5, 5.5, 39, 37, 'lqs', 1.5) + R(51.5, 34, 39, 8.5, 'lqg');
-    out += lq('M64 31h14l-1 11H65z', 'lqu') + lq('M63 21 71 6l8 15z', 'lqr') + C(71, 24, 5, 'lqk lqo');
-    out += lq('M66 25.5c1 8 9 8 10 0-3 1.5-7 1.5-10 0z', 'lqb') + C(69.2, 23.5, 0.7, 'lqd') + C(72.8, 23.5, 0.7, 'lqd');
-    out += L(83, 40, 85, 17, 'lql') + lq('M83 12h5l-1 6h-3z', 'lqm');
-    // The clash between the two cards.
-    out += star(48, 24, 6, 'lqy lqo');
-    // Hand: four picture cards (pointy hat, hard hat, slime, Change Sides monster).
-    for (let i = 0; i < 4; i++) out += R(4 + i * 22.5, 49, 20.5, 12.5, 'lqh', 2.5) + R(5.5 + i * 22.5, 50.5, 8, 9.5, 'lqs', 1) + L(16 + i * 22.5, 53, 22 + i * 22.5, 53, 'g') + L(16 + i * 22.5, 57, 20 + i * 22.5, 57, 'g');
-    out += lq('M7 59 9.5 52l2.5 7z', 'lqr') + lq('M29.5 57.5a3 3 0 0 1 6 0z', 'lqy') + lq('M51.5 59c0-4 1.5-6 3.5-6s3.5 2 3.5 6z', 'lqe') + lq('M74 59c0-4 1.5-6 3.5-6s3.5 2 3.5 6z', 'lqp');
-    return out;
-  },
   // Four in a Row: the light board with round holes; filled blue discs and red ring discs, the last move dashed.
   'connect-four': () => {
     const discs: Record<string, string> = { '2,2': 'p2', '2,3': 'p1', '2,4': 'p1', '2,5': 'p2', '3,3': 'p2', '3,4': 'p1', '3,5': 'p1', '4,4': 'p2', '4,5': 'p1', '6,5': 'p2' };
@@ -651,7 +629,7 @@ export const MIRRORED: ReadonlySet<string> = new Set(['ambiguity-detector', 'aud
 const FALLBACK = () => C(28, 34, 11, 'a') + R(40, 22, 22, 22, 'o', 3) + tri(74, 36, 11, 'i');
 
 /** Games whose card shows a picture rendered by the game itself instead of a drawing (see the header comment). */
-export const PHOTOS: ReadonlySet<string> = new Set(['relay-command']);
+export const PHOTOS: ReadonlySet<string> = new Set(['relay-command', 'card-quest']);
 
 /** Same-origin URL of a game's preview photo, under the app's base URL (works at any deploy path and offline). */
 export const photoUrl = (id: string, scheme: 'light' | 'dark'): string => `${import.meta.env.BASE_URL}previews/${id}-${scheme}.webp`;

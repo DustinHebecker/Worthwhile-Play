@@ -112,12 +112,18 @@ describe('game previews on the home page', () => {
   });
 
   describe('photo previews (a picture rendered by the game itself)', () => {
-    it('the WebP size check does catch a wrong or broken file', () => {
+    it('the WebP size check reads extended (VP8X) and lossy (VP8) files and catches a wrong or broken file', () => {
       const ok = readFileSync(join(PUBLIC, 'previews/relay-command-light.webp'));
+      expect(ok.toString('ascii', 12, 16)).toBe('VP8X');
       expect(webpSize(ok)).toEqual({ width: 288, height: 192 });
+      const lossy = readFileSync(join(PUBLIC, 'previews/card-quest-light.webp'));
+      expect(lossy.toString('ascii', 12, 16)).toBe('VP8 ');
+      expect(webpSize(lossy)).toEqual({ width: 288, height: 192 });
       expect(webpSize(ok.subarray(0, 100))).toBeUndefined();
       expect(webpSize(readFileSync(join(PUBLIC, 'logo.png')))).toBeUndefined();
     });
+
+    it('the photo games are Relay Command and Lootlings', () => expect([...PHOTOS].sort()).toEqual(['card-quest', 'relay-command']));
 
     it.each([...PHOTOS])('%s: a registered game, without a drawing of its own', (id) => {
       expect(ids).toContain(id);
