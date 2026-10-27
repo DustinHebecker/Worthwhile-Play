@@ -1,63 +1,59 @@
-/*
- * Translator note (design § 18.1): use the standard music terms of each language (design Appendix B), never song
- * references ("the first two notes of …"), and "often heard as" for anything subjective. Keep the placeholders.
- */
 import type { ContentText } from './types';
 
 export const content: ContentText = {
   intervals: {
-    m2: 'minor second',
-    M2: 'major second',
-    m3: 'minor third',
-    M3: 'major third',
-    P4: 'perfect fourth',
-    TT: 'tritone',
-    P5: 'perfect fifth',
-    m6: 'minor sixth',
-    M6: 'major sixth',
-    m7: 'minor seventh',
-    M7: 'major seventh',
-    P8: 'octave'
+    m2: 'segunda menor',
+    M2: 'segunda maior',
+    m3: 'terça menor',
+    M3: 'terça maior',
+    P4: 'quarta justa',
+    TT: 'trítono',
+    P5: 'quinta justa',
+    m6: 'sexta menor',
+    M6: 'sexta maior',
+    m7: 'sétima menor',
+    M7: 'sétima maior',
+    P8: 'oitava'
   },
   chords: {
-    maj: 'major chord',
-    min: 'minor chord',
-    dim: 'diminished chord',
-    aug: 'augmented chord',
-    dom7: 'dominant seventh chord',
-    maj7: 'major seventh chord',
-    min7: 'minor seventh chord'
+    maj: 'acorde maior',
+    min: 'acorde menor',
+    dim: 'acorde diminuto',
+    aug: 'acorde aumentado',
+    dom7: 'acorde de sétima da dominante',
+    maj7: 'acorde de sétima maior',
+    min7: 'acorde de sétima menor'
   },
-  scales: { major: 'major scale', 'natural-minor': 'natural minor scale', 'harmonic-minor': 'harmonic minor scale', 'major-pentatonic': 'major pentatonic scale' },
+  scales: { major: 'escala maior', 'natural-minor': 'escala menor natural', 'harmonic-minor': 'escala menor harmônica', 'major-pentatonic': 'escala pentatônica maior' },
   cadences: {
-    finished: { name: 'Finished', explain: 'The dominant (V) goes home to the tonic (I): the phrase sounds complete (an authentic cadence).' },
-    open: { name: 'Open', explain: 'The phrase stops on the dominant (V): it sounds like a question that waits to go on (a half cadence).' },
-    surprise: { name: 'Surprise', explain: 'The dominant (V) leads to vi instead of home: you expect rest, and the music turns aside (a deceptive cadence).' }
+    finished: { name: 'Concluída', explain: 'A dominante (V) volta para a tônica (I): a frase soa terminada (cadência perfeita).' },
+    open: { name: 'Aberta', explain: 'A frase para na dominante (V): soa como uma pergunta esperando continuação (meia cadência).' },
+    surprise: { name: 'Surpresa', explain: 'A dominante (V) vai para o vi em vez de voltar para casa: você espera repouso e a música desvia (cadência de engano).' }
   },
-  classes: { perfect: 'perfect consonance', imperfect: 'imperfect consonance', mild: 'mild dissonance', sharp: 'sharp dissonance' },
-  semitones: { one: '{n} semitone', other: '{n} semitones' },
+  classes: { perfect: 'consonância perfeita', imperfect: 'consonância imperfeita', mild: 'dissonância suave', sharp: 'dissonância forte' },
+  semitones: { one: '{n} semitom', other: '{n} semitons' },
   cents: { one: '{n} cent', other: '{n} cents' },
-  steps: { whole: 'W', half: 'H', three: 'W+H' },
-  up: 'up',
-  down: 'down',
+  steps: { whole: 'T', half: 'S', three: 'T+S' },
+  up: 'sobe',
+  down: 'desce',
   tips: {
-    interval: '{a} has {na}, {b} has {nb}. Count the keys from one note to the other, or the steps on the staff.',
-    chord: 'Count the stacked thirds in semitones: {a} is {ta}, {b} is {tb}.',
-    scale: 'Compare the steps: {a} goes {pa}, {b} goes {pb} (W = whole tone, H = semitone).',
-    pair: 'The more stable sound has the simpler ratio: {ra} for {a}, {rb} for {b}.',
-    cadence: 'Listen to the last chord: does it return home ({a}), or does it stop elsewhere ({b})?',
-    contour: 'Follow only up and down, step by step: it went {a}, not {b}.',
-    changed: 'Compare A and B note by note: note {a} changed, not note {b}.',
-    rhythm: 'Count along “1 & 2 & 3 & 4 &” and listen for where each note starts.'
+    interval: '{a}: {na}; {b}: {nb}. Conte as teclas de uma nota à outra, ou os graus na pauta.',
+    chord: 'Conte as terças empilhadas em semitons: {a} é {ta}; {b} é {tb}.',
+    scale: 'Compare os passos: {a} vai {pa}; {b} vai {pb} (T = tom, S = semitom).',
+    pair: 'O som mais estável tem a razão mais simples: {ra} para {a}, {rb} para {b}.',
+    cadence: 'Era {a}, não {b}. Ouça o último acorde: ele volta para casa (I), para no V ou desvia para o vi?',
+    contour: 'Siga só se sobe ou desce, passo a passo: foi {a}, não {b}.',
+    changed: 'Compare A e B nota por nota: mudou a nota {a}, não a nota {b}.',
+    rhythm: 'Conte “1 e 2 e 3 e 4 e” e ouça onde cada nota começa.'
   },
-  learned: 'Most listeners who grew up with Western music hear the {name} as more at rest. This preference is partly learned (McDermott et al. 2016).',
-  ratioWhy: 'The simpler the ratio, the sooner the combined wave repeats; Western harmony usually hears such sounds as stable.',
+  learned: 'A maioria das pessoas que cresceram com música ocidental ouve a {name} como mais em repouso. Essa preferência é em parte aprendida (McDermott et al. 2016).',
+  ratioWhy: 'Quanto mais simples a razão, mais cedo a onda combinada se repete; a harmonia ocidental costuma ouvir esses sons como estáveis.',
   closing: {
-    intervals: 'Intervals are the building blocks of melodies and chords. Another round with other starting notes is always possible.',
-    chords: 'Chords are built from stacked thirds; their sizes give each chord its colour.',
-    stability: '“Stable” and “tense” describe how Western harmony usually hears these sounds; other traditions hear them differently.',
-    melody: 'Following the shape of a melody is a good first step towards singing or playing it.',
-    rhythm: 'Counting the beat and its halves makes any rhythm readable.',
-    build: 'Building intervals, chords and scales by hand shows how they are made.'
+    intervals: 'Os intervalos são as peças das melodias e dos acordes. Outra rodada com outras notas de partida é sempre possível.',
+    chords: 'Acordes são feitos de terças empilhadas; os tamanhos delas dão a cada acorde a sua cor.',
+    stability: '“Estável” e “tenso” descrevem como a harmonia ocidental costuma ouvir esses sons; outras tradições os ouvem de outro jeito.',
+    melody: 'Seguir a forma de uma melodia é um bom primeiro passo para cantá-la ou tocá-la.',
+    rhythm: 'Contar o tempo e as suas metades torna qualquer ritmo legível.',
+    build: 'Montar intervalos, acordes e escalas à mão mostra como eles são feitos.'
   }
 };

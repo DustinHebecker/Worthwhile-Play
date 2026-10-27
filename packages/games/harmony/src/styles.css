@@ -122,6 +122,7 @@
 
 /* Free keyboard. */
 .wp-harmony .hm-free-controls { display: grid; gap: 0.5rem; }
+.wp-harmony .hm-free-controls > button { justify-self: start; }
 .wp-harmony .hm-radios, .wp-harmony .hm-overlay { display: flex; flex-wrap: wrap; gap: 0.2rem 0.8rem; margin: 0; padding: 0.3rem 0.5rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius); }
 .wp-harmony .hm-radio, .wp-harmony .hm-overlay label, .wp-harmony .hm-check, .wp-harmony .hm-field { display: inline-flex; align-items: center; gap: 0.3rem; min-height: var(--wp-touch); }
 .wp-harmony .hm-free-name { font-size: 1.1rem; font-weight: 700; }

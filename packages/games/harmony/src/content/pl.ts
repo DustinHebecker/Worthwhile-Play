@@ -1,63 +1,59 @@
-/*
- * Translator note (design § 18.1): use the standard music terms of each language (design Appendix B), never song
- * references ("the first two notes of …"), and "often heard as" for anything subjective. Keep the placeholders.
- */
 import type { ContentText } from './types';
 
 export const content: ContentText = {
   intervals: {
-    m2: 'minor second',
-    M2: 'major second',
-    m3: 'minor third',
-    M3: 'major third',
-    P4: 'perfect fourth',
-    TT: 'tritone',
-    P5: 'perfect fifth',
-    m6: 'minor sixth',
-    M6: 'major sixth',
-    m7: 'minor seventh',
-    M7: 'major seventh',
-    P8: 'octave'
+    m2: 'sekunda mała',
+    M2: 'sekunda wielka',
+    m3: 'tercja mała',
+    M3: 'tercja wielka',
+    P4: 'kwarta czysta',
+    TT: 'tryton',
+    P5: 'kwinta czysta',
+    m6: 'seksta mała',
+    M6: 'seksta wielka',
+    m7: 'septyma mała',
+    M7: 'septyma wielka',
+    P8: 'oktawa'
   },
   chords: {
-    maj: 'major chord',
-    min: 'minor chord',
-    dim: 'diminished chord',
-    aug: 'augmented chord',
-    dom7: 'dominant seventh chord',
-    maj7: 'major seventh chord',
-    min7: 'minor seventh chord'
+    maj: 'trójdźwięk durowy',
+    min: 'trójdźwięk molowy',
+    dim: 'trójdźwięk zmniejszony',
+    aug: 'trójdźwięk zwiększony',
+    dom7: 'septymowy akord dominantowy',
+    maj7: 'wielki septymowy akord durowy (maj7)',
+    min7: 'mały septymowy akord molowy (m7)'
   },
-  scales: { major: 'major scale', 'natural-minor': 'natural minor scale', 'harmonic-minor': 'harmonic minor scale', 'major-pentatonic': 'major pentatonic scale' },
+  scales: { major: 'gama durowa', 'natural-minor': 'gama molowa naturalna', 'harmonic-minor': 'gama molowa harmoniczna', 'major-pentatonic': 'pentatonika durowa' },
   cadences: {
-    finished: { name: 'Finished', explain: 'The dominant (V) goes home to the tonic (I): the phrase sounds complete (an authentic cadence).' },
-    open: { name: 'Open', explain: 'The phrase stops on the dominant (V): it sounds like a question that waits to go on (a half cadence).' },
-    surprise: { name: 'Surprise', explain: 'The dominant (V) leads to vi instead of home: you expect rest, and the music turns aside (a deceptive cadence).' }
+    finished: { name: 'Zamknięta', explain: 'Dominanta (V) wraca do toniki (I): fraza brzmi na zakończoną (kadencja doskonała).' },
+    open: { name: 'Otwarta', explain: 'Fraza zatrzymuje się na dominancie (V): brzmi jak pytanie, które czeka na dalszy ciąg (półkadencja).' },
+    surprise: { name: 'Niespodzianka', explain: 'Dominanta (V) prowadzi do vi zamiast do toniki: spodziewasz się spoczynku, a muzyka skręca (kadencja zwodnicza).' }
   },
-  classes: { perfect: 'perfect consonance', imperfect: 'imperfect consonance', mild: 'mild dissonance', sharp: 'sharp dissonance' },
-  semitones: { one: '{n} semitone', other: '{n} semitones' },
-  cents: { one: '{n} cent', other: '{n} cents' },
-  steps: { whole: 'W', half: 'H', three: 'W+H' },
-  up: 'up',
-  down: 'down',
+  classes: { perfect: 'konsonans doskonały', imperfect: 'konsonans niedoskonały', mild: 'dysonans łagodny', sharp: 'dysonans ostry' },
+  semitones: { one: '{n} półton', few: '{n} półtony', many: '{n} półtonów', other: '{n} półtonu' },
+  cents: { one: '{n} cent', few: '{n} centy', many: '{n} centów', other: '{n} centa' },
+  steps: { whole: 'C', half: 'P', three: 'C+P' },
+  up: 'w górę',
+  down: 'w dół',
   tips: {
-    interval: '{a} has {na}, {b} has {nb}. Count the keys from one note to the other, or the steps on the staff.',
-    chord: 'Count the stacked thirds in semitones: {a} is {ta}, {b} is {tb}.',
-    scale: 'Compare the steps: {a} goes {pa}, {b} goes {pb} (W = whole tone, H = semitone).',
-    pair: 'The more stable sound has the simpler ratio: {ra} for {a}, {rb} for {b}.',
-    cadence: 'Listen to the last chord: does it return home ({a}), or does it stop elsewhere ({b})?',
-    contour: 'Follow only up and down, step by step: it went {a}, not {b}.',
-    changed: 'Compare A and B note by note: note {a} changed, not note {b}.',
-    rhythm: 'Count along “1 & 2 & 3 & 4 &” and listen for where each note starts.'
+    interval: '{a}: {na}; {b}: {nb}. Policz klawisze od jednej nuty do drugiej albo stopnie na pięciolinii.',
+    chord: 'Policz nałożone tercje w półtonach: {a} to {ta}, {b} to {tb}.',
+    scale: 'Porównaj kroki: {a} idzie {pa}, {b} idzie {pb} (C = cały ton, P = półton).',
+    pair: 'Bardziej stabilny dźwięk ma prostszy stosunek: {ra} dla {a}, {rb} dla {b}.',
+    cadence: 'To była {a}, nie {b}. Posłuchaj ostatniego akordu: wraca do domu (I), zatrzymuje się na V czy skręca do vi?',
+    contour: 'Śledź tylko górę i dół, krok po kroku: było {a}, nie {b}.',
+    changed: 'Porównaj A i B nuta po nucie: zmieniła się nuta {a}, nie nuta {b}.',
+    rhythm: 'Licz „1 i 2 i 3 i 4 i” i słuchaj, gdzie zaczyna się każda nuta.'
   },
-  learned: 'Most listeners who grew up with Western music hear the {name} as more at rest. This preference is partly learned (McDermott et al. 2016).',
-  ratioWhy: 'The simpler the ratio, the sooner the combined wave repeats; Western harmony usually hears such sounds as stable.',
+  learned: 'Większość osób wychowanych na muzyce zachodniej słyszy interwał „{name}” jako spokojniejszy. Ta preferencja jest częściowo wyuczona (McDermott i in. 2016).',
+  ratioWhy: 'Im prostszy stosunek, tym szybciej powtarza się połączona fala; harmonia zachodnia zwykle słyszy takie brzmienia jako stabilne.',
   closing: {
-    intervals: 'Intervals are the building blocks of melodies and chords. Another round with other starting notes is always possible.',
-    chords: 'Chords are built from stacked thirds; their sizes give each chord its colour.',
-    stability: '“Stable” and “tense” describe how Western harmony usually hears these sounds; other traditions hear them differently.',
-    melody: 'Following the shape of a melody is a good first step towards singing or playing it.',
-    rhythm: 'Counting the beat and its halves makes any rhythm readable.',
-    build: 'Building intervals, chords and scales by hand shows how they are made.'
+    intervals: 'Interwały to cegiełki melodii i akordów. Zawsze możesz zagrać kolejną rundę z innymi dźwiękami startowymi.',
+    chords: 'Akordy składają się z nałożonych tercji; ich wielkości nadają każdemu akordowi jego barwę.',
+    stability: '„Stabilny” i „napięty” opisują, jak harmonia zachodnia zwykle słyszy te brzmienia; inne tradycje słyszą je inaczej.',
+    melody: 'Śledzenie kształtu melodii to dobry pierwszy krok, by ją zaśpiewać albo zagrać.',
+    rhythm: 'Liczenie miary i jej połówek pozwala odczytać każdy rytm.',
+    build: 'Budowanie interwałów, akordów i gam ręcznie pokazuje, jak są zrobione.'
   }
 };

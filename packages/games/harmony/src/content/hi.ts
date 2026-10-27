@@ -1,63 +1,59 @@
-/*
- * Translator note (design § 18.1): use the standard music terms of each language (design Appendix B), never song
- * references ("the first two notes of …"), and "often heard as" for anything subjective. Keep the placeholders.
- */
 import type { ContentText } from './types';
 
 export const content: ContentText = {
   intervals: {
-    m2: 'minor second',
-    M2: 'major second',
-    m3: 'minor third',
-    M3: 'major third',
-    P4: 'perfect fourth',
-    TT: 'tritone',
-    P5: 'perfect fifth',
-    m6: 'minor sixth',
-    M6: 'major sixth',
-    m7: 'minor seventh',
-    M7: 'major seventh',
-    P8: 'octave'
+    m2: 'माइनर सेकंड',
+    M2: 'मेजर सेकंड',
+    m3: 'माइनर थर्ड',
+    M3: 'मेजर थर्ड',
+    P4: 'परफ़ेक्ट फ़ोर्थ',
+    TT: 'ट्राइटोन',
+    P5: 'परफ़ेक्ट फ़िफ़्थ',
+    m6: 'माइनर सिक्स्थ',
+    M6: 'मेजर सिक्स्थ',
+    m7: 'माइनर सेवन्थ',
+    M7: 'मेजर सेवन्थ',
+    P8: 'ऑक्टेव'
   },
   chords: {
-    maj: 'major chord',
-    min: 'minor chord',
-    dim: 'diminished chord',
-    aug: 'augmented chord',
-    dom7: 'dominant seventh chord',
-    maj7: 'major seventh chord',
-    min7: 'minor seventh chord'
+    maj: 'मेजर कॉर्ड',
+    min: 'माइनर कॉर्ड',
+    dim: 'डिमिनिश्ड कॉर्ड',
+    aug: 'ऑगमेंटेड कॉर्ड',
+    dom7: 'डोमिनेंट सेवन्थ कॉर्ड',
+    maj7: 'मेजर सेवन्थ कॉर्ड',
+    min7: 'माइनर सेवन्थ कॉर्ड'
   },
-  scales: { major: 'major scale', 'natural-minor': 'natural minor scale', 'harmonic-minor': 'harmonic minor scale', 'major-pentatonic': 'major pentatonic scale' },
+  scales: { major: 'मेजर स्केल', 'natural-minor': 'नैचुरल माइनर स्केल', 'harmonic-minor': 'हार्मोनिक माइनर स्केल', 'major-pentatonic': 'मेजर पेंटाटोनिक स्केल' },
   cadences: {
-    finished: { name: 'Finished', explain: 'The dominant (V) goes home to the tonic (I): the phrase sounds complete (an authentic cadence).' },
-    open: { name: 'Open', explain: 'The phrase stops on the dominant (V): it sounds like a question that waits to go on (a half cadence).' },
-    surprise: { name: 'Surprise', explain: 'The dominant (V) leads to vi instead of home: you expect rest, and the music turns aside (a deceptive cadence).' }
+    finished: { name: 'पूरा', explain: 'डोमिनेंट (V) वापस टॉनिक (I) पर आता है: वाक्यांश पूरा लगता है (ऑथेंटिक कैडेंस)।' },
+    open: { name: 'खुला', explain: 'वाक्यांश डोमिनेंट (V) पर रुकता है: ऐसा लगता है जैसे कोई सवाल आगे की प्रतीक्षा कर रहा हो (हाफ़ कैडेंस)।' },
+    surprise: { name: 'अचानक मोड़', explain: 'डोमिनेंट (V) घर लौटने के बजाय vi पर जाता है: आप ठहराव की उम्मीद करते हैं और संगीत मुड़ जाता है (डिसेप्टिव कैडेंस)।' }
   },
-  classes: { perfect: 'perfect consonance', imperfect: 'imperfect consonance', mild: 'mild dissonance', sharp: 'sharp dissonance' },
-  semitones: { one: '{n} semitone', other: '{n} semitones' },
-  cents: { one: '{n} cent', other: '{n} cents' },
+  classes: { perfect: 'पूर्ण संवादी (परफ़ेक्ट कॉन्सोनेंस)', imperfect: 'अपूर्ण संवादी (इम्परफ़ेक्ट कॉन्सोनेंस)', mild: 'हल्का विसंवादी (माइल्ड डिसोनेंस)', sharp: 'तीखा विसंवादी (शार्प डिसोनेंस)' },
+  semitones: { one: '{n} सेमिटोन', other: '{n} सेमिटोन' },
+  cents: { one: '{n} सेंट', other: '{n} सेंट' },
   steps: { whole: 'W', half: 'H', three: 'W+H' },
-  up: 'up',
-  down: 'down',
+  up: 'ऊपर',
+  down: 'नीचे',
   tips: {
-    interval: '{a} has {na}, {b} has {nb}. Count the keys from one note to the other, or the steps on the staff.',
-    chord: 'Count the stacked thirds in semitones: {a} is {ta}, {b} is {tb}.',
-    scale: 'Compare the steps: {a} goes {pa}, {b} goes {pb} (W = whole tone, H = semitone).',
-    pair: 'The more stable sound has the simpler ratio: {ra} for {a}, {rb} for {b}.',
-    cadence: 'Listen to the last chord: does it return home ({a}), or does it stop elsewhere ({b})?',
-    contour: 'Follow only up and down, step by step: it went {a}, not {b}.',
-    changed: 'Compare A and B note by note: note {a} changed, not note {b}.',
-    rhythm: 'Count along “1 & 2 & 3 & 4 &” and listen for where each note starts.'
+    interval: '{a}: {na}; {b}: {nb}। एक स्वर से दूसरे तक कुंजियाँ गिनें, या स्टाफ़ पर सीढ़ियाँ।',
+    chord: 'एक-दूसरे पर रखे थर्ड को सेमिटोन में गिनें: {a} = {ta}, {b} = {tb}।',
+    scale: 'क़दमों की तुलना करें: {a}: {pa}, {b}: {pb} (W = होल टोन, H = सेमिटोन)।',
+    pair: 'ज़्यादा स्थिर ध्वनि का अनुपात सरल होता है: {a} का {ra}, {b} का {rb}।',
+    cadence: 'उत्तर «{a}» था, «{b}» नहीं। आख़िरी कॉर्ड सुनें: क्या वह घर (I) लौटता है, V पर रुकता है, या vi की ओर मुड़ता है?',
+    contour: 'क़दम-दर-क़दम सिर्फ़ ऊपर और नीचे पर ध्यान दें: «{a}» था, «{b}» नहीं।',
+    changed: 'A और B को स्वर-दर-स्वर मिलाएँ: स्वर {a} बदला था, स्वर {b} नहीं।',
+    rhythm: '“1 और 2 और 3 और 4 और” गिनें और सुनें कि हर स्वर कहाँ शुरू होता है।'
   },
-  learned: 'Most listeners who grew up with Western music hear the {name} as more at rest. This preference is partly learned (McDermott et al. 2016).',
-  ratioWhy: 'The simpler the ratio, the sooner the combined wave repeats; Western harmony usually hears such sounds as stable.',
+  learned: 'पश्चिमी संगीत सुनते हुए बड़े हुए ज़्यादातर लोग {name} को ज़्यादा ठहरा हुआ सुनते हैं। यह पसंद कुछ हद तक सीखी हुई है (McDermott आदि, 2016)।',
+  ratioWhy: 'अनुपात जितना सरल, मिली हुई तरंग उतनी जल्दी दोहराती है; पश्चिमी हार्मनी ऐसी ध्वनियों को आम तौर पर स्थिर सुनती है।',
   closing: {
-    intervals: 'Intervals are the building blocks of melodies and chords. Another round with other starting notes is always possible.',
-    chords: 'Chords are built from stacked thirds; their sizes give each chord its colour.',
-    stability: '“Stable” and “tense” describe how Western harmony usually hears these sounds; other traditions hear them differently.',
-    melody: 'Following the shape of a melody is a good first step towards singing or playing it.',
-    rhythm: 'Counting the beat and its halves makes any rhythm readable.',
-    build: 'Building intervals, chords and scales by hand shows how they are made.'
+    intervals: 'इंटरवल धुनों और कॉर्ड की ईंटें हैं। उदाहरण: सा से शुद्ध ग तक मेजर थर्ड है, सा से प तक परफ़ेक्ट फ़िफ़्थ। दूसरे शुरुआती स्वरों के साथ एक और राउंड कभी भी खेल सकते हैं।',
+    chords: 'कॉर्ड एक-दूसरे पर रखे थर्ड से बनते हैं; उनका आकार हर कॉर्ड को उसका रंग देता है।',
+    stability: '“स्थिर” और “तनाव भरा” बताते हैं कि पश्चिमी हार्मनी इन ध्वनियों को आम तौर पर कैसे सुनती है; दूसरी परंपराएँ, जैसे राग संगीत, इन्हें अलग तरह से सुनती हैं।',
+    melody: 'धुन के आकार का पीछा करना उसे गाने या बजाने की ओर अच्छा पहला क़दम है।',
+    rhythm: 'ताल और उसके आधे हिस्से गिनने से कोई भी लय पढ़ी जा सकती है।',
+    build: 'इंटरवल, कॉर्ड और स्केल को हाथ से बनाकर दिखता है कि वे कैसे बने हैं।'
   }
 };

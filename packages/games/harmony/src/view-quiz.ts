@@ -177,8 +177,9 @@ export function quizScreen(host: Host, state: QuizState): HTMLElement[] {
   const card = h('section', { class: 'hm-card', 'aria-labelledby': 'hm-q-heading' }, host.soundBar(buttons));
 
   /* Options or the build task */
-  if (spec.k === 'build') card.append(buildPanel(host, state, item, spec));
-  else card.append(optionsGroup(host, state, item, spec, questionText));
+  const build = spec.k === 'build' ? buildPanel(host, state, item, spec) : null;
+  if (build) card.append(build.info);
+  else card.append(optionsGroup(host, state, item, spec as ChoiceSpec, questionText));
 
   /* Actions */
   if (!committed) {
@@ -214,6 +215,7 @@ export function quizScreen(host: Host, state: QuizState): HTMLElement[] {
 
   const layout = h('div', { class: 'hm-layout' }, card, panel);
   const out: HTMLElement[] = [header, layout];
+  if (build) out.push(build.keys);
   if (spec.k !== 'build' && showsKeyboard(state, item, item.peeked === 'hint')) {
     const marks = keyMarks(spec);
     const first = Math.min(...marks.keys());
@@ -305,7 +307,7 @@ function optionsGroup(host: Host, state: QuizState, item: Item, spec: ChoiceSpec
 
 /* ---------- Build tasks ---------- */
 
-function buildPanel(host: Host, state: QuizState, item: Item, spec: BuildSpec): HTMLElement {
+function buildPanel(host: Host, state: QuizState, item: Item, spec: BuildSpec): { info: HTMLElement; keys: HTMLElement } {
   const { env } = host;
   const t = env.t;
   const committed = isCommitted(item);
@@ -332,7 +334,8 @@ function buildPanel(host: Host, state: QuizState, item: Item, spec: BuildSpec): 
       if (missing) marks.set(m, [...(marks.get(m) ?? []), 'missing']);
     }
   } else for (const k of keys) marks.set(k, ['selected']);
-  box.append(
+  const keysBox = h('div', { class: 'hm-keys-box' });
+  keysBox.append(
     renderPiano({
       env,
       low: KEYS_LOW,
@@ -354,7 +357,7 @@ function buildPanel(host: Host, state: QuizState, item: Item, spec: BuildSpec): 
       testid: 'hm-keys'
     })
   );
-  return box;
+  return { info: box, keys: keysBox };
 }
 
 /* ---------- Review ---------- */

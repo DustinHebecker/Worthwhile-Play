@@ -1,63 +1,59 @@
-/*
- * Translator note (design § 18.1): use the standard music terms of each language (design Appendix B), never song
- * references ("the first two notes of …"), and "often heard as" for anything subjective. Keep the placeholders.
- */
 import type { ContentText } from './types';
 
 export const content: ContentText = {
   intervals: {
-    m2: 'minor second',
-    M2: 'major second',
-    m3: 'minor third',
-    M3: 'major third',
-    P4: 'perfect fourth',
-    TT: 'tritone',
-    P5: 'perfect fifth',
-    m6: 'minor sixth',
-    M6: 'major sixth',
-    m7: 'minor seventh',
-    M7: 'major seventh',
-    P8: 'octave'
+    m2: 'ثانية صغيرة',
+    M2: 'ثانية كبيرة',
+    m3: 'ثالثة صغيرة',
+    M3: 'ثالثة كبيرة',
+    P4: 'رابعة تامة',
+    TT: 'تريتون (رابعة زائدة)',
+    P5: 'خامسة تامة',
+    m6: 'سادسة صغيرة',
+    M6: 'سادسة كبيرة',
+    m7: 'سابعة صغيرة',
+    M7: 'سابعة كبيرة',
+    P8: 'أوكتاف (ديوان)'
   },
   chords: {
-    maj: 'major chord',
-    min: 'minor chord',
-    dim: 'diminished chord',
-    aug: 'augmented chord',
-    dom7: 'dominant seventh chord',
-    maj7: 'major seventh chord',
-    min7: 'minor seventh chord'
+    maj: 'تآلف كبير',
+    min: 'تآلف صغير',
+    dim: 'تآلف ناقص',
+    aug: 'تآلف زائد',
+    dom7: 'تآلف السابعة المسيطرة',
+    maj7: 'تآلف السابعة الكبيرة (maj7)',
+    min7: 'تآلف السابعة الصغيرة (m7)'
   },
-  scales: { major: 'major scale', 'natural-minor': 'natural minor scale', 'harmonic-minor': 'harmonic minor scale', 'major-pentatonic': 'major pentatonic scale' },
+  scales: { major: 'سلّم كبير', 'natural-minor': 'سلّم صغير طبيعي', 'harmonic-minor': 'سلّم صغير هارموني', 'major-pentatonic': 'سلّم خماسي كبير' },
   cadences: {
-    finished: { name: 'Finished', explain: 'The dominant (V) goes home to the tonic (I): the phrase sounds complete (an authentic cadence).' },
-    open: { name: 'Open', explain: 'The phrase stops on the dominant (V): it sounds like a question that waits to go on (a half cadence).' },
-    surprise: { name: 'Surprise', explain: 'The dominant (V) leads to vi instead of home: you expect rest, and the music turns aside (a deceptive cadence).' }
+    finished: { name: 'منتهية', explain: 'يعود تآلف الدرجة الخامسة (V) إلى تآلف القرار (I): تبدو الجملة مكتملة (قفلة تامة).' },
+    open: { name: 'مفتوحة', explain: 'تتوقف الجملة على تآلف الدرجة الخامسة (V): تبدو كسؤال ينتظر التتمة (نصف قفلة).' },
+    surprise: { name: 'مفاجأة', explain: 'يذهب تآلف الدرجة الخامسة (V) إلى vi بدلًا من القرار: تتوقع الراحة فتنعطف الموسيقى (قفلة خادعة).' }
   },
-  classes: { perfect: 'perfect consonance', imperfect: 'imperfect consonance', mild: 'mild dissonance', sharp: 'sharp dissonance' },
-  semitones: { one: '{n} semitone', other: '{n} semitones' },
-  cents: { one: '{n} cent', other: '{n} cents' },
-  steps: { whole: 'W', half: 'H', three: 'W+H' },
-  up: 'up',
-  down: 'down',
+  classes: { perfect: 'توافق تام', imperfect: 'توافق ناقص', mild: 'تنافر خفيف', sharp: 'تنافر حاد' },
+  semitones: { zero: '{n} نصف تون', one: 'نصف تون واحد', two: 'نصفا تون', few: '{n} أنصاف تون', many: '{n} نصف تون', other: '{n} نصف تون' },
+  cents: { zero: '{n} سنت', one: 'سنت واحد', two: 'سنتان', few: '{n} سنتات', many: '{n} سنتًا', other: '{n} سنت' },
+  steps: { whole: 'ت', half: 'ن', three: 'ت+ن' },
+  up: 'صعودًا',
+  down: 'هبوطًا',
   tips: {
-    interval: '{a} has {na}, {b} has {nb}. Count the keys from one note to the other, or the steps on the staff.',
-    chord: 'Count the stacked thirds in semitones: {a} is {ta}, {b} is {tb}.',
-    scale: 'Compare the steps: {a} goes {pa}, {b} goes {pb} (W = whole tone, H = semitone).',
-    pair: 'The more stable sound has the simpler ratio: {ra} for {a}, {rb} for {b}.',
-    cadence: 'Listen to the last chord: does it return home ({a}), or does it stop elsewhere ({b})?',
-    contour: 'Follow only up and down, step by step: it went {a}, not {b}.',
-    changed: 'Compare A and B note by note: note {a} changed, not note {b}.',
-    rhythm: 'Count along “1 & 2 & 3 & 4 &” and listen for where each note starts.'
+    interval: '{a}: {na}؛ {b}: {nb}. عُدّ المفاتيح من نغمة إلى الأخرى، أو الدرجات على المدرج.',
+    chord: 'عُدّ الثالثات المتراكبة بأنصاف التون: {a} = {ta}، و{b} = {tb}.',
+    scale: 'قارن الخطوات: {a}: {pa}، و{b}: {pb} (ت = تون كامل، ن = نصف تون).',
+    pair: 'الصوت الأكثر استقرارًا نسبته أبسط: {ra} لـ{a}، و{rb} لـ{b}.',
+    cadence: 'كانت «{a}» لا «{b}». استمع إلى التآلف الأخير: هل يعود إلى القرار (I)، أم يتوقف على V، أم ينعطف إلى vi؟',
+    contour: 'تتبّع الصعود والهبوط فقط، خطوة خطوة: كان «{a}» لا «{b}».',
+    changed: 'قارن A وB نغمةً نغمة: تغيّرت النغمة {a} لا النغمة {b}.',
+    rhythm: 'عُدّ «1 و 2 و 3 و 4 و» واستمع إلى حيث تبدأ كل نغمة.'
   },
-  learned: 'Most listeners who grew up with Western music hear the {name} as more at rest. This preference is partly learned (McDermott et al. 2016).',
-  ratioWhy: 'The simpler the ratio, the sooner the combined wave repeats; Western harmony usually hears such sounds as stable.',
+  learned: 'يسمع معظم من نشأوا على الموسيقى الغربية الفاصل «{name}» أكثر هدوءًا. وهذا التفضيل مكتسب جزئيًا (McDermott وآخرون 2016).',
+  ratioWhy: 'كلما كانت النسبة أبسط تكررت الموجة المجمّعة أسرع؛ والهارموني الغربي يسمع هذه الأصوات عادةً مستقرة.',
   closing: {
-    intervals: 'Intervals are the building blocks of melodies and chords. Another round with other starting notes is always possible.',
-    chords: 'Chords are built from stacked thirds; their sizes give each chord its colour.',
-    stability: '“Stable” and “tense” describe how Western harmony usually hears these sounds; other traditions hear them differently.',
-    melody: 'Following the shape of a melody is a good first step towards singing or playing it.',
-    rhythm: 'Counting the beat and its halves makes any rhythm readable.',
-    build: 'Building intervals, chords and scales by hand shows how they are made.'
+    intervals: 'الفواصل هي لبنات الألحان والتآلفات. يمكنك دائمًا لعب جولة أخرى بنغمات بداية مختلفة.',
+    chords: 'تُبنى التآلفات من ثالثات متراكبة؛ وأحجامها تمنح كل تآلف لونه.',
+    stability: '«مستقر» و«متوتر» يصفان كيف يسمع الهارموني الغربي هذه الأصوات عادةً؛ وتقاليد أخرى تسمعها بشكل مختلف.',
+    melody: 'تتبّع شكل اللحن خطوة أولى جيدة لغنائه أو عزفه.',
+    rhythm: 'عدّ النبضة وأنصافها يجعل أي إيقاع مقروءًا.',
+    build: 'بناء الفواصل والتآلفات والسلالم بيدك يُظهر كيف تُصنع.'
   }
 };

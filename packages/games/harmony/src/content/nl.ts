@@ -1,63 +1,59 @@
-/*
- * Translator note (design § 18.1): use the standard music terms of each language (design Appendix B), never song
- * references ("the first two notes of …"), and "often heard as" for anything subjective. Keep the placeholders.
- */
 import type { ContentText } from './types';
 
 export const content: ContentText = {
   intervals: {
-    m2: 'minor second',
-    M2: 'major second',
-    m3: 'minor third',
-    M3: 'major third',
-    P4: 'perfect fourth',
-    TT: 'tritone',
-    P5: 'perfect fifth',
-    m6: 'minor sixth',
-    M6: 'major sixth',
-    m7: 'minor seventh',
-    M7: 'major seventh',
-    P8: 'octave'
+    m2: 'kleine secunde',
+    M2: 'grote secunde',
+    m3: 'kleine terts',
+    M3: 'grote terts',
+    P4: 'reine kwart',
+    TT: 'tritonus',
+    P5: 'reine kwint',
+    m6: 'kleine sext',
+    M6: 'grote sext',
+    m7: 'kleine septiem',
+    M7: 'grote septiem',
+    P8: 'octaaf'
   },
   chords: {
-    maj: 'major chord',
-    min: 'minor chord',
-    dim: 'diminished chord',
-    aug: 'augmented chord',
-    dom7: 'dominant seventh chord',
-    maj7: 'major seventh chord',
-    min7: 'minor seventh chord'
+    maj: 'grote drieklank (majeur)',
+    min: 'kleine drieklank (mineur)',
+    dim: 'verminderde drieklank',
+    aug: 'overmatige drieklank',
+    dom7: 'dominantseptiemakkoord',
+    maj7: 'groot septiemakkoord (maj7)',
+    min7: 'klein septiemakkoord (m7)'
   },
-  scales: { major: 'major scale', 'natural-minor': 'natural minor scale', 'harmonic-minor': 'harmonic minor scale', 'major-pentatonic': 'major pentatonic scale' },
+  scales: { major: 'majeurtoonladder', 'natural-minor': 'natuurlijke mineur', 'harmonic-minor': 'harmonische mineur', 'major-pentatonic': 'majeur-pentatoniek' },
   cadences: {
-    finished: { name: 'Finished', explain: 'The dominant (V) goes home to the tonic (I): the phrase sounds complete (an authentic cadence).' },
-    open: { name: 'Open', explain: 'The phrase stops on the dominant (V): it sounds like a question that waits to go on (a half cadence).' },
-    surprise: { name: 'Surprise', explain: 'The dominant (V) leads to vi instead of home: you expect rest, and the music turns aside (a deceptive cadence).' }
+    finished: { name: 'Afgesloten', explain: 'De dominant (V) gaat terug naar de tonica (I): de frase klinkt af (volkomen cadens).' },
+    open: { name: 'Open', explain: 'De frase stopt op de dominant (V): het klinkt als een vraag die op een vervolg wacht (halve cadens).' },
+    surprise: { name: 'Verrassing', explain: 'De dominant (V) gaat naar vi in plaats van naar huis: je verwacht rust en de muziek buigt af (bedrieglijke cadens).' }
   },
-  classes: { perfect: 'perfect consonance', imperfect: 'imperfect consonance', mild: 'mild dissonance', sharp: 'sharp dissonance' },
-  semitones: { one: '{n} semitone', other: '{n} semitones' },
-  cents: { one: '{n} cent', other: '{n} cents' },
-  steps: { whole: 'W', half: 'H', three: 'W+H' },
-  up: 'up',
-  down: 'down',
+  classes: { perfect: 'volkomen consonant', imperfect: 'onvolkomen consonant', mild: 'milde dissonant', sharp: 'scherpe dissonant' },
+  semitones: { one: '{n} halve toon', other: '{n} halve tonen' },
+  cents: { one: '{n} cent', other: '{n} cent' },
+  steps: { whole: 'H', half: '½', three: 'H+½' },
+  up: 'omhoog',
+  down: 'omlaag',
   tips: {
-    interval: '{a} has {na}, {b} has {nb}. Count the keys from one note to the other, or the steps on the staff.',
-    chord: 'Count the stacked thirds in semitones: {a} is {ta}, {b} is {tb}.',
-    scale: 'Compare the steps: {a} goes {pa}, {b} goes {pb} (W = whole tone, H = semitone).',
-    pair: 'The more stable sound has the simpler ratio: {ra} for {a}, {rb} for {b}.',
-    cadence: 'Listen to the last chord: does it return home ({a}), or does it stop elsewhere ({b})?',
-    contour: 'Follow only up and down, step by step: it went {a}, not {b}.',
-    changed: 'Compare A and B note by note: note {a} changed, not note {b}.',
-    rhythm: 'Count along “1 & 2 & 3 & 4 &” and listen for where each note starts.'
+    interval: '{a} heeft {na}, {b} heeft {nb}. Tel de toetsen van de ene noot naar de andere, of de stappen op de notenbalk.',
+    chord: 'Tel de gestapelde tertsen in halve tonen: {a} is {ta}, {b} is {tb}.',
+    scale: 'Vergelijk de stappen: {a} gaat {pa}, {b} gaat {pb} (H = hele toon, ½ = halve toon).',
+    pair: 'De stabielere klank heeft de eenvoudigere verhouding: {ra} bij {a}, {rb} bij {b}.',
+    cadence: 'Het was {a}, niet {b}. Luister naar het laatste akkoord: komt het thuis (I), stopt het op V of buigt het af naar vi?',
+    contour: 'Volg alleen omhoog en omlaag, stap voor stap: het ging {a}, niet {b}.',
+    changed: 'Vergelijk A en B noot voor noot: noot {a} veranderde, niet noot {b}.',
+    rhythm: 'Tel mee: „1 en 2 en 3 en 4 en”, en luister waar elke noot begint.'
   },
-  learned: 'Most listeners who grew up with Western music hear the {name} as more at rest. This preference is partly learned (McDermott et al. 2016).',
-  ratioWhy: 'The simpler the ratio, the sooner the combined wave repeats; Western harmony usually hears such sounds as stable.',
+  learned: 'De meeste luisteraars die met westerse muziek zijn opgegroeid, horen het interval {name} als rustiger. Die voorkeur is deels aangeleerd (McDermott e.a. 2016).',
+  ratioWhy: 'Hoe eenvoudiger de verhouding, hoe sneller de samengestelde golf zich herhaalt; de westerse harmonie hoort zulke klanken meestal als stabiel.',
   closing: {
-    intervals: 'Intervals are the building blocks of melodies and chords. Another round with other starting notes is always possible.',
-    chords: 'Chords are built from stacked thirds; their sizes give each chord its colour.',
-    stability: '“Stable” and “tense” describe how Western harmony usually hears these sounds; other traditions hear them differently.',
-    melody: 'Following the shape of a melody is a good first step towards singing or playing it.',
-    rhythm: 'Counting the beat and its halves makes any rhythm readable.',
-    build: 'Building intervals, chords and scales by hand shows how they are made.'
+    intervals: 'Intervallen zijn de bouwstenen van melodieën en akkoorden. Nog een ronde met andere begintonen kan altijd.',
+    chords: 'Akkoorden zijn gestapelde tertsen; hun grootte geeft elk akkoord zijn kleur.',
+    stability: '„Stabiel” en „gespannen” beschrijven hoe de westerse harmonie deze klanken meestal hoort; andere tradities horen ze anders.',
+    melody: 'De vorm van een melodie volgen is een goede eerste stap om haar te zingen of te spelen.',
+    rhythm: 'Wie de tel en zijn helften telt, kan elk ritme lezen.',
+    build: 'Intervallen, akkoorden en toonladders met de hand bouwen laat zien hoe ze in elkaar zitten.'
   }
 };

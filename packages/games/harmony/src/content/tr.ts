@@ -1,63 +1,59 @@
-/*
- * Translator note (design § 18.1): use the standard music terms of each language (design Appendix B), never song
- * references ("the first two notes of …"), and "often heard as" for anything subjective. Keep the placeholders.
- */
 import type { ContentText } from './types';
 
 export const content: ContentText = {
   intervals: {
-    m2: 'minor second',
-    M2: 'major second',
-    m3: 'minor third',
-    M3: 'major third',
-    P4: 'perfect fourth',
-    TT: 'tritone',
-    P5: 'perfect fifth',
-    m6: 'minor sixth',
-    M6: 'major sixth',
-    m7: 'minor seventh',
-    M7: 'major seventh',
-    P8: 'octave'
+    m2: 'küçük ikili',
+    M2: 'büyük ikili',
+    m3: 'küçük üçlü',
+    M3: 'büyük üçlü',
+    P4: 'tam dörtlü',
+    TT: 'artık dörtlü (triton)',
+    P5: 'tam beşli',
+    m6: 'küçük altılı',
+    M6: 'büyük altılı',
+    m7: 'küçük yedili',
+    M7: 'büyük yedili',
+    P8: 'oktav'
   },
   chords: {
-    maj: 'major chord',
-    min: 'minor chord',
-    dim: 'diminished chord',
-    aug: 'augmented chord',
-    dom7: 'dominant seventh chord',
-    maj7: 'major seventh chord',
-    min7: 'minor seventh chord'
+    maj: 'majör akor',
+    min: 'minör akor',
+    dim: 'eksik akor',
+    aug: 'artık akor',
+    dom7: 'dominant yedili akoru',
+    maj7: 'majör yedili akoru',
+    min7: 'minör yedili akoru'
   },
-  scales: { major: 'major scale', 'natural-minor': 'natural minor scale', 'harmonic-minor': 'harmonic minor scale', 'major-pentatonic': 'major pentatonic scale' },
+  scales: { major: 'majör dizi', 'natural-minor': 'doğal minör dizi', 'harmonic-minor': 'armonik minör dizi', 'major-pentatonic': 'majör pentatonik dizi' },
   cadences: {
-    finished: { name: 'Finished', explain: 'The dominant (V) goes home to the tonic (I): the phrase sounds complete (an authentic cadence).' },
-    open: { name: 'Open', explain: 'The phrase stops on the dominant (V): it sounds like a question that waits to go on (a half cadence).' },
-    surprise: { name: 'Surprise', explain: 'The dominant (V) leads to vi instead of home: you expect rest, and the music turns aside (a deceptive cadence).' }
+    finished: { name: 'Tamamlanmış', explain: 'Dominant (V) toniğe (I) döner: cümle bitmiş gibi duyulur (tam kadans).' },
+    open: { name: 'Açık', explain: 'Cümle dominantta (V) durur: devamını bekleyen bir soru gibi duyulur (yarım kadans).' },
+    surprise: { name: 'Sürpriz', explain: 'Dominant (V) eve dönmek yerine vi’ye gider: dinlenme beklersiniz, müzik başka yöne döner (aldatıcı kadans).' }
   },
-  classes: { perfect: 'perfect consonance', imperfect: 'imperfect consonance', mild: 'mild dissonance', sharp: 'sharp dissonance' },
-  semitones: { one: '{n} semitone', other: '{n} semitones' },
-  cents: { one: '{n} cent', other: '{n} cents' },
-  steps: { whole: 'W', half: 'H', three: 'W+H' },
-  up: 'up',
-  down: 'down',
+  classes: { perfect: 'tam konsonans', imperfect: 'eksik konsonans', mild: 'hafif disonans', sharp: 'sert disonans' },
+  semitones: { one: '{n} yarım ses', other: '{n} yarım ses' },
+  cents: { one: '{n} sent', other: '{n} sent' },
+  steps: { whole: 'T', half: 'Y', three: 'T+Y' },
+  up: 'yukarı',
+  down: 'aşağı',
   tips: {
-    interval: '{a} has {na}, {b} has {nb}. Count the keys from one note to the other, or the steps on the staff.',
-    chord: 'Count the stacked thirds in semitones: {a} is {ta}, {b} is {tb}.',
-    scale: 'Compare the steps: {a} goes {pa}, {b} goes {pb} (W = whole tone, H = semitone).',
-    pair: 'The more stable sound has the simpler ratio: {ra} for {a}, {rb} for {b}.',
-    cadence: 'Listen to the last chord: does it return home ({a}), or does it stop elsewhere ({b})?',
-    contour: 'Follow only up and down, step by step: it went {a}, not {b}.',
-    changed: 'Compare A and B note by note: note {a} changed, not note {b}.',
-    rhythm: 'Count along “1 & 2 & 3 & 4 &” and listen for where each note starts.'
+    interval: '{a}: {na}; {b}: {nb}. Bir notadan diğerine tuşları ya da porte üzerindeki basamakları say.',
+    chord: 'Üst üste binen üçlüleri yarım ses olarak say: {a} {ta}, {b} {tb}.',
+    scale: 'Adımları karşılaştır: {a} {pa}, {b} {pb} (T = tam ses, Y = yarım ses).',
+    pair: 'Daha dengeli ses daha basit orana sahiptir: {a} için {ra}, {b} için {rb}.',
+    cadence: 'Doğrusu {a}, {b} değil. Son akoru dinle: eve mi döner (I), V’de mi durur, yoksa vi’ye mi sapar?',
+    contour: 'Yalnızca inişi ve çıkışı adım adım izle: {a} idi, {b} değil.',
+    changed: 'A ve B’yi nota nota karşılaştır: değişen nota {a}, {b} değil.',
+    rhythm: '“1 ve 2 ve 3 ve 4 ve” diye say ve her notanın nerede başladığını dinle.'
   },
-  learned: 'Most listeners who grew up with Western music hear the {name} as more at rest. This preference is partly learned (McDermott et al. 2016).',
-  ratioWhy: 'The simpler the ratio, the sooner the combined wave repeats; Western harmony usually hears such sounds as stable.',
+  learned: 'Batı müziğiyle büyüyen dinleyicilerin çoğu {name} aralığını daha dingin duyar. Bu tercih kısmen öğrenilmiştir (McDermott ve ark. 2016).',
+  ratioWhy: 'Oran ne kadar basitse birleşik dalga o kadar çabuk tekrar eder; Batı armonisi bu tür sesleri genellikle dengeli duyar.',
   closing: {
-    intervals: 'Intervals are the building blocks of melodies and chords. Another round with other starting notes is always possible.',
-    chords: 'Chords are built from stacked thirds; their sizes give each chord its colour.',
-    stability: '“Stable” and “tense” describe how Western harmony usually hears these sounds; other traditions hear them differently.',
-    melody: 'Following the shape of a melody is a good first step towards singing or playing it.',
-    rhythm: 'Counting the beat and its halves makes any rhythm readable.',
-    build: 'Building intervals, chords and scales by hand shows how they are made.'
+    intervals: 'Aralıklar melodilerin ve akorların yapı taşlarıdır. Başka başlangıç notalarıyla yeni bir tur her zaman mümkün.',
+    chords: 'Akorlar üst üste binen üçlülerden oluşur; büyüklükleri her akora rengini verir.',
+    stability: '“Dengeli” ve “gergin”, Batı armonisinin bu sesleri genellikle nasıl duyduğunu anlatır; başka gelenekler onları farklı duyar.',
+    melody: 'Bir melodinin biçimini izlemek, onu söylemek ya da çalmak için iyi bir ilk adımdır.',
+    rhythm: 'Vuruşu ve yarılarını saymak her ritmi okunur kılar.',
+    build: 'Aralıkları, akorları ve dizileri elle kurmak nasıl yapıldıklarını gösterir.'
   }
 };

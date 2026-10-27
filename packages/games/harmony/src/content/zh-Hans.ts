@@ -1,63 +1,59 @@
-/*
- * Translator note (design § 18.1): use the standard music terms of each language (design Appendix B), never song
- * references ("the first two notes of …"), and "often heard as" for anything subjective. Keep the placeholders.
- */
 import type { ContentText } from './types';
 
 export const content: ContentText = {
   intervals: {
-    m2: 'minor second',
-    M2: 'major second',
-    m3: 'minor third',
-    M3: 'major third',
-    P4: 'perfect fourth',
-    TT: 'tritone',
-    P5: 'perfect fifth',
-    m6: 'minor sixth',
-    M6: 'major sixth',
-    m7: 'minor seventh',
-    M7: 'major seventh',
-    P8: 'octave'
+    m2: '小二度',
+    M2: '大二度',
+    m3: '小三度',
+    M3: '大三度',
+    P4: '纯四度',
+    TT: '增四度（三全音）',
+    P5: '纯五度',
+    m6: '小六度',
+    M6: '大六度',
+    m7: '小七度',
+    M7: '大七度',
+    P8: '纯八度'
   },
   chords: {
-    maj: 'major chord',
-    min: 'minor chord',
-    dim: 'diminished chord',
-    aug: 'augmented chord',
-    dom7: 'dominant seventh chord',
-    maj7: 'major seventh chord',
-    min7: 'minor seventh chord'
+    maj: '大三和弦',
+    min: '小三和弦',
+    dim: '减三和弦',
+    aug: '增三和弦',
+    dom7: '属七和弦',
+    maj7: '大七和弦',
+    min7: '小七和弦'
   },
-  scales: { major: 'major scale', 'natural-minor': 'natural minor scale', 'harmonic-minor': 'harmonic minor scale', 'major-pentatonic': 'major pentatonic scale' },
+  scales: { major: '大调音阶', 'natural-minor': '自然小调音阶', 'harmonic-minor': '和声小调音阶', 'major-pentatonic': '大调五声音阶' },
   cadences: {
-    finished: { name: 'Finished', explain: 'The dominant (V) goes home to the tonic (I): the phrase sounds complete (an authentic cadence).' },
-    open: { name: 'Open', explain: 'The phrase stops on the dominant (V): it sounds like a question that waits to go on (a half cadence).' },
-    surprise: { name: 'Surprise', explain: 'The dominant (V) leads to vi instead of home: you expect rest, and the music turns aside (a deceptive cadence).' }
+    finished: { name: '结束', explain: '属和弦（V）回到主和弦（I）：乐句听起来已经结束（完全终止）。' },
+    open: { name: '开放', explain: '乐句停在属和弦（V）上：听起来像一个等待下文的问题（半终止）。' },
+    surprise: { name: '意外', explain: '属和弦（V）没有回到主和弦，而是走向 vi：本以为会停下来，音乐却转向一旁（阻碍终止）。' }
   },
-  classes: { perfect: 'perfect consonance', imperfect: 'imperfect consonance', mild: 'mild dissonance', sharp: 'sharp dissonance' },
-  semitones: { one: '{n} semitone', other: '{n} semitones' },
-  cents: { one: '{n} cent', other: '{n} cents' },
-  steps: { whole: 'W', half: 'H', three: 'W+H' },
-  up: 'up',
-  down: 'down',
+  classes: { perfect: '完全协和音程', imperfect: '不完全协和音程', mild: '轻度不协和音程', sharp: '尖锐不协和音程' },
+  semitones: { other: '{n}个半音' },
+  cents: { other: '{n}音分' },
+  steps: { whole: '全', half: '半', three: '全+半' },
+  up: '上行',
+  down: '下行',
   tips: {
-    interval: '{a} has {na}, {b} has {nb}. Count the keys from one note to the other, or the steps on the staff.',
-    chord: 'Count the stacked thirds in semitones: {a} is {ta}, {b} is {tb}.',
-    scale: 'Compare the steps: {a} goes {pa}, {b} goes {pb} (W = whole tone, H = semitone).',
-    pair: 'The more stable sound has the simpler ratio: {ra} for {a}, {rb} for {b}.',
-    cadence: 'Listen to the last chord: does it return home ({a}), or does it stop elsewhere ({b})?',
-    contour: 'Follow only up and down, step by step: it went {a}, not {b}.',
-    changed: 'Compare A and B note by note: note {a} changed, not note {b}.',
-    rhythm: 'Count along “1 & 2 & 3 & 4 &” and listen for where each note starts.'
+    interval: '{a}有{na}，{b}有{nb}。数一数从一个音到另一个音的琴键，或五线谱上的级数。',
+    chord: '用半音数一数叠起来的三度：{a}是{ta}，{b}是{tb}。',
+    scale: '比较音阶的步距：{a}是{pa}，{b}是{pb}（全＝全音，半＝半音）。',
+    pair: '越稳定的音响，比例越简单：{a}是{ra}，{b}是{rb}。',
+    cadence: '答案是“{a}”，不是“{b}”。听最后一个和弦：它回到主和弦（I），停在 V 上，还是转向 vi？',
+    contour: '一步一步只看上行还是下行：答案是“{a}”，不是“{b}”。',
+    changed: '把 A 和 B 一个音一个音地比较：变化的是第{a}个音，不是第{b}个音。',
+    rhythm: '数“1 哒 2 哒 3 哒 4 哒”，听每个音从哪里开始。'
   },
-  learned: 'Most listeners who grew up with Western music hear the {name} as more at rest. This preference is partly learned (McDermott et al. 2016).',
-  ratioWhy: 'The simpler the ratio, the sooner the combined wave repeats; Western harmony usually hears such sounds as stable.',
+  learned: '大多数听着西方音乐长大的人会觉得{name}更安定。这种偏好在一定程度上是后天习得的（McDermott 等，2016）。',
+  ratioWhy: '比例越简单，合成的波形重复得越早；西方和声通常把这样的音响听作稳定。',
   closing: {
-    intervals: 'Intervals are the building blocks of melodies and chords. Another round with other starting notes is always possible.',
-    chords: 'Chords are built from stacked thirds; their sizes give each chord its colour.',
-    stability: '“Stable” and “tense” describe how Western harmony usually hears these sounds; other traditions hear them differently.',
-    melody: 'Following the shape of a melody is a good first step towards singing or playing it.',
-    rhythm: 'Counting the beat and its halves makes any rhythm readable.',
-    build: 'Building intervals, chords and scales by hand shows how they are made.'
+    intervals: '音程是旋律和和弦的基本单元。随时可以换个起始音再来一轮。',
+    chords: '和弦由叠置的三度构成；三度的大小决定了每个和弦的色彩。',
+    stability: '“稳定”和“紧张”描述的是西方和声通常怎样听这些音响；其他传统有不同的听法。',
+    melody: '跟随旋律的走向，是唱出或弹出它的良好第一步。',
+    rhythm: '数清拍子和半拍，任何节奏都能读懂。',
+    build: '亲手搭建音程、和弦和音阶，就能看出它们是怎样构成的。'
   }
 };

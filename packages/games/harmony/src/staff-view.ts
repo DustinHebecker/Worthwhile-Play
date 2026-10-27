@@ -95,8 +95,11 @@ export function renderStaff(events: readonly StaffEvent[], options: StaffOptions
   const width = left + Math.max(1, events.length) * spacing + 10;
   const grand = options.grand === true;
   const labels = events.some((e) => e.label);
-  const height = (grand ? 196 : 112) + (labels ? 18 : 0);
+  const bottomLine = grand ? BASS_TOP + 40 : TREBLE_TOP + 40;
+  const labelY = bottomLine + 30;
+  const height = labels ? labelY + 6 : bottomLine + (grand ? 18 : 26);
   const root = svg('svg', { viewBox: `0 0 ${width} ${height}`, class: 'hm-staff', role: 'img', 'aria-label': options.name, dir: 'ltr', ...(options.testid ? { 'data-testid': options.testid } : {}) });
+  root.style.maxInlineSize = `${Math.round(width * 1.6)}px`;
   const staves: { clef: Clef; top: number }[] = grand ? [{ clef: 'treble', top: TREBLE_TOP }, { clef: 'bass', top: BASS_TOP }] : [{ clef: 'treble', top: TREBLE_TOP }];
   for (const { clef, top } of staves) {
     for (let i = 0; i < 5; i++) root.appendChild(svg('line', { x1: 4, x2: width - 4, y1: top + i * LINE_GAP, y2: top + i * LINE_GAP, class: 'hm-line' }));
@@ -133,7 +136,7 @@ export function renderStaff(events: readonly StaffEvent[], options: StaffOptions
       }
       if (ev.mark) g.appendChild(path(`M${x} ${top - 26}l5 5-5 5-5-5z`, 'hm-ink'));
     }
-    if (ev.label) g.appendChild(svg('text', { x, y: height - 5, class: 'hm-label', 'text-anchor': 'middle' }, document.createTextNode(ev.label)));
+    if (ev.label) g.appendChild(svg('text', { x, y: labelY, class: 'hm-label', 'text-anchor': 'middle' }, document.createTextNode(ev.label)));
     root.appendChild(g);
   });
   if (options.contour && centres.length > 1) root.appendChild(svg('polyline', { points: centres.map(([x, y]) => `${r1(x)},${r1(y)}`).join(' '), class: 'hm-contour' }));

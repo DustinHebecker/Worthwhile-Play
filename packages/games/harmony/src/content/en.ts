@@ -45,7 +45,7 @@ export const content: ContentText = {
     chord: 'Count the stacked thirds in semitones: {a} is {ta}, {b} is {tb}.',
     scale: 'Compare the steps: {a} goes {pa}, {b} goes {pb} (W = whole tone, H = semitone).',
     pair: 'The more stable sound has the simpler ratio: {ra} for {a}, {rb} for {b}.',
-    cadence: 'Listen to the last chord: does it return home ({a}), or does it stop elsewhere ({b})?',
+    cadence: 'It was {a}, not {b}. Listen to the last chord: does it return home (I), stop on V, or turn to vi?',
     contour: 'Follow only up and down, step by step: it went {a}, not {b}.',
     changed: 'Compare A and B note by note: note {a} changed, not note {b}.',
     rhythm: 'Count along “1 & 2 & 3 & 4 &” and listen for where each note starts.'

@@ -24,7 +24,6 @@ export const en = {
   'sound.bar': 'Sound',
   'sound.play': 'Play',
   'sound.stop': 'Stop',
-  'sound.playing': 'Playing…',
   'sound.slower': 'Slower',
   'sound.togetherApart': 'Together, then apart',
   'sound.playA': 'Play A',

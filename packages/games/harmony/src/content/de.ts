@@ -41,7 +41,7 @@ export const content: ContentText = {
     chord: 'Zähle die geschichteten Terzen in Halbtönen: {a} ist {ta}, {b} ist {tb}.',
     scale: 'Vergleiche die Schritte: {a} geht {pa}, {b} geht {pb} (G = Ganzton, H = Halbton).',
     pair: 'Der stabilere Klang hat das einfachere Verhältnis: {ra} bei {a}, {rb} bei {b}.',
-    cadence: 'Achte auf den letzten Akkord: Kehrt er nach Hause zurück ({a}) oder bleibt er woanders stehen ({b})?',
+    cadence: 'Es war {a}, nicht {b}. Achte auf den letzten Akkord: Kehrt er nach Hause zurück (I), bleibt er auf V stehen oder biegt er zur VI ab?',
     contour: 'Folge nur auf und ab, Schritt für Schritt: Es ging {a}, nicht {b}.',
     changed: 'Vergleiche A und B Ton für Ton: Ton {a} hat sich verändert, nicht Ton {b}.',
     rhythm: 'Zähle mit „1 und 2 und 3 und 4 und“ und achte darauf, wo jeder Ton beginnt.'

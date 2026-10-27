@@ -1,63 +1,59 @@
-/*
- * Translator note (design § 18.1): use the standard music terms of each language (design Appendix B), never song
- * references ("the first two notes of …"), and "often heard as" for anything subjective. Keep the placeholders.
- */
 import type { ContentText } from './types';
 
 export const content: ContentText = {
   intervals: {
-    m2: 'minor second',
-    M2: 'major second',
-    m3: 'minor third',
-    M3: 'major third',
-    P4: 'perfect fourth',
-    TT: 'tritone',
-    P5: 'perfect fifth',
-    m6: 'minor sixth',
-    M6: 'major sixth',
-    m7: 'minor seventh',
-    M7: 'major seventh',
-    P8: 'octave'
+    m2: 'малая секунда',
+    M2: 'большая секунда',
+    m3: 'малая терция',
+    M3: 'большая терция',
+    P4: 'чистая кварта',
+    TT: 'тритон',
+    P5: 'чистая квинта',
+    m6: 'малая секста',
+    M6: 'большая секста',
+    m7: 'малая септима',
+    M7: 'большая септима',
+    P8: 'октава'
   },
   chords: {
-    maj: 'major chord',
-    min: 'minor chord',
-    dim: 'diminished chord',
-    aug: 'augmented chord',
-    dom7: 'dominant seventh chord',
-    maj7: 'major seventh chord',
-    min7: 'minor seventh chord'
+    maj: 'мажорное трезвучие',
+    min: 'минорное трезвучие',
+    dim: 'уменьшённое трезвучие',
+    aug: 'увеличенное трезвучие',
+    dom7: 'доминантсептаккорд',
+    maj7: 'большой мажорный септаккорд (maj7)',
+    min7: 'малый минорный септаккорд (m7)'
   },
-  scales: { major: 'major scale', 'natural-minor': 'natural minor scale', 'harmonic-minor': 'harmonic minor scale', 'major-pentatonic': 'major pentatonic scale' },
+  scales: { major: 'мажорная гамма', 'natural-minor': 'натуральный минор', 'harmonic-minor': 'гармонический минор', 'major-pentatonic': 'мажорная пентатоника' },
   cadences: {
-    finished: { name: 'Finished', explain: 'The dominant (V) goes home to the tonic (I): the phrase sounds complete (an authentic cadence).' },
-    open: { name: 'Open', explain: 'The phrase stops on the dominant (V): it sounds like a question that waits to go on (a half cadence).' },
-    surprise: { name: 'Surprise', explain: 'The dominant (V) leads to vi instead of home: you expect rest, and the music turns aside (a deceptive cadence).' }
+    finished: { name: 'Завершённо', explain: 'Доминанта (V) возвращается к тонике (I): фраза звучит законченной (полный совершенный каденс).' },
+    open: { name: 'Открыто', explain: 'Фраза останавливается на доминанте (V): звучит как вопрос, который ждёт продолжения (половинный каденс).' },
+    surprise: { name: 'Неожиданно', explain: 'Доминанта (V) ведёт к vi вместо тоники: ждёшь покоя, а музыка сворачивает в сторону (прерванный каденс).' }
   },
-  classes: { perfect: 'perfect consonance', imperfect: 'imperfect consonance', mild: 'mild dissonance', sharp: 'sharp dissonance' },
-  semitones: { one: '{n} semitone', other: '{n} semitones' },
-  cents: { one: '{n} cent', other: '{n} cents' },
-  steps: { whole: 'W', half: 'H', three: 'W+H' },
-  up: 'up',
-  down: 'down',
+  classes: { perfect: 'совершенный консонанс', imperfect: 'несовершенный консонанс', mild: 'мягкий диссонанс', sharp: 'острый диссонанс' },
+  semitones: { one: '{n} полутон', few: '{n} полутона', many: '{n} полутонов', other: '{n} полутона' },
+  cents: { one: '{n} цент', few: '{n} цента', many: '{n} центов', other: '{n} цента' },
+  steps: { whole: 'Т', half: 'П', three: 'Т+П' },
+  up: 'вверх',
+  down: 'вниз',
   tips: {
-    interval: '{a} has {na}, {b} has {nb}. Count the keys from one note to the other, or the steps on the staff.',
-    chord: 'Count the stacked thirds in semitones: {a} is {ta}, {b} is {tb}.',
-    scale: 'Compare the steps: {a} goes {pa}, {b} goes {pb} (W = whole tone, H = semitone).',
-    pair: 'The more stable sound has the simpler ratio: {ra} for {a}, {rb} for {b}.',
-    cadence: 'Listen to the last chord: does it return home ({a}), or does it stop elsewhere ({b})?',
-    contour: 'Follow only up and down, step by step: it went {a}, not {b}.',
-    changed: 'Compare A and B note by note: note {a} changed, not note {b}.',
-    rhythm: 'Count along “1 & 2 & 3 & 4 &” and listen for where each note starts.'
+    interval: '{a}: {na}; {b}: {nb}. Посчитай клавиши от одной ноты до другой или ступени на нотном стане.',
+    chord: 'Посчитай терции в полутонах: {a} — {ta}, {b} — {tb}.',
+    scale: 'Сравни шаги: {a} — {pa}, {b} — {pb} (Т = тон, П = полутон).',
+    pair: 'У более устойчивого созвучия отношение проще: {ra} у интервала «{a}», {rb} у интервала «{b}».',
+    cadence: 'Это было «{a}», а не «{b}». Слушай последний аккорд: возвращается ли он домой (I), останавливается на V или сворачивает к vi?',
+    contour: 'Следи только за движением вверх и вниз, шаг за шагом: было «{a}», а не «{b}».',
+    changed: 'Сравни A и B нота за нотой: изменилась нота {a}, а не нота {b}.',
+    rhythm: 'Считай «1 и 2 и 3 и 4 и» и слушай, где начинается каждая нота.'
   },
-  learned: 'Most listeners who grew up with Western music hear the {name} as more at rest. This preference is partly learned (McDermott et al. 2016).',
-  ratioWhy: 'The simpler the ratio, the sooner the combined wave repeats; Western harmony usually hears such sounds as stable.',
+  learned: 'Большинство слушателей, выросших на западной музыке, слышат интервал «{name}» как более спокойный. Это предпочтение отчасти выучено (McDermott и др., 2016).',
+  ratioWhy: 'Чем проще отношение, тем раньше повторяется общая волна; западная гармония обычно слышит такие созвучия как устойчивые.',
   closing: {
-    intervals: 'Intervals are the building blocks of melodies and chords. Another round with other starting notes is always possible.',
-    chords: 'Chords are built from stacked thirds; their sizes give each chord its colour.',
-    stability: '“Stable” and “tense” describe how Western harmony usually hears these sounds; other traditions hear them differently.',
-    melody: 'Following the shape of a melody is a good first step towards singing or playing it.',
-    rhythm: 'Counting the beat and its halves makes any rhythm readable.',
-    build: 'Building intervals, chords and scales by hand shows how they are made.'
+    intervals: 'Интервалы — это кирпичики мелодий и аккордов. Ещё один раунд с другими начальными нотами можно сыграть всегда.',
+    chords: 'Аккорды строятся из терций; их размеры дают каждому аккорду свою окраску.',
+    stability: '«Устойчиво» и «напряжённо» описывают, как западная гармония обычно слышит эти созвучия; другие традиции слышат их иначе.',
+    melody: 'Следить за формой мелодии — хороший первый шаг, чтобы спеть или сыграть её.',
+    rhythm: 'Если считать доли и их половинки, можно прочитать любой ритм.',
+    build: 'Если строить интервалы, аккорды и гаммы своими руками, видно, как они устроены.'
   }
 };
