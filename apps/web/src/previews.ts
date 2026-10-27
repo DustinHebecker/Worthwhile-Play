@@ -642,7 +642,15 @@ const PREVIEWS: Record<string, () => string> = {
     [0, 1, 2].map((i) => P(`M${44 + i * 5} ${11 - i * 2}q${4 + i * 1.5} ${7 + i * 2} 0 ${14 + i * 4}`, 'ab')).join('') +
     [0, 1, 2, 3, 4, 5, 6].map((i) => R(6 + i * 12, 36, 12, 25, 'c', 1)).join('') +
     [0, 1, 3, 4, 5].map((i) => R(6 + (i + 1) * 12 - 3.6, 36, 7.2, 15, 'i', 0.8)).join('') +
-    C(12, 55, 2.6, 'a') + C(36, 55, 2.6, 'a')
+    C(12, 55, 2.6, 'a') + C(36, 55, 2.6, 'a'),
+  // Weight & Balance: a level bar on a triangular stand with two hanging weights (the taller one nearer the axle, so
+  // 2 × 16 = 4 × 8); on the right a table edge with three blocks stacked past it and a dashed plumb line at the edge.
+  // No text; not mirrored (left and right are the picture's sides in every locale).
+  'balance-lab': () =>
+    poly([[30, 22], [23, 44], [37, 44]], 'e') + R(5, 18.5, 50, 3.5, 'o', 1.5) + C(30, 20.2, 1.4, 'i') +
+    L(14, 22, 14, 27, 'fn') + R(10, 27, 8, 8, 'a', 1) + L(38, 22, 38, 27, 'fn') + R(34, 27, 8, 16, 'a', 1) +
+    R(58, 48, 24, 14, 'wd') + R(71, 41, 13.2, 7, 'o', 1) + R(74.3, 34, 13.2, 7, 'o', 1) + R(80.9, 27, 13.2, 7, 'o', 1) +
+    L(82, 18, 82, 48, 'fn ds')
 };
 
 /** Pictures made only of text cards and lines: these follow the reading direction (flipped in RTL). */
