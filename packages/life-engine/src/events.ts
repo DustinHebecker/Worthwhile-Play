@@ -27,7 +27,8 @@ export type Effect =
   | { set: string }
   | { clear: string }
   | { count: string; add: number }
-  | { book: { account: string; cents: number; category: string } }
+  /** Books money; with `real`, `cents` are at start-year prices and scaled by the life's price index. */
+  | { book: { account: string; cents: number; category: string; real?: boolean } }
   | { transfer: { from: string; to: string; cents: number } }
   | { setCount: string; value: number }
   /** Stores the current month in a counter (for `since` conditions). */
@@ -132,6 +133,13 @@ export function availableChoices(defs: readonly EventDef[], state: LifeCore, eve
   return def.choices.filter((c) => holds(state, c.when));
 }
 
+/** The price index of a state that carries an economy (a life), else 1. */
+function priceIndexOf(state: LifeCore): number {
+  const economy = (state as { economy?: { priceIndex?: unknown } }).economy;
+  const p = economy?.priceIndex;
+  return typeof p === 'number' && Number.isFinite(p) && p > 0 ? p : 1;
+}
+
 function applyEffect<S extends LifeCore>(state: S, e: Effect, rng: Rng): S {
   if ('roll' in e) {
     const ppm = e.roll.find((r) => holds(state, r.when))?.ppm ?? 0;
@@ -153,7 +161,10 @@ function applyEffect<S extends LifeCore>(state: S, e: Effect, rng: Rng): S {
     const now = Object.hasOwn(state.counters, e.count) ? (state.counters[e.count] as number) : 0;
     return { ...state, counters: { ...state.counters, [e.count]: now + e.add } };
   }
-  if ('book' in e) return { ...state, ledger: book(state.ledger, e.book.account, e.book.cents, e.book.category) };
+  if ('book' in e) {
+    const cents = e.book.real === true ? Math.round(e.book.cents * priceIndexOf(state)) : e.book.cents;
+    return { ...state, ledger: book(state.ledger, e.book.account, cents, e.book.category) };
+  }
   if ('transfer' in e) return { ...state, ledger: transfer(state.ledger, e.transfer.from, e.transfer.to, e.transfer.cents) };
   if ('schedule' in e) {
     const entry: Scheduled = { eventId: e.schedule, month: state.month + e.inMonths };

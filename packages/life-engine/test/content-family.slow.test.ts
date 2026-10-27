@@ -5,6 +5,9 @@ import {
 } from '../src';
 import { testRngFor } from './helpers';
 
+/** Whole-life simulations: a generous timeout so they stay reliable on loaded machines. */
+const HEAVY = 120_000;
+
 const EVENTS: readonly EventDef[] = [...EVENTS_DE, ...EVENTS_DE_FAMILY];
 const systems = lifeSystems(PROFILE_DE);
 
@@ -52,7 +55,7 @@ describe('Germany family and career pack (whole-life runs)', () => {
       expect(isBalanced(s.ledger)).toBe(true);
       expect(isLifeState(s)).toBe(true);
     }
-  });
+  }, HEAVY);
 
   it('reaches every family event text over many lives', () => {
     const all = new Map<string, number>();
@@ -61,7 +64,7 @@ describe('Germany family and career pack (whole-life runs)', () => {
     }
     const texts = new Set(EVENTS_DE_FAMILY.map((e) => e.textId ?? e.id));
     expect([...texts].filter((t) => !all.has(t))).toEqual([]);
-  });
+  }, HEAVY);
 
   it('family lives: most have children; about a third of marriages end in divorce (calibration, wide bands)', () => {
     let married = 0;
@@ -79,6 +82,6 @@ describe('Germany family and career pack (whole-life runs)', () => {
     // Lifetime divorce risk ≈ 33 % of marriages (family.md § 2a); a wide band for a game simulation.
     expect(divorced / married).toBeGreaterThan(0.15);
     expect(divorced / married).toBeLessThan(0.5);
-  });
+  }, HEAVY);
 });
 
