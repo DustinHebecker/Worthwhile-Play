@@ -1,201 +1,194 @@
-/**
-// UNTRANSLATED
- *
- * Note for translators: plain words; common names only ("water fleas", not "Daphnia" — an "about" line may add the
- * scientific name in brackets); no digits in the texts (numbers come from the model); spraying, fishing and
- * relocating are management actions, described neutrally. Keep sentences short.
- */
 import type { ContentText } from './types';
 
 export const content: ContentText = {
-  weeks: { one: '{n} week', other: '{n} weeks' },
+  weeks: { other: '{n}周' },
   species: {
-    algae: { name: 'Green algae', about: 'Tiny plants floating in the water. They grow fast on nutrients and light; water fleas and snails eat them. Many algae turn the water green and shade the plants below.' },
-    bluegreen: { name: 'Blue-green algae', about: 'Strictly speaking bacteria (cyanobacteria). They grow slowly, need rich water and are hardly eaten, so they bloom when nutrients pile up.' },
-    duckweed: { name: 'Duckweed', about: 'Small floating leaves. In rich water they cover the surface and shade everything below.' },
-    pondweed: { name: 'Pondweed', about: 'Underwater plants rooted in the mud. They need clear water to get light, take nutrients away from the algae and give water fleas a place to hide from fish.' },
-    fleas: { name: 'Water fleas', about: 'Tiny crustaceans (Daphnia) that graze the algae. Small fish eat them, but in pondweed and in the mud many stay out of reach.' },
-    snails: { name: 'Pond snails', about: 'They eat dead plant matter and a few algae. Small fish eat some of them.' },
-    minnows: { name: 'Small fish', about: 'They hunt water fleas and some snails. Their young take about six weeks to grow up. Pike eat them.' },
-    pike: { name: 'Pike', about: 'A large hunter that eats small fish. Young pike take about twenty weeks to grow up.' },
-    grass: { name: 'Grasses', about: 'Tall and fast-growing on rich soil. They shade the low plants and use a lot of water.' },
-    flowers: { name: 'Wildflowers', about: 'Low plants that do well on poor soil. They need light, so tall grass pushes them out. Aphids and rabbits eat them.' },
-    clover: { name: 'Clover', about: 'A low plant that makes its own nitrogen from the air, less so on rich soil. Its dead leaves feed the soil for its neighbours. Rabbits like it most.' },
-    aphids: { name: 'Aphids', about: 'Tiny insects that suck plant sap, mostly from wildflowers. They multiply very fast. Ladybirds eat them.' },
-    ladybirds: { name: 'Ladybirds', about: 'Beetles that eat aphids. Their larvae take about three weeks to grow up, so they react to more aphids with a delay.' },
-    rabbits: { name: 'Rabbits', about: 'They graze clover first, then wildflowers and grass. Their young take about five weeks to grow up. Foxes hunt them; some are always safe in burrows.' },
-    foxes: { name: 'Foxes', about: 'They hunt rabbits. Young foxes take about half a year to grow up.' },
-    worms: { name: 'Earthworms', about: 'They eat dead leaves and turn them back into nutrients that plants can use.' }
+    algae: { name: '绿藻', about: '漂浮在水中的微小植物。有养分和光照就长得很快；水蚤和螺类以它们为食。藻类多了会把水染绿，遮住下面的植物。' },
+    bluegreen: { name: '蓝藻', about: '其实是细菌（蓝细菌）。长得慢，需要富营养的水，几乎没有动物吃它们，所以养分积累时就会暴发。' },
+    duckweed: { name: '浮萍', about: '漂浮的小叶片。在富营养的水里会铺满水面，遮住下面的一切。' },
+    pondweed: { name: '眼子菜', about: '扎根在淤泥里的沉水植物。它们需要清水才能得到光照，会抢走藻类的养分，还给水蚤提供躲避鱼的地方。' },
+    fleas: { name: '水蚤', about: '吃藻类的微小甲壳动物（溞）。小鱼吃它们，但在眼子菜和淤泥里很多水蚤是鱼够不着的。' },
+    snails: { name: '椎实螺', about: '吃死去的植物残体和少量藻类。小鱼会吃掉一部分。' },
+    minnows: { name: '小鱼', about: '捕食水蚤和一些螺。幼鱼大约要六周才长大。狗鱼吃它们。' },
+    pike: { name: '狗鱼', about: '吃小鱼的大型捕食者。幼年狗鱼大约要二十周才长大。' },
+    grass: { name: '禾草', about: '在肥沃的土壤上长得高、长得快。会遮住矮小的植物，耗水很多。' },
+    flowers: { name: '野花', about: '在贫瘠土壤上长得好的矮小植物。它们需要光照，所以高草会把它们挤走。蚜虫和兔子吃它们。' },
+    clover: { name: '三叶草', about: '一种矮小植物，能自己从空气中获取氮，在肥沃土壤上获取得少一些。它的枯叶为邻居肥沃土壤。兔子最爱吃它。' },
+    aphids: { name: '蚜虫', about: '吸食植物汁液的小昆虫，主要吸野花。繁殖得非常快。瓢虫吃它们。' },
+    ladybirds: { name: '瓢虫', about: '吃蚜虫的甲虫。幼虫大约要三周才长大，所以对蚜虫增多的反应有延迟。' },
+    rabbits: { name: '兔子', about: '先吃三叶草，再吃野花和草。幼兔大约要五周才长大。狐狸捕食它们；有些兔子总能在洞里保住性命。' },
+    foxes: { name: '狐狸', about: '捕食兔子。幼狐大约要半年才长大。' },
+    worms: { name: '蚯蚓', about: '吃落叶，再把它们变回植物能用的养分。' }
   },
   challenges: {
     'fleas-arrive': {
-      title: 'Water fleas arrive',
-      situation: 'A young pond has only green algae. Water fleas reach it, carried in by a bird.',
-      think: 'Who eats the algae? What happens to the water fleas when the algae get fewer?',
-      explain: 'Water fleas multiply on the algae until they eat as fast as the algae grow. From then on the water fleas, not the nutrients, set how much algae there is: a balancing loop (B1). The water turns clear and stays clear.',
-      real: 'In real ponds, fish and the seasons usually keep this from being so neat.'
+      title: '水蚤来了',
+      situation: '一个新池塘里只有绿藻。一只鸟把水蚤带了进来。',
+      think: '谁吃藻类？藻类变少时，水蚤会怎样？',
+      explain: '水蚤靠吃藻类繁殖，直到它们吃的速度和藻类长的速度一样快。从那以后，决定藻类多少的是水蚤，而不是养分：一个调节循环（B1）。水变清了，并一直保持清澈。',
+      real: '在真实的池塘里，鱼和季节通常不会让事情这么整齐。'
     },
     'enrich-swings': {
-      title: 'More food for everyone',
-      situation: 'Heavy runoff from a field starts to feed a pond of algae and water fleas.',
-      think: 'More nutrients feed more algae. What do the water fleas do with more algae, and what do the algae do then?',
-      explain: 'More nutrients let the algae race ahead; the water fleas follow, eat the algae down, then starve; the algae recover, and it starts again. Richer water made the system swing instead of settle. Ecologists call this the paradox of enrichment (B1).',
-      real: 'In real ponds, many more species and the seasons damp or change these swings.'
+      title: '人人都有更多食物',
+      situation: '来自农田的大量径流开始给一个有藻类和水蚤的池塘施肥。',
+      think: '养分多了，藻类就多。水蚤面对更多藻类会怎样？之后藻类又会怎样？',
+      explain: '更多的养分让藻类抢先增长；水蚤跟着增多，把藻类吃光，然后挨饿；藻类恢复，一切重新开始。更肥的水让系统来回波动，而不是趋于稳定。生态学家称之为富营养化悖论（B1）。',
+      real: '在真实的池塘里，更多的物种和季节会削弱或改变这种波动。'
     },
     'fish-stocked': {
-      title: 'Fish in the pond',
-      situation: 'Someone releases small fish into a pond that had none.',
-      think: 'Fish eat water fleas. Who eats the algae, and what happens to them?',
-      explain: 'The fish eat water fleas, so fewer water fleas graze the algae, and the algae grow. A change at the top reaches the bottom of the food chain: a trophic cascade. It builds up slowly, because young fish need weeks to grow up.',
-      real: 'In real ponds, fish also stir up the mud, which clouds the water even more.'
+      title: '池塘里放了鱼',
+      situation: '有人把小鱼放进一个原本没有鱼的池塘。',
+      think: '鱼吃水蚤。谁吃藻类？藻类会怎样？',
+      explain: '鱼吃掉水蚤，吃藻类的水蚤就少了，于是藻类增多。食物链顶端的变化一直传到底端：营养级联。它来得很慢，因为幼鱼要好几周才长大。',
+      real: '在真实的池塘里，鱼还会搅起淤泥，让水更加浑浊。'
     },
     'pike-return': {
-      title: 'Pike come back',
-      situation: 'A few young pike are released into a pond full of small fish.',
-      think: 'Follow the chain: pike, small fish, water fleas, algae.',
-      explain: 'Pike eat small fish; fewer small fish leave more water fleas; more water fleas eat more algae. Each step flips the direction, so the algae fall. It takes long because young pike need about twenty weeks to grow up.',
-      real: 'In real lakes, removing small fish or adding pike is used to clear the water, with mixed and often short-lived success.'
+      title: '狗鱼回来了',
+      situation: '几条幼年狗鱼被放进一个满是小鱼的池塘。',
+      think: '顺着链条想：狗鱼、小鱼、水蚤、藻类。',
+      explain: '狗鱼吃小鱼；小鱼少了，水蚤就多了；水蚤多了，吃掉的藻类也多。每一步都把方向反过来，所以藻类减少。这需要很长时间，因为幼年狗鱼大约要二十周才长大。',
+      real: '在真实的湖泊里，人们会捕走小鱼或放入狗鱼来让水变清，效果不一，而且常常不持久。'
     },
     'algae-treatment': {
-      title: 'A quick fix for green water',
-      situation: 'The pond is treated: nine in ten of the algae die and sink, but stay in the water.',
-      think: 'Where do the nutrients in the dead algae go? And what happened to the water fleas while the algae were gone?',
-      explain: 'The dead algae rot within days and give their nutrients back to the water. The water fleas went hungry while the algae were gone, so for a while nobody holds the algae in check, and they overshoot. A fix that removes the symptom but not the nutrients does not last.',
-      real: 'In real ponds, rotting algae also use up oxygen, which can harm fish.'
+      title: '治绿水的快办法',
+      situation: '池塘被处理了：十分之九的藻类死亡下沉，但仍留在水中。',
+      think: '死藻里的养分去了哪里？藻类不在的时候，水蚤又怎样了？',
+      explain: '死藻几天内就会腐烂，把养分还给水体。藻类不在的时候水蚤挨了饿，所以有一段时间没有谁能控制藻类，藻类就超过了原来的水平。只去除症状、不去除养分的办法，维持不了多久。',
+      real: '在真实的池塘里，腐烂的藻类还会消耗氧气，可能伤害鱼。'
     },
     'slow-runoff': {
-      title: 'A field upstream',
-      situation: 'A new field upstream starts to drain into the clear pond.',
-      think: 'What do more nutrients do to the algae, and what do more algae do to the pondweed below them?',
-      explain: 'For months nothing seems to happen: the pondweed even looks fine after half a year. Meanwhile nutrients pile up in the water and the mud. When the algae finally win, a reinforcing loop takes over: more algae, more shade, less pondweed, fewer hiding places for water fleas, even more algae (R1, R2). The flip is fast; the cause was slow.',
-      real: 'In real lakes, such shifts from clear to green water are well documented, often after years of slow change.'
+      title: '上游的一块农田',
+      situation: '上游新开了一块农田，开始向清澈的池塘排水。',
+      think: '养分多了会对藻类怎样？藻类多了又会对下面的眼子菜怎样？',
+      explain: '好几个月似乎什么都没发生：半年后眼子菜甚至看上去还很好。与此同时，养分在水里和淤泥里不断积累。等藻类终于占了上风，一个增强循环就接管了：藻类更多，阴影更多，眼子菜更少，水蚤的藏身处更少，藻类再多（R1、R2）。转变很快，原因却很慢。',
+      real: '在真实的湖泊里，从清水到绿水的这种转变有很多记录，往往发生在多年缓慢变化之后。'
     },
     'no-way-back': {
-      title: 'The runoff stops',
-      situation: 'Two years later the runoff is stopped completely. Will the pondweed come back?',
-      think: 'Is there any pondweed left to grow back? What keeps the water green now?',
-      explain: 'Stopping the runoff removes the cause, but the pond stays green: the algae shade the bottom, and no pondweed is left to grow back. The reinforcing loop (R1) now holds the pond in its green state. Going back needs more than undoing the change, for example planting pondweed again.',
-      real: 'In real lakes, recovery after the nutrients are cut often takes many years, and plants are sometimes replanted.'
+      title: '径流停止了',
+      situation: '两年后径流被完全截断。眼子菜会回来吗？',
+      think: '还有眼子菜剩下来能重新长出吗？现在是什么让水保持绿色？',
+      explain: '截断径流去掉了原因，但池塘仍然是绿的：藻类遮住了水底，也没有眼子菜留下来重新生长。增强循环（R1）现在把池塘锁在绿色状态。要回去，光撤销变化是不够的，比如还得重新种眼子菜。',
+      real: '在真实的湖泊里，截断养分后的恢复常常要很多年，有时还要重新种植植物。'
     },
     shade: {
-      title: 'A tree over the pond',
-      situation: 'A tree grows over the pond and shades it.',
-      think: 'Pondweed needs light at the bottom. What else takes light away from it?',
-      explain: 'Less light slows the pondweed, so it holds the algae back less. The algae and the water fleas start to swing, and each burst of algae shades the pondweed further (R1): it falls step by step.',
-      real: 'In real ponds, falling leaves from the tree would also add nutrients.'
+      title: '池塘上方的一棵树',
+      situation: '一棵树长到池塘上方，给它遮了荫。',
+      think: '眼子菜需要水底有光。还有什么会夺走它的光？',
+      explain: '光少了，眼子菜长得慢，对藻类的抑制也就弱了。藻类和水蚤开始波动，每一波藻类暴发都让眼子菜更暗（R1）：它一步一步地减少。',
+      real: '在真实的池塘里，树上掉下的叶子也会带来养分。'
     },
     spray: {
-      title: 'Spraying against aphids',
-      situation: 'The meadow is sprayed against aphids: nine in ten aphids and also nine in ten ladybirds die.',
-      think: 'Who grows back faster: the aphids or the ladybirds that eat them?',
-      explain: 'Spraying killed the aphids and the ladybirds that eat them. Aphids multiply much faster than ladybirds, so they came back first, with no one to stop them, and the wildflowers paid for it. Ecologists call this pest resurgence (B2 with a delay).',
-      real: 'In real fields, spraying also harms bees and other insects, and pests can become resistant.'
+      title: '喷药治蚜虫',
+      situation: '草地被喷药治蚜虫：十分之九的蚜虫死了，十分之九的瓢虫也死了。',
+      think: '谁恢复得更快：蚜虫，还是吃蚜虫的瓢虫？',
+      explain: '喷药既杀死了蚜虫，也杀死了吃蚜虫的瓢虫。蚜虫繁殖得比瓢虫快得多，所以它们先回来了，而且没有谁能阻止，野花为此付出了代价。生态学家称之为害虫再猖獗（B2，有延迟）。',
+      real: '在真实的田地里，喷药也会伤害蜜蜂和其他昆虫，害虫还可能产生抗药性。'
     },
     'no-foxes': {
-      title: 'The foxes leave',
-      situation: 'The foxes leave the meadow.',
-      think: 'Who kept the rabbits in check? What do more rabbits eat first?',
-      explain: 'Without foxes the balancing loop that held the rabbits in check is gone (B2). The rabbits multiply and graze the clover, their favourite food, until little is left.',
-      real: 'In real landscapes, rabbits also move away, and diseases can cut their numbers.'
+      title: '狐狸走了',
+      situation: '狐狸离开了草地。',
+      think: '是谁控制着兔子？兔子多了，先吃什么？',
+      explain: '没有了狐狸，控制兔子的调节循环就消失了（B2）。兔子大量繁殖，把它们最爱吃的三叶草吃得所剩无几。',
+      real: '在真实的地方，兔子也会迁走，疾病也可能减少它们的数量。'
     },
     fertilise: {
-      title: 'A little fertiliser',
-      situation: 'The farmer spreads some fertiliser every week.',
-      think: 'Which plant profits most from rich soil, and what does it do to the low plants?',
-      explain: 'Fertiliser feeds the grasses most. Taller grass shades the clover and the wildflowers, and clover loses its edge: on rich soil, making its own nitrogen no longer helps. More food for the meadow means fewer kinds of plants.',
-      real: 'In real meadows, nitrogen from fertiliser and from the air is a main reason for lost wildflowers.'
+      title: '施一点肥',
+      situation: '农民每周撒一点肥料。',
+      think: '哪种植物最能从肥沃的土壤中得益？它会对矮小的植物做什么？',
+      explain: '肥料主要喂饱了禾草。更高的草遮住了三叶草和野花，三叶草也失去了优势：在肥沃的土壤上，自己固氮已经帮不上忙。草地的食物更多，植物种类却更少。',
+      real: '在真实的草地上，来自肥料和空气的氮是野花消失的主要原因之一。'
     },
     drought: {
-      title: 'A dry summer',
-      situation: 'Twelve dry weeks, then normal rain again.',
-      think: 'What do the grasses need besides nutrients? What happens when the rain comes back?',
-      explain: 'Without rain the soil dries out and the grasses slow down and shrink. When the rain returns, the soil fills up and the grasses grow back, even past their old level, because nutrients piled up in the soil while they could not use them.',
-      real: 'In real meadows, a long drought can also kill plants and let others take their place.'
+      title: '干燥的夏天',
+      situation: '十二周干旱，然后降雨恢复正常。',
+      think: '除了养分，禾草还需要什么？雨水回来时会发生什么？',
+      explain: '没有雨，土壤变干，禾草长得慢并且缩小。雨水回来后，土壤蓄满水，禾草重新长起来，甚至超过原来的水平，因为在它们无法利用的时候，养分在土壤里积累了起来。',
+      real: '在真实的草地上，长期干旱还可能杀死植物，给别的植物腾出地方。'
     },
     'clover-poor': {
-      title: 'Clover for a poor meadow',
-      situation: 'Clover is sown into a poor meadow of wildflowers.',
-      think: 'Clover makes nitrogen from the air. Where does that nitrogen go when its leaves die?',
-      explain: 'Clover brings new nitrogen into the meadow. When its leaves die, earthworms turn them into nutrients that the wildflowers use. The neighbours profit, slowly, through the soil: a chain with a delay.',
-      real: 'In real farming, clover is sown for exactly this reason.'
+      title: '给贫瘠草地种三叶草',
+      situation: '在一片贫瘠的野花草地上播种三叶草。',
+      think: '三叶草从空气中获取氮。它的叶子死后，这些氮去了哪里？',
+      explain: '三叶草给草地带来了新的氮。它的叶子死后，蚯蚓把叶子变成野花能用的养分。邻居们慢慢地通过土壤得益：一条有延迟的链条。',
+      real: '在真实的农业里，人们种三叶草正是出于这个原因。'
     },
     'worms-gone': {
-      title: 'Where are the earthworms?',
-      situation: 'The earthworms disappear from the meadow.',
-      think: 'Who turns dead leaves back into food for plants? Which plant does not depend on that?',
-      explain: 'Without earthworms, dead leaves pile up and their nutrients stay locked in. The grasses go hungry. Clover makes its own nitrogen, so it gains: a side effect few people expect.',
-      real: 'In real soils, many more animals, fungi and bacteria break down dead leaves.'
+      title: '蚯蚓去哪儿了？',
+      situation: '蚯蚓从草地上消失了。',
+      think: '谁把落叶重新变成植物的食物？哪种植物不靠这个？',
+      explain: '没有蚯蚓，落叶越积越多，里面的养分被锁住了。禾草开始挨饿。三叶草能自己固氮，所以反而得益：这是很少有人料到的副作用。',
+      real: '在真实的土壤里，还有更多的动物、真菌和细菌分解落叶。'
     },
     'foxes-return': {
-      title: 'The foxes come back',
-      situation: 'Foxes return to a meadow overrun by rabbits.',
-      think: 'How long do young foxes need to grow up? What do fewer rabbits mean for the clover?',
-      explain: 'At first little happens: young foxes need about half a year to grow up. Then the foxes bring the rabbits down (B2), and the clover, freed from grazing, slowly comes back. The effect arrives years after the cause.',
-      real: 'In real landscapes, foxes also hunt other animals, and rabbits find new places to live.'
+      title: '狐狸回来了',
+      situation: '狐狸回到一片被兔子占满的草地。',
+      think: '幼狐要多久才长大？兔子少了，对三叶草意味着什么？',
+      explain: '起初几乎没什么变化：幼狐大约要半年才长大。然后狐狸让兔子减少（B2），摆脱了啃食的三叶草慢慢回来。效果在原因出现好几年后才到来。',
+      real: '在真实的地方，狐狸也捕食别的动物，兔子也会找到新的住处。'
     },
     'ladybirds-gone': {
-      title: 'Ladybirds collected',
-      situation: 'Most ladybirds are collected for a garden elsewhere.',
-      think: 'Who eats the aphids? How fast can the remaining ladybirds come back?',
-      explain: 'Without ladybirds the aphids multiply. The few remaining ladybirds now find plenty of food, and their numbers grow back after a delay. Then they bring the aphids down again (B2).',
-      real: 'In real gardens, other aphid hunters such as hoverflies and birds help as well.'
+      title: '瓢虫被收走了',
+      situation: '大部分瓢虫被收集起来，送到别处的花园。',
+      think: '谁吃蚜虫？剩下的瓢虫能多快回来？',
+      explain: '没有瓢虫，蚜虫大量繁殖。剩下的少数瓢虫现在有了充足的食物，数量在延迟之后恢复。然后它们又把蚜虫压下去（B2）。',
+      real: '在真实的花园里，食蚜蝇和鸟类等其他蚜虫天敌也会帮忙。'
     }
   },
   goals: {
     'save-pondweed': {
-      story: 'A new field upstream starts to drain into the clear pond. Keep the pondweed alive for two years while the runoff continues.',
-      target: 'Pondweed at least {v} every week until week {w}.',
-      hint: 'Algae are a symptom. What feeds them, and how soon must it change?',
-      explain: 'The pondweed falls only when the algae shade it, and the algae grow from the nutrients the field brings. Act on the cause, and act early: by the time the pondweed looks weak, the reinforcing loop has already taken over.',
+      story: '上游新开的农田开始向清澈的池塘排水。在径流持续的两年里，让眼子菜活下去。',
+      target: '直到第{w}周，眼子菜每周至少{v}。',
+      hint: '藻类只是症状。是什么在喂养它们？必须多快改变？',
+      explain: '只有当藻类遮住眼子菜时，眼子菜才会减少，而藻类靠农田带来的养分生长。要针对原因，而且要早：等眼子菜看起来虚弱时，增强循环早已接管。',
       plans: {
-        buffer: 'A buffer strip of plants along the field catches most of the runoff before it reaches the pond. Early enough, the algae never get ahead.',
-        ditch: 'Closing the ditch stops the runoff completely, so the algae never get ahead.'
+        buffer: '沿着农田种一条植物缓冲带，在径流到达池塘前拦住大部分。种得够早，藻类就永远占不了上风。',
+        ditch: '封闭水沟会完全截断径流，所以藻类永远占不了上风。'
       }
     },
     'clear-pond': {
-      story: 'The pond turned green after two years of runoff. Make the water clear again, with pondweed growing, for twelve weeks in a row.',
-      target: 'Algae (green and blue-green) at most {v} and pondweed at least {p}, for twelve weeks in a row, by week {w}.',
-      hint: 'Algae are a symptom. What feeds them? And what keeps them down once the water is clear?',
-      explain: 'The green state holds itself: algae shade out the plants that would hold them back. Clearing the water needs the cause removed (the runoff), the stored nutrients taken out or flushed away, and the pondweed back, so that the reinforcing loop turns towards clear water.',
+      story: '经过两年的径流，池塘变绿了。让水重新变清，并让眼子菜生长，连续保持十二周。',
+      target: '在第{w}周之前，藻类（绿藻和蓝藻）最多{v}且眼子菜至少{p}，连续十二周。',
+      hint: '藻类只是症状。是什么在喂养它们？水变清以后，又是什么让它们保持在低位？',
+      explain: '绿色状态会自我维持：藻类遮住了本来能抑制它们的植物。要让水变清，需要去掉原因（径流），取出或冲走储存的养分，并让眼子菜回来，使增强循环转向清水。',
       plans: {
-        restore: 'Stop the runoff, dredge the nutrient-rich mud, plant pondweed and take out most small fish (so more water fleas graze the algae). Together they turn the loop towards clear water.',
-        flush: 'Stop the runoff and let a stream flush the nutrients and algae out for a while, then plant pondweed into the clear water.'
+        restore: '截断径流，清挖富含养分的淤泥，种植眼子菜，捞走大部分小鱼（让更多水蚤吃藻类）。它们一起把循环转向清水。',
+        flush: '截断径流，让溪流冲刷一段时间带走养分和藻类，然后在清水里种眼子菜。'
       }
     },
     'protect-flowers': {
-      story: 'A neighbour has just sprayed the meadow: most aphids and most ladybirds died. Keep the wildflowers for a year.',
-      target: 'Wildflowers at least {v} every week until week {w}.',
-      hint: 'The aphids come back faster than the ladybirds. When would new ladybirds find something to eat?',
-      explain: 'The aphids rebound before their hunters do. Ladybirds released too early starve, because there are no aphids yet; released too late, the wildflowers are already eaten. Timing decides.',
+      story: '邻居刚给草地喷了药：大部分蚜虫和大部分瓢虫都死了。让野花保持一年。',
+      target: '直到第{w}周，野花每周至少{v}。',
+      hint: '蚜虫恢复得比瓢虫快。新的瓢虫什么时候才能找到吃的？',
+      explain: '蚜虫比它们的天敌先恢复。放得太早，瓢虫会饿死，因为还没有蚜虫；放得太晚，野花已经被吃掉了。时机决定一切。',
       plans: {
-        ladybirds: 'Released after about ten weeks, when the aphids are back but before they peak, the ladybirds find food at once and stop the aphids in time.'
+        ladybirds: '大约十周后放出瓢虫，这时蚜虫已经回来但还没到高峰，瓢虫立刻有吃的，能及时制止蚜虫。'
       }
     },
     'bring-back-clover': {
-      story: 'Without foxes, rabbits have grazed the clover almost away. Bring the clover back for eight weeks in a row within four years.',
-      target: 'Clover at least {v} for eight weeks in a row, by week {w}.',
-      hint: 'Removing rabbits helps only for a while. What kept them in check before?',
-      explain: 'Rabbits multiply fast, so removing some only buys time. Lasting change needs the balancing loop back: foxes. Young foxes need half a year to grow up, so the clover comes back years later.',
+      story: '没有狐狸，兔子几乎把三叶草吃光了。在四年内让三叶草回来，连续保持八周。',
+      target: '在第{w}周之前，三叶草至少{v}，连续八周。',
+      hint: '移走兔子只能管一阵子。以前是什么在控制它们？',
+      explain: '兔子繁殖很快，所以移走一些只能争取时间。持久的改变需要让调节循环回来：狐狸。幼狐要半年才长大，所以三叶草要好几年后才回来。',
       plans: {
-        foxes: 'Foxes alone are enough, but patience is needed: they bring the rabbits down slowly.',
-        foxesRabbits: 'Foxes plus relocating half the rabbits: the foxes start with fewer rabbits to catch up with.',
-        foxesRabbitsClover: 'Foxes, relocating most rabbits and sowing clover: the fastest way, because the clover gets a head start while the foxes grow up.'
+        foxes: '只放狐狸就够了，但需要耐心：它们让兔子减少得很慢。',
+        foxesRabbits: '放狐狸并迁走一半兔子：狐狸要追赶的兔子更少。',
+        foxesRabbitsClover: '放狐狸、迁走大部分兔子并播种三叶草：最快的办法，因为在狐狸长大期间三叶草先占了先机。'
       }
     }
   },
   loops: {
-    graze: 'Water fleas graze the algae down; fewer algae, fewer water fleas.',
-    fishFleas: 'Small fish eat water fleas; fewer water fleas, fewer young fish.',
-    pikeFish: 'Pike eat small fish; fewer small fish, fewer young pike.',
-    clearWater: 'Algae shade the pondweed; pondweed holds the algae back. Whoever is ahead pulls further ahead.',
-    shelter: 'Pondweed hides water fleas from fish, and water fleas eat algae.',
-    recycle: 'Dead algae rot and feed new algae.',
-    aphidsFlowers: 'Aphids feed on the wildflowers; fewer wildflowers, fewer aphids.',
-    ladybirdsAphids: 'Ladybirds eat aphids; fewer aphids, fewer young ladybirds.',
-    rabbitsClover: 'Rabbits graze the clover; less clover, fewer young rabbits.',
-    foxesRabbits: 'Foxes hunt rabbits; fewer rabbits, fewer young foxes.',
-    thirst: 'Grasses use the soil water; dry soil slows the grasses.',
-    wormsDead: 'Earthworms eat dead leaves; fewer dead leaves, fewer earthworms.',
-    flowerUptake: 'Wildflowers take up the nutrients they grow from.'
+    graze: '水蚤把藻类吃少；藻类少了，水蚤也少。',
+    fishFleas: '小鱼吃水蚤；水蚤少了，幼鱼也少。',
+    pikeFish: '狗鱼吃小鱼；小鱼少了，幼年狗鱼也少。',
+    clearWater: '藻类遮住眼子菜；眼子菜抑制藻类。谁领先，谁就越领越多。',
+    shelter: '眼子菜帮水蚤躲开鱼，而水蚤吃藻类。',
+    recycle: '死藻腐烂，喂养新的藻类。',
+    aphidsFlowers: '蚜虫靠野花为生；野花少了，蚜虫也少。',
+    ladybirdsAphids: '瓢虫吃蚜虫；蚜虫少了，幼年瓢虫也少。',
+    rabbitsClover: '兔子吃三叶草；三叶草少了，幼兔也少。',
+    foxesRabbits: '狐狸捕食兔子；兔子少了，幼狐也少。',
+    thirst: '禾草消耗土壤水分；土壤干了，禾草就长得慢。',
+    wormsDead: '蚯蚓吃落叶；落叶少了，蚯蚓也少。',
+    flowerUptake: '野花吸收它们赖以生长的养分。'
   }
 };

@@ -1,201 +1,194 @@
-/**
-// UNTRANSLATED
- *
- * Note for translators: plain words; common names only ("water fleas", not "Daphnia" — an "about" line may add the
- * scientific name in brackets); no digits in the texts (numbers come from the model); spraying, fishing and
- * relocating are management actions, described neutrally. Keep sentences short.
- */
 import type { ContentText } from './types';
 
 export const content: ContentText = {
-  weeks: { one: '{n} week', other: '{n} weeks' },
+  weeks: { other: '{n}주' },
   species: {
-    algae: { name: 'Green algae', about: 'Tiny plants floating in the water. They grow fast on nutrients and light; water fleas and snails eat them. Many algae turn the water green and shade the plants below.' },
-    bluegreen: { name: 'Blue-green algae', about: 'Strictly speaking bacteria (cyanobacteria). They grow slowly, need rich water and are hardly eaten, so they bloom when nutrients pile up.' },
-    duckweed: { name: 'Duckweed', about: 'Small floating leaves. In rich water they cover the surface and shade everything below.' },
-    pondweed: { name: 'Pondweed', about: 'Underwater plants rooted in the mud. They need clear water to get light, take nutrients away from the algae and give water fleas a place to hide from fish.' },
-    fleas: { name: 'Water fleas', about: 'Tiny crustaceans (Daphnia) that graze the algae. Small fish eat them, but in pondweed and in the mud many stay out of reach.' },
-    snails: { name: 'Pond snails', about: 'They eat dead plant matter and a few algae. Small fish eat some of them.' },
-    minnows: { name: 'Small fish', about: 'They hunt water fleas and some snails. Their young take about six weeks to grow up. Pike eat them.' },
-    pike: { name: 'Pike', about: 'A large hunter that eats small fish. Young pike take about twenty weeks to grow up.' },
-    grass: { name: 'Grasses', about: 'Tall and fast-growing on rich soil. They shade the low plants and use a lot of water.' },
-    flowers: { name: 'Wildflowers', about: 'Low plants that do well on poor soil. They need light, so tall grass pushes them out. Aphids and rabbits eat them.' },
-    clover: { name: 'Clover', about: 'A low plant that makes its own nitrogen from the air, less so on rich soil. Its dead leaves feed the soil for its neighbours. Rabbits like it most.' },
-    aphids: { name: 'Aphids', about: 'Tiny insects that suck plant sap, mostly from wildflowers. They multiply very fast. Ladybirds eat them.' },
-    ladybirds: { name: 'Ladybirds', about: 'Beetles that eat aphids. Their larvae take about three weeks to grow up, so they react to more aphids with a delay.' },
-    rabbits: { name: 'Rabbits', about: 'They graze clover first, then wildflowers and grass. Their young take about five weeks to grow up. Foxes hunt them; some are always safe in burrows.' },
-    foxes: { name: 'Foxes', about: 'They hunt rabbits. Young foxes take about half a year to grow up.' },
-    worms: { name: 'Earthworms', about: 'They eat dead leaves and turn them back into nutrients that plants can use.' }
+    algae: { name: '녹조류', about: '물속에 떠다니는 아주 작은 식물입니다. 영양분과 빛이 있으면 빨리 자라고, 물벼룩과 달팽이가 먹습니다. 조류가 많으면 물이 초록색이 되고 아래 식물을 가립니다.' },
+    bluegreen: { name: '남조류', about: '사실은 세균(남세균)입니다. 느리게 자라고 영양이 풍부한 물이 필요하며 거의 먹히지 않아서, 영양분이 쌓이면 대량으로 번성합니다.' },
+    duckweed: { name: '개구리밥', about: '물에 떠 있는 작은 잎입니다. 영양이 풍부한 물에서는 수면을 덮고 그 아래 모든 것을 가립니다.' },
+    pondweed: { name: '가래', about: '진흙에 뿌리내린 물속 식물입니다. 빛을 받으려면 맑은 물이 필요하고, 조류의 영양분을 빼앗으며, 물벼룩에게 물고기를 피할 은신처를 줍니다.' },
+    fleas: { name: '물벼룩', about: '조류를 뜯어 먹는 아주 작은 갑각류(다프니아)입니다. 작은 물고기가 먹지만, 가래와 진흙 속에서는 많은 수가 닿지 않는 곳에 있습니다.' },
+    snails: { name: '물달팽이', about: '죽은 식물 찌꺼기와 약간의 조류를 먹습니다. 작은 물고기가 일부를 먹습니다.' },
+    minnows: { name: '작은 물고기', about: '물벼룩과 달팽이 몇 마리를 사냥합니다. 새끼가 자라는 데 약 여섯 주가 걸립니다. 강꼬치고기가 먹습니다.' },
+    pike: { name: '강꼬치고기', about: '작은 물고기를 먹는 큰 사냥꾼입니다. 어린 강꼬치고기가 자라는 데 약 스무 주가 걸립니다.' },
+    grass: { name: '볏과 풀', about: '비옥한 땅에서 키가 크고 빨리 자랍니다. 키 작은 식물을 가리고 물을 많이 씁니다.' },
+    flowers: { name: '들꽃', about: '척박한 땅에서 잘 자라는 키 작은 식물입니다. 빛이 필요해서 키 큰 풀에 밀려납니다. 진딧물과 토끼가 먹습니다.' },
+    clover: { name: '토끼풀', about: '공기에서 스스로 질소를 얻는 키 작은 식물로, 비옥한 땅에서는 덜 얻습니다. 죽은 잎이 이웃을 위해 흙을 기름지게 합니다. 토끼가 가장 좋아합니다.' },
+    aphids: { name: '진딧물', about: '주로 들꽃의 즙을 빨아 먹는 작은 곤충입니다. 아주 빨리 불어납니다. 무당벌레가 먹습니다.' },
+    ladybirds: { name: '무당벌레', about: '진딧물을 먹는 딱정벌레입니다. 애벌레가 자라는 데 약 세 주가 걸려서, 진딧물이 늘어도 늦게 반응합니다.' },
+    rabbits: { name: '토끼', about: '먼저 토끼풀을, 그다음 들꽃과 풀을 뜯습니다. 새끼가 자라는 데 약 다섯 주가 걸립니다. 여우가 사냥하지만, 일부는 굴 속에서 늘 안전합니다.' },
+    foxes: { name: '여우', about: '토끼를 사냥합니다. 어린 여우가 자라는 데 약 반년이 걸립니다.' },
+    worms: { name: '지렁이', about: '죽은 잎을 먹고 식물이 쓸 수 있는 영양분으로 되돌립니다.' }
   },
   challenges: {
     'fleas-arrive': {
-      title: 'Water fleas arrive',
-      situation: 'A young pond has only green algae. Water fleas reach it, carried in by a bird.',
-      think: 'Who eats the algae? What happens to the water fleas when the algae get fewer?',
-      explain: 'Water fleas multiply on the algae until they eat as fast as the algae grow. From then on the water fleas, not the nutrients, set how much algae there is: a balancing loop (B1). The water turns clear and stays clear.',
-      real: 'In real ponds, fish and the seasons usually keep this from being so neat.'
+      title: '물벼룩이 오다',
+      situation: '새 연못에는 녹조류만 있습니다. 새가 물벼룩을 옮겨 옵니다.',
+      think: '누가 조류를 먹을까요? 조류가 줄면 물벼룩은 어떻게 될까요?',
+      explain: '물벼룩은 조류를 먹고 불어나다가, 조류가 자라는 만큼 빨리 먹게 됩니다. 그때부터 조류의 양을 정하는 것은 영양분이 아니라 물벼룩입니다: 균형 고리(B1). 물이 맑아지고 계속 맑게 유지됩니다.',
+      real: '실제 연못에서는 물고기와 계절 때문에 보통 이렇게 깔끔하지 않습니다.'
     },
     'enrich-swings': {
-      title: 'More food for everyone',
-      situation: 'Heavy runoff from a field starts to feed a pond of algae and water fleas.',
-      think: 'More nutrients feed more algae. What do the water fleas do with more algae, and what do the algae do then?',
-      explain: 'More nutrients let the algae race ahead; the water fleas follow, eat the algae down, then starve; the algae recover, and it starts again. Richer water made the system swing instead of settle. Ecologists call this the paradox of enrichment (B1).',
-      real: 'In real ponds, many more species and the seasons damp or change these swings.'
+      title: '모두에게 더 많은 먹이',
+      situation: '밭에서 많은 양의 물이 흘러들어 조류와 물벼룩이 사는 연못에 영양분을 줍니다.',
+      think: '영양분이 많으면 조류가 늘어납니다. 조류가 많아지면 물벼룩은 어떻게 하고, 그다음 조류는 어떻게 될까요?',
+      explain: '영양분이 늘자 조류가 먼저 치고 나가고, 물벼룩이 뒤따라 조류를 먹어 치운 뒤 굶주립니다. 조류가 회복되면 모든 것이 다시 시작됩니다. 더 풍부한 물 때문에 시스템이 안정되지 않고 흔들렸습니다. 생태학자들은 이것을 부영양화의 역설이라고 부릅니다(B1).',
+      real: '실제 연못에서는 훨씬 많은 종과 계절이 이런 흔들림을 누그러뜨리거나 바꿉니다.'
     },
     'fish-stocked': {
-      title: 'Fish in the pond',
-      situation: 'Someone releases small fish into a pond that had none.',
-      think: 'Fish eat water fleas. Who eats the algae, and what happens to them?',
-      explain: 'The fish eat water fleas, so fewer water fleas graze the algae, and the algae grow. A change at the top reaches the bottom of the food chain: a trophic cascade. It builds up slowly, because young fish need weeks to grow up.',
-      real: 'In real ponds, fish also stir up the mud, which clouds the water even more.'
+      title: '연못에 물고기를',
+      situation: '누군가 물고기가 없던 연못에 작은 물고기를 풀어 놓습니다.',
+      think: '물고기는 물벼룩을 먹습니다. 조류는 누가 먹고, 조류는 어떻게 될까요?',
+      explain: '물고기가 물벼룩을 먹으니 조류를 뜯는 물벼룩이 줄고, 조류가 늘어납니다. 위쪽의 변화가 먹이사슬의 아래까지 닿습니다: 영양 단계 연쇄. 어린 물고기가 자라는 데 몇 주가 걸려서 천천히 나타납니다.',
+      real: '실제 연못에서는 물고기가 진흙도 휘저어 물을 더 탁하게 만듭니다.'
     },
     'pike-return': {
-      title: 'Pike come back',
-      situation: 'A few young pike are released into a pond full of small fish.',
-      think: 'Follow the chain: pike, small fish, water fleas, algae.',
-      explain: 'Pike eat small fish; fewer small fish leave more water fleas; more water fleas eat more algae. Each step flips the direction, so the algae fall. It takes long because young pike need about twenty weeks to grow up.',
-      real: 'In real lakes, removing small fish or adding pike is used to clear the water, with mixed and often short-lived success.'
+      title: '강꼬치고기가 돌아오다',
+      situation: '작은 물고기로 가득한 연못에 어린 강꼬치고기 몇 마리를 풀어 놓습니다.',
+      think: '사슬을 따라가 보세요: 강꼬치고기, 작은 물고기, 물벼룩, 조류.',
+      explain: '강꼬치고기가 작은 물고기를 먹고, 작은 물고기가 줄면 물벼룩이 더 남고, 물벼룩이 늘면 조류를 더 먹습니다. 단계마다 방향이 뒤집혀서 조류가 줄어듭니다. 어린 강꼬치고기가 자라는 데 약 스무 주가 걸려서 오래 걸립니다.',
+      real: '실제 호수에서는 물을 맑게 하려고 작은 물고기를 잡아내거나 강꼬치고기를 넣지만, 효과는 들쭉날쭉하고 오래가지 않는 경우가 많습니다.'
     },
     'algae-treatment': {
-      title: 'A quick fix for green water',
-      situation: 'The pond is treated: nine in ten of the algae die and sink, but stay in the water.',
-      think: 'Where do the nutrients in the dead algae go? And what happened to the water fleas while the algae were gone?',
-      explain: 'The dead algae rot within days and give their nutrients back to the water. The water fleas went hungry while the algae were gone, so for a while nobody holds the algae in check, and they overshoot. A fix that removes the symptom but not the nutrients does not last.',
-      real: 'In real ponds, rotting algae also use up oxygen, which can harm fish.'
+      title: '초록 물을 위한 빠른 해결책',
+      situation: '연못을 처리합니다: 조류 열 중 아홉이 죽어 가라앉지만 물속에 남아 있습니다.',
+      think: '죽은 조류 속 영양분은 어디로 갈까요? 그리고 조류가 없는 동안 물벼룩은 어떻게 되었을까요?',
+      explain: '죽은 조류는 며칠 안에 썩어 영양분을 물로 돌려줍니다. 조류가 없는 동안 물벼룩은 굶주렸기 때문에, 한동안 조류를 억누를 것이 없어 조류가 예전 수준을 넘어 버립니다. 증상만 없애고 영양분은 그대로 두는 해결책은 오래가지 않습니다.',
+      real: '실제 연못에서는 썩는 조류가 산소도 써 버려서 물고기에게 해로울 수 있습니다.'
     },
     'slow-runoff': {
-      title: 'A field upstream',
-      situation: 'A new field upstream starts to drain into the clear pond.',
-      think: 'What do more nutrients do to the algae, and what do more algae do to the pondweed below them?',
-      explain: 'For months nothing seems to happen: the pondweed even looks fine after half a year. Meanwhile nutrients pile up in the water and the mud. When the algae finally win, a reinforcing loop takes over: more algae, more shade, less pondweed, fewer hiding places for water fleas, even more algae (R1, R2). The flip is fast; the cause was slow.',
-      real: 'In real lakes, such shifts from clear to green water are well documented, often after years of slow change.'
+      title: '상류의 밭',
+      situation: '상류에 새로 생긴 밭의 물이 맑은 연못으로 흘러들기 시작합니다.',
+      think: '영양분이 늘면 조류는 어떻게 될까요? 조류가 늘면 그 아래 가래는 어떻게 될까요?',
+      explain: '몇 달 동안은 아무 일도 없어 보입니다. 반년이 지나도 가래는 멀쩡해 보이죠. 그사이 영양분은 물과 진흙에 쌓입니다. 마침내 조류가 이기면 강화 고리가 주도권을 잡습니다: 조류가 늘고, 그늘이 늘고, 가래가 줄고, 물벼룩의 은신처가 줄고, 조류가 더 늘어납니다(R1, R2). 전환은 빠르고, 원인은 느렸습니다.',
+      real: '실제 호수에서 맑은 물이 초록 물로 바뀌는 전환은 잘 기록되어 있으며, 수년간의 느린 변화 끝에 일어나는 경우가 많습니다.'
     },
     'no-way-back': {
-      title: 'The runoff stops',
-      situation: 'Two years later the runoff is stopped completely. Will the pondweed come back?',
-      think: 'Is there any pondweed left to grow back? What keeps the water green now?',
-      explain: 'Stopping the runoff removes the cause, but the pond stays green: the algae shade the bottom, and no pondweed is left to grow back. The reinforcing loop (R1) now holds the pond in its green state. Going back needs more than undoing the change, for example planting pondweed again.',
-      real: 'In real lakes, recovery after the nutrients are cut often takes many years, and plants are sometimes replanted.'
+      title: '유입이 멈추다',
+      situation: '두 해 뒤 유입을 완전히 막습니다. 가래가 돌아올까요?',
+      think: '다시 자랄 가래가 남아 있나요? 지금 무엇이 물을 초록색으로 유지하나요?',
+      explain: '유입을 막으면 원인은 사라지지만 연못은 초록색 그대로입니다. 조류가 바닥을 가리고, 다시 자랄 가래가 남아 있지 않기 때문입니다. 이제 강화 고리(R1)가 연못을 초록 상태에 붙잡아 둡니다. 되돌아가려면 변화를 취소하는 것 이상이 필요합니다. 예를 들어 가래를 다시 심어야 합니다.',
+      real: '실제 호수에서는 영양분 유입을 끊은 뒤에도 회복에 여러 해가 걸리는 경우가 많고, 때로는 식물을 다시 심습니다.'
     },
     shade: {
-      title: 'A tree over the pond',
-      situation: 'A tree grows over the pond and shades it.',
-      think: 'Pondweed needs light at the bottom. What else takes light away from it?',
-      explain: 'Less light slows the pondweed, so it holds the algae back less. The algae and the water fleas start to swing, and each burst of algae shades the pondweed further (R1): it falls step by step.',
-      real: 'In real ponds, falling leaves from the tree would also add nutrients.'
+      title: '연못 위의 나무',
+      situation: '연못 위로 나무가 자라 그늘을 드리웁니다.',
+      think: '가래는 바닥에 빛이 필요합니다. 그 밖에 무엇이 가래의 빛을 빼앗을까요?',
+      explain: '빛이 줄면 가래가 느려져 조류를 덜 억누릅니다. 조류와 물벼룩이 흔들리기 시작하고, 조류가 불어날 때마다 가래가 더 그늘에 가려집니다(R1). 가래는 한 단계씩 줄어듭니다.',
+      real: '실제 연못에서는 나무에서 떨어진 잎도 영양분을 더할 것입니다.'
     },
     spray: {
-      title: 'Spraying against aphids',
-      situation: 'The meadow is sprayed against aphids: nine in ten aphids and also nine in ten ladybirds die.',
-      think: 'Who grows back faster: the aphids or the ladybirds that eat them?',
-      explain: 'Spraying killed the aphids and the ladybirds that eat them. Aphids multiply much faster than ladybirds, so they came back first, with no one to stop them, and the wildflowers paid for it. Ecologists call this pest resurgence (B2 with a delay).',
-      real: 'In real fields, spraying also harms bees and other insects, and pests can become resistant.'
+      title: '진딧물 방제 살포',
+      situation: '초원에 진딧물 방제 약을 뿌립니다: 진딧물 열 중 아홉, 무당벌레도 열 중 아홉이 죽습니다.',
+      think: '누가 더 빨리 회복할까요? 진딧물일까요, 진딧물을 먹는 무당벌레일까요?',
+      explain: '약은 진딧물과 진딧물을 먹는 무당벌레를 모두 죽였습니다. 진딧물은 무당벌레보다 훨씬 빨리 불어나서 먼저 돌아왔고, 막을 존재가 없었으니 들꽃이 그 대가를 치렀습니다. 생태학자들은 이것을 해충의 재발생이라고 부릅니다(지연이 있는 B2).',
+      real: '실제 들판에서는 살포가 꿀벌과 다른 곤충에게도 해를 주고, 해충이 내성을 갖게 될 수 있습니다.'
     },
     'no-foxes': {
-      title: 'The foxes leave',
-      situation: 'The foxes leave the meadow.',
-      think: 'Who kept the rabbits in check? What do more rabbits eat first?',
-      explain: 'Without foxes the balancing loop that held the rabbits in check is gone (B2). The rabbits multiply and graze the clover, their favourite food, until little is left.',
-      real: 'In real landscapes, rabbits also move away, and diseases can cut their numbers.'
+      title: '여우가 떠나다',
+      situation: '여우가 초원을 떠납니다.',
+      think: '누가 토끼를 억눌렀나요? 늘어난 토끼는 무엇을 먼저 먹을까요?',
+      explain: '여우가 없으면 토끼를 억누르던 균형 고리가 사라집니다(B2). 토끼가 불어나 가장 좋아하는 먹이인 토끼풀을 거의 남기지 않고 뜯어 먹습니다.',
+      real: '실제 자연에서는 토끼가 다른 곳으로 옮겨 가기도 하고, 질병으로 수가 줄기도 합니다.'
     },
     fertilise: {
-      title: 'A little fertiliser',
-      situation: 'The farmer spreads some fertiliser every week.',
-      think: 'Which plant profits most from rich soil, and what does it do to the low plants?',
-      explain: 'Fertiliser feeds the grasses most. Taller grass shades the clover and the wildflowers, and clover loses its edge: on rich soil, making its own nitrogen no longer helps. More food for the meadow means fewer kinds of plants.',
-      real: 'In real meadows, nitrogen from fertiliser and from the air is a main reason for lost wildflowers.'
+      title: '비료 조금',
+      situation: '농부가 매주 비료를 조금씩 뿌립니다.',
+      think: '비옥한 땅에서 가장 이득을 보는 식물은 무엇이고, 그 식물은 키 작은 식물에게 무엇을 할까요?',
+      explain: '비료는 주로 볏과 풀을 먹입니다. 키 큰 풀이 토끼풀과 들꽃을 가리고, 토끼풀은 장점을 잃습니다. 비옥한 땅에서는 스스로 질소를 만드는 것이 더 이상 도움이 되지 않으니까요. 초원의 먹이가 늘면 식물의 종류는 줄어듭니다.',
+      real: '실제 초원에서는 비료와 공기에서 오는 질소가 들꽃이 사라지는 주요 원인입니다.'
     },
     drought: {
-      title: 'A dry summer',
-      situation: 'Twelve dry weeks, then normal rain again.',
-      think: 'What do the grasses need besides nutrients? What happens when the rain comes back?',
-      explain: 'Without rain the soil dries out and the grasses slow down and shrink. When the rain returns, the soil fills up and the grasses grow back, even past their old level, because nutrients piled up in the soil while they could not use them.',
-      real: 'In real meadows, a long drought can also kill plants and let others take their place.'
+      title: '메마른 여름',
+      situation: '열두 주 동안 가물다가 다시 보통 비가 내립니다.',
+      think: '볏과 풀에는 영양분 말고 무엇이 필요할까요? 비가 돌아오면 어떻게 될까요?',
+      explain: '비가 없으면 흙이 말라 풀이 느려지고 줄어듭니다. 비가 돌아오면 흙에 물이 차고 풀이 다시 자라는데, 예전 수준을 넘기까지 합니다. 풀이 쓰지 못하는 동안 흙 속에 영양분이 쌓였기 때문입니다.',
+      real: '실제 초원에서는 긴 가뭄이 식물을 죽이고 다른 식물에게 자리를 내주기도 합니다.'
     },
     'clover-poor': {
-      title: 'Clover for a poor meadow',
-      situation: 'Clover is sown into a poor meadow of wildflowers.',
-      think: 'Clover makes nitrogen from the air. Where does that nitrogen go when its leaves die?',
-      explain: 'Clover brings new nitrogen into the meadow. When its leaves die, earthworms turn them into nutrients that the wildflowers use. The neighbours profit, slowly, through the soil: a chain with a delay.',
-      real: 'In real farming, clover is sown for exactly this reason.'
+      title: '척박한 초원에 토끼풀을',
+      situation: '들꽃이 자라는 척박한 초원에 토끼풀 씨를 뿌립니다.',
+      think: '토끼풀은 공기에서 질소를 얻습니다. 잎이 죽으면 그 질소는 어디로 갈까요?',
+      explain: '토끼풀은 초원에 새로운 질소를 가져옵니다. 잎이 죽으면 지렁이가 그것을 들꽃이 쓰는 영양분으로 바꿉니다. 이웃들은 흙을 통해 천천히 이득을 봅니다: 지연이 있는 사슬.',
+      real: '실제 농사에서도 바로 이런 이유로 토끼풀을 심습니다.'
     },
     'worms-gone': {
-      title: 'Where are the earthworms?',
-      situation: 'The earthworms disappear from the meadow.',
-      think: 'Who turns dead leaves back into food for plants? Which plant does not depend on that?',
-      explain: 'Without earthworms, dead leaves pile up and their nutrients stay locked in. The grasses go hungry. Clover makes its own nitrogen, so it gains: a side effect few people expect.',
-      real: 'In real soils, many more animals, fungi and bacteria break down dead leaves.'
+      title: '지렁이는 어디에?',
+      situation: '초원에서 지렁이가 사라집니다.',
+      think: '죽은 잎을 다시 식물의 먹이로 바꾸는 것은 누구일까요? 그것에 기대지 않는 식물은 무엇일까요?',
+      explain: '지렁이가 없으면 죽은 잎이 쌓이고 그 영양분은 갇혀 버립니다. 볏과 풀은 굶주립니다. 토끼풀은 스스로 질소를 만들기 때문에 오히려 이득을 봅니다: 거의 아무도 예상하지 못하는 부작용입니다.',
+      real: '실제 흙에서는 훨씬 많은 동물, 균류, 세균이 죽은 잎을 분해합니다.'
     },
     'foxes-return': {
-      title: 'The foxes come back',
-      situation: 'Foxes return to a meadow overrun by rabbits.',
-      think: 'How long do young foxes need to grow up? What do fewer rabbits mean for the clover?',
-      explain: 'At first little happens: young foxes need about half a year to grow up. Then the foxes bring the rabbits down (B2), and the clover, freed from grazing, slowly comes back. The effect arrives years after the cause.',
-      real: 'In real landscapes, foxes also hunt other animals, and rabbits find new places to live.'
+      title: '여우가 돌아오다',
+      situation: '토끼가 넘쳐 나는 초원에 여우가 돌아옵니다.',
+      think: '어린 여우가 자라는 데 얼마나 걸릴까요? 토끼가 줄면 토끼풀에는 어떤 의미일까요?',
+      explain: '처음에는 별일이 없습니다. 어린 여우가 자라는 데 약 반년이 걸리니까요. 그다음 여우가 토끼를 줄이고(B2), 뜯기던 토끼풀이 천천히 돌아옵니다. 결과는 원인보다 몇 년 늦게 나타납니다.',
+      real: '실제 자연에서는 여우가 다른 동물도 사냥하고, 토끼는 새로 살 곳을 찾습니다.'
     },
     'ladybirds-gone': {
-      title: 'Ladybirds collected',
-      situation: 'Most ladybirds are collected for a garden elsewhere.',
-      think: 'Who eats the aphids? How fast can the remaining ladybirds come back?',
-      explain: 'Without ladybirds the aphids multiply. The few remaining ladybirds now find plenty of food, and their numbers grow back after a delay. Then they bring the aphids down again (B2).',
-      real: 'In real gardens, other aphid hunters such as hoverflies and birds help as well.'
+      title: '무당벌레를 옮기다',
+      situation: '무당벌레 대부분을 모아 다른 곳의 정원으로 보냅니다.',
+      think: '진딧물은 누가 먹을까요? 남은 무당벌레는 얼마나 빨리 돌아올 수 있을까요?',
+      explain: '무당벌레가 없으니 진딧물이 불어납니다. 남은 몇 마리 무당벌레는 이제 먹이가 넉넉해, 지연을 거쳐 수가 다시 늘어납니다. 그다음 진딧물을 다시 줄입니다(B2).',
+      real: '실제 정원에서는 꽃등에와 새 같은 다른 진딧물 천적도 돕습니다.'
     }
   },
   goals: {
     'save-pondweed': {
-      story: 'A new field upstream starts to drain into the clear pond. Keep the pondweed alive for two years while the runoff continues.',
-      target: 'Pondweed at least {v} every week until week {w}.',
-      hint: 'Algae are a symptom. What feeds them, and how soon must it change?',
-      explain: 'The pondweed falls only when the algae shade it, and the algae grow from the nutrients the field brings. Act on the cause, and act early: by the time the pondweed looks weak, the reinforcing loop has already taken over.',
+      story: '상류에 새로 생긴 밭의 물이 맑은 연못으로 흘러들기 시작합니다. 유입이 계속되는 두 해 동안 가래를 살려 두세요.',
+      target: '{w}주차까지 매주 가래 {v} 이상.',
+      hint: '조류는 증상입니다. 무엇이 조류를 먹이고, 얼마나 빨리 바뀌어야 할까요?',
+      explain: '가래는 조류가 그늘을 드리울 때만 줄어들고, 조류는 밭이 가져오는 영양분으로 자랍니다. 원인에 손을 쓰되, 일찍 하세요. 가래가 약해 보일 때면 강화 고리가 이미 주도권을 잡은 뒤입니다.',
       plans: {
-        buffer: 'A buffer strip of plants along the field catches most of the runoff before it reaches the pond. Early enough, the algae never get ahead.',
-        ditch: 'Closing the ditch stops the runoff completely, so the algae never get ahead.'
+        buffer: '밭 가장자리를 따라 심은 완충 식생대가 유입의 대부분을 연못에 닿기 전에 붙잡습니다. 충분히 일찍 하면 조류가 결코 앞서지 못합니다.',
+        ditch: '배수로를 막으면 유입이 완전히 멈추므로 조류가 결코 앞서지 못합니다.'
       }
     },
     'clear-pond': {
-      story: 'The pond turned green after two years of runoff. Make the water clear again, with pondweed growing, for twelve weeks in a row.',
-      target: 'Algae (green and blue-green) at most {v} and pondweed at least {p}, for twelve weeks in a row, by week {w}.',
-      hint: 'Algae are a symptom. What feeds them? And what keeps them down once the water is clear?',
-      explain: 'The green state holds itself: algae shade out the plants that would hold them back. Clearing the water needs the cause removed (the runoff), the stored nutrients taken out or flushed away, and the pondweed back, so that the reinforcing loop turns towards clear water.',
+      story: '두 해 동안의 유입으로 연못이 초록색이 되었습니다. 가래가 자라는 맑은 물을 열두 주 연속으로 되찾으세요.',
+      target: '{w}주차까지 조류(녹조류와 남조류) {v} 이하이고 가래 {p} 이상, 열두 주 연속.',
+      hint: '조류는 증상입니다. 무엇이 조류를 먹일까요? 물이 맑아진 뒤에는 무엇이 조류를 낮게 유지할까요?',
+      explain: '초록 상태는 스스로 유지됩니다. 조류가 자신을 억누를 식물을 그늘로 가리기 때문입니다. 물을 맑게 하려면 원인(유입)을 없애고, 쌓인 영양분을 꺼내거나 씻어 내고, 가래를 되살려서 강화 고리가 맑은 물 쪽으로 돌게 해야 합니다.',
       plans: {
-        restore: 'Stop the runoff, dredge the nutrient-rich mud, plant pondweed and take out most small fish (so more water fleas graze the algae). Together they turn the loop towards clear water.',
-        flush: 'Stop the runoff and let a stream flush the nutrients and algae out for a while, then plant pondweed into the clear water.'
+        restore: '유입을 막고, 영양분이 많은 진흙을 준설하고, 가래를 심고, 작은 물고기 대부분을 잡아냅니다(물벼룩이 더 많이 조류를 뜯도록). 이것들이 함께 고리를 맑은 물 쪽으로 돌립니다.',
+        flush: '유입을 막고 한동안 시냇물이 영양분과 조류를 씻어 내게 한 뒤, 맑아진 물에 가래를 심습니다.'
       }
     },
     'protect-flowers': {
-      story: 'A neighbour has just sprayed the meadow: most aphids and most ladybirds died. Keep the wildflowers for a year.',
-      target: 'Wildflowers at least {v} every week until week {w}.',
-      hint: 'The aphids come back faster than the ladybirds. When would new ladybirds find something to eat?',
-      explain: 'The aphids rebound before their hunters do. Ladybirds released too early starve, because there are no aphids yet; released too late, the wildflowers are already eaten. Timing decides.',
+      story: '이웃이 방금 초원에 약을 뿌렸습니다: 진딧물 대부분과 무당벌레 대부분이 죽었습니다. 들꽃을 한 해 동안 지키세요.',
+      target: '{w}주차까지 매주 들꽃 {v} 이상.',
+      hint: '진딧물은 무당벌레보다 빨리 돌아옵니다. 새 무당벌레가 먹이를 찾을 수 있는 때는 언제일까요?',
+      explain: '진딧물은 천적보다 먼저 회복합니다. 너무 일찍 풀어 준 무당벌레는 진딧물이 아직 없어 굶주리고, 너무 늦으면 들꽃이 이미 먹힌 뒤입니다. 시기가 결정합니다.',
       plans: {
-        ladybirds: 'Released after about ten weeks, when the aphids are back but before they peak, the ladybirds find food at once and stop the aphids in time.'
+        ladybirds: '약 열 주 뒤, 진딧물이 돌아왔지만 정점에 이르기 전에 풀어 주면 무당벌레가 곧바로 먹이를 찾고 제때 진딧물을 막습니다.'
       }
     },
     'bring-back-clover': {
-      story: 'Without foxes, rabbits have grazed the clover almost away. Bring the clover back for eight weeks in a row within four years.',
-      target: 'Clover at least {v} for eight weeks in a row, by week {w}.',
-      hint: 'Removing rabbits helps only for a while. What kept them in check before?',
-      explain: 'Rabbits multiply fast, so removing some only buys time. Lasting change needs the balancing loop back: foxes. Young foxes need half a year to grow up, so the clover comes back years later.',
+      story: '여우가 없어 토끼가 토끼풀을 거의 다 뜯어 먹었습니다. 네 해 안에 토끼풀을 여덟 주 연속으로 되살리세요.',
+      target: '{w}주차까지 토끼풀 {v} 이상, 여덟 주 연속.',
+      hint: '토끼를 없애는 것은 잠시만 도움이 됩니다. 예전에는 무엇이 토끼를 억눌렀나요?',
+      explain: '토끼는 빨리 불어나므로 일부를 없애는 것은 시간을 버는 것뿐입니다. 오래가는 변화에는 균형 고리, 곧 여우가 돌아와야 합니다. 어린 여우가 자라는 데 반년이 걸리니 토끼풀은 몇 년 뒤에야 돌아옵니다.',
       plans: {
-        foxes: 'Foxes alone are enough, but patience is needed: they bring the rabbits down slowly.',
-        foxesRabbits: 'Foxes plus relocating half the rabbits: the foxes start with fewer rabbits to catch up with.',
-        foxesRabbitsClover: 'Foxes, relocating most rabbits and sowing clover: the fastest way, because the clover gets a head start while the foxes grow up.'
+        foxes: '여우만으로도 충분하지만 인내가 필요합니다. 여우는 토끼를 천천히 줄입니다.',
+        foxesRabbits: '여우와 함께 토끼 절반을 옮기기: 여우가 따라잡아야 할 토끼가 줄어듭니다.',
+        foxesRabbitsClover: '여우, 토끼 대부분 옮기기, 토끼풀 씨 뿌리기: 가장 빠른 길입니다. 여우가 자라는 동안 토끼풀이 앞서 나가기 때문입니다.'
       }
     }
   },
   loops: {
-    graze: 'Water fleas graze the algae down; fewer algae, fewer water fleas.',
-    fishFleas: 'Small fish eat water fleas; fewer water fleas, fewer young fish.',
-    pikeFish: 'Pike eat small fish; fewer small fish, fewer young pike.',
-    clearWater: 'Algae shade the pondweed; pondweed holds the algae back. Whoever is ahead pulls further ahead.',
-    shelter: 'Pondweed hides water fleas from fish, and water fleas eat algae.',
-    recycle: 'Dead algae rot and feed new algae.',
-    aphidsFlowers: 'Aphids feed on the wildflowers; fewer wildflowers, fewer aphids.',
-    ladybirdsAphids: 'Ladybirds eat aphids; fewer aphids, fewer young ladybirds.',
-    rabbitsClover: 'Rabbits graze the clover; less clover, fewer young rabbits.',
-    foxesRabbits: 'Foxes hunt rabbits; fewer rabbits, fewer young foxes.',
-    thirst: 'Grasses use the soil water; dry soil slows the grasses.',
-    wormsDead: 'Earthworms eat dead leaves; fewer dead leaves, fewer earthworms.',
-    flowerUptake: 'Wildflowers take up the nutrients they grow from.'
+    graze: '물벼룩이 조류를 뜯어 줄입니다. 조류가 줄면 물벼룩도 줄어듭니다.',
+    fishFleas: '작은 물고기가 물벼룩을 먹습니다. 물벼룩이 줄면 어린 물고기도 줄어듭니다.',
+    pikeFish: '강꼬치고기가 작은 물고기를 먹습니다. 작은 물고기가 줄면 어린 강꼬치고기도 줄어듭니다.',
+    clearWater: '조류가 가래를 가리고, 가래가 조류를 억누릅니다. 앞선 쪽이 더 앞서 나갑니다.',
+    shelter: '가래가 물벼룩을 물고기로부터 숨겨 주고, 물벼룩은 조류를 먹습니다.',
+    recycle: '죽은 조류가 썩어 새 조류를 먹입니다.',
+    aphidsFlowers: '진딧물은 들꽃을 먹고 삽니다. 들꽃이 줄면 진딧물도 줄어듭니다.',
+    ladybirdsAphids: '무당벌레가 진딧물을 먹습니다. 진딧물이 줄면 어린 무당벌레도 줄어듭니다.',
+    rabbitsClover: '토끼가 토끼풀을 뜯습니다. 토끼풀이 줄면 새끼 토끼도 줄어듭니다.',
+    foxesRabbits: '여우가 토끼를 사냥합니다. 토끼가 줄면 어린 여우도 줄어듭니다.',
+    thirst: '풀이 흙 속 물을 씁니다. 흙이 마르면 풀이 느려집니다.',
+    wormsDead: '지렁이가 죽은 잎을 먹습니다. 죽은 잎이 줄면 지렁이도 줄어듭니다.',
+    flowerUptake: '들꽃은 자라는 데 필요한 영양분을 흡수합니다.'
   }
 };
