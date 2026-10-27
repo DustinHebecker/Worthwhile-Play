@@ -62,8 +62,8 @@ export const CLDS = {
   'fleas-arrive': {
     habitat: 'pond',
     nodes: ['nutrients', 'algae', 'fleas'],
-    edges: [e('nutrients', 'algae', 1), e('algae', 'nutrients', -1), ...GRAZE],
-    loops: [B_GRAZE, { id: 'B2', path: ['nutrients', 'algae'], key: 'uptake' }],
+    edges: [e('nutrients', 'algae', 1), ...GRAZE],
+    loops: [B_GRAZE],
     highlight: 'B1'
   },
   'enrich-swings': {
@@ -132,8 +132,8 @@ export const CLDS = {
   fertilise: {
     habitat: 'meadow',
     nodes: ['fertiliser', 'nutrients', 'grass', 'clover', 'flowers'],
-    edges: [e('fertiliser', 'nutrients', 1), e('nutrients', 'grass', 1), e('grass', 'nutrients', -1), e('grass', 'clover', -1), e('grass', 'flowers', -1)],
-    loops: [{ id: 'B1', path: ['nutrients', 'grass'], key: 'grassUptake' }],
+    edges: [e('fertiliser', 'nutrients', 1), e('nutrients', 'grass', 1), e('grass', 'clover', -1), e('grass', 'flowers', -1)],
+    loops: [],
     highlight: null,
     chain: ['fertiliser', 'nutrients', 'grass', 'clover']
   },

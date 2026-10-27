@@ -328,7 +328,7 @@ export function runGoalWeeks(s: GoalState, weeks: number | 'settle'): { state: G
         break;
       }
     }
-  } else runGoal(g, run, notebookActions(s), weeks);
+  } else runGoal(g, run, s.notebook.log, weeks);
   const status = goalStatus(g, run.samples);
   const week = status.kind === 'running' ? run.sim.week : Math.min(run.sim.week, status.week);
   const outcome: GoalOutcome | null = status.kind === 'running' ? null : { kind: status.kind, week: status.week };
@@ -441,7 +441,7 @@ export function isSim(x: unknown, habitat: Habitat): x is Sim {
     isNat(x.exp) &&
     isNat(x.wimp) &&
     isNat(x.wexp) &&
-    isArrayOf(x.cond, isInt, hab.conditions.length) &&
+    isArrayOf(x.cond, (c): c is number => isInt(c), hab.conditions.length) &&
     x.cond.every((c, k) => c >= 0 && c < hab.conditions[k]!.levels.length) &&
     balanced(x as unknown as Sim)
   );
