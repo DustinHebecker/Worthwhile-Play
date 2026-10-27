@@ -3,7 +3,7 @@
  * Intervals, chords and scales are spelled by letter steps from the root, so the letter distance always matches the
  * interval number. Pure.
  */
-import { CADENCE_PROGRESSIONS, CADENCE_STEPS, CHORD_TONES, LETTER_STEPS, SCALE_STEPS, SCALE_TONES, SEMITONES, cadenceVoices, type CadenceChord, type CadenceId, type ChordId, type IntervalId, type ScaleId } from './theory';
+import { CADENCE_PROGRESSIONS, CADENCE_STEPS, CHORD_TONES, LETTER_STEPS, SCALE_STEPS, SCALE_TONES, SEMITONES, cadenceVoices, pitchClass, recognise, type CadenceChord, type CadenceId, type ChordId, type IntervalId, type ScaleId } from './theory';
 
 export interface Spelled {
   /** Letter 0…6 = C D E F G A B. */
@@ -155,4 +155,78 @@ export function spellNear(from: Spelled, midi: number): Spelled {
     }
   }
   return defaultSpelling(midi);
+}
+
+/* ---------- Spelling what is held on the free keyboard (design § 7.7) ---------- */
+
+/** The other usual single-accidental spelling of the black keys (C♯/D♭ …); naturals have none here. */
+const ALTERNATIVE: Readonly<Record<number, Pick<Spelled, 'l' | 'a'>>> = { 1: { l: 0, a: 1 }, 3: { l: 1, a: 1 }, 6: { l: 4, a: -1 }, 8: { l: 4, a: 1 }, 10: { l: 5, a: 1 } };
+const spellingsOf = (pc: number): Pick<Spelled, 'l' | 'a'>[] => [ROOT_POOL[pc]!, ...(ALTERNATIVE[pc] ? [ALTERNATIVE[pc]] : [])];
+
+/** A letter and accidental placed at a MIDI note (the octave follows from the note). */
+export const placeAt = (la: Pick<Spelled, 'l' | 'a'>, midi: number): Spelled => ({ l: la.l, a: la.a, o: Math.floor((midi - NATURAL[la.l]! - la.a) / 12) - 1 });
+
+/** Rare spellings cost most, then accidentals, then two different notes written on the same letter and octave. */
+const cost = (notes: readonly Spelled[]): number => {
+  let c = 0;
+  notes.forEach((n, i) => {
+    c += (isRare(n) ? 10 : 0) + (n.a !== 0 ? 1 : 0);
+    if (notes.some((m, k) => k < i && diatonic(m) === diatonic(n) && midiOf(m) !== midiOf(n))) c += 100;
+  });
+  return c;
+};
+
+export interface HeldSpelling {
+  /** The held notes (ascending MIDI), spelled. */
+  readonly notes: Spelled[];
+  /** For a recognised chord: its root as spelled, the quality and the inversion (an augmented triad may be named from another tone). */
+  readonly chord?: { readonly root: Pick<Spelled, 'l' | 'a'>; readonly q: ChordId; readonly inversion: number };
+}
+
+/**
+ * Spells held notes by what they form (design § 7.8 applied to the free keyboard): an interval by letter steps from
+ * the lower note (a major third above E is G♯, never A♭), a chord in stacked thirds from its root (C♯ minor rather than
+ * D♭ minor with F♭; an augmented triad from the tone that needs no double sharp), anything else with the usual
+ * spellings, avoiding two notes on one letter. Among correct spellings the one with fewest rare spellings and
+ * accidentals wins. Pure.
+ */
+export function spellHeld(held: readonly number[]): HeldSpelling {
+  const notes = [...new Set(held)].sort((a, b) => a - b);
+  const r = recognise(notes);
+  let best: { notes: Spelled[]; cost: number; chord?: HeldSpelling['chord'] } | undefined;
+  const offer = (spelled: Spelled[], chord?: HeldSpelling['chord']) => {
+    const c = cost(spelled);
+    if (!best || c < best.cost) best = { notes: spelled, cost: c, ...(chord ? { chord } : {}) };
+  };
+  if (r.kind === 'chord') {
+    const bassPc = pitchClass(r.bass);
+    const roots = r.q === 'aug' ? [0, 4, 8].map((v) => pitchClass(r.rootPc + v)) : [r.rootPc];
+    for (const rootPc of roots)
+      for (const la of spellingsOf(rootPc)) {
+        const tones = spellChord({ ...la, o: 4 }, r.q);
+        if (!tones) continue;
+        const byPc = new Map(tones.map((t) => [pitchClass(midiOf(t)), t] as const));
+        const inversion = CHORD_TONES[r.q].findIndex((v) => pitchClass(rootPc + v) === bassPc);
+        offer(notes.map((m) => placeAt(byPc.get(pitchClass(m))!, m)), { root: la, q: r.q, inversion });
+      }
+  } else if (r.kind === 'interval' && r.ivl && pitchClass(r.high) !== pitchClass(r.low)) {
+    const lowPc = pitchClass(r.low);
+    const steps = r.ivl === 'TT' ? [3, 4] : [LETTER_STEPS[r.ivl]];
+    for (const la of spellingsOf(lowPc))
+      for (const st of steps) {
+        const up = spellAt(placeAt(la, r.low), st, pitchClass(r.high - r.low));
+        if (up) offer(notes.map((m) => placeAt(pitchClass(m) === lowPc ? la : up, m)));
+      }
+  } else {
+    const pcs = [...new Set(notes.map(pitchClass))];
+    const choices = pcs.filter((pc) => ALTERNATIVE[pc]);
+    for (let mask = 0; mask < 1 << choices.length; mask++) {
+      const pick = (pc: number) => {
+        const k = choices.indexOf(pc);
+        return k >= 0 && mask & (1 << k) ? ALTERNATIVE[pc]! : ROOT_POOL[pc]!;
+      };
+      offer(notes.map((m) => placeAt(pick(pitchClass(m)), m)));
+    }
+  }
+  return best ? { notes: best.notes, ...(best.chord ? { chord: best.chord } : {}) } : { notes: notes.map(defaultSpelling) };
 }

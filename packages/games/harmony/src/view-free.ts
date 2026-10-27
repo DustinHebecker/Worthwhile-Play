@@ -11,25 +11,9 @@ import { BASE_MAX, BASE_MIN, FREE_HIGH, FREE_LOW } from './levels';
 import { listOf, ratioLine, wavePicture } from './pictures';
 import { clearHeld, setBase, setMode, setOverlay, setTuning, toggleHeld, type KeyboardState } from './rules';
 import { renderStaff } from './staff-view';
-import { ROOT_POOL, defaultSpelling, midiOf, spellChord, type Spelled } from './spelling';
+import { ROOT_POOL, defaultSpelling, spellHeld } from './spelling';
 import { SCALES, SCALE_TONES, midiToFreq, pitchClass, pureRatio, recognise, type ScaleId } from './theory';
 import type { Host } from './view-host';
-
-/** Spelling of held notes: chord tones relative to a recognised root, else the usual spelling. */
-function spellHeld(held: readonly number[]): Spelled[] {
-  const r = recognise(held);
-  if (r.kind === 'chord') {
-    const tones = spellChord({ ...ROOT_POOL[r.rootPc]!, o: 4 }, r.q);
-    if (tones) {
-      const byPc = new Map(tones.map((s) => [pitchClass(midiOf(s)), s] as const));
-      return held.map((m) => {
-        const s = byPc.get(pitchClass(m));
-        return s ? { ...s, o: s.o + Math.round((m - midiOf(s)) / 12) } : defaultSpelling(m);
-      });
-    }
-  }
-  return held.map(defaultSpelling);
-}
 
 /** Frequencies of held notes: equal temperament, or pure ratios above the lowest held note. */
 export function heldFreqs(held: readonly number[], tuning: 'equal' | 'just'): number[] {
@@ -47,7 +31,7 @@ function namePanel(env: Env, state: KeyboardState): HTMLElement {
   const held = state.held;
   const panel = h('section', { class: 'hm-panel hm-free-panel', 'aria-live': 'polite', 'data-testid': 'hm-free-panel' });
   const r = recognise(held);
-  const spelled = spellHeld(held);
+  const { notes: spelled, chord } = spellHeld(held);
   let text: string;
   switch (r.kind) {
     case 'empty':
@@ -62,7 +46,7 @@ function namePanel(env: Env, state: KeyboardState): HTMLElement {
       break;
     }
     case 'chord':
-      text = t('free.chord', { root: env.note(ROOT_POOL[r.rootPc]!), name: env.chord(r.q), inversion: t(`free.inv${r.inversion}`) });
+      text = t('free.chord', { root: env.note(chord?.root ?? ROOT_POOL[r.rootPc]!), name: env.chord(r.q), inversion: t(`free.inv${chord?.inversion ?? r.inversion}`) });
       break;
     case 'unnamed':
       text = t('free.noName', { list: listOf(r.above.map((s) => env.semitones(s))) });
@@ -125,6 +109,7 @@ export function freeScreen(host: Host, state: KeyboardState): HTMLElement[] {
     }
   }
   const panel = namePanel(env, state);
+  const heldSpelled = spellHeld(state.held).notes;
   const octaves = host.narrow() ? 1 : 2;
   const start = Math.min(12 * (state.base + 1), FREE_HIGH + 1 - 12 * octaves);
   const piano = renderPiano({
@@ -136,14 +121,14 @@ export function freeScreen(host: Host, state: KeyboardState): HTMLElement[] {
     layout: host.prefs().keys,
     marks,
     toggle: state.mode === 'hold',
-    spell: (m) => spellHeld([m])[0]!,
+    spell: (m) => heldSpelled[state.held.indexOf(m)] ?? defaultSpelling(m),
     onPress: (m) => {
       if (host.paused()) return;
       if (state.mode === 'play') {
         host.play(keyEvents(midiToFreq(m)));
         // Shown while it plays (cosmetic; never state): the name panel names the last played key.
         const name = panel.querySelector('[data-testid="hm-free-name"]');
-        if (name) name.textContent = env.noteOct(spellHeld([m])[0]!);
+        if (name) name.textContent = env.noteOct(defaultSpelling(m));
         host.announce(env.spokenMidi(m));
       } else {
         const next = toggleHeld(state, m);

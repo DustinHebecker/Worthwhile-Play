@@ -14,10 +14,11 @@ import {
   spellDown,
   spellNear,
   spellScale,
+  spellHeld,
   spellUp,
   type Spelled
 } from '../src/spelling';
-import { CHORDS, CHORD_TONES, INTERVALS, LETTER_STEPS, SCALES, SCALE_TONES, SEMITONES, pitchClass } from '../src/theory';
+import { CHORDS, CHORD_TONES, INTERVALS, LETTER_STEPS, SCALES, SCALE_TONES, SEMITONES, intervalOfSemitones, pitchClass } from '../src/theory';
 
 const s = (l: number, a: -1 | 0 | 1, o: number): Spelled => ({ l, a, o });
 const name = (n: Spelled | undefined) => (n ? `${'CDEFGAB'[n.l]}${n.a === 1 ? '#' : n.a === -1 ? 'b' : ''}${n.o}` : 'none');
@@ -150,5 +151,62 @@ describe('chords, scales and cadences', () => {
       })
     );
     expect(spellAt(s(0, 0, 4), 1, 4)).toBeUndefined();
+  });
+});
+
+describe('spellHeld (free keyboard)', () => {
+  const names = (held: number[]) => spellHeld(held).notes.map(name).join(' ');
+
+  it('spells an interval by letter steps from the lower note: a major third above E is G♯, never A♭', () => {
+    expect(names([64, 68])).toBe('E4 G#4');
+    expect(names([71, 75])).toBe('B4 D#5');
+    expect(names([66, 70])).toBe('F#4 A#4');
+    expect(names([60, 63])).toBe('C4 Eb4');
+    expect(names([65, 66])).toBe('F4 Gb4');
+    expect(names([70, 71])).toBe('A#4 B4');
+    expect(names([61, 64])).toBe('C#4 E4');
+    expect(names([60, 72])).toBe('C4 C5');
+    // Every two-note set: the letter distance matches the interval number (the tritone as a fourth or a fifth).
+    fc.assert(
+      fc.property(fc.integer({ min: 36, max: 82 }), fc.integer({ min: 1, max: 11 }), (low, size) => {
+        const [a, b] = spellHeld([low, low + size]).notes;
+        expect(midiOf(a!)).toBe(low);
+        expect(midiOf(b!)).toBe(low + size);
+        const steps = diatonic(b!) - diatonic(a!);
+        const ivl = intervalOfSemitones(size)!;
+        expect(ivl === 'TT' ? [3, 4] : [LETTER_STEPS[ivl]]).toContain(steps);
+      })
+    );
+  });
+
+  it('spells chords in stacked thirds from the usual root, never with a double accidental', () => {
+    expect(names([61, 64, 68])).toBe('C#4 E4 G#4');
+    expect(names([68, 71, 75])).toBe('G#4 B4 D#5');
+    expect(names([61, 64, 67])).toBe('C#4 E4 G4');
+    expect(names([63, 66, 69])).toBe('D#4 F#4 A4');
+    expect(names([61, 65, 68])).toBe('Db4 F4 Ab4');
+    // E augmented would need B♯; the symmetric triad is named from a tone that needs no rare spelling.
+    expect(names([64, 68, 72])).toBe('E4 Ab4 C5');
+    expect(spellHeld([64, 68, 72]).chord).toEqual({ root: { l: 5, a: -1 }, q: 'aug', inversion: 2 });
+    expect(names([59, 63, 67])).toBe('B3 Eb4 G4');
+    expect(spellHeld([61, 64, 68]).chord).toEqual({ root: { l: 0, a: 1 }, q: 'min', inversion: 0 });
+    for (const q of CHORDS)
+      for (let root = 48; root < 60; root++)
+        for (let inv = 0; inv < CHORD_TONES[q].length; inv++) {
+          const midis = CHORD_TONES[q].map((v, i) => root + v + (i < inv ? 12 : 0)).sort((x, y) => x - y);
+          const { notes, chord } = spellHeld(midis);
+          expect(notes.map(midiOf)).toEqual(midis);
+          expect(notes.every((n) => Math.abs(n.a) <= 1)).toBe(true);
+          expect(chord?.q).toBe(q);
+          // Stacked thirds (and the seventh): every tone is an even number of letters above the named root.
+          const r = chord!.root;
+          for (const n of notes) expect((((n.l - r.l) % 7) + 7) % 7 % 2).toBe(0);
+        }
+  });
+
+  it('keeps other sets on the usual spellings and avoids two notes on one letter', () => {
+    expect(names([65, 66, 70])).toBe('F4 Gb4 Bb4');
+    expect(names([60])).toBe('C4');
+    expect(spellHeld([]).notes).toEqual([]);
   });
 });
