@@ -233,6 +233,12 @@ function eventVisible(ev: SimEvent, live: ReadonlySet<number>, seen: (x: number,
     case 'site':
     case 'sold':
       return ev.side === side || seen(ev.x, ev.y);
+    // Drones: a launch is seen like a new unit; a landing and a replacement are the owner's business.
+    case 'drone-launched':
+      return ev.side === side || seen(ev.x, ev.y);
+    case 'drone-docked':
+    case 'drone-ready':
+      return ev.side === side;
     // A repair is the yard owner's business; another side hears of it only when it sees both the
     // unit and the yard (the event names the yard).
     case 'repaired':

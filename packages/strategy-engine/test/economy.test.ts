@@ -10,6 +10,7 @@ import {
   observe,
   resolveTurn,
   STRATEGY_RULESET,
+  STRATEGY_CARRIERS,
   STRATEGY_TOWERS,
   UNKNOWN_LEFT,
   validateCommand,
@@ -188,8 +189,9 @@ describe('economy (I6a, D8)', () => {
       expect({ ...net.archetypes[id], cost: 0, buildTurns: 0 }).toEqual({ ...BASE_RULESET.archetypes[id], cost: 0, buildTurns: 0 });
     }
     expect(Object.keys(STRATEGY_TOWERS).sort()).toEqual(Object.keys(BASE_RULESET.archetypes).filter((id) => id.startsWith('tower-')).sort());
-    // Every other archetype is unchanged.
-    for (const id of Object.keys(BASE_RULESET.archetypes)) if (!(id in STRATEGY_TOWERS)) expect(net.archetypes[id]).toBe(BASE_RULESET.archetypes[id]);
+    // Every other archetype is unchanged, except that the Scout Car carries a drone (owner decision 2026-10-27).
+    for (const id of Object.keys(BASE_RULESET.archetypes)) if (!(id in STRATEGY_TOWERS) && !(id in STRATEGY_CARRIERS)) expect(net.archetypes[id]).toBe(BASE_RULESET.archetypes[id]);
+    expect(net.archetypes.outrider).toEqual({ ...BASE_RULESET.archetypes.outrider, carrier: { kind: 'kite', leash: 5, rebuildTurns: 2 } });
     // Placed by the post, paid at once, a site for its build turns, then it shoots an enemy in range.
     let w = field();
     w = turn(w, [[{ side: 0, unit: 1, order: { type: 'build', kind: 'tower-gun', x: 2, y: 1 } }], []]).world;

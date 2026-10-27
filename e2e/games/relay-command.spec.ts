@@ -275,6 +275,31 @@ test('relay-command: the map is drawn from the side or from above; the choice st
   expect(await picture()).not.toBe(above);
 });
 
+test('relay-command: a Scout Car launches its drone on a phone; the drone stays in the air after a reload and lands again (owner decision 2026-10-27)', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await start(page);
+  // Marsh Delta: two Scout Cars per side, inside the own radio cover from the start.
+  await page.getByTestId('rc-scenario').selectOption('marsh-delta');
+  await expect.poll(async () => (await saved(page))?.world.entities.some((e) => e.side === 0 && e.kind === 'outrider')).toBe(true);
+  const car = (await saved(page))!.world.entities.find((e) => e.side === 0 && e.kind === 'outrider')!;
+  await page.getByTestId(`rc-unit-${car.id}`).click();
+  await page.getByTestId('rc-launch').click();
+  await expect(page.getByTestId('rc-launch')).toBeDisabled();
+  await page.getByTestId('rc-lock').click();
+  await expect.poll(async () => (await saved(page))?.world.entities.some((e) => e.kind === 'kite' && e.side === 0)).toBe(true);
+  const drone = (await saved(page))!.world.entities.find((e) => e.kind === 'kite' && e.side === 0)!;
+  await expect(page.getByTestId('rc-summary')).toContainText('launched its drone');
+  await page.reload();
+  await page.getByTestId('continue').click();
+  await page.getByTestId(`rc-unit-${drone.id}`).click();
+  await expect(page.getByTestId('rc-recall')).toBeVisible();
+  await page.getByTestId('rc-recall').click();
+  await page.getByTestId('rc-lock').click();
+  await expect.poll(async () => (await saved(page))?.world.entities.some((e) => e.id === drone.id)).toBe(false);
+  await expect(page.getByTestId('rc-summary')).toContainText('landed on');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+});
+
 test('relay-command: a random map chosen in the setup (size, map number) survives a reload; it fits a 360 px phone', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 740 });
   await start(page);

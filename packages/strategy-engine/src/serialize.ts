@@ -31,6 +31,8 @@ export const isValidOrder = (v: unknown, w: number, h: number): v is Order => {
     case 'repair':
       return isInt(v.target, 1, MAX_ID);
     case 'sell':
+    case 'launch':
+    case 'recall':
       return Object.keys(v).length === 1;
     default:
       return false;
@@ -39,11 +41,11 @@ export const isValidOrder = (v: unknown, w: number, h: number): v is Order => {
 
 const isKind = (v: unknown): v is string => typeof v === 'string' && v.length > 0 && v.length <= 64;
 
-/** Orders a unit can stand under (`produce`, `build`, `repair` and `sell` are one-shot commands, never standing orders). */
+/** Orders a unit can stand under (`produce`, `build`, `repair`, `sell` and `launch` are one-shot commands, never standing orders). */
 const isStandingOrder = (v: unknown, w: number, h: number): v is Order => isValidOrder(v, w, h) && !isOneShotOrder(v);
 
 /** One-shot economy commands: carried out at once, the unit's standing order stays. */
-export const isOneShotOrder = (o: Order): boolean => o.type === 'produce' || o.type === 'build' || o.type === 'repair' || o.type === 'sell';
+export const isOneShotOrder = (o: Order): boolean => o.type === 'produce' || o.type === 'build' || o.type === 'repair' || o.type === 'sell' || o.type === 'launch';
 
 const isStatus = (v: unknown): v is Status => isRecord(v) && isOneOf(v.kind, STATUS_KINDS) && isInt(v.ticks, 1, 10_000);
 
@@ -105,6 +107,7 @@ export function isValidWorld(value: unknown, ruleset?: Ruleset): value is World 
     (e.build === undefined || validBuild(e, ruleset)) &&
     (e.beam === null || (isRecord(e.beam) && isInt(e.beam.target, 1, MAX_ID) && isInt(e.beam.stacks, 0, 1000))) &&
     (e.deploy === undefined || validDeploy(e, ruleset)) &&
+    validDroneFields(e, ruleset) &&
     (e.doctrine === undefined || isValidDoctrine(e.doctrine)) &&
     (e.hitAt === undefined || isInt(e.hitAt, 0, tick)) &&
     (e.bumps === undefined || isInt(e.bumps, 0, DEADLOCK_TICKS)) &&
@@ -125,6 +128,7 @@ export function isValidWorld(value: unknown, ruleset?: Ruleset): value is World 
   if (!isArrayOf(value.entities, isEntity) || !isArrayOf(value.projectiles, isProjectile)) return false;
   const entities = value.entities;
   for (let i = 1; i < entities.length; i++) if ((entities[i] as Entity).id <= (entities[i - 1] as Entity).id) return false;
+  if (!validDroneLinks(entities, ruleset)) return false;
   if (ruleset && (ruleset.fog ? value.intel === undefined : value.intel !== undefined)) return false;
   if (value.intel !== undefined && !validIntel(value.intel, entities, { w, h, sides, tick, nextId }, ruleset)) return false;
   // A side that is out knows nothing any more.
@@ -161,6 +165,33 @@ function validQueue(e: Record<string, unknown>, ruleset: Ruleset | undefined): b
     return !!product && product.buildTurns > 0 && (yard?.production?.includes(q.kind) ?? false) && isInt(q.left, 0, product.buildTurns);
   };
   return isArrayOf(e.queue, isItem) && e.queue.length <= MAX_QUEUE;
+}
+
+/**
+ * Drone fields: `drone` and `rebuild` only on a carrier (never both; `rebuild` within its
+ * rebuild time), `carrier` on anything that can fly. Their links are checked in `validDroneLinks`.
+ */
+function validDroneFields(e: Record<string, unknown>, ruleset: Ruleset | undefined): boolean {
+  if (e.drone === undefined && e.rebuild === undefined && e.carrier === undefined) return true;
+  if (e.side === NEUTRAL) return false;
+  const spec = ruleset ? archetypeOf(ruleset, e.kind as string)?.carrier : undefined;
+  if (e.drone !== undefined && (!isInt(e.drone, 1, MAX_ID) || e.rebuild !== undefined || (ruleset && !spec))) return false;
+  if (e.rebuild !== undefined && (!isInt(e.rebuild, 1, spec?.rebuildTurns ?? 1000) || (ruleset && !spec))) return false;
+  if (e.carrier !== undefined && (!isInt(e.carrier, 1, MAX_ID) || (ruleset && archetypeOf(ruleset, e.kind as string)?.layer !== 'air'))) return false;
+  return true;
+}
+
+/** A carrier's drone exists, is its kind, of its side and names it as carrier, and the other way round. */
+function validDroneLinks(entities: readonly Entity[], ruleset: Ruleset | undefined): boolean {
+  const byId = new Map(entities.map((e) => [e.id, e]));
+  for (const e of entities) {
+    if (e.drone !== undefined) {
+      const d = byId.get(e.drone);
+      if (!d || d.side !== e.side || d.carrier !== e.id || (ruleset && d.kind !== archetypeOf(ruleset, e.kind)?.carrier?.kind)) return false;
+    }
+    if (e.carrier !== undefined && byId.get(e.carrier)?.drone !== e.id) return false;
+  }
+  return true;
 }
 
 /** Construction only on structures that can be built, within their build time. */

@@ -110,6 +110,27 @@ export const normalizeDoctrine = (d: Doctrine): Doctrine => ({
 
 export const findEntity = (world: World, id: number): Entity | undefined => world.entities.find((e) => e.id === id);
 
+/** The carrier a drone belongs to (same side, carrying it), if any. */
+export function carrierOf(world: World, drone: Entity): Entity | undefined {
+  if (drone.carrier === undefined) return undefined;
+  const carrier = findEntity(world, drone.carrier);
+  return carrier && carrier.side === drone.side && carrier.drone === drone.id ? carrier : undefined;
+}
+
+/** Where a carrier's drone is: aboard (can be launched), in the air, or being replaced. */
+export function droneState(ruleset: Ruleset, e: Entity): 'aboard' | 'flying' | 'rebuilding' | undefined {
+  if (!archetypeOf(ruleset, e.kind)?.carrier) return undefined;
+  return e.drone !== undefined ? 'flying' : e.rebuild !== undefined ? 'rebuilding' : 'aboard';
+}
+
+/** Whether (x, y) lies within the leash of a drone's carrier (true for anything that is not a drone on a leash). */
+export function withinLeash(world: World, ruleset: Ruleset, drone: Entity, x: number, y: number): boolean {
+  const carrier = carrierOf(world, drone);
+  const leash = carrier ? archetypeOf(ruleset, carrier.kind)?.carrier?.leash : undefined;
+  if (!carrier || leash === undefined) return true;
+  return (x - carrier.x) ** 2 + (y - carrier.y) ** 2 <= leash * leash;
+}
+
 export type CommandCheck =
   | { ok: true }
   | { ok: false; reason: CommandRefusal };
@@ -120,7 +141,8 @@ export type CommandCheck =
  * command source, or the kind is no buildable structure), `not-buildable` (cell not free,
  * passable, inside own coverage, or an Extractor off a deposit / another structure on one),
  * `cannot-repair` (not a finished yard making that kind, or the unit not own, damaged and next to
- * it), `cannot-sell` (not a finished structure, or a command source).
+ * it), `cannot-sell` (not a finished structure, or a command source). Drones: `cannot-launch` (no
+ * carrier, or its drone is not aboard), `leash` (a destination beyond the drone's leash).
  */
 export type CommandRefusal =
   | 'unknown-unit'
@@ -139,7 +161,9 @@ export type CommandRefusal =
   | 'cannot-build'
   | 'not-buildable'
   | 'cannot-repair'
-  | 'cannot-sell';
+  | 'cannot-sell'
+  | 'cannot-launch'
+  | 'leash';
 
 /**
  * Rule check for a single command against the current world. Never throws. Pass `networks`
@@ -165,6 +189,7 @@ export function validateCommand(world: World, ruleset: Ruleset, command: Command
         return { ok: false, reason: 'out-of-bounds' };
       }
       if (!passable(world.map, ruleset, order.x, order.y, arch.layer)) return { ok: false, reason: 'impassable' };
+      if (!withinLeash(world, ruleset, unit, order.x, order.y)) return { ok: false, reason: 'leash' };
       return { ok: true };
     case 'deploy':
       return needsDeploy(arch) ? { ok: true } : { ok: false, reason: 'bad-order' };
@@ -175,6 +200,7 @@ export function validateCommand(world: World, ruleset: Ruleset, command: Command
       for (const [x, y] of [[order.x, order.y], [order.rx, order.ry]] as const) {
         if (!Number.isInteger(x) || !Number.isInteger(y) || !inBounds(world.map, x, y)) return { ok: false, reason: 'out-of-bounds' };
         if (!passable(world.map, ruleset, x, y, arch.layer)) return { ok: false, reason: 'impassable' };
+        if (!withinLeash(world, ruleset, unit, x, y)) return { ok: false, reason: 'leash' };
       }
       return { ok: true };
     case 'escort': {
@@ -238,6 +264,10 @@ export function validateCommand(world: World, ruleset: Ruleset, command: Command
       if (!ruleset.economy) return { ok: false, reason: 'bad-order' };
       if (arch.speed !== 0 || arch.comms?.role === 'source' || !isReady(unit)) return { ok: false, reason: 'cannot-sell' };
       return { ok: true };
+    case 'launch':
+      return droneState(ruleset, unit) === 'aboard' && isReady(unit) && archetypeOf(ruleset, arch.carrier?.kind ?? '') ? { ok: true } : { ok: false, reason: 'cannot-launch' };
+    case 'recall':
+      return carrierOf(world, unit) ? { ok: true } : { ok: false, reason: 'bad-order' };
     default:
       return { ok: false, reason: 'bad-order' };
   }
@@ -278,6 +308,10 @@ export function normalizeOrder(order: Order): Order {
       return { type: 'repair', target: order.target };
     case 'sell':
       return { type: 'sell' };
+    case 'launch':
+      return { type: 'launch' };
+    case 'recall':
+      return { type: 'recall' };
     default:
       return { type: 'hold' };
   }
