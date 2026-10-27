@@ -852,3 +852,14 @@ Everything of §§ 5–20 is implemented in the order of § 23. Where the code d
 - **Physical letter keys** for the piano are named per keyboard layout in the help text (QWERTZ: A W S E D F T G Z H U J K; AZERTY: Q Z S E D F T G Y H U J K).
 - **Generation budget:** 0.04–1.8 ms per round (Node, after warm-up); `generate.slow.test.ts` (2,000 seeds × 18 topic/level pairs) never needed a relaxed or fixed draw.
 - **Chunks** (`pnpm build`, raw / gzip): game chunk 212 / 69 kB including the 16 UI catalogues; content per locale 2.8–6.3 / 1.4–2.0 kB; styles 9.9 / 2.4 kB.
+
+## Review notes (independent reviewer, 2026-10-27)
+
+Music theory verified independently (every interval, chord and scale of 299 seeds × 3 levels against a separate letter/semitone model; 25+ items by hand; cadence voice leading; German/Polish H/B, solfège per locale, the zh prefix rule). Changes made in review:
+
+- **Free keyboard spelling** (`spellHeld` in `spelling.ts`): held notes are spelled by what they form — an interval by letter steps from the lower note (E + G♯, not E + A♭), a chord in stacked thirds from the enharmonic root with fewer rare spellings (C♯ minor, not D♭ minor with F♭; an augmented triad from a tone needing no double sharp), other sets with the usual spellings while avoiding two notes on one letter. The name panel uses the same root.
+- **Natural signs** (`naturalSigns` in `staff.ts`): no key signature and accidentals hold to the end of the bar, so a natural note after (or beside) the same letter and octave with an accidental gets an own-path ♮ (e.g. melody B of "which note changed?" in the review). Two notes on one position sit side by side like a second.
+- **Half rest** for two quarter rests filling beats 1–2 or 3–4 (hard rhythms).
+- **Step words**: German GT/HT and Polish 1/½ (G, H and C are note names there).
+- **Wave caption** is a plural content form per locale ("with every wave", "every 2 waves", ru 2 волны / 5 волн).
+- **Level cap**: the overlap count uses the lengthened duration of notes shorter than the attack.
