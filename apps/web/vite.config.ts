@@ -41,9 +41,10 @@ export default defineConfig(({ mode }) => ({
         ]
       },
       workbox: {
-        // Core app and all bundled games are precached: they must work offline after the first visit.
+        // Core app, all bundled games and the card preview photos (webp) are precached: they must work offline after the
+        // first visit.
         // Large optional packs (audio, AI models) will use separate, explicitly user-triggered caches.
-        globPatterns: ['**/*.{js,css,html,svg,png,ico,webmanifest,txt}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,webp,ico,webmanifest,txt}'],
         // The link-preview image is only fetched by link unfurlers, never by the app.
         globIgnores: ['og-image.png', 'favicon-16.png', 'favicon-48.png'],
         navigateFallback: '/index.html',

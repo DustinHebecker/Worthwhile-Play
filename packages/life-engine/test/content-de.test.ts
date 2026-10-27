@@ -5,6 +5,9 @@ import {
 } from '../src';
 import { testRngFor } from './helpers';
 
+/** Whole-life simulations: a generous timeout so they stay reliable on loaded machines. */
+const HEAVY = 120_000;
+
 const systems = lifeSystems(PROFILE_DE);
 const params = new Set(ALL_PARAMS.map((p) => p.id));
 
@@ -44,7 +47,7 @@ describe('Germany event pack', () => {
       expect(isLifeState(s)).toBe(true);
       expect(ageInYears(s.month)).toBeGreaterThanOrEqual(16);
     }
-  });
+  }, HEAVY);
 
   it('reaches every event over many lives', () => {
     const all = new Map<string, number>();
@@ -55,7 +58,7 @@ describe('Germany event pack', () => {
     const never = EVENTS_DE.map((e) => e.id).filter((id) => !all.has(id));
     // The work accident (≈ 20 ppm per month) is too rare to appear in 150 lives.
     expect(never.filter((id) => id !== 'health.work-accident')).toEqual([]);
-  });
+  }, HEAVY);
 
   it('keeps university reachable without a recommendation (via the detour)', () => {
     const prefer = ['detour', 'study', 'exams', 'job', 'full-time', 'average', 'support', 'rehab'];
@@ -74,5 +77,5 @@ describe('Germany event pack', () => {
     // Without a recommendation the detour (+2 years) still leads to a degree in about 65 % of cases.
     expect(graduates / blocked).toBeGreaterThan(0.5);
     expect(graduates / blocked).toBeLessThan(0.8);
-  });
+  }, HEAVY);
 });

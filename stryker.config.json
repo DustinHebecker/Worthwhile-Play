@@ -35,6 +35,11 @@
     "packages/games/timeline/src/score.ts",
     "packages/games/timeline/src/axis.ts",
     "packages/games/timeline/src/generate.ts",
+    "packages/games/ecosystem/src/model.ts",
+    "packages/games/ecosystem/src/shape.ts",
+    "packages/games/ecosystem/src/score.ts",
+    "packages/games/ecosystem/src/goals.ts",
+    "packages/games/ecosystem/src/cld.ts",
     "!**/*.d.ts",
     "!packages/learning-content/src/builtin/**"
   ],

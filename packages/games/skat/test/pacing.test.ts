@@ -46,7 +46,8 @@ describe('reveal pacing', () => {
         if (!step.hold) expect(step.winner).toBeNull();
       });
     }
-  });
+    // Five seeds of real computer play (search): about 5 s alone, beyond the 20 s default on a busy machine.
+  }, 60_000);
 
   it('can start with the unchanged table (a new deal before the computers bid)', () => {
     const start = startSeries(newGame(5));

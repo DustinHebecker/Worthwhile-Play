@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { decide } from '../src/ai';
 import { advance } from '../src/driver';
-import { DEFAULT_SETTINGS, fightTotals, newGame, observe, step, type CardQuestState } from '../src/rules';
+import { actorOf, DEFAULT_SETTINGS, fightTotals, newGame, observe, step, type CardQuestState } from '../src/rules';
 import { worldDecks } from '../src/worlds';
 import { selfPlay } from './harness';
 
@@ -55,7 +55,7 @@ describe('computer players', () => {
   it('advance stops exactly when the person has to decide', () => {
     let s = step(newGame(21), 0, { a: 'start', settings: { ...DEFAULT_SETTINGS, opponents: 5 } })!;
     s = advance(s);
-    const actor = s.phase === 'fight' ? s.fight!.actor : s.active;
+    const actor = actorOf(s);
     expect(actor).toBe(0);
   });
 });

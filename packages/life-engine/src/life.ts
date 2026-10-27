@@ -133,14 +133,15 @@ export function budget(s: LifeState, profile: Profile): BudgetItem[] {
     // Tax schedules and benefit levels move with prices (no bracket creep in the model): taxes are
     // computed at start prices and scaled back.
     items.push({ category: 'salary', cents: Math.round(profile.netPay(Math.round(gross / prices)) * prices) });
-  } else if (has(s, 'work.unemployed') && counter(s, 'ui.left') > 0) {
+  } else if (has(s, 'work.unemployed') && counter(s, 'ui.left') > 0 && profile.unemploymentInsurance.replacement > 0) {
     items.push({ category: 'unemployment-insurance', cents: Math.round(counter(s, 'work.last-net') * profile.unemploymentInsurance.replacement) });
   } else if (has(s, 'work.training') || has(s, 'work.study')) {
     const support = profile.educationSupport(has(s, 'parents.low-income'));
-    items.push({ category: support.category, cents: Math.round(support.cents * prices) });
+    if (support.cents > 0) items.push({ category: support.category, cents: Math.round(support.cents * prices) });
   } else if (has(s, 'work.home-parent') && partner) {
     // Caring for the children at home while the partner earns: no own income, no benefit.
-  } else if (age >= 18 && !has(s, 'work.retired')) {
+  } else if (age >= 18 && !has(s, 'work.retired') && profile.basicSupport(atParents) > 0) {
+    // Profiles without a general cash minimum income (India) book nothing here.
     items.push({ category: 'basic-support', cents: Math.round(profile.basicSupport(atParents) * prices) });
   }
   const kids = childAges(s);
@@ -149,7 +150,7 @@ export function budget(s: LifeState, profile: Profile): BudgetItem[] {
       for (const a of kids) items.push({ category: 'child-support', cents: -Math.round(profile.childSupport(a) * prices) });
     } else {
       const share = partner || has(s, 'children.shared') ? 0.5 : 1;
-      items.push({ category: 'child-benefit', cents: Math.round(kids.length * profile.childBenefit() * share * prices) });
+      if (profile.childBenefit() > 0) items.push({ category: 'child-benefit', cents: Math.round(kids.length * profile.childBenefit() * share * prices) });
       const cost = kids.reduce((sum, a) => sum + profile.childCost(a), 0);
       items.push({ category: 'children', cents: -Math.round(cost * share * prices) });
     }

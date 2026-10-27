@@ -125,6 +125,33 @@ Sampled **jointly** (Gaussian copula over the profile's marginal distributions) 
 
 **Variance options** on the start screen (O10): random start · start from a band (e.g. "bottom 20 % of the profile") · choose profile and household.
 
+### 3.3 Implemented: South Asia (India) profile, first slice (E4a)
+
+`PROFILE_IN` (`packages/life-engine/src/profiles/in.ts`) and `EVENTS_IN` (`content/in.ts`). The start setting lists each region with a random household and each household (`random`, `de`, `basic-support`, `middle`, `in`, `street`, `upper-middle`, `wealthy`). Household ids are unique across profiles, so saves from the Germany-only version stay valid. Money is in rupees at 2026 prices; the economy replays India's CPI years. There is no real-wage series yet, so wages follow prices (IER 2024 reports regular salaries roughly flat in real terms 2019–24).
+
+| Area | Model | Basis |
+|---|---|---|
+| Households | Street (income percentile 1), upper middle (92), wealthy (99) | Census 2011 houseless; WID 2022-23 thresholds |
+| Pay | No qualification: casual work, daily wage × 16 days. Higher secondary or diploma: secondary-level salary s = urban average / (1 − g + g·p). Degree: p·s. Postgraduate: 1.3·p·s | PLFS 2023-24; graduate premium p = 2.25 (IER 2024); g and the postgraduate factor are **assumptions** |
+| Pay by sex | Raw ratios: regular women/men to the average; casual women to the average | PLFS 2023-24 |
+| Age profile | Rising to 1.5× from 22 to 47, then flat; normalised to mean 1 over 22–60 | IER 2024 (qualitative); the ratio is an **assumption** |
+| Tax | New regime FY 2025-26: standard deduction, slabs, zero tax up to ₹12 lakh with marginal relief, 4 % cess. Provident fund is left out (it is saving); so are surcharges | Statutory |
+| Living costs | Per-person spending (HCES 2023-24) turned into a single budget with the OECD scale for an assumed four-person household. Frugal = rural level, average = urban, comfortable = urban × middle-40 average/threshold. At the parents' home: half the urban per-person spending | HCES; household size is an **assumption** |
+| Safety net | No cash minimum income (rations are in kind), no unemployment insurance, no student support, no child benefit | — |
+| Children | 0.3 single budgets plus school spending weighted by the government-school share; child support half the child's cost (no statutory minimum; **assumption**) | CMS:E 2025 |
+| Labour market | Monthly job finding 10 % (no degree) or 5 % (graduates); job loss from the steady state with the PLFS unemployment rates by education (4.4 %, 8.6 %, 13 %). Regular jobs come with social security and employer health cover in 46.6 % of cases | PLFS 2023-24; the job-finding rates are **assumptions** |
+| Education | Government or private school. A 14.1 % yearly chance of pressure to leave school at 14–15. Streams after grade 10. Coaching. Elite seat 1.2 % on average (coaching assumed ×3), one drop year. Public college 3 years, private 4 years, vocational course 2 years, master 2 years | UDISE+, CMS:E, JEE numbers; the coaching odds ratio is an **assumption** |
+| Housing | Street → a rented room once there is regular work; otherwise moving out from 21 | — |
+| Health | Catastrophic hospital bill 16.5 % per household-year; bill = 2 months of average living costs (start prices, scaled by inflation) unless the job brings health cover | NSS 75th round; the bill size is an **assumption** |
+| Life review | Income (pre-tax, per adult) and wealth (per adult) percentiles from WID | WID 2022-23 |
+
+| Marriage (E4b) | Family-arranged match proposals from the legal minimum age (women 18, men 21): about 29,300 ppm per month for women 18–24 (median 19.2; marriages before 18 are not played) and 16,400 ppm for men 21–29 (median ≈ 24.5, **assumption**), lower afterwards, paused during education. A rare self-chosen partner (≈ 5 % of marriages). After the wedding, women are asked whether to keep working and men face the provider role | NFHS-5, IHDS-II, PLFS |
+| Children (E4b) | Child wish 8 %/month for married couples (**assumption**, calibrated so that a family wanting two children has about two); conception as for Germany (biology); maternity benefit at full pay for 26 weeks (12 from the third child), only with social security (proxy for an employer with 10+ staff) | Maternity Benefit (Amendment) Act 2017 |
+| Separation (E4b) | 40 ppm per month (from the divorced and separated stock, under-reported) | Census 2011 |
+| Parents (E4b) | Death of a parent from the life table, mother 22 and father 27 years older (**assumptions**) | UN WPP 2024 |
+
+The assumptions are parameters with the source `model-assumption` and status `unverified`. `checkParams` lists them, and they must be researched or confirmed before the release. Dowry is deliberately not modelled (§ 10). **Not yet in the slice:** care for parents, joint-family finances (in-laws' household), wealth transfers of wealthy families (gifts, family business, inheritance), tuition and coaching costs as money (the parents carry them, shown as strain), medical entrance exams, rural lives, and a sensitivity review of the texts.
+
 ---
 
 ## 4. Decisions and trade-off design

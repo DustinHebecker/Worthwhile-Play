@@ -107,7 +107,7 @@ export interface Fight {
   actor: number;
   /** Consecutive passes; the window closes when every player has passed in a row. */
   passes: number;
-  /** Die results of the flee rolls so far (one per monster). */
+  /** Die results of the flee rolls so far: the fighter's (one per monster), then the helper's (§ 5.5). */
   rolls: number[];
   /** Seat helping the fighter (its table strength counts for the fighter), or null. */
   helper: number | null;
@@ -136,7 +136,7 @@ export type LogEvent =
   | { e: 'escape'; seat: number; card: string }
   | { e: 'curse'; seat: number; card: string; target: number }
   | { e: 'won'; seat: number; levels: number; loot: number }
-  | { e: 'lost'; seat: number }
+  | { e: 'lost'; seat: number; helper?: number }
   | { e: 'flee'; seat: number; monster: string; roll: number; total: number; ok: boolean }
   | { e: 'penalty'; seat: number; p: Penalty['t']; card?: string; n?: number }
   | { e: 'equip'; seat: number; card: string }
@@ -342,6 +342,8 @@ export function actorOf(state: CardQuestState): number {
       return -1;
     case 'fight':
       return state.fight?.actor ?? state.active;
+    case 'flee':
+      return state.fight ? fleeTurn(state).seat : state.active;
     default:
       return state.active;
   }
@@ -492,10 +494,27 @@ export function monsterLoot(m: FightMonster): number {
   return Math.max(0, def.loot + m.boosters.reduce((a, b) => a + (defOf(b) as { loot: number }).loot, 0));
 }
 
-/** Flee bonus of the fighter (items, origins, professions, one-shots), without the monster's own modifier. */
-export function fleeBonus(state: CardQuestState): number {
-  const p = state.players[state.active] as Player;
-  let bonus = state.fight?.flee ?? 0;
+/**
+ * Flee rolls of a lost fight (owner 2026-10-27): the fighter flees from every monster, then the helper does too.
+ * A helper who changed sides is on the monsters' side and does not flee.
+ */
+export const fleeRollCount = (fight: Fight): number => fight.monsters.length * (fight.helper === null ? 1 : 2);
+
+/** Who flees next in a lost fight, and from which monster (index into `fight.monsters`). */
+export function fleeTurn(state: CardQuestState): { seat: number; monster: number } {
+  const fight = state.fight as Fight;
+  const i = fight.rolls.length;
+  const n = fight.monsters.length;
+  return { seat: i < n || fight.helper === null ? state.active : fight.helper, monster: i % n };
+}
+
+/**
+ * Flee bonus of a player in the fight (items, origins, professions), without the monster's own modifier. Flee
+ * one-shots played in the fight count for the fighter only.
+ */
+export function fleeBonus(state: CardQuestState, seat: number = state.active): number {
+  const p = state.players[seat] as Player;
+  let bonus = seat === state.active ? (state.fight?.flee ?? 0) : 0;
   for (const id of [...p.equipped, ...p.origins, ...p.professions]) {
     const def = defOf(id) as { flee?: number };
     bonus += def.flee ?? 0;
@@ -667,7 +686,7 @@ function resolveFight(state: CardQuestState): void {
     endFight(state);
     return;
   }
-  log(state, { e: 'lost', seat: state.active });
+  log(state, fight.helper === null ? { e: 'lost', seat: state.active } : { e: 'lost', seat: state.active, helper: fight.helper });
   fight.actor = state.active;
   state.phase = 'flee';
 }
@@ -1026,19 +1045,20 @@ function apply(s: CardQuestState, seat: number, action: Action): boolean {
     }
     case 'roll': {
       const fight = s.fight;
-      if (s.phase !== 'flee' || !fight || seat !== s.active) return false;
-      const index = fight.rolls.length;
-      const m = fight.monsters[index] as FightMonster;
+      if (s.phase !== 'flee' || !fight) return false;
+      const turn = fleeTurn(s);
+      if (seat !== turn.seat) return false;
+      const m = fight.monsters[turn.monster] as FightMonster;
       const def = defOf(m.card) as MonsterCard;
       const rng = createRngFromState(s.rng);
       const roll = rng.int(1, 6);
       s.rng = rng.state();
-      const total = roll + fleeBonus(s) + (def.flee ?? 0);
+      const total = roll + fleeBonus(s, seat) + (def.flee ?? 0);
       const ok = !def.noFlee && total >= FLEE_TARGET;
       fight.rolls.push(roll);
       log(s, { e: 'flee', seat, monster: m.card, roll, total, ok });
       if (!ok) for (const p of def.blunder) applyPenalty(s, seat, p);
-      if (fight.rolls.length >= fight.monsters.length) endFight(s);
+      if (fight.rolls.length >= fleeRollCount(fight)) endFight(s);
       return true;
     }
     case 'end': {
@@ -1275,7 +1295,7 @@ function isValidFight(v: unknown, known: Set<string>, seats: number): v is Fight
     isInt(v.actor, 0, seats - 1) &&
     isInt(v.passes, 0, seats) &&
     isArrayOf(v.rolls, (r): r is number => isInt(r, 1, 6)) &&
-    v.rolls.length <= v.monsters.length &&
+    v.rolls.length <= v.monsters.length * (v.helper === null ? 1 : 2) &&
     (v.helper === null || isInt(v.helper, 0, seats - 1)) &&
     (v.turncoat === null || isInt(v.turncoat, 0, seats - 1)) &&
     (v.helper === null ? v.deal === null : isValidTerms(v.deal) && v.deal.t !== 'stay') &&
@@ -1330,9 +1350,9 @@ function check(v: unknown): v is CardQuestState {
   if (state.players[0]!.personality !== null || state.players.slice(1).some((p) => p.personality === null)) return false;
   const inFight = state.phase === 'fight' || state.phase === 'flee';
   if (inFight ? !isValidFight(state.fight, known, seats) || !fightSeatsConsistent(state) : state.fight !== null) return false;
-  // A fight window has no flee rolls yet; while fleeing, at least one monster is still to roll for.
+  // A fight window has no flee rolls yet; while fleeing, at least one roll (fighter's or helper's) is still to come.
   if (state.phase === 'fight' && state.fight!.rolls.length !== 0) return false;
-  if (state.phase === 'flee' && state.fight!.rolls.length >= state.fight!.monsters.length) return false;
+  if (state.phase === 'flee' && state.fight!.rolls.length >= fleeRollCount(state.fight!)) return false;
   // Piles hold only cards of their kind.
   if ([...state.encounter, ...state.encounterDiscard].some((c) => isLootType(defOf(c).type))) return false;
   if ([...state.loot, ...state.lootDiscard].some((c) => !isLootType(defOf(c).type))) return false;
@@ -1394,8 +1414,9 @@ function isValidEvent(v: unknown, known: Set<string>, seats: number): v is LogEv
   switch (v.e) {
     case 'turn':
     case 'rummage':
-    case 'lost':
       return seat(v.seat);
+    case 'lost':
+      return seat(v.seat) && (v.helper === undefined || seat(v.helper));
     case 'open':
     case 'challenge':
     case 'equip':

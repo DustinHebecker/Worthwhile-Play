@@ -12,11 +12,11 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-function setup(seed = 11, locale: Parameters<typeof createTestContext>[1] = 'en') {
+function setup(seed = 11, locale: Parameters<typeof createTestContext>[1] = 'en', household = 'de') {
   const ctx = createTestContext(game as never, locale);
   const instance = game.create(ctx.context);
   running.push(instance);
-  instance.newGame({ seed });
+  instance.newGame({ seed, settings: { household } });
   return { ctx, instance, root: ctx.context.root };
 }
 
@@ -69,6 +69,18 @@ describe('Many Lives view', () => {
     // A restored finished life shows the review again but is not reported twice.
     instance.restore(instance.serialize());
     expect(ctx.results).toHaveLength(1);
+  });
+
+  it('shows the Indian region with its own scene, events and rupees', () => {
+    const { root, instance } = setup(4, 'en', 'street');
+    expect(byId(root, 'ml-region')?.textContent).toBe('A large country in South Asia (calibrated on India)');
+    expect(byId(root, 'ml-event-title')?.textContent).toBe('Starting school');
+    expect(root.querySelector('.ml-s-tarp')).not.toBeNull();
+    byId(root, 'ml-choice-government')!.click();
+    const s = instance.serialize();
+    expect(s.life.flags).toContain('school.government');
+    instance.restore({ ...s, life: { ...s.life, month: 16 * 12 + 1, ledger: { balances: { cash: 1_000_000 }, flows: {}, opening: 1_000_000 } } });
+    expect(byId(root, 'ml-cash')?.textContent).toContain('₹');
   });
 
   it('reset returns to the seeded start of the same life', () => {
