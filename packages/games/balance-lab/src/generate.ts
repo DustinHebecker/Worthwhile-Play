@@ -110,7 +110,20 @@ export function beamPredict(rng: Rng, d: Difficulty, needs: PredictNeeds): TaskS
   for (let i = 0; i < TRIES * 2; i++) {
     const hard = d === 'hard' && rng.next() < 0.5;
     const axle = hard ? rng.int(-2, 2) : 0;
-    const scene: BeamScene = { half: p.half, axle, barKg: hard ? rng.int(2, 6) : 0, weights: randomBeamWeights(rng, p.half, rng.int(p.weights[0], p.weights[1]), p.maxKg, axle) };
+    const count = rng.int(p.weights[0], p.weights[1]);
+    const scene: BeamScene = { half: p.half, axle, barKg: hard ? rng.int(2, 6) : 0, weights: randomBeamWeights(rng, p.half, needs.exact ? count - 1 : count, p.maxKg, axle) };
+    if (needs.exact) {
+      // Exact balances are rare among random scenes: complete the scene with one weight that levels it.
+      const net = beamNet(scene);
+      const options: { kg: number; hook: number }[] = [];
+      for (let hook = -p.half; hook <= p.half; hook++) {
+        const d = hook - axle;
+        if (d === 0 || scene.weights.filter((w) => w.hook === hook).length >= 3) continue;
+        if ((-net) % d === 0 && -net / d >= 1 && -net / d <= p.maxKg) options.push({ kg: -net / d, hook });
+      }
+      if (options.length === 0) continue;
+      scene.weights.push(rng.pick(options));
+    }
     const v = beamVerdict(scene);
     if (needs.exact !== (v === 'level')) continue;
     if (!needs.exact && beamMargin(scene) < p.margin) continue;
