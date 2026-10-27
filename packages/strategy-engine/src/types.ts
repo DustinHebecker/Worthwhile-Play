@@ -406,6 +406,13 @@ export type SimEvent =
    * gets no report of it (its plans and the opponent's stay as they were); the player sees a mark.
    */
   | { t: 'flash'; tick: number; id: number; side: number; kind: string; x: number; y: number }
+  /**
+   * Reports only: an intercepted order (owner choice 2026-10-27). A hostile unit received an order
+   * within the radius of one of the side's reporting Direction Finders (`by`): the side fixes it where
+   * it stood and keeps it spotted until the turn ends (its guns may engage it like any sighting).
+   * Told only to `to`, the intercepting side (the sender does not learn it was heard).
+   */
+  | { t: 'intercept'; tick: number; id: number; side: number; kind: string; x: number; y: number; by: number; to: number }
   /** A Command Post changed sides (`from` may be NEUTRAL): told to whoever sees its cell or owns or owned it. */
   | { t: 'captured'; tick: number; id: number; kind: string; x: number; y: number; from: number; to: number }
   /** A side owned no Command Post at the end of a turn and is out (told to every side). */

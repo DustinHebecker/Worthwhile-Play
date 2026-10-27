@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   carrierOf,
+  cellOf,
+  computeNetwork,
   createWorld,
   droneState,
   isValidWorld,
@@ -39,6 +41,34 @@ const launch = (w: World): Command => ({ side: 0, unit: kind(w, 'outrider').id, 
 const launched = (extra: Scenario['entities'] = []) => play(base(extra), 1, [launch(base(extra))]).world;
 
 describe('drones', () => {
+  it('a drone keeps radio contact through its carrier (owner review 2026-10-27): beyond the net it relays while the car stands in coverage', () => {
+    const w = launched();
+    const at = (world: World, id: number, x: number) => {
+      const copy = structuredClone(world);
+      Object.assign(copy.entities.find((e) => e.id === id)!, { x });
+      return copy;
+    };
+    const drone = kind(w, 'kite');
+    const car = kind(w, 'outrider');
+    // The post (radius 5) covers x <= 6. The drone 6 cells out is beyond the post's reach for a
+    // relay of radius 3, yet linked to its car at x = 2: it is a node and covers 3 cells around it.
+    const out = at(w, drone.id, 7);
+    const net = computeNetwork(out, rs, 0);
+    expect(net.nodes).toContain(drone.id);
+    expect(net.coverage[cellOf(out.map, 10, 2)]).toBe(1);
+    expect(net.coverage[cellOf(out.map, 11, 2)]).toBe(0);
+    // The car itself out of coverage: no link, and the drone is cut off as any relay would be.
+    const lost = at(at(out, car.id, 8), drone.id, 12);
+    const cut = computeNetwork(lost, rs, 0);
+    expect(cut.nodes).not.toContain(drone.id);
+    expect(cut.coverage[cellOf(lost.map, 12, 2)]).toBe(0);
+    // An enemy drone never joins the own net, and a drone without its car (not the car's) has no link.
+    expect(computeNetwork(out, rs, 1).nodes).not.toContain(drone.id);
+    const orphan = structuredClone(out);
+    delete orphan.entities.find((e) => e.id === car.id)!.drone;
+    expect(computeNetwork(orphan, rs, 0).nodes).not.toContain(drone.id);
+  });
+
   it('a Scout Car launches its drone with one order: it takes off above the car and escorts it; the car keeps its order', () => {
     const w = base();
     const car = kind(w, 'outrider');

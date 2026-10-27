@@ -226,3 +226,60 @@ describe('attack orders a weapon cannot carry out', () => {
     expect(validateCommand(w, rs, { side: 0, unit: 2, order: { type: 'attack', target: 3 } })).toEqual({ ok: false, reason: 'bad-target' });
   });
 });
+
+describe('direction finding of orders (owner choice 2026-10-27)', () => {
+  // Side 0: post at 1, Direction Finder at 4 (hears 6 cells, sees 4). Side 1: post at 12 (covers x >= 7).
+  const base = (riflesAt = 10) =>
+    worldOf(open(14, 5), [
+      { side: 0, kind: 'command-post', x: 1, y: 2 },
+      { side: 0, kind: 'tracer', x: 4, y: 2 },
+      { side: 1, kind: 'command-post', x: 12, y: 2 },
+      { side: 1, kind: 'rifles', x: riflesAt, y: 2 }
+    ]);
+  const rifles = (w: World) => w.entities.find((e) => e.kind === 'rifles')!;
+  const order = (w: World): Command => ({ side: 1, unit: rifles(w).id, order: { type: 'move', x: rifles(w).x - 1, y: 2 } });
+
+  it('an enemy that receives an order within 6 cells is fixed: told to the finder side only, in sight until the turn ends', () => {
+    const w = base();
+    expect(isSpotted(w, rs, 0, rifles(w).id)).toBe(false);
+    const r = resolveTurn(w, rs, [[], [order(w)]]);
+    const id = rifles(w).id;
+    const finder = w.entities.find((e) => e.kind === 'tracer')!.id;
+    expect(r.events).toContainEqual({ t: 'intercept', tick: 1, id, side: 1, kind: 'rifles', x: 10, y: 2, by: finder, to: 0 });
+    expect(r.reported?.[0]).toContainEqual(expect.objectContaining({ t: 'intercept', id, to: 0 }));
+    expect(r.reported?.[1]?.some((e) => e.t === 'intercept')).toBe(false);
+    // Tracked through the turn: spotted where it stands now, so it can be ordered at.
+    expect(isSpotted(r.world, rs, 0, id)).toBe(true);
+    expect(r.world.intel?.[0]?.find((rep) => rep.id === id)).toMatchObject({ x: rifles(r.world).x, live: true });
+    expect(validateCommand(r.world, rs, { side: 0, unit: finder, order: { type: 'attack', target: id } })).toEqual({ ok: false, reason: 'no-weapon' });
+    // The next turn without an order: no fix, the report goes cold (a ghost where it was last tracked).
+    const next = resolveTurn(r.world, rs, [[], []]);
+    expect(next.events.some((e) => e.t === 'intercept')).toBe(false);
+    expect(isSpotted(next.world, rs, 0, id)).toBe(false);
+    expect(next.world.intel?.[0]?.find((rep) => rep.id === id)).toMatchObject({ live: false });
+    expect(isValidWorld(next.world, rs)).toBe(true);
+  });
+
+  it('nothing is heard without an order, beyond 6 cells, or from a finder out of contact', () => {
+    const quiet = resolveTurn(base(), rs, [[], []]);
+    expect(quiet.events.some((e) => e.t === 'intercept')).toBe(false);
+    const far = base(11);
+    expect(resolveTurn(far, rs, [[], [order(far)]]).events.some((e) => e.t === 'intercept')).toBe(false);
+    // The finder 9 cells from the post: out of its coverage (radius 5), so it reports nothing.
+    const cut = structuredClone(base());
+    Object.assign(cut.entities.find((e) => e.kind === 'tracer')!, { x: 9 });
+    expect(resolveTurn(cut, rs, [[], [order(cut)]]).events.some((e) => e.t === 'intercept')).toBe(false);
+    // Only a working Direction Finder listens: not a jammer in its place, not a finder knocked out (EMP).
+    const jammer = structuredClone(base());
+    jammer.entities.find((e) => e.kind === 'tracer')!.kind = 'jammer';
+    expect(resolveTurn(jammer, rs, [[], [order(jammer)]]).events.some((e) => e.t === 'intercept')).toBe(false);
+    const stunned = structuredClone(base());
+    stunned.entities.find((e) => e.kind === 'tracer')!.status = [{ kind: 'disabled', ticks: 6 }];
+    expect(resolveTurn(stunned, rs, [[], [order(stunned)]]).events.some((e) => e.t === 'intercept')).toBe(false);
+    // An own unit's orders are never intercepted by the own finder.
+    const own = base();
+    const finder = own.entities.find((e) => e.kind === 'tracer')!;
+    expect(resolveTurn(own, rs, [[{ side: 0, unit: finder.id, order: { type: 'hold' } }], []]).events.some((e) => e.t === 'intercept')).toBe(false);
+  });
+});
+

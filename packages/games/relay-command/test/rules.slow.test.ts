@@ -15,9 +15,11 @@ import { opponentCounts, SCENARIOS } from '../src/scenarios';
  * docs/design/strategy.md "Defence towers"); 'fd8529d3' since it no longer feeds units into a known
  * tower wall (rally point beyond the towers' reach, towers weigh double among a post's defenders;
  * owner review 2026-10-18); 'd68f3e39' since a Scout Car it gives no order launches its drone with a
- * spare slot (2026-10-27, a measured gain, docs/design/strategy.md § 4.1).
+ * spare slot (2026-10-27, a measured gain, docs/design/strategy.md § 4.1); 'b32f2301' since a drone
+ * keeps contact through its carrier (datalink, owner review 2026-10-27; direction finding of orders,
+ * radius 6, leaves these games' plans as they are).
  */
-const TWO_SIDE_AI_FINGERPRINT = 'd68f3e39';
+const TWO_SIDE_AI_FINGERPRINT = 'b32f2301';
 const ai = (world: World, side: number, difficulty: Difficulty = 'normal') => planAi(observe(world, RULESET, side), RULESET, difficulty);
 
 describe('several sides (docs/design/strategy.md § 9.4)', () => {
@@ -125,7 +127,9 @@ describe('hot-seat (docs/design/strategy.md § 9.4, D10)', () => {
   // opponent stopped feeding units into known tower walls (owner review 2026-10-18): 'a636ca8'; then every
   // step in the summaries names the cell it left (`fx`, `fy` on `move`, for the turn replay, owner request
   // 2026-10-27; world, log, plans and result unchanged: without those two fields it is 'a636ca8' again): '3a126a32';
-  // then the opponent launched the drones of Scout Cars it gives no order (2026-10-27, a measured gain): 'dd7d0cec'.
+  // then the opponent launched the drones of Scout Cars it gives no order (2026-10-27, a measured gain): 'dd7d0cec';
+  // then drones kept contact through their carriers and Direction Finders intercepted orders within 6 cells
+  // (owner review 2026-10-27; `intercept` events in the summaries): 'd6b6862b'.
   it('one person is the single-player game, byte for byte: every map and opponent count matches the fingerprint taken before hot-seat (main at f2ee871)', () => {
     let h = 0x811c9dc5;
     const feed = (text: string) => {
@@ -144,6 +148,6 @@ describe('hot-seat (docs/design/strategy.md § 9.4, D10)', () => {
         }
       }
     }
-    expect(h.toString(16)).toBe('dd7d0cec');
+    expect(h.toString(16)).toBe('d6b6862b');
   }, 300_000);
 });
