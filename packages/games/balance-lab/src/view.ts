@@ -69,6 +69,8 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
   let animate = false;
   let freeKg = 2;
   let focusAfter: string | null = null;
+  /** The cursor line of the last render, announced after arrow keys (focus stays on the scene). */
+  let whereText = '';
 
   const live = h('div', { class: 'sr-only', 'aria-live': 'polite', role: 'status', 'data-testid': 'bl-announcer' });
   const main = h('div', { class: 'bl-main' });
@@ -285,6 +287,7 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
     e.preventDefault();
     focusAfter = 'bl-scene-wrap';
     restoreFocus();
+    if (e.key.startsWith('Arrow') && whereText) announce(live, whereText);
   }
 
   container.addEventListener('keydown', (e) => {
@@ -446,6 +449,7 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
     if (fine) stepRow.append(button('◀◀', 'bl-step-left4', () => step(-4), { 'aria-label': t('step.left4') }));
     stepRow.append(button('◀', 'bl-step-left', () => step(-1), { 'aria-label': t('step.left') }), button('▶', 'bl-step-right', () => step(1), { 'aria-label': t('step.right') }));
     if (fine) stepRow.append(button('▶▶', 'bl-step-right4', () => step(4), { 'aria-label': t('step.right4') }));
+    whereText = where;
     box.append(h('p', { class: 'bl-where', 'data-testid': 'bl-where' }, where), stepRow);
     const act = h('div', { class: 'bl-actions' });
     const placing = (scene.bench !== 'stack' || id === 'stack-counter') && id !== 'beam-axle' && id !== 'mobile-string';
@@ -587,6 +591,7 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
 
   function render() {
     clear(main);
+    whereText = '';
     if (state.mode === 'free') renderFree(state);
     else if (isSummary(state)) renderSummary(state);
     else renderTask(state, currentItem(state)!);

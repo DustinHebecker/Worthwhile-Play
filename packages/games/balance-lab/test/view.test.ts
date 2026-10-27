@@ -23,6 +23,17 @@ function mount(settings: Record<string, string>, difficulty = 'easy', locale: 'e
 const key = (el: HTMLElement, k: string) => el.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true }));
 
 describe('view', () => {
+  it('announces the cursor position after an arrow key in the scene', async () => {
+    const m = mount({ mode: 'free', freeBench: 'beam' });
+    const wrap = m.q('bl-scene-wrap')!;
+    wrap.focus();
+    key(wrap, 'ArrowRight');
+    await new Promise((r) => setTimeout(r, 60));
+    const where = m.q('bl-where')!.textContent!;
+    expect(where).not.toBe('');
+    expect(m.q('bl-announcer')!.textContent).toBe(where);
+  });
+
   it('renders every bench and kind without missing keys', () => {
     for (const bench of ['beam', 'mobile', 'stack'])
       for (const tasks of ['predict', 'build'])
