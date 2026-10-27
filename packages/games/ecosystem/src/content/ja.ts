@@ -1,201 +1,194 @@
-/**
-// UNTRANSLATED
- *
- * Note for translators: plain words; common names only ("water fleas", not "Daphnia" — an "about" line may add the
- * scientific name in brackets); no digits in the texts (numbers come from the model); spraying, fishing and
- * relocating are management actions, described neutrally. Keep sentences short.
- */
 import type { ContentText } from './types';
 
 export const content: ContentText = {
-  weeks: { one: '{n} week', other: '{n} weeks' },
+  weeks: { other: '{n}週' },
   species: {
-    algae: { name: 'Green algae', about: 'Tiny plants floating in the water. They grow fast on nutrients and light; water fleas and snails eat them. Many algae turn the water green and shade the plants below.' },
-    bluegreen: { name: 'Blue-green algae', about: 'Strictly speaking bacteria (cyanobacteria). They grow slowly, need rich water and are hardly eaten, so they bloom when nutrients pile up.' },
-    duckweed: { name: 'Duckweed', about: 'Small floating leaves. In rich water they cover the surface and shade everything below.' },
-    pondweed: { name: 'Pondweed', about: 'Underwater plants rooted in the mud. They need clear water to get light, take nutrients away from the algae and give water fleas a place to hide from fish.' },
-    fleas: { name: 'Water fleas', about: 'Tiny crustaceans (Daphnia) that graze the algae. Small fish eat them, but in pondweed and in the mud many stay out of reach.' },
-    snails: { name: 'Pond snails', about: 'They eat dead plant matter and a few algae. Small fish eat some of them.' },
-    minnows: { name: 'Small fish', about: 'They hunt water fleas and some snails. Their young take about six weeks to grow up. Pike eat them.' },
-    pike: { name: 'Pike', about: 'A large hunter that eats small fish. Young pike take about twenty weeks to grow up.' },
-    grass: { name: 'Grasses', about: 'Tall and fast-growing on rich soil. They shade the low plants and use a lot of water.' },
-    flowers: { name: 'Wildflowers', about: 'Low plants that do well on poor soil. They need light, so tall grass pushes them out. Aphids and rabbits eat them.' },
-    clover: { name: 'Clover', about: 'A low plant that makes its own nitrogen from the air, less so on rich soil. Its dead leaves feed the soil for its neighbours. Rabbits like it most.' },
-    aphids: { name: 'Aphids', about: 'Tiny insects that suck plant sap, mostly from wildflowers. They multiply very fast. Ladybirds eat them.' },
-    ladybirds: { name: 'Ladybirds', about: 'Beetles that eat aphids. Their larvae take about three weeks to grow up, so they react to more aphids with a delay.' },
-    rabbits: { name: 'Rabbits', about: 'They graze clover first, then wildflowers and grass. Their young take about five weeks to grow up. Foxes hunt them; some are always safe in burrows.' },
-    foxes: { name: 'Foxes', about: 'They hunt rabbits. Young foxes take about half a year to grow up.' },
-    worms: { name: 'Earthworms', about: 'They eat dead leaves and turn them back into nutrients that plants can use.' }
+    algae: { name: '緑藻', about: '水の中にただよう小さな植物です。栄養分と光があると速く増え、ミジンコや巻貝に食べられます。藻が多いと水が緑色になり、下の植物をかげにします。' },
+    bluegreen: { name: 'アオコ', about: '実は細菌（シアノバクテリア）です。ゆっくり増え、栄養の多い水を必要とし、ほとんど食べられないため、栄養分がたまると大発生します。' },
+    duckweed: { name: 'ウキクサ', about: '水に浮かぶ小さな葉です。栄養の多い水では水面をおおい、その下のすべてをかげにします。' },
+    pondweed: { name: 'ヒルムシロ', about: '泥に根を張る水中の植物です。光を受けるには澄んだ水が必要で、藻から栄養分をうばい、ミジンコに魚からの隠れ場所を与えます。' },
+    fleas: { name: 'ミジンコ', about: '藻を食べる小さな甲殻類です。小魚に食べられますが、ヒルムシロの中や泥の中では多くが届かない所にいます。' },
+    snails: { name: 'モノアラガイ', about: '枯れた植物のかすと少しの藻を食べる巻貝です。一部は小魚に食べられます。' },
+    minnows: { name: '小魚', about: 'ミジンコと少しの巻貝をとって食べます。稚魚が育つには約六週かかります。カワカマスに食べられます。' },
+    pike: { name: 'カワカマス', about: '小魚を食べる大きな捕食者です。若いカワカマスが育つには約二十週かかります。' },
+    grass: { name: 'イネ科の草', about: '肥えた土では背が高く速く育ちます。背の低い植物をかげにし、水をたくさん使います。' },
+    flowers: { name: '野の花', about: 'やせた土でよく育つ背の低い植物です。光が必要なので、背の高い草に追い出されます。アブラムシとウサギに食べられます。' },
+    clover: { name: 'クローバー', about: '空気から自分で窒素を取りこむ背の低い植物で、肥えた土では取りこむ量が減ります。枯れた葉が近くの植物のために土を肥やします。ウサギの大好物です。' },
+    aphids: { name: 'アブラムシ', about: '主に野の花の汁を吸う小さな昆虫です。とても速く増えます。テントウムシに食べられます。' },
+    ladybirds: { name: 'テントウムシ', about: 'アブラムシを食べる甲虫です。幼虫が育つのに約三週かかるので、アブラムシが増えても反応が遅れます。' },
+    rabbits: { name: 'ウサギ', about: 'まずクローバー、次に野の花と草を食べます。子ウサギが育つには約五週かかります。キツネに狩られますが、巣穴にいるものはいつも安全です。' },
+    foxes: { name: 'キツネ', about: 'ウサギを狩ります。若いキツネが育つには約半年かかります。' },
+    worms: { name: 'ミミズ', about: '落ち葉を食べて、植物が使える栄養分に戻します。' }
   },
   challenges: {
     'fleas-arrive': {
-      title: 'Water fleas arrive',
-      situation: 'A young pond has only green algae. Water fleas reach it, carried in by a bird.',
-      think: 'Who eats the algae? What happens to the water fleas when the algae get fewer?',
-      explain: 'Water fleas multiply on the algae until they eat as fast as the algae grow. From then on the water fleas, not the nutrients, set how much algae there is: a balancing loop (B1). The water turns clear and stays clear.',
-      real: 'In real ponds, fish and the seasons usually keep this from being so neat.'
+      title: 'ミジンコがやって来る',
+      situation: 'できたばかりの池には緑藻しかいません。鳥に運ばれて、ミジンコがやって来ます。',
+      think: '藻を食べるのはだれ？藻が減るとミジンコはどうなる？',
+      explain: 'ミジンコは藻を食べて増え、やがて藻が増えるのと同じ速さで食べるようになります。そこからは、藻の量を決めるのは栄養分ではなくミジンコです：バランス型ループ（B1）。水は澄み、そのまま澄んだ状態が続きます。',
+      real: '実際の池では、魚や季節のせいで、ふつうはこれほどきれいにはいきません。'
     },
     'enrich-swings': {
-      title: 'More food for everyone',
-      situation: 'Heavy runoff from a field starts to feed a pond of algae and water fleas.',
-      think: 'More nutrients feed more algae. What do the water fleas do with more algae, and what do the algae do then?',
-      explain: 'More nutrients let the algae race ahead; the water fleas follow, eat the algae down, then starve; the algae recover, and it starts again. Richer water made the system swing instead of settle. Ecologists call this the paradox of enrichment (B1).',
-      real: 'In real ponds, many more species and the seasons damp or change these swings.'
+      title: 'みんなにもっと食べ物を',
+      situation: '畑からの大量の流入が、藻とミジンコのいる池に栄養を与えはじめます。',
+      think: '栄養分が増えると藻が増えます。藻が増えるとミジンコはどうして、その後藻はどうなる？',
+      explain: '栄養分が増えると藻が先に増え、ミジンコが追いかけて藻を食べつくし、やがて飢えます。藻が回復し、また最初から繰り返します。栄養の多い水のせいで、システムは落ち着かずに揺れるようになりました。生態学者はこれを富栄養化のパラドックスと呼びます（B1）。',
+      real: '実際の池では、もっと多くの種と季節が、この揺れを弱めたり変えたりします。'
     },
     'fish-stocked': {
-      title: 'Fish in the pond',
-      situation: 'Someone releases small fish into a pond that had none.',
-      think: 'Fish eat water fleas. Who eats the algae, and what happens to them?',
-      explain: 'The fish eat water fleas, so fewer water fleas graze the algae, and the algae grow. A change at the top reaches the bottom of the food chain: a trophic cascade. It builds up slowly, because young fish need weeks to grow up.',
-      real: 'In real ponds, fish also stir up the mud, which clouds the water even more.'
+      title: '池に魚を',
+      situation: 'だれかが魚のいなかった池に小魚を放します。',
+      think: '魚はミジンコを食べます。藻を食べるのはだれで、藻はどうなる？',
+      explain: '魚がミジンコを食べるので、藻を食べるミジンコが減り、藻が増えます。上の変化が食物連鎖の下まで届きます：栄養カスケード。稚魚が育つのに何週もかかるので、ゆっくり進みます。',
+      real: '実際の池では、魚が泥もかき回し、水がさらににごります。'
     },
     'pike-return': {
-      title: 'Pike come back',
-      situation: 'A few young pike are released into a pond full of small fish.',
-      think: 'Follow the chain: pike, small fish, water fleas, algae.',
-      explain: 'Pike eat small fish; fewer small fish leave more water fleas; more water fleas eat more algae. Each step flips the direction, so the algae fall. It takes long because young pike need about twenty weeks to grow up.',
-      real: 'In real lakes, removing small fish or adding pike is used to clear the water, with mixed and often short-lived success.'
+      title: 'カワカマスが戻る',
+      situation: '小魚でいっぱいの池に、若いカワカマスを数匹放します。',
+      think: '連鎖をたどってみよう：カワカマス、小魚、ミジンコ、藻。',
+      explain: 'カワカマスは小魚を食べます。小魚が減るとミジンコが多く残り、ミジンコが増えると藻をたくさん食べます。段階ごとに向きが反転するので、藻は減ります。若いカワカマスが育つのに約二十週かかるので、時間がかかります。',
+      real: '実際の湖では、水を澄ませるために小魚を取り出したりカワカマスを入れたりしますが、効果はまちまちで、長続きしないことも多いです。'
     },
     'algae-treatment': {
-      title: 'A quick fix for green water',
-      situation: 'The pond is treated: nine in ten of the algae die and sink, but stay in the water.',
-      think: 'Where do the nutrients in the dead algae go? And what happened to the water fleas while the algae were gone?',
-      explain: 'The dead algae rot within days and give their nutrients back to the water. The water fleas went hungry while the algae were gone, so for a while nobody holds the algae in check, and they overshoot. A fix that removes the symptom but not the nutrients does not last.',
-      real: 'In real ponds, rotting algae also use up oxygen, which can harm fish.'
+      title: '緑の水への手っ取り早い対策',
+      situation: '池を処理します：藻の十のうち九が死んで沈みますが、水の中に残ります。',
+      think: '死んだ藻の栄養分はどこへ行く？藻がいない間、ミジンコはどうなった？',
+      explain: '死んだ藻は数日で腐り、栄養分を水に返します。藻がいない間ミジンコは飢えていたので、しばらくはだれも藻を抑えられず、藻は前の量を超えて増えます。症状を消しても栄養分を取り除かない対策は長続きしません。',
+      real: '実際の池では、腐る藻が酸素も使うので、魚に害を与えることがあります。'
     },
     'slow-runoff': {
-      title: 'A field upstream',
-      situation: 'A new field upstream starts to drain into the clear pond.',
-      think: 'What do more nutrients do to the algae, and what do more algae do to the pondweed below them?',
-      explain: 'For months nothing seems to happen: the pondweed even looks fine after half a year. Meanwhile nutrients pile up in the water and the mud. When the algae finally win, a reinforcing loop takes over: more algae, more shade, less pondweed, fewer hiding places for water fleas, even more algae (R1, R2). The flip is fast; the cause was slow.',
-      real: 'In real lakes, such shifts from clear to green water are well documented, often after years of slow change.'
+      title: '上流の畑',
+      situation: '上流に新しくできた畑の水が、澄んだ池に流れこみはじめます。',
+      think: '栄養分が増えると藻はどうなる？藻が増えると、その下のヒルムシロはどうなる？',
+      explain: '何か月も何も起きていないように見えます。半年たってもヒルムシロは元気そうです。その間に、栄養分は水と泥にたまっていきます。ついに藻が勝つと、強化型ループが主導権をにぎります：藻が増え、かげが増え、ヒルムシロが減り、ミジンコの隠れ場所が減り、藻がさらに増えます（R1、R2）。変化は急ですが、原因はゆっくりでした。',
+      real: '実際の湖でも、澄んだ水から緑の水へのこうした変化はよく記録されていて、多くは何年もかけたゆっくりした変化の後に起こります。'
     },
     'no-way-back': {
-      title: 'The runoff stops',
-      situation: 'Two years later the runoff is stopped completely. Will the pondweed come back?',
-      think: 'Is there any pondweed left to grow back? What keeps the water green now?',
-      explain: 'Stopping the runoff removes the cause, but the pond stays green: the algae shade the bottom, and no pondweed is left to grow back. The reinforcing loop (R1) now holds the pond in its green state. Going back needs more than undoing the change, for example planting pondweed again.',
-      real: 'In real lakes, recovery after the nutrients are cut often takes many years, and plants are sometimes replanted.'
+      title: '流入が止まる',
+      situation: '二年後、流入を完全に止めます。ヒルムシロは戻ってくるでしょうか？',
+      think: 'また生えてこられるヒルムシロは残っている？今、何が水を緑色に保っている？',
+      explain: '流入を止めれば原因はなくなりますが、池は緑のままです。藻が底をかげにし、また生えてくるヒルムシロが残っていないからです。今は強化型ループ（R1）が池を緑の状態にとどめています。元に戻すには、変化を取り消すだけでは足りません。たとえばヒルムシロを植え直すことが必要です。',
+      real: '実際の湖では、栄養分の流入を止めた後も回復に何年もかかることが多く、植物を植え直すこともあります。'
     },
     shade: {
-      title: 'A tree over the pond',
-      situation: 'A tree grows over the pond and shades it.',
-      think: 'Pondweed needs light at the bottom. What else takes light away from it?',
-      explain: 'Less light slows the pondweed, so it holds the algae back less. The algae and the water fleas start to swing, and each burst of algae shades the pondweed further (R1): it falls step by step.',
-      real: 'In real ponds, falling leaves from the tree would also add nutrients.'
+      title: '池の上の木',
+      situation: '池の上に木が育ち、池をかげにします。',
+      think: 'ヒルムシロは底に光が必要です。ほかに何がヒルムシロの光をうばう？',
+      explain: '光が減るとヒルムシロの成長が遅くなり、藻を抑える力が弱まります。藻とミジンコが揺れはじめ、藻が増えるたびにヒルムシロはさらにかげになります（R1）。ヒルムシロは一段ずつ減っていきます。',
+      real: '実際の池では、木から落ちる葉も栄養分を加えます。'
     },
     spray: {
-      title: 'Spraying against aphids',
-      situation: 'The meadow is sprayed against aphids: nine in ten aphids and also nine in ten ladybirds die.',
-      think: 'Who grows back faster: the aphids or the ladybirds that eat them?',
-      explain: 'Spraying killed the aphids and the ladybirds that eat them. Aphids multiply much faster than ladybirds, so they came back first, with no one to stop them, and the wildflowers paid for it. Ecologists call this pest resurgence (B2 with a delay).',
-      real: 'In real fields, spraying also harms bees and other insects, and pests can become resistant.'
+      title: 'アブラムシに薬をまく',
+      situation: '野原にアブラムシ用の薬をまきます：アブラムシの十のうち九、テントウムシも十のうち九が死にます。',
+      think: '先に回復するのはどちら？アブラムシ、それともアブラムシを食べるテントウムシ？',
+      explain: '薬はアブラムシと、アブラムシを食べるテントウムシの両方を殺しました。アブラムシはテントウムシよりずっと速く増えるので先に戻り、止める者がいないまま、野の花がその代償を払いました。生態学者はこれを害虫の誘導多発と呼びます（遅れのあるB2）。',
+      real: '実際の畑では、薬はハチなどほかの昆虫も傷つけ、害虫が薬に強くなることもあります。'
     },
     'no-foxes': {
-      title: 'The foxes leave',
-      situation: 'The foxes leave the meadow.',
-      think: 'Who kept the rabbits in check? What do more rabbits eat first?',
-      explain: 'Without foxes the balancing loop that held the rabbits in check is gone (B2). The rabbits multiply and graze the clover, their favourite food, until little is left.',
-      real: 'In real landscapes, rabbits also move away, and diseases can cut their numbers.'
+      title: 'キツネが去る',
+      situation: 'キツネが野原から去ります。',
+      think: 'ウサギを抑えていたのはだれ？増えたウサギはまず何を食べる？',
+      explain: 'キツネがいなくなると、ウサギを抑えていたバランス型ループがなくなります（B2）。ウサギは増えて、大好物のクローバーをほとんど残らないほど食べてしまいます。',
+      real: '実際の自然では、ウサギがほかの場所へ移ったり、病気で数が減ったりもします。'
     },
     fertilise: {
-      title: 'A little fertiliser',
-      situation: 'The farmer spreads some fertiliser every week.',
-      think: 'Which plant profits most from rich soil, and what does it do to the low plants?',
-      explain: 'Fertiliser feeds the grasses most. Taller grass shades the clover and the wildflowers, and clover loses its edge: on rich soil, making its own nitrogen no longer helps. More food for the meadow means fewer kinds of plants.',
-      real: 'In real meadows, nitrogen from fertiliser and from the air is a main reason for lost wildflowers.'
+      title: '少しの肥料',
+      situation: '農家が毎週少しずつ肥料をまきます。',
+      think: '肥えた土で一番得をする植物はどれ？その植物は背の低い植物に何をする？',
+      explain: '肥料は主にイネ科の草を育てます。背の高い草がクローバーと野の花をかげにし、クローバーは強みを失います。肥えた土では、自分で窒素を作れてももう役に立たないからです。野原の栄養が増えると、植物の種類は減ります。',
+      real: '実際の草地では、肥料と空気からの窒素が、野の花が消える大きな原因です。'
     },
     drought: {
-      title: 'A dry summer',
-      situation: 'Twelve dry weeks, then normal rain again.',
-      think: 'What do the grasses need besides nutrients? What happens when the rain comes back?',
-      explain: 'Without rain the soil dries out and the grasses slow down and shrink. When the rain returns, the soil fills up and the grasses grow back, even past their old level, because nutrients piled up in the soil while they could not use them.',
-      real: 'In real meadows, a long drought can also kill plants and let others take their place.'
+      title: '乾いた夏',
+      situation: '十二週間の日照りの後、また普通に雨が降ります。',
+      think: 'イネ科の草には栄養分のほかに何が必要？雨が戻るとどうなる？',
+      explain: '雨がないと土がかわき、草の成長が遅くなって小さくなります。雨が戻ると土に水がたまり、草はまた育ちます。草が使えなかった間に土に栄養分がたまったので、前の量を超えるほどです。',
+      real: '実際の草地では、長い日照りで植物が枯れ、ほかの植物に場所をゆずることもあります。'
     },
     'clover-poor': {
-      title: 'Clover for a poor meadow',
-      situation: 'Clover is sown into a poor meadow of wildflowers.',
-      think: 'Clover makes nitrogen from the air. Where does that nitrogen go when its leaves die?',
-      explain: 'Clover brings new nitrogen into the meadow. When its leaves die, earthworms turn them into nutrients that the wildflowers use. The neighbours profit, slowly, through the soil: a chain with a delay.',
-      real: 'In real farming, clover is sown for exactly this reason.'
+      title: 'やせた野原にクローバーを',
+      situation: '野の花が咲くやせた野原にクローバーの種をまきます。',
+      think: 'クローバーは空気から窒素を取りこみます。葉が枯れると、その窒素はどこへ行く？',
+      explain: 'クローバーは野原に新しい窒素を持ちこみます。葉が枯れると、ミミズがそれを野の花の使う栄養分に変えます。近くの植物は、土を通してゆっくり得をします：遅れのある連鎖です。',
+      real: '実際の農業でも、まさにこの理由でクローバーをまきます。'
     },
     'worms-gone': {
-      title: 'Where are the earthworms?',
-      situation: 'The earthworms disappear from the meadow.',
-      think: 'Who turns dead leaves back into food for plants? Which plant does not depend on that?',
-      explain: 'Without earthworms, dead leaves pile up and their nutrients stay locked in. The grasses go hungry. Clover makes its own nitrogen, so it gains: a side effect few people expect.',
-      real: 'In real soils, many more animals, fungi and bacteria break down dead leaves.'
+      title: 'ミミズはどこへ？',
+      situation: '野原からミミズがいなくなります。',
+      think: '落ち葉をまた植物の食べ物に変えるのはだれ？それにたよらない植物はどれ？',
+      explain: 'ミミズがいないと落ち葉がたまり、その栄養分は閉じこめられたままになります。イネ科の草はおなかをすかせます。クローバーは自分で窒素を作るので、かえって得をします：ほとんどの人が予想しない副作用です。',
+      real: '実際の土では、もっと多くの動物、菌類、細菌が落ち葉を分解します。'
     },
     'foxes-return': {
-      title: 'The foxes come back',
-      situation: 'Foxes return to a meadow overrun by rabbits.',
-      think: 'How long do young foxes need to grow up? What do fewer rabbits mean for the clover?',
-      explain: 'At first little happens: young foxes need about half a year to grow up. Then the foxes bring the rabbits down (B2), and the clover, freed from grazing, slowly comes back. The effect arrives years after the cause.',
-      real: 'In real landscapes, foxes also hunt other animals, and rabbits find new places to live.'
+      title: 'キツネが戻ってくる',
+      situation: 'ウサギであふれた野原にキツネが戻ってきます。',
+      think: '若いキツネが育つのにどれくらいかかる？ウサギが減ると、クローバーにとって何を意味する？',
+      explain: 'はじめはほとんど何も起きません。若いキツネが育つのに約半年かかるからです。その後キツネがウサギを減らし（B2）、食べられなくなったクローバーがゆっくり戻ってきます。結果は原因の何年も後にやって来ます。',
+      real: '実際の自然では、キツネはほかの動物も狩り、ウサギは新しいすみかを見つけます。'
     },
     'ladybirds-gone': {
-      title: 'Ladybirds collected',
-      situation: 'Most ladybirds are collected for a garden elsewhere.',
-      think: 'Who eats the aphids? How fast can the remaining ladybirds come back?',
-      explain: 'Without ladybirds the aphids multiply. The few remaining ladybirds now find plenty of food, and their numbers grow back after a delay. Then they bring the aphids down again (B2).',
-      real: 'In real gardens, other aphid hunters such as hoverflies and birds help as well.'
+      title: 'テントウムシを集める',
+      situation: 'テントウムシの大半を集めて、よその庭へ送ります。',
+      think: 'アブラムシを食べるのはだれ？残ったテントウムシはどれくらい速く戻れる？',
+      explain: 'テントウムシがいないので、アブラムシが増えます。残った少しのテントウムシは食べ物がたっぷりあるので、遅れて数が戻ります。そして再びアブラムシを減らします（B2）。',
+      real: '実際の庭では、ハナアブや鳥など、ほかのアブラムシの天敵も助けてくれます。'
     }
   },
   goals: {
     'save-pondweed': {
-      story: 'A new field upstream starts to drain into the clear pond. Keep the pondweed alive for two years while the runoff continues.',
-      target: 'Pondweed at least {v} every week until week {w}.',
-      hint: 'Algae are a symptom. What feeds them, and how soon must it change?',
-      explain: 'The pondweed falls only when the algae shade it, and the algae grow from the nutrients the field brings. Act on the cause, and act early: by the time the pondweed looks weak, the reinforcing loop has already taken over.',
+      story: '上流に新しくできた畑の水が、澄んだ池に流れこみはじめます。流入が続く二年の間、ヒルムシロを生かしておきましょう。',
+      target: '{w}週目まで毎週ヒルムシロが{v}以上。',
+      hint: '藻は症状にすぎません。何が藻を育て、どれくらい早く変える必要がある？',
+      explain: 'ヒルムシロが減るのは藻にかげにされたときだけで、藻は畑が運ぶ栄養分で育ちます。原因に手を打ち、それも早く打ちましょう。ヒルムシロが弱って見えるころには、強化型ループがすでに主導権をにぎっています。',
       plans: {
-        buffer: 'A buffer strip of plants along the field catches most of the runoff before it reaches the pond. Early enough, the algae never get ahead.',
-        ditch: 'Closing the ditch stops the runoff completely, so the algae never get ahead.'
+        buffer: '畑のふちに植物の緩衝帯を作ると、流入の大部分が池に届く前に止まります。早めに作れば、藻は決して先に増えません。',
+        ditch: '水路をふさぐと流入が完全に止まるので、藻は決して先に増えません。'
       }
     },
     'clear-pond': {
-      story: 'The pond turned green after two years of runoff. Make the water clear again, with pondweed growing, for twelve weeks in a row.',
-      target: 'Algae (green and blue-green) at most {v} and pondweed at least {p}, for twelve weeks in a row, by week {w}.',
-      hint: 'Algae are a symptom. What feeds them? And what keeps them down once the water is clear?',
-      explain: 'The green state holds itself: algae shade out the plants that would hold them back. Clearing the water needs the cause removed (the runoff), the stored nutrients taken out or flushed away, and the pondweed back, so that the reinforcing loop turns towards clear water.',
+      story: '二年間の流入で池が緑色になりました。ヒルムシロが育つ澄んだ水を、十二週続けて取り戻しましょう。',
+      target: '{w}週目までに、藻（緑藻とアオコ）が{v}以下かつヒルムシロが{p}以上を十二週続ける。',
+      hint: '藻は症状にすぎません。何が藻を育てている？そして水が澄んだ後、何が藻を少なく保つ？',
+      explain: '緑の状態は自分で自分を保ちます。藻が、藻を抑えるはずの植物をかげにするからです。水を澄ませるには、原因（流入）を取り除き、たまった栄養分を取り出すか流し出し、ヒルムシロを戻して、強化型ループを澄んだ水の向きに回す必要があります。',
       plans: {
-        restore: 'Stop the runoff, dredge the nutrient-rich mud, plant pondweed and take out most small fish (so more water fleas graze the algae). Together they turn the loop towards clear water.',
-        flush: 'Stop the runoff and let a stream flush the nutrients and algae out for a while, then plant pondweed into the clear water.'
+        restore: '流入を止め、栄養分の多い泥をさらい、ヒルムシロを植え、小魚の大半を取り出します（ミジンコがもっと藻を食べるように）。これらが合わさって、ループを澄んだ水の向きに回します。',
+        flush: '流入を止め、しばらく小川の水で栄養分と藻を流し出してから、澄んだ水にヒルムシロを植えます。'
       }
     },
     'protect-flowers': {
-      story: 'A neighbour has just sprayed the meadow: most aphids and most ladybirds died. Keep the wildflowers for a year.',
-      target: 'Wildflowers at least {v} every week until week {w}.',
-      hint: 'The aphids come back faster than the ladybirds. When would new ladybirds find something to eat?',
-      explain: 'The aphids rebound before their hunters do. Ladybirds released too early starve, because there are no aphids yet; released too late, the wildflowers are already eaten. Timing decides.',
+      story: '隣の人が野原に薬をまいたばかりです：アブラムシの大半とテントウムシの大半が死にました。野の花を一年間守りましょう。',
+      target: '{w}週目まで毎週野の花が{v}以上。',
+      hint: 'アブラムシはテントウムシより早く戻ってきます。新しいテントウムシが食べ物を見つけられるのはいつ？',
+      explain: 'アブラムシは天敵より先に回復します。早すぎるとテントウムシはアブラムシがまだいなくて飢え、遅すぎると野の花はもう食べられています。決め手はタイミングです。',
       plans: {
-        ladybirds: 'Released after about ten weeks, when the aphids are back but before they peak, the ladybirds find food at once and stop the aphids in time.'
+        ladybirds: '約十週後、アブラムシが戻ってきたけれどまだピークになる前に放すと、テントウムシはすぐ食べ物を見つけ、間に合うようにアブラムシを止めます。'
       }
     },
     'bring-back-clover': {
-      story: 'Without foxes, rabbits have grazed the clover almost away. Bring the clover back for eight weeks in a row within four years.',
-      target: 'Clover at least {v} for eight weeks in a row, by week {w}.',
-      hint: 'Removing rabbits helps only for a while. What kept them in check before?',
-      explain: 'Rabbits multiply fast, so removing some only buys time. Lasting change needs the balancing loop back: foxes. Young foxes need half a year to grow up, so the clover comes back years later.',
+      story: 'キツネがいないので、ウサギがクローバーをほとんど食べつくしました。四年以内にクローバーを八週続けて取り戻しましょう。',
+      target: '{w}週目までに、クローバーが{v}以上を八週続ける。',
+      hint: 'ウサギを取り除いても、効くのはしばらくの間だけです。前は何がウサギを抑えていた？',
+      explain: 'ウサギは速く増えるので、一部を取り除いても時間かせぎにしかなりません。長続きする変化には、バランス型ループ、つまりキツネが戻る必要があります。若いキツネが育つのに半年かかるので、クローバーが戻るのは何年も後です。',
       plans: {
-        foxes: 'Foxes alone are enough, but patience is needed: they bring the rabbits down slowly.',
-        foxesRabbits: 'Foxes plus relocating half the rabbits: the foxes start with fewer rabbits to catch up with.',
-        foxesRabbitsClover: 'Foxes, relocating most rabbits and sowing clover: the fastest way, because the clover gets a head start while the foxes grow up.'
+        foxes: 'キツネだけで十分ですが、しんぼうが必要です。キツネはウサギをゆっくり減らします。',
+        foxesRabbits: 'キツネに加えてウサギの半分を移す：キツネが追いつくべきウサギが少なくなります。',
+        foxesRabbitsClover: 'キツネ、ウサギの大半を移す、クローバーの種をまく：一番速い方法です。キツネが育つ間に、クローバーが先に育つからです。'
       }
     }
   },
   loops: {
-    graze: 'Water fleas graze the algae down; fewer algae, fewer water fleas.',
-    fishFleas: 'Small fish eat water fleas; fewer water fleas, fewer young fish.',
-    pikeFish: 'Pike eat small fish; fewer small fish, fewer young pike.',
-    clearWater: 'Algae shade the pondweed; pondweed holds the algae back. Whoever is ahead pulls further ahead.',
-    shelter: 'Pondweed hides water fleas from fish, and water fleas eat algae.',
-    recycle: 'Dead algae rot and feed new algae.',
-    aphidsFlowers: 'Aphids feed on the wildflowers; fewer wildflowers, fewer aphids.',
-    ladybirdsAphids: 'Ladybirds eat aphids; fewer aphids, fewer young ladybirds.',
-    rabbitsClover: 'Rabbits graze the clover; less clover, fewer young rabbits.',
-    foxesRabbits: 'Foxes hunt rabbits; fewer rabbits, fewer young foxes.',
-    thirst: 'Grasses use the soil water; dry soil slows the grasses.',
-    wormsDead: 'Earthworms eat dead leaves; fewer dead leaves, fewer earthworms.',
-    flowerUptake: 'Wildflowers take up the nutrients they grow from.'
+    graze: 'ミジンコが藻を食べて減らします。藻が減るとミジンコも減ります。',
+    fishFleas: '小魚がミジンコを食べます。ミジンコが減ると稚魚も減ります。',
+    pikeFish: 'カワカマスが小魚を食べます。小魚が減ると若いカワカマスも減ります。',
+    clearWater: '藻がヒルムシロをかげにし、ヒルムシロが藻を抑えます。先に出た方がさらに先へ進みます。',
+    shelter: 'ヒルムシロがミジンコを魚から隠し、ミジンコは藻を食べます。',
+    recycle: '死んだ藻が腐って、新しい藻を育てます。',
+    aphidsFlowers: 'アブラムシは野の花で生きています。野の花が減るとアブラムシも減ります。',
+    ladybirdsAphids: 'テントウムシがアブラムシを食べます。アブラムシが減ると若いテントウムシも減ります。',
+    rabbitsClover: 'ウサギがクローバーを食べます。クローバーが減ると子ウサギも減ります。',
+    foxesRabbits: 'キツネがウサギを狩ります。ウサギが減ると若いキツネも減ります。',
+    thirst: '草が土の水を使います。土がかわくと草の成長が遅くなります。',
+    wormsDead: 'ミミズが落ち葉を食べます。落ち葉が減るとミミズも減ります。',
+    flowerUptake: '野の花は、育つための栄養分を吸収します。'
   }
 };
