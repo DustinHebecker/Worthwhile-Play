@@ -85,10 +85,15 @@ function selfPlay(seed: number): RcState {
 describe('Field Exercise scenario', () => {
   // Maps made for teams (Bastion) are asymmetric on purpose: they have tests of their own.
   for (const spec of SCENARIOS.filter((x) => !x.seats?.teams)) {
-    it(`${spec.id} is symmetric in terrain and units, the Command Posts can reach each other, and every unit starts in radio cover (every opponent count)`, () => {
+    it(`${spec.id} is ${spec.asymmetric ? 'fair in its armies' : 'symmetric in terrain and units'}, the Command Posts can reach each other, and every unit starts in radio cover (every opponent count${spec.asymmetric ? ' and start' : ''})`, () => {
       const { map, entities } = spec.scenario;
       const key = (e: (typeof entities)[number]) => `${e.side}:${e.kind}:${e.x},${e.y}`;
-      if (!spec.seats) {
+      if (spec.asymmetric) {
+        // Asymmetric on purpose (terrain, deposits, reach; fairness is measured): every seat starts with the same army.
+        const army = (seat: number) => entities.filter((e) => e.side === seat).map((e) => e.kind).sort().join();
+        const seats = spec.seats?.frames.length ?? 2;
+        for (let seat = 1; seat < seats; seat++) expect(army(seat)).toBe(army(0));
+      } else if (!spec.seats) {
         // Two sides: the point mirror with the sides swapped.
         expect(map.terrain).toBe([...map.terrain].reverse().join(''));
         const mirror = (e: (typeof entities)[number]) => `${1 - e.side}:${e.kind}:${map.w - 1 - e.x},${map.h - 1 - e.y}`;
@@ -111,8 +116,8 @@ describe('Field Exercise scenario', () => {
         const deposits = (map.deposits ?? []).map((d) => `${d.x},${d.y}`);
         expect(new Set((map.deposits ?? []).map((d) => turn(d.x, d.y).join(',')))).toEqual(new Set(deposits));
       }
-      for (const opponents of opponentCounts(spec)) {
-        const w = initialWorld(spec, 1, opponents);
+      for (const opponents of opponentCounts(spec)) for (const start of spec.asymmetric ? startSeats(spec, opponents) : [null]) {
+        const w = initialWorld(spec, 1, opponents, false, null, start);
         expect(w.sides).toBe(opponents + 1);
         const rules = rulesetFor(spec, opponents);
         const own = w.entities.find((e) => e.side === 0 && e.kind === 'command-post')!;
@@ -120,7 +125,7 @@ describe('Field Exercise scenario', () => {
           const post = w.entities.find((e) => e.side === side && e.kind === 'command-post')!;
           expect(findPath(w.map, rules, cellOf(w.map, own.x, own.y), cellOf(w.map, post.x, post.y), { layer: 'ground', side: 0 }), `${spec.id} ${opponents}: post of ${side}`).toBeDefined();
         }
-        expect(isValidState(newGame(3, spec, 'normal', 12, false, null, opponents))).toBe(true);
+        expect(isValidState(newGame(3, spec, 'normal', 12, false, null, opponents, [], false, null, null, start))).toBe(true);
         // Every unit starts inside its side's radio cover: all of them can be ordered on turn 1.
         for (let side = 0; side <= opponents; side++) {
           const cover = computeNetwork(w, rules, side).coverage;

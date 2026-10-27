@@ -18,6 +18,12 @@ export interface ScenarioSpec {
   readonly scenario: Scenario;
   /** Maps for several sides: the seats (bases) and which of them play for each opponent count. */
   readonly seats?: Seats;
+  /**
+   * Made asymmetric on purpose (large maps, owner request 2026-10-27): the starting places differ
+   * in terrain, deposits and reach, and the player picks one (`start`). Fairness is measured (AI
+   * against AI from either place), not mirrored.
+   */
+  readonly asymmetric?: true;
 }
 
 /**
@@ -402,4 +408,217 @@ export const BASTION: ScenarioSpec = {
   seats: { frames: ['id', 'id', 'id', 'id'], layouts: { 3: [0, 1, 2, 3] }, teams: { '1v3': [0, 1, 2, 3], '3v1': [1, 2, 0, 3] } }
 };
 
-export const SCENARIOS: readonly ScenarioSpec[] = [FIELD_EXERCISE, CROSSROADS, RIDGE_VALLEY, MARSH_DELTA, FOUR_CORNERS, BASTION];
+/**
+ * Highland Line: 48×32, asymmetric (owner request 2026-10-27). Side 0 holds the lowland town in
+ * the south-west: open ground, three deposits close by. Side 1 holds a plateau in the north-east
+ * behind a ridge with two passes: hills for range and radio, two deposits. A river with three
+ * bridges runs between them; four deposits lie out on the way.
+ */
+export const HIGHLAND_LINE: ScenarioSpec = {
+  id: 'highland-line',
+  turnLimit: 48,
+  asymmetric: true,
+  scenario: {
+    map: {
+      w: 48,
+      h: 32,
+      terrain: [
+        '...............~~............^..................',
+        '...............~~~...........^..................',
+        '................~~...........^.......hh.........',
+        '................~~~.....f....=.======...........',
+        '.................~~....fff..=^==.h..===.........',
+        '.................~~~..fffff==^..................',
+        '..................~~...fff==.^^.....h.......hh..',
+        '..s...............~~~...f==...^^........=.......',
+        '.sss...............~~~..==.....^^.......=.......',
+        'sssss............========.......^^......=hh.....',
+        '.sss...........===..~~~..........^^.....=.....=.',
+        '..s...........==.....~~~..........^^^^^^=^^^^^=^',
+        '.............==.......~~~.............===.....=.',
+        '.....f.....===.........~~~~..........==.......=.',
+        '...fffff..==.............~~~.......===........=.',
+        '..fffffff.=...............~~~.....==hh.....f.==.',
+        '...fffff.==................~~~~..==hhh...ffff=..',
+        '.....f...=..fff..............~~~.=......fffff=f.',
+        '.........=.fffff...........=======.......fff==..',
+        '........==..fff............=....~~~........f=...',
+        '........=................===.....~~~~......==...',
+        '........=...............==.........~~~~....=....',
+        '........=..............==hh..........~~~~.==....',
+        '.....uuu=..u.........===.h.............~~~=.....',
+        '.....uuu=......=========..............=====~~~..',
+        '........========.......======s........=.....~~~~',
+        '........=.....uu.....s....ss===========.......~~',
+        '..........uuu......sssss...sss..................',
+        '....uu....uuu.....sssssss.......fffff...........',
+        '....uu.............sssss.......fffffff..........',
+        '.....................s..........fffff...........',
+        '................................................'
+      ].join(''),
+      deposits: [
+        { x: 3, y: 24, left: DEPOSIT_SUPPLY },
+        { x: 12, y: 24, left: DEPOSIT_SUPPLY },
+        { x: 8, y: 30, left: DEPOSIT_SUPPLY },
+        { x: 44, y: 2, left: DEPOSIT_SUPPLY },
+        { x: 36, y: 8, left: DEPOSIT_SUPPLY },
+        { x: 22, y: 4, left: DEPOSIT_SUPPLY },
+        { x: 26, y: 23, left: DEPOSIT_SUPPLY },
+        { x: 33, y: 27, left: DEPOSIT_SUPPLY },
+        { x: 44, y: 14, left: DEPOSIT_SUPPLY }
+      ]
+    },
+    sides: 2,
+    entities: [
+      { side: 0, kind: 'command-post', x: 5, y: 26 },
+      { side: 0, kind: 'muster', x: 4, y: 25 },
+      { side: 0, kind: 'howitzer', x: 3, y: 26 },
+      { side: 0, kind: 'jammer', x: 6, y: 29 },
+      { side: 0, kind: 'tracer', x: 2, y: 27 },
+      { side: 0, kind: 'mast-truck', x: 7, y: 25 },
+      { side: 0, kind: 'mast-truck', x: 8, y: 27 },
+      { side: 0, kind: 'field-post', x: 7, y: 23 },
+      { side: 0, kind: 'rifles', x: 9, y: 24 },
+      { side: 0, kind: 'rifles', x: 8, y: 28 },
+      { side: 0, kind: 'rifles', x: 6, y: 22 },
+      { side: 0, kind: 'lancer', x: 9, y: 26 },
+      { side: 0, kind: 'lancer', x: 4, y: 23 },
+      { side: 0, kind: 'warden', x: 7, y: 27 },
+      { side: 0, kind: 'outrider', x: 8, y: 24 },
+      { side: 1, kind: 'command-post', x: 41, y: 4 },
+      { side: 1, kind: 'muster', x: 42, y: 3 },
+      { side: 1, kind: 'howitzer', x: 43, y: 4 },
+      { side: 1, kind: 'jammer', x: 41, y: 2 },
+      { side: 1, kind: 'tracer', x: 39, y: 3 },
+      { side: 1, kind: 'mast-truck', x: 38, y: 5 },
+      { side: 1, kind: 'mast-truck', x: 44, y: 7 },
+      { side: 1, kind: 'field-post', x: 40, y: 7 },
+      { side: 1, kind: 'rifles', x: 37, y: 4 },
+      { side: 1, kind: 'rifles', x: 39, y: 6 },
+      { side: 1, kind: 'rifles', x: 43, y: 8 },
+      { side: 1, kind: 'lancer', x: 42, y: 6 },
+      { side: 1, kind: 'lancer', x: 38, y: 3 },
+      { side: 1, kind: 'warden', x: 40, y: 5 },
+      { side: 1, kind: 'outrider', x: 37, y: 6 }
+    ],
+    seed: 0
+  }
+};
+
+/**
+ * Lake Country: 48×32, asymmetric, three bases round a lake (owner request 2026-10-27). Seat 0
+ * holds the west behind a belt of forest, far from both others, with the most deposits near it.
+ * Seats 1 (north-east, hills) and 2 (south-east, town) sit close to each other across a river
+ * with one bridge. A causeway leads to a rich deposit on the island.
+ */
+export const LAKE_COUNTRY: ScenarioSpec = {
+  id: 'lake-country',
+  turnLimit: 48,
+  asymmetric: true,
+  scenario: {
+    map: {
+      w: 48,
+      h: 32,
+      terrain: [
+        '................................................',
+        '................................................',
+        '..............................................h.',
+        '................fff..........fff.......hh.......',
+        '...sss.........fffff===================.........',
+        '..sssss.........fff==........fff......====......',
+        '...sss....f.......==................h....=......',
+        '.........fff....===......................=.hh...',
+        '.........fff...==........................=......',
+        '.........fff..==h......~..............h..=......',
+        '..........f...=h...~~~~~~~~~.............=......',
+        '.............==...~~~~~~~~~~~............=......',
+        '.............=...~~~~~~~~~~~~~...........=......',
+        '.............=..~~~~~~~~~~~~~~~..........=......',
+        '............==..~~~~~~~...~~~~~..........=......',
+        '........=====..~~~~~~~.....~~~~~.........=......',
+        '.....====.......~~~~~~~...~~~~~.~~~~~~~~~=~~~~~~',
+        '.........==.....~~~~~~~~=~~~~~~..........=......',
+        '..........==.....~~~~~~~=~~~~~...........=......',
+        '...........=......h~~~~~=~~~~............=....s.',
+        '...........==....hhh~~~~=~~~.............=...sss',
+        '..........f.==....h....~=................=...sss',
+        '.........fff.==.........=................=...sss',
+        '.........fff..==........=................=....s.',
+        '.........fff...==.......=.......sss......=uu....',
+        '..........f.....===.....=......sssss.....=......',
+        '..............sss.==....=.......sss...uuu=......',
+        '.............sssss.==...=.....fff.....====......',
+        '..............sss...===================....uu...',
+        '..............................fff....u.....uu...',
+        '................................................',
+        '................................................'
+      ].join(''),
+      deposits: [
+        { x: 3, y: 12, left: DEPOSIT_SUPPLY },
+        { x: 4, y: 21, left: DEPOSIT_SUPPLY },
+        { x: 45, y: 3, left: DEPOSIT_SUPPLY },
+        { x: 36, y: 2, left: DEPOSIT_SUPPLY },
+        { x: 45, y: 30, left: DEPOSIT_SUPPLY },
+        { x: 35, y: 30, left: DEPOSIT_SUPPLY },
+        { x: 24, y: 15, left: RICH_DEPOSIT_SUPPLY },
+        { x: 24, y: 2, left: DEPOSIT_SUPPLY },
+        { x: 22, y: 30, left: DEPOSIT_SUPPLY },
+        { x: 19, y: 8, left: DEPOSIT_SUPPLY },
+        { x: 20, y: 24, left: DEPOSIT_SUPPLY }
+      ]
+    },
+    sides: 3,
+    supply: [150, 300, 300],
+    entities: [
+      { side: 0, kind: 'command-post', x: 5, y: 16 },
+      { side: 0, kind: 'muster', x: 4, y: 15 },
+      { side: 0, kind: 'howitzer', x: 1, y: 16 },
+      { side: 0, kind: 'jammer', x: 1, y: 15 },
+      { side: 0, kind: 'tracer', x: 1, y: 17 },
+      { side: 0, kind: 'mast-truck', x: 2, y: 16 },
+      { side: 0, kind: 'field-post', x: 9, y: 16 },
+      { side: 0, kind: 'mast-truck', x: 9, y: 15 },
+      { side: 0, kind: 'rifles', x: 9, y: 17 },
+      { side: 0, kind: 'rifles', x: 8, y: 16 },
+      { side: 0, kind: 'rifles', x: 8, y: 15 },
+      { side: 0, kind: 'lancer', x: 8, y: 17 },
+      { side: 0, kind: 'lancer', x: 8, y: 14 },
+      { side: 0, kind: 'warden', x: 8, y: 18 },
+      { side: 0, kind: 'outrider', x: 8, y: 13 },
+      { side: 1, kind: 'command-post', x: 41, y: 5 },
+      { side: 1, kind: 'muster', x: 42, y: 4 },
+      { side: 1, kind: 'howitzer', x: 44, y: 2 },
+      { side: 1, kind: 'jammer', x: 43, y: 2 },
+      { side: 1, kind: 'tracer', x: 44, y: 3 },
+      { side: 1, kind: 'mast-truck', x: 42, y: 1 },
+      { side: 1, kind: 'field-post', x: 38, y: 8 },
+      { side: 1, kind: 'mast-truck', x: 38, y: 7 },
+      { side: 1, kind: 'rifles', x: 39, y: 8 },
+      { side: 1, kind: 'rifles', x: 37, y: 6 },
+      { side: 1, kind: 'rifles', x: 40, y: 9 },
+      { side: 1, kind: 'lancer', x: 39, y: 7 },
+      { side: 1, kind: 'lancer', x: 38, y: 6 },
+      { side: 1, kind: 'warden', x: 40, y: 8 },
+      { side: 1, kind: 'outrider', x: 37, y: 5 },
+      { side: 2, kind: 'command-post', x: 41, y: 27 },
+      { side: 2, kind: 'muster', x: 42, y: 28 },
+      { side: 2, kind: 'howitzer', x: 44, y: 30 },
+      { side: 2, kind: 'jammer', x: 43, y: 30 },
+      { side: 2, kind: 'tracer', x: 44, y: 29 },
+      { side: 2, kind: 'mast-truck', x: 42, y: 31 },
+      { side: 2, kind: 'field-post', x: 38, y: 24 },
+      { side: 2, kind: 'mast-truck', x: 38, y: 25 },
+      { side: 2, kind: 'rifles', x: 39, y: 24 },
+      { side: 2, kind: 'rifles', x: 37, y: 26 },
+      { side: 2, kind: 'rifles', x: 40, y: 23 },
+      { side: 2, kind: 'lancer', x: 39, y: 25 },
+      { side: 2, kind: 'lancer', x: 38, y: 26 },
+      { side: 2, kind: 'warden', x: 40, y: 24 },
+      { side: 2, kind: 'outrider', x: 37, y: 27 }
+    ],
+    seed: 0
+  },
+  seats: { frames: ['id', 'id', 'id'], layouts: { 1: [0, 1], 2: [0, 1, 2] } }
+};
+
+export const SCENARIOS: readonly ScenarioSpec[] = [FIELD_EXERCISE, CROSSROADS, RIDGE_VALLEY, MARSH_DELTA, FOUR_CORNERS, BASTION, HIGHLAND_LINE, LAKE_COUNTRY];

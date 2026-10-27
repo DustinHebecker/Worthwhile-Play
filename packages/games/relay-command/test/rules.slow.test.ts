@@ -92,7 +92,8 @@ describe('several sides (docs/design/strategy.md § 9.4)', () => {
     const feed = (text: string) => {
       for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193) >>> 0;
     };
-    for (const spec of SCENARIOS.filter((x) => !x.seats)) {
+    // The maps of that time (the large asymmetric maps came later and have tests of their own).
+    for (const spec of SCENARIOS.filter((x) => !x.seats && !x.asymmetric)) {
       for (const [mine, theirs] of [['hard', 'normal'], ['normal', 'hard']] as const) {
         let s = newGame(3, spec, theirs, 24);
         while (s.phase === 'plan') {
@@ -136,7 +137,7 @@ describe('hot-seat (docs/design/strategy.md § 9.4, D10)', () => {
       for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193) >>> 0;
     };
     // The maps of that time (a map made for teams, Bastion, came later and has tests of its own).
-    for (const spec of SCENARIOS.filter((x) => !x.seats?.teams)) {
+    for (const spec of SCENARIOS.filter((x) => !x.seats?.teams && !x.asymmetric)) {
       for (const n of opponentCounts(spec)) {
         let s = newGame(5, spec, 'normal', 12, false, null, n);
         expect(isHotSeat(s)).toBe(false);

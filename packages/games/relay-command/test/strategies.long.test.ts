@@ -160,7 +160,8 @@ function tournament(maps: readonly ScenarioSpec[], limits: readonly number[], op
 const share = (t: Tally | undefined): number => (t ? t.wins / Math.max(1, t.wins + t.losses + t.draws) : 0);
 
 describe('strategy tournament (owner decision 2026-10-17)', () => {
-  const MAPS = SCENARIOS.filter((x) => !x.seats);
+  // Point-symmetric two-side maps (the large asymmetric ones are measured from either start in levels.long).
+  const MAPS = SCENARIOS.filter((x) => !x.seats && !x.asymmetric);
 
   /**
    * Upper bounds of each strategy's share of wins over the whole round robin (4 maps x 2 lengths x
