@@ -14,9 +14,10 @@ import { opponentCounts, SCENARIOS } from '../src/scenarios';
  * '31513435' since the opponent builds defence towers (owner decision 2026-10-16, a measured gain,
  * docs/design/strategy.md "Defence towers"); 'fd8529d3' since it no longer feeds units into a known
  * tower wall (rally point beyond the towers' reach, towers weigh double among a post's defenders;
- * owner review 2026-10-18).
+ * owner review 2026-10-18); 'd68f3e39' since a Scout Car it gives no order launches its drone with a
+ * spare slot (2026-10-27, a measured gain, docs/design/strategy.md § 4.1).
  */
-const TWO_SIDE_AI_FINGERPRINT = 'fd8529d3';
+const TWO_SIDE_AI_FINGERPRINT = 'd68f3e39';
 const ai = (world: World, side: number, difficulty: Difficulty = 'normal') => planAi(observe(world, RULESET, side), RULESET, difficulty);
 
 describe('several sides (docs/design/strategy.md § 9.4)', () => {
@@ -123,7 +124,8 @@ describe('hot-seat (docs/design/strategy.md § 9.4, D10)', () => {
   // plans and result unchanged: without the flash events it is 'da7608a7' again): '901bcbec'; then the
   // opponent stopped feeding units into known tower walls (owner review 2026-10-18): 'a636ca8'; then every
   // step in the summaries names the cell it left (`fx`, `fy` on `move`, for the turn replay, owner request
-  // 2026-10-27; world, log, plans and result unchanged: without those two fields it is 'a636ca8' again): '3a126a32'.
+  // 2026-10-27; world, log, plans and result unchanged: without those two fields it is 'a636ca8' again): '3a126a32';
+  // then the opponent launched the drones of Scout Cars it gives no order (2026-10-27, a measured gain): 'dd7d0cec'.
   it('one person is the single-player game, byte for byte: every map and opponent count matches the fingerprint taken before hot-seat (main at f2ee871)', () => {
     let h = 0x811c9dc5;
     const feed = (text: string) => {
@@ -142,6 +144,6 @@ describe('hot-seat (docs/design/strategy.md § 9.4, D10)', () => {
         }
       }
     }
-    expect(h.toString(16)).toBe('3a126a32');
+    expect(h.toString(16)).toBe('dd7d0cec');
   }, 300_000);
 });

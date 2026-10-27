@@ -384,6 +384,35 @@ describe('drones (owner decision 2026-10-27)', () => {
     expect(planAi(seen, RULESET, 'hard')).toEqual(plan);
   });
 
+  it('the opponent puts a drone up from a Scout Car it gives no order, with a slot to spare (normal and hard, never easy)', () => {
+    const s = newGame(1);
+    const cars = enemy(s).filter((e) => e.kind === 'rifles').slice(0, 2);
+    for (const car of cars) Object.assign(car, { kind: 'outrider', hp: 45 });
+    // The first car is holding back to regroup (below the retreat threshold): it gets no order.
+    Object.assign(cars[0]!, { hp: 5 });
+    s.world.intel = initialIntel(s.world, RULESET);
+    const obs = observe(s.world, RULESET, OPPONENT);
+    const roomy = { ...obs, network: { ...obs.network, slots: 12 } };
+    for (const d of ['normal', 'hard'] as const) {
+      const plan = planAi(roomy, RULESET, d);
+      const launched = plan.filter((c) => c.order.type === 'launch');
+      expect(launched).toContainEqual({ side: OPPONENT, unit: cars[0]!.id, order: { type: 'launch' } });
+      // Only cars, only after every other order, never a car that has an order this turn.
+      expect(launched.every((c) => cars.some((car) => car.id === c.unit))).toBe(true);
+      expect(plan.slice(plan.length - launched.length)).toEqual(launched);
+      expect(launched.every((c) => plan.filter((o) => o.unit === c.unit).length === 1)).toBe(true);
+      // The order slots go to the army first: with the post's four, none is left for a launch.
+      expect(planAi(obs, RULESET, d).some((c) => c.order.type === 'launch')).toBe(false);
+    }
+    expect(planAi(roomy, RULESET, 'easy').some((c) => c.order.type === 'launch')).toBe(false);
+    // Up already: no second launch.
+    const up = lockTurn(planOrder(s, own(s)[1]!.id, { type: 'hold' })!);
+    const car = up.world.entities.find((e) => e.id === cars[0]!.id)!;
+    Object.assign(car, { drone: 999 });
+    const later = observe(up.world, RULESET, OPPONENT);
+    expect(planAi({ ...later, network: { ...later.network, slots: 12 } }, RULESET, 'hard').some((c) => c.unit === car.id && c.order.type === 'launch')).toBe(false);
+  });
+
   it('a drone is free: launching it changes no side\'s strength', () => {
     const { s, car } = withCar();
     const before = sideValue(s.world, PLAYER);
