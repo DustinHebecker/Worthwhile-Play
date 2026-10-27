@@ -39,8 +39,8 @@ export interface NoteEvent {
   readonly freq: number;
   readonly start: number;
   readonly dur: number;
-  readonly level?: number;
-  readonly voice?: Voice;
+  readonly level?: number | undefined;
+  readonly voice?: Voice | undefined;
 }
 
 export interface ScheduledNote {

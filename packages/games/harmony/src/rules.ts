@@ -129,7 +129,7 @@ export function restart(state: HarmonyState): HarmonyState {
 
 /* ---------- Answers ---------- */
 
-const isChoice = (a: Answer): a is { choice: number } => 'choice' in a;
+const isChoice = (a: Answer): a is { readonly choice: number } => 'choice' in a;
 
 /** Whether an answer is right (design § 10): the choice index, the exact MIDI note or the pitch-class set. */
 export function isMatch(spec: Spec, answer: Answer): boolean {
@@ -191,10 +191,10 @@ export function skip(state: QuizState): QuizState {
   return withItem(state, { ...item, answer: 'skip', matched: null });
 }
 
-/** "Show the picture" by ear (`hint`), or the automatic picture when sound is unavailable (`no-sound`). */
+/** "Show the picture" by ear or "Show on the keyboard" by eye (`hint`), or the automatic picture by ear when sound is unavailable (`no-sound`). */
 export function peek(state: QuizState, kind: 'hint' | 'no-sound'): QuizState {
   const item = currentItem(state);
-  if (!item || isCommitted(item) || item.peeked !== false || state.senses !== 'ear') return state;
+  if (!item || isCommitted(item) || item.peeked !== false || (kind === 'no-sound' && state.senses !== 'ear')) return state;
   return withItem(state, { ...item, peeked: kind });
 }
 
@@ -274,7 +274,7 @@ export function summarize(state: QuizState): Summary {
 
 /* ---------- Free keyboard (design § 7.7) ---------- */
 
-const inFree = (m: number) => isInt(m, FREE_LOW, FREE_HIGH);
+const inFree = (m: unknown): m is number => isInt(m, FREE_LOW, FREE_HIGH);
 
 export function toggleHeld(state: KeyboardState, midi: number): KeyboardState {
   if (state.mode !== 'hold' || !inFree(midi)) return state;
@@ -317,7 +317,7 @@ function isValidItem(v: unknown, topic: QuizTopic, level: Level, senses: Senses)
   if (!isRecord(v.spec) || !TOPIC_KINDS[topic][level].includes(v.spec.k as string) || specProblem(v.spec, level) !== undefined) return false;
   const spec = v.spec as unknown as Spec;
   if (v.draft !== null && !isAnswerFor(spec, v.draft)) return false;
-  if (!(v.peeked === false || ((v.peeked === 'hint' || v.peeked === 'no-sound') && senses === 'ear'))) return false;
+  if (!(v.peeked === false || v.peeked === 'hint' || (v.peeked === 'no-sound' && senses === 'ear'))) return false;
   if (v.answer === null) return v.matched === null;
   if (v.answer === 'skip') return v.matched === null;
   if (!isAnswerFor(spec, v.answer)) return false;
@@ -329,7 +329,7 @@ function isKeyboardState(v: Record<string, unknown>): boolean {
   return (
     Object.keys(v).length === 8 &&
     isUint32(v.seed) &&
-    isArrayOf(v.held, (m): m is number => inFree(m)) &&
+    isArrayOf(v.held, inFree) &&
     (v.held as number[]).length <= MAX_KEYS &&
     (v.held as number[]).every((m, i, a) => i === 0 || m > a[i - 1]!) &&
     isInt(v.base, BASE_MIN, BASE_MAX) &&

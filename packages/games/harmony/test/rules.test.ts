@@ -92,13 +92,14 @@ describe('quiz transitions (design § 13)', () => {
     expect(restart(done)).toEqual(quiz(3, 'intervals'));
   });
 
-  it('peek is recorded by ear only, once, before checking', () => {
+  it('peek is recorded once, before checking; no-sound by ear only', () => {
     let s = quiz(4, 'chords', 'medium');
     s = peek(s, 'hint');
     expect(s.items[0]!.peeked).toBe('hint');
     expect(peek(s, 'no-sound')).toBe(s);
     const eye = quiz(4, 'chords', 'medium', 'eye');
-    expect(peek(eye, 'hint')).toBe(eye);
+    expect(peek(eye, 'no-sound')).toBe(eye);
+    expect(peek(eye, 'hint').items[0]!.peeked).toBe('hint');
     s = next(skip(s));
     s = peek(s, 'no-sound');
     expect(summarize({ ...s, index: 10 } as QuizState)).toMatchObject({ hints: 1, noSound: 1, skipped: 1 });

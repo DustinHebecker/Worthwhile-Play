@@ -1,6 +1,6 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { itemEvents, withContour, type Variant } from '../src/audio/play';
+import { itemEvents, withContour } from '../src/audio/play';
 import {
   ATTACK,
   FREQ_MAX,
@@ -21,14 +21,12 @@ import {
   rhythmEvents,
   schedule,
   slower,
-  type NoteEvent,
-  type ScheduledNote
+  type NoteEvent
 } from '../src/audio/schedule';
 import { HARMONICS, waveTables } from '../src/audio/voices';
 import { generateRound } from '../src/generate';
 import { peakSum, variants } from './audio-helpers';
 import { LEVELS, QUIZ_TOPICS } from '../src/levels';
-import type { Spec } from '../src/spec';
 
 const eventArb = fc.record({
   freq: fc.double({ min: 20, max: 3000, noNaN: true }),

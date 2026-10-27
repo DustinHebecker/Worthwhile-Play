@@ -134,7 +134,7 @@ describe('graph and levels (design § 9.2, § 9.4)', () => {
     const { engine } = setup();
     engine.play(chord);
     const ctx = FakeContext.instances[0]!;
-    const masterGain = ctx.gains().find((g) => g.connections[0] && (g.connections[0] as { kind: string }).kind === 'compressor')!;
+    const masterGain = ctx.gains().find((g) => g.connections[0] && (g.connections[0] as unknown as { kind: string }).kind === 'compressor')!;
     fc.assert(
       fc.property(fc.oneof(fc.double(), fc.integer()), (v) => {
         engine.setVolume(v);
