@@ -86,9 +86,12 @@ describe('opponent levels (I5)', () => {
     for (const spec of MARGIN_MAPS) {
       const hard = margin(spec, 'hard', 'easy', 20, 2, 2);
       const normal = margin(spec, 'normal', 'easy', 20, 2, 2);
-      // 20 openings each (measured 2026-10-17: 20-0 for both levels on both maps).
-      expect(hard.a, `${spec.id} hard vs easy ${JSON.stringify(hard)}`).toBeGreaterThanOrEqual(hard.b + 16);
-      expect(normal.a, `${spec.id} normal vs easy ${JSON.stringify(normal)}`).toBeGreaterThanOrEqual(normal.b + 16);
+      // 20 openings each (measured 2026-10-17: 20-0 for both levels on both maps). Since easy builds
+      // (owner review 2026-10-27: two Extractors, a Vehicle Factory) its income keeps more Rifle Squads
+      // at home, and hard's storms into them can lose on strength at turn 24: Field Exercise hard 16-4,
+      // normal 19-1; Ridge Valley 20-0 for both. A clear margin is now 12 games.
+      expect(hard.a, `${spec.id} hard vs easy ${JSON.stringify(hard)}`).toBeGreaterThanOrEqual(hard.b + 12);
+      expect(normal.a, `${spec.id} normal vs easy ${JSON.stringify(normal)}`).toBeGreaterThanOrEqual(normal.b + 12);
     }
   }, 600_000); // 2 maps x 2 levels x 20 AI-vs-AI games of 24 turns: 154 s under coverage on a loaded 4-core machine (2026-10-14), kept under half of this
 

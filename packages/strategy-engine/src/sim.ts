@@ -2,8 +2,8 @@ import { isRecord } from '@wp/game-core';
 import { cellOf, dirsFor, dist2, frameCell, frameDirs, frameIndexIn, frameOf, maxStepCost, passable, stepCost, terrainAt } from './grid';
 import { canReach, costGrid, findPath, NumberHeap, regions } from './path';
 import { DEFAULT_DOCTRINE, MAX_SUPPLY, NEUTRAL, type Archetype, type Command, type Doctrine, type Entity, type Order, type OrderEndReason, type Report, type Ruleset, type SimEvent, type Status, type TargetPriority, type WeaponSpec, type World } from './types';
-import { computeNetwork, isEmitter, type Network } from './network';
-import { initialIntel, updateIntel } from './vision';
+import { computeNetwork, isActiveEw, isEmitter, type Network } from './network';
+import { initialIntel, reportingUnits, updateIntel } from './vision';
 import { archetypeOf, carrierOf, findEntity, hostile, needsDeploy, normalizeDoctrine, normalizeOrder, spawn, validateCommand } from './world';
 import { depositAt, incomeOf, isReady, repairPrice, sellRefund, spawnCell } from './economy';
 
@@ -23,7 +23,9 @@ export function runTicks(world: World, ruleset: Ruleset, commands: readonly Comm
   const w = structuredClone(world);
   const events: SimEvent[] = [];
   const reported = ruleset.fog ? Array.from({ length: w.sides }, (): SimEvent[] => []) : undefined;
-  for (let i = 0; i < ticks; i++) tick(w, ruleset, i === 0 ? commands : [], events, reported);
+  // Units each side fixed by intercepting their orders: spotted until this batch of ticks ends (a turn).
+  const fixes = Array.from({ length: w.sides }, () => new Set<number>());
+  for (let i = 0; i < ticks; i++) tick(w, ruleset, i === 0 ? commands : [], events, reported, fixes);
   return reported ? { world: w, events, reported } : { world: w, events };
 }
 
@@ -61,7 +63,7 @@ interface Hit {
 }
 
 /** One tick in the fixed system order of ADR 0009 (systems not yet implemented are no-ops). */
-export function tick(w: World, rs: Ruleset, commands: readonly Command[], events: SimEvent[], reported?: SimEvent[][]): void {
+export function tick(w: World, rs: Ruleset, commands: readonly Command[], events: SimEvent[], reported?: SimEvent[][], fixes?: Set<number>[]): void {
   const firstEvent = events.length;
   // Worlds from before fog (or built by hand) start with what each side sees and owns.
   if (rs.fog && !w.intel) w.intel = initialIntel(w, rs);
@@ -98,6 +100,8 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
   const placing: { unit: Entity; kind: string; x: number; y: number }[] = [];
   // Carriers launching their drone in this batch: set down after the loop, like sites (ids by cell).
   const launching: Entity[] = [];
+  // Units that received an order in this batch (where they stood): Direction Finders may intercept it.
+  const received: Entity[] = [];
   for (const c of commands) {
     if (!validateCommand(w, rs, c, networks).ok) continue;
     // A placement the side's knowledge allowed may still find the cell taken: refused unpaid.
@@ -121,6 +125,7 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
       slotsLeft.set(c.side, left - 1);
     }
     const unit = findEntity(w, c.unit) as Entity;
+    if (!received.includes(unit)) received.push(unit);
     const order = normalizeOrder(c.order);
     // Economy: production and placement are one-shot and paid at once; the standing order stays.
     if (order.type === 'produce') {
@@ -163,6 +168,24 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
     delete unit.stall;
     delete unit.prev;
     events.push({ t: 'order', tick: t, id: unit.id });
+  }
+
+  // Direction finding (owner choice 2026-10-27): an order is a radio message. A hostile unit that
+  // received one within the radius of a side's reporting, working Direction Finder is fixed where it
+  // stood: told to that side (\`intercept\`) and spotted by it until the turn ends.
+  if (rs.fog && fixes && received.length > 0) {
+    for (let side = 0; side < w.sides; side++) {
+      if (w.out?.includes(side)) continue;
+      const finders = reportingUnits(w, rs, side, networks?.[side]).filter((e) => arch(e).ew?.role === 'tracer' && isActiveEw(rs, e));
+      if (finders.length === 0) continue;
+      for (const unit of received) {
+        if (!hostile(w, side, unit.side)) continue;
+        const by = finders.find((f) => dist2(f.x, f.y, unit.x, unit.y) <= (arch(f).ew?.radius ?? 0) ** 2);
+        if (!by) continue;
+        fixes[side]?.add(unit.id);
+        events.push({ t: 'intercept', tick: t, id: unit.id, side: unit.side, kind: unit.kind, x: unit.x, y: unit.y, by: by.id, to: side });
+      }
+    }
   }
 
   // With fog, weapons engage only targets the own side has spotted (reports from the end of the
@@ -595,7 +618,7 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
   // 10b. Capture and elimination (several sides): at the end of a turn, after everything else.
   if (rs.capture && t % rs.ticksPerTurn === 0) captureAndEliminate(w, rs, t, events);
   // 11. Vision (fog rulesets): reports and per-side event filter (D7)
-  if (rs.fog) updateIntel(w, rs, gone, events, firstEvent, reported);
+  if (rs.fog) updateIntel(w, rs, gone, events, firstEvent, reported, fixes);
   // 12. Victory is decided by the mode (game rules).
 }
 
