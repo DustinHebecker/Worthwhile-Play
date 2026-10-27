@@ -15,4 +15,5 @@ export * from './content/de';
 export * from './rng-for';
 export * from './content/de-family';
 export * from './content/in';
+export * from './content/in-family';
 export * from './review';

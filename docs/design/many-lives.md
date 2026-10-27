@@ -145,7 +145,12 @@ Sampled **jointly** (Gaussian copula over the profile's marginal distributions) 
 | Health | Catastrophic hospital bill 16.5 % per household-year; bill = 2 months of average living costs (start prices, scaled by inflation) unless the job brings health cover | NSS 75th round; the bill size is an **assumption** |
 | Life review | Income (pre-tax, per adult) and wealth (per adult) percentiles from WID | WID 2022-23 |
 
-The assumptions are parameters with the source `model-assumption` and status `unverified`. `checkParams` lists them, and they must be researched or confirmed before the release. **Not yet in the slice:** family life (marriage, children, maternity benefit), wealth transfers of wealthy families (gifts, family business, inheritance), tuition and coaching costs as money (the parents carry them, shown as strain), medical entrance exams, rural lives, and a sensitivity review of the texts.
+| Marriage (E4b) | Family-arranged match proposals from the legal minimum age (women 18, men 21): about 29,300 ppm per month for women 18–24 (median 19.2; marriages before 18 are not played) and 16,400 ppm for men 21–29 (median ≈ 24.5, **assumption**), lower afterwards, paused during education. A rare self-chosen partner (≈ 5 % of marriages). After the wedding, women are asked whether to keep working and men face the provider role | NFHS-5, IHDS-II, PLFS |
+| Children (E4b) | Child wish 8 %/month for married couples (**assumption**, calibrated so that a family wanting two children has about two); conception as for Germany (biology); maternity benefit at full pay for 26 weeks (12 from the third child), only with social security (proxy for an employer with 10+ staff) | Maternity Benefit (Amendment) Act 2017 |
+| Separation (E4b) | 40 ppm per month (from the divorced and separated stock, under-reported) | Census 2011 |
+| Parents (E4b) | Death of a parent from the life table, mother 22 and father 27 years older (**assumptions**) | UN WPP 2024 |
+
+The assumptions are parameters with the source `model-assumption` and status `unverified`. `checkParams` lists them, and they must be researched or confirmed before the release. Dowry is deliberately not modelled (§ 10). **Not yet in the slice:** care for parents, joint-family finances (in-laws' household), wealth transfers of wealthy families (gifts, family business, inheritance), tuition and coaching costs as money (the parents carry them, shown as strain), medical entrance exams, rural lives, and a sensitivity review of the texts.
 
 ---
 
