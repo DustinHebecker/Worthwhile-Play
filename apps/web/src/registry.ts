@@ -79,7 +79,8 @@ export const GAMES: readonly GameEntry[] = [
   entry('fermi-lab', () => import('@wp/game-fermi-lab')),
   entry('many-lives', () => import('@wp/game-many-lives')),
   entry('probability-detective', () => import('@wp/game-probability-detective')),
-  entry('atlas-explorer', () => import('@wp/game-atlas-explorer'))
+  entry('atlas-explorer', () => import('@wp/game-atlas-explorer')),
+  entry('timeline', () => import('@wp/game-timeline'))
 ];
 
 export const findGame = (id: string): GameEntry | undefined => GAMES.find((g) => g.metadata.id === id);

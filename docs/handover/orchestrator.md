@@ -151,14 +151,18 @@ App size: precache about 7.7 MB (213 entries, all games and locales, offline).
 - A weekly model rate limit can stop subagents mid-review. Resume them with SendMessage once it resets.
 - Ports in use by convention: publish e2e 4793, PR gate 4795, ad-hoc checks 4796–4799, feature agents 5100–5999.
 
-## Paused state (2026-10-25)
+## State (2026-10-26)
 
-Done on 2026-10-25 (on main and deployed): Lootlings #73 (8 worlds; random games show the drawn worlds). Estimation Lab: the start screen picks "Free estimate" or "Guided, with help"; the extra model step is gone (owner request), and saves migrate v1 to v2.
+On main and deployed:
+- Estimation Lab: two paths (free / guided), one value per input (owner feedback); no "give up" button (owner: not for now).
+- Probability Detective: reviewed, 38 cases recomputed.
+- Atlas Explorer: reviewed. Neutrality fixes for narrow disputed areas, the date line, routes, rivers, desert and line margins. Natural Earth 5.1.2, policy "mark, don't decide", detailed map.
+- Strategy #74–#77: four-base editor, team = strongest side, lone computer holds, asymmetric maps.
 
-Open, in this order:
-- Strategy #74 (map editor for four-base maps, head 7223dac): gate, then merge. Next comes the balance PR (a team counts as its strongest side, owner option A; 006665c on `backup/strategy-engine`).
-- Probability Detective: `game/probability-detective` at c6dedb9 is green; e2e 14/14 covers all modes, and the screenshots are checked. Next: the independent review (step 3), then on the orchestrator side Stryker `mutate` (`src/{frac,generate,traps}.ts`), a ROADMAP row and a `docs/third-party.md` entry (original content, invented numbers). Open design question: in RTL the trap-explanation bars fill from the left while the belief bar starts on the right.
-- Estimation Lab, question for the owner: guided mode has no "give up and show the answer" exit. Ask whether one is wanted.
+Open:
+- New-games pipeline: Timeline (game 5) is being planned on `plan/<id>` (agent running). Then Tiny Ecosystem, Harmony, Balance Lab.
+- Atlas follow-ups (debatable, not done): the game chunk is 93 KB gzip (all 16 catalogues bundled); hatched slivers along Kashmir (~900 km²); Melilla and Gibraltar read as their neighbours; direction words take the shorter way round the globe; a native-speaker review of the AI-assisted locales.
+- Probability Detective follow-ups: the review screen is dense (fold more?); the wording of "forecast score".
 - Estimation Lab follow-ups (owner said yes): a "recently seen" memory for tasks; a yearly review of time-dependent figures; three source links that return 404 from the container (UN PopFacts 2017/2, OICA 2013, University of Arizona bees) — check them in a browser and switch to Wayback if dead; true plurals for count words ("1 days").
 - Pixel Peel open items: the phone start time (about 300 ms against a 250 ms target) needs a measurement on a quiet machine; a side-by-side landscape layout.
 - `scripts/orchestrator/gate-pr.sh` still runs the slow suites under coverage. The relay generator slow tests time out there under load; align it with CI (exclude `*.slow.test.ts` from coverage and run them separately).

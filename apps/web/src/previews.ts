@@ -651,7 +651,16 @@ const PREVIEWS: Record<string, () => string> = {
     P('M38 12c10-5 26-6 38-1c6 3 6 9 1 12c-5 2-10 1-14 3c-2 5-6 9-9 14c-2 3-5 4-7 1c-2-4-1-9-4-12c-4-2-6-6-4-10c-3-2-3-5-1-7z', 'rl') +
     P('M70 41c5-3 12-2 15 1c2 3 1 7-3 8c-4 1-8 1-11-1c-3-2-3-6-1-8z', 'rl') +
     L(72.5, 48, 75.5, 42.5, 'ab') + L(75.5, 49, 79, 42, 'ab') + L(79, 49, 82.5, 42, 'ab') + L(82.5, 48.5, 85, 44, 'ab') +
-    P('M50 52Q60 44 72 45', 'fn ds') + diamond(50, 52, 3.8, 'a')
+    P('M50 52Q60 44 72 45', 'fn ds') + diamond(50, 52, 3.8, 'a'),
+  // Sense of Time: three stacked order cards with ▲▼ handles above the timeline: an axis whose ticks close up towards
+  // the right (the squeezed scale), the hatched accepted range with a bold outline and the answer ◆ just left of it.
+  // No text or digits; not mirrored (the timeline runs left to right in every locale).
+  timeline: () =>
+    [3, 14, 25].map((y, i) =>
+      R(14, y, 68, 9, 'e', 2) + L(20, y + 4.5, 20 + [40, 32, 36][i]!, y + 4.5, 'mu') +
+      tri(73, y + 3, 1.8, 'i') + poly([[71.2, y + 5.6], [74.8, y + 5.6], [73, y + 7.6]], 'i')).join('') +
+    L(4, 48, 92, 48, 'k') + [8, 36, 58, 74, 86].map((x) => L(x, 44.5, x, 51.5, 'k')).join('') +
+    R(44, 43, 11, 10, 'ob', 1) + hatch(44, 43, 11, 10, 3, 'fn') + diamond(39, 48, 4.2, 'a')
 };
 
 /** Pictures made only of text cards and lines: these follow the reading direction (flipped in RTL). */
