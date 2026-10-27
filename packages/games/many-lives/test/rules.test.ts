@@ -78,3 +78,21 @@ describe('Many Lives rules', () => {
     fc.assert(fc.property(fc.anything(), (v) => { isManyLivesState(v); }));
   });
 });
+
+describe('event texts', () => {
+  it('every event and choice has its texts in English and German', async () => {
+    const { EVENTS, textIdOf } = await import('../src/rules');
+    const { messages } = await import('../src/messages');
+    const missing: string[] = [];
+    for (const locale of ['en', 'de']) {
+      const m = messages[locale]!;
+      for (const def of EVENTS) {
+        const id = textIdOf(def);
+        for (const key of [`event.${id}.title`, `event.${id}.text`, ...def.choices.map((c) => `choice.${id}.${c.id}`)]) {
+          if (m[key] === undefined) missing.push(`${locale}:${key}`);
+        }
+      }
+    }
+    expect(missing).toEqual([]);
+  });
+});

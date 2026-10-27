@@ -1,13 +1,16 @@
 import type { NewGameOptions, SettingSpec, SettingValue } from '@wp/game-core';
 import { createRng, isRecord } from '@wp/game-core';
 import {
-  EVENTS_DE, PROFILE_DE, advanceUntilEvent, ageInYears, availableChoices, budget, choose, isLifeState, keyedRngFor,
+  EVENTS_DE, EVENTS_DE_FAMILY, PROFILE_DE, advanceUntilEvent, ageInYears, availableChoices, budget, choose, isLifeState, keyedRngFor,
   lifeSystems, newLife, qualificationOf, type BudgetItem, type Choice, type EventDef, type LifeState, type Profile
 } from '@wp/life-engine';
 
 /** The only profile of this first version (owner decision O25: Germany first, India next). */
 export const PROFILE: Profile = PROFILE_DE;
-export const EVENTS: readonly EventDef[] = EVENTS_DE;
+export const EVENTS: readonly EventDef[] = [...EVENTS_DE, ...EVENTS_DE_FAMILY];
+
+/** Message id of an event (variants of one event share their texts). */
+export const textIdOf = (def: EventDef): string => def.textId ?? def.id;
 const SYSTEMS = lifeSystems(PROFILE);
 
 export const HOUSEHOLDS = ['random', ...PROFILE.households.map((h) => h.id)] as const;
@@ -89,7 +92,10 @@ export function step(state: ManyLivesState, kind: StepKind): ManyLivesState {
   if (!state.life.alive || state.life.pending.length > 0) return state;
   const max = kind === 'month' ? 1 : kind === 'year' ? 12 : MAX_FAST_FORWARD_MONTHS;
   const r = advanceUntilEvent(state.life, EVENTS, rngFor(state), max, SYSTEMS);
-  const drawn = r.state.pending.map((p) => ({ month: p.month, key: `event.${p.eventId}.title` }));
+  const drawn = r.state.pending.map((p) => {
+    const def = EVENTS.find((d) => d.id === p.eventId);
+    return { month: p.month, key: `event.${def === undefined ? p.eventId : textIdOf(def)}.title` };
+  });
   return { ...state, life: r.state, lastStep: r.months, log: pushLog(state.log, [...outcomes(state.life, r.state), ...drawn]) };
 }
 

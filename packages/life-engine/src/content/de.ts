@@ -27,6 +27,7 @@ const LAYOFF_PPM = { none: 18_496, vocational: 3_298, tertiary: 2_091 } as const
 const LAYOFF_PARAMS = ['de.labour.job-finding-monthly-insured', 'de.labour.unemployment.no-qualification', 'de.labour.unemployment.vocational', 'de.labour.unemployment.tertiary', 'de.wellbeing.unemployment-life-satisfaction'];
 
 const loseJob = [
+  { mark: 'job.lost-at' },
   { clear: 'work.employed' }, { clear: 'work.part-time' }, { set: 'work.unemployed' },
   { setCount: 'ui.left', value: 12 }, { stat: 'satisfaction' as const, add: -UNEMPLOYMENT_SATISFACTION }, { stat: 'security' as const, add: -100 }
 ];
@@ -141,15 +142,15 @@ export const EVENTS_DE: readonly EventDef[] = [
     ]
   },
   {
-    id: 'job.lost-unskilled', chancePpm: LAYOFF_PPM.none, cooldownMonths: 6, when: all(flag('work.employed'), qual(0)), params: LAYOFF_PARAMS,
+    id: 'job.lost-unskilled', chancePpm: LAYOFF_PPM.none, cooldownMonths: 6, when: all(flag('work.employed'), qual(0), { not: flag('work.parental-leave') }), params: LAYOFF_PARAMS,
     choices: [{ id: 'accept', effects: loseJob }]
   },
   {
-    id: 'job.lost-vocational', chancePpm: LAYOFF_PPM.vocational, cooldownMonths: 6, when: all(flag('work.employed'), qual(1)), params: LAYOFF_PARAMS,
+    id: 'job.lost-vocational', chancePpm: LAYOFF_PPM.vocational, cooldownMonths: 6, when: all(flag('work.employed'), qual(1), { not: flag('work.parental-leave') }), params: LAYOFF_PARAMS,
     choices: [{ id: 'accept', effects: loseJob }]
   },
   {
-    id: 'job.lost-graduate', chancePpm: LAYOFF_PPM.tertiary, cooldownMonths: 6, when: all(flag('work.employed'), qual(2, 3)), params: LAYOFF_PARAMS,
+    id: 'job.lost-graduate', chancePpm: LAYOFF_PPM.tertiary, cooldownMonths: 6, when: all(flag('work.employed'), qual(2, 3), { not: flag('work.parental-leave') }), params: LAYOFF_PARAMS,
     choices: [{ id: 'accept', effects: loseJob }]
   },
   // --- Home ----------------------------------------------------------------------------------------
