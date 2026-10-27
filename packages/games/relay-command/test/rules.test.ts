@@ -172,11 +172,15 @@ describe('Field Exercise scenario', () => {
     expect(stalled(-300, -280)).toBe(true); // the trailing side gains less than the margin
     expect(stalled(-300, -200)).toBe(false); // a real comeback
     expect(stalled(100, -100)).toBe(false); // the lead changed hands
-    // Only the two posts: nothing can change, and from CONTACT_TURN the rule counts; the game ends
-    // as a draw STALL_TURNS turns later.
+    // Only the two posts (and no deposits, so nobody can build an Extractor): nothing can change,
+    // and from CONTACT_TURN the rule counts; the game ends as a draw STALL_TURNS turns later.
     // Plain open end: the game goes on; from the same point the player may end it on strength.
+    const postsOnly = (st: RcState): RcState => {
+      const world = withoutUnits(st.world, st.world.entities.filter((e) => e.kind !== 'command-post').map((e) => e.id));
+      return { ...st, world: { ...world, map: { ...world.map, deposits: [] } } };
+    };
     const plain = newGame(1, FIELD_EXERCISE, 'easy', null);
-    let p: RcState = { ...plain, world: withoutUnits(plain.world, plain.world.entities.filter((e) => e.kind !== 'command-post').map((e) => e.id)) };
+    let p: RcState = postsOnly(plain);
     while (p.world.turn < CONTACT_TURN + STALL_TURNS - 1) p = lockTurn(p);
     expect(canSettle(p)).toBe(false);
     expect(settle(p)).toBe(p);
@@ -197,7 +201,7 @@ describe('Field Exercise scenario', () => {
     const base = newGame(1, FIELD_EXERCISE, 'easy', null, true);
     expect(base.quick).toBe(true);
     expect(newGame(1, FIELD_EXERCISE, 'easy', 24, true).quick).toBe(false); // quick only with open end
-    let s: RcState = { ...base, world: withoutUnits(base.world, base.world.entities.filter((e) => e.kind !== 'command-post').map((e) => e.id)) };
+    let s: RcState = postsOnly(base);
     while (s.phase === 'plan' && s.world.turn < CONTACT_TURN - 1) s = lockTurn(s);
     expect(s.lead).toEqual([]);
     while (s.phase === 'plan') s = lockTurn(s);

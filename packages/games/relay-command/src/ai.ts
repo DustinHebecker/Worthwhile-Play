@@ -835,13 +835,13 @@ function economyOrders(obs: Observation, ruleset: Ruleset, own: readonly Entity[
   if (difficulty === 'easy') {
     // Easy builds too (owner review 2026-10-27), slowly and never towers: an Extractor at a time on
     // a covered deposit out of known enemy reach (at most EASY_EXTRACTORS), a Vehicle Factory from
-    // EASY_POOL_TURN; it always keeps its cushion.
+    // EASY_POOL_TURN next to a standing Barracks (it adds to production); it always keeps its cushion.
     const free = source ? freeDeposits(obs, ruleset, source) : [];
     const extractorsNow = ownAll.filter((e) => arch(e)?.extractor).length;
     if (source && extractorsNow < EASY_EXTRACTORS && !ownAll.some((e) => arch(e)?.extractor && (e.build ?? 0) > 0) && supply >= EASY_RESERVE + costOf('extractor')) {
       for (const d of free) if (tryOrder({ side, unit: source.id, order: { type: 'build', kind: 'extractor', x: d.x, y: d.y } })) break;
     }
-    if (source && world.turn >= EASY_POOL_TURN && !ownAll.some((e) => e.kind === 'motor-pool') && supply >= EASY_RESERVE + costOf('motor-pool')) {
+    if (source && world.turn >= EASY_POOL_TURN && yards.some((y) => y.kind === 'muster') && !ownAll.some((e) => e.kind === 'motor-pool') && supply >= EASY_RESERVE + costOf('motor-pool')) {
       const spot = buildSpot(obs, ruleset, source, 'motor-pool');
       if (spot) tryOrder({ side, unit: source.id, order: { type: 'build', kind: 'motor-pool', x: spot.x, y: spot.y } });
     }
