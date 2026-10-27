@@ -269,6 +269,13 @@ describe('direction finding of orders (owner choice 2026-10-27)', () => {
     const cut = structuredClone(base());
     Object.assign(cut.entities.find((e) => e.kind === 'tracer')!, { x: 9 });
     expect(resolveTurn(cut, rs, [[], [order(cut)]]).events.some((e) => e.t === 'intercept')).toBe(false);
+    // Only a working Direction Finder listens: not a jammer in its place, not a finder knocked out (EMP).
+    const jammer = structuredClone(base());
+    jammer.entities.find((e) => e.kind === 'tracer')!.kind = 'jammer';
+    expect(resolveTurn(jammer, rs, [[], [order(jammer)]]).events.some((e) => e.t === 'intercept')).toBe(false);
+    const stunned = structuredClone(base());
+    stunned.entities.find((e) => e.kind === 'tracer')!.status = [{ kind: 'disabled', ticks: 6 }];
+    expect(resolveTurn(stunned, rs, [[], [order(stunned)]]).events.some((e) => e.t === 'intercept')).toBe(false);
     // An own unit's orders are never intercepted by the own finder.
     const own = base();
     const finder = own.entities.find((e) => e.kind === 'tracer')!;
