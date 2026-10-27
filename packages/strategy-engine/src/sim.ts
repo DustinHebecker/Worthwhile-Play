@@ -36,6 +36,13 @@ export function resolveTurn(world: World, ruleset: Ruleset, plans: readonly (rea
   return result;
 }
 
+/**
+ * How far (cells) a Direction Finder hears an order. Below its emitter radius (8): at 8 the fixes
+ * cost the level margins (hard vs normal 11-9 on Field Exercise, a passive player not beaten in
+ * time) and lifted the economist over its bound; 6 keeps the level suites (docs/design/strategy.md).
+ */
+export const INTERCEPT_RADIUS = 6;
+
 const has = (e: Entity, kind: Status['kind']): boolean => e.status.some((s) => s.kind === kind && s.ticks > 0);
 
 /** Integer damage after the armor matrix and cover; at least 1 if the class can be engaged at all. */
@@ -180,7 +187,7 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
       if (finders.length === 0) continue;
       for (const unit of received) {
         if (!hostile(w, side, unit.side)) continue;
-        const by = finders.find((f) => dist2(f.x, f.y, unit.x, unit.y) <= (arch(f).ew?.radius ?? 0) ** 2);
+        const by = finders.find((f) => dist2(f.x, f.y, unit.x, unit.y) <= INTERCEPT_RADIUS ** 2);
         if (!by) continue;
         fixes[side]?.add(unit.id);
         events.push({ t: 'intercept', tick: t, id: unit.id, side: unit.side, kind: unit.kind, x: unit.x, y: unit.y, by: by.id, to: side });
