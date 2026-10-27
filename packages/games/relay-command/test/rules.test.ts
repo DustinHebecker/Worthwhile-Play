@@ -172,11 +172,15 @@ describe('Field Exercise scenario', () => {
     expect(stalled(-300, -280)).toBe(true); // the trailing side gains less than the margin
     expect(stalled(-300, -200)).toBe(false); // a real comeback
     expect(stalled(100, -100)).toBe(false); // the lead changed hands
-    // Only the two posts: nothing can change, and from CONTACT_TURN the rule counts; the game ends
-    // as a draw STALL_TURNS turns later.
+    // Only the two posts (and no deposits, so nobody can build an Extractor): nothing can change,
+    // and from CONTACT_TURN the rule counts; the game ends as a draw STALL_TURNS turns later.
     // Plain open end: the game goes on; from the same point the player may end it on strength.
+    const postsOnly = (st: RcState): RcState => {
+      const world = withoutUnits(st.world, st.world.entities.filter((e) => e.kind !== 'command-post').map((e) => e.id));
+      return { ...st, world: { ...world, map: { ...world.map, deposits: [] } } };
+    };
     const plain = newGame(1, FIELD_EXERCISE, 'easy', null);
-    let p: RcState = { ...plain, world: withoutUnits(plain.world, plain.world.entities.filter((e) => e.kind !== 'command-post').map((e) => e.id)) };
+    let p: RcState = postsOnly(plain);
     while (p.world.turn < CONTACT_TURN + STALL_TURNS - 1) p = lockTurn(p);
     expect(canSettle(p)).toBe(false);
     expect(settle(p)).toBe(p);
@@ -197,7 +201,7 @@ describe('Field Exercise scenario', () => {
     const base = newGame(1, FIELD_EXERCISE, 'easy', null, true);
     expect(base.quick).toBe(true);
     expect(newGame(1, FIELD_EXERCISE, 'easy', 24, true).quick).toBe(false); // quick only with open end
-    let s: RcState = { ...base, world: withoutUnits(base.world, base.world.entities.filter((e) => e.kind !== 'command-post').map((e) => e.id)) };
+    let s: RcState = postsOnly(base);
     while (s.phase === 'plan' && s.world.turn < CONTACT_TURN - 1) s = lockTurn(s);
     expect(s.lead).toEqual([]);
     while (s.phase === 'plan') s = lockTurn(s);
@@ -856,6 +860,7 @@ describe('information model (I3c, D7)', () => {
       expect(all.length).toBeGreaterThanOrEqual(s.events.length);
       // Every event happened, except muzzle flashes (reports only): those name a real unit of another side.
       for (const ev of s.events) {
+        if (ev.t === 'intercept') expect(ev.to).toBe(PLAYER);
         if (ev.t === 'flash') expect(s.world.entities.find((e) => e.id === ev.id)?.side).not.toBe(PLAYER);
         else expect(all).toContainEqual(ev);
       }
@@ -1733,12 +1738,35 @@ describe('opponent economy and easy fighters (mutation run on ai.ts, 2026-10-15)
   const fresh = () => structuredClone(newGame(1).world);
   const setSupply = (w: World, n: number) => { w.supply![OPPONENT] = n; return w; };
 
-  it('easy only trains Rifle Squads, one per idle yard, and only with a cushion of 150 left; it never builds', () => {
+  it('easy builds too (owner review 2026-10-27), slowly: one Extractor at a time up to two, a Vehicle Factory from turn 10, always a cushion of 150', () => {
     const cushion = 150 + RULESET.archetypes.rifles!.cost;
     expect(jobs(plan(setSupply(fresh(), cushion - 1), 'easy'))).toEqual([]);
     expect(jobs(plan(setSupply(fresh(), cushion), 'easy'))).toEqual(['rifles']);
-    expect(jobs(plan(setSupply(fresh(), 5_000), 'easy'))).toEqual(['rifles']); // one yard, one squad: no building
-    const busy = setSupply(fresh(), 5_000);
+    // Enough for the cushion and an Extractor: it builds one, nearest first, then trains.
+    const rich = plan(setSupply(fresh(), 5_000), 'easy');
+    expect(jobs(rich)).toEqual(['extractor', 'rifles']);
+    const site = rich.find((c) => c.order.type === 'build')!.order as { x: number; y: number };
+    expect(fresh().map.deposits!.some((d) => d.x === site.x && d.y === site.y)).toBe(true);
+    // One at a time: while a site stands, no second; two standing, none more.
+    const building = setSupply(fresh(), 5_000);
+    const post = building.entities.find((e) => e.side === OPPONENT && e.kind === 'command-post')!;
+    const deposits = building.map.deposits!.filter((d) => !building.entities.some((e) => e.x === d.x && e.y === d.y)).sort((p, q) => (p.x - post.x) ** 2 + (p.y - post.y) ** 2 - ((q.x - post.x) ** 2 + (q.y - post.y) ** 2));
+    const extractor = (id: number, d: { x: number; y: number }, build?: number): Entity => ({ id, side: OPPONENT, kind: 'extractor', x: d.x, y: d.y, hp: 120, mp: 0, cooldown: 0, order: { type: 'hold' }, status: [], beam: null, ...(build !== undefined && { build }) });
+    building.entities.push(extractor(900, deposits[0]!, 1));
+    expect(jobs(plan(building, 'easy'))).toEqual(['rifles']);
+    const two = setSupply(fresh(), 5_000);
+    two.entities.push(extractor(900, deposits[0]!), extractor(901, deposits[1]!));
+    expect(jobs(plan(two, 'easy'))).toEqual(['rifles']);
+    // The Vehicle Factory from turn 10 (not before), and once it stands it trains Scout Cars.
+    two.turn = 9;
+    expect(jobs(plan(two, 'easy'))).not.toContain('motor-pool');
+    two.turn = 10;
+    expect(jobs(plan(two, 'easy'))).toEqual(['motor-pool', 'rifles']);
+    const pool = plan(two, 'easy').find((c) => c.order.type === 'build')!.order as { x: number; y: number };
+    two.entities.push({ id: 902, side: OPPONENT, kind: 'motor-pool', x: pool.x, y: pool.y, hp: 250, mp: 0, cooldown: 0, order: { type: 'hold' }, status: [], beam: null });
+    expect(jobs(plan(two, 'easy'))).toEqual(['rifles', 'outrider']);
+    // A busy yard gets nothing more.
+    const busy = setSupply(fresh(), cushion);
     busy.entities.find((e) => e.side === OPPONENT && e.kind === 'muster')!.queue = [{ kind: 'rifles', left: 1 }];
     expect(jobs(plan(busy, 'easy'))).toEqual([]);
   });

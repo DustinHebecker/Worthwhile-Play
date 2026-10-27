@@ -785,8 +785,12 @@ const SAVE_TURNS = 3;
 const SURPLUS = 800;
 /** Most yards a side builds for itself (the starting Muster Yard included). */
 const MAX_YARDS = 4;
-/** Easy keeps a cushion before it produces anything (it never builds). */
+/** Easy keeps a cushion before it produces or builds anything. */
 const EASY_RESERVE = 150;
+/** Extractors easy builds at most (one at a time). */
+const EASY_EXTRACTORS = 2;
+/** Turn from which easy builds a Vehicle Factory. */
+const EASY_POOL_TURN = 10;
 /** A known enemy fighter this close (cells) to the post or an Extractor threatens it: a tower goes up. */
 const TOWER_THREAT = 7;
 /**
@@ -806,8 +810,9 @@ const maxTowers = (extractors: number): number => Math.min(4, 1 + Math.floor(ext
 /**
  * Strategic spending (I6a, § 11): Extractors on free covered deposits first (income compounds),
  * then a Motor Pool once two Extractors stand (hard, or normal from turn 6), then units from the
- * level's template as the yards allow; at most `slots` orders. Easy only produces infantry when
- * it has a cushion. Everything is checked with validateCommand before it is spent.
+ * level's template as the yards allow; at most `slots` orders. Easy builds slowly (two Extractors,
+ * a Vehicle Factory from turn 10, no towers) and produces Rifle Squads and Scout Cars, always with a
+ * cushion. Everything is checked with validateCommand before it is spent.
  */
 function economyOrders(obs: Observation, ruleset: Ruleset, own: readonly Entity[], difficulty: Difficulty, slots: number): Command[] {
   const { world, side, network } = obs;
@@ -828,20 +833,30 @@ function economyOrders(obs: Observation, ruleset: Ruleset, own: readonly Entity[
     return true;
   };
   if (difficulty === 'easy') {
+    // Easy builds too (owner review 2026-10-27), slowly and never towers: an Extractor at a time on
+    // a covered deposit out of known enemy reach (at most EASY_EXTRACTORS), a Vehicle Factory from
+    // EASY_POOL_TURN next to a standing Barracks (it adds to production); it always keeps its cushion.
+    const free = source ? freeDeposits(obs, ruleset, source) : [];
+    const extractorsNow = ownAll.filter((e) => arch(e)?.extractor).length;
+    if (source && extractorsNow < EASY_EXTRACTORS && !ownAll.some((e) => arch(e)?.extractor && (e.build ?? 0) > 0) && supply >= EASY_RESERVE + costOf('extractor')) {
+      for (const d of free) if (tryOrder({ side, unit: source.id, order: { type: 'build', kind: 'extractor', x: d.x, y: d.y } })) break;
+    }
+    if (source && world.turn >= EASY_POOL_TURN && yards.some((y) => y.kind === 'muster') && !ownAll.some((e) => e.kind === 'motor-pool') && supply >= EASY_RESERVE + costOf('motor-pool')) {
+      const spot = buildSpot(obs, ruleset, source, 'motor-pool');
+      if (spot) tryOrder({ side, unit: source.id, order: { type: 'build', kind: 'motor-pool', x: spot.x, y: spot.y } });
+    }
+    // Units from each idle yard: Rifle Squads, Scout Cars from the factory.
     for (const yard of yards) {
-      if (supply < EASY_RESERVE + costOf('rifles') || (yard.queue?.length ?? 0) > 0) continue;
-      tryOrder({ side, unit: yard.id, order: { type: 'produce', kind: 'rifles' } });
+      const kind = yard.kind === 'motor-pool' ? 'outrider' : 'rifles';
+      if (supply < EASY_RESERVE + costOf(kind) || (yard.queue?.length ?? 0) > 0) continue;
+      tryOrder({ side, unit: yard.id, order: { type: 'produce', kind } });
     }
     return commands;
   }
   // 1. Extractors on free deposits inside coverage (nearest to the post first).
   if (source) {
-    const free = (world.map.deposits ?? [])
-      .filter((d) => (d.left > 0 || d.left === UNKNOWN_LEFT || d.endless) && !world.entities.some((e) => e.x === d.x && e.y === d.y))
-      .sort((a, b) => dist2(a.x, a.y, source.x, source.y) - dist2(b.x, b.y, source.x, source.y) || sideFrame(obs, cellOf(world.map, a.x, a.y)) - sideFrame(obs, cellOf(world.map, b.x, b.y)));
-    for (const d of free) {
+    for (const d of freeDeposits(obs, ruleset, source)) {
       if (supply < costOf('extractor')) break;
-      if (dangerAt(obs, ruleset, d.x, d.y) > 0) continue; // within reach of a known enemy fighter: it would only be shelled
       tryOrder({ side, unit: source.id, order: { type: 'build', kind: 'extractor', x: d.x, y: d.y } });
     }
   }
@@ -908,6 +923,18 @@ function economyOrders(obs: Observation, ruleset: Ruleset, own: readonly Entity[
     }
   }
   return commands;
+}
+
+/**
+ * Deposits left to build on, nearest to `source` first (ties in the side's frame), without those a
+ * known enemy fighter can reach (an Extractor there would only be shelled).
+ */
+function freeDeposits(obs: Observation, ruleset: Ruleset, source: Entity): { x: number; y: number }[] {
+  const { world } = obs;
+  return (world.map.deposits ?? [])
+    .filter((d) => (d.left > 0 || d.left === UNKNOWN_LEFT || d.endless) && !world.entities.some((e) => e.x === d.x && e.y === d.y))
+    .sort((a, b) => dist2(a.x, a.y, source.x, source.y) - dist2(b.x, b.y, source.x, source.y) || sideFrame(obs, cellOf(world.map, a.x, a.y)) - sideFrame(obs, cellOf(world.map, b.x, b.y)))
+    .filter((d) => dangerAt(obs, ruleset, d.x, d.y) === 0);
 }
 
 /** A free covered cell for a structure near `source`, away from deposits, nearest first (ties in the side's frame). */

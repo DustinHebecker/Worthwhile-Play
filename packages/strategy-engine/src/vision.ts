@@ -153,7 +153,7 @@ export function isSpotted(world: World, ruleset: Ruleset, side: number, id: numb
  * (events from `events[from]` on): those involving an entity it observes now, a removed entity
  * whose cell it observes, an observed cell, or the loss of one of its own command sources.
  */
-export function updateIntel(world: World, ruleset: Ruleset, gone: readonly Entity[], events?: readonly SimEvent[], from = 0, reported?: SimEvent[][]): void {
+export function updateIntel(world: World, ruleset: Ruleset, gone: readonly Entity[], events?: readonly SimEvent[], from = 0, reported?: SimEvent[][], fixes?: readonly ReadonlySet<number>[]): void {
   const intel: Report[][] = [];
   for (let side = 0; side < world.sides; side++) {
     const network = ruleset.commandNetwork ? computeNetwork(world, ruleset, side) : undefined;
@@ -163,7 +163,9 @@ export function updateIntel(world: World, ruleset: Ruleset, gone: readonly Entit
     const knownLoss = (e: Entity): boolean => e.side === side && (archetypeOf(ruleset, e.kind)?.comms?.role === 'source' || events?.some((ev, i) => i >= from && ev.t === 'sold' && ev.id === e.id) === true);
     const previous = world.intel?.[side] ?? [];
     const seenCell = (x: number, y: number): boolean => observed[cellOf(world.map, x, y)] === 1;
-    const reports = updatedReports(world, side, observed, previous, gone, knownLoss, revealedEmitters(world, ruleset, side, network));
+    const revealed = revealedEmitters(world, ruleset, side, network);
+    for (const id of fixes?.[side] ?? []) revealed.add(id);
+    const reports = updatedReports(world, side, observed, previous, gone, knownLoss, revealed);
     intel.push(reports);
     const list = reported?.[side];
     if (!events || !list) continue;
@@ -226,6 +228,9 @@ function eventVisible(ev: SimEvent, live: ReadonlySet<number>, seen: (x: number,
     case 'income':
     case 'site-blocked':
       return ev.side === side;
+    // An intercepted order is the listening side's knowledge; the sender never learns it was heard.
+    case 'intercept':
+      return ev.to === side;
     // What a yard queued is its owner's business, even when the yard is in sight.
     case 'queued':
       return ownIds.has(ev.id);
