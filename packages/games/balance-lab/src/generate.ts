@@ -126,6 +126,8 @@ export function beamPredict(rng: Rng, d: Difficulty, needs: PredictNeeds): TaskS
     }
     const v = beamVerdict(scene);
     if (needs.exact !== (v === 'level')) continue;
+    // An exact balance must look unbalanced (design § 10.2): the kilograms per side differ.
+    if (needs.exact && naiveBeam(scene) === 'level') continue;
     if (!needs.exact && beamMargin(scene) < p.margin) continue;
     if (needs.trap && naiveBeam(scene) === v) continue;
     return predictTask('beam-predict', { bench: 'beam', s: scene }, SIDES.indexOf(v), null);
@@ -316,6 +318,7 @@ export function mobilePredict(rng: Rng, d: Difficulty, needs: PredictNeeds): Tas
     const bar = bars[marked]!;
     const v = sideOf(barNet(bar));
     if (needs.exact !== (v === 'level')) continue;
+    if (needs.exact && naiveBar(bar) === 'level') continue;
     if (!needs.exact && barMargin(mobile, marked) < p.margin) continue;
     if (needs.trap && naiveBar(bar) === v) continue;
     return predictTask('mobile-predict', { bench: 'mobile', s: mobile }, SIDES.indexOf(v), marked);

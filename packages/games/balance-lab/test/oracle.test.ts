@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 import type { Translator } from '@wp/game-core';
 import { goalMet } from '../src/check';
 import { describe as describeScene } from '../src/explain';
+import { naiveBar, naiveBeam } from '../src/naive';
 import { freeEdit, freeScene, isBalanceState, newState, setMobileHook, type FreeState } from '../src/rules';
 import { DIFFICULTIES, generateRound, generateTask, isPredict, SIDES, STACK_ANSWERS, type Scene, type TaskId } from '../src/generate';
 
@@ -174,6 +175,16 @@ describe('independent oracle', () => {
           for (const x of a) expect(a.filter((y) => y === x).length).toBeLessThanOrEqual(a.length / 2);
           for (let i = 2; i < a.length; i++) expect(a[i] === a[i - 1] && a[i] === a[i - 2]).toBe(false);
         }
+  });
+
+  it('exact balances look unbalanced (the kilograms per side differ)', () => {
+    for (const d of ['medium', 'hard'] as const)
+      for (let i = 0; i < N; i++) {
+        const b = generateTask(createRng(i), 'beam-predict', d, { trap: false, exact: true });
+        if (b.scene.bench === 'beam') expect(naiveBeam(b.scene.s)).not.toBe('level');
+        const m = generateTask(createRng(i), 'mobile-predict', d, { trap: false, exact: true });
+        if (m.scene.bench === 'mobile') expect(naiveBar(bars(m.scene.s)[m.marked!])).not.toBe('level');
+      }
   });
 
   it('the free mobile takes a weight on every one of its eight hooks', () => {
