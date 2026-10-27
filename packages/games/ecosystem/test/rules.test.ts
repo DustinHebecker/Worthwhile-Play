@@ -389,7 +389,7 @@ describe('isEcoState', () => {
       { ...g, outcome: { kind: 'failed', week: 3 }, reported: true }
     );
     const e = continueFromHere(exploreRun(explore('meadow'), 3).state);
-    const sim = (e.notebook.start as { sim: Record<string, unknown> }).sim;
+    const sim = (e.notebook.start as unknown as { sim: Record<string, unknown> }).sim;
     const withSim = (patch: Record<string, unknown>) => ({ ...e, notebook: { ...e.notebook, start: { sim: { ...sim, ...patch } } } });
     bad.push(
       withSim({ n: -1 }),
