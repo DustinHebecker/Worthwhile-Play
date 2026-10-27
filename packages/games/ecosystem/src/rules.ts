@@ -30,7 +30,7 @@ import {
   type Sim
 } from './model';
 import { PRESETS } from './presets';
-import { levelBand, levelMarks, shapeMarks, sketchError, sketchMarks, type Band, type Marks } from './score';
+import { levelBand, levelMarks, shapeMarks, sketchScore, type Band, type Marks } from './score';
 import { classify, type Shape } from './shape';
 import { PRESET_IDS, type PresetId } from './spinup';
 
@@ -230,7 +230,7 @@ export function modelAnswer(q: Question, series: readonly number[]): { band: Ban
 export function marksOf(c: Challenge, q: Question, a: Answer, series: readonly number[]): Marks {
   if (q.kind === 'level' && a.kind === 'level') return levelMarks(levelBand(series[0]!, series[q.week]!), a.band);
   if (q.kind === 'shape' && a.kind === 'shape') return shapeMarks(classify(series), q.options[a.option]!);
-  if (q.kind === 'sketch' && a.kind === 'sketch') return sketchMarks(sketchError(a.points, series, c.horizon, q.max));
+  if (q.kind === 'sketch' && a.kind === 'sketch') return sketchScore(a.points, series, c.horizon, q.max);
   return 0;
 }
 

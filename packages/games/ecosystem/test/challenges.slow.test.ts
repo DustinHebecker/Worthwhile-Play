@@ -5,7 +5,7 @@ import { GOALS } from '../src/goals';
 import { habitatDef } from '../src/habitats';
 import { applyAction, cloneSim } from '../src/model';
 import { PRESETS } from '../src/presets';
-import { levelBand } from '../src/score';
+import { levelBand, sketchScore, sketchWeeks } from '../src/score';
 import { classify } from '../src/shape';
 import { edgeEffect } from './sensitivity';
 
@@ -41,6 +41,9 @@ describe('prediction challenges against the model (Appendix B.1)', () => {
           expect(q.max, `${c.id} sketch scale`).toBeGreaterThanOrEqual(1.5 * top);
           expect(q.max).toBeGreaterThanOrEqual(2 * v[0]!);
           expect(roundScale(q.max), `${c.id} ${q.max}`).toBe(true);
+          // Fair marks: the model's own values at the handles match; an untouched (flat) sketch never does.
+          expect(sketchScore(sketchWeeks(c.horizon).map((w) => v[w]!), v, c.horizon, q.max), `${c.id} perfect sketch`).toBe(3);
+          expect(sketchScore(sketchWeeks(c.horizon).map(() => v[0]!), v, c.horizon, q.max), `${c.id} flat sketch`).toBeLessThanOrEqual(1);
         }
       }
     });

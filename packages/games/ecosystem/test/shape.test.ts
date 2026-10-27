@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { SHAPES, classify, family, legSize, legs, type Shape } from '../src/shape';
-import { MARK_SYMBOLS, SKETCH_LIMITS, levelBand, levelMarks, shapeMarks, sketchError, sketchMarks, sketchWeeks } from '../src/score';
+import { MARK_SYMBOLS, SKETCH_LIMITS, levelBand, levelMarks, shapeMarks, sketchCap, sketchError, sketchMarks, sketchScore, sketchWeeks } from '../src/score';
 
 describe('shape classes (§ 11.1)', () => {
   const cases: [number[], Shape][] = [
@@ -133,5 +133,28 @@ describe('scoring (§ 11.2)', () => {
     );
     expect(MARK_SYMBOLS[3]).toBe('●●●');
     expect(MARK_SYMBOLS[0]).toBe('○○○');
+  });
+
+  it('a sketch of another shape is capped: ●●○ in the same family, ●○○ otherwise, however close it lies', () => {
+    const H = 12;
+    // Falls from 100 to 60 thousand: a flat sketch at 100 is within 120 ‰ of a 500-thousand scale, but not its shape.
+    const falling = Array.from({ length: H + 1 }, (_, w) => 100_000 - 3_000 * w - (w > 0 ? 4_000 : 0));
+    const at = sketchWeeks(H).map((w) => falling[w]!);
+    const flat = at.map(() => 100_000);
+    expect(sketchMarks(sketchError(flat, falling, H, 500_000))).toBe(3);
+    expect(sketchCap(flat, falling, H)).toBe(1);
+    expect(sketchScore(flat, falling, H, 500_000)).toBe(1);
+    expect(sketchScore(at, falling, H, 500_000)).toBe(3);
+    // Falls, then recovers a little: the same family as "falls".
+    const dip = [...at.slice(0, 4), 50_000, 75_000];
+    expect(sketchCap(dip, falling, H)).toBe(2);
+    // The cap never raises the marks of the distance.
+    fc.assert(
+      fc.property(fc.array(fc.integer({ min: 0, max: 500_000 }), { minLength: 6, maxLength: 6 }), (pts) => {
+        const score = sketchScore(pts, falling, H, 500_000);
+        expect(score).toBeLessThanOrEqual(sketchMarks(sketchError(pts, falling, H, 500_000)));
+        expect(score).toBeLessThanOrEqual(sketchCap(pts, falling, H));
+      })
+    );
   });
 });

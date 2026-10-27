@@ -3,7 +3,7 @@
  * 0 = ○○○ "the model went another way". Integer arithmetic only.
  */
 import { idiv } from './model';
-import { family, type Shape } from './shape';
+import { classify, family, type Shape } from './shape';
 
 /** Level bands: 0 lower, 1 about the same, 2 higher. */
 export type Band = 0 | 1 | 2;
@@ -46,5 +46,23 @@ export function sketchMarks(e: number): Marks {
   if (e <= SKETCH_LIMITS[2]) return 1;
   return 0;
 }
+
+/**
+ * The most marks a sketch can get from its own shape: the distance alone is lenient on the sketch chart's roomy scale
+ * (an untouched flat line lies within 120 ‰ of a curve that halves), so a sketch whose shape differs from the model's
+ * gets at most ●●○ in the same family and ●○○ otherwise. The model's shape counts both over every week and at the six
+ * handle weeks (where a perfect sketch cannot show a dip between two handles).
+ */
+export function sketchCap(points: readonly number[], series: readonly number[], H: number): Marks {
+  const v0 = series[0] ?? 0;
+  const mine = classify([v0, ...points]);
+  const atHandles = classify([v0, ...sketchWeeks(H).map((w) => series[w] ?? 0)]);
+  const cap = (model: Shape): Marks => (model === mine ? 3 : family(model) !== null && family(model) === family(mine) ? 2 : 1);
+  return Math.max(cap(classify(series)), cap(atHandles)) as Marks;
+}
+
+/** Marks of a sketch: its distance from the model, capped by its shape. */
+export const sketchScore = (points: readonly number[], series: readonly number[], H: number, Y: number): Marks =>
+  Math.min(sketchMarks(sketchError(points, series, H, Y)), sketchCap(points, series, H)) as Marks;
 
 export const MARK_SYMBOLS: Readonly<Record<Marks, string>> = { 3: '●●●', 2: '●●○', 1: '●○○', 0: '○○○' };
