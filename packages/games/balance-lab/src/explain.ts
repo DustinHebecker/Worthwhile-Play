@@ -45,7 +45,11 @@ export function barTerms(node: MobileNode): { l: number; r: number }[] {
   });
 }
 
-const one = (t: Translator, x: number) => new Intl.NumberFormat(t.locale, { maximumFractionDigits: 1 }).format(x);
+/**
+ * A centre of mass S/M in cm. Two decimals: with at most 48 kg above a joint (6 bodies, 8 cubes, a bucket), a centre off an edge by
+ * at least 1/48 cm never rounds onto that edge, so the shown number always agrees with "holds", "edge" or "tips".
+ */
+const one = (t: Translator, x: number) => new Intl.NumberFormat(t.locale, { maximumFractionDigits: 2 }).format(x);
 const num = (t: Translator, x: number) => new Intl.NumberFormat(t.locale).format(x);
 
 export function explainLines(t: Translator, scene: Scene, outcome: Outcome, overhang?: { best: number; n: number }): string[] {
@@ -107,13 +111,15 @@ export function describe(t: Translator, scene: Scene): string {
   }
   if (scene.bench === 'mobile') {
     const out: string[] = [];
-    let n = 0;
+    // Bar numbers follow `mobileBars` (depth-first), the numbering of the explanation and the hook chips.
+    const all = mobileBars(scene.s);
+    const numberOf = (bar: MobileNode) => (isBar(bar) ? all.indexOf(bar.bar) + 1 : 0);
     const walk = (node: MobileNode) => {
       if (!isBar(node)) return;
-      const me = ++n;
+      const me = numberOf(node);
       const hooks = node.bar.hooks.map((h) => {
         const d = h.pos - node.bar.string;
-        const what = h.child === null ? t('desc.empty') : isBar(h.child) ? t('desc.sub', { n: num(t, n + 1), kg: num(t, mobileMass(h.child)) }) : t('desc.kg', { kg: num(t, h.child.kg) });
+        const what = h.child === null ? t('desc.empty') : isBar(h.child) ? t('desc.sub', { n: num(t, numberOf(h.child)), kg: num(t, mobileMass(h.child)) }) : t('desc.kg', { kg: num(t, h.child.kg) });
         return t(d < 0 ? 'desc.hookLeft' : 'desc.hookRight', { d: num(t, Math.abs(d)), what });
       });
       out.push(t('desc.bar', { n: num(t, me), hooks: hooks.join('; ') }));
