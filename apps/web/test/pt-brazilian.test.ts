@@ -87,5 +87,6 @@ describe('Portuguese is Brazilian Portuguese (pt-BR)', () => {
     expect(Object.keys(CONTENT_MODULES).some((path) => path.includes('/deep-read/'))).toBe(true);
     const offenders = strings.filter(([, text]) => PATTERN.test(text)).map(([where, text]) => `${where}: ${text}`);
     expect(offenders).toEqual([]);
-  });
+    // Loads every game's catalogue and content chunk (18 s alone on a busy machine): far beyond the 20 s default under load.
+  }, 120_000);
 });
