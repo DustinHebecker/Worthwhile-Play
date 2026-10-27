@@ -60,7 +60,7 @@ export const content: ContentText = {
       title: 'Un champ en amont',
       situation: 'Un nouveau champ en amont commence à se déverser dans la mare claire.',
       think: 'Que font plus de nutriments aux algues, et que font plus d’algues au potamot en dessous ?',
-      explain: 'Pendant des mois, rien ne semble se passer : le potamot a même l’air en forme au bout de six mois. Pendant ce temps, les nutriments s’accumulent dans l’eau et la vase. Quand les algues finissent par gagner, une boucle de renforcement prend le relais : plus d’algues, plus d’ombre, moins de potamot, moins de cachettes pour les daphnies, encore plus d’algues (R1, R2). La bascule est rapide ; la cause était lente.',
+      explain: 'Pendant des mois, rien ne semble se passer : le potamot a même l’air en forme au bout de six mois. Pendant ce temps, les nutriments s’accumulent dans l’eau et la vase, jusqu’à ce que les lentilles d’eau et les algues bleu-vert, qui ont besoin d’une eau riche, démarrent et fassent de l’ombre au potamot. Alors une boucle de renforcement prend le relais : moins de potamot, plus d’algues, plus d’ombre (R1). La bascule est rapide ; la cause était lente.',
       real: 'Dans de vrais lacs, de telles bascules d’une eau claire à une eau verte sont bien documentées, souvent après des années de changement lent.'
     },
     'no-way-back': {
@@ -95,7 +95,7 @@ export const content: ContentText = {
       title: 'Un peu d’engrais',
       situation: 'L’agriculteur épand un peu d’engrais chaque semaine.',
       think: 'Quelle plante profite le plus d’un sol riche, et que fait-elle aux plantes basses ?',
-      explain: 'L’engrais nourrit surtout les graminées. Une herbe plus haute fait de l’ombre au trèfle et aux fleurs sauvages, et le trèfle perd son avantage : sur sol riche, fabriquer son propre azote ne l’aide plus. Plus de nourriture pour la prairie signifie moins de sortes de plantes.',
+      explain: 'L’engrais nourrit surtout les graminées. Une herbe plus haute fait de l’ombre au trèfle, plus bas, et le trèfle perd son avantage : sur sol riche, fabriquer son propre azote ne l’aide plus. Plus de nourriture pour la prairie ne signifie pas plus de chaque plante.',
       real: 'Dans de vraies prairies, l’azote des engrais et de l’air est une cause majeure de la perte des fleurs sauvages.'
     },
     drought: {
@@ -129,8 +129,8 @@ export const content: ContentText = {
     'ladybirds-gone': {
       title: 'Coccinelles ramassées',
       situation: 'La plupart des coccinelles sont ramassées pour un jardin ailleurs.',
-      think: 'Qui mange les pucerons ? À quelle vitesse les coccinelles restantes peuvent-elles revenir ?',
-      explain: 'Sans coccinelles, les pucerons se multiplient. Les quelques coccinelles restantes trouvent maintenant beaucoup de nourriture, et leur nombre remonte avec retard. Puis elles font de nouveau baisser les pucerons (B2).',
+      think: 'Qui mange les pucerons ? Et de quoi les pucerons ont-ils besoin pour continuer à se multiplier ?',
+      explain: 'Sans coccinelles, les pucerons se multiplient et dévorent les fleurs sauvages. Avec moins de nourriture, ils diminuent de nouveau (B1) : ici, c’est leur nourriture qui les freine, pas leurs prédateurs. Les quelques coccinelles restantes restent peu nombreuses pendant des mois.',
       real: 'Dans de vrais jardins, d’autres chasseurs de pucerons comme les syrphes et les oiseaux aident aussi.'
     }
   },
@@ -139,7 +139,7 @@ export const content: ContentText = {
       story: 'Un nouveau champ en amont commence à se déverser dans la mare claire. Gardez le potamot en vie pendant deux ans tandis que le ruissellement continue.',
       target: 'Potamot au moins {v} chaque semaine jusqu’à la semaine {w}.',
       hint: 'Les algues sont un symptôme. Qu’est-ce qui les nourrit, et combien de temps avant que cela doive changer ?',
-      explain: 'Le potamot ne baisse que lorsque les algues lui font de l’ombre, et les algues poussent grâce aux nutriments qu’apporte le champ. Agissez sur la cause, et tôt : quand le potamot semble faible, la boucle de renforcement a déjà pris le relais.',
+      explain: 'Le potamot ne baisse que lorsque quelque chose lui fait de l’ombre : les lentilles d’eau et les algues, qui poussent grâce aux nutriments qu’apporte le champ. Agissez sur la cause, et tôt : quand le potamot semble faible, la boucle de renforcement a déjà pris le relais.',
       plans: {
         buffer: 'Une bande de plantes le long du champ retient la plus grande partie du ruissellement avant qu’il n’atteigne la mare. Assez tôt, les algues ne prennent jamais l’avantage.',
         ditch: 'Fermer le fossé arrête complètement le ruissellement, donc les algues ne prennent jamais l’avantage.'

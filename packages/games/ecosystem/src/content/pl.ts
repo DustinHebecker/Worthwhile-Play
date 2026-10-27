@@ -60,7 +60,7 @@ export const content: ContentText = {
       title: 'Pole w górze rzeki',
       situation: 'Nowe pole w górze rzeki zaczyna odprowadzać wodę do czystego stawu.',
       think: 'Co więcej składników odżywczych robi z glonami, a co więcej glonów robi z rdestnicą pod nimi?',
-      explain: 'Przez miesiące wydaje się, że nic się nie dzieje: rdestnica nawet po pół roku wygląda dobrze. Tymczasem składniki odżywcze gromadzą się w wodzie i w mule. Gdy glony wreszcie wygrywają, władzę przejmuje pętla wzmacniająca: więcej glonów, więcej cienia, mniej rdestnicy, mniej kryjówek dla rozwielitek, jeszcze więcej glonów (R1, R2). Przełom jest szybki; przyczyna była powolna.',
+      explain: 'Przez miesiące wydaje się, że nic się nie dzieje: rdestnica nawet po pół roku wygląda dobrze. Tymczasem składniki odżywcze gromadzą się w wodzie i w mule, aż rzęsa wodna i sinice, którym potrzebna jest żyzna woda, gwałtownie rosną i zacieniają rdestnicę. Wtedy władzę przejmuje pętla wzmacniająca: mniej rdestnicy, więcej glonów, więcej cienia (R1). Przełom jest szybki; przyczyna była powolna.',
       real: 'W prawdziwych jeziorach takie przejścia od czystej do zielonej wody są dobrze opisane, często po latach powolnych zmian.'
     },
     'no-way-back': {
@@ -95,7 +95,7 @@ export const content: ContentText = {
       title: 'Trochę nawozu',
       situation: 'Rolnik co tydzień rozsypuje trochę nawozu.',
       think: 'Która roślina najwięcej zyskuje na żyznej glebie i co robi z niskimi roślinami?',
-      explain: 'Nawóz karmi przede wszystkim trawy. Wyższa trawa zacienia koniczynę i dzikie kwiaty, a koniczyna traci swoją przewagę: na żyznej glebie samodzielne wytwarzanie azotu już nie pomaga. Więcej jedzenia dla łąki oznacza mniej rodzajów roślin.',
+      explain: 'Nawóz karmi przede wszystkim trawy. Wyższa trawa zacienia niską koniczynę, a koniczyna traci swoją przewagę: na żyznej glebie samodzielne wytwarzanie azotu już nie pomaga. Więcej jedzenia dla łąki nie oznacza więcej każdej rośliny.',
       real: 'Na prawdziwych łąkach azot z nawozów i z powietrza jest jedną z głównych przyczyn znikania dzikich kwiatów.'
     },
     drought: {
@@ -129,8 +129,8 @@ export const content: ContentText = {
     'ladybirds-gone': {
       title: 'Zebrane biedronki',
       situation: 'Większość biedronek zostaje zebrana do ogrodu gdzie indziej.',
-      think: 'Kto je mszyce? Jak szybko mogą wrócić pozostałe biedronki?',
-      explain: 'Bez biedronek mszyce się mnożą. Kilka pozostałych biedronek znajduje teraz mnóstwo pokarmu i ich liczba z opóźnieniem się odbudowuje. Potem znów zmniejszają liczbę mszyc (B2).',
+      think: 'Kto je mszyce? I czego potrzebują mszyce, żeby dalej się mnożyć?',
+      explain: 'Bez biedronek mszyce się mnożą i objadają dzikie kwiaty. Gdy pokarmu jest mniej, mszyc znów ubywa (B1): tu hamuje je pokarm, a nie drapieżniki. Pozostałych biedronek jeszcze przez miesiące jest niewiele.',
       real: 'W prawdziwych ogrodach pomagają też inni łowcy mszyc, na przykład bzygi i ptaki.'
     }
   },
@@ -139,7 +139,7 @@ export const content: ContentText = {
       story: 'Nowe pole w górze rzeki zaczyna odprowadzać wodę do czystego stawu. Utrzymaj rdestnicę przy życiu przez dwa lata, gdy spływ trwa.',
       target: 'Rdestnica co najmniej {v} w każdym tygodniu do tygodnia {w}.',
       hint: 'Glony to objaw. Co je karmi i jak szybko trzeba to zmienić?',
-      explain: 'Rdestnicy ubywa dopiero wtedy, gdy zacieniają ją glony, a glony rosną dzięki składnikom odżywczym z pola. Działaj na przyczynę, i to wcześnie: gdy rdestnica wygląda słabo, pętla wzmacniająca już przejęła władzę.',
+      explain: 'Rdestnicy ubywa dopiero wtedy, gdy coś ją zacienia: rzęsa wodna i glony, które rosną dzięki składnikom odżywczym z pola. Działaj na przyczynę, i to wcześnie: gdy rdestnica wygląda słabo, pętla wzmacniająca już przejęła władzę.',
       plans: {
         buffer: 'Pas roślin wzdłuż pola zatrzymuje większość spływu, zanim dotrze do stawu. Posadzony w porę sprawia, że glony nigdy nie wychodzą na prowadzenie.',
         ditch: 'Zamknięcie rowu całkiem zatrzymuje spływ, więc glony nigdy nie wychodzą na prowadzenie.'

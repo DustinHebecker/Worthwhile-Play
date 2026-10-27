@@ -1,7 +1,8 @@
 /**
  * The model's answer to a causal-loop edge (design § 12.2 (b)): at a start state, raise the source by 10 % (a
- * condition one level towards "more") and see which way the target moves — over one day, or over the target's
- * maturation delay + 2 weeks for a delay edge (4 weeks when the target has none). Test helper, not game code.
+ * condition one level towards "more"; a species by at least 1,000 u) and see which way the target moves — over one
+ * day, or over the target's maturation delay + 2 weeks for a delay edge (4 weeks when the target has none). Test
+ * helper, not game code.
  */
 import type { Edge } from '../src/cld';
 import { habitatDef, speciesIndex, type Habitat } from '../src/habitats';
@@ -46,7 +47,9 @@ export function edgeEffect(start: Sim, habitat: Habitat, edge: Edge): number {
   else if (edge.from === 'water') hi.w += idiv(hi.w, 10) + 1;
   else {
     const i = speciesIndex(hab, edge.from);
-    hi.b[i] = hi.b[i]! + idiv(pop(hi, i), 10) + 1;
+    // At least one display unit (1,000 u): the steep light and water responses work in thousands (`q`), so a nudge of
+    // a tiny population (e.g. 826 u of duckweed in the clear pond) would sit below their resolution.
+    hi.b[i] = hi.b[i]! + Math.max(idiv(pop(hi, i), 10) + 1, 1000);
   }
   const t = speciesIndex(hab, edge.to);
   const run = (s: Sim) => {

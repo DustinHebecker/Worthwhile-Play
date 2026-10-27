@@ -60,7 +60,7 @@ export const content: ContentText = {
       title: 'Een akker stroomopwaarts',
       situation: 'Een nieuwe akker stroomopwaarts begint af te wateren in de heldere vijver.',
       think: 'Wat doen meer voedingsstoffen met de algen, en wat doen meer algen met het fonteinkruid eronder?',
-      explain: 'Maandenlang lijkt er niets te gebeuren: het fonteinkruid ziet er na een half jaar zelfs goed uit. Ondertussen hopen voedingsstoffen zich op in het water en de modder. Als de algen uiteindelijk winnen, neemt een versterkende kringloop het over: meer algen, meer schaduw, minder fonteinkruid, minder schuilplekken voor watervlooien, nog meer algen (R1, R2). De omslag is snel; de oorzaak was traag.',
+      explain: 'Maandenlang lijkt er niets te gebeuren: het fonteinkruid ziet er na een half jaar zelfs goed uit. Ondertussen hopen voedingsstoffen zich op in het water en de modder, tot eendenkroos en blauwalgen, die voedselrijk water nodig hebben, ineens groeien en het fonteinkruid beschaduwen. Dan neemt een versterkende kringloop het over: minder fonteinkruid, meer algen, meer schaduw (R1). De omslag is snel; de oorzaak was traag.',
       real: 'In echte meren zijn zulke omslagen van helder naar groen water goed beschreven, vaak na jaren van langzame verandering.'
     },
     'no-way-back': {
@@ -95,7 +95,7 @@ export const content: ContentText = {
       title: 'Een beetje mest',
       situation: 'De boer strooit elke week wat mest.',
       think: 'Welke plant heeft het meeste voordeel van rijke grond, en wat doet die met de lage planten?',
-      explain: 'Mest voedt vooral de grassen. Hoger gras beschaduwt de klaver en de wilde bloemen, en klaver verliest zijn voordeel: op rijke grond helpt het niet meer om zelf stikstof te maken. Meer voedsel voor de weide betekent minder soorten planten.',
+      explain: 'Mest voedt vooral de grassen. Hoger gras beschaduwt de lage klaver, en klaver verliest zijn voordeel: op rijke grond helpt het niet meer om zelf stikstof te maken. Meer voedsel voor de weide betekent niet meer van elke plant.',
       real: 'In echte weiden is stikstof uit mest en uit de lucht een hoofdoorzaak van verdwenen wilde bloemen.'
     },
     drought: {
@@ -129,8 +129,8 @@ export const content: ContentText = {
     'ladybirds-gone': {
       title: 'Lieveheersbeestjes verzameld',
       situation: 'De meeste lieveheersbeestjes worden verzameld voor een tuin elders.',
-      think: 'Wie eet de bladluizen? Hoe snel kunnen de overgebleven lieveheersbeestjes terugkomen?',
-      explain: 'Zonder lieveheersbeestjes vermenigvuldigen de bladluizen zich. De paar overgebleven lieveheersbeestjes vinden nu volop voedsel, en hun aantal groeit met vertraging terug. Dan drukken ze de bladluizen weer terug (B2).',
+      think: 'Wie eet de bladluizen? En wat hebben de bladluizen nodig om zich te blijven vermenigvuldigen?',
+      explain: 'Zonder lieveheersbeestjes vermenigvuldigen de bladluizen zich en eten ze de wilde bloemen kaal. Met minder voedsel dalen ze weer (B1): hier remt hun voedsel ze af, niet hun jagers. De paar overgebleven lieveheersbeestjes blijven maandenlang schaars.',
       real: 'In echte tuinen helpen ook andere bladluisjagers zoals zweefvliegen en vogels.'
     }
   },
@@ -139,7 +139,7 @@ export const content: ContentText = {
       story: 'Een nieuwe akker stroomopwaarts begint af te wateren in de heldere vijver. Houd het fonteinkruid twee jaar in leven terwijl de afvloeiing doorgaat.',
       target: 'Fonteinkruid elke week minstens {v} tot week {w}.',
       hint: 'Algen zijn een symptoom. Wat voedt ze, en hoe snel moet dat veranderen?',
-      explain: 'Het fonteinkruid daalt pas als de algen het beschaduwen, en de algen groeien van de voedingsstoffen die de akker aanvoert. Pak de oorzaak aan, en doe het vroeg: tegen de tijd dat het fonteinkruid zwak oogt, heeft de versterkende kringloop het al overgenomen.',
+      explain: 'Het fonteinkruid daalt pas als iets het beschaduwt: eendenkroos en algen, die groeien van de voedingsstoffen die de akker aanvoert. Pak de oorzaak aan, en doe het vroeg: tegen de tijd dat het fonteinkruid zwak oogt, heeft de versterkende kringloop het al overgenomen.',
       plans: {
         buffer: 'Een bufferstrook van planten langs de akker vangt het grootste deel van de afvloeiing op voordat die de vijver bereikt. Op tijd aangelegd, komen de algen nooit vooruit.',
         ditch: 'De sloot afsluiten stopt de afvloeiing helemaal, dus de algen komen nooit vooruit.'

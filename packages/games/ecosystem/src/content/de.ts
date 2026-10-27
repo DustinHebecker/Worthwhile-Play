@@ -60,7 +60,7 @@ export const content: ContentText = {
       title: 'Ein Feld bachaufwärts',
       situation: 'Ein neues Feld bachaufwärts beginnt, in den klaren Teich zu entwässern.',
       think: 'Was machen mehr Nährstoffe mit den Algen, und was machen mehr Algen mit dem Laichkraut darunter?',
-      explain: 'Monatelang scheint nichts zu passieren: Das Laichkraut sieht nach einem halben Jahr sogar gut aus. Inzwischen häufen sich Nährstoffe in Wasser und Schlamm an. Wenn die Algen schließlich gewinnen, übernimmt ein verstärkender Kreislauf: mehr Algen, mehr Schatten, weniger Laichkraut, weniger Verstecke für Wasserflöhe, noch mehr Algen (R1, R2). Der Umschwung ist schnell; die Ursache war langsam.',
+      explain: 'Monatelang scheint nichts zu passieren: Das Laichkraut sieht nach einem halben Jahr sogar gut aus. Inzwischen häufen sich Nährstoffe in Wasser und Schlamm an, bis Wasserlinsen und Blaualgen, die nährstoffreiches Wasser brauchen, loslegen und das Laichkraut beschatten. Dann übernimmt ein verstärkender Kreislauf: weniger Laichkraut, mehr Algen, mehr Schatten (R1). Der Umschwung ist schnell; die Ursache war langsam.',
       real: 'In echten Seen sind solche Umschwünge von klarem zu grünem Wasser gut belegt, oft nach Jahren langsamer Veränderung.'
     },
     'no-way-back': {
@@ -95,7 +95,7 @@ export const content: ContentText = {
       title: 'Ein wenig Dünger',
       situation: 'Der Landwirt streut jede Woche etwas Dünger.',
       think: 'Welche Pflanze profitiert am meisten von reichem Boden, und was macht sie mit den niedrigen Pflanzen?',
-      explain: 'Dünger nährt vor allem die Gräser. Höheres Gras beschattet Klee und Wildblumen, und der Klee verliert seinen Vorteil: Auf reichem Boden hilft es nicht mehr, Stickstoff selbst zu holen. Mehr Futter für die Wiese bedeutet weniger Pflanzenarten.',
+      explain: 'Dünger nährt vor allem die Gräser. Höheres Gras beschattet den niedrigen Klee, und der Klee verliert seinen Vorteil: Auf reichem Boden hilft es nicht mehr, Stickstoff selbst zu holen. Mehr Futter für die Wiese heißt nicht mehr von jeder Pflanze.',
       real: 'In echten Wiesen ist Stickstoff aus Dünger und aus der Luft ein Hauptgrund für verschwundene Wildblumen.'
     },
     drought: {
@@ -129,8 +129,8 @@ export const content: ContentText = {
     'ladybirds-gone': {
       title: 'Marienkäfer eingesammelt',
       situation: 'Die meisten Marienkäfer werden für einen Garten anderswo eingesammelt.',
-      think: 'Wer frisst die Blattläuse? Wie schnell können die übrigen Marienkäfer zurückkommen?',
-      explain: 'Ohne Marienkäfer vermehren sich die Blattläuse. Die wenigen übrigen Marienkäfer finden jetzt reichlich Futter, und ihre Zahl wächst mit Verzögerung nach. Dann drücken sie die Blattläuse wieder herunter (B2).',
+      think: 'Wer frisst die Blattläuse? Und was brauchen die Blattläuse, um sich weiter zu vermehren?',
+      explain: 'Ohne Marienkäfer vermehren sich die Blattläuse und fressen die Wildblumen herunter. Mit weniger Futter gehen sie wieder zurück (B1): Hier bremst sie ihr Futter, nicht ihre Jäger. Marienkäfer bleiben noch monatelang selten.',
       real: 'In echten Gärten helfen auch andere Blattlausjäger wie Schwebfliegen und Vögel.'
     }
   },
@@ -139,7 +139,7 @@ export const content: ContentText = {
       story: 'Ein neues Feld bachaufwärts beginnt, in den klaren Teich zu entwässern. Halte das Laichkraut zwei Jahre lang am Leben, während der Zufluss weitergeht.',
       target: 'Laichkraut jede Woche mindestens {v} bis Woche {w}.',
       hint: 'Algen sind ein Symptom. Was nährt sie, und wie bald muss sich das ändern?',
-      explain: 'Das Laichkraut geht erst zurück, wenn die Algen es beschatten, und die Algen wachsen aus den Nährstoffen, die das Feld bringt. Setze an der Ursache an, und das früh: Wenn das Laichkraut schwach aussieht, hat der verstärkende Kreislauf schon übernommen.',
+      explain: 'Das Laichkraut geht erst zurück, wenn etwas es beschattet: Wasserlinsen und Algen, die aus den Nährstoffen wachsen, die das Feld bringt. Setze an der Ursache an, und das früh: Wenn das Laichkraut schwach aussieht, hat der verstärkende Kreislauf schon übernommen.',
       plans: {
         buffer: 'Ein Pufferstreifen aus Pflanzen am Feldrand fängt den Großteil des Zuflusses ab, bevor er den Teich erreicht. Früh genug angelegt, ziehen die Algen nie davon.',
         ditch: 'Den Graben zu schließen stoppt den Zufluss ganz, also ziehen die Algen nie davon.'

@@ -60,7 +60,7 @@ export const content: ContentText = {
       title: 'Un campo río arriba',
       situation: 'Un campo nuevo río arriba empieza a desaguar en el estanque claro.',
       think: '¿Qué hacen más nutrientes con las algas, y qué hacen más algas con la espiga de agua de abajo?',
-      explain: 'Durante meses parece que no pasa nada: la espiga de agua incluso se ve bien al cabo de medio año. Mientras tanto, los nutrientes se acumulan en el agua y en el lodo. Cuando las algas por fin ganan, un bucle de refuerzo toma el mando: más algas, más sombra, menos espiga de agua, menos escondites para las pulgas, aún más algas (R1, R2). El vuelco es rápido; la causa fue lenta.',
+      explain: 'Durante meses parece que no pasa nada: la espiga de agua incluso se ve bien al cabo de medio año. Mientras tanto, los nutrientes se acumulan en el agua y en el lodo, hasta que las lentejas de agua y las algas verdeazuladas, que necesitan agua rica, se disparan y dan sombra a la espiga de agua. Entonces un bucle de refuerzo toma el mando: menos espiga de agua, más algas, más sombra (R1). El vuelco es rápido; la causa fue lenta.',
       real: 'En lagos reales, estos vuelcos de agua clara a verde están bien documentados, a menudo tras años de cambio lento.'
     },
     'no-way-back': {
@@ -95,7 +95,7 @@ export const content: ContentText = {
       title: 'Un poco de abono',
       situation: 'El agricultor esparce algo de abono cada semana.',
       think: '¿Qué planta aprovecha más un suelo rico, y qué hace con las plantas bajas?',
-      explain: 'El abono alimenta sobre todo a las hierbas. La hierba más alta da sombra al trébol y a las flores silvestres, y el trébol pierde su ventaja: en suelo rico ya no le ayuda fabricar su propio nitrógeno. Más comida para el prado significa menos tipos de plantas.',
+      explain: 'El abono alimenta sobre todo a las hierbas. La hierba más alta da sombra al trébol, que es bajo, y el trébol pierde su ventaja: en suelo rico ya no le ayuda fabricar su propio nitrógeno. Más comida para el prado no significa más de cada planta.',
       real: 'En prados reales, el nitrógeno del abono y del aire es una causa principal de la pérdida de flores silvestres.'
     },
     drought: {
@@ -129,8 +129,8 @@ export const content: ContentText = {
     'ladybirds-gone': {
       title: 'Mariquitas recogidas',
       situation: 'Se recogen la mayoría de las mariquitas para un jardín de otro lugar.',
-      think: '¿Quién come los pulgones? ¿Con qué rapidez pueden volver las mariquitas que quedan?',
-      explain: 'Sin mariquitas, los pulgones se multiplican. Las pocas mariquitas que quedan encuentran ahora mucha comida, y su número se recupera con retraso. Después vuelven a reducir los pulgones (B2).',
+      think: '¿Quién come los pulgones? ¿Y qué necesitan los pulgones para seguir multiplicándose?',
+      explain: 'Sin mariquitas, los pulgones se multiplican y se comen las flores silvestres. Con menos comida, vuelven a bajar (B1): aquí los frena su comida, no sus cazadores. Las pocas mariquitas que quedan siguen siendo pocas durante meses.',
       real: 'En jardines reales también ayudan otros cazadores de pulgones, como los sírfidos y los pájaros.'
     }
   },
@@ -139,7 +139,7 @@ export const content: ContentText = {
       story: 'Un campo nuevo río arriba empieza a desaguar en el estanque claro. Mantén viva la espiga de agua durante dos años mientras sigue la escorrentía.',
       target: 'Espiga de agua al menos {v} cada semana hasta la semana {w}.',
       hint: 'Las algas son un síntoma. ¿Qué las alimenta, y cuánto antes debe cambiar?',
-      explain: 'La espiga de agua solo baja cuando las algas le dan sombra, y las algas crecen con los nutrientes que trae el campo. Actúa sobre la causa, y pronto: cuando la espiga de agua parece débil, el bucle de refuerzo ya ha tomado el mando.',
+      explain: 'La espiga de agua solo baja cuando algo le da sombra: las lentejas de agua y las algas, que crecen con los nutrientes que trae el campo. Actúa sobre la causa, y pronto: cuando la espiga de agua parece débil, el bucle de refuerzo ya ha tomado el mando.',
       plans: {
         buffer: 'Una franja de plantas junto al campo atrapa la mayor parte de la escorrentía antes de que llegue al estanque. A tiempo, las algas nunca se adelantan.',
         ditch: 'Cerrar la acequia corta del todo la escorrentía, así que las algas nunca se adelantan.'

@@ -124,7 +124,7 @@ export const pt: Catalogue = {
   'summary.remark.allMatched': 'Você leu todos os ciclos. Experimente o Difícil, em que você desenha a curva.',
   'summary.remark.balancing': 'Os ciclos de equilíbrio foram os mais comuns nesta rodada: mais de algo leva, depois de um tempo, a menos disso.',
   'summary.remark.reinforcing': 'Os ciclos de reforço foram os mais comuns nesta rodada: uma mudança se alimenta até que outra coisa a pare.',
-  'summary.remark.chains': 'As cadeias de efeitos foram as mais comuns nesta rodada: uma mudança numa ponta chega à outra, e cada passo inverte a direção.',
+  'summary.remark.chains': 'As cadeias de efeitos foram as mais comuns nesta rodada: uma mudança numa ponta chega à outra passo a passo, e cada passo pode manter ou inverter a direção.',
   'summary.line': '{mark} {title}',
   'summary.skipped': '– {title} (pulado)',
   'goalui.deadline': 'Prazo: semana {w}',

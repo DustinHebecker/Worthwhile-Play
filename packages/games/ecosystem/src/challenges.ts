@@ -254,7 +254,7 @@ export const CHALLENGES: readonly Challenge[] = [
       medium: [shape('aphids', 'rise-fall', 'rises', 'steady', 'falls')],
       hard: [sketch('aphids', 50_000, 'rise-fall')]
     },
-    delay: true
+    delay: false
   }
 ];
 

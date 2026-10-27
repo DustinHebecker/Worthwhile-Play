@@ -67,7 +67,7 @@ export const content: ContentText = {
       title: 'A field upstream',
       situation: 'A new field upstream starts to drain into the clear pond.',
       think: 'What do more nutrients do to the algae, and what do more algae do to the pondweed below them?',
-      explain: 'For months nothing seems to happen: the pondweed even looks fine after half a year. Meanwhile nutrients pile up in the water and the mud. When the algae finally win, a reinforcing loop takes over: more algae, more shade, less pondweed, fewer hiding places for water fleas, even more algae (R1, R2). The flip is fast; the cause was slow.',
+      explain: 'For months nothing seems to happen: the pondweed even looks fine after half a year. Meanwhile nutrients pile up in the water and the mud, until duckweed and blue-green algae, which need rich water, take off and shade the pondweed. Then a reinforcing loop takes over: less pondweed, more algae, more shade (R1). The flip is fast; the cause was slow.',
       real: 'In real lakes, such shifts from clear to green water are well documented, often after years of slow change.'
     },
     'no-way-back': {
@@ -102,7 +102,7 @@ export const content: ContentText = {
       title: 'A little fertiliser',
       situation: 'The farmer spreads some fertiliser every week.',
       think: 'Which plant profits most from rich soil, and what does it do to the low plants?',
-      explain: 'Fertiliser feeds the grasses most. Taller grass shades the clover and the wildflowers, and clover loses its edge: on rich soil, making its own nitrogen no longer helps. More food for the meadow means fewer kinds of plants.',
+      explain: 'Fertiliser feeds the grasses most. Taller grass shades the low clover, and clover loses its edge: on rich soil, making its own nitrogen no longer helps. More food for the meadow does not mean more of every plant.',
       real: 'In real meadows, nitrogen from fertiliser and from the air is a main reason for lost wildflowers.'
     },
     drought: {
@@ -136,8 +136,8 @@ export const content: ContentText = {
     'ladybirds-gone': {
       title: 'Ladybirds collected',
       situation: 'Most ladybirds are collected for a garden elsewhere.',
-      think: 'Who eats the aphids? How fast can the remaining ladybirds come back?',
-      explain: 'Without ladybirds the aphids multiply. The few remaining ladybirds now find plenty of food, and their numbers grow back after a delay. Then they bring the aphids down again (B2).',
+      think: 'Who eats the aphids? And what do the aphids need to keep multiplying?',
+      explain: 'Without ladybirds the aphids multiply and eat the wildflowers down. With less food they fall again (B1): here their food, not their hunters, stops them. The few remaining ladybirds stay few for months.',
       real: 'In real gardens, other aphid hunters such as hoverflies and birds help as well.'
     }
   },
@@ -146,7 +146,7 @@ export const content: ContentText = {
       story: 'A new field upstream starts to drain into the clear pond. Keep the pondweed alive for two years while the runoff continues.',
       target: 'Pondweed at least {v} every week until week {w}.',
       hint: 'Algae are a symptom. What feeds them, and how soon must it change?',
-      explain: 'The pondweed falls only when the algae shade it, and the algae grow from the nutrients the field brings. Act on the cause, and act early: by the time the pondweed looks weak, the reinforcing loop has already taken over.',
+      explain: 'The pondweed falls only when something shades it: duckweed and algae, which grow from the nutrients the field brings. Act on the cause, and act early: by the time the pondweed looks weak, the reinforcing loop has already taken over.',
       plans: {
         buffer: 'A buffer strip of plants along the field catches most of the runoff before it reaches the pond. Early enough, the algae never get ahead.',
         ditch: 'Closing the ditch stops the runoff completely, so the algae never get ahead.'

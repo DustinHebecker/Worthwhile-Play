@@ -124,7 +124,7 @@ export const ko: Catalogue = {
   'summary.remark.allMatched': '모든 고리를 읽어 냈습니다. 곡선을 그리는 어려움 단계에 도전해 보세요.',
   'summary.remark.balancing': '이번 라운드에는 균형 고리가 가장 많았습니다: 무언가가 많아지면 시간이 지나 그것이 줄어듭니다.',
   'summary.remark.reinforcing': '이번 라운드에는 강화 고리가 가장 많았습니다: 변화가 스스로를 키우다가 다른 무언가가 멈춥니다.',
-  'summary.remark.chains': '이번 라운드에는 효과의 사슬이 가장 많았습니다: 한쪽 끝의 변화가 다른 끝에 닿고, 단계마다 방향이 뒤집힙니다.',
+  'summary.remark.chains': '이번 라운드에는 효과의 사슬이 가장 많았습니다: 한쪽 끝의 변화가 한 단계씩 다른 끝에 닿고, 각 단계는 방향을 유지하거나 뒤집을 수 있습니다.',
   'summary.line': '{mark} {title}',
   'summary.skipped': '– {title} (건너뜀)',
   'goalui.deadline': '마감: {w}주차',

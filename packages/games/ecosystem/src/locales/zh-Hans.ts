@@ -124,7 +124,7 @@ export const zhHans: Catalogue = {
   'summary.remark.allMatched': '你读懂了每一个循环。试试“困难”，在那里要画出曲线。',
   'summary.remark.balancing': '这一轮最常见的是调节循环：某样东西多了，过一段时间会导致它变少。',
   'summary.remark.reinforcing': '这一轮最常见的是增强循环：变化会自我放大，直到别的东西把它挡住。',
-  'summary.remark.chains': '这一轮最常见的是连锁效应：一端的变化传到另一端，每一步都把方向反过来。',
+  'summary.remark.chains': '这一轮最常见的是连锁效应：一端的变化一步步传到另一端，每一步都可能保持或反转方向。',
   'summary.line': '{mark} {title}',
   'summary.skipped': '– {title}（跳过）',
   'goalui.deadline': '期限：第{w}周',

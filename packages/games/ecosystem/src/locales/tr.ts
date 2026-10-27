@@ -124,7 +124,7 @@ export const tr: Catalogue = {
   'summary.remark.allMatched': 'Her döngüyü doğru okudun. Eğriyi çizdiğin Zor seviyesini dene.',
   'summary.remark.balancing': 'Bu turda en çok dengeleyici döngüler çıktı: bir şeyin artması bir süre sonra onun azalmasına yol açar.',
   'summary.remark.reinforcing': 'Bu turda en çok pekiştirici döngüler çıktı: bir değişiklik, başka bir şey onu durdurana kadar kendini besler.',
-  'summary.remark.chains': 'Bu turda en çok etki zincirleri çıktı: bir uçtaki değişiklik öbür uca ulaşır ve her adım yönü tersine çevirir.',
+  'summary.remark.chains': 'Bu turda en çok etki zincirleri çıktı: bir uçtaki değişiklik adım adım öbür uca ulaşır ve her adım yönü koruyabilir ya da tersine çevirebilir.',
   'summary.line': '{mark} {title}',
   'summary.skipped': '– {title} (atlandı)',
   'goalui.deadline': 'Son tarih: {w}. hafta',

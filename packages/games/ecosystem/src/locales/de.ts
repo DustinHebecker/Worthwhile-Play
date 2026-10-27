@@ -125,7 +125,7 @@ export const de: Catalogue = {
   'summary.remark.allMatched': 'Du hast jeden Kreislauf erkannt. Versuch „Schwer“, wo du die Kurve skizzierst.',
   'summary.remark.balancing': 'Ausgleichende Kreisläufe kamen in dieser Runde am häufigsten vor: Mehr von etwas führt nach einer Weile zu weniger davon.',
   'summary.remark.reinforcing': 'Verstärkende Kreisläufe kamen in dieser Runde am häufigsten vor: Eine Änderung nährt sich selbst, bis etwas anderes sie stoppt.',
-  'summary.remark.chains': 'Wirkungsketten kamen in dieser Runde am häufigsten vor: Eine Änderung an einem Ende erreicht das andere, und jeder Schritt dreht die Richtung um.',
+  'summary.remark.chains': 'Wirkungsketten kamen in dieser Runde am häufigsten vor: Eine Änderung an einem Ende wandert Schritt für Schritt zum anderen, und jeder Schritt kann die Richtung beibehalten oder umdrehen.',
   'summary.line': '{mark} {title}',
   'summary.skipped': '– {title} (übersprungen)',
   'goalui.deadline': 'Frist: Woche {w}',

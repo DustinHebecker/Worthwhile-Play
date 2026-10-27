@@ -50,12 +50,15 @@ const R_SHADE: Loop = { id: 'R1', path: ['algae', 'pondweed'], key: 'clearWater'
 const APHIDS = [e('flowers', 'aphids', 1), e('aphids', 'flowers', -1), e('aphids', 'ladybirds', 1, true), e('ladybirds', 'aphids', -1)];
 const RABBITS = [e('clover', 'rabbits', 1, true), e('rabbits', 'clover', -1), e('rabbits', 'foxes', 1, true), e('foxes', 'rabbits', -1)];
 
+// Under runoff the pondweed is shaded out first by duckweed (and blue-green algae), which take off only once nutrients
+// have piled up (the slow chain); then the clear-water loop R1 flips towards algae.
 const runoffCld: Cld = {
   habitat: 'pond',
-  nodes: ['runoff', 'nutrients', 'algae', 'pondweed', 'fleas'],
-  edges: [e('runoff', 'nutrients', 1), e('nutrients', 'algae', 1), ...SHADE, e('pondweed', 'fleas', 1), ...GRAZE],
+  nodes: ['runoff', 'nutrients', 'duckweed', 'pondweed', 'fleas', 'algae'],
+  edges: [e('runoff', 'nutrients', 1), e('nutrients', 'duckweed', 1), e('duckweed', 'pondweed', -1), e('nutrients', 'algae', 1), ...SHADE, e('pondweed', 'fleas', 1), ...GRAZE],
   loops: [R_SHADE, { id: 'R2', path: ['algae', 'pondweed', 'fleas'], key: 'shelter' }, B_GRAZE],
-  highlight: 'R1'
+  highlight: 'R1',
+  chain: ['runoff', 'nutrients', 'duckweed', 'pondweed']
 };
 
 export const CLDS = {
@@ -169,12 +172,13 @@ export const CLDS = {
     highlight: 'B2',
     chain: ['foxes', 'rabbits', 'clover']
   },
+  // The aphids fall again because they eat their food down (B1); the few ladybirds left stay too few for months.
   'ladybirds-gone': {
     habitat: 'meadow',
     nodes: ['flowers', 'aphids', 'ladybirds'],
     edges: APHIDS,
     loops: [{ id: 'B1', path: ['flowers', 'aphids'], key: 'aphidsFlowers' }, { id: 'B2', path: ['aphids', 'ladybirds'], key: 'ladybirdsAphids' }],
-    highlight: 'B2'
+    highlight: 'B1'
   },
   // Goals.
   'save-pondweed': runoffCld,

@@ -124,7 +124,7 @@ export const nl: Catalogue = {
   'summary.remark.allMatched': 'Je las elke kringloop goed. Probeer Moeilijk, waar je de curve schetst.',
   'summary.remark.balancing': 'Balancerende kringlopen kwamen deze ronde het vaakst voor: meer van iets leidt na een tijd tot minder ervan.',
   'summary.remark.reinforcing': 'Versterkende kringlopen kwamen deze ronde het vaakst voor: een verandering voedt zichzelf tot iets anders haar stopt.',
-  'summary.remark.chains': 'Ketens van effecten kwamen deze ronde het vaakst voor: een verandering aan het ene eind bereikt het andere, en elke stap keert de richting om.',
+  'summary.remark.chains': 'Ketens van effecten kwamen deze ronde het vaakst voor: een verandering aan het ene eind gaat stap voor stap naar het andere, en elke stap kan de richting behouden of omkeren.',
   'summary.line': '{mark} {title}',
   'summary.skipped': '– {title} (overgeslagen)',
   'goalui.deadline': 'Deadline: week {w}',

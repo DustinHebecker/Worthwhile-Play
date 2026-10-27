@@ -60,7 +60,7 @@ export const content: ContentText = {
       title: 'Yukarıdaki tarla',
       situation: 'Yukarıda yeni açılan bir tarlanın suyu berrak gölete akmaya başlıyor.',
       think: 'Daha çok besin alglere ne yapar, daha çok alg de altlarındaki su otuna ne yapar?',
-      explain: 'Aylarca hiçbir şey olmuyor gibi görünür: su otu yarım yıl sonra bile iyi görünür. Bu arada besinler suda ve çamurda birikir. Algler sonunda kazandığında pekiştirici bir döngü devreye girer: daha çok alg, daha çok gölge, daha az su otu, su pireleri için daha az saklanma yeri, daha da çok alg (R1, R2). Dönüşüm hızlıdır; neden ise yavaştı.',
+      explain: 'Aylarca hiçbir şey olmuyor gibi görünür: su otu yarım yıl sonra bile iyi görünür. Bu arada besinler suda ve çamurda birikir; sonunda zengin suya ihtiyaç duyan su mercimeği ve mavi-yeşil algler hızla çoğalıp su otunu gölgeler. Ardından pekiştirici bir döngü devreye girer: daha az su otu, daha çok alg, daha çok gölge (R1). Dönüşüm hızlıdır; neden ise yavaştı.',
       real: 'Gerçek göllerde berrak sudan yeşil suya böyle geçişler iyi belgelenmiştir; çoğu zaman yıllarca süren yavaş değişimden sonra gelir.'
     },
     'no-way-back': {
@@ -95,7 +95,7 @@ export const content: ContentText = {
       title: 'Biraz gübre',
       situation: 'Çiftçi her hafta biraz gübre serpiyor.',
       think: 'Zengin topraktan en çok hangi bitki yararlanır ve alçak bitkilere ne yapar?',
-      explain: 'Gübre en çok çimenleri besler. Daha uzun otlar yoncayı ve kır çiçeklerini gölgede bırakır, yonca da üstünlüğünü kaybeder: zengin toprakta kendi azotunu üretmek artık işe yaramaz. Çayır için daha çok besin, daha az bitki çeşidi demektir.',
+      explain: 'Gübre en çok çimenleri besler. Daha uzun otlar alçak yoncayı gölgede bırakır, yonca da üstünlüğünü kaybeder: zengin toprakta kendi azotunu üretmek artık işe yaramaz. Çayır için daha çok besin, her bitkinin çoğalması demek değildir.',
       real: 'Gerçek çayırlarda gübreden ve havadan gelen azot, kır çiçeklerinin kaybolmasının başlıca nedenlerindendir.'
     },
     drought: {
@@ -129,8 +129,8 @@ export const content: ContentText = {
     'ladybirds-gone': {
       title: 'Toplanan uğur böcekleri',
       situation: 'Uğur böceklerinin çoğu başka bir bahçe için toplanıyor.',
-      think: 'Yaprak bitlerini kim yer? Kalan uğur böcekleri ne kadar hızlı geri gelebilir?',
-      explain: 'Uğur böcekleri olmadan yaprak bitleri çoğalır. Kalan birkaç uğur böceği artık bol besin bulur ve sayıları gecikmeyle toparlanır. Sonra yaprak bitlerini yeniden azaltırlar (B2).',
+      think: 'Yaprak bitlerini kim yer? Peki yaprak bitlerinin çoğalmaya devam etmek için neye ihtiyacı var?',
+      explain: 'Uğur böcekleri olmadan yaprak bitleri çoğalır ve kır çiçeklerini yiyip bitirir. Besin azalınca yeniden azalırlar (B1): burada onları avcıları değil, besinleri durdurur. Kalan birkaç uğur böceği aylarca az kalır.',
       real: 'Gerçek bahçelerde çiçek sinekleri ve kuşlar gibi başka yaprak biti avcıları da yardım eder.'
     }
   },
@@ -139,7 +139,7 @@ export const content: ContentText = {
       story: 'Yukarıda yeni açılan bir tarlanın suyu berrak gölete akmaya başlıyor. Akıntı sürerken su otunu iki yıl hayatta tut.',
       target: '{w}. haftaya kadar her hafta en az {v} su otu.',
       hint: 'Algler bir belirtidir. Onları ne besliyor ve bunun ne kadar erken değişmesi gerekiyor?',
-      explain: 'Su otu ancak algler onu gölgelediğinde azalır; algler de tarlanın getirdiği besinlerle büyür. Nedene müdahale et, hem de erken: su otu zayıf göründüğünde pekiştirici döngü çoktan devreye girmiştir.',
+      explain: 'Su otu ancak bir şey onu gölgelediğinde azalır: tarlanın getirdiği besinlerle büyüyen su mercimeği ve algler. Nedene müdahale et, hem de erken: su otu zayıf göründüğünde pekiştirici döngü çoktan devreye girmiştir.',
       plans: {
         buffer: 'Tarla kenarına dikilen bir bitki şeridi, akıntının çoğunu gölete ulaşmadan tutar. Zamanında yapılırsa algler asla öne geçmez.',
         ditch: 'Hendeği kapatmak akıntıyı tamamen durdurur, böylece algler asla öne geçmez.'

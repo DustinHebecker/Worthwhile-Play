@@ -124,7 +124,7 @@ export const pl: Catalogue = {
   'summary.remark.allMatched': 'Odczytałeś każdą pętlę. Spróbuj poziomu trudnego, na którym rysujesz krzywą.',
   'summary.remark.balancing': 'W tej rundzie najczęściej pojawiały się pętle równoważące: więcej czegoś po pewnym czasie prowadzi do mniej tego.',
   'summary.remark.reinforcing': 'W tej rundzie najczęściej pojawiały się pętle wzmacniające: zmiana napędza samą siebie, aż coś innego ją zatrzyma.',
-  'summary.remark.chains': 'W tej rundzie najczęściej pojawiały się łańcuchy skutków: zmiana na jednym końcu dociera do drugiego, a każdy krok odwraca kierunek.',
+  'summary.remark.chains': 'W tej rundzie najczęściej pojawiały się łańcuchy skutków: zmiana na jednym końcu krok po kroku dociera do drugiego, a każdy krok może zachować albo odwrócić kierunek.',
   'summary.line': '{mark} {title}',
   'summary.skipped': '– {title} (pominięte)',
   'goalui.deadline': 'Termin: tydzień {w}',

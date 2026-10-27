@@ -124,7 +124,7 @@ export const ja: Catalogue = {
   'summary.remark.allMatched': 'すべてのループを読み解きました。曲線を描く「むずかしい」に挑戦してみましょう。',
   'summary.remark.balancing': 'このラウンドではバランス型ループが一番多く出ました：何かが増えると、しばらくしてそれが減ります。',
   'summary.remark.reinforcing': 'このラウンドでは強化型ループが一番多く出ました：変化が自分自身を強め、別の何かが止めるまで続きます。',
-  'summary.remark.chains': 'このラウンドでは効果の連鎖が一番多く出ました：一方の端の変化がもう一方に届き、段階ごとに向きが反転します。',
+  'summary.remark.chains': 'このラウンドでは効果の連鎖が一番多く出ました：一方の端の変化が一歩ずつもう一方に届き、各段階で向きが保たれることも反転することもあります。',
   'summary.line': '{mark} {title}',
   'summary.skipped': '– {title}（スキップ）',
   'goalui.deadline': '期限：{w}週目',

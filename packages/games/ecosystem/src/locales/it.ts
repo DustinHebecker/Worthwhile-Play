@@ -124,7 +124,7 @@ export const it: Catalogue = {
   'summary.remark.allMatched': 'Hai letto ogni ciclo. Prova Difficile, dove disegni la curva.',
   'summary.remark.balancing': 'In questo turno i cicli di bilanciamento sono stati i più frequenti: più di qualcosa porta, dopo un po’, a meno di quella cosa.',
   'summary.remark.reinforcing': 'In questo turno i cicli di rinforzo sono stati i più frequenti: un cambiamento si alimenta da sé finché qualcos’altro non lo ferma.',
-  'summary.remark.chains': 'In questo turno le catene di effetti sono state le più frequenti: un cambiamento a un capo raggiunge l’altro, e ogni passo inverte la direzione.',
+  'summary.remark.chains': 'In questo turno le catene di effetti sono state le più frequenti: un cambiamento a un capo raggiunge l’altro passo dopo passo, e ogni passo può mantenere o invertire la direzione.',
   'summary.line': '{mark} {title}',
   'summary.skipped': '– {title} (saltata)',
   'goalui.deadline': 'Scadenza: settimana {w}',

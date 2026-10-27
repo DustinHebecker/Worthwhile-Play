@@ -124,7 +124,7 @@ export const es: Catalogue = {
   'summary.remark.allMatched': 'Leíste todos los bucles. Prueba Difícil, donde dibujas la curva.',
   'summary.remark.balancing': 'En esta ronda abundaron los bucles de equilibrio: más de algo lleva, con el tiempo, a menos de eso.',
   'summary.remark.reinforcing': 'En esta ronda abundaron los bucles de refuerzo: un cambio se alimenta a sí mismo hasta que otra cosa lo detiene.',
-  'summary.remark.chains': 'En esta ronda abundaron las cadenas de efectos: un cambio en un extremo llega al otro, y cada paso invierte la dirección.',
+  'summary.remark.chains': 'En esta ronda abundaron las cadenas de efectos: un cambio en un extremo llega paso a paso al otro, y cada paso puede mantener o invertir la dirección.',
   'summary.line': '{mark} {title}',
   'summary.skipped': '– {title} (saltado)',
   'goalui.deadline': 'Plazo: semana {w}',

@@ -124,7 +124,7 @@ export const fr: Catalogue = {
   'summary.remark.allMatched': 'Vous avez lu chaque boucle. Essayez Difficile, où vous esquissez la courbe.',
   'summary.remark.balancing': 'Les boucles d’équilibrage étaient les plus fréquentes : plus de quelque chose mène, après un temps, à moins de cette chose.',
   'summary.remark.reinforcing': 'Les boucles de renforcement étaient les plus fréquentes : un changement s’entretient lui-même jusqu’à ce que quelque chose l’arrête.',
-  'summary.remark.chains': 'Les chaînes d’effets étaient les plus fréquentes : un changement à un bout atteint l’autre, chaque étape inversant le sens.',
+  'summary.remark.chains': 'Les chaînes d’effets étaient les plus fréquentes : un changement à un bout atteint l’autre pas à pas, et chaque étape peut garder ou inverser le sens.',
   'summary.line': '{mark} {title}',
   'summary.skipped': '– {title} (passé)',
   'goalui.deadline': 'Échéance : semaine {w}',

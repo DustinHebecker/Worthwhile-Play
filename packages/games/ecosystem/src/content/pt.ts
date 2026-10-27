@@ -60,7 +60,7 @@ export const content: ContentText = {
       title: 'Uma lavoura rio acima',
       situation: 'Uma lavoura nova rio acima começa a escoar para a lagoa limpa.',
       think: 'O que mais nutrientes fazem com as algas, e o que mais algas fazem com a espiga-d’água embaixo delas?',
-      explain: 'Por meses parece que nada acontece: a espiga-d’água até parece bem depois de meio ano. Enquanto isso, os nutrientes se acumulam na água e na lama. Quando as algas finalmente vencem, um ciclo de reforço assume: mais algas, mais sombra, menos espiga-d’água, menos esconderijos para as pulgas-d’água, ainda mais algas (R1, R2). A virada é rápida; a causa foi lenta.',
+      explain: 'Por meses parece que nada acontece: a espiga-d’água até parece bem depois de meio ano. Enquanto isso, os nutrientes se acumulam na água e na lama, até que as lentilhas-d’água e as algas azuis, que precisam de água rica, disparem e façam sombra na espiga-d’água. Então um ciclo de reforço assume: menos espiga-d’água, mais algas, mais sombra (R1). A virada é rápida; a causa foi lenta.',
       real: 'Em lagos reais, essas viradas de água limpa para água verde são bem documentadas, muitas vezes depois de anos de mudança lenta.'
     },
     'no-way-back': {
@@ -95,7 +95,7 @@ export const content: ContentText = {
       title: 'Um pouco de adubo',
       situation: 'O agricultor espalha um pouco de adubo toda semana.',
       think: 'Qual planta mais se beneficia de solo rico, e o que ela faz com as plantas baixas?',
-      explain: 'O adubo alimenta principalmente os capins. O capim mais alto faz sombra no trevo e nas flores silvestres, e o trevo perde sua vantagem: em solo rico, fazer o próprio nitrogênio já não ajuda. Mais comida para o prado significa menos tipos de plantas.',
+      explain: 'O adubo alimenta principalmente os capins. O capim mais alto faz sombra no trevo, que é baixo, e o trevo perde sua vantagem: em solo rico, fazer o próprio nitrogênio já não ajuda. Mais comida para o prado não significa mais de cada planta.',
       real: 'Em prados reais, o nitrogênio do adubo e do ar é uma das principais causas da perda de flores silvestres.'
     },
     drought: {
@@ -129,8 +129,8 @@ export const content: ContentText = {
     'ladybirds-gone': {
       title: 'Joaninhas recolhidas',
       situation: 'A maioria das joaninhas é recolhida para um jardim em outro lugar.',
-      think: 'Quem come os pulgões? Com que rapidez as joaninhas que sobraram podem voltar?',
-      explain: 'Sem joaninhas, os pulgões se multiplicam. As poucas joaninhas que sobraram agora encontram muita comida, e seu número se recupera com atraso. Depois elas voltam a reduzir os pulgões (B2).',
+      think: 'Quem come os pulgões? E do que os pulgões precisam para continuar se multiplicando?',
+      explain: 'Sem joaninhas, os pulgões se multiplicam e devoram as flores silvestres. Com menos comida, eles voltam a cair (B1): aqui é a comida que os freia, não os predadores. As poucas joaninhas que sobraram continuam poucas por meses.',
       real: 'Em jardins reais, outros caçadores de pulgões, como moscas-das-flores e pássaros, também ajudam.'
     }
   },
@@ -139,7 +139,7 @@ export const content: ContentText = {
       story: 'Uma lavoura nova rio acima começa a escoar para a lagoa limpa. Mantenha a espiga-d’água viva por dois anos enquanto o escoamento continua.',
       target: 'Espiga-d’água com pelo menos {v} toda semana até a semana {w}.',
       hint: 'As algas são um sintoma. O que as alimenta, e quão cedo isso precisa mudar?',
-      explain: 'A espiga-d’água só cai quando as algas fazem sombra nela, e as algas crescem com os nutrientes que a lavoura traz. Ataque a causa, e cedo: quando a espiga-d’água parece fraca, o ciclo de reforço já assumiu.',
+      explain: 'A espiga-d’água só cai quando algo faz sombra nela: as lentilhas-d’água e as algas, que crescem com os nutrientes que a lavoura traz. Ataque a causa, e cedo: quando a espiga-d’água parece fraca, o ciclo de reforço já assumiu.',
       plans: {
         buffer: 'Uma faixa de plantas na beira da lavoura segura a maior parte do escoamento antes que chegue à lagoa. Feita a tempo, as algas nunca disparam.',
         ditch: 'Fechar a vala corta totalmente o escoamento, então as algas nunca disparam.'

@@ -60,7 +60,7 @@ export const content: ContentText = {
       title: 'Un campo a monte',
       situation: 'Un nuovo campo a monte comincia a scaricare nello stagno limpido.',
       think: 'Cosa fanno più nutrienti alle alghe, e cosa fanno più alghe alla brasca sotto di loro?',
-      explain: 'Per mesi sembra che non succeda nulla: dopo sei mesi la brasca sembra perfino in forma. Intanto i nutrienti si accumulano nell’acqua e nel fango. Quando le alghe finalmente vincono, prende il sopravvento un ciclo di rinforzo: più alghe, più ombra, meno brasca, meno nascondigli per le pulci, ancora più alghe (R1, R2). La svolta è rapida; la causa era lenta.',
+      explain: 'Per mesi sembra che non succeda nulla: dopo sei mesi la brasca sembra perfino in forma. Intanto i nutrienti si accumulano nell’acqua e nel fango, finché le lenticchie d’acqua e le alghe azzurre, che hanno bisogno di acqua ricca, partono e fanno ombra alla brasca. Allora prende il sopravvento un ciclo di rinforzo: meno brasca, più alghe, più ombra (R1). La svolta è rapida; la causa era lenta.',
       real: 'Nei laghi veri, queste svolte dall’acqua limpida a quella verde sono ben documentate, spesso dopo anni di cambiamenti lenti.'
     },
     'no-way-back': {
@@ -95,7 +95,7 @@ export const content: ContentText = {
       title: 'Un po’ di concime',
       situation: 'L’agricoltore sparge un po’ di concime ogni settimana.',
       think: 'Quale pianta trae più vantaggio da un suolo ricco, e cosa fa alle piante basse?',
-      explain: 'Il concime nutre soprattutto le graminacee. L’erba più alta fa ombra al trifoglio e ai fiori selvatici, e il trifoglio perde il suo vantaggio: su suolo ricco, produrre da sé l’azoto non aiuta più. Più cibo per il prato significa meno tipi di piante.',
+      explain: 'Il concime nutre soprattutto le graminacee. L’erba più alta fa ombra al trifoglio, che è basso, e il trifoglio perde il suo vantaggio: su suolo ricco, produrre da sé l’azoto non aiuta più. Più cibo per il prato non significa più di ogni pianta.',
       real: 'Nei prati veri, l’azoto dei concimi e dell’aria è una delle cause principali della scomparsa dei fiori selvatici.'
     },
     drought: {
@@ -129,8 +129,8 @@ export const content: ContentText = {
     'ladybirds-gone': {
       title: 'Coccinelle raccolte',
       situation: 'La maggior parte delle coccinelle viene raccolta per un giardino altrove.',
-      think: 'Chi mangia gli afidi? Quanto in fretta possono tornare le coccinelle rimaste?',
-      explain: 'Senza coccinelle, gli afidi si moltiplicano. Le poche coccinelle rimaste ora trovano molto cibo, e il loro numero si riprende con ritardo. Poi riducono di nuovo gli afidi (B2).',
+      think: 'Chi mangia gli afidi? E di che cosa hanno bisogno gli afidi per continuare a moltiplicarsi?',
+      explain: 'Senza coccinelle, gli afidi si moltiplicano e divorano i fiori selvatici. Con meno cibo, calano di nuovo (B1): qui a fermarli è il cibo, non i loro predatori. Le poche coccinelle rimaste restano poche per mesi.',
       real: 'Nei giardini veri aiutano anche altri cacciatori di afidi, come i sirfidi e gli uccelli.'
     }
   },
@@ -139,7 +139,7 @@ export const content: ContentText = {
       story: 'Un nuovo campo a monte comincia a scaricare nello stagno limpido. Tieni in vita la brasca per due anni mentre il dilavamento continua.',
       target: 'Brasca almeno {v} ogni settimana fino alla settimana {w}.',
       hint: 'Le alghe sono un sintomo. Cosa le nutre, e quanto presto deve cambiare?',
-      explain: 'La brasca cala solo quando le alghe le fanno ombra, e le alghe crescono con i nutrienti che il campo porta. Agisci sulla causa, e presto: quando la brasca sembra debole, il ciclo di rinforzo ha già preso il sopravvento.',
+      explain: 'La brasca cala solo quando qualcosa le fa ombra: le lenticchie d’acqua e le alghe, che crescono con i nutrienti che il campo porta. Agisci sulla causa, e presto: quando la brasca sembra debole, il ciclo di rinforzo ha già preso il sopravvento.',
       plans: {
         buffer: 'Una fascia di piante lungo il campo trattiene gran parte del dilavamento prima che raggiunga lo stagno. Fatta in tempo, le alghe non passano mai in vantaggio.',
         ditch: 'Chiudere il fosso ferma del tutto il dilavamento, quindi le alghe non passano mai in vantaggio.'

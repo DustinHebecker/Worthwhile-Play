@@ -123,7 +123,7 @@ export const en = {
   'summary.remark.allMatched': 'You read every loop. Try hard, where you sketch the curve.',
   'summary.remark.balancing': 'Balancing loops came up most this round: more of something leads, after a while, to less of it.',
   'summary.remark.reinforcing': 'Reinforcing loops came up most this round: a change feeds on itself until something else stops it.',
-  'summary.remark.chains': 'Chains of effects came up most this round: a change at one end reaches the other, each step flipping the direction.',
+  'summary.remark.chains': 'Chains of effects came up most this round: a change at one end travels step by step to the other, and each step can keep or flip the direction.',
   'summary.line': '{mark} {title}',
   'summary.skipped': '– {title} (skipped)',
   'goalui.deadline': 'Deadline: week {w}',
