@@ -698,6 +698,26 @@ Each slow file stays under 50 % of its timeout under parallel load (the reviewer
 
 ---
 
+## 24. Implementation notes (implementer, 2026-10-27)
+
+Owner decisions (§ 22): title "Pond & Meadow" / "Teich & Wiese"; both habitats and all three modes in the first release; all 16 locales at once.
+
+Calibration: every preset is bit-identical to the planner's prototype (checked value by value; golden checksums in `test/model.test.ts`), and all of Appendix B is reproduced by `test/challenges.slow.test.ts` and `test/goals.slow.test.ts`, with the deviations below.
+
+1. **Arrivals only for species that ever lived in the habitat** (`Sim.seen`), as in the prototype; otherwise the bare presets would fill up with species the player never added.
+2. **`imp` counts the start amount**, so the balance invariant is exactly `total = imp − exp` (water: `w = wimp − wexp`); presets rebase `imp` to the total after spin-up.
+3. **Meadow decay is 3,000 ‰/week** (the prototype's own default was 10,000); 3,000 reproduces Appendix B exactly.
+4. **`remove` exports** the removed mass (as § 7 says; the prototype put it into dead matter). With export, worms-gone grasses become an ambiguous fall-rise at p = 15 %, so the worms-gone medium question asks for clover (rises) and the hard sketch draws clover.
+5. **CLDs:** the uptake edges (algae → nutrients, grasses → nutrients) were removed, because when nutrients are depleted the model's sensitivity has the opposite sign. Edge signs are tested by finite differences at the preset state (must equal the sign) and after the change (must not be opposite); ladybirds → aphids is zero right after spraying, hence the two-point test.
+6. **Shape threshold** uses the exact integer form `100·diff ≥ ref·p`.
+7. **Goals:** tools apply directly at the current week (no separate sheet); the reference plan of save-pondweed is applied at week 0 (net-every-10-weeks is tested in addition); bring-back-clover's fastest plan uses the 90 % rabbit tool (week 106; § B.2 had 80 % → 115), because the tools offer 50 % and 90 %.
+8. **Explore** got a focus picker (which species the large chart shows) next to the comparison line.
+9. **Engine fuzz** runs 300 random sequences × 520 weeks per habitat (not 2,000) to keep the slow suite short; the exact-balance and bounds checks are unchanged.
+10. **Performance:** `stepWeek` ≈ 0.03 ms warm; 520 weeks ≈ 10–22 ms; fuzz ≈ 0.015–0.018 ms per simulated week; building all presets ≈ 250–385 ms (stored, so never at runtime).
+11. **Names:** Portuguese is Brazilian ("Espiga-d’água" for pondweed); Turkish uses "Su otu" (pondweed) and "çiçek sinekleri" (hoverflies); Japanese content writes numbers in kanji (the content test forbids digits outside placeholders and loop ids).
+
+---
+
 ## Appendix A — row for `docs/third-party.md` (ready to paste)
 
 ```markdown
