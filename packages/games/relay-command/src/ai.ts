@@ -5,6 +5,7 @@ import {
   DEFAULT_DOCTRINE,
   depositAt,
   dist2,
+  droneState,
   flowField,
   incomeOfSide,
   MAX_QUEUE,
@@ -74,6 +75,7 @@ const SLOT_MARGIN = 2;
  *   distance, known defence and damage (`objectiveOf`), neutral posts are taken over by infantry,
  *   a damaged own post with raiders near gets a guard, and the relay truck moves to reconnect
  *   fighters cut off away from the objective;
+ * - normal / hard: a Scout Car without an order puts its drone up (it escorts the car);
  * - hard: as normal, plus electronic warfare (jammer set up near known enemy relays and posts,
  *   tracer with the relay truck) and a bolder weighting of damage dealt against damage taken.
  */
@@ -142,14 +144,18 @@ export function planAi(observation: Observation, ruleset: Ruleset, difficulty: D
     const strategic = assault(obs, ruleset, plan, fighters.filter((u) => !engaged(u)));
     fighting = [...tactical, ...strategic];
   }
+  // Spare slots (normal / hard): a Scout Car without an order this turn puts its drone up. The drone
+  // escorts it, a wider view and a relay above the car; it is never flown on its own (docs, § 4.1).
+  const ordered = new Set([...fixed, ...fighting].map((c) => c.unit));
+  const launches: Command[] = difficulty === 'easy' ? [] : own.filter((u) => droneState(ruleset, u) === 'aboard' && !ordered.has(u.id)).map((u) => ({ side, unit: u.id, order: { type: 'launch' } }));
   // Spend order slots only on orders the engine will accept.
-  return [...fixed, ...fighting.filter(valid)].slice(0, budget);
+  return [...fixed, ...fighting.filter(valid), ...launches.filter(valid)].slice(0, budget);
 }
 
 /**
- * The observation without drones (owner decision 2026-10-27). The opponent does not fly them: no
- * way of flying them measured a gain without letting a player who only digs in win (docs). In the
- * air they take no ground cell (no wall, no taken building cell or deposit), the engine fires at
+ * The observation without drones (owner decision 2026-10-27). The opponent launches its own but
+ * never flies them: no way of flying them measured a gain without letting a player who only digs
+ * in win (docs); a launched drone escorts its car. In the air they take no ground cell (no wall, no taken building cell or deposit), the engine fires at
  * them only when nothing else is in reach, and one is replaced for free: nothing to plan around.
  */
 function withoutDrones(obs: Observation, ruleset: Ruleset): Observation {
