@@ -26,6 +26,7 @@ export const es: BalanceMessages = {
   'task.beam-predict': 'Al quitar el pasador, ¿qué pasa?',
   'task.beam-hook': 'Cuelga la pesa de {kg} kg para que la barra quede horizontal.',
   'task.beam-weights': 'Cuelga todas las pesas de la bandeja para que la barra quede horizontal.',
+  'task.beam-choose': '¿Qué pesa va en el gancho marcado (▼)? Cuelga exactamente una para que la barra quede horizontal.',
   'task.beam-axle': 'La barra tiene peso propio. Mueve el eje para que quede horizontal.',
   'task.mobile-predict': '¿Hacia dónde se inclina la varilla marcada (▶)?',
   'task.mobile-hang': 'Cuelga cada pesa de un gancho para que todas las varillas queden horizontales.',

@@ -26,6 +26,7 @@ export const zhHans: BalanceMessages = {
   'task.beam-predict': '拔掉销子后会怎样？',
   'task.beam-hook': '挂上 {kg} 千克的砝码，让横杆保持水平。',
   'task.beam-weights': '把托盘里的砝码全部挂上，让横杆保持水平。',
+  'task.beam-choose': '哪个砝码应挂在标记的挂钩（▼）上？只挂一个，让横杆保持水平。',
   'task.beam-axle': '横杆有自身重量。移动转轴，让它保持水平。',
   'task.mobile-predict': '标记的横杆（▶）会往哪边倾斜？',
   'task.mobile-hang': '把每个砝码挂到一个挂钩上，让所有横杆都水平。',

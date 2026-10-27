@@ -26,6 +26,7 @@ export const nl: BalanceMessages = {
   'task.beam-predict': 'Wat gebeurt er als de pin eruit gaat?',
   'task.beam-hook': 'Hang het gewicht van {kg} kg zo op dat de balk horizontaal blijft.',
   'task.beam-weights': 'Hang alle gewichten uit het bakje zo op dat de balk horizontaal blijft.',
+  'task.beam-choose': 'Welk gewicht hoort aan de gemarkeerde haak (▼)? Hang er precies één op zodat de balk horizontaal blijft.',
   'task.beam-axle': 'De balk heeft een eigen gewicht. Verplaats de as zodat de balk horizontaal blijft.',
   'task.mobile-predict': 'Naar welke kant zakt de gemarkeerde stang (▶)?',
   'task.mobile-hang': 'Hang elk gewicht aan een haak zodat alle stangen horizontaal hangen.',

@@ -26,6 +26,7 @@ export const pl: BalanceMessages = {
   'task.beam-predict': 'Co się stanie po wyjęciu bolca?',
   'task.beam-hook': 'Powieś ciężarek {kg} kg tak, żeby belka została pozioma.',
   'task.beam-weights': 'Powieś wszystkie ciężarki z tacki tak, żeby belka została pozioma.',
+  'task.beam-choose': 'Który ciężarek pasuje na zaznaczony haczyk (▼)? Powieś dokładnie jeden, żeby belka została pozioma.',
   'task.beam-axle': 'Belka ma własny ciężar. Przesuń oś tak, żeby została pozioma.',
   'task.mobile-predict': 'W którą stronę przechyli się zaznaczony pręt (▶)?',
   'task.mobile-hang': 'Powieś każdy ciężarek na haczyku tak, żeby wszystkie pręty wisiały poziomo.',

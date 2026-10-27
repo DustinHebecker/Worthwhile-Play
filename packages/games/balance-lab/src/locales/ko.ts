@@ -26,6 +26,7 @@ export const ko: BalanceMessages = {
   'task.beam-predict': '핀을 뽑으면 어떻게 될까요?',
   'task.beam-hook': '{kg} kg 추를 걸어 막대가 수평을 유지하게 하세요.',
   'task.beam-weights': '쟁반의 추를 모두 걸어 막대가 수평을 유지하게 하세요.',
+  'task.beam-choose': '표시된 고리(▼)에는 어떤 추가 맞을까요? 막대가 수평이 되도록 딱 하나만 거세요.',
   'task.beam-axle': '막대에도 무게가 있습니다. 축을 옮겨 수평을 유지하게 하세요.',
   'task.mobile-predict': '표시된 막대(▶)는 어느 쪽으로 기울까요?',
   'task.mobile-hang': '추를 하나씩 고리에 걸어 모든 막대가 수평이 되게 하세요.',

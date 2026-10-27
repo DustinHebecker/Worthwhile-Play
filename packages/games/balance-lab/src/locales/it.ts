@@ -26,6 +26,7 @@ export const it: BalanceMessages = {
   'task.beam-predict': 'Quando si toglie il perno, che cosa succede?',
   'task.beam-hook': 'Appendi il peso da {kg} kg in modo che l’asta resti orizzontale.',
   'task.beam-weights': 'Appendi tutti i pesi del vassoio in modo che l’asta resti orizzontale.',
+  'task.beam-choose': 'Quale peso va sul gancio segnato (▼)? Appendine esattamente uno perché l’asta resti orizzontale.',
   'task.beam-axle': 'L’asta ha un peso proprio. Sposta il perno in modo che resti orizzontale.',
   'task.mobile-predict': 'Da che parte si inclina l’asta segnata (▶)?',
   'task.mobile-hang': 'Appendi ogni peso a un gancio in modo che tutte le aste pendano orizzontali.',

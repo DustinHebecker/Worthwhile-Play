@@ -78,6 +78,33 @@ describe('view', () => {
     expect(m.ctx.results).toHaveLength(1);
   });
 
+  it('beam-choose: one weight on the marked hook; a new choice replaces it', () => {
+    for (let seed = 1; seed < 40; seed++) {
+      const m = mount({ bench: 'beam', tasks: 'build' }, 'medium', 'en', seed);
+      const s = m.state() as RoundState;
+      const it = s.items[0]!;
+      if (it.goal?.kind !== 'choose') {
+        m.instance.dispose();
+        continue;
+      }
+      const right = it.witness!.s as { weights: { kg: number; free?: boolean }[] };
+      const kg = right.weights.find((w) => w.free)!.kg;
+      const wrong = it.tray.findIndex((x) => x !== kg);
+      m.q(`bl-tray-${wrong}`)!.click();
+      m.q('bl-place')!.click();
+      const left = (m.state() as RoundState).items[0]!;
+      const i = left.tray.filter((x) => x !== it.tray[wrong]).indexOf(kg);
+      m.q(`bl-tray-${i}`)!.click();
+      m.q('bl-place')!.click();
+      const draft = (m.state() as RoundState).items[0]!.draft.s as { weights: { free?: boolean; hook: number }[] };
+      expect(draft.weights.filter((w) => w.free)).toHaveLength(1);
+      m.q('bl-letgo')!.click();
+      expect(m.q('bl-outcome')!.dataset.status).toBe('solved');
+      return;
+    }
+    throw new Error('no beam-choose task found');
+  });
+
   it('refuses "Let go" with parts in the tray and says so', () => {
     const m = mount({ bench: 'mobile', tasks: 'build' });
     m.q('bl-letgo')!.click();

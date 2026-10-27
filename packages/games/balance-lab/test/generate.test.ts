@@ -64,6 +64,13 @@ describe('generation', () => {
         expect(goalMet(t, t.scene)).toBe(false);
         if (t.scene.bench === 'beam' && id === 'beam-hook') expect(beamHookSolutions(t.scene.s, t.tray[0]!)).toHaveLength(1);
         if (t.scene.bench === 'beam' && id === 'beam-axle') expect(beamAxleSolutions(t.scene.s)).toHaveLength(1);
+        if (t.scene.bench === 'beam' && t.goal?.kind === 'choose') {
+          const sc = t.scene.s;
+          const hook = t.goal.hook;
+          const fits = t.tray.filter((kg) => goalMet(t, { bench: 'beam', s: { ...sc, weights: [...sc.weights, { kg, hook, free: true }] } }));
+          expect(fits).toHaveLength(1);
+          expect(new Set(t.tray).size).toBe(t.tray.length);
+        }
         if (t.scene.bench === 'mobile') expect(countHangSolutions(t.scene.s, t.tray)).toBe(1);
         if (t.scene.bench === 'stack') expect(stackContactsOk(t.witness!.s as never)).toBe(true);
         for (const kg of t.tray) expect(kg >= 1 && kg <= 9).toBe(true);

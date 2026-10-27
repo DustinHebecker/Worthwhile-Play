@@ -26,6 +26,7 @@ export const tr: BalanceMessages = {
   'task.beam-predict': 'Pim çekilince ne olur?',
   'task.beam-hook': '{kg} kg’lık ağırlığı, çubuk yatay kalacak şekilde as.',
   'task.beam-weights': 'Tepsideki bütün ağırlıkları, çubuk yatay kalacak şekilde as.',
+  'task.beam-choose': 'İşaretli kancaya (▼) hangi ağırlık gelir? Çubuk yatay kalsın diye tam bir tane as.',
   'task.beam-axle': 'Çubuğun kendi ağırlığı var. Mili, çubuk yatay kalacak şekilde kaydır.',
   'task.mobile-predict': 'İşaretli çubuk (▶) hangi yöne eğilir?',
   'task.mobile-hang': 'Her ağırlığı bir kancaya as, tüm çubuklar yatay assın.',

@@ -121,6 +121,13 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
     if (!sc || !editable()) return;
     if (sc.bench === 'beam') {
       if (taskId() === 'beam-axle') return void edit({ bench: 'beam', s: setAxle(sc.s, target) ?? sc.s });
+      const goal = state.mode === 'round' ? currentItem(state)?.goal : undefined;
+      if (goal?.kind === 'choose') {
+        // Only the marked hook takes a weight, and only one: a new choice replaces the one hanging there.
+        const kg = selTray === null ? undefined : trayNow()[selTray];
+        if (kg !== undefined && edit({ bench: 'beam', s: placeBeam({ ...sc.s, weights: sc.s.weights.filter((w) => !w.free) }, kg, goal.hook) ?? sc.s })) selTray = null;
+        return render();
+      }
       cursor = target;
       if (selPlaced !== null) return void (edit({ bench: 'beam', s: moveBeam(sc.s, selPlaced, target) ?? sc.s }) || render());
       if (selTray !== null) {
@@ -165,6 +172,7 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
     const sc = sceneNow();
     if (!sc || !editable()) return;
     if (sc.bench === 'beam') {
+      if (taskId() === 'beam-choose') return;
       if (taskId() === 'beam-axle') return void edit({ bench: 'beam', s: setAxle(sc.s, sc.s.axle + Math.sign(dx)) ?? sc.s });
       if (selPlaced !== null) {
         const w = sc.s.weights[selPlaced];
@@ -296,7 +304,7 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
       (!!item && !predict && item.status === 'open' && ((state.mode === 'round' && state.difficulty === 'easy') || item.help >= 2));
     let cur: SceneOptions['cursor'] = null;
     if (editable()) {
-      if (scene.bench === 'beam' && taskId() !== 'beam-axle') cur = selPlaced === null ? { kind: 'hook', at: cursor } : null;
+      if (scene.bench === 'beam' && taskId() !== 'beam-axle') cur = selPlaced === null || taskId() === 'beam-choose' ? { kind: 'hook', at: cursor } : null;
       else if (scene.bench === 'mobile') cur = { kind: 'hook', at: cursor };
       else if (scene.bench === 'stack') cur = taskId() === 'stack-counter' ? (selPlaced === null ? { kind: 'cube', at: cursor } : null) : { kind: 'body', at: cursor };
     }
@@ -410,7 +418,7 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
       if (b) where = t('cursor.body', { n: num(cursor + 1), from: num(b.left) });
     }
     if (scene.bench === 'stack' && id === 'stack-counter' && selPlaced === null) where = t('cursor.cube', { x: num(cursor) });
-    const stepRow = h('div', { class: 'bl-steps', dir: 'ltr' });
+    const stepRow = h('div', { class: 'bl-steps', dir: 'ltr', hidden: id === 'beam-choose' });
     const fine = scene.bench === 'stack';
     if (fine) stepRow.append(button('◀◀', 'bl-step-left4', () => step(-4), { 'aria-label': t('step.left4') }));
     stepRow.append(button('◀', 'bl-step-left', () => step(-1), { 'aria-label': t('step.left') }), button('▶', 'bl-step-right', () => step(1), { 'aria-label': t('step.right') }));
@@ -456,6 +464,7 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
 
   function renderTask(s: RoundState, it: Item) {
     const predict = isPredict(it.id);
+    if (it.goal?.kind === 'choose') cursor = it.goal.hook;
     const head = h(
       'div',
       { class: 'bl-head' },

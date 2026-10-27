@@ -3,7 +3,7 @@
  * and then `requestSave()`.
  */
 import { createRng, isArrayOf, isInt, isOneOf, isRecord, isUint32, type SettingValue } from '@wp/game-core';
-import { goalMet, outcomeMeets, outcomeOf, trayLeft, type Outcome } from './check';
+import { goalMet, outcomeOf, trayLeft, type Outcome } from './check';
 import {
   BENCHES,
   DIFFICULTIES,
@@ -297,7 +297,7 @@ export function letGo(s: RoundState): RoundState | null {
     }
     if (trayLeft(it, it.draft) > 0) return null;
     const outcome = outcomeOf(it.draft);
-    const solved = outcomeMeets(it, outcome);
+    const solved = goalMet(it, it.draft);
     return { ...it, outcome, status: solved ? (it.help >= 2 && s.difficulty !== 'easy' ? 'solved-with-help' : 'solved') : 'open' };
   });
 }
@@ -441,7 +441,7 @@ function fixedPart(scene: Scene, id: TaskId): unknown {
 }
 
 const isGoal = (x: unknown): x is Goal =>
-  isRecord(x) && (((x.kind === 'level' || x.kind === 'stand') && Object.keys(x).length === 1) || (x.kind === 'overhang' && isInt(x.cm, 1, 100) && isInt(x.best, 1, 100)));
+  isRecord(x) && (((x.kind === 'level' || x.kind === 'stand') && Object.keys(x).length === 1) || (x.kind === 'overhang' && isInt(x.cm, 1, 100) && isInt(x.best, 1, 100)) || (x.kind === 'choose' && isInt(x.hook, -6, 6) && x.hook !== 0));
 
 const isOutcome = (x: unknown): boolean => isRecord(x);
 
@@ -478,10 +478,10 @@ function isItem(x: unknown, difficulty: Difficulty): x is Item {
   }
   if (!isGoal(it.goal) || !isScene(it.witness) || it.answer !== null || it.marked !== null) return false;
   if (!same(fixedPart(it.witness, id), fixedPart(it.scene, id)) || !goalMet(it, it.witness)) return false;
-  if (it.status === 'open') return it.outcome === null || !outcomeMeets(it, it.outcome);
+  if (it.status === 'open') return it.outcome === null || !goalMet(it, it.draft);
   if (it.status === 'shown') return it.help === 3 && same(it.draft, it.witness);
   if (it.status === 'solved' || it.status === 'solved-with-help') {
-    if (it.outcome === null || !outcomeMeets(it, it.outcome)) return false;
+    if (it.outcome === null || !goalMet(it, it.draft)) return false;
     return it.status === (it.help >= 2 && difficulty !== 'easy' ? 'solved-with-help' : 'solved');
   }
   return false;

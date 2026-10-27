@@ -14,7 +14,9 @@ export function outcomeOf(scene: Scene): Outcome {
 }
 
 /** Parts still in the tray. */
-export function trayLeft(task: Pick<TaskSpec, 'tray'>, scene: Scene): number {
+export function trayLeft(task: Pick<TaskSpec, 'tray' | 'goal'>, scene: Scene): number {
+  // beam-choose: exactly one weight of the tray is hung.
+  if (scene.bench === 'beam' && task.goal?.kind === 'choose') return scene.s.weights.some((w) => w.free) ? 0 : 1;
   if (scene.bench === 'beam') return task.tray.length - scene.s.weights.filter((w) => w.free).length;
   if (scene.bench === 'mobile') return emptySlots(scene.s);
   return task.tray.length - scene.s.cubes.filter((c) => c.free).length;
@@ -23,11 +25,16 @@ export function trayLeft(task: Pick<TaskSpec, 'tray'>, scene: Scene): number {
 export function outcomeMeets(task: Pick<TaskSpec, 'goal'>, outcome: Outcome): boolean {
   const goal = task.goal;
   if (!goal) return false;
-  if (outcome.bench !== 'stack') return goal.kind === 'level' && outcome.sides.every((s) => s === 'level');
+  if (outcome.bench !== 'stack') return (goal.kind === 'level' || goal.kind === 'choose') && outcome.sides.every((s) => s === 'level');
   if (!outcome.stands) return false;
   return goal.kind === 'overhang' ? outcome.overhang >= goal.cm : goal.kind === 'stand';
 }
 
 export function goalMet(task: Pick<TaskSpec, 'goal' | 'tray'>, scene: Scene): boolean {
+  const goal = task.goal;
+  if (goal?.kind === 'choose' && scene.bench === 'beam') {
+    const free = scene.s.weights.filter((w) => w.free);
+    if (free.length !== 1 || free[0]!.hook !== goal.hook) return false;
+  }
   return trayLeft(task, scene) === 0 && outcomeMeets(task, outcomeOf(scene));
 }

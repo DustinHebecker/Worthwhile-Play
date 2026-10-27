@@ -26,6 +26,7 @@ export const pt: BalanceMessages = {
   'task.beam-predict': 'Quando se tira o pino, o que acontece?',
   'task.beam-hook': 'Pendure o peso de {kg} kg para que a barra fique horizontal.',
   'task.beam-weights': 'Pendure todos os pesos do tabuleiro para que a barra fique horizontal.',
+  'task.beam-choose': 'Que peso pertence ao gancho marcado (▼)? Pendure exatamente um para que a barra fique horizontal.',
   'task.beam-axle': 'A barra tem peso próprio. Mude o eixo de lugar para que fique horizontal.',
   'task.mobile-predict': 'Para que lado se inclina a vareta marcada (▶)?',
   'task.mobile-hang': 'Pendure cada peso num gancho para que todas as varetas fiquem horizontais.',

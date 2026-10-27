@@ -35,11 +35,11 @@ export type Bench = 'beam' | 'mobile' | 'stack';
 export const BENCHES: readonly Bench[] = ['beam', 'mobile', 'stack'];
 export const DIFFICULTIES: readonly Difficulty[] = ['easy', 'medium', 'hard'];
 
-export const TASK_IDS = ['beam-predict', 'beam-hook', 'beam-weights', 'beam-axle', 'mobile-predict', 'mobile-hang', 'stack-predict', 'stack-overhang', 'stack-counter'] as const;
+export const TASK_IDS = ['beam-predict', 'beam-hook', 'beam-weights', 'beam-choose', 'beam-axle', 'mobile-predict', 'mobile-hang', 'stack-predict', 'stack-overhang', 'stack-counter'] as const;
 export type TaskId = (typeof TASK_IDS)[number];
 
 export type Scene = { bench: 'beam'; s: BeamScene } | { bench: 'mobile'; s: MobileNode } | { bench: 'stack'; s: StackScene };
-export type Goal = { kind: 'level' } | { kind: 'stand' } | { kind: 'overhang'; cm: number; best: number };
+export type Goal = { kind: 'level' } | { kind: 'stand' } | { kind: 'overhang'; cm: number; best: number } | { kind: 'choose'; hook: number };
 
 export interface TaskSpec {
   id: TaskId;
@@ -62,9 +62,9 @@ export const isPredict = (id: TaskId): boolean => id.endsWith('-predict');
 export const SIDES: readonly Side[] = ['left-down', 'level', 'right-down'];
 export const STACK_ANSWERS: readonly StackAnswer[] = ['stands', 'left', 'right'];
 
-/** Build pools per bench and difficulty (design § 10.3; `beam-choose` and `mobile-string` not built yet). */
+/** Build pools per bench and difficulty (design § 10.3; `mobile-string` not built yet). */
 export function buildPool(bench: Bench, difficulty: Difficulty): TaskId[] {
-  if (bench === 'beam') return difficulty === 'hard' ? ['beam-hook', 'beam-weights', 'beam-axle'] : ['beam-hook', 'beam-weights'];
+  if (bench === 'beam') return difficulty === 'hard' ? ['beam-hook', 'beam-weights', 'beam-choose', 'beam-axle'] : difficulty === 'medium' ? ['beam-hook', 'beam-weights', 'beam-choose'] : ['beam-hook', 'beam-weights'];
   if (bench === 'mobile') return ['mobile-hang'];
   return ['stack-overhang', 'stack-counter'];
 }
@@ -172,6 +172,25 @@ export function beamWeights(rng: Rng, d: Difficulty): TaskSpec {
     return buildTask('beam-weights', { bench: 'beam', s: scene }, moved.map((w) => w.kg).sort((a, b) => a - b), { bench: 'beam', s: { ...scene, weights: [...fixed, ...moved.map((w) => ({ ...w, free: true }))] } });
   }
   return beamHook(rng, d);
+}
+
+/** Which weight from a tray of 3–4 levels the bar on the marked hook? Exactly one does (distinct masses). */
+export function beamChoose(rng: Rng, d: Difficulty): TaskSpec {
+  const p = P[d];
+  for (let i = 0; i < TRIES; i++) {
+    const scene: BeamScene = { half: p.half, axle: 0, barKg: 0, weights: randomBeamWeights(rng, p.half, rng.int(p.weights[0], p.weights[1]), p.maxKg) };
+    const net = beamNet(scene);
+    const hook = rng.int(-p.half, p.half);
+    if (net === 0 || hook === 0 || scene.weights.filter((w) => w.hook === hook).length >= 3 || (-net) % hook !== 0) continue;
+    const kg = -net / hook;
+    if (kg < 1 || kg > p.maxKg) continue;
+    const tray = new Set([kg]);
+    const size = d === 'hard' ? 4 : 3;
+    while (tray.size < size) tray.add(rng.int(1, p.maxKg));
+    return buildTask('beam-choose', { bench: 'beam', s: scene }, [...tray].sort((a, b) => a - b), { bench: 'beam', s: { ...scene, weights: [...scene.weights, { kg, hook, free: true }] } }, { kind: 'choose', hook });
+  }
+  const scene: BeamScene = { half: p.half, axle: 0, barKg: 0, weights: [{ kg: 2, hook: -4 }] };
+  return buildTask('beam-choose', { bench: 'beam', s: scene }, [1, 2, 3], { bench: 'beam', s: { ...scene, weights: [...scene.weights, { kg: 2, hook: 4, free: true }] } }, { kind: 'choose', hook: 4 });
 }
 
 export function beamAxle(rng: Rng, d: Difficulty): TaskSpec {
@@ -396,6 +415,8 @@ export function generateTask(rng: Rng, id: TaskId, d: Difficulty, needs: Predict
       return beamHook(rng, d);
     case 'beam-weights':
       return beamWeights(rng, d);
+    case 'beam-choose':
+      return beamChoose(rng, d);
     case 'beam-axle':
       return beamAxle(rng, d);
     case 'mobile-predict':

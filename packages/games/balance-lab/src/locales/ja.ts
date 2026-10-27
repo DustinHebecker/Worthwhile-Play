@@ -26,6 +26,7 @@ export const ja: BalanceMessages = {
   'task.beam-predict': 'ピンを抜くと、どうなる？',
   'task.beam-hook': '{kg} kg のおもりを下げて、棒を水平に保とう。',
   'task.beam-weights': 'トレーのおもりを全部下げて、棒を水平に保とう。',
+  'task.beam-choose': '印のフック（▼）にはどのおもり？ ちょうどひとつ下げて、棒を水平に保とう。',
   'task.beam-axle': '棒にも重さがあります。軸を動かして水平に保とう。',
   'task.mobile-predict': '印のついた棒（▶）はどちらに傾く？',
   'task.mobile-hang': 'おもりをひとつずつフックに下げて、すべての棒を水平にしよう。',

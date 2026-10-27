@@ -26,6 +26,7 @@ export const de: BalanceMessages = {
   'task.beam-predict': 'Wenn der Stift gezogen wird: Was passiert?',
   'task.beam-hook': 'Häng das {kg}-kg-Gewicht so auf, dass der Balken waagerecht bleibt.',
   'task.beam-weights': 'Häng alle Gewichte aus der Ablage so auf, dass der Balken waagerecht bleibt.',
+  'task.beam-choose': 'Welches Gewicht gehört an den markierten Haken (▼)? Häng genau eines auf, sodass der Balken waagerecht bleibt.',
   'task.beam-axle': 'Der Balken hat ein eigenes Gewicht. Versetz die Achse so, dass er waagerecht bleibt.',
   'task.mobile-predict': 'Wohin neigt sich die markierte Stange (▶)?',
   'task.mobile-hang': 'Häng jedes Gewicht an einen Haken, sodass alle Stangen waagerecht hängen.',

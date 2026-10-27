@@ -25,6 +25,7 @@ export const en = {
   'task.beam-predict': 'When the pin is pulled, what happens?',
   'task.beam-hook': 'Hang the {kg} kg weight so the bar stays level.',
   'task.beam-weights': 'Hang all the weights from the tray so the bar stays level.',
+  'task.beam-choose': 'Which weight belongs on the marked hook (▼)? Hang exactly one so the bar stays level.',
   'task.beam-axle': 'The bar has its own weight. Move the axle so the bar stays level.',
   'task.mobile-predict': 'Which way does the marked bar (▶) dip?',
   'task.mobile-hang': 'Hang every weight on a hook so all bars hang level.',

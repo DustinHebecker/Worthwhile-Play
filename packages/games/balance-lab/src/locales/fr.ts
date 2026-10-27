@@ -26,6 +26,7 @@ export const fr: BalanceMessages = {
   'task.beam-predict': 'Quand on retire la goupille, que se passe-t-il ?',
   'task.beam-hook': 'Accroche le poids de {kg} kg pour que la barre reste horizontale.',
   'task.beam-weights': 'Accroche tous les poids du plateau pour que la barre reste horizontale.',
+  'task.beam-choose': 'Quel poids va au crochet marqué (▼) ? Accroches-en exactement un pour que la barre reste horizontale.',
   'task.beam-axle': 'La barre a son propre poids. Déplace l’axe pour qu’elle reste horizontale.',
   'task.mobile-predict': 'De quel côté penche la tige marquée (▶) ?',
   'task.mobile-hang': 'Accroche chaque poids à un crochet pour que toutes les tiges pendent à l’horizontale.',
