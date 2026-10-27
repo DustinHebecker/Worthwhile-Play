@@ -151,20 +151,22 @@ App size: precache about 7.7 MB (213 entries, all games and locales, offline).
 - A weekly model rate limit can stop subagents mid-review. Resume them with SendMessage once it resets.
 - Ports in use by convention: publish e2e 4793, PR gate 4795, ad-hoc checks 4796–4799, feature agents 5100–5999.
 
-## State (2026-10-26)
+## State (2026-10-27)
 
 On main and deployed:
-- Estimation Lab: two paths (free / guided), one value per input (owner feedback); no "give up" button (owner: not for now).
-- Probability Detective: reviewed, 38 cases recomputed.
-- Atlas Explorer: reviewed. Neutrality fixes for narrow disputed areas, the date line, routes, rivers, desert and line margins. Natural Earth 5.1.2, policy "mark, don't decide", detailed map.
-- Strategy #74–#77: four-base editor, team = strongest side, lone computer holds, asymmetric maps.
+- New-games pipeline games 1–7 are live: Best Plan, Estimation Lab, Probability Detective, Atlas Explorer, Sense of Time (`timeline`), Pond & Meadow (`ecosystem`), Tones & Chords (`harmony`, published 2026-10-27 after an independent review; audio ≤ −6 dBFS, the iPhone silent switch is respected, every task can be solved by eye).
+- Catalogue: Pixel Peel at position 5. Photo previews for relay-command and card-quest (`PHOTOS` in `apps/web/src/previews.ts`), shown whole with `object-fit: contain` (owner feedback 2026-10-27).
+- ADR 0021 mutation budget (changed lines on PRs, rotating 1/8 weekly sample, full runs on demand); slow suites run in CI's long job and separately in `gate-pr.sh`.
+- ADR 0003 amendment: partial locales with `status: 'preview'` (used by Many Lives, en/de).
+- Large contexts merged recently: Lootlings #86 (the helper must flee too); strategy #87 (start-seat choice).
 
 Open:
-- New-games pipeline: Timeline (game 5) is being planned on `plan/<id>` (agent running). Then Tiny Ecosystem, Harmony, Balance Lab.
-- Atlas follow-ups (debatable, not done): the game chunk is 93 KB gzip (all 16 catalogues bundled); hatched slivers along Kashmir (~900 km²); Melilla and Gibraltar read as their neighbours; direction words take the shorter way round the globe; a native-speaker review of the AI-assisted locales.
-- Probability Detective follow-ups: the review screen is dense (fold more?); the wording of "forecast score".
-- Estimation Lab follow-ups (owner said yes): a "recently seen" memory for tasks; a yearly review of time-dependent figures; three source links that return 404 from the container (UN PopFacts 2017/2, OICA 2013, University of Arizona bees) — check them in a browser and switch to Wayback if dead; true plurals for count words ("1 days").
-- Pixel Peel open items: the phone start time (about 300 ms against a 250 ms target) needs a measurement on a quiet machine; a side-by-side landscape layout.
-- `scripts/orchestrator/gate-pr.sh` still runs the slow suites under coverage. The relay generator slow tests time out there under load; align it with CI (exclude `*.slow.test.ts` from coverage and run them separately).
-- Economy (waits for the owner's "weitermachen" in its own session; nine questions in `docs/design/economy-draft.md`) and adventures (three owner questions) are unchanged.
-- Remaining pipeline games: Atlas Explorer, Timeline, Tiny Ecosystem, Harmony, Balance Lab.
+- Pipeline game 8, "Weight & Balance" / "Gewicht & Gleichgewicht" (`balance-lab`): plan on `plan/balance-lab` (`docs/design/balance-lab.md`). The owner accepted all four recommendations: three benches plus a free bench, all 16 locales, a short tipping animation from the exact verdict. The implementation is on `game/balance-lab`, possibly unfinished; it then needs the independent review and a publish.
+- Tones & Chords follow-ups (reviewer, debatable): describing rhythm by eye for screen readers as note values; muting during an ear task counts as a hint; respelling in "which note changed?" (D♭ vs C♯); the lowpass Q.
+- Pond & Meadow follow-ups: feedback when "add" is refused; the Hindi pondweed name; frozen tiny populations.
+- Atlas follow-ups (debatable, not done): the game chunk is 93 KB gzip; hatched slivers along Kashmir; Melilla and Gibraltar; direction words; a native-speaker review of the AI-assisted locales.
+- Estimation Lab follow-ups: a "recently seen" memory; a yearly figure review; three 404 source links (UN PopFacts 2017/2, OICA 2013, University of Arizona bees); true plurals for count words.
+- Pixel Peel: the phone start time (about 300 ms against a 250 ms target); a side-by-side landscape layout.
+- Strategy: next PR (drone datalink, the Direction Finder intercepts orders, easy builds).
+- Waiting on the owner: Economy ("weitermachen" plus nine questions in `docs/design/economy-draft.md`; Many Lives needs `@wp/finance-math` from it) and adventures (three questions: start E1? time model? location of Adventure B?).
+- Recurring load flakes on this machine: the relay replay e2e, node-conquest 44 px e2e, card-quest K3 picture, skat pacing. Rerun them alone before calling a failure real.

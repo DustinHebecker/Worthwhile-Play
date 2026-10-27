@@ -211,8 +211,13 @@ test('harmony: Arabic mirrors the panels but not the keyboard or the staff', asy
   await expect(r.locator('.wp-harmony')).toHaveAttribute('dir', 'rtl');
   await expect(r.getByTestId('hm-keys')).toHaveAttribute('dir', 'ltr');
   await expect(r.getByTestId('hm-staff')).toHaveAttribute('dir', 'ltr');
-  const c = (await r.getByTestId('hm-key-60').boundingBox())!;
-  const d = (await r.getByTestId('hm-key-62').boundingBox())!;
+  // The visible octave starts at the chord's lowest note, so it depends on the task: compare the
+  // lowest visible white key with the next white key (C with D, or the first two whites shown).
+  const keys = r.getByTestId('hm-keys').locator('[data-testid^="hm-key-"]');
+  const midis = (await keys.evaluateAll((els) => els.map((e) => Number(e.getAttribute('data-testid')!.slice(7))))).sort((a, b) => a - b);
+  const whites = midis.filter((m) => [0, 2, 4, 5, 7, 9, 11].includes(m % 12));
+  const c = (await r.getByTestId(`hm-key-${whites[0]}`).boundingBox())!;
+  const d = (await r.getByTestId(`hm-key-${whites[1]}`).boundingBox())!;
   expect(c.x).toBeLessThan(d.x);
   // The question card starts at the inline start (right) edge.
   const card = (await r.locator('.hm-card').boundingBox())!;
