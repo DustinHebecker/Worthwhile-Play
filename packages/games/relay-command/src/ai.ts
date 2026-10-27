@@ -1,7 +1,5 @@
 import {
   archetypeOf,
-  carrierOf,
-  droneState,
   cellOf,
   computeNetwork,
   DEFAULT_DOCTRINE,
@@ -146,51 +144,9 @@ export function planAi(obs: Observation, ruleset: Ruleset, difficulty: Difficult
     const strategic = assault(obs, ruleset, plan, fighters.filter((u) => !engaged(u)));
     fighting = [...tactical, ...strategic];
   }
-  // Drones (hard only: measured gain there, a loss at normal) take only the slots left over.
-  const drones = difficulty === 'hard' ? droneOrders(obs, ruleset, own, plan) : [];
-  // Spend order slots only on orders the engine will accept.
-  return [...fixed, ...fighting.filter(valid), ...drones.filter(valid)].slice(0, budget);
-}
-
-/**
- * Drones (owner decision 2026-10-27; hard only): each Scout Car launches its drone, and the
- * drone flies ahead of its car towards the objective (the post under attack, else the nearest known
- * enemy), as far as its leash allows, onto a cell no known enemy that can hit it reaches. What it
- * spots, the guns can shell. A drone already at (or flying to) a cell next to that one stays on course.
- */
-function droneOrders(obs: Observation, ruleset: Ruleset, own: readonly Entity[], plan: AssaultPlan | undefined): Command[] {
-  const { world, side } = obs;
-  const commands: Command[] = [];
-  const known = enemiesOf(obs);
-  const antiAir = known.filter((e) => (archetypeOf(ruleset, e.kind)?.weapon?.vs.air ?? 0) > 0);
-  const exposed = (x: number, y: number) =>
-    antiAir.some((e) => {
-      const reach = (archetypeOf(ruleset, e.kind)?.weapon?.range ?? 0) + 1;
-      return dist2(x, y, e.x, e.y) <= reach * reach;
-    });
-  for (const car of own) if (droneState(ruleset, car) === 'aboard') commands.push({ side, unit: car.id, order: { type: 'launch' } });
-  // Ahead only once the storm is on: flown out earlier, it shows the defence of the post and the
-  // storm waits for odds it never gets (a turtle then wins on strength, measured on Field Exercise).
-  if (plan && !plan.storming) return commands;
-  for (const drone of own) {
-    const car = carrierOf(world, drone);
-    const leash = car && archetypeOf(ruleset, car.kind)?.carrier?.leash;
-    const toward = car && (plan?.objective ?? nearest(car, known, obs));
-    if (!car || leash === undefined || !toward) continue;
-    let best: { x: number; y: number; d: number; f: number } | undefined;
-    for (let y = Math.max(0, car.y - leash); y <= Math.min(world.map.h - 1, car.y + leash); y++)
-      for (let x = Math.max(0, car.x - leash); x <= Math.min(world.map.w - 1, car.x + leash); x++) {
-        if (dist2(x, y, car.x, car.y) > leash * leash || exposed(x, y)) continue;
-        const d = dist2(x, y, toward.x, toward.y);
-        const f = sideFrame(obs, cellOf(world.map, x, y));
-        if (!best || d < best.d || (d === best.d && f < best.f)) best = { x, y, d, f };
-      }
-    if (!best) continue;
-    const aim = drone.order.type === 'move' ? drone.order : drone;
-    if (Math.max(Math.abs(aim.x - best.x), Math.abs(aim.y - best.y)) <= 1 && !exposed(aim.x, aim.y)) continue;
-    commands.push({ side, unit: drone.id, order: { type: 'move', x: best.x, y: best.y } });
-  }
-  return commands;
+  // Spend order slots only on orders the engine will accept. (The opponent does not launch drones:
+  // no way of flying them measured a gain without letting a player who only digs in win.)
+  return [...fixed, ...fighting.filter(valid)].slice(0, budget);
 }
 
 /** Fighters within this many cells count as company; a unit never advances on its own. */
