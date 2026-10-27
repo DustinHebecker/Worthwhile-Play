@@ -228,8 +228,8 @@ describe('attack orders a weapon cannot carry out', () => {
 });
 
 describe('direction finding of orders (owner choice 2026-10-27)', () => {
-  // Side 0: post at 1, Direction Finder at 4 (radius 8, sees 4 cells). Side 1: post at 12 (covers x >= 7).
-  const base = (riflesAt = 11) =>
+  // Side 0: post at 1, Direction Finder at 4 (hears 6 cells, sees 4). Side 1: post at 12 (covers x >= 7).
+  const base = (riflesAt = 10) =>
     worldOf(open(14, 5), [
       { side: 0, kind: 'command-post', x: 1, y: 2 },
       { side: 0, kind: 'tracer', x: 4, y: 2 },
@@ -239,13 +239,13 @@ describe('direction finding of orders (owner choice 2026-10-27)', () => {
   const rifles = (w: World) => w.entities.find((e) => e.kind === 'rifles')!;
   const order = (w: World): Command => ({ side: 1, unit: rifles(w).id, order: { type: 'move', x: rifles(w).x - 1, y: 2 } });
 
-  it('an enemy that receives an order within 8 cells is fixed: told to the finder side only, in sight until the turn ends', () => {
+  it('an enemy that receives an order within 6 cells is fixed: told to the finder side only, in sight until the turn ends', () => {
     const w = base();
     expect(isSpotted(w, rs, 0, rifles(w).id)).toBe(false);
     const r = resolveTurn(w, rs, [[], [order(w)]]);
     const id = rifles(w).id;
     const finder = w.entities.find((e) => e.kind === 'tracer')!.id;
-    expect(r.events).toContainEqual({ t: 'intercept', tick: 1, id, side: 1, kind: 'rifles', x: 11, y: 2, by: finder, to: 0 });
+    expect(r.events).toContainEqual({ t: 'intercept', tick: 1, id, side: 1, kind: 'rifles', x: 10, y: 2, by: finder, to: 0 });
     expect(r.reported?.[0]).toContainEqual(expect.objectContaining({ t: 'intercept', id, to: 0 }));
     expect(r.reported?.[1]?.some((e) => e.t === 'intercept')).toBe(false);
     // Tracked through the turn: spotted where it stands now, so it can be ordered at.
@@ -260,10 +260,10 @@ describe('direction finding of orders (owner choice 2026-10-27)', () => {
     expect(isValidWorld(next.world, rs)).toBe(true);
   });
 
-  it('nothing is heard without an order, beyond 8 cells, or from a finder out of contact', () => {
+  it('nothing is heard without an order, beyond 6 cells, or from a finder out of contact', () => {
     const quiet = resolveTurn(base(), rs, [[], []]);
     expect(quiet.events.some((e) => e.t === 'intercept')).toBe(false);
-    const far = base(13);
+    const far = base(11);
     expect(resolveTurn(far, rs, [[], [order(far)]]).events.some((e) => e.t === 'intercept')).toBe(false);
     // The finder 9 cells from the post: out of its coverage (radius 5), so it reports nothing.
     const cut = structuredClone(base());
