@@ -1,201 +1,194 @@
-/**
-// UNTRANSLATED
- *
- * Note for translators: plain words; common names only ("water fleas", not "Daphnia" — an "about" line may add the
- * scientific name in brackets); no digits in the texts (numbers come from the model); spraying, fishing and
- * relocating are management actions, described neutrally. Keep sentences short.
- */
 import type { ContentText } from './types';
 
 export const content: ContentText = {
-  weeks: { one: '{n} week', other: '{n} weeks' },
+  weeks: { one: '{n} week', other: '{n} weken' },
   species: {
-    algae: { name: 'Green algae', about: 'Tiny plants floating in the water. They grow fast on nutrients and light; water fleas and snails eat them. Many algae turn the water green and shade the plants below.' },
-    bluegreen: { name: 'Blue-green algae', about: 'Strictly speaking bacteria (cyanobacteria). They grow slowly, need rich water and are hardly eaten, so they bloom when nutrients pile up.' },
-    duckweed: { name: 'Duckweed', about: 'Small floating leaves. In rich water they cover the surface and shade everything below.' },
-    pondweed: { name: 'Pondweed', about: 'Underwater plants rooted in the mud. They need clear water to get light, take nutrients away from the algae and give water fleas a place to hide from fish.' },
-    fleas: { name: 'Water fleas', about: 'Tiny crustaceans (Daphnia) that graze the algae. Small fish eat them, but in pondweed and in the mud many stay out of reach.' },
-    snails: { name: 'Pond snails', about: 'They eat dead plant matter and a few algae. Small fish eat some of them.' },
-    minnows: { name: 'Small fish', about: 'They hunt water fleas and some snails. Their young take about six weeks to grow up. Pike eat them.' },
-    pike: { name: 'Pike', about: 'A large hunter that eats small fish. Young pike take about twenty weeks to grow up.' },
-    grass: { name: 'Grasses', about: 'Tall and fast-growing on rich soil. They shade the low plants and use a lot of water.' },
-    flowers: { name: 'Wildflowers', about: 'Low plants that do well on poor soil. They need light, so tall grass pushes them out. Aphids and rabbits eat them.' },
-    clover: { name: 'Clover', about: 'A low plant that makes its own nitrogen from the air, less so on rich soil. Its dead leaves feed the soil for its neighbours. Rabbits like it most.' },
-    aphids: { name: 'Aphids', about: 'Tiny insects that suck plant sap, mostly from wildflowers. They multiply very fast. Ladybirds eat them.' },
-    ladybirds: { name: 'Ladybirds', about: 'Beetles that eat aphids. Their larvae take about three weeks to grow up, so they react to more aphids with a delay.' },
-    rabbits: { name: 'Rabbits', about: 'They graze clover first, then wildflowers and grass. Their young take about five weeks to grow up. Foxes hunt them; some are always safe in burrows.' },
-    foxes: { name: 'Foxes', about: 'They hunt rabbits. Young foxes take about half a year to grow up.' },
-    worms: { name: 'Earthworms', about: 'They eat dead leaves and turn them back into nutrients that plants can use.' }
+    algae: { name: 'Groenalgen', about: 'Piepkleine plantjes die in het water zweven. Ze groeien snel op voedingsstoffen en licht; watervlooien en slakken eten ze. Veel algen kleuren het water groen en beschaduwen de planten eronder.' },
+    bluegreen: { name: 'Blauwalgen', about: 'Eigenlijk bacteriën (cyanobacteriën). Ze groeien langzaam, hebben voedselrijk water nodig en worden nauwelijks gegeten, dus ze bloeien op als voedingsstoffen zich ophopen.' },
+    duckweed: { name: 'Eendenkroos', about: 'Kleine drijvende blaadjes. In voedselrijk water bedekken ze het oppervlak en beschaduwen ze alles eronder.' },
+    pondweed: { name: 'Fonteinkruid', about: 'Onderwaterplanten die in de modder wortelen. Ze hebben helder water nodig voor licht, nemen de algen voedingsstoffen af en geven watervlooien een schuilplek voor vissen.' },
+    fleas: { name: 'Watervlooien', about: 'Piepkleine kreeftjes (Daphnia) die de algen afgrazen. Kleine vissen eten ze, maar in het fonteinkruid en de modder blijven er veel buiten bereik.' },
+    snails: { name: 'Poelslakken', about: 'Ze eten dode plantenresten en een paar algen. Kleine vissen eten er een deel van.' },
+    minnows: { name: 'Kleine vissen', about: 'Ze jagen op watervlooien en wat slakken. Hun jongen hebben ongeveer zes weken nodig om op te groeien. Snoeken eten ze.' },
+    pike: { name: 'Snoeken', about: 'Een grote jager die kleine vissen eet. Jonge snoeken hebben ongeveer twintig weken nodig om op te groeien.' },
+    grass: { name: 'Grassen', about: 'Hoog en snelgroeiend op voedselrijke grond. Ze beschaduwen de lage planten en gebruiken veel water.' },
+    flowers: { name: 'Wilde bloemen', about: 'Lage planten die het goed doen op schrale grond. Ze hebben licht nodig, dus hoog gras verdringt ze. Bladluizen en konijnen eten ze.' },
+    clover: { name: 'Klaver', about: 'Een lage plant die zijn eigen stikstof uit de lucht haalt, minder op rijke grond. Zijn dode blaadjes bemesten de bodem voor de buren. Konijnen vinden hem het lekkerst.' },
+    aphids: { name: 'Bladluizen', about: 'Piepkleine insecten die plantensap zuigen, vooral van wilde bloemen. Ze vermenigvuldigen zich heel snel. Lieveheersbeestjes eten ze.' },
+    ladybirds: { name: 'Lieveheersbeestjes', about: 'Kevers die bladluizen eten. Hun larven hebben ongeveer drie weken nodig om op te groeien, dus ze reageren met vertraging op meer bladluizen.' },
+    rabbits: { name: 'Konijnen', about: 'Ze eten eerst klaver, dan wilde bloemen en gras. Hun jongen hebben ongeveer vijf weken nodig om op te groeien. Vossen jagen op ze; een deel is altijd veilig in hun holen.' },
+    foxes: { name: 'Vossen', about: 'Ze jagen op konijnen. Jonge vossen hebben ongeveer een half jaar nodig om op te groeien.' },
+    worms: { name: 'Regenwormen', about: 'Ze eten dode bladeren en maken er weer voedingsstoffen van die planten kunnen gebruiken.' }
   },
   challenges: {
     'fleas-arrive': {
-      title: 'Water fleas arrive',
-      situation: 'A young pond has only green algae. Water fleas reach it, carried in by a bird.',
-      think: 'Who eats the algae? What happens to the water fleas when the algae get fewer?',
-      explain: 'Water fleas multiply on the algae until they eat as fast as the algae grow. From then on the water fleas, not the nutrients, set how much algae there is: a balancing loop (B1). The water turns clear and stays clear.',
-      real: 'In real ponds, fish and the seasons usually keep this from being so neat.'
+      title: 'Watervlooien komen aan',
+      situation: 'Een jonge vijver heeft alleen groenalgen. Watervlooien komen erin terecht, meegebracht door een vogel.',
+      think: 'Wie eet de algen? Wat gebeurt er met de watervlooien als de algen minder worden?',
+      explain: 'De watervlooien vermenigvuldigen zich op de algen tot ze net zo snel eten als de algen groeien. Vanaf dan bepalen de watervlooien, niet de voedingsstoffen, hoeveel algen er zijn: een balancerende kringloop (B1). Het water wordt helder en blijft helder.',
+      real: 'In echte vijvers zorgen vissen en de seizoenen er meestal voor dat het niet zo netjes gaat.'
     },
     'enrich-swings': {
-      title: 'More food for everyone',
-      situation: 'Heavy runoff from a field starts to feed a pond of algae and water fleas.',
-      think: 'More nutrients feed more algae. What do the water fleas do with more algae, and what do the algae do then?',
-      explain: 'More nutrients let the algae race ahead; the water fleas follow, eat the algae down, then starve; the algae recover, and it starts again. Richer water made the system swing instead of settle. Ecologists call this the paradox of enrichment (B1).',
-      real: 'In real ponds, many more species and the seasons damp or change these swings.'
+      title: 'Meer voedsel voor iedereen',
+      situation: 'Sterke afvloeiing van een akker begint een vijver met algen en watervlooien te voeden.',
+      think: 'Meer voedingsstoffen voeden meer algen. Wat doen de watervlooien met meer algen, en wat doen de algen dan?',
+      explain: 'Meer voedingsstoffen laten de algen vooruit schieten; de watervlooien volgen, eten de algen op en verhongeren dan; de algen herstellen, en het begint opnieuw. Rijker water liet het systeem schommelen in plaats van tot rust komen. Ecologen noemen dit de paradox van verrijking (B1).',
+      real: 'In echte vijvers dempen of veranderen veel meer soorten en de seizoenen deze schommelingen.'
     },
     'fish-stocked': {
-      title: 'Fish in the pond',
-      situation: 'Someone releases small fish into a pond that had none.',
-      think: 'Fish eat water fleas. Who eats the algae, and what happens to them?',
-      explain: 'The fish eat water fleas, so fewer water fleas graze the algae, and the algae grow. A change at the top reaches the bottom of the food chain: a trophic cascade. It builds up slowly, because young fish need weeks to grow up.',
-      real: 'In real ponds, fish also stir up the mud, which clouds the water even more.'
+      title: 'Vissen in de vijver',
+      situation: 'Iemand zet kleine vissen uit in een vijver waar er geen waren.',
+      think: 'Vissen eten watervlooien. Wie eet de algen, en wat gebeurt er met ze?',
+      explain: 'De vissen eten watervlooien, dus grazen minder watervlooien de algen af, en de algen groeien. Een verandering bovenaan bereikt de onderkant van de voedselketen: een trofische cascade. Het gaat langzaam, omdat jonge vissen weken nodig hebben om op te groeien.',
+      real: 'In echte vijvers woelen vissen ook de modder op, wat het water nog troebeler maakt.'
     },
     'pike-return': {
-      title: 'Pike come back',
-      situation: 'A few young pike are released into a pond full of small fish.',
-      think: 'Follow the chain: pike, small fish, water fleas, algae.',
-      explain: 'Pike eat small fish; fewer small fish leave more water fleas; more water fleas eat more algae. Each step flips the direction, so the algae fall. It takes long because young pike need about twenty weeks to grow up.',
-      real: 'In real lakes, removing small fish or adding pike is used to clear the water, with mixed and often short-lived success.'
+      title: 'Snoeken komen terug',
+      situation: 'Een paar jonge snoeken worden uitgezet in een vijver vol kleine vissen.',
+      think: 'Volg de keten: snoeken, kleine vissen, watervlooien, algen.',
+      explain: 'Snoeken eten kleine vissen; minder kleine vissen laten meer watervlooien over; meer watervlooien eten meer algen. Elke stap keert de richting om, dus de algen nemen af. Het duurt lang omdat jonge snoeken ongeveer twintig weken nodig hebben om op te groeien.',
+      real: 'In echte meren worden kleine vissen weggevangen of snoeken uitgezet om het water helder te maken, met wisselend en vaak kortstondig succes.'
     },
     'algae-treatment': {
-      title: 'A quick fix for green water',
-      situation: 'The pond is treated: nine in ten of the algae die and sink, but stay in the water.',
-      think: 'Where do the nutrients in the dead algae go? And what happened to the water fleas while the algae were gone?',
-      explain: 'The dead algae rot within days and give their nutrients back to the water. The water fleas went hungry while the algae were gone, so for a while nobody holds the algae in check, and they overshoot. A fix that removes the symptom but not the nutrients does not last.',
-      real: 'In real ponds, rotting algae also use up oxygen, which can harm fish.'
+      title: 'Een snelle oplossing voor groen water',
+      situation: 'De vijver wordt behandeld: negen op de tien algen sterven en zakken naar beneden, maar blijven in het water.',
+      think: 'Waar gaan de voedingsstoffen in de dode algen heen? En wat gebeurde er met de watervlooien terwijl de algen weg waren?',
+      explain: 'De dode algen rotten binnen enkele dagen en geven hun voedingsstoffen terug aan het water. De watervlooien hadden honger terwijl de algen weg waren, dus houdt een tijdje niemand de algen in toom, en ze schieten door. Een oplossing die het symptoom weghaalt maar niet de voedingsstoffen, houdt geen stand.',
+      real: 'In echte vijvers verbruiken rottende algen ook zuurstof, wat vissen kan schaden.'
     },
     'slow-runoff': {
-      title: 'A field upstream',
-      situation: 'A new field upstream starts to drain into the clear pond.',
-      think: 'What do more nutrients do to the algae, and what do more algae do to the pondweed below them?',
-      explain: 'For months nothing seems to happen: the pondweed even looks fine after half a year. Meanwhile nutrients pile up in the water and the mud. When the algae finally win, a reinforcing loop takes over: more algae, more shade, less pondweed, fewer hiding places for water fleas, even more algae (R1, R2). The flip is fast; the cause was slow.',
-      real: 'In real lakes, such shifts from clear to green water are well documented, often after years of slow change.'
+      title: 'Een akker stroomopwaarts',
+      situation: 'Een nieuwe akker stroomopwaarts begint af te wateren in de heldere vijver.',
+      think: 'Wat doen meer voedingsstoffen met de algen, en wat doen meer algen met het fonteinkruid eronder?',
+      explain: 'Maandenlang lijkt er niets te gebeuren: het fonteinkruid ziet er na een half jaar zelfs goed uit. Ondertussen hopen voedingsstoffen zich op in het water en de modder. Als de algen uiteindelijk winnen, neemt een versterkende kringloop het over: meer algen, meer schaduw, minder fonteinkruid, minder schuilplekken voor watervlooien, nog meer algen (R1, R2). De omslag is snel; de oorzaak was traag.',
+      real: 'In echte meren zijn zulke omslagen van helder naar groen water goed beschreven, vaak na jaren van langzame verandering.'
     },
     'no-way-back': {
-      title: 'The runoff stops',
-      situation: 'Two years later the runoff is stopped completely. Will the pondweed come back?',
-      think: 'Is there any pondweed left to grow back? What keeps the water green now?',
-      explain: 'Stopping the runoff removes the cause, but the pond stays green: the algae shade the bottom, and no pondweed is left to grow back. The reinforcing loop (R1) now holds the pond in its green state. Going back needs more than undoing the change, for example planting pondweed again.',
-      real: 'In real lakes, recovery after the nutrients are cut often takes many years, and plants are sometimes replanted.'
+      title: 'De afvloeiing stopt',
+      situation: 'Twee jaar later wordt de afvloeiing helemaal gestopt. Komt het fonteinkruid terug?',
+      think: 'Is er nog fonteinkruid over dat kan teruggroeien? Wat houdt het water nu groen?',
+      explain: 'De afvloeiing stoppen haalt de oorzaak weg, maar de vijver blijft groen: de algen beschaduwen de bodem, en er is geen fonteinkruid meer dat kan teruggroeien. De versterkende kringloop (R1) houdt de vijver nu in zijn groene toestand. Terug vraagt meer dan de verandering ongedaan maken, bijvoorbeeld opnieuw fonteinkruid planten.',
+      real: 'In echte meren duurt herstel na het afsluiten van de voedingsstoffen vaak vele jaren, en soms worden planten opnieuw geplant.'
     },
     shade: {
-      title: 'A tree over the pond',
-      situation: 'A tree grows over the pond and shades it.',
-      think: 'Pondweed needs light at the bottom. What else takes light away from it?',
-      explain: 'Less light slows the pondweed, so it holds the algae back less. The algae and the water fleas start to swing, and each burst of algae shades the pondweed further (R1): it falls step by step.',
-      real: 'In real ponds, falling leaves from the tree would also add nutrients.'
+      title: 'Een boom boven de vijver',
+      situation: 'Een boom groeit boven de vijver en beschaduwt hem.',
+      think: 'Fonteinkruid heeft licht nodig op de bodem. Wat neemt het nog meer licht af?',
+      explain: 'Minder licht remt het fonteinkruid, zodat het de algen minder tegenhoudt. De algen en de watervlooien gaan schommelen, en elke algengolf beschaduwt het fonteinkruid verder (R1): het daalt stap voor stap.',
+      real: 'In echte vijvers zou vallend blad van de boom ook voedingsstoffen toevoegen.'
     },
     spray: {
-      title: 'Spraying against aphids',
-      situation: 'The meadow is sprayed against aphids: nine in ten aphids and also nine in ten ladybirds die.',
-      think: 'Who grows back faster: the aphids or the ladybirds that eat them?',
-      explain: 'Spraying killed the aphids and the ladybirds that eat them. Aphids multiply much faster than ladybirds, so they came back first, with no one to stop them, and the wildflowers paid for it. Ecologists call this pest resurgence (B2 with a delay).',
-      real: 'In real fields, spraying also harms bees and other insects, and pests can become resistant.'
+      title: 'Spuiten tegen bladluizen',
+      situation: 'De weide wordt bespoten tegen bladluizen: negen op de tien bladluizen en ook negen op de tien lieveheersbeestjes sterven.',
+      think: 'Wie groeit sneller terug: de bladluizen of de lieveheersbeestjes die ze eten?',
+      explain: 'Het spuiten doodde de bladluizen én de lieveheersbeestjes die ze eten. Bladluizen vermenigvuldigen zich veel sneller dan lieveheersbeestjes, dus ze kwamen eerst terug, zonder dat iemand ze tegenhield, en de wilde bloemen betaalden de prijs. Ecologen noemen dit plaagopleving (B2 met vertraging).',
+      real: 'Op echte akkers schaadt spuiten ook bijen en andere insecten, en plagen kunnen resistent worden.'
     },
     'no-foxes': {
-      title: 'The foxes leave',
-      situation: 'The foxes leave the meadow.',
-      think: 'Who kept the rabbits in check? What do more rabbits eat first?',
-      explain: 'Without foxes the balancing loop that held the rabbits in check is gone (B2). The rabbits multiply and graze the clover, their favourite food, until little is left.',
-      real: 'In real landscapes, rabbits also move away, and diseases can cut their numbers.'
+      title: 'De vossen vertrekken',
+      situation: 'De vossen verlaten de weide.',
+      think: 'Wie hield de konijnen in toom? Wat eten meer konijnen het eerst?',
+      explain: 'Zonder vossen is de balancerende kringloop weg die de konijnen in toom hield (B2). De konijnen vermenigvuldigen zich en eten de klaver, hun lievelingsvoedsel, tot er weinig van over is.',
+      real: 'In echte landschappen trekken konijnen ook weg, en ziektes kunnen hun aantal verlagen.'
     },
     fertilise: {
-      title: 'A little fertiliser',
-      situation: 'The farmer spreads some fertiliser every week.',
-      think: 'Which plant profits most from rich soil, and what does it do to the low plants?',
-      explain: 'Fertiliser feeds the grasses most. Taller grass shades the clover and the wildflowers, and clover loses its edge: on rich soil, making its own nitrogen no longer helps. More food for the meadow means fewer kinds of plants.',
-      real: 'In real meadows, nitrogen from fertiliser and from the air is a main reason for lost wildflowers.'
+      title: 'Een beetje mest',
+      situation: 'De boer strooit elke week wat mest.',
+      think: 'Welke plant heeft het meeste voordeel van rijke grond, en wat doet die met de lage planten?',
+      explain: 'Mest voedt vooral de grassen. Hoger gras beschaduwt de klaver en de wilde bloemen, en klaver verliest zijn voordeel: op rijke grond helpt het niet meer om zelf stikstof te maken. Meer voedsel voor de weide betekent minder soorten planten.',
+      real: 'In echte weiden is stikstof uit mest en uit de lucht een hoofdoorzaak van verdwenen wilde bloemen.'
     },
     drought: {
-      title: 'A dry summer',
-      situation: 'Twelve dry weeks, then normal rain again.',
-      think: 'What do the grasses need besides nutrients? What happens when the rain comes back?',
-      explain: 'Without rain the soil dries out and the grasses slow down and shrink. When the rain returns, the soil fills up and the grasses grow back, even past their old level, because nutrients piled up in the soil while they could not use them.',
-      real: 'In real meadows, a long drought can also kill plants and let others take their place.'
+      title: 'Een droge zomer',
+      situation: 'Twaalf droge weken, dan weer normale regen.',
+      think: 'Wat hebben de grassen nodig naast voedingsstoffen? Wat gebeurt er als de regen terugkomt?',
+      explain: 'Zonder regen droogt de bodem uit, en de grassen groeien langzamer en krimpen. Als de regen terugkomt, loopt de bodem vol en groeien de grassen terug, zelfs boven hun oude niveau, omdat voedingsstoffen zich in de bodem ophoopten terwijl ze die niet konden gebruiken.',
+      real: 'In echte weiden kan een lange droogte ook planten doden en ruimte maken voor andere.'
     },
     'clover-poor': {
-      title: 'Clover for a poor meadow',
-      situation: 'Clover is sown into a poor meadow of wildflowers.',
-      think: 'Clover makes nitrogen from the air. Where does that nitrogen go when its leaves die?',
-      explain: 'Clover brings new nitrogen into the meadow. When its leaves die, earthworms turn them into nutrients that the wildflowers use. The neighbours profit, slowly, through the soil: a chain with a delay.',
-      real: 'In real farming, clover is sown for exactly this reason.'
+      title: 'Klaver voor een schrale weide',
+      situation: 'Er wordt klaver gezaaid in een schrale weide met wilde bloemen.',
+      think: 'Klaver haalt stikstof uit de lucht. Waar gaat die stikstof heen als zijn blaadjes afsterven?',
+      explain: 'Klaver brengt nieuwe stikstof in de weide. Als zijn blaadjes afsterven, maken regenwormen er voedingsstoffen van die de wilde bloemen gebruiken. De buren profiteren, langzaam, via de bodem: een keten met vertraging.',
+      real: 'In de echte landbouw wordt klaver precies om deze reden gezaaid.'
     },
     'worms-gone': {
-      title: 'Where are the earthworms?',
-      situation: 'The earthworms disappear from the meadow.',
-      think: 'Who turns dead leaves back into food for plants? Which plant does not depend on that?',
-      explain: 'Without earthworms, dead leaves pile up and their nutrients stay locked in. The grasses go hungry. Clover makes its own nitrogen, so it gains: a side effect few people expect.',
-      real: 'In real soils, many more animals, fungi and bacteria break down dead leaves.'
+      title: 'Waar zijn de regenwormen?',
+      situation: 'De regenwormen verdwijnen uit de weide.',
+      think: 'Wie maakt van dode bladeren weer voedsel voor planten? Welke plant is daar niet van afhankelijk?',
+      explain: 'Zonder regenwormen hopen dode bladeren zich op en blijven hun voedingsstoffen erin vastzitten. De grassen krijgen honger. Klaver maakt zijn eigen stikstof, dus hij wint: een bijwerking die weinig mensen verwachten.',
+      real: 'In echte bodems breken veel meer dieren, schimmels en bacteriën dode bladeren af.'
     },
     'foxes-return': {
-      title: 'The foxes come back',
-      situation: 'Foxes return to a meadow overrun by rabbits.',
-      think: 'How long do young foxes need to grow up? What do fewer rabbits mean for the clover?',
-      explain: 'At first little happens: young foxes need about half a year to grow up. Then the foxes bring the rabbits down (B2), and the clover, freed from grazing, slowly comes back. The effect arrives years after the cause.',
-      real: 'In real landscapes, foxes also hunt other animals, and rabbits find new places to live.'
+      title: 'De vossen komen terug',
+      situation: 'Vossen keren terug naar een weide die overspoeld is door konijnen.',
+      think: 'Hoe lang hebben jonge vossen nodig om op te groeien? Wat betekenen minder konijnen voor de klaver?',
+      explain: 'Eerst gebeurt er weinig: jonge vossen hebben ongeveer een half jaar nodig om op te groeien. Dan drukken de vossen de konijnen terug (B2), en de klaver, verlost van het grazen, komt langzaam terug. Het effect komt jaren na de oorzaak.',
+      real: 'In echte landschappen jagen vossen ook op andere dieren, en konijnen vinden nieuwe plekken om te leven.'
     },
     'ladybirds-gone': {
-      title: 'Ladybirds collected',
-      situation: 'Most ladybirds are collected for a garden elsewhere.',
-      think: 'Who eats the aphids? How fast can the remaining ladybirds come back?',
-      explain: 'Without ladybirds the aphids multiply. The few remaining ladybirds now find plenty of food, and their numbers grow back after a delay. Then they bring the aphids down again (B2).',
-      real: 'In real gardens, other aphid hunters such as hoverflies and birds help as well.'
+      title: 'Lieveheersbeestjes verzameld',
+      situation: 'De meeste lieveheersbeestjes worden verzameld voor een tuin elders.',
+      think: 'Wie eet de bladluizen? Hoe snel kunnen de overgebleven lieveheersbeestjes terugkomen?',
+      explain: 'Zonder lieveheersbeestjes vermenigvuldigen de bladluizen zich. De paar overgebleven lieveheersbeestjes vinden nu volop voedsel, en hun aantal groeit met vertraging terug. Dan drukken ze de bladluizen weer terug (B2).',
+      real: 'In echte tuinen helpen ook andere bladluisjagers zoals zweefvliegen en vogels.'
     }
   },
   goals: {
     'save-pondweed': {
-      story: 'A new field upstream starts to drain into the clear pond. Keep the pondweed alive for two years while the runoff continues.',
-      target: 'Pondweed at least {v} every week until week {w}.',
-      hint: 'Algae are a symptom. What feeds them, and how soon must it change?',
-      explain: 'The pondweed falls only when the algae shade it, and the algae grow from the nutrients the field brings. Act on the cause, and act early: by the time the pondweed looks weak, the reinforcing loop has already taken over.',
+      story: 'Een nieuwe akker stroomopwaarts begint af te wateren in de heldere vijver. Houd het fonteinkruid twee jaar in leven terwijl de afvloeiing doorgaat.',
+      target: 'Fonteinkruid elke week minstens {v} tot week {w}.',
+      hint: 'Algen zijn een symptoom. Wat voedt ze, en hoe snel moet dat veranderen?',
+      explain: 'Het fonteinkruid daalt pas als de algen het beschaduwen, en de algen groeien van de voedingsstoffen die de akker aanvoert. Pak de oorzaak aan, en doe het vroeg: tegen de tijd dat het fonteinkruid zwak oogt, heeft de versterkende kringloop het al overgenomen.',
       plans: {
-        buffer: 'A buffer strip of plants along the field catches most of the runoff before it reaches the pond. Early enough, the algae never get ahead.',
-        ditch: 'Closing the ditch stops the runoff completely, so the algae never get ahead.'
+        buffer: 'Een bufferstrook van planten langs de akker vangt het grootste deel van de afvloeiing op voordat die de vijver bereikt. Op tijd aangelegd, komen de algen nooit vooruit.',
+        ditch: 'De sloot afsluiten stopt de afvloeiing helemaal, dus de algen komen nooit vooruit.'
       }
     },
     'clear-pond': {
-      story: 'The pond turned green after two years of runoff. Make the water clear again, with pondweed growing, for twelve weeks in a row.',
-      target: 'Algae (green and blue-green) at most {v} and pondweed at least {p}, for twelve weeks in a row, by week {w}.',
-      hint: 'Algae are a symptom. What feeds them? And what keeps them down once the water is clear?',
-      explain: 'The green state holds itself: algae shade out the plants that would hold them back. Clearing the water needs the cause removed (the runoff), the stored nutrients taken out or flushed away, and the pondweed back, so that the reinforcing loop turns towards clear water.',
+      story: 'De vijver werd groen na twee jaar afvloeiing. Maak het water weer helder, met groeiend fonteinkruid, twaalf weken achter elkaar.',
+      target: 'Algen (groen- en blauwalgen) hoogstens {v} en fonteinkruid minstens {p}, twaalf weken achter elkaar, tegen week {w}.',
+      hint: 'Algen zijn een symptoom. Wat voedt ze? En wat houdt ze klein als het water eenmaal helder is?',
+      explain: 'De groene toestand houdt zichzelf in stand: algen beschaduwen de planten die ze zouden tegenhouden. Helder water vraagt dat de oorzaak verdwijnt (de afvloeiing), dat de opgeslagen voedingsstoffen eruit gehaald of weggespoeld worden, en dat het fonteinkruid terugkomt, zodat de versterkende kringloop naar helder water draait.',
       plans: {
-        restore: 'Stop the runoff, dredge the nutrient-rich mud, plant pondweed and take out most small fish (so more water fleas graze the algae). Together they turn the loop towards clear water.',
-        flush: 'Stop the runoff and let a stream flush the nutrients and algae out for a while, then plant pondweed into the clear water.'
+        restore: 'Stop de afvloeiing, bagger de voedselrijke modder, plant fonteinkruid en haal de meeste kleine vissen eruit (zodat meer watervlooien de algen afgrazen). Samen draaien ze de kringloop naar helder water.',
+        flush: 'Stop de afvloeiing en laat een tijdje een beek de voedingsstoffen en algen wegspoelen, plant dan fonteinkruid in het heldere water.'
       }
     },
     'protect-flowers': {
-      story: 'A neighbour has just sprayed the meadow: most aphids and most ladybirds died. Keep the wildflowers for a year.',
-      target: 'Wildflowers at least {v} every week until week {w}.',
-      hint: 'The aphids come back faster than the ladybirds. When would new ladybirds find something to eat?',
-      explain: 'The aphids rebound before their hunters do. Ladybirds released too early starve, because there are no aphids yet; released too late, the wildflowers are already eaten. Timing decides.',
+      story: 'Een buurman heeft de weide net bespoten: de meeste bladluizen en de meeste lieveheersbeestjes zijn dood. Houd de wilde bloemen een jaar lang in stand.',
+      target: 'Wilde bloemen elke week minstens {v} tot week {w}.',
+      hint: 'De bladluizen komen sneller terug dan de lieveheersbeestjes. Wanneer zouden nieuwe lieveheersbeestjes iets te eten vinden?',
+      explain: 'De bladluizen herstellen vóór hun jagers. Te vroeg uitgezette lieveheersbeestjes verhongeren, omdat er nog geen bladluizen zijn; te laat uitgezet, zijn de wilde bloemen al opgegeten. De timing beslist.',
       plans: {
-        ladybirds: 'Released after about ten weeks, when the aphids are back but before they peak, the ladybirds find food at once and stop the aphids in time.'
+        ladybirds: 'Uitgezet na ongeveer tien weken, als de bladluizen terug zijn maar nog niet op hun piek, vinden de lieveheersbeestjes meteen voedsel en stoppen ze de bladluizen op tijd.'
       }
     },
     'bring-back-clover': {
-      story: 'Without foxes, rabbits have grazed the clover almost away. Bring the clover back for eight weeks in a row within four years.',
-      target: 'Clover at least {v} for eight weeks in a row, by week {w}.',
-      hint: 'Removing rabbits helps only for a while. What kept them in check before?',
-      explain: 'Rabbits multiply fast, so removing some only buys time. Lasting change needs the balancing loop back: foxes. Young foxes need half a year to grow up, so the clover comes back years later.',
+      story: 'Zonder vossen hebben konijnen de klaver bijna helemaal opgegeten. Breng de klaver binnen vier jaar terug, acht weken achter elkaar.',
+      target: 'Klaver minstens {v}, acht weken achter elkaar, tegen week {w}.',
+      hint: 'Konijnen weghalen helpt maar even. Wat hield ze vroeger in toom?',
+      explain: 'Konijnen vermenigvuldigen zich snel, dus een deel weghalen levert alleen tijd op. Een blijvende verandering vraagt de balancerende kringloop terug: vossen. Jonge vossen hebben een half jaar nodig om op te groeien, dus de klaver komt pas jaren later terug.',
       plans: {
-        foxes: 'Foxes alone are enough, but patience is needed: they bring the rabbits down slowly.',
-        foxesRabbits: 'Foxes plus relocating half the rabbits: the foxes start with fewer rabbits to catch up with.',
-        foxesRabbitsClover: 'Foxes, relocating most rabbits and sowing clover: the fastest way, because the clover gets a head start while the foxes grow up.'
+        foxes: 'Vossen alleen zijn genoeg, maar het vraagt geduld: ze drukken de konijnen langzaam terug.',
+        foxesRabbits: 'Vossen plus de helft van de konijnen verplaatsen: de vossen hoeven minder konijnen in te halen.',
+        foxesRabbitsClover: 'Vossen, de meeste konijnen verplaatsen en klaver zaaien: de snelste weg, omdat de klaver een voorsprong krijgt terwijl de vossen opgroeien.'
       }
     }
   },
   loops: {
-    graze: 'Water fleas graze the algae down; fewer algae, fewer water fleas.',
-    fishFleas: 'Small fish eat water fleas; fewer water fleas, fewer young fish.',
-    pikeFish: 'Pike eat small fish; fewer small fish, fewer young pike.',
-    clearWater: 'Algae shade the pondweed; pondweed holds the algae back. Whoever is ahead pulls further ahead.',
-    shelter: 'Pondweed hides water fleas from fish, and water fleas eat algae.',
-    recycle: 'Dead algae rot and feed new algae.',
-    aphidsFlowers: 'Aphids feed on the wildflowers; fewer wildflowers, fewer aphids.',
-    ladybirdsAphids: 'Ladybirds eat aphids; fewer aphids, fewer young ladybirds.',
-    rabbitsClover: 'Rabbits graze the clover; less clover, fewer young rabbits.',
-    foxesRabbits: 'Foxes hunt rabbits; fewer rabbits, fewer young foxes.',
-    thirst: 'Grasses use the soil water; dry soil slows the grasses.',
-    wormsDead: 'Earthworms eat dead leaves; fewer dead leaves, fewer earthworms.',
-    flowerUptake: 'Wildflowers take up the nutrients they grow from.'
+    graze: 'Watervlooien grazen de algen af; minder algen, minder watervlooien.',
+    fishFleas: 'Kleine vissen eten watervlooien; minder watervlooien, minder jonge vissen.',
+    pikeFish: 'Snoeken eten kleine vissen; minder kleine vissen, minder jonge snoeken.',
+    clearWater: 'Algen beschaduwen het fonteinkruid; fonteinkruid houdt de algen tegen. Wie voorligt, loopt verder uit.',
+    shelter: 'Fonteinkruid verbergt watervlooien voor vissen, en watervlooien eten algen.',
+    recycle: 'Dode algen rotten en voeden nieuwe algen.',
+    aphidsFlowers: 'Bladluizen leven van de wilde bloemen; minder wilde bloemen, minder bladluizen.',
+    ladybirdsAphids: 'Lieveheersbeestjes eten bladluizen; minder bladluizen, minder jonge lieveheersbeestjes.',
+    rabbitsClover: 'Konijnen eten de klaver; minder klaver, minder jonge konijnen.',
+    foxesRabbits: 'Vossen jagen op konijnen; minder konijnen, minder jonge vossen.',
+    thirst: 'Grassen verbruiken het bodemwater; droge grond remt de grassen.',
+    wormsDead: 'Regenwormen eten dode bladeren; minder dode bladeren, minder regenwormen.',
+    flowerUptake: 'Wilde bloemen nemen de voedingsstoffen op waaruit ze groeien.'
   }
 };

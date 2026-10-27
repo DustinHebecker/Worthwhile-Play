@@ -1,201 +1,194 @@
-/**
-// UNTRANSLATED
- *
- * Note for translators: plain words; common names only ("water fleas", not "Daphnia" — an "about" line may add the
- * scientific name in brackets); no digits in the texts (numbers come from the model); spraying, fishing and
- * relocating are management actions, described neutrally. Keep sentences short.
- */
 import type { ContentText } from './types';
 
 export const content: ContentText = {
-  weeks: { one: '{n} week', other: '{n} weeks' },
+  weeks: { one: '{n} semana', many: '{n} semanas', other: '{n} semanas' },
   species: {
-    algae: { name: 'Green algae', about: 'Tiny plants floating in the water. They grow fast on nutrients and light; water fleas and snails eat them. Many algae turn the water green and shade the plants below.' },
-    bluegreen: { name: 'Blue-green algae', about: 'Strictly speaking bacteria (cyanobacteria). They grow slowly, need rich water and are hardly eaten, so they bloom when nutrients pile up.' },
-    duckweed: { name: 'Duckweed', about: 'Small floating leaves. In rich water they cover the surface and shade everything below.' },
-    pondweed: { name: 'Pondweed', about: 'Underwater plants rooted in the mud. They need clear water to get light, take nutrients away from the algae and give water fleas a place to hide from fish.' },
-    fleas: { name: 'Water fleas', about: 'Tiny crustaceans (Daphnia) that graze the algae. Small fish eat them, but in pondweed and in the mud many stay out of reach.' },
-    snails: { name: 'Pond snails', about: 'They eat dead plant matter and a few algae. Small fish eat some of them.' },
-    minnows: { name: 'Small fish', about: 'They hunt water fleas and some snails. Their young take about six weeks to grow up. Pike eat them.' },
-    pike: { name: 'Pike', about: 'A large hunter that eats small fish. Young pike take about twenty weeks to grow up.' },
-    grass: { name: 'Grasses', about: 'Tall and fast-growing on rich soil. They shade the low plants and use a lot of water.' },
-    flowers: { name: 'Wildflowers', about: 'Low plants that do well on poor soil. They need light, so tall grass pushes them out. Aphids and rabbits eat them.' },
-    clover: { name: 'Clover', about: 'A low plant that makes its own nitrogen from the air, less so on rich soil. Its dead leaves feed the soil for its neighbours. Rabbits like it most.' },
-    aphids: { name: 'Aphids', about: 'Tiny insects that suck plant sap, mostly from wildflowers. They multiply very fast. Ladybirds eat them.' },
-    ladybirds: { name: 'Ladybirds', about: 'Beetles that eat aphids. Their larvae take about three weeks to grow up, so they react to more aphids with a delay.' },
-    rabbits: { name: 'Rabbits', about: 'They graze clover first, then wildflowers and grass. Their young take about five weeks to grow up. Foxes hunt them; some are always safe in burrows.' },
-    foxes: { name: 'Foxes', about: 'They hunt rabbits. Young foxes take about half a year to grow up.' },
-    worms: { name: 'Earthworms', about: 'They eat dead leaves and turn them back into nutrients that plants can use.' }
+    algae: { name: 'Algas verdes', about: 'Plantas diminutas que flotan en el agua. Crecen rápido con nutrientes y luz; las pulgas de agua y los caracoles se las comen. Muchas algas tiñen el agua de verde y dan sombra a las plantas de abajo.' },
+    bluegreen: { name: 'Algas verdeazuladas', about: 'En realidad son bacterias (cianobacterias). Crecen despacio, necesitan agua rica y casi nadie se las come, así que proliferan cuando se acumulan nutrientes.' },
+    duckweed: { name: 'Lentejas de agua', about: 'Hojitas flotantes. En agua rica cubren la superficie y dan sombra a todo lo de abajo.' },
+    pondweed: { name: 'Espiga de agua', about: 'Plantas sumergidas que enraízan en el lodo. Necesitan agua clara para recibir luz, quitan nutrientes a las algas y dan a las pulgas de agua un refugio frente a los peces.' },
+    fleas: { name: 'Pulgas de agua', about: 'Pequeños crustáceos (Daphnia) que pastan las algas. Los peces pequeños se las comen, pero en la espiga de agua y en el lodo muchas quedan fuera de su alcance.' },
+    snails: { name: 'Caracoles de estanque', about: 'Comen restos de plantas muertas y algunas algas. Los peces pequeños se comen algunos.' },
+    minnows: { name: 'Peces pequeños', about: 'Cazan pulgas de agua y algunos caracoles. Sus crías tardan unas seis semanas en crecer. Los lucios se los comen.' },
+    pike: { name: 'Lucios', about: 'Un gran cazador que come peces pequeños. Los lucios jóvenes tardan unas veinte semanas en crecer.' },
+    grass: { name: 'Hierbas', about: 'Altas y de crecimiento rápido en suelo rico. Dan sombra a las plantas bajas y gastan mucha agua.' },
+    flowers: { name: 'Flores silvestres', about: 'Plantas bajas que prosperan en suelo pobre. Necesitan luz, así que la hierba alta las desplaza. Los pulgones y los conejos se las comen.' },
+    clover: { name: 'Trébol', about: 'Una planta baja que obtiene su propio nitrógeno del aire, menos en suelo rico. Sus hojas muertas abonan el suelo para sus vecinas. Es lo que más les gusta a los conejos.' },
+    aphids: { name: 'Pulgones', about: 'Insectos diminutos que chupan savia, sobre todo de las flores silvestres. Se multiplican muy rápido. Las mariquitas se los comen.' },
+    ladybirds: { name: 'Mariquitas', about: 'Escarabajos que comen pulgones. Sus larvas tardan unas tres semanas en crecer, así que responden con retraso a un aumento de pulgones.' },
+    rabbits: { name: 'Conejos', about: 'Comen primero trébol, luego flores silvestres y hierba. Sus crías tardan unas cinco semanas en crecer. Los zorros los cazan; algunos siempre están a salvo en sus madrigueras.' },
+    foxes: { name: 'Zorros', about: 'Cazan conejos. Los zorros jóvenes tardan medio año en crecer.' },
+    worms: { name: 'Lombrices', about: 'Comen hojas muertas y las convierten de nuevo en nutrientes que las plantas pueden usar.' }
   },
   challenges: {
     'fleas-arrive': {
-      title: 'Water fleas arrive',
-      situation: 'A young pond has only green algae. Water fleas reach it, carried in by a bird.',
-      think: 'Who eats the algae? What happens to the water fleas when the algae get fewer?',
-      explain: 'Water fleas multiply on the algae until they eat as fast as the algae grow. From then on the water fleas, not the nutrients, set how much algae there is: a balancing loop (B1). The water turns clear and stays clear.',
-      real: 'In real ponds, fish and the seasons usually keep this from being so neat.'
+      title: 'Llegan las pulgas de agua',
+      situation: 'Un estanque joven solo tiene algas verdes. Llegan pulgas de agua, traídas por un ave.',
+      think: '¿Quién come las algas? ¿Qué les pasa a las pulgas de agua cuando hay menos algas?',
+      explain: 'Las pulgas de agua se multiplican con las algas hasta que comen tan rápido como crecen las algas. Desde entonces son las pulgas, no los nutrientes, las que fijan cuántas algas hay: un bucle de equilibrio (B1). El agua se aclara y sigue clara.',
+      real: 'En estanques reales, los peces y las estaciones suelen impedir que todo sea tan ordenado.'
     },
     'enrich-swings': {
-      title: 'More food for everyone',
-      situation: 'Heavy runoff from a field starts to feed a pond of algae and water fleas.',
-      think: 'More nutrients feed more algae. What do the water fleas do with more algae, and what do the algae do then?',
-      explain: 'More nutrients let the algae race ahead; the water fleas follow, eat the algae down, then starve; the algae recover, and it starts again. Richer water made the system swing instead of settle. Ecologists call this the paradox of enrichment (B1).',
-      real: 'In real ponds, many more species and the seasons damp or change these swings.'
+      title: 'Más comida para todos',
+      situation: 'Una fuerte escorrentía de un campo empieza a abonar un estanque con algas y pulgas de agua.',
+      think: 'Más nutrientes alimentan más algas. ¿Qué hacen las pulgas con más algas, y qué hacen luego las algas?',
+      explain: 'Más nutrientes dejan que las algas se adelanten; las pulgas las siguen, se las comen y luego pasan hambre; las algas se recuperan y todo vuelve a empezar. El agua más rica hizo que el sistema oscilara en vez de asentarse. Los ecólogos lo llaman la paradoja del enriquecimiento (B1).',
+      real: 'En estanques reales, muchas más especies y las estaciones amortiguan o cambian estas oscilaciones.'
     },
     'fish-stocked': {
-      title: 'Fish in the pond',
-      situation: 'Someone releases small fish into a pond that had none.',
-      think: 'Fish eat water fleas. Who eats the algae, and what happens to them?',
-      explain: 'The fish eat water fleas, so fewer water fleas graze the algae, and the algae grow. A change at the top reaches the bottom of the food chain: a trophic cascade. It builds up slowly, because young fish need weeks to grow up.',
-      real: 'In real ponds, fish also stir up the mud, which clouds the water even more.'
+      title: 'Peces en el estanque',
+      situation: 'Alguien suelta peces pequeños en un estanque que no tenía.',
+      think: 'Los peces comen pulgas de agua. ¿Quién come las algas y qué les pasa?',
+      explain: 'Los peces comen pulgas de agua, así que menos pulgas pastan las algas, y las algas crecen. Un cambio arriba llega al fondo de la cadena alimentaria: una cascada trófica. Avanza despacio porque los peces jóvenes tardan semanas en crecer.',
+      real: 'En estanques reales, los peces también remueven el lodo, lo que enturbia aún más el agua.'
     },
     'pike-return': {
-      title: 'Pike come back',
-      situation: 'A few young pike are released into a pond full of small fish.',
-      think: 'Follow the chain: pike, small fish, water fleas, algae.',
-      explain: 'Pike eat small fish; fewer small fish leave more water fleas; more water fleas eat more algae. Each step flips the direction, so the algae fall. It takes long because young pike need about twenty weeks to grow up.',
-      real: 'In real lakes, removing small fish or adding pike is used to clear the water, with mixed and often short-lived success.'
+      title: 'Vuelven los lucios',
+      situation: 'Se sueltan unos lucios jóvenes en un estanque lleno de peces pequeños.',
+      think: 'Sigue la cadena: lucios, peces pequeños, pulgas de agua, algas.',
+      explain: 'Los lucios comen peces pequeños; menos peces pequeños dejan más pulgas de agua; más pulgas comen más algas. Cada paso invierte la dirección, así que las algas bajan. Tarda mucho porque los lucios jóvenes necesitan unas veinte semanas para crecer.',
+      real: 'En lagos reales se retiran peces pequeños o se añaden lucios para aclarar el agua, con éxito desigual y a menudo breve.'
     },
     'algae-treatment': {
-      title: 'A quick fix for green water',
-      situation: 'The pond is treated: nine in ten of the algae die and sink, but stay in the water.',
-      think: 'Where do the nutrients in the dead algae go? And what happened to the water fleas while the algae were gone?',
-      explain: 'The dead algae rot within days and give their nutrients back to the water. The water fleas went hungry while the algae were gone, so for a while nobody holds the algae in check, and they overshoot. A fix that removes the symptom but not the nutrients does not last.',
-      real: 'In real ponds, rotting algae also use up oxygen, which can harm fish.'
+      title: 'Un arreglo rápido para el agua verde',
+      situation: 'Se trata el estanque: nueve de cada diez algas mueren y se hunden, pero se quedan en el agua.',
+      think: '¿Adónde van los nutrientes de las algas muertas? ¿Y qué les pasó a las pulgas mientras faltaban las algas?',
+      explain: 'Las algas muertas se pudren en pocos días y devuelven sus nutrientes al agua. Las pulgas de agua pasaron hambre mientras faltaban las algas, así que durante un tiempo nadie las controla, y se pasan de su nivel anterior. Un arreglo que quita el síntoma pero no los nutrientes no dura.',
+      real: 'En estanques reales, las algas en descomposición también consumen oxígeno, lo que puede dañar a los peces.'
     },
     'slow-runoff': {
-      title: 'A field upstream',
-      situation: 'A new field upstream starts to drain into the clear pond.',
-      think: 'What do more nutrients do to the algae, and what do more algae do to the pondweed below them?',
-      explain: 'For months nothing seems to happen: the pondweed even looks fine after half a year. Meanwhile nutrients pile up in the water and the mud. When the algae finally win, a reinforcing loop takes over: more algae, more shade, less pondweed, fewer hiding places for water fleas, even more algae (R1, R2). The flip is fast; the cause was slow.',
-      real: 'In real lakes, such shifts from clear to green water are well documented, often after years of slow change.'
+      title: 'Un campo río arriba',
+      situation: 'Un campo nuevo río arriba empieza a desaguar en el estanque claro.',
+      think: '¿Qué hacen más nutrientes con las algas, y qué hacen más algas con la espiga de agua de abajo?',
+      explain: 'Durante meses parece que no pasa nada: la espiga de agua incluso se ve bien al cabo de medio año. Mientras tanto, los nutrientes se acumulan en el agua y en el lodo. Cuando las algas por fin ganan, un bucle de refuerzo toma el mando: más algas, más sombra, menos espiga de agua, menos escondites para las pulgas, aún más algas (R1, R2). El vuelco es rápido; la causa fue lenta.',
+      real: 'En lagos reales, estos vuelcos de agua clara a verde están bien documentados, a menudo tras años de cambio lento.'
     },
     'no-way-back': {
-      title: 'The runoff stops',
-      situation: 'Two years later the runoff is stopped completely. Will the pondweed come back?',
-      think: 'Is there any pondweed left to grow back? What keeps the water green now?',
-      explain: 'Stopping the runoff removes the cause, but the pond stays green: the algae shade the bottom, and no pondweed is left to grow back. The reinforcing loop (R1) now holds the pond in its green state. Going back needs more than undoing the change, for example planting pondweed again.',
-      real: 'In real lakes, recovery after the nutrients are cut often takes many years, and plants are sometimes replanted.'
+      title: 'Se acaba la escorrentía',
+      situation: 'Dos años después se corta del todo la escorrentía. ¿Volverá la espiga de agua?',
+      think: '¿Queda algo de espiga de agua que pueda rebrotar? ¿Qué mantiene ahora el agua verde?',
+      explain: 'Cortar la escorrentía quita la causa, pero el estanque sigue verde: las algas dan sombra al fondo y no queda espiga de agua que pueda rebrotar. El bucle de refuerzo (R1) mantiene ahora el estanque en su estado verde. Volver atrás exige más que deshacer el cambio, por ejemplo replantar espiga de agua.',
+      real: 'En lagos reales, la recuperación tras cortar los nutrientes suele tardar muchos años, y a veces se replantan plantas.'
     },
     shade: {
-      title: 'A tree over the pond',
-      situation: 'A tree grows over the pond and shades it.',
-      think: 'Pondweed needs light at the bottom. What else takes light away from it?',
-      explain: 'Less light slows the pondweed, so it holds the algae back less. The algae and the water fleas start to swing, and each burst of algae shades the pondweed further (R1): it falls step by step.',
-      real: 'In real ponds, falling leaves from the tree would also add nutrients.'
+      title: 'Un árbol sobre el estanque',
+      situation: 'Un árbol crece sobre el estanque y le da sombra.',
+      think: 'La espiga de agua necesita luz en el fondo. ¿Qué otra cosa le quita luz?',
+      explain: 'Menos luz frena la espiga de agua, que así frena menos a las algas. Las algas y las pulgas empiezan a oscilar, y cada brote de algas da más sombra a la espiga de agua (R1): baja paso a paso.',
+      real: 'En estanques reales, las hojas que caen del árbol también aportarían nutrientes.'
     },
     spray: {
-      title: 'Spraying against aphids',
-      situation: 'The meadow is sprayed against aphids: nine in ten aphids and also nine in ten ladybirds die.',
-      think: 'Who grows back faster: the aphids or the ladybirds that eat them?',
-      explain: 'Spraying killed the aphids and the ladybirds that eat them. Aphids multiply much faster than ladybirds, so they came back first, with no one to stop them, and the wildflowers paid for it. Ecologists call this pest resurgence (B2 with a delay).',
-      real: 'In real fields, spraying also harms bees and other insects, and pests can become resistant.'
+      title: 'Fumigar contra pulgones',
+      situation: 'Se fumiga el prado contra los pulgones: mueren nueve de cada diez pulgones y también nueve de cada diez mariquitas.',
+      think: '¿Quién se recupera antes: los pulgones o las mariquitas que se los comen?',
+      explain: 'La fumigación mató a los pulgones y a las mariquitas que se los comen. Los pulgones se multiplican mucho más rápido que las mariquitas, así que volvieron primero, sin nadie que los frenara, y las flores silvestres lo pagaron. Los ecólogos lo llaman resurgencia de plagas (B2 con retraso).',
+      real: 'En campos reales, fumigar también daña a las abejas y a otros insectos, y las plagas pueden volverse resistentes.'
     },
     'no-foxes': {
-      title: 'The foxes leave',
-      situation: 'The foxes leave the meadow.',
-      think: 'Who kept the rabbits in check? What do more rabbits eat first?',
-      explain: 'Without foxes the balancing loop that held the rabbits in check is gone (B2). The rabbits multiply and graze the clover, their favourite food, until little is left.',
-      real: 'In real landscapes, rabbits also move away, and diseases can cut their numbers.'
+      title: 'Se van los zorros',
+      situation: 'Los zorros abandonan el prado.',
+      think: '¿Quién mantenía a raya a los conejos? ¿Qué comen primero más conejos?',
+      explain: 'Sin zorros desaparece el bucle de equilibrio que mantenía a raya a los conejos (B2). Los conejos se multiplican y se comen el trébol, su comida favorita, hasta que queda poco.',
+      real: 'En paisajes reales, los conejos también se marchan y las enfermedades pueden reducir su número.'
     },
     fertilise: {
-      title: 'A little fertiliser',
-      situation: 'The farmer spreads some fertiliser every week.',
-      think: 'Which plant profits most from rich soil, and what does it do to the low plants?',
-      explain: 'Fertiliser feeds the grasses most. Taller grass shades the clover and the wildflowers, and clover loses its edge: on rich soil, making its own nitrogen no longer helps. More food for the meadow means fewer kinds of plants.',
-      real: 'In real meadows, nitrogen from fertiliser and from the air is a main reason for lost wildflowers.'
+      title: 'Un poco de abono',
+      situation: 'El agricultor esparce algo de abono cada semana.',
+      think: '¿Qué planta aprovecha más un suelo rico, y qué hace con las plantas bajas?',
+      explain: 'El abono alimenta sobre todo a las hierbas. La hierba más alta da sombra al trébol y a las flores silvestres, y el trébol pierde su ventaja: en suelo rico ya no le ayuda fabricar su propio nitrógeno. Más comida para el prado significa menos tipos de plantas.',
+      real: 'En prados reales, el nitrógeno del abono y del aire es una causa principal de la pérdida de flores silvestres.'
     },
     drought: {
-      title: 'A dry summer',
-      situation: 'Twelve dry weeks, then normal rain again.',
-      think: 'What do the grasses need besides nutrients? What happens when the rain comes back?',
-      explain: 'Without rain the soil dries out and the grasses slow down and shrink. When the rain returns, the soil fills up and the grasses grow back, even past their old level, because nutrients piled up in the soil while they could not use them.',
-      real: 'In real meadows, a long drought can also kill plants and let others take their place.'
+      title: 'Un verano seco',
+      situation: 'Doce semanas secas y luego lluvia normal otra vez.',
+      think: '¿Qué necesitan las hierbas además de nutrientes? ¿Qué pasa cuando vuelve la lluvia?',
+      explain: 'Sin lluvia el suelo se seca y las hierbas crecen más despacio y se reducen. Cuando vuelve la lluvia, el suelo se llena y las hierbas vuelven a crecer, incluso por encima de su nivel anterior, porque los nutrientes se acumularon en el suelo mientras no podían usarlos.',
+      real: 'En prados reales, una sequía larga también puede matar plantas y dejar sitio a otras.'
     },
     'clover-poor': {
-      title: 'Clover for a poor meadow',
-      situation: 'Clover is sown into a poor meadow of wildflowers.',
-      think: 'Clover makes nitrogen from the air. Where does that nitrogen go when its leaves die?',
-      explain: 'Clover brings new nitrogen into the meadow. When its leaves die, earthworms turn them into nutrients that the wildflowers use. The neighbours profit, slowly, through the soil: a chain with a delay.',
-      real: 'In real farming, clover is sown for exactly this reason.'
+      title: 'Trébol para un prado pobre',
+      situation: 'Se siembra trébol en un prado pobre de flores silvestres.',
+      think: 'El trébol saca nitrógeno del aire. ¿Adónde va ese nitrógeno cuando mueren sus hojas?',
+      explain: 'El trébol trae nitrógeno nuevo al prado. Cuando mueren sus hojas, las lombrices las convierten en nutrientes que usan las flores silvestres. Las vecinas se benefician, despacio, a través del suelo: una cadena con retraso.',
+      real: 'En la agricultura real se siembra trébol justo por este motivo.'
     },
     'worms-gone': {
-      title: 'Where are the earthworms?',
-      situation: 'The earthworms disappear from the meadow.',
-      think: 'Who turns dead leaves back into food for plants? Which plant does not depend on that?',
-      explain: 'Without earthworms, dead leaves pile up and their nutrients stay locked in. The grasses go hungry. Clover makes its own nitrogen, so it gains: a side effect few people expect.',
-      real: 'In real soils, many more animals, fungi and bacteria break down dead leaves.'
+      title: '¿Dónde están las lombrices?',
+      situation: 'Las lombrices desaparecen del prado.',
+      think: '¿Quién convierte las hojas muertas en alimento para las plantas? ¿Qué planta no depende de eso?',
+      explain: 'Sin lombrices, las hojas muertas se acumulan y sus nutrientes quedan atrapados. Las hierbas pasan hambre. El trébol fabrica su propio nitrógeno, así que gana: un efecto secundario que pocos esperan.',
+      real: 'En suelos reales, muchos más animales, hongos y bacterias descomponen las hojas muertas.'
     },
     'foxes-return': {
-      title: 'The foxes come back',
-      situation: 'Foxes return to a meadow overrun by rabbits.',
-      think: 'How long do young foxes need to grow up? What do fewer rabbits mean for the clover?',
-      explain: 'At first little happens: young foxes need about half a year to grow up. Then the foxes bring the rabbits down (B2), and the clover, freed from grazing, slowly comes back. The effect arrives years after the cause.',
-      real: 'In real landscapes, foxes also hunt other animals, and rabbits find new places to live.'
+      title: 'Vuelven los zorros',
+      situation: 'Los zorros vuelven a un prado invadido por conejos.',
+      think: '¿Cuánto tardan en crecer los zorros jóvenes? ¿Qué significan menos conejos para el trébol?',
+      explain: 'Al principio pasa poco: los zorros jóvenes tardan medio año en crecer. Luego los zorros reducen los conejos (B2), y el trébol, libre de pastoreo, vuelve poco a poco. El efecto llega años después de la causa.',
+      real: 'En paisajes reales, los zorros también cazan otros animales y los conejos encuentran nuevos lugares donde vivir.'
     },
     'ladybirds-gone': {
-      title: 'Ladybirds collected',
-      situation: 'Most ladybirds are collected for a garden elsewhere.',
-      think: 'Who eats the aphids? How fast can the remaining ladybirds come back?',
-      explain: 'Without ladybirds the aphids multiply. The few remaining ladybirds now find plenty of food, and their numbers grow back after a delay. Then they bring the aphids down again (B2).',
-      real: 'In real gardens, other aphid hunters such as hoverflies and birds help as well.'
+      title: 'Mariquitas recogidas',
+      situation: 'Se recogen la mayoría de las mariquitas para un jardín de otro lugar.',
+      think: '¿Quién come los pulgones? ¿Con qué rapidez pueden volver las mariquitas que quedan?',
+      explain: 'Sin mariquitas, los pulgones se multiplican. Las pocas mariquitas que quedan encuentran ahora mucha comida, y su número se recupera con retraso. Después vuelven a reducir los pulgones (B2).',
+      real: 'En jardines reales también ayudan otros cazadores de pulgones, como los sírfidos y los pájaros.'
     }
   },
   goals: {
     'save-pondweed': {
-      story: 'A new field upstream starts to drain into the clear pond. Keep the pondweed alive for two years while the runoff continues.',
-      target: 'Pondweed at least {v} every week until week {w}.',
-      hint: 'Algae are a symptom. What feeds them, and how soon must it change?',
-      explain: 'The pondweed falls only when the algae shade it, and the algae grow from the nutrients the field brings. Act on the cause, and act early: by the time the pondweed looks weak, the reinforcing loop has already taken over.',
+      story: 'Un campo nuevo río arriba empieza a desaguar en el estanque claro. Mantén viva la espiga de agua durante dos años mientras sigue la escorrentía.',
+      target: 'Espiga de agua al menos {v} cada semana hasta la semana {w}.',
+      hint: 'Las algas son un síntoma. ¿Qué las alimenta, y cuánto antes debe cambiar?',
+      explain: 'La espiga de agua solo baja cuando las algas le dan sombra, y las algas crecen con los nutrientes que trae el campo. Actúa sobre la causa, y pronto: cuando la espiga de agua parece débil, el bucle de refuerzo ya ha tomado el mando.',
       plans: {
-        buffer: 'A buffer strip of plants along the field catches most of the runoff before it reaches the pond. Early enough, the algae never get ahead.',
-        ditch: 'Closing the ditch stops the runoff completely, so the algae never get ahead.'
+        buffer: 'Una franja de plantas junto al campo atrapa la mayor parte de la escorrentía antes de que llegue al estanque. A tiempo, las algas nunca se adelantan.',
+        ditch: 'Cerrar la acequia corta del todo la escorrentía, así que las algas nunca se adelantan.'
       }
     },
     'clear-pond': {
-      story: 'The pond turned green after two years of runoff. Make the water clear again, with pondweed growing, for twelve weeks in a row.',
-      target: 'Algae (green and blue-green) at most {v} and pondweed at least {p}, for twelve weeks in a row, by week {w}.',
-      hint: 'Algae are a symptom. What feeds them? And what keeps them down once the water is clear?',
-      explain: 'The green state holds itself: algae shade out the plants that would hold them back. Clearing the water needs the cause removed (the runoff), the stored nutrients taken out or flushed away, and the pondweed back, so that the reinforcing loop turns towards clear water.',
+      story: 'El estanque se volvió verde tras dos años de escorrentía. Devuélvele el agua clara, con espiga de agua creciendo, durante doce semanas seguidas.',
+      target: 'Algas (verdes y verdeazuladas) como máximo {v} y espiga de agua al menos {p}, doce semanas seguidas, antes de la semana {w}.',
+      hint: 'Las algas son un síntoma. ¿Qué las alimenta? ¿Y qué las mantiene a raya cuando el agua ya está clara?',
+      explain: 'El estado verde se mantiene solo: las algas dan sombra a las plantas que las frenarían. Para aclarar el agua hay que quitar la causa (la escorrentía), sacar o arrastrar los nutrientes acumulados y recuperar la espiga de agua, de modo que el bucle de refuerzo gire hacia el agua clara.',
       plans: {
-        restore: 'Stop the runoff, dredge the nutrient-rich mud, plant pondweed and take out most small fish (so more water fleas graze the algae). Together they turn the loop towards clear water.',
-        flush: 'Stop the runoff and let a stream flush the nutrients and algae out for a while, then plant pondweed into the clear water.'
+        restore: 'Cortar la escorrentía, dragar el lodo rico en nutrientes, plantar espiga de agua y sacar la mayoría de los peces pequeños (para que más pulgas pasten las algas). Juntos giran el bucle hacia el agua clara.',
+        flush: 'Cortar la escorrentía y dejar que un arroyo arrastre nutrientes y algas durante un tiempo; después plantar espiga de agua en el agua clara.'
       }
     },
     'protect-flowers': {
-      story: 'A neighbour has just sprayed the meadow: most aphids and most ladybirds died. Keep the wildflowers for a year.',
-      target: 'Wildflowers at least {v} every week until week {w}.',
-      hint: 'The aphids come back faster than the ladybirds. When would new ladybirds find something to eat?',
-      explain: 'The aphids rebound before their hunters do. Ladybirds released too early starve, because there are no aphids yet; released too late, the wildflowers are already eaten. Timing decides.',
+      story: 'Un vecino acaba de fumigar el prado: murieron la mayoría de los pulgones y la mayoría de las mariquitas. Conserva las flores silvestres durante un año.',
+      target: 'Flores silvestres al menos {v} cada semana hasta la semana {w}.',
+      hint: 'Los pulgones vuelven más rápido que las mariquitas. ¿Cuándo encontrarían comida unas mariquitas nuevas?',
+      explain: 'Los pulgones se recuperan antes que sus cazadores. Las mariquitas soltadas demasiado pronto pasan hambre, porque aún no hay pulgones; soltadas demasiado tarde, las flores ya se han comido. El momento lo decide.',
       plans: {
-        ladybirds: 'Released after about ten weeks, when the aphids are back but before they peak, the ladybirds find food at once and stop the aphids in time.'
+        ladybirds: 'Soltadas a las diez semanas más o menos, cuando los pulgones ya han vuelto pero antes de su pico, las mariquitas encuentran comida enseguida y frenan a los pulgones a tiempo.'
       }
     },
     'bring-back-clover': {
-      story: 'Without foxes, rabbits have grazed the clover almost away. Bring the clover back for eight weeks in a row within four years.',
-      target: 'Clover at least {v} for eight weeks in a row, by week {w}.',
-      hint: 'Removing rabbits helps only for a while. What kept them in check before?',
-      explain: 'Rabbits multiply fast, so removing some only buys time. Lasting change needs the balancing loop back: foxes. Young foxes need half a year to grow up, so the clover comes back years later.',
+      story: 'Sin zorros, los conejos casi han acabado con el trébol. Haz que el trébol vuelva durante ocho semanas seguidas en un plazo de cuatro años.',
+      target: 'Trébol al menos {v}, ocho semanas seguidas, antes de la semana {w}.',
+      hint: 'Quitar conejos solo ayuda un tiempo. ¿Qué los mantenía a raya antes?',
+      explain: 'Los conejos se multiplican rápido, así que quitar algunos solo da tiempo. Un cambio duradero necesita que vuelva el bucle de equilibrio: los zorros. Los zorros jóvenes tardan medio año en crecer, así que el trébol vuelve años después.',
       plans: {
-        foxes: 'Foxes alone are enough, but patience is needed: they bring the rabbits down slowly.',
-        foxesRabbits: 'Foxes plus relocating half the rabbits: the foxes start with fewer rabbits to catch up with.',
-        foxesRabbitsClover: 'Foxes, relocating most rabbits and sowing clover: the fastest way, because the clover gets a head start while the foxes grow up.'
+        foxes: 'Los zorros solos bastan, pero hace falta paciencia: reducen los conejos despacio.',
+        foxesRabbits: 'Zorros y trasladar la mitad de los conejos: los zorros tienen menos conejos que alcanzar.',
+        foxesRabbitsClover: 'Zorros, trasladar la mayoría de los conejos y sembrar trébol: la vía más rápida, porque el trébol toma ventaja mientras crecen los zorros.'
       }
     }
   },
   loops: {
-    graze: 'Water fleas graze the algae down; fewer algae, fewer water fleas.',
-    fishFleas: 'Small fish eat water fleas; fewer water fleas, fewer young fish.',
-    pikeFish: 'Pike eat small fish; fewer small fish, fewer young pike.',
-    clearWater: 'Algae shade the pondweed; pondweed holds the algae back. Whoever is ahead pulls further ahead.',
-    shelter: 'Pondweed hides water fleas from fish, and water fleas eat algae.',
-    recycle: 'Dead algae rot and feed new algae.',
-    aphidsFlowers: 'Aphids feed on the wildflowers; fewer wildflowers, fewer aphids.',
-    ladybirdsAphids: 'Ladybirds eat aphids; fewer aphids, fewer young ladybirds.',
-    rabbitsClover: 'Rabbits graze the clover; less clover, fewer young rabbits.',
-    foxesRabbits: 'Foxes hunt rabbits; fewer rabbits, fewer young foxes.',
-    thirst: 'Grasses use the soil water; dry soil slows the grasses.',
-    wormsDead: 'Earthworms eat dead leaves; fewer dead leaves, fewer earthworms.',
-    flowerUptake: 'Wildflowers take up the nutrients they grow from.'
+    graze: 'Las pulgas de agua pastan las algas; menos algas, menos pulgas.',
+    fishFleas: 'Los peces pequeños comen pulgas de agua; menos pulgas, menos peces jóvenes.',
+    pikeFish: 'Los lucios comen peces pequeños; menos peces pequeños, menos lucios jóvenes.',
+    clearWater: 'Las algas dan sombra a la espiga de agua; la espiga de agua frena a las algas. Quien va delante se adelanta aún más.',
+    shelter: 'La espiga de agua esconde a las pulgas de los peces, y las pulgas comen algas.',
+    recycle: 'Las algas muertas se pudren y alimentan algas nuevas.',
+    aphidsFlowers: 'Los pulgones viven de las flores silvestres; menos flores, menos pulgones.',
+    ladybirdsAphids: 'Las mariquitas comen pulgones; menos pulgones, menos mariquitas jóvenes.',
+    rabbitsClover: 'Los conejos comen el trébol; menos trébol, menos conejos jóvenes.',
+    foxesRabbits: 'Los zorros cazan conejos; menos conejos, menos zorros jóvenes.',
+    thirst: 'Las hierbas gastan el agua del suelo; el suelo seco frena las hierbas.',
+    wormsDead: 'Las lombrices comen hojas muertas; menos hojas muertas, menos lombrices.',
+    flowerUptake: 'Las flores silvestres absorben los nutrientes con los que crecen.'
   }
 };
