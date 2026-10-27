@@ -1,0 +1,154 @@
+/* Tones & Chords. All rules are scoped under .wp-harmony and use logical properties (RTL-safe). Panels, text and the
+   sound bar follow the reading direction; the staff, the keyboard, contours, rhythm grids and wave pictures are LTR
+   (pitch rises and time runs left to right in every locale). Marks are glyphs and words, never colour alone. */
+.wp-harmony { display: grid; gap: 0.75rem; max-width: 66rem; margin-inline: auto; min-width: 0; overflow-wrap: anywhere; scroll-padding-block-end: 5rem; }
+.wp-harmony .hm-main { display: grid; gap: 0.8rem; min-width: 0; }
+.wp-harmony p { margin: 0; }
+.wp-harmony h2 { margin: 0; font-size: 1.25rem; line-height: 1.35; }
+.wp-harmony h3 { margin: 0; font-size: 1.05rem; }
+.wp-harmony :is(h2, h3)[tabindex]:focus { outline-offset: 4px; }
+.wp-harmony .hm-head { display: grid; gap: 0.25rem; }
+.wp-harmony .hm-progress, .wp-harmony .hm-muted, .wp-harmony .hm-help-line { color: var(--wp-muted); font-size: 0.93rem; }
+.wp-harmony button, .wp-harmony select { min-height: var(--wp-touch); min-width: var(--wp-touch); }
+.wp-harmony .hm-primary { font-weight: 700; }
+.wp-harmony .hm-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+.wp-harmony .hm-layout { display: grid; gap: 0.8rem; min-width: 0; }
+@media (min-width: 48rem) {
+  .wp-harmony .hm-layout { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); align-items: start; }
+}
+.wp-harmony .hm-card, .wp-harmony .hm-panel, .wp-harmony .hm-mixups {
+  display: grid; gap: 0.6rem; padding: 0.8rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius);
+  background: var(--wp-surface); min-width: 0; align-content: start;
+}
+
+/* Sound bar. */
+.wp-harmony .hm-soundbar { display: grid; gap: 0.35rem; padding-block-end: 0.5rem; border-block-end: 1px solid var(--wp-border); }
+.wp-harmony .hm-sound-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
+.wp-harmony .hm-play--main { font-weight: 700; }
+.wp-harmony .hm-play--main .hm-btn-text::before { content: '▶ '; }
+.wp-harmony .hm-playing { outline: 2px dashed var(--wp-focus); outline-offset: 2px; }
+.wp-harmony .hm-volume { display: inline-flex; align-items: center; gap: 0.35rem; min-height: var(--wp-touch); }
+.wp-harmony .hm-volume input { inline-size: 7rem; min-height: var(--wp-touch); margin: 0; accent-color: var(--wp-accent); }
+.wp-harmony .hm-mute[aria-pressed='false'] { text-decoration: line-through; }
+.wp-harmony .hm-sound-status, .wp-harmony .hm-notice { padding: 0.4rem 0.6rem; border-inline-start: 4px solid var(--wp-accent); background: var(--wp-surface-2); }
+
+/* Options. */
+.wp-harmony .hm-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: 0.45rem; margin: 0; padding: 0; border: 0; min-width: 0; }
+.wp-harmony .hm-options--rhythm, .wp-harmony .hm-options--contour { grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); }
+.wp-harmony .hm-option-row { display: flex; gap: 0.3rem; align-items: stretch; min-width: 0; }
+.wp-harmony .hm-option {
+  flex: 1 1 auto; display: flex; gap: 0.5rem; align-items: center; min-height: var(--wp-touch); padding: 0.45rem 0.6rem; min-width: 0;
+  border: 1px solid var(--wp-border); border-radius: var(--wp-radius); background: var(--wp-surface-2); cursor: pointer;
+}
+.wp-harmony .hm-option input { inline-size: 1.25rem; block-size: 1.25rem; margin: 0; flex: none; accent-color: var(--wp-accent); }
+.wp-harmony .hm-option--chosen { border-width: 2px; border-color: var(--wp-text); }
+.wp-harmony .hm-option--right { border-style: double; border-width: 3px; }
+.wp-harmony .hm-option-body { display: grid; gap: 0.2rem; min-width: 0; }
+.wp-harmony .hm-option-name { font-weight: 600; }
+.wp-harmony .hm-option-size { color: var(--wp-muted); font-size: 0.88rem; }
+.wp-harmony .hm-option-mark { font-size: 0.9rem; font-weight: 700; }
+.wp-harmony .hm-hear { flex: none; padding: 0; }
+.wp-harmony .hm-contour-pic { inline-size: 6rem; block-size: auto; }
+.wp-harmony .hm-contour-line { fill: none; stroke: var(--wp-text); stroke-width: 2; }
+
+/* Rhythm grids: ● onset, ━ held, · rest, with the counting syllable under each box. */
+.wp-harmony .hm-grid { display: grid; grid-template-columns: repeat(8, minmax(1.4rem, 1fr)); gap: 2px; min-width: 0; }
+.wp-harmony .hm-slot { display: grid; justify-items: center; border: 1px solid var(--wp-border); border-radius: 3px; padding-block: 0.15rem; background: var(--wp-surface); }
+.wp-harmony .hm-slot--onset { border-color: var(--wp-text); }
+.wp-harmony .hm-slot-sym { font-weight: 700; line-height: 1.2; }
+.wp-harmony .hm-slot-count { font-size: 0.75rem; color: var(--wp-muted); }
+
+/* Notation and pictures (drawn by code; LTR). */
+.wp-harmony .hm-picture-body { display: grid; gap: 0.5rem; min-width: 0; }
+.wp-harmony .hm-pair { grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr)); }
+.wp-harmony .hm-dyad { display: grid; gap: 0.3rem; padding: 0.4rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius); }
+.wp-harmony .hm-dyad-label { font-weight: 700; }
+.wp-harmony .hm-staff { display: block; inline-size: 100%; max-inline-size: 30rem; block-size: auto; min-block-size: 6.5rem; }
+.wp-harmony .hm-rhythm-staff { min-block-size: 4rem; }
+.wp-harmony .hm-line, .wp-harmony .hm-ledger, .wp-harmony .hm-stem, .wp-harmony .hm-axis { stroke: var(--wp-text); stroke-width: 1; }
+.wp-harmony .hm-ledger { stroke-width: 1.4; }
+.wp-harmony .hm-stem { stroke-width: 1.4; }
+.wp-harmony .hm-axis { stroke: var(--wp-border); }
+.wp-harmony .hm-head { fill: var(--wp-text); }
+.wp-harmony .hm-head-open { fill: none; stroke: var(--wp-text); stroke-width: 2.2; }
+.wp-harmony .hm-ink { fill: var(--wp-text); }
+.wp-harmony .hm-clef-line { fill: none; stroke: var(--wp-text); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.wp-harmony .hm-thin { stroke: var(--wp-text); stroke-width: 1.2; fill: none; }
+.wp-harmony .hm-mid { stroke: var(--wp-text); stroke-width: 1.8; fill: none; }
+.wp-harmony .hm-thick { stroke: var(--wp-text); stroke-width: 2.6; fill: none; }
+.wp-harmony .hm-rest, .wp-harmony .hm-flag { fill: none; stroke: var(--wp-text); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.wp-harmony .hm-contour { fill: none; stroke: var(--wp-accent); stroke-width: 2; stroke-dasharray: 5 4; }
+.wp-harmony .hm-label, .wp-harmony .hm-time { fill: var(--wp-text); font-family: var(--wp-font, system-ui, sans-serif); font-size: 13px; }
+.wp-harmony .hm-time { font-size: 20px; font-weight: 700; }
+.wp-harmony .hm-wave-fig { margin: 0; display: grid; gap: 0.2rem; min-width: 0; }
+.wp-harmony .hm-wave { inline-size: 100%; max-inline-size: 22rem; block-size: auto; }
+.wp-harmony .hm-wave-line { fill: none; stroke: var(--wp-accent); stroke-width: 1.6; }
+.wp-harmony .hm-wave-fig figcaption { font-size: 0.88rem; color: var(--wp-muted); }
+.wp-harmony .hm-ratio bdi { font-variant-numeric: tabular-nums; }
+.wp-harmony .hm-verdict { font-weight: 700; font-size: 1.05rem; }
+.wp-harmony .hm-tip { padding: 0.6rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius); }
+.wp-harmony .hm-listen { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.wp-harmony .hm-melody-label { font-weight: 600; }
+.wp-harmony .hm-build { display: grid; gap: 0.5rem; min-width: 0; }
+
+/* Keyboard: always left to right. White keys ≥ 44 px wide, black keys 62 % of a white key and ≥ 88 px tall. */
+.wp-harmony .hm-keys-box { min-width: 0; }
+.wp-harmony .hm-keys-box:focus { outline: none; }
+.wp-harmony .hm-piano-wrap { display: grid; gap: 0.3rem; min-width: 0; justify-items: start; }
+.wp-harmony .hm-shift-row { display: flex; gap: 0.4rem; }
+.wp-harmony .hm-piano { position: relative; display: flex; min-width: 0; max-inline-size: 100%; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+.wp-harmony .hm-key { display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 0.15rem; padding: 0 0 0.35rem; font: inherit; cursor: pointer; }
+.wp-harmony .hm-piano--piano .hm-white {
+  flex: 1 0 2.75rem; min-inline-size: 2.75rem; max-inline-size: 3.5rem; min-block-size: 9.5rem; border: 1px solid var(--wp-text);
+  border-radius: 0 0 6px 6px; background: var(--wp-surface); color: var(--wp-text);
+}
+.wp-harmony .hm-piano--piano .hm-black {
+  position: absolute; inset-block-start: 0; z-index: 1; min-inline-size: 0; min-block-size: 5.6rem; block-size: 5.6rem;
+  border: 1px solid var(--wp-text); border-radius: 0 0 5px 5px; background: var(--wp-text); color: var(--wp-surface); font-size: 0.72rem;
+}
+.wp-harmony .hm-piano--piano { inline-size: max-content; }
+.wp-harmony .hm-key-marks { font-weight: 700; min-block-size: 1.2em; line-height: 1.2; }
+.wp-harmony .hm-key-name { font-size: 0.8rem; }
+.wp-harmony .hm-black .hm-key-name { font-size: 0.68rem; }
+.wp-harmony .hm-marked.hm-white { box-shadow: inset 0 -0.45rem 0 var(--wp-surface-2); }
+.wp-harmony .hm-key[aria-pressed='true'].hm-white { background: var(--wp-surface-2); border-width: 2px; }
+.wp-harmony .hm-key[aria-disabled='true'] { cursor: default; }
+.wp-harmony .hm-key:focus-visible { outline: 3px solid var(--wp-focus); outline-offset: -3px; z-index: 2; }
+.wp-harmony .hm-piano--buttons { display: grid; grid-auto-columns: minmax(2.75rem, 1fr); gap: 0.25rem; }
+.wp-harmony .hm-piano--buttons .hm-key { min-inline-size: 2.75rem; min-block-size: 2.75rem; justify-content: center; padding: 0.1rem; border: 1px solid var(--wp-text); border-radius: 6px; background: var(--wp-surface); color: var(--wp-text); }
+.wp-harmony .hm-piano--buttons .hm-white { grid-row: 1; }
+.wp-harmony .hm-piano--buttons .hm-black { grid-row: 2; background: var(--wp-surface-2); }
+
+/* Free keyboard. */
+.wp-harmony .hm-free-controls { display: grid; gap: 0.5rem; }
+.wp-harmony .hm-free-controls > button { justify-self: start; }
+.wp-harmony .hm-radios, .wp-harmony .hm-overlay { display: flex; flex-wrap: wrap; gap: 0.2rem 0.8rem; margin: 0; padding: 0.3rem 0.5rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius); }
+.wp-harmony .hm-radio, .wp-harmony .hm-overlay label, .wp-harmony .hm-check, .wp-harmony .hm-field { display: inline-flex; align-items: center; gap: 0.3rem; min-height: var(--wp-touch); }
+.wp-harmony .hm-free-name { font-size: 1.1rem; font-weight: 700; }
+
+/* Summary and boxes. */
+.wp-harmony .hm-mixups ul { display: grid; gap: 0.35rem; margin: 0; padding-inline-start: 1.2rem; }
+.wp-harmony .hm-boxes { display: grid; gap: 0.4rem; }
+.wp-harmony .hm-prefs, .wp-harmony .hm-help { border: 1px solid var(--wp-border); border-radius: var(--wp-radius); padding-inline: 0.6rem; }
+.wp-harmony .hm-prefs > :not(summary) { margin-block-end: 0.4rem; }
+.wp-harmony .hm-prefs summary, .wp-harmony .hm-help summary { min-block-size: var(--wp-touch); box-sizing: border-box; padding-block: 0.7rem; cursor: pointer; }
+.wp-harmony .hm-prefs { display: block; }
+.wp-harmony .hm-prefs[open] { display: grid; gap: 0.2rem; padding-block-end: 0.5rem; }
+
+/* Phones: the actions stay reachable at the bottom without covering the focused element (scroll-padding above). */
+@media (max-width: 40rem) {
+  .wp-harmony .hm-card > .hm-actions { position: sticky; inset-block-end: 0; z-index: 3; padding-block: 0.4rem; background: var(--wp-surface); border-block-start: 1px solid var(--wp-border); }
+  .wp-harmony .hm-volume input { inline-size: 5.5rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wp-harmony * { transition: none !important; animation: none !important; }
+}
+@media (forced-colors: active) {
+  .wp-harmony :is(.hm-line, .hm-ledger, .hm-stem, .hm-thin, .hm-mid, .hm-thick, .hm-rest, .hm-flag, .hm-clef-line, .hm-head-open, .hm-contour, .hm-contour-line, .hm-wave-line) { stroke: CanvasText; }
+  .wp-harmony :is(.hm-head, .hm-ink) { fill: CanvasText; }
+  .wp-harmony :is(.hm-label, .hm-time) { fill: CanvasText; }
+  .wp-harmony .hm-key { border: 1px solid CanvasText; forced-color-adjust: none; background: Canvas; color: CanvasText; }
+  .wp-harmony .hm-piano--piano .hm-black { background: CanvasText; color: Canvas; }
+}
