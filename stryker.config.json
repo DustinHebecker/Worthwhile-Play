@@ -31,6 +31,10 @@
     "packages/games/atlas-explorer/src/route.ts",
     "packages/games/atlas-explorer/src/generate.ts",
     "packages/games/atlas-explorer/src/build/*.ts",
+    "packages/games/timeline/src/time.ts",
+    "packages/games/timeline/src/score.ts",
+    "packages/games/timeline/src/axis.ts",
+    "packages/games/timeline/src/generate.ts",
     "!**/*.d.ts",
     "!packages/learning-content/src/builtin/**"
   ],
