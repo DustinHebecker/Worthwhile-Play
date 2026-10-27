@@ -127,10 +127,18 @@ describe('"When was it?"', () => {
     expect(m.q('tl-slider')!.getAttribute('aria-valuetext')).not.toBe('No answer yet.');
     expect(m.q('tl-axis-live')!.textContent).toMatch(/^Your answer: /);
     expect(m.q('tl-means')!.textContent).toMatch(/^= /);
+    const now = () => Number(m.q('tl-slider')!.getAttribute('aria-valuenow'));
+    expect(m.q('tl-slider')!.getAttribute('aria-valuemin')).toBe('0');
+    expect(m.q('tl-slider')!.getAttribute('aria-valuemax')).toBe('100');
+    const afterRight = now();
     m.key('tl-slider', 'Home');
     expect((m.state().items[m.state().index] as WhenItem).draft.y!).toBeLessThan(y!);
+    // The value grows to the right: Home is the minimum, End the maximum.
+    expect(now()).toBe(0);
+    expect(now()).toBeLessThan(afterRight);
     m.key('tl-slider', 'End');
     expect((m.state().items[m.state().index] as WhenItem).draft.y!).toBeLessThanOrEqual(2020);
+    expect(now()).toBeGreaterThan(afterRight);
     // Zoom keys change the window, not the answer.
     const before = m.q('tl-axis-shows')!.textContent;
     const draft = (m.state().items[m.state().index] as WhenItem).draft.y;

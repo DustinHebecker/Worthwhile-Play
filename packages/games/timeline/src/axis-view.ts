@@ -238,9 +238,11 @@ export function createAxisView(o: AxisOptions, initialView: AxisView = 'log'): A
     const glyph = slider.firstElementChild as HTMLElement;
     glyph.textContent = !has ? '◇' : x < 0 ? '◀' : x > 1 ? '▶' : '◆';
     slider.style.left = `${Math.min(1, Math.max(0, x)) * 100}%`;
-    slider.setAttribute('aria-valuemin', String(Math.round(win.lo * 1000) / 1000));
-    slider.setAttribute('aria-valuemax', String(Math.round(win.hi * 1000) / 1000));
-    slider.setAttribute('aria-valuenow', String(Math.round((has ? Math.log10(2030 - draftY!) : (win.lo + win.hi) / 2) * 1000) / 1000));
+    // The value is the position across the visible axis (0 = left edge, the past; 100 = right edge), so it grows
+    // with ArrowRight/ArrowUp and Home/End reach min/max, in both views; the year itself is in aria-valuetext.
+    slider.setAttribute('aria-valuemin', '0');
+    slider.setAttribute('aria-valuemax', '100');
+    slider.setAttribute('aria-valuenow', String(Math.round(Math.min(1, Math.max(0, x)) * 1000) / 10));
     slider.setAttribute('aria-valuetext', has ? formatYear(draftY!, tt, locale) : t('when.noAnswer'));
     slider.dataset.state = has ? 'set' : 'empty';
   }
