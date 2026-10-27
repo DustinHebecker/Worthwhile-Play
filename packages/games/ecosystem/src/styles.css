@@ -39,14 +39,14 @@
   border-radius: var(--wp-radius); background: var(--wp-surface); min-width: 0;
 }
 .wp-ecosystem .eco-status { font-weight: 700; }
-.wp-ecosystem.eco-has-bar { scroll-padding-block-end: 7rem; }
+:root:has(.wp-ecosystem.eco-has-bar) { scroll-padding-block-end: 7.5rem; }
 .wp-ecosystem .eco-sticky:empty { display: none; }
 @media (max-width: 47.99rem) {
   .wp-ecosystem .eco-sticky, .wp-ecosystem .eco-runbar {
     position: sticky; inset-block-end: 0; z-index: 2; padding-block: 0.5rem;
     background: var(--wp-surface); border-block-start: 1px solid var(--wp-border);
   }
-  .wp-ecosystem { scroll-padding-block-end: 7rem; }
+  :root:has(.wp-ecosystem[data-mode='goal'], .wp-ecosystem[data-mode='explore']) { scroll-padding-block-end: 7.5rem; }
 }
 .wp-ecosystem .eco-bar, .wp-ecosystem .eco-runbar, .wp-ecosystem .eco-row-buttons, .wp-ecosystem .eco-tools {
   display: flex; flex-wrap: wrap; gap: 0.5rem;

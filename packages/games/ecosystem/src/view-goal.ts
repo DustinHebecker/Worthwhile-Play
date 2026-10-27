@@ -76,9 +76,9 @@ export function goalScreen(host: Host, s: GoalState): Screen {
     panel.push(h('p', { class: 'eco-outcome eco-failed', 'data-testid': 'eco-outcome', role: 'status' }, g.target.kind === 'every' ? ui.t('goalui.failedEvery', { name: ui.name(g.focus), w: ui.int(o.week) }) : ui.t('goalui.failedStreak', { w: ui.int(o.week) })));
   }
   if (!done) {
-    // Hint: on easy shown from the start; otherwise behind "Show a hint" (not recorded).
+    // Hint: on easy shown from the start, on medium behind "Show a hint" (not recorded), none on hard.
     const hint = h('details', { class: 'eco-hint', 'data-testid': 'eco-hint', open: s.difficulty === 'easy' }, h('summary', {}, ui.t('goalui.hint')), h('p', {}, ui.goal(g.id).hint), cldView(ui, cldOf(g.id)!));
-    panel.push(hint);
+    if (s.difficulty !== 'hard') panel.push(hint);
     const tools = h('div', { class: 'eco-tools', 'data-testid': 'eco-tools', role: 'group', 'aria-label': ui.t('goalui.tools') });
     const blocked = failed || left <= 0 || nb.week >= g.deadline;
     for (const tool of g.tools) {
