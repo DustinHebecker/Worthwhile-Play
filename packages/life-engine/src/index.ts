@@ -12,3 +12,4 @@ export * from './profiles/de';
 export * from './life';
 export * from './content/de';
 export * from './rng-for';
+export * from './content/de-family';

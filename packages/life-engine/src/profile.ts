@@ -47,4 +47,16 @@ export interface Profile {
   educationSupport(parentsLowIncome: boolean): { cents: number; category: 'student-grant' | 'family-support' };
   /** Unemployment insurance: share of the last net pay and months of entitlement. */
   unemploymentInsurance: { replacement: number; months: number };
+  /** Share of the single-person living costs that one partner pays when a couple lives together. */
+  coupleLivingShare: number;
+  /** Monthly spending on a child of this age at start prices (cents, whole household). */
+  childCost(age: number): number;
+  /** Child benefit per child and month at start prices (cents, whole household). */
+  childBenefit(): number;
+  /** Minimum child support for a child of this age living with the other parent (cents per month). */
+  childSupport(age: number): number;
+  /** Parental allowance per month from the last net pay (cents, both at the same prices). */
+  parentalAllowance(lastNetCents: number): number;
+  /** Months of parental allowance for one parent (the partner months come on top). */
+  parentalLeaveMonths: number;
 }

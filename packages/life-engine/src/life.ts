@@ -81,14 +81,37 @@ export interface BudgetItem {
   cents: number;
 }
 
-/** The household budget of the current month (design § 5.5); empty before own finances. */
+/** Ages (completed years) of the children under 18 (counters `child.<n>.born`). */
+export function childAges(s: LifeCore): number[] {
+  const ages: number[] = [];
+  for (let n = 1; n <= counter(s, 'children'); n++) {
+    const born = s.counters[`child.${n}.born`];
+    if (born === undefined) continue;
+    const age = Math.floor((s.month - born) / 12);
+    if (age < 18) ages.push(age);
+  }
+  return ages;
+}
+
+/** The person lives together with a partner (cohabiting or married). */
+export const livesWithPartner = (s: LifeCore): boolean => has(s, 'rel.cohabiting') || has(s, 'rel.married');
+
+/**
+ * The household budget of the current month (design § 5.5), the person's own share: with a partner,
+ * shared costs and child benefit are split in half. Empty before own finances.
+ */
 export function budget(s: LifeState, profile: Profile): BudgetItem[] {
   const age = ageInYears(s.month);
   if (age < OWN_FINANCES_AGE || !s.alive) return [];
   const items: BudgetItem[] = [];
   const atParents = has(s, 'home.parents');
   const prices = s.economy.priceIndex;
-  if (has(s, 'work.employed')) {
+  const partner = livesWithPartner(s);
+  if (has(s, 'work.parental-leave') && counter(s, 'leave.left') > 0) {
+    // Parental allowance replaces the pay during the leave (computed from the last net pay at start prices).
+    const lastNet = Math.round(counter(s, 'work.last-net') / prices);
+    items.push({ category: 'parental-allowance', cents: Math.round(profile.parentalAllowance(lastNet) * prices) });
+  } else if (has(s, 'work.employed')) {
     const gross = Math.round(profile.grossPay(qualificationOf(s), age, s.sex, has(s, 'work.part-time')) * s.economy.wageIndex * (1 + counter(s, 'work.raise-permille') / 1000));
     // Tax schedules and benefit levels move with prices (no bracket creep in the model): taxes are
     // computed at start prices and scaled back.
@@ -98,13 +121,27 @@ export function budget(s: LifeState, profile: Profile): BudgetItem[] {
   } else if (has(s, 'work.training') || has(s, 'work.study')) {
     const support = profile.educationSupport(has(s, 'parents.low-income'));
     items.push({ category: support.category, cents: Math.round(support.cents * prices) });
+  } else if (has(s, 'work.home-parent') && partner) {
+    // Caring for the children at home while the partner earns: no own income, no benefit.
   } else if (age >= 18 && !has(s, 'work.retired')) {
     items.push({ category: 'basic-support', cents: Math.round(profile.basicSupport(atParents) * prices) });
+  }
+  const kids = childAges(s);
+  if (kids.length > 0) {
+    if (has(s, 'children.with-other')) {
+      for (const a of kids) items.push({ category: 'child-support', cents: -Math.round(profile.childSupport(a) * prices) });
+    } else {
+      const share = partner || has(s, 'children.shared') ? 0.5 : 1;
+      items.push({ category: 'child-benefit', cents: Math.round(kids.length * profile.childBenefit() * share * prices) });
+      const cost = kids.reduce((sum, a) => sum + profile.childCost(a), 0);
+      items.push({ category: 'children', cents: -Math.round(cost * share * prices) });
+    }
   }
   // Living with the parents without own income: the parents carry the costs.
   if (atParents && items.length === 0) return items;
   const living: Living = atParents ? 'parents' : (LIFESTYLES[Math.max(0, Math.min(2, counter(s, 'lifestyle')))] as Living);
-  items.push({ category: 'living', cents: -Math.round(profile.livingCost(living) * prices) });
+  const share = partner && !atParents ? profile.coupleLivingShare : 1;
+  items.push({ category: 'living', cents: -Math.round(profile.livingCost(living) * share * prices) });
   return items;
 }
 
@@ -139,6 +176,7 @@ export function lifeSystems(profile: Profile): (s: LifeState, rngFor: RngFor) =>
     const salary = items.find((i) => i.category === 'salary');
     if (salary !== undefined) counters['work.last-net'] = salary.cents;
     if (has(s, 'work.unemployed') && counter(s, 'ui.left') > 0) counters['ui.left'] = counter(s, 'ui.left') - 1;
+    if (has(s, 'work.parental-leave') && counter(s, 'leave.left') > 0) counters['leave.left'] = counter(s, 'leave.left') - 1;
     return { ...s, ledger, counters };
   };
 }

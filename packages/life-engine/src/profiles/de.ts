@@ -1,4 +1,5 @@
 import { DE_PARAMS } from '../params/de';
+import { WORLD_PARAMS } from '../params/world';
 import { paramValue } from '../params/check';
 import { seriesById } from '../params/series';
 import type { Living, Profile, Qualification } from '../profile';
@@ -134,5 +135,21 @@ export const PROFILE_DE: Profile = {
   educationSupport(parentsLowIncome) {
     return { cents: cents(v('de.education.student-grant-max')), category: parentsLowIncome ? 'student-grant' : 'family-support' };
   },
-  unemploymentInsurance: { replacement: v('de.labour.ui-replacement-rate'), months: v('de.labour.ui-duration-under-50') }
+  unemploymentInsurance: { replacement: v('de.labour.ui-replacement-rate'), months: v('de.labour.ui-duration-under-50') },
+  // OECD-modified scale: a couple needs 1 + 0.5 = 1.5 single budgets, each partner pays half.
+  coupleLivingShare: (1 + paramValue(WORLD_PARAMS, 'world.household.equivalence-second-adult')) / 2,
+  childCost(age) {
+    return cents(age < 6 ? v('de.family.child-cost-age-0-6') : age < 12 ? v('de.family.child-cost-age-6-11') : v('de.family.child-cost-age-12-17'));
+  },
+  childBenefit() {
+    return cents(v('de.family.child-benefit'));
+  },
+  childSupport(age) {
+    return cents(age < 6 ? v('de.family.child-support-0-5') : age < 12 ? v('de.family.child-support-6-11') : v('de.family.child-support-12-17'));
+  },
+  parentalAllowance(lastNetCents) {
+    const raw = lastNetCents * v('de.family.parental-allowance-rate');
+    return Math.round(Math.min(cents(v('de.family.parental-allowance-max')), Math.max(cents(v('de.family.parental-allowance-min')), raw)));
+  },
+  parentalLeaveMonths: v('de.family.parental-allowance-months') - 2
 };
