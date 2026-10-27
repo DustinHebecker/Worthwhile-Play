@@ -168,6 +168,36 @@ describe('drones', () => {
     expect(drone.id).toBeGreaterThan(0);
   });
 
+  it('a launch is reported like a new unit; a landing and a replacement only to the owner', () => {
+    // The enemy post at (6, 2) sees the car's cell.
+    const start = base([{ side: 1, kind: 'command-post', x: 6, y: 2 }]);
+    const up = resolveTurn(start, rs, [[launch(start)], []]);
+    const launchedBy = (side: number) => up.reported?.[side]?.some((e) => e.t === 'drone-launched') ?? false;
+    expect(launchedBy(0)).toBe(true);
+    expect(launchedBy(1)).toBe(true);
+    // Far from any enemy, the launch is the owner's alone.
+    const far = base();
+    const alone = resolveTurn(far, rs, [[launch(far)], []]);
+    expect(alone.reported?.[0]?.some((e) => e.t === 'drone-launched')).toBe(true);
+    expect(alone.reported?.[1]?.some((e) => e.t === 'drone-launched')).toBe(false);
+    // Landing, in sight of the enemy post: told to the owner only.
+    const drone = kind(up.world, 'kite');
+    const down = resolveTurn(up.world, rs, [[{ side: 0, unit: drone.id, order: { type: 'recall' } }], []]);
+    expect(down.events.some((e) => e.t === 'drone-docked')).toBe(true);
+    expect(down.reported?.[0]?.some((e) => e.t === 'drone-docked')).toBe(true);
+    expect(down.reported?.[1]?.some((e) => e.t === 'drone-docked')).toBe(false);
+    // A replacement: told to the owner only.
+    const lost = structuredClone(up.world);
+    const car = kind(lost, 'outrider');
+    lost.entities = lost.entities.filter((e) => e.kind !== 'kite');
+    delete car.drone;
+    car.rebuild = 1;
+    if (lost.intel) lost.intel = lost.intel.map((l) => l.filter((r) => r.kind !== 'kite'));
+    const ready = resolveTurn(lost, rs, [[], []]);
+    expect(ready.reported?.[0]?.some((e) => e.t === 'drone-ready' && e.id === car.id)).toBe(true);
+    expect(ready.reported?.[1]?.some((e) => e.t === 'drone-ready')).toBe(false);
+  });
+
   it('everything but artillery and tanks can hit it', () => {
     // The enemy sees the drone (its post covers its Rifle Squad), and nobody is in range of anything yet.
     const w = launched([

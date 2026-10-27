@@ -278,6 +278,9 @@ test('relay-command: the map is drawn from the side or from above; the choice st
 test('relay-command: a Scout Car launches its drone on a phone; the drone stays in the air after a reload and lands again (owner decision 2026-10-27)', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 740 });
   await start(page);
+  // Marsh Delta: two Scout Cars per side, inside the own radio cover from the start.
+  await page.getByTestId('rc-scenario').selectOption('marsh-delta');
+  await expect.poll(async () => (await saved(page))?.world.entities.some((e) => e.side === 0 && e.kind === 'outrider')).toBe(true);
   const car = (await saved(page))!.world.entities.find((e) => e.side === 0 && e.kind === 'outrider')!;
   await page.getByTestId(`rc-unit-${car.id}`).click();
   await page.getByTestId('rc-launch').click();

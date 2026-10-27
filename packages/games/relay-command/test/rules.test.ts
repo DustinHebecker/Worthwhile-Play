@@ -373,6 +373,17 @@ describe('drones (owner decision 2026-10-27)', () => {
     expect(isValidState(s2)).toBe(true);
   });
 
+  it('the opponent plans as if drones were not there: one above a deposit does not keep it from building there', () => {
+    const s = newGame(1);
+    const obs = observe(s.world, RULESET, OPPONENT);
+    const plan = planAi(obs, RULESET, 'hard');
+    const build = plan.find((c) => c.order.type === 'build' && c.order.kind === 'extractor')!.order as { x: number; y: number };
+    // A spotted enemy drone hovers right above that deposit.
+    const drone: Entity = { id: s.world.nextId, side: PLAYER, kind: 'kite', x: build.x, y: build.y, hp: 20, mp: 0, cooldown: 0, order: { type: 'hold' }, status: [], beam: null };
+    const seen = { ...obs, world: { ...obs.world, entities: [...obs.world.entities, drone], nextId: drone.id + 1 } };
+    expect(planAi(seen, RULESET, 'hard')).toEqual(plan);
+  });
+
   it('a drone is free: launching it changes no side\'s strength', () => {
     const { s, car } = withCar();
     const before = sideValue(s.world, PLAYER);
