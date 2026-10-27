@@ -239,6 +239,20 @@ describe('drones', () => {
     expect(events).toContainEqual(expect.objectContaining({ t: 'destroyed', kind: 'rifles' }));
   });
 
+  it('every step names the cell it left (turn replay), also for a drone that follows its car', () => {
+    const w = launched();
+    const drone = kind(w, 'kite');
+    const { events } = play(w, 2, [{ side: 0, unit: drone.id, order: { type: 'move', x: 6, y: 2 } }]);
+    const steps = events.filter((e): e is Extract<SimEvent, { t: 'move' }> => e.t === 'move' && e.id === drone.id);
+    expect(steps.length).toBeGreaterThan(0);
+    let at = { x: drone.x, y: drone.y };
+    for (const s of steps) {
+      expect({ x: s.fx, y: s.fy }).toEqual(at);
+      at = { x: s.x, y: s.y };
+    }
+    expect(at).toEqual({ x: 6, y: 2 });
+  });
+
   it('launches in one batch get the same ids whatever order the plans come in', () => {
     const w = worldOf([
       { side: 0, kind: 'command-post', x: 1, y: 2 },

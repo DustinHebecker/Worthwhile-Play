@@ -89,6 +89,7 @@
 .ml-s-ball { fill: #d1a23f; stroke: var(--ml-ink); stroke-width: 1.5; }
 .ml-s-clothes { fill: var(--ml-accent); stroke: var(--ml-ink); stroke-width: 1.5; }
 .ml-s-legs { fill: #4b5563; }
+.ml-s-clothes-2 { fill: #5b7fa8; stroke: var(--ml-ink); stroke-width: 1.5; }
 .ml-s-eye { fill: #2b211c; }
 .ml-s-mouth { fill: none; stroke: #2b211c; stroke-width: 1.8; stroke-linecap: round; }
 .ml-choices, .ml-time { display: flex; flex-wrap: wrap; gap: 0.5rem; }
@@ -100,3 +101,12 @@
 .ml-pos { color: var(--ml-pos); }
 .ml-total { font-weight: 700; border-block-start: 1px solid var(--wp-border); padding-block-start: 0.15rem; }
 .ml-log-list { margin: 0; padding-inline-start: 1.25rem; display: grid; gap: 0.15rem; font-size: 0.9rem; }
+
+.ml h3 { margin: 0.25rem 0 0; font-size: 1rem; }
+.ml-timeline { display: block; inline-size: 100%; block-size: auto; }
+.ml-t-money { fill: var(--ml-window); opacity: 0.6; }
+.ml-t-sat { fill: none; stroke: var(--ml-accent); stroke-width: 2.5; stroke-linejoin: round; }
+.ml-t-axis { stroke: var(--ml-ink); stroke-width: 1; }
+.ml-table { border-collapse: collapse; inline-size: 100%; font-variant-numeric: tabular-nums; }
+.ml-table th, .ml-table td { text-align: end; padding: 0.15rem 0.5rem; border-block-end: 1px solid var(--wp-border); }
+.ml-table th:first-child, .ml-table td:first-child { text-align: start; }

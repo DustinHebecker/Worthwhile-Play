@@ -300,6 +300,37 @@ test('relay-command: a Scout Car launches its drone on a phone; the drone stays 
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
 });
 
+test('relay-command: the last turn plays back on the map on a phone; it ends by itself or when skipped (owner request 2026-10-27)', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await start(page);
+  await expect(page.getByTestId('rc-replay')).toBeDisabled();
+  // A Rifle Squad walks two cells (the first free cell found by a tap on the map).
+  const rifle = firstRifle((await saved(page))!);
+  await page.getByTestId(`rc-unit-${rifle.id}`).click();
+  const map = page.getByTestId('rc-map');
+  const box = (await map.boundingBox())!;
+  const cols = Number(await map.getAttribute('data-cols'));
+  const cell = box.width / cols;
+  for (const [dx, dy] of [[2, 0], [-2, 0], [0, -2], [0, 2], [2, 2], [-2, -2]] as const) {
+    await map.click({ position: { x: (rifle.x + dx + 0.5) * cell, y: (rifle.y + dy + 0.5) * cell } });
+    if ((await page.getByTestId('rc-slots').textContent()) === 'Planning: 1/4') break;
+  }
+  await expect(page.getByTestId('rc-slots')).toHaveText('Planning: 1/4');
+  await page.getByTestId('rc-lock').click();
+  await expect(page.getByTestId('rc-replay')).toBeEnabled();
+  const picture = () => page.getByTestId('rc-map').evaluate((c) => (c as HTMLCanvasElement).toDataURL());
+  const end = await picture();
+  await page.getByTestId('rc-replay').click();
+  await expect(page.getByTestId('rc-replay-bar')).toBeVisible();
+  // While it plays the map shows the turn as it went (not the end of it).
+  await expect.poll(picture).not.toBe(end);
+  await expect(page.getByTestId('rc-replay-bar')).toBeHidden({ timeout: 10_000 });
+  await page.getByTestId('rc-replay').click();
+  await page.getByTestId('rc-replay-skip').click();
+  await expect(page.getByTestId('rc-replay-bar')).toBeHidden();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+});
+
 test('relay-command: a random map chosen in the setup (size, map number) survives a reload; it fits a 360 px phone', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 740 });
   await start(page);

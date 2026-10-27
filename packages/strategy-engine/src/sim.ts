@@ -367,7 +367,7 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
       const swap = passing.length > 0 ? contestWinner(passing) : undefined;
       if (swap && passable(w.map, rs, swap.e.x, swap.e.y, arch(resting).layer)) {
         winner = swap;
-        events.push({ t: 'move', tick: t, id: resting.id, x: swap.e.x, y: swap.e.y });
+        events.push({ t: 'move', tick: t, id: resting.id, x: swap.e.x, y: swap.e.y, fx: resting.x, fy: resting.y });
         standing.set(cellOf(w.map, swap.e.x, swap.e.y) + (air ? cells : 0), resting);
         resting.prev = cell;
         resting.x = swap.e.x;
@@ -396,7 +396,7 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
       e.mp -= claim.cost;
       delete e.deploy;
       moved.add(e.id);
-      events.push({ t: 'move', tick: t, id: e.id, x: e.x, y: e.y });
+      events.push({ t: 'move', tick: t, id: e.id, x: e.x, y: e.y, fx: e.prev % w.map.w, fy: Math.floor(e.prev / w.map.w) });
     }
   }
 

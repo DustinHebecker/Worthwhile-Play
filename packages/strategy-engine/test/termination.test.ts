@@ -492,6 +492,18 @@ describe('follow-ups from the review of PR #7 (round 3)', () => {
     expect(unit(world, 2)).toMatchObject({ x: 8, y: 0 });
     // The escort is back beside its charge.
     expect(Math.abs(unit(world, 3).x - 4)).toBeLessThanOrEqual(2);
+    // Every step of both, the swap included, names the cell it left (turn replay).
+    for (const id of [2, 3]) {
+      let at = { x: unit(w, id).x, y: unit(w, id).y };
+      for (const e of events) {
+        if (e.t !== 'move' || e.id !== id) continue;
+        expect({ x: e.fx, y: e.fy }).toEqual(at);
+        at = { x: e.x, y: e.y };
+      }
+      expect(at).toEqual({ x: unit(world, id).x, y: unit(world, id).y });
+    }
+    // The escort stepped aside by a swap (its only way out of the pass).
+    expect(events.some((e) => e.t === 'move' && e.id === 3)).toBe(true);
   });
 
   it('an escort that cannot move (disabled, e.g. by EMP) never swaps: the unit behind it waits', () => {

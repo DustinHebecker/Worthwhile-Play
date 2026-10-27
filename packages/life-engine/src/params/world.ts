@@ -102,5 +102,7 @@ export const WORLD_PARAMS: readonly Param[] = [
   p('us.labour.callback-ratio-white-latino', 1.24, 'ratio', 'quillian-2017', 2015, 'US', [1.14, 1.34], 'verified', 'band assumed'),
   p('world.labour.callback-ratio-high-discrimination', 2, 'ratio', 'quillian-2019', 2019, 'world', [1.7, 2], 'verified', '"nearly 2×" natives vs non-white applicants (France highest); band assumed below 2'),
   p('world.labour.callback-ratio-low-discrimination', 1.25, 'ratio', 'quillian-2019', 2019, 'world', [1.15, 1.35], 'verified', '"~1.25×" (e.g. GB, CA, DE, US); band assumed'),
-  p('us.earnings.plainness-penalty', 0.075, 'share', 'hamermesh-biddle-1994', 1994, 'US', [0.05, 0.1], 'verified', 'wage penalty 5–10 %; midpoint; game uses ±5 % modifier sparingly')
+  p('us.earnings.plainness-penalty', 0.075, 'share', 'hamermesh-biddle-1994', 1994, 'US', [0.05, 0.1], 'verified', 'wage penalty 5–10 %; midpoint; game uses ±5 % modifier sparingly'),
+  p('world.household.equivalence-second-adult', 0.5, 'ratio', 'oecd-equivalence-scales', 2013, 'world', [0.5, 0.5], 'verified', 'OECD-modified scale weight of a second adult (definition)'),
+  p('world.household.equivalence-child', 0.3, 'ratio', 'oecd-equivalence-scales', 2013, 'world', [0.3, 0.3], 'verified', 'OECD-modified scale weight of a child under 14 (definition)')
 ];
