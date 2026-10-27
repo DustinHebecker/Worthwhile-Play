@@ -124,6 +124,7 @@ export function freeScreen(host: Host, state: KeyboardState): HTMLElement[] {
       if (degree >= 0) marks.set(m, [...(marks.get(m) ?? []), `scale${degree + 1}`]);
     }
   }
+  const panel = namePanel(env, state);
   const octaves = host.narrow() ? 1 : 2;
   const start = Math.min(12 * (state.base + 1), FREE_HIGH + 1 - 12 * octaves);
   const piano = renderPiano({
@@ -140,8 +141,10 @@ export function freeScreen(host: Host, state: KeyboardState): HTMLElement[] {
       if (host.paused()) return;
       if (state.mode === 'play') {
         host.play(keyEvents(midiToFreq(m)));
+        // Shown while it plays (cosmetic; never state): the name panel names the last played key.
+        const name = panel.querySelector('[data-testid="hm-free-name"]');
+        if (name) name.textContent = env.noteOct(spellHeld([m])[0]!);
         host.announce(env.spokenMidi(m));
-        host.setKeysStart(start, m);
       } else {
         const next = toggleHeld(state, m);
         if (next.held.includes(m)) host.play(heldEvents(heldFreqs(next.held, next.tuning)));
@@ -153,8 +156,7 @@ export function freeScreen(host: Host, state: KeyboardState): HTMLElement[] {
       host.commit(setBase(state, base), f ?? 'hm-keys-higher');
     },
     focusMidi: host.focusKey(),
-    focusNow: host.focusKey() !== undefined,
     testid: 'hm-keys'
   });
-  return [header, h('div', { class: 'hm-layout' }, card, namePanel(env, state)), h('div', { class: 'hm-keys-box' }, piano)];
+  return [header, h('div', { class: 'hm-layout' }, card, panel), h('div', { class: 'hm-keys-box' }, piano)];
 }

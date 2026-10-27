@@ -3,12 +3,14 @@ import type { Variant } from '../src/audio/play';
 import { ATTACK, gainAt, type ScheduledNote } from '../src/audio/schedule';
 import type { Spec } from '../src/spec';
 
-/** The sum of all note envelopes at many instants (every edge ± ε and a fine grid). */
-export function peakSum(notes: readonly ScheduledNote[]): number {
+/** The sum of all note envelopes at many instants (every edge ± ε and, unless `grid` is false, a fine grid). */
+export function peakSum(notes: readonly ScheduledNote[], grid = true): number {
   const times = new Set<number>();
   for (const n of notes) for (const t of [n.start, n.start + ATTACK, n.end, n.stop]) for (const d of [-1e-6, 0, 1e-6]) times.add(t + d);
+  // Each envelope rises only during its attack and never rises afterwards, so the sum peaks at an attack's end; the grid
+  // is an extra, independent check.
   const end = Math.max(0, ...notes.map((n) => n.stop));
-  for (let t = 0; t <= end; t += 0.01) times.add(t);
+  if (grid) for (let t = 0; t <= end; t += 0.01) times.add(t);
   let max = 0;
   for (const t of times) max = Math.max(max, notes.reduce((s, n) => s + gainAt(n, t), 0));
   return max;

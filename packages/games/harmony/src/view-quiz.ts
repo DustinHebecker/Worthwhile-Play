@@ -233,7 +233,6 @@ export function quizScreen(host: Host, state: QuizState): HTMLElement[] {
           onPress: (m) => host.play([{ freq: 440 * 2 ** ((m - 69) / 12), start: 0, dur: 0.8 }]),
           onShift: (s, f) => host.setKeysStart(s, f),
           focusMidi: host.focusKey(),
-          focusNow: host.focusKey() !== undefined,
           testid: 'hm-keys'
         })
       )
@@ -353,7 +352,6 @@ function buildPanel(host: Host, state: QuizState, item: Item, spec: BuildSpec): 
       },
       onShift: (s, f) => host.setKeysStart(s, f),
       focusMidi: host.focusKey(),
-      focusNow: host.focusKey() !== undefined,
       testid: 'hm-keys'
     })
   );

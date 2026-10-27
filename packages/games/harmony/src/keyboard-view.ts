@@ -30,9 +30,8 @@ export interface PianoOptions {
   readonly onPress: (midi: number) => void;
   /** Shows another range (the ◀ ▶ buttons, or arrow keys beyond the visible keys); `focus` is the key to focus. */
   readonly onShift?: (start: number, focus?: number) => void;
-  /** The key that holds the roving tab stop (and gets focus when `focusNow`). */
+  /** The key that holds the roving tab stop (the view focuses it after a key press). */
   readonly focusMidi?: number | undefined;
-  readonly focusNow?: boolean;
   readonly testid?: string;
 }
 
@@ -153,6 +152,5 @@ export function renderPiano(o: PianoOptions): HTMLElement {
     higher.addEventListener('click', () => o.onShift?.(o.start + 12));
     wrap.append(h('div', { class: 'hm-shift-row' }, lower, higher), group);
   } else wrap.append(group);
-  if (o.focusNow) queueMicrotask(() => group.querySelector<HTMLElement>('[tabindex="0"]')?.focus());
   return wrap;
 }

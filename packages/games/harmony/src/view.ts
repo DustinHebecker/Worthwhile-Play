@@ -248,6 +248,7 @@ export function createHarmony(context: GameContext): GameInstance<HarmonyState> 
     }
     main.append(h('div', { class: 'hm-boxes' }, prefsBox(), helpBox()));
     if (typeof focusNext === 'string') main.querySelector<HTMLElement>(`#${focusNext}, [data-testid="${focusNext}"]`)?.focus();
+    else if (typeof focusNext === 'number') main.querySelector<HTMLElement>(`.hm-key[data-midi="${focusNext}"]`)?.focus();
     focusNext = null;
     keyFocus = undefined;
   }

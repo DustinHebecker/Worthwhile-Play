@@ -51,7 +51,13 @@ const key = (p: readonly number[]) => p.join(',');
  * Every pattern of a level (distinct durations), in a fixed order: each half bar is one two-beat cell or two one-beat
  * cells. Patterns need at least two notes; on easy and medium they start with a note on beat 1.
  */
-export function allPatterns(level: Level): number[][] {
+export function allPatterns(level: Level): readonly (readonly number[])[] {
+  return (PATTERNS[level] ??= buildPatterns(level));
+}
+
+const PATTERNS: Partial<Record<Level, readonly (readonly number[])[]>> = {};
+
+function buildPatterns(level: Level): number[][] {
   const { one, two } = CELLS[level];
   const halves: number[][] = [...two.map((c) => [...c]), ...one.flatMap((a) => one.map((b) => [...a, ...b]))];
   const seen = new Set<string>();
