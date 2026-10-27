@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { isValidState, legalActions, step, type Action } from '../src/rules';
+import { actorOf, isValidState, legalActions, step, type Action } from '../src/rules';
 import { start } from './harness';
 
 /*
@@ -12,7 +12,7 @@ describe('properties over random legal play (slow)', () => {
     const states = [s];
     for (const p of picks) {
       if (s.phase === 'over') break;
-      const actor = s.phase === 'fight' ? s.fight!.actor : s.active;
+      const actor = actorOf(s);
       const legal: Action[] = legalActions(s, actor);
       const action = legal[p % legal.length]!;
       const next = step(s, actor, action);

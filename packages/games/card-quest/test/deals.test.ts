@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { createRngFromState } from '@wp/game-core';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { actorOf, FAVOUR_LIMIT, fightTotals, isValidState, legalActions, migrateState, observe, step, STATE_VERSION, type CardQuestState, type Terms } from '../src/rules';
@@ -100,6 +101,73 @@ describe('offers and helping', () => {
     const done = passAll(step(offer(s, 1, { t: 'loot', n: 1 })!, 1, { a: 'accept' })!);
     expect(done.phase).toBe('flee');
     expect(done.players.map((p) => p.rep)).toEqual([3, 3, 3]);
+  });
+});
+
+describe('a lost fight with a helper (owner 2026-10-27)', () => {
+  /** Seat 1 (level 3, Thermos of Mine Tea: strength 4) helps; 1 + 4 < 5, so the fight against the Gold Rat is lost. */
+  const lostWithHelp = () => {
+    const s = ratFight((s) => {
+      s.players[1]!.level = 3;
+      s.loot.push(...s.players[1]!.equipped.splice(0));
+      take(s, 'kz.mine-tea', s.players[1]!.equipped);
+    });
+    return passAll(step(offer(s, 1, { t: 'loot', n: 1 })!, 1, { a: 'accept' })!);
+  };
+  /** A generator state whose first two dice are `a` and `b`. */
+  const dice = (a: number, b: number) => {
+    for (let st = 1; ; st++) {
+      const r = createRngFromState(st);
+      if (r.int(1, 6) === a && r.int(1, 6) === b) return st;
+    }
+  };
+
+  it('the fighter flees first, then the helper flees on their own; a failed roll gives the helper the Blunder', () => {
+    const lost = { ...lostWithHelp(), rng: dice(6, 1) };
+    expect(lost.phase).toBe('flee');
+    expect(lost.log.at(-1)).toMatchObject({ e: 'lost', seat: 0, helper: 1 });
+    expect(actorOf(lost)).toBe(0);
+    expect(step(lost, 1, { a: 'roll' })).toBeNull();
+    const fighterRolled = step(lost, 0, { a: 'roll' })!;
+    expect(fighterRolled.phase).toBe('flee');
+    expect(isValidState(fighterRolled)).toBe(true);
+    expect(actorOf(fighterRolled)).toBe(1);
+    expect(legalActions(fighterRolled, 1)).toEqual([{ a: 'roll' }]);
+    expect(step(fighterRolled, 0, { a: 'roll' })).toBeNull();
+    const done = step(fighterRolled, 1, { a: 'roll' })!;
+    expect(done.phase).toBe('end');
+    expect(isValidState(done)).toBe(true);
+    expect(done.log.filter((e) => e.e === 'flee')).toMatchObject([
+      { seat: 0, ok: true },
+      { seat: 1, roll: 1, ok: false }
+    ]);
+    // The Gold Rat's Blunder (the small item) hits the helper, who also gets nothing for a lost fight.
+    expect(done.players[1]!.equipped).not.toContain('kz.mine-tea');
+    expect(done.log.some((e) => e.e === 'penalty' && e.seat === 1)).toBe(true);
+    expect(done.players[1]!.hand).toEqual(lost.players[1]!.hand);
+  });
+
+  it('the helper rolls with their own flee bonus; flee one-shots played in the fight count for the fighter only', () => {
+    const lost = { ...lostWithHelp(), rng: dice(6, 4) };
+    const withShot = { ...lost, fight: { ...lost.fight!, flee: 3 } };
+    const done = step(step(withShot, 0, { a: 'roll' })!, 1, { a: 'roll' })!;
+    expect(done.log.filter((e) => e.e === 'flee').map((e) => (e.e === 'flee' ? e.total : 0))).toEqual([6 + 3, 4]);
+  });
+
+  it('a helper who changed sides does not flee; a fight without a helper has one roll per monster', () => {
+    const lost = lostWithHelp();
+    const switched = { ...lost, fight: { ...lost.fight!, helper: null, deal: null, turncoat: 1 } };
+    expect(isValidState(switched)).toBe(true);
+    expect(step(switched, 0, { a: 'roll' })!.phase).toBe('end');
+  });
+
+  it('a save from before the change, saved after the fighter’s roll, lets the helper roll now', () => {
+    const lost = { ...lostWithHelp(), rng: dice(2, 6) };
+    const old = step(lost, 0, { a: 'roll' })!;
+    expect(old.fight!.rolls).toHaveLength(1);
+    expect(isValidState(old)).toBe(true);
+    expect(actorOf(old)).toBe(1);
+    expect(isValidState({ ...old, fight: { ...old.fight!, rolls: [2, 6] } })).toBe(false);
   });
 });
 
