@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { seedFromString } from '@wp/game-core';
@@ -494,6 +496,18 @@ describe('runs, samples and settling', () => {
       stepWeek(b, POND);
       expect(b.b).toEqual(a.b);
       expect(POND.species.map((_, i) => pop(b, i))).toEqual(POND.species.map((_, i) => pop(a, i)));
+    }
+  });
+});
+
+describe('integer-only model code (§ 7.1)', () => {
+  it('uses no exponentiation operator and no floating-point Math functions', () => {
+    for (const file of ['model.ts', 'habitats.ts', 'shape.ts', 'score.ts', 'goals.ts', 'challenges.ts', 'spinup.ts']) {
+      // Comments may mention them; code may not.
+      const code = readFileSync(join(__dirname, '../src', file), 'utf8')
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/\/\/.*$/gm, '');
+      expect(code, file).not.toMatch(/\*\*|Math\.(exp|log|log2|pow|sqrt|cbrt|round|sin|cos|tan|atan2|hypot|random)\b/);
     }
   });
 });

@@ -20,7 +20,7 @@ export const MAX_AMOUNT = 20_000_000;
 export const MAX_WEEK = 520;
 export const MAX_ACTIONS = 300;
 /** Bookkeeping totals (imports, exports) stay far below 2^53; validation bound. */
-export const MAX_TOTAL = 2 ** 45;
+export const MAX_TOTAL = 35_184_372_088_832; // 2^45, written out: the model avoids the `**` operator (§ 7.1)
 export const DAYS = 7;
 const M = 1_000_000;
 
