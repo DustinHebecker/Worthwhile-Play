@@ -122,6 +122,21 @@ describe('wording in all 16 locales (design § 17)', () => {
     }
   });
 
+  it('states reviewed details precisely (review 2026-10-27)', () => {
+    const en = content.en!;
+    const t = (l: string, id: string) => content[l]!.events[id]!;
+    expect(en.events.lovelace![0]).toBe('Ada Lovelace is the first to publish a program for a computing machine');
+    expect(en.events['ibn-battuta']![1]).toContain('about 117,000 km');
+    expect(messages.en!['summary.tip.recent']).toContain('the first public steam railway (1825)');
+    // Every locale gives Ibn Battuta's distance as about 117,000 km (any digit grouping or number words).
+    for (const l of SUPPORTED_LOCALES) expect(t(l, 'ibn-battuta')[1].replace(/\D/g, ''), l).toMatch(/117/);
+    // Hindi: "millions" of lives, not "hundreds of thousands" (लाखों).
+    expect(t('hi', 'genghis-khan')[1]).not.toContain('लाखों');
+    // Teotihuacan: the range covers the 1st-century view its note mentions as well as 170–310 CE.
+    const teo = ev('teotihuacan')!;
+    expect([teo.lo, teo.hi]).toEqual([1, 310]);
+  });
+
   it('never gives a date away in a title (year digits or era words)', () => {
     for (const l of SUPPORTED_LOCALES) {
       const msgs = messages[l]!;

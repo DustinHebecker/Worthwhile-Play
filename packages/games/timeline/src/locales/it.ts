@@ -150,7 +150,7 @@ export const it: TimelineMessages = {
   'summary.recent': 'Hai teso a collocare gli eventi più vicino a oggi di quanto fossero.',
   'summary.none': 'Nessuna tendenza chiara nelle tue stime.',
   'summary.tip.deep': 'Il passato profondo è immenso: i dinosauri si sono estinti 66 milioni di anni fa, ma prima avevano vissuto per circa 165 milioni di anni.',
-  'summary.tip.recent': 'Per gli ultimi secoli aiuta un punto di riferimento noto: la prima ferrovia (1825), lo sbarco sulla Luna (1969) o la storia della tua famiglia.',
+  'summary.tip.recent': 'Per gli ultimi secoli aiuta un punto di riferimento noto: la prima ferrovia pubblica a vapore (1825), lo sbarco sulla Luna (1969) o la storia della tua famiglia.',
   'summary.tip.general': 'Prova la vista uniforme in una spiegazione: mostra quanto è breve la storia scritta rispetto all’età della Terra.',
   'summary.marks': 'Segni: {marks}',
   'note.content': 'Le date provengono da fonti pubblicate (indicate dopo ogni risposta); le date approssimative hanno un intervallo. Gli eventi sono una selezione da tutti i continenti.'

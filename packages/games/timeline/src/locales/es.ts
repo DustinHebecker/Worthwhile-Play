@@ -150,7 +150,7 @@ export const es: TimelineMessages = {
   'summary.recent': 'Tendiste a situar los acontecimientos más cerca de hoy de lo que fueron.',
   'summary.none': 'No hay una tendencia clara en tus estimaciones.',
   'summary.tip.deep': 'El pasado profundo es inmenso: los dinosaurios se extinguieron hace 66 millones de años, pero antes habían vivido unos 165 millones de años.',
-  'summary.tip.recent': 'Para los últimos siglos ayuda un punto de referencia conocido: el primer ferrocarril (1825), la llegada a la Luna (1969) o la historia de tu propia familia.',
+  'summary.tip.recent': 'Para los últimos siglos ayuda un punto de referencia conocido: el primer ferrocarril público de vapor (1825), la llegada a la Luna (1969) o la historia de tu propia familia.',
   'summary.tip.general': 'Prueba la vista uniforme en una explicación: muestra lo corta que es la historia escrita frente a la edad de la Tierra.',
   'summary.marks': 'Signos: {marks}',
   'note.content': 'Las fechas proceden de fuentes publicadas (indicadas tras cada respuesta); las fechas aproximadas tienen un intervalo. Los acontecimientos son una selección de todos los continentes.'

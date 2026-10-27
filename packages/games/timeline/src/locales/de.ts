@@ -150,7 +150,7 @@ export const de: TimelineMessages = {
   'summary.recent': 'Du hast Ereignisse eher zu nah an heute gelegt.',
   'summary.none': 'Keine deutliche Tendenz in deinen Schätzungen.',
   'summary.tip.deep': 'Die tiefe Vergangenheit ist riesig: Die Dinosaurier starben vor 66 Millionen Jahren aus, hatten davor aber schon rund 165 Millionen Jahre gelebt.',
-  'summary.tip.recent': 'Für die letzten Jahrhunderte hilft ein bekannter Anker: die erste Eisenbahn (1825), die Mondlandung (1969) oder die Geschichte deiner eigenen Familie.',
+  'summary.tip.recent': 'Für die letzten Jahrhunderte hilft ein bekannter Anker: die erste öffentliche Dampfeisenbahn (1825), die Mondlandung (1969) oder die Geschichte deiner eigenen Familie.',
   'summary.tip.general': 'Probiere in einer Auflösung die gleichmäßige Ansicht: Sie zeigt, wie kurz die aufgeschriebene Geschichte neben dem Alter der Erde ist.',
   'summary.marks': 'Zeichen: {marks}',
   'note.content': 'Die Daten stammen aus veröffentlichten Quellen (nach jeder Antwort genannt); ungefähre Daten haben einen Bereich. Die Ereignisse sind eine Auswahl aus allen Kontinenten.'

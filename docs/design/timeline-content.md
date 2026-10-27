@@ -412,8 +412,8 @@ about 240 BCE (range 250–230 BCE) · `year -239 [-249…-229]` · science · a
 *Source:* Tacitus, Annals 15.38–44; Wikipedia, "Great Fire of Rome" (checked 2026-10-26).
 
 **`teotihuacan`** — The Pyramid of the Sun is built at Teotihuacan, Mexico  
-about 200 CE (range 100–310 CE) · `year 200 [100…310]` · culture · americas · tier 2 · ✓  
-*Note:* Its date is debated (1st century, or about 170–310 CE by recent excavations); Teotihuacan was one of the largest cities in the world at its height.  
+about 200 CE (range 1–310 CE) · `year 200 [1…310]` · culture · americas · tier 2 · ✓ range widened from 100–310 CE (2026-10-27) to cover both views of the debate  
+*Note:* Its date is debated (the 1st century in older studies, about 170–310 CE by recent excavations); Teotihuacan was one of the largest cities in the world at its height.  
 *Source:* Sugiyama, N., Sugiyama, S. & Sarabia G., A. (2013), "Inside the Sun Pyramid at Teotihuacan, Mexico: 2008–2011 excavations and preliminary results", Latin American Antiquity 24: 403–432; Sload, R. (2015), "When was the Sun Pyramid built?", Latin American Antiquity 26: 221–241.
 
 **`cai-lun`** — Cai Lun presents an improved way of making paper to the Han court  
@@ -555,8 +555,8 @@ about 1325 (range 1320–1350) · `year 1325 [1320…1350]` · culture · americ
 
 **`ibn-battuta`** — Ibn Battuta travels from Morocco across Africa and Asia  
 1325–1354 (span) · `span year 1325…1354` · explore · africa · tier 2 · ✓ re-checked against Wikipedia, "Ibn Battuta"  
-*Note:* Over about 29 years he journeyed perhaps 100,000 km, as far as China and the Maldives.  
-*Source:* Dunn, R. E. (2012), The Adventures of Ibn Battuta, 3rd ed., University of California Press.
+*Note:* Over 29 years he journeyed about 117,000 km, as far as China and the Maldives.  
+*Source:* Dunn, R. E. (2012), The Adventures of Ibn Battuta, 3rd ed., University of California Press; Wikipedia, "Ibn Battuta" (about 117,000 km).
 
 **`zheng-he`** — Zheng He leads seven great sea voyages from China to the Indian Ocean and East Africa  
 1405–1433 (span) · `span year 1405…1433` · explore · asia · tier 2 · ✓ re-checked against Wikipedia, "Zheng He"  
@@ -715,7 +715,7 @@ about 1831 (range 1830–1832) · `year 1831 [1830…1832]` · culture · asia �
 *Note:* Thousands of copies were printed and sold cheaply; it became one of the most famous images in the world.  
 *Source:* British Museum, "Under the wave off Kanagawa"; Wikipedia, "The Great Wave off Kanagawa".
 
-**`lovelace`** — Ada Lovelace publishes the first program written for a computing machine  
+**`lovelace`** — Ada Lovelace is the first to publish a program for a computing machine  
 1843 · `year 1843` · science · europe · tier 2 · ✓ re-checked against Wikipedia, "Ada Lovelace"  
 *Note:* Her notes on Charles Babbage's planned Analytical Engine included a method to calculate Bernoulli numbers.  
 *Source:* Wikipedia, "Ada Lovelace"; Hollings, C., Martin, U. & Rice, A. (2018), Ada Lovelace: The Making of a Computer Scientist, Bodleian Library.

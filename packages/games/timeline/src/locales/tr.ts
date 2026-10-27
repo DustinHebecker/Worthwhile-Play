@@ -150,7 +150,7 @@ export const tr: TimelineMessages = {
   'summary.recent': 'Olayları olduklarından daha yakına yerleştirme eğilimin vardı.',
   'summary.none': 'Tahminlerinde belirgin bir eğilim yok.',
   'summary.tip.deep': 'Derin geçmiş çok uzundur: dinozorlar 66 milyon yıl önce yok oldu, ama ondan önce yaklaşık 165 milyon yıl yaşamışlardı.',
-  'summary.tip.recent': 'Son birkaç yüzyıl için bilinen bir dayanak noktası yardımcı olur: ilk demiryolu (1825), Ay’a iniş (1969) ya da kendi ailenin tarihi.',
+  'summary.tip.recent': 'Son birkaç yüzyıl için bilinen bir dayanak noktası yardımcı olur: ilk halka açık buharlı demiryolu (1825), Ay’a iniş (1969) ya da kendi ailenin tarihi.',
   'summary.tip.general': 'Bir açıklamada eşit görünümü dene: yazılı tarihin Dünya’nın yaşının yanında ne kadar kısa olduğunu gösterir.',
   'summary.marks': 'İşaretler: {marks}',
   'note.content': 'Tarihler yayımlanmış kaynaklardan alınmıştır (her yanıttan sonra belirtilir); yaklaşık tarihlerin bir aralığı vardır. Olaylar tüm kıtalardan bir seçkidir.'

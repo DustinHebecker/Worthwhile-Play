@@ -150,7 +150,7 @@ export const pl: TimelineMessages = {
   'summary.recent': 'Twoje odpowiedzi częściej umieszczały wydarzenia bliżej dziś, niż były.',
   'summary.none': 'Brak wyraźnej tendencji w twoich szacunkach.',
   'summary.tip.deep': 'Głęboka przeszłość jest ogromna: dinozaury wymarły 66 milionów lat temu, ale wcześniej żyły przez mniej więcej 165 milionów lat.',
-  'summary.tip.recent': 'Dla ostatnich stuleci pomaga znany punkt odniesienia: pierwsza kolej (1825), lądowanie na Księżycu (1969) albo historia własnej rodziny.',
+  'summary.tip.recent': 'Dla ostatnich stuleci pomaga znany punkt odniesienia: pierwsza publiczna kolej parowa (1825), lądowanie na Księżycu (1969) albo historia własnej rodziny.',
   'summary.tip.general': 'Wypróbuj widok równy w omówieniu: pokazuje, jak krótka jest historia pisana wobec wieku Ziemi.',
   'summary.marks': 'Znaki: {marks}',
   'note.content': 'Daty pochodzą z opublikowanych źródeł (podanych po każdej odpowiedzi); daty przybliżone mają przedział. Wydarzenia to wybór ze wszystkich kontynentów.'

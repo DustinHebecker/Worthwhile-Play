@@ -123,7 +123,7 @@ export const fr: TimelineMessages = {
   'first.gapNear': '●○○ Ton estimation de l’écart était à un cran près.',
   'first.gapFar': '○○○ Ton estimation de l’écart était plus éloignée.',
   'first.insight': 'Surprenant ?',
-  'together.prompt': 'Lequel de ces événements s’est produit à environ {tau} près ?',
+  'together.prompt': 'Lequel de ces événements a eu lieu dans les {tau} environ avant ou après celui-ci ?',
   'together.focus': '{date} : {title}',
   'together.right': '●●● Exact : « {title} ».',
   'together.wrong': '○○○ Pas celui-ci – c’est « {title} » qui est dans la fenêtre.',
@@ -150,7 +150,7 @@ export const fr: TimelineMessages = {
   'summary.recent': 'Tu as eu tendance à placer les événements plus près d’aujourd’hui qu’ils ne l’étaient.',
   'summary.none': 'Pas de tendance nette dans tes estimations.',
   'summary.tip.deep': 'Le passé lointain est immense : les dinosaures ont disparu il y a 66 millions d’années, mais ils avaient vécu environ 165 millions d’années auparavant.',
-  'summary.tip.recent': 'Pour les derniers siècles, un repère connu aide : le premier chemin de fer (1825), les premiers pas sur la Lune (1969) ou l’histoire de ta propre famille.',
+  'summary.tip.recent': 'Pour les derniers siècles, un repère connu aide : le premier chemin de fer public à vapeur (1825), les premiers pas sur la Lune (1969) ou l’histoire de ta propre famille.',
   'summary.tip.general': 'Essaie la vue régulière dans une explication : elle montre combien l’histoire écrite est courte à côté de l’âge de la Terre.',
   'summary.marks': 'Signes : {marks}',
   'note.content': 'Les dates proviennent de sources publiées (indiquées après chaque réponse) ; les dates approximatives ont un intervalle. Les événements sont une sélection venue de tous les continents.'

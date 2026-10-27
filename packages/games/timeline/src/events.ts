@@ -361,7 +361,7 @@ export const EVENTS: readonly EventData[] = [
     checked: '2026-10-26'
   },
   {
-    id: 'teotihuacan', cat: 'culture', region: 'americas', tier: 2, kind: 'point', unit: 'year', at: 200, lo: 100, hi: 310,
+    id: 'teotihuacan', cat: 'culture', region: 'americas', tier: 2, kind: 'point', unit: 'year', at: 200, lo: 1, hi: 310,
     sources: ['Sugiyama, N., Sugiyama, S. & Sarabia G., A. (2013), "Inside the Sun Pyramid at Teotihuacan, Mexico: 2008–2011 excavations and preliminary results", Latin American Antiquity 24: 403–432', 'Sload, R. (2015), "When was the Sun Pyramid built?", Latin American Antiquity 26: 221–241'],
     checked: '2026-10-26'
   },
@@ -477,7 +477,7 @@ export const EVENTS: readonly EventData[] = [
   },
   {
     id: 'ibn-battuta', cat: 'explore', region: 'africa', tier: 2, kind: 'span', unit: 'year', lo: 1325, hi: 1354,
-    sources: ['Dunn, R. E. (2012), The Adventures of Ibn Battuta, 3rd ed., University of California Press'],
+    sources: ['Dunn, R. E. (2012), The Adventures of Ibn Battuta, 3rd ed., University of California Press', 'Wikipedia, "Ibn Battuta" (about 117,000 km)'],
     checked: '2026-10-26'
   },
   {

@@ -150,7 +150,7 @@ export const nl: TimelineMessages = {
   'summary.recent': 'Je plaatste gebeurtenissen meestal recenter dan ze waren.',
   'summary.none': 'Geen duidelijke neiging in je schattingen.',
   'summary.tip.deep': 'Het diepe verleden is enorm: de dinosauriërs stierven 66 miljoen jaar geleden uit, maar leefden daarvoor al zo’n 165 miljoen jaar.',
-  'summary.tip.recent': 'Voor de laatste eeuwen helpt een bekend ankerpunt: de eerste spoorlijn (1825), de maanlanding (1969) of de geschiedenis van je eigen familie.',
+  'summary.tip.recent': 'Voor de laatste eeuwen helpt een bekend ankerpunt: de eerste openbare stoomspoorlijn (1825), de maanlanding (1969) of de geschiedenis van je eigen familie.',
   'summary.tip.general': 'Probeer bij een uitleg de gelijkmatige weergave: die laat zien hoe kort de geschreven geschiedenis is naast de leeftijd van de aarde.',
   'summary.marks': 'Tekens: {marks}',
   'note.content': 'De data komen uit gepubliceerde bronnen (na elk antwoord vermeld); data bij benadering hebben een bereik. De gebeurtenissen zijn een selectie uit alle continenten.'

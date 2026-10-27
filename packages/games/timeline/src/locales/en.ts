@@ -149,7 +149,7 @@ export const en = {
   'summary.recent': 'You tended to place events more recently than they were.',
   'summary.none': 'No clear tendency in your estimates.',
   'summary.tip.deep': 'The deep past is vast: the dinosaurs died out 66 million years ago, but lived for about 165 million years before that.',
-  'summary.tip.recent': 'For the last few centuries, a known anchor helps: the first railway (1825), the Moon landing (1969) or your own family’s history.',
+  'summary.tip.recent': 'For the last few centuries, a known anchor helps: the first public steam railway (1825), the Moon landing (1969) or your own family’s history.',
   'summary.tip.general': 'Try the even view in a review: it shows how short recorded history is next to the age of the Earth.',
   'summary.marks': 'Marks: {marks}',
   'note.content': 'Dates come from published sources (shown after each answer); approximate dates have a range. The events are a selection from every continent.'
