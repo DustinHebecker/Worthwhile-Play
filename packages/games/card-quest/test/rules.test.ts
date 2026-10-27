@@ -7,6 +7,7 @@ import {
   FLEE_TARGET,
   HAND_LIMIT,
   START_CARDS,
+  actorOf,
   charityTarget,
   displacedBy,
   equipmentFits,
@@ -546,7 +547,7 @@ describe('properties over random legal play', () => {
     const states = [s];
     for (const p of picks) {
       if (s.phase === 'over') break;
-      const actor = s.phase === 'fight' ? s.fight!.actor : s.active;
+      const actor = actorOf(s);
       const legal: Action[] = legalActions(s, actor);
       const action = legal[p % legal.length]!;
       const next = step(s, actor, action);
