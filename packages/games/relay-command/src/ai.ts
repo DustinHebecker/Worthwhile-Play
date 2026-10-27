@@ -785,6 +785,10 @@ const SAVE_TURNS = 3;
 const SURPLUS = 800;
 /** Most yards a side builds for itself (the starting Muster Yard included). */
 const MAX_YARDS = 4;
+/** The own cover ending this many cells short of the objective starts a chain of Radio Masts towards it. */
+const MAST_GAP = 8;
+/** Supply kept back when a Radio Mast of the chain is built. */
+const MAST_RESERVE = 40;
 /** Easy keeps a cushion before it produces or builds anything. */
 const EASY_RESERVE = 150;
 /** Extractors easy builds at most (one at a time). */
@@ -880,6 +884,14 @@ function economyOrders(obs: Observation, ruleset: Ruleset, own: readonly Entity[
       if (spot) tryOrder({ side, unit: source.id, order: { type: 'build', kind, x: spot.x, y: spot.y } });
     }
   }
+  // 1c. Large maps (2026-10-27): an objective far beyond the own radio cover is out of reach of any
+  // order, so the cover is carried towards it by a chain of Radio Masts: one at a time, on the covered
+  // cell nearest the objective out of known enemy reach, once the cover ends MAST_GAP cells short.
+  const objective = source ? objectiveOf(obs, ruleset) : undefined;
+  if (source && objective && supply >= costOf('relay-mast') + MAST_RESERVE && !ownAll.some((e) => e.kind === 'relay-mast' && (e.build ?? 0) > 0)) {
+    const spot = mastSpot(obs, ruleset, objective);
+    if (spot) tryOrder({ side, unit: source.id, order: { type: 'build', kind: 'relay-mast', x: spot.x, y: spot.y } });
+  }
   // 2. A Motor Pool next to the post once the economy runs (vehicles: scouts that spot from afar, guns).
   const hasPool = ownAll.some((e) => e.kind === 'motor-pool');
   if (source && !hasPool && (extractors >= 2 || world.turn >= POOL_TURN) && supply >= costOf('motor-pool')) {
@@ -935,6 +947,31 @@ function freeDeposits(obs: Observation, ruleset: Ruleset, source: Entity): { x: 
     .filter((d) => (d.left > 0 || d.left === UNKNOWN_LEFT || d.endless) && !world.entities.some((e) => e.x === d.x && e.y === d.y))
     .sort((a, b) => dist2(a.x, a.y, source.x, source.y) - dist2(b.x, b.y, source.x, source.y) || sideFrame(obs, cellOf(world.map, a.x, a.y)) - sideFrame(obs, cellOf(world.map, b.x, b.y)))
     .filter((d) => dangerAt(obs, ruleset, d.x, d.y) === 0);
+}
+
+/**
+ * Where the next Radio Mast of the chain goes (see economyOrders): the covered, free, passable cell
+ * nearest to `objective`, away from deposits and out of reach of known enemy fighters; none while
+ * the cover already ends within MAST_GAP cells of the objective.
+ */
+function mastSpot(obs: Observation, ruleset: Ruleset, objective: Positioned): { x: number; y: number } | undefined {
+  const { world, network } = obs;
+  const taken = new Set(world.entities.map((e) => cellOf(world.map, e.x, e.y)));
+  const deposits = new Set((world.map.deposits ?? []).map((d) => cellOf(world.map, d.x, d.y)));
+  let nearest = Number.POSITIVE_INFINITY;
+  let best: { x: number; y: number; d: number; f: number } | undefined;
+  for (let y = 0; y < world.map.h; y++) {
+    for (let x = 0; x < world.map.w; x++) {
+      const c = cellOf(world.map, x, y);
+      if (network.coverage[c] !== 1) continue;
+      const d = dist2(x, y, objective.x, objective.y);
+      nearest = Math.min(nearest, d);
+      if (taken.has(c) || deposits.has(c) || !passable(world.map, ruleset, x, y, 'ground') || dangerAt(obs, ruleset, x, y) > 0) continue;
+      const f = sideFrame(obs, c);
+      if (!best || d < best.d || (d === best.d && f < best.f)) best = { x, y, d, f };
+    }
+  }
+  return nearest > MAST_GAP * MAST_GAP && best ? { x: best.x, y: best.y } : undefined;
 }
 
 /** A free covered cell for a structure near `source`, away from deposits, nearest first (ties in the side's frame). */
