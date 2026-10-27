@@ -1,201 +1,194 @@
-/**
-// UNTRANSLATED
- *
- * Note for translators: plain words; common names only ("water fleas", not "Daphnia" — an "about" line may add the
- * scientific name in brackets); no digits in the texts (numbers come from the model); spraying, fishing and
- * relocating are management actions, described neutrally. Keep sentences short.
- */
 import type { ContentText } from './types';
 
 export const content: ContentText = {
-  weeks: { one: '{n} week', other: '{n} weeks' },
+  weeks: { one: '{n} hafta', other: '{n} hafta' },
   species: {
-    algae: { name: 'Green algae', about: 'Tiny plants floating in the water. They grow fast on nutrients and light; water fleas and snails eat them. Many algae turn the water green and shade the plants below.' },
-    bluegreen: { name: 'Blue-green algae', about: 'Strictly speaking bacteria (cyanobacteria). They grow slowly, need rich water and are hardly eaten, so they bloom when nutrients pile up.' },
-    duckweed: { name: 'Duckweed', about: 'Small floating leaves. In rich water they cover the surface and shade everything below.' },
-    pondweed: { name: 'Pondweed', about: 'Underwater plants rooted in the mud. They need clear water to get light, take nutrients away from the algae and give water fleas a place to hide from fish.' },
-    fleas: { name: 'Water fleas', about: 'Tiny crustaceans (Daphnia) that graze the algae. Small fish eat them, but in pondweed and in the mud many stay out of reach.' },
-    snails: { name: 'Pond snails', about: 'They eat dead plant matter and a few algae. Small fish eat some of them.' },
-    minnows: { name: 'Small fish', about: 'They hunt water fleas and some snails. Their young take about six weeks to grow up. Pike eat them.' },
-    pike: { name: 'Pike', about: 'A large hunter that eats small fish. Young pike take about twenty weeks to grow up.' },
-    grass: { name: 'Grasses', about: 'Tall and fast-growing on rich soil. They shade the low plants and use a lot of water.' },
-    flowers: { name: 'Wildflowers', about: 'Low plants that do well on poor soil. They need light, so tall grass pushes them out. Aphids and rabbits eat them.' },
-    clover: { name: 'Clover', about: 'A low plant that makes its own nitrogen from the air, less so on rich soil. Its dead leaves feed the soil for its neighbours. Rabbits like it most.' },
-    aphids: { name: 'Aphids', about: 'Tiny insects that suck plant sap, mostly from wildflowers. They multiply very fast. Ladybirds eat them.' },
-    ladybirds: { name: 'Ladybirds', about: 'Beetles that eat aphids. Their larvae take about three weeks to grow up, so they react to more aphids with a delay.' },
-    rabbits: { name: 'Rabbits', about: 'They graze clover first, then wildflowers and grass. Their young take about five weeks to grow up. Foxes hunt them; some are always safe in burrows.' },
-    foxes: { name: 'Foxes', about: 'They hunt rabbits. Young foxes take about half a year to grow up.' },
-    worms: { name: 'Earthworms', about: 'They eat dead leaves and turn them back into nutrients that plants can use.' }
+    algae: { name: 'Yeşil algler', about: 'Suda süzülen minik bitkiler. Besin ve ışıkla hızla çoğalırlar; su pireleri ve salyangozlar onları yer. Çok alg suyu yeşile boyar ve alttaki bitkileri gölgede bırakır.' },
+    bluegreen: { name: 'Mavi-yeşil algler', about: 'Aslında bakteridirler (siyanobakteriler). Yavaş büyür, zengin suya ihtiyaç duyar ve neredeyse hiç yenmezler; bu yüzden besin biriktiğinde patlama yaparlar.' },
+    duckweed: { name: 'Su mercimeği', about: 'Küçük yüzen yapraklar. Zengin suda yüzeyi kaplar ve altındaki her şeyi gölgede bırakır.' },
+    pondweed: { name: 'Su otu', about: 'Çamura kök salmış su altı bitkileri. Işık almak için berrak suya ihtiyaç duyar, alglerin besinini elinden alır ve su pirelerine balıklardan saklanacak yer sağlar.' },
+    fleas: { name: 'Su pireleri', about: 'Algleri otlayan minik kabuklular (Daphnia). Küçük balıklar onları yer, ama su otunun arasında ve çamurda pek çoğu erişilmez kalır.' },
+    snails: { name: 'Gölet salyangozları', about: 'Ölü bitki artıklarını ve biraz alg yerler. Küçük balıklar bir kısmını yer.' },
+    minnows: { name: 'Küçük balıklar', about: 'Su pirelerini ve biraz salyangozu avlarlar. Yavruları yaklaşık altı haftada büyür. Turna balıkları onları yer.' },
+    pike: { name: 'Turna balıkları', about: 'Küçük balıkları yiyen büyük bir avcı. Genç turnalar yaklaşık yirmi haftada büyür.' },
+    grass: { name: 'Çimenler', about: 'Zengin toprakta uzun boylu ve hızlı büyürler. Alçak bitkileri gölgede bırakır ve çok su kullanırlar.' },
+    flowers: { name: 'Kır çiçekleri', about: 'Fakir toprakta iyi yetişen alçak bitkiler. Işığa ihtiyaç duyarlar, bu yüzden uzun otlar onları dışarı iter. Yaprak bitleri ve tavşanlar onları yer.' },
+    clover: { name: 'Yonca', about: 'Azotunu havadan kendisi alan alçak bir bitki; zengin toprakta daha az alır. Ölü yaprakları komşuları için toprağı zenginleştirir. Tavşanların en sevdiği besindir.' },
+    aphids: { name: 'Yaprak bitleri', about: 'Çoğunlukla kır çiçeklerinin özsuyunu emen minik böcekler. Çok hızlı çoğalırlar. Uğur böcekleri onları yer.' },
+    ladybirds: { name: 'Uğur böcekleri', about: 'Yaprak biti yiyen böcekler. Larvaları yaklaşık üç haftada büyür, bu yüzden yaprak bitlerinin artışına gecikmeyle tepki verirler.' },
+    rabbits: { name: 'Tavşanlar', about: 'Önce yoncayı, sonra kır çiçeklerini ve otu yerler. Yavruları yaklaşık beş haftada büyür. Tilkiler onları avlar; bazıları yuvalarında hep güvendedir.' },
+    foxes: { name: 'Tilkiler', about: 'Tavşan avlarlar. Genç tilkiler yaklaşık yarım yılda büyür.' },
+    worms: { name: 'Solucanlar', about: 'Ölü yaprakları yer ve onları bitkilerin kullanabileceği besinlere geri dönüştürürler.' }
   },
   challenges: {
     'fleas-arrive': {
-      title: 'Water fleas arrive',
-      situation: 'A young pond has only green algae. Water fleas reach it, carried in by a bird.',
-      think: 'Who eats the algae? What happens to the water fleas when the algae get fewer?',
-      explain: 'Water fleas multiply on the algae until they eat as fast as the algae grow. From then on the water fleas, not the nutrients, set how much algae there is: a balancing loop (B1). The water turns clear and stays clear.',
-      real: 'In real ponds, fish and the seasons usually keep this from being so neat.'
+      title: 'Su pireleri geliyor',
+      situation: 'Genç bir gölette yalnızca yeşil algler var. Bir kuşun taşıdığı su pireleri gölete ulaşıyor.',
+      think: 'Algleri kim yer? Algler azaldığında su pirelerine ne olur?',
+      explain: 'Su pireleri alglerle çoğalır, ta ki algler ne hızla büyüyorsa o hızla yiyene kadar. O andan sonra alg miktarını besinler değil su pireleri belirler: dengeleyici bir döngü (B1). Su berraklaşır ve berrak kalır.',
+      real: 'Gerçek göletlerde balıklar ve mevsimler genellikle işlerin bu kadar düzenli gitmesine izin vermez.'
     },
     'enrich-swings': {
-      title: 'More food for everyone',
-      situation: 'Heavy runoff from a field starts to feed a pond of algae and water fleas.',
-      think: 'More nutrients feed more algae. What do the water fleas do with more algae, and what do the algae do then?',
-      explain: 'More nutrients let the algae race ahead; the water fleas follow, eat the algae down, then starve; the algae recover, and it starts again. Richer water made the system swing instead of settle. Ecologists call this the paradox of enrichment (B1).',
-      real: 'In real ponds, many more species and the seasons damp or change these swings.'
+      title: 'Herkese daha çok besin',
+      situation: 'Bir tarladan gelen güçlü akıntı, algler ve su pireleri olan bir göleti beslemeye başlıyor.',
+      think: 'Daha çok besin daha çok alg demek. Su pireleri daha çok alg karşısında ne yapar, sonra algler ne yapar?',
+      explain: 'Daha çok besin alglerin öne fırlamasını sağlar; su pireleri peşlerinden gelir, algleri yer bitirir, sonra aç kalır; algler toparlanır ve her şey yeniden başlar. Daha zengin su, sistemi dengelemek yerine salınıma soktu. Ekolojistler buna zenginleşme paradoksu der (B1).',
+      real: 'Gerçek göletlerde çok daha fazla tür ve mevsimler bu salınımları yumuşatır ya da değiştirir.'
     },
     'fish-stocked': {
-      title: 'Fish in the pond',
-      situation: 'Someone releases small fish into a pond that had none.',
-      think: 'Fish eat water fleas. Who eats the algae, and what happens to them?',
-      explain: 'The fish eat water fleas, so fewer water fleas graze the algae, and the algae grow. A change at the top reaches the bottom of the food chain: a trophic cascade. It builds up slowly, because young fish need weeks to grow up.',
-      real: 'In real ponds, fish also stir up the mud, which clouds the water even more.'
+      title: 'Gölette balık',
+      situation: 'Biri, hiç balık olmayan bir gölete küçük balıklar bırakıyor.',
+      think: 'Balıklar su pirelerini yer. Algleri kim yer ve alglere ne olur?',
+      explain: 'Balıklar su pirelerini yer, böylece algleri otlayan su pireleri azalır ve algler çoğalır. Tepedeki bir değişiklik besin zincirinin dibine kadar ulaşır: bir trofik çağlayan. Yavaş gelişir, çünkü genç balıkların büyümesi haftalar alır.',
+      real: 'Gerçek göletlerde balıklar çamuru da karıştırır ve suyu daha da bulandırır.'
     },
     'pike-return': {
-      title: 'Pike come back',
-      situation: 'A few young pike are released into a pond full of small fish.',
-      think: 'Follow the chain: pike, small fish, water fleas, algae.',
-      explain: 'Pike eat small fish; fewer small fish leave more water fleas; more water fleas eat more algae. Each step flips the direction, so the algae fall. It takes long because young pike need about twenty weeks to grow up.',
-      real: 'In real lakes, removing small fish or adding pike is used to clear the water, with mixed and often short-lived success.'
+      title: 'Turnalar geri dönüyor',
+      situation: 'Küçük balıklarla dolu bir gölete birkaç genç turna balığı bırakılıyor.',
+      think: 'Zinciri izle: turnalar, küçük balıklar, su pireleri, algler.',
+      explain: 'Turnalar küçük balıkları yer; daha az küçük balık daha çok su piresi bırakır; daha çok su piresi daha çok alg yer. Her adım yönü tersine çevirir, bu yüzden algler azalır. Uzun sürer, çünkü genç turnaların büyümesi yaklaşık yirmi hafta alır.',
+      real: 'Gerçek göllerde suyu berraklaştırmak için küçük balıklar çıkarılır ya da turna eklenir; başarısı değişkendir ve çoğu zaman kısa sürer.'
     },
     'algae-treatment': {
-      title: 'A quick fix for green water',
-      situation: 'The pond is treated: nine in ten of the algae die and sink, but stay in the water.',
-      think: 'Where do the nutrients in the dead algae go? And what happened to the water fleas while the algae were gone?',
-      explain: 'The dead algae rot within days and give their nutrients back to the water. The water fleas went hungry while the algae were gone, so for a while nobody holds the algae in check, and they overshoot. A fix that removes the symptom but not the nutrients does not last.',
-      real: 'In real ponds, rotting algae also use up oxygen, which can harm fish.'
+      title: 'Yeşil suya hızlı çözüm',
+      situation: 'Gölet ilaçlanıyor: her on algden dokuzu ölüp dibe çöküyor, ama suda kalıyor.',
+      think: 'Ölü alglerdeki besinler nereye gider? Algler yokken su pirelerine ne oldu?',
+      explain: 'Ölü algler birkaç günde çürür ve besinlerini suya geri verir. Algler yokken su pireleri aç kaldı, bu yüzden bir süre algleri kimse dizginlemez ve eski düzeylerini aşarlar. Belirtiyi ortadan kaldırıp besinleri bırakan bir çözüm uzun sürmez.',
+      real: 'Gerçek göletlerde çürüyen algler oksijeni de tüketir ve bu balıklara zarar verebilir.'
     },
     'slow-runoff': {
-      title: 'A field upstream',
-      situation: 'A new field upstream starts to drain into the clear pond.',
-      think: 'What do more nutrients do to the algae, and what do more algae do to the pondweed below them?',
-      explain: 'For months nothing seems to happen: the pondweed even looks fine after half a year. Meanwhile nutrients pile up in the water and the mud. When the algae finally win, a reinforcing loop takes over: more algae, more shade, less pondweed, fewer hiding places for water fleas, even more algae (R1, R2). The flip is fast; the cause was slow.',
-      real: 'In real lakes, such shifts from clear to green water are well documented, often after years of slow change.'
+      title: 'Yukarıdaki tarla',
+      situation: 'Yukarıda yeni açılan bir tarlanın suyu berrak gölete akmaya başlıyor.',
+      think: 'Daha çok besin alglere ne yapar, daha çok alg de altlarındaki su otuna ne yapar?',
+      explain: 'Aylarca hiçbir şey olmuyor gibi görünür: su otu yarım yıl sonra bile iyi görünür. Bu arada besinler suda ve çamurda birikir. Algler sonunda kazandığında pekiştirici bir döngü devreye girer: daha çok alg, daha çok gölge, daha az su otu, su pireleri için daha az saklanma yeri, daha da çok alg (R1, R2). Dönüşüm hızlıdır; neden ise yavaştı.',
+      real: 'Gerçek göllerde berrak sudan yeşil suya böyle geçişler iyi belgelenmiştir; çoğu zaman yıllarca süren yavaş değişimden sonra gelir.'
     },
     'no-way-back': {
-      title: 'The runoff stops',
-      situation: 'Two years later the runoff is stopped completely. Will the pondweed come back?',
-      think: 'Is there any pondweed left to grow back? What keeps the water green now?',
-      explain: 'Stopping the runoff removes the cause, but the pond stays green: the algae shade the bottom, and no pondweed is left to grow back. The reinforcing loop (R1) now holds the pond in its green state. Going back needs more than undoing the change, for example planting pondweed again.',
-      real: 'In real lakes, recovery after the nutrients are cut often takes many years, and plants are sometimes replanted.'
+      title: 'Akıntı duruyor',
+      situation: 'İki yıl sonra akıntı tamamen kesiliyor. Su otu geri gelecek mi?',
+      think: 'Yeniden büyüyebilecek su otu kaldı mı? Şimdi suyu yeşil tutan ne?',
+      explain: 'Akıntıyı kesmek nedeni ortadan kaldırır, ama gölet yeşil kalır: algler dibi gölgeler ve yeniden büyüyecek su otu kalmamıştır. Pekiştirici döngü (R1) artık göleti yeşil durumda tutar. Geri dönmek, değişikliği geri almaktan fazlasını gerektirir; örneğin su otunu yeniden dikmek.',
+      real: 'Gerçek göllerde besin girişi kesildikten sonra toparlanma çoğu zaman yıllar sürer ve bazen bitkiler yeniden dikilir.'
     },
     shade: {
-      title: 'A tree over the pond',
-      situation: 'A tree grows over the pond and shades it.',
-      think: 'Pondweed needs light at the bottom. What else takes light away from it?',
-      explain: 'Less light slows the pondweed, so it holds the algae back less. The algae and the water fleas start to swing, and each burst of algae shades the pondweed further (R1): it falls step by step.',
-      real: 'In real ponds, falling leaves from the tree would also add nutrients.'
+      title: 'Göletin üstünde bir ağaç',
+      situation: 'Göletin üstünde bir ağaç büyüyor ve göleti gölgeliyor.',
+      think: 'Su otu dipte ışığa ihtiyaç duyar. Işığını başka ne elinden alır?',
+      explain: 'Daha az ışık su otunu yavaşlatır, böylece algleri daha az dizginler. Algler ve su pireleri salınmaya başlar ve her alg patlaması su otunu daha çok gölgede bırakır (R1): basamak basamak azalır.',
+      real: 'Gerçek göletlerde ağaçtan düşen yapraklar da besin eklerdi.'
     },
     spray: {
-      title: 'Spraying against aphids',
-      situation: 'The meadow is sprayed against aphids: nine in ten aphids and also nine in ten ladybirds die.',
-      think: 'Who grows back faster: the aphids or the ladybirds that eat them?',
-      explain: 'Spraying killed the aphids and the ladybirds that eat them. Aphids multiply much faster than ladybirds, so they came back first, with no one to stop them, and the wildflowers paid for it. Ecologists call this pest resurgence (B2 with a delay).',
-      real: 'In real fields, spraying also harms bees and other insects, and pests can become resistant.'
+      title: 'Yaprak bitine karşı ilaçlama',
+      situation: 'Çayır yaprak bitine karşı ilaçlanıyor: her on yaprak bitinden dokuzu ve her on uğur böceğinden de dokuzu ölüyor.',
+      think: 'Kim daha hızlı toparlanır: yaprak bitleri mi, onları yiyen uğur böcekleri mi?',
+      explain: 'İlaçlama hem yaprak bitlerini hem de onları yiyen uğur böceklerini öldürdü. Yaprak bitleri uğur böceklerinden çok daha hızlı çoğalır, bu yüzden önce onlar döndü, onları durduran olmadan; bedelini kır çiçekleri ödedi. Ekolojistler buna zararlıların yeniden artışı der (gecikmeli B2).',
+      real: 'Gerçek tarlalarda ilaçlama arılara ve başka böceklere de zarar verir, zararlılar da dirençli hâle gelebilir.'
     },
     'no-foxes': {
-      title: 'The foxes leave',
-      situation: 'The foxes leave the meadow.',
-      think: 'Who kept the rabbits in check? What do more rabbits eat first?',
-      explain: 'Without foxes the balancing loop that held the rabbits in check is gone (B2). The rabbits multiply and graze the clover, their favourite food, until little is left.',
-      real: 'In real landscapes, rabbits also move away, and diseases can cut their numbers.'
+      title: 'Tilkiler gidiyor',
+      situation: 'Tilkiler çayırdan ayrılıyor.',
+      think: 'Tavşanları kim dizginliyordu? Tavşanlar çoğalınca önce ne yerler?',
+      explain: 'Tilkiler olmadan tavşanları dizginleyen dengeleyici döngü kaybolur (B2). Tavşanlar çoğalır ve en sevdikleri besin olan yoncayı, çok azı kalana kadar yerler.',
+      real: 'Gerçek doğada tavşanlar başka yerlere de gider ve hastalıklar sayılarını azaltabilir.'
     },
     fertilise: {
-      title: 'A little fertiliser',
-      situation: 'The farmer spreads some fertiliser every week.',
-      think: 'Which plant profits most from rich soil, and what does it do to the low plants?',
-      explain: 'Fertiliser feeds the grasses most. Taller grass shades the clover and the wildflowers, and clover loses its edge: on rich soil, making its own nitrogen no longer helps. More food for the meadow means fewer kinds of plants.',
-      real: 'In real meadows, nitrogen from fertiliser and from the air is a main reason for lost wildflowers.'
+      title: 'Biraz gübre',
+      situation: 'Çiftçi her hafta biraz gübre serpiyor.',
+      think: 'Zengin topraktan en çok hangi bitki yararlanır ve alçak bitkilere ne yapar?',
+      explain: 'Gübre en çok çimenleri besler. Daha uzun otlar yoncayı ve kır çiçeklerini gölgede bırakır, yonca da üstünlüğünü kaybeder: zengin toprakta kendi azotunu üretmek artık işe yaramaz. Çayır için daha çok besin, daha az bitki çeşidi demektir.',
+      real: 'Gerçek çayırlarda gübreden ve havadan gelen azot, kır çiçeklerinin kaybolmasının başlıca nedenlerindendir.'
     },
     drought: {
-      title: 'A dry summer',
-      situation: 'Twelve dry weeks, then normal rain again.',
-      think: 'What do the grasses need besides nutrients? What happens when the rain comes back?',
-      explain: 'Without rain the soil dries out and the grasses slow down and shrink. When the rain returns, the soil fills up and the grasses grow back, even past their old level, because nutrients piled up in the soil while they could not use them.',
-      real: 'In real meadows, a long drought can also kill plants and let others take their place.'
+      title: 'Kurak bir yaz',
+      situation: 'On iki kurak hafta, sonra yeniden normal yağmur.',
+      think: 'Çimenlerin besin dışında neye ihtiyacı var? Yağmur geri gelince ne olur?',
+      explain: 'Yağmur olmadan toprak kurur, çimenler yavaşlar ve küçülür. Yağmur geri gelince toprak dolar ve çimenler yeniden büyür, hatta eski düzeylerini aşar; çünkü onlar kullanamazken toprakta besin birikmiştir.',
+      real: 'Gerçek çayırlarda uzun bir kuraklık bitkileri öldürüp başkalarına yer de açabilir.'
     },
     'clover-poor': {
-      title: 'Clover for a poor meadow',
-      situation: 'Clover is sown into a poor meadow of wildflowers.',
-      think: 'Clover makes nitrogen from the air. Where does that nitrogen go when its leaves die?',
-      explain: 'Clover brings new nitrogen into the meadow. When its leaves die, earthworms turn them into nutrients that the wildflowers use. The neighbours profit, slowly, through the soil: a chain with a delay.',
-      real: 'In real farming, clover is sown for exactly this reason.'
+      title: 'Fakir çayıra yonca',
+      situation: 'Kır çiçekleriyle dolu fakir bir çayıra yonca ekiliyor.',
+      think: 'Yonca azotu havadan alır. Yaprakları ölünce o azot nereye gider?',
+      explain: 'Yonca çayıra yeni azot getirir. Yaprakları ölünce solucanlar onları kır çiçeklerinin kullandığı besinlere dönüştürür. Komşular toprak yoluyla, yavaş yavaş kazanır: gecikmeli bir zincir.',
+      real: 'Gerçek tarımda yonca tam da bu nedenle ekilir.'
     },
     'worms-gone': {
-      title: 'Where are the earthworms?',
-      situation: 'The earthworms disappear from the meadow.',
-      think: 'Who turns dead leaves back into food for plants? Which plant does not depend on that?',
-      explain: 'Without earthworms, dead leaves pile up and their nutrients stay locked in. The grasses go hungry. Clover makes its own nitrogen, so it gains: a side effect few people expect.',
-      real: 'In real soils, many more animals, fungi and bacteria break down dead leaves.'
+      title: 'Solucanlar nerede?',
+      situation: 'Solucanlar çayırdan kayboluyor.',
+      think: 'Ölü yaprakları yeniden bitki besinine kim dönüştürür? Hangi bitki buna bağlı değildir?',
+      explain: 'Solucanlar olmadan ölü yapraklar birikir ve içlerindeki besinler kilitli kalır. Çimenler aç kalır. Yonca kendi azotunu ürettiği için kazançlı çıkar: pek kimsenin beklemediği bir yan etki.',
+      real: 'Gerçek topraklarda ölü yaprakları çok daha fazla hayvan, mantar ve bakteri ayrıştırır.'
     },
     'foxes-return': {
-      title: 'The foxes come back',
-      situation: 'Foxes return to a meadow overrun by rabbits.',
-      think: 'How long do young foxes need to grow up? What do fewer rabbits mean for the clover?',
-      explain: 'At first little happens: young foxes need about half a year to grow up. Then the foxes bring the rabbits down (B2), and the clover, freed from grazing, slowly comes back. The effect arrives years after the cause.',
-      real: 'In real landscapes, foxes also hunt other animals, and rabbits find new places to live.'
+      title: 'Tilkiler geri dönüyor',
+      situation: 'Tilkiler, tavşanların istila ettiği bir çayıra geri dönüyor.',
+      think: 'Genç tilkilerin büyümesi ne kadar sürer? Daha az tavşan yonca için ne anlama gelir?',
+      explain: 'Başta pek bir şey olmaz: genç tilkilerin büyümesi yaklaşık yarım yıl sürer. Sonra tilkiler tavşanları azaltır (B2) ve otlanmaktan kurtulan yonca yavaşça geri gelir. Sonuç, nedenden yıllar sonra gelir.',
+      real: 'Gerçek doğada tilkiler başka hayvanları da avlar, tavşanlar da yaşayacak yeni yerler bulur.'
     },
     'ladybirds-gone': {
-      title: 'Ladybirds collected',
-      situation: 'Most ladybirds are collected for a garden elsewhere.',
-      think: 'Who eats the aphids? How fast can the remaining ladybirds come back?',
-      explain: 'Without ladybirds the aphids multiply. The few remaining ladybirds now find plenty of food, and their numbers grow back after a delay. Then they bring the aphids down again (B2).',
-      real: 'In real gardens, other aphid hunters such as hoverflies and birds help as well.'
+      title: 'Toplanan uğur böcekleri',
+      situation: 'Uğur böceklerinin çoğu başka bir bahçe için toplanıyor.',
+      think: 'Yaprak bitlerini kim yer? Kalan uğur böcekleri ne kadar hızlı geri gelebilir?',
+      explain: 'Uğur böcekleri olmadan yaprak bitleri çoğalır. Kalan birkaç uğur böceği artık bol besin bulur ve sayıları gecikmeyle toparlanır. Sonra yaprak bitlerini yeniden azaltırlar (B2).',
+      real: 'Gerçek bahçelerde çiçek sinekleri ve kuşlar gibi başka yaprak biti avcıları da yardım eder.'
     }
   },
   goals: {
     'save-pondweed': {
-      story: 'A new field upstream starts to drain into the clear pond. Keep the pondweed alive for two years while the runoff continues.',
-      target: 'Pondweed at least {v} every week until week {w}.',
-      hint: 'Algae are a symptom. What feeds them, and how soon must it change?',
-      explain: 'The pondweed falls only when the algae shade it, and the algae grow from the nutrients the field brings. Act on the cause, and act early: by the time the pondweed looks weak, the reinforcing loop has already taken over.',
+      story: 'Yukarıda yeni açılan bir tarlanın suyu berrak gölete akmaya başlıyor. Akıntı sürerken su otunu iki yıl hayatta tut.',
+      target: '{w}. haftaya kadar her hafta en az {v} su otu.',
+      hint: 'Algler bir belirtidir. Onları ne besliyor ve bunun ne kadar erken değişmesi gerekiyor?',
+      explain: 'Su otu ancak algler onu gölgelediğinde azalır; algler de tarlanın getirdiği besinlerle büyür. Nedene müdahale et, hem de erken: su otu zayıf göründüğünde pekiştirici döngü çoktan devreye girmiştir.',
       plans: {
-        buffer: 'A buffer strip of plants along the field catches most of the runoff before it reaches the pond. Early enough, the algae never get ahead.',
-        ditch: 'Closing the ditch stops the runoff completely, so the algae never get ahead.'
+        buffer: 'Tarla kenarına dikilen bir bitki şeridi, akıntının çoğunu gölete ulaşmadan tutar. Zamanında yapılırsa algler asla öne geçmez.',
+        ditch: 'Hendeği kapatmak akıntıyı tamamen durdurur, böylece algler asla öne geçmez.'
       }
     },
     'clear-pond': {
-      story: 'The pond turned green after two years of runoff. Make the water clear again, with pondweed growing, for twelve weeks in a row.',
-      target: 'Algae (green and blue-green) at most {v} and pondweed at least {p}, for twelve weeks in a row, by week {w}.',
-      hint: 'Algae are a symptom. What feeds them? And what keeps them down once the water is clear?',
-      explain: 'The green state holds itself: algae shade out the plants that would hold them back. Clearing the water needs the cause removed (the runoff), the stored nutrients taken out or flushed away, and the pondweed back, so that the reinforcing loop turns towards clear water.',
+      story: 'İki yıllık akıntıdan sonra gölet yeşile döndü. Suyu, su otu büyürken, on iki hafta boyunca yeniden berrak yap.',
+      target: '{w}. haftaya kadar, art arda on iki hafta algler (yeşil ve mavi-yeşil) en fazla {v} ve su otu en az {p}.',
+      hint: 'Algler bir belirtidir. Onları ne besliyor? Su berraklaşınca onları ne düşük tutar?',
+      explain: 'Yeşil durum kendini sürdürür: algler, kendilerini dizginleyecek bitkileri gölgede bırakır. Suyu berraklaştırmak için nedeni (akıntıyı) kaldırmak, biriken besinleri çıkarmak ya da yıkamak ve su otunu geri getirmek gerekir; böylece pekiştirici döngü berrak suya doğru döner.',
       plans: {
-        restore: 'Stop the runoff, dredge the nutrient-rich mud, plant pondweed and take out most small fish (so more water fleas graze the algae). Together they turn the loop towards clear water.',
-        flush: 'Stop the runoff and let a stream flush the nutrients and algae out for a while, then plant pondweed into the clear water.'
+        restore: 'Akıntıyı durdur, besince zengin çamuru tara, su otu dik ve küçük balıkların çoğunu çıkar (daha çok su piresi algleri otlasın diye). Birlikte döngüyü berrak suya doğru çevirirler.',
+        flush: 'Akıntıyı durdur ve bir süre bir derenin besinleri ve algleri yıkayıp götürmesine izin ver, sonra berrak suya su otu dik.'
       }
     },
     'protect-flowers': {
-      story: 'A neighbour has just sprayed the meadow: most aphids and most ladybirds died. Keep the wildflowers for a year.',
-      target: 'Wildflowers at least {v} every week until week {w}.',
-      hint: 'The aphids come back faster than the ladybirds. When would new ladybirds find something to eat?',
-      explain: 'The aphids rebound before their hunters do. Ladybirds released too early starve, because there are no aphids yet; released too late, the wildflowers are already eaten. Timing decides.',
+      story: 'Bir komşu çayırı az önce ilaçladı: yaprak bitlerinin çoğu ve uğur böceklerinin çoğu öldü. Kır çiçeklerini bir yıl boyunca koru.',
+      target: '{w}. haftaya kadar her hafta en az {v} kır çiçeği.',
+      hint: 'Yaprak bitleri uğur böceklerinden daha hızlı geri gelir. Yeni uğur böcekleri ne zaman yiyecek bulur?',
+      explain: 'Yaprak bitleri avcılarından önce toparlanır. Çok erken bırakılan uğur böcekleri, henüz yaprak biti olmadığı için aç kalır; çok geç bırakılırsa kır çiçekleri çoktan yenmiştir. Belirleyici olan zamanlamadır.',
       plans: {
-        ladybirds: 'Released after about ten weeks, when the aphids are back but before they peak, the ladybirds find food at once and stop the aphids in time.'
+        ladybirds: 'Yaklaşık on hafta sonra, yaprak bitleri geri döndüğünde ama zirveye ulaşmadan bırakılan uğur böcekleri hemen besin bulur ve yaprak bitlerini zamanında durdurur.'
       }
     },
     'bring-back-clover': {
-      story: 'Without foxes, rabbits have grazed the clover almost away. Bring the clover back for eight weeks in a row within four years.',
-      target: 'Clover at least {v} for eight weeks in a row, by week {w}.',
-      hint: 'Removing rabbits helps only for a while. What kept them in check before?',
-      explain: 'Rabbits multiply fast, so removing some only buys time. Lasting change needs the balancing loop back: foxes. Young foxes need half a year to grow up, so the clover comes back years later.',
+      story: 'Tilkiler olmadan tavşanlar yoncayı neredeyse bitirdi. Dört yıl içinde yoncayı art arda sekiz hafta geri getir.',
+      target: '{w}. haftaya kadar, art arda sekiz hafta en az {v} yonca.',
+      hint: 'Tavşanları uzaklaştırmak yalnızca bir süre işe yarar. Önceden onları ne dizginliyordu?',
+      explain: 'Tavşanlar hızla çoğalır, bu yüzden bir kısmını uzaklaştırmak yalnızca zaman kazandırır. Kalıcı değişiklik için dengeleyici döngünün, yani tilkilerin geri dönmesi gerekir. Genç tilkilerin büyümesi yarım yıl sürer, bu yüzden yonca ancak yıllar sonra geri gelir.',
       plans: {
-        foxes: 'Foxes alone are enough, but patience is needed: they bring the rabbits down slowly.',
-        foxesRabbits: 'Foxes plus relocating half the rabbits: the foxes start with fewer rabbits to catch up with.',
-        foxesRabbitsClover: 'Foxes, relocating most rabbits and sowing clover: the fastest way, because the clover gets a head start while the foxes grow up.'
+        foxes: 'Tek başına tilkiler yeter, ama sabır gerekir: tavşanları yavaşça azaltırlar.',
+        foxesRabbits: 'Tilkiler artı tavşanların yarısını taşımak: tilkilerin yetişmesi gereken tavşan sayısı azalır.',
+        foxesRabbitsClover: 'Tilkiler, tavşanların çoğunu taşımak ve yonca ekmek: en hızlı yol, çünkü tilkiler büyürken yonca öne geçer.'
       }
     }
   },
   loops: {
-    graze: 'Water fleas graze the algae down; fewer algae, fewer water fleas.',
-    fishFleas: 'Small fish eat water fleas; fewer water fleas, fewer young fish.',
-    pikeFish: 'Pike eat small fish; fewer small fish, fewer young pike.',
-    clearWater: 'Algae shade the pondweed; pondweed holds the algae back. Whoever is ahead pulls further ahead.',
-    shelter: 'Pondweed hides water fleas from fish, and water fleas eat algae.',
-    recycle: 'Dead algae rot and feed new algae.',
-    aphidsFlowers: 'Aphids feed on the wildflowers; fewer wildflowers, fewer aphids.',
-    ladybirdsAphids: 'Ladybirds eat aphids; fewer aphids, fewer young ladybirds.',
-    rabbitsClover: 'Rabbits graze the clover; less clover, fewer young rabbits.',
-    foxesRabbits: 'Foxes hunt rabbits; fewer rabbits, fewer young foxes.',
-    thirst: 'Grasses use the soil water; dry soil slows the grasses.',
-    wormsDead: 'Earthworms eat dead leaves; fewer dead leaves, fewer earthworms.',
-    flowerUptake: 'Wildflowers take up the nutrients they grow from.'
+    graze: 'Su pireleri algleri otlar; daha az alg, daha az su piresi.',
+    fishFleas: 'Küçük balıklar su pirelerini yer; daha az su piresi, daha az genç balık.',
+    pikeFish: 'Turnalar küçük balıkları yer; daha az küçük balık, daha az genç turna.',
+    clearWater: 'Algler su otunu gölgeler; su otu algleri dizginler. Önde olan daha da öne geçer.',
+    shelter: 'Su otu su pirelerini balıklardan saklar, su pireleri de algleri yer.',
+    recycle: 'Ölü algler çürür ve yeni algleri besler.',
+    aphidsFlowers: 'Yaprak bitleri kır çiçekleriyle yaşar; daha az çiçek, daha az yaprak biti.',
+    ladybirdsAphids: 'Uğur böcekleri yaprak bitlerini yer; daha az yaprak biti, daha az genç uğur böceği.',
+    rabbitsClover: 'Tavşanlar yoncayı yer; daha az yonca, daha az yavru tavşan.',
+    foxesRabbits: 'Tilkiler tavşan avlar; daha az tavşan, daha az genç tilki.',
+    thirst: 'Çimenler topraktaki suyu kullanır; kuru toprak çimenleri yavaşlatır.',
+    wormsDead: 'Solucanlar ölü yaprakları yer; daha az ölü yaprak, daha az solucan.',
+    flowerUptake: 'Kır çiçekleri büyüdükleri besinleri alır.'
   }
 };
