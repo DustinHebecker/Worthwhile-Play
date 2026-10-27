@@ -488,6 +488,11 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
   function renderTask(s: RoundState, it: Item) {
     const predict = isPredict(it.id);
     if (it.goal?.kind === 'choose') cursor = it.goal.hook;
+    if (it.id === 'stack-counter' && it.draft.bench === 'stack' && selPlaced === null) {
+      // The cube cursor always rests on a place where a cube fits (the middle of the plank to begin with).
+      const spots = cubeSpots(it.draft.s, 0);
+      if (!spots.includes(cursor)) cursor = spots[Math.floor(spots.length / 2)] ?? cursor;
+    }
     const head = h(
       'div',
       { class: 'bl-head' },
