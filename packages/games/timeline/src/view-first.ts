@@ -6,13 +6,13 @@ import { h } from '@wp/ui';
 import { fitYears } from './axis';
 import type { AxisMark } from './axis-view';
 import { formatGap } from './format';
-import { checkFirst, chooseFirst, chooseGap, earlierOf, firstRight, gapResult, type FirstItem } from './rules';
+import { checkFirst, chooseFirst, chooseGap, firstRight, gapResult, type FirstItem } from './rules';
 import type { Host, Screen } from './view-host';
 
 /** The first answer's verdict sentence. */
 export function firstVerdict(host: Host, item: FirstItem): string {
   const { t, ui } = host;
-  const title = ui.title(item[earlierOf(item)]);
+  const title = ui.title(item[item.earlier]);
   const right = firstRight(item);
   if (right === null) return t('first.skipped', { title });
   return t(right ? 'first.right' : 'first.wrong', { title });
@@ -70,7 +70,7 @@ export function firstScreen(host: Host, item: FirstItem): Screen {
   const a = ui.ev(item.a);
   const b = ui.ev(item.b);
   card.push(ui.heading('h3', 'tl-review-heading', t('review.heading')), h('p', { class: 'tl-verdict', 'data-testid': 'tl-verdict' }, firstVerdict(host, item)));
-  const [earlier, later] = earlierOf(item) === 'a' ? (['a', 'b'] as const) : (['b', 'a'] as const);
+  const [earlier, later] = item.earlier === 'a' ? (['a', 'b'] as const) : (['b', 'a'] as const);
   for (const side of [earlier, later]) card.push(h('p', { 'data-testid': `tl-date-${side}` }, h('span', { 'aria-hidden': 'true' }, `${symbols[side]} `), ui.rich('first.date', { title: ui.title(item[side]), date: ui.when(item[side]) })));
   card.push(h('p', { 'data-testid': 'tl-between' }, ui.rich('first.between', { duration: ui.duration(Math.abs(b.y - a.y)) })));
   const gr = gapResult(item);

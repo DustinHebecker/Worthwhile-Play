@@ -378,14 +378,14 @@ Calm and descriptive:
 
 ---
 
-## 14. State (plain JSON, `stateVersion: 1`) and migration
+## 14. State (plain JSON, `stateVersion: 2`) and migration
 
 ```ts
 type Mode = 'when' | 'order' | 'first' | 'together';
 type EntryUnit = 'ce' | 'bce' | 'ago' | 'ka' | 'ma' | 'ga';
 
 interface TimelineState {
-  v: 1;
+  v: 2;                                  // version 1 had no stored solutions (migrateState fills them)
   content: string;                       // CONTENT_ID at creation, 'events-1'
   seed: number;                          // uint32
   difficulty: 'easy' | 'medium' | 'hard';
@@ -405,9 +405,11 @@ interface WhenItem { kind: 'when'; event: string; anchors: string[];         // 
 
 interface OrderItem { kind: 'order'; events: string[];                       // 3..6, the shown starting order
   draft: string[];                                                             // a permutation of events
+  solution: string[];                                                          // the right order, oldest first (stored at creation)
   answer: string[] | 'skip' | null; pairs: number | null; }
 
 interface FirstItem { kind: 'first'; a: string; b: string; pair: string | null; // curated pair id
+  earlier: 'a' | 'b';                                                          // the older event (stored at creation)
   gaps: number[]; gapIndex: number;                                            // 0 or 4 bucket values (years); index of the right one, −1 if none
   draft: { first: 'a' | 'b' | null; gap: number | null };
   answer: { first: 'a' | 'b'; gap: number | null } | 'skip' | null; }
@@ -419,10 +421,10 @@ interface TogetherItem { kind: 'together'; focus: string; tau: number;       // 
 
 - **Phase is derived:** review when `answer !== null`.
 - **Saves hold ids and numbers only**, never texts. Results that depend on content (order solution, earlier event, gap bucket, right option, band, pairs) are computed at creation or commit and **stored**, so a corrected date never flips an old review (the review then shows the current date and note; acceptable, as in Atlas).
-- `isValidState(x)` never throws. It checks every type and bound above; `content` is a known content id; every event id exists (retired ids stay valid, they are never removed); `items.length` and kinds per mode; ids distinct within an order set and between `a`/`b`; `draft` of an order item is a permutation of `events`; `answer` years within `[Y_MIN, Y_MAX]`; `band` consistent with `milli` (`band 0 ⇔ milli 0` and the band limits of § 7.3); `pairs ≤ n(n−1)/2` and consistent with the stored arrangement; `gaps` length 0 or 4, increasing, `gapIndex` in range (or −1 with no gaps); `answer.gap` null when there are no gaps; `options.length === 3`, `correct` 0–2; `tau` in the 1/2/5 × 10ᵏ set; `index ≤ len`; `reported ⇒ index === len`.
+- `isValidState(x)` never throws. It checks every type and bound above; `content` is a known content id; every event id exists (retired ids stay valid, they are never removed); `items.length` and kinds per mode; ids distinct within an order set and between `a`/`b`; `draft` and `solution` of an order item are permutations of `events`; `answer` years within `[Y_MIN, Y_MAX]`; `band` consistent with `milli` (`band 0 ⇔ milli 0` and the band limits of § 7.3); `pairs ≤ n(n−1)/2` and consistent with the stored arrangement and the stored `solution`; `earlier` is `'a'` or `'b'`. Validation reads no dates: whether a set's ranges overlap, which event is older and the right order were decided by the generator and stored, so a corrected date never makes an old save invalid (test: `content-correction.test.ts` swaps dates in a copy of the content table); `gaps` length 0 or 4, increasing, `gapIndex` in range (or −1 with no gaps); `answer.gap` null when there are no gaps; `options.length === 3`, `correct` 0–2; `tau` in the 1/2/5 × 10ᵏ set; `index ≤ len`; `reported ⇒ index === len`.
 - The PRNG state is not stored: all randomness is spent in `newGame`.
 - **Pure transitions** (`rules.ts`), each returning the same object when nothing changes: `createRound(seed, difficulty, mode, span)`, `setDraftYear`, `setDraftText`, `setUnit`, `checkWhen`, `move(from, to)`, `checkOrder`, `chooseFirst`, `chooseGap`, `checkFirst`, `chooseOption`, `checkTogether`, `skip`, `next`, plus derived `phase`, `review(item)`, `summary(state)`.
-- **Migration policy:** `stateVersion` stays 1 while changes are additive. Content updates add events or correct dates; ids are never removed (`retired: true` keeps them valid and out of new rounds), so `CONTENT_ID` changes only when ids would have to change meaning; then `isValidState` keeps accepting the previous id. An incompatible state change bumps `stateVersion` with `migrateState`; an unmigratable save is reported as corrupt (acceptable for a round of a few minutes).
+- **Migration policy:** `stateVersion` stays the same while changes are additive. Version 2 (2026-10-27) added the stored `solution` and `earlier`; `migrateState` fills them in a version 1 save from the content at load and keeps every answer and result (a save that then does not validate is refused, never thrown). Content updates add events or correct dates; ids are never removed (`retired: true` keeps them valid and out of new rounds), so `CONTENT_ID` changes only when ids would have to change meaning; then `isValidState` keeps accepting the previous id. An incompatible state change bumps `stateVersion` with `migrateState`; an unmigratable save is reported as corrupt (acceptable for a round of a few minutes).
 - **End:** "See summary" sets `index = len`; `finished()` once; reopening a finished save shows the summary. `reset()` = the same seed's round from the start. `pause()` blocks input (no timers).
 - **No answer in the DOM before the review**: cards carry no date, position or correctness attribute; the axis has no target element (a view test asserts this).
 
@@ -653,6 +655,7 @@ The implementation follows this plan; where it differs, the change and the reaso
 | Zoom limit (§ 12.1) | down to 0.01 decades | 0.01 decades, but always at least 20 years across (`minWidthAt`) | 0.01 decades is only a few months near today |
 | Tick labels (§ 12.2) | measured text | width estimated per character (`textWidth`) | no layout reads in the draw loop; generous spacing hides the error |
 | Generated ticks (§ 12.2) | multiples of 1, 2, 5 × 10ᵏ | the same, roundest first, none less than a tenth as round as the third-roundest candidate, never two ticks with one label, years ago only before 10,000 BCE | reviews showed "1876" between round years and repeated "12K ago" labels |
+| Stored solutions (§ 14) | "order solution, earlier event … stored" | until 2026-10-27 the order solution, the earlier event and the non-overlap check were recomputed from the current content in reviews and in `isValidState`; now `solution` and `earlier` are stored at creation (`stateVersion` 2, `migrateState` for version 1) and validation reads no dates | a later date correction could flip an old review or reject a save |
 | Category | six fields | plus `history` (rulers, wars, politics) | owner decision on people (§ 23) |
 | Bundle (§ 21) | game chunk ≤ 80 KB minified | 266 KB minified / 80 KB gzip; content chunks 31–80 KB minified, 14–20 KB gzip (non-Latin scripts are larger in UTF-8: hi 80 KB, ru/uk 58 KB) | all 16 UI catalogues travel in the game chunk, as in every other game of the catalogue (205–339 KB); `events.ts` with sources is 53 KB of source |
 

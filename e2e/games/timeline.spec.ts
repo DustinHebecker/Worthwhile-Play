@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { expectResumeAfterReload, readSave, startGame } from '../../packages/testing/src/e2e';
 import { ev } from '../../packages/games/timeline/src/data';
-import { correctOrder, earlierOf, type FirstItem, type OrderItem, type TimelineState, type TogetherItem, type WhenItem } from '../../packages/games/timeline/src/rules';
+import { type FirstItem, type OrderItem, type TimelineState, type TogetherItem, type WhenItem } from '../../packages/games/timeline/src/rules';
 
 const ID = 'timeline';
 const root = (page: Page) => page.getByTestId('game-root');
@@ -71,7 +71,7 @@ test('timeline: "Put in order" resumes after a reload, then by keyboard and butt
   await expect.poll(async () => current<OrderItem>(await savedState(page)).draft[1]).toBe(before[0]);
   // Now sort with the buttons, using the dates.
   const item = current<OrderItem>(await savedState(page));
-  const order = correctOrder(item.events);
+  const order = item.solution;
   const draft = [...item.draft];
   for (let target = 0; target < order.length; target++) {
     let at = draft.indexOf(order[target]!);
@@ -93,7 +93,7 @@ test('timeline: "Which came first?" on medium asks the gap and explains it', asy
   let sawGap = false;
   for (let i = 0; i < 3; i++) {
     const item = current<FirstItem>(await stateAt(page, i));
-    await r.getByTestId(`tl-first-${earlierOf(item)}`).check();
+    await r.getByTestId(`tl-first-${item.earlier}`).check();
     if (item.gaps.length) {
       sawGap = true;
       await r.getByTestId(`tl-gap-${item.gapIndex}`).check();

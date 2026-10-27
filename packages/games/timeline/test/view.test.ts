@@ -4,7 +4,7 @@ import { createTestContext } from '@wp/testing';
 import type { GameModule } from '@wp/game-core';
 import { ev } from '../src/data';
 import game from '../src/index';
-import { correctOrder, createRound, currentItem, earlierOf, isSummary, next, skip, type FirstItem, type Item, type OrderItem, type TimelineState, type TogetherItem, type WhenItem } from '../src/rules';
+import { createRound, currentItem, isSummary, next, skip, type FirstItem, type Item, type OrderItem, type TimelineState, type TogetherItem, type WhenItem } from '../src/rules';
 import type { Difficulty, RoundMode } from '../src/generate';
 
 const module = game as GameModule<unknown>;
@@ -199,7 +199,7 @@ describe('"Put in order"', () => {
   it('reviews the right order, each card’s place and the gaps', () => {
     const s = roundWith('order', 'medium', 'order');
     const item = currentItem(s) as OrderItem;
-    const order = correctOrder(item.events);
+    const order = item.solution;
     // Put the cards in the right order with the buttons.
     const m = mount(s);
     for (let target = 0; target < order.length; target++) {
@@ -223,7 +223,7 @@ describe('"Which came first?" and "Same time?"', () => {
     const item = currentItem(s) as FirstItem;
     const m = mount(s);
     expect(m.q('tl-gap')).not.toBeNull();
-    m.pick(`tl-first-${earlierOf(item)}`);
+    m.pick(`tl-first-${item.earlier}`);
     m.click('tl-check');
     await wait();
     expect(m.q('tl-announcer')!.textContent).toBe('Choose about how much time lies between them.');

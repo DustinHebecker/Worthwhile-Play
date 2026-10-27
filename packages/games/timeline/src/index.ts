@@ -2,7 +2,7 @@ import { defineGame, type SettingSpec } from '@wp/game-core';
 import { preloadContent } from './content';
 import { MODES, SPANS } from './generate';
 import { metadata } from './metadata';
-import { isTimelineState, settingsOf, type TimelineState } from './rules';
+import { isTimelineState, migrateState, settingsOf, type TimelineState } from './rules';
 import { createTimeline } from './view';
 
 export type { TimelineState } from './rules';
@@ -20,6 +20,7 @@ export default defineGame<TimelineState>({
   settingsOf,
   create: createTimeline,
   isValidState: isTimelineState,
+  migrateState,
   // Titles, notes and insights of the UI locale (and the English fallback) load before a round starts (ADR 0011).
   preload: (locale: string) => preloadContent(locale)
 });

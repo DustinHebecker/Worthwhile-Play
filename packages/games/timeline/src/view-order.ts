@@ -6,7 +6,7 @@
 import { h } from '@wp/ui';
 import { fitYears } from './axis';
 import type { AxisMark } from './axis-view';
-import { checkOrder, correctOrder, move, type OrderItem } from './rules';
+import { checkOrder, move, type OrderItem } from './rules';
 import { BAND_MARKS, orderMark, pairsTotal } from './score';
 import type { Host, Screen } from './view-host';
 
@@ -27,7 +27,7 @@ export function orderScreen(host: Host, item: OrderItem): Screen {
   const { t, ui } = host;
   const card: HTMLElement[] = [host.header(item, t('order.prompt'))];
   const n = item.events.length;
-  const order = correctOrder(item.events);
+  const order = item.solution;
 
   if (item.answer === null) {
     const picked = host.scratch.picked as Pick | undefined;

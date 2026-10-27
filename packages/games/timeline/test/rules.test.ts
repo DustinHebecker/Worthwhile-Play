@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { DIFFICULTIES, MODES, SPANS, type Difficulty, type RoundMode, type Span } from '../src/generate';
 import {
   MAX_TEXT, checkFirst, checkOrder, checkTogether, checkWhen, chooseFirst, chooseGap, chooseOption, correctOrder, createRound, currentItem, earlierOf, firstRight, gapResult,
-  isSummary, isTimelineState, markReported, move, next, phase, restartRound, setWhenDraft, settingsOf, skip, startChoice, summarize, tendencyKey, togetherRight,
+  isSummary, isTimelineState, markReported, migrateState, move, next, phase, restartRound, setWhenDraft, settingsOf, skip, startChoice, summarize, tendencyKey, togetherRight,
   type FirstItem, type OrderItem, type TimelineState, type TogetherItem, type WhenItem
 } from '../src/rules';
 import { Y_MAX, Y_MIN } from '../src/time';
@@ -32,6 +32,17 @@ describe('creating a round', () => {
         expect(isTimelineState(s)).toBe(true);
         expect(phase(s)).toBe('question');
         expect(s.items.every((i) => i.answer === null)).toBe(true);
+      }
+  });
+
+  it('stores the solutions when the round is generated (order, earlier event)', () => {
+    for (const mode of MODES)
+      for (const span of SPANS) {
+        const s = createRound(41, 'hard', mode, span);
+        for (const it of s.items) {
+          if (it.kind === 'order') expect(it.solution).toEqual(O.sortOldestFirst(it.events));
+          if (it.kind === 'first') expect(it.earlier).toBe(O.position(it.a) < O.position(it.b) ? 'a' : 'b');
+        }
       }
   });
 
@@ -271,7 +282,8 @@ describe('isTimelineState', () => {
       return isTimelineState(s);
     };
     expect(bad(() => undefined)).toBe(true);
-    expect(bad((s) => (s.v = 2))).toBe(false);
+    expect(bad((s) => (s.v = 1))).toBe(false);
+    expect(bad((s) => (s.v = 3))).toBe(false);
     expect(bad((s) => (s.content = 'events-0'))).toBe(false);
     expect(bad((s) => (s.seed = -1))).toBe(false);
     expect(bad((s) => (s.mode = 'when'))).toBe(false);
@@ -293,6 +305,25 @@ describe('isTimelineState', () => {
     expect(bad((s) => (s.items[orderAt].draft[0] = s.items[orderAt].draft[1]))).toBe(false);
     expect(bad((s) => (s.items[orderAt].events[0] = s.items[orderAt].events[1]))).toBe(false);
     expect(bad((s) => Object.assign(s.items[orderAt], { answer: s.items[orderAt].draft, pairs: 99 }))).toBe(false);
+    expect(bad((s) => (s.items[orderAt].solution = s.items[orderAt].solution.slice(1)))).toBe(false);
+    expect(bad((s) => (s.items[orderAt].solution[0] = s.items[orderAt].solution[1]))).toBe(false);
+    expect(bad((s) => delete s.items[orderAt].solution)).toBe(false);
+    // The pairs of a checked order item must agree with the stored solution.
+    let o = base;
+    while (currentItem(o)!.kind !== 'order') o = next(skip(o));
+    const checked = (answer: (sol: string[]) => string[], pairs: number) => {
+      const s = clone(o);
+      const it = s.items[s.index] as OrderItem;
+      Object.assign(it, { answer: answer(it.solution), pairs });
+      return isTimelineState(s);
+    };
+    const total = (item<OrderItem>(o).events.length * (item<OrderItem>(o).events.length - 1)) / 2;
+    expect(checked((sol) => sol, total)).toBe(true);
+    expect(checked((sol) => sol, 0)).toBe(false);
+    expect(checked((sol) => [...sol].reverse(), 0)).toBe(true);
+    expect(checked((sol) => [...sol].reverse(), total)).toBe(false);
+    expect(bad((s) => (s.items[firstAt].earlier = 'c'))).toBe(false);
+    expect(bad((s) => delete s.items[firstAt].earlier)).toBe(false);
     expect(bad((s) => (s.items[firstAt].b = s.items[firstAt].a))).toBe(false);
     expect(bad((s) => (s.items[firstAt].gaps = [100, 10, 1000, 1e4]))).toBe(false);
     expect(bad((s) => (s.items[firstAt].gapIndex = 7))).toBe(false);
@@ -304,5 +335,44 @@ describe('isTimelineState', () => {
     // Later items must still be open; earlier ones answered.
     expect(bad((s) => (s.items[5].answer = 'skip'))).toBe(false);
     expect(bad((s) => (s.index = 1))).toBe(false);
+  });
+});
+
+describe('migrating version 1 saves (no stored solutions)', () => {
+  /** A version 1 save: the same state without the stored solutions. */
+  const toV1 = (s: TimelineState): unknown => {
+    const v1 = clone(s) as unknown as { v: number; items: Record<string, unknown>[] };
+    v1.v = 1;
+    for (const it of v1.items) {
+      delete it.solution;
+      delete it.earlier;
+    }
+    return v1;
+  };
+
+  it('fills the solutions from the content and keeps every answer', () => {
+    for (const mode of MODES) {
+      let s = createRound(17, 'medium', mode, 'all');
+      // Answer the first items (an order item in its arrangement), skip one, keep the last open.
+      for (let i = 0; i < s.items.length - 1; i++) {
+        const it = currentItem(s)!;
+        s = it.kind === 'order' ? checkOrder(move(s, 0, 1)) : it.kind === 'first' ? checkFirst(chooseGap(chooseFirst(s, 'b'), (it as FirstItem).gaps[0] ?? 0)) : skip(s);
+        s = next(s);
+      }
+      const migrated = migrateState(toV1(s), 1);
+      expect(migrated).toEqual(s);
+      expect(isTimelineState(migrated)).toBe(true);
+    }
+  });
+
+  it('never throws and refuses what it cannot migrate', () => {
+    fc.assert(fc.property(fc.anything(), fc.integer({ min: -2, max: 3 }), (x, v) => migrateState(x, v) === undefined || isTimelineState(migrateState(x, v))));
+    const s = createRound(5, 'easy', 'mixed', 'all');
+    expect(migrateState(toV1(s), 2)).toBeUndefined();
+    expect(migrateState(s, 1)).toBeUndefined();
+    const broken = toV1(s) as { items: Record<string, unknown>[] };
+    const orderAt = s.items.findIndex((i) => i.kind === 'order');
+    broken.items[orderAt]!.events = ['nope', 'nada', 'niente'];
+    expect(migrateState(broken, 1)).toBeUndefined();
   });
 });

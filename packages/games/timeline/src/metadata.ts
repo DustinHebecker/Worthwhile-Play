@@ -3,7 +3,7 @@ import { messages } from './messages';
 
 export const metadata: GameMetadata = {
   id: 'timeline',
-  stateVersion: 1,
+  stateVersion: 2,
   skills: ['learning', 'deduction'],
   typicalMinutes: [6, 14],
   inputMethods: ['pointer', 'touch', 'keyboard'],

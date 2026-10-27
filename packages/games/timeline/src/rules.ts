@@ -1,8 +1,9 @@
 /**
  * State and pure transitions of Sense of Time (design § 14). The state is plain JSON holding ids and numbers only;
- * results that depend on the content (band, distance, pairs, the right option) are computed when the item is
- * created or checked and stored, so a later content correction never flips an old review. Every transition returns
- * the same object when nothing changes.
+ * results that depend on the content (the order solution, the earlier event, the gap rung, the right option, band,
+ * distance, pairs) are computed when the item is created or checked and stored, so a later content correction never
+ * flips an old review or makes `isTimelineState` reject a save. Every transition returns the same object when nothing
+ * changes.
  */
 import { isInt, isOneOf, isRecord, isUint32 } from '@wp/game-core';
 import { CONTENT_IDS, CONTENT_ID, curatedPair, ev, evOf, isEventId } from './data';
@@ -36,6 +37,8 @@ export interface OrderItem {
   events: string[];
   /** The current arrangement (a permutation of `events`), oldest first. */
   draft: string[];
+  /** The right order (oldest first), stored when the round is generated. */
+  solution: string[];
   answer: string[] | 'skip' | null;
   pairs: number | null;
 }
@@ -45,6 +48,8 @@ export interface FirstItem {
   a: string;
   b: string;
   pair: string | null;
+  /** Which event is older, stored when the round is generated. */
+  earlier: 'a' | 'b';
   /** Four gap rungs (years) or none; `gapIndex` is the right one (−1 without a gap question). */
   gaps: number[];
   gapIndex: number;
@@ -65,7 +70,7 @@ export interface TogetherItem {
 export type Item = WhenItem | OrderItem | FirstItem | TogetherItem;
 
 export interface TimelineState {
-  v: 1;
+  v: 2;
   content: string;
   seed: number;
   difficulty: Difficulty;
@@ -79,6 +84,8 @@ export interface TimelineState {
 }
 
 export const MAX_TEXT = 24;
+/** The save format (`metadata.stateVersion`); version 1 had no stored solutions (`migrateState`). */
+export const STATE_VERSION = 2;
 
 /* ---------- Creation ---------- */
 
@@ -87,7 +94,7 @@ export function createRound(seed: number, difficulty: Difficulty, mode: RoundMod
   const s = seed >>> 0;
   const { items } = generateRound(s, difficulty, mode, span);
   return {
-    v: 1,
+    v: 2,
     content: CONTENT_ID,
     seed: s,
     difficulty,
@@ -100,9 +107,9 @@ export function createRound(seed: number, difficulty: Difficulty, mode: RoundMod
         case 'when':
           return { ...it, anchors: [...it.anchors], draft: { y: null, unit: 'ce', text: '' }, answer: null, milli: null, band: null };
         case 'order':
-          return { ...it, events: [...it.events], draft: [...it.events], answer: null, pairs: null };
+          return { ...it, events: [...it.events], draft: [...it.events], solution: correctOrder(it.events), answer: null, pairs: null };
         case 'first':
-          return { ...it, gaps: [...it.gaps], draft: { first: null, gap: null }, answer: null };
+          return { ...it, earlier: earlierOf(it), gaps: [...it.gaps], draft: { first: null, gap: null }, answer: null };
         case 'together':
           return { ...it, options: [...it.options], draft: null, answer: null };
       }
@@ -136,9 +143,9 @@ export const phase = (s: TimelineState): 'question' | 'review' | 'summary' => {
   return !item ? 'summary' : inReview(item) ? 'review' : 'question';
 };
 
-/** The events of an order item from oldest to most recent. */
+/** The events of an order set from oldest to most recent in the current content (stored as `solution` at creation). */
 export const correctOrder = (events: readonly string[]): string[] => [...events].sort((p, q) => evOf(p).y - evOf(q).y);
-/** Which of a first item's events is older. */
+/** Which of two events is older in the current content (stored as `earlier` at creation). */
 export const earlierOf = (item: Pick<FirstItem, 'a' | 'b'>): 'a' | 'b' => (evOf(item.a).y < evOf(item.b).y ? 'a' : 'b');
 
 /* ---------- Transitions ---------- */
@@ -185,12 +192,9 @@ export function move(s: TimelineState, from: number, to: number): TimelineState 
   });
 }
 
-/** Checks an order item: the number of pairs in the right relative order is stored (§ 8.2). */
+/** Checks an order item: the number of pairs in the right relative order (by the stored solution) is stored (§ 8.2). */
 export function checkOrder(s: TimelineState): TimelineState {
-  return withItem<OrderItem>(s, 'order', (it) => {
-    const order = correctOrder(it.events);
-    return { ...it, answer: it.draft.slice(), pairs: kendallPairs(it.draft, (id) => order.indexOf(id)) };
-  });
+  return withItem<OrderItem>(s, 'order', (it) => ({ ...it, answer: it.draft.slice(), pairs: kendallPairs(it.draft, (id) => it.solution.indexOf(id)) }));
 }
 
 export function chooseFirst(s: TimelineState, first: 'a' | 'b'): TimelineState {
@@ -241,7 +245,7 @@ export const markReported = (s: TimelineState): TimelineState => (s.reported || 
 
 /** Whether a first item's answer was right (null when skipped or open). */
 export function firstRight(item: FirstItem): boolean | null {
-  return item.answer === null || item.answer === 'skip' ? null : item.answer.first === earlierOf(item);
+  return item.answer === null || item.answer === 'skip' ? null : item.answer.first === item.earlier;
 }
 /** Whether the gap answer was right, one step off or further (null without a gap answer). */
 export function gapResult(item: FirstItem): 'right' | 'near' | 'far' | null {
@@ -356,14 +360,6 @@ function bandConsistent(band: unknown, milli: unknown): boolean {
   return bandOf(milli, false) === band;
 }
 
-/** Pairwise distinct non-overlapping events (the generator's promise for compared events). */
-const disjoint = (ids: readonly string[]): boolean =>
-  ids.every((p, i) => ids.every((q, j) => j <= i || (() => {
-    const a = evOf(p);
-    const b = evOf(q);
-    return a.hi < b.lo || b.hi < a.lo;
-  })()));
-
 function validWhen(it: Record<string, unknown>, d: Difficulty): boolean {
   if (!isEventId(it.event) || !isIdList(it.anchors, 0, 3) || (it.anchors as string[]).includes(it.event as string)) return false;
   if (d === 'hard' && (it.anchors as string[]).length) return false;
@@ -375,18 +371,20 @@ function validWhen(it: Record<string, unknown>, d: Difficulty): boolean {
   return true;
 }
 
+// Only the stored results are compared, never the current dates: a corrected date keeps old saves valid (§ 14).
 function validOrder(it: Record<string, unknown>): boolean {
-  if (!isIdList(it.events, 3, 6) || !disjoint(it.events)) return false;
+  if (!isIdList(it.events, 3, 6)) return false;
   const events = it.events;
   if (!isIdList(it.draft, 3, 6) || !isPermutation(events, it.draft)) return false;
+  if (!isIdList(it.solution, 3, 6) || !isPermutation(events, it.solution)) return false;
+  const solution = it.solution;
   if (it.answer === null || it.answer === 'skip') return it.pairs === null;
   if (!isIdList(it.answer, 3, 6) || !isPermutation(events, it.answer)) return false;
-  const order = correctOrder(events);
-  return isInt(it.pairs, 0, pairsTotal(events.length)) && it.pairs === kendallPairs(it.answer, (id) => order.indexOf(id));
+  return isInt(it.pairs, 0, pairsTotal(events.length)) && it.pairs === kendallPairs(it.answer, (id) => solution.indexOf(id));
 }
 
 function validFirst(it: Record<string, unknown>, d: Difficulty): boolean {
-  if (!isEventId(it.a) || !isEventId(it.b) || it.a === it.b || !disjoint([it.a, it.b])) return false;
+  if (!isEventId(it.a) || !isEventId(it.b) || it.a === it.b || !(it.earlier === 'a' || it.earlier === 'b')) return false;
   if (it.pair !== null) {
     const p = typeof it.pair === 'string' ? curatedPair(it.pair) : undefined;
     if (!p || !((p.older === it.a && p.newer === it.b) || (p.older === it.b && p.newer === it.a))) return false;
@@ -415,7 +413,7 @@ function validTogether(it: Record<string, unknown>): boolean {
 /** Checks every type and bound of a save (§ 14). Never throws. */
 export function isTimelineState(value: unknown): value is TimelineState {
   try {
-    if (!isRecord(value) || value.v !== 1 || !isOneOf(value.content, CONTENT_IDS) || !isUint32(value.seed)) return false;
+    if (!isRecord(value) || value.v !== STATE_VERSION || !isOneOf(value.content, CONTENT_IDS) || !isUint32(value.seed)) return false;
     if (!isOneOf(value.difficulty, DIFFICULTIES) || !isOneOf(value.mode, MODES) || !isOneOf(value.span, SPANS)) return false;
     const d = value.difficulty;
     const kinds = ROUND_KINDS[value.mode];
@@ -438,5 +436,31 @@ export function isTimelineState(value: unknown): value is TimelineState {
     return subjects.size > 0;
   } catch {
     return false;
+  }
+}
+
+/**
+ * Upgrades a version 1 save (§ 14): it had no stored solutions, so the order solution and the earlier event are
+ * filled from the content at load. Every answer and stored result stays as it was; a save that does not validate
+ * afterwards is refused (`undefined`). Never throws.
+ */
+export function migrateState(state: unknown, fromVersion: number): TimelineState | undefined {
+  try {
+    if (fromVersion !== 1 || !isRecord(state) || state.v !== 1 || !Array.isArray(state.items)) return undefined;
+    const known = (ids: unknown): ids is string[] => Array.isArray(ids) && ids.every(isEventId);
+    const items: unknown[] = [];
+    for (const it of state.items) {
+      if (isRecord(it) && it.kind === 'order' && it.solution === undefined) {
+        if (!known(it.events)) return undefined;
+        items.push({ ...it, solution: correctOrder(it.events) });
+      } else if (isRecord(it) && it.kind === 'first' && it.earlier === undefined) {
+        if (!isEventId(it.a) || !isEventId(it.b)) return undefined;
+        items.push({ ...it, earlier: earlierOf({ a: it.a, b: it.b }) });
+      } else items.push(it);
+    }
+    const next: unknown = { ...state, v: STATE_VERSION, items };
+    return isTimelineState(next) ? next : undefined;
+  } catch {
+    return undefined;
   }
 }
