@@ -391,13 +391,12 @@ export function tick(w: World, rs: Ruleset, commands: readonly Command[], events
       e.prev = cellOf(w.map, e.x, e.y);
       if (standing.get(e.prev + (air ? cells : 0)) === e) standing.delete(e.prev + (air ? cells : 0));
       standing.set(key, e);
-      const [fx, fy] = [e.x, e.y];
       e.x = cell % w.map.w;
       e.y = Math.floor(cell / w.map.w);
       e.mp -= claim.cost;
       delete e.deploy;
       moved.add(e.id);
-      events.push({ t: 'move', tick: t, id: e.id, x: e.x, y: e.y, fx, fy });
+      events.push({ t: 'move', tick: t, id: e.id, x: e.x, y: e.y, fx: e.prev % w.map.w, fy: Math.floor(e.prev / w.map.w) });
     }
   }
 
