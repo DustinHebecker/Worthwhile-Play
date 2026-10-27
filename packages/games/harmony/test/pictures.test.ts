@@ -2,7 +2,7 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { formatNumber, formatPlural, fill, pluralCategory, ratioText } from '../src/format';
-import { chordHeads, ledgerLines, staffPosition, stemUp } from '../src/staff';
+import { chordHeads, ledgerLines, naturalSigns, staffPosition, stemUp } from '../src/staff';
 import { renderContour, renderRhythm, renderStaff } from '../src/staff-view';
 import { midiToFreq } from '../src/theory';
 import { MAX_SAMPLES, ratioFacts, shortRepeat, waveSamples } from '../src/wave';
@@ -51,6 +51,21 @@ describe('staff layout (design § 11.1)', () => {
     const far = chordHeads([{ p: 0, a: 1 }, { p: 7, a: 1 }], true);
     expect(far.map((x) => x.accCol)).toEqual([0, 0]);
     expect(chordHeads([{ p: 2, a: 0 }], true)[0]!.accCol).toBe(-1);
+    // Two notes on one position (F and F♯): side by side, the natural one with its sign.
+    const unison = chordHeads([{ p: 1, a: 1 }, { p: 1, a: 0, natural: true }], true);
+    expect(unison.map((x) => [x.a, x.side, x.natural, x.accCol >= 0])).toEqual([[0, 0, true, true], [1, 1, false, true]]);
+  });
+
+  it('draws a natural sign where an earlier note of the bar altered the same letter and octave (no key signature)', () => {
+    // Melody B of "which note changed?": B4 C♯5 B♭4 F♯5 B4 — the last B needs ♮, the first does not.
+    const melody = [s(6, 0, 4), s(0, 1, 5), s(6, -1, 4), s(3, 1, 5), s(6, 0, 4)].map((n) => [n]);
+    expect(naturalSigns(melody).map((f) => f[0])).toEqual([false, false, false, false, true]);
+    // Another octave is another note; a chord with F and F♯ marks the F.
+    expect(naturalSigns([[s(6, -1, 4)], [s(6, 0, 5)]])).toEqual([[false], [false]]);
+    expect(naturalSigns([[s(3, 0, 4), s(3, 1, 4)]])).toEqual([[true, false]]);
+    const staff = renderStaff(melody.map((notes) => ({ notes })), { name: 'Melody B', style: 'quarter' });
+    expect(staff.querySelectorAll('[data-acc="natural"]')).toHaveLength(1);
+    expect(staff.querySelectorAll('[data-acc="flat"]')).toHaveLength(1);
   });
 
   it('draws staffs, rhythm notation and contours as left-to-right images with names, using own paths (no font glyphs)', () => {

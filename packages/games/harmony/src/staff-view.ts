@@ -4,7 +4,7 @@
  * traced from a font or image). Always `dir="ltr"`, `role="img"` with an accessible name.
  */
 import { notation, type NotationEvent } from './rhythm';
-import { chordHeads, ledgerLines, staffPosition, stemUp, type Clef } from './staff';
+import { chordHeads, ledgerLines, naturalSigns, staffPosition, stemUp, type Clef } from './staff';
 import { midiOf, type Spelled } from './spelling';
 
 const NS = 'http://www.w3.org/2000/svg';
@@ -39,8 +39,15 @@ export const bassClef = (x: number, y0: number) =>
     svg('circle', { cx: 31, cy: 15, r: 1.9, class: 'hm-ink' })
   );
 
-/** ♯ ♭ as own paths, centred on (x, y). */
-export function accidental(a: -1 | 1, x: number, y: number): SVGGElement {
+/** ♯ ♭ ♮ as own paths, centred on (x, y) (0 = the natural sign). */
+export function accidental(a: -1 | 0 | 1, x: number, y: number): SVGGElement {
+  if (a === 0)
+    return svg(
+      'g',
+      { class: 'hm-acc', 'data-acc': 'natural' },
+      path(`M${x - 2.4} ${y - 10}V${y + 4.4}M${x + 2.4} ${y - 4.4}V${y + 10}`, 'hm-thin'),
+      path(`M${x - 2.4} ${y - 1.6}L${x + 2.4} ${y - 4.4}M${x - 2.4} ${y + 4.4}L${x + 2.4} ${y + 1.6}`, 'hm-thick')
+    );
   if (a === 1)
     return svg(
       'g',
@@ -107,24 +114,27 @@ export function renderStaff(events: readonly StaffEvent[], options: StaffOptions
   }
   if (grand) root.appendChild(svg('line', { x1: 4, x2: 4, y1: TREBLE_TOP, y2: BASS_TOP + 40, class: 'hm-line' }));
   const centres: [number, number][] = [];
+  const naturals = naturalSigns(events.map((ev) => ev.notes));
   events.forEach((ev, i) => {
     const x = left + i * spacing + spacing / 2;
     const g = svg('g', { class: 'hm-event', ...(ev.id ? { 'data-ev': ev.id } : {}) });
     for (const { clef, top } of staves) {
-      const mine = ev.notes.filter((n) => !grand || (clef === 'treble' ? midiOf(n) >= 60 : midiOf(n) < 60));
+      const onStaff = (n: Spelled) => !grand || (clef === 'treble' ? midiOf(n) >= 60 : midiOf(n) < 60);
+      const mine = ev.notes.filter(onStaff);
+      const natural = naturals[i]!.filter((_, k) => onStaff(ev.notes[k]!));
       if (!mine.length) continue;
       const bottom = top + 4 * LINE_GAP;
       const yOf = (p: number) => bottom - (p * LINE_GAP) / 2;
       const positions = mine.map((n) => staffPosition(n, clef));
       const up = options.style === 'quarter' ? stemUp(positions) : true;
-      const heads = chordHeads(mine.map((n, k) => ({ p: positions[k]!, a: n.a })), up);
+      const heads = chordHeads(mine.map((n, k) => ({ p: positions[k]!, a: n.a, natural: natural[k] })), up);
       const ledgers = new Set<number>();
       for (const hd of heads) for (const q of ledgerLines(hd.p)) ledgers.add(q);
       for (const q of ledgers) g.appendChild(svg('line', { x1: x - 11, x2: x + 11 + (heads.some((h2) => h2.side === 1) ? 13 : 0), y1: yOf(q), y2: yOf(q), class: 'hm-ledger' }));
       for (const hd of heads) {
         const hx = x + hd.side * 13;
         g.appendChild(head(hx, yOf(hd.p), options.style !== 'quarter'));
-        if (hd.a !== 0) g.appendChild(accidental(hd.a as 1 | -1, x - 15 - hd.accCol * 10 - (heads.some((h2) => h2.side === -1) ? 13 : 0), yOf(hd.p)));
+        if (hd.a !== 0 || hd.natural) g.appendChild(accidental(hd.a, x - 15 - hd.accCol * 10 - (heads.some((h2) => h2.side === -1) ? 13 : 0), yOf(hd.p)));
         centres.push([hx, yOf(hd.p)]);
       }
       if (options.style === 'quarter') {
