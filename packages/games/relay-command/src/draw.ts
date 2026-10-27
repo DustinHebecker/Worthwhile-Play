@@ -1,4 +1,6 @@
 /** Drawing shared by the game map and the map editor (one cell = CELL px, marks never colour alone). */
+import type { View } from './icons';
+import { drawTerrainMap, type TerrainDetail, type TerrainMap } from './terrain';
 
 /** Size of one map cell in canvas pixels (44 px: the touch target). */
 export const CELL = 44;
@@ -19,10 +21,28 @@ export const TERRAIN_NAMES: Readonly<Record<string, string>> = {
  * has a second diamond beside it, an endless one a ring around it (shapes, never colour; a diamond
  * inside the first read as a filled one on a phone, review of PR #36).
  */
-export function drawDeposit(g: CanvasRenderingContext2D, px: number, py: number, size: 'plain' | 'rich' | 'endless' = 'plain'): void {
+export function drawDeposit(g: CanvasRenderingContext2D, px: number, py: number, size: 'plain' | 'rich' | 'endless' = 'plain', halo?: string): void {
+  if (halo) {
+    // A surface-coloured outline first, so the mark stands out on busy terrain.
+    const ink = g.strokeStyle;
+    const fill = g.fillStyle;
+    g.strokeStyle = halo;
+    g.fillStyle = halo;
+    g.save();
+    g.lineWidth = 4.5;
+    drawDepositPath(g, px, py, size);
+    g.restore();
+    g.strokeStyle = ink;
+    g.fillStyle = fill;
+  }
+  g.lineWidth = 1.5;
+  drawDepositPath(g, px, py, size);
+}
+
+function drawDepositPath(g: CanvasRenderingContext2D, px: number, py: number, size: 'plain' | 'rich' | 'endless'): void {
   const cx = px + CELL - 9;
   const cy = py + 9;
-  g.lineWidth = 1.5;
+  const width = g.lineWidth;
   const diamond = (x: number, r: number) => {
     g.beginPath();
     g.moveTo(x, cy - r);
@@ -40,66 +60,53 @@ export function drawDeposit(g: CanvasRenderingContext2D, px: number, py: number,
     g.stroke();
   }
   g.beginPath();
-  g.arc(cx, cy, 1.5, 0, Math.PI * 2);
+  g.arc(cx, cy, width > 2 ? 3 : 1.5, 0, Math.PI * 2);
   g.fill();
 }
 
+/** Reads a colour token (with a fallback) from the game's stylesheet. */
+export type CssToken = (name: string, fallback: string) => string;
 
-/** Pattern marks so that terrain is never told apart by colour alone. */
-export function drawTerrainMark(g: CanvasRenderingContext2D, name: string, px: number, py: number): void {
-  const c = CELL;
-  g.beginPath();
-  switch (name) {
-    case 'road':
-      g.moveTo(px, py + c / 2);
-      g.lineTo(px + c, py + c / 2);
-      g.setLineDash([4, 4]);
-      g.stroke();
-      g.setLineDash([]);
-      return;
-    case 'forest':
-      for (const [dx, dy] of [[0.25, 0.3], [0.7, 0.25], [0.45, 0.7]] as const) {
-        g.moveTo(px + dx * c + 4, py + dy * c);
-        g.arc(px + dx * c, py + dy * c, 4, 0, Math.PI * 2);
+const FALLBACK: Readonly<Record<string, string>> = { plain: '#e7e3d4', road: '#cfc8b4', forest: '#b9d0ae', hill: '#ddcfa8', urban: '#d3d1cc', swamp: '#c4d3c2', water: '#a9c7dd', ridge: '#c4bfb3' };
+const NAMES = Object.values(TERRAIN_NAMES);
+
+/** The ground colours of the current theme (light or dark) as the terrain renderer wants them. */
+function palette(css: CssToken): { base(name: string): string; dark: boolean; key: string } {
+  const colours = new Map(NAMES.map((n) => [n, css(`--rc-${n}`, FALLBACK[n] ?? '#dddddd')]));
+  const plain = colours.get('plain') ?? '#e7e3d4';
+  const m = /^#([0-9a-f]{6})$/i.exec(plain);
+  const dark = m ? parseInt(m[1]!.slice(0, 2), 16) + parseInt(m[1]!.slice(2, 4), 16) + parseInt(m[1]!.slice(4, 6), 16) < 3 * 110 : false;
+  return { base: (n) => colours.get(n) ?? FALLBACK[n] ?? '#dddddd', dark, key: [...colours.values()].join() };
+}
+
+/**
+ * The terrain of a map, drawn once into a canvas of its own and reused until the map, the view, the
+ * theme or the pixel ratio changes (drawing it takes far longer than copying it).
+ */
+export function createTerrainLayer(detail: TerrainDetail): { draw(g: CanvasRenderingContext2D, map: TerrainMap, view: View, css: CssToken, ratio: number): void } {
+  let key = '';
+  let layer: HTMLCanvasElement | null = null;
+  return {
+    draw(g, map, view, css, ratio) {
+      const colours = palette(css);
+      const next = [map.w, map.h, map.terrain, view, ratio, colours.key].join('|');
+      if (next !== key || !layer) {
+        const c = layer ?? (g.canvas.ownerDocument ?? document).createElement('canvas');
+        c.width = Math.round(map.w * CELL * ratio);
+        c.height = Math.round(map.h * CELL * ratio);
+        const lg = c.getContext('2d');
+        if (!lg) return;
+        lg.setTransform(ratio, 0, 0, ratio, 0, 0);
+        drawTerrainMap(lg, map, CELL, colours, view, detail);
+        layer = c;
+        key = next;
       }
-      g.fill();
-      return;
-    case 'hill':
-      g.moveTo(px + c * 0.2, py + c * 0.75);
-      g.lineTo(px + c * 0.5, py + c * 0.3);
-      g.lineTo(px + c * 0.8, py + c * 0.75);
-      g.stroke();
-      return;
-    case 'urban':
-      g.rect(px + c * 0.2, py + c * 0.2, c * 0.22, c * 0.22);
-      g.rect(px + c * 0.55, py + c * 0.5, c * 0.22, c * 0.22);
-      g.stroke();
-      return;
-    case 'swamp':
-      for (const dy of [0.35, 0.65]) {
-        g.moveTo(px + c * 0.2, py + dy * c);
-        g.lineTo(px + c * 0.45, py + dy * c);
-        g.moveTo(px + c * 0.55, py + dy * c);
-        g.lineTo(px + c * 0.8, py + dy * c);
-      }
-      g.stroke();
-      return;
-    case 'water':
-      for (const dy of [0.35, 0.65]) {
-        g.moveTo(px + c * 0.15, py + dy * c);
-        g.quadraticCurveTo(px + c * 0.32, py + dy * c - 6, px + c * 0.5, py + dy * c);
-        g.quadraticCurveTo(px + c * 0.68, py + dy * c + 6, px + c * 0.85, py + dy * c);
-      }
-      g.stroke();
-      return;
-    case 'ridge':
-      for (let i = 0; i < 4; i++) {
-        g.moveTo(px + (i * c) / 4, py + c);
-        g.lineTo(px + ((i + 1) * c) / 4, py);
-      }
-      g.stroke();
-      return;
-    default:
-      return;
-  }
+      g.drawImage(layer, 0, 0, map.w * CELL, map.h * CELL);
+    }
+  };
+}
+
+/** One cell of a terrain as in the map (legend and editor palette). */
+export function drawTerrainSwatch(g: CanvasRenderingContext2D, code: string, view: View, css: CssToken): void {
+  drawTerrainMap(g, { w: 1, h: 1, terrain: code }, CELL, palette(css), view, 'coarse');
 }

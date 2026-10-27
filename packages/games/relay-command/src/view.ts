@@ -74,11 +74,11 @@ import {
   type RcState
 } from './rules';
 import { DIFFICULTIES, type Difficulty } from './ai';
-import { drawIcon } from './icons';
+import { drawIcon, VIEWS, type View } from './icons';
 import { createEditor } from './editor';
 import { blankMap, customSpec, hostMapLibrary, mapIssues, MAX_NAME, memoryStore, migratePreferenceMaps, preferenceMapLibrary, type EditMap, type MapLibrary, type MapStore } from './maps';
 import { generateMap } from './generator';
-import { CELL, drawDeposit, drawTerrainMark, TERRAIN_NAMES } from './draw';
+import { CELL, createTerrainLayer, drawDeposit, drawTerrainSwatch, TERRAIN_NAMES } from './draw';
 import { FIELD_EXERCISE, opponentCounts, SCENARIOS, scenarioFor } from './scenarios';
 import './styles.css';
 
@@ -347,6 +347,20 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     'aria-describedby': `${uid}-cursor`
   });
   const mapWrap = h('div', { class: 'rc-mapwrap', dir: 'ltr' }, canvas);
+  /** How the map is drawn: from the side (default) or from above; a choice of this device, not of the game. */
+  const readView = (): View => {
+    try {
+      return context.preferences?.get('mapView') === 'top' ? 'top' : 'profile';
+    } catch {
+      return 'profile';
+    }
+  };
+  let mapView: View = readView();
+  const terrainLayer = createTerrainLayer('fine');
+  const viewButtons = VIEWS.map((v) =>
+    h('button', { type: 'button', 'data-testid': `rc-view-${v}`, 'aria-pressed': String(v === mapView), onclick: () => setView(v) }, t(`view.${v}`))
+  );
+  const viewGroup = h('div', { class: 'rc-actions rc-view', role: 'group', 'aria-label': t('view.label'), 'data-testid': 'rc-view' }, h('span', { class: 'rc-label' }, t('view.label')), ...viewButtons);
 
   /** Game setup, until the first turn is locked: scenario and turn limit (open end by default). */
   const scenarioSelect = h('select', { 'data-testid': 'rc-scenario', onchange: () => onSetup() });
@@ -488,6 +502,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     t,
     css: (name, fallback) => css(name, fallback),
     icon: (kind, own) => unitIcon(kind, own),
+    view: () => mapView,
     library: mapLibrary,
     libraryChanged: () => {
       if (!state.edit) render(); // the setup lists the device's maps
@@ -531,7 +546,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   const mainEl = h(
     'div',
     { class: 'rc-main', 'data-testid': 'rc-main' },
-    h('div', { class: 'rc-board' }, mapWrap, cursorDesc, legendEl),
+    h('div', { class: 'rc-board' }, mapWrap, cursorDesc, viewGroup, legendEl),
     h(
       'div',
       { class: 'rc-side' },
@@ -602,6 +617,22 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       if (!part.isConnected) shell.insertBefore(part, next);
       next = part;
     }
+  }
+
+  function setView(v: View): void {
+    if (v === mapView) return;
+    mapView = v;
+    try {
+      context.preferences?.set('mapView', v);
+    } catch {
+      /* not kept: this session only */
+    }
+    for (const [i, b] of viewButtons.entries()) b.setAttribute('aria-pressed', String(VIEWS[i] === v));
+    // The legend and the pictures in the lists follow the map.
+    for (const child of [...legendEl.children]) if (child.tagName !== 'SUMMARY') child.remove();
+    legendDrawn = false;
+    render();
+    announce(live, t('view.changed', { view: t(`view.${v}`) }));
   }
 
   /* ---------- Rendering ---------- */
@@ -1089,7 +1120,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     if (!g) return icon;
     const colour = sideColour(side);
     const surface = css('--wp-surface', '#ffffff');
-    if (drawIcon(g, kind, 0, 0, CELL / 44, { own, colour, surface })) return icon;
+    if (drawIcon(g, kind, 0, 0, CELL / 44, { own, colour, surface, view: mapView })) return icon;
     const c = CELL / 2;
     const r = CELL * 0.34;
     g.lineWidth = 3;
@@ -1234,14 +1265,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
               .filter(Boolean)
               .join(' · ');
       row(
-        swatch((g) => {
-          g.fillStyle = css(`--rc-${name}`, '#ddd');
-          g.fillRect(0, 0, CELL, CELL);
-          g.strokeStyle = css('--rc-mark', '#00000055');
-          g.fillStyle = css('--rc-mark', '#00000055');
-          g.lineWidth = 1.5;
-          drawTerrainMark(g, name, 0, 0);
-        }),
+        swatch((g) => drawTerrainSwatch(g, code, mapView, css)),
         `${t(`terrain.${name}`)}: ${effect}`
       );
     }
@@ -1264,7 +1288,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
           g.fillRect(0, 0, CELL, CELL);
           g.strokeStyle = css('--rc-mark', '#00000055');
           g.fillStyle = css('--rc-mark', '#00000055');
-          drawDeposit(g, 0, 0);
+          drawDeposit(g, 0, 0, 'plain', css('--wp-surface', '#ffffff'));
         }),
         t('legend.deposit')
       );
@@ -1274,27 +1298,19 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
           g.fillRect(0, 0, CELL, CELL);
           g.strokeStyle = css('--rc-mark', '#00000055');
           g.fillStyle = css('--rc-mark', '#00000055');
-          drawDeposit(g, 0, 0, 'endless');
+          drawDeposit(g, 0, 0, 'endless', css('--wp-surface', '#ffffff'));
         }),
         t('legend.depositEndless')
       );
-      row(swatch((g) => drawIcon(g, 'muster', 0, 0, CELL / 44, { own: true, colour: colourOwn, surface: css('--wp-surface', '#ffffff'), site: 2 })), t('legend.site'));
+      row(swatch((g) => drawIcon(g, 'muster', 0, 0, CELL / 44, { own: true, colour: colourOwn, surface: css('--wp-surface', '#ffffff'), site: 2, view: mapView })), t('legend.site'));
     }
-    row(swatch((g) => drawIcon(g, 'mast-truck', 0, 0, CELL / 44, { own: true, colour: colourOwn, surface: css('--wp-surface', '#ffffff'), deployed: true })), t('legend.setUp'));
-    row(swatch((g) => drawIcon(g, 'rifles', 0, 0, CELL / 44, { own: false, colour: colourEnemy, surface: css('--wp-surface', '#ffffff'), ghost: true })), t('legend.ghost'));
+    row(swatch((g) => drawIcon(g, 'mast-truck', 0, 0, CELL / 44, { own: true, colour: colourOwn, surface: css('--wp-surface', '#ffffff'), deployed: true, view: mapView })), t('legend.setUp'));
+    row(swatch((g) => drawIcon(g, 'rifles', 0, 0, CELL / 44, { own: false, colour: colourEnemy, surface: css('--wp-surface', '#ffffff'), ghost: true, view: mapView })), t('legend.ghost'));
     row(
       swatch((g) => {
-        g.fillStyle = css('--rc-plain', '#e7e3d4');
-        g.fillRect(0, 0, CELL, CELL);
-        g.strokeStyle = css('--rc-nocover', 'rgba(29, 29, 27, 0.35)');
-        g.beginPath();
-        for (let k = 0; k < CELL; k += 11) {
-          g.moveTo(k, 0);
-          g.lineTo(0, k);
-          g.moveTo(CELL, k);
-          g.lineTo(k, CELL);
-        }
-        g.stroke();
+        drawTerrainSwatch(g, '.', mapView, css);
+        // Covered on the left, outside on the right.
+        drawCoverEdge(g, [[CELL / 2, 0, 0, 1, 1]]);
       }),
       t('legend.noCover')
     );
@@ -1323,8 +1339,10 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       swatch((g) => {
         g.fillStyle = css('--rc-plain', '#e7e3d4');
         g.fillRect(0, 0, CELL, CELL);
-        g.fillStyle = css('--rc-fog', 'rgba(29, 29, 27, 0.18)');
+        drawTerrainSwatch(g, '.', mapView, css);
+        g.fillStyle = css('--rc-fog', 'rgba(250, 250, 247, 0.5)');
         g.fillRect(0, 0, CELL, CELL);
+        g.fillStyle = css('--rc-fog-dot', 'rgba(29, 29, 27, 0.4)');
         g.beginPath();
         g.arc(CELL - 7, CELL - 7, 2, 0, Math.PI * 2);
         g.fill();
@@ -1511,7 +1529,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     canvas.width = Math.round(width * ratio);
     canvas.height = Math.round(height * ratio);
     g.setTransform(ratio, 0, 0, ratio, 0, 0);
-    drawTerrain(g, w);
+    drawTerrain(g, w, ratio);
     drawFog(g, w);
     drawCoverage(g, w);
     drawOrders(g, w);
@@ -1524,23 +1542,18 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   function drawCoverage(g: CanvasRenderingContext2D, w: World): void {
     const net = network();
     g.save();
-    g.strokeStyle = css('--rc-nocover', 'rgba(29, 29, 27, 0.35)');
-    g.lineWidth = 1;
-    g.beginPath();
-    for (let y = 0; y < w.map.h; y++) {
+    // The edge of the coverage: a line with short ticks on the side outside it (shape, not colour).
+    const covered = (x: number, y: number) => x < 0 || y < 0 || x >= w.map.w || y >= w.map.h || net.coverage[cellOf(w.map, x, y)] === 1;
+    const edges: CoverEdge[] = [];
+    for (let y = 0; y < w.map.h; y++)
       for (let x = 0; x < w.map.w; x++) {
-        if (net.coverage[cellOf(w.map, x, y)] === 1) continue;
-        const px = x * CELL;
-        const py = y * CELL;
-        for (let k = 0; k < CELL; k += 11) {
-          g.moveTo(px + k, py);
-          g.lineTo(px, py + k);
-          g.moveTo(px + CELL, py + k);
-          g.lineTo(px + k, py + CELL);
-        }
+        if (!covered(x, y)) continue;
+        if (!covered(x + 1, y)) edges.push([(x + 1) * CELL, y * CELL, 0, 1, 1]);
+        if (!covered(x - 1, y)) edges.push([x * CELL, y * CELL, 0, 1, -1]);
+        if (!covered(x, y + 1)) edges.push([x * CELL, (y + 1) * CELL, 1, 0, 1]);
+        if (!covered(x, y - 1)) edges.push([x * CELL, y * CELL, 1, 0, -1]);
       }
-    }
-    g.stroke();
+    drawCoverEdge(g, edges);
     // Jammed cells: a zigzag across the cell (pattern, not colour alone).
     g.strokeStyle = css('--wp-danger', '#a1271b');
     g.lineWidth = 1.5;
@@ -1571,6 +1584,38 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     g.restore();
   }
 
+  /** A cell side on the edge of the coverage: start (px), direction (1, 0 or 0, 1), and the side outside it (±1). */
+  type CoverEdge = readonly [number, number, number, number, number];
+  function drawCoverEdge(g: CanvasRenderingContext2D, edges: readonly CoverEdge[]): void {
+    if (!edges.length) return;
+    const trace = () => {
+      g.beginPath();
+      for (const [x, y, dx, dy, out] of edges) {
+        g.moveTo(x, y);
+        g.lineTo(x + dx * CELL, y + dy * CELL);
+        // Ticks every 11 px, pointing outside (across the line).
+        for (let k = 5.5; k < CELL; k += 11) {
+          g.moveTo(x + dx * k, y + dy * k);
+          g.lineTo(x + dx * k + dy * out * 5, y + dy * k + dx * out * 5);
+        }
+      }
+    };
+    g.save();
+    g.lineCap = 'round';
+    g.setLineDash([]);
+    g.strokeStyle = css('--wp-surface', '#ffffff');
+    g.globalAlpha = 0.7;
+    g.lineWidth = 4;
+    trace();
+    g.stroke();
+    g.globalAlpha = 1;
+    g.strokeStyle = css('--rc-nocover', 'rgba(29, 29, 27, 0.6)');
+    g.lineWidth = 1.6;
+    trace();
+    g.stroke();
+    g.restore();
+  }
+
   /** A per-turn figure in the UI locale: whole numbers as they are, others to one decimal (1.5 → "1,5" in German). */
   const perTurn = (n: number): string => new Intl.NumberFormat(t.locale, { maximumFractionDigits: 1 }).format(n);
 
@@ -1594,45 +1639,66 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     g.restore();
   }
 
-  /** Veils cells the player does not see now: a translucent wash plus a dot (not colour alone). */
+  /**
+   * Veils cells the player does not see now: a milky wash with soft edges (a mask of four samples per
+   * cell, scaled up smoothly) plus a dot in each such cell (not colour alone).
+   */
+  const FOG_RES = 4;
+  let fogMask: HTMLCanvasElement | null = null;
   function drawFog(g: CanvasRenderingContext2D, w: World): void {
     if (revealed()) return;
     const observed = picture(state.world, me()).observed;
+    const fog = css('--rc-fog', 'rgba(250, 250, 247, 0.5)');
+    fogMask ??= h('canvas', {}) as HTMLCanvasElement;
+    fogMask.width = w.map.w * FOG_RES;
+    fogMask.height = w.map.h * FOG_RES;
+    const mg = fogMask.getContext('2d');
     g.save();
-    g.fillStyle = css('--rc-fog', 'rgba(29, 29, 27, 0.18)');
+    if (mg) {
+      mg.clearRect(0, 0, fogMask.width, fogMask.height);
+      mg.fillStyle = fog;
+      for (let y = 0; y < w.map.h; y++)
+        for (let x = 0; x < w.map.w; x++) if (observed[cellOf(w.map, x, y)] !== 1) mg.fillRect(x * FOG_RES, y * FOG_RES, FOG_RES, FOG_RES);
+      g.imageSmoothingEnabled = true;
+      g.drawImage(fogMask, 0, 0, w.map.w * CELL, w.map.h * CELL);
+    }
+    g.fillStyle = css('--rc-fog-dot', 'rgba(29, 29, 27, 0.4)');
+    g.beginPath();
     for (let y = 0; y < w.map.h; y++) {
       for (let x = 0; x < w.map.w; x++) {
         if (observed[cellOf(w.map, x, y)] === 1) continue;
-        g.fillRect(x * CELL, y * CELL, CELL, CELL);
-        g.beginPath();
+        if (!mg) g.fillRect(x * CELL, y * CELL, CELL, CELL);
+        g.moveTo(x * CELL + CELL - 5, y * CELL + CELL - 7);
         g.arc(x * CELL + CELL - 7, y * CELL + CELL - 7, 2, 0, Math.PI * 2);
-        g.fill();
       }
     }
+    g.fill();
     g.restore();
   }
 
-  function drawTerrain(g: CanvasRenderingContext2D, w: World): void {
-    const line = css('--rc-grid', '#00000022');
-    for (let y = 0; y < w.map.h; y++) {
+  /** The terrain (drawn once per map, view and theme), then the deposits and the cell grid on top. */
+  function drawTerrain(g: CanvasRenderingContext2D, w: World, ratio: number): void {
+    terrainLayer.draw(g, w.map, mapView, css, ratio);
+    const halo = css('--wp-surface', '#ffffff');
+    g.strokeStyle = css('--rc-mark', '#00000055');
+    g.fillStyle = css('--rc-mark', '#00000055');
+    for (let y = 0; y < w.map.h; y++)
       for (let x = 0; x < w.map.w; x++) {
-        const code = w.map.terrain[y * w.map.w + x] ?? '.';
-        const name = TERRAIN_NAMES[code] ?? 'plain';
-        const px = x * CELL;
-        const py = y * CELL;
-        g.fillStyle = css(`--rc-${name}`, '#ddd');
-        g.fillRect(px, py, CELL, CELL);
-        g.strokeStyle = css('--rc-mark', '#00000055');
-        g.fillStyle = css('--rc-mark', '#00000055');
-        g.lineWidth = 1.5;
-        drawTerrainMark(g, name, px, py);
         const deposit = depositAt(w.map, x, y);
-        if (deposit) drawDeposit(g, px, py, deposit.endless ? 'endless' : 'plain');
-        g.strokeStyle = line;
-        g.lineWidth = 1;
-        g.strokeRect(px + 0.5, py + 0.5, CELL - 1, CELL - 1);
+        if (deposit) drawDeposit(g, x * CELL, y * CELL, deposit.endless ? 'endless' : 'plain', halo);
       }
+    g.strokeStyle = css('--rc-grid', '#00000022');
+    g.lineWidth = 1;
+    g.beginPath();
+    for (let x = 1; x < w.map.w; x++) {
+      g.moveTo(x * CELL + 0.5, 0);
+      g.lineTo(x * CELL + 0.5, w.map.h * CELL);
     }
+    for (let y = 1; y < w.map.h; y++) {
+      g.moveTo(0, y * CELL + 0.5);
+      g.lineTo(w.map.w * CELL, y * CELL + 0.5);
+    }
+    g.stroke();
   }
 
   /** Diagonal hatching inside a structure under construction, and the turns left as a number. */
@@ -1735,7 +1801,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     g.save();
     // Icon set A: frame for category and side, mark for function (icons.ts); the old token is the
     // fallback where Path2D is missing.
-    const drawn = drawIcon(g, e.kind, e.x * CELL, e.y * CELL, CELL / 44, { own, colour, surface, ghost, deployed: isSetUp(e) && !ghost, ...(e.build !== undefined && { site: e.build }) });
+    const drawn = drawIcon(g, e.kind, e.x * CELL, e.y * CELL, CELL / 44, { own, colour, surface, ghost, view: mapView, deployed: isSetUp(e) && !ghost, ...(e.build !== undefined && { site: e.build }) });
     if (!drawn) {
       g.lineWidth = 3;
       g.strokeStyle = colour;

@@ -246,6 +246,35 @@ test('relay-command: "Deposits never run dry" chosen before the first turn survi
   await expect(page.getByTestId('rc-setup-summary')).toContainText('endless deposits');
 });
 
+test('relay-command: the map is drawn from the side or from above; the choice stays on this device after a reload; it fits a 360 px phone', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await start(page);
+  const picture = () => page.getByTestId('rc-map').evaluate((c) => (c as HTMLCanvasElement).toDataURL());
+  // The terrain is painted (not one flat colour per cell): many different colours in a strip of the map.
+  const colours = await page.getByTestId('rc-map').evaluate((c) => {
+    const canvas = c as HTMLCanvasElement;
+    const data = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, Math.min(canvas.height, 200)).data;
+    const seen = new Set<number>();
+    for (let i = 0; i < data.length; i += 4) seen.add((data[i]! << 16) | (data[i + 1]! << 8) | data[i + 2]!);
+    return seen.size;
+  });
+  expect(colours).toBeGreaterThan(200);
+  await expect(page.getByTestId('rc-view-profile')).toHaveAttribute('aria-pressed', 'true');
+  const side = await picture();
+  await page.getByTestId('rc-view-top').click();
+  await expect(page.getByTestId('rc-view-top')).toHaveAttribute('aria-pressed', 'true');
+  const above = await picture();
+  expect(above).not.toBe(side);
+  const widths = await page.evaluate(() => ({ page: document.documentElement.scrollWidth, viewport: document.documentElement.clientWidth }));
+  expect(widths.page).toBeLessThanOrEqual(widths.viewport);
+  await page.reload();
+  await page.getByTestId('continue').click();
+  await expect(page.getByTestId('rc-view-top')).toHaveAttribute('aria-pressed', 'true');
+  await page.getByTestId('rc-view-profile').click();
+  await expect(page.getByTestId('rc-view-profile')).toHaveAttribute('aria-pressed', 'true');
+  expect(await picture()).not.toBe(above);
+});
+
 test('relay-command: a random map chosen in the setup (size, map number) survives a reload; it fits a 360 px phone', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 740 });
   await start(page);

@@ -154,6 +154,34 @@ describe('Relay Command view', () => {
     expect(own.y).toBe(12);
   });
 
+  it('switches the map between the side view (default) and the top view, and keeps the choice on this device', () => {
+    expect($('rc-view-profile').getAttribute('aria-pressed')).toBe('true');
+    expect($('rc-view-top').getAttribute('aria-pressed')).toBe('false');
+    const rows = () => ctx.context.root.querySelectorAll('[data-testid="rc-legend"] li').length;
+    const before = rows();
+    click('rc-view-top');
+    expect($('rc-view-top').getAttribute('aria-pressed')).toBe('true');
+    expect($('rc-view-profile').getAttribute('aria-pressed')).toBe('false');
+    expect(ctx.preferences.get('mapView')).toBe('top');
+    later();
+    expect($('rc-live').textContent).toBe('Map view: From above.');
+    // The legend is drawn anew for the view, not added a second time.
+    expect(rows()).toBe(before);
+    expect(ctx.context.root.querySelectorAll('[data-testid="rc-legend-kinds"]')).toHaveLength(1);
+    // Choosing the same view again changes nothing.
+    $('rc-live').textContent = '';
+    click('rc-view-top');
+    later();
+    expect($('rc-live').textContent).toBe('');
+    // The game itself does not change: the choice is not part of the saved game.
+    expect(JSON.stringify(state())).not.toContain('mapView');
+    // A new start on this device opens in the chosen view.
+    instance.dispose();
+    instance = game.create(ctx.context) as GameInstance<RcState>;
+    instance.newGame({ seed: 4 });
+    expect($('rc-view-top').getAttribute('aria-pressed')).toBe('true');
+  });
+
   it('renders the turn, the status, both unit lists and the map', () => {
     expect($('rc-turn').textContent).toBe('Turn 1');
     expect($('rc-status').getAttribute('data-phase')).toBe('plan');
@@ -507,7 +535,7 @@ describe('Relay Command view', () => {
     for (const name of ['open ground', 'road', 'forest', 'hill', 'buildings', 'swamp', 'water', 'ridge']) expect(legend.textContent).toContain(name);
     expect(legend.textContent).toContain('move cost 6 · cover 25 %');
     expect(legend.textContent).toContain('impassable');
-    expect(legend.textContent).toContain('Structure (square on a bar)');
+    expect(legend.textContent).toContain('Structure (a building, no wheels)');
     expect(legend.querySelectorAll('li').length).toBeGreaterThanOrEqual(16);
   });
 
@@ -936,7 +964,7 @@ describe('Relay Command view', () => {
     // Rates per turn, not per tick (owner, 2026-10-18): 6 ticks a turn, the EMP Tower every 4: 1.5 shots.
     expect($('rc-card-rate').textContent).toBe('1.5× per turn · pulse (lands a moment later on the target’s cell and its neighbours)');
     expect($('rc-legend-kinds').textContent).toContain('Laser Tower');
-    expect(ctx.context.root.textContent).toContain('Defence tower (structure with battlements)');
+    expect(ctx.context.root.textContent).toContain('Defence tower (a turret on a pedestal)');
     expect(ctx.context.root.textContent).toContain('Defence towers are placed by the Command Post');
   });
 
