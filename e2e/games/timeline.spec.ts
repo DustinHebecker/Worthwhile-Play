@@ -167,3 +167,27 @@ test('timeline: fits 360 px in Arabic; the timeline stays left to right; 44 px t
   await expect(r.locator('#tl-review-heading')).toBeFocused();
   expect(await overflow()).toBeLessThanOrEqual(0);
 });
+
+test('timeline: works offline after the first visit — open, reload, continue and play an item', async ({ page, context }) => {
+  await page.goto('/');
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+  });
+  await page.reload(); // let the service worker control the page
+  await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true);
+  await context.setOffline(true);
+  try {
+    await startGame(page, ID, { difficulty: 'easy', settings: { mode: 'first', span: 'all' } });
+    const item = current<FirstItem>(await stateAt(page, 0));
+    await page.reload();
+    await page.getByTestId('continue').click();
+    const r = root(page);
+    await expect(r.getByTestId('tl-root')).toHaveAttribute('data-phase', 'first-question');
+    await r.getByTestId(`tl-first-${item.earlier}`).check();
+    await r.getByTestId('tl-check').click();
+    await expect(r.getByTestId('tl-verdict')).toHaveText(/^●●● Right: /);
+    await expect(r.getByTestId('tl-about')).toContainText('Sources');
+  } finally {
+    await context.setOffline(false);
+  }
+});
