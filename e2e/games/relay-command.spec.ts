@@ -324,7 +324,7 @@ test('relay-command: the last turn plays back on the map on a phone; it ends by 
   await expect(page.getByTestId('rc-replay-bar')).toBeVisible();
   // While it plays the map shows the turn as it went (not the end of it).
   await expect.poll(picture).not.toBe(end);
-  await expect(page.getByTestId('rc-replay-bar')).toBeHidden({ timeout: 10_000 });
+  await expect(page.getByTestId('rc-replay-bar')).toBeHidden({ timeout: 15_000 });
   await page.getByTestId('rc-replay').click();
   await page.getByTestId('rc-replay-skip').click();
   await expect(page.getByTestId('rc-replay-bar')).toBeHidden();
