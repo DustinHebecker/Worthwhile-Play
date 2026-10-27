@@ -115,7 +115,6 @@ export const tr: BalanceMessages = {
   'ex.right': 'Sağ: {terms} = {sum}',
   'ex.term': '{kg} kg × {d} = {m}',
   'ex.barTerm': 'çubuk {kg} kg × {d} = {m}',
-  'ex.table': 'masa',
   why: 'Neden?',
   formula: 'Formül',
   'formula.lever': 'Σ kg × adım (sol) = Σ kg × adım (sağ) olduğunda yatay.',

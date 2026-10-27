@@ -115,7 +115,6 @@ export const zhHans: BalanceMessages = {
   'ex.right': '右边：{terms} = {sum}',
   'ex.term': '{kg} 千克 × {d} = {m}',
   'ex.barTerm': '横杆 {kg} 千克 × {d} = {m}',
-  'ex.table': '桌子',
   why: '为什么？',
   formula: '公式',
   'formula.lever': '当 Σ 千克 × 格数（左）= Σ 千克 × 格数（右）时保持水平。',

@@ -67,7 +67,7 @@ export function explainLines(t: Translator, scene: Scene, outcome: Outcome, over
     return terms.map((x, i) => t('out.bar', { n: num(t, i + 1), l: num(t, x.l), r: num(t, x.r), verdict: t(`verdict.${sideOf(x.r - x.l)}`) }));
   }
   const lines = stackJoints(scene.s).map((j) =>
-    t('out.joint', { k: num(t, j.k + 1), x: one(t, j.S / j.M), lo: j.k === 0 ? t('ex.table') : num(t, j.lo), hi: num(t, j.hi), state: t(j.holds ? (j.edge ? 'state.edge' : 'state.holds') : 'state.tips') })
+    t('out.joint', { k: num(t, j.k + 1), x: one(t, j.S / j.M), lo: num(t, j.lo), hi: num(t, j.hi), state: t(j.holds ? (j.edge ? 'state.edge' : 'state.holds') : 'state.tips') })
   );
   if (outcome.bench === 'stack') {
     if (outcome.stands) lines.push(t(outcome.edge ? 'out.edge' : 'out.stands'));

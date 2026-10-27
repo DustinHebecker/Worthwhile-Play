@@ -115,7 +115,6 @@ export const ja: BalanceMessages = {
   'ex.right': '右：{terms} = {sum}',
   'ex.term': '{kg} kg × {d} = {m}',
   'ex.barTerm': '棒 {kg} kg × {d} = {m}',
-  'ex.table': '机',
   why: 'なぜ？',
   formula: '式',
   'formula.lever': 'Σ kg × 目盛り（左）= Σ kg × 目盛り（右）のとき水平。',

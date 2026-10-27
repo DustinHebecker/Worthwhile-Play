@@ -115,7 +115,6 @@ export const ru: BalanceMessages = {
   'ex.right': 'Справа: {terms} = {sum}',
   'ex.term': '{kg} кг × {d} = {m}',
   'ex.barTerm': 'стержень {kg} кг × {d} = {m}',
-  'ex.table': 'стол',
   why: 'Почему?',
   formula: 'Формула',
   'formula.lever': 'Горизонтально, когда Σ кг × шаги (слева) = Σ кг × шаги (справа).',

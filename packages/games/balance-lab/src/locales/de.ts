@@ -115,7 +115,6 @@ export const de: BalanceMessages = {
   'ex.right': 'Rechts: {terms} = {sum}',
   'ex.term': '{kg} kg × {d} = {m}',
   'ex.barTerm': 'Balken {kg} kg × {d} = {m}',
-  'ex.table': 'dem Tisch',
   why: 'Warum?',
   formula: 'Die Formel',
   'formula.lever': 'Waagerecht, wenn Σ kg × Schritte (links) = Σ kg × Schritte (rechts).',

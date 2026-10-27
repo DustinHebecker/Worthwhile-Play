@@ -115,7 +115,6 @@ export const nl: BalanceMessages = {
   'ex.right': 'Rechts: {terms} = {sum}',
   'ex.term': '{kg} kg × {d} = {m}',
   'ex.barTerm': 'balk {kg} kg × {d} = {m}',
-  'ex.table': 'de tafel',
   why: 'Waarom?',
   formula: 'De formule',
   'formula.lever': 'Horizontaal als Σ kg × stappen (links) = Σ kg × stappen (rechts).',

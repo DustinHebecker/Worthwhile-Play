@@ -115,7 +115,6 @@ export const hi: BalanceMessages = {
   'ex.right': 'दायाँ: {terms} = {sum}',
   'ex.term': '{kg} किग्रा × {d} = {m}',
   'ex.barTerm': 'छड़ {kg} किग्रा × {d} = {m}',
-  'ex.table': 'मेज़',
   why: 'क्यों?',
   formula: 'सूत्र',
   'formula.lever': 'क्षैतिज जब Σ किग्रा × कदम (बायाँ) = Σ किग्रा × कदम (दायाँ)।',

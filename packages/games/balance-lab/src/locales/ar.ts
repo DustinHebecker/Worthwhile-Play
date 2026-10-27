@@ -115,7 +115,6 @@ export const ar: BalanceMessages = {
   'ex.right': 'اليمين: {terms} = {sum}',
   'ex.term': '{kg} كغ × {d} = {m}',
   'ex.barTerm': 'القضيب {kg} كغ × {d} = {m}',
-  'ex.table': 'الطاولة',
   why: 'لماذا؟',
   formula: 'المعادلة',
   'formula.lever': 'أفقي عندما Σ كغ × خطوات (يسار) = Σ كغ × خطوات (يمين).',

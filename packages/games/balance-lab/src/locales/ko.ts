@@ -115,7 +115,6 @@ export const ko: BalanceMessages = {
   'ex.right': '오른쪽: {terms} = {sum}',
   'ex.term': '{kg} kg × {d} = {m}',
   'ex.barTerm': '막대 {kg} kg × {d} = {m}',
-  'ex.table': '탁자',
   why: '왜 그럴까?',
   formula: '공식',
   'formula.lever': 'Σ kg × 칸(왼쪽) = Σ kg × 칸(오른쪽)일 때 수평.',

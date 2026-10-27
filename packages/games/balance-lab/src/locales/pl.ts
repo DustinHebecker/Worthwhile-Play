@@ -115,7 +115,6 @@ export const pl: BalanceMessages = {
   'ex.right': 'Prawa: {terms} = {sum}',
   'ex.term': '{kg} kg × {d} = {m}',
   'ex.barTerm': 'belka {kg} kg × {d} = {m}',
-  'ex.table': 'stół',
   why: 'Dlaczego?',
   formula: 'Wzór',
   'formula.lever': 'Poziomo, gdy Σ kg × kroki (lewa) = Σ kg × kroki (prawa).',

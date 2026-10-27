@@ -115,7 +115,6 @@ export const uk: BalanceMessages = {
   'ex.right': 'Праворуч: {terms} = {sum}',
   'ex.term': '{kg} кг × {d} = {m}',
   'ex.barTerm': 'стрижень {kg} кг × {d} = {m}',
-  'ex.table': 'стіл',
   why: 'Чому?',
   formula: 'Формула',
   'formula.lever': 'Горизонтально, коли Σ кг × кроки (ліворуч) = Σ кг × кроки (праворуч).',

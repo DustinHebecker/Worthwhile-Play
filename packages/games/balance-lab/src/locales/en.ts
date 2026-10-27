@@ -114,7 +114,6 @@ export const en = {
   'ex.right': 'Right: {terms} = {sum}',
   'ex.term': '{kg} kg × {d} = {m}',
   'ex.barTerm': 'bar {kg} kg × {d} = {m}',
-  'ex.table': 'the table',
   why: 'Why?',
   formula: 'The formula',
   'formula.lever': 'Level when Σ kg × steps (left) = Σ kg × steps (right).',

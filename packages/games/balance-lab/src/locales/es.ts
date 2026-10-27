@@ -115,7 +115,6 @@ export const es: BalanceMessages = {
   'ex.right': 'Derecha: {terms} = {sum}',
   'ex.term': '{kg} kg × {d} = {m}',
   'ex.barTerm': 'barra {kg} kg × {d} = {m}',
-  'ex.table': 'la mesa',
   why: '¿Por qué?',
   formula: 'La fórmula',
   'formula.lever': 'Horizontal cuando Σ kg × pasos (izquierda) = Σ kg × pasos (derecha).',
