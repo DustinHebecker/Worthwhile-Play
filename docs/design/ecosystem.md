@@ -410,6 +410,8 @@ Families for "close" (●●○): up-first {`rises`, `rise-fall`}, down-first {`
 
 Sketch error: handles `p₁…p₆` at weeks `t_k = idiv(k·H, 6)`, values on the sketch chart's fixed y scale `0…Y`, where `Y = sketchMax` is stored per challenge question: a round value (1, 2 or 5 × 10ᵏ thousand u) ≥ 1.5 × max(model series, `v₀`) and ≥ 2 × `v₀` (checked by `challenges.slow.test.ts`), so the scale is known before the run and hints only weakly at the answer; `e = idiv(1000 · Σ |p_k − v_{t_k}|, 6 · Y)` ‰ *(calibrate the band limits on the e2e's sample sketches)*. The sketch's own shape (classifier on `[v₀, p₁…p₆]`) is shown next to the model's ("Your sketch: rises, then falls · The pond: rises, then falls ✓").
 
+**Shape cap (review, § 25):** a sketch's marks are at most ●●○ when its own class (classifier on `[v₀, p₁…p₆]`) differs from the model's but shares its family, and at most ●○○ otherwise; the model's class counts over every week or at the six handle weeks, whichever matches better.
+
 **Fairness rule (tested, § 19.3):** every question's answer is unambiguous: `level` answers have `ρ ≤ 0.75` or `ρ ≥ 1.25` (or `0.95 ≤ ρ ≤ 1.05` for "about the same"); `shape` answers are the same class for `p` = 15, 20 and 25.
 
 ### 11.3 Review content
@@ -706,7 +708,7 @@ Calibration: every preset is bit-identical to the planner's prototype (checked v
 
 1. **Arrivals only for species that ever lived in the habitat** (`Sim.seen`), as in the prototype; otherwise the bare presets would fill up with species the player never added.
 2. **`imp` counts the start amount**, so the balance invariant is exactly `total = imp − exp` (water: `w = wimp − wexp`); presets rebase `imp` to the total after spin-up.
-3. **Meadow decay is 3,000 ‰/week** (the prototype's own default was 10,000); 3,000 reproduces Appendix B exactly.
+3. **Meadow decay is 3,000 ppm/day** (0.3 % of the litter per day, as § 8.2 says; the prototype's own default was 10,000); 3,000 reproduces Appendix B exactly.
 4. **`remove` exports** the removed mass (as § 7 says; the prototype put it into dead matter). With export, worms-gone grasses become an ambiguous fall-rise at p = 15 %, so the worms-gone medium question asks for clover (rises) and the hard sketch draws clover.
 5. **CLDs:** the uptake edges (algae → nutrients, grasses → nutrients) were removed, because when nutrients are depleted the model's sensitivity has the opposite sign. Edge signs are tested by finite differences at the preset state (must equal the sign) and after the change (must not be opposite); ladybirds → aphids is zero right after spraying, hence the two-point test.
 6. **Shape threshold** uses the exact integer form `100·diff ≥ ref·p`.
@@ -714,8 +716,25 @@ Calibration: every preset is bit-identical to the planner's prototype (checked v
 8. **Explore** got a focus picker (which species the large chart shows) next to the comparison line.
 9. **Engine fuzz** runs 300 random sequences × 520 weeks per habitat (not 2,000) to keep the slow suite short; the exact-balance and bounds checks are unchanged.
 10. **Performance:** `stepWeek` ≈ 0.03 ms warm; 520 weeks ≈ 10–22 ms; fuzz ≈ 0.015–0.018 ms per simulated week; building all presets ≈ 250–385 ms (stored, so never at runtime).
-12. **Bundle (production build):** game chunk 300 KB minified / 91 KB gzip, of which ≈ 208 KB are the 16 UI catalogues (UTF-8), so code, data and the English messages are ≈ 92 KB (budget § 20: 120 KB). Content per locale via `preload`: 14–27 KB, except Hindi at 36.6 KB (Devanagari takes 3 bytes per character in UTF-8; 7.2 KB gzip), slightly above the 35 KB budget.
 11. **Names:** Portuguese is Brazilian ("Espiga-d’água" for pondweed); Turkish uses "Su otu" (pondweed) and "çiçek sinekleri" (hoverflies); Japanese content writes numbers in kanji (the content test forbids digits outside placeholders and loop ids).
+12. **Bundle (production build):** game chunk 300 KB minified / 91 KB gzip, of which ≈ 208 KB are the 16 UI catalogues (UTF-8), so code, data and the English messages are ≈ 92 KB (budget § 20: 120 KB). Content per locale via `preload`: 14–27 KB, except Hindi at 36.6 KB (Devanagari takes 3 bytes per character in UTF-8; 7.2 KB gzip), slightly above the 35 KB budget.
+
+
+## 25. Review notes (independent reviewer, 2026-10-27)
+
+Independent checks: a second implementation of the day and week step (Appendix C plus § 7.6, maps keyed by species id, BigInt division) reproduces every challenge run and every reference plan bit for bit (24 runs); all 16 challenges' stated answers and all four goals' outcomes were recomputed from it.
+
+Changes made in review (each with tests):
+
+1. **Explanations follow the model.** *slow-runoff* / *save-pondweed*: the pondweed is shaded out by duckweed and blue-green algae (0 → 157 and 0 → 91 thousand u by week 52), which take off only once nutrients have piled up; green algae stay flat (58 → 51) until after the flip. The diagram gains `duckweed` (nutrients →+ duckweed →− pondweed, highlighted as the slow chain) and the texts name it. *ladybirds-gone*: the aphids fall again because they eat the wildflowers down (106 → 33); with every ladybird removed the curve is the same, so the explaining loop is B1, not B2 (no longer a delay challenge). *fertilise*: the wildflowers do not decline (106 → 106 in two years, 110 after ten) and no plant disappears, so the text no longer says "fewer kinds of plants". Round remark on chains: steps do not always flip the direction (clover-poor is + + +).
+2. **Edge-sign test:** a species is nudged by at least 1,000 u (the steep responses work in thousands), so a small source such as duckweed (826 u) registers; every other edge keeps its sign.
+3. **"Does it hold?" looks 156 weeks ahead** (was 104): relocating 90 % of the rabbits twice, without foxes, reaches *bring-back-clover* in week 95 and slipped back only 114 weeks later, so the review called it held. Reference plans still hold; the pond's flush-only fixes still slip back after 72 / 79 weeks.
+4. **Sketch marks are capped by the sketch's shape** (§ 11.2 amended): on the roomy sketch scale an untouched flat line scored ●●● on 7 of 15 hard challenges and a mirrored sketch twice. Now another class of the same family gets at most ●●○, any other shape ●○○; the model's shape counts over every week or at the six handles, so a perfect sketch still scores ●●● (both checked per challenge).
+5. Hindi duckweed is डकवीड (जलकुंभी is water hyacinth); `MAX_TOTAL` written without `**`, and a source scan keeps the model files free of `**` and floating-point `Math` functions.
+
+Deviations of § 24 judged: 1 (arrivals only once seen) and 2 (imp counts the start) are equivalent bookkeeping, documented in `model.ts`; 3 (meadow decay) matches § 8.2 — the note's unit was wrong and is corrected; 4 (`remove` exports, worms-gone asks for clover) follows § 7.7, and clover rises unambiguously (2.06 ×; grasses fall to 44 and recover to 56, a fair reason not to ask for them); 5 (uptake edges removed) is honest: at the low nutrient levels of the presets, more algae or grass return more nutrients through excretion than they take up in a day, so the diagram would otherwise claim a sign the model contradicts; the recycle loop R1 of *algae-treatment* is then a true reinforcing loop of the drawn edges. 6–12 are fine.
+
+Known and accepted: integer flooring freezes very small populations (three 90 % relocations leave ≈ 200 u of rabbits that stay put for years); explore "continue from here" with heavy runoff keeps growing towards an equilibrium near 14 M u total (below `MAX_AMOUNT`); Hindi content is 36.6 KB (> 35 KB, 7.2 KB gzip: Devanagari takes 3 bytes per character), accepted.
 
 ---
 
