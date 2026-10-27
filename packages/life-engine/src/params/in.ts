@@ -82,6 +82,11 @@ export const IN_PARAMS: readonly Param[] = [
   p('in.model.household-size', 4, 'count', 'model-assumption', 2026, [3.5, 4.5], 'unverified', 'persons per household, to turn per-person spending into a single-adult budget'),
   p('in.model.coaching-odds-ratio', 3, 'ratio', 'model-assumption', 2026, [1.5, 5], 'unverified', 'chance of an elite seat with vs without coaching'),
   p('in.model.hospital-bill-months', 2, 'months', 'model-assumption', 2026, [1.2, 6], 'unverified', 'catastrophic bill in months of average living costs (the 10 %-of-consumption threshold is 1.2 months)'),
+  p('in.model.age-first-marriage-men', 24.5, 'years', 'model-assumption', 2026, [24, 26], 'unverified', 'median age at first marriage, men (research notes: ≈ 24–25)'),
+  p('in.model.parent-age-mother', 22, 'years', 'model-assumption', 2026, [20, 25], 'unverified', "mother's age at the person's birth (for the parents' life-table risk)"),
+  p('in.model.parent-age-father', 27, 'years', 'model-assumption', 2026, [24, 31], 'unverified', "father's age at the person's birth"),
+  p('in.model.child-wish-monthly', 0.08, 'share', 'model-assumption', 2026, [0.04, 0.12], 'unverified', 'monthly chance that a married couple talks about a (further) child; calibrated to a fertility of about 2'),
+  p('in.model.return-to-work-monthly', 0.01, 'share', 'model-assumption', 2026, [0.005, 0.03], 'unverified', 'monthly chance that the wish to work again comes up when caring at home (female participation 41.7 %)'),
   // --- Education -----------------------------------------------------------------------------------
   p('in.education.government-school-share', 0.559, 'share', 'cmse-2025', 2025, [0.539, 0.579], 'secondary', 'rural ≈ 66 %, urban 30.1 %'),
   p('in.education.private-unaided-share', 0.319, 'share', 'cmse-2025', 2025, [0.3, 0.36], 'secondary', 'UDISE+ 2023-24: 34.4 %'),
@@ -174,6 +179,9 @@ export const IN_PARAMS: readonly Param[] = [
   p('in.family.separated-share', 0.0061, 'share', 'ijps-divorce-2011', 2011, [0.0061, 0.012], 'secondary', 'of married people; separation more common than divorce; upper band assumed'),
   p('in.family.women-paid-cash', 0.254, 'share', 'nfhs5-factsheet', 2021, [0.234, 0.274], 'verified', 'women who worked in the last 12 months and were paid in cash; band assumed'),
   p('in.family.women-own-property', 0.433, 'share', 'nfhs5-factsheet', 2021, [0.413, 0.453], 'verified', 'house and/or land, alone or jointly; band assumed'),
+  p('in.family.family-involved-spouse-choice', 0.95, 'share', 'ncaer-ihds-marriage', 2012, [0.93, 0.97], 'secondary', 'ever-married women 15–49 whose family was involved in choosing the spouse; ≈ 5 % chose without family input'),
+  p('in.family.maternity-benefit-months', 6, 'months', 'hsf-maternity-2017', 2017, [6, 6], 'secondary', '26 weeks at full pay for the first two children, establishments with 10+ employees; ' + FIXED),
+  p('in.family.maternity-benefit-months-later', 3, 'months', 'hsf-maternity-2017', 2017, [3, 3], 'secondary', '12 weeks from the third child; ' + FIXED),
   // --- Housing -------------------------------------------------------------------------------------
   p('in.housing.ownership-rate', 0.87, 'share', 'mospi-housing-census', 2011, [0.85, 0.89], 'secondary', 'all-India; band assumed'),
   p('in.housing.ownership-rate-urban', 0.668, 'share', 'mospi-housing-census', 2001, [0.66, 0.69], 'secondary', '2001 (renters 28.5 %); 2011 split ≈ 67–69 % unverified'),

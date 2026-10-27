@@ -174,15 +174,15 @@ export const EVENTS_IN: readonly EventDef[] = [
     choices: [{ id: 'take', effects: startRegular }, { id: 'keep-looking', effects: [] }]
   },
   {
-    id: 'job.lost-in-casual', textId: 'job.lost-in', chancePpm: LAYOFF_PPM.casual, cooldownMonths: 6, when: all(flag('work.employed'), qual(0)), params: LAYOFF_PARAMS,
+    id: 'job.lost-in-casual', textId: 'job.lost-in', chancePpm: LAYOFF_PPM.casual, cooldownMonths: 6, when: all(flag('work.employed'), qual(0), not(flag('work.parental-leave'))), params: LAYOFF_PARAMS,
     choices: [{ id: 'accept', effects: loseJob }]
   },
   {
-    id: 'job.lost-in-regular', textId: 'job.lost-in', chancePpm: LAYOFF_PPM.regular, cooldownMonths: 6, when: all(flag('work.employed'), qual(1)), params: LAYOFF_PARAMS,
+    id: 'job.lost-in-regular', textId: 'job.lost-in', chancePpm: LAYOFF_PPM.regular, cooldownMonths: 6, when: all(flag('work.employed'), qual(1), not(flag('work.parental-leave'))), params: LAYOFF_PARAMS,
     choices: [{ id: 'accept', effects: loseJob }]
   },
   {
-    id: 'job.lost-in-graduate', textId: 'job.lost-in', chancePpm: LAYOFF_PPM.graduate, cooldownMonths: 6, when: all(flag('work.employed'), qual(2, 3)), params: LAYOFF_PARAMS,
+    id: 'job.lost-in-graduate', textId: 'job.lost-in', chancePpm: LAYOFF_PPM.graduate, cooldownMonths: 6, when: all(flag('work.employed'), qual(2, 3), not(flag('work.parental-leave'))), params: LAYOFF_PARAMS,
     choices: [{ id: 'accept', effects: loseJob }]
   },
   // --- Home --------------------------------------------------------------------------------------------

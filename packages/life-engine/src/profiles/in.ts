@@ -171,11 +171,12 @@ export const PROFILE_IN: Profile = {
   childSupport(age) {
     return Math.round(this.childCost(age) / 2);
   },
-  // Family events for this profile follow in the next step (maternity benefit, E4b).
-  parentalAllowance() {
-    return 0;
+  // Maternity benefit: full pay for 26 weeks in establishments with 10+ employees (the event offers
+  // it with social security only, as a proxy for such an employer).
+  parentalAllowance(lastNetCents) {
+    return lastNetCents;
   },
-  parentalLeaveMonths: 0,
+  parentalLeaveMonths: v('in.family.maternity-benefit-months'),
   // WID pre-tax income per adult (not equivalised household income as for Germany); the bottom-50
   // average stands in for the 25th percentile.
   incomeDistribution: [[25, v('in.income.bottom50-average')], [50, v('in.income.middle40-threshold')], [90, v('in.income.top10-threshold')], [99, v('in.income.top1-threshold')]],
