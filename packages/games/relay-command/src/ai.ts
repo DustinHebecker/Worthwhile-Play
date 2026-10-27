@@ -146,14 +146,14 @@ export function planAi(obs: Observation, ruleset: Ruleset, difficulty: Difficult
     const strategic = assault(obs, ruleset, plan, fighters.filter((u) => !engaged(u)));
     fighting = [...tactical, ...strategic];
   }
-  // Drones (normal / hard) take only the slots left over.
-  const drones = difficulty === 'easy' ? [] : droneOrders(obs, ruleset, own, plan);
+  // Drones (hard only: measured gain there, a loss at normal) take only the slots left over.
+  const drones = difficulty === 'hard' ? droneOrders(obs, ruleset, own, plan) : [];
   // Spend order slots only on orders the engine will accept.
   return [...fixed, ...fighting.filter(valid), ...drones.filter(valid)].slice(0, budget);
 }
 
 /**
- * Drones (owner decision 2026-10-27; normal and hard): each Scout Car launches its drone, and the
+ * Drones (owner decision 2026-10-27; hard only): each Scout Car launches its drone, and the
  * drone flies ahead of its car towards the objective (the post under attack, else the nearest known
  * enemy), as far as its leash allows, onto a cell no known enemy that can hit it reaches. What it
  * spots, the guns can shell. A drone already at (or flying to) a cell next to that one stays on course.
@@ -169,6 +169,9 @@ function droneOrders(obs: Observation, ruleset: Ruleset, own: readonly Entity[],
       return dist2(x, y, e.x, e.y) <= reach * reach;
     });
   for (const car of own) if (droneState(ruleset, car) === 'aboard') commands.push({ side, unit: car.id, order: { type: 'launch' } });
+  // Ahead only once the storm is on: flown out earlier, it shows the defence of the post and the
+  // storm waits for odds it never gets (a turtle then wins on strength, measured on Field Exercise).
+  if (plan && !plan.storming) return commands;
   for (const drone of own) {
     const car = carrierOf(world, drone);
     const leash = car && archetypeOf(ruleset, car.kind)?.carrier?.leash;
