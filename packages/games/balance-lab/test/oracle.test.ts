@@ -8,7 +8,7 @@ import type { Translator } from '@wp/game-core';
 import { goalMet } from '../src/check';
 import { describe as describeScene } from '../src/explain';
 import { freeEdit, freeScene, isBalanceState, newState, setMobileHook, type FreeState } from '../src/rules';
-import { DIFFICULTIES, generateTask, SIDES, STACK_ANSWERS, type Scene, type TaskId } from '../src/generate';
+import { DIFFICULTIES, generateRound, generateTask, isPredict, SIDES, STACK_ANSWERS, type Scene, type TaskId } from '../src/generate';
 
 type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -162,6 +162,18 @@ describe('independent oracle', () => {
 
   it('every listed id exists', () => {
     expect(ids('beam').length + ids('mobile').length + ids('stack').length).toBe(11);
+  });
+
+  it('predict rounds balance their answers (no option right for more than half, never three in a row)', () => {
+    for (const bench of ['beam', 'mobile', 'stack', 'mixed'] as const)
+      for (const d of DIFFICULTIES)
+        for (let seed = 0; seed < 60; seed++) {
+          const a = generateRound(createRng(seed), bench, 'predict', d)
+            .filter((t) => isPredict(t.id))
+            .map((t) => `${t.id}:${t.answer}`.replace('mobile-predict', 'beam-predict'));
+          for (const x of a) expect(a.filter((y) => y === x).length).toBeLessThanOrEqual(a.length / 2);
+          for (let i = 2; i < a.length; i++) expect(a[i] === a[i - 1] && a[i] === a[i - 2]).toBe(false);
+        }
   });
 
   it('the free mobile takes a weight on every one of its eight hooks', () => {

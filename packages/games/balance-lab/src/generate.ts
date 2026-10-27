@@ -496,9 +496,32 @@ export function predictNeeds(p: number, predictCount: number, d: Difficulty): Pr
   return { trap: d === 'easy' ? p % 3 === 0 : p % 2 === 0, exact: d !== 'easy' && predictCount >= 2 && p === 1 };
 }
 
+/** The option a predict item's answer names ("left-down", "stands", …); beam and mobile share their options. */
+const answerLabel = (t: TaskSpec): string => (t.answer === null ? '' : benchOf(t.id) === 'stack' ? STACK_ANSWERS[t.answer]! : SIDES[t.answer]!);
+const BALANCE_TRIES = 30;
+
+/**
+ * A round (design § 10.2). Balance of answers: a predict item is drawn again (same needs, bounded tries) while its
+ * answer would be right for more than half of the round's predict items or the third equal answer in a row. Where
+ * the rule cannot be met (e.g. three lever items on easy, where "stays level" never occurs) the last draw is kept.
+ */
 export function generateRound(rng: Rng, bench: BenchSetting, tasks: TasksSetting, d: Difficulty): TaskSpec[] {
   const ids = roundPlan(rng, bench, tasks, d);
   const predictCount = ids.filter(isPredict).length;
+  const answers: string[] = [];
   let p = 0;
-  return ids.map((id) => generateTask(rng, id, d, isPredict(id) ? predictNeeds(p++, predictCount, d) : undefined));
+  return ids.map((id) => {
+    if (!isPredict(id)) return generateTask(rng, id, d);
+    const needs = predictNeeds(p++, predictCount, d);
+    let task = generateTask(rng, id, d, needs);
+    for (let i = 0; i < BALANCE_TRIES; i++) {
+      const a = answerLabel(task);
+      const tooMany = answers.filter((x) => x === a).length + 1 > predictCount / 2;
+      const threeInARow = answers.length >= 2 && answers[answers.length - 1] === a && answers[answers.length - 2] === a;
+      if (!tooMany && !threeInARow) break;
+      task = generateTask(rng, id, d, needs);
+    }
+    answers.push(answerLabel(task));
+    return task;
+  });
 }
