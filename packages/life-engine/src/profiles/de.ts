@@ -151,5 +151,7 @@ export const PROFILE_DE: Profile = {
     const raw = lastNetCents * v('de.family.parental-allowance-rate');
     return Math.round(Math.min(cents(v('de.family.parental-allowance-max')), Math.max(cents(v('de.family.parental-allowance-min')), raw)));
   },
-  parentalLeaveMonths: v('de.family.parental-allowance-months') - 2
+  parentalLeaveMonths: v('de.family.parental-allowance-months') - 2,
+  incomeDistribution: ([10, 25, 50, 75, 90, 95, 99] as const).map((q) => [q, v(`de.income.equivalised-net-p${q}`)] as const),
+  wealthDistribution: [[10, v('de.wealth.household-p10')], [50, v('de.wealth.household-median')], [90, v('de.wealth.household-p90')]]
 };

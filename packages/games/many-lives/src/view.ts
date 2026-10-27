@@ -1,8 +1,8 @@
 import { bcp47Tag, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
 import { announce, clear, h } from '@wp/ui';
-import { STATS, ageInYears, balanceOf, dateOf } from '@wp/life-engine';
+import { STATS, ageInYears, balanceOf, dateOf, reviewLife, type YearRecord } from '@wp/life-engine';
 import {
-  ageOf, budgetOf, createState, currentEvent, decide, isOver, qualification, settingsOf, step, textIdOf, type ManyLivesState, type StepKind
+  PROFILE, ageOf, budgetOf, createState, currentEvent, decide, isOver, qualification, settingsOf, step, textIdOf, type ManyLivesState, type StepKind
 } from './rules';
 import { drawScene, placeOf } from './scene';
 import './styles.css';
@@ -101,13 +101,7 @@ export function createManyLives(context: GameContext): GameInstance<ManyLivesSta
   function renderCard() {
     clear(card);
     if (isOver(state)) {
-      card.append(
-        h('h2', {}, t('review.title')),
-        h('p', { 'data-testid': 'ml-review-age' }, t('review.age', { age: ageOf(state) })),
-        h('p', {}, t('review.wealth', { amount: money(balanceOf(state.life.ledger, 'cash')) })),
-        h('p', {}, t('review.qualification', { qualification: t(`qual.${qualification(state)}`) })),
-        h('p', { class: 'ml-muted' }, t('review.note'))
-      );
+      renderReview();
       return;
     }
     const ev = currentEvent(state);
@@ -133,6 +127,70 @@ export function createManyLives(context: GameContext): GameInstance<ManyLivesSta
         h('button', { type: 'button', 'data-testid': 'ml-year', onclick: () => advance('year') }, t('time.year')),
         h('button', { type: 'button', class: 'primary', 'data-testid': 'ml-next-event', 'data-autofocus': true, onclick: () => advance('event') }, t('time.event')))
     );
+  }
+
+  function renderReview() {
+    const r = reviewLife(state.life, PROFILE);
+    const year = state.life.calendar.birthYear;
+    const years = state.life.years ?? [];
+    card.append(
+      h('h2', {}, t('review.title')),
+      h('p', { 'data-testid': 'ml-review-age' }, t('review.age', { age: r.age })),
+      h('p', {}, t('review.wealth-real', { amount: money(balanceOf(state.life.ledger, 'cash')), real: money(r.realWealth), year })),
+      h('p', {}, t('review.qualification', { qualification: t(`qual.${qualification(state)}`) })),
+      h('p', {}, t('review.children', { n: r.children })),
+      h('p', { 'data-testid': 'ml-review-mobility' }, r.mobility.working === undefined
+        ? t('review.mobility-start', { start: r.mobility.start })
+        : t('review.mobility', { start: r.mobility.start, working: r.mobility.working })),
+      h('h3', {}, t('review.dimensions')),
+      h('ul', { class: 'ml-stats ml-review-dims', 'data-testid': 'ml-review-dims' }, ...r.dimensions.map((d) => {
+        const label = t(`review.dim.${d.id}`);
+        return h('li', { class: 'ml-stat' }, h('span', { class: 'ml-stat-label' }, label),
+          h('meter', { min: 0, max: 100, value: d.value, 'aria-label': t('stat.value', { label, value: d.value }) }),
+          h('span', { class: 'ml-stat-value', 'aria-hidden': 'true' }, String(d.value)));
+      })),
+      h('p', {}, t('review.satisfied-years', { n: new Intl.NumberFormat(bcp47Tag(t.locale), { maximumFractionDigits: 1 }).format(r.satisfiedYears) })),
+      ...(years.length > 1 ? [
+        h('h3', {}, t('review.timeline')),
+        timeline(years),
+        h('p', { class: 'ml-muted' }, t('review.legend')),
+        h('details', {}, h('summary', {}, t('review.table')), h('table', { class: 'ml-table' },
+          h('thead', {}, h('tr', {}, h('th', { scope: 'col' }, t('review.col.age')), h('th', { scope: 'col' }, t('review.col.satisfaction')), h('th', { scope: 'col' }, t('review.col.money', { year })))),
+          h('tbody', {}, ...years.filter((y, i) => y.age % 5 === 0 || i === years.length - 1).map((y) => h('tr', {},
+            h('td', {}, String(y.age)), h('td', {}, String(Math.round((y.stats[STATS.indexOf('satisfaction')] ?? 0) / 10))), h('td', {}, money(Math.round(y.cash / y.prices))))))))
+      ] : []),
+      h('p', { class: 'ml-muted' }, t('review.simplified')),
+      h('p', { class: 'ml-muted' }, t('review.note'))
+    );
+  }
+
+  /** Satisfaction (line) and money in start prices (area) over age; decorative, the table carries the data. */
+  function timeline(years: readonly YearRecord[]): SVGElement {
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 320 120');
+    svg.setAttribute('class', 'ml-timeline');
+    svg.setAttribute('aria-hidden', 'true');
+    const first = years[0]!.age;
+    const span = Math.max(1, years[years.length - 1]!.age - first);
+    const real = years.map((y) => y.cash / y.prices);
+    const top = Math.max(1, ...real);
+    const low = Math.min(0, ...real);
+    const x = (age: number) => 10 + (300 * (age - first)) / span;
+    const yMoney = (v: number) => 110 - (100 * (v - low)) / (top - low);
+    const ySat = (v: number) => 110 - v / 10;
+    const path = (pts: [number, number][]) => pts.map(([px, py], i) => `${i ? 'L' : 'M'}${px.toFixed(1)} ${py.toFixed(1)}`).join('');
+    const area = document.createElementNS(NS, 'path');
+    area.setAttribute('d', `${path(years.map((y, i) => [x(y.age), yMoney(real[i]!)]))}L${x(years[years.length - 1]!.age).toFixed(1)} 110L${x(first).toFixed(1)} 110Z`);
+    area.setAttribute('class', 'ml-t-money');
+    const line = document.createElementNS(NS, 'path');
+    line.setAttribute('d', path(years.map((y) => [x(y.age), ySat(y.stats[STATS.indexOf('satisfaction')] ?? 0)])));
+    line.setAttribute('class', 'ml-t-sat');
+    const axis = document.createElementNS(NS, 'path');
+    axis.setAttribute('d', 'M10 110H310');
+    axis.setAttribute('class', 'ml-t-axis');
+    svg.append(area, axis, line);
+    return svg;
   }
 
   function renderBudget() {

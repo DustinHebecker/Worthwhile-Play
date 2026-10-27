@@ -1,21 +1,38 @@
 import { createRng } from '@wp/game-core';
 import type { Economy } from './economy';
 import { isEconomy, nextEconomyYear, startEconomy } from './economy';
-import { book, openLedger } from './ledger';
+import { balanceOf, book, openLedger } from './ledger';
 import { LIFE_TABLES } from './params/lifetables';
 import type { Living, Profile, Qualification } from './profile';
 import { QUALIFICATIONS } from './profile';
 import type { RngFor } from './sim';
 import type { LifeCore, Sex } from './state';
 import { STATS, clampStat, isLifeCore } from './state';
-import { ageInYears, dateOf } from './time';
+import { ageInYears, dateOf, isBirthday } from './time';
 
-/** A life: the core plus the economy it lives in and how it started. */
+/** One line of a life's history, written on each birthday from the own-finances age and at the end. */
+export interface YearRecord {
+  age: number;
+  /** Money at the end of the year (cents, nominal). */
+  cash: number;
+  /** Price index then (to show money in start-year prices). */
+  prices: number;
+  /** Own monthly income (all positive budget items, cents, nominal) in the last month. */
+  income: number;
+  /** The stats in the order of STATS. */
+  stats: number[];
+}
+
+/** A life: the core plus the economy it lives in, how it started and its yearly history. */
 export interface LifeState extends LifeCore {
   seed: number;
   householdId: string;
   economy: Economy;
+  /** Yearly history (absent in saves from before it existed). */
+  years?: YearRecord[];
 }
+
+export const YEARS_LIMIT = 130;
 
 /** Age from which the person has own finances (budget booked monthly). */
 export const OWN_FINANCES_AGE = 16;
@@ -166,7 +183,8 @@ export function lifeSystems(profile: Profile): (s: LifeState, rngFor: RngFor) =>
     const age = ageInYears(s.month);
     if (age >= MORTALITY_FROM_AGE && !(has(s, 'content.gentle') && age < GENTLE_MIN_DEATH_AGE)) {
       if (rngFor(s.month, 'mortality').next() * 1_000_000 < mortalityPpm(s, profile)) {
-        return { ...s, alive: false, flags: [...new Set([...s.flags, 'died.natural'])].sort() };
+        const dead = { ...s, alive: false, flags: [...new Set([...s.flags, 'died.natural'])].sort() };
+        return { ...dead, years: recordYear(dead, 0) };
       }
     }
     const items = budget(s, profile);
@@ -177,12 +195,39 @@ export function lifeSystems(profile: Profile): (s: LifeState, rngFor: RngFor) =>
     if (salary !== undefined) counters['work.last-net'] = salary.cents;
     if (has(s, 'work.unemployed') && counter(s, 'ui.left') > 0) counters['ui.left'] = counter(s, 'ui.left') - 1;
     if (has(s, 'work.parental-leave') && counter(s, 'leave.left') > 0) counters['leave.left'] = counter(s, 'leave.left') - 1;
-    return { ...s, ledger, counters };
+    const next = { ...s, ledger, counters };
+    if (age >= OWN_FINANCES_AGE && isBirthday(s.month)) {
+      return { ...next, years: recordYear(next, items.reduce((a, i) => a + Math.max(0, i.cents), 0)) };
+    }
+    return next;
   };
+}
+
+/** Appends this year's record (bounded). */
+function recordYear(s: LifeState, income: number): YearRecord[] {
+  const record: YearRecord = {
+    age: ageInYears(s.month),
+    cash: balanceOf(s.ledger, 'cash'),
+    prices: s.economy.priceIndex,
+    income,
+    stats: STATS.map((id) => s.stats[id])
+  };
+  return [...(s.years ?? []), record].slice(-YEARS_LIMIT);
+}
+
+function isYearRecord(v: unknown): v is YearRecord {
+  if (typeof v !== 'object' || v === null) return false;
+  const r = v as Record<string, unknown>;
+  return Number.isInteger(r.age) && (r.age as number) >= 0 && (r.age as number) <= 150
+    && Number.isSafeInteger(r.cash) && Number.isSafeInteger(r.income)
+    && typeof r.prices === 'number' && Number.isFinite(r.prices) && r.prices > 0
+    && Array.isArray(r.stats) && r.stats.length === STATS.length
+    && r.stats.every((x) => Number.isInteger(x) && (x as number) >= 0 && (x as number) <= 1000);
 }
 
 export function isLifeState(value: unknown): value is LifeState {
   if (!isLifeCore(value)) return false;
   const s = value as unknown as Record<string, unknown>;
-  return Number.isSafeInteger(s.seed) && typeof s.householdId === 'string' && /^[a-z0-9-]{1,40}$/.test(s.householdId) && isEconomy(s.economy);
+  return Number.isSafeInteger(s.seed) && typeof s.householdId === 'string' && /^[a-z0-9-]{1,40}$/.test(s.householdId) && isEconomy(s.economy)
+    && (s.years === undefined || (Array.isArray(s.years) && s.years.length <= YEARS_LIMIT && s.years.every(isYearRecord)));
 }

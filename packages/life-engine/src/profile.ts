@@ -59,4 +59,8 @@ export interface Profile {
   parentalAllowance(lastNetCents: number): number;
   /** Months of parental allowance for one parent (the partner months come on top). */
   parentalLeaveMonths: number;
+  /** Equivalised annual net income by percentile at start prices: [percentile, currency units], ascending. */
+  incomeDistribution: readonly (readonly [number, number])[];
+  /** Household net wealth by percentile at start prices: [percentile, currency units], ascending. */
+  wealthDistribution: readonly (readonly [number, number])[];
 }

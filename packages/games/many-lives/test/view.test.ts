@@ -60,6 +60,10 @@ describe('Many Lives view', () => {
     }
     expect(isOver(instance.serialize())).toBe(true);
     expect(byId(root, 'ml-review-age')?.textContent).toContain('Lived to the age of');
+    expect(byId(root, 'ml-review-dims')?.querySelectorAll('meter')).toHaveLength(7);
+    expect(byId(root, 'ml-review-mobility')?.textContent).toMatch(/percentile \d+/);
+    expect(root.querySelector('.ml-timeline')).not.toBeNull();
+    expect(root.querySelectorAll('.ml-table tbody tr').length).toBeGreaterThan(3);
     expect(ctx.results).toEqual([{ outcome: 'completed', stats: { age: expect.any(Number) } }]);
     expect(instance.serialize().reported).toBe(true);
     // A restored finished life shows the review again but is not reported twice.
