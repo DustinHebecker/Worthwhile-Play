@@ -714,6 +714,7 @@ Calibration: every preset is bit-identical to the planner's prototype (checked v
 8. **Explore** got a focus picker (which species the large chart shows) next to the comparison line.
 9. **Engine fuzz** runs 300 random sequences × 520 weeks per habitat (not 2,000) to keep the slow suite short; the exact-balance and bounds checks are unchanged.
 10. **Performance:** `stepWeek` ≈ 0.03 ms warm; 520 weeks ≈ 10–22 ms; fuzz ≈ 0.015–0.018 ms per simulated week; building all presets ≈ 250–385 ms (stored, so never at runtime).
+12. **Bundle (production build):** game chunk 300 KB minified / 91 KB gzip, of which ≈ 208 KB are the 16 UI catalogues (UTF-8), so code, data and the English messages are ≈ 92 KB (budget § 20: 120 KB). Content per locale via `preload`: 14–27 KB, except Hindi at 36.6 KB (Devanagari takes 3 bytes per character in UTF-8; 7.2 KB gzip), slightly above the 35 KB budget.
 11. **Names:** Portuguese is Brazilian ("Espiga-d’água" for pondweed); Turkish uses "Su otu" (pondweed) and "çiçek sinekleri" (hoverflies); Japanese content writes numbers in kanji (the content test forbids digits outside placeholders and loop ids).
 
 ---
