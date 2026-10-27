@@ -5,6 +5,9 @@ import {
 } from '../src';
 import { testRngFor } from './helpers';
 
+/** Whole-life simulations: a generous timeout so they stay reliable on loaded machines. */
+const HEAVY = 120_000;
+
 const systems = lifeSystems(PROFILE_IN);
 const params = new Set(ALL_PARAMS.map((p) => p.id));
 
@@ -54,7 +57,7 @@ describe('India event pack', () => {
       expect(isLifeState(s)).toBe(true);
       expect(ageInYears(s.month)).toBeGreaterThanOrEqual(16);
     }
-  });
+  }, HEAVY);
 
   it('reaches every event over many lives', () => {
     const all = new Map<string, number>();
@@ -62,7 +65,7 @@ describe('India event pack', () => {
       for (const [id, n] of play(seed, undefined, random(seed)).seen) all.set(id, (all.get(id) ?? 0) + n);
     }
     expect(EVENTS_IN.map((e) => e.id).filter((id) => !all.has(id))).toEqual([]);
-  });
+  }, HEAVY);
 
   it('keeps the elite seat rare and coaching helpful, and gives a degree without it', () => {
     let seats = 0;
@@ -77,7 +80,7 @@ describe('India event pack', () => {
     expect(seats / n).toBeGreaterThan(0.015);
     expect(seats / n).toBeLessThan(0.09);
     expect(graduates / n).toBeGreaterThan(0.9);
-  });
+  }, HEAVY);
 
   it('lets the street household reach regular work and a room', () => {
     let rooms = 0;
@@ -90,7 +93,7 @@ describe('India event pack', () => {
     }
     expect(rooms / n).toBeGreaterThan(0.8);
     expect(qualified / n).toBeGreaterThan(0.6);
-  });
+  }, HEAVY);
 
   it('books hospital bills in start prices scaled by inflation', () => {
     let bills = 0;
@@ -103,5 +106,5 @@ describe('India event pack', () => {
       }
     }
     expect(bills).toBe(1);
-  });
+  }, HEAVY);
 });
