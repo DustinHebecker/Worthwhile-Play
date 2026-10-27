@@ -70,6 +70,8 @@
 .ml-s-ground { fill: var(--ml-ground); }
 .ml-s-wall { fill: var(--ml-wall); stroke: var(--ml-ink); stroke-width: 1.5; }
 .ml-s-roof { fill: var(--ml-roof); stroke: var(--ml-ink); stroke-width: 1.5; }
+.ml-s-tarp { fill: var(--ml-roof); stroke: var(--ml-ink); stroke-width: 1.5; opacity: 0.85; }
+.ml-s-lamp { fill: none; stroke: var(--ml-ink); stroke-width: 3; }
 .ml-s-window { fill: var(--ml-window); stroke: var(--ml-ink); stroke-width: 1; }
 .ml-s-door, .ml-s-trunk { fill: var(--ml-door); }
 .ml-s-plant { fill: var(--ml-green); }
