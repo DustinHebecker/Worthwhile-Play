@@ -9,7 +9,7 @@ export interface Host {
   readonly ui: Ui;
   readonly t: Translator;
   readonly axis: AxisViewApi;
-  /** The current calendar year (typed "years ago" count back from it). */
+  /** The current calendar year (typed "years ago" after 10,000 BCE count back from it). */
   readonly nowYear: number;
   state(): TimelineState;
   paused(): boolean;

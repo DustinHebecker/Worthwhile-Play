@@ -115,7 +115,7 @@ export function whenScreen(host: Host, item: WhenItem): Screen {
       fit: null,
       onPlace(y, via) {
         if (host.paused()) return;
-        const entry = yearToEntry(y, host.nowYear);
+        const entry = yearToEntry(y);
         const next = setWhenDraft(host.state(), { y, unit: entry.unit, text: entryText(entry.value, entry.unit, ui.locale) });
         host.commit(next, null, via === 'pointer' ? t('when.placed', { date: ui.year(y) }) : undefined);
       }

@@ -1,6 +1,8 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
+import { ALL } from '../src/data';
 import { EVENTS } from '../src/events';
+import { scoreYear } from '../src/score';
 import {
   AXIS_YEAR, BP_YEAR, EARTH_AGE, U_MAX, U_MIN, Y_MAX, Y_MIN, age, clampYear, entryToYear, eraOf, fromBce, fromBp, normalise, regimeOf, roundSig, sep,
   snapStep, snapYear, toBce, u, yearAtU, yearToEntry, yearsBetween
@@ -87,33 +89,78 @@ describe('time model (design § 5)', () => {
     expect(entryToYear(1969, 'ce', 2026)).toEqual({ ok: true, y: 1969 });
     expect(entryToYear(2560, 'bce', 2026)).toEqual({ ok: true, y: -2559 });
     expect(entryToYear(1, 'bce', 2026)).toEqual({ ok: true, y: 0 });
+    // Recent "years ago" count back from the current year …
     expect(entryToYear(57, 'ago', 2026)).toEqual({ ok: true, y: 1969 });
-    expect(entryToYear(14.4, 'ka', 2026)).toEqual({ ok: true, y: 2026 - 14_400 });
-    expect(entryToYear(66, 'ma', 2026)).toEqual({ ok: true, y: 2026 - 66e6 });
-    expect(entryToYear(4.54, 'ga', 2026)).toEqual({ ok: true, y: 2026 - 4.54e9 });
+    expect(entryToYear(57, 'ago', 2030)).toEqual({ ok: true, y: 1973 });
+    expect(entryToYear(11_949, 'ago', 2026)).toEqual({ ok: true, y: 2026 - 11_949 });
+    // … dates older than 10,000 BCE from 1950, as they are shown (§ 5.1).
+    expect(entryToYear(11_950, 'ago', 2026)).toEqual({ ok: true, y: -10_000 });
+    expect(entryToYear(12_800, 'ago', 2026)).toEqual({ ok: true, y: 1950 - 12_800 });
+    expect(entryToYear(12_800, 'ago', 2100)).toEqual({ ok: true, y: 1950 - 12_800 });
+    expect(entryToYear(14.4, 'ka', 2026)).toEqual({ ok: true, y: 1950 - 14_400 });
+    expect(entryToYear(66, 'ma', 2026)).toEqual({ ok: true, y: 1950 - 66e6 });
+    expect(entryToYear(4.54, 'ga', 2026)).toEqual({ ok: true, y: 1950 - 4.54e9 });
     expect(entryToYear(2021, 'ce', 2026)).toEqual({ ok: false, reason: 'tooRecent' });
     expect(entryToYear(5, 'ago', 2026)).toEqual({ ok: false, reason: 'tooRecent' });
-    expect(entryToYear(6, 'ga', 2026)).toEqual({ ok: false, reason: 'tooOld' });
+    expect(entryToYear(5, 'ga', 2026)).toEqual({ ok: true, y: Y_MIN });
+    expect(entryToYear(5.001, 'ga', 2026)).toEqual({ ok: false, reason: 'tooOld' });
     expect(entryToYear(0, 'ce', 2026)).toEqual({ ok: false, reason: 'zero' });
     expect(entryToYear(0.2, 'ce', 2026)).toEqual({ ok: false, reason: 'zero' });
     expect(entryToYear(Number.NaN, 'ce', 2026)).toEqual({ ok: false, reason: 'zero' });
   });
 
-  it('shows axis years in the field in a fitting unit', () => {
-    expect(yearToEntry(1969, 2026)).toEqual({ unit: 'ce', value: 1969 });
-    expect(yearToEntry(0, 2026)).toEqual({ unit: 'bce', value: 1 });
-    expect(yearToEntry(-9999, 2026)).toEqual({ unit: 'bce', value: 10_000 });
-    expect(yearToEntry(-12_450, 2026)).toEqual({ unit: 'ago', value: 14_500 });
-    expect(yearToEntry(2026 - 66e6, 2026)).toEqual({ unit: 'ma', value: 66 });
-    expect(yearToEntry(2026 - 4.54e9, 2026)).toEqual({ unit: 'ga', value: 4.54 });
-    // Typed back in its unit, the value lands within the snapping resolution.
+  it('shows axis years in the field in a fitting unit, deep-past years ago from 1950', () => {
+    expect(yearToEntry(1969)).toEqual({ unit: 'ce', value: 1969 });
+    expect(yearToEntry(0)).toEqual({ unit: 'bce', value: 1 });
+    expect(yearToEntry(-9999)).toEqual({ unit: 'bce', value: 10_000 });
+    expect(yearToEntry(-10_000)).toEqual({ unit: 'ago', value: 12_000 });
+    expect(yearToEntry(-12_450)).toEqual({ unit: 'ago', value: 14_400 });
+    expect(yearToEntry(1950 - 66e6)).toEqual({ unit: 'ma', value: 66 });
+    expect(yearToEntry(1950 - 4.54e9)).toEqual({ unit: 'ga', value: 4.54 });
+    // Typed back in its unit (in any current year), the value lands within the snapping resolution.
     fc.assert(
-      fc.property(fc.integer({ min: Y_MIN, max: Y_MAX }), (y) => {
-        const e = yearToEntry(y, 2026);
-        const r = entryToYear(e.value, e.unit, 2026);
-        return r.ok && Math.abs(r.y - y) <= Math.max(1, (2026 - y) * 0.006);
+      fc.property(fc.integer({ min: Y_MIN, max: Y_MAX }), fc.integer({ min: 2026, max: 2100 }), (y, now) => {
+        const e = yearToEntry(y);
+        const r = entryToYear(e.value, e.unit, now);
+        return r.ok && Math.abs(r.y - y) <= Math.max(1, (AXIS_YEAR - y) * 0.006);
       })
     );
+  });
+
+  it('scores any year inside an event\'s shown range, typed in the shown unit, as within the range', () => {
+    // The shown "years ago" numbers: years before 1950 with at most 4 significant digits (format.ts, § 5.3).
+    const shownAgo = (y: number) => roundSig(BP_YEAR - y, 4);
+    const typed = (n: number): [number, 'ago' | 'ma' | 'ga'] => (n < 1e6 ? [n, 'ago'] : n < 1e9 ? [n / 1e6, 'ma'] : [n / 1e9, 'ga']);
+    /** Every shown unit's part of the range scores band 0 for the value at fraction `f` between its shown ends. */
+    const inside = (e: (typeof ALL)[number], f: number, now: number): boolean => {
+      const bands: number[] = [];
+      if (regimeOf(e.lo) === 'ago') {
+        // The "years ago" part of the shown range (up to 10,000 BCE when the range reaches into BCE years).
+        const older = shownAgo(e.lo);
+        const newer = regimeOf(e.hi) === 'ago' ? shownAgo(e.hi) : BP_YEAR + 10_000;
+        const [value, unit] = typed(Math.round(newer + f * (older - newer)));
+        const r = entryToYear(value, unit, now);
+        if (!r.ok) return false;
+        bands.push(scoreYear(r.y, e.lo, e.hi).band);
+      }
+      if (regimeOf(e.hi) !== 'ago') {
+        const lo = Math.max(e.lo, -9999);
+        const y = Math.round(lo + f * (e.hi - lo));
+        const r = y >= 1 ? entryToYear(y, 'ce', now) : entryToYear(toBce(y), 'bce', now);
+        if (!r.ok) return false;
+        bands.push(scoreYear(r.y, e.lo, e.hi).band);
+      }
+      return bands.length > 0 && bands.every((b) => b === 0);
+    };
+    for (const e of ALL) for (const f of [0, 0.5, 1]) expect(inside(e, f, 2026), `${e.id} at ${f}`).toBe(true);
+    fc.assert(
+      fc.property(fc.constantFrom(...ALL), fc.double({ min: 0, max: 1, noNaN: true }), fc.integer({ min: 2026, max: 2100 }), inside),
+      { numRuns: 2000 }
+    );
+    // The report that started it: Clovis, shown as 13,050–12,750 years ago, typed as 12,800.
+    const clovis = ALL.find((e) => e.id === 'clovis')!;
+    const r = entryToYear(12_800, 'ago', 2026);
+    expect(r.ok && scoreYear(r.y, clovis.lo, clovis.hi).band).toBe(0);
   });
 
   it('separates ranges on the log scale (0 when they overlap)', () => {

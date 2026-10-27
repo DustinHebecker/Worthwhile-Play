@@ -1,6 +1,6 @@
 /**
  * The time model (design § 5): astronomical years, "years ago", the logarithmic age scale, eras, display regimes,
- * snapping and typed entry. Pure; no clock is read here (the view passes the current year for typed "years ago").
+ * snapping and typed entry. Pure; no clock is read here (the view passes the current year for recent typed "years ago").
  */
 import type { EventData } from './types';
 
@@ -85,8 +85,9 @@ const AGO_FACTOR: Readonly<Record<'ago' | 'ka' | 'ma' | 'ga', number>> = { ago: 
 export type EntryResult = { readonly ok: true; readonly y: number } | { readonly ok: false; readonly reason: 'tooRecent' | 'tooOld' | 'zero' };
 
 /**
- * A typed number in a unit as an astronomical year. "Years ago" count back from `nowYear` (the current year, from the
- * view); CE and BCE values are rounded to whole years.
+ * A typed number in a unit as an astronomical year. "Years ago" count the way dates are shown (§ 5.3): a date that
+ * lies before 10,000 BCE counts from 1950, as the sources and the display do; a more recent one counts back from
+ * `nowYear` (the current year, from the view). CE and BCE values are rounded to whole years.
  */
 export function entryToYear(value: number, unit: EntryUnit, nowYear: number): EntryResult {
   if (!Number.isFinite(value) || value <= 0) return { ok: false, reason: 'zero' };
@@ -98,7 +99,8 @@ export function entryToYear(value: number, unit: EntryUnit, nowYear: number): En
   } else {
     const years = Math.round(value * AGO_FACTOR[unit]);
     if (years < 1) return { ok: false, reason: 'zero' };
-    y = nowYear - years;
+    const bp = fromBp(years);
+    y = regimeOf(bp) === 'ago' ? bp : nowYear - years;
   }
   if (y > Y_MAX) return { ok: false, reason: 'tooRecent' };
   if (y < Y_MIN) return { ok: false, reason: 'tooOld' };
@@ -109,13 +111,13 @@ export function entryToYear(value: number, unit: EntryUnit, nowYear: number): En
 export const roundSig = (x: number, n: number): number => (x > 0 && Number.isFinite(x) ? Number(x.toPrecision(n)) : x);
 
 /**
- * How a year from the axis appears in the typed field: the year (CE or BCE) from 10,000 BCE on, else years ago from
- * `nowYear` (three significant digits) in a fitting unit.
+ * How a year from the axis appears in the typed field: the year (CE or BCE) from 10,000 BCE on, else years before
+ * 1950 (three significant digits) in a fitting unit — the way the date is shown and read back by `entryToYear`.
  */
-export function yearToEntry(y: number, nowYear: number): { readonly unit: EntryUnit; readonly value: number } {
+export function yearToEntry(y: number): { readonly unit: EntryUnit; readonly value: number } {
   if (y >= 1) return { unit: 'ce', value: y };
   if (y >= -9999) return { unit: 'bce', value: toBce(y) };
-  const a = nowYear - y;
+  const a = BP_YEAR - y;
   if (a < 1e6) return { unit: 'ago', value: roundSig(a, 3) };
   if (a < 1e9) return { unit: 'ma', value: roundSig(a / 1e6, 3) };
   return { unit: 'ga', value: roundSig(a / 1e9, 3) };
