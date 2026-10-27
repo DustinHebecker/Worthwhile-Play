@@ -300,6 +300,27 @@ test('relay-command: a Scout Car launches its drone on a phone; the drone stays 
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
 });
 
+test('relay-command: the last turn plays back on the map on a phone; it ends by itself or when skipped (owner request 2026-10-27)', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await start(page);
+  await expect(page.getByTestId('rc-replay')).toBeDisabled();
+  await page.locator('[data-testid^="rc-unit-"]').nth(2).click();
+  await page.getByTestId('rc-regroup').click();
+  await page.getByTestId('rc-lock').click();
+  await expect(page.getByTestId('rc-replay')).toBeEnabled();
+  const picture = () => page.getByTestId('rc-map').evaluate((c) => (c as HTMLCanvasElement).toDataURL());
+  const end = await picture();
+  await page.getByTestId('rc-replay').click();
+  await expect(page.getByTestId('rc-replay-bar')).toBeVisible();
+  // While it plays the map shows the turn as it went (not the end of it).
+  await expect.poll(picture).not.toBe(end);
+  await expect(page.getByTestId('rc-replay-bar')).toBeHidden({ timeout: 10_000 });
+  await page.getByTestId('rc-replay').click();
+  await page.getByTestId('rc-replay-skip').click();
+  await expect(page.getByTestId('rc-replay-bar')).toBeHidden();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+});
+
 test('relay-command: a random map chosen in the setup (size, map number) survives a reload; it fits a 360 px phone', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 740 });
   await start(page);

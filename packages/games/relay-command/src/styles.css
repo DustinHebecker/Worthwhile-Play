@@ -174,6 +174,9 @@
 .wp-relay-command .rc-slots[data-full] { color: var(--wp-accent, var(--wp-p1)); font-weight: 800; text-decoration: underline; text-underline-offset: 0.2em; }
 .wp-relay-command .rc-bar .rc-status:empty { display: none; }
 .wp-relay-command .rc-view { align-items: center; }
+.wp-relay-command .rc-replay { align-items: center; }
+.wp-relay-command .rc-replay-bar { align-items: center; }
+.wp-relay-command .rc-replay-bar[hidden] { display: none; }
 .wp-relay-command .rc-legend { margin: 0; }
 .wp-relay-command .rc-legend summary { cursor: pointer; min-height: var(--wp-touch, 44px); display: flex; align-items: center; }
 .wp-relay-command .rc-legend-list { list-style: none; margin: 0.25rem 0 0; padding: 0; display: grid; gap: 0.35rem; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); }

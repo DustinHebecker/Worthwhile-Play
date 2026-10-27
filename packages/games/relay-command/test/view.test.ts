@@ -182,6 +182,54 @@ describe('Relay Command view', () => {
     expect($('rc-view-top').getAttribute('aria-pressed')).toBe('true');
   });
 
+  it('plays the last turn back on demand, or after every turn when chosen; skip, Escape or a click on the map end it (owner request 2026-10-27)', () => {
+    // Nothing to play before the first turn.
+    expect(($('rc-replay') as HTMLButtonElement).disabled).toBe(true);
+    expect($('rc-replay-bar').hidden).toBe(true);
+    click('rc-unit-' + firstMobile().id);
+    click('rc-regroup');
+    click('rc-lock');
+    // Off by default: the turn is not played by itself.
+    expect($('rc-replay-bar').hidden).toBe(true);
+    expect(($('rc-replay') as HTMLButtonElement).disabled).toBe(false);
+    click('rc-replay');
+    expect($('rc-replay-bar').hidden).toBe(false);
+    expect($('rc-replay-status').textContent).toBe('Turn 1 is played back …');
+    expect(($('rc-replay') as HTMLButtonElement).disabled).toBe(true);
+    click('rc-replay-skip');
+    expect($('rc-replay-bar').hidden).toBe(true);
+    expect(($('rc-replay') as HTMLButtonElement).disabled).toBe(false);
+    // Escape (any key) on the map ends it, and does nothing else (the selection stays).
+    const before = $('rc-selection-text').textContent;
+    click('rc-replay');
+    key('Escape');
+    expect($('rc-replay-bar').hidden).toBe(true);
+    expect($('rc-selection-text').textContent).toBe(before);
+    // A click on the map ends it too.
+    click('rc-replay');
+    $('rc-map').dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect($('rc-replay-bar').hidden).toBe(true);
+    // It plays to its end by itself (a turn of six ticks).
+    click('rc-replay');
+    vi.advanceTimersByTime(10_000);
+    expect($('rc-replay-bar').hidden).toBe(true);
+    // Chosen: every turn plays when it is carried out, and the choice is kept on this device.
+    ($('rc-replay-auto') as HTMLInputElement).checked = true;
+    $('rc-replay-auto').dispatchEvent(new Event('change', { bubbles: true }));
+    expect(ctx.preferences.get('replayTurns')).toBe(true);
+    click('rc-lock');
+    expect($('rc-replay-bar').hidden).toBe(false);
+    expect($('rc-replay-status').textContent).toBe('Turn 2 is played back …');
+    // A new order (a change of the game) ends it.
+    click('rc-unit-' + firstMobile().id);
+    click('rc-hold');
+    expect($('rc-replay-bar').hidden).toBe(true);
+    instance.dispose();
+    instance = game.create(ctx.context) as GameInstance<RcState>;
+    instance.newGame({ seed: 4 });
+    expect(($('rc-replay-auto') as HTMLInputElement).checked).toBe(true);
+  });
+
   it('renders the turn, the status, both unit lists and the map', () => {
     expect($('rc-turn').textContent).toBe('Turn 1');
     expect($('rc-status').getAttribute('data-phase')).toBe('plan');
