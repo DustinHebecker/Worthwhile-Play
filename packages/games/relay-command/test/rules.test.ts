@@ -2034,6 +2034,59 @@ describe('storms against a ringed post (2026-10-21)', () => {
   });
 });
 
+describe('the opponent on large maps (more than 24×16 cells, owner request 2026-10-27)', () => {
+  /** An open w×h map: the player's post at the left edge, the opponent's post (and `more`) at the right. */
+  const world = (w: number, h: number, more: { kind: string; x: number; y: number }[] = [], turn = 1) => {
+    const y = Math.floor(h / 2);
+    const entities = [
+      { side: PLAYER, kind: 'command-post', x: 1, y },
+      { side: OPPONENT, kind: 'command-post', x: w - 2, y },
+      ...more.map((u) => ({ side: OPPONENT, ...u }))
+    ];
+    const world = createWorld({ map: { w, h, terrain: '.'.repeat(w * h) }, sides: 2, entities, seed: 1 }, RULESET);
+    world.turn = turn;
+    world.intel = initialIntel(world, RULESET);
+    return world;
+  };
+  const masts = (w: World) => planAi(observe(w, RULESET, OPPONENT), RULESET, 'hard').filter((c) => c.order.type === 'build' && c.order.kind === 'relay-mast').map((c) => (c.order.type === 'build' ? { x: c.order.x, y: c.order.y } : undefined));
+
+  it('carries its cover towards a far objective with a Radio Mast on the covered cell nearest it', () => {
+    // 40×10 = 400 cells: the post covers 5 cells round (38, 5); the nearest covered cell to (1, 5) is (33, 5).
+    expect(masts(world(40, 10))).toEqual([{ x: 33, y: 5 }]);
+  });
+
+  it('builds no Radio Mast within MAST_GAP (4) of an own one: the next covered cell farther out instead', () => {
+    // A mast at (33, 5) covers 6 cells round, out to (27, 5): that is 6 from it, so the chain goes on there.
+    expect(masts(world(40, 10, [{ kind: 'relay-mast', x: 33, y: 5 }]))).toEqual([{ x: 27, y: 5 }]);
+  });
+
+  it('stops the chain once the cover ends within MAST_GAP of the objective', () => {
+    // The post's cover reaches (33, 5); the player's post stands 3 cells beyond it.
+    const near = world(40, 10, [{ kind: 'relay-mast', x: 36, y: 5 }]);
+    near.entities.find((e) => e.side === PLAYER)!.x = 30;
+    near.intel = initialIntel(near, RULESET);
+    expect(masts(near)).toEqual([]);
+  });
+
+  it('keeps the measured AI on maps up to 24×16: no Radio Mast chain there', () => {
+    expect(masts(world(24, 16))).toEqual([]);
+  });
+
+  it('a far storm heads for the outer rings round the post from the start (before ESCALATE_TURN), not for the post', () => {
+    const w = world(40, 10, [{ kind: 'rifles', x: 30, y: 5 }]);
+    const obs = observe(w, RULESET, OPPONENT);
+    const post = obs.world.entities.find((e) => e.side === PLAYER && e.kind === 'command-post')!;
+    const goal = approachCells(obs, RULESET, post)(obs.world.entities.find((e) => e.kind === 'rifles')!);
+    expect(goal).not.toEqual({ x: post.x, y: post.y });
+    expect(Math.max(Math.abs(goal.x - post.x), Math.abs(goal.y - post.y))).toBeGreaterThanOrEqual(2);
+    // On a map of 24×16 or less it still heads for the post before ESCALATE_TURN.
+    const small = world(24, 16, [{ kind: 'rifles', x: 15, y: 8 }]);
+    const smallObs = observe(small, RULESET, OPPONENT);
+    const smallPost = smallObs.world.entities.find((e) => e.side === PLAYER && e.kind === 'command-post')!;
+    expect(approachCells(smallObs, RULESET, smallPost)(smallObs.world.entities.find((e) => e.kind === 'rifles')!)).toEqual({ x: smallPost.x, y: smallPost.y });
+  });
+});
+
 describe('teams (owner decisions 2026-10-24)', () => {
   const corners = SCENARIOS.find((x) => x.id === 'four-corners')!;
   const post = (w: World, side: number) => w.entities.find((e) => e.side === side && e.kind === 'command-post')!;
