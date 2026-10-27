@@ -124,6 +124,26 @@ export const teamsOnly = (spec: ScenarioSpec): boolean => !!spec.seats?.teams;
 export const teamShapeOf = (world: Pick<World, 'teams'>): TeamShape | null =>
   world.teams ? ((Object.keys(TEAM_LAYOUTS) as TeamShape[]).find((k) => JSON.stringify(TEAM_LAYOUTS[k]) === JSON.stringify(world.teams)) ?? null) : null;
 
+/**
+ * The seats the player may start from (owner request 2026-10-27), the default first: both bases of
+ * a two-side map; every base of a map with seats (the others turn with the player's choice); on a
+ * map made for teams only the seats of the player's own team in that shape (the role, e.g. the lone
+ * base against three, is the shape's choice).
+ */
+export function startSeats(spec: ScenarioSpec, opponents: number, shape: TeamShape | null = null): number[] {
+  if (!spec.seats) return opponents === 1 ? [0, 1] : [];
+  if (spec.seats.teams) {
+    const layout = shape !== null && Object.hasOwn(spec.seats.teams, shape) ? spec.seats.teams[shape] : undefined;
+    if (!layout || layout.length !== opponents + 1) return [];
+    const team = TEAM_LAYOUTS[shape!];
+    return layout.filter((_, side) => team[side] === team[0]);
+  }
+  const layout = spec.seats.layouts[opponents];
+  if (!layout) return [];
+  const bases = [...new Set(spec.scenario.entities.filter((e) => e.kind === 'command-post' && e.side !== NEUTRAL).map((e) => e.side))];
+  return [layout[0]!, ...bases.filter((seat) => seat !== layout[0]).sort((a, b) => a - b)];
+}
+
 /** The rules of a running game. */
 export const rulesOf = (state: Pick<RcState, 'scenario' | 'map' | 'opponents'>): Ruleset => {
   const spec = specOf(state);
@@ -131,9 +151,10 @@ export const rulesOf = (state: Pick<RcState, 'scenario' | 'map' | 'opponents'>):
 };
 
 /** The scenario's world at the start of a game (every side alike, so the start is fair); `endless`: no deposit runs dry. */
-export function initialWorld(spec: ScenarioSpec, seed: number, opponents = 1, endless = false, teams: TeamShape | null = null): World {
+export function initialWorld(spec: ScenarioSpec, seed: number, opponents = 1, endless = false, teams: TeamShape | null = null, start: number | null = null): World {
   if (teams && !teamShapes(spec, opponents).includes(teams)) throw new RangeError(`${spec.id} has no teams ${teams} for ${opponents} opponents.`);
-  const scenario = scenarioFor(spec, opponents, teams);
+  if (start !== null && !startSeats(spec, opponents, teams).includes(start)) throw new RangeError(`${spec.id} has no start at seat ${start}.`);
+  const scenario = scenarioFor(spec, opponents, teams, start);
   if (!scenario) throw new RangeError(`${spec.id} has no layout for ${opponents} opponents${teams ? ` and teams ${teams}` : ''}.`);
   const rules = rulesetFor(spec, opponents);
   const map = endless && scenario.map.deposits ? { ...scenario.map, deposits: scenario.map.deposits.map((d) => ({ ...d, endless: true as const })) } : scenario.map;
@@ -216,6 +237,11 @@ export interface RcState {
   retired: number[];
   /** Hot-seat: the side that won, or null (draw, or a single-player game: see `result`). */
   winner: number | null;
+  /**
+   * The seat the player took (owner request 2026-10-27: pick the own starting place on every map;
+   * `scenarioFor`). Absent: the map's default seat (saves from before this have none).
+   */
+  start?: number;
 }
 
 /** A map being edited: the map, the library slot it came from (null = not saved yet), and mirror mode. */
@@ -230,7 +256,7 @@ export const scenarioById = (id: string): ScenarioSpec | undefined => SCENARIOS.
 /** The scenario a game runs on: its player-made map, else the built-in one. */
 export const specOf = (state: Pick<RcState, 'scenario' | 'map'>): ScenarioSpec | undefined => (state.map ? customSpec(state.map) : scenarioById(state.scenario));
 
-export function newGame(seed: number, base: ScenarioSpec = FIELD_EXERCISE, difficulty: Difficulty = 'normal', turnLimit: number | null = base.turnLimit, quick = false, map: EditMap | null = null, opponents = 1, seats: readonly Seat[] = [], endless = false, random: RandomMap | null = null, teams: TeamShape | null = null): RcState {
+export function newGame(seed: number, base: ScenarioSpec = FIELD_EXERCISE, difficulty: Difficulty = 'normal', turnLimit: number | null = base.turnLimit, quick = false, map: EditMap | null = null, opponents = 1, seats: readonly Seat[] = [], endless = false, random: RandomMap | null = null, teams: TeamShape | null = null, start: number | null = null): RcState {
   const spec = map ? customSpec(map) : base;
   // Only the counts the map declares (two-side maps and player-made ones: one).
   const count = opponentCounts(spec).includes(opponents) ? opponents : (opponentCounts(spec)[0] ?? 1);
@@ -241,7 +267,10 @@ export function newGame(seed: number, base: ScenarioSpec = FIELD_EXERCISE, diffi
   // share sight; the end names the team's survivors). A map made for teams has no free-for-all: it
   // starts with its first shape unless another is chosen.
   const team = teams && teamShapes(spec, count).includes(teams) ? teams : teamsOnly(spec) ? (teamShapes(spec, count)[0] ?? null) : null;
-  const world = initialWorld(spec, seed, count, endless, team);
+  // The player's seat (a seat the map does not offer for this setup: its default).
+  const starts = startSeats(spec, count, team);
+  const seat = start !== null && start !== starts[0] && starts.includes(start) ? start : null;
+  const world = initialWorld(spec, seed, count, endless, team, seat);
   return {
     v: 12,
     seed: normalizeSeed(seed),
@@ -270,7 +299,8 @@ export function newGame(seed: number, base: ScenarioSpec = FIELD_EXERCISE, diffi
     locked: seating.map(() => []),
     inbox: seating.map(() => []),
     retired: [],
-    winner: null
+    winner: null,
+    ...(seat !== null && { start: seat })
   };
 }
 
@@ -775,8 +805,8 @@ export function outcome(world: World, turnLimit: number | null, lead: readonly n
 }
 
 /** Re-runs the logged plans from the scenario start (bug reports, tests). */
-export function replay(seed: number, log: readonly TurnLog[], spec: ScenarioSpec = FIELD_EXERCISE, opponents = 1, endless = false, teams: TeamShape | null = null): World {
-  let world = initialWorld(spec, seed, opponents, endless, teams);
+export function replay(seed: number, log: readonly TurnLog[], spec: ScenarioSpec = FIELD_EXERCISE, opponents = 1, endless = false, teams: TeamShape | null = null, start: number | null = null): World {
+  let world = initialWorld(spec, seed, opponents, endless, teams, start);
   const rules = rulesetFor(spec, opponents);
   for (const entry of log) {
     for (const side of entry.retired ?? []) world = retire(world, side).world;
@@ -845,8 +875,8 @@ const isTurnLog = (isCommand: (v: unknown) => v is Command, sides: number) => (v
  * kinds and never more units than at the start. This keeps manipulated or foreign saves (huge
  * maps, hundreds of units) from freezing the tab.
  */
-function matchesScenario(world: World, spec: ScenarioSpec, opponents: number, endless: boolean): boolean {
-  const scenario = scenarioFor(spec, opponents, teamShapeOf(world));
+function matchesScenario(world: World, spec: ScenarioSpec, opponents: number, endless: boolean, seat: number | null): boolean {
+  const scenario = scenarioFor(spec, opponents, teamShapeOf(world), seat);
   if (!scenario) return false;
   const { map, entities } = scenario;
   if (world.ruleset !== rulesetFor(spec, opponents).id || world.map.w !== map.w || world.map.h !== map.h || world.map.terrain !== map.terrain) return false;
@@ -939,10 +969,13 @@ export function isValidState(value: unknown): value is RcState {
   const opponents = value.opponents;
   // A map made for teams plays only with one of its shapes (which also picks its seats).
   const shape = isRecord(value.world) && Array.isArray(value.world.teams) ? teamShapeOf({ teams: value.world.teams as number[] }) : null;
-  const scenario = opponentCounts(spec).includes(opponents) ? scenarioFor(spec, opponents, teamsOnly(spec) ? shape : null) : undefined;
+  // The player's seat: absent for the map's default, else one of the other seats it offers.
+  const start = value.start === undefined ? null : value.start;
+  if (start !== null && (!isInt(start, 0, MAX_OPPONENTS) || !startSeats(spec, opponents, teamsOnly(spec) ? shape : null).slice(1).includes(start))) return false;
+  const scenario = opponentCounts(spec).includes(opponents) ? scenarioFor(spec, opponents, teamsOnly(spec) ? shape : null, start) : undefined;
   if (!scenario) return false;
   const rules = rulesetFor(spec, opponents);
-  if (!isValidWorld(value.world, rules) || value.world.sides !== opponents + 1 || !matchesScenario(value.world, spec, opponents, value.endless)) return false;
+  if (!isValidWorld(value.world, rules) || value.world.sides !== opponents + 1 || !matchesScenario(value.world, spec, opponents, value.endless, start)) return false;
   // A crafted save must not turn a side's post neutral, add teams the map does not offer or change
   // how a side sees the map.
   const w = value.world;

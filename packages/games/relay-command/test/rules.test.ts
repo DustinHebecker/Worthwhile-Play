@@ -52,6 +52,7 @@ import {
   personsLeft,
   rulesOf,
   type Seat,
+  startSeats,
   teamShapes,
   teamShapeOf,
   teamsOnly,
@@ -60,7 +61,7 @@ import {
   TEAM_LAYOUTS,
   opponentValue,
 } from '../src/rules';
-import { BASTION, FIELD_EXERCISE, opponentCounts, RIDGE_VALLEY, SCENARIOS } from '../src/scenarios';
+import { BASTION, FIELD_EXERCISE, FOUR_CORNERS, opponentCounts, RIDGE_VALLEY, SCENARIOS } from '../src/scenarios';
 import { customSpec, fromScenario } from '../src/maps';
 import { generateMap } from '../src/generator';
 
@@ -350,6 +351,88 @@ describe('planning', () => {
     expect(planOrder(s, commandPost(s.world, PLAYER)!.id, { type: 'move', x: 1, y: 1 })).toBeUndefined();
     expect(planOrder(s, 999, { type: 'hold' })).toBeUndefined();
     expect(planOrder(concede(s), own(s)[1]!.id, { type: 'hold' })).toBeUndefined();
+  });
+});
+
+describe('the player picks the own base (owner request 2026-10-27)', () => {
+  const post = (w: World, side: number) => w.entities.find((e) => e.side === side && e.kind === 'command-post')!;
+  const fresh = (st: RcState) => JSON.parse(JSON.stringify(st)) as unknown;
+
+  it('every map offers its bases, the default first; a map for teams only the seats of the player\'s team', () => {
+    expect(startSeats(FIELD_EXERCISE, 1)).toEqual([0, 1]);
+    expect(startSeats(FIELD_EXERCISE, 2)).toEqual([]);
+    for (const n of [1, 2, 3]) expect(startSeats(FOUR_CORNERS, n)).toEqual([0, 1, 2, 3]);
+    expect(startSeats(BASTION, 3, '1v3')).toEqual([0]);
+    expect(startSeats(BASTION, 3, '3v1')).toEqual([1, 2, 3]);
+    expect(startSeats(BASTION, 3, null)).toEqual([]);
+    expect(startSeats(BASTION, 2, '3v1')).toEqual([]);
+  });
+
+  it('a two-side map swaps the sides with their frames: the player takes the other base, the opponent the player\'s', () => {
+    const base = newGame(1, FIELD_EXERCISE);
+    const swapped = newGame(1, FIELD_EXERCISE, 'normal', 24, false, null, 1, [], false, null, null, 1);
+    expect(swapped.start).toBe(1);
+    expect(base.start).toBeUndefined();
+    expect(post(swapped.world, PLAYER)).toMatchObject({ x: post(base.world, OPPONENT).x, y: post(base.world, OPPONENT).y });
+    expect(post(swapped.world, OPPONENT)).toMatchObject({ x: post(base.world, PLAYER).x, y: post(base.world, PLAYER).y });
+    expect(swapped.world.frames).toEqual(['r180', 'id']);
+    expect(base.world.frames).toBeUndefined();
+    // The same armies, ids by the scenario's order: only the sides changed.
+    expect(swapped.world.entities.map((e) => [e.id, e.kind, e.x, e.y])).toEqual(base.world.entities.map((e) => [e.id, e.kind, e.x, e.y]));
+    expect(isValidState(fresh(swapped))).toBe(true);
+    expect(isValidState(fresh(lockTurn(swapped)))).toBe(true);
+  });
+
+  it('on four bases the seats turn round the map: neighbours stay neighbours, so teams keep their shape', () => {
+    const corner = (w: World, side: number) => [post(w, side).x, post(w, side).y].join(',');
+    const base = newGame(1, FOUR_CORNERS, 'normal', 24, false, null, 3, [], false, null, '2v2-next');
+    const turned = newGame(1, FOUR_CORNERS, 'normal', 24, false, null, 3, [], false, null, '2v2-next', 2);
+    // The player sits where side 2 sat; each side moved on by two seats, its frame with it.
+    expect(corner(turned.world, 0)).toBe(corner(base.world, 2));
+    expect(corner(turned.world, 1)).toBe(corner(base.world, 3));
+    expect(corner(turned.world, 2)).toBe(corner(base.world, 0));
+    expect(corner(turned.world, 3)).toBe(corner(base.world, 1));
+    expect(turned.world.frames).toEqual([base.world.frames![2], base.world.frames![3], base.world.frames![0], base.world.frames![1]]);
+    expect(turned.world.teams).toEqual(base.world.teams);
+    expect(isValidState(fresh(turned))).toBe(true);
+    // One opponent on four bases: the two sides sit across, from whichever corner.
+    const one = newGame(1, FOUR_CORNERS, 'normal', 24, false, null, 1, [], false, null, null, 1);
+    expect(one.world.entities.filter((e) => e.kind === 'command-post' && e.side === NEUTRAL)).toHaveLength(2);
+    expect(isValidState(fresh(one))).toBe(true);
+  });
+
+  it('on a map for teams the player swaps places within the own team; the lone opponent keeps the plateau', () => {
+    const base = newGame(1, BASTION, 'normal', 24, false, null, 3, [], false, null, '3v1');
+    const moved = newGame(1, BASTION, 'normal', 24, false, null, 3, [], false, null, '3v1', 3);
+    const lone = base.world.teams!.findIndex((team) => team !== base.world.teams![0]);
+    expect(post(moved.world, lone)).toMatchObject({ x: post(base.world, lone).x, y: post(base.world, lone).y });
+    expect(post(moved.world, PLAYER)).toMatchObject({ x: post(base.world, 3).x, y: post(base.world, 3).y });
+    expect(post(moved.world, 3)).toMatchObject({ x: post(base.world, PLAYER).x, y: post(base.world, PLAYER).y });
+    expect(moved.world.supply).toEqual(base.world.supply);
+    expect(isValidState(fresh(moved))).toBe(true);
+  });
+
+  it('a base the map does not offer for that setup starts at its default', () => {
+    for (const st of [newGame(1, FIELD_EXERCISE, 'normal', 24, false, null, 1, [], false, null, null, 2), newGame(1, BASTION, 'normal', 24, false, null, 3, [], false, null, '3v1', 0), newGame(1, FIELD_EXERCISE, 'normal', 24, false, null, 1, [], false, null, null, 0)]) {
+      expect(st.start).toBeUndefined();
+      expect(isValidState(fresh(st))).toBe(true);
+    }
+  });
+
+  it('a save names a base only as the setup can give it, and its world must stand there', () => {
+    const swapped = newGame(1, FIELD_EXERCISE, 'normal', 24, false, null, 1, [], false, null, null, 1);
+    const base = newGame(1, FIELD_EXERCISE);
+    for (const start of [0, 2, 7, -1, 1.5, '1', null]) expect(isValidState({ ...(fresh(swapped) as object), start })).toBe(false);
+    // The world of one base under the name of another.
+    expect(isValidState({ ...(fresh(base) as object), start: 1 })).toBe(false);
+    const { start: _start, ...unnamed } = fresh(swapped) as Record<string, unknown>;
+    expect(isValidState(unnamed)).toBe(false);
+  });
+
+  it('a game from another base replays exactly from its log', () => {
+    let st = newGame(5, RIDGE_VALLEY, 'normal', 24, false, null, 1, [], false, null, null, 1);
+    for (let i = 0; i < 3; i++) st = lockTurn(st);
+    expect(worldHash(replay(st.seed, st.log, RIDGE_VALLEY, 1, false, null, 1))).toBe(worldHash(st.world));
   });
 });
 
