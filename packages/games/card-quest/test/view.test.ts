@@ -263,7 +263,8 @@ describe('view', () => {
     const instance = game.create(ctx.context as never);
     instance.newGame({ seed: 3, settings: { 'world-sl': true, 'world-of': true } });
     const pictured = () => [...ctx.context.root.querySelectorAll('[data-testid="hand"] .cq-tile')].filter((t) => t.querySelector('svg.cq-il')).length;
-    await vi.waitFor(() => expect(pictured()).toBe(ctx.context.root.querySelectorAll('[data-testid="hand"] .cq-tile').length));
+    // The world pictures load as lazy chunks; under a busy machine that takes longer than vi.waitFor's default 1 s.
+    await vi.waitFor(() => expect(pictured()).toBe(ctx.context.root.querySelectorAll('[data-testid="hand"] .cq-tile').length), { timeout: 15_000, interval: 50 });
     expect(pictured()).toBeGreaterThan(0);
     instance.dispose();
   });

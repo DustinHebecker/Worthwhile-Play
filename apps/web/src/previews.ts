@@ -22,6 +22,8 @@
  *   cell · m0–m5 code symbols · chl/chd/pw/pb chess · lf/lgd/lgr/lgf/lmr/lbk/ltg/lsel laser · tp/trd/tf/th/tw/tm/tmf
  *   terrain · rl/rw/rwv/bt/bi river · s0–s2/pf stones · fw/fh water · st star · win tower windows · fbg/fsk/fsh/fhr face · hb hole
  *   pcf/pci/pcr/pcb/pcl playing cards (face, black and red suits, back, back line)
+ *   rcw/rcr/rcrd/rct/rcts/rch/rcf/rcwh relay command map (waves, road, its centre line, crowns, their shadow, humps,
+ *   the veil, wheel hubs) · rcg/rcd/rcp/rcl/rcm player-1 lines (gun, drone frame, rotors, leash, legs)
  *   text: t  ts contrast  tm2 muted  n1/n2 counts  tz/tli laser labels  tsm small  txs tiny  tl large
  */
 
@@ -102,31 +104,24 @@ const card = (x: number, y: number, w: number, h: number, rank: string, k: strin
 const back = (x: number, y: number, w: number, h: number) => R(x, y, w, h, 'pcb', 0.8) + R(x + 1, y + 1, w - 2, h - 2, 'pcl', 0.5);
 
 const PREVIEWS: Record<string, () => string> = {
-  // Relay Command: the terrain grid (plain, road, forest dots, water waves, hill marks), the fog of war hatched,
-  // own units as filled blue pictograms, known enemy posts outlined in the second side's colour, a planned order.
+  // Relay Command (redrawn for the game's map of 2026-10-27): soft ground with a wood of round crowns, two humps, a
+  // lake and a road band; own units from the side, filled and facing right (a tank on its track, Rifles, a Scout Car
+  // with its drone above on its leash); the far side under the milky veil of the unobserved, with dots, and an enemy
+  // truck in it, pale and outlined in the second side's colour, facing left; a planned move as a dashed arrow.
   'relay-command': () => {
-    const s = 11, x0 = 4, y0 = 4.5;
-    const map = ['ppffpphp', 'pwwfpphp', 'fpprrrrp', 'pprrhpww', 'prrpfpww'];
-    const fill: Record<string, string> = { p: 'tp', r: 'trd', f: 'tf', h: 'th', w: 'tw' };
-    let cells = '', marks = '', fdots = '', fog = '';
-    map.forEach((line, r) => [...line].forEach((k, q) => {
-      const x = x0 + q * s, y = y0 + r * s;
-      cells += R(x, y, s, s, fill[k]!);
-      if (k === 'f') fdots += `M${x + 3.5} ${y + 4}h0M${x + 7.5} ${y + 7.5}h0`;
-      if (k === 'w') marks += `M${x + 2} ${y + 4.5}q1.75-1.5 3.5 0t3.5 0M${x + 2} ${y + 7.5}q1.75-1.5 3.5 0t3.5 0`;
-      if (k === 'h') marks += `M${x + 3} ${y + 8}l2.5-5 2.5 5`;
-      if (k === 'r') marks += `M${x + 1} ${y + 5.5}h3M${x + 7} ${y + 5.5}h3`;
-      if (q >= 4 && r <= 2) fog += `M${x} ${y + 5.5}l5.5-5.5M${x} ${y + s}l${s}-${s}M${x + 5.5} ${y + s}l5.5-5.5`;
-    }));
-    const own = (q: number, r: number, glyph: string) => R(x0 + q * s + 1, y0 + r * s + 1, s - 2, s - 2, 'p1', 2) + P(glyph, 'sk');
-    const cx = (q: number) => x0 + q * s, cy = (r: number) => y0 + r * s;
-    return cells + P(marks, 'tm') + P(fdots, 'tmd') + P(fog, 'tm') +
-      own(0, 4, `M${cx(0) + 4} ${cy(4) + 8.5}v-6l4 1.6-4 1.6`) +
-      own(1, 3, `M${cx(1) + 3.8} ${cy(3) + 3.5}v4M${cx(1) + 5.5} ${cy(3) + 3.5}v4M${cx(1) + 7.2} ${cy(3) + 3.5}v4`) +
-      own(2, 4, `M${cx(2) + 3} ${cy(4) + 4}h5v3h-5z`) +
-      R(cx(6) + 1, cy(0) + 1, s - 2, s - 2, 'c y2', 2) + P(`M${cx(6) + 4} ${cy(0) + 8.5}v-6l4 1.6-4 1.6`, 'y2') +
-      R(cx(7) + 1, cy(2) + 1, s - 2, s - 2, 'c y2 ds', 2) + P(`M${cx(7) + 3} ${cy(2) + 5}l2.5-2 2.5 2M${cx(7) + 3.5} ${cy(2) + 5}v3.5h4v-3.5`, 'y2') +
-      P(`M${cx(1) + 5.5} ${cy(3)}V${cy(2) + 5.5}H${cx(3) + 5.5}`, 'ab ds') + head(cx(3), cy(2) + 5.5, cx(3) + 7, cy(2) + 5.5, 'a');
+    let s = R(4, 4.5, 88, 55, 'tp', 2);
+    s += P('M60 44c3-6 13-7 19-4s12 2 12 9-2 10-10 10H62c-5 0-6-9-2-15z', 'tw') + P('M66 50q2-1.6 4 0t4 0M74 55q2-1.6 4 0t4 0M80 47q2-1.6 4 0t4 0', 'rcw');
+    const road = 'M7 41c10-2 19-1 27-5s18-10 26-10h28';
+    s += P(road, 'rcr') + P(road, 'rcrd');
+    for (const [x, y, r] of [[10, 10, 3.6], [17, 9, 4], [24, 11, 3.4], [13, 16, 3.8], [20, 16, 3.6], [8, 21, 3]] as const) s += C(x, y + 1, r, 'rcts') + C(x, y, r, 'rct');
+    s += P('M40 20c2-8 14-8 16 0z', 'rch') + P('M33 24c2-9 15-9 17 0z', 'rch');
+    s += P('M62 4.5h28a2 2 0 0 1 2 2V36H70c-5 0-8-4-8-9z', 'rcf') + [70, 78, 86].map((x) => [10, 18, 26].map((y) => C(x, y, 0.7, 'tmf')).join('')).join('');
+    s += P('M68 15h10v5h-12v-3z', 'c y2') + P('M78 16h4l2 2.5V20h-6z', 'c y2') + C(70, 21.3, 1.6, 'c y2') + C(81, 21.3, 1.6, 'c y2');
+    s += R(14, 46, 17, 4.2, 'i', 2) + P('M15 46l2-4h12l2 4z', 'p1') + P('M19 42l1.5-3h6l1.5 3z', 'p1') + P('M27.5 40.3h6', 'rcg') + [16, 19.5, 23, 26.5, 29.5].map((x) => C(x, 48.1, 1, 'rcwh')).join('');
+    s += P('M38 37v-3.5l3-1.5h5l2-3h4.5l2 3 2.5 1v4z', 'p1') + [41.5, 52.5].map((x) => C(x, 37.5, 1.9, 'i') + C(x, 37.5, 0.8, 'rcwh')).join('');
+    s += P('M44 21h8M44.5 21v1.5h7V21', 'rcd') + C(44, 20.2, 1.4, 'rcp') + C(52, 20.2, 1.4, 'rcp') + R(46.5, 21.5, 3, 2, 'p1', 0.6) + P('M48 24v4', 'rcl');
+    s += [6, 9.5, 13].map((x, i) => P(`M${x} ${36 - (i === 1 ? 1 : 0)}v-3`, 'rcm') + C(x, 31.2 - (i === 1 ? 1 : 0), 1.1, 'p1')).join('');
+    return s + P('M56 30q6-6 9-10', 'ab ds') + head(56, 30, 65, 20, 'a');
   },
   // Orbit Links: nodes on dark-grey space joined by straight lanes; own (blue) and opposing (red) home nodes with
   // their strength, neutral outposts with dashed rims, a shipyard hexagon and a defence platform; a dashed stream.
