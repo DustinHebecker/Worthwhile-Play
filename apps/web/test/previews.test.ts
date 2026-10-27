@@ -163,7 +163,7 @@ describe('game previews on the home page', () => {
     it('photos fill the band like a drawing, and the service worker precaches them', () => {
       const css = readFileSync(join(__dirname, '../src/styles.css'), 'utf8');
       expect(css).toMatch(/^\.game-preview-picture \{ display: contents; \}/m);
-      expect(css).toMatch(/^\.game-preview--photo \{ object-fit: cover; \}/m);
+      expect(css).toMatch(/^\.game-preview--photo \{ object-fit: contain; \}/m);
       const vite = readFileSync(join(__dirname, '../vite.config.ts'), 'utf8');
       expect(vite.match(/globPatterns: \[([^\]]*)\]/)?.[1]).toMatch(/[{,]webp[,}]/);
     });

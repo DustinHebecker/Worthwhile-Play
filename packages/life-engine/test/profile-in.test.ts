@@ -67,7 +67,7 @@ describe('India profile', () => {
     expect(india.childCost(8)).toBe(504_991);
     expect(india.childSupport(8)).toBe(252_496);
     expect(india.childBenefit()).toBe(0);
-    expect(india.parentalAllowance(1_000_00)).toBe(0);
+    expect(india.parentalAllowance(1_000_00)).toBe(1_000_00);
     expect(india.basicSupport(true)).toBe(0);
     expect(india.educationSupport(true)).toEqual({ cents: 0, category: 'family-support' });
   });

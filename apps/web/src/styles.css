@@ -46,11 +46,12 @@ main:focus { outline: none; }
 /* Full card width, 3:2 up to 7.5rem high (the drawing is centred); the height is known before paint, so no layout shift. */
 .game-card .game-preview { grid-area: preview; inline-size: 100%; block-size: auto; aspect-ratio: 96 / 64; max-block-size: 7.5rem; margin-block-end: 0.4rem; }
 /* Photo previews (PHOTOS in src/previews.ts): the <picture> wrapper adds no box, so the <img> is the card's preview band
-   exactly like an SVG drawing; the photo fills the band (cropped at top and bottom when the band is capped). The
+   exactly like an SVG drawing; like a drawing, the whole photo is shown and centred (owner feedback 2026-10-27: no
+   cropping on wide desktop cards). The
    light/dark choice is the <source media> (prefers-color-scheme, the app's only theme switch). In forced-colours
    mode the photo stays as it is (images are not recoloured) and keeps the CanvasText border of every preview. */
 .game-preview-picture { display: contents; }
-.game-preview--photo { object-fit: cover; }
+.game-preview--photo { object-fit: contain; }
 
 /* Game previews (src/previews.ts): flat sketches of each game's own screen, drawn from the design tokens and, where a
    game has its own palette (lights, walls, crates, terrain…), from the same colours as the game. Decorative only. */

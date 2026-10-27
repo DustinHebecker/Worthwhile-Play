@@ -1,7 +1,7 @@
 import type { NewGameOptions, SettingSpec, SettingValue } from '@wp/game-core';
 import { createRng, isRecord } from '@wp/game-core';
 import {
-  EVENTS_DE, EVENTS_DE_FAMILY, EVENTS_IN, PROFILE_DE, PROFILE_IN, advanceUntilEvent, ageInYears, availableChoices, budget, choose, isLifeState, keyedRngFor,
+  EVENTS_DE, EVENTS_DE_FAMILY, EVENTS_IN, EVENTS_IN_FAMILY, PROFILE_DE, PROFILE_IN, advanceUntilEvent, ageInYears, availableChoices, budget, choose, isLifeState, keyedRngFor,
   lifeSystems, newLife, qualificationOf, type BudgetItem, type Choice, type EventDef, type LifeState, type Profile
 } from '@wp/life-engine';
 
@@ -14,7 +14,7 @@ interface Region {
 const region = (profile: Profile, events: readonly EventDef[]): Region => ({ profile, events, systems: lifeSystems(profile) });
 export const REGIONS: Readonly<Record<string, Region>> = {
   de: region(PROFILE_DE, [...EVENTS_DE, ...EVENTS_DE_FAMILY]),
-  in: region(PROFILE_IN, EVENTS_IN)
+  in: region(PROFILE_IN, [...EVENTS_IN, ...EVENTS_IN_FAMILY])
 };
 const REGION_IDS = Object.keys(REGIONS);
 
