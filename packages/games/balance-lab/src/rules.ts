@@ -408,7 +408,7 @@ function isMobileNode(x: unknown, depth: number): x is MobileNode {
 
 function isMobile(x: unknown): x is MobileNode {
   if (!isMobileNode(x, 0) || !isBar(x)) return false;
-  return mobileBars(x).length <= 3 && mobileHooks(x).filter((h) => h.child && !isBar(h.child)).length <= 6 && mobileDepth(x) <= 3;
+  return mobileBars(x).length <= 3 && mobileHooks(x).filter((h) => h.child && !isBar(h.child)).length <= 8 && mobileDepth(x) <= 3;
 }
 
 function isStackScene(x: unknown): x is StackScene {
