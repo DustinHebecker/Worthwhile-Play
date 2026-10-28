@@ -1724,8 +1724,9 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     }
     if (!g) return; // No canvas support (e.g. jsdom): the DOM lists remain fully usable.
     // The device's pixel ratio, capped so a large map's canvas stays within what phone browsers draw
-    // (about 16.7 megapixels; a 48×32 map at 44 px a cell is 3 megapixels before scaling).
-    const ratio = Math.max(1, Math.min(3, globalThis.devicePixelRatio || 1, Math.sqrt(MAX_CANVAS_PIXELS / (width * height))));
+    // (about 16.7 megapixels; a 48×32 map at 44 px a cell is 3 megapixels before scaling). A large map
+    // shown smaller needs only that share of the pixels (drawn as sharp, a quarter of the work at 50 %).
+    const ratio = Math.max(1, Math.min(3, globalThis.devicePixelRatio || 1, Math.sqrt(MAX_CANVAS_PIXELS / (width * height)))) * scale;
     canvas.width = Math.round(width * ratio);
     canvas.height = Math.round(height * ratio);
     g.setTransform(ratio, 0, 0, ratio, 0, 0);
