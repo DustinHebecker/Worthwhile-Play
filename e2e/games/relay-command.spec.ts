@@ -914,3 +914,26 @@ test('relay-command: an asymmetric random map is chosen in the setup and survive
   await expect(page.getByTestId('rc-random-asym')).toBeChecked();
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
 });
+
+test('relay-command: the editor shows a 48×32 map at 100 % in a frame; a tap paints, and with "Move the map" it does not', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await start(page);
+  await page.getByTestId('rc-editor-open').click();
+  await page.getByTestId('ed-width').selectOption('48');
+  await page.getByTestId('ed-height').selectOption('32');
+  const map = page.getByTestId('ed-map');
+  // Fitted, a cell would be about 7 px wide; at 100 % it is 44 px and the frame scrolls.
+  await page.getByTestId('ed-size-100').click();
+  await expect(map).toHaveCSS('width', `${48 * 44}px`);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
+  const terrain = async () => ((await readSave(page, 'relay-command')) as { state: { edit: { map: { terrain: string } } } }).state.edit.map.terrain;
+  await map.scrollIntoViewIfNeeded();
+  await map.click({ position: { x: 66, y: 66 } }); // cell (1, 1) with the road tool
+  await expect.poll(terrain).toMatch(/^.{49}=/);
+  const painted = await terrain();
+  await page.getByTestId('ed-move').click();
+  await expect(page.getByTestId('ed-move')).toHaveAttribute('aria-pressed', 'true');
+  await map.click({ position: { x: 154, y: 66 } }); // cell (3, 1): nothing happens
+  await page.waitForTimeout(300);
+  expect(await terrain()).toBe(painted);
+});
