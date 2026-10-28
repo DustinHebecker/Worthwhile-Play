@@ -121,6 +121,49 @@ describe('view (design § 15–16, § 20.3)', () => {
     expect(FakeContext.instances).toHaveLength(0);
   });
 
+  it('by ear, "Show the picture" is a hint while sound is on, and recorded like no-sound while muted', () => {
+    win.AudioContext = FakeContext;
+    const { root, game, missing } = mount();
+    game.newGame({ seed: 5, difficulty: 'easy', settings: { topic: 'intervals', senses: 'ear' } });
+    expect(q(root, 'hm-picture-after')!.textContent).toBe('The picture appears after you check.');
+    q(root, 'hm-show-picture')!.click();
+    expect((game.serialize() as QuizState).items[0]!.peeked).toBe('hint');
+    expect(q(root, 'hm-no-sound')).toBeNull();
+    choose(root, 0);
+    q(root, 'hm-check')!.click();
+    q(root, 'hm-next')!.click();
+    q(root, 'hm-mute')!.click();
+    expect(q(root, 'hm-picture-after')!.textContent).toBe('Sound is off. Show the picture to answer; it is not counted as a hint.');
+    q(root, 'hm-show-picture')!.click();
+    expect((game.serialize() as QuizState).items[1]!.peeked).toBe('no-sound');
+    expect(q(root, 'hm-no-sound')!.textContent).toBe('Sound was off, so this question is shown as a picture.');
+    // Unmuting afterwards does not turn it into a hint.
+    q(root, 'hm-mute')!.click();
+    expect((game.serialize() as QuizState).items[1]!.peeked).toBe('no-sound');
+    const total = (game.serialize() as QuizState).items.length;
+    for (let i = 1; i < total; i++) {
+      choose(root, 0);
+      q(root, 'hm-check')!.click();
+      q(root, i < total - 1 ? 'hm-next' : 'hm-summary-btn')!.click();
+    }
+    expect(root.textContent).toContain('With the picture: 1');
+    expect(root.textContent).toContain('Shown as a picture because sound was off or not available: 1');
+    expect(missing).toEqual([]);
+  });
+
+  it('volume at 0 counts as sound off; every locale has the texts', () => {
+    win.AudioContext = FakeContext;
+    for (const locale of ['en', 'de', 'ar', 'ja'] as const) {
+      const { root, game, missing } = mount(locale, new Map<string, unknown>([['volume', 0]]));
+      game.newGame({ seed: 7, difficulty: 'medium', settings: { topic: 'chords', senses: 'ear' } });
+      q(root, 'hm-show-picture')!.click();
+      expect((game.serialize() as QuizState).items[0]!.peeked).toBe('no-sound');
+      expect(q(root, 'hm-no-sound')).not.toBeNull();
+      expect(missing).toEqual([]);
+      game.dispose();
+    }
+  });
+
   it('validates preferences (junk → defaults)', () => {
     win.AudioContext = FakeContext;
     const prefs = new Map<string, unknown>([['volume', 'loud'], ['names', 'klingon'], ['keys', 7], ['muted', 'yes']]);

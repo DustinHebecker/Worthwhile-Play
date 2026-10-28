@@ -143,6 +143,9 @@ export function tipText(env: Env, m: Pick<MixUp, 'k' | 'answer' | 'choice'>): st
   }
 }
 
+/** No sound can be heard right now: Web Audio is unavailable, the game is muted, or the volume is at 0. */
+export const soundOff = (host: Host): boolean => !host.soundAvailable() || host.prefs().muted || host.prefs().volume === 0;
+
 /* ---------- The question screen ---------- */
 
 export function quizScreen(host: Host, state: QuizState): HTMLElement[] {
@@ -200,11 +203,13 @@ export function quizScreen(host: Host, state: QuizState): HTMLElement[] {
   const panel = h('section', { class: 'hm-panel', 'data-testid': 'hm-panel' });
   if (committed) panel.append(...review(host, state, item));
   else if (!picture) {
+    // With sound off (muted, volume 0 or no Web Audio) the picture is the only way to answer: recorded as
+    // `no-sound` like the automatic fallback, not as a hint (design § 5.1).
     const show = h('button', { type: 'button', class: 'hm-secondary', 'data-testid': 'hm-show-picture' }, t('action.showPicture'));
-    show.addEventListener('click', () => !host.paused() && host.commit(peek(state, 'hint'), 'hm-picture'));
-    panel.append(h('p', { class: 'hm-muted' }, t('picture.after')), show);
+    show.addEventListener('click', () => !host.paused() && host.commit(peek(state, soundOff(host) ? 'no-sound' : 'hint'), 'hm-picture'));
+    panel.append(h('p', { class: 'hm-muted', 'data-testid': 'hm-picture-after' }, t(soundOff(host) ? 'picture.soundOff' : 'picture.after')), show);
   } else if (spec.k !== 'build') {
-    if (item.peeked === 'no-sound') panel.append(h('p', { class: 'hm-notice', 'data-testid': 'hm-no-sound' }, t('sound.noSoundPicture')));
+    if (item.peeked === 'no-sound') panel.append(h('p', { class: 'hm-notice', 'data-testid': 'hm-no-sound' }, t(host.soundAvailable() ? 'sound.offPicture' : 'sound.noSoundPicture')));
     panel.append(itemPicture(env, spec, false));
     if (eye && spec.k === 'interval' && state.difficulty !== 'easy' && item.peeked === false) {
       const show = h('button', { type: 'button', class: 'hm-secondary', 'data-testid': 'hm-show-keys' }, t('action.showKeyboard'));
