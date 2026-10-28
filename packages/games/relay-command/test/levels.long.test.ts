@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createRng } from '@wp/game-core';
 import { initialIntel, observe, passable, type World } from '@wp/strategy-engine';
 import { DIFFICULTIES, planAi, type Difficulty } from '../src/ai';
+import { generateMap } from '../src/generator';
 import { isValidState, lockTurn, startSeats, migrateState, newGame, OPPONENT, planOrder, PLAYER, RULESET, TURN_LIMITS, type RcState } from '../src/rules';
 import { FIELD_EXERCISE, opponentCounts, RIDGE_VALLEY, SCENARIOS, type ScenarioSpec } from '../src/scenarios';
 
@@ -252,6 +253,18 @@ describe('large asymmetric maps (owner request 2026-10-27)', () => {
         expect(lost, label).toBeGreaterThanOrEqual(1);
       }
     }
+  }, 1_800_000);
+
+  it('asymmetric random maps (32×20, 48×32): a passive player loses at normal from either base; hard against hard each side wins some', () => {
+    for (const [w, h] of [[32, 20], [48, 32]] as const) {
+      const passive = Array.from({ length: 4 }, (_, i) => play(newGame(i + 1, FIELD_EXERCISE, 'normal', null, false, generateMap(w, h, i + 1, 'm', 2, true), 1, [], false, null, null, i % 2), 'passive'));
+      expect(passive.map((g) => `${g.result}@${g.world.turn}`), `${w}×${h} passive`).toEqual(passive.map((g) => `lost@${g.world.turn}`));
+    }
+    // Measured over maps 1–10 at 48×32 (cap 150): side 0 won 5, side 1 won 5.
+    const games = Array.from({ length: 10 }, (_, i) => play(newGame(i + 1, FIELD_EXERCISE, 'hard', null, false, generateMap(48, 32, i + 1, 'm', 2, true), 1), 'hard'));
+    const label = games.map((g) => `${g.result ?? 'open'}@${g.world.turn}`).join(' ');
+    expect(games.filter((g) => g.result === 'won').length, label).toBeGreaterThanOrEqual(2);
+    expect(games.filter((g) => g.result === 'lost').length, label).toBeGreaterThanOrEqual(2);
   }, 1_800_000);
 
   it('every opponent count the map offers starts from every start with all units in play', () => {
