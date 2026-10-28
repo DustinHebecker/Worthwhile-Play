@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createTestContext } from '@wp/testing';
 import type { GameModule, GameResult } from '@wp/game-core';
 import game from '../src/index';
-import { applyTool, choiceOf, commit, newGameState, questionOf, runGoalWeeks, setDraft, type Answer, type EcoState, type GoalState, type PredictState } from '../src/rules';
+import { ADD_LIMIT, cloneSim, total } from '../src/model';
+import { applyTool, choiceOf, commit, newGameState, notebookStart, questionOf, runGoalWeeks, setDraft, type Answer, type EcoState, type ExploreState, type GoalState, type PredictState } from '../src/rules';
 
 const module = game as GameModule<unknown>;
 type Locale = 'en' | 'de' | 'ar' | 'ja';
@@ -231,6 +232,39 @@ describe('explore screens', () => {
     expect(m.q('eco-log')!.textContent).toContain('Pike: added');
     m.q('eco-undo')!.click();
     expect((m.state() as { notebook: { log: unknown[] } }).notebook.log).toHaveLength(0);
+  });
+
+  it('a refused "add" says why inline and in the live region; the state stays as it was', () => {
+    vi.useFakeTimers();
+    for (const locale of LOCALES) {
+      const base = explore('pond') as ExploreState;
+      const sim = cloneSim(notebookStart(base.notebook));
+      const extra = ADD_LIMIT - 10_000 - total(sim);
+      sim.d += extra;
+      sim.imp += extra;
+      const near: ExploreState = { ...base, notebook: { ...base.notebook, start: { sim } } };
+      const m = mount(near, locale);
+      expect(m.q('eco-refused')).toBeNull();
+      (m.q('eco-species') as HTMLSelectElement).value = 'minnows';
+      m.q('eco-species')!.dispatchEvent(new Event('change'));
+      const saves = m.ctx.saveRequests();
+      m.q('eco-add')!.click();
+      expect(m.state()).toEqual(near);
+      expect(m.ctx.saveRequests()).toBe(saves);
+      vi.runAllTimers();
+      const note = m.q('eco-refused')!.textContent!;
+      expect(note.length).toBeGreaterThan(20);
+      expect(m.q('eco-announcer')!.textContent).toContain(note.replace(/^ⓘ /, ''));
+      expect(document.activeElement).toBe(m.q('eco-add'));
+      if (locale === 'en') expect(note).toMatch(/^ⓘ The pond can’t hold more right now: with Small fish added, .* more than 10,000\. Remove something first/);
+      expect(m.ctx.missingKeys).toEqual([]);
+      // Another change goes through and the note goes away.
+      m.q('eco-remove-50')!.click();
+      expect((m.state() as ExploreState).notebook.log).toHaveLength(1);
+      expect(m.q('eco-refused')).toBeNull();
+      document.body.innerHTML = '';
+    }
+    vi.useRealTimers();
   });
 
   it('meadow conditions are selects; a change of rain is logged', () => {
