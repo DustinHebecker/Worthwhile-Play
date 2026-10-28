@@ -71,6 +71,9 @@ test('balance-lab: the best overhang with the step buttons on a phone, no page s
     await r.getByTestId('bl-solution').click();
     await r.getByTestId('bl-next').click();
   }
+  // The save is written after the last "Next"; wait for it instead of reading a stale one.
+  const want = i;
+  await expect.poll(async () => (await savedState(page)).index).toBe(want);
   s = await savedState(page);
   i = s.index;
   const item = s.items[i]!;
@@ -124,4 +127,18 @@ test('balance-lab: in Arabic the scene is not mirrored and "Let go" works', asyn
   await r.getByTestId('bl-opt-1').check();
   await r.getByTestId('bl-letgo').click();
   await expect(r.getByTestId('bl-outcome')).toBeVisible();
+});
+
+test('balance-lab: on the free mobile every tap on an empty hook in the picture hangs a weight (phone width)', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await startGame(page, ID, { settings: { mode: 'free', freeBench: 'mobile' } });
+  const r = root(page);
+  const slots = r.locator('.bl-slot');
+  const empty = await slots.count();
+  // Pointer taps on the drawn hooks (the picture is framed to its content, so this checks the tap mapping too).
+  await slots.last().click({ force: true });
+  await expect(slots).toHaveCount(empty - 1);
+  await slots.first().click({ force: true });
+  await expect(slots).toHaveCount(empty - 2);
+  await expect(r.locator('.bl-kg')).toHaveCount(2);
 });
