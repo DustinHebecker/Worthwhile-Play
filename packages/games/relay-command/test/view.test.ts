@@ -7,6 +7,7 @@ import { initialIntel, NEUTRAL, passable, retire, validateCommand, type Entity }
 import { concede, lockTurn, newGame, OPPONENT, orderRefusal, planOrder, PLAYER, RULESET, sideValue, STALL_TURNS, stalemateTurns, type RcState } from '../src/rules';
 import { SCENARIOS } from '../src/scenarios';
 import { CELL } from '../src/view';
+import { isFair } from '../src/maps';
 
 let ctx: TestContext;
 let instance: GameInstance<RcState>;
@@ -805,6 +806,42 @@ describe('Relay Command view', () => {
     expect(state().log.length).toBeGreaterThan(0);
     expect($('rc-setup-summary').textContent).not.toContain('Normal');
     expect($('rc-setup-summary').textContent).not.toContain(' · ·');
+  });
+
+  it('a random map can be asymmetric with one opponent (owner request 2026-10-27): kept in the recipe, named as such, hidden with more opponents, locked after the first turn', () => {
+    const scenario = $('rc-scenario') as HTMLSelectElement;
+    scenario.value = 'random';
+    scenario.dispatchEvent(new Event('change'));
+    const box = $('rc-random-asym') as HTMLInputElement;
+    expect($('rc-random-asym-label').hidden).toBe(false);
+    expect(box.checked).toBe(false);
+    const mirrored = state().map!;
+    box.checked = true;
+    box.dispatchEvent(new Event('change'));
+    const { seed } = state().random!;
+    expect(state().random).toEqual({ w: 16, h: 12, seed, asymmetric: true });
+    expect(state().map!.name).toBe(`Random asymmetric map 16×12 · No. ${seed}`);
+    expect(state().map!.terrain).not.toBe(mirrored.terrain);
+    expect(isFair(state().map!)).toBe(false);
+    // Unchecked: the mirrored map of that number again.
+    box.checked = false;
+    box.dispatchEvent(new Event('change'));
+    expect(state().random).toEqual({ w: 16, h: 12, seed });
+    expect(state().map).toEqual(mirrored);
+    // Two opponents: four bases, never asymmetric; the choice is hidden.
+    box.checked = true;
+    box.dispatchEvent(new Event('change'));
+    const opponents = $('rc-opponents') as HTMLSelectElement;
+    opponents.value = '2';
+    opponents.dispatchEvent(new Event('change'));
+    expect(state().opponents).toBe(2);
+    expect(state().random!.asymmetric).toBeUndefined();
+    expect($('rc-random-asym-label').hidden).toBe(true);
+    opponents.value = '1';
+    opponents.dispatchEvent(new Event('change'));
+    expect(state().random!.asymmetric).toBe(true);
+    click('rc-lock');
+    expect(box.disabled).toBe(true);
   });
 
   it('offers a random map: size and map number pick it, "New map" draws another; the same number gives it back; locked after the first turn', () => {

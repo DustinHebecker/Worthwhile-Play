@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { NEUTRAL, observe } from '@wp/strategy-engine';
 import { planAi } from '../src/ai';
-import { depositsPerSeat, depositsPerSide, generatedMapProblems, generateMap, POST_DISTANCE_SHARE, RICH_BALANCE, RICH_MIDDLE_FROM } from '../src/generator';
+import { ASYM_OFFSET_SHARE, depositsPerSeat, depositsPerSide, generatedMapProblems, generateMap, POST_DISTANCE_SHARE, RICH_BALANCE, RICH_MIDDLE_FROM } from '../src/generator';
 import { applyTool, blankMap, customSpec, FOUR_SEATS, isFair, isValidMap, MAP_HEIGHTS, MAP_WIDTHS, mapIssues, toScenario, type EditMap } from '../src/maps';
 import { isValidState, lockTurn, newGame, planOrder, PLAYER, RANDOM_OPPONENTS, rulesOf } from '../src/rules';
 import { opponentCounts } from '../src/scenarios';
@@ -197,4 +197,94 @@ describe('map generator, four bases (Generator C, owner decisions 2026-10-18)', 
     expect(isValidState({ ...s, edit: { map: generateMap(16, 12, 2), slot: null, mirror: true } })).toBe(true);
   }, 120_000);
 
+});
+
+describe('map generator, asymmetric (owner request 2026-10-27: generated asymmetric maps besides the hand-built ones)', () => {
+  const posts = (map: EditMap) => [0, 1].map((side) => map.units.find((u) => u.side === side && u.kind === 'command-post')!);
+  const own = (map: EditMap, side: number) => map.deposits.filter((d) => d.size !== 'rich' && (side === 0 ? d.y >= map.h / 2 : d.y < map.h / 2));
+
+  it('every size: a valid, playable map, not mirrored, the posts off each other\'s mirror image, as many deposits per side, rich ones from 200 cells', () => {
+    for (const [w, h] of SIZES) {
+      for (const seed of [1, 2]) {
+        const map = generateMap(w, h, seed, '', 2, true);
+        const label = `${w}×${h} #${seed}`;
+        expect(generatedMapProblems(map, true), label).toEqual([]);
+        expect(isFair(map), label).toBe(false);
+        const [a, b] = posts(map);
+        expect(Math.abs(a!.x - (w - 1 - b!.x)), label).toBeGreaterThanOrEqual(Math.max(2, Math.round(w * ASYM_OFFSET_SHARE)));
+        expect(own(map, 0).length, label).toBe(depositsPerSide(w, h));
+        expect(own(map, 1).length, label).toBe(depositsPerSide(w, h));
+        expect(map.deposits.filter((d) => d.size === 'rich').length, label).toBe(w * h >= RICH_MIDDLE_FROM ? 2 : 0);
+        // Each side's pieces stand on its own half.
+        expect(map.units.every((u) => (u.side === 0 ? u.y >= h / 2 : u.y < h / 2)), label).toBe(true);
+      }
+    }
+  }, 120_000);
+
+  it('a map number gives the same asymmetric map on every device and version: the maps of 12 numbers match their fingerprint', () => {
+    // Taken when asymmetric maps were added (2026-10-28). A deliberate change of the generator updates
+    // it with a note, like the AI fingerprints: maps passed on by number would otherwise change unseen.
+    let hash = 0x811c9dc5;
+    const feed = (text: string) => {
+      for (let i = 0; i < text.length; i++) hash = Math.imul(hash ^ text.charCodeAt(i), 0x01000193) >>> 0;
+    };
+    for (const [w, h] of [[12, 10], [20, 14], [24, 16], [48, 32]] as const) for (const seed of [1, 2, 3]) feed(JSON.stringify(generateMap(w, h, seed, '', 2, true)));
+    expect(hash.toString(16)).toBe('7d96c201');
+  });
+
+  it('the same number gives the same map; it is unrelated to the mirrored map of that number', () => {
+    expect(generateMap(32, 20, 9, 'x', 2, true)).toEqual(generateMap(32, 20, 9, 'x', 2, true));
+    expect(generateMap(32, 20, 9, 'x', 2, true).terrain).not.toBe(generateMap(32, 20, 9, 'x').terrain);
+    expect(generateMap(32, 20, 9, 'x', 2, true).terrain).not.toBe(generateMap(32, 20, 10, 'x', 2, true).terrain);
+  });
+
+  it('the validator in asymmetric mode: no symmetry needed, but even and balanced deposits and posts off the mirror', () => {
+    const map = generateMap(24, 16, 4, '', 2, true);
+    expect(generatedMapProblems(map)).toContain('not symmetric');
+    expect(generatedMapProblems(map, true)).toEqual([]);
+    // Free open cells of a half, farthest from a point first (passable, no piece or deposit on them).
+    const freeCells = (top: boolean, from: { x: number; y: number }) => {
+      const used = new Set([...map.units, ...map.deposits].map((p) => `${p.x},${p.y}`));
+      const cells: { x: number; y: number }[] = [];
+      for (let y = top ? 0 : map.h / 2; y < (top ? map.h / 2 : map.h); y++) for (let x = 0; x < map.w; x++) if (map.terrain[y * map.w + x] === '.' && !used.has(`${x},${y}`)) cells.push({ x, y });
+      return cells.sort((p, q) => (q.x - from.x) ** 2 + (q.y - from.y) ** 2 - ((p.x - from.x) ** 2 + (p.y - from.y) ** 2));
+    };
+    const [a, b] = posts(map);
+    const plainOf0 = map.deposits.filter((d) => d.size !== 'rich' && d.y >= map.h / 2);
+    // One of side 0's deposits moved into side 1's half: uneven.
+    const moved = plainOf0.at(-1)!;
+    const target = freeCells(true, b!).at(-1)!;
+    const uneven = { ...map, deposits: map.deposits.map((d) => (d === moved ? { ...d, ...target } : d)) };
+    expect(isValidMap(uneven)).toBe(true);
+    expect(generatedMapProblems(uneven, true)).toContain('uneven deposits');
+    // Side 0's deposits all moved to the cells of its half farthest from its post: not balanced.
+    const far = freeCells(false, a!);
+    const remote = { ...map, deposits: map.deposits.map((d) => (plainOf0.includes(d) ? { ...d, ...far[plainOf0.indexOf(d) * 3]! } : d)) };
+    expect(isValidMap(remote)).toBe(true);
+    expect(generatedMapProblems(remote, true)).toContain('deposits not balanced');
+    // Side 0's post moved onto side 1's mirror image: mirrored posts.
+    const mx = map.w - 1 - b!.x;
+    const mirrored = { ...map, units: map.units.map((u) => (u === a ? { ...u, x: mx } : u)) };
+    expect(isValidMap(mirrored)).toBe(true);
+    expect(generatedMapProblems(mirrored, true)).toContain('posts mirrored');
+    // Four bases are never asymmetric.
+    expect(() => generateMap(24, 16, 1, '', 4, true)).toThrow(RangeError);
+  });
+
+  it('a game on it: valid saves every turn from either base, the AI plays both sides', () => {
+    const map = generateMap(24, 16, 6, 'A', 2, true);
+    for (const start of [0, 1]) {
+      let s = newGame(2, FIELD_EXERCISE, 'normal', 12, false, map, 1, [], false, { w: 24, h: 16, seed: 6, asymmetric: true }, null, start);
+      expect(isValidState(s)).toBe(true);
+      for (let i = 0; i < 6 && s.phase === 'plan'; i++) {
+        for (const c of planAi(observe(s.world, rulesOf(s), PLAYER), rulesOf(s), 'normal')) s = planOrder(s, c.unit, c.order, c.doctrine) ?? s;
+        s = lockTurn(s);
+        expect(isValidState(JSON.parse(JSON.stringify(s)) as unknown)).toBe(true);
+      }
+      expect(s.random).toEqual({ w: 24, h: 16, seed: 6, asymmetric: true });
+    }
+    const s = newGame(2, FIELD_EXERCISE, 'normal', 12, false, map, 1, [], false, { w: 24, h: 16, seed: 6, asymmetric: true });
+    expect(isValidState({ ...s, random: { ...s.random, asymmetric: 'yes' } })).toBe(false);
+    expect(isValidState({ ...s, random: { ...s.random, asymmetric: false } })).toBe(false);
+  });
 });

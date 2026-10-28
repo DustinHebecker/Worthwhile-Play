@@ -26,6 +26,14 @@ export const RICH_BALANCE = 1.25;
 export const depositsPerSeat = (w: number, h: number): number => Math.max(2, Math.min(3, Math.round((w * h) / 120)));
 /** Candidates drawn per seed before the plain fallback (which always passes). */
 const ATTEMPTS = 40;
+/**
+ * Asymmetric maps (owner request 2026-10-27, "Beides": generated asymmetric maps besides the
+ * hand-built ones): the ground path cost from a post to its own deposits, summed, is at most this
+ * multiple of the other side's; so is the cost to the nearest of them.
+ */
+export const ASYM_BALANCE = 1.3;
+/** On an asymmetric map the posts stand at least this many columns off each other's mirror image. */
+export const ASYM_OFFSET_SHARE = 1 / 8;
 
 /** The pieces each side starts with, by map size (small maps: Field Exercise's set; large: Ridge Valley's). */
 function startingKinds(area: number): string[] {
@@ -47,20 +55,24 @@ function seatKinds(quarter: number): string[] {
  * symmetric (above). Four bases (owner decision 2026-10-18): one in each corner, the map the same
  * mirrored left to right and top to bottom; only the bottom-left quarter (seat 0) is generated.
  */
-export function generateMap(w: number, h: number, seed: number, name = '', bases: 2 | 4 = 2): EditMap {
+export function generateMap(w: number, h: number, seed: number, name = '', bases: 2 | 4 = 2, asymmetric = false): EditMap {
   if (!(MAP_WIDTHS as readonly number[]).includes(w) || !(MAP_HEIGHTS as readonly number[]).includes(h) || h % 2 !== 0) throw new RangeError(`No editor size: ${w}×${h}.`);
   if (name.length > MAX_NAME) throw new RangeError(`Map name longer than ${MAX_NAME} characters.`);
   if (bases !== 2 && bases !== 4) throw new RangeError(`No map with ${String(bases)} bases.`);
-  // Four bases draw from another stream, so the two kinds of map of one number are unrelated.
-  const rng = createRng(((seed >>> 0) ^ Math.imul(w * 64 + h + (bases === 4 ? 0x10000 : 0), 0x9e3779b1)) >>> 0);
-  const draw = bases === 4 ? candidateFour : candidate;
+  if (asymmetric && bases !== 2) throw new RangeError('Asymmetric maps have two bases.');
+  // Four bases and asymmetric maps draw from streams of their own, so the kinds of map of one number are unrelated.
+  const rng = createRng(((seed >>> 0) ^ Math.imul(w * 64 + h + (bases === 4 ? 0x10000 : 0) + (asymmetric ? 0x20000 : 0), 0x9e3779b1)) >>> 0);
+  const draw = bases === 4 ? candidateFour : asymmetric ? candidateAsymmetric : candidate;
+  const ok = (map: EditMap | undefined): map is EditMap => !!map && generatedMapProblems(map, asymmetric).length === 0;
   for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
     const map = draw(w, h, rng, name, true);
-    if (map && generatedMapProblems(map).length === 0) return map;
+    if (ok(map)) return map;
   }
-  // Open ground with the bases only (always passes): the rare seed whose candidates all failed.
-  const plain = draw(w, h, rng, name, false);
-  if (plain && generatedMapProblems(plain).length === 0) return plain;
+  // Open ground with the bases only (always passes when mirrored): the rare seed whose candidates all failed.
+  for (let attempt = 0; attempt < (asymmetric ? ATTEMPTS : 1); attempt++) {
+    const plain = draw(w, h, rng, name, false);
+    if (ok(plain)) return plain;
+  }
   throw new Error(`No valid map for ${w}×${h} seed ${seed}.`);
 }
 
@@ -183,6 +195,141 @@ function candidate(w: number, h: number, rng: Rng, name: string, features: boole
   const all: MapUnit[] = [...units.map((u) => ({ ...u, side: 0, ...mirror(u.x, u.y) })), ...units];
   const allDeposits: MapDeposit[] = deposits.flatMap((d) => [d, { ...d, ...mirror(d.x, d.y) }]);
   return { name, w, h, terrain: terrain.join(''), deposits: allDeposits, units: all.sort((a, b) => a.side - b.side || a.y - b.y || a.x - b.x) };
+}
+
+/**
+ * An asymmetric two-side candidate (owner request 2026-10-27): terrain over the whole map without a
+ * mirror, side 1's post near the top edge and side 0's near the bottom, each anywhere along its edge
+ * but not where the other's mirror image would be; each side's starting pieces and deposits on its
+ * own half. Fairness comes from the validator (`generatedMapProblems(map, true)`): as many deposits
+ * per side, their ground path costs within ASYM_BALANCE, rich deposits in the contested middle.
+ */
+function candidateAsymmetric(w: number, h: number, rng: Rng, name: string, features: boolean): EditMap | undefined {
+  const terrain: string[] = Array.from({ length: w * h }, () => '.');
+  const inside = (x: number, y: number) => x >= 0 && y >= 0 && x < w && y < h;
+  const set = (x: number, y: number, code: string) => {
+    if (inside(x, y)) terrain[y * w + x] = code;
+  };
+  const at = (x: number, y: number) => terrain[y * w + x] ?? '^';
+  const blocked = (x: number, y: number) => at(x, y) === '~' || at(x, y) === '^';
+  const area = w * h;
+  const half = h / 2;
+  // Side 1's half is the top one (rows < half), side 0's the bottom one.
+  const ownHalf = (side: number, y: number) => (side === 1 ? y < half : y >= half);
+
+  const minDistance = POST_DISTANCE_SHARE * Math.max(w, h);
+  const offset = Math.max(2, Math.round(w * ASYM_OFFSET_SHARE));
+  let posts: [{ x: number; y: number }, { x: number; y: number }] | undefined;
+  for (let k = 0; k < 30 && !posts; k++) {
+    const top = { x: rng.int(2, w - 3), y: rng.int(1, Math.min(2, half - 2)) };
+    const bottom = { x: rng.int(2, w - 3), y: h - 1 - rng.int(1, Math.min(2, half - 2)) };
+    if (Math.hypot(top.x - bottom.x, top.y - bottom.y) >= minDistance && Math.abs(bottom.x - (w - 1 - top.x)) >= offset) posts = [bottom, top];
+  }
+  if (!posts) return undefined;
+
+  if (features) {
+    // Blobs of forest, hills, buildings and swamp; a few walls of water or ridge, anywhere on the map.
+    const blob = (code: string, size: number) => {
+      let x = rng.int(0, w - 1);
+      let y = rng.int(0, h - 1);
+      for (let i = 0; i < size; i++) {
+        set(x, y, code);
+        x = Math.max(0, Math.min(w - 1, x + rng.int(-1, 1)));
+        y = Math.max(0, Math.min(h - 1, y + rng.int(-1, 1)));
+      }
+    };
+    // Twice the blobs of half a symmetric map (it draws them on one half and mirrors them).
+    for (let i = 0; i < 2 * Math.round(area / 40); i++) blob('f', rng.int(3, 7));
+    for (let i = 0; i < 2 * Math.round(area / 90); i++) blob('h', rng.int(2, 4));
+    for (let i = 0; i < 2 * Math.round(area / 120); i++) blob('u', rng.int(2, 4));
+    for (let i = 0; i < 2 * Math.round(area / 150); i++) blob('s', rng.int(2, 4));
+    const walls = area >= 160 ? rng.int(2, 6) : rng.int(0, 2);
+    for (let i = 0; i < walls; i++) {
+      const code = rng.int(0, 1) === 0 ? '~' : '^';
+      const vertical = rng.int(0, 1) === 0;
+      let x = rng.int(1, w - 2);
+      let y = rng.int(1, h - 2);
+      for (let k = 0, n = rng.int(3, Math.max(3, Math.round(Math.min(w, h) / 2))); k < n; k++) {
+        set(x, y, code);
+        if (vertical) y = Math.min(h - 2, y + 1);
+        else x = Math.min(w - 2, x + 1);
+      }
+    }
+    // A road from each post towards the middle.
+    const cx = Math.floor(w / 2);
+    for (const [side, post] of posts.entries()) {
+      let x = post.x;
+      let y = post.y;
+      const goal = side === 1 ? half - 1 : half;
+      for (let k = 0; k < w + h && (x !== cx || y !== goal); k++) {
+        if (y !== goal && (rng.int(0, 2) > 0 || x === cx)) y += Math.sign(goal - y);
+        else x += Math.sign(cx - x);
+        if (!blocked(x, y)) set(x, y, '=');
+      }
+    }
+  }
+  // Each base area is open ground (the starting pieces must fit and move off).
+  for (const [side, post] of posts.entries()) {
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -3; dx <= 3; dx++) if (inside(post.x + dx, post.y + dy) && ownHalf(side, post.y + dy)) set(post.x + dx, post.y + dy, '.');
+  }
+
+  const units: MapUnit[] = [];
+  const taken = new Set<number>();
+  const free = (side: number, x: number, y: number) => inside(x, y) && ownHalf(side, y) && !blocked(x, y) && !taken.has(y * w + x);
+  const near = (side: number, cx: number, cy: number, r: number) => {
+    const cells: { x: number; y: number; d: number; t: number }[] = [];
+    for (let y = cy - r; y <= cy + r; y++) for (let x = cx - r; x <= cx + r; x++) if (free(side, x, y)) cells.push({ x, y, d: (x - cx) ** 2 + (y - cy) ** 2, t: rng.int(0, 1000) });
+    return cells.sort((a, b) => a.d - b.d || a.t - b.t);
+  };
+  for (const [side, post] of posts.entries()) {
+    for (const kind of startingKinds(area)) {
+      const spot = kind === 'command-post' ? { x: post.x, y: post.y } : near(side, post.x, post.y, 4)[kind === 'muster' ? 2 : 0];
+      if (!spot) return undefined;
+      taken.add(spot.y * w + spot.x);
+      units.push({ side, kind, x: spot.x, y: spot.y });
+    }
+  }
+
+  // Deposits: per side one behind the post (in its cover) and the others spread over its half; a
+  // rich pair near the middle on larger maps, each about as far from both posts.
+  const deposits: MapDeposit[] = [];
+  const spaced = (x: number, y: number) => deposits.every((d) => Math.max(Math.abs(d.x - x), Math.abs(d.y - y)) >= 3);
+  const own = depositsPerSide(w, h);
+  for (const [side, post] of posts.entries()) {
+    const first = near(side, post.x, post.y, 4).filter((c) => c.d >= 4 && spaced(c.x, c.y));
+    if (!first[0]) return undefined;
+    deposits.push({ x: first[0].x, y: first[0].y });
+    taken.add(first[0].y * w + first[0].x);
+    let placed = 1;
+    for (let tries = 0; placed < own && tries < 200; tries++) {
+      const x = rng.int(0, w - 1);
+      const y = side === 1 ? rng.int(0, half - 1) : rng.int(half, h - 1);
+      if (!free(side, x, y) || !spaced(x, y)) continue;
+      deposits.push({ x, y });
+      taken.add(y * w + x);
+      placed++;
+    }
+    if (placed < own) return undefined;
+  }
+  if (area >= RICH_MIDDLE_FROM) {
+    const map: GameMap = { w, h, terrain: terrain.join('') };
+    const fields = posts.map((p) => flowField(map, RULESET, [cellOf(map, p.x, p.y)], 'ground'));
+    const balance = (c: { x: number; y: number }) => {
+      const [a, b] = fields.map((f) => f[cellOf(map, c.x, c.y)] ?? -1) as [number, number];
+      return a <= 0 || b <= 0 ? Infinity : Math.max(a, b) / Math.min(a, b);
+    };
+    // One rich deposit in each half's middle rows, the most contested first.
+    for (const side of [1, 0]) {
+      const middle = near(side, Math.floor(w / 2), side === 1 ? half - 1 : half, 4)
+        .filter((c) => spaced(c.x, c.y) && balance(c) <= RICH_BALANCE)
+        .sort((p, q) => balance(p) - balance(q));
+      if (!middle[0]) return undefined;
+      deposits.push({ x: middle[0].x, y: middle[0].y, size: 'rich' });
+      taken.add(middle[0].y * w + middle[0].x);
+    }
+  }
+
+  return { name, w, h, terrain: terrain.join(''), deposits, units: units.sort((a, b) => a.side - b.side || a.y - b.y || a.x - b.x) };
 }
 
 /**
@@ -322,11 +469,12 @@ function candidateFour(w: number, h: number, rng: Rng, name: string, features: b
  * post by ground path cost (RICH_BALANCE), every starting unit inside its side's radio cover and
  * every mobile one able to step off its cell.
  */
-export function generatedMapProblems(map: EditMap): string[] {
+export function generatedMapProblems(map: EditMap, asymmetric = false): string[] {
   const problems: string[] = [];
   if (!isValidMap(map)) return ['invalid map'];
   if (mapIssues(map).length > 0) problems.push('not playable');
-  if (!isFair(map)) problems.push('not symmetric');
+  if (!asymmetric && !isFair(map)) problems.push('not symmetric');
+  if (asymmetric && map.seats === 4) problems.push('asymmetric with four bases');
   const four = map.seats === 4;
   const sides = four ? [0, 1, 2, 3] : [0, 1];
   const posts = sides.map((side) => map.units.find((u) => u.side === side && u.kind === 'command-post'));
@@ -344,11 +492,27 @@ export function generatedMapProblems(map: EditMap): string[] {
   const ownPlain = own.filter((d) => d.size !== 'rich').length;
   const rich = map.deposits.filter((d) => d.size === 'rich').length;
   if (ownPlain < (four ? depositsPerSeat(map.w, map.h) : depositsPerSide(map.w, map.h))) problems.push('too few deposits');
+  // Without symmetry each side is counted: side 1's own deposits are those in the top half.
+  const theirs = map.deposits.filter((d) => d.y < map.h / 2 && d.size !== 'rich').length;
+  if (asymmetric && theirs !== ownPlain) problems.push('uneven deposits');
   if (map.w * map.h >= RICH_MIDDLE_FROM && rich < sides.length) problems.push('no rich middle');
   const fields = all.map((p) => flowField(scenario.map, RULESET, [cellOf(scenario.map, p.x, p.y)], 'ground'));
   for (const d of map.deposits.filter((x) => x.size === 'rich')) {
     const costs = fields.map((f) => f[cellOf(scenario.map, d.x, d.y)] ?? -1);
     if (costs.some((c) => c <= 0) || Math.max(...costs) > RICH_BALANCE * Math.min(...costs)) problems.push(`rich deposit ${d.x},${d.y} not contested`);
+  }
+  if (asymmetric && !four) {
+    // Each side's own deposits (its half by row): their summed ground path cost from its post, and the nearest one's.
+    const reachOf = (side: number) => {
+      const field = fields[side]!;
+      const costs = map.deposits.filter((d) => d.size !== 'rich' && (side === 0 ? d.y >= map.h / 2 : d.y < map.h / 2)).map((d) => field[cellOf(scenario.map, d.x, d.y)] ?? -1);
+      return { sum: costs.reduce((a, b) => a + b, 0), nearest: Math.min(...costs), unreachable: costs.some((c) => c < 0) };
+    };
+    const [a, b] = [reachOf(0), reachOf(1)];
+    const balanced = (x: number, y: number) => x > 0 && y > 0 && Math.max(x, y) <= ASYM_BALANCE * Math.min(x, y);
+    if (a.unreachable || b.unreachable || !balanced(a.sum, b.sum) || !balanced(a.nearest, b.nearest)) problems.push('deposits not balanced');
+    const [p0, p1] = all as [MapUnit, MapUnit];
+    if (Math.abs(p0.x - (map.w - 1 - p1.x)) < Math.max(2, Math.round(map.w * ASYM_OFFSET_SHARE))) problems.push('posts mirrored');
   }
   // Every mobile starting unit can step off its cell (terrain only: the others move too).
   for (const u of map.units) {

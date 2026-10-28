@@ -29,6 +29,22 @@ describe('map generator (I6c, P9)', () => {
     }
   }, 120_000);
 
+  it('asymmetric maps: every size and seed passes the validator in asymmetric mode and is not mirrored; any seed (property)', () => {
+    for (const [w, h] of SIZES) {
+      for (let seed = 0; seed < 4; seed++) {
+        const map = generateMap(w, h, seed, 'Random', 2, true);
+        expect(generatedMapProblems(map, true), `${w}×${h} seed ${seed}`).toEqual([]);
+        expect(generatedMapProblems(map), `${w}×${h} seed ${seed}`).toContain('not symmetric');
+      }
+    }
+    fc.assert(
+      fc.property(fc.constantFrom(...SIZES), fc.integer({ min: 0, max: 0xffffffff }), ([w, h], seed) => {
+        expect(generatedMapProblems(generateMap(w, h, seed, '', 2, true), true)).toEqual([]);
+      }),
+      { numRuns: 100 }
+    );
+  }, 300_000);
+
   it('property: any seed on any size passes the validator (P9)', () => {
     fc.assert(
       fc.property(fc.constantFrom(...SIZES), fc.integer({ min: 0, max: 0xffffffff }), ([w, h], seed) => {
