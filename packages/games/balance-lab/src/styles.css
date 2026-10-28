@@ -1,0 +1,88 @@
+/* Weight & Balance. Scoped under .wp-balance with logical properties (RTL-safe). The scene and its step controls are
+   LTR in every locale (left and right mean the picture's left and right); everything else follows the page direction.
+   Meaning is carried by words, numbers, arrows and patterns, never by colour alone. */
+.wp-balance { display: grid; gap: 0.75rem; max-width: 66rem; margin-inline: auto; min-width: 0; overflow-wrap: anywhere; }
+.wp-balance .bl-main { display: grid; gap: 0.8rem; min-width: 0; }
+.wp-balance p { margin: 0; }
+.wp-balance h2 { margin: 0; font-size: 1.2rem; line-height: 1.35; }
+.wp-balance .bl-head { display: grid; gap: 0.25rem; }
+.wp-balance .bl-progress, .wp-balance .bl-muted, .wp-balance .bl-where { color: var(--wp-muted); font-size: 0.95rem; }
+.wp-balance button, .wp-balance select { min-height: var(--wp-touch, 44px); min-width: var(--wp-touch, 44px); font-size: 1rem; }
+.wp-balance .bl-primary { font-weight: 700; }
+.wp-balance .bl-actions, .wp-balance .bl-steps, .wp-balance .bl-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.wp-balance .bl-layout { display: grid; gap: 0.8rem; min-width: 0; }
+@media (min-width: 48rem) {
+  .wp-balance .bl-layout { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); align-items: start; }
+}
+.wp-balance .bl-scene-col, .wp-balance .bl-panel, .wp-balance .bl-summary {
+  display: grid; gap: 0.6rem; padding: 0.8rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius, 8px);
+  background: var(--wp-surface); min-width: 0; align-content: start;
+}
+.wp-balance .bl-scene { min-width: 0; border-radius: var(--wp-radius, 8px); background: var(--wp-surface-2, transparent); }
+.wp-balance .bl-scene:focus-visible { outline: 3px solid var(--wp-focus); outline-offset: 2px; }
+.wp-balance .bl-svg { display: block; inline-size: 100%; block-size: auto; touch-action: manipulation; cursor: pointer; }
+.wp-balance .bl-ltr { display: grid; gap: 0.5rem; min-width: 0; }
+.wp-balance .bl-controls { display: grid; gap: 0.5rem; min-width: 0; }
+.wp-balance .bl-tray { display: grid; gap: 0.3rem; }
+.wp-balance .bl-label-text { font-weight: 600; }
+.wp-balance .bl-chip[aria-pressed='true'] { outline: 3px solid var(--wp-focus); outline-offset: 1px; font-weight: 700; }
+.wp-balance .bl-chip[aria-pressed='true']::before { content: '● '; }
+.wp-balance .bl-row { display: inline-flex; gap: 0.5rem; align-items: center; }
+.wp-balance .bl-options { display: grid; gap: 0.4rem; margin: 0; padding: 0; border: 0; min-width: 0; }
+.wp-balance .bl-options legend { font-weight: 600; margin-block-end: 0.3rem; }
+.wp-balance .bl-option { display: flex; gap: 0.5rem; align-items: center; min-height: var(--wp-touch, 44px); padding-inline: 0.6rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius, 8px); cursor: pointer; }
+.wp-balance .bl-option input { inline-size: 1.25rem; block-size: 1.25rem; margin: 0; }
+.wp-balance .bl-option:has(input:checked) { outline: 3px solid var(--wp-focus); font-weight: 700; }
+.wp-balance .bl-notice, .wp-balance .bl-tip { padding: 0.4rem 0.6rem; border-inline-start: 4px solid var(--wp-accent); background: var(--wp-surface-2); }
+.wp-balance .bl-outcome { display: grid; gap: 0.3rem; padding: 0.6rem; border-inline-start: 4px solid var(--wp-accent); background: var(--wp-surface-2); }
+.wp-balance .bl-mark { font-weight: 700; }
+.wp-balance .bl-why ul { margin: 0.4rem 0 0; padding-inline-start: 1.2rem; display: grid; gap: 0.2rem; }
+.wp-balance .bl-why summary, .wp-balance .bl-formula summary { min-height: var(--wp-touch, 44px); display: flex; align-items: center; cursor: pointer; font-weight: 600; }
+@media (max-width: 47.99rem) {
+  .wp-balance .bl-sticky { position: sticky; inset-block-end: 0; z-index: 1; padding-block: 0.4rem; background: var(--wp-surface); }
+}
+.wp-balance.bl-paused { pointer-events: none; }
+
+/* Scene drawing. */
+.wp-balance .bl-svg text { font-family: inherit; }
+.wp-balance .bl-bar { fill: var(--wp-surface); stroke: var(--wp-text); stroke-width: 1.5; }
+.wp-balance .bl-bar--marked { stroke-width: 3; stroke-dasharray: 6 3; }
+.wp-balance .bl-stand, .wp-balance .bl-table { fill: var(--wp-surface-2); stroke: var(--wp-text); stroke-width: 1.5; }
+.wp-balance .bl-ceiling { fill: var(--wp-text); }
+.wp-balance .bl-edge { stroke: var(--wp-text); stroke-width: 1.5; stroke-dasharray: 3 3; }
+.wp-balance .bl-axle { fill: var(--wp-text); }
+.wp-balance .bl-hook { fill: var(--wp-text); }
+.wp-balance .bl-tick { font-size: 9px; fill: var(--wp-muted); }
+.wp-balance .bl-string { stroke: var(--wp-text); stroke-width: 1.2; }
+.wp-balance .bl-mass, .wp-balance .bl-cube, .wp-balance .bl-bucket { fill: var(--wp-accent); stroke: var(--wp-text); stroke-width: 1.2; fill-opacity: 0.35; }
+.wp-balance .bl-weight--free .bl-mass, .wp-balance .bl-cube.bl-weight--free { stroke-width: 2.4; }
+.wp-balance .bl-label { font-size: 11px; font-weight: 700; fill: var(--wp-text); }
+.wp-balance .bl-label--small { font-size: 9px; }
+.wp-balance .bl-slot { fill: none; stroke: var(--wp-text); stroke-dasharray: 3 2; }
+.wp-balance .bl-cursor { fill: var(--wp-focus, currentColor); stroke: var(--wp-text); }
+.wp-balance .bl-body { fill: var(--wp-surface); stroke: var(--wp-text); stroke-width: 1.5; }
+.wp-balance .bl-body--plank { fill: var(--wp-surface-2); }
+.wp-balance .bl-body--cursor { stroke-width: 3.5; stroke-dasharray: 5 2; }
+.wp-balance .bl-pattern { pointer-events: none; }
+.wp-balance .bl-hatch-line { stroke: var(--wp-text); stroke-width: 1; opacity: 0.6; fill: none; }
+.wp-balance .bl-dot { fill: var(--wp-text); opacity: 0.6; }
+.wp-balance .bl-seg { stroke: var(--wp-text); stroke-width: 1; }
+.wp-balance .bl-seg--left { fill: url(#bl-hatch); }
+.wp-balance .bl-seg--right { fill: url(#bl-dots); }
+.wp-balance .bl-seg-label { font-size: 8px; font-weight: 700; fill: var(--wp-text); paint-order: stroke; stroke: var(--wp-surface); stroke-width: 3px; }
+.wp-balance .bl-axis { stroke: var(--wp-text); stroke-width: 2; }
+.wp-balance .bl-flag { fill: var(--wp-accent); stroke: var(--wp-text); }
+.wp-balance .bl-flag-line { stroke: var(--wp-text); stroke-dasharray: 2 3; }
+.wp-balance .bl-contact { stroke: var(--wp-text); stroke-width: 4; opacity: 0.55; }
+.wp-balance .bl-plumb { stroke: var(--wp-text); stroke-dasharray: 3 3; }
+.wp-balance .bl-com { fill: var(--wp-surface); stroke: var(--wp-text); stroke-width: 1.5; }
+.wp-balance .bl-com--fail { stroke-width: 3; }
+.wp-balance .bl-com-cross { stroke: var(--wp-text); stroke-width: 1.5; }
+
+/* The tipping pose is computed from the verdict; the motion is cosmetic (≤ 0.7 s) and off with reduced motion. */
+@keyframes bl-tip { from { transform: rotate(0deg); } to { transform: rotate(var(--bl-angle)); } }
+.wp-balance .bl-tipping { animation: bl-tip 0.6s ease-in; }
+@media (prefers-reduced-motion: reduce) { .wp-balance .bl-tipping { animation: none; } }
+@media (forced-colors: active) {
+  .wp-balance .bl-mass, .wp-balance .bl-cube, .wp-balance .bl-bucket, .wp-balance .bl-cursor { fill: Canvas; stroke: CanvasText; }
+}

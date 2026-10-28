@@ -74,6 +74,9 @@ importers:
       '@wp/game-audience-switch':
         specifier: workspace:*
         version: link:../../packages/games/audience-switch
+      '@wp/game-balance-lab':
+        specifier: workspace:*
+        version: link:../../packages/games/balance-lab
       '@wp/game-black-box':
         specifier: workspace:*
         version: link:../../packages/games/black-box
@@ -329,6 +332,25 @@ importers:
         version: link:../../testing
 
   packages/games/audience-switch:
+    dependencies:
+      '@wp/game-core':
+        specifier: workspace:*
+        version: link:../../game-core
+      '@wp/ui':
+        specifier: workspace:*
+        version: link:../../ui
+    devDependencies:
+      '@wp/localization':
+        specifier: workspace:*
+        version: link:../../localization
+      '@wp/persistence':
+        specifier: workspace:*
+        version: link:../../persistence
+      '@wp/testing':
+        specifier: workspace:*
+        version: link:../../testing
+
+  packages/games/balance-lab:
     dependencies:
       '@wp/game-core':
         specifier: workspace:*

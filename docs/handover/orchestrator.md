@@ -154,19 +154,19 @@ App size: precache about 7.7 MB (213 entries, all games and locales, offline).
 ## State (2026-10-27)
 
 On main and deployed:
-- New-games pipeline games 1–7 are live: Best Plan, Estimation Lab, Probability Detective, Atlas Explorer, Sense of Time (`timeline`), Pond & Meadow (`ecosystem`), Tones & Chords (`harmony`, published 2026-10-27 after an independent review; audio ≤ −6 dBFS, the iPhone silent switch is respected, every task can be solved by eye).
+- New-games pipeline games 1–7 are live: Best Plan, Estimation Lab, Probability Detective, Atlas Explorer, Sense of Time (`timeline`), Pond & Meadow (`ecosystem`), Tones & Chords (`harmony`, published 2026-10-27 after an independent review; the first deploy failed on a seed-dependent Arabic e2e, fixed in fa2cccd; audio ≤ −6 dBFS, the iPhone silent switch is respected, every task can be solved by eye).
 - Catalogue: Pixel Peel at position 5. Photo previews for relay-command and card-quest (`PHOTOS` in `apps/web/src/previews.ts`), shown whole with `object-fit: contain` (owner feedback 2026-10-27).
 - ADR 0021 mutation budget (changed lines on PRs, rotating 1/8 weekly sample, full runs on demand); slow suites run in CI's long job and separately in `gate-pr.sh`.
 - ADR 0003 amendment: partial locales with `status: 'preview'` (used by Many Lives, en/de).
 - Large contexts merged recently: Lootlings #86 (the helper must flee too); strategy #87 (start-seat choice).
 
 Open:
-- Pipeline game 8, "Weight & Balance" / "Gewicht & Gleichgewicht" (`balance-lab`): plan on `plan/balance-lab` (`docs/design/balance-lab.md`). The owner accepted all four recommendations: three benches plus a free bench, all 16 locales, a short tipping animation from the exact verdict. The implementation is on `game/balance-lab`, possibly unfinished; it then needs the independent review and a publish.
+- Pipeline game 8, "Weight & Balance" / "Gewicht & Gleichgewicht" (`balance-lab`): plan on `plan/balance-lab`; implemented and reviewed on `game/balance-lab` (head c13d61d). The reviewer found no physics errors, verified the statics with an independent oracle test, and fixed 7 smaller issues (answer balance in predict rounds, exact balances that look unbalanced, screen-reader announcements and others). Before publishing: merge into the working branch and run the full gate (the reviewer ran only the package tests, typecheck and lint), check the SVG scenes and RTL in a browser, measure the chunk (≈63 kB gzip vs a 60 kB budget; split the texts via `preload` if needed). Open design points: no pointer drag (tap-tap and step buttons instead); the hard "which joint gives way?" question and the movable counter plank are missing; on easy, "stays level" is never the answer.
 - Tones & Chords follow-ups (reviewer, debatable): describing rhythm by eye for screen readers as note values; muting during an ear task counts as a hint; respelling in "which note changed?" (D♭ vs C♯); the lowpass Q.
 - Pond & Meadow follow-ups: feedback when "add" is refused; the Hindi pondweed name; frozen tiny populations.
 - Atlas follow-ups (debatable, not done): the game chunk is 93 KB gzip; hatched slivers along Kashmir; Melilla and Gibraltar; direction words; a native-speaker review of the AI-assisted locales.
 - Estimation Lab follow-ups: a "recently seen" memory; a yearly figure review; three 404 source links (UN PopFacts 2017/2, OICA 2013, University of Arizona bees); true plurals for count words.
 - Pixel Peel: the phone start time (about 300 ms against a 250 ms target); a side-by-side landscape layout.
-- Strategy: next PR (drone datalink, the Direction Finder intercepts orders, easy builds).
+- Strategy: #88 (drone datalink, Direction Finder intercepts, easy builds) merged and deployed. PR #89 (large 48×32 maps, head dc4e43d): local gate green on 2026-10-27 (7274 unit, 300 slow, 639 e2e); merge it next session after checking its head and CI are unchanged.
 - Waiting on the owner: Economy ("weitermachen" plus nine questions in `docs/design/economy-draft.md`; Many Lives needs `@wp/finance-math` from it) and adventures (three questions: start E1? time model? location of Adventure B?).
 - Recurring load flakes on this machine: the relay replay e2e, node-conquest 44 px e2e, card-quest K3 picture, skat pacing. Rerun them alone before calling a failure real.
