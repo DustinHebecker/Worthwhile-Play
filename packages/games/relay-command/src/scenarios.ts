@@ -686,6 +686,7 @@ export const TWO_VALLEYS: ScenarioSpec = {
       ]
     },
     sides: 2,
+    supply: [300, 600],
     entities: [
       { side: 0, kind: 'command-post', x: 40, y: 27 },
       { side: 0, kind: 'muster', x: 41, y: 28 },

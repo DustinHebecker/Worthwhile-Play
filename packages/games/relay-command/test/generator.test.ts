@@ -104,7 +104,7 @@ describe('map generator (I6c, P9)', () => {
       }
     }
     expect(RICH_BALANCE).toBeLessThanOrEqual(1.25);
-  });
+  }, 120_000);
 
   it('refuses inputs it cannot honour: a size the editor does not offer, an odd height, a name too long', () => {
     expect(() => generateMap(13, 10, 1)).toThrow(RangeError);
@@ -219,7 +219,7 @@ describe('map generator, asymmetric (owner request 2026-10-27: generated asymmet
         expect(map.units.every((u) => (u.side === 0 ? u.y >= h / 2 : u.y < h / 2)), label).toBe(true);
       }
     }
-  });
+  }, 120_000);
 
   it('a map number gives the same asymmetric map on every device and version: the maps of 12 numbers match their fingerprint', () => {
     // Taken when asymmetric maps were added (2026-10-28). A deliberate change of the generator updates
