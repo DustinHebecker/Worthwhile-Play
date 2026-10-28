@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import game from '../src/index';
 import type { BalanceState, FreeState, RoundState } from '../src/rules';
 import { mobileBars, type MobileNode } from '../src/statics';
+import { mobileHooks } from '../src/rules';
 
 afterEach(() => {
   document.body.innerHTML = '';
@@ -146,6 +147,15 @@ describe('view', () => {
     m.q('bl-letgo')!.click();
     expect(m.q('bl-notice')).not.toBeNull();
     expect((m.state() as RoundState).items[0]!.outcome).toBeNull();
+  });
+
+  it('the free mobile hangs the chosen weight on every tapped hook, from the first tap', () => {
+    const m = mount({ mode: 'free', freeBench: 'mobile' });
+    const freeWeights = () => mobileHooks((m.state() as FreeState).scene.s as MobileNode).filter((hk) => hk.child && !('bar' in hk.child) && hk.child.free).length;
+    m.q('bl-hook-0')!.click();
+    expect(freeWeights()).toBe(1);
+    m.q('bl-hook-1')!.click();
+    expect(freeWeights()).toBe(2);
   });
 
   it('the free bench: place, let go, hold again, undo', () => {
