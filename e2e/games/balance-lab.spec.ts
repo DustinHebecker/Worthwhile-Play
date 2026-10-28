@@ -71,6 +71,9 @@ test('balance-lab: the best overhang with the step buttons on a phone, no page s
     await r.getByTestId('bl-solution').click();
     await r.getByTestId('bl-next').click();
   }
+  // The save is written after the last "Next"; wait for it instead of reading a stale one.
+  const want = i;
+  await expect.poll(async () => (await savedState(page)).index).toBe(want);
   s = await savedState(page);
   i = s.index;
   const item = s.items[i]!;
