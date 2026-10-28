@@ -621,4 +621,106 @@ export const LAKE_COUNTRY: ScenarioSpec = {
   seats: { frames: ['id', 'id', 'id'], layouts: { 1: [0, 1], 2: [0, 1, 2] } }
 };
 
-export const SCENARIOS: readonly ScenarioSpec[] = [FIELD_EXERCISE, CROSSROADS, RIDGE_VALLEY, MARSH_DELTA, FOUR_CORNERS, BASTION, HIGHLAND_LINE, LAKE_COUNTRY];
+/**
+ * Two Valleys: 48×32, asymmetric (owner request 2026-10-27, the third hand-built large map). A ridge
+ * splits the map; three passes cross it. Side 0 holds the wide southern valley: a town by a lake,
+ * the passes in the middle and the east close by. Side 1 holds a narrow north-western valley behind
+ * a side ridge: two ways out (the west pass and a gap to the open north-east), its deposits close at
+ * hand; three more lie in the open north-east steppe, three in the south-west.
+ */
+export const TWO_VALLEYS: ScenarioSpec = {
+  id: 'two-valleys',
+  turnLimit: 48,
+  asymmetric: true,
+  scenario: {
+    map: {
+      w: 48,
+      h: 32,
+      terrain: [
+        '..................^.............................',
+        '..................^.............................',
+        '......f...........^......hhh....................',
+        '....fffff.........^.....hhhhh...................',
+        '...fffffff........^......hhh.....s..............',
+        '....fffff.........^...........sssssss...........',
+        '......f..............======..sssssssss..........',
+        '.....====.....========..=.=====ssssss...........',
+        '.....=..=======...^.....=.....=====.............',
+        '..uuu=.....hhh....^.....==........====..fffff...',
+        '.uuuu==...hhhhh...^......=...........====fffff..',
+        '..uuu.=....hhh....^^.....=..............====f...',
+        '......=............^.....=.................==...',
+        '......=............^.....=..................=...',
+        '......=^^^^^^^.....^.....=..................=...',
+        '^^^^^^=......^^^^^^......=^^^^^^^^..........=...',
+        '......=...........^^^^^^^=^......^^^^^^.....=^^^',
+        '......=..................=............^^^^^^=...',
+        '......=..................=..................=...',
+        '......=..................=..................=...',
+        '......===................=.................==h..',
+        '........===.............==................h=hhh.',
+        '..........===...........=.~~~~~...........==hh..',
+        '..........f.===........==~~~~~~~..........=.....',
+        '.......fffffff===......=~~~~~~~~~.....u..==.....',
+        '......fffffffff.===...==.~~~~~~~....uuuuu=......',
+        '.......fffffff....===.=...~~~~~....uuuuu==......',
+        '..........f.........========........=====.......',
+        '.................hhh.......==========.u.........',
+        '................hhhhh...........................',
+        '.................hhh............................',
+        '................................................'
+      ].join(''),
+      deposits: [
+        { x: 2, y: 3, left: DEPOSIT_SUPPLY },
+        { x: 9, y: 12, left: DEPOSIT_SUPPLY },
+        { x: 13, y: 4, left: DEPOSIT_SUPPLY },
+        { x: 30, y: 4, left: DEPOSIT_SUPPLY },
+        { x: 36, y: 12, left: DEPOSIT_SUPPLY },
+        { x: 46, y: 6, left: DEPOSIT_SUPPLY },
+        { x: 43, y: 30, left: DEPOSIT_SUPPLY },
+        { x: 34, y: 23, left: DEPOSIT_SUPPLY },
+        { x: 45, y: 24, left: DEPOSIT_SUPPLY },
+        { x: 15, y: 27, left: DEPOSIT_SUPPLY },
+        { x: 22, y: 22, left: DEPOSIT_SUPPLY },
+        { x: 3, y: 28, left: DEPOSIT_SUPPLY }
+      ]
+    },
+    sides: 2,
+    supply: [300, 600],
+    entities: [
+      { side: 0, kind: 'command-post', x: 40, y: 27 },
+      { side: 0, kind: 'muster', x: 41, y: 28 },
+      { side: 0, kind: 'howitzer', x: 42, y: 30 },
+      { side: 0, kind: 'jammer', x: 43, y: 29 },
+      { side: 0, kind: 'tracer', x: 41, y: 31 },
+      { side: 0, kind: 'mast-truck', x: 44, y: 28 },
+      { side: 0, kind: 'field-post', x: 37, y: 24 },
+      { side: 0, kind: 'mast-truck', x: 37, y: 25 },
+      { side: 0, kind: 'rifles', x: 38, y: 24 },
+      { side: 0, kind: 'rifles', x: 36, y: 26 },
+      { side: 0, kind: 'rifles', x: 39, y: 23 },
+      { side: 0, kind: 'lancer', x: 38, y: 25 },
+      { side: 0, kind: 'lancer', x: 37, y: 26 },
+      { side: 0, kind: 'warden', x: 39, y: 24 },
+      { side: 0, kind: 'outrider', x: 36, y: 27 },
+      { side: 1, kind: 'command-post', x: 5, y: 6 },
+      { side: 1, kind: 'muster', x: 4, y: 5 },
+      { side: 1, kind: 'howitzer', x: 2, y: 4 },
+      { side: 1, kind: 'jammer', x: 3, y: 3 },
+      { side: 1, kind: 'tracer', x: 1, y: 5 },
+      { side: 1, kind: 'mast-truck', x: 4, y: 2 },
+      { side: 1, kind: 'field-post', x: 8, y: 9 },
+      { side: 1, kind: 'mast-truck', x: 7, y: 9 },
+      { side: 1, kind: 'rifles', x: 8, y: 8 },
+      { side: 1, kind: 'rifles', x: 6, y: 10 },
+      { side: 1, kind: 'rifles', x: 9, y: 7 },
+      { side: 1, kind: 'lancer', x: 7, y: 8 },
+      { side: 1, kind: 'lancer', x: 6, y: 9 },
+      { side: 1, kind: 'warden', x: 8, y: 7 },
+      { side: 1, kind: 'outrider', x: 5, y: 10 }
+    ],
+    seed: 0
+  }
+};
+
+export const SCENARIOS: readonly ScenarioSpec[] = [FIELD_EXERCISE, CROSSROADS, RIDGE_VALLEY, MARSH_DELTA, FOUR_CORNERS, BASTION, HIGHLAND_LINE, LAKE_COUNTRY, TWO_VALLEYS];
