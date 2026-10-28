@@ -1,0 +1,123 @@
+import { createRng } from '@wp/game-core';
+import fc from 'fast-check';
+import { describe, expect, it } from 'vitest';
+import { goalMet } from '../src/check';
+import {
+  benchOf,
+  buildPool,
+  DIFFICULTIES,
+  generateRound,
+  generateTask,
+  isPredict,
+  predictNeeds,
+  roundPlan,
+  SIDES,
+  STACK_ANSWERS,
+  TASK_IDS,
+  type BenchSetting,
+  type Difficulty,
+  type TasksSetting
+} from '../src/generate';
+import { naiveBar, naiveBeam, naiveStack } from '../src/naive';
+import { beamAxleSolutions, beamHookSolutions, countHangSolutions } from '../src/solve';
+import { barNet, beamVerdict, mobileBars, sideOf, stackContactsOk, stackVerdict } from '../src/statics';
+
+const diff = fc.constantFrom<Difficulty>(...DIFFICULTIES);
+const seed = fc.integer({ min: 0, max: 0xffffffff });
+
+describe('generation', () => {
+  it('is deterministic and has the round length', () => {
+    fc.assert(
+      fc.property(seed, diff, fc.constantFrom<BenchSetting>('mixed', 'beam', 'mobile', 'stack'), fc.constantFrom<TasksSetting>('mixed', 'predict', 'build'), (s, d, b, t) => {
+        const a = generateRound(createRng(s), b, t, d);
+        expect(generateRound(createRng(s), b, t, d)).toEqual(a);
+        expect(a).toHaveLength(6);
+        if (b !== 'mixed') expect(a.every((x) => benchOf(x.id) === b)).toBe(true);
+        if (t === 'predict') expect(a.every((x) => isPredict(x.id))).toBe(true);
+        if (t === 'build') expect(a.some((x) => isPredict(x.id))).toBe(false);
+      }),
+      { numRuns: 40 }
+    );
+  });
+
+  it('mixed rounds alternate benches and kinds, predict first', () => {
+    expect(roundPlan(createRng(1), 'mixed', 'mixed', 'easy').map((id) => [benchOf(id), isPredict(id)])).toEqual([
+      ['beam', true],
+      ['stack', false],
+      ['mobile', true],
+      ['beam', false],
+      ['stack', true],
+      ['mobile', false]
+    ]);
+    // A bench's build pool is used up before a task id repeats.
+    const ids = roundPlan(createRng(5), 'beam', 'build', 'hard');
+    expect(new Set(ids.slice(0, 3)).size).toBe(3);
+    expect(buildPool('beam', 'hard')).toContain('beam-axle');
+  });
+
+  it('every build task: the witness meets the goal, the start does not, unique tasks have one answer', () => {
+    fc.assert(
+      fc.property(seed, diff, fc.constantFrom(...TASK_IDS.filter((id) => !isPredict(id))), (s, d, id) => {
+        const t = generateTask(createRng(s), id, d);
+        expect(t.witness).not.toBeNull();
+        expect(goalMet(t, t.witness!)).toBe(true);
+        expect(goalMet(t, t.scene)).toBe(false);
+        if (t.scene.bench === 'beam' && id === 'beam-hook') expect(beamHookSolutions(t.scene.s, t.tray[0]!)).toHaveLength(1);
+        if (t.scene.bench === 'beam' && id === 'beam-axle') expect(beamAxleSolutions(t.scene.s)).toHaveLength(1);
+        if (t.scene.bench === 'beam' && t.goal?.kind === 'choose') {
+          const sc = t.scene.s;
+          const hook = t.goal.hook;
+          const fits = t.tray.filter((kg) => goalMet(t, { bench: 'beam', s: { ...sc, weights: [...sc.weights, { kg, hook, free: true }] } }));
+          expect(fits).toHaveLength(1);
+          expect(new Set(t.tray).size).toBe(t.tray.length);
+        }
+        if (t.scene.bench === 'mobile' && id === 'mobile-hang') expect(countHangSolutions(t.scene.s, t.tray)).toBe(1);
+        if (t.witness!.bench === 'mobile' && id === 'mobile-string')
+          for (const bar of mobileBars(t.witness!.s)) {
+            const holes = Array.from({ length: bar.width + 1 }, (_, at) => at).filter((at) => bar.hooks.every((h) => h.pos !== at) && barNet({ ...bar, string: at }) === 0);
+            expect(holes).toEqual([bar.string]);
+          }
+        if (t.scene.bench === 'stack') expect(stackContactsOk(t.witness!.s as never)).toBe(true);
+        for (const kg of t.tray) expect(kg >= 1 && kg <= 9).toBe(true);
+      }),
+      { numRuns: 150 }
+    );
+  });
+
+  it('predict answers agree with the statics; traps beat the naive rule; exact cases are exact', () => {
+    fc.assert(
+      fc.property(seed, diff, fc.constantFrom('beam-predict' as const, 'mobile-predict' as const, 'stack-predict' as const), fc.boolean(), fc.boolean(), (s, d, id, trap, exact) => {
+        const t = generateTask(createRng(s), id, d, { trap, exact: exact && d !== 'easy' });
+        const sc = t.scene;
+        if (sc.bench === 'beam') {
+          expect(SIDES[t.answer!]).toBe(beamVerdict(sc.s));
+          if (trap) expect(naiveBeam(sc.s)).not.toBe(beamVerdict(sc.s));
+        } else if (sc.bench === 'mobile') {
+          const bar = mobileBars(sc.s)[t.marked!]!;
+          expect(SIDES[t.answer!]).toBe(sideOf(barNet(bar)));
+          if (trap) expect(naiveBar(bar)).not.toBe(sideOf(barNet(bar)));
+        } else {
+          const v = stackVerdict(sc.s);
+          expect(v.failing.length).toBeLessThanOrEqual(1);
+          expect(STACK_ANSWERS[t.answer!]).toBe(v.stands ? 'stands' : v.failing[0]!.dir);
+          if (trap) expect(naiveStack(sc.s)).not.toBe(STACK_ANSWERS[t.answer!]);
+          expect(stackContactsOk(sc.s)).toBe(true);
+        }
+      }),
+      { numRuns: 150 }
+    );
+  });
+
+  it('trap shares and exact cases per round', () => {
+    expect([0, 1, 2].map((p) => predictNeeds(p, 3, 'easy'))).toEqual([
+      { trap: true, exact: false },
+      { trap: false, exact: false },
+      { trap: false, exact: false }
+    ]);
+    expect([0, 1, 2].map((p) => predictNeeds(p, 3, 'hard'))).toEqual([
+      { trap: true, exact: false },
+      { trap: false, exact: true },
+      { trap: true, exact: false }
+    ]);
+  });
+});
