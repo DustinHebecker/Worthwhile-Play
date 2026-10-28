@@ -57,6 +57,13 @@ import './styles.css';
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
+/** The picture x under a pointer x: the scene is framed by a fitted viewBox and letterboxed (xMidYMid meet). */
+function sceneX(svg: SVGElement, rect: DOMRect, clientX: number): number {
+  const [vx = 0, , vw = 320, vh = 230] = (svg.getAttribute('viewBox') ?? '').split(/\s+/).map(Number);
+  const k = Math.min(rect.width / vw, rect.height > 0 ? rect.height / vh : Infinity);
+  return vx + (clientX - rect.left - (rect.width - vw * k) / 2) / k;
+}
+
 export function createBalance(context: GameContext): GameInstance<BalanceState> {
   const { t, root } = context;
   let state: BalanceState = newState(0, readSettings(undefined, undefined));
@@ -310,6 +317,12 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
   const button = (label: string, testid: string, onclick: () => void, extra: Record<string, string | boolean | undefined> = {}) =>
     h('button', { type: 'button', 'data-testid': testid, onclick: () => !paused && onclick(), ...extra }, label);
 
+  /** The unit around a weight's number in the picture, taken from the tray label (e.g. "3 kg" → "" and "kg"). */
+  const kgUnit = (() => {
+    const [pre = '', post = ''] = t('tray.weight', { kg: '\u0001' }).split('\u0001');
+    return { pre: pre.trim(), post: post.trim() };
+  })();
+
   function sceneBlock(scene: Scene, item: Item | null): HTMLElement {
     const outcome = state.mode === 'free' ? state.outcome : (item?.outcome ?? null);
     const predict = item ? isPredict(item.id) : false;
@@ -331,13 +344,14 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
       marked: item?.id === 'mobile-string' && editable() ? cursor : (item?.marked ?? null),
       flag: item?.goal?.kind === 'overhang' ? item.goal.cm : null,
       title,
-      desc: describe(t, scene)
+      desc: describe(t, scene),
+      kgUnit
     });
     svg.addEventListener('click', (e) => {
       if (paused || !editable()) return;
       const rect = svg.getBoundingClientRect();
       if (rect.width === 0) return;
-      const px = ((e.clientX - rect.left) / rect.width) * 320;
+      const px = sceneX(svg, rect, e.clientX);
       if (scene.bench === 'beam') actAt(nearestHook(scene.s.half, px));
       else if (scene.bench === 'mobile') {
         const xs = mobileHookXs(scene.s);
@@ -379,7 +393,7 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
       }
     }
     // Placed parts (selectable).
-    const placed = h('div', { class: 'bl-chips', role: 'group', 'aria-label': t('placed.label') });
+    const placed = h('div', { class: `bl-chips${scene.bench === 'mobile' ? ' bl-chips--grid' : ''}`, role: 'group', 'aria-label': t('placed.label') });
     if (scene.bench === 'beam' && id !== 'beam-axle')
       scene.s.weights.forEach((w, i) => {
         if (!w.free) return;
