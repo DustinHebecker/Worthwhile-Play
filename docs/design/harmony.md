@@ -111,7 +111,7 @@ Round length *(calibrate within 6–12)*: a recognition question takes 20–40 s
 |---|---|---|
 | Question | Sound only. The picture is hidden until "Check". "Show the picture" is available as a hint, recorded as `peeked` and named in the summary ("2 with the picture"), never penalised. | The picture is the question (staff, keyboard, grid, ratio). A Play button is still there and is optional. |
 | What it practises | Listening | Theory and reading notation (stated honestly; § 3) |
-| No sound available (§ 9.6) | The picture is shown automatically, with one line: "Sound is not available here, so this question is shown as a picture." The item is marked `peeked: 'no-sound'`, and the summary says so neutrally. | Unchanged |
+| No sound available (§ 9.6) | The picture is shown automatically, with one line: "Sound is not available here, so this question is shown as a picture." The item is marked `peeked: 'no-sound'`, and the summary says so neutrally. **Sound off** (muted or volume 0, after review 2026-10-28): the picture stays hidden behind "Show the picture" with the line "Sound is off. Show the picture to answer; it is not counted as a hint."; pressing it records `peeked: 'no-sound'` (not `hint`), and the summary line reads "Shown as a picture because sound was off or not available: n". The state shape is unchanged. | Unchanged |
 
 The start-screen hint for `senses` reads: "No sound, or playing silently? Choose 'By eye'. You can still press Play whenever you like."
 
