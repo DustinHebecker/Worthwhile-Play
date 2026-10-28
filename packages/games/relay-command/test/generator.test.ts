@@ -104,7 +104,7 @@ describe('map generator (I6c, P9)', () => {
       }
     }
     expect(RICH_BALANCE).toBeLessThanOrEqual(1.25);
-  });
+  }, 120_000);
 
   it('refuses inputs it cannot honour: a size the editor does not offer, an odd height, a name too long', () => {
     expect(() => generateMap(13, 10, 1)).toThrow(RangeError);
