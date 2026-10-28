@@ -309,6 +309,13 @@ const MIN_STORM = 4;
  * only holds, a waiting siege or a crowd that never reaches the odds would run to the turn cap.
  */
 const ESCALATE_TURN = 60;
+/**
+ * Maps larger than this (cells; 24×16, the largest size before large maps) are large: there the own
+ * cover is carried towards the objective by Radio Masts, and a far storm heads for the
+ * outer rings around the objective from the start (see `approachCells`). Smaller maps keep their measured AI (a mast
+ * chain there cost a storm through a ring of holding units on a 24×16 random map).
+ */
+const LARGE_MAP_CELLS = 24 * 16;
 /** On the way to the rally point a fighter that loses contact comes back (the storm orders keep). */
 const RALLY_DOCTRINE: Doctrine = { ...AI_DOCTRINE, lostContact: 'regroup' };
 
@@ -652,7 +659,9 @@ export function approachCells(obs: Observation, ruleset: Ruleset, objective: Ent
   // rings instead: one the side sees (nearest first), else the farthest out (a ring may be two
   // deep); from there it sees what holds the post and fires on it. Earlier the storm heads for the
   // post as before (measured: doing so from the start cost hard its lead over normal on Ridge Valley).
-  const late = world.turn >= ESCALATE_TURN;
+  // On large maps from the start: the long march would otherwise only begin at ESCALATE_TURN
+  // (measured on a 48×32 random map: 20 fighters stood at home from turn 10 to 60).
+  const late = world.turn >= ESCALATE_TURN || world.map.w * world.map.h > LARGE_MAP_CELLS;
   const seen = late ? observedCells(world, ruleset, side, obs.network) : undefined;
   const watched = (cell: { x: number; y: number }) => seen?.[cellOf(world.map, cell.x, cell.y)] === 1;
   const outer = late ? [...rings.filter((c) => c.r >= 2 && watched(c)), ...rings.filter((c) => c.r >= 2 && !watched(c)).sort((a, b) => b.r - a.r || a.f - b.f)] : [];
@@ -785,6 +794,10 @@ const SAVE_TURNS = 3;
 const SURPLUS = 800;
 /** Most yards a side builds for itself (the starting Muster Yard included). */
 const MAX_YARDS = 4;
+/** The own cover ending this many cells short of the objective starts a chain of Radio Masts towards it. */
+const MAST_GAP = 4;
+/** Supply kept back when a Radio Mast of the chain is built. */
+const MAST_RESERVE = 40;
 /** Easy keeps a cushion before it produces or builds anything. */
 const EASY_RESERVE = 150;
 /** Extractors easy builds at most (one at a time). */
@@ -880,6 +893,14 @@ function economyOrders(obs: Observation, ruleset: Ruleset, own: readonly Entity[
       if (spot) tryOrder({ side, unit: source.id, order: { type: 'build', kind, x: spot.x, y: spot.y } });
     }
   }
+  // 1c. Large maps (2026-10-27, larger than LARGE_MAP_CELLS): an objective far beyond the own radio cover is out of reach of any
+  // order, so the cover is carried towards it by a chain of Radio Masts: one at a time, on the covered
+  // cell nearest the objective out of known enemy reach, once the cover ends MAST_GAP cells short.
+  const objective = source && world.map.w * world.map.h > LARGE_MAP_CELLS ? objectiveOf(obs, ruleset) : undefined;
+  if (source && objective && supply >= costOf('relay-mast') + MAST_RESERVE && !ownAll.some((e) => e.kind === 'relay-mast' && (e.build ?? 0) > 0)) {
+    const spot = mastSpot(obs, ruleset, objective);
+    if (spot) tryOrder({ side, unit: source.id, order: { type: 'build', kind: 'relay-mast', x: spot.x, y: spot.y } });
+  }
   // 2. A Motor Pool next to the post once the economy runs (vehicles: scouts that spot from afar, guns).
   const hasPool = ownAll.some((e) => e.kind === 'motor-pool');
   if (source && !hasPool && (extractors >= 2 || world.turn >= POOL_TURN) && supply >= costOf('motor-pool')) {
@@ -935,6 +956,43 @@ function freeDeposits(obs: Observation, ruleset: Ruleset, source: Entity): { x: 
     .filter((d) => (d.left > 0 || d.left === UNKNOWN_LEFT || d.endless) && !world.entities.some((e) => e.x === d.x && e.y === d.y))
     .sort((a, b) => dist2(a.x, a.y, source.x, source.y) - dist2(b.x, b.y, source.x, source.y) || sideFrame(obs, cellOf(world.map, a.x, a.y)) - sideFrame(obs, cellOf(world.map, b.x, b.y)))
     .filter((d) => dangerAt(obs, ruleset, d.x, d.y) === 0);
+}
+
+/**
+ * Where the next Radio Mast of the chain goes (see economyOrders): the covered, free, passable cell
+ * nearest to `objective`, away from deposits and out of reach of known enemy fighters; none while
+ * the cover already ends within MAST_GAP cells of the objective.
+ */
+function mastSpot(obs: Observation, ruleset: Ruleset, objective: Positioned): { x: number; y: number } | undefined {
+  const { world, network } = obs;
+  const taken = new Set(world.entities.map((e) => cellOf(world.map, e.x, e.y)));
+  const deposits = new Set((world.map.deposits ?? []).map((d) => cellOf(world.map, d.x, d.y)));
+  // A mast next to an own mast adds nothing (measured: where an enemy jammer swallows the cover a
+  // dozen masts went up side by side, turn after turn).
+  const masts = world.entities.filter((e) => e.side === obs.side && e.kind === 'relay-mast');
+  let nearest = Number.POSITIVE_INFINITY;
+  // The best cell out of known enemy reach, and the best one at all (the last masts may have to stand in reach).
+  let safe: { x: number; y: number; d: number; f: number } | undefined;
+  let any: { x: number; y: number; d: number; f: number } | undefined;
+  const better = (a: { d: number; f: number } | undefined, d: number, f: number) => !a || d < a.d || (d === a.d && f < a.f);
+  for (let y = 0; y < world.map.h; y++) {
+    for (let x = 0; x < world.map.w; x++) {
+      const c = cellOf(world.map, x, y);
+      if (network.coverage[c] !== 1) continue;
+      const d = dist2(x, y, objective.x, objective.y);
+      nearest = Math.min(nearest, d);
+      if (taken.has(c) || deposits.has(c) || !passable(world.map, ruleset, x, y, 'ground')) continue;
+      if (masts.some((m) => dist2(m.x, m.y, x, y) <= MAST_GAP * MAST_GAP)) continue;
+      const f = sideFrame(obs, c);
+      if (better(any, d, f)) any = { x, y, d, f };
+      if (dangerAt(obs, ruleset, x, y) === 0 && better(safe, d, f)) safe = { x, y, d, f };
+    }
+  }
+  if (nearest <= MAST_GAP * MAST_GAP) return undefined;
+  // A safe cell that still brings the cover closer; else the closest cell (a mast in reach is shot at,
+  // but the cover must reach the objective for the storm to be ordered at all).
+  const pick = safe && (!any || safe.d < nearest) ? safe : any;
+  return pick && { x: pick.x, y: pick.y };
 }
 
 /** A free covered cell for a structure near `source`, away from deposits, nearest first (ties in the side's frame). */

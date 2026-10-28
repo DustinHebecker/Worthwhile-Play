@@ -86,6 +86,13 @@ import { generateMap } from './generator';
 import { CELL, createTerrainLayer, drawDeposit, drawTerrainSwatch, TERRAIN_NAMES } from './draw';
 import { FIELD_EXERCISE, opponentCounts, SCENARIOS, scenarioFor } from './scenarios';
 
+/** Most pixels a map canvas has (phone browsers refuse larger canvases; a margin below 16.7 MP). */
+const MAX_CANVAS_PIXELS = 12_000_000;
+/** Maps larger than this (cells; 24×16) are large: they scroll in a frame of their own and can be zoomed out. */
+const LARGE_MAP_CELLS = 24 * 16;
+/** Map sizes on large maps (owner request 2026-10-27, 48×32 maps): a share of the full 44 px a cell. */
+export const ZOOMS = [1, 0.75, 0.5] as const;
+
 /** Where a cell lies on a map, by thirds (the name of a base in the setup). */
 export function placeOf(x: number, y: number, w: number, h: number): string {
   const col = x * 3 < w ? 'left' : x * 3 >= 2 * w ? 'right' : '';
@@ -394,14 +401,34 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   };
   let mapView: View = readView();
   const terrainLayer = createTerrainLayer('fine');
-  /** Time per tick of the replay (a turn of 6 ticks takes 2.7 s; stepwise with reduced motion). */
-  const REPLAY_TICK_MS = 450;
-  const REPLAY_STEP_MS = 700;
+  /**
+   * Time per tick of the replay (a turn of 6 ticks takes 6 s; stepwise with reduced motion 6.6 s).
+   * Slowed down after the owner's review 2026-10-27: at 450 ms a tick the shooter could not be told.
+   */
+  const REPLAY_TICK_MS = 1000;
+  const REPLAY_STEP_MS = 1100;
   let playing: { replay: Replay; f: number; start: number; frame: number } | null = null;
   const viewButtons = VIEWS.map((v) =>
     h('button', { type: 'button', 'data-testid': `rc-view-${v}`, 'aria-pressed': String(v === mapView), onclick: () => setView(v) }, t(`view.${v}`))
   );
   const viewGroup = h('div', { class: 'rc-actions rc-view', role: 'group', 'aria-label': t('view.label'), 'data-testid': 'rc-view' }, h('span', { class: 'rc-label' }, t('view.label')), ...viewButtons);
+  /** Map size on large maps, a choice of this device (smaller cells than the 44 px targets: an overview to choose from). */
+  const readZoom = (): number => {
+    try {
+      const z = Number(context.preferences?.get('mapZoom'));
+      return (ZOOMS as readonly number[]).includes(z) ? z : 1;
+    } catch {
+      return 1;
+    }
+  };
+  let zoom = readZoom();
+  const percent = (z: number) => t('zoom.percent', { n: Math.round(z * 100) });
+  const zoomButtons = ZOOMS.map((z) =>
+    h('button', { type: 'button', 'data-testid': `rc-zoom-${Math.round(z * 100)}`, 'aria-pressed': String(z === zoom), onclick: () => setZoom(z) }, percent(z))
+  );
+  const zoomGroup = h('div', { class: 'rc-actions rc-view', role: 'group', 'aria-label': t('zoom.label'), 'data-testid': 'rc-zoom', hidden: true }, h('span', { class: 'rc-label' }, t('zoom.label')), ...zoomButtons);
+  /** Whether the next draw brings the cursor into the map's frame: centred (a new map, a handover) or only just ('near'). */
+  let reveal: 'centre' | 'near' | null = 'centre';
   /**
    * Turn replay (owner request 2026-10-27): the last turn played back on the map, moves and shots,
    * from what the side was told. On demand, or after every turn when the player chose so (off by
@@ -614,7 +641,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   const mainEl = h(
     'div',
     { class: 'rc-main', 'data-testid': 'rc-main' },
-    h('div', { class: 'rc-board' }, mapWrap, cursorDesc, viewGroup, replayRow, legendEl),
+    h('div', { class: 'rc-board' }, mapWrap, cursorDesc, viewGroup, zoomGroup, replayRow, legendEl),
     h(
       'div',
       { class: 'rc-side' },
@@ -1631,12 +1658,52 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   // Colours come from CSS custom properties on the game container (light/dark aware).
   const css = (name: string, fallback: string) => getComputedStyle(shell).getPropertyValue(name).trim() || fallback;
 
+  function setZoom(z: number): void {
+    if (z === zoom) return;
+    zoom = z;
+    try {
+      context.preferences?.set('mapZoom', String(z));
+    } catch {
+      /* not kept: this session only */
+    }
+    for (const [i, b] of zoomButtons.entries()) b.setAttribute('aria-pressed', String(ZOOMS[i] === z));
+    reveal = 'centre';
+    render();
+    announce(live, t('zoom.changed', { size: percent(z) }));
+  }
+
+  /** Scrolls the large map's frame so the cursor cell is in view (centred, or only just). */
+  function revealCursor(how: 'centre' | 'near', scale: number): void {
+    const cell = CELL * scale;
+    const left = cursor.x * cell;
+    const top = cursor.y * cell;
+    const { clientWidth: fw, clientHeight: fh } = mapWrap;
+    if (fw === 0 || fh === 0) return;
+    if (how === 'centre') {
+      mapWrap.scrollLeft = left + cell / 2 - fw / 2;
+      mapWrap.scrollTop = top + cell / 2 - fh / 2;
+      return;
+    }
+    if (left < mapWrap.scrollLeft) mapWrap.scrollLeft = left;
+    else if (left + cell > mapWrap.scrollLeft + fw) mapWrap.scrollLeft = left + cell - fw;
+    if (top < mapWrap.scrollTop) mapWrap.scrollTop = top;
+    else if (top + cell > mapWrap.scrollTop + fh) mapWrap.scrollTop = top + cell - fh;
+  }
+
   function draw(): void {
     const w = world();
     const width = w.map.w * CELL;
     const height = w.map.h * CELL;
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
+    const large = w.map.w * w.map.h > LARGE_MAP_CELLS;
+    const scale = large ? zoom : 1;
+    canvas.style.width = `${width * scale}px`;
+    canvas.style.height = `${height * scale}px`;
+    mapWrap.classList.toggle('rc-large', large);
+    zoomGroup.hidden = !large;
+    if (reveal) {
+      if (large) revealCursor(reveal, scale);
+      reveal = null;
+    }
     canvas.setAttribute('data-cols', String(w.map.w));
     canvas.setAttribute('data-rows', String(w.map.h));
     let g: CanvasRenderingContext2D | null = null;
@@ -1646,7 +1713,9 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       g = null;
     }
     if (!g) return; // No canvas support (e.g. jsdom): the DOM lists remain fully usable.
-    const ratio = Math.max(1, Math.min(3, globalThis.devicePixelRatio || 1));
+    // The device's pixel ratio, capped so a large map's canvas stays within what phone browsers draw
+    // (about 16.7 megapixels; a 48×32 map at 44 px a cell is 3 megapixels before scaling).
+    const ratio = Math.max(1, Math.min(3, globalThis.devicePixelRatio || 1, Math.sqrt(MAX_CANVAS_PIXELS / (width * height))));
     canvas.width = Math.round(width * ratio);
     canvas.height = Math.round(height * ratio);
     g.setTransform(ratio, 0, 0, ratio, 0, 0);
@@ -1737,49 +1806,56 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       const base: Entity = known ?? { id: u.id, side: u.side, kind: u.kind, x: at.x, y: at.y, hp: arch?.hp ?? 1, mp: 0, cooldown: 0, order: { type: 'hold' }, status: [], beam: null };
       drawUnit(g, { ...base, x: at.x, y: at.y });
     }
-    // The shots of the tick under way show in the second part of its step.
+    // The shots of the tick under way show in the second part of its step: first the shooter is
+    // ringed and flashes, then the shot travels to its target (a line, or an arc for a shell), and
+    // the target is ringed where it lands. With reduced motion everything stands at once.
     const tick = Math.floor(f) + 1;
-    const p = f - Math.floor(f);
-    if (p < 0.25 && !reducedMotion()) return;
+    const still = reducedMotion();
+    const p = still ? 1 : f - Math.floor(f);
+    if (p < 0.15) return;
+    const travel = Math.min(1, Math.max(0, (p - 0.3) / 0.4));
     const mid = (x: number, y: number) => [x * CELL + CELL / 2, y * CELL + CELL / 2] as const;
+    const danger = css('--wp-danger', '#a1271b');
+    const ring = (x: number, y: number, r: number, width: number) => {
+      g.lineWidth = width;
+      g.setLineDash([]);
+      g.beginPath();
+      g.arc(...mid(x, y), r, 0, Math.PI * 2);
+      g.stroke();
+    };
     g.save();
     g.lineCap = 'round';
+    g.strokeStyle = danger;
     for (const shot of replay.shots) {
       if (shot.tick !== tick) continue;
-      if (shot.t === 'fire') {
+      if (shot.t === 'fire' || shot.t === 'shell') {
         const a = now.get(shot.from);
-        const b = now.get(shot.to);
-        if (!a || !b) continue;
-        g.strokeStyle = css('--wp-danger', '#a1271b');
-        g.lineWidth = 2.5;
-        g.setLineDash([]);
-        g.beginPath();
-        g.moveTo(...mid(a.x, a.y));
-        g.lineTo(...mid(b.x, b.y));
-        g.stroke();
-      } else if (shot.t === 'shell') {
-        const a = now.get(shot.from);
+        const b = shot.t === 'fire' ? now.get(shot.to) : { x: shot.x, y: shot.y };
         if (!a) continue;
+        // The shooter: a bold ring and its muzzle flash.
+        ring(a.x, a.y, CELL * 0.5, 3);
+        if (p < 0.45) drawFlash(g, a.x * CELL, a.y * CELL);
+        if (!b || travel === 0) continue;
         const [ax, ay] = mid(a.x, a.y);
-        const [bx, by] = mid(shot.x, shot.y);
-        g.strokeStyle = css('--wp-danger', '#a1271b');
-        g.lineWidth = 2;
-        g.setLineDash([4, 4]);
+        const [bx, by] = mid(b.x, b.y);
+        g.setLineDash(shot.t === 'shell' ? [4, 4] : []);
+        g.lineWidth = shot.t === 'shell' ? 2 : 2.5;
         g.beginPath();
         g.moveTo(ax, ay);
-        g.quadraticCurveTo((ax + bx) / 2, Math.min(ay, by) - CELL * 1.5, bx, by);
+        if (shot.t === 'fire') g.lineTo(ax + (bx - ax) * travel, ay + (by - ay) * travel);
+        else {
+          // The part of the arc flown so far (a quadratic Bézier split at `travel`).
+          const [qx, qy] = [(ax + bx) / 2, Math.min(ay, by) - CELL * 1.5];
+          const [c1x, c1y] = [ax + (qx - ax) * travel, ay + (qy - ay) * travel];
+          const [c2x, c2y] = [qx + (bx - qx) * travel, qy + (by - qy) * travel];
+          g.quadraticCurveTo(c1x, c1y, c1x + (c2x - c1x) * travel, c1y + (c2y - c1y) * travel);
+        }
         g.stroke();
       } else if (shot.t === 'burst') {
-        drawFlash(g, shot.x * CELL, shot.y * CELL);
+        if (travel === 1) drawFlash(g, shot.x * CELL, shot.y * CELL);
       } else {
         const at = now.get(shot.id);
-        if (!at) continue;
-        g.strokeStyle = css('--wp-danger', '#a1271b');
-        g.lineWidth = 2;
-        g.setLineDash([]);
-        g.beginPath();
-        g.arc(...mid(at.x, at.y), CELL * 0.42, 0, Math.PI * 2);
-        g.stroke();
+        if (at && travel === 1) ring(at.x, at.y, CELL * 0.42, 2);
       }
     }
     g.restore();
@@ -2365,7 +2441,10 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     placing = null;
     noticeEl.hidden = true;
     const unit = id === null ? undefined : known(id);
-    if (unit) cursor = { x: unit.x, y: unit.y };
+    if (unit) {
+      cursor = { x: unit.x, y: unit.y };
+      reveal = 'near';
+    }
     render();
     if (unit) announce(live, t('announce.selected', { name: unitName(unit) }));
   }
@@ -2702,6 +2781,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     if (delta) {
       event.preventDefault();
       cursor = { x: Math.max(0, Math.min(w - 1, cursor.x + delta[0])), y: Math.max(0, Math.min(rows - 1, cursor.y + delta[1])) };
+      reveal = 'near';
       render();
       return;
     }
@@ -2725,6 +2805,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   const homeCursor = () => {
     const post = world().entities.find((e) => e.side === me() && e.kind === 'command-post');
     cursor = post ? { x: post.x, y: post.y } : { x: 0, y: 0 };
+    reveal = 'centre';
   };
 
   /* ---------- Instance ---------- */
