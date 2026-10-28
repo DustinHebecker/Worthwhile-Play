@@ -221,6 +221,17 @@ describe('map generator, asymmetric (owner request 2026-10-27: generated asymmet
     }
   });
 
+  it('a map number gives the same asymmetric map on every device and version: the maps of 12 numbers match their fingerprint', () => {
+    // Taken when asymmetric maps were added (2026-10-28). A deliberate change of the generator updates
+    // it with a note, like the AI fingerprints: maps passed on by number would otherwise change unseen.
+    let hash = 0x811c9dc5;
+    const feed = (text: string) => {
+      for (let i = 0; i < text.length; i++) hash = Math.imul(hash ^ text.charCodeAt(i), 0x01000193) >>> 0;
+    };
+    for (const [w, h] of [[12, 10], [20, 14], [24, 16], [48, 32]] as const) for (const seed of [1, 2, 3]) feed(JSON.stringify(generateMap(w, h, seed, '', 2, true)));
+    expect(hash.toString(16)).toBe('7d96c201');
+  });
+
   it('the same number gives the same map; it is unrelated to the mirrored map of that number', () => {
     expect(generateMap(32, 20, 9, 'x', 2, true)).toEqual(generateMap(32, 20, 9, 'x', 2, true));
     expect(generateMap(32, 20, 9, 'x', 2, true).terrain).not.toBe(generateMap(32, 20, 9, 'x').terrain);
