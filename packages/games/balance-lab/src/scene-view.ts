@@ -123,12 +123,12 @@ function drawBeam(scene: BeamScene, o: SceneOptions): SVGElement {
   root.append(bar);
   // The turning-effect bars go below the lowest hanging weight, so they never cover one.
   const tilt = side === 'left-down' || side === 'right-down' ? 130 * Math.sin((TIP_BEAM * Math.PI) / 180) : 0;
-  if (o.explain) root.append(beamBars(scene, L, Math.max(L.barY + 92, lowest + 10 + tilt)));
+  if (o.explain) root.append(beamBars(scene, Math.max(L.barY + 92, lowest + 10 + tilt)));
   return root;
 }
 
 /** Turning-effect bars below the beam: left segments hatched, right ones dotted, each labelled. */
-function beamBars(scene: BeamScene, L: ReturnType<typeof layoutBeam>, y: number): SVGElement {
+function beamBars(scene: BeamScene, y: number): SVGElement {
   const g = s('g', { class: 'bl-explain' });
   const m = beamMoments(scene);
   const items = [...scene.weights.map((w, i) => ({ v: m.weights[i]!, label: `${w.kg}×${Math.abs(w.hook - scene.axle)}` })), { v: m.bar, label: `${scene.barKg}×${Math.abs(scene.axle)}` }].filter((x) => x.v !== 0);

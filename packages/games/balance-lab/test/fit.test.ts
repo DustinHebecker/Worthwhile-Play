@@ -1,0 +1,55 @@
+// @vitest-environment jsdom
+import { describe, expect, it } from 'vitest';
+import { contentBox, fitViewBox, pathPoints } from '../src/fit';
+import { drawScene, s, type SceneOptions } from '../src/scene-view';
+import type { Scene } from '../src/generate';
+
+const opts: SceneOptions = { outcome: null, explain: false, animate: false, cursor: null, marked: null, flag: null, title: 't', desc: 'd', kgUnit: { pre: '', post: 'kg' } };
+
+describe('scene framing', () => {
+  it('reads the points of the simple paths the scene draws', () => {
+    expect(pathPoints('M10 20h14l-7 9z')).toEqual([
+      [10, 20],
+      [24, 20],
+      [17, 29]
+    ]);
+    expect(pathPoints('M0 0L5 6H9V2')).toEqual([
+      [0, 0],
+      [5, 6],
+      [9, 6],
+      [9, 2]
+    ]);
+    expect(pathPoints('M5 18h14l-4 5 4 5h-14z').at(-1)).toEqual([5, 28]);
+  });
+
+  it('ignores parts marked data-nofit and covers the whole tipping motion', () => {
+    const g = s('g', {}, s('rect', { x: -1000, y: 0, width: 5000, height: 10, 'data-nofit': '' }), s('rect', { x: 0, y: 0, width: 100, height: 10 }));
+    expect(contentBox(g)).toEqual({ x0: 0, y0: 0, x1: 100, y1: 10 });
+    const turned = s('g', { 'data-rot': 90, 'data-cx': 0, 'data-cy': 0 }, s('line', { x1: 0, y1: 0, x2: 100, y2: 0 }));
+    const b = contentBox(s('g', {}, turned))!;
+    // At rest (0°), half-way (45°) and in the final pose (90°).
+    expect(b.x1).toBeCloseTo(100);
+    expect(b.y1).toBeCloseTo(100);
+    expect(fitViewBox(s('g'), '0 0 320 230')).toBe('0 0 320 230');
+  });
+
+  it('frames every bench around its content, larger than the old fixed picture on a phone', () => {
+    const scenes: Scene[] = [
+      { bench: 'beam', s: { half: 4, axle: 0, barKg: 0, weights: [{ kg: 3, hook: -2 }] } },
+      { bench: 'stack', s: { bodies: [{ kind: 'block', left: -10 }, { kind: 'block', left: -6 }], cubes: [{ kg: 2, x: 0, on: 1 }] } },
+      {
+        bench: 'mobile',
+        s: { bar: { width: 4, string: 2, hooks: [{ pos: 0, child: { kg: 2 } }, { pos: 4, child: null }] } }
+      }
+    ] as Scene[];
+    for (const sc of scenes) {
+      const svg = drawScene(sc, opts);
+      const [, , w, h] = svg.getAttribute('viewBox')!.split(' ').map(Number);
+      expect(w).toBeGreaterThan(0);
+      expect(h).toBeGreaterThan(0);
+      if (sc.bench !== 'beam') expect(w).toBeLessThan(320);
+      // Weights carry their unit, so they never read like a part number.
+      expect(svg.querySelector('.bl-kg')?.textContent).toMatch(/^\d+kg$/);
+    }
+  });
+});
