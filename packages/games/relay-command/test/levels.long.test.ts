@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { createRng } from '@wp/game-core';
 import { initialIntel, observe, passable, type World } from '@wp/strategy-engine';
 import { DIFFICULTIES, planAi, type Difficulty } from '../src/ai';
-import { isValidState, lockTurn, migrateState, newGame, OPPONENT, planOrder, PLAYER, RULESET, TURN_LIMITS, type RcState } from '../src/rules';
-import { FIELD_EXERCISE, RIDGE_VALLEY, SCENARIOS, type ScenarioSpec } from '../src/scenarios';
+import { isValidState, lockTurn, startSeats, migrateState, newGame, OPPONENT, planOrder, PLAYER, RULESET, TURN_LIMITS, type RcState } from '../src/rules';
+import { FIELD_EXERCISE, opponentCounts, RIDGE_VALLEY, SCENARIOS, type ScenarioSpec } from '../src/scenarios';
 
 /** A side's plan from its own observation (default: the game's default level). */
 const ai = (world: World, side: number, difficulty: Difficulty = 'normal') => planAi(observe(world, RULESET, side), RULESET, difficulty);
@@ -13,8 +13,8 @@ const ai = (world: World, side: number, difficulty: Difficulty = 'normal') => pl
 // mutation sandbox (a git-ignored `vitest.mut-*.config.ts`) can exclude it by name, so that each
 // mutant of rules.ts or ai.ts does not cost minutes (mutation scores are then a lower bound).
 
-/** The maps these suites measure: two-side and free-for-all maps (Bastion, made for teams, has tests of its own). */
-const TWO_OR_FFA = SCENARIOS.filter((x) => !x.seats?.teams);
+/** Symmetric maps (two sides or free-for-all); the large asymmetric maps have tests of their own below. */
+const TWO_OR_FFA = SCENARIOS.filter((x) => !x.seats?.teams && !x.asymmetric);
 
 describe('opponent levels (I5)', () => {
   /** A game length: a turn limit, open end (`null`) or a quick match. */
@@ -196,5 +196,65 @@ describe('opponent levels (I5)', () => {
     delete v3.difficulty;
     expect(migrateState(v3, 3)?.difficulty).toBe('normal');
     expect(isValidState({ ...newGame(2), difficulty: 'impossible' })).toBe(false);
+  });
+});
+
+describe('large asymmetric maps (owner request 2026-10-27)', () => {
+  const LARGE = SCENARIOS.filter((x) => x.asymmetric);
+  /** Longest game accepted on a 48×32 map (measured: 140 turns, normal from the lowland against a passive plateau). */
+  const LARGE_BOUND = 160;
+  /** A new open-ended game from `start`, `moves` units of every side nudged by up to one cell (the engine draws no randomness). */
+  function nudged(spec: ScenarioSpec, seed: number, level: Difficulty, start: number, opponents = 1, moves = 6): RcState {
+    const s = newGame(seed, spec, level, null, false, null, opponents, [], false, null, null, start);
+    const rng = createRng(seed * 7919 + 13);
+    const { w, h } = s.world.map;
+    const free = (x: number, y: number) => x >= 0 && y >= 0 && x < w && y < h && passable(s.world.map, RULESET, x, y, 'ground') && !s.world.entities.some((e) => e.x === x && e.y === y);
+    const movable = s.world.entities.filter((e) => e.kind !== 'command-post' && e.kind !== 'muster');
+    for (let k = 0; k < moves; k++) {
+      const u = movable[rng.int(0, movable.length - 1)]!;
+      const nx = u.x + rng.int(-1, 1);
+      const ny = u.y + rng.int(-1, 1);
+      if (free(nx, ny)) Object.assign(u, { x: nx, y: ny });
+    }
+    s.world.intel = initialIntel(s.world, RULESET);
+    return s;
+  }
+  function play(s: RcState, player: Difficulty | 'passive'): RcState {
+    for (let i = 0; i < LARGE_BOUND && s.phase === 'plan'; i++) {
+      if (player !== 'passive') for (const c of ai(s.world, PLAYER, player)) s = planOrder(s, c.unit, c.order, c.doctrine) ?? s;
+      s = lockTurn(s);
+    }
+    return s;
+  }
+
+  it('a passive player loses at normal and hard from every start against one opponent, within the bound, and the save stays valid', () => {
+    for (const spec of LARGE) {
+      for (const start of startSeats(spec, 1)) {
+        for (const level of ['normal', 'hard'] as const) {
+          const g = play(nudged(spec, 1, level, start), 'passive');
+          expect(g, `${spec.id} start=${start} ${level}: ${g.result}@${g.world.turn}`).toMatchObject({ phase: 'finished', result: 'lost' });
+          expect(isValidState(JSON.parse(JSON.stringify(g)) as unknown)).toBe(true);
+        }
+      }
+    }
+  }, 900_000);
+
+  it('hard against hard: from every start, each place wins some of the decided games (fair by measurement, not by mirror)', () => {
+    for (const spec of LARGE) {
+      // On a two-side map start 1 is start 0 with the sides swapped: the same games.
+      const starts = spec.seats ? startSeats(spec, 1) : [0];
+      for (const start of starts) {
+        const games = Array.from({ length: 8 }, (_, i) => play(nudged(spec, i + 1, 'hard', start), 'hard'));
+        const label = `${spec.id} start=${start}: ${games.map((g) => `${g.result ?? 'open'}@${g.world.turn}`).join(' ')}`;
+        const won = games.filter((g) => g.result === 'won').length;
+        const lost = games.filter((g) => g.result === 'lost').length;
+        expect(won, label).toBeGreaterThanOrEqual(1);
+        expect(lost, label).toBeGreaterThanOrEqual(1);
+      }
+    }
+  }, 1_800_000);
+
+  it('every opponent count the map offers starts from every start with all units in play', () => {
+    for (const spec of LARGE) for (const n of opponentCounts(spec)) for (const start of startSeats(spec, n)) expect(isValidState(newGame(1, spec, 'normal', null, false, null, n, [], false, null, null, start))).toBe(true);
   });
 });

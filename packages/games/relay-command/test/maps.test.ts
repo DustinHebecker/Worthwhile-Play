@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
+import { LIBRARY_LIMITS } from '@wp/game-core';
 import {
   applyTool,
   mirrorImages,
@@ -195,7 +196,8 @@ describe('map editor: share codes and the library', () => {
       fc.property(arbMap, (m) => {
         expect(isValidMap(m)).toBe(true);
         const code = encodeMap(m);
-        expect(JSON.stringify(code).length).toBeLessThanOrEqual(2000);
+        // Maps up to 24×16 fit one preference value (the store before the host library); larger maps live in the library.
+        expect(JSON.stringify(code).length).toBeLessThanOrEqual(m.w * m.h <= 24 * 16 ? 2000 : LIBRARY_LIMITS.maxBytes);
         expect(decodeMap(code)).toEqual(m);
       }),
       { numRuns: 200 }
@@ -208,6 +210,14 @@ describe('map editor: share codes and the library', () => {
     for (let i = 0; i < 6; i++) m = applyTool(m, { type: 'deposit' }, i, 5, true);
     expect(m.units).toHaveLength(48);
     expect(JSON.stringify(encodeMap(m)).length).toBeLessThanOrEqual(2000);
+  });
+
+  it('the largest map (48×32, a deposit on every other cell, full armies) fits one library item', () => {
+    let m = blankMap(48, 32, 'x'.repeat(40));
+    for (let i = 0; i < 24; i++) m = applyTool(m, { type: 'unit', kind: 'field-post', side: 0 }, i, 0, true);
+    for (let y = 2; y < 16; y += 2) for (let x = 0; x < 48; x += 2) m = applyTool(m, { type: 'deposit' }, x, y, true);
+    expect(m.units).toHaveLength(48);
+    expect(new TextEncoder().encode(JSON.stringify(encodeMap(m))).length).toBeLessThanOrEqual(LIBRARY_LIMITS.maxBytes);
   });
 
   it('junk is never a map and never throws', () => {

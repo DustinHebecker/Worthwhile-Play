@@ -462,7 +462,7 @@ export function drawTerrainMap(g: CanvasRenderingContext2D, map: TerrainMap, cel
         g.stroke();
       }
     } else {
-      // Humps: big grassy domes seen from the side (dark outline, lit from above, a ground shadow) on
+      // Humps: big rounded grassy domes seen from the side (dark outline, lit from above, a ground shadow) on
       // a map-wide lattice where the field is high, biggest in the middle of a group. A soft tint
       // under them, never over a forest, a town, a swamp or water.
       g.save();
@@ -488,14 +488,18 @@ export function drawTerrainMap(g: CanvasRenderingContext2D, map: TerrainMap, cel
           if (hh < 0.5) continue;
           const [cx, cy] = at(u, v);
           const r2 = rnd(gx, gy, 24);
-          humpList.push({ cx, cy, W: (12 + 7 * hh + rnd(gx, gy, 23) * 6) * k, Hh: (9 + 8 * hh + r2 * 5) * k, lean: (r2 - 0.5) * 0.3 });
+          humpList.push({ cx, cy, W: (13 + 7 * hh + rnd(gx, gy, 23) * 6) * k, Hh: (8 + 7 * hh + r2 * 4) * k, lean: (r2 - 0.5) * 0.3 });
         }
       const edge = css(mixRgb(hb, BLACK, 0.45));
       drawHump = ({ cx, cy, W, Hh, lean }) => {
+        // A rolling hill: a bell that runs out softly at its foot and has a round crown (no peak), the
+        // crown shifted by its lean.
+        const top = cx + lean * W;
         const curve = () => {
           g.beginPath();
           g.moveTo(cx - W, cy);
-          g.bezierCurveTo(cx - W * (0.55 - lean), cy - Hh * 1.32, cx + W * (0.55 + lean), cy - Hh * 1.32, cx + W, cy);
+          g.bezierCurveTo(cx - W * 0.86, cy - Hh * 0.42, top - W * 0.72, cy - Hh, top, cy - Hh);
+          g.bezierCurveTo(top + W * 0.72, cy - Hh, cx + W * 0.86, cy - Hh * 0.42, cx + W, cy);
         };
         g.fillStyle = 'rgba(0,0,0,0.16)';
         g.beginPath();
@@ -512,19 +516,6 @@ export function drawTerrainMap(g: CanvasRenderingContext2D, map: TerrainMap, cel
         g.strokeStyle = edge;
         g.lineWidth = 1.3 * k;
         curve();
-        g.stroke();
-        // A few tufts on the top.
-        g.strokeStyle = css(mixRgb(hb, BLACK, 0.3));
-        g.lineWidth = k;
-        g.beginPath();
-        for (const f of [-0.35, 0.05, 0.4]) {
-          const tx = cx + f * W;
-          const ty = cy - Hh * (0.95 - Math.abs(f) * 0.55) + 2.5 * k;
-          g.moveTo(tx - 1.2 * k, ty);
-          g.lineTo(tx - 0.4 * k, ty - 2.6 * k);
-          g.moveTo(tx + 0.6 * k, ty);
-          g.lineTo(tx + 1.4 * k, ty - 2.8 * k);
-        }
         g.stroke();
       };
     }
