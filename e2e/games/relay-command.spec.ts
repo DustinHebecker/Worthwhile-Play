@@ -7,7 +7,7 @@ interface SavedRelay {
   world: { turn: number; entities: { id: number; side: number; kind: string; x: number; y: number }[] };
   result: string | null;
   endless: boolean;
-  random: { w: number; h: number; seed: number } | null;
+  random: { w: number; h: number; seed: number; asymmetric?: true } | null;
 }
 
 const saved = async (page: Page) => ((await readSave(page, 'relay-command')) as { state: SavedRelay } | undefined)?.state;
@@ -896,4 +896,18 @@ test('relay-command: a large map (48×32) scrolls in its own frame, opens at the
   await page.getByTestId('continue').click();
   await expect(page.getByTestId('rc-map')).toHaveAttribute('data-cols', '48');
   await expect(page.getByTestId('rc-zoom-50')).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('relay-command: an asymmetric random map is chosen in the setup and survives a reload', async ({ page }) => {
+  await start(page);
+  await page.getByTestId('rc-scenario').selectOption('random');
+  await expect(page.getByTestId('rc-random')).toBeVisible();
+  // The label is the touch target.
+  await page.getByTestId('rc-random-asym-label').click();
+  await expect(page.getByTestId('rc-random-asym')).toBeChecked();
+  await expect.poll(async () => (await saved(page))?.random?.asymmetric).toBe(true);
+  await page.reload();
+  await page.getByTestId('continue').click();
+  await expect(page.getByTestId('rc-random-asym')).toBeChecked();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
 });

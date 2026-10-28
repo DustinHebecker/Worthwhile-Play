@@ -172,6 +172,8 @@ export interface RandomMap {
   w: number;
   h: number;
   seed: number;
+  /** Generated without a mirror (owner request 2026-10-27); absent for a mirrored map (older saves too). */
+  asymmetric?: true;
 }
 
 /** Sizes offered for a random map in the setup (small to the largest the editor allows). */
@@ -956,6 +958,8 @@ const isValidDraft = (v: unknown): v is MapDraft | null =>
 function isValidRandom(random: unknown, map: unknown): boolean {
   if (random === null) return true;
   if (!isRecord(random) || !isUint32(random.seed) || !RANDOM_SIZES.some(([w, h]) => w === random.w && h === random.h)) return false;
+  // Asymmetric maps have two bases.
+  if (random.asymmetric !== undefined && (random.asymmetric !== true || (isRecord(map) && map.seats !== undefined))) return false;
   return isRecord(map) && map.w === random.w && map.h === random.h;
 }
 

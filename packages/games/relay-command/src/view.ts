@@ -75,6 +75,7 @@ import {
   unitById,
   RANDOM_OPPONENTS,
   RANDOM_SIZES,
+  type RandomMap,
   type RcState
 } from './rules';
 import { DIFFICULTIES, type Difficulty } from './ai';
@@ -460,12 +461,16 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
   randomSize.value = '16x12'; // a medium map unless another size is chosen
   const randomSeed = h('input', { type: 'number', min: '0', max: '4294967295', step: '1', inputmode: 'numeric', 'data-testid': 'rc-random-seed', onchange: () => onSetup() }) as HTMLInputElement;
   const randomNew = h('button', { type: 'button', 'data-testid': 'rc-random-new', onclick: () => newRandomMap() }, t('setup.randomNew'));
+  /** Generated without a mirror (owner request 2026-10-27): two bases only, so one opponent. */
+  const randomAsym = h('input', { type: 'checkbox', 'data-testid': 'rc-random-asym', onchange: () => onSetup() }) as HTMLInputElement;
+  const randomAsymLabel = h('label', { class: 'rc-check', 'data-testid': 'rc-random-asym-label' }, randomAsym, h('span', {}, t('setup.randomAsymmetric')));
   const randomBox = h(
     'div',
     { class: 'rc-random', 'data-testid': 'rc-random', hidden: true },
     h('label', {}, h('span', {}, t('setup.randomSize')), randomSize),
     h('label', {}, h('span', {}, t('setup.randomSeed')), randomSeed),
-    randomNew
+    randomNew,
+    randomAsymLabel
   );
   const limitSelect = h('select', { 'data-testid': 'rc-turn-limit', onchange: () => onSetup() });
   /** Opponent level (owner decision 2026-10-16): chosen here with the map, not on the host's start screen. */
@@ -793,11 +798,16 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     randomSize.disabled = setupLocked;
     randomSeed.disabled = setupLocked;
     randomNew.disabled = setupLocked;
+    randomAsym.disabled = setupLocked;
     randomBox.hidden = state.random === null;
     if (state.random) {
       randomSize.value = `${state.random.w}x${state.random.h}`;
       if (document.activeElement !== randomSeed) randomSeed.value = String(state.random.seed);
+      // With more opponents the choice is hidden and kept for when one opponent is chosen again.
+      if (state.opponents === 1) randomAsym.checked = state.random.asymmetric === true;
     }
+    // Asymmetric maps have two bases: offered with one opponent only.
+    randomAsymLabel.hidden = state.opponents > 1;
     endlessInput.checked = state.endless;
     syncSeatRows(setupLocked);
     setupBox.toggleAttribute('data-locked', setupLocked);
@@ -2604,15 +2614,18 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       syncOpponentOptions();
       // One opponent: a two-side map; two or three: four bases, one in each corner.
       const opponents = Number(opponentsSelect.value) || 1;
+      const asymmetric = randomAsym.checked && opponents === 1;
       let map: EditMap;
       try {
-        map = generateMap(size[0], size[1], seed, t('setup.randomName', { w: size[0], h: size[1], n: seed }).slice(0, MAX_NAME), opponents > 1 ? 4 : 2);
+        const name = t(asymmetric ? 'setup.randomNameAsymmetric' : 'setup.randomName', { w: size[0], h: size[1], n: seed }).slice(0, MAX_NAME);
+        map = generateMap(size[0], size[1], seed, name, opponents > 1 ? 4 : 2, asymmetric);
       } catch {
         render(); // cannot happen for the offered sizes; the game stays as it is
         return;
       }
       selected = null;
-      commit(newGame(state.seed, FIELD_EXERCISE, state.difficulty, limit, limitSelect.value === 'quick', map, opponents, chosenSeats(), endlessInput.checked, { w: size[0], h: size[1], seed }, chosenTeams(), chosenStart()), t('announce.setup', { scenario: mapLabel(map) }));
+      const recipe: RandomMap = { w: size[0], h: size[1], seed, ...(asymmetric && { asymmetric: true as const }) };
+      commit(newGame(state.seed, FIELD_EXERCISE, state.difficulty, limit, limitSelect.value === 'quick', map, opponents, chosenSeats(), endlessInput.checked, recipe, chosenTeams(), chosenStart()), t('announce.setup', { scenario: mapLabel(map) }));
       homeCursor();
       render();
       return;
