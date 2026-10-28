@@ -1485,6 +1485,7 @@ describe('Relay Command map editor', () => {
     await settle();
     const values = [...($('ed-start') as HTMLSelectElement).options].map((o) => o.value);
     expect(values).toContain('highland-line');
+    expect(values).toContain('two-valleys');
     expect(values).toContain('bastion');
     expect(values).not.toContain('lake-country');
   });

@@ -892,6 +892,9 @@ test('relay-command: a large map (48×32) scrolls in its own frame, opens at the
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
   await page.getByTestId('rc-zoom-50').click();
   await expect(page.getByTestId('rc-map')).toHaveCSS('width', `${48 * 22}px`);
+  // Shown at half size the canvas holds only the pixels it shows (as sharp, a quarter of the drawing).
+  const backing = await page.getByTestId('rc-map').evaluate((c) => (c as HTMLCanvasElement).width / (c.getBoundingClientRect().width * devicePixelRatio));
+  expect(backing).toBeLessThanOrEqual(1.01);
   await page.reload();
   await page.getByTestId('continue').click();
   await expect(page.getByTestId('rc-map')).toHaveAttribute('data-cols', '48');
