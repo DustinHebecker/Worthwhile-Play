@@ -162,11 +162,11 @@ On main and deployed:
 
 Open:
 - Pipeline game 8, "Weight & Balance" (`balance-lab`): published 2026-10-28 (plan, implementation, independent review, phone-layout polish incl. a first-tap bug on the free bench). All 8 pipeline games are now live. Follow-ups (owner to decide): pointer drag; the hard "which joint gives way?" question and a movable counter plank; "stays level" is never the answer on easy; bucket cubes can overlap; chunk ≈63 kB gzip vs a 60 kB budget.
-- Tones & Chords follow-ups (reviewer, debatable): describing rhythm by eye for screen readers as note values; muting during an ear task counts as a hint; respelling in "which note changed?" (D♭ vs C♯); the lowpass Q.
-- Pond & Meadow follow-ups: feedback when "add" is refused; the Hindi pondweed name; frozen tiny populations.
+- Tones & Chords follow-ups (reviewer, debatable): describing rhythm by eye for screen readers as note values; respelling in "which note changed?" (D♭ vs C♯); the lowpass Q.
+- Pond & Meadow follow-ups: the Hindi pondweed name; frozen tiny populations.
 - Atlas follow-ups (debatable, not done): the game chunk is 93 KB gzip; hatched slivers along Kashmir; Melilla and Gibraltar; direction words; a native-speaker review of the AI-assisted locales.
 - Estimation Lab follow-ups: a "recently seen" memory; a yearly figure review; three 404 source links (UN PopFacts 2017/2, OICA 2013, University of Arizona bees); true plurals for count words.
 - Pixel Peel: the phone start time (about 300 ms against a 250 ms target); a side-by-side landscape layout.
-- Strategy: #88 (drone datalink, Direction Finder intercepts, easy builds) merged and deployed. #89 (large 48×32 maps) and #90 (asymmetric random maps) merged 2026-10-28; #91 (Two Valleys map) in the gate queue.
+- Strategy: #88 (drone datalink, Direction Finder intercepts, easy builds) merged and deployed. #89 (large 48×32 maps), #90 (asymmetric random maps) and #91 (Two Valleys) merged 2026-10-28. PR #92 (editor: large maps at 100 %/50 %, 'Move the map', head f96462e): local gate green on 2026-10-28; merge next session after checking that its head and CI are unchanged.
 - Waiting on the owner: Economy ("weitermachen" plus nine questions in `docs/design/economy-draft.md`; Many Lives needs `@wp/finance-math` from it) and adventures (three questions: start E1? time model? location of Adventure B?).
 - Recurring load flakes on this machine: the relay replay e2e, node-conquest 44 px e2e, card-quest K3 picture, skat pacing. Rerun them alone before calling a failure real.
