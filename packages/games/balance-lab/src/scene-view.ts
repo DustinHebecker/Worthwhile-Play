@@ -106,7 +106,11 @@ function drawBeam(scene: BeamScene, o: SceneOptions): SVGElement {
     bar.append(s('text', { x: L.x(p), y: L.barY - 9, class: 'bl-tick', 'text-anchor': 'middle' }, String(Math.abs(p - scene.axle))));
   }
   bar.append(s('circle', { cx: ax, cy: L.barY, r: 4, class: 'bl-axle' }));
-  if (scene.barKg > 0) bar.append(kgLabel(L.x(0), L.barY + 3, scene.barKg, o, 8));
+  if (scene.barKg > 0) {
+    // The bar's own weight acts at its middle; when the axle sits there too, the label steps aside off the axle dot.
+    const off = Math.abs(ax - L.x(0)) < 15 ? (ax <= L.x(0) ? 1 : -1) * Math.max(15, L.step * 0.5) : 0;
+    bar.append(kgLabel(L.x(0) + off, L.barY + 3, scene.barKg, o, 8));
+  }
   let lowest = L.barY + 70;
   for (const w of scene.weights) {
     let y = L.barY + 9;
@@ -246,6 +250,7 @@ function drawStack(scene: StackScene, o: SceneOptions): SVGElement {
   });
   // Cubes, stacked when they share a spot.
   const heights = new Map<string, number>();
+  let topY = L.bodyY(scene.bodies.length - 1);
   for (const c of scene.cubes) {
     const g = fail && c.on >= fail.joint ? upper : lower;
     const key = `${c.on}:${c.x}`;
@@ -253,6 +258,7 @@ function drawStack(scene: StackScene, o: SceneOptions): SVGElement {
     const size = CUBE_WIDTH * L.scale;
     heights.set(key, below + size);
     const y = L.bodyY(c.on) - below - size;
+    topY = Math.min(topY, y - 2);
     const cx = L.px(c.x);
     const cls = `${c.free ? ' bl-weight--free' : ''}${o.cursor?.kind === 'cube' && o.cursor.at === c.x ? ' bl-body--cursor' : ''}`;
     // A weight shape (handle on a trapezoid), not a block: it must not read like a numbered part.
@@ -277,6 +283,11 @@ function drawStack(scene: StackScene, o: SceneOptions): SVGElement {
   }
   if (o.explain) {
     const g = s('g', { class: 'bl-explain' });
+    // After a fall the tipped parts sweep over the joint, so the fall notes go above the upright stack, on the side
+    // the parts fall away from (the side that stays clear during the whole motion).
+    let notes = 0;
+    const lefts = scene.bodies.map((b) => L.px(b.left));
+    const rights = scene.bodies.map((b) => L.px(b.left + BODY_LENGTH[b.kind]));
     for (const j of joints) {
       const x = L.px(j.S / j.M);
       const y = L.bodyY(j.k) + L.bodyH;
@@ -284,7 +295,11 @@ function drawStack(scene: StackScene, o: SceneOptions): SVGElement {
       g.append(s('line', { x1: x, y1: L.bodyY(scene.bodies.length - 1) - 4, x2: x, y2: y, class: 'bl-plumb' }));
       g.append(s('circle', { cx: x, cy: y - 5, r: 4, class: `bl-com${j.holds ? '' : ' bl-com--fail'}` }));
       g.append(s('path', { d: `M${x - 2.6} ${y - 5}h5.2M${x} ${y - 7.6}v5.2`, class: 'bl-com-cross' }));
-      if (!j.holds) g.append(s('text', { x: x + (j.dir === 'right' ? 7 : -7), y: y - 2, class: 'bl-label bl-label--small bl-halo', 'text-anchor': j.dir === 'right' ? 'start' : 'end' }, j.dir === 'right' ? '✕ →' : '← ✕'));
+      const note = j.dir === 'right' ? '✕ →' : '← ✕';
+      const anchor = j.dir === 'right' ? 'start' : 'end';
+      if (!j.holds && fail)
+        g.append(s('text', { x: j.dir === 'right' ? Math.min(...lefts) : Math.max(...rights), y: topY - 6 - 12 * notes++, class: 'bl-label bl-label--small bl-halo bl-fall-note', 'text-anchor': anchor }, note));
+      else if (!j.holds) g.append(s('text', { x: x + (j.dir === 'right' ? 7 : -7), y: y - 2, class: 'bl-label bl-label--small bl-halo', 'text-anchor': anchor }, note));
       else if (j.edge) g.append(s('text', { x: x + 7, y: y - 2, class: 'bl-label bl-label--small bl-halo' }, '▲'));
     }
     root.append(g);

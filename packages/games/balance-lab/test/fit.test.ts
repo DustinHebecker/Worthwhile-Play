@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { contentBox, fitViewBox, pathPoints } from '../src/fit';
 import { drawScene, s, type SceneOptions } from '../src/scene-view';
 import type { Scene } from '../src/generate';
+import { outcomeOf } from '../src/check';
 
 const opts: SceneOptions = { outcome: null, explain: false, animate: false, cursor: null, marked: null, flag: null, title: 't', desc: 'd', kgUnit: { pre: '', post: 'kg' } };
 
@@ -51,5 +52,22 @@ describe('scene framing', () => {
       // Weights carry their unit, so they never read like a part number.
       expect(svg.querySelector('.bl-kg')?.textContent).toMatch(/^\d+kg$/);
     }
+  });
+
+  it('puts the fall note above the upright stack, clear of the tipped parts', () => {
+    const sc = { bench: 'stack', s: { bodies: [{ kind: 'block', left: -12 }, { kind: 'block', left: 4 }], cubes: [] } } as Scene;
+    const outcome = outcomeOf(sc);
+    expect(outcome.bench === 'stack' && outcome.failing.length).toBeTruthy();
+    const svg = drawScene(sc, { ...opts, outcome, explain: true });
+    const note = svg.querySelector('.bl-fall-note')!;
+    const top = Math.min(...Array.from(svg.querySelectorAll('.bl-body')).map((b) => Number(b.getAttribute('y'))));
+    expect(Number(note.getAttribute('y'))).toBeLessThan(top);
+  });
+
+  it('keeps the beam weight label off the axle dot when the axle is in the middle', () => {
+    const svg = drawScene({ bench: 'beam', s: { half: 6, axle: 0, barKg: 7, weights: [] } } as Scene, opts);
+    const axle = svg.querySelector('.bl-axle')!;
+    const label = svg.querySelector('.bl-kg')!;
+    expect(Math.abs(Number(label.getAttribute('x')) - Number(axle.getAttribute('cx')))).toBeGreaterThanOrEqual(15);
   });
 });
