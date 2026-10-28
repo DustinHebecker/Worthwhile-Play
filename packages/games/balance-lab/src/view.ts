@@ -128,6 +128,9 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
   function actAt(target: number) {
     const sc = sceneNow();
     if (!sc || !editable()) return;
+    // On the free bench the weight menu always has a weight chosen: a tap on a hook hangs it, from the first tap on
+    // (not only after "Place" happened to select it).
+    if (state.mode === 'free' && selTray === null && selPlaced === null && trayNow().length) selTray = 0;
     if (sc.bench === 'beam') {
       if (taskId() === 'beam-axle') return void edit({ bench: 'beam', s: setAxle(sc.s, target) ?? sc.s });
       const goal = state.mode === 'round' ? currentItem(state)?.goal : undefined;
