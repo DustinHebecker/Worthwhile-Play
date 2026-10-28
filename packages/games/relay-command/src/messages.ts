@@ -1266,7 +1266,7 @@ const nl: Catalogue = {
   'scenario.bastion': 'Bastion (20×14, één basis op een plateau tegen drie, alleen teams)',
   'scenario.highland-line': 'Hooglandlinie (48×32, een stad in het laagland tegen een plateau, asymmetrisch)',
   'scenario.lake-country': 'Merenland (48×32, drie bases rond een meer, asymmetrisch, 1 of 2 tegenstanders)',
-  'scenario.two-valleys': 'Two Valleys (48×32, a wide valley against a narrow one behind a ridge, asymmetric)', // TODO-TR
+  'scenario.two-valleys': 'Twee Dalen (48×32, een breed dal tegen een smal dal achter een bergkam, asymmetrisch)',
   'side.opponent': 'Tegenstander {mark}',
   'side.ally': 'Bondgenoot {mark}',
   'list.allies': 'Eenheden van bondgenoten',
@@ -1763,7 +1763,7 @@ const es: Catalogue = {
   'scenario.bastion': 'Bastión (20×14, una base en una meseta contra tres, solo equipos)',
   'scenario.highland-line': 'Línea de las Tierras Altas (48×32, una ciudad en la llanura contra una meseta, asimétrico)',
   'scenario.lake-country': 'Tierra de Lagos (48×32, tres bases alrededor de un lago, asimétrico, 1 o 2 oponentes)',
-  'scenario.two-valleys': 'Two Valleys (48×32, a wide valley against a narrow one behind a ridge, asymmetric)', // TODO-TR
+  'scenario.two-valleys': 'Dos Valles (48×32, un valle ancho contra uno estrecho tras una cresta, asimétrico)',
   'side.opponent': 'Oponente {mark}',
   'side.ally': 'Aliado {mark}',
   'list.allies': 'Unidades aliadas',
@@ -2260,7 +2260,7 @@ const fr: Catalogue = {
   'scenario.bastion': 'Bastion (20×14, une base sur un plateau contre trois, équipes uniquement)',
   'scenario.highland-line': 'Ligne des Hautes Terres (48×32, une ville de plaine contre un plateau, asymétrique)',
   'scenario.lake-country': 'Pays des Lacs (48×32, trois bases autour d’un lac, asymétrique, 1 ou 2 adversaires)',
-  'scenario.two-valleys': 'Two Valleys (48×32, a wide valley against a narrow one behind a ridge, asymmetric)', // TODO-TR
+  'scenario.two-valleys': 'Deux Vallées (48×32, une large vallée contre une vallée étroite derrière une crête, asymétrique)',
   'side.opponent': 'Adversaire {mark}',
   'side.ally': 'Allié {mark}',
   'list.allies': 'Unités alliées',
@@ -2756,7 +2756,7 @@ const ru: Catalogue = {
   'scenario.bastion': 'Бастион (20×14, одна база на плато против трёх, только команды)',
   'scenario.highland-line': 'Нагорный рубеж (48×32, город в низине против плато, асимметричная)',
   'scenario.lake-country': 'Озёрный край (48×32, три базы вокруг озера, асимметричная, 1 или 2 противника)',
-  'scenario.two-valleys': 'Two Valleys (48×32, a wide valley against a narrow one behind a ridge, asymmetric)', // TODO-TR
+  'scenario.two-valleys': 'Две долины (48×32, широкая долина против узкой за хребтом, асимметричная)',
   'side.opponent': 'Противник {mark}',
   'side.ally': 'Союзник {mark}',
   'list.allies': 'Подразделения союзников',
@@ -3253,7 +3253,7 @@ const zhHans: Catalogue = {
   'scenario.bastion': '堡垒（20×14，高台上的一个基地对抗三个，仅限队伍）',
   'scenario.highland-line': '高地防线（48×32，低地城镇对抗高台，非对称）',
   'scenario.lake-country': '湖区（48×32，环湖的三个基地，非对称，1 或 2 个对手）',
-  'scenario.two-valleys': 'Two Valleys (48×32, a wide valley against a narrow one behind a ridge, asymmetric)', // TODO-TR
+  'scenario.two-valleys': '双谷（48×32，宽谷对抗山脊后的窄谷，非对称）',
   'side.opponent': '对手 {mark}',
   'side.ally': '盟友 {mark}',
   'list.allies': '盟友部队',
@@ -3749,7 +3749,7 @@ const ko: Catalogue = {
   'scenario.bastion': '보루 (20×14, 고원 위 기지 1개 대 3개, 팀 전용)',
   'scenario.highland-line': '고지대 전선 (48×32, 저지대 도시 대 고원, 비대칭)',
   'scenario.lake-country': '호수 지대 (48×32, 호수를 둘러싼 기지 3개, 비대칭, 상대 1~2명)',
-  'scenario.two-valleys': 'Two Valleys (48×32, a wide valley against a narrow one behind a ridge, asymmetric)', // TODO-TR
+  'scenario.two-valleys': '두 계곡 (48×32, 넓은 계곡 대 능선 뒤의 좁은 계곡, 비대칭)',
   'side.opponent': '상대 {mark}',
   'side.ally': '동맹 {mark}',
   'list.allies': '동맹 유닛',
@@ -4246,7 +4246,7 @@ const ja: Catalogue = {
   'scenario.bastion': '要塞（20×14、台地の基地1つ対3つ、チームのみ）',
   'scenario.highland-line': '高地線（48×32、低地の町対台地、非対称）',
   'scenario.lake-country': '湖水地方（48×32、湖を囲む基地3つ、非対称、相手1～2）',
-  'scenario.two-valleys': 'Two Valleys (48×32, a wide valley against a narrow one behind a ridge, asymmetric)', // TODO-TR
+  'scenario.two-valleys': '二つの谷（48×32、広い谷対尾根の向こうの狭い谷、非対称）',
   'side.opponent': '相手 {mark}',
   'side.ally': '同盟 {mark}',
   'list.allies': '同盟の部隊',
@@ -4742,7 +4742,7 @@ const ar: Catalogue = {
   'scenario.bastion': 'المعقل (20×14، قاعدة واحدة على هضبة في مواجهة ثلاث، الفرق فقط)',
   'scenario.highland-line': 'خط المرتفعات (48×32، بلدة في الأراضي المنخفضة في مواجهة هضبة، غير متماثلة)',
   'scenario.lake-country': 'بلاد البحيرات (48×32، ثلاث قواعد حول بحيرة، غير متماثلة، خصم أو خصمان)',
-  'scenario.two-valleys': 'Two Valleys (48×32, a wide valley against a narrow one behind a ridge, asymmetric)', // TODO-TR
+  'scenario.two-valleys': 'الواديان (48×32، وادٍ واسع في مواجهة وادٍ ضيق خلف حافة جبلية، غير متماثلة)',
   'side.opponent': 'الخصم {mark}',
   'side.ally': 'الحليف {mark}',
   'list.allies': 'وحدات الحلفاء',
@@ -5239,7 +5239,7 @@ const pt: Catalogue = {
   'scenario.bastion': 'Bastião (20×14, uma base em um planalto contra três, apenas equipes)',
   'scenario.highland-line': 'Linha das Terras Altas (48×32, uma cidade na planície contra um planalto, assimétrico)',
   'scenario.lake-country': 'Terra dos Lagos (48×32, três bases em volta de um lago, assimétrico, 1 ou 2 oponentes)',
-  'scenario.two-valleys': 'Two Valleys (48×32, a wide valley against a narrow one behind a ridge, asymmetric)', // TODO-TR
+  'scenario.two-valleys': 'Dois Vales (48×32, um vale largo contra um estreito atrás de um cume, assimétrico)',
   'side.opponent': 'Oponente {mark}',
   'side.ally': 'Aliado {mark}',
   'list.allies': 'Unidades aliadas',
@@ -5735,7 +5735,7 @@ const it: Catalogue = {
   'scenario.bastion': 'Bastione (20×14, una base su un altopiano contro tre, solo squadre)',
   'scenario.highland-line': 'Linea delle Alture (48×32, una città di pianura contro un altopiano, asimmetrico)',
   'scenario.lake-country': 'Terra dei Laghi (48×32, tre basi intorno a un lago, asimmetrico, 1 o 2 avversari)',
-  'scenario.two-valleys': 'Two Valleys (48×32, a wide valley against a narrow one behind a ridge, asymmetric)', // TODO-TR
+  'scenario.two-valleys': 'Due Valli (48×32, una valle ampia contro una stretta dietro una cresta, asimmetrico)',
   'side.opponent': 'Avversario {mark}',
   'side.ally': 'Alleato {mark}',
   'list.allies': 'Unità alleate',
@@ -6232,7 +6232,7 @@ const pl: Catalogue = {
   'scenario.bastion': 'Bastion (20×14, jedna baza na płaskowyżu przeciw trzem, tylko drużyny)',
   'scenario.highland-line': 'Linia Wyżyn (48×32, miasto na nizinie przeciw płaskowyżowi, asymetryczna)',
   'scenario.lake-country': 'Kraina Jezior (48×32, trzy bazy wokół jeziora, asymetryczna, 1 lub 2 przeciwników)',
-  'scenario.two-valleys': 'Two Valleys (48×32, a wide valley against a narrow one behind a ridge, asymmetric)', // TODO-TR
+  'scenario.two-valleys': 'Dwie Doliny (48×32, szeroka dolina przeciw wąskiej za granią, asymetryczna)',
   'side.opponent': 'Przeciwnik {mark}',
   'side.ally': 'Sojusznik {mark}',
   'list.allies': 'Oddziały sojuszników',
@@ -6728,7 +6728,7 @@ const tr: Catalogue = {
   'scenario.bastion': 'Tabya (20×14, yayla üzerinde bir üs üçe karşı, yalnızca takımlar)',
   'scenario.highland-line': 'Dağlık Hat (48×32, ovadaki bir kasaba bir yaylaya karşı, asimetrik)',
   'scenario.lake-country': 'Göller Bölgesi (48×32, bir gölün çevresinde üç üs, asimetrik, 1 veya 2 rakip)',
-  'scenario.two-valleys': 'Two Valleys (48×32, a wide valley against a narrow one behind a ridge, asymmetric)', // TODO-TR
+  'scenario.two-valleys': 'İki Vadi (48×32, bir sırtın ardındaki dar vadiye karşı geniş bir vadi, asimetrik)',
   'side.opponent': 'Rakip {mark}',
   'side.ally': 'Müttefik {mark}',
   'list.allies': 'Müttefik birlikleri',
@@ -7225,7 +7225,7 @@ const uk: Catalogue = {
   'scenario.bastion': 'Бастіон (20×14, одна база на плато проти трьох, лише команди)',
   'scenario.highland-line': 'Нагірний рубіж (48×32, місто в низовині проти плато, асиметрична)',
   'scenario.lake-country': 'Озерний край (48×32, три бази навколо озера, асиметрична, 1 або 2 суперники)',
-  'scenario.two-valleys': 'Two Valleys (48×32, a wide valley against a narrow one behind a ridge, asymmetric)', // TODO-TR
+  'scenario.two-valleys': 'Дві долини (48×32, широка долина проти вузької за хребтом, асиметрична)',
   'side.opponent': 'Суперник {mark}',
   'side.ally': 'Союзник {mark}',
   'list.allies': 'Підрозділи союзників',
@@ -7722,7 +7722,7 @@ const hi: Catalogue = {
   'scenario.bastion': 'गढ़ (20×14, पठार पर एक अड्डा तीन के विरुद्ध, केवल टीमें)',
   'scenario.highland-line': 'पहाड़ी मोर्चा (48×32, तराई का एक कस्बा पठार के विरुद्ध, असममित)',
   'scenario.lake-country': 'झीलों का देश (48×32, एक झील के चारों ओर तीन अड्डे, असममित, 1 या 2 विरोधी)',
-  'scenario.two-valleys': 'Two Valleys (48×32, a wide valley against a narrow one behind a ridge, asymmetric)', // TODO-TR
+  'scenario.two-valleys': 'दो घाटियाँ (48×32, पहाड़ी धार के पीछे की संकरी घाटी के विरुद्ध एक चौड़ी घाटी, असममित)',
   'side.opponent': 'विरोधी {mark}',
   'side.ally': 'सहयोगी {mark}',
   'list.allies': 'सहयोगियों की टुकड़ियाँ',
