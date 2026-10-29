@@ -116,6 +116,7 @@ export const en = {
   'review.why': 'Why',
   'review.next': 'Next challenge',
   'review.summary': 'See summary',
+  'note.recalculated': 'The model was refined since you started; this notebook was recalculated.',
   'note.model': 'This is a simplified model. It shows the kind of behaviour real ponds and meadows can show, not what a particular pond will do. Numbers are model units, weeks are model weeks.',
   'summary.heading': 'Your predictions this round',
   'summary.counts': '●●● {a} · ●●○ {b} · ●○○ {c} · ○○○ {d} · skipped {s}',

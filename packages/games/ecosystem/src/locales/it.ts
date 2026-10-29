@@ -117,6 +117,7 @@ export const it: Catalogue = {
   'review.why': 'Perché',
   'review.next': 'Sfida successiva',
   'review.summary': 'Vedi il riepilogo',
+  'note.recalculated': 'Il modello è stato perfezionato da quando hai iniziato; questo quaderno è stato ricalcolato.',
   'note.model': 'È un modello semplificato. Mostra il tipo di comportamento che possono avere stagni e prati veri, non cosa farà uno stagno preciso. I numeri sono unità del modello, le settimane sono settimane del modello.',
   'summary.heading': 'Le tue previsioni in questo turno',
   'summary.counts': '●●● {a} · ●●○ {b} · ●○○ {c} · ○○○ {d} · saltate {s}',

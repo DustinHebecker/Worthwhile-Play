@@ -13,9 +13,13 @@
  */
 import { DEAD, habitatDef, type Habitat, type HabitatDef } from './habitats';
 
-/** Names equations, parameters and presets (§ 14); a recalibration gets a new id. */
-export const MODEL_ID = 'eco-1';
-export const MODEL_IDS: readonly string[] = [MODEL_ID];
+/**
+ * Names equations, parameters and presets (§ 14); a change of the equations gets a new id. `eco-2` (2026-10-29): at
+ * least 1 u dies a day (§ 7.4 step 3), so tiny populations no longer freeze; parameters, presets, challenges and goals
+ * are unchanged. Saves of `eco-1` stay valid and their notebooks are replayed with the current model.
+ */
+export const MODEL_ID = 'eco-2';
+export const MODEL_IDS: readonly string[] = ['eco-1', MODEL_ID];
 export const MAX_AMOUNT = 20_000_000;
 /**
  * Explore refuses an "add" that would take the habitat's total above this (design § 7.8). With the holding capacity
@@ -267,13 +271,16 @@ export function stepDay(s: Sim, hab: HabitatDef, env: Env, wLight = 1000, wRain 
       flow(f === DEAD ? D : 3 + f, EAT + c, idiv(Q * om[k]!, total));
     }
   }
-  // 3. Losses of every present species.
+  // 3. Losses of every present species. At least 1 u dies a day: below ⌈10⁶ / mort⌉ u the death flow would floor to 0
+  // and a population the model cannot feed would stand still for ever instead of shrinking to `min` and vanishing
+  // (step 8) — "frozen tiny populations", design § 7.4 step 3.
   for (let i = 0; i < nS; i++) {
     const B = b[i]!;
     if (B === 0) continue;
     const p = sp[i]!;
+    const death = pm(p.mort, B) + (p.m2 ? idiv(pm(p.m2, B) * B, M) : 0);
     flow(3 + i, N, pm(p.resp, B));
-    flow(3 + i, D, pm(p.mort, B) + (p.m2 ? idiv(pm(p.m2, B) * B, M) : 0));
+    flow(3 + i, D, death === 0 && p.mort > 0 ? 1 : death);
     if (p.suspended && env.flow) flow(3 + i, OUT, pm(env.flow, B));
   }
   // 4. Pools.

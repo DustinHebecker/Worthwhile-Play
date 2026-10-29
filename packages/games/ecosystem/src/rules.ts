@@ -148,6 +148,16 @@ export function settingsOf(state: EcoState): Readonly<Record<string, SettingValu
 }
 
 /** The same round, goal or notebook from its start. */
+/**
+ * A save of an earlier model id under the current one (design § 14): predict items keep their stored marks; goal and
+ * explore notebooks are replayed from their start and log with the current model, so the view says they were
+ * recalculated. A save of the current model comes back unchanged (the same object).
+ */
+export function currentModel(state: EcoState): { state: EcoState; recalculated: boolean } {
+  if (state.model === MODEL_ID) return { state, recalculated: false };
+  return { state: { ...state, model: MODEL_ID }, recalculated: state.mode !== 'predict' };
+}
+
 export function restart(state: EcoState): EcoState {
   if (state.mode === 'predict') return newGameState(state.seed, { ...choiceOf(state.difficulty, {}), mode: 'predict' });
   if (state.mode === 'goal') return { ...state, notebook: { ...state.notebook, log: [], week: 0 }, outcome: null, reported: false };
