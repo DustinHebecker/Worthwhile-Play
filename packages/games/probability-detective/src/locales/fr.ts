@@ -146,6 +146,8 @@ export const fr: Catalogue = {
   'summary.close': 'Estimations finales très proches : {a} sur {n} · proches : {b}',
   'summary.baseRate': 'Affaires où ta première estimation a suivi l’indice en oubliant le taux de base : {n}',
   'summary.forecast': 'Score de prévision moyen : {a} (estimations exactes sur les mêmes affaires : {b})',
+  'summary.cases': 'Affaire par affaire',
+  'summary.open': 'Ouvre une affaire pour lire toute l’explication.',
   'habit.less': 'Tu as eu tendance à bouger moins que ne le justifiaient les indices. C’est fréquent – les indices méritent souvent un plus grand pas.',
   'habit.more': 'Tu as eu tendance à bouger plus que ne le justifiaient les indices.',
   'habit.right': 'Tes pas avaient à peu près la bonne taille.',

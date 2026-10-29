@@ -23,7 +23,7 @@ import {
   type Obs
 } from './rules';
 import { checkTemplateById } from './templates';
-import { MARKS, beliefControls } from './ui';
+import { MARKS, beliefControls, type Level, type Ui } from './ui';
 import type { Host } from './view-host';
 
 export const checksText = (locale: string, c: CheckCase): CheckTemplateText => contentFor(locale).checks[c.template]!;
@@ -166,7 +166,34 @@ export function checksScreen(host: Host, c: CheckCase): HTMLElement[] {
     );
   };
 
-  /* ---------- Review (design § 7.4) ---------- */
+  const review = () =>
+    h(
+      'section',
+      { class: 'pd-review', 'data-testid': 'pd-review' },
+      ui.heading('h3', 'pd-review-heading', t('review.heading')),
+      ...checksExplanation(ui, c, 'h3'),
+      h('div', { class: 'pd-actions' }, host.nextButton())
+    );
+
+  return [
+    host.header(text.title, 'kind.checks'),
+    h('div', { class: `pd-layout${reviewed ? ' pd-layout--review' : ''}`, 'data-template': c.template }, caseFile(), reviewed ? review() : c.deciding ? decidePanel() : checksPanel())
+  ];
+}
+
+/**
+ * The explanation of a reviewed checks case: what really happened, the points, the decision, the investigation, what
+ * each check was worth, the best plan, the forecast and the formulas (design § 7.4). Shown on the review screen and
+ * again, collapsed, in the round summary; `level` is the heading level of its sections. It sets no ids.
+ */
+export function checksExplanation(ui: Ui, c: CheckCase, level: Level): (HTMLElement | string)[] {
+  const { t } = ui;
+  const locale = ui.locale;
+  const text = checksText(locale, c);
+  const hypName = (i: number) => checksHyp(locale, c, i);
+  const optionName = (d: number) => text.options[c.options[d]!.id] ?? c.options[d]!.id;
+  const checkText = (i: number) => text.checks[c.checks[i]!.id]!;
+  const resultText = (i: number, r: 0 | 1) => (r === 1 ? checkText(i).yes : checkText(i).no);
 
   const actionText = (a: Action) => (a.kind === 'run' ? t('plan.run', { check: checkText(a.check).label }) : optionName(a.option));
 
@@ -215,71 +242,60 @@ export function checksScreen(host: Host, c: CheckCase): HTMLElement[] {
     );
   };
 
-  const review = () => {
-    const r = reviewChecks(c);
-    const d = c.decision!;
-    // A good outcome: with hindsight, no other option would have brought more points.
-    const good = c.options[d]!.pay[c.truth]! === Math.max(...c.options.map((o) => o.pay[c.truth]!));
-    const post = checkPosterior(checkParams(c), observed(c));
-    const rows = r.rows.map((row, k) =>
-      h(
-        'li',
-        { 'data-testid': `pd-inv-${k}` },
-        h('strong', {}, actionText(row.action)),
-        ' — ',
-        t('inv.value', { v: ui.points(row.value) }),
-        ' · ',
-        cmp(row.value, row.bestValue) === 0 ? t('inv.best') : t('inv.better', { best: actionText(row.best[0]!), v: ui.points(row.bestValue) })
-      )
+  const r = reviewChecks(c);
+  const d = c.decision!;
+  // A good outcome: with hindsight, no other option would have brought more points.
+  const good = c.options[d]!.pay[c.truth]! === Math.max(...c.options.map((o) => o.pay[c.truth]!));
+  const post = checkPosterior(checkParams(c), observed(c));
+  const rows = r.rows.map((row, k) =>
+    h(
+      'li',
+      { 'data-testid': `pd-inv-${k}` },
+      h('strong', {}, actionText(row.action)),
+      ' — ',
+      t('inv.value', { v: ui.points(row.value) }),
+      ' · ',
+      cmp(row.value, row.bestValue) === 0 ? t('inv.best') : t('inv.better', { best: actionText(row.best[0]!), v: ui.points(row.bestValue) })
+    )
+  );
+  const forecast: HTMLElement[] = [];
+  if (r.final && r.score !== null) {
+    forecast.push(
+      h('p', {}, t('checks.estimate', { b: `${MARKS[0]} ${ui.whole(r.final[0]!)}`, p: `${MARKS[0]} ${ui.pct(post[0]!)}` }), ' ', r.finalBand ? ui.bandText(r.finalBand) : ''),
+      h('p', { 'data-testid': 'pd-forecast' }, t('forecast.line', { s: ui.int(r.score), e: ui.int(Math.round(toNumber(r.exactScore))), r: ui.int(75) }))
     );
-    const forecast: HTMLElement[] = [];
-    if (r.final && r.score !== null) {
-      forecast.push(
-        h('p', {}, t('checks.estimate', { b: `${MARKS[0]} ${ui.whole(r.final[0]!)}`, p: `${MARKS[0]} ${ui.pct(post[0]!)}` }), ' ', r.finalBand ? ui.bandText(r.finalBand) : ''),
-        h('p', { 'data-testid': 'pd-forecast' }, t('forecast.line', { s: ui.int(r.score), e: ui.int(Math.round(toNumber(r.exactScore))), r: ui.int(75) }))
-      );
-    }
-    return h(
-      'section',
-      { class: 'pd-review', 'data-testid': 'pd-review' },
-      ui.heading('h3', 'pd-review-heading', t('review.heading')),
-      h('p', { class: 'pd-truth', 'data-testid': 'pd-truth' }, ui.mark(c.truth), ' ', t('review.truth', { name: hypName(c.truth) })),
-      h(
-        'p',
-        { 'data-testid': 'pd-points' },
-        t('checks.outcome', { option: optionName(d), pay: ui.points(c.options[d]!.pay[c.truth]!), cost: ui.points(-r.spent), total: ui.points(r.points) })
-      ),
-      h('p', { class: 'pd-verdict', 'data-testid': 'pd-decision', 'data-best': String(r.bestDecision) }, verdict(r.bestDecision, good)),
-      h('p', {}, t('checks.evs', { list: c.options.map((_, i) => `${optionName(i)} ${ui.points(r.evs[i]!)}`).join(' · ') })),
-      h('p', { class: 'pd-small' }, t('checks.ev')),
-      h('h3', {}, t('checks.investigation')),
-      h('ol', { class: 'pd-rows', 'data-testid': 'pd-investigation' }, ...rows),
-      h('h3', {}, t('checks.worth')),
-      worthChart(r.myopic),
-      h('h3', {}, t('checks.plan', { v: ui.points(r.startValue) })),
-      planTree(),
-      forecast.length ? h('section', { class: 'pd-forecast' }, h('h3', {}, t('forecast.heading')), ...forecast, h('p', { class: 'pd-small' }, t('forecast.explain'))) : '',
-      h(
-        'details',
-        { class: 'pd-formulas', 'data-testid': 'pd-formulas' },
-        h('summary', {}, t('formula.heading')),
-        ...c.options.map((o, i) =>
-          h(
-            'p',
-            { class: 'pd-formula', dir: 'ltr' },
-            'EV(',
-            ui.bdi(optionName(i)),
-            ') = ',
-            `${ui.pct(post[0]!)} × ${ui.points(o.pay[0]!)} + ${ui.pct(post[1]!)} × ${ui.points(o.pay[1]!)} = ${ui.points(r.evs[i]!)}`
-          )
-        )
-      ),
-      h('div', { class: 'pd-actions' }, host.nextButton())
-    );
-  };
-
+  }
   return [
-    host.header(text.title, 'kind.checks'),
-    h('div', { class: `pd-layout${reviewed ? ' pd-layout--review' : ''}`, 'data-template': c.template }, caseFile(), reviewed ? review() : c.deciding ? decidePanel() : checksPanel())
+    h('p', { class: 'pd-truth', 'data-testid': 'pd-truth' }, ui.mark(c.truth), ' ', t('review.truth', { name: hypName(c.truth) })),
+    h(
+      'p',
+      { 'data-testid': 'pd-points' },
+      t('checks.outcome', { option: optionName(d), pay: ui.points(c.options[d]!.pay[c.truth]!), cost: ui.points(-r.spent), total: ui.points(r.points) })
+    ),
+    h('p', { class: 'pd-verdict', 'data-testid': 'pd-decision', 'data-best': String(r.bestDecision) }, verdict(r.bestDecision, good)),
+    h('p', {}, t('checks.evs', { list: c.options.map((_, i) => `${optionName(i)} ${ui.points(r.evs[i]!)}`).join(' · ') })),
+    h('p', { class: 'pd-small' }, t('checks.ev')),
+    h(level, {}, t('checks.investigation')),
+    h('ol', { class: 'pd-rows', 'data-testid': 'pd-investigation' }, ...rows),
+    h(level, {}, t('checks.worth')),
+    worthChart(r.myopic),
+    h(level, {}, t('checks.plan', { v: ui.points(r.startValue) })),
+    planTree(),
+    forecast.length ? h('section', { class: 'pd-forecast' }, h(level, {}, t('forecast.heading')), ...forecast, h('p', { class: 'pd-small' }, t('forecast.explain'))) : '',
+    h(
+      'details',
+      { class: 'pd-formulas', 'data-testid': 'pd-formulas' },
+      h('summary', {}, t('formula.heading')),
+      ...c.options.map((o, i) =>
+        h(
+          'p',
+          { class: 'pd-formula', dir: 'ltr' },
+          'EV(',
+          ui.bdi(optionName(i)),
+          ') = ',
+          `${ui.pct(post[0]!)} × ${ui.points(o.pay[0]!)} + ${ui.pct(post[1]!)} × ${ui.points(o.pay[1]!)} = ${ui.points(r.evs[i]!)}`
+        )
+      )
+    )
   ];
 }

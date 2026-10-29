@@ -146,6 +146,8 @@ export const ko: Catalogue = {
   'summary.close': '최종 추정이 아주 가까움: {n}개 중 {a}개 · 가까움: {b}개',
   'summary.baseRate': '첫 추정이 단서만 따르고 기저율을 빼먹은 사건: {n}',
   'summary.forecast': '평균 예측 점수: {a} (같은 사건의 정확한 추정: {b})',
+  'summary.cases': '사건별로 보기',
+  'summary.open': '사건을 열면 전체 설명을 볼 수 있어요.',
   'habit.less': '단서가 뒷받침하는 것보다 적게 움직이는 경향이 있었어요. 흔한 패턴입니다 – 증거는 더 큰 걸음을 받을 만한 경우가 많아요.',
   'habit.more': '단서가 뒷받침하는 것보다 많이 움직이는 경향이 있었어요.',
   'habit.right': '걸음의 크기가 대체로 알맞았어요.',

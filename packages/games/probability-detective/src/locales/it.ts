@@ -146,6 +146,8 @@ export const it: Catalogue = {
   'summary.close': 'Stime finali molto vicine: {a} su {n} · vicine: {b}',
   'summary.baseRate': 'Casi in cui la prima stima ha seguito l’indizio tralasciando la frequenza di base: {n}',
   'summary.forecast': 'Punteggio medio della previsione: {a} (stime esatte sugli stessi casi: {b})',
+  'summary.cases': 'Caso per caso',
+  'summary.open': 'Apri un caso per leggere la spiegazione completa.',
   'habit.less': 'Tendevi a spostarti meno di quanto giustificassero gli indizi. È uno schema comune: gli indizi spesso meritano un passo più grande.',
   'habit.more': 'Tendevi a spostarti più di quanto giustificassero gli indizi.',
   'habit.right': 'I tuoi passi avevano più o meno la misura giusta.',
