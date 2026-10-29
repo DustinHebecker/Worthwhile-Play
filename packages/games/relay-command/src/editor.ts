@@ -95,6 +95,8 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
   let previous: MapDraft | null = null;
 
   const map = () => o.draft().map;
+  /** Mirrored editing is on (a three-base map is never mirrored). */
+  const mirrored = () => o.draft().mirror && map().seats !== 3;
   const mapName = (m: EditMap) => m.name.trim() || t('editor.untitled');
   const set = (next: EditMap, message?: string) => {
     if (next === map() && message === undefined) return;
@@ -131,9 +133,13 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
   const heightSelect = h('select', { 'data-testid': 'ed-height', onchange: () => set(resize(map(), map().w, Number(heightSelect.value))) }) as HTMLSelectElement;
   for (const v of MAP_HEIGHTS) heightSelect.append(h('option', { value: String(v) }, String(v)));
   const mirrorBox = h('input', { type: 'checkbox', 'data-testid': 'ed-mirror', onchange: () => o.change({ ...o.draft(), mirror: mirrorBox.checked }) }) as HTMLInputElement;
-  /** Bases (owner decision 2026-10-24): two sides, or four bases in the corners (seats A–D, A is you). */
+  /**
+   * Bases (owner decision 2026-10-24): two sides, or four bases in the corners (seats A–D, A is you);
+   * since 2026-10-29 also three (seats A–C, as Lake Country), which are never mirrored.
+   */
   const basesSelect = h('select', { 'data-testid': 'ed-bases', onchange: () => onBases() }) as HTMLSelectElement;
-  for (const n of [2, 4]) basesSelect.append(h('option', { value: String(n) }, t(n === 2 ? 'editor.bases2' : 'editor.bases4')));
+  for (const n of [2, 3, 4]) basesSelect.append(h('option', { value: String(n) }, t(`editor.bases${n}`)));
+  const mirrorLabel = h('label', { class: 'rc-ed-check' }, mirrorBox, h('span', {}, t('editor.mirror')));
   /**
    * Asymmetric maps (owner decision 2026-10-26): each base's Supply at the start and, with four
    * bases, a map made for teams (base A alone against three, as Bastion).
@@ -143,7 +149,7 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
   const teamsLabel = h('label', { class: 'rc-ed-check' }, teamsBox, h('span', {}, t('editor.teams')));
   const startSelect = h('select', { 'data-testid': 'ed-start' }) as HTMLSelectElement;
   startSelect.append(h('option', { value: 'blank' }, t('editor.blank')));
-  // Built-in maps the editor can hold (two or four bases; Lake Country has three).
+  // Built-in maps the editor can hold (all of them since three bases came, 2026-10-29).
   for (const spec of SCENARIOS) if (isValidMap(fromScenario(spec))) startSelect.append(h('option', { value: spec.id }, t(`scenario.${spec.id}`)));
   const loadBtn = h('button', { type: 'button', 'data-testid': 'ed-load', onclick: () => onLoad() });
   const settings = h(
@@ -153,7 +159,7 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
     h('label', {}, h('span', {}, t('editor.width')), widthSelect),
     h('label', {}, h('span', {}, t('editor.height')), heightSelect),
     h('label', {}, h('span', {}, t('editor.bases')), basesSelect),
-    h('label', { class: 'rc-ed-check' }, mirrorBox, h('span', {}, t('editor.mirror'))),
+    mirrorLabel,
     teamsLabel,
     h('div', { class: 'rc-ed-start' }, h('label', {}, h('span', {}, t('editor.start')), startSelect), loadBtn)
   );
@@ -174,8 +180,8 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
   const same = (a: Tool, b: Tool) => JSON.stringify(a) === JSON.stringify(b);
   const toolButton = (next: Tool, label: string, pic: HTMLElement, id: string) =>
     h('button', { type: 'button', class: 'rc-ed-tool', 'data-testid': `ed-tool-${id}`, 'aria-pressed': same(tool, next) ? 'true' : 'false', onclick: () => pick(next, label) }, pic, h('span', {}, label));
-  /** Whose a piece is, in words: on a four-base map its base (A is you), else you or the opponent. */
-  const seatLabel = (s: number): string => (map().seats === 4 ? t(s === 0 ? 'editor.seatOwn' : 'editor.seat', { mark: 'ABCD'[s] ?? '?' }) : t(s === 0 ? 'editor.sideOwn' : 'editor.sideEnemy'));
+  /** Whose a piece is, in words: on a map with three or four bases its base (A is you), else you or the opponent. */
+  const seatLabel = (s: number): string => (map().seats ? t(s === 0 ? 'editor.seatOwn' : 'editor.seat', { mark: 'ABCD'[s] ?? '?' }) : t(s === 0 ? 'editor.sideOwn' : 'editor.sideEnemy'));
   const sideButton = (s: number) =>
     h('button', { type: 'button', class: 'rc-ed-side', 'data-testid': `ed-side-${s}`, 'aria-pressed': side === s ? 'true' : 'false', onclick: () => pickSide(s) }, seatLabel(s));
 
@@ -219,7 +225,7 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
     o.announce(t('editor.toolChosen', { tool: label }));
   }
   function onBases(): void {
-    const bases = basesSelect.value === '4' ? 4 : 2;
+    const bases = basesSelect.value === '4' ? 4 : basesSelect.value === '3' ? 3 : 2;
     if (bases === seatsOf(map())) return;
     if (side >= bases) pickSide(0);
     set(withBases(map(), bases));
@@ -280,7 +286,7 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
   };
   const applyAt = (x: number, y: number) => {
     cursor = { x, y };
-    set(applyTool(map(), tool, x, y, o.draft().mirror));
+    set(applyTool(map(), tool, x, y, mirrored()));
     render();
   };
   canvas.addEventListener('pointerdown', (event) => {
@@ -373,7 +379,7 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
       drawIcon(g, u.kind, u.x * CELL, u.y * CELL, CELL / 44, { own, colour: o.css(own ? '--wp-p1' : '--wp-p2', own ? '#24508f' : '#9a3412'), surface, view: view() });
     }
     // Mirror line: the centre of the map, where the halves meet.
-    if (o.draft().mirror) {
+    if (mirrored()) {
       g.save();
       g.setLineDash([6, 6]);
       g.strokeStyle = o.css('--wp-muted', '#5c5b55');
@@ -421,10 +427,10 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
   function renderIssues(): void {
     clear(issuesEl);
     const issues = mapIssues(map());
-    const sideName = (s?: number) => (map().seats === 4 && s !== undefined ? t('editor.forSeat', { mark: 'ABCD'[s] ?? '?' }) : t(s === 1 ? 'editor.forEnemy' : 'editor.forOwn'));
+    const sideName = (s?: number) => (map().seats && s !== undefined ? t('editor.forSeat', { mark: 'ABCD'[s] ?? '?' }) : t(s === 1 ? 'editor.forEnemy' : 'editor.forOwn'));
     if (issues.length === 0) issuesEl.append(h('p', { 'data-testid': 'ed-ok' }, t('editor.ok')));
     else issuesEl.append(h('p', {}, t('editor.issues')), h('ul', {}, ...issues.map((i) => h('li', {}, t(i.key, { side: sideName(i.side) })))));
-    issuesEl.append(h('p', { class: 'rc-muted', 'data-testid': 'ed-fair' }, t(map().teams ? 'editor.teamsMap' : isFair(map()) ? (map().seats === 4 ? 'editor.fairFour' : 'editor.fair') : 'editor.unfair')));
+    issuesEl.append(h('p', { class: 'rc-muted', 'data-testid': 'ed-fair' }, t(map().teams ? 'editor.teamsMap' : map().seats === 3 ? 'editor.threeBases' : isFair(map()) ? (map().seats === 4 ? 'editor.fairFour' : 'editor.fair') : 'editor.unfair')));
     playBtn.toggleAttribute('disabled', issues.length > 0);
   }
 
@@ -565,6 +571,8 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
     basesSelect.value = String(seatsOf(draft.map));
     if (side >= seatsOf(draft.map)) side = 0;
     mirrorBox.checked = draft.mirror;
+    // Three bases are never mirrored: the choice is hidden (and kept for the next map).
+    mirrorLabel.hidden = draft.map.seats === 3;
     teamsLabel.hidden = draft.map.seats !== 4;
     teamsBox.checked = draft.map.teams === true;
     renderSupply();
