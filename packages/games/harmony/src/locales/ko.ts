@@ -115,7 +115,7 @@ export const ko: HarmonyMessages = {
   'staff.two': '두 음: {a}, 그다음 {b}',
   'staff.together': '함께 나는 음: {notes}',
   'staff.notes': '음: {notes}',
-  'staff.rhythm': '악보의 리듬: {text}',
+  'staff.rhythm': '악보의 리듬(4/4박자): {text}',
   'staff.cadence': '네 화음: {list}',
   'wave.none': '기본음의 합: 짧게 되풀이되지 않습니다.',
   'keys.name': '피아노 건반',

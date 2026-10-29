@@ -115,7 +115,7 @@ export const uk: HarmonyMessages = {
   'staff.two': 'Два звуки: {a}, потім {b}',
   'staff.together': 'Звуки разом: {notes}',
   'staff.notes': 'Звуки: {notes}',
-  'staff.rhythm': 'Ритм нотами: {text}',
+  'staff.rhythm': 'Ритм нотами, розмір 4/4: {text}',
   'staff.cadence': 'Чотири акорди: {list}',
   'wave.none': 'Сума основних тонів: короткого повтору немає.',
   'keys.name': 'Фортепіанна клавіатура',

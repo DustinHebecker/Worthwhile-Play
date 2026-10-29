@@ -37,6 +37,15 @@ export const content: ContentText = {
   steps: { whole: 'T', half: 'S', three: 'T+S' },
   up: 'sobe',
   down: 'desce',
+  noteValues: {
+    eighth: { single: 'colcheia', count: { other: '{n} colcheias' } },
+    quarter: { single: 'semínima', count: { other: '{n} semínimas' } },
+    'dotted-quarter': { single: 'semínima pontuada', count: { other: '{n} semínimas pontuadas' } },
+    half: { single: 'mínima', count: { other: '{n} mínimas' } },
+    'rest-eighth': { single: 'pausa de colcheia', count: { other: '{n} pausas de colcheia' } },
+    'rest-quarter': { single: 'pausa de semínima', count: { other: '{n} pausas de semínima' } },
+    'rest-half': { single: 'pausa de mínima', count: { other: '{n} pausas de mínima' } }
+  },
   tips: {
     interval: '{a}: {na}; {b}: {nb}. Conte as teclas de uma nota à outra, ou os graus na pauta.',
     chord: 'Conte as terças empilhadas em semitons: {a} é {ta}; {b} é {tb}.',

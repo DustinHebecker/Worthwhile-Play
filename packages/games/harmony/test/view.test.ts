@@ -283,6 +283,25 @@ describe('view (design § 15–16, § 20.3)', () => {
     expect((game.serialize() as QuizState).items[0]!.answer).toEqual({ choice: 1 });
   });
 
+  it('rhythm by eye: the notation is read as note values, the options as grids, so they never match as text', () => {
+    for (const locale of ['en', 'de'] as const)
+      for (const difficulty of LEVELS) {
+        const { root, game } = mount(locale);
+        game.newGame({ seed: 5, settings: { topic: 'rhythm', senses: 'eye' }, difficulty });
+        const label = q(root, 'hm-notation')!.getAttribute('aria-label')!;
+        expect(label).toMatch(locale === 'en' ? /^Rhythm in notation, 4\/4 time: .*(note|rest)/ : /^Rhythmus in Noten, 4\/4-Takt: .*(note|Pause)/);
+        const text = label.slice(label.indexOf(': ') + 2);
+        const options = [...root.querySelectorAll<HTMLElement>('[data-testid="hm-options"] label')];
+        expect(options.length).toBeGreaterThanOrEqual(3);
+        for (const option of options) {
+          const grid = option.querySelector('.hm-grid')!.getAttribute('aria-label')!;
+          const name = `${option.textContent} ${grid}`;
+          expect(name.includes(text) || grid.includes(text), `${locale} ${difficulty}: ${name}`).toBe(false);
+        }
+        document.body.innerHTML = '';
+      }
+  });
+
   it('pause blocks input; reset restarts the same round', () => {
     const { root, game } = mount();
     game.newGame({ seed: 9, settings: { topic: 'rhythm', senses: 'eye' }, difficulty: 'hard' });

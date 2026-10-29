@@ -37,6 +37,15 @@ export const content: ContentText = {
   steps: { whole: 'T', half: '½', three: 'T½' },
   up: 'monte',
   down: 'descend',
+  noteValues: {
+    eighth: { single: 'croche', count: { other: '{n} croches' } },
+    quarter: { single: 'noire', count: { other: '{n} noires' } },
+    'dotted-quarter': { single: 'noire pointée', count: { other: '{n} noires pointées' } },
+    half: { single: 'blanche', count: { other: '{n} blanches' } },
+    'rest-eighth': { single: 'demi-soupir', count: { other: '{n} demi-soupirs' } },
+    'rest-quarter': { single: 'soupir', count: { other: '{n} soupirs' } },
+    'rest-half': { single: 'demi-pause', count: { other: '{n} demi-pauses' } }
+  },
   tips: {
     interval: '{a} : {na} ; {b} : {nb}. Compte les touches d’une note à l’autre, ou les degrés sur la portée.',
     chord: 'Compte les tierces superposées en demi-tons : {a} = {ta}, {b} = {tb}.',

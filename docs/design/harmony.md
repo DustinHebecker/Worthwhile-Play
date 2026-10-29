@@ -239,7 +239,7 @@ One bar of 4/4 on an eighth-note grid (8 slots). A pattern is a list of duration
 - Slot vector: each slot is *onset*, *held* or *silent*. Distance = the number of differing slots. Patterns start with a note on beat 1 (no rest first) on easy and medium.
 - **By ear:** 80 BPM *(calibrate 70–90)*. An optional count-in of 4 soft ticks (preference, default on; the ticks are an octave higher and at half level). Notes are sustained for 85 % of their value on one pitch (G4), so rests are audible as silence. "Slower" plays at 60 BPM. Scheduling uses the audio clock (§ 9.3), so the timing is exact regardless of input latency, and nothing is tapped.
 - **Options** are grids: 8 boxes labelled "1 & 2 & 3 & 4 &". An onset is a filled box with ●, a held note is a bar "━" running from the onset, and a rest is an empty box with "·". This is not colour-only information.
-- **By eye:** the pattern is shown in standard notation (§ 14.3). Choose the grid that matches it. This is reading rhythm notation.
+- **By eye:** the pattern is shown in standard notation (§ 14.3). Choose the grid that matches it. This is reading rhythm notation. For screen readers the notation is named by its note values in the locale's standard terms, runs of equal values counted ("Rhythm in notation, 4/4 time: quarter note, 2 eighth notes, quarter rest, quarter note"; de "Viertelnote, 2 Achtelnoten, Viertelpause, Viertelnote"), while the options keep the grid text ("1: note, &: held, 2: note, …"). The two never share a phrase, so a screen-reader user also has to place the values on the beats instead of matching strings.
 - **Review:** notation and grid aligned, counting syllables under the notes, and "Listen: yours / the answer".
 
 ### 7.6 Build it (keyboard tasks; identical with and without sound)
@@ -540,7 +540,7 @@ A single-line percussion staff (no clef; a "4/4" time signature drawn as text di
 ## 16. Accessibility
 
 - Native buttons, radios and range inputs. Options are a radio group (arrows; the draft is `aria-checked`). Keys are buttons with `aria-pressed` in hold and build modes.
-- **Screen readers:** note names are spoken in words (§ 18.3: "C sharp 4", "Cis 4", "do dièse 4"). Intervals and chords are spoken as full names. The staff `role="img"` has a generated name ("Two notes: E 4, then G sharp 4"). The rhythm grid has a text form ("note on 1, held to 2; note on 3, on 'and', on 4").
+- **Screen readers:** note names are spoken in words (§ 18.3: "C sharp 4", "Cis 4", "do dièse 4"). Intervals and chords are spoken as full names. The staff `role="img"` has a generated name ("Two notes: E 4, then G sharp 4"). The rhythm grid has a text form ("note on 1, held to 2; note on 3, on 'and', on 4"). The rhythm notation is named by its note values (§ 7.5), never by the grid text of the options.
 - **Speech and sound do not compete:** nothing is announced while sound plays. Verdicts are announced politely after Check ("That's it: major third"). Play does not move focus.
 - **By ear works for blind players** (sound plus spoken options). **By eye works for deaf players** (§ 8). The rules text states both honestly.
 - No colour-only information: marks are symbols plus words, rhythm boxes use ● ━ ·, and stability classes are words.
@@ -863,3 +863,7 @@ Music theory verified independently (every interval, chord and scale of 299 seed
 - **Step words**: German GT/HT and Polish 1/½ (G, H and C are note names there).
 - **Wave caption** is a plural content form per locale ("with every wave", "every 2 waves", ru 2 волны / 5 волн).
 - **Level cap**: the overlap count uses the lengthened duration of notes shorter than the attack.
+
+## Follow-up (2026-10-29)
+
+- **Rhythm by eye, screen readers:** the notation's accessible name was the same slot text as the option grids, so the question was string matching. It is now read as note values (`notationText` in `pictures.ts`, terms in `content/<locale>.ts` `noteValues` with plural forms; the label names the 4/4 time). Tests: every pattern of every level in every locale parses back to its slot vector; no notation phrase occurs in any grid text; plural forms for runs of 2–8 per locale.

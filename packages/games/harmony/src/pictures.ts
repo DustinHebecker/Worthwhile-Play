@@ -6,7 +6,7 @@
 import { h } from '@wp/ui';
 import type { Env } from './env';
 import { fill, formatPlural } from './format';
-import { slots } from './rhythm';
+import { notation, slots, type RhythmGlyph } from './rhythm';
 import { CHANGED_POSITIONS, answerIndex, buildAnswerNotes, changedIndex, contourOf, intervalNotes, type Spec } from './spec';
 import { renderRhythm, renderStaff, svg, type StaffEvent } from './staff-view';
 import { midiOf, spellCadence, spellChord, spellChordVoicing, spellScale, type Spelled } from './spelling';
@@ -114,7 +114,7 @@ export function itemPicture(env: Env, spec: Spec, reveal: boolean, chosen?: numb
     }
     case 'rhythm': {
       const pattern = spec.options[spec.answer]!;
-      box.append(renderRhythm(pattern, t('staff.rhythm', { text: gridText(env, pattern) }), 'hm-notation'));
+      box.append(renderRhythm(pattern, t('staff.rhythm', { text: notationText(env, pattern) }), 'hm-notation'));
       if (reveal) box.append(rhythmGrid(env, pattern, 'hm-answer-grid'), h('p', {}, t('review.counting', { text: countingText(env, pattern) })));
       break;
     }
@@ -235,6 +235,21 @@ export const stepPattern = (env: Env, s: Parameters<typeof scaleStepSizes>[0]): 
   scaleStepSizes(s).map((d) => (d === 1 ? env.c.steps.half : d === 2 ? env.c.steps.whole : env.c.steps.three)).join(' ');
 
 /* ---------- Rhythm grids (design § 7.5) ---------- */
+
+/**
+ * The notation read as note values for screen readers (by eye, § 7.5): "quarter note, 2 eighth notes, quarter rest,
+ * half note". Runs of equal values are counted. Deliberately not the grid text of the options ("1: note, &: held, …"):
+ * matching them means placing each value on the beat grid, which is the reading task sighted players do.
+ */
+export function notationText(env: Env, pattern: readonly number[]): string {
+  const runs: { glyph: RhythmGlyph; n: number }[] = [];
+  for (const e of notation(pattern)) {
+    const last = runs[runs.length - 1];
+    if (last?.glyph === e.glyph) last.n++;
+    else runs.push({ glyph: e.glyph, n: 1 });
+  }
+  return listOf(runs.map(({ glyph, n }) => (n === 1 ? env.c.noteValues[glyph].single : formatPlural(env.c.noteValues[glyph].count, n, env.locale))));
+}
 
 /** Counting syllables of the 8 slots: 1 & 2 & 3 & 4 &. */
 export const countSyllables = (env: Env): string[] => [1, 2, 3, 4].flatMap((b) => [env.int(b), env.t('grid.and')]);

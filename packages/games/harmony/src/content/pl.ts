@@ -37,6 +37,15 @@ export const content: ContentText = {
   steps: { whole: '1', half: '½', three: '1½' },
   up: 'w górę',
   down: 'w dół',
+  noteValues: {
+    eighth: { single: 'ósemka', count: { few: '{n} ósemki', many: '{n} ósemek', other: '{n} ósemki' } },
+    quarter: { single: 'ćwierćnuta', count: { few: '{n} ćwierćnuty', many: '{n} ćwierćnut', other: '{n} ćwierćnuty' } },
+    'dotted-quarter': { single: 'ćwierćnuta z kropką', count: { few: '{n} ćwierćnuty z kropką', many: '{n} ćwierćnut z kropką', other: '{n} ćwierćnuty z kropką' } },
+    half: { single: 'półnuta', count: { few: '{n} półnuty', many: '{n} półnut', other: '{n} półnuty' } },
+    'rest-eighth': { single: 'pauza ósemkowa', count: { few: '{n} pauzy ósemkowe', many: '{n} pauz ósemkowych', other: '{n} pauzy ósemkowe' } },
+    'rest-quarter': { single: 'pauza ćwierćnutowa', count: { few: '{n} pauzy ćwierćnutowe', many: '{n} pauz ćwierćnutowych', other: '{n} pauzy ćwierćnutowe' } },
+    'rest-half': { single: 'pauza półnutowa', count: { few: '{n} pauzy półnutowe', many: '{n} pauz półnutowych', other: '{n} pauzy półnutowe' } }
+  },
   tips: {
     interval: '{a}: {na}; {b}: {nb}. Policz klawisze od jednej nuty do drugiej albo stopnie na pięciolinii.',
     chord: 'Policz nałożone tercje w półtonach: {a} to {ta}, {b} to {tb}.',

@@ -41,6 +41,15 @@ export const content: ContentText = {
   steps: { whole: 'W', half: 'H', three: 'W+H' },
   up: 'up',
   down: 'down',
+  noteValues: {
+    eighth: { single: 'eighth note', count: { other: '{n} eighth notes' } },
+    quarter: { single: 'quarter note', count: { other: '{n} quarter notes' } },
+    'dotted-quarter': { single: 'dotted quarter note', count: { other: '{n} dotted quarter notes' } },
+    half: { single: 'half note', count: { other: '{n} half notes' } },
+    'rest-eighth': { single: 'eighth rest', count: { other: '{n} eighth rests' } },
+    'rest-quarter': { single: 'quarter rest', count: { other: '{n} quarter rests' } },
+    'rest-half': { single: 'half rest', count: { other: '{n} half rests' } }
+  },
   tips: {
     interval: '{a} has {na}, {b} has {nb}. Count the keys from one note to the other, or the steps on the staff.',
     chord: 'Count the stacked thirds in semitones: {a} is {ta}, {b} is {tb}.',

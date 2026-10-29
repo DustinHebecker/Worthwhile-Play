@@ -37,6 +37,15 @@ export const content: ContentText = {
   steps: { whole: 'T', half: 'Y', three: 'T+Y' },
   up: 'yukarı',
   down: 'aşağı',
+  noteValues: {
+    eighth: { single: 'sekizlik nota', count: { other: '{n} sekizlik nota' } },
+    quarter: { single: 'dörtlük nota', count: { other: '{n} dörtlük nota' } },
+    'dotted-quarter': { single: 'noktalı dörtlük nota', count: { other: '{n} noktalı dörtlük nota' } },
+    half: { single: 'ikilik nota', count: { other: '{n} ikilik nota' } },
+    'rest-eighth': { single: 'sekizlik sus', count: { other: '{n} sekizlik sus' } },
+    'rest-quarter': { single: 'dörtlük sus', count: { other: '{n} dörtlük sus' } },
+    'rest-half': { single: 'ikilik sus', count: { other: '{n} ikilik sus' } }
+  },
   tips: {
     interval: '{a}: {na}; {b}: {nb}. Bir notadan diğerine tuşları ya da porte üzerindeki basamakları say.',
     chord: 'Üst üste binen üçlüleri yarım ses olarak say: {a} {ta}, {b} {tb}.',
