@@ -258,10 +258,11 @@ export interface RcState {
 
 /**
  * The styles a computer side may play (owner decision 2026-10-29: "der Seed entscheidet pro Gegner
- * zufällig", `Style` in ai.ts): spreading its attacks over the enemies by distance (A) or keeping a
- * guard at home while other enemies are near (B). Both only matter against two or more enemies.
+ * zufällig", `Style` in ai.ts): spreading its attacks over the enemies by distance (A), keeping a
+ * guard at home while other enemies are near (B), or both (owner decision 2026-10-29: "die Kombination
+ * A+B sollte explizit auch möglich sein"). All only matter against two or more enemies.
  */
-export const OPPONENT_STYLES: readonly Style[] = ['spread', 'guarded'];
+export const OPPONENT_STYLES: readonly Style[] = ['spread', 'guarded', 'both'];
 
 /** The style a computer side plays: drawn once per game from its seed and the side (never Math.random). */
 export const styleOf = (state: Pick<RcState, 'seed'>, side: number): Style =>
