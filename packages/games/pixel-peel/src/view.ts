@@ -686,6 +686,40 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
     }
   };
 
+  /**
+   * Fonts differ between devices: on a phone a text that does not fit its fixed box steps its font down, 0.875 →
+   * 0.8 → 0.75 rem (`data-fit` 0–2, styles.css), and only then scrolls inside. Measured after each text change (a
+   * mutation observer, so every way the text changes is covered) and on mount and resize: one layout read each.
+   */
+  const fitSteps = (el: HTMLElement, overflows: () => boolean) => {
+    if (!compact || !el.isConnected) {
+      if (el.hasAttribute('data-fit')) el.removeAttribute('data-fit');
+      return;
+    }
+    el.dataset.fit = '0';
+    for (let k = 1; k <= 2 && overflows(); k++) el.dataset.fit = String(k);
+  };
+  const fitStatus = () => fitSteps(status, () => status.scrollHeight > status.clientHeight + 1);
+  const fitActions = () =>
+    fitSteps(actions, () =>
+      [...actions.querySelectorAll<HTMLButtonElement>('button')].some((b) => {
+        if (b.hidden) return false;
+        const label = b.querySelector<HTMLElement>('.pp-label');
+        if (!label) return false;
+        const cs = getComputedStyle(b);
+        const room = b.clientHeight - (parseFloat(cs.paddingTop) || 0) - (parseFloat(cs.paddingBottom) || 0);
+        return label.offsetHeight > room + 1 || label.scrollWidth > label.clientWidth + 1;
+      })
+    );
+  const fitObservers: MutationObserver[] = [];
+  if (typeof MutationObserver === 'function') {
+    const onStatus = new MutationObserver(() => fitStatus());
+    onStatus.observe(status, { childList: true, characterData: true, subtree: true });
+    const onActions = new MutationObserver(() => fitActions());
+    onActions.observe(actions, { childList: true, characterData: true, subtree: true, attributes: true, attributeFilter: ['hidden'] });
+    fitObservers.push(onStatus, onActions);
+  }
+
   const showPreview = (move: Move | null) => {
     if (previewMove === move) return;
     // Any input jumps an animation to its end (design § 7.5), so the preview shows the real position.
@@ -1475,6 +1509,8 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
     cssCache = new Map();
     compact = stickyTop();
     update();
+    fitStatus();
+    fitActions();
   };
   container.addEventListener('keydown', onKeyDown);
   document.addEventListener('pointerdown', onPointerDown);
@@ -1520,6 +1556,8 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
     if (!container.isConnected) context.root.appendChild(container);
     colours.open = wide();
     update();
+    fitStatus();
+    fitActions();
   };
 
   return {
@@ -1560,6 +1598,7 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
       dropAnimations();
       cancelHint();
       cancelStuckSafe();
+      for (const o of fitObservers) o.disconnect();
       container.removeEventListener('keydown', onKeyDown);
       document.removeEventListener('pointerdown', onPointerDown);
       if (typeof window !== 'undefined') window.removeEventListener('resize', onResize);

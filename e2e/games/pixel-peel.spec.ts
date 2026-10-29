@@ -417,32 +417,51 @@ test('pixel-peel: on a phone the stuck notice is a card over the picture; the la
   expect((await saved(page)).moves).toHaveLength(run.moves.length);
 });
 
-test('pixel-peel: the 3-line status holds the longest result and preview texts of every locale at 360 px', async ({ page }, info) => {
+/**
+ * Fonts differ between devices (and between this container and CI). The status and the action row fit themselves
+ * (steps down to 0.75 rem); the tests check that behaviour with the normal font and with a wider one (letter-spacing
+ * 0.05 em), so they catch real-device variance instead of depending on exact font metrics.
+ */
+const WIDER_FONT = '.wp-pixel-peel, .wp-pixel-peel * { letter-spacing: 0.05em !important; }';
+
+test('pixel-peel: the status fits its box with the longest result and preview texts of every locale at 360 px, also with a wider font', async ({ page }, info) => {
   test.skip(info.project.name !== 'desktop', 'viewport sizes are set explicitly');
   await page.setViewportSize({ width: 360, height: 640 });
   await startGame(page, ID, { difficulty: 'hard', settings: { motif: 'red-fox' } });
   await savedState(page);
-  for (const [locale, cat] of Object.entries(messages as Record<string, Record<string, string>>)) {
-    const colour = Object.entries(cat).filter(([k]) => k.startsWith('colour.')).map(([, v]) => v).reduce((a, b) => (b.length > a.length ? b : a));
-    const fill = (text: string, extra: Record<string, string> = {}) =>
-      text.replace(/\{(\w+)\}/g, (_, k: string) => extra[k] ?? ({ shooter: `${colour} 88`, n: '88', left: '88', slot: '4', lane: '4', k: '188' } as Record<string, string>)[k] ?? '88');
-    const reason = [cat['reason.noSlot']!, cat['reason.nothing']!].map((r) => fill(r)).reduce((a, b) => (b.length > a.length ? b : a));
-    const texts = Object.entries(cat)
-      .filter(([k]) => k.startsWith('preview.') || k.startsWith('result.') || k === 'hint.lane' || k === 'status.startShort')
-      .map(([k, v]) => fill(v, { reason }) + (k.startsWith('preview.') ? ` ${cat['confirm.again'] ?? ''}` : ''));
-    const overflow = await root(page).getByTestId('pp-status').evaluate((el, list) => {
-      const bad: string[] = [];
-      for (const text of list) {
-        el.textContent = text;
-        if (el.scrollHeight > el.clientHeight + 1) bad.push(text);
-      }
-      return bad;
-    }, texts);
-    expect(overflow, locale).toEqual([]);
+  const status = root(page).getByTestId('pp-status');
+  const box = (await status.boundingBox())!;
+  for (const wider of [false, true]) {
+    if (wider) await page.addStyleTag({ content: WIDER_FONT });
+    for (const [locale, cat] of Object.entries(messages as Record<string, Record<string, string>>)) {
+      const colour = Object.entries(cat).filter(([k]) => k.startsWith('colour.')).map(([, v]) => v).reduce((a, b) => (b.length > a.length ? b : a));
+      const fill = (text: string, extra: Record<string, string> = {}) =>
+        text.replace(/\{(\w+)\}/g, (_, k: string) => extra[k] ?? ({ shooter: `${colour} 88`, n: '88', left: '88', slot: '4', lane: '4', k: '188' } as Record<string, string>)[k] ?? '88');
+      const reason = [cat['reason.noSlot']!, cat['reason.nothing']!].map((r) => fill(r)).reduce((a, b) => (b.length > a.length ? b : a));
+      const texts = Object.entries(cat)
+        .filter(([k]) => k.startsWith('preview.') || k.startsWith('result.') || k === 'hint.lane' || k === 'status.startShort')
+        .map(([k, v]) => fill(v, { reason }) + (k.startsWith('preview.') ? ` ${cat['confirm.again'] ?? ''}` : ''));
+      const problems = await status.evaluate(async (el, list) => {
+        const bad: string[] = [];
+        for (const text of list) {
+          el.textContent = text;
+          // The view fits the text after each change (a mutation observer, before the next frame).
+          await new Promise((r) => requestAnimationFrame(r));
+          const size = parseFloat(getComputedStyle(el).fontSize);
+          if (el.scrollHeight > el.clientHeight + 1) bad.push(`overflows at ${size} px: ${text}`);
+          if (size < 12) bad.push(`font ${size} px below 0.75 rem: ${text}`);
+        }
+        return bad;
+      }, texts);
+      expect(problems, `${locale}${wider ? ', wider font' : ''}`).toEqual([]);
+      // The box itself never changes: nothing below it moves.
+      const now = (await status.boundingBox())!;
+      expect(Math.abs(now.height - box.height) + Math.abs(now.y - box.y)).toBeLessThanOrEqual(1);
+    }
   }
 });
 
-test('pixel-peel: the action row holds Undo, Hint, Display and Finish peeling of every locale in one row at 360 px', async ({ page }, info) => {
+test('pixel-peel: the action row holds Undo, Hint, Display and Finish peeling of every locale in one row at 360 px, also with a wider font', async ({ page }, info) => {
   test.skip(info.project.name !== 'desktop', 'viewport sizes are set explicitly');
   await page.addInitScript(() => localStorage.setItem('wp:pref:pixel-peel:display', JSON.stringify({ confirm: false, peel: 'slow' })));
   await page.setViewportSize({ width: 360, height: 640 });
@@ -451,30 +470,38 @@ test('pixel-peel: the action row holds Undo, Hint, Display and Finish peeling of
   const height = (await root(page).getByTestId('pp-actions').boundingBox())!.height;
   for (const move of state.witness.slice(0, 4)) await buttonFor(page, move).click();
   await expect(root(page).getByTestId('pp-finish-peeling')).toBeVisible();
-  for (const [locale, cat] of Object.entries(messages as Record<string, Record<string, string>>)) {
-    const common = (COMMON_MESSAGES as Record<string, Record<string, string>>)[locale]!;
-    const labels = [common['common.undo']!, common['common.hint']!, cat['action.display']!, cat['action.finishPeeling']!];
-    const problems = await root(page).locator('.wp-pixel-peel').evaluate((el, [lang, list]) => {
-      el.setAttribute('lang', lang as string);
-      const out: string[] = [];
-      const row = el.querySelector('[data-testid="pp-actions"]') as HTMLElement;
-      const buttons = ['pp-undo', 'pp-hint', 'pp-display', 'pp-finish-peeling'].map((id) => el.querySelector(`[data-testid="${id}"]`) as HTMLElement);
-      buttons.forEach((b, i) => (b.querySelector('.pp-label')!.textContent = (list as string[])[i]!));
-      const r = row.getBoundingClientRect();
-      for (const b of buttons) {
-        const box = b.getBoundingClientRect();
-        if (box.left < r.left - 0.5 || box.right > r.right + 0.5) out.push(`${b.dataset.testid} outside the row`);
-        if (box.width < 44 || box.height < 44) out.push(`${b.dataset.testid} smaller than 44 px`);
-        const range = document.createRange();
-        range.selectNodeContents(b.querySelector('.pp-label')!);
-        if ([...range.getClientRects()].some((x) => x.left < box.left - 0.5 || x.right > box.right + 0.5)) out.push(`${b.dataset.testid}: "${b.textContent}" spills out`);
-      }
-      return { out, height: r.height, scroll: document.documentElement.scrollWidth - document.documentElement.clientWidth };
-    }, [locale, labels] as const);
-    expect(problems.out, locale).toEqual([]);
-    // Finish peeling comes and goes during play: the row (and so the play unit) keeps its height in every locale.
-    expect(problems.height, locale).toBeLessThanOrEqual(height + 0.5);
-    expect(problems.scroll, locale).toBeLessThanOrEqual(0);
+  for (const wider of [false, true]) {
+    if (wider) await page.addStyleTag({ content: WIDER_FONT });
+    for (const [locale, cat] of Object.entries(messages as Record<string, Record<string, string>>)) {
+      const common = (COMMON_MESSAGES as Record<string, Record<string, string>>)[locale]!;
+      const labels = [common['common.undo']!, common['common.hint']!, cat['action.display']!, cat['action.finishPeeling']!];
+      const problems = await root(page).locator('.wp-pixel-peel').evaluate(async (el, [lang, list]) => {
+        el.setAttribute('lang', lang as string);
+        const out: string[] = [];
+        const row = el.querySelector('[data-testid="pp-actions"]') as HTMLElement;
+        const buttons = ['pp-undo', 'pp-hint', 'pp-display', 'pp-finish-peeling'].map((id) => el.querySelector(`[data-testid="${id}"]`) as HTMLElement);
+        buttons.forEach((b, i) => (b.querySelector('.pp-label')!.textContent = (list as string[])[i]!));
+        // The view fits the row after each change (a mutation observer, before the next frame).
+        await new Promise((r) => requestAnimationFrame(r));
+        const r = row.getBoundingClientRect();
+        for (const b of buttons) {
+          const box = b.getBoundingClientRect();
+          if (box.left < r.left - 0.5 || box.right > r.right + 0.5) out.push(`${b.dataset.testid} outside the row`);
+          if (box.width < 44 || box.height < 44) out.push(`${b.dataset.testid} smaller than 44 px`);
+          const size = parseFloat(getComputedStyle(b).fontSize);
+          if (size < 12) out.push(`${b.dataset.testid}: font ${size} px below 0.75 rem`);
+          const range = document.createRange();
+          range.selectNodeContents(b.querySelector('.pp-label')!);
+          const rects = [...range.getClientRects()];
+          if (rects.some((x) => x.left < box.left - 0.5 || x.right > box.right + 0.5 || x.top < box.top - 0.5 || x.bottom > box.bottom + 0.5)) out.push(`${b.dataset.testid}: "${b.textContent}" spills out at ${size} px`);
+        }
+        return { out, height: r.height, scroll: document.documentElement.scrollWidth - document.documentElement.clientWidth };
+      }, [locale, labels] as const);
+      expect(problems.out, `${locale}${wider ? ', wider font' : ''}`).toEqual([]);
+      // Finish peeling comes and goes during play: the row (and so the play unit) keeps its height in every locale.
+      expect(problems.height, locale).toBeLessThanOrEqual(height + 0.5);
+      expect(problems.scroll, locale).toBeLessThanOrEqual(0);
+    }
   }
 });
 
