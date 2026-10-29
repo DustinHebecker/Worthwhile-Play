@@ -2,7 +2,10 @@ import { expect, test, type Page } from '@playwright/test';
 import { expectResumeAfterReload, readSave, startGame } from '../../packages/testing/src/e2e';
 import { decodeAtlas } from '../../packages/games/atlas-explorer/src/atlas';
 import { ATLAS_DATA } from '../../packages/games/atlas-explorer/src/data/atlas.gen';
+import { content as en } from '../../packages/games/atlas-explorer/src/content/en';
+import { content as uk } from '../../packages/games/atlas-explorer/src/content/uk';
 import { project } from '../../packages/games/atlas-explorer/src/geo';
+import { createRound } from '../../packages/games/atlas-explorer/src/rules';
 import type { AtlasState, FindItem, MysteryItem, RouteItem } from '../../packages/games/atlas-explorer/src/state';
 
 const ID = 'atlas-explorer';
@@ -192,4 +195,44 @@ test('atlas-explorer: Arabic is right-to-left, the map is not mirrored', async (
   expect(w.x).toBeLessThan(e.x);
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(0);
+});
+
+/** Switches the UI language through the header menu (re-renders the current page). */
+async function switchLanguage(page: Page, locale: string): Promise<void> {
+  await page.getByTestId('language-menu').locator('summary').click();
+  await page.getByTestId('header-language').selectOption(locale);
+  await expect(page.locator('html')).toHaveAttribute('lang', locale);
+}
+
+test('atlas-explorer: the texts and names of a language never loaded before are available offline (precached)', async ({ page, context }) => {
+  // A seed whose first item asks for a river, lake, range… (named by the per-locale content, not by CLDR or a deck).
+  const seed = Array.from({ length: 500 }, (_, i) => i + 1).find((n) => (createRound(n, 'easy', 'find', 'world', atlas).items[0] as FindItem).target.t === 'feature')!;
+  const target = (createRound(seed, 'easy', 'find', 'world', atlas).items[0] as FindItem).target as { t: 'feature'; id: string };
+  const kind = `kindOf.${atlas.feature(target.id)!.kind}` as keyof typeof en.text;
+  const title = (c: typeof en) => c.text['find.title'].replace('{kind}', c.text[kind]).replace('{name}', c.names[target.id]!);
+  expect(uk.names[target.id]).not.toBe(en.names[target.id]);
+
+  await page.goto(`/games/${ID}`);
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+  });
+  await page.reload();
+  await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true);
+  // Start once to remember the settings, then the seed's round by its link; reopen the page without the link.
+  await startGame(page, ID, { difficulty: 'easy', settings: { mode: 'find', region: 'world' } });
+  await page.goto(`/games/${ID}?seed=${seed}`);
+  await expect(page.locator('#ae-item-heading')).toHaveText(title(en));
+  await page.goto(`/games/${ID}`);
+  await page.getByTestId('continue').click();
+  await expect(page.getByTestId('ae-skip')).toHaveText(en.text['action.skip']);
+
+  await context.setOffline(true);
+  // The game page re-renders in Ukrainian; its texts and names come from a chunk that was never requested before.
+  await switchLanguage(page, 'uk');
+  await page.getByTestId('continue').click();
+  await expect(page.locator('#ae-item-heading')).toHaveText(title(uk));
+  await expect(page.getByTestId('ae-skip')).toHaveText(uk.text['action.skip']);
+  await page.getByTestId('ae-skip').click();
+  await expect(page.getByTestId('ae-next')).toHaveText(uk.text['action.next']);
+  await context.setOffline(false);
 });

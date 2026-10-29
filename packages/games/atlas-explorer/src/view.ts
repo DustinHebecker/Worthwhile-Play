@@ -4,7 +4,7 @@
  */
 import { bcp47Tag, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
 import { announce, clear, h } from '@wp/ui';
-import { contentFor } from './content';
+import { contentFor, withContent } from './content';
 import { atlasSync } from './data';
 import type { DistanceUnit } from './format';
 import { createMapView, type Scene } from './map-view';
@@ -22,7 +22,9 @@ import './styles.css';
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
 export function createAtlasExplorer(context: GameContext): GameInstance<AtlasState> {
-  const { t, root } = context;
+  const { root } = context;
+  // In-game texts come from the preloaded per-locale content (ADR 0011), the rest from the host.
+  const t = withContent(context.t);
   const atlas = atlasSync();
   const pref = <T extends string>(key: string, allowed: readonly T[], fallback: T): T => {
     try {

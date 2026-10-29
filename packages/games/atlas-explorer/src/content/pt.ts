@@ -1,6 +1,7 @@
 import type { ContentText } from './types';
+import { text } from './text/pt';
 
-/** Brazilian Portuguese names and sentences of Atlas Explorer (design § 13.2; capitals of the *Capitals* deck come from `capitalName`). */
+/** Brazilian Portuguese names, sentences and in-game texts of Atlas Explorer (design § 13.2; capitals of the *Capitals* deck come from `capitalName`). */
 export const content: ContentText = {
   names: {
     "new-york": "Nova York",
@@ -197,5 +198,6 @@ export const content: ContentText = {
     "urals": "Costumam ser considerados parte do limite entre a Europa e a Ásia.",
     "victoria": "O maior lago da África; o Nilo sai dele em direção ao norte.",
     "yangtze": "O rio mais longo da Ásia."
-  }
+  },
+  text
 };

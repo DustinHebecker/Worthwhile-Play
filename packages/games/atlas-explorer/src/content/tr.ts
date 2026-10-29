@@ -1,6 +1,7 @@
 import type { ContentText } from './types';
+import { text } from './text/tr';
 
-/** Turkish names and sentences of Atlas Explorer (design § 13.2; capitals of the *Capitals* deck come from `capitalName`). */
+/** Turkish names, sentences and in-game texts of Atlas Explorer (design § 13.2; capitals of the *Capitals* deck come from `capitalName`). */
 export const content: ContentText = {
   names: {
     "new-york": "New York",
@@ -197,5 +198,6 @@ export const content: ContentText = {
     "urals": "Genellikle Avrupa ile Asya arasındaki sınırın bir parçası sayılır.",
     "victoria": "Afrika'nın en büyük gölü; Nil kuzeye doğru buradan çıkar.",
     "yangtze": "Asya'nın en uzun nehri."
-  }
+  },
+  text
 };

@@ -1,6 +1,7 @@
 import type { ContentText } from './types';
+import { text } from './text/zh-Hans';
 
-/** Simplified Chinese names and sentences of Atlas Explorer (design § 13.2; capitals of the *Capitals* deck come from `capitalName`). */
+/** Simplified Chinese names, sentences and in-game texts of Atlas Explorer (design § 13.2; capitals of the *Capitals* deck come from `capitalName`). */
 export const content: ContentText = {
   names: {
     "new-york": "纽约",
@@ -197,5 +198,6 @@ export const content: ContentText = {
     "urals": "通常被视为欧洲和亚洲分界线的一部分。",
     "victoria": "非洲最大的湖泊；尼罗河从这里向北流出。",
     "yangtze": "亚洲最长的河流。"
-  }
+  },
+  text
 };
