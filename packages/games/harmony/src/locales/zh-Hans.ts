@@ -115,7 +115,7 @@ export const zhHans: HarmonyMessages = {
   'staff.two': '两个音：{a}，然后 {b}',
   'staff.together': '同时的音：{notes}',
   'staff.notes': '音：{notes}',
-  'staff.rhythm': '乐谱中的节奏：{text}',
+  'staff.rhythm': '乐谱中的节奏（4/4拍）：{text}',
   'staff.cadence': '四个和弦：{list}',
   'wave.none': '基音之和：没有短周期重复。',
   'keys.name': '钢琴键盘',

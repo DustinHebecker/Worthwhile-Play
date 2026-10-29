@@ -37,6 +37,15 @@ export const content: ContentText = {
   steps: { whole: 'Т', half: 'П', three: 'Т+П' },
   up: 'вгору',
   down: 'вниз',
+  noteValues: {
+    eighth: { single: 'восьма нота', count: { few: '{n} восьмі ноти', many: '{n} восьмих нот', other: '{n} восьмі ноти' } },
+    quarter: { single: 'четвертна нота', count: { few: '{n} четвертні ноти', many: '{n} четвертних нот', other: '{n} четвертні ноти' } },
+    'dotted-quarter': { single: 'четвертна нота з крапкою', count: { few: '{n} четвертні ноти з крапкою', many: '{n} четвертних нот з крапкою', other: '{n} четвертні ноти з крапкою' } },
+    half: { single: 'половинна нота', count: { few: '{n} половинні ноти', many: '{n} половинних нот', other: '{n} половинні ноти' } },
+    'rest-eighth': { single: 'восьма пауза', count: { few: '{n} восьмі паузи', many: '{n} восьмих пауз', other: '{n} восьмі паузи' } },
+    'rest-quarter': { single: 'четвертна пауза', count: { few: '{n} четвертні паузи', many: '{n} четвертних пауз', other: '{n} четвертні паузи' } },
+    'rest-half': { single: 'половинна пауза', count: { few: '{n} половинні паузи', many: '{n} половинних пауз', other: '{n} половинні паузи' } }
+  },
   tips: {
     interval: '{a}: {na}; {b}: {nb}. Порахуй клавіші від однієї ноти до іншої або щаблі на нотному стані.',
     chord: 'Порахуй терції в півтонах: {a} — {ta}, {b} — {tb}.',

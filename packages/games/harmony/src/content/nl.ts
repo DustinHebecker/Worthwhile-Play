@@ -37,6 +37,15 @@ export const content: ContentText = {
   steps: { whole: 'H', half: '½', three: 'H+½' },
   up: 'omhoog',
   down: 'omlaag',
+  noteValues: {
+    eighth: { single: 'achtste noot', count: { other: '{n} achtste noten' } },
+    quarter: { single: 'kwartnoot', count: { other: '{n} kwartnoten' } },
+    'dotted-quarter': { single: 'gepunteerde kwartnoot', count: { other: '{n} gepunteerde kwartnoten' } },
+    half: { single: 'halve noot', count: { other: '{n} halve noten' } },
+    'rest-eighth': { single: 'achtste rust', count: { other: '{n} achtste rusten' } },
+    'rest-quarter': { single: 'kwartrust', count: { other: '{n} kwartrusten' } },
+    'rest-half': { single: 'halve rust', count: { other: '{n} halve rusten' } }
+  },
   tips: {
     interval: '{a} heeft {na}, {b} heeft {nb}. Tel de toetsen van de ene noot naar de andere, of de stappen op de notenbalk.',
     chord: 'Tel de gestapelde tertsen in halve tonen: {a} is {ta}, {b} is {tb}.',

@@ -37,6 +37,15 @@ export const content: ContentText = {
   steps: { whole: 'T', half: 'S', three: 'T+S' },
   up: 'sube',
   down: 'baja',
+  noteValues: {
+    eighth: { single: 'corchea', count: { other: '{n} corcheas' } },
+    quarter: { single: 'negra', count: { other: '{n} negras' } },
+    'dotted-quarter': { single: 'negra con puntillo', count: { other: '{n} negras con puntillo' } },
+    half: { single: 'blanca', count: { other: '{n} blancas' } },
+    'rest-eighth': { single: 'silencio de corchea', count: { other: '{n} silencios de corchea' } },
+    'rest-quarter': { single: 'silencio de negra', count: { other: '{n} silencios de negra' } },
+    'rest-half': { single: 'silencio de blanca', count: { other: '{n} silencios de blanca' } }
+  },
   tips: {
     interval: '{a}: {na}; {b}: {nb}. Cuenta las teclas de una nota a la otra, o los pasos en el pentagrama.',
     chord: 'Cuenta las terceras apiladas en semitonos: {a} es {ta}; {b} es {tb}.',

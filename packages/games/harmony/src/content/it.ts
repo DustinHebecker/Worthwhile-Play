@@ -37,6 +37,15 @@ export const content: ContentText = {
   steps: { whole: 'T', half: 'S', three: 'T+S' },
   up: 'sale',
   down: 'scende',
+  noteValues: {
+    eighth: { single: 'croma', count: { other: '{n} crome' } },
+    quarter: { single: 'semiminima', count: { other: '{n} semiminime' } },
+    'dotted-quarter': { single: 'semiminima puntata', count: { other: '{n} semiminime puntate' } },
+    half: { single: 'minima', count: { other: '{n} minime' } },
+    'rest-eighth': { single: 'pausa di croma', count: { other: '{n} pause di croma' } },
+    'rest-quarter': { single: 'pausa di semiminima', count: { other: '{n} pause di semiminima' } },
+    'rest-half': { single: 'pausa di minima', count: { other: '{n} pause di minima' } }
+  },
   tips: {
     interval: '{a}: {na}; {b}: {nb}. Conta i tasti da una nota all’altra, o i gradi sul pentagramma.',
     chord: 'Conta le terze sovrapposte in semitoni: {a} è {ta}, {b} è {tb}.',

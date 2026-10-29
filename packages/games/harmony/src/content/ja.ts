@@ -37,6 +37,15 @@ export const content: ContentText = {
   steps: { whole: '全', half: '半', three: '全+半' },
   up: '上がる',
   down: '下がる',
+  noteValues: {
+    eighth: { single: '八分音符', count: { other: '八分音符{n}つ' } },
+    quarter: { single: '四分音符', count: { other: '四分音符{n}つ' } },
+    'dotted-quarter': { single: '付点四分音符', count: { other: '付点四分音符{n}つ' } },
+    half: { single: '二分音符', count: { other: '二分音符{n}つ' } },
+    'rest-eighth': { single: '八分休符', count: { other: '八分休符{n}つ' } },
+    'rest-quarter': { single: '四分休符', count: { other: '四分休符{n}つ' } },
+    'rest-half': { single: '二分休符', count: { other: '二分休符{n}つ' } }
+  },
   tips: {
     interval: '{a}は{na}、{b}は{nb}です。一方の音からもう一方の音まで鍵盤を数えるか、五線上の段を数えましょう。',
     chord: '積み重なった3度を半音で数えましょう。{a}は{ta}、{b}は{tb}です。',

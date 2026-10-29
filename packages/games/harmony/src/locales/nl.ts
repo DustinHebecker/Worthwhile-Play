@@ -115,7 +115,7 @@ export const nl: HarmonyMessages = {
   'staff.two': 'Twee tonen: {a}, dan {b}',
   'staff.together': 'Tonen samen: {notes}',
   'staff.notes': 'Tonen: {notes}',
-  'staff.rhythm': 'Ritme in notenschrift: {text}',
+  'staff.rhythm': 'Ritme in notenschrift, 4/4-maat: {text}',
   'staff.cadence': 'Vier akkoorden: {list}',
   'wave.none': 'Som van de grondtonen: geen korte herhaling.',
   'keys.name': 'Klavier',

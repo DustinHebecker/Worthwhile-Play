@@ -37,6 +37,15 @@ export const content: ContentText = {
   steps: { whole: 'W', half: 'H', three: 'W+H' },
   up: 'ऊपर',
   down: 'नीचे',
+  noteValues: {
+    eighth: { single: 'एट्थ नोट', count: { other: '{n} एट्थ नोट' } },
+    quarter: { single: 'क्वार्टर नोट', count: { other: '{n} क्वार्टर नोट' } },
+    'dotted-quarter': { single: 'डॉटेड क्वार्टर नोट', count: { other: '{n} डॉटेड क्वार्टर नोट' } },
+    half: { single: 'हाफ़ नोट', count: { other: '{n} हाफ़ नोट' } },
+    'rest-eighth': { single: 'एट्थ रेस्ट', count: { other: '{n} एट्थ रेस्ट' } },
+    'rest-quarter': { single: 'क्वार्टर रेस्ट', count: { other: '{n} क्वार्टर रेस्ट' } },
+    'rest-half': { single: 'हाफ़ रेस्ट', count: { other: '{n} हाफ़ रेस्ट' } }
+  },
   tips: {
     interval: '{a}: {na}; {b}: {nb}। एक स्वर से दूसरे तक कुंजियाँ गिनें, या स्टाफ़ पर सीढ़ियाँ।',
     chord: 'एक-दूसरे पर रखे थर्ड को सेमिटोन में गिनें: {a} = {ta}, {b} = {tb}।',

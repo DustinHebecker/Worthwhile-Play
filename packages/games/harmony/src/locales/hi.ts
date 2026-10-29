@@ -115,7 +115,7 @@ export const hi: HarmonyMessages = {
   'staff.two': 'दो स्वर: {a}, फिर {b}',
   'staff.together': 'साथ बजते स्वर: {notes}',
   'staff.notes': 'स्वर: {notes}',
-  'staff.rhythm': 'स्वरलिपि में लय: {text}',
+  'staff.rhythm': 'स्वरलिपि में लय, 4/4 टाइम सिग्नेचर: {text}',
   'staff.cadence': 'चार कॉर्ड: {list}',
   'wave.none': 'मूल स्वरों का योग: कोई छोटी पुनरावृत्ति नहीं।',
   'keys.name': 'पियानो कीबोर्ड',

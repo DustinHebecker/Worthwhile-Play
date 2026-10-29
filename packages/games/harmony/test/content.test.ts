@@ -19,7 +19,7 @@ function leaves(value: unknown, path = ''): [string, string][] {
   if (value && typeof value === 'object') return Object.entries(value).flatMap(([k, v]) => leaves(v, path ? `${path}.${k}` : k));
   return [];
 }
-const isPlural = (path: string) => /^(semitones|cents|waveRepeat)\./.test(path);
+const isPlural = (path: string) => /^(semitones|cents|waveRepeat)\./.test(path) || /^noteValues\.[\w-]+\.count\./.test(path);
 
 describe('content (design § 18.1)', () => {
   it('every locale has the same terms, tips and lines as English, with the same placeholders', () => {

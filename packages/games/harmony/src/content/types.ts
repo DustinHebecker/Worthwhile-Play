@@ -1,4 +1,5 @@
 import type { QuizTopic } from '../levels';
+import type { RhythmGlyph } from '../rhythm';
 import type { CadenceId, ChordId, ConsonanceClass, IntervalId, ScaleId } from '../theory';
 
 /** Plural forms by `Intl.PluralRules` category (`other` is required); `{n}` is the number. */
@@ -29,6 +30,12 @@ export interface ContentText {
   /** Contour directions in words. */
   readonly up: string;
   readonly down: string;
+  /**
+   * Note values of the rhythm notation (design § 14.3) in the language's standard terms, for the spoken description
+   * of the notation (§ 7.5 by eye): `single` names one value ("quarter note"), `count` a run of n ≥ 2 equal values
+   * ("{n} quarter notes"; n = 2…8).
+   */
+  readonly noteValues: Readonly<Record<RhythmGlyph, { readonly single: string; readonly count: PluralForms }>>;
   /** Mix-up tips: {a} and {b} are names; the other placeholders are facts the view fills in. */
   readonly tips: {
     /** {a} {b} names, {na} {nb} "4 semitones" */
