@@ -60,7 +60,8 @@
     "maxStepDeg": 1,
     "maxSpanDeg": 3,
     "maxDeviationCells": 6,
-    "hatchMaxDeviationCells": 2,
+    "hatchMaxDeviationCells": 1,
+    "hatchCheckStepDeg": 0.01,
     "fineMaxKm2": 100,
     "fineUnit": 1000,
     "fineDeviationCells": 0.05,
@@ -90,7 +91,7 @@
     "others": 61,
     "disputed": 78,
     "arcs": 3240,
-    "points": 28019,
+    "points": 29076,
     "lakes": 12,
     "rivers": 27,
     "regions": 31,
@@ -4019,9 +4020,404 @@
       }
     ]
   },
+  "hatchedEdges": {
+    "stepDeg": 0.01,
+    "overlays": {
+      "d-b05": {
+        "extraKm2": 246,
+        "missingKm2": 203,
+        "edgeKm": 1927
+      },
+      "d-b07": {
+        "extraKm2": 160,
+        "missingKm2": 215,
+        "edgeKm": 973
+      },
+      "d-b53": {
+        "extraKm2": 16,
+        "missingKm2": 12,
+        "edgeKm": 111
+      },
+      "d-b54": {
+        "extraKm2": 171,
+        "missingKm2": 61,
+        "edgeKm": 428
+      },
+      "d-b17": {
+        "extraKm2": 51,
+        "missingKm2": 81,
+        "edgeKm": 338
+      },
+      "d-b00": {
+        "extraKm2": 628,
+        "missingKm2": 498,
+        "edgeKm": 1790
+      },
+      "d-b16": {
+        "extraKm2": 82,
+        "missingKm2": 42,
+        "edgeKm": 207
+      },
+      "d-b30": {
+        "extraKm2": 144,
+        "missingKm2": 159,
+        "edgeKm": 1974
+      },
+      "d-b14": {
+        "extraKm2": 116,
+        "missingKm2": 119,
+        "edgeKm": 380
+      },
+      "d-b15": {
+        "extraKm2": 226,
+        "missingKm2": 271,
+        "edgeKm": 899
+      },
+      "d-b19": {
+        "extraKm2": 0,
+        "missingKm2": 0,
+        "edgeKm": 2694
+      },
+      "d-b28": {
+        "extraKm2": 44,
+        "missingKm2": 935,
+        "edgeKm": 2993
+      },
+      "d-b35": {
+        "extraKm2": 58,
+        "missingKm2": 102,
+        "edgeKm": 526
+      },
+      "d-b37": {
+        "extraKm2": 107,
+        "missingKm2": 100,
+        "edgeKm": 373
+      },
+      "d-b57": {
+        "extraKm2": 160,
+        "missingKm2": 150,
+        "edgeKm": 554
+      },
+      "d-b56": {
+        "extraKm2": 542,
+        "missingKm2": 700,
+        "edgeKm": 2566
+      },
+      "d-b38": {
+        "extraKm2": 96,
+        "missingKm2": 117,
+        "edgeKm": 388
+      },
+      "d-b82": {
+        "extraKm2": 1,
+        "missingKm2": 0,
+        "edgeKm": 12
+      },
+      "d-b06": {
+        "extraKm2": 50,
+        "missingKm2": 100,
+        "edgeKm": 454
+      },
+      "d-b08": {
+        "extraKm2": 238,
+        "missingKm2": 185,
+        "edgeKm": 1350
+      },
+      "d-b88": {
+        "extraKm2": 1,
+        "missingKm2": 0,
+        "edgeKm": 31
+      },
+      "d-b85": {
+        "extraKm2": 0,
+        "missingKm2": 1,
+        "edgeKm": 8
+      },
+      "d-b67": {
+        "extraKm2": 37,
+        "missingKm2": 34,
+        "edgeKm": 97
+      },
+      "d-b36": {
+        "extraKm2": 180,
+        "missingKm2": 179,
+        "edgeKm": 646
+      },
+      "d-c03": {
+        "extraKm2": 129,
+        "missingKm2": 85,
+        "edgeKm": 426
+      },
+      "d-c02": {
+        "extraKm2": 64,
+        "missingKm2": 67,
+        "edgeKm": 491
+      },
+      "d-b55": {
+        "extraKm2": 0,
+        "missingKm2": 0,
+        "edgeKm": 9
+      },
+      "d-b13": {
+        "extraKm2": 88,
+        "missingKm2": 139,
+        "edgeKm": 412
+      },
+      "d-b03": {
+        "extraKm2": 58,
+        "missingKm2": 73,
+        "edgeKm": 267
+      },
+      "d-b04": {
+        "extraKm2": 23,
+        "missingKm2": 37,
+        "edgeKm": 109
+      },
+      "d-b01": {
+        "extraKm2": 45,
+        "missingKm2": 47,
+        "edgeKm": 156
+      },
+      "d-b02": {
+        "extraKm2": 21,
+        "missingKm2": 26,
+        "edgeKm": 114
+      },
+      "d-b20": {
+        "extraKm2": 17,
+        "missingKm2": 12,
+        "edgeKm": 502
+      },
+      "d-b43": {
+        "extraKm2": 20,
+        "missingKm2": 77,
+        "edgeKm": 275
+      },
+      "d-b45": {
+        "extraKm2": 8,
+        "missingKm2": 1,
+        "edgeKm": 246
+      },
+      "d-b51": {
+        "extraKm2": 142,
+        "missingKm2": 46,
+        "edgeKm": 550
+      },
+      "d-b97": {
+        "extraKm2": 28,
+        "missingKm2": 60,
+        "edgeKm": 156
+      },
+      "d-b75": {
+        "extraKm2": 59,
+        "missingKm2": 80,
+        "edgeKm": 209
+      },
+      "d-b76": {
+        "extraKm2": 4,
+        "missingKm2": 21,
+        "edgeKm": 49
+      },
+      "d-b89": {
+        "extraKm2": 53,
+        "missingKm2": 20,
+        "edgeKm": 1066
+      },
+      "d-b58": {
+        "extraKm2": 0,
+        "missingKm2": 0,
+        "edgeKm": 23
+      },
+      "d-b74": {
+        "extraKm2": 1,
+        "missingKm2": 0,
+        "edgeKm": 24
+      },
+      "d-b92": {
+        "extraKm2": 8,
+        "missingKm2": 13,
+        "edgeKm": 72
+      },
+      "d-b94": {
+        "extraKm2": 24,
+        "missingKm2": 42,
+        "edgeKm": 216
+      },
+      "d-b93": {
+        "extraKm2": 38,
+        "missingKm2": 33,
+        "edgeKm": 743
+      },
+      "d-b96": {
+        "extraKm2": 0,
+        "missingKm2": 0,
+        "edgeKm": 8
+      },
+      "d-b95": {
+        "extraKm2": 2,
+        "missingKm2": 0,
+        "edgeKm": 16
+      },
+      "d-b98": {
+        "extraKm2": 0,
+        "missingKm2": 0,
+        "edgeKm": 69
+      },
+      "d-b78": {
+        "extraKm2": 0,
+        "missingKm2": 1,
+        "edgeKm": 76
+      },
+      "d-b09": {
+        "extraKm2": 138,
+        "missingKm2": 55,
+        "edgeKm": 939
+      },
+      "d-b79": {
+        "extraKm2": 0,
+        "missingKm2": 0,
+        "edgeKm": 15
+      },
+      "d-b99": {
+        "extraKm2": 0,
+        "missingKm2": 0,
+        "edgeKm": 6
+      },
+      "d-c01": {
+        "extraKm2": 198,
+        "missingKm2": 191,
+        "edgeKm": 775
+      },
+      "d-c04": {
+        "extraKm2": 111,
+        "missingKm2": 81,
+        "edgeKm": 1741
+      },
+      "d-b77": {
+        "extraKm2": 0,
+        "missingKm2": 0,
+        "edgeKm": 1072
+      },
+      "d-b68": {
+        "extraKm2": 0,
+        "missingKm2": 0,
+        "edgeKm": 47
+      },
+      "d-b22": {
+        "extraKm2": 0,
+        "missingKm2": 0,
+        "edgeKm": 127
+      },
+      "d-b29": {
+        "extraKm2": 0,
+        "missingKm2": 0,
+        "edgeKm": 915
+      },
+      "d-b69": {
+        "extraKm2": 0,
+        "missingKm2": 0,
+        "edgeKm": 8
+      },
+      "d-b12": {
+        "extraKm2": 0,
+        "missingKm2": 0,
+        "edgeKm": 1984
+      },
+      "d-b71": {
+        "extraKm2": 0,
+        "missingKm2": 0,
+        "edgeKm": 5
+      },
+      "d-b46": {
+        "extraKm2": 0,
+        "missingKm2": 0,
+        "edgeKm": 6
+      },
+      "d-b48": {
+        "extraKm2": 0,
+        "missingKm2": 0,
+        "edgeKm": 3
+      },
+      "d-b31": {
+        "extraKm2": 0,
+        "missingKm2": 0,
+        "edgeKm": 0
+      },
+      "d-b18": {
+        "extraKm2": 0,
+        "missingKm2": 0,
+        "edgeKm": 9
+      },
+      "d-b73": {
+        "extraKm2": 0,
+        "missingKm2": 0,
+        "edgeKm": 14
+      },
+      "d-b41": {
+        "extraKm2": 0,
+        "missingKm2": 0,
+        "edgeKm": 0
+      },
+      "d-b42": {
+        "extraKm2": 0,
+        "missingKm2": 0,
+        "edgeKm": 1
+      },
+      "d-b80": {
+        "extraKm2": 0,
+        "missingKm2": 0,
+        "edgeKm": 0
+      },
+      "d-b21": {
+        "extraKm2": 0,
+        "missingKm2": 0,
+        "edgeKm": 4
+      },
+      "d-b52": {
+        "extraKm2": 0,
+        "missingKm2": 0,
+        "edgeKm": 2
+      },
+      "d-b63": {
+        "extraKm2": 0,
+        "missingKm2": 0,
+        "edgeKm": 1
+      },
+      "d-b64": {
+        "extraKm2": 0,
+        "missingKm2": 0,
+        "edgeKm": 0
+      },
+      "d-b65": {
+        "extraKm2": 0,
+        "missingKm2": 0,
+        "edgeKm": 2
+      },
+      "d-b62": {
+        "extraKm2": 0,
+        "missingKm2": 0,
+        "edgeKm": 1
+      },
+      "d-b66": {
+        "extraKm2": 0,
+        "missingKm2": 0,
+        "edgeKm": 0
+      },
+      "d-b70": {
+        "extraKm2": 0,
+        "missingKm2": 0,
+        "edgeKm": 1
+      },
+      "d-b87": {
+        "extraKm2": 0,
+        "missingKm2": 0,
+        "edgeKm": 0
+      }
+    }
+  },
   "output": {
     "file": "src/data/atlas.gen.ts",
-    "bytes": 150498,
-    "sha256": "767406e1cd02ea5fe6bf8a729092ae08577e7940748f687809ee0401301aa3ae"
+    "bytes": 152509,
+    "sha256": "37332d21b235255c3e546e9707d00233fecf93b3f530eb19a5f1260bf95e542d"
   }
 }

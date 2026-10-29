@@ -709,6 +709,39 @@ async function main() {
   });
   log(`largest simplification error at the boundary samples: ${worst.toFixed(1)} km (${worstAt})`);
 
+  /* --- Hatched areas as drawn against the source (policy A, § 12.2; Kashmir follow-up 2026-10-29) --- */
+  // On land only, sampled every `hatchCheckStepDeg`: "extra" is ground drawn hatched that the source does not mark
+  // (undisputed land marked as disputed), "missing" is ground the source marks that is drawn as a country instead.
+  // Both come from simplifying the hatched edges; a data test keeps them below a mean displacement per km of edge.
+  const simpleArcs = topo.arcs.map((a, i) => simple.get(i) ?? a);
+  const drawnHatch = overlays.map((o, oi) => [
+    ...drawn.rings.filter((r) => r.owner === unitShapes.length + oi).map((r) => toDeg(ringPoints(simpleArcs, r.arcs))),
+    ...(fineGroups.get(`disputed:${o.id}`)?.rings ?? []).map((r) => r.map((v) => v / P.fineUnit))
+  ]);
+  const drawnHatchLoc = makeLocator(drawnHatch);
+  const drawnLandLoc = makeLocator([
+    ...ordered.map((_, ei) => [
+      ...drawn.rings.filter((r) => r.owner === ei).map((r) => toDeg(ringPoints(simpleArcs, r.arcs))),
+      ...[...fineGroups.values()].filter((g) => g.kind !== 'disputed' && g.id === idOf(ordered[ei]!)).flatMap((g) => g.rings.map((r) => r.map((v) => v / P.fineUnit)))
+    ])
+  ]);
+  const sourceLocs = overlays.map((o) => makeLocator([hatchFeatures.find((f) => str(f.props, 'BRK_A3') === o.brk)!.polygons.flatMap(flatRings)]));
+  const inSource = (x: number, y: number) => sourceLocs.some((l) => l(x, y) >= 0);
+  const step = P.hatchCheckStepDeg;
+  const hatchedEdges: Record<string, { extraKm2: number; missingKm2: number; edgeKm: number }> = {};
+  overlays.forEach((o, oi) => {
+    const src = hatchFeatures.find((f) => str(f.props, 'BRK_A3') === o.brk)!.polygons;
+    const b = boxOf(src);
+    const box: [number, number, number, number] = [b[0] - 0.05, b[1] - 0.05, b[2] + 0.05, b[3] + 0.05];
+    const extra = sampledAreaKm2(box, step, (x, y) => drawnHatchLoc(x, y) === oi && !inSource(x, y) && landLocator(x, y) >= 0);
+    const missing = sampledAreaKm2(box, step, (x, y) => sourceLocs[oi]!(x, y) >= 0 && drawnHatchLoc(x, y) < 0 && drawnLandLoc(x, y) >= 0);
+    const edgeKm = drawnHatch[oi]!.reduce((sum, r) => sum + lineLengthKm(r), 0);
+    hatchedEdges[o.id] = { extraKm2: Math.round(extra), missingKm2: Math.round(missing), edgeKm: Math.round(edgeKm) };
+  });
+  const sumOf = (ids: string[], k: 'extraKm2' | 'missingKm2') => ids.reduce((sum, id) => sum + (hatchedEdges[id]?.[k] ?? 0), 0);
+  const allIds = Object.keys(hatchedEdges);
+  log(`hatched areas against the source (land, km²): extra ${sumOf(allIds, 'extraKm2')}, missing ${sumOf(allIds, 'missingKm2')}; Kashmir (d-b05 + d-b09) extra ${sumOf(['d-b05', 'd-b09'], 'extraKm2')}, missing ${sumOf(['d-b05', 'd-b09'], 'missingKm2')}`);
+
   /* --- Label points inside their simplified country? --- */
   const outside: string[] = [];
   ordered.forEach((e, ei) => {
@@ -812,6 +845,7 @@ async function main() {
     neighbours: nbNow,
     facts: factsNow,
     worldviews: worldview,
+    hatchedEdges: { stepDeg: step, overlays: hatchedEdges },
     output: { file: 'src/data/atlas.gen.ts', bytes: Buffer.byteLength(body), sha256: sha256(body) }
   };
   writeFileSync(prevPath, JSON.stringify(manifest, null, 2) + '\n');

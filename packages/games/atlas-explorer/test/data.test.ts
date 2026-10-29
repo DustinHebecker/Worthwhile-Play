@@ -139,6 +139,21 @@ describe('generated atlas', () => {
     }
   });
 
+  it('keeps hatched edges close to the source: no wide hatched slivers (Kashmir follow-up 2026-10-29)', () => {
+    // Measured by the build on land every 0.01°: ground drawn hatched that the source does not mark ("extra": 692 km²
+    // along the edges of Indian- and Pakistani-administered Kashmir with the former 2-cell limit, now 384) and disputed
+    // ground drawn as a country ("missing": 487, now 258). Both come from simplifying the hatched edges, now within one
+    // grid cell (about 2 km); the mean displacement per km of edge was up to 1.5 km, now at most 0.73.
+    const e = manifest.hatchedEdges;
+    expect(e.stepDeg).toBeLessThanOrEqual(0.01);
+    const rows = Object.entries(e.overlays);
+    expect(rows).toHaveLength(atlas.disputed.length);
+    for (const [id, v] of rows) if (v.edgeKm >= 50) expect((v.extraKm2 + v.missingKm2) / v.edgeKm, id).toBeLessThanOrEqual(0.8);
+    const kashmir = ['d-b05', 'd-b09'].map((id) => e.overlays[id as keyof typeof e.overlays]!);
+    expect(kashmir.reduce((sum, v) => sum + v.extraKm2, 0)).toBeLessThanOrEqual(450);
+    expect(kashmir.reduce((sum, v) => sum + v.missingKm2, 0)).toBeLessThanOrEqual(350);
+  });
+
   it('places every curated city in its country (or within the 25 km tolerance)', () => {
     for (const city of atlas.cities) {
       const c = atlas.country(city.country)!;
