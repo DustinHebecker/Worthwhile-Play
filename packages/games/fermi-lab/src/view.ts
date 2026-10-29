@@ -1,7 +1,7 @@
 import { bcp47Tag, type GameContext, type GameInstance, type NewGameOptions } from '@wp/game-core';
 import { announce, clear, h } from '@wp/ui';
-import { contentFor, type ContentText } from './content';
-import { fieldParts, fieldText, formatQuantity, parseLocaleNumber, roundSig, type ParseResult } from './format';
+import { contentFor, type ContentText, type PluralForms } from './content';
+import { fieldParts, fieldText, formatQuantity, parseLocaleNumber, pluralForm, roundSig, type ParseResult } from './format';
 import {
   EXP_MAX,
   EXP_MIN,
@@ -36,7 +36,7 @@ import {
   type Score
 } from './rules';
 import type { Power, Task } from './tasks';
-import { WORD_UNITS, dimsText, isCountWord, unitText } from './units';
+import { COUNTED_WORDS, WORD_UNITS, dimsText, unitText, type CountedWord } from './units';
 import './styles.css';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -50,8 +50,8 @@ function svg<K extends keyof SVGElementTagNameMap>(tag: K, attrs: SvgAttrs, ...c
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 const WORDS: ReadonlySet<string> = new Set(WORD_UNITS);
-/** Word units with a count form after a number ("160 days", "25 years"). */
-const COUNTED: ReadonlySet<string> = new Set(['day', 'year']);
+/** Words with plural forms after a number ("1 grain", "40,000 grains", "160 days"). */
+const COUNTED: ReadonlySet<string> = new Set(COUNTED_WORDS);
 
 /** Chart geometry (SVG units; the charts scale to the width). */
 const CHART_W = 600;
@@ -93,8 +93,21 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
 
   /* ---------- Numbers and units ---------- */
 
-  const unitLabel = (unit: string): string =>
-    unit === '1' ? '' : unitText(unit, (name, countForm) => (isCountWord(name) || (countForm && COUNTED.has(name)) ? t(`${countForm ? 'n' : 'u'}.${name}`) : WORDS.has(name) ? t(`u.${name}`) : name));
+  /**
+   * A unit with translated words. After a number (`n`, as displayed: 3 significant digits) count words take the
+   * locale's plural form for it ("1 day", "21 год", "5 лет"); without `n` (a field's unit while it is empty) the
+   * general form (`other`).
+   */
+  const unitLabel = (unit: string, n?: number): string =>
+    unit === '1'
+      ? ''
+      : unitText(unit, (name, countForm) => {
+          if (countForm && COUNTED.has(name)) {
+            const forms = text().counts[name as CountedWord];
+            return n === undefined ? forms.other : pluralForm(forms, roundSig(n, 3), locale);
+          }
+          return COUNTED.has(name) || WORDS.has(name) ? t(`u.${name}`) : name;
+        });
 
   const sciLabel = (v: number): string => {
     const q = formatQuantity(v, locale);
@@ -105,14 +118,14 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
   const spoken = (v: number, unit = ''): string => {
     const q = formatQuantity(v, locale);
     const words = q.words ? ` (${q.words})` : '';
-    const u = unitLabel(unit);
+    const u = unitLabel(unit, v);
     return `${sciLabel(v)}${words}${u ? ` ${u}` : ''}`;
   };
 
   /** A quantity for display: mantissa × 10<sup>n</sup>, the locale's large-number words and the unit. */
   const quantity = (v: number, unit = '', options: { words?: boolean; testid?: string } = {}): HTMLElement => {
     const q = formatQuantity(v, locale);
-    const u = unitLabel(unit);
+    const u = unitLabel(unit, v);
     const el = h('span', { class: 'fl-qty', 'data-value': String(v), 'data-testid': options.testid, 'aria-label': spoken(v, unit) });
     const num = h('bdi', { class: 'fl-num', dir: 'ltr', 'aria-hidden': 'true' }, q.mantissa);
     if (q.exponent !== null) num.append(' × 10', h('sup', {}, q.exponentText));
@@ -130,6 +143,8 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
     }
   };
   const ratio = (f: number): string => formatQuantity(roundSig(f, 2), locale, 2).text;
+  /** "{n} times too high" in the plural form of the displayed ratio. */
+  const times = (forms: PluralForms, f: number): string => pluralForm(forms, roundSig(f, 2), locale).replace('{n}', ratio(f));
   const powerSymbol = (p: Power): string => t(`op.${p}`);
 
   /* ---------- Number input (field, × 10ⁿ stepper, interpretation, optional slider and step buttons) ---------- */
@@ -243,6 +258,7 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
       clear(interp);
       const r = parse();
       const v = value();
+      unitEl.textContent = unitLabel(o.unit, v ?? undefined);
       if (!r.ok && r.reason === 'empty') interp.append(o.slider ? t('interp.empty') : '');
       else if (!r.ok || v === null) {
         interp.append(h('span', { class: 'fl-warn' }, `⚠ ${t(!r.ok && r.reason === 'notPositive' ? 'interp.notPositive' : 'interp.invalid')}`));
@@ -499,7 +515,7 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
     return h('span', { class: 'fl-marks', role: 'img', 'aria-label': t('marks.label', { n }) }, '●'.repeat(n) + '○'.repeat(3 - n));
   };
 
-  const directionText = (s: Score): string => (s.direction === 'none' ? t('direction.none') : t(`direction.${s.direction}`, { factor: ratio(s.factor) }));
+  const directionText = (s: Score): string => (s.direction === 'none' ? t('direction.none') : times(text().ratios[s.direction], s.factor));
 
   /** Log axis from lo to hi decades mapped onto [PAD, CHART_W − PAD]. */
   const axis = (lo: number, hi: number) => (v: number) => PAD + ((Math.log10(v) - lo) / (hi - lo)) * (CHART_W - 2 * PAD);
@@ -549,7 +565,7 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
       { class: 'fl-legend' },
       item('◆', t('scale.answer'), quantity(q.answer!, task.answer.unit, { words: false })),
       item('┃', t('scale.reference'), quantity(task.answer.central, task.answer.unit, { words: false })),
-      item('▨', t('review.range'), t('review.rangeValue', { low: formatQuantity(task.answer.low, locale).text, high: `${formatQuantity(task.answer.high, locale).text} ${unitLabel(task.answer.unit)}`.trim() }))
+      item('▨', t('review.range'), t('review.rangeValue', { low: formatQuantity(task.answer.low, locale).text, high: `${formatQuantity(task.answer.high, locale).text} ${unitLabel(task.answer.unit, task.answer.high)}`.trim() }))
     );
     return h(
       'figure',
@@ -721,14 +737,14 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
             ': ',
             t('summary.row', {
               band: t(`band.${r.score.band}`),
-              direction: r.score.direction === 'none' ? t('summary.dirNone') : t(r.score.direction === 'high' ? 'summary.dirHigh' : 'summary.dirLow', { f: ratio(r.score.factor) })
+              direction: r.score.direction === 'none' ? t('summary.dirNone') : times(r.score.direction === 'high' ? text().ratios.rowHigh : text().ratios.rowLow, r.score.factor)
             })
           )
         )
       )
     );
     const logBias = Math.log10(sum.bias);
-    const biasText = Math.abs(logBias) <= Math.log10(1.25) ? t('summary.biasSame') : logBias < 0 ? t('summary.biasLow', { f: ratio(1 / sum.bias) }) : t('summary.biasHigh', { f: ratio(sum.bias) });
+    const biasText = Math.abs(logBias) <= Math.log10(1.25) ? t('summary.biasSame') : logBias < 0 ? times(text().ratios.biasLow, 1 / sum.bias) : times(text().ratios.biasHigh, sum.bias);
     const lines: HTMLElement[] = [h('p', { 'data-testid': 'fl-bias' }, biasText)];
     lines.push(h('p', { class: 'fl-small' }, t('summary.counts', { a: sum.withinFactor3, b: sum.withinFactor10, n: sum.rows.length })));
     return [

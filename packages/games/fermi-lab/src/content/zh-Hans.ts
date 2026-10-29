@@ -1,6 +1,47 @@
 import type { ContentText } from './types';
 
 export const content: ContentText = {
+  counts: {
+    day: { other: '天' },
+    year: { other: '年' },
+    ant: { other: '只' },
+    battery: { other: '节' },
+    beat: { other: '次' },
+    bee: { other: '只' },
+    birth: { other: '名' },
+    breath: { other: '次' },
+    cell: { other: '个' },
+    charge: { other: '次' },
+    earth: { other: '个地球' },
+    egg: { other: '枚' },
+    grain: { other: '粒' },
+    hair: { other: '根' },
+    household: { other: '户' },
+    molecule: { other: '个' },
+    orbit: { other: '圈' },
+    passenger: { other: '名乘客' },
+    person: { other: '人' },
+    phone: { other: '部' },
+    piano: { other: '架' },
+    pupil: { other: '学生' },
+    sheet: { other: '张' },
+    step: { other: '步' },
+    teacher: { other: '名教师' },
+    tree: { other: '棵' },
+    trip: { other: '人次' },
+    tuner: { other: '名调音师' },
+    tuning: { other: '次' },
+    vehicle: { other: '辆' },
+    word: { other: '词' }
+  },
+  ratios: {
+    high: { other: '偏高 {n} 倍。' },
+    low: { other: '只有参考值的 {n} 分之一，偏低。' },
+    rowHigh: { other: '偏高 {n} 倍' },
+    rowLow: { other: '偏低，是参考值的 {n} 分之一' },
+    biasHigh: { other: '平均来看，你的答案偏高约 {n} 倍。' },
+    biasLow: { other: '平均来看，你的答案偏低，约为参考值的 {n} 分之一。' }
+  },
   factors: {
     aaEnergy: '一节五号电池放出的能量',
     airDensity: '空气密度',

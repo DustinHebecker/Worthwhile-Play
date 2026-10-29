@@ -8,14 +8,14 @@ import { RECENT_KEY, createInitial, currentQuestion, taskOf, type FermiState } f
 const module = game as GameModule<unknown>;
 
 beforeAll(async () => {
-  for (const locale of ['en', 'de', 'ar', 'ja']) await game.preload!(locale);
+  for (const locale of ['en', 'de', 'ar', 'ja', 'ru']) await game.preload!(locale);
 });
 
 afterEach(() => {
   document.body.innerHTML = '';
 });
 
-function mount(state: FermiState, locale: 'en' | 'de' | 'ar' | 'ja' = 'en') {
+function mount(state: FermiState, locale: 'en' | 'de' | 'ar' | 'ja' | 'ru' = 'en') {
   const ctx = createTestContext(module, locale);
   const finished: unknown[] = [];
   const context = { ...ctx.context, finished: (r: unknown) => finished.push(r) };
@@ -190,5 +190,27 @@ describe('view', () => {
     instance.newGame({ seed: 5 });
     expect(instance.serialize()).toEqual(createInitial(5));
     instance.dispose();
+  });
+
+  it('writes count words and "times" in the plural form of the number shown (Russian: год, года, лет; раз, раза)', () => {
+    const base = createInitial(4, { model: 'free' });
+    const state: FermiState = { ...base, questions: base.questions.map((q, i) => (i === 0 ? { ...q, taskId: 'lifetime-sleep', windowLo: -1 } : q)) };
+    const m = mount(state, 'ru');
+    const unit = () => m.root.querySelector('.fl-field-unit')!.textContent;
+    expect(unit()).toBe('года');
+    for (const [typed, form] of [['1', 'год'], ['3', 'года'], ['5', 'лет'], ['21', 'год'], ['1,5', 'года']] as const) {
+      m.type('fl-est-input', typed);
+      expect(unit(), typed).toBe(form);
+      expect(m.q('fl-est-value')!.textContent, typed).toContain(form);
+    }
+    m.type('fl-est-input', '125');
+    m.click('fl-guess');
+    expect(m.q('fl-answer')!.textContent).toContain('лет');
+    expect(m.q('fl-direction')!.textContent).toContain('В 5 раз больше.');
+    m.instance.dispose();
+    const en = mount({ ...state, questions: state.questions.map((q, i) => (i === 0 ? { ...q, phase: 'review', answer: 50 } : q)) }, 'en');
+    expect(en.q('fl-direction')!.textContent).toContain('2 times too high.');
+    expect(en.q('fl-answer')!.textContent).toContain('50 years');
+    expect(en.ctx.missingKeys).toEqual([]);
   });
 });

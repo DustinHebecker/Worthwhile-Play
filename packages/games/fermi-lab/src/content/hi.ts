@@ -1,6 +1,47 @@
 import type { ContentText } from './types';
 
 export const content: ContentText = {
+  counts: {
+    day: { one: 'दिन', other: 'दिन' },
+    year: { one: 'साल', other: 'साल' },
+    ant: { one: 'चींटी', other: 'चींटियाँ' },
+    battery: { one: 'बैटरी', other: 'बैटरियाँ' },
+    beat: { one: 'धड़कन', other: 'धड़कनें' },
+    bee: { one: 'मधुमक्खी', other: 'मधुमक्खियाँ' },
+    birth: { one: 'जन्म', other: 'जन्म' },
+    breath: { one: 'साँस', other: 'साँसें' },
+    cell: { one: 'कोशिका', other: 'कोशिकाएँ' },
+    charge: { one: 'चार्ज', other: 'चार्ज' },
+    earth: { one: 'पृथ्वी', other: 'पृथ्वियाँ' },
+    egg: { one: 'अंडा', other: 'अंडे' },
+    grain: { one: 'दाना', other: 'दाने' },
+    hair: { one: 'बाल', other: 'बाल' },
+    household: { one: 'परिवार', other: 'परिवार' },
+    molecule: { one: 'अणु', other: 'अणु' },
+    orbit: { one: 'चक्कर', other: 'चक्कर' },
+    passenger: { one: 'यात्री', other: 'यात्री' },
+    person: { one: 'व्यक्ति', other: 'लोग' },
+    phone: { one: 'फ़ोन', other: 'फ़ोन' },
+    piano: { one: 'पियानो', other: 'पियानो' },
+    pupil: { one: 'विद्यार्थी', other: 'विद्यार्थी' },
+    sheet: { one: 'पन्ना', other: 'पन्ने' },
+    step: { one: 'क़दम', other: 'क़दम' },
+    teacher: { one: 'शिक्षक', other: 'शिक्षक' },
+    tree: { one: 'पेड़', other: 'पेड़' },
+    trip: { one: 'यात्रा', other: 'यात्राएँ' },
+    tuner: { one: 'ट्यूनर', other: 'ट्यूनर' },
+    tuning: { one: 'ट्यूनिंग', other: 'ट्यूनिंग' },
+    vehicle: { one: 'वाहन', other: 'वाहन' },
+    word: { one: 'शब्द', other: 'शब्द' }
+  },
+  ratios: {
+    high: { one: '{n} गुना ज़्यादा।', other: '{n} गुना ज़्यादा।' },
+    low: { one: '{n} गुना कम।', other: '{n} गुना कम।' },
+    rowHigh: { one: '{n} गुना ज़्यादा', other: '{n} गुना ज़्यादा' },
+    rowLow: { one: '{n} गुना कम', other: '{n} गुना कम' },
+    biasHigh: { one: 'औसतन आपके जवाब {n} गुना ज़्यादा थे।', other: 'औसतन आपके जवाब {n} गुना ज़्यादा थे।' },
+    biasLow: { one: 'औसतन आपके जवाब {n} गुना कम थे।', other: 'औसतन आपके जवाब {n} गुना कम थे।' }
+  },
   factors: {
     aaEnergy: 'एक AA बैटरी से मिलने वाली ऊर्जा',
     airDensity: 'हवा का घनत्व',

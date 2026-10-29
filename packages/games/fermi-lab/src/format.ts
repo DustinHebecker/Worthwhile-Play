@@ -230,3 +230,24 @@ export function fieldParts(value: number, locale: string, digits = 2): { text: s
   }
   return { text: fieldText(m, locale, digits), exp: e };
 }
+
+const pluralRules = new Map<string, Intl.PluralRules>();
+
+/** The plural category of n in a locale (`other` when the locale is unknown). */
+export function pluralCategory(n: number, locale: string): Intl.LDMLPluralRule {
+  let rules = pluralRules.get(locale);
+  if (!rules) {
+    try {
+      rules = new Intl.PluralRules(bcp47Tag(locale));
+    } catch {
+      rules = new Intl.PluralRules('en');
+    }
+    pluralRules.set(locale, rules);
+  }
+  return Number.isFinite(n) ? rules.select(n) : 'other';
+}
+
+/** The form of `forms` for n (`other` when the locale's category is missing). */
+export function pluralForm(forms: Readonly<Partial<Record<Intl.LDMLPluralRule, string>>> & { readonly other: string }, n: number, locale: string): string {
+  return forms[pluralCategory(n, locale)] ?? forms.other;
+}

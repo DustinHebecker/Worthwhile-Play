@@ -1,6 +1,47 @@
 import type { ContentText } from './types';
 
 export const content: ContentText = {
+  counts: {
+    day: { other: '일' },
+    year: { other: '년' },
+    ant: { other: '마리' },
+    battery: { other: '개' },
+    beat: { other: '회' },
+    bee: { other: '마리' },
+    birth: { other: '명' },
+    breath: { other: '회' },
+    cell: { other: '개' },
+    charge: { other: '회' },
+    earth: { other: '개' },
+    egg: { other: '개' },
+    grain: { other: '알' },
+    hair: { other: '가닥' },
+    household: { other: '가구' },
+    molecule: { other: '개' },
+    orbit: { other: '바퀴' },
+    passenger: { other: '명' },
+    person: { other: '명' },
+    phone: { other: '대' },
+    piano: { other: '대' },
+    pupil: { other: '학생' },
+    sheet: { other: '장' },
+    step: { other: '걸음' },
+    teacher: { other: '명' },
+    tree: { other: '그루' },
+    trip: { other: '회' },
+    tuner: { other: '명' },
+    tuning: { other: '회' },
+    vehicle: { other: '대' },
+    word: { other: '단어' }
+  },
+  ratios: {
+    high: { other: '기준값의 {n}배로 높습니다.' },
+    low: { other: '기준값의 {n}분의 1로 낮습니다.' },
+    rowHigh: { other: '{n}배 높음' },
+    rowLow: { other: '{n}분의 1로 낮음' },
+    biasHigh: { other: '평균적으로 답이 {n}배 정도 높았습니다.' },
+    biasLow: { other: '평균적으로 답이 기준값의 {n}분의 1 정도로 낮았습니다.' }
+  },
   factors: {
     aaEnergy: 'AA 건전지 하나가 내는 에너지',
     airDensity: '공기의 밀도',
