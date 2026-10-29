@@ -4,7 +4,7 @@ import { createInitial } from '../src/generate';
 import { hint } from '../src/hint';
 import { MOTIFS } from '../src/motifs/index';
 import { picker } from '../src/policies';
-import { DIFFICULTIES, play, tableOfState, type PeelState } from '../src/rules';
+import { play, tableOfState, type PeelState } from '../src/rules';
 
 /**
  * Wall-clock sanity budgets (ADR 0021: `*.slow.test.ts`, never under Stryker, whose instrumentation slows code down).
@@ -71,9 +71,16 @@ describe('timing budgets (sanity only)', () => {
 
   it('generation: median over every motif and difficulty under 60 ms, none over 400 ms (measured about 10 / 40 ms)', () => {
     const times: number[] = [];
-    for (const d of DIFFICULTIES) for (const motif of MOTIFS) times.push(fastest(3, () => createInitial(1, d, motif.id)));
+    for (const d of ['easy', 'medium'] as const) for (const motif of MOTIFS) times.push(fastest(3, () => createInitial(1, d, motif.id)));
     expect(median(times), 'median generation (ms)').toBeLessThan(60);
     expect(Math.max(...times), 'slowest generation (ms)').toBeLessThan(400);
+  });
+
+  it('hard generation with the waiting horizon and the opening guard (design v3 § 2.6): average under 150 ms, none over 600 ms (measured about 48 / 155 ms)', () => {
+    const times: number[] = [];
+    for (const motif of MOTIFS) for (const seed of [1, 2, 3]) times.push(fastest(3, () => createInitial(seed, 'hard', motif.id)));
+    expect(times.reduce((a, b) => a + b, 0) / times.length, 'average hard generation (ms)').toBeLessThan(150);
+    expect(Math.max(...times), 'slowest hard generation (ms)').toBeLessThan(600);
   });
 
   it('hint on off-path hard positions: each under 800 ms (measured well under 80 ms)', () => {

@@ -4,6 +4,7 @@
  *
  *   node packages/games/pixel-peel/scripts/doom-report.ts [--level easy|medium|hard|all] [--seeds 3] [--jobs 4]
  *                                                         [--motifs id,id] [--out file.jsonl] [--quick]
+ *                                                         [--set horizon=12 --set guard=true …]
  *
  * For every motif × seed of a level it plays the four rules-of-thumb players (obvious, tidy, cautious, noisy tidy),
  * finds for each dead end the fatal move and the doom delay with the oracle of `test/doom.ts` (method of § 1.1), and
@@ -60,6 +61,13 @@ async function work(index: number, count: number): Promise<void> {
     ORACLE: unknown;
     QUICK_ORACLE: unknown;
   };
+  // Calibration: --set key=value (repeatable) overrides level parameters, e.g. --set horizon=12 --set candidates=5.
+  const { LEVELS } = (await import(pathToFileURL(resolve(here, '../src/generate.ts')).href)) as { LEVELS: Record<string, Record<string, unknown>> };
+  args.forEach((a, i) => {
+    if (a !== '--set') return;
+    const [key, value] = (args[i + 1] as string).split('=') as [string, string];
+    for (const level of levels) (LEVELS[level] as Record<string, unknown>)[key] = value === 'true' ? true : value === 'false' ? false : Number(value);
+  });
   const only = opt('--motifs', '');
   const motifs = MOTIFS.filter((m) => !only || only.split(',').includes(m.id));
   let i = 0;

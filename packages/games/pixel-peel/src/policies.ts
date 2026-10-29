@@ -84,7 +84,7 @@ export function run(table: Table, pick: (children: readonly Child[]) => Child, b
   return { result: 'solved', moves, cursor: cur };
 }
 
-export function runPolicy(table: Table, id: PolicyId, seed: number, budget: Budget, from?: Cursor): RunResult {
+export function runPolicy(table: Table, id: PolicyId, seed: number, budget: Budget, from?: Cursor, maxMoves?: number): RunResult {
   const p = picker(id, seed);
-  return run(table, (c) => p.pick(c), budget, from);
+  return run(table, (c) => p.pick(c), budget, from, maxMoves);
 }
