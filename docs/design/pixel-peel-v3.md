@@ -340,3 +340,91 @@ Estimate: about 2.5–3 implementer days; no shared change required (the host-in
 2. **How quickly should a wrong decision show on hard?** (a) Horizon 20 *(recommended: mistakes show within a median of 4 and 90 % within 17 moves; 98 % beyond all rules of thumb)*; (b) horizon 12 (mistakes show even sooner; a little easier, 97 %); (c) horizon 30 (more long-range planning; 10 % of dead ends still show 25+ moves late).
 3. **Medium too?** (a) Hard only for now, measure medium in the benchmark and decide later *(recommended)*; (b) apply the same horizon rule to medium now.
 4. **Scroll the game into view when it starts on a phone?** (a) Yes, once per game start *(recommended)*; (b) no, and the orchestrator instead collapses the page intro while a game is playing (helps all games, a shared change).
+
+## 12. Implementation notes (2026-10-29)
+
+Implemented on branch `game/pixel-peel-v3` in the order of § 9 (peeling, phone layout, generator, stuck card, locales, tests), with the owner's decisions of 2026-10-29: horizon 20 on hard plus the opening guard and "Back to move k"; easy and medium measured with the same method and changed only if they show the same problem; slow peeling optional (Slow / Quick / Off, default Slow); the phone layout as the main point, plus a one-time scroll into view. Measurements come from this container (Node 22, 4 cores, shared with other work), Chromium for the layout.
+
+### 12.1 Fair games: doom delay before and after (benchmark of § 6.1)
+
+`node packages/games/pixel-peel/scripts/doom-report.ts --level <level> --seeds <n>` (every motif × seeds 1001…, the four rules of thumb obvious, tidy, cautious, noisy tidy; oracle of § 1.1: plan, P1–P4, 40 noisy rollouts, plan-guided search of 4 000 nodes). Owner's targets for all three levels: median ≤ 6, 90th percentile ≤ 20, no fatal move among the first 5 moves.
+
+| Level | Puzzles / dead ends | Delay median / p75 / p90 / max | Delay ≥ 20 / ≥ 25 | Fatal move in the first 5 / 10 moves | First moves with no way found | Targets |
+|---|---|---|---|---|---|---|
+| Easy, before = after | 60 / 7 | 0 / 2 / 2 / 5 | 0 / 0 % | 0 / 0 % | 0 of 180 | met |
+| Easy, 6 seeds | 120 / 21 | 2 / 5 / 6 / 16 | 0 / 0 % | 0 / 0 % | 0 of 360 | met |
+| Medium, before = after | 60 / 165 | 4 / 6 / 12 / 32 | 3.0 / 1.8 % | 0 / 0 % | 0 of 180 | met |
+| Medium, 6 seeds | 120 / 333 | 4 / 7 / 12 / 32 | 2.1 / 1.5 % | 0 / 0 % | 0 of 360 | met |
+| **Hard, before** (v2) | 60 / 238 | **11 / 22 / 31 / 61** | 28.2 / 20.2 % | **14.3** / 28.2 % | **14 of 180** (12 puzzles) | not met |
+| **Hard, after** (v3) | 60 / 235 | **4 / 8 / 15 / 56** | 6.4 / 4.3 % | **0** / 0 % | **0 of 180** | met |
+
+- **Easy and medium do not show the problem** (no late dooms by the targets, no early fatal moves, no fatal first move), so they keep the v2 generator: `horizon: Infinity`, `guard: false`. A test pins their states byte for byte (3 seeds each) to the pre-v3 output.
+- **The long tail on hard** is an upper bound of the one-sided oracle. The 15 hard dead ends with a delay ≥ 20 were re-measured with a 5× stronger oracle (200 rollouts, 25 000 nodes): their delays became 10–35 (median 18; 3 of 15 still ≥ 25; the 56 became 29). Hard therefore still has a few mistakes that show 25–35 moves later in a ~110-move game; none in the opening.
+- Calibration of `H` with the final guard (same 60 puzzles): H 12 → median 4, p90 19, max 58, 0 % early, 1 first move unproven; H 15 → 4 / 19 / 63, 2.6 % early (fallback games); **H 20 → 4 / 15 / 56, 0 %, 0** (chosen, the owner's value); H 30 → 5 / 19 / 56, 0 %, 0. Runs of 60 puzzles vary by a few points between variants.
+
+### 12.2 Generator values (deviations from § 2.2 / § 2.3 in bold)
+
+| Hard | Plan | Implemented |
+|---|---|---|
+| Waiting horizon `H` | 20 | 20 |
+| Candidates, budget | 6, 18 000 | 6, **30 000** launches |
+| Opening guard | every first move: P0, then P2 | **every first move and the first 5 moves of each deterministic rule of thumb (P1–P4)**; proof by "follow the plan", 12 noisy rollouts around plan / tidy / cautious (noise 5–20 %), then a plan-guided search of 600 nodes (`src/prove.ts`) |
+| Fallback when nothing is accepted | best by score | best by score, **a candidate failing the guard scores 2 lower** |
+
+- **Why the guard is wider.** With the plan's guard (first moves only, P0 then P2) the benchmark still showed fatal moves at move 5 for three rules of thumb in one puzzle (1.3 % of dead ends), against the owner's "no deciding move among the first 5". A position that can be finished means every position before it on the same way can be finished too, so proving the position after 5 moves of each rule of thumb covers the first 5 moves of these ways. Positions are de-duplicated by key, and a proven opening also proves its first move.
+- **Why the proof is wider than P0 / P2.** On hard the rules of thumb fail by design, so P2 rarely proves anything; P0 alone proved 73 % of the first moves the oracle could finish. Noisy rollouts and the small search proved almost all the rest (guard pass rate 72 % of the candidates that pass the level rule, plan's prototype 84 %).
+- **Budget.** The guard costs about 6 000 launches when it passes. With 18 000 launches only 88 % of hard games were accepted (below the ≥ 90 % target); 30 000 gives 92.5 %.
+- Steering trials count one launch each; `since` resets when a parked shooter is relaunched and goes back to its place.
+
+Level definition, hard, every motif × 6 seeds (`generator.slow.test.ts`, v2 values in brackets): accepted 92.5 % (100 %); obvious play fails 100 % (100 %); **all five rules fail 92.5 %** (98 %; target ≥ 90 %); all 4 places full at least once 93 % (100 %; v3 target ≥ 60 %); zero-hit parks in the witness 0 % (100 %; target dropped); median slot entries 11 (9); shooters below 4 shots 1.3 % (1.8 %); witness 112.7 launches (122.5); candidates tried 2.13 (1.06); counted launches 12 231 (2 028); longest wait in a waiting place, median 21 moves (93).
+
+**Time.** Hard generation, fastest of 3, every motif × 3 seeds: average about 50 ms, slowest about 205 ms (v2: 19 / 65 ms). `timing.slow.test.ts`: hard average < 150 ms, slowest < 600 ms (several times the measured values, as for the other bounds there); easy and medium keep < 60 / 400 ms. In Chromium with 4× CPU throttling at 390 × 844, from Start to the drawn picture: hard red fox 568 ms, market stall 372 ms, winter village 311 ms, tiger 302 ms (v2 measured 203–288 ms). If this is too slow on real phones, lower `candidates` first (§ 2.6).
+
+### 12.3 Slow peeling
+
+- Timing as § 3.3: 3 ms per station, ≤ 250 ms per walk, 40 ms per hit, 150 ms peel effect, parking lap ≤ 700 ms, ≤ 3.5 s per launch, backlog ≤ 6 s. `peelTimeline(hits, stations, usedUp)` is pure; the speed-up lives in `PeelQueue`: it is set when a launch is queued (`max(1, remaining / 6 000)`), so everything queued ends within 6 s exactly (a speed recomputed every frame would only decay towards it). A used-up token stops at its last hit and fades during its last peel; a token with shots left walks on to the start corner.
+- Token 16–26 px (larger than the plan's sketch, to be seen on 6 px cells) with the shooter's symbol and its shots on a small dark pill; a line to the cell during the hit pause; queued launches as small tokens stacked at the start corner.
+- Preference record `display.peel`; `animation: false` reads as Off; the `animation` field is no longer written. Reduced motion: the group shows Off, disabled, with "Off, because your device asks for reduced motion." Switching to Quick or Off finishes the queue; Off/Quick → Slow applies from the next launch.
+- "Finish peeling": visible text without the count plus a count badge, accessible name with the count ("Finish peeling (2)"): keys `action.finishPeeling` and `action.finishPeelingCount`.
+- Frames at 4× CPU throttling during peeling (3 fast launches, 150 frames): interval median 16.7 ms, 95th percentile 16.8 ms, worst 33–50 ms (one dropped frame).
+- The reveal fades in when the queue is empty (focus moves to its title then); `finished()` is called at the last move, as before.
+
+### 12.4 Phone layout
+
+Layout after 10 hard moves (CSS px from the viewport top; picture = canvas with its track; the action row is 44 px below the lanes):
+
+| Viewport, motif | Title | Picture | Status (3 lines) | Waiting places | Lane fronts | Lanes with 2 chips end | Before (v2): status, fronts |
+|---|---|---|---|---|---|---|---|
+| 360 × 640, red fox | 30–54 | 64–364 | 374–429 | 435–483 | 489–541 | 587 | status 210–306 under the sticky picture 4–304 |
+| 360 × 640, winter village | 52–76 | 86–338 | 348–402 | 408–456 | 462–514 | 560 | fronts 588–640 |
+| 360 × 740, red fox | 130–154 | 164–464 | 474–529 | 535–583 | 589–641 | 687 | status 272–368 under the picture 4–304 |
+| 360 × 740, winter village | 152–176 | 186–438 | 448–502 | 508–556 | 562–614 | 660 | fronts 688–740 |
+| 390 × 844, red fox | 0–24 | 34–382 | 392–447 | 453–501 | 507–559 | 605 | status 339–435 under the picture 4–352 |
+| 390 × 844, winter village | 256–280 | 290–542 | 552–607 | 613–661 | 667–719 | 765 | fronts 792–844 |
+| 412 × 915, red fox | 0–24 | 34–382 | 392–446 | 452–500 | 506–558 | 604 | status 385–481 under the picture 21–369 |
+| 412 × 915, winter village | 327–351 | 361–613 | 623–677 | 683–731 | 737–789 | 835 | fronts 863–915 |
+| 1280 × 800, red fox | 0–27 | 39–579 | beside: 39–135 | 175–223 | 287–339 | 627 | the game started 425 px down; picture 464–1004 |
+
+- The picture size comes from `fitCell` (`src/layout.ts`) with the *measured* height of the unit without the picture (title line to the end of the action row), not a fixed budget; the chips area holds 2 chips also when a lane has fewer, so the unit keeps its height. Red fox at 360 × 640: 6 px cells; winter village: 5 px.
+- **Deviation:** the one-time scroll runs on every layout, not only on narrow portrait screens, whenever the play unit is not fully on screen after the start (owner: "scroll the play area into view once at game start"); on desktop this brings the picture and the lanes into view together (e2e at 1280 × 800).
+- **Deviation:** "Show whole lanes" stays a button under the action row; switched on, the chips grow inside the lanes (the unit is then taller than one screen, the player's choice). The default on phones is off, 2 chips per lane.
+- Notices are cards over the bottom of the picture (`max(50 %, 12.5rem)`, scrolling inside), closed with × (`notice.close`) or Esc until the next change; keyboard players are taken into the stuck card and back.
+- The status is 3 lines at 0.875 rem; an e2e test fills it with the longest `preview.*` (with "press again"), `result.*`, `hint.lane` and `status.startShort` texts of **all 16 locales** at 360 px. One Russian text was shortened to fit ("уберёт {n} и снова будет ждать…").
+- Landscape and desktop keep the side-by-side layout (e2e at 844 × 390, 740 × 360, 640 × 360, 1280 × 800, Arabic).
+
+### 12.5 Stuck card
+
+When no move is left the card computes the hint's safe point after one frame (the existing `hint()`, proven as there) and offers "Back to move k" first ("No move left. Going back to move k works."); with no safe point after the start it keeps the v2 text and buttons. Tests: the view offers exactly `hint(state).k` and goes back to it; for 4 hard games where the obvious play is stuck, a way on from `k` is found and checked by replay.
+
+### 12.6 State, locales, tests
+
+- State unchanged (`stateVersion` 2, no migration); only the display preference gains `peel`.
+- New keys in all 16 locales: `options.peel`, `options.peelSlow`, `options.peelQuick`, `options.peelOff`, `options.peelReduced`, `action.finishPeeling`, `action.finishPeelingCount`, `action.display`, `status.startShort`, `stuck.back`, `stuck.backButton`, `notice.close`; `options.animation` removed. The lane number in a front's corner is a digit (`aria-hidden`), no key.
+- Tests: `peel.test.ts` (timeline and queue, properties), `layout.test.ts` (`fitCell`, properties), `view.test.ts` (Peeling preference and migration, queueing before any frame, finish triggers, reduced motion, reveal after the queue, stuck card, notices), `generator.test.ts` (horizon properties over small random pictures, the guard of 10 hard games checked by replay, a fatal first move rejected and confirmed by breadth-first search, easy/medium unchanged), `generator.slow.test.ts` (v3 hard targets, doom guard on 4 hard games × 2 rules of thumb with the quick oracle: fatal move after move 5 and delay ≤ 25), `hint.test.ts` (stuck card's way back), `timing.slow.test.ts` (hard bounds), e2e (layout at 360 × 640, 360 × 740, 390 × 844, 412 × 915 × 2 motifs through 10 moves without scrolling; stuck card; status in all locales; slow peeling queue, reload mid-peeling, Display panel, reduced motion; desktop 1280 × 800). The doom oracle (`test/doom.ts`) and the benchmark script are not part of `pnpm test` except the small slow-test guard.
+
+### 12.7 Open points
+
+- Mutation testing (`pnpm mutation`) of `peel.ts`, `layout.ts`, `prove.ts` and the new `construct` rules was not run in this round.
+- Hard generation takes about 2.5× longer than v2 (§ 12.2); the start on a throttled phone profile is up to ~0.6 s for the slowest motif.
+- A few hard mistakes still show 25–35 moves later (§ 12.1); a smaller `H` did not reduce this reliably in the measurement.
+- The shared alternative of § 4.4 (the host collapsing its intro during play) is still open for the orchestrator.

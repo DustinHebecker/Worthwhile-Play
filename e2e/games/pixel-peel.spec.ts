@@ -535,3 +535,14 @@ test('pixel-peel: with reduced motion there is no peeling animation and Peeling 
   await expect(root(page).getByTestId('pp-option-peel-off')).toBeChecked();
   await expect(root(page).getByTestId('pp-option-peel-slow')).toBeDisabled();
 });
+
+test('pixel-peel: at 1280 × 800 the play area is scrolled into view once, with the whole picture and every lane front on screen', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'viewport sizes are set explicitly');
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await startGame(page, ID, { difficulty: 'hard', settings: { motif: 'red-fox' } });
+  await savedState(page);
+  await expect(root(page).getByTestId('pp-canvas')).toBeInViewport({ ratio: 1 });
+  for (let i = 0; i < 4; i++) await expect(root(page).getByTestId(`pp-lane-${i}`)).toBeInViewport({ ratio: 1 });
+  await expect(root(page).getByTestId('pp-status')).toBeInViewport({ ratio: 1 });
+  await expect(root(page).locator('.pp-slots')).toBeInViewport({ ratio: 1 });
+});
