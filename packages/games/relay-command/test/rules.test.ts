@@ -2454,12 +2454,12 @@ describe('opponent styles (owner decision 2026-10-29: spread by distance, a guar
   const post = (w: World, side: number) => w.entities.find((e) => e.side === side && e.kind === 'command-post')!;
   const d = (a: Entity, b: Entity) => Math.hypot(a.x - b.x, a.y - b.y);
 
-  it('each computer side plays a style drawn once from the seed: spread or guarded, about half each', () => {
-    expect(OPPONENT_STYLES).toEqual(['spread', 'guarded']);
-    const count = { spread: 0, guarded: 0 };
-    for (let seed = 0; seed < 300; seed++) for (const side of [1, 2, 3]) count[styleOf({ seed }, side) as 'spread' | 'guarded']++;
-    expect(count.spread + count.guarded).toBe(900);
-    expect(Math.min(count.spread, count.guarded)).toBeGreaterThan(400);
+  it('each computer side plays a style drawn once from the seed: spread, guarded or both, about a third each', () => {
+    expect(OPPONENT_STYLES).toEqual(['spread', 'guarded', 'both']);
+    const count = { spread: 0, guarded: 0, both: 0 };
+    for (let seed = 0; seed < 300; seed++) for (const side of [1, 2, 3]) count[styleOf({ seed }, side) as 'spread' | 'guarded' | 'both']++;
+    expect(count.spread + count.guarded + count.both).toBe(900);
+    expect(Math.min(count.spread, count.guarded, count.both)).toBeGreaterThan(250);
     expect(styleOf({ seed: 1 }, 2)).toBe(styleOf({ seed: 1 }, 2));
     // The turn's plans: each computer side planned in its style.
     const s = corners(11);
