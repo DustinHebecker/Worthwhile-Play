@@ -1,7 +1,9 @@
 // @vitest-environment jsdom
 import { createTestContext } from '@wp/testing';
 import type { GameModule } from '@wp/game-core';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { toClient } from '../src/fit';
+import { layoutBeam, layoutStack } from '../src/layout';
 import game from '../src/index';
 import type { BalanceState, FreeState, RoundState } from '../src/rules';
 import { mobileBars, type MobileNode } from '../src/statics';
@@ -214,5 +216,129 @@ describe('view', () => {
     expect(m.q('bl-root')!.getAttribute('dir')).toBe('rtl');
     expect(m.q('bl-scene-wrap')!.getAttribute('dir')).toBe('ltr');
     expect(m.ctx.missingKeys).toEqual([]);
+  });
+});
+
+describe('dragging with a pointer or a finger (owner decision 2026-10-29)', () => {
+  const RECT = { left: 0, top: 0, width: 640, height: 460 };
+  const CHIP = { left: 20, top: 600, width: 80, height: 44 };
+  const asRect = (r: typeof RECT) => ({ ...r, x: r.left, y: r.top, right: r.left + r.width, bottom: r.top + r.height, toJSON: () => r }) as DOMRect;
+  let restore: () => void = () => undefined;
+  beforeAll(() => {
+    // jsdom has no layout: the scene gets a 640 × 460 box, every other element a chip-sized one below it.
+    const spy = vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
+      return asRect(this.getAttribute('data-testid') === 'bl-scene' ? RECT : CHIP);
+    });
+    restore = () => spy.mockRestore();
+  });
+  afterAll(() => restore());
+
+  const pointer = (el: EventTarget, type: string, at: { x: number; y: number }, pointerType = 'mouse') =>
+    el.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: 7, clientX: at.x, clientY: at.y, button: 0, pointerType }));
+  const chipPoint = { x: 60, y: 622 };
+  /** The client point of a picture point of the current (fitted) scene. */
+  const client = (m: ReturnType<typeof mount>, x: number, y: number) => toClient(m.q('bl-scene')!.getAttribute('viewBox'), RECT, x, y);
+  const hookPoint = (m: ReturnType<typeof mount>, half: number, hook: number) => client(m, layoutBeam(half).x(hook), layoutBeam(half).barY + 30);
+  const beamDraft = (m: ReturnType<typeof mount>) => {
+    const s = m.state();
+    const sc = s.mode === 'free' ? s.scene : s.items[s.index]!.draft;
+    return sc.bench === 'beam' ? sc.s : null;
+  };
+
+  for (const pointerType of ['mouse', 'touch'])
+    it(`drags a tray weight onto the hook under the pointer, previews the snap target and saves (${pointerType})`, () => {
+      const m = mount({ bench: 'beam', tasks: 'build' });
+      const it0 = (m.state() as RoundState).items[0]!;
+      const hook = (it0.witness!.s as { weights: { hook: number; free?: boolean }[] }).weights.find((w) => w.free)!.hook;
+      const saves = m.ctx.saveRequests();
+      const chip = m.q('bl-tray-0')!;
+      pointer(chip, 'pointerdown', chipPoint, pointerType);
+      pointer(chip, 'pointermove', hookPoint(m, 4, hook), pointerType);
+      expect(m.q('bl-drag-ghost')).not.toBeNull();
+      expect(m.q('bl-where')!.textContent).toBe(hook === 0 ? 'Hook: 0 steps at the axle' : `Hook: ${Math.abs(hook)} steps ${hook < 0 ? 'left' : 'right'}`);
+      expect(m.root.querySelector('.wp-balance')!.classList.contains('bl-is-dragging')).toBe(true);
+      pointer(chip, 'pointerup', hookPoint(m, 4, hook), pointerType);
+      expect(m.q('bl-drag-ghost')).toBeNull();
+      expect(beamDraft(m)!.weights.filter((w) => w.free).map((w) => w.hook)).toEqual([hook]);
+      expect(m.ctx.saveRequests()).toBeGreaterThan(saves);
+      m.q('bl-letgo')!.click();
+      expect(m.q('bl-outcome')!.dataset.status).toBe('solved');
+    });
+
+  it('a press that hardly moves stays a tap: the chip is chosen, nothing is placed', () => {
+    const m = mount({ bench: 'beam', tasks: 'build' });
+    const chip = m.q('bl-tray-0')!;
+    pointer(chip, 'pointerdown', chipPoint);
+    pointer(chip, 'pointermove', { x: chipPoint.x + 3, y: chipPoint.y + 2 });
+    expect(m.q('bl-drag-ghost')).toBeNull();
+    pointer(chip, 'pointerup', { x: chipPoint.x + 3, y: chipPoint.y + 2 });
+    chip.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }));
+    expect(m.q('bl-tray-0')!.getAttribute('aria-pressed')).toBe('true');
+    expect(beamDraft(m)!.weights.some((w) => w.free)).toBe(false);
+  });
+
+  it('dropping outside the scene or pressing Escape cancels the drag', () => {
+    const m = mount({ bench: 'beam', tasks: 'build' });
+    const before = JSON.stringify(m.state());
+    let chip = m.q('bl-tray-0')!;
+    pointer(chip, 'pointerdown', chipPoint);
+    pointer(chip, 'pointermove', hookPoint(m, 4, 2));
+    expect(m.q('bl-drag-ghost')).not.toBeNull();
+    pointer(chip, 'pointermove', { x: 300, y: 700 });
+    expect(m.q('bl-drag-ghost')).toBeNull();
+    pointer(chip, 'pointerup', { x: 300, y: 700 });
+    expect(JSON.stringify(m.state())).toBe(before);
+    chip = m.q('bl-tray-0')!;
+    pointer(chip, 'pointerdown', chipPoint);
+    pointer(chip, 'pointermove', hookPoint(m, 4, 2));
+    const esc = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+    chip.dispatchEvent(esc);
+    expect(esc.defaultPrevented).toBe(true);
+    expect(m.q('bl-drag-ghost')).toBeNull();
+    pointer(chip, 'pointerup', hookPoint(m, 4, 2));
+    expect(JSON.stringify(m.state())).toBe(before);
+    // The keyboard and tap paths still work afterwards.
+    m.q('bl-tray-0')!.click();
+    m.q('bl-place')!.click();
+    expect(beamDraft(m)!.weights.some((w) => w.free)).toBe(true);
+  });
+
+  it('drags a hung weight to another hook; the click that ends the drag is not a tap', () => {
+    const m = mount({ mode: 'free', freeBench: 'beam' });
+    m.q('bl-place')!.click();
+    expect(beamDraft(m)!.weights).toEqual([{ kg: 2, hook: 0, free: true }]);
+    const part = m.root.querySelector('[data-drag="weight:0"]')!;
+    pointer(part, 'pointerdown', hookPoint(m, 6, 0));
+    pointer(part, 'pointermove', hookPoint(m, 6, 3));
+    pointer(part, 'pointerup', hookPoint(m, 6, 3));
+    expect(beamDraft(m)!.weights).toEqual([{ kg: 2, hook: 3, free: true }]);
+    const svg = m.q('bl-scene')!;
+    const at = hookPoint(m, 6, -5);
+    svg.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1, clientX: at.x, clientY: at.y }));
+    expect(beamDraft(m)!.weights).toHaveLength(1);
+    // The next real tap acts again.
+    svg.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1, clientX: at.x, clientY: at.y }));
+    expect(beamDraft(m)!.weights.map((w) => w.hook)).toEqual([3, -5]);
+  });
+
+  it('slides a block of the overhang task sideways by the pointer movement', () => {
+    const m = mount({ bench: 'stack', tasks: 'build' });
+    for (let i = 0; i < 6 && (m.state() as RoundState).items[(m.state() as RoundState).index]!.id !== 'stack-overhang'; i++) {
+      m.q('bl-solution')!.click();
+      m.q('bl-next')!.click();
+    }
+    const s = m.state() as RoundState;
+    const draft = s.items[s.index]!.draft.s as { bodies: { left: number }[] };
+    const L = layoutStack(draft as never);
+    const left = draft.bodies[1]!.left;
+    const part = m.root.querySelector('[data-drag="body:1"]')!;
+    const from = client(m, L.px(left + 12), L.bodyY(1) + 10);
+    const to = client(m, L.px(left + 22), L.bodyY(1) + 10);
+    pointer(part, 'pointerdown', from);
+    pointer(part, 'pointermove', to);
+    expect(m.q('bl-where')!.textContent).toBe(`Part 2: left end at ${left + 10} cm`);
+    pointer(part, 'pointerup', to);
+    const after = m.state() as RoundState;
+    expect((after.items[after.index]!.draft.s as { bodies: { left: number }[] }).bodies[1]!.left).toBe(left + 10);
   });
 });

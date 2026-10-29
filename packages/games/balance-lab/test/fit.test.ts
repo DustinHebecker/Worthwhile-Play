@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { contentBox, fitViewBox, pathPoints } from '../src/fit';
+import { contentBox, fitViewBox, pathPoints, toClient, toScene } from '../src/fit';
 import { drawScene, s, type SceneOptions } from '../src/scene-view';
 import type { Scene } from '../src/generate';
 import { outcomeOf } from '../src/check';
@@ -69,5 +69,22 @@ describe('scene framing', () => {
     const axle = svg.querySelector('.bl-axle')!;
     const label = svg.querySelector('.bl-kg')!;
     expect(Math.abs(Number(label.getAttribute('x')) - Number(axle.getAttribute('cx')))).toBeGreaterThanOrEqual(15);
+  });
+
+  it('maps client points into the fitted viewBox, letterboxed, and back', () => {
+    // A 100 × 50 viewBox in a 400 × 400 box: scale 4, 100 px of letterbox above and below.
+    const rect = { left: 10, top: 20, width: 400, height: 400 };
+    expect(toScene('-20 30 100 50', rect, 10, 120)).toEqual({ x: -20, y: 30 });
+    expect(toScene('-20 30 100 50', rect, 410, 320)).toEqual({ x: 80, y: 80 });
+    expect(toClient('-20 30 100 50', rect, 30, 55)).toEqual({ x: 210, y: 220 });
+    for (const [x, y] of [[0, 0], [12.5, -3], [77, 41]] as const) {
+      const c = toClient('5 -10 320 230', rect, x, y);
+      const back = toScene('5 -10 320 230', rect, c.x, c.y);
+      expect(back.x).toBeCloseTo(x, 9);
+      expect(back.y).toBeCloseTo(y, 9);
+    }
+    // A missing or broken viewBox falls back to the default frame.
+    expect(toScene(null, { left: 0, top: 0, width: 320, height: 230 }, 160, 115)).toEqual({ x: 160, y: 115 });
+    expect(toScene('1 2 x', { left: 0, top: 0, width: 320, height: 230 }, 0, 0)).toEqual({ x: 0, y: 0 });
   });
 });

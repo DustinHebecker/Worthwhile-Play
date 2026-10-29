@@ -6,7 +6,7 @@
 import type { Outcome } from './check';
 import type { Scene } from './generate';
 import { fitViewBox } from './fit';
-import { layoutBeam, layoutMobile, layoutStack, STACK_VIEW, type MobileLayout } from './layout';
+import { layoutBeam, layoutMobile, layoutStack, mobileHookPoints, STACK_VIEW, type MobileLayout } from './layout';
 import { beamMoments, BODY_LENGTH, bodyCentre, CUBE_WIDTH, isBar, stackJoints, type BeamScene, type MobileNode, type StackScene } from './statics';
 
 const NS = 'http://www.w3.org/2000/svg';
@@ -34,7 +34,18 @@ export interface SceneOptions {
   desc: string;
   /** The unit around a weight's number (from `tray.weight`, e.g. "" and "kg"), so weights read as weights. */
   kgUnit?: { pre: string; post: string };
+  /** Mark the parts that may be dragged (`data-drag`): placed parts, and bodies that may slide. */
+  drag?: { parts: boolean; bodies: boolean };
 }
+
+/** Marks a drawn part as draggable (the view reads `data-drag` on pointerdown, design § 13.1). */
+const draggable = (el: SVGElement, on: boolean | undefined, what: string): SVGElement => {
+  if (on) {
+    el.setAttribute('data-drag', what);
+    el.classList.add('bl-draggable');
+  }
+  return el;
+};
 
 const TIP_BEAM = 12;
 const TIP_MOBILE = 25;
@@ -112,15 +123,11 @@ function drawBeam(scene: BeamScene, o: SceneOptions): SVGElement {
     bar.append(kgLabel(L.x(0) + off, L.barY + 3, scene.barKg, o, 8));
   }
   let lowest = L.barY + 70;
-  for (const w of scene.weights) {
-    let y = L.barY + 9;
-    for (const other of scene.weights) {
-      if (other === w) break;
-      if (other.hook === w.hook) y += 22 + other.kg * 2.5;
-    }
-    bar.append(weightShape(L.x(w.hook), y, w.kg, w.free, o, Math.min(22, L.step * 0.92)));
+  scene.weights.forEach((w, i) => {
+    const y = beamWeightY(scene, w.hook, i);
+    bar.append(draggable(weightShape(L.x(w.hook), y, w.kg, w.free, o, Math.min(22, L.step * 0.92)), o.drag?.parts && w.free, `weight:${i}`));
     lowest = Math.max(lowest, y + 22 + w.kg * 2.5);
-  }
+  });
   if (o.cursor?.kind === 'hook') bar.append(s('path', { d: `M${L.x(o.cursor.at) - 7} ${L.barY - 30}h14l-7 9z`, class: 'bl-cursor' }));
   const side = o.outcome?.bench === 'beam' ? o.outcome.sides[0] : undefined;
   rotate(bar, side === 'left-down' ? -TIP_BEAM : side === 'right-down' ? TIP_BEAM : 0, ax, L.barY, o.animate);
@@ -129,6 +136,16 @@ function drawBeam(scene: BeamScene, o: SceneOptions): SVGElement {
   const tilt = side === 'left-down' || side === 'right-down' ? 130 * Math.sin((TIP_BEAM * Math.PI) / 180) : 0;
   if (o.explain) root.append(beamBars(scene, Math.max(L.barY + 92, lowest + 10 + tilt)));
   return root;
+}
+
+/** Where the weight hanging i-th in the list (or a new one, i = list length) on `hook` begins: below those before it. */
+function beamWeightY(scene: BeamScene, hook: number, i: number, except = -1): number {
+  const L = layoutBeam(scene.half);
+  let y = L.barY + 9;
+  scene.weights.forEach((other, j) => {
+    if (j < i && j !== except && other.hook === hook) y += 22 + other.kg * 2.5;
+  });
+  return y;
 }
 
 /** Turning-effect bars below the beam: left segments hatched, right ones dotted, each labelled. */
@@ -189,7 +206,7 @@ function drawMobile(node: MobileNode, o: SceneOptions): SVGElement {
         g.append(s('rect', { x: hx - w / 2, y: l.y, width: w, height: 8 + 9 + 13 + 6 * 2.5, class: 'bl-reserve' }));
       } else if (!isBar(h.child)) {
         g.append(s('line', { x1: hx, y1: l.y, x2: hx, y2: l.y + 8, class: 'bl-string' }));
-        g.append(weightShape(hx, l.y + 8, h.child.kg, h.child.free, o, w));
+        g.append(draggable(weightShape(hx, l.y + 8, h.child.kg, h.child.free, o, w), o.drag?.parts && h.child.free, `hook:${j}`));
       } else if (child) {
         g.append(s('line', { x1: hx, y1: l.y, x2: hx, y2: child.y, class: 'bl-string' }));
         g.append(draw(h.child, child, barIdx));
@@ -226,7 +243,8 @@ function drawStack(scene: StackScene, o: SceneOptions): SVGElement {
   const lower = s('g');
   const upper = s('g');
   scene.bodies.forEach((b, k) => {
-    const g = fail && k >= fail.joint ? upper : lower;
+    const g = draggable(s('g'), o.drag?.bodies, `body:${k}`);
+    (fail && k >= fail.joint ? upper : lower).append(g);
     const y = L.bodyY(k);
     const kind = b.kind;
     g.append(
@@ -251,8 +269,9 @@ function drawStack(scene: StackScene, o: SceneOptions): SVGElement {
   // Cubes, stacked when they share a spot.
   const heights = new Map<string, number>();
   let topY = L.bodyY(scene.bodies.length - 1);
-  for (const c of scene.cubes) {
-    const g = fail && c.on >= fail.joint ? upper : lower;
+  scene.cubes.forEach((c, i) => {
+    const g = draggable(s('g'), o.drag?.parts && c.free, `cube:${i}`);
+    (fail && c.on >= fail.joint ? upper : lower).append(g);
     const key = `${c.on}:${c.x}`;
     const below = heights.get(key) ?? 0;
     const size = CUBE_WIDTH * L.scale;
@@ -265,7 +284,7 @@ function drawStack(scene: StackScene, o: SceneOptions): SVGElement {
     g.append(s('path', { d: `M${cx - 2.5} ${y + 3}v-1.6h5v1.6`, class: 'bl-handle' }));
     g.append(s('path', { d: `M${cx - size / 2 + 1.6} ${y + 3}H${cx + size / 2 - 1.6}L${cx + size / 2} ${y + size}H${cx - size / 2}Z`, class: `bl-cube${cls}` }));
     g.append(kgLabel(cx, y + size / 2 + 4, c.kg, o, 6.8));
-  }
+  });
   if (scene.bucket) {
     const b = scene.bucket;
     const g = fail && b.on >= fail.joint ? upper : lower;
@@ -318,4 +337,42 @@ export function drawScene(scene: Scene, o: SceneOptions): SVGElement {
   // Frame the drawing tightly (design § 19.1: as large as possible on a phone); the beam keeps its full bar width.
   svg.setAttribute('viewBox', fitViewBox(content, VIEWBOX[scene.bench], 8, scene.bench === 'beam' ? 300 : 150, 110));
   return svg;
+}
+
+/* ---------------- Drag preview (design § 13.1) ---------------- */
+
+/** Where a dragged part would land: a beam hook, a mobile hook (index), a cube centre (cm) or a body's left end (cm). */
+export type Ghost =
+  | { kind: 'beam'; hook: number; kg: number; except: number }
+  | { kind: 'mobile'; hook: number; kg: number }
+  | { kind: 'cube'; x: number; kg: number; except: number }
+  | { kind: 'body'; index: number; left: number };
+
+/** The snap target drawn while dragging: a dashed outline of the part where it would land (no motion, no colour cue). */
+export function drawGhost(scene: Scene, g: Ghost, o: Pick<SceneOptions, 'kgUnit'>): SVGElement {
+  const root = s('g', { class: 'bl-ghost', 'data-testid': 'bl-drag-ghost', 'aria-hidden': 'true' });
+  const opts = { ...o } as SceneOptions;
+  if (g.kind === 'beam' && scene.bench === 'beam') {
+    const L = layoutBeam(scene.s.half);
+    root.append(s('path', { d: `M${L.x(g.hook) - 7} ${L.barY - 30}h14l-7 9z`, class: 'bl-cursor' }));
+    root.append(weightShape(L.x(g.hook), beamWeightY(scene.s, g.hook, scene.s.weights.length, g.except), g.kg, true, opts, Math.min(22, L.step * 0.92)));
+  } else if (g.kind === 'mobile' && scene.bench === 'mobile') {
+    const p = mobileHookPoints(scene.s)[g.hook];
+    if (p) root.append(s('path', { d: `M${p.x - 7} ${p.y - 26}h14l-7 9z`, class: 'bl-cursor' }), weightShape(p.x, p.y + 8, g.kg, true, opts, 18));
+  } else if (g.kind === 'cube' && scene.bench === 'stack') {
+    const L = layoutStack(scene.s);
+    const size = CUBE_WIDTH * L.scale;
+    const below = scene.s.cubes.filter((c, i) => i !== g.except && c.on === 0 && c.x === g.x).length * size;
+    const y = L.bodyY(0) - below - size;
+    const cx = L.px(g.x);
+    root.append(
+      s('path', { d: `M${cx - size / 2 + 1.6} ${y + 3}H${cx + size / 2 - 1.6}L${cx + size / 2} ${y + size}H${cx - size / 2}Z`, class: 'bl-cube' }),
+      kgLabel(cx, y + size / 2 + 4, g.kg, opts, 6.8)
+    );
+  } else if (g.kind === 'body' && scene.bench === 'stack') {
+    const L = layoutStack(scene.s);
+    const b = scene.s.bodies[g.index];
+    if (b) root.append(s('rect', { x: L.px(g.left), y: L.bodyY(g.index), width: BODY_LENGTH[b.kind] * L.scale, height: L.bodyH, rx: 2, class: 'bl-body' }));
+  }
+  return root;
 }

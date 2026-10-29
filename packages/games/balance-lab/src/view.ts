@@ -51,7 +51,9 @@ import {
   type Item,
   type RoundState
 } from './rules';
-import { drawScene, type SceneOptions } from './scene-view';
+import { drawGhost, drawScene, type Ghost, type SceneOptions } from './scene-view';
+import { canDrag, dropScene, movePointer, press, release, snapTarget, sourceOf, dragKg, type DragSource, type DropContext, type Gesture } from './drag';
+import { toScene } from './fit';
 import { cubeSpots, freeCubeSpots, setString } from './generate';
 import { isBar, mobileBars, type StackScene } from './statics';
 import './styles.css';
@@ -59,11 +61,7 @@ import './styles.css';
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
 /** The picture x under a pointer x: the scene is framed by a fitted viewBox and letterboxed (xMidYMid meet). */
-function sceneX(svg: SVGElement, rect: DOMRect, clientX: number): number {
-  const [vx = 0, , vw = 320, vh = 230] = (svg.getAttribute('viewBox') ?? '').split(/\s+/).map(Number);
-  const k = Math.min(rect.width / vw, rect.height > 0 ? rect.height / vh : Infinity);
-  return vx + (clientX - rect.left - (rect.width - vw * k) / 2) / k;
-}
+const sceneX = (svg: SVGElement, rect: DOMRect, clientX: number): number => toScene(svg.getAttribute('viewBox'), rect, clientX, 0).x;
 
 /** The spot nearest to x (x itself when there is none). */
 const nearestSpot = (spots: readonly number[], x: number): number => spots.reduce((best, s) => (Math.abs(s - x) < Math.abs(best - x) ? s : best), spots[0] ?? x);
@@ -97,6 +95,13 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
   let focusAfter: string | null = null;
   /** The cursor line of the last render, announced after arrow keys (focus stays on the scene). */
   let whereText = '';
+  /** Pointer drag (design § 13.1): the gesture, its snap target, the picture point of the press, the captured element. */
+  let gesture: Gesture | null = null;
+  let dragTarget: number | null = null;
+  let dragFrom: { x: number; y: number } | null = null;
+  let captured: Element | null = null;
+  /** The click that follows a drag (or a cancelled one) is not a tap. */
+  let swallowClick = false;
 
   const live = h('div', { class: 'sr-only', 'aria-live': 'polite', role: 'status', 'data-testid': 'bl-announcer' });
   const main = h('div', { class: 'bl-main' });
@@ -293,6 +298,163 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
     announce(live, t('announce.released', { text: outcomeLine(t, done.draft, done.outcome!) }));
   }
 
+  /* ---------------- Dragging (pointer and touch; keyboard and tap paths are separate) ---------------- */
+
+  /** Bodies slide when dragged on the overhang task and on the free stack bench. */
+  const bodiesMovable = (): boolean => state.mode === 'free' || taskId() === 'stack-overhang';
+
+  function dropContext(): DropContext | null {
+    const sc = sceneNow();
+    if (!sc || !editable()) return null;
+    const it = state.mode === 'round' ? currentItem(state) : undefined;
+    return { scene: sc, id: it?.id, goal: it?.goal ?? null, tray: state.mode === 'round' ? trayNow() : [], bodies: sc.bench === 'stack' && bodiesMovable() };
+  }
+
+  const sceneSvg = () => container.querySelector<SVGSVGElement>('[data-testid="bl-scene"]');
+  const doc = root.ownerDocument;
+
+  function startDrag(e: PointerEvent, source: DragSource, el: Element) {
+    if (paused || gesture || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    const ctx = dropContext();
+    if (!ctx || !canDrag(ctx, source)) return;
+    gesture = press(source, e.pointerId, e.clientX, e.clientY);
+    const svg = sceneSvg();
+    dragFrom = svg ? toScene(svg.getAttribute('viewBox'), svg.getBoundingClientRect(), e.clientX, e.clientY) : null;
+    captured = el;
+    try {
+      el.setPointerCapture?.(e.pointerId);
+    } catch {
+      // Capture is a convenience: the moves still reach the document.
+    }
+    doc.addEventListener('pointermove', onDragMove);
+    doc.addEventListener('pointerup', onDragUp);
+    doc.addEventListener('pointercancel', onDragCancel);
+    doc.addEventListener('keydown', onDragKey, true);
+  }
+
+  function endDrag() {
+    doc.removeEventListener('pointermove', onDragMove);
+    doc.removeEventListener('pointerup', onDragUp);
+    doc.removeEventListener('pointercancel', onDragCancel);
+    doc.removeEventListener('keydown', onDragKey, true);
+    try {
+      if (gesture && captured?.hasPointerCapture?.(gesture.pointerId)) captured.releasePointerCapture(gesture.pointerId);
+    } catch {
+      // Already released.
+    }
+    container.querySelector('[data-testid="bl-drag-ghost"]')?.remove();
+    container.classList.remove('bl-is-dragging');
+    gesture = null;
+    dragTarget = null;
+    dragFrom = null;
+    captured = null;
+  }
+
+  function ghostOf(ctx: DropContext, source: DragSource, target: number): Ghost | null {
+    const kg = dragKg(ctx, source) ?? 0;
+    const sc = ctx.scene;
+    if (sc.bench === 'beam') return { kind: 'beam', hook: target, kg, except: source.kind === 'weight' ? source.index : -1 };
+    if (sc.bench === 'mobile') return { kind: 'mobile', hook: target, kg };
+    if (source.kind === 'body') return { kind: 'body', index: source.index, left: target };
+    return { kind: 'cube', x: target, kg, except: source.kind === 'cube' ? source.index : -1 };
+  }
+
+  /** The cursor line for a snap target (the same words as the keyboard cursor). */
+  function targetText(ctx: DropContext, source: DragSource, target: number): string {
+    const sc = ctx.scene;
+    if (sc.bench === 'beam') {
+      const d = target - sc.s.axle;
+      return t('cursor.beam', { d: num(Math.abs(d)), side: t(d < 0 ? 'dir.left' : d > 0 ? 'dir.right' : 'dir.axle') });
+    }
+    if (sc.bench === 'mobile') return mobileHookLabel(t, sc.s, target);
+    if (source.kind === 'body') return t('cursor.body', { n: num(source.index + 1), from: num(target) });
+    return t('cursor.cube', { x: num(target) });
+  }
+
+  function showSnap(clientX: number, clientY: number) {
+    container.querySelector('[data-testid="bl-drag-ghost"]')?.remove();
+    const svg = sceneSvg();
+    const ctx = dropContext();
+    if (!svg || !ctx || !gesture) return;
+    const rect = svg.getBoundingClientRect();
+    const inside = rect.width > 0 && clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
+    const p = toScene(svg.getAttribute('viewBox'), rect, clientX, clientY);
+    dragTarget = inside ? snapTarget(ctx, gesture.source, p, dragFrom ?? p) : null;
+    const where = container.querySelector('[data-testid="bl-where"]');
+    if (dragTarget === null) {
+      if (where) where.textContent = '';
+      return;
+    }
+    const ghost = ghostOf(ctx, gesture.source, dragTarget);
+    if (ghost) svg.append(drawGhost(ctx.scene, ghost, { kgUnit }));
+    if (where) where.textContent = targetText(ctx, gesture.source, dragTarget);
+  }
+
+  function onDragMove(e: PointerEvent) {
+    if (!gesture || e.pointerId !== gesture.pointerId) return;
+    const was = gesture.dragging;
+    gesture = movePointer(gesture, e.pointerId, e.clientX, e.clientY);
+    if (!gesture.dragging) return;
+    e.preventDefault();
+    if (!was) {
+      container.classList.add('bl-is-dragging');
+      captured?.classList.add('bl-drag-source');
+    }
+    showSnap(e.clientX, e.clientY);
+  }
+
+  function onDragUp(e: PointerEvent) {
+    if (!gesture || e.pointerId !== gesture.pointerId) return;
+    const g = gesture;
+    if (g.dragging) showSnap(e.clientX, e.clientY);
+    const r = release(g, dragTarget);
+    const ctx = dropContext();
+    endDrag();
+    // A tap: the click that follows does what a tap does (tap a part, then a place).
+    if (r.kind === 'tap') return;
+    swallowClick = true;
+    const scene = r.kind === 'drop' && ctx ? dropScene(ctx, g.source, r.target) : null;
+    if (!scene) return render();
+    selTray = null;
+    selPlaced = null;
+    cursor = g.source.kind === 'body' ? g.source.index : r.kind === 'drop' ? r.target : cursor;
+    if (!edit(scene)) return render();
+    if (whereText) announce(live, whereText);
+  }
+
+  function onDragCancel(e: PointerEvent) {
+    if (!gesture || e.pointerId !== gesture.pointerId) return;
+    swallowClick = gesture.dragging;
+    endDrag();
+    render();
+  }
+
+  /** Escape cancels a drag (and nothing else happens: the scene's own Escape is not reached). */
+  function onDragKey(e: KeyboardEvent) {
+    if (e.key !== 'Escape' || !gesture?.dragging) return;
+    e.preventDefault();
+    e.stopPropagation();
+    swallowClick = true;
+    endDrag();
+    render();
+  }
+
+  // A drag's own click is swallowed; a click from the keyboard (detail 0) never is.
+  container.addEventListener(
+    'click',
+    (e) => {
+      if (swallowClick && e.detail !== 0) {
+        e.stopPropagation();
+        e.preventDefault();
+      }
+      swallowClick = false;
+    },
+    true
+  );
+  container.addEventListener('pointerdown', () => (swallowClick = false), true);
+  // While a part is held, a finger moving over the page drags the part, never scrolls the page.
+  container.addEventListener('touchmove', (e) => gesture && e.cancelable && e.preventDefault(), { passive: false });
+
   function onKey(e: KeyboardEvent) {
     if (paused) return;
     const big = e.shiftKey ? 4 : 1;
@@ -335,7 +497,7 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
 
   /* ---------------- Rendering ---------------- */
 
-  const button = (label: string, testid: string, onclick: () => void, extra: Record<string, string | boolean | undefined> = {}) =>
+  const button = (label: string, testid: string, onclick: () => void, extra: Record<string, string | boolean | EventListener | undefined> = {}) =>
     h('button', { type: 'button', 'data-testid': testid, onclick: () => !paused && onclick(), ...extra }, label);
 
   /** The unit around a weight's number in the picture, taken from the tray label (e.g. "3 kg" → "" and "kg"). */
@@ -366,7 +528,13 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
       flag: item?.goal?.kind === 'overhang' ? item.goal.cm : null,
       title,
       desc: describe(t, scene),
-      kgUnit
+      kgUnit,
+      drag: { parts: editable(), bodies: editable() && scene.bench === 'stack' && bodiesMovable() }
+    });
+    svg.addEventListener('pointerdown', (e) => {
+      const el = (e.target as Element | null)?.closest?.('[data-drag]');
+      const source = sourceOf(el?.getAttribute('data-drag') ?? null);
+      if (el && source) startDrag(e, source, el);
     });
     svg.addEventListener('click', (e) => {
       if (paused || !editable()) return;
@@ -406,7 +574,7 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
               selTray = selTray === i ? null : i;
               selPlaced = null;
               render();
-            }, { 'aria-pressed': selTray === i ? 'true' : 'false', class: 'bl-chip' })
+            }, { 'aria-pressed': selTray === i ? 'true' : 'false', class: 'bl-chip bl-chip--drag', onpointerdown: ((e: PointerEvent) => startDrag(e, { kind: 'tray', index: i }, e.currentTarget as Element)) as EventListener })
           )
         );
         if (!tray.length) chips.append(h('span', { class: 'bl-muted' }, t('tray.empty')));
@@ -647,6 +815,10 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
     },
     serialize: () => clone(state),
     pause() {
+      if (gesture) {
+        swallowClick = gesture.dragging;
+        endDrag();
+      }
       paused = true;
       animate = false;
       container.classList.add('bl-paused');
@@ -662,6 +834,7 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
       render();
     },
     dispose() {
+      endDrag();
       container.remove();
     }
   };
