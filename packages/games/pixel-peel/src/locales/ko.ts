@@ -151,5 +151,6 @@ export const ko: Catalogue = {
   'action.display': '표시',
   'status.startShort': '사수를 고르세요. 그 색이 밝게 표시되고 없앨 픽셀에 표시가 생깁니다.',
   'stuck.back': '더 둘 수가 없습니다. {k}번째 수로 돌아가면 됩니다.',
-  'stuck.backButton': '{k}번째 수로 돌아가기'
+  'stuck.backButton': '{k}번째 수로 돌아가기',
+  'notice.close': '닫기'
 };

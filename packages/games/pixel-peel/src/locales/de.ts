@@ -151,5 +151,6 @@ export const de: Catalogue = {
   'action.display': 'Anzeige',
   'status.startShort': 'Wähle einen Schützen: Seine Farbe leuchtet auf, und die Pixel, die er entfernen würde, sind markiert.',
   'stuck.back': 'Kein Zug mehr möglich. Zurück zu Zug {k} klappt.',
-  'stuck.backButton': 'Zurück zu Zug {k}'
+  'stuck.backButton': 'Zurück zu Zug {k}',
+  'notice.close': 'Schließen'
 };

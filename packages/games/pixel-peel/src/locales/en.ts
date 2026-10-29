@@ -150,7 +150,8 @@ export const en = {
   'action.display': 'Display',
   'status.startShort': 'Choose a shooter: its colour lights up and the pixels it would remove are marked.',
   'stuck.back': 'No move left. Going back to move {k} works.',
-  'stuck.backButton': 'Back to move {k}'
+  'stuck.backButton': 'Back to move {k}',
+  'notice.close': 'Close'
 };
 
 export type Catalogue = Record<keyof typeof en, string>;

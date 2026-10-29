@@ -9,12 +9,14 @@
 /* Shared button styles set display; keep the hidden attribute authoritative. */
 .wp-pixel-peel [hidden] { display: none !important; }
 
-.wp-pixel-peel .pp-play { display: grid; gap: 0.75rem; }
+.wp-pixel-peel .pp-play { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.75rem; }
 .wp-pixel-peel .pp-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.25rem 1rem; }
 .wp-pixel-peel .pp-title { font-weight: 700; font-size: 1.1rem; }
 .wp-pixel-peel .pp-left { color: var(--wp-muted); font-variant-numeric: tabular-nums; }
 
-.wp-pixel-peel .pp-main { display: grid; gap: 0.75rem; align-items: start; }
+.wp-pixel-peel .pp-main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.75rem; align-items: start; }
+/* The picture with its notice cards (stuck, the hint's way back): cards lie over the picture, so nothing moves. */
+.wp-pixel-peel .pp-frame { position: relative; min-inline-size: 0; }
 /*
  * Side by side on wide screens and on phones held sideways (e.g. 740 × 360): the picture and the side column (status,
  * waiting places, lanes) share the screen, so the player never scrolls between the picture and the shooters.
@@ -23,16 +25,18 @@
 @media (min-width: 48rem), (min-width: 36rem) and (orientation: landscape) {
   .wp-pixel-peel .pp-main { grid-template-columns: minmax(0, 1.25fr) minmax(19rem, 1fr); }
   /* The picture stays in view while the side column (lanes, colours) scrolls past. */
-  .wp-pixel-peel .pp-board { position: sticky; inset-block-start: 0.75rem; }
+  .wp-pixel-peel .pp-frame { position: sticky; inset-block-start: 0.75rem; }
 }
 /* Short and sideways: the picture is limited by the height, so equal columns give the lanes the spare width. */
 @media (min-width: 36rem) and (orientation: landscape) and (max-height: 31.99rem) {
   .wp-pixel-peel .pp-main { grid-template-columns: minmax(0, 1fr) minmax(19rem, 1fr); }
-  .wp-pixel-peel .pp-board { inset-block-start: 0.5rem; }
+  .wp-pixel-peel .pp-frame { inset-block-start: 0.5rem; }
 }
 
 /* The picture is content: never mirrored, never wider than its column. */
 .wp-pixel-peel .pp-board { direction: ltr; min-inline-size: 0; display: flex; justify-content: center; }
+/* Measures the viewport with the browser bars shown (100svh where supported). */
+.wp-pixel-peel .pp-svh { position: fixed; inset-block-start: 0; inset-inline-start: 0; inline-size: 0; block-size: 100vh; block-size: 100svh; visibility: hidden; pointer-events: none; }
 .wp-pixel-peel .pp-board.is-large {
   display: block;
   overflow: auto;
@@ -40,24 +44,6 @@
   border: 1px solid var(--wp-border);
   border-radius: var(--wp-radius);
   overscroll-behavior: contain;
-}
-/*
- * Stacked (narrow screens, held upright): the picture stays at the top while the player scrolls to the lanes, so the
- * spotlight is always seen; the view keeps it within half the screen height. Not on short screens, where a sticky
- * picture would cover the lanes.
- */
-@media (max-width: 47.99rem) and (orientation: portrait) and (min-height: 32rem), (max-width: 35.99rem) and (min-height: 32rem) {
-  .wp-pixel-peel .pp-board:not(.is-large) {
-    position: sticky;
-    inset-block-start: 0;
-    z-index: 2;
-    padding-block: 4px;
-    background: var(--wp-bg);
-  }
-  /* A control reached by keyboard is never left under the sticky picture. */
-  .wp-pixel-peel button,
-  .wp-pixel-peel summary,
-  .wp-pixel-peel input { scroll-margin-block-start: min(calc(100vw - 0.5rem), calc(50vh + 0.5rem)); }
 }
 .wp-pixel-peel .pp-board.is-large:focus-visible { outline: 3px solid var(--wp-focus); outline-offset: 2px; }
 .wp-pixel-peel .pp-board.is-large .pp-canvas { max-inline-size: none; }
@@ -70,7 +56,7 @@
   forced-color-adjust: none;
 }
 
-.wp-pixel-peel .pp-side { display: grid; gap: 0.75rem; min-inline-size: 0; }
+.wp-pixel-peel .pp-side { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.75rem; min-inline-size: 0; }
 /* Four lines are reserved, so a preview on hover never moves the shooters under the pointer. */
 .wp-pixel-peel .pp-status { min-block-size: 6em; line-height: 1.5; }
 .wp-pixel-peel .pp-status[aria-busy='true'] { color: var(--wp-muted); }
@@ -138,7 +124,19 @@
 .wp-pixel-peel .pp-lanes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.5rem; }
 .wp-pixel-peel .pp-lane { display: grid; gap: 0.25rem; align-content: start; min-inline-size: 0; }
 .wp-pixel-peel .pp-lane-name { font-size: 0.8rem; color: var(--wp-muted); }
+.wp-pixel-peel .pp-front-cell { position: relative; display: grid; }
 .wp-pixel-peel .pp-lane .pp-front { inline-size: 100%; }
+/* The lane number in the front's corner (decorative; the button's name says the lane). */
+.wp-pixel-peel .pp-lane-number {
+  display: none;
+  position: absolute;
+  inset-block-start: 2px;
+  inset-inline-start: 4px;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--wp-muted);
+  pointer-events: none;
+}
 .wp-pixel-peel .pp-lane-empty {
   display: grid;
   place-items: center;
@@ -164,16 +162,38 @@
 .wp-pixel-peel .pp-lanes-toggle { min-block-size: 44px; justify-self: start; }
 
 .wp-pixel-peel .pp-actions button { flex: 1 1 auto; }
+.wp-pixel-peel .pp-more { display: grid; gap: 0.75rem; }
 .wp-pixel-peel .pp-help { font-size: 0.85rem; }
+.wp-pixel-peel .pp-help-start { display: none; }
 
-.wp-pixel-peel .pp-stuck {
+/* Notice cards over the bottom of the picture (design v3 § 4.3). */
+.wp-pixel-peel .pp-notices {
+  position: absolute;
+  inset-inline: 0.5rem;
+  inset-block-end: 0.5rem;
+  z-index: 3;
   display: grid;
   gap: 0.5rem;
-  padding: 0.75rem;
+  max-block-size: max(50%, 12.5rem);
+  overflow-y: auto;
+  pointer-events: none;
+}
+.wp-pixel-peel .pp-notices > * { pointer-events: auto; }
+.wp-pixel-peel .pp-stuck,
+.wp-pixel-peel .pp-hint-row {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
   border: 2px solid var(--wp-focus);
   border-radius: var(--wp-radius);
   background: var(--wp-surface);
+  box-shadow: 0 2px 10px rgb(0 0 0 / 0.25);
 }
+.wp-pixel-peel .pp-hint-row { display: flex; flex-wrap: wrap; }
+.wp-pixel-peel .pp-stuck-head { display: flex; align-items: start; justify-content: space-between; gap: 0.5rem; }
+.wp-pixel-peel .pp-stuck-head p { padding-block-start: 0.25rem; }
+.wp-pixel-peel .pp-close { flex: none; padding: 0; }
+.wp-pixel-peel .pp-stuck .wp-row button { padding-inline: 0.6rem; font-size: 0.9rem; }
 
 .wp-pixel-peel .pp-details { border: 1px solid var(--wp-border); border-radius: var(--wp-radius); padding-inline: 0.75rem; background: var(--wp-surface); }
 .wp-pixel-peel .pp-details > summary { min-block-size: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 600; }
@@ -211,6 +231,54 @@
 @keyframes pp-fade {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+/*
+ * Stacked (narrow screens, held upright): the play unit of design v3 § 4.1 — title line, picture, a 3-line status,
+ * waiting places, lane fronts with 2 chips each and the action row — fits one screen (the view sizes the picture to
+ * fit, src/layout.ts). The picture also stays at the top while the player scrolls on to the colours and the display
+ * options. Not on short screens, where a sticky picture would cover the lanes. Keep this query, the side-by-side
+ * query above and stickyTop() in view.ts in step.
+ */
+@media (max-width: 47.99rem) and (orientation: portrait) and (min-height: 32rem), (max-width: 35.99rem) and (min-height: 32rem) {
+  .wp-pixel-peel .pp-play,
+  .wp-pixel-peel .pp-main,
+  .wp-pixel-peel .pp-side { gap: 0.375rem; }
+  .wp-pixel-peel .pp-head { flex-wrap: nowrap; min-block-size: 1.5rem; align-items: center; }
+  .wp-pixel-peel .pp-title { font-size: 1rem; min-inline-size: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .wp-pixel-peel .pp-left { flex: none; font-size: 0.8125rem; white-space: nowrap; }
+  .wp-pixel-peel .pp-frame:not(.is-large) {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 2;
+    background: var(--wp-bg);
+  }
+  .wp-pixel-peel .pp-board:not(.is-large) { padding-block: 4px; }
+  /* Three lines, fixed: a preview or a result never moves the shooters; a longer text scrolls inside. */
+  .wp-pixel-peel .pp-status { min-block-size: 0; block-size: calc(3 * 1.3em); overflow-y: auto; font-size: 0.875rem; line-height: 1.3; }
+  /* Headings and lane names stay for screen readers (the groups and buttons are named); a small lane number stays. */
+  .wp-pixel-peel .pp-slots-section > .pp-heading,
+  .wp-pixel-peel .pp-lanes-section > .pp-heading {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .wp-pixel-peel .pp-lane-name { display: none; }
+  .wp-pixel-peel .pp-lane-number { display: block; }
+  .wp-pixel-peel .pp-lanes { gap: 0.375rem; }
+  /* Room for 2 chips per lane, also when a lane holds fewer: the unit keeps its height during play. */
+  .wp-pixel-peel .pp-chips { min-block-size: 42px; }
+  .wp-pixel-peel .pp-actions { flex-wrap: nowrap; gap: 0.375rem; }
+  .wp-pixel-peel .pp-actions button { flex: 1 1 0; min-inline-size: 0; padding-inline: 0.4rem; font-size: 0.875rem; line-height: 1.15; white-space: normal; }
+  .wp-pixel-peel .pp-help-start { display: block; }
+  /* A control reached by keyboard is never left under the sticky picture. */
+  .wp-pixel-peel button,
+  .wp-pixel-peel summary,
+  .wp-pixel-peel input { scroll-margin-block-start: var(--pp-picture-h, 50vh); }
 }
 
 /* Launches change text in many small places: keep their layout work local (no paint containment: hint badges overhang). */

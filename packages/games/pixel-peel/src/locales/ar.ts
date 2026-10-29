@@ -151,5 +151,6 @@ export const ar: Catalogue = {
   'action.display': 'العرض',
   'status.startShort': 'اختر راميًا: يضيء لونه وتُعلَّم البكسلات التي سيزيلها.',
   'stuck.back': 'لم تبقَ أي حركة. العودة إلى الحركة {k} تنجح.',
-  'stuck.backButton': 'العودة إلى الحركة {k}'
+  'stuck.backButton': 'العودة إلى الحركة {k}',
+  'notice.close': 'إغلاق'
 };

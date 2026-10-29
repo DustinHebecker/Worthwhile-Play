@@ -151,5 +151,6 @@ export const tr: Catalogue = {
   'action.display': 'Görünüm',
   'status.startShort': 'Bir atıcı seç: rengi parlar ve kaldıracağı pikseller işaretlenir.',
   'stuck.back': 'Hiç hamle kalmadı. {k}. hamleye dönmek işe yarar.',
-  'stuck.backButton': '{k}. hamleye dön'
+  'stuck.backButton': '{k}. hamleye dön',
+  'notice.close': 'Kapat'
 };

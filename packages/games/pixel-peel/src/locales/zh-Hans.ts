@@ -151,5 +151,6 @@ export const zhHans: Catalogue = {
   'action.display': '显示',
   'status.startShort': '选择一个射手：它的颜色会亮起，它将移除的像素会被标记。',
   'stuck.back': '没有可走的步骤了。回到第 {k} 步可以完成。',
-  'stuck.backButton': '回到第 {k} 步'
+  'stuck.backButton': '回到第 {k} 步',
+  'notice.close': '关闭'
 };

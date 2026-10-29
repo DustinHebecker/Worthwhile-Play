@@ -151,5 +151,6 @@ export const fr: Catalogue = {
   'action.display': 'Affichage',
   'status.startShort': 'Choisis un tireur : sa couleur s’éclaire et les pixels qu’il retirerait sont marqués.',
   'stuck.back': 'Plus aucun coup possible. Revenir au coup {k} fonctionne.',
-  'stuck.backButton': 'Revenir au coup {k}'
+  'stuck.backButton': 'Revenir au coup {k}',
+  'notice.close': 'Fermer'
 };

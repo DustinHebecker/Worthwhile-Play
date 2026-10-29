@@ -151,5 +151,6 @@ export const pt: Catalogue = {
   'action.display': 'Exibição',
   'status.startShort': 'Escolha um atirador: a cor dele se destaca e os pixels que ele removeria ficam marcados.',
   'stuck.back': 'Não há mais jogadas. Voltar à jogada {k} funciona.',
-  'stuck.backButton': 'Voltar à jogada {k}'
+  'stuck.backButton': 'Voltar à jogada {k}',
+  'notice.close': 'Fechar'
 };

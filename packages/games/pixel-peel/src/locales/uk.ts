@@ -151,5 +151,6 @@ export const uk: Catalogue = {
   'action.display': 'Відображення',
   'status.startShort': 'Обери стрільця: його колір підсвітиться, а пікселі, які він прибере, буде позначено.',
   'stuck.back': 'Ходів більше немає. Повернення до ходу {k} спрацює.',
-  'stuck.backButton': 'Повернутися до ходу {k}'
+  'stuck.backButton': 'Повернутися до ходу {k}',
+  'notice.close': 'Закрити'
 };

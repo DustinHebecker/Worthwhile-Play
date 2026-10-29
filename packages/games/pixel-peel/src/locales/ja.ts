@@ -151,5 +151,6 @@ export const ja: Catalogue = {
   'action.display': '表示',
   'status.startShort': 'シューターを選んでください。その色が明るくなり、取り除くピクセルに印が付きます。',
   'stuck.back': 'もう打てる手がありません。{k} 手目に戻れば仕上げられます。',
-  'stuck.backButton': '{k} 手目に戻る'
+  'stuck.backButton': '{k} 手目に戻る',
+  'notice.close': '閉じる'
 };

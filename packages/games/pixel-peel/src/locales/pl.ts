@@ -151,5 +151,6 @@ export const pl: Catalogue = {
   'action.display': 'Wyświetlanie',
   'status.startShort': 'Wybierz strzelca: jego kolor się podświetli, a piksele, które by usunął, zostaną oznaczone.',
   'stuck.back': 'Nie ma już ruchu. Powrót do ruchu {k} działa.',
-  'stuck.backButton': 'Wróć do ruchu {k}'
+  'stuck.backButton': 'Wróć do ruchu {k}',
+  'notice.close': 'Zamknij'
 };

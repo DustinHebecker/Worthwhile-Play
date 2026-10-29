@@ -151,5 +151,6 @@ export const hi: Catalogue = {
   'action.display': 'प्रदर्शन',
   'status.startShort': 'कोई निशानेबाज़ चुनें: उसका रंग चमक उठता है और जो पिक्सेल वह हटाएगा, वे चिह्नित हो जाते हैं।',
   'stuck.back': 'कोई चाल नहीं बची। चाल {k} पर लौटने से काम बनेगा।',
-  'stuck.backButton': 'चाल {k} पर लौटें'
+  'stuck.backButton': 'चाल {k} पर लौटें',
+  'notice.close': 'बंद करें'
 };

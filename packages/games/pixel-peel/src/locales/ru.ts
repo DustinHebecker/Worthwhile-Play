@@ -64,7 +64,7 @@ export const ru: Catalogue = {
   'preview.removes': '{shooter}: уберёт {n}, затем будет ждать на свободном месте, останется: {left}.',
   'preview.usedUp': '{shooter}: уберёт {n} и израсходуется.',
   'preview.parks': '{shooter}: пока ни до чего не дотянется и будет ждать (парковка).',
-  'preview.backToSlot': '{shooter}: уберёт {n}, затем снова будет ждать на своём месте, останется: {left}.',
+  'preview.backToSlot': '{shooter}: уберёт {n} и снова будет ждать на своём месте, останется: {left}.',
   'preview.blocked': '{shooter}: {reason}',
   'reason.noSlot': 'нет свободного места ожидания, а осталось бы: {left}.',
   'reason.nothing': 'до этого цвета пока не дотянуться.',
@@ -151,5 +151,6 @@ export const ru: Catalogue = {
   'action.display': 'Отображение',
   'status.startShort': 'Выбери стрелка: его цвет подсветится, а пиксели, которые он уберёт, будут отмечены.',
   'stuck.back': 'Ходов больше нет. Возврат к ходу {k} работает.',
-  'stuck.backButton': 'Вернуться к ходу {k}'
+  'stuck.backButton': 'Вернуться к ходу {k}',
+  'notice.close': 'Закрыть'
 };

@@ -151,5 +151,6 @@ export const nl: Catalogue = {
   'action.display': 'Weergave',
   'status.startShort': 'Kies een schutter: zijn kleur licht op en de pixels die hij zou weghalen zijn gemarkeerd.',
   'stuck.back': 'Geen zet meer mogelijk. Terug naar zet {k} werkt.',
-  'stuck.backButton': 'Terug naar zet {k}'
+  'stuck.backButton': 'Terug naar zet {k}',
+  'notice.close': 'Sluiten'
 };

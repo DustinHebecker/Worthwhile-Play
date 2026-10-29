@@ -6,6 +6,7 @@ import { createInitial } from './generate';
 import { hint as computeHint, type HintResult } from './hint';
 import { findMotif } from './motifs/index';
 import { canUndo, resetState, restart, tableOfState, undo, undoTo, type Hit, type Move, type PaletteEntry, type PeelState, type Shooter } from './rules';
+import { fitCell } from './layout';
 import { PeelQueue } from './peel';
 import { inkFor, SYMBOLS, symbolPath } from './symbols';
 import './styles.css';
@@ -20,8 +21,9 @@ const TRACK = 6;
 const LARGE_CELL = 14;
 /** Symbols and the hatch are drawn from this cell size (CSS px). */
 const SYMBOL_MIN = 10;
-/** Chips shown per lane before "Show whole lanes". */
+/** Chips shown per lane before "Show whole lanes" (on a phone held upright: 2, so the play unit fits one screen). */
 const CHIPS_SHOWN = 7;
+const CHIPS_COMPACT = 2;
 
 /** How launches are drawn (design v3 § 3.1): Slow peels pixel by pixel, Quick is the short v2 animation, Off is instant. */
 export type PeelMode = 'slow' | 'quick' | 'off';
@@ -137,6 +139,9 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
   let laneFocus = 0;
   let slotFocus = 0;
   let wasStuck = false;
+  /** The notice cards were closed (until the next change), and where focus goes back to. */
+  let noticesDismissed = false;
+  let noticeReturn: HTMLElement | null = null;
   let becameStuck = false;
   /** The shooter button just launched: not previewed again until the pointer leaves it or focus moves. */
   let quiet: HTMLElement | null = null;
@@ -167,6 +172,9 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
   };
   const wide = () => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(min-width: 48rem)').matches;
   const wholeLanes = () => display.wholeLanes ?? wide();
+  /** The stacked layout of a phone held upright (read once per mount and resize). */
+  let compact = false;
+  const chipsShown = () => (compact ? CHIPS_COMPACT : CHIPS_SHOWN);
   /** The picture sticks to the top of the stacked layout (the media query of styles.css). */
   const stickyTop = () =>
     typeof window !== 'undefined' &&
@@ -205,9 +213,14 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
   const hintButton = button('pp-hint', t('common.hint'), () => doHint());
   const undoToButton = button('pp-undo-to', '', () => doUndoTo());
   const hintRow = h('div', { class: 'wp-row pp-hint-row', hidden: true }, undoToButton);
+  const stuckText = h('p', { id: 'pp-stuck-text', 'data-testid': 'pp-stuck-text' }, t('stuck.text'));
+  const closeNotice = h('button', { type: 'button', class: 'pp-close', 'data-testid': 'pp-stuck-close', 'aria-label': t('notice.close'), onclick: () => dismissNotices() }, h('span', { 'aria-hidden': 'true' }, '×'));
+  const stuckBack = button('pp-stuck-back', '', () => doStuckBack());
+  stuckBack.hidden = true;
   const stuckPanel = h('div', { class: 'pp-stuck', role: 'group', 'aria-labelledby': 'pp-stuck-text', 'data-testid': 'pp-stuck', hidden: true },
-    h('p', { id: 'pp-stuck-text' }, t('stuck.text')),
+    h('div', { class: 'pp-stuck-head' }, stuckText, closeNotice),
     h('div', { class: 'wp-row' },
+      stuckBack,
       button('pp-stuck-undo', t('common.undo'), () => doUndo()),
       button('pp-stuck-restart', t('action.restart'), () => doRestart()),
       button('pp-stuck-hint', t('common.hint'), () => doHint())
@@ -285,19 +298,57 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
   /** The Peeling mode in effect: reduced motion forces Off. */
   const peelMode = (): PeelMode => (context.reducedMotion ? 'off' : display.peel);
 
-  const side = h('div', { class: 'pp-side' },
-    status,
-    hintRow,
-    stuckPanel,
-    h('section', { class: 'pp-section' }, slotsHeading, slotsRow),
-    h('section', { class: 'pp-section' }, h('h3', { class: 'pp-heading', id: 'pp-lanes-heading' }, t('lanes.heading')), lanesRow, lanesToggle),
-    h('div', { class: 'wp-row pp-actions' }, undoButton, restartButton, hintButton, finishButton),
+  // The Display button of the action row opens the same panel directly under the row (design v3 § 3.1).
+  const displayButton = button('pp-display', t('action.display'), () => toggleDisplay());
+  displayButton.setAttribute('aria-expanded', 'false');
+  optionsBox.id = 'pp-options';
+  displayButton.setAttribute('aria-controls', 'pp-options');
+  optionsBox.addEventListener('toggle', () => displayButton.setAttribute('aria-expanded', String(optionsBox.open)));
+
+  /*
+   * The play unit (design v3 § 4.1): title line, picture, status, waiting places, lane fronts and the action row; on
+   * a phone held upright it fits one screen. Notices (stuck, the hint's way back) are cards over the picture, so
+   * nothing under the finger moves. Everything else follows below the unit.
+   */
+  const noticeLayer = h('div', { class: 'pp-notices' }, stuckPanel, hintRow);
+  const frameEl = h('div', { class: 'pp-frame', 'data-testid': 'pp-frame' }, board, noticeLayer);
+  const actions = h('div', { class: 'wp-row pp-actions', 'data-testid': 'pp-actions' }, undoButton, hintButton, displayButton, finishButton);
+  const more = h('div', { class: 'pp-more' },
+    lanesToggle,
+    h('div', { class: 'wp-row pp-secondary' }, restartButton),
+    h('p', { class: 'wp-muted pp-help pp-help-start' }, t('status.start')),
     h('p', { class: 'wp-muted pp-help' }, t('help.symbols')),
     h('p', { class: 'wp-muted pp-help' }, t('help.keys')),
     colours,
     optionsBox
   );
-  const playArea = h('div', { class: 'pp-play' }, h('div', { class: 'pp-head' }, titleEl, leftEl), h('div', { class: 'pp-main' }, board, side));
+  const side = h('div', { class: 'pp-side' },
+    status,
+    h('section', { class: 'pp-section pp-slots-section' }, slotsHeading, slotsRow),
+    h('section', { class: 'pp-section pp-lanes-section' }, h('h3', { class: 'pp-heading', id: 'pp-lanes-heading' }, t('lanes.heading')), lanesRow),
+    actions,
+    more
+  );
+  const headEl = h('div', { class: 'pp-head' }, titleEl, leftEl);
+  const playArea = h('div', { class: 'pp-play', 'data-testid': 'pp-play' }, headEl, h('div', { class: 'pp-main' }, frameEl, side));
+  /** Measures `100svh` (the viewport with the browser bars shown); falls back to innerHeight. */
+  const svhProbe = h('div', { class: 'pp-svh', 'aria-hidden': 'true' });
+
+  function toggleDisplay() {
+    if (optionsBox.open) {
+      optionsBox.open = false;
+      more.append(optionsBox);
+    } else {
+      actions.after(optionsBox);
+      optionsBox.open = true;
+      try {
+        optionsBox.scrollIntoView?.({ block: 'nearest' });
+      } catch {
+        // Presentation only.
+      }
+    }
+    displayButton.setAttribute('aria-expanded', String(optionsBox.open));
+  }
 
   const revealCanvas = h('canvas', { class: 'pp-reveal-canvas', role: 'img', 'data-testid': 'pp-reveal-canvas' });
   const revealTitle = h('h2', { class: 'pp-reveal-title', tabindex: -1, 'data-testid': 'pp-reveal-title' });
@@ -305,7 +356,7 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
   const revealStats = h('p', { class: 'wp-muted', 'data-testid': 'pp-reveal-stats' });
   const reveal = h('section', { class: 'pp-reveal', 'data-testid': 'pp-reveal', hidden: true }, h('div', { class: 'pp-reveal-board', dir: 'ltr' }, revealCanvas), revealTitle, revealPlace, revealStats);
 
-  const container = h('div', { class: 'wp-pixel-peel', dir: t.direction, lang: bcp47Tag(t.locale) }, playArea, reveal, live);
+  const container = h('div', { class: 'wp-pixel-peel', dir: t.direction, lang: bcp47Tag(t.locale) }, playArea, reveal, live, svhProbe);
   if (context.reducedMotion) container.classList.add('is-reduced-motion');
 
   // --- Session: engine, cursor, exposure, cached previews (design v2 § 6.5) -----------------------------------
@@ -384,7 +435,13 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
       laneChips.push([]);
       const list = h('ol', { class: 'pp-chips', 'aria-label': t('lane.queue', { lane: i + 1 }) });
       laneLists.push(list);
-      lanesRow.append(h('div', { class: 'pp-lane', 'data-testid': `pp-lane-box-${i}` }, h('span', { class: 'pp-lane-name', 'aria-hidden': 'true' }, t('lane.name', { lane: i + 1 })), b, empty, list));
+      lanesRow.append(
+        h('div', { class: 'pp-lane', 'data-testid': `pp-lane-box-${i}` },
+          h('span', { class: 'pp-lane-name', 'aria-hidden': 'true' }, t('lane.name', { lane: i + 1 })),
+          h('div', { class: 'pp-front-cell' }, b, empty, h('span', { class: 'pp-lane-number', 'aria-hidden': 'true', dir: 'ltr' }, String(i + 1))),
+          list
+        )
+      );
     });
     for (const b of [...slotButtons, ...laneButtons]) {
       b.addEventListener('click', () => activate(b));
@@ -488,7 +545,7 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
       b.hidden = !front;
       (laneEmpty[i] as HTMLElement).hidden = Boolean(front);
       if (front) fillShooter(b, front, t('lane.label', { lane: i + 1, colour: colourName(front.c), symbol: symbolName(front.c), shots: front.n }));
-      const end = whole ? lane.length : Math.min(lane.length, k + 1 + CHIPS_SHOWN);
+      const end = whole ? lane.length : Math.min(lane.length, k + 1 + chipsShown());
       hiddenChips += lane.length - end;
       const chips = laneChips[i] as (HTMLElement | undefined)[];
       chips.forEach((chip, index) => {
@@ -497,7 +554,7 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
       });
       for (let index = k + 1; index < end; index++) if (!chips[index]) chipOf(i, index);
     });
-    const longest = Math.max(0, ...state.lanes.map((lane, i) => lane.length - (cursor.laneFront[i] as number) - 1 - CHIPS_SHOWN));
+    const longest = Math.max(0, ...state.lanes.map((lane, i) => lane.length - (cursor.laneFront[i] as number) - 1 - chipsShown()));
     lanesToggle.hidden = longest <= 0;
     lanesToggle.setAttribute('aria-expanded', String(whole));
     setText(lanesToggle, whole ? t('lanes.collapse') : t('lanes.expand', { n: hiddenChips }));
@@ -517,7 +574,7 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
 
     // Actions, stuck, hint undo target
     const stuck = !isSolved && isStuckNow();
-    stuckPanel.hidden = !stuck;
+    stuckPanel.hidden = !stuck || noticesDismissed;
     // As rules.canUndo, from the cached cursor (canUndo replays every move).
     const undoable = !isSolved && (state.moves.length > 0 || (state.restartUndo?.length ?? 0) > 0);
     undoButton.disabled = !undoable;
@@ -528,7 +585,7 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
       if (b.dataset.testid === 'pp-stuck-restart') b.disabled = state.moves.length === 0;
     }
     const undoTarget = hintResult?.kind === 'undo' && hintResult.k < state.moves.length ? hintResult.k : -1;
-    hintRow.hidden = undoTarget < 0;
+    hintRow.hidden = undoTarget < 0 || noticesDismissed;
     setText(undoToButton, undoTarget === 0 ? t('hint.undoToStart') : t('hint.undoTo', { k: undoTarget }));
 
     // Colours overview
@@ -614,7 +671,7 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
       status.textContent = previewText(previewOf(previewMove)) + (selected === previewMove ? ` ${t('confirm.again')}` : '');
       status.dataset.kind = 'preview';
     } else {
-      status.textContent = statusText || t('status.start');
+      status.textContent = statusText || t(compact ? 'status.startShort' : 'status.start');
       status.dataset.kind = statusText ? 'message' : 'start';
     }
   };
@@ -719,24 +776,41 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
     return w > 0 ? w : 0;
   };
 
+  /** The viewport height with the browser bars shown (`100svh`), else innerHeight. */
+  const viewportHeight = () => {
+    const probe = svhProbe.offsetHeight;
+    if (probe > 0) return probe;
+    return typeof window !== 'undefined' && window.innerHeight > 0 ? window.innerHeight : 0;
+  };
+
   /**
-   * Cell size in CSS px: Fit fills the available width (at least 5 px), Large is 14 px. Measured once per mount and
-   * resize: reading layout on every launch would force a layout each time.
-   * Fit also keeps the picture within the screen height, so the lanes are never pushed out of reach: where the picture
-   * sticks to the top (narrow and tall screens, see styles.css) it takes at most half the height, elsewhere 90 %.
+   * Height of the play unit without the picture (design v3 § 4.2). Stacked: from the title line to the end of the
+   * action row, so picture, status, waiting places, lane fronts and actions fit one screen. Side by side: the title
+   * line above the picture, so the whole picture fits the screen beside the lanes.
    */
-  let fitCell = 0;
+  const chromeHeight = () => {
+    const top = headEl.getBoundingClientRect().top;
+    const pic = canvas.getBoundingClientRect();
+    if (compact) return Math.max(0, actions.getBoundingClientRect().bottom - top - pic.height);
+    return Math.max(0, pic.top - top) + 8;
+  };
+
+  /**
+   * Cell size in CSS px: Fit is the largest size (5–24 px) that fits the width and keeps the play unit within the
+   * screen height (`fitCell`); Large is 14 px. Measured once per mount and resize: reading layout on every launch
+   * would force a layout each time.
+   */
+  let fitSize = 0;
+  let lastPictureH = '';
   const cellSize = () => {
     const { w, h } = table.engine;
     if (display.large) return LARGE_CELL;
-    if (!fitCell) {
-      const avail = available();
-      const tall = typeof window !== 'undefined' && window.innerHeight > 0 ? window.innerHeight : 0;
-      const byHeight = tall > 0 ? Math.floor((tall * (stickyTop() ? 0.5 : 0.9) - 2 * TRACK) / h) : 24;
-      fitCell = avail > 0 ? Math.max(5, Math.min(24, Math.floor((avail - 2 * TRACK) / w), byHeight)) : 0;
-      if (!fitCell) return 8;
+    if (!fitSize) {
+      const availW = available();
+      fitSize = availW > 0 && !playArea.hidden ? fitCell({ availW, availH: viewportHeight(), w, h, track: TRACK, chrome: chromeHeight() }) : 0;
+      if (!fitSize) return 8;
     }
-    return fitCell;
+    return fitSize;
   };
   /** Bumped whenever the drawn cells or the exposed set change (keys the cached spotlight image). */
   let stamp = 0;
@@ -880,7 +954,10 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
     const cell = cellSize();
     const cssW = w * cell + 2 * TRACK;
     const cssH = h * cell + 2 * TRACK;
+    const pictureH = `${display.large ? 0 : cssH + 8}px`;
+    if (pictureH !== lastPictureH) container.style.setProperty('--pp-picture-h', (lastPictureH = pictureH));
     board.classList.toggle('is-large', display.large);
+    frameEl.classList.toggle('is-large', display.large);
     if (display.large) {
       board.setAttribute('role', 'region');
       board.setAttribute('tabindex', '0');
@@ -1150,6 +1227,8 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
     if (solvedNow) state = { ...state, reported: true };
     statusText = message;
     becameStuck = false;
+    noticesDismissed = false;
+    const keyboard = document.activeElement instanceof HTMLElement && container.contains(document.activeElement) && keyboardFocused(document.activeElement) ? document.activeElement : null;
     if (played) startAnimation(played.hits, played.colour, played.shots, played.usedUp);
     if (solvedNow) focusReveal = true;
     update();
@@ -1158,8 +1237,28 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
       announce(live, `${motifTitle()}. ${t('reveal.stats', { launches: cursor.launches, parks: cursor.parks })}`);
       context.finished({ outcome: 'completed', stats: { launches: cursor.launches, parks: cursor.parks } });
     } else announce(live, becameStuck ? `${message} ${t('stuck.text')}` : message);
+    // A keyboard player is taken into the stuck card (and back when it closes, design v3 § 4.3).
+    if (becameStuck && keyboard) {
+      const first = [...stuckPanel.querySelectorAll<HTMLButtonElement>('.wp-row button')].find((b) => !b.hidden && !b.disabled);
+      if (first) {
+        noticeReturn = keyboard;
+        first.focus();
+      }
+    }
     becameStuck = false;
   };
+
+  /** Closes the notice cards until the next change (Esc or the close button); focus goes back where it came from. */
+  function dismissNotices() {
+    const inside = document.activeElement instanceof HTMLElement && noticeLayer.contains(document.activeElement);
+    noticesDismissed = true;
+    update();
+    if (inside) {
+      const back = noticeReturn && noticeReturn.isConnected && !noticeReturn.hidden ? noticeReturn : (visible(laneButtons)[0] ?? visible(slotButtons)[0] ?? undoButton);
+      back.focus();
+    }
+    noticeReturn = null;
+  }
 
   const resultText = (p: Preview): string => {
     const shooter = shooterText(shooterOf(p) as Shooter);
@@ -1218,6 +1317,11 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
     if (paused) return;
     const next = restart(state);
     if (next !== state) commit(next, t('status.restarted'));
+  }
+
+  /** The stuck card's way back (completed in step 5). */
+  function doStuckBack() {
+    doUndoTo();
   }
 
   function doUndoTo() {
@@ -1310,11 +1414,14 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
     if ((event.ctrlKey || event.metaKey) && !event.shiftKey && !event.altKey && event.key.toLowerCase() === 'z') {
       event.preventDefault();
       doUndo();
-    } else if (event.key === 'Escape' && (previewMove || selected || shownColour)) {
+    } else if (event.key === 'Escape' && (previewMove || selected || shownColour) && !noticeLayer.contains(event.target as Node)) {
       selected = null;
       shownColour = null;
       showPreview(null);
       update();
+    } else if (event.key === 'Escape' && (!stuckPanel.hidden || !hintRow.hidden)) {
+      event.preventDefault();
+      dismissNotices();
     }
   };
   const onPointerDown = (event: PointerEvent) => {
@@ -1326,9 +1433,10 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
     }
   };
   const onResize = () => {
-    fitCell = 0;
+    fitSize = 0;
     cssCache = new Map();
-    draw();
+    compact = stickyTop();
+    update();
   };
   container.addEventListener('keydown', onKeyDown);
   document.addEventListener('pointerdown', onPointerDown);
@@ -1336,9 +1444,25 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
 
   // --- GameInstance --------------------------------------------------------------------------------------------
 
+  /**
+   * Once per game start or restore (design v3 § 4.4): when the play unit is not fully on screen, the page scrolls so
+   * that its top is at the top. Presentation only, in the next frame; never again during play.
+   */
+  const scrollIntoViewOnce = () => {
+    if (typeof window === 'undefined' || typeof window.requestAnimationFrame !== 'function') return;
+    window.requestAnimationFrame(() => {
+      if (!container.isConnected || playArea.hidden || typeof playArea.scrollIntoView !== 'function') return;
+      const vh = viewportHeight();
+      const top = playArea.getBoundingClientRect().top;
+      const bottom = Math.max(actions.getBoundingClientRect().bottom, compact ? 0 : frameEl.getBoundingClientRect().bottom);
+      if (top < 0 || bottom > vh) playArea.scrollIntoView({ block: 'start', behavior: 'instant' });
+    });
+  };
+
   const mount = () => {
-    fitCell = 0;
+    fitSize = 0;
     cssCache = new Map();
+    compact = stickyTop();
     dropAnimations();
     cancelHint();
     hintResult = null;
@@ -1346,6 +1470,8 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
     previewMove = null;
     shownColour = null;
     statusText = '';
+    noticesDismissed = false;
+    noticeReturn = null;
     laneFocus = 0;
     slotFocus = 0;
     rebuild();
@@ -1360,10 +1486,12 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
     newGame(options: NewGameOptions) {
       state = createInitial(options.seed, options.difficulty, options.settings?.motif);
       mount();
+      scrollIntoViewOnce();
     },
     restore(saved: PeelState) {
       state = clone(saved);
       mount();
+      scrollIntoViewOnce();
       // A save written between the last move and finished() (or by an older version): report the end once.
       if (solved() && !state.reported) {
         state = { ...state, reported: true };

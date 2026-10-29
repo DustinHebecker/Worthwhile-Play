@@ -151,5 +151,6 @@ export const es: Catalogue = {
   'action.display': 'Visualización',
   'status.startShort': 'Elige un tirador: su color se ilumina y se marcan los píxeles que quitaría.',
   'stuck.back': 'No queda ninguna jugada. Volver a la jugada {k} funciona.',
-  'stuck.backButton': 'Volver a la jugada {k}'
+  'stuck.backButton': 'Volver a la jugada {k}',
+  'notice.close': 'Cerrar'
 };
