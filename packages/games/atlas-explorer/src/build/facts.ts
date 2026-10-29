@@ -28,13 +28,34 @@ export function ringAreaKm2(ring: Path): number {
 /** Area (km²) of a polygon: outer ring minus holes. */
 export const polygonAreaKm2 = (poly: Polygon): number => Math.max(0, ringAreaKm2(poly[0]!) - poly.slice(1).reduce((s, h) => s + ringAreaKm2(h), 0));
 
-/** Keeps polygons of at least `minKm2`, and always the largest one (so no country disappears). */
-export function dropSmallParts(polys: readonly Polygon[], minKm2: number): Polygon[] {
+/**
+ * Keeps polygons of at least `minKm2`, always the largest one (so no country disappears), and the smaller ones that
+ * `keep` accepts (land exclaves: dropping one would let the neighbour's simplified outline swallow it).
+ */
+export function dropSmallParts(polys: readonly Polygon[], minKm2: number, keep: (poly: Polygon) => boolean = () => false): Polygon[] {
   if (polys.length === 0) return [];
   const areas = polys.map(polygonAreaKm2);
   const largest = areas.indexOf(Math.max(...areas));
-  return polys.filter((_, i) => i === largest || areas[i]! >= minKm2);
+  return polys.filter((p, i) => i === largest || areas[i]! >= minKm2 || keep(p));
 }
+
+/**
+ * Whether a polygon's outer ring shares at least `min` vertices with another entity (`shared` tells for one vertex):
+ * Natural Earth draws a land border with the same vertices on both sides, so this finds land exclaves and tiny
+ * countries on land, but not islands.
+ */
+export function touchesLand(poly: Polygon, shared: (lon: number, lat: number) => boolean, min = 2): boolean {
+  const ring = poly[0]!;
+  // A closed ring repeats its first vertex at the end: count it once.
+  const last = ring.length > 1 && ring[0]![0] === ring[ring.length - 1]![0] && ring[0]![1] === ring[ring.length - 1]![1] ? ring.length - 1 : ring.length;
+  let n = 0;
+  for (let i = 0; i < last; i++) if (shared(ring[i]![0], ring[i]![1]) && ++n >= min) return true;
+  return false;
+}
+
+/** Whether box `inner` lies within box `outer` grown by `pad` (all `[minLon, minLat, maxLon, maxLat]`). */
+export const boxWithin = (inner: readonly number[], outer: readonly number[], pad = 0): boolean =>
+  inner[0]! >= outer[0]! - pad && inner[1]! >= outer[1]! - pad && inner[2]! <= outer[2]! + pad && inner[3]! <= outer[3]! + pad;
 
 /** Length (km) of a flat lon/lat line (degrees). */
 export function lineLengthKm(flat: Flat): number {

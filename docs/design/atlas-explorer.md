@@ -263,7 +263,7 @@ The target outlined, all guesses with their arrows, the clues each checked again
 
 ### 9.2 Graph and generator
 
-- Nodes: UN members; edges: land borders under the neutrality rule (§ 12.3: at least 5 km of shared border outside disputed areas). Bridges, tunnels and ferries do not count; the rules say so ("land borders as drawn on this map").
+- Nodes: UN members; edges: land borders under the neutrality rule (§ 12.3: at least 5 km of shared border outside disputed areas). Bridges, tunnels and ferries do not count; the rules say so ("land borders as drawn on this map"). *As implemented:* a border that exists only through an overseas part (France–Brazil and France–Suriname via French Guiana) or only through a small exclave across the sea (Spain–Morocco via Ceuta and Melilla, § 26) is a neighbour fact for clues but no route step.
 - The pair (A, B) is drawn so that the shortest number of crossings `best` is 2–3 (easy), 4–5 (medium), 6–8 (hard), both in the same connected component, and at least one of them in the region (unless Oceania, § 5).
 - `best` and the number of shortest routes are computed by BFS at generation and **stored** (§ 16).
 - On easy a small compass shows the direction from the current country to the goal (bearing between label points).
@@ -380,6 +380,7 @@ export const ATLAS_DATA = {
 - **Encoding.** Arc coordinates are stored as integer lon/lat in **1/50 degree** (≤ 1.1 km; projection-independent, so geodesic maths needs no inverse projection); points (cities, label points, dots) and the state use **1/100 degree**. Topology and simplification run on the projected 16,384-cell grid (§ 11.2) before the coordinates are written as lon/lat. Arcs are delta-encoded, zigzag, written as 5-bit groups with a continuation bit in printable ASCII (the well-known "encoded polyline" idea, own code) inside a JSON string literal (the script writes it with `JSON.stringify`, so `\` and quotes are escaped). Decoding all arcs takes a few milliseconds (budget § 22).
 - **Topology.** Shared borders are one arc used by two countries (one reversed); rings are lists of arc references. Simplifying arcs with fixed ends keeps neighbours gap-free. Arcs between map units of the same country are dropped (dissolve), so e.g. England/Scotland are one United Kingdom.
 - **Facts are computed at full resolution in the script**, not from the simplified geometry: neighbours (§ 12.3), coast (an arc of the home territory that borders no other polygon and is not a lake shore), `island`, the latitude lines crossed by the home territory, rivers/ranges/deserts inside it, `areaCore` (spherical area excluding disputed overlays) and `areaMax` (including every overlay that touches the country), standard UTC offsets (min of the offsets on 15 January and 15 July 2026, i.e. without daylight saving).
+- *As implemented (2026-10-29, § 26):* the island filter (parts under 100 km² dropped) keeps **small parts with a land border** (23 parts, e.g. Ceuta, Melilla, Llívia and the Armenian and Azerbaijani enclaves); **tiny parts on land** (below 100 km²: exclaves, micro-states, small hatched areas such as Gibraltar) are written a second time at 1/1000° (`fine`, `fineUnit`) and their coarse rings are left out, so a tap there names the right place; the sub-regions are one table (`subs`, referenced by index `s`); `nx` lists neighbours reached only through a small exclave.
 - **Home territory** = the map units with Natural Earth's `HOMEPART = 1` (e.g. France without French Guiana and Réunion), used for the clue facts; scoring uses all parts of a country.
 - **Ids are stable and never reused or removed** (a feature that should no longer appear gets `retired: true` in the config and stays in the data), so saves stay valid (§ 16).
 
@@ -417,6 +418,7 @@ The generated module is one lazily loaded chunk (`assets/atlas.gen-*.js`), preca
 4. **Only UN member states** are targets or answer options. Other entities (Taiwan, Kosovo, Western Sahara, Palestine, Somaliland, Northern Cyprus, dependencies, Antarctica) are drawn, can be explored in reviews (with CLDR names where CLDR has one and the disputed label where hatched) and are never asked about.
 5. **No manual edits** to the data: every hand-made border change would be our own political judgement. The rules state the data date. When Natural Earth publishes a new release, the data is updated (§ 11.4).
 6. Rules text (en): "Borders follow Natural Earth (public-domain map data, 2022). Areas whose status is disputed are hatched and belong to no country in this game. This is not a statement about any claim."
+7. *Applied to the smallest places (2026-10-29, § 26):* **Gibraltar** is a feature of type *Disputed* in the layer (administered by the UK, claimed by Spain), so it is hatched like every other such area, neither Spain nor the UK. **Ceuta and Melilla** are features of type *Geo subunit* (not hatched under rule 2), so they are drawn as what the data says: parts of Spain. The four Spanish islets claimed by Morocco (Perejil, Vélez de la Gomera, Alhucemas, Chafarinas) are *Disputed* and hatched.
 
 ### 12.3 Consequences in the rules
 
@@ -750,6 +752,17 @@ Follow-up 2026-10-29: the in-game UI texts (231 of 251 keys) moved from `src/loc
 9. **Report to the orchestrator:** the registry line (append after the existing games), the dependency, the preview (§ 20), the ROADMAP rows (new game, skills spatial/learning/deduction; the M1 "maps/neighbours" note), the Stryker `mutate` lines (§ 1.3), Appendix A for `docs/third-party.md`, and the measured chunk sizes.
 
 ---
+
+## 26. Review follow-ups (2026-10-29)
+
+Reviewer notes after publication, handled in `change/atlas-geo-followups`.
+
+**Melilla, Ceuta and Gibraltar.** Found: Natural Earth draws Ceuta (18 km²) and Melilla (12 km²) as parts of Spain's map unit, but the island filter (§ 11.2: parts under 100 km² dropped, the largest kept) dropped them, so Morocco's simplified outline swallowed Melilla (a tap there read "Morocco") and Ceuta read "Sea"; Spain–Morocco were no neighbours (a documented deviation from the Factbook). Gibraltar (3.7 km²) is in the disputed-areas layer as *Disputed* and was hatched, but below the arcs' resolution (1/50°, ≈ 2 km) its drawn shape missed the Rock, which read "Spain". Changed (build, data, runtime; no state change, data id unchanged so saves stay valid):
+- Small parts with a **land border** stay (Natural Earth draws a land border with the same vertices on both sides; a part sharing at least two of them is no island): 23 parts, e.g. Ceuta, Melilla, Llívia, the enclaves of Armenia, Azerbaijan, Uzbekistan and Tajikistan, Madha and Nahwa, Point Roberts.
+- **Tiny parts on land** (below 100 km²: those exclaves, Monaco, San Marino, Vatican City, Gibraltar, Saint-Martin/Sint Maarten, and 28 small hatched areas such as Mount Scopus, the Dragonja, the Vojvodina river islands and the Spanish islets claimed by Morocco) get **fine rings** at 1/1000° (simplified to within ≈ 100 m); their coarse rings, and the coarse holes cut for them in a neighbour (France around Llívia), are left out. `placeAt` tests hatched areas, then these fine parts (smallest first), then the coarse countries. Three hatched areas that quantisation had flattened into zero-area slivers (Dragonja, Vojvodina, Mount Scopus) and 10 of the 14 hatched islets that were not drawn at all now have a shape (the other four are not land in the map units).
+- Result: Ceuta and Melilla read **Spain**, the Moroccan towns around them Morocco; Gibraltar reads **"Area with a disputed status"**, La Línea Spain; Llívia Spain inside France. Measured against the source on a fine grid around ten such places, a tap names a wrong entity in 0.2–1.8 % of land samples (at the edges, within the neighbours' coarse outlines).
+- **Spain–Morocco** are now neighbours (as in the Factbook), but the border exists only at Ceuta and Melilla, across the sea from the Spanish mainland, so it is **no overland route step** (like France–Brazil via French Guiana; `nx` in the data, `route.ts`, the e2e BFS). Clues may say "One of its neighbours is Spain" for Morocco. No other neighbour or fact changed (manifest comparison).
+- Budget: the sub-region strings became one table (−6 KB), so the module stays within 150 KB (147.0 KB).
 
 ## Appendix A — section for `docs/third-party.md` (ready to paste)
 

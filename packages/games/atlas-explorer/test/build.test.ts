@@ -3,7 +3,7 @@ import fc from 'fast-check';
 import { decodeInts, encodeInts } from '../src/codec';
 import { EE_X_MAX } from '../src/geo';
 import { readCollection, str, num, type Path } from '../src/build/geojson';
-import { areNeighbours, dropSmallParts, featureReaches, interiorPoint, lengthInsideKm, lineLengthKm, linesCrossed, LINE_BITS, LINE_NEAR_SHIFT, makeLocator, polygonAreaKm2, ringAreaKm2, sampledAreaKm2, segmentHatched, unhatchedLengthKm } from '../src/build/facts';
+import { areNeighbours, boxWithin, dropSmallParts, featureReaches, interiorPoint, lengthInsideKm, lineLengthKm, linesCrossed, LINE_BITS, LINE_NEAR_SHIFT, makeLocator, polygonAreaKm2, ringAreaKm2, sampledAreaKm2, segmentHatched, touchesLand, unhatchedLengthKm } from '../src/build/facts';
 import { compareViews, makeGrid, rasterize } from '../src/build/raster';
 import { simplify } from '../src/build/simplify';
 import { arcUsers, buildTopology, dissolve, quantizeRing, ringPoints } from '../src/build/topology';
@@ -219,6 +219,28 @@ describe('facts', () => {
     expect(dropSmallParts([big, small], 100)).toEqual([big]);
     expect(dropSmallParts([small], 100)).toEqual([small]);
     expect(dropSmallParts([], 100)).toEqual([]);
+  });
+
+  it('keeps small parts with a land border (exclaves such as Ceuta and Melilla), not small islands', () => {
+    // Country A: a big part and two small ones; the first small part shares two border vertices with country B.
+    const big = [sq(0, 0, 1, 1)];
+    const exclave = [sq(3, 3, 3.02, 3.02)];
+    const island = [sq(5, 5, 5.01, 5.01)];
+    const neighbourB = [sq(3.02, 3, 3.1, 3.02)];
+    const vertices = new Set(neighbourB[0]!.map(([x, y]) => `${x},${y}`));
+    const shared = (x: number, y: number) => vertices.has(`${x},${y}`);
+    expect(touchesLand(exclave, shared)).toBe(true);
+    expect(touchesLand(island, shared)).toBe(false);
+    // One shared vertex is a corner touch, not a border.
+    expect(touchesLand([sq(3.1, 3.02, 3.2, 3.2)], shared)).toBe(false);
+    expect(dropSmallParts([big, exclave, island], 100, (p) => touchesLand(p, shared))).toEqual([big, exclave]);
+  });
+
+  it('finds the coarse rings a fine part replaces by their boxes', () => {
+    expect(boxWithin([1, 1, 2, 2], [1, 1, 2, 2])).toBe(true);
+    expect(boxWithin([0.98, 1, 2, 2], [1, 1, 2, 2])).toBe(false);
+    expect(boxWithin([0.98, 1, 2, 2.02], [1, 1, 2, 2], 0.03)).toBe(true);
+    expect(boxWithin([0, 0, 3, 3], [1, 1, 2, 2], 0.03)).toBe(false);
   });
 
   it('applies the neighbour rule: 5 km of border outside hatched areas, either side', () => {

@@ -20,6 +20,7 @@ import { UN_MEMBERS } from '../src/data/un-members';
 import { readCollection, num, str, type Feature, type Path, type Polygon } from '../src/build/geojson';
 import {
   areNeighbours,
+  boxWithin,
   dropSmallParts,
   featureReaches,
   flatRings,
@@ -31,6 +32,7 @@ import {
   packLines,
   polygonAreaKm2,
   sampledAreaKm2,
+  touchesLand,
   unhatchedLengthKm
 } from '../src/build/facts';
 import { compareViews, floodFill, makeGrid, near, paintPolygon, rasterize, type Disagreement } from '../src/build/raster';
@@ -194,14 +196,41 @@ async function main() {
   const ordered = [...unEntities.sort((a, b) => a.iso.localeCompare(b.iso)), ...[...entities.values()].filter((e) => !e.un).sort((a, b) => a.key.localeCompare(b.key))];
   const idOf = (e: Entity) => (e.un ? e.iso : e.key);
 
-  // Small islands dropped per entity (largest part kept), remembering which unit each polygon came from.
-  // One shape per ring: holes are flagged, as a hole (a lake or an enclave) is never a sea coast.
-  const unitShapes: { entity: number; home: boolean; poly: Polygon; hole: boolean }[] = [];
+  // Raw vertices used by two entities: Natural Earth draws a land border with the same vertices on both sides.
+  const vertexOwner = new Map<string, number>();
+  const sharedVertices = new Set<string>();
+  ordered.forEach((e, ei) => {
+    for (const u of e.units)
+      for (const poly of u.polys)
+        for (const ring of poly)
+          for (const [x, y] of ring) {
+            const k = `${x},${y}`;
+            const o = vertexOwner.get(k);
+            if (o === undefined) vertexOwner.set(k, ei);
+            else if (o !== ei) sharedVertices.add(k);
+          }
+  });
+  const onLand = (poly: Polygon) => touchesLand(poly, (x, y) => sharedVertices.has(`${x},${y}`));
+
+  // Small islands dropped per entity (largest part kept), remembering which unit each polygon came from. Small parts
+  // with a land border stay (exclaves such as Ceuta, Melilla or Llívia): dropped, their ground would be drawn and
+  // named as the neighbour around them. One shape per ring: holes are flagged, as a hole (a lake or an enclave) is
+  // never a sea coast. `tiny` marks parts on land below `fineMaxKm2`, which are also written at a finer resolution.
+  const unitShapes: { entity: number; home: boolean; poly: Polygon; hole: boolean; exclave: boolean; tiny: boolean }[] = [];
+  const exclaves: string[] = [];
   ordered.forEach((e, ei) => {
     const all = e.units.flatMap((u) => u.polys.map((poly) => ({ home: u.home, poly })));
-    const kept = new Set(dropSmallParts(all.map((x) => x.poly), P.minIslandKm2));
-    for (const x of all) if (kept.has(x.poly)) x.poly.forEach((ring, k) => unitShapes.push({ entity: ei, home: x.home, poly: [ring], hole: k > 0 }));
+    const kept = new Set(dropSmallParts(all.map((x) => x.poly), P.minIslandKm2, onLand));
+    const plain = new Set(dropSmallParts(all.map((x) => x.poly), P.minIslandKm2));
+    for (const x of all) {
+      if (!kept.has(x.poly)) continue;
+      const exclave = !plain.has(x.poly);
+      const tiny = polygonAreaKm2(x.poly) < P.fineMaxKm2 && onLand(x.poly);
+      if (exclave) exclaves.push(`${idOf(e)} ${polygonAreaKm2(x.poly).toFixed(1)} km² at ${x.poly[0]![0]!.map((v) => v.toFixed(2)).join(' ')}`);
+      x.poly.forEach((ring, k) => unitShapes.push({ entity: ei, home: x.home, poly: [ring], hole: k > 0, exclave, tiny: tiny && k === 0 }));
+    }
   });
+  log(`small parts kept for their land border: ${exclaves.length} (${exclaves.join('; ')})`);
 
   /* --- Disputed overlay (policy A, § 12.2) --- */
   const entityLocators = ordered.map((e) => makeLocator(e.units.flatMap((u) => u.polys.map(flatRings))));
@@ -268,7 +297,11 @@ async function main() {
   for (const s of unitShapes) paintPolygon(oceanGrid, landMask, s.poly, 1);
   const oceanCells = floodFill(oceanGrid, landMask, config.oceanSeeds, 0, 2);
   log(`ocean mask: ${oceanCells} of ${landMask.length} cells`);
-  const pairKm = new Map<string, { raw: number; free: number }>();
+  const pairKm = new Map<string, { raw: number; free: number; freeMain: number }>();
+  const onExclave = (ri: number) => {
+    const o = topo.rings[ri]!.owner;
+    return o < unitShapes.length && unitShapes[o]!.exclave;
+  };
   const coastKm = new Map<number, number>();
   topo.arcs.forEach((arc, ai) => {
     const us = users[ai]!;
@@ -278,9 +311,11 @@ async function main() {
     if (distinct.length === 2) {
       const [a, b] = distinct.sort((x, y) => x - y) as [number, number];
       const key = `${a}:${b}`;
-      const r = pairKm.get(key) ?? { raw: 0, free: 0 };
+      const r = pairKm.get(key) ?? { raw: 0, free: 0, freeMain: 0 };
+      const free = unhatchedLengthKm(deg, inHatch, [1.5, 4], nearHatch);
       r.raw += lineLengthKm(deg);
-      r.free += unhatchedLengthKm(deg, inHatch, [1.5, 4], nearHatch);
+      r.free += free;
+      if (!us.some(([ri]) => onExclave(ri))) r.freeMain += free;
       pairKm.set(key, r);
     } else if (distinct.length === 1 && ents.length === 1) {
       const ring = us.find(([ri]) => topo.rings[ri]!.owner < unitShapes.length)!;
@@ -301,6 +336,9 @@ async function main() {
     }
   });
   const neighbours = new Map<number, Set<number>>();
+  // Neighbours only through a small exclave (Spain–Morocco via Ceuta and Melilla, across the sea from the Spanish
+  // mainland): a fact for clues, but no overland route step (src/route.ts).
+  const exclaveOnly = new Map<number, Set<number>>();
   const lostPairs: string[] = [];
   for (const [key, r] of pairKm) {
     const [a, b] = key.split(':').map(Number) as [number, number];
@@ -310,11 +348,20 @@ async function main() {
       if (!neighbours.has(b)) neighbours.set(b, new Set());
       neighbours.get(a)!.add(b);
       neighbours.get(b)!.add(a);
+      if (!areNeighbours(r.freeMain, P.neighbourMinKm))
+        for (const [x, y] of [
+          [a, b],
+          [b, a]
+        ] as const) {
+          if (!exclaveOnly.has(x)) exclaveOnly.set(x, new Set());
+          exclaveOnly.get(x)!.add(y);
+        }
     } else lostPairs.push(`${idOf(ordered[a]!)}–${idOf(ordered[b]!)} (${r.raw.toFixed(0)} km, ${r.free.toFixed(1)} km outside hatched areas)`);
   }
   const close = [...pairKm].filter(([k, r]) => ordered[Number(k.split(':')[0])]!.un && ordered[Number(k.split(':')[1])]!.un && r.free < r.raw - 1 && r.free < 80);
   log(`borders partly in hatched areas: ${close.map(([k, r]) => `${k.split(':').map((i) => idOf(ordered[Number(i)]!)).join('–')} ${r.free.toFixed(1)}/${r.raw.toFixed(0)} km`).join(', ')}`);
   log(`neighbours: ${[...neighbours.values()].reduce((s, n) => s + n.size, 0) / 2} pairs of UN members; not neighbours under the 5 km rule: ${lostPairs.join('; ')}`);
+  log(`neighbours only through a small exclave (no overland step): ${[...exclaveOnly].filter(([a, bs]) => [...bs].some((b) => a < b)).map(([a, bs]) => [...bs].filter((b) => a < b).map((b) => `${idOf(ordered[a]!)}–${idOf(ordered[b]!)}`).join(', ')).join(', ')}`);
 
   /* --- Continents for the island fact --- */
   const continents = land.flatMap((f) => f.polygons).filter((p) => polygonAreaKm2(p) >= P.continentMinKm2);
@@ -427,6 +474,7 @@ async function main() {
       areaCore: Math.round(areaCore),
       areaMax: Math.round(areaMax),
       nb: [...(neighbours.get(ei) ?? [])].map((j) => ordered[j]!.iso).sort(),
+      nx: [...(exclaveOnly.get(ei) ?? [])].map((j) => ordered[j]!.iso).sort(),
       coast: (coastKm.get(ei) ?? 0) >= P.coastMinKm,
       island,
       lines,
@@ -457,7 +505,39 @@ async function main() {
   for (const m of measured) largest.set(m.r.owner, Math.max(largest.get(m.r.owner) ?? 0, m.km2));
   const dropped = measured.filter((m) => m.distinct < 3 || (m.km2 < 1 && largest.get(m.r.owner)! > m.km2));
   if (dropped.length) log(`dropped ${dropped.length} degenerate rings after dissolving`);
-  const drawn: Topology = { arcs: topo.arcs, rings: measured.filter((m) => !dropped.includes(m)).map((m) => m.r) };
+  // Tiny parts on land (below `fineMaxKm2`: exclaves, micro-states, small hatched areas such as Gibraltar) are below
+  // the resolution of the shared arcs (1/50°, simplified): drawn from them, Gibraltar's Rock read "Spain" and Melilla
+  // "Morocco". They are written once more at 1/`fineUnit` degree, and their coarse rings (and the coarse holes cut
+  // for them in a neighbour) are left out of the output; the runtime tests the fine rings before the coarse ones.
+  const landLocator = makeLocator(ordered.flatMap((e) => e.units.flatMap((u) => u.polys.map(flatRings))));
+  type FinePart = { owner: number; kind: 'country' | 'other' | 'disputed'; id: string; ring: Path; box: number[] };
+  const fineParts: FinePart[] = [];
+  unitShapes.forEach((sh) => {
+    if (!sh.tiny) return;
+    const e = ordered[sh.entity]!;
+    fineParts.push({ owner: sh.entity, kind: e.un ? 'country' : 'other', id: idOf(e), ring: sh.poly[0]!, box: boxOf([sh.poly]) });
+  });
+  overlays.forEach((o, oi) =>
+    o.polys.forEach((poly) => {
+      const pt = polygonAreaKm2(poly) < P.fineMaxKm2 ? interiorPoint(poly) : null;
+      if (pt && landLocator(pt[0], pt[1]) >= 0) fineParts.push({ owner: unitShapes.length + oi, kind: 'disputed', id: o.id, ring: poly[0]!, box: boxOf([poly]) });
+    })
+  );
+  const ringBox = (ring: number[]) => {
+    const pts = toDeg(ringPoints(topo.arcs, ring));
+    const box = [Infinity, Infinity, -Infinity, -Infinity];
+    for (let i = 0; i < pts.length; i += 2) {
+      box[0] = Math.min(box[0]!, pts[i]!);
+      box[1] = Math.min(box[1]!, pts[i + 1]!);
+      box[2] = Math.max(box[2]!, pts[i]!);
+      box[3] = Math.max(box[3]!, pts[i + 1]!);
+    }
+    return box;
+  };
+  const kept = measured.filter((m) => !dropped.includes(m));
+  const replacedRings = kept.filter((m) => m.km2 < P.fineMaxKm2 && fineParts.some((f) => boxWithin(ringBox(m.r.arcs), f.box, P.fineBoxPadDeg)));
+  log(`fine rings: ${fineParts.length} tiny parts on land (${fineParts.map((f) => f.id).join(' ')}); ${replacedRings.length} coarse rings left out`);
+  const drawn: Topology = { arcs: topo.arcs, rings: kept.filter((m) => !replacedRings.includes(m)).map((m) => m.r) };
   const usedArcs = [...new Set(drawn.rings.flatMap((r) => r.arcs.map((ref) => (ref < 0 ? ~ref : ref))))].sort((a, b) => a - b);
   const protect = new Set<number>();
   // Edges of hatched areas follow the data more closely (policy A, § 12.2): with the general deviation limit a narrow
@@ -530,6 +610,19 @@ async function main() {
     }
     return encodeInts(ints);
   };
+  const fineRing = (ring: Path) => {
+    const q = quantizeRing(ring, P.fineUnit, P.maxStepDeg * P.fineUnit);
+    return q && simplify(q, { threshold: Infinity, cell: CELL, unit: P.fineUnit, maxSpan: P.maxSpanDeg * P.fineUnit, maxDeviation: P.fineDeviationCells });
+  };
+  const fineGroups = new Map<string, { kind: FinePart['kind']; id: string; rings: number[][] }>();
+  for (const f of fineParts) {
+    const r = fineRing(f.ring);
+    if (!r) throw new Error(`fine ring of ${f.id} is degenerate`);
+    const key = `${f.kind}:${f.id}`;
+    if (!fineGroups.has(key)) fineGroups.set(key, { kind: f.kind, id: f.id, rings: [] });
+    fineGroups.get(key)!.rings.push(r);
+  }
+  const fineOut = [...fineGroups.values()].map((g) => ({ k: g.kind, id: g.id, rings: encodePaths(g.rings) }));
   const polygonPaths = (polys: Polygon[], threshold: number) =>
     polys.flatMap((poly) => poly.map((ring) => quantizeRing(ring, UNIT, P.maxStepDeg * UNIT)).filter((r): r is number[] => r !== null).map((r) => simplify(r, simplifyOpts(threshold))).filter((r) => r.length >= 8));
   const linePath = (line: Path) => {
@@ -589,6 +682,10 @@ async function main() {
     if (!e.un) return;
     const rings = drawn.rings.filter((r) => r.owner === ei).map((r) => ringPoints(topo.arcs, r.arcs));
     const all: number[][] = rings.flatMap((r) => Array.from({ length: r.length / 2 }, (_, i) => [r[2 * i]!, r[2 * i + 1]!]));
+    // A country drawn only from fine rings (Monaco): its quantised fine outline, in 1/50°.
+    if (!all.length)
+      for (const r of fineGroups.get(`country:${e.iso}`)?.rings ?? [])
+        for (let i = 0; i + 1 < r.length; i += 2) all.push([Math.round((r[i]! * UNIT) / P.fineUnit), Math.round((r[i + 1]! * UNIT) / P.fineUnit)]);
     const n = Math.min(20, all.length);
     samples[e.iso] = Array.from({ length: n }, (_, k) => {
       const p = all[Math.floor((k * all.length) / n)]!;
@@ -601,6 +698,7 @@ async function main() {
   ordered.forEach((e, ei) => {
     if (!e.un) return;
     const rings = drawn.rings.filter((r) => r.owner === ei).map((r) => toDeg(ringPoints(arcsOut.length ? topo.arcs.map((a, i) => simple.get(i) ?? a) : [], r.arcs)));
+    for (const g of fineGroups.values()) if (g.kind === 'country' && g.id === e.iso) rings.push(...g.rings.map((r) => r.map((v) => v / P.fineUnit)));
     for (const [x, y] of samples[e.iso]!) {
       const d = boundaryDistanceKm(x! / 100, y! / 100, rings);
       if (d > worst) {
@@ -617,24 +715,34 @@ async function main() {
     if (!e.un) return;
     const rings = drawn.rings.filter((r) => r.owner === ei).map((r) => toDeg(ringPoints(topo.arcs.map((a, i) => simple.get(i) ?? a), r.arcs)));
     const f = countryFacts.find((c) => c.id === e.iso)!;
+    for (const g of fineGroups.values()) if (g.kind === 'country' && g.id === e.iso) rings.push(...g.rings.map((r) => r.map((v) => v / P.fineUnit)));
     if (!pointInRings(f.label[0]! / 100, f.label[1]! / 100, rings)) outside.push(e.iso);
   });
   if (outside.length) log(`label points outside their simplified country: ${outside.join(' ')}`);
 
   /* --- Output module --- */
+  // UN M49 region and sub-region pairs, referenced by index from each country (`s`).
+  const subPairs: [string, string][] = [];
+  const subIndex = (region: string, sub: string) => {
+    let i = subPairs.findIndex(([r, x]) => r === region && x === sub);
+    if (i < 0) i = subPairs.push([region, sub]) - 1;
+    return i;
+  };
   const out = {
     id: config.dataId,
     unit: UNIT,
     arcs: encodeInts(arcInts),
+    subs: subPairs,
     // Numeric facts packed into one encoded string per country (decoded by src/atlas.ts, `unpackFacts`):
     // tier, label lon/lat, home extent (4), population, its year, area core/max, lines, flags (coast 1, island 2,
     // no region clue 4, "lies mostly in" 8). Lists are space-separated ids.
     countries: countryFacts.map((c, i) => ({
       id: c.id,
-      region: c.region,
-      sub: c.sub,
+      s: subIndex(c.region, c.sub),
       f: encodeInts([c.tier, ...c.label, ...c.hb, c.pop, c.popYear, c.areaCore, c.areaMax, c.lines, (c.coast ? 1 : 0) | (c.island ? 2 : 0) | ('noRegion' in c ? 4 : 0) | ('mostly' in c ? 8 : 0)]),
       nb: c.nb.join(' '),
+      // Neighbours only through a small exclave: no overland route step (omitted when none).
+      ...(c.nx.length ? { nx: c.nx.join(' ') } : {}),
       ft: [...c.rivers, ...c.regions].join(' '),
       // Physical regions that reach in only a little (omitted when none, to keep the module small).
       ...(c.regionsNear.length ? { fm: c.regionsNear.join(' ') } : {}),
@@ -647,6 +755,9 @@ async function main() {
       .filter(({ e }) => !e.un)
       .map(({ e, ei }) => ({ id: e.key, iso: e.iso, label: [round100(num(e.attrs.props, 'LABEL_X')), round100(num(e.attrs.props, 'LABEL_Y'))], rings: entityRings(ei) })),
     disputed: overlays.map((o, oi) => ({ id: o.id, rings: overlayRings(oi) })),
+    // Tiny parts on land at 1/fineUnit degree (see `fineParts`); their owners' coarse rings leave them out.
+    fineUnit: P.fineUnit,
+    fine: fineOut,
     lakes: lakesOut,
     rivers: riversOut,
     regions: regionsOut,

@@ -61,6 +61,10 @@
     "maxSpanDeg": 3,
     "maxDeviationCells": 6,
     "hatchMaxDeviationCells": 2,
+    "fineMaxKm2": 100,
+    "fineUnit": 1000,
+    "fineDeviationCells": 0.05,
+    "fineBoxPadDeg": 0.03,
     "minIslandKm2": 100,
     "featureThreshold": 400,
     "lakeThreshold": 64,
@@ -85,8 +89,8 @@
     "countries": 193,
     "others": 61,
     "disputed": 78,
-    "arcs": 3269,
-    "points": 28161,
+    "arcs": 3240,
+    "points": 28019,
     "lakes": 12,
     "rivers": 27,
     "regions": 31,
@@ -392,6 +396,7 @@
     "ES": [
       "AD",
       "FR",
+      "MA",
       "PT"
     ],
     "ET": [
@@ -645,7 +650,8 @@
       "TN"
     ],
     "MA": [
-      "DZ"
+      "DZ",
+      "ES"
     ],
     "MC": [
       "FR"
@@ -4015,7 +4021,7 @@
   },
   "output": {
     "file": "src/data/atlas.gen.ts",
-    "bytes": 152739,
-    "sha256": "648d656ef09d562c451810b18beee9d9c7c0e1e1d10818aadfcce5c1834b0606"
+    "bytes": 150498,
+    "sha256": "767406e1cd02ea5fe6bf8a729092ae08577e7940748f687809ee0401301aa3ae"
   }
 }

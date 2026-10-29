@@ -99,6 +99,46 @@ describe('generated atlas', () => {
     for (const [name, lon, lat] of places) expect(placeAt(atlas, lon, lat)?.kind, name).toBe('disputed');
   });
 
+  it('names tiny places on land as the data does: Ceuta and Melilla are Spain, Gibraltar is hatched', () => {
+    // Below the resolution of the shared arcs, Melilla read "Morocco", Ceuta "sea" and Gibraltar's Rock "Spain"; tiny
+    // parts on land now have fine rings that are tested first (follow-up 2026-10-29).
+    const at = (lon: number, lat: number) => placeAt(atlas, lon, lat);
+    const country = (id: string) => ({ kind: 'country', id });
+    // Ceuta and Melilla: administered by Spain, drawn as Spanish exclaves; Morocco around them.
+    expect(at(-5.316, 35.889), 'Ceuta').toEqual(country('ES'));
+    expect(at(-2.94, 35.29), 'Melilla').toEqual(country('ES'));
+    expect(at(-2.956, 35.28), 'Melilla airport').toEqual(country('ES'));
+    expect(at(-5.36, 35.85), 'Fnideq').toEqual(country('MA'));
+    expect(at(-2.93, 35.17), 'Nador').toEqual(country('MA'));
+    // Gibraltar is in the disputed-areas layer (administered by the UK, claimed by Spain): hatched, so neither Spain
+    // nor the United Kingdom; La Línea next to it is Spain.
+    expect(at(-5.348, 36.128), 'Gibraltar').toEqual({ kind: 'disputed', id: 'd-b55' });
+    expect(at(-5.35, 36.165), 'La Línea').toEqual(country('ES'));
+    // Llívia (Spain, inside France), Monaco, San Marino and Vatican City.
+    expect(at(1.98, 42.465), 'Llívia').toEqual(country('ES'));
+    expect(at(2.04, 42.46), 'Saillagouse').toEqual(country('FR'));
+    expect(at(7.42, 43.735), 'Monaco').toEqual(country('MC'));
+    expect(at(12.45, 43.94), 'San Marino').toEqual(country('SM'));
+    expect(at(12.4535, 41.9035), 'Vatican City').toEqual({ kind: 'other', id: 'VAT' });
+    expect(at(12.49, 41.89), 'Rome').toEqual(country('IT'));
+    // A tap in Ceuta counts for Spain; Spain and Morocco are neighbours (their only border is at Ceuta and Melilla).
+    expect(countryDistanceKm(atlas, atlas.country('ES')!, -5.316, 35.889)).toBe(0);
+    expect(atlas.country('ES')!.nb).toContain('MA');
+    // Fine rings are closed rings with an area; the tiny hatched areas that quantisation had flattened into zero-area
+    // slivers (Dragonja, Vojvodina, Mount Scopus) have one again.
+    const area = (r: ArrayLike<number>) => {
+      let a = 0;
+      for (let i = 2; i < r.length; i += 2) a += r[i - 2]! * r[i + 1]! - r[i]! * r[i - 1]!;
+      return Math.abs(a / 2);
+    };
+    for (const sp of atlas.spots) for (const r of sp.rings) expect(area(r), sp.id).toBeGreaterThan(0);
+    for (const id of ['d-b82', 'd-b96', 'd-b99', 'd-b55']) {
+      const d = atlas.disputed.find((x) => x.id === id)!;
+      expect(d.rings.length, id).toBeGreaterThan(0);
+      for (const r of d.rings) expect(area(r), id).toBeGreaterThan(0);
+    }
+  });
+
   it('places every curated city in its country (or within the 25 km tolerance)', () => {
     for (const city of atlas.cities) {
       const c = atlas.country(city.country)!;
