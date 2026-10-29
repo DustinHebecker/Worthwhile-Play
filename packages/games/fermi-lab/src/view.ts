@@ -5,6 +5,7 @@ import { fieldParts, fieldText, formatQuantity, parseLocaleNumber, roundSig, typ
 import {
   EXP_MAX,
   EXP_MIN,
+  RECENT_KEY,
   ROUND_LENGTH,
   TEXT_MAX,
   commitGuess,
@@ -19,6 +20,8 @@ import {
   markFinished,
   modelResult,
   next,
+  readRecent,
+  rememberTask,
   resetState,
   score,
   sensitivity,
@@ -66,6 +69,24 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
   const live = h('div', { class: 'sr-only', 'aria-live': 'polite', role: 'status', 'data-testid': 'fl-announcer' });
   const main = h('div', { class: 'fl-main' });
   const container = h('div', { class: 'wp-fermi-lab', dir: t.direction, lang: bcp47Tag(locale), 'data-testid': 'fl-root' }, main, live);
+
+  /** The device's memory of recently shown tasks (a preference, never in the save; missing or junk reads as none). */
+  const recent = (): string[] => {
+    try {
+      return readRecent(context.preferences?.get(RECENT_KEY));
+    } catch {
+      return [];
+    }
+  };
+  const markShown = (taskId: string) => {
+    const before = recent();
+    if (before.at(-1) === taskId) return;
+    try {
+      context.preferences?.set(RECENT_KEY, rememberTask(before, taskId));
+    } catch {
+      /* preferences are optional */
+    }
+  };
 
   const text = (): ContentText => contentFor(locale);
   const factorName = (id: string): string => text().factors[id] ?? id;
@@ -733,6 +754,7 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
     } else {
       const q = currentQuestion(state)!;
       const task = taskOf(q);
+      markShown(q.taskId);
       container.dataset.phase = q.phase;
       main.append(h('span', { id: 'fl-question-anchor', tabindex: -1, class: 'fl-anchor' }), header(q, task));
       if (q.phase === 'estimate') main.append(...renderEstimate(q, task));
@@ -757,7 +779,7 @@ export function createFermiLab(context: GameContext): GameInstance<FermiState> {
 
   return {
     newGame(options: NewGameOptions) {
-      show(createInitial(options.seed, { difficulty: options.difficulty, category: options.settings?.category, model: options.settings?.model }));
+      show(createInitial(options.seed, { difficulty: options.difficulty, category: options.settings?.category, model: options.settings?.model }, recent()));
     },
     restore(saved: FermiState) {
       show(clone(saved));

@@ -3,7 +3,7 @@ import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { createTestContext } from '@wp/testing';
 import type { GameModule } from '@wp/game-core';
 import game from '../src/index';
-import { createInitial, currentQuestion, taskOf, type FermiState } from '../src/rules';
+import { RECENT_KEY, createInitial, currentQuestion, taskOf, type FermiState } from '../src/rules';
 
 const module = game as GameModule<unknown>;
 
@@ -153,5 +153,42 @@ describe('view', () => {
     expect(nums.length).toBeGreaterThan(0);
     for (const n of nums) expect(n.getAttribute('dir')).toBe('ltr');
     expect(m.ctx.missingKeys).toEqual([]);
+  });
+
+  it('remembers the shown tasks on this device (not in the save) and the next round avoids them', () => {
+    const ctx = createTestContext(module, 'en');
+    const instance = game.create(ctx.context);
+    const opts = { seed: 77, difficulty: 'easy', settings: { category: 'all', model: 'free' } };
+    instance.newGame(opts);
+    const first = instance.serialize() as FermiState;
+    const shown = first.questions.map((q) => q.taskId);
+    expect(ctx.preferences.get(RECENT_KEY)).toEqual([shown[0]]);
+    expect(JSON.stringify(first)).not.toContain(RECENT_KEY);
+    // The player sees all five questions.
+    for (const id of shown.slice(1)) {
+      instance.restore({ ...first, index: shown.indexOf(id) });
+    }
+    expect(ctx.preferences.get(RECENT_KEY)).toEqual(shown);
+    instance.newGame(opts);
+    const second = (instance.serialize() as FermiState).questions.map((q) => q.taskId);
+    expect(second.filter((id) => shown.includes(id))).toEqual([]);
+    instance.dispose();
+  });
+
+  it('ignores a missing or broken memory', () => {
+    for (const junk of [undefined, 'x', 42, { a: 1 }, ['nope', null], null]) {
+      const ctx = createTestContext(module, 'en');
+      ctx.preferences.set(RECENT_KEY, junk);
+      const instance = game.create(ctx.context);
+      instance.newGame({ seed: 5 });
+      expect(instance.serialize()).toEqual(createInitial(5));
+      instance.dispose();
+    }
+    const ctx = createTestContext(module, 'en');
+    const { preferences: _unused, ...withoutPreferences } = ctx.context;
+    const instance = game.create(withoutPreferences);
+    instance.newGame({ seed: 5 });
+    expect(instance.serialize()).toEqual(createInitial(5));
+    instance.dispose();
   });
 });

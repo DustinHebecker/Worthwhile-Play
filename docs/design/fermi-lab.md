@@ -82,7 +82,7 @@ Why 5 and one at a time:
 
 Level mapping: easy → level 1 (fill with 2); medium → level 2 (fill with 1, then 3); hard → level 3 (fill with 2).
 
-Across rounds no memory of "seen" tasks is kept (no extra persistent state); 46 tasks over 5 categories × 3 levels make immediate repeats rare enough. (If play-tests disagree, a per-device preference of the last ~20 task ids could bias selection — not in the MVP.)
+**Recently shown tasks (change 2026-10-29).** The device remembers the ids of the last **7** tasks shown, in the game's preference `recent` (`context.preferences`, ADR 0017; never in the save; a missing or broken value reads as "none", unknown ids are dropped). A question counts as shown when it is displayed. When a round is chosen, every unseen task of the filtered pool comes before any remembered one (each group in the level order above, shuffled within a level as before); remembered tasks fill up only when fewer than 5 unseen remain, the one seen longest ago first. The random draws do not depend on the memory, so the same seed and the same memory give the same round, an empty memory gives exactly the old round, and "restart" repeats the round it began with. Why 7: about half of the smallest level pool of "All topics" (14 hard tasks), so an "All topics" round never has to leave its level to avoid a recent task, while the window still covers the whole previous round plus two; in a single topic (8–11 tasks) it covers most of the pool, so rounds rotate through the topic.
 
 ### 4.1 Per-question phases
 
