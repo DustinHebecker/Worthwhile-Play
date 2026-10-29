@@ -94,7 +94,6 @@ export const it: Catalogue = {
   'colours.heading': 'Colori',
   'colours.row': 'rimasti {left} · ora sul bordo {edge} · colpi in attesa {shots}',
   'options.heading': 'Visualizzazione',
-  'options.animation': 'Animazione',
   'options.allSymbols': 'Simboli su tutti i pixel (solo nella vista grande o su schermi larghi)',
   'options.confirm': 'Conferma prima del lancio (la prima pressione mostra l’anteprima)',
   'help.keys': 'Tastiera: Tab fino ai posti d’attesa o alle file, le frecce scelgono, Invio o Spazio lancia, Esc cancella l’anteprima, Ctrl+Z annulla.',
@@ -142,5 +141,15 @@ export const it: Catalogue = {
   'symbol.halfDisc': 'semicerchio',
   'symbol.twoDots': 'due punti',
   'symbol.uprightBar': 'barra verticale',
-  'symbol.chevron': 'gallone'
+  'symbol.chevron': 'gallone',
+  'options.peel': 'Sbucciatura',
+  'options.peelSlow': 'Lenta: i tiratori fanno il giro e sbucciano pixel per pixel',
+  'options.peelQuick': 'Rapida',
+  'options.peelOff': 'Spenta',
+  'options.peelReduced': 'Spenta: il dispositivo chiede meno movimento.',
+  'action.finishPeeling': 'Finisci di sbucciare ({n})',
+  'action.display': 'Visualizzazione',
+  'status.startShort': 'Scegli un tiratore: il suo colore si illumina e i pixel che toglierebbe vengono segnati.',
+  'stuck.back': 'Nessuna mossa possibile. Tornare alla mossa {k} funziona.',
+  'stuck.backButton': 'Torna alla mossa {k}'
 };

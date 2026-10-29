@@ -12,9 +12,10 @@ async function savedState(page: Page): Promise<PeelState> {
   return saved(page);
 }
 
-// Most tests launch with one press: "Confirm before launch" (on by default for touch screens) is switched off here.
+// Most tests launch with one press: "Confirm before launch" (on by default for touch screens) is switched off here,
+// and Peeling is Off (the tests of slow peeling switch it on).
 test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem('wp:pref:pixel-peel:display', JSON.stringify({ confirm: false })));
+  await page.addInitScript(() => localStorage.setItem('wp:pref:pixel-peel:display', JSON.stringify({ confirm: false, peel: 'off' })));
 });
 
 const buttonFor = (page: Page, move: string) => root(page).getByTestId(move.startsWith('L') ? `pp-lane-${move.slice(1)}` : `pp-slot-${move.slice(1)}`);

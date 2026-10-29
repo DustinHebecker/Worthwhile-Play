@@ -94,7 +94,6 @@ export const tr: Catalogue = {
   'colours.heading': 'Renkler',
   'colours.row': 'kalan {left} · şu an kenarda {edge} · bekleyen atış {shots}',
   'options.heading': 'Görünüm',
-  'options.animation': 'Animasyon',
   'options.allSymbols': 'Tüm piksellerde semboller (yalnızca büyük görünümde veya geniş ekranda)',
   'options.confirm': 'Göndermeden önce onayla (ilk basış önizlemeyi gösterir)',
   'help.keys': 'Klavye: Tab ile bekleme yerlerine veya sıralara geç, ok tuşları seçer, Enter veya Boşluk gönderir, Esc önizlemeyi temizler, Ctrl+Z geri alır.',
@@ -142,5 +141,15 @@ export const tr: Catalogue = {
   'symbol.halfDisc': 'yarım daire',
   'symbol.twoDots': 'iki nokta',
   'symbol.uprightBar': 'dikey çubuk',
-  'symbol.chevron': 'şerit açı'
+  'symbol.chevron': 'şerit açı',
+  'options.peel': 'Soyma',
+  'options.peelSlow': 'Yavaş: atıcılar resmin çevresinde dolaşıp pikselleri tek tek soyar',
+  'options.peelQuick': 'Hızlı',
+  'options.peelOff': 'Kapalı',
+  'options.peelReduced': 'Kapalı: cihaz daha az hareket istiyor.',
+  'action.finishPeeling': 'Soymayı bitir ({n})',
+  'action.display': 'Görünüm',
+  'status.startShort': 'Bir atıcı seç: rengi parlar ve kaldıracağı pikseller işaretlenir.',
+  'stuck.back': 'Hiç hamle kalmadı. {k}. hamleye dönmek işe yarar.',
+  'stuck.backButton': '{k}. hamleye dön'
 };

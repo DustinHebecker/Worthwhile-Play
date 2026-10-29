@@ -94,7 +94,6 @@ export const nl: Catalogue = {
   'colours.heading': 'Kleuren',
   'colours.row': 'over {left} · nu aan de rand {edge} · schoten klaar {shots}',
   'options.heading': 'Weergave',
-  'options.animation': 'Animatie',
   'options.allSymbols': 'Symbolen op alle pixels (alleen in grote weergave of op brede schermen)',
   'options.confirm': 'Bevestigen voor het starten (de eerste druk toont de voorvertoning)',
   'help.keys': 'Toetsenbord: Tab naar de wachtplaatsen of de rijen, de pijltjestoetsen kiezen, Enter of spatie start, Esc wist de voorvertoning, Ctrl+Z maakt ongedaan.',
@@ -142,5 +141,15 @@ export const nl: Catalogue = {
   'symbol.halfDisc': 'halve schijf',
   'symbol.twoDots': 'twee stippen',
   'symbol.uprightBar': 'staande balk',
-  'symbol.chevron': 'punthaak'
+  'symbol.chevron': 'punthaak',
+  'options.peel': 'Afpellen',
+  'options.peelSlow': 'Langzaam: schutters lopen rond en pellen pixel voor pixel af',
+  'options.peelQuick': 'Snel',
+  'options.peelOff': 'Uit',
+  'options.peelReduced': 'Uit, omdat je apparaat om minder beweging vraagt.',
+  'action.finishPeeling': 'Afpellen afronden ({n})',
+  'action.display': 'Weergave',
+  'status.startShort': 'Kies een schutter: zijn kleur licht op en de pixels die hij zou weghalen zijn gemarkeerd.',
+  'stuck.back': 'Geen zet meer mogelijk. Terug naar zet {k} werkt.',
+  'stuck.backButton': 'Terug naar zet {k}'
 };

@@ -94,7 +94,6 @@ export const ja: Catalogue = {
   'colours.heading': '色',
   'colours.row': '残り {left} · 今ふちに {edge} · 待機中の弾 {shots}',
   'options.heading': '表示',
-  'options.animation': 'アニメーション',
   'options.allSymbols': 'すべてのピクセルに記号（大きな表示か広い画面のときだけ）',
   'options.confirm': '送り出す前に確認する（最初に押すとプレビューを表示）',
   'help.keys': 'キーボード：Tab で待機場所か列へ、矢印キーで選択、Enter かスペースで送り出し、Esc でプレビューを消去、Ctrl+Z で取り消し。',
@@ -142,5 +141,15 @@ export const ja: Catalogue = {
   'symbol.halfDisc': '半円',
   'symbol.twoDots': '2つの点',
   'symbol.uprightBar': '縦の棒',
-  'symbol.chevron': '山形'
+  'symbol.chevron': '山形',
+  'options.peel': 'はがし方',
+  'options.peelSlow': 'ゆっくり：シューターが周りを回り、1 ピクセルずつはがします',
+  'options.peelQuick': 'すばやく',
+  'options.peelOff': 'オフ',
+  'options.peelReduced': 'オフ：デバイスが動きを減らすよう求めています。',
+  'action.finishPeeling': 'はがしを今すぐ終える（{n}）',
+  'action.display': '表示',
+  'status.startShort': 'シューターを選んでください。その色が明るくなり、取り除くピクセルに印が付きます。',
+  'stuck.back': 'もう打てる手がありません。{k} 手目に戻れば仕上げられます。',
+  'stuck.backButton': '{k} 手目に戻る'
 };

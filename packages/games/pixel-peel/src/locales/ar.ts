@@ -94,7 +94,6 @@ export const ar: Catalogue = {
   'colours.heading': 'الألوان',
   'colours.row': 'المتبقي {left} · على الحافة الآن {edge} · الطلقات المنتظرة {shots}',
   'options.heading': 'العرض',
-  'options.animation': 'الحركة',
   'options.allSymbols': 'رموز على كل البكسلات (في العرض الكبير أو على الشاشات العريضة فقط)',
   'options.confirm': 'التأكيد قبل الإطلاق (الضغطة الأولى تعرض المعاينة)',
   'help.keys': 'لوحة المفاتيح: Tab للانتقال إلى أماكن الانتظار أو الصفوف، والأسهم للاختيار، وEnter أو المسافة للإطلاق، وEsc لمسح المعاينة، وCtrl+Z للتراجع.',
@@ -142,5 +141,15 @@ export const ar: Catalogue = {
   'symbol.halfDisc': 'نصف دائرة',
   'symbol.twoDots': 'نقطتان',
   'symbol.uprightBar': 'شريط عمودي',
-  'symbol.chevron': 'شيفرون'
+  'symbol.chevron': 'شيفرون',
+  'options.peel': 'التقشير',
+  'options.peelSlow': 'بطيء: يدور الرماة حول الصورة ويقشرون بكسلًا بكسلًا',
+  'options.peelQuick': 'سريع',
+  'options.peelOff': 'إيقاف',
+  'options.peelReduced': 'متوقف لأن جهازك يطلب تقليل الحركة.',
+  'action.finishPeeling': 'أنهِ التقشير ({n})',
+  'action.display': 'العرض',
+  'status.startShort': 'اختر راميًا: يضيء لونه وتُعلَّم البكسلات التي سيزيلها.',
+  'stuck.back': 'لم تبقَ أي حركة. العودة إلى الحركة {k} تنجح.',
+  'stuck.backButton': 'العودة إلى الحركة {k}'
 };

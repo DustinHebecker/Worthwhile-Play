@@ -94,7 +94,6 @@ export const pl: Catalogue = {
   'colours.heading': 'Kolory',
   'colours.row': 'zostało {left} · teraz na brzegu {edge} · strzały w zapasie {shots}',
   'options.heading': 'Wyświetlanie',
-  'options.animation': 'Animacja',
   'options.allSymbols': 'Symbole na wszystkich pikselach (tylko w dużym widoku lub na szerokim ekranie)',
   'options.confirm': 'Potwierdzaj przed wysłaniem (pierwsze naciśnięcie pokazuje podgląd)',
   'help.keys': 'Klawiatura: Tab do miejsc oczekiwania lub rzędów, strzałki wybierają, Enter lub spacja wysyła, Esc czyści podgląd, Ctrl+Z cofa.',
@@ -142,5 +141,15 @@ export const pl: Catalogue = {
   'symbol.halfDisc': 'półkole',
   'symbol.twoDots': 'dwie kropki',
   'symbol.uprightBar': 'pionowy pasek',
-  'symbol.chevron': 'szewron'
+  'symbol.chevron': 'szewron',
+  'options.peel': 'Obieranie',
+  'options.peelSlow': 'Powoli: strzelcy obiegają obrazek i obierają piksel po pikselu',
+  'options.peelQuick': 'Szybko',
+  'options.peelOff': 'Wyłączone',
+  'options.peelReduced': 'Wyłączone: urządzenie prosi o mniej ruchu.',
+  'action.finishPeeling': 'Dokończ obieranie ({n})',
+  'action.display': 'Wyświetlanie',
+  'status.startShort': 'Wybierz strzelca: jego kolor się podświetli, a piksele, które by usunął, zostaną oznaczone.',
+  'stuck.back': 'Nie ma już ruchu. Powrót do ruchu {k} działa.',
+  'stuck.backButton': 'Wróć do ruchu {k}'
 };

@@ -94,7 +94,6 @@ export const ru: Catalogue = {
   'colours.heading': 'Цвета',
   'colours.row': 'осталось {left} · сейчас с краю {edge} · выстрелов в запасе {shots}',
   'options.heading': 'Отображение',
-  'options.animation': 'Анимация',
   'options.allSymbols': 'Символы на всех пикселях (только в крупном виде или на широком экране)',
   'options.confirm': 'Подтверждать перед отправкой (первое нажатие показывает предпросмотр)',
   'help.keys': 'Клавиатура: Tab — к местам ожидания или рядам, стрелки — выбор, Enter или пробел — отправить, Esc — убрать предпросмотр, Ctrl+Z — отменить.',
@@ -142,5 +141,15 @@ export const ru: Catalogue = {
   'symbol.halfDisc': 'полукруг',
   'symbol.twoDots': 'две точки',
   'symbol.uprightBar': 'вертикальная полоса',
-  'symbol.chevron': 'галочка'
+  'symbol.chevron': 'галочка',
+  'options.peel': 'Очистка',
+  'options.peelSlow': 'Медленно: стрелки обходят картинку и снимают пиксель за пикселем',
+  'options.peelQuick': 'Быстро',
+  'options.peelOff': 'Выкл.',
+  'options.peelReduced': 'Выкл.: устройство просит меньше движения.',
+  'action.finishPeeling': 'Завершить очистку ({n})',
+  'action.display': 'Отображение',
+  'status.startShort': 'Выбери стрелка: его цвет подсветится, а пиксели, которые он уберёт, будут отмечены.',
+  'stuck.back': 'Ходов больше нет. Возврат к ходу {k} работает.',
+  'stuck.backButton': 'Вернуться к ходу {k}'
 };

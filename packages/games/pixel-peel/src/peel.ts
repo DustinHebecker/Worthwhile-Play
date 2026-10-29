@@ -67,7 +67,7 @@ export function peelTimeline(hits: readonly PeelHit[], stations: number, usedUp:
     t += d;
   };
   let at = -0.5;
-  hits.forEach((hit, k) => {
+  hits.forEach((hit) => {
     const station = ((hit.station % s) + s) % s;
     // Forward only: the first place of this station at or after the token; a second hit at the same station is a lap
     // later (a station reaches one cell per pass).

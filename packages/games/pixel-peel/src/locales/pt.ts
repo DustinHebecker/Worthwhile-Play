@@ -94,7 +94,6 @@ export const pt: Catalogue = {
   'colours.heading': 'Cores',
   'colours.row': 'restam {left} · na borda agora {edge} · tiros à espera {shots}',
   'options.heading': 'Exibição',
-  'options.animation': 'Animação',
   'options.allSymbols': 'Símbolos em todos os pixels (só na visualização grande ou em telas largas)',
   'options.confirm': 'Confirmar antes de lançar (o primeiro toque mostra a prévia)',
   'help.keys': 'Teclado: Tab até os lugares de espera ou as filas, as setas escolhem, Enter ou Espaço lança, Esc limpa a prévia, Ctrl+Z desfaz.',
@@ -142,5 +141,15 @@ export const pt: Catalogue = {
   'symbol.halfDisc': 'semicírculo',
   'symbol.twoDots': 'dois pontos',
   'symbol.uprightBar': 'barra vertical',
-  'symbol.chevron': 'chevron'
+  'symbol.chevron': 'chevron',
+  'options.peel': 'Descascar',
+  'options.peelSlow': 'Lento: os atiradores dão a volta e descascam pixel a pixel',
+  'options.peelQuick': 'Rápido',
+  'options.peelOff': 'Desligado',
+  'options.peelReduced': 'Desligado: o dispositivo pede menos movimento.',
+  'action.finishPeeling': 'Terminar de descascar ({n})',
+  'action.display': 'Exibição',
+  'status.startShort': 'Escolha um atirador: a cor dele se destaca e os pixels que ele removeria ficam marcados.',
+  'stuck.back': 'Não há mais jogadas. Voltar à jogada {k} funciona.',
+  'stuck.backButton': 'Voltar à jogada {k}'
 };

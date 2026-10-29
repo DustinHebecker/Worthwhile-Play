@@ -6,6 +6,7 @@ import { createInitial } from './generate';
 import { hint as computeHint, type HintResult } from './hint';
 import { findMotif } from './motifs/index';
 import { canUndo, resetState, restart, tableOfState, undo, undoTo, type Hit, type Move, type PaletteEntry, type PeelState, type Shooter } from './rules';
+import { PeelQueue } from './peel';
 import { inkFor, SYMBOLS, symbolPath } from './symbols';
 import './styles.css';
 
@@ -22,8 +23,29 @@ const SYMBOL_MIN = 10;
 /** Chips shown per lane before "Show whole lanes". */
 const CHIPS_SHOWN = 7;
 
+/** How launches are drawn (design v3 § 3.1): Slow peels pixel by pixel, Quick is the short v2 animation, Off is instant. */
+export type PeelMode = 'slow' | 'quick' | 'off';
+export const PEEL_MODES: readonly PeelMode[] = ['slow', 'quick', 'off'];
+
+/**
+ * The Peeling preference of a stored display record: `peel` when valid, else the v2 `animation: false` as Off, else
+ * the default Slow (design v3 § 5).
+ */
+export function peelOf(stored: unknown): PeelMode {
+  const record = typeof stored === 'object' && stored !== null ? (stored as Record<string, unknown>) : {};
+  if ((PEEL_MODES as readonly unknown[]).includes(record.peel)) return record.peel as PeelMode;
+  return record.animation === false ? 'off' : 'slow';
+}
+
+/** Frame scheduling and clock, injectable for tests (presentation only: nothing in the game waits for them). */
+export interface ViewOptions {
+  frame?: (callback: (time: number) => void) => number;
+  cancelFrame?: (handle: number) => void;
+  now?: () => number;
+}
+
 interface Display {
-  animation: boolean;
+  peel: PeelMode;
   allSymbols: boolean;
   confirm: boolean;
   large: boolean;
@@ -80,8 +102,12 @@ const PLACEHOLDER: PeelState = {
   reported: false
 };
 
-export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
+export function createPixelPeel(context: GameContext, viewOptions: ViewOptions = {}): GameInstance<PeelState> {
   const { t } = context;
+  const hasFrames = typeof requestAnimationFrame === 'function';
+  const frame = viewOptions.frame ?? (hasFrames ? (cb: (time: number) => void) => requestAnimationFrame(cb) : undefined);
+  const cancelFrame = viewOptions.cancelFrame ?? (typeof cancelAnimationFrame === 'function' ? (h: number) => cancelAnimationFrame(h) : () => undefined);
+  const now = viewOptions.now ?? (() => performance.now());
   const locale: Locale = (LOCALES as readonly string[]).includes(t.locale) ? (t.locale as Locale) : 'en';
   // A tiny placeholder until newGame() or restore(): generating a real game here would only cost start time.
   let state: PeelState = PLACEHOLDER;
@@ -101,6 +127,13 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
   let hintTimer: ReturnType<typeof setTimeout> | null = null;
   let statusText = '';
   let anim: Animation | null = null;
+  /** Slow peeling: the queue of committed launches still to draw, and its frame loop. */
+  let slow: PeelQueue | null = null;
+  let slowFrame: number | null = null;
+  let slowLast = 0;
+  /** The reveal takes focus when it appears after the last move (not on restore). */
+  let focusReveal = false;
+  const peeling = () => slow?.busy ?? false;
   let laneFocus = 0;
   let slotFocus = 0;
   let wasStuck = false;
@@ -124,7 +157,7 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
   const stored = context.preferences?.get(PREFS);
   const pref = (key: keyof Display): unknown => (typeof stored === 'object' && stored !== null ? (stored as Record<string, unknown>)[key] : undefined);
   const display: Display = {
-    animation: pref('animation') !== false,
+    peel: peelOf(stored),
     allSymbols: pref('allSymbols') === true,
     // On touch screens a tap would launch at once and the spotlight would never be seen: there the first tap
     // previews by default (remembered once the player changes it).
@@ -160,11 +193,13 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
   const live = h('div', { class: 'sr-only', 'aria-live': 'polite', 'data-testid': 'pp-live' });
   const titleEl = h('p', { class: 'pp-title', 'data-testid': 'pp-title' });
   const leftEl = h('p', { class: 'pp-left', 'data-testid': 'pp-left' });
-  const canvas = h('canvas', { class: 'pp-canvas', role: 'img', 'data-testid': 'pp-canvas' });
+  const canvas = h('canvas', { class: 'pp-canvas', role: 'img', id: 'pp-canvas', 'data-testid': 'pp-canvas' });
   const board = h('div', { class: 'pp-board', dir: 'ltr', 'data-testid': 'pp-board' }, canvas);
   const status = h('p', { class: 'wp-status pp-status', 'data-testid': 'pp-status', 'aria-live': 'off' });
 
   const button = (testId: string, label: string, onclick: () => void) => h('button', { type: 'button', 'data-testid': testId, onclick: () => onclick() }, label);
+  const finishButton = button('pp-finish-peeling', '', () => finishAll());
+  finishButton.setAttribute('aria-controls', 'pp-canvas');
   const undoButton = button('pp-undo', t('common.undo'), () => doUndo());
   const restartButton = button('pp-restart', t('action.restart'), () => doRestart());
   const hintButton = button('pp-hint', t('common.hint'), () => doHint());
@@ -195,12 +230,11 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
   const colours = h('details', { class: 'pp-details', 'data-testid': 'pp-colours' }, h('summary', {}, t('colours.heading')), coloursList);
   let colourRows: { li: HTMLElement; count: HTMLElement; toggle: HTMLButtonElement; key: string }[] = [];
 
-  const checkbox = (key: 'animation' | 'allSymbols' | 'confirm' | 'wholeLanes', label: string) => {
+  const checkbox = (key: 'allSymbols' | 'confirm' | 'wholeLanes', label: string) => {
     const input = h('input', { type: 'checkbox', 'data-testid': `pp-option-${key}` });
     input.addEventListener('change', () => {
       display[key] = input.checked;
       savePrefs();
-      if (key === 'animation' && !input.checked) finishAnimation();
       selected = null;
       update();
     });
@@ -210,14 +244,30 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
     const input = h('input', { type: 'radio', name: 'pp-size', value: large ? 'large' : 'fit', 'data-testid': `pp-option-${large ? 'large' : 'fit'}` });
     input.addEventListener('change', () => {
       if (!input.checked) return;
+      finishAll();
       display.large = large;
       savePrefs();
       update();
     });
     return { input, label: h('label', { class: 'pp-option' }, input, h('span', {}, t(large ? 'options.large' : 'options.fit'))) };
   };
+  const peelRadio = (mode: PeelMode) => {
+    const input = h('input', { type: 'radio', name: 'pp-peel', value: mode, 'data-testid': `pp-option-peel-${mode}` });
+    input.addEventListener('change', () => {
+      if (!input.checked) return;
+      display.peel = mode;
+      savePrefs();
+      // Effective at once: away from Slow the queue ends now; Quick → Off ends the short animation (§ 3.1).
+      if (mode !== 'slow') finishAll();
+      update();
+    });
+    const key = mode === 'slow' ? 'options.peelSlow' : mode === 'quick' ? 'options.peelQuick' : 'options.peelOff';
+    return { input, label: h('label', { class: 'pp-option' }, input, h('span', {}, t(key))) };
+  };
+  const peelRadios = { slow: peelRadio('slow'), quick: peelRadio('quick'), off: peelRadio('off') };
+  const peelReduced = h('p', { class: 'wp-muted pp-help', 'data-testid': 'pp-peel-reduced' }, t('options.peelReduced'));
+  peelReduced.hidden = !context.reducedMotion;
   const options = {
-    animation: checkbox('animation', t('options.animation')),
     allSymbols: checkbox('allSymbols', t('options.allSymbols')),
     confirm: checkbox('confirm', t('options.confirm')),
     wholeLanes: checkbox('wholeLanes', t('options.wholeLanes'))
@@ -225,13 +275,15 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
   const sizes = { fit: sizeRadio(false), large: sizeRadio(true) };
   const optionsBox = h('details', { class: 'pp-details', 'data-testid': 'pp-options' },
     h('summary', {}, t('options.heading')),
+    h('fieldset', { class: 'pp-sizes pp-peel', 'data-testid': 'pp-peel' }, h('legend', {}, t('options.peel')), peelRadios.slow.label, peelRadios.quick.label, peelRadios.off.label, peelReduced),
     h('fieldset', { class: 'pp-sizes' }, h('legend', {}, t('options.size')), sizes.fit.label, sizes.large.label),
     options.wholeLanes.label,
     options.allSymbols.label,
-    options.animation.label,
     options.confirm.label
   );
   const savePrefs = () => context.preferences?.set(PREFS, { ...display });
+  /** The Peeling mode in effect: reduced motion forces Off. */
+  const peelMode = (): PeelMode => (context.reducedMotion ? 'off' : display.peel);
 
   const side = h('div', { class: 'pp-side' },
     status,
@@ -239,7 +291,7 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
     stuckPanel,
     h('section', { class: 'pp-section' }, slotsHeading, slotsRow),
     h('section', { class: 'pp-section' }, h('h3', { class: 'pp-heading', id: 'pp-lanes-heading' }, t('lanes.heading')), lanesRow, lanesToggle),
-    h('div', { class: 'wp-row pp-actions' }, undoButton, restartButton, hintButton),
+    h('div', { class: 'wp-row pp-actions' }, undoButton, restartButton, hintButton, finishButton),
     h('p', { class: 'wp-muted pp-help' }, t('help.symbols')),
     h('p', { class: 'wp-muted pp-help' }, t('help.keys')),
     colours,
@@ -266,6 +318,7 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
     cursor = replayCursor(table, state.moves) ?? (replayCursor(table, []) as Cursor);
     exposure = exposureOf(table.engine, cursor.cells);
     stamp++;
+    exposedStamp++;
     leftOf = new Int32Array(table.engine.keys.length + 1);
     const { colour } = table.engine;
     for (let i = 0; i < colour.length; i++) if (cursor.cells.present[i]) leftOf[colour[i] as number] = (leftOf[colour[i] as number] as number) + 1;
@@ -360,7 +413,7 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
       const count = h('span', { class: 'pp-colour-count' });
       const toggle = h('button', { type: 'button', class: 'pp-show', 'aria-pressed': 'false', 'aria-label': t('colours.showLabel', { colour: t(`colour.${p.name}`) }), 'data-testid': `pp-show-${p.key}` }, t('colours.show'));
       toggle.addEventListener('click', () => {
-        finishAnimation();
+        finishQuick();
         shownColour = shownColour === p.key ? null : p.key;
         update();
       });
@@ -491,17 +544,20 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
     const reachable = state.picture.palette.filter((p) => (edge[table.engine.codes.get(p.key) ?? 0] ?? 0) > 0).map((p) => t('picture.reachItem', { colour: t(`colour.${p.name}`), n: edge[table.engine.codes.get(p.key) ?? 0] ?? 0 }));
     setAttr(canvas, 'aria-label', t('picture.label', { title: motifTitle(), w: table.engine.w, h: table.engine.h, left, total, reachable: reachable.length ? reachable.join(t('list.separator')) : t('picture.reachNone') }));
 
-    for (const key of ['animation', 'allSymbols', 'confirm'] as const) options[key].input.checked = display[key];
+    for (const key of ['allSymbols', 'confirm'] as const) options[key].input.checked = display[key];
     options.wholeLanes.input.checked = whole;
     sizes.fit.input.checked = !display.large;
     sizes.large.input.checked = display.large;
-    options.animation.input.disabled = context.reducedMotion;
-    if (context.reducedMotion) options.animation.input.checked = false;
+    for (const mode of PEEL_MODES) {
+      peelRadios[mode].input.checked = peelMode() === mode;
+      peelRadios[mode].input.disabled = context.reducedMotion;
+    }
 
-    // Reveal
-    playArea.hidden = isSolved;
-    reveal.hidden = !isSolved;
-    if (isSolved) {
+    // Reveal: once the picture is solved and nothing is still peeling.
+    const showReveal = isSolved && !peeling();
+    playArea.hidden = showReveal;
+    reveal.hidden = !showReveal;
+    if (showReveal) {
       revealTitle.textContent = motifTitle();
       revealPlace.textContent = motifPlace();
       revealPlace.hidden = motifPlace() === '';
@@ -510,7 +566,22 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
     if (stuck && !wasStuck) becameStuck = true;
     wasStuck = stuck;
     renderStatus();
+    syncPeel();
     draw();
+    if (showReveal && focusReveal) {
+      focusReveal = false;
+      revealTitle.focus();
+    }
+  };
+
+  /** Test hooks and the Finish peeling button (design v3 § 3.4). */
+  const syncPeel = () => {
+    const launches = slow?.launches ?? 0;
+    setAttr(board, 'data-peeling', String(launches));
+    setAttr(board, 'data-pending', String(slow?.pending ?? 0));
+    finishButton.hidden = !peeling();
+    const label = t('action.finishPeeling', { n: Math.max(1, launches) });
+    setText(finishButton, label);
   };
 
   const visible = (list: HTMLButtonElement[]) => list.filter((b) => !b.hidden);
@@ -551,7 +622,7 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
   const showPreview = (move: Move | null) => {
     if (previewMove === move) return;
     // Any input jumps an animation to its end (design § 7.5), so the preview shows the real position.
-    if (move !== null) finishAnimation();
+    if (move !== null) finishQuick();
     previewMove = move;
     if (move === null) selected = null;
     renderStatus();
@@ -667,8 +738,10 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
     }
     return fitCell;
   };
-  /** Bumped whenever the drawn cells or the exposed set change (keys the cached test hooks and spotlight image). */
+  /** Bumped whenever the drawn cells or the exposed set change (keys the cached spotlight image). */
   let stamp = 0;
+  /** Bumped whenever the committed exposed set changes (keys the exposed-cell test hook). */
+  let exposedStamp = 0;
 
   /** Station centre on the track (for the moving token). */
   const stationPoint = (i: number, cell: number, w: number, h: number): [number, number] => {
@@ -677,6 +750,90 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
     if (i < w + h) return [TRACK + w * cell + half, TRACK + (h - 1 - (i - w) + 0.5) * cell];
     if (i < 2 * w + h) return [TRACK + (w - 1 - (i - w - h) + 0.5) * cell, half];
     return [half, TRACK + (i - 2 * w - h + 0.5) * cell];
+  };
+
+  /** A point on the track at track distance `d` (stations; −0.5 is the start corner), between two stations. */
+  const trackPoint = (d: number, cell: number, w: number, h: number): [number, number] => {
+    const n = 2 * w + 2 * h;
+    const i0 = Math.floor(d);
+    const f = d - i0;
+    const a = stationPoint((((i0 % n) + n) % n), cell, w, h);
+    const b = stationPoint(((((i0 + 1) % n) + n) % n), cell, w, h);
+    return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
+  };
+
+  const roundRect = (g: CanvasRenderingContext2D, x: number, y: number, size: number, r: number) => {
+    g.beginPath();
+    g.moveTo(x + r, y);
+    g.arcTo(x + size, y, x + size, y + size, r);
+    g.arcTo(x + size, y + size, x, y + size, r);
+    g.arcTo(x, y + size, x, y, r);
+    g.arcTo(x, y, x + size, y, r);
+    g.closePath();
+  };
+
+  /** Slow peeling: cells in their peel effect, the line to the cell being peeled, the token and the queue. */
+  const drawSlow = (g: CanvasRenderingContext2D, cell: number) => {
+    if (!slow) return;
+    const { w, h, colour } = table.engine;
+    const ink = cssVar('--wp-text', '#1d1d1b');
+    // Peeling cells shrink to the backdrop.
+    for (const e of slow.effects()) {
+      const size = cell * (1 - e.progress);
+      if (size <= 0.5) continue;
+      g.fillStyle = entry(keyOfCode(colour[e.cell] as number)).e.hex;
+      g.fillRect(TRACK + (e.cell % w) * cell + (cell - size) / 2, TRACK + Math.floor(e.cell / w) * cell + (cell - size) / 2, size, size);
+    }
+    const token = slow.token();
+    const size = Math.max(14, Math.min(22, Math.round(cell * 1.6)));
+    // Waiting launches: small tokens stacked at the start corner, in launch order.
+    const queued = slow.queued();
+    const small = Math.max(8, Math.round(size * 0.55));
+    queued.slice(0, 6).forEach((key, k) => {
+      const x = 1 + k * (small * 0.45);
+      const y = h * cell + 2 * TRACK - small - 1 - k * (small * 0.45);
+      roundRect(g, x, y, small, 2);
+      g.fillStyle = entry(key).e.hex;
+      g.fill();
+      g.lineWidth = 1;
+      g.strokeStyle = ink;
+      g.stroke();
+    });
+    if (!token) return;
+    const [tx, ty] = trackPoint(token.distance, cell, w, h);
+    const { e, i } = entry(token.colour);
+    const tokenInk = inkFor(e.hex);
+    if (token.target !== null) {
+      g.beginPath();
+      g.moveTo(tx, ty);
+      g.lineTo(TRACK + (token.target % w + 0.5) * cell, TRACK + (Math.floor(token.target / w) + 0.5) * cell);
+      g.lineWidth = 1.5;
+      g.strokeStyle = ink;
+      g.stroke();
+    }
+    g.save();
+    g.globalAlpha = 1 - token.fade;
+    const x = Math.max(0, Math.min(w * cell + 2 * TRACK - size, tx - size / 2));
+    const y = Math.max(0, Math.min(h * cell + 2 * TRACK - size, ty - size / 2));
+    roundRect(g, x, y, size, 4);
+    g.fillStyle = e.hex;
+    g.fill();
+    g.lineWidth = 1.5;
+    g.strokeStyle = ink;
+    g.stroke();
+    drawSymbol(g, i, x + size * 0.18, y + size * 0.18, size * 0.64, tokenInk);
+    // Remaining shots: a small number on a pill at the token's corner.
+    const label = String(token.shots);
+    g.font = `700 ${Math.max(9, Math.round(size * 0.5))}px system-ui, sans-serif`;
+    const tw = (typeof g.measureText === 'function' ? g.measureText(label).width : 6) + 4;
+    const lx = Math.min(w * cell + 2 * TRACK - tw, x + size - 3);
+    const ly = Math.max(0, y - 6);
+    g.fillStyle = ink;
+    g.fillRect(lx, ly, tw, Math.max(10, Math.round(size * 0.55)));
+    g.fillStyle = cssVar('--wp-bg', '#ffffff');
+    g.textBaseline = 'top';
+    g.fillText(label, lx + 2, ly + 1);
+    g.restore();
   };
 
   let scratch: HTMLCanvasElement | null = null;
@@ -700,7 +857,9 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
     const { colour } = table.engine;
     if (spotBuffer.length !== base.length) spotBuffer = new Uint8ClampedArray(base.length);
     spotBuffer.set(base);
-    for (let c = 0; c < colour.length; c++) if (!(shown[c] === 1 && colour[c] === code)) spotBuffer[c * 4 + 3] = 0;
+    // Cells still to peel are going: dimmed like the other colours (design v3 § 3.2).
+    const present = cursor.cells.present;
+    for (let c = 0; c < colour.length; c++) if (!(shown[c] === 1 && present[c] === 1 && colour[c] === code)) spotBuffer[c * 4 + 3] = 0;
     spotFor = key;
     return spotBuffer;
   };
@@ -731,11 +890,11 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
       board.removeAttribute('tabindex');
       board.removeAttribute('aria-label');
     }
-    if (exposedFor !== stamp) {
+    if (exposedFor !== exposedStamp) {
       exposedCells = [];
       for (let c = 0; c < exposure.seenBy.length; c++) if (exposure.seenBy[c]) exposedCells.push(c);
       canvas.dataset.exposed = exposedCells.map((c) => `${c % w},${Math.floor(c / w)}`).join(' ');
-      exposedFor = stamp;
+      exposedFor = exposedStamp;
     }
     const ex = exposedCells;
     canvas.dataset.cell = String(cell);
@@ -745,7 +904,7 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
     canvas.dataset.preview = p ? p.cells.map((x) => `${x.cell % w},${Math.floor(x.cell / w)}`).join(' ') : '';
     const spot = spotlightKey();
     canvas.dataset.spotlight = spot ?? '';
-    if (solved() && !anim) drawReveal();
+    if (solved() && !anim && !peeling()) drawReveal();
     const g = context2d(canvas, cssW, cssH);
     if (!g) return;
     // Track: a plain frame, with one tick per station when the cells are large enough.
@@ -776,7 +935,8 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
     // Symbols from 10 px: on exposed cells, or on all with the option.
     if (symbols !== 'none') {
       const size = Math.max(6, Math.round(cell * 0.62));
-      const list = symbols === 'all' ? [...shown.keys()].filter((c) => shown[c]) : ex;
+      const present = cursor.cells.present;
+      const list = symbols === 'all' ? [...shown.keys()].filter((c) => shown[c] && present[c]) : ex;
       for (const c of list) {
         if (!shown[c] || (code && colour[c] !== code)) continue;
         const { e, i } = entry(keyOfCode(colour[c] as number));
@@ -817,6 +977,7 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
         g.strokeRect(x + 2.5, y + 2.5, cell - 5, cell - 5);
       }
     }
+    if (slow?.busy) drawSlow(g, cell);
     if (anim) {
       const hit = anim.hits[Math.min(anim.done, anim.hits.length - 1)];
       if (hit) {
@@ -876,9 +1037,10 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
 
   // --- Animation (cosmetic only: the state has already changed) ------------------------------------------------
 
+  /** Quick: the short v2 animation (any input jumps it to its end). */
   const tick = () => {
     if (!anim) return;
-    const f = Math.min(1, (performance.now() - anim.start) / anim.duration);
+    const f = Math.min(1, (now() - anim.start) / anim.duration);
     const done = Math.floor(f * anim.hits.length);
     if (done > anim.done) {
       popCells(anim.hits.slice(anim.done, done).map((x) => x.cell));
@@ -890,25 +1052,72 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
       return;
     }
     draw();
-    anim.frame = requestAnimationFrame(tick);
+    if (frame) anim.frame = frame(tick);
   };
 
-  const startAnimation = (hits: Hit[], c: string) => {
-    finishAnimation();
-    if (context.reducedMotion || !display.animation || hits.length === 0 || typeof requestAnimationFrame !== 'function') {
+  /** Slow: one frame of the peel queue (design v3 § 3.2); the loop stops when the queue is empty. */
+  const slowTick = () => {
+    slowFrame = null;
+    if (!slow) return;
+    const t1 = now();
+    // A long gap (a hidden page, a stalled frame) moves on at most one second.
+    const dt = Math.min(1000, Math.max(0, t1 - slowLast));
+    slowLast = t1;
+    popCells(slow.advance(dt));
+    if (slow.busy) {
+      syncPeel();
+      draw();
+      if (frame) slowFrame = frame(slowTick);
+    } else update();
+  };
+
+  const startAnimation = (hits: Hit[], c: string, shots: number, usedUp: boolean) => {
+    finishQuick();
+    const mode = peelMode();
+    if (mode === 'slow' && frame) {
+      slow ??= new PeelQueue(2 * table.engine.w + 2 * table.engine.h);
+      if (!slow.busy) slowLast = now();
+      slow.enqueue({ hits, colour: c, shots, usedUp });
+      if (slowFrame === null) slowFrame = frame(slowTick);
+      return;
+    }
+    if (mode === 'off' || hits.length === 0 || !frame || peeling()) {
+      // Behind a running queue a quick launch would peel ahead of it: it joins the end of the queue's picture at once.
       popCells(hits.map((x) => x.cell));
       return;
     }
-    anim = { hits, done: 0, start: performance.now(), duration: Math.min(ANIMATION_MAX_MS, 120 + hits.length * 30), frame: 0, c };
-    anim.frame = requestAnimationFrame(tick);
+    anim = { hits, done: 0, start: now(), duration: Math.min(ANIMATION_MAX_MS, 120 + hits.length * 30), frame: 0, c };
+    anim.frame = frame(tick);
   };
 
-  function finishAnimation() {
+  function finishQuick() {
     if (!anim) return;
-    if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(anim.frame);
+    cancelFrame(anim.frame);
     popCells(anim.hits.slice(anim.done).map((x) => x.cell));
     anim = null;
     draw();
+  }
+
+  /**
+   * Ends every animation at once (Finish peeling, Undo, Start again, Back to move k, Hint, size changes, switching
+   * Peeling away from Slow, pause). `refresh: false` when a full update follows anyway.
+   */
+  function finishAll(refresh = true) {
+    finishQuick();
+    if (slowFrame !== null) cancelFrame(slowFrame);
+    slowFrame = null;
+    if (!slow?.busy) return;
+    popCells(slow.finishAll());
+    if (refresh) update();
+  }
+
+  /** Forgets every animation without drawing (a rebuild or dispose follows). */
+  function dropAnimations() {
+    if (anim) cancelFrame(anim.frame);
+    anim = null;
+    if (slowFrame !== null) cancelFrame(slowFrame);
+    slowFrame = null;
+    slow = null;
   }
 
   // --- Actions -------------------------------------------------------------------------------------------------
@@ -919,7 +1128,7 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
   };
 
   /** Applies a new state after a move (incrementally) or any other change (by replay). */
-  const commit = (next: PeelState, message: string, played?: { move: Move; hits: Hit[] }) => {
+  const commit = (next: PeelState, message: string, played?: { move: Move; hits: Hit[]; colour: string; shots: number; usedUp: boolean }) => {
     cancelHint();
     hintResult = null;
     selected = null;
@@ -931,22 +1140,23 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
       for (const hit of played.hits) leftOf[table.engine.colour[hit.cell] as number] = (leftOf[table.engine.colour[hit.cell] as number] as number) - 1;
       updateExposure(table.engine, cursor.cells, exposure, played.hits.map((x) => x.cell));
       stamp++;
+      exposedStamp++;
       previews = new Map();
     } else {
-      finishAnimation();
+      dropAnimations();
       rebuild();
     }
     const solvedNow = solved() && !state.reported;
     if (solvedNow) state = { ...state, reported: true };
     statusText = message;
     becameStuck = false;
-    if (played) startAnimation(played.hits, keyOfCode(table.engine.colour[(played.hits[0] ?? { cell: 0 }).cell] as number));
+    if (played) startAnimation(played.hits, played.colour, played.shots, played.usedUp);
+    if (solvedNow) focusReveal = true;
     update();
     context.requestSave();
     if (solvedNow) {
       announce(live, `${motifTitle()}. ${t('reveal.stats', { launches: cursor.launches, parks: cursor.parks })}`);
       context.finished({ outcome: 'completed', stats: { launches: cursor.launches, parks: cursor.parks } });
-      revealTitle.focus();
     } else announce(live, becameStuck ? `${message} ${t('stuck.text')}` : message);
     becameStuck = false;
   };
@@ -959,7 +1169,7 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
   };
 
   function activate(b: HTMLButtonElement) {
-    finishAnimation();
+    finishQuick();
     if (paused || solved()) return;
     const move = moveOf(b);
     if (!move) return;
@@ -982,7 +1192,8 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
     const isLane = move.startsWith('L');
     const index = Number(move.slice(1));
     const wasFocused = document.activeElement === b;
-    commit({ ...state, moves: [...state.moves, move], restartUndo: null }, resultText(p), { move, hits: p.cells });
+    const s = shooterOf(p) as Shooter;
+    commit({ ...state, moves: [...state.moves, move], restartUndo: null }, resultText(p), { move, hits: p.cells, colour: s.c, shots: s.n, usedUp: p.left === 0 });
     quiet = b;
     if (solved()) return;
     // Focus stays on the same lane; an emptied lane or slot hands focus on (next lane, then the first slot).
@@ -996,21 +1207,21 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
   }
 
   function doUndo() {
-    finishAnimation();
+    finishAll(false);
     if (paused || !canUndo(state)) return;
     const fromRestart = state.moves.length === 0;
     commit(undo(state), t(fromRestart ? 'status.restartUndone' : 'status.undone'));
   }
 
   function doRestart() {
-    finishAnimation();
+    finishAll(false);
     if (paused) return;
     const next = restart(state);
     if (next !== state) commit(next, t('status.restarted'));
   }
 
   function doUndoTo() {
-    finishAnimation();
+    finishAll(false);
     if (paused || hintResult?.kind !== 'undo') return;
     const k = hintResult.k;
     const next = undoTo(state, k);
@@ -1036,7 +1247,7 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
   };
 
   function doHint() {
-    finishAnimation();
+    finishAll();
     if (paused || solved() || hintTimer !== null) return;
     // The quick answer (on the witness path) at once; anything else after one frame with a busy state.
     const onPath = state.moves.every((m, i) => state.witness[i] === m) && state.moves.length < state.witness.length;
@@ -1128,7 +1339,7 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
   const mount = () => {
     fitCell = 0;
     cssCache = new Map();
-    finishAnimation();
+    dropAnimations();
     cancelHint();
     hintResult = null;
     selected = null;
@@ -1163,7 +1374,7 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
     serialize: () => clone(state),
     pause() {
       paused = true;
-      finishAnimation();
+      finishAll();
       cancelHint();
       renderStatus();
     },
@@ -1176,7 +1387,7 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
       context.requestSave();
     },
     dispose() {
-      finishAnimation();
+      dropAnimations();
       cancelHint();
       container.removeEventListener('keydown', onKeyDown);
       document.removeEventListener('pointerdown', onPointerDown);

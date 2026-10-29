@@ -94,7 +94,6 @@ export const de: Catalogue = {
   'colours.heading': 'Farben',
   'colours.row': 'übrig {left} · jetzt am Rand {edge} · Schüsse bereit {shots}',
   'options.heading': 'Anzeige',
-  'options.animation': 'Animation',
   'options.allSymbols': 'Symbole auf allen Pixeln (nur in der großen Ansicht oder auf breiten Bildschirmen)',
   'options.confirm': 'Vor dem Losschicken bestätigen (der erste Druck zeigt die Vorschau)',
   'help.keys': 'Tastatur: Mit Tab zu den Warteplätzen oder Reihen, die Pfeiltasten wählen, Eingabe oder Leertaste schickt los, Esc löscht die Vorschau, Strg+Z macht rückgängig.',
@@ -142,5 +141,15 @@ export const de: Catalogue = {
   'symbol.halfDisc': 'Halbkreis',
   'symbol.twoDots': 'zwei Punkte',
   'symbol.uprightBar': 'senkrechter Balken',
-  'symbol.chevron': 'Winkel'
+  'symbol.chevron': 'Winkel',
+  'options.peel': 'Abschälen',
+  'options.peelSlow': 'Langsam: Die Schützen laufen herum und schälen Pixel für Pixel ab',
+  'options.peelQuick': 'Schnell',
+  'options.peelOff': 'Aus',
+  'options.peelReduced': 'Aus, weil dein Gerät um weniger Bewegung bittet.',
+  'action.finishPeeling': 'Abschälen beenden ({n})',
+  'action.display': 'Anzeige',
+  'status.startShort': 'Wähle einen Schützen: Seine Farbe leuchtet auf, und die Pixel, die er entfernen würde, sind markiert.',
+  'stuck.back': 'Kein Zug mehr möglich. Zurück zu Zug {k} klappt.',
+  'stuck.backButton': 'Zurück zu Zug {k}'
 };

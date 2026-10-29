@@ -6,7 +6,7 @@ import { SUPPORTED_LOCALES, type SupportedLocale } from '@wp/localization';
 import game from '../src/index';
 import { createInitial } from '../src/generate';
 import { exposed, initialPosition, play, position, type PeelState } from '../src/rules';
-import { inkFor } from '../src/view';
+import { createPixelPeel, inkFor, peelOf, type PeelMode } from '../src/view';
 import { stateOf } from './helpers';
 
 HTMLCanvasElement.prototype.getContext = (() => null) as typeof HTMLCanvasElement.prototype.getContext;
@@ -287,11 +287,14 @@ describe('view', () => {
     const box = q('pp-option-allSymbols') as HTMLInputElement;
     box.checked = true;
     box.dispatchEvent(new Event('change'));
-    expect(ctx.preferences.get('display')).toEqual({ animation: true, allSymbols: true, confirm: false, large: false, wholeLanes: null });
+    expect(ctx.preferences.get('display')).toEqual({ peel: 'slow', allSymbols: true, confirm: false, large: false, wholeLanes: null });
     expect(instance.serialize()).toEqual(before);
     expect(ctx.saveRequests()).toBe(saves);
-    // Reduced motion: animation is off and cannot be switched on.
-    expect((q('pp-option-animation') as HTMLInputElement).disabled).toBe(true);
+    // Reduced motion: Peeling shows Off and cannot be changed, with the reason.
+    for (const mode of ['slow', 'quick', 'off']) expect((q(`pp-option-peel-${mode}`) as HTMLInputElement).disabled).toBe(true);
+    expect((q('pp-option-peel-off') as HTMLInputElement).checked).toBe(true);
+    expect(q('pp-peel-reduced').hidden).toBe(false);
+    expect(q('pp-peel-reduced').textContent).toBe('Off, because your device asks for reduced motion.');
   });
 
   it('the colours overview lists every colour by name with counts', () => {
@@ -460,3 +463,216 @@ function initialPositionState(): PeelState {
   expect(initialPosition(s).cells.length).toBe(s.picture.w * s.picture.h);
   return s;
 }
+
+/** A fake frame scheduler and clock (the view's injectable options): frames run only when a test steps them. */
+function fakeFrames() {
+  let time = 1000;
+  let id = 0;
+  const queue = new Map<number, (t: number) => void>();
+  const step = (ms: number) => {
+    time += ms;
+    const callbacks = [...queue.values()];
+    queue.clear();
+    for (const cb of callbacks) cb(time);
+  };
+  return {
+    options: { frame: (cb: (t: number) => void) => (queue.set(++id, cb), id), cancelFrame: (h: number) => void queue.delete(h), now: () => time },
+    step,
+    /** Steps 16 ms frames until nothing is scheduled (or `limit` ms passed). */
+    runOut(limit = 30_000) {
+      for (let t = 0; t < limit && queue.size > 0; t += 16) step(16);
+    },
+    get scheduled() {
+      return queue.size;
+    }
+  };
+}
+
+/** A game with motion allowed (the test context has reduced motion) and the fake frames. */
+function startMotion(options: { peel?: PeelMode; state?: PeelState; motif?: string; difficulty?: string; seed?: number; reducedMotion?: boolean } = {}) {
+  const ctx = createTestContext(game as GameModule<unknown>, 'en');
+  ctx.preferences.set('display', { confirm: false, ...(options.peel ? { peel: options.peel } : {}) });
+  const frames = fakeFrames();
+  const context = { ...ctx.context, reducedMotion: options.reducedMotion ?? false };
+  const instance = createPixelPeel(context, frames.options);
+  if (options.state) instance.restore(options.state);
+  else instance.newGame({ seed: options.seed ?? 1, difficulty: options.difficulty ?? 'easy', settings: { motif: options.motif ?? 'red-fox' } });
+  cleanup.push(() => instance.dispose());
+  const root = ctx.context.root;
+  const q = (id: string) => root.querySelector<HTMLElement>(`[data-testid="${id}"]`)!;
+  const press = (move: string) => q(move.startsWith('L') ? `pp-lane-${move.slice(1)}` : `pp-slot-${move.slice(1)}`).click();
+  const peeling = () => Number(q('pp-board').dataset.peeling);
+  const pending = () => Number(q('pp-board').dataset.pending);
+  return { ctx, instance, root, q, frames, press, peeling, pending };
+}
+
+describe('slow peeling (design v3 § 3)', () => {
+  it('the stored preference: peel when valid, the v2 animation: false as Off, else Slow', () => {
+    expect(peelOf({ peel: 'quick' })).toBe('quick');
+    expect(peelOf({ peel: 'off', animation: true })).toBe('off');
+    expect(peelOf({ animation: false })).toBe('off');
+    expect(peelOf({ animation: true })).toBe('slow');
+    expect(peelOf({})).toBe('slow');
+    expect(peelOf({ peel: 'fast', animation: false })).toBe('off');
+    expect(peelOf({ peel: 'fast' })).toBe('slow');
+    for (const junk of [undefined, null, 3, 'slow', [], { peel: 1 }]) expect(peelOf(junk)).toBe('slow');
+  });
+
+  it('Slow is the default; an old record with animation: false starts with Off and is saved without animation', () => {
+    const fresh = startMotion();
+    expect((fresh.q('pp-option-peel-slow') as HTMLInputElement).checked).toBe(true);
+    expect(fresh.q('pp-peel-reduced').hidden).toBe(true);
+    fresh.instance.dispose();
+    const ctx = createTestContext(game as GameModule<unknown>, 'en');
+    ctx.preferences.set('display', { animation: false, allSymbols: false, confirm: false });
+    const instance = createPixelPeel({ ...ctx.context, reducedMotion: false }, fakeFrames().options);
+    instance.newGame({ seed: 1, difficulty: 'easy', settings: { motif: 'red-fox' } });
+    cleanup.push(() => instance.dispose());
+    const q = (id: string) => ctx.context.root.querySelector<HTMLElement>(`[data-testid="${id}"]`)!;
+    expect((q('pp-option-peel-off') as HTMLInputElement).checked).toBe(true);
+    const box = q('pp-option-allSymbols') as HTMLInputElement;
+    box.checked = true;
+    box.dispatchEvent(new Event('change'));
+    expect(ctx.preferences.get('display')).toEqual({ peel: 'off', allSymbols: true, confirm: false, large: false, wholeLanes: null });
+  });
+
+  it('launches are committed and saved before any frame runs; they queue and peel one after the other', () => {
+    const { instance, ctx, frames, press, peeling, pending, q } = startMotion();
+    const witness = instance.serialize().witness;
+    const saves = ctx.saveRequests();
+    press(witness[0]!);
+    press(witness[1]!);
+    expect(instance.serialize().moves).toEqual(witness.slice(0, 2));
+    expect(ctx.saveRequests()).toBe(saves + 2);
+    expect(peeling()).toBe(2);
+    const committedHits = pending();
+    expect(committedHits).toBeGreaterThan(0);
+    expect(q('pp-finish-peeling').hidden).toBe(false);
+    expect(q('pp-finish-peeling').textContent).toBe('Finish peeling (2)');
+    // The text and the numbers describe the committed position at once.
+    expect(q('pp-status').textContent).toMatch(/removed \d+/);
+    frames.step(16);
+    expect(pending()).toBeLessThanOrEqual(committedHits);
+    frames.runOut();
+    expect(peeling()).toBe(0);
+    expect(pending()).toBe(0);
+    expect(q('pp-finish-peeling').hidden).toBe(true);
+    expect(frames.scheduled).toBe(0);
+    expect(instance.serialize().moves).toEqual(witness.slice(0, 2));
+  });
+
+  it('input is never blocked: a launch while peeling queues, the preview works, Finish peeling ends it at once', () => {
+    const { instance, frames, press, peeling, pending, q } = startMotion();
+    const witness = instance.serialize().witness;
+    press(witness[0]!);
+    frames.step(16);
+    const lane = q(witness[1]!.startsWith('L') ? `pp-lane-${witness[1]!.slice(1)}` : `pp-slot-${witness[1]!.slice(1)}`);
+    lane.focus();
+    expect(q('pp-canvas').dataset.preview).not.toBe('');
+    expect(peeling()).toBe(1);
+    press(witness[1]!);
+    press(witness[2]!);
+    expect(instance.serialize().moves).toEqual(witness.slice(0, 3));
+    expect(peeling()).toBe(3);
+    q('pp-finish-peeling').click();
+    expect(peeling()).toBe(0);
+    expect(pending()).toBe(0);
+    expect(frames.scheduled).toBe(0);
+  });
+
+  it('Undo, Start again, Hint and pause finish the queue first', () => {
+    const { instance, press, peeling, pending, q } = startMotion();
+    const witness = instance.serialize().witness;
+    press(witness[0]!);
+    press(witness[1]!);
+    q('pp-undo').click();
+    expect(peeling()).toBe(0);
+    expect(pending()).toBe(0);
+    expect(instance.serialize().moves).toEqual(witness.slice(0, 1));
+    press(witness[1]!);
+    q('pp-restart').click();
+    expect(peeling()).toBe(0);
+    expect(instance.serialize().moves).toEqual([]);
+    q('pp-undo').click();
+    press(witness[2]!);
+    expect(peeling()).toBe(1);
+    q('pp-hint').click();
+    expect(peeling()).toBe(0);
+    press(witness[3]!);
+    expect(peeling()).toBe(1);
+    instance.pause();
+    expect(peeling()).toBe(0);
+    instance.resume();
+  });
+
+  it('switching Peeling to Quick or Off mid-queue finishes it at once; with Off nothing ever queues', () => {
+    const { instance, frames, press, peeling, q, ctx } = startMotion();
+    const witness = instance.serialize().witness;
+    press(witness[0]!);
+    expect(peeling()).toBe(1);
+    const quick = q('pp-option-peel-quick') as HTMLInputElement;
+    quick.checked = true;
+    quick.dispatchEvent(new Event('change'));
+    expect(peeling()).toBe(0);
+    expect(ctx.preferences.get('display')).toMatchObject({ peel: 'quick' });
+    // Quick: the short animation, no queue.
+    press(witness[1]!);
+    expect(peeling()).toBe(0);
+    frames.runOut();
+    const off = q('pp-option-peel-off') as HTMLInputElement;
+    off.checked = true;
+    off.dispatchEvent(new Event('change'));
+    press(witness[2]!);
+    expect(peeling()).toBe(0);
+    expect(frames.scheduled).toBe(0);
+    // Back to Slow: from the next launch.
+    const slow = q('pp-option-peel-slow') as HTMLInputElement;
+    slow.checked = true;
+    slow.dispatchEvent(new Event('change'));
+    press(witness[3]!);
+    expect(peeling()).toBe(1);
+  });
+
+  it('reduced motion forces Off: no queue, no frames', () => {
+    const { instance, frames, press, peeling, q } = startMotion({ peel: 'slow', reducedMotion: true });
+    expect((q('pp-option-peel-off') as HTMLInputElement).checked).toBe(true);
+    expect((q('pp-option-peel-slow') as HTMLInputElement).disabled).toBe(true);
+    press(instance.serialize().witness[0]!);
+    expect(peeling()).toBe(0);
+    expect(frames.scheduled).toBe(0);
+  });
+
+  it('finishing the picture while peeling calls finished() once at the last move; the reveal shows after the queue', () => {
+    let s = createInitial(4, 'medium', 'koala');
+    const last = s.witness.length - 1;
+    for (const m of s.witness.slice(0, last - 1)) s = play(s, m);
+    const { ctx, instance, frames, press, peeling, q } = startMotion({ state: s });
+    press(s.witness[last - 1]!);
+    press(s.witness[last]!);
+    expect(ctx.results).toHaveLength(1);
+    expect(instance.serialize().reported).toBe(true);
+    expect(peeling()).toBe(2);
+    expect(q('pp-reveal').hidden).toBe(true);
+    frames.runOut();
+    expect(q('pp-reveal').hidden).toBe(false);
+    expect(document.activeElement).toBe(q('pp-reveal-title'));
+    expect(ctx.results).toHaveLength(1);
+  });
+
+  it('a restored game shows the committed picture without replaying old launches', () => {
+    let s = createInitial(1, 'easy', 'red-fox');
+    for (const m of s.witness.slice(0, 5)) s = play(s, m);
+    const { peeling, pending, frames } = startMotion({ state: s });
+    expect(peeling()).toBe(0);
+    expect(pending()).toBe(0);
+    expect(frames.scheduled).toBe(0);
+  });
+
+  it('dispose while peeling stops the frames', () => {
+    const { instance, press, frames } = startMotion();
+    press(instance.serialize().witness[0]!);
+    expect(frames.scheduled).toBe(1);
+    instance.dispose();
+    expect(frames.scheduled).toBe(0);
+  });
+});
