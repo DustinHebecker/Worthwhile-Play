@@ -6,8 +6,8 @@ import { h } from '@wp/ui';
 import { cursorText, rowsOf, type Line } from './chart-view';
 import { foodWebView } from './foodweb-view';
 import { habitatDef, speciesIndex } from './habitats';
-import { HABITAT_ACTIONS, MAX_WEEK, sample, type Action } from './model';
-import { backTo, continueFromHere, exploreApply, exploreRun, ghostRun, notebookRun, undoLast, type ExploreState } from './rules';
+import { ADD_LIMIT, HABITAT_ACTIONS, MAX_ACTIONS, MAX_WEEK, sample, type Action } from './model';
+import { backTo, continueFromHere, exploreApply, exploreRefusal, exploreRun, ghostRun, notebookRun, undoLast, type ExploreRefusal, type ExploreState } from './rules';
 import { ghostToggle, legend } from './view-goal';
 import { changeLog, runBar } from './view-notebook';
 import type { Host, Screen } from './view-host';
@@ -35,13 +35,28 @@ export function exploreScreen(host: Host, s: ExploreState): Screen {
   lines.push({ values: pad(window.map((x) => x[fi]!)), cls: 'eco-line-model' });
   const rows = rowsOf(s.habitat, window);
 
-  const apply = (a: Omit<Action, 'week'>) => {
+  /** Applies a change; a refused one is explained inline and announced, and the control keeps the focus. */
+  const apply = (a: Omit<Action, 'week'>, from: string) => {
     if (host.paused()) return;
     const st = host.state() as ExploreState;
     const full = { week: st.notebook.week, ...a } as Action;
-    const next = exploreApply(st, full);
-    if (next !== st) host.commit(next, 'eco-run-4', ui.t('explore.applied', { n: ui.int(full.week), what: ui.action(s.habitat, full) }));
+    const why = exploreRefusal(st, full);
+    if (why) {
+      const text = refusalText(host, st, full, why);
+      host.scratch.refused = { week: st.notebook.week, changes: st.notebook.log.length, text } satisfies Refused;
+      host.refresh(from);
+      host.announce(text);
+      return;
+    }
+    host.scratch.refused = undefined;
+    host.commit(exploreApply(st, full), 'eco-run-4', ui.t('explore.applied', { n: ui.int(full.week), what: ui.action(s.habitat, full) }));
   };
+  // A refusal note stays only while the notebook is where it was refused (any run, undo or change moves on).
+  const refused = host.scratch.refused as Refused | undefined;
+  const note =
+    refused && refused.week === nb.week && refused.changes === nb.log.length
+      ? h('p', { class: 'eco-refused', 'data-testid': 'eco-refused' }, h('span', { 'aria-hidden': 'true' }, 'ⓘ '), refused.text)
+      : null;
   const commitRun = (weeks: number | 'settle', id: string) => {
     const st = host.state() as ExploreState;
     const from = st.notebook.week;
@@ -81,9 +96,9 @@ export function exploreScreen(host: Host, s: ExploreState): Screen {
       host.scratch.species = select.value;
     });
     const chosen = () => select.value || hab.species[0]!.id;
-    const btn = (key: string, testid: string, f: () => void) => {
-      const b = h('button', { type: 'button', class: 'eco-tool', 'data-testid': testid, 'aria-disabled': full ? 'true' : 'false' }, ui.t(key));
-      b.addEventListener('click', () => !full && f());
+    const btn = (key: string, testid: string, f: (from: string) => void) => {
+      const b = h('button', { type: 'button', class: 'eco-tool', id: testid, 'data-testid': testid, 'aria-disabled': full ? 'true' : 'false' }, ui.t(key));
+      b.addEventListener('click', () => !full && f(testid));
       return b;
     };
     body.append(
@@ -92,14 +107,15 @@ export function exploreScreen(host: Host, s: ExploreState): Screen {
       h(
         'div',
         { class: 'eco-tools' },
-        btn('explore.add', 'eco-add', () => apply({ kind: 'add', species: chosen() })),
-        ...([50, 90, 100] as const).map((share) => btn(`explore.remove${share}`, `eco-remove-${share}`, () => apply({ kind: 'remove', species: chosen(), share })))
-      ),
-      h('h3', {}, ui.t('explore.conditions'))
+        btn('explore.add', 'eco-add', (from) => apply({ kind: 'add', species: chosen() }, from)),
+        ...([50, 90, 100] as const).map((share) => btn(`explore.remove${share}`, `eco-remove-${share}`, (from) => apply({ kind: 'remove', species: chosen(), share }, from)))
+      )
     );
+    if (note) body.append(note);
+    body.append(h('h3', {}, ui.t('explore.conditions')));
     hab.conditions.forEach((c, k) => {
       const sel = h('select', { id: `eco-cond-${c.id}`, 'data-testid': `eco-cond-${c.id}`, disabled: full }, ...c.levels.map((lv, i) => h('option', { value: String(i), selected: run.sim.cond[k] === i }, ui.t(`level.${c.id}.${lv}`))));
-      sel.addEventListener('change', () => apply({ kind: 'set', cond: k, level: Number(sel.value) }));
+      sel.addEventListener('change', () => apply({ kind: 'set', cond: k, level: Number(sel.value) }, `eco-cond-${c.id}`));
       body.append(h('label', { class: 'eco-cond', for: `eco-cond-${c.id}` }, h('span', {}, ui.t(`cond.${c.id}`)), sel));
     });
     body.append(h('h3', {}, ui.t('explore.actions')));
@@ -107,8 +123,8 @@ export function exploreScreen(host: Host, s: ExploreState): Screen {
     for (const kind of HABITAT_ACTIONS[s.habitat]) {
       if (kind === 'add' || kind === 'remove' || kind === 'set') continue;
       if (kind === 'mow') {
-        acts.append(btn('action.mow-remove', 'eco-act-mow-remove', () => apply({ kind: 'mow', cuttings: 'remove' })), btn('action.mow-leave', 'eco-act-mow-leave', () => apply({ kind: 'mow', cuttings: 'leave' })));
-      } else acts.append(btn(`action.${kind}`, `eco-act-${kind}`, () => apply({ kind })));
+        acts.append(btn('action.mow-remove', 'eco-act-mow-remove', (from) => apply({ kind: 'mow', cuttings: 'remove' }, from)), btn('action.mow-leave', 'eco-act-mow-leave', (from) => apply({ kind: 'mow', cuttings: 'leave' }, from)));
+      } else acts.append(btn(`action.${kind}`, `eco-act-${kind}`, (from) => apply({ kind }, from)));
     }
     body.append(acts);
   } else if (tab === 'web') {
@@ -160,6 +176,28 @@ export function exploreScreen(host: Host, s: ExploreState): Screen {
     },
     panel
   };
+}
+
+/** The note a refused change leaves (view scratch, never saved). */
+interface Refused {
+  readonly week: number;
+  readonly changes: number;
+  readonly text: string;
+}
+
+/** Why a change was refused, in words (design § 7.8: an "add" stops at `ADD_LIMIT`; § 5: 520 weeks, 300 changes). */
+function refusalText(host: Host, s: ExploreState, a: Action, why: ExploreRefusal): string {
+  const { ui } = host;
+  switch (why) {
+    case 'limit':
+      return ui.t(`explore.addLimit.${s.habitat}`, { name: ui.name(a.species!), limit: ui.amount(ADD_LIMIT) });
+    case 'changes':
+      return ui.t('explore.tooMany', { max: ui.int(MAX_ACTIONS) });
+    case 'full':
+      return ui.t('status.full', { n: ui.int(s.notebook.week) });
+    default:
+      return ui.t('explore.refused');
+  }
 }
 
 function continueButton(host: Host): HTMLElement {

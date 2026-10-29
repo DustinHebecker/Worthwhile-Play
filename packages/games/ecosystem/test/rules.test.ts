@@ -19,6 +19,7 @@ import {
   continueFromHere,
   currentItem,
   exploreApply,
+  exploreRefusal,
   exploreRun,
   flatSketch,
   ghostRun,
@@ -323,6 +324,29 @@ describe('explore', () => {
     expect(exploreApply(t, { week: 0, kind: 'add', species: 'algae' }).notebook.log).toHaveLength(2); // exactly 10,000,000
     expect(exploreApply(exploreApply(t, { week: 0, kind: 'add', species: 'algae' }), { week: 0, kind: 'add', species: 'algae' }).notebook.log).toHaveLength(2);
     expect(exploreApply(t, { week: 0, kind: 'remove', species: 'algae', share: 50 }).notebook.log).toHaveLength(2); // other changes are not limited
+  });
+
+  it('exploreRefusal names why a change is refused, and exploreApply refuses exactly then', () => {
+    const sim = cloneSim(PRESETS['pond.lively'].sim);
+    const extra = ADD_LIMIT - 10_000 - total(sim);
+    sim.d += extra;
+    sim.imp += extra;
+    const near: ExploreState = { ...explore(), notebook: { ...explore().notebook, start: { sim } } };
+    const add = (species: string): Action => ({ week: 0, kind: 'add', species });
+    expect(exploreRefusal(near, add('minnows'))).toBe('limit');
+    expect(exploreRefusal(near, add('algae'))).toBeNull();
+    expect(exploreRefusal(near, { week: 0, kind: 'spray' })).toBe('invalid');
+    expect(exploreRefusal(near, { week: 2, kind: 'dredge' })).toBe('invalid');
+    let many = explore('pond', 'simple');
+    for (let k = 0; k < MAX_ACTIONS; k++) many = exploreApply(many, { week: 0, kind: 'set', cond: 0, level: k % 3 });
+    expect(exploreRefusal(many, add('pike'))).toBe('changes');
+    const late = exploreRun(explore('pond', 'bare'), MAX_WEEK).state;
+    expect(exploreRefusal(late, { week: MAX_WEEK, kind: 'dredge' })).toBe('full');
+    for (const s of [near, many, late, explore()]) {
+      for (const a of [add('minnows'), add('algae'), { week: s.notebook.week, kind: 'dredge' } as Action]) {
+        expect(exploreApply(s, a) === s).toBe(exploreRefusal(s, a) !== null);
+      }
+    }
   });
 
   it('undo and back-to work in explore too', () => {
