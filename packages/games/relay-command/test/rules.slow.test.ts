@@ -132,7 +132,8 @@ describe('hot-seat (docs/design/strategy.md § 9.4, D10)', () => {
   // then drones kept contact through their carriers and Direction Finders intercepted orders within 6 cells
   // (owner review 2026-10-27; `intercept` events in the summaries): 'd6b6862b'; then the seed picked a style per
   // opponent, spreading its attacks or keeping a guard at home against two or more enemies (owner decision
-  // 2026-10-29, measured: no loss of strength; with every side 'direct' it is 'd6b6862b' again): '1829b1b0'.
+  // 2026-10-29, measured: no loss of strength; with every side 'direct' it is 'd6b6862b' again): '1829b1b0'; then
+  // both styles together became the third the seed may pick (owner decision 2026-10-29): 'd3fe3879'.
   it('one person is the single-player game, byte for byte: every map and opponent count matches the fingerprint taken before hot-seat (main at f2ee871)', () => {
     let h = 0x811c9dc5;
     const feed = (text: string) => {
@@ -151,6 +152,6 @@ describe('hot-seat (docs/design/strategy.md § 9.4, D10)', () => {
         }
       }
     }
-    expect(h.toString(16)).toBe('1829b1b0');
+    expect(h.toString(16)).toBe('d3fe3879');
   }, 300_000);
 });
