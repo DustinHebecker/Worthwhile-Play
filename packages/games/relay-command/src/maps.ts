@@ -18,9 +18,10 @@ export interface EditMap {
   readonly units: readonly MapUnit[];
   /**
    * Maps with four bases (generated since 2026-10-18, made in the editor since 2026-10-24): a unit's
-   * side is its seat, 0 bottom left, 1 top left, 2 top right, 3 bottom right. Absent: a two-side map.
+   * side is its seat, 0 bottom left, 1 top left, 2 top right, 3 bottom right. Three bases (2026-10-29,
+   * as Lake Country): seats 0 to 2 wherever their posts stand, never mirrored. Absent: a two-side map.
    */
-  readonly seats?: 4;
+  readonly seats?: 3 | 4;
   /**
    * Asymmetric maps (owner decision 2026-10-26): each base's Supply at the start, one per seat
    * (SUPPLY_CHOICES). Absent: every side starts with the ruleset's amount (START_SUPPLY).
@@ -54,6 +55,11 @@ export const FOUR_SEATS: Seats = { frames: ['id', 'fy', 'r180', 'fx'], layouts: 
  * A four-base map made for teams (as Bastion): three opponents; in 1 against 3 the player is base A,
  * in 3 against 1 the player is base B and base A the lone opponent (side 2, as TEAM_LAYOUTS says).
  */
+/**
+ * A three-base map (as Lake Country): one or two opponents; with one, seat 2's post stays neutral.
+ * Such a map is never a mirror of itself, so every seat sees the map as it is.
+ */
+export const THREE_SEATS: Seats = { frames: ['id', 'id', 'id'], layouts: { 1: [0, 1], 2: [0, 1, 2] } };
 export const TEAM_SEATS: Seats = { ...FOUR_SEATS, layouts: { 3: [0, 1, 2, 3] }, teams: { '1v3': [0, 1, 2, 3], '3v1': [1, 2, 0, 3] } };
 
 /**
@@ -102,8 +108,8 @@ export function fromScenario(spec: ScenarioSpec, name = ''): EditMap {
     terrain: map.terrain,
     deposits: (map.deposits ?? []).map((d) => withSize(d.x, d.y, d.endless ? 'endless' : d.left > DEPOSIT_SUPPLY ? 'rich' : 'plain')),
     units: entities.map((e) => ({ side: e.side, kind: e.kind, x: e.x, y: e.y })),
-    // A built-in map with four bases starts a four-base map (its seats in the same corners).
-    ...(spec.seats && { seats: 4 as const }),
+    // A built-in map with four bases starts a four-base map (its seats in the same corners); with three, a three-base map.
+    ...(spec.seats && { seats: spec.seats.frames.length === 3 ? (3 as const) : (4 as const) }),
     // Its Supply per seat, when it differs from the usual start (Bastion), and whether it is made for teams.
     ...(spec.scenario.supply?.some((v) => v !== START_SUPPLY) && { supply: [...spec.scenario.supply] }),
     ...(spec.seats?.teams && { teams: true as const })
@@ -122,7 +128,13 @@ export function toScenario(map: EditMap): Scenario {
 }
 
 /** The scenario spec a game on `map` runs on (id 'custom'; the turn limit is chosen in the setup). */
-export const customSpec = (map: EditMap): ScenarioSpec => ({ id: 'custom', turnLimit: 12, scenario: toScenario(map), ...(map.seats === 4 && { seats: map.teams ? TEAM_SEATS : FOUR_SEATS }) });
+export const customSpec = (map: EditMap): ScenarioSpec => ({
+  id: 'custom',
+  turnLimit: 12,
+  scenario: toScenario(map),
+  ...(map.seats === 4 && { seats: map.teams ? TEAM_SEATS : FOUR_SEATS }),
+  ...(map.seats === 3 && { seats: THREE_SEATS })
+});
 
 /** What an edit does at one cell. */
 export type Tool = { readonly type: 'terrain'; readonly code: string } | { readonly type: 'deposit'; readonly size?: DepositSize } | { readonly type: 'unit'; readonly kind: string; readonly side: number } | { readonly type: 'erase' };
@@ -137,6 +149,8 @@ const blocks = (code: string) => code === '~' || code === '^';
  */
 export function mirrorImages(map: Pick<EditMap, 'w' | 'h' | 'seats'>, x: number, y: number): { x: number; y: number; seat: readonly number[] }[] {
   const { w, h } = map;
+  // Three bases have no mirror images: a mirrored edit changes only its own cell.
+  if (map.seats === 3) return [];
   if (map.seats === 4) {
     return [
       { x: w - 1 - x, y, seat: [3, 2, 1, 0] },
@@ -162,15 +176,16 @@ export function applyTool(map: EditMap, tool: Tool, x: number, y: number, mirror
 }
 
 /**
- * The same map with `bases` bases: four-base pieces of seats 2 and 3 (and their Supply) go when it
- * becomes a two-side map, which is never made for teams; new bases start with START_SUPPLY.
+ * The same map with `bases` bases: the pieces of seats that go (and their Supply) go with them;
+ * only a four-base map is made for teams; new bases start with START_SUPPLY.
  */
-export function withBases(map: EditMap, bases: 2 | 4): EditMap {
+export function withBases(map: EditMap, bases: 2 | 3 | 4): EditMap {
   const { seats: _seats, supply, teams: _teams, ...rest } = map;
   void _seats;
-  const kept = supply && supplyOf(bases === 4 ? { seats: 4, supply } : { supply });
+  const seats = bases === 2 ? {} : { seats: bases };
+  const kept = supply && supplyOf({ ...seats, supply });
   const withSupply = kept?.some((v) => v !== START_SUPPLY) ? { supply: kept } : {};
-  return bases === 4 ? { ...rest, seats: 4, ...withSupply, ...(_teams && { teams: true as const }) } : { ...rest, units: map.units.filter((u) => u.side < 2), ...withSupply };
+  return { ...rest, ...seats, units: map.units.filter((u) => u.side < bases), ...withSupply, ...(bases === 4 && _teams && { teams: true as const }) };
 }
 
 /** The same map with `seat` starting with `amount` Supply (one of SUPPLY_CHOICES; anything else changes nothing). */
@@ -261,8 +276,8 @@ export function mapIssues(map: EditMap): MapIssue[] {
  * swapped) and top to bottom (seats 0 and 1, 2 and 3 swapped). Terrain, deposits and units.
  */
 export function isFair(map: EditMap): boolean {
-  // A map made for teams, or with Supply that differs between bases, is asymmetric by design.
-  if (map.teams || new Set(supplyOf(map)).size > 1) return false;
+  // A map made for teams, with Supply that differs between bases, or with three bases, is asymmetric by design.
+  if (map.teams || map.seats === 3 || new Set(supplyOf(map)).size > 1) return false;
   type Image = { readonly at: (p: { x: number; y: number }) => { x: number; y: number }; readonly side: readonly number[] };
   const images: Image[] =
     map.seats === 4
@@ -288,8 +303,8 @@ export function isFair(map: EditMap): boolean {
 export function isValidMap(value: unknown): value is EditMap {
   if (!isRecord(value)) return false;
   const { name, w, h, terrain, deposits, units, seats, supply, teams } = value;
-  if (typeof name !== 'string' || name.length > MAX_NAME || (seats !== undefined && seats !== 4)) return false;
-  const sides = seats === 4 ? 4 : 2;
+  if (typeof name !== 'string' || name.length > MAX_NAME || (seats !== undefined && seats !== 3 && seats !== 4)) return false;
+  const sides = seats === 4 || seats === 3 ? seats : 2;
   if (supply !== undefined && (!Array.isArray(supply) || supply.length !== sides || !supply.every((v) => (SUPPLY_CHOICES as readonly unknown[]).includes(v)))) return false;
   if (teams !== undefined && (teams !== true || seats !== 4)) return false;
   if (!(MAP_WIDTHS as readonly unknown[]).includes(w) || !(MAP_HEIGHTS as readonly unknown[]).includes(h)) return false;
@@ -317,8 +332,8 @@ const MAX_CODE = 16_000;
 
 /** A short text that carries the whole map (copy, paste, keep). */
 export function encodeMap(map: EditMap): string {
-  // A four-base map adds its seat count as a seventh field (two-side codes stay as they were); an
-  // asymmetric one its seat count (2 or 4) and an eighth field: { s: Supply per seat, t: 1 for teams }.
+  // A map with three or four bases adds its seat count as a seventh field (two-side codes stay as they
+  // were); an asymmetric one its seat count (2 to 4) and an eighth field: { s: Supply per seat, t: 1 for teams }.
   const extra = { ...(map.supply && { s: supplyOf(map) }), ...(map.teams && { t: 1 }) };
   const tail = Object.keys(extra).length > 0 ? [seatsOf(map), extra] : map.seats ? [map.seats] : [];
   const json = JSON.stringify([map.name, map.w, map.h, map.terrain, map.deposits.map((d) => (d.size ? [d.x, d.y, DEPOSIT_SIZES.indexOf(d.size)] : [d.x, d.y])), map.units.map((u) => [u.side, MAP_KINDS.indexOf(u.kind as (typeof MAP_KINDS)[number]), u.x, u.y]), ...tail]);
@@ -338,8 +353,8 @@ export function decodeMap(code: unknown): EditMap | undefined {
     const data = JSON.parse(json) as unknown;
     if (!Array.isArray(data) || data.length < 6 || data.length > 8) return undefined;
     const [name, w, h, terrain, deposits, units, seats, extra] = data as unknown[];
-    if (data.length === 7 && seats !== 4) return undefined;
-    if (data.length === 8 && ((seats !== 2 && seats !== 4) || !isRecord(extra) || Object.keys(extra).some((k) => k !== 's' && k !== 't') || (extra.t !== undefined && extra.t !== 1))) return undefined;
+    if (data.length === 7 && seats !== 3 && seats !== 4) return undefined;
+    if (data.length === 8 && ((seats !== 2 && seats !== 3 && seats !== 4) || !isRecord(extra) || Object.keys(extra).length === 0 || Object.keys(extra).some((k) => k !== 's' && k !== 't') || (extra.t !== undefined && extra.t !== 1))) return undefined;
     const more = data.length === 8 && isRecord(extra) ? extra : {};
     if (!Array.isArray(deposits) || !Array.isArray(units)) return undefined;
     const map = {
@@ -349,7 +364,7 @@ export function decodeMap(code: unknown): EditMap | undefined {
       terrain,
       deposits: deposits.map((d: unknown) => (!Array.isArray(d) || d.length > 3 ? null : d.length === 3 ? (d[2] === 1 || d[2] === 2 ? { x: d[0], y: d[1], size: DEPOSIT_SIZES[d[2]] } : null) : { x: d[0], y: d[1] })),
       units: units.map((u: unknown) => (Array.isArray(u) ? { side: u[0], kind: MAP_KINDS[u[1] as number] ?? '', x: u[2], y: u[3] } : null)),
-      ...(seats === 4 && { seats: 4 as const }),
+      ...((seats === 3 || seats === 4) && { seats }),
       ...(more.s !== undefined && { supply: more.s }),
       ...(more.t === 1 && { teams: true })
     };

@@ -8,6 +8,7 @@ import {
   withSupply,
   withTeams,
   START_SUPPLY,
+  THREE_SEATS,
   SUPPLY_CHOICES,
   supplyOf,
   blankMap,
@@ -438,7 +439,7 @@ describe('map editor: four bases (owner decision 2026-10-24)', () => {
     expect(decodeMap(encodeMap(m))).toEqual(m);
     const two = blankMap(12, 10, 'Two');
     expect(decodeMap(encodeMap(two))).toEqual(two);
-    const json = JSON.stringify(['x', 12, 10, '.'.repeat(120), [], [], 3]);
+    const json = JSON.stringify(['x', 12, 10, '.'.repeat(120), [], [], 5]);
     expect(decodeMap('RC1.' + btoa(json).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''))).toBeUndefined();
   });
 
@@ -558,7 +559,8 @@ describe('map editor: asymmetric maps (owner decision 2026-10-26)', () => {
       [...base, 2, { t: 1 }], // teams need four bases
       [...base, 4, { t: 2 }],
       [...base, 4, { x: 1 }],
-      [...base, 3, {}],
+      [...base, 5, { s: [300, 300, 300, 300, 300] }],
+      [...base, 3, {}], // nothing asymmetric: the seven-field code
       [...base, 4, 'teams'],
       [...base, 4, {}, 9]
     ]) expect(decodeMap(code(bad)), JSON.stringify(bad.slice(6))).toBeUndefined();
@@ -572,5 +574,80 @@ describe('map editor: asymmetric maps (owner decision 2026-10-26)', () => {
     expect(isValidMap({ ...m, teams: false })).toBe(false);
     expect(isValidMap({ ...playable(), teams: true })).toBe(false);
     expect(isValidMap({ ...m, supply: [0, 150, 1000, 3000], teams: true })).toBe(true);
+  });
+});
+
+describe('map editor: three bases (2026-10-29, as Lake Country)', () => {
+  const three = () => withBases(blankMap(16, 12, 'Three'), 3);
+  /** A playable three-base map: a post and a squad per base, placed by hand (never mirrored). */
+  function playableThree(): EditMap {
+    let m = three();
+    const put = (tool: Tool, x: number, y: number) => (m = applyTool(m, tool, x, y, true));
+    for (const [side, x, y] of [[0, 1, 10], [1, 1, 1], [2, 14, 6]] as const) {
+      put({ type: 'unit', kind: 'command-post', side }, x, y);
+      put({ type: 'unit', kind: 'rifles', side }, x + (x < 8 ? 1 : -1), y);
+    }
+    return m;
+  }
+
+  it('Lake Country opens as a three-base map with its Supply; it plays with one or two opponents', () => {
+    const lake = fromScenario(SCENARIOS.find((x) => x.id === 'lake-country')!, 'Lakes');
+    expect(lake.seats).toBe(3);
+    expect(lake.supply).toEqual([150, 300, 300]);
+    expect(isValidMap(lake)).toBe(true);
+    expect(mapIssues(lake)).toEqual([]);
+    expect(isFair(lake)).toBe(false);
+    expect(customSpec(lake).seats).toBe(THREE_SEATS);
+    expect(toScenario(lake).sides).toBe(3);
+    for (const n of [1, 2]) {
+      const s = newGame(1, FIELD_EXERCISE, 'normal', 12, false, lake, n);
+      expect(s.opponents).toBe(n);
+      expect(s.world.sides).toBe(n + 1); // with one opponent, seat C's post stays neutral
+      expect(isValidState(JSON.parse(JSON.stringify(s)))).toBe(true);
+    }
+    // The editor keeps a three-base draft across a reload.
+    expect(isValidState(JSON.parse(JSON.stringify({ ...newGame(1, FIELD_EXERCISE, 'normal', 12, false, null, 1), edit: { map: lake, slot: null, mirror: true } })))).toBe(true);
+    // Teams as the built-in map offers them.
+    expect(teamShapes(customSpec(lake), 2)).toEqual(teamShapes(SCENARIOS.find((x) => x.id === 'lake-country')!, 2));
+  });
+
+  it('a three-base map is never mirrored: a mirrored edit changes its own cell only', () => {
+    expect(mirrorImages(three(), 2, 9)).toEqual([]);
+    const m = applyTool(three(), { type: 'unit', kind: 'command-post', side: 2 }, 13, 2, true);
+    expect(m.units).toEqual([{ side: 2, kind: 'command-post', x: 13, y: 2 }]);
+    expect(applyTool(three(), { type: 'terrain', code: 'f' }, 2, 2, true).terrain.split('f')).toHaveLength(2);
+    expect(applyTool(three(), { type: 'unit', kind: 'rifles', side: 3 }, 3, 3, false).units).toHaveLength(0);
+    const m3 = playableThree();
+    expect(mapIssues(m3)).toEqual([]);
+    expect(isFair(m3)).toBe(false);
+  });
+
+  it('switching bases keeps the pieces and Supply of the bases that stay; teams only with four', () => {
+    let four = withTeams(withSupply(withSupply(withBases(blankMap(16, 12, 'Four'), 4), 2, 600), 3, 1500), true);
+    four = applyTool(four, { type: 'unit', kind: 'command-post', side: 0 }, 2, 9, true);
+    const m = withBases(four, 3);
+    expect(m.seats).toBe(3);
+    expect(m.units.map((u) => u.side).sort()).toEqual([0, 1, 2]);
+    expect(m.supply).toEqual([300, 300, 600]);
+    expect(m).not.toHaveProperty('teams');
+    expect(isValidMap(m)).toBe(true);
+    const back = withBases(m, 4);
+    expect(back.supply).toEqual([300, 300, 600, 300]);
+    expect(back).not.toHaveProperty('teams');
+    expect(withBases(withSupply(three(), 2, 600), 2)).not.toHaveProperty('supply');
+    expect(withBases(three(), 2).seats).toBeUndefined();
+  });
+
+  it('share codes carry three bases (seven fields; eight with Supply); a three-base map refuses a fourth seat or teams', () => {
+    const m = playableThree();
+    expect(decodeMap(encodeMap(m))).toEqual(m);
+    const rich = withSupply(m, 1, 1000);
+    expect(decodeMap(encodeMap(rich))).toEqual(rich);
+    const lake = fromScenario(SCENARIOS.find((x) => x.id === 'lake-country')!);
+    expect(decodeMap(encodeMap(lake))).toEqual({ ...lake, units: decodeMap(encodeMap(lake))!.units });
+    expect(isValidMap({ ...m, units: [...m.units, { side: 3, kind: 'rifles', x: 8, y: 8 }] })).toBe(false);
+    expect(isValidMap({ ...m, teams: true })).toBe(false);
+    expect(isValidMap({ ...m, supply: [300, 300] })).toBe(false);
+    expect(isValidMap({ ...m, seats: 5 })).toBe(false);
   });
 });
