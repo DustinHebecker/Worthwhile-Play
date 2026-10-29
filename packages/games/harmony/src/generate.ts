@@ -26,7 +26,7 @@ import {
   type Dir,
   type Spec
 } from './spec';
-import { ROOT_POOL, isRare, midiOf, spellAt, spellChordVoicing, spellNear, type Spelled } from './spelling';
+import { ROOT_POOL, isRare, midiOf, spellAt, spellChordVoicing, spellInKey, type Spelled } from './spelling';
 import { CADENCES, CLASS_MEMBERS, PAIR_COMBOS, SCALE_TONES, SEMITONES, pitchClass, type CadenceId, type ChordId, type IntervalId, type ScaleId } from './theory';
 
 const ATTEMPTS = 200;
@@ -119,9 +119,10 @@ function scaleNotes(pc: number, level: Level): Spelled[] | undefined {
   return out;
 }
 
-/** A melody following `contour` on scale notes: degree steps in [minStep, maxStep], or semitone steps for easy. */
-function melody(rng: Rng, level: Level, contour: string): Spelled[] | undefined {
-  const notes = scaleNotes(rng.int(0, 11), level);
+/** A melody following `contour` on the notes of a random major key: degree steps of 1–4 (one leap of 3–4), or semitone steps for easy. */
+function melody(rng: Rng, level: Level, contour: string): { key: Pick<Spelled, 'l' | 'a'>; notes: Spelled[] } | undefined {
+  const pc = rng.int(0, 11);
+  const notes = scaleNotes(pc, level);
   if (!notes) return undefined;
   let i = rng.int(0, notes.length - 1);
   const path = [i];
@@ -143,14 +144,14 @@ function melody(rng: Rng, level: Level, contour: string): Spelled[] | undefined 
     i = rng.pick(candidates);
     path.push(i);
   }
-  return path.map((j) => notes[j]!);
+  return { key: ROOT_POOL[pc]!, notes: path.map((j) => notes[j]!) };
 }
 
 const ALL_CONTOURS_4 = Array.from({ length: 16 }, (_, n) => Array.from({ length: 4 }, (_, b) => ((n >> (3 - b)) & 1 ? 'd' : 'u')).join(''));
 const hamming = (a: string, b: string) => [...a].filter((c, i) => c !== b[i]).length;
 
 function drawContour(rng: Rng, level: Level, contour: string): Spec | undefined {
-  const notes = melody(rng, level, contour);
+  const notes = melody(rng, level, contour)?.notes;
   if (!notes) return undefined;
   if (level === 'easy') return { k: 'contour', notes, options: CONTOURS_3 };
   const near = rng.shuffle(ALL_CONTOURS_4.filter((c) => c !== contour && hamming(c, contour) <= 2));
@@ -160,15 +161,17 @@ function drawContour(rng: Rng, level: Level, contour: string): Spec | undefined 
 
 function drawChanged(rng: Rng, position: number): Spec | undefined {
   const contour = rng.pick(ALL_CONTOURS_4);
-  const a = melody(rng, 'hard', contour);
-  if (!a) return undefined;
+  const drawn = melody(rng, 'hard', contour);
+  if (!drawn) return undefined;
+  const a = drawn.notes;
   const from = midiOf(a[position]!);
   const moves = rng.shuffle([-3, -2, -1, 1, 2, 3]);
   for (const move of moves) {
     const m = from + move;
     if (m < TREBLE_LOW || m > TREBLE_HIGH) continue;
     if (midiOf(a[position - 1]!) === m || (position + 1 < a.length && midiOf(a[position + 1]!) === m)) continue;
-    const b = a.map((n, i) => (i === position ? spellNear(n, m) : n));
+    // Spelled in the melody's key (C♯ in E major, not D♭); only the notation depends on it, never the answer.
+    const b = a.map((n, i) => (i === position ? spellInKey(drawn.key, m, [a[position - 1]!, ...a.slice(position + 1, position + 2)], move) : n));
     return { k: 'changed', a, b };
   }
   return undefined;
@@ -245,7 +248,7 @@ function plans(rng: Rng, topic: QuizTopic, level: Level, n: number): Plan[] {
           draw: (r) => drawChanged(r, p),
           fallback: () => {
             const a: Spelled[] = [C4, { l: 2, a: 0, o: 4 }, { l: 4, a: 0, o: 4 }, { l: 2, a: 0, o: 4 }, { l: 0, a: 0, o: 5 }];
-            return { k: 'changed', a, b: a.map((x, i) => (i === p ? spellNear(x, midiOf(x) + 1) : x)) };
+            return { k: 'changed', a, b: a.map((x, i) => (i === p ? spellInKey(C4, midiOf(x) + 1, [a[i - 1]!, ...a.slice(i + 1, i + 2)], 1) : x)) };
           }
         }));
       const contours = level === 'easy' ? answerSequence(rng, CONTOURS_3, n) : answerSequence(rng, ALL_CONTOURS_4, n);

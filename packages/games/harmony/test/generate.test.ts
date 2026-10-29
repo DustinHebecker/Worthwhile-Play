@@ -4,7 +4,8 @@ import { createRng } from '@wp/game-core';
 import { answerSequence, generateRound, generationStats } from '../src/generate';
 import { LEVELS, QUIZ_TOPICS } from '../src/levels';
 import { CONTOURS_3, changedIndex, contourOf, specProblem, type Spec } from '../src/spec';
-import { midiOf } from '../src/spelling';
+import { ROOT_POOL, keySignature, midiOf, spellScale } from '../src/spelling';
+import { pitchClass } from '../src/theory';
 import { fairnessProblems } from './fairness';
 
 const seed = fc.integer({ min: 0, max: 0xffffffff });
@@ -69,6 +70,50 @@ describe('generateRound (design § 7)', () => {
         expect(stab.filter((k) => k === 'cadence').length).toBe(level === 'hard' ? 4 : 0);
       }
     }
+  });
+
+  it('spells the changed note in the melody\'s key: diatonic when the pitch is in the key, else one step from the signature', () => {
+    // The key is not stored; every pool major key that contains all of melody A (as spelled) is a candidate.
+    const keys = ROOT_POOL.map((key) => ({ sig: keySignature(key)!, scale: spellScale({ ...key, o: 4 }, 'major')! }));
+    let changed = 0;
+    let chromatic = 0;
+    fc.assert(
+      fc.property(seed, fc.constantFrom(...LEVELS), (s, level) => {
+        for (const spec of generateRound(s, 'melody', level)) {
+          if (spec.k !== 'changed') continue;
+          changed++;
+          const i = changedIndex(spec.a, spec.b);
+          const n = spec.b[i]!;
+          expect(Math.abs(n.a)).toBeLessThanOrEqual(1);
+          const candidates = keys.filter((k) => spec.a.every((x) => k.sig[x.l] === x.a));
+          expect(candidates.length).toBeGreaterThan(0);
+          const fits = candidates.filter((k) => {
+            const inKey = k.scale.some((x) => pitchClass(midiOf(x)) === pitchClass(midiOf(n)));
+            return inKey ? n.a === k.sig[n.l] : Math.abs(n.a - k.sig[n.l]!) === 1;
+          });
+          expect(fits.length).toBeGreaterThan(0);
+          if (fits.every((k) => n.a !== k.sig[n.l])) chromatic++;
+        }
+      }),
+      { numRuns: 300 }
+    );
+    expect(changed).toBeGreaterThan(500);
+    expect(chromatic).toBeGreaterThan(0);
+  });
+
+  it('spells the changed note in E major as C♯5, not D♭5 (review example)', () => {
+    let found = 0;
+    for (let s = 0; s < 400; s++)
+      for (const spec of generateRound(s, 'melody', 'hard')) {
+        if (spec.k !== 'changed') continue;
+        const i = changedIndex(spec.a, spec.b);
+        const inE = spec.a.every((x) => keySignature({ l: 2, a: 0 })![x.l] === x.a) && spec.a.some((x) => x.l === 1 && x.a === 1);
+        if (inE && midiOf(spec.b[i]!) === 73) {
+          found++;
+          expect(spec.b[i]).toEqual({ l: 0, a: 1, o: 5 });
+        }
+      }
+    expect(found).toBeGreaterThan(0);
   });
 
   it('specProblem catches tampering', () => {

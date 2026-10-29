@@ -6,13 +6,14 @@ import {
   diatonic,
   isRare,
   isSpelled,
+  keySignature,
   midiOf,
   spellAt,
   spellCadence,
   spellChord,
   spellChordVoicing,
   spellDown,
-  spellNear,
+  spellInKey,
   spellScale,
   spellHeld,
   spellUp,
@@ -138,19 +139,42 @@ describe('chords, scales and cadences', () => {
     expect(spellCadence(s(1, -1, 4), 'finished')![2]!.map(name)).toEqual(['Ab3', 'Eb4', 'Ab4', 'C5']);
   });
 
-  it('spellNear keeps the letter when it can, never with a double accidental', () => {
-    expect(spellNear(s(2, 0, 4), 63)).toEqual(s(2, -1, 4));
-    expect(spellNear(s(2, 0, 4), 65)).toEqual(s(3, 0, 4));
-    expect(spellNear(s(0, 0, 4), 62)).toEqual(s(1, 0, 4));
+  it('spellInKey spells a moved note in its key: the key\'s own spelling, else the least departure from the signature', () => {
+    const E = { l: 2, a: 0 } as const;
+    const C = { l: 0, a: 0 } as const;
+    expect(keySignature(E)).toEqual([1, 1, 0, 1, 1, 0, 0]);
+    expect(keySignature({ l: 2, a: -1 })).toEqual([0, 0, -1, 0, 0, -1, -1]);
+    // The reviewer's example: in E major, D♯5 moved down two semitones is C♯5 (diatonic), not D♭5.
+    expect(name(spellInKey(E, 73, [s(1, 1, 5)], -2))).toBe('C#5');
+    // Not in the key: a single departure from the signature (D♮ in E major, C♮ rather than B♯).
+    expect(name(spellInKey(E, 74, [], 1))).toBe('D5');
+    expect(name(spellInKey(E, 72, [], -1))).toBe('C5');
+    expect(name(spellInKey({ l: 3, a: 1 }, 72, [], 1))).toBe('C5');
+    expect(name(spellInKey({ l: 2, a: -1 }, 64, [], 1))).toBe('E4');
+    // Raised when moving up, lowered when moving down …
+    expect(name(spellInKey(C, 61, [], 1))).toBe('C#4');
+    expect(name(spellInKey(C, 61, [], -1))).toBe('Db4');
+    // … unless that puts it on the staff position of a neighbouring note (C4 C♯4 → C4 D♭4; B major: E♯4 F♯4, not F4 F♯4).
+    expect(name(spellInKey(C, 61, [s(0, 0, 4)], 1))).toBe('Db4');
+    expect(name(spellInKey({ l: 6, a: 0 }, 65, [s(3, 1, 4)], -1))).toBe('E#4');
+    // spellAt refuses double accidentals (four semitones above C on the next letter would be D𝄪).
+    expect(spellAt(s(0, 0, 4), 1, 4)).toBeUndefined();
+  });
+
+  it('spellInKey: diatonic when the pitch is in the key, else at most one step from the signature; never a double accidental', () => {
+    const spelled = fc.integer({ min: 60, max: 81 }).map(defaultSpelling);
     fc.assert(
-      fc.property(fc.integer({ min: 60, max: 81 }), fc.constantFrom(-3, -2, -1, 1, 2, 3), (m, d) => {
-        const from = defaultSpelling(m);
-        const near = spellNear(from, m + d);
-        expect(midiOf(near)).toBe(m + d);
-        expect(Math.abs(near.a)).toBeLessThanOrEqual(1);
+      fc.property(fc.integer({ min: 0, max: 11 }), fc.integer({ min: 60, max: 81 }), fc.array(spelled, { maxLength: 2 }), fc.constantFrom(-3, -2, -1, 1, 2, 3), (pc, m, neighbours, move) => {
+        const key = ROOT_POOL[pc]!;
+        const sig = keySignature(key)!;
+        const scale = spellScale({ ...key, o: 4 }, 'major')!;
+        const n = spellInKey(key, m, neighbours, move);
+        expect(midiOf(n)).toBe(m);
+        expect(isSpelled(n)).toBe(true);
+        if (scale.some((x) => pitchClass(midiOf(x)) === pitchClass(m))) expect(n.a).toBe(sig[n.l]);
+        else expect(Math.abs(n.a - sig[n.l]!)).toBe(1);
       })
     );
-    expect(spellAt(s(0, 0, 4), 1, 4)).toBeUndefined();
   });
 });
 
