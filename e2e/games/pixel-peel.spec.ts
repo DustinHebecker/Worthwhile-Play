@@ -534,8 +534,10 @@ test('pixel-peel: slow peeling — a reload in the middle of peeling loses nothi
   await expect(root(page).getByTestId('pp-left')).toHaveAttribute('data-left', String(presentCount(position(after))));
 });
 
-test('pixel-peel: the Display button opens the options mid-game; Slow → Off finishes the queue at once and is remembered', async ({ page }) => {
+test('pixel-peel: the Display button opens the options mid-game; Slow → Off finishes the queue at once and is remembered', async ({ page, isMobile }) => {
   await slowPeeling(page);
+  // On the phone, a small one: the panel is taller than the room under the sticky picture.
+  if (isMobile) await page.setViewportSize({ width: 360, height: 640 });
   await startGame(page, ID, { difficulty: 'hard', settings: { motif: 'red-fox' } });
   const state = await savedState(page);
   for (const move of state.witness.slice(0, 2)) await buttonFor(page, move).click();
@@ -543,6 +545,11 @@ test('pixel-peel: the Display button opens the options mid-game; Slow → Off fi
   const display = root(page).getByTestId('pp-display');
   await display.click();
   await expect(display).toHaveAttribute('aria-expanded', 'true');
+  // Its heading (which closes it again) is on screen, not under the picture that sticks to the top on a phone.
+  const heading = root(page).getByTestId('pp-options').locator('summary');
+  await expect(heading).toBeInViewport();
+  const [h, pic] = [(await heading.boundingBox())!, (await root(page).getByTestId('pp-frame').boundingBox())!];
+  if (h.x < pic.x + pic.width && pic.x < h.x + h.width) expect(h.y).toBeGreaterThanOrEqual(pic.y + pic.height - 1);
   const off = root(page).getByTestId('pp-option-peel-off');
   await expect(off).toBeInViewport();
   await off.check();

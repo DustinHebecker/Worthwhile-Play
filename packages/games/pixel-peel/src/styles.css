@@ -290,9 +290,13 @@
   .wp-pixel-peel .pp-actions { flex-wrap: nowrap; gap: 0.375rem; }
   .wp-pixel-peel .pp-actions button { flex: 1 1 auto; min-inline-size: auto; padding: 0.2rem 0.25rem; font-size: 0.875rem; line-height: 1.15; white-space: normal; }
   .wp-pixel-peel .pp-help-start { display: block; }
-  /* A control reached by keyboard is never left under the sticky picture. */
+  /*
+   * A control reached by keyboard is never left under the sticky picture; nor is the top of the Display panel when
+   * the action row's Display button scrolls it into view (its heading closes it again).
+   */
   .wp-pixel-peel button,
   .wp-pixel-peel summary,
+  .wp-pixel-peel .pp-details,
   .wp-pixel-peel input { scroll-margin-block-start: var(--pp-picture-h, 50vh); }
 }
 
