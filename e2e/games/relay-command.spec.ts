@@ -604,6 +604,32 @@ test('relay-command: an asymmetric map for teams in the editor on a phone (Basti
   await expect(page.getByTestId('rc-teams')).toHaveValue('1v3');
 });
 
+test('relay-command: Lake Country opens in the editor on a phone as a three-base map; it survives a reload and plays with two opponents', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await start(page);
+  await page.getByTestId('rc-editor-open').click();
+  await page.getByTestId('ed-start').selectOption('lake-country');
+  await page.getByTestId('ed-load').click();
+  await expect(page.getByTestId('ed-load')).toHaveText('Press again to replace the map');
+  await page.waitForTimeout(450);
+  await page.getByTestId('ed-load').click();
+  await expect(page.getByTestId('ed-bases')).toHaveValue('3');
+  await expect(page.getByTestId('ed-side-2')).toHaveText('Base C');
+  await expect(page.getByTestId('ed-mirror')).toBeHidden();
+  await expect(page.getByTestId('ed-supply-0')).toHaveValue('150');
+  await expect(page.getByTestId('ed-fair')).toHaveText('Three bases are never mirrored: play the map to see whether it is fair.');
+  const widths = await page.evaluate(() => ({ page: document.documentElement.scrollWidth, viewport: document.documentElement.clientWidth }));
+  expect(widths.page).toBeLessThanOrEqual(widths.viewport);
+  await page.reload();
+  await page.getByTestId('continue').click();
+  await expect(page.getByTestId('ed-bases')).toHaveValue('3');
+  await page.getByTestId('ed-play').click();
+  const game = async () => (await saved(page)) as unknown as { opponents: number; map: { seats?: number } | null; world: { sides: number; supply?: number[] } } | undefined;
+  await expect.poll(async () => (await game())?.map?.seats).toBe(3);
+  expect((await game())!.opponents).toBe(2);
+  expect((await game())!.world.supply).toEqual([150, 300, 300]);
+});
+
 test('relay-command: the map editor on a phone — paint with taps, save, resume after a reload, play the map', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 740 });
   await start(page);

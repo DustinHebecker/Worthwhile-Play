@@ -1491,7 +1491,7 @@ describe('Relay Command map editor', () => {
     click('rc-editor-open');
     await settle();
     const bases = $('ed-bases') as HTMLSelectElement;
-    expect([...bases.options].map((o) => o.textContent)).toEqual(['2 (you and an opponent)', '3 (you and two opponents, never mirrored)', '4 (one in each corner)']);
+    expect([...bases.options].map((o) => o.textContent)).toEqual(['2 (you and an opponent)', '3 (you and two opponents)', '4 (one in each corner)']);
     bases.value = '3';
     bases.dispatchEvent(new Event('change'));
     expect(state().edit!.map.seats).toBe(3);
