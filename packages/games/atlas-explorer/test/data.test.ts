@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { countryAt, countryDistanceKm, decodeAtlas, inside, LINES, placeAt, REGIONS } from '../src/atlas';
 import { ATLAS_DATA } from '../src/data/atlas.gen';
 import { UN_MEMBERS } from '../src/data/un-members';
+import { bbox, pointInRings } from '../src/geo';
 import manifest from '../src/data/manifest.json';
 
 const atlas = decodeAtlas(ATLAS_DATA);
@@ -137,6 +138,31 @@ describe('generated atlas', () => {
       expect(d.rings.length, id).toBeGreaterThan(0);
       for (const r of d.rings) expect(area(r), id).toBeGreaterThan(0);
     }
+  });
+
+  it('counts every fine ring as part of its owner, also where it overlaps the owner’s own outline', () => {
+    // Voeren and Comines-Warneton lie inside Belgium's dissolved outline and Madha inside Oman's coarse ring of it:
+    // with one even–odd test over all rings, the overlap was a hole (a tap there was "not Belgium").
+    // Every fine ring of a country or another unit is a spot; sample the ground inside it.
+    let checked = 0;
+    for (const sp of atlas.spots) {
+      const owner = sp.kind === 'country' ? atlas.country(sp.id)! : atlas.others.find((o) => o.id === sp.id)!;
+      const r = sp.rings[0]!;
+      const [x0, y0, x1, y1] = bbox([r]);
+      for (let i = 1; i < 12; i++)
+        for (let j = 1; j < 12; j++) {
+          const lon = x0 + ((x1 - x0) * i) / 12;
+          const lat = y0 + ((y1 - y0) * j) / 12;
+          if (!pointInRings(lon, lat, [r])) continue;
+          checked++;
+          expect(inside(owner, lon, lat), `${sp.id} ${lon.toFixed(3)} ${lat.toFixed(3)}`).toBe(true);
+        }
+    }
+    expect(checked).toBeGreaterThan(1000);
+    expect(placeAt(atlas, 5.82, 50.742), 'Voeren').toEqual({ kind: 'country', id: 'BE' });
+    expect(inside(atlas.country('BE')!, 5.82, 50.742), 'Voeren').toBe(true);
+    expect(inside(atlas.country('BE')!, 2.933, 50.754), 'Comines-Warneton').toBe(true);
+    expect(inside(atlas.country('OM')!, 56.22, 25.24), 'Madha').toBe(true);
   });
 
   it('keeps hatched edges close to the source: no wide hatched slivers (Kashmir follow-up 2026-10-29)', () => {

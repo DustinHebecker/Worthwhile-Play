@@ -21,6 +21,12 @@ export interface Shape {
   /** Closed rings, flat `[lon, lat, …]` in degrees. */
   readonly rings: readonly Float64Array[];
   readonly box: Box;
+  /**
+   * How many of the last `rings` are fine rings of tiny parts on land (§ 26). Each counts on its own: a fine ring can
+   * overlap the owner's own simplified outline (Voeren in Belgium, Madha in Oman), where the even–odd test of all
+   * rings together would cut a hole.
+   */
+  readonly fine?: number;
 }
 
 export interface Country extends Shape {
@@ -208,7 +214,8 @@ export function decodeAtlas(data: AtlasData): Atlas {
   const fineOf = (kind: Spot['kind'], id: string) => fine.filter((x) => x.kind === kind && x.id === id).flatMap((x) => x.rings);
   const countries: Country[] = data.countries.map((c) => {
     const f = decodeInts(c.f);
-    const rings = [...decodeRings(c.rings, arcs, unit), ...fineOf('country', c.id)];
+    const fineRings = fineOf('country', c.id);
+    const rings = [...decodeRings(c.rings, arcs, unit), ...fineRings];
     const flags = f[12]!;
     const [region, sub] = data.subs[c.s] ?? ['', ''];
     return {
@@ -234,16 +241,19 @@ export function decodeAtlas(data: AtlasData): Atlas {
       touching: words(c.dz),
       nbExclave: words(c.nx ?? ''),
       rings,
-      box: boxOf(rings)
+      box: boxOf(rings),
+      fine: fineRings.length
     };
   });
   const others: Other[] = data.others.map((o) => {
-    const rings = [...decodeRings(o.rings, arcs, unit), ...fineOf('other', o.id)];
-    return { id: o.id, iso: o.iso, label: pt(o.label), rings, box: boxOf(rings) };
+    const fineRings = fineOf('other', o.id);
+    const rings = [...decodeRings(o.rings, arcs, unit), ...fineRings];
+    return { id: o.id, iso: o.iso, label: pt(o.label), rings, box: boxOf(rings), fine: fineRings.length };
   });
   const disputed: Disputed[] = data.disputed.map((d) => {
-    const rings = [...decodeRings(d.rings, arcs, unit), ...fineOf('disputed', d.id)];
-    return { id: d.id, rings, box: boxOf(rings) };
+    const fineRings = fineOf('disputed', d.id);
+    const rings = [...decodeRings(d.rings, arcs, unit), ...fineRings];
+    return { id: d.id, rings, box: boxOf(rings), fine: fineRings.length };
   });
   const features: Feature[] = [
     ...data.rivers.map((r) => {
@@ -292,8 +302,14 @@ export function decodeAtlas(data: AtlasData): Atlas {
 
 const inBox = (b: Box, lon: number, lat: number, pad = 0) => lon >= b[0] - pad && lon <= b[2] + pad && lat >= b[1] - pad && lat <= b[3] + pad;
 
-/** Whether a point lies inside a shape (bounding-box prefilter, then even–odd). */
-export const inside = (s: Shape, lon: number, lat: number): boolean => inBox(s.box, lon, lat) && pointInRings(lon, lat, s.rings);
+/** Whether a point lies inside a shape (bounding-box prefilter, then even–odd; each fine ring on its own). */
+export function inside(s: Shape, lon: number, lat: number): boolean {
+  if (!inBox(s.box, lon, lat)) return false;
+  const n = s.fine ?? 0;
+  if (n === 0) return pointInRings(lon, lat, s.rings);
+  const k = s.rings.length - n;
+  return pointInRings(lon, lat, s.rings.slice(0, k)) || s.rings.slice(k).some((r) => pointInRings(lon, lat, [r]));
+}
 
 /**
  * What lies under a point: a hatched area first (it belongs to no country), then a tiny part on land drawn at the fine
