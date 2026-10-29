@@ -1,6 +1,7 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { isPredict } from '../src/generate';
+import { CUBE_WIDTH } from '../src/statics';
 import {
   choose,
   currentItem,
@@ -17,6 +18,7 @@ import {
   mobileHooks,
   moveBeam,
   moveBody,
+  moveCube,
   newState,
   next,
   placeBeam,
@@ -209,5 +211,47 @@ describe('isBalanceState', () => {
     expect(t((x) => (x.index = 3))).toBe(false);
     expect(t((x) => (x.items[1]!.witness = x.items[1]!.scene))).toBe(false);
     expect(t((x) => (x.items[0]!.outcome = { bench: 'beam', sides: ['level'] }))).toBe(false);
+  });
+});
+
+describe('cubes on the counterweight plank', () => {
+  const plank = { bodies: [{ kind: 'plank' as const, left: -30 }], cubes: [], bucket: { kg: 2, on: 0, x: 16 } };
+
+  it('a cube goes on the spot of another (they stack) or at least a cube width away, never in between', () => {
+    const one = placeCube(plank, 2, 0, -20)!;
+    expect(one.cubes).toHaveLength(1);
+    expect(placeCube(one, 3, 0, -17)).toBeNull();
+    expect(placeCube(one, 3, 0, -15)).toBeNull();
+    expect(placeCube(one, 3, 0, -20)!.cubes.map((c) => c.x)).toEqual([-20, -20]);
+    expect(placeCube(one, 3, 0, -14)!.cubes.map((c) => c.x)).toEqual([-20, -14]);
+    expect(placeCube(one, 3, 0, -26)!.cubes.map((c) => c.x)).toEqual([-20, -26]);
+    const two = placeCube(one, 3, 0, -14)!;
+    expect(moveCube(two, 1, -16)).toBeNull();
+    expect(moveCube(two, 1, -20)!.cubes.map((c) => c.x)).toEqual([-20, -20]);
+    expect(moveCube(two, 1, -8)!.cubes.map((c) => c.x)).toEqual([-20, -8]);
+    // Moving a cube never collides with itself.
+    expect(moveCube(two, 1, -13)!.cubes.map((c) => c.x)).toEqual([-20, -13]);
+  });
+
+  it('a save from before the rule, with cubes closer than their width, stays valid and playable', () => {
+    for (let seed = 0; seed < 40; seed++) {
+      const s = round(seed, { bench: 'stack', tasks: 'build' }, 'medium');
+      const i = s.items.findIndex((x) => x.id === 'stack-counter');
+      if (i < 0) continue;
+      const old = clone(s);
+      const it = old.items[i]!;
+      if (it.draft.bench !== 'stack' || it.tray.length < 2) continue;
+      it.draft.s.cubes = [
+        { kg: it.tray[0]!, on: 0, x: it.draft.s.bodies[0]!.left + 10, free: true },
+        { kg: it.tray[1]!, on: 0, x: it.draft.s.bodies[0]!.left + 13, free: true }
+      ];
+      expect(isBalanceState(clone(old))).toBe(true);
+      // The overlapping cube can still be moved apart (or onto the other).
+      const scene = it.draft.s;
+      expect(moveCube(scene, 1, scene.cubes[0]!.x + CUBE_WIDTH)).not.toBeNull();
+      expect(moveCube(scene, 1, scene.cubes[0]!.x)).not.toBeNull();
+      return;
+    }
+    throw new Error('no medium stack-counter task found');
   });
 });

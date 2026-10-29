@@ -5,7 +5,10 @@ import { goalMet } from '../src/check';
 import {
   benchOf,
   buildPool,
+  cubeClear,
+  cubeSpots,
   DIFFICULTIES,
+  freeCubeSpots,
   generateRound,
   generateTask,
   isPredict,
@@ -16,11 +19,12 @@ import {
   TASK_IDS,
   type BenchSetting,
   type Difficulty,
+  type TaskId,
   type TasksSetting
 } from '../src/generate';
 import { naiveBar, naiveBeam, naiveStack } from '../src/naive';
 import { beamAxleSolutions, beamHookSolutions, countHangSolutions } from '../src/solve';
-import { barNet, beamVerdict, mobileBars, sideOf, stackContactsOk, stackVerdict } from '../src/statics';
+import { barNet, beamVerdict, CUBE_WIDTH, mobileBars, sideOf, stackContactsOk, stackVerdict, type StackCube, type StackScene } from '../src/statics';
 
 const diff = fc.constantFrom<Difficulty>(...DIFFICULTIES);
 const seed = fc.integer({ min: 0, max: 0xffffffff });
@@ -119,5 +123,40 @@ describe('generation', () => {
       { trap: false, exact: true },
       { trap: true, exact: false }
     ]);
+  });
+});
+
+describe('cubes keep clear of each other (shapes and kg labels never overlap)', () => {
+  /** Two cubes on one body either share a spot (and stack) or sit at least a cube's width apart. */
+  const clearOfEachOther = (cubes: readonly StackCube[]) =>
+    cubes.every((a, i) => cubes.every((b, j) => i === j || a.on !== b.on || a.x === b.x || Math.abs(a.x - b.x) >= CUBE_WIDTH));
+
+  it('freeCubeSpots leaves out the spots closer to a cube than its width, but keeps its own spot', () => {
+    const scene: StackScene = { bodies: [{ kind: 'plank', left: -30 }], cubes: [{ kg: 2, on: 0, x: 0, free: true }] };
+    const free = freeCubeSpots(scene, 0);
+    expect(cubeSpots(scene, 0)).toHaveLength(43);
+    expect(free).toHaveLength(43 - 10);
+    for (const x of [-5, -1, 1, 5]) expect(free, `x = ${x}`).not.toContain(x);
+    for (const x of [-6, 0, 6, -27, 15]) expect(free, `x = ${x}`).toContain(x);
+    // The moved cube itself is ignored; cubes on another body never matter.
+    expect(freeCubeSpots(scene, 0, 0)).toEqual(cubeSpots(scene, 0));
+    expect(cubeClear({ ...scene, cubes: [{ kg: 2, on: 1, x: 0 }] }, 0, 3)).toBe(true);
+  });
+
+  it('in every generated stack scene and witness', () => {
+    fc.assert(
+      fc.property(seed, diff, fc.constantFrom<TaskId>('stack-predict', 'stack-counter'), fc.boolean(), (s, d, id, trap) => {
+        const task = generateTask(createRng(s), id, d, { trap, exact: false });
+        for (const sc of [task.scene, task.witness]) if (sc?.bench === 'stack') expect(clearOfEachOther(sc.s.cubes), JSON.stringify(sc.s.cubes)).toBe(true);
+      }),
+      { numRuns: 300 }
+    );
+  });
+
+  it('stacked cubes weigh like one cube of their total mass at that spot (the physics is unchanged)', () => {
+    const plank: StackScene = { bodies: [{ kind: 'plank', left: -30 }], cubes: [], bucket: { kg: 3, on: 0, x: 16 } };
+    const stacked = stackVerdict({ ...plank, cubes: [{ kg: 2, on: 0, x: -24 }, { kg: 2, on: 0, x: -24 }] });
+    const one = stackVerdict({ ...plank, cubes: [{ kg: 4, on: 0, x: -24 }] });
+    expect(stacked).toEqual(one);
   });
 });
