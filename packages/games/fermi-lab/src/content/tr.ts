@@ -1,6 +1,47 @@
 import type { ContentText } from './types';
 
 export const content: ContentText = {
+  counts: {
+    day: { one: 'gün', other: 'gün' },
+    year: { one: 'yıl', other: 'yıl' },
+    ant: { one: 'karınca', other: 'karınca' },
+    battery: { one: 'pil', other: 'pil' },
+    beat: { one: 'atım', other: 'atım' },
+    bee: { one: 'arı', other: 'arı' },
+    birth: { one: 'doğum', other: 'doğum' },
+    breath: { one: 'nefes', other: 'nefes' },
+    cell: { one: 'hücre', other: 'hücre' },
+    charge: { one: 'şarj', other: 'şarj' },
+    earth: { one: 'Dünya', other: 'Dünya' },
+    egg: { one: 'yumurta', other: 'yumurta' },
+    grain: { one: 'tane', other: 'tane' },
+    hair: { one: 'tel saç', other: 'tel saç' },
+    household: { one: 'hane', other: 'hane' },
+    molecule: { one: 'molekül', other: 'molekül' },
+    orbit: { one: 'tur', other: 'tur' },
+    passenger: { one: 'yolcu', other: 'yolcu' },
+    person: { one: 'kişi', other: 'kişi' },
+    phone: { one: 'telefon', other: 'telefon' },
+    piano: { one: 'piyano', other: 'piyano' },
+    pupil: { one: 'öğrenci', other: 'öğrenci' },
+    sheet: { one: 'yaprak', other: 'yaprak' },
+    step: { one: 'adım', other: 'adım' },
+    teacher: { one: 'öğretmen', other: 'öğretmen' },
+    tree: { one: 'ağaç', other: 'ağaç' },
+    trip: { one: 'yolculuk', other: 'yolculuk' },
+    tuner: { one: 'akortçu', other: 'akortçu' },
+    tuning: { one: 'akort', other: 'akort' },
+    vehicle: { one: 'araç', other: 'araç' },
+    word: { one: 'kelime', other: 'kelime' }
+  },
+  ratios: {
+    high: { one: '{n} kat fazla.', other: '{n} kat fazla.' },
+    low: { one: '{n} kat az.', other: '{n} kat az.' },
+    rowHigh: { one: '{n} kat fazla', other: '{n} kat fazla' },
+    rowLow: { one: '{n} kat az', other: '{n} kat az' },
+    biasHigh: { one: 'Cevapların ortalamada {n} kat fazlaydı.', other: 'Cevapların ortalamada {n} kat fazlaydı.' },
+    biasLow: { one: 'Cevapların ortalamada {n} kat azdı.', other: 'Cevapların ortalamada {n} kat azdı.' }
+  },
   factors: {
     aaEnergy: 'Bir AA pilin verdiği enerji',
     airDensity: 'Havanın yoğunluğu',

@@ -385,7 +385,7 @@ explain: >
   gives around 50,000 — and beekeepers report 50,000–80,000 in strong colonies.
 sources:
   - "Egg-laying and colony size: University of Delaware, Mid-Atlantic Apiculture (MAAREC), \"The Colony and Its Organization\", https://canr.udel.edu/maarec/honey-bee-biology/the-colony-and-its-organization/ (up to 1,500 eggs/day; up to 80,000 workers)."
-  - "Worker lifespan in summer: PBS Nature honeybee guide (15–38 days), https://www.pbs.org/wnet/nature/animal-guide-honeybee/499 ; University of Arizona activity sheet (average 42 days), https://cales.arizona.edu/pubs/insects/ahb/act12.html"
+  - "Worker lifespan in summer: PBS Nature honeybee guide (15–38 days), https://www.pbs.org/wnet/nature/animal-guide-honeybee/499 ; University of Arizona activity sheet (average 42 days), https://web.archive.org/web/2023/https://cales.arizona.edu/pubs/insects/ahb/act12.html (original page 404 since 2026-10; archived copy)"
 confidence: medium
 ```
 
@@ -651,7 +651,7 @@ explain: >
   that every factor can be guessed and errors in different directions partly cancel. Household size varies
   a lot around the world, from about 2 to over 5.
 sources:
-  - "Household size: UN DESA, Household Size and Composition Around the World 2017 (country averages 2 to 9 persons; most of Europe, North America and Japan below 3), https://www.un.org/en/development/desa/population/publications/pdf/popfacts/PopFacts_2017-2.pdf (verified 2026-10-17)."
+  - "Household size: UN DESA, Household Size and Composition Around the World 2017 (country averages 2 to 9 persons; most of Europe, North America and Japan below 3), https://www.un.org/development/desa/pd/sites/www.un.org.development.desa.pd/files/files/documents/2020/Jan/un_2017_factsheet2.pdf (the same Population Facts No. 2017/2 at its current UN DESA address; the old popfacts URL returns 404; verified 2026-10-29: "ranges from 2 to 9 persons per household", fewer than three in most of Europe and Northern America, Japan 2.4)."
   - "Piano share, tunings per year, tuner workload: assumptions (no reliable statistics found; model answer)."
 confidence: low
 # Owner decision 2026-10-17: German household size (2.0, Destatis) replaced by a world-oriented 2.5 (range 2–5).
@@ -821,7 +821,7 @@ explain: >
   countries there is more than one vehicle for every two people, in many poor countries fewer than
   one per twenty.
 sources:
-  - "Vehicles in use: OICA (2011: 1,097 million), https://www.oica.net/wp-content/uploads/2013/09/OICA-Francfort-2013ok.pdf ; ≈ 1.55 billion 2023 per OICA as cited by Wikipedia \"Motor vehicle\", https://en.wikipedia.org/wiki/Motor_vehicle (secondary; review)."
+  - "Vehicles in use: OICA (2011: 1,097 million), https://web.archive.org/web/2017/https://www.oica.net/wp-content/uploads/2013/09/OICA-Francfort-2013ok.pdf (original file 404 since the OICA site was rebuilt; archived copy) ; ≈ 1.55 billion 2023 per OICA as cited by Wikipedia \"Motor vehicle\", https://en.wikipedia.org/wiki/Motor_vehicle (secondary; review)."
 confidence: medium
 ```
 

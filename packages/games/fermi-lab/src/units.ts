@@ -52,7 +52,10 @@ export const PHYSICAL_UNITS: Readonly<Record<string, UnitDef>> = {
   mol: { scale: 1, dims: [0, 0, 0, 0, 1] }
 };
 
-/** Count words (labels only, dimensionless). Each has `u.<word>` and `n.<word>` message keys. */
+/**
+ * Count words (labels only, dimensionless). Each has a `u.<word>` message key (per-unit form, "g/grain") and plural
+ * forms in the content (`counts`, shown after a number).
+ */
 export const COUNT_WORDS = [
   'ant',
   'battery',
@@ -87,6 +90,13 @@ export const COUNT_WORDS = [
 export type CountWord = (typeof COUNT_WORDS)[number];
 
 const COUNTS: ReadonlySet<string> = new Set(COUNT_WORDS);
+
+/** Word units that also have a count form after a number ("160 days", "25 years"). */
+export const COUNTED_UNITS = ['day', 'year'] as const;
+
+/** Every word with plural forms after a number (`ContentText.counts`). */
+export type CountedWord = CountWord | (typeof COUNTED_UNITS)[number];
+export const COUNTED_WORDS: readonly CountedWord[] = [...COUNTED_UNITS, ...COUNT_WORDS];
 
 /** Physical unit tokens whose label is translated (`u.<token>`); all other symbols are SI and shown as they are. */
 export const WORD_UNITS = ['L', 'mL', 'µL', 't', 's', 'min', 'h', 'day', 'year', 'ha'] as const;

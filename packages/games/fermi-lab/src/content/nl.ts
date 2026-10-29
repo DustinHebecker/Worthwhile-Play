@@ -1,6 +1,47 @@
 import type { ContentText } from './types';
 
 export const content: ContentText = {
+  counts: {
+    day: { one: 'dag', other: 'dagen' },
+    year: { one: 'jaar', other: 'jaar' },
+    ant: { one: 'mier', other: 'mieren' },
+    battery: { one: 'batterij', other: 'batterijen' },
+    beat: { one: 'slag', other: 'slagen' },
+    bee: { one: 'bij', other: 'bijen' },
+    birth: { one: 'geboorte', other: 'geboorten' },
+    breath: { one: 'ademhaling', other: 'ademhalingen' },
+    cell: { one: 'cel', other: 'cellen' },
+    charge: { one: 'lading', other: 'ladingen' },
+    earth: { one: 'aarde', other: 'aardes' },
+    egg: { one: 'ei', other: 'eieren' },
+    grain: { one: 'korrel', other: 'korrels' },
+    hair: { one: 'haar', other: 'haren' },
+    household: { one: 'huishouden', other: 'huishoudens' },
+    molecule: { one: 'molecuul', other: 'moleculen' },
+    orbit: { one: 'omloop', other: 'omlopen' },
+    passenger: { one: 'passagier', other: 'passagiers' },
+    person: { one: 'persoon', other: 'personen' },
+    phone: { one: 'telefoon', other: 'telefoons' },
+    piano: { one: 'piano', other: 'piano’s' },
+    pupil: { one: 'leerling', other: 'leerlingen' },
+    sheet: { one: 'vel', other: 'vellen' },
+    step: { one: 'stap', other: 'stappen' },
+    teacher: { one: 'leraar', other: 'leraren' },
+    tree: { one: 'boom', other: 'bomen' },
+    trip: { one: 'reis', other: 'reizen' },
+    tuner: { one: 'stemmer', other: 'stemmers' },
+    tuning: { one: 'stembeurt', other: 'stembeurten' },
+    vehicle: { one: 'voertuig', other: 'voertuigen' },
+    word: { one: 'woord', other: 'woorden' }
+  },
+  ratios: {
+    high: { one: '{n} keer te hoog.', other: '{n} keer te hoog.' },
+    low: { one: '{n} keer te laag.', other: '{n} keer te laag.' },
+    rowHigh: { one: '{n} keer te hoog', other: '{n} keer te hoog' },
+    rowLow: { one: '{n} keer te laag', other: '{n} keer te laag' },
+    biasHigh: { one: 'Gemiddeld waren je antwoorden {n} keer te hoog.', other: 'Gemiddeld waren je antwoorden {n} keer te hoog.' },
+    biasLow: { one: 'Gemiddeld waren je antwoorden {n} keer te laag.', other: 'Gemiddeld waren je antwoorden {n} keer te laag.' }
+  },
   factors: {
     aaEnergy: 'Energie die een AA-batterij levert',
     airDensity: 'Dichtheid van lucht',

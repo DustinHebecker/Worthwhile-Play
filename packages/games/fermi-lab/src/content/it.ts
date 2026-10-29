@@ -1,6 +1,47 @@
 import type { ContentText } from './types';
 
 export const content: ContentText = {
+  counts: {
+    day: { one: 'giorno', many: 'giorni', other: 'giorni' },
+    year: { one: 'anno', many: 'anni', other: 'anni' },
+    ant: { one: 'formica', many: 'formiche', other: 'formiche' },
+    battery: { one: 'pila', many: 'pile', other: 'pile' },
+    beat: { one: 'battito', many: 'battiti', other: 'battiti' },
+    bee: { one: 'ape', many: 'api', other: 'api' },
+    birth: { one: 'nascita', many: 'nascite', other: 'nascite' },
+    breath: { one: 'respiro', many: 'respiri', other: 'respiri' },
+    cell: { one: 'cellula', many: 'cellule', other: 'cellule' },
+    charge: { one: 'ricarica', many: 'ricariche', other: 'ricariche' },
+    earth: { one: 'Terra', many: 'Terre', other: 'Terre' },
+    egg: { one: 'uovo', many: 'uova', other: 'uova' },
+    grain: { one: 'chicco', many: 'chicchi', other: 'chicchi' },
+    hair: { one: 'capello', many: 'capelli', other: 'capelli' },
+    household: { one: 'famiglia', many: 'famiglie', other: 'famiglie' },
+    molecule: { one: 'molecola', many: 'molecole', other: 'molecole' },
+    orbit: { one: 'orbita', many: 'orbite', other: 'orbite' },
+    passenger: { one: 'passeggero', many: 'passeggeri', other: 'passeggeri' },
+    person: { one: 'persona', many: 'persone', other: 'persone' },
+    phone: { one: 'telefono', many: 'telefoni', other: 'telefoni' },
+    piano: { one: 'pianoforte', many: 'pianoforti', other: 'pianoforti' },
+    pupil: { one: 'alunno', many: 'alunni', other: 'alunni' },
+    sheet: { one: 'foglio', many: 'fogli', other: 'fogli' },
+    step: { one: 'passo', many: 'passi', other: 'passi' },
+    teacher: { one: 'insegnante', many: 'insegnanti', other: 'insegnanti' },
+    tree: { one: 'albero', many: 'alberi', other: 'alberi' },
+    trip: { one: 'viaggio', many: 'viaggi', other: 'viaggi' },
+    tuner: { one: 'accordatore', many: 'accordatori', other: 'accordatori' },
+    tuning: { one: 'accordatura', many: 'accordature', other: 'accordature' },
+    vehicle: { one: 'veicolo', many: 'veicoli', other: 'veicoli' },
+    word: { one: 'parola', many: 'parole', other: 'parole' }
+  },
+  ratios: {
+    high: { one: '{n} volta troppo alta.', many: '{n} volte troppo alta.', other: '{n} volte troppo alta.' },
+    low: { one: '{n} volta troppo bassa.', many: '{n} volte troppo bassa.', other: '{n} volte troppo bassa.' },
+    rowHigh: { one: '{n} volta troppo alta', many: '{n} volte troppo alta', other: '{n} volte troppo alta' },
+    rowLow: { one: '{n} volta troppo bassa', many: '{n} volte troppo bassa', other: '{n} volte troppo bassa' },
+    biasHigh: { one: 'In media le tue risposte erano {n} volta troppo alte.', many: 'In media le tue risposte erano {n} volte troppo alte.', other: 'In media le tue risposte erano {n} volte troppo alte.' },
+    biasLow: { one: 'In media le tue risposte erano {n} volta troppo basse.', many: 'In media le tue risposte erano {n} volte troppo basse.', other: 'In media le tue risposte erano {n} volte troppo basse.' }
+  },
   factors: {
     aaEnergy: 'Energia fornita da una pila AA',
     airDensity: 'Densità dell’aria',

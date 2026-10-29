@@ -3,7 +3,7 @@ import { createLocaleContent } from '@wp/game-core';
 import type { SupportedLocale } from '@wp/localization';
 import type { ContentText } from './types';
 
-export type { ContentText, TaskText } from './types';
+export type { ContentText, PluralForms, RatioText, TaskText } from './types';
 
 /**
  * Task wording per UI locale (ADR 0010). Ids are checked for parity by the content tests.

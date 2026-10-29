@@ -2,6 +2,47 @@ import type { ContentText } from './types';
 
 /** English (source) wording; the reference for every translation. */
 export const content: ContentText = {
+  counts: {
+    day: { one: 'day', other: 'days' },
+    year: { one: 'year', other: 'years' },
+    ant: { one: 'ant', other: 'ants' },
+    battery: { one: 'battery', other: 'batteries' },
+    beat: { one: 'beat', other: 'beats' },
+    bee: { one: 'bee', other: 'bees' },
+    birth: { one: 'birth', other: 'births' },
+    breath: { one: 'breath', other: 'breaths' },
+    cell: { one: 'cell', other: 'cells' },
+    charge: { one: 'charge', other: 'charges' },
+    earth: { one: 'Earth', other: 'Earths' },
+    egg: { one: 'egg', other: 'eggs' },
+    grain: { one: 'grain', other: 'grains' },
+    hair: { one: 'hair', other: 'hairs' },
+    household: { one: 'household', other: 'households' },
+    molecule: { one: 'molecule', other: 'molecules' },
+    orbit: { one: 'orbit', other: 'orbits' },
+    passenger: { one: 'passenger', other: 'passengers' },
+    person: { one: 'person', other: 'people' },
+    phone: { one: 'phone', other: 'phones' },
+    piano: { one: 'piano', other: 'pianos' },
+    pupil: { one: 'pupil', other: 'pupils' },
+    sheet: { one: 'sheet', other: 'sheets' },
+    step: { one: 'step', other: 'steps' },
+    teacher: { one: 'teacher', other: 'teachers' },
+    tree: { one: 'tree', other: 'trees' },
+    trip: { one: 'trip', other: 'trips' },
+    tuner: { one: 'tuner', other: 'tuners' },
+    tuning: { one: 'tuning', other: 'tunings' },
+    vehicle: { one: 'vehicle', other: 'vehicles' },
+    word: { one: 'word', other: 'words' }
+  },
+  ratios: {
+    high: { one: '{n} time too high.', other: '{n} times too high.' },
+    low: { one: '{n} time too low.', other: '{n} times too low.' },
+    rowHigh: { one: '{n} time too high', other: '{n} times too high' },
+    rowLow: { one: '{n} time too low', other: '{n} times too low' },
+    biasHigh: { one: 'On average your answers were {n} time too high.', other: 'On average your answers were {n} times too high.' },
+    biasLow: { one: 'On average your answers were {n} time too low.', other: 'On average your answers were {n} times too low.' }
+  },
   factors: {
     aaEnergy: 'Energy delivered by one AA battery',
     airDensity: 'Density of air',
