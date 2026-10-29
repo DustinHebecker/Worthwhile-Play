@@ -291,6 +291,52 @@ describe('hard stacks (owner decision 2026-10-29)', () => {
     throw new Error('no hard stack-counter task');
   });
 
+  it('◀◀ and ▶▶ stop at the bound instead of refusing the step; ◀ and ▶ still step 1 cm (follow-up 2026-10-29)', () => {
+    const m = mount({ bench: 'stack', tasks: 'build' });
+    const cur = () => (m.state() as RoundState).items[(m.state() as RoundState).index]!;
+    for (let i = 0; i < 6 && cur().id !== 'stack-overhang'; i++) {
+      m.q('bl-solution')!.click();
+      m.q('bl-next')!.click();
+    }
+    expect(cur().id).toBe('stack-overhang');
+    const lefts = () => (cur().draft.s as { bodies: { left: number }[] }).bodies.map((b) => b.left);
+    expect(lefts().slice(0, 2)).toEqual([-36, -36]);
+    // Block 1 lies under block 2 (from -36 to -12) and keeps at least 1 cm under it: its left end stops at -13.
+    m.q('bl-body-0')!.click();
+    for (let i = 0; i < 5; i++) m.q('bl-step-right4')!.click();
+    expect(lefts()[0]).toBe(-16);
+    m.q('bl-step-right4')!.click();
+    expect(lefts()[0]).toBe(-13);
+    m.q('bl-step-right4')!.click();
+    expect(lefts()[0]).toBe(-13);
+    m.q('bl-step-left')!.click();
+    expect(lefts()[0]).toBe(-14);
+    // Shift + arrow is the keyboard's 4 cm step and stops there too; a plain arrow steps 1 cm.
+    key(m.q('bl-scene-wrap')!, 'ArrowRight');
+    expect(lefts()[0]).toBe(-13);
+    m.q('bl-scene-wrap')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', shiftKey: true, bubbles: true }));
+    expect(lefts()[0]).toBe(-17);
+    expect(m.ctx.missingKeys).toEqual([]);
+  });
+
+  it('▶▶ slides the hard counter plank up to its last place on the table (1 cm left on it)', () => {
+    for (let seed = 1; seed < 60; seed++) {
+      const m = mount({ bench: 'stack', tasks: 'build' }, 'hard', 'en', seed);
+      const item = () => (m.state() as RoundState).items[0]!;
+      if (item().id !== 'stack-counter') {
+        m.instance.dispose();
+        continue;
+      }
+      const left = () => (item().draft.s as { bodies: { left: number }[] }).bodies[0]!.left;
+      const start = left();
+      m.q('bl-body-0')!.click();
+      for (let i = 0; i < 12; i++) m.q('bl-step-right4')!.click();
+      expect([start, left()]).toEqual([start, -1]);
+      return;
+    }
+    throw new Error('no hard stack-counter task');
+  });
+
   it('medium stack-counter offers no plank chip', () => {
     for (let seed = 1; seed < 60; seed++) {
       const m = mount({ bench: 'stack', tasks: 'build' }, 'medium', 'en', seed);
@@ -445,6 +491,38 @@ describe('dragging with a pointer or a finger (owner decision 2026-10-29)', () =
     expect(names(added)).toEqual(['keydown', 'pointercancel', 'pointermove', 'pointerup']);
     added.mockRestore();
     removed.mockRestore();
+  });
+
+  it('pause() during a drag ends it and leaves the scene as before: nothing dimmed, no outline, the cursor line back (follow-up 2026-10-29)', () => {
+    const m = mount({ mode: 'free', freeBench: 'beam' });
+    m.q('bl-place')!.click();
+    const before = JSON.stringify(m.state());
+    const where = m.q('bl-where')!.textContent;
+    const part = m.root.querySelector('[data-drag="weight:0"]')!;
+    pointer(part, 'pointerdown', hookPoint(m, 6, 0));
+    pointer(part, 'pointermove', hookPoint(m, 6, 3));
+    expect(m.root.querySelectorAll('.bl-drag-source')).toHaveLength(1);
+    expect(m.q('bl-where')!.textContent).not.toBe(where);
+    m.instance.pause();
+    const clean = () => {
+      expect(m.root.querySelector('.bl-drag-source')).toBeNull();
+      expect(m.q('bl-drag-ghost')).toBeNull();
+      expect(m.root.querySelector('.wp-balance')!.classList.contains('bl-is-dragging')).toBe(false);
+      expect(m.q('bl-where')!.textContent).toBe(where);
+    };
+    clean();
+    // The release while paused drops nothing.
+    pointer(part, 'pointerup', hookPoint(m, 6, 3));
+    m.instance.resume();
+    clean();
+    expect(JSON.stringify(m.state())).toBe(before);
+    // After the resume the part drags again.
+    const again = m.root.querySelector('[data-drag="weight:0"]')!;
+    pointer(again, 'pointerdown', hookPoint(m, 6, 0));
+    pointer(again, 'pointermove', hookPoint(m, 6, -2));
+    pointer(again, 'pointerup', hookPoint(m, 6, -2));
+    expect(beamDraft(m)!.weights).toEqual([{ kg: 2, hook: -2, free: true }]);
+    expect(m.root.querySelector('.bl-drag-source')).toBeNull();
   });
 
   it('drags a hung weight to another hook; the click that ends the drag is not a tap', () => {

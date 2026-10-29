@@ -244,6 +244,30 @@ export function placeCube(scene: StackScene, kg: number, on: number, x: number):
   return { ...scene, cubes: [...scene.cubes, { kg, on, x, free: true }] };
 }
 
+/**
+ * A step of up to |dx| cm (the step buttons, ◀◀ ▶▶ 4 cm): body k moves by dx, or, where fewer than |dx| cm remain
+ * before a bound (contact, cube room, the bucket's place), as far as it may within |dx| in that direction. Null when
+ * it cannot move that way at all. A 1 cm step is `moveBody` itself.
+ */
+export function stepBody(scene: StackScene, k: number, dx: number): StackScene | null {
+  for (let d = dx; d !== 0; d -= Math.sign(dx)) {
+    const next = moveBody(scene, k, d);
+    if (next) return next;
+  }
+  return null;
+}
+
+/**
+ * The spot a cube (or the cube cursor) steps to from `from` by up to |dx| cm: the farthest of `spots` (the free ones,
+ * keeping the cube spacing) in that direction within |dx|; where none is that close (a neighbour blocks the way), the
+ * nearest one beyond, so a step skips over the neighbour or stacks on it. Undefined: no spot in that direction.
+ */
+export function stepSpot(spots: readonly number[], from: number, dx: number): number | undefined {
+  const ahead = dx > 0 ? spots.filter((x) => x > from).sort((a, b) => a - b) : spots.filter((x) => x < from).sort((a, b) => b - a);
+  const within = ahead.filter((x) => Math.abs(x - from) <= Math.abs(dx));
+  return within[within.length - 1] ?? ahead[0];
+}
+
 export function moveCube(scene: StackScene, i: number, x: number): StackScene | null {
   const c = scene.cubes[i];
   if (!c?.free || !freeCubeSpots(scene, c.on, i).includes(x)) return null;

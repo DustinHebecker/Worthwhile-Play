@@ -151,6 +151,29 @@ App size: precache about 7.7 MB (213 entries, all games and locales, offline).
 - A weekly model rate limit can stop subagents mid-review. Resume them with SendMessage once it resets.
 - Ports in use by convention: publish e2e 4793, PR gate 4795, ad-hoc checks 4796–4799, feature agents 5100–5999.
 
+## State (2026-10-29)
+
+On main and deployed (in addition to 2026-10-28):
+- All 8 pipeline games live. Follow-ups published 2026-10-29:
+  - Weight & Balance: texts per locale (chunk 65 → 35 kB gzip), cube spacing, phone layout; owner decisions: drag with mouse/finger, hard stack tasks ("which joint gives way?", movable counter plank), exact balances on easy ~1/6. Reviewed independently (oracle tests).
+  - Atlas Explorer: in-game texts per locale (chunk 94 → 42 kB gzip); e2e tolerates a pixel-rounding miss on tiny countries.
+  - Estimation Lab: true plurals in 16 locales, "recently seen" memory per device (last 7 tasks), three dead source links replaced (two via web.archive.org — owner asked to confirm figures in a browser).
+  - Tones & Chords: rhythm notation read as note values for screen readers; changed note spelled in the melody's key; muted by-ear picture not counted as a hint.
+  - Pond & Meadow: starving tiny populations die out (model eco-2, old notebooks recalculated), refused changes explain why, Hindi pondweed name (पॉन्डवीड).
+  - Pixel Peel: side-by-side layout on landscape phones.
+  - Probability Detective: compact round summary with collapsible cases (owner decision).
+- Strategy #89–#93 merged (large maps, asymmetric random maps, Two Valleys, editor large maps, three-base editor maps).
+
+Open:
+- Strategy PR #94 (difficulty per computer opponent) in the gate; next from strategy: opponent styles.
+- Weight & Balance: "which joint gives way?" answer is the table joint in ~38 % of hard falls (players may learn it; rebalance in the generator if wanted); ◀◀/▶▶ refuse a 4 cm step near bounds instead of stopping at the bound; a paused drag leaves the source part dimmed until resume (cosmetic).
+- Atlas follow-ups: Kashmir slivers; Melilla and Gibraltar; direction words; native review.
+- Pixel Peel: phone start time (~300 ms vs 250 ms target) needs a quiet-machine measurement.
+- Native-speaker review of AI-drafted locales (all new games).
+- Waiting on the owner: Economy ("weitermachen" + nine questions; Many Lives needs `@wp/finance-math`), adventures (three questions).
+- Recurring load flakes: relay replay e2e, node-conquest 44 px e2e, card-quest K3 picture and equip e2e (game root not visible in 30 s once on CI), skat pacing. Re-run once before calling a failure real.
+- Privacy incident 2026-10-29: a follow-up agent once put the owner's e-mail address into a User-Agent header of a Wikidata request (rate-limited). Owner informed. Briefs now forbid personal data in requests.
+
 ## State (2026-10-28)
 
 On main and deployed:

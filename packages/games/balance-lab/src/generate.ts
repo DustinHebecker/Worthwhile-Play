@@ -393,8 +393,24 @@ function randomStack(rng: Rng, d: Difficulty): StackScene {
 
 const stackAnswer = (v: { stands: boolean; failing: { dir: 'left' | 'right' }[] }): StackAnswer => (v.stands ? 'stands' : v.failing[0]!.dir);
 
+/**
+ * Hard stack-predict also asks which joint gives way (design § 9.3). Random stacks fail mostly low down (the table
+ * joint carries everything), so players could learn "say joint 1": the failing joint is drawn first, evenly over the
+ * joints the stack has (owner review 2026-10-29). The first acceptable stack still decides between "stands" and a
+ * fall, so the share of falls is unchanged; a fall at another joint only commits the search to a fall at the drawn
+ * joint (the first such fall is kept as the fallback when none is found). The exact case ("balanced on the edge")
+ * always stands, so it is unaffected.
+ */
+export const spreadsFailingJoint = (d: Difficulty): boolean => d === 'hard';
+
+/** The drawn failing joint for a stack of n bodies: `u` ∈ [0, 1) from the rng, spread evenly over its n joints. */
+export const targetJoint = (u: number, n: number): number => Math.min(n - 1, Math.floor(u * n));
+
 export function stackPredict(rng: Rng, d: Difficulty, needs: PredictNeeds): TaskSpec {
   const p = P[d];
+  const spread = spreadsFailingJoint(d);
+  const u = spread ? rng.next() : 0;
+  let fall: TaskSpec | null = null;
   for (let i = 0; i < TRIES * 3; i++) {
     const scene = randomStack(rng, d);
     if (needs.exact) {
@@ -414,8 +430,16 @@ export function stackPredict(rng: Rng, d: Difficulty, needs: PredictNeeds): Task
     if (!needs.exact && (v.edge || stackMargin(scene) < p.stackMargin)) continue;
     const answer = stackAnswer(v);
     if (needs.trap && naiveStack(scene) === answer) continue;
-    return predictTask('stack-predict', { bench: 'stack', s: scene }, STACK_ANSWERS.indexOf(answer), null);
+    const task = predictTask('stack-predict', { bench: 'stack', s: scene }, STACK_ANSWERS.indexOf(answer), null);
+    if (!spread) return task;
+    if (v.stands) {
+      if (fall === null) return task;
+      continue;
+    }
+    if (v.failing[0]!.joint === targetJoint(u, scene.bodies.length)) return task;
+    fall ??= task;
   }
+  if (fall) return fall;
   const scene: StackScene = { bodies: [{ kind: 'block', left: -14 }, { kind: 'block', left: -4 }], cubes: [] };
   return predictTask('stack-predict', { bench: 'stack', s: scene }, 2, null);
 }
