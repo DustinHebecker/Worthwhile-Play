@@ -3,10 +3,13 @@ import { decodeRows } from './art/bake';
 import { heightOf, rasterise, type Tier } from './art/raster';
 import { ART_DIFFICULTIES, widthFor } from './art/sizes';
 import type { Motif } from './art/types';
-import { createFrontIndex, engineOf, exposedCounts, fullCells, hitsOf, indexFronts, launch, replayCursor, tableOf, type Cells, type Engine } from './engine';
+import { cloneCells, createFrontIndex, engineOf, exposedCounts, fullCells, hitsOf, indexFronts, launch, replayCursor, startCursor, step, tableOf, type Cells, type Engine, type Table } from './engine';
+import { identitiesOf } from './hint';
 import { BAKED } from './motifs/baked';
 import { MOTIFS, findMotif } from './motifs/index';
 import { POLICIES, runPolicy, type Budget, type PolicyId } from './policies';
+import { provable } from './prove';
+import { keyOf } from './solver';
 import { toDifficulty, type Difficulty, type Move, type PeelState, type Picture, type Shooter } from './rules';
 
 /**
@@ -36,12 +39,20 @@ export interface Level {
    * in a lane make the game easy). Three in a row and a lane far longer than the shortest cost far more.
    */
   sameColour: number;
+  /**
+   * Waiting horizon (design v3 § 2.2): a shooter parked for this many construction steps is overdue; it is relaunched
+   * first, steered back into reach, and no decoy is placed meanwhile. Decoys only take colours reachable now.
+   * Infinity keeps the v2 rules.
+   */
+  horizon: number;
+  /** Opening guard (design v3 § 2.3): every first move other than the witness's must still be finishable. */
+  guard: boolean;
 }
 
 export const LEVELS: Readonly<Record<Difficulty, Level>> = {
-  easy: { tier: 1, lanes: 4, slots: 5, pack: [10, 40], decoy: 0.06, decoyPack: [8, 30], minShots: 4, candidates: 3, budget: 6000, sameColour: 10 },
-  medium: { tier: 2, lanes: 4, slots: 5, pack: [10, 60], decoy: 0.16, decoyPack: [10, 40], minShots: 4, candidates: 4, budget: 8000, sameColour: 40 },
-  hard: { tier: 3, lanes: 4, slots: 4, pack: [12, 90], decoy: 0.3, decoyPack: [24, 90], minShots: 4, candidates: 4, budget: 10000, sameColour: 100 }
+  easy: { tier: 1, lanes: 4, slots: 5, pack: [10, 40], decoy: 0.06, decoyPack: [8, 30], minShots: 4, candidates: 3, budget: 6000, sameColour: 10, horizon: Infinity, guard: false },
+  medium: { tier: 2, lanes: 4, slots: 5, pack: [10, 60], decoy: 0.16, decoyPack: [10, 40], minShots: 4, candidates: 4, budget: 8000, sameColour: 40, horizon: Infinity, guard: false },
+  hard: { tier: 3, lanes: 4, slots: 4, pack: [12, 90], decoy: 0.3, decoyPack: [24, 90], minShots: 4, candidates: 6, budget: 30000, sameColour: 100, horizon: 20, guard: true }
 };
 
 const decoded = new Map<string, string[]>();
@@ -81,6 +92,8 @@ export interface Construction {
   decoys: number;
   /** Launches spent. */
   launches: number;
+  /** Per witness move, why the construction made it (for the property tests of design v3 § 6.1). */
+  kinds: ('relaunch' | 'decoy' | 'fit')[];
 }
 
 /** Weighted pick by integer weights (one rng draw). */
@@ -107,9 +120,12 @@ export function construct(engine: Engine, level: Level, rng: Rng): Construction 
   for (const c of engine.colour) remaining[c] = (remaining[c] as number) + 1;
   remaining[0] = 0;
   const reserved = new Int32Array(colours + 1);
-  const slots: ({ c: number; n: number } | null)[] = Array.from({ length: level.slots }, () => null);
+  /** Parked shooters; `since` is the construction step (witness event index) when it last went to its slot. */
+  const slots: ({ c: number; n: number; since: number } | null)[] = Array.from({ length: level.slots }, () => null);
+  const bounded = Number.isFinite(level.horizon);
   const draws: Draw[] = [];
   const events: Event[] = [];
+  const kinds: Construction['kinds'] = [];
   let launches = 0;
   let decoys = 0;
   // The fronts of `cells`, indexed once per step when a trial needs them: trials leave the cells as they were.
@@ -122,14 +138,16 @@ export function construct(engine: Engine, level: Level, rng: Rng): Construction 
     return hitsOf(engine, cells, c, n, fronts);
   };
   const relaunch = (j: number) => {
-    const s = slots[j] as { c: number; n: number };
+    const s = slots[j] as { c: number; n: number; since: number };
     launches++;
     const h = launch(engine, cells, s.c, s.n);
     remaining[s.c] = (remaining[s.c] as number) - h;
     reserved[s.c] = (reserved[s.c] as number) - h;
     s.n -= h;
+    s.since = events.length;
     if (s.n === 0) slots[j] = null;
     events.push({ kind: 'S', slot: j });
+    kinds.push('relaunch');
   };
   for (let guard = 0; cells.left > 0 && guard < 20000; guard++) {
     const exposed = exposedCounts(engine, cells);
@@ -137,16 +155,31 @@ export function construct(engine: Engine, level: Level, rng: Rng): Construction 
     const free = slots.indexOf(null);
     const ready: number[] = [];
     slots.forEach((s, j) => s && (exposed[s.c] as number) > 0 && ready.push(j));
+    // Bounded waiting (design v3 § 2.2): overdue shooters come back first.
+    const overdue: number[] = [];
+    if (bounded) slots.forEach((s, j) => s && events.length - s.since >= level.horizon && overdue.push(j));
+    const overdueReady = overdue.filter((j) => ready.includes(j));
+    if (overdueReady.length > 0) {
+      relaunch(rng.pick(overdueReady));
+      continue;
+    }
     if (ready.length > 0 && (free < 0 || rng.next() < 0.6)) {
       relaunch(rng.pick(ready));
       continue;
     }
-    if (free >= 0 && rng.next() < level.decoy) {
+    if (free >= 0 && overdue.length === 0 && rng.next() < level.decoy) {
       const candidates: number[] = [];
-      for (let c = 1; c <= colours; c++) if ((remaining[c] as number) - (reserved[c] as number) >= level.decoyPack[0]) candidates.push(c);
+      for (let c = 1; c <= colours; c++) {
+        if ((remaining[c] as number) - (reserved[c] as number) < level.decoyPack[0]) continue;
+        // Bounded: only colours reachable now, so a decoy hits something first and need not wait long.
+        if (bounded && (exposed[c] as number) === 0) continue;
+        candidates.push(c);
+      }
       if (candidates.length > 0) {
-        // Weighted towards colours exposed least: those wait longest.
-        const c = weighted(rng, candidates, (x) => ((exposed[x] as number) === 0 ? 6 : (exposed[x] as number) < 4 ? 3 : 1));
+        // v2: weighted towards colours exposed least (those wait longest). Bounded: big colour pools first.
+        const c = bounded
+          ? weighted(rng, candidates, (x) => Math.max(1, Math.min(20, Math.floor(((remaining[x] as number) - (reserved[x] as number)) / 16))))
+          : weighted(rng, candidates, (x) => ((exposed[x] as number) === 0 ? 6 : (exposed[x] as number) < 4 ? 3 : 1));
         const a = Math.min(rng.int(level.decoyPack[0], level.decoyPack[1]), (remaining[c] as number) - (reserved[c] as number));
         const h = hitsOn(c, a);
         if (h < a) {
@@ -154,9 +187,10 @@ export function construct(engine: Engine, level: Level, rng: Rng): Construction 
           launch(engine, cells, c, a);
           remaining[c] = (remaining[c] as number) - h;
           reserved[c] = (reserved[c] as number) + a - h;
-          slots[free] = { c, n: a - h };
+          slots[free] = { c, n: a - h, since: events.length };
           draws.push({ c, n: a });
           events.push({ kind: 'L', draw: draws.length - 1 });
+          kinds.push('decoy');
           decoys++;
           continue;
         }
@@ -177,9 +211,23 @@ export function construct(engine: Engine, level: Level, rng: Rng): Construction 
       relaunch(rng.pick(ready));
       continue;
     }
+    // Steering (bounded): while a shooter is overdue and out of reach, prefer launches that bring its colour to the
+    // edge (a trial launch on a copy each, counted). A preference, never a dead end: without such a launch, any.
+    let pool = options;
+    if (overdue.length > 0) {
+      const wanted = overdue.map((j) => (slots[j] as { c: number }).c);
+      const steering = options.filter((o) => {
+        launches++;
+        const copy = cloneCells(cells);
+        launch(engine, copy, o.c, Math.min(target, o.cap));
+        const after = exposedCounts(engine, copy);
+        return wanted.some((c) => (after[c] as number) > 0);
+      });
+      if (steering.length > 0) pool = steering;
+    }
     const enough = Math.max(level.minShots, level.pack[0]);
-    const good = options.filter((o) => o.h >= enough || o.h === o.cap);
-    const chosen = good.length > 0 ? weighted(rng, good, (o) => o.h) : options.reduce((x, o) => (o.h > x.h ? o : x));
+    const good = pool.filter((o) => o.h >= enough || o.h === o.cap);
+    const chosen = good.length > 0 ? weighted(rng, good, (o) => o.h) : pool.reduce((x, o) => (o.h > x.h ? o : x));
     // Tiny shooters make dull play: a shooter that would hit fewer than `minShots`, or leave a remainder of fewer
     // than `minShots` cells of its colour, takes more shots and waits in a free slot with the rest instead.
     let n = chosen.h;
@@ -192,10 +240,11 @@ export function construct(engine: Engine, level: Level, rng: Rng): Construction 
     remaining[chosen.c] = (remaining[chosen.c] as number) - hit;
     if (n > hit) {
       reserved[chosen.c] = (reserved[chosen.c] as number) + n - hit;
-      slots[freeNow] = { c: chosen.c, n: n - hit };
+      slots[freeNow] = { c: chosen.c, n: n - hit, since: events.length };
     }
     draws.push({ c: chosen.c, n });
     events.push({ kind: 'L', draw: draws.length - 1 });
+    kinds.push('fit');
   }
   // Deal the draws into lanes in draw order. Any lane keeps the witness valid (a lane is launched in draw order), so
   // the lane is chosen to interleave colours: not behind the same colour (never three in a row), not beside the
@@ -225,7 +274,7 @@ export function construct(engine: Engine, level: Level, rng: Rng): Construction 
   const shooters: Shooter[][] = lanes.map(() => []);
   draws.forEach((d, k) => (shooters[laneOf[k] as number] as Shooter[]).push({ c: engine.keys[d.c - 1] as string, n: d.n }));
   const witness = events.map((e) => (e.kind === 'L' ? `L${laneOf[e.draw]}` : `S${e.slot}`));
-  return { lanes: shooters, witness, decoys, launches };
+  return { lanes: shooters, witness, decoys, launches, kinds };
 }
 
 export type Verdict = Partial<Record<PolicyId, 'solved' | 'stuck' | 'unknown'>>;
@@ -268,6 +317,50 @@ export function verdict(table: ReturnType<typeof tableOf>, difficulty: Difficult
   return v;
 }
 
+/** How hard the opening guard looks for a way on from each position it checks (src/prove.ts). */
+export const GUARD = { rollouts: 12, nodes: 600 } as const;
+/** The opening guard also covers the first moves of each rule of thumb up to this many moves. */
+export const GUARD_DEPTH = 5;
+const GUARD_POLICIES: readonly PolicyId[] = ['obvious', 'tidy', 'slotsFirst', 'cautious'];
+
+/**
+ * The opening guard (design v3 § 2.3): a way to finish must be found from the position after every first move other
+ * than the witness's, and after the first `GUARD_DEPTH` moves of each deterministic rule of thumb (P1–P4; a position
+ * that can be finished means every earlier one on its way can be, too): "follow the plan", noisy rollouts around it,
+ * then a small plan-guided search. A found solution proves it. Counted launches; out of budget counts as not proven.
+ */
+export function openingGuard(table: Table, witness: readonly Move[], budget: Budget): boolean {
+  const witnessIds = identitiesOf(table, witness);
+  /** Positions proven (by key): a position reached in another order needs no second proof. */
+  const proven = new Set<string>();
+  const firstMoves = new Set<Move>([witness[0] as Move]);
+  const check = (moves: readonly Move[], seed: number): boolean => {
+    if (moves.every((m, k) => witness[k] === m)) return true;
+    const from = replayCursor(table, moves);
+    if (!from) return false;
+    const key = keyOf(from);
+    if (from.cells.left === 0 || proven.has(key)) return true;
+    if (!provable(table, from, witnessIds, identitiesOf(table, moves), budget, { ...GUARD, seed })) return false;
+    proven.add(key);
+    return true;
+  };
+  // The rules of thumb first: a proven opening also proves its first move (every position on the way can be finished).
+  for (const [k, id] of GUARD_POLICIES.entries()) {
+    if (budget.left <= 0) return false;
+    const opening = runPolicy(table, id, 0, budget, undefined, GUARD_DEPTH).moves;
+    // A rule of thumb that is stuck within the first moves has no way on: the guard fails.
+    if (opening.length < GUARD_DEPTH && replayCursor(table, opening)?.cells.left !== 0) return false;
+    if (!check(opening, 11 + k)) return false;
+    if (opening[0]) firstMoves.add(opening[0]);
+  }
+  for (let i = 0; i < table.lanes.length; i++) {
+    const move = `L${i}`;
+    if (firstMoves.has(move) || !step(table, startCursor(table), 'L', i, false).legal) continue;
+    if (!check([move], i + 1)) return false;
+  }
+  return true;
+}
+
 export interface Generated {
   motif: Motif;
   picture: Picture;
@@ -280,6 +373,8 @@ export interface Generated {
   decoys: number;
   /** Counted launches spent (construction and verification). */
   launches: number;
+  /** The opening guard passed (undefined where the level has none, or the candidate failed earlier). */
+  guarded?: boolean;
 }
 
 /** Generates one game for a motif and difficulty (design v2 § 3.4). */
@@ -295,9 +390,18 @@ export function generate(motif: Motif, difficulty: Difficulty, rng: Rng, seed = 
     budget.left -= c.launches;
     const table = tableOf(engine, c.lanes, level.slots);
     const v = budget.left > 0 ? verdict(table, difficulty, seed + k, budget) : {};
-    const ok = budget.left >= 0 && accepts(difficulty, v);
-    const s = score(difficulty, v);
-    const g = { motif, picture, lanes: c.lanes, slots: level.slots, witness: c.witness, verdict: v, accepted: ok, candidates: k, decoys: c.decoys, launches: level.budget - budget.left, score: s };
+    let ok = budget.left >= 0 && accepts(difficulty, v);
+    let s = score(difficulty, v);
+    let guarded: boolean | undefined;
+    if (ok && level.guard) {
+      guarded = openingGuard(table, c.witness, budget);
+      // A candidate whose opening may decide the game ranks below a guarded one that one rule of thumb solves.
+      if (!guarded || budget.left < 0) {
+        ok = false;
+        s -= 2;
+      }
+    }
+    const g = { motif, picture, lanes: c.lanes, slots: level.slots, witness: c.witness, verdict: v, accepted: ok, candidates: k, decoys: c.decoys, launches: level.budget - budget.left, score: s, ...(guarded === undefined ? {} : { guarded }) };
     if (ok) return g;
     if (!best || s > best.score) best = g;
     best = { ...best, candidates: k, launches: level.budget - budget.left };

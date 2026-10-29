@@ -94,7 +94,6 @@ export const es: Catalogue = {
   'colours.heading': 'Colores',
   'colours.row': 'quedan {left} · en el borde ahora {edge} · disparos en espera {shots}',
   'options.heading': 'Visualización',
-  'options.animation': 'Animación',
   'options.allSymbols': 'Símbolos en todos los píxeles (solo en vista grande o en pantallas anchas)',
   'options.confirm': 'Confirmar antes de lanzar (la primera pulsación muestra la vista previa)',
   'help.keys': 'Teclado: Tab a los lugares de espera o a las filas, las flechas eligen, Intro o Espacio lanza, Esc borra la vista previa, Ctrl+Z deshace.',
@@ -142,5 +141,17 @@ export const es: Catalogue = {
   'symbol.halfDisc': 'semicírculo',
   'symbol.twoDots': 'dos puntos',
   'symbol.uprightBar': 'barra vertical',
-  'symbol.chevron': 'cheurón'
+  'symbol.chevron': 'cheurón',
+  'options.peel': 'Pelado',
+  'options.peelSlow': 'Lento: los tiradores dan la vuelta y pelan píxel a píxel',
+  'options.peelQuick': 'Rápido',
+  'options.peelOff': 'Desactivado',
+  'options.peelReduced': 'Desactivado porque tu dispositivo pide menos movimiento.',
+  'action.finishPeeling': 'Terminar de pelar',
+  'action.finishPeelingCount': 'Terminar de pelar ({n})',
+  'action.display': 'Vista',
+  'status.startShort': 'Elige un tirador: su color se ilumina y se marcan los píxeles que quitaría.',
+  'stuck.back': 'No queda ninguna jugada. Volver a la jugada {k} funciona.',
+  'stuck.backButton': 'Volver a la jugada {k}',
+  'notice.close': 'Cerrar'
 };

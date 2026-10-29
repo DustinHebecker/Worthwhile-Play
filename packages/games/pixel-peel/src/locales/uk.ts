@@ -94,7 +94,6 @@ export const uk: Catalogue = {
   'colours.heading': 'Кольори',
   'colours.row': 'залишилося {left} · зараз з краю {edge} · пострілів у запасі {shots}',
   'options.heading': 'Відображення',
-  'options.animation': 'Анімація',
   'options.allSymbols': 'Символи на всіх пікселях (лише у великому вигляді або на широкому екрані)',
   'options.confirm': 'Підтверджувати перед відправленням (перше натискання показує попередній перегляд)',
   'help.keys': 'Клавіатура: Tab — до місць очікування або рядів, стрілки — вибір, Enter або пробіл — відправити, Esc — прибрати попередній перегляд, Ctrl+Z — скасувати.',
@@ -142,5 +141,17 @@ export const uk: Catalogue = {
   'symbol.halfDisc': 'півколо',
   'symbol.twoDots': 'дві крапки',
   'symbol.uprightBar': 'вертикальна смуга',
-  'symbol.chevron': 'шеврон'
+  'symbol.chevron': 'шеврон',
+  'options.peel': 'Очищення',
+  'options.peelSlow': 'Повільно: стрільці обходять картинку й знімають піксель за пікселем',
+  'options.peelQuick': 'Швидко',
+  'options.peelOff': 'Вимк.',
+  'options.peelReduced': 'Вимк.: пристрій просить менше руху.',
+  'action.finishPeeling': 'Завершити очищення',
+  'action.finishPeelingCount': 'Завершити очищення ({n})',
+  'action.display': 'Вигляд',
+  'status.startShort': 'Обери стрільця: його колір підсвітиться, а пікселі, які він прибере, буде позначено.',
+  'stuck.back': 'Ходів більше немає. Повернення до ходу {k} спрацює.',
+  'stuck.backButton': 'Повернутися до ходу {k}',
+  'notice.close': 'Закрити'
 };

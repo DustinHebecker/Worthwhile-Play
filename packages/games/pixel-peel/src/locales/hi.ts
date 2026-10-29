@@ -94,7 +94,6 @@ export const hi: Catalogue = {
   'colours.heading': 'रंग',
   'colours.row': 'बचे {left} · अभी किनारे पर {edge} · प्रतीक्षारत निशाने {shots}',
   'options.heading': 'प्रदर्शन',
-  'options.animation': 'एनिमेशन',
   'options.allSymbols': 'सभी पिक्सेलों पर चिह्न (केवल बड़े दृश्य में या चौड़ी स्क्रीन पर)',
   'options.confirm': 'भेजने से पहले पुष्टि करें (पहली बार दबाने पर पूर्वावलोकन दिखता है)',
   'help.keys': 'कीबोर्ड: Tab से प्रतीक्षा-स्थानों या कतारों पर जाएँ, तीर कुंजियों से चुनें, Enter या Space से भेजें, Esc से पूर्वावलोकन हटाएँ, Ctrl+Z से पूर्ववत करें।',
@@ -142,5 +141,17 @@ export const hi: Catalogue = {
   'symbol.halfDisc': 'अर्धवृत्त',
   'symbol.twoDots': 'दो बिंदु',
   'symbol.uprightBar': 'खड़ी पट्टी',
-  'symbol.chevron': 'शेवरॉन'
+  'symbol.chevron': 'शेवरॉन',
+  'options.peel': 'छीलना',
+  'options.peelSlow': 'धीमा: निशानेबाज़ चित्र के चारों ओर घूमकर एक-एक पिक्सेल छीलते हैं',
+  'options.peelQuick': 'तेज़',
+  'options.peelOff': 'बंद',
+  'options.peelReduced': 'बंद: आपका डिवाइस कम गति चाहता है।',
+  'action.finishPeeling': 'छीलना पूरा करें',
+  'action.finishPeelingCount': 'छीलना पूरा करें ({n})',
+  'action.display': 'प्रदर्शन',
+  'status.startShort': 'कोई निशानेबाज़ चुनें: उसका रंग चमक उठता है और जो पिक्सेल वह हटाएगा, वे चिह्नित हो जाते हैं।',
+  'stuck.back': 'कोई चाल नहीं बची। चाल {k} पर लौटने से काम बनेगा।',
+  'stuck.backButton': 'चाल {k} पर लौटें',
+  'notice.close': 'बंद करें'
 };

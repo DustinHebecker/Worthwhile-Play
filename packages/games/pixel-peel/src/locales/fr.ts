@@ -94,7 +94,6 @@ export const fr: Catalogue = {
   'colours.heading': 'Couleurs',
   'colours.row': 'restants {left} · au bord maintenant {edge} · tirs en attente {shots}',
   'options.heading': 'Affichage',
-  'options.animation': 'Animation',
   'options.allSymbols': 'Symboles sur tous les pixels (seulement en grande vue ou sur écran large)',
   'options.confirm': 'Confirmer avant de lancer (le premier appui montre l’aperçu)',
   'help.keys': 'Clavier : Tab vers les places d’attente ou les files, les flèches choisissent, Entrée ou Espace lance, Échap efface l’aperçu, Ctrl+Z annule.',
@@ -142,5 +141,17 @@ export const fr: Catalogue = {
   'symbol.halfDisc': 'demi-disque',
   'symbol.twoDots': 'deux points',
   'symbol.uprightBar': 'barre verticale',
-  'symbol.chevron': 'chevron'
+  'symbol.chevron': 'chevron',
+  'options.peel': 'Épluchage',
+  'options.peelSlow': 'Lent : les tireurs font le tour et épluchent pixel par pixel',
+  'options.peelQuick': 'Rapide',
+  'options.peelOff': 'Désactivé',
+  'options.peelReduced': 'Désactivé : l’appareil demande moins d’animations.',
+  'action.finishPeeling': 'Terminer l’épluchage',
+  'action.finishPeelingCount': 'Terminer l’épluchage ({n})',
+  'action.display': 'Affichage',
+  'status.startShort': 'Choisis un tireur : sa couleur s’éclaire et les pixels qu’il retirerait sont marqués.',
+  'stuck.back': 'Plus aucun coup possible. Revenir au coup {k} fonctionne.',
+  'stuck.backButton': 'Revenir au coup {k}',
+  'notice.close': 'Fermer'
 };

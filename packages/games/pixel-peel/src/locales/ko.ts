@@ -94,7 +94,6 @@ export const ko: Catalogue = {
   'colours.heading': '색깔',
   'colours.row': '남음 {left} · 지금 가장자리 {edge} · 남은 사격 {shots}',
   'options.heading': '표시',
-  'options.animation': '애니메이션',
   'options.allSymbols': '모든 픽셀에 기호 표시 (크게 보기나 넓은 화면에서만)',
   'options.confirm': '보내기 전에 확인 (처음 누르면 미리 보기 표시)',
   'help.keys': '키보드: Tab으로 대기 자리나 줄로 이동, 화살표 키로 선택, Enter 또는 Space로 보내기, Esc로 미리 보기 지우기, Ctrl+Z로 실행 취소.',
@@ -142,5 +141,17 @@ export const ko: Catalogue = {
   'symbol.halfDisc': '반원',
   'symbol.twoDots': '점 두 개',
   'symbol.uprightBar': '세로 막대',
-  'symbol.chevron': '꺾쇠'
+  'symbol.chevron': '꺾쇠',
+  'options.peel': '벗기기',
+  'options.peelSlow': '느리게: 사수가 그림 둘레를 돌며 픽셀을 하나씩 벗겨 냅니다',
+  'options.peelQuick': '빠르게',
+  'options.peelOff': '끄기',
+  'options.peelReduced': '꺼짐: 기기에서 동작 줄이기를 요청합니다.',
+  'action.finishPeeling': '벗기기 바로 끝내기',
+  'action.finishPeelingCount': '벗기기 바로 끝내기 ({n})',
+  'action.display': '표시',
+  'status.startShort': '사수를 고르세요. 그 색이 밝게 표시되고 없앨 픽셀에 표시가 생깁니다.',
+  'stuck.back': '더 둘 수가 없습니다. {k}번째 수로 돌아가면 됩니다.',
+  'stuck.backButton': '{k}번째 수로 돌아가기',
+  'notice.close': '닫기'
 };

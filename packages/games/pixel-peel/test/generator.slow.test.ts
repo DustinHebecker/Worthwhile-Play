@@ -5,7 +5,8 @@ import { createInitial, generate, LEVELS, witnessSolves } from '../src/generate'
 import { widthFor } from '../src/art/sizes';
 import { MOTIFS } from '../src/motifs/index';
 import { POLICIES, runPolicy } from '../src/policies';
-import { DIFFICULTIES, isPeelState, LIMITS, type Difficulty, type Move, type Picture, type Shooter } from '../src/rules';
+import { DIFFICULTIES, isPeelState, LIMITS, tableOfState, type Difficulty, type Move, type Picture, type Shooter } from '../src/rules';
+import { doomOf, QUICK_ORACLE } from './doom';
 
 /**
  * The long generator tests (ADR 0021: `*.slow.test.ts` runs in `pnpm test` and CI, not under Stryker): every motif at
@@ -84,14 +85,17 @@ describe('generator over every motif (design v2 § 3)', () => {
     longestRun: number;
     pairs: number;
     samePairs: number;
+    /** Accepted games whose opening guard did not pass (design v3 § 2.3; hard only). */
+    unguarded: number;
   }
-  const tally = (): Tally => ({ n: 0, accepted: 0, obviousFails: 0, allFail: 0, small: 0, shooters: 0, fullSlots: 0, parked: 0, slotEntries: [], longestRun: 0, pairs: 0, samePairs: 0 });
+  const tally = (): Tally => ({ n: 0, accepted: 0, obviousFails: 0, allFail: 0, small: 0, shooters: 0, fullSlots: 0, parked: 0, slotEntries: [], longestRun: 0, pairs: 0, samePairs: 0, unguarded: 0 });
   const gather = (t: Tally, d: Difficulty, motifs: typeof MOTIFS) => {
     for (const motif of motifs) {
       for (let seed = 1; seed <= 6; seed++) {
         const g = generate(motif, d, createRng(seed * 7919), seed);
         t.n++;
         if (g.accepted) t.accepted++;
+        if (g.accepted && LEVELS[d].guard && g.guarded !== true) t.unguarded++;
         const table = tableOf(engineOf(g.picture), g.lanes, g.slots);
         const results = POLICIES.map((p) => runPolicy(table, p, seed, { left: 1e9 }).result);
         if (results[0] !== 'solved') t.obviousFails++;
@@ -126,7 +130,8 @@ describe('generator over every motif (design v2 § 3)', () => {
     parked: t.parked / t.n,
     median: [...t.slotEntries].sort((a, b) => a - b)[Math.floor(t.slotEntries.length / 2)] as number,
     longestRun: t.longestRun,
-    sameShare: t.samePairs / t.pairs
+    sameShare: t.samePairs / t.pairs,
+    unguarded: t.unguarded
   });
   const CHUNK = 5;
   const checks: Record<Difficulty, (r: ReturnType<typeof summary>) => void> = {
@@ -144,13 +149,16 @@ describe('generator over every motif (design v2 § 3)', () => {
       expect(r.longestRun).toBeLessThanOrEqual(2);
       expect(r.sameShare).toBeLessThanOrEqual(0.02);
     },
+    // Design v3 § 2.2: with the waiting horizon all K places are full at least once in ≥ 60 % (was ≥ 90 %), and
+    // zero-hit parks in the witness are gone (decoys hit something first); the opening guard holds in every accepted
+    // game.
     hard: (r) => {
       expect(r.accepted).toBeGreaterThanOrEqual(0.9);
       expect(r.obviousFails).toBeGreaterThanOrEqual(0.95);
       expect(r.allFail).toBeGreaterThanOrEqual(0.9);
       expect(r.median).toBeGreaterThanOrEqual(6);
-      expect(r.fullSlots).toBeGreaterThanOrEqual(0.9);
-      expect(r.parked).toBeGreaterThanOrEqual(0.6);
+      expect(r.fullSlots).toBeGreaterThanOrEqual(0.6);
+      expect(r.unguarded).toBe(0);
       expect(r.longestRun).toBeLessThanOrEqual(2);
       // Two of one colour in a row only where it cannot be avoided.
       expect(r.sameShare).toBeLessThanOrEqual(0.01);
@@ -165,10 +173,29 @@ describe('generator over every motif (design v2 § 3)', () => {
       it(`${d}: the rates hold`, () => {
         expect(t.n).toBe(MOTIFS.length * 6);
         const r = summary(t);
+        console.info(`pixel-peel ${d}:`, JSON.stringify(r));
         checks[d](r);
         expect(r.small).toBeLessThanOrEqual(0.08);
       });
     });
   }
 
+
+  /**
+   * The doom benchmark in small (design v3 § 6.1; the full one is scripts/doom-report.ts): on 4 fixed hard games the
+   * obvious and the tidy rule get stuck; with the quick oracle the mistake shows within 25 moves each time.
+   */
+  it('hard: a wrong decision shows within 25 moves (4 games × 2 rules of thumb, quick oracle)', () => {
+    for (const [motif, seed] of [['red-fox', 21], ['winter-village', 22], ['tiger', 23], ['fjord', 24]] as const) {
+      const state = createInitial(seed, 'hard', motif);
+      const table = tableOfState(state);
+      for (const player of ['obvious', 'tidy'] as const) {
+        const r = runPolicy(table, player, state.seed, { left: 1e8 });
+        if (r.result !== 'stuck') continue;
+        const d = doomOf(state, r.moves, QUICK_ORACLE);
+        expect(d.delay, `${motif} ${seed} ${player}: fatal move ${d.fatal}`).toBeLessThanOrEqual(25);
+        expect(d.fatal, `${motif} ${seed} ${player}`).toBeGreaterThan(5);
+      }
+    }
+  });
 });

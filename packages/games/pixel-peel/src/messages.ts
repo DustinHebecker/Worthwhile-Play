@@ -24,7 +24,8 @@ import { zhHans } from './locales/zh-Hans';
  * motif needs no message change. The number of colours is shown in the game's title line (`title.colours`), where it
  * is the number actually played.
  * Translator notes: a "shooter" is a small token that runs around the picture and removes pixels of its colour;
- * "waiting place" is a parking spot for a shooter that still has shots; "parking" means moving a shooter aside.
+ * "waiting place" is a parking spot for a shooter that still has shots; "parking" means moving a shooter aside;
+ * "peeling" (display option) is how a launch is drawn: slowly pixel by pixel, quickly, or not at all.
  * Colour names are lower case where the language allows, because they appear inside sentences.
  */
 const CATALOGUES: Record<Locale, Catalogue> = { en, de, nl, es, fr, ru, 'zh-Hans': zhHans, ko, ja, ar, pt, it, pl, tr, uk, hi };

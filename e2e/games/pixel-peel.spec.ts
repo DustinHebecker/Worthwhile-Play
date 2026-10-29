@@ -1,6 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
 import { expectResumeAfterReload, readSave, startGame } from '../../packages/testing/src/e2e';
-import { position, presentCount, preview, type PeelState } from '../../packages/games/pixel-peel/src/rules';
+import { position, presentCount, preview, tableOfState, type PeelState } from '../../packages/games/pixel-peel/src/rules';
+import { runPolicy } from '../../packages/games/pixel-peel/src/policies';
+import { messages } from '../../packages/games/pixel-peel/src/messages';
+import { COMMON_MESSAGES } from '../../packages/localization/src/common-messages';
 
 const ID = 'pixel-peel';
 const root = (page: Page) => page.getByTestId('game-root');
@@ -12,9 +15,15 @@ async function savedState(page: Page): Promise<PeelState> {
   return saved(page);
 }
 
-// Most tests launch with one press: "Confirm before launch" (on by default for touch screens) is switched off here.
+// Most tests launch with one press: "Confirm before launch" (on by default for touch screens) is switched off here,
+// and Peeling is Off (the tests of slow peeling switch it on). Only on the first load of a test: after a reload the
+// game reads back what it stored.
 test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem('wp:pref:pixel-peel:display', JSON.stringify({ confirm: false })));
+  await page.addInitScript(() => {
+    if (sessionStorage.getItem('pp-test-prefs')) return;
+    sessionStorage.setItem('pp-test-prefs', '1');
+    localStorage.setItem('wp:pref:pixel-peel:display', JSON.stringify({ confirm: false, peel: 'off' }));
+  });
 });
 
 const buttonFor = (page: Page, move: string) => root(page).getByTestId(move.startsWith('L') ? `pp-lane-${move.slice(1)}` : `pp-slot-${move.slice(1)}`);
@@ -213,12 +222,12 @@ async function expectSideBySide(page: Page, rtl = false): Promise<void> {
 }
 
 test('pixel-peel: the picture fits the screen height; held sideways it sits beside the lanes', async ({ page }) => {
-  // Upright phone: the picture sticks to the top and takes at most half the height.
+  // Upright phone: the picture sticks to the top and leaves room for the rest of the play unit.
   await page.setViewportSize({ width: 360, height: 640 });
   await startGame(page, ID, { difficulty: 'hard', settings: { motif: 'tiger' } });
   await savedState(page);
-  const board = root(page).getByTestId('pp-board');
-  expect(await board.evaluate((el) => getComputedStyle(el).position)).toBe('sticky');
+  const frame = root(page).getByTestId('pp-frame');
+  expect(await frame.evaluate((el) => getComputedStyle(el).position)).toBe('sticky');
   expect((await root(page).getByTestId('pp-canvas').boundingBox())?.height ?? 999).toBeLessThanOrEqual(320);
   // Sideways (740 × 360): the picture fits the height and moves beside the lanes.
   await page.setViewportSize({ width: 740, height: 360 });
@@ -308,4 +317,276 @@ test('pixel-peel: in Arabic the lanes start at inline-start and the picture is n
   await root(page).getByTestId('pp-lane-0').focus();
   await page.keyboard.press('ArrowLeft');
   await expect(root(page).getByTestId('pp-lane-1')).toBeFocused();
+});
+
+// --- Design v3 § 4: one screen of play on a phone held upright -------------------------------------------------------
+
+/** The play unit's parts that must be on screen together (owner, 2026-10-29), plus the title line and the actions. */
+const UNIT = ['pp-title', 'pp-canvas', 'pp-status', 'pp-actions'] as const;
+
+async function unitBoxes(page: Page): Promise<Record<string, { top: number; bottom: number; left: number; right: number }>> {
+  return root(page).locator('.wp-pixel-peel').evaluate((el) => {
+    const out: Record<string, { top: number; bottom: number; left: number; right: number }> = {};
+    const add = (name: string, node: Element | null) => {
+      if (!node) return;
+      const r = node.getBoundingClientRect();
+      out[name] = { top: r.top, bottom: r.bottom, left: r.left, right: r.right };
+    };
+    for (const id of ['pp-title', 'pp-canvas', 'pp-status', 'pp-actions']) add(id, el.querySelector(`[data-testid="${id}"]`));
+    el.querySelectorAll('.pp-slot-cell').forEach((cell, j) => add(`slot-${j}`, cell));
+    el.querySelectorAll('.pp-front-cell').forEach((cell, i) => add(`front-${i}`, cell));
+    el.querySelectorAll('.pp-chips').forEach((list, i) => add(`chips-${i}`, list));
+    return out;
+  });
+}
+
+function expectInViewport(boxes: Record<string, { top: number; bottom: number; left: number; right: number }>, width: number, height: number, label: string): void {
+  for (const [name, b] of Object.entries(boxes)) {
+    expect(b.top, `${label}: ${name} top`).toBeGreaterThanOrEqual(-0.5);
+    expect(b.bottom, `${label}: ${name} bottom`).toBeLessThanOrEqual(height + 0.5);
+    expect(b.left, `${label}: ${name} left`).toBeGreaterThanOrEqual(-0.5);
+    expect(b.right, `${label}: ${name} right`).toBeLessThanOrEqual(width + 0.5);
+  }
+  // In order, without overlap: title, picture, status, waiting places, lane fronts (with their chips), actions.
+  const order = ['pp-title', 'pp-canvas', 'pp-status', 'slot-0', 'front-0', 'chips-0', 'pp-actions'];
+  for (let k = 1; k < order.length; k++) expect(boxes[order[k]!]!.top, `${label}: ${order[k]} below ${order[k - 1]}`).toBeGreaterThanOrEqual(boxes[order[k - 1]!]!.bottom - 0.5);
+}
+
+for (const [width, height] of [[360, 640], [360, 740], [390, 844], [412, 915]] as const) {
+  for (const motif of ['winter-village', 'red-fox'] as const) {
+    test(`pixel-peel: at ${width} × ${height} (${motif}) picture, status, waiting places and lane fronts fit one screen through 10 moves`, async ({ page }, info) => {
+      test.skip(info.project.name !== 'desktop', 'viewport sizes are set explicitly');
+      await page.setViewportSize({ width, height });
+      await startGame(page, ID, { difficulty: 'hard', settings: { motif } });
+      const state = await savedState(page);
+      // After Start the unit is scrolled into view once (next frame).
+      await expect.poll(async () => {
+        const b = await unitBoxes(page);
+        return b['pp-title']!.top >= -0.5 && b['pp-actions']!.bottom <= height + 0.5;
+      }).toBe(true);
+      const first = await unitBoxes(page);
+      expectInViewport(first, width, height, 'start');
+      const scrollY = await page.evaluate(() => window.scrollY);
+      // Ten moves of the stored solution, at least up to its first shooter in a waiting place.
+      const n = Math.max(10, prefixWithPark(state, 1));
+      for (let k = 0; k < n; k++) {
+        await buttonFor(page, state.witness[k]!).click();
+        await expect.poll(async () => (await saved(page)).moves.length).toBe(k + 1);
+        const now = await unitBoxes(page);
+        expectInViewport(now, width, height, `after move ${k + 1}`);
+        for (const id of [...UNIT, 'slot-0', 'front-0', 'front-3']) {
+          expect(Math.abs(now[id]!.top - first[id]!.top), `${id} stays put after move ${k + 1}`).toBeLessThanOrEqual(1);
+        }
+        expect(await page.evaluate(() => window.scrollY), `no scrolling after move ${k + 1}`).toBe(scrollY);
+      }
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
+      for (const id of ['pp-lane-0', 'pp-lane-1', 'pp-lane-2', 'pp-lane-3', 'pp-undo', 'pp-hint', 'pp-display']) {
+        const box = (await root(page).getByTestId(id).boundingBox())!;
+        expect(box.width, id).toBeGreaterThanOrEqual(44);
+        expect(box.height, id).toBeGreaterThanOrEqual(44);
+      }
+    });
+  }
+}
+
+test('pixel-peel: on a phone the stuck notice is a card over the picture; the lanes do not move', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'viewport sizes are set explicitly');
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 360, height: 640 });
+  await startGame(page, ID, { difficulty: 'hard', settings: { motif: 'red-fox' } });
+  const state = await savedState(page);
+  // The obvious play (most hits first) gets stuck on hard; play it through the buttons.
+  const run = runPolicy(tableOfState(state), 'obvious', 1, { left: 1e8 });
+  expect(run.result).toBe('stuck');
+  const before = await unitBoxes(page);
+  for (const move of run.moves) await buttonFor(page, move).click();
+  await expect.poll(async () => (await saved(page)).moves.length).toBe(run.moves.length);
+  const card = root(page).getByTestId('pp-stuck');
+  await expect(card).toBeVisible();
+  const after = await unitBoxes(page);
+  for (const id of ['pp-status', 'slot-0', 'front-0', 'pp-actions']) expect(Math.abs(after[id]!.top - before[id]!.top), id).toBeLessThanOrEqual(1);
+  const frame = (await root(page).getByTestId('pp-frame').boundingBox())!;
+  // The card lies in the notice layer over the picture (it scrolls inside when it is taller).
+  const box = (await root(page).locator('.pp-notices').boundingBox())!;
+  expect(box.y).toBeGreaterThanOrEqual(frame.y - 0.5);
+  expect(box.y + box.height).toBeLessThanOrEqual(frame.y + frame.height + 0.5);
+  expect(box.y + box.height).toBeLessThanOrEqual(640);
+  // Esc closes it; nothing else changes.
+  await root(page).getByTestId('pp-stuck-close').click();
+  await expect(card).toBeHidden();
+  expect((await saved(page)).moves).toHaveLength(run.moves.length);
+});
+
+test('pixel-peel: the 3-line status holds the longest result and preview texts of every locale at 360 px', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'viewport sizes are set explicitly');
+  await page.setViewportSize({ width: 360, height: 640 });
+  await startGame(page, ID, { difficulty: 'hard', settings: { motif: 'red-fox' } });
+  await savedState(page);
+  for (const [locale, cat] of Object.entries(messages as Record<string, Record<string, string>>)) {
+    const colour = Object.entries(cat).filter(([k]) => k.startsWith('colour.')).map(([, v]) => v).reduce((a, b) => (b.length > a.length ? b : a));
+    const fill = (text: string, extra: Record<string, string> = {}) =>
+      text.replace(/\{(\w+)\}/g, (_, k: string) => extra[k] ?? ({ shooter: `${colour} 88`, n: '88', left: '88', slot: '4', lane: '4', k: '188' } as Record<string, string>)[k] ?? '88');
+    const reason = [cat['reason.noSlot']!, cat['reason.nothing']!].map((r) => fill(r)).reduce((a, b) => (b.length > a.length ? b : a));
+    const texts = Object.entries(cat)
+      .filter(([k]) => k.startsWith('preview.') || k.startsWith('result.') || k === 'hint.lane' || k === 'status.startShort')
+      .map(([k, v]) => fill(v, { reason }) + (k.startsWith('preview.') ? ` ${cat['confirm.again'] ?? ''}` : ''));
+    const overflow = await root(page).getByTestId('pp-status').evaluate((el, list) => {
+      const bad: string[] = [];
+      for (const text of list) {
+        el.textContent = text;
+        if (el.scrollHeight > el.clientHeight + 1) bad.push(text);
+      }
+      return bad;
+    }, texts);
+    expect(overflow, locale).toEqual([]);
+  }
+});
+
+test('pixel-peel: the action row holds Undo, Hint, Display and Finish peeling of every locale in one row at 360 px', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'viewport sizes are set explicitly');
+  await page.addInitScript(() => localStorage.setItem('wp:pref:pixel-peel:display', JSON.stringify({ confirm: false, peel: 'slow' })));
+  await page.setViewportSize({ width: 360, height: 640 });
+  await startGame(page, ID, { difficulty: 'hard', settings: { motif: 'red-fox' } });
+  const state = await savedState(page);
+  const height = (await root(page).getByTestId('pp-actions').boundingBox())!.height;
+  for (const move of state.witness.slice(0, 4)) await buttonFor(page, move).click();
+  await expect(root(page).getByTestId('pp-finish-peeling')).toBeVisible();
+  for (const [locale, cat] of Object.entries(messages as Record<string, Record<string, string>>)) {
+    const common = (COMMON_MESSAGES as Record<string, Record<string, string>>)[locale]!;
+    const labels = [common['common.undo']!, common['common.hint']!, cat['action.display']!, cat['action.finishPeeling']!];
+    const problems = await root(page).locator('.wp-pixel-peel').evaluate((el, [lang, list]) => {
+      el.setAttribute('lang', lang as string);
+      const out: string[] = [];
+      const row = el.querySelector('[data-testid="pp-actions"]') as HTMLElement;
+      const buttons = ['pp-undo', 'pp-hint', 'pp-display', 'pp-finish-peeling'].map((id) => el.querySelector(`[data-testid="${id}"]`) as HTMLElement);
+      buttons.forEach((b, i) => (b.querySelector('.pp-label')!.textContent = (list as string[])[i]!));
+      const r = row.getBoundingClientRect();
+      for (const b of buttons) {
+        const box = b.getBoundingClientRect();
+        if (box.left < r.left - 0.5 || box.right > r.right + 0.5) out.push(`${b.dataset.testid} outside the row`);
+        if (box.width < 44 || box.height < 44) out.push(`${b.dataset.testid} smaller than 44 px`);
+        const range = document.createRange();
+        range.selectNodeContents(b.querySelector('.pp-label')!);
+        if ([...range.getClientRects()].some((x) => x.left < box.left - 0.5 || x.right > box.right + 0.5)) out.push(`${b.dataset.testid}: "${b.textContent}" spills out`);
+      }
+      return { out, height: r.height, scroll: document.documentElement.scrollWidth - document.documentElement.clientWidth };
+    }, [locale, labels] as const);
+    expect(problems.out, locale).toEqual([]);
+    // Finish peeling comes and goes during play: the row (and so the play unit) keeps its height in every locale.
+    expect(problems.height, locale).toBeLessThanOrEqual(height + 0.5);
+    expect(problems.scroll, locale).toBeLessThanOrEqual(0);
+  }
+});
+
+// --- Design v3 § 3: slow peeling --------------------------------------------------------------------------------------
+
+const slowPeeling = async (page: Page) =>
+  page.addInitScript(() => {
+    if (sessionStorage.getItem('pp-test-slow')) return;
+    sessionStorage.setItem('pp-test-slow', '1');
+    localStorage.setItem('wp:pref:pixel-peel:display', JSON.stringify({ confirm: false, peel: 'slow' }));
+  });
+const board = (page: Page) => root(page).getByTestId('pp-board');
+const peelingCount = async (page: Page) => Number(await board(page).getAttribute('data-peeling'));
+
+test('pixel-peel: slow peeling — fast launches are saved at once and queue; Finish peeling ends the queue', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'viewport sizes are set explicitly');
+  await slowPeeling(page);
+  await page.setViewportSize({ width: 360, height: 640 });
+  await startGame(page, ID, { difficulty: 'hard', settings: { motif: 'winter-village' } });
+  const state = await savedState(page);
+  await expect(root(page).getByTestId('pp-option-peel-slow')).toBeChecked();
+  const actions = (await root(page).getByTestId('pp-actions').boundingBox())!;
+  for (const move of state.witness.slice(0, 3)) await buttonFor(page, move).click();
+  await expect.poll(async () => (await saved(page)).moves).toEqual(state.witness.slice(0, 3));
+  expect(await peelingCount(page)).toBeGreaterThan(0);
+  const finish = root(page).getByTestId('pp-finish-peeling');
+  await expect(finish).toBeVisible();
+  // The Finish peeling button joins the action row without moving anything.
+  const during = (await root(page).getByTestId('pp-actions').boundingBox())!;
+  expect(Math.abs(during.y - actions.y) + Math.abs(during.height - actions.height)).toBeLessThanOrEqual(1);
+  const box = (await finish.boundingBox())!;
+  expect(box.height).toBeGreaterThanOrEqual(44);
+  await finish.click();
+  await expect(board(page)).toHaveAttribute('data-peeling', '0');
+  await expect(board(page)).toHaveAttribute('data-pending', '0');
+  await expect(finish).toBeHidden();
+  const pos = position(await saved(page));
+  await expect(root(page).getByTestId('pp-left')).toHaveAttribute('data-left', String(presentCount(pos)));
+});
+
+test('pixel-peel: slow peeling — a reload in the middle of peeling loses nothing and replays nothing', async ({ page }) => {
+  await slowPeeling(page);
+  let state: PeelState | undefined;
+  await expectResumeAfterReload(
+    page,
+    ID,
+    async (p) => {
+      state = await savedState(p);
+      for (const move of state.witness.slice(0, 3)) await buttonFor(p, move).click();
+      expect(await peelingCount(p)).toBeGreaterThan(0);
+    },
+    { difficulty: 'hard', settings: { motif: 'winter-village' } }
+  );
+  const after = await saved(page);
+  expect(after.moves).toEqual(state!.witness.slice(0, 3));
+  await expect(board(page)).toHaveAttribute('data-pending', '0');
+  await expect(board(page)).toHaveAttribute('data-peeling', '0');
+  await expect(root(page).getByTestId('pp-left')).toHaveAttribute('data-left', String(presentCount(position(after))));
+});
+
+test('pixel-peel: the Display button opens the options mid-game; Slow → Off finishes the queue at once and is remembered', async ({ page, isMobile }) => {
+  await slowPeeling(page);
+  // On the phone, a small one: the panel is taller than the room under the sticky picture.
+  if (isMobile) await page.setViewportSize({ width: 360, height: 640 });
+  await startGame(page, ID, { difficulty: 'hard', settings: { motif: 'red-fox' } });
+  const state = await savedState(page);
+  for (const move of state.witness.slice(0, 2)) await buttonFor(page, move).click();
+  expect(await peelingCount(page)).toBeGreaterThan(0);
+  const display = root(page).getByTestId('pp-display');
+  await display.click();
+  await expect(display).toHaveAttribute('aria-expanded', 'true');
+  // Its heading (which closes it again) is on screen, not under the picture that sticks to the top on a phone.
+  const heading = root(page).getByTestId('pp-options').locator('summary');
+  await expect(heading).toBeInViewport();
+  const [h, pic] = [(await heading.boundingBox())!, (await root(page).getByTestId('pp-frame').boundingBox())!];
+  if (h.x < pic.x + pic.width && pic.x < h.x + h.width) expect(h.y).toBeGreaterThanOrEqual(pic.y + pic.height - 1);
+  const off = root(page).getByTestId('pp-option-peel-off');
+  await expect(off).toBeInViewport();
+  await off.check();
+  await expect(board(page)).toHaveAttribute('data-peeling', '0');
+  await expect(board(page)).toHaveAttribute('data-pending', '0');
+  // Off: the next launch draws at once.
+  await buttonFor(page, state.witness[2]!).click();
+  await expect.poll(async () => (await saved(page)).moves.length).toBe(3);
+  expect(await peelingCount(page)).toBe(0);
+  await display.click();
+  await expect(display).toHaveAttribute('aria-expanded', 'false');
+  await page.reload();
+  await page.getByTestId('continue').click();
+  await expect(root(page).getByTestId('pp-option-peel-off')).toBeChecked();
+});
+
+test('pixel-peel: with reduced motion there is no peeling animation and Peeling shows Off', async ({ page }) => {
+  await slowPeeling(page);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await startGame(page, ID, { difficulty: 'hard', settings: { motif: 'red-fox' } });
+  const state = await savedState(page);
+  await buttonFor(page, state.witness[0]!).click();
+  await expect.poll(async () => (await saved(page)).moves.length).toBe(1);
+  expect(await peelingCount(page)).toBe(0);
+  await expect(root(page).getByTestId('pp-finish-peeling')).toBeHidden();
+  await expect(root(page).getByTestId('pp-option-peel-off')).toBeChecked();
+  await expect(root(page).getByTestId('pp-option-peel-slow')).toBeDisabled();
+});
+
+test('pixel-peel: at 1280 × 800 the play area is scrolled into view once, with the whole picture and every lane front on screen', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'viewport sizes are set explicitly');
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await startGame(page, ID, { difficulty: 'hard', settings: { motif: 'red-fox' } });
+  await savedState(page);
+  await expect(root(page).getByTestId('pp-canvas')).toBeInViewport({ ratio: 1 });
+  for (let i = 0; i < 4; i++) await expect(root(page).getByTestId(`pp-lane-${i}`)).toBeInViewport({ ratio: 1 });
+  await expect(root(page).getByTestId('pp-status')).toBeInViewport({ ratio: 1 });
+  await expect(root(page).locator('.pp-slots')).toBeInViewport({ ratio: 1 });
 });

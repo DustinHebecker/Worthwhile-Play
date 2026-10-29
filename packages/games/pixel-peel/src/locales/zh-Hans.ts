@@ -94,7 +94,6 @@ export const zhHans: Catalogue = {
   'colours.heading': '颜色',
   'colours.row': '剩余 {left} · 现在在边缘 {edge} · 待发射击 {shots}',
   'options.heading': '显示',
-  'options.animation': '动画',
   'options.allSymbols': '所有像素都显示符号（仅在大图或宽屏上）',
   'options.confirm': '派出前确认（第一次按下显示预览）',
   'help.keys': '键盘：用 Tab 移到等待位或射手列，方向键选择，Enter 或空格派出，Esc 清除预览，Ctrl+Z 撤销。',
@@ -142,5 +141,17 @@ export const zhHans: Catalogue = {
   'symbol.halfDisc': '半圆',
   'symbol.twoDots': '两点',
   'symbol.uprightBar': '竖条',
-  'symbol.chevron': 'V 形'
+  'symbol.chevron': 'V 形',
+  'options.peel': '剥除动画',
+  'options.peelSlow': '慢速：射手绕着图走，逐个像素剥除',
+  'options.peelQuick': '快速',
+  'options.peelOff': '关闭',
+  'options.peelReduced': '已关闭：你的设备要求减少动态效果。',
+  'action.finishPeeling': '立即完成剥除',
+  'action.finishPeelingCount': '立即完成剥除（{n}）',
+  'action.display': '显示',
+  'status.startShort': '选择一个射手：它的颜色会亮起，它将移除的像素会被标记。',
+  'stuck.back': '没有可走的步骤了。回到第 {k} 步可以完成。',
+  'stuck.backButton': '回到第 {k} 步',
+  'notice.close': '关闭'
 };

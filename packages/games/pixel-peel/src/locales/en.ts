@@ -93,7 +93,6 @@ export const en = {
   'colours.heading': 'Colours',
   'colours.row': 'left {left} · at the edge now {edge} · shots waiting {shots}',
   'options.heading': 'Display',
-  'options.animation': 'Animation',
   'options.allSymbols': 'Symbols on all pixels (only in large view or on wide screens)',
   'options.confirm': 'Confirm before launch (the first press shows the preview)',
   'help.keys': 'Keyboard: Tab to the waiting places or the lanes, the arrow keys choose, Enter or Space launches, Esc clears the preview, Ctrl+Z undoes.',
@@ -141,7 +140,19 @@ export const en = {
   'symbol.halfDisc': 'half disc',
   'symbol.twoDots': 'two dots',
   'symbol.uprightBar': 'upright bar',
-  'symbol.chevron': 'chevron'
+  'symbol.chevron': 'chevron',
+  'options.peel': 'Peeling',
+  'options.peelSlow': 'Slow: shooters run round and peel pixel by pixel',
+  'options.peelQuick': 'Quick',
+  'options.peelOff': 'Off',
+  'options.peelReduced': 'Off, because your device asks for reduced motion.',
+  'action.finishPeeling': 'Finish peeling',
+  'action.finishPeelingCount': 'Finish peeling ({n})',
+  'action.display': 'Display',
+  'status.startShort': 'Choose a shooter: its colour lights up and the pixels it would remove are marked.',
+  'stuck.back': 'No move left. Going back to move {k} works.',
+  'stuck.backButton': 'Back to move {k}',
+  'notice.close': 'Close'
 };
 
 export type Catalogue = Record<keyof typeof en, string>;
