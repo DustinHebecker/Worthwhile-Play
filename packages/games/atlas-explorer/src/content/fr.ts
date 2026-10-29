@@ -1,6 +1,7 @@
 import type { ContentText } from './types';
+import { text } from './text/fr';
 
-/** French names and sentences of Atlas Explorer (design § 13.2; capitals of the *Capitals* deck come from `capitalName`). */
+/** French names, sentences and in-game texts of Atlas Explorer (design § 13.2; capitals of the *Capitals* deck come from `capitalName`). */
 export const content: ContentText = {
   names: {
     "new-york": "New York",
@@ -197,5 +198,6 @@ export const content: ContentText = {
     "urals": "On les considère en général comme une partie de la limite entre l'Europe et l'Asie.",
     "victoria": "Le plus grand lac d'Afrique ; le Nil en sort vers le nord.",
     "yangtze": "Le plus long fleuve d'Asie."
-  }
+  },
+  text
 };

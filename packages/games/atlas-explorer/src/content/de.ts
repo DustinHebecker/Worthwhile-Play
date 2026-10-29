@@ -1,6 +1,7 @@
 import type { ContentText } from './types';
+import { text } from './text/de';
 
-/** German names and sentences of Atlas Explorer (design § 13.2; capitals of the *Capitals* deck come from `capitalName`). */
+/** German names, sentences and in-game texts of Atlas Explorer (design § 13.2; capitals of the *Capitals* deck come from `capitalName`). */
 export const content: ContentText = {
   names: {
     "new-york": "New York",
@@ -197,5 +198,6 @@ export const content: ContentText = {
     "urals": "Gilt meist als Teil der Grenze zwischen Europa und Asien.",
     "victoria": "Der größte See Afrikas; der Nil fließt aus ihm nach Norden ab.",
     "yangtze": "Der längste Fluss Asiens."
-  }
+  },
+  text
 };

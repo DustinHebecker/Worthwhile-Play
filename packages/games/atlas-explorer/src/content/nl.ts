@@ -1,6 +1,7 @@
 import type { ContentText } from './types';
+import { text } from './text/nl';
 
-/** Dutch names and sentences of Atlas Explorer (design § 13.2; capitals of the *Capitals* deck come from `capitalName`). */
+/** Dutch names, sentences and in-game texts of Atlas Explorer (design § 13.2; capitals of the *Capitals* deck come from `capitalName`). */
 export const content: ContentText = {
   names: {
     "new-york": "New York",
@@ -197,5 +198,6 @@ export const content: ContentText = {
     "urals": "Geldt meestal als deel van de grens tussen Europa en Azië.",
     "victoria": "Het grootste meer van Afrika; de Nijl stroomt eruit naar het noorden.",
     "yangtze": "De langste rivier van Azië."
-  }
+  },
+  text
 };
