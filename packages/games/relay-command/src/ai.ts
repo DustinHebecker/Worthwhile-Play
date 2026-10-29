@@ -89,7 +89,8 @@ const SLOT_MARGIN = 2;
  * - several sides (normal / hard, docs/design/strategy.md § 9.4): the target post is chosen by
  *   distance, known defence and damage (`objectiveOf`), neutral posts are taken over by infantry,
  *   a damaged own post with raiders near gets a guard, and the relay truck moves to reconnect
- *   fighters cut off away from the objective;
+ *   fighters cut off away from the objective; against two or more enemies the `style` spreads the
+ *   choice of target or keeps a guard at home (`Style`);
  * - normal / hard: a Scout Car without an order puts its drone up (it escorts the car);
  * - hard: as normal, plus electronic warfare (jammer set up near known enemy relays and posts,
  *   tracer with the relay truck) and a bolder weighting of damage dealt against damage taken.
