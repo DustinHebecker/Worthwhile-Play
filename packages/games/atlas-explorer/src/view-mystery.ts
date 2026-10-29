@@ -6,7 +6,7 @@
 import { bcp47Tag } from '@wp/game-core';
 import { h } from '@wp/ui';
 import { countryAt, placeAt, type Box } from './atlas';
-import { capitalOf, type Clue } from './clues';
+import { bordersConfirmed, capitalOf, type Clue } from './clues';
 import type { LineId, Scene } from './map-view';
 import { guess, nextClue, setGuessDraft, showMystery } from './rules';
 import type { MysteryItem } from './state';
@@ -138,7 +138,7 @@ export function mysteryScreen(host: Host, item: MysteryItem): Screen {
       const lines: (string | HTMLElement)[] = [h('strong', {}, t('mystery.not', { name: ui.country(g) })), ' ', t('mystery.towards', { offset: ui.distanceAndDirection(c.label[0], c.label[1], target.label[0], target.label[1], s.difficulty === 'easy' ? 8 : 16), name: ui.country(g) })];
       const dateLine = ui.dateLine(c.label[0], target.label[0]);
       if (dateLine) lines.push(' ', dateLine);
-      if (target.nb.includes(g)) lines.push(' ', h('span', { class: 'ae-borders' }, t('mystery.borders', { name: ui.country(g) })));
+      if (bordersConfirmed(atlas, target, item.clues, g)) lines.push(' ', h('span', { class: 'ae-borders' }, t('mystery.borders', { name: ui.country(g) })));
       list.append(h('li', { class: 'ae-guess-card', 'data-testid': `ae-guess-${g}` }, ...lines));
       arcs.push({ from: [c.label[0], c.label[1]], to: [target.label[0], target.label[1]], style: 'arrow' });
     }

@@ -241,6 +241,20 @@ describe('Atlas Explorer view', () => {
     expect(lines2.join(' ')).not.toContain('date line');
   });
 
+  it('keeps a mystery item saved before a data update consistent with its stored clues', () => {
+    // Before Ceuta and Melilla were drawn (§ 26), Morocco had one neighbour; an open item keeps that clue.
+    const g = setup('mystery');
+    const s = g.state();
+    const old: MysteryItem = { kind: 'mystery', target: 'MA', clues: [{ id: 'region', arg: 'africa' }, { id: 'nbCount', arg: '1' }, { id: 'nb', arg: 'DZ' }], shown: 3, guesses: ['ES', 'DZ'], draft: null, end: null };
+    expect(game.isValidState({ ...s, items: [old, ...s.items.slice(1)] })).toBe(true);
+    g.instance.restore({ ...s, items: [old, ...s.items.slice(1)] });
+    expect(g.el('ae-guess-ES')?.querySelector('.ae-borders')).toBeNull();
+    expect(g.el('ae-guess-DZ')?.querySelector('.ae-borders')).not.toBeNull();
+    // Drawn today, the clue says two, and Spain's card says it borders Morocco.
+    g.instance.restore({ ...s, items: [{ ...old, clues: [{ id: 'region', arg: 'africa' }, { id: 'nbCount', arg: '2' }, { id: 'nb', arg: 'DZ' }] }, ...s.items.slice(1)] });
+    expect(g.el('ae-guess-ES')?.querySelector('.ae-borders')).not.toBeNull();
+  });
+
   it('says "mostly" in the region clue of a transcontinental country', () => {
     const g = setup('mystery');
     const s = g.state();

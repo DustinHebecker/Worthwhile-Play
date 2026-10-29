@@ -152,6 +152,18 @@ export function clueExcludes(atlas: Atlas, c: Country, clue: Clue): boolean {
   return !clueTrue(atlas, c, clue);
 }
 
+/**
+ * Whether a guess card may say "{guess} borders it" (design § 8): the item's stored clues are authoritative. An item
+ * saved before a data update keeps its clues, and a neighbour count can then be out of date (Morocco had one neighbour
+ * before Ceuta and Melilla were drawn, § 26); the card then confirms only the neighbours the clues name, so it never
+ * contradicts a clue the player was given.
+ */
+export function bordersConfirmed(atlas: Atlas, target: Country, clues: readonly Clue[], guess: string): boolean {
+  if (clues.some((k) => k.id === 'nb' && k.arg === guess)) return true;
+  if (!target.nb.includes(guess)) return false;
+  return !clues.some((k) => k.id === 'nbCount' && !clueTrue(atlas, target, k));
+}
+
 /** Candidates (UN members) left after some clues. */
 export function candidatesAfter(atlas: Atlas, clues: readonly Clue[]): Country[] {
   return atlas.countries.filter((c) => !clues.some((k) => clueExcludes(atlas, c, k)));
