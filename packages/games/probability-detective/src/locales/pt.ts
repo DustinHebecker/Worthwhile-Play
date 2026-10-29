@@ -146,6 +146,8 @@ export const pt: Catalogue = {
   'summary.close': 'Estimativas finais muito perto: {a} de {n} · perto: {b}',
   'summary.baseRate': 'Casos em que sua primeira estimativa seguiu a pista e deixou de fora a taxa de base: {n}',
   'summary.forecast': 'Pontuação média da previsão: {a} (estimativas exatas nos mesmos casos: {b})',
+  'summary.cases': 'Caso a caso',
+  'summary.open': 'Abra um caso para ler a explicação completa.',
   'habit.less': 'Você tendeu a se mover menos do que as pistas justificavam. É um padrão comum — os indícios muitas vezes merecem um passo maior.',
   'habit.more': 'Você tendeu a se mover mais do que as pistas justificavam.',
   'habit.right': 'Seus passos tiveram mais ou menos o tamanho certo.',

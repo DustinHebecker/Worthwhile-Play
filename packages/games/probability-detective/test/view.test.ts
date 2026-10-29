@@ -178,8 +178,93 @@ describe('view', () => {
       click(root, i < 4 ? 'pd-next' : 'pd-summary-btn');
     }
     expect(finished).toHaveLength(1);
-    expect(root.querySelectorAll('[data-testid="pd-summary-list"] li')).toHaveLength(5);
+    expect(root.querySelectorAll('[data-testid="pd-summary-list"] > li')).toHaveLength(5);
     expect(root.querySelector('[data-testid="pd-sum-checks"]')).not.toBeNull();
+  });
+});
+
+describe('view: the compact round summary', () => {
+  /** Plays a mixed round with real answers: the default belief for clues, the first option for traps, one check. */
+  function playMixed(root: HTMLElement, game: Awaited<ReturnType<typeof mount>>['game']) {
+    game.newGame({ seed: 8, difficulty: 'easy', settings: { mode: 'mixed' } });
+    for (let i = 0; i < 5; i++) {
+      const c = game.serialize().cases[i]!;
+      if (c.kind === 'clues') c.clues.forEach(() => click(root, 'pd-commit'));
+      else if (c.kind === 'checks') {
+        click(root, 'pd-run-0');
+        click(root, 'pd-ready');
+        click(root, 'pd-choice-0');
+        click(root, 'pd-decide');
+      } else {
+        c.drafts.forEach((_, qi) => {
+          const radio = root.querySelector<HTMLInputElement>(`[data-testid="pd-q${qi}-o0"]`);
+          if (radio) radio.click();
+          else click(root, `pd-q${qi}-plus`);
+        });
+        click(root, 'pd-trap-check');
+      }
+      click(root, i < 4 ? 'pd-next' : 'pd-summary-btn');
+    }
+  }
+
+  it('shows the lines and the tip first, then one collapsed entry per case with a verdict line', async () => {
+    const { root, game } = await mount();
+    playMixed(root, game);
+    expect(document.activeElement?.id).toBe('pd-summary-heading');
+    const main = root.querySelector('.pd-main')!;
+    // Reading order: heading, the round's lines, the tip, the notebook, then the cases.
+    expect([...main.children].map((el) => el.getAttribute('data-testid') ?? el.className)).toEqual(['pd-heading', 'pd-sum-lines', 'pd-tip', 'pd-calibration', 'pd-cases']);
+    const entries = [...root.querySelectorAll<HTMLDetailsElement>('[data-testid="pd-summary-list"] > li > details.pd-case')];
+    expect(entries).toHaveLength(5);
+    const cases = game.serialize().cases;
+    entries.forEach((d, i) => {
+      expect(d.open, `entry ${i}`).toBe(false);
+      const summary = d.querySelector(':scope > summary')!;
+      expect(summary.querySelector('.pd-case-title')!.textContent!.length).toBeGreaterThan(3);
+      const line = summary.querySelector('.pd-case-line')!.textContent!;
+      // Its accessible text reads "title: verdict".
+      expect(summary.textContent).toBe(`${summary.querySelector('.pd-case-title')!.textContent}: ${line}`);
+      const c = cases[i]!;
+      if (c.kind === 'trap') expect(line).toMatch(/^matching the exact answer: \d of \d$/);
+      else expect(line).toMatch(/^You: ● \d+.% · Exact: ● [\d.]+.% · [●○]{3} /);
+      if (c.kind === 'checks') expect(line).toMatch(/best decision ✓|another option was better on average/);
+      // Nothing is lost: the full explanation is inside, without ids (it may repeat) and with headings one level down.
+      const body = d.querySelector('.pd-case-body')!;
+      expect(body.querySelector('[id]')).toBeNull();
+      expect(body.querySelector('h2, h3')).toBeNull();
+      if (c.kind === 'trap') {
+        expect(body.querySelector('[data-testid="pd-explain"]')).not.toBeNull();
+        expect(body.querySelector('[data-visual]')).not.toBeNull();
+        expect(body.querySelectorAll('.pd-question')).toHaveLength(c.drafts.length);
+      } else {
+        expect(body.querySelector('[data-testid="pd-truth"]')!.textContent).toMatch(/^. It was: /);
+        expect(body.querySelector('[data-testid="pd-forecast"]')).not.toBeNull();
+        expect(body.querySelector('[data-testid="pd-formulas"]')).not.toBeNull();
+        expect(body.querySelectorAll('h4').length).toBeGreaterThan(1);
+      }
+      if (c.kind === 'clues') expect(body.querySelector('[data-testid="pd-ledger"]')).not.toBeNull();
+      if (c.kind === 'checks') expect(body.querySelector('[data-testid="pd-plan"]')).not.toBeNull();
+    });
+    expect(root.querySelector('#pd-cases-h')!.tagName).toBe('H3');
+    expect(root.querySelector('.pd-cases')!.getAttribute('aria-labelledby')).toBe('pd-cases-h');
+  });
+
+  it('says "skipped" in the verdict line of a skipped case, and renders in every locale without raw keys', async () => {
+    for (const locale of ['ar', 'de', 'ja', 'hi'] as const) {
+      const { root, game } = await mount(locale);
+      game.newGame({ seed: 4, difficulty: 'easy' });
+      for (let i = 0; i < 5; i++) {
+        const c = game.serialize().cases[i] as ClueCase;
+        c.clues.forEach(() => click(root, i === 0 ? 'pd-skip' : 'pd-commit'));
+        click(root, i < 4 ? 'pd-next' : 'pd-summary-btn');
+      }
+      const lines = [...root.querySelectorAll('.pd-case-line')].map((el) => el.textContent);
+      expect(lines).toHaveLength(5);
+      expect(root.textContent).not.toMatch(/\b(summary|review|ledger|board)\.[a-z]/);
+      expect(lines.slice(1).every((l) => l!.includes('●'))).toBe(true);
+      expect(lines[0]).not.toContain('●');
+      root.remove();
+    }
   });
 });
 

@@ -145,6 +145,8 @@ export const en = {
   'summary.close': 'Final estimates very close: {a} of {n} · close: {b}',
   'summary.baseRate': 'Cases where your first estimate followed the clue and left out the base rate: {n}',
   'summary.forecast': 'Average forecast score: {a} (exact estimates on the same cases: {b})',
+  'summary.cases': 'Case by case',
+  'summary.open': 'Open a case to read its full explanation.',
   'habit.less': 'You tended to move less than the clues justified. That is a common pattern — evidence often deserves a bigger step.',
   'habit.more': 'You tended to move further than the clues justified.',
   'habit.right': 'Your steps were about the right size.',

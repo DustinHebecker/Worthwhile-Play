@@ -8,8 +8,8 @@ import type { Translator } from '@wp/game-core';
 import { goalMet } from '../src/check';
 import { describe as describeScene } from '../src/explain';
 import { naiveBar, naiveBeam } from '../src/naive';
-import { freeEdit, freeScene, isBalanceState, newState, setMobileHook, type FreeState } from '../src/rules';
-import { DIFFICULTIES, generateRound, generateTask, isPredict, SIDES, STACK_ANSWERS, type Scene, type TaskId } from '../src/generate';
+import { choose, chooseJoint, currentItem, freeEdit, freeScene, isBalanceState, letGo, moveBody, newState, readSettings, setMobileHook, type FreeState, type RoundState } from '../src/rules';
+import { cubeSpots, DIFFICULTIES, generateRound, generateTask, isPredict, SIDES, STACK_ANSWERS, type Scene, type TaskId } from '../src/generate';
 
 type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -212,5 +212,67 @@ describe('independent oracle', () => {
     expect(text).toContain('desc.sub(2,2)');
     expect(text).toContain('desc.sub(3,2)');
     expect(freeScene('mobile').bench).toBe('mobile');
+  });
+
+  it('hard stack-predict: a falling stack has exactly one failing joint, and only that joint matches (review 2026-10-29)', () => {
+    for (let i = 0; i < 300; i++)
+      for (const trap of [false, true])
+        for (const exact of [false, true]) {
+          const t = generateTask(createRng(i * 7919 + 17), 'stack-predict', 'hard', { trap, exact });
+          const f = stackFail(t.scene.s);
+          expect(f.length).toBeLessThanOrEqual(1);
+          expect(STACK_ANSWERS[t.answer!]).toBe(f.length ? f[0]!.dir : 'stands');
+        }
+    let checked = 0;
+    for (let seed = 0; seed < 60; seed++) {
+      const s = newState(seed, readSettings({ bench: 'stack', tasks: 'predict' }, 'hard')) as RoundState;
+      const it0 = currentItem(s)!;
+      if (it0.answer === 0) continue;
+      const f = stackFail(it0.scene.s);
+      expect(f).toHaveLength(1);
+      const n = (it0.scene.s as Any).bodies.length;
+      for (let j = 0; j < n; j++) {
+        const done = letGo(chooseJoint(choose(s, it0.answer!)!, j)!)!;
+        expect(currentItem(done)!.status).toBe(j === f[0]!.k ? 'matched' : 'different');
+        expect(isBalanceState(JSON.parse(JSON.stringify(done)))).toBe(true);
+      }
+      checked++;
+    }
+    expect(checked).toBeGreaterThan(10);
+  });
+
+  it('hard stack-counter: no placement of the tray cubes holds the plank where it starts; the plank slides within its bounds; "it stands" agrees with the oracle (review 2026-10-29)', () => {
+    for (let i = 0; i < 40; i++) {
+      const t = generateTask(createRng(i * 104729 + 3), 'stack-counter', 'hard');
+      const st: Any = t.scene.s;
+      const kgs = t.tray;
+      expect(kgs).toHaveLength(3);
+      // Brute force over every spot of every cube (closer than the cube spacing too, a superset of what the game allows).
+      // The plank on the table is joint 0: plank, bucket and cubes together must have their centre of mass over [left, 0].
+      const spots = cubeSpots(st, 0);
+      const p = st.bodies[0];
+      let holding = 0;
+      for (const a of spots)
+        for (const b of spots)
+          for (const c of spots) {
+            const m = 2 + st.bucket.kg + kgs[0]! + kgs[1]! + kgs[2]!;
+            const mx = 2 * (p.left + 24) + st.bucket.kg * st.bucket.x + kgs[0]! * a + kgs[1]! * b + kgs[2]! * c;
+            if (mx <= 0 && mx >= p.left * m) holding++;
+          }
+      expect([i, holding]).toEqual([i, 0]);
+      expect(stackFail({ ...st, cubes: kgs.map((kg) => ({ kg, on: 0, x: spots[0] })) }).length).toBe(1);
+      expect(stackFail(t.witness!.s)).toEqual([]);
+      for (let left = -45; left <= 2; left++) {
+        const sc: Any = left === st.bodies[0].left ? st : moveBody(st, 0, left - st.bodies[0].left);
+        // At least 1 cm on the table, the bucket at least 6 cm past the edge.
+        expect([left, sc !== null]).toEqual([left, left >= -40 && left <= -1]);
+        if (!sc) continue;
+        const sp = cubeSpots(sc, 0);
+        for (let r = 0; r < 8; r++) {
+          const draft = { ...sc, cubes: kgs.map((kg, k) => ({ kg, on: 0, x: sp[(i * 31 + r * 7 + k * 13 + left + 100) % sp.length], free: true })) };
+          expect(goalMet(t, { bench: 'stack', s: draft })).toBe(stackFail(draft).length === 0);
+        }
+      }
+    }
   });
 });

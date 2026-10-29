@@ -146,6 +146,8 @@ export const tr: Catalogue = {
   'summary.close': 'Çok yakın son tahminler: {n} içinde {a} · yakın: {b}',
   'summary.baseRate': 'İlk tahminin ipucunu izleyip temel oranı dışarıda bıraktığı dosyalar: {n}',
   'summary.forecast': 'Ortalama tahmin puanı: {a} (aynı dosyalarda kesin tahminler: {b})',
+  'summary.cases': 'Dosya dosya',
+  'summary.open': 'Tam açıklamayı okumak için bir dosyayı aç.',
   'habit.less': 'İpuçlarının haklı çıkardığından genelde daha az kaydın. Bu yaygın bir örüntü – kanıt çoğu zaman daha büyük bir adımı hak eder.',
   'habit.more': 'İpuçlarının haklı çıkardığından genelde daha fazla kaydın.',
   'habit.right': 'Adımların aşağı yukarı doğru büyüklükteydi.',

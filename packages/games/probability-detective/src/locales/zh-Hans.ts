@@ -146,6 +146,8 @@ export const zhHans: Catalogue = {
   'summary.close': '最终估计非常接近：{n} 个中有 {a} 个 · 接近：{b} 个',
   'summary.baseRate': '第一个估计只跟着线索走、漏掉基础比率的案件：{n}',
   'summary.forecast': '平均预测得分：{a}（同样案件中的精确估计：{b}）',
+  'summary.cases': '逐个案件',
+  'summary.open': '打开一个案件，查看完整讲解。',
   'habit.less': '你往往移动得比线索所支持的少。这很常见——证据常常值得更大的一步。',
   'habit.more': '你往往移动得比线索所支持的多。',
   'habit.right': '你每一步的幅度大致合适。',

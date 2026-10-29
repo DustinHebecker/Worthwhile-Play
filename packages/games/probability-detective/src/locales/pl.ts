@@ -146,6 +146,8 @@ export const pl: Catalogue = {
   'summary.close': 'Końcowe oceny bardzo blisko: {a} z {n} · blisko: {b}',
   'summary.baseRate': 'Sprawy, w których pierwsza ocena poszła za wskazówką i pominęła częstość bazową: {n}',
   'summary.forecast': 'Średni wynik prognozy: {a} (dokładne oceny w tych samych sprawach: {b})',
+  'summary.cases': 'Sprawa po sprawie',
+  'summary.open': 'Otwórz sprawę, aby przeczytać pełne wyjaśnienie.',
   'habit.less': 'Zwykle przesuwałeś się mniej, niż uzasadniały wskazówki. To częsty wzorzec – poszlaki często zasługują na większy krok.',
   'habit.more': 'Zwykle przesuwałeś się dalej, niż uzasadniały wskazówki.',
   'habit.right': 'Twoje kroki miały mniej więcej właściwą wielkość.',

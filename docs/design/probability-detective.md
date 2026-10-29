@@ -350,6 +350,8 @@ Shown once after the last review; calm and factual:
 
 `finished({ outcome: 'completed', stats: { cases, scored, veryClose, close, forecastAvg, bestDecisions } })` — integers only.
 
+**Compact layout (owner decision 2026-10-29).** The summary screen is ordered: the heading (focused, as before), the round's lines above (closeness, forecast, checks, traps, then movement habit and base rates), the tip, the calibration notebook, and then a "Case by case" section (`h3`) with one `<details>` per case. Each `<summary>` (≥ 44 px) shows the case title and a one-line verdict: "You: ● 30 % · Exact: ● 25 % · ●●○ Close" (two explanations: the first one's share; three: every share), plus "best decision ✓ / another option was better on average" for checks, "matching the exact answer: a of n" for traps, or "skipped". Inside is the case's full review explanation, the same as on its review screen (`clueExplanation`, `checksExplanation`, `trapExplanation`; section headings one level down as `h4`, no ids). **All entries start collapsed**, including the worst-missed one: the screen stays short at 360 px, every verdict line is visible at once (the misses are already marked by the band words and ○ marks), and the reading order stays predictable for keyboard and screen-reader users.
+
 ---
 
 ## 11. Explanation visuals

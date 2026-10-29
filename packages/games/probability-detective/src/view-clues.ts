@@ -22,11 +22,14 @@ import {
   type Movement
 } from './rules';
 import { templateById } from './templates';
-import { MARKS, beliefControls } from './ui';
+import { MARKS, beliefControls, type Level, type Ui } from './ui';
 import type { Host } from './view-host';
 
 export const clueText = (locale: string, c: ClueCase): TemplateText => contentFor(locale).templates[c.template]!;
 export const clueHyp = (locale: string, c: ClueCase, i: number): string => clueText(locale, c).hyps[templateById(c.template)?.hyps[i] ?? ''] ?? '';
+
+/** A committed answer as "● 30 % · ■ 70 %", or "skipped". */
+export const clueAnswerText = (ui: Ui, a: Answer): string => (a === 'skip' ? ui.t('skipped') : a.map((x, i) => `${MARKS[i]} ${ui.whole(x)}`).join(' · '));
 
 export function clueScreen(host: Host, c: ClueCase): HTMLElement[] {
   const { ui } = host;
@@ -39,7 +42,7 @@ export function clueScreen(host: Host, c: ClueCase): HTMLElement[] {
   const freqRow = (nums: readonly number[], den: number) =>
     h('ul', { class: 'pd-freq' }, ...nums.map((num, i) => h('li', {}, named(i), ': ', ui.bdi(ui.stated(num, den, host.difficulty())))));
 
-  const answerText = (a: Answer) => (a === 'skip' ? t('skipped') : a.map((x, i) => `${MARKS[i]} ${ui.whole(x)}`).join(' · '));
+  const answerText = (a: Answer) => clueAnswerText(ui, a);
 
   const caseFile = () => {
     const shown = isReview(c) ? c.clues.length : revealed(c);
@@ -111,6 +114,34 @@ export function clueScreen(host: Host, c: ClueCase): HTMLElement[] {
     );
   };
 
+  const review = () =>
+    h(
+      'section',
+      { class: 'pd-review', 'data-testid': 'pd-review' },
+      ui.heading('h3', 'pd-review-heading', t('review.heading')),
+      ...clueExplanation(ui, c, 'h3'),
+      h('div', { class: 'pd-actions' }, host.nextButton())
+    );
+
+  return [
+    host.header(text.title, 'kind.clues'),
+    h('div', { class: `pd-layout${isReview(c) ? ' pd-layout--review' : ''}`, 'data-template': c.template }, caseFile(), isReview(c) ? review() : beliefPanel())
+  ];
+}
+
+/**
+ * The explanation of a reviewed clue case: what really happened, the counting board, the evidence chain, the forecast
+ * score and the formulas. Shown on the review screen and again, collapsed, in the round summary; `level` is the heading
+ * level of its sections (h3 on the review screen, h4 inside a summary entry). It sets no ids, so it can appear more than once.
+ */
+export function clueExplanation(ui: Ui, c: ClueCase, level: Level): (HTMLElement | string)[] {
+  const { t } = ui;
+  const locale = ui.locale;
+  const text = clueText(locale, c);
+  const hypName = (i: number) => clueHyp(locale, c, i);
+  const named = (i: number) => ui.named(hypName(i), i);
+  const answerText = (a: Answer) => clueAnswerText(ui, a);
+
   const moveText = (m: Movement): string => {
     switch (m.kind) {
       case 'neutral':
@@ -164,7 +195,7 @@ export function clueScreen(host: Host, c: ClueCase): HTMLElement[] {
     return h(
       'section',
       { class: 'pd-ledger', 'data-testid': 'pd-ledger' },
-      h('h3', {}, t('ledger.heading')),
+      h(level, {}, t('ledger.heading')),
       h('p', { class: 'pd-small' }, t('ledger.multiply')),
       h('ol', { class: 'pd-rows' }, ...rows),
       r.baseRate ? h('p', { class: 'pd-flag', 'data-testid': 'pd-baserate' }, t('baseRate.flag', { name: hypName(0), p: ui.pct(posteriorAfter(c, 1)[0]!) })) : ''
@@ -190,7 +221,7 @@ export function clueScreen(host: Host, c: ClueCase): HTMLElement[] {
     return h(
       'section',
       { class: 'pd-board', 'data-testid': 'pd-board' },
-      h('h3', {}, t('board.heading')),
+      h(level, {}, t('board.heading')),
       h('p', {}, t('board.intro', { n: ui.int(b.population) })),
       h('div', { class: 'pd-scroll' }, h('table', { class: 'pd-table' }, h('thead', {}, head), h('tbody', {}, ...rows))),
       // The closing sentence speaks of "every clue", so it appears only when the board covers all of them.
@@ -242,38 +273,27 @@ export function clueScreen(host: Host, c: ClueCase): HTMLElement[] {
     );
   };
 
-  const review = () => {
-    const r = reviewCase(c);
-    const pn = posteriorAfter(c, c.clues.length);
-    const forecast: HTMLElement[] = [];
-    if (r.score !== null) {
-      const ref = c.hyps === 2 ? 75 : 67;
-      forecast.push(h('p', { 'data-testid': 'pd-forecast' }, t('forecast.line', { s: ui.int(r.score), e: ui.int(Math.round(toNumber(r.exactScore))), r: ui.int(ref) })));
-      // A good estimate on a case that went a less likely way: say how often that happens. With three explanations the
-      // truth can be below one half and still the most likely one; that case did not go "another way".
-      const pTruth = toNumber(pn[c.truth]!);
-      const notLeading = pn.some((x, i) => i !== c.truth && cmp(x, pn[c.truth]!) > 0);
-      if ((r.finalBand === 'spot' || r.finalBand === 'close') && pTruth < 0.5 && pTruth > 0 && notLeading)
-        forecast.push(h('p', { 'data-testid': 'pd-luck' }, t('forecast.luck', { k: ui.int(Math.max(1, Math.round(pTruth * 100))) })));
-    }
-    return h(
-      'section',
-      { class: 'pd-review', 'data-testid': 'pd-review' },
-      ui.heading('h3', 'pd-review-heading', t('review.heading')),
-      h('p', { class: 'pd-truth', 'data-testid': 'pd-truth' }, ui.mark(c.truth), ' ', t('review.truth', { name: hypName(c.truth) })),
-      r.finalBand ? h('p', { class: 'pd-verdict', 'data-testid': 'pd-verdict', 'data-band': r.finalBand }, ui.bandText(r.finalBand)) : '',
-      h('p', {}, t('review.final', { p: pn.map((x, i) => `${MARKS[i]} ${ui.pct(x)}`).join(' · ') })),
-      h('h3', {}, t('review.numbers')),
-      board(),
-      ledger(),
-      h('section', { class: 'pd-forecast' }, h('h3', {}, t('forecast.heading')), ...forecast, h('p', { class: 'pd-small' }, t('forecast.explain'))),
-      formulas(),
-      h('div', { class: 'pd-actions' }, host.nextButton())
-    );
-  };
-
+  const r = reviewCase(c);
+  const pn = posteriorAfter(c, c.clues.length);
+  const forecast: HTMLElement[] = [];
+  if (r.score !== null) {
+    const ref = c.hyps === 2 ? 75 : 67;
+    forecast.push(h('p', { 'data-testid': 'pd-forecast' }, t('forecast.line', { s: ui.int(r.score), e: ui.int(Math.round(toNumber(r.exactScore))), r: ui.int(ref) })));
+    // A good estimate on a case that went a less likely way: say how often that happens. With three explanations the
+    // truth can be below one half and still the most likely one; that case did not go "another way".
+    const pTruth = toNumber(pn[c.truth]!);
+    const notLeading = pn.some((x, i) => i !== c.truth && cmp(x, pn[c.truth]!) > 0);
+    if ((r.finalBand === 'spot' || r.finalBand === 'close') && pTruth < 0.5 && pTruth > 0 && notLeading)
+      forecast.push(h('p', { 'data-testid': 'pd-luck' }, t('forecast.luck', { k: ui.int(Math.max(1, Math.round(pTruth * 100))) })));
+  }
   return [
-    host.header(text.title, 'kind.clues'),
-    h('div', { class: `pd-layout${isReview(c) ? ' pd-layout--review' : ''}`, 'data-template': c.template }, caseFile(), isReview(c) ? review() : beliefPanel())
+    h('p', { class: 'pd-truth', 'data-testid': 'pd-truth' }, ui.mark(c.truth), ' ', t('review.truth', { name: hypName(c.truth) })),
+    r.finalBand ? h('p', { class: 'pd-verdict', 'data-testid': 'pd-verdict', 'data-band': r.finalBand }, ui.bandText(r.finalBand)) : '',
+    h('p', {}, t('review.final', { p: pn.map((x, i) => `${MARKS[i]} ${ui.pct(x)}`).join(' · ') })),
+    h(level, {}, t('review.numbers')),
+    board(),
+    ledger(),
+    h('section', { class: 'pd-forecast' }, h(level, {}, t('forecast.heading')), ...forecast, h('p', { class: 'pd-small' }, t('forecast.explain'))),
+    formulas()
   ];
 }
