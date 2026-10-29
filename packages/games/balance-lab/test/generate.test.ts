@@ -247,6 +247,12 @@ describe('"Stays level" on easy (owner decision 2026-10-29)', () => {
     );
   });
 
+  it('meets the answer balance where the redraws alone did not (seed 1524232080, easy stack: was stands ×3 in a row)', () => {
+    const answers = generateRound(createRng(1524232080), 'stack', 'predict', 'easy').map(label);
+    for (let i = 2; i < answers.length; i++) expect(answers[i] === answers[i - 1] && answers[i] === answers[i - 2], answers.join()).toBe(false);
+    for (const a of new Set(answers)) expect(answers.filter((x) => x === a).length).toBeLessThanOrEqual(answers.length / 2);
+  });
+
   it('an easy round with three lever items may now contain one "Stays level", never two', () => {
     let seen = false;
     for (let s = 0; s < 300; s++) {

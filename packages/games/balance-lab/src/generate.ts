@@ -569,9 +569,9 @@ const BALANCE_TRIES = 30;
 export const EASY_LEVEL_SHARE = 1 / 6;
 
 /**
- * A round (design § 10.2). Balance of answers: a predict item is drawn again (same needs, bounded tries) while its
- * answer would be right for more than half of the round's predict items or the third equal answer in a row. Where
- * the rule cannot be met the last draw is kept. An easy lever or mobile item is made an exact balance with the
+ * A round (design § 10.2). Balance of answers: a predict item is drawn again (same needs, then without the trap and
+ * exact needs; bounded tries) while its answer would be right for more than half of the round's predict items or the
+ * third equal answer in a row; a last reordering of the predict items breaks remaining runs. An easy lever or mobile item is made an exact balance with the
  * probability `EASY_LEVEL_SHARE`, but only where "Stays level" keeps that rule.
  */
 export function generateRound(rng: Rng, bench: BenchSetting, tasks: TasksSetting, d: Difficulty): TaskSpec[] {
@@ -580,13 +580,44 @@ export function generateRound(rng: Rng, bench: BenchSetting, tasks: TasksSetting
   const answers: string[] = [];
   const fits = (a: string) => answers.filter((x) => x === a).length + 1 <= predictCount / 2 && !(answers.length >= 2 && answers[answers.length - 1] === a && answers[answers.length - 2] === a);
   let p = 0;
-  return ids.map((id) => {
+  const round = ids.map((id) => {
     if (!isPredict(id)) return generateTask(rng, id, d);
     let needs = predictNeeds(p++, predictCount, d);
     if (d === 'easy' && benchOf(id) !== 'stack' && rng.next() < EASY_LEVEL_SHARE && fits('level')) needs = { ...needs, exact: true };
     let task = generateTask(rng, id, d, needs);
     for (let i = 0; i < BALANCE_TRIES && !fits(answerLabel(task)); i++) task = generateTask(rng, id, d, needs);
+    // Some needs (e.g. an easy stack trap) almost always give the same answer: drop them before giving up.
+    const plain = { trap: false, exact: false };
+    for (let i = 0; i < BALANCE_TRIES && !fits(answerLabel(task)); i++) task = generateTask(rng, id, d, plain);
     answers.push(answerLabel(task));
     return task;
   });
+  return breakRuns(round);
+}
+
+/**
+ * Last resort for the "never three equal in a row" rule: reorders the predict items among their own positions
+ * (each item stays valid on its own; the count rule does not depend on the order). Returns the round unchanged
+ * when it already holds or no order of the items can satisfy it.
+ */
+function breakRuns(round: readonly TaskSpec[]): TaskSpec[] {
+  const slots = round.flatMap((t, i) => (isPredict(t.id) ? [i] : []));
+  const ok = (order: readonly TaskSpec[]) =>
+    order.every((t, i) => i < 2 || !(answerLabel(t) === answerLabel(order[i - 1]!) && answerLabel(t) === answerLabel(order[i - 2]!)));
+  const items = slots.map((i) => round[i]!);
+  if (ok(items)) return [...round];
+  // Greedy: always take the item whose answer is most frequent among the rest and does not make a third in a row.
+  const rest = [...items];
+  const order: TaskSpec[] = [];
+  while (rest.length) {
+    const count = (a: string) => rest.filter((t) => answerLabel(t) === a).length;
+    const allowed = rest.filter((t) => !(order.length >= 2 && answerLabel(order[order.length - 1]!) === answerLabel(t) && answerLabel(order[order.length - 2]!) === answerLabel(t)));
+    if (!allowed.length) return [...round];
+    const pick = allowed.reduce((best, t) => (count(answerLabel(t)) > count(answerLabel(best)) ? t : best));
+    order.push(pick);
+    rest.splice(rest.indexOf(pick), 1);
+  }
+  const out = [...round];
+  slots.forEach((slot, k) => (out[slot] = order[k]!));
+  return out;
 }
