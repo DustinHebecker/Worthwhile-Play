@@ -28,7 +28,6 @@ import {
   markReported,
   mobileHooks,
   moveBeam,
-  moveBody,
   moveCube,
   needsJoint,
   newState,
@@ -42,6 +41,8 @@ import {
   setAxle,
   setMobileHook,
   showSolution,
+  stepBody,
+  stepSpot,
   skip,
   summarize,
   toggleWhy,
@@ -69,12 +70,6 @@ const sceneX = (svg: SVGElement, rect: DOMRect, clientX: number): number => toSc
 
 /** The spot nearest to x (x itself when there is none). */
 const nearestSpot = (spots: readonly number[], x: number): number => spots.reduce((best, s) => (Math.abs(s - x) < Math.abs(best - x) ? s : best), spots[0] ?? x);
-
-/** The first spot at or beyond `from + dx` in the direction of dx, else the last spot in that direction (undefined: none past `from`). */
-function nextSpot(spots: readonly number[], from: number, dx: number): number | undefined {
-  const ahead = dx > 0 ? spots.filter((s) => s > from) : spots.filter((s) => s < from).reverse();
-  return ahead.find((s) => Math.abs(s - from) >= Math.abs(dx)) ?? ahead[ahead.length - 1];
-}
 
 /** Where the cube cursor rests on body 0: the middle of the plank to begin with, then the nearest spot where a new cube fits. */
 function cubeCursor(scene: StackScene, cursor: number): number {
@@ -244,19 +239,20 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
       cursor = (cursor + Math.sign(dx) + n) % n;
       return render();
     }
-    if (taskId() === 'stack-counter' && selBody) return void edit({ bench: 'stack', s: moveBody(sc.s, 0, dx) ?? sc.s });
+    if (taskId() === 'stack-counter' && selBody) return void edit({ bench: 'stack', s: stepBody(sc.s, 0, dx) ?? sc.s });
     if (taskId() === 'stack-counter') {
-      // The next spot in that direction where a cube keeps clear of the others: it skips over a neighbour or stacks on it.
+      // The farthest spot within the step where a cube keeps clear of the others (a 4 cm step stops at the plank end or
+      // next to a neighbour); with none that close, it skips over the neighbour or stacks on it.
       if (selPlaced !== null) {
         const c = sc.s.cubes[selPlaced];
-        const x = c && nextSpot(freeCubeSpots(sc.s, 0, selPlaced), c.x, dx);
+        const x = c && stepSpot(freeCubeSpots(sc.s, 0, selPlaced), c.x, dx);
         return void (x !== undefined && edit({ bench: 'stack', s: moveCube(sc.s, selPlaced, x) ?? sc.s }));
       }
-      const x = nextSpot(freeCubeSpots(sc.s, 0), cursor, dx);
+      const x = stepSpot(freeCubeSpots(sc.s, 0), cursor, dx);
       if (x !== undefined) cursor = x;
       return render();
     }
-    edit({ bench: 'stack', s: moveBody(sc.s, cursor, dx) ?? sc.s });
+    edit({ bench: 'stack', s: stepBody(sc.s, cursor, dx) ?? sc.s });
   }
 
   function place() {

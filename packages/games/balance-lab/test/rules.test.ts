@@ -1,7 +1,7 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { isPredict } from '../src/generate';
-import { BUCKET_MIN_X } from '../src/generate';
+import { BUCKET_MIN_X, freeCubeSpots } from '../src/generate';
 import { CUBE_WIDTH, stackVerdict, type StackScene } from '../src/statics';
 import {
   asksJoint,
@@ -33,6 +33,8 @@ import {
   settingsOf,
   showSolution,
   skip,
+  stepBody,
+  stepSpot,
   summarize,
   trayRemaining,
   tryAgain,
@@ -396,5 +398,72 @@ describe('hard stack-counter: the plank slides (owner decision 2026-10-29)', () 
     li.scene = { bench: 'stack', s: { ...(li.witness!.s as StackScene), cubes: [] } };
     li.draft = clone(li.scene);
     expect(isBalanceState(legacy)).toBe(true);
+  });
+});
+
+describe('the 4 cm steps stop at a bound instead of refusing (follow-up 2026-10-29)', () => {
+  const plankScene = (left: number, bucketX = left + 46): StackScene => ({ bodies: [{ kind: 'plank', left }], cubes: [], bucket: { kg: 2, on: 0, x: bucketX } });
+
+  it('a body steps by up to 4 cm: the whole step where it fits, else as far as it may', () => {
+    // The plank keeps at least 1 cm on the table (left ≤ -1): from -3, ▶▶ stops at -1; from -5 it steps the full 4 cm.
+    expect(moveBody(plankScene(-3), 0, 4)).toBeNull();
+    expect(stepBody(plankScene(-3), 0, 4)!.bodies[0]!.left).toBe(-1);
+    expect(stepBody(plankScene(-3), 0, 4)!.bucket!.x).toBe(45);
+    expect(stepBody(plankScene(-5), 0, 4)!.bodies[0]!.left).toBe(-1);
+    expect(stepBody(plankScene(-1), 0, 4)).toBeNull();
+    // The bucket hangs at least BUCKET_MIN_X past the edge: sliding back stops there.
+    const back = stepBody(plankScene(-30, BUCKET_MIN_X + 2), 0, -4)!;
+    expect([back.bodies[0]!.left, back.bucket!.x]).toEqual([-32, BUCKET_MIN_X]);
+    // Overhang blocks keep at least 1 cm of contact with the block below.
+    const blocks: StackScene = { bodies: [{ kind: 'block', left: -12 }, { kind: 'block', left: 9 }], cubes: [] };
+    expect(stepBody(blocks, 1, 4)!.bodies[1]!.left).toBe(11);
+    expect(stepBody(blocks, 1, -4)!.bodies[1]!.left).toBe(5);
+    expect(stepBody(blocks, 0, -4)!.bodies[0]!.left).toBe(-14);
+  });
+
+  it('a 1 cm step is moveBody itself; a 4 cm step is the farthest allowed move within 4 cm', () => {
+    fc.assert(
+      fc.property(fc.integer({ min: -40, max: -1 }), fc.integer({ min: -24, max: 24 }), fc.constantFrom(-4, -1, 1, 4), (left, off, dx) => {
+        const scene: StackScene = { bodies: [{ kind: 'block', left }, { kind: 'block', left: left + off }], cubes: [] };
+        for (const k of [0, 1]) {
+          const got = stepBody(scene, k, dx);
+          if (Math.abs(dx) === 1) expect(got).toEqual(moveBody(scene, k, dx));
+          const ok = [4, 3, 2, 1].filter((d) => d <= Math.abs(dx)).map((d) => d * Math.sign(dx)).find((d) => moveBody(scene, k, d) !== null);
+          expect(got).toEqual(ok === undefined ? null : moveBody(scene, k, ok));
+        }
+      })
+    );
+  });
+
+  it('a cube steps to the farthest free spot within the step, stops next to a neighbour, then skips over it', () => {
+    const plank: StackScene = { bodies: [{ kind: 'plank', left: -30 }], cubes: [{ kg: 2, on: 0, x: -20, free: true }, { kg: 1, on: 0, x: -12, free: true }], bucket: { kg: 2, on: 0, x: 16 } };
+    const spots = freeCubeSpots(plank, 0, 1);
+    // The plank's inner end: the last spot is -27, 3 cm away from -24.
+    expect(stepSpot(spots, -24, -4)).toBe(-27);
+    expect(stepSpot(spots, -27, -4)).toBeUndefined();
+    // Its outer end (spots up to 15).
+    expect(stepSpot(spots, 13, 4)).toBe(15);
+    // Next to the neighbour at -20 (its free spots end at -14): ◀◀ from -12 stops at -14, the next one stacks on it.
+    expect(stepSpot(spots, -12, -4)).toBe(-14);
+    expect(stepSpot(spots, -14, -4)).toBe(-20);
+    // The 1 cm step is unchanged: the nearest free spot in that direction.
+    expect(stepSpot(spots, -14, -1)).toBe(-20);
+    expect(stepSpot(spots, -12, -1)).toBe(-13);
+  });
+
+  it('stepSpot: within the step it goes as far as it can, else to the nearest spot beyond; ±1 is the nearest spot', () => {
+    fc.assert(
+      fc.property(fc.uniqueArray(fc.integer({ min: -30, max: 30 }), { maxLength: 30 }), fc.integer({ min: -30, max: 30 }), fc.constantFrom(-4, -1, 1, 4), (spots, from, dx) => {
+        const got = stepSpot(spots, from, dx);
+        const ahead = spots.filter((x) => (x - from) * dx > 0).sort((a, b) => Math.abs(a - from) - Math.abs(b - from));
+        if (ahead.length === 0) {
+          expect(got).toBeUndefined();
+          return;
+        }
+        const within = ahead.filter((x) => Math.abs(x - from) <= Math.abs(dx));
+        expect(got).toBe(within.length ? within[within.length - 1] : ahead[0]);
+        if (Math.abs(dx) === 1) expect(got).toBe(ahead[0]);
+      })
+    );
   });
 });
