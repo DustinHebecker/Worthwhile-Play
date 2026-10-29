@@ -2500,10 +2500,16 @@ describe('opponent styles (owner decision 2026-10-29: spread by distance, a guar
     const home = post(s.world, 1);
     const far = [0, 2, 3].reduce((a, b) => (d(home, post(s.world, a)) > d(home, post(s.world, b)) ? a : b));
     expect(picks.size).toBe(3);
-    expect(picks.get(far)!).toBeGreaterThan(40);
-    expect(picks.get(far)!).toBeLessThan(130);
+    // Expected 80 of 400 (a fifth); drawn without weights it would be a third (133).
+    expect(picks.get(far)!).toBeGreaterThan(55);
+    expect(picks.get(far)!).toBeLessThan(110);
     expect(Math.max(...picks.values())).toBeGreaterThan(picks.get(far)!);
     expect(far).not.toBe(direct.side);
+    // Two opponents (three sides, the fourth post neutral): spread already draws between the two enemies.
+    const three = newGame(7, FOUR_CORNERS, 'hard', null, false, null, 2);
+    const drawn = new Set<number>();
+    for (let rng = 0; rng < 40; rng++) drawn.add(objectiveOf(observe(at(three, rng), rulesOf(three), 1), rulesOf(three), 'spread')!.side);
+    expect([...drawn].filter((side) => side !== NEUTRAL).sort()).toEqual([0, 2]);
   });
 
   it('guarded: up to GUARD_MAX of the fighters hold in front of the own post while other enemies are near, none against one', () => {
@@ -2528,6 +2534,27 @@ describe('opponent styles (owner decision 2026-10-29: spread by distance, a guar
       if (c?.order.type === 'move') expect(Math.max(Math.abs(c.order.x - plan.guardAt!.x), Math.abs(c.order.y - plan.guardAt!.y))).toBeLessThanOrEqual(3);
       expect(c?.order.type === 'attack' && c.order.target === objective.id).toBe(false);
     }
+    // The guard point lies towards the nearest other hostile post, and the guards are the fighters nearest it.
+    const others = [0, 2, 3].map((side) => post(s.world, side)).filter((p) => p.id !== objective.id);
+    const threat = others.reduce((a, p) => (d(post(s.world, 1), p) < d(post(s.world, 1), a) ? p : a));
+    const guardAt = { ...threat, ...plan.guardAt! };
+    expect(d(guardAt, threat)).toBeLessThan(d(guardAt, objective));
+    expect(d(guardAt, threat)).toBeLessThan(d(post(s.world, 1), threat) - 1);
+    const far = Math.max(...plan.guards!.map((g) => d(g, guardAt)));
+    for (const f of plan.all) expect(d(f, guardAt)).toBeGreaterThanOrEqual(far);
+    // With the guard: no guard is sent to the rally point of the attack.
+    const near = (c: Command | undefined, p: { x: number; y: number }) => c?.order.type === 'move' && Math.max(Math.abs(c.order.x - p.x), Math.abs(c.order.y - p.y)) <= 3;
+    expect(plan.guards!.some((g) => near(orders.find((c) => c.unit === g.id), plan.rally))).toBe(false);
+    // The guards start next to the guard point already (no order needed); the others are sent to the rally point.
+    for (const g of plan.guards!) expect(Math.max(Math.abs(g.x - plan.guardAt!.x), Math.abs(g.y - plan.guardAt!.y)) <= 2 || near(orders.find((c) => c.unit === g.id), plan.guardAt!)).toBe(true);
+    expect(orders.some((c) => near(c, plan.rally) && plan.all.some((f) => f.id === c.unit))).toBe(true);
+    // Both styles together keep a guard too (against the threat left by their own drawn objective).
+    expect(assaultPlan(obs, rules, 'hard', 'both')!.guards!.length).toBeGreaterThan(0);
+    // Alone against three (Bastion, 1 against 3): it holds at home anyway, no extra guard.
+    const bastion = newGame(3, BASTION, 'hard', null, false, null, 3, [], false, null, '1v3');
+    const lone = observe(bastion.world, rulesOf(bastion), PLAYER);
+    expect(outnumbered(bastion.world, PLAYER)).toBe(true);
+    expect(assaultPlan(lone, rulesOf(bastion), 'hard', 'guarded')!.guards).toBeUndefined();
     // Direct and spread keep no guard; one enemy (Ridge Valley) or none near: no guard.
     expect(assaultPlan(obs, rules, 'hard', 'direct')!.guards).toBeUndefined();
     expect(assaultPlan(obs, rules, 'hard', 'spread')!.guards).toBeUndefined();

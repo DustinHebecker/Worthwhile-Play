@@ -518,10 +518,10 @@ function guardPlan(obs: Observation, ruleset: Ruleset, objective: Entity, home: 
   const count = Math.floor(guardShare(obs, objective) * fighters.length);
   if (count === 0) return undefined;
   // Towards the nearest other hostile post (the threat the guard is for).
-  const others = targetPosts(obs).filter((p) => p.id !== objective.id && p.side !== NEUTRAL);
-  const threat = others.reduce<Entity | undefined>((a, p) => (!a || dist2(home.x, home.y, p.x, p.y) < dist2(home.x, home.y, a.x, a.y) ? p : a), undefined);
-  if (!threat) return undefined;
-  const len = Math.sqrt(dist2(home.x, home.y, threat.x, threat.y)) || 1;
+  // (A share above 0 means there is one: `guardShare` counts only other hostile posts.)
+  const [first, ...rest] = targetPosts(obs).filter((p) => p.id !== objective.id && p.side !== NEUTRAL);
+  const threat = rest.reduce((a, p) => (dist2(home.x, home.y, p.x, p.y) < dist2(home.x, home.y, a.x, a.y) ? p : a), first!);
+  const len = Math.sqrt(dist2(home.x, home.y, threat.x, threat.y));
   const at = coveredNear(obs, ruleset, { x: Math.round(home.x + ((threat.x - home.x) / len) * HOLD_DIST), y: Math.round(home.y + ((threat.y - home.y) / len) * HOLD_DIST) });
   const units = [...fighters].sort((a, b) => dist2(a.x, a.y, at.x, at.y) - dist2(b.x, b.y, at.x, at.y) || frame(obs, a) - frame(obs, b)).slice(0, count);
   return { units, at };
