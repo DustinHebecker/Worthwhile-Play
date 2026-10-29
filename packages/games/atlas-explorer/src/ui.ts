@@ -9,7 +9,7 @@ import { h } from '@wp/ui';
 import type { Atlas } from './atlas';
 import type { ContentText } from './content';
 import { formatArea, formatClock, formatDecimal, formatDegrees, formatDensity, formatDistance, formatDuration, formatInt, formatPopulation, formatUtcOffset, type DistanceUnit } from './format';
-import { compassWord, distanceKm, rhumbBearing } from './geo';
+import { compassWord, crossesDateLine, distanceKm, mapBearing } from './geo';
 import type { Place } from './state';
 
 /** Marks of the find bands (design § 6.3), always shown with words. */
@@ -48,10 +48,13 @@ export interface Ui {
   lon(lon: number, digits?: number): string;
   /** "41.9° N, 12.5° E". */
   coord(lon: number, lat: number, digits?: number): string;
-  /** Compass word from one point to another as read off a map (rhumb line; 16 words, 8 on easy). */
+  /** Compass word from one point to another as read off this map (no wrapping at ±180°; 16 words, 8 on easy). */
   direction(fromLon: number, fromLat: number, toLon: number, toLat: number, sectors?: 8 | 16): string;
-  /** "about 1,400 km north-west" from one point to another. */
+  /** "about 1,400 km north-west" from one point to another (great-circle distance, direction as on the map). */
   distanceAndDirection(fromLon: number, fromLat: number, toLon: number, toLat: number, sectors?: 8 | 16): string;
+  /** The sentence that the shortest way crosses the date line (so it runs the other way round than the map
+   *  direction), or '' when it does not. Shown next to every `distanceAndDirection`. */
+  dateLine(fromLon: number, toLon: number): string;
   heading(tag: 'h2' | 'h3', id: string, text: string): HTMLElement;
   bdi(text: string, cls?: string): HTMLElement;
 }
@@ -109,10 +112,11 @@ export function createUi(t: Translator, atlas: Atlas, content: () => ContentText
     lat: (lat, digits = 1) => deg(lat, 'coord.n', 'coord.s', digits),
     lon: (lon, digits = 1) => deg(lon, 'coord.e', 'coord.w', digits),
     coord: (lon, lat, digits = 1) => t('coord.pair', { lat: ui.lat(lat, digits), lon: ui.lon(lon, digits) }),
-    direction: (a, b, c, d, sectors = 16) => t(`dir.${compassWord(rhumbBearing(a, b, c, d), sectors)}`),
+    direction: (a, b, c, d, sectors = 16) => t(`dir.${compassWord(mapBearing(a, b, c, d), sectors)}`),
     distanceAndDirection(a, b, c, d, sectors = 16) {
       return t('feedback.offset', { km: ui.km(distanceKm(a, b, c, d)), dir: ui.direction(a, b, c, d, sectors) });
     },
+    dateLine: (a, c) => (crossesDateLine(a, c) ? t('feedback.dateLine') : ''),
     heading: (tag, id, text) => h(tag, { id, tabindex: -1, class: 'ae-heading' }, text),
     bdi: (text, cls) => h('bdi', cls ? { class: cls } : {}, text)
   };

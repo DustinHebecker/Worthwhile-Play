@@ -15,7 +15,8 @@ import {
   mercatorFactor,
   pointInRings,
   polygonDistanceKm,
-  rhumbBearing,
+  mapBearing,
+  crossesDateLine,
   project,
   segmentDistanceKm,
   sunTimeHours,
@@ -177,20 +178,46 @@ describe('bearings and compass words', () => {
   });
 
   it('reads map directions along rhumb lines', () => {
-    expect(rhumbBearing(0, 0, 0, 10)).toBeCloseTo(0, 9);
-    expect(rhumbBearing(0, 0, 10, 0)).toBeCloseTo(90, 9);
-    expect(rhumbBearing(0, 10, 0, 0)).toBeCloseTo(180, 9);
+    expect(mapBearing(0, 0, 0, 10)).toBeCloseTo(0, 9);
+    expect(mapBearing(0, 0, 10, 0)).toBeCloseTo(90, 9);
+    expect(mapBearing(0, 10, 0, 0)).toBeCloseTo(180, 9);
     // France → Papua New Guinea: east-south-east on the map, although the great circle starts north-east.
-    expect(compassWord(rhumbBearing(2.5, 46.7, 145, -6))).toBe('ese');
+    expect(compassWord(mapBearing(2.5, 46.7, 145, -6))).toBe('ese');
     expect(compassWord(bearing(2.5, 46.7, 145, -6), 8)).toBe('ne');
-    // Across the antimeridian the short way is taken.
-    expect(rhumbBearing(170, 0, -170, 0)).toBeCloseTo(90, 9);
-    expect(rhumbBearing(-170, 0, 170, 0)).toBeCloseTo(270, 9);
     fc.assert(
       fc.property(lon, lat, lon, lat, (a, b, c, d) => {
-        const v = rhumbBearing(a, b, c, d);
+        const v = mapBearing(a, b, c, d);
         expect(v).toBeGreaterThanOrEqual(0);
         expect(v).toBeLessThan(360);
+      })
+    );
+  });
+
+  it('reads directions across the date line as the map shows them, and says when the shortest way crosses it', () => {
+    // The map is centred on 0° and does not wrap: 170° E lies east of 170° W on it, although the shortest way from
+    // 170° W runs west across the date line.
+    expect(mapBearing(170, 0, -170, 0)).toBeCloseTo(270, 9);
+    expect(mapBearing(-170, 0, 170, 0)).toBeCloseTo(90, 9);
+    // Anchorage → Anadyr (Russian Far East): east on the map; the shortest way (about 1,900 km) crosses the date line.
+    expect(compassWord(mapBearing(-149.9, 61.2, 177.5, 64.7))).toBe('e');
+    expect(compassWord(bearing(-149.9, 61.2, 177.5, 64.7), 8)).toBe('nw');
+    expect(crossesDateLine(-149.9, 177.5)).toBe(true);
+    // Fiji (178° E) → Samoa (172° W): east on the map would be the long way; the shortest way crosses the date line.
+    expect(compassWord(mapBearing(178.4, -18.1, -171.8, -13.8), 8)).toBe('w');
+    expect(crossesDateLine(178.4, -171.8)).toBe(true);
+    // Tokyo → Honolulu crosses it; Honolulu → New York, two places 180° apart and the line itself do not.
+    expect(crossesDateLine(139.7, -157.9)).toBe(true);
+    expect(crossesDateLine(-157.9, -74)).toBe(false);
+    expect(crossesDateLine(-90, 90)).toBe(false);
+    expect(crossesDateLine(0, 180)).toBe(false);
+    fc.assert(
+      fc.property(lon, lat, lon, lat, (a, b, c, d) => {
+        // East or west on the map follows the sign of the plain longitude difference, never the shorter way round.
+        const v = mapBearing(a, b, c, d);
+        if (c - a > 1e-6) expect(v > 0 && v < 180).toBe(true);
+        if (a - c > 1e-6) expect(v > 180 && v < 360).toBe(true);
+        expect(crossesDateLine(a, c)).toBe(crossesDateLine(c, a));
+        expect(crossesDateLine(a, c)).toBe(Math.abs(c - a) > 180);
       })
     );
   });

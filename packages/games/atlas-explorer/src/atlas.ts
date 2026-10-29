@@ -21,6 +21,12 @@ export interface Shape {
   /** Closed rings, flat `[lon, lat, …]` in degrees. */
   readonly rings: readonly Float64Array[];
   readonly box: Box;
+  /**
+   * How many of the last `rings` are fine rings of tiny parts on land (§ 26). Each counts on its own: a fine ring can
+   * overlap the owner's own simplified outline (Voeren in Belgium, Madha in Oman), where the even–odd test of all
+   * rings together would cut a hole.
+   */
+  readonly fine?: number;
 }
 
 export interface Country extends Shape {
@@ -55,6 +61,8 @@ export interface Country extends Shape {
   readonly featuresNear: readonly string[];
   /** Hatched areas touching it. */
   readonly touching: readonly string[];
+  /** Neighbours reached only through a small exclave (Spain–Morocco via Ceuta and Melilla): no overland step. */
+  readonly nbExclave: readonly string[];
 }
 
 export interface Other extends Shape {
@@ -98,11 +106,19 @@ export interface Sea {
   readonly at: readonly (readonly [number, number])[];
 }
 
+/** A tiny part on land drawn at a finer resolution (also merged into its owner's rings), tested first. */
+export interface Spot extends Shape {
+  readonly kind: 'country' | 'other' | 'disputed';
+  readonly id: string;
+}
+
 export interface Atlas {
   readonly id: string;
   readonly countries: readonly Country[];
   readonly others: readonly Other[];
   readonly disputed: readonly Disputed[];
+  /** Tiny parts of countries and other units on land, smallest first (hit-tested before the coarse shapes). */
+  readonly spots: readonly Spot[];
   readonly features: readonly Feature[];
   readonly cities: readonly City[];
   readonly seas: readonly Sea[];
@@ -193,15 +209,20 @@ const boxOf = (parts: readonly Flat[]): Box => (parts.length ? bbox(parts) : [0,
 export function decodeAtlas(data: AtlasData): Atlas {
   const arcs = decodeArcs(data.arcs);
   const unit = data.unit;
+  // Fine rings of tiny parts on land, added to their owners' rings (which leave those parts out).
+  const fine = data.fine.map((x) => ({ kind: x.k, id: x.id, rings: decodePaths(x.rings, data.fineUnit) }));
+  const fineOf = (kind: Spot['kind'], id: string) => fine.filter((x) => x.kind === kind && x.id === id).flatMap((x) => x.rings);
   const countries: Country[] = data.countries.map((c) => {
     const f = decodeInts(c.f);
-    const rings = decodeRings(c.rings, arcs, unit);
+    const fineRings = fineOf('country', c.id);
+    const rings = [...decodeRings(c.rings, arcs, unit), ...fineRings];
     const flags = f[12]!;
+    const [region, sub] = data.subs[c.s] ?? ['', ''];
     return {
       id: c.id,
       tier: toTier(f[0]!),
-      region: (REGIONS as readonly string[]).includes(c.region) ? (c.region as Region) : 'africa',
-      sub: c.sub,
+      region: (REGIONS as readonly string[]).includes(region) ? (region as Region) : 'africa',
+      sub,
       label: pt([f[1]!, f[2]!]),
       home: [f[3]! / 100, f[4]! / 100, f[5]! / 100, f[6]! / 100],
       pop: f[7]!,
@@ -218,17 +239,21 @@ export function decodeAtlas(data: AtlasData): Atlas {
       features: words(c.ft),
       featuresNear: words(c.fm ?? ''),
       touching: words(c.dz),
+      nbExclave: words(c.nx ?? ''),
       rings,
-      box: boxOf(rings)
+      box: boxOf(rings),
+      fine: fineRings.length
     };
   });
   const others: Other[] = data.others.map((o) => {
-    const rings = decodeRings(o.rings, arcs, unit);
-    return { id: o.id, iso: o.iso, label: pt(o.label), rings, box: boxOf(rings) };
+    const fineRings = fineOf('other', o.id);
+    const rings = [...decodeRings(o.rings, arcs, unit), ...fineRings];
+    return { id: o.id, iso: o.iso, label: pt(o.label), rings, box: boxOf(rings), fine: fineRings.length };
   });
   const disputed: Disputed[] = data.disputed.map((d) => {
-    const rings = decodeRings(d.rings, arcs, unit);
-    return { id: d.id, rings, box: boxOf(rings) };
+    const fineRings = fineOf('disputed', d.id);
+    const rings = [...decodeRings(d.rings, arcs, unit), ...fineRings];
+    return { id: d.id, rings, box: boxOf(rings), fine: fineRings.length };
   });
   const features: Feature[] = [
     ...data.rivers.map((r) => {
@@ -249,11 +274,19 @@ export function decodeAtlas(data: AtlasData): Atlas {
   const byCountry = new Map(countries.map((c) => [c.id, c]));
   const byFeature = new Map(features.map((f) => [f.id, f]));
   const byCity = new Map(cities.map((c) => [c.id, c]));
+  // Spots: one per fine ring of a country or other unit, smallest first (an enclave inside an exclave wins).
+  const spots: Spot[] = fine
+    .filter((x) => x.kind !== 'disputed')
+    .flatMap((x) => x.rings.map((r) => ({ kind: x.kind, id: x.id, rings: [r], box: boxOf([r]) })))
+    .map((sp) => ({ sp, size: (sp.box[2] - sp.box[0]) * (sp.box[3] - sp.box[1]) }))
+    .sort((p, q) => p.size - q.size)
+    .map((x) => x.sp);
   return {
     id: data.id,
     countries,
     others,
     disputed,
+    spots,
     features,
     cities,
     seas: data.seas.map((s) => ({ id: s.id, at: s.at.map(pt) })),
@@ -269,14 +302,25 @@ export function decodeAtlas(data: AtlasData): Atlas {
 
 const inBox = (b: Box, lon: number, lat: number, pad = 0) => lon >= b[0] - pad && lon <= b[2] + pad && lat >= b[1] - pad && lat <= b[3] + pad;
 
-/** Whether a point lies inside a shape (bounding-box prefilter, then even–odd). */
-export const inside = (s: Shape, lon: number, lat: number): boolean => inBox(s.box, lon, lat) && pointInRings(lon, lat, s.rings);
+/** Whether a point lies inside a shape (bounding-box prefilter, then even–odd; each fine ring on its own). */
+export function inside(s: Shape, lon: number, lat: number): boolean {
+  if (!inBox(s.box, lon, lat)) return false;
+  const n = s.fine ?? 0;
+  if (n === 0) return pointInRings(lon, lat, s.rings);
+  const k = s.rings.length - n;
+  return pointInRings(lon, lat, s.rings.slice(0, k)) || s.rings.slice(k).some((r) => pointInRings(lon, lat, [r]));
+}
 
-/** What lies under a point: a hatched area first (it belongs to no country), then a UN member, another entity, or the sea. */
+/**
+ * What lies under a point: a hatched area first (it belongs to no country), then a tiny part on land drawn at the fine
+ * resolution (Ceuta and Melilla are Spain's even where Morocco's coarse outline runs), then a UN member, another
+ * entity, or the sea.
+ */
 export type PlaceAt = { readonly kind: 'disputed'; readonly id: string } | { readonly kind: 'country'; readonly id: string } | { readonly kind: 'other'; readonly id: string } | null;
 
 export function placeAt(atlas: Atlas, lon: number, lat: number): PlaceAt {
   for (const d of atlas.disputed) if (inside(d, lon, lat)) return { kind: 'disputed', id: d.id };
+  for (const s of atlas.spots) if (inside(s, lon, lat)) return { kind: s.kind === 'country' ? 'country' : 'other', id: s.id };
   for (const c of atlas.countries) if (inside(c, lon, lat)) return { kind: 'country', id: c.id };
   for (const o of atlas.others) if (inside(o, lon, lat)) return { kind: 'other', id: o.id };
   return null;

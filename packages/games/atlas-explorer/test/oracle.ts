@@ -37,8 +37,8 @@ export const RAW_COUNTRIES: Map<string, RawCountry> = new Map(
       c.id,
       {
         id: c.id,
-        region: c.region,
-        sub: c.sub,
+        region: ATLAS_DATA.subs[c.s]![0],
+        sub: ATLAS_DATA.subs[c.s]![1],
         tier: f[0]!,
         home: [f[3]! / 100, f[4]! / 100, f[5]! / 100, f[6]! / 100],
         pop: f[7]!,

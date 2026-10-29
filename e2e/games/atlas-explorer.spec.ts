@@ -49,9 +49,13 @@ async function clientPoint(page: Page, lon: number, lat: number): Promise<{ x: n
   );
 }
 
-/** Whether two countries' home territories touch (within 2°): borders via overseas parts are no overland steps. */
+/**
+ * Whether two countries' home territories touch (within 2°) and their border is more than a small exclave's: borders
+ * via overseas parts or only via an exclave across the sea (Spain–Morocco via Ceuta and Melilla) are no overland steps.
+ */
 function homesTouch(a: string, b: string): boolean {
   const [p, q] = [atlas.country(a)!.home, atlas.country(b)!.home];
+  if (atlas.country(a)!.nbExclave.includes(b)) return false;
   return p[0] - q[2] <= 2 && q[0] - p[2] <= 2 && p[1] - q[3] <= 2 && q[1] - p[3] <= 2;
 }
 
