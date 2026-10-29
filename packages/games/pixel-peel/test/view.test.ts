@@ -154,6 +154,12 @@ describe('view', () => {
     expect(q('pp-stuck-back').hidden).toBe(false);
     expect(q('pp-stuck-back').textContent).toBe(`Back to move ${k}`);
     expect(q('pp-stuck-text').textContent).toBe(`No move left. Going back to move ${k} works.`);
+    // Hint in the stuck card names the same safe point: its way back stays in the stuck card, no second card.
+    q('pp-stuck-hint').click();
+    vi.advanceTimersByTime(50);
+    expect(status()).toContain(`${k}`);
+    expect(q('pp-undo-to').closest('[hidden]')).not.toBeNull();
+    expect(q('pp-stuck-back').hidden).toBe(false);
     q('pp-stuck-back').click();
     expect(instance.serialize().moves).toEqual(r.moves.slice(0, k));
     expect(status()).toBe(`Back at move ${k}.`);

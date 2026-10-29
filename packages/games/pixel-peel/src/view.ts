@@ -591,7 +591,8 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
       if (b.dataset.testid === 'pp-stuck-restart') b.disabled = state.moves.length === 0;
     }
     const undoTarget = hintResult?.kind === 'undo' && hintResult.k < state.moves.length ? hintResult.k : -1;
-    hintRow.hidden = undoTarget < 0 || noticesDismissed;
+    // The stuck card already offers the same way back first: no second card with the same button.
+    hintRow.hidden = undoTarget < 0 || noticesDismissed || (!stuckPanel.hidden && safe === undoTarget);
     setText(undoToButton, undoTarget === 0 ? t('hint.undoToStart') : t('hint.undoTo', { k: undoTarget }));
 
     // Colours overview
