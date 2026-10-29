@@ -1480,14 +1480,54 @@ describe('Relay Command map editor', () => {
     expect(state().edit!.slot).toBeNull();
   });
 
-  it('the editor starts from the built-in maps it can hold: two or four bases (not Lake Country, three)', async () => {
+  it('the editor starts from every built-in map: two, three (Lake Country) or four bases', async () => {
     click('rc-editor-open');
     await settle();
     const values = [...($('ed-start') as HTMLSelectElement).options].map((o) => o.value);
-    expect(values).toContain('highland-line');
-    expect(values).toContain('two-valleys');
-    expect(values).toContain('bastion');
-    expect(values).not.toContain('lake-country');
+    expect(values).toEqual(['blank', ...SCENARIOS.map((x) => x.id)]);
+  });
+
+  it('three bases: named A to C, never mirrored (the choice is hidden), played with two opponents; Lake Country opens with its Supply', async () => {
+    click('rc-editor-open');
+    await settle();
+    const bases = $('ed-bases') as HTMLSelectElement;
+    expect([...bases.options].map((o) => o.textContent)).toEqual(['2 (you and an opponent)', '3 (you and two opponents, never mirrored)', '4 (one in each corner)']);
+    bases.value = '3';
+    bases.dispatchEvent(new Event('change'));
+    expect(state().edit!.map.seats).toBe(3);
+    expect(['ed-side-0', 'ed-side-1', 'ed-side-2'].map((id) => $(id).textContent)).toEqual(['Base A (you, blue)', 'Base B', 'Base C']);
+    expect(document.querySelector('[data-testid="ed-side-3"]')).toBeNull();
+    expect($('ed-mirror').closest('label')!.hidden).toBe(true);
+    expect($('ed-teams').closest('label')!.hidden).toBe(true);
+    expect(state().edit!.mirror).toBe(true); // kept for the next map
+    const place = (kind: string, side: number, x: number, y: number) => {
+      click(`ed-side-${side}`);
+      click(`ed-tool-${kind}`);
+      moveTo(x, y);
+      edKey('Enter');
+    };
+    for (const [side, x, y] of [[0, 2, 9], [1, 2, 2], [2, 13, 5]] as const) {
+      place('command-post', side, x, y);
+      place('rifles', side, x + (x < 8 ? 1 : -1), y);
+    }
+    // Not mirrored: six pieces, one per tap.
+    expect(state().edit!.map.units).toHaveLength(6);
+    expect($('ed-ok').textContent).toBe('Ready to play.');
+    expect($('ed-fair').textContent).toBe('Three bases are never mirrored: play the map to see whether it is fair.');
+    click('ed-play');
+    expect(state().map!.seats).toBe(3);
+    expect(state().opponents).toBe(2);
+    expect(state().world.sides).toBe(3);
+    expect([...($('rc-opponents') as HTMLSelectElement).options].map((o) => o.value)).toEqual(['1', '2']);
+    // Lake Country opens as it is: three bases with their Supply.
+    click('rc-editor-open');
+    ($('ed-start') as HTMLSelectElement).value = 'lake-country';
+    click('ed-load');
+    later();
+    click('ed-load');
+    expect(state().edit!.map.seats).toBe(3);
+    expect(state().edit!.map.supply).toEqual([150, 300, 300]);
+    expect([0, 1, 2].map((seat) => ($(`ed-supply-${seat}`) as HTMLSelectElement).value)).toEqual(['150', '300', '300']);
   });
 
   it('the editor shows a large map fitted, at 100 % or 50 % in a frame; "Move the map" lets a swipe scroll instead of paint', async () => {

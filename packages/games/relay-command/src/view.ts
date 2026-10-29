@@ -82,7 +82,7 @@ import { DIFFICULTIES, type Difficulty } from './ai';
 import { drawIcon, VIEWS, type View } from './icons';
 import { buildReplay, positionAt, type Replay } from './replay';
 import { createEditor } from './editor';
-import { blankMap, customSpec, hostMapLibrary, mapIssues, MAX_NAME, memoryStore, migratePreferenceMaps, preferenceMapLibrary, type EditMap, type MapLibrary, type MapStore } from './maps';
+import { blankMap, customSpec, hostMapLibrary, mapIssues, MAX_NAME, memoryStore, migratePreferenceMaps, preferenceMapLibrary, seatsOf, type EditMap, type MapLibrary, type MapStore } from './maps';
 import { generateMap } from './generator';
 import { CELL, createTerrainLayer, drawDeposit, drawTerrainSwatch, TERRAIN_NAMES } from './draw';
 import { FIELD_EXERCISE, opponentCounts, SCENARIOS, scenarioFor } from './scenarios';
@@ -637,7 +637,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     selected = null;
     const limit = state.turnLimit;
     // A map with four bases starts with three opponents (the setup offers one to three and teams).
-    commit(newGame(normalizeSeed(state.seed + 1), FIELD_EXERCISE, state.difficulty, limit, state.quick, m, m.seats === 4 ? 3 : 1, [], state.endless), t('announce.setup', { scenario: mapLabel(m) }));
+    commit(newGame(normalizeSeed(state.seed + 1), FIELD_EXERCISE, state.difficulty, limit, state.quick, m, seatsOf(m) - 1, [], state.endless), t('announce.setup', { scenario: mapLabel(m) }));
     homeCursor();
     render();
     canvas.focus();
@@ -2637,7 +2637,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     selected = null;
     const map = own && mapIssues(own).length === 0 ? own : null;
     syncOpponentOptions();
-    // A player-made map with four bases takes the count chosen (two-side maps: one).
+    // A player-made map with three or four bases takes the count chosen (two-side maps: one).
     const opponents = map && !map.seats ? 1 : Number(opponentsSelect.value) || 1;
     commit(newGame(state.seed, spec, state.difficulty, limit, limitSelect.value === 'quick', map, opponents, chosenSeats(), endlessInput.checked, null, chosenTeams(), chosenStart()), t('announce.setup', { scenario: map ? mapLabel(map) : t(`scenario.${spec.id}`) }));
     homeCursor();
