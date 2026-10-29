@@ -86,6 +86,16 @@
 .wp-balance .bl-com--fail { stroke-width: 3; }
 .wp-balance .bl-com-cross { stroke: var(--wp-text); stroke-width: 1.5; }
 
+/* Dragging (design § 13.1): parts that can be dragged, and the tray chips, take the touch themselves, so a finger that
+   holds one never scrolls the page; the snap target is a dashed outline (shape and line style, not colour). */
+.wp-balance .bl-draggable, .wp-balance .bl-chip--drag { touch-action: none; cursor: grab; }
+.wp-balance.bl-is-dragging, .wp-balance.bl-is-dragging * { cursor: grabbing; }
+.wp-balance .bl-drag-source { opacity: 0.4; }
+.wp-balance.bl-is-dragging .bl-cursor { visibility: hidden; }
+.wp-balance.bl-is-dragging .bl-ghost .bl-cursor { visibility: visible; }
+.wp-balance .bl-ghost { pointer-events: none; }
+.wp-balance .bl-ghost .bl-mass, .wp-balance .bl-ghost .bl-cube, .wp-balance .bl-ghost .bl-body { stroke-width: 2.4; stroke-dasharray: 4 3; fill-opacity: 0.2; }
+
 /* The tipping pose is computed from the verdict (an SVG transform); the cosmetic motion (≤ 0.7 s) is a SMIL
    rotation the view only adds when motion is allowed (reduced motion: the final pose only). */
 @media (forced-colors: active) {

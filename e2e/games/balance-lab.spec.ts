@@ -145,6 +145,59 @@ test('balance-lab: on the free mobile every tap on an empty hook in the picture 
   await expect(r.locator('.bl-kg')).toHaveCount(2);
 });
 
+type Point = { x: number; y: number };
+
+/** Drags from one viewport point to another: with the mouse on desktop, with a finger (real touch input) on a phone. */
+async function drag(page: Page, from: Point, to: Point, touch: boolean): Promise<void> {
+  const steps = 12;
+  if (!touch) {
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.down();
+    await page.mouse.move(to.x, to.y, { steps });
+    await page.mouse.up();
+    return;
+  }
+  const cdp = await page.context().newCDPSession(page);
+  const send = (type: 'touchStart' | 'touchMove' | 'touchEnd', p?: Point) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: p ? [{ x: p.x, y: p.y }] : [] });
+  await send('touchStart', from);
+  for (let i = 1; i <= steps; i++) await send('touchMove', { x: from.x + ((to.x - from.x) * i) / steps, y: from.y + ((to.y - from.y) * i) / steps });
+  await send('touchEnd');
+  await cdp.detach();
+}
+
+const centre = async (l: ReturnType<Page['locator']>): Promise<Point> => {
+  const b = (await l.boundingBox())!;
+  return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
+};
+
+test('balance-lab: drag a weight from the tray onto a hook, then drag it to the hook that levels the bar (mouse or touch)', async ({ page, isMobile }) => {
+  await startGame(page, ID, { difficulty: 'easy', settings: { mode: 'round', bench: 'beam', tasks: 'build' } });
+  const r = root(page);
+  const hook = await witnessHook(page, 0);
+  const s0 = await savedState(page);
+  const half = (s0.items[0]!.scene.s as { half: number }).half;
+  const first = hook > 0 ? -half : half;
+  // Scene and tray in view together (the scene is first in the column).
+  await r.getByTestId('bl-scene').evaluate((el) => el.scrollIntoView({ block: 'start' }));
+  const scrollBefore = await page.evaluate(() => window.scrollY);
+  const hookAt = async (h: number) => {
+    const c = await centre(r.locator('.bl-hook').nth(h + half));
+    return { x: c.x, y: c.y + 24 };
+  };
+  await drag(page, await centre(r.getByTestId('bl-tray-0')), await hookAt(first), isMobile);
+  await expect.poll(async () => (((await savedState(page)).items[0]!.draft.s as { weights: { free?: boolean }[] }).weights.filter((w) => w.free).length)).toBe(1);
+  // The page did not scroll while the finger moved over it.
+  expect(await page.evaluate(() => window.scrollY)).toBe(scrollBefore);
+  const placed = (await savedState(page)).items[0]!.draft.s as { weights: { hook: number; free?: boolean }[] };
+  const at = placed.weights.find((w) => w.free)!.hook;
+  expect(Math.abs(at - first)).toBeLessThanOrEqual(1);
+  // A tap on the placed weight would not move it; a drag does.
+  await drag(page, await centre(r.locator('[data-drag^="weight:"] .bl-mass')), await hookAt(hook), isMobile);
+  await expect.poll(async () => ((await savedState(page)).items[0]!.draft.s as { weights: { hook: number; free?: boolean }[] }).weights.find((w) => w.free)?.hook).toBe(hook);
+  await r.getByTestId('bl-letgo').click();
+  await expect(r.getByTestId('bl-outcome')).toHaveAttribute('data-status', 'solved');
+});
+
 /** Switches the UI language through the header menu (re-renders the current page). */
 async function switchLanguage(page: Page, locale: string): Promise<void> {
   await page.getByTestId('language-menu').locator('summary').click();

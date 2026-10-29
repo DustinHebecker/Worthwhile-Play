@@ -49,6 +49,22 @@ export function mobileHookXs(node: MobileNode): number[] {
   return out;
 }
 
+/** Picture point of every mobile hook (on its bar), depth-first (the order of `mobileHooks`). */
+export function mobileHookPoints(node: MobileNode): { x: number; y: number }[] {
+  const out: { x: number; y: number }[] = [];
+  const walk = (n: MobileNode, l: MobileLayout) => {
+    if (!isBar(n)) return;
+    const x0 = l.x - n.bar.string * l.unit;
+    n.bar.hooks.forEach((h, k) => {
+      out.push({ x: x0 + h.pos * l.unit, y: l.y });
+      const c = l.children[k];
+      if (h.child && c) walk(h.child, c);
+    });
+  };
+  walk(node, layoutMobile(node));
+  return out;
+}
+
 export const STACK_VIEW = { height: 240, scale: 2.2, origin: 180, bodyH: 22 } as const;
 
 export function layoutStack(scene: StackScene) {

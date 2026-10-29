@@ -181,3 +181,36 @@ export function fitViewBox(root: Element, fallback: string, pad = 8, minW = 150,
   const r = (v: number) => Math.round(v * 10) / 10;
   return `${r(cx - w / 2)} ${r(cy - h / 2)} ${r(w)} ${r(h)}`;
 }
+
+/** A client rectangle (the part of `DOMRect` the mapping needs). */
+export interface ClientRect {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+/** The numbers of a viewBox attribute (the fallback frame when it is missing or malformed). */
+function viewBoxOf(viewBox: string | null): [number, number, number, number] {
+  const v = (viewBox ?? '').trim().split(/[\s,]+/).map(Number);
+  return v.length === 4 && v.every(Number.isFinite) && v[2]! > 0 && v[3]! > 0 ? (v as [number, number, number, number]) : [0, 0, 320, 230];
+}
+
+/** Scale and letterbox offsets of a viewBox shown in a client rectangle (`preserveAspectRatio` xMidYMid meet). */
+function frame(viewBox: string | null, rect: ClientRect) {
+  const [vx, vy, vw, vh] = viewBoxOf(viewBox);
+  const k = Math.min(rect.width / vw, rect.height > 0 ? rect.height / vh : Infinity);
+  return { vx, vy, k, ox: rect.left + (rect.width - vw * k) / 2, oy: rect.top + (rect.height - vh * k) / 2 };
+}
+
+/** The picture point under a client point: the scene is framed by a fitted viewBox and letterboxed (xMidYMid meet). */
+export function toScene(viewBox: string | null, rect: ClientRect, clientX: number, clientY: number): { x: number; y: number } {
+  const f = frame(viewBox, rect);
+  return { x: f.vx + (clientX - f.ox) / f.k, y: f.vy + (clientY - f.oy) / f.k };
+}
+
+/** The client point of a picture point (the inverse of `toScene`). */
+export function toClient(viewBox: string | null, rect: ClientRect, x: number, y: number): { x: number; y: number } {
+  const f = frame(viewBox, rect);
+  return { x: f.ox + (x - f.vx) * f.k, y: f.oy + (y - f.vy) * f.k };
+}
