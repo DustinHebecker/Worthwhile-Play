@@ -5,7 +5,9 @@ import type { GameInstance, GameModule } from '@wp/game-core';
 import { SUPPORTED_LOCALES, type SupportedLocale } from '@wp/localization';
 import game from '../src/index';
 import { createInitial } from '../src/generate';
-import { exposed, initialPosition, play, position, type PeelState } from '../src/rules';
+import { exposed, initialPosition, play, position, tableOfState, type PeelState } from '../src/rules';
+import { hint } from '../src/hint';
+import { runPolicy } from '../src/policies';
 import { createPixelPeel, inkFor, peelOf, type PeelMode } from '../src/view';
 import { stateOf } from './helpers';
 
@@ -133,6 +135,42 @@ describe('view', () => {
     expect(status()).toContain('Started again');
     q('pp-undo').click();
     expect(instance.serialize().moves).toEqual(moves);
+  });
+
+  it('the stuck card offers the way back: "Back to move k" (the hint\'s safe point), after one frame', () => {
+    let s = createInitial(31, 'hard', 'red-fox');
+    const r = runPolicy(tableOfState(s), 'obvious', 1, { left: 1e8 });
+    expect(r.result).toBe('stuck');
+    for (const m of r.moves) s = play(s, m);
+    const safe = hint(s);
+    expect(safe.kind).toBe('undo');
+    const k = (safe as { k: number }).k;
+    vi.useFakeTimers();
+    const { q, instance, status } = start({ state: s });
+    expect(q('pp-stuck').hidden).toBe(false);
+    expect(q('pp-stuck-back').hidden).toBe(true);
+    expect(k).toBeGreaterThan(0);
+    vi.advanceTimersByTime(50);
+    expect(q('pp-stuck-back').hidden).toBe(false);
+    expect(q('pp-stuck-back').textContent).toBe(`Back to move ${k}`);
+    expect(q('pp-stuck-text').textContent).toBe(`No move left. Going back to move ${k} works.`);
+    q('pp-stuck-back').click();
+    expect(instance.serialize().moves).toEqual(r.moves.slice(0, k));
+    expect(status()).toBe(`Back at move ${k}.`);
+    expect(q('pp-stuck').hidden).toBe(true);
+  });
+
+  it('the stuck card is closed with its close button or Esc and comes back after the next change', () => {
+    const { q, root } = start({ state: play(ringState(), 'L1') });
+    expect(q('pp-stuck').hidden).toBe(false);
+    q('pp-stuck-close').click();
+    expect(q('pp-stuck').hidden).toBe(true);
+    q('pp-undo').click();
+    q('pp-lane-1').click();
+    expect(q('pp-stuck').hidden).toBe(false);
+    root.firstElementChild!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(q('pp-stuck').hidden).toBe(true);
+    expect(q('pp-stuck-close').getAttribute('aria-label')).toBe('Close');
   });
 
   it('shows the stuck panel calmly, without finishing the game', () => {

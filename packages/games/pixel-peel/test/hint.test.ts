@@ -6,6 +6,7 @@ import { createInitial } from '../src/generate';
 import { commonPrefix, followPlan, hint, identitiesOf, safePointCandidates } from '../src/hint';
 import { picker, POLICIES, run, runPolicy } from '../src/policies';
 import { initialPosition, play, positionAt, tableOfState, type PeelState } from '../src/rules';
+import { prove } from '../src/prove';
 import { refObviousPlay } from './reference';
 import { solve, stateOf } from './helpers';
 
@@ -158,5 +159,29 @@ describe('hint at scale (design v2 § 4)', () => {
       }),
       { numRuns: 15 }
     );
+  });
+});
+
+describe('the stuck card\'s way back (design v3 § 2.4)', () => {
+  it('after a rule of thumb gets stuck on hard, the hint offers a move number from which the picture can be finished (checked by replay)', () => {
+    let checked = 0;
+    for (const [motif, seed] of [['red-fox', 31], ['winter-village', 32], ['tiger', 33], ['koala', 34]] as const) {
+      let state = createInitial(seed, 'hard', motif);
+      const table = tableOfState(state);
+      const r = runPolicy(table, 'obvious', 1, { left: 1e8 });
+      if (r.result !== 'stuck') continue;
+      for (const m of r.moves) state = play(state, m);
+      const h = hint(state);
+      expect(h.kind).toBe('undo');
+      if (h.kind !== 'undo') continue;
+      expect(h.k).toBeLessThan(state.moves.length);
+      const prefix = state.moves.slice(0, h.k);
+      const from = replayCursor(table, prefix)!;
+      const way = prove(table, from, identitiesOf(table, state.witness), identitiesOf(table, prefix), { left: 1e9 }, { rollouts: 40, nodes: 4000, seed: 1 });
+      expect(way, `${motif} ${seed}: back to move ${h.k}`).not.toBeNull();
+      expect(replayCursor(table, [...prefix, ...way!])?.cells.left).toBe(0);
+      checked++;
+    }
+    expect(checked).toBeGreaterThanOrEqual(3);
   });
 });

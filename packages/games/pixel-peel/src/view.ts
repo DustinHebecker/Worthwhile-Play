@@ -576,6 +576,11 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
     // Actions, stuck, hint undo target
     const stuck = !isSolved && isStuckNow();
     stuckPanel.hidden = !stuck || noticesDismissed;
+    if (stuck) scheduleStuckSafe();
+    const safe = stuck && stuckSafe?.key === state.moves.join(' ') && stuckSafe.k > 0 ? stuckSafe.k : -1;
+    stuckBack.hidden = safe < 0;
+    setText(stuckBack, safe > 0 ? t('stuck.backButton', { k: safe }) : '');
+    setText(stuckText, safe > 0 ? t('stuck.back', { k: safe }) : t('stuck.text'));
     // As rules.canUndo, from the cached cursor (canUndo replays every move).
     const undoable = !isSolved && (state.moves.length > 0 || (state.restartUndo?.length ?? 0) > 0);
     undoButton.disabled = !undoable;
@@ -1205,10 +1210,14 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
     if (hintTimer !== null) clearTimeout(hintTimer);
     hintTimer = null;
   };
+  let stuckTimer: ReturnType<typeof setTimeout> | null = null;
+  /** The safe point offered by the stuck card, for the moves it was computed for (-1: none beyond the start). */
+  let stuckSafe: { key: string; k: number } | null = null;
 
   /** Applies a new state after a move (incrementally) or any other change (by replay). */
   const commit = (next: PeelState, message: string, played?: { move: Move; hits: Hit[]; colour: string; shots: number; usedUp: boolean }) => {
     cancelHint();
+    cancelStuckSafe();
     hintResult = null;
     selected = null;
     previewMove = null;
@@ -1321,10 +1330,34 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
     if (next !== state) commit(next, t('status.restarted'));
   }
 
-  /** The stuck card's way back (completed in step 5). */
+  /** The stuck card's way back (design v3 § 2.4): the hint's safe point, proven as the hint proves it. */
   function doStuckBack() {
-    doUndoTo();
+    finishAll(false);
+    if (paused || stuckSafe === null || stuckSafe.key !== state.moves.join(' ')) return;
+    const k = stuckSafe.k;
+    const next = undoTo(state, k);
+    if (next !== state) commit(next, k === 0 ? t('status.undoneToStart') : t('status.undoneTo', { k }));
   }
+
+  /**
+   * When the position is stuck, the safe point is computed once, after one frame (the search takes a moment on a
+   * phone); until then the card offers Undo, Start again and Hint. Presentation only: no rule waits for it.
+   */
+  const scheduleStuckSafe = () => {
+    const key = state.moves.join(' ');
+    if (stuckTimer !== null || stuckSafe?.key === key) return;
+    stuckTimer = setTimeout(() => {
+      stuckTimer = null;
+      if (paused || !isStuckNow() || state.moves.join(' ') !== key) return;
+      const r = computeHint(state);
+      stuckSafe = { key, k: r.kind === 'undo' && r.k < state.moves.length ? r.k : -1 };
+      update();
+    }, 30);
+  };
+  const cancelStuckSafe = () => {
+    if (stuckTimer !== null) clearTimeout(stuckTimer);
+    stuckTimer = null;
+  };
 
   function doUndoTo() {
     finishAll(false);
@@ -1467,6 +1500,8 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
     compact = stickyTop();
     dropAnimations();
     cancelHint();
+    cancelStuckSafe();
+    stuckSafe = null;
     hintResult = null;
     selected = null;
     previewMove = null;
@@ -1506,10 +1541,12 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
       paused = true;
       finishAll();
       cancelHint();
+      cancelStuckSafe();
       renderStatus();
     },
     resume() {
       paused = false;
+      if (isStuckNow()) scheduleStuckSafe();
     },
     reset() {
       state = resetState(state);
@@ -1519,6 +1556,7 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
     dispose() {
       dropAnimations();
       cancelHint();
+      cancelStuckSafe();
       container.removeEventListener('keydown', onKeyDown);
       document.removeEventListener('pointerdown', onPointerDown);
       if (typeof window !== 'undefined') window.removeEventListener('resize', onResize);
