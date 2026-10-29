@@ -308,3 +308,6 @@
 .wp-relay-command .rc-vs-table td { text-align: end; font-variant-numeric: tabular-nums; padding: 0.15rem; white-space: nowrap; }
 /* Large maps (more than 24×16 cells) scroll in a frame of their own instead of stretching the page. */
 .wp-relay-command .rc-mapwrap.rc-large { max-height: min(75vh, 56rem); overscroll-behavior: contain; }
+/* The editor's large maps at 100 % or 50 %: a frame of their own that scrolls. */
+.wp-relay-command .rc-ed-mapwrap.rc-large { overflow: auto; max-block-size: min(75vh, 56rem); overscroll-behavior: contain; }
+.wp-relay-command .rc-ed-mapwrap.rc-large .rc-ed-map { max-inline-size: none; }

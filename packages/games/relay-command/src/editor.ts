@@ -60,6 +60,9 @@ export interface EditorOptions {
   readonly announce: (text: string) => void;
 }
 
+/** Maps larger than this (cells; 24×16) are large: the editor offers to show them at 100 % or 50 % in a frame. */
+const LARGE_EDIT_CELLS = 24 * 16;
+
 /** Milliseconds after arming a two-press button in which a second press does not count. */
 const CONFIRM_GAP = 400;
 
@@ -76,6 +79,14 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
   let codeOpen = false;
   let painting = false;
   let lastCell = -1;
+  /**
+   * Large maps (more than 24×16 cells, owner request 2026-10-27): fitted into the width a cell of a
+   * 48×32 map is a few pixels on a phone, so the map can be shown at 100 % or 50 % in a frame that
+   * scrolls; "Move the map" then lets a swipe scroll instead of paint. This session only.
+   */
+  let size: 'fit' | 1 | 0.5 = 'fit';
+  let moving = false;
+  const isLarge = () => map().w * map().h > LARGE_EDIT_CELLS;
   /**
    * The whole draft before the last change (map, library slot, mirror mode): one step of undo,
    * covering resizing and loading too. Cleared whenever the editor opens or closes, a game starts
@@ -242,6 +253,24 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
   // --- Map canvas ------------------------------------------------------------------------------
   const canvas = h('canvas', { class: 'rc-ed-map', 'data-testid': 'ed-map', tabindex: 0, role: 'application', 'aria-roledescription': t('editor.title'), 'aria-describedby': 'rc-ed-cursor' }) as HTMLCanvasElement;
   const cursorDesc = h('p', { id: 'rc-ed-cursor', class: 'rc-muted', 'data-testid': 'ed-cursor', 'aria-live': 'polite' });
+  const mapWrap = h('div', { class: 'rc-ed-mapwrap', dir: 'ltr' }, canvas);
+  const sizeButtons = new Map<'fit' | 1 | 0.5, HTMLElement>(
+    (['fit', 1, 0.5] as const).map((v) => [
+      v,
+      h('button', { type: 'button', 'data-testid': `ed-size-${v === 'fit' ? 'fit' : Math.round(v * 100)}`, 'aria-pressed': 'false', onclick: () => setSize(v) }, v === 'fit' ? t('editor.fit') : t('zoom.percent', { n: Math.round(v * 100) }))
+    ])
+  );
+  const moveBtn = h('button', { type: 'button', 'data-testid': 'ed-move', 'aria-pressed': 'false', hidden: true, onclick: () => setMoving(!moving) }, t('editor.move'));
+  const sizeGroup = h('div', { class: 'rc-actions rc-view', role: 'group', 'aria-label': t('zoom.label'), 'data-testid': 'ed-size', hidden: true }, h('span', { class: 'rc-label' }, t('zoom.label')), ...sizeButtons.values(), moveBtn);
+  function setSize(v: 'fit' | 1 | 0.5): void {
+    size = v;
+    if (v === 'fit') moving = false;
+    render();
+  }
+  function setMoving(on: boolean): void {
+    moving = on;
+    render();
+  }
   const cellAt = (event: MouseEvent): { x: number; y: number } | undefined => {
     const rect = canvas.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) return undefined;
@@ -255,6 +284,7 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
     render();
   };
   canvas.addEventListener('pointerdown', (event) => {
+    if (moving) return; // the swipe scrolls the frame
     const cell = cellAt(event);
     if (!cell) return;
     painting = true;
@@ -278,7 +308,7 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
   canvas.addEventListener('pointercancel', stop);
   // Clicks without pointer events (keyboard-free assistive tech, tests).
   canvas.addEventListener('click', (event) => {
-    if ((event as PointerEvent).pointerId !== undefined && event.detail !== 0) return;
+    if (moving || ((event as PointerEvent).pointerId !== undefined && event.detail !== 0)) return;
     const cell = cellAt(event);
     if (cell) applyAt(cell.x, cell.y);
   });
@@ -301,6 +331,17 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
     const m = map();
     canvas.width = m.w * CELL;
     canvas.height = m.h * CELL;
+    // Large maps: fitted (as all maps), or at 100 % / 50 % in a frame that scrolls.
+    const large = isLarge();
+    if (!large) moving = false;
+    const framed = large && size !== 'fit';
+    mapWrap.classList.toggle('rc-large', framed);
+    canvas.style.inlineSize = framed ? `${m.w * CELL * (size as number)}px` : '';
+    canvas.style.touchAction = moving ? 'pan-x pan-y' : '';
+    sizeGroup.hidden = !large;
+    for (const [v, b] of sizeButtons) b.setAttribute('aria-pressed', String(v === size));
+    moveBtn.hidden = !framed;
+    moveBtn.setAttribute('aria-pressed', String(moving));
     canvas.setAttribute('data-cols', String(m.w));
     let g: CanvasRenderingContext2D | null = null;
     try {
@@ -506,7 +547,8 @@ export function createEditor(o: EditorOptions): { readonly el: HTMLElement; rend
     h('p', { class: 'rc-muted' }, t('editor.hint')),
     settings,
     supplyBox,
-    h('div', { class: 'rc-ed-main' }, h('div', { class: 'rc-ed-mapwrap', dir: 'ltr' }, canvas), palette),
+    sizeGroup,
+    h('div', { class: 'rc-ed-main' }, mapWrap, palette),
     cursorDesc,
     issuesEl,
     noticeEl,

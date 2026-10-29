@@ -1490,6 +1490,52 @@ describe('Relay Command map editor', () => {
     expect(values).not.toContain('lake-country');
   });
 
+  it('the editor shows a large map fitted, at 100 % or 50 % in a frame; "Move the map" lets a swipe scroll instead of paint', async () => {
+    click('rc-editor-open');
+    await settle();
+    const map = $('ed-map') as HTMLCanvasElement;
+    // 16×12: no size choice.
+    expect($('ed-size').hidden).toBe(true);
+    const pick = (id: string, value: string) => {
+      const el = $(id) as HTMLSelectElement;
+      el.value = value;
+      el.dispatchEvent(new Event('change'));
+    };
+    pick('ed-width', '48');
+    pick('ed-height', '32');
+    expect($('ed-size').hidden).toBe(false);
+    // Fitted by default, as every map: no frame, no move button.
+    expect($('ed-size-fit').getAttribute('aria-pressed')).toBe('true');
+    expect(map.style.inlineSize).toBe('');
+    expect(map.parentElement!.classList.contains('rc-large')).toBe(false);
+    expect($('ed-move').hidden).toBe(true);
+    click('ed-size-100');
+    expect(map.style.inlineSize).toBe(`${48 * 44}px`);
+    expect(map.parentElement!.classList.contains('rc-large')).toBe(true);
+    expect($('ed-size-100').getAttribute('aria-pressed')).toBe('true');
+    click('ed-size-50');
+    expect(map.style.inlineSize).toBe(`${48 * 22}px`);
+    // Moving: a tap paints nothing and the canvas lets the browser scroll.
+    expect($('ed-move').hidden).toBe(false);
+    click('ed-move');
+    expect($('ed-move').getAttribute('aria-pressed')).toBe('true');
+    expect(map.style.touchAction).toBe('pan-x pan-y');
+    const before = state().edit!.map.terrain;
+    map.dispatchEvent(new MouseEvent('click', { clientX: 1, clientY: 1, bubbles: true }));
+    expect(state().edit!.map.terrain).toBe(before);
+    click('ed-move');
+    expect(map.style.touchAction).toBe('');
+    // Back to fitted: no frame and moving ends.
+    click('ed-move');
+    click('ed-size-fit');
+    expect(map.style.inlineSize).toBe('');
+    expect($('ed-move').getAttribute('aria-pressed')).toBe('false');
+    // A small map again: no size choice.
+    pick('ed-width', '16');
+    pick('ed-height', '12');
+    expect($('ed-size').hidden).toBe(true);
+  });
+
   it('undo restores the whole draft (map and its saved place), and is forgotten when the editor closes', async () => {
     const name = (v: string) => {
       const input = $('ed-name') as HTMLInputElement;
