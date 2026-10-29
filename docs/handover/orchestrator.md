@@ -164,14 +164,17 @@ On main and deployed (in addition to 2026-10-28):
   - Probability Detective: compact round summary with collapsible cases (owner decision).
 - Strategy #89–#93 merged (large maps, asymmetric random maps, Two Valleys, editor large maps, three-base editor maps).
 
+Later on 2026-10-29 (all published):
+- Weight & Balance: failing joint spread evenly over the joints; 4 cm steps stop at bounds; paused drag fixed; every round now meets the answer balance (seed-dependent property failure reported by the strategy agent, fixed in 77960ce).
+- Atlas Explorer (reviewed): Ceuta and Melilla drawn as Spain (Natural Earth "Geo subunit"), Gibraltar hatched ("Disputed"), precise outlines for places < 100 km², Kashmir hatched edges held to one grid cell, east/west as read off the map with a date-line sentence. Owner decisions 2026-10-29: Ceuta/Melilla stay Spain (no hatching); Spain–Morocco is a clue neighbour but not an overland route step. Atlas data is at 148.9 of 150 KiB (≈1.1 KB margin).
+- Strategy #94 (difficulty per opponent) and #95 (opponent styles) merged.
+
 Open:
-- Strategy PR #94 (difficulty per computer opponent) in the gate; next from strategy: opponent styles.
-- Weight & Balance: "which joint gives way?" answer is the table joint in ~38 % of hard falls (players may learn it; rebalance in the generator if wanted); ◀◀/▶▶ refuse a 4 cm step near bounds instead of stopping at the bound; a paused drag leaves the source part dimmed until resume (cosmetic).
-- Atlas follow-ups: Kashmir slivers; Melilla and Gibraltar; direction words; native review.
 - Pixel Peel: phone start time (~300 ms vs 250 ms target) needs a quiet-machine measurement.
+- Atlas: finer hatched edges (0.5 cell, +3.5 KB) only with a larger data budget; Natural Earth's tiny outlines are rough (shown as in the data).
 - Native-speaker review of AI-drafted locales (all new games).
 - Waiting on the owner: Economy ("weitermachen" + nine questions; Many Lives needs `@wp/finance-math`), adventures (three questions).
-- Recurring load flakes: relay replay e2e, node-conquest 44 px e2e, card-quest K3 picture and equip e2e (game root not visible in 30 s once on CI), skat pacing. Re-run once before calling a failure real.
+- Recurring load flakes: relay replay e2e, node-conquest 44 px e2e, card-quest K3 picture and equip e2e, skat pacing. Re-run once before calling a failure real.
 - Privacy incident 2026-10-29: a follow-up agent once put the owner's e-mail address into a User-Agent header of a Wikidata request (rate-limited). Owner informed. Briefs now forbid personal data in requests.
 
 ## State (2026-10-28)
