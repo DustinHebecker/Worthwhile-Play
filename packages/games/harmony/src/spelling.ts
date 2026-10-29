@@ -162,9 +162,9 @@ export function keySignature(tonic: Pick<Spelled, 'l' | 'a'>): (-1 | 0 | 1)[] | 
 /**
  * The spelling of `midi` in the major key of `tonic` (used for the moved note of "which note changed?"): the key's own
  * spelling when the pitch belongs to the key (C♯ in E major, never D♭); otherwise, among the single-accidental
- * spellings, the one that departs least from the key signature, then one not on the staff position of a neighbouring
- * note (`neighbours`), then not a rare spelling (E♯, F♭, B♯, C♭), then raised when the note moved up (`move` > 0) and
- * lowered when it moved down. Never a double accidental. Pure.
+ * spellings, the one that departs least from the key signature, then not a rare spelling (E♯, F♭, B♯, C♭; a natural
+ * sign reads better), then one not on the staff position of a neighbouring note (`neighbours`), then raised when the
+ * note moved up (`move` > 0) and lowered when it moved down. Never a double accidental. Pure.
  */
 export function spellInKey(tonic: Pick<Spelled, 'l' | 'a'>, midi: number, neighbours: readonly Spelled[] = [], move = 0): Spelled {
   const sig = keySignature(tonic);
@@ -178,8 +178,8 @@ export function spellInKey(tonic: Pick<Spelled, 'l' | 'a'>, midi: number, neighb
       if (a === sig[l]) return s;
       const cost = [
         Math.abs(a - sig[l]!),
-        neighbours.some((n) => diatonic(n) === diatonic(s) && midiOf(n) !== midi) ? 1 : 0,
         isRare(s) ? 1 : 0,
+        neighbours.some((n) => diatonic(n) === diatonic(s) && midiOf(n) !== midi) ? 1 : 0,
         move !== 0 && Math.sign(a - sig[l]!) !== Math.sign(move) ? 1 : 0
       ];
       if (!best || cheaper(cost, best.cost)) best = { s, cost };

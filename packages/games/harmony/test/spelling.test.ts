@@ -154,9 +154,11 @@ describe('chords, scales and cadences', () => {
     // Raised when moving up, lowered when moving down …
     expect(name(spellInKey(C, 61, [], 1))).toBe('C#4');
     expect(name(spellInKey(C, 61, [], -1))).toBe('Db4');
-    // … unless that puts it on the staff position of a neighbouring note (C4 C♯4 → C4 D♭4; B major: E♯4 F♯4, not F4 F♯4).
+    // … unless that puts it on the staff position of a neighbouring note (C4 C♯4 → C4 D♭4) …
     expect(name(spellInKey(C, 61, [s(0, 0, 4)], 1))).toBe('Db4');
-    expect(name(spellInKey({ l: 6, a: 0 }, 65, [s(3, 1, 4)], -1))).toBe('E#4');
+    // … but a natural sign beats E♯, F♭, B♯ and C♭ (B major: F♮4 before F♯4, not E♯4; E♭ major: B♮4 after B♭4, not C♭5).
+    expect(name(spellInKey({ l: 6, a: 0 }, 65, [s(3, 1, 4)], -1))).toBe('F4');
+    expect(name(spellInKey({ l: 2, a: -1 }, 71, [s(6, -1, 4)], 1))).toBe('B4');
     // spellAt refuses double accidentals (four semitones above C on the next letter would be D𝄪).
     expect(spellAt(s(0, 0, 4), 1, 4)).toBeUndefined();
   });
