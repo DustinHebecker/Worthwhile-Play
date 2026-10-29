@@ -3,6 +3,7 @@ import { expectResumeAfterReload, readSave, startGame } from '../../packages/tes
 import { position, presentCount, preview, tableOfState, type PeelState } from '../../packages/games/pixel-peel/src/rules';
 import { runPolicy } from '../../packages/games/pixel-peel/src/policies';
 import { messages } from '../../packages/games/pixel-peel/src/messages';
+import { COMMON_MESSAGES } from '../../packages/localization/src/common-messages';
 
 const ID = 'pixel-peel';
 const root = (page: Page) => page.getByTestId('game-root');
@@ -438,6 +439,41 @@ test('pixel-peel: the 3-line status holds the longest result and preview texts o
       return bad;
     }, texts);
     expect(overflow, locale).toEqual([]);
+  }
+});
+
+test('pixel-peel: the action row holds Undo, Hint, Display and Finish peeling of every locale in one row at 360 px', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'viewport sizes are set explicitly');
+  await page.addInitScript(() => localStorage.setItem('wp:pref:pixel-peel:display', JSON.stringify({ confirm: false, peel: 'slow' })));
+  await page.setViewportSize({ width: 360, height: 640 });
+  await startGame(page, ID, { difficulty: 'hard', settings: { motif: 'red-fox' } });
+  const state = await savedState(page);
+  const height = (await root(page).getByTestId('pp-actions').boundingBox())!.height;
+  for (const move of state.witness.slice(0, 4)) await buttonFor(page, move).click();
+  await expect(root(page).getByTestId('pp-finish-peeling')).toBeVisible();
+  for (const [locale, cat] of Object.entries(messages as Record<string, Record<string, string>>)) {
+    const common = (COMMON_MESSAGES as Record<string, Record<string, string>>)[locale]!;
+    const labels = [common['common.undo']!, common['common.hint']!, cat['action.display']!, cat['action.finishPeeling']!];
+    const problems = await root(page).locator('.wp-pixel-peel').evaluate((el, [lang, list]) => {
+      el.setAttribute('lang', lang as string);
+      const out: string[] = [];
+      const row = el.querySelector('[data-testid="pp-actions"]') as HTMLElement;
+      const buttons = ['pp-undo', 'pp-hint', 'pp-display', 'pp-finish-peeling'].map((id) => el.querySelector(`[data-testid="${id}"]`) as HTMLElement);
+      buttons.forEach((b, i) => ((i === 3 ? b.querySelector('span')! : b).textContent = (list as string[])[i]!));
+      const r = row.getBoundingClientRect();
+      for (const b of buttons) {
+        const box = b.getBoundingClientRect();
+        if (box.left < r.left - 0.5 || box.right > r.right + 0.5) out.push(`${b.dataset.testid} outside the row`);
+        const range = document.createRange();
+        range.selectNodeContents(b.dataset.testid === 'pp-finish-peeling' ? b.querySelector('span')! : b);
+        if ([...range.getClientRects()].some((x) => x.left < box.left - 0.5 || x.right > box.right + 0.5)) out.push(`${b.dataset.testid}: "${b.textContent}" spills out`);
+      }
+      return { out, height: r.height, scroll: document.documentElement.scrollWidth - document.documentElement.clientWidth };
+    }, [locale, labels] as const);
+    expect(problems.out, locale).toEqual([]);
+    // Finish peeling comes and goes during play: the row (and so the play unit) keeps its height in every locale.
+    expect(problems.height, locale).toBeLessThanOrEqual(height + 0.5);
+    expect(problems.scroll, locale).toBeLessThanOrEqual(0);
   }
 });
 

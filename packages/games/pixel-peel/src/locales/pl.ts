@@ -149,7 +149,7 @@ export const pl: Catalogue = {
   'options.peelReduced': 'Wyłączone: urządzenie prosi o mniej ruchu.',
   'action.finishPeeling': 'Dokończ obieranie',
   'action.finishPeelingCount': 'Dokończ obieranie ({n})',
-  'action.display': 'Wyświetlanie',
+  'action.display': 'Widok',
   'status.startShort': 'Wybierz strzelca: jego kolor się podświetli, a piksele, które by usunął, zostaną oznaczone.',
   'stuck.back': 'Nie ma już ruchu. Powrót do ruchu {k} działa.',
   'stuck.backButton': 'Wróć do ruchu {k}',

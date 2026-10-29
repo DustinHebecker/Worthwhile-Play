@@ -149,7 +149,7 @@ export const it: Catalogue = {
   'options.peelReduced': 'Spenta: il dispositivo chiede meno movimento.',
   'action.finishPeeling': 'Finisci di sbucciare',
   'action.finishPeelingCount': 'Finisci di sbucciare ({n})',
-  'action.display': 'Visualizzazione',
+  'action.display': 'Vista',
   'status.startShort': 'Scegli un tiratore: il suo colore si illumina e i pixel che toglierebbe vengono segnati.',
   'stuck.back': 'Nessuna mossa possibile. Tornare alla mossa {k} funziona.',
   'stuck.backButton': 'Torna alla mossa {k}',

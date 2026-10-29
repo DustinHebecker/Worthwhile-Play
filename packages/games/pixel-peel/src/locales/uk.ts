@@ -149,7 +149,7 @@ export const uk: Catalogue = {
   'options.peelReduced': 'Вимк.: пристрій просить менше руху.',
   'action.finishPeeling': 'Завершити очищення',
   'action.finishPeelingCount': 'Завершити очищення ({n})',
-  'action.display': 'Відображення',
+  'action.display': 'Вигляд',
   'status.startShort': 'Обери стрільця: його колір підсвітиться, а пікселі, які він прибере, буде позначено.',
   'stuck.back': 'Ходів більше немає. Повернення до ходу {k} спрацює.',
   'stuck.backButton': 'Повернутися до ходу {k}',

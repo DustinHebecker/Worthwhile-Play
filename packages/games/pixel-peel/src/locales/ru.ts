@@ -149,7 +149,7 @@ export const ru: Catalogue = {
   'options.peelReduced': 'Выкл.: устройство просит меньше движения.',
   'action.finishPeeling': 'Завершить очистку',
   'action.finishPeelingCount': 'Завершить очистку ({n})',
-  'action.display': 'Отображение',
+  'action.display': 'Вид',
   'status.startShort': 'Выбери стрелка: его цвет подсветится, а пиксели, которые он уберёт, будут отмечены.',
   'stuck.back': 'Ходов больше нет. Возврат к ходу {k} работает.',
   'stuck.backButton': 'Вернуться к ходу {k}',

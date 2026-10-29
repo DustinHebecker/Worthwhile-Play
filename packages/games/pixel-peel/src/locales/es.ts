@@ -149,7 +149,7 @@ export const es: Catalogue = {
   'options.peelReduced': 'Desactivado porque tu dispositivo pide menos movimiento.',
   'action.finishPeeling': 'Terminar de pelar',
   'action.finishPeelingCount': 'Terminar de pelar ({n})',
-  'action.display': 'Visualización',
+  'action.display': 'Vista',
   'status.startShort': 'Elige un tirador: su color se ilumina y se marcan los píxeles que quitaría.',
   'stuck.back': 'No queda ninguna jugada. Volver a la jugada {k} funciona.',
   'stuck.backButton': 'Volver a la jugada {k}',
