@@ -9,15 +9,20 @@ export interface AtlasData {
   readonly unit: number;
   /** All border and coast arcs (count, then per arc: points, first point relative to the previous arc's, deltas). */
   readonly arcs: string;
+  /** UN M49 region and sub-region pairs (`[region, sub]`), referenced by index from the countries. */
+  readonly subs: readonly (readonly [string, string])[];
   /** The 193 UN member states, sorted by code. */
   readonly countries: readonly {
     readonly id: string;
-    readonly region: string;
-    readonly sub: string;
+    /** Index into `subs`. */
+    readonly s: number;
     /** Packed numbers: tier, label lon/lat, home extent ×4, population, year, area core/max, lines, flags. */
     readonly f: string;
     /** Neighbours (space-separated codes). */
     readonly nb: string;
+    /** Neighbours only through a small exclave (Spain–Morocco via Ceuta and Melilla): no overland route step
+     *  (space-separated codes; omitted when none). */
+    readonly nx?: string;
     /** Rivers and physical regions in the home territory (space-separated ids). */
     readonly ft: string;
     /** Physical regions that reach in only a little (below the share threshold, design § 8.2; space-separated ids;
@@ -32,6 +37,11 @@ export interface AtlasData {
   readonly others: readonly { readonly id: string; readonly iso: string; readonly label: readonly number[]; readonly rings: string }[];
   /** Areas with a disputed status (policy A, design § 12.2): no names. */
   readonly disputed: readonly { readonly id: string; readonly rings: string }[];
+  /** Integer units per degree of the fine rings. */
+  readonly fineUnit: number;
+  /** Tiny parts on land (exclaves, micro-states, small hatched areas) at a finer resolution than the shared arcs;
+   *  each belongs to a country, another unit or a hatched area, whose coarse rings leave the part out. */
+  readonly fine: readonly { readonly k: 'country' | 'other' | 'disputed'; readonly id: string; readonly rings: string }[];
   readonly lakes: readonly { readonly id: string; readonly tier: number; readonly rings: string; readonly label: readonly number[]; readonly area: number }[];
   readonly rivers: readonly { readonly id: string; readonly tier: number; readonly lines: string; readonly label: readonly number[]; readonly km: number }[];
   readonly regions: readonly { readonly id: string; readonly kind: string; readonly tier: number; readonly rings: string; readonly label: readonly number[]; readonly area: number }[];

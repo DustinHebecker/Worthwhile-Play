@@ -114,7 +114,7 @@ describe('route graph', () => {
     expect(shortestRoute(g, 'PT', 'JP')).toBeNull();
   });
 
-  it('walks only overland: borders via overseas parts (French Guiana) are not route steps', () => {
+  it('walks only overland: borders via overseas parts (French Guiana) or small exclaves (Ceuta) are not route steps', () => {
     const g = graphOf(atlas);
     // France borders Brazil and Suriname on the map (the facts and clues keep them) …
     expect(atlas.country('FR')!.nb).toEqual(expect.arrayContaining(['BR', 'SR']));
@@ -123,9 +123,17 @@ describe('route graph', () => {
     expect(g.get('BR')).not.toContain('FR');
     expect(g.get('SR')).toEqual(['BR', 'GY']);
     expect(shortestRoute(g, 'PT', 'BR')).toBeNull();
-    // Only those two borders are left out; every other neighbour pair is a step.
+    // Spain borders Morocco only at Ceuta and Melilla, small exclaves across the sea from the Spanish mainland: a
+    // neighbour fact, but no overland step (Portugal → Spain → Morocco would cross the Strait of Gibraltar).
+    expect(atlas.country('MA')!.nb).toContain('ES');
+    expect(atlas.country('ES')!.nbExclave).toEqual(['MA']);
+    expect(g.get('ES')).not.toContain('MA');
+    expect(g.get('MA')).toEqual(['DZ']);
+    expect(shortestRoute(g, 'PT', 'MA')!.length - 1).toBeGreaterThan(2);
+    // Only those three borders are left out; every other neighbour pair is a step.
     const dropped = atlas.countries.flatMap((c) => c.nb.filter((n) => c.id < n && !g.get(c.id)!.includes(n)).map((n) => `${c.id}-${n}`));
-    expect(dropped).toEqual(['BR-FR', 'FR-SR']);
+    expect(dropped).toEqual(['BR-FR', 'ES-MA', 'FR-SR']);
+    for (const c of atlas.countries) for (const n of c.nbExclave) expect(c.nb, `${c.id}-${n}`).toContain(n);
     for (const [id, nbs] of g) for (const n of nbs) expect(g.get(n), `${id}-${n}`).toContain(id);
   });
 });

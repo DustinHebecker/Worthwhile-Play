@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createRng } from '@wp/game-core';
 import { decodeAtlas } from '../src/atlas';
-import { AREA_RATIO, CAPITAL_DLAT, PEOPLE_RATIO, candidatesAfter, clueExcludes, clueKnown, clueLimits, clueTrue, drawMystery, orderClues, trueClues } from '../src/clues';
+import { AREA_RATIO, CAPITAL_DLAT, PEOPLE_RATIO, bordersConfirmed, candidatesAfter, clueExcludes, clueKnown, clueLimits, clueTrue, drawMystery, orderClues, trueClues } from '../src/clues';
 import { DIFFICULTIES } from '../src/compare';
 import { ATLAS_DATA } from '../src/data/atlas.gen';
 import { createRound } from '../src/generate';
@@ -40,6 +40,22 @@ function strictlyTrue(t: RawCountry, id: string, arg: string): boolean {
 }
 
 describe('mystery clues', () => {
+  it('confirm a bordering guess only as far as the stored clues agree (saves from before a data update)', () => {
+    const ma = atlas.country('MA')!;
+    const region = { id: 'region', arg: 'africa' } as const;
+    // Today Morocco borders Algeria and Spain (Ceuta and Melilla, § 26), and an item drawn now says so.
+    expect(bordersConfirmed(atlas, ma, [region, { id: 'nbCount', arg: '2' }], 'ES')).toBe(true);
+    expect(bordersConfirmed(atlas, ma, [region], 'ES')).toBe(true);
+    expect(bordersConfirmed(atlas, ma, [region], 'FR')).toBe(false);
+    // An item saved before the update says "1 neighbour": the card must not add Spain, but still confirms a
+    // neighbour that a clue names.
+    const old = [region, { id: 'nbCount', arg: '1' }, { id: 'nb', arg: 'DZ' }] as const;
+    expect(bordersConfirmed(atlas, ma, old, 'ES')).toBe(false);
+    expect(bordersConfirmed(atlas, ma, old, 'DZ')).toBe(true);
+    // A stored neighbour clue stays confirmed even if the data no longer lists it.
+    expect(bordersConfirmed(atlas, ma, [region, { id: 'nb', arg: 'MR' }], 'MR')).toBe(true);
+  });
+
   it('are true for the target and leave exactly the target (independent filter)', () => {
     let n = 0;
     for (const d of DIFFICULTIES)

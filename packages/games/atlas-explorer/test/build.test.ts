@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { decodeInts, encodeInts } from '../src/codec';
-import { EE_X_MAX } from '../src/geo';
+import { EE_X_MAX, project } from '../src/geo';
 import { readCollection, str, num, type Path } from '../src/build/geojson';
-import { areNeighbours, dropSmallParts, featureReaches, interiorPoint, lengthInsideKm, lineLengthKm, linesCrossed, LINE_BITS, LINE_NEAR_SHIFT, makeLocator, polygonAreaKm2, ringAreaKm2, sampledAreaKm2, segmentHatched, unhatchedLengthKm } from '../src/build/facts';
+import { areNeighbours, boxWithin, dropSmallParts, featureReaches, interiorPoint, lengthInsideKm, lineLengthKm, linesCrossed, LINE_BITS, LINE_NEAR_SHIFT, makeLocator, polygonAreaKm2, ringAreaKm2, sampledAreaKm2, segmentHatched, touchesLand, unhatchedLengthKm } from '../src/build/facts';
 import { compareViews, makeGrid, rasterize } from '../src/build/raster';
 import { simplify } from '../src/build/simplify';
 import { arcUsers, buildTopology, dissolve, quantizeRing, ringPoints } from '../src/build/topology';
@@ -200,6 +200,46 @@ describe('simplification', () => {
     const spike = [0, 0, 100, 0, 101, 300, 102, 0, 200, 0];
     expect(simplify(spike, opts)).toContain(300);
   });
+
+  it('leaves no hatched sliver wider than the deviation limit (hatched edges and fine rings)', () => {
+    // Every original point stays within `maxDeviation` cells of the simplified line, so the ground between the source
+    // edge and the drawn edge (a hatched sliver over a country, or disputed ground drawn as a country) is never wider.
+    const toCells = (x: number, y: number, unit: number) => {
+      const [px, py] = project(x / unit, y / unit);
+      return [px / cell, py / cell] as const;
+    };
+    const deviation = (pts: number[], out: number[], unit: number) => {
+      let worst = 0;
+      for (let i = 0; i < pts.length; i += 2) {
+        const [qx, qy] = toCells(pts[i]!, pts[i + 1]!, unit);
+        let best = Infinity;
+        for (let j = 2; j < out.length; j += 2) {
+          const [ax, ay] = toCells(out[j - 2]!, out[j - 1]!, unit);
+          const [bx, by] = toCells(out[j]!, out[j + 1]!, unit);
+          const dx = bx - ax;
+          const dy = by - ay;
+          const t = dx || dy ? Math.max(0, Math.min(1, ((qx - ax) * dx + (qy - ay) * dy) / (dx * dx + dy * dy))) : 0;
+          best = Math.min(best, Math.hypot(qx - ax - t * dx, qy - ay - t * dy));
+        }
+        worst = Math.max(worst, best);
+      }
+      return worst;
+    };
+    fc.assert(
+      fc.property(fc.array(fc.tuple(fc.integer({ min: -3, max: 3 }), fc.integer({ min: 1, max: 4 })), { minLength: 3, maxLength: 80 }), fc.constantFrom(1, 2), (steps, limit) => {
+        // A jagged edge: small sideways steps along a line, in 1/50°.
+        const pts: number[] = [0, 0];
+        for (const [dy, dx] of steps) pts.push(pts[pts.length - 2]! + dx, pts[pts.length - 1]! + dy);
+        const out = simplify(pts, { ...opts, threshold: 1e9, maxDeviation: limit });
+        expect(deviation(pts, out, 50)).toBeLessThanOrEqual(limit + 1e-9);
+      })
+    );
+    // Fine rings (1/1000°) are simplified by the deviation limit alone (threshold ∞): 0.05 cells, about 100 m.
+    const ring = [0, 0, 400, 0, 800, 1, 1200, 0, 1200, 900, 600, 900, 0, 900, 0, 0];
+    const fine = simplify(ring, { threshold: Infinity, cell, unit: 1000, maxSpan: 3000, maxDeviation: 0.05 });
+    expect(deviation(ring, fine, 1000)).toBeLessThanOrEqual(0.05);
+    expect(fine.length).toBeLessThan(ring.length);
+  });
 });
 
 describe('facts', () => {
@@ -219,6 +259,28 @@ describe('facts', () => {
     expect(dropSmallParts([big, small], 100)).toEqual([big]);
     expect(dropSmallParts([small], 100)).toEqual([small]);
     expect(dropSmallParts([], 100)).toEqual([]);
+  });
+
+  it('keeps small parts with a land border (exclaves such as Ceuta and Melilla), not small islands', () => {
+    // Country A: a big part and two small ones; the first small part shares two border vertices with country B.
+    const big = [sq(0, 0, 1, 1)];
+    const exclave = [sq(3, 3, 3.02, 3.02)];
+    const island = [sq(5, 5, 5.01, 5.01)];
+    const neighbourB = [sq(3.02, 3, 3.1, 3.02)];
+    const vertices = new Set(neighbourB[0]!.map(([x, y]) => `${x},${y}`));
+    const shared = (x: number, y: number) => vertices.has(`${x},${y}`);
+    expect(touchesLand(exclave, shared)).toBe(true);
+    expect(touchesLand(island, shared)).toBe(false);
+    // One shared vertex is a corner touch, not a border.
+    expect(touchesLand([sq(3.1, 3.02, 3.2, 3.2)], shared)).toBe(false);
+    expect(dropSmallParts([big, exclave, island], 100, (p) => touchesLand(p, shared))).toEqual([big, exclave]);
+  });
+
+  it('finds the coarse rings a fine part replaces by their boxes', () => {
+    expect(boxWithin([1, 1, 2, 2], [1, 1, 2, 2])).toBe(true);
+    expect(boxWithin([0.98, 1, 2, 2], [1, 1, 2, 2])).toBe(false);
+    expect(boxWithin([0.98, 1, 2, 2.02], [1, 1, 2, 2], 0.03)).toBe(true);
+    expect(boxWithin([0, 0, 3, 3], [1, 1, 2, 2], 0.03)).toBe(false);
   });
 
   it('applies the neighbour rule: 5 km of border outside hatched areas, either side', () => {
