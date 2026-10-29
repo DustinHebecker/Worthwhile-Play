@@ -15,9 +15,14 @@ async function savedState(page: Page): Promise<PeelState> {
 }
 
 // Most tests launch with one press: "Confirm before launch" (on by default for touch screens) is switched off here,
-// and Peeling is Off (the tests of slow peeling switch it on).
+// and Peeling is Off (the tests of slow peeling switch it on). Only on the first load of a test: after a reload the
+// game reads back what it stored.
 test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem('wp:pref:pixel-peel:display', JSON.stringify({ confirm: false, peel: 'off' })));
+  await page.addInitScript(() => {
+    if (sessionStorage.getItem('pp-test-prefs')) return;
+    sessionStorage.setItem('pp-test-prefs', '1');
+    localStorage.setItem('wp:pref:pixel-peel:display', JSON.stringify({ confirm: false, peel: 'off' }));
+  });
 });
 
 const buttonFor = (page: Page, move: string) => root(page).getByTestId(move.startsWith('L') ? `pp-lane-${move.slice(1)}` : `pp-slot-${move.slice(1)}`);
@@ -434,4 +439,99 @@ test('pixel-peel: the 3-line status holds the longest result and preview texts o
     }, texts);
     expect(overflow, locale).toEqual([]);
   }
+});
+
+// --- Design v3 § 3: slow peeling --------------------------------------------------------------------------------------
+
+const slowPeeling = async (page: Page) =>
+  page.addInitScript(() => {
+    if (sessionStorage.getItem('pp-test-slow')) return;
+    sessionStorage.setItem('pp-test-slow', '1');
+    localStorage.setItem('wp:pref:pixel-peel:display', JSON.stringify({ confirm: false, peel: 'slow' }));
+  });
+const board = (page: Page) => root(page).getByTestId('pp-board');
+const peelingCount = async (page: Page) => Number(await board(page).getAttribute('data-peeling'));
+
+test('pixel-peel: slow peeling — fast launches are saved at once and queue; Finish peeling ends the queue', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'viewport sizes are set explicitly');
+  await slowPeeling(page);
+  await page.setViewportSize({ width: 360, height: 640 });
+  await startGame(page, ID, { difficulty: 'hard', settings: { motif: 'winter-village' } });
+  const state = await savedState(page);
+  await expect(root(page).getByTestId('pp-option-peel-slow')).toBeChecked();
+  const actions = (await root(page).getByTestId('pp-actions').boundingBox())!;
+  for (const move of state.witness.slice(0, 3)) await buttonFor(page, move).click();
+  await expect.poll(async () => (await saved(page)).moves).toEqual(state.witness.slice(0, 3));
+  expect(await peelingCount(page)).toBeGreaterThan(0);
+  const finish = root(page).getByTestId('pp-finish-peeling');
+  await expect(finish).toBeVisible();
+  // The Finish peeling button joins the action row without moving anything.
+  const during = (await root(page).getByTestId('pp-actions').boundingBox())!;
+  expect(Math.abs(during.y - actions.y) + Math.abs(during.height - actions.height)).toBeLessThanOrEqual(1);
+  const box = (await finish.boundingBox())!;
+  expect(box.height).toBeGreaterThanOrEqual(44);
+  await finish.click();
+  await expect(board(page)).toHaveAttribute('data-peeling', '0');
+  await expect(board(page)).toHaveAttribute('data-pending', '0');
+  await expect(finish).toBeHidden();
+  const pos = position(await saved(page));
+  await expect(root(page).getByTestId('pp-left')).toHaveAttribute('data-left', String(presentCount(pos)));
+});
+
+test('pixel-peel: slow peeling — a reload in the middle of peeling loses nothing and replays nothing', async ({ page }) => {
+  await slowPeeling(page);
+  let state: PeelState | undefined;
+  await expectResumeAfterReload(
+    page,
+    ID,
+    async (p) => {
+      state = await savedState(p);
+      for (const move of state.witness.slice(0, 3)) await buttonFor(p, move).click();
+      expect(await peelingCount(p)).toBeGreaterThan(0);
+    },
+    { difficulty: 'hard', settings: { motif: 'winter-village' } }
+  );
+  const after = await saved(page);
+  expect(after.moves).toEqual(state!.witness.slice(0, 3));
+  await expect(board(page)).toHaveAttribute('data-pending', '0');
+  await expect(board(page)).toHaveAttribute('data-peeling', '0');
+  await expect(root(page).getByTestId('pp-left')).toHaveAttribute('data-left', String(presentCount(position(after))));
+});
+
+test('pixel-peel: the Display button opens the options mid-game; Slow → Off finishes the queue at once and is remembered', async ({ page }) => {
+  await slowPeeling(page);
+  await startGame(page, ID, { difficulty: 'hard', settings: { motif: 'red-fox' } });
+  const state = await savedState(page);
+  for (const move of state.witness.slice(0, 2)) await buttonFor(page, move).click();
+  expect(await peelingCount(page)).toBeGreaterThan(0);
+  const display = root(page).getByTestId('pp-display');
+  await display.click();
+  await expect(display).toHaveAttribute('aria-expanded', 'true');
+  const off = root(page).getByTestId('pp-option-peel-off');
+  await expect(off).toBeInViewport();
+  await off.check();
+  await expect(board(page)).toHaveAttribute('data-peeling', '0');
+  await expect(board(page)).toHaveAttribute('data-pending', '0');
+  // Off: the next launch draws at once.
+  await buttonFor(page, state.witness[2]!).click();
+  await expect.poll(async () => (await saved(page)).moves.length).toBe(3);
+  expect(await peelingCount(page)).toBe(0);
+  await display.click();
+  await expect(display).toHaveAttribute('aria-expanded', 'false');
+  await page.reload();
+  await page.getByTestId('continue').click();
+  await expect(root(page).getByTestId('pp-option-peel-off')).toBeChecked();
+});
+
+test('pixel-peel: with reduced motion there is no peeling animation and Peeling shows Off', async ({ page }) => {
+  await slowPeeling(page);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await startGame(page, ID, { difficulty: 'hard', settings: { motif: 'red-fox' } });
+  const state = await savedState(page);
+  await buttonFor(page, state.witness[0]!).click();
+  await expect.poll(async () => (await saved(page)).moves.length).toBe(1);
+  expect(await peelingCount(page)).toBe(0);
+  await expect(root(page).getByTestId('pp-finish-peeling')).toBeHidden();
+  await expect(root(page).getByTestId('pp-option-peel-off')).toBeChecked();
+  await expect(root(page).getByTestId('pp-option-peel-slow')).toBeDisabled();
 });

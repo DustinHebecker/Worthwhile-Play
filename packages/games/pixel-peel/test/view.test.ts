@@ -548,7 +548,8 @@ describe('slow peeling (design v3 § 3)', () => {
     const committedHits = pending();
     expect(committedHits).toBeGreaterThan(0);
     expect(q('pp-finish-peeling').hidden).toBe(false);
-    expect(q('pp-finish-peeling').textContent).toBe('Finish peeling (2)');
+    expect(q('pp-finish-peeling').getAttribute('aria-label')).toBe('Finish peeling (2)');
+    expect(q('pp-finish-peeling').textContent).toBe('Finish peeling2');
     // The text and the numbers describe the committed position at once.
     expect(q('pp-status').textContent).toMatch(/removed \d+/);
     frames.step(16);

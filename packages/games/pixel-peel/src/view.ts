@@ -206,7 +206,8 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
   const status = h('p', { class: 'wp-status pp-status', 'data-testid': 'pp-status', 'aria-live': 'off' });
 
   const button = (testId: string, label: string, onclick: () => void) => h('button', { type: 'button', 'data-testid': testId, onclick: () => onclick() }, label);
-  const finishButton = button('pp-finish-peeling', '', () => finishAll());
+  const finishCount = h('span', { class: 'pp-count', 'aria-hidden': 'true', dir: 'ltr' });
+  const finishButton = h('button', { type: 'button', class: 'pp-finish', 'data-testid': 'pp-finish-peeling', onclick: () => finishAll() }, h('span', {}, t('action.finishPeeling')), finishCount);
   finishButton.setAttribute('aria-controls', 'pp-canvas');
   const undoButton = button('pp-undo', t('common.undo'), () => doUndo());
   const restartButton = button('pp-restart', t('action.restart'), () => doRestart());
@@ -637,8 +638,9 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
     setAttr(board, 'data-peeling', String(launches));
     setAttr(board, 'data-pending', String(slow?.pending ?? 0));
     finishButton.hidden = !peeling();
-    const label = t('action.finishPeeling', { n: Math.max(1, launches) });
-    setText(finishButton, label);
+    // The accessible name says how many launches are still peeling; the count shows as a badge.
+    setAttr(finishButton, 'aria-label', t('action.finishPeelingCount', { n: Math.max(1, launches) }));
+    setText(finishCount, String(Math.max(1, launches)));
   };
 
   const visible = (list: HTMLButtonElement[]) => list.filter((b) => !b.hidden);
@@ -859,7 +861,7 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
       g.fillRect(TRACK + (e.cell % w) * cell + (cell - size) / 2, TRACK + Math.floor(e.cell / w) * cell + (cell - size) / 2, size, size);
     }
     const token = slow.token();
-    const size = Math.max(14, Math.min(22, Math.round(cell * 1.6)));
+    const size = Math.max(16, Math.min(26, Math.round(cell * 2.4)));
     // Waiting launches: small tokens stacked at the start corner, in launch order.
     const queued = slow.queued();
     const small = Math.max(8, Math.round(size * 0.55));
