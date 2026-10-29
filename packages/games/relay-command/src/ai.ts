@@ -403,7 +403,8 @@ export function objectiveOf(obs: Observation, ruleset: Ruleset, style: Style = '
   // Spread (variant A): the post with the best score -SPREAD·ln(cost) + G, G a Gumbel draw fixed per
   // game, side and post: a post is chosen with weight cost^-SPREAD, the same one turn after turn
   // while the costs stand (Gumbel-max), so the attack stays on one post and does not flip.
-  const spread = spreads(style);
+  // Only between two or more hostile sides: alone against one, a game is played as before.
+  const spread = spreads(style) && targetPosts(obs).filter((p) => p.side !== NEUTRAL).length >= 2;
   for (const post of targetPosts(obs)) {
     if (post.side === NEUTRAL && !infantry) continue;
     const defence = armed.filter((e) => dist2(e.x, e.y, post.x, post.y) <= DEFENCE_RADIUS * DEFENCE_RADIUS).reduce((sum, e) => sum + value(e), 0);
@@ -434,12 +435,13 @@ export const GUARD_MAX = 0.3;
 /**
  * Guarded style (variant B): the share of the fighters that holds in front of the own post. Each other
  * hostile post counts (d_objective / d_other)², at most 1 (as near as the objective or nearer: 1);
- * the share is GUARD_MAX times their sum, at most GUARD_MAX. No other enemy: 0.
+ * the share is GUARD_MAX times their sum, at most GUARD_MAX. Fewer than two hostile sides: 0.
  */
 export function guardShare(obs: Observation, objective: Entity): number {
   const { world, side } = obs;
   const home = world.entities.find((e) => e.side === side && e.kind === 'command-post');
-  if (!home) return 0;
+  // Only between two or more hostile sides (as spread): alone against one, a game is played as before.
+  if (!home || targetPosts(obs).filter((p) => p.side !== NEUTRAL).length < 2) return 0;
   const toObjective = Math.sqrt(dist2(home.x, home.y, objective.x, objective.y));
   let weight = 0;
   for (const post of targetPosts(obs)) {

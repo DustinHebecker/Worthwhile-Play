@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { isRecord } from '@wp/game-core';
 import { BASE_RULESET, NEUTRAL, archetypeOf, canonicalJson, cellOf, findPath, observe, passable, DEFAULT_DOCTRINE, computeNetwork, createWorld, frameIndexIn, frameOf, teamOf, initialIntel, observedCells, resolveTurn, retire, validateCommand, worldHash, type Command, type Entity, type World } from '@wp/strategy-engine';
-import { APPROACH_RADIUS, approachCells, assaultPlan, objectiveOf, outnumbered, planAi, type Difficulty } from '../src/ai';
+import { APPROACH_RADIUS, approachCells, assaultPlan, GUARD_MAX, guardShare, objectiveOf, outnumbered, planAi, STYLES, type Difficulty } from '../src/ai';
 import {
   cancelJob,
   cancelOrder,
@@ -52,6 +52,8 @@ import {
   personsLeft,
   rulesOf,
   levelOf,
+  OPPONENT_STYLES,
+  styleOf,
   type Seat,
   startSeats,
   teamShapes,
@@ -2443,5 +2445,112 @@ describe('difficulty per opponent (owner request 2026-10-29)', () => {
     const { levels: _levels, ...plain } = s;
     void _levels;
     expect(isValidState(plain)).toBe(true);
+  });
+});
+
+describe('opponent styles (owner decision 2026-10-29: spread by distance, a guard at home; the seed picks one per opponent)', () => {
+  const corners = (seed = 7) => newGame(seed, FOUR_CORNERS, 'hard', null, false, null, 3);
+  const at = (s: RcState, rng: number) => ({ ...s.world, rng });
+  const post = (w: World, side: number) => w.entities.find((e) => e.side === side && e.kind === 'command-post')!;
+  const d = (a: Entity, b: Entity) => Math.hypot(a.x - b.x, a.y - b.y);
+
+  it('each computer side plays a style drawn once from the seed: spread or guarded, about half each', () => {
+    expect(OPPONENT_STYLES).toEqual(['spread', 'guarded']);
+    const count = { spread: 0, guarded: 0 };
+    for (let seed = 0; seed < 300; seed++) for (const side of [1, 2, 3]) count[styleOf({ seed }, side) as 'spread' | 'guarded']++;
+    expect(count.spread + count.guarded).toBe(900);
+    expect(Math.min(count.spread, count.guarded)).toBeGreaterThan(400);
+    expect(styleOf({ seed: 1 }, 2)).toBe(styleOf({ seed: 1 }, 2));
+    // The turn's plans: each computer side planned in its style.
+    const s = corners(11);
+    const next = lockTurn(s);
+    const rules = rulesOf(s);
+    for (const side of [1, 2, 3]) expect(next.log[0]!.plans[side], `side ${side}`).toEqual(planAi(observe(s.world, rules, side), rules, 'hard', styleOf(s, side)));
+  });
+
+  it('against one enemy every style plays as before (two-side maps, and four bases with one opponent)', () => {
+    for (const s of [newGame(3, RIDGE_VALLEY, 'hard'), newGame(3, FOUR_CORNERS, 'hard', null, false, null, 1)]) {
+      const rules = rulesOf(s);
+      let w = s.world;
+      for (let turn = 0; turn < 4; turn++) {
+        const obs = observe(w, rules, OPPONENT);
+        const direct = planAi(obs, rules, 'hard', 'direct');
+        for (const style of STYLES) expect(planAi(obs, rules, 'hard', style), `${s.scenario} ${style} turn ${turn}`).toEqual(direct);
+        for (const style of STYLES) expect(objectiveOf(obs, rules, style)?.id).toBe(objectiveOf(obs, rules)?.id);
+        w = resolveTurn(w, rules, [[], direct]).world;
+      }
+    }
+  });
+
+  it('spread: the post is a draw fixed per game, side and post, weighted towards the cheaper; direct always takes the cheapest', () => {
+    const s = corners();
+    const rules = rulesOf(s);
+    const picks = new Map<number, number>();
+    for (let rng = 0; rng < 400; rng++) {
+      const obs = observe(at(s, rng), rules, 1);
+      const pick = objectiveOf(obs, rules, 'spread')!;
+      expect(objectiveOf(obs, rules, 'spread')!.id).toBe(pick.id); // the same draw every time
+      expect(objectiveOf(obs, rules, 'both')!.id).toBe(pick.id);
+      expect(objectiveOf(obs, rules, 'guarded')!.id).toBe(objectiveOf(obs, rules, 'direct')!.id);
+      picks.set(pick.side, (picks.get(pick.side) ?? 0) + 1);
+    }
+    const direct = objectiveOf(observe(s.world, rules, 1), rules)!;
+    // Side 1 (top left) has two neighbours at the same distance and one across the diagonal, √2 as far:
+    // weights 1 : 1 : 1/2, so the far one is drawn about a fifth of the time and never the most.
+    const home = post(s.world, 1);
+    const far = [0, 2, 3].reduce((a, b) => (d(home, post(s.world, a)) > d(home, post(s.world, b)) ? a : b));
+    expect(picks.size).toBe(3);
+    expect(picks.get(far)!).toBeGreaterThan(40);
+    expect(picks.get(far)!).toBeLessThan(130);
+    expect(Math.max(...picks.values())).toBeGreaterThan(picks.get(far)!);
+    expect(far).not.toBe(direct.side);
+  });
+
+  it('guarded: up to GUARD_MAX of the fighters hold in front of the own post while other enemies are near, none against one', () => {
+    const s = corners();
+    const rules = rulesOf(s);
+    const obs = observe(s.world, rules, 1);
+    const objective = objectiveOf(obs, rules)!;
+    // Four Corners: another neighbour as near as the objective (1) and the far corner (1/2): capped at GUARD_MAX.
+    expect(guardShare(obs, objective)).toBeCloseTo(GUARD_MAX, 10);
+    const plan = assaultPlan(obs, rules, 'hard', 'guarded')!;
+    const fighters = s.world.entities.filter((e) => e.side === 1 && rules.archetypes[e.kind]?.weapon && (rules.archetypes[e.kind]?.speed ?? 0) > 0);
+    expect(plan.guards).toHaveLength(Math.floor(GUARD_MAX * fighters.length));
+    expect(plan.all).toHaveLength(fighters.length - plan.guards!.length);
+    expect(plan.all.some((f) => plan.guards!.some((g) => g.id === f.id))).toBe(false);
+    // The guard stands in front of the own post (HOLD_DIST), inside its radio cover.
+    expect(d(post(s.world, 1), { ...objective, ...plan.guardAt! })).toBeLessThanOrEqual(4);
+    expect(obs.network.coverage[cellOf(s.world.map, plan.guardAt!.x, plan.guardAt!.y)]).toBe(1);
+    // The guards get no order towards the objective; the others do.
+    const orders = planAi(obs, rules, 'hard', 'guarded');
+    for (const g of plan.guards!) {
+      const c = orders.find((o) => o.unit === g.id);
+      if (c?.order.type === 'move') expect(Math.max(Math.abs(c.order.x - plan.guardAt!.x), Math.abs(c.order.y - plan.guardAt!.y))).toBeLessThanOrEqual(3);
+      expect(c?.order.type === 'attack' && c.order.target === objective.id).toBe(false);
+    }
+    // Direct and spread keep no guard; one enemy (Ridge Valley) or none near: no guard.
+    expect(assaultPlan(obs, rules, 'hard', 'direct')!.guards).toBeUndefined();
+    expect(assaultPlan(obs, rules, 'hard', 'spread')!.guards).toBeUndefined();
+    const ridge = newGame(3, RIDGE_VALLEY, 'hard');
+    const ridgeObs = observe(ridge.world, rulesOf(ridge), OPPONENT);
+    expect(guardShare(ridgeObs, objectiveOf(ridgeObs, rulesOf(ridge))!)).toBe(0);
+    expect(assaultPlan(ridgeObs, rulesOf(ridge), 'hard', 'guarded')!.guards).toBeUndefined();
+  });
+
+  it('guard share by distance: an other enemy twice as far as the objective counts a quarter', () => {
+    const s = corners();
+    const rules = rulesOf(s);
+    const obs = observe(s.world, rules, 1);
+    const home = post(s.world, 1);
+    const objective = post(s.world, 0);
+    const only = { ...obs, world: { ...obs.world, entities: obs.world.entities.filter((e) => !(e.kind === 'command-post' && (e.side === 2 || e.side === 3))) } };
+    expect(guardShare(only, objective)).toBe(0);
+    const twice = { x: home.x + 2 * (objective.x - home.x), y: home.y + 2 * (objective.y - home.y) };
+    const other = { ...post(s.world, 2), ...twice };
+    const placed = { ...only, world: { ...only.world, entities: [...only.world.entities, other] } };
+    expect(guardShare(placed, objective)).toBeCloseTo(GUARD_MAX / 4, 10);
+    // A neutral post is no threat.
+    const neutral = { ...placed, world: { ...placed.world, entities: placed.world.entities.map((e) => (e.id === other.id ? { ...e, side: NEUTRAL } : e)) } };
+    expect(guardShare(neutral, objective)).toBe(0);
   });
 });
