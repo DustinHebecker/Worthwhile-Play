@@ -18,6 +18,8 @@ import {
   predictNeeds,
   roundPlan,
   SIDES,
+  spreadsFailingJoint,
+  targetJoint,
   STACK_ANSWERS,
   TASK_IDS,
   type BenchSetting,
@@ -253,5 +255,43 @@ describe('"Stays level" on easy (owner decision 2026-10-29)', () => {
       seen ||= answers.includes('level');
     }
     expect(seen).toBe(true);
+  });
+});
+
+describe('hard stack-predict: which joint gives way is spread over the joints (owner review 2026-10-29)', () => {
+  it('the drawn joint is one of the stack\'s joints, each for an equal share of u', () => {
+    fc.assert(
+      fc.property(fc.double({ min: 0, max: 1, maxExcluded: true, noNaN: true }), fc.integer({ min: 1, max: 6 }), (u, n) => {
+        const j = targetJoint(u, n);
+        expect(Number.isInteger(j) && j >= 0 && j < n).toBe(true);
+        expect(u >= j / n && u < (j + 1) / n + 1e-12).toBe(true);
+      })
+    );
+    expect(DIFFICULTIES.filter(spreadsFailingJoint)).toEqual(['hard']);
+  });
+
+  it('over 2,000 falling items no joint gives way more than 1.5 times (or less than half) its even share', () => {
+    fc.assert(
+      fc.property(fc.integer({ min: 0, max: 1e6 }), (base) => {
+        const count = [0, 0, 0, 0, 0, 0];
+        const even = [0, 0, 0, 0, 0, 0];
+        let falls = 0;
+        for (let r = 0; falls < 2000; r++)
+          for (const t of generateRound(createRng(base * 4099 + r), 'stack', 'predict', 'hard')) {
+            if (t.scene.bench !== 'stack') continue;
+            const v = stackVerdict(t.scene.s);
+            if (v.stands) continue;
+            falls++;
+            const n = t.scene.s.bodies.length;
+            for (let j = 0; j < n; j++) even[j]! += 1 / n;
+            count[v.failing[0]!.joint]!++;
+          }
+        for (let j = 0; j < 6; j++) {
+          expect(count[j]!, `joint ${j + 1}: ${count.join()} vs ${even.map(Math.round).join()}`).toBeLessThanOrEqual(1.5 * even[j]!);
+          if (even[j]! > 50) expect(count[j]!, `joint ${j + 1}: ${count.join()}`).toBeGreaterThanOrEqual(0.5 * even[j]!);
+        }
+      }),
+      { numRuns: 3 }
+    );
   });
 });
