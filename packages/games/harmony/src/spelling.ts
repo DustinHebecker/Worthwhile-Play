@@ -141,20 +141,50 @@ export function defaultSpelling(midi: number): Spelled {
 /** A pool root (by pitch class) placed at a MIDI note of that pitch class. */
 export const rootAt = (midi: number): Spelled => defaultSpelling(midi);
 
+/** A letter and accidental placed at a MIDI note (the octave follows from the note). */
+export const placeAt = (la: Pick<Spelled, 'l' | 'a'>, midi: number): Spelled => ({ l: la.l, a: la.a, o: Math.floor((midi - NATURAL[la.l]! - la.a) / 12) - 1 });
+
+/** Lexicographic comparison of cost vectors of equal length. */
+const cheaper = (x: readonly number[], y: readonly number[]): boolean => {
+  const i = x.findIndex((v, k) => v !== y[k]);
+  return i >= 0 && x[i]! < y[i]!;
+};
+
+/** The accidental each letter carries in the major key of `tonic` (its key signature), indexed by letter 0…6. */
+export function keySignature(tonic: Pick<Spelled, 'l' | 'a'>): (-1 | 0 | 1)[] | undefined {
+  const scale = spellScale({ ...tonic, o: 4 }, 'major');
+  if (!scale) return undefined;
+  const sig: (-1 | 0 | 1)[] = [0, 0, 0, 0, 0, 0, 0];
+  for (const n of scale) sig[n.l] = n.a;
+  return sig;
+}
+
 /**
- * A chromatic spelling of `midi` near `from` (used for the moved note of "which note changed?"): the same letter when
- * a single accidental suffices and it is not a rare spelling, else the neighbouring letter in the direction of the move.
+ * The spelling of `midi` in the major key of `tonic` (used for the moved note of "which note changed?"): the key's own
+ * spelling when the pitch belongs to the key (C♯ in E major, never D♭); otherwise, among the single-accidental
+ * spellings, the one that departs least from the key signature, then not a rare spelling (E♯, F♭, B♯, C♭; a natural
+ * sign reads better), then one not on the staff position of a neighbouring note (`neighbours`), then raised when the
+ * note moved up (`move` > 0) and lowered when it moved down. Never a double accidental. Pure.
  */
-export function spellNear(from: Spelled, midi: number): Spelled {
-  const diff = midi - midiOf(from);
-  const candidates = [0, Math.sign(diff), -Math.sign(diff), 2 * Math.sign(diff)];
-  for (const allowRare of [false, true]) {
-    for (const steps of candidates) {
-      const s = spellAt(from, steps, diff);
-      if (s && (allowRare || !isRare(s))) return s;
+export function spellInKey(tonic: Pick<Spelled, 'l' | 'a'>, midi: number, neighbours: readonly Spelled[] = [], move = 0): Spelled {
+  const sig = keySignature(tonic);
+  if (!sig) return defaultSpelling(midi);
+  const pc = ((midi % 12) + 12) % 12;
+  let best: { s: Spelled; cost: number[] } | undefined;
+  for (let l = 0; l < 7; l++)
+    for (const a of [-1, 0, 1] as const) {
+      if ((((NATURAL[l]! + a) % 12) + 12) % 12 !== pc) continue;
+      const s = placeAt({ l, a }, midi);
+      if (a === sig[l]) return s;
+      const cost = [
+        Math.abs(a - sig[l]!),
+        isRare(s) ? 1 : 0,
+        neighbours.some((n) => diatonic(n) === diatonic(s) && midiOf(n) !== midi) ? 1 : 0,
+        move !== 0 && Math.sign(a - sig[l]!) !== Math.sign(move) ? 1 : 0
+      ];
+      if (!best || cheaper(cost, best.cost)) best = { s, cost };
     }
-  }
-  return defaultSpelling(midi);
+  return best?.s ?? defaultSpelling(midi);
 }
 
 /* ---------- Spelling what is held on the free keyboard (design § 7.7) ---------- */
@@ -163,8 +193,6 @@ export function spellNear(from: Spelled, midi: number): Spelled {
 const ALTERNATIVE: Readonly<Record<number, Pick<Spelled, 'l' | 'a'>>> = { 1: { l: 0, a: 1 }, 3: { l: 1, a: 1 }, 6: { l: 4, a: -1 }, 8: { l: 4, a: 1 }, 10: { l: 5, a: 1 } };
 const spellingsOf = (pc: number): Pick<Spelled, 'l' | 'a'>[] => [ROOT_POOL[pc]!, ...(ALTERNATIVE[pc] ? [ALTERNATIVE[pc]] : [])];
 
-/** A letter and accidental placed at a MIDI note (the octave follows from the note). */
-export const placeAt = (la: Pick<Spelled, 'l' | 'a'>, midi: number): Spelled => ({ l: la.l, a: la.a, o: Math.floor((midi - NATURAL[la.l]! - la.a) / 12) - 1 });
 
 /** Rare spellings cost most, then accidentals, then two different notes written on the same letter and octave. */
 const cost = (notes: readonly Spelled[]): number => {
