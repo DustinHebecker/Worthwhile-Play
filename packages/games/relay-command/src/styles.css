@@ -228,6 +228,8 @@
 .wp-relay-command .rc-ed-settings input[type='text'] { min-block-size: var(--wp-touch, 44px); inline-size: min(16rem, 100%); }
 .wp-relay-command .rc-ed-settings select { min-block-size: var(--wp-touch, 44px); max-inline-size: 100%; }
 .wp-relay-command .rc-ed-check { display: flex !important; align-items: center; gap: 0.5rem; min-block-size: var(--wp-touch, 44px); }
+/* Hidden choices stay hidden (mirroring on three bases, teams on fewer than four): the rule above outranks [hidden]. */
+.wp-relay-command .rc-ed-check[hidden] { display: none !important; }
 .wp-relay-command .rc-ed-check input { inline-size: 1.4rem; block-size: 1.4rem; }
 .wp-relay-command .rc-ed-supply { display: flex; flex-wrap: wrap; gap: 0.6rem 1.2rem; align-items: end; min-inline-size: 0; margin: 0; padding: 0.4rem 0.6rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius, 10px); }
 .wp-relay-command .rc-ed-supply label { display: grid; gap: 0.2rem; min-inline-size: 0; }

@@ -608,6 +608,9 @@ test('relay-command: Lake Country opens in the editor on a phone as a three-base
   await page.setViewportSize({ width: 360, height: 740 });
   await start(page);
   await page.getByTestId('rc-editor-open').click();
+  // Two sides: mirroring offered, teams not.
+  await expect(page.getByTestId('ed-mirror')).toBeVisible();
+  await expect(page.getByTestId('ed-teams')).toBeHidden();
   await page.getByTestId('ed-start').selectOption('lake-country');
   await page.getByTestId('ed-load').click();
   await expect(page.getByTestId('ed-load')).toHaveText('Press again to replace the map');
@@ -616,6 +619,7 @@ test('relay-command: Lake Country opens in the editor on a phone as a three-base
   await expect(page.getByTestId('ed-bases')).toHaveValue('3');
   await expect(page.getByTestId('ed-side-2')).toHaveText('Base C');
   await expect(page.getByTestId('ed-mirror')).toBeHidden();
+  await expect(page.getByTestId('ed-teams')).toBeHidden();
   await expect(page.getByTestId('ed-supply-0')).toHaveValue('150');
   await expect(page.getByTestId('ed-fair')).toHaveText('Three bases are never mirrored: play the map to see whether it is fair.');
   const widths = await page.evaluate(() => ({ page: document.documentElement.scrollWidth, viewport: document.documentElement.clientWidth }));
