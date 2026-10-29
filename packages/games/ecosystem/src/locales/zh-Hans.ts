@@ -117,6 +117,7 @@ export const zhHans: Catalogue = {
   'review.why': '为什么',
   'review.next': '下一个挑战',
   'review.summary': '查看总结',
+  'note.recalculated': '自你开始以来，模型已经改进；这本笔记已重新计算。',
   'note.model': '这是一个简化模型。它展示真实池塘和草地可能出现的行为，而不是某个具体池塘会怎样。数字是模型单位，周是模型周。',
   'summary.heading': '你这一轮的预测',
   'summary.counts': '●●● {a} · ●●○ {b} · ●○○ {c} · ○○○ {d} · 跳过 {s}',

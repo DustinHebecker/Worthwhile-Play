@@ -3,10 +3,11 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { seedFromString } from '@wp/game-core';
-import { DEAD, MEADOW, POND, habitatDef, type HabitatDef, type Habitat, type SpeciesDef } from '../src/habitats';
+import { DEAD, HABITATS, MEADOW, POND, habitatDef, type HabitatDef, type Habitat, type SpeciesDef } from '../src/habitats';
 import {
   HABITAT_ACTIONS,
   MAX_AMOUNT,
+  MAX_WEEK,
   applyAction,
   balanced,
   calmWeek,
@@ -430,6 +431,60 @@ describe('mechanisms (hand-computed)', () => {
   });
 });
 
+describe('small populations: no frozen amounts (§ 7.4 step 3)', () => {
+  it('at least 1 u dies a day: the death flow no longer floors to 0 for a small population', () => {
+    // A pike-like species alone: mortality 1,000 ppm/day floors to 0 below 1,000 u, respiration 4,000 below 250 u.
+    const hab = tiny([sp({ id: 'p', producer: false, resp: 4_000, mort: 1_000, min: 100 })]);
+    const day = (amount: number) => {
+      const s = simOf([amount]);
+      stepDay(s, hab, ENV);
+      expect(balanced(s)).toBe(true);
+      return [s.b[0], s.n, s.d];
+    };
+    expect(day(249)).toEqual([248, 0, 1]); // every loss floored to 0: it stood still for ever
+    expect(day(999)).toEqual([995, 3, 1]);
+    expect(day(2_000)).toEqual([1_990, 8, 2]); // the rule is off once mortality reaches 1 u
+    // A species without a mortality rate (a resting test species) keeps its amount.
+    const r = simOf([150]);
+    stepDay(r, tiny([sp({ id: 'r', producer: false, min: 100 })]), ENV);
+    expect(r.b[0]).toBe(150);
+  });
+
+  it('three 90 % rabbit relocations without foxes leave no rabbits behind (they stayed at 104 u for ten years)', () => {
+    const hab = habitatDef('meadow');
+    const rabbits = hab.species.findIndex((x) => x.id === 'rabbits');
+    const out = (week: number): Action => ({ week, kind: 'remove', species: 'rabbits', share: 90 });
+    const run = simulate(PRESETS['meadow.nofox'].sim, 'meadow', [out(0), out(1), out(2)], 520);
+    const v = run.samples.map((x) => x[rabbits]!);
+    const gone = v.findIndex((x) => x === 0);
+    expect(gone).toBeGreaterThan(0);
+    expect(gone).toBeLessThanOrEqual(8); // the last young ones mature and die out (week 7)
+    expect(v.slice(gone).every((x) => x === 0)).toBe(true);
+    expect(balanced(run.sim)).toBe(true);
+  });
+
+  for (const habitat of HABITATS) {
+    it(`${habitat}: every animal left without food dies out within ten years and never stands still on the way`, () => {
+      const hab = habitatDef(habitat);
+      const animals = hab.species.flatMap((x, i) => (x.producer ? [] : [i]));
+      fc.assert(
+        fc.property(fc.constantFrom(...animals), fc.integer({ min: 100, max: 5_000 }), (i, amount) => {
+          const s = makeSim(habitat, { n: 0, d: 0, w: habitat === 'meadow' ? 100_000 : 0, b: { [hab.species[i]!.id]: Math.max(amount, hab.species[i]!.min) } });
+          let prev = pop(s, i);
+          for (let w = 0; w < MAX_WEEK && prev > 0; w++) {
+            stepWeek(s, hab);
+            const v = pop(s, i);
+            if (v === prev) return false;
+            prev = v;
+          }
+          return prev === 0 && balanced(s);
+        }),
+        { numRuns: 80 }
+      );
+    });
+  }
+});
+
 describe('interventions', () => {
   it('add creates the species (seen from then on), remove takes the share of adults and juveniles', () => {
     const s = cloneSim(PRESETS['pond.openfish'].sim);
@@ -532,7 +587,7 @@ describe('integer-only model code (§ 7.1)', () => {
   });
 });
 
-// Checksums (FNV-1a of the JSON samples) of 104 weeks from every preset, model eco-1.
+// Checksums (FNV-1a of the JSON samples) of 104 weeks from every preset; the same for models eco-1 and eco-2.
 const GOLDEN: Record<string, number> = {
   'meadow.bare': 3548208892,
   'meadow.lively': 113100980,

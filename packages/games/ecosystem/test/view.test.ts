@@ -267,6 +267,32 @@ describe('explore screens', () => {
     vi.useRealTimers();
   });
 
+  it('a notebook saved with the earlier model says it was recalculated; the save moves to the current model', () => {
+    vi.useFakeTimers();
+    for (const locale of LOCALES) {
+      const cur = explore('meadow') as ExploreState;
+      const fresh = mount(cur, locale);
+      expect(fresh.q('eco-refined')!.hidden).toBe(true);
+      expect(fresh.ctx.saveRequests()).toBe(0);
+      document.body.innerHTML = '';
+      const m = mount({ ...cur, model: 'eco-1' }, locale);
+      const line = m.q('eco-refined')!;
+      expect(line.hidden).toBe(false);
+      expect(line.textContent!.length).toBeGreaterThan(20);
+      if (locale === 'en') expect(line.textContent).toBe('The model was refined since you started; this notebook was recalculated.');
+      expect(m.state().model).toBe('eco-2');
+      expect(m.ctx.saveRequests()).toBe(1);
+      vi.runAllTimers();
+      expect(m.q('eco-announcer')!.textContent).toBe(line.textContent);
+      expect(m.ctx.missingKeys).toEqual([]);
+      // A new game drops the line.
+      m.instance.newGame({ seed: 9, difficulty: 'medium', settings: { mode: 'explore' } });
+      expect(m.q('eco-refined')!.hidden).toBe(true);
+      document.body.innerHTML = '';
+    }
+    vi.useRealTimers();
+  });
+
   it('meadow conditions are selects; a change of rain is logged', () => {
     const m = mount(explore('meadow'), 'ar');
     const rain = m.q('eco-cond-rain') as HTMLSelectElement;

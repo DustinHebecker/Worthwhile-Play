@@ -117,6 +117,7 @@ export const pl: Catalogue = {
   'review.why': 'Dlaczego',
   'review.next': 'Następne wyzwanie',
   'review.summary': 'Zobacz podsumowanie',
+  'note.recalculated': 'Od twojego startu model został dopracowany; ten notatnik przeliczono od nowa.',
   'note.model': 'To uproszczony model. Pokazuje, jak mogą się zachowywać prawdziwe stawy i łąki, a nie co zrobi konkretny staw. Liczby to jednostki modelu, tygodnie to tygodnie modelu.',
   'summary.heading': 'Twoje przewidywania w tej rundzie',
   'summary.counts': '●●● {a} · ●●○ {b} · ●○○ {c} · ○○○ {d} · pominięte {s}',

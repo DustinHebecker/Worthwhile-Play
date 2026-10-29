@@ -117,6 +117,7 @@ export const es: Catalogue = {
   'review.why': 'Por qué',
   'review.next': 'Siguiente reto',
   'review.summary': 'Ver resumen',
+  'note.recalculated': 'El modelo se ha afinado desde que empezaste; este cuaderno se ha recalculado.',
   'note.model': 'Es un modelo simplificado. Muestra el tipo de comportamiento que pueden tener los estanques y prados reales, no lo que hará un estanque concreto. Los números son unidades del modelo y las semanas, semanas del modelo.',
   'summary.heading': 'Tus predicciones en esta ronda',
   'summary.counts': '●●● {a} · ●●○ {b} · ●○○ {c} · ○○○ {d} · saltados {s}',

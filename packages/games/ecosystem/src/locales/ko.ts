@@ -117,6 +117,7 @@ export const ko: Catalogue = {
   'review.why': '이유',
   'review.next': '다음 도전',
   'review.summary': '요약 보기',
+  'note.recalculated': '시작한 뒤로 모델이 다듬어졌습니다. 이 노트는 다시 계산했습니다.',
   'note.model': '이것은 단순화한 모델입니다. 실제 연못과 초원이 보일 수 있는 행동을 보여 줄 뿐, 특정 연못이 어떻게 될지는 알려 주지 않습니다. 숫자는 모델 단위, 주는 모델의 주입니다.',
   'summary.heading': '이번 라운드의 예측',
   'summary.counts': '●●● {a} · ●●○ {b} · ●○○ {c} · ○○○ {d} · 건너뜀 {s}',

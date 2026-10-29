@@ -117,6 +117,7 @@ export const tr: Catalogue = {
   'review.why': 'Neden',
   'review.next': 'Sonraki görev',
   'review.summary': 'Özete git',
+  'note.recalculated': 'Başladığından beri model iyileştirildi; bu defter yeniden hesaplandı.',
   'note.model': 'Bu basitleştirilmiş bir modeldir. Gerçek göletlerin ve çayırların gösterebileceği davranış türünü gösterir, belirli bir göletin ne yapacağını değil. Sayılar model birimi, haftalar model haftasıdır.',
   'summary.heading': 'Bu turdaki tahminlerin',
   'summary.counts': '●●● {a} · ●●○ {b} · ●○○ {c} · ○○○ {d} · atlanan {s}',

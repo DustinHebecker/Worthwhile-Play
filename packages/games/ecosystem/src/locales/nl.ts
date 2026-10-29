@@ -117,6 +117,7 @@ export const nl: Catalogue = {
   'review.why': 'Waarom',
   'review.next': 'Volgende opgave',
   'review.summary': 'Naar de samenvatting',
+  'note.recalculated': 'Het model is verfijnd sinds je begon; dit notitieboek is opnieuw berekend.',
   'note.model': 'Dit is een vereenvoudigd model. Het laat zien welk gedrag echte vijvers en weiden kunnen vertonen, niet wat een bepaalde vijver zal doen. Getallen zijn modeleenheden, weken zijn modelweken.',
   'summary.heading': 'Je voorspellingen deze ronde',
   'summary.counts': '●●● {a} · ●●○ {b} · ●○○ {c} · ○○○ {d} · overgeslagen {s}',

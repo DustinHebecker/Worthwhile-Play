@@ -117,6 +117,7 @@ export const de: Catalogue = {
   'review.why': 'Warum',
   'review.next': 'Nächste Aufgabe',
   'review.summary': 'Zur Zusammenfassung',
+  'note.recalculated': 'Das Modell wurde seit deinem Start verfeinert; dieses Notizbuch wurde neu berechnet.',
   'note.model':
     'Dies ist ein vereinfachtes Modell. Es zeigt, welches Verhalten echte Teiche und Wiesen zeigen können, nicht, was ein bestimmter Teich tun wird. Zahlen sind Modelleinheiten, Wochen sind Modellwochen.',
   'summary.heading': 'Deine Vorhersagen in dieser Runde',
