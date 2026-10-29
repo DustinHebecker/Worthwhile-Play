@@ -302,6 +302,28 @@ describe('hard stack-predict: which joint gives way? (owner decision 2026-10-29)
     expect(isBalanceState(bad)).toBe(false);
   });
 
+  it('an open or skipped item with a joint past the top body is rejected, so "Let go" never leaves a valid save invalid (review)', () => {
+    const { s, i } = find(true);
+    const bodies = (s.items[i]!.scene.s as StackScene).bodies.length;
+    const open = clone(chooseJoint(choose(s, s.items[i]!.answer!)!, 0)!);
+    expect(isBalanceState(open)).toBe(true);
+    open.items[i]!.jointChoice = bodies;
+    expect(isBalanceState(open)).toBe(false);
+    const skipped = clone(skip(chooseJoint(choose(s, s.items[i]!.answer!)!, bodies - 1)!)!);
+    expect(isBalanceState(skipped)).toBe(true);
+    skipped.items[i]!.jointChoice = bodies;
+    expect(isBalanceState(skipped)).toBe(false);
+    // Whatever a valid open item holds, committing it gives a valid save.
+    for (let j = 0; j < bodies; j++) expect(isBalanceState(clone(letGo(chooseJoint(choose(s, 1)!, j)!)!))).toBe(true);
+    // Never throws on odd values.
+    for (const v of [Number.NaN, '1', {}, [], -1, 1.5, Infinity, true, 1e9]) {
+      const odd = clone(open) as unknown as { items: Record<string, unknown>[] };
+      odd.items[i]!.jointChoice = v;
+      expect(() => isBalanceState(odd)).not.toThrow();
+      expect(isBalanceState(odd)).toBe(false);
+    }
+  });
+
   it('a stack that stands needs no joint; medium asks none', () => {
     const { s, i } = find(false);
     const done = letGo(choose(s, 0)!)!;

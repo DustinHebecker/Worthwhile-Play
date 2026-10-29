@@ -517,6 +517,8 @@ function isItem(x: unknown, difficulty: Difficulty): x is Item {
   if (!isOneOf(x.status, ['open', 'solved', 'solved-with-help', 'shown', 'matched', 'different', 'skipped'] as const)) return false;
   if (!(x.outcome === null || isOutcome(x.outcome))) return false;
   const it = x as unknown as Item;
+  // A chosen joint names a body of the scene (open, skipped and committed items alike).
+  if (it.scene.bench === 'stack' && (it.jointChoice ?? -1) >= it.scene.s.bodies.length) return false;
   if (!draftFits(it, difficulty) || !it.history.every((h) => draftFits({ ...it, draft: h }, difficulty))) return false;
   if (it.outcome !== null && !same(it.outcome, outcomeOf(it.draft))) return false;
   if (isPredict(id)) {
@@ -527,7 +529,6 @@ function isItem(x: unknown, difficulty: Difficulty): x is Item {
     if (it.outcome === null) return false;
     if (it.status === 'skipped') return true;
     if (it.choice === null) return false;
-    if (it.scene.bench === 'stack' && (it.jointChoice ?? -1) >= it.scene.s.bodies.length) return false;
     return it.status === (predictMatches(it, difficulty) ? 'matched' : 'different');
   }
   if (!isGoal(it.goal) || !isScene(it.witness) || it.answer !== null || it.marked !== null) return false;
