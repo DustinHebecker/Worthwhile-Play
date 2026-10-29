@@ -43,7 +43,8 @@ export function describePoint(ui: Ui, atlas: Atlas, lon: number, lat: number, ne
   if (!nearest) return base;
   const n = nearestCity(atlas, lon, lat, (c) => c.id === nearest.skipCity || c.country === nearest.skipCountry);
   if (!n) return base;
-  return `${base} · ${ui.t('map.nearest', { city: ui.city(n.city.id), offset: ui.distanceAndDirection(n.city.lon, n.city.lat, lon, lat) })}`;
+  const dateLine = ui.dateLine(n.city.lon, lon);
+  return `${base} · ${ui.t('map.nearest', { city: ui.city(n.city.id), offset: ui.distanceAndDirection(n.city.lon, n.city.lat, lon, lat) })}${dateLine ? ` · ${dateLine}` : ''}`;
 }
 
 /** The exploring readout of a review: name, latitude and distance from the answer of the last picked point. */

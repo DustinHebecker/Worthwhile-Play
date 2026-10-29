@@ -40,6 +40,7 @@ export const text: AtlasText = {
   'band.2': '方向对了',
   'band.3': '还比较远——看看它在哪里',
   'feedback.offset': '{dir}约{km}',
+  'feedback.dateLine': '最短路线穿过国际日期变更线：在这张地图上，它从一侧边缘出去，又从另一侧边缘回来。',
   'explore.hint': '四处看看：点一下地图上任何地方，就能看到它的名称、纬度以及与{name}的距离。',
   'explore.from': '距{name} {km}',
   'compare.choose': '你的答案',

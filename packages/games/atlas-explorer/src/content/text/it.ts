@@ -40,6 +40,7 @@ export const text: AtlasText = {
   'band.2': 'Sulla strada giusta',
   'band.3': 'Più lontano – guarda dov’è',
   'feedback.offset': 'a circa {km} {dir}',
+  'feedback.dateLine': 'La via più breve attraversa la linea del cambiamento di data: su questa carta esce da un bordo e rientra dall’altro.',
   'explore.hint': 'Guardati intorno: tocca un punto qualsiasi della carta per vederne il nome, la latitudine e la distanza da {name}.',
   'explore.from': 'a {km} da {name}',
   'compare.choose': 'La tua risposta',

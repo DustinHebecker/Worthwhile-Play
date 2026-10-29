@@ -149,6 +149,8 @@ export function findScreen(host: Host, item: FindItem): Screen {
     if (near && item.km !== null) {
       scene.arcs = [{ from: [mlon, mlat], to: near, label: ui.km(item.km), style: 'dashed' }];
       lines.push(t(target.t === 'country' || target.t === 'feature' ? 'find.awayEdge' : 'find.away', { offset: ui.distanceAndDirection(near[0], near[1], mlon, mlat, d === 'easy' ? 8 : 16) }));
+      const dateLine = ui.dateLine(near[0], mlon);
+      if (dateLine) lines.push(dateLine);
     }
     const box = centre ? boxAround([[mlon, mlat], centre], 6) : boxAround([[mlon, mlat]], 10);
     const area = targetBox(host, item);

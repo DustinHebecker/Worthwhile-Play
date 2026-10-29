@@ -39,6 +39,7 @@ export const text = {
   'band.2': 'On the right track',
   'band.3': 'Further away — see where it is',
   'feedback.offset': 'about {km} {dir}',
+  'feedback.dateLine': 'The shortest way crosses the date line: on this map it leaves at one edge and comes back at the other.',
   'explore.hint': 'Look around: tap any place on the map to see its name, its latitude and its distance from {name}.',
   'explore.from': '{km} from {name}',
   'compare.choose': 'Your answer',

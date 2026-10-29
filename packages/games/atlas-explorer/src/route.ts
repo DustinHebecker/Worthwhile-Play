@@ -25,13 +25,17 @@ export function overland(a: Country, b: Country): boolean {
   return gap <= OVERLAND_GAP_DEG;
 }
 
-/** The atlas's overland border graph (neighbour lists sorted, cached per atlas). */
+/**
+ * The atlas's overland border graph (neighbour lists sorted, cached per atlas): neither borders through overseas parts
+ * (`overland`) nor borders only through a small exclave (Spain–Morocco via Ceuta and Melilla, which lie across the
+ * sea from the Spanish mainland) are steps.
+ */
 export function graphOf(atlas: Atlas): Graph {
   let g = graphs.get(atlas);
   if (!g) {
     const steps = (c: Country) => c.nb.filter((n) => {
       const o = atlas.country(n);
-      return o !== undefined && overland(c, o);
+      return o !== undefined && !c.nbExclave.includes(n) && overland(c, o);
     });
     g = new Map(atlas.countries.map((c) => [c.id, steps(c).sort()]));
     graphs.set(atlas, g);

@@ -40,6 +40,7 @@ export const text: AtlasText = {
   'band.2': 'Doğru yoldasın',
   'band.3': 'Daha uzak – nerede olduğuna bak',
   'feedback.offset': 'yaklaşık {km} {dir}',
+  'feedback.dateLine': 'En kısa yol tarih değiştirme çizgisini geçer: bu haritada bir kenardan çıkıp öbür kenardan geri girer.',
   'explore.hint': 'Etrafa bak: adını, enlemini ve hedefe ({name}) uzaklığını görmek için haritada herhangi bir yere dokun.',
   'explore.from': 'hedefe ({name}) uzaklık: {km}',
   'compare.choose': 'Cevabın',

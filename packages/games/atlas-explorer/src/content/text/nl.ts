@@ -40,6 +40,7 @@ export const text: AtlasText = {
   'band.2': 'Op de goede weg',
   'band.3': 'Verder weg – kijk waar het ligt',
   'feedback.offset': 'ongeveer {km} {dir}',
+  'feedback.dateLine': 'De kortste weg gaat over de datumgrens: op deze kaart verdwijnt hij aan de ene rand en komt hij aan de andere weer terug.',
   'explore.hint': 'Kijk rond: tik op een plek op de kaart om de naam, de breedtegraad en de afstand tot {name} te zien.',
   'explore.from': '{km} van {name}',
   'compare.choose': 'Je antwoord',

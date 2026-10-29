@@ -14,8 +14,9 @@ const LANDLOCKED = 'AD AF AM AT AZ BF BI BO BT BW BY CF CH CZ ET HU KG KZ LA LI 
 
 /**
  * Land boundaries of 45 countries (Factbook "border countries", UN members only), and the documented deviations of
- * this map: the neutrality rule (§ 12.3: a border lying entirely along a hatched area does not count) and the
- * exclaves under 100 km² that the map does not draw (Ceuta and Melilla).
+ * this map: the neutrality rule (§ 12.3: a border lying entirely along a hatched area does not count). Ceuta and
+ * Melilla are drawn since the 2026-10-29 follow-up (small parts with a land border stay), so Spain–Morocco is a
+ * neighbour pair as in the Factbook.
  */
 const BORDERS: Record<string, string> = {
   AR: 'BO BR CL PY UY',
@@ -68,8 +69,7 @@ const BORDERS: Record<string, string> = {
 const DEVIATIONS: Record<string, string> = {
   'CN-PK': 'the whole border lies along hatched Kashmir areas (§ 12.3)',
   'GY-VE': 'the whole border lies along the hatched Essequibo area (§ 12.3)',
-  'IL-SY': 'the whole border lies along the hatched Golan Heights (§ 12.3)',
-  'ES-MA': 'Ceuta and Melilla are parts under 100 km², not drawn (§ 11.2)'
+  'IL-SY': 'the whole border lies along the hatched Golan Heights (§ 12.3)'
 };
 const key = (a: string, b: string) => [a, b].sort().join('-');
 

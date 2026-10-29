@@ -222,6 +222,39 @@ describe('Atlas Explorer view', () => {
     expect(g.phase()).toBe('compare-review');
   });
 
+  it('reads directions off the map across the date line and says when the shortest way crosses it', () => {
+    const g = setup('find');
+    const s = g.state();
+    // Target 150° W (Alaska), marker 170° E (Kamchatka): east on the map, the shortest way crosses the date line.
+    const across: FindItem = { kind: 'find', target: { t: 'point', at: [-15000, 6000] }, draft: [17000, 6000], answer: null, km: null, band: null };
+    g.instance.restore({ ...s, items: [across, ...s.items.slice(1)] });
+    g.click('ae-check');
+    const lines = [...g.root.querySelectorAll('[data-testid="ae-review-line"]')].map((e) => e.textContent ?? '');
+    expect(lines[0]).toMatch(/^Your marker is about [\d,]+ km east of it\.$/);
+    expect(lines[1]).toBe('The shortest way crosses the date line: on this map it leaves at one edge and comes back at the other.');
+    // Without the date line in between, no such sentence.
+    const plain: FindItem = { ...across, draft: [-12000, 6000] };
+    g.instance.restore({ ...s, items: [plain, ...s.items.slice(1)] });
+    g.click('ae-check');
+    const lines2 = [...g.root.querySelectorAll('[data-testid="ae-review-line"]')].map((e) => e.textContent ?? '');
+    expect(lines2[0]).toMatch(/^Your marker is about [\d,]+ km east of it\.$/);
+    expect(lines2.join(' ')).not.toContain('date line');
+  });
+
+  it('keeps a mystery item saved before a data update consistent with its stored clues', () => {
+    // Before Ceuta and Melilla were drawn (§ 26), Morocco had one neighbour; an open item keeps that clue.
+    const g = setup('mystery');
+    const s = g.state();
+    const old: MysteryItem = { kind: 'mystery', target: 'MA', clues: [{ id: 'region', arg: 'africa' }, { id: 'nbCount', arg: '1' }, { id: 'nb', arg: 'DZ' }], shown: 3, guesses: ['ES', 'DZ'], draft: null, end: null };
+    expect(game.isValidState({ ...s, items: [old, ...s.items.slice(1)] })).toBe(true);
+    g.instance.restore({ ...s, items: [old, ...s.items.slice(1)] });
+    expect(g.el('ae-guess-ES')?.querySelector('.ae-borders')).toBeNull();
+    expect(g.el('ae-guess-DZ')?.querySelector('.ae-borders')).not.toBeNull();
+    // Drawn today, the clue says two, and Spain's card says it borders Morocco.
+    g.instance.restore({ ...s, items: [{ ...old, clues: [{ id: 'region', arg: 'africa' }, { id: 'nbCount', arg: '2' }, { id: 'nb', arg: 'DZ' }] }, ...s.items.slice(1)] });
+    expect(g.el('ae-guess-ES')?.querySelector('.ae-borders')).not.toBeNull();
+  });
+
   it('says "mostly" in the region clue of a transcontinental country', () => {
     const g = setup('mystery');
     const s = g.state();

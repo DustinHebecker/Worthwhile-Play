@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { countryAt, countryDistanceKm, decodeAtlas, inside, LINES, placeAt, REGIONS } from '../src/atlas';
 import { ATLAS_DATA } from '../src/data/atlas.gen';
 import { UN_MEMBERS } from '../src/data/un-members';
+import { bbox, pointInRings } from '../src/geo';
 import manifest from '../src/data/manifest.json';
 
 const atlas = decodeAtlas(ATLAS_DATA);
@@ -97,6 +98,86 @@ describe('generated atlas', () => {
       ['North Nicosia', 33.36, 35.2]
     ];
     for (const [name, lon, lat] of places) expect(placeAt(atlas, lon, lat)?.kind, name).toBe('disputed');
+  });
+
+  it('names tiny places on land as the data does: Ceuta and Melilla are Spain, Gibraltar is hatched', () => {
+    // Below the resolution of the shared arcs, Melilla read "Morocco", Ceuta "sea" and Gibraltar's Rock "Spain"; tiny
+    // parts on land now have fine rings that are tested first (follow-up 2026-10-29).
+    const at = (lon: number, lat: number) => placeAt(atlas, lon, lat);
+    const country = (id: string) => ({ kind: 'country', id });
+    // Ceuta and Melilla: administered by Spain, drawn as Spanish exclaves; Morocco around them.
+    expect(at(-5.316, 35.889), 'Ceuta').toEqual(country('ES'));
+    expect(at(-2.94, 35.29), 'Melilla').toEqual(country('ES'));
+    expect(at(-2.956, 35.28), 'Melilla airport').toEqual(country('ES'));
+    expect(at(-5.36, 35.85), 'Fnideq').toEqual(country('MA'));
+    expect(at(-2.93, 35.17), 'Nador').toEqual(country('MA'));
+    // Gibraltar is in the disputed-areas layer (administered by the UK, claimed by Spain): hatched, so neither Spain
+    // nor the United Kingdom; La Línea next to it is Spain.
+    expect(at(-5.348, 36.128), 'Gibraltar').toEqual({ kind: 'disputed', id: 'd-b55' });
+    expect(at(-5.35, 36.165), 'La Línea').toEqual(country('ES'));
+    // Llívia (Spain, inside France), Monaco, San Marino and Vatican City.
+    expect(at(1.98, 42.465), 'Llívia').toEqual(country('ES'));
+    expect(at(2.04, 42.46), 'Saillagouse').toEqual(country('FR'));
+    expect(at(7.42, 43.735), 'Monaco').toEqual(country('MC'));
+    expect(at(12.45, 43.94), 'San Marino').toEqual(country('SM'));
+    expect(at(12.4535, 41.9035), 'Vatican City').toEqual({ kind: 'other', id: 'VAT' });
+    expect(at(12.49, 41.89), 'Rome').toEqual(country('IT'));
+    // A tap in Ceuta counts for Spain; Spain and Morocco are neighbours (their only border is at Ceuta and Melilla).
+    expect(countryDistanceKm(atlas, atlas.country('ES')!, -5.316, 35.889)).toBe(0);
+    expect(atlas.country('ES')!.nb).toContain('MA');
+    // Fine rings are closed rings with an area; the tiny hatched areas that quantisation had flattened into zero-area
+    // slivers (Dragonja, Vojvodina, Mount Scopus) have one again.
+    const area = (r: ArrayLike<number>) => {
+      let a = 0;
+      for (let i = 2; i < r.length; i += 2) a += r[i - 2]! * r[i + 1]! - r[i]! * r[i - 1]!;
+      return Math.abs(a / 2);
+    };
+    for (const sp of atlas.spots) for (const r of sp.rings) expect(area(r), sp.id).toBeGreaterThan(0);
+    for (const id of ['d-b82', 'd-b96', 'd-b99', 'd-b55']) {
+      const d = atlas.disputed.find((x) => x.id === id)!;
+      expect(d.rings.length, id).toBeGreaterThan(0);
+      for (const r of d.rings) expect(area(r), id).toBeGreaterThan(0);
+    }
+  });
+
+  it('counts every fine ring as part of its owner, also where it overlaps the owner’s own outline', () => {
+    // Voeren and Comines-Warneton lie inside Belgium's dissolved outline and Madha inside Oman's coarse ring of it:
+    // with one even–odd test over all rings, the overlap was a hole (a tap there was "not Belgium").
+    // Every fine ring of a country or another unit is a spot; sample the ground inside it.
+    let checked = 0;
+    for (const sp of atlas.spots) {
+      const owner = sp.kind === 'country' ? atlas.country(sp.id)! : atlas.others.find((o) => o.id === sp.id)!;
+      const r = sp.rings[0]!;
+      const [x0, y0, x1, y1] = bbox([r]);
+      for (let i = 1; i < 12; i++)
+        for (let j = 1; j < 12; j++) {
+          const lon = x0 + ((x1 - x0) * i) / 12;
+          const lat = y0 + ((y1 - y0) * j) / 12;
+          if (!pointInRings(lon, lat, [r])) continue;
+          checked++;
+          expect(inside(owner, lon, lat), `${sp.id} ${lon.toFixed(3)} ${lat.toFixed(3)}`).toBe(true);
+        }
+    }
+    expect(checked).toBeGreaterThan(1000);
+    expect(placeAt(atlas, 5.82, 50.742), 'Voeren').toEqual({ kind: 'country', id: 'BE' });
+    expect(inside(atlas.country('BE')!, 5.82, 50.742), 'Voeren').toBe(true);
+    expect(inside(atlas.country('BE')!, 2.933, 50.754), 'Comines-Warneton').toBe(true);
+    expect(inside(atlas.country('OM')!, 56.22, 25.24), 'Madha').toBe(true);
+  });
+
+  it('keeps hatched edges close to the source: no wide hatched slivers (Kashmir follow-up 2026-10-29)', () => {
+    // Measured by the build on land every 0.01°: ground drawn hatched that the source does not mark ("extra": 692 km²
+    // along the edges of Indian- and Pakistani-administered Kashmir with the former 2-cell limit, now 384) and disputed
+    // ground drawn as a country ("missing": 487, now 258). Both come from simplifying the hatched edges, now within one
+    // grid cell (about 2 km); the mean displacement per km of edge was up to 1.5 km, now at most 0.73.
+    const e = manifest.hatchedEdges;
+    expect(e.stepDeg).toBeLessThanOrEqual(0.01);
+    const rows = Object.entries(e.overlays);
+    expect(rows).toHaveLength(atlas.disputed.length);
+    for (const [id, v] of rows) if (v.edgeKm >= 50) expect((v.extraKm2 + v.missingKm2) / v.edgeKm, id).toBeLessThanOrEqual(0.8);
+    const kashmir = ['d-b05', 'd-b09'].map((id) => e.overlays[id as keyof typeof e.overlays]!);
+    expect(kashmir.reduce((sum, v) => sum + v.extraKm2, 0)).toBeLessThanOrEqual(450);
+    expect(kashmir.reduce((sum, v) => sum + v.missingKm2, 0)).toBeLessThanOrEqual(350);
   });
 
   it('places every curated city in its country (or within the 25 km tolerance)', () => {
