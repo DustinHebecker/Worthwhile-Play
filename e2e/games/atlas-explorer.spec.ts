@@ -86,8 +86,12 @@ test('atlas-explorer: tapping the target on the map is "On target"; the review e
   await expect(page.getByTestId('ae-root')).toHaveAttribute('data-phase', 'find-review');
   const done = await current<FindItem>(page);
   expect(done.band).not.toBeNull();
-  // A river's label point can lie a little off the line; everything else is hit exactly.
-  expect(done.band!).toBeLessThanOrEqual(item.target.t === 'feature' ? 1 : 0);
+  // A river's label point can lie a little off the line; everything else is hit exactly — up to the
+  // click's pixel rounding, which can land a tiny country's label point just outside its border.
+  const east = await clientPoint(page, lon + 1, lat);
+  const kmPerPixel = (111.32 * Math.cos((lat * Math.PI) / 180)) / Math.hypot(east.x - p.x, east.y - p.y);
+  const pixelMiss = done.band === 1 && done.km! <= 2 * kmPerPixel;
+  expect(done.band!).toBeLessThanOrEqual(item.target.t === 'feature' || pixelMiss ? 1 : 0);
   await expect(page.getByTestId('ae-verdict')).toContainText(done.band === 0 ? 'On target' : 'Close');
   await expect(page.locator('#ae-review-heading')).toBeFocused();
 });
