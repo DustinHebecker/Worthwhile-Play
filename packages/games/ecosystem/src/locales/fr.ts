@@ -117,6 +117,7 @@ export const fr: Catalogue = {
   'review.why': 'Pourquoi',
   'review.next': 'Défi suivant',
   'review.summary': 'Voir le résumé',
+  'note.recalculated': 'Le modèle a été affiné depuis que vous avez commencé ; ce carnet a été recalculé.',
   'note.model': 'C’est un modèle simplifié. Il montre le genre de comportement que peuvent avoir de vraies mares et prairies, pas ce que fera une mare précise. Les nombres sont des unités du modèle, les semaines des semaines du modèle.',
   'summary.heading': 'Vos prédictions de cette manche',
   'summary.counts': '●●● {a} · ●●○ {b} · ●○○ {c} · ○○○ {d} · passés {s}',

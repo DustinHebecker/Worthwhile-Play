@@ -117,6 +117,7 @@ export const ja: Catalogue = {
   'review.why': 'なぜ',
   'review.next': '次のチャレンジ',
   'review.summary': 'まとめを見る',
+  'note.recalculated': '始めたあとでモデルが改良されたため、このノートは計算し直しました。',
   'note.model': 'これは単純化したモデルです。実際の池や野原が見せうる振る舞いを示すもので、特定の池がどうなるかを示すものではありません。数値はモデル単位、週はモデルの週です。',
   'summary.heading': 'このラウンドの予想',
   'summary.counts': '●●● {a} · ●●○ {b} · ●○○ {c} · ○○○ {d} · スキップ {s}',

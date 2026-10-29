@@ -3,7 +3,7 @@ import fc from 'fast-check';
 import { CHALLENGES, DIFFICULTIES, challengeOf, drawRound, type Difficulty } from '../src/challenges';
 import { GOAL_IDS, goalOf } from '../src/goals';
 import { HABITATS } from '../src/habitats';
-import { ADD_LIMIT, MAX_ACTIONS, MAX_WEEK, balanced, cloneSim, simulate, total, type Action } from '../src/model';
+import { ADD_LIMIT, MAX_ACTIONS, MAX_WEEK, MODEL_ID, balanced, cloneSim, simulate, total, type Action } from '../src/model';
 import { PRESETS } from '../src/presets';
 import {
   MODES,
@@ -18,6 +18,7 @@ import {
   commit,
   continueFromHere,
   currentItem,
+  currentModel,
   exploreApply,
   exploreRefusal,
   exploreRun,
@@ -453,5 +454,23 @@ describe('isEcoState', () => {
   it('accepts every state reached by the transitions and its JSON round trip', () => {
     const states: EcoState[] = [predict(), goal('bring-back-clover'), explore('meadow', 'bare', true)];
     for (const s of states) valid(s);
+  });
+
+  it('accepts saves of the earlier model eco-1; currentModel moves them to the current one (§ 14)', () => {
+    expect(MODEL_ID).toBe('eco-2');
+    const p = predict();
+    const g = runGoalWeeks(applyTool(goal('bring-back-clover'), 'rabbits-90'), 30).state;
+    const e = exploreRun(exploreApply(explore('meadow'), { week: 0, kind: 'remove', species: 'rabbits', share: 90 }), 26).state;
+    expect([g.notebook.log.length, g.notebook.week, e.notebook.log.length, e.notebook.week]).toEqual([1, 30, 1, 26]);
+    for (const s of [p, g, e]) {
+      const old = { ...clone(s), model: 'eco-1' } as EcoState;
+      valid(old);
+      const up = currentModel(old);
+      expect(up.state).toEqual(s);
+      // Notebooks are replayed with the current model; predict items keep their stored marks.
+      expect(up.recalculated).toBe(s.mode !== 'predict');
+      expect(currentModel(s)).toEqual({ state: s, recalculated: false });
+      expect(currentModel(s).state).toBe(s);
+    }
   });
 });

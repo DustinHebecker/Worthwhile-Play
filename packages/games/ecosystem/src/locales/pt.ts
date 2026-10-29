@@ -117,6 +117,7 @@ export const pt: Catalogue = {
   'review.why': 'Por quê',
   'review.next': 'Próximo desafio',
   'review.summary': 'Ver resumo',
+  'note.recalculated': 'O modelo foi refinado desde que você começou; este caderno foi recalculado.',
   'note.model': 'Este é um modelo simplificado. Ele mostra o tipo de comportamento que lagoas e prados reais podem ter, não o que uma lagoa específica vai fazer. Os números são unidades do modelo, e as semanas são semanas do modelo.',
   'summary.heading': 'Suas previsões nesta rodada',
   'summary.counts': '●●● {a} · ●●○ {b} · ●○○ {c} · ○○○ {d} · puladas {s}',

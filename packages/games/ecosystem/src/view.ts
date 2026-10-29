@@ -7,7 +7,7 @@ import { bcp47Tag, type GameContext, type GameInstance, type NewGameOptions } fr
 import { announce, clear, h } from '@wp/ui';
 import { focusChart, numbersTable, sharedChart, smallMultiples } from './chart-view';
 import { badgeKey, renderScene } from './scene';
-import { choiceOf, markReported, newGameState, restart, type EcoState } from './rules';
+import { choiceOf, currentModel, markReported, newGameState, restart, type EcoState } from './rules';
 import { createUi } from './ui';
 import { exploreScreen } from './view-explore';
 import { goalScreen } from './view-goal';
@@ -43,7 +43,9 @@ export function createEcosystem(context: GameContext): GameInstance<EcoState> {
   const aside = h('div', { class: 'eco-aside' }, panel, bar);
   const layout = h('div', { class: 'eco-layout' }, main, aside);
   const note = h('p', { class: 'eco-foot', 'data-testid': 'eco-foot' }, t('note.model'));
-  const container = h('div', { class: 'wp-ecosystem', dir: t.direction, lang: bcp47Tag(t.locale), 'data-testid': 'eco-root' }, layout, note, live);
+  /** Shown after restoring a notebook saved with an earlier model id (design § 14). */
+  const refined = h('p', { class: 'eco-refined', 'data-testid': 'eco-refined', hidden: true }, t('note.recalculated'));
+  const container = h('div', { class: 'wp-ecosystem', dir: t.direction, lang: bcp47Tag(t.locale), 'data-testid': 'eco-root' }, refined, layout, note, live);
 
   const host: Host = {
     ui,
@@ -141,8 +143,9 @@ export function createEcosystem(context: GameContext): GameInstance<EcoState> {
     }
   }
 
-  const show = (s: EcoState) => {
+  const show = (s: EcoState, recalculated = false) => {
     state = s;
+    refined.hidden = !recalculated;
     focusNext = null;
     screenKey = '';
     scratch = {};
@@ -155,7 +158,12 @@ export function createEcosystem(context: GameContext): GameInstance<EcoState> {
       show(newGameState(options.seed, choiceOf(options.difficulty, options.settings)));
     },
     restore(saved: EcoState) {
-      show(clone(saved));
+      const { state: s, recalculated } = currentModel(clone(saved));
+      show(s, recalculated);
+      if (s.model !== saved.model) {
+        context.requestSave();
+        if (recalculated) announce(live, t('note.recalculated'));
+      }
     },
     serialize: () => clone(state),
     pause() {
