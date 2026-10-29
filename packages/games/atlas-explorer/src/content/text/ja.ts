@@ -40,6 +40,7 @@ export const text: AtlasText = {
   'band.2': 'いい線',
   'band.3': 'もう少し遠い（場所を見てみよう）',
   'feedback.offset': '{dir}へ約{km}',
+  'feedback.dateLine': '最短の道は日付変更線を越えます。この地図では、片方の端から出て、反対側の端から戻ってきます。',
   'explore.hint': '見て回ろう：地図のどこかをタップすると、その名前、緯度、{name}からの距離がわかります。',
   'explore.from': '{name}から{km}',
   'compare.choose': 'あなたの答え',

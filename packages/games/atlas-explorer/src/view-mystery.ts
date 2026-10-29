@@ -136,16 +136,18 @@ export function mysteryScreen(host: Host, item: MysteryItem): Screen {
       if (g === item.target) continue;
       const c = atlas.country(g)!;
       const lines: (string | HTMLElement)[] = [h('strong', {}, t('mystery.not', { name: ui.country(g) })), ' ', t('mystery.towards', { offset: ui.distanceAndDirection(c.label[0], c.label[1], target.label[0], target.label[1], s.difficulty === 'easy' ? 8 : 16), name: ui.country(g) })];
+      const dateLine = ui.dateLine(c.label[0], target.label[0]);
+      if (dateLine) lines.push(' ', dateLine);
       if (target.nb.includes(g)) lines.push(' ', h('span', { class: 'ae-borders' }, t('mystery.borders', { name: ui.country(g) })));
       list.append(h('li', { class: 'ae-guess-card', 'data-testid': `ae-guess-${g}` }, ...lines));
       arcs.push({ from: [c.label[0], c.label[1]], to: [target.label[0], target.label[1]], style: 'arrow' });
     }
     if (list.childElementCount) card.splice(review ? card.length - 1 : card.length, 0, h('h3', { class: 'ae-sub' }, t('mystery.guesses')), list);
   }
-  // Arrows only show the map direction (as the text does), a short way towards the target.
+  // Arrows only show the map direction (as the text does: no wrapping at the date line), a short way towards the target.
   for (let i = 0; i < arcs.length; i++) {
     const a = arcs[i]!;
-    const dl = ((((a.to[0] - a.from[0] + 540) % 360) + 360) % 360) - 180;
+    const dl = a.to[0] - a.from[0];
     const f = Math.min(0.3, 12 / Math.max(1e-9, Math.hypot(dl, a.to[1] - a.from[1])));
     arcs[i] = { ...a, to: [a.from[0] + dl * f, a.from[1] + (a.to[1] - a.from[1]) * f] };
   }

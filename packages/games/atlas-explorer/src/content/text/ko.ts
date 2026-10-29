@@ -40,6 +40,7 @@ export const text: AtlasText = {
   'band.2': '방향이 맞음',
   'band.3': '조금 멂 – 어디인지 확인해 보세요',
   'feedback.offset': '{dir}으로 약 {km}',
+  'feedback.dateLine': '가장 짧은 길은 날짜 변경선을 지납니다. 이 지도에서는 한쪽 가장자리로 나갔다가 반대쪽 가장자리로 다시 들어옵니다.',
   'explore.hint': '둘러보기: 지도의 아무 곳이나 탭하면 이름, 위도, 그리고 목표({name})까지의 거리를 볼 수 있습니다.',
   'explore.from': '목표({name})까지 {km}',
   'compare.choose': '내 답',

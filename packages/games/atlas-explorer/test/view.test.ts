@@ -222,6 +222,25 @@ describe('Atlas Explorer view', () => {
     expect(g.phase()).toBe('compare-review');
   });
 
+  it('reads directions off the map across the date line and says when the shortest way crosses it', () => {
+    const g = setup('find');
+    const s = g.state();
+    // Target 150° W (Alaska), marker 170° E (Kamchatka): east on the map, the shortest way crosses the date line.
+    const across: FindItem = { kind: 'find', target: { t: 'point', at: [-15000, 6000] }, draft: [17000, 6000], answer: null, km: null, band: null };
+    g.instance.restore({ ...s, items: [across, ...s.items.slice(1)] });
+    g.click('ae-check');
+    const lines = [...g.root.querySelectorAll('[data-testid="ae-review-line"]')].map((e) => e.textContent ?? '');
+    expect(lines[0]).toMatch(/^Your marker is about [\d,]+ km east of it\.$/);
+    expect(lines[1]).toBe('The shortest way crosses the date line: on this map it leaves at one edge and comes back at the other.');
+    // Without the date line in between, no such sentence.
+    const plain: FindItem = { ...across, draft: [-12000, 6000] };
+    g.instance.restore({ ...s, items: [plain, ...s.items.slice(1)] });
+    g.click('ae-check');
+    const lines2 = [...g.root.querySelectorAll('[data-testid="ae-review-line"]')].map((e) => e.textContent ?? '');
+    expect(lines2[0]).toMatch(/^Your marker is about [\d,]+ km east of it\.$/);
+    expect(lines2.join(' ')).not.toContain('date line');
+  });
+
   it('says "mostly" in the region clue of a transcontinental country', () => {
     const g = setup('mystery');
     const s = g.state();
