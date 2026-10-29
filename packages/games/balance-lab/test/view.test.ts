@@ -1,11 +1,16 @@
 // @vitest-environment jsdom
 import { createTestContext } from '@wp/testing';
 import type { GameModule } from '@wp/game-core';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import game from '../src/index';
 import type { BalanceState, FreeState, RoundState } from '../src/rules';
 import { mobileBars, type MobileNode } from '../src/statics';
 import { mobileHooks } from '../src/rules';
+
+// The host awaits `preload` for the UI locale before creating the game (ADR 0011).
+beforeAll(async () => {
+  for (const locale of ['en', 'ar']) await game.preload!(locale);
+});
 
 afterEach(() => {
   document.body.innerHTML = '';

@@ -1,5 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectResumeAfterReload, readSave, startGame } from '../../packages/testing/src/e2e';
+import { expectResumeAfterReload, readSave, startGame, submitStart } from '../../packages/testing/src/e2e';
+import { content as en } from '../../packages/games/balance-lab/src/content/en';
+import { content as uk } from '../../packages/games/balance-lab/src/content/uk';
 import type { FreeState, RoundState } from '../../packages/games/balance-lab/src/rules';
 
 const ID = 'balance-lab';
@@ -141,4 +143,31 @@ test('balance-lab: on the free mobile every tap on an empty hook in the picture 
   await slots.first().click({ force: true });
   await expect(slots).toHaveCount(empty - 2);
   await expect(r.locator('.bl-kg')).toHaveCount(2);
+});
+
+/** Switches the UI language through the header menu (re-renders the current page). */
+async function switchLanguage(page: Page, locale: string): Promise<void> {
+  await page.getByTestId('language-menu').locator('summary').click();
+  await page.getByTestId('header-language').selectOption(locale);
+  await expect(page.locator('html')).toHaveAttribute('lang', locale);
+}
+
+test('balance-lab: the texts of a language never loaded before are available offline (precached)', async ({ page, context }) => {
+  await page.goto(`/games/${ID}`);
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+  });
+  await page.reload();
+  await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true);
+  await submitStart(page, { settings: { mode: 'free', freeBench: 'beam' } });
+  await expect(root(page).getByTestId('bl-letgo')).toHaveText(en['btn.letGo']);
+  await context.setOffline(true);
+  // The game page re-renders in Ukrainian; its in-game texts come from a chunk that was never requested before.
+  await switchLanguage(page, 'uk');
+  await page.getByTestId('continue').click();
+  await expect(root(page).getByTestId('bl-letgo')).toHaveText(uk['btn.letGo']);
+  await root(page).getByTestId('bl-place').click();
+  await root(page).getByTestId('bl-letgo').click();
+  await expect(root(page).getByTestId('bl-hold')).toHaveText(uk['free.hold']);
+  await context.setOffline(false);
 });

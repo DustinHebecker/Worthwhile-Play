@@ -7,6 +7,7 @@ import { bcp47Tag, type GameContext, type GameInstance, type NewGameOptions } fr
 import { announce, clear, h } from '@wp/ui';
 import { trayLeft } from './check';
 import { describe, explainLines, mobileHookLabel, outcomeLine } from './explain';
+import { withContent } from './content';
 import { benchOf, isPredict, OVERHANG_BLOCKS, SIDES, STACK_ANSWERS, type Scene } from './generate';
 import { mobileHookXs, nearestHook, stackXAt } from './layout';
 import {
@@ -65,7 +66,8 @@ function sceneX(svg: SVGElement, rect: DOMRect, clientX: number): number {
 }
 
 export function createBalance(context: GameContext): GameInstance<BalanceState> {
-  const { t, root } = context;
+  const { root } = context;
+  const t = withContent(context.t);
   let state: BalanceState = newState(0, readSettings(undefined, undefined));
   let paused = false;
   /** View-only selection: a tray part (index into the remaining tray) or a placed part (index in the scene). */
