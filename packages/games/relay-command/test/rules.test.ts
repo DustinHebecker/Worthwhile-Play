@@ -2424,10 +2424,10 @@ describe('difficulty per opponent (owner request 2026-10-29)', () => {
     expect(s.levels).toEqual(['normal', 'easy', 'hard', 'normal']);
     expect([1, 2, 3].map((side) => levelOf(s, side))).toEqual(['easy', 'hard', 'normal']);
     expect(isValidState(JSON.parse(JSON.stringify(s)))).toBe(true);
-    // The turn's plans: each computer side planned at its level, from its own observation.
+    // The turn's plans: each computer side planned at its level (and in its style), from its own observation.
     const next = lockTurn(s);
     const rules = rulesOf(s);
-    for (const [side, level] of [[1, 'easy'], [2, 'hard'], [3, 'normal']] as const) expect(next.log[0]!.plans[side], `side ${side}`).toEqual(planAi(observe(s.world, rules, side), rules, level));
+    for (const [side, level] of [[1, 'easy'], [2, 'hard'], [3, 'normal']] as const) expect(next.log[0]!.plans[side], `side ${side}`).toEqual(planAi(observe(s.world, rules, side), rules, level, styleOf(s, side)));
     // One level for every computer (a person's entry means nothing): none kept, the game's level counts.
     expect(game(['hard', 'normal', 'normal', 'normal'])).not.toHaveProperty('levels');
     expect(game([undefined, 'easy', 'easy', 'easy'], ['person', 'computer', 'computer', 'computer']).levels).toEqual(['normal', 'easy', 'easy', 'easy']);
