@@ -1,9 +1,12 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { isPredict } from '../src/generate';
-import { CUBE_WIDTH } from '../src/statics';
+import { BUCKET_MIN_X } from '../src/generate';
+import { CUBE_WIDTH, stackVerdict, type StackScene } from '../src/statics';
 import {
+  asksJoint,
   choose,
+  chooseJoint,
   currentItem,
   editDraft,
   freeEdit,
@@ -253,5 +256,123 @@ describe('cubes on the counterweight plank', () => {
       return;
     }
     throw new Error('no medium stack-counter task found');
+  });
+});
+
+describe('hard stack-predict: which joint gives way? (owner decision 2026-10-29)', () => {
+  /** A hard stack-predict round and the index of an item whose stack falls (or stands). */
+  function find(falls: boolean): { s: RoundState; i: number } {
+    for (let seed = 0; seed < 200; seed++) {
+      const s = round(seed, { bench: 'stack', tasks: 'predict' }, 'hard');
+      const i = s.items.findIndex((it) => (it.answer !== 0) === falls);
+      if (i >= 0) return { s: { ...s, index: i, items: s.items.map((it, j) => (j < i ? { ...it, outcome: { bench: 'stack', ...stackVerdict(it.scene.s as StackScene) }, status: 'skipped' as const } : it)) }, i };
+    }
+    throw new Error('no such item');
+  }
+
+  it('a fall needs a joint before "Let go"; the right joint matches, another one does not', () => {
+    const { s, i } = find(true);
+    const it = s.items[i]!;
+    const bodies = (it.scene.s as StackScene).bodies.length;
+    const joint = stackVerdict(it.scene.s as StackScene).failing[0]!.joint;
+    expect(asksJoint(it.id, 'hard')).toBe(true);
+    expect(chooseJoint(s, joint)).toBeNull();
+    const fall = choose(s, it.answer!)!;
+    expect(letGo(fall)).toBeNull();
+    expect(chooseJoint(fall, bodies)).toBeNull();
+    expect(chooseJoint(fall, -1)).toBeNull();
+    const right = letGo(chooseJoint(fall, joint)!)!;
+    expect(currentItem(right)!.status).toBe('matched');
+    expect(isBalanceState(clone(right))).toBe(true);
+    const wrong = letGo(chooseJoint(fall, (joint + 1) % bodies)!)!;
+    expect(currentItem(wrong)!.status).toBe('different');
+    expect(isBalanceState(clone(wrong))).toBe(true);
+    // The other fall direction is "another way" whatever the joint.
+    const other = letGo(chooseJoint(choose(s, it.answer === 1 ? 2 : 1)!, joint)!)!;
+    expect(currentItem(other)!.status).toBe('different');
+    // Choosing "Stands" drops the joint; "Let go" then needs none.
+    const back = choose(chooseJoint(fall, joint)!, 0)!;
+    expect(currentItem(back)!.jointChoice).toBeNull();
+    expect(currentItem(letGo(back)!)!.status).toBe('different');
+    // Tampering: a joint that does not match the status, or out of range, is rejected.
+    const bad = clone(right);
+    bad.items[i]!.jointChoice = (joint + 1) % bodies;
+    expect(isBalanceState(bad)).toBe(false);
+    bad.items[i]!.jointChoice = 9;
+    expect(isBalanceState(bad)).toBe(false);
+  });
+
+  it('a stack that stands needs no joint; medium asks none', () => {
+    const { s, i } = find(false);
+    const done = letGo(choose(s, 0)!)!;
+    expect(currentItem(done)!.status).toBe('matched');
+    expect(chooseJoint(choose(s, 1)!, 0)).not.toBeNull();
+    const m = round(3, { bench: 'stack', tasks: 'predict' }, 'medium');
+    expect(chooseJoint(choose(m, 1)!, 0)).toBeNull();
+    const it = currentItem(m)!;
+    const committed = letGo(choose(m, it.answer!)!)!;
+    expect(currentItem(committed)!.status).toBe('matched');
+    const tampered = clone(committed);
+    tampered.items[0]!.jointChoice = 0;
+    expect(isBalanceState(tampered)).toBe(false);
+    expect(i).toBeGreaterThanOrEqual(0);
+  });
+
+  it('a save from before the question (a fall committed without a joint) stays valid and is judged by the option', () => {
+    const { s, i } = find(true);
+    const it = s.items[i]!;
+    const old = clone(s);
+    const o = old.items[i]! as { jointChoice?: number | null };
+    delete o.jointChoice;
+    Object.assign(old.items[i]!, { choice: it.answer, outcome: { bench: 'stack', ...stackVerdict(it.scene.s as StackScene) }, status: 'matched' });
+    expect(isBalanceState(clone(old))).toBe(true);
+    Object.assign(old.items[i]!, { status: 'different' });
+    expect(isBalanceState(clone(old))).toBe(false);
+  });
+});
+
+describe('hard stack-counter: the plank slides (owner decision 2026-10-29)', () => {
+  function counter(d: 'medium' | 'hard'): RoundState {
+    for (let seed = 0; seed < 100; seed++) {
+      const s = round(seed, { bench: 'stack', tasks: 'build' }, d);
+      const i = s.items.findIndex((it) => it.id === 'stack-counter');
+      if (i >= 0) return { ...s, index: i, items: s.items.map((it, j) => (j < i ? { ...it, draft: clone(it.witness!), outcome: null, status: 'shown' as const, help: 3 } : it)) };
+    }
+    throw new Error('no stack-counter task');
+  }
+
+  it('the plank moves with its bucket and cubes, never so far back that the bucket hangs over the table', () => {
+    const s = counter('hard');
+    expect(isBalanceState(clone(s))).toBe(true);
+    const it = currentItem(s)!;
+    const start = it.draft.s as StackScene;
+    const withCube = placeCube(start, it.tray[0]!, 0, start.bodies[0]!.left + 10)!;
+    const moved = moveBody(withCube, 0, -3)!;
+    expect(moved.bodies[0]!.left).toBe(start.bodies[0]!.left - 3);
+    expect(moved.bucket!.x).toBe(start.bucket!.x - 3);
+    expect(moved.cubes[0]!.x).toBe(withCube.cubes[0]!.x - 3);
+    const limit = BUCKET_MIN_X - start.bucket!.x;
+    expect(moveBody(start, 0, limit)!.bucket!.x).toBe(BUCKET_MIN_X);
+    expect(moveBody(start, 0, limit - 1)).toBeNull();
+    // A draft with the plank slid is a valid save on hard; the witness solves after sliding.
+    const slid = editDraft(s, { bench: 'stack', s: moved })!;
+    expect(isBalanceState(clone(slid))).toBe(true);
+    const solved = letGo(editDraft(s, clone(it.witness!))!)!;
+    expect(currentItem(solved)!.status).toBe('solved');
+    expect(isBalanceState(clone(solved))).toBe(true);
+  });
+
+  it('on medium the plank stays: a slid plank is not a valid draft; a hard save with the plank at the witness place stays valid', () => {
+    const m = counter('medium');
+    const it = currentItem(m)!;
+    const slid = editDraft(m, { bench: 'stack', s: moveBody(it.draft.s as StackScene, 0, -2)! })!;
+    expect(isBalanceState(clone(slid))).toBe(false);
+    // A hard save from before the sliding plank: the start had the plank at the witness's place.
+    const h = counter('hard');
+    const legacy = clone(h);
+    const li = legacy.items[legacy.index]!;
+    li.scene = { bench: 'stack', s: { ...(li.witness!.s as StackScene), cubes: [] } };
+    li.draft = clone(li.scene);
+    expect(isBalanceState(legacy)).toBe(true);
   });
 });

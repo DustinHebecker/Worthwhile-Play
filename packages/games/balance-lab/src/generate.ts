@@ -434,6 +434,16 @@ export function stackOverhang(_rng: Rng, d: Difficulty): TaskSpec {
   });
 }
 
+/** The bucket hangs clear of the table edge, at least this far past it (cm); the hard plank slides only that far back. */
+export const BUCKET_MIN_X = 6;
+
+/** Whether some placement of cubes of these masses on the plank holds it: all of them at its inner end is the best. */
+export function counterSavable(scene: StackScene, kgs: readonly number[]): boolean {
+  const plank = scene.bodies[0]!;
+  const x = plank.left + CUBE_WIDTH / 2;
+  return stackVerdict({ ...scene, cubes: kgs.map((kg) => ({ kg, on: 0, x })) }).stands;
+}
+
 export function stackCounter(rng: Rng, d: Difficulty): TaskSpec {
   const k = d === 'easy' ? 1 : d === 'medium' ? 2 : 3;
   for (let i = 0; i < TRIES; i++) {
@@ -445,10 +455,21 @@ export function stackCounter(rng: Rng, d: Difficulty): TaskSpec {
     for (let c = 0; c < k; c++) cubes.push({ kg: rng.int(1, 4), on: 0, x: rng.pick(freeCubeSpots({ ...scene, cubes }, 0)), free: true });
     const witness: StackScene = { ...scene, cubes };
     if (!stackVerdict(witness).stands) continue;
+    const kgs = cubes.map((c) => c.kg).sort((a, b) => a - b);
+    if (d === 'hard') {
+      // The plank slides too (design § 9.3): it starts further out, where no placement of the cubes can hold it, so
+      // sliding it back is part of the answer. It keeps at least 6 cm on the table.
+      const outs: number[] = [];
+      for (let at = left + 1; at <= -6; at++) if (!counterSavable({ ...scene, bodies: [{ kind: 'plank', left: at }] }, kgs)) outs.push(at);
+      if (outs.length === 0) continue;
+      const at = rng.pick(outs);
+      const start: StackScene = { bodies: [{ kind: 'plank', left: at }], cubes: [], bucket: { ...scene.bucket!, x: at + 46 } };
+      return buildTask('stack-counter', { bench: 'stack', s: start }, kgs, { bench: 'stack', s: witness }, { kind: 'stand' });
+    }
     // Not too easy: the cubes placed in the middle of the plank must not already hold it.
     const lazy: StackScene = { ...scene, cubes: cubes.map((c) => ({ ...c, x: plank.left + 24 })) };
     if (stackVerdict(lazy).stands && rng.next() < 0.7) continue;
-    return buildTask('stack-counter', { bench: 'stack', s: scene }, cubes.map((c) => c.kg).sort((a, b) => a - b), { bench: 'stack', s: witness }, { kind: 'stand' });
+    return buildTask('stack-counter', { bench: 'stack', s: scene }, kgs, { bench: 'stack', s: witness }, { kind: 'stand' });
   }
   const scene: StackScene = { bodies: [{ kind: 'plank', left: -30 }], cubes: [], bucket: { kg: 1, on: 0, x: 16 } };
   return buildTask('stack-counter', { bench: 'stack', s: scene }, [2], { bench: 'stack', s: { ...scene, cubes: [{ kg: 2, on: 0, x: -27, free: true }] } }, { kind: 'stand' });

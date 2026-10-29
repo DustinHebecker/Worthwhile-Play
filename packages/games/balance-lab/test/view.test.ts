@@ -6,7 +6,7 @@ import { toClient } from '../src/fit';
 import { layoutBeam, layoutStack } from '../src/layout';
 import game from '../src/index';
 import type { BalanceState, FreeState, RoundState } from '../src/rules';
-import { mobileBars, type MobileNode } from '../src/statics';
+import { mobileBars, stackVerdict, type MobileNode } from '../src/statics';
 import { mobileHooks } from '../src/rules';
 
 // The host awaits `preload` for the UI locale before creating the game (ADR 0011).
@@ -219,6 +219,93 @@ describe('view', () => {
   });
 });
 
+describe('hard stacks (owner decision 2026-10-29)', () => {
+  const pick = (m: ReturnType<typeof mount>, id: string) => {
+    const opt = m.q(id) as HTMLInputElement;
+    opt.checked = true;
+    opt.dispatchEvent(new Event('change', { bubbles: true }));
+  };
+
+  it('stack-predict asks which joint gives way once a fall is chosen; "Let go" waits for it', () => {
+    for (let seed = 1; seed < 80; seed++) {
+      const m = mount({ bench: 'stack', tasks: 'predict' }, 'hard', 'en', seed);
+      const it = (m.state() as RoundState).items[0]!;
+      if (it.answer === 0) {
+        m.instance.dispose();
+        continue;
+      }
+      expect(m.q('bl-joints')).toBeNull();
+      pick(m, 'bl-opt-0');
+      expect(m.q('bl-joints')).toBeNull();
+      // Any fall shows every joint (nothing about the answer is given away).
+      const other = it.answer === 1 ? 2 : 1;
+      pick(m, `bl-opt-${other}`);
+      const bodies = (it.scene.s as { bodies: unknown[] }).bodies.length;
+      expect(m.root.querySelectorAll('[data-testid^="bl-joint-"]')).toHaveLength(bodies);
+      expect(m.q('bl-joints')!.textContent).toContain('Which joint gives way?');
+      expect(m.q('bl-joints')!.textContent).toContain('Joint 1: part 1 on the table');
+      expect(m.q('bl-joints')!.textContent).toContain('Joint 2: part 2 on part 1');
+      pick(m, `bl-opt-${it.answer}`);
+      expect((m.q('bl-letgo') as HTMLButtonElement).disabled).toBe(true);
+      const joint = stackVerdict(it.scene.s as never).failing[0]!.joint;
+      pick(m, `bl-joint-${joint}`);
+      expect((m.q('bl-letgo') as HTMLButtonElement).disabled).toBe(false);
+      m.q('bl-letgo')!.click();
+      expect(m.q('bl-outcome')!.dataset.matched).toBe('true');
+      expect(m.q('bl-joint-yours')!.textContent).toBe(`You said joint ${joint + 1}.`);
+      expect(m.ctx.missingKeys).toEqual([]);
+      return;
+    }
+    throw new Error('no falling hard stack');
+  });
+
+  it('stack-counter: the plank chip slides the plank with the step buttons; the task says so', () => {
+    for (let seed = 1; seed < 60; seed++) {
+      const m = mount({ bench: 'stack', tasks: 'build' }, 'hard', 'en', seed);
+      const item = () => (m.state() as RoundState).items[0]!;
+      if (item().id !== 'stack-counter') {
+        m.instance.dispose();
+        continue;
+      }
+      expect(m.q('bl-task')!.textContent).toContain('Slide the plank');
+      const left = () => (item().draft.s as { bodies: { left: number }[] }).bodies[0]!.left;
+      const start = left();
+      m.q('bl-body-0')!.click();
+      expect(m.q('bl-body-0')!.getAttribute('aria-pressed')).toBe('true');
+      expect(m.q('bl-place')).toBeNull();
+      m.q('bl-step-left4')!.click();
+      m.q('bl-step-left')!.click();
+      expect(left()).toBe(start - 5);
+      expect(m.q('bl-where')!.textContent).toBe(`Part 1: left end at ${start - 5} cm`);
+      // The arrow keys slide it too; Escape lets go of the plank.
+      key(m.q('bl-scene-wrap')!, 'ArrowRight');
+      expect(left()).toBe(start - 4);
+      key(m.q('bl-scene-wrap')!, 'Escape');
+      expect(m.q('bl-body-0')!.getAttribute('aria-pressed')).toBe('false');
+      // "Show me a solution" slides it back and places the cubes.
+      m.q('bl-solution')!.click();
+      expect(item().draft).toEqual(item().witness);
+      expect(m.ctx.missingKeys).toEqual([]);
+      return;
+    }
+    throw new Error('no hard stack-counter task');
+  });
+
+  it('medium stack-counter offers no plank chip', () => {
+    for (let seed = 1; seed < 60; seed++) {
+      const m = mount({ bench: 'stack', tasks: 'build' }, 'medium', 'en', seed);
+      if ((m.state() as RoundState).items[0]!.id !== 'stack-counter') {
+        m.instance.dispose();
+        continue;
+      }
+      expect(m.q('bl-body-0')).toBeNull();
+      expect(m.root.querySelector('[data-drag^="body:"]')).toBeNull();
+      return;
+    }
+    throw new Error('no medium stack-counter task');
+  });
+});
+
 describe('dragging with a pointer or a finger (owner decision 2026-10-29)', () => {
   const RECT = { left: 0, top: 0, width: 640, height: 460 };
   const CHIP = { left: 20, top: 600, width: 80, height: 44 };
@@ -340,5 +427,31 @@ describe('dragging with a pointer or a finger (owner decision 2026-10-29)', () =
     pointer(part, 'pointerup', to);
     const after = m.state() as RoundState;
     expect((after.items[after.index]!.draft.s as { bodies: { left: number }[] }).bodies[1]!.left).toBe(left + 10);
+  });
+
+  it('drags the plank of a hard stack-counter, with its bucket', () => {
+    for (let seed = 1; seed < 60; seed++) {
+      const m = mount({ bench: 'stack', tasks: 'build' }, 'hard', 'en', seed);
+      const item = () => (m.state() as RoundState).items[0]!;
+      if (item().id !== 'stack-counter') {
+        m.instance.dispose();
+        continue;
+      }
+      const sc = item().draft.s as { bodies: { left: number }[]; bucket: { x: number } };
+      const L = layoutStack(sc as never);
+      const left = sc.bodies[0]!.left;
+      const part = m.root.querySelector('[data-drag="body:0"]')!;
+      const from = client(m, L.px(left + 20), L.bodyY(0) + 10);
+      const to = client(m, L.px(left + 12), L.bodyY(0) + 10);
+      pointer(part, 'pointerdown', from);
+      pointer(part, 'pointermove', to);
+      pointer(part, 'pointerup', to);
+      const after = item().draft.s as typeof sc;
+      expect(after.bodies[0]!.left).toBe(left - 8);
+      expect(after.bucket.x).toBe(sc.bucket.x - 8);
+      expect(m.q('bl-body-0')!.getAttribute('aria-pressed')).toBe('true');
+      return;
+    }
+    throw new Error('no hard stack-counter task');
   });
 });

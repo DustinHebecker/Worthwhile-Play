@@ -12,7 +12,9 @@ import { benchOf, isPredict, OVERHANG_BLOCKS, SIDES, STACK_ANSWERS, type Scene }
 import { mobileHookXs, nearestHook, stackXAt } from './layout';
 import {
   addBody,
+  asksJoint,
   choose,
+  chooseJoint,
   currentItem,
   editDraft,
   freeClear,
@@ -28,10 +30,12 @@ import {
   moveBeam,
   moveBody,
   moveCube,
+  needsJoint,
   newState,
   next,
   placeBeam,
   placeCube,
+  plankMovable,
   readSettings,
   removeTop,
   resetTask,
@@ -88,6 +92,8 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
   /** View-only selection: a tray part (index into the remaining tray) or a placed part (index in the scene). */
   let selTray: number | null = null;
   let selPlaced: number | null = null;
+  /** Hard stack-counter: the plank is selected (the step buttons and arrow keys slide it). */
+  let selBody = false;
   let cursor = 0;
   let notice = '';
   let animate = false;
@@ -113,6 +119,7 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
   function resetView() {
     selTray = null;
     selPlaced = null;
+    selBody = false;
     cursor = 0;
     notice = '';
     animate = false;
@@ -145,6 +152,8 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
     return state.mode === 'free' ? commit(freeEdit(state, scene)) : commit(editDraft(state, scene));
   };
   const taskId = () => (state.mode === 'round' ? currentItem(state)?.id : undefined);
+  /** Hard stack-counter: the plank slides as well as the cubes go on it. */
+  const plankFree = (): boolean => state.mode === 'round' && taskId() === 'stack-counter' && plankMovable('stack-counter', state.difficulty);
 
   /* ---------------- Actions ---------------- */
 
@@ -189,6 +198,8 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
     }
     // Stack: cubes on body 0 (the counterweight task); bodies are selected by their chips or ↑/↓.
     if (taskId() === 'stack-counter') {
+      // With the plank selected, a tap in the picture places nothing (the plank slides with the steps or a drag).
+      if (selBody) return render();
       // The nearest spot where the cube keeps clear of the others (or stacks on one).
       const x = nearestSpot(freeCubeSpots(sc.s, 0, selPlaced ?? -1), target);
       cursor = x;
@@ -233,6 +244,7 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
       cursor = (cursor + Math.sign(dx) + n) % n;
       return render();
     }
+    if (taskId() === 'stack-counter' && selBody) return void edit({ bench: 'stack', s: moveBody(sc.s, 0, dx) ?? sc.s });
     if (taskId() === 'stack-counter') {
       // The next spot in that direction where a cube keeps clear of the others: it skips over a neighbour or stacks on it.
       if (selPlaced !== null) {
@@ -248,6 +260,7 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
   }
 
   function place() {
+    selBody = false;
     if (selTray === null && trayNow().length) selTray = 0;
     const sc = sceneNow();
     if (!sc) return;
@@ -301,7 +314,7 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
   /* ---------------- Dragging (pointer and touch; keyboard and tap paths are separate) ---------------- */
 
   /** Bodies slide when dragged on the overhang task and on the free stack bench. */
-  const bodiesMovable = (): boolean => state.mode === 'free' || taskId() === 'stack-overhang';
+  const bodiesMovable = (): boolean => state.mode === 'free' || taskId() === 'stack-overhang' || plankFree();
 
   function dropContext(): DropContext | null {
     const sc = sceneNow();
@@ -417,7 +430,9 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
     if (!scene) return render();
     selTray = null;
     selPlaced = null;
-    cursor = g.source.kind === 'body' ? g.source.index : r.kind === 'drop' ? r.target : cursor;
+    // A slid plank (hard stack-counter) stays selected, so the step buttons fine-tune it.
+    selBody = g.source.kind === 'body' && plankFree();
+    cursor = g.source.kind === 'body' ? (plankFree() ? cursor : g.source.index) : r.kind === 'drop' ? r.target : cursor;
     if (!edit(scene)) return render();
     if (whereText) announce(live, whereText);
   }
@@ -472,6 +487,7 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
     } else if (e.key === 'Escape') {
       selTray = null;
       selPlaced = null;
+      selBody = false;
       render();
     } else return;
     e.preventDefault();
@@ -516,7 +532,7 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
     if (editable()) {
       if (scene.bench === 'beam' && taskId() !== 'beam-axle') cur = selPlaced === null || taskId() === 'beam-choose' ? { kind: 'hook', at: cursor } : null;
       else if (scene.bench === 'mobile' && taskId() !== 'mobile-string') cur = { kind: 'hook', at: cursor };
-      else if (scene.bench === 'stack') cur = taskId() === 'stack-counter' ? (selPlaced === null ? { kind: 'cube', at: cursor } : null) : { kind: 'body', at: cursor };
+      else if (scene.bench === 'stack') cur = taskId() === 'stack-counter' ? (selBody ? { kind: 'body', at: 0 } : selPlaced === null ? { kind: 'cube', at: cursor } : null) : { kind: 'body', at: cursor };
     }
     const title = item ? taskText(item) : t(`free.${state.bench}`);
     const svg = drawScene(scene, {
@@ -573,6 +589,7 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
             button(t('tray.weight', { kg: num(kg) }), `bl-tray-${i}`, () => {
               selTray = selTray === i ? null : i;
               selPlaced = null;
+              selBody = false;
               render();
             }, { 'aria-pressed': selTray === i ? 'true' : 'false', class: 'bl-chip bl-chip--drag', onpointerdown: ((e: PointerEvent) => startDrag(e, { kind: 'tray', index: i }, e.currentTarget as Element)) as EventListener })
           )
@@ -595,6 +612,17 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
           }, { 'aria-pressed': selPlaced === i ? 'true' : 'false', class: 'bl-chip' })
         );
       });
+    if (scene.bench === 'stack' && id === 'stack-counter' && plankFree()) {
+      const plank = scene.s.bodies[0]!;
+      placed.append(
+        button(t('body.name', { n: num(1), kind: t(`kind.${plank.kind}`) }), 'bl-body-0', () => {
+          selBody = !selBody;
+          selTray = null;
+          selPlaced = null;
+          render();
+        }, { 'aria-pressed': selBody ? 'true' : 'false', class: 'bl-chip' })
+      );
+    }
     if (scene.bench === 'stack' && id === 'stack-counter')
       scene.s.cubes.forEach((c, i) => {
         if (!c.free) return;
@@ -602,6 +630,7 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
           button(t('placed.cube', { kg: num(c.kg), x: num(c.x) }), `bl-placed-${i}`, () => {
             selPlaced = selPlaced === i ? null : i;
             selTray = null;
+            selBody = false;
             render();
           }, { 'aria-pressed': selPlaced === i ? 'true' : 'false', class: 'bl-chip' })
         );
@@ -646,7 +675,7 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
       const b = scene.s.bodies[cursor];
       if (b) where = t('cursor.body', { n: num(cursor + 1), from: num(b.left) });
     }
-    if (scene.bench === 'stack' && id === 'stack-counter' && selPlaced === null) where = t('cursor.cube', { x: num(cursor) });
+    if (scene.bench === 'stack' && id === 'stack-counter' && selPlaced === null) where = selBody ? t('cursor.body', { n: num(1), from: num(scene.s.bodies[0]!.left) }) : t('cursor.cube', { x: num(cursor) });
     const stepRow = h('div', { class: 'bl-steps', dir: 'ltr', hidden: id === 'beam-choose' });
     const fine = scene.bench === 'stack';
     if (fine) stepRow.append(button('◀◀', 'bl-step-left4', () => step(-4), { 'aria-label': t('step.left4') }));
@@ -655,7 +684,7 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
     whereText = where;
     box.append(h('p', { class: 'bl-where', 'data-testid': 'bl-where' }, where), stepRow);
     const act = h('div', { class: 'bl-actions' });
-    const placing = (scene.bench !== 'stack' || id === 'stack-counter') && id !== 'beam-axle' && id !== 'mobile-string';
+    const placing = (scene.bench !== 'stack' || id === 'stack-counter') && id !== 'beam-axle' && id !== 'mobile-string' && !selBody;
     if (placing) act.append(button(t('btn.place'), 'bl-place', place), button(t('btn.back'), 'bl-back', backToTray));
     if (state.mode === 'free' && scene.bench === 'stack')
       act.append(
@@ -669,7 +698,8 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
 
   function taskText(it: Item): string {
     const kg = it.tray[0] ?? 0;
-    return t(`task.${it.id}`, { kg: num(kg), cm: num(it.goal?.kind === 'overhang' ? it.goal.cm : 0) });
+    const hard = state.mode === 'round' && plankMovable(it.id, state.difficulty);
+    return t(hard ? 'task.stack-counter-hard' : `task.${it.id}`, { kg: num(kg), cm: num(it.goal?.kind === 'overhang' ? it.goal.cm : 0) });
   }
 
   function whyPanel(lines: string[], bench: string, open: boolean): HTMLElement {
@@ -716,10 +746,21 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
         fs.append(h('label', { class: 'bl-option' }, input, h('span', {}, t(key))));
       });
       panel.append(fs);
+      // Hard stacks: when a fall is chosen, which joint gives way? (Every joint is offered, so nothing is given away.)
+      if (asksJoint(it.id, s.difficulty) && it.choice !== null && it.choice !== 0 && it.scene.bench === 'stack') {
+        const js = h('fieldset', { class: 'bl-options', 'data-testid': 'bl-joints' }, h('legend', {}, t('joint.legend')));
+        it.scene.s.bodies.forEach((_, k) => {
+          const input = h('input', { type: 'radio', name: 'bl-joint', value: String(k), 'data-testid': `bl-joint-${k}`, checked: it.jointChoice === k, disabled: it.status !== 'open' });
+          input.addEventListener('change', () => commit(chooseJoint(s, k)));
+          const label = k === 0 ? t('joint.table', { k: num(1), n: num(1) }) : t('joint.on', { k: num(k + 1), n: num(k + 1), m: num(k) });
+          js.append(h('label', { class: 'bl-option' }, input, h('span', {}, label)));
+        });
+        panel.append(js);
+      }
     }
     if (it.status === 'open' && it.outcome === null) {
       const row = h('div', { class: 'bl-actions bl-sticky' });
-      row.append(button(t('btn.letGo'), 'bl-letgo', doLetGo, { class: 'bl-primary', disabled: predict && it.choice === null }));
+      row.append(button(t('btn.letGo'), 'bl-letgo', doLetGo, { class: 'bl-primary', disabled: predict && (it.choice === null || needsJoint(it, s.difficulty)) }));
       if (predict) row.append(button(t('btn.skip'), 'bl-skip', () => ((animate = !context.reducedMotion), commit(toggleWhy(skip(s) ?? s, true) ?? skip(s)))));
       else row.append(button(t('btn.undo'), 'bl-undo', () => commit(undo(s)), { disabled: it.history.length === 0 }), button(t('btn.reset'), 'bl-reset', () => commit(resetTask(s))));
       panel.append(row);
@@ -739,6 +780,7 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
           'div',
           { class: 'bl-outcome', 'data-testid': 'bl-outcome', tabindex: '-1', 'data-status': it.status, 'data-matched': String(it.status === 'matched') },
           h('p', { class: 'bl-mark' }, mark),
+          (it.jointChoice ?? null) !== null && it.status !== 'skipped' ? h('p', { 'data-testid': 'bl-joint-yours' }, t('joint.yours', { k: num((it.jointChoice ?? 0) + 1) })) : null,
           h('p', {}, outcomeLine(t, it.draft, it.outcome))
         ),
         whyPanel(explainLines(t, it.draft, it.outcome, overhang), it.draft.bench, s.whyOpen)

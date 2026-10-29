@@ -14,6 +14,7 @@ import {
   SIDES,
   STACK_ANSWERS,
   TASK_IDS,
+  BUCKET_MIN_X,
   cubeSpots,
   freeCubeSpots,
   type Bench,
@@ -50,6 +51,11 @@ export interface Item extends TaskSpec {
   history: Scene[];
   /** Predict: the option chosen (not yet committed while `outcome` is null). */
   choice: number | null;
+  /**
+   * Hard stack-predict, when a fall is chosen: the joint chosen as the one that gives way (index k: body k on its
+   * support). Absent in saves from before the question existed (owner decision 2026-10-29); additive, version 1.
+   */
+  jointChoice?: number | null;
   outcome: Outcome | null;
   status: Status;
   /** Highest hint step used (1 tip, 2 explanations, 3 solution shown). */
@@ -195,13 +201,42 @@ export function setMobileHook(node: MobileNode, j: number, kg: number | null): M
   return walk(node);
 }
 
-/** Moves body k by dx cm; refused when any joint would have less than 1 cm of contact. */
+/**
+ * Moves body k by dx cm, with the cubes on it and a bucket hanging from it (the plank of hard stack-counter); refused
+ * when any joint would have less than 1 cm of contact or the bucket would hang over the table.
+ */
 export function moveBody(scene: StackScene, k: number, dx: number): StackScene | null {
   const b = scene.bodies[k];
   if (!b || dx === 0) return null;
   const next: StackScene = { ...scene, bodies: scene.bodies.map((x, i) => (i === k ? { ...x, left: x.left + dx } : x)), cubes: scene.cubes.map((c) => (c.on === k ? { ...c, x: c.x + dx } : c)) };
-  if (!stackContactsOk(next) || next.cubes.some((c) => !cubeSpots(next, c.on).includes(c.x))) return null;
+  if (scene.bucket?.on === k) next.bucket = { ...scene.bucket, x: scene.bucket.x + dx };
+  if (!stackContactsOk(next) || next.cubes.some((c) => !cubeSpots(next, c.on).includes(c.x)) || (next.bucket && next.bucket.x < BUCKET_MIN_X)) return null;
   return next;
+}
+
+/** Hard stack-counter: the plank may slide as well (design § 9.3, owner decision 2026-10-29). */
+export const plankMovable = (id: TaskId, difficulty: Difficulty): boolean => id === 'stack-counter' && difficulty === 'hard';
+
+/** Hard stack-predict also asks which joint gives way (design § 9.3, owner decision 2026-10-29). */
+export const asksJoint = (id: TaskId, difficulty: Difficulty): boolean => id === 'stack-predict' && difficulty === 'hard';
+
+/** The joint that gives way in a predict scene (stack-predict has at most one), or null when it stands. */
+export function failingJoint(scene: Scene): number | null {
+  return scene.bench === 'stack' ? (stackVerdict(scene.s).failing[0]?.joint ?? null) : null;
+}
+
+/** A fall is chosen and the joint question is still open: "Let go" waits for a joint. */
+export const needsJoint = (it: Pick<Item, 'id' | 'choice' | 'jointChoice'>, difficulty: Difficulty): boolean =>
+  asksJoint(it.id, difficulty) && it.choice !== null && it.choice !== 0 && (it.jointChoice ?? null) === null;
+
+/**
+ * Whether a committed prediction matches: the option, and on hard stacks that fall also the joint. A save from before
+ * the joint question (no joint chosen for a fall) is judged by the option alone.
+ */
+export function predictMatches(it: Pick<Item, 'id' | 'choice' | 'jointChoice' | 'answer' | 'scene'>, difficulty: Difficulty): boolean {
+  if (it.choice === null || it.choice !== it.answer) return false;
+  if (!asksJoint(it.id, difficulty) || it.answer === 0 || (it.jointChoice ?? null) === null) return true;
+  return it.jointChoice === failingJoint(it.scene);
 }
 
 export function placeCube(scene: StackScene, kg: number, on: number, x: number): StackScene | null {
@@ -285,7 +320,19 @@ export function resetTask(s: RoundState): RoundState | null {
 }
 
 export function choose(s: RoundState, choice: number): RoundState | null {
-  return withItem(s, (it) => (isPredict(it.id) && it.status === 'open' && isInt(choice, 0, 2) ? { ...it, choice } : null));
+  return withItem(s, (it) => {
+    if (!isPredict(it.id) || it.status !== 'open' || !isInt(choice, 0, 2)) return null;
+    // "Stands" has no joint that gives way: a joint chosen for a fall is dropped.
+    return asksJoint(it.id, s.difficulty) && choice === 0 && (it.jointChoice ?? null) !== null ? { ...it, choice, jointChoice: null } : { ...it, choice };
+  });
+}
+
+/** Hard stack-predict: chooses the joint that gives way (only while a fall is chosen). */
+export function chooseJoint(s: RoundState, joint: number): RoundState | null {
+  return withItem(s, (it) => {
+    if (!asksJoint(it.id, s.difficulty) || it.status !== 'open' || it.choice === null || it.choice === 0 || it.scene.bench !== 'stack') return null;
+    return isInt(joint, 0, it.scene.s.bodies.length - 1) ? { ...it, jointChoice: joint } : null;
+  });
 }
 
 /** "Let go": predict — commits the choice; build — evaluates the draft (refused while parts are in the tray). */
@@ -293,8 +340,8 @@ export function letGo(s: RoundState): RoundState | null {
   return withItem(s, (it) => {
     if (it.status !== 'open' || it.outcome !== null) return null;
     if (isPredict(it.id)) {
-      if (it.choice === null) return null;
-      return { ...it, outcome: outcomeOf(it.draft), status: it.choice === it.answer ? 'matched' : 'different' };
+      if (it.choice === null || needsJoint(it, s.difficulty)) return null;
+      return { ...it, outcome: outcomeOf(it.draft), status: predictMatches(it, s.difficulty) ? 'matched' : 'different' };
     }
     if (trayLeft(it, it.draft) > 0) return null;
     const outcome = outcomeOf(it.draft);
@@ -421,7 +468,7 @@ function isStackScene(x: unknown): x is StackScene {
   if (x.bucket !== undefined && !(isRecord(x.bucket) && isKg(x.bucket.kg, 4) && isInt(x.bucket.on, 0, n - 1) && isInt(x.bucket.x, -300, 300))) return false;
   const scene = x as unknown as StackScene;
   if (!stackContactsOk(scene)) return false;
-  if (scene.bucket && scene.bucket.x !== bodyRight(scene.bodies[scene.bucket.on]!) - 2) return false;
+  if (scene.bucket && (scene.bucket.x !== bodyRight(scene.bodies[scene.bucket.on]!) - 2 || scene.bucket.x < BUCKET_MIN_X)) return false;
   return scene.cubes.every((c) => cubeSpots(scene, c.on).includes(c.x));
 }
 
@@ -434,9 +481,13 @@ export function isScene(x: unknown): x is Scene {
 }
 
 /** The scene with every part the player placed taken away (and, for movable parts, compared loosely). */
-function fixedPart(scene: Scene, id: TaskId): unknown {
+function fixedPart(scene: Scene, id: TaskId, difficulty: Difficulty): unknown {
   if (scene.bench === 'beam') return { ...scene.s, axle: id === 'beam-axle' ? 0 : scene.s.axle, weights: scene.s.weights.filter((w) => !w.free) };
-  if (scene.bench === 'stack') return { ...scene.s, bodies: id === 'stack-overhang' ? scene.s.bodies.map((b) => b.kind) : scene.s.bodies, cubes: scene.s.cubes.filter((c) => !c.free) };
+  if (scene.bench === 'stack') {
+    const loose = id === 'stack-overhang' || plankMovable(id, difficulty);
+    const bucket = scene.s.bucket && (plankMovable(id, difficulty) ? { kg: scene.s.bucket.kg, on: scene.s.bucket.on } : scene.s.bucket);
+    return { ...scene.s, bodies: loose ? scene.s.bodies.map((b) => b.kind) : scene.s.bodies, cubes: scene.s.cubes.filter((c) => !c.free), ...(bucket ? { bucket } : {}) };
+  }
   const strip = (n: MobileNode): MobileNode => (isBar(n) ? { bar: { ...n.bar, string: id === 'mobile-string' ? 0 : n.bar.string, hooks: n.bar.hooks.map((h) => ({ pos: h.pos, child: h.child && !isBar(h.child) && h.child.free ? null : h.child ? strip(h.child) : null })) } } : n);
   return strip(scene.s);
 }
@@ -446,9 +497,9 @@ const isGoal = (x: unknown): x is Goal =>
 
 const isOutcome = (x: unknown): boolean => isRecord(x);
 
-function draftFits(it: Item): boolean {
+function draftFits(it: Item, difficulty: Difficulty): boolean {
   if (it.draft.bench !== it.scene.bench) return false;
-  if (!same(fixedPart(it.draft, it.id), fixedPart(it.scene, it.id))) return false;
+  if (!same(fixedPart(it.draft, it.id, difficulty), fixedPart(it.scene, it.id, difficulty))) return false;
   const placed = it.tray.length - trayRemaining(it).length;
   // Every placed part came from the tray (no more parts than the tray holds, and of matching masses).
   const total = it.draft.bench === 'beam' ? it.draft.s.weights.filter((w) => w.free).length : it.draft.bench === 'stack' ? it.draft.s.cubes.filter((c) => c.free).length : mobileHooks(it.draft.s).filter((h) => h.child && !isBar(h.child) && h.child.free).length;
@@ -462,10 +513,11 @@ function isItem(x: unknown, difficulty: Difficulty): x is Item {
   if (!isArrayOf(x.tray, (k): k is number => isKg(k)) || x.tray.length > 4) return false;
   if (!isArrayOf(x.history, isScene) || x.history.length > HISTORY_LIMIT) return false;
   if (!isInt(x.help, 0, 3) || !(x.choice === null || isInt(x.choice, 0, 2))) return false;
+  if (!(x.jointChoice === undefined || x.jointChoice === null || (asksJoint(id, difficulty) && isInt(x.jointChoice, 0, 5) && x.choice !== null && x.choice !== 0))) return false;
   if (!isOneOf(x.status, ['open', 'solved', 'solved-with-help', 'shown', 'matched', 'different', 'skipped'] as const)) return false;
   if (!(x.outcome === null || isOutcome(x.outcome))) return false;
   const it = x as unknown as Item;
-  if (!draftFits(it) || !it.history.every((h) => draftFits({ ...it, draft: h }))) return false;
+  if (!draftFits(it, difficulty) || !it.history.every((h) => draftFits({ ...it, draft: h }, difficulty))) return false;
   if (it.outcome !== null && !same(it.outcome, outcomeOf(it.draft))) return false;
   if (isPredict(id)) {
     if (it.goal !== null || it.witness !== null || it.tray.length !== 0 || !isInt(it.answer, 0, 2) || !same(it.draft, it.scene)) return false;
@@ -475,10 +527,11 @@ function isItem(x: unknown, difficulty: Difficulty): x is Item {
     if (it.outcome === null) return false;
     if (it.status === 'skipped') return true;
     if (it.choice === null) return false;
-    return it.status === (it.choice === it.answer ? 'matched' : 'different');
+    if (it.scene.bench === 'stack' && (it.jointChoice ?? -1) >= it.scene.s.bodies.length) return false;
+    return it.status === (predictMatches(it, difficulty) ? 'matched' : 'different');
   }
   if (!isGoal(it.goal) || !isScene(it.witness) || it.answer !== null || it.marked !== null) return false;
-  if (!same(fixedPart(it.witness, id), fixedPart(it.scene, id)) || !goalMet(it, it.witness)) return false;
+  if (!same(fixedPart(it.witness, id, difficulty), fixedPart(it.scene, id, difficulty)) || !goalMet(it, it.witness)) return false;
   if (it.status === 'open') return it.outcome === null || !goalMet(it, it.draft);
   if (it.status === 'shown') return it.help === 3 && same(it.draft, it.witness);
   if (it.status === 'solved' || it.status === 'solved-with-help') {
