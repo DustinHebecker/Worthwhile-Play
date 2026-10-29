@@ -70,8 +70,17 @@ test('probability-detective: a whole round with the keyboard only, skipping, end
     await r.getByTestId(i < 4 ? 'pd-next' : 'pd-summary-btn').focus();
     await page.keyboard.press('Enter');
   }
-  await expect(r.getByTestId('pd-summary-list').locator('li')).toHaveCount(5);
+  await expect(r.locator('#pd-summary-heading')).toBeFocused();
+  await expect(r.getByTestId('pd-summary-list').locator('> li')).toHaveCount(5);
   await expect(r.getByTestId('pd-tip')).toBeVisible();
+  // Compact summary: every case collapsed, its verdict line visible; Enter on a summary opens the full explanation.
+  await expect(r.locator('details.pd-case[open]')).toHaveCount(0);
+  await expect(r.getByTestId('pd-case-line-4')).toBeVisible();
+  await expect(r.getByTestId('pd-case-4').getByTestId('pd-ledger')).toBeHidden();
+  await r.getByTestId('pd-case-4').locator('> summary').focus();
+  await page.keyboard.press('Enter');
+  await expect(r.getByTestId('pd-case-4')).toHaveAttribute('open', '');
+  await expect(r.getByTestId('pd-case-4').getByTestId('pd-ledger')).toBeVisible();
   await expect(page.getByTestId('finished')).toBeVisible();
   expect((await savedState(page)).reported).toBe(true);
 });
@@ -156,7 +165,7 @@ test('probability-detective: a trap round of five, answered and checked, ends wi
     for (let qi = 0; qi < c.drafts.length; qi++) await expect(r.getByTestId(`pd-q${qi}-exact`)).toBeVisible();
     await r.getByTestId(i < 4 ? 'pd-next' : 'pd-summary-btn').click();
   }
-  await expect(r.getByTestId('pd-summary-list').locator('li')).toHaveCount(5);
+  await expect(r.getByTestId('pd-summary-list').locator('> li')).toHaveCount(5);
   await expect(page.getByTestId('finished')).toBeVisible();
 });
 
@@ -180,7 +189,47 @@ test('probability-detective: a mixed round runs clues, trap, checks, trap, clues
     await expect(r.locator('#pd-review-heading')).toBeFocused();
     await r.getByTestId(i < 4 ? 'pd-next' : 'pd-summary-btn').click();
   }
-  await expect(r.getByTestId('pd-summary-list').locator('li')).toHaveCount(5);
+  await expect(r.getByTestId('pd-summary-list').locator('> li')).toHaveCount(5);
   await expect(page.getByTestId('finished')).toBeVisible();
   expect((await savedState(page)).reported).toBe(true);
+});
+
+test('probability-detective: the round summary fits 360 px in Arabic, collapsed and opened, with 44 px case summaries', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await page.goto('/');
+  await page.getByTestId('language-menu').locator('summary').click();
+  await page.getByTestId('header-language').selectOption('ar');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'ar');
+  await startGame(page, ID, { difficulty: 'easy', settings: { mode: 'mixed' } });
+  const r = root(page);
+  for (let i = 0; i < 5; i++) {
+    await expect.poll(async () => (await savedState(page)).index).toBe(i);
+    const c = (await savedState(page)).cases[i]!;
+    if (c.kind === 'clues') {
+      for (let k = 0; k < c.clues.length; k++) await r.getByTestId('pd-commit').click();
+    } else if (c.kind === 'trap') {
+      await answerTrap(page, c);
+      await r.getByTestId('pd-trap-check').click();
+    } else {
+      await r.getByTestId('pd-run-0').click();
+      await r.getByTestId('pd-ready').click();
+      await r.getByTestId('pd-choice-0').check();
+      await r.getByTestId('pd-decide').click();
+    }
+    await expect(r.locator('#pd-review-heading')).toBeFocused();
+    await r.getByTestId(i < 4 ? 'pd-next' : 'pd-summary-btn').click();
+  }
+  await expect(r.locator('#pd-summary-heading')).toBeFocused();
+  const summaries = r.locator('details.pd-case > summary');
+  await expect(summaries).toHaveCount(5);
+  const overflow = () => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  for (let i = 0; i < 5; i++) {
+    const box = (await summaries.nth(i).boundingBox())!;
+    expect(box.height, `summary ${i}`).toBeGreaterThanOrEqual(44);
+  }
+  expect(await overflow()).toBeLessThanOrEqual(0);
+  for (let i = 0; i < 5; i++) await summaries.nth(i).click();
+  await expect(r.locator('details.pd-case[open]')).toHaveCount(5);
+  await expect(r.getByTestId('pd-case-2').getByTestId('pd-plan')).toBeVisible();
+  expect(await overflow()).toBeLessThanOrEqual(0);
 });

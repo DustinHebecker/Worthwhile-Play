@@ -146,6 +146,8 @@ export const nl: Catalogue = {
   'summary.close': 'Laatste schattingen heel dichtbij: {a} van {n} · dichtbij: {b}',
   'summary.baseRate': 'Zaken waarin je eerste schatting de aanwijzing volgde en de basiskans wegliet: {n}',
   'summary.forecast': 'Gemiddelde voorspellingsscore: {a} (exacte schattingen bij dezelfde zaken: {b})',
+  'summary.cases': 'Zaak voor zaak',
+  'summary.open': 'Open een zaak om de hele uitleg te lezen.',
   'habit.less': 'Je verschoof meestal minder dan de aanwijzingen rechtvaardigden. Dat is een veelvoorkomend patroon – bewijs verdient vaak een grotere stap.',
   'habit.more': 'Je verschoof meestal verder dan de aanwijzingen rechtvaardigden.',
   'habit.right': 'Je stappen hadden ongeveer de juiste grootte.',
