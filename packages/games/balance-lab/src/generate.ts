@@ -539,26 +539,29 @@ const answerLabel = (t: TaskSpec): string => (t.answer === null ? '' : benchOf(t
 const BALANCE_TRIES = 30;
 
 /**
+ * On easy, about this share of the lever and mobile predict items is an exact balance ("Stays level"), so players
+ * do not learn that it never happens (owner decision 2026-10-29). Medium and hard have their exact case by § 10.2.
+ */
+export const EASY_LEVEL_SHARE = 1 / 6;
+
+/**
  * A round (design § 10.2). Balance of answers: a predict item is drawn again (same needs, bounded tries) while its
  * answer would be right for more than half of the round's predict items or the third equal answer in a row. Where
- * the rule cannot be met (e.g. three lever items on easy, where "stays level" never occurs) the last draw is kept.
+ * the rule cannot be met the last draw is kept. An easy lever or mobile item is made an exact balance with the
+ * probability `EASY_LEVEL_SHARE`, but only where "Stays level" keeps that rule.
  */
 export function generateRound(rng: Rng, bench: BenchSetting, tasks: TasksSetting, d: Difficulty): TaskSpec[] {
   const ids = roundPlan(rng, bench, tasks, d);
   const predictCount = ids.filter(isPredict).length;
   const answers: string[] = [];
+  const fits = (a: string) => answers.filter((x) => x === a).length + 1 <= predictCount / 2 && !(answers.length >= 2 && answers[answers.length - 1] === a && answers[answers.length - 2] === a);
   let p = 0;
   return ids.map((id) => {
     if (!isPredict(id)) return generateTask(rng, id, d);
-    const needs = predictNeeds(p++, predictCount, d);
+    let needs = predictNeeds(p++, predictCount, d);
+    if (d === 'easy' && benchOf(id) !== 'stack' && rng.next() < EASY_LEVEL_SHARE && fits('level')) needs = { ...needs, exact: true };
     let task = generateTask(rng, id, d, needs);
-    for (let i = 0; i < BALANCE_TRIES; i++) {
-      const a = answerLabel(task);
-      const tooMany = answers.filter((x) => x === a).length + 1 > predictCount / 2;
-      const threeInARow = answers.length >= 2 && answers[answers.length - 1] === a && answers[answers.length - 2] === a;
-      if (!tooMany && !threeInARow) break;
-      task = generateTask(rng, id, d, needs);
-    }
+    for (let i = 0; i < BALANCE_TRIES && !fits(answerLabel(task)); i++) task = generateTask(rng, id, d, needs);
     answers.push(answerLabel(task));
     return task;
   });
