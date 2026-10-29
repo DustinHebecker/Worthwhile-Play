@@ -206,12 +206,14 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
   const status = h('p', { class: 'wp-status pp-status', 'data-testid': 'pp-status', 'aria-live': 'off' });
 
   const button = (testId: string, label: string, onclick: () => void) => h('button', { type: 'button', 'data-testid': testId, onclick: () => onclick() }, label);
+  /** A button of the action row: its label in a span, so on a phone it keeps 44 px and its longest word (styles.css). */
+  const actionButton = (testId: string, label: string, onclick: () => void) => h('button', { type: 'button', 'data-testid': testId, onclick: () => onclick() }, h('span', { class: 'pp-label' }, label));
   const finishCount = h('span', { class: 'pp-count', 'aria-hidden': 'true', dir: 'ltr' });
-  const finishButton = h('button', { type: 'button', class: 'pp-finish', 'data-testid': 'pp-finish-peeling', onclick: () => finishAll() }, h('span', {}, t('action.finishPeeling')), finishCount);
+  const finishButton = h('button', { type: 'button', class: 'pp-finish', 'data-testid': 'pp-finish-peeling', onclick: () => finishAll() }, h('span', { class: 'pp-label' }, t('action.finishPeeling')), finishCount);
   finishButton.setAttribute('aria-controls', 'pp-canvas');
-  const undoButton = button('pp-undo', t('common.undo'), () => doUndo());
+  const undoButton = actionButton('pp-undo', t('common.undo'), () => doUndo());
   const restartButton = button('pp-restart', t('action.restart'), () => doRestart());
-  const hintButton = button('pp-hint', t('common.hint'), () => doHint());
+  const hintButton = actionButton('pp-hint', t('common.hint'), () => doHint());
   const undoToButton = button('pp-undo-to', '', () => doUndoTo());
   const hintRow = h('div', { class: 'wp-row pp-hint-row', hidden: true }, undoToButton);
   const stuckText = h('p', { id: 'pp-stuck-text', 'data-testid': 'pp-stuck-text' }, t('stuck.text'));
@@ -300,7 +302,7 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
   const peelMode = (): PeelMode => (context.reducedMotion ? 'off' : display.peel);
 
   // The Display button of the action row opens the same panel directly under the row (design v3 § 3.1).
-  const displayButton = button('pp-display', t('action.display'), () => toggleDisplay());
+  const displayButton = actionButton('pp-display', t('action.display'), () => toggleDisplay());
   displayButton.setAttribute('aria-expanded', 'false');
   optionsBox.id = 'pp-options';
   displayButton.setAttribute('aria-controls', 'pp-options');

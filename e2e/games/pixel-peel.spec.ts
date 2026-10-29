@@ -459,13 +459,14 @@ test('pixel-peel: the action row holds Undo, Hint, Display and Finish peeling of
       const out: string[] = [];
       const row = el.querySelector('[data-testid="pp-actions"]') as HTMLElement;
       const buttons = ['pp-undo', 'pp-hint', 'pp-display', 'pp-finish-peeling'].map((id) => el.querySelector(`[data-testid="${id}"]`) as HTMLElement);
-      buttons.forEach((b, i) => ((i === 3 ? b.querySelector('span')! : b).textContent = (list as string[])[i]!));
+      buttons.forEach((b, i) => (b.querySelector('.pp-label')!.textContent = (list as string[])[i]!));
       const r = row.getBoundingClientRect();
       for (const b of buttons) {
         const box = b.getBoundingClientRect();
         if (box.left < r.left - 0.5 || box.right > r.right + 0.5) out.push(`${b.dataset.testid} outside the row`);
+        if (box.width < 44 || box.height < 44) out.push(`${b.dataset.testid} smaller than 44 px`);
         const range = document.createRange();
-        range.selectNodeContents(b.dataset.testid === 'pp-finish-peeling' ? b.querySelector('span')! : b);
+        range.selectNodeContents(b.querySelector('.pp-label')!);
         if ([...range.getClientRects()].some((x) => x.left < box.left - 0.5 || x.right > box.right + 0.5)) out.push(`${b.dataset.testid}: "${b.textContent}" spills out`);
       }
       return { out, height: r.height, scroll: document.documentElement.scrollWidth - document.documentElement.clientWidth };
