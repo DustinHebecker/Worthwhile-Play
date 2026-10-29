@@ -277,6 +277,9 @@
 .wp-relay-command .rc-setup .rc-seats label.rc-seat-choice { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 0.35rem; min-block-size: var(--wp-touch, 44px); margin-inline-start: 0.75rem; }
 .wp-relay-command .rc-seat-choice input { inline-size: 1.25rem; block-size: 1.25rem; margin: 0; }
 .wp-relay-command .rc-seat-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem; min-block-size: var(--wp-touch, 44px); }
+.wp-relay-command .rc-seat-group { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.25rem; }
+.wp-relay-command .rc-seat-level { min-block-size: var(--wp-touch, 44px); max-inline-size: 100%; margin-inline-start: 0.75rem; }
+.wp-relay-command .rc-seat-level[hidden] { display: none; }
 .wp-relay-command .rc-setup .rc-hint { flex: 1 1 100%; }
 .wp-relay-command .rc-seat { margin: 0; font-weight: 600; }
 .wp-relay-command .rc-handover { display: grid; gap: 1rem; justify-items: start; padding: 1.5rem 1rem; border: 1px solid var(--wp-border); border-radius: var(--wp-radius, 10px); background: var(--wp-surface); }

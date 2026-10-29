@@ -248,7 +248,16 @@ export interface RcState {
    * `scenarioFor`). Absent: the map's default seat (saves from before this have none).
    */
   start?: number;
+  /**
+   * Difficulty per side (owner request 2026-10-29: "bei jedem Gegner individuell die Schwierigkeit
+   * festlegen"): a computer side plays at its entry, a person's entry means nothing. Absent: every
+   * computer plays at `difficulty` (saves from before this have none).
+   */
+  levels?: Difficulty[];
 }
+
+/** The difficulty a computer side plays at: its own level, else the game's. */
+export const levelOf = (state: Pick<RcState, 'difficulty' | 'levels'>, side: number): Difficulty => state.levels?.[side] ?? state.difficulty;
 
 /** A map being edited: the map, the library slot it came from (null = not saved yet), and mirror mode. */
 export interface MapDraft {
@@ -262,7 +271,21 @@ export const scenarioById = (id: string): ScenarioSpec | undefined => SCENARIOS.
 /** The scenario a game runs on: its player-made map, else the built-in one. */
 export const specOf = (state: Pick<RcState, 'scenario' | 'map'>): ScenarioSpec | undefined => (state.map ? customSpec(state.map) : scenarioById(state.scenario));
 
-export function newGame(seed: number, base: ScenarioSpec = FIELD_EXERCISE, difficulty: Difficulty = 'normal', turnLimit: number | null = base.turnLimit, quick = false, map: EditMap | null = null, opponents = 1, seats: readonly Seat[] = [], endless = false, random: RandomMap | null = null, teams: TeamShape | null = null, start: number | null = null): RcState {
+export function newGame(
+  seed: number,
+  base: ScenarioSpec = FIELD_EXERCISE,
+  difficulty: Difficulty = 'normal',
+  turnLimit: number | null = base.turnLimit,
+  quick = false,
+  map: EditMap | null = null,
+  opponents = 1,
+  seats: readonly Seat[] = [],
+  endless = false,
+  random: RandomMap | null = null,
+  teams: TeamShape | null = null,
+  start: number | null = null,
+  levels: readonly (Difficulty | undefined)[] = []
+): RcState {
   const spec = map ? customSpec(map) : base;
   // Only the counts the map declares (two-side maps and player-made ones: one).
   const count = opponentCounts(spec).includes(opponents) ? opponents : (opponentCounts(spec)[0] ?? 1);
@@ -277,6 +300,9 @@ export function newGame(seed: number, base: ScenarioSpec = FIELD_EXERCISE, diffi
   const starts = startSeats(spec, count, team);
   const seat = start !== null && start !== starts[0] && starts.includes(start) ? start : null;
   const world = initialWorld(spec, seed, count, endless, team, seat);
+  // Levels per side: kept only when a computer side plays at another level than the game's.
+  const level = seating.map((_, side) => (isOneOf(levels[side], DIFFICULTIES) ? levels[side] : difficulty));
+  const mixed = level.some((l, side) => seating[side] === 'computer' && l !== difficulty);
   return {
     v: 12,
     seed: normalizeSeed(seed),
@@ -306,7 +332,8 @@ export function newGame(seed: number, base: ScenarioSpec = FIELD_EXERCISE, diffi
     inbox: seating.map(() => []),
     retired: [],
     winner: null,
-    ...(seat !== null && { start: seat })
+    ...(seat !== null && { start: seat }),
+    ...(mixed && { levels: level })
   };
 }
 
@@ -490,7 +517,7 @@ function resolveAll(state: RcState): RcState {
   const plans = Array.from({ length: state.world.sides }, (_, side): Command[] => {
     if (out.has(side)) return [];
     if (state.seats[side] === 'person') return side === state.planning ? state.draft : (state.locked[side] ?? []);
-    return planAi(observe(state.world, rules, side), rules, state.difficulty);
+    return planAi(observe(state.world, rules, side), rules, levelOf(state, side));
   });
   const { world, events: all, reported } = resolveTurn(state.world, rules, plans);
   const entry: TurnLog = state.retired.length > 0 ? { turn: state.world.turn, plans, retired: state.retired } : { turn: state.world.turn, plans };
@@ -966,6 +993,7 @@ function isValidRandom(random: unknown, map: unknown): boolean {
 export function isValidState(value: unknown): value is RcState {
   if (!isRecord(value) || value.v !== 12 || typeof value.endless !== 'boolean' || !isValidRandom(value.random, value.map) || !isUint32(value.seed) || typeof value.scenario !== 'string' || !isInt(value.opponents, 1, MAX_OPPONENTS)) return false;
   if (!isOneOf(value.difficulty, DIFFICULTIES)) return false;
+  if (value.levels !== undefined && (!isArrayOf(value.levels, (l): l is Difficulty => isOneOf(l, DIFFICULTIES)) || !isRecord(value.world) || value.levels.length !== value.world.sides)) return false;
   // A player-made map: well-formed and playable, and then the scenario is 'custom'.
   if (value.map !== null && (!isValidMap(value.map) || mapIssues(value.map).length > 0)) return false;
   if ((value.map !== null) !== (value.scenario === 'custom')) return false;

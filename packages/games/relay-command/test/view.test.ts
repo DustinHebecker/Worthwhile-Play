@@ -786,6 +786,48 @@ describe('Relay Command view', () => {
     expect(ctx.difficulties.at(-1)).toBe('hard');
   });
 
+  it('with two or more opponents each computer seat has its own level (owner request 2026-10-29); the main choice sets them all', () => {
+    const change = (el: HTMLSelectElement, value: string) => {
+      el.value = value;
+      el.dispatchEvent(new Event('change'));
+    };
+    const level = (side: number) => $(`rc-level-${side}`) as HTMLSelectElement;
+    // One opponent: the main choice is the opponent's level.
+    expect(level(1).hidden).toBe(true);
+    change($('rc-scenario') as HTMLSelectElement, 'four-corners');
+    change($('rc-opponents') as HTMLSelectElement, '2');
+    expect([1, 2].map((side) => level(side).hidden)).toEqual([false, false]);
+    expect([...level(1).options].map((o) => o.textContent)).toEqual(['Easy', 'Normal', 'Hard']);
+    expect(level(2).getAttribute('aria-label')).toBe('Difficulty of player C');
+    change(level(1), 'easy');
+    change(level(2), 'hard');
+    expect(state().levels).toEqual(['normal', 'easy', 'hard']);
+    // A third opponent starts at the game's level; the others keep theirs.
+    change($('rc-opponents') as HTMLSelectElement, '3');
+    expect([1, 2, 3].map((side) => level(side).value)).toEqual(['easy', 'hard', 'normal']);
+    // A person's seat has no level.
+    const person = $('rc-seat-3-person') as HTMLInputElement;
+    person.checked = true;
+    person.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(level(3).hidden).toBe(true);
+    const computer = $('rc-seat-3-computer') as HTMLInputElement;
+    computer.checked = true;
+    computer.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(level(3).hidden).toBe(false);
+    // "New game" keeps the levels; the main choice sets every seat again.
+    instance.reset();
+    expect(state().levels).toEqual(['normal', 'easy', 'hard', 'normal']);
+    change($('rc-difficulty') as HTMLSelectElement, 'hard');
+    expect(state()).not.toHaveProperty('levels');
+    expect([1, 2].map((side) => level(side).value)).toEqual(['hard', 'hard']);
+    // Locked after the first turn; the summary names each computer seat's level.
+    change(level(1), 'easy');
+    click('rc-lock');
+    expect(level(1).disabled).toBe(true);
+    expect(state().levels).toEqual(['hard', 'easy', 'hard', 'hard']);
+    expect($('rc-setup-summary').textContent).toContain(' · B: Easy · C: Hard · D: Hard');
+  });
+
   it('with no computer seat (hot-seat only) there is no opponent level: the control is hidden and not in the summary (review of PR #49)', () => {
     expect($('rc-difficulty-label').hidden).toBe(false);
     const person = $('rc-seat-1-person') as HTMLInputElement;

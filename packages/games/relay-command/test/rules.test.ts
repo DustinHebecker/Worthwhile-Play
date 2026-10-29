@@ -51,6 +51,7 @@ import {
   isHotSeat,
   personsLeft,
   rulesOf,
+  levelOf,
   type Seat,
   startSeats,
   teamShapes,
@@ -2410,5 +2411,37 @@ describe('teams in hot-seat (owner decision 2026-10-24)', () => {
     expect(end.phase).toBe('finished');
     expect(winnersOf(end)).toEqual([0, 1]);
     expect(end.result).toBe('won');
+  });
+});
+
+describe('difficulty per opponent (owner request 2026-10-29)', () => {
+  const game = (levels: (Difficulty | undefined)[], seats: ('person' | 'computer')[] = []) => newGame(7, FOUR_CORNERS, 'normal', 30, false, null, 3, seats, false, null, null, null, levels);
+
+  it('each computer side plays at its own level; a game with one level for all keeps none', () => {
+    const s = game([undefined, 'easy', 'hard', undefined]);
+    expect(s.levels).toEqual(['normal', 'easy', 'hard', 'normal']);
+    expect([1, 2, 3].map((side) => levelOf(s, side))).toEqual(['easy', 'hard', 'normal']);
+    expect(isValidState(JSON.parse(JSON.stringify(s)))).toBe(true);
+    // The turn's plans: each computer side planned at its level, from its own observation.
+    const next = lockTurn(s);
+    const rules = rulesOf(s);
+    for (const [side, level] of [[1, 'easy'], [2, 'hard'], [3, 'normal']] as const) expect(next.log[0]!.plans[side], `side ${side}`).toEqual(planAi(observe(s.world, rules, side), rules, level));
+    // One level for every computer (a person's entry means nothing): none kept, the game's level counts.
+    expect(game(['hard', 'normal', 'normal', 'normal'])).not.toHaveProperty('levels');
+    expect(game([undefined, 'easy', 'easy', 'easy'], ['person', 'computer', 'computer', 'computer']).levels).toEqual(['normal', 'easy', 'easy', 'easy']);
+    expect(game([undefined, 'hard'], ['person', 'person', 'computer', 'computer'])).not.toHaveProperty('levels');
+    expect(levelOf(game([]), 2)).toBe('normal');
+    // An unknown level counts as the game's.
+    expect(game([undefined, 'brutal' as Difficulty])).not.toHaveProperty('levels');
+  });
+
+  it('a save with levels that do not fit is refused', () => {
+    const s = game([undefined, 'easy', 'hard', undefined]);
+    expect(isValidState({ ...s, levels: ['easy', 'hard'] })).toBe(false);
+    expect(isValidState({ ...s, levels: ['normal', 'easy', 'brutal', 'normal'] })).toBe(false);
+    expect(isValidState({ ...s, levels: 'hard' })).toBe(false);
+    const { levels: _levels, ...plain } = s;
+    void _levels;
+    expect(isValidState(plain)).toBe(true);
   });
 });
