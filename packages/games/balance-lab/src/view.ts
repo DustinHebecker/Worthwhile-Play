@@ -343,6 +343,7 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
     doc.addEventListener('pointerup', onDragUp);
     doc.addEventListener('pointercancel', onDragCancel);
     doc.addEventListener('keydown', onDragKey, true);
+    doc.defaultView?.addEventListener('blur', cancelDrag);
   }
 
   function endDrag() {
@@ -350,6 +351,7 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
     doc.removeEventListener('pointerup', onDragUp);
     doc.removeEventListener('pointercancel', onDragCancel);
     doc.removeEventListener('keydown', onDragKey, true);
+    doc.defaultView?.removeEventListener('blur', cancelDrag);
     try {
       if (gesture && captured?.hasPointerCapture?.(gesture.pointerId)) captured.releasePointerCapture(gesture.pointerId);
     } catch {
@@ -405,6 +407,8 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
 
   function onDragMove(e: PointerEvent) {
     if (!gesture || e.pointerId !== gesture.pointerId) return;
+    // No button held any more: the pointerup was missed (released outside the window, or while it lost focus).
+    if (e.buttons === 0) return cancelDrag();
     const was = gesture.dragging;
     gesture = movePointer(gesture, e.pointerId, e.clientX, e.clientY);
     if (!gesture.dragging) return;
@@ -439,6 +443,12 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
 
   function onDragCancel(e: PointerEvent) {
     if (!gesture || e.pointerId !== gesture.pointerId) return;
+    cancelDrag();
+  }
+
+  /** Ends a press or drag without a drop (pointercancel, a missed pointerup, the window losing focus). */
+  function cancelDrag() {
+    if (!gesture) return;
     swallowClick = gesture.dragging;
     endDrag();
     render();
@@ -458,7 +468,8 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
   container.addEventListener(
     'click',
     (e) => {
-      if (swallowClick && e.detail !== 0) {
+      // While a part is held, nothing else is clicked (a second finger, or Enter on a focused button).
+      if (gesture?.dragging || (swallowClick && e.detail !== 0)) {
         e.stopPropagation();
         e.preventDefault();
       }
@@ -471,7 +482,8 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
   container.addEventListener('touchmove', (e) => gesture && e.cancelable && e.preventDefault(), { passive: false });
 
   function onKey(e: KeyboardEvent) {
-    if (paused) return;
+    // While a part is held, keys do not edit the scene under it (Escape cancels the drag first).
+    if (paused || gesture?.dragging) return;
     const big = e.shiftKey ? 4 : 1;
     const sc = sceneNow();
     if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {

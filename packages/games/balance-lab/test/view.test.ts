@@ -320,8 +320,9 @@ describe('dragging with a pointer or a finger (owner decision 2026-10-29)', () =
   });
   afterAll(() => restore());
 
-  const pointer = (el: EventTarget, type: string, at: { x: number; y: number }, pointerType = 'mouse') =>
-    el.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: 7, clientX: at.x, clientY: at.y, button: 0, pointerType }));
+  // `buttons`: the primary button (or a finger) is down from pointerdown until pointerup/pointercancel.
+  const pointer = (el: EventTarget, type: string, at: { x: number; y: number }, pointerType = 'mouse', buttons = type === 'pointerup' || type === 'pointercancel' ? 0 : 1) =>
+    el.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: 7, clientX: at.x, clientY: at.y, button: 0, buttons, pointerType }));
   const chipPoint = { x: 60, y: 622 };
   /** The client point of a picture point of the current (fitted) scene. */
   const client = (m: ReturnType<typeof mount>, x: number, y: number) => toClient(m.q('bl-scene')!.getAttribute('viewBox'), RECT, x, y);
@@ -388,6 +389,62 @@ describe('dragging with a pointer or a finger (owner decision 2026-10-29)', () =
     m.q('bl-tray-0')!.click();
     m.q('bl-place')!.click();
     expect(beamDraft(m)!.weights.some((w) => w.free)).toBe(true);
+  });
+
+  it('pointercancel, the window losing focus and a missed pointerup each end the drag without a drop (review)', () => {
+    const m = mount({ bench: 'beam', tasks: 'build' });
+    const before = JSON.stringify(m.state());
+    const wp = m.root.querySelector('.wp-balance')!;
+    const ends: ((chip: Element) => void)[] = [
+      (chip) => pointer(chip, 'pointercancel', hookPoint(m, 4, 2), 'touch'),
+      () => window.dispatchEvent(new FocusEvent('blur')),
+      (chip) => pointer(chip, 'pointermove', hookPoint(m, 4, 3), 'mouse', 0)
+    ];
+    for (const end of ends) {
+      const chip = m.q('bl-tray-0')!;
+      pointer(chip, 'pointerdown', chipPoint);
+      pointer(chip, 'pointermove', hookPoint(m, 4, 2));
+      expect(wp.classList.contains('bl-is-dragging')).toBe(true);
+      end(chip);
+      expect(wp.classList.contains('bl-is-dragging')).toBe(false);
+      expect(m.q('bl-drag-ghost')).toBeNull();
+      // A later pointerup over a hook drops nothing, and a new drag starts afresh.
+      pointer(document, 'pointerup', hookPoint(m, 4, 2));
+      expect(JSON.stringify(m.state())).toBe(before);
+    }
+    const chip = m.q('bl-tray-0')!;
+    pointer(chip, 'pointerdown', chipPoint);
+    pointer(chip, 'pointermove', hookPoint(m, 4, 2));
+    pointer(chip, 'pointerup', hookPoint(m, 4, 2));
+    expect(beamDraft(m)!.weights.filter((w) => w.free).map((w) => w.hook)).toEqual([2]);
+  });
+
+  it('keys and clicks do not edit the scene under a held part; dispose removes the document listeners (review)', () => {
+    const m = mount({ mode: 'free', freeBench: 'beam' });
+    m.q('bl-place')!.click();
+    const before = JSON.stringify(m.state());
+    const part = m.root.querySelector('[data-drag="weight:0"]')!;
+    pointer(part, 'pointerdown', hookPoint(m, 6, 0));
+    pointer(part, 'pointermove', hookPoint(m, 6, 3));
+    key(m.q('bl-scene-wrap')!, 'ArrowRight');
+    key(m.q('bl-scene-wrap')!, 'Delete');
+    m.q('bl-place')!.click();
+    expect(JSON.stringify(m.state())).toBe(before);
+    expect(m.q('bl-drag-ghost')).not.toBeNull();
+    pointer(part, 'pointerup', hookPoint(m, 6, 3));
+    expect(beamDraft(m)!.weights).toEqual([{ kg: 2, hook: 3, free: true }]);
+    // A drag still held when the game is disposed leaves no listener behind.
+    const added = vi.spyOn(document, 'addEventListener');
+    const removed = vi.spyOn(document, 'removeEventListener');
+    const again = m.root.querySelector('[data-drag="weight:0"]')!;
+    pointer(again, 'pointerdown', hookPoint(m, 6, 3));
+    pointer(again, 'pointermove', hookPoint(m, 6, 0));
+    m.instance.dispose();
+    const names = (spy: typeof added) => spy.mock.calls.map((c) => String(c[0])).sort();
+    expect(names(removed)).toEqual(names(added));
+    expect(names(added)).toEqual(['keydown', 'pointercancel', 'pointermove', 'pointerup']);
+    added.mockRestore();
+    removed.mockRestore();
   });
 
   it('drags a hung weight to another hook; the click that ends the drag is not a tap', () => {
