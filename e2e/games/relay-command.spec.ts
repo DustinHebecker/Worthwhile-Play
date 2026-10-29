@@ -408,6 +408,27 @@ test('relay-command: a team game (2 against 2) on Four Corners survives a reload
   await expect(page.getByTestId('rc-teams')).toBeDisabled();
 });
 
+test('relay-command: each opponent its own level on a 360 px phone (an easy one and a hard one); the levels survive a reload and play', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await start(page);
+  await page.getByTestId('rc-scenario').selectOption('four-corners');
+  await page.getByTestId('rc-opponents').selectOption('2');
+  await page.getByTestId('rc-level-1').selectOption('easy');
+  await page.getByTestId('rc-level-2').selectOption('hard');
+  const levels = async () => ((await saved(page)) as unknown as { levels?: string[] } | undefined)?.levels;
+  await expect.poll(levels).toEqual(['normal', 'easy', 'hard']);
+  const widths = await page.evaluate(() => ({ page: document.documentElement.scrollWidth, viewport: document.documentElement.clientWidth }));
+  expect(widths.page).toBeLessThanOrEqual(widths.viewport);
+  await page.reload();
+  await page.getByTestId('continue').click();
+  await expect(page.getByTestId('rc-level-1')).toHaveValue('easy');
+  await expect(page.getByTestId('rc-level-2')).toHaveValue('hard');
+  await page.getByTestId('rc-lock').click();
+  await expect.poll(async () => (await saved(page))?.world.turn).toBe(1);
+  await expect(page.getByTestId('rc-setup-summary')).toContainText('B: Easy · C: Hard');
+  expect(await levels()).toEqual(['normal', 'easy', 'hard']);
+});
+
 test('relay-command: the Command Post places an Extractor on a deposit by tapping the map', async ({ page, isMobile }) => {
   await start(page);
   const s = (await saved(page))!;

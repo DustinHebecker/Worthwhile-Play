@@ -33,6 +33,7 @@ import {
   canSettle,
   confirmHandover,
   isHotSeat,
+  levelOf,
   personsLeft,
   type Seat,
   concede,
@@ -829,7 +830,12 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     const mapText = state.map ? mapLabel(state.map) : t(`scenario.${state.scenario}`);
     const length = limitSelect.selectedOptions[0]?.textContent ?? '';
     const summary = state.opponents > 1 ? t('setup.summaryOpponents', { map: mapText, length, n: state.opponents }) : t('setup.summary', { map: mapText, length });
-    const level = computer ? [difficultySelect.selectedOptions[0]?.textContent ?? ''] : [];
+    // Levels per seat: each computer seat with its own (in the order of the seats).
+    const level = !computer
+      ? []
+      : state.levels
+        ? state.seats.flatMap((seat, side) => (seat === 'computer' ? [t('setup.levelSeat', { mark: sideMark(side), level: t(`level.${levelOf(state, side)}`) })] : []))
+        : [difficultySelect.selectedOptions[0]?.textContent ?? ''];
     const shape = teamShapeOf(state.world);
     setupSummary.textContent = [summary, ...(shape ? [t(`setup.teams.${shape}`)] : []), ...(state.endless ? [t('setup.endlessShort')] : []), ...level].join(' · ');
     statusEl.textContent = statusText();
@@ -891,10 +897,24 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
         const name = `${uid}-seat-${side}`;
         const choice = (seat: Seat) =>
           h('label', { class: 'rc-seat-choice' }, h('input', { type: 'radio', name, value: seat, 'data-testid': `rc-seat-${side}-${seat}`, onchange: () => onSetup() }), h('span', {}, t(`setup.seat.${seat}`)));
+        // A computer seat's own difficulty (owner request 2026-10-29), offered with two or more opponents.
+        const level = h('select', { class: 'rc-seat-level', 'data-testid': `rc-level-${side}`, 'data-side': String(side), 'aria-label': t('setup.levelOf', { mark }), onchange: () => onSetup() }) as HTMLSelectElement;
+        for (const d of DIFFICULTIES) level.append(h('option', { value: d }, t(`level.${d}`)));
         seatsBox.append(
-          h('div', { class: 'rc-seat-row', role: 'radiogroup', 'aria-label': t('setup.seat.label', { mark }), 'data-testid': `rc-seat-${side}` }, badge, ' ', h('span', {}, t('setup.seat.label', { mark })), choice('computer'), choice('person'))
+          h(
+            'div',
+            { class: 'rc-seat-row', 'data-testid': `rc-seat-${side}` },
+            h('span', { role: 'radiogroup', 'aria-label': t('setup.seat.label', { mark }), class: 'rc-seat-group' }, badge, ' ', h('span', {}, t('setup.seat.label', { mark })), choice('computer'), choice('person')),
+            level
+          )
         );
       }
+    }
+    for (const select of seatsBox.querySelectorAll<HTMLSelectElement>('select.rc-seat-level')) {
+      const side = Number(select.dataset.side);
+      select.value = levelOf(state, side);
+      select.disabled = locked;
+      select.hidden = sides < 3 || state.seats[side] !== 'computer';
     }
     for (const input of seatsBox.querySelectorAll<HTMLInputElement>('input[type="radio"]')) {
       const side = Number(input.name.slice(input.name.lastIndexOf('-') + 1));
@@ -906,6 +926,14 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     // Several persons have no quick match (an open end is decided by the posts or giving up).
     const quick = limitSelect.querySelector<HTMLOptionElement>('option[value="quick"]');
     if (quick) quick.disabled = hot;
+  }
+
+  /** The difficulty chosen per seat in the setup rows (one opponent: the game's, from the main choice). */
+  function chosenLevels(): (Difficulty | undefined)[] {
+    if (state.seats.length < 3) return [];
+    const levels: (Difficulty | undefined)[] = [];
+    for (const select of seatsBox.querySelectorAll<HTMLSelectElement>('select.rc-seat-level')) levels[Number(select.dataset.side)] = isDifficulty(select.value) ? select.value : undefined;
+    return levels;
   }
 
   /** The seats chosen in the setup rows (missing rows: the computer). */
@@ -2596,7 +2624,10 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     const difficulty = difficultySelect.value;
     if (!isDifficulty(difficulty) || difficulty === state.difficulty) return;
     context.setDifficulty?.(difficulty); // the host's next "New game" and save envelope follow
-    commit({ ...state, difficulty }, t('announce.difficulty', { level: t(`difficulty.${difficulty}`) }));
+    // The main choice sets every computer seat (each can then be changed on its own).
+    const { levels: _levels, ...rest } = state;
+    void _levels;
+    commit({ ...rest, difficulty }, t('announce.difficulty', { level: t(`difficulty.${difficulty}`) }));
   }
 
   function onSetup(): void {
@@ -2626,7 +2657,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
       }
       selected = null;
       const recipe: RandomMap = { w: size[0], h: size[1], seed, ...(asymmetric && { asymmetric: true as const }) };
-      commit(newGame(state.seed, FIELD_EXERCISE, state.difficulty, limit, limitSelect.value === 'quick', map, opponents, chosenSeats(), endlessInput.checked, recipe, chosenTeams(), chosenStart()), t('announce.setup', { scenario: mapLabel(map) }));
+      commit(newGame(state.seed, FIELD_EXERCISE, state.difficulty, limit, limitSelect.value === 'quick', map, opponents, chosenSeats(), endlessInput.checked, recipe, chosenTeams(), chosenStart(), chosenLevels()), t('announce.setup', { scenario: mapLabel(map) }));
       homeCursor();
       render();
       return;
@@ -2639,7 +2670,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     syncOpponentOptions();
     // A player-made map with three or four bases takes the count chosen (two-side maps: one).
     const opponents = map && !map.seats ? 1 : Number(opponentsSelect.value) || 1;
-    commit(newGame(state.seed, spec, state.difficulty, limit, limitSelect.value === 'quick', map, opponents, chosenSeats(), endlessInput.checked, null, chosenTeams(), chosenStart()), t('announce.setup', { scenario: map ? mapLabel(map) : t(`scenario.${spec.id}`) }));
+    commit(newGame(state.seed, spec, state.difficulty, limit, limitSelect.value === 'quick', map, opponents, chosenSeats(), endlessInput.checked, null, chosenTeams(), chosenStart(), chosenLevels()), t('announce.setup', { scenario: map ? mapLabel(map) : t(`scenario.${spec.id}`) }));
     homeCursor();
     render();
   }
@@ -2854,7 +2885,7 @@ export function createRelayCommand(context: GameContext): GameInstance<RcState> 
     pause() {},
     resume() {},
     reset() {
-      state = { ...newGame(state.seed, scenarioById(state.scenario) ?? FIELD_EXERCISE, state.difficulty, state.turnLimit, state.quick, state.map, state.opponents, state.seats, state.endless, state.random, teamShapeOf(state.world), state.start ?? null), edit: state.edit };
+      state = { ...newGame(state.seed, scenarioById(state.scenario) ?? FIELD_EXERCISE, state.difficulty, state.turnLimit, state.quick, state.map, state.opponents, state.seats, state.endless, state.random, teamShapeOf(state.world), state.start ?? null, state.levels ?? []), edit: state.edit };
       selected = null;
       confirming = false;
       reported = false;
