@@ -493,6 +493,38 @@ describe('dragging with a pointer or a finger (owner decision 2026-10-29)', () =
     removed.mockRestore();
   });
 
+  it('pause() during a drag ends it and leaves the scene as before: nothing dimmed, no outline, the cursor line back (follow-up 2026-10-29)', () => {
+    const m = mount({ mode: 'free', freeBench: 'beam' });
+    m.q('bl-place')!.click();
+    const before = JSON.stringify(m.state());
+    const where = m.q('bl-where')!.textContent;
+    const part = m.root.querySelector('[data-drag="weight:0"]')!;
+    pointer(part, 'pointerdown', hookPoint(m, 6, 0));
+    pointer(part, 'pointermove', hookPoint(m, 6, 3));
+    expect(m.root.querySelectorAll('.bl-drag-source')).toHaveLength(1);
+    expect(m.q('bl-where')!.textContent).not.toBe(where);
+    m.instance.pause();
+    const clean = () => {
+      expect(m.root.querySelector('.bl-drag-source')).toBeNull();
+      expect(m.q('bl-drag-ghost')).toBeNull();
+      expect(m.root.querySelector('.wp-balance')!.classList.contains('bl-is-dragging')).toBe(false);
+      expect(m.q('bl-where')!.textContent).toBe(where);
+    };
+    clean();
+    // The release while paused drops nothing.
+    pointer(part, 'pointerup', hookPoint(m, 6, 3));
+    m.instance.resume();
+    clean();
+    expect(JSON.stringify(m.state())).toBe(before);
+    // After the resume the part drags again.
+    const again = m.root.querySelector('[data-drag="weight:0"]')!;
+    pointer(again, 'pointerdown', hookPoint(m, 6, 0));
+    pointer(again, 'pointermove', hookPoint(m, 6, -2));
+    pointer(again, 'pointerup', hookPoint(m, 6, -2));
+    expect(beamDraft(m)!.weights).toEqual([{ kg: 2, hook: -2, free: true }]);
+    expect(m.root.querySelector('.bl-drag-source')).toBeNull();
+  });
+
   it('drags a hung weight to another hook; the click that ends the drag is not a tap', () => {
     const m = mount({ mode: 'free', freeBench: 'beam' });
     m.q('bl-place')!.click();

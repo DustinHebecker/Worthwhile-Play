@@ -353,8 +353,15 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
     } catch {
       // Already released.
     }
+    // Undo what the drag drew over the last render (pause() ends a drag without a render): the snap outline, the
+    // dimmed source part and the cursor line naming the snap target.
     container.querySelector('[data-testid="bl-drag-ghost"]')?.remove();
     container.classList.remove('bl-is-dragging');
+    captured?.classList.remove('bl-drag-source');
+    if (gesture?.dragging) {
+      const where = container.querySelector('[data-testid="bl-where"]');
+      if (where) where.textContent = whereText;
+    }
     gesture = null;
     dragTarget = null;
     dragFrom = null;
