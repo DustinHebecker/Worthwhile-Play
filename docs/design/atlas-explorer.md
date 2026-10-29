@@ -698,6 +698,8 @@ Imports the pure projection from `packages/games/atlas-explorer/src/geo.ts` and 
 |---|---|
 | Atlas chunk (`atlas.gen`) | ≤ 150 KB minified (detailed variant measured ≈ 110–130 KB), ≈ 75–90 KB gzip; test-enforced raw size ≤ 150 KB |
 | Game code chunk (without atlas and content) | ≤ 90 KB minified (≈ 28 KB gzip) incl. English UI messages and the capitals table |
+
+Follow-up 2026-10-29: the in-game UI texts (231 of 251 keys) moved from `src/locales/<l>.ts` into the per-locale content chunks (`src/content/text/<l>.ts`, looked up via `withContent(context.t)`); only the 20 texts the host shows before the game loads stay in the metadata catalogues. The game chunk went from ≈94 kB to ≈42 kB gzip; each content chunk is 6.5–8.7 kB gzip.
 | Content per locale | ≤ 30 KB minified (≈ 10 KB gzip), loaded via `preload` |
 | Decode the atlas | < 15 ms on a mid-range phone (≈ 40,000 coordinates) |
 | First map render | < 60 ms (≈ 250 paths built once); zoom/pan by `viewBox` only, 60 fps on desktop |

@@ -37,6 +37,15 @@ export const content: ContentText = {
   steps: { whole: 'ت', half: 'ن', three: 'ت+ن' },
   up: 'صعودًا',
   down: 'هبوطًا',
+  noteValues: {
+    eighth: { single: 'نوتة ثمنية', count: { two: 'نوتتان ثمنيتان', few: '{n} نوتات ثمنية', many: '{n} نوتة ثمنية', other: '{n} نوتة ثمنية' } },
+    quarter: { single: 'نوتة ربعية', count: { two: 'نوتتان ربعيتان', few: '{n} نوتات ربعية', many: '{n} نوتة ربعية', other: '{n} نوتة ربعية' } },
+    'dotted-quarter': { single: 'نوتة ربعية منقوطة', count: { two: 'نوتتان ربعيتان منقوطتان', few: '{n} نوتات ربعية منقوطة', many: '{n} نوتة ربعية منقوطة', other: '{n} نوتة ربعية منقوطة' } },
+    half: { single: 'نوتة نصفية', count: { two: 'نوتتان نصفيتان', few: '{n} نوتات نصفية', many: '{n} نوتة نصفية', other: '{n} نوتة نصفية' } },
+    'rest-eighth': { single: 'سكتة ثمنية', count: { two: 'سكتتان ثمنيتان', few: '{n} سكتات ثمنية', many: '{n} سكتة ثمنية', other: '{n} سكتة ثمنية' } },
+    'rest-quarter': { single: 'سكتة ربعية', count: { two: 'سكتتان ربعيتان', few: '{n} سكتات ربعية', many: '{n} سكتة ربعية', other: '{n} سكتة ربعية' } },
+    'rest-half': { single: 'سكتة نصفية', count: { two: 'سكتتان نصفيتان', few: '{n} سكتات نصفية', many: '{n} سكتة نصفية', other: '{n} سكتة نصفية' } }
+  },
   tips: {
     interval: '{a}: {na}؛ {b}: {nb}. عُدّ المفاتيح من نغمة إلى الأخرى، أو الدرجات على المدرج.',
     chord: 'عُدّ الثالثات المتراكبة بأنصاف التون: {a} = {ta}، و{b} = {tb}.',

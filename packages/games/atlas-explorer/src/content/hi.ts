@@ -1,6 +1,7 @@
 import type { ContentText } from './types';
+import { text } from './text/hi';
 
-/** Hindi names and sentences of Atlas Explorer (design § 13.2; capitals of the *Capitals* deck come from `capitalName`). */
+/** Hindi names, sentences and in-game texts of Atlas Explorer (design § 13.2; capitals of the *Capitals* deck come from `capitalName`). */
 export const content: ContentText = {
   names: {
     "new-york": "न्यूयॉर्क",
@@ -197,5 +198,6 @@ export const content: ContentText = {
     "urals": "इन्हें आमतौर पर यूरोप और एशिया की सीमा का हिस्सा माना जाता है।",
     "victoria": "अफ़्रीका की सबसे बड़ी झील; नील नदी यहीं से उत्तर की ओर निकलती है।",
     "yangtze": "एशिया की सबसे लंबी नदी।"
-  }
+  },
+  text
 };

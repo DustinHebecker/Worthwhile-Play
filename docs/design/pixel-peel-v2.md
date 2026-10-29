@@ -840,8 +840,8 @@ Kept unchanged apart from the supersampling: autumn forest, winter village, fjor
 
 - **Spotlight wash:** 70 % towards the motif's backdrop colour.
 - **Large view:** scrolls the first previewed pixel into view.
-- **Wide screens (48 rem and up):** the picture is sticky beside the side column.
-- **Phones:** the picture is sticky at the top while the player scrolls to the lanes. Focused controls scroll clear of it.
+- **Wide screens (48 rem and up) and phones held sideways (36 rem and up, landscape):** the picture is sticky beside the side column, so the whole picture and the lane fronts are on screen together (e.g. 640 × 360, 740 × 360, 844 × 390). On short landscape screens (under 32 rem tall) the two columns are equal, since the picture is limited by the height.
+- **Phones held upright:** the picture is sticky at the top while the player scrolls to the lanes. Focused controls scroll clear of it.
 - **Touch screens:** "Confirm before launch" is on by default, so the first tap shows the spotlight and the marked pixels. A remembered choice wins.
 - **Status line:** keeps a fixed height, so the buttons do not move under the pointer.
 - **Pointer leaving a button:** clears only the preview that button started.

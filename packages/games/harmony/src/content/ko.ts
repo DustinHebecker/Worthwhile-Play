@@ -37,6 +37,15 @@ export const content: ContentText = {
   steps: { whole: '온', half: '반', three: '온+반' },
   up: '위로',
   down: '아래로',
+  noteValues: {
+    eighth: { single: '8분음표', count: { other: '8분음표 {n}개' } },
+    quarter: { single: '4분음표', count: { other: '4분음표 {n}개' } },
+    'dotted-quarter': { single: '점4분음표', count: { other: '점4분음표 {n}개' } },
+    half: { single: '2분음표', count: { other: '2분음표 {n}개' } },
+    'rest-eighth': { single: '8분쉼표', count: { other: '8분쉼표 {n}개' } },
+    'rest-quarter': { single: '4분쉼표', count: { other: '4분쉼표 {n}개' } },
+    'rest-half': { single: '2분쉼표', count: { other: '2분쉼표 {n}개' } }
+  },
   tips: {
     interval: '{a}: {na}, {b}: {nb}. 한 음에서 다른 음까지 건반을 세거나 오선의 칸과 줄을 세어 보세요.',
     chord: '쌓인 3도를 반음으로 세어 보세요. {a}: {ta}, {b}: {tb}.',

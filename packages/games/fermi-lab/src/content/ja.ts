@@ -1,6 +1,47 @@
 import type { ContentText } from './types';
 
 export const content: ContentText = {
+  counts: {
+    day: { other: '日' },
+    year: { other: '年' },
+    ant: { other: '匹' },
+    battery: { other: '本' },
+    beat: { other: '拍' },
+    bee: { other: '匹' },
+    birth: { other: '人' },
+    breath: { other: '回' },
+    cell: { other: '個' },
+    charge: { other: '回' },
+    earth: { other: '個分' },
+    egg: { other: '個' },
+    grain: { other: '粒' },
+    hair: { other: '本' },
+    household: { other: '世帯' },
+    molecule: { other: '個' },
+    orbit: { other: '周' },
+    passenger: { other: '人' },
+    person: { other: '人' },
+    phone: { other: '台' },
+    piano: { other: '台' },
+    pupil: { other: '生徒' },
+    sheet: { other: '枚' },
+    step: { other: '歩' },
+    teacher: { other: '人' },
+    tree: { other: '本' },
+    trip: { other: '回' },
+    tuner: { other: '人' },
+    tuning: { other: '回' },
+    vehicle: { other: '台' },
+    word: { other: '語' }
+  },
+  ratios: {
+    high: { other: '参考値の{n}倍で、大きすぎます。' },
+    low: { other: '参考値の{n}分の1で、小さすぎます。' },
+    rowHigh: { other: '{n}倍（大きすぎ）' },
+    rowLow: { other: '{n}分の1（小さすぎ）' },
+    biasHigh: { other: '平均すると、答えは{n}倍ほど大きすぎました。' },
+    biasLow: { other: '平均すると、答えは{n}分の1ほど小さすぎました。' }
+  },
   factors: {
     aaEnergy: '単3電池1本が出すエネルギー',
     airDensity: '空気の密度',

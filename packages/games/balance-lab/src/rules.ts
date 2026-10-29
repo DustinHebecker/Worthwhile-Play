@@ -15,6 +15,7 @@ import {
   STACK_ANSWERS,
   TASK_IDS,
   cubeSpots,
+  freeCubeSpots,
   type Bench,
   type BenchSetting,
   type Difficulty,
@@ -204,13 +205,13 @@ export function moveBody(scene: StackScene, k: number, dx: number): StackScene |
 }
 
 export function placeCube(scene: StackScene, kg: number, on: number, x: number): StackScene | null {
-  if (!cubeSpots(scene, on).includes(x) || scene.cubes.length >= 8) return null;
+  if (!freeCubeSpots(scene, on).includes(x) || scene.cubes.length >= 8) return null;
   return { ...scene, cubes: [...scene.cubes, { kg, on, x, free: true }] };
 }
 
 export function moveCube(scene: StackScene, i: number, x: number): StackScene | null {
   const c = scene.cubes[i];
-  if (!c?.free || !cubeSpots(scene, c.on).includes(x)) return null;
+  if (!c?.free || !freeCubeSpots(scene, c.on, i).includes(x)) return null;
   return { ...scene, cubes: scene.cubes.map((d, j) => (j === i ? { ...d, x } : d)) };
 }
 

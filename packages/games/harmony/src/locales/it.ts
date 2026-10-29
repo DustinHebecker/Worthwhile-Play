@@ -115,7 +115,7 @@ export const it: HarmonyMessages = {
   'staff.two': 'Due note: {a}, poi {b}',
   'staff.together': 'Note insieme: {notes}',
   'staff.notes': 'Note: {notes}',
-  'staff.rhythm': 'Ritmo in notazione: {text}',
+  'staff.rhythm': 'Ritmo in notazione, tempo 4/4: {text}',
   'staff.cadence': 'Quattro accordi: {list}',
   'wave.none': 'Somma delle fondamentali: nessuna ripetizione breve.',
   'keys.name': 'Tastiera di pianoforte',

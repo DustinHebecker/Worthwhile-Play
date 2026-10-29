@@ -5,6 +5,7 @@ import {
   CATEGORY_CHOICES,
   DIFFICULTIES,
   MODEL_MODES,
+  RECENT_SIZE,
   ROUND_LENGTH,
   STATE_VERSION,
   bandOf,
@@ -21,7 +22,9 @@ import {
   modelResult,
   next,
   poolOf,
+  readRecent,
   referenceProduct,
+  rememberTask,
   resetState,
   score,
   selectTasks,
@@ -287,6 +290,110 @@ describe('round selection', () => {
     const t = createInitial(5, { difficulty: 'hard', category: 'space', model: 'free' });
     expect(settingsOf(t)).toEqual({ difficulty: 'hard', category: 'space', model: 'free' });
     expect(resetState(playQuestion(t, 10))).toEqual(t);
+  });
+});
+
+describe('recently shown tasks (per-device memory)', () => {
+  const LEVELS = { easy: [1, 2, 3], medium: [2, 1, 3], hard: [3, 2, 1] } as const;
+  /** The selection before the memory existed (design § 4), to check that an empty memory changes nothing. */
+  const legacy = (seed: number, difficulty: (typeof DIFFICULTIES)[number], category: (typeof CATEGORY_CHOICES)[number]) => {
+    const rng = createRng(seed);
+    const chosen: Task[] = [];
+    for (const level of LEVELS[difficulty]) for (const t of rng.shuffle(poolOf(category).filter((x) => x.level === level))) if (chosen.length < ROUND_LENGTH) chosen.push(t);
+    return rng.shuffle(chosen).map((t) => t.id);
+  };
+  const setting = fc.record({ seed: fc.integer({ min: 0, max: 0xffffffff }), difficulty: fc.constantFrom(...DIFFICULTIES), category: fc.constantFrom(...CATEGORY_CHOICES) });
+  const ids = (s: FermiState) => s.questions.map((q) => q.taskId);
+
+  it('the window is about half of the smallest level pool of "All topics" and covers at least one round', () => {
+    const smallest = Math.min(...[1, 2, 3].map((l) => poolOf('all').filter((t) => t.level === l).length));
+    expect(RECENT_SIZE).toBeGreaterThanOrEqual(ROUND_LENGTH);
+    expect(RECENT_SIZE).toBeLessThanOrEqual(Math.floor(smallest / 2));
+  });
+
+  it('without a memory the round is the same as before the memory existed', () => {
+    fc.assert(
+      fc.property(setting, ({ seed, difficulty, category }) => {
+        expect(ids(createInitial(seed, { difficulty, category }))).toEqual(legacy(seed, difficulty, category));
+        expect(ids(createInitial(seed, { difficulty, category }, []))).toEqual(legacy(seed, difficulty, category));
+      }),
+      { numRuns: 300 }
+    );
+  });
+
+  it('prefers unseen tasks, repeats the ones seen longest ago only when the pool runs out, and is deterministic', () => {
+    const withMemory = setting.chain((x) => fc.shuffledSubarray(poolOf(x.category).map((t) => t.id), { maxLength: RECENT_SIZE }).map((recent) => ({ ...x, recent })));
+    fc.assert(
+      fc.property(withMemory, ({ seed, difficulty, category, recent }) => {
+        const s = createInitial(seed, { difficulty, category }, recent);
+        const round = ids(s);
+        expect(isFermiState(s)).toBe(true);
+        expect(new Set(round).size).toBe(ROUND_LENGTH);
+        for (const id of round) expect(poolOf(category).map((t) => t.id)).toContain(id);
+        const unseen = poolOf(category).filter((t) => !recent.includes(t.id));
+        if (unseen.length >= ROUND_LENGTH) expect(round.filter((id) => recent.includes(id))).toEqual([]);
+        else {
+          for (const t of unseen) expect(round).toContain(t.id);
+          // Among the seen tasks of one level, the round takes the ones seen longest ago.
+          for (const id of round.filter((x) => recent.includes(x)))
+            for (const other of recent.filter((x) => !round.includes(x) && task(x).level === task(id).level)) expect(recent.indexOf(id)).toBeLessThan(recent.indexOf(other));
+        }
+        expect(createInitial(seed, { difficulty, category }, recent)).toEqual(s);
+      }),
+      { numRuns: 400 }
+    );
+  });
+
+  it('round after round: no task of the window comes back while the pool allows it, and "All topics" keeps its level', () => {
+    fc.assert(
+      fc.property(setting, fc.integer({ min: 2, max: 8 }), ({ seed, difficulty, category }, rounds) => {
+        let recent: string[] = [];
+        for (let r = 0; r < rounds; r++) {
+          const round = ids(createInitial(seed + r, { difficulty, category }, recent));
+          const unseen = poolOf(category).filter((t) => !recent.includes(t.id)).length;
+          if (unseen >= ROUND_LENGTH) for (const id of round) expect(recent, `round ${r}`).not.toContain(id);
+          if (category === 'all') for (const id of round) expect(task(id).level).toBe(LEVELS[difficulty][0]);
+          for (const id of round) recent = rememberTask(recent, id);
+        }
+      }),
+      { numRuns: 200 }
+    );
+  });
+
+  it('a restart repeats the round it started with, whatever the memory says now', () => {
+    fc.assert(
+      fc.property(setting, fc.shuffledSubarray(TASKS.map((t) => t.id), { maxLength: RECENT_SIZE }), ({ seed, difficulty, category }, recent) => {
+        const s = createInitial(seed, { difficulty, category, model: 'free' }, recent);
+        expect(resetState(playQuestion(s, 10))).toEqual(s);
+      }),
+      { numRuns: 100 }
+    );
+  });
+
+  it('reads any stored value without throwing: known ids only, no duplicates, at most the window', () => {
+    expect(readRecent(undefined)).toEqual([]);
+    expect(readRecent('rain-roof')).toEqual([]);
+    expect(readRecent({ 0: 'rain-roof' })).toEqual([]);
+    expect(readRecent(['nope', 'rain-roof', 3, null, 'rain-roof'])).toEqual(['rain-roof']);
+    fc.assert(
+      fc.property(fc.anything(), fc.array(fc.oneof(fc.constantFrom(...TASKS.map((t) => t.id)), fc.string(), fc.anything())), (junk, list) => {
+        for (const value of [junk, list]) {
+          const r = readRecent(value);
+          expect(r.length).toBeLessThanOrEqual(RECENT_SIZE);
+          expect(new Set(r).size).toBe(r.length);
+          for (const id of r) expect(taskById(id)).toBeDefined();
+          expect(readRecent(r)).toEqual(r);
+        }
+      }),
+      { numRuns: 300 }
+    );
+  });
+
+  it('remembers the newest last and forgets the oldest beyond the window', () => {
+    let r: string[] = [];
+    for (const t of TASKS.slice(0, RECENT_SIZE + 3)) r = rememberTask(r, t.id);
+    expect(r).toEqual(TASKS.slice(3, RECENT_SIZE + 3).map((t) => t.id));
+    expect(rememberTask(r, r[0]!)).toEqual([...r.slice(1), r[0]]);
   });
 });
 

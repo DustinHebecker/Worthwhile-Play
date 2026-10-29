@@ -186,7 +186,33 @@ test('pixel-peel: at 360 × 740 a 64-wide picture fits, nothing scrolls sideways
   }
 });
 
-test('pixel-peel: the picture fits the screen height; held sideways it does not stick over the lanes', async ({ page }) => {
+/**
+ * Held sideways (or on a wide screen) the picture and the lanes sit side by side: with the play area scrolled to the
+ * top, the whole picture and every lane front are on screen at once, nothing covers a lane, nothing scrolls sideways.
+ */
+async function expectSideBySide(page: Page, rtl = false): Promise<void> {
+  const viewport = page.viewportSize()!;
+  await root(page).locator('.pp-main').evaluate((el) => window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY));
+  const canvas = (await root(page).getByTestId('pp-canvas').boundingBox())!;
+  expect(canvas.y).toBeGreaterThanOrEqual(-1);
+  expect(canvas.y + canvas.height).toBeLessThanOrEqual(viewport.height + 1);
+  for (let i = 0; i < 4; i++) {
+    const lane = (await root(page).getByTestId(`pp-lane-${i}`).boundingBox())!;
+    // Beside the picture (on the inline-end side), not below it.
+    if (rtl) expect(lane.x + lane.width, `lane ${i}`).toBeLessThanOrEqual(canvas.x);
+    else expect(lane.x, `lane ${i}`).toBeGreaterThanOrEqual(canvas.x + canvas.width);
+    expect(lane.y, `lane ${i}`).toBeGreaterThanOrEqual(0);
+    expect(lane.y + lane.height, `lane ${i}`).toBeLessThanOrEqual(viewport.height);
+    expect(lane.width, `lane ${i}`).toBeGreaterThanOrEqual(44);
+    expect(lane.height, `lane ${i}`).toBeGreaterThanOrEqual(44);
+    const hit = await page.evaluate(([x, y]) => (document.elementFromPoint(x!, y!) as HTMLElement | null)?.closest('[data-testid]')?.getAttribute('data-testid'), [lane.x + lane.width / 2, lane.y + lane.height / 2]);
+    expect(hit, `lane ${i} is not covered`).toBe(`pp-lane-${i}`);
+  }
+  await expect(root(page).getByTestId('pp-status')).toBeInViewport();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
+}
+
+test('pixel-peel: the picture fits the screen height; held sideways it sits beside the lanes', async ({ page }) => {
   // Upright phone: the picture sticks to the top and takes at most half the height.
   await page.setViewportSize({ width: 360, height: 640 });
   await startGame(page, ID, { difficulty: 'hard', settings: { motif: 'tiger' } });
@@ -194,15 +220,32 @@ test('pixel-peel: the picture fits the screen height; held sideways it does not 
   const board = root(page).getByTestId('pp-board');
   expect(await board.evaluate((el) => getComputedStyle(el).position)).toBe('sticky');
   expect((await root(page).getByTestId('pp-canvas').boundingBox())?.height ?? 999).toBeLessThanOrEqual(320);
-  // Sideways (740 × 360): not sticky, the whole picture fits the height, and the lanes can be scrolled into view.
+  // Sideways (740 × 360): the picture fits the height and moves beside the lanes.
   await page.setViewportSize({ width: 740, height: 360 });
   await expect.poll(async () => (await root(page).getByTestId('pp-canvas').boundingBox())?.height ?? 999).toBeLessThanOrEqual(0.9 * 360);
-  expect(await board.evaluate((el) => getComputedStyle(el).position)).not.toBe('sticky');
-  const lane = root(page).getByTestId('pp-lane-0');
-  await lane.scrollIntoViewIfNeeded();
-  const box = await lane.boundingBox();
-  const hit = await page.evaluate(([x, y]) => (document.elementFromPoint(x!, y!) as HTMLElement | null)?.closest('[data-testid]')?.getAttribute('data-testid'), [(box?.x ?? 0) + (box?.width ?? 0) / 2, (box?.y ?? 0) + (box?.height ?? 0) / 2]);
-  expect(hit).toBe('pp-lane-0');
+  await expectSideBySide(page);
+  // Scrolling on to the buttons below the lanes keeps the picture in view beside them.
+  const undo = root(page).getByTestId('pp-undo');
+  await undo.scrollIntoViewIfNeeded();
+  await expect(undo).toBeInViewport();
+  await expect(root(page).getByTestId('pp-canvas')).toBeInViewport({ ratio: 0.99 });
+});
+
+for (const [width, height, motif] of [[844, 390, 'summer-meadow'], [640, 360, 'red-fox']] as const) {
+  test(`pixel-peel: at ${width} × ${height} the picture and the lanes are side by side and both in view`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await startGame(page, ID, { difficulty: motif === 'red-fox' ? 'easy' : 'hard', settings: { motif } });
+    await savedState(page);
+    await expectSideBySide(page);
+  });
+}
+
+test('pixel-peel: held sideways in Arabic the lanes sit on the inline-end side of the picture', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('worthwhile-play:ui-locale', 'ar'));
+  await page.setViewportSize({ width: 740, height: 360 });
+  await startGame(page, ID, { difficulty: 'medium', settings: { motif: 'llama' } });
+  await savedState(page);
+  await expectSideBySide(page, true);
 });
 
 test('pixel-peel: Large view scrolls inside its region, pans with the arrow keys and shows symbols', async ({ page }) => {

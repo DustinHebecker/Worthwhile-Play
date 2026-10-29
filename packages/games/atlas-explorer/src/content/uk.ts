@@ -1,6 +1,7 @@
 import type { ContentText } from './types';
+import { text } from './text/uk';
 
-/** Ukrainian names and sentences of Atlas Explorer (design § 13.2; capitals of the *Capitals* deck come from `capitalName`). */
+/** Ukrainian names, sentences and in-game texts of Atlas Explorer (design § 13.2; capitals of the *Capitals* deck come from `capitalName`). */
 export const content: ContentText = {
   names: {
     "new-york": "Нью-Йорк",
@@ -197,5 +198,6 @@ export const content: ContentText = {
     "urals": "Зазвичай вважаються частиною межі між Європою та Азією.",
     "victoria": "Найбільше озеро Африки; з нього на північ витікає Ніл.",
     "yangtze": "Найдовша річка Азії."
-  }
+  },
+  text
 };

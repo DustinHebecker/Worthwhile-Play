@@ -1,6 +1,7 @@
 import type { ContentText } from './types';
+import { text } from './text/ar';
 
-/** Arabic names and sentences of Atlas Explorer (design § 13.2; capitals of the *Capitals* deck come from `capitalName`). */
+/** Arabic names, sentences and in-game texts of Atlas Explorer (design § 13.2; capitals of the *Capitals* deck come from `capitalName`). */
 export const content: ContentText = {
   names: {
     "new-york": "نيويورك",
@@ -197,5 +198,6 @@ export const content: ContentText = {
     "urals": "تُعدّ عادةً جزءًا من الحد بين أوروبا وآسيا.",
     "victoria": "أكبر بحيرة في أفريقيا؛ يخرج منها النيل متجهًا شمالًا.",
     "yangtze": "أطول نهر في آسيا."
-  }
+  },
+  text
 };

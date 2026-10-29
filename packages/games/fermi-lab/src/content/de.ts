@@ -1,6 +1,47 @@
 import type { ContentText } from './types';
 
 export const content: ContentText = {
+  counts: {
+    day: { one: 'Tag', other: 'Tage' },
+    year: { one: 'Jahr', other: 'Jahre' },
+    ant: { one: 'Ameise', other: 'Ameisen' },
+    battery: { one: 'Batterie', other: 'Batterien' },
+    beat: { one: 'Schlag', other: 'Schläge' },
+    bee: { one: 'Biene', other: 'Bienen' },
+    birth: { one: 'Geburt', other: 'Geburten' },
+    breath: { one: 'Atemzug', other: 'Atemzüge' },
+    cell: { one: 'Zelle', other: 'Zellen' },
+    charge: { one: 'Ladung', other: 'Ladungen' },
+    earth: { one: 'Erde', other: 'Erden' },
+    egg: { one: 'Ei', other: 'Eier' },
+    grain: { one: 'Korn', other: 'Körner' },
+    hair: { one: 'Haar', other: 'Haare' },
+    household: { one: 'Haushalt', other: 'Haushalte' },
+    molecule: { one: 'Molekül', other: 'Moleküle' },
+    orbit: { one: 'Umlauf', other: 'Umläufe' },
+    passenger: { one: 'Passagier', other: 'Passagiere' },
+    person: { one: 'Person', other: 'Personen' },
+    phone: { one: 'Handy', other: 'Handys' },
+    piano: { one: 'Klavier', other: 'Klaviere' },
+    pupil: { one: 'Schüler', other: 'Schüler' },
+    sheet: { one: 'Blatt', other: 'Blatt' },
+    step: { one: 'Schritt', other: 'Schritte' },
+    teacher: { one: 'Lehrkraft', other: 'Lehrkräfte' },
+    tree: { one: 'Baum', other: 'Bäume' },
+    trip: { one: 'Reise', other: 'Reisen' },
+    tuner: { one: 'Klavierstimmer', other: 'Klavierstimmer' },
+    tuning: { one: 'Stimmung', other: 'Stimmungen' },
+    vehicle: { one: 'Fahrzeug', other: 'Fahrzeuge' },
+    word: { one: 'Wort', other: 'Wörter' }
+  },
+  ratios: {
+    high: { one: '{n}-mal zu hoch.', other: '{n}-mal zu hoch.' },
+    low: { one: '{n}-mal zu niedrig.', other: '{n}-mal zu niedrig.' },
+    rowHigh: { one: '{n}-mal zu hoch', other: '{n}-mal zu hoch' },
+    rowLow: { one: '{n}-mal zu niedrig', other: '{n}-mal zu niedrig' },
+    biasHigh: { one: 'Im Mittel lagen deine Antworten {n}-mal zu hoch.', other: 'Im Mittel lagen deine Antworten {n}-mal zu hoch.' },
+    biasLow: { one: 'Im Mittel lagen deine Antworten {n}-mal zu niedrig.', other: 'Im Mittel lagen deine Antworten {n}-mal zu niedrig.' }
+  },
   factors: {
     aaEnergy: 'Energie, die eine AA-Batterie abgibt',
     airDensity: 'Dichte der Luft',

@@ -1,6 +1,7 @@
 import type { ContentText } from './types';
+import { text } from './text/ja';
 
-/** Japanese names and sentences of Atlas Explorer (design § 13.2; capitals of the *Capitals* deck come from `capitalName`). */
+/** Japanese names, sentences and in-game texts of Atlas Explorer (design § 13.2; capitals of the *Capitals* deck come from `capitalName`). */
 export const content: ContentText = {
   names: {
     "new-york": "ニューヨーク",
@@ -197,5 +198,6 @@ export const content: ContentText = {
     "urals": "ふつうヨーロッパとアジアの境界の一部とされます。",
     "victoria": "アフリカ最大の湖。ナイル川がここから北へ流れ出します。",
     "yangtze": "アジアで最も長い川。"
-  }
+  },
+  text
 };

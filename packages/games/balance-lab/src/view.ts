@@ -7,6 +7,7 @@ import { bcp47Tag, type GameContext, type GameInstance, type NewGameOptions } fr
 import { announce, clear, h } from '@wp/ui';
 import { trayLeft } from './check';
 import { describe, explainLines, mobileHookLabel, outcomeLine } from './explain';
+import { withContent } from './content';
 import { benchOf, isPredict, OVERHANG_BLOCKS, SIDES, STACK_ANSWERS, type Scene } from './generate';
 import { mobileHookXs, nearestHook, stackXAt } from './layout';
 import {
@@ -51,8 +52,8 @@ import {
   type RoundState
 } from './rules';
 import { drawScene, type SceneOptions } from './scene-view';
-import { cubeSpots, setString } from './generate';
-import { isBar, mobileBars } from './statics';
+import { cubeSpots, freeCubeSpots, setString } from './generate';
+import { isBar, mobileBars, type StackScene } from './statics';
 import './styles.css';
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
@@ -64,8 +65,26 @@ function sceneX(svg: SVGElement, rect: DOMRect, clientX: number): number {
   return vx + (clientX - rect.left - (rect.width - vw * k) / 2) / k;
 }
 
+/** The spot nearest to x (x itself when there is none). */
+const nearestSpot = (spots: readonly number[], x: number): number => spots.reduce((best, s) => (Math.abs(s - x) < Math.abs(best - x) ? s : best), spots[0] ?? x);
+
+/** The first spot at or beyond `from + dx` in the direction of dx, else the last spot in that direction (undefined: none past `from`). */
+function nextSpot(spots: readonly number[], from: number, dx: number): number | undefined {
+  const ahead = dx > 0 ? spots.filter((s) => s > from) : spots.filter((s) => s < from).reverse();
+  return ahead.find((s) => Math.abs(s - from) >= Math.abs(dx)) ?? ahead[ahead.length - 1];
+}
+
+/** Where the cube cursor rests on body 0: the middle of the plank to begin with, then the nearest spot where a new cube fits. */
+function cubeCursor(scene: StackScene, cursor: number): number {
+  const spots = cubeSpots(scene, 0);
+  const free = freeCubeSpots(scene, 0);
+  if (free.includes(cursor)) return cursor;
+  return nearestSpot(free, spots.includes(cursor) ? cursor : (spots[Math.floor(spots.length / 2)] ?? cursor));
+}
+
 export function createBalance(context: GameContext): GameInstance<BalanceState> {
-  const { t, root } = context;
+  const { root } = context;
+  const t = withContent(context.t);
   let state: BalanceState = newState(0, readSettings(undefined, undefined));
   let paused = false;
   /** View-only selection: a tray part (index into the remaining tray) or a placed part (index in the scene). */
@@ -165,8 +184,8 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
     }
     // Stack: cubes on body 0 (the counterweight task); bodies are selected by their chips or ↑/↓.
     if (taskId() === 'stack-counter') {
-      const spots = cubeSpots(sc.s, 0);
-      const x = spots.reduce((best, s) => (Math.abs(s - target) < Math.abs(best - target) ? s : best), spots[0] ?? target);
+      // The nearest spot where the cube keeps clear of the others (or stacks on one).
+      const x = nearestSpot(freeCubeSpots(sc.s, 0, selPlaced ?? -1), target);
       cursor = x;
       if (selPlaced !== null) return void (edit({ bench: 'stack', s: moveCube(sc.s, selPlaced, x) ?? sc.s }) || render());
       if (selTray !== null) {
@@ -210,12 +229,14 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
       return render();
     }
     if (taskId() === 'stack-counter') {
+      // The next spot in that direction where a cube keeps clear of the others: it skips over a neighbour or stacks on it.
       if (selPlaced !== null) {
         const c = sc.s.cubes[selPlaced];
-        return void (c && edit({ bench: 'stack', s: moveCube(sc.s, selPlaced, c.x + dx) ?? sc.s }));
+        const x = c && nextSpot(freeCubeSpots(sc.s, 0, selPlaced), c.x, dx);
+        return void (x !== undefined && edit({ bench: 'stack', s: moveCube(sc.s, selPlaced, x) ?? sc.s }));
       }
-      const spots = cubeSpots(sc.s, 0);
-      cursor = Math.max(spots[0] ?? 0, Math.min(spots[spots.length - 1] ?? 0, cursor + dx));
+      const x = nextSpot(freeCubeSpots(sc.s, 0), cursor, dx);
+      if (x !== undefined) cursor = x;
       return render();
     }
     edit({ bench: 'stack', s: moveBody(sc.s, cursor, dx) ?? sc.s });
@@ -225,10 +246,7 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
     if (selTray === null && trayNow().length) selTray = 0;
     const sc = sceneNow();
     if (!sc) return;
-    if (sc.bench === 'stack' && taskId() === 'stack-counter' && selPlaced === null) {
-      const spots = cubeSpots(sc.s, 0);
-      if (!spots.includes(cursor)) cursor = spots[Math.floor(spots.length / 2)] ?? cursor;
-    }
+    if (sc.bench === 'stack' && taskId() === 'stack-counter' && selPlaced === null) cursor = cubeCursor(sc.s, cursor);
     actAt(cursor);
   }
 
@@ -511,8 +529,7 @@ export function createBalance(context: GameContext): GameInstance<BalanceState> 
     if (it.goal?.kind === 'choose') cursor = it.goal.hook;
     if (it.id === 'stack-counter' && it.draft.bench === 'stack' && selPlaced === null) {
       // The cube cursor always rests on a place where a cube fits (the middle of the plank to begin with).
-      const spots = cubeSpots(it.draft.s, 0);
-      if (!spots.includes(cursor)) cursor = spots[Math.floor(spots.length / 2)] ?? cursor;
+      cursor = cubeCursor(it.draft.s, cursor);
     }
     const head = h(
       'div',

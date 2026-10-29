@@ -134,8 +134,11 @@ export function createPixelPeel(context: GameContext): GameInstance<PeelState> {
   };
   const wide = () => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(min-width: 48rem)').matches;
   const wholeLanes = () => display.wholeLanes ?? wide();
-  /** The picture sticks to the top of the screen (the media query of styles.css). */
-  const stickyTop = () => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 47.99rem) and (min-height: 32rem)').matches;
+  /** The picture sticks to the top of the stacked layout (the media query of styles.css). */
+  const stickyTop = () =>
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(max-width: 47.99rem) and (orientation: portrait) and (min-height: 32rem), (max-width: 35.99rem) and (min-height: 32rem)').matches;
 
   // --- Text helpers ------------------------------------------------------------------------------------------
 

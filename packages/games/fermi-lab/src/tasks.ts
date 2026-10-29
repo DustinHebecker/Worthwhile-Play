@@ -282,7 +282,7 @@ export const TASKS: readonly Task[] = [
     sources: [
       { about: 'eggsPerDay', type: 'cited', cite: 'University of Delaware, MAAREC, "The Colony and Its Organization" (up to 1,500 eggs a day; up to 80,000 workers)', url: 'https://canr.udel.edu/maarec/honey-bee-biology/the-colony-and-its-organization/' },
       { about: 'workerLife', type: 'cited', cite: 'PBS Nature, honeybee guide (15–38 days in summer)', url: 'https://www.pbs.org/wnet/nature/animal-guide-honeybee/499' },
-      { about: 'workerLife', type: 'cited', cite: 'University of Arizona, activity sheet (average 42 days)', url: 'https://cales.arizona.edu/pubs/insects/ahb/act12.html' }
+      { about: 'workerLife', type: 'cited', cite: 'University of Arizona, activity sheet (average 42 days; archived copy, the original page is gone)', url: 'https://web.archive.org/web/2023/https://cales.arizona.edu/pubs/insects/ahb/act12.html' }
     ]
   },
   {
@@ -443,7 +443,7 @@ export const TASKS: readonly Task[] = [
       f('tuningsPerTuner', 800, 600, 1000, 'tuning/(tuner·year)', -1)
     ],
     sources: [
-      { about: 'householdSize', type: 'cited', cite: 'UN DESA, Household Size and Composition Around the World 2017 (country averages from about 2 to 9 people per household; most of Europe, North America and Japan below 3)', url: 'https://www.un.org/en/development/desa/population/publications/pdf/popfacts/PopFacts_2017-2.pdf' },
+      { about: 'householdSize', type: 'cited', cite: 'UN DESA, Household Size and Composition Around the World 2017 (country averages from about 2 to 9 people per household; most of Europe, North America and Japan below 3)', url: 'https://www.un.org/development/desa/pd/sites/www.un.org.development.desa.pd/files/files/documents/2020/Jan/un_2017_factsheet2.pdf' },
       { about: 'pianoShare', type: 'assumption' },
       { about: 'tuningsPerTuner', type: 'assumption' }
     ]
@@ -543,7 +543,7 @@ export const TASKS: readonly Task[] = [
     answer: { central: 1.5e9, low: 1.1e9, high: 1.9e9, unit: 'vehicle' },
     factors: [WORLD_POPULATION, f('peoplePerVehicle', 5.5, 4, 7.5, 'person/vehicle', -1)],
     sources: [
-      { about: 'answer', type: 'cited', cite: 'OICA, vehicles in use (2011: 1,097 million)', url: 'https://www.oica.net/wp-content/uploads/2013/09/OICA-Francfort-2013ok.pdf' },
+      { about: 'answer', type: 'cited', cite: 'OICA, vehicles in use (2011: 1,097 million; archived copy, the original file is gone)', url: 'https://web.archive.org/web/2017/https://www.oica.net/wp-content/uploads/2013/09/OICA-Francfort-2013ok.pdf' },
       { about: 'answer', type: 'cited', cite: 'Wikipedia, "Motor vehicle" (about 1.55 billion in 2023, citing OICA; review)', url: 'https://en.wikipedia.org/wiki/Motor_vehicle' }
     ]
   },

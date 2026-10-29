@@ -100,19 +100,55 @@ export const poolOf = (category: CategoryChoice): Task[] =>
     .slice()
     .sort((a, b) => (a.id < b.id ? -1 : 1));
 
+/* ---------------- Recently shown tasks (per device, never in the save) ---------------- */
+
+/** Key of the per-device preference (`context.preferences`) that lists the recently shown task ids. */
+export const RECENT_KEY = 'recent';
+
+/**
+ * How many recently shown tasks the next rounds avoid: 7, about half of the smallest level pool of "All topics"
+ * (14 hard tasks; 15 easy, 17 medium). So an "All topics" round never has to leave its level to avoid a recent
+ * task (at least 7 unseen tasks remain on every level), and the window still covers the whole previous round (5)
+ * plus two. A single topic has only 8–11 tasks: there the window covers most of the pool, and a round takes its
+ * unseen tasks first (the neighbouring levels included) and repeats the ones seen longest ago only when needed.
+ */
+export const RECENT_SIZE = 7;
+
+/** The remembered ids from an untrusted preference value: known task ids, no duplicates, the last `RECENT_SIZE`. */
+export function readRecent(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  const ids: string[] = [];
+  for (const id of value.slice(-100)) {
+    if (typeof id !== 'string' || !taskById(id)) continue;
+    const at = ids.indexOf(id);
+    if (at >= 0) ids.splice(at, 1);
+    ids.push(id);
+  }
+  return ids.slice(-RECENT_SIZE);
+}
+
+/** The memory after `id` was shown: `id` moves to the end (most recent), the oldest falls out beyond the window. */
+export function rememberTask(recent: readonly string[], id: string): string[] {
+  return [...recent.filter((x) => x !== id), id].slice(-RECENT_SIZE);
+}
+
 /**
  * Five distinct tasks: the round's level first, then the neighbouring level(s) when the category has fewer than
- * five, in a shuffled order.
+ * five, in a shuffled order. Tasks in `recent` (most recent last) come after every unseen task of the category and
+ * among themselves the one seen longest ago first. The random draws do not depend on `recent`, and with no memory
+ * the result is the same as without one.
  */
-export function selectTasks(rng: Rng, difficulty: Difficulty, category: CategoryChoice): Task[] {
+export function selectTasks(rng: Rng, difficulty: Difficulty, category: CategoryChoice, recent: readonly string[] = []): Task[] {
   const pool = poolOf(category);
-  const chosen: Task[] = [];
+  const seenAt = new Map(recent.map((id, i) => [id, i]));
+  const unseen: Task[] = [];
+  const seen: Task[] = [];
   for (const level of LEVEL_ORDER[difficulty]) {
-    for (const task of rng.shuffle(pool.filter((t) => t.level === level))) {
-      if (chosen.length < ROUND_LENGTH) chosen.push(task);
-    }
+    const shuffled = rng.shuffle(pool.filter((t) => t.level === level));
+    unseen.push(...shuffled.filter((t) => !seenAt.has(t.id)));
+    seen.push(...shuffled.filter((t) => seenAt.has(t.id)).sort((a, b) => seenAt.get(a.id)! - seenAt.get(b.id)!));
   }
-  return rng.shuffle(chosen);
+  return rng.shuffle([...unseen, ...seen].slice(0, ROUND_LENGTH));
 }
 
 /** The slider window's lower decade: the central value lies 2 to 7 decades above it, at a seeded offset. */
@@ -131,23 +167,37 @@ const freshQuestion = (task: Task, rng: Rng, model: ModelMode): QuestionState =>
   answer: null
 });
 
-/** A new round. Untrusted choices fall back to the defaults (easy, all categories, guided). */
-export function createInitial(seed: number, choices: StartChoices = {}): FermiState {
+/**
+ * A new round. Untrusted choices fall back to the defaults (easy, all categories, guided); `recent` is the device's
+ * memory of recently shown tasks (`readRecent`). Same seed, choices and memory: same round.
+ */
+export function createInitial(seed: number, choices: StartChoices = {}, recent: readonly string[] = []): FermiState {
   const safeSeed = Number.isFinite(seed) ? Math.trunc(seed) >>> 0 : 0;
   const difficulty = pick(DIFFICULTIES, choices.difficulty, 'easy');
   const category = pick(CATEGORY_CHOICES, choices.category, 'all');
   const model = pick(MODEL_MODES, choices.model, 'guided');
   const rng = createRng(safeSeed);
-  const tasks = selectTasks(rng, difficulty, category);
+  const tasks = selectTasks(rng, difficulty, category, recent);
   return { v: 2, seed: safeSeed, difficulty, category, model, questions: tasks.map((t) => freshQuestion(t, rng, model)), index: 0, finishedReported: false };
 }
 
-export const resetState = (state: FermiState): FermiState => createInitial(state.seed, state);
+/**
+ * The round from its start: the same tasks (whatever the memory was then) with the same slider windows, since the
+ * draws of `selectTasks` do not depend on the memory.
+ */
+export function resetState(state: FermiState): FermiState {
+  const rng = createRng(state.seed);
+  selectTasks(rng, state.difficulty, state.category);
+  return { ...createInitial(state.seed, state), questions: state.questions.map((q) => freshQuestion(taskOf(q), rng, state.model)) };
+}
 
 /* ---------------- Accessors ---------------- */
 
 export const currentQuestion = (state: FermiState): QuestionState | undefined => state.questions[state.index];
-export const taskOf = (q: QuestionState): Task => taskById(q.taskId)!;
+export function taskOf(q: QuestionState): Task {
+  return taskById(q.taskId)!;
+}
+
 export const isSummary = (state: FermiState): boolean => state.index >= ROUND_LENGTH;
 
 const replaceQuestion = (state: FermiState, update: (q: QuestionState) => QuestionState): FermiState => {

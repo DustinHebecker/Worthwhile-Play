@@ -1,6 +1,7 @@
 import type { ContentText } from './types';
+import { text } from './text/ru';
 
-/** Russian names and sentences of Atlas Explorer (design § 13.2; capitals of the *Capitals* deck come from `capitalName`). */
+/** Russian names, sentences and in-game texts of Atlas Explorer (design § 13.2; capitals of the *Capitals* deck come from `capitalName`). */
 export const content: ContentText = {
   names: {
     "new-york": "Нью-Йорк",
@@ -197,5 +198,6 @@ export const content: ContentText = {
     "urals": "Обычно считается частью границы между Европой и Азией.",
     "victoria": "Крупнейшее озеро Африки; из него на север вытекает Нил.",
     "yangtze": "Самая длинная река Азии."
-  }
+  },
+  text
 };

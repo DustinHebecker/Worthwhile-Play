@@ -114,7 +114,7 @@ export const en = {
   'staff.two': 'Two notes: {a}, then {b}',
   'staff.together': 'Notes together: {notes}',
   'staff.notes': 'Notes: {notes}',
-  'staff.rhythm': 'Rhythm in notation: {text}',
+  'staff.rhythm': 'Rhythm in notation, 4/4 time: {text}',
   'staff.cadence': 'Four chords: {list}',
   'wave.none': 'Sum of the fundamentals: no short repeat.',
   'keys.name': 'Piano keyboard',

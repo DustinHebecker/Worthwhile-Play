@@ -1,6 +1,47 @@
 import type { ContentText } from './types';
 
 export const content: ContentText = {
+  counts: {
+    day: { one: 'dzień', few: 'dni', many: 'dni', other: 'dnia' },
+    year: { one: 'rok', few: 'lata', many: 'lat', other: 'roku' },
+    ant: { one: 'mrówka', few: 'mrówki', many: 'mrówek', other: 'mrówki' },
+    battery: { one: 'bateria', few: 'baterie', many: 'baterii', other: 'baterii' },
+    beat: { one: 'uderzenie', few: 'uderzenia', many: 'uderzeń', other: 'uderzenia' },
+    bee: { one: 'pszczoła', few: 'pszczoły', many: 'pszczół', other: 'pszczoły' },
+    birth: { one: 'urodzenie', few: 'urodzenia', many: 'urodzeń', other: 'urodzenia' },
+    breath: { one: 'oddech', few: 'oddechy', many: 'oddechów', other: 'oddechu' },
+    cell: { one: 'komórka', few: 'komórki', many: 'komórek', other: 'komórki' },
+    charge: { one: 'ładowanie', few: 'ładowania', many: 'ładowań', other: 'ładowania' },
+    earth: { one: 'Ziemia', few: 'Ziemie', many: 'Ziem', other: 'Ziemi' },
+    egg: { one: 'jajo', few: 'jaja', many: 'jaj', other: 'jaja' },
+    grain: { one: 'ziarno', few: 'ziarna', many: 'ziaren', other: 'ziarna' },
+    hair: { one: 'włos', few: 'włosy', many: 'włosów', other: 'włosa' },
+    household: { one: 'gospodarstwo', few: 'gospodarstwa', many: 'gospodarstw', other: 'gospodarstwa' },
+    molecule: { one: 'cząsteczka', few: 'cząsteczki', many: 'cząsteczek', other: 'cząsteczki' },
+    orbit: { one: 'okrążenie', few: 'okrążenia', many: 'okrążeń', other: 'okrążenia' },
+    passenger: { one: 'pasażer', few: 'pasażerów', many: 'pasażerów', other: 'pasażera' },
+    person: { one: 'osoba', few: 'osoby', many: 'osób', other: 'osoby' },
+    phone: { one: 'telefon', few: 'telefony', many: 'telefonów', other: 'telefonu' },
+    piano: { one: 'pianino', few: 'pianina', many: 'pianin', other: 'pianina' },
+    pupil: { one: 'uczeń', few: 'uczniów', many: 'uczniów', other: 'ucznia' },
+    sheet: { one: 'kartka', few: 'kartki', many: 'kartek', other: 'kartki' },
+    step: { one: 'krok', few: 'kroki', many: 'kroków', other: 'kroku' },
+    teacher: { one: 'nauczyciel', few: 'nauczycieli', many: 'nauczycieli', other: 'nauczyciela' },
+    tree: { one: 'drzewo', few: 'drzewa', many: 'drzew', other: 'drzewa' },
+    trip: { one: 'podróż', few: 'podróże', many: 'podróży', other: 'podróży' },
+    tuner: { one: 'stroiciel', few: 'stroicieli', many: 'stroicieli', other: 'stroiciela' },
+    tuning: { one: 'strojenie', few: 'strojenia', many: 'strojeń', other: 'strojenia' },
+    vehicle: { one: 'pojazd', few: 'pojazdy', many: 'pojazdów', other: 'pojazdu' },
+    word: { one: 'słowo', few: 'słowa', many: 'słów', other: 'słowa' }
+  },
+  ratios: {
+    high: { one: '{n} raz za wysoko.', few: '{n} razy za wysoko.', many: '{n} razy za wysoko.', other: '{n} raza za wysoko.' },
+    low: { one: '{n} raz za nisko.', few: '{n} razy za nisko.', many: '{n} razy za nisko.', other: '{n} raza za nisko.' },
+    rowHigh: { one: '{n} raz za wysoko', few: '{n} razy za wysoko', many: '{n} razy za wysoko', other: '{n} raza za wysoko' },
+    rowLow: { one: '{n} raz za nisko', few: '{n} razy za nisko', many: '{n} razy za nisko', other: '{n} raza za nisko' },
+    biasHigh: { one: 'Średnio twoje odpowiedzi były {n} raz za wysokie.', few: 'Średnio twoje odpowiedzi były {n} razy za wysokie.', many: 'Średnio twoje odpowiedzi były {n} razy za wysokie.', other: 'Średnio twoje odpowiedzi były {n} raza za wysokie.' },
+    biasLow: { one: 'Średnio twoje odpowiedzi były {n} raz za niskie.', few: 'Średnio twoje odpowiedzi były {n} razy za niskie.', many: 'Średnio twoje odpowiedzi były {n} razy za niskie.', other: 'Średnio twoje odpowiedzi były {n} raza za niskie.' }
+  },
   factors: {
     aaEnergy: 'Energia oddawana przez jedną baterię AA',
     airDensity: 'Gęstość powietrza',

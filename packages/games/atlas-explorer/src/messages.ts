@@ -17,8 +17,9 @@ import { uk } from './locales/uk';
 import { zhHans } from './locales/zh-Hans';
 
 /**
- * UI translations of Atlas Explorer, one file per locale in ./locales (each typed against the English keys). Names of
- * places and the insight sentences live in `content/<locale>.ts` (ADR 0011); country names come from CLDR. Counts are
- * phrased as "label: {n}", and durations and distances come from `Intl`, so no plural forms are needed.
+ * Catalogue and start-screen texts of Atlas Explorer, one file per locale in ./locales (each typed against the English
+ * keys). The in-game texts, names of places and insight sentences are per-locale chunks in ./content (ADR 0011), loaded
+ * by `GameModule.preload`; country names come from CLDR. Counts are phrased as "label: {n}", and durations and
+ * distances come from `Intl`, so no plural forms are needed.
  */
 export const messages: GameMessages = { en, de, nl, es, fr, ru, 'zh-Hans': zhHans, ko, ja, ar, pt, it, pl, tr, uk, hi };

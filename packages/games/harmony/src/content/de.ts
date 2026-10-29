@@ -37,6 +37,15 @@ export const content: ContentText = {
   steps: { whole: 'GT', half: 'HT', three: 'GT+HT' },
   up: 'aufwärts',
   down: 'abwärts',
+  noteValues: {
+    eighth: { single: 'Achtelnote', count: { other: '{n} Achtelnoten' } },
+    quarter: { single: 'Viertelnote', count: { other: '{n} Viertelnoten' } },
+    'dotted-quarter': { single: 'punktierte Viertelnote', count: { other: '{n} punktierte Viertelnoten' } },
+    half: { single: 'halbe Note', count: { other: '{n} halbe Noten' } },
+    'rest-eighth': { single: 'Achtelpause', count: { other: '{n} Achtelpausen' } },
+    'rest-quarter': { single: 'Viertelpause', count: { other: '{n} Viertelpausen' } },
+    'rest-half': { single: 'halbe Pause', count: { other: '{n} halbe Pausen' } }
+  },
   tips: {
     interval: '{a} hat {na}, {b} hat {nb}. Zähle die Tasten von einem Ton zum anderen oder die Stufen im Notensystem.',
     chord: 'Zähle die geschichteten Terzen in Halbtönen: {a} ist {ta}, {b} ist {tb}.',

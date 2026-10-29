@@ -115,7 +115,7 @@ export const de: HarmonyMessages = {
   'staff.two': 'Zwei Töne: {a}, dann {b}',
   'staff.together': 'Töne zusammen: {notes}',
   'staff.notes': 'Töne: {notes}',
-  'staff.rhythm': 'Rhythmus in Noten: {text}',
+  'staff.rhythm': 'Rhythmus in Noten, 4/4-Takt: {text}',
   'staff.cadence': 'Vier Akkorde: {list}',
   'wave.none': 'Summe der Grundtöne: keine kurze Wiederholung.',
   'keys.name': 'Klaviatur',

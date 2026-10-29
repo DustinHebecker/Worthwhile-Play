@@ -1,11 +1,16 @@
 // @vitest-environment jsdom
 import { createTestContext } from '@wp/testing';
 import type { GameModule } from '@wp/game-core';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import game from '../src/index';
 import type { BalanceState, FreeState, RoundState } from '../src/rules';
 import { mobileBars, type MobileNode } from '../src/statics';
 import { mobileHooks } from '../src/rules';
+
+// The host awaits `preload` for the UI locale before creating the game (ADR 0011).
+beforeAll(async () => {
+  for (const locale of ['en', 'ar']) await game.preload!(locale);
+});
 
 afterEach(() => {
   document.body.innerHTML = '';
@@ -167,6 +172,41 @@ describe('view', () => {
     m.q('bl-hold')!.click();
     m.q('bl-undo')!.click();
     expect((m.state() as FreeState).scene).toEqual({ bench: 'beam', s: { half: 6, axle: 0, barKg: 0, weights: [] } });
+  });
+
+  it('stack-counter: a cube stacks on another or the step buttons jump past it, never half over it', () => {
+    for (let seed = 1; seed < 60; seed++) {
+      const m = mount({ mode: 'round', bench: 'stack', tasks: 'build' }, 'medium', 'en', seed);
+      const item = () => (m.state() as RoundState).items[0]!;
+      if (item().id !== 'stack-counter' || item().tray.length < 2) {
+        m.instance.dispose();
+        continue;
+      }
+      const xs = () => {
+        const d = item().draft;
+        return d.bench === 'stack' ? d.s.cubes.map((c) => c.x) : [];
+      };
+      m.q('bl-tray-0')!.click();
+      m.q('bl-place')!.click();
+      const [x] = xs() as [number];
+      // The second cube goes where the cursor rests, on the first one: they stack.
+      m.q('bl-tray-0')!.click();
+      m.q('bl-place')!.click();
+      expect(xs()).toEqual([x, x]);
+      // One step to the right jumps a whole cube width; back onto the first, then past it to the left.
+      m.q('bl-step-right')!.click();
+      expect(xs()).toEqual([x, x + 6]);
+      m.q('bl-step-left')!.click();
+      expect(xs()).toEqual([x, x]);
+      m.q('bl-step-left')!.click();
+      expect(xs()).toEqual([x, x - 6]);
+      // A 4 cm step that would end half over the other cube goes on to the next clear spot (here: onto it).
+      m.q('bl-step-right4')!.click();
+      expect(xs()).toEqual([x, x]);
+      expect(m.ctx.missingKeys).toEqual([]);
+      return;
+    }
+    throw new Error('no medium stack-counter task found');
   });
 
   it('keeps the scene left-to-right on an RTL page', () => {

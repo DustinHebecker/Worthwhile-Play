@@ -15,10 +15,20 @@
 .wp-pixel-peel .pp-left { color: var(--wp-muted); font-variant-numeric: tabular-nums; }
 
 .wp-pixel-peel .pp-main { display: grid; gap: 0.75rem; align-items: start; }
-@media (min-width: 48rem) {
+/*
+ * Side by side on wide screens and on phones held sideways (e.g. 740 × 360): the picture and the side column (status,
+ * waiting places, lanes) share the screen, so the player never scrolls between the picture and the shooters.
+ * The stacked layout below is the exact complement (keep the two queries, and stickyTop() in view.ts, in step).
+ */
+@media (min-width: 48rem), (min-width: 36rem) and (orientation: landscape) {
   .wp-pixel-peel .pp-main { grid-template-columns: minmax(0, 1.25fr) minmax(19rem, 1fr); }
   /* The picture stays in view while the side column (lanes, colours) scrolls past. */
   .wp-pixel-peel .pp-board { position: sticky; inset-block-start: 0.75rem; }
+}
+/* Short and sideways: the picture is limited by the height, so equal columns give the lanes the spare width. */
+@media (min-width: 36rem) and (orientation: landscape) and (max-height: 31.99rem) {
+  .wp-pixel-peel .pp-main { grid-template-columns: minmax(0, 1fr) minmax(19rem, 1fr); }
+  .wp-pixel-peel .pp-board { inset-block-start: 0.5rem; }
 }
 
 /* The picture is content: never mirrored, never wider than its column. */
@@ -32,11 +42,11 @@
   overscroll-behavior: contain;
 }
 /*
- * On phones held upright the picture stays at the top while the player scrolls to the lanes, so the spotlight is
- * always seen; the view keeps it within half the screen height. Not on short screens (a phone held sideways), where a
- * sticky picture would cover the lanes.
+ * Stacked (narrow screens, held upright): the picture stays at the top while the player scrolls to the lanes, so the
+ * spotlight is always seen; the view keeps it within half the screen height. Not on short screens, where a sticky
+ * picture would cover the lanes.
  */
-@media (max-width: 47.99rem) and (min-height: 32rem) {
+@media (max-width: 47.99rem) and (orientation: portrait) and (min-height: 32rem), (max-width: 35.99rem) and (min-height: 32rem) {
   .wp-pixel-peel .pp-board:not(.is-large) {
     position: sticky;
     inset-block-start: 0;

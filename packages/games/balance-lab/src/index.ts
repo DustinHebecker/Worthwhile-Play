@@ -1,4 +1,5 @@
 import { defineGame, type SettingSpec } from '@wp/game-core';
+import { preloadContent } from './content';
 import { metadata } from './metadata';
 import { isBalanceState, settingsOf, type BalanceState } from './rules';
 import { createBalance } from './view';
@@ -19,5 +20,7 @@ export default defineGame<BalanceState>({
   settings,
   settingsOf,
   create: createBalance,
-  isValidState: isBalanceState
+  isValidState: isBalanceState,
+  // The in-game texts of the UI locale (and the English fallback) load before a game starts (ADR 0011).
+  preload: preloadContent
 });

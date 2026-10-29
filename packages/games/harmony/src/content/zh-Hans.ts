@@ -37,6 +37,15 @@ export const content: ContentText = {
   steps: { whole: '全', half: '半', three: '全+半' },
   up: '上行',
   down: '下行',
+  noteValues: {
+    eighth: { single: '八分音符', count: { other: '{n}个八分音符' } },
+    quarter: { single: '四分音符', count: { other: '{n}个四分音符' } },
+    'dotted-quarter': { single: '附点四分音符', count: { other: '{n}个附点四分音符' } },
+    half: { single: '二分音符', count: { other: '{n}个二分音符' } },
+    'rest-eighth': { single: '八分休止符', count: { other: '{n}个八分休止符' } },
+    'rest-quarter': { single: '四分休止符', count: { other: '{n}个四分休止符' } },
+    'rest-half': { single: '二分休止符', count: { other: '{n}个二分休止符' } }
+  },
   tips: {
     interval: '{a}有{na}，{b}有{nb}。数一数从一个音到另一个音的琴键，或五线谱上的级数。',
     chord: '用半音数一数叠起来的三度：{a}是{ta}，{b}是{tb}。',

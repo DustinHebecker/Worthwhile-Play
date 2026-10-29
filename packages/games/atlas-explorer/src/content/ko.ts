@@ -1,6 +1,7 @@
 import type { ContentText } from './types';
+import { text } from './text/ko';
 
-/** Korean names and sentences of Atlas Explorer (design § 13.2; capitals of the *Capitals* deck come from `capitalName`). */
+/** Korean names, sentences and in-game texts of Atlas Explorer (design § 13.2; capitals of the *Capitals* deck come from `capitalName`). */
 export const content: ContentText = {
   names: {
     "new-york": "뉴욕",
@@ -197,5 +198,6 @@ export const content: ContentText = {
     "urals": "보통 유럽과 아시아의 경계의 일부로 여겨집니다.",
     "victoria": "아프리카에서 가장 큰 호수입니다. 나일강이 이곳에서 북쪽으로 흘러 나갑니다.",
     "yangtze": "아시아에서 가장 긴 강입니다."
-  }
+  },
+  text
 };

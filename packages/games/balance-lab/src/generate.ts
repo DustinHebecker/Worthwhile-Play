@@ -342,6 +342,20 @@ export function cubeSpots(scene: StackScene, on: number): number[] {
   return out;
 }
 
+/**
+ * Whether a cube centred at x on body `on` keeps clear of the other cubes there (`except`: the index of a cube to
+ * ignore, the one being moved): it shares a spot with each (cubes on the same spot stack) or sits at least a cube's
+ * width away, so shapes and kg labels never overlap. Old saves may hold closer cubes; they stay valid (`cubeSpots`).
+ */
+export function cubeClear(scene: StackScene, on: number, x: number, except = -1): boolean {
+  return scene.cubes.every((c, i) => i === except || c.on !== on || c.x === x || Math.abs(c.x - x) >= CUBE_WIDTH);
+}
+
+/** The spots of `cubeSpots` where a new (or the moved, `except`) cube keeps clear of the other cubes on that body. */
+export function freeCubeSpots(scene: StackScene, on: number, except = -1): number[] {
+  return cubeSpots(scene, on).filter((x) => cubeClear(scene, on, x, except));
+}
+
 /** Margin of a stack: the smallest distance of a centre of mass from the nearer contact edge, relative to its width. */
 export function stackMargin(scene: StackScene): number {
   let min = Number.POSITIVE_INFINITY;
@@ -371,7 +385,7 @@ function randomStack(rng: Rng, d: Difficulty): StackScene {
   const cubes = rng.int(0, p.cubes);
   for (let c = 0; c < cubes; c++) {
     const on = rng.int(0, n - 1);
-    const spots = cubeSpots(scene, on);
+    const spots = freeCubeSpots(scene, on);
     if (spots.length) scene.cubes.push({ kg: rng.int(1, 4), on, x: rng.pick(spots) });
   }
   return scene;
@@ -427,8 +441,8 @@ export function stackCounter(rng: Rng, d: Difficulty): TaskSpec {
     const plank: StackBody = { kind: 'plank', left };
     const scene: StackScene = { bodies: [plank], cubes: [], bucket: { kg: rng.int(1, d === 'easy' ? 2 : 4), on: 0, x: bodyRight(plank) - 2 } };
     if (stackVerdict(scene).stands) continue;
-    const spots = cubeSpots(scene, 0);
-    const cubes: StackCube[] = Array.from({ length: k }, () => ({ kg: rng.int(1, 4), on: 0, x: rng.pick(spots), free: true }));
+    const cubes: StackCube[] = [];
+    for (let c = 0; c < k; c++) cubes.push({ kg: rng.int(1, 4), on: 0, x: rng.pick(freeCubeSpots({ ...scene, cubes }, 0)), free: true });
     const witness: StackScene = { ...scene, cubes };
     if (!stackVerdict(witness).stands) continue;
     // Not too easy: the cubes placed in the middle of the plank must not already hold it.

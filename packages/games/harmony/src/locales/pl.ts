@@ -115,7 +115,7 @@ export const pl: HarmonyMessages = {
   'staff.two': 'Dwa dźwięki: {a}, potem {b}',
   'staff.together': 'Dźwięki razem: {notes}',
   'staff.notes': 'Dźwięki: {notes}',
-  'staff.rhythm': 'Rytm w zapisie nutowym: {text}',
+  'staff.rhythm': 'Rytm w zapisie nutowym, metrum 4/4: {text}',
   'staff.cadence': 'Cztery akordy: {list}',
   'wave.none': 'Suma tonów podstawowych: brak krótkiego powtórzenia.',
   'keys.name': 'Klawiatura fortepianu',
