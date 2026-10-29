@@ -1,4 +1,4 @@
-import { isArrayOf, isInt, isOneOf, isRecord, isUint32, normalizeSeed } from '@wp/game-core';
+import { createRng, isArrayOf, isInt, isOneOf, isRecord, isUint32, normalizeSeed } from '@wp/game-core';
 import { hostile, teamOf,
   archetypeOf,
   computeNetwork,
@@ -30,7 +30,7 @@ import { hostile, teamOf,
   type World,
   spawn
 } from '@wp/strategy-engine';
-import { DIFFICULTIES, planAi, type Difficulty } from './ai';
+import { DIFFICULTIES, planAi, type Difficulty, type Style } from './ai';
 import { FIELD_EXERCISE, opponentCounts, SCENARIOS, scenarioFor, type ScenarioSpec } from './scenarios';
 import { customSpec, isValidMap, mapIssues, MAP_SLOTS, type EditMap } from './maps';
 
@@ -255,6 +255,17 @@ export interface RcState {
    */
   levels?: Difficulty[];
 }
+
+/**
+ * The styles a computer side may play (owner decision 2026-10-29: "der Seed entscheidet pro Gegner
+ * zufällig", `Style` in ai.ts): spreading its attacks over the enemies by distance (A) or keeping a
+ * guard at home while other enemies are near (B). Both only matter against two or more enemies.
+ */
+export const OPPONENT_STYLES: readonly Style[] = ['spread', 'guarded'];
+
+/** The style a computer side plays: drawn once per game from its seed and the side (never Math.random). */
+export const styleOf = (state: Pick<RcState, 'seed'>, side: number): Style =>
+  OPPONENT_STYLES[Math.floor(createRng((state.seed ^ Math.imul(side + 1, 0x2545f491)) >>> 0).next() * OPPONENT_STYLES.length)] ?? 'direct';
 
 /** The difficulty a computer side plays at: its own level, else the game's. */
 export const levelOf = (state: Pick<RcState, 'difficulty' | 'levels'>, side: number): Difficulty => state.levels?.[side] ?? state.difficulty;
@@ -517,7 +528,7 @@ function resolveAll(state: RcState): RcState {
   const plans = Array.from({ length: state.world.sides }, (_, side): Command[] => {
     if (out.has(side)) return [];
     if (state.seats[side] === 'person') return side === state.planning ? state.draft : (state.locked[side] ?? []);
-    return planAi(observe(state.world, rules, side), rules, levelOf(state, side));
+    return planAi(observe(state.world, rules, side), rules, levelOf(state, side), styleOf(state, side));
   });
   const { world, events: all, reported } = resolveTurn(state.world, rules, plans);
   const entry: TurnLog = state.retired.length > 0 ? { turn: state.world.turn, plans, retired: state.retired } : { turn: state.world.turn, plans };
