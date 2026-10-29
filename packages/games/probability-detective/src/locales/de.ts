@@ -146,6 +146,8 @@ export const de: Catalogue = {
   'summary.close': 'Letzte Schätzungen sehr nah: {a} von {n} · nah: {b}',
   'summary.baseRate': 'Fälle, in denen deine erste Schätzung dem Hinweis folgte und die Grundrate wegließ: {n}',
   'summary.forecast': 'Durchschnittlicher Prognosewert: {a} (exakte Schätzungen bei denselben Fällen: {b})',
+  'summary.cases': 'Fall für Fall',
+  'summary.open': 'Öffne einen Fall, um die ganze Erklärung zu lesen.',
   'habit.less': 'Du hast dich meist weniger bewegt, als die Hinweise hergaben. Das ist ein häufiges Muster – Indizien verdienen oft einen größeren Schritt.',
   'habit.more': 'Du hast dich meist weiter bewegt, als die Hinweise hergaben.',
   'habit.right': 'Deine Schritte hatten ungefähr die richtige Größe.',

@@ -3,7 +3,7 @@ import { h } from '@wp/ui';
 import { contentFor, type TrapText } from './content';
 import { checkTrap, isReview, reviewTrap, setTrapDraft, toNumber, trapQuestions, type TrapCase } from './rules';
 import { diceCount, trapById, type ExplainSpec, type Token, type TrapQuestion } from './traps';
-import type { Ui } from './ui';
+import type { Level, Ui } from './ui';
 import type { Host } from './view-host';
 
 export const trapText = (locale: string, c: TrapCase): TrapText => contentFor(locale).traps[c.template]!;
@@ -142,6 +142,45 @@ export function trapVisual(ui: Ui, spec: ExplainSpec, text: TrapText, tokens: Re
   }
 }
 
+const trapOptionText = (ui: Ui, text: TrapText, tokens: Readonly<Record<string, Token>>, q: TrapQuestion, i: number): string =>
+  q.kind === 'choice' ? ui.fill(text.options[q.options[i]!] ?? q.options[i]!, tokens) : q.kind === 'count' ? ui.int(q.values[i]!) : '';
+
+/** The checked questions of a trap: each with the player's answer and the exact one; `level` is the heading level. */
+export function trapAnswers(ui: Ui, c: TrapCase, level: Level): HTMLElement[] {
+  const { t } = ui;
+  const text = trapText(ui.locale, c);
+  const tokens = trapById(c.template)!.tokens(c.params);
+  const optionText = (q: TrapQuestion, i: number) => trapOptionText(ui, text, tokens, q, i);
+  const answerText = (q: TrapQuestion, a: number | 'skip'): string => (a === 'skip' ? t('skipped') : q.kind === 'prob' ? ui.whole(a) : optionText(q, a));
+  const reviews = reviewTrap(c);
+  return trapQuestions(c).map((q, qi) => {
+    const r = reviews[qi]!;
+    const exact = q.kind === 'prob' ? ui.pct(q.exact) : optionText(q, q.correct);
+    return h(
+      'section',
+      { class: 'pd-question', 'data-testid': `pd-q${qi}` },
+      h(level, {}, ui.fill(text.questions[q.id] ?? '', tokens)),
+      h('p', {}, t('trap.your', { a: answerText(q, r.answer) })),
+      h('p', { 'data-testid': `pd-q${qi}-exact`, 'data-match': String(r.matches) }, r.matches ? t('trap.match') : t('trap.exact', { a: exact })),
+      r.band ? h('p', { class: 'pd-band', 'data-band': r.band }, `${t('trap.exact', { a: exact })} · ${ui.bandText(r.band)}`) : ''
+    );
+  });
+}
+
+/** Why a trap catches people: the explanation sentence and its visual (design § 11.5). */
+export function trapWhy(ui: Ui, c: TrapCase): HTMLElement[] {
+  const text = trapText(ui.locale, c);
+  const template = trapById(c.template)!;
+  return [h('p', { 'data-testid': 'pd-explain' }, ui.fill(text.explain, template.explainTokens(c.params))), trapVisual(ui, template.explain(c.params), text, template.tokens(c.params))];
+}
+
+/** The whole explanation of a checked trap for the round summary: the story, the answers and why. It sets no ids. */
+export const trapExplanation = (ui: Ui, c: TrapCase, level: Level): HTMLElement[] => [
+  h('p', { class: 'pd-story' }, ui.fill(trapText(ui.locale, c).story, trapById(c.template)!.tokens(c.params))),
+  ...trapAnswers(ui, c, level),
+  ...trapWhy(ui, c)
+];
+
 export function trapScreen(host: Host, c: TrapCase): HTMLElement[] {
   const { ui } = host;
   const { t } = ui;
@@ -151,10 +190,7 @@ export function trapScreen(host: Host, c: TrapCase): HTMLElement[] {
   const questions = trapQuestions(c);
   const reviewed = isReview(c);
 
-  const optionText = (q: TrapQuestion, i: number): string =>
-    q.kind === 'choice' ? ui.fill(text.options[q.options[i]!] ?? q.options[i]!, tokens) : q.kind === 'count' ? ui.int(q.values[i]!) : '';
-
-  const answerText = (q: TrapQuestion, a: number | 'skip'): string => (a === 'skip' ? t('skipped') : q.kind === 'prob' ? ui.whole(a) : optionText(q, a));
+  const optionText = (q: TrapQuestion, i: number): string => trapOptionText(ui, text, tokens, q, i);
 
   const probControl = (qi: number, value: number | null) => {
     const shown = value ?? 50;
@@ -183,18 +219,6 @@ export function trapScreen(host: Host, c: TrapCase): HTMLElement[] {
 
   const questionBlock = (q: TrapQuestion, qi: number) => {
     const legend = ui.fill(text.questions[q.id] ?? '', tokens);
-    if (reviewed) {
-      const r = reviewTrap(c)[qi]!;
-      const exact = q.kind === 'prob' ? ui.pct(q.exact) : optionText(q, q.correct);
-      return h(
-        'section',
-        { class: 'pd-question', 'data-testid': `pd-q${qi}` },
-        h('h3', {}, legend),
-        h('p', {}, t('trap.your', { a: answerText(q, r.answer) })),
-        h('p', { 'data-testid': `pd-q${qi}-exact`, 'data-match': String(r.matches) }, r.matches ? t('trap.match') : t('trap.exact', { a: exact })),
-        r.band ? h('p', { class: 'pd-band', 'data-band': r.band }, `${t('trap.exact', { a: exact })} · ${ui.bandText(r.band)}`) : ''
-      );
-    }
     const draft = c.drafts[qi] ?? null;
     if (q.kind === 'prob') return h('fieldset', { class: 'pd-question', 'data-testid': `pd-q${qi}` }, h('legend', {}, legend), ...probControl(qi, draft));
     const count = q.kind === 'choice' ? q.options.length : q.values.length;
@@ -217,15 +241,17 @@ export function trapScreen(host: Host, c: TrapCase): HTMLElement[] {
     host.commit(checkTrap(host.state(), skip), 'pd-review-heading', t('trap.explain'));
   };
 
-  const body: (HTMLElement | string)[] = [h('p', { class: 'pd-story', 'data-testid': 'pd-trap-story' }, ui.fill(text.story, tokens)), ...questions.map(questionBlock)];
+  const body: (HTMLElement | string)[] = [
+    h('p', { class: 'pd-story', 'data-testid': 'pd-trap-story' }, ui.fill(text.story, tokens)),
+    ...(reviewed ? trapAnswers(ui, c, 'h3') : questions.map(questionBlock))
+  ];
   if (reviewed) {
     body.push(
       h(
         'section',
         { class: 'pd-review', 'data-testid': 'pd-review' },
         ui.heading('h3', 'pd-review-heading', t('trap.explain')),
-        h('p', { 'data-testid': 'pd-explain' }, ui.fill(text.explain, template.explainTokens(c.params))),
-        trapVisual(ui, template.explain(c.params), text, tokens),
+        ...trapWhy(ui, c),
         h('div', { class: 'pd-actions' }, host.nextButton())
       )
     );

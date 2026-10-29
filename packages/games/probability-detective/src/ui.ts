@@ -10,6 +10,8 @@ import type { Difficulty } from './templates';
 import type { Token } from './traps';
 
 export const MARKS = ['●', '■', '▲'] as const;
+/** Heading level of explanation sections: h3 on a review screen, h4 inside a round-summary entry. */
+export type Level = 'h3' | 'h4';
 export const BAND_MARKS: Record<Band, string> = { spot: '●●●', close: '●●○', off: '●○○', far: '○○○' };
 
 export interface Ui {
