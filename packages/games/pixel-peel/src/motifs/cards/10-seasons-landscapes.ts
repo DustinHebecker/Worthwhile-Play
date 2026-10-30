@@ -58,5 +58,21 @@ export const CARDS: readonly MotifCard[] = [
     art: () => import('../baked/volcano'),
     title: { de: 'Vulkan bei Nacht', en: 'Volcano at night', nl: 'Vulkaan bij nacht', es: 'Volcán de noche', fr: 'Volcan la nuit', ru: 'Вулкан ночью', 'zh-Hans': '夜晚的火山', ko: '밤의 화산', ja: '夜の火山', ar: 'بركان في الليل', pt: 'Vulcão à noite', it: 'Vulcano di notte', pl: 'Wulkan nocą', tr: 'Gece yanardağ', uk: 'Вулкан уночі', hi: 'रात में ज्वालामुखी' },
     place: { de: 'Aktive Vulkane, etwa auf Hawaii, Island oder Sizilien', en: 'Active volcanoes, as in Hawaii, Iceland or Sicily', nl: 'Actieve vulkanen, zoals op Hawaï, IJsland of Sicilië', es: 'Volcanes activos, como en Hawái, Islandia o Sicilia', fr: 'Volcans actifs, comme à Hawaï, en Islande ou en Sicile', ru: 'Действующие вулканы, например на Гавайях, в Исландии или на Сицилии', 'zh-Hans': '活火山，例如在夏威夷、冰岛或西西里岛', ko: '하와이, 아이슬란드, 시칠리아 같은 곳의 활화산', ja: 'ハワイ、アイスランド、シチリアなどの活火山', ar: 'براكين نشطة، كما في هاواي أو آيسلندا أو صقلية', pt: 'Vulcões ativos, como no Havai, na Islândia ou na Sicília', it: 'Vulcani attivi, come alle Hawaii, in Islanda o in Sicilia', pl: 'Czynne wulkany, np. na Hawajach, Islandii lub Sycylii', tr: 'Hawaii, İzlanda ya da Sicilya’daki gibi etkin yanardağlar', uk: 'Діючі вулкани, як-от на Гаваях, в Ісландії чи на Сицилії', hi: 'सक्रिय ज्वालामुखी, जैसे हवाई, आइसलैंड या सिसिली में' }
+  },
+  {
+    id: 'mangroves',
+    group: 'landscape',
+    aspect: 'wide',
+    art: () => import('../baked/mangroves'),
+    title: { de: 'Mangroven bei Ebbe', en: 'Mangroves at low tide', nl: 'Mangroven bij eb', es: 'Manglar en marea baja', fr: 'Mangrove à marée basse', ru: 'Мангровые заросли в отлив', 'zh-Hans': '退潮时的红树林', ko: '썰물 때의 맹그로브 숲', ja: '干潮のマングローブ林', ar: 'غابة المانغروف عند الجزر', pt: 'Mangue na maré baixa', it: 'Mangrovie con la bassa marea', pl: 'Namorzyny w czasie odpływu', tr: 'Cezirde mangrov ormanı', uk: 'Мангри під час відпливу', hi: 'भाटे के समय मैंग्रोव वन' },
+    place: { de: 'Tropische Küsten weltweit', en: 'Tropical coasts around the world', nl: 'Tropische kusten over de hele wereld', es: 'Costas tropicales de todo el mundo', fr: 'Côtes tropicales du monde entier', ru: 'Тропические побережья по всему миру', 'zh-Hans': '世界各地的热带海岸', ko: '세계 곳곳의 열대 해안', ja: '世界各地の熱帯の海岸', ar: 'السواحل الاستوائية حول العالم', pt: 'Costas tropicais de todo o mundo', it: 'Coste tropicali di tutto il mondo', pl: 'Tropikalne wybrzeża na całym świecie', tr: 'Dünyanın dört bir yanındaki tropik kıyılar', uk: 'Тропічні узбережжя по всьому світу', hi: 'दुनिया भर के उष्णकटिबंधीय तट' }
+  },
+  {
+    id: 'savanna',
+    group: 'landscape',
+    aspect: 'panorama',
+    art: () => import('../baked/savanna'),
+    title: { de: 'Savanne bei Sonnenuntergang', en: 'Savanna at sunset', nl: 'Savanne bij zonsondergang', es: 'Sabana al atardecer', fr: 'Savane au coucher du soleil', ru: 'Саванна на закате', 'zh-Hans': '日落时的稀树草原', ko: '해 질 녘의 사바나', ja: '夕暮れのサバンナ', ar: 'السافانا عند الغروب', pt: 'Savana ao pôr do sol', it: 'Savana al tramonto', pl: 'Sawanna o zachodzie słońca', tr: 'Gün batımında savan', uk: 'Савана на заході сонця', hi: 'सूर्यास्त के समय सवाना' },
+    place: { de: 'Ostafrika, etwa Kenia und Tansania', en: 'East Africa, as in Kenya and Tanzania', nl: 'Oost-Afrika, zoals Kenia en Tanzania', es: 'África oriental, como Kenia y Tanzania', fr: 'Afrique de l’Est, comme le Kenya et la Tanzanie', ru: 'Восточная Африка, например Кения и Танзания', 'zh-Hans': '东非，例如肯尼亚和坦桑尼亚', ko: '케냐, 탄자니아 같은 동아프리카', ja: 'ケニアやタンザニアなどの東アフリカ', ar: 'شرق أفريقيا، مثل كينيا وتنزانيا', pt: 'África Oriental, como o Quénia e a Tanzânia', it: 'Africa orientale, come Kenya e Tanzania', pl: 'Afryka Wschodnia, np. Kenia i Tanzania', tr: 'Kenya ve Tanzanya gibi Doğu Afrika', uk: 'Східна Африка, як-от Кенія і Танзанія', hi: 'पूर्वी अफ़्रीका, जैसे केन्या और तंज़ानिया' }
   }
 ];
