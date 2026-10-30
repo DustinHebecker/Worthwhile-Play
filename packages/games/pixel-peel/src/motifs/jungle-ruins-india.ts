@@ -1,0 +1,150 @@
+import type { Motif } from '../art/types';
+
+/** A ruined sandstone temple tower with carved tiers, swallowed by the roots of a banyan tree in an Indian jungle, with grey langurs sitting on its steps. Original vector art drawn for Worthwhile Play. */
+export const jungleRuinsIndia: Motif = {
+  id: 'jungle-ruins-india',
+  group: 'landscape',
+  title: {
+    de: 'Tempelruine im Dschungel',
+    en: 'Jungle temple ruins',
+    nl: 'Tempelruïne in de jungle',
+    es: 'Templo en ruinas en la selva',
+    fr: 'Temple en ruine dans la jungle',
+    ru: 'Руины храма в джунглях',
+    'zh-Hans': '丛林中的神庙遗迹',
+    ko: '정글 속 사원 유적',
+    ja: 'ジャングルの寺院遺跡',
+    ar: 'أطلال معبد في الغابة',
+    pt: 'Ruínas de templo na selva',
+    it: 'Tempio in rovina nella giungla',
+    pl: 'Ruiny świątyni w dżungli',
+    tr: 'Ormandaki tapınak kalıntıları',
+    uk: 'Руїни храму в джунглях',
+    hi: 'जंगल में मंदिर के खंडहर'
+  },
+  place: {
+    de: 'Tropische Wälder Indiens',
+    en: 'Tropical forests of India',
+    nl: 'Tropische bossen van India',
+    es: 'Bosques tropicales de la India',
+    fr: 'Forêts tropicales de l’Inde',
+    ru: 'Тропические леса Индии',
+    'zh-Hans': '印度的热带森林',
+    ko: '인도의 열대림',
+    ja: 'インドの熱帯林',
+    ar: 'الغابات الاستوائية في الهند',
+    pt: 'Florestas tropicais da Índia',
+    it: 'Foreste tropicali dell’India',
+    pl: 'Lasy tropikalne Indii',
+    tr: 'Hindistan’ın tropik ormanları',
+    uk: 'Тропічні ліси Індії',
+    hi: 'भारत के उष्णकटिबंधीय वन'
+  },
+  aspect: 'tall',
+  backdrop: '#c8b8e8',
+  palette: {
+    y: ['#fbeaa6', 'lightYellow', 1],
+    z: ['#e8b84a', 'gold', 3, 'y'],
+    a: ['#3f806d', 'teal', 1],
+    n: ['#1f5046', 'darkTeal', 3, 'a'],
+    t: ['#d4a86c', 'tan', 1],
+    p: ['#ecd8b2', 'beige', 2, 't'],
+    l: ['#a3744a', 'lightBrown', 1],
+    b: ['#6c472f', 'brown', 1],
+    c: ['#4a3123', 'darkBrown', 2, 'b'],
+    k: ['#1b1918', 'charcoal', 1],
+    g: ['#8d867a', 'grey', 1],
+    u: ['#5b5750', 'darkGrey', 2, 'g'],
+    w: ['#d3d0c8', 'lightGrey', 1],
+    d: ['#1f4a29', 'darkGreen', 1],
+    e: ['#4d8f36', 'green', 1],
+    i: ['#a1ca4a', 'lime', 1],
+    x: ['#6d7531', 'olive', 2, 'e']
+  },
+  layers: [
+    // Warm light behind the trees, the jungle hazy blue-green in the distance.
+    { shape: { all: true }, fill: 'a' },
+    { shape: { ellipse: [50, 14, 30, 24] }, fill: 'y' },
+    { shape: { ellipse: [14, 60, 16, 22] }, fill: 'n', shade: { light: 'a', dir: 'ne', width: 2 } },
+    { shape: { ellipse: [88, 70, 16, 24] }, fill: 'n', shade: { light: 'a', dir: 'nw', width: 2 } },
+    { shape: { rect: [0, 30, 100, 80] }, fill: { scatter: 'n', density: 0.1, salt: 81 }, min: 39 },
+    // The stone platform and the steps in front.
+    { shape: { rect: [18, 100, 64, 10] }, fill: 'l', shade: { light: 't', dark: 'b', dir: 'nw', width: 2 } },
+    { name: 'steps', shape: { poly: [[30, 110], [70, 110], [76, 134], [24, 134]] }, fill: { stripes: ['t', 't', 'b'], width: 2.2, angle: 90 } },
+    { shape: { poly: [[24, 110], [30, 110], [24, 134], [18, 134]] }, fill: 'b', shade: { dark: 'c', dir: 'e', mode: 'band', amount: 0.4 } },
+    { shape: { poly: [[70, 110], [76, 110], [82, 134], [76, 134]] }, fill: 'b', shade: { dark: 'c', dir: 'w', mode: 'band', amount: 0.4 } },
+    { shape: { rect: [24, 110, 58, 24] }, fill: { scatter: 'x', density: 0.1, salt: 82 }, clip: 'steps', min: 39 },
+    // The temple tower: a curved spire of carved tiers, lit from the left, with a ribbed crown stone.
+    {
+      name: 'tower',
+      shape: {
+        poly: [[33, 101], [33, 72], [31, 70], [31, 60], [32, 48], [35, 38], [39, 30], [44, 25], [50, 23], [56, 25], [61, 30], [65, 38], [68, 48], [69, 60], [69, 70], [67, 72], [67, 101]],
+        smooth: 1
+      },
+      fill: { stripes: ['t', 't', 'l'], width: 1.8, angle: 90 },
+      shade: { light: 'p', dark: 'b', dir: 'w', mode: 'band', amount: 0.3 }
+    },
+    { shape: { poly: [[44, 26], [56, 26], [58, 40], [59, 72], [41, 72], [42, 40]], smooth: 1 }, fill: { stripes: ['p', 't', 'l'], width: 1.8, angle: 90 }, clip: 'tower' },
+    { shape: { line: [[38, 34], [36, 50], [36, 70]], width: 1 }, fill: 'b', clip: 'tower', min: 39 },
+    { shape: { line: [[62, 34], [64, 50], [64, 70]], width: 1 }, fill: 'c', clip: 'tower', min: 39 },
+    { shape: { rect: [31, 72, 38, 4] }, fill: 'b', shade: { light: 'l', dir: 'n', mode: 'band', amount: 0.4 } },
+    { shape: { rect: [33, 76, 34, 6] }, fill: 'l' },
+    { shape: { rect: [33, 76, 34, 6] }, fill: { stripes: ['t', 'c'], width: 2, angle: 0 }, min: 39 },
+    { shape: { ellipse: [50, 21.6, 6.6, 2.6] }, fill: { stripes: ['t', 'b'], width: 1.4, angle: 0 }, shade: { light: 'p', dir: 'w', mode: 'band', amount: 0.3 } },
+    { shape: { poly: [[48.6, 19.4], [51.4, 19.4], [51, 16], [50, 13.6], [49, 16]] }, fill: 'l', keep: true },
+    // The doorway into the dark sanctum, with a carved frame.
+    { shape: { poly: [[42, 101], [42, 90], [44, 86], [50, 83], [56, 86], [58, 90], [58, 101]], smooth: 1 }, fill: 'b', shade: { light: 't', dir: 'w', width: 1 } },
+    { shape: { poly: [[44.6, 101], [44.6, 91], [46.4, 88], [50, 86.4], [53.6, 88], [55.4, 91], [55.4, 101]], smooth: 1 }, fill: 'k' },
+    // The banyan: a trunk of braided roots on the right, its roots pouring over the tower's shoulder to the ground.
+    { name: 'trunk', shape: { poly: [[76, 20], [90, 22], [94, 40], [92, 70], [96, 100], [78, 100], [82, 72], [80, 44]], smooth: 1 }, fill: 'g', shade: { light: 'w', dark: 'u', dir: 'w', width: 2 } },
+    { shape: { line: [[84, 26], [86, 50], [84, 74], [86, 98]], width: 1.2 }, fill: 'u', clip: 'trunk' },
+    { shape: { line: [[90, 30], [89, 56], [92, 98]], width: 1 }, fill: 'u', clip: 'trunk', min: 39 },
+    { shape: { line: [[80, 30], [80, 52]], width: 1 }, fill: 'w', clip: 'trunk', min: 39 },
+    { shape: { line: [[78, 22], [66, 24], [62, 32], [62, 50], [66, 70], [68, 100]], width: 2.4 }, fill: 'g', shade: { light: 'w', dark: 'u', dir: 'w' } },
+    { shape: { line: [[80, 24], [72, 30], [70, 50], [74, 72], [74, 100]], width: 2 }, fill: 'g', shade: { dark: 'u', dir: 'w' } },
+    { shape: { line: [[64, 28], [57, 36], [55, 52], [56, 70]], width: 1.6 }, fill: 'g', shade: { light: 'w', dir: 'w' } },
+    { shape: { line: [[62, 40], [66, 56], [63, 74], [62, 88]], width: 1 }, fill: 'u', min: 39 },
+    { shape: { line: [[57, 48], [52, 58], [51, 70]], width: 1 }, fill: 'g', min: 39 },
+    { shape: { line: [[70, 30], [76, 50], [77, 76]], width: 1 }, fill: 'u', min: 45 },
+    { shape: { line: [[98, 36], [99, 70], [98, 100]], width: 1.2 }, fill: 'g' },
+    { shape: { line: [[40, 28], [36, 40], [35, 54]], width: 1.2 }, fill: 'g', min: 39 },
+    // Moss and small plants growing on the stone.
+    { shape: { ellipse: [40, 31, 3, 1.6] }, fill: 'x' },
+    { shape: { ellipse: [34, 60, 2.6, 1.6] }, fill: 'x', min: 39 },
+    { shape: { ellipse: [48, 72.4, 4, 1.4] }, fill: 'e' },
+    { shape: { ellipse: [26, 100.6, 6, 1.6] }, fill: 'x' },
+    // The banyan's crown and jungle trees framing the view, lit from the upper left.
+    { shape: { ellipse: [80, 12, 22, 14] }, fill: 'e', shade: { light: 'i', dark: 'd', dir: 'nw', width: 2 } },
+    { shape: { ellipse: [96, 30, 10, 12] }, fill: 'd', shade: { light: 'e', dir: 'nw', width: 2 } },
+    { shape: { ellipse: [14, 14, 20, 14] }, fill: 'e', shade: { light: 'i', dark: 'd', dir: 'nw', width: 2 } },
+    { shape: { ellipse: [4, 34, 10, 12] }, fill: 'd', shade: { light: 'e', dir: 'ne', width: 2 } },
+    { shape: { ellipse: [30, 4, 10, 6] }, fill: 'e', shade: { light: 'i', dark: 'd', dir: 'nw' } },
+    { shape: { ellipse: [68, 4, 10, 5] }, fill: 'e', shade: { light: 'i', dark: 'd', dir: 'nw' } },
+    { shape: { rect: [0, 0, 100, 40] }, fill: { scatter: 'i', density: 0.06, salt: 83 }, min: 39 },
+    // Shafts of afternoon sun slanting through the canopy.
+    { shape: { poly: [[18, 20], [26, 18], [52, 110], [42, 112]] }, fill: { scatter: 'z', density: 0.22, salt: 84 }, min: 45 },
+    { shape: { poly: [[30, 14], [34, 13], [60, 96], [55, 97]] }, fill: { scatter: 'z', density: 0.16, salt: 85 }, min: 45 },
+    // Ferns and big leaves in the corners.
+    { shape: { ellipse: [8, 118, 12, 8], rot: -30 }, fill: 'e', shade: { light: 'i', dark: 'd', dir: 'nw', width: 2 } },
+    { shape: { ellipse: [4, 130, 14, 6], rot: -10 }, fill: 'd', shade: { light: 'e', dir: 'n', width: 2 } },
+    { shape: { ellipse: [92, 116, 12, 8], rot: 30 }, fill: 'e', shade: { light: 'i', dark: 'd', dir: 'nw', width: 2 } },
+    { shape: { ellipse: [96, 130, 14, 6], rot: 10 }, fill: 'd', shade: { light: 'e', dir: 'n', width: 2 } },
+    { shape: { line: [[8, 118], [18, 112]], width: 1 }, fill: 'd', min: 39 },
+    { shape: { line: [[92, 116], [82, 110]], width: 1 }, fill: 'd', min: 39 },
+    // A grey langur sitting on the steps: black face, hands and feet, a pale fringe, a long tail hanging down.
+    { shape: { line: [[68, 118], [71, 124], [71.4, 131]], width: 1.6 }, fill: 'u' },
+    { shape: { ellipse: [63.6, 112.6, 6, 7.6] }, fill: 'w', shade: { dark: 'g', dir: 'nw', width: 1 } },
+    { shape: { ellipse: [62, 120, 5.6, 2] }, fill: 'g' },
+    { shape: { ellipse: [62.4, 102.4, 4.6, 4.2] }, fill: 'w', shade: { dark: 'g', dir: 'nw', mode: 'band', amount: 0.2 } },
+    { shape: { ellipse: [61, 103.2, 2.8, 2.6] }, fill: 'k', keep: true },
+    { shape: { line: [[60.4, 112], [58.4, 116.6]], width: 1.4 }, fill: 'g', min: 39 },
+    { shape: { ellipse: [58.2, 117, 1.4, 1] }, fill: 'k', keep: true },
+    { shape: { ellipse: [57.4, 120.6, 1.8, 1] }, fill: 'k' },
+    // A second langur on the platform to the left of the tower, its tail curling over the edge.
+    { shape: { line: [[22, 99], [19.4, 103], [20, 108], [22.6, 110.4]], width: 1.4 }, fill: 'u' },
+    { shape: { ellipse: [25.2, 94.4, 4.2, 5.4] }, fill: 'w', shade: { dark: 'g', dir: 'nw', width: 1 } },
+    { shape: { ellipse: [26.2, 87.4, 3.4, 3.2] }, fill: 'w' },
+    { shape: { ellipse: [27.2, 88, 2, 2] }, fill: 'k', keep: true },
+    { shape: { ellipse: [28.4, 99.6, 1.6, 0.9] }, fill: 'k', min: 39 }
+  ]
+};

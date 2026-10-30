@@ -50,5 +50,21 @@ export const CARDS: readonly MotifCard[] = [
     art: () => import('../baked/tundra'),
     title: { de: 'Tundra im Herbst', en: 'Tundra in autumn', nl: 'Toendra in de herfst', es: 'Tundra en otoño', fr: 'Toundra en automne', ru: 'Тундра осенью', 'zh-Hans': '秋日苔原', ko: '가을의 툰드라', ja: '秋のツンドラ', ar: 'التندرا في الخريف', pt: 'Tundra no outono', it: 'Tundra in autunno', pl: 'Tundra jesienią', tr: 'Sonbaharda tundra', uk: 'Тундра восени', hi: 'पतझड़ में टुंड्रा' },
     place: { de: 'Arktische Tundra, etwa in Lappland', en: 'Arctic tundra, such as in Lapland', nl: 'Arctische toendra, zoals in Lapland', es: 'Tundra ártica, como en Laponia', fr: 'Toundra arctique, par exemple en Laponie', ru: 'Арктическая тундра, например в Лапландии', 'zh-Hans': '北极苔原，例如拉普兰', ko: '라플란드 같은 북극 툰드라', ja: 'ラップランドなどの北極圏のツンドラ', ar: 'التندرا القطبية الشمالية، مثل لابلاند', pt: 'Tundra ártica, como na Lapônia', it: 'Tundra artica, per esempio in Lapponia', pl: 'Tundra arktyczna, na przykład w Laponii', tr: 'Laponya gibi Arktik tundra bölgeleri', uk: 'Арктична тундра, наприклад у Лапландії', hi: 'आर्कटिक टुंड्रा, जैसे लैपलैंड में' }
+  },
+  {
+    id: 'amazon-rainforest',
+    group: 'landscape',
+    aspect: 'square',
+    art: () => import('../baked/amazon-rainforest'),
+    title: { de: 'Amazonas-Regenwald', en: 'Amazon rainforest', nl: 'Amazoneregenwoud', es: 'Selva amazónica', fr: 'Forêt amazonienne', ru: 'Леса Амазонии', 'zh-Hans': '亚马孙雨林', ko: '아마존 열대우림', ja: 'アマゾンの熱帯雨林', ar: 'غابات الأمازون المطيرة', pt: 'Floresta Amazônica', it: 'Foresta amazzonica', pl: 'Puszcza Amazońska', tr: 'Amazon yağmur ormanı', uk: 'Амазонський дощовий ліс', hi: 'अमेज़न वर्षावन' },
+    place: { de: 'Amazonasbecken, Südamerika', en: 'Amazon basin, South America', nl: 'Amazonebekken, Zuid-Amerika', es: 'Cuenca del Amazonas, Sudamérica', fr: 'Bassin amazonien, Amérique du Sud', ru: 'Бассейн Амазонки, Южная Америка', 'zh-Hans': '南美洲亚马孙盆地', ko: '남아메리카 아마존강 유역', ja: '南アメリカ、アマゾン川流域', ar: 'حوض الأمازون، أمريكا الجنوبية', pt: 'Bacia Amazônica, América do Sul', it: 'Bacino amazzonico, Sud America', pl: 'Dorzecze Amazonki, Ameryka Południowa', tr: 'Amazon Havzası, Güney Amerika', uk: 'Басейн Амазонки, Південна Америка', hi: 'अमेज़न बेसिन, दक्षिण अमेरिका' }
+  },
+  {
+    id: 'jungle-ruins-india',
+    group: 'landscape',
+    aspect: 'tall',
+    art: () => import('../baked/jungle-ruins-india'),
+    title: { de: 'Tempelruine im Dschungel', en: 'Jungle temple ruins', nl: 'Tempelruïne in de jungle', es: 'Templo en ruinas en la selva', fr: 'Temple en ruine dans la jungle', ru: 'Руины храма в джунглях', 'zh-Hans': '丛林中的神庙遗迹', ko: '정글 속 사원 유적', ja: 'ジャングルの寺院遺跡', ar: 'أطلال معبد في الغابة', pt: 'Ruínas de templo na selva', it: 'Tempio in rovina nella giungla', pl: 'Ruiny świątyni w dżungli', tr: 'Ormandaki tapınak kalıntıları', uk: 'Руїни храму в джунглях', hi: 'जंगल में मंदिर के खंडहर' },
+    place: { de: 'Tropische Wälder Indiens', en: 'Tropical forests of India', nl: 'Tropische bossen van India', es: 'Bosques tropicales de la India', fr: 'Forêts tropicales de l’Inde', ru: 'Тропические леса Индии', 'zh-Hans': '印度的热带森林', ko: '인도의 열대림', ja: 'インドの熱帯林', ar: 'الغابات الاستوائية في الهند', pt: 'Florestas tropicais da Índia', it: 'Foreste tropicali dell’India', pl: 'Lasy tropikalne Indii', tr: 'Hindistan’ın tropik ormanları', uk: 'Тропічні ліси Індії', hi: 'भारत के उष्णकटिबंधीय वन' }
   }
 ];
