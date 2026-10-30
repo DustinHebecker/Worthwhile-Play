@@ -18,5 +18,21 @@ export const CARDS: readonly MotifCard[] = [
     art: () => import('../baked/salar-de-uyuni'),
     title: { de: 'Salar de Uyuni', en: 'Salar de Uyuni', nl: 'Salar de Uyuni', es: 'Salar de Uyuni', fr: 'Salar d’Uyuni', ru: 'Солончак Уюни', 'zh-Hans': '乌尤尼盐沼', ko: '우유니 소금사막', ja: 'ウユニ塩原', ar: 'سالار دي أويوني', pt: 'Salar de Uyuni', it: 'Salar de Uyuni', pl: 'Salar de Uyuni', tr: 'Uyuni Tuz Düzlüğü', uk: 'Солончак Уюні', hi: 'सालार दे उयूनी' },
     place: { de: 'Departamento Potosí, Bolivien', en: 'Potosí Department, Bolivia', nl: 'Departement Potosí, Bolivia', es: 'Departamento de Potosí, Bolivia', fr: 'Département de Potosí, Bolivie', ru: 'Департамент Потоси, Боливия', 'zh-Hans': '玻利维亚波托西省', ko: '볼리비아 포토시주', ja: 'ボリビア、ポトシ県', ar: 'مقاطعة بوتوسي، بوليفيا', pt: 'Departamento de Potosí, Bolívia', it: 'Dipartimento di Potosí, Bolivia', pl: 'Departament Potosí, Boliwia', tr: 'Potosí Departmanı, Bolivya', uk: 'Департамент Потосі, Болівія', hi: 'पोतोसी विभाग, बोलीविया' }
+  },
+  {
+    id: 'desert-oasis',
+    group: 'landscape',
+    aspect: 'square',
+    art: () => import('../baked/desert-oasis'),
+    title: { de: 'Oase in der Wüste', en: 'Desert oasis', nl: 'Oase in de woestijn', es: 'Oasis en el desierto', fr: 'Oasis dans le désert', ru: 'Оазис в пустыне', 'zh-Hans': '沙漠绿洲', ko: '사막의 오아시스', ja: '砂漠のオアシス', ar: 'واحة في الصحراء', pt: 'Oásis no deserto', it: 'Oasi nel deserto', pl: 'Oaza na pustyni', tr: 'Çölde bir vaha', uk: 'Оаза в пустелі', hi: 'रेगिस्तान में नख़लिस्तान' },
+    place: { de: 'Sahara, Nordafrika', en: 'Sahara, North Africa', nl: 'Sahara, Noord-Afrika', es: 'Sáhara, norte de África', fr: 'Sahara, Afrique du Nord', ru: 'Сахара, Северная Африка', 'zh-Hans': '北非撒哈拉沙漠', ko: '북아프리카 사하라 사막', ja: '北アフリカ、サハラ砂漠', ar: 'الصحراء الكبرى، شمال أفريقيا', pt: 'Saara, Norte da África', it: 'Sahara, Nord Africa', pl: 'Sahara, Afryka Północna', tr: 'Sahra Çölü, Kuzey Afrika', uk: 'Сахара, Північна Африка', hi: 'सहारा, उत्तरी अफ़्रीका' }
+  },
+  {
+    id: 'icebergs',
+    group: 'landscape',
+    aspect: 'wide',
+    art: () => import('../baked/icebergs'),
+    title: { de: 'Eisberge', en: 'Icebergs', nl: 'IJsbergen', es: 'Icebergs', fr: 'Icebergs', ru: 'Айсберги', 'zh-Hans': '冰山', ko: '빙산', ja: '氷山', ar: 'جبال جليدية', pt: 'Icebergs', it: 'Iceberg', pl: 'Góry lodowe', tr: 'Buzdağları', uk: 'Айсберги', hi: 'हिमशैल' },
+    place: { de: 'Polarmeere der Arktis und Antarktis', en: 'Polar seas of the Arctic and Antarctic', nl: 'Poolzeeën van de Noord- en Zuidpool', es: 'Mares polares del Ártico y la Antártida', fr: 'Mers polaires de l’Arctique et de l’Antarctique', ru: 'Полярные моря Арктики и Антарктики', 'zh-Hans': '北极和南极的极地海域', ko: '북극과 남극의 극지 바다', ja: '北極と南極の極地の海', ar: 'البحار القطبية في القطبين الشمالي والجنوبي', pt: 'Mares polares do Ártico e da Antártida', it: 'Mari polari dell’Artico e dell’Antartide', pl: 'Morza polarne Arktyki i Antarktyki', tr: 'Arktik ve Antarktika’nın kutup denizleri', uk: 'Полярні моря Арктики та Антарктики', hi: 'आर्कटिक और अंटार्कटिक के ध्रुवीय समुद्र' }
   }
 ];
