@@ -74,5 +74,13 @@ export const CARDS: readonly MotifCard[] = [
     art: () => import('../baked/dutch-windmill'),
     title: { de: 'Holländische Windmühle', en: 'Dutch windmill', nl: 'Hollandse windmolen', es: 'Molino holandés', fr: 'Moulin hollandais', ru: 'Голландская мельница', 'zh-Hans': '荷兰风车', ko: '네덜란드 풍차', ja: 'オランダの風車', ar: 'طاحونة هولندية', pt: 'Moinho holandês', it: 'Mulino olandese', pl: 'Holenderski wiatrak', tr: 'Hollanda yel değirmeni', uk: 'Голландський вітряк', hi: 'डच पवनचक्की' },
     place: { de: 'An einem Kanal in den Niederlanden', en: 'By a canal in the Netherlands', nl: 'Aan een vaart in Nederland', es: 'Junto a un canal en los Países Bajos', fr: 'Au bord d’un canal aux Pays-Bas', ru: 'У канала в Нидерландах', 'zh-Hans': '荷兰的运河边', ko: '네덜란드의 운하 옆', ja: 'オランダの運河のほとり', ar: 'بجانب قناة في هولندا', pt: 'Junto a um canal nos Países Baixos', it: 'Lungo un canale nei Paesi Bassi', pl: 'Nad kanałem w Holandii', tr: 'Hollanda’da bir kanal kenarında', uk: 'Біля каналу в Нідерландах', hi: 'नीदरलैंड्स में एक नहर के किनारे' }
+  },
+  {
+    id: 'giza-pyramids',
+    group: 'landmark',
+    aspect: 'panorama',
+    art: () => import('../baked/giza-pyramids'),
+    title: { de: 'Pyramiden von Gizeh', en: 'Pyramids of Giza', nl: 'Piramides van Gizeh', es: 'Pirámides de Guiza', fr: 'Pyramides de Gizeh', ru: 'Пирамиды Гизы', 'zh-Hans': '吉萨金字塔', ko: '기자의 피라미드', ja: 'ギザの三大ピラミッド', ar: 'أهرامات الجيزة', pt: 'Pirâmides de Gizé', it: 'Piramidi di Giza', pl: 'Piramidy w Gizie', tr: 'Gize piramitleri', uk: 'Піраміди Гізи', hi: 'गीज़ा के पिरामिड' },
+    place: { de: 'Gizeh, Ägypten', en: 'Giza, Egypt', nl: 'Gizeh, Egypte', es: 'Guiza, Egipto', fr: 'Gizeh, Égypte', ru: 'Гиза, Египет', 'zh-Hans': '埃及吉萨', ko: '이집트 기자', ja: 'エジプト、ギザ', ar: 'الجيزة، مصر', pt: 'Gizé, Egito', it: 'Giza, Egitto', pl: 'Giza, Egipt', tr: 'Gize, Mısır', uk: 'Гіза, Єгипет', hi: 'गीज़ा, मिस्र' }
   }
 ];

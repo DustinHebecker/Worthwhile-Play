@@ -8,6 +8,7 @@ import { sugarloafMountain } from '../sugarloaf-mountain';
 import { uluru } from '../uluru';
 import { greatWall } from '../great-wall';
 import { dutchWindmill } from '../dutch-windmill';
+import { gizaPyramids } from '../giza-pyramids';
 
 /** Ten famous landmarks around the world (batch 15, landmarks). */
-export const BATCH: readonly Motif[] = [mountFuji, toriiGate, empireStateBuilding, brandenburgGate, eiffelTower, sugarloafMountain, uluru, greatWall, dutchWindmill];
+export const BATCH: readonly Motif[] = [mountFuji, toriiGate, empireStateBuilding, brandenburgGate, eiffelTower, sugarloafMountain, uluru, greatWall, dutchWindmill, gizaPyramids];
