@@ -65,7 +65,6 @@ export const snowyPines: Motif = {
     // Blue hour: deep navy above, a last violet and peach glow low in the sky, the first stars.
     { shape: { rect: [0, 0, 100, 100] }, fill: { gradient: ['n', 'b', 'v', 'a'], from: [0, 4], to: [0, 52], soft: 0.6 } },
     { shape: { ellipse: [60, 52, 70, 14] }, fill: { gradient: ['a', 'c'], from: [0, 38], to: [0, 47], soft: 0.6 } },
-    { shape: { rect: [0, 0, 100, 30] }, fill: { scatter: 'w', density: 0.03, salt: 41 }, min: 40 },
     { shape: { ellipse: [76, 12, 1, 1] }, fill: 'w', keep: true },
     { shape: { ellipse: [36, 8, 1, 1] }, fill: 'm', keep: true, min: 48 },
     // Far wooded hills in the dusk.

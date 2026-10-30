@@ -65,8 +65,9 @@ export const volcano: Motif = {
   layers: [
     // Night sky, deep blue above, glowing violet and maroon near the mountain, with stars.
     { shape: { rect: [0, 0, 100, 100] }, fill: { gradient: ['n', 'b', 'v', 'p'], from: [0, 6], to: [0, 70], soft: 0.6 } },
-    { shape: { rect: [0, 0, 100, 44] }, fill: { scatter: 'w', density: 0.022, salt: 71 } },
-    { shape: { ellipse: [14, 10, 1, 1] }, fill: 'w', keep: true },
+    { shape: { ellipse: [17, 15, 5.5, 5.5] }, fill: 'w', shade: { dark: 'l', dir: 'se', mode: 'band', amount: 0.3 } },
+    { shape: { ellipse: [36, 8, 1, 1] }, fill: 'w', keep: true },
+    { shape: { ellipse: [8, 30, 1, 1] }, fill: 'w', keep: true },
     { shape: { ellipse: [84, 30, 1, 1] }, fill: 'w', keep: true },
     { shape: { ellipse: [28, 24, 1, 1] }, fill: 'w', keep: true, min: 40 },
     // The ash plume drifting right, lit from below by the eruption.
