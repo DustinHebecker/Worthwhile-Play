@@ -42,5 +42,29 @@ export const CARDS: readonly MotifCard[] = [
     art: () => import('../baked/greenhouse'),
     title: { de: 'Gewächshaus', en: 'Greenhouse', nl: 'Kas', es: 'Invernadero', fr: 'Serre', ru: 'Теплица', 'zh-Hans': '温室', ko: '온실', ja: '温室', ar: 'دفيئة', pt: 'Estufa', it: 'Serra', pl: 'Szklarnia', tr: 'Sera', uk: 'Теплиця', hi: 'ग्रीनहाउस' },
     place: { de: 'Ein Glashaus in einem Garten', en: 'A glasshouse in a garden', nl: 'Een glazen kas in een tuin', es: 'Un invernadero de cristal en un jardín', fr: 'Une serre vitrée dans un jardin', ru: 'Стеклянная теплица в саду', 'zh-Hans': '花园里的玻璃温室', ko: '정원 안의 유리 온실', ja: '庭のガラスの温室', ar: 'بيت زجاجي في حديقة', pt: 'Uma estufa de vidro num jardim', it: 'Una serra di vetro in un giardino', pl: 'Szklarnia w ogrodzie', tr: 'Bir bahçede cam sera', uk: 'Скляна теплиця в саду', hi: 'एक बगीचे में शीशे का घर' }
+  },
+  {
+    id: 'bakery-window',
+    group: 'scene',
+    aspect: 'wide',
+    art: () => import('../baked/bakery-window'),
+    title: { de: 'Bäckerschaufenster', en: 'Bakery window', nl: 'Etalage van de bakker', es: 'Escaparate de panadería', fr: 'Vitrine de boulangerie', ru: 'Витрина пекарни', 'zh-Hans': '面包店橱窗', ko: '빵집 진열창', ja: 'パン屋のショーウィンドウ', ar: 'واجهة مخبز', pt: 'Montra da padaria', it: 'Vetrina del forno', pl: 'Witryna piekarni', tr: 'Fırın vitrini', uk: 'Вітрина пекарні', hi: 'बेकरी की खिड़की' },
+    place: { de: 'Eine Bäckerei an der Straßenecke', en: 'A corner bakery', nl: 'Een bakkerij op de hoek', es: 'Una panadería de esquina', fr: 'Une boulangerie du coin', ru: 'Пекарня на углу', 'zh-Hans': '街角的面包店', ko: '길모퉁이 빵집', ja: '街角のパン屋', ar: 'مخبز على ناصية الشارع', pt: 'Uma padaria de esquina', it: 'Un forno all’angolo', pl: 'Piekarnia na rogu', tr: 'Köşedeki bir fırın', uk: 'Пекарня на розі', hi: 'नुक्कड़ की एक बेकरी' }
+  },
+  {
+    id: 'viaduct-train',
+    group: 'scene',
+    aspect: 'panorama',
+    art: () => import('../baked/viaduct-train'),
+    title: { de: 'Dampfzug auf dem Viadukt', en: 'Steam train on a viaduct', nl: 'Stoomtrein op een viaduct', es: 'Tren de vapor en un viaducto', fr: 'Train à vapeur sur un viaduc', ru: 'Паровоз на виадуке', 'zh-Hans': '高架桥上的蒸汽火车', ko: '고가교 위의 증기 기관차', ja: '高架橋を渡る蒸気機関車', ar: 'قطار بخاري على جسر', pt: 'Comboio a vapor num viaduto', it: 'Treno a vapore sul viadotto', pl: 'Parowóz na wiadukcie', tr: 'Viyadükte buharlı tren', uk: 'Паротяг на віадуці', hi: 'पुल पर भाप की रेलगाड़ी' },
+    place: { de: 'Ein grünes Flusstal', en: 'A green river valley', nl: 'Een groen rivierdal', es: 'Un valle fluvial verde', fr: 'Une vallée verdoyante', ru: 'Зелёная долина реки', 'zh-Hans': '绿色的河谷', ko: '푸른 강 골짜기', ja: '緑の川の谷', ar: 'وادي نهر أخضر', pt: 'Um vale verde com um rio', it: 'Una verde valle fluviale', pl: 'Zielona dolina rzeki', tr: 'Yeşil bir nehir vadisi', uk: 'Зелена долина річки', hi: 'एक हरी-भरी नदी घाटी' }
+  },
+  {
+    id: 'tea-ceremony',
+    group: 'scene',
+    aspect: 'wide',
+    art: () => import('../baked/tea-ceremony'),
+    title: { de: 'Teezeremonie', en: 'Tea ceremony', nl: 'Theeceremonie', es: 'Ceremonia del té', fr: 'Cérémonie du thé', ru: 'Чайная церемония', 'zh-Hans': '茶道', ko: '다도', ja: '茶の湯', ar: 'مراسم الشاي', pt: 'Cerimónia do chá', it: 'Cerimonia del tè', pl: 'Ceremonia herbaciana', tr: 'Çay seremonisi', uk: 'Чайна церемонія', hi: 'चाय समारोह' },
+    place: { de: 'Ein Teeraum mit Blick in den Garten', en: 'A tea room looking onto a garden', nl: 'Een theekamer met uitzicht op de tuin', es: 'Una sala de té con vista al jardín', fr: 'Un pavillon de thé ouvert sur le jardin', ru: 'Чайная комната с видом на сад', 'zh-Hans': '面向庭院的茶室', ko: '정원이 보이는 다실', ja: '庭に面した茶室', ar: 'غرفة شاي تطل على حديقة', pt: 'Uma sala de chá com vista para o jardim', it: 'Una sala da tè affacciata sul giardino', pl: 'Pokój herbaciany z widokiem na ogród', tr: 'Bahçeye bakan bir çay odası', uk: 'Чайна кімната з видом на сад', hi: 'बगीचे की ओर खुलता एक चाय कक्ष' }
   }
 ];
