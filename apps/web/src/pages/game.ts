@@ -1,5 +1,5 @@
 import { coerceSetting, gameLocale, hostSettings, ownsDifficulty, randomSeed, resolveSettings, settingId, type GameInstance, type GameModule, type GameResult, type SettingSpec, type SettingValue, type SettingsEnv } from '@wp/game-core';
-import type { GameContentLanguages, GamePreferences, UserDeckSource } from '@wp/game-core';
+import type { GameContentLanguages, GamePreferences, NewGameOptions, UserDeckSource } from '@wp/game-core';
 import { readContentLanguages } from '@wp/localization';
 import { createAutosave, createGameLibrary, createSave, interpretSave, type GameSave, type SaveStore } from '@wp/persistence';
 import { clear, h } from '@wp/ui';
@@ -272,18 +272,34 @@ export function renderGamePage(main: HTMLElement, app: AppContext, route: GameRo
     finishedSlot.hidden = false;
   };
 
+  /** Counts starts, so only the latest of overlapping starts (e.g. a double press while one prepares) goes on. */
+  let starts = 0;
   const startNew = async ({ seed = randomSeed(), difficulty, settings = {}, begin = false, focus = true }: Partial<Setup> & { seed?: number; begin?: boolean; focus?: boolean }) => {
+    const options: NewGameOptions = {
+      seed,
+      ...(difficulty !== undefined ? { difficulty } : {}),
+      ...(Object.keys(settings).length ? { settings } : {}),
+      ...(begin ? { begin } : {})
+    };
+    // ADR 0011 amendment: a game may load what this particular game needs (e.g. one picture's art) first.
+    const start = ++starts;
+    if (module?.prepare) {
+      status.querySelector('[data-testid="prepare-error"]')?.remove();
+      try {
+        await module.prepare(options);
+      } catch (error) {
+        console.error(error);
+        if (start === starts && !disposed) status.append(h('p', { role: 'alert', 'data-testid': 'prepare-error' }, t('game.loadError')));
+        return;
+      }
+      if (start !== starts || disposed) return;
+    }
     current = { seed, difficulty, settings, known: true };
     // Reuse a running instance so game-internal options (e.g. opponent type) carry over to the next round.
     const game = instance ?? mount();
     showGame();
     clear(finishedSlot);
-    game.newGame({
-      seed,
-      ...(difficulty !== undefined ? { difficulty } : {}),
-      ...(Object.keys(settings).length ? { settings } : {}),
-      ...(begin ? { begin } : {})
-    });
+    game.newGame(options);
     toolbar();
     await autosave?.flush(true);
     // A game can mark its main play area with data-autofocus (e.g. so arrow keys move pieces instead of

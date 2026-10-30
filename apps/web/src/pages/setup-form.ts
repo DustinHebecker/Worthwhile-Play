@@ -95,8 +95,15 @@ export function renderSetupForm(
         );
         readers.set(id, () => inputs.find((input) => input.checked)?.value);
       } else {
+        const option = (choice: SettingValue) => h('option', { value: String(choice), selected: choice === value, ...valueLang }, valueLabel(spec, choice, gt));
+        // Optional groups (`<optgroup>`): the values in no group first, then each group in its order.
+        const groups = spec.kind === 'choice' ? (spec.groups ?? []) : [];
+        const grouped = new Set(groups.flatMap((group) => group.values.map(String)));
         const select = h('select', { id: domId, name: domId, 'data-testid': settingTestId(spec), 'aria-describedby': hintId },
-          ...choices.map((choice) => h('option', { value: String(choice), selected: choice === value, ...valueLang }, valueLabel(spec, choice, gt)))
+          ...choices.filter((choice) => !grouped.has(String(choice))).map(option),
+          ...groups.map((group) =>
+            h('optgroup', { label: gt(group.labelKey), ...own }, ...group.values.filter((v) => choices.includes(v)).map(option))
+          )
         );
         container = h('div', { class: 'setting field' }, h('label', { for: domId, ...labelLang }, label), select, hint);
         readers.set(id, () => select.value);
