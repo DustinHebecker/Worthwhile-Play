@@ -10,7 +10,7 @@
  * - Per motif: `<id>.png`, the three difficulties side by side (each about 384 px wide) with a palette strip (swatch
  *   with symbol, name, cell count; a count under the minimum in red); `<id>-<difficulty>-<w>.png` at about 512 px;
  *   `<id>-layers.png`, the hard render once per layer with that layer's mask highlighted. `--sheet` skips these.
- * - Always `contact-sheet.png`: every selected motif at easy, medium and hard, each fitted into a 240 px box, two
+ * - Always `contact-sheet.png`: every selected motif at easy, medium and hard, each fitted into a 256 px box, two
  *   motifs per row, labelled with id, aspect and sizes (the quick review sheet).
  * - Warnings: ΔE pairs below the thresholds, the colour-share rules, the despeckle share, colours merged for size,
  *   and the rasterisation time.
@@ -290,7 +290,7 @@ async function main(): Promise<void> {
 
   // The contact sheet: each motif at easy, medium and hard, fitted into a box, `perRow` motifs per row.
   if (sheet.length) {
-    const box = 240;
+    const box = 256;
     const gap = 12;
     const label = 34;
     const perRow = sheet.length > 2 ? 2 : sheet.length;

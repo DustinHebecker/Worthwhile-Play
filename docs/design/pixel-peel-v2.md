@@ -898,3 +898,6 @@ What the reviewer changed (each a separate commit on this branch):
 - **Tests under load (ADR 0021).** Every wall-clock bound moved to `test/timing.slow.test.ts`, timed as the fastest of a few repeats with bounds several times the measured values; the sweeps over every motif (generator, level rates, re-rasterising against the baked pictures) moved to `generator.slow.test.ts` and `motifs.slow.test.ts`. The fast motif test checks the authoring rules on the baked pictures a game plays.
 - **Art.** The hummingbird is redrawn: the bird against a bright sky in soft focus, wings raised in a V, a long beak reaching into the open trumpet flower; effective colours easy / medium / hard 6.5 / 8.7 / 9.1 (was 4.0 / 7.8 / 8.2). The tiger's muzzle pads no longer read as a second pair of eyes on hard. The lowest effective number of colours on easy is now 4.3 (llama).
 
+### 15.11 More motifs (2026-10-30)
+
+For the expansion to about 95 motifs the art pipeline gained the aspects `tall` and `panorama`, the group `landmark`, per-motif size overrides, batch files, per-motif baked art loaded on demand and a contact-sheet review. All of it is described in `pixel-peel-motifs.md`, which is binding for new motifs. The 20 motifs above keep their pictures (the baked rows are byte-identical).

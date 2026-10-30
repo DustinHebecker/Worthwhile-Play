@@ -20,3 +20,10 @@ The text exercises of ADR 0010 bundled their content (texts, questions, explanat
 + The pattern scales to more content without touching the 2 MiB precache limit per file.
 − One more request (two in a locale other than English) when a game is opened, and 80 more precache entries (the total precached size stays the same).
 − `contentFor` throws if a host forgets to await `preload`; the contract suite and the host test (`apps/web/test/game-page.test.ts`) guard that.
+
+## Amendment (2026-10-30): `prepare` for content one new game needs
+Context: Pixel Peel is growing from 20 to about 95 pictures. Each picture's baked art (about 1–2.5 kB gzip) is needed only by the game that plays it, but which picture a game plays is known only at `newGame` (the seed draws "Any picture"), after `preload`.
+- **Optional hook** `GameModule.prepare?(options: NewGameOptions): Promise<void>`. The host (`startNew` in `apps/web/src/pages/game.ts`) awaits it with the same options right before every `newGame` (start screen, deep links, "Another round"); `newGame` stays synchronous. Not used for `restore`: a save holds everything it needs (Pixel Peel stores the whole picture).
+- **Contract of the hook**: idempotent and cached; rejects only when it cannot load. The host then logs the error, shows its generic load error (`role="alert"`) and starts nothing (the start screen stays). Of overlapping starts (a double press while one prepares) only the latest goes on.
+- **Offline**: the loaded chunks are emitted under `assets/` and precached, so a game can start offline with content never loaded before (e2e-tested with a Pixel Peel picture).
+- **Tests**: `runGameContract` checks `prepare` for arbitrary start-screen settings (repeatable, then `newGame` starts validly). Its other tests start games synchronously, so a game with `prepare` loads everything its starts may need in a `beforeAll` (or top-level `await`) of its contract test file. Host tests cover the order, a failure and overlapping starts.

@@ -40,3 +40,6 @@ Phase 1 (this ADR): core types, validation, host start screen, contract and e2e 
 + Settings are data: validated in all 16 locales and sampled in the contract (deterministic, valid state for any combination; no throw on junk).
 − Games must migrate their own option panels; until then some games still show options both on the start screen (difficulty) and in the game.
 − "New game" is one more step during play (start screen, then Start); "Another round" keeps the one-press repeat.
+
+## Amendment (2026-10-30): groups in a long choice
+A choice may declare `groups: { labelKey, values }[]`. The host's select shows the values in no group first, then one `<optgroup>` per group (label from the game's namespace, values in the group's order); radio buttons ignore groups. `validateSettings` checks that each group lists known values, that no value is in two groups, and that every `labelKey` exists in the game's locales. First use: Pixel Peel's picture select (about 95 pictures in five groups, each group starting with "Any <kind>").
