@@ -7,13 +7,12 @@ import { hint as computeHint, type HintResult } from './hint';
 import { findMotif } from './motifs/index';
 import { canUndo, resetState, restart, tableOfState, undo, undoTo, type Hit, type Move, type PaletteEntry, type PeelState, type Shooter } from './rules';
 import { fitCell } from './layout';
-import { PeelQueue } from './peel';
+import { PeelQueue, SLOW_TIMING, TIMING } from './peel';
 import { inkFor, SYMBOLS, symbolPath } from './symbols';
 import './styles.css';
 
 export { inkFor, SYMBOLS } from './symbols';
 
-const ANIMATION_MAX_MS = 900;
 const PREFS = 'display';
 /** Track frame around the picture (CSS px). */
 const TRACK = 6;
@@ -25,18 +24,24 @@ const SYMBOL_MIN = 10;
 const CHIPS_SHOWN = 7;
 const CHIPS_COMPACT = 2;
 
-/** How launches are drawn (design v3 § 3.1): Slow peels pixel by pixel, Quick is the short v2 animation, Off is instant. */
+/**
+ * How launches are drawn (design v3 § 3, § 12.9): Slow walks station by station and shoots line by line, Quick walks
+ * quickly and peels pixel by pixel, Off is instant.
+ */
 export type PeelMode = 'slow' | 'quick' | 'off';
 export const PEEL_MODES: readonly PeelMode[] = ['slow', 'quick', 'off'];
 
 /**
- * The Peeling preference of a stored display record: `peel` when valid, else the v2 `animation: false` as Off, else
- * the default Slow (design v3 § 5).
+ * The Peeling preference of a stored display record (field `peeling`). Older records: the first v3 field `peel`,
+ * whose "slow" was today's Quick (the same animation) and whose v2-style "quick" is gone, both read as Quick, "off"
+ * as Off; the v2 `animation: false` as Off; otherwise the default, Quick.
  */
 export function peelOf(stored: unknown): PeelMode {
   const record = typeof stored === 'object' && stored !== null ? (stored as Record<string, unknown>) : {};
-  if ((PEEL_MODES as readonly unknown[]).includes(record.peel)) return record.peel as PeelMode;
-  return record.animation === false ? 'off' : 'slow';
+  if ((PEEL_MODES as readonly unknown[]).includes(record.peeling)) return record.peeling as PeelMode;
+  if (record.peel === 'off') return 'off';
+  if (record.peel === 'slow' || record.peel === 'quick') return 'quick';
+  return record.animation === false ? 'off' : 'quick';
 }
 
 /** Frame scheduling and clock, injectable for tests (presentation only: nothing in the game waits for them). */
@@ -47,22 +52,12 @@ export interface ViewOptions {
 }
 
 interface Display {
-  peel: PeelMode;
+  peeling: PeelMode;
   allSymbols: boolean;
   confirm: boolean;
   large: boolean;
   /** null: the default for the screen width. */
   wholeLanes: boolean | null;
-}
-
-interface Animation {
-  hits: Hit[];
-  done: number;
-  start: number;
-  duration: number;
-  frame: number;
-  /** Colour key of the launched shooter (token colour). */
-  c: string;
 }
 
 /** What a move would do (cached per position). */
@@ -128,9 +123,10 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
   let hintResult: HintResult | null = null;
   let hintTimer: ReturnType<typeof setTimeout> | null = null;
   let statusText = '';
-  let anim: Animation | null = null;
   /** Slow peeling: the queue of committed launches still to draw, and its frame loop. */
   let slow: PeelQueue | null = null;
+  /** How the current queue draws (Slow: shots line by line; Quick: pixel by pixel). */
+  let slowMode: PeelMode = 'quick';
   let slowFrame: number | null = null;
   let slowLast = 0;
   /** The reveal takes focus when it appears after the last move (not on restore). */
@@ -162,7 +158,7 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
   const stored = context.preferences?.get(PREFS);
   const pref = (key: keyof Display): unknown => (typeof stored === 'object' && stored !== null ? (stored as Record<string, unknown>)[key] : undefined);
   const display: Display = {
-    peel: peelOf(stored),
+    peeling: peelOf(stored),
     allSymbols: pref('allSymbols') === true,
     // On touch screens a tap would launch at once and the spotlight would never be seen: there the first tap
     // previews by default (remembered once the player changes it).
@@ -271,10 +267,10 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
     const input = h('input', { type: 'radio', name: 'pp-peel', value: mode, 'data-testid': `pp-option-peel-${mode}` });
     input.addEventListener('change', () => {
       if (!input.checked) return;
-      display.peel = mode;
+      display.peeling = mode;
       savePrefs();
-      // Effective at once: away from Slow the queue ends now; Quick → Off ends the short animation (§ 3.1).
-      if (mode !== 'slow') finishAll();
+      // Effective at once: the running queue ends now; the next launch is drawn the new way.
+      finishAll();
       update();
     });
     const key = mode === 'slow' ? 'options.peelSlow' : mode === 'quick' ? 'options.peelQuick' : 'options.peelOff';
@@ -291,7 +287,7 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
   const sizes = { fit: sizeRadio(false), large: sizeRadio(true) };
   const optionsBox = h('details', { class: 'pp-details', 'data-testid': 'pp-options' },
     h('summary', {}, t('options.heading')),
-    h('fieldset', { class: 'pp-sizes pp-peel', 'data-testid': 'pp-peel' }, h('legend', {}, t('options.peel')), peelRadios.slow.label, peelRadios.quick.label, peelRadios.off.label, peelReduced),
+    h('fieldset', { class: 'pp-sizes pp-peel', 'data-testid': 'pp-peel' }, h('legend', {}, t('options.peel')), peelRadios.slow.label, peelRadios.quick.label, peelRadios.off.label, h('p', { class: 'wp-muted pp-help' }, t('options.peelHelp')), peelReduced),
     h('fieldset', { class: 'pp-sizes' }, h('legend', {}, t('options.size')), sizes.fit.label, sizes.large.label),
     options.wholeLanes.label,
     options.allSymbols.label,
@@ -299,7 +295,7 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
   );
   const savePrefs = () => context.preferences?.set(PREFS, { ...display });
   /** The Peeling mode in effect: reduced motion forces Off. */
-  const peelMode = (): PeelMode => (context.reducedMotion ? 'off' : display.peel);
+  const peelMode = (): PeelMode => (context.reducedMotion ? 'off' : display.peeling);
 
   // The Display button of the action row opens the same panel directly under the row (design v3 § 3.1).
   const displayButton = actionButton('pp-display', t('action.display'), () => toggleDisplay());
@@ -473,7 +469,6 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
       const count = h('span', { class: 'pp-colour-count' });
       const toggle = h('button', { type: 'button', class: 'pp-show', 'aria-pressed': 'false', 'aria-label': t('colours.showLabel', { colour: t(`colour.${p.name}`) }), 'data-testid': `pp-show-${p.key}` }, t('colours.show'));
       toggle.addEventListener('click', () => {
-        finishQuick();
         shownColour = shownColour === p.key ? null : p.key;
         update();
       });
@@ -723,7 +718,6 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
   const showPreview = (move: Move | null) => {
     if (previewMove === move) return;
     // Any input jumps an animation to its end (design § 7.5), so the preview shows the real position.
-    if (move !== null) finishQuick();
     previewMove = move;
     if (move === null) selected = null;
     renderStatus();
@@ -921,7 +915,7 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
     const [tx, ty] = trackPoint(token.distance, cell, w, h);
     const { e, i } = entry(token.colour);
     const tokenInk = inkFor(e.hex);
-    if (token.target !== null) {
+    if (slowMode !== 'slow' && token.target !== null) {
       g.beginPath();
       g.moveTo(tx, ty);
       g.lineTo(TRACK + (token.target % w + 0.5) * cell, TRACK + (Math.floor(token.target / w) + 0.5) * cell);
@@ -952,6 +946,44 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
     g.textBaseline = 'top';
     g.fillText(label, lx + 2, ly + 1);
     g.restore();
+    // Slow: the shot, over the token: a straight beam along the station's row or column, from the edge to the farthest
+    // pixel it removes, and an outline around each of them.
+    if (slowMode === 'slow' && token.station !== null && token.beam >= 0 && token.targets.length > 0) {
+      const st = token.station;
+      const far = token.targets.reduce((a, c) => {
+        // Distance from the far side: the bottom shoots up, the right side left, the top down, the left side right.
+        const d = (x: number) => (st < w ? Math.floor(x / w) : st < w + h ? x % w : st < 2 * w + h ? -Math.floor(x / w) : -(x % w));
+        return d(c) < d(a) ? c : a;
+      });
+      const cx = far % w;
+      const cy = Math.floor(far / w);
+      const thick = Math.max(4, cell * 0.7);
+      let rx: number, ry: number, rw: number, rh: number;
+      if (st < w) [rx, ry, rw, rh] = [TRACK + (st + 0.5) * cell - thick / 2, TRACK + cy * cell, thick, (h - cy) * cell + TRACK];
+      else if (st < w + h) [rx, ry, rw, rh] = [TRACK + cx * cell, TRACK + (cy + 0.5) * cell - thick / 2, (w - cx) * cell + TRACK, thick];
+      else if (st < 2 * w + h) [rx, ry, rw, rh] = [TRACK + (cx + 0.5) * cell - thick / 2, 0, thick, TRACK + (cy + 1) * cell];
+      else [rx, ry, rw, rh] = [0, TRACK + (cy + 0.5) * cell - thick / 2, TRACK + (cx + 1) * cell, thick];
+      g.save();
+      // In for the first third of the shot, then fading out.
+      g.globalAlpha = token.beam < 0.33 ? 0.9 : Math.max(0, 0.9 * (1 - (token.beam - 0.33) / 0.67));
+      g.fillStyle = entry(token.colour).e.hex;
+      g.fillRect(rx, ry, rw, rh);
+      g.lineWidth = 1;
+      g.strokeStyle = ink;
+      g.strokeRect(rx + 0.5, ry + 0.5, Math.max(0, rw - 1), Math.max(0, rh - 1));
+      g.globalAlpha = Math.max(0, 1 - token.beam);
+      for (const c of token.targets) {
+        const x0 = TRACK + (c % w) * cell;
+        const y0 = TRACK + Math.floor(c / w) * cell;
+        g.lineWidth = 2;
+        g.strokeStyle = '#000000';
+        g.strokeRect(x0 - 1, y0 - 1, cell + 2, cell + 2);
+        g.lineWidth = 1;
+        g.strokeStyle = '#ffffff';
+        g.strokeRect(x0 + 0.5, y0 + 0.5, cell - 1, cell - 1);
+      }
+      g.restore();
+    }
   };
 
   let scratch: HTMLCanvasElement | null = null;
@@ -986,7 +1018,7 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
 
   /** The colour key in the spotlight: the previewed shooter's, else the one shown from the colours list. */
   const spotlightKey = (): string | null => {
-    if (previewMove && !anim) {
+    if (previewMove) {
       const s = shooterOf(previewOf(previewMove));
       if (s) return s.c;
     }
@@ -1021,11 +1053,11 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
     canvas.dataset.cell = String(cell);
     const symbols = cell >= SYMBOL_MIN ? (display.allSymbols ? 'all' : 'edge') : 'none';
     canvas.dataset.symbols = symbols;
-    const p = previewMove && !anim ? previewOf(previewMove) : null;
+    const p = previewMove ? previewOf(previewMove) : null;
     canvas.dataset.preview = p ? p.cells.map((x) => `${x.cell % w},${Math.floor(x.cell / w)}`).join(' ') : '';
     const spot = spotlightKey();
     canvas.dataset.spotlight = spot ?? '';
-    if (solved() && !anim && !peeling()) drawReveal();
+    if (solved() && !peeling()) drawReveal();
     const g = context2d(canvas, cssW, cssH);
     if (!g) return;
     // Track: a plain frame, with one tick per station when the cells are large enough.
@@ -1099,19 +1131,6 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
       }
     }
     if (slow?.busy) drawSlow(g, cell);
-    if (anim) {
-      const hit = anim.hits[Math.min(anim.done, anim.hits.length - 1)];
-      if (hit) {
-        const [tx, ty] = stationPoint(hit.station, cell, w, h);
-        g.beginPath();
-        g.arc(tx, ty, TRACK / 2 + 2, 0, Math.PI * 2);
-        g.fillStyle = entry(anim.c).e.hex;
-        g.fill();
-        g.lineWidth = 1.5;
-        g.strokeStyle = cssVar('--wp-text', '#1d1d1b');
-        g.stroke();
-      }
-    }
   };
 
   /** In Large view, scrolls the picture so that the first previewed cell is visible (if none is). */
@@ -1158,25 +1177,7 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
 
   // --- Animation (cosmetic only: the state has already changed) ------------------------------------------------
 
-  /** Quick: the short v2 animation (any input jumps it to its end). */
-  const tick = () => {
-    if (!anim) return;
-    const f = Math.min(1, (now() - anim.start) / anim.duration);
-    const done = Math.floor(f * anim.hits.length);
-    if (done > anim.done) {
-      popCells(anim.hits.slice(anim.done, done).map((x) => x.cell));
-      anim.done = done;
-    }
-    if (f >= 1) {
-      anim = null;
-      draw();
-      return;
-    }
-    draw();
-    if (frame) anim.frame = frame(tick);
-  };
-
-  /** Slow: one frame of the peel queue (design v3 § 3.2); the loop stops when the queue is empty. */
+  /** One frame of the peel queue (Slow or Quick, design v3 § 3.2); the loop stops when the queue is empty. */
   const slowTick = () => {
     slowFrame = null;
     if (!slow) return;
@@ -1193,38 +1194,26 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
   };
 
   const startAnimation = (hits: Hit[], c: string, shots: number, usedUp: boolean) => {
-    finishQuick();
     const mode = peelMode();
-    if (mode === 'slow' && frame) {
-      slow ??= new PeelQueue(2 * table.engine.w + 2 * table.engine.h);
-      if (!slow.busy) slowLast = now();
-      slow.enqueue({ hits, colour: c, shots, usedUp });
-      if (slowFrame === null) slowFrame = frame(slowTick);
-      return;
-    }
-    if (mode === 'off' || hits.length === 0 || !frame || peeling()) {
-      // Behind a running queue a quick launch would peel ahead of it: it joins the end of the queue's picture at once.
+    if (mode === 'off' || !frame) {
       popCells(hits.map((x) => x.cell));
       return;
     }
-    anim = { hits, done: 0, start: now(), duration: Math.min(ANIMATION_MAX_MS, 120 + hits.length * 30), frame: 0, c };
-    anim.frame = frame(tick);
+    // A queue draws one way; a change of the preference has finished the old one (peelRadio).
+    if (!slow || slowMode !== mode) {
+      slow = new PeelQueue(2 * table.engine.w + 2 * table.engine.h, mode === 'slow' ? SLOW_TIMING : TIMING);
+      slowMode = mode;
+    }
+    if (!slow.busy) slowLast = now();
+    slow.enqueue({ hits, colour: c, shots, usedUp });
+    if (slowFrame === null) slowFrame = frame(slowTick);
   };
-
-  function finishQuick() {
-    if (!anim) return;
-    cancelFrame(anim.frame);
-    popCells(anim.hits.slice(anim.done).map((x) => x.cell));
-    anim = null;
-    draw();
-  }
 
   /**
    * Ends every animation at once (Finish peeling, Undo, Start again, Back to move k, Hint, size changes, switching
    * Peeling away from Slow, pause). `refresh: false` when a full update follows anyway.
    */
   function finishAll(refresh = true) {
-    finishQuick();
     if (slowFrame !== null) cancelFrame(slowFrame);
     slowFrame = null;
     if (!slow?.busy) return;
@@ -1234,8 +1223,6 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
 
   /** Forgets every animation without drawing (a rebuild or dispose follows). */
   function dropAnimations() {
-    if (anim) cancelFrame(anim.frame);
-    anim = null;
     if (slowFrame !== null) cancelFrame(slowFrame);
     slowFrame = null;
     slow = null;
@@ -1316,7 +1303,6 @@ export function createPixelPeel(context: GameContext, viewOptions: ViewOptions =
   };
 
   function activate(b: HTMLButtonElement) {
-    finishQuick();
     if (paused || solved()) return;
     const move = moveOf(b);
     if (!move) return;

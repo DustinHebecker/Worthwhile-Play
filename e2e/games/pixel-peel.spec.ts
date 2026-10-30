@@ -22,7 +22,7 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     if (sessionStorage.getItem('pp-test-prefs')) return;
     sessionStorage.setItem('pp-test-prefs', '1');
-    localStorage.setItem('wp:pref:pixel-peel:display', JSON.stringify({ confirm: false, peel: 'off' }));
+    localStorage.setItem('wp:pref:pixel-peel:display', JSON.stringify({ confirm: false, peeling: 'off' }));
   });
 });
 
@@ -463,7 +463,7 @@ test('pixel-peel: the status fits its box with the longest result and preview te
 
 test('pixel-peel: the action row holds Undo, Hint, Display and Finish peeling of every locale in one row at 360 px, also with a wider font', async ({ page }, info) => {
   test.skip(info.project.name !== 'desktop', 'viewport sizes are set explicitly');
-  await page.addInitScript(() => localStorage.setItem('wp:pref:pixel-peel:display', JSON.stringify({ confirm: false, peel: 'slow' })));
+  await page.addInitScript(() => localStorage.setItem('wp:pref:pixel-peel:display', JSON.stringify({ confirm: false, peeling: 'quick' })));
   await page.setViewportSize({ width: 360, height: 640 });
   await startGame(page, ID, { difficulty: 'hard', settings: { motif: 'red-fox' } });
   const state = await savedState(page);
@@ -505,24 +505,26 @@ test('pixel-peel: the action row holds Undo, Hint, Display and Finish peeling of
   }
 });
 
-// --- Design v3 § 3: slow peeling --------------------------------------------------------------------------------------
+// --- Design v3 § 3 and § 12.9: peeling (Slow shoots line by line, Quick peels pixel by pixel) -------------------------
 
-const slowPeeling = async (page: Page) =>
-  page.addInitScript(() => {
-    if (sessionStorage.getItem('pp-test-slow')) return;
-    sessionStorage.setItem('pp-test-slow', '1');
-    localStorage.setItem('wp:pref:pixel-peel:display', JSON.stringify({ confirm: false, peel: 'slow' }));
-  });
+const withPeeling = async (page: Page, mode: 'slow' | 'quick') =>
+  page.addInitScript((m) => {
+    if (sessionStorage.getItem('pp-test-peeling')) return;
+    sessionStorage.setItem('pp-test-peeling', '1');
+    localStorage.setItem('wp:pref:pixel-peel:display', JSON.stringify({ confirm: false, peeling: m }));
+  }, mode);
+const slowPeeling = async (page: Page) => withPeeling(page, 'quick');
 const board = (page: Page) => root(page).getByTestId('pp-board');
 const peelingCount = async (page: Page) => Number(await board(page).getAttribute('data-peeling'));
 
-test('pixel-peel: slow peeling — fast launches are saved at once and queue; Finish peeling ends the queue', async ({ page }, info) => {
+for (const mode of ['quick', 'slow'] as const) {
+test(`pixel-peel: peeling ${mode} — fast launches are saved at once and queue; Finish peeling ends the queue`, async ({ page }, info) => {
   test.skip(info.project.name !== 'desktop', 'viewport sizes are set explicitly');
-  await slowPeeling(page);
+  await withPeeling(page, mode);
   await page.setViewportSize({ width: 360, height: 640 });
   await startGame(page, ID, { difficulty: 'hard', settings: { motif: 'winter-village' } });
   const state = await savedState(page);
-  await expect(root(page).getByTestId('pp-option-peel-slow')).toBeChecked();
+  await expect(root(page).getByTestId(`pp-option-peel-${mode}`)).toBeChecked();
   const actions = (await root(page).getByTestId('pp-actions').boundingBox())!;
   for (const move of state.witness.slice(0, 3)) await buttonFor(page, move).click();
   await expect.poll(async () => (await saved(page)).moves).toEqual(state.witness.slice(0, 3));
@@ -542,8 +544,8 @@ test('pixel-peel: slow peeling — fast launches are saved at once and queue; Fi
   await expect(root(page).getByTestId('pp-left')).toHaveAttribute('data-left', String(presentCount(pos)));
 });
 
-test('pixel-peel: slow peeling — a reload in the middle of peeling loses nothing and replays nothing', async ({ page }) => {
-  await slowPeeling(page);
+test(`pixel-peel: peeling ${mode} — a reload in the middle of peeling loses nothing and replays nothing`, async ({ page }) => {
+  await withPeeling(page, mode);
   let state: PeelState | undefined;
   await expectResumeAfterReload(
     page,
@@ -561,8 +563,28 @@ test('pixel-peel: slow peeling — a reload in the middle of peeling loses nothi
   await expect(board(page)).toHaveAttribute('data-peeling', '0');
   await expect(root(page).getByTestId('pp-left')).toHaveAttribute('data-left', String(presentCount(position(after))));
 });
+}
 
-test('pixel-peel: the Display button opens the options mid-game; Slow → Off finishes the queue at once and is remembered', async ({ page, isMobile }) => {
+test('pixel-peel: peeling slow — the shooter shoots line by line: the pixels go in steps, one shot after another', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'one is enough');
+  await withPeeling(page, 'slow');
+  await startGame(page, ID, { difficulty: 'hard', settings: { motif: 'red-fox' } });
+  const state = await savedState(page);
+  await buttonFor(page, state.witness[0]!).click();
+  const pending = async () => Number(await board(page).getAttribute('data-pending'));
+  const start = await pending();
+  expect(start).toBeGreaterThan(1);
+  const seen = new Set<number>([start]);
+  for (let k = 0; k < 40 && (await pending()) > 0; k++) {
+    seen.add(await pending());
+    await page.waitForTimeout(100);
+  }
+  // Several distinct steps: shots, not one pop; and it ends by itself.
+  expect(seen.size).toBeGreaterThan(2);
+  await expect(board(page)).toHaveAttribute('data-peeling', '0', { timeout: 10_000 });
+});
+
+test('pixel-peel: the Display button opens the options mid-game; Quick → Off finishes the queue at once and is remembered', async ({ page, isMobile }) => {
   await slowPeeling(page);
   // On the phone, a small one: the panel is taller than the room under the sticky picture.
   if (isMobile) await page.setViewportSize({ width: 360, height: 640 });

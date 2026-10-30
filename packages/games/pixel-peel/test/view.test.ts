@@ -331,7 +331,7 @@ describe('view', () => {
     const box = q('pp-option-allSymbols') as HTMLInputElement;
     box.checked = true;
     box.dispatchEvent(new Event('change'));
-    expect(ctx.preferences.get('display')).toEqual({ peel: 'slow', allSymbols: true, confirm: false, large: false, wholeLanes: null });
+    expect(ctx.preferences.get('display')).toEqual({ peeling: 'quick', allSymbols: true, confirm: false, large: false, wholeLanes: null });
     expect(instance.serialize()).toEqual(before);
     expect(ctx.saveRequests()).toBe(saves);
     // Reduced motion: Peeling shows Off and cannot be changed, with the reason.
@@ -535,7 +535,7 @@ function fakeFrames() {
 /** A game with motion allowed (the test context has reduced motion) and the fake frames. */
 function startMotion(options: { peel?: PeelMode; state?: PeelState; motif?: string; difficulty?: string; seed?: number; reducedMotion?: boolean } = {}) {
   const ctx = createTestContext(game as GameModule<unknown>, 'en');
-  ctx.preferences.set('display', { confirm: false, ...(options.peel ? { peel: options.peel } : {}) });
+  ctx.preferences.set('display', { confirm: false, ...(options.peel ? { peeling: options.peel } : {}) });
   const frames = fakeFrames();
   const context = { ...ctx.context, reducedMotion: options.reducedMotion ?? false };
   const instance = createPixelPeel(context, frames.options);
@@ -551,33 +551,44 @@ function startMotion(options: { peel?: PeelMode; state?: PeelState; motif?: stri
 }
 
 describe('slow peeling (design v3 § 3)', () => {
-  it('the stored preference: peel when valid, the v2 animation: false as Off, else Slow', () => {
+  it('the stored preference: peeling when valid; the first v3 peel ("slow" was today\'s Quick) and the v2 animation: false migrate; else Quick', () => {
+    expect(peelOf({ peeling: 'slow' })).toBe('slow');
+    expect(peelOf({ peeling: 'quick', peel: 'off' })).toBe('quick');
+    expect(peelOf({ peeling: 'off', animation: true })).toBe('off');
+    // First v3 records: its "slow" is the animation now called Quick; its short "quick" is gone (Quick too).
+    expect(peelOf({ peel: 'slow' })).toBe('quick');
     expect(peelOf({ peel: 'quick' })).toBe('quick');
     expect(peelOf({ peel: 'off', animation: true })).toBe('off');
+    // v2 records.
     expect(peelOf({ animation: false })).toBe('off');
-    expect(peelOf({ animation: true })).toBe('slow');
-    expect(peelOf({})).toBe('slow');
-    expect(peelOf({ peel: 'fast', animation: false })).toBe('off');
-    expect(peelOf({ peel: 'fast' })).toBe('slow');
-    for (const junk of [undefined, null, 3, 'slow', [], { peel: 1 }]) expect(peelOf(junk)).toBe('slow');
+    expect(peelOf({ animation: true })).toBe('quick');
+    expect(peelOf({})).toBe('quick');
+    expect(peelOf({ peeling: 'fast', peel: 'fast', animation: false })).toBe('off');
+    expect(peelOf({ peeling: 'fast' })).toBe('quick');
+    for (const junk of [undefined, null, 3, 'slow', [], { peeling: 1 }, { peel: 1 }]) expect(peelOf(junk)).toBe('quick');
   });
 
-  it('Slow is the default; an old record with animation: false starts with Off and is saved without animation', () => {
+  it('Quick is the default; an old record migrates and is saved as peeling (without peel or animation)', () => {
     const fresh = startMotion();
-    expect((fresh.q('pp-option-peel-slow') as HTMLInputElement).checked).toBe(true);
+    expect((fresh.q('pp-option-peel-quick') as HTMLInputElement).checked).toBe(true);
     expect(fresh.q('pp-peel-reduced').hidden).toBe(true);
+    expect(fresh.q('pp-peel').textContent).toContain('Slow (shoots line by line)');
+    expect(fresh.q('pp-peel').textContent).toContain('shoots straight along that row or column');
     fresh.instance.dispose();
-    const ctx = createTestContext(game as GameModule<unknown>, 'en');
-    ctx.preferences.set('display', { animation: false, allSymbols: false, confirm: false });
-    const instance = createPixelPeel({ ...ctx.context, reducedMotion: false }, fakeFrames().options);
-    instance.newGame({ seed: 1, difficulty: 'easy', settings: { motif: 'red-fox' } });
-    cleanup.push(() => instance.dispose());
-    const q = (id: string) => ctx.context.root.querySelector<HTMLElement>(`[data-testid="${id}"]`)!;
-    expect((q('pp-option-peel-off') as HTMLInputElement).checked).toBe(true);
-    const box = q('pp-option-allSymbols') as HTMLInputElement;
-    box.checked = true;
-    box.dispatchEvent(new Event('change'));
-    expect(ctx.preferences.get('display')).toEqual({ peel: 'off', allSymbols: true, confirm: false, large: false, wholeLanes: null });
+    for (const [old, mode] of [[{ animation: false }, 'off'], [{ peel: 'slow' }, 'quick'], [{ peel: 'quick' }, 'quick'], [{ peel: 'off' }, 'off']] as const) {
+      const ctx = createTestContext(game as GameModule<unknown>, 'en');
+      ctx.preferences.set('display', { ...old, allSymbols: false, confirm: false });
+      const instance = createPixelPeel({ ...ctx.context, reducedMotion: false }, fakeFrames().options);
+      instance.newGame({ seed: 1, difficulty: 'easy', settings: { motif: 'red-fox' } });
+      cleanup.push(() => instance.dispose());
+      const q = (id: string) => ctx.context.root.querySelector<HTMLElement>(`[data-testid="${id}"]`)!;
+      expect((q(`pp-option-peel-${mode}`) as HTMLInputElement).checked, JSON.stringify(old)).toBe(true);
+      const box = q('pp-option-allSymbols') as HTMLInputElement;
+      box.checked = true;
+      box.dispatchEvent(new Event('change'));
+      expect(ctx.preferences.get('display')).toEqual({ peeling: mode, allSymbols: true, confirm: false, large: false, wholeLanes: null });
+      instance.dispose();
+    }
   });
 
   it('launches are committed and saved before any frame runs; they queue and peel one after the other', () => {
@@ -650,32 +661,53 @@ describe('slow peeling (design v3 § 3)', () => {
     instance.resume();
   });
 
-  it('switching Peeling to Quick or Off mid-queue finishes it at once; with Off nothing ever queues', () => {
+  it('switching Peeling mid-queue finishes it at once; the next launch is drawn the new way; with Off nothing ever queues', () => {
     const { instance, frames, press, peeling, q, ctx } = startMotion();
     const witness = instance.serialize().witness;
+    const choose = (mode: string) => {
+      const input = q(`pp-option-peel-${mode}`) as HTMLInputElement;
+      input.checked = true;
+      input.dispatchEvent(new Event('change'));
+    };
     press(witness[0]!);
     expect(peeling()).toBe(1);
-    const quick = q('pp-option-peel-quick') as HTMLInputElement;
-    quick.checked = true;
-    quick.dispatchEvent(new Event('change'));
+    choose('slow');
     expect(peeling()).toBe(0);
-    expect(ctx.preferences.get('display')).toMatchObject({ peel: 'quick' });
-    // Quick: the short animation, no queue.
+    expect(ctx.preferences.get('display')).toMatchObject({ peeling: 'slow' });
+    // Slow: queues too, and takes longer than Quick for the same launch.
     press(witness[1]!);
+    expect(peeling()).toBe(1);
+    choose('quick');
     expect(peeling()).toBe(0);
-    frames.runOut();
-    const off = q('pp-option-peel-off') as HTMLInputElement;
-    off.checked = true;
-    off.dispatchEvent(new Event('change'));
+    choose('off');
     press(witness[2]!);
     expect(peeling()).toBe(0);
     expect(frames.scheduled).toBe(0);
-    // Back to Slow: from the next launch.
-    const slow = q('pp-option-peel-slow') as HTMLInputElement;
-    slow.checked = true;
-    slow.dispatchEvent(new Event('change'));
+    choose('quick');
     press(witness[3]!);
     expect(peeling()).toBe(1);
+    frames.runOut();
+    expect(peeling()).toBe(0);
+  });
+
+  it('Slow: the shooter stops at each station it hits; its pixels go together with the shot, in the order of the rules', () => {
+    const { instance, frames, press, pending, peeling } = startMotion({ peel: 'slow' });
+    const s = instance.serialize();
+    press(s.witness[0]!);
+    const total = pending();
+    expect(total).toBeGreaterThan(0);
+    let t = 0;
+    const seen: number[] = [];
+    while (peeling() > 0 && t < 20_000) {
+      frames.step(16);
+      t += 16;
+      seen.push(pending());
+    }
+    expect(pending()).toBe(0);
+    // Bounded: one launch ends within 7 s of presentation time (plus a frame).
+    expect(t).toBeLessThanOrEqual(7000 + 32);
+    // Pixels went in steps, never all at once (several shots).
+    expect(new Set(seen).size).toBeGreaterThan(2);
   });
 
   it('reduced motion forces Off: no queue, no frames', () => {
