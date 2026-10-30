@@ -58,5 +58,21 @@ export const CARDS: readonly MotifCard[] = [
     art: () => import('../baked/uluru'),
     title: { de: 'Uluru', en: 'Uluru', nl: 'Uluru', es: 'Uluru', fr: 'Uluru', ru: 'Улуру', 'zh-Hans': '乌卢鲁', ko: '울루루', ja: 'ウルル', ar: 'أولورو', pt: 'Uluru', it: 'Uluru', pl: 'Uluru', tr: 'Uluru', uk: 'Улуру', hi: 'उलुरु' },
     place: { de: 'Northern Territory, Australien', en: 'Northern Territory, Australia', nl: 'Northern Territory, Australië', es: 'Territorio del Norte, Australia', fr: 'Territoire du Nord, Australie', ru: 'Северная территория, Австралия', 'zh-Hans': '澳大利亚北领地', ko: '오스트레일리아 노던 준주', ja: 'オーストラリア、ノーザンテリトリー', ar: 'الإقليم الشمالي، أستراليا', pt: 'Território do Norte, Austrália', it: 'Territorio del Nord, Australia', pl: 'Terytorium Północne, Australia', tr: 'Kuzey Toprakları, Avustralya', uk: 'Північна територія, Австралія', hi: 'नॉर्दर्न टेरिटरी, ऑस्ट्रेलिया' }
+  },
+  {
+    id: 'great-wall',
+    group: 'landmark',
+    aspect: 'wide',
+    art: () => import('../baked/great-wall'),
+    title: { de: 'Chinesische Mauer', en: 'Great Wall of China', nl: 'Chinese Muur', es: 'Gran Muralla China', fr: 'Grande Muraille de Chine', ru: 'Великая Китайская стена', 'zh-Hans': '长城', ko: '만리장성', ja: '万里の長城', ar: 'سور الصين العظيم', pt: 'Grande Muralha da China', it: 'Grande Muraglia cinese', pl: 'Wielki Mur Chiński', tr: 'Çin Seddi', uk: 'Великий китайський мур', hi: 'चीन की महान दीवार' },
+    place: { de: 'Nordchina', en: 'Northern China', nl: 'Noord-China', es: 'Norte de China', fr: 'Nord de la Chine', ru: 'Северный Китай', 'zh-Hans': '中国北方', ko: '중국 북부', ja: '中国北部', ar: 'شمال الصين', pt: 'Norte da China', it: 'Cina settentrionale', pl: 'Północne Chiny', tr: 'Kuzey Çin', uk: 'Північний Китай', hi: 'उत्तरी चीन' }
+  },
+  {
+    id: 'dutch-windmill',
+    group: 'landmark',
+    aspect: 'square',
+    art: () => import('../baked/dutch-windmill'),
+    title: { de: 'Holländische Windmühle', en: 'Dutch windmill', nl: 'Hollandse windmolen', es: 'Molino holandés', fr: 'Moulin hollandais', ru: 'Голландская мельница', 'zh-Hans': '荷兰风车', ko: '네덜란드 풍차', ja: 'オランダの風車', ar: 'طاحونة هولندية', pt: 'Moinho holandês', it: 'Mulino olandese', pl: 'Holenderski wiatrak', tr: 'Hollanda yel değirmeni', uk: 'Голландський вітряк', hi: 'डच पवनचक्की' },
+    place: { de: 'An einem Kanal in den Niederlanden', en: 'By a canal in the Netherlands', nl: 'Aan een vaart in Nederland', es: 'Junto a un canal en los Países Bajos', fr: 'Au bord d’un canal aux Pays-Bas', ru: 'У канала в Нидерландах', 'zh-Hans': '荷兰的运河边', ko: '네덜란드의 운하 옆', ja: 'オランダの運河のほとり', ar: 'بجانب قناة في هولندا', pt: 'Junto a um canal nos Países Baixos', it: 'Lungo un canale nei Paesi Bassi', pl: 'Nad kanałem w Holandii', tr: 'Hollanda’da bir kanal kenarında', uk: 'Біля каналу в Нідерландах', hi: 'नीदरलैंड्स में एक नहर के किनारे' }
   }
 ];
