@@ -34,5 +34,21 @@ export const CARDS: readonly MotifCard[] = [
     art: () => import('../baked/orangutan'),
     title: { de: 'Orang-Utan', en: 'Orangutan', nl: 'Orang-oetan', es: 'Orangután', fr: 'Orang-outan', ru: 'Орангутан', 'zh-Hans': '猩猩', ko: '오랑우탄', ja: 'オランウータン', ar: 'إنسان الغاب', pt: 'Orangotango', it: 'Orango', pl: 'Orangutan', tr: 'Orangutan', uk: 'Орангутан', hi: 'ओरंगउटान' },
     place: { de: 'Regenwälder auf Borneo, Südostasien', en: 'Rainforests of Borneo, South-East Asia', nl: 'Regenwouden van Borneo, Zuidoost-Azië', es: 'Selvas de Borneo, sudeste asiático', fr: 'Forêts tropicales de Bornéo, Asie du Sud-Est', ru: 'Тропические леса Борнео, Юго-Восточная Азия', 'zh-Hans': '东南亚婆罗洲的雨林', ko: '동남아시아 보르네오섬의 열대우림', ja: '東南アジア、ボルネオ島の熱帯雨林', ar: 'الغابات المطيرة في بورنيو، جنوب شرق آسيا', pt: 'Florestas tropicais de Bornéu, Sudeste Asiático', it: 'Foreste pluviali del Borneo, Sud-est asiatico', pl: 'Lasy deszczowe Borneo, Azja Południowo-Wschodnia', tr: 'Borneo’nun yağmur ormanları, Güneydoğu Asya', uk: 'Тропічні ліси Борнео, Південно-Східна Азія', hi: 'बोर्नियो के वर्षावन, दक्षिण-पूर्व एशिया' }
+  },
+  {
+    id: 'lion',
+    group: 'animal',
+    aspect: 'wide',
+    art: () => import('../baked/lion'),
+    title: { de: 'Löwe', en: 'Lion', nl: 'Leeuw', es: 'León', fr: 'Lion', ru: 'Лев', 'zh-Hans': '狮子', ko: '사자', ja: 'ライオン', ar: 'الأسد', pt: 'Leão', it: 'Leone', pl: 'Lew', tr: 'Aslan', uk: 'Лев', hi: 'सिंह' },
+    place: { de: 'Savannen in Afrika südlich der Sahara; einige im Gir-Wald, Indien', en: 'Savannas of sub-Saharan Africa; a few in the Gir Forest, India', nl: 'Savannes in Afrika ten zuiden van de Sahara; enkele in het Gir-woud, India', es: 'Sabanas del África subsahariana; unos pocos en el bosque de Gir, India', fr: 'Savanes d’Afrique subsaharienne ; quelques-uns dans la forêt de Gir, en Inde', ru: 'Саванны Африки южнее Сахары; немного — в лесу Гир, Индия', 'zh-Hans': '撒哈拉以南非洲的稀树草原；印度吉尔森林也有少量', ko: '사하라 이남 아프리카의 사바나, 일부는 인도 기르 숲', ja: 'サハラ以南のアフリカのサバンナ、一部はインドのギル森林', ar: 'سافانا أفريقيا جنوب الصحراء الكبرى، وقلة في غابة غير بالهند', pt: 'Savanas da África subsaariana; alguns na Floresta de Gir, Índia', it: 'Savane dell’Africa subsahariana; alcuni nella foresta di Gir, India', pl: 'Sawanny Afryki Subsaharyjskiej; nieliczne w lesie Gir w Indiach', tr: 'Sahra altı Afrika’nın savanları; birkaçı Hindistan’daki Gir Ormanı’nda', uk: 'Савани Африки на південь від Сахари; кілька — у лісі Гір, Індія', hi: 'उप-सहारा अफ़्रीका के सवाना; कुछ भारत के गिर वन में' }
+  },
+  {
+    id: 'peacock',
+    group: 'animal',
+    aspect: 'square',
+    art: () => import('../baked/peacock'),
+    title: { de: 'Pfau', en: 'Peacock', nl: 'Pauw', es: 'Pavo real', fr: 'Paon', ru: 'Павлин', 'zh-Hans': '孔雀', ko: '공작', ja: 'クジャク', ar: 'الطاووس', pt: 'Pavão', it: 'Pavone', pl: 'Paw', tr: 'Tavus kuşu', uk: 'Павич', hi: 'मोर' },
+    place: { de: 'Wälder und Felder in Südasien', en: 'Forests and farmland of South Asia', nl: 'Bossen en akkers in Zuid-Azië', es: 'Bosques y campos del sur de Asia', fr: 'Forêts et campagnes d’Asie du Sud', ru: 'Леса и поля Южной Азии', 'zh-Hans': '南亚的森林与农田', ko: '남아시아의 숲과 농지', ja: '南アジアの森や農地', ar: 'الغابات والأراضي الزراعية في جنوب آسيا', pt: 'Florestas e campos do Sul da Ásia', it: 'Foreste e campagne dell’Asia meridionale', pl: 'Lasy i pola Azji Południowej', tr: 'Güney Asya’nın ormanları ve tarlaları', uk: 'Ліси й поля Південної Азії', hi: 'दक्षिण एशिया के वन और खेत' }
   }
 ];
