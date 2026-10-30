@@ -26,5 +26,21 @@ export const CARDS: readonly MotifCard[] = [
     art: () => import('../baked/autumn-vineyard'),
     title: { de: 'Weinberg im Herbst', en: 'Vineyard in autumn', nl: 'Wijngaard in de herfst', es: 'Viñedo en otoño', fr: 'Vignoble en automne', ru: 'Виноградник осенью', 'zh-Hans': '秋天的葡萄园', ko: '가을의 포도밭', ja: '秋のぶどう畑', ar: 'كرم عنب في الخريف', pt: 'Vinha no outono', it: 'Vigneto in autunno', pl: 'Winnica jesienią', tr: 'Sonbaharda bağ', uk: 'Виноградник восени', hi: 'पतझड़ में अंगूर का बाग़' },
     place: { de: 'Weinbaugebiete mit sanften Hügeln, etwa in Europa', en: 'Wine regions with rolling hills, as in Europe', nl: 'Wijnstreken met glooiende heuvels, zoals in Europa', es: 'Regiones vinícolas de colinas suaves, como en Europa', fr: 'Régions viticoles aux collines douces, comme en Europe', ru: 'Винодельческие края с холмами, например в Европе', 'zh-Hans': '丘陵起伏的葡萄酒产区，例如欧洲', ko: '유럽처럼 언덕이 완만한 포도주 산지', ja: 'ヨーロッパなど、なだらかな丘のワイン産地', ar: 'مناطق النبيذ ذات التلال المتموجة، كما في أوروبا', pt: 'Regiões vinícolas de colinas suaves, como na Europa', it: 'Zone vinicole dalle dolci colline, come in Europa', pl: 'Regiony winiarskie wśród łagodnych wzgórz, np. w Europie', tr: 'Avrupa’daki gibi inişli çıkışlı tepelerde bağ bölgeleri', uk: 'Виноробні краї з пологими пагорбами, як у Європі', hi: 'यूरोप जैसे, ढलानदार पहाड़ियों वाले अंगूर उत्पादक इलाक़े' }
+  },
+  {
+    id: 'snowy-pines',
+    group: 'season',
+    aspect: 'square',
+    art: () => import('../baked/snowy-pines'),
+    title: { de: 'Verschneite Kiefern', en: 'Snowy pines at dusk', nl: 'Besneeuwde dennen', es: 'Pinos nevados al anochecer', fr: 'Pins enneigés au crépuscule', ru: 'Заснеженные сосны в сумерках', 'zh-Hans': '黄昏的雪松林', ko: '해 질 녘 눈 덮인 소나무', ja: '夕暮れの雪の松林', ar: 'صنوبر مثلج عند الغسق', pt: 'Pinheiros nevados ao anoitecer', it: 'Pini innevati al crepuscolo', pl: 'Ośnieżone sosny o zmierzchu', tr: 'Alacakaranlıkta karlı çamlar', uk: 'Засніжені сосни в сутінках', hi: 'सांझ में बर्फ़ से ढके चीड़' },
+    place: { de: 'Nördliche Nadelwälder im Winter', en: 'Northern conifer forests in winter', nl: 'Noordelijke naaldbossen in de winter', es: 'Bosques de coníferas del norte en invierno', fr: 'Forêts de conifères du Nord en hiver', ru: 'Северные хвойные леса зимой', 'zh-Hans': '冬季的北方针叶林', ko: '겨울의 북부 침엽수림', ja: '冬の北方針葉樹林', ar: 'غابات الصنوبريات الشمالية في الشتاء', pt: 'Florestas de coníferas do norte no inverno', it: 'Foreste di conifere del Nord in inverno', pl: 'Północne lasy iglaste zimą', tr: 'Kışın kuzeyin iğne yapraklı ormanları', uk: 'Північні хвойні ліси взимку', hi: 'सर्दियों में उत्तरी शंकुधारी वन' }
+  },
+  {
+    id: 'prairie-storm',
+    group: 'season',
+    aspect: 'wide',
+    art: () => import('../baked/prairie-storm'),
+    title: { de: 'Gewitter über der Prärie', en: 'Thunderstorm on the prairie', nl: 'Onweer boven de prairie', es: 'Tormenta sobre la pradera', fr: 'Orage sur la prairie', ru: 'Гроза над прерией', 'zh-Hans': '草原上的雷暴', ko: '대초원의 뇌우', ja: '大草原の雷雨', ar: 'عاصفة رعدية فوق البراري', pt: 'Trovoada na pradaria', it: 'Temporale sulla prateria', pl: 'Burza nad prerią', tr: 'Bozkırda gök gürültülü fırtına', uk: 'Гроза над прерією', hi: 'प्रेयरी पर आंधी-तूफ़ान' },
+    place: { de: 'Sommer in den Great Plains, Nordamerika', en: 'Summer on the Great Plains, North America', nl: 'Zomer op de Great Plains, Noord-Amerika', es: 'Verano en las Grandes Llanuras, Norteamérica', fr: 'Été dans les Grandes Plaines, Amérique du Nord', ru: 'Лето на Великих равнинах, Северная Америка', 'zh-Hans': '北美洲大平原的夏天', ko: '북아메리카 대평원의 여름', ja: '北アメリカ、グレートプレーンズの夏', ar: 'الصيف في السهول الكبرى، أمريكا الشمالية', pt: 'Verão nas Grandes Planícies, América do Norte', it: 'Estate nelle Grandi Pianure, Nord America', pl: 'Lato na Wielkich Równinach, Ameryka Północna', tr: 'Büyük Ovalar’da yaz, Kuzey Amerika', uk: 'Літо на Великих рівнинах, Північна Америка', hi: 'ग्रेट प्लेन्स में गर्मी, उत्तरी अमेरिका' }
   }
 ];
