@@ -42,5 +42,21 @@ export const CARDS: readonly MotifCard[] = [
     art: () => import('../baked/eiffel-tower'),
     title: { de: 'Eiffelturm', en: 'Eiffel Tower', nl: 'Eiffeltoren', es: 'Torre Eiffel', fr: 'Tour Eiffel', ru: 'Эйфелева башня', 'zh-Hans': '埃菲尔铁塔', ko: '에펠탑', ja: 'エッフェル塔', ar: 'برج إيفل', pt: 'Torre Eiffel', it: 'Torre Eiffel', pl: 'Wieża Eiffla', tr: 'Eyfel Kulesi', uk: 'Ейфелева вежа', hi: 'एफ़िल टॉवर' },
     place: { de: 'Paris, Frankreich', en: 'Paris, France', nl: 'Parijs, Frankrijk', es: 'París, Francia', fr: 'Paris, France', ru: 'Париж, Франция', 'zh-Hans': '法国巴黎', ko: '프랑스 파리', ja: 'フランス、パリ', ar: 'باريس، فرنسا', pt: 'Paris, França', it: 'Parigi, Francia', pl: 'Paryż, Francja', tr: 'Paris, Fransa', uk: 'Париж, Франція', hi: 'पेरिस, फ़्रांस' }
+  },
+  {
+    id: 'sugarloaf-mountain',
+    group: 'landmark',
+    aspect: 'panorama',
+    art: () => import('../baked/sugarloaf-mountain'),
+    title: { de: 'Zuckerhut', en: 'Sugarloaf Mountain', nl: 'Suikerbroodberg', es: 'Pan de Azúcar', fr: 'Pain de Sucre', ru: 'Сахарная Голова', 'zh-Hans': '糖面包山', ko: '슈가로프산', ja: 'ポン・ジ・アスーカル', ar: 'جبل رغيف السكر', pt: 'Pão de Açúcar', it: 'Pan di Zucchero', pl: 'Głowa Cukru', tr: 'Şeker Somunu Dağı', uk: 'Цукрова Голова', hi: 'शुगरलोफ़ पर्वत' },
+    place: { de: 'Rio de Janeiro, Brasilien', en: 'Rio de Janeiro, Brazil', nl: 'Rio de Janeiro, Brazilië', es: 'Río de Janeiro, Brasil', fr: 'Rio de Janeiro, Brésil', ru: 'Рио-де-Жанейро, Бразилия', 'zh-Hans': '巴西里约热内卢', ko: '브라질 리우데자네이루', ja: 'ブラジル、リオデジャネイロ', ar: 'ريو دي جانيرو، البرازيل', pt: 'Rio de Janeiro, Brasil', it: 'Rio de Janeiro, Brasile', pl: 'Rio de Janeiro, Brazylia', tr: 'Rio de Janeiro, Brezilya', uk: 'Ріо-де-Жанейро, Бразилія', hi: 'रियो डी जनेरो, ब्राज़ील' }
+  },
+  {
+    id: 'uluru',
+    group: 'landmark',
+    aspect: 'panorama',
+    art: () => import('../baked/uluru'),
+    title: { de: 'Uluru', en: 'Uluru', nl: 'Uluru', es: 'Uluru', fr: 'Uluru', ru: 'Улуру', 'zh-Hans': '乌卢鲁', ko: '울루루', ja: 'ウルル', ar: 'أولورو', pt: 'Uluru', it: 'Uluru', pl: 'Uluru', tr: 'Uluru', uk: 'Улуру', hi: 'उलुरु' },
+    place: { de: 'Northern Territory, Australien', en: 'Northern Territory, Australia', nl: 'Northern Territory, Australië', es: 'Territorio del Norte, Australia', fr: 'Territoire du Nord, Australie', ru: 'Северная территория, Австралия', 'zh-Hans': '澳大利亚北领地', ko: '오스트레일리아 노던 준주', ja: 'オーストラリア、ノーザンテリトリー', ar: 'الإقليم الشمالي، أستراليا', pt: 'Território do Norte, Austrália', it: 'Territorio del Nord, Australia', pl: 'Terytorium Północne, Australia', tr: 'Kuzey Toprakları, Avustralya', uk: 'Північна територія, Австралія', hi: 'नॉर्दर्न टेरिटरी, ऑस्ट्रेलिया' }
   }
 ];
