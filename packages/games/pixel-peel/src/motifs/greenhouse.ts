@@ -68,10 +68,8 @@ export const greenhouse: Motif = {
     { shape: { ellipse: [82, 8, 12, 3.6] }, fill: 'w', shade: { dark: 's', dir: 'n', mode: 'band', amount: 0.3 } },
     { shape: { ellipse: [14, 14, 9, 2.8] }, fill: 'w', min: 40 },
     { name: 'hedge', shape: { poly: [[-2, 58], [-2, 38], [6, 34], [14, 37], [20, 32], [28, 36], [34, 34], [70, 34], [78, 30], [86, 33], [94, 29], [102, 32], [102, 58]], smooth: 1 }, fill: 'd', shade: { light: 'g', dir: 'nw' } },
-    { shape: { all: true }, fill: { scatter: 'g', density: 0.12, salt: 21 }, clip: 'hedge', min: 40 },
     // The lawn.
     { name: 'lawn', shape: { rect: [0, 54, 100, 46] }, fill: { gradient: ['g', 'l', 'l'], from: [0, 56], to: [0, 92], soft: 0.6 } },
-    { shape: { all: true }, fill: { scatter: 'z', density: 0.06, salt: 5 }, clip: 'lawn', min: 48 },
     // The greenhouse in three-quarter view: gable front, side wall and roof, glass full of plants.
     { name: 'front', shape: { poly: [[8, 86], [8, 48], [33, 24], [58, 48], [58, 86]] }, fill: 's' },
     { name: 'side', shape: { poly: [[58, 86], [58, 48], [92, 44], [92, 80]] }, fill: 'm' },
@@ -183,10 +181,6 @@ export const greenhouse: Motif = {
     { shape: { line: [[58, 48], [92, 44]], width: 1.2 }, fill: 'w' },
     { shape: { line: [[8, 86], [58, 86], [92, 80]], width: 2 }, fill: 'i' },
     // Glints on the glass.
-    { shape: { line: [[12, 58], [16, 52]], width: 1 }, fill: 'w', min: 40 },
-    { shape: { line: [[40, 52], [44, 46]], width: 1 }, fill: 'w', min: 40 },
-    { shape: { line: [[64, 54], [68, 48]], width: 1 }, fill: 'w', min: 40 },
-    { shape: { line: [[80, 50], [84, 44]], width: 1 }, fill: 'w', min: 40 },
     // The open door with a brick step.
     { shape: { rect: [26, 63, 14, 23] }, fill: 'w' },
     { shape: { rect: [27.6, 64.6, 10.8, 21.4] }, fill: 'b', shade: { dark: 'q', dir: 'nw', mode: 'band', amount: 0.3 } },

@@ -71,7 +71,6 @@ export const canalBicycle: Motif = {
     { shape: { rect: [0, 24, 100, 62] }, fill: 'x' },
     // Three narrow canal houses: a stepped gable in red brick, a neck gable in cream plaster, a bell gable in brown brick.
     { name: 'h1', shape: { poly: [[0, 86], [0, 30], [3, 30], [3, 25], [7, 25], [7, 20], [11, 20], [11, 15], [15, 15], [15, 11], [22, 11], [22, 15], [26, 15], [26, 20], [30, 20], [30, 25], [34, 25], [34, 86]] }, fill: 'r', shade: { dark: 'x', dir: 'w', mode: 'band', amount: 0.12 } },
-    { shape: { all: true }, fill: { stripes: ['r', 'r', 'x'], width: 1.4, angle: 90 }, clip: 'h1', min: 42 },
     { shape: { line: [[0, 30.6], [3.6, 30.6], [3.6, 25.6], [7.6, 25.6], [7.6, 20.6], [11.6, 20.6], [11.6, 15.6], [15.6, 15.6], [15.6, 11.6], [21.4, 11.6], [21.4, 15.6], [25.4, 15.6], [25.4, 20.6], [29.4, 20.6], [29.4, 25.6], [33.4, 25.6]], width: 1 }, fill: 'w', min: 36 },
     { shape: { rect: [15, 17, 4, 6] }, fill: 'w' },
     { shape: { rect: [16.1, 18.1, 1.8, 3.8] }, fill: 'k', keep: true },
@@ -131,7 +130,6 @@ export const canalBicycle: Motif = {
     { shape: { rect: [44, 71, 12, 15], round: 1 }, fill: 'k' },
     { shape: { rect: [45.2, 72.2, 9.6, 13.8], round: 1 }, fill: 'm', shade: { dark: 'd', dir: 'w', mode: 'band', amount: 0.3 } },
     { name: 'h3', shape: { poly: [[66, 86], [66, 32], [69, 31], [71, 27], [73, 23], [76, 20], [79, 18.4], [87, 18.4], [90, 20], [93, 23], [95, 27], [97, 31], [100, 32], [100, 86]], smooth: 1 }, fill: 'b', shade: { light: 't', dark: 'x', dir: 'w', mode: 'rim' } },
-    { shape: { all: true }, fill: { stripes: ['b', 'b', 'x'], width: 1.4, angle: 90 }, clip: 'h3', min: 42 },
     { shape: { ellipse: [83, 17.4, 4, 1.6] }, fill: 'w' },
     { shape: { rect: [80, 22, 6, 7] }, fill: 'w' },
     { shape: { rect: [81.1, 23.1, 3.8, 4.8] }, fill: 'k', keep: true },
@@ -176,10 +174,6 @@ export const canalBicycle: Motif = {
     { shape: { line: [[22, 90], [28, 90]], width: 1 }, fill: 'l' },
     // The near quay: a stone edge and pale paving.
     { name: 'quay', shape: { rect: [0, 98, 100, 36] }, fill: { gradient: ['e', 'i', 'i'], from: [0, 100], to: [0, 118], soft: 0.5 } },
-    { shape: { line: [[0, 106], [100, 106]], width: 0.8 }, fill: 'e', min: 42 },
-    { shape: { line: [[0, 113], [100, 113]], width: 0.8 }, fill: 'e', min: 42 },
-    { shape: { line: [[0, 121], [100, 121]], width: 0.8 }, fill: 'e', min: 42 },
-    { shape: { line: [[0, 130], [100, 130]], width: 0.8 }, fill: 'e', min: 42 },
     { shape: { rect: [0, 97.4, 100, 3] }, fill: 'i', shade: { dark: 'k', dir: 'n', mode: 'band', amount: 0.3 } },
     // The bicycle: step-through red frame, black tyres, brown saddle, a basket of tulips.
     { shape: { line: [[35.6, 121], [35.36, 123.14], [34.65, 125.17], [33.51, 126.99], [31.99, 128.51], [30.17, 129.65], [28.14, 130.36], [26, 130.6], [23.86, 130.36], [21.83, 129.65], [20.01, 128.51], [18.49, 126.99], [17.35, 125.17], [16.64, 123.14], [16.4, 121], [16.64, 118.86], [17.35, 116.83], [18.49, 115.01], [20.01, 113.49], [21.83, 112.35], [23.86, 111.64], [26, 111.4], [28.14, 111.64], [30.17, 112.35], [31.99, 113.49], [33.51, 115.01], [34.65, 116.83], [35.36, 118.86], [35.6, 121]], width: 2.2 }, fill: 'k' },
