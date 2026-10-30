@@ -1,0 +1,133 @@
+import type { Motif } from '../art/types';
+
+/** The stone city on its mountain saddle: roofless gabled houses and a few thatched ones around the green plaza, terraces stepping down the slopes, the steep forested peak of Huayna Picchu behind, mist in the valleys. Original vector art drawn for Worthwhile Play. */
+export const machuPicchu: Motif = {
+  id: 'machu-picchu',
+  group: 'landmark',
+  title: {
+    de: 'Machu Picchu',
+    en: 'Machu Picchu',
+    nl: 'Machu Picchu',
+    es: 'Machu Picchu',
+    fr: 'Machu Picchu',
+    ru: 'Мачу-Пикчу',
+    'zh-Hans': '马丘比丘',
+    ko: '마추픽추',
+    ja: 'マチュ・ピチュ',
+    ar: 'ماتشو بيتشو',
+    pt: 'Machu Picchu',
+    it: 'Machu Picchu',
+    pl: 'Machu Picchu',
+    tr: 'Machu Picchu',
+    uk: 'Мачу-Пікчу',
+    hi: 'माचू पिच्चू'
+  },
+  place: {
+    de: 'Region Cusco, Peru',
+    en: 'Cusco Region, Peru',
+    nl: 'Regio Cusco, Peru',
+    es: 'Región Cusco, Perú',
+    fr: 'Région de Cuzco, Pérou',
+    ru: 'Регион Куско, Перу',
+    'zh-Hans': '秘鲁库斯科大区',
+    ko: '페루 쿠스코주',
+    ja: 'ペルー、クスコ県',
+    ar: 'إقليم كوسكو، بيرو',
+    pt: 'Região de Cusco, Peru',
+    it: 'Regione di Cusco, Perù',
+    pl: 'Region Cusco, Peru',
+    tr: 'Cusco Bölgesi, Peru',
+    uk: 'Регіон Куско, Перу',
+    hi: 'कुस्को क्षेत्र, पेरू'
+  },
+  aspect: 'square',
+  backdrop: '#f0c6d8',
+  palette: {
+    s: ['#7cb5e2', 'skyBlue', 1],
+    l: ['#c6e1f3', 'lightBlue', 2, 's'],
+    w: ['#f6f7f6', 'white', 1],
+    v: ['#8f9cc9', 'lavender', 2, 'b'],
+    b: ['#4b71a6', 'blue', 1],
+    i: ['#cbc9bf', 'lightGrey', 2, 'g'],
+    g: ['#9a978d', 'grey', 1],
+    k: ['#5c5b55', 'darkGrey', 1],
+    c: ['#25271f', 'charcoal', 1],
+    m: ['#a8d05a', 'lime', 1],
+    e: ['#4f963c', 'green', 1],
+    x: ['#6e7a33', 'olive', 3, 'e'],
+    t: ['#2f7c6c', 'teal', 2, 'd'],
+    d: ['#21492b', 'darkGreen', 1],
+    h: ['#c9a66a', 'tan', 2, 'o'],
+    o: ['#7a5232', 'brown', 1]
+  },
+  layers: [
+    // Sky with drifting cloud.
+    { shape: { rect: [0, 0, 100, 60] }, fill: { gradient: ['s', 's', 'l'], from: [0, 0], to: [0, 40], soft: 0.6 } },
+    { shape: { ellipse: [20, 10, 13, 3.6] }, fill: 'w', shade: { dark: 'l', dir: 'n', mode: 'band', amount: 0.35 } },
+    { shape: { ellipse: [29, 7.4, 7, 3.4] }, fill: 'w' },
+    { shape: { ellipse: [92, 8, 10, 2.6] }, fill: 'w', shade: { dark: 'l', dir: 'n', mode: 'band', amount: 0.35 }, min: 44 },
+    { shape: { rect: [0, 52, 100, 50] }, fill: 'e' },
+    // Distant Andean ranges in blue haze, steep and jagged.
+    { shape: { poly: [[-2, 40], [4, 30], [9, 25], [13, 29], [18, 22], [23, 27], [28, 24], [34, 31], [40, 36], [46, 42], [50, 50], [-2, 50]], smooth: 1 }, fill: 'v', shade: { light: 'l', dir: 'nw' } },
+    { shape: { poly: [[84, 34], [88, 26], [92, 22], [96, 25], [102, 22], [102, 50], [84, 50]], smooth: 1 }, fill: 'v', shade: { light: 'l', dir: 'nw' } },
+    { shape: { poly: [[-2, 46], [6, 38], [12, 40], [20, 34], [28, 38], [36, 42], [44, 48], [46, 56], [-2, 56]], smooth: 1 }, fill: 'b', shade: { light: 'v', dir: 'nw' } },
+    // Mist lying in the valleys.
+    { shape: { ellipse: [22, 49.6, 28, 3] }, fill: 'w', shade: { dark: 'l', dir: 's', mode: 'band', amount: 0.4 } },
+    // A dark mountain across the gorge on the right.
+    { shape: { poly: [[78, 52], [84, 34], [90, 28], [98, 27], [102, 29], [102, 62], [78, 62]], smooth: 1 }, fill: 't', shade: { light: 'v', dark: 'b', dir: 'nw', width: 2 } },
+    // Huayna Picchu: the steep, round-topped forested peak behind the city, grey rock faces on its flanks, its small neighbour at its foot.
+    { name: 'peak', shape: { poly: [[40, 60], [48, 55], [53, 48], [56.6, 39], [59, 30], [61.4, 23], [64.4, 17.6], [68, 14.6], [72, 14], [75.6, 15.6], [78, 19.4], [79.6, 25], [81, 32], [83.6, 39], [87, 45], [90, 52], [92, 62]], smooth: 1 }, fill: 'e', shade: { light: 'm', dark: 'd', dir: 'nw', width: 2 } },
+    { shape: { poly: [[74, 18], [78, 20], [80, 28], [82, 36], [86, 44], [90, 52], [92, 62], [78, 62], [80, 50], [76, 36], [75, 26]], smooth: 1 }, fill: 'd', clip: 'peak' },
+    { shape: { poly: [[57, 40], [59.6, 31], [62, 24], [64.6, 19], [64.6, 26], [63, 34], [60.6, 44]], smooth: 1 }, fill: 'k', clip: 'peak' },
+    { shape: { poly: [[70, 30], [73, 28], [74, 40], [71, 46], [69, 38]], smooth: 1 }, fill: 'k', clip: 'peak' },
+    { shape: { poly: [[58.4, 38], [60.6, 31], [62, 28], [61.6, 34]], smooth: 1 }, fill: 'g', clip: 'peak', min: 44 },
+    { shape: { poly: [[70.6, 32], [72.4, 30.4], [72.2, 36], [70.6, 38]], smooth: 1 }, fill: 'g', clip: 'peak', min: 56 },
+    { shape: { line: [[66.4, 17], [74, 16.4]], width: 1 }, fill: 'g', clip: 'peak', min: 44 },
+    { shape: { line: [[65, 19.6], [76.4, 19]], width: 1 }, fill: 'g', clip: 'peak', min: 56 },
+    { shape: { all: true }, fill: { scatter: 'd', density: 0.12, salt: 4 }, clip: 'peak', min: 44 },
+    { shape: { all: true }, fill: { scatter: 'x', density: 0.08, salt: 5 }, clip: 'peak', min: 56 },
+    { shape: { poly: [[36, 62], [40, 54.6], [44, 51], [48, 50.4], [52, 52.4], [56, 60]], smooth: 1 }, fill: 't', shade: { light: 'e', dark: 'd', dir: 'nw', width: 2 } },
+    { shape: { ellipse: [86, 55, 14, 2.4] }, fill: 'w', shade: { dark: 'l', dir: 's', mode: 'band', amount: 0.4 } },
+    // The saddle the city stands on, falling steeply into the valley on the right.
+    { name: 'saddle', shape: { poly: [[-2, 58], [14, 55.4], [30, 54], [48, 55], [66, 57], [84, 59], [102, 61], [102, 102], [-2, 102]], smooth: 1 }, fill: 'e', shade: { light: 'm', dir: 'n', width: 2 } },
+    { shape: { poly: [[90, 60], [102, 61], [102, 102], [96, 102], [92, 80]], smooth: 1 }, fill: 'c', shade: { light: 'd', dir: 'w', width: 2 } },
+    { shape: { all: true }, fill: { scatter: 'x', density: 0.1, salt: 7 }, clip: 'saddle', min: 56 },
+    // The central plaza.
+    { shape: { poly: [[38, 64], [60, 63.4], [62, 69], [40, 70]], smooth: 1 }, fill: 'm', shade: { dark: 'e', dir: 'nw', mode: 'band', amount: 0.2 } },
+    // The upper houses: roofless granite walls with gable ends, two rebuilt with thatch.
+    { shape: { poly: [[6, 62], [6, 56], [9.6, 52], [13.2, 56], [16, 56], [16, 53.6], [30, 53.6], [30, 56], [33, 56], [36.6, 52], [40.2, 56], [44, 56], [44, 62]] }, fill: 'g', shade: { light: 'i', dark: 'k', dir: 'nw', width: 1 } },
+    { shape: { poly: [[4.8, 56.4], [9.6, 51], [14.4, 56.4]] }, fill: 'h', shade: { dark: 'o', dir: 'w', mode: 'band', amount: 0.45 } },
+    { shape: { poly: [[31.8, 56.4], [36.6, 51], [41.4, 56.4]] }, fill: 'h', shade: { dark: 'o', dir: 'w', mode: 'band', amount: 0.45 } },
+    { shape: { rect: [8.4, 57.4, 2.8, 3.6] }, fill: 'c', keep: true },
+    { shape: { rect: [19, 56.4, 2.8, 3.6] }, fill: 'c', keep: true },
+    { shape: { rect: [25, 56.4, 2.8, 3.6] }, fill: 'c', keep: true, min: 44 },
+    { shape: { rect: [35.2, 57.4, 2.8, 3.6] }, fill: 'c', keep: true },
+    { shape: { line: [[16, 56], [30, 56]], width: 1 }, fill: 'k', min: 44 },
+    // The lower houses on terraces of their own beyond the plaza.
+    { shape: { poly: [[2, 70], [2, 64.6], [5.6, 61], [9.2, 64.6], [24, 64.6], [24, 70]] }, fill: 'g', shade: { light: 'i', dark: 'k', dir: 'nw', width: 1 } },
+    { shape: { rect: [12, 65.6, 2.8, 3.2] }, fill: 'c', keep: true },
+    { shape: { rect: [18, 65.6, 2.8, 3.2] }, fill: 'c', keep: true, min: 44 },
+    { shape: { poly: [[62, 66], [62, 61.4], [65.6, 57.8], [69.2, 61.4], [74, 61.4], [74, 59.4], [84, 59.4], [84, 61.6], [87.6, 58], [91.2, 61.6], [91.2, 66]] }, fill: 'g', shade: { light: 'i', dark: 'k', dir: 'nw', width: 1 } },
+    { shape: { poly: [[73, 61.8], [79, 56.6], [85, 61.8]] }, fill: 'h', shade: { dark: 'o', dir: 'w', mode: 'band', amount: 0.45 } },
+    { shape: { rect: [64.4, 62.2, 2.8, 3.2] }, fill: 'c', keep: true },
+    { shape: { rect: [77.6, 62.4, 2.8, 3.2] }, fill: 'c', keep: true },
+    { shape: { rect: [86.2, 62.2, 2.8, 3.2] }, fill: 'c', keep: true, min: 44 },
+    { shape: { poly: [[64, 74], [64, 69.4], [67.6, 65.8], [71.2, 69.4], [88, 69.4], [88, 74]] }, fill: 'g', shade: { light: 'i', dark: 'k', dir: 'nw', width: 1 } },
+    { shape: { rect: [74, 70.4, 2.8, 2.8] }, fill: 'c', keep: true },
+    { shape: { rect: [81, 70.4, 2.8, 2.8] }, fill: 'c', keep: true, min: 44 },
+    { shape: { line: [[62, 66.6], [92, 66.6]], width: 1 }, fill: 'k' },
+    // Terraces stepping down the slopes: green treads, stone risers.
+    { name: 'terraces', shape: { poly: [[-2, 72], [12, 72], [28, 73], [42, 75.6], [52, 79], [58, 86], [62, 96], [62, 102], [-2, 102]], smooth: 1 }, fill: 'e' },
+    { shape: { all: true }, fill: { stripes: ['m', 'e', 'e', 'k'], width: 1.8, angle: 98 }, clip: 'terraces' },
+    { shape: { all: true }, fill: { stripes: ['m', 'e', 'x', 'g'], width: 1.8, angle: 98 }, clip: 'terraces', min: 56 },
+    { name: 'eterr', shape: { poly: [[58, 78], [68, 76.6], [80, 76], [92, 78], [94, 88], [96, 102], [62, 102], [60, 88]], smooth: 1 }, fill: 'e' },
+    { shape: { all: true }, fill: { stripes: ['m', 'e', 'e', 'k'], width: 1.8, angle: 84 }, clip: 'eterr' },
+    { shape: { all: true }, fill: { stripes: ['m', 'e', 'x', 'g'], width: 1.8, angle: 84 }, clip: 'eterr', min: 56 },
+    { shape: { line: [[26, 74], [32, 71.4], [40, 70]], width: 1.6 }, fill: 'h', min: 44 },
+    // A stone stairway between the terraces, and a tree on the edge of the drop.
+    { shape: { line: [[16, 101], [22, 88], [26, 75]], width: 2.8 }, fill: 'i' },
+    { shape: { line: [[16, 101], [22, 88], [26, 75]], width: 1 }, fill: 'g', min: 44 },
+    { shape: { line: [[94, 100], [95, 88]], width: 1.6 }, fill: 'o' },
+    { shape: { ellipse: [95, 84, 6, 5] }, fill: 'd', shade: { light: 'e', dir: 'nw', width: 2 } }
+  ]
+};
