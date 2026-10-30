@@ -42,5 +42,21 @@ export const CARDS: readonly MotifCard[] = [
     art: () => import('../baked/panda'),
     title: { de: 'Großer Panda', en: 'Giant panda', nl: 'Reuzenpanda', es: 'Panda gigante', fr: 'Panda géant', ru: 'Большая панда', 'zh-Hans': '大熊猫', ko: '자이언트판다', ja: 'ジャイアントパンダ', ar: 'الباندا العملاقة', pt: 'Panda-gigante', it: 'Panda gigante', pl: 'Panda wielka', tr: 'Dev panda', uk: 'Велика панда', hi: 'विशाल पांडा' },
     place: { de: 'Bambuswälder in den Bergen Zentralchinas', en: 'Bamboo forests in the mountains of central China', nl: 'Bamboebossen in de bergen van Centraal-China', es: 'Bosques de bambú en las montañas del centro de China', fr: 'Forêts de bambous des montagnes du centre de la Chine', ru: 'Бамбуковые леса в горах Центрального Китая', 'zh-Hans': '中国中部山区的竹林', ko: '중국 중부 산지의 대나무 숲', ja: '中国中部の山地の竹林', ar: 'غابات الخيزران في جبال وسط الصين', pt: 'Florestas de bambu nas montanhas do centro da China', it: 'Foreste di bambù sulle montagne della Cina centrale', pl: 'Lasy bambusowe w górach środkowych Chin', tr: 'Orta Çin dağlarındaki bambu ormanları', uk: 'Бамбукові ліси в горах Центрального Китаю', hi: 'मध्य चीन के पहाड़ों के बाँस के जंगल' }
+  },
+  {
+    id: 'kangaroo',
+    group: 'animal',
+    aspect: 'square',
+    art: () => import('../baked/kangaroo'),
+    title: { de: 'Rotes Riesenkänguru', en: 'Red kangaroo', nl: 'Rode reuzenkangoeroe', es: 'Canguro rojo', fr: 'Kangourou roux', ru: 'Рыжий кенгуру', 'zh-Hans': '红袋鼠', ko: '붉은캥거루', ja: 'アカカンガルー', ar: 'الكنغر الأحمر', pt: 'Canguru-vermelho', it: 'Canguro rosso', pl: 'Kangur rudy', tr: 'Kızıl kanguru', uk: 'Рудий кенгуру', hi: 'लाल कंगारू' },
+    place: { de: 'Trockenes Inland Australiens', en: 'The dry interior of Australia', nl: 'Het droge binnenland van Australië', es: 'El interior árido de Australia', fr: 'L’intérieur aride de l’Australie', ru: 'Засушливые внутренние районы Австралии', 'zh-Hans': '澳大利亚干旱的内陆地区', ko: '오스트레일리아의 건조한 내륙', ja: 'オーストラリアの乾燥した内陸部', ar: 'المناطق الداخلية الجافة في أستراليا', pt: 'O interior árido da Austrália', it: 'L’entroterra arido dell’Australia', pl: 'Suche wnętrze Australii', tr: 'Avustralya’nın kurak iç bölgeleri', uk: 'Посушливі внутрішні райони Австралії', hi: 'ऑस्ट्रेलिया का सूखा भीतरी इलाका' }
+  },
+  {
+    id: 'snow-leopard',
+    group: 'animal',
+    aspect: 'wide',
+    art: () => import('../baked/snow-leopard'),
+    title: { de: 'Schneeleopard', en: 'Snow leopard', nl: 'Sneeuwluipaard', es: 'Leopardo de las nieves', fr: 'Panthère des neiges', ru: 'Снежный барс', 'zh-Hans': '雪豹', ko: '눈표범', ja: 'ユキヒョウ', ar: 'نمر الثلوج', pt: 'Leopardo-das-neves', it: 'Leopardo delle nevi', pl: 'Irbis śnieżny', tr: 'Kar leoparı', uk: 'Сніговий барс', hi: 'हिम तेंदुआ' },
+    place: { de: 'Hochgebirge Zentral- und Südasiens', en: 'High mountains of Central and South Asia', nl: 'Hooggebergte van Centraal- en Zuid-Azië', es: 'Altas montañas de Asia central y meridional', fr: 'Hautes montagnes d’Asie centrale et du Sud', ru: 'Высокогорья Центральной и Южной Азии', 'zh-Hans': '中亚和南亚的高山地区', ko: '중앙아시아와 남아시아의 높은 산악 지대', ja: '中央アジアと南アジアの高山', ar: 'الجبال العالية في آسيا الوسطى وجنوب آسيا', pt: 'Altas montanhas da Ásia Central e do Sul', it: 'Alte montagne dell’Asia centrale e meridionale', pl: 'Wysokie góry Azji Środkowej i Południowej', tr: 'Orta ve Güney Asya’nın yüksek dağları', uk: 'Високогір’я Центральної та Південної Азії', hi: 'मध्य और दक्षिण एशिया के ऊँचे पहाड़' }
   }
 ];
