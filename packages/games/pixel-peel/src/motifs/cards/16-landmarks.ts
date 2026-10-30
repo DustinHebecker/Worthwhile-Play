@@ -50,5 +50,21 @@ export const CARDS: readonly MotifCard[] = [
     art: () => import('../baked/taj-mahal'),
     title: { de: 'Taj Mahal', en: 'Taj Mahal', nl: 'Taj Mahal', es: 'Taj Mahal', fr: 'Taj Mahal', ru: 'Тадж-Махал', 'zh-Hans': '泰姬陵', ko: '타지마할', ja: 'タージ・マハル', ar: 'تاج محل', pt: 'Taj Mahal', it: 'Taj Mahal', pl: 'Tadź Mahal', tr: 'Tac Mahal', uk: 'Тадж-Махал', hi: 'ताजमहल' },
     place: { de: 'Agra, Uttar Pradesh, Indien', en: 'Agra, Uttar Pradesh, India', nl: 'Agra, Uttar Pradesh, India', es: 'Agra, Uttar Pradesh, India', fr: 'Agra, Uttar Pradesh, Inde', ru: 'Агра, Уттар-Прадеш, Индия', 'zh-Hans': '印度北方邦阿格拉', ko: '인도 우타르프라데시주 아그라', ja: 'インド、ウッタル・プラデーシュ州アーグラ', ar: 'أغرا، أتر برديش، الهند', pt: 'Agra, Uttar Pradesh, Índia', it: 'Agra, Uttar Pradesh, India', pl: 'Agra, Uttar Pradesh, Indie', tr: 'Agra, Uttar Pradeş, Hindistan', uk: 'Агра, Уттар-Прадеш, Індія', hi: 'आगरा, उत्तर प्रदेश, भारत' }
+  },
+  {
+    id: 'machu-picchu',
+    group: 'landmark',
+    aspect: 'square',
+    art: () => import('../baked/machu-picchu'),
+    title: { de: 'Machu Picchu', en: 'Machu Picchu', nl: 'Machu Picchu', es: 'Machu Picchu', fr: 'Machu Picchu', ru: 'Мачу-Пикчу', 'zh-Hans': '马丘比丘', ko: '마추픽추', ja: 'マチュ・ピチュ', ar: 'ماتشو بيتشو', pt: 'Machu Picchu', it: 'Machu Picchu', pl: 'Machu Picchu', tr: 'Machu Picchu', uk: 'Мачу-Пікчу', hi: 'माचू पिच्चू' },
+    place: { de: 'Region Cusco, Peru', en: 'Cusco Region, Peru', nl: 'Regio Cusco, Peru', es: 'Región Cusco, Perú', fr: 'Région de Cuzco, Pérou', ru: 'Регион Куско, Перу', 'zh-Hans': '秘鲁库斯科大区', ko: '페루 쿠스코주', ja: 'ペルー、クスコ県', ar: 'إقليم كوسكو، بيرو', pt: 'Região de Cusco, Peru', it: 'Regione di Cusco, Perù', pl: 'Region Cusco, Peru', tr: 'Cusco Bölgesi, Peru', uk: 'Регіон Куско, Перу', hi: 'कुस्को क्षेत्र, पेरू' }
+  },
+  {
+    id: 'colosseum',
+    group: 'landmark',
+    aspect: 'wide',
+    art: () => import('../baked/colosseum'),
+    title: { de: 'Kolosseum', en: 'Colosseum', nl: 'Colosseum', es: 'Coliseo', fr: 'Colisée', ru: 'Колизей', 'zh-Hans': '罗马斗兽场', ko: '콜로세움', ja: 'コロッセオ', ar: 'الكولوسيوم', pt: 'Coliseu', it: 'Colosseo', pl: 'Koloseum', tr: 'Kolezyum', uk: 'Колізей', hi: 'कोलोसियम' },
+    place: { de: 'Rom, Italien', en: 'Rome, Italy', nl: 'Rome, Italië', es: 'Roma, Italia', fr: 'Rome, Italie', ru: 'Рим, Италия', 'zh-Hans': '意大利罗马', ko: '이탈리아 로마', ja: 'イタリア、ローマ', ar: 'روما، إيطاليا', pt: 'Roma, Itália', it: 'Roma, Italia', pl: 'Rzym, Włochy', tr: 'Roma, İtalya', uk: 'Рим, Італія', hi: 'रोम, इटली' }
   }
 ];
