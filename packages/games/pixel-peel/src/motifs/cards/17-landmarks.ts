@@ -42,5 +42,21 @@ export const CARDS: readonly MotifCard[] = [
     art: () => import('../baked/moai'),
     title: { de: 'Moai auf Rapa Nui', en: 'Moai of Rapa Nui', nl: 'Moai op Rapa Nui', es: 'Moáis de Rapa Nui', fr: 'Moaï de Rapa Nui', ru: 'Моаи острова Пасхи', 'zh-Hans': '复活节岛摩艾石像', ko: '라파누이의 모아이', ja: 'ラパ・ヌイのモアイ', ar: 'تماثيل مواي في رابا نوي', pt: 'Moais de Rapa Nui', it: 'Moai di Rapa Nui', pl: 'Moai na Rapa Nui', tr: 'Rapa Nui Moaileri', uk: 'Моаї острова Пасхи', hi: 'रापा नुई की मोआई मूर्तियाँ' },
     place: { de: 'Osterinsel (Rapa Nui), Chile', en: 'Easter Island (Rapa Nui), Chile', nl: 'Paaseiland (Rapa Nui), Chili', es: 'Isla de Pascua (Rapa Nui), Chile', fr: 'Île de Pâques (Rapa Nui), Chili', ru: 'Остров Пасхи (Рапа-Нуи), Чили', 'zh-Hans': '智利复活节岛（拉帕努伊）', ko: '칠레 이스터섬(라파누이)', ja: 'チリ、イースター島（ラパ・ヌイ）', ar: 'جزيرة الفصح (رابا نوي)، تشيلي', pt: 'Ilha de Páscoa (Rapa Nui), Chile', it: 'Isola di Pasqua (Rapa Nui), Cile', pl: 'Wyspa Wielkanocna (Rapa Nui), Chile', tr: 'Paskalya Adası (Rapa Nui), Şili', uk: 'Острів Пасхи (Рапа-Нуї), Чилі', hi: 'ईस्टर द्वीप (रापा नुई), चिली' }
+  },
+  {
+    id: 'sydney-opera-house',
+    group: 'landmark',
+    aspect: 'wide',
+    art: () => import('../baked/sydney-opera-house'),
+    title: { de: 'Opernhaus Sydney', en: 'Sydney Opera House', nl: 'Opera van Sydney', es: 'Ópera de Sídney', fr: 'Opéra de Sydney', ru: 'Сиднейский оперный театр', 'zh-Hans': '悉尼歌剧院', ko: '시드니 오페라 하우스', ja: 'シドニー・オペラハウス', ar: 'دار أوبرا سيدني', pt: 'Ópera de Sydney', it: 'Teatro dell’Opera di Sydney', pl: 'Opera w Sydney', tr: 'Sidney Opera Binası', uk: 'Сіднейський оперний театр', hi: 'सिडनी ओपेरा हाउस' },
+    place: { de: 'Sydney, Australien', en: 'Sydney, Australia', nl: 'Sydney, Australië', es: 'Sídney, Australia', fr: 'Sydney, Australie', ru: 'Сидней, Австралия', 'zh-Hans': '澳大利亚悉尼', ko: '오스트레일리아 시드니', ja: 'オーストラリア、シドニー', ar: 'سيدني، أستراليا', pt: 'Sydney, Austrália', it: 'Sydney, Australia', pl: 'Sydney, Australia', tr: 'Sidney, Avustralya', uk: 'Сідней, Австралія', hi: 'सिडनी, ऑस्ट्रेलिया' }
+  },
+  {
+    id: 'table-mountain',
+    group: 'landmark',
+    aspect: 'panorama',
+    art: () => import('../baked/table-mountain'),
+    title: { de: 'Tafelberg', en: 'Table Mountain', nl: 'Tafelberg', es: 'Montaña de la Mesa', fr: 'Montagne de la Table', ru: 'Столовая гора', 'zh-Hans': '桌山', ko: '테이블산', ja: 'テーブルマウンテン', ar: 'جبل الطاولة', pt: 'Montanha da Mesa', it: 'Table Mountain', pl: 'Góra Stołowa', tr: 'Masa Dağı', uk: 'Столова гора', hi: 'टेबल माउंटेन' },
+    place: { de: 'Kapstadt, Südafrika', en: 'Cape Town, South Africa', nl: 'Kaapstad, Zuid-Afrika', es: 'Ciudad del Cabo, Sudáfrica', fr: 'Le Cap, Afrique du Sud', ru: 'Кейптаун, ЮАР', 'zh-Hans': '南非开普敦', ko: '남아프리카 공화국 케이프타운', ja: '南アフリカ、ケープタウン', ar: 'كيب تاون، جنوب أفريقيا', pt: 'Cidade do Cabo, África do Sul', it: 'Città del Capo, Sudafrica', pl: 'Kapsztad, Republika Południowej Afryki', tr: 'Cape Town, Güney Afrika', uk: 'Кейптаун, Південна Африка', hi: 'केप टाउन, दक्षिण अफ़्रीका' }
   }
 ];
