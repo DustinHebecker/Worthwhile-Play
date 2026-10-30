@@ -169,8 +169,10 @@ Later on 2026-10-29 (all published):
 - Atlas Explorer (reviewed): Ceuta and Melilla drawn as Spain (Natural Earth "Geo subunit"), Gibraltar hatched ("Disputed"), precise outlines for places < 100 km², Kashmir hatched edges held to one grid cell, east/west as read off the map with a date-line sentence. Owner decisions 2026-10-29: Ceuta/Melilla stay Spain (no hatching); Spain–Morocco is a clue neighbour but not an overland route step. Atlas data is at 148.9 of 150 KiB (≈1.1 KB margin).
 - Strategy #94 (difficulty per opponent) and #95 (opponent styles) merged.
 
+- Pixel Peel v3 (owner feedback 2026-10-29; plan `docs/design/pixel-peel-v3.md`, reviewed): hard puzzles generated with a 20-move waiting horizon and guarded openings (doom delay median 11 → 4–5, nothing deciding in the first 5 moves; easy/medium already met the targets and are unchanged), "Back to move k" in the stuck panel, optional slow peeling (Slow/Quick/Off, default Slow, Display panel mid-game), one-screen phone play (picture, status, waiting places, lane fronts, actions) with font auto-fit. Waiting for the owner's test verdict on slow peeling.
+
 Open:
-- Pixel Peel: phone start time (~300 ms vs 250 ms target) needs a quiet-machine measurement.
+- Pixel Peel: owner to test v3 (slow peeling default, one-screen layout). "Back to move k" often points further back than needed (avg 9 moves, 14 % to the start) — possible follow-up with a stronger search. Hard generation ~50 ms avg (worst ~0.9 s on a 4×-throttled phone). Phone start time now 0.3–0.6 s at 4× throttling (target was 250 ms). pixel-peel has no Stryker mutate entries yet.
 - Atlas: finer hatched edges (0.5 cell, +3.5 KB) only with a larger data budget; Natural Earth's tiny outlines are rough (shown as in the data).
 - Native-speaker review of AI-drafted locales (all new games).
 - Waiting on the owner: Economy ("weitermachen" + nine questions; Many Lives needs `@wp/finance-math`), adventures (three questions).
