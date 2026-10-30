@@ -58,5 +58,21 @@ export const CARDS: readonly MotifCard[] = [
     art: () => import('../baked/snow-leopard'),
     title: { de: 'Schneeleopard', en: 'Snow leopard', nl: 'Sneeuwluipaard', es: 'Leopardo de las nieves', fr: 'Panthère des neiges', ru: 'Снежный барс', 'zh-Hans': '雪豹', ko: '눈표범', ja: 'ユキヒョウ', ar: 'نمر الثلوج', pt: 'Leopardo-das-neves', it: 'Leopardo delle nevi', pl: 'Irbis śnieżny', tr: 'Kar leoparı', uk: 'Сніговий барс', hi: 'हिम तेंदुआ' },
     place: { de: 'Hochgebirge Zentral- und Südasiens', en: 'High mountains of Central and South Asia', nl: 'Hooggebergte van Centraal- en Zuid-Azië', es: 'Altas montañas de Asia central y meridional', fr: 'Hautes montagnes d’Asie centrale et du Sud', ru: 'Высокогорья Центральной и Южной Азии', 'zh-Hans': '中亚和南亚的高山地区', ko: '중앙아시아와 남아시아의 높은 산악 지대', ja: '中央アジアと南アジアの高山', ar: 'الجبال العالية في آسيا الوسطى وجنوب آسيا', pt: 'Altas montanhas da Ásia Central e do Sul', it: 'Alte montagne dell’Asia centrale e meridionale', pl: 'Wysokie góry Azji Środkowej i Południowej', tr: 'Orta ve Güney Asya’nın yüksek dağları', uk: 'Високогір’я Центральної та Південної Азії', hi: 'मध्य और दक्षिण एशिया के ऊँचे पहाड़' }
+  },
+  {
+    id: 'toucan',
+    group: 'animal',
+    aspect: 'tall',
+    art: () => import('../baked/toucan'),
+    title: { de: 'Tukan', en: 'Toucan', nl: 'Toekan', es: 'Tucán', fr: 'Toucan', ru: 'Тукан', 'zh-Hans': '巨嘴鸟', ko: '큰부리새', ja: 'オオハシ', ar: 'الطوقان', pt: 'Tucano', it: 'Tucano', pl: 'Tukan', tr: 'Tukan', uk: 'Тукан', hi: 'टूकन' },
+    place: { de: 'Regenwälder Mittel- und Südamerikas', en: 'Rainforests of Central and South America', nl: 'Regenwouden van Midden- en Zuid-Amerika', es: 'Selvas de América Central y del Sur', fr: 'Forêts tropicales d’Amérique centrale et du Sud', ru: 'Тропические леса Центральной и Южной Америки', 'zh-Hans': '中美洲和南美洲的热带雨林', ko: '중앙아메리카와 남아메리카의 열대우림', ja: '中南米の熱帯雨林', ar: 'الغابات المطيرة في أمريكا الوسطى والجنوبية', pt: 'Florestas tropicais da América Central e do Sul', it: 'Foreste pluviali dell’America centrale e meridionale', pl: 'Lasy deszczowe Ameryki Środkowej i Południowej', tr: 'Orta ve Güney Amerika’nın yağmur ormanları', uk: 'Тропічні ліси Центральної та Південної Америки', hi: 'मध्य और दक्षिण अमेरिका के वर्षावन' }
+  },
+  {
+    id: 'sea-turtle',
+    group: 'animal',
+    aspect: 'wide',
+    art: () => import('../baked/sea-turtle'),
+    title: { de: 'Suppenschildkröte', en: 'Green sea turtle', nl: 'Soepschildpad', es: 'Tortuga verde', fr: 'Tortue verte', ru: 'Зелёная черепаха', 'zh-Hans': '绿海龟', ko: '푸른바다거북', ja: 'アオウミガメ', ar: 'السلحفاة الخضراء', pt: 'Tartaruga-verde', it: 'Tartaruga verde', pl: 'Żółw zielony', tr: 'Yeşil deniz kaplumbağası', uk: 'Зелена черепаха', hi: 'हरा समुद्री कछुआ' },
+    place: { de: 'Tropische und subtropische Meere weltweit', en: 'Tropical and subtropical seas worldwide', nl: 'Tropische en subtropische zeeën wereldwijd', es: 'Mares tropicales y subtropicales de todo el mundo', fr: 'Mers tropicales et subtropicales du monde entier', ru: 'Тропические и субтропические моря всего мира', 'zh-Hans': '全球热带和亚热带海域', ko: '전 세계의 열대 및 아열대 바다', ja: '世界の熱帯・亜熱帯の海', ar: 'البحار الاستوائية وشبه الاستوائية حول العالم', pt: 'Mares tropicais e subtropicais de todo o mundo', it: 'Mari tropicali e subtropicali di tutto il mondo', pl: 'Morza tropikalne i subtropikalne na całym świecie', tr: 'Dünyanın tropikal ve subtropikal denizleri', uk: 'Тропічні та субтропічні моря світу', hi: 'दुनिया भर के उष्णकटिबंधीय और उपोष्णकटिबंधीय समुद्र' }
   }
 ];
