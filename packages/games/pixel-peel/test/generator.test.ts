@@ -8,7 +8,7 @@ import { identitiesOf } from '../src/hint';
 import { runPolicy } from '../src/policies';
 import { prove } from '../src/prove';
 import { findMotif } from '../src/motifs/index';
-import { widthFor } from '../src/art/sizes';
+import { heightOf, widthFor } from '../src/art/sizes';
 import { MOTIFS } from '../src/motifs/index';
 import { apply, DIFFICULTIES, initialPosition, isPeelState, LIMITS, type Difficulty, type Move, type Picture, type Shooter } from '../src/rules';
 import { oracleSolvable } from './oracle';
@@ -35,8 +35,11 @@ function witnessStats(picture: Picture, lanes: Shooter[][], slots: number, witne
   return { slotEntries, zeroHitParks, maxOccupied, solved: cur.cells.left === 0 };
 }
 
-/** One motif of each group (season, landscape, animal, scene). */
-const SAMPLE = MOTIFS.filter((m, i) => MOTIFS.findIndex((x) => x.group === m.group) === i);
+/**
+ * A fixed sample: the first motif of each group and of each aspect (a deterministic, small set however many motifs
+ * there are; generator.slow.test.ts sweeps every motif).
+ */
+const SAMPLE = MOTIFS.filter((m, i) => MOTIFS.findIndex((x) => x.group === m.group) === i || MOTIFS.findIndex((x) => x.aspect === m.aspect) === i);
 
 describe('generator (design v2 § 3)', () => {
   it('is deterministic: the same seed, difficulty and choice give a deep-equal state', () => {
@@ -96,7 +99,7 @@ describe('generator (design v2 § 3)', () => {
           expect(witnessSolves(g.picture, g.lanes, g.slots, g.witness), label).toBe(true);
           const w = widthFor(motif, d);
           expect(g.picture.w, label).toBe(w);
-          expect(g.picture.h, label).toBe(motif.aspect === 'wide' ? (w * 3) / 4 : w);
+          expect(g.picture.h, label).toBe(heightOf(motif, w));
           expect(g.slots).toBe(level.slots);
           expect(g.lanes).toHaveLength(4);
           const lengths = g.lanes.map((l) => l.length);

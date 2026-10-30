@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createRng } from '@wp/game-core';
 import { engineOf, parseMove, startCursor, step, tableOf } from '../src/engine';
 import { createInitial, generate, LEVELS, witnessSolves } from '../src/generate';
-import { widthFor } from '../src/art/sizes';
+import { heightOf, widthFor } from '../src/art/sizes';
 import { MOTIFS } from '../src/motifs/index';
 import { POLICIES, runPolicy } from '../src/policies';
 import { DIFFICULTIES, isPeelState, LIMITS, tableOfState, type Difficulty, type Move, type Picture, type Shooter } from '../src/rules';
@@ -47,7 +47,7 @@ describe('generator over every motif (design v2 § 3)', () => {
           expect(witnessSolves(g.picture, g.lanes, g.slots, g.witness), label).toBe(true);
           const w = widthFor(motif, d);
           expect(g.picture.w, label).toBe(w);
-          expect(g.picture.h, label).toBe(motif.aspect === 'wide' ? (w * 3) / 4 : w);
+          expect(g.picture.h, label).toBe(heightOf(motif, w));
           expect(g.slots).toBe(level.slots);
           expect(g.lanes).toHaveLength(4);
           const lengths = g.lanes.map((l) => l.length);
