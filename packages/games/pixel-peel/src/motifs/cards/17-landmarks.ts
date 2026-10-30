@@ -18,5 +18,13 @@ export const CARDS: readonly MotifCard[] = [
     art: () => import('../baked/angkor-wat'),
     title: { de: 'Angkor Wat', en: 'Angkor Wat', nl: 'Angkor Wat', es: 'Angkor Wat', fr: 'Angkor Vat', ru: 'Ангкор-Ват', 'zh-Hans': '吴哥窟', ko: '앙코르 와트', ja: 'アンコール・ワット', ar: 'أنغكور وات', pt: 'Angkor Wat', it: 'Angkor Wat', pl: 'Angkor Wat', tr: 'Angkor Wat', uk: 'Ангкор-Ват', hi: 'अंकोरवाट' },
     place: { de: 'Siem Reap, Kambodscha', en: 'Siem Reap, Cambodia', nl: 'Siem Reap, Cambodja', es: 'Siem Reap, Camboya', fr: 'Siem Reap, Cambodge', ru: 'Сиемреап, Камбоджа', 'zh-Hans': '柬埔寨暹粒', ko: '캄보디아 시엠레아프', ja: 'カンボジア、シェムリアップ', ar: 'سيام ريب، كمبوديا', pt: 'Siem Reap, Camboja', it: 'Siem Reap, Cambogia', pl: 'Siem Reap, Kambodża', tr: 'Siem Reap, Kamboçya', uk: 'Сієм Ріп, Камбоджа', hi: 'सियेम रीप, कंबोडिया' }
+  },
+  {
+    id: 'kilimanjaro',
+    group: 'landmark',
+    aspect: 'panorama',
+    art: () => import('../baked/kilimanjaro'),
+    title: { de: 'Kilimandscharo', en: 'Kilimanjaro', nl: 'Kilimanjaro', es: 'Kilimanjaro', fr: 'Kilimandjaro', ru: 'Килиманджаро', 'zh-Hans': '乞力马扎罗山', ko: '킬리만자로산', ja: 'キリマンジャロ', ar: 'كليمنجارو', pt: 'Kilimanjaro', it: 'Kilimangiaro', pl: 'Kilimandżaro', tr: 'Kilimanjaro', uk: 'Кіліманджаро', hi: 'किलिमंजारो' },
+    place: { de: 'Region Kilimandscharo, Tansania', en: 'Kilimanjaro Region, Tanzania', nl: 'Regio Kilimanjaro, Tanzania', es: 'Región de Kilimanjaro, Tanzania', fr: 'Région du Kilimandjaro, Tanzanie', ru: 'Область Килиманджаро, Танзания', 'zh-Hans': '坦桑尼亚乞力马扎罗区', ko: '탄자니아 킬리만자로주', ja: 'タンザニア、キリマンジャロ州', ar: 'منطقة كليمنجارو، تنزانيا', pt: 'Região de Kilimanjaro, Tanzânia', it: 'Regione del Kilimangiaro, Tanzania', pl: 'Region Kilimandżaro, Tanzania', tr: 'Kilimanjaro Bölgesi, Tanzanya', uk: 'Регіон Кіліманджаро, Танзанія', hi: 'किलिमंजारो क्षेत्र, तंज़ानिया' }
   }
 ];
