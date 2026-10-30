@@ -74,5 +74,13 @@ export const CARDS: readonly MotifCard[] = [
     art: () => import('../baked/sea-turtle'),
     title: { de: 'Suppenschildkröte', en: 'Green sea turtle', nl: 'Soepschildpad', es: 'Tortuga verde', fr: 'Tortue verte', ru: 'Зелёная черепаха', 'zh-Hans': '绿海龟', ko: '푸른바다거북', ja: 'アオウミガメ', ar: 'السلحفاة الخضراء', pt: 'Tartaruga-verde', it: 'Tartaruga verde', pl: 'Żółw zielony', tr: 'Yeşil deniz kaplumbağası', uk: 'Зелена черепаха', hi: 'हरा समुद्री कछुआ' },
     place: { de: 'Tropische und subtropische Meere weltweit', en: 'Tropical and subtropical seas worldwide', nl: 'Tropische en subtropische zeeën wereldwijd', es: 'Mares tropicales y subtropicales de todo el mundo', fr: 'Mers tropicales et subtropicales du monde entier', ru: 'Тропические и субтропические моря всего мира', 'zh-Hans': '全球热带和亚热带海域', ko: '전 세계의 열대 및 아열대 바다', ja: '世界の熱帯・亜熱帯の海', ar: 'البحار الاستوائية وشبه الاستوائية حول العالم', pt: 'Mares tropicais e subtropicais de todo o mundo', it: 'Mari tropicali e subtropicali di tutto il mondo', pl: 'Morza tropikalne i subtropikalne na całym świecie', tr: 'Dünyanın tropikal ve subtropikal denizleri', uk: 'Тропічні та субтропічні моря світу', hi: 'दुनिया भर के उष्णकटिबंधीय और उपोष्णकटिबंधीय समुद्र' }
+  },
+  {
+    id: 'humpback-whale',
+    group: 'animal',
+    aspect: 'tall',
+    art: () => import('../baked/humpback-whale'),
+    title: { de: 'Buckelwal', en: 'Humpback whale', nl: 'Bultrug', es: 'Ballena jorobada', fr: 'Baleine à bosse', ru: 'Горбатый кит', 'zh-Hans': '座头鲸', ko: '혹등고래', ja: 'ザトウクジラ', ar: 'الحوت الأحدب', pt: 'Baleia-jubarte', it: 'Megattera', pl: 'Humbak', tr: 'Kambur balina', uk: 'Горбатий кит', hi: 'हंपबैक व्हेल' },
+    place: { de: 'Alle Ozeane der Welt', en: 'All the world’s oceans', nl: 'Alle oceanen van de wereld', es: 'Todos los océanos del mundo', fr: 'Tous les océans du monde', ru: 'Все океаны мира', 'zh-Hans': '世界各大洋', ko: '전 세계의 모든 대양', ja: '世界中の海洋', ar: 'جميع محيطات العالم', pt: 'Todos os oceanos do mundo', it: 'Tutti gli oceani del mondo', pl: 'Wszystkie oceany świata', tr: 'Dünyanın tüm okyanusları', uk: 'Усі океани світу', hi: 'दुनिया के सभी महासागर' }
   }
 ];
