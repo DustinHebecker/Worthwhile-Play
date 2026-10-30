@@ -1,5 +1,6 @@
 import type { Motif } from '../../art/types';
 import { autumnVineyard } from '../autumn-vineyard';
+import { baobabAvenue } from '../baobab-avenue';
 import { mangroves } from '../mangroves';
 import { monsoonAlley } from '../monsoon-alley';
 import { mountainLake } from '../mountain-lake';
@@ -12,4 +13,4 @@ import { tulipFields } from '../tulip-fields';
 import { volcano } from '../volcano';
 
 /** Seasons and landscapes around the world (art batch 10). */
-export const BATCH: readonly Motif[] = [tulipFields, monsoonAlley, autumnVineyard, snowyPines, prairieStorm, summerBeach, volcano, mangroves, savanna, steppeYurts, mountainLake];
+export const BATCH: readonly Motif[] = [tulipFields, monsoonAlley, autumnVineyard, snowyPines, prairieStorm, summerBeach, volcano, mangroves, savanna, steppeYurts, mountainLake, baobabAvenue];

@@ -90,5 +90,13 @@ export const CARDS: readonly MotifCard[] = [
     art: () => import('../baked/mountain-lake'),
     title: { de: 'Bergsee', en: 'Mountain lake', nl: 'Bergmeer', es: 'Lago de montaña', fr: 'Lac de montagne', ru: 'Горное озеро', 'zh-Hans': '高山湖泊', ko: '산속 호수', ja: '山の湖', ar: 'بحيرة جبلية', pt: 'Lago de montanha', it: 'Lago alpino', pl: 'Górskie jezioro', tr: 'Dağ gölü', uk: 'Гірське озеро', hi: 'पहाड़ी झील' },
     place: { de: 'Hochgebirge wie die Alpen', en: 'High mountains such as the Alps', nl: 'Hooggebergte zoals de Alpen', es: 'Alta montaña, como los Alpes', fr: 'Haute montagne, comme les Alpes', ru: 'Высокие горы, например Альпы', 'zh-Hans': '阿尔卑斯山等高山地区', ko: '알프스 같은 높은 산지', ja: 'アルプスなどの高山', ar: 'الجبال العالية مثل جبال الألب', pt: 'Alta montanha, como os Alpes', it: 'Alta montagna, come le Alpi', pl: 'Wysokie góry, takie jak Alpy', tr: 'Alpler gibi yüksek dağlar', uk: 'Високі гори, як-от Альпи', hi: 'आल्प्स जैसे ऊँचे पहाड़' }
+  },
+  {
+    id: 'baobab-avenue',
+    group: 'landscape',
+    aspect: 'square',
+    art: () => import('../baked/baobab-avenue'),
+    title: { de: 'Allee der Baobabs', en: 'Avenue of the Baobabs', nl: 'Baobablaan', es: 'Avenida de los Baobabs', fr: 'Allée des Baobabs', ru: 'Аллея баобабов', 'zh-Hans': '猴面包树大道', ko: '바오밥나무 거리', ja: 'バオバブの並木道', ar: 'جادة أشجار الباوباب', pt: 'Avenida dos Baobás', it: 'Viale dei Baobab', pl: 'Aleja Baobabów', tr: 'Baobab Caddesi', uk: 'Алея баобабів', hi: 'बाओबाब का रास्ता' },
+    place: { de: 'Bei Morondava, Madagaskar', en: 'Near Morondava, Madagascar', nl: 'Bij Morondava, Madagaskar', es: 'Cerca de Morondava, Madagascar', fr: 'Près de Morondava, Madagascar', ru: 'Около Морундавы, Мадагаскар', 'zh-Hans': '马达加斯加穆龙达瓦附近', ko: '마다가스카르 모론다바 근처', ja: 'マダガスカル、モロンダバ近郊', ar: 'قرب موروندافا، مدغشقر', pt: 'Perto de Morondava, Madagáscar', it: 'Vicino a Morondava, Madagascar', pl: 'Okolice Morondavy, Madagaskar', tr: 'Morondava yakınları, Madagaskar', uk: 'Поблизу Морундави, Мадагаскар', hi: 'मोरोंदावा के पास, मेडागास्कर' }
   }
 ];

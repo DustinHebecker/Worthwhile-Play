@@ -72,9 +72,9 @@ export const monsoonAlley: Motif = {
     { shape: { rect: [36, 46, 28, 40] }, fill: 'o', shade: { dark: 'c', dir: 'w', mode: 'band', amount: 0.2 } },
     { shape: { rect: [45, 40, 9, 6.5], round: 1 }, fill: 'k' },
     { shape: { rect: [36, 45, 28, 2] }, fill: 'c' },
-    { shape: { rect: [41, 52, 5, 6] }, fill: 'y', keep: true },
-    { shape: { rect: [54, 52, 5, 6] }, fill: 'k', keep: true },
-    { shape: { rect: [46, 66, 8, 18] }, fill: 'k' },
+    { shape: { rect: [40, 50, 6, 7] }, fill: 'y', keep: true },
+    { shape: { rect: [55, 58, 4, 9] }, fill: 'k', keep: true },
+    { shape: { rect: [44, 66, 7, 18] }, fill: 'k' },
     // Left: a tall turquoise house in front, a lower one behind; lit from the open sky.
     { name: 'leftFar', shape: { poly: [[14, 24], [38, 46], [38, 84], [14, 115.6]] }, fill: { gradient: ['u', 'e'], from: [14, 60], to: [38, 60], soft: 0.6 } },
     { shape: { poly: [[14, 20.3], [38, 44.5], [38, 46], [14, 24]] }, fill: 'e' },

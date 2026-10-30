@@ -78,8 +78,8 @@ export const tulipFields: Motif = {
     { shape: { ellipse: [91, 21, 3.6, 5.5] }, fill: 'd', shade: { light: 'e', dir: 'nw' } },
     { shape: { rect: [72.5, 23.5, 12, 5.8] }, fill: 'r', shade: { dark: 'x', dir: 'w', mode: 'band', amount: 0.3 } },
     { shape: { poly: [[71, 24.5], [75.5, 18.5], [81.5, 18.5], [86, 24.5]] }, fill: 'n', shade: { dark: 'x', dir: 'n', mode: 'band', amount: 0.25 } },
-    { shape: { rect: [74.5, 25, 2, 2] }, fill: 'w', keep: true, min: 48 },
-    { shape: { rect: [80.5, 25, 2, 2] }, fill: 'w', keep: true, min: 48 },
+    { shape: { rect: [74.5, 25, 3, 2] }, fill: 'w', keep: true, min: 48 },
+    { shape: { rect: [80, 25, 2.4, 4.3] }, fill: 'n', keep: true, min: 48 },
     // The field: a green hedge on the horizon, then the rows fanning out from the farmhouse.
     { name: 'field', shape: { rect: [0, 29, 100, 46] }, fill: 'e' },
     { shape: { poly: [VP, [0, 29.8], [0, 31.6]] }, fill: 'o' },
