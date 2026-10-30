@@ -74,5 +74,21 @@ export const CARDS: readonly MotifCard[] = [
     art: () => import('../baked/savanna'),
     title: { de: 'Savanne bei Sonnenuntergang', en: 'Savanna at sunset', nl: 'Savanne bij zonsondergang', es: 'Sabana al atardecer', fr: 'Savane au coucher du soleil', ru: 'Саванна на закате', 'zh-Hans': '日落时的稀树草原', ko: '해 질 녘의 사바나', ja: '夕暮れのサバンナ', ar: 'السافانا عند الغروب', pt: 'Savana ao pôr do sol', it: 'Savana al tramonto', pl: 'Sawanna o zachodzie słońca', tr: 'Gün batımında savan', uk: 'Савана на заході сонця', hi: 'सूर्यास्त के समय सवाना' },
     place: { de: 'Ostafrika, etwa Kenia und Tansania', en: 'East Africa, as in Kenya and Tanzania', nl: 'Oost-Afrika, zoals Kenia en Tanzania', es: 'África oriental, como Kenia y Tanzania', fr: 'Afrique de l’Est, comme le Kenya et la Tanzanie', ru: 'Восточная Африка, например Кения и Танзания', 'zh-Hans': '东非，例如肯尼亚和坦桑尼亚', ko: '케냐, 탄자니아 같은 동아프리카', ja: 'ケニアやタンザニアなどの東アフリカ', ar: 'شرق أفريقيا، مثل كينيا وتنزانيا', pt: 'África Oriental, como o Quénia e a Tanzânia', it: 'Africa orientale, come Kenya e Tanzania', pl: 'Afryka Wschodnia, np. Kenia i Tanzania', tr: 'Kenya ve Tanzanya gibi Doğu Afrika', uk: 'Східна Африка, як-от Кенія і Танзанія', hi: 'पूर्वी अफ़्रीका, जैसे केन्या और तंज़ानिया' }
+  },
+  {
+    id: 'steppe-yurts',
+    group: 'landscape',
+    aspect: 'wide',
+    art: () => import('../baked/steppe-yurts'),
+    title: { de: 'Jurten in der Steppe', en: 'Yurts on the steppe', nl: 'Joerten op de steppe', es: 'Yurtas en la estepa', fr: 'Yourtes dans la steppe', ru: 'Юрты в степи', 'zh-Hans': '草原上的蒙古包', ko: '초원의 게르', ja: '草原のゲル', ar: 'خيام اليورت في السهوب', pt: 'Iurtas na estepe', it: 'Yurte nella steppa', pl: 'Jurty na stepie', tr: 'Bozkırda yurtlar', uk: 'Юрти в степу', hi: 'स्टेपी में यर्ट' },
+    place: { de: 'Steppe der Mongolei', en: 'The steppe of Mongolia', nl: 'De steppe van Mongolië', es: 'La estepa de Mongolia', fr: 'La steppe de Mongolie', ru: 'Монгольская степь', 'zh-Hans': '蒙古草原', ko: '몽골의 초원', ja: 'モンゴルの草原', ar: 'سهوب منغوليا', pt: 'A estepe da Mongólia', it: 'La steppa della Mongolia', pl: 'Step Mongolii', tr: 'Moğolistan bozkırı', uk: 'Степ Монголії', hi: 'मंगोलिया की स्टेपी' }
+  },
+  {
+    id: 'mountain-lake',
+    group: 'landscape',
+    aspect: 'tall',
+    art: () => import('../baked/mountain-lake'),
+    title: { de: 'Bergsee', en: 'Mountain lake', nl: 'Bergmeer', es: 'Lago de montaña', fr: 'Lac de montagne', ru: 'Горное озеро', 'zh-Hans': '高山湖泊', ko: '산속 호수', ja: '山の湖', ar: 'بحيرة جبلية', pt: 'Lago de montanha', it: 'Lago alpino', pl: 'Górskie jezioro', tr: 'Dağ gölü', uk: 'Гірське озеро', hi: 'पहाड़ी झील' },
+    place: { de: 'Hochgebirge wie die Alpen', en: 'High mountains such as the Alps', nl: 'Hooggebergte zoals de Alpen', es: 'Alta montaña, como los Alpes', fr: 'Haute montagne, comme les Alpes', ru: 'Высокие горы, например Альпы', 'zh-Hans': '阿尔卑斯山等高山地区', ko: '알프스 같은 높은 산지', ja: 'アルプスなどの高山', ar: 'الجبال العالية مثل جبال الألب', pt: 'Alta montanha, como os Alpes', it: 'Alta montagna, come le Alpi', pl: 'Wysokie góry, takie jak Alpy', tr: 'Alpler gibi yüksek dağlar', uk: 'Високі гори, як-от Альпи', hi: 'आल्प्स जैसे ऊँचे पहाड़' }
   }
 ];
